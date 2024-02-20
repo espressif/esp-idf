@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,6 +13,7 @@ extern "C" {
 #include "sdkconfig.h"
 #include <stdint.h>
 #include "ulp_riscv_register_ops.h"
+#include "ulp_riscv_interrupt.h"
 
 /**
  * @brief Wakeup main CPU from sleep or deep sleep.
@@ -66,7 +67,6 @@ void __attribute__((__noreturn__)) ulp_riscv_halt(void);
  */
 void ulp_riscv_timer_stop(void);
 
-
 /**
  * @brief Resumes the ULP timer
  *
@@ -75,10 +75,9 @@ void ulp_riscv_timer_stop(void);
  */
 void ulp_riscv_timer_resume(void);
 
-#define ULP_RISCV_GET_CCOUNT()	({ int __ccount; \
-				asm volatile("rdcycle %0;" : "=r"(__ccount)); \
-				__ccount; })
-
+#define ULP_RISCV_GET_CCOUNT()  ({ int __ccount; \
+                asm volatile("rdcycle %0;" : "=r"(__ccount)); \
+                __ccount; })
 
 #if CONFIG_IDF_TARGET_ESP32S2
 /* These are only approximate default numbers, the default frequency
@@ -98,7 +97,7 @@ void ulp_riscv_timer_resume(void);
 void static inline ulp_riscv_delay_cycles(uint32_t cycles)
 {
     uint32_t start = ULP_RISCV_GET_CCOUNT();
-	/* Off with an estimate of cycles in this function to improve accuracy */
+    /* Off with an estimate of cycles in this function to improve accuracy */
     uint32_t end = start + cycles - 20;
 
     while (ULP_RISCV_GET_CCOUNT()  < end) {
@@ -111,6 +110,26 @@ void static inline ulp_riscv_delay_cycles(uint32_t cycles)
  *
  */
 void ulp_riscv_gpio_wakeup_clear(void);
+
+/**
+ * @brief Enable ULP RISC-V SW Interrupt
+ *
+ * @param handler       Interrupt handler
+ * @param arg           Interrupt handler argument
+ */
+void ulp_riscv_enable_sw_intr(intr_handler_t handler, void *arg);
+
+/**
+ * @brief Disable ULP RISC-V SW Interrupt
+ */
+void ulp_riscv_disable_sw_intr(void);
+
+/**
+ * @brief Trigger ULP RISC-V SW Interrupt
+ *
+ * @note The SW interrupt will only trigger if it has been enabled previously using ulp_riscv_enable_sw_intr().
+ */
+void ulp_riscv_trigger_sw_intr(void);
 
 #ifdef __cplusplus
 }

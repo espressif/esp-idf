@@ -28,7 +28,7 @@ extern "C" {
 #define ESP_CACHE_MALLOC_FLAG_DMA          BIT(1)
 
 /**
- * @brief Helper function for malloc a cache aligned memory buffer
+ * @brief Helper function for malloc a cache aligned data memory buffer
  *
  * @param[in]  size         Size in bytes, the amount of memory to allocate
  * @param[in]  flags        Flags, see `ESP_CACHE_MALLOC_FLAG_x`
@@ -43,7 +43,7 @@ extern "C" {
 esp_err_t esp_cache_aligned_malloc(size_t size, uint32_t flags, void **out_ptr, size_t *actual_size);
 
 /**
- * @brief Helper function for calloc a cache aligned memory buffer
+ * @brief Helper function for calloc a cache aligned data memory buffer
  *
  * @param[in]  n            Number of continuing chunks of memory to allocate
  * @param[in]  size         Size of one chunk, in bytes
@@ -58,6 +58,17 @@ esp_err_t esp_cache_aligned_malloc(size_t size, uint32_t flags, void **out_ptr, 
  */
 esp_err_t esp_cache_aligned_calloc(size_t n, size_t size, uint32_t flags, void **out_ptr, size_t *actual_size);
 
+/**
+ * @brief Get Cache alignment requirement for data
+ *
+ * @param[in]  flags          Flags, see `ESP_CACHE_MALLOC_FLAG_x`
+ * @param[out] out_alignment  Alignment
+ *
+ * @return
+ *        - ESP_OK:
+ *        - ESP_ERR_INVALID_ARG: Invalid argument
+ */
+esp_err_t esp_cache_get_alignment(uint32_t flags, size_t *out_alignment);
 
 #ifdef __cplusplus
 }

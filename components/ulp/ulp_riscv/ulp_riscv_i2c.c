@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -72,7 +72,7 @@ static esp_err_t i2c_configure_io(gpio_num_t io_num, bool pullup_en)
     /* Initialize IO Pin */
     ESP_RETURN_ON_ERROR(rtc_gpio_init(io_num), RTCI2C_TAG, "RTC GPIO Init failed for GPIO %d", io_num);
     /* Set direction to input+output */
-    ESP_RETURN_ON_ERROR(rtc_gpio_set_direction(io_num, RTC_GPIO_MODE_INPUT_OUTPUT), RTCI2C_TAG, "RTC GPIO Set direction failed for %d", io_num);
+    ESP_RETURN_ON_ERROR(rtc_gpio_set_direction(io_num, RTC_GPIO_MODE_INPUT_OUTPUT_OD), RTCI2C_TAG, "RTC GPIO Set direction failed for %d", io_num);
     /* Disable pulldown on the io pin */
     ESP_RETURN_ON_ERROR(rtc_gpio_pulldown_dis(io_num), RTCI2C_TAG, "RTC GPIO pulldown disable failed for %d", io_num);
     /* Enable pullup based on pullup_en flag */
@@ -200,7 +200,7 @@ static esp_err_t i2c_set_timing(const ulp_riscv_i2c_cfg_t *cfg)
  * |----------|----------|---------|---------|----------|------------|---------|
  */
 static void ulp_riscv_i2c_format_cmd(uint32_t cmd_idx, uint8_t op_code, uint8_t ack_val,
-        uint8_t ack_expected, uint8_t ack_check_en, uint8_t byte_num)
+                                     uint8_t ack_expected, uint8_t ack_check_en, uint8_t byte_num)
 {
 #if CONFIG_IDF_TARGET_ESP32S2
     /* Reset cmd register */
@@ -210,12 +210,12 @@ static void ulp_riscv_i2c_format_cmd(uint32_t cmd_idx, uint8_t op_code, uint8_t 
     i2c_dev->command[cmd_idx].done = 0;                     // CMD Done
     i2c_dev->command[cmd_idx].op_code = op_code;            // Opcode
     i2c_dev->command[cmd_idx].ack_val = ack_val;            // ACK bit sent by I2C controller during READ.
-                                                            // Ignored during RSTART, STOP, END and WRITE cmds.
+    // Ignored during RSTART, STOP, END and WRITE cmds.
     i2c_dev->command[cmd_idx].ack_exp = ack_expected;       // ACK bit expected by I2C controller during WRITE.
-                                                            // Ignored during RSTART, STOP, END and READ cmds.
+    // Ignored during RSTART, STOP, END and READ cmds.
     i2c_dev->command[cmd_idx].ack_en = ack_check_en;        // I2C controller verifies that the ACK bit sent by the
-                                                            // slave device matches the ACK expected bit during WRITE.
-                                                            // Ignored during RSTART, STOP, END and READ cmds.
+    // slave device matches the ACK expected bit during WRITE.
+    // Ignored during RSTART, STOP, END and READ cmds.
     HAL_FORCE_MODIFY_U32_REG_FIELD(i2c_dev->command[cmd_idx], byte_num, byte_num);  // Byte Num
 
 #elif CONFIG_IDF_TARGET_ESP32S3
@@ -226,12 +226,12 @@ static void ulp_riscv_i2c_format_cmd(uint32_t cmd_idx, uint8_t op_code, uint8_t 
     i2c_dev->i2c_cmd[cmd_idx].i2c_command_done = 0;         // CMD Done
     i2c_dev->i2c_cmd[cmd_idx].i2c_op_code = op_code;        // Opcode
     i2c_dev->i2c_cmd[cmd_idx].i2c_ack_val = ack_val;        // ACK bit sent by I2C controller during READ.
-                                                            // Ignored during RSTART, STOP, END and WRITE cmds.
+    // Ignored during RSTART, STOP, END and WRITE cmds.
     i2c_dev->i2c_cmd[cmd_idx].i2c_ack_exp = ack_expected;   // ACK bit expected by I2C controller during WRITE.
-                                                            // Ignored during RSTART, STOP, END and READ cmds.
+    // Ignored during RSTART, STOP, END and READ cmds.
     i2c_dev->i2c_cmd[cmd_idx].i2c_ack_en = ack_check_en;    // I2C controller verifies that the ACK bit sent by the
-                                                            // slave device matches the ACK expected bit during WRITE.
-                                                            // Ignored during RSTART, STOP, END and READ cmds.
+    // slave device matches the ACK expected bit during WRITE.
+    // Ignored during RSTART, STOP, END and READ cmds.
     HAL_FORCE_MODIFY_U32_REG_FIELD(i2c_dev->i2c_cmd[cmd_idx], i2c_byte_num, byte_num);  // Byte Num
 #endif // CONFIG_IDF_TARGET_ESP32S2
 }
@@ -247,10 +247,10 @@ static inline esp_err_t ulp_riscv_i2c_wait_for_interrupt(int32_t ticks_to_wait)
 
         /* Return ESP_OK if Tx or Rx data interrupt bits are set. */
         if ((status & RTC_I2C_TX_DATA_INT_ST) ||
-            (status & RTC_I2C_RX_DATA_INT_ST)) {
+                (status & RTC_I2C_RX_DATA_INT_ST)) {
             ret = ESP_OK;
             break;
-        /* In case of error status, break and return ESP_FAIL */
+            /* In case of error status, break and return ESP_FAIL */
 #if CONFIG_IDF_TARGET_ESP32S2
         } else if ((status & RTC_I2C_TIMEOUT_INT_ST) ||
 #elif CONFIG_IDF_TARGET_ESP32S3
@@ -479,6 +479,15 @@ esp_err_t ulp_riscv_i2c_master_init(const ulp_riscv_i2c_cfg_t *cfg)
     /* Configure RTC I2C GPIOs */
     ESP_RETURN_ON_ERROR(i2c_set_pin(cfg), RTCI2C_TAG, "Failed to configure RTC I2C GPIOs");
 
+    /* Enable internal open-drain mode for SDA and SCL lines */
+#if CONFIG_IDF_TARGET_ESP32S2
+    i2c_dev->ctrl.sda_force_out = 0;
+    i2c_dev->ctrl.scl_force_out = 0;
+#elif CONFIG_IDF_TARGET_ESP32S3
+    i2c_dev->i2c_ctrl.i2c_sda_force_out = 0;
+    i2c_dev->i2c_ctrl.i2c_scl_force_out = 0;
+#endif // CONFIG_IDF_TARGET_ESP32S2
+
 #if CONFIG_IDF_TARGET_ESP32S2
     /* Configure the RTC I2C controller in master mode */
     i2c_dev->ctrl.ms_mode = 1;
@@ -501,13 +510,13 @@ esp_err_t ulp_riscv_i2c_master_init(const ulp_riscv_i2c_cfg_t *cfg)
 
     /* Enable RTC I2C interrupts */
     SET_PERI_REG_MASK(RTC_I2C_INT_ENA_REG, RTC_I2C_RX_DATA_INT_ENA |
-                                           RTC_I2C_TX_DATA_INT_ENA |
-                                           RTC_I2C_ARBITRATION_LOST_INT_ENA |
-                                           RTC_I2C_ACK_ERR_INT_ENA |
+                      RTC_I2C_TX_DATA_INT_ENA |
+                      RTC_I2C_ARBITRATION_LOST_INT_ENA |
+                      RTC_I2C_ACK_ERR_INT_ENA |
 #if CONFIG_IDF_TARGET_ESP32S2
-                                           RTC_I2C_TIMEOUT_INT_ENA);
+                      RTC_I2C_TIMEOUT_INT_ENA);
 #elif CONFIG_IDF_TARGET_ESP32S3
-                                           RTC_I2C_TIME_OUT_INT_ENA);
+                      RTC_I2C_TIME_OUT_INT_ENA);
 #endif // CONFIG_IDF_TARGET_ESP32S2
 
     return ESP_OK;

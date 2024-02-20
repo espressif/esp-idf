@@ -8,7 +8,7 @@
 
 #include <stdio.h>
 #include "esp_err.h"
-#include "driver/sdmmc_types.h"
+#include "sd_protocol_types.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -200,8 +200,10 @@ esp_err_t sdmmc_io_write_byte(sdmmc_card_t* card, uint32_t function,
  *              using sdmmc_card_init
  * @param function  IO function number
  * @param addr  byte address within IO function where reading starts
- * @param dst  buffer which receives the data read from card
- * @param size  number of bytes to read
+ * @param dst  buffer which receives the data read from card. Aligned to 4 byte boundary unless
+ *             `SDMMC_HOST_FLAG_ALLOC_ALIGNED_BUF` flag is set when calling `sdmmc_card_init`. The flag is mandatory
+ *             when the buffer is behind the cache.
+ * @param size  number of bytes to read, 1 to 512.
  * @return
  *      - ESP_OK on success
  *      - ESP_ERR_INVALID_SIZE if size exceeds 512 bytes
@@ -220,8 +222,9 @@ esp_err_t sdmmc_io_read_bytes(sdmmc_card_t* card, uint32_t function,
  *              using sdmmc_card_init
  * @param function  IO function number
  * @param addr  byte address within IO function where writing starts
- * @param src  data to be written
- * @param size  number of bytes to write
+ * @param src  data to be written. Aligned to 4 byte boundary unless `SDMMC_HOST_FLAG_ALLOC_ALIGNED_BUF` flag is set
+ *             when calling `sdmmc_card_init`. The flag is mandatory when the buffer is behind the cache.
+ * @param size  number of bytes to write, 1 to 512.
  * @return
  *      - ESP_OK on success
  *      - ESP_ERR_INVALID_SIZE if size exceeds 512 bytes
@@ -240,7 +243,8 @@ esp_err_t sdmmc_io_write_bytes(sdmmc_card_t* card, uint32_t function,
  *              using sdmmc_card_init
  * @param function  IO function number
  * @param addr  byte address within IO function where writing starts
- * @param dst  buffer which receives the data read from card
+ * @param dst  buffer which receives the data read from card. Aligned to 4 byte boundary, and also cache line size if
+ *             the buffer is behind the cache.
  * @param size  number of bytes to read, must be divisible by the card block
  *              size.
  * @return
@@ -261,7 +265,8 @@ esp_err_t sdmmc_io_read_blocks(sdmmc_card_t* card, uint32_t function,
  *              using sdmmc_card_init
  * @param function  IO function number
  * @param addr  byte address within IO function where writing starts
- * @param src  data to be written
+ * @param src  data to be written. Aligned to 4 byte boundary, and also cache line size if the buffer is behind the
+ *             cache.
  * @param size  number of bytes to read, must be divisible by the card block
  *              size.
  * @return

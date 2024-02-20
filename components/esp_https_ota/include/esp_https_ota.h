@@ -62,6 +62,7 @@ typedef struct {
 #if CONFIG_ESP_HTTPS_OTA_DECRYPT_CB
     decrypt_cb_t decrypt_cb;                       /*!< Callback for external decryption layer */
     void *decrypt_user_ctx;                        /*!< User context for external decryption layer */
+    uint16_t enc_img_header_size;                  /*!< Header size of pre-encrypted ota image header */
 #endif
     const esp_partition_t *update_partition;       /*!< Pointer to partition that should be updated, if NULL, asuming next APP partition that is updatable*/
 } esp_https_ota_config_t;

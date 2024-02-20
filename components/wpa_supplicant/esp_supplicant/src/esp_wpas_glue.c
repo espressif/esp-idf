@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -93,11 +93,12 @@ int hostapd_send_eapol(const u8 *source, const u8 *sta_addr,
 
 }
 
-void wpa_supplicant_transition_disable(void *sm, u8 bitmap)
+void wpa_supplicant_transition_disable(struct wpa_sm *sm, u8 bitmap)
 {
     wpa_printf(MSG_DEBUG, "TRANSITION_DISABLE %02x", bitmap);
 
-    if (bitmap & TRANSITION_DISABLE_WPA3_PERSONAL) {
+    if  ((bitmap & TRANSITION_DISABLE_WPA3_PERSONAL) &&
+          wpa_key_mgmt_sae(sm->key_mgmt)) {
         esp_wifi_sta_disable_wpa2_authmode_internal();
     }
 }

@@ -23,7 +23,9 @@
 
 static const char *TAG = "boot";
 
+#if !CONFIG_APP_BUILD_TYPE_RAM
 esp_image_header_t WORD_ALIGNED_ATTR bootloader_image_hdr;
+#endif
 
 void bootloader_clear_bss_section(void)
 {
@@ -101,7 +103,7 @@ void bootloader_print_banner(void)
 #endif
     }
 
-#if CONFIG_FREERTOS_UNICORE
+#if CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
 #if (SOC_CPU_CORES_NUM > 1)
     ESP_EARLY_LOGW(TAG, "Unicore bootloader");
 #endif

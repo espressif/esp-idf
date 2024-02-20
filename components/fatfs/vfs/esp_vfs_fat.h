@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,8 +7,7 @@
 #pragma once
 #include <stddef.h>
 #include "esp_err.h"
-#include "driver/gpio.h"
-#include "driver/sdmmc_types.h"
+#include "sd_protocol_types.h"
 #include "driver/sdspi_host.h"
 #include "ff.h"
 #include "wear_levelling.h"
@@ -96,7 +95,25 @@ typedef struct {
      * Doesn't do anything for other memory storage media.
      */
     bool disk_status_check_enable;
+    /**
+     * Use 1 FAT (File Allocation Tables) instead of 2.
+     * This decreases reliability, but makes more space available
+     * (usually only one sector).
+     * Note that this option has effect only when the filesystem is formatted.
+     * When mounting an already-formatted partition, the actual number of FATs
+     * may be different.
+     */
+    bool use_one_fat;
 } esp_vfs_fat_mount_config_t;
+
+#define VFS_FAT_MOUNT_DEFAULT_CONFIG() \
+    { \
+        .format_if_mount_failed = false, \
+        .max_files = 5, \
+        .allocation_unit_size = 0, \
+        .disk_status_check_enable = false, \
+        .use_one_fat = false, \
+    }
 
 // Compatibility definition
 typedef esp_vfs_fat_mount_config_t esp_vfs_fat_sdmmc_mount_config_t;
@@ -208,6 +225,25 @@ esp_err_t esp_vfs_fat_sdmmc_unmount(void) __attribute__((deprecated("Please use 
 esp_err_t esp_vfs_fat_sdcard_unmount(const char* base_path, sdmmc_card_t *card);
 
 /**
+ * @brief Format FAT filesystem with given configuration
+ *
+ * @note
+ * This API should be only called when the FAT is already mounted.
+ *
+ * @param base_path  Path where partition should be registered (e.g. "/sdcard")
+ * @param card       Pointer to the card handle, which should be initialised by calling `esp_vfs_fat_sdspi_mount` first
+ * @param cfg        Pointer to structure with extra parameters for formatting FATFS (only relevant fields are used).
+ *                   If NULL, the previous configuration will be used.
+ *
+ * @return
+ *        - ESP_OK
+ *        - ESP_ERR_INVALID_STATE: FAT partition isn't mounted, call esp_vfs_fat_sdmmc_mount or esp_vfs_fat_sdspi_mount first
+ *        - ESP_ERR_NO_MEM: if memory can not be allocated
+ *        - ESP_FAIL: fail to format it, or fail to mount back
+ */
+esp_err_t esp_vfs_fat_sdcard_format_cfg(const char *base_path, sdmmc_card_t *card, esp_vfs_fat_mount_config_t *cfg);
+
+/**
  * @brief Format FAT filesystem
  *
  * @note
@@ -266,6 +302,27 @@ esp_err_t esp_vfs_fat_spiflash_mount_rw_wl(const char* base_path,
  *      - ESP_ERR_INVALID_STATE if esp_vfs_fat_spiflash_mount_rw_wl hasn't been called
  */
 esp_err_t esp_vfs_fat_spiflash_unmount_rw_wl(const char* base_path, wl_handle_t wl_handle);
+
+/**
+ * @brief Format FAT filesystem with given configuration
+ *
+ * @note
+ * This API can be called when the FAT is mounted / not mounted.
+ * If this API is called when the FAT isn't mounted (by calling esp_vfs_fat_spiflash_mount_rw_wl),
+ * this API will first mount the FAT then format it, then restore back to the original state.
+ *
+ * @param base_path        Path where partition should be registered (e.g. "/spiflash")
+ * @param partition_label  Label of the partition which should be used
+ * @param cfg              Pointer to structure with extra parameters for formatting FATFS (only relevant fields are used).
+ *                         If NULL and mounted the previous configuration will be used.
+ *                         If NULL and unmounted the default configuration will be used.
+ *
+ * @return
+ *        - ESP_OK
+ *        - ESP_ERR_NO_MEM: if memory can not be allocated
+ *        - Other errors from esp_vfs_fat_spiflash_mount_rw_wl
+ */
+esp_err_t esp_vfs_fat_spiflash_format_cfg_rw_wl(const char* base_path, const char* partition_label, esp_vfs_fat_mount_config_t *cfg);
 
 /**
  * @brief Format FAT filesystem

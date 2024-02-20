@@ -10,12 +10,12 @@ The event loop library allows components to declare events so that other compone
 
 .. only:: SOC_WIFI_SUPPORTED
 
-    One common case is, if a high-level library is using the Wi-Fi library: it may subscribe to :ref:`ESP32 Wi-Fi Programming Model <wifi-programming-model>` directly and act on those events. 
+    One common case is, if a high-level library is using the Wi-Fi library: it may subscribe to :ref:`ESP32 Wi-Fi Programming Model <wifi-programming-model>` directly and act on those events.
 
 .. only:: SOC_BT_SUPPORTED
 
     .. note::
-    
+
         Various modules of the Bluetooth stack deliver events to applications via dedicated callback functions instead of via the Event Loop Library.
 
 Using ``esp_event`` APIs
@@ -134,7 +134,7 @@ The default event loop is a special type of loop used for system events (Wi-Fi e
       - :cpp:func:`esp_event_loop_create_default`
     * - :cpp:func:`esp_event_loop_delete`
       - :cpp:func:`esp_event_loop_delete_default`
-    * - :cpp:func:`esp_event_handler_register_with` 
+    * - :cpp:func:`esp_event_handler_register_with`
       - :cpp:func:`esp_event_handler_register`
     * - :cpp:func:`esp_event_handler_unregister_with`
       - :cpp:func:`esp_event_handler_unregister`
@@ -182,7 +182,7 @@ If the hypothetical event ``MY_OTHER_EVENT_BASE``, ``MY_OTHER_EVENT_ID`` is post
 Handler Un-Registering Itself
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-In general, an event handler run by an event loop is **not allowed to do any (un)registering activity on that event loop**. There is one exception, though: un-registering itself is allowed for the handler. E.g., it is possible to do the following:
+In general, an event handler run by an event loop is **not allowed to do any registering/unregistering activity on that event loop**. There is one exception, though: un-registering itself is allowed for the handler. E.g., it is possible to do the following:
 
 .. code-block:: c
 

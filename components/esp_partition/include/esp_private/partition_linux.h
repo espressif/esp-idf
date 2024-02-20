@@ -236,10 +236,6 @@ esp_partition_file_mmap_ctrl_t* esp_partition_get_file_mmap_ctrl_input(void);
 */
 esp_partition_file_mmap_ctrl_t* esp_partition_get_file_mmap_ctrl_act(void);
 
-// private function in partition.c to unload partitions and free space allocated by them
-void unload_partitions(void);
-
-
 #ifdef __cplusplus
 }
 #endif

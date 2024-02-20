@@ -109,18 +109,25 @@ static inline void uart_ll_enable_bus_clock(uart_port_t uart_num, bool enable)
  */
 static inline void uart_ll_reset_register(uart_port_t uart_num)
 {
+    // ESP32S3 requires a workaround: enable core reset before enabling uart module clock to prevent uart output garbage value
     switch (uart_num) {
     case 0:
+        UART0.clk_conf.rst_core = 1;
         SYSTEM.perip_rst_en0.uart_rst = 1;
         SYSTEM.perip_rst_en0.uart_rst = 0;
+        UART0.clk_conf.rst_core = 0;
         break;
     case 1:
+        UART1.clk_conf.rst_core = 1;
         SYSTEM.perip_rst_en0.uart1_rst = 1;
         SYSTEM.perip_rst_en0.uart1_rst = 0;
+        UART1.clk_conf.rst_core = 0;
         break;
     case 2:
+        UART2.clk_conf.rst_core = 1;
         SYSTEM.perip_rst_en1.uart2_rst = 1;
         SYSTEM.perip_rst_en1.uart2_rst = 0;
+        UART2.clk_conf.rst_core = 0;
         break;
     default:
         abort();
@@ -129,19 +136,6 @@ static inline void uart_ll_reset_register(uart_port_t uart_num)
 }
 // SYSTEM.perip_rst_enx are shared registers, so this function must be used in an atomic way
 #define uart_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; uart_ll_reset_register(__VA_ARGS__)
-
-/**
- * @brief  Configure the UART core reset.
- *
- * @param  hw Beginning address of the peripheral registers.
- * @param  core_rst_en True to enable the core reset, otherwise set it false.
- *
- * @return None.
- */
-static inline void uart_ll_set_reset_core(uart_dev_t *hw, bool core_rst_en)
-{
-    hw->clk_conf.rst_core = core_rst_en;
-}
 
 /**
  * @brief  Set the UART source clock.

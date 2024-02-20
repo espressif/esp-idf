@@ -1081,11 +1081,11 @@ esp_err_t usbh_ep_enqueue_urb(usbh_ep_handle_t ep_hdl, urb_t *urb)
 
     endpoint_t *ep_obj = (endpoint_t *)ep_hdl;
 
-    USBH_CHECK( transfer_check_usb_compliance(&(urb->transfer),
-                USB_EP_DESC_GET_XFERTYPE(ep_obj->constant.ep_desc),
-                USB_EP_DESC_GET_MPS(ep_obj->constant.ep_desc),
-                USB_EP_DESC_GET_EP_DIR(ep_obj->constant.ep_desc)),
-                ESP_ERR_INVALID_ARG);
+    USBH_CHECK(transfer_check_usb_compliance(&(urb->transfer),
+                                             USB_EP_DESC_GET_XFERTYPE(ep_obj->constant.ep_desc),
+                                             USB_EP_DESC_GET_MPS(ep_obj->constant.ep_desc),
+                                             USB_EP_DESC_GET_EP_DIR(ep_obj->constant.ep_desc)),
+               ESP_ERR_INVALID_ARG);
     // Check that the EP's underlying pipe is in the active state before submitting the URB
     if (hcd_pipe_get_state(ep_obj->constant.pipe_hdl) != HCD_PIPE_STATE_ACTIVE) {
         return ESP_ERR_INVALID_STATE;

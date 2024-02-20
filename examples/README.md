@@ -14,6 +14,7 @@ The examples are grouped into subdirectories by category. Each category director
 - `cxx` C++ language utilization examples and experimental components.
 - `ethernet` Ethernet network examples.
 - `get-started` Simple examples with minimal functionality. Good start point for beginners.
+- `ieee802154` IEEE802.15.4 examples.
 - `mesh` Wi-Fi Mesh examples.
 - `network` Examples related to general network environment, test & analysis.
 - `openthread` OpenThread examples.
@@ -39,18 +40,6 @@ Building an example is the same as building any other project:
 - Run `idf.py menuconfig` to open the project configuration menu. Most examples have a project-specific "Example Configuration" section here (for example, to set the WiFi SSID & password to use).
 - `idf.py build` to build the example.
 - Follow the printed instructions to flash, or run `idf.py -p PORT flash`.
-
-## Running Test Python Script (ttfw)
-
-Some of the examples have `..._test.py` scripts that are used to test that the example works as expected. These scripts run automatically in the internal test queue. They are not intended to be run by ESP-IDF users but sometimes you may want to run them locally.
-
-Install Python dependencies and export the Python path where the IDF CI Python modules are found with the following commands:
-
-```bash
-bash install.sh --enable-ttfw
-source export.sh
-export PYTHONPATH=$IDF_PATH/tools/ci/python_packages:$IDF_PATH/tools:$PYTHONPATH
-```
 
 ## Running Test Python Script (pytest)
 

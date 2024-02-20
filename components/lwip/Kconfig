@@ -124,6 +124,15 @@ menu "LWIP"
             This option is used to disable the Network Discovery Protocol (NDP) if it is not required.
             Please use this option with caution, as the NDP is essential for IPv6 functionality within a local network.
 
+    config LWIP_FORCE_ROUTER_FORWARDING
+        bool "LWIP Force Router Forwarding Enable/Disable"
+        default n
+        depends on LWIP_ND6
+        help
+            This option is used to set the the router flag for the NA packets.
+            When enabled, the router flag in NA packet will always set to 1,
+            otherwise, never set router flag for NA packets.
+
     config LWIP_MAX_SOCKETS
         int "Max number of open sockets"
         range 1 16
@@ -188,6 +197,13 @@ menu "LWIP"
             Enabling this option allows checking for the destination address
             of a received IPv4 Packet.
 
+    config LWIP_IP_DEFAULT_TTL
+        int "The value for Time-To-Live used by transport layers"
+        range 1 255
+        default 64
+        help
+            Set value for Time-To-Live used by transport layers.
+
     config LWIP_IP4_FRAG
         bool "Enable fragment outgoing IP4 packets"
         default y
@@ -232,14 +248,14 @@ menu "LWIP"
             Enabling this option allows packets forwarding across multiple interfaces.
 
     config LWIP_IPV4_NAPT
-        bool "Enable NAT (new/experimental)"
+        bool "Enable NAT"
         depends on LWIP_IP_FORWARD
         default n
         help
             Enabling this option allows Network Address and Port Translation.
 
     config LWIP_IPV4_NAPT_PORTMAP
-        bool "Enable NAT Port Mapping (new/experimental)"
+        bool "Enable NAT Port Mapping"
         depends on LWIP_IPV4_NAPT
         default y
         help
@@ -387,6 +403,14 @@ menu "LWIP"
                 After this number is exceeded, DHCP server removes of the oldest device
                 from it's address pool, without notification.
 
+        config LWIP_DHCPS_STATIC_ENTRIES
+            bool "Enable ARP static entries"
+            default y
+            depends on LWIP_DHCPS
+            help
+                Enabling this option allows DHCP server to support temporary static ARP entries
+                for DHCP Client. This will help the DHCP server to send the DHCP OFFER and DHCP ACK using IP unicast.
+
     endmenu # DHCPS
 
     menuconfig LWIP_AUTOIP
@@ -442,7 +466,7 @@ menu "LWIP"
         default y
         help
             Enable IPv6 function. If not use IPv6 function, set this option to n.
-            If disabling LWIP_IPV6 then some other components (coap and asio) will
+            If disabling LWIP_IPV6 then some other components (asio) will
             no longer be available.
 
     config LWIP_IPV6_AUTOCONFIG
@@ -574,7 +598,7 @@ menu "LWIP"
 
                 Can be set lower to save RAM, the default value 1460(ipv4)/1440(ipv6) will give best throughput.
                 IPv4 TCP_MSS Range: 576 <= TCP_MSS <= 1460
-                IPv6 TCP_MSS Range: 1220<= TCP_mSS <= 1440
+                IPv6 TCP_MSS Range: 1220<= TCP_MSS <= 1440
 
         config LWIP_TCP_TMR_INTERVAL
             int "TCP timer interval(ms)"
@@ -599,7 +623,7 @@ menu "LWIP"
 
         config LWIP_TCP_SND_BUF_DEFAULT
             int "Default send buffer size"
-            default 5744  # 4 * default MSS
+            default 5760  # 4 * default MSS
             range 2440 65535 if !LWIP_WND_SCALE
             range 2440 1024000 if LWIP_WND_SCALE
             help
@@ -616,7 +640,7 @@ menu "LWIP"
 
         config LWIP_TCP_WND_DEFAULT
             int "Default receive window size"
-            default 5744 # 4 * default MSS
+            default 5760 # 4 * default MSS
             range 2440 65535 if !LWIP_WND_SCALE
             range 2440 1024000 if LWIP_WND_SCALE
             help
@@ -649,6 +673,20 @@ menu "LWIP"
                 mail box is full, the LWIP drops the packets. So generally we need to make sure the TCP
                 receive mail box is big enough to avoid packet drop between LWIP core and application.
 
+        config LWIP_TCP_ACCEPTMBOX_SIZE
+            int "Default TCP accept mail box size"
+            default 6
+            range 1 64 if !LWIP_WND_SCALE
+            range 1 255 if LWIP_WND_SCALE
+            help
+                Set TCP accept mail box size. Generally bigger value means supporting larger backlogs
+                but more memory. The recommended value is 6, but applications can set it to a lower value
+                if listening servers are meant to have a smaller backlog.
+
+                TCP accept mail box is a per socket mail box, when the application listens for connections
+                with a given listening TCP socket. If the mailbox is full, LWIP will send a RST packet and
+                the client will fail to connect.
+
         config LWIP_TCP_QUEUE_OOSEQ
             bool "Queue incoming out-of-order segments"
             default y
@@ -657,6 +695,41 @@ menu "LWIP"
 
                 Disable this option to save some RAM during TCP sessions, at the expense
                 of increased retransmissions if segments arrive out of order.
+
+        config LWIP_TCP_OOSEQ_TIMEOUT
+            int "Timeout for each pbuf queued in TCP OOSEQ, in RTOs."
+            depends on LWIP_TCP_QUEUE_OOSEQ
+            range 1 30
+            default 6
+            help
+                The timeout value is TCP_OOSEQ_TIMEOUT * RTO.
+
+        config LWIP_TCP_OOSEQ_MAX_PBUFS
+            int "The maximum number of pbufs queued on OOSEQ per pcb"
+            depends on LWIP_TCP_QUEUE_OOSEQ
+            range 0 12
+            default 4 if !SPIRAM_TRY_ALLOCATE_WIFI_LWIP
+            default 0 if SPIRAM_TRY_ALLOCATE_WIFI_LWIP
+            help
+                If LWIP_TCP_OOSEQ_MAX_PBUFS = 0, TCP will not control the number of OOSEQ pbufs.
+
+                In a poor network environment, many out-of-order tcp pbufs will be received.
+                These out-of-order pbufs will be cached in the TCP out-of-order queue which will
+                cause Wi-Fi/Ethernet fail to release RX buffer in time.
+                It is possible that all RX buffers for MAC layer are used by OOSEQ.
+
+                Control the number of out-of-order pbufs to ensure
+                that the MAC layer has enough RX buffer to receive packets.
+
+                In the Wi-Fi scenario, recommended OOSEQ PBUFS Range:
+                0 <= TCP_OOSEQ_MAX_PBUFS <= CONFIG_ESP_WIFI_DYNAMIC_RX_BUFFER_NUM/(MAX_TCP_NUMBER + 1)
+
+                In the Ethernet scenario,recommended Ethernet OOSEQ PBUFS Range:
+                0 <= TCP_OOSEQ_MAX_PBUFS <= CONFIG_ETH_DMA_RX_BUFFER_NUM/(MAX_TCP_NUMBER + 1)
+
+                Within the recommended value range, the larger the value, the better the performance.
+
+                MAX_TCP_NUMBER represent Maximum number of TCP connections in Wi-Fi(STA+SoftAP) and Ethernet scenario.
 
         config LWIP_TCP_SACK_OUT
             bool "Support sending selective acknowledgements"
@@ -872,6 +945,23 @@ menu "LWIP"
         help
             Enable Microsoft Point-to-Point Encryption (MPPE) support
 
+    config LWIP_PPP_SERVER_SUPPORT
+        bool "Enable PPP server support"
+        depends on LWIP_PPP_SUPPORT
+        default n
+        help
+            Enable to use PPP server
+
+    config LWIP_PPP_VJ_HEADER_COMPRESSION
+        bool "Enable VJ IP Header compression"
+        depends on LWIP_PPP_SUPPORT
+        default y
+        help
+            Enable support for VJ header compression.
+            Please disable this if you're using NAPT on PPP interface,
+            since the compressed IP header might not be correctly interpreted
+            in NAT causing the compressed packet to be dropped.
+
     config LWIP_ENABLE_LCP_ECHO
         bool "Enable LCP ECHO"
         depends on LWIP_PPP_SUPPORT
@@ -988,6 +1078,33 @@ menu "LWIP"
                 (SNTPv4 RFC 4330 enforces a minimum update time of 15 seconds).
 
     endmenu # SNTP
+
+    menu "DNS"
+
+        config LWIP_DNS_MAX_SERVERS
+            int "Maximum number of DNS servers"
+            default 3
+            range 1 4
+            help
+                Set maximum number of DNS servers.
+                If fallback DNS servers are supported,
+                the number of DNS servers needs to be greater than or equal to 3.
+
+        config LWIP_FALLBACK_DNS_SERVER_SUPPORT
+            bool "Enable DNS fallback server support"
+            default n
+            depends on LWIP_DNS_MAX_SERVERS >= 3
+            help
+                Enable this feature to support DNS fallback server.
+
+        config LWIP_FALLBACK_DNS_SERVER_ADDRESS
+            string "DNS fallback server address"
+            default "114.114.114.114"
+            depends on LWIP_FALLBACK_DNS_SERVER_SUPPORT
+            help
+                This option allows you to config dns fallback server address.
+
+    endmenu # DNS
 
     config LWIP_BRIDGEIF_MAX_PORTS
         int "Maximum number of bridge ports"

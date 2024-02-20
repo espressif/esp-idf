@@ -1,7 +1,7 @@
 LED Control (LEDC)
 ==================
 
-{IDF_TARGET_LEDC_MAX_FADE_RANGE_NUM: default="1", esp32c6="16", esp32h2="16"}
+{IDF_TARGET_LEDC_MAX_FADE_RANGE_NUM: default="1", esp32c6="16", esp32h2="16", esp32p4="16"}
 
 :link_to_translation:`zh_CN:[中文]`
 
@@ -150,7 +150,7 @@ The source clock can also limit the PWM frequency. The higher the source clock f
          - 40 MHz
          - Dynamic Frequency Scaling compatible
 
-.. only:: esp32c6
+.. only:: esp32c6 or esp32p4
 
     .. list-table:: Characteristics of {IDF_TARGET_NAME} LEDC source clocks
        :widths: 15 15 30
@@ -201,6 +201,8 @@ The source clock can also limit the PWM frequency. The higher the source clock f
     .. only:: not SOC_LEDC_HAS_TIMER_SPECIFIC_MUX
 
         2. For {IDF_TARGET_NAME}, all timers share one clock source. In other words, it is impossible to use different clock sources for different timers.
+
+The LEDC driver offers a helper function :cpp:func:`ledc_find_suitable_duty_resolution` to find the maximum possible resolution for the timer, given the source clock frequency and the desired PWM signal frequency.
 
 When a timer is no longer needed by any channel, it can be deconfigured by calling the same function :cpp:func:`ledc_timer_config`. The configuration structure :cpp:type:`ledc_timer_config_t` passes in should be:
 

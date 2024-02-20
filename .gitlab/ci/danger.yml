@@ -1,0 +1,18 @@
+# Extenal DangerJS
+include:
+  - project: espressif/shared-ci-dangerjs
+    ref: master
+    file: danger.yaml
+
+run-danger-mr-linter:
+  stage: pre_check
+  variables:
+    GIT_STRATEGY: none # no repo checkout
+    ENABLE_CHECK_AREA_LABELS: 'true'
+    ENABLE_CHECK_DOCS_TRANSLATION: 'true'
+    ENABLE_CHECK_RELEASE_NOTES_DESCRIPTION: 'true'
+    ENABLE_CHECK_UPDATED_CHANGELOG: 'false'
+  before_script: []
+  cache: []
+  tags:
+    - dangerjs

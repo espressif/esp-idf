@@ -466,7 +466,8 @@ typedef union {
          */
         uint32_t div_num0:3;
         /** touch_out_sel : R/W; bitpos: [25]; default: 0;
-         *  need_des
+         *  0: Select the output of the touch as data
+         *  1: Select the output of the touch as clock
          */
         uint32_t touch_out_sel:1;
         /** touch_out_reset : WT; bitpos: [26]; default: 0;
@@ -680,95 +681,37 @@ typedef union {
     uint32_t val;
 } lp_analog_peri_touch_approach_reg_t;
 
-/** Type of touch_freq0_scan_para register
+/** Type of touch_freq_scan_para register
  *  need_des
  */
 typedef union {
     struct {
-        /** touch_freq0_dcap_lpf : R/W; bitpos: [6:0]; default: 0;
-         *  need_des
+        /** touch_freq_dcap_lpf : R/W; bitpos: [6:0]; default: 0;
+         *  Capacity of the RC low pass filter
+         *  0 ~ 2.54 pF, step 20fF
          */
-        uint32_t touch_freq0_dcap_lpf:7;
-        /** touch_freq0_dres_lpf : R/W; bitpos: [8:7]; default: 0;
-         *  need_des
+        uint32_t touch_freq_dcap_lpf:7;
+        /** touch_freq_dres_lpf : R/W; bitpos: [8:7]; default: 0;
+         *  Resistance of the RC low pass filter
+         *  0 ~ 4.5 K, step 1.5 K
          */
-        uint32_t touch_freq0_dres_lpf:2;
-        /** touch_freq0_drv_ls : R/W; bitpos: [12:9]; default: 0;
-         *  need_des
+        uint32_t touch_freq_dres_lpf:2;
+        /** touch_freq_drv_ls : R/W; bitpos: [12:9]; default: 0;
+         *  Low speed touch driver, effective when high speed driver is disabled
          */
-        uint32_t touch_freq0_drv_ls:4;
-        /** touch_freq0_drv_hs : R/W; bitpos: [17:13]; default: 0;
-         *  need_des
+        uint32_t touch_freq_drv_ls:4;
+        /** touch_freq_drv_hs : R/W; bitpos: [17:13]; default: 0;
+         *  High speed touch driver
          */
-        uint32_t touch_freq0_drv_hs:5;
-        /** touch_freq0_dbias : R/W; bitpos: [22:18]; default: 0;
-         *  need_des
+        uint32_t touch_freq_drv_hs:5;
+        /** touch_freq_dbias : R/W; bitpos: [22:18]; default: 0;
+         *  Internal LDO voltage
          */
-        uint32_t touch_freq0_dbias:5;
+        uint32_t touch_freq_dbias:5;
         uint32_t reserved_23:9;
     };
     uint32_t val;
-} lp_analog_peri_touch_freq0_scan_para_reg_t;
-
-/** Type of touch_freq1_scan_para register
- *  need_des
- */
-typedef union {
-    struct {
-        /** touch_freq1_dcap_lpf : R/W; bitpos: [6:0]; default: 0;
-         *  need_des
-         */
-        uint32_t touch_freq1_dcap_lpf:7;
-        /** touch_freq1_dres_lpf : R/W; bitpos: [8:7]; default: 0;
-         *  need_des
-         */
-        uint32_t touch_freq1_dres_lpf:2;
-        /** touch_freq1_drv_ls : R/W; bitpos: [12:9]; default: 0;
-         *  need_des
-         */
-        uint32_t touch_freq1_drv_ls:4;
-        /** touch_freq1_drv_hs : R/W; bitpos: [17:13]; default: 0;
-         *  need_des
-         */
-        uint32_t touch_freq1_drv_hs:5;
-        /** touch_freq1_dbias : R/W; bitpos: [22:18]; default: 0;
-         *  need_des
-         */
-        uint32_t touch_freq1_dbias:5;
-        uint32_t reserved_23:9;
-    };
-    uint32_t val;
-} lp_analog_peri_touch_freq1_scan_para_reg_t;
-
-/** Type of touch_freq2_scan_para register
- *  need_des
- */
-typedef union {
-    struct {
-        /** touch_freq2_dcap_lpf : R/W; bitpos: [6:0]; default: 0;
-         *  need_des
-         */
-        uint32_t touch_freq2_dcap_lpf:7;
-        /** touch_freq2_dres_lpf : R/W; bitpos: [8:7]; default: 0;
-         *  need_des
-         */
-        uint32_t touch_freq2_dres_lpf:2;
-        /** touch_freq2_drv_ls : R/W; bitpos: [12:9]; default: 0;
-         *  need_des
-         */
-        uint32_t touch_freq2_drv_ls:4;
-        /** touch_freq2_drv_hs : R/W; bitpos: [17:13]; default: 0;
-         *  need_des
-         */
-        uint32_t touch_freq2_drv_hs:5;
-        /** touch_freq2_dbias : R/W; bitpos: [22:18]; default: 0;
-         *  need_des
-         */
-        uint32_t touch_freq2_dbias:5;
-        uint32_t reserved_23:9;
-    };
-    uint32_t val;
-} lp_analog_peri_touch_freq2_scan_para_reg_t;
+} lp_analog_peri_touch_freq_scan_para_reg_t;
 
 /** Type of touch_ana_para register
  *  need_des
@@ -776,15 +719,17 @@ typedef union {
 typedef union {
     struct {
         /** touch_touch_buf_drv : R/W; bitpos: [2:0]; default: 0;
-         *  need_des
+         *  The driver of water proof touch buff
          */
         uint32_t touch_touch_buf_drv:3;
         /** touch_touch_en_cal : R/W; bitpos: [3]; default: 0;
-         *  need_des
+         *  Enable internal loop. Need to turn off touch pad.
+         *  Tuning 'dcap_cal' to change the frequency
          */
         uint32_t touch_touch_en_cal:1;
         /** touch_touch_dcap_cal : R/W; bitpos: [10:4]; default: 0;
-         *  need_des
+         *  The internal capacitor connected to the touch pad. Effective when 'en_cal' enabled
+         *  Normally set to 0
          */
         uint32_t touch_touch_dcap_cal:7;
         uint32_t reserved_11:21;
@@ -799,35 +744,45 @@ typedef union {
     struct {
         uint32_t reserved_0:8;
         /** touch_data_sel : R/W; bitpos: [9:8]; default: 0;
-         *  need_des
+         *  The type of the output data for debugging
+         *  0/1: raw data
+         *  2: baseline
+         *  3: smooth data
          */
         uint32_t touch_data_sel:2;
         /** touch_freq_sel : R/W; bitpos: [11:10]; default: 0;
-         *  need_des
+         *  The frequency id of the output data for debugging
+         *  0: invalid
+         *  1: Frequency 1
+         *  2: Frequency 2
+         *  3: Frequency 3
          */
         uint32_t touch_freq_sel:2;
         /** touch_bufsel : R/W; bitpos: [26:12]; default: 0;
-         *  need_des
+         *  The bitmap of the shield pad
          */
         uint32_t touch_bufsel:15;
         /** touch_done_en : R/W; bitpos: [27]; default: 0;
-         *  need_des
+         *  Force to terminate the touch by software
          */
         uint32_t touch_done_en:1;
         /** touch_done_force : R/W; bitpos: [28]; default: 0;
-         *  need_des
+         *  0: Select touch_meas_done as the touch timer input
+         *  1: Select software termination as the touch timer input
          */
         uint32_t touch_done_force:1;
         /** touch_fsm_en : R/W; bitpos: [29]; default: 1;
-         *  need_des
+         *  0: Select software configured parameters for ana
+         *  1: Select hardware calculated parameters for ana
          */
         uint32_t touch_fsm_en:1;
         /** touch_start_en : R/W; bitpos: [30]; default: 0;
-         *  need_des
+         *  Force to start the touch by software
          */
         uint32_t touch_start_en:1;
         /** touch_start_force : R/W; bitpos: [31]; default: 0;
-         *  need_des
+         *  0: Select the touch timer to start the touch scanning
+         *  1: Select the software to start the touch scanning
          */
         uint32_t touch_start_force:1;
     };
@@ -840,11 +795,11 @@ typedef union {
 typedef union {
     struct {
         /** touch_start : R/W; bitpos: [14:0]; default: 0;
-         *  need_des
+         *  The bitmap of the start touch channels
          */
         uint32_t touch_start:15;
         /** touch_xpd : R/W; bitpos: [29:15]; default: 0;
-         *  need_des
+         *  The bitmap of the power on touch channels
          */
         uint32_t touch_xpd:15;
         uint32_t reserved_30:2;
@@ -858,629 +813,13 @@ typedef union {
 typedef union {
     struct {
         uint32_t reserved_0:16;
-        /** touch_pad0_th0 : R/W; bitpos: [31:16]; default: 0;
-         *  Reserved
+        /** touch_pad_th : R/W; bitpos: [31:16]; default: 0;
+         *  The threshold to activate a touch channel
          */
-        uint32_t touch_pad0_th0:16;
+        uint32_t threshold:16;
     };
     uint32_t val;
-} lp_analog_peri_touch_pad0_th0_reg_t;
-
-/** Type of touch_pad0_th1 register
- *  need_des
- */
-typedef union {
-    struct {
-        uint32_t reserved_0:16;
-        /** touch_pad0_th1 : R/W; bitpos: [31:16]; default: 0;
-         *  Reserved
-         */
-        uint32_t touch_pad0_th1:16;
-    };
-    uint32_t val;
-} lp_analog_peri_touch_pad0_th1_reg_t;
-
-/** Type of touch_pad0_th2 register
- *  need_des
- */
-typedef union {
-    struct {
-        uint32_t reserved_0:16;
-        /** touch_pad0_th2 : R/W; bitpos: [31:16]; default: 0;
-         *  Reserved
-         */
-        uint32_t touch_pad0_th2:16;
-    };
-    uint32_t val;
-} lp_analog_peri_touch_pad0_th2_reg_t;
-
-/** Type of touch_pad1_th0 register
- *  need_des
- */
-typedef union {
-    struct {
-        uint32_t reserved_0:16;
-        /** touch_pad1_th0 : R/W; bitpos: [31:16]; default: 0;
-         *  Reserved
-         */
-        uint32_t touch_pad1_th0:16;
-    };
-    uint32_t val;
-} lp_analog_peri_touch_pad1_th0_reg_t;
-
-/** Type of touch_pad1_th1 register
- *  need_des
- */
-typedef union {
-    struct {
-        uint32_t reserved_0:16;
-        /** touch_pad1_th1 : R/W; bitpos: [31:16]; default: 0;
-         *  Reserved
-         */
-        uint32_t touch_pad1_th1:16;
-    };
-    uint32_t val;
-} lp_analog_peri_touch_pad1_th1_reg_t;
-
-/** Type of touch_pad1_th2 register
- *  need_des
- */
-typedef union {
-    struct {
-        uint32_t reserved_0:16;
-        /** touch_pad1_th2 : R/W; bitpos: [31:16]; default: 0;
-         *  Reserved
-         */
-        uint32_t touch_pad1_th2:16;
-    };
-    uint32_t val;
-} lp_analog_peri_touch_pad1_th2_reg_t;
-
-/** Type of touch_pad2_th0 register
- *  need_des
- */
-typedef union {
-    struct {
-        uint32_t reserved_0:16;
-        /** touch_pad2_th0 : R/W; bitpos: [31:16]; default: 0;
-         *  Reserved
-         */
-        uint32_t touch_pad2_th0:16;
-    };
-    uint32_t val;
-} lp_analog_peri_touch_pad2_th0_reg_t;
-
-/** Type of touch_pad2_th1 register
- *  need_des
- */
-typedef union {
-    struct {
-        uint32_t reserved_0:16;
-        /** touch_pad2_th1 : R/W; bitpos: [31:16]; default: 0;
-         *  Reserved
-         */
-        uint32_t touch_pad2_th1:16;
-    };
-    uint32_t val;
-} lp_analog_peri_touch_pad2_th1_reg_t;
-
-/** Type of touch_pad2_th2 register
- *  need_des
- */
-typedef union {
-    struct {
-        uint32_t reserved_0:16;
-        /** touch_pad2_th2 : R/W; bitpos: [31:16]; default: 0;
-         *  Reserved
-         */
-        uint32_t touch_pad2_th2:16;
-    };
-    uint32_t val;
-} lp_analog_peri_touch_pad2_th2_reg_t;
-
-/** Type of touch_pad3_th0 register
- *  need_des
- */
-typedef union {
-    struct {
-        uint32_t reserved_0:16;
-        /** touch_pad3_th0 : R/W; bitpos: [31:16]; default: 0;
-         *  Reserved
-         */
-        uint32_t touch_pad3_th0:16;
-    };
-    uint32_t val;
-} lp_analog_peri_touch_pad3_th0_reg_t;
-
-/** Type of touch_pad3_th1 register
- *  need_des
- */
-typedef union {
-    struct {
-        uint32_t reserved_0:16;
-        /** touch_pad3_th1 : R/W; bitpos: [31:16]; default: 0;
-         *  Reserved
-         */
-        uint32_t touch_pad3_th1:16;
-    };
-    uint32_t val;
-} lp_analog_peri_touch_pad3_th1_reg_t;
-
-/** Type of touch_pad3_th2 register
- *  need_des
- */
-typedef union {
-    struct {
-        uint32_t reserved_0:16;
-        /** touch_pad3_th2 : R/W; bitpos: [31:16]; default: 0;
-         *  Reserved
-         */
-        uint32_t touch_pad3_th2:16;
-    };
-    uint32_t val;
-} lp_analog_peri_touch_pad3_th2_reg_t;
-
-/** Type of touch_pad4_th0 register
- *  need_des
- */
-typedef union {
-    struct {
-        uint32_t reserved_0:16;
-        /** touch_pad4_th0 : R/W; bitpos: [31:16]; default: 0;
-         *  Reserved
-         */
-        uint32_t touch_pad4_th0:16;
-    };
-    uint32_t val;
-} lp_analog_peri_touch_pad4_th0_reg_t;
-
-/** Type of touch_pad4_th1 register
- *  need_des
- */
-typedef union {
-    struct {
-        uint32_t reserved_0:16;
-        /** touch_pad4_th1 : R/W; bitpos: [31:16]; default: 0;
-         *  Reserved
-         */
-        uint32_t touch_pad4_th1:16;
-    };
-    uint32_t val;
-} lp_analog_peri_touch_pad4_th1_reg_t;
-
-/** Type of touch_pad4_th2 register
- *  need_des
- */
-typedef union {
-    struct {
-        uint32_t reserved_0:16;
-        /** touch_pad4_th2 : R/W; bitpos: [31:16]; default: 0;
-         *  Reserved
-         */
-        uint32_t touch_pad4_th2:16;
-    };
-    uint32_t val;
-} lp_analog_peri_touch_pad4_th2_reg_t;
-
-/** Type of touch_pad5_th0 register
- *  need_des
- */
-typedef union {
-    struct {
-        uint32_t reserved_0:16;
-        /** touch_pad5_th0 : R/W; bitpos: [31:16]; default: 0;
-         *  Reserved
-         */
-        uint32_t touch_pad5_th0:16;
-    };
-    uint32_t val;
-} lp_analog_peri_touch_pad5_th0_reg_t;
-
-/** Type of touch_pad5_th1 register
- *  need_des
- */
-typedef union {
-    struct {
-        uint32_t reserved_0:16;
-        /** touch_pad5_th1 : R/W; bitpos: [31:16]; default: 0;
-         *  Reserved
-         */
-        uint32_t touch_pad5_th1:16;
-    };
-    uint32_t val;
-} lp_analog_peri_touch_pad5_th1_reg_t;
-
-/** Type of touch_pad5_th2 register
- *  need_des
- */
-typedef union {
-    struct {
-        uint32_t reserved_0:16;
-        /** touch_pad5_th2 : R/W; bitpos: [31:16]; default: 0;
-         *  Reserved
-         */
-        uint32_t touch_pad5_th2:16;
-    };
-    uint32_t val;
-} lp_analog_peri_touch_pad5_th2_reg_t;
-
-/** Type of touch_pad6_th0 register
- *  need_des
- */
-typedef union {
-    struct {
-        uint32_t reserved_0:16;
-        /** touch_pad6_th0 : R/W; bitpos: [31:16]; default: 0;
-         *  Reserved
-         */
-        uint32_t touch_pad6_th0:16;
-    };
-    uint32_t val;
-} lp_analog_peri_touch_pad6_th0_reg_t;
-
-/** Type of touch_pad6_th1 register
- *  need_des
- */
-typedef union {
-    struct {
-        uint32_t reserved_0:16;
-        /** touch_pad6_th1 : R/W; bitpos: [31:16]; default: 0;
-         *  Reserved
-         */
-        uint32_t touch_pad6_th1:16;
-    };
-    uint32_t val;
-} lp_analog_peri_touch_pad6_th1_reg_t;
-
-/** Type of touch_pad6_th2 register
- *  need_des
- */
-typedef union {
-    struct {
-        uint32_t reserved_0:16;
-        /** touch_pad6_th2 : R/W; bitpos: [31:16]; default: 0;
-         *  Reserved
-         */
-        uint32_t touch_pad6_th2:16;
-    };
-    uint32_t val;
-} lp_analog_peri_touch_pad6_th2_reg_t;
-
-/** Type of touch_pad7_th0 register
- *  need_des
- */
-typedef union {
-    struct {
-        uint32_t reserved_0:16;
-        /** touch_pad7_th0 : R/W; bitpos: [31:16]; default: 0;
-         *  Reserved
-         */
-        uint32_t touch_pad7_th0:16;
-    };
-    uint32_t val;
-} lp_analog_peri_touch_pad7_th0_reg_t;
-
-/** Type of touch_pad7_th1 register
- *  need_des
- */
-typedef union {
-    struct {
-        uint32_t reserved_0:16;
-        /** touch_pad7_th1 : R/W; bitpos: [31:16]; default: 0;
-         *  Reserved
-         */
-        uint32_t touch_pad7_th1:16;
-    };
-    uint32_t val;
-} lp_analog_peri_touch_pad7_th1_reg_t;
-
-/** Type of touch_pad7_th2 register
- *  need_des
- */
-typedef union {
-    struct {
-        uint32_t reserved_0:16;
-        /** touch_pad7_th2 : R/W; bitpos: [31:16]; default: 0;
-         *  Reserved
-         */
-        uint32_t touch_pad7_th2:16;
-    };
-    uint32_t val;
-} lp_analog_peri_touch_pad7_th2_reg_t;
-
-/** Type of touch_pad8_th0 register
- *  need_des
- */
-typedef union {
-    struct {
-        uint32_t reserved_0:16;
-        /** touch_pad8_th0 : R/W; bitpos: [31:16]; default: 0;
-         *  Reserved
-         */
-        uint32_t touch_pad8_th0:16;
-    };
-    uint32_t val;
-} lp_analog_peri_touch_pad8_th0_reg_t;
-
-/** Type of touch_pad8_th1 register
- *  need_des
- */
-typedef union {
-    struct {
-        uint32_t reserved_0:16;
-        /** touch_pad8_th1 : R/W; bitpos: [31:16]; default: 0;
-         *  Reserved
-         */
-        uint32_t touch_pad8_th1:16;
-    };
-    uint32_t val;
-} lp_analog_peri_touch_pad8_th1_reg_t;
-
-/** Type of touch_pad8_th2 register
- *  need_des
- */
-typedef union {
-    struct {
-        uint32_t reserved_0:16;
-        /** touch_pad8_th2 : R/W; bitpos: [31:16]; default: 0;
-         *  Reserved
-         */
-        uint32_t touch_pad8_th2:16;
-    };
-    uint32_t val;
-} lp_analog_peri_touch_pad8_th2_reg_t;
-
-/** Type of touch_pad9_th0 register
- *  need_des
- */
-typedef union {
-    struct {
-        uint32_t reserved_0:16;
-        /** touch_pad9_th0 : R/W; bitpos: [31:16]; default: 0;
-         *  Reserved
-         */
-        uint32_t touch_pad9_th0:16;
-    };
-    uint32_t val;
-} lp_analog_peri_touch_pad9_th0_reg_t;
-
-/** Type of touch_pad9_th1 register
- *  need_des
- */
-typedef union {
-    struct {
-        uint32_t reserved_0:16;
-        /** touch_pad9_th1 : R/W; bitpos: [31:16]; default: 0;
-         *  Reserved
-         */
-        uint32_t touch_pad9_th1:16;
-    };
-    uint32_t val;
-} lp_analog_peri_touch_pad9_th1_reg_t;
-
-/** Type of touch_pad9_th2 register
- *  need_des
- */
-typedef union {
-    struct {
-        uint32_t reserved_0:16;
-        /** touch_pad9_th2 : R/W; bitpos: [31:16]; default: 0;
-         *  Reserved
-         */
-        uint32_t touch_pad9_th2:16;
-    };
-    uint32_t val;
-} lp_analog_peri_touch_pad9_th2_reg_t;
-
-/** Type of touch_pad10_th0 register
- *  need_des
- */
-typedef union {
-    struct {
-        uint32_t reserved_0:16;
-        /** touch_pad10_th0 : R/W; bitpos: [31:16]; default: 0;
-         *  Reserved
-         */
-        uint32_t touch_pad10_th0:16;
-    };
-    uint32_t val;
-} lp_analog_peri_touch_pad10_th0_reg_t;
-
-/** Type of touch_pad10_th1 register
- *  need_des
- */
-typedef union {
-    struct {
-        uint32_t reserved_0:16;
-        /** touch_pad10_th1 : R/W; bitpos: [31:16]; default: 0;
-         *  Reserved
-         */
-        uint32_t touch_pad10_th1:16;
-    };
-    uint32_t val;
-} lp_analog_peri_touch_pad10_th1_reg_t;
-
-/** Type of touch_pad10_th2 register
- *  need_des
- */
-typedef union {
-    struct {
-        uint32_t reserved_0:16;
-        /** touch_pad10_th2 : R/W; bitpos: [31:16]; default: 0;
-         *  Reserved
-         */
-        uint32_t touch_pad10_th2:16;
-    };
-    uint32_t val;
-} lp_analog_peri_touch_pad10_th2_reg_t;
-
-/** Type of touch_pad11_th0 register
- *  need_des
- */
-typedef union {
-    struct {
-        uint32_t reserved_0:16;
-        /** touch_pad11_th0 : R/W; bitpos: [31:16]; default: 0;
-         *  Reserved
-         */
-        uint32_t touch_pad11_th0:16;
-    };
-    uint32_t val;
-} lp_analog_peri_touch_pad11_th0_reg_t;
-
-/** Type of touch_pad11_th1 register
- *  need_des
- */
-typedef union {
-    struct {
-        uint32_t reserved_0:16;
-        /** touch_pad11_th1 : R/W; bitpos: [31:16]; default: 0;
-         *  Reserved
-         */
-        uint32_t touch_pad11_th1:16;
-    };
-    uint32_t val;
-} lp_analog_peri_touch_pad11_th1_reg_t;
-
-/** Type of touch_pad11_th2 register
- *  need_des
- */
-typedef union {
-    struct {
-        uint32_t reserved_0:16;
-        /** touch_pad11_th2 : R/W; bitpos: [31:16]; default: 0;
-         *  Reserved
-         */
-        uint32_t touch_pad11_th2:16;
-    };
-    uint32_t val;
-} lp_analog_peri_touch_pad11_th2_reg_t;
-
-/** Type of touch_pad12_th0 register
- *  need_des
- */
-typedef union {
-    struct {
-        uint32_t reserved_0:16;
-        /** touch_pad12_th0 : R/W; bitpos: [31:16]; default: 0;
-         *  Reserved
-         */
-        uint32_t touch_pad12_th0:16;
-    };
-    uint32_t val;
-} lp_analog_peri_touch_pad12_th0_reg_t;
-
-/** Type of touch_pad12_th1 register
- *  need_des
- */
-typedef union {
-    struct {
-        uint32_t reserved_0:16;
-        /** touch_pad12_th1 : R/W; bitpos: [31:16]; default: 0;
-         *  Reserved
-         */
-        uint32_t touch_pad12_th1:16;
-    };
-    uint32_t val;
-} lp_analog_peri_touch_pad12_th1_reg_t;
-
-/** Type of touch_pad12_th2 register
- *  need_des
- */
-typedef union {
-    struct {
-        uint32_t reserved_0:16;
-        /** touch_pad12_th2 : R/W; bitpos: [31:16]; default: 0;
-         *  Reserved
-         */
-        uint32_t touch_pad12_th2:16;
-    };
-    uint32_t val;
-} lp_analog_peri_touch_pad12_th2_reg_t;
-
-/** Type of touch_pad13_th0 register
- *  need_des
- */
-typedef union {
-    struct {
-        uint32_t reserved_0:16;
-        /** touch_pad13_th0 : R/W; bitpos: [31:16]; default: 0;
-         *  Reserved
-         */
-        uint32_t touch_pad13_th0:16;
-    };
-    uint32_t val;
-} lp_analog_peri_touch_pad13_th0_reg_t;
-
-/** Type of touch_pad13_th1 register
- *  need_des
- */
-typedef union {
-    struct {
-        uint32_t reserved_0:16;
-        /** touch_pad13_th1 : R/W; bitpos: [31:16]; default: 0;
-         *  Reserved
-         */
-        uint32_t touch_pad13_th1:16;
-    };
-    uint32_t val;
-} lp_analog_peri_touch_pad13_th1_reg_t;
-
-/** Type of touch_pad13_th2 register
- *  need_des
- */
-typedef union {
-    struct {
-        uint32_t reserved_0:16;
-        /** touch_pad13_th2 : R/W; bitpos: [31:16]; default: 0;
-         *  Reserved
-         */
-        uint32_t touch_pad13_th2:16;
-    };
-    uint32_t val;
-} lp_analog_peri_touch_pad13_th2_reg_t;
-
-/** Type of touch_pad14_th0 register
- *  need_des
- */
-typedef union {
-    struct {
-        uint32_t reserved_0:16;
-        /** touch_pad14_th0 : R/W; bitpos: [31:16]; default: 0;
-         *  Reserved
-         */
-        uint32_t touch_pad14_th0:16;
-    };
-    uint32_t val;
-} lp_analog_peri_touch_pad14_th0_reg_t;
-
-/** Type of touch_pad14_th1 register
- *  need_des
- */
-typedef union {
-    struct {
-        uint32_t reserved_0:16;
-        /** touch_pad14_th1 : R/W; bitpos: [31:16]; default: 0;
-         *  Reserved
-         */
-        uint32_t touch_pad14_th1:16;
-    };
-    uint32_t val;
-} lp_analog_peri_touch_pad14_th1_reg_t;
-
-/** Type of touch_pad14_th2 register
- *  need_des
- */
-typedef union {
-    struct {
-        uint32_t reserved_0:16;
-        /** touch_pad14_th2 : R/W; bitpos: [31:16]; default: 0;
-         *  Reserved
-         */
-        uint32_t touch_pad14_th2:16;
-    };
-    uint32_t val;
-} lp_analog_peri_touch_pad14_th2_reg_t;
+} lp_analog_peri_touch_pad_thn_reg_t;
 
 /** Type of date register
  *  need_des
@@ -1499,6 +838,10 @@ typedef union {
     uint32_t val;
 } lp_analog_peri_date_reg_t;
 
+
+typedef struct {
+    volatile lp_analog_peri_touch_pad_thn_reg_t thn[3];
+} lp_analog_peri_touch_padx_thn_reg_t;
 
 typedef struct {
     volatile lp_analog_peri_bod_mode0_cntl_reg_t bod_mode0_cntl;
@@ -1530,61 +873,16 @@ typedef struct {
     volatile lp_analog_peri_touch_slp1_reg_t touch_slp1;
     volatile lp_analog_peri_touch_clr_reg_t touch_clr;
     volatile lp_analog_peri_touch_approach_reg_t touch_approach;
-    volatile lp_analog_peri_touch_freq0_scan_para_reg_t touch_freq0_scan_para;
-    volatile lp_analog_peri_touch_freq1_scan_para_reg_t touch_freq1_scan_para;
-    volatile lp_analog_peri_touch_freq2_scan_para_reg_t touch_freq2_scan_para;
+    volatile lp_analog_peri_touch_freq_scan_para_reg_t touch_freq_scan_para[3];
     volatile lp_analog_peri_touch_ana_para_reg_t touch_ana_para;
     volatile lp_analog_peri_touch_mux0_reg_t touch_mux0;
     volatile lp_analog_peri_touch_mux1_reg_t touch_mux1;
-    volatile lp_analog_peri_touch_pad0_th0_reg_t touch_pad0_th0;
-    volatile lp_analog_peri_touch_pad0_th1_reg_t touch_pad0_th1;
-    volatile lp_analog_peri_touch_pad0_th2_reg_t touch_pad0_th2;
-    volatile lp_analog_peri_touch_pad1_th0_reg_t touch_pad1_th0;
-    volatile lp_analog_peri_touch_pad1_th1_reg_t touch_pad1_th1;
-    volatile lp_analog_peri_touch_pad1_th2_reg_t touch_pad1_th2;
-    volatile lp_analog_peri_touch_pad2_th0_reg_t touch_pad2_th0;
-    volatile lp_analog_peri_touch_pad2_th1_reg_t touch_pad2_th1;
-    volatile lp_analog_peri_touch_pad2_th2_reg_t touch_pad2_th2;
-    volatile lp_analog_peri_touch_pad3_th0_reg_t touch_pad3_th0;
-    volatile lp_analog_peri_touch_pad3_th1_reg_t touch_pad3_th1;
-    volatile lp_analog_peri_touch_pad3_th2_reg_t touch_pad3_th2;
-    volatile lp_analog_peri_touch_pad4_th0_reg_t touch_pad4_th0;
-    volatile lp_analog_peri_touch_pad4_th1_reg_t touch_pad4_th1;
-    volatile lp_analog_peri_touch_pad4_th2_reg_t touch_pad4_th2;
-    volatile lp_analog_peri_touch_pad5_th0_reg_t touch_pad5_th0;
-    volatile lp_analog_peri_touch_pad5_th1_reg_t touch_pad5_th1;
-    volatile lp_analog_peri_touch_pad5_th2_reg_t touch_pad5_th2;
-    volatile lp_analog_peri_touch_pad6_th0_reg_t touch_pad6_th0;
-    volatile lp_analog_peri_touch_pad6_th1_reg_t touch_pad6_th1;
-    volatile lp_analog_peri_touch_pad6_th2_reg_t touch_pad6_th2;
-    volatile lp_analog_peri_touch_pad7_th0_reg_t touch_pad7_th0;
-    volatile lp_analog_peri_touch_pad7_th1_reg_t touch_pad7_th1;
-    volatile lp_analog_peri_touch_pad7_th2_reg_t touch_pad7_th2;
-    volatile lp_analog_peri_touch_pad8_th0_reg_t touch_pad8_th0;
-    volatile lp_analog_peri_touch_pad8_th1_reg_t touch_pad8_th1;
-    volatile lp_analog_peri_touch_pad8_th2_reg_t touch_pad8_th2;
-    volatile lp_analog_peri_touch_pad9_th0_reg_t touch_pad9_th0;
-    volatile lp_analog_peri_touch_pad9_th1_reg_t touch_pad9_th1;
-    volatile lp_analog_peri_touch_pad9_th2_reg_t touch_pad9_th2;
-    volatile lp_analog_peri_touch_pad10_th0_reg_t touch_pad10_th0;
-    volatile lp_analog_peri_touch_pad10_th1_reg_t touch_pad10_th1;
-    volatile lp_analog_peri_touch_pad10_th2_reg_t touch_pad10_th2;
-    volatile lp_analog_peri_touch_pad11_th0_reg_t touch_pad11_th0;
-    volatile lp_analog_peri_touch_pad11_th1_reg_t touch_pad11_th1;
-    volatile lp_analog_peri_touch_pad11_th2_reg_t touch_pad11_th2;
-    volatile lp_analog_peri_touch_pad12_th0_reg_t touch_pad12_th0;
-    volatile lp_analog_peri_touch_pad12_th1_reg_t touch_pad12_th1;
-    volatile lp_analog_peri_touch_pad12_th2_reg_t touch_pad12_th2;
-    volatile lp_analog_peri_touch_pad13_th0_reg_t touch_pad13_th0;
-    volatile lp_analog_peri_touch_pad13_th1_reg_t touch_pad13_th1;
-    volatile lp_analog_peri_touch_pad13_th2_reg_t touch_pad13_th2;
-    volatile lp_analog_peri_touch_pad14_th0_reg_t touch_pad14_th0;
-    volatile lp_analog_peri_touch_pad14_th1_reg_t touch_pad14_th1;
-    volatile lp_analog_peri_touch_pad14_th2_reg_t touch_pad14_th2;
+    volatile lp_analog_peri_touch_padx_thn_reg_t touch_padx_thn[15];
     uint32_t reserved_1f8[129];
     volatile lp_analog_peri_date_reg_t date;
 } lp_analog_peri_dev_t;
 
+extern lp_analog_peri_dev_t LP_ANA_PERI;
 
 #ifndef __cplusplus
 _Static_assert(sizeof(lp_analog_peri_dev_t) == 0x400, "Invalid size of lp_analog_peri_dev_t structure");

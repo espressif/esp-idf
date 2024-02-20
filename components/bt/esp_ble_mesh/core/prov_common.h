@@ -62,8 +62,8 @@ extern "C" {
 #define REC_RSP_REC_NOT_PRESENT         0x01
 #define REC_RSP_OFFSET_OUT_OF_BOUND     0x02
 
-#define CERT_BASED_PROV_SUPPORT(oob)    ((oob) & BIT_MASK(7))
-#define PROV_REC_SUPPORT(oob)           ((oob) & BIT_MASK(8))
+#define CERT_BASED_PROV_SUPPORT(oob)    ((oob) & BIT(7))
+#define PROV_REC_SUPPORT(oob)           ((oob) & BIT(8))
 
 #if CONFIG_BLE_MESH_PROV_EPA
 #define PROV_ENC_SIZE(link)             ((link)->algorithm == PROV_ALG_P256_HMAC_SHA256 ? 32 : 16)

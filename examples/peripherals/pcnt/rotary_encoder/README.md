@@ -6,13 +6,14 @@
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
 
 The PCNT peripheral is designed to count the number of rising and/or falling edges of an input signal. Each PCNT unit has two channels, which makes it possible to extract more information from two input signals than only one signal.
-This example shows how to make use of the HW features to decode the differential signals generated from a common rotary encoder -- [EC11](https://tech.alpsalpine.com/prod/e/html/encoder/incremental/ec11/ec11_list.html).
+
+This example shows how to make use of the HW features to decode the differential signals generated from a common rotary encoder -- [EC11](https://tech.alpsalpine.com/e/products/category/encorder/sub/01/series/ec11e/).
 
 The signals a rotary encoder produces (and what can be handled by this example) are based on a 2-bit gray code available on 2 digital data signal lines. The typical encoders use 3 output pins: 2 for the signals and one for the common signal usually GND.
 
 Typical signals:
 
-```
+```text
 A      +-----+     +-----+     +-----+
              |     |     |     |
              |     |     |     |
@@ -35,7 +36,7 @@ B         +-----+     +-----+     +-----+
 
 Connection :
 
-```
+```text
       +--------+              +---------------------------------+
       |        |              |                                 |
       |      A +--------------+ GPIO_A (internal pull up)       |
@@ -49,11 +50,11 @@ Connection :
       +--------+              +---------------------------------+
 ```
 
-The GPIO used by the example can be changed according to your board by `EXAMPLE_EC11_GPIO_A` and `EXAMPLE_EC11_GPIO_B` in [source file](main/rotary_encoder_example_main.c);
+The GPIO used by the example can be changed according to your board by `EXAMPLE_EC11_GPIO_A` and `EXAMPLE_EC11_GPIO_B` in [source file](main/rotary_encoder_example_main.c).
 
 ### Build and Flash
 
-By configuring one of the EC11 GPIO (e.g. `EXAMPLE_EC11_GPIO_A`) as a wake up source, we can make the rotary encoder wake the system from light sleep. This example can illustrate this feature if you enable the `EXAMPLE_WAKE_UP_LIGHT_SLEEP` from the menuconfig.
+By configuring one of the EC11 GPIO (e.g. `EXAMPLE_EC11_GPIO_A`) as a wake up source, you can make the rotary encoder wake the system from light sleep. This example can illustrate this feature if you enable the `EXAMPLE_WAKE_UP_LIGHT_SLEEP` from the menuconfig.
 
 Run `idf.py -p PORT flash monitor` to build, flash and monitor the project.
 
@@ -63,7 +64,7 @@ See the [Getting Started Guide](https://docs.espressif.com/projects/esp-idf/en/l
 
 ## Example Output
 
-```
+```text
 I (0) cpu_start: Starting scheduler on APP CPU.
 I (325) example: install pcnt unit
 I (335) example: set glitch filter

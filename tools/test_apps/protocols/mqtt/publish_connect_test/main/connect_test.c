@@ -8,11 +8,11 @@
 */
 
 #include <stdint.h>
-#include "esp_netif.h"
+#include "esp_console.h"
 
 #include "esp_log.h"
 #include "mqtt_client.h"
-#include "esp_tls.h"
+#include "publish_connect_test.h"
 
 #if (!defined(CONFIG_EXAMPLE_CONNECT_CASE_NO_CERT)) ||                  \
     (!defined(CONFIG_EXAMPLE_CONNECT_CASE_SERVER_CERT)) ||              \
@@ -34,16 +34,22 @@ extern const uint8_t client_inv_crt[]       asm("_binary_client_inv_crt_start");
 extern const uint8_t client_no_pwd_key[]    asm("_binary_client_no_pwd_key_start");
 
 static const char *TAG = "connect_test";
-static esp_mqtt_client_handle_t mqtt_client = NULL;
 static int running_test_case = 0;
 
 static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_t event_id, void *event_data)
 {
+    (void)handler_args;
+    (void)base;
+    (void)event_id;
     esp_mqtt_event_handle_t event = event_data;
     ESP_LOGD(TAG, "Event: %d, Test case: %d", event->event_id, running_test_case);
     switch (event->event_id) {
+    case MQTT_EVENT_BEFORE_CONNECT:
+        break;
     case MQTT_EVENT_CONNECTED:
         ESP_LOGI(TAG, "MQTT_EVENT_CONNECTED: Test=%d", running_test_case);
+        break;
+    case MQTT_EVENT_DISCONNECTED:
         break;
     case MQTT_EVENT_ERROR:
         ESP_LOGI(TAG, "MQTT_EVENT_ERROR: Test=%d", running_test_case);
@@ -61,44 +67,17 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
     }
 }
 
-static void create_client(void)
+static void connect_no_certs(esp_mqtt_client_handle_t client, const char *uri)
 {
-    const esp_mqtt_client_config_t mqtt_cfg = {
-        .broker.address.uri = "mqtts://127.0.0.1:1234"
-    };
-    esp_mqtt_client_handle_t client = esp_mqtt_client_init(&mqtt_cfg);
-    esp_mqtt_client_register_event(client, ESP_EVENT_ANY_ID, mqtt_event_handler, client);
-    mqtt_client = client;
-    esp_mqtt_client_start(client);
-    ESP_LOGI(TAG, "mqtt client created for connection tests");
-}
-
-static void destroy_client(void)
-{
-    if (mqtt_client) {
-        esp_mqtt_client_stop(mqtt_client);
-        esp_mqtt_client_destroy(mqtt_client);
-        mqtt_client = NULL;
-        ESP_LOGI(TAG, "mqtt client for connection tests destroyed");
-    }
-}
-
-static void connect_no_certs(const char *host, const int port)
-{
-    char uri[64];
-    sprintf(uri, "mqtts://%s:%d", host, port);
+    ESP_LOGI(TAG, "Runnning :CONFIG_EXAMPLE_CONNECT_CASE_NO_CERT");
     const esp_mqtt_client_config_t mqtt_cfg = {
         .broker.address.uri = uri
     };
-    esp_mqtt_set_config(mqtt_client, &mqtt_cfg);
-    esp_mqtt_client_disconnect(mqtt_client);
-    esp_mqtt_client_reconnect(mqtt_client);
+    esp_mqtt_set_config(client, &mqtt_cfg);
 }
 
-static void connect_with_client_key_password(const char *host, const int port)
+static void connect_with_client_key_password(esp_mqtt_client_handle_t client, const char *uri)
 {
-    char uri[64];
-    sprintf(uri, "mqtts://%s:%d", host, port);
     const esp_mqtt_client_config_t mqtt_cfg = {
         .broker.address.uri = uri,
         .broker.verification.certificate = (const char *)ca_local_crt,
@@ -107,15 +86,11 @@ static void connect_with_client_key_password(const char *host, const int port)
         .credentials.authentication.key_password = "esp32",
         .credentials.authentication.key_password_len = 5
     };
-    esp_mqtt_set_config(mqtt_client, &mqtt_cfg);
-    esp_mqtt_client_disconnect(mqtt_client);
-    esp_mqtt_client_reconnect(mqtt_client);
+    esp_mqtt_set_config(client, &mqtt_cfg);
 }
 
-static void connect_with_server_der_cert(const char *host, const int port)
+static void connect_with_server_der_cert(esp_mqtt_client_handle_t client, const char *uri)
 {
-    char uri[64];
-    sprintf(uri, "mqtts://%s:%d", host, port);
     const esp_mqtt_client_config_t mqtt_cfg = {
         .broker.address.uri = uri,
         .broker.verification.certificate = (const char *)ca_der_start,
@@ -123,123 +98,96 @@ static void connect_with_server_der_cert(const char *host, const int port)
         .credentials.authentication.certificate = "NULL",
         .credentials.authentication.key = "NULL"
     };
-    esp_mqtt_set_config(mqtt_client, &mqtt_cfg);
-    esp_mqtt_client_disconnect(mqtt_client);
-    esp_mqtt_client_reconnect(mqtt_client);
+    esp_mqtt_set_config(client, &mqtt_cfg);
 }
 
-static void connect_with_wrong_server_cert(const char *host, const int port)
+static void connect_with_wrong_server_cert(esp_mqtt_client_handle_t client, const char *uri)
 {
-    char uri[64];
-    sprintf(uri, "mqtts://%s:%d", host, port);
     const esp_mqtt_client_config_t mqtt_cfg = {
         .broker.address.uri = uri,
         .broker.verification.certificate = (const char *)client_pwd_crt,
         .credentials.authentication.certificate = "NULL",
         .credentials.authentication.key = "NULL"
     };
-    esp_mqtt_set_config(mqtt_client, &mqtt_cfg);
-    esp_mqtt_client_disconnect(mqtt_client);
-    esp_mqtt_client_reconnect(mqtt_client);
+    esp_mqtt_set_config(client, &mqtt_cfg);
 }
 
-static void connect_with_server_cert(const char *host, const int port)
+static void connect_with_server_cert(esp_mqtt_client_handle_t client, const char *uri)
 {
-    char uri[64];
-    sprintf(uri, "mqtts://%s:%d", host, port);
     const esp_mqtt_client_config_t mqtt_cfg = {
         .broker.address.uri = uri,
         .broker.verification.certificate = (const char *)ca_local_crt,
     };
-    esp_mqtt_set_config(mqtt_client, &mqtt_cfg);
-    esp_mqtt_client_disconnect(mqtt_client);
-    esp_mqtt_client_reconnect(mqtt_client);
+    esp_mqtt_set_config(client, &mqtt_cfg);
 }
 
-static void connect_with_server_client_certs(const char *host, const int port)
+static void connect_with_server_client_certs(esp_mqtt_client_handle_t client, const char *uri)
 {
-    char uri[64];
-    sprintf(uri, "mqtts://%s:%d", host, port);
     const esp_mqtt_client_config_t mqtt_cfg = {
         .broker.address.uri = uri,
         .broker.verification.certificate = (const char *)ca_local_crt,
         .credentials.authentication.certificate = (const char *)client_pwd_crt,
         .credentials.authentication.key = (const char *)client_no_pwd_key
     };
-    esp_mqtt_set_config(mqtt_client, &mqtt_cfg);
-    esp_mqtt_client_disconnect(mqtt_client);
-    esp_mqtt_client_reconnect(mqtt_client);
+    esp_mqtt_set_config(client, &mqtt_cfg);
 }
 
-static void connect_with_invalid_client_certs(const char *host, const int port)
+static void connect_with_invalid_client_certs(esp_mqtt_client_handle_t client, const char *uri)
 {
-    char uri[64];
-    sprintf(uri, "mqtts://%s:%d", host, port);
     const esp_mqtt_client_config_t mqtt_cfg = {
         .broker.address.uri = uri,
         .broker.verification.certificate = (const char *)ca_local_crt,
         .credentials.authentication.certificate = (const char *)client_inv_crt,
         .credentials.authentication.key = (const char *)client_no_pwd_key
     };
-    esp_mqtt_set_config(mqtt_client, &mqtt_cfg);
-    esp_mqtt_client_disconnect(mqtt_client);
-    esp_mqtt_client_reconnect(mqtt_client);
+    esp_mqtt_set_config(client, &mqtt_cfg);
 }
 
-static void connect_with_alpn(const char *host, const int port)
+static void connect_with_alpn(esp_mqtt_client_handle_t client, const char *uri)
 {
-    char uri[64];
     const char *alpn_protos[] = { "mymqtt", NULL };
-    sprintf(uri, "mqtts://%s:%d", host, port);
     const esp_mqtt_client_config_t mqtt_cfg = {
         .broker.address.uri = uri,
         .broker.verification.alpn_protos = alpn_protos
     };
-    esp_mqtt_set_config(mqtt_client, &mqtt_cfg);
-    esp_mqtt_client_disconnect(mqtt_client);
-    esp_mqtt_client_reconnect(mqtt_client);
+    esp_mqtt_set_config(client, &mqtt_cfg);
 }
 
-void connection_test(const char *line)
-{
-    char test_type[32];
-    char host[32];
-    int port;
-    int test_case;
+void connect_setup(command_context_t * ctx) {
+    esp_mqtt_client_register_event(ctx->mqtt_client, ESP_EVENT_ANY_ID, mqtt_event_handler, ctx->data);
+}
 
-    sscanf(line, "%s %s %d %d", test_type, host, &port, &test_case);
-    if (mqtt_client == NULL) {
-        create_client();
-    }
-    if (strcmp(host, "teardown") == 0) {
-        destroy_client();;
-    }
-    ESP_LOGI(TAG, "CASE:%d, connecting to mqtts://%s:%d ", test_case, host, port);
+void connect_teardown(command_context_t * ctx) {
+    esp_mqtt_client_unregister_event(ctx->mqtt_client, ESP_EVENT_ANY_ID, mqtt_event_handler);
+}
+void connection_test(command_context_t * ctx, const char *uri, int test_case)
+{
+    ESP_LOGI(TAG, "CASE:%d, connecting to %s", test_case, uri);
     running_test_case = test_case;
     switch (test_case) {
     case CONFIG_EXAMPLE_CONNECT_CASE_NO_CERT:
-        connect_no_certs(host, port);
+        connect_no_certs(ctx->mqtt_client, uri);
         break;
     case CONFIG_EXAMPLE_CONNECT_CASE_SERVER_CERT:
-        connect_with_server_cert(host, port);
+        connect_with_server_cert(ctx->mqtt_client, uri);
         break;
     case CONFIG_EXAMPLE_CONNECT_CASE_MUTUAL_AUTH:
-        connect_with_server_client_certs(host, port);
+        connect_with_server_client_certs(ctx->mqtt_client, uri);
         break;
     case CONFIG_EXAMPLE_CONNECT_CASE_INVALID_SERVER_CERT:
-        connect_with_wrong_server_cert(host, port);
+        connect_with_wrong_server_cert(ctx->mqtt_client, uri);
         break;
     case CONFIG_EXAMPLE_CONNECT_CASE_SERVER_DER_CERT:
-        connect_with_server_der_cert(host, port);
+        connect_with_server_der_cert(ctx->mqtt_client, uri);
         break;
     case CONFIG_EXAMPLE_CONNECT_CASE_MUTUAL_AUTH_KEY_PWD:
-        connect_with_client_key_password(host, port);
+        connect_with_client_key_password(ctx->mqtt_client, uri);
         break;
     case CONFIG_EXAMPLE_CONNECT_CASE_MUTUAL_AUTH_BAD_CRT:
-        connect_with_invalid_client_certs(host, port);
+        connect_with_invalid_client_certs(ctx->mqtt_client, uri);
         break;
     case CONFIG_EXAMPLE_CONNECT_CASE_NO_CERT_ALPN:
-        connect_with_alpn(host, port);
+        connect_with_alpn(ctx->mqtt_client, uri);
         break;
     default:
         ESP_LOGE(TAG, "Unknown test case %d ", test_case);

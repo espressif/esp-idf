@@ -6,7 +6,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  *
- * SPDX-FileContributor: 2016-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2016-2023 Espressif Systems (Shanghai) CO LTD
  */
 /*
  *  The AES block cipher was designed by Vincent Rijmen and Joan Daemen.
@@ -14,6 +14,7 @@
  *  http://csrc.nist.gov/encryption/aes/rijndael/Rijndael.pdf
  *  http://csrc.nist.gov/publications/fips/fips197/fips-197.pdf
  */
+#include "sdkconfig.h"
 #include "aes/esp_aes_internal.h"
 #include "mbedtls/aes.h"
 #include "hal/aes_hal.h"
@@ -22,9 +23,8 @@
 #include "mbedtls/error.h"
 
 #include <string.h>
-#include "mbedtls/platform.h"
 
-#if SOC_AES_GDMA
+#if SOC_AES_SUPPORT_DMA
 #include "esp_aes_dma_priv.h"
 #endif
 
@@ -39,10 +39,12 @@ bool valid_key_length(const esp_aes_context *ctx)
     return valid_len;
 }
 
-
-void esp_aes_init( esp_aes_context *ctx )
+void esp_aes_init(esp_aes_context *ctx)
 {
-    bzero( ctx, sizeof( esp_aes_context ) );
+    bzero(ctx, sizeof(esp_aes_context));
+#if SOC_AES_SUPPORT_DMA && CONFIG_MBEDTLS_AES_USE_INTERRUPT
+    esp_aes_intr_alloc();
+#endif
 }
 
 void esp_aes_free( esp_aes_context *ctx )

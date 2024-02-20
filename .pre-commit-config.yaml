@@ -1,9 +1,11 @@
 # See https://pre-commit.com for more information
 # See https://pre-commit.com/hooks.html for more hooks
 
+default_stages: [commit]
+
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.0.1
+    rev: v4.5.0
     hooks:
       - id: trailing-whitespace
         # note: whitespace exclusions use multiline regex, see https://pre-commit.com/#regular-expressions
@@ -39,11 +41,12 @@ repos:
     hooks:
       - id: flake8
         args: ['--config=.flake8', '--tee', '--benchmark']
-  - repo: https://github.com/pycqa/isort
-    rev: 5.12.0  # python 3.8 compatible
+  - repo: https://github.com/asottile/reorder-python-imports
+    rev: v3.12.0
     hooks:
-      - id: isort
-        name: isort (python)
+      - id: reorder-python-imports
+        name: Reorder Python imports
+        args: [--py38-plus]
         exclude: >
           (?x)^(
               .*_pb2.py
@@ -62,11 +65,6 @@ repos:
         language: python
         pass_filenames: false
         always_run: true
-      - id: check-kconfigs
-        name: Validate Kconfig files
-        entry: tools/ci/check_kconfigs.py
-        language: python
-        files: '^Kconfig$|Kconfig.*$'
       - id: check-deprecated-kconfigs-options
         name: Check if any Kconfig Options Deprecated
         entry: tools/ci/check_deprecated_kconfigs.py
@@ -87,20 +85,13 @@ repos:
         always_run: true
         files: '\.gitlab/CODEOWNERS'
         pass_filenames: false
-      - id: check-rules-yml
-        name: Check rules.yml all rules have at lease one job applied, all rules needed exist
-        entry: tools/ci/check_rules_yml.py
-        language: python
-        files: '\.gitlab/ci/.+\.yml|\.gitlab-ci.yml|\.gitmodules'
-        pass_filenames: false
-        additional_dependencies:
-          - PyYAML == 5.3.1
       - id: check-generated-rules
         name: Check rules are generated (based on .gitlab/ci/dependencies/dependencies.yml)
         entry: tools/ci/generate_rules.py
         language: python
-        files: '\.gitlab/ci/dependencies/.+|\.gitlab/ci/.*\.yml'
+        files: '\.gitlab/ci/dependencies/.+|\.gitlab/ci/.*\.yml|.gitlab-ci.yml'
         pass_filenames: false
+        require_serial: true
         additional_dependencies:
           - PyYAML == 5.3.1
       - id: mypy-check
@@ -111,6 +102,7 @@ repos:
           - 'mypy-extensions==0.4.3'
           - 'types-setuptools==57.4.14'
           - 'types-PyYAML==0.1.9'
+          - 'types-requests'
         exclude: >
           (?x)^(
               .*_pb2.py
@@ -157,14 +149,20 @@ repos:
         require_serial: true
         additional_dependencies:
           - PyYAML == 5.3.1
-          - idf_build_apps~=1.0
-      - id: sort-build-test-rules-ymls
-        name: sort .build-test-rules.yml files
-        entry: tools/ci/check_build_test_rules.py sort-yaml
+          - idf-build-apps~=2.0
+      - id: sort-yaml-files
+        name: sort yaml files
+        entry: tools/ci/sort_yaml.py
         language: python
-        files: '\.build-test-rules\.yml'
+        files: '\.build-test-rules\.yml$|known_generate_test_child_pipeline_warnings\.yml$'
         additional_dependencies:
-          - PyYAML == 5.3.1
+          - ruamel.yaml
+      - id: sort-yaml-test
+        name: sort yaml test
+        entry: python -m unittest tools/ci/sort_yaml.py
+        language: python
+        files: 'tools/ci/sort_yaml\.py$'
+        additional_dependencies:
           - ruamel.yaml
       - id: check-build-test-rules-path-exists
         name: check path in .build-test-rules.yml exists
@@ -175,18 +173,20 @@ repos:
         always_run: true
         pass_filenames: false
         require_serial: true
-      - id: submodule-sbom-hash-check
-        name: Check if sbom-hash values for submodules in .gitmodules match submodules checkout hash in git tree
-        entry: python tools/test_sbom/test_submodules.py
-        language: python
-        always_run: true
-        pass_filenames: false
       - id: cleanup-ignore-lists
         name: Remove non-existing patterns from ignore lists
         entry: tools/ci/cleanup_ignore_lists.py
         language: python
         always_run: true
         require_serial: true
+      - id: gitlab-yaml-linter
+        name: Check gitlab yaml files
+        entry: tools/ci/gitlab_yaml_linter.py
+        language: python
+        files: '\.gitlab-ci\.yml|\.gitlab/ci/.+\.yml'
+        pass_filenames: false
+        additional_dependencies:
+          - PyYAML == 5.3.1
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.0.1
     hooks:
@@ -198,12 +198,12 @@ repos:
       - id: check-copyright
         args: ['--ignore', 'tools/ci/check_copyright_ignore.txt', '--config', 'tools/ci/check_copyright_config.yaml']
   - repo: https://github.com/espressif/conventional-precommit-linter
-    rev: v1.2.1
+    rev: v1.6.0
     hooks:
       - id: conventional-precommit-linter
         stages: [commit-msg]
   - repo: https://github.com/espressif/astyle_py.git
-    rev: v1.0.2
+    rev: v1.0.5
     hooks:
       - id: astyle_py
         # If you are modifying astyle version, update tools/format.sh as well
@@ -219,3 +219,18 @@ repos:
       name: shellcheck dash (export.sh)
       args: ['--shell', 'dash', '-x']
       files: 'export.sh'
+  - repo: https://github.com/espressif/esp-idf-sbom.git
+    rev: v0.13.0
+    hooks:
+      - id: validate-sbom-manifest
+        stages: [post-commit]
+  - repo: https://github.com/sphinx-contrib/sphinx-lint
+    rev: v0.9.1
+    hooks:
+      - id: 'sphinx-lint'
+        name: Lint rST files in docs folder using Sphinx Lint
+        files: ^(docs/en|docs/zh_CN)/.*\.(rst|inc)$
+  - repo: https://github.com/espressif/esp-idf-kconfig.git
+    rev: v2.1.0
+    hooks:
+      - id: check-kconfig-files

@@ -6,14 +6,23 @@ if BLE_MESH
         help
             It is a temporary solution and needs further modifications.
 
+    config BLE_MESH_RANDOM_ADV_INTERVAL
+        bool "Support using random adv interval for mesh packets"
+        select BT_BLE_HIGH_DUTY_ADV_INTERVAL if BT_BLUEDROID_ENABLED
+        default n
+        help
+            Enable this option to allow using random advertising interval
+            for mesh packets. And this could help avoid collision of
+            advertising packets.
+
     config BLE_MESH_USE_DUPLICATE_SCAN
         bool "Support Duplicate Scan in BLE Mesh"
         select BTDM_BLE_SCAN_DUPL if IDF_TARGET_ESP32
         select BTDM_BLE_MESH_SCAN_DUPL_EN if IDF_TARGET_ESP32
-        select BT_CTRL_BLE_SCAN_DUPL if IDF_TARGET_ESP32C3
-        select BT_CTRL_BLE_MESH_SCAN_DUPL_EN if IDF_TARGET_ESP32C3
-        select BT_LE_SCAN_DUPL if IDF_TARGET_ESP32C6
-        select BT_LE_SCAN_DUPL if IDF_TARGET_ESP32H2
+        select BT_CTRL_BLE_SCAN_DUPL if IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3
+        select BT_CTRL_BLE_MESH_SCAN_DUPL_EN if IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3
+        select BT_LE_SCAN_DUPL if IDF_TARGET_ESP32C6 || IDF_TARGET_ESP32H2
+        select BT_NIMBLE_VS_SUPPORT if BT_NIMBLE_ENABLED
         default y
         help
             Enable this option to allow using specific duplicate scan filter
@@ -614,6 +623,21 @@ if BLE_MESH
             Provisioner can provision up to 20 nodes and each node contains two elements,
             then the replay protection list size of Provisioner should be at least 40.
 
+    config BLE_MESH_NOT_RELAY_REPLAY_MSG
+        bool "Not relay replayed messages in a mesh network"
+        depends on BLE_MESH_EXPERIMENTAL
+        default n
+        help
+            There may be many expired messages in a complex mesh network that would be
+            considered replayed messages.
+            Enable this option will refuse to relay such messages, which could help to
+            reduce invalid packets in the mesh network.
+            However, it should be noted that enabling this option may result in packet
+            loss in certain environments.
+            Therefore, users need to decide whether to enable this option according to
+            the actual usage situation.
+
+
     config BLE_MESH_MSG_CACHE_SIZE
         int "Network message cache size"
         default 10
@@ -677,6 +701,13 @@ if BLE_MESH
             with the IV update Flag.
             When the above situation is encountered, this option can be used to decide whether
             to perform the IV index recovery procedure.
+
+    config BLE_MESH_SAR_ENHANCEMENT
+        bool "Segmentation and reassembly enhancement"
+        default n
+        help
+            Enable this option to use the enhanced segmentation and reassembly
+            mechanism introduced in Bluetooth Mesh Protocol 1.1.
 
     config BLE_MESH_TX_SEG_MSG_COUNT
         int "Maximum number of simultaneous outgoing segmented messages"
@@ -1091,6 +1122,16 @@ if BLE_MESH
                 help
                     Maximum number of Bridging Table entries that the Bridge Configuration Server can support.
 
+            config BLE_MESH_BRIDGE_CRPL
+                int "Maximum capacity of bridge replay protection list"
+                default 5
+                range 1 255
+                help
+                    This option specifies the maximum capacity of the bridge replay
+                    protection list. The bridge replay protection list is used to
+                    prevent a bridged subnet from replay attack, which will store the
+                    source address and sequence number of the received bridge messages.
+
         endif #BLE_MESH_BRC_SRV
 
         config BLE_MESH_PRB_CLI
@@ -1424,7 +1465,7 @@ if BLE_MESH
 
         config BLE_MESH_MBT_CLI
             bool "BLOB Transfer Client model"
-            default y
+            default n
             help
                 Enable support for BLOB Transfer Client model.
 
@@ -1442,7 +1483,7 @@ if BLE_MESH
 
         config BLE_MESH_MBT_SRV
             bool "BLOB Transfer Server model"
-            default y
+            default n
             help
                 Enable support for BLOB Transfer Server model.
 
@@ -1474,6 +1515,7 @@ if BLE_MESH
 
         config BLE_MESH_BQB_TEST
             bool "Enable BLE Mesh specific internal test"
+            select BLE_MESH_IV_UPDATE_TEST
             default n
             help
                 This option is used to enable some internal functions for auto-pts test.
@@ -1578,5 +1620,13 @@ if BLE_MESH
         endif # BLE_MESH_DEBUG
 
     endmenu
+
+    config BLE_MESH_EXPERIMENTAL
+        bool "Make BLE Mesh experimental features visible"
+        default n
+        help
+            Make BLE Mesh Experimental features visible.
+            Experimental features list:
+            - CONFIG_BLE_MESH_NOT_RELAY_REPLAY_MSG
 
 endif # BLE_MESH

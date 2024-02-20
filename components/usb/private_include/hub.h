@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,6 +8,7 @@
 
 #include <stdlib.h>
 #include <stdint.h>
+#include "sdkconfig.h"
 #include "esp_err.h"
 #include "usb_private.h"
 #include "usbh.h"
@@ -22,8 +23,11 @@ extern "C" {
  * @brief Hub driver configuration
  */
 typedef struct {
-    usb_proc_req_cb_t proc_req_cb;      /**< Processing request callback */
-    void *proc_req_cb_arg;              /**< Processing request callback argument */
+    usb_proc_req_cb_t proc_req_cb;                  /**< Processing request callback */
+    void *proc_req_cb_arg;                          /**< Processing request callback argument */
+#ifdef CONFIG_USB_HOST_ENABLE_ENUM_FILTER_CALLBACK
+    usb_host_enum_filter_cb_t enum_filter_cb;       /**< Set device configuration callback */
+#endif // CONFIG_USB_HOST_ENABLE_ENUM_FILTER_CALLBACK
 } hub_config_t;
 
 // ---------------------------------------------- Hub Driver Functions -------------------------------------------------

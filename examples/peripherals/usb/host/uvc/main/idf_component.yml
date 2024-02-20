@@ -1,9 +1,7 @@
 ## IDF Component Manager Manifest File
 dependencies:
-  idf: ">=4.4"
-  usb_host_uvc: "1.0.0"
-  mdns:
-    rules:
-      - if: "idf_version >= 5.0"
+  idf: ">=5.0"
+  usb_host_uvc: "^1.0.0"
+  mdns: "^1.2.0"
   protocol_examples_common:
     path: ${IDF_PATH}/examples/common_components/protocol_examples_common

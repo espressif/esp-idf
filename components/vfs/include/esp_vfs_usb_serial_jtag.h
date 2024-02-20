@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,44 +14,11 @@
 extern "C" {
 #endif
 
-/**
- * @brief add /dev/usbserjtag virtual filesystem driver
- *
- * This function is called from startup code to enable console output
- */
-esp_err_t esp_vfs_dev_usb_serial_jtag_register(void);
+esp_err_t esp_vfs_dev_usb_serial_jtag_register(void) __attribute__((deprecated("Please use usb_serial_jtag_vfs_register instead")));
 
-/**
- * @brief Set the line endings expected to be received
- *
- * This specifies the conversion between line endings received and
- * newlines ('\n', LF) passed into stdin:
- *
- * - ESP_LINE_ENDINGS_CRLF: convert CRLF to LF
- * - ESP_LINE_ENDINGS_CR: convert CR to LF
- * - ESP_LINE_ENDINGS_LF: no modification
- *
- * @note this function is not thread safe w.r.t. reading
- *
- * @param mode line endings expected
- */
-void esp_vfs_dev_usb_serial_jtag_set_rx_line_endings(esp_line_endings_t mode);
+void esp_vfs_dev_usb_serial_jtag_set_rx_line_endings(esp_line_endings_t mode) __attribute__((deprecated("Please use usb_serial_jtag_vfs_set_rx_line_endings instead")));
 
-/**
- * @brief Set the line endings to sent
- *
- * This specifies the conversion between newlines ('\n', LF) on stdout and line
- * endings sent:
- *
- * - ESP_LINE_ENDINGS_CRLF: convert LF to CRLF
- * - ESP_LINE_ENDINGS_CR: convert LF to CR
- * - ESP_LINE_ENDINGS_LF: no modification
- *
- * @note this function is not thread safe w.r.t. writing
- *
- * @param mode line endings to send
- */
-void esp_vfs_dev_usb_serial_jtag_set_tx_line_endings(esp_line_endings_t mode);
+void esp_vfs_dev_usb_serial_jtag_set_tx_line_endings(esp_line_endings_t mode) __attribute__((deprecated("Please use usb_serial_jtag_vfs_set_tx_line_endings instead")));
 
 #ifdef __cplusplus
 }

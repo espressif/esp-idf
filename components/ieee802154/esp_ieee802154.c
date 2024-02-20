@@ -6,7 +6,9 @@
 
 #include <stdint.h>
 #include <string.h>
+#include "sdkconfig.h"
 #include "esp_ieee802154.h"
+#include "esp_err.h"
 #include "esp_phy_init.h"
 #include "esp_ieee802154_ack.h"
 #include "esp_ieee802154_dev.h"
@@ -22,15 +24,17 @@
 esp_err_t esp_ieee802154_enable(void)
 {
     ieee802154_enable();
-    esp_phy_enable(PHY_MODEM_IEEE802154);
+    ieee802154_rf_enable();
     esp_btbb_enable();
     return ieee802154_mac_init();
 }
 
 esp_err_t esp_ieee802154_disable(void)
 {
+    esp_btbb_disable();
+    ieee802154_rf_disable();
     ieee802154_disable();
-    return ESP_OK;
+    return ieee802154_mac_deinit();
 }
 
 uint8_t esp_ieee802154_get_channel(void)
@@ -334,6 +338,11 @@ uint8_t esp_ieee802154_get_recent_lqi(void)
     return ieee802154_get_recent_lqi();
 }
 
+esp_err_t esp_ieee802154_receive_handle_done(const uint8_t *frame)
+{
+    return ieee802154_receive_handle_done(frame);
+}
+
 __attribute__((weak)) void esp_ieee802154_receive_done(uint8_t *data, esp_ieee802154_frame_info_t *frame_info)
 {
 
@@ -393,3 +402,15 @@ __attribute__((weak)) void esp_ieee802154_timer1_done(void)
 {
 
 }
+
+#if CONFIG_IEEE802154_TXRX_STATISTIC
+void esp_ieee802154_txrx_statistic_clear(void)
+{
+    ieee802154_txrx_statistic_clear();
+}
+
+void esp_ieee802154_txrx_statistic_print(void)
+{
+    ieee802154_txrx_statistic_print();
+}
+#endif // CONFIG_IEEE802154_TXRX_STATISTIC

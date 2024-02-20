@@ -74,7 +74,7 @@ flash 可选的功能
 
 -  flash 的私有 ID (unique ID) - 表示 flash 支持它自己的 64-bit 独有 ID。
 
-.. only:: esp32c3
+.. only:: SOC_SPI_MEM_SUPPORT_AUTO_SUSPEND
 
     -  暂停与恢复 - 表示 flash 可以在读/写的过程中接受暂停/恢复的命令。{IDF_TARGET_NAME} 可以在 flash 正在写/擦除的过程中保持 cache 开启，并能随机读取 flash 中的内容。
 
@@ -118,7 +118,7 @@ SPI flash 容量
 
 SPI flash 容量由引导加载程序镜像头部（烧录偏移量为 0x1000）的一个字段进行配置。
 
-默认情况下，引导程序被写入 flash 时，``esptool.py`` 会自动检测 SPI flash 容量，同时使用正确容量更新引导程序的头部。也可以在工程配置中设置 :envvar:`CONFIG_ESPTOOLPY_FLASHSIZE`，生成固定的 flash 容量。
+默认情况下，引导程序被写入 flash 时，``esptool.py`` 会自动检测 SPI flash 容量，同时使用正确容量更新引导程序的头部。也可以在工程配置中设置 :ref:`CONFIG_ESPTOOLPY_FLASHSIZE`，生成固定的 flash 容量。
 
 如需在运行时覆盖已配置的 flash 容量，请配置 ``g_rom_flashchip`` 结构中的 ``chip_size``。``esp_flash_*`` 函数使用此容量（于软件和 ROM 中）进行边界检查。
 

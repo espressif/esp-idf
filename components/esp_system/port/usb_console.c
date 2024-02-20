@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -55,7 +55,6 @@ typedef enum {
     REBOOT_BOOTLOADER_DFU,
 } reboot_type_t;
 
-
 static reboot_type_t s_queue_reboot = REBOOT_NONE;
 static int s_prev_rts_state;
 static intr_handle_t s_usb_int_handle;
@@ -87,11 +86,9 @@ void esp_usb_console_write_char(char c);
 #define ISR_FLAG  0
 #endif // CONFIG_ESP_CONSOLE_USB_CDC_SUPPORT_ETS_PRINTF
 
-
 /* Optional write lock routines; used only if esp_rom_printf output via CDC is enabled */
 static inline void write_lock_acquire(void);
 static inline void write_lock_release(void);
-
 
 /* Other forward declarations */
 void esp_usb_console_before_restart(void);
@@ -273,7 +270,7 @@ esp_err_t esp_usb_console_init(void)
      *   It is not because we actually need the interrupt to work with cache disabled!
      */
     err = esp_intr_alloc(ETS_USB_INTR_SOURCE, ISR_FLAG | ESP_INTR_FLAG_INTRDISABLED,
-            esp_usb_console_interrupt, NULL, &s_usb_int_handle);
+                         esp_usb_console_interrupt, NULL, &s_usb_int_handle);
     if (err != ESP_OK) {
         esp_unregister_shutdown_handler(esp_usb_console_before_restart);
         return err;
@@ -298,7 +295,7 @@ esp_err_t esp_usb_console_init(void)
 
 #ifdef CONFIG_ESP_CONSOLE_USB_CDC_SUPPORT_ETS_PRINTF
     /* Install esp_rom_printf handler */
-    esp_rom_uart_set_as_console(ESP_ROM_USB_OTG_NUM);
+    esp_rom_output_set_as_console(ESP_ROM_USB_OTG_NUM);
     esp_rom_install_channel_putc(1, &esp_usb_console_write_char);
 #endif // CONFIG_ESP_CONSOLE_USB_CDC_SUPPORT_ETS_PRINTF
 
@@ -310,7 +307,7 @@ esp_err_t esp_usb_console_init(void)
  * too early, before esp_timer is fully initialized.
  * This gets called a bit later in the process when we can already register a timer.
  */
-ESP_SYSTEM_INIT_FN(esp_usb_console_init_restart_timer, BIT(0), 220)
+ESP_SYSTEM_INIT_FN(esp_usb_console_init_restart_timer, SECONDARY, BIT(0), 220)
 {
     esp_timer_create_args_t timer_create_args = {
         .callback = &esp_usb_console_on_restart_timeout,
@@ -440,7 +437,6 @@ bool esp_usb_console_write_available(void)
     }
     return cdc_acm_irq_tx_ready(s_cdc_acm_device) != 0;
 }
-
 
 #ifdef CONFIG_ESP_CONSOLE_USB_CDC_SUPPORT_ETS_PRINTF
 /* Used as an output function by esp_rom_printf.

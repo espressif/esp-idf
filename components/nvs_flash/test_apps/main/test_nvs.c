@@ -97,12 +97,6 @@ TEST_CASE("nvs_flash_init_partition_ptr() works correctly", "[nvs]")
 }
 
 #ifdef CONFIG_SOC_HMAC_SUPPORTED
-/* TODO: This test does not run in CI as the runner assigned has
- * flash encryption enabled by default. Enabling flash encryption
- * 'selects' NVS encryption; a new runner needs to be setup
- * for testing the HMAC NVS encryption scheme without flash encryption
- * enabled for this test.
- */
 TEST_CASE("test nvs encryption with HMAC-based scheme without toggling any config options", "[nvs_encr_hmac]")
 {
     nvs_handle_t handle;

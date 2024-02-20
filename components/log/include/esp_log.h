@@ -159,7 +159,7 @@ uint32_t esp_log_early_timestamp(void);
  *
  * This function or these macros should not be used from an interrupt.
  */
-void esp_log_write(esp_log_level_t level, const char* tag, const char* format, ...) __attribute__ ((format (printf, 3, 4)));
+void esp_log_write(esp_log_level_t level, const char* tag, const char* format, ...) __attribute__((format(printf, 3, 4)));
 
 /**
  * @brief Write message into the log, va_list variant
@@ -278,7 +278,6 @@ void esp_log_writev(esp_log_level_t level, const char* tag, const char* format, 
 //to be back compatible
 #define esp_log_buffer_hex      ESP_LOG_BUFFER_HEX
 #define esp_log_buffer_char     ESP_LOG_BUFFER_CHAR
-
 
 #if CONFIG_LOG_COLORS
 #define LOG_COLOR_BLACK   "30"
@@ -522,6 +521,5 @@ void esp_log_writev(esp_log_level_t level, const char* tag, const char* format, 
 #ifdef __cplusplus
 }
 #endif
-
 
 #endif /* __ESP_LOG_H__ */

@@ -13,7 +13,8 @@
 #ifndef CONFIG_IDF_TARGET_LINUX
 #include "esp_memory_utils.h"  // for esp_ptr_byte_accessible
 #else
-static inline bool esp_ptr_byte_accessible(const void* ptr) {
+static inline bool esp_ptr_byte_accessible(const void* ptr)
+{
     (void) ptr;
     return true;
 }

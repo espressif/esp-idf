@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -191,6 +191,11 @@ esp_err_t NVSPartitionManager::open_handle(const char *part_name,
     if (sHandle == nullptr) {
         return ESP_ERR_NVS_PART_NOT_FOUND;
     }
+
+    if (open_mode == NVS_READWRITE && const_cast<Partition*>(sHandle->getPart())->get_readonly()) {
+        return ESP_ERR_NOT_ALLOWED;
+    }
+
 
     esp_err_t err = sHandle->createOrOpenNamespace(ns_name, open_mode == NVS_READWRITE, nsIndex);
     if (err != ESP_OK) {

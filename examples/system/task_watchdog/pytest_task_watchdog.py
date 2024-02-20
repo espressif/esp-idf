@@ -5,13 +5,7 @@ import pytest
 from pytest_embedded import Dut
 
 
-# IDF-5055
-@pytest.mark.esp32
-@pytest.mark.esp32s2
-@pytest.mark.esp32s3
-@pytest.mark.esp32c3
-@pytest.mark.esp32c6
-@pytest.mark.esp32h2
+@pytest.mark.supported_targets
 @pytest.mark.generic
 def test_task_watchdog(dut: Dut) -> None:
 

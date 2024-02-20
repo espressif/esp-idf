@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -17,12 +17,34 @@
 #include "esp_log.h"
 #include "nvs_flash.h"
 #include "esp_bt.h"
+
+#if CONFIG_BT_NIMBLE_ENABLED
+#include "host/ble_hs.h"
+#include "nimble/nimble_port.h"
+#include "nimble/nimble_port_freertos.h"
+#else
 #include "esp_bt_defs.h"
 #include "esp_gap_ble_api.h"
 #include "esp_gatts_api.h"
 #include "esp_gatt_defs.h"
 #include "esp_bt_main.h"
 #include "esp_bt_device.h"
+#endif
+
+#if CONFIG_BT_NIMBLE_ENABLED
+#include "host/ble_hs.h"
+#include "nimble/nimble_port.h"
+#include "nimble/nimble_port_freertos.h"
+#define ESP_BD_ADDR_STR         "%02x:%02x:%02x:%02x:%02x:%02x"
+#define ESP_BD_ADDR_HEX(addr)   addr[0], addr[1], addr[2], addr[3], addr[4], addr[5]
+#else
+#include "esp_bt_defs.h"
+#include "esp_gap_ble_api.h"
+#include "esp_gatts_api.h"
+#include "esp_gatt_defs.h"
+#include "esp_bt_main.h"
+#include "esp_bt_device.h"
+#endif
 
 #include "esp_hidh.h"
 #include "esp_hid_gap.h"
@@ -99,6 +121,13 @@ void hid_demo_task(void *pvParameters)
                 printf("ADDR_TYPE: '%s', ", ble_addr_type_str(r->ble.addr_type));
             }
 #endif /* CONFIG_BT_BLE_ENABLED */
+#if CONFIG_BT_NIMBLE_ENABLED
+            if (r->transport == ESP_HID_TRANSPORT_BLE) {
+                cr = r;
+                printf("APPEARANCE: 0x%04x, ", r->ble.appearance);
+                printf("ADDR_TYPE: '%d', ", r->ble.addr_type);
+            }
+#endif /* CONFIG_BT_BLE_ENABLED */
 #if CONFIG_BT_HID_HOST_ENABLED
             if (r->transport == ESP_HID_TRANSPORT_BT) {
                 cr = r;
@@ -123,6 +152,17 @@ void hid_demo_task(void *pvParameters)
     vTaskDelete(NULL);
 }
 
+#if CONFIG_BT_NIMBLE_ENABLED
+void ble_hid_host_task(void *param)
+{
+    ESP_LOGI(TAG, "BLE Host Task Started");
+    /* This function will return only when nimble_port_stop() is executed */
+    nimble_port_run();
+
+    nimble_port_freertos_deinit();
+}
+void ble_store_config_init(void);
+#endif
 void app_main(void)
 {
     esp_err_t ret;
@@ -148,5 +188,16 @@ void app_main(void)
     };
     ESP_ERROR_CHECK( esp_hidh_init(&config) );
 
+#if CONFIG_BT_NIMBLE_ENABLED
+    /* XXX Need to have template for store */
+    ble_store_config_init();
+
+    ble_hs_cfg.store_status_cb = ble_store_util_status_rr;
+	/* Starting nimble task after gatts is initialized*/
+    ret = esp_nimble_enable(ble_hid_host_task);
+    if (ret) {
+        ESP_LOGE(TAG, "esp_nimble_enable failed: %d", ret);
+    }
+#endif
     xTaskCreate(&hid_demo_task, "hid_task", 6 * 1024, NULL, 2, NULL);
 }

@@ -9,7 +9,7 @@
 
 #define EXAMPLE_ADC_CHANNEL     ADC_CHANNEL_0
 #define EXAMPLE_ADC_UNIT        ADC_UNIT_1
-#define EXAMPLE_ADC_ATTEN       ADC_ATTEN_DB_11
+#define EXAMPLE_ADC_ATTEN       ADC_ATTEN_DB_12
 #define EXAMPLE_ADC_WIDTH       ADC_BITWIDTH_DEFAULT
 
 /* Set high threshold, approx. 1.75V*/

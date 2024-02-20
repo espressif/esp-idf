@@ -61,9 +61,9 @@ TEST_CASE("async_memcpy_eof_event", "[etm]")
     TEST_ESP_OK(esp_etm_dump(stdout));
 
     const uint32_t buffer_size = 1024;
-    uint8_t *src_buf = heap_caps_malloc(buffer_size, MALLOC_CAP_8BIT | MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
+    uint8_t *src_buf = heap_caps_aligned_alloc(64, buffer_size, MALLOC_CAP_8BIT | MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
     TEST_ASSERT_NOT_NULL(src_buf);
-    uint8_t *dst_buf = heap_caps_malloc(buffer_size, MALLOC_CAP_8BIT | MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
+    uint8_t *dst_buf = heap_caps_aligned_alloc(64, buffer_size, MALLOC_CAP_8BIT | MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
     TEST_ASSERT_NOT_NULL(dst_buf);
 
     printf("start memcpy\r\n");

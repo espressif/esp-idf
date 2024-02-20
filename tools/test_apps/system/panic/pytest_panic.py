@@ -25,7 +25,7 @@ TARGETS_TESTED = [
 # with some exceptions.
 CONFIGS = [
     pytest.param('coredump_flash_bin_crc', marks=TARGETS_TESTED),
-    pytest.param('coredump_flash_elf_sha', marks=[pytest.mark.esp32]),  # sha256 only supported on esp32, IDF-1820
+    pytest.param('coredump_flash_elf_sha', marks=TARGETS_TESTED),
     pytest.param('coredump_uart_bin_crc', marks=TARGETS_TESTED),
     pytest.param('coredump_uart_elf_crc', marks=TARGETS_TESTED),
     pytest.param('gdbstub', marks=TARGETS_TESTED),
@@ -36,7 +36,7 @@ CONFIGS = [
 TARGETS_DUAL_CORE = [pytest.mark.esp32, pytest.mark.esp32s3]
 CONFIGS_DUAL_CORE = [
     pytest.param('coredump_flash_bin_crc', marks=TARGETS_DUAL_CORE),
-    pytest.param('coredump_flash_elf_sha', marks=[pytest.mark.esp32]),  # sha256 only supported on esp32, IDF-1820
+    pytest.param('coredump_flash_elf_sha', marks=TARGETS_DUAL_CORE),
     pytest.param('coredump_uart_bin_crc', marks=TARGETS_DUAL_CORE),
     pytest.param('coredump_uart_elf_crc', marks=TARGETS_DUAL_CORE),
     pytest.param('gdbstub', marks=TARGETS_DUAL_CORE),
@@ -123,10 +123,19 @@ def test_task_wdt_cpu0(dut: PanicTestDut, config: str, test_func_name: str) -> N
     dut.expect_elf_sha256()
     dut.expect_none('Guru Meditation')
 
+    coredump_pattern = (PANIC_ABORT_PREFIX +
+                        'Task watchdog got triggered. '
+                        'The following tasks/users did not reset the watchdog in time:\n - ')
+    if dut.is_multi_core:
+        coredump_pattern += 'IDLE0 (CPU 0)'
+    else:
+        coredump_pattern += 'IDLE (CPU 0)'
+
     common_test(
         dut,
         config,
         expected_backtrace=get_default_backtrace(test_func_name),
+        expected_coredump=[coredump_pattern]
     )
 
 
@@ -151,42 +160,14 @@ def test_task_wdt_cpu1(dut: PanicTestDut, config: str, test_func_name: str) -> N
     dut.expect_elf_sha256()
     dut.expect_none('Guru Meditation')
 
+    coredump_pattern = (PANIC_ABORT_PREFIX +
+                        'Task watchdog got triggered. '
+                        'The following tasks/users did not reset the watchdog in time:\n - IDLE1 (CPU 1)')
     common_test(
         dut,
         config,
         expected_backtrace=expected_backtrace,
-    )
-
-
-@pytest.mark.parametrize('config', CONFIGS_DUAL_CORE, indirect=True)
-@pytest.mark.generic
-def test_task_wdt_both_cpus(dut: PanicTestDut, config: str, test_func_name: str) -> None:
-    if dut.target == 'esp32s3':
-        pytest.xfail(reason='Only prints "Print CPU 1 backtrace", IDF-6560')
-    dut.run_test_func(test_func_name)
-    dut.expect_exact(
-        'Task watchdog got triggered. The following tasks/users did not reset the watchdog in time:'
-    )
-    dut.expect_exact('CPU 0: Infinite loop')
-    dut.expect_exact('CPU 1: Infinite loop')
-    if dut.is_xtensa:
-        # see comment in test_task_wdt_cpu0
-        dut.expect_none('register dump:')
-        dut.expect_exact('Print CPU 0 (current core) backtrace')
-        dut.expect_backtrace()
-        dut.expect_exact('Print CPU 1 backtrace')
-        dut.expect_backtrace()
-        # On Xtensa, we get incorrect backtrace from GDB in this test
-        expected_backtrace = ['infinite_loop', 'vPortTaskWrapper']
-    else:
-        assert False, 'No dual-core RISC-V chips yet, check this test case later'
-    dut.expect_elf_sha256()
-    dut.expect_none('Guru Meditation')
-
-    common_test(
-        dut,
-        config,
-        expected_backtrace=expected_backtrace,
+        expected_coredump=[coredump_pattern]
     )
 
 
@@ -260,9 +241,12 @@ def test_int_wdt_cache_disabled(
 @pytest.mark.generic
 def test_cache_error(dut: PanicTestDut, config: str, test_func_name: str) -> None:
     dut.run_test_func(test_func_name)
-    if dut.target in ['esp32c3', 'esp32c2', 'esp32c6', 'esp32h2']:
-        # Cache error interrupt is not raised, IDF-6398
-        dut.expect_gme('Illegal instruction')
+    if dut.target in ['esp32c3', 'esp32c2']:
+        dut.expect_gme('Cache error')
+        dut.expect_exact('Cached memory region accessed while ibus or cache is disabled')
+    elif dut.target in ['esp32c6', 'esp32h2']:
+        dut.expect_gme('Cache error')
+        dut.expect_exact('Cache access error')
     elif dut.target in ['esp32s2']:
         # Cache error interrupt is not enabled, IDF-1558
         dut.expect_gme('IllegalInstruction')
@@ -822,3 +806,17 @@ def test_hw_stack_guard_cpu0(dut: PanicTestDut, config: str, test_func_name: str
     dut.expect_exact('Stack pointer: 0x')
     dut.expect(r'Stack bounds: 0x(.*) - 0x')
     common_test(dut, config)
+
+
+@pytest.mark.esp32
+@pytest.mark.parametrize('config', ['panic'], indirect=True)
+@pytest.mark.generic
+def test_illegal_access(dut: PanicTestDut, config: str, test_func_name: str) -> None:
+    dut.run_test_func(test_func_name)
+    if dut.is_xtensa:
+        dut.expect(r'\[1\] val: (-?\d+) at 0x80000000', timeout=30)
+        dut.expect_gme('LoadProhibited')
+        dut.expect_reg_dump(0)
+        dut.expect_backtrace()
+        dut.expect_elf_sha256()
+        dut.expect_none('Guru Meditation')

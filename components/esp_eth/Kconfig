@@ -5,7 +5,7 @@ menu "Ethernet"
         bool
 
     menuconfig ETH_USE_ESP32_EMAC
-        depends on IDF_TARGET_ESP32
+        depends on SOC_EMAC_SUPPORTED
         bool "Support ESP32 internal EMAC controller"
         default y
         select ETH_ENABLED
@@ -25,6 +25,7 @@ menu "Ethernet"
 
         if ETH_PHY_INTERFACE_RMII
             choice ETH_RMII_CLK_MODE
+                depends on IDF_TARGET_ESP32
                 prompt "RMII clock mode"
                 default ETH_RMII_CLK_INPUT
                 help
@@ -47,6 +48,7 @@ menu "Ethernet"
 
         if ETH_RMII_CLK_INPUT
             config ETH_RMII_CLK_IN_GPIO
+                depends on IDF_TARGET_ESP32
                 int
                 range 0 0
                 default 0
@@ -56,6 +58,7 @@ menu "Ethernet"
 
         if ETH_RMII_CLK_OUTPUT
             config ETH_RMII_CLK_OUTPUT_GPIO0
+                depends on IDF_TARGET_ESP32
                 bool "Output RMII clock from GPIO0 (Experimental!)"
                 default n
                 help
@@ -69,6 +72,7 @@ menu "Ethernet"
 
             if !ETH_RMII_CLK_OUTPUT_GPIO0
                 config ETH_RMII_CLK_OUT_GPIO
+                    depends on IDF_TARGET_ESP32
                     int "RMII clock GPIO number"
                     range 16 17
                     default 17
@@ -83,11 +87,13 @@ menu "Ethernet"
             default 512
             help
                 Set the size of each buffer used by Ethernet MAC DMA.
+                !! Important !! Make sure it is 64B aligned for ESP32P4!
 
         config ETH_DMA_RX_BUFFER_NUM
             int "Amount of Ethernet DMA Rx buffers"
             range 3 30
-            default 10
+            default 10 if IDF_TARGET_ESP32
+            default 20 if IDF_TARGET_ESP32P4 #ESP32P4 has smaller internal Rx FIFO
             help
                 Number of DMA receive buffers. Each buffer's size is ETH_DMA_BUFFER_SIZE.
                 Larger number of buffers could increase throughput somehow.

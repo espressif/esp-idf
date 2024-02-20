@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -28,6 +28,8 @@
 #include "hal/adc_ll.h"
 #include "esp_private/adc_share_hw_ctrl.h"
 #include "esp_private/sar_periph_ctrl.h"
+#include "esp_private/periph_ctrl.h"
+#include "soc/periph_defs.h"
 //For calibration
 #if CONFIG_IDF_TARGET_ESP32S2
 #include "esp_efuse_rtc_table.h"
@@ -189,4 +191,40 @@ esp_err_t adc2_wifi_release(void)
 #endif
 
     return ESP_OK;
+}
+
+static portMUX_TYPE s_spinlock = portMUX_INITIALIZER_UNLOCKED;
+
+/*------------------------------------------------------------------------------
+* For those who use APB_SARADC periph
+*----------------------------------------------------------------------------*/
+static int s_adc_digi_ctrlr_cnt;
+
+void adc_apb_periph_claim(void)
+{
+    portENTER_CRITICAL(&s_spinlock);
+    s_adc_digi_ctrlr_cnt++;
+    if (s_adc_digi_ctrlr_cnt == 1) {
+        //enable ADC digital part
+        periph_module_enable(PERIPH_SARADC_MODULE);
+        //reset ADC digital part
+        periph_module_reset(PERIPH_SARADC_MODULE);
+    }
+
+    portEXIT_CRITICAL(&s_spinlock);
+}
+
+void adc_apb_periph_free(void)
+{
+    portENTER_CRITICAL(&s_spinlock);
+    s_adc_digi_ctrlr_cnt--;
+    if (s_adc_digi_ctrlr_cnt == 0) {
+        periph_module_disable(PERIPH_SARADC_MODULE);
+    } else if (s_adc_digi_ctrlr_cnt < 0) {
+        portEXIT_CRITICAL(&s_spinlock);
+        ESP_LOGE(TAG, "%s called, but `s_adc_digi_ctrlr_cnt == 0`", __func__);
+        abort();
+    }
+
+    portEXIT_CRITICAL(&s_spinlock);
 }

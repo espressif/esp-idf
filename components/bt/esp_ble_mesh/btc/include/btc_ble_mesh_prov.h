@@ -28,6 +28,8 @@ typedef enum {
     BTC_BLE_MESH_ACT_INPUT_STRING,
     BTC_BLE_MESH_ACT_SET_DEVICE_NAME,
     BTC_BLE_MESH_ACT_PROXY_IDENTITY_ENABLE,
+    BTC_BLE_MESH_ACT_PRIVATE_PROXY_IDENTITY_ENABLE,
+    BTC_BLE_MESH_ACT_PRIVATE_PROXY_IDENTITY_DISABLE,
     BTC_BLE_MESH_ACT_PROXY_GATT_ENABLE,
     BTC_BLE_MESH_ACT_PROXY_GATT_DISABLE,
     BTC_BLE_MESH_ACT_NODE_ADD_LOCAL_NET_KEY,
@@ -339,6 +341,7 @@ typedef union {
     } model_unsub_group_addr;
     struct ble_mesh_deinit_args {
         esp_ble_mesh_deinit_param_t param;
+        SemaphoreHandle_t semaphore;
     } mesh_deinit;
 } btc_ble_mesh_prov_args_t;
 

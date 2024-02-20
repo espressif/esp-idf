@@ -8,7 +8,7 @@ OTA 流程概览
 
 OTA 升级机制可以让设备在固件正常运行时根据接收数据（如通过 Wi-Fi 或蓝牙）进行自我更新。
 
-要运行 OTA 机制，需配置设备的 :doc:`分区表 <../../api-guides/partition-tables>`，该分区表至少包括两个 OTA 应用程序分区（即 ``ota_0`` 和 ``ota_1``）和一个 OTA 数据分区。
+要运行 OTA 机制，需配置设备的 :doc:`../../api-guides/partition-tables`，该分区表至少包括两个 OTA 应用程序分区（即 ``ota_0`` 和 ``ota_1``）和一个 OTA 数据分区。
 
 OTA 功能启动后，向当前未用于启动的 OTA 应用分区写入新的应用固件镜像。镜像验证后，OTA 数据分区更新，指定在下一次启动时使用该镜像。
 
@@ -17,7 +17,7 @@ OTA 功能启动后，向当前未用于启动的 OTA 应用分区写入新的�
 OTA 数据分区
 ------------
 
-所有使用 OTA 功能项目，其 :doc:`分区表 <../../api-guides/partition-tables>` 必须包含一个 OTA 数据分区（类型为 ``data``，子类型为 ``ota``）。
+所有使用 OTA 功能项目，其 :doc:`../../api-guides/partition-tables` 必须包含一个 OTA 数据分区（类型为 ``data``，子类型为 ``ota``）。
 
 工厂启动设置下，OTA 数据分区中应没有数据（所有字节擦写成 0xFF）。如果分区表中有工厂应用程序，ESP-IDF 软件引导加载程序会启动工厂应用程序。如果分区表中没有工厂应用程序，则启动第一个可用的 OTA 分区（通常是 ``ota_0``）。
 
@@ -56,7 +56,7 @@ OTA 数据分区的容量是 2 个 flash 扇区的大小（0x2000 字节），�
                                则仅会选取一次。在引导加载程序中，状态立即变为
                                ``ESP_OTA_IMG_PENDING_VERIFY``。
  ESP_OTA_IMG_PENDING_VERIFY    如使能 :ref:`CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE`，
-                               则不会选取，状态变为``ESP_OTA_IMG_ABORTED``。
+                               则不会选取，状态变为 ``ESP_OTA_IMG_ABORTED``。
 =============================  ========================================================
 
 如果 :ref:`CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE` 没有使能（默认情况），则 :cpp:func:`esp_ota_mark_app_valid_cancel_rollback` 和 :cpp:func:`esp_ota_mark_app_invalid_rollback_and_reboot` 为可选功能，``ESP_OTA_IMG_NEW`` 和 ``ESP_OTA_IMG_PENDING_VERIFY`` 不会使用。
@@ -153,9 +153,9 @@ Kconfig 中的 :ref:`CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE` 可以帮助用户�
                 if (data_read > sizeof(esp_image_header_t) + sizeof(esp_image_segment_header_t) + sizeof(esp_app_desc_t)) {
                     // check current version with downloading
                     if (esp_efuse_check_secure_version(new_app_info.secure_version) == false) {
-                    	ESP_LOGE(TAG, "This a new app can not be downloaded due to a secure version is lower than stored in efuse.");
-                    	http_cleanup(client);
-                    	task_fatal_error();
+                      ESP_LOGE(TAG, "This a new app can not be downloaded due to a secure version is lower than stored in efuse.");
+                      http_cleanup(client);
+                      task_fatal_error();
                     }
 
                     image_header_was_checked = true;
@@ -201,7 +201,7 @@ Kconfig 中的 :ref:`CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE` 可以帮助用户�
 OTA 工具 ``otatool.py``
 ----------------------------
 
-``app_update`` 组件中有 :component_file:`otatool.py<app_update/otatool.py>` 工具，用于在目标设备上完成下列 OTA 分区相关操作：
+``app_update`` 组件中有 :component_file:`app_update/otatool.py` 工具，用于在目标设备上完成下列 OTA 分区相关操作：
 
   - 读取 otadata 分区 (read_otadata)
   - 擦除 otadata 分区，将设备复位至工厂应用程序 (erase_otadata)
@@ -232,7 +232,7 @@ Python API
 
 .. code-block:: python
 
-  # 创建 partool.py 的目标设备，并将目标设备连接到串行端口 /dev/ttyUSB1
+  # 创建 parttool.py 的目标设备，并将目标设备连接到串行端口 /dev/ttyUSB1
   target = OtatoolTarget("/dev/ttyUSB1")
 
 现在，可使用创建的 `OtatoolTarget` 在目标设备上完成操作：
@@ -297,10 +297,10 @@ Python API
 相关文档
 --------
 
-* :doc:`分区表 <../../api-guides/partition-tables>`
-* :doc:`分区表 API <../storage/partition>`
-* :doc:`低层 SPI Flash API <../peripherals/spi_flash/index>`
-* :doc:`ESP HTTPS OTA <esp_https_ota>`
+* :doc:`../../api-guides/partition-tables`
+* :doc:`../storage/partition`
+* :doc:`../peripherals/spi_flash/index`
+* :doc:`esp_https_ota`
 
 应用程序示例
 ------------
@@ -322,4 +322,3 @@ OTA 升级失败排查
     :figclass: align-center
 
     OTA 升级失败时如何排查（点击放大）
-

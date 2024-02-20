@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -47,13 +47,13 @@ void task_test_trace_utilities(void *arg)
     //Tests on this core
     TEST_ASSERT(uxTaskGetTaskNumber(task_handles[core]) == (0x0F << (core)));
     TEST_ASSERT(uxQueueGetQueueNumber(test_queues[core]) == (0x0F << (core)));
-    TEST_ASSERT(ucQueueGetQueueType(test_queues[core]) == BIN_SEM_QUEUE_TYPE)
+    TEST_ASSERT(ucQueueGetQueueType(test_queues[core]) == BIN_SEM_QUEUE_TYPE);
 
     //Test on other core
 #ifndef CONFIG_FREERTOS_UNICORE
     TEST_ASSERT(uxTaskGetTaskNumber(task_handles[!core]) == (0x0F << (!core)));
     TEST_ASSERT(uxQueueGetQueueNumber(test_queues[!core]) == (0x0F << (!core)));
-    TEST_ASSERT(ucQueueGetQueueType(test_queues[!core]) == BIN_SEM_QUEUE_TYPE)
+    TEST_ASSERT(ucQueueGetQueueType(test_queues[!core]) == BIN_SEM_QUEUE_TYPE);
 #endif
 
     xSemaphoreGive(test_queues[core]);      //Signal done
@@ -62,7 +62,7 @@ void task_test_trace_utilities(void *arg)
 
 TEST_CASE("Test freertos trace facility functions", "[freertos]")
 {
-    for(int i = 0; i < NO_OF_CORES; i++){
+    for (int i = 0; i < NO_OF_CORES; i++) {
         test_queues[i] = xSemaphoreCreateBinary();   //Create a queue as binary semaphore for each core
         xTaskCreatePinnedToCore(task_test_trace_utilities, "Test Task", 4096, (void *)(0x0F << i), TSK_PRIORITY, &task_handles[i], i);
     }
@@ -70,21 +70,20 @@ TEST_CASE("Test freertos trace facility functions", "[freertos]")
     vTaskDelay(10);
 
     //Start the tasks
-    for(int i = NO_OF_CORES - 1; i >= 0; i--){
+    for (int i = NO_OF_CORES - 1; i >= 0; i--) {
         xSemaphoreGive(test_queues[i]);
     }
 
     vTaskDelay(10); //Small delay to ensure semaphores are taken
 
     //Wait for done
-    for(int i = 0; i < NO_OF_CORES; i++){
+    for (int i = 0; i < NO_OF_CORES; i++) {
         xSemaphoreTake(test_queues[i], portMAX_DELAY);
         vSemaphoreDelete(test_queues[i]);
     }
 
     vTaskDelay(10);     //Give time for idle task to clean up
 }
-
 
 #define MAX_TASKS           15
 #define TASKS_TO_CREATE     5
@@ -94,7 +93,7 @@ static TaskStatus_t *tsk_status_array;
 
 void created_task(void* arg)
 {
-    while(1){
+    while (1) {
         vTaskDelay(100);
     }
 }
@@ -102,7 +101,7 @@ void created_task(void* arg)
 TEST_CASE("Test freertos uxTaskGetSystemState", "[freertos]")
 {
     tsk_status_array = calloc(MAX_TASKS, sizeof(TaskStatus_t));
-    for(int i = 0; i < TASKS_TO_CREATE; i++){
+    for (int i = 0; i < TASKS_TO_CREATE; i++) {
         xTaskCreatePinnedToCore(created_task, "Created Task", 1024, NULL, TSK_PRIORITY, &created_handles[i], 0);
     }
 
@@ -112,15 +111,15 @@ TEST_CASE("Test freertos uxTaskGetSystemState", "[freertos]")
 
     //Check if get system state has got all created tasks
     bool not_found = false;
-    for(int i = 0; i < TASKS_TO_CREATE; i++){
+    for (int i = 0; i < TASKS_TO_CREATE; i++) {
         bool found = false;
-        for(int j = 0; j < MAX_TASKS; j++){
-            if(tsk_status_array[j].xHandle == created_handles[i]){
+        for (int j = 0; j < MAX_TASKS; j++) {
+            if (tsk_status_array[j].xHandle == created_handles[i]) {
                 found = true;
                 break;
             }
         }
-        if(!found){
+        if (!found) {
             not_found = true;
             break;
         }
@@ -128,7 +127,7 @@ TEST_CASE("Test freertos uxTaskGetSystemState", "[freertos]")
     TEST_ASSERT(not_found == false);
 
     //Cleanup
-    for(int i = 0; i < TASKS_TO_CREATE; i++){
+    for (int i = 0; i < TASKS_TO_CREATE; i++) {
         vTaskDelete(created_handles[i]);
     }
     free(tsk_status_array);

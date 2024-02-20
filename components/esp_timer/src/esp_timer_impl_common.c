@@ -38,7 +38,8 @@ void IRAM_ATTR esp_timer_impl_set_alarm(uint64_t timestamp)
 }
 
 #ifdef CONFIG_ESP_TIMER_SUPPORTS_ISR_DISPATCH_METHOD
-void IRAM_ATTR esp_timer_impl_try_to_set_next_alarm(void) {
+void IRAM_ATTR esp_timer_impl_try_to_set_next_alarm(void)
+{
     portENTER_CRITICAL_ISR(&s_time_update_lock);
     unsigned now_alarm_idx;  // ISR is called due to this current alarm
     unsigned next_alarm_idx; // The following alarm after now_alarm_idx

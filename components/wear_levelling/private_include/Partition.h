@@ -32,6 +32,7 @@ public:
     virtual esp_err_t read(size_t src_addr, void *dest, size_t size);
 
     virtual size_t get_sector_size();
+    virtual bool is_readonly();
 
     virtual ~Partition();
 protected:

@@ -1,7 +1,7 @@
 /*
- * SPDX-FileCopyrightText: 2017-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2024 Espressif Systems (Shanghai) CO LTD
  *
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0 OR MIT
  */
 
 #include <string.h>
@@ -77,7 +77,7 @@ esp_err_t esp_apptrace_init(void)
     return ESP_OK;
 }
 
-ESP_SYSTEM_INIT_FN(esp_apptrace_init, ESP_SYSTEM_INIT_ALL_CORES, 115)
+ESP_SYSTEM_INIT_FN(esp_apptrace_init, SECONDARY, ESP_SYSTEM_INIT_ALL_CORES, 115)
 {
     return esp_apptrace_init();
 }

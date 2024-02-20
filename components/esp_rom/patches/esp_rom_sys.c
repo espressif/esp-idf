@@ -44,7 +44,7 @@ IRAM_ATTR void esp_rom_install_uart_printf(void)
 #if CONFIG_IDF_TARGET_ESP32
 extern uint32_t g_ticks_per_us_pro;
 #if SOC_CPU_CORES_NUM > 1
-#ifndef CONFIG_FREERTOS_UNICORE
+#ifndef CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
 extern uint32_t g_ticks_per_us_app;
 #endif
 #endif
@@ -53,7 +53,7 @@ IRAM_ATTR void esp_rom_set_cpu_ticks_per_us(uint32_t ticks_per_us)
     /* Update scale factors used by esp_rom_delay_us */
     g_ticks_per_us_pro = ticks_per_us;
 #if SOC_CPU_CORES_NUM > 1
-#ifndef CONFIG_FREERTOS_UNICORE
+#ifndef CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
     g_ticks_per_us_app = ticks_per_us;
 #endif
 #endif

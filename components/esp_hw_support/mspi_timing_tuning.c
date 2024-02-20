@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,9 +17,10 @@
 #include "hal/cache_hal.h"
 #include "hal/cache_ll.h"
 #include "esp_private/mspi_timing_tuning.h"
-#include "mspi_timing_config.h"
+#include "esp_private/mspi_timing_config.h"
 #include "mspi_timing_by_mspi_delay.h"
-#if SOC_MEMSPI_TIMING_TUNING_BY_MSPI_DELAY
+#include "mspi_timing_by_dqs.h"
+#if SOC_MEMSPI_TIMING_TUNING_BY_MSPI_DELAY || SOC_MEMSPI_TIMING_TUNING_BY_DQS
 #include "mspi_timing_tuning_configs.h"
 #include "hal/mspi_timing_tuning_ll.h"
 #endif
@@ -60,6 +61,8 @@
  */
 typedef enum {
     MSPI_TIMING_TUNING_MSPI_DIN_DUMMY,    //tune by mspi din and dummy
+    MSPI_TIMING_TUNING_MSPI_DQS_PHASE,    //tune by mspi dqs phase
+    MSPI_TIMING_TUNING_MSPI_DELAYLINE,    //tune by mspi delayline
 } mspi_timing_tuning_t;
 
 typedef struct mspi_tuning_cfg_drv_s mspi_tuning_cfg_drv_t;
@@ -73,6 +76,11 @@ struct mspi_tuning_cfg_drv_s {
     mspi_timing_tuning_t flash_tuning_type;
 
     /**
+     * @brief How many test times during sweep
+     */
+    uint32_t sweep_test_nums;
+
+    /**
      * @brief Init MSPI for Flash timing tuning
      *
      * @param[in] flash_freq_mhz  Flash frequency in MHz
@@ -82,9 +90,10 @@ struct mspi_tuning_cfg_drv_s {
     /**
      * @brief Configure MSPI for Flash timing tuning
      *
-     * @param[in] params  Timing tuning parameters
+     * @param[in] configs Timing tuning configs
+     * @param[in] id      Config ID
      */
-    void (*flash_tune_mspi)(const void *params);
+    void (*flash_tune_mspi)(const void *configs, uint8_t id);
 
     /**
      * @brief Flash read
@@ -112,9 +121,10 @@ struct mspi_tuning_cfg_drv_s {
      * @brief Set best Flash tuning configs.
      *        After this, calling `mspi_timing_enter_high_speed_mode` will set these configs correctly
      *
-     * @param[in] params  Timing tuning parameters
+     * @param[in] configs  Timing tuning configs
+     * @param[in] best_id  Best config ID
      */
-    void (*flash_set_best_tuning_config)(const void *params);
+    void (*flash_set_best_tuning_config)(const void *configs, uint8_t best_id);
 
     /**
      * @brief PSRAM tuning scheme type
@@ -131,9 +141,10 @@ struct mspi_tuning_cfg_drv_s {
     /**
      * @brief Configure MSPI for PSRAM timing tuning
      *
-     * @param[in] params  Timing tuning parameters
+     * @param[in] configs Timing tuning configs
+     * @param[in] id      Config ID
      */
-    void (*psram_tune_mspi)(const void *params);
+    void (*psram_tune_mspi)(const void *configs, uint8_t id);
 
     /**
      * @brief PSRAM read
@@ -161,9 +172,10 @@ struct mspi_tuning_cfg_drv_s {
      * @brief Set best PSRAM tuning configs.
      *        After this, calling `mspi_timing_enter_high_speed_mode` will set these configs correctly
      *
-     * @param[in] params  Timing tuning parameters
+     * @param[in] configs  Timing tuning config
+     * @param[in] best_id  Best config ID
      */
-    void (*psram_set_best_tuning_config)(const void *params);
+    void (*psram_set_best_tuning_config)(const void *configs, uint8_t best_id);
 };
 
 static mspi_tuning_cfg_drv_t s_tuning_cfg_drv = {};
@@ -185,6 +197,7 @@ void s_register_config_driver(mspi_tuning_cfg_drv_t *cfg_drv, bool is_flash)
         s_tuning_cfg_drv.psram_select_best_tuning_config = cfg_drv->psram_select_best_tuning_config;
         s_tuning_cfg_drv.psram_set_best_tuning_config = cfg_drv->psram_set_best_tuning_config;
     }
+    s_tuning_cfg_drv.sweep_test_nums = cfg_drv->sweep_test_nums;
 }
 
 #if MSPI_TIMING_FLASH_NEEDS_TUNING || MSPI_TIMING_PSRAM_NEEDS_TUNING
@@ -192,33 +205,37 @@ void s_register_config_driver(mspi_tuning_cfg_drv_t *cfg_drv, bool is_flash)
  * We use different MSPI timing tuning config to read data to see if current MSPI sampling is successful.
  * The sampling result will be stored in an array. In this array, successful item will be 1, failed item will be 0.
  */
-static void s_sweep_for_success_sample_points(uint8_t *reference_data, void *config, bool is_flash, uint8_t *out_array)
+static void s_sweep_for_success_sample_points(uint8_t *reference_data, void *config, bool is_flash, uint32_t *out_array)
 {
     const mspi_timing_config_t *timing_config = (const mspi_timing_config_t *)config;
     uint32_t config_idx = 0;
     uint8_t read_data[MSPI_TIMING_TEST_DATA_LEN] = {0};
 
     for (config_idx = 0; config_idx < timing_config->available_config_num; config_idx++) {
-        memset(read_data, 0, MSPI_TIMING_TEST_DATA_LEN);
+        out_array[config_idx] = 0;
+        for (int i = 0; i < s_tuning_cfg_drv.sweep_test_nums; i++) {
+            memset(read_data, 0, MSPI_TIMING_TEST_DATA_LEN);
 #if MSPI_TIMING_FLASH_NEEDS_TUNING
-        if (is_flash) {
-            s_tuning_cfg_drv.flash_tune_mspi(&(timing_config->tuning_config_table[config_idx]));
-            s_tuning_cfg_drv.flash_read(read_data, MSPI_TIMING_FLASH_TEST_DATA_ADDR, sizeof(read_data));
-        }
+            if (is_flash) {
+                s_tuning_cfg_drv.flash_tune_mspi(timing_config, config_idx);
+                s_tuning_cfg_drv.flash_read(read_data, MSPI_TIMING_FLASH_TEST_DATA_ADDR, sizeof(read_data));
+            }
 #endif
 #if MSPI_TIMING_PSRAM_NEEDS_TUNING
-        if (!is_flash) {
-            s_tuning_cfg_drv.psram_tune_mspi(&(timing_config->tuning_config_table[config_idx]));
-            s_tuning_cfg_drv.psram_read(read_data, MSPI_TIMING_PSRAM_TEST_DATA_ADDR, MSPI_TIMING_TEST_DATA_LEN);
-        }
+            if (!is_flash) {
+                s_tuning_cfg_drv.psram_tune_mspi(timing_config, config_idx);
+                s_tuning_cfg_drv.psram_read(read_data, MSPI_TIMING_PSRAM_TEST_DATA_ADDR, MSPI_TIMING_TEST_DATA_LEN);
+            }
 #endif
-        if (memcmp(reference_data, read_data, sizeof(read_data)) == 0) {
-            out_array[config_idx] = 1;
-            ESP_EARLY_LOGD(TAG, "%"PRIu32", good", config_idx);
-        } else {
-            ESP_EARLY_LOGD(TAG, "%"PRIu32", bad", config_idx);
+            if (memcmp(reference_data, read_data, sizeof(read_data)) == 0) {
+                out_array[config_idx] += 1;
+            }
         }
+    }
 
+    ESP_EARLY_LOGD(TAG, "test nums: %d, test result: [id][good/bad][good_times]:", s_tuning_cfg_drv.sweep_test_nums);
+    for (config_idx = 0; config_idx < timing_config->available_config_num; config_idx++) {
+        ESP_EARLY_LOGD(TAG, "[%"PRIu32"][%s][%d] ", config_idx, out_array[config_idx] == s_tuning_cfg_drv.sweep_test_nums ? "good" : "bad", out_array[config_idx]);
     }
 }
 
@@ -228,7 +245,7 @@ static void s_sweep_for_success_sample_points(uint8_t *reference_data, void *con
  * out_length: 3
  * outout_end_index: 6
  */
-static void s_find_max_consecutive_success_points(uint8_t *array, uint32_t size, uint32_t *out_length, uint32_t *out_end_index)
+static void s_find_max_consecutive_success_points(uint32_t *array, uint32_t size, uint32_t *out_length, uint32_t *out_end_index)
 {
     uint32_t max = 0;
     uint32_t match_num = 0;
@@ -236,7 +253,7 @@ static void s_find_max_consecutive_success_points(uint8_t *array, uint32_t size,
     uint32_t end = 0;
 
     while (i < size) {
-        if (array[i]) {
+        if (array[i] == s_tuning_cfg_drv.sweep_test_nums) {
             match_num++;
         } else {
             if (match_num > max) {
@@ -262,18 +279,18 @@ static void s_select_best_tuning_config(mspi_timing_config_t *config, uint32_t c
 #elif MSPI_TIMING_FLASH_STR_MODE
         best_point = s_tuning_cfg_drv.flash_select_best_tuning_config(timing_config, consecutive_length, end, NULL, IS_SDR);
 #endif
-        s_tuning_cfg_drv.flash_set_best_tuning_config(&(timing_config->tuning_config_table[best_point]));
+        s_tuning_cfg_drv.flash_set_best_tuning_config(timing_config, best_point);
     } else {
 #if MSPI_TIMING_PSRAM_DTR_MODE
         best_point = s_tuning_cfg_drv.psram_select_best_tuning_config(timing_config, consecutive_length, end, reference_data, IS_DDR);
 #elif MSPI_TIMING_PSRAM_STR_MODE
         best_point = s_tuning_cfg_drv.psram_select_best_tuning_config(timing_config, consecutive_length, end, NULL, IS_SDR);
 #endif
-        s_tuning_cfg_drv.psram_set_best_tuning_config(&(timing_config->tuning_config_table[best_point]));
+        s_tuning_cfg_drv.psram_set_best_tuning_config(timing_config, best_point);
     }
 }
 
-static void s_do_tuning(uint8_t *reference_data, void *timing_config, bool is_flash)
+static void s_do_tuning(uint8_t *reference_data, mspi_timing_config_t *config, bool is_flash)
 {
     /**
      * We use MSPI to tune the timing:
@@ -283,7 +300,7 @@ static void s_do_tuning(uint8_t *reference_data, void *timing_config, bool is_fl
      */
     uint32_t consecutive_length = 0;
     uint32_t last_success_point = 0;
-    uint8_t sample_result[MSPI_TIMING_CONFIG_NUM_DEFAULT] = {0};
+    uint32_t sample_result[MSPI_TIMING_CONFIG_NUM_MAX] = {0};
 
 #if MSPI_TIMING_FLASH_NEEDS_TUNING
     if (is_flash) {
@@ -296,9 +313,9 @@ static void s_do_tuning(uint8_t *reference_data, void *timing_config, bool is_fl
     }
 #endif
 
-    s_sweep_for_success_sample_points(reference_data, timing_config, is_flash, sample_result);
-    s_find_max_consecutive_success_points(sample_result, MSPI_TIMING_CONFIG_NUM_DEFAULT, &consecutive_length, &last_success_point);
-    s_select_best_tuning_config(timing_config, consecutive_length, last_success_point, reference_data, is_flash);
+    s_sweep_for_success_sample_points(reference_data, config, is_flash, sample_result);
+    s_find_max_consecutive_success_points(sample_result, config->available_config_num, &consecutive_length, &last_success_point);
+    s_select_best_tuning_config(config, consecutive_length, last_success_point, reference_data, is_flash);
 }
 #endif  //#if MSPI_TIMING_FLASH_NEEDS_TUNING || MSPI_TIMING_PSRAM_NEEDS_TUNING
 
@@ -318,6 +335,7 @@ void mspi_timing_flash_tuning(void)
 #if SOC_MEMSPI_TIMING_TUNING_BY_MSPI_DELAY
     mspi_tuning_cfg_drv_t drv = {
         .flash_tuning_type = MSPI_TIMING_TUNING_MSPI_DIN_DUMMY,
+        .sweep_test_nums = 1,
         .flash_init_mspi = mspi_timing_flash_init,
         .flash_tune_mspi = mspi_timing_config_flash_set_tuning_regs,
         .flash_read = mspi_timing_config_flash_read_data,
@@ -362,16 +380,15 @@ void mspi_timing_psram_tuning(void)
      */
     mspi_timing_enter_low_speed_mode(true);
 
-#if SOC_MEMSPI_TIMING_TUNING_BY_MSPI_DELAY
     // write data into psram, used to do timing tuning test.
     uint8_t reference_data[MSPI_TIMING_TEST_DATA_LEN];
-    for (int i=0; i < MSPI_TIMING_TEST_DATA_LEN/4; i++) {
-        ((uint32_t *)reference_data)[i] = 0xa5ff005a;
-    }
+    mspi_timing_config_psram_prepare_reference_data(reference_data, MSPI_TIMING_TEST_DATA_LEN);
     mspi_timing_config_psram_write_data(reference_data, MSPI_TIMING_PSRAM_TEST_DATA_ADDR, MSPI_TIMING_TEST_DATA_LEN);
 
+#if SOC_MEMSPI_TIMING_TUNING_BY_MSPI_DELAY
     mspi_tuning_cfg_drv_t drv = {
         .psram_tuning_type = MSPI_TIMING_TUNING_MSPI_DIN_DUMMY,
+        .sweep_test_nums = 1,
         .psram_init_mspi = mspi_timing_psram_init,
         .psram_tune_mspi = mspi_timing_config_psram_set_tuning_regs,
         .psram_read = mspi_timing_config_psram_read_data,
@@ -381,14 +398,48 @@ void mspi_timing_psram_tuning(void)
     bool is_flash = false;
     s_register_config_driver(&drv, is_flash);
 
-    mspi_timing_config_t timing_configs = {0};
+    mspi_timing_config_t timing_configs = {};
     mspi_timing_get_psram_tuning_configs(&timing_configs);
-#endif //#if SOC_MEMSPI_TIMING_TUNING_BY_MSPI_DELAY
 
     //Disable the variable dummy mode when doing timing tuning
     mspi_timing_ll_enable_flash_variable_dummy(1, false);
+
     //Get required config, and set them to PSRAM related registers
     s_do_tuning(reference_data, &timing_configs, false);
+#endif //#if SOC_MEMSPI_TIMING_TUNING_BY_MSPI_DELAY
+
+#if SOC_MEMSPI_TIMING_TUNING_BY_DQS
+    bool is_flash = false;
+    mspi_timing_config_t timing_configs = {};
+
+    //Phase
+    mspi_tuning_cfg_drv_t drv = {
+        .psram_tuning_type = MSPI_TIMING_TUNING_MSPI_DQS_PHASE,
+        .sweep_test_nums = 1,
+        .psram_init_mspi = mspi_timing_psram_init,
+        .psram_tune_mspi = mspi_timing_config_psram_set_tuning_phase,
+        .psram_read = mspi_timing_config_psram_read_data,
+        .psram_select_best_tuning_config = mspi_timing_psram_select_best_tuning_phase,
+        .psram_set_best_tuning_config = mspi_timing_psram_set_best_tuning_phase,
+    };
+    s_register_config_driver(&drv, is_flash);
+    mspi_timing_get_psram_tuning_phases(&timing_configs);
+    s_do_tuning(reference_data, &timing_configs, false);
+
+    //Delayline
+    drv = (mspi_tuning_cfg_drv_t) {
+        .psram_tuning_type = MSPI_TIMING_TUNING_MSPI_DELAYLINE,
+        .sweep_test_nums = MSPI_TIMING_DELAYLINE_TEST_NUMS,
+        .psram_init_mspi = mspi_timing_psram_init,
+        .psram_tune_mspi = mspi_timing_config_psram_set_tuning_delayline,
+        .psram_read = mspi_timing_config_psram_read_data,
+        .psram_select_best_tuning_config = mspi_timing_psram_select_best_tuning_delayline,
+        .psram_set_best_tuning_config = mspi_timing_psram_set_best_tuning_delayline,
+    };
+    s_register_config_driver(&drv, is_flash);
+    mspi_timing_get_psram_tuning_delaylines(&timing_configs);
+    s_do_tuning(reference_data, &timing_configs, false);
+#endif
 
     mspi_timing_enter_high_speed_mode(true);
 }
@@ -493,16 +544,24 @@ void mspi_timing_change_speed_mode_cache_safe(bool switch_down)
 /*------------------------------------------------------------------------------
  * APIs to inform SPI1 Flash driver of necessary timing configurations
  *----------------------------------------------------------------------------*/
-bool spi_timing_is_tuned(void)
+bool spi_flash_timing_is_tuned(void)
 {
+#if MSPI_TIMING_MSPI1_IS_INVOLVED
+    //esp flash driver needs to be notified
 #if MSPI_TIMING_FLASH_NEEDS_TUNING || MSPI_TIMING_PSRAM_NEEDS_TUNING
+    //either flash or psram or both is tuned, needs notify flash driver
     return true;
 #else
+    //otherwise no need
     return false;
 #endif
+#else
+    //if mspi1 is not involved in timing tuning
+    return false;
+#endif  //MSPI_TIMING_MSPI1_IS_INVOLVED
 }
 
-#if MSPI_TIMING_FLASH_NEEDS_TUNING || MSPI_TIMING_PSRAM_NEEDS_TUNING
+#if MSPI_TIMING_MSPI1_IS_INVOLVED && (MSPI_TIMING_FLASH_NEEDS_TUNING || MSPI_TIMING_PSRAM_NEEDS_TUNING)
 void spi_timing_get_flash_timing_param(spi_flash_hal_timing_config_t *out_timing_config)
 {
     // Get clock configuration directly from system.
@@ -522,7 +581,7 @@ void spi_timing_get_flash_timing_param(spi_flash_hal_timing_config_t *out_timing
     // This function shouldn't be called if timing tuning is not used.
     abort();
 }
-#endif // MSPI_TIMING_FLASH_NEEDS_TUNING || MSPI_TIMING_PSRAM_NEEDS_TUNING
+#endif // #if MSPI_TIMING_MSPI1_IS_INVOLVED && (MSPI_TIMING_FLASH_NEEDS_TUNING || MSPI_TIMING_PSRAM_NEEDS_TUNING)
 
 /*------------------------------------------------------------------------------
  * Common settings

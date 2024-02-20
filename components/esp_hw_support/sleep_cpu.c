@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -47,6 +47,14 @@
 #include "soc/plic_reg.h"
 #include "soc/clint_reg.h"
 #include "esp32c6/rom/cache.h"
+#elif CONFIG_IDF_TARGET_ESP32C5
+#include "esp32c5/rom/rtc.h"
+#include "riscv/rvsleep-frames.h"
+#include "soc/intpri_reg.h"
+#include "soc/cache_reg.h"
+#include "soc/clic_reg.h"
+#include "soc/clint_reg.h"
+#include "esp32c5/rom/cache.h"
 #elif CONFIG_IDF_TARGET_ESP32H2
 #include "esp32h2/rom/rtc.h"
 #include "riscv/rvsleep-frames.h"
@@ -92,7 +100,7 @@ static DRAM_ATTR __attribute__((unused)) sleep_cpu_retention_t s_cpu_retention;
 
 #if SOC_PM_SUPPORT_TAGMEM_PD && SOC_PM_CPU_RETENTION_BY_RTCCNTL
 
-#if CONFIG_PM_POWER_DOWN_TAGMEM_IN_LIGHT_SLEEP
+#if CONFIG_PM_RESTORE_CACHE_TAGMEM_AFTER_LIGHT_SLEEP
 static uint32_t cache_tagmem_retention_setup(uint32_t code_seg_vaddr, uint32_t code_seg_size, uint32_t data_seg_vaddr, uint32_t data_seg_size)
 {
     uint32_t sets;   /* i/d-cache total set counts */
@@ -153,11 +161,11 @@ static uint32_t cache_tagmem_retention_setup(uint32_t code_seg_vaddr, uint32_t c
      * i/d-cache tagmem blocks (128 bits * 3 = 96 bits * 4) */
     return (((icache_tagmem_blk_gs + dcache_tagmem_blk_gs) << 2) * 3);
 }
-#endif // CONFIG_PM_POWER_DOWN_TAGMEM_IN_LIGHT_SLEEP
+#endif // CONFIG_PM_RESTORE_CACHE_TAGMEM_AFTER_LIGHT_SLEEP
 
 static esp_err_t esp_sleep_tagmem_pd_low_init(void)
 {
-#if CONFIG_PM_POWER_DOWN_TAGMEM_IN_LIGHT_SLEEP
+#if CONFIG_PM_RESTORE_CACHE_TAGMEM_AFTER_LIGHT_SLEEP
         if (s_cpu_retention.retent.tagmem.link_addr == NULL) {
             extern char _stext[], _etext[];
             uint32_t code_start = (uint32_t)_stext;
@@ -186,11 +194,11 @@ static esp_err_t esp_sleep_tagmem_pd_low_init(void)
                 return ESP_ERR_NO_MEM;
             }
         }
-#else // CONFIG_PM_POWER_DOWN_TAGMEM_IN_LIGHT_SLEEP
+#else // CONFIG_PM_RESTORE_CACHE_TAGMEM_AFTER_LIGHT_SLEEP
         s_cpu_retention.retent.tagmem.icache.enable = 0;
         s_cpu_retention.retent.tagmem.dcache.enable = 0;
         s_cpu_retention.retent.tagmem.link_addr = NULL;
-#endif // CONFIG_PM_POWER_DOWN_TAGMEM_IN_LIGHT_SLEEP
+#endif // CONFIG_PM_RESTORE_CACHE_TAGMEM_AFTER_LIGHT_SLEEP
     return ESP_OK;
 }
 
@@ -329,7 +337,7 @@ static inline void * cpu_domain_cache_config_sleep_frame_alloc_and_init(void)
 #if CONFIG_IDF_TARGET_ESP32C6
         { .start = EXTMEM_L1_CACHE_CTRL_REG, .end = EXTMEM_L1_CACHE_CTRL_REG + 4 },
         { .start = EXTMEM_L1_CACHE_WRAP_AROUND_CTRL_REG, .end = EXTMEM_L1_CACHE_WRAP_AROUND_CTRL_REG + 4 }
-#elif CONFIG_IDF_TARGET_ESP32H2
+#elif CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP32C5
         { .start = CACHE_L1_CACHE_CTRL_REG, .end = CACHE_L1_CACHE_CTRL_REG + 4 },
         { .start = CACHE_L1_CACHE_WRAP_AROUND_CTRL_REG, .end = CACHE_L1_CACHE_WRAP_AROUND_CTRL_REG + 4 }
 #endif
@@ -652,18 +660,18 @@ static IRAM_ATTR void cpu_domain_dev_regs_restore(cpu_domain_dev_sleep_frame_t *
 }
 
 #if CONFIG_PM_CHECK_SLEEP_RETENTION_FRAME
-static void update_retention_frame_crc(uint32_t *frame_ptr, uint32_t frame_check_size, uint32_t *frame_crc_ptr)
+static IRAM_ATTR void update_retention_frame_crc(uint32_t *frame_ptr, uint32_t frame_check_size, uint32_t *frame_crc_ptr)
 {
     *(frame_crc_ptr) = esp_crc32_le(0, (void *)frame_ptr, frame_check_size);
 }
 
-static void validate_retention_frame_crc(uint32_t *frame_ptr, uint32_t frame_check_size, uint32_t *frame_crc_ptr)
+static IRAM_ATTR void validate_retention_frame_crc(uint32_t *frame_ptr, uint32_t frame_check_size, uint32_t *frame_crc_ptr)
 {
     if(*(frame_crc_ptr) != esp_crc32_le(0, (void *)(frame_ptr), frame_check_size)){
         // resume uarts
         for (int i = 0; i < SOC_UART_NUM; ++i) {
 #ifndef CONFIG_IDF_TARGET_ESP32
-            if (!periph_ll_periph_enabled(PERIPH_UART0_MODULE + i)) {
+            if (!uart_ll_is_enabled(i)) {
                 continue;
             }
 #endif

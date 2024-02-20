@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -23,10 +23,10 @@
 #define REG_I2S_BASE(i)                         (DR_REG_I2S_BASE)                        // only one I2S on C6
 #define REG_TIMG_BASE(i)                        (DR_REG_TIMERGROUP0_BASE + (i) * 0x1000) // TIMERG0 and TIMERG1
 #define REG_SPI_MEM_BASE(i)                     (DR_REG_SPI0_BASE + (i) * 0x1000)        // SPIMEM0 and SPIMEM1
-#define REG_SPI_BASE(i)                         (DR_REG_SPI2_BASE)                       // only one GPSPI on C6
+#define REG_SPI_BASE(i)                         (((i)==2) ? (DR_REG_SPI2_BASE) : (0))    // only one GPSPI on C6
 #define REG_I2C_BASE(i)                         (DR_REG_I2C_EXT_BASE)                    // only one I2C on C6
 #define REG_MCPWM_BASE(i)                       (DR_REG_MCPWM_BASE)                      // only one MCPWM on C6
-#define REG_TWAI_BASE(i)                        (DR_REG_TWAI0_BASE + (i) * 0x2000)        // TWAI0 and TWAI1
+#define REG_TWAI_BASE(i)                        (DR_REG_TWAI0_BASE + (i) * 0x2000)       // TWAI0 and TWAI1
 
 //Registers Operation {{
 #define ETS_UNCACHED_ADDR(addr) (addr)
@@ -138,9 +138,7 @@
 //Periheral Clock {{
 #define  APB_CLK_FREQ_ROM                            ( 40*1000000 )
 #define  CPU_CLK_FREQ_ROM                            APB_CLK_FREQ_ROM
-#define  EFUSE_CLK_FREQ_ROM                          ( 20*1000000)
 #define  CPU_CLK_FREQ_MHZ_BTLD                       (80)               // The cpu clock frequency (in MHz) to set at 2nd stage bootloader system clock configuration
-#define  CPU_CLK_FREQ                                APB_CLK_FREQ
 #define  APB_CLK_FREQ                                ( 40*1000000 )
 #define  MODEM_REQUIRED_MIN_APB_CLK_FREQ             ( 80*1000000 )
 #define  REF_CLK_FREQ                                ( 1000000 )
@@ -203,9 +201,9 @@
 #define SOC_PERIPHERAL_LOW 0x60000000
 #define SOC_PERIPHERAL_HIGH 0x60100000
 
-// Debug region, not used by software
-#define SOC_DEBUG_LOW 0x20000000
-#define SOC_DEBUG_HIGH 0x28000000
+// CPU sub-system region, contains interrupt config registers
+#define SOC_CPU_SUBSYSTEM_LOW 0x20000000
+#define SOC_CPU_SUBSYSTEM_HIGH 0x30000000
 
 // Start (highest address) of ROM boot stack, only relevant during early boot
 #define SOC_ROM_STACK_START         0x4087e610

@@ -1131,36 +1131,15 @@ static inline void i2s_ll_enable_camera(i2s_dev_t *hw, bool enable)
 }
 
 /**
- * @brief Enable I2S build in ADC mode
+ * @brief Enable I2S built-in ADC/DAC mode
  *
  * @param hw Peripheral I2S hardware instance address.
- * @param enable Set true to enable build in ADC
+ * @param enable Set true to enable built-in ADC/DAC
  */
-static inline void i2s_ll_enable_builtin_adc(i2s_dev_t *hw, bool enable)
+static inline void i2s_ll_enable_builtin_adc_dac(i2s_dev_t *hw, bool enable)
 {
     hw->conf2.lcd_en = enable;
     hw->conf2.camera_en = 0;
-    hw->conf.rx_right_first = 0;
-    hw->conf.rx_msb_shift = 0;
-    hw->conf.rx_mono = 0;
-    hw->conf.rx_short_sync = 0;
-    hw->fifo_conf.rx_fifo_mod = enable;
-    hw->conf_chan.rx_chan_mod = enable;
-}
-
-/**
- * @brief Enable I2S build in DAC mode
- *
- * @param hw Peripheral I2S hardware instance address.
- *  * @param enable Set true to enable build in DAC
- */
-static inline void i2s_ll_enable_builtin_dac(i2s_dev_t *hw, bool enable)
-{
-    hw->conf2.lcd_en = enable;
-    hw->conf2.camera_en = 0;
-    hw->conf.tx_right_first = enable;
-    hw->conf.tx_msb_shift = 0;
-    hw->conf.tx_short_sync = 0;
 }
 
 #ifdef __cplusplus

@@ -55,7 +55,7 @@ void pau_hal_start_regdma_modem_link(pau_hal_context_t *hal, bool backup_or_rest
 void pau_hal_stop_regdma_modem_link(pau_hal_context_t *hal);
 #endif
 
-#if SOC_PM_RETENTION_HAS_REGDMA_POWER_BUG
+#if SOC_PM_RETENTION_SW_TRIGGER_REGDMA
 /**
  * @brief Set regdma system link address
  *
@@ -102,7 +102,7 @@ void pau_hal_start_regdma_extra_link(pau_hal_context_t *hal, bool backup_or_rest
  */
 void pau_hal_stop_regdma_extra_link(pau_hal_context_t *hal);
 
-#if SOC_PM_RETENTION_HAS_REGDMA_POWER_BUG
+#if SOC_PM_RETENTION_SW_TRIGGER_REGDMA
 /**
  * @brief Enable or disable PAU module clock
  *

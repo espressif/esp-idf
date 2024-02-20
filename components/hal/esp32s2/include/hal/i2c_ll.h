@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,6 +11,7 @@
 #include "soc/i2c_periph.h"
 #include "soc/i2c_struct.h"
 #include "soc/clk_tree_defs.h"
+#include "soc/system_reg.h"
 #include "hal/i2c_types.h"
 #include "esp_attr.h"
 #include "hal/misc.h"
@@ -44,24 +45,29 @@ typedef union {
 #define I2C_LL_CMD_END        4    /*!<I2C end command */
 
 typedef enum {
-    I2C_LL_INTR_TXFIFO_WM = (1 << 1),
-    I2C_LL_INTR_RXFIFO_WM = (1 << 0),
+    I2C_INTR_MST_TXFIFO_WM = (1 << 1),
+    I2C_INTR_MST_RXFIFO_WM = (1 << 0),
     I2C_LL_INTR_NACK = (1 << 10),
     I2C_LL_INTR_TIMEOUT = (1 << 8),
     I2C_LL_INTR_MST_COMPLETE = (1 << 7),
     I2C_LL_INTR_ARBITRATION = (1 << 5),
     I2C_LL_INTR_END_DETECT = (1 << 3),
     I2C_LL_INTR_ST_TO = (1 << 13),
-    I2C_LL_INTR_START = (1 << 15),
-    I2C_LL_INTR_STRETCH = (1 << 16),
-    I2C_LL_INTR_UNMATCH = (1 << 18),
-} i2c_ll_intr_t;
+} i2c_ll_master_intr_t;
+
+typedef enum {
+    I2C_INTR_SLV_TXFIFO_WM = (1 << 1),
+    I2C_INTR_SLV_RXFIFO_WM = (1 << 0),
+    I2C_INTR_SLV_COMPLETE = (1 << 7),
+    I2C_INTR_START = (1 << 15),
+    I2C_INTR_STRETCH = (1 << 16),
+} i2c_ll_slave_intr_t;
 
 // Get the I2C hardware instance
 #define I2C_LL_GET_HW(i2c_num)        (((i2c_num) == 0) ? &I2C0 : &I2C1)
 #define I2C_LL_MASTER_EVENT_INTR    (I2C_NACK_INT_ENA_M|I2C_TIME_OUT_INT_ENA_M|I2C_TRANS_COMPLETE_INT_ENA_M|I2C_ARBITRATION_LOST_INT_ENA_M|I2C_END_DETECT_INT_ENA_M)
-#define I2C_LL_SLAVE_EVENT_INTR     (I2C_TRANS_COMPLETE_INT_ENA_M|I2C_TXFIFO_WM_INT_ENA_M|I2C_SLAVE_STRETCH_INT_ENA_M)
-#define I2C_LL_SLAVE_RX_EVENT_INTR  (I2C_TRANS_COMPLETE_INT_ENA_M | I2C_SLAVE_STRETCH_INT_ENA_M)
+#define I2C_LL_SLAVE_EVENT_INTR     (I2C_TRANS_COMPLETE_INT_ENA_M|I2C_TXFIFO_WM_INT_ENA_M|I2C_RXFIFO_WM_INT_ENA_M | I2C_SLAVE_STRETCH_INT_ENA_M)
+#define I2C_LL_SLAVE_RX_EVENT_INTR  (I2C_TRANS_COMPLETE_INT_ENA_M | I2C_RXFIFO_WM_INT_ENA_M | I2C_SLAVE_STRETCH_INT_ENA_M)
 #define I2C_LL_SLAVE_TX_EVENT_INTR  (I2C_TXFIFO_WM_INT_ENA_M)
 #define I2C_LL_RESET_SLV_SCL_PULSE_NUM_DEFAULT   (9)
 
@@ -253,6 +259,20 @@ static inline void i2c_ll_slave_broadcast_enable(i2c_dev_t *hw, bool broadcast_e
 }
 
 /**
+ * @brief Get the cause of SCL clock stretching in slave mode
+ *
+ * @param hw Beginning address of the peripheral registers
+ * @param stretch_cause Pointer to stretch cause in the slave mode.
+ *
+ * @return None
+ */
+__attribute__((always_inline))
+static inline void i2c_ll_slave_get_stretch_cause(i2c_dev_t *hw, i2c_slave_stretch_cause_t *stretch_cause)
+{
+    // Not supported on esp32s2
+}
+
+/**
  * @brief  Configure I2C slave address
  *
  * @param  hw Beginning address of the peripheral registers
@@ -265,9 +285,9 @@ static inline void i2c_ll_set_slave_addr(i2c_dev_t *hw, uint16_t slave_addr, boo
 {
     hw->slave_addr.en_10bit = addr_10bit_en;
     if (addr_10bit_en) {
-        uint8_t addr_14_7 = (slave_addr & 0xff) << 7;
-        uint8_t addr_6_0 = ((slave_addr & 0x300) >> 8) || 0x78;
-        hw->slave_addr.addr = addr_14_7 || addr_6_0;
+        uint16_t addr_14_7 = (slave_addr & 0xff) << 7;
+        uint8_t addr_6_0 = ((slave_addr & 0x300) >> 8) | 0x78;
+        hw->slave_addr.addr = addr_14_7 | addr_6_0;
     } else {
         hw->slave_addr.addr = slave_addr;
     }
@@ -356,6 +376,7 @@ static inline void i2c_ll_set_txfifo_empty_thr(i2c_dev_t *hw, uint8_t empty_thr)
  */
 static inline void i2c_ll_set_rxfifo_full_thr(i2c_dev_t *hw, uint8_t full_thr)
 {
+    hw->fifo_conf.fifo_prt_en = 1;
     hw->fifo_conf.rx_fifo_wm_thrhd = full_thr;
 }
 
@@ -699,6 +720,51 @@ static inline void i2c_ll_update(i2c_dev_t *hw)
 }
 
 /**
+ * @brief Enable the bus clock for I2C module
+ *
+ * @param i2c_port I2C port id
+ * @param enable true to enable, false to disable
+ */
+static inline void i2c_ll_enable_bus_clock(int i2c_port, bool enable)
+{
+    if (i2c_port == 0) {
+        uint32_t reg_val = READ_PERI_REG(DPORT_PERIP_CLK_EN0_REG);
+        reg_val &= ~DPORT_I2C_EXT0_CLK_EN_M;
+        reg_val |= enable << DPORT_I2C_EXT0_CLK_EN_S;
+        WRITE_PERI_REG(DPORT_PERIP_CLK_EN0_REG, reg_val);
+    } else if (i2c_port == 1) {
+        uint32_t reg_val = READ_PERI_REG(DPORT_PERIP_CLK_EN0_REG);
+        reg_val &= ~DPORT_I2C_EXT1_CLK_EN_M;
+        reg_val |= enable << DPORT_I2C_EXT1_CLK_EN_S;
+        WRITE_PERI_REG(DPORT_PERIP_CLK_EN0_REG, reg_val);
+    }
+}
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define i2c_ll_enable_bus_clock(...) do {(void)__DECLARE_RCC_ATOMIC_ENV; i2c_ll_enable_bus_clock(__VA_ARGS__);} while(0)
+
+/**
+ * @brief Reset the I2C module
+ *
+ * @param i2c_port Group ID
+ */
+static inline void i2c_ll_reset_register(int i2c_port)
+{
+    if (i2c_port == 0) {
+        WRITE_PERI_REG(DPORT_PERIP_RST_EN0_REG, DPORT_I2C_EXT0_RST_M);
+        WRITE_PERI_REG(DPORT_PERIP_RST_EN0_REG, 0);
+    } else if (i2c_port == 1) {
+        WRITE_PERI_REG(DPORT_PERIP_RST_EN0_REG, DPORT_I2C_EXT1_RST_M);
+        WRITE_PERI_REG(DPORT_PERIP_RST_EN0_REG, 0);
+    }
+}
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define i2c_ll_reset_register(...) do {(void)__DECLARE_RCC_ATOMIC_ENV; i2c_ll_reset_register(__VA_ARGS__);} while(0)
+
+/**
  * @brief Set whether slave should auto start, or only start with start signal from master
  *
  * @param hw Beginning address of the peripheral registers
@@ -737,6 +803,20 @@ __attribute__((always_inline))
 static inline void i2c_ll_slave_clear_stretch(i2c_dev_t *dev)
 {
     dev->scl_stretch_conf.slave_scl_stretch_clr = 1;
+}
+
+/**
+ * @brief Check if i2c command is done.
+ *
+ * @param  hw Beginning address of the peripheral registers
+ * @param  cmd_idx The index of the command register, must be less than 16
+ *
+ * @return True if the `cmd_idx` command is done. Otherwise false.
+ */
+__attribute__((always_inline))
+static inline bool i2c_ll_master_is_cmd_done(i2c_dev_t *hw, int cmd_idx)
+{
+    return hw->command[cmd_idx].done;
 }
 
 //////////////////////////////////////////Deprecated Functions//////////////////////////////////////////////////////////

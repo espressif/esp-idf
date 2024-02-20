@@ -11,11 +11,11 @@
 
 请从 Windows“命令提示符”窗口，切换至 ESP-IDF 的安装目录。然后运行::
 
-	install.bat
+    install.bat
 
 对于 Powershell，请切换至 ESP-IDF 的安装目录。然后运行::
 
-	install.ps1
+    install.ps1
 
 该命令可下载并安装 ESP-IDF 所需的工具。如已经安装了某个版本的工具，则该命令将无效。该工具的下载安装位置由 ESP-IDF 工具安装器的设置决定，默认情况下为： ``C:\Users\username\.espressif``。
 

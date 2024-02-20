@@ -1,5 +1,10 @@
+idf_build_get_property(idf_target IDF_TARGET)
+
+if(${idf_target} STREQUAL "linux")
+    return() # This component is not supported by the POSIX/Linux simulator
+endif()
+
 if(CONFIG_ESP_WIFI_ENABLED)
-    idf_build_get_property(idf_target IDF_TARGET)
 
     if(CONFIG_APP_NO_BLOBS)
         set(link_binary_libs 0)
@@ -33,11 +38,18 @@ if(CONFIG_ESP_WIFI_ENABLED)
     if(CONFIG_ESP_WIFI_NAN_ENABLE)
         list(APPEND srcs "wifi_apps/src/nan_app.c")
     endif()
+    set(local_include_dirs include/local)
+else()
+    # No local wifi: provide only netif bindings
+    set(srcs
+            "src/wifi_default.c"
+            "src/wifi_netif.c")
+    set(local_include_dirs)
 
 endif()
 
 idf_component_register(SRCS "${srcs}"
-                    INCLUDE_DIRS "include" "wifi_apps/include"
+                    INCLUDE_DIRS "include" "wifi_apps/include" ${local_include_dirs}
                     REQUIRES esp_event esp_phy esp_netif
                     PRIV_REQUIRES driver esptool_py esp_pm esp_timer nvs_flash
                                   wpa_supplicant hal lwip esp_coex ${extra_priv_requires}
@@ -65,5 +77,15 @@ if(CONFIG_ESP_WIFI_ENABLED)
             target_link_libraries(${COMPONENT_LIB} PUBLIC ${blob})
         endforeach()
     endif()
+else()
+    # No local wifi: use esp_wifi_remote if it's available within our components
+    idf_build_get_property(build_components BUILD_COMPONENTS)
+    if(esp_wifi_remote IN_LIST build_components)
+        idf_component_get_property(esp_wifi_remote esp_wifi_remote COMPONENT_LIB)
+        target_link_libraries(${COMPONENT_LIB} PUBLIC ${esp_wifi_remote})
+    endif()
+endif()
 
+if(CONFIG_SPIRAM)
+    idf_component_optional_requires(PRIVATE esp_psram)
 endif()

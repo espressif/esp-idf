@@ -1,11 +1,12 @@
 /*
- * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include "utils/includes.h"
 #include "utils/common.h"
+#include "utils/eloop.h"
 #include "common/defs.h"
 
 #include "esp_dpp_i.h"
@@ -14,15 +15,15 @@
 #include "esp_event.h"
 #include "esp_wifi.h"
 #include "common/ieee802_11_defs.h"
+#include "esp_wps_i.h"
 
 #ifdef CONFIG_DPP
 static void *s_dpp_task_hdl = NULL;
 static void *s_dpp_evt_queue = NULL;
 static void *s_dpp_api_lock = NULL;
 
-static bool s_dpp_stop_listening;
-static int s_dpp_auth_retries;
-struct esp_dpp_context_t s_dpp_ctx;
+static bool s_dpp_listen_in_progress;
+static struct esp_dpp_context_t s_dpp_ctx;
 static wifi_action_rx_cb_t s_action_rx_cb = esp_supp_rx_action;
 
 #define DPP_API_LOCK() os_mutex_lock(s_dpp_api_lock)
@@ -35,6 +36,7 @@ struct action_rx_param {
     u32 vendor_data_len;
     struct ieee80211_action *action_frm;
 };
+
 
 static int esp_dpp_post_evt(uint32_t evt_id, uint32_t data)
 {
@@ -72,7 +74,25 @@ end:
 
 static void esp_dpp_call_cb(esp_supp_dpp_event_t evt, void *data)
 {
+    if ( evt == ESP_SUPP_DPP_FAIL && s_dpp_ctx.dpp_auth) {
+        dpp_auth_deinit(s_dpp_ctx.dpp_auth);
+        s_dpp_ctx.dpp_auth = NULL;
+    }
     s_dpp_ctx.dpp_event_cb(evt, data);
+}
+
+static void esp_dpp_auth_conf_wait_timeout(void *eloop_ctx, void *timeout_ctx)
+{
+    if (!s_dpp_ctx.dpp_auth || !s_dpp_ctx.dpp_auth->waiting_auth_conf)
+        return;
+
+    wpa_printf(MSG_DEBUG,
+           "DPP: Terminate authentication exchange due to Auth Confirm timeout");
+    if (s_dpp_ctx.dpp_auth) {
+        dpp_auth_deinit(s_dpp_ctx.dpp_auth);
+        s_dpp_ctx.dpp_auth = NULL;
+    }
+    esp_dpp_call_cb(ESP_SUPP_DPP_FAIL, (void *)ESP_ERR_DPP_AUTH_TIMEOUT);
 }
 
 void esp_send_action_frame(uint8_t *dest_mac, const uint8_t *buf, uint32_t len,
@@ -140,15 +160,20 @@ static void esp_dpp_rx_auth_req(struct action_rx_param *rx_param, uint8_t *dpp_d
         rc = ESP_ERR_DPP_INVALID_ATTR;
         goto fail;
     }
-
+    if (s_dpp_ctx.dpp_auth) {
+        wpa_printf(MSG_DEBUG, "DPP: Already in DPP authentication exchange - ignore new one");
+        return;
+    }
     s_dpp_ctx.dpp_auth = dpp_auth_req_rx(NULL, DPP_CAPAB_ENROLLEE, 0, NULL,
                                          own_bi, rx_param->channel,
                                          (const u8 *)&rx_param->action_frm->u.public_action.v, dpp_data, len);
     os_memcpy(s_dpp_ctx.dpp_auth->peer_mac_addr, rx_param->sa, ETH_ALEN);
-
     esp_send_action_frame(rx_param->sa, wpabuf_head(s_dpp_ctx.dpp_auth->resp_msg),
                           wpabuf_len(s_dpp_ctx.dpp_auth->resp_msg),
                           rx_param->channel, OFFCHAN_TX_WAIT_TIME);
+    eloop_cancel_timeout(esp_dpp_auth_conf_wait_timeout, NULL,NULL);
+    eloop_register_timeout(ESP_DPP_AUTH_TIMEOUT_SECS, 0, esp_dpp_auth_conf_wait_timeout,NULL, NULL);
+
     return;
 fail:
     esp_dpp_call_cb(ESP_SUPP_DPP_FAIL, (void *)rc);
@@ -179,6 +204,7 @@ static int esp_dpp_handle_config_obj(struct dpp_authentication *auth,
 {
     wifi_config_t *wifi_cfg = &s_dpp_ctx.wifi_cfg;
 
+    os_memset(wifi_cfg, 0, sizeof(wifi_config_t));
     if (conf->ssid_len) {
         os_memcpy(wifi_cfg->sta.ssid, conf->ssid, conf->ssid_len);
     }
@@ -201,7 +227,7 @@ static int esp_dpp_handle_config_obj(struct dpp_authentication *auth,
         wpa_printf(MSG_INFO, DPP_EVENT_CONNECTOR "%s",
                    conf->connector);
     }
-    s_dpp_stop_listening = false;
+    s_dpp_listen_in_progress = true;
     esp_wifi_action_tx_req(WIFI_OFFCHAN_TX_CANCEL, 0, 0, NULL);
     esp_dpp_call_cb(ESP_SUPP_DPP_CFG_RECVD, wifi_cfg);
 
@@ -231,6 +257,8 @@ static void esp_dpp_rx_auth_conf(struct action_rx_param *rx_param, uint8_t *dpp_
         rc = ESP_ERR_DPP_FAILURE;
         goto fail;
     }
+
+    eloop_cancel_timeout(esp_dpp_auth_conf_wait_timeout, NULL, NULL);
 
     if (dpp_auth_conf_rx(auth, (const u8 *)&public_action->v,
                          dpp_data, len) < 0) {
@@ -281,7 +309,7 @@ static void gas_query_resp_rx(struct action_rx_param *rx_param)
     int i, res;
 
     if (pos[1] == WLAN_EID_VENDOR_SPECIFIC && pos[2] == 5 &&
-            WPA_GET_BE24(&pos[3]) == OUI_WFA && pos[6] == 0x1a && pos[7] == 1) {
+            WPA_GET_BE24(&pos[3]) == OUI_WFA && pos[6] == 0x1a && pos[7] == 1 && auth) {
         if (dpp_conf_resp_rx(auth, resp, rx_param->vendor_data_len - 2) < 0) {
             wpa_printf(MSG_DEBUG, "DPP: Configuration attempt failed");
             goto fail;
@@ -317,7 +345,7 @@ static void esp_dpp_rx_action(struct action_rx_param *rx_param)
                                         (size_t)(public_action->v.pa_vendor_spec.vendor_data -
                                                  (u8 *)rx_param->action_frm);
 
-            if (!s_dpp_stop_listening) {
+            if (s_dpp_listen_in_progress) {
                 esp_supp_dpp_stop_listen();
             }
 
@@ -354,6 +382,21 @@ static void esp_dpp_task(void *pvParameters )
 
             switch (evt->id) {
             case SIG_DPP_DEL_TASK:
+                struct dpp_bootstrap_params_t *params = &s_dpp_ctx.bootstrap_params;
+                eloop_cancel_timeout(esp_dpp_auth_conf_wait_timeout, NULL, NULL);
+                if (params->info) {
+                    os_free(params->info);
+                    params->info = NULL;
+                }
+
+                if (s_dpp_ctx.dpp_global) {
+                    dpp_global_deinit(s_dpp_ctx.dpp_global);
+                    s_dpp_ctx.dpp_global = NULL;
+                }
+                if (s_dpp_ctx.dpp_auth) {
+                    dpp_auth_deinit(s_dpp_ctx.dpp_auth);
+                    s_dpp_ctx.dpp_auth = NULL;
+                }
                 task_del = true;
                 break;
 
@@ -378,10 +421,20 @@ static void esp_dpp_task(void *pvParameters )
                 struct dpp_bootstrap_params_t *p = &s_dpp_ctx.bootstrap_params;
                 static int counter;
                 int channel;
+                esp_err_t ret = 0;
 
+                if (p->num_chan <= 0) {
+                    wpa_printf(MSG_ERROR, "Listen channel not set");
+                    break;
+                }
                 channel = p->chan_list[counter++ % p->num_chan];
-                esp_wifi_remain_on_channel(WIFI_IF_STA, WIFI_ROC_REQ, channel,
+                ret = esp_wifi_remain_on_channel(WIFI_IF_STA, WIFI_ROC_REQ, channel,
                                            BOOTSTRAP_ROC_WAIT_TIME, s_action_rx_cb);
+                if (ret != ESP_OK) {
+                    wpa_printf(MSG_ERROR, "Failed ROC. error : 0x%x", ret);
+                    break;
+                }
+                s_dpp_listen_in_progress = true;
             }
             break;
 
@@ -454,13 +507,14 @@ static void offchan_event_handler(void *arg, esp_event_base_t event_base,
                    evt->status, (uint32_t)evt->context);
 
         if (evt->status) {
+            eloop_cancel_timeout(esp_dpp_auth_conf_wait_timeout, NULL, NULL);
             esp_dpp_call_cb(ESP_SUPP_DPP_FAIL, (void *)ESP_ERR_DPP_TX_FAILURE);
         }
 
     } else if (event_id == WIFI_EVENT_ROC_DONE) {
         wifi_event_roc_done_t *evt = (wifi_event_roc_done_t *)event_data;
 
-        if (!s_dpp_stop_listening && evt->context == (uint32_t)s_action_rx_cb) {
+        if (s_dpp_listen_in_progress && evt->context == (uint32_t)s_action_rx_cb) {
             esp_dpp_post_evt(SIG_DPP_LISTEN_NEXT_CHANNEL, 0);
         }
     }
@@ -518,6 +572,10 @@ esp_err_t
 esp_supp_dpp_bootstrap_gen(const char *chan_list, enum dpp_bootstrap_type type,
                            const char *key, const char *uri_info)
 {
+    if (!s_dpp_ctx.dpp_global) {
+        wpa_printf(MSG_ERROR, "DPP: failed to bootstrap as dpp not initialized.");
+        return ESP_FAIL;
+    }
     struct dpp_bootstrap_params_t *params = &s_dpp_ctx.bootstrap_params;
     char *uri_chan_list = esp_dpp_parse_chan_list(chan_list);
     char *command = os_zalloc(1200);
@@ -581,47 +639,87 @@ fail:
 
 esp_err_t esp_supp_dpp_start_listen(void)
 {
+    if (s_dpp_listen_in_progress) {
+        wpa_printf(MSG_ERROR, "DPP: Failed to start listen as listen is already in progress.");
+        return ESP_FAIL;
+    }
+
+    if (!s_dpp_ctx.dpp_global || s_dpp_ctx.id < 1) {
+        wpa_printf(MSG_ERROR, "DPP: failed to start listen as dpp not initialized or bootstrapped.");
+        return ESP_FAIL;
+    }
+
     if (esp_wifi_get_user_init_flag_internal() == 0) {
         wpa_printf(MSG_ERROR, "DPP: ROC not possible before wifi is started");
         return ESP_ERR_INVALID_STATE;
     }
 
-    s_dpp_stop_listening = false;
     return esp_dpp_post_evt(SIG_DPP_LISTEN_NEXT_CHANNEL, 0);
 }
 
 void esp_supp_dpp_stop_listen(void)
 {
-    s_dpp_stop_listening = true;
+    s_dpp_listen_in_progress = false;
     esp_wifi_remain_on_channel(WIFI_IF_STA, WIFI_ROC_CANCEL, 0, 0, NULL);
+}
+
+bool is_dpp_enabled(void)
+{
+    return (s_dpp_ctx.dpp_global ? true : false);
 }
 
 esp_err_t esp_supp_dpp_init(esp_supp_dpp_event_cb_t cb)
 {
-    struct dpp_global_config cfg = {0};
-    int ret;
+    esp_err_t ret = ESP_OK;
+    wifi_mode_t mode = 0;
+    if (esp_wifi_get_mode(&mode) || ((mode != WIFI_MODE_STA) && (mode != WIFI_MODE_APSTA))) {
+        wpa_printf(MSG_ERROR, "DPP: failed to init as not in station mode.");
+        return ESP_FAIL;
+    }
+
+    if (is_wps_enabled()) {
+        wpa_printf(MSG_ERROR, "DPP: failed to init since WPS is enabled");
+        return ESP_FAIL;
+    }
+    if (s_dpp_ctx.dpp_global) {
+        wpa_printf(MSG_ERROR, "DPP: failed to init as init already done.");
+        return ESP_FAIL;
+    }
 
     os_bzero(&s_dpp_ctx, sizeof(s_dpp_ctx));
-    s_dpp_ctx.dpp_event_cb = cb;
-
+    struct dpp_global_config cfg = {0};
     cfg.cb_ctx = &s_dpp_ctx;
     cfg.msg_ctx = &s_dpp_ctx;
     s_dpp_ctx.dpp_global = dpp_global_init(&cfg);
-
-    s_dpp_stop_listening = false;
-    s_dpp_evt_queue = os_queue_create(3, sizeof(dpp_event_t));
-    ret = os_task_create(esp_dpp_task, "dppT", DPP_TASK_STACK_SIZE, NULL, 2, &s_dpp_task_hdl);
-    if (ret != TRUE) {
-        wpa_printf(MSG_ERROR, "DPP: failed to create task");
-        return ESP_FAIL;
+    if (!s_dpp_ctx.dpp_global) {
+        wpa_printf(MSG_ERROR, "DPP: failed to allocate memory for dpp_global");
+        ret = ESP_ERR_NO_MEM;
+        goto init_fail;
     }
 
     s_dpp_api_lock = os_recursive_mutex_create();
     if (!s_dpp_api_lock) {
-        esp_supp_dpp_deinit();
         wpa_printf(MSG_ERROR, "DPP: dpp_init: failed to create DPP API lock");
-        return ESP_ERR_NO_MEM;
+        ret = ESP_ERR_NO_MEM;
+        goto init_fail;
     }
+
+    s_dpp_evt_queue = os_queue_create(3, sizeof(dpp_event_t));
+    if (!s_dpp_evt_queue) {
+        wpa_printf(MSG_ERROR, "DPP: dpp_init: failed to create DPP API queue");
+        ret = ESP_ERR_NO_MEM;
+        goto init_fail;
+    }
+
+    ret = os_task_create(esp_dpp_task, "dppT", DPP_TASK_STACK_SIZE, NULL, 2, &s_dpp_task_hdl);
+    if (ret != TRUE) {
+        wpa_printf(MSG_ERROR, "DPP: failed to create task");
+        ret = ESP_ERR_NO_MEM;
+        goto init_fail;
+    }
+
+    s_dpp_listen_in_progress = false;
+    s_dpp_ctx.dpp_event_cb = cb;
 
     esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_ACTION_TX_STATUS,
                                &offchan_event_handler, NULL);
@@ -631,23 +729,32 @@ esp_err_t esp_supp_dpp_init(esp_supp_dpp_event_cb_t cb)
     wpa_printf(MSG_INFO, "esp_dpp_task prio:%d, stack:%d", 2, DPP_TASK_STACK_SIZE);
 
     return ESP_OK;
+init_fail:
+    if (s_dpp_ctx.dpp_global) {
+        dpp_global_deinit(s_dpp_ctx.dpp_global);
+        s_dpp_ctx.dpp_global = NULL;
+    }
+    if (s_dpp_api_lock) {
+        os_mutex_delete(s_dpp_api_lock);
+        s_dpp_api_lock = NULL;
+    }
+    if (s_dpp_evt_queue) {
+        os_queue_delete(s_dpp_evt_queue);
+        s_dpp_evt_queue = NULL;
+    }
+    return ret;
 }
-
 void esp_supp_dpp_deinit(void)
 {
-    struct dpp_bootstrap_params_t *params = &s_dpp_ctx.bootstrap_params;
-
-    if (params->info) {
-        os_free(params->info);
-        params->info = NULL;
-    }
 
     esp_event_handler_unregister(WIFI_EVENT, WIFI_EVENT_ACTION_TX_STATUS,
                                &offchan_event_handler);
     esp_event_handler_unregister(WIFI_EVENT, WIFI_EVENT_ROC_DONE,
                                &offchan_event_handler);
-    s_dpp_auth_retries = 0;
-    dpp_global_deinit(s_dpp_ctx.dpp_global);
-    esp_dpp_post_evt(SIG_DPP_DEL_TASK, 0);
+    if (s_dpp_ctx.dpp_global) {
+        if (esp_dpp_post_evt(SIG_DPP_DEL_TASK, 0)) {
+            wpa_printf(MSG_ERROR, "DPP Deinit Failed");
+        }
+    }
 }
 #endif

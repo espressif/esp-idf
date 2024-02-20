@@ -89,8 +89,9 @@ menu "Partition Table"
         string "Custom partition CSV file" if PARTITION_TABLE_CUSTOM
         default "partitions.csv"
         help
-            Name of the custom partition CSV filename. This path is evaluated
-            relative to the project root directory.
+            Name of the custom partition CSV filename.
+            This path is evaluated relative to the project root directory by default.
+            However, if the absolute path for the CSV file is provided, then the absolute path is configured.
 
     config PARTITION_TABLE_FILENAME
         string

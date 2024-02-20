@@ -62,15 +62,15 @@ static void example_i2s_init(void)
         .use_apll = 0,
     };
     //install and start i2s driver
-    TEST_ESP_OK( i2s_driver_install(i2s_num, &i2s_config, 0, NULL) );
+    TEST_ESP_OK(i2s_driver_install(i2s_num, &i2s_config, 0, NULL));
     //init DAC pad
-    TEST_ESP_OK( i2s_set_dac_mode(I2S_DAC_CHANNEL_BOTH_EN) );
+    TEST_ESP_OK(i2s_set_dac_mode(I2S_DAC_CHANNEL_BOTH_EN));
 }
 
 static void example_i2s_deinit(void)
 {
-    TEST_ESP_OK( i2s_set_dac_mode(I2S_DAC_CHANNEL_DISABLE) );
-    TEST_ESP_OK( i2s_driver_uninstall(EXAMPLE_I2S_NUM) );
+    TEST_ESP_OK(i2s_set_dac_mode(I2S_DAC_CHANNEL_DISABLE));
+    TEST_ESP_OK(i2s_driver_uninstall(EXAMPLE_I2S_NUM));
 }
 
 /**
@@ -78,7 +78,7 @@ static void example_i2s_deinit(void)
  */
 static void example_set_file_play_mode(void)
 {
-    TEST_ESP_OK( i2s_set_clk(EXAMPLE_I2S_NUM, 16000, EXAMPLE_I2S_SAMPLE_BITS, 1) );
+    TEST_ESP_OK(i2s_set_clk(EXAMPLE_I2S_NUM, 16000, EXAMPLE_I2S_SAMPLE_BITS, 1));
 }
 
 /**
@@ -125,7 +125,7 @@ static void example_disp_buf(uint8_t *buf, int length)
  */
 static void example_reset_play_mode(void)
 {
-    TEST_ESP_OK( i2s_set_clk(EXAMPLE_I2S_NUM, EXAMPLE_I2S_SAMPLE_RATE, EXAMPLE_I2S_SAMPLE_BITS, EXAMPLE_I2S_CHANNEL_NUM) );
+    TEST_ESP_OK(i2s_set_clk(EXAMPLE_I2S_NUM, EXAMPLE_I2S_SAMPLE_RATE, EXAMPLE_I2S_SAMPLE_BITS, EXAMPLE_I2S_CHANNEL_NUM));
 }
 
 TEST_CASE("DAC_DMA_output", "[dac]")

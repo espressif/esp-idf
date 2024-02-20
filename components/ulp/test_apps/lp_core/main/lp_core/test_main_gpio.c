@@ -12,8 +12,7 @@
 volatile uint32_t gpio_test_finished;
 volatile uint32_t gpio_test_succeeded;
 
-
-int main (void)
+int main(void)
 {
     ulp_lp_core_gpio_init(LP_IO_NUM_0);
 

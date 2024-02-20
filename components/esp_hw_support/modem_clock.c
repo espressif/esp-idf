@@ -157,36 +157,6 @@ modem_clock_context_t * __attribute__((weak)) IRAM_ATTR MODEM_CLOCK_instance(voi
 }
 
 #if SOC_PM_SUPPORT_PMU_MODEM_STATE
-static void IRAM_ATTR modem_clock_domain_power_state_icg_map_init(modem_clock_context_t *ctx)
-{
-    #define ICG_NOGATING_SLEEP  (BIT(PMU_HP_ICG_MODEM_CODE_SLEEP))
-    #define ICG_NOGATING_MODEM  (BIT(PMU_HP_ICG_MODEM_CODE_MODEM))
-    #define ICG_NOGATING_ACTIVE (BIT(PMU_HP_ICG_MODEM_CODE_ACTIVE))
-
-    /* the ICG code's bit 0, 1 and 2 indicates the ICG state
-     * of pmu SLEEP, MODEM and ACTIVE mode respectively */
-    const uint32_t code[MODEM_CLOCK_DOMAIN_MAX] = {
-        [MODEM_CLOCK_DOMAIN_MODEM_APB]          = ICG_NOGATING_ACTIVE | ICG_NOGATING_MODEM,
-        [MODEM_CLOCK_DOMAIN_MODEM_PERIPH]       = ICG_NOGATING_ACTIVE,
-        [MODEM_CLOCK_DOMAIN_WIFI]               = ICG_NOGATING_ACTIVE | ICG_NOGATING_MODEM,
-        [MODEM_CLOCK_DOMAIN_BT]                 = ICG_NOGATING_ACTIVE | ICG_NOGATING_MODEM,
-        [MODEM_CLOCK_DOMAIN_MODEM_PRIVATE_FE]   = ICG_NOGATING_ACTIVE | ICG_NOGATING_MODEM,
-        [MODEM_CLOCK_DOMAIN_IEEE802154]         = ICG_NOGATING_ACTIVE | ICG_NOGATING_MODEM,
-        [MODEM_CLOCK_DOMAIN_LP_APB]             = ICG_NOGATING_ACTIVE | ICG_NOGATING_MODEM,
-        [MODEM_CLOCK_DOMAIN_I2C_MASTER]         = ICG_NOGATING_ACTIVE | ICG_NOGATING_MODEM,
-        [MODEM_CLOCK_DOMAIN_COEX]               = ICG_NOGATING_ACTIVE | ICG_NOGATING_MODEM,
-        [MODEM_CLOCK_DOMAIN_WIFIPWR]            = ICG_NOGATING_ACTIVE | ICG_NOGATING_MODEM,
-    };
-    for (modem_clock_domain_t domain = MODEM_CLOCK_DOMAIN_MODEM_APB; domain < MODEM_CLOCK_DOMAIN_MAX; domain++) {
-        modem_clock_hal_set_clock_domain_icg_bitmap(ctx->hal, domain, code[domain]);
-    }
-}
-
-void modem_clock_domain_pmu_state_icg_map_init(void)
-{
-    modem_clock_domain_power_state_icg_map_init(MODEM_CLOCK_instance());
-}
-
 esp_err_t modem_clock_domain_clk_gate_enable(modem_clock_domain_t domain, pmu_hp_icg_modem_mode_t mode)
 {
     if (domain >= MODEM_CLOCK_DOMAIN_MAX || domain < MODEM_CLOCK_DOMAIN_MODEM_APB) {
@@ -275,8 +245,8 @@ void IRAM_ATTR modem_clock_module_mac_reset(periph_module_t module)
         case PERIPH_IEEE802154_MODULE:
             modem_syscon_ll_reset_zbmac(ctx->hal->syscon_dev);
             break;
-        default:
 #endif
+        default:
             assert(0);
     }
     portEXIT_CRITICAL_SAFE(&ctx->lock);
@@ -319,9 +289,43 @@ static IRAM_ATTR uint32_t modem_clock_get_module_deps(periph_module_t module)
     return deps;
 }
 
+#if SOC_PM_SUPPORT_PMU_MODEM_STATE
+/* the ICG code's bit 0, 1 and 2 indicates the ICG state
+ * of pmu SLEEP, MODEM and ACTIVE mode respectively */
+#define ICG_NOGATING_SLEEP  (BIT(PMU_HP_ICG_MODEM_CODE_SLEEP))
+#define ICG_NOGATING_MODEM  (BIT(PMU_HP_ICG_MODEM_CODE_MODEM))
+#define ICG_NOGATING_ACTIVE (BIT(PMU_HP_ICG_MODEM_CODE_ACTIVE))
+
+static const DRAM_ATTR uint32_t initial_gating_mode[MODEM_CLOCK_DOMAIN_MAX] = {
+    [MODEM_CLOCK_DOMAIN_MODEM_APB]      = ICG_NOGATING_ACTIVE | ICG_NOGATING_MODEM,
+    [MODEM_CLOCK_DOMAIN_MODEM_PERIPH]   = ICG_NOGATING_ACTIVE,
+    [MODEM_CLOCK_DOMAIN_WIFI]           = ICG_NOGATING_ACTIVE | ICG_NOGATING_MODEM,
+    [MODEM_CLOCK_DOMAIN_BT]             = ICG_NOGATING_ACTIVE,
+    [MODEM_CLOCK_DOMAIN_MODEM_FE]       = ICG_NOGATING_ACTIVE | ICG_NOGATING_MODEM,
+    [MODEM_CLOCK_DOMAIN_IEEE802154]     = ICG_NOGATING_ACTIVE,
+    [MODEM_CLOCK_DOMAIN_LP_APB]         = ICG_NOGATING_ACTIVE | ICG_NOGATING_MODEM,
+    [MODEM_CLOCK_DOMAIN_I2C_MASTER]     = ICG_NOGATING_ACTIVE | ICG_NOGATING_MODEM,
+    [MODEM_CLOCK_DOMAIN_COEX]           = ICG_NOGATING_ACTIVE | ICG_NOGATING_MODEM,
+    [MODEM_CLOCK_DOMAIN_WIFIPWR]        = ICG_NOGATING_ACTIVE | ICG_NOGATING_MODEM,
+};
+
+static IRAM_ATTR void modem_clock_module_icg_map_init_all(void)
+{
+    portENTER_CRITICAL_SAFE(&MODEM_CLOCK_instance()->lock);
+    for (int domain = 0; domain < MODEM_CLOCK_DOMAIN_MAX; domain++) {
+        uint32_t code = modem_clock_hal_get_clock_domain_icg_bitmap(MODEM_CLOCK_instance()->hal, domain);
+        modem_clock_hal_set_clock_domain_icg_bitmap(MODEM_CLOCK_instance()->hal, domain, initial_gating_mode[domain] | code);
+    }
+    portEXIT_CRITICAL_SAFE(&MODEM_CLOCK_instance()->lock);
+}
+#endif // SOC_PM_SUPPORT_PMU_MODEM_STATE
+
 void IRAM_ATTR modem_clock_module_enable(periph_module_t module)
 {
     assert(IS_MODEM_MODULE(module));
+#if SOC_PM_SUPPORT_PMU_MODEM_STATE
+    modem_clock_module_icg_map_init_all();
+#endif
     uint32_t deps = modem_clock_get_module_deps(module);
     modem_clock_device_enable(MODEM_CLOCK_instance(), deps);
 }

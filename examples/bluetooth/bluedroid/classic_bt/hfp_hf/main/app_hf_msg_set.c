@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -35,51 +35,7 @@ static vu_args_t vu_args;
 static rh_args_t rh_args;
 static bat_args_t bat_args;
 
-void hf_msg_show_usage(void)
-{
-    printf("########################################################################\n");
-    printf("HF client command usage manual\n");
-    printf("HF client commands begin with \"hf\" and end with \";\"\n");
-    printf("Supported commands are as follows, arguments are embraced with < and >\n");
-    printf("hf con;   -- setup connection with peer device\n");
-    printf("hf dis;   -- release connection with peer device\n");
-    printf("hf cona;  -- setup audio connection with peer device\n");
-    printf("hf disa;  -- release connection with peer device\n");
-    printf("hf qop;   -- query current operator name\n");
-    printf("hf qc;    -- query current call status\n");
-    printf("hf ac;    -- answer incoming call\n");
-    printf("hf rc;    -- reject incoming call\n");
-    printf("hf d <num>;        -- dial <num>, e.g. hf d 11223344\n");
-    printf("hf rd;             -- redial\n");
-    printf("hf dm <index>;     -- dial memory\n");
-    printf("hf vron;           -- start voice recognition\n");
-    printf("hf vroff;          -- stop voice recognition\n");
-    printf("hf vu <tgt> <vol>; -- volume update\n");
-    printf("     tgt: 0-speaker, 1-microphone\n");
-    printf("     vol: volume gain ranges from 0 to 15\n");
-    printf("hf rs;             -- retrieve subscriber information\n");
-    printf("hf rv;             -- retrieve last voice tag number\n");
-    printf("hf rh <btrh>;      -- response and hold\n");
-    printf("     btrh:\n");
-    printf("        0 - put call on hold,\n");
-    printf("        1 - accept the held call,\n");
-    printf("        2 -reject the held call\n");
-    printf("hf k <dtmf>;       -- send dtmf code.\n");
-    printf("     dtmf: single character in set 0-9, *, #, A-D\n");
-    printf("hf xp;             -- Enable Vendor specific feature for battery status\n");
-    printf("hf bat;            -- Send battery status\n");
-    printf("hf h;              -- show command manual\n");
-    printf("########################################################################\n");
-}
-
 #define HF_CMD_HANDLER(cmd)    static int hf_##cmd##_handler(int argn, char **argv)
-
-
-HF_CMD_HANDLER(help)
-{
-    hf_msg_show_usage();
-    return 0;
-}
 
 HF_CMD_HANDLER(conn)
 {
@@ -307,69 +263,57 @@ HF_CMD_HANDLER(iphoneaccev)
 
 
 static hf_msg_hdl_t hf_cmd_tbl[] = {
-    {0,    "h",            hf_help_handler},
-    {5,    "con",          hf_conn_handler},
-    {10,   "dis",          hf_disc_handler},
-    {20,   "cona",         hf_conn_audio_handler},
-    {30,   "disa",         hf_disc_audio_handler},
-    {40,   "qop",          hf_query_op_handler},
-    {120,  "qc",           hf_query_call_handler},
-    {50,   "ac",           hf_answer_handler},
-    {60,   "rc",           hf_reject_handler},
-    {70,   "d",            hf_dial_handler},
-    {80,   "rd",           hf_redial_handler},
-    {85,   "dm",           hf_dial_mem_handler},
-    {90,   "vron",         hf_start_vr_handler},
-    {100,  "vroff",        hf_stop_vr_handler},
-    {110,  "vu",           hf_volume_update_handler},
-    {130,  "rs",           hf_retrieve_subscriber_handler},
-    {140,  "rv",           hf_request_last_voice_tag_handler},
-    {150,  "rh",           hf_btrh_handler},
-    {160,  "k",            hf_dtmf_handler},
-    {170,  "xp",           hf_xapl_handler},
-    {180,  "bat",          hf_iphoneaccev_handler},
+    {"con",          hf_conn_handler},
+    {"dis",          hf_disc_handler},
+    {"cona",         hf_conn_audio_handler},
+    {"disa",         hf_disc_audio_handler},
+    {"qop",          hf_query_op_handler},
+    {"qc",           hf_query_call_handler},
+    {"ac",           hf_answer_handler},
+    {"rc",           hf_reject_handler},
+    {"d",            hf_dial_handler},
+    {"rd",           hf_redial_handler},
+    {"dm",           hf_dial_mem_handler},
+    {"vron",         hf_start_vr_handler},
+    {"vroff",        hf_stop_vr_handler},
+    {"vu",           hf_volume_update_handler},
+    {"rs",           hf_retrieve_subscriber_handler},
+    {"rv",           hf_request_last_voice_tag_handler},
+    {"rh",           hf_btrh_handler},
+    {"k",            hf_dtmf_handler},
+    {"xp",           hf_xapl_handler},
+    {"bat",          hf_iphoneaccev_handler},
 };
-
-hf_msg_hdl_t *hf_get_cmd_tbl(void)
-{
-    return hf_cmd_tbl;
-}
-
-size_t hf_get_cmd_tbl_size(void)
-{
-    return sizeof(hf_cmd_tbl) / sizeof(hf_msg_hdl_t);
-}
 
 #define HF_ORDER(name)   name##_cmd
-enum hf_cmd_name {
-    h = 0,      /*show command manual*/
-    con,        /*set up connection with peer device*/
-    dis,        /*release connection with peer device*/
-    cona,       /*setup audio connection with peer device*/
-    disa,       /*setup audio connection with peer device*/
-    qop,        /*query current operator name*/
-    qc,         /*query current call status*/
-    ac,         /*answer incoming call*/
-    rc,         /*reject incoming call*/
-    d,          /*dial <num>, e.g. d 11223344*/
-    rd,         /*redial*/
-    dm,         /*dial memory*/
-    vron,       /*start voice recognition*/
-    vroff,      /*stop voice recognition*/
-    vu,         /*volume update*/
-    rs,         /*retrieve subscriber information*/
-    rv,         /*retrieve last voice tag number*/
-    rh,         /*response and hold*/
-    k,          /*send dtmf code*/
-    xp,         /*send XAPL feature enable command to indicate battery level*/
-    bat,        /*send battery level and docker status*/
+enum hf_cmd_idx {
+    HF_CMD_IDX_CON = 0,       /*set up connection with peer device*/
+    HF_CMD_IDX_DIS,           /*disconnection with peer device*/
+    HF_CMD_IDX_CONA,          /*set up audio connection with peer device*/
+    HF_CMD_IDX_DISA,          /*release audio connection with peer device*/
+    HF_CMD_IDX_QOP,        /*query current operator name*/
+    HF_CMD_IDX_QC,         /*query current call status*/
+    HF_CMD_IDX_AC,         /*answer incoming call*/
+    HF_CMD_IDX_RC,         /*reject incoming call*/
+    HF_CMD_IDX_D,          /*dial <num>, e.g. d 11223344*/
+    HF_CMD_IDX_RD,         /*redial*/
+    HF_CMD_IDX_DM,         /*dial memory*/
+    HF_CMD_IDX_VRON,       /*start voice recognition*/
+    HF_CMD_IDX_VROFF,      /*stop voice recognition*/
+    HF_CMD_IDX_VU,         /*volume update*/
+    HF_CMD_IDX_RS,         /*retrieve subscriber information*/
+    HF_CMD_IDX_RV,         /*retrieve last voice tag number*/
+    HF_CMD_IDX_RH,         /*response and hold*/
+    HF_CMD_IDX_K,          /*send dtmf code*/
+    HF_CMD_IDX_XP,         /*send XAPL feature enable command to indicate battery level*/
+    HF_CMD_IDX_BAT,        /*send battery level and docker status*/
 };
+
 static char *hf_cmd_explain[] = {
-    "show command manual",
     "set up connection with peer device",
     "release connection with peer device",
     "setup audio connection with peer device",
-    "release connection with peer device",
+    "release audio connection with peer device",
     "query current operator name",
     "query current call status",
     "answer incoming call",
@@ -385,7 +329,7 @@ static char *hf_cmd_explain[] = {
     "response and hold",
     "send dtmf code.\n        <dtmf>  single character in set 0-9, *, #, A-D",
     "send XAPL feature enable command to indicate battery level",
-    "send battery level and docker status.",
+    "send battery level and docker status",
 };
 
 void register_hfp_hf(void)
@@ -393,105 +337,105 @@ void register_hfp_hf(void)
 
         const esp_console_cmd_t con_cmd = {
             .command = "con",
-            .help = hf_cmd_explain[con],
+            .help = hf_cmd_explain[HF_CMD_IDX_CON],
             .hint = NULL,
-            .func = hf_cmd_tbl[con].handler,
+            .func = hf_cmd_tbl[HF_CMD_IDX_CON].handler,
         };
         ESP_ERROR_CHECK(esp_console_cmd_register(&con_cmd));
 
         const esp_console_cmd_t dis_cmd = {
             .command = "dis",
-            .help = hf_cmd_explain[dis],
+            .help = hf_cmd_explain[HF_CMD_IDX_DIS],
             .hint = NULL,
-            .func = hf_cmd_tbl[dis].handler,
+            .func = hf_cmd_tbl[HF_CMD_IDX_DIS].handler,
         };
         ESP_ERROR_CHECK(esp_console_cmd_register(&dis_cmd));
 
         const esp_console_cmd_t cona_cmd = {
             .command = "cona",
-            .help = hf_cmd_explain[cona],
+            .help = hf_cmd_explain[HF_CMD_IDX_CONA],
             .hint = NULL,
-            .func = hf_cmd_tbl[cona].handler,
+            .func = hf_cmd_tbl[HF_CMD_IDX_CONA].handler,
         };
         ESP_ERROR_CHECK(esp_console_cmd_register(&cona_cmd));
 
         const esp_console_cmd_t disa_cmd = {
             .command = "disa",
-            .help = hf_cmd_explain[disa],
+            .help = hf_cmd_explain[HF_CMD_IDX_DISA],
             .hint = NULL,
-            .func = hf_cmd_tbl[disa].handler,
+            .func = hf_cmd_tbl[HF_CMD_IDX_DISA].handler,
         };
         ESP_ERROR_CHECK(esp_console_cmd_register(&disa_cmd));
 
         const esp_console_cmd_t qop_cmd = {
             .command = "qop",
-            .help = hf_cmd_explain[qop],
+            .help = hf_cmd_explain[HF_CMD_IDX_QOP],
             .hint = NULL,
-            .func = hf_cmd_tbl[qop].handler,
+            .func = hf_cmd_tbl[HF_CMD_IDX_QOP].handler,
         };
         ESP_ERROR_CHECK(esp_console_cmd_register(&qop_cmd));
 
         const esp_console_cmd_t qc_cmd = {
             .command = "qc",
-            .help = hf_cmd_explain[qc],
+            .help = hf_cmd_explain[HF_CMD_IDX_QC],
             .hint = NULL,
-            .func = hf_cmd_tbl[qc].handler,
+            .func = hf_cmd_tbl[HF_CMD_IDX_QC].handler,
         };
         ESP_ERROR_CHECK(esp_console_cmd_register(&qc_cmd));
 
         const esp_console_cmd_t ac_cmd = {
             .command = "ac",
-            .help = hf_cmd_explain[ac],
+            .help = hf_cmd_explain[HF_CMD_IDX_AC],
             .hint = NULL,
-            .func = hf_cmd_tbl[ac].handler,
+            .func = hf_cmd_tbl[HF_CMD_IDX_AC].handler,
         };
         ESP_ERROR_CHECK(esp_console_cmd_register(&ac_cmd));
 
         const esp_console_cmd_t rc_cmd = {
             .command = "rc",
-            .help = hf_cmd_explain[rc],
+            .help = hf_cmd_explain[HF_CMD_IDX_RC],
             .hint = NULL,
-            .func = hf_cmd_tbl[rc].handler,
+            .func = hf_cmd_tbl[HF_CMD_IDX_RC].handler,
         };
         ESP_ERROR_CHECK(esp_console_cmd_register(&rc_cmd));
 
         const esp_console_cmd_t d_cmd = {
             .command = "d",
-            .help = hf_cmd_explain[d],
+            .help = hf_cmd_explain[HF_CMD_IDX_D],
             .hint = "<num>",
-            .func = hf_cmd_tbl[d].handler,
+            .func = hf_cmd_tbl[HF_CMD_IDX_D].handler,
         };
         ESP_ERROR_CHECK(esp_console_cmd_register(&d_cmd));
 
         const esp_console_cmd_t rd_cmd = {
             .command = "rd",
-            .help = hf_cmd_explain[rd],
+            .help = hf_cmd_explain[HF_CMD_IDX_RD],
             .hint = NULL,
-            .func = hf_cmd_tbl[rd].handler,
+            .func = hf_cmd_tbl[HF_CMD_IDX_RD].handler,
         };
         ESP_ERROR_CHECK(esp_console_cmd_register(&rd_cmd));
 
         const esp_console_cmd_t dm_cmd = {
             .command = "dm",
-            .help = hf_cmd_explain[dm],
+            .help = hf_cmd_explain[HF_CMD_IDX_DM],
             .hint = "<index>",
-            .func = hf_cmd_tbl[dm].handler,
+            .func = hf_cmd_tbl[HF_CMD_IDX_DM].handler,
         };
         ESP_ERROR_CHECK(esp_console_cmd_register(&dm_cmd));
 
         const esp_console_cmd_t vron_cmd = {
             .command = "vron",
-            .help = hf_cmd_explain[vron],
+            .help = hf_cmd_explain[HF_CMD_IDX_VRON],
             .hint = NULL,
-            .func = hf_cmd_tbl[vron].handler,
+            .func = hf_cmd_tbl[HF_CMD_IDX_VRON].handler,
         };
         ESP_ERROR_CHECK(esp_console_cmd_register(&vron_cmd));
 
         const esp_console_cmd_t vroff_cmd = {
             .command = "vroff",
-            .help = hf_cmd_explain[vroff],
+            .help = hf_cmd_explain[HF_CMD_IDX_VROFF],
             .hint = NULL,
-            .func = hf_cmd_tbl[vroff].handler,
+            .func = hf_cmd_tbl[HF_CMD_IDX_VROFF].handler,
         };
         ESP_ERROR_CHECK(esp_console_cmd_register(&vroff_cmd));
 
@@ -500,26 +444,26 @@ void register_hfp_hf(void)
         vu_args.end = arg_end(1);
         const esp_console_cmd_t vu_cmd = {
             .command = "vu",
-            .help = hf_cmd_explain[vu],
+            .help = hf_cmd_explain[HF_CMD_IDX_VU],
             .hint = NULL,
-            .func = hf_cmd_tbl[vu].handler,
+            .func = hf_cmd_tbl[HF_CMD_IDX_VU].handler,
             .argtable = &vu_args
         };
         ESP_ERROR_CHECK(esp_console_cmd_register(&vu_cmd));
 
         const esp_console_cmd_t rs_cmd = {
             .command = "rs",
-            .help = hf_cmd_explain[rs],
+            .help = hf_cmd_explain[HF_CMD_IDX_RS],
             .hint = NULL,
-            .func = hf_cmd_tbl[rs].handler,
+            .func = hf_cmd_tbl[HF_CMD_IDX_RS].handler,
         };
         ESP_ERROR_CHECK(esp_console_cmd_register(&rs_cmd));
 
         const esp_console_cmd_t rv_cmd = {
             .command = "rv",
-            .help = hf_cmd_explain[rv],
+            .help = hf_cmd_explain[HF_CMD_IDX_RV],
             .hint = NULL,
-            .func = hf_cmd_tbl[rv].handler,
+            .func = hf_cmd_tbl[HF_CMD_IDX_RV].handler,
         };
         ESP_ERROR_CHECK(esp_console_cmd_register(&rv_cmd));
 
@@ -527,26 +471,26 @@ void register_hfp_hf(void)
         rh_args.end = arg_end(1);
         const esp_console_cmd_t rh_cmd = {
             .command = "rh",
-            .help = hf_cmd_explain[rh],
+            .help = hf_cmd_explain[HF_CMD_IDX_RH],
             .hint = NULL,
-            .func = hf_cmd_tbl[rh].handler,
+            .func = hf_cmd_tbl[HF_CMD_IDX_RH].handler,
             .argtable = &rh_args
         };
         ESP_ERROR_CHECK(esp_console_cmd_register(&rh_cmd));
 
         const esp_console_cmd_t k_cmd = {
             .command = "k",
-            .help = hf_cmd_explain[k],
+            .help = hf_cmd_explain[HF_CMD_IDX_K],
             .hint = "<dtmf>",
-            .func = hf_cmd_tbl[k].handler,
+            .func = hf_cmd_tbl[HF_CMD_IDX_K].handler,
         };
         ESP_ERROR_CHECK(esp_console_cmd_register(&k_cmd));
 
         const esp_console_cmd_t xp_cmd = {
             .command = "xp",
-            .help = hf_cmd_explain[xp],
+            .help = hf_cmd_explain[HF_CMD_IDX_XP],
             .hint = NULL,
-            .func = hf_cmd_tbl[xp].handler,
+            .func = hf_cmd_tbl[HF_CMD_IDX_XP].handler,
         };
         ESP_ERROR_CHECK(esp_console_cmd_register(&xp_cmd));
 
@@ -555,9 +499,9 @@ void register_hfp_hf(void)
         bat_args.end = arg_end(1);
         const esp_console_cmd_t bat_cmd = {
             .command = "bat",
-            .help = hf_cmd_explain[bat],
+            .help = hf_cmd_explain[HF_CMD_IDX_BAT],
             .hint = "<bat_level> <docked>",
-            .func = hf_cmd_tbl[bat].handler,
+            .func = hf_cmd_tbl[HF_CMD_IDX_BAT].handler,
             .argtable = &bat_args,
         };
         ESP_ERROR_CHECK(esp_console_cmd_register(&bat_cmd));

@@ -3,7 +3,6 @@ menu "ESP HTTPS server"
     config ESP_HTTPS_SERVER_ENABLE
         bool "Enable ESP_HTTPS_SERVER component"
         depends on (ESP_TLS_USING_MBEDTLS && MBEDTLS_TLS_SERVER)
-        select ESP_TLS_SERVER
         help
             Enable ESP HTTPS server component
 

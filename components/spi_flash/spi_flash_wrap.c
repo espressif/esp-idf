@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,6 +12,7 @@
 #include "spi_flash_defs.h"
 #include "esp_rom_sys.h"
 #include "esp_rom_spiflash.h"
+#include "rom/spi_flash.h"
 #include "spi_flash_override.h"
 #include "esp_private/spi_flash_os.h"
 
@@ -87,9 +88,9 @@ esp_err_t spi_flash_wrap_enable_77(spi_flash_wrap_size_t wrap_size)
 {
     uint8_t wrap_code = (uint8_t) (((__builtin_ctz(wrap_size) - 3) * 2) << 4);
     // According to the special format, we need enable QIO_FWRITE for command 77h and clear it after this command is done.
-    REG_SET_BIT(SPI_MEM_USER_REG(1), SPI_MEM_FWRITE_QIO);
+    REG_SET_BIT(PERIPHS_SPI_FLASH_USRREG, SPI_MEM_FWRITE_QIO);
     bootloader_flash_execute_command_common(CMD_WRAP, 0, 0, 6, 8, wrap_code, 0);
-    REG_CLR_BIT(SPI_MEM_USER_REG(1), SPI_MEM_FWRITE_QIO);
+    REG_CLR_BIT(PERIPHS_SPI_FLASH_USRREG, SPI_MEM_FWRITE_QIO);
     return ESP_OK;
 }
 
@@ -110,9 +111,9 @@ esp_err_t spi_flash_wrap_clear_c0(void)
 esp_err_t spi_flash_wrap_clear_77(void)
 {
     // According to the special format, we need enable QIO_FWRITE for command 77h and clear it after this command is done.
-    REG_SET_BIT(SPI_MEM_USER_REG(1), SPI_MEM_FWRITE_QIO);
+    REG_SET_BIT(PERIPHS_SPI_FLASH_USRREG, SPI_MEM_FWRITE_QIO);
     bootloader_flash_execute_command_common(CMD_WRAP, 0, 0, 6, 8, 0x10, 0);
-    REG_CLR_BIT(SPI_MEM_USER_REG(1), SPI_MEM_FWRITE_QIO);
+    REG_CLR_BIT(PERIPHS_SPI_FLASH_USRREG, SPI_MEM_FWRITE_QIO);
     return ESP_OK;
 }
 
@@ -153,7 +154,7 @@ esp_err_t spi_flash_wrap_disable(void)
 bool spi_flash_support_wrap_size(uint32_t wrap_size)
 {
     // Only QIO mode supports wrap.
-    if (!REG_GET_BIT(SPI_MEM_CTRL_REG(0), SPI_MEM_FREAD_QIO)) {
+    if (!REG_GET_BIT(PERIPHS_SPI_FLASH_CTRL, SPI_MEM_FREAD_QIO)) {
         ESP_EARLY_LOGE(FLASH_WRAP_TAG, "flash wrap is only supported in QIO mode");
         abort();
     }

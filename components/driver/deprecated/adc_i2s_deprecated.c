@@ -56,7 +56,7 @@ esp_pm_lock_handle_t adc_digi_arbiter_lock = NULL;
         ESP32 Depricated ADC APIs and functions
 ---------------------------------------------------------------*/
 #define DIG_ADC_OUTPUT_FORMAT_DEFUALT (ADC_DIGI_FORMAT_12BIT)
-#define DIG_ADC_ATTEN_DEFUALT         (ADC_ATTEN_DB_11)
+#define DIG_ADC_ATTEN_DEFUALT         (ADC_ATTEN_DB_12)
 #define DIG_ADC_BIT_WIDTH_DEFUALT     (3)   //3 for ADC_WIDTH_BIT_12
 
 /**

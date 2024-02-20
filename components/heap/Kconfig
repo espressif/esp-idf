@@ -63,7 +63,6 @@ menu "Heap memory debugging"
 
     config HEAP_TASK_TRACKING
         bool "Enable heap task tracking"
-        depends on !HEAP_POISONING_DISABLED
         help
             Enables tracking the task responsible for each heap allocation.
 
@@ -129,4 +128,14 @@ menu "Heap memory debugging"
 
             Note that it is only safe to enable this configuration if no functions from esp_heap_caps.h
             or esp_heap_trace.h are called from ISR.
+
+    config HEAP_TLSF_CHECK_PATCH
+        bool "Patch the tlsf_check_pool() for ROM HEAP TLSF implementation"
+        depends on IDF_TARGET_ESP32C2 && ESP32C2_REV_MIN_FULL < 200
+        default y
+        help
+            ROM does not contain the patch of tlsf_check_pool() allowing perform
+            the integrity checking on used blocks. The patch to allow  such check
+            needs to be applied.
+
 endmenu

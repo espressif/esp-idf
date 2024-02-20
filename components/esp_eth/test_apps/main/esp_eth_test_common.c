@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -63,19 +63,30 @@ esp_eth_mac_t *mac_init(void *vendor_emac_config, eth_mac_config_t *mac_config)
     };
 #if CONFIG_TARGET_ETH_PHY_DEVICE_W5500
     eth_w5500_config_t w5500_config = ETH_W5500_DEFAULT_CONFIG(DEFAULT_TARGET_SPI_HOST, &devcfg);
+#if CONFIG_TARGET_ETH_SPI_POLL_MS > 0
+    w5500_config.int_gpio_num = -1;
+    w5500_config.poll_period_ms = CONFIG_TARGET_ETH_SPI_POLL_MS;
+#endif
     if (vendor_emac_config == NULL) {
         vendor_emac_config = &w5500_config;
     }
     mac = esp_eth_mac_new_w5500(vendor_emac_config, mac_config);
 #elif CONFIG_TARGET_ETH_PHY_DEVICE_KSZ8851SNL
     eth_ksz8851snl_config_t ksz8851snl_config = ETH_KSZ8851SNL_DEFAULT_CONFIG(DEFAULT_TARGET_SPI_HOST, &devcfg);
-    ksz8851snl_config.int_gpio_num = 4;
+#if CONFIG_TARGET_ETH_SPI_POLL_MS > 0
+    ksz8851snl_config.int_gpio_num = -1;
+    ksz8851snl_config.poll_period_ms = CONFIG_TARGET_ETH_SPI_POLL_MS;
+#endif
     if (vendor_emac_config == NULL) {
         vendor_emac_config = &ksz8851snl_config;
     }
     mac = esp_eth_mac_new_ksz8851snl(vendor_emac_config, mac_config);
 #elif CONFIG_TARGET_ETH_PHY_DEVICE_DM9051
     eth_dm9051_config_t dm9051_config = ETH_DM9051_DEFAULT_CONFIG(DEFAULT_TARGET_SPI_HOST, &devcfg);
+#if CONFIG_TARGET_ETH_SPI_POLL_MS > 0
+    dm9051_config.int_gpio_num = -1;
+    dm9051_config.poll_period_ms = CONFIG_TARGET_ETH_SPI_POLL_MS;
+#endif
     if (vendor_emac_config == NULL) {
         vendor_emac_config = &dm9051_config ;
     }
@@ -96,23 +107,31 @@ esp_eth_phy_t *phy_init(eth_phy_config_t *phy_config)
     phy_config->phy_addr = ESP_ETH_PHY_ADDR_AUTO;
 #if CONFIG_TARGET_ETH_PHY_DEVICE_IP101
     phy = esp_eth_phy_new_ip101(phy_config);
-#elif CONFIG_TARGET_ETH_PHY_DEVICE_LAN87XX
+    ESP_LOGI(TAG, "DUT PHY: IP101");
+#elif CONFIG_TARGET_ETH_PHY_DEVICE_LAN8720
     phy = esp_eth_phy_new_lan87xx(phy_config);
-#elif CONFIG_TARGET_ETH_PHY_DEVICE_KSZ80XX
+    ESP_LOGI(TAG, "DUT PHY: LAN8720");
+#elif CONFIG_TARGET_ETH_PHY_DEVICE_KSZ8041
     phy = esp_eth_phy_new_ksz80xx(phy_config);
+    ESP_LOGI(TAG, "DUT PHY: KSZ8041");
 #elif CONFIG_TARGET_ETH_PHY_DEVICE_RTL8201
     phy = esp_eth_phy_new_rtl8201(phy_config);
+    ESP_LOGI(TAG, "DUT PHY: RTL8201");
 #elif CONFIG_TARGET_ETH_PHY_DEVICE_DP83848
     phy = esp_eth_phy_new_dp83848(phy_config);
+    ESP_LOGI(TAG, "DUT PHY: DP83848");
 #endif // CONFIG_TARGET_ETH_PHY_DEVICE_IP101
 #elif CONFIG_TARGET_USE_SPI_ETHERNET
     phy_config->reset_gpio_num = -1;
 #if CONFIG_TARGET_ETH_PHY_DEVICE_W5500
     phy = esp_eth_phy_new_w5500(phy_config);
+    ESP_LOGI(TAG, "DUT PHY: W5500");
 #elif CONFIG_TARGET_ETH_PHY_DEVICE_KSZ8851SNL
     phy = esp_eth_phy_new_ksz8851snl(phy_config);
+    ESP_LOGI(TAG, "DUT PHY: KSZ8851SNL");
 #elif CONFIG_TARGET_ETH_PHY_DEVICE_DM9051
     phy = esp_eth_phy_new_dm9051(phy_config);
+    ESP_LOGI(TAG, "DUT PHY: DM9051");
 #endif // CONFIG_TARGET_ETH_PHY_DEVICE_W5500
 #endif // CONFIG_TARGET_USE_INTERNAL_ETHERNET
     return phy;
@@ -145,14 +164,18 @@ void eth_event_handler(void *arg, esp_event_base_t event_base,
     EventGroupHandle_t eth_event_group = (EventGroupHandle_t)arg;
     switch (event_id) {
     case ETHERNET_EVENT_CONNECTED:
+        ESP_LOGI(TAG, "Ethernet Link Up");
         xEventGroupSetBits(eth_event_group, ETH_CONNECT_BIT);
         break;
     case ETHERNET_EVENT_DISCONNECTED:
+        ESP_LOGI(TAG, "Ethernet Link Down");
         break;
     case ETHERNET_EVENT_START:
+        ESP_LOGI(TAG, "Ethernet Started");
         xEventGroupSetBits(eth_event_group, ETH_START_BIT);
     break;
     case ETHERNET_EVENT_STOP:
+        ESP_LOGI(TAG, "Ethernet Stopped");
         xEventGroupSetBits(eth_event_group, ETH_STOP_BIT);
         break;
     default:

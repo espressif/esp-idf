@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -63,7 +63,7 @@ static mac_t s_mac_table[] = {
 #define ITEMS_IN_MAC_TABLE (sizeof(s_mac_table) / sizeof(mac_t))
 
 static esp_err_t generate_mac(uint8_t *mac, uint8_t *base_mac_addr, esp_mac_type_t type);
-static esp_err_t get_efuse_mac_get_default(uint8_t *mac);
+static esp_err_t get_efuse_factory_mac(uint8_t *mac);
 static esp_err_t get_efuse_mac_custom(uint8_t *mac);
 #if CONFIG_SOC_IEEE802154_SUPPORTED
 static esp_err_t get_efuse_mac_ext(uint8_t *mac);
@@ -89,11 +89,19 @@ static esp_err_t get_mac_addr_from_mac_table(uint8_t *mac, int idx, bool silent)
         esp_mac_type_t type = s_mac_table[idx].type;
         if (ESP_MAC_BASE <= type && type <= ESP_MAC_EFUSE_EXT) {
             esp_err_t err = ESP_OK;
-            if (type == ESP_MAC_BASE || type == ESP_MAC_EFUSE_FACTORY) {
-                err = get_efuse_mac_get_default(s_mac_table[idx].mac);
-            } else if (type == ESP_MAC_EFUSE_CUSTOM) {
-                err = get_efuse_mac_custom(s_mac_table[idx].mac);
-            }
+            if (type == ESP_MAC_EFUSE_FACTORY
+#ifndef CONFIG_ESP_MAC_USE_CUSTOM_MAC_AS_BASE_MAC
+                    || type == ESP_MAC_BASE
+#endif
+             ) {
+                err = get_efuse_factory_mac(s_mac_table[idx].mac);
+             } else if (type == ESP_MAC_EFUSE_CUSTOM
+#ifdef CONFIG_ESP_MAC_USE_CUSTOM_MAC_AS_BASE_MAC
+                            || type == ESP_MAC_BASE
+#endif
+             ) {
+                 err = get_efuse_mac_custom(s_mac_table[idx].mac);
+             }
 #if CONFIG_SOC_IEEE802154_SUPPORTED
             else if (type == ESP_MAC_EFUSE_EXT) {
                 err = get_efuse_mac_ext(s_mac_table[idx].mac);
@@ -246,7 +254,7 @@ static esp_err_t get_efuse_mac_custom(uint8_t *mac)
 
 esp_err_t esp_efuse_mac_get_default(uint8_t *mac)
 {
-    esp_err_t err = get_efuse_mac_get_default(mac);
+    esp_err_t err = get_efuse_factory_mac(mac);
     if (err != ESP_OK) {
         return err;
     }
@@ -257,7 +265,7 @@ esp_err_t esp_efuse_mac_get_default(uint8_t *mac)
 #endif
 }
 
-static esp_err_t get_efuse_mac_get_default(uint8_t *mac)
+static esp_err_t get_efuse_factory_mac(uint8_t *mac)
 {
     size_t size_bits = esp_efuse_get_field_size(ESP_EFUSE_MAC_FACTORY);
     assert((size_bits % 8) == 0);

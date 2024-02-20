@@ -40,8 +40,10 @@ uint16_t esp_core_dump_get_arch_id(void);
  *
  * @param info Pointer to the panic information. It contains the execution
  *             frame.
+ * @param isr_context A flag indicating whether the crash happened within an ISR context.
+ *                    Set to 1 if the crash occurred in an ISR, and 0 otherwise.
  */
-void esp_core_dump_port_init(panic_info_t *info);
+void esp_core_dump_port_init(panic_info_t *info, bool isr_context);
 
 /**
  * @brief Reset fake stacks allocator, if any.

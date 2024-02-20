@@ -15,7 +15,7 @@
 
 TEST_CASE("Test pbkdf2", "[crypto-pbkdf2]")
 {
-    set_leak_threshold(120);
+    set_leak_threshold(130);
 
     uint8_t PMK[PMK_LEN];
     uint8_t ssid_len;

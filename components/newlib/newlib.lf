@@ -5,5 +5,3 @@ entries:
   abort (noflash)
   assert (noflash)
   stdatomic (noflash)
-  if IDF_TARGET_ARCH_RISCV:
-    port_stdatomic (noflash)

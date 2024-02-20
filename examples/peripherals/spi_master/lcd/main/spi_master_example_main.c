@@ -87,7 +87,7 @@ DRAM_ATTR static const lcd_init_cmd_t st_init_cmds[] = {
     /* Frame Rate Control, 60Hz, inversion=0 */
     {0xC6, {0x0f}, 1},
     /* Power Control 1, AVDD=6.8V, AVCL=-4.8V, VDDS=2.3V */
-    {0xD0, {0xA4, 0xA1}, 1},
+    {0xD0, {0xA4, 0xA1}, 2},
     /* Positive Voltage Gamma Control */
     {0xE0, {0xD0, 0x00, 0x05, 0x0E, 0x15, 0x0D, 0x37, 0x43, 0x47, 0x09, 0x15, 0x12, 0x16, 0x19}, 14},
     /* Negative Voltage Gamma Control */
@@ -333,13 +333,13 @@ static void send_lines(spi_device_handle_t spi, int ypos, uint16_t *linedata)
     trans[0].tx_data[0] = 0x2A;         //Column Address Set
     trans[1].tx_data[0] = 0;            //Start Col High
     trans[1].tx_data[1] = 0;            //Start Col Low
-    trans[1].tx_data[2] = (320) >> 8;   //End Col High
-    trans[1].tx_data[3] = (320) & 0xff; //End Col Low
+    trans[1].tx_data[2] = (320 - 1) >> 8;   //End Col High
+    trans[1].tx_data[3] = (320 - 1) & 0xff; //End Col Low
     trans[2].tx_data[0] = 0x2B;         //Page address set
     trans[3].tx_data[0] = ypos >> 8;    //Start page high
     trans[3].tx_data[1] = ypos & 0xff;  //start page low
-    trans[3].tx_data[2] = (ypos + PARALLEL_LINES) >> 8; //end page high
-    trans[3].tx_data[3] = (ypos + PARALLEL_LINES) & 0xff; //end page low
+    trans[3].tx_data[2] = (ypos + PARALLEL_LINES - 1) >> 8; //end page high
+    trans[3].tx_data[3] = (ypos + PARALLEL_LINES - 1) & 0xff; //end page low
     trans[4].tx_data[0] = 0x2C;         //memory write
     trans[5].tx_buffer = linedata;      //finally send the line data
     trans[5].length = 320 * 2 * 8 * PARALLEL_LINES;  //Data length, in bits

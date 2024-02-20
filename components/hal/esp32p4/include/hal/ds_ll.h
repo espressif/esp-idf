@@ -16,6 +16,7 @@
 #include <string.h>
 
 #include "soc/hwcrypto_reg.h"
+#include "soc/hp_sys_clkrst_struct.h"
 #include "soc/soc_caps.h"
 #include "hal/ds_types.h"
 
@@ -23,6 +24,35 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/**
+ * @brief Enable the bus clock for DS peripheral module
+ *
+ * @param true to enable the module, false to disable the module
+ */
+static inline void ds_ll_enable_bus_clock(bool enable)
+{
+    HP_SYS_CLKRST.peri_clk_ctrl25.reg_crypto_ds_clk_en = enable;
+}
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define ds_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; ds_ll_enable_bus_clock(__VA_ARGS__)
+
+/**
+ * @brief Reset the DS peripheral module
+ */
+static inline void ds_ll_reset_register(void)
+{
+    HP_SYS_CLKRST.hp_rst_en2.reg_rst_en_ds = 1;
+    HP_SYS_CLKRST.hp_rst_en2.reg_rst_en_ds = 0;
+    HP_SYS_CLKRST.hp_rst_en2.reg_rst_en_crypto = 1;
+    HP_SYS_CLKRST.hp_rst_en2.reg_rst_en_crypto = 0;
+}
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define ds_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; ds_ll_reset_register(__VA_ARGS__)
 
 static inline void ds_ll_start(void)
 {

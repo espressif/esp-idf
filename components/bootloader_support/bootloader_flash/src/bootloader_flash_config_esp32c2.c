@@ -11,9 +11,7 @@
 #include "esp_log.h"
 #include "esp_rom_gpio.h"
 #include "esp32c2/rom/spi_flash.h"
-#include "esp32c2/rom/efuse.h"
 #include "soc/gpio_periph.h"
-#include "soc/efuse_reg.h"
 #include "soc/spi_reg.h"
 #include "soc/spi_mem_reg.h"
 #include "soc/soc_caps.h"
@@ -71,6 +69,7 @@ void IRAM_ATTR bootloader_flash_set_dummy_out(void)
     REG_SET_BIT(SPI_MEM_CTRL_REG(1), SPI_MEM_FDUMMY_OUT | SPI_MEM_D_POL | SPI_MEM_Q_POL);
 }
 
+//deprecated
 void IRAM_ATTR bootloader_flash_dummy_config(const esp_image_header_t *pfhdr)
 {
     bootloader_configure_spi_pins(1);
@@ -127,10 +126,8 @@ static void update_flash_config(const esp_image_header_t *bootloader_hdr)
     default:
         size = 2;
     }
-    cache_hal_disable(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_ALL);
     // Set flash chip size
     esp_rom_spiflash_config_param(rom_spiflash_legacy_data->chip.device_id, size * 0x100000, 0x10000, 0x1000, 0x100, 0xffff);    // TODO: set mode
-    cache_hal_enable(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_ALL);
 }
 
 static void print_flash_info(const esp_image_header_t *bootloader_hdr)
@@ -220,7 +217,8 @@ static void bootloader_print_mmu_page_size(void)
 
 static void IRAM_ATTR bootloader_init_flash_configure(void)
 {
-    bootloader_flash_dummy_config(&bootloader_image_hdr);
+    bootloader_configure_spi_pins(1);
+    bootloader_flash_set_dummy_out();
     bootloader_flash_cs_timing_config();
 }
 
@@ -243,8 +241,76 @@ esp_err_t bootloader_init_spi_flash(void)
 
     bootloader_print_mmu_page_size();
     print_flash_info(&bootloader_image_hdr);
+
+    cache_hal_disable(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_ALL);
     update_flash_config(&bootloader_image_hdr);
+    cache_hal_enable(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_ALL);
+
     //ensure the flash is write-protected
     bootloader_enable_wp();
     return ESP_OK;
 }
+
+#if CONFIG_APP_BUILD_TYPE_RAM && !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
+static void bootloader_flash_set_spi_mode(const esp_image_header_t* pfhdr)
+{
+    esp_rom_spiflash_read_mode_t mode;
+    switch(pfhdr->spi_mode) {
+    case ESP_IMAGE_SPI_MODE_QIO:
+        mode = ESP_ROM_SPIFLASH_QIO_MODE;
+        break;
+    case ESP_IMAGE_SPI_MODE_QOUT:
+        mode = ESP_ROM_SPIFLASH_QOUT_MODE;
+        break;
+    case ESP_IMAGE_SPI_MODE_DIO:
+        mode = ESP_ROM_SPIFLASH_DIO_MODE;
+        break;
+    case ESP_IMAGE_SPI_MODE_FAST_READ:
+        mode = ESP_ROM_SPIFLASH_FASTRD_MODE;
+        break;
+    case ESP_IMAGE_SPI_MODE_SLOW_READ:
+        mode = ESP_ROM_SPIFLASH_SLOWRD_MODE;
+        break;
+    default:
+        mode = ESP_ROM_SPIFLASH_DIO_MODE;
+    }
+    esp_rom_spiflash_config_readmode(mode);
+}
+
+void bootloader_flash_hardware_init(void)
+{
+    esp_rom_spiflash_attach(0, false);
+
+    //init cache hal
+    cache_hal_init();
+    //init mmu
+    mmu_hal_init();
+    // update flash ID
+    bootloader_flash_update_id();
+
+    /* Alternative of bootloader_init_spi_flash */
+    // RAM app doesn't have headers in the flash. Make a default one for it.
+    esp_image_header_t WORD_ALIGNED_ATTR hdr = {
+        .spi_mode = ESP_IMAGE_SPI_MODE_DIO,
+        .spi_speed = ESP_IMAGE_SPI_SPEED_DIV_2,
+        .spi_size = ESP_IMAGE_FLASH_SIZE_2MB,
+    };
+    bootloader_configure_spi_pins(1);
+    bootloader_flash_set_spi_mode(&hdr);
+    bootloader_flash_clock_config(&hdr);
+    bootloader_flash_set_dummy_out();
+    bootloader_flash_cs_timing_config();
+
+    bootloader_spi_flash_resume();
+    bootloader_flash_unlock();
+
+    bootloader_print_mmu_page_size();
+
+    cache_hal_disable(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_ALL);
+    update_flash_config(&hdr);
+    cache_hal_enable(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_ALL);
+
+    //ensure the flash is write-protected
+    bootloader_enable_wp();
+}
+#endif //CONFIG_APP_BUILD_TYPE_RAM && !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP

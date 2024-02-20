@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -28,10 +28,10 @@
 #define IDF_PERFORMANCE_MAX_ECDSA_P256_VERIFY_OP                                49000
 
 #define IDF_PERFORMANCE_MAX_SPI_CLK_FREQ                                        40*1000*1000
-#define IDF_PERFORMANCE_MAX_SPI_PER_TRANS_POLLING                               20
-#define IDF_PERFORMANCE_MAX_SPI_PER_TRANS_POLLING_NO_DMA                        16
-#define IDF_PERFORMANCE_MAX_SPI_PER_TRANS_NO_POLLING                            45
-#define IDF_PERFORMANCE_MAX_SPI_PER_TRANS_NO_POLLING_NO_DMA                     41
+#define IDF_PERFORMANCE_MAX_SPI_PER_TRANS_POLLING                               23
+#define IDF_PERFORMANCE_MAX_SPI_PER_TRANS_POLLING_NO_DMA                        18
+#define IDF_PERFORMANCE_MAX_SPI_PER_TRANS_NO_POLLING                            47
+#define IDF_PERFORMANCE_MAX_SPI_PER_TRANS_NO_POLLING_NO_DMA                     42
 
 // floating point instructions per divide and per sqrt (configured for worst-case with PSRAM workaround)
 #define IDF_PERFORMANCE_MAX_CYCLES_PER_DIV                                      70

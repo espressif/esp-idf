@@ -52,8 +52,8 @@ def test_examples_perf_benchmark_sdcard_sdmmc(dut: Dut) -> None:
 
 
 @pytest.mark.esp32
-@pytest.mark.esp32s2
 @pytest.mark.esp32c3
+@pytest.mark.esp32s2
 @pytest.mark.sdcard_spimode
 @pytest.mark.parametrize(
     'config',

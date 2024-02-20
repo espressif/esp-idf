@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -178,6 +178,34 @@ typedef struct {
  * @param info Pointer to a structure to fill with heap metadata.
  */
 void multi_heap_get_info(multi_heap_handle_t heap, multi_heap_info_t *info);
+
+/**
+ * @brief Perform an aligned allocation from the provided offset
+ *
+ * @param heap The heap in which to perform the allocation
+ * @param size The size of the allocation
+ * @param alignment How the memory must be aligned
+ * @param offset The offset at which the alignment should start
+ * @return void* The ptr to the allocated memory
+ */
+void *multi_heap_aligned_alloc_offs(multi_heap_handle_t heap, size_t size, size_t alignment, size_t offset);
+
+/**
+ * @brief Reset the minimum_free_bytes value (setting it to free_bytes) and return the former value
+ *
+ * @param heap The heap in which the reset is taking place
+ * @return size_t the value of minimum_free_bytes before it is reset
+ */
+size_t multi_heap_reset_minimum_free_bytes(multi_heap_handle_t heap);
+
+/**
+ * @brief Set the value of minimum_free_bytes to new_minimum_free_bytes_value or keep
+ * the current value of minimum_free_bytes if it is smaller than new_minimum_free_bytes_value
+ *
+ * @param heap The heap in which the restore is taking place
+ * @param new_minimum_free_bytes_value The value to restore the minimum_free_bytes to
+ */
+void multi_heap_restore_minimum_free_bytes(multi_heap_handle_t heap, const size_t new_minimum_free_bytes_value);
 
 #ifdef __cplusplus
 }

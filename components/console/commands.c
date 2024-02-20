@@ -1,11 +1,15 @@
 /*
- * SPDX-FileCopyrightText: 2016-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2016-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <stdio.h>
 #include <string.h>
+#if __has_include(<bsd/string.h>)
+// for strlcpy
+#include <bsd/string.h>
+#endif
 #include <stdlib.h>
 #include <sys/param.h>
 #include "esp_heap_caps.h"
@@ -32,9 +36,11 @@ typedef struct cmd_item_ {
      * May be NULL.
      */
     char *hint;
-    esp_console_cmd_func_t func;    //!< pointer to the command handler
-    void *argtable;                 //!< optional pointer to arg table
-    SLIST_ENTRY(cmd_item_) next;    //!< next command in the list
+    esp_console_cmd_func_t func;                        //!< pointer to the command handler (without user context)
+    esp_console_cmd_func_with_context_t func_w_context; //!< pointer to the command handler (with user context)
+    void *argtable;                                     //!< optional pointer to arg table
+    void *context;                                      //!< optional pointer to user context
+    SLIST_ENTRY(cmd_item_) next;                        //!< next command in the list
 } cmd_item_t;
 
 /** linked list of command structures */
@@ -97,6 +103,10 @@ esp_err_t esp_console_cmd_register(const esp_console_cmd_t *cmd)
     if (strchr(cmd->command, ' ') != NULL) {
         return ESP_ERR_INVALID_ARG;
     }
+    if ((cmd->func == NULL && cmd->func_w_context == NULL)
+            || (cmd->func != NULL && cmd->func_w_context != NULL)) {
+        return ESP_ERR_INVALID_ARG;
+    }
     item = (cmd_item_t *)find_command_by_name(cmd->command);
     if (!item) {
         // not registered before
@@ -129,15 +139,26 @@ esp_err_t esp_console_cmd_register(const esp_console_cmd_t *cmd)
         item->hint = buf;
     }
     item->argtable = cmd->argtable;
-    item->func = cmd->func;
-    cmd_item_t *last = SLIST_FIRST(&s_cmd_list);
+
+    if (cmd->func) {
+        item->func = cmd->func;
+    } else {
+        // cmd->func_w_context is valid here according to check above
+        item->func_w_context = cmd->func_w_context;
+        item->context = cmd->context;
+    }
+
+    cmd_item_t *last = NULL;
+    cmd_item_t *it;
+    SLIST_FOREACH(it, &s_cmd_list, next) {
+        if (strcmp(it->command, item->command) > 0) {
+            break;
+        }
+        last = it;
+    }
     if (last == NULL) {
         SLIST_INSERT_HEAD(&s_cmd_list, item, next);
     } else {
-        cmd_item_t *it;
-        while ((it = SLIST_NEXT(last, next)) != NULL) {
-            last = it;
-        }
         SLIST_INSERT_AFTER(last, item, next);
     }
     return ESP_OK;
@@ -210,7 +231,12 @@ esp_err_t esp_console_run(const char *cmdline, int *cmd_ret)
         free(argv);
         return ESP_ERR_NOT_FOUND;
     }
-    *cmd_ret = (*cmd->func)(argc, argv);
+    if (cmd->func) {
+        *cmd_ret = (*cmd->func)(argc, argv);
+    }
+    if (cmd->func_w_context) {
+        *cmd_ret = (*cmd->func_w_context)(cmd->context, argc, argv);
+    }
     free(argv);
     return ESP_OK;
 }

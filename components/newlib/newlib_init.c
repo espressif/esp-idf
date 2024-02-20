@@ -20,6 +20,7 @@
 #include "esp_attr.h"
 #include "soc/soc_caps.h"
 #include "esp_rom_caps.h"
+#include "esp_private/startup_internal.h"
 
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/rom/libc_stubs.h"
@@ -33,13 +34,13 @@
 #include "esp32c2/rom/libc_stubs.h"
 #elif CONFIG_IDF_TARGET_ESP32C6
 #include "esp32c6/rom/libc_stubs.h"
+#elif CONFIG_IDF_TARGET_ESP32C5
+#include "esp32c5/rom/libc_stubs.h"
 #elif CONFIG_IDF_TARGET_ESP32H2
 #include "esp32h2/rom/libc_stubs.h"
 #elif CONFIG_IDF_TARGET_ESP32P4
 #include "esp32p4/rom/libc_stubs.h"
 #endif
-
-static struct _reent s_reent;
 
 extern int _printf_float(struct _reent *rptr,
                void *pdata,
@@ -56,6 +57,21 @@ extern int _scanf_float(struct _reent *rptr,
 static void raise_r_stub(struct _reent *rptr)
 {
     _raise_r(rptr, 0);
+}
+
+static void esp_cleanup_r (struct _reent *rptr)
+{
+    if (_REENT_STDIN(rptr) != _REENT_STDIN(_GLOBAL_REENT)) {
+        _fclose_r(rptr, _REENT_STDIN(rptr));
+    }
+
+    if (_REENT_STDOUT(rptr) != _REENT_STDOUT(_GLOBAL_REENT)) {
+        _fclose_r(rptr, _REENT_STDOUT(rptr));
+    }
+
+    if (_REENT_STDERR(rptr) !=_REENT_STDERR(_GLOBAL_REENT)) {
+        _fclose_r(rptr, _REENT_STDERR(rptr));
+    }
 }
 
 static struct syscall_stub_table s_stub_table = {
@@ -113,21 +129,20 @@ static struct syscall_stub_table s_stub_table = {
     ._printf_float = NULL,
     ._scanf_float = NULL,
 #endif
-#if CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3 \
-    || CONFIG_IDF_TARGET_ESP32C2 || CONFIG_IDF_TARGET_ESP32C6 || CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP32P4
+#if !CONFIG_IDF_TARGET_ESP32 && !CONFIG_IDF_TARGET_ESP32S2
     /* TODO IDF-2570 : mark that this assert failed in ROM, to avoid confusion between IDF & ROM
        assertion failures (as function names & source file names will be similar)
     */
     .__assert_func = __assert_func,
 
-    /* We don't expect either ROM code or IDF to ever call __sinit, so it's implemented as abort() for now.
+    /* We don't expect either ROM code to ever call __sinit, so it's implemented as abort() for now.
 
-       esp_reent_init() does this job inside IDF.
-
-       Kept in the syscall table in case we find a need for it later.
+       __sinit may be called in IDF side only if /dev/console used as input/output. It called only
+       once for _GLOBAL_REENT. Then reuse std file pointers from _GLOBAL_REENT in another reents.
+       See esp_newlib_init() and esp_reent_init() for details.
     */
     .__sinit = (void *)abort,
-    ._cleanup_r = &_cleanup_r,
+    ._cleanup_r = &esp_cleanup_r,
 #endif
 };
 
@@ -141,7 +156,17 @@ void esp_newlib_init(void)
     syscall_table_ptr = &s_stub_table;
 #endif
 
+#if __NEWLIB__ > 4 || ( __NEWLIB__ == 4 && __NEWLIB_MINOR__ > 1 ) /* TODO: IDF-8134 */
+    memset(&__sglue, 0, sizeof(__sglue));
+    _global_impure_ptr = _GLOBAL_REENT;
+#else
+    static struct _reent s_reent;
     _GLOBAL_REENT = &s_reent;
+#endif
+
+    /* Ensure that the initialization of sfp is prevented until esp_newlib_init_global_stdio() is explicitly invoked. */
+    _GLOBAL_REENT->__cleanup = esp_cleanup_r;
+    _REENT_SDIDINIT(_GLOBAL_REENT) = 1;
 
     environ = malloc(sizeof(char*));
     if (environ == 0) {
@@ -153,4 +178,63 @@ void esp_newlib_init(void)
     esp_newlib_locks_init();
 }
 
+ESP_SYSTEM_INIT_FN(init_newlib, CORE, BIT(0), 102)
+{
+    esp_newlib_init();
+    return ESP_OK;
+}
+
 void esp_setup_newlib_syscalls(void) __attribute__((alias("esp_newlib_init")));
+
+/**
+ * Postponed _GLOBAL_REENT stdio FPs initialization.
+ *
+ * Can not be a part of esp_reent_init() because stdio device may not initialized yet.
+ *
+ * Called from startup code and FreeRTOS, not intended to be called from
+ * application code.
+ */
+void esp_newlib_init_global_stdio(const char *stdio_dev)
+{
+    if (stdio_dev == NULL)
+    {
+        _GLOBAL_REENT->__cleanup = NULL;
+        _REENT_SDIDINIT(_GLOBAL_REENT) = 0;
+        __sinit(_GLOBAL_REENT);
+        _GLOBAL_REENT->__cleanup = esp_cleanup_r;
+        _REENT_SDIDINIT(_GLOBAL_REENT) = 1;
+    } else {
+        _REENT_STDIN(_GLOBAL_REENT) = fopen(stdio_dev, "r");
+        _REENT_STDOUT(_GLOBAL_REENT) = fopen(stdio_dev, "w");
+        _REENT_STDERR(_GLOBAL_REENT) = fopen(stdio_dev, "w");
+#if ESP_ROM_NEEDS_SWSETUP_WORKAROUND
+        /*
+        - This workaround for printf functions using 32-bit time_t after the 64-bit time_t upgrade
+        - The 32-bit time_t usage is triggered through ROM Newlib functions printf related functions calling __swsetup_r() on
+          the first call to a particular file pointer (i.e., stdin, stdout, stderr)
+        - Thus, we call the toolchain version of __swsetup_r() now (before any printf calls are made) to setup all of the
+          file pointers. Thus, the ROM newlib code will never call the ROM version of __swsetup_r().
+        - See IDFGH-7728 for more details
+        */
+        extern int __swsetup_r (struct _reent *, FILE *);
+        __swsetup_r(_GLOBAL_REENT, _REENT_STDIN(_GLOBAL_REENT));
+        __swsetup_r(_GLOBAL_REENT, _REENT_STDOUT(_GLOBAL_REENT));
+        __swsetup_r(_GLOBAL_REENT, _REENT_STDERR(_GLOBAL_REENT));
+#endif /* ESP_ROM_NEEDS_SWSETUP_WORKAROUND */
+    }
+}
+
+ESP_SYSTEM_INIT_FN(init_newlib_stdio, CORE, BIT(0), 115)
+{
+#if defined(CONFIG_VFS_SUPPORT_IO) && !defined(CONFIG_ESP_CONSOLE_NONE)
+    esp_newlib_init_global_stdio("/dev/console");
+#else
+    esp_newlib_init_global_stdio(NULL);
+#endif
+    return ESP_OK;
+}
+
+// Hook to force the linker to include this file
+void newlib_include_init_funcs(void)
+{
+}

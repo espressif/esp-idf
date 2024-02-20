@@ -14,12 +14,14 @@
 
 #ifndef OS_H
 #define OS_H
+#include <sys/types.h>
 #include "esp_types.h"
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include "esp_err.h"
 #include "supplicant_opt.h"
+#include "esp_private/esp_wifi_private.h"
 #include "esp_wifi.h"
 
 typedef time_t os_time_t;

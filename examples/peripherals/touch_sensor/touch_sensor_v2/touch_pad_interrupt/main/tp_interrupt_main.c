@@ -196,7 +196,7 @@ void app_main(void)
 
     /* Filter setting */
     touchsensor_filter_set(TOUCH_PAD_FILTER_IIR_16);
-    touch_pad_timeout_set(true, SOC_TOUCH_PAD_THRESHOLD_MAX);
+    touch_pad_timeout_set(true, TOUCH_PAD_THRESHOLD_MAX);
     /* Register touch interrupt ISR, enable intr type. */
     touch_pad_isr_register(touchsensor_interrupt_cb, NULL, TOUCH_PAD_INTR_MASK_ALL);
     /* If you have other touch algorithm, you can get the measured value after the `TOUCH_PAD_INTR_MASK_SCAN_DONE` interrupt is generated. */

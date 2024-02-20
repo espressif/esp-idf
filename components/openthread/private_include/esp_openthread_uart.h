@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -29,16 +29,40 @@ extern "C" {
 esp_err_t esp_openthread_uart_init_port(const esp_openthread_uart_config_t *config);
 
 /**
- * @brief  Initializes the uart for OpenThread host connection.
+ * @brief  Initializes the console UART for OpenThread host connection.
  *
- * @param[in]   config  The uart configuration.
+ * @param[in]   config  The platform configuration.
  *
  * @return
  *      - ESP_OK on success
  *      - ESP_ERROR on failure
  *
  */
-esp_err_t esp_openthread_uart_init(const esp_openthread_platform_config_t *config);
+esp_err_t esp_openthread_host_cli_uart_init(const esp_openthread_platform_config_t *config);
+
+/**
+ * @brief  Initializes the console USB JTAG for OpenThread host connection.
+ *
+ * @param[in]   config  The platform configuration.
+ *
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERROR on failure
+ *
+ */
+esp_err_t esp_openthread_host_cli_usb_init(const esp_openthread_platform_config_t *config);
+
+/**
+ * @brief  Initializes the RCP UART for OpenThread host connection.
+ *
+ * @param[in]   config  The platform configuration.
+ *
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERROR on failure
+ *
+ */
+esp_err_t esp_openthread_host_rcp_uart_init(const esp_openthread_platform_config_t *config);
 
 /**
  * @brief  Deintializes the uart for OpenThread host connection.

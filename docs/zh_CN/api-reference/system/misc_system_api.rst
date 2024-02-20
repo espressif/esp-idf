@@ -4,7 +4,7 @@
 :link_to_translation:`en:[English]`
 
 {IDF_TARGET_BASE_MAC_BLOCK: default="BLK1", esp32="BLK0"}
-{IDF_TARGET_CPU_RESET_DES: default="CPU 复位", esp32="两个 CPU 均复位", esp32s3="两个 CPU 均复位"}
+{IDF_TARGET_CPU_RESET_DES: default="CPU 复位", esp32="两个 CPU 均复位", esp32s3="两个 CPU 均复位", esp32p4="两个 CPU 均复位"}
 
 软件复位
 ------------

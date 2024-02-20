@@ -9,6 +9,7 @@
 #include <inttypes.h>
 
 #include "esp_log.h"
+#include "esp_assert.h"
 #include "esp_check.h"
 #include "http_parser.h"
 #include "http_header.h"
@@ -20,6 +21,7 @@
 #include "esp_http_client.h"
 #include "errno.h"
 #include "esp_random.h"
+#include "esp_tls.h"
 
 #ifdef CONFIG_ESP_HTTP_CLIENT_ENABLE_HTTPS
 #include "esp_transport_ssl.h"
@@ -28,6 +30,9 @@
 ESP_EVENT_DEFINE_BASE(ESP_HTTP_CLIENT_EVENT);
 
 static const char *TAG = "HTTP_CLIENT";
+
+ESP_STATIC_ASSERT((int)ESP_HTTP_CLIENT_TLS_VER_ANY == (int)ESP_TLS_VER_ANY, "Enum mismatch in esp_http_client and esp-tls");
+ESP_STATIC_ASSERT((int)ESP_HTTP_CLIENT_TLS_VER_MAX <= (int)ESP_TLS_VER_TLS_MAX, "HTTP client supported TLS is not supported in esp-tls");
 
 /**
  * HTTP Buffer
@@ -83,6 +88,13 @@ typedef enum {
     HTTP_STATE_RES_COMPLETE_DATA,
     HTTP_STATE_CLOSE
 } esp_http_state_t;
+
+typedef enum {
+    SESSION_TICKET_UNUSED = 0,
+    SESSION_TICKET_NOT_SAVED,
+    SESSION_TICKET_SAVED,
+} session_ticket_state_t;
+
 /**
  * HTTP client class
  */
@@ -122,6 +134,9 @@ struct esp_http_client {
     esp_transport_keep_alive_t  keep_alive_cfg;
     struct ifreq                *if_name;
     unsigned                    cache_data_in_fetch_hdr: 1;
+#ifdef CONFIG_ESP_TLS_CLIENT_SESSION_TICKETS
+    session_ticket_state_t      session_ticket_state;
+#endif
 };
 
 typedef struct esp_http_client esp_http_client_t;
@@ -189,7 +204,7 @@ static void http_dispatch_event_to_event_loop(int32_t event_id, const void* even
 {
     esp_err_t err = esp_event_post(ESP_HTTP_CLIENT_EVENT, event_id, event_data, event_data_size, portMAX_DELAY);
     if (err != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to post https_ota event: %"PRId32", error: %s", event_id, esp_err_to_name(err));
+        ESP_LOGE(TAG, "Failed to post http_client event: %"PRId32", error: %s", event_id, esp_err_to_name(err));
     }
 }
 
@@ -564,6 +579,7 @@ static esp_err_t _clear_auth_data(esp_http_client_handle_t client)
     free(client->auth_data->qop);
     free(client->auth_data->nonce);
     free(client->auth_data->opaque);
+    free(client->auth_data->uri);
     memset(client->auth_data, 0, sizeof(esp_http_auth_data_t));
     return ESP_OK;
 }
@@ -595,10 +611,14 @@ static esp_err_t esp_http_client_prepare(esp_http_client_handle_t client)
             auth_response = http_auth_basic(client->connection_info.username, client->connection_info.password);
 #ifdef CONFIG_ESP_HTTP_CLIENT_ENABLE_DIGEST_AUTH
         } else if (client->connection_info.auth_type == HTTP_AUTH_TYPE_DIGEST && client->auth_data) {
-            client->auth_data->uri = client->connection_info.path;
+            client->auth_data->uri = NULL;
+            http_utils_assign_string(&client->auth_data->uri,client->connection_info.path,-1);
+            if (client->connection_info.query){
+                http_utils_append_string(&client->auth_data->uri,"?",-1);
+                http_utils_append_string(&client->auth_data->uri,client->connection_info.query,-1);
+            }
             client->auth_data->cnonce = ((uint64_t)esp_random() << 32) + esp_random();
             auth_response = http_auth_digest(client->connection_info.username, client->connection_info.password, client->auth_data);
-            client->auth_data->nc ++;
 #endif
         }
 
@@ -723,6 +743,7 @@ esp_http_client_handle_t esp_http_client_init(const esp_http_client_config_t *co
             esp_transport_ssl_set_client_cert_data_der(ssl, config->client_cert_pem, config->client_cert_len);
         }
     }
+    esp_transport_ssl_set_tls_version(ssl, config->tls_version);
 
 #if CONFIG_ESP_TLS_USE_SECURE_ELEMENT
     if (config->use_secure_element) {
@@ -733,6 +754,18 @@ esp_http_client_handle_t esp_http_client_init(const esp_http_client_config_t *co
 #if CONFIG_ESP_TLS_USE_DS_PERIPHERAL
     if (config->ds_data != NULL) {
         esp_transport_ssl_set_ds_data(ssl, config->ds_data);
+    }
+#endif
+
+#if CONFIG_ESP_TLS_CLIENT_SESSION_TICKETS
+    if (config->save_client_session) {
+        client->session_ticket_state = SESSION_TICKET_NOT_SAVED;
+    }
+#endif
+
+#if CONFIG_ESP_HTTP_CLIENT_ENABLE_CUSTOM_TRANSPORT
+    if (config->transport) {
+        client->transport = config->transport;
     }
 #endif
 
@@ -1107,10 +1140,15 @@ static int esp_http_client_get_data(esp_http_client_handle_t client)
     esp_http_buffer_t *res_buffer = client->response->buffer;
 
     ESP_LOGD(TAG, "data_process=%"PRId64", content_length=%"PRId64, client->response->data_process, client->response->content_length);
-
+    errno = 0;
     int rlen = esp_transport_read(client->transport, res_buffer->data, client->buffer_size_rx, client->timeout_ms);
     if (rlen >= 0) {
-        http_parser_execute(client->parser, client->parser_settings, res_buffer->data, rlen);
+        // When tls error is ESP_TLS_ERR_SSL_WANT_READ (-0x6900), esp_trasnport_read returns ERR_TCP_TRANSPORT_CONNECTION_TIMEOUT (0x0).
+        // We should not execute http_parser_execute() on this condition as it sets the internal state machine in an
+        // invalid state.
+        if (!(client->is_async && rlen == 0)) {
+            http_parser_execute(client->parser, client->parser_settings, res_buffer->data, rlen);
+        }
     }
     return rlen;
 }
@@ -1341,6 +1379,7 @@ int64_t esp_http_client_fetch_headers(esp_http_client_handle_t client)
     client->response->status_code = -1;
 
     while (client->state < HTTP_STATE_RES_COMPLETE_HEADER) {
+        errno = 0;
         buffer->len = esp_transport_read(client->transport, buffer->data, client->buffer_size_rx, client->timeout_ms);
         if (buffer->len <= 0) {
             if (buffer->len == ERR_TCP_TRANSPORT_CONNECTION_TIMEOUT) {
@@ -1376,8 +1415,21 @@ static esp_err_t esp_http_client_connect(esp_http_client_handle_t client)
     }
 
     if (client->state < HTTP_STATE_CONNECTED) {
-        ESP_LOGD(TAG, "Begin connect to: %s://%s:%d", client->connection_info.scheme, client->connection_info.host, client->connection_info.port);
-        client->transport = esp_transport_list_get_transport(client->transport_list, client->connection_info.scheme);
+#ifdef CONFIG_ESP_HTTP_CLIENT_ENABLE_CUSTOM_TRANSPORT
+        // If the custom transport is enabled and defined, we skip the selection of appropriate transport from the list
+        // based on the scheme, since we already have the transport
+        if (!client->transport)
+#endif
+        {
+            ESP_LOGD(TAG, "Begin connect to: %s://%s:%d", client->connection_info.scheme, client->connection_info.host, client->connection_info.port);
+            client->transport = esp_transport_list_get_transport(client->transport_list, client->connection_info.scheme);
+        }
+
+#ifdef CONFIG_ESP_TLS_CLIENT_SESSION_TICKETS
+        if (client->session_ticket_state == SESSION_TICKET_SAVED) {
+            esp_transport_ssl_session_ticket_operation(client->transport, ESP_TRANSPORT_SESSION_TICKET_USE);
+        }
+#endif
         if (client->transport == NULL) {
             ESP_LOGE(TAG, "No transport found");
 #ifndef CONFIG_ESP_HTTP_CLIENT_ENABLE_HTTPS
@@ -1409,6 +1461,13 @@ static esp_err_t esp_http_client_connect(esp_http_client_handle_t client)
         client->state = HTTP_STATE_CONNECTED;
         http_dispatch_event(client, HTTP_EVENT_ON_CONNECTED, NULL, 0);
         http_dispatch_event_to_event_loop(HTTP_EVENT_ON_CONNECTED, &client, sizeof(esp_http_client_handle_t));
+#ifdef CONFIG_ESP_TLS_CLIENT_SESSION_TICKETS
+        if (client->session_ticket_state != SESSION_TICKET_UNUSED) {
+            esp_transport_ssl_session_ticket_operation(client->transport, ESP_TRANSPORT_SESSION_TICKET_SAVE);
+            client->session_ticket_state = SESSION_TICKET_SAVED;
+        }
+#endif
+
     }
     return ESP_OK;
 }
@@ -1701,6 +1760,9 @@ void esp_http_client_add_auth(esp_http_client_handle_t client)
         client->auth_data->nc = 1;
         client->auth_data->realm = http_utils_get_string_between(auth_header, "realm=\"", "\"");
         client->auth_data->algorithm = http_utils_get_string_between(auth_header, "algorithm=", ",");
+        if (client->auth_data->algorithm == NULL) {
+            client->auth_data->algorithm = http_utils_get_string_after(auth_header, "algorithm=");
+        }
         if (client->auth_data->algorithm == NULL) {
             client->auth_data->algorithm = strdup("MD5");
         }

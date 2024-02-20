@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,7 +14,7 @@
 #include "soc/timer_periph.h"
 #include "esp_app_trace.h"
 #include "esp_freertos_hooks.h"
-#include "esp_private/dbg_stubs.h"
+#include "dbg_stubs.h"
 #include "esp_ipc.h"
 #include "hal/wdt_hal.h"
 #if CONFIG_IDF_TARGET_ESP32
@@ -170,6 +170,13 @@ long gcov_rtio_ftell(void *stream)
 {
     long ret = esp_apptrace_ftell(ESP_APPTRACE_DEST_TRAX, stream);
     ESP_EARLY_LOGV(TAG, "%s(%p) = %ld", __FUNCTION__, stream, ret);
+    return ret;
+}
+
+int gcov_rtio_feof(void *stream)
+{
+    int ret = esp_apptrace_feof(ESP_APPTRACE_DEST_TRAX, stream);
+    ESP_EARLY_LOGV(TAG, "%s(%p) = %d", __FUNCTION__, stream, ret);
     return ret;
 }
 

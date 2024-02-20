@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2016-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2016-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -21,7 +21,6 @@ extern "C" {
  * @defgroup ulp_registers ULP coprocessor registers
  * @{
  */
-
 
 #define R0 0    /*!< general purpose register 0 */
 #define R1 1    /*!< general purpose register 1 */
@@ -101,7 +100,6 @@ extern "C" {
 #define SUB_OPCODE_MACRO_BRANCH 1   /*!< Branch macro */
 #define SUB_OPCODE_MACRO_LABELPC 2  /*!< Label pointer macro */
 /**@}*/
-
 
 /**
  * @brief Instruction format structure
@@ -306,7 +304,8 @@ union ulp_insn {
  * @param reg peripheral register in RTC_CNTL_, RTC_IO_, SENS_, RTC_I2C peripherals.
  * @return periph_sel value for the peripheral to which this register belongs.
  */
-static inline uint32_t SOC_REG_TO_ULP_PERIPH_SEL(uint32_t reg) {
+static inline uint32_t SOC_REG_TO_ULP_PERIPH_SEL(uint32_t reg)
+{
     uint32_t ret = 3;
     if (reg < DR_REG_RTCCNTL_BASE) {
         assert(0 && "invalid register base");
@@ -314,9 +313,9 @@ static inline uint32_t SOC_REG_TO_ULP_PERIPH_SEL(uint32_t reg) {
         ret = RD_REG_PERIPH_RTC_CNTL;
     } else if (reg < DR_REG_SENS_BASE) {
         ret = RD_REG_PERIPH_RTC_IO;
-    } else if (reg < DR_REG_RTC_I2C_BASE){
+    } else if (reg < DR_REG_RTC_I2C_BASE) {
         ret = RD_REG_PERIPH_SENS;
-    } else if (reg < DR_REG_IO_MUX_BASE){
+    } else if (reg < DR_REG_IO_MUX_BASE) {
         ret = RD_REG_PERIPH_RTC_I2C;
     } else {
         assert(0 && "invalid register base");
@@ -465,7 +464,6 @@ static inline uint32_t SOC_REG_TO_ULP_PERIPH_SEL(uint32_t reg) {
     .sub_opcode = SUB_OPCODE_ST, \
     .opcode = OPCODE_ST } }
 
-
 /**
  * Load value from RTC memory into reg_dest register.
  *
@@ -479,7 +477,6 @@ static inline uint32_t SOC_REG_TO_ULP_PERIPH_SEL(uint32_t reg) {
     .offset = offset_, \
     .unused2 = 0, \
     .opcode = OPCODE_LD } }
-
 
 /**
  *  Branch relative if R0 less than immediate value.
@@ -596,7 +593,6 @@ static inline uint32_t SOC_REG_TO_ULP_PERIPH_SEL(uint32_t reg) {
     .sub_opcode = SUB_OPCODE_BX, \
     .opcode = OPCODE_BRANCH } }
 
-
 /**
  * Addition: dest = src1 + src2
  */
@@ -669,7 +665,6 @@ static inline uint32_t SOC_REG_TO_ULP_PERIPH_SEL(uint32_t reg) {
     .sub_opcode = SUB_OPCODE_ALU_REG, \
     .opcode = OPCODE_ALU } }
 
-
 /**
  * Logical shift right: dest = src >> shift
  */
@@ -693,7 +688,6 @@ static inline uint32_t SOC_REG_TO_ULP_PERIPH_SEL(uint32_t reg) {
     .sel = ALU_SEL_ADD, \
     .sub_opcode = SUB_OPCODE_ALU_IMM, \
     .opcode = OPCODE_ALU } }
-
 
 /**
  *  Subtract register and an immediate value: dest = src - imm
@@ -754,7 +748,6 @@ static inline uint32_t SOC_REG_TO_ULP_PERIPH_SEL(uint32_t reg) {
     .sel = ALU_SEL_LSH, \
     .sub_opcode = SUB_OPCODE_ALU_IMM, \
     .opcode = OPCODE_ALU } }
-
 
 /**
  * Logical shift right register value by an immediate: dest = val >> imm

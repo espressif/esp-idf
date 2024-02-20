@@ -7,7 +7,7 @@
 # See https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/partition-tables.html
 # for explanation of partition table structure and uses.
 #
-# SPDX-FileCopyrightText: 2016-2021 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2016-2023 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 
 from __future__ import division, print_function, unicode_literals
@@ -32,7 +32,7 @@ SECURE_NONE = None
 SECURE_V1 = 'v1'
 SECURE_V2 = 'v2'
 
-__version__ = '1.2'
+__version__ = '1.3'
 
 APP_TYPE = 0x00
 DATA_TYPE = 0x01
@@ -98,14 +98,18 @@ def get_alignment_offset_for_type(ptype):
 
 
 def get_alignment_size_for_type(ptype):
-    if ptype == APP_TYPE and secure == SECURE_V1:
-        # For secure boot v1 case, app partition must be 64K aligned
-        # signature block (68 bytes) lies at the very end of 64K block
-        return 0x10000
-    if ptype == APP_TYPE and secure == SECURE_V2:
-        # For secure boot v2 case, app partition must be 4K aligned
-        # signature block (4K) is kept after padding the unsigned image to 64K boundary
-        return 0x1000
+    if ptype == APP_TYPE:
+        if secure == SECURE_V1:
+            # For secure boot v1 case, app partition must be 64K aligned
+            # signature block (68 bytes) lies at the very end of 64K block
+            return 0x10000
+        elif secure == SECURE_V2:
+            # For secure boot v2 case, app partition must be 4K aligned
+            # signature block (4K) is kept after padding the unsigned image to 64K boundary
+            return 0x1000
+        else:
+            # For no secure boot enabled case, app partition must be 4K aligned (min. flash erase size)
+            return 0x1000
     # No specific size alignement requirement as such
     return 0x1
 
@@ -341,7 +345,8 @@ class PartitionDefinition(object):
     # dictionary maps flag name (as used in CSV flags list, property name)
     # to bit set in flags words in binary format
     FLAGS = {
-        'encrypted': 0
+        'encrypted': 0,
+        'readonly': 1
     }
 
     # add subtypes for the 16 OTA slot values ("ota_XX, etc.")
@@ -355,6 +360,7 @@ class PartitionDefinition(object):
         self.offset = None
         self.size = None
         self.encrypted = False
+        self.readonly = False
 
     @classmethod
     def from_csv(cls, line, line_no):
@@ -439,7 +445,7 @@ class PartitionDefinition(object):
         offset_align = get_alignment_offset_for_type(self.type)
         if self.offset % offset_align:
             raise ValidationError(self, 'Offset 0x%x is not aligned to 0x%x' % (self.offset, offset_align))
-        if self.type == APP_TYPE and secure is not SECURE_NONE:
+        if self.type == APP_TYPE:
             size_align = get_alignment_size_for_type(self.type)
             if self.size % size_align:
                 raise ValidationError(self, 'Size 0x%x is not aligned to 0x%x' % (self.size, size_align))
@@ -453,6 +459,11 @@ class PartitionDefinition(object):
         if self.name in all_subtype_names and SUBTYPES.get(self.type, {}).get(self.name, '') != self.subtype:
             critical("WARNING: Partition has name '%s' which is a partition subtype, but this partition has "
                      'non-matching type 0x%x and subtype 0x%x. Mistake in partition table?' % (self.name, self.type, self.subtype))
+
+        always_rw_data_subtypes = [SUBTYPES[DATA_TYPE]['ota'], SUBTYPES[DATA_TYPE]['coredump']]
+        if self.type == TYPES['data'] and self.subtype in always_rw_data_subtypes and self.readonly is True:
+            raise ValidationError(self, "'%s' partition of type %s and subtype %s is always read-write and cannot be read-only" %
+                                  (self.name, self.type, self.subtype))
 
     STRUCT_FORMAT = b'<2sBBLL16sL'
 

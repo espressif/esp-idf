@@ -16,9 +16,9 @@
 
 请参考 `触摸传感器应用方案简介 <https://github.com/espressif/esp-iot-solution/blob/release/v1.0/documents/touch_pad_solution/touch_sensor_design_en.md>`_，查看触摸传感器设计详情和固件开发指南。
 
-.. only:: SOC_TOUCH_VERSION_1
+.. only:: esp32
 
-	如果想评估触摸传感器的多种应用场景，请查看 `ESP32 触摸功能开发套件 <https://docs.espressif.com/projects/espressif-esp-dev-kits/en/latest/esp32/esp32-sense-kit/user_guide.html>`_。
+  如果想评估触摸传感器的多种应用场景，请查看 `ESP32 触摸功能开发套件 <https://docs.espressif.com/projects/espressif-esp-dev-kits/en/latest/esp32/esp32-sense-kit/user_guide.html>`_。
 
 功能介绍
 ----------------------
@@ -125,7 +125,7 @@
 触摸状态测量
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. only:: SOC_TOUCH_VERSION_1
+.. only:: esp32
 
     借助以下两个函数从传感器读取原始数据和滤波后的数据：
 
@@ -138,7 +138,7 @@
 
         使用 :cpp:func:`touch_pad_read_filtered` 之前，需要先调用 `滤波采样`_ 中特定的滤波器函数来初始化并配置该滤波器。
 
-.. only:: SOC_TOUCH_VERSION_2
+.. only:: esp32s2 or esp32s3
 
     借助以下函数从传感器读取原始数据：
 
@@ -151,7 +151,7 @@
 测量方式
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. only:: SOC_TOUCH_VERSION_1
+.. only:: esp32
 
     触摸传感器会统计固定时间内的充放电次数，其计数结果即为原始数据，可由 :cpp:func:`touch_pad_read_raw_data` 读出。上述固定时间可通过 :cpp:func:`touch_pad_set_measurement_clock_cycles` 设置。完成一次测量后，触摸传感器会在下次测量开始前保持睡眠状态。两次测量之前的间隔时间可由 :cpp:func:`touch_pad_set_measurement_interval` 进行设置。
 
@@ -159,7 +159,7 @@
 
         若设置的计数时间太短（即测量持续的时钟周期数太小），则可能导致结果不准确，但是过大的计数时间也会造成功耗上升。另外，若睡眠时间加测量时间的总时间过长，则会造成触摸传感器响应变慢。
 
-.. only:: SOC_TOUCH_VERSION_2
+.. only:: esp32s2 or esp32s3
 
     触摸传感器会统计固定充放电次数所需的时间（即所需时钟周期数），其结果即为原始数据，可由 :cpp:func:`touch_pad_read_raw_data` 读出。上述固定的充放电次数可通过 :cpp:func:`touch_pad_set_charge_discharge_times` 设置。完成一次测量后，触摸传感器会在下次测量开始前保持睡眠状态。两次测量之前的间隔时间可由 :cpp:func:`touch_pad_set_measurement_interval` 进行设置。
 
@@ -172,11 +172,11 @@
 
 触摸传感器设有数个可配置参数，以适应触摸传感器设计特点。例如，如果需要感知较细微的电容变化，则可以缩小触摸传感器充放电的参考电压范围。使用 :cpp:func:`touch_pad_set_voltage` 函数，可以设置电压参考低值和参考高值。
 
-.. only:: SOC_TOUCH_VERSION_1
+.. only:: esp32
 
     优化测量除了可以识别细微的电容变化之外，还可以降低应用程序功耗，但可能会增加测量噪声干扰。如果得到的动态读数范围结果比较理想，则可以调用 :cpp:func:`touch_pad_set_measurement_clock_cycles` 函数来减少测量时间，从而进一步降低功耗。
 
-.. only:: SOC_TOUCH_VERSION_2
+.. only:: esp32s2 or esp32s3
 
     优化测量除了可以识别细微的电容变化之外，还可以降低应用程序功耗，但可能会增加测量噪声干扰。如果得到的动态读数范围结果比较理想，则可以调用 :cpp:func:`touch_pad_set_charge_discharge_times` 函数来减少测量时间，从而进一步降低功耗。
 
@@ -187,17 +187,17 @@
     * 电压门限：:cpp:func:`touch_pad_set_voltage`
     * 速率（斜率）：:cpp:func:`touch_pad_set_cnt_mode`
 
-.. only:: SOC_TOUCH_VERSION_1
+.. only:: esp32
 
     * 单次测量所用的时钟周期：:cpp:func:`touch_pad_set_measurement_clock_cycles`
 
-.. only:: SOC_TOUCH_VERSION_2
+.. only:: esp32s2 or esp32s3
 
     * 单次测量所需充放电次数：:cpp:func:`touch_pad_set_charge_discharge_times`
 
 电压门限（参考低值/参考高值）、速率（斜率）与测量时间的关系如下图所示：
 
-.. only:: SOC_TOUCH_VERSION_1
+.. only:: esp32
 
     .. figure:: ../../../_static/touch_pad-measurement-parameters.jpg
         :align: center
@@ -208,7 +208,7 @@
 
     上图中的 **Output** 代表触摸传感器读值，即一个测量周期内测得的脉冲计数值。
 
-.. only:: SOC_TOUCH_VERSION_2
+.. only:: esp32s2 or esp32s3
 
     .. figure:: ../../../_static/touch_pad-measurement-parameters-version2.png
         :align: center
@@ -225,7 +225,7 @@
 
 滤波采样
 ^^^^^^^^^^^^^^^^^^^^^^^^^
-.. only:: SOC_TOUCH_VERSION_1
+.. only:: esp32
 
     如果测量中存在噪声，可以使用提供的 API 函数对采样进行滤波。使用滤波器之前，请先调用 :cpp:func:`touch_pad_filter_start` 启动该滤波器。
 
@@ -233,7 +233,7 @@
 
     如需停止滤波器，请调用 :cpp:func:`touch_pad_filter_stop` 函数。如果不再使用该滤波器，请调用 :cpp:func:`touch_pad_filter_delete` 删除此滤波器。
 
-.. only:: SOC_TOUCH_VERSION_2
+.. only:: esp32s2 or esp32s3
 
     如果测量中存在噪声，可以使用提供的 API 函数对采样进行滤波。{IDF_TARGET_NAME} 的触摸功能提供了两套 API 可实现此功能。
 
@@ -259,7 +259,7 @@
 
 确定监测阈值后就可以在初始化时调用 :cpp:func:`touch_pad_config` 设置此阈值，或在运行时调用 :cpp:func:`touch_pad_set_thresh` 设置此阈值。
 
-.. only:: SOC_TOUCH_VERSION_1
+.. only:: esp32
 
     下一步就是设置如何触发中断。可以设置在阈值以下或以上触发中断，具体触发模式由函数 :cpp:func:`touch_pad_set_trigger_mode` 设置。
 
@@ -270,13 +270,13 @@
 
 中断配置完成后，可以调用 :cpp:func:`touch_pad_get_status` 查看中断信号来自哪个触摸传感器，也可以调用 :cpp:func:`touch_pad_clear_status` 清除触摸传感器状态信息。
 
-.. only:: SOC_TOUCH_VERSION_1
+.. only:: esp32
 
     .. note::
 
         触摸监测中的中断信号基于原始/未经滤波的采样（对比设置的阈值），并在硬件中实现。启用软件滤波 API（请参考 :ref:`touch_pad-api-filtering-of-measurements`）并不会影响这一过程。
 
-.. only:: SOC_TOUCH_VERSION_1
+.. only:: esp32
 
     从睡眠模式唤醒
     ^^^^^^^^^^^^^^^^^^^^^^

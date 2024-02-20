@@ -1,0 +1,1 @@
+CONFIG_IDF_TARGET="esp32h2"

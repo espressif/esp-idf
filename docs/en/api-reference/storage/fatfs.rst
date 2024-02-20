@@ -19,30 +19,32 @@ The function :cpp:func:`esp_vfs_fat_unregister_path` deletes the registration wi
 
 Most applications use the following workflow when working with ``esp_vfs_fat_`` functions:
 
-1. Call :cpp:func:`esp_vfs_fat_register` to specify:
+#. Call :cpp:func:`esp_vfs_fat_register` to specify:
     - Path prefix where to mount the filesystem (e.g., ``"/sdcard"``, ``"/spiflash"``)
     - FatFs drive number
     - A variable which receives the pointer to the ``FATFS`` structure
 
-2. Call :cpp:func:`ff_diskio_register` to register the disk I/O driver for the drive number used in Step 1.
+#. Call :cpp:func:`ff_diskio_register` to register the disk I/O driver for the drive number used in Step 1.
 
-3. Call the FatFs function ``f_mount``, and optionally ``f_fdisk``, ``f_mkfs``, to mount the filesystem using the same drive number which was passed to :cpp:func:`esp_vfs_fat_register`. For more information, see `FatFs documentation <http://elm-chan.org/fsw/ff/doc/mount.html>`_.
+#. To mount the filesystem using the same drive number which was passed to :cpp:func:`esp_vfs_fat_register`, call the FatFs function :cpp:func:`f_mount`. If the filesystem is not present on the target logical drive, :cpp:func:`f_mount` will fail with the ``FR_NO_FILESYSTEM`` error. In such case, call :cpp:func:`f_mkfs` to create a fresh FatFS structure on the drive first, and then call :cpp:func:`f_mount` again. Note that SD cards need to be partitioned with :cpp:func:`f_fdisk` prior to previously described steps. For more information, see `FatFs documentation <http://elm-chan.org/fsw/ff/doc/mount.html>`_.
 
-4. Call the C standard library and POSIX API functions to perform such actions on files as open, read, write, erase, copy, etc. Use paths starting with the path prefix passed to :cpp:func:`esp_vfs_register` (for example, ``"/sdcard/hello.txt"``). The filesystem uses `8.3 filenames <https://en.wikipedia.org/wiki/8.3_filename>`_ format (SFN) by default. If you need to use long filenames (LFN), enable the :ref:`CONFIG_FATFS_LONG_FILENAMES` option. More details on the FatFs filenames are available `here <http://elm-chan.org/fsw/ff/doc/filename.html>`_.
+#. Call the C standard library and POSIX API functions to perform such actions on files as open, read, write, erase, copy, etc. Use paths starting with the path prefix passed to :cpp:func:`esp_vfs_register` (for example, ``"/sdcard/hello.txt"``). The filesystem uses `8.3 filenames <https://en.wikipedia.org/wiki/8.3_filename>`_ format (SFN) by default. If you need to use long filenames (LFN), enable the :ref:`CONFIG_FATFS_LONG_FILENAMES` option. Please refer to `FatFs filenames <http://elm-chan.org/fsw/ff/doc/filename.html>`_ for more details.
 
-5. Optionally, by enabling the option :ref:`CONFIG_FATFS_USE_FASTSEEK`, you can use the POSIX lseek function to perform it faster. The fast seek does not work for files in write mode, so to take advantage of fast seek, you should open (or close and then reopen) the file in read-only mode.
+#. Optionally, call the FatFs library functions directly. In this case, use paths without a VFS prefix, for example, ``"/hello.txt"``.
 
-6. Optionally, call the FatFs library functions directly. In this case, use paths without a VFS prefix (for example, ``"/hello.txt"``).
+#. Close all open files.
 
-7. Close all open files.
+#. Call the FatFs function :cpp:func:`f_mount` for the same drive number with NULL ``FATFS*`` argument to unmount the filesystem.
 
-8. Call the FatFs function ``f_mount`` for the same drive number with NULL ``FATFS*`` argument to unmount the filesystem.
+#. Call the FatFs function :cpp:func:`ff_diskio_register` with NULL ``ff_diskio_impl_t*`` argument and the same drive number to unregister the disk I/O driver.
 
-9. Call the FatFs function :cpp:func:`ff_diskio_register` with NULL ``ff_diskio_impl_t*`` argument and the same drive number to unregister the disk I/O driver.
-
-10. Call :cpp:func:`esp_vfs_fat_unregister_path` with the path where the file system is mounted to remove FatFs from VFS, and free the ``FATFS`` structure allocated in Step 1.
+#. Call :cpp:func:`esp_vfs_fat_unregister_path` with the path where the file system is mounted to remove FatFs from VFS, and free the ``FATFS`` structure allocated in Step 1.
 
 The convenience functions :cpp:func:`esp_vfs_fat_sdmmc_mount`, :cpp:func:`esp_vfs_fat_sdspi_mount`, and :cpp:func:`esp_vfs_fat_sdcard_unmount` wrap the steps described above and also handle SD card initialization. These functions are described in the next section.
+
+.. note::
+
+   Because FAT filesystem does not support hardlinks, :cpp:func:`link` copies contents of the file instead. (This only applies to files on FatFs volumes.)
 
 
 Using FatFs with VFS and SD Cards
@@ -57,6 +59,15 @@ Using FatFs with VFS in Read-Only Mode
 --------------------------------------
 
 The header file :component_file:`fatfs/vfs/esp_vfs_fat.h` also defines the convenience functions :cpp:func:`esp_vfs_fat_spiflash_mount_ro` and :cpp:func:`esp_vfs_fat_spiflash_unmount_ro`. These functions perform Steps 1-3 and 7-9 respectively for read-only FAT partitions. These are particularly helpful for data partitions written only once during factory provisioning, which will not be changed by production application throughout the lifetime of the hardware.
+
+Configuration options
+---------------------
+
+The following configuration options are available for the FatFs component:
+
+* :ref:`CONFIG_FATFS_USE_FASTSEEK` - If enabled, the POSIX :cpp:func:`lseek` function will be performed faster. The fast seek does not work for files in write mode, so to take advantage of fast seek, you should open (or close and then reopen) the file in read-only mode.
+* :ref:`CONFIG_FATFS_IMMEDIATE_FSYNC` - If enabled, the FatFs will automatically call :cpp:func:`f_sync` to flush recent file changes after each call of :cpp:func:`write`, :cpp:func:`pwrite`, :cpp:func:`link`, :cpp:func:`truncate` and :cpp:func:`ftruncate` functions. This feature improves file-consistency and size reporting accuracy for the FatFs, at a price on decreased performance due to frequent disk operations.
+* :ref:`CONFIG_FATFS_LINK_LOCK` - If enabled, this option guarantees the API thread safety, while disabling this option might be necessary for applications that require fast frequent small file operations (e.g., logging to a file). Note that if this option is disabled, the copying performed by :cpp:func:`link` will be non-atomic. In such case, using :cpp:func:`link` on a large file on the same volume in a different task is not guaranteed to be thread safe.
 
 
 FatFS Disk IO Layer
@@ -107,14 +118,15 @@ If you decide for any reason to use ``fatfs_create_rawflash_image`` (without wea
 
 The arguments of the function are as follows:
 
-1. partition - the name of the partition as defined in the partition table (e.g., :example_file:`storage/fatfsgen/partitions_example.csv`).
+#. partition - the name of the partition as defined in the partition table (e.g., :example_file:`storage/fatfsgen/partitions_example.csv`).
 
-2. base_dir - the directory that will be encoded to FatFs partition and optionally flashed into the device. Beware that you have to specify the suitable size of the partition in the partition table.
+#. base_dir - the directory that will be encoded to FatFs partition and optionally flashed into the device. Beware that you have to specify the suitable size of the partition in the partition table.
 
-3. flag ``FLASH_IN_PROJECT`` - optionally, users can have the image automatically flashed together with the app binaries, partition tables, etc. on ``idf.py flash -p <PORT>`` by specifying ``FLASH_IN_PROJECT``.
+#. flag ``FLASH_IN_PROJECT`` - optionally, users can have the image automatically flashed together with the app binaries, partition tables, etc. on ``idf.py flash -p <PORT>`` by specifying ``FLASH_IN_PROJECT``.
 
-4. flag ``PRESERVE_TIME`` - optionally, users can force preserving the timestamps from the source folder to the target image. Without preserving the time, every timestamp will be set to the FATFS default initial time (1st January 1980).
+#. flag ``PRESERVE_TIME`` - optionally, users can force preserving the timestamps from the source folder to the target image. Without preserving the time, every timestamp will be set to the FATFS default initial time (1st January 1980).
 
+#. flag ``ONE_FAT`` - optionally, users can still choose to generate a FATFS volume with a single FAT (file allocation table) instead of two. This makes the free space in the FATFS volume a bit larger (by ``number of sectors used by FAT * sector size``) but also more prone to corruption.
 
 For example::
 
@@ -134,8 +146,9 @@ It is a reverse tool of (:component_file:`fatfsgen.py <fatfs/fatfsgen.py>`), i.e
 
 Usage::
 
-    ./fatfsparse.py [-h] [--wl-layer {detect,enabled,disabled}] fatfs_image.img
+    ./fatfsparse.py [-h] [--wl-layer {detect,enabled,disabled}] [--verbose] fatfs_image.img
 
+Parameter --verbose prints detailed information from boot sector of the FatFs image to the terminal before folder structure is generated.
 
 High-level API Reference
 ------------------------

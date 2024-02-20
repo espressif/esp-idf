@@ -9,6 +9,7 @@
 #include "osi/allocator.h"
 #include "stack/bt_types.h"
 #include "common/bt_defs.h"
+#include "common/bt_target.h"
 #include "bta/bta_api.h"
 #include "bta/bta_dm_co.h"
 #include "btc/btc_task.h"
@@ -23,7 +24,9 @@
 #include "osi/mutex.h"
 #include "osi/thread.h"
 #include "osi/pkt_queue.h"
+#if (BT_CONTROLLER_INCLUDED == TRUE)
 #include "esp_bt.h"
+#endif
 
 #if (BLE_INCLUDED == TRUE)
 #if (BLE_42_FEATURE_SUPPORT == TRUE)
@@ -187,7 +190,11 @@ static void btc_to_bta_adv_data(esp_ble_adv_data_t *p_adv_data, tBTA_BLE_ADV_DAT
 
     if (p_adv_data->include_txpower) {
         mask |= BTM_BLE_AD_BIT_TX_PWR;
+#if (BT_CONTROLLER_INCLUDED == TRUE)
         bta_adv_data->tx_power = esp_ble_tx_power_get(ESP_BLE_PWR_TYPE_ADV);
+#else
+        bta_adv_data->tx_power = 0;
+#endif
     }
 
     if (p_adv_data->min_interval > 0 && p_adv_data->max_interval > 0 &&
@@ -461,6 +468,25 @@ static void btc_stop_adv_callback(uint8_t status)
     msg.pid = BTC_PID_GAP_BLE;
     msg.act = ESP_GAP_BLE_ADV_STOP_COMPLETE_EVT;
     param.adv_stop_cmpl.status = btc_hci_to_esp_status(status);
+
+    ret = btc_transfer_context(&msg, &param,
+                               sizeof(esp_ble_gap_cb_param_t), NULL, NULL);
+
+    if (ret != BT_STATUS_SUCCESS) {
+        BTC_TRACE_ERROR("%s btc_transfer_context failed\n", __func__);
+    }
+}
+
+static void btc_clear_adv_callback(uint8_t status)
+{
+    esp_ble_gap_cb_param_t param;
+    bt_status_t ret;
+    btc_msg_t msg = {0};
+
+    msg.sig = BTC_SIG_API_CB;
+    msg.pid = BTC_PID_GAP_BLE;
+    msg.act = ESP_GAP_BLE_ADV_CLEAR_COMPLETE_EVT;
+    param.adv_clear_cmpl.status = btc_hci_to_esp_status(status);
 
     ret = btc_transfer_context(&msg, &param,
                                sizeof(esp_ble_gap_cb_param_t), NULL, NULL);
@@ -1257,12 +1283,16 @@ static void btc_ble_stop_scanning(tBTA_START_STOP_SCAN_CMPL_CBACK *stop_scan_cb)
     BTA_DmBleScan(false, duration, NULL, stop_scan_cb);
 }
 
-
 static void btc_ble_stop_advertising(tBTA_START_STOP_ADV_CMPL_CBACK *stop_adv_cb)
 {
     bool stop_adv = false;
 
     BTA_DmBleBroadcast(stop_adv, stop_adv_cb);
+}
+
+static void btc_ble_clear_advertising(tBTA_CLEAR_ADV_CMPL_CBACK *clear_adv_cb)
+{
+    BTA_DmBleClearAdv(clear_adv_cb);
 }
 #endif // #if (BLE_42_FEATURE_SUPPORT == TRUE)
 static void btc_ble_update_conn_params(BD_ADDR bd_addr, uint16_t min_int,
@@ -1731,6 +1761,9 @@ void btc_gap_ble_call_handler(btc_msg_t *msg)
     case BTC_GAP_BLE_ACT_STOP_ADV:
         btc_ble_stop_advertising(btc_stop_adv_callback);
         break;
+    case BTC_GAP_BLE_ACT_CLEAR_ADV:
+        btc_ble_clear_advertising(btc_clear_adv_callback);
+        break;
 #endif // #if (BLE_42_FEATURE_SUPPORT == TRUE)
     case BTC_GAP_BLE_ACT_UPDATE_CONN_PARAM:
         btc_ble_update_conn_params(arg->conn_update_params.conn_params.bda,
@@ -2043,6 +2076,10 @@ void btc_gap_ble_call_handler(btc_msg_t *msg)
         params.addr_type = arg_5->periodic_adv_create_sync.params.addr_type;
         params.skip = arg_5->periodic_adv_create_sync.params.skip;
         params.sync_timeout = arg_5->periodic_adv_create_sync.params.sync_timeout;
+        #if (CONFIG_BT_BLE_FEAT_CREATE_SYNC_ENH)
+        params.reports_disabled = arg_5->periodic_adv_create_sync.params.reports_disabled;
+        params.filter_duplicates = arg_5->periodic_adv_create_sync.params.filter_duplicates;
+        #endif
 
         memcpy(params.addr, arg_5->periodic_adv_create_sync.params.addr, sizeof(BD_ADDR));
         BTC_TRACE_DEBUG("BTC_GAP_BLE_PERIODIC_ADV_CREATE_SYNC");

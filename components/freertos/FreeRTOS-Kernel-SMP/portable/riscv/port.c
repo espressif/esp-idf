@@ -9,7 +9,7 @@
 #include "soc/soc_caps.h"
 #include "soc/periph_defs.h"
 #include "soc/system_reg.h"
-#include "soc/interrupt_reg.h"
+#include "hal/crosscore_int_ll.h"
 #include "hal/systimer_hal.h"
 #include "hal/systimer_ll.h"
 #include "riscv/rvruntime-frames.h"
@@ -184,6 +184,9 @@ void IRAM_ATTR vPortReleaseLock( portMUX_TYPE *lock )
 
 void vPortYield(void)
 {
+    // TODO: IDF-8113
+    const int core_id = 0;
+
     if (uxInterruptNesting) {
         vPortYieldFromISR();
     } else {
@@ -199,7 +202,7 @@ void vPortYield(void)
            for an instant yield, and if that happens then the WFI would be
            waiting for the next interrupt to occur...)
         */
-        while (uxSchedulerRunning && REG_READ(SYSTEM_CPU_INTR_FROM_CPU_0_REG) != 0) {}
+        while (uxSchedulerRunning && crosscore_int_ll_get_state(core_id) != 0) {}
     }
 }
 
@@ -283,7 +286,7 @@ BaseType_t xPortStartScheduler(void)
     /* Setup the hardware to generate the tick. */
     vPortSetupTimer();
 
-    esprv_intc_int_set_threshold(1); /* set global INTC masking level */
+    esprv_int_set_threshold(1); /* set global INTC masking level */
     rv_utils_intr_global_enable();
 
     vPortYield();

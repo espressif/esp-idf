@@ -20,6 +20,7 @@
 #include "esp_types.h"
 #include "soc/spi_periph.h"
 #include "soc/spi_struct.h"
+#include "soc/system_struct.h"
 #include "soc/lldesc.h"
 #include "hal/assert.h"
 #include "hal/misc.h"
@@ -36,7 +37,7 @@ extern "C" {
 #define SPI_LL_ONE_LINE_USER_MASK (SPI_FWRITE_QUAD | SPI_FWRITE_DUAL)
 /// Swap the bit order to its correct place to send
 #define HAL_SPI_SWAP_DATA_TX(data, len) HAL_SWAP32((uint32_t)(data) << (32 - len))
-#define SPI_LL_GET_HW(ID) ((ID)==0? ({abort();NULL;}):&GPSPI2)
+#define SPI_LL_GET_HW(ID) (((ID)==1) ? &GPSPI2 : NULL)
 
 #define SPI_LL_DMA_MAX_BIT_LEN    (1 << 18)    //reg len: 18 bits
 #define SPI_LL_CPU_MAX_BIT_LEN    (16 * 32)    //Fifo len: 16 words
@@ -92,6 +93,65 @@ typedef enum {
 /*------------------------------------------------------------------------------
  * Control
  *----------------------------------------------------------------------------*/
+/**
+ * Enable peripheral register clock
+ *
+ * @param host_id   Peripheral index number, see `spi_host_device_t`
+ * @param enable    Enable/Disable
+ */
+static inline void spi_ll_enable_bus_clock(spi_host_device_t host_id, bool enable) {
+    switch (host_id)
+    {
+    case SPI1_HOST:
+        SYSTEM.perip_clk_en0.reg_spi01_clk_en = enable;
+        break;
+    case SPI2_HOST:
+        SYSTEM.perip_clk_en0.reg_spi2_clk_en = enable;
+        break;
+    default: HAL_ASSERT(false);
+    }
+}
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define spi_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; spi_ll_enable_bus_clock(__VA_ARGS__)
+
+/**
+ * Reset whole peripheral register to init value defined by HW design
+ *
+ * @param host_id   Peripheral index number, see `spi_host_device_t`
+ */
+static inline void spi_ll_reset_register(spi_host_device_t host_id) {
+    switch (host_id)
+    {
+    case SPI1_HOST:
+        SYSTEM.perip_rst_en0.reg_spi01_rst = 1;
+        SYSTEM.perip_rst_en0.reg_spi01_rst = 0;
+        break;
+    case SPI2_HOST:
+        SYSTEM.perip_rst_en0.reg_spi2_rst = 1;
+        SYSTEM.perip_rst_en0.reg_spi2_rst = 0;
+        break;
+    default: HAL_ASSERT(false);
+    }
+}
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define spi_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; spi_ll_reset_register(__VA_ARGS__)
+
+/**
+ * Enable functional output clock within peripheral
+ *
+ * @param host_id   Peripheral index number, see `spi_host_device_t`
+ * @param enable    Enable/Disable
+ */
+static inline void spi_ll_enable_clock(spi_host_device_t host_id, bool enable)
+{
+    spi_dev_t *hw = SPI_LL_GET_HW(host_id);
+    HAL_ASSERT(hw != NULL);
+    hw->clk_gate.clk_en = enable;
+}
 
 /**
  * Select SPI peripheral clock source (master).
@@ -131,7 +191,6 @@ static inline void spi_ll_master_init(spi_dev_t *hw)
     hw->slave.val = 0;
     hw->user.val = 0;
 
-    hw->clk_gate.clk_en = 1;
     hw->clk_gate.mst_clk_active = 1;
     hw->clk_gate.mst_clk_sel = 1;
 

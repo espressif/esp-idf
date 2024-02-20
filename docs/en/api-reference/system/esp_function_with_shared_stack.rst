@@ -1,10 +1,26 @@
 Call Function with External Stack
 =================================
 
+:link_to_translation:`zh_CN:[中文]`
+
 Overview
 --------
 
-A given function can be executed with a user-allocated stack space which is independent of current task stack, this mechanism can be used to save stack space wasted by tasks which call a common function with intensive stack usage such as ``printf``. The given function can be called inside the shared stack space which is a callback function deferred by calling :cpp:func:`esp_execute_shared_stack_function`, passing that function as a parameter.
+A given function can be executed with a user-allocated stack space which is independent of current task stack. This mechanism can be used to save stack space wasted by tasks which call a common function with intensive stack usage such as ``printf``. The given function can be called inside the shared stack space, which is a callback function deferred by calling :cpp:func:`esp_execute_shared_stack_function`, passing that function as a parameter.
+
+.. warning::
+
+  :cpp:func:`esp_execute_shared_stack_function` does only minimal preparation of the provided shared stack memory. The function passed to it for execution on the shared stack space or any of that function's callees should not do any of the following:
+
+  .. list::
+    
+     - Use thread-local storage
+     :esp32p4: - Use the floating-point unit
+     :esp32p4: - Use the AI co-processor
+     - Call vTaskDelete(NULL) to delete the currently running task
+
+  Furthermore, backtraces will be wrong when called from the function running on the shared stack or any of its callees. The limitations are quite severe, so that we might deprecate :cpp:func:`esp_execute_shared_stack_function` in the future. If you have any use case which can only be implemented using :cpp:func:`esp_execute_shared_stack_function`, please open a `GitHub Issue <https://github.com/espressif/esp-idf/issues>`_.
+
 
 Usage
 -----
@@ -49,11 +65,10 @@ The usage may look like the code below:
         free(shared_stack);
     }
 
+
 .. _esp-call-with-stack-basic_usage:
 
 API Reference
 -------------
 
 .. include-build-file:: inc/esp_expression_with_stack.inc
-
-

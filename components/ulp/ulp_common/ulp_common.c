@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -28,8 +28,8 @@ esp_err_t ulp_set_wakeup_period(size_t period_index, uint32_t period_us)
 #if CONFIG_IDF_TARGET_ESP32
     uint64_t period_cycles = (period_us_64 << RTC_CLK_CAL_FRACT) / esp_clk_slowclk_cal_get();
     uint64_t min_sleep_period_cycles = ULP_FSM_PREPARE_SLEEP_CYCLES
-                                    + ULP_FSM_WAKEUP_SLEEP_CYCLES
-                                    + REG_GET_FIELD(RTC_CNTL_TIMER2_REG, RTC_CNTL_ULPCP_TOUCH_START_WAIT);
+                                       + ULP_FSM_WAKEUP_SLEEP_CYCLES
+                                       + REG_GET_FIELD(RTC_CNTL_TIMER2_REG, RTC_CNTL_ULPCP_TOUCH_START_WAIT);
     if (period_cycles < min_sleep_period_cycles) {
         period_cycles = min_sleep_period_cycles;
         ESP_LOGW("ulp", "Sleep period clipped to minimum of %"PRIu32" cycles", (uint32_t) min_sleep_period_cycles);
@@ -37,7 +37,7 @@ esp_err_t ulp_set_wakeup_period(size_t period_index, uint32_t period_us)
         period_cycles -= min_sleep_period_cycles;
     }
     REG_SET_FIELD(SENS_ULP_CP_SLEEP_CYC0_REG + period_index * sizeof(uint32_t),
-            SENS_SLEEP_CYCLES_S0, (uint32_t) period_cycles);
+                  SENS_SLEEP_CYCLES_S0, (uint32_t) period_cycles);
 #elif defined(CONFIG_IDF_TARGET_ESP32S2) || defined(CONFIG_IDF_TARGET_ESP32S3)
     soc_rtc_slow_clk_src_t slow_clk_src = rtc_clk_slow_src_get();
     rtc_cal_sel_t cal_clk = RTC_CAL_RTC_MUX;

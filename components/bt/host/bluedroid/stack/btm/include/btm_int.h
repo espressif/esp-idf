@@ -218,6 +218,9 @@ tBTM_CMPL_CB        *p_afh_channels_cmpl_cb; /* Callback function to be called  
 TIMER_LIST_ENT       page_timeout_set_timer;
 tBTM_CMPL_CB         *p_page_to_set_cmpl_cb; /* Callback function to be called when */
 /* set page timeout is completed */
+TIMER_LIST_ENT       set_acl_pkt_types_timer;
+tBTM_CMPL_CB         *p_set_acl_pkt_types_cmpl_cb; /* Callback function to be called when */
+/* set ACL packet types is completed */
 #endif
 
 DEV_CLASS            dev_class;         /* Local device class                   */
@@ -665,6 +668,9 @@ struct tBTM_SEC_DEV_REC{
     secure connection. This will be helpful to know when peer device downgrades it's security. */
 
     UINT16              ble_hci_handle;         /* use in DUMO connection */
+
+#define BTM_ENC_MODE_UNKNOWN  0xff
+    UINT8               enc_mode;               /* encryption mode of current link */
     UINT8               enc_key_size;           /* current link encryption key size */
     tBT_DEVICE_TYPE     device_type;
     BOOLEAN             new_encryption_key_is_p256; /* Set to TRUE when the newly generated LK
@@ -1046,6 +1052,7 @@ tACL_CONN    *btm_handle_to_acl (UINT16 hci_handle);
 void         btm_read_link_policy_complete (UINT8 *p);
 void         btm_read_rssi_complete (UINT8 *p);
 void         btm_read_tx_power_complete (UINT8 *p, BOOLEAN is_ble);
+void         btm_acl_pkt_types_changed(UINT8 status, UINT16 handle, UINT16 pkt_types);
 void         btm_read_link_quality_complete (UINT8 *p);
 tBTM_STATUS  btm_set_packet_types (tACL_CONN *p, UINT16 pkt_types);
 void         btm_process_clk_off_comp_evt (UINT16 hci_handle, UINT16 clock_offset);

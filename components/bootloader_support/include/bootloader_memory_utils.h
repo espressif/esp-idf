@@ -39,7 +39,7 @@ inline static bool esp_dram_match_iram(void) {
  */
 __attribute__((always_inline))
 inline static bool esp_ptr_in_iram(const void *p) {
-#if CONFIG_IDF_TARGET_ESP32 && CONFIG_FREERTOS_UNICORE
+#if CONFIG_IDF_TARGET_ESP32 && CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
     return ((intptr_t)p >= SOC_CACHE_APP_LOW && (intptr_t)p < SOC_IRAM_HIGH);
 #else
     return ((intptr_t)p >= SOC_IRAM_LOW && (intptr_t)p < SOC_IRAM_HIGH);

@@ -5,3 +5,4 @@ fread          gcov_rtio_fread
 fseek          gcov_rtio_fseek
 ftell          gcov_rtio_ftell
 setbuf         gcov_rtio_setbuf
+feof           gcov_rtio_feof

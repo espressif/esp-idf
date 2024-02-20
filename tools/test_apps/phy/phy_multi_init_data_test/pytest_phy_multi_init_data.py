@@ -6,7 +6,7 @@ from pytest_embedded_idf.dut import IdfDut
 
 
 @pytest.mark.supported_targets
-@pytest.mark.temp_skip_ci(targets=['esp32h2'], reason='h2 not supported')
+@pytest.mark.temp_skip_ci(targets=['esp32h2', 'esp32p4'], reason='h2/p4 not supported')  # TODO: IDF-8990
 @pytest.mark.generic
 @pytest.mark.parametrize('config', [
     'phy_multiple_init_data',

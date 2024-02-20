@@ -89,3 +89,8 @@ void esp_phy_disable(esp_phy_modem_t modem)
     phy_clr_modem_flag(modem);
     _lock_release(&s_phy_access_lock);
 }
+
+_lock_t phy_get_lock(void)
+{
+    return s_phy_access_lock;
+}

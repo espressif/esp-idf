@@ -11,6 +11,7 @@
 #include <stdbool.h>
 #include "hal/assert.h"
 #include "hal/misc.h"
+#include "hal/lp_aon_ll.h"
 #include "soc/soc_etm_struct.h"
 #include "soc/pcr_struct.h"
 
@@ -111,6 +112,10 @@ static inline void etm_ll_channel_set_task(soc_etm_dev_t *hw, uint32_t chan, uin
 {
     hw->channel[chan].task_id.task_id = task;
 }
+
+#define etm_ll_is_lpcore_wakeup_triggered()         lp_aon_ll_get_lpcore_etm_wakeup_flag()
+
+#define etm_ll_clear_lpcore_wakeup_status()       lp_aon_ll_clear_lpcore_etm_wakeup_flag()
 
 #ifdef __cplusplus
 }

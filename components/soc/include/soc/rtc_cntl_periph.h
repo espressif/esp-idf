@@ -9,7 +9,7 @@
 #include "sdkconfig.h"
 
 // TODO: IDF-5645
-#if CONFIG_IDF_TARGET_ESP32C6
+#if CONFIG_IDF_TARGET_ESP32C6 || CONFIG_IDF_TARGET_ESP32C5
 #include "soc/lp_io_reg.h"
 #include "soc/lp_io_struct.h"
 #include "soc/lp_aon_reg.h"
@@ -25,7 +25,7 @@
 #endif
 
 // TODO: IDF-5645
-#if CONFIG_IDF_TARGET_ESP32C6 || CONFIG_IDF_TARGET_ESP32P4
+#if CONFIG_IDF_TARGET_ESP32C6 || CONFIG_IDF_TARGET_ESP32P4 || CONFIG_IDF_TARGET_ESP32C5
 #include "soc/lp_analog_peri_reg.h"
 #include "soc/lp_clkrst_reg.h"
 #include "soc/lp_clkrst_struct.h"

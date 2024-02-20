@@ -51,7 +51,7 @@ typedef struct {
 static inline void __attribute__((always_inline)) spinlock_initialize(spinlock_t *lock)
 {
     assert(lock);
-#if !CONFIG_FREERTOS_UNICORE
+#if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
     lock->owner = SPINLOCK_FREE;
     lock->count = 0;
 #endif
@@ -73,7 +73,7 @@ static inline void __attribute__((always_inline)) spinlock_initialize(spinlock_t
  */
 static inline bool __attribute__((always_inline)) spinlock_acquire(spinlock_t *lock, int32_t timeout)
 {
-#if !CONFIG_FREERTOS_UNICORE && !BOOTLOADER_BUILD
+#if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE && !BOOTLOADER_BUILD
     uint32_t irq_status;
     uint32_t core_owner_id, other_core_owner_id;
     bool lock_set;
@@ -151,7 +151,7 @@ exit:
 #endif
     return lock_set;
 
-#else  // !CONFIG_FREERTOS_UNICORE
+#else  // !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
     return true;
 #endif
 }
@@ -171,7 +171,7 @@ exit:
  */
 static inline void __attribute__((always_inline)) spinlock_release(spinlock_t *lock)
 {
-#if !CONFIG_FREERTOS_UNICORE && !BOOTLOADER_BUILD
+#if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE && !BOOTLOADER_BUILD
     uint32_t irq_status;
     uint32_t core_owner_id;
 
@@ -198,7 +198,7 @@ static inline void __attribute__((always_inline)) spinlock_release(spinlock_t *l
 #else
     rv_utils_restore_intlevel(irq_status);
 #endif  //#if __XTENSA__
-#endif  //#if !CONFIG_FREERTOS_UNICORE && !BOOTLOADER_BUILD
+#endif  //#if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE && !BOOTLOADER_BUILD
 }
 
 #ifdef __cplusplus

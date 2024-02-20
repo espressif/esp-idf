@@ -269,29 +269,29 @@ TEST_CASE("ADC1 continuous raw average and std_deviation", "[adc_continuous][man
 
 TEST_CASE("ADC1 continuous std deviation performance, no filter", "[adc_continuous][performance]")
 {
-    float std = test_adc_continuous_std(ADC_ATTEN_DB_11, false, 0, true);
+    float std = test_adc_continuous_std(ADC_ATTEN_DB_12, false, 0, true);
     TEST_PERFORMANCE_LESS_THAN(ADC_CONTINUOUS_STD_ATTEN3_NO_FILTER, "%.2f", std);
 }
 
 #if SOC_ADC_DIG_IIR_FILTER_SUPPORTED
 TEST_CASE("ADC1 continuous std deviation performance, with filter", "[adc_continuous][performance]")
 {
-    float std = test_adc_continuous_std(ADC_ATTEN_DB_11, false, 0, true);
+    float std = test_adc_continuous_std(ADC_ATTEN_DB_12, false, 0, true);
     TEST_PERFORMANCE_LESS_THAN(ADC_CONTINUOUS_STD_ATTEN3_NO_FILTER, "%.2f", std);
 
-    std = test_adc_continuous_std(ADC_ATTEN_DB_11, true, ADC_DIGI_IIR_FILTER_COEFF_2, true);
+    std = test_adc_continuous_std(ADC_ATTEN_DB_12, true, ADC_DIGI_IIR_FILTER_COEFF_2, true);
     TEST_PERFORMANCE_LESS_THAN(ADC_CONTINUOUS_STD_ATTEN3_FILTER_2, "%.2f", std);
 
-    std = test_adc_continuous_std(ADC_ATTEN_DB_11, true, ADC_DIGI_IIR_FILTER_COEFF_4, true);
+    std = test_adc_continuous_std(ADC_ATTEN_DB_12, true, ADC_DIGI_IIR_FILTER_COEFF_4, true);
     TEST_PERFORMANCE_LESS_THAN(ADC_CONTINUOUS_STD_ATTEN3_FILTER_4, "%.2f", std);
 
-    std = test_adc_continuous_std(ADC_ATTEN_DB_11, true, ADC_DIGI_IIR_FILTER_COEFF_8, true);
+    std = test_adc_continuous_std(ADC_ATTEN_DB_12, true, ADC_DIGI_IIR_FILTER_COEFF_8, true);
     TEST_PERFORMANCE_LESS_THAN(ADC_CONTINUOUS_STD_ATTEN3_FILTER_8, "%.2f", std);
 
-    std = test_adc_continuous_std(ADC_ATTEN_DB_11, true, ADC_DIGI_IIR_FILTER_COEFF_16, true);
+    std = test_adc_continuous_std(ADC_ATTEN_DB_12, true, ADC_DIGI_IIR_FILTER_COEFF_16, true);
     TEST_PERFORMANCE_LESS_THAN(ADC_CONTINUOUS_STD_ATTEN3_FILTER_16, "%.2f", std);
 
-    std = test_adc_continuous_std(ADC_ATTEN_DB_11, true, ADC_DIGI_IIR_FILTER_COEFF_64, true);
+    std = test_adc_continuous_std(ADC_ATTEN_DB_12, true, ADC_DIGI_IIR_FILTER_COEFF_64, true);
     TEST_PERFORMANCE_LESS_THAN(ADC_CONTINUOUS_STD_ATTEN3_FILTER_64, "%.2f", std);
 }
 #endif  //#if SOC_ADC_DIG_IIR_FILTER_SUPPORTED
@@ -375,7 +375,7 @@ TEST_CASE("ADC1 oneshot raw average and std_deviation", "[adc_oneshot][manual]")
 
 TEST_CASE("ADC1 oneshot std_deviation performance", "[adc_oneshot][performance]")
 {
-    float std = test_adc_oneshot_std(ADC_ATTEN_DB_11, true);
+    float std = test_adc_oneshot_std(ADC_ATTEN_DB_12, true);
     TEST_PERFORMANCE_LESS_THAN(ADC_ONESHOT_STD_ATTEN3, "%.2f", std);
 }
 /*---------------------------------------------------------------

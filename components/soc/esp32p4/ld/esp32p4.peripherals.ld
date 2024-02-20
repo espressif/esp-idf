@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,6 +20,7 @@ PROVIDE ( UHCI0             = 0x500DF000 );
 PROVIDE ( RMT               = 0x500A2000 );
 PROVIDE ( RMTMEM            = 0x500A2800 );
 PROVIDE ( LEDC              = 0x500D3000 );
+PROVIDE ( LEDC_GAMMA_RAM  = 0x500D3400 );
 PROVIDE ( TIMERG0           = 0x500C2000 );
 PROVIDE ( TIMERG1           = 0x500C3000 );
 PROVIDE ( SYSTIMER          = 0x500E2000 );
@@ -58,6 +59,7 @@ PROVIDE ( SDM            = 0x500E0F00 );
 PROVIDE ( GLITCH_FILTER  = 0x500E0F30 );
 PROVIDE ( GPIO_ETM       = 0x500E0F60 );
 PROVIDE ( IOMUX          = 0x500E1000 );
+PROVIDE ( MSPI_IOMUX     = 0x500E1200 );
 
 PROVIDE ( HP_SYSTEM         = 0x500E5000 );
 PROVIDE ( HP_SYS_CLKRST     = 0x500E6000 );
@@ -75,6 +77,7 @@ PROVIDE ( LP_I2C        = 0x50122000 );
 PROVIDE ( LP_SPI        = 0x50123000 );
 PROVIDE ( LP_WDT        = 0x50116000 );
 PROVIDE ( LP_I2S        = 0x50125000 );
+PROVIDE ( LP_TOUCH      = 0x50128000 );
 PROVIDE ( LP_GPIO         = 0x5012A000 );
 PROVIDE ( LP_I2C_ANA_MST = 0x50124000 );
 PROVIDE ( LP_ANA_PERI   = 0x50113000 );
@@ -83,6 +86,7 @@ PROVIDE ( AHB_DMA      =  0x50085000 );
 PROVIDE ( AXI_DMA      =  0x5008a000 );
 PROVIDE ( LCD_CAM      = 0x500dc000 );
 PROVIDE ( LP_IOMUX      = 0x5012B000 );
+PROVIDE ( LP_TSENS     = 0x5012f000 );
 
 PROVIDE ( MIPI_CSI_BRIDGE    = 0x5009F800 );
 PROVIDE ( MIPI_CSI_HOST      = 0x5009F000 );
@@ -96,8 +100,13 @@ PROVIDE ( I3C_MST            = 0x500DA000 );
 PROVIDE ( I3C_MST_MEM        = 0x500DA000 );
 PROVIDE ( I3C_SLV            = 0x500DB000 );
 
+PROVIDE ( JPEG               = 0x50086000 );
 PROVIDE ( PPA                = 0x50087000 );
 PROVIDE ( DMA2D              = 0x50088000 );
-PROVIDE ( JPEG               = 0x50086000 );
 
 PROVIDE ( USB_WRAP           = 0x50080000 );
+PROVIDE ( USB_DWC_HS         = 0x50000000 );
+PROVIDE ( USB_DWC_FS         = 0x50040000 );
+
+PROVIDE ( EMAC_MAC           = 0x50098000 );
+PROVIDE ( EMAC_DMA           = 0x50099000 );

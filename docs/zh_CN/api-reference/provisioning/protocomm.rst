@@ -28,8 +28,11 @@ Protocomm 为以下各种传输提供框架：
     :SOC_WIFI_SUPPORTED: - Wi-Fi (SoftAP + HTTPD)
     - 控制台：使用该传输方案时，设备端会自动调用处理程序。相关代码片段，请参见下文传输示例。
 
+请注意，对于 ``protocomm_security1`` 和 ``protocomm_security2``，客户端仍需要执行双向握手来建立会话。
 
-请注意，对于 ``protocomm_security1`` 和 ``protocomm_security2``，客户端仍需要执行双向握手来建立会话。关于安全握手逻辑的详情，请参阅 :doc:`provisioning`。
+.. only:: SOC_WIFI_SUPPORTED
+
+    关于安全握手逻辑的详情，请参阅 :doc:`provisioning`。
 
 .. _enabling-protocomm-security-version:
 
@@ -40,10 +43,10 @@ Protocomm 为以下各种传输提供框架：
 
     * 支持 ``protocomm_security0``，该版本无安全功能：:ref:`CONFIG_ESP_PROTOCOMM_SUPPORT_SECURITY_VERSION_0`，该选项默认启用。
     * 支持 ``protocomm_security1``，使用 Curve25519 密钥交换和 AES-CTR 加密/解密：:ref:`CONFIG_ESP_PROTOCOMM_SUPPORT_SECURITY_VERSION_1`，该选项默认启用。
-    * 支持 ``protocomm_security2``，使用基于 SRP6a 的密钥交换和 AES-GCM 加密/解密：:ref:`CONFIG_ESP_PROTOCOMM_SUPPORT_SECURITY_VERSION_2`。 
+    * 支持 ``protocomm_security2``，使用基于 SRP6a 的密钥交换和 AES-GCM 加密/解密：:ref:`CONFIG_ESP_PROTOCOMM_SUPPORT_SECURITY_VERSION_2`。
 
-.. note:: 
-    
+.. note::
+
     启用多个安全版本后可以动态控制安全版本，但也会增加固件大小。
 
 .. only:: SOC_WIFI_SUPPORTED
@@ -241,7 +244,7 @@ Protocomm 为以下各种传输提供框架：
 
     使用 Security 0 的低功耗蓝牙传输方案示例
     -------------------------------------------
-    
+
     示例用法请参阅 :component_file:`wifi_provisioning/src/scheme_ble.c`。
 
     .. highlight:: c
@@ -299,5 +302,7 @@ API 参考
 .. include-build-file:: inc/protocomm_security.inc
 .. include-build-file:: inc/protocomm_security0.inc
 .. include-build-file:: inc/protocomm_security1.inc
+.. include-build-file:: inc/protocomm_security2.inc
+.. include-build-file:: inc/esp_srp.inc
 .. include-build-file:: inc/protocomm_httpd.inc
 .. include-build-file:: inc/protocomm_ble.inc

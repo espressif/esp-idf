@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2018-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,34 +17,24 @@
 #if CONFIG_IDF_TARGET_ESP32
 #include "soc/dport_reg.h"
 #include "esp32/rom/cache.h"
-#include "esp32/rom/secure_boot.h"
 #elif CONFIG_IDF_TARGET_ESP32S2
-#include "esp32s2/rom/secure_boot.h"
 #elif CONFIG_IDF_TARGET_ESP32S3
-#include "esp32s3/rom/secure_boot.h"
 #elif CONFIG_IDF_TARGET_ESP32C3
-#include "esp32c3/rom/efuse.h"
 #include "esp32c3/rom/crc.h"
 #include "esp32c3/rom/uart.h"
-#include "esp32c3/rom/secure_boot.h"
 #elif CONFIG_IDF_TARGET_ESP32C2
-#include "esp32c2/rom/efuse.h"
 #include "esp32c2/rom/crc.h"
 #include "esp32c2/rom/rtc.h"
 #include "esp32c2/rom/uart.h"
-#include "esp32c2/rom/secure_boot.h"
 #elif CONFIG_IDF_TARGET_ESP32C6
-#include "esp32c6/rom/efuse.h"
 #include "esp32c6/rom/crc.h"
 #include "esp32c6/rom/rtc.h"
 #include "esp32c6/rom/uart.h"
-#include "esp32c6/rom/secure_boot.h"
+#elif CONFIG_IDF_TARGET_ESP32C5
 #elif CONFIG_IDF_TARGET_ESP32H2
-#include "esp32h2/rom/efuse.h"
 #include "esp32h2/rom/crc.h"
 #include "esp32h2/rom/rtc.h"
 #include "esp32h2/rom/uart.h"
-#include "esp32h2/rom/secure_boot.h"
 #elif CONFIG_IDF_TARGET_ESP32P4
 
 #else // CONFIG_IDF_TARGET_*
@@ -714,7 +704,7 @@ static void load_image(const esp_image_metadata_t *image_data)
            so issue a system reset to ensure flash encryption
            cache resets properly */
         ESP_LOGI(TAG, "Resetting with flash encryption enabled...");
-        esp_rom_uart_tx_wait_idle(0);
+        esp_rom_output_tx_wait_idle(0);
         bootloader_reset();
     }
 #endif
@@ -884,7 +874,7 @@ static void set_cache_and_start_app(
     bus_mask = cache_ll_l1_get_bus(0, irom_load_addr_aligned, irom_size);
     cache_ll_l1_enable_bus(0, bus_mask);
 
-#if !CONFIG_FREERTOS_UNICORE
+#if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
     bus_mask = cache_ll_l1_get_bus(1, drom_load_addr_aligned, drom_size);
     cache_ll_l1_enable_bus(1, bus_mask);
     bus_mask = cache_ll_l1_get_bus(1, irom_load_addr_aligned, irom_size);

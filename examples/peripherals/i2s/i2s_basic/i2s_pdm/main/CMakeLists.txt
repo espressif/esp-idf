@@ -9,4 +9,5 @@ if(CONFIG_SOC_I2S_SUPPORTS_PDM_RX AND CONFIG_EXAMPLE_PDM_RX)
 endif()
 
 idf_component_register(SRCS "${srcs}"
-                    INCLUDE_DIRS ".")
+                    PRIV_REQUIRES esp_driver_i2s esp_driver_gpio
+                    INCLUDE_DIRS "." "$ENV{IDF_PATH}/examples/peripherals/i2s/common")

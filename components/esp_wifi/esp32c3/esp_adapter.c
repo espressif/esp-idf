@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -41,9 +41,9 @@
 #include "nvs.h"
 #include "os.h"
 #include "esp_smartconfig.h"
-#include "esp_coexist_internal.h"
+#include "private/esp_coexist_internal.h"
 #include "esp32c3/rom/ets_sys.h"
-#include "esp_modem_wrapper.h"
+#include "private/esp_modem_wrapper.h"
 
 #define TAG "esp_adapter"
 
@@ -108,9 +108,9 @@ static void wifi_delete_queue_wrapper(void *queue)
 
 static void set_intr_wrapper(int32_t cpu_no, uint32_t intr_source, uint32_t intr_num, int32_t intr_prio)
 {
-    intr_matrix_route(intr_source, intr_num);
-    esprv_intc_int_set_priority(intr_num, intr_prio);
-    esprv_intc_int_set_type(intr_num, INTR_TYPE_LEVEL);
+    esp_rom_route_intr_matrix(cpu_no, intr_source, intr_num);
+    esprv_int_set_priority(intr_num, intr_prio);
+    esprv_int_set_type(intr_num, INTR_TYPE_LEVEL);
 }
 
 static void clear_intr_wrapper(uint32_t intr_source, uint32_t intr_num)
@@ -125,12 +125,12 @@ static void set_isr_wrapper(int32_t n, void *f, void *arg)
 
 static void enable_intr_wrapper(uint32_t intr_mask)
 {
-    esprv_intc_int_enable(intr_mask);
+    esprv_int_enable(intr_mask);
 }
 
 static void disable_intr_wrapper(uint32_t intr_mask)
 {
-    esprv_intc_int_disable(intr_mask);
+    esprv_int_disable(intr_mask);
 }
 
 static bool IRAM_ATTR is_from_isr_wrapper(void)

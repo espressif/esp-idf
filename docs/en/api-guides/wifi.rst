@@ -797,7 +797,7 @@ Scan Phase
 +++++++++++++++++++++
 
  - s1.1: The Wi-Fi driver begins scanning in "Wi-Fi Connect". Refer to `Scan in Wi-Fi Connect`_ for more details.
- - s1.2: If the scan fails to find the target AP, `WIFI_EVENT_STA_DISCONNECTED`_ will arise and the reason code will be ``WIFI_REASON_NO_AP_FOUND``. Refer to `Wi-Fi Reason Code`_.
+ - s1.2: If the scan fails to find the target AP, `WIFI_EVENT_STA_DISCONNECTED`_ will arise and the reason code could either be ``WIFI_REASON_NO_AP_FOUND`` or ``WIFI_REASON_NO_AP_FOUND_W_COMPATIBLE_SECURITY`` or ``WIFI_REASON_NO_AP_FOUND_IN_AUTHMODE_THRESHOLD`` or ``WIFI_REASON_NO_AP_FOUND_IN_RSSI_THRESHOLD`` depending of the Station's configuration. Refer to `Wi-Fi Reason Code`_.
 
 Auth Phase
 +++++++++++++++++++++
@@ -828,25 +828,34 @@ Four-way Handshake Phase
  - s4.7: The station raises `WIFI_EVENT_STA_CONNECTED`_.
 
 
+.. _esp_wifi_reason_code:
+
 Wi-Fi Reason Code
 +++++++++++++++++++++
 
-The table below shows the reason-code defined in {IDF_TARGET_NAME}. The first column is the macro name defined in :component_file:`esp_wifi/include/esp_wifi_types.h`. The common prefix ``WIFI_REASON`` is removed, which means that ``UNSPECIFIED`` actually stands for ``WIFI_REASON_UNSPECIFIED`` and so on. The second column is the value of the reason. The third column is the standard value to which this reason is mapped in section 9.4.1.7 of IEEE 802.11-2020. (For more information, refer to the standard mentioned above.) The last column describes the reason.
+The table below shows the reason-code defined in {IDF_TARGET_NAME}. The first column is the macro name defined in :component_file:`esp_wifi/include/esp_wifi_types.h`. The common prefix ``WIFI_REASON`` is removed, which means that ``UNSPECIFIED`` actually stands for ``WIFI_REASON_UNSPECIFIED`` and so on. The second column is the value of the reason. This reason value is same as defined in section 9.4.1.7 of IEEE 802.11-2020. (For more information, refer to the standard mentioned above.) The last column describes the reason. Reason-codes starting from 200 are Espressif defined reason-codes and are not part of IEEE 802.11-2020.\
+
+Also note that REASON_NO_AP_FOUND_XXX codes are mentioned in increasing order of importance. So if a single AP has a combination of the above reasons for failure, the more important one will be reported. Additionally, if there are multiple APs that satisfy the identifying criteria and connecting to all of them fails for different reasons mentioned above, then the reason code reported is for the AP that failed connection due to the least important reason code, as it was the one closest to a successful connection.\
+
+Following reason codes are renamed to their shorter form to wrap the table in page width.
+
+- TRANSMISSION_LINK_ESTABLISHMENT_FAILED : TX_LINK_EST_FAILED
+- NO_AP_FOUND_W_COMPATIBLE_SECURITY : NO_AP_FOUND_SECURITY
+- NO_AP_FOUND_IN_AUTHMODE_THRESHOLD : NO_AP_FOUND_AUTHMODE
+- NO_AP_FOUND_IN_RSSI_THRESHOLD : NO_AP_FOUND_RSSI
 
 .. list-table::
    :header-rows: 1
-   :widths: 5 10 12 40
+   :widths: 41 10 49
+   :class: longtable
 
    * - Reason code
      - Value
-     - Mapped To
      - Description
    * - UNSPECIFIED
      - 1
-     - 1
      - Generally, it means an internal failure, e.g., the memory runs out, the internal TX fails, or the reason is received from the remote side.
    * - AUTH_EXPIRE
-     - 2
      - 2
      - The previous authentication is no longer valid.
 
@@ -862,14 +871,12 @@ The table below shows the reason-code defined in {IDF_TARGET_NAME}. The first co
        - the station is de-authed by calling :cpp:func:`esp_wifi_deauth_sta()`.
    * - AUTH_LEAVE
      - 3
-     - 3
      - De-authenticated, because the sending station is leaving (or has left).
 
        For the ESP station, this reason is reported when:
 
        - it is received from the AP.
    * - ASSOC_EXPIRE
-     - 4
      - 4
      - Disassociated due to inactivity.
 
@@ -884,7 +891,6 @@ The table below shows the reason-code defined in {IDF_TARGET_NAME}. The first co
        - the station is de-authed by calling :cpp:func:`esp_wifi_deauth_sta()`.
    * - ASSOC_TOOMANY
      - 5
-     - 5
      - Disassociated, because the AP is unable to handle all currently associated STAs at the same time.
 
        For the ESP station, this reason is reported when:
@@ -895,7 +901,6 @@ The table below shows the reason-code defined in {IDF_TARGET_NAME}. The first co
 
        - the stations associated with the AP reach the maximum number that the AP can support.
    * - NOT_AUTHED
-     - 6
      - 6
      - Class-2 frame received from a non-authenticated STA.
 
@@ -908,7 +913,6 @@ The table below shows the reason-code defined in {IDF_TARGET_NAME}. The first co
        - the AP receives a packet with data from a non-authenticated station.
    * - NOT_ASSOCED
      - 7
-     - 7
      - Class-3 frame received from a non-associated STA.
 
        For the ESP station, this reason is reported when:
@@ -920,7 +924,6 @@ The table below shows the reason-code defined in {IDF_TARGET_NAME}. The first co
        - the AP receives a packet with data from a non-associated station.
    * - ASSOC_LEAVE
      - 8
-     - 8
      - Disassociated, because the sending station is leaving (or has left) BSS.
 
        For the ESP station, this reason is reported when:
@@ -928,7 +931,6 @@ The table below shows the reason-code defined in {IDF_TARGET_NAME}. The first co
        - it is received from the AP.
        - the station is disconnected by :cpp:func:`esp_wifi_disconnect()` and other APIs.
    * - ASSOC_NOT_AUTHED
-     - 9
      - 9
      - station requesting (re)association is not authenticated by the responding STA.
 
@@ -941,7 +943,6 @@ The table below shows the reason-code defined in {IDF_TARGET_NAME}. The first co
        - the AP receives packets with data from an associated, yet not authenticated, station.
    * - DISASSOC_PWRCAP_BAD
      - 10
-     - 10
      - Disassociated, because the information in the Power Capability element is unacceptable.
 
        For the ESP station, this reason is reported when:
@@ -949,14 +950,19 @@ The table below shows the reason-code defined in {IDF_TARGET_NAME}. The first co
        - it is received from the AP.
    * - DISASSOC_SUPCHAN_BAD
      - 11
-     - 11
      - Disassociated, because the information in the Supported Channels element is unacceptable.
 
        For the ESP station, this reason is reported when:
 
        - it is received from the AP.
+   * - BSS_TRANSITION_DISASSOC
+     - 12
+     - AP wants us to move to another AP, sent as a part of BTM procedure. Please note that when station is sending BTM request and moving to another AP, ROAMING reason code will be reported instead of this.
+
+       For the ESP station, this reason is reported when:
+
+       - it is received from the AP.
    * - IE_INVALID
-     - 13
      - 13
      - Invalid element, i.e., an element whose content does not meet the specifications of the Standard in frame formats clause.
 
@@ -969,14 +975,12 @@ The table below shows the reason-code defined in {IDF_TARGET_NAME}. The first co
        - the AP parses a wrong WPA or RSN IE.
    * - MIC_FAILURE
      - 14
-     - 14
      - Message integrity code (MIC) failure.
 
        For the ESP station, this reason is reported when:
 
        - it is received from the AP.
    * - 4WAY_HANDSHAKE_TIMEOUT
-     - 15
      - 15
      - Four-way handshake times out. For legacy reasons, in ESP this reason code is replaced with ``WIFI_REASON_HANDSHAKE_TIMEOUT``.
 
@@ -986,14 +990,12 @@ The table below shows the reason-code defined in {IDF_TARGET_NAME}. The first co
        - it is received from the AP.
    * - GROUP_KEY_UPDATE_TIMEOUT
      - 16
-     - 16
      - Group-Key Handshake times out.
 
        For the ESP station, this reason is reported when:
 
        - it is received from the AP.
    * - IE_IN_4WAY_DIFFERS
-     - 17
      - 17
      - The element in the four-way handshake is different from the (Re-)Association Request/Probe and Response/Beacon frame.
 
@@ -1003,14 +1005,12 @@ The table below shows the reason-code defined in {IDF_TARGET_NAME}. The first co
        - the station finds that the four-way handshake IE differs from the IE in the (Re-)Association Request/Probe and Response/Beacon frame.
    * - GROUP_CIPHER_INVALID
      - 18
-     - 18
      - Invalid group cipher.
 
        For the ESP station, this reason is reported when:
 
        - it is received from the AP.
    * - PAIRWISE_CIPHER_INVALID
-     - 19
      - 19
      - Invalid pairwise cipher.
 
@@ -1019,13 +1019,11 @@ The table below shows the reason-code defined in {IDF_TARGET_NAME}. The first co
        - it is received from the AP.
    * - AKMP_INVALID
      - 20
-     - 20
      - Invalid AKMP.
 
        For the ESP station, this reason is reported when:
        - it is received from the AP.
    * - UNSUPP_RSN_IE_VERSION
-     - 21
      - 21
      - Unsupported RSNE version.
 
@@ -1034,14 +1032,12 @@ The table below shows the reason-code defined in {IDF_TARGET_NAME}. The first co
        - it is received from the AP.
    * - INVALID_RSN_IE_CAP
      - 22
-     - 22
      - Invalid RSNE capabilities.
 
        For the ESP station, this reason is reported when:
 
        - it is received from the AP.
    * - 802_1X_AUTH_FAILED
-     - 23
      - 23
      - IEEE 802.1X. authentication failed.
 
@@ -1054,7 +1050,6 @@ The table below shows the reason-code defined in {IDF_TARGET_NAME}. The first co
        - IEEE 802.1X. authentication fails.
    * - CIPHER_SUITE_REJECTED
      - 24
-     - 24
      - Cipher suite rejected due to security policies.
 
        For the ESP station, this reason is reported when:
@@ -1062,125 +1057,131 @@ The table below shows the reason-code defined in {IDF_TARGET_NAME}. The first co
        - it is received from the AP.
    * - TDLS_PEER_UNREACHABLE
      - 25
-     - 25
      - TDLS direct-link teardown due to TDLS peer STA unreachable via the TDLS direct link.
    * - TDLS_UNSPECIFIED
-     - 26
      - 26
      - TDLS direct-link teardown for unspecified reason.
    * - SSP_REQUESTED_DISASSOC
      - 27
-     - 27
      - Disassociated because session terminated by SSP request.
    * - NO_SSP_ROAMING_AGREEMENT
-     - 28
      - 28
      - Disassociated because of lack of SSP roaming agreement.
    * - BAD_CIPHER_OR_AKM
      - 29
-     - 29
      - Requested service rejected because of SSP cipher suite or AKM requirement.
    * - NOT_AUTHORIZED_THIS_LOCATION
-     - 30
      - 30
      - Requested service not authorized in this location.
    * - SERVICE_CHANGE_PRECLUDES_TS
      - 31
-     - 31
      - TS deleted because QoS AP lacks sufficient bandwidth for this QoS STA due to a change in BSS service characteristics or operational mode (e.g., an HT BSS change from 40 MHz channel to 20 MHz channel).
    * - UNSPECIFIED_QOS
-     - 32
      - 32
      - Disassociated for unspecified, QoS-related reason.
    * - NOT_ENOUGH_BANDWIDTH
      - 33
-     - 33
      - Disassociated because QoS AP lacks sufficient bandwidth for this QoS STA.
    * - MISSING_ACKS
-     - 34
      - 34
      - Disassociated because excessive number of frames need to be acknowledged, but are not acknowledged due to AP transmissions and/or poor channel conditions.
    * - EXCEEDED_TXOP
      - 35
-     - 35
      - Disassociated because STA is transmitting outside the limits of its TXOPs.
    * - STA_LEAVING
-     - 36
      - 36
      - Requesting STA is leaving the BSS (or resetting).
    * - END_BA
      - 37
-     - 37
      - Requesting STA is no longer using the stream or session.
    * - UNKNOWN_BA
-     - 38
      - 38
      - Requesting STA received frames using a mechanism for which a setup has not been completed.
    * - TIMEOUT
      - 39
-     - 39
      - Requested from peer STA due to timeout
    * - Reserved
      - 40 ~ 45
-     - 40 ~ 45
-     -
+     - Reserved as per IEEE80211-2020 specifications.
    * - PEER_INITIATED
-     - 46
      - 46
      - In a Disassociation frame: Disassociated because authorized access limit reached.
    * - AP_INITIATED
      - 47
-     - 47
      - In a Disassociation frame: Disassociated due to external service requirements.
    * - INVALID_FT_ACTION_FRAME_COUNT
-     - 48
      - 48
      - Invalid FT Action frame count.
    * - INVALID_PMKID
      - 49
-     - 49
      - Invalid pairwise master key identifier (PMKID).
    * - INVALID_MDE
-     - 50
      - 50
      - Invalid MDE.
    * - INVALID_FTE
      - 51
-     - 51
      - Invalid FTE
-   * - TRANSMISSION_LINK_ESTABLISHMENT_FAILED
+   * - TX_LINK_EST_FAILED
      - 67
-     - 67
-     - Transmission link establishment in alternative channel failed.
+     - TRANSMISSION_LINK_ESTABLISHMENT_FAILED will be reported when Transmission link establishment in alternative channel failed.
    * - ALTERATIVE_CHANNEL_OCCUPIED
-     - 68
      - 68
      - The alternative channel is occupied.
    * - BEACON_TIMEOUT
      - 200
-     - reserved
      - Espressif-specific Wi-Fi reason code: when the station loses N beacons continuously, it will disrupt the connection and report this reason.
    * - NO_AP_FOUND
      - 201
-     - reserved
-     - Espressif-specific Wi-Fi reason code: when the station fails to scan the target AP, this reason code will be reported.
+     - Espressif-specific Wi-Fi reason code: when the station fails to scan the target AP, this reason code will be reported. In case of security mismatch or station's configuration mismatch, new reason codes NO_AP_FOUND_XXX will be reported.
    * - AUTH_FAIL
      - 202
-     - reserved
      - Espressif-specific Wi-Fi reason code: the authentication fails, but not because of a timeout.
    * - ASSOC_FAIL
      - 203
-     - reserved
      - Espressif-specific Wi-Fi reason code: the association fails, but not because of ASSOC_EXPIRE or ASSOC_TOOMANY.
    * - HANDSHAKE_TIMEOUT
      - 204
-     - reserved
      - Espressif-specific Wi-Fi reason code: the handshake fails for the same reason as that in WIFI_REASON_4WAY_HANDSHAKE_TIMEOUT.
    * - CONNECTION_FAIL
      - 205
-     - reserved
      - Espressif-specific Wi-Fi reason code: the connection to the AP has failed.
+   * - AP_TSF_RESET
+     - 206
+     - Espressif-specific Wi-Fi reason code: the disconnection happened due to AP's TSF reset.
+   * - ROAMING
+     - 207
+     - Espressif-specific Wi-Fi reason code: the station is roaming to another AP, this reason code is just for info, station will automatically move to another AP.
+   * - ASSOC_COMEBACK_TIME_TOO_LONG
+     - 208
+     - Espressif-specific Wi-Fi reason code: This reason code will be reported when Assoc comeback time in association response is too high.
+   * - SA_QUERY_TIMEOUT
+     - 209
+     - Espressif-specific Wi-Fi reason code: This reason code will be reported when AP did not reply of SA query sent by ESP station.
+   * - NO_AP_FOUND_SECURITY
+     - 210
+     - Espressif-specific Wi-Fi reason code: NO_AP_FOUND_W_COMPATIBLE_SECURITY will be reported if an AP that fits identifying criteria (e.g. ssid) is found but the connection is rejected due to incompatible security configuration. These situations could be:
 
+       - The Access Point is offering WEP security, but our station's password is not WEP-compliant.
+       - The station is configured in Open mode; however, the Access Point is broadcasting in secure mode.
+       - The Access Point uses Enterprise security, but we haven't set up the corresponding enterprise configuration, and vice versa.
+       - SAE-PK is configured in the station configuration, but the Access Point does not support SAE-PK.
+       - SAE-H2E is configured in the station configuration; however, the AP only supports WPA3-PSK or WPA3-WPA2-PSK.
+       - The station is configured in secure mode (Password or Enterprise mode); however, an Open AP is found during the scan.
+       - SAE HnP is configured in the station configuration; however, the AP supports H2E only.
+       - H2E is disabled in the station configuration; however, the AP is WPA3-EXT-PSK, which requires H2E support.
+       - The Access Point requires PMF, but the station is not configured for PMF capable/required.
+       - The station configuration requires PMF, but the AP is not configured for PMF capable/required.
+       - The Access Point is using unsupported group management/pairwise ciphers.
+       - OWE is not enabled in the station configuration, but the discovered AP is using OWE only mode.
+       - The Access Point is broadcasting an invalid RSNXE in its beacons.
+       - The Access Point is in Independent BSS mode.
+
+   * - NO_AP_FOUND_AUTHMODE
+     - 211
+     - Espressif-specific Wi-Fi reason code: NO_AP_FOUND_IN_AUTHMODE_THRESHOLD will be reported if an AP that fit identifying criteria (e.g. ssid) is found but the authmode threhsold set in the wifi_config_t is not met.
+   * - NO_AP_FOUND_RSSI
+     - 212
+     - Espressif-specific Wi-Fi reason code: NO_AP_FOUND_IN_RSSI_THRESHOLD will be reported if an AP that fits identifying criteria (e.g. ssid) is found but the RSSI threhsold set in the wifi_config_t is not met.
 
 Wi-Fi Reason code related to wrong password
 ++++++++++++++++++++++++++++++++++++++++++++++
@@ -1196,7 +1197,7 @@ The table below shows the Wi-Fi reason-code may related to wrong password.
      - Description
    * - 4WAY_HANDSHAKE_TIMEOUT
      - 15
-     - Four-way handshake times out. Setting wrong password when STA connecting to an encrpyted AP.
+     - Four-way handshake times out. Setting wrong password when STA connecting to an encrypted AP.
    * - NO_AP_FOUND
      - 201
      - This may related to wrong password in the two scenarios:
@@ -1219,8 +1220,8 @@ The table below shows the Wi-Fi reason-code may related to low RSSI.
    * - Reason code
      - Value
      - Description
-   * - NO_AP_FOUND
-     - 201
+   * - NO_AP_FOUND_IN_RSSI_THRESHOLD
+     - 212
      - The station fails to scan the target AP due to low RSSI
    * - HANDSHAKE_TIMEOUT
      - 204
@@ -1751,6 +1752,8 @@ A config option :ref:`CONFIG_ESP_WIFI_11R_SUPPORT` and configuration parameter :
 
 {IDF_TARGET_NAME} Wi-Fi Power-saving Mode
 -----------------------------------------
+
+This subsection will briefly introduce the concepts and usage related to Wi-Fi Power Saving Mode, for a more detailed introduction please refer to the :doc:`Low Power Mode User Guide <../api-guides/low-power-mode>`
 
 Station Sleep
 ++++++++++++++++++++++

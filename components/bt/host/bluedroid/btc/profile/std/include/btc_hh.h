@@ -103,7 +103,7 @@ typedef struct {
 /* btc_spp_args_t */
 typedef union {
     // BTC_HH_CONNECT_EVT
-    struct connect_arg {
+    struct hh_connect_arg {
         BD_ADDR bd_addr;
     } connect;
 

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -141,7 +141,7 @@ static void unpinned_task(void *arg)
 #if CONFIG_FREERTOS_SMP
     TEST_ASSERT_EQUAL(tskNO_AFFINITY, vTaskCoreAffinityGet(NULL));
 #else
-    TEST_ASSERT_EQUAL(tskNO_AFFINITY, xTaskGetAffinity(NULL));
+    TEST_ASSERT_EQUAL(tskNO_AFFINITY, xTaskGetCoreID(NULL));
 #endif
 #endif // !CONFIG_FREERTOS_UNICORE
 
@@ -162,7 +162,7 @@ static void unpinned_task(void *arg)
 #if CONFIG_FREERTOS_SMP
     TEST_ASSERT_EQUAL(1 << cur_core_num, vTaskCoreAffinityGet(NULL));
 #else
-    TEST_ASSERT_EQUAL(cur_core_num, xTaskGetAffinity(NULL));
+    TEST_ASSERT_EQUAL(cur_core_num, xTaskGetCoreID(NULL));
 #endif
 #endif // !CONFIG_FREERTOS_UNICORE
     // Reenable scheduling/preemption
@@ -194,7 +194,6 @@ typedef struct {
     TaskHandle_t main;
 } ParamsFPU;
 
-
 /**
  * @brief Function performing some simple calculation using several FPU registers.
  *        The goal is to be preempted by a task that also uses the FPU on the same core.
@@ -206,8 +205,7 @@ void fpu_calculation(void* arg)
     const float init = negative ? -1.f : 1.f;
     float f = init;
 
-    for(int i = 0; i < 10; i++)
-    {
+    for (int i = 0; i < 10; i++) {
         /* The following calculation doesn't really have any meaning, we try to use several FPU registers and operations */
         float delta = negative ? -1.1f : 1.1f;
         for (int i = 0; i < 1000; i++) {
@@ -222,7 +220,7 @@ void fpu_calculation(void* arg)
          * It'll have the sign of the other tasks' `f` value.
          * Use assert to make sure the sign is correct. Using TEST_ASSERT_TRUE triggers a stack overflow.
          */
-        assert( (negative && f < 0.0f) || (!negative && f > 0.0f) );
+        assert((negative && f < 0.0f) || (!negative && f > 0.0f));
         f = init;
 
         /* Give the hand back to FreeRTOS to avoid any watchdog */
@@ -232,8 +230,6 @@ void fpu_calculation(void* arg)
     xTaskNotifyGive(p->main);
     vTaskDelete(NULL);
 }
-
-
 
 TEST_CASE("FPU: Unsolicited context switch between tasks using FPU", "[freertos]")
 {

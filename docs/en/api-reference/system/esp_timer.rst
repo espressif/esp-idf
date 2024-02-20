@@ -1,4 +1,4 @@
-High Resolution Timer (ESP Timer)
+ESP Timer (High Resolution Timer)
 =================================
 
 :link_to_translation:`zh_CN:[中文]`
@@ -7,106 +7,317 @@ High Resolution Timer (ESP Timer)
 
 {IDF_TARGET_HR_TIMER_Resolution:default = "Not updated", esp32 = "64", esp32s2 = "64", esp32c3 = "52", esp32s3 = "52", esp32c2 = "52", esp32c6 = "52", esp32h2 = "52", esp32p4 = "52"}
 
+.. only:: html
+
+    This document covers the ESP-IDF feature called ESP Timer. The contents are as follows:
+
+    .. contents::
+        :local:
+        :depth: 2
+
 
 Overview
 --------
 
-Although FreeRTOS provides software timers, FreeRTOS software timers have a few limitations:
+The ESP Timer feature allows for creating software timers and invoking their callback functions (dispatching callbacks) on timeout. ESP Timer is useful when user software needs to perform delayed or periodic actions, such as delayed device start/stop or periodic sampling of sensor data.
 
-- Maximum resolution is equal to the RTOS tick period
-- Timer callbacks are dispatched from a low-priority timer service (i.e., daemon) task. This task can be preempted by other tasks, leading to decreased precision and accuracy.
+ESP Timer hides the complexity associated with managing multiple timers, dispatching callbacks, accounting for clock frequency changes (if dynamic frequency scaling is enabled), and maintaining correct time after light sleep.
 
-Although hardware timers are not subject to the limitations mentioned, they may not be as user-friendly. For instance, application components may require timer events to be triggered at specific future times, but hardware timers typically have only one "compare" value for interrupt generation. This necessitates the creation of an additional system on top of the hardware timer to keep track of pending events and ensure that callbacks are executed when the corresponding hardware interrupts occur.
+For application scenarios that require better real-time performance (such as generating waveforms) or configurable timer resolution, it is recommended that :doc:`GPTimer </api-reference/peripherals/gptimer>` be used instead. Also, GPTimer has features not available in ESP Timer, such as event capture.
 
-.. only:: esp32
-
-    The hardware timer interrupt's priority is configured via the :ref:`CONFIG_ESP_TIMER_INTERRUPT_LEVEL` option (possible priorities being 1, 2, or 3). Raising the timer interrupt's priority can reduce the timer processing delay caused by interrupt latency.
+Finally, FreeRTOS has its own software timers. As explained in :ref:`FreeRTOS Timers`, they have much lower resolution compared to ESP Timer, but FreeRTOS timers are portable (non-dependent on ESP-IDF) which might be an advantage in some cases.
 
 
-``esp_timer`` set of APIs provides one-shot and periodic timers, microsecond time resolution, and {IDF_TARGET_HR_TIMER_Resolution}-bit range.
+Features and Concepts
+---------------------
 
-Internally, ``esp_timer`` uses a {IDF_TARGET_HR_TIMER_Resolution}-bit hardware timer. The exact hardware timer implementation used depends on the target, where {IDF_TARGET_HR_TIMER} is used for {IDF_TARGET_NAME}.
+The ESP Timer API provides:
 
-Timer callbacks can be dispatched by two methods:
+- One-shot and periodic timers
+- Multiple callback dispatch methods
+- Handling overdue callbacks
+- Bit range: {IDF_TARGET_HR_TIMER_Resolution} bits
+- Time resolution: 1 microsecond
 
-- ``ESP_TIMER_TASK``.
-- ``ESP_TIMER_ISR``. Available only if :ref:`CONFIG_ESP_TIMER_SUPPORTS_ISR_DISPATCH_METHOD` is enabled (by default disabled).
 
-``ESP_TIMER_TASK``. Timer callbacks are dispatched from a high-priority ``esp_timer`` task. Because all the callbacks are dispatched from the same task, it is recommended to only do the minimal possible amount of work from the callback itself, posting an event to a lower-priority task using a queue instead.
+One-Shot and Periodic Timers
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-If other tasks with a priority higher than ``esp_timer`` are running, callback dispatching will be delayed until the ``esp_timer`` task has a chance to run. For example, this will happen if an SPI Flash operation is in progress.
+A one-shot timer invokes its callback function only once upon expiration and then stops operation. One-shot timers are useful for single delayed actions, such as turning off a device or reading a sensor after a specified time interval.
 
-``ESP_TIMER_ISR``. Timer callbacks are dispatched directly from the timer interrupt handler. This method is useful for some simple callbacks which aim for lower latency.
+A periodic timer invokes its callback function upon expiration and restarts itself automatically, resulting in the callback function being invoked at a defined interval until the periodic timer is manually stopped. Periodic timers are useful for repeated actions, such as sampling sensor data, updating display information, or generating a waveform.
 
-Creating and starting a timer, and dispatching the callback takes some time. Therefore, there is a lower limit to the timeout value of one-shot ``esp_timer``. If :cpp:func:`esp_timer_start_once` is called with a timeout value of less than 20 us, the callback will be dispatched only after approximately 20 us.
 
-Periodic ``esp_timer`` also imposes a 50 us restriction on the minimal timer period. Periodic software timers with a period of less than 50 us are not practical since they would consume most of the CPU time. Consider using dedicated hardware peripherals or DMA features if you find that a timer with a small period is required.
+.. _Callback Methods:
 
-Using ``esp_timer`` APIs
-------------------------
+Callback Dispatch Methods
+^^^^^^^^^^^^^^^^^^^^^^^^^
 
-A single timer is represented by :cpp:type:`esp_timer_handle_t` type. Each timer has a callback function associated with it. This callback function is called from the ``esp_timer`` task each time the timer elapses.
+Timer callbacks can be dispatched using the following methods:
 
-- To create a timer, call :cpp:func:`esp_timer_create`.
-- To delete the timer when it is no longer needed, call :cpp:func:`esp_timer_delete`.
+- Task Dispatch method (default):
 
-The timer can be started in one-shot mode or in periodic mode.
+    - Dispatches timer callbacks from a single high-priority ESP Timer task (esp_timer task (notified by ISR) > callback)
+    - Suitable for handling timer callbacks that are not time-critical
 
-- To start the timer in one-shot mode, call :cpp:func:`esp_timer_start_once`, passing the time interval after which the callback should be called. When the callback gets called, the timer is considered to be stopped.
+- Interrupt Dispatch method (:cpp:enumerator:`ESP_TIMER_ISR <esp_timer_dispatch_t::ESP_TIMER_ISR>`):
 
-- To start the timer in periodic mode, call :cpp:func:`esp_timer_start_periodic`, passing the period with which the callback should be called. The timer keeps running until :cpp:func:`esp_timer_stop` is called.
+    - Dispatches timer callbacks directly from an interrupt handler (ISR > callback)
+    - Suitable for simple, low-latency timer callbacks which take a few microseconds to run
+    - Ensures shorter delay between the event and the callback execution
+    - Not affected by other active tasks
 
-Note that the timer must not be running when :cpp:func:`esp_timer_start_once` or :cpp:func:`esp_timer_start_periodic` is called. To restart a running timer, call :cpp:func:`esp_timer_stop` first, then call one of the start functions.
 
-Callback Functions
+Task Dispatch Specifics
+~~~~~~~~~~~~~~~~~~~~~~~
+
+The execution of callbacks in the ESP Timer task is serialized. Thus, when multiple timeouts occur simultaneously, the execution time of one callback will delay the execution of subsequent callbacks. For this reason, it is recommended to keep the callbacks short. If the callback needs to perform more work, the work should be deferred to a lower-priority task using FreeRTOS primitives, such as queues and semaphores.
+
+If other FreeRTOS tasks with higher priority are running, such as an SPI Flash operation, callback dispatching will be delayed until the ESP Timer task has a chance to run.
+
+To maintain predictable and timely execution of tasks, callbacks should never attempt block (waiting for resources) or yield (give up control) operations, because such operations disrupt the serialized execution of callbacks.
+
+
+Interrupt Dispatch Specifics
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Timers using the Interrupt Dispatch method have their callbacks executed from an interrupt handler. As interrupts can preempt all tasks, the Interrupt Dispatch method offers lower latency. Interrupt dispatched timer callbacks should never attempt to block and should not attempt to trigger a context switch via ``portYIELD_FROM_ISR()``. Instead, the function :cpp:func:`esp_timer_isr_dispatch_need_yield` should be used. The context switch will happen after all ISR dispatch timers are processed.
+
+While using interrupt dispatched timers, the standard logging or debugging methods, such as ``printf`` should be avoided. To debug an application or display certain information in the console, the ESP-IDF logging macros should be used, such as :c:macro:`ESP_DRAM_LOGI`, :c:macro:`ESP_EARLY_LOGI`, etc. These macros are specifically designed to work in various contexts, including interrupt service routines.
+
+
+Obtaining Current Time
+^^^^^^^^^^^^^^^^^^^^^^
+
+The time passed since the initialization of ESP Timer can be obtained using the convenience function :cpp:func:`esp_timer_get_time`. The initialization happens shortly before the ``app_main`` function is called. This function is fast and has no locking mechanisms that could potentially introduce delays or conflicts. As a result, it can be useful for fine-grained timing, with the accuracy of 1 us, in tasks as well as in ISR routines.
+
+Unlike the ``gettimeofday()`` function, :cpp:func:`esp_timer_get_time` has the following specifics:
+
+- Upon wakeup from deep sleep, the initialization timer restarts from zero
+- The returned value has no timezone settings or daylight saving time adjustments
+
+
+System Integration
 ------------------
 
-.. note:: Keep the callback functions as short as possible. Otherwise, it will affect all timers.
+This section mainly covers some aspects of how to optimize the operation of ESP Timer and integrate it with other ESP-IDF features.
 
-Timer callbacks that are processed by the ``ESP_TIMER_ISR`` method should not call the context switch call - ``portYIELD_FROM_ISR()``. Instead, use the :cpp:func:`esp_timer_isr_dispatch_need_yield` function. The context switch will be done after all ISR dispatch timers have been processed if required by the system.
+
+Timeout Value Limits
+^^^^^^^^^^^^^^^^^^^^
+
+As callback dispatching can never be instantaneous, the one-shot and periodic timers created with ESP Timer also have timeout value limits. These limits cannot be estimated precisely, because they depend on multiple factors.
+
+For reference, the ESP32 running at 240 MHz and using the Task Dispatch method has the approximate minimum timeout values as follows:
+
+* One-shot timers: ~20 us
+
+    * If :cpp:func:`esp_timer_start_once` is called, this is the earliest time after which the system will be able to dispatch a callback.
+
+* Periodic timers: ~50 us
+
+    * Periodic software timers with a smaller timeout value would simply consume most of the CPU time, which is impractical.
+
+The lower the CPU frequency, the higher the minimum timeout values will be. The general guideline is if the required timeout values are in the order of tens of microseconds, the user application needs to undergo thorough testing to ensure stable operation.
+
+If the minimum timeout values slightly exceed the requirements, the Interrupt Dispatch method might offer an improvement.
+
+.. only:: not SOC_PARLIO_SUPPORTED and SOC_RMT_SUPPORTED
+
+    For even smaller timeout values, for example, to generate or receive waveforms or do bit banging, the resolution of ESP Timer may be insufficient. In this case, it is recommended to use dedicated peripherals, such as :doc:`GPTimer </api-reference/peripherals/gptimer>` or :doc:`RMT </api-reference/peripherals/rmt>`, and their DMA features if available.
+
+.. only:: SOC_PARLIO_SUPPORTED
+
+    For even smaller timeout values, for example, to generate or receive waveforms or do bit banging, the resolution of ESP Timer may be insufficient. In this case, it is recommended to use dedicated peripherals, such as :doc:`Parallel IO </api-reference/peripherals/parlio>`, and their DMA features if available.
+
+
+Sleep Mode Considerations
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+If a timer is started, and there are no other tasks being executed during the wait time, the chip can be put into sleep to optimize power consumption.
+
+Sleep can be induced in the following ways:
+
+* **Automatic sleep** provided by :doc:`Power Management APIs <power_management>`: If no tasks are being executed, the chip can automatically enter light sleep and automatically wake up at the appropriate time for ESP Timer to dispatch a pending callback.
+* **Manual sleep** provided by :doc:`Sleep Mode APIs <sleep_modes>`: The chip can be put into sleep regardless of whether other tasks are being executed.
+
+For manually induced sleep, the following sleep modes exist:
+
+* Deep-sleep mode: ESP Timer is deactivated
+
+  The user application restarts from scratch upon wakeup from deep sleep. This makes deep sleep unsuitable for continuous ESP Timer operation. However, deep sleep can be used if the running timers are not expected to persist across wakeups.
+
+* Light-sleep mode: ESP Timer is suspended
+
+  While in light sleep, ESP Timer counter and callbacks are suspended. Timekeeping is done by the RTC timer. Once the chip is woken up, the counter of ESP Timer is automatically advanced by the amount of time spent in sleep, then timekeeping and callback execution is resumed.
+
+  At this point, ESP Timer will attempt to dispatch all unhandled callbacks if there are any. It can potentially lead to the overflow of ESP Timer callback execution queue. This behavior may be undesirable for certain applications, and the ways to avoid it are covered in :ref:`Handling Callbacks in Light Sleep`.
+
+
+.. _FreeRTOS Timers:
+
+FreeRTOS Timers
+^^^^^^^^^^^^^^^
+
+Although FreeRTOS provides `software timers <https://www.freertos.org/RTOS-software-timer.html>`_, they have limitations:
+
+- FreeRTOS timer resolution is bound by the `tick frequency <https://www.freertos.org/a00110.html#configTICK_RATE_HZ>`_, which is typically in the range of 100 to 1000 Hz.
+- Timer callbacks are dispatched from a low-priority timer task that can be preempted by other tasks, leading to decreased timer precision and accuracy.
+
+However, FreeRTOS timers are portable (non-dependent on ESP-IDF) and are written to be deterministic as they do not dispatch callbacks from ISRs.
+
 
 .. only:: SOC_ETM_SUPPORTED and SOC_SYSTIMER_SUPPORT_ETM
 
-    ETM Event
-    ---------
+    ETM Events
+    ^^^^^^^^^^
 
-    The ``esp_timer`` is constructed based on a hardware timer called **systimer**, which is able to generate the alarm event and interact with the :doc:`ETM </api-reference/peripherals/etm>` module. You can call :cpp:func:`esp_timer_new_etm_alarm_event` to get the corresponding ETM event handle.
+    ESP Timer has connection to the :doc:`Event Task Matrix </api-reference/peripherals/etm>` (ETM) module. This module allows notifying a number of peripherals about events without involving CPU interrupts. Direct notifications reduce latency and decrease CPU workload. The function :cpp:func:`esp_timer_new_etm_alarm_event` can be called to get the corresponding ETM event handle.
 
-    To know more about how to connect the event to an ETM channel, please refer to the :doc:`ETM </api-reference/peripherals/etm>` documentation.
 
-``esp_timer`` During Light-sleep
---------------------------------
+Usage
+-----
 
-During Light-sleep, the ``esp_timer`` counter stops and no callback functions are called. Instead, the time is counted by the RTC counter. Upon waking up, the system gets the difference between the counters and calls a function that advances the ``esp_timer`` counter. Since the counter has been advanced, the system starts calling callbacks that were not called during sleep. The number of callbacks depends on the duration of the sleep and the period of the timers. It can lead to the overflow of some queues. This only applies to periodic timers, since one-shot timers are only called once.
+While setting up your ESP-IDF project, make sure to:
 
-This behavior can be changed by calling :cpp:func:`esp_timer_stop` before sleeping. In some cases, this can be inconvenient, and instead of the stop function, you can use the ``skip_unhandled_events`` option during :cpp:func:`esp_timer_create`. When the ``skip_unhandled_events`` is true, if a periodic timer expires one or more times during Light-sleep, then only one callback is called on wake.
+- Add required component dependencies to your ``CMakeLists.txt``.
+- Include required header files in your ``.c`` files.
+- (Optional) Set Kconfig options. For this, see :ref:`Kconfig Options <component-config-esp-timer-high-resolution-timer->` > *ESP Timer (High Resolution Timer)*
 
-Using the ``skip_unhandled_events`` option with automatic Light-sleep (see :doc:`Power Management APIs <power_management>`) helps to reduce the power consumption of the system when it is in Light-sleep. The duration of Light-sleep is also in part determined by the next event occurs. Timers with ``skip_unhandled_events`` option does not wake up the system.
 
-Handling Callbacks
-------------------
+.. _General Procedure:
 
-``esp_timer`` is designed to achieve a high-resolution and low-latency timer with the ability to handle delayed events. If the timer is late, then the callback will be called as soon as possible, and it will not be lost. In the worst case, when the timer has not been processed for more than one period (for periodic timers), the callbacks will be called one after the other without waiting for the set period. This can be bad for some applications, and the ``skip_unhandled_events`` option is introduced to eliminate this behavior. If ``skip_unhandled_events`` is set, then a periodic timer that has expired multiple times without being able to call the callback will still result in only one callback event once processing is possible.
+General Procedure
+^^^^^^^^^^^^^^^^^
 
-Obtaining Current Time
-----------------------
+The general procedure to create, start, stop, and delete a timer is as follows:
 
-``esp_timer`` also provides a convenience function to obtain the time passed since start-up, with microsecond precision: :cpp:func:`esp_timer_get_time`. This function returns the number of microseconds since ``esp_timer`` was initialized, which usually happens shortly before ``app_main`` function is called.
+1. Create a timer
 
-Unlike ``gettimeofday`` function, values returned by :cpp:func:`esp_timer_get_time`:
+    - Define a timer handle using the type :cpp:type:`esp_timer_handle_t`
+    - Set the timer configuration parameters by defining the structure :cpp:struct:`esp_timer_create_args_t` which also includes the callback function
 
-- Start from zero after the chip wakes up from Deep-sleep
-- Do not have timezone or DST adjustments applied
+      .. note::
 
-Application Example
--------------------
+          It is recommended to keep callbacks as short as possible to avoid delaying other callbacks.
 
-The following example illustrates the usage of ``esp_timer`` APIs: :example:`system/esp_timer`.
+    - To create a timer, call the function :cpp:func:`esp_timer_create`
+
+2. Start the timer in one-shot mode or periodic mode depending on your requirements
+
+    - To start the timer in one-shot mode, call :cpp:func:`esp_timer_start_once`
+    - To start the timer in periodic mode, call :cpp:func:`esp_timer_start_periodic`; the timer will continue running until you explicitly stop it using :cpp:func:`esp_timer_stop`
+
+    .. note:: When executing a start function, ensure that the timer is not running. If a timer is running, either call :cpp:func:`esp_timer_restart` or stop it first using :cpp:func:`esp_timer_stop` and then call one of the start functions.
+
+3. Stop the timer
+
+    - To stop the running timer, call the function :cpp:func:`esp_timer_stop`
+
+4. Delete the timer
+
+    - When the timer is no longer needed, delete it to free up memory using the function :cpp:func:`esp_timer_delete`
+
+
+.. _Using ESP_TIMER_ISR Callback Method:
+
+Using the Interrupt Dispatch Method
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Out of the available :ref:`callback methods <Callback Methods>`, if you choose the Interrupt Dispatch method, follow these steps:
+
+1. Set Kconfig options
+
+    - Enable :ref:`CONFIG_ESP_TIMER_SUPPORTS_ISR_DISPATCH_METHOD`
+
+2. Create a timer
+
+    - Set the timer configuration parameters by defining the structure :cpp:struct:`esp_timer_create_args_t`
+
+      .. code-block:: c
+
+          const esp_timer_create_args_t timer = {
+            ... ,
+            .dispatch_method = ESP_TIMER_ISR,
+            ...
+          };
+    - To create a timer, call the function :cpp:func:`esp_timer_create`
+
+For further steps, refer to :ref:`General Procedure`.
+
+
+.. _Handling Callbacks in Light Sleep:
+
+Handling Callbacks in Light-sleep Mode
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Light sleep allows you to save power while maintaining the ability to quickly wake up for specific actions. To use ESP Timer in conjunction with Light-sleep mode, see :doc:`Sleep Mode APIs <sleep_modes>`.
+
+During light sleep, to keep unhandled callbacks under control and avoid potential overflow of ESP Timer callback execution queue on wakeup, do one of the following:
+
+- Prevent the invocation of callbacks in the first place: stop the timer before entering light sleep by using :cpp:func:`esp_timer_stop`.
+- If calling the stop function is not desirable for any reason, use the option :cpp:member:`esp_timer_create_args_t::skip_unhandled_events`. In this case, if a periodic timer expires one or more times during light sleep, then only one callback is executed on wakeup.
+
+
+Debugging Timers
+^^^^^^^^^^^^^^^^
+
+The function :cpp:func:`esp_timer_dump` allows dumping information about either all or only running timers: the parameters for timers, the number of times the timers were started, triggered, skipped, and time taken by timer callbacks to execute. This information can be helpful in debugging.
+
+To debug timers, use the following procedure:
+
+1. Set Kconfig options for more detailed output:
+
+    - Enable :ref:`CONFIG_ESP_TIMER_PROFILING`
+
+    Note that enabling this option increases code size and heap memory usage.
+
+2. Wherever required in your code, call the function :cpp:func:`esp_timer_dump` to print the information and use it to debug your timers.
+
+3. Once debugging is complete, consider disabling :ref:`CONFIG_ESP_TIMER_PROFILING`.
+
+
+Troubleshooting
+---------------
+
+Unstable Callback Dispatch Time
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+While dispatching the same callback function repeatedly, if the response time varies considerably, try to stabilize it by doing the following:
+
+.. list::
+
+    - Use the :ref:`ESP_TIMER_ISR callback method <Using ESP_TIMER_ISR Callback Method>`
+    :SOC_HP_CPU_HAS_MULTIPLE_CORES: - Use the Kconfig option :ref:`CONFIG_ESP_TIMER_TASK_AFFINITY` to run the ESP Timer task on both cores
+
+
+Significant Delays Dispatching Callbacks
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+If dispatching a callback function takes a considerable amount of time, the problem can lie in the callback function itself. More precisely, as all callback functions are processed one by one in a single esp_timer task, the delays might be caused by other callback functions earlier in the queue.
+
+For this reason, make sure that all callback functions in your application can execute on their own quickly and without any blocking operations.
+
+
+Repeated Callback Dispatches After Sleep
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+If the callback functions are executed repeatedly upon wakeup from sleep, see :ref:`Handling Callbacks in Light Sleep`.
+
+
+Stack Overflow While Dispatching Callbacks
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+If you see a stack overflow error when executing a callback function, consider reducing the stack usage within your callback function. Alternatively, try increasing the size of the ESP Timer task stack by adjusting :ref:`CONFIG_ESP_TIMER_TASK_STACK_SIZE`.
+
+
+Application Examples
+--------------------
+
+* :example:`system/esp_timer` creates and starts one-shot and periodic software timers, shows how they work with Light-sleep mode, and then stops and deletes the timers
 
 
 API Reference
 -------------
 
 .. include-build-file:: inc/esp_timer.inc
-
-

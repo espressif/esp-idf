@@ -1,11 +1,12 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include "sdkconfig.h"
 #include "esp_assert.h"
+#include "esp_heap_caps.h"
 #include "freertos/idf_additions.h"
 #if CONFIG_FREERTOS_ENABLE_TASK_SNAPSHOT
     #include "esp_private/freertos_debug.h"
@@ -20,11 +21,6 @@
  * additional API.
  */
 
-#if CONFIG_FREERTOS_USE_KERNEL_10_5_1
-    #define pxCurrentTCB    pxCurrentTCBs
-#else
-#endif
-
 /* ------------------------------------------------- Static Asserts ------------------------------------------------- */
 
 /*
@@ -33,9 +29,7 @@
  */
 _Static_assert( offsetof( StaticTask_t, pxDummy6 ) == offsetof( TCB_t, pxStack ) );
 _Static_assert( offsetof( StaticTask_t, pxDummy8 ) == offsetof( TCB_t, pxEndOfStack ) );
-#if CONFIG_FREERTOS_SMP
-    _Static_assert( tskNO_AFFINITY == CONFIG_FREERTOS_NO_AFFINITY, "CONFIG_FREERTOS_NO_AFFINITY must be the same as tskNO_AFFINITY" );
-#endif /* CONFIG_FREERTOS_SMP */
+_Static_assert( tskNO_AFFINITY == ( BaseType_t ) CONFIG_FREERTOS_NO_AFFINITY, "CONFIG_FREERTOS_NO_AFFINITY must be the same as tskNO_AFFINITY" );
 
 /* ------------------------------------------------- Kernel Control ------------------------------------------------- */
 
@@ -87,15 +81,14 @@ _Static_assert( offsetof( StaticTask_t, pxDummy8 ) == offsetof( TCB_t, pxEndOfSt
     {
         /* Minor optimization. This function can never switch cores mid
          * execution */
-        BaseType_t xCoreID = xPortGetCoreID();
+        BaseType_t xCoreID = portGET_CORE_ID();
         BaseType_t xSwitchRequired = pdFALSE;
 
         /* This function should never be called by Core 0. */
         configASSERT( xCoreID != 0 );
 
-        /* Called by the portable layer each time a tick interrupt occurs.
-         * Increments the tick then checks to see if the new tick value will
-         * cause any tasks to be unblocked. */
+        /* Called by the portable layer each time a tick interrupt occurs
+         * on a core other than core 0. */
         traceTASK_INCREMENT_TICK( xTickCount );
 
         if( uxSchedulerSuspended[ xCoreID ] == ( UBaseType_t ) 0U )
@@ -104,29 +97,12 @@ _Static_assert( offsetof( StaticTask_t, pxDummy8 ) == offsetof( TCB_t, pxEndOfSt
              * kernel data structures. */
             taskENTER_CRITICAL_ISR( &xKernelLock );
 
-            /* A task being unblocked cannot cause an immediate context switch
-             * if preemption is turned off. */
-            #if ( configUSE_PREEMPTION == 1 )
-            {
-                /* Check if core 0 calling xTaskIncrementTick() has
-                 * unblocked a task that can be run. */
-                if( uxTopReadyPriority > pxCurrentTCB[ xCoreID ]->uxPriority )
-                {
-                    xSwitchRequired = pdTRUE;
-                }
-                else
-                {
-                    mtCOVERAGE_TEST_MARKER();
-                }
-            }
-            #endif /* if ( configUSE_PREEMPTION == 1 ) */
-
             /* Tasks of equal priority to the currently running task will share
              * processing time (time slice) if preemption is on, and the application
              * writer has not explicitly turned time slicing off. */
             #if ( ( configUSE_PREEMPTION == 1 ) && ( configUSE_TIME_SLICING == 1 ) )
             {
-                if( listCURRENT_LIST_LENGTH( &( pxReadyTasksLists[ pxCurrentTCB[ xCoreID ]->uxPriority ] ) ) > ( UBaseType_t ) 1 )
+                if( listCURRENT_LIST_LENGTH( &( pxReadyTasksLists[ pxCurrentTCBs[ xCoreID ]->uxPriority ] ) ) > ( UBaseType_t ) 1 )
                 {
                     xSwitchRequired = pdTRUE;
                 }
@@ -181,6 +157,8 @@ _Static_assert( offsetof( StaticTask_t, pxDummy8 ) == offsetof( TCB_t, pxEndOfSt
     {
         BaseType_t xReturn;
 
+        configASSERT( taskVALID_CORE_ID( xCoreID ) == pdTRUE || xCoreID == tskNO_AFFINITY );
+
         #if CONFIG_FREERTOS_SMP
         {
             /* If using Amazon SMP FreeRTOS. This function is just a wrapper around
@@ -227,23 +205,12 @@ _Static_assert( offsetof( StaticTask_t, pxDummy8 ) == offsetof( TCB_t, pxEndOfSt
 
                 if( pxNewTCB != NULL )
                 {
-                    #if CONFIG_FREERTOS_USE_KERNEL_10_5_1
-                    {
-                        memset( ( void * ) pxNewTCB, 0x00, sizeof( TCB_t ) );
+                    memset( ( void * ) pxNewTCB, 0x00, sizeof( TCB_t ) );
 
-                        /* Allocate space for the stack used by the task being created.
-                         * The base of the stack memory stored in the TCB so the task can
-                         * be deleted later if required. */
-                        pxNewTCB->pxStack = ( StackType_t * ) pvPortMallocStack( ( ( ( size_t ) usStackDepth ) * sizeof( StackType_t ) ) ); /*lint !e961 MISRA exception as the casts are only redundant for some ports. */
-                    }
-                    #else /* CONFIG_FREERTOS_USE_KERNEL_10_5_1 */
-                    {
-                        /* Allocate space for the stack used by the task being created.
-                         * The base of the stack memory stored in the TCB so the task can
-                         * be deleted later if required. */
-                        pxNewTCB->pxStack = ( StackType_t * ) pvPortMalloc( ( ( ( size_t ) usStackDepth ) * sizeof( StackType_t ) ) ); /*lint !e961 MISRA exception as the casts are only redundant for some ports. */
-                    }
-                    #endif /* CONFIG_FREERTOS_USE_KERNEL_10_5_1 */
+                    /* Allocate space for the stack used by the task being created.
+                     * The base of the stack memory stored in the TCB so the task can
+                     * be deleted later if required. */
+                    pxNewTCB->pxStack = ( StackType_t * ) pvPortMallocStack( ( ( ( size_t ) usStackDepth ) * sizeof( StackType_t ) ) ); /*lint !e961 MISRA exception as the casts are only redundant for some ports. */
 
                     if( pxNewTCB->pxStack == NULL )
                     {
@@ -257,17 +224,8 @@ _Static_assert( offsetof( StaticTask_t, pxDummy8 ) == offsetof( TCB_t, pxEndOfSt
             {
                 StackType_t * pxStack;
 
-                #if CONFIG_FREERTOS_USE_KERNEL_10_5_1
-                {
-                    /* Allocate space for the stack used by the task being created. */
-                    pxStack = pvPortMallocStack( ( ( ( size_t ) usStackDepth ) * sizeof( StackType_t ) ) ); /*lint !e9079 All values returned by pvPortMalloc() have at least the alignment required by the MCU's stack and this allocation is the stack. */
-                }
-                #else /* CONFIG_FREERTOS_USE_KERNEL_10_5_1 */
-                {
-                    /* Allocate space for the stack used by the task being created. */
-                    pxStack = pvPortMalloc( ( ( ( size_t ) usStackDepth ) * sizeof( StackType_t ) ) ); /*lint !e9079 All values returned by pvPortMalloc() have at least the alignment required by the MCU's stack and this allocation is the stack. */
-                }
-                #endif /* CONFIG_FREERTOS_USE_KERNEL_10_5_1 */
+                /* Allocate space for the stack used by the task being created. */
+                pxStack = pvPortMallocStack( ( ( ( size_t ) usStackDepth ) * sizeof( StackType_t ) ) ); /*lint !e9079 All values returned by pvPortMalloc() have at least the alignment required by the MCU's stack and this allocation is the stack. */
 
                 if( pxStack != NULL )
                 {
@@ -276,11 +234,7 @@ _Static_assert( offsetof( StaticTask_t, pxDummy8 ) == offsetof( TCB_t, pxEndOfSt
 
                     if( pxNewTCB != NULL )
                     {
-                        #if CONFIG_FREERTOS_USE_KERNEL_10_5_1
-                        {
-                            memset( ( void * ) pxNewTCB, 0x00, sizeof( TCB_t ) );
-                        }
-                        #endif /* CONFIG_FREERTOS_USE_KERNEL_10_5_1 */
+                        memset( ( void * ) pxNewTCB, 0x00, sizeof( TCB_t ) );
 
                         /* Store the stack location in the TCB. */
                         pxNewTCB->pxStack = pxStack;
@@ -289,15 +243,7 @@ _Static_assert( offsetof( StaticTask_t, pxDummy8 ) == offsetof( TCB_t, pxEndOfSt
                     {
                         /* The stack cannot be used as the TCB was not created.  Free
                          * it again. */
-                        #if CONFIG_FREERTOS_USE_KERNEL_10_5_1
-                        {
-                            vPortFreeStack( pxStack );
-                        }
-                        #else /* CONFIG_FREERTOS_USE_KERNEL_10_5_1 */
-                        {
-                            vPortFree( pxStack );
-                        }
-                        #endif /* CONFIG_FREERTOS_USE_KERNEL_10_5_1 */
+                        vPortFreeStack( pxStack );
                     }
                 }
                 else
@@ -347,6 +293,10 @@ _Static_assert( offsetof( StaticTask_t, pxDummy8 ) == offsetof( TCB_t, pxEndOfSt
     {
         TaskHandle_t xReturn;
 
+        configASSERT( portVALID_STACK_MEM( puxStackBuffer ) );
+        configASSERT( portVALID_TCB_MEM( pxTaskBuffer ) );
+        configASSERT( taskVALID_CORE_ID( xCoreID ) == pdTRUE || xCoreID == tskNO_AFFINITY );
+
         #if CONFIG_FREERTOS_SMP
         {
             /* If using Amazon SMP FreeRTOS. This function is just a wrapper around
@@ -355,6 +305,10 @@ _Static_assert( offsetof( StaticTask_t, pxDummy8 ) == offsetof( TCB_t, pxEndOfSt
             {
                 /* Convert xCoreID into an affinity mask */
                 UBaseType_t uxCoreAffinityMask;
+
+                /* Bit shifting << xCoreID is only valid if we have less than
+                 * 32 cores. */
+                ESP_STATIC_ASSERT( configNUM_CORES < 32 );
 
                 if( xCoreID == tskNO_AFFINITY )
                 {
@@ -377,10 +331,6 @@ _Static_assert( offsetof( StaticTask_t, pxDummy8 ) == offsetof( TCB_t, pxEndOfSt
         {
             TCB_t * pxNewTCB;
 
-            configASSERT( portVALID_STACK_MEM( puxStackBuffer ) );
-            configASSERT( portVALID_TCB_MEM( pxTaskBuffer ) );
-            configASSERT( ( ( xCoreID >= 0 ) && ( xCoreID < configNUM_CORES ) ) || ( xCoreID == tskNO_AFFINITY ) );
-
             #if ( configASSERT_DEFINED == 1 )
             {
                 /* Sanity check that the size of the structure used to declare a
@@ -397,13 +347,7 @@ _Static_assert( offsetof( StaticTask_t, pxDummy8 ) == offsetof( TCB_t, pxEndOfSt
                 /* The memory used for the task's TCB and stack are passed into this
                  * function - use them. */
                 pxNewTCB = ( TCB_t * ) pxTaskBuffer; /*lint !e740 !e9087 Unusual cast is ok as the structures are designed to have the same alignment, and the size is checked by an assert. */
-
-                #if CONFIG_FREERTOS_USE_KERNEL_10_5_1
-                {
-                    memset( ( void * ) pxNewTCB, 0x00, sizeof( TCB_t ) );
-                }
-                #endif /* CONFIG_FREERTOS_USE_KERNEL_10_5_1 */
-
+                memset( ( void * ) pxNewTCB, 0x00, sizeof( TCB_t ) );
                 pxNewTCB->pxStack = ( StackType_t * ) puxStackBuffer;
 
                 #if ( tskSTATIC_AND_DYNAMIC_ALLOCATION_POSSIBLE != 0 ) /*lint !e731 !e9029 Macro has been consolidated for readability reasons. */
@@ -500,21 +444,11 @@ BaseType_t xTaskGetCoreID( TaskHandle_t xTask )
 
     TaskHandle_t xTaskGetIdleTaskHandleForCore( BaseType_t xCoreID )
     {
-        #if CONFIG_FREERTOS_USE_KERNEL_10_5_1
-        {
-            /* If xTaskGetIdleTaskHandle() is called before the scheduler has been
-             * started, then xIdleTaskHandle will be NULL. */
-            configASSERT( ( xCoreID < configNUMBER_OF_CORES ) && ( xCoreID != tskNO_AFFINITY ) );
-            configASSERT( ( xIdleTaskHandle[ xCoreID ] != NULL ) );
-            return xIdleTaskHandle[ xCoreID ];
-        }
-        #else /* CONFIG_FREERTOS_USE_KERNEL_10_5_1 */
-        {
-            configASSERT( xCoreID >= 0 && xCoreID < configNUM_CORES );
-            configASSERT( ( xIdleTaskHandle[ xCoreID ] != NULL ) );
-            return ( TaskHandle_t ) xIdleTaskHandle[ xCoreID ];
-        }
-        #endif /* CONFIG_FREERTOS_USE_KERNEL_10_5_1 */
+        /* If xTaskGetIdleTaskHandle() is called before the scheduler has been
+         * started, then xIdleTaskHandle will be NULL. */
+        configASSERT( taskVALID_CORE_ID( xCoreID ) == pdTRUE );
+        configASSERT( ( xIdleTaskHandle[ xCoreID ] != NULL ) );
+        return xIdleTaskHandle[ xCoreID ];
     }
 
 #endif /* INCLUDE_xTaskGetIdleTaskHandle */
@@ -526,42 +460,20 @@ BaseType_t xTaskGetCoreID( TaskHandle_t xTask )
     {
         TaskHandle_t xReturn;
 
-        #if CONFIG_FREERTOS_USE_KERNEL_10_5_1
-        {
-            configASSERT( xCoreID < configNUMBER_OF_CORES );
-            configASSERT( xCoreID != tskNO_AFFINITY );
+        configASSERT( taskVALID_CORE_ID( xCoreID ) == pdTRUE );
 
-            /* For SMP, we need to take the kernel lock here as we are about to
-             * access kernel data structures. For single core, a critical section is
-             * not required as this is not called from an interrupt and the current
-             * TCB will always be the same for any individual execution thread. */
-            taskENTER_CRITICAL_SMP_ONLY( &xKernelLock );
-            {
-                xReturn = pxCurrentTCBs[ xCoreID ];
-            }
-            /* Release the previously taken kernel lock. */
-            taskEXIT_CRITICAL_SMP_ONLY( &xKernelLock );
-        }
-        #else /* CONFIG_FREERTOS_USE_KERNEL_10_5_1 */
+        #if ( CONFIG_FREERTOS_SMP )
         {
-            #if CONFIG_FREERTOS_SMP
-            {
-                xReturn = xTaskGetCurrentTaskHandleCPU( xCoreID );
-            }
-            #else /* CONFIG_FREERTOS_SMP */
-            {
-                if( xCoreID < configNUM_CORES )
-                {
-                    xReturn = pxCurrentTCB[ xCoreID ];
-                }
-                else
-                {
-                    xReturn = NULL;
-                }
-            }
-            #endif /* CONFIG_FREERTOS_SMP */
+            xReturn = xTaskGetCurrentTaskHandleCPU( ( UBaseType_t ) xCoreID );
         }
-        #endif /* CONFIG_FREERTOS_USE_KERNEL_10_5_1 */
+        #else /* CONFIG_FREERTOS_SMP */
+        {
+            /* A critical section is not required as this function does not
+             * guarantee that the TCB will still be valid when this function
+             * returns. */
+            xReturn = pxCurrentTCBs[ xCoreID ];
+        }
+        #endif /* CONFIG_FREERTOS_SMP */
 
         return xReturn;
     }
@@ -569,38 +481,36 @@ BaseType_t xTaskGetCoreID( TaskHandle_t xTask )
 #endif /* ( ( INCLUDE_xTaskGetCurrentTaskHandle == 1 ) || ( configUSE_MUTEXES == 1 ) ) */
 /*----------------------------------------------------------*/
 
-#if ( CONFIG_FREERTOS_USE_KERNEL_10_5_1 && ( configGENERATE_RUN_TIME_STATS == 1 ) && ( INCLUDE_xTaskGetIdleTaskHandle == 1 ) )
+#if ( !CONFIG_FREERTOS_SMP && ( configGENERATE_RUN_TIME_STATS == 1 ) && ( INCLUDE_xTaskGetIdleTaskHandle == 1 ) )
 
     configRUN_TIME_COUNTER_TYPE ulTaskGetIdleRunTimeCounterForCore( BaseType_t xCoreID )
     {
         uint32_t ulRunTimeCounter;
 
-        configASSERT( xCoreID < configNUMBER_OF_CORES );
-        configASSERT( xCoreID != tskNO_AFFINITY );
+        configASSERT( taskVALID_CORE_ID( xCoreID ) == pdTRUE );
 
         /* For SMP, we need to take the kernel lock here as we are about to
          * access kernel data structures. */
-        taskENTER_CRITICAL_SMP_ONLY( &xKernelLock );
+        prvENTER_CRITICAL_SMP_ONLY( &xKernelLock );
         {
             ulRunTimeCounter = xIdleTaskHandle[ xCoreID ]->ulRunTimeCounter;
         }
         /* Release the previously taken kernel lock. */
-        taskEXIT_CRITICAL_SMP_ONLY( &xKernelLock );
+        prvEXIT_CRITICAL_SMP_ONLY( &xKernelLock );
 
         return ulRunTimeCounter;
     }
 
-#endif /* ( CONFIG_FREERTOS_USE_KERNEL_10_5_1 && ( configGENERATE_RUN_TIME_STATS == 1 ) && ( INCLUDE_xTaskGetIdleTaskHandle == 1 ) ) */
+#endif /* ( !CONFIG_FREERTOS_SMP && ( configGENERATE_RUN_TIME_STATS == 1 ) && ( INCLUDE_xTaskGetIdleTaskHandle == 1 ) ) */
 /*----------------------------------------------------------*/
 
-#if ( CONFIG_FREERTOS_USE_KERNEL_10_5_1 && ( configGENERATE_RUN_TIME_STATS == 1 ) && ( INCLUDE_xTaskGetIdleTaskHandle == 1 ) )
+#if ( !CONFIG_FREERTOS_SMP && ( configGENERATE_RUN_TIME_STATS == 1 ) && ( INCLUDE_xTaskGetIdleTaskHandle == 1 ) )
 
     configRUN_TIME_COUNTER_TYPE ulTaskGetIdleRunTimePercentForCore( BaseType_t xCoreID )
     {
         configRUN_TIME_COUNTER_TYPE ulTotalTime, ulReturn;
 
-        configASSERT( xCoreID < configNUMBER_OF_CORES );
-        configASSERT( xCoreID != tskNO_AFFINITY );
+        configASSERT( taskVALID_CORE_ID( xCoreID ) == pdTRUE );
 
         ulTotalTime = portGET_RUN_TIME_COUNTER_VALUE();
 
@@ -612,12 +522,12 @@ BaseType_t xTaskGetCoreID( TaskHandle_t xTask )
         {
             /* For SMP, we need to take the kernel lock here as we are about
              * to access kernel data structures. */
-            taskENTER_CRITICAL_SMP_ONLY( &xKernelLock );
+            prvENTER_CRITICAL_SMP_ONLY( &xKernelLock );
             {
                 ulReturn = xIdleTaskHandle[ xCoreID ]->ulRunTimeCounter / ulTotalTime;
             }
             /* Release the previously taken kernel lock. */
-            taskEXIT_CRITICAL_SMP_ONLY( &xKernelLock );
+            prvEXIT_CRITICAL_SMP_ONLY( &xKernelLock );
         }
         else
         {
@@ -627,7 +537,7 @@ BaseType_t xTaskGetCoreID( TaskHandle_t xTask )
         return ulReturn;
     }
 
-#endif /* ( CONFIG_FREERTOS_USE_KERNEL_10_5_1 &&  ( configGENERATE_RUN_TIME_STATS == 1 ) && ( INCLUDE_xTaskGetIdleTaskHandle == 1 ) ) */
+#endif /* ( !CONFIG_FREERTOS_SMP && ( configGENERATE_RUN_TIME_STATS == 1 ) && ( INCLUDE_xTaskGetIdleTaskHandle == 1 ) ) */
 /*-----------------------------------------------------------*/
 
 uint8_t * pxTaskGetStackStart( TaskHandle_t xTask )
@@ -929,7 +839,7 @@ uint8_t * pxTaskGetStackStart( TaskHandle_t xTask )
     struct _reent * __getreent( void )
     {
         /* No lock needed because if this changes, we won't be running anymore. */
-        TCB_t * pxCurTask = xTaskGetCurrentTaskHandle();
+        TCB_t * pxCurTask = ( TCB_t * ) xTaskGetCurrentTaskHandle();
         struct _reent * ret;
 
         if( pxCurTask == NULL )
@@ -940,15 +850,15 @@ uint8_t * pxTaskGetStackStart( TaskHandle_t xTask )
         else
         {
             /* We have a task; return its reentrant struct. */
-            #if CONFIG_FREERTOS_USE_KERNEL_10_5_1
-            {
-                ret = &pxCurTask->xTLSBlock;
-            }
-            #else /* CONFIG_FREERTOS_USE_KERNEL_10_5_1 */
+            #if ( CONFIG_FREERTOS_SMP )
             {
                 ret = &pxCurTask->xNewLib_reent;
             }
-            #endif /* CONFIG_FREERTOS_USE_KERNEL_10_5_1 */
+            #else /* CONFIG_FREERTOS_SMP */
+            {
+                ret = &pxCurTask->xTLSBlock;
+            }
+            #endif /* CONFIG_FREERTOS_SMP */
         }
 
         return ret;
@@ -963,7 +873,8 @@ uint8_t * pxTaskGetStackStart( TaskHandle_t xTask )
  *
  * @note There are currently differing number of task list between SMP FreeRTOS and ESP-IDF FreeRTOS
  */
-static List_t * non_ready_task_lists[] = {
+static List_t * non_ready_task_lists[] =
+{
     #ifdef CONFIG_FREERTOS_SMP
         &xPendingReadyList,
     #else /* CONFIG_FREERTOS_SMP */
@@ -984,10 +895,10 @@ static List_t * non_ready_task_lists[] = {
 /*----------------------------------------------------------*/
 
 /**
- * @brief Get the next task list to traverse
+ * @brief Get the task list from state lists by index
  *
- * - Given a particular task list, this function returns the next task to traverse.
- * - The task lists are returned in the following precedence
+ * - This function returns the task list based on the specified index.
+ * - The index is relative to the below order of the task state lists
  *      - Ready lists (highest to lowers priority)
  *      - Pending ready list(s)
  *      - Delayed list 1
@@ -995,132 +906,133 @@ static List_t * non_ready_task_lists[] = {
  *      - Waiting termination list
  *      - Suspended list
  *
- * @param pxCurTaskList Previously traversed task list (or NULL if obtaining the first task list)
- * @return List_t* The next task list to traverse (or NULL of all task lists have been traversed)
+ * @param uxListIndex The index of the desired task list.
+ * @return A pointer to the task list at the specified index.
+ *         Returns NULL if the index is out of bounds or list is corrupted.
  */
-static List_t * pxGetNextTaskList( List_t * pxCurTaskList )
+static List_t * pxGetTaskListByIndex( UBaseType_t uxListIndex )
 {
-    List_t * pxNextTaskList = NULL;
+    List_t * pxTaskList;
+    const size_t xNonReadyTaskListsCnt = ( sizeof( non_ready_task_lists ) / sizeof( List_t * ) );
 
-    /* No Current List. Start from the highest priority ready task list */
-    if( pxCurTaskList == NULL )
+    if( uxListIndex < configMAX_PRIORITIES )
     {
-        pxNextTaskList = &pxReadyTasksLists[ configMAX_PRIORITIES - 1 ];
+        pxTaskList = &pxReadyTasksLists[ configMAX_PRIORITIES - 1 - uxListIndex ];
     }
-    /* Current list is one of the ready task lists. Find the current priority, and return the next lower priority ready task list */
-    else if( ( pxCurTaskList >= &pxReadyTasksLists[ 0 ] ) && ( pxCurTaskList <= &pxReadyTasksLists[ configMAX_PRIORITIES - 1 ] ) )
+    else if( uxListIndex < configMAX_PRIORITIES + xNonReadyTaskListsCnt + 1 )
     {
-        /* Find the current priority */
-        int cur_priority;
+        pxTaskList = non_ready_task_lists[ uxListIndex - configMAX_PRIORITIES ];
+    }
+    else
+    {
+        pxTaskList = NULL;
+    }
 
-        for( cur_priority = configMAX_PRIORITIES - 1; cur_priority >= 0; cur_priority-- )
+    /* sanity check */
+    if( pxTaskList )
+    {
+        if( !portVALID_LIST_MEM( pxTaskList ) )
         {
-            if( pxCurTaskList == &pxReadyTasksLists[ cur_priority ] )
-            {
-                break;
-            }
-        }
-
-        /* Return the ready task list at (cur_priority - 1), or the pending ready task list */
-        if( cur_priority > 0 )
-        {
-            pxNextTaskList = &pxReadyTasksLists[ cur_priority - 1 ];
-        }
-        /* We've reached the end of the Ready Task Lists.  We get the next list from the non-ready task lists */
-        else if( cur_priority == 0 )
-        {
-            pxNextTaskList = non_ready_task_lists[ 0 ];
-        }
-        else
-        {
-            abort(); /* This should never occur */
+            pxTaskList = NULL;
         }
     }
 
-    /* Current list is one of the non-ready task lists. Fetch the next non-ready task list */
-    if( pxNextTaskList == NULL )
-    {
-        int cur_list_idx;
-        const int num_non_ready_task_lists = ( sizeof( non_ready_task_lists ) / sizeof( List_t * ) );
-
-        /* Note: - 1 so that if the current list is the last on non_ready_task_lists[], the next list will return NULL */
-        for( cur_list_idx = 0; cur_list_idx < num_non_ready_task_lists - 1; cur_list_idx++ )
-        {
-            if( pxCurTaskList == non_ready_task_lists[ cur_list_idx ] )
-            {
-                pxNextTaskList = non_ready_task_lists[ cur_list_idx + 1 ];
-                break;
-            }
-        }
-    }
-
-    return pxNextTaskList;
+    return pxTaskList;
 }
 /*----------------------------------------------------------*/
 
-TaskHandle_t pxTaskGetNext( TaskHandle_t pxTask )
+/**
+ * @brief Get the total count of task lists.
+ *
+ * The count includes both the ready task lists (based on priority) and non-ready task lists.
+ *
+ * @return The total count of task lists.
+ *
+ */
+static inline UBaseType_t pxGetTaskListCount( void )
 {
-    TCB_t * pxTCB = ( TCB_t * ) pxTask;
+    return configMAX_PRIORITIES + ( sizeof( non_ready_task_lists ) / sizeof( List_t * ) );
+}
+/*----------------------------------------------------------*/
 
-    /* Check current task is valid */
-    if( ( pxTCB != NULL ) && !portVALID_TCB_MEM( pxTCB ) )
+/**
+ * @brief Get the next task using the task iterator.
+ *
+ * This function retrieves the next task in the traversal sequence.
+ *
+ * @param xIterator Pointer to the task iterator structure.
+ *
+ * @return Index of the current task list. Returns -1 if all tasks have been traversed.
+ *
+ * @note The task iterator keeps track of the current state during task traversal,
+ *       including the index of the current task list and the pointer of the next task list item.
+ *       When all tasks have been traversed, this function returns -1.
+ *       If a broken or corrupted task is encountered, the task handle is set to NULL.
+ */
+int xTaskGetNext( TaskIterator_t * xIterator )
+{
+    if( !xIterator )
     {
-        return NULL;
+        return -1;
     }
 
-    List_t * pxCurTaskList;
-    const ListItem_t * pxCurListItem;
+    ListItem_t * pxNextListItem = xIterator->pxNextListItem;
+    UBaseType_t uxCurListIdx = xIterator->uxCurrentListIndex;
+    UBaseType_t uxMaxListIdx = pxGetTaskListCount();
 
-    if( pxTCB == NULL )
+    for( ; uxCurListIdx < uxMaxListIdx; ++uxCurListIdx )
     {
-        /* Starting traversal for the first time */
-        pxCurTaskList = pxGetNextTaskList( NULL );
-        pxCurListItem = listGET_END_MARKER( pxCurTaskList );
-    }
-    else
-    {
-        /* Continuing traversal */
-        pxCurTaskList = listLIST_ITEM_CONTAINER( &pxTCB->xStateListItem );
-        pxCurListItem = &pxTCB->xStateListItem;
-    }
+        List_t * pxCurrentTaskList = pxGetTaskListByIndex( uxCurListIdx );
 
-    ListItem_t * pxNextListItem = NULL;
-
-    if( pxCurListItem->pxNext == listGET_END_MARKER( pxCurTaskList ) )
-    {
-        List_t * pxNextTaskList = pxGetNextTaskList( pxCurTaskList );
-
-        while( pxNextTaskList != NULL )
+        if( !pxCurrentTaskList || ( listCURRENT_LIST_LENGTH( pxCurrentTaskList ) == 0 ) )
         {
-            if( !listLIST_IS_EMPTY( pxNextTaskList ) )
-            {
-                /* Get the first item in the next task list */
-                pxNextListItem = listGET_HEAD_ENTRY( pxNextTaskList );
-                break;
-            }
-
-            /* Task list is empty. Get the next task list */
-            pxNextTaskList = pxGetNextTaskList( pxNextTaskList );
+            continue;
         }
-    }
-    else
-    {
-        /*There are still more items in the current task list. Get the next item */
-        pxNextListItem = listGET_NEXT( pxCurListItem );
+
+        const ListItem_t * pxCurrListItem = listGET_END_MARKER( pxCurrentTaskList );
+
+        if( !pxNextListItem )
+        {
+            /* We are here if the traversal starts from the beginning or when we finish traversing
+             * for one of the state lists
+             */
+            pxNextListItem = listGET_NEXT( pxCurrListItem );
+        }
+
+        if( !portVALID_LIST_MEM( pxNextListItem ) )
+        {
+            /* Nothing to do with the corrupted list item. We will skip to the next task state list.
+             * pxNextListItem should be NULL at the beggining of each task list.
+             */
+            pxNextListItem = NULL;
+            continue;
+        }
+
+        TCB_t * pxTCB = ( TCB_t * ) listGET_LIST_ITEM_OWNER( pxNextListItem );
+
+        if( !portVALID_TCB_MEM( pxTCB ) )
+        {
+            pxTCB = NULL;
+        }
+
+        xIterator->pxTaskHandle = pxTCB;
+        xIterator->uxCurrentListIndex = uxCurListIdx;
+
+        if( pxCurrListItem->pxPrevious == pxNextListItem )
+        {
+            /* If this is the last item of the current state list */
+            xIterator->uxCurrentListIndex++;
+            xIterator->pxNextListItem = NULL;
+        }
+        else
+        {
+            xIterator->pxNextListItem = listGET_NEXT( pxNextListItem );
+        }
+
+        return uxCurListIdx;
     }
 
-    TCB_t * pxNextTCB;
-
-    if( pxNextListItem == NULL )
-    {
-        pxNextTCB = NULL;
-    }
-    else
-    {
-        pxNextTCB = ( TCB_t * ) listGET_LIST_ITEM_OWNER( pxNextListItem );
-    }
-
-    return pxNextTCB;
+    return -1; /* end of the task list */
 }
 /*----------------------------------------------------------*/
 
@@ -1146,37 +1058,20 @@ UBaseType_t uxTaskGetSnapshotAll( TaskSnapshot_t * const pxTaskSnapshotArray,
 {
     UBaseType_t uxArrayNumFilled = 0;
 
-    /*Traverse all of the tasks lists */
-    List_t * pxCurTaskList = pxGetNextTaskList( NULL ); /*Get the first task list */
+    /* Traverse all of the tasks lists */
+    TaskIterator_t xTaskIter = { 0 }; /* Point to the first task list */
 
-    while( pxCurTaskList != NULL && uxArrayNumFilled < uxArrayLength )
+    while( xTaskGetNext( &xTaskIter ) != -1 && uxArrayNumFilled < uxArrayLength )
     {
-        if( !listLIST_IS_EMPTY( pxCurTaskList ) )
-        {
-            const ListItem_t * pxCurListItem;
-            /*Walk each task on the current task list */
-            pxCurListItem = listGET_HEAD_ENTRY( pxCurTaskList );
-
-            while( pxCurListItem != listGET_END_MARKER( pxCurTaskList ) )
-            {
-                TCB_t * pxTCB = ( TCB_t * ) listGET_LIST_ITEM_OWNER( pxCurListItem );
-                vTaskGetSnapshot( ( TaskHandle_t ) pxTCB, &pxTaskSnapshotArray[ uxArrayNumFilled ] );
-                uxArrayNumFilled++;
-
-                if( !( uxArrayNumFilled < uxArrayLength ) )
-                {
-                    break;
-                }
-
-                pxCurListItem = listGET_NEXT( pxCurListItem );
-            }
-        }
-
-        /*Get the next task list */
-        pxCurTaskList = pxGetNextTaskList( pxCurTaskList );
+        vTaskGetSnapshot( xTaskIter.pxTaskHandle, &pxTaskSnapshotArray[ uxArrayNumFilled ] );
+        uxArrayNumFilled++;
     }
 
-    *pxTCBSize = sizeof( TCB_t );
+    if( pxTCBSize != NULL )
+    {
+        *pxTCBSize = sizeof( TCB_t );
+    }
+
     return uxArrayNumFilled;
 }
 /*----------------------------------------------------------*/
@@ -1187,17 +1082,14 @@ void * pvTaskGetCurrentTCBForCore( BaseType_t xCoreID )
 {
     void * pvRet;
 
-    configASSERT( ( xCoreID >= 0 ) && ( xCoreID < configNUM_CORES ) );
-    #if CONFIG_FREERTOS_USE_KERNEL_10_5_1
+    configASSERT( taskVALID_CORE_ID( xCoreID ) == pdTRUE );
+
+    #if CONFIG_FREERTOS_SMP
+        /* SMP FreeRTOS defines pxCurrentTCB as a macro function call */
+        pvRet = ( void * ) pxCurrentTCB;
+    #else /* CONFIG_FREERTOS_SMP */
         pvRet = ( void * ) pxCurrentTCBs[ xCoreID ];
-    #else /* CONFIG_FREERTOS_USE_KERNEL_10_5_1 */
-        #if CONFIG_FREERTOS_SMP
-            /* SMP FreeRTOS defines pxCurrentTCB as a macro function call */
-            pvRet = pxCurrentTCB;
-        #else /* CONFIG_FREERTOS_SMP */
-            pvRet = ( void * ) pxCurrentTCB[ xCoreID ];
-        #endif /* CONFIG_FREERTOS_SMP */
-    #endif /* CONFIG_FREERTOS_USE_KERNEL_10_5_1 */
+    #endif /* CONFIG_FREERTOS_SMP */
     return pvRet;
 }
 
@@ -1223,7 +1115,8 @@ void * pvTaskGetCurrentTCBForCore( BaseType_t xCoreID )
         ESP_FREERTOS_DEBUG_TABLE_END,
     };
 
-    const DRAM_ATTR uint8_t FreeRTOS_openocd_params[ ESP_FREERTOS_DEBUG_TABLE_END ] = {
+    const DRAM_ATTR uint8_t FreeRTOS_openocd_params[ ESP_FREERTOS_DEBUG_TABLE_END ] =
+    {
         ESP_FREERTOS_DEBUG_TABLE_END, /* table size */
         1,                            /* table version */
         tskKERNEL_VERSION_MAJOR,
@@ -1235,4 +1128,108 @@ void * pvTaskGetCurrentTCBForCore( BaseType_t xCoreID )
     };
 
 #endif /* CONFIG_FREERTOS_DEBUG_OCDAWARE */
+/*----------------------------------------------------------*/
+
+/* ----------------------------------------------------- PSRAM ---------------------------------------------------- */
+
+#if CONFIG_SPIRAM
+
+    #if CONFIG_FREERTOS_SMP
+        BaseType_t prvTaskCreateDynamicAffinitySetWithCaps( TaskFunction_t pxTaskCode,
+                                                            const char * const pcName,
+                                                            const configSTACK_DEPTH_TYPE usStackDepth,
+                                                            void * const pvParameters,
+                                                            UBaseType_t uxPriority,
+                                                            UBaseType_t uxCoreAffinityMask,
+                                                            UBaseType_t uxStackMemoryCaps,
+                                                            TaskHandle_t * const pxCreatedTask )
+    #else /* CONFIG_FREERTOS_SMP */
+        BaseType_t prvTaskCreateDynamicPinnedToCoreWithCaps( TaskFunction_t pxTaskCode,
+                                                             const char * const pcName,
+                                                             const configSTACK_DEPTH_TYPE usStackDepth,
+                                                             void * const pvParameters,
+                                                             UBaseType_t uxPriority,
+                                                             const BaseType_t xCoreID,
+                                                             UBaseType_t uxStackMemoryCaps,
+                                                             TaskHandle_t * const pxCreatedTask )
+    #endif /* CONFIG_FREERTOS_SMP */
+    {
+        TCB_t * pxNewTCB;
+        BaseType_t xReturn;
+
+        StackType_t * pxStack;
+
+        configASSERT( uxStackMemoryCaps & ( MALLOC_CAP_8BIT ) );
+        configASSERT( ( uxStackMemoryCaps & MALLOC_CAP_SPIRAM ) ||
+                      ( uxStackMemoryCaps & MALLOC_CAP_INTERNAL ) );
+        #if ( !CONFIG_FREERTOS_SMP )
+        {
+            configASSERT( taskVALID_CORE_ID( xCoreID ) == pdTRUE || xCoreID == tskNO_AFFINITY );
+        }
+        #endif /* !CONFIG_FREERTOS_SMP */
+
+        /* Allocate space for the stack used by the task being created. */
+        pxStack = heap_caps_malloc( ( ( ( size_t ) usStackDepth ) * sizeof( StackType_t ) ), uxStackMemoryCaps );
+
+        if( pxStack != NULL )
+        {
+            /* Allocate space for the TCB. */
+            pxNewTCB = ( TCB_t * ) pvPortMalloc( sizeof( TCB_t ) );
+
+            if( pxNewTCB != NULL )
+            {
+                memset( ( void * ) pxNewTCB, 0x00, sizeof( TCB_t ) );
+
+                /* Store the stack location in the TCB. */
+                pxNewTCB->pxStack = pxStack;
+            }
+            else
+            {
+                /* The stack cannot be used as the TCB has not been created. Free it. */
+                heap_caps_free( pxStack );
+            }
+        }
+        else
+        {
+            pxNewTCB = NULL;
+        }
+
+        if( pxNewTCB != NULL )
+        {
+            #if ( tskSTATIC_AND_DYNAMIC_ALLOCATION_POSSIBLE != 0 )
+            {
+                /* Tasks can be created statically or dynamically, so note this
+                 * task was created dynamically in case it is later deleted. */
+                pxNewTCB->ucStaticallyAllocated = tskDYNAMICALLY_ALLOCATED_STACK_AND_TCB;
+            }
+            #endif /* tskSTATIC_AND_DYNAMIC_ALLOCATION_POSSIBLE */
+
+            #if CONFIG_FREERTOS_SMP
+            {
+                prvInitialiseNewTask( pxTaskCode, pcName, ( uint32_t ) usStackDepth, pvParameters, uxPriority, pxCreatedTask, pxNewTCB, NULL );
+                #if ( ( configNUM_CORES > 1 ) && ( configUSE_CORE_AFFINITY == 1 ) )
+                {
+                    /* Set the task's affinity before scheduling it */
+                    pxNewTCB->uxCoreAffinityMask = uxCoreAffinityMask;
+                }
+                #endif /* ( ( configNUM_CORES > 1 ) && ( configUSE_CORE_AFFINITY == 1 ) ) */
+            }
+            #else /* CONFIG_FREERTOS_SMP */
+            {
+                prvInitialiseNewTask( pxTaskCode, pcName, ( uint32_t ) usStackDepth, pvParameters, uxPriority, pxCreatedTask, pxNewTCB, NULL, xCoreID );
+            }
+            #endif /* CONFIG_FREERTOS_SMP */
+
+            prvAddNewTaskToReadyList( pxNewTCB );
+            xReturn = pdPASS;
+        }
+        else
+        {
+            xReturn = errCOULD_NOT_ALLOCATE_REQUIRED_MEMORY;
+        }
+
+        return xReturn;
+    }
+
+#endif /* CONFIG_SPIRAM */
 /*----------------------------------------------------------*/

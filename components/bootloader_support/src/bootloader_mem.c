@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,15 +12,14 @@
 #include "bootloader_mem.h"
 #include "esp_cpu.h"
 
-#if CONFIG_IDF_TARGET_ESP32C6 || CONFIG_IDF_TARGET_ESP32H2
-#include "soc/hp_apm_reg.h"
-#include "soc/lp_apm_reg.h"
-#include "soc/lp_apm0_reg.h"
+#if SOC_APM_SUPPORTED
+#include "hal/apm_hal.h"
 #endif
 
 void bootloader_init_mem(void)
 {
-#if SOC_APM_SUPPORTED
+
+#if !defined(BOOTLOADER_BUILD) && defined(SOC_APM_SUPPORTED)
     /* By default, these access path filters are enable and allow the
      * access to masters only if they are in TEE mode. Since all masters
      * except HP CPU boots in REE mode, default setting of these filters
@@ -28,9 +27,7 @@ void bootloader_init_mem(void)
      * So, at boot disabling these filters. They will enable as per the
      * use case by TEE initialization code.
      */
-    REG_WRITE(LP_APM_FUNC_CTRL_REG, 0);
-    REG_WRITE(LP_APM0_FUNC_CTRL_REG, 0);
-    REG_WRITE(HP_APM_FUNC_CTRL_REG, 0);
+    apm_hal_apm_ctrl_filter_enable_all(false);
 #endif
 
 #ifdef CONFIG_BOOTLOADER_REGION_PROTECTION_ENABLE

@@ -1,6 +1,6 @@
-.. linked from fatfs.rst
-
 :orphan:
+
+.. linked from fatfs.rst
 
 在主机上生成和解析 FATFS
 =====================================

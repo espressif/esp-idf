@@ -5,6 +5,7 @@ import pytest
 from pytest_embedded import Dut
 
 
+@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='esp32p4 support TBD')  # TODO: IDF-8982
 @pytest.mark.supported_targets
 @pytest.mark.generic
 def test_mbedtls(dut: Dut) -> None:
@@ -60,7 +61,6 @@ def test_mbedtls_psram(dut: Dut) -> None:
 @pytest.mark.parametrize(
     'config',
     [
-        'psram_esp32',
         'psram_all_ext',
     ],
     indirect=True,
@@ -74,3 +74,16 @@ def test_mbedtls_psram_esp32(dut: Dut) -> None:
 @pytest.mark.parametrize('config', ['ecdsa_sign',], indirect=True)
 def test_mbedtls_ecdsa_sign(dut: Dut) -> None:
     dut.run_all_single_board_cases(group='efuse_key')
+
+
+@pytest.mark.esp32c2
+@pytest.mark.generic
+@pytest.mark.parametrize(
+    'config',
+    [
+        'rom_impl',
+    ],
+    indirect=True,
+)
+def test_mbedtls_rom_impl_esp32c2(dut: Dut) -> None:
+    dut.run_all_single_board_cases()

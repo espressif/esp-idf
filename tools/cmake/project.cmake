@@ -64,29 +64,87 @@ endif()
 idf_build_set_property(__COMPONENT_MANAGER_INTERFACE_VERSION 2)
 
 #
-# Get the project version from either a version file or the Git revision. This is passed
-# to the idf_build_process call. Dependencies are also set here for when the version file
-# changes (if it is used).
+# Parse and store the VERSION argument provided to the project() command.
 #
-function(__project_get_revision var)
-    set(_project_path "${CMAKE_CURRENT_LIST_DIR}")
-    if(NOT DEFINED PROJECT_VER)
-        if(EXISTS "${_project_path}/version.txt")
-            file(STRINGS "${_project_path}/version.txt" PROJECT_VER)
-            set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${_project_path}/version.txt")
-        else()
-            git_describe(PROJECT_VER_GIT "${_project_path}")
-            if(PROJECT_VER_GIT)
-                set(PROJECT_VER ${PROJECT_VER_GIT})
-            else()
-                message(STATUS "Could not use 'git describe' to determine PROJECT_VER.")
-                set(PROJECT_VER 1)
-            endif()
+function(__parse_and_store_version_arg)
+    # The project_name is the fisrt argument that was passed to the project() command
+    set(project_name ${ARGV0})
+
+    # Parse other arguments passed to the project() call
+    set(options)
+    set(oneValueArgs VERSION)
+    set(multiValueArgs)
+    cmake_parse_arguments(PROJECT "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
+
+    # If the VERSION keyword exists but no version string is provided then raise a warning
+    if((NOT PROJECT_VERSION
+        OR PROJECT_VERSION STREQUAL "NOTFOUND")
+        AND NOT PROJECT_VERSION STREQUAL "0")
+        message(STATUS "VERSION keyword not followed by a value or was followed by a value that expanded to nothing.")
+        # Default the version to 1 in this case
+        set(project_ver 1)
+    else()
+        # Check if version is valid. cmake allows the version to be in the format <major>[.<minor>[.<patch>[.<tweak>]]]]
+        string(REGEX MATCH "^([0-9]+(\\.[0-9]+(\\.[0-9]+(\\.[0-9]+)?)?)?)?$" version_valid ${PROJECT_VERSION})
+        if(NOT version_valid AND NOT PROJECT_VERSION STREQUAL "0")
+            message(SEND_ERROR "Version \"${PROJECT_VERSION}\" format invalid.")
+            return()
         endif()
+
+        # Split the version string into major, minor, patch, and tweak components
+        string(REPLACE "." ";" version_components ${PROJECT_VERSION})
+        list(GET version_components 0 PROJECT_VERSION_MAJOR)
+        list(LENGTH version_components version_length)
+        if(version_length GREATER 1)
+            list(GET version_components 1 PROJECT_VERSION_MINOR)
+        endif()
+        if(version_length GREATER 2)
+            list(GET version_components 2 PROJECT_VERSION_PATCH)
+        endif()
+        if(version_length GREATER 3)
+            list(GET version_components 3 PROJECT_VERSION_TWEAK)
+        endif()
+
+        # Store the version string in cmake specified variables to access the version
+        set(PROJECT_VERSION ${PROJECT_VERSION} PARENT_SCOPE)
+        set(PROJECT_VERSION_MAJOR ${PROJECT_VERSION_MAJOR} PARENT_SCOPE)
+        if(PROJECT_VERSION_MINOR)
+            set(PROJECT_VERSION_MINOR ${PROJECT_VERSION_MINOR} PARENT_SCOPE)
+        endif()
+        if(PROJECT_VERSION_PATCH)
+            set(PROJECT_VERSION_PATCH ${PROJECT_VERSION_PATCH} PARENT_SCOPE)
+        endif()
+        if(PROJECT_VERSION_TWEAK)
+            set(PROJECT_VERSION_TWEAK ${PROJECT_VERSION_TWEAK} PARENT_SCOPE)
+        endif()
+
+        # Also store the version string in the specified variables for the project_name
+        set(${project_name}_VERSION ${PROJECT_VERSION} PARENT_SCOPE)
+        set(${project_name}_VERSION_MAJOR ${PROJECT_VERSION_MAJOR} PARENT_SCOPE)
+        if(PROJECT_VERSION_MINOR)
+            set(${project_name}_VERSION_MINOR ${PROJECT_VERSION_MINOR} PARENT_SCOPE)
+        endif()
+        if(PROJECT_VERSION_PATCH)
+            set(${project_name}_VERSION_PATCH ${PROJECT_VERSION_PATCH} PARENT_SCOPE)
+        endif()
+        if(PROJECT_VERSION_TWEAK)
+            set(${project_name}_VERSION_TWEAK ${PROJECT_VERSION_TWEAK} PARENT_SCOPE)
+        endif()
+    endif()
+endfunction()
+
+#
+# Get the project version from a version file. This is passed to the idf_build_process call.
+# Dependencies are also set here for when the version file changes (if it is used).
+#
+function(__project_get_revision_from_version_file var)
+    set(_project_path "${CMAKE_CURRENT_LIST_DIR}")
+    if(EXISTS "${_project_path}/version.txt")
+        file(STRINGS "${_project_path}/version.txt" PROJECT_VER)
+        set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${_project_path}/version.txt")
     endif()
     set(${var} "${PROJECT_VER}" PARENT_SCOPE)
 endfunction()
-
 
 # paths_with_spaces_to_list
 #
@@ -119,7 +177,7 @@ function(paths_with_spaces_to_list variable_name)
     endif()
 endfunction()
 
-function(__component_info components output)
+function(__build_component_info components output)
     set(components_json "")
     foreach(name ${components})
         __component_get_target(target ${name})
@@ -173,6 +231,62 @@ function(__component_info components output)
             "            \"managed_priv_reqs\": ${managed_priv_reqs},"
             "            \"file\": \"${file}\","
             "            \"sources\": ${sources},"
+            "            \"include_dirs\": ${include_dirs}"
+            "        }"
+        )
+        string(CONFIGURE "${component_json}" component_json)
+        if(NOT "${components_json}" STREQUAL "")
+            string(APPEND components_json ",\n")
+        endif()
+        string(APPEND components_json "${component_json}")
+    endforeach()
+    string(PREPEND components_json "{\n")
+    string(APPEND components_json "\n    }")
+    set(${output} "${components_json}" PARENT_SCOPE)
+endfunction()
+
+function(__all_component_info output)
+    set(components_json "")
+
+    idf_build_get_property(build_prefix __PREFIX)
+    idf_build_get_property(component_targets __COMPONENT_TARGETS)
+
+    foreach(target ${component_targets})
+        __component_get_property(name ${target} COMPONENT_NAME)
+        __component_get_property(alias ${target} COMPONENT_ALIAS)
+        __component_get_property(prefix ${target} __PREFIX)
+        __component_get_property(dir ${target} COMPONENT_DIR)
+        __component_get_property(type ${target} COMPONENT_TYPE)
+        __component_get_property(lib ${target} COMPONENT_LIB)
+        __component_get_property(reqs ${target} REQUIRES)
+        __component_get_property(include_dirs ${target} INCLUDE_DIRS)
+        __component_get_property(priv_reqs ${target} PRIV_REQUIRES)
+        __component_get_property(managed_reqs ${target} MANAGED_REQUIRES)
+        __component_get_property(managed_priv_reqs ${target} MANAGED_PRIV_REQUIRES)
+
+        if(prefix STREQUAL build_prefix)
+            set(name ${name})
+        else()
+            set(name ${alias})
+        endif()
+
+        make_json_list("${reqs}" reqs)
+        make_json_list("${priv_reqs}" priv_reqs)
+        make_json_list("${managed_reqs}" managed_reqs)
+        make_json_list("${managed_priv_reqs}" managed_priv_reqs)
+        make_json_list("${include_dirs}" include_dirs)
+
+        string(JOIN "\n" component_json
+            "        \"${name}\": {"
+            "            \"alias\": \"${alias}\","
+            "            \"target\": \"${target}\","
+            "            \"prefix\": \"${prefix}\","
+            "            \"dir\": \"${dir}\","
+            "            \"lib\": \"${lib}\","
+            "            \"reqs\": ${reqs},"
+            "            \"priv_reqs\": ${priv_reqs},"
+            "            \"managed_reqs\": ${managed_reqs},"
+            "            \"managed_priv_reqs\": ${managed_priv_reqs},"
             "            \"include_dirs\": ${include_dirs}"
             "        }"
         )
@@ -251,7 +365,8 @@ function(__project_info test_components)
     make_json_list("${build_component_paths};${test_component_paths}" build_component_paths_json)
     make_json_list("${common_component_reqs}" common_component_reqs_json)
 
-    __component_info("${build_components};${test_components}" build_component_info_json)
+    __build_component_info("${build_components};${test_components}" build_component_info_json)
+    __all_component_info(all_component_info_json)
 
     # The configure_file function doesn't process generator expressions, which are needed
     # e.g. to get component target library(TARGET_LINKER_FILE), so the project_description
@@ -541,7 +656,54 @@ macro(project project_name)
         set(build_dir ${CMAKE_BINARY_DIR})
     endif()
 
-    __project_get_revision(project_ver)
+    # If PROJECT_VER has not been set yet, look for the version from various sources in the following order of priority:
+    #
+    # 1. version.txt file in the top level project directory
+    # 2. From the VERSION argument if passed to the project() macro
+    # 3. git describe if the project is in a git repository
+    # 4. Default to 1 if none of the above conditions are true
+    #
+    # PS: PROJECT_VER will get overidden later if CONFIG_APP_PROJECT_VER_FROM_CONFIG is defined.
+    #     See components/esp_app_format/CMakeLists.txt.
+    if(NOT DEFINED PROJECT_VER)
+        # Read the version information from the version.txt file if it is present
+        __project_get_revision_from_version_file(project_ver)
+
+        # If the version is not set from the version.txt file, check other sources for the version information
+        if(NOT project_ver)
+            # Check if version information was passed to project() via the VERSION argument
+            set(version_keyword_present FALSE)
+            foreach(arg ${ARGN})
+                if(${arg} STREQUAL "VERSION")
+                    set(version_keyword_present TRUE)
+                endif()
+            endforeach()
+
+            if(version_keyword_present)
+                __parse_and_store_version_arg(${project_name} ${ARGN})
+                set(project_ver ${PROJECT_VERSION})
+
+                # If the project() command is called from the top-level CMakeLists.txt,
+                # store the version in CMAKE_PROJECT_VERSION.
+                if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
+                    set(CMAKE_PROJECT_VERSION ${PROJECT_VERSION})
+                endif()
+            else()
+                # Use git describe to determine the version
+                git_describe(PROJECT_VER_GIT "${CMAKE_CURRENT_LIST_DIR}")
+                if(PROJECT_VER_GIT)
+                    set(project_ver ${PROJECT_VER_GIT})
+                else()
+                    message(STATUS "Could not use 'git describe' to determine PROJECT_VER.")
+                    # None of sources contain the version information. Default PROJECT_VER to 1.
+                    set(project_ver 1)
+                endif() #if(PROJECT_VER_GIT)
+            endif() #if(version_keyword_present)
+        endif() #if(NOT project_ver)
+    else()
+        # PROJECT_VER has been set before calling project(). Copy it into project_ver for idf_build_process() later.
+        set(project_ver ${PROJECT_VER})
+    endif() #if(NOT DEFINED PROJECT_VER)
 
     message(STATUS "Building ESP-IDF components for target ${IDF_TARGET}")
 
@@ -717,9 +879,6 @@ macro(project project_name)
 
     # Add DFU build and flash targets
     __add_dfu_targets()
-
-    # Add UF2 build targets
-    __add_uf2_targets()
 
     idf_build_executable(${project_elf})
 

@@ -1,0 +1,24 @@
+menu "ESP-Driver:Analog Comparator Configurations"
+    depends on SOC_ANA_CMPR_SUPPORTED
+    config ANA_CMPR_ISR_IRAM_SAFE
+        bool "Analog comparator ISR IRAM-Safe"
+        default n
+        help
+            Ensure the Analog Comparator interrupt is IRAM-Safe by allowing the interrupt handler to be
+            executable when the cache is disabled (e.g. SPI Flash write).
+
+    config ANA_CMPR_CTRL_FUNC_IN_IRAM
+        bool "Place Analog Comparator control functions into IRAM"
+        default n
+        help
+            Place Analog Comparator control functions (like ana_cmpr_set_internal_reference) into IRAM,
+            so that these functions can be IRAM-safe and able to be called in an IRAM interrupt context.
+            Enabling this option can improve driver performance as well.
+
+    config ANA_CMPR_ENABLE_DEBUG_LOG
+        bool "Enable debug log"
+        default n
+        help
+            Wether to enable the debug log message for Analog Comparator driver.
+            Note that, this option only controls the Analog Comparator driver log, won't affect other drivers.
+endmenu # Analog Comparator Configuration

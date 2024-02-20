@@ -1,0 +1,7 @@
+# Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
+
+components/esp_driver_gptimer/test_apps/gptimer:
+  disable:
+    - if: SOC_GPTIMER_SUPPORTED != 1
+  depends_components:
+    - esp_driver_gptimer

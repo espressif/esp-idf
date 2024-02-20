@@ -5,7 +5,7 @@ entries:
         panic (noflash)
         panic_handler (noflash)
         panic_arch (noflash)
-        cache_err_int:esp_cache_err_get_cpuid (noflash)
+        cache_err_int (noflash)
         reset_reason:esp_reset_reason_get_hint (noflash)
         if ESP_SYSTEM_HW_STACK_GUARD = y:
             hw_stack_guard:esp_hw_stack_guard_get_bounds (noflash)

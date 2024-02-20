@@ -247,11 +247,11 @@ typedef union {
          */
         uint32_t bayer_mode:2;
         /** hsync_start_exist : R/W; bitpos: [29]; default: 1;
-         *  this bit configures the line end packet exist or not. 0: not exist, 1: exist
+         *  this bit configures the line end start exist or not. 0: not exist, 1: exist
          */
         uint32_t hsync_start_exist:1;
         /** hsync_end_exist : R/W; bitpos: [30]; default: 1;
-         *  this bit configures the line start packet exist or not. 0: not exist, 1: exist
+         *  this bit configures the line end packet exist or not. 0: not exist, 1: exist
          */
         uint32_t hsync_end_exist:1;
         uint32_t reserved_31:1;
@@ -3857,6 +3857,7 @@ typedef struct {
     volatile isp_rdn_eco_high_reg_t rdn_eco_high;
 } isp_dev_t;
 
+extern isp_dev_t ISP;
 
 #ifndef __cplusplus
 _Static_assert(sizeof(isp_dev_t) == 0x244, "Invalid size of isp_dev_t structure");

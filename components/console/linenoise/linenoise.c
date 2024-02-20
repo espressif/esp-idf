@@ -105,6 +105,7 @@
 
 #include <unistd.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdio_ext.h>
 #include <errno.h>
@@ -114,6 +115,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/fcntl.h>
+#include <sys/time.h>
 #include <unistd.h>
 #include <assert.h>
 #include "linenoise.h"
@@ -237,7 +239,10 @@ static int getCursorPosition(void) {
     /* Send the command to the TTY on the other end of the UART.
      * Let's use unistd's write function. Thus, data sent through it are raw
      * reducing the overhead compared to using fputs, fprintf, etc... */
-    write(out_fd, get_cursor_cmd, sizeof(get_cursor_cmd));
+    int num_written = write(out_fd, get_cursor_cmd, sizeof(get_cursor_cmd));
+    if (num_written != sizeof(get_cursor_cmd)) {
+        return -1;
+    }
 
     /* For USB CDC, it is required to flush the output. */
     flushWrite();
@@ -804,6 +809,23 @@ uint32_t getMillis(void) {
     return tv.tv_sec * 1000 + tv.tv_usec / 1000;
 }
 
+static inline size_t prompt_len_ignore_escape_seq(const char *prompt) {
+    size_t plen = 0;
+    bool in_escape_sequence = false;
+
+    for (; *prompt != '\0'; ++prompt) {
+        if (*prompt == '\033') {
+            in_escape_sequence = true;
+        } else if (in_escape_sequence && *prompt == 'm') {
+            in_escape_sequence = false;
+        } else if (!in_escape_sequence) {
+            ++plen;
+        }
+    }
+
+    return plen;
+}
+
 /* This function is the core of the line editing capability of linenoise.
  * It expects 'fd' to be already in "raw mode" so that every key pressed
  * will be returned ASAP to read().
@@ -839,15 +861,16 @@ static int linenoiseEdit(char *buf, size_t buflen, const char *prompt)
      * initially is just an empty string. */
     linenoiseHistoryAdd("");
 
-    int pos1 = getCursorPosition();
     if (write(out_fd, prompt,l.plen) == -1) {
         return -1;
     }
     flushWrite();
-    int pos2 = getCursorPosition();
-    if (pos1 >= 0 && pos2 >= 0) {
-        l.plen = pos2 - pos1;
-    }
+
+    /* If the prompt has been registered with ANSI escape sequences
+     * for terminal colors then we remove them from the prompt length
+     * calculation. */
+    l.plen = prompt_len_ignore_escape_seq(prompt);
+
     while(1) {
         char c;
         int nread;
@@ -1092,6 +1115,7 @@ static int linenoiseRaw(char *buf, size_t buflen, const char *prompt) {
 static int linenoiseDumb(char* buf, size_t buflen, const char* prompt) {
     /* dumb terminal, fall back to fgets */
     fputs(prompt, stdout);
+    flushWrite();
     size_t count = 0;
     while (count < buflen) {
         int c = fgetc(stdin);
@@ -1105,11 +1129,13 @@ static int linenoiseDumb(char* buf, size_t buflen, const char* prompt) {
                 count --;
             }
             fputs("\x08 ", stdout); /* Windows CMD: erase symbol under cursor */
+            flushWrite();
         } else {
             buf[count] = c;
             ++count;
         }
         fputc(c, stdout); /* echo */
+        flushWrite();
     }
     fputc('\n', stdout);
     flushWrite();

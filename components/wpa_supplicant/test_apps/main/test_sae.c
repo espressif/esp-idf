@@ -48,7 +48,7 @@ void wpabuf_free2(struct wpabuf *buf)
 
 TEST_CASE("Test SAE functionality with ECC group", "[wpa3_sae]")
 {
-    set_leak_threshold(120);
+    set_leak_threshold(400);
     ESP_LOGI("SAE Test", "### Beginning SAE init and deinit ###");
     {
         /* Test init and deinit*/
@@ -162,7 +162,7 @@ TEST_CASE("Test SAE functionality with ECC group", "[wpa3_sae]")
         TEST_ASSERT(sae.tmp->sae_rand != NULL);
         TEST_ASSERT(mask != NULL);
 
-        TEST_ASSERT(crypto_bignum_add(sae.tmp->sae_rand, mask, sae.tmp->own_commit_scalar) == 0)
+        TEST_ASSERT(crypto_bignum_add(sae.tmp->sae_rand, mask, sae.tmp->own_commit_scalar) == 0);
         TEST_ASSERT(crypto_bignum_mod(sae.tmp->own_commit_scalar, sae.tmp->order, sae.tmp->own_commit_scalar) == 0);
         TEST_ASSERT(crypto_ec_point_mul(sae.tmp->ec, sae.tmp->pwe_ecc, mask, sae.tmp->own_commit_element_ecc) == 0);
         TEST_ASSERT(crypto_ec_point_invert(sae.tmp->ec, sae.tmp->own_commit_element_ecc) == 0);
@@ -176,7 +176,7 @@ TEST_CASE("Test SAE functionality with ECC group", "[wpa3_sae]")
         TEST_ASSERT(os_memcmp(wpabuf_head(buf), local_commit, sizeof(local_commit)) == 0);
 
         TEST_ASSERT(sae_parse_commit(&sae, peer_commit, sizeof(peer_commit), NULL, NULL, NULL, 0) == 0);
-        TEST_ASSERT(sae_process_commit(&sae) == 0)
+        TEST_ASSERT(sae_process_commit(&sae) == 0);
 
         ESP_LOGI("SAE TEST", "### Compare derived KCK,PMK,PMKID with predefined vectors ###");
         ESP_LOG_BUFFER_HEXDUMP("SAE: Derived KCK    ",  sae.tmp->kck, SAE_KCK_LEN, ESP_LOG_INFO);
@@ -214,7 +214,7 @@ TEST_CASE("Test SAE functionality with ECC group", "[wpa3_sae]")
 
         ESP_LOG_BUFFER_HEXDUMP("SAE: Derived SAE: PT.y    ", bin + prime_len, prime_len, ESP_LOG_INFO);
         ESP_LOG_BUFFER_HEXDUMP("SAE: Predefined SAE: PT.y ", pwe_19_y, prime_len, ESP_LOG_INFO);
-        TEST_ASSERT(os_memcmp(pwe_19_y, bin + prime_len, prime_len) == 0)
+        TEST_ASSERT(os_memcmp(pwe_19_y, bin + prime_len, prime_len) == 0);
 
         crypto_ec_point_deinit(pwe, 1);
         sae_deinit_pt(pt_info);

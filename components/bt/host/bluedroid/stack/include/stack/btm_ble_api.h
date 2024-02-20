@@ -809,6 +809,10 @@ typedef struct {
 
 typedef struct {
     UINT8 filter_policy;
+    #if (CONFIG_BT_BLE_FEAT_CREATE_SYNC_ENH)
+    UINT8 reports_disabled;
+    UINT8 filter_duplicates;
+    #endif
     UINT8 sid;
     tBLE_ADDR_TYPE addr_type;
     BD_ADDR addr;
@@ -1000,6 +1004,7 @@ typedef void (tBTM_START_ADV_CMPL_CBACK) (UINT8 status);
 typedef void (tBTM_START_STOP_ADV_CMPL_CBACK) (UINT8 status);
 
 typedef void (tBTM_UPDATE_DUPLICATE_EXCEPTIONAL_LIST_CMPL_CBACK) (tBTM_STATUS status, uint8_t subcode, uint32_t length, uint8_t *device_info);
+typedef void (tBTM_CLEAR_ADV_CMPL_CBACK) (UINT8 status);
 #if (BLE_50_FEATURE_SUPPORT == TRUE)
 #define    BTM_BLE_5_GAP_READ_PHY_COMPLETE_EVT                     1
 #define    BTM_BLE_5_GAP_SET_PREFERED_DEFAULT_PHY_COMPLETE_EVT     2
@@ -2638,6 +2643,17 @@ BOOLEAN BTM_GetCurrentConnParams(BD_ADDR bda, uint16_t *interval, uint16_t *late
 **
 *******************************************************************************/
 BOOLEAN BTM_Ble_Authorization(BD_ADDR bd_addr, BOOLEAN authorize);
+
+/*******************************************************************************
+**
+** Function         BTM_BleClearAdv
+**
+** Description      This function is called to clear legacy advertising
+**
+** Parameter        p_clear_adv_cback - Command complete callback
+**
+*******************************************************************************/
+BOOLEAN BTM_BleClearAdv(tBTM_CLEAR_ADV_CMPL_CBACK *p_clear_adv_cback);
 /*
 #ifdef __cplusplus
 }

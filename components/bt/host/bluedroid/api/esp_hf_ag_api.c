@@ -21,7 +21,9 @@
 #include "common/bt_target.h"
 #include "common/bt_defs.h"
 #include "device/bdaddr.h"
+#if (BT_CONTROLLER_INCLUDED == TRUE)
 #include "esp_bt.h"
+#endif
 #include "esp_hf_ag_api.h"
 #include "esp_err.h"
 #include "esp_bt_main.h"
@@ -171,6 +173,9 @@ esp_err_t esp_hf_ag_volume_control(esp_bd_addr_t remote_addr, esp_hf_volume_cont
     if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
         return ESP_ERR_INVALID_STATE;
     }
+    if (volume < 0 || volume > 15) {
+        return ESP_ERR_INVALID_ARG;
+    }
     btc_msg_t msg;
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_HF;
@@ -237,6 +242,9 @@ esp_err_t esp_hf_ag_devices_status_indchange(esp_bd_addr_t remote_addr,
     if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
         return ESP_ERR_INVALID_STATE;
     }
+    if (signal < 0 || signal > 5) {
+        return ESP_ERR_INVALID_ARG;
+    }
     btc_msg_t msg;
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_HF;
@@ -285,6 +293,10 @@ esp_err_t esp_hf_ag_cind_response(esp_bd_addr_t remote_addr,
     if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
         return ESP_ERR_INVALID_STATE;
     }
+    if (signal < 0 || signal > 5 || batt_lev < 0 || batt_lev > 5) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
     btc_msg_t msg;
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_HF;
@@ -363,7 +375,7 @@ esp_err_t esp_hf_ag_cnum_response(esp_bd_addr_t remote_addr, char *number, int n
     if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
         return ESP_ERR_INVALID_STATE;
     }
-    if (number == NULL) {
+    if (number == NULL || number_type < 128 || number_type > 175) {
         return ESP_ERR_INVALID_ARG;
     }
     btc_msg_t msg;

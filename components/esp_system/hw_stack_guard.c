@@ -11,7 +11,7 @@
 #include "esp_rom_sys.h"
 #include "esp_cpu.h"
 
-ESP_SYSTEM_INIT_FN(esp_hw_stack_guard_init, ESP_SYSTEM_INIT_ALL_CORES, 101)
+ESP_SYSTEM_INIT_FN(esp_hw_stack_guard_init, SECONDARY, ESP_SYSTEM_INIT_ALL_CORES, 101)
 {
     uint32_t core_id = esp_cpu_get_core_id();
 
@@ -40,13 +40,12 @@ ESP_SYSTEM_INIT_FN(esp_hw_stack_guard_init, ESP_SYSTEM_INIT_ALL_CORES, 101)
     /* enable interrup routine  */
     esp_rom_route_intr_matrix(core_id, ETS_ASSIST_DEBUG_INTR_SOURCE, ETS_ASSIST_DEBUG_INUM);
 
-    esprv_intc_int_set_type(ETS_ASSIST_DEBUG_INUM, INTR_TYPE_LEVEL);
-    esprv_intc_int_set_priority(ETS_ASSIST_DEBUG_INUM, SOC_INTERRUPT_LEVEL_MEDIUM);
+    esprv_int_set_type(ETS_ASSIST_DEBUG_INUM, INTR_TYPE_LEVEL);
+    esprv_int_set_priority(ETS_ASSIST_DEBUG_INUM, SOC_INTERRUPT_LEVEL_MEDIUM);
 
     ESP_INTR_ENABLE(ETS_ASSIST_DEBUG_INUM);
     return ESP_OK;
 }
-
 
 /* The functions below are designed to be used in interrupt/panic handler
  * In case using them in user's code put them into critical section */

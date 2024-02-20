@@ -31,6 +31,10 @@ extern "C" {
 #define EXAMPLE_NETIF_DESC_ETH "example_netif_eth"
 #endif
 
+#if CONFIG_EXAMPLE_CONNECT_PPP
+#define EXAMPLE_NETIF_DESC_PPP "example_netif_ppp"
+#endif
+
 /* Example default interface, prefer the ethernet one if running in example-test (CI) configuration */
 #if CONFIG_EXAMPLE_CONNECT_ETHERNET
 #define EXAMPLE_INTERFACE get_example_netif_from_desc(EXAMPLE_NETIF_DESC_ETH)
@@ -38,6 +42,9 @@ extern "C" {
 #elif CONFIG_EXAMPLE_CONNECT_WIFI
 #define EXAMPLE_INTERFACE get_example_netif_from_desc(EXAMPLE_NETIF_DESC_STA)
 #define get_example_netif() get_example_netif_from_desc(EXAMPLE_NETIF_DESC_STA)
+#elif CONFIG_EXAMPLE_CONNECT_PPP
+#define EXAMPLE_INTERFACE get_example_netif_from_desc(EXAMPLE_NETIF_DESC_PPP)
+#define get_example_netif() get_example_netif_from_desc(EXAMPLE_NETIF_DESC_PPP)
 #endif
 
 /**

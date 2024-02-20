@@ -16,7 +16,7 @@
 #if SOC_CPU_HAS_FPU && CONFIG_FREERTOS_FPU_IN_ISR
 
 // We can use xtensa API here as currently, non of the RISC-V targets have an FPU
-#include "xtensa/xtensa_api.h"
+#include "xtensa_api.h"     // Replace with interrupt allocator API (IDF-3891)
 #include "esp_intr_alloc.h"
 
 #define SW_ISR_LEVEL_1      7
@@ -119,7 +119,7 @@ static void unpinned_task(void *arg)
 #if CONFIG_FREERTOS_SMP
     TEST_ASSERT_EQUAL(tskNO_AFFINITY, vTaskCoreAffinityGet(NULL));
 #else
-    TEST_ASSERT_EQUAL(tskNO_AFFINITY, xTaskGetAffinity(NULL));
+    TEST_ASSERT_EQUAL(tskNO_AFFINITY, xTaskGetCoreID(NULL));
 #endif
 #endif // !CONFIG_FREERTOS_UNICORE
 
@@ -136,7 +136,7 @@ static void unpinned_task(void *arg)
 #if CONFIG_FREERTOS_SMP
     TEST_ASSERT_EQUAL(tskNO_AFFINITY, vTaskCoreAffinityGet(NULL));
 #else
-    TEST_ASSERT_EQUAL(tskNO_AFFINITY, xTaskGetAffinity(NULL));
+    TEST_ASSERT_EQUAL(tskNO_AFFINITY, xTaskGetCoreID(NULL));
 #endif
 #endif // !CONFIG_FREERTOS_UNICORE
     // Reenable scheduling/preemption

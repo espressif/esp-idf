@@ -48,7 +48,7 @@ def test_gcov(dut: IdfDut, openocd: OpenOcd) -> None:
             for expect in expect_lines[:]:
                 if expect in line:
                     if expect.endswith('.gcda'):  # check file exists
-                        file_path = line.split()[-1].strip("'")
+                        file_path = line.split()[3].strip("'")
                         assert os.path.isfile(file_path)
 
                     expect_lines.remove(expect)

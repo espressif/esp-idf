@@ -9,13 +9,13 @@
 upload-pip-cache:
   extends:
     - .upload_cache_template
-    - .before_script_minimal
-    - .rules:patterns:python-cache
+    - .before_script:minimal
+    - .rules:upload-python-cache
   tags:
     - $GEO
     - cache
   cache:
-    key: pip-cache
+    key: pip-cache-${LATEST_GIT_TAG}
     paths:
       - .cache/pip
     policy: push
@@ -29,13 +29,13 @@ upload-pip-cache:
 upload-submodules-cache:
   extends:
     - .upload_cache_template
-    - .before_script_minimal
-    - .rules:patterns:submodule
+    - .before_script:minimal
+    - .rules:upload-submodule-cache
   tags:
     - $GEO
     - cache
   cache:
-    key: submodule-cache
+    key: submodule-cache-${LATEST_GIT_TAG}
     paths:
       - .cache/submodule_archives
     policy: push
@@ -48,27 +48,3 @@ upload-submodules-cache:
   parallel:
     matrix:
       - GEO: [ 'shiny',  'brew' ]
-
-upload-danger-npm-cache:
-  stage: upload_cache
-  image: node:18.15.0-alpine3.16
-  extends:
-    - .rules:patterns:dangerjs
-  tags:
-    - $GEO
-    - cache
-  cache:
-    key:
-      files:
-        - .gitlab/dangerjs/package-lock.json
-    paths:
-      - .gitlab/dangerjs/node_modules/
-    policy: push
-  before_script:
-    - echo "Skip before scripts ...."
-  script:
-    - cd .gitlab/dangerjs
-    - npm install --no-progress --no-update-notifier
-  parallel:
-    matrix:
-      - GEO: [ 'shiny', 'brew' ]

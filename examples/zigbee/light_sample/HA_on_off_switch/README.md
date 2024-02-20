@@ -33,30 +33,32 @@ Build the project, flash it to the board, and start the monitor tool to view the
 
 As you run the example, you will see the following log:
 
-light switch:
 ```
-I (318) gpio: GPIO[9]| InputEn: 1| OutputEn: 0| OpenDrain: 0| Pullup: 1| Pulldown: 0| Intr:2
-I (328) system_api: Base MAC address is not set
-I (328) system_api: read default base MAC address from EFUSE
-I (408) phy: libbtbb version: 6c47ec3, Mar 16 2022, 18:54:24
-I (408) phy: phy_version: 101, bb2a234, Mar 16 2022, 18:54:11
-I (818) ESP_ZB_ON_OFF_SWITCH: status: 255
-I (818) ESP_ZB_ON_OFF_SWITCH: Zigbee stack initialized
-I (818) ESP_ZB_ON_OFF_SWITCH: Start network formation
-I (1318) ESP_ZB_ON_OFF_SWITCH: Formed network successfully (Extended PAN ID: ff:fc:7c:c0:f0:bd:97:10, PAN ID: 0x88e7)
-I (1778) ESP_ZB_ON_OFF_SWITCH: status: 0
-I (5528) ESP_ZB_ON_OFF_SWITCH: status: 0
-I (6038) ESP_ZB_ON_OFF_SWITCH: status: 0
-I (6068) ESP_ZB_ON_OFF_SWITCH: New device commissioned or rejoined (short: 0x2878)
-I (6098) ESP_ZB_ON_OFF_SWITCH: User find cb: address:0x2878, endpoint:10
-I (6638) ESP_ZB_ON_OFF_SWITCH: status: 0
-I (6678) ESP_ZB_ON_OFF_SWITCH: status: 0
-I (8168) ESP_ZB_ON_OFF_SWITCH: send move to on_off toggle command
-I (8898) ESP_ZB_ON_OFF_SWITCH: send move to on_off toggle command
-I (9458) ESP_ZB_ON_OFF_SWITCH: send move to on_off toggle command
-I (10088) ESP_ZB_ON_OFF_SWITCH: send move to on_off toggle command
-I (10588) ESP_ZB_ON_OFF_SWITCH: send move to on_off toggle command
-I (11098) ESP_ZB_ON_OFF_SWITCH: send move to on_off toggle command
+I (388) main_task: Calling app_main()
+I (398) gpio: GPIO[9]| InputEn: 1| OutputEn: 0| OpenDrain: 0| Pullup: 1| Pulldown: 0| Intr:2
+I (398) phy_init: phy_version 220,2dbbbe7,Sep 25 2023,20:39:25
+I (478) phy: libbtbb version: 90c587c, Sep 25 2023, 20:39:57
+I (488) ESP_ZB_ON_OFF_SWITCH: ZDO signal: ZDO Config Ready (0x17), status: ESP_FAIL
+I (488) ESP_ZB_ON_OFF_SWITCH: Zigbee stack initialized
+I (488) ESP_ZB_ON_OFF_SWITCH: Start network formation
+I (498) main_task: Returned from app_main()
+I (998) ESP_ZB_ON_OFF_SWITCH: ZDO signal: NWK Permit Join (0x36), status: ESP_OK
+I (998) ESP_ZB_ON_OFF_SWITCH: Formed network successfully (Extended PAN ID: 60:55:f9:00:00:f6:07:b4, PAN ID: 0x2a74, Channel:13)
+I (1468) ESP_ZB_ON_OFF_SWITCH: ZDO signal: NWK Permit Join (0x36), status: ESP_OK
+I (1468) ESP_ZB_ON_OFF_SWITCH: Network steering started
+I (14228) ESP_ZB_ON_OFF_SWITCH: ZDO signal: NWK Device Associated (0x12), status: ESP_OK
+I (14728) ESP_ZB_ON_OFF_SWITCH: ZDO signal: ZDO Device Update (0x30), status: ESP_OK
+I (14788) ESP_ZB_ON_OFF_SWITCH: New device commissioned or rejoined (short: 0xe399)
+I (14858) ESP_ZB_ON_OFF_SWITCH: Found light
+I (14858) ESP_ZB_ON_OFF_SWITCH: Try to bind On/Off
+I (14858) ESP_ZB_ON_OFF_SWITCH: Bound successfully!
+I (14858) ESP_ZB_ON_OFF_SWITCH: The light originating from address(0xe399) on endpoint(10)
+I (15338) ESP_ZB_ON_OFF_SWITCH: ZDO signal: ZDO Device Authorized (0x2f), status: ESP_OK
+I (15408) ESP_ZB_ON_OFF_SWITCH: ZDO signal: NWK Permit Join (0x36), status: ESP_OK
+I (35838) ESP_ZB_ON_OFF_SWITCH: ZDO signal: NLME Status Indication (0x32), status: ESP_OK
+I (38548) ESP_ZB_ON_OFF_SWITCH: Send 'on_off toggle' command
+I (39598) ESP_ZB_ON_OFF_SWITCH: Send 'on_off toggle' command
+I (41148) ESP_ZB_ON_OFF_SWITCH: Send 'on_off toggle' command
 ```
 
 ## Light Control Functions

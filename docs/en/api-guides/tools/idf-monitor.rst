@@ -11,7 +11,7 @@ IDF Monitor can be launched from an ESP-IDF project by running ``idf.py monitor`
 Keyboard Shortcuts
 ==================
 
-For easy interaction with IDF Monitor, use the keyboard shortcuts given in the table.
+For easy interaction with IDF Monitor, use the keyboard shortcuts given in the table. These keyboard shortcuts can be customized, for more details see `Configuration File`_ section.
 
 .. list-table::
    :header-rows: 1
@@ -33,8 +33,8 @@ For easy interaction with IDF Monitor, use the keyboard shortcuts given in the t
      - Send the exit character itself to remote
      -
    * - * Ctrl + P
-     - Reset target into bootloader to pause app via RTS line
-     - Resets the target, into bootloader via the RTS line (if connected), so that the board runs nothing. Useful when you need to wait for another device to startup.
+     - Reset target into bootloader to pause app via RTS and DTR lines
+     - Resets the target into the bootloader using the RTS and DTR lines (if connected). This stops the board from executing the application, making it useful when waiting for another device to start. For additional details, refer to :ref:`target-reset-into-bootloader`.
    * - * Ctrl + R
      - Reset target board via RTS
      - Resets the target board and re-starts the application via the RTS line (if connected).
@@ -61,7 +61,7 @@ For easy interaction with IDF Monitor, use the keyboard shortcuts given in the t
      -
    * - Ctrl + C
      - Interrupt running application
-     - Pauses IDF Monitor and runs GDB_ project debugger to debug the application at runtime. This requires :ref:CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME option to be enabled.
+     - Pauses IDF Monitor and runs GDB_ project debugger to debug the application at runtime. This requires :ref:`CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME` option to be enabled.
 
 Any keys pressed, other than ``Ctrl-]`` and ``Ctrl-T``, will be sent through the serial port.
 
@@ -74,7 +74,7 @@ Automatic Address Decoding
 
 Whenever the chip outputs a hexadecimal address that points to executable code, IDF monitor looks up the location in the source code (file name and line number) and prints the location on the next line in yellow.
 
-.. code-block:: none
+.. highlight:: none
 
 .. only:: CONFIG_IDF_TARGET_ARCH_XTENSA
 
@@ -167,7 +167,7 @@ Whenever the chip outputs a hexadecimal address that points to executable code, 
 
     Backtrace:
     panic_abort (details=details@entry=0x3fc9a37c "abort() was called at PC 0x42067cd5 on core 0") at /home/marius/esp-idf_2/components/esp_system/panic.c:367
-    367	    *((int *) 0) = 0; // NOLINT(clang-analyzer-core.NullDereference) should be an invalid operation on targets
+    367     *((int *) 0) = 0; // NOLINT(clang-analyzer-core.NullDereference) should be an invalid operation on targets
     #0  panic_abort (details=details@entry=0x3fc9a37c "abort() was called at PC 0x42067cd5 on core 0") at /home/marius/esp-idf_2/components/esp_system/panic.c:367
     #1  0x40386b02 in esp_system_abort (details=details@entry=0x3fc9a37c "abort() was called at PC 0x42067cd5 on core 0") at /home/marius/esp-idf_2/components/esp_system/system_api.c:108
     #2  0x403906cc in abort () at /home/marius/esp-idf_2/components/newlib/abort.c:46
@@ -228,11 +228,86 @@ The ROM ELF file is automatically loaded from a location based on the ``IDF_PATH
 Target Reset on Connection
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-By default, IDF Monitor will reset the target when connecting to it. The reset of the target chip is performed using the DTR and RTS serial lines. To prevent IDF Monitor from automatically resetting the target on connection, call IDF Monitor with the ``--no-reset`` option (e.g., ``idf.py monitor --no-reset``).
+By default, IDF Monitor will reset the target when connecting to it. The reset of the target chip is performed using the DTR and RTS serial lines. To prevent IDF Monitor from automatically resetting the target on connection, call IDF Monitor with the ``--no-reset`` option (e.g., ``idf.py monitor --no-reset``). You can also set the environment variable ``ESP_IDF_MONITOR_NO_RESET`` to ``1`` to achieve the same behavior.
 
 .. note::
 
     The ``--no-reset`` option applies the same behavior even when connecting IDF Monitor to a particular port (e.g., ``idf.py monitor --no-reset -p [PORT]``).
+
+
+.. _target-reset-into-bootloader:
+
+Target Reset into Bootloader
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+IDF Monitor provides the capability to reset a chip into the bootloader using a pre-defined reset sequence that has been tuned to work in most environments. Additionally, users have the flexibility to set a custom reset sequence, allowing for fine-tuning and adaptability to diverse scenarios.
+
+Using Pre-defined Reset Sequence
+--------------------------------
+
+IDF Monitor's default reset sequence is designed to work seamlessly across a wide range of environments. To trigger a reset into the bootloader using the default sequence, no additional configuration is required.
+
+Custom Reset Sequence
+---------------------
+
+For more advanced users or specific use cases, IDF Monitor supports the configuration of a custom reset sequence using :ref:`configuration-file`. This is particularly useful in extreme edge cases where the default sequence may not suffice.
+
+The sequence is defined with a string in the following format:
+
+- Consists of individual commands divided by ``|`` (e.g. ``R0|D1|W0.5``).
+- Commands (e.g. ``R0``) are defined by a code (``R``) and an argument (``0``).
+
+.. list-table::
+    :header-rows: 1
+    :widths: 15 50 35
+    :align: center
+
+    * - Code
+      - Action
+      - Argument
+    * - D
+      - Set DTR control line
+      - ``1``/``0``
+    * - R
+      - Set RTS control line
+      - ``1``/``0``
+    * - U
+      - Set DTR and RTS control lines at the same time (Unix-like systems only)
+      - ``0,0``/``0,1``/``1,0``/``1,1``
+    * - W
+      - Wait for ``N`` seconds (where ``N`` is a float)
+      - N
+
+Example:
+
+.. code-block:: ini
+
+    [esp-idf-monitor]
+    custom_reset_sequence = U0,1|W0.1|D1|R0|W0.5|D0
+
+Refer to `custom reset sequence`_ from Esptool documentation for further details. Please note that ``custom_reset_sequence`` is the only used value from the Esptool configuration, and others will be ignored in IDF Monitor.
+
+Share Configuration Across Tools
+--------------------------------
+
+The configuration for the custom reset sequence can be specified in a shared configuration file between IDF Monitor and Esptool. In this case, your configuration file name should be either ``setup.cfg`` or ``tox.ini`` so it would be recognized by both tools.
+
+Example of a shared configuration file:
+
+.. code-block:: ini
+
+    [esp-idf-monitor]
+    menu_key = T
+    skip_menu_key = True
+
+    [esptool]
+    custom_reset_sequence = U0,1|W0.1|D1|R0|W0.5|D0
+
+.. note::
+
+    When using the ``custom_reset_sequence`` parameter in both the ``[esp-idf-monitor]`` section and the ``[esptool]`` section, the configuration from the ``[esp-idf-monitor]`` section will take precedence in IDF Monitor. Any conflicting configuration in the ``[esptool]`` section will be ignored.
+
+    This precedence rule also applies when the configuration is spread across multiple files. The global esp-idf-monitor configuration will take precedence over the local esptool configuration.
 
 
 Launching GDB with GDBStub
@@ -256,15 +331,19 @@ In both cases (i.e., sending the ``Ctrl+C`` message, or receiving the special st
 Output Filtering
 ~~~~~~~~~~~~~~~~
 
-IDF monitor can be invoked as ``idf.py monitor --print-filter="xyz"``, where ``--print-filter`` is the parameter for output filtering. The default value is an empty string, which means that everything is printed.
-
-Restrictions on what to print can be specified as a series of ``<tag>:<log_level>`` items where ``<tag>`` is the tag string and ``<log_level>`` is a character from the set ``{N, E, W, I, D, V, *}`` referring to a level for :doc:`logging <../../api-reference/system/log>`.
-
-For example, ``PRINT_FILTER="tag1:W"`` matches and prints only the outputs written with ``ESP_LOGW("tag1", ...)`` or at lower verbosity level, i.e., ``ESP_LOGE("tag1", ...)``. Not specifying a ``<log_level>`` or using ``*`` defaults to Verbose level.
+IDF monitor can be invoked as ``idf.py monitor --print-filter="xyz"``, where ``--print-filter`` is the parameter for output filtering. The default value is an empty string, which means that everything is printed. Filtering can also be configured using the ``ESP_IDF_MONITOR_PRINT_FILTER`` environment variable.
 
 .. note::
 
-   Use primary logging to disable at compilation the outputs you do not need through the :doc:`logging library <../../api-reference/system/log>`. Output filtering with ESP- monitor is a secondary solution which can be useful for adjusting the filtering options without recompiling the application.
+   When using both the environment variable ``ESP_IDF_MONITOR_PRINT_FILTER`` and the argument ``--print-filter``, the setting from the CLI argument will take precedence.
+
+Restrictions on what to print can be specified as a series of ``<tag>:<log_level>`` items where ``<tag>`` is the tag string and ``<log_level>`` is a character from the set ``{N, E, W, I, D, V, *}`` referring to a level for :doc:`logging <../../api-reference/system/log>`.
+
+For example, ``--print_filter="tag1:W"`` matches and prints only the outputs written with ``ESP_LOGW("tag1", ...)`` or at lower verbosity level, i.e., ``ESP_LOGE("tag1", ...)``. Not specifying a ``<log_level>`` or using ``*`` defaults to a Verbose level.
+
+.. note::
+
+   Use primary logging to disable at compilation the outputs you do not need through the :doc:`logging library <../../api-reference/system/log>`. Output filtering with the IDF monitor is a secondary solution that can be useful for adjusting the filtering options without recompiling the application.
 
 Your app tags must not contain spaces, asterisks ``*``, or colons ``:`` to be compatible with the output filtering feature.
 
@@ -273,7 +352,7 @@ If the last line of the output in your app is not followed by a carriage return,
 Examples of Filtering Rules:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-- ``*`` can be used to match any tags. However, the string ``PRINT_FILTER="*:I tag1:E"`` with regards to ``tag1`` prints errors only, because the rule for ``tag1`` has a higher priority over the rule for ``*``.
+- ``*`` can be used to match any tags. However, the string ``--print_filter="*:I tag1:E"`` with regards to ``tag1`` prints errors only, because the rule for ``tag1`` has a higher priority over the rule for ``*``.
 - The default (empty) rule is equivalent to ``*:V`` because matching every tag at the Verbose level or lower means matching everything.
 - ``"*:N"`` suppresses not only the outputs from logging functions, but also the prints made by ``printf``, etc. To avoid this, use ``*:E`` or a higher verbosity level.
 - Rules ``"tag1:V"``, ``"tag1:v"``, ``"tag1:"``, ``"tag1:*"``, and ``"tag1"`` are equivalent.
@@ -300,12 +379,12 @@ The following log snippet was acquired without any filtering options::
     D (318) vfs: esp_vfs_register_fd_range is successful for range <54; 64) and VFS ID 1
     I (328) wifi: wifi driver task: 3ffdbf84, prio:23, stack:4096, core=0
 
-The captured output for the filtering options ``PRINT_FILTER="wifi esp_image:E light_driver:I"`` is given below::
+The captured output for the filtering options ``--print_filter="wifi esp_image:E light_driver:I"`` is given below::
 
     E (31) esp_image: image at 0x30000 has invalid magic byte
     I (328) wifi: wifi driver task: 3ffdbf84, prio:23, stack:4096, core=0
 
-``The options ``PRINT_FILTER="light_driver:D esp_image:N boot:N cpu_start:N vfs:N wifi:N *:V"`` show the following output::
+The options ``--print_filter="light_driver:D esp_image:N boot:N cpu_start:N vfs:N wifi:N *:V"`` show the following output::
 
     load:0x40078000,len:13564
     entry 0x40078d4c
@@ -313,18 +392,123 @@ The captured output for the filtering options ``PRINT_FILTER="wifi esp_image:E l
     D (309) light_driver: [light_init, 74]:status: 1, mode: 2
 
 
+.. _configuration-file:
+
+Configuration File
+==================
+
+``esp-idf-monitor`` is using `C0 control codes`_ to interact with the console. Characters from the config file are converted to their C0 control codes. Available characters include the English alphabet (A-Z) and special symbols: ``[``, ``]``, ``\``, ``^``, ``_``.
+
+.. warning::
+
+    Please note that some characters may not work on all platforms or can be already reserved as a shortcut for something else. Use this feature with caution!
+
+
+File Location
+~~~~~~~~~~~~~
+
+The default name for a configuration file is ``esp-idf-monitor.cfg``. First, the same directory ``esp-idf-monitor`` is being run if is inspected.
+
+If a configuration file is not found here, the current user's OS configuration directory is inspected next:
+
+ - Linux: ``/home/<user>/.config/esp-idf-monitor/``
+ - MacOS ``/Users/<user>/.config/esp-idf-monitor/``
+ - Windows: ``c:\Users\<user>\AppData\Local\esp-idf-monitor\``
+
+If a configuration file is still not found, the last inspected location is the home directory:
+
+ - Linux: ``/home/<user>/``
+ - MacOS ``/Users/<user>/``
+ - Windows: ``c:\Users\<user>\``
+
+On Windows, the home directory can be set with the ``HOME`` or ``USERPROFILE`` environment variables. Therefore, the Windows configuration directory location also depends on these.
+
+A different location for the configuration file can be specified with the ``ESP_IDF_MONITOR_CFGFILE`` environment variable, e.g., ``ESP_IDF_MONITOR_CFGFILE = ~/custom_config.cfg``. This overrides the search priorities described above.
+
+``esp-idf-monitor`` will read settings from other usual configuration files if no other configuration file is used. It automatically reads from ``setup.cfg`` or ``tox.ini`` if they exist.
+
+Configuration Options
+~~~~~~~~~~~~~~~~~~~~~
+
+Below is a table listing the available configuration options:
+
+.. list-table::
+    :header-rows: 1
+    :widths: 30 50 20
+    :align: center
+
+    * - Option Name
+      - Description
+      - Default Value
+    * - menu_key
+      - Key to access the main menu.
+      - ``T``
+    * - exit_key
+      - Key to exit the monitor.
+      - ``]``
+    * - chip_reset_key
+      - Key to initiate a chip reset.
+      - ``R``
+    * - recompile_upload_key
+      - Key to recompile and upload.
+      - ``F``
+    * - recompile_upload_app_key
+      - Key to recompile and upload just the application.
+      - ``A``
+    * - toggle_output_key
+      - Key to toggle the output display.
+      - ``Y``
+    * - toggle_log_key
+      - Key to toggle the logging feature.
+      - ``L``
+    * - toggle_timestamp_key
+      - Key to toggle timestamp display.
+      - ``I``
+    * - chip_reset_bootloader_key
+      - Key to reset the chip to bootloader mode.
+      - ``P``
+    * - exit_menu_key
+      - Key to exit the monitor from the menu.
+      - ``X``
+    * - skip_menu_key
+      - Pressing the menu key can be skipped for menu commands.
+      - ``False``
+    * - custom_reset_sequence
+      - Custom reset sequence for resetting into the bootloader.
+      - N/A
+
+
+Syntax
+~~~~~~
+
+The configuration file is in .ini file format: it must be introduced by an ``[esp-idf-monitor]`` header to be recognized as valid. This section then contains name = value entries. Lines beginning with ``#`` or ``;`` are ignored as comments.
+
+.. code-block:: ini
+
+    # esp-idf-monitor.cfg file to configure internal settings of esp-idf-monitor
+    [esp-idf-monitor]
+    menu_key = T
+    exit_key = ]
+    chip_reset_key = R
+    recompile_upload_key = F
+    recompile_upload_app_key = A
+    toggle_output_key = Y
+    toggle_log_key = L
+    toggle_timestamp_key = I
+    chip_reset_bootloader_key = P
+    exit_menu_key = X
+    skip_menu_key = False
+
+
 Known Issues with IDF Monitor
 =============================
 
-Issues Observed on Windows
-~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-- Arrow keys, as well as some other keys, do not work in GDB due to Windows Console limitations.
-- Occasionally, when "idf.py" exits, it might stall for up to 30 seconds before IDF Monitor resumes.
-- When "gdb" is run, it might stall for a short time before it begins communicating with the GDBStub.
+If you encounter any issues while using IDF Monitor, check our `GitHub repository <https://github.com/espressif/esp-idf-monitor/issues>`_ for a list of known issues and their current status. If you come across a problem that hasn't been documented yet, we encourage you to create a new issue report.
 
 .. _addr2line: https://sourceware.org/binutils/docs/binutils/addr2line.html
 .. _esp-idf-monitor: https://github.com/espressif/esp-idf-monitor
 .. _gdb: https://sourceware.org/gdb/download/onlinedocs/
 .. _pySerial: https://github.com/pyserial/pyserial
 .. _miniterm: https://pyserial.readthedocs.org/en/latest/tools.html#module-serial.tools.miniterm
+.. _C0 control codes: https://en.wikipedia.org/wiki/C0_and_C1_control_codes#C0_controls
+.. _custom reset sequence: https://docs.espressif.com/projects/esptool/en/latest/{IDF_TARGET_PATH_NAME}/esptool/configuration-file.html#custom-reset-sequence

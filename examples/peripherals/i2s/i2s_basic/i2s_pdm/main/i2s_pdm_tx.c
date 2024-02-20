@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -13,11 +13,12 @@
 #include "esp_check.h"
 #include "sdkconfig.h"
 #include "i2s_pdm_example.h"
+#include "i2s_example_pins.h"
 
-#define EXAMPLE_PDM_TX_CLK_IO           GPIO_NUM_4      // I2S PDM TX clock io number
-#define EXAMPLE_PDM_TX_DOUT_IO          GPIO_NUM_5      // I2S PDM TX data out io number
+#define EXAMPLE_PDM_TX_CLK_IO           EXAMPLE_I2S_BCLK_IO1      // I2S PDM TX clock io number
+#define EXAMPLE_PDM_TX_DOUT_IO          EXAMPLE_I2S_DOUT_IO1      // I2S PDM TX data out io number
 
-#define EXAMPLE_PDM_TX_FREQ_HZ          44100           // I2S PDM TX frequency
+#define EXAMPLE_PDM_TX_FREQ_HZ          16000           // I2S PDM TX frequency
 #define EXAMPLE_WAVE_AMPLITUDE          (1000.0)        // 1~32767
 #define CONST_PI                        (3.1416f)
 #define EXAMPLE_SINE_WAVE_LEN(tone)     (uint32_t)((EXAMPLE_PDM_TX_FREQ_HZ / (float)tone) + 0.5) // The sample point number per sine wave to generate the tone

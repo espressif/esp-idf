@@ -22,6 +22,9 @@ if(NOT BOOTLOADER_BUILD)
         endif()
     elseif(CONFIG_COMPILER_OPTIMIZATION_DEBUG)
         list(APPEND compile_options "-Og")
+        if(CMAKE_C_COMPILER_ID MATCHES "GNU" AND NOT CONFIG_IDF_TARGET_LINUX)
+            list(APPEND compile_options "-fno-shrink-wrap")  # Disable shrink-wrapping to reduce binary size
+        endif()
     elseif(CONFIG_COMPILER_OPTIMIZATION_NONE)
         list(APPEND compile_options "-O0")
     elseif(CONFIG_COMPILER_OPTIMIZATION_PERF)
@@ -37,6 +40,9 @@ else()  # BOOTLOADER_BUILD
         endif()
     elseif(CONFIG_BOOTLOADER_COMPILER_OPTIMIZATION_DEBUG)
         list(APPEND compile_options "-Og")
+        if(CMAKE_C_COMPILER_ID MATCHES "GNU" AND NOT CONFIG_IDF_TARGET_LINUX)
+            list(APPEND compile_options "-fno-shrink-wrap")  # Disable shrink-wrapping to reduce binary size
+        endif()
     elseif(CONFIG_BOOTLOADER_COMPILER_OPTIMIZATION_NONE)
         list(APPEND compile_options "-O0")
     elseif(CONFIG_BOOTLOADER_COMPILER_OPTIMIZATION_PERF)
@@ -115,8 +121,10 @@ if(CMAKE_C_COMPILER_ID MATCHES "Clang")
     list(APPEND compile_options "-Wno-c2x-extensions")
     # warning on xMPU_SETTINGS for esp32s2 has size 0 for C and 1 for C++
     list(APPEND compile_options "-Wno-extern-c-compat")
-    # warning: implicit truncation from 'int' to a one-bit wide bit-field changes value from 1 to -1
-    list(APPEND compile_options "-Wno-single-bit-bitfield-constant-conversion")
+    if(NOT (CONFIG_IDF_TARGET_LINUX AND CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin"))
+        # warning: implicit truncation from 'int' to a one-bit wide bit-field changes value from 1 to -1
+        list(APPEND compile_options "-Wno-single-bit-bitfield-constant-conversion")
+    endif()
 endif()
 # More warnings may exist in unit tests and example projects.
 
@@ -184,6 +192,13 @@ endif()
 if(CONFIG_COMPILER_DISABLE_GCC12_WARNINGS)
     list(APPEND compile_options "-Wno-address"
                                 "-Wno-use-after-free")
+endif()
+
+if(CONFIG_COMPILER_DISABLE_GCC13_WARNINGS)
+    list(APPEND compile_options "-Wno-xor-used-as-pow")
+    list(APPEND c_compile_options "-Wno-enum-int-mismatch")
+    list(APPEND cxx_compile_options "-Wno-self-move"
+                                    "-Wno-dangling-reference")
 endif()
 
 # GCC-specific options

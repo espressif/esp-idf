@@ -80,7 +80,7 @@ TEST_CASE("ADC oneshot fast work with ISR", "[adc_oneshot]")
     //-------------ADC1 TEST Channel 0 Config---------------//
     adc_oneshot_chan_cfg_t config = {
         .bitwidth = ADC_BITWIDTH_DEFAULT,
-        .atten = ADC_ATTEN_DB_11,
+        .atten = ADC_ATTEN_DB_12,
     };
     TEST_ESP_OK(adc_oneshot_config_channel(isr_test_ctx.oneshot_handle, ADC1_TEST_CHAN0, &config));
 
@@ -171,7 +171,7 @@ TEST_CASE("ADC continuous big conv_frame_size test", "[adc_continuous]")
         .format = ADC_DRIVER_TEST_OUTPUT_TYPE,
     };
     adc_digi_pattern_config_t adc_pattern[SOC_ADC_PATT_LEN_MAX] = {0};
-    adc_pattern[0].atten = ADC_ATTEN_DB_11;
+    adc_pattern[0].atten = ADC_ATTEN_DB_12;
     adc_pattern[0].channel = ADC1_TEST_CHAN0;
     adc_pattern[0].unit = ADC_UNIT_1;
     adc_pattern[0].bit_width = SOC_ADC_DIGI_MAX_BITWIDTH;
@@ -229,7 +229,7 @@ TEST_CASE("ADC continuous flush internal pool", "[adc_continuous][mannual][ignor
         .format = ADC_DRIVER_TEST_OUTPUT_TYPE,
     };
     adc_digi_pattern_config_t adc_pattern[SOC_ADC_PATT_LEN_MAX] = {0};
-    adc_pattern[0].atten = ADC_ATTEN_DB_11;
+    adc_pattern[0].atten = ADC_ATTEN_DB_12;
     adc_pattern[0].channel = ADC1_TEST_CHAN0;
     adc_pattern[0].unit = ADC_UNIT_1;
     adc_pattern[0].bit_width = SOC_ADC_DIGI_MAX_BITWIDTH;
@@ -263,6 +263,57 @@ TEST_CASE("ADC continuous flush internal pool", "[adc_continuous][mannual][ignor
     TEST_ESP_OK(adc_continuous_stop(handle));
     TEST_ESP_OK(adc_continuous_deinit(handle));
 }
+
+#if !CONFIG_IDF_TARGET_ESP32C3 //TODO: DIG-270
+
+#define ADC_RESTART_TEST_SIZE   4096
+#define ADC_READ_TEST_COUNT     10
+
+TEST_CASE("ADC continuous test after restarting", "[adc_continuous]")
+{
+    adc_continuous_handle_t handle = NULL;
+    adc_continuous_handle_cfg_t adc_config = {
+        .max_store_buf_size = ADC_RESTART_TEST_SIZE,
+        .conv_frame_size = ADC_RESTART_TEST_SIZE,
+    };
+    TEST_ESP_OK(adc_continuous_new_handle(&adc_config, &handle));
+
+    adc_continuous_config_t dig_cfg = {
+        .sample_freq_hz = 50 * 1000,
+        .conv_mode = ADC_CONV_SINGLE_UNIT_1,
+        .format = ADC_DRIVER_TEST_OUTPUT_TYPE,
+    };
+    adc_digi_pattern_config_t adc_pattern[SOC_ADC_PATT_LEN_MAX] = {0};
+    adc_pattern[0].atten = ADC_ATTEN_DB_12;
+    adc_pattern[0].channel = ADC1_TEST_CHAN0;
+    adc_pattern[0].unit = ADC_UNIT_1;
+    adc_pattern[0].bit_width = SOC_ADC_DIGI_MAX_BITWIDTH;
+    dig_cfg.adc_pattern = adc_pattern;
+    dig_cfg.pattern_num = 1;
+    TEST_ESP_OK(adc_continuous_config(handle, &dig_cfg));
+
+    uint8_t* result = malloc(ADC_RESTART_TEST_SIZE);
+    TEST_ASSERT(result);
+
+    test_adc_set_io_level(ADC_UNIT_1, ADC1_TEST_CHAN0, 0);
+
+    for (int i = 0; i < ADC_READ_TEST_COUNT; i++) {
+        uint32_t ret_num = 0;
+        TEST_ESP_OK(adc_continuous_start(handle));
+        TEST_ESP_OK(adc_continuous_read(handle, result, ADC_RESTART_TEST_SIZE, &ret_num, ADC_MAX_DELAY));
+        TEST_ASSERT_EQUAL(ADC_RESTART_TEST_SIZE, ret_num);
+        for (int i = 0; i < ret_num; i += SOC_ADC_DIGI_RESULT_BYTES) {
+            adc_digi_output_data_t *p = (void*)&result[i];
+            uint32_t chan_num = ADC_DRIVER_TEST_GET_CHANNEL(p);
+            TEST_ASSERT(chan_num < SOC_ADC_CHANNEL_NUM(ADC_UNIT_1));
+        }
+        TEST_ESP_OK(adc_continuous_stop(handle));
+    }
+
+    TEST_ESP_OK(adc_continuous_deinit(handle));
+    free(result);
+}
+#endif //!CONFIG_IDF_TARGET_ESP32C3
 
 #if SOC_ADC_DIG_IIR_FILTER_SUPPORTED
 TEST_CASE("ADC filter exhausted allocation", "[adc_continuous]")

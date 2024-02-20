@@ -13,7 +13,6 @@
 #include "soc/rtc.h"
 #include "soc/periph_defs.h"
 #include "freertos/FreeRTOS.h"
-#include "freertos/xtensa_api.h"
 #include "freertos/semphr.h"
 #include "esp_timer.h"
 #include "esp_intr_alloc.h"

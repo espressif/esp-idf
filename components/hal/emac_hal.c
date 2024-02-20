@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,20 +8,6 @@
 #include "esp_attr.h"
 #include "hal/emac_hal.h"
 #include "hal/emac_ll.h"
-#include "hal/gpio_ll.h"
-
-#define ETH_CRC_LENGTH (4)
-
-#ifndef NDEBUG
-#define EMAC_HAL_BUF_MAGIC_ID 0x1E1C8416
-#endif // NDEBUG
-
-typedef struct {
-#ifndef NDEBUG
-    uint32_t magic_id;
-#endif // NDEBUG
-    uint32_t copy_len;
-}__attribute__((packed)) emac_hal_auto_buf_info_t;
 
 static esp_err_t emac_hal_flush_trans_fifo(emac_hal_context_t *hal)
 {
@@ -35,123 +21,13 @@ static esp_err_t emac_hal_flush_trans_fifo(emac_hal_context_t *hal)
     return ESP_ERR_TIMEOUT;
 }
 
-void emac_hal_iomux_init_mii(void)
-{
-    /* TX_CLK to GPIO0 */
-    gpio_ll_iomux_func_sel(PERIPHS_IO_MUX_GPIO0_U, FUNC_GPIO0_EMAC_TX_CLK);
-    PIN_INPUT_ENABLE(GPIO_PIN_MUX_REG[0]);
-    /* TX_EN to GPIO21 */
-    gpio_ll_iomux_func_sel(PERIPHS_IO_MUX_GPIO21_U, FUNC_GPIO21_EMAC_TX_EN);
-    PIN_INPUT_DISABLE(GPIO_PIN_MUX_REG[21]);
-    /* TXD0 to GPIO19 */
-    gpio_ll_iomux_func_sel(PERIPHS_IO_MUX_GPIO19_U, FUNC_GPIO19_EMAC_TXD0);
-    PIN_INPUT_DISABLE(GPIO_PIN_MUX_REG[19]);
-    /* TXD1 to GPIO22 */
-    gpio_ll_iomux_func_sel(PERIPHS_IO_MUX_GPIO22_U, FUNC_GPIO22_EMAC_TXD1);
-    PIN_INPUT_DISABLE(GPIO_PIN_MUX_REG[22]);
-    /* TXD2 to MTMS */
-    gpio_ll_iomux_func_sel(PERIPHS_IO_MUX_MTMS_U, FUNC_MTMS_EMAC_TXD2);
-    PIN_INPUT_DISABLE(GPIO_PIN_MUX_REG[14]);
-    /* TXD3 to MTDI */
-    gpio_ll_iomux_func_sel(PERIPHS_IO_MUX_MTDI_U, FUNC_MTDI_EMAC_TXD3);
-    PIN_INPUT_DISABLE(GPIO_PIN_MUX_REG[12]);
-
-    /* RX_CLK to GPIO5 */
-    gpio_ll_iomux_func_sel(PERIPHS_IO_MUX_GPIO5_U, FUNC_GPIO5_EMAC_RX_CLK);
-    PIN_INPUT_ENABLE(GPIO_PIN_MUX_REG[5]);
-    /* RX_DV to GPIO27 */
-    gpio_ll_iomux_func_sel(PERIPHS_IO_MUX_GPIO27_U, FUNC_GPIO27_EMAC_RX_DV);
-    PIN_INPUT_ENABLE(GPIO_PIN_MUX_REG[27]);
-    /* RXD0 to GPIO25 */
-    gpio_ll_iomux_func_sel(PERIPHS_IO_MUX_GPIO25_U, FUNC_GPIO25_EMAC_RXD0);
-    PIN_INPUT_ENABLE(GPIO_PIN_MUX_REG[25]);
-    /* RXD1 to GPIO26 */
-    gpio_ll_iomux_func_sel(PERIPHS_IO_MUX_GPIO26_U, FUNC_GPIO26_EMAC_RXD1);
-    PIN_INPUT_ENABLE(GPIO_PIN_MUX_REG[26]);
-    /* RXD2 to U0TXD */
-    gpio_ll_iomux_func_sel(PERIPHS_IO_MUX_U0TXD_U, FUNC_U0TXD_EMAC_RXD2);
-    PIN_INPUT_ENABLE(GPIO_PIN_MUX_REG[1]);
-    /* RXD3 to MTDO */
-    gpio_ll_iomux_func_sel(PERIPHS_IO_MUX_MTDO_U, FUNC_MTDO_EMAC_RXD3);
-    PIN_INPUT_ENABLE(GPIO_PIN_MUX_REG[15]);
-}
-
-void emac_hal_iomux_rmii_clk_input(void)
-{
-    /* REF_CLK(RMII mode) to GPIO0 */
-    gpio_ll_iomux_func_sel(PERIPHS_IO_MUX_GPIO0_U, FUNC_GPIO0_EMAC_TX_CLK);
-    PIN_INPUT_ENABLE(GPIO_PIN_MUX_REG[0]);
-}
-
-void emac_hal_iomux_rmii_clk_ouput(int num)
-{
-    switch (num) {
-    case 0:
-        /* APLL clock output to GPIO0 (must be configured to 50MHz!) */
-        gpio_ll_iomux_func_sel(PERIPHS_IO_MUX_GPIO0_U, FUNC_GPIO0_CLK_OUT1);
-        PIN_INPUT_DISABLE(GPIO_PIN_MUX_REG[0]);
-        break;
-    case 16:
-        /* RMII CLK (50MHz) output to GPIO16 */
-        gpio_ll_iomux_func_sel(PERIPHS_IO_MUX_GPIO16_U, FUNC_GPIO16_EMAC_CLK_OUT);
-        PIN_INPUT_DISABLE(GPIO_PIN_MUX_REG[16]);
-        break;
-    case 17:
-        /* RMII CLK (50MHz) output to GPIO17 */
-        gpio_ll_iomux_func_sel(PERIPHS_IO_MUX_GPIO17_U, FUNC_GPIO17_EMAC_CLK_OUT_180);
-        PIN_INPUT_DISABLE(GPIO_PIN_MUX_REG[17]);
-        break;
-    default:
-        break;
-    }
-}
-
-void emac_hal_iomux_init_rmii(void)
-{
-    /* TX_EN to GPIO21 */
-    gpio_ll_iomux_func_sel(PERIPHS_IO_MUX_GPIO21_U, FUNC_GPIO21_EMAC_TX_EN);
-    PIN_INPUT_DISABLE(GPIO_PIN_MUX_REG[21]);
-    /* TXD0 to GPIO19 */
-    gpio_ll_iomux_func_sel(PERIPHS_IO_MUX_GPIO19_U, FUNC_GPIO19_EMAC_TXD0);
-    PIN_INPUT_DISABLE(GPIO_PIN_MUX_REG[19]);
-    /* TXD1 to GPIO22 */
-    gpio_ll_iomux_func_sel(PERIPHS_IO_MUX_GPIO22_U, FUNC_GPIO22_EMAC_TXD1);
-    PIN_INPUT_DISABLE(GPIO_PIN_MUX_REG[22]);
-
-    /* CRS_DV to GPIO27 */
-    gpio_ll_iomux_func_sel(PERIPHS_IO_MUX_GPIO27_U, FUNC_GPIO27_EMAC_RX_DV);
-    PIN_INPUT_ENABLE(GPIO_PIN_MUX_REG[27]);
-    /* RXD0 to GPIO25 */
-    gpio_ll_iomux_func_sel(PERIPHS_IO_MUX_GPIO25_U, FUNC_GPIO25_EMAC_RXD0);
-    PIN_INPUT_ENABLE(GPIO_PIN_MUX_REG[25]);
-    /* RXD1 to GPIO26 */
-    gpio_ll_iomux_func_sel(PERIPHS_IO_MUX_GPIO26_U, FUNC_GPIO26_EMAC_RXD1);
-    PIN_INPUT_ENABLE(GPIO_PIN_MUX_REG[26]);
-}
-
-void emac_hal_iomux_init_tx_er(void)
-{
-    /* TX_ER to GPIO4 */
-    gpio_ll_iomux_func_sel(PERIPHS_IO_MUX_GPIO4_U, FUNC_GPIO4_EMAC_TX_ER);
-    PIN_INPUT_DISABLE(GPIO_PIN_MUX_REG[4]);
-}
-
-void emac_hal_iomux_init_rx_er(void)
-{
-    /* RX_ER to MTCK */
-    gpio_ll_iomux_func_sel(PERIPHS_IO_MUX_MTCK_U, FUNC_MTCK_EMAC_RX_ER);
-    PIN_INPUT_ENABLE(GPIO_PIN_MUX_REG[13]);
-}
-
-void emac_hal_init(emac_hal_context_t *hal, void *descriptors,
-                   uint8_t **rx_buf, uint8_t **tx_buf)
+void emac_hal_init(emac_hal_context_t *hal)
 {
     hal->dma_regs = &EMAC_DMA;
     hal->mac_regs = &EMAC_MAC;
+#if CONFIG_IDF_TARGET_ESP32
     hal->ext_regs = &EMAC_EXT;
-    hal->descriptors = descriptors;
-    hal->rx_buf = rx_buf;
-    hal->tx_buf = tx_buf;
+#endif
 }
 
 void emac_hal_set_csr_clock_range(emac_hal_context_t *hal, int freq)
@@ -172,50 +48,10 @@ void emac_hal_set_csr_clock_range(emac_hal_context_t *hal, int freq)
     }
 }
 
-void emac_hal_reset_desc_chain(emac_hal_context_t *hal)
+void emac_hal_set_rx_tx_desc_addr(emac_hal_context_t *hal, eth_dma_rx_descriptor_t *rx_desc, eth_dma_tx_descriptor_t *tx_desc)
 {
-    /* reset DMA descriptors */
-    hal->rx_desc = (eth_dma_rx_descriptor_t *)(hal->descriptors);
-    hal->tx_desc = (eth_dma_tx_descriptor_t *)(hal->descriptors +
-                   sizeof(eth_dma_rx_descriptor_t) * CONFIG_ETH_DMA_RX_BUFFER_NUM);
-    /* init rx chain */
-    for (int i = 0; i < CONFIG_ETH_DMA_RX_BUFFER_NUM; i++) {
-        /* Set Own bit of the Rx descriptor Status: DMA */
-        hal->rx_desc[i].RDES0.Own = EMAC_LL_DMADESC_OWNER_DMA;
-        /* Set Buffer1 size and Second Address Chained bit */
-        hal->rx_desc[i].RDES1.SecondAddressChained = 1;
-        hal->rx_desc[i].RDES1.ReceiveBuffer1Size = CONFIG_ETH_DMA_BUFFER_SIZE;
-        /* Enable Ethernet DMA Rx Descriptor interrupt */
-        hal->rx_desc[i].RDES1.DisableInterruptOnComplete = 0;
-        /* point to the buffer */
-        hal->rx_desc[i].Buffer1Addr = (uint32_t)(hal->rx_buf[i]);
-        /* point to next descriptor */
-        hal->rx_desc[i].Buffer2NextDescAddr = (uint32_t)(hal->rx_desc + i + 1);
-    }
-    /* For last descriptor, set next descriptor address register equal to the first descriptor base address */
-    hal->rx_desc[CONFIG_ETH_DMA_RX_BUFFER_NUM - 1].Buffer2NextDescAddr = (uint32_t)(hal->rx_desc);
-
-    /* init tx chain */
-    for (int i = 0; i < CONFIG_ETH_DMA_TX_BUFFER_NUM; i++) {
-        /* Set Own bit of the Tx descriptor Status: CPU */
-        hal->tx_desc[i].TDES0.Own = EMAC_LL_DMADESC_OWNER_CPU;
-        hal->tx_desc[i].TDES0.SecondAddressChained = 1;
-        hal->tx_desc[i].TDES1.TransmitBuffer1Size = CONFIG_ETH_DMA_BUFFER_SIZE;
-        /* Enable Ethernet DMA Tx Descriptor interrupt */
-        hal->tx_desc[1].TDES0.InterruptOnComplete = 1;
-        /* Enable Transmit Timestamp */
-        hal->tx_desc[i].TDES0.TransmitTimestampEnable = 1;
-        /* point to the buffer */
-        hal->tx_desc[i].Buffer1Addr = (uint32_t)(hal->tx_buf[i]);
-        /* point to next descriptor */
-        hal->tx_desc[i].Buffer2NextDescAddr = (uint32_t)(hal->tx_desc + i + 1);
-    }
-    /* For last descriptor, set next descriptor address register equal to the first descriptor base address */
-    hal->tx_desc[CONFIG_ETH_DMA_TX_BUFFER_NUM - 1].Buffer2NextDescAddr = (uint32_t)(hal->tx_desc);
-
-    /* set base address of the first descriptor */
-    emac_ll_set_rx_desc_addr(hal->dma_regs, (uint32_t)hal->rx_desc);
-    emac_ll_set_tx_desc_addr(hal->dma_regs, (uint32_t)hal->tx_desc);
+    emac_ll_set_rx_desc_addr(hal->dma_regs, (uint32_t)rx_desc);
+    emac_ll_set_tx_desc_addr(hal->dma_regs, (uint32_t)tx_desc);
 }
 
 void emac_hal_init_mac_default(emac_hal_context_t *hal)
@@ -293,8 +129,13 @@ void emac_hal_init_dma_default(emac_hal_context_t *hal, emac_hal_dma_config_t *h
     /* DMAOMR Configuration */
     /* Enable Dropping of TCP/IP Checksum Error Frames */
     emac_ll_drop_tcp_err_frame_enable(hal->dma_regs, true);
+#if CONFIG_IDF_TARGET_ESP32P4
+    /* Disable Receive Store Forward (Rx FIFO is only 256B) */
+    emac_ll_recv_store_forward_enable(hal->dma_regs, false);
+#else
     /* Enable Receive Store Forward */
     emac_ll_recv_store_forward_enable(hal->dma_regs, true);
+#endif
     /* Enable Flushing of Received Frames because of the unavailability of receive descriptors or buffers */
     emac_ll_flush_recv_frame_enable(hal->dma_regs, true);
     /* Disable Transmit Store Forward */
@@ -403,331 +244,4 @@ esp_err_t emac_hal_stop(emac_hal_context_t *hal)
     emac_ll_disable_all_intr(hal->dma_regs);
 
     return ESP_OK;
-}
-
-uint32_t emac_hal_transmit_frame(emac_hal_context_t *hal, uint8_t *buf, uint32_t length)
-{
-    /* Get the number of Tx buffers to use for the frame */
-    uint32_t bufcount = 0;
-    uint32_t lastlen = length;
-    uint32_t sentout = 0;
-    while (lastlen > CONFIG_ETH_DMA_BUFFER_SIZE) {
-        lastlen -= CONFIG_ETH_DMA_BUFFER_SIZE;
-        bufcount++;
-    }
-    if (lastlen) {
-        bufcount++;
-    }
-    if (bufcount > CONFIG_ETH_DMA_TX_BUFFER_NUM) {
-        goto err;
-    }
-
-    eth_dma_tx_descriptor_t *desc_iter = hal->tx_desc;
-    /* A frame is transmitted in multiple descriptor */
-    for (size_t i = 0; i < bufcount; i++) {
-        /* Check if the descriptor is owned by the Ethernet DMA (when 1) or CPU (when 0) */
-        if (desc_iter->TDES0.Own != EMAC_LL_DMADESC_OWNER_CPU) {
-            goto err;
-        }
-        /* Clear FIRST and LAST segment bits */
-        desc_iter->TDES0.FirstSegment = 0;
-        desc_iter->TDES0.LastSegment = 0;
-        desc_iter->TDES0.InterruptOnComplete = 0;
-        if (i == 0) {
-            /* Setting the first segment bit */
-            desc_iter->TDES0.FirstSegment = 1;
-        }
-        if (i == (bufcount - 1)) {
-            /* Setting the last segment bit */
-            desc_iter->TDES0.LastSegment = 1;
-            /* Enable transmit interrupt */
-            desc_iter->TDES0.InterruptOnComplete = 1;
-            /* Program size */
-            desc_iter->TDES1.TransmitBuffer1Size = lastlen;
-            /* copy data from uplayer stack buffer */
-            memcpy((void *)(desc_iter->Buffer1Addr), buf + i * CONFIG_ETH_DMA_BUFFER_SIZE, lastlen);
-            sentout += lastlen;
-        } else {
-            /* Program size */
-            desc_iter->TDES1.TransmitBuffer1Size = CONFIG_ETH_DMA_BUFFER_SIZE;
-            /* copy data from uplayer stack buffer */
-            memcpy((void *)(desc_iter->Buffer1Addr), buf + i * CONFIG_ETH_DMA_BUFFER_SIZE, CONFIG_ETH_DMA_BUFFER_SIZE);
-            sentout += CONFIG_ETH_DMA_BUFFER_SIZE;
-        }
-        /* Point to next descriptor */
-        desc_iter = (eth_dma_tx_descriptor_t *)(desc_iter->Buffer2NextDescAddr);
-    }
-
-    /* Set Own bit of the Tx descriptor Status: gives the buffer back to ETHERNET DMA */
-    for (size_t i = 0; i < bufcount; i++) {
-        hal->tx_desc->TDES0.Own = EMAC_LL_DMADESC_OWNER_DMA;
-        hal->tx_desc = (eth_dma_tx_descriptor_t *)(hal->tx_desc->Buffer2NextDescAddr);
-    }
-    emac_ll_transmit_poll_demand(hal->dma_regs, 0);
-    return sentout;
-err:
-    return 0;
-}
-
-uint32_t emac_hal_transmit_multiple_buf_frame(emac_hal_context_t *hal, uint8_t **buffs, uint32_t *lengths, uint32_t buffs_cnt)
-{
-    /* Get the number of Tx buffers to use for the frame */
-    uint32_t dma_bufcount = 0;
-    uint32_t sentout = 0;
-    uint8_t *ptr = buffs[0];
-    uint32_t lastlen = lengths[0];
-    uint32_t avail_len = CONFIG_ETH_DMA_BUFFER_SIZE;
-
-    eth_dma_tx_descriptor_t *desc_iter = hal->tx_desc;
-    /* A frame is transmitted in multiple descriptor */
-    while (dma_bufcount < CONFIG_ETH_DMA_TX_BUFFER_NUM) {
-        /* Check if the descriptor is owned by the Ethernet DMA (when 1) or CPU (when 0) */
-        if (desc_iter->TDES0.Own != EMAC_LL_DMADESC_OWNER_CPU) {
-            goto err;
-        }
-        /* Clear FIRST and LAST segment bits */
-        desc_iter->TDES0.FirstSegment = 0;
-        desc_iter->TDES0.LastSegment = 0;
-        desc_iter->TDES0.InterruptOnComplete = 0;
-        desc_iter->TDES1.TransmitBuffer1Size = 0;
-        if (dma_bufcount == 0) {
-            /* Setting the first segment bit */
-            desc_iter->TDES0.FirstSegment = 1;
-        }
-
-        while (buffs_cnt > 0) {
-            /* Check if input buff data fits to currently available space in the descriptor */
-            if (lastlen < avail_len) {
-                /* copy data from uplayer stack buffer */
-                memcpy((void *)(desc_iter->Buffer1Addr + (CONFIG_ETH_DMA_BUFFER_SIZE - avail_len)), ptr, lastlen);
-                sentout += lastlen;
-                avail_len -= lastlen;
-                desc_iter->TDES1.TransmitBuffer1Size += lastlen;
-
-                /* Update processed input buffers info */
-                buffs_cnt--;
-                ptr = *(++buffs);
-                lastlen = *(++lengths);
-            /* There is only limited available space in the current descriptor, use it all */
-            } else {
-                /* copy data from uplayer stack buffer */
-                memcpy((void *)(desc_iter->Buffer1Addr + (CONFIG_ETH_DMA_BUFFER_SIZE - avail_len)), ptr, avail_len);
-                sentout += avail_len;
-                lastlen -= avail_len;
-                /* If lastlen is not zero, input buff will be fragmented over multiple descriptors */
-                if (lastlen > 0) {
-                    ptr += avail_len;
-                /* Input buff fully fits the descriptor, move to the next input buff */
-                } else {
-                    /* Update processed input buffers info */
-                    buffs_cnt--;
-                    ptr = *(++buffs);
-                    lastlen = *(++lengths);
-                }
-                avail_len = CONFIG_ETH_DMA_BUFFER_SIZE;
-                desc_iter->TDES1.TransmitBuffer1Size = CONFIG_ETH_DMA_BUFFER_SIZE;
-                /* The descriptor is full here so exit and use the next descriptor */
-                break;
-            }
-        }
-        /* Increase counter of utilized DMA buffers */
-        dma_bufcount++;
-
-        /* If all input buffers processed, mark as LAST segment and finish the coping */
-        if (buffs_cnt == 0) {
-            /* Setting the last segment bit */
-            desc_iter->TDES0.LastSegment = 1;
-            /* Enable transmit interrupt */
-            desc_iter->TDES0.InterruptOnComplete = 1;
-            break;
-        }
-
-        /* Point to next descriptor */
-        desc_iter = (eth_dma_tx_descriptor_t *)(desc_iter->Buffer2NextDescAddr);
-    }
-
-    /* Set Own bit of the Tx descriptor Status: gives the buffer back to ETHERNET DMA */
-    for (size_t i = 0; i < dma_bufcount; i++) {
-        hal->tx_desc->TDES0.Own = EMAC_LL_DMADESC_OWNER_DMA;
-        hal->tx_desc = (eth_dma_tx_descriptor_t *)(hal->tx_desc->Buffer2NextDescAddr);
-    }
-    emac_ll_transmit_poll_demand(hal->dma_regs, 0);
-    return sentout;
-err:
-    return 0;
-}
-
-uint8_t *emac_hal_alloc_recv_buf(emac_hal_context_t *hal, uint32_t *size)
-{
-    eth_dma_rx_descriptor_t *desc_iter = hal->rx_desc;
-    uint32_t used_descs = 0;
-    uint32_t ret_len = 0;
-    uint32_t copy_len = 0;
-    uint8_t *buf = NULL;
-
-    /* Traverse descriptors owned by CPU */
-    while ((desc_iter->RDES0.Own != EMAC_LL_DMADESC_OWNER_DMA) && (used_descs < CONFIG_ETH_DMA_RX_BUFFER_NUM)) {
-        used_descs++;
-        /* Last segment in frame */
-        if (desc_iter->RDES0.LastDescriptor) {
-            /* Get the Frame Length of the received packet: substruct 4 bytes of the CRC */
-            ret_len = desc_iter->RDES0.FrameLength - ETH_CRC_LENGTH;
-            /* packets larger than expected will be truncated */
-            copy_len = ret_len > *size ? *size : ret_len;
-            break;
-        }
-        /* point to next descriptor */
-        desc_iter = (eth_dma_rx_descriptor_t *)(desc_iter->Buffer2NextDescAddr);
-    }
-    if (copy_len > 0) {
-        buf = malloc(copy_len);
-        if (buf != NULL) {
-            emac_hal_auto_buf_info_t *buff_info = (emac_hal_auto_buf_info_t *)buf;
-            /* no need to check allocated buffer min lenght prior writing since we know that EMAC DMA is configured to
-            not forward erroneous or undersized frames (less than 64B), see emac_hal_init_dma_default */
-#ifndef NDEBUG
-            buff_info->magic_id = EMAC_HAL_BUF_MAGIC_ID;
-#endif // NDEBUG
-            buff_info->copy_len = copy_len;
-        }
-    }
-    /* indicate actual size of received frame */
-    *size = ret_len;
-    return buf;
-}
-
-uint32_t emac_hal_receive_frame(emac_hal_context_t *hal, uint8_t *buf, uint32_t size, uint32_t *frames_remain, uint32_t *free_desc)
-{
-    eth_dma_rx_descriptor_t *desc_iter = hal->rx_desc;
-    eth_dma_rx_descriptor_t *first_desc = hal->rx_desc;
-    uint32_t used_descs = 0;
-    uint32_t ret_len = 0;
-    uint32_t copy_len = 0;
-    uint32_t frame_count = 0;
-
-    if (size != EMAC_HAL_BUF_SIZE_AUTO) {
-        /* Traverse descriptors owned by CPU */
-        while ((desc_iter->RDES0.Own != EMAC_LL_DMADESC_OWNER_DMA) && (used_descs < CONFIG_ETH_DMA_RX_BUFFER_NUM) && !frame_count) {
-            used_descs++;
-            /* Last segment in frame */
-            if (desc_iter->RDES0.LastDescriptor) {
-                /* Get the Frame Length of the received packet: substruct 4 bytes of the CRC */
-                ret_len = desc_iter->RDES0.FrameLength - ETH_CRC_LENGTH;
-                /* packets larger than expected will be truncated */
-                copy_len = ret_len > size ? size : ret_len;
-                /* update unhandled frame count */
-                frame_count++;
-            }
-            /* First segment in frame */
-            if (desc_iter->RDES0.FirstDescriptor) {
-                first_desc = desc_iter;
-            }
-            /* point to next descriptor */
-            desc_iter = (eth_dma_rx_descriptor_t *)(desc_iter->Buffer2NextDescAddr);
-        }
-    } else {
-        emac_hal_auto_buf_info_t *buff_info = (emac_hal_auto_buf_info_t *)buf;
-#ifndef NDEBUG
-        /* check that buffer was allocated by emac_hal_alloc_recv_buf */
-        assert(buff_info->magic_id == EMAC_HAL_BUF_MAGIC_ID);
-#endif // NDEBUG
-        copy_len = buff_info->copy_len;
-        ret_len = copy_len;
-    }
-
-    if (copy_len) {
-        /* check how many frames left to handle */
-        while ((desc_iter->RDES0.Own != EMAC_LL_DMADESC_OWNER_DMA) && (used_descs < CONFIG_ETH_DMA_RX_BUFFER_NUM)) {
-            used_descs++;
-            if (desc_iter->RDES0.LastDescriptor) {
-                frame_count++;
-            }
-            /* point to next descriptor */
-            desc_iter = (eth_dma_rx_descriptor_t *)(desc_iter->Buffer2NextDescAddr);
-        }
-        desc_iter = first_desc;
-        while(copy_len > CONFIG_ETH_DMA_BUFFER_SIZE) {
-            used_descs--;
-            memcpy(buf, (void *)(desc_iter->Buffer1Addr), CONFIG_ETH_DMA_BUFFER_SIZE);
-            buf += CONFIG_ETH_DMA_BUFFER_SIZE;
-            copy_len -= CONFIG_ETH_DMA_BUFFER_SIZE;
-            /* Set Own bit in Rx descriptors: gives the buffers back to DMA */
-            desc_iter->RDES0.Own = EMAC_LL_DMADESC_OWNER_DMA;
-            desc_iter = (eth_dma_rx_descriptor_t *)(desc_iter->Buffer2NextDescAddr);
-        }
-        memcpy(buf, (void *)(desc_iter->Buffer1Addr), copy_len);
-        desc_iter->RDES0.Own = EMAC_LL_DMADESC_OWNER_DMA;
-        used_descs--;
-        /* `copy_len` does not include CRC, hence check if we reached the last descriptor */
-        while (!desc_iter->RDES0.LastDescriptor) {
-            desc_iter = (eth_dma_rx_descriptor_t *)(desc_iter->Buffer2NextDescAddr);
-            desc_iter->RDES0.Own = EMAC_LL_DMADESC_OWNER_DMA;
-            used_descs--;
-        }
-        /* update rxdesc */
-        hal->rx_desc = (eth_dma_rx_descriptor_t *)(desc_iter->Buffer2NextDescAddr);
-        /* poll rx demand */
-        emac_ll_receive_poll_demand(hal->dma_regs, 0);
-        frame_count--;
-    }
-    *frames_remain = frame_count;
-    *free_desc = CONFIG_ETH_DMA_RX_BUFFER_NUM - used_descs;
-    return ret_len;
-}
-
-uint32_t emac_hal_flush_recv_frame(emac_hal_context_t *hal, uint32_t *frames_remain, uint32_t *free_desc)
-{
-    eth_dma_rx_descriptor_t *desc_iter = hal->rx_desc;
-    eth_dma_rx_descriptor_t *first_desc = hal->rx_desc;
-    uint32_t used_descs = 0;
-    uint32_t frame_len = 0;
-    uint32_t frame_count = 0;
-
-    /* Traverse descriptors owned by CPU */
-    while ((desc_iter->RDES0.Own != EMAC_LL_DMADESC_OWNER_DMA) && (used_descs < CONFIG_ETH_DMA_RX_BUFFER_NUM) && !frame_count) {
-        used_descs++;
-        /* Last segment in frame */
-        if (desc_iter->RDES0.LastDescriptor) {
-            /* Get the Frame Length of the received packet: substruct 4 bytes of the CRC */
-            frame_len = desc_iter->RDES0.FrameLength - ETH_CRC_LENGTH;
-            /* update unhandled frame count */
-            frame_count++;
-        }
-        /* First segment in frame */
-        if (desc_iter->RDES0.FirstDescriptor) {
-            first_desc = desc_iter;
-        }
-        /* point to next descriptor */
-        desc_iter = (eth_dma_rx_descriptor_t *)(desc_iter->Buffer2NextDescAddr);
-    }
-
-    /* if there is at least one frame waiting */
-    if (frame_len) {
-        /* check how many frames left to handle */
-        while ((desc_iter->RDES0.Own != EMAC_LL_DMADESC_OWNER_DMA) && (used_descs < CONFIG_ETH_DMA_RX_BUFFER_NUM)) {
-            used_descs++;
-            if (desc_iter->RDES0.LastDescriptor) {
-                frame_count++;
-            }
-            /* point to next descriptor */
-            desc_iter = (eth_dma_rx_descriptor_t *)(desc_iter->Buffer2NextDescAddr);
-        }
-        desc_iter = first_desc;
-        /* return descriptors to DMA */
-        while (!desc_iter->RDES0.LastDescriptor) {
-            desc_iter->RDES0.Own = EMAC_LL_DMADESC_OWNER_DMA;
-            desc_iter = (eth_dma_rx_descriptor_t *)(desc_iter->Buffer2NextDescAddr);
-            used_descs--;
-        }
-        desc_iter->RDES0.Own = EMAC_LL_DMADESC_OWNER_DMA;
-        used_descs--;
-        /* update rxdesc */
-        hal->rx_desc = (eth_dma_rx_descriptor_t *)(desc_iter->Buffer2NextDescAddr);
-        /* poll rx demand */
-        emac_ll_receive_poll_demand(hal->dma_regs, 0);
-        frame_count--;
-    }
-    *frames_remain = frame_count;
-    *free_desc = CONFIG_ETH_DMA_RX_BUFFER_NUM - used_descs;
-    return frame_len;
 }

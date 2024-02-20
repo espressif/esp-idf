@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  *
  */
-
+#pragma once
 #include "soc/soc_caps.h"
 #include "hal/sha_types.h"
 
@@ -65,11 +65,18 @@ static const unsigned char sha1_padding[64] = {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 };
 
+typedef enum {
+    ESP_SHA_STATE_INIT,
+    ESP_SHA_STATE_IN_PROCESS
+} esp_sha_state;
+
 typedef struct {
     uint32_t total[2];          /*!< number of bytes processed  */
     uint32_t state[5];          /*!< intermediate digest state  */
     unsigned char buffer[64];   /*!< data block being processed */
     int first_block;            /*!< if first then true else false */
+    esp_sha_type mode;
+    esp_sha_state sha_state;
 } sha1_ctx;
 
 #endif /* defined(SOC_SHA_SUPPORT_SHA1) */
@@ -89,6 +96,8 @@ typedef struct {
     uint32_t state[8];          /*!< intermediate digest state  */
     unsigned char buffer[64];   /*!< data block being processed */
     int first_block;            /*!< if first then true, else false */
+    esp_sha_type mode;
+    esp_sha_state sha_state;
 } sha256_ctx;
 
 #endif /* defined(SOC_SHA_SUPPORT_SHA224) || defined(SOC_SHA_SUPPORT_SHA256) */
@@ -112,6 +121,8 @@ typedef struct {
     unsigned char buffer[128];  /*!< data block being processed */
     int first_block;
     uint32_t t_val;             /*!< t_val for 512/t mode */
+    esp_sha_type mode;
+    esp_sha_state sha_state;
 } sha512_ctx;
 
 #if SOC_SHA_SUPPORT_SHA512_T

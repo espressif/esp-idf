@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,16 +13,21 @@
 #include "hal/efuse_ll.h"
 #include "hal/efuse_hal.h"
 
+#include "hal/spi_flash_ll.h"
+#include "rom/spi_flash.h"
 #if CONFIG_IDF_TARGET_ESP32
 #   include "soc/spi_struct.h"
 #   include "soc/spi_reg.h"
     /* SPI flash controller */
 #   define SPIFLASH SPI1
+#   define SPI0     SPI0
 #else
+#   include "hal/spimem_flash_ll.h"
 #   include "soc/spi_mem_struct.h"
 #   include "soc/spi_mem_reg.h"
     /* SPI flash controller */
 #   define SPIFLASH SPIMEM1
+#   define SPI0     SPIMEM0
 #endif
 
 // This dependency will be removed in the future.  IDF-5025
@@ -146,11 +151,14 @@ static const char *TAG = "bootloader_flash";
    63th block for bootloader_flash_read
 */
 #define MMU_BLOCK0_VADDR  SOC_DROM_LOW
-#if CONFIG_IDF_TARGET_ESP32P4
-//TODO: IDF-7918
-#define MMAP_MMU_SIZE     (SOC_DRAM_FLASH_ADDRESS_HIGH - SOC_DRAM_FLASH_ADDRESS_LOW) // This mmu size means that the mmu size to be mapped
-#else
+#if CONFIG_IDF_TARGET_ESP32S2
+/**
+ * On ESP32S2 we use `(SOC_DRAM0_CACHE_ADDRESS_HIGH - SOC_DRAM0_CACHE_ADDRESS_LOW)`.
+ * As this code is in bootloader, we keep this on ESP32S2
+ */
 #define MMAP_MMU_SIZE     (SOC_DRAM0_CACHE_ADDRESS_HIGH - SOC_DRAM0_CACHE_ADDRESS_LOW) // This mmu size means that the mmu size to be mapped
+#else
+#define MMAP_MMU_SIZE     (SOC_DRAM_FLASH_ADDRESS_HIGH - SOC_DRAM_FLASH_ADDRESS_LOW) // This mmu size means that the mmu size to be mapped
 #endif
 #define MMU_BLOCK63_VADDR (MMU_BLOCK0_VADDR + MMAP_MMU_SIZE - SPI_FLASH_MMU_PAGE_SIZE)
 #define FLASH_READ_VADDR MMU_BLOCK63_VADDR
@@ -426,7 +434,7 @@ esp_err_t bootloader_flash_erase_range(uint32_t start_addr, uint32_t size)
     return spi_to_esp_err(rc);
 }
 
-#if CONFIG_SPI_FLASH_32BIT_ADDR_ENABLE
+#if CONFIG_BOOTLOADER_CACHE_32BIT_ADDR_QUAD_FLASH || CONFIG_BOOTLOADER_CACHE_32BIT_ADDR_OCTAL_FLASH
 void bootloader_flash_32bits_address_map_enable(esp_rom_spiflash_read_mode_t flash_mode)
 {
     esp_rom_opiflash_spi0rd_t cache_rd = {};
@@ -453,6 +461,18 @@ void bootloader_flash_32bits_address_map_enable(esp_rom_spiflash_read_mode_t fla
         cache_rd.addr_bit_len = 32;
         cache_rd.dummy_bit_len = 6;
         cache_rd.cmd = CMD_FASTRD_QIO_4B;
+        cache_rd.cmd_bit_len = 8;
+        break;
+    case ESP_ROM_SPIFLASH_FASTRD_MODE:
+        cache_rd.addr_bit_len = 32;
+        cache_rd.dummy_bit_len = 8;
+        cache_rd.cmd = CMD_FASTRD_4B;
+        cache_rd.cmd_bit_len = 8;
+        break;
+     case ESP_ROM_SPIFLASH_SLOWRD_MODE:
+        cache_rd.addr_bit_len = 32;
+        cache_rd.dummy_bit_len = 0;
+        cache_rd.cmd = CMD_SLOWRD_4B;
         cache_rd.cmd_bit_len = 8;
         break;
     default:
@@ -566,10 +586,12 @@ IRAM_ATTR uint32_t bootloader_flash_execute_command_common(
     uint32_t old_user_reg = SPIFLASH.user.val;
     uint32_t old_user1_reg = SPIFLASH.user1.val;
     uint32_t old_user2_reg = SPIFLASH.user2.val;
+    // Clear ctrl regs.
+    SPIFLASH.ctrl.val = 0;
 #if CONFIG_IDF_TARGET_ESP32
-    SPIFLASH.ctrl.val = SPI_WP_REG_M; // keep WP high while idle, otherwise leave DIO mode
+    spi_flash_ll_set_wp_level(&SPIFLASH, true);
 #else
-    SPIFLASH.ctrl.val = SPI_MEM_WP_REG_M; // keep WP high while idle, otherwise leave DIO mode
+    spimem_flash_ll_set_wp_level(&SPIFLASH, true);
 #endif
     //command phase
     SPIFLASH.user.usr_command = 1;
@@ -817,8 +839,8 @@ bool IRAM_ATTR bootloader_flash_is_octal_mode_enabled(void)
 esp_rom_spiflash_read_mode_t bootloader_flash_get_spi_mode(void)
 {
     esp_rom_spiflash_read_mode_t spi_mode = ESP_ROM_SPIFLASH_FASTRD_MODE;
+    uint32_t spi_ctrl = spi_flash_ll_get_ctrl_val(&SPI0);
 #if CONFIG_IDF_TARGET_ESP32
-    uint32_t spi_ctrl = REG_READ(SPI_CTRL_REG(0));
     if (spi_ctrl & SPI_FREAD_QIO) {
         spi_mode = ESP_ROM_SPIFLASH_QIO_MODE;
     } else if (spi_ctrl & SPI_FREAD_QUAD) {
@@ -833,7 +855,6 @@ esp_rom_spiflash_read_mode_t bootloader_flash_get_spi_mode(void)
         spi_mode = ESP_ROM_SPIFLASH_SLOWRD_MODE;
     }
 #else
-    uint32_t spi_ctrl = REG_READ(SPI_MEM_CTRL_REG(0));
     if (spi_ctrl & SPI_MEM_FREAD_QIO) {
         spi_mode = ESP_ROM_SPIFLASH_QIO_MODE;
     } else if (spi_ctrl & SPI_MEM_FREAD_QUAD) {

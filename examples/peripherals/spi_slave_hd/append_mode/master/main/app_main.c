@@ -15,18 +15,13 @@
 #include "esp_serial_slave_link/essl.h"
 #include "esp_serial_slave_link/essl_spi.h"
 
-#ifdef CONFIG_IDF_TARGET_ESP32H2
-#define GPIO_MOSI          5
-#define GPIO_MISO          0
-#define GPIO_SCLK          4
-#define GPIO_CS            1
-
-#else
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////// Please update the following configuration according to your Hardware spec /////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
 #define GPIO_MOSI          11
 #define GPIO_MISO          13
 #define GPIO_SCLK          12
 #define GPIO_CS            10
-#endif
 
 #define HOST_ID            SPI2_HOST
 #define TRANSACTION_LEN    16

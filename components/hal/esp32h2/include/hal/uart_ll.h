@@ -155,19 +155,6 @@ FORCE_INLINE_ATTR void uart_ll_update(uart_dev_t *hw)
 }
 
 /**
- * @brief  Configure the UART core reset.
- *
- * @param  hw Beginning address of the peripheral registers.
- * @param  core_rst_en True to enable the core reset, otherwise set it false.
- *
- * @return None.
- */
-FORCE_INLINE_ATTR void uart_ll_set_reset_core(uart_dev_t *hw, bool core_rst_en)
-{
-    UART_LL_PCR_REG_SET(hw, conf, rst_en, core_rst_en);
-}
-
-/**
  * @brief  Enable the UART clock.
  *
  * @param  hw Beginning address of the peripheral registers.

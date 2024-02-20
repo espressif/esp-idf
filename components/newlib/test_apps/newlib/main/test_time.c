@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -45,7 +45,14 @@
 #include "esp32p4/rtc.h"
 #endif
 
-#if portNUM_PROCESSORS == 2
+#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
+#include "hal/cache_ll.h"
+#endif
+
+#if (portNUM_PROCESSORS == 2) && CONFIG_IDF_TARGET_ARCH_XTENSA
+// https://github.com/espressif/arduino-esp32/issues/120
+/* Test for hardware bug, not needed for newer chips */
+
 #include "soc/rtc_cntl_reg.h"
 
 // This runs on APP CPU:
@@ -65,7 +72,7 @@ static void time_adc_test_task(void* arg)
     vTaskDelete(NULL);
 }
 
-// https://github.com/espressif/arduino-esp32/issues/120
+
 TEST_CASE("Reading RTC registers on APP CPU doesn't affect clock", "[newlib]")
 {
     SemaphoreHandle_t done = xSemaphoreCreateBinary();
@@ -79,13 +86,13 @@ TEST_CASE("Reading RTC registers on APP CPU doesn't affect clock", "[newlib]")
         struct timeval tv_stop;
         gettimeofday(&tv_stop, NULL);
         float time_sec = tv_stop.tv_sec - tv_start.tv_sec + 1e-6f * (tv_stop.tv_usec - tv_start.tv_usec);
-        printf("(0) time taken: %f sec\n", time_sec);
+        printf("(%d) time taken: %f sec\n", i, time_sec);
         TEST_ASSERT_TRUE(fabs(time_sec - 1.0f) < 0.1);
     }
     TEST_ASSERT_TRUE(xSemaphoreTake(done, 5000 / portTICK_PERIOD_MS));
 }
 
-#endif // portNUM_PROCESSORS == 2
+#endif // (portNUM_PROCESSORS == 2) && CONFIG_IDF_TARGET_ARCH_XTENSA
 
 TEST_CASE("test adjtime function", "[newlib]")
 {
@@ -608,6 +615,12 @@ static void set_initial_condition(type_reboot_t type_reboot, int error_time)
     printf("delta timestamp = %d (s)\n", dt);
     TEST_ASSERT_GREATER_OR_EQUAL(error_time, dt);
     s_time_in_reboot = esp_rtc_get_time_us();
+
+#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
+    /* If internal data is behind a cache it might not be written to the physical memory when we crash/reboot
+       force a full writeback here to ensure this */
+    cache_ll_writeback_all(CACHE_LL_LEVEL_INT_MEM, CACHE_TYPE_DATA, CACHE_LL_ID_ALL);
+#endif
 
     if (type_reboot == TYPE_REBOOT_ABORT) {
         printf("Update boot time based on diff\n");

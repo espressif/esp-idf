@@ -20,6 +20,7 @@
 #include "esp_attr.h"
 #include "soc/spi_periph.h"
 #include "soc/spi_struct.h"
+#include "soc/dport_reg.h"
 #include "soc/lldesc.h"
 #include "hal/assert.h"
 #include "hal/misc.h"
@@ -39,11 +40,12 @@ extern "C" {
 #define SPI_LL_ONE_LINE_USER_MASK (SPI_FWRITE_OCT | SPI_FWRITE_QUAD | SPI_FWRITE_DUAL)
 /// Swap the bit order to its correct place to send
 #define HAL_SPI_SWAP_DATA_TX(data, len) HAL_SWAP32((uint32_t)(data) << (32 - len))
-#define SPI_LL_GET_HW(ID) ((ID)==0? ({abort();NULL;}):((ID)==1? &GPSPI2 : &GPSPI3))
+#define SPI_LL_GET_HW(ID) (((ID)==1) ? &GPSPI2 : (((ID)==2) ? &GPSPI3 : NULL))
 
 #define SPI_LL_DMA_MAX_BIT_LEN    (1 << 23)    //reg len: 23 bits
 #define SPI_LL_CPU_MAX_BIT_LEN    (18 * 32)    //Fifo len: 18 words
 #define SPI_LL_MOSI_FREE_LEVEL    1            //Default level after bus initialized
+#define SPI_LL_DMA_SHARED         1            //spi_dma shared with adc and dac on S2
 
 /**
  * The data structure holding calculated clock configuration. Since the
@@ -100,6 +102,86 @@ typedef enum {
 /*------------------------------------------------------------------------------
  * Control
  *----------------------------------------------------------------------------*/
+/**
+ * Enable peripheral register clock
+ *
+ * @param host_id   Peripheral index number, see `spi_host_device_t`
+ * @param enable    Enable/Disable
+ */
+static inline void spi_ll_enable_bus_clock(spi_host_device_t host_id, bool enable) {
+    if (enable) {
+        switch (host_id)
+        {
+        case SPI1_HOST:
+            DPORT_SET_PERI_REG_MASK(DPORT_PERIP_CLK_EN_REG, DPORT_SPI01_CLK_EN);
+            break;
+        case SPI2_HOST:
+            DPORT_SET_PERI_REG_MASK(DPORT_PERIP_CLK_EN_REG, DPORT_SPI2_CLK_EN);
+            break;
+        case SPI3_HOST:
+            DPORT_SET_PERI_REG_MASK(DPORT_PERIP_CLK_EN_REG, DPORT_SPI3_CLK_EN);
+            break;
+        default: HAL_ASSERT(false);
+        }
+    } else {
+        switch (host_id)
+        {
+        case SPI1_HOST:
+            DPORT_CLEAR_PERI_REG_MASK(DPORT_PERIP_CLK_EN_REG, DPORT_SPI01_CLK_EN);
+            break;
+        case SPI2_HOST:
+            DPORT_CLEAR_PERI_REG_MASK(DPORT_PERIP_CLK_EN_REG, DPORT_SPI2_CLK_EN);
+            break;
+        case SPI3_HOST:
+            DPORT_CLEAR_PERI_REG_MASK(DPORT_PERIP_CLK_EN_REG, DPORT_SPI3_CLK_EN);
+            break;
+        default: HAL_ASSERT(false);
+        }
+    }
+}
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define spi_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; spi_ll_enable_bus_clock(__VA_ARGS__)
+
+/**
+ * Reset whole peripheral register to init value defined by HW design
+ *
+ * @param host_id   Peripheral index number, see `spi_host_device_t`
+ */
+static inline void spi_ll_reset_register(spi_host_device_t host_id) {
+    switch (host_id)
+    {
+    case SPI1_HOST:
+        DPORT_SET_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG, DPORT_SPI01_RST);
+        DPORT_CLEAR_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG, DPORT_SPI01_RST);
+        break;
+    case SPI2_HOST:
+        DPORT_SET_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG, DPORT_SPI2_RST);
+        DPORT_CLEAR_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG, DPORT_SPI2_RST);
+        break;
+    case SPI3_HOST:
+        DPORT_SET_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG, DPORT_SPI3_RST);
+        DPORT_CLEAR_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG, DPORT_SPI3_RST);
+        break;
+    default: HAL_ASSERT(false);
+    }
+}
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define spi_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; spi_ll_reset_register(__VA_ARGS__)
+
+/**
+ * Enable functional output clock within peripheral
+ *
+ * @param host_id   Peripheral index number, see `spi_host_device_t`
+ * @param enable    Enable/Disable
+ */
+static inline void spi_ll_enable_clock(spi_host_device_t host_id, bool enable)
+{
+    //empty, keep this for compatibility
+}
 
 /**
  * Select SPI peripheral clock source (master).
@@ -306,6 +388,7 @@ static inline void spi_ll_outfifo_empty_clr(spi_dev_t *hw)
  * @param hw     Beginning address of the peripheral registers.
  * @param enable 1: enable; 2: disable
  */
+__attribute__((always_inline))
 static inline void spi_ll_dma_rx_enable(spi_dev_t *hw, bool enable)
 {
     //This is not used in esp32s2
@@ -317,6 +400,7 @@ static inline void spi_ll_dma_rx_enable(spi_dev_t *hw, bool enable)
  * @param hw     Beginning address of the peripheral registers.
  * @param enable 1: enable; 2: disable
  */
+__attribute__((always_inline))
 static inline void spi_ll_dma_tx_enable(spi_dev_t *hw, bool enable)
 {
     //This is not used in esp32s2
@@ -1114,6 +1198,69 @@ static inline uint32_t spi_ll_slave_hd_get_last_addr(spi_dev_t *hw)
  *      RX DMA (Peripherals->DMA->RAM)
  *      TX DMA (RAM->DMA->Peripherals)
  *----------------------------------------------------------------------------*/
+/**
+ * Enable peripheral register clock
+ *
+ * @param host_id   Peripheral index number, see `spi_host_device_t`
+ * @param enable    Enable/Disable
+ */
+static inline void spi_dma_ll_enable_bus_clock(spi_host_device_t host_id, bool enable) {
+    if (enable) {
+        switch (host_id)
+        {
+        case SPI2_HOST:
+            DPORT_SET_PERI_REG_MASK(DPORT_PERIP_CLK_EN_REG, DPORT_SPI2_DMA_CLK_EN);
+            break;
+        case SPI3_HOST:
+            DPORT_SET_PERI_REG_MASK(DPORT_PERIP_CLK_EN_REG, DPORT_SPI3_DMA_CLK_EN);
+            break;
+        default:
+            HAL_ASSERT(false);
+        }
+    } else {
+        switch (host_id)
+        {
+        case SPI2_HOST:
+            DPORT_CLEAR_PERI_REG_MASK(DPORT_PERIP_CLK_EN_REG, DPORT_SPI2_DMA_CLK_EN);
+            break;
+        case SPI3_HOST:
+            DPORT_CLEAR_PERI_REG_MASK(DPORT_PERIP_CLK_EN_REG, DPORT_SPI3_DMA_CLK_EN);
+            break;
+        default:
+            HAL_ASSERT(false);
+        }
+    }
+}
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_RC_ATOMIC_ENV variable in advance
+#define spi_dma_ll_enable_bus_clock(...) (void)__DECLARE_RCC_RC_ATOMIC_ENV; spi_dma_ll_enable_bus_clock(__VA_ARGS__)
+
+/**
+ * Reset whole peripheral register to init value defined by HW design
+ *
+ * @param host_id   Peripheral index number, see `spi_host_device_t`
+ */
+static inline void spi_dma_ll_reset_register(spi_host_device_t host_id) {
+    switch (host_id)
+    {
+    case SPI2_HOST:
+        DPORT_SET_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG, DPORT_SPI2_DMA_RST);
+        DPORT_CLEAR_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG, DPORT_SPI2_DMA_RST);
+        break;
+    case SPI3_HOST:
+        DPORT_SET_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG, DPORT_SPI3_DMA_RST);
+        DPORT_CLEAR_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG, DPORT_SPI3_DMA_RST);
+        break;
+    default:
+        HAL_ASSERT(false);
+    }
+}
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_RC_ATOMIC_ENV variable in advance
+#define spi_dma_ll_reset_register(...) (void)__DECLARE_RCC_RC_ATOMIC_ENV; spi_dma_ll_reset_register(__VA_ARGS__)
+
 //---------------------------------------------------RX-------------------------------------------------//
 /**
  * Reset RX DMA which stores the data received from a peripheral into RAM.
@@ -1121,6 +1268,7 @@ static inline uint32_t spi_ll_slave_hd_get_last_addr(spi_dev_t *hw)
  * @param dma_in  Beginning address of the DMA peripheral registers which stores the data received from a peripheral into RAM.
  * @param channel DMA channel, for chip version compatibility, not used.
  */
+__attribute__((always_inline))
 static inline void spi_dma_ll_rx_reset(spi_dma_dev_t *dma_in, uint32_t channel)
 {
     dma_in->dma_conf.in_rst = 1;
@@ -1134,6 +1282,7 @@ static inline void spi_dma_ll_rx_reset(spi_dma_dev_t *dma_in, uint32_t channel)
  * @param channel DMA channel, for chip version compatibility, not used.
  * @param addr    Address of the beginning DMA descriptor.
  */
+__attribute__((always_inline))
 static inline void spi_dma_ll_rx_start(spi_dma_dev_t *dma_in, uint32_t channel, lldesc_t *addr)
 {
     dma_in->dma_in_link.addr = (int) addr & 0xFFFFF;
@@ -1195,6 +1344,7 @@ static inline uint32_t spi_dma_ll_get_in_suc_eof_desc_addr(spi_dma_dev_t *dma_in
  * @param dma_out Beginning address of the DMA peripheral registers which transmits the data from RAM to a peripheral.
  * @param channel DMA channel, for chip version compatibility, not used.
  */
+__attribute__((always_inline))
 static inline void spi_dma_ll_tx_reset(spi_dma_dev_t *dma_out, uint32_t channel)
 {
     //Reset TX DMA peripheral
@@ -1209,6 +1359,7 @@ static inline void spi_dma_ll_tx_reset(spi_dma_dev_t *dma_out, uint32_t channel)
  * @param channel DMA channel, for chip version compatibility, not used.
  * @param addr    Address of the beginning DMA descriptor.
  */
+__attribute__((always_inline))
 static inline void spi_dma_ll_tx_start(spi_dma_dev_t *dma_out, uint32_t channel, lldesc_t *addr)
 {
     dma_out->dma_out_link.addr = (int) addr & 0xFFFFF;

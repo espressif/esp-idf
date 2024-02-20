@@ -1,0 +1,64 @@
+menu "ESP-Driver:SPI Configurations"
+    depends on SOC_GPSPI_SUPPORTED
+    config SPI_MASTER_IN_IRAM
+        bool "Place transmitting functions of SPI master into IRAM"
+        default n
+        depends on !FREERTOS_PLACE_FUNCTIONS_INTO_FLASH
+        select SPI_MASTER_ISR_IN_IRAM
+        select ESP_SPI_BUS_LOCK_FUNCS_IN_IRAM
+        help
+            Normally only the ISR of SPI master is placed in the IRAM, so that it
+            can work without the flash when interrupt is triggered.
+            For other functions, there's some possibility that the flash cache
+            miss when running inside and out of SPI functions, which may increase
+            the interval of SPI transactions.
+            Enable this to put ``queue_trans``, ``get_trans_result`` and
+            ``transmit`` functions into the IRAM to avoid possible cache miss.
+
+            This configuration won't be available if `CONFIG_FREERTOS_PLACE_FUNCTIONS_INTO_FLASH` is enabled.
+
+            During unit test, this is enabled to measure the ideal case of api.
+
+    config SPI_MASTER_ISR_IN_IRAM
+        bool "Place SPI master ISR function into IRAM"
+        default y
+        depends on !HEAP_PLACE_FUNCTION_INTO_FLASH
+        select PERIPH_CTRL_FUNC_IN_IRAM
+        select HAL_SPI_MASTER_FUNC_IN_IRAM
+        select ESP_SPI_BUS_LOCK_ISR_FUNCS_IN_IRAM
+        select GDMA_CTRL_FUNC_IN_IRAM if SOC_GDMA_SUPPORTED
+        help
+            Place the SPI master ISR in to IRAM to avoid possible cache miss.
+
+            Enabling this configuration is possible only when HEAP_PLACE_FUNCTION_INTO_FLASH
+            is disabled since the spi master uses can allocate transactions buffers into DMA
+            memory section using the heap component API that ipso facto has to be placed in IRAM.
+
+            Also you can forbid the ISR being disabled during flash writing
+            access, by add ESP_INTR_FLAG_IRAM when initializing the driver.
+
+    config SPI_SLAVE_IN_IRAM
+        bool "Place transmitting functions of SPI slave into IRAM"
+        default n
+        select SPI_SLAVE_ISR_IN_IRAM
+        help
+            Normally only the ISR of SPI slave is placed in the IRAM, so that it
+            can work without the flash when interrupt is triggered.
+            For other functions, there's some possibility that the flash cache
+            miss when running inside and out of SPI functions, which may increase
+            the interval of SPI transactions.
+            Enable this to put ``queue_trans``, ``get_trans_result`` and
+            ``transmit`` functions into the IRAM to avoid possible cache miss.
+
+    config SPI_SLAVE_ISR_IN_IRAM
+        bool "Place SPI slave ISR function into IRAM"
+        default y
+        select PERIPH_CTRL_FUNC_IN_IRAM
+        select HAL_SPI_SLAVE_FUNC_IN_IRAM
+        help
+            Place the SPI slave ISR in to IRAM to avoid possible cache miss.
+
+            Also you can forbid the ISR being disabled during flash writing
+            access, by add ESP_INTR_FLAG_IRAM when initializing the driver.
+
+endmenu # SPI Configuration

@@ -30,6 +30,11 @@ static STAILQ_HEAD(, os_mbuf_pool) g_msys_pool_list =
 
 #define OS_MSYS_1_SANITY_MIN_COUNT MYNEWT_VAL(MSYS_1_SANITY_MIN_COUNT)
 #define OS_MSYS_2_SANITY_MIN_COUNT MYNEWT_VAL(MSYS_2_SANITY_MIN_COUNT)
+#if CONFIG_BT_NIMBLE_MSYS_BUF_FROM_HEAP
+#define OS_MSYS_BLOCK_FROM_HEAP                 (1)
+#else
+#define OS_MSYS_BLOCK_FROM_HEAP                 (0)
+#endif // CONFIG_BT_NIMBLE_MSYS_BUF_FROM_HEAP
 #else
 #define OS_MSYS_1_BLOCK_COUNT CONFIG_BT_LE_MSYS_1_BLOCK_COUNT
 #define OS_MSYS_1_BLOCK_SIZE CONFIG_BT_LE_MSYS_1_BLOCK_SIZE
@@ -38,6 +43,12 @@ static STAILQ_HEAD(, os_mbuf_pool) g_msys_pool_list =
 
 #define OS_MSYS_1_SANITY_MIN_COUNT 0
 #define OS_MSYS_2_SANITY_MIN_COUNT 0
+
+#if CONFIG_BT_LE_MSYS_BUF_FROM_HEAP
+#define OS_MSYS_BLOCK_FROM_HEAP                 (1)
+#else
+#define OS_MSYS_BLOCK_FROM_HEAP                 (0)
+#endif // CONFIG_BT_LE_MSYS_BUF_FROM_HEAP
 #endif
 
 
@@ -71,7 +82,7 @@ static struct os_mempool os_msys_init_2_mempool;
 #endif
 
 #if CONFIG_BT_LE_MSYS_INIT_IN_CONTROLLER
-extern int  esp_ble_msys_init(uint16_t msys_size1, uint16_t msys_size2, uint16_t msys_cnt1, uint16_t msys_cnt2);
+extern int  esp_ble_msys_init(uint16_t msys_size1, uint16_t msys_size2, uint16_t msys_cnt1, uint16_t msys_cnt2, uint8_t from_heap);
 extern void esp_ble_msys_deinit(void);
 
 int os_msys_init(void)
@@ -79,7 +90,8 @@ int os_msys_init(void)
     return esp_ble_msys_init(SYSINIT_MSYS_1_MEMBLOCK_SIZE,
                              SYSINIT_MSYS_2_MEMBLOCK_SIZE,
                              OS_MSYS_1_BLOCK_COUNT,
-                             OS_MSYS_2_BLOCK_COUNT);
+                             OS_MSYS_2_BLOCK_COUNT,
+                             OS_MSYS_BLOCK_FROM_HEAP);
 }
 
 void os_msys_deinit(void)

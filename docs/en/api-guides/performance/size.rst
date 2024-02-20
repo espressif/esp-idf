@@ -441,7 +441,7 @@ lwIP IPv6
 
   .. note::
 
-      IPv6 is required by some components such as ``coap`` and :doc:`/api-reference/protocols/asio`. These components will not be available if IPV6 is disabled.
+      IPv6 is required by some components such as :doc:`/api-reference/protocols/asio`. These components will not be available if IPV6 is disabled.
 
 lwIP IPv4
 @@@@@@@@@
@@ -518,6 +518,11 @@ The help text for each option has some more information for reference.
    - Ensure that any TLS client(s) that connect to the device can still connect with supported/recommended cipher suites. Note that future versions of client operating systems may remove support for some features, so it is recommended to enable multiple supported cipher suites, or algorithms for redundancy.
 
    If depending on third party clients or servers, always pay attention to announcements about future changes to supported TLS features. If not, the {IDF_TARGET_NAME} device may become inaccessible if support changes.
+
+.. only:: CONFIG_ESP_ROM_HAS_MBEDTLS_CRYPTO_LIB
+
+   Enabling the config option :ref:`CONFIG_MBEDTLS_USE_CRYPTO_ROM_IMPL` will use the crypto algorithms from mbedTLS library inside the chip ROM.
+   Disabling the config option :ref:`CONFIG_MBEDTLS_USE_CRYPTO_ROM_IMPL` will use the crypto algorithms from the ESP-IDF mbedtls component library. This will increase the binary size (flash footprint).
 
 .. note::
 

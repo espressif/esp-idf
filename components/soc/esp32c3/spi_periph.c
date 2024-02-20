@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,29 +12,30 @@
 */
 const spi_signal_conn_t spi_periph_signal[SOC_SPI_PERIPH_NUM] = {
     {
-        .spiclk_out = SPICLK_OUT_MUX_IDX,
-        .spiclk_in = 0,/* SPI clock is not an input signal*/
-        .spid_out = SPID_OUT_IDX,
-        .spiq_out = SPIQ_OUT_IDX,
-        .spiwp_out = SPIWP_OUT_IDX,
-        .spihd_out = SPIHD_OUT_IDX,
-        .spid_in = SPID_IN_IDX,
-        .spiq_in = SPIQ_IN_IDX,
-        .spiwp_in = SPIWP_IN_IDX,
-        .spihd_in = SPIHD_IN_IDX,
-        .spics_out = {SPICS0_OUT_IDX, SPICS1_OUT_IDX},/* SPI0/1 do not have CS2 now */
-        .spics_in = 0,/* SPI cs is not an input signal*/
-        .spiclk_iomux_pin = SPI_IOMUX_PIN_NUM_CLK,
-        .spid_iomux_pin = SPI_IOMUX_PIN_NUM_MOSI,
-        .spiq_iomux_pin = SPI_IOMUX_PIN_NUM_MISO,
-        .spiwp_iomux_pin = SPI_IOMUX_PIN_NUM_WP,
-        .spihd_iomux_pin = SPI_IOMUX_PIN_NUM_HD,
-        .spics0_iomux_pin = SPI_IOMUX_PIN_NUM_CS,
-        .irq = ETS_SPI1_INTR_SOURCE,
+        // MSPI has dedicated iomux pins
+        .spiclk_out = -1,
+        .spiclk_in = -1,
+        .spid_out = -1,
+        .spiq_out = -1,
+        .spiwp_out = -1,
+        .spihd_out = -1,
+        .spid_in = -1,
+        .spiq_in = -1,
+        .spiwp_in = -1,
+        .spihd_in = -1,
+        .spics_out = {-1},
+        .spics_in = -1,
+        .spiclk_iomux_pin = -1,
+        .spid_iomux_pin = -1,
+        .spiq_iomux_pin = -1,
+        .spiwp_iomux_pin = -1,
+        .spihd_iomux_pin = -1,
+        .spics0_iomux_pin = -1,
+        .irq = -1,
         .irq_dma = -1,
-        .module = PERIPH_SPI_MODULE,
-        .hw = (spi_dev_t *) &SPIMEM1,
-        .func = SPI_FUNC_NUM,
+        .module = -1,
+        .hw = NULL,
+        .func = -1,
     }, {
         .spiclk_out = FSPICLK_OUT_IDX,
         .spiclk_in = FSPICLK_IN_IDX,

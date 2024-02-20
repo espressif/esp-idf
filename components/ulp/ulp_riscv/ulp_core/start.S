@@ -1,28 +1,26 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-	.section .text.vectors
-	.global irq_vector
-	.global reset_vector
 
-/* The reset vector, jumps to startup code */
-reset_vector:
-	j __start
+#include "ulp_riscv_interrupt_ops.h"
 
-/* Interrupt handler */
-.balign 16
-irq_vector:
-	ret
+    .section .text
+    .global __start
 
-	.section .text
-
+.type __start, %function
 __start:
-	/* setup the stack pointer */
-	la sp, __stack_top
-	call ulp_riscv_rescue_from_monitor
-	call main
-	call ulp_riscv_halt
+    /* setup the stack pointer */
+    la sp, __stack_top
+
+    /* Enable interrupts globally */
+    maskirq_insn(zero, zero)
+
+    /* Start ULP user code */
+    call ulp_riscv_rescue_from_monitor
+    call main
+    call ulp_riscv_halt
 loop:
-	j loop
+    j loop
+    .size __start, .-__start

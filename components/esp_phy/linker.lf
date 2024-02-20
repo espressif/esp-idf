@@ -1,7 +1,10 @@
 if IDF_TARGET_ESP32 = y:
     [scheme:phy_iram]
     entries:
+    if ESP_WIFI_SLP_IRAM_OPT = y:
         phy_iram -> iram0_text
+    else:
+        phy_iram -> flash_text
 
     [sections:phy_iram]
     entries:
@@ -11,7 +14,7 @@ if IDF_TARGET_ESP32 = y:
 archive: libphy.a
 entries:
     * (noflash_data)
-    if ESP_WIFI_SLP_IRAM_OPT = y && IDF_TARGET_ESP32 = y:
+    if IDF_TARGET_ESP32 = y:
         * (phy_iram)
 
 [mapping:rtc]

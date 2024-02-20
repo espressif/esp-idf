@@ -23,7 +23,7 @@ The ``program`` array is an array of ``ulp_insn_t``, i.e., ULP coprocessor instr
     Because some of the instruction macros expand to inline function calls, defining such array in global scope will cause the compiler to produce an "initializer element is not constant" error. To fix this error, move the definition of instructions array into local scope.
 
 .. note::
-    
+
     Load, store and move instructions use **addresses expressed in 32-bit words**. Address 0 corresponds to the first word of ``RTC_SLOW_MEM``.
     This is different to how address arguments are handled in assembly code of the same instructions. See the section :ref:`ulp-fsm-addressing` for more details for reference.
 

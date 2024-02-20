@@ -6,7 +6,7 @@ RF Coexistence
 Overview
 ---------------
 
-{IDF_TARGET_NAME} has only one 2.4 GHz ISM band RF module, which is shared by Bluetooth (BT & BLE) and Wi-Fi, so Bluetooth can't receive or transmit data while Wi-Fi is receiving or transmitting data and vice versa. Under such circumstances, {IDF_TARGET_NAME} uses the time-division multiplexing method to receive and transmit packets.
+ESP boards now support three modules: Bluetooth (BT & BLE), IEEE802.15.4, and Wi-Fi. Each type of board has only one 2.4 GHz ISM band RF module, shared by two or three modules. Consequently, a module cannot receive or transmit data while another module is engaged in data transmission or reception. In such scenarios, {IDF_TARGET_NAME} employs the time-division multiplexing method to manage the reception and transmission of packets.
 
 
 Supported Coexistence Scenario for {IDF_TARGET_NAME}
@@ -69,6 +69,24 @@ Supported Coexistence Scenario for {IDF_TARGET_NAME}
       |       |        |TX         |Y       |Y            |Y    |Y         |Y          |
       +-------+--------+-----------+--------+-------------+-----+----------+-----------+
 
+.. only:: SOC_IEEE802154_SUPPORTED
+
+  .. table:: Supported Features of Thread (IEEE802.15.4) and BLE Coexistence
+
+      +--------+-----------------+-----+------------+-----------+----------+
+      |                          |BLE                                      |
+      +                          +-----+------------+-----------+----------+
+      |                          |Scan |Advertising |Connecting |Connected |
+      +--------+-----------------+-----+------------+-----------+----------+
+      | Thread |Scan             |X    |Y           |Y          |Y         |
+      +        +-----------------+-----+------------+-----------+----------+
+      |        |Connecting       |X    |Y           |Y          |Y         |
+      +        +-----------------+-----+------------+-----------+----------+
+      |        |Connected        |X    |Y           |Y          |Y         |
+      +        +-----------------+-----+------------+-----------+----------+
+      |        |Connected        |     |            |           |          |
+      |        |(high throughput)|X    |C1          |C1         |C1        |
+      +--------+-----------------+-----+------------+-----------+----------+
 
 .. note::
 
@@ -102,15 +120,15 @@ The RF resource allocation mechanism is based on priority. As shown below, both 
       default_group_color = none;
 
       # node labels
-   	  Wi-Fi [shape = box];
-   	  Bluetooth [shape = box];
-   	  Coexistence [shape = box, label = 'Coexistence module'];
-   	  RF [shape = box, label = 'RF module'];
+       Wi-Fi [shape = box];
+       Bluetooth [shape = box];
+       Coexistence [shape = box, label = 'Coexistence module'];
+       RF [shape = box, label = 'RF module'];
 
       # node connections
-   	  Wi-Fi -> Coexistence;
-   	  Bluetooth  -> Coexistence;
-   	  Coexistence -> RF;
+       Wi-Fi -> Coexistence;
+       Bluetooth  -> Coexistence;
+       Coexistence -> RF;
     }
 
 
@@ -131,6 +149,9 @@ Coexistence Period and Time Slice
 
   Wi-Fi and BLE have their fixed time slice to use the RF. In the Wi-Fi time slice, Wi-Fi will send a higher priority request to the coexistence arbitration module. Similarly, BLE can enjoy higher priority at their own time slice. The duration of the coexistence period and the proportion of each time slice are divided into four categories according to the Wi-Fi status:
 
+.. only:: SOC_IEEE802154_SUPPORTED
+
+  Currently, the only supported strategy ensures that the priority of BLE always takes precedence over IEEE802.15.4.
 
 .. list::
 
@@ -154,8 +175,7 @@ According to the coexistence logic, different coexistence periods and time slice
 Dynamic Priority
 """"""""""""""""""""""""""""
 
-The coexistence module assigns different priorities to different status of Wi-Fi and Bluetooth. And the priority for each status is dynamic. For example, in every N BLE Advertising events, there is always one event with high priority. If a high-priority BLE Advertising event occurs within the Wi-Fi time slice, the right to use the RF may be preempted by BLE.
-
+The coexistence module assigns varying priorities to different statuses of each module, and these priorities are dynamic. For example, in every N BLE Advertising events, there is always one event with high priority. If a high-priority BLE Advertising event occurs within the Wi-Fi time slice, the right to use the RF may be preempted by BLE.
 
 .. only:: SOC_WIFI_SUPPORTED
 
@@ -225,10 +245,11 @@ Setting Coexistence Compile-time Options
       #) :ref:`CONFIG_ESP_WIFI_RX_IRAM_OPT`: turning off this configuration option will reduce the IRAM memory by approximately 17 KB.
       #) :ref:`CONFIG_LWIP_TCP_SND_BUF_DEFAULT`: reduce the default TX buffer size for TCP sockets.
       #) :ref:`CONFIG_LWIP_TCP_WND_DEFAULT`:  reduce the default size of the RX window for TCP sockets.
-      #) :ref:`CONFIG_LWIP_TCP_RECVMBOX_SIZE`: reduce the size of the TCP receive mailbox.
+      #) :ref:`CONFIG_LWIP_TCP_RECVMBOX_SIZE`: reduce the size of the TCP receive mailbox. Receive mailbox buffers data within active connections and handles data flow during connections。
+      #) :ref:`CONFIG_LWIP_TCP_ACCEPTMBOX_SIZE`: reduce the size of the TCP accept mailbox. Accept mailbox queues incoming connection requests and manages the initiation of new connections.
       #) :ref:`CONFIG_LWIP_UDP_RECVMBOX_SIZE`: reduce the size of the UDP receive mailbox.
       #) :ref:`CONFIG_LWIP_TCPIP_RECVMBOX_SIZE`: reduce the size of TCPIP task receive mailbox.
 
 .. note::
 
-  Since the coexistence configuration option depends on the Bluetooth configuration option, please turn on the Bluetooth configuration option first before configuring the coexistence feature in the Wi-Fi configuration option.
+  As the coexistence configuration option relies on the presence of any two enabled modules, please ensure that both modules are activated before configuring any coexistence features.

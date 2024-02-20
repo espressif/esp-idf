@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,7 +7,6 @@
 #include <sys/param.h>
 #include <esp_cpu.h>
 #include <bootloader_utility.h>
-#include <bootloader_signature.h>
 #include <esp_secure_boot.h>
 #include <esp_fault.h>
 #include <esp_log.h>
@@ -19,29 +18,19 @@
 #include "bootloader_util.h"
 #include "bootloader_common.h"
 #include "esp_rom_sys.h"
+#include "esp_efuse.h"
+#include "esp_app_desc.h"
 #include "bootloader_memory_utils.h"
 #include "soc/soc_caps.h"
 #include "hal/cache_ll.h"
-#if CONFIG_IDF_TARGET_ESP32
-#include "esp32/rom/secure_boot.h"
-#elif CONFIG_IDF_TARGET_ESP32S2
-#include "esp32s2/rom/secure_boot.h"
-#elif CONFIG_IDF_TARGET_ESP32S3
-#include "esp32s3/rom/secure_boot.h"
-#elif CONFIG_IDF_TARGET_ESP32C3
-#include "esp32c3/rom/secure_boot.h"
-#elif CONFIG_IDF_TARGET_ESP32C2
+#if CONFIG_IDF_TARGET_ESP32C2
 #include "esp32c2/rom/rtc.h"
-#include "esp32c2/rom/secure_boot.h"
 #elif CONFIG_IDF_TARGET_ESP32C6
 #include "esp32c6/rom/rtc.h"
-#include "esp32c6/rom/secure_boot.h"
 #elif CONFIG_IDF_TARGET_ESP32H2
 #include "esp32h2/rom/rtc.h"
-#include "esp32h2/rom/secure_boot.h"
 #elif CONFIG_IDF_TARGET_ESP32P4
 #include "esp32p4/rom/rtc.h"
-#include "esp32p4/rom/secure_boot.h"
 #endif
 
 #define ALIGN_UP(num, align) (((num) + ((align) - 1)) & ~((align) - 1))
@@ -89,10 +78,10 @@ static bool should_map(uint32_t load_addr);
 
 static esp_err_t process_segments(esp_image_metadata_t *data, bool silent, bool do_load, bootloader_sha256_handle_t sha_handle, uint32_t *checksum);
 /* Load or verify a segment */
-static esp_err_t process_segment(int index, uint32_t flash_addr, esp_image_segment_header_t *header, bool silent, bool do_load, bootloader_sha256_handle_t sha_handle, uint32_t *checksum);
+static esp_err_t process_segment(int index, uint32_t flash_addr, esp_image_segment_header_t *header, bool silent, bool do_load, bootloader_sha256_handle_t sha_handle, uint32_t *checksum, esp_image_metadata_t *metadata);
 
 /* split segment and verify if data_len is too long */
-static esp_err_t process_segment_data(intptr_t load_addr, uint32_t data_addr, uint32_t data_len, bool do_load, bootloader_sha256_handle_t sha_handle, uint32_t *checksum);
+static esp_err_t process_segment_data(int segment, intptr_t load_addr, uint32_t data_addr, uint32_t data_len, bool do_load, bootloader_sha256_handle_t sha_handle, uint32_t *checksum, esp_image_metadata_t *metadata);
 
 /* Verify the main image header */
 static esp_err_t verify_image_header(uint32_t src_addr, const esp_image_header_t *image, bool silent);
@@ -240,6 +229,21 @@ static esp_err_t image_load(esp_image_load_mode_t mode, const esp_partition_pos_
         cache_ll_writeback_all(CACHE_LL_LEVEL_INT_MEM, CACHE_TYPE_DATA, CACHE_LL_ID_ALL);
 #endif
     }
+
+#if CONFIG_BOOTLOADER_APP_ANTI_ROLLBACK
+    /* For anti-rollback case, reconfirm security version of the application to prevent FI attacks */
+    bool sec_ver = false;
+    if (do_load) {
+        sec_ver = esp_efuse_check_secure_version(data->secure_version);
+        if (!sec_ver) {
+            err = ESP_FAIL;
+            goto err;
+        }
+    }
+    /* Ensure that the security version check passes for image loading scenario */
+    ESP_FAULT_ASSERT(!do_load || sec_ver == true);
+#endif // CONFIG_BOOTLOADER_APP_ANTI_ROLLBACK
+
 #endif // BOOTLOADER_BUILD
 
     // Success!
@@ -522,7 +526,7 @@ static esp_err_t process_segments(esp_image_metadata_t *data, bool silent, bool 
     for (int i = 0; i < data->image.segment_count; i++) {
         esp_image_segment_header_t *header = &data->segments[i];
         ESP_LOGV(TAG, "loading segment header %d at offset 0x%"PRIx32, i, next_addr);
-        CHECK_ERR(process_segment(i, next_addr, header, silent, do_load, sha_handle, checksum));
+        CHECK_ERR(process_segment(i, next_addr, header, silent, do_load, sha_handle, checksum, data));
         next_addr += sizeof(esp_image_segment_header_t);
         data->segment_data[i] = next_addr;
         next_addr += header->data_len;
@@ -543,7 +547,7 @@ err:
     return err;
 }
 
-static esp_err_t process_segment(int index, uint32_t flash_addr, esp_image_segment_header_t *header, bool silent, bool do_load, bootloader_sha256_handle_t sha_handle, uint32_t *checksum)
+static esp_err_t process_segment(int index, uint32_t flash_addr, esp_image_segment_header_t *header, bool silent, bool do_load, bootloader_sha256_handle_t sha_handle, uint32_t *checksum, esp_image_metadata_t *metadata)
 {
     esp_err_t err;
 
@@ -601,7 +605,7 @@ static esp_err_t process_segment(int index, uint32_t flash_addr, esp_image_segme
         uint32_t offset_page = ((data_addr & MMAP_ALIGNED_MASK) != 0) ? 1 : 0;
         /* Data we could map in case we are not aligned to PAGE boundary is one page size lesser. */
         data_len = MIN(data_len_remain, ((free_page_count - offset_page) * SPI_FLASH_MMU_PAGE_SIZE));
-        CHECK_ERR(process_segment_data(load_addr, data_addr, data_len, do_load, sha_handle, checksum));
+        CHECK_ERR(process_segment_data(index, load_addr, data_addr, data_len, do_load, sha_handle, checksum, metadata));
         data_addr += data_len;
         data_len_remain -= data_len;
     }
@@ -616,7 +620,42 @@ err:
     return err;
 }
 
-static esp_err_t process_segment_data(intptr_t load_addr, uint32_t data_addr, uint32_t data_len, bool do_load, bootloader_sha256_handle_t sha_handle, uint32_t *checksum)
+#if CONFIG_BOOTLOADER_APP_ANTI_ROLLBACK
+/* The __attribute__((optimize("O0"))) is used to disable optimizations for this function,
+ * preventing the compiler from potentially optimizing data_buffer and reading data directly from src.
+ * This is crucial as we want to read from Flash only once, ensuring the integrity of the data.
+ */
+__attribute__((optimize("O0")))
+static size_t process_esp_app_desc_data(const uint32_t *src, bootloader_sha256_handle_t sha_handle, uint32_t *checksum, esp_image_metadata_t *metadata)
+{
+    /* Using data_buffer here helps to securely read secure_version
+     * (for anti-rollback) from esp_app_desc_t, preventing FI attack.
+     * We read data from Flash into this buffer, which is covered by sha256.
+     * Therefore, if the flash is under attackers control and contents are modified
+     * the sha256 comparison will fail.
+     *
+     * The esp_app_desc_t structure is located in DROM and is always in segment #0.
+     *
+     * esp_app_desc_t is always at #0 segment (index==0).
+     * secure_version field of esp_app_desc_t is located at #2 word (w_i==1).
+     */
+    uint32_t data_buffer[2];
+    memcpy(data_buffer, src, sizeof(data_buffer));
+    assert(data_buffer[0] == ESP_APP_DESC_MAGIC_WORD);
+    metadata->secure_version = data_buffer[1];
+    if (checksum != NULL) {
+        *checksum ^= data_buffer[0] ^ data_buffer[1];
+    }
+    if (sha_handle != NULL) {
+        bootloader_sha256_data(sha_handle, data_buffer, sizeof(data_buffer));
+    }
+    ESP_FAULT_ASSERT(memcmp(data_buffer, src, sizeof(data_buffer)) == 0);
+    ESP_FAULT_ASSERT(memcmp(&metadata->secure_version, &src[1], sizeof(uint32_t)) == 0);
+    return sizeof(data_buffer);
+}
+#endif // CONFIG_BOOTLOADER_APP_ANTI_ROLLBACK
+
+static esp_err_t process_segment_data(int segment, intptr_t load_addr, uint32_t data_addr, uint32_t data_len, bool do_load, bootloader_sha256_handle_t sha_handle, uint32_t *checksum, esp_image_metadata_t *metadata)
 {
     // If we are not loading, and the checksum is empty, skip processing this
     // segment for data
@@ -652,6 +691,16 @@ static esp_err_t process_segment_data(intptr_t load_addr, uint32_t data_addr, ui
 #endif
 
     const uint32_t *src = data;
+
+#if CONFIG_BOOTLOADER_APP_ANTI_ROLLBACK
+    if (segment == 0) {
+        // The esp_app_desc_t structure is located in DROM and is always in segment #0.
+        size_t len = process_esp_app_desc_data(src, sha_handle, checksum, metadata);
+        data_len -= len;
+        src += len / 4;
+        // In BOOTLOADER_BUILD, for DROM (segment #0) we do not load it into dest (only map it), do_load = false.
+    }
+#endif // CONFIG_BOOTLOADER_APP_ANTI_ROLLBACK
 
     for (size_t i = 0; i < data_len; i += 4) {
         int w_i = i / 4; // Word index
@@ -932,9 +981,13 @@ static esp_err_t verify_secure_boot_signature(bootloader_sha256_handle_t sha_han
         return ESP_ERR_IMAGE_INVALID;
     }
 
-#if CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME || CONFIG_SECURE_SIGNED_APPS_ECDSA_V2_SCHEME
     // Adjust image length result to include the appended signature
+#if CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME || CONFIG_SECURE_SIGNED_APPS_ECDSA_V2_SCHEME
     data->image_len = end - data->start_addr + sizeof(ets_secure_boot_signature_t);
+#elif defined(CONFIG_SECURE_SIGNED_APPS_ECDSA_SCHEME)
+    if (data->start_addr != ESP_BOOTLOADER_OFFSET) {
+        data->image_len = end - data->start_addr + sizeof(esp_secure_boot_sig_block_t);
+    }
 #endif
 
 #endif // SECURE_BOOT_CHECK_SIGNATURE

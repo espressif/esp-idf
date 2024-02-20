@@ -41,6 +41,7 @@ extern "C" {
                     Oneshot
 ---------------------------------------------------------------*/
 #define ADC_LL_DATA_INVERT_DEFAULT(PERIPH_NUM)         (0)
+#define ADC_LL_DELAY_CYCLE_AFTER_DONE_SIGNAL           (0)
 
 /*---------------------------------------------------------------
                     DMA

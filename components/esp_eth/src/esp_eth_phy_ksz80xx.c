@@ -186,7 +186,9 @@ static esp_err_t ksz80xx_set_speed(esp_eth_phy_t *phy, eth_speed_t speed)
     /* Check if loopback is enabled, and if so, can it work with proposed speed or not */
     bmcr_reg_t bmcr;
     ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, phy_802_3->addr, ETH_PHY_BMCR_REG_ADDR, &(bmcr.val)), err, TAG, "read BMCR failed");
-    ESP_GOTO_ON_FALSE(bmcr.en_loopback & (speed == ETH_SPEED_100M), ESP_ERR_INVALID_STATE, err, TAG, "Speed must be 100M for loopback operation");
+    if (bmcr.en_loopback) {
+        ESP_GOTO_ON_FALSE(speed == ETH_SPEED_100M, ESP_ERR_INVALID_STATE, err, TAG, "Speed must be 100M for loopback operation");
+    }
 
     return esp_eth_phy_802_3_set_speed(phy_802_3, speed);
 err:

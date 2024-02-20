@@ -1,3 +1,9 @@
+idf_build_get_property(target IDF_TARGET)
+
+if(${target} STREQUAL "linux")
+    return() # This component is not necessary on the POSIX/Linux simulator
+endif()
+
 idf_component_register(SRCS "cxx_exception_stubs.cpp"
                             "cxx_guards.cpp"
                         # Make sure that pthread is in component list

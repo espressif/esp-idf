@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -36,10 +36,12 @@ extern "C" {
 #define SPI_LL_ONE_LINE_USER_MASK (SPI_FWRITE_QUAD | SPI_FWRITE_DUAL)
 /// Swap the bit order to its correct place to send
 #define HAL_SPI_SWAP_DATA_TX(data, len) HAL_SWAP32((uint32_t)(data) << (32 - len))
-#define SPI_LL_GET_HW(ID) ((ID)==0? ({abort();NULL;}):((ID)==1? &GPSPI2 : &GPSPI3))
+#define SPI_LL_GET_HW(ID) (((ID)==1) ? &GPSPI2 : (((ID)==2) ? &GPSPI3 : NULL))
 
 #define SPI_LL_DMA_MAX_BIT_LEN    (1 << 18)    //reg len: 18 bits
 #define SPI_LL_CPU_MAX_BIT_LEN    (16 * 32)    //Fifo len: 16 words
+#define SPI_LL_SUPPORT_CLK_SRC_PRE_DIV      1  //clock source have divider before peripheral
+#define SPI_LL_CLK_SRC_PRE_DIV_MAX          512//div1(8bit) * div2(8bit but set const 2)
 
 /**
  * The data structure holding calculated clock configuration. Since the
@@ -175,6 +177,12 @@ static inline void spi_ll_set_clk_source(spi_dev_t *hw, spi_clock_source_t clk_s
 {
     uint32_t clk_id = 0;
     switch (clk_source) {
+    case SPI_CLK_SRC_SPLL:
+        clk_id = 4;
+        break;
+    case SPI_CLK_SRC_RC_FAST:
+        clk_id = 1;
+        break;
     case SPI_CLK_SRC_XTAL:
         clk_id = 0;
         break;
@@ -192,6 +200,32 @@ static inline void spi_ll_set_clk_source(spi_dev_t *hw, spi_clock_source_t clk_s
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
 #define spi_ll_set_clk_source(...) (void)__DECLARE_RCC_ATOMIC_ENV; spi_ll_set_clk_source(__VA_ARGS__)
+
+/**
+ * Config clock source integrate pre_div before it enter GPSPI peripheral
+ *
+ * @note 1. For timing turning(e.g. input_delay) feature available, should be (mst_div >= 2)
+ *       2. From peripheral limitation: (sour_freq/hs_div <= 160M) and (sour_freq/hs_div/mst_div <= 80M)
+ *
+ * @param hw        Beginning address of the peripheral registers.
+ * @param hs_div    Timing turning clock divider: (hs_clk_o = sour_freq/hs_div)
+ * @param mst_div   Functional output clock divider: (mst_clk_o = sour_freq/hs_div/mst_div)
+ */
+__attribute__((always_inline))
+static inline void spi_ll_clk_source_pre_div(spi_dev_t *hw, uint8_t hs_div, uint8_t mst_div)
+{
+    if (hw == &GPSPI2) {
+        HP_SYS_CLKRST.peri_clk_ctrl116.reg_gpspi2_hs_clk_div_num = hs_div - 1;
+        HP_SYS_CLKRST.peri_clk_ctrl116.reg_gpspi2_mst_clk_div_num = mst_div - 1;
+    } else if (hw == &GPSPI3) {
+        HP_SYS_CLKRST.peri_clk_ctrl117.reg_gpspi3_hs_clk_div_num = hs_div - 1;
+        HP_SYS_CLKRST.peri_clk_ctrl117.reg_gpspi3_mst_clk_div_num = mst_div - 1;
+    }
+}
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define spi_ll_clk_sour_pre_div(...) (void)__DECLARE_RCC_ATOMIC_ENV; spi_ll_clk_sour_pre_div(__VA_ARGS__)
 
 /**
  * Initialize SPI peripheral (master).
@@ -658,12 +692,16 @@ static inline void spi_ll_master_set_line_mode(spi_dev_t *hw, spi_line_mode_t li
     hw->user.val &= ~SPI_LL_ONE_LINE_USER_MASK;
     hw->ctrl.fcmd_dual = (line_mode.cmd_lines == 2);
     hw->ctrl.fcmd_quad = (line_mode.cmd_lines == 4);
+    hw->ctrl.fcmd_oct = (line_mode.cmd_lines == 8);
     hw->ctrl.faddr_dual = (line_mode.addr_lines == 2);
     hw->ctrl.faddr_quad = (line_mode.addr_lines == 4);
+    hw->ctrl.faddr_oct = (line_mode.addr_lines == 8);
     hw->ctrl.fread_dual = (line_mode.data_lines == 2);
     hw->user.fwrite_dual = (line_mode.data_lines == 2);
     hw->ctrl.fread_quad = (line_mode.data_lines == 4);
     hw->user.fwrite_quad = (line_mode.data_lines == 4);
+    hw->ctrl.fread_oct = (line_mode.data_lines == 8);
+    hw->user.fwrite_oct = (line_mode.data_lines == 8);
 }
 
 /**

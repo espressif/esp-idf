@@ -1,24 +1,37 @@
 /*
- * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #pragma once
 
+#include "soc/soc_caps.h"
+/*
+This header is shared across all targets. Resolve to an empty header for targets
+that don't support USB OTG.
+*/
+#if SOC_USB_OTG_SUPPORTED
+#include <stdint.h>
+#include <stdbool.h>
+#include "soc/usb_dwc_struct.h"
+#include "soc/usb_dwc_cfg.h"
+#include "hal/usb_dwc_types.h"
+#include "hal/misc.h"
+#endif // SOC_USB_OTG_SUPPORTED
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#include <stdint.h>
-#include <stdbool.h>
-#include "soc/soc_caps.h"
 #if SOC_USB_OTG_SUPPORTED
-#include "soc/usb_dwc_struct.h"
-#endif
-#include "hal/usb_types_private.h"
-#include "hal/misc.h"
 
+/* -----------------------------------------------------------------------------
+--------------------------------- DWC Constants --------------------------------
+----------------------------------------------------------------------------- */
+
+#define USB_DWC_QTD_LIST_MEM_ALIGN              512
+#define USB_DWC_FRAME_LIST_MEM_ALIGN            512     // The frame list needs to be 512 bytes aligned (contrary to the databook)
 
 /* -----------------------------------------------------------------------------
 ------------------------------- Global Registers -------------------------------
@@ -98,7 +111,6 @@ extern "C" {
 #define USB_DWC_LL_INTR_CHAN_CHHLTD         (1 << 1)
 #define USB_DWC_LL_INTR_CHAN_XFERCOMPL      (1 << 0)
 
-#if SOC_USB_OTG_SUPPORTED
 /*
  * QTD (Queue Transfer Descriptor) structure used in Scatter/Gather DMA mode.
  * Each QTD describes one transfer. Scatter gather mode will automatically split
@@ -204,6 +216,20 @@ static inline void usb_dwc_ll_gusbcfg_dis_srp_cap(usb_dwc_dev_t *hw)
 {
     hw->gusbcfg_reg.srpcap = 0;
 }
+
+static inline void usb_dwc_ll_gusbcfg_set_timeout_cal(usb_dwc_dev_t *hw, uint8_t tout_cal)
+{
+    hw->gusbcfg_reg.toutcal = tout_cal;
+}
+
+#if (OTG_HSPHY_INTERFACE != 0)
+static inline void usb_dwc_ll_gusbcfg_set_utmi_phy(usb_dwc_dev_t *hw)
+{
+    hw->gusbcfg_reg.phyif = 1;       // 16 bits interface
+    hw->gusbcfg_reg.ulpiutmisel = 0; // UTMI+
+    hw->gusbcfg_reg.physel = 0;      // HS PHY
+}
+#endif // (OTG_HSPHY_INTERFACE != 0)
 
 // --------------------------- GRSTCTL Register --------------------------------
 
@@ -419,26 +445,28 @@ static inline void usb_dwc_ll_hcfg_set_fsls_pclk_sel(usb_dwc_dev_t *hw)
 /**
  * @brief Sets some default values to HCFG to operate in Host mode with scatter/gather DMA
  *
- * @param hw Start address of the DWC_OTG registers
- * @param speed Speed to initialize the host port at
+ * @param[in] hw    Start address of the DWC_OTG registers
+ * @param[in] speed Speed to initialize the host port at
  */
-static inline void usb_dwc_ll_hcfg_set_defaults(usb_dwc_dev_t *hw, usb_priv_speed_t speed)
+static inline void usb_dwc_ll_hcfg_set_defaults(usb_dwc_dev_t *hw, usb_dwc_speed_t speed)
 {
     hw->hcfg_reg.descdma = 1;   //Enable scatt/gatt
-    hw->hcfg_reg.fslssupp = 1;  //FS/LS support only
+#if (OTG_HSPHY_INTERFACE == 0)
     /*
     Indicate to the OTG core what speed the PHY clock is at
-    Note: It seems like our PHY has an implicit 8 divider applied when in LS mode,
+    Note: It seems like S2/S3 PHY has an implicit 8 divider applied when in LS mode,
           so the values of FSLSPclkSel and FrInt have to be adjusted accordingly.
     */
-    hw->hcfg_reg.fslspclksel = (speed == USB_PRIV_SPEED_FULL) ? 1 : 2;  //PHY clock on esp32-sx for FS/LS-only
+    hw->hcfg_reg.fslspclksel = (speed == USB_DWC_SPEED_FULL) ? 1 : 2;  //PHY clock on esp32-sx for FS/LS-only
+#endif // (OTG_HSPHY_INTERFACE == 0)
     hw->hcfg_reg.perschedena = 0;   //Disable perio sched
 }
 
 // ----------------------------- HFIR Register ---------------------------------
 
-static inline void usb_dwc_ll_hfir_set_defaults(usb_dwc_dev_t *hw, usb_priv_speed_t speed)
+static inline void usb_dwc_ll_hfir_set_defaults(usb_dwc_dev_t *hw, usb_dwc_speed_t speed)
 {
+#if (OTG_HSPHY_INTERFACE == 0)
     usb_dwc_hfir_reg_t hfir;
     hfir.val = hw->hfir_reg.val;
     hfir.hfirrldctrl = 0;       //Disable dynamic loading
@@ -447,8 +475,9 @@ static inline void usb_dwc_ll_hfir_set_defaults(usb_dwc_dev_t *hw, usb_priv_spee
     Note: It seems like our PHY has an implicit 8 divider applied when in LS mode,
           so the values of FSLSPclkSel and FrInt have to be adjusted accordingly.
     */
-    hfir.frint = (speed == USB_PRIV_SPEED_FULL) ? 48000 : 6000; //esp32-sx targets only support FS or LS
+    hfir.frint = (speed == USB_DWC_SPEED_FULL) ? 48000 : 6000; //esp32-sx targets only support FS or LS
     hw->hfir_reg.val = hfir.val;
+#endif // (OTG_HSPHY_INTERFACE == 0)
 }
 
 // ----------------------------- HFNUM Register --------------------------------
@@ -530,19 +559,9 @@ static inline uint32_t usb_dwc_ll_hflbaddr_get_base_addr(usb_dwc_dev_t *hw)
 
 // ----------------------------- HPRT Register ---------------------------------
 
-static inline usb_priv_speed_t usb_dwc_ll_hprt_get_speed(usb_dwc_dev_t *hw)
+static inline usb_dwc_speed_t usb_dwc_ll_hprt_get_speed(usb_dwc_dev_t *hw)
 {
-    usb_priv_speed_t speed;
-    //esp32-s2 and esp32-s3 only support FS or LS
-    switch (hw->hprt_reg.prtspd) {
-        case 1:
-            speed = USB_PRIV_SPEED_FULL;
-            break;
-        default:
-            speed = USB_PRIV_SPEED_LOW;
-            break;
-    }
-    return speed;
+    return (usb_dwc_speed_t)hw->hprt_reg.prtspd;
 }
 
 static inline uint32_t usb_dwc_ll_hprt_get_test_ctl(usb_dwc_dev_t *hw)
@@ -701,24 +720,9 @@ static inline void usb_dwc_ll_hcchar_set_dev_addr(volatile usb_dwc_host_chan_reg
     chan->hcchar_reg.devaddr = addr;
 }
 
-static inline void usb_dwc_ll_hcchar_set_ep_type(volatile usb_dwc_host_chan_regs_t *chan, usb_priv_xfer_type_t type)
+static inline void usb_dwc_ll_hcchar_set_ep_type(volatile usb_dwc_host_chan_regs_t *chan, usb_dwc_xfer_type_t type)
 {
-    uint32_t ep_type;
-    switch (type) {
-        case USB_PRIV_XFER_TYPE_CTRL:
-            ep_type = 0;
-            break;
-        case USB_PRIV_XFER_TYPE_ISOCHRONOUS:
-            ep_type = 1;
-            break;
-        case USB_PRIV_XFER_TYPE_BULK:
-            ep_type = 2;
-            break;
-        default:    //USB_PRIV_XFER_TYPE_INTR
-            ep_type = 3;
-            break;
-    }
-    chan->hcchar_reg.eptype = ep_type;
+    chan->hcchar_reg.eptype = (uint32_t)type;
 }
 
 //Indicates whether channel is commuunicating with a LS device connected via a FS hub. Setting this bit to 1 will cause
@@ -743,7 +747,7 @@ static inline void usb_dwc_ll_hcchar_set_mps(volatile usb_dwc_host_chan_regs_t *
     chan->hcchar_reg.mps = mps;
 }
 
-static inline void usb_dwc_ll_hcchar_init(volatile usb_dwc_host_chan_regs_t *chan, int dev_addr, int ep_num, int mps, usb_priv_xfer_type_t type, bool is_in, bool is_ls)
+static inline void usb_dwc_ll_hcchar_init(volatile usb_dwc_host_chan_regs_t *chan, int dev_addr, int ep_num, int mps, usb_dwc_xfer_type_t type, bool is_in, bool is_ls)
 {
     //Sets all persistent fields of the channel over its lifetimez
     usb_dwc_ll_hcchar_set_dev_addr(chan, dev_addr);
@@ -793,28 +797,48 @@ static inline uint32_t usb_dwc_ll_hctsiz_get_pid(volatile usb_dwc_host_chan_regs
 
 static inline void usb_dwc_ll_hctsiz_set_qtd_list_len(volatile usb_dwc_host_chan_regs_t *chan, int qtd_list_len)
 {
-    HAL_FORCE_MODIFY_U32_REG_FIELD(chan->hctsiz_reg, ntd, qtd_list_len - 1);    //Set the length of the descriptor list
+    usb_dwc_hctsiz_reg_t hctsiz;
+    hctsiz.val = chan->hctsiz_reg.val;
+    //Set the length of the descriptor list. NTD occupies xfersize[15:8]
+    hctsiz.xfersize &= ~(0xFF << 8);
+    hctsiz.xfersize |= ((qtd_list_len - 1) & 0xFF) << 8;
+    chan->hctsiz_reg.val = hctsiz.val;
 }
 
 static inline void usb_dwc_ll_hctsiz_init(volatile usb_dwc_host_chan_regs_t *chan)
 {
-    chan->hctsiz_reg.dopng = 0;         //Don't do ping
-    HAL_FORCE_MODIFY_U32_REG_FIELD(chan->hctsiz_reg, sched_info, 0xFF); //Schedinfo is always 0xFF for fullspeed. Not used in Bulk/Ctrl channels
+    usb_dwc_hctsiz_reg_t hctsiz;
+    hctsiz.val = chan->hctsiz_reg.val;
+    hctsiz.dopng = 0;         //Don't do ping
+    /*
+    Set SCHED_INFO which occupies xfersize[7:0]
+    It is always set to 0xFF for full speed and not used in Bulk/Ctrl channels
+    */
+    hctsiz.xfersize |= 0xFF;
+    chan->hctsiz_reg.val = hctsiz.val;
 }
 
 // ---------------------------- HCDMAi Register --------------------------------
 
 static inline void usb_dwc_ll_hcdma_set_qtd_list_addr(volatile usb_dwc_host_chan_regs_t *chan, void *dmaaddr, uint32_t qtd_idx)
 {
-    //Set HCDMAi
-    chan->hcdma_reg.val = 0;
-    chan->hcdma_reg.non_iso.dmaaddr = (((uint32_t)dmaaddr) >> 9) & 0x7FFFFF;  //MSB of 512 byte aligned address
-    chan->hcdma_reg.non_iso.ctd = qtd_idx;
+    usb_dwc_hcdma_reg_t hcdma;
+    /*
+    Set the base address portion of the field which is dmaaddr[31:9]. This is
+    the based address of the QTD list and must be 512 bytes aligned
+    */
+    hcdma.dmaaddr = ((uint32_t)dmaaddr) & 0xFFFFFE00;
+    //Set the current QTD index in the QTD list which is dmaaddr[8:3]
+    hcdma.dmaaddr |= (qtd_idx & 0x3F) << 3;
+    //dmaaddr[2:0] is reserved thus doesn't not need to be set
+
+    chan->hcdma_reg.val = hcdma.val;
 }
 
 static inline int usb_dwc_ll_hcdam_get_cur_qtd_idx(usb_dwc_host_chan_regs_t *chan)
 {
-    return chan->hcdma_reg.non_iso.ctd;
+    //The current QTD index is dmaaddr[8:3]
+    return (chan->hcdma_reg.dmaaddr >> 3) & 0x3F;
 }
 
 // ---------------------------- HCDMABi Register -------------------------------
@@ -934,7 +958,7 @@ static inline void usb_dwc_ll_qtd_get_status(usb_dwc_ll_dma_qtd_t *qtd, int *rem
     qtd->buffer_status_val = 0;
 }
 
-#endif
+#endif // SOC_USB_OTG_SUPPORTED
 
 #ifdef __cplusplus
 }

@@ -68,8 +68,7 @@ size_t heap_caps_get_per_task_info(heap_task_info_params_t *params)
             }
             void *p = multi_heap_get_block_address(b);  // Safe, only arithmetic
             size_t bsize = multi_heap_get_allocated_size(heap, p); // Validates
-            TaskHandle_t btask = (TaskHandle_t)multi_heap_get_block_owner(b);
-
+            TaskHandle_t btask = MULTI_HEAP_GET_BLOCK_OWNER(p);
             // Accumulate per-task allocation totals.
             if (params->totals) {
                 size_t i;

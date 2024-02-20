@@ -1,0 +1,13 @@
+[mapping:gpio_driver]
+archive: libesp_driver_gpio.a
+entries:
+    if GPIO_CTRL_FUNC_IN_IRAM = y:
+        gpio: gpio_set_level (noflash)
+        gpio: gpio_intr_disable (noflash)
+        gpio: gpio_get_level (noflash)
+
+[mapping:gpio_hal]
+archive: libhal.a
+entries:
+    if GPIO_CTRL_FUNC_IN_IRAM = y:
+        gpio_hal: gpio_hal_intr_disable (noflash)

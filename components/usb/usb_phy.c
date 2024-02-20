@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,13 +11,20 @@
 #include "esp_check.h"
 #include "esp_private/periph_ctrl.h"
 #include "esp_private/usb_phy.h"
-#include "soc/usb_otg_periph.h"
-#include "hal/usb_phy_hal.h"
-#include "hal/usb_phy_ll.h"
+#include "soc/usb_dwc_periph.h"
+#include "hal/usb_fsls_phy_hal.h"
+#include "hal/usb_fsls_phy_ll.h"
 #include "esp_rom_gpio.h"
 #include "driver/gpio.h"
 #include "hal/gpio_ll.h"
+#include "soc/soc_caps.h"
 #include "soc/usb_pins.h"
+
+#if !SOC_RCC_IS_INDEPENDENT
+#define USB_WRAP_RCC_ATOMIC() PERIPH_RCC_ATOMIC()
+#else
+#define USB_WRAP_RCC_ATOMIC()
+#endif
 
 static const char *USBPHY_TAG = "usb_phy";
 
@@ -32,7 +39,7 @@ struct phy_context_t {
     usb_otg_mode_t otg_mode;                      /**< USB OTG mode */
     usb_phy_speed_t otg_speed;                    /**< USB speed */
     usb_phy_ext_io_conf_t *iopins;                /**< external PHY I/O pins */
-    usb_phy_hal_context_t hal_context;            /**< USB_PHY hal context */
+    usb_fsls_phy_hal_context_t hal_context;            /**< USB_PHY hal context */
 };
 
 typedef struct {
@@ -119,7 +126,7 @@ esp_err_t usb_phy_otg_set_mode(usb_phy_handle_t handle, usb_otg_mode_t mode)
         esp_rom_gpio_connect_in_signal(GPIO_MATRIX_CONST_ONE_INPUT, USB_OTG_VBUSVALID_IN_IDX, false);  // receiving a valid Vbus from host
         esp_rom_gpio_connect_in_signal(GPIO_MATRIX_CONST_ONE_INPUT, USB_OTG_AVALID_IN_IDX, false);     // HIGH to force USB host mode
         if (handle->target == USB_PHY_TARGET_INT) {
-            usb_phy_hal_int_load_conf_host(&(handle->hal_context));
+            usb_fsls_phy_hal_int_load_conf_host(&(handle->hal_context));
         }
     } else if (mode == USB_OTG_MODE_DEVICE) {
         esp_rom_gpio_connect_in_signal(GPIO_MATRIX_CONST_ONE_INPUT, USB_OTG_IDDIG_IN_IDX, false);      // connected connector is mini-B side
@@ -140,13 +147,7 @@ esp_err_t usb_phy_otg_dev_set_speed(usb_phy_handle_t handle, usb_phy_speed_t spe
                         USBPHY_TAG, "set speed not supported");
 
     handle->otg_speed = speed;
-    usb_priv_speed_t hal_speed = 0;
-    if (speed == USB_PHY_SPEED_LOW) {
-        hal_speed = USB_PRIV_SPEED_LOW;
-    } else if (speed == USB_PHY_SPEED_FULL) {
-        hal_speed = USB_PRIV_SPEED_FULL;
-    }
-    usb_phy_hal_int_load_conf_dev(&(handle->hal_context), hal_speed);
+    usb_fsls_phy_hal_int_load_conf_dev(&(handle->hal_context), speed);
     return ESP_OK;
 }
 
@@ -162,7 +163,7 @@ esp_err_t usb_phy_action(usb_phy_handle_t handle, usb_phy_action_t action)
     switch (action) {
     case USB_PHY_ACTION_HOST_ALLOW_CONN:
         if (handle->target == USB_PHY_TARGET_INT) {
-            usb_phy_hal_int_mimick_disconn(&(handle->hal_context), false);
+            usb_fsls_phy_hal_int_mimick_disconn(&(handle->hal_context), false);
         } else {
             if (!handle->iopins) {
                 ret = ESP_FAIL;
@@ -179,7 +180,7 @@ esp_err_t usb_phy_action(usb_phy_handle_t handle, usb_phy_action_t action)
 
     case USB_PHY_ACTION_HOST_FORCE_DISCONN:
         if (handle->target == USB_PHY_TARGET_INT) {
-            usb_phy_hal_int_mimick_disconn(&(handle->hal_context), true);
+            usb_fsls_phy_hal_int_mimick_disconn(&(handle->hal_context), true);
         } else {
             /*
             Disable connections on the external PHY by connecting the VP and VM signals to the constant LOW signal.
@@ -219,9 +220,12 @@ static esp_err_t usb_phy_install(void)
         portEXIT_CRITICAL(&phy_spinlock);
         goto cleanup;
     }
+    // Enable USB peripheral and reset the register
     portEXIT_CRITICAL(&phy_spinlock);
-    periph_module_enable(usb_otg_periph_signal.module);
-    periph_module_reset(usb_otg_periph_signal.module);
+    USB_WRAP_RCC_ATOMIC() {
+        usb_fsls_phy_ll_usb_wrap_enable_bus_clock(true);
+        usb_fsls_phy_ll_usb_wrap_reset_register();
+    }
     return ESP_OK;
 
 cleanup:
@@ -259,13 +263,13 @@ esp_err_t usb_new_phy(const usb_phy_config_t *config, usb_phy_handle_t *handle_r
     phy_context->controller = config->controller;
     phy_context->status = USB_PHY_STATUS_IN_USE;
 
-    usb_phy_hal_init(&(phy_context->hal_context));
+    usb_fsls_phy_hal_init(&(phy_context->hal_context));
     if (config->controller == USB_PHY_CTRL_OTG) {
-        usb_phy_hal_otg_conf(&(phy_context->hal_context), config->target == USB_PHY_TARGET_EXT);
+        usb_fsls_phy_hal_otg_conf(&(phy_context->hal_context), config->target == USB_PHY_TARGET_EXT);
     }
 #if SOC_USB_SERIAL_JTAG_SUPPORTED
     else if (config->controller == USB_PHY_CTRL_SERIAL_JTAG) {
-        usb_phy_hal_jtag_conf(&(phy_context->hal_context), config->target == USB_PHY_TARGET_EXT);
+        usb_fsls_phy_hal_jtag_conf(&(phy_context->hal_context), config->target == USB_PHY_TARGET_EXT);
         phy_context->otg_mode = USB_OTG_MODE_DEVICE;
         phy_context->otg_speed = USB_PHY_SPEED_FULL;
     }
@@ -311,8 +315,10 @@ static void phy_uninstall(void)
     if (p_phy_ctrl_obj->ref_count == 0) {
         p_phy_ctrl_obj_free = p_phy_ctrl_obj;
         p_phy_ctrl_obj = NULL;
-        // Disable USB peripheral
-        periph_module_disable(usb_otg_periph_signal.module);
+        USB_WRAP_RCC_ATOMIC() {
+            // Disable USB peripheral without reset the module
+            usb_fsls_phy_ll_usb_wrap_enable_bus_clock(false);
+        }
     }
     portEXIT_CRITICAL(&phy_spinlock);
     free(p_phy_ctrl_obj_free);
@@ -327,8 +333,9 @@ esp_err_t usb_del_phy(usb_phy_handle_t handle)
     if (handle->target == USB_PHY_TARGET_EXT) {
         p_phy_ctrl_obj->external_phy = NULL;
     } else {
-        // Clear pullup and pulldown loads on D+ / D-
-        usb_phy_ll_int_load_conf(handle->hal_context.wrap_dev, false, false, false, false);
+        // Clear pullup and pulldown loads on D+ / D-, and disable the pads
+        usb_fsls_phy_ll_int_load_conf(handle->hal_context.wrap_dev, false, false, false, false);
+        usb_fsls_phy_ll_usb_wrap_pad_enable(handle->hal_context.wrap_dev, false);
         p_phy_ctrl_obj->internal_phy = NULL;
     }
     portEXIT_CRITICAL(&phy_spinlock);

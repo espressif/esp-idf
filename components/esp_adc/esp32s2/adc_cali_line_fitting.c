@@ -177,7 +177,7 @@ static bool prepare_calib_data_for(adc_unit_t unit_id, adc_atten_t atten, adc_ca
         case ADC_ATTEN_DB_6:
             parsed_data_storage->efuse_data.ver2.adc_calib_high_voltage = 1000;
             break;
-        case ADC_ATTEN_DB_11:
+        case ADC_ATTEN_DB_12:
             parsed_data_storage->efuse_data.ver2.adc_calib_high_voltage = 2000;
             break;
         default:

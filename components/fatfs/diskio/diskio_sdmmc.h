@@ -7,7 +7,7 @@
 #pragma once
 
 #include "sdmmc_cmd.h"
-#include "driver/sdmmc_defs.h"
+#include "sd_protocol_defs.h"
 
 #ifdef __cplusplus
 extern "C" {

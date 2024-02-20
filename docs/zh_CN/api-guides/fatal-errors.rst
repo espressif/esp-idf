@@ -221,7 +221,7 @@
         Backtrace:
 
         0x42006686 in bar (ptr=ptr@entry=0x0) at ../main/hello_world_main.c:18
-        18	    *ptr = 0x42424242;
+        18      *ptr = 0x42424242;
         #0  0x42006686 in bar (ptr=ptr@entry=0x0) at ../main/hello_world_main.c:18
         #1  0x42006692 in foo () at ../main/hello_world_main.c:22
         #2  0x420066ac in app_main () at ../main/hello_world_main.c:28
@@ -282,7 +282,7 @@ GDB Stub
 
 RTC 看门狗超时
 ----------------
-{IDF_TARGET_RTCWDT_RTC_RESET:default="Not updated", esp32="RTCWDT_RTC_RESET", esp32s2="RTCWDT_RTC_RST", esp32s3="RTCWDT_RTC_RST", esp32c3="RTCWDT_RTC_RST", esp32c2="RTCWDT_RTC_RST", esp32c6="LP_WDT_SYS", esp32h2="LP_WDT_SYS"}
+{IDF_TARGET_RTCWDT_RTC_RESET:default="Not updated", esp32="RTCWDT_RTC_RESET", esp32s2="RTCWDT_RTC_RST", esp32s3="RTCWDT_RTC_RST", esp32c3="RTCWDT_RTC_RST", esp32c2="RTCWDT_RTC_RST", esp32c6="LP_WDT_SYS", esp32h2="LP_WDT_SYS", esp32p4="LP_WDT_SYS"}
 
 RTC 看门狗在启动代码中用于跟踪执行时间，也有助于防止由于电源不稳定引起的锁定。RTC 看门狗默认启用，参见 :ref:`CONFIG_BOOTLOADER_WDT_ENABLE`。如果执行时间超时，RTC 看门狗将自动重启系统。此时，ROM 引导加载程序将打印消息 ``RTC Watchdog Timeout`` 说明重启原因。
 
@@ -533,7 +533,7 @@ FreeRTOS 堆栈检查
 - 移位基数或指数错误（如移位超过 32 位）
 - 整数转换错误
 
-请参考 `GCC 文档 <https://gcc.gnu.org/onlinedocs/gcc/Instrumentation-Options.html>`_ 中的``-fsanitize=undefined`` 选项，查看支持检查的完整列表。
+请参考 `GCC 文档 <https://gcc.gnu.org/onlinedocs/gcc/Instrumentation-Options.html>`_ 中的 ``-fsanitize=undefined`` 选项，查看支持检查的完整列表。
 
 使能 UBSAN
 """"""""""""""

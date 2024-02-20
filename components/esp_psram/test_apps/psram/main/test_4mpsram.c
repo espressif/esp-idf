@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,20 +20,22 @@ static void test_psram_content(void)
     uint32_t *test_area = heap_caps_malloc(test_size, MALLOC_CAP_SPIRAM);
 
     size_t p;
-    size_t s=test_size;
-    int errct=0;
-    int initial_err=-1;
-    for (p=0; p<(s/sizeof(int)); p+=4) {
-        test_area[p]=p^0xAAAAAAAA;
+    size_t s = test_size;
+    int errct = 0;
+    int initial_err = -1;
+    for (p = 0; p < (s / sizeof(int)); p += 4) {
+        test_area[p] = p ^ 0xAAAAAAAA;
     }
-    for (p=0; p<(s/sizeof(int)); p+=4) {
-        if (test_area[p]!=(p^0xAAAAAAAA)) {
+    for (p = 0; p < (s / sizeof(int)); p += 4) {
+        if (test_area[p] != (p ^ 0xAAAAAAAA)) {
             errct++;
-            if (errct==1) initial_err=p*4;
+            if (errct == 1) {
+                initial_err = p * 4;
+            }
         }
     }
     if (errct) {
-        ESP_LOGE(TAG, "SPI SRAM memory test fail. %d/%d writes failed, first @ %p", errct, s/32, initial_err+test_area);
+        ESP_LOGE(TAG, "SPI SRAM memory test fail. %d/%d writes failed, first @ %p", errct, s / 32, initial_err + test_area);
         TEST_FAIL();
     } else {
         ESP_LOGI(TAG, "SPI SRAM memory test OK");
@@ -48,10 +50,14 @@ bool psram_is_32mbit_ver0(void);
 static void test_spi_bus_occupy(spi_host_device_t expected_occupied_host)
 {
     bool claim_hspi = spicommon_periph_claim(HSPI_HOST, "ut-hspi");
-    if (claim_hspi) ESP_LOGI(TAG, "HSPI claimed.");
+    if (claim_hspi) {
+        ESP_LOGI(TAG, "HSPI claimed.");
+    }
 
     bool claim_vspi = spicommon_periph_claim(VSPI_HOST, "ut-vspi");
-    if (claim_vspi) ESP_LOGI(TAG, "VSPI claimed.");
+    if (claim_vspi) {
+        ESP_LOGI(TAG, "VSPI claimed.");
+    }
 
     if (expected_occupied_host == HSPI_HOST) {
         TEST_ASSERT_FALSE(claim_hspi);

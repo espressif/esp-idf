@@ -10,6 +10,7 @@ ESP-IDF 支持以下类型的看门狗定时器：
 
 .. list::
 
+    - 硬件看门狗定时器
     - 中断看门狗定时器 (IWDT)
     - 任务看门狗定时器 (TWDT)
     :SOC_XT_WDT_SUPPORTED: - XTAL32K 看门狗定时器 (Crystal 32K 看门狗定时器，即 XTWDT)
@@ -17,6 +18,32 @@ ESP-IDF 支持以下类型的看门狗定时器：
 中断看门狗负责确保 ISR（中断服务程序）不被长时间阻塞，TWDT 负责检测任务长时间运行而不让步的情况。
 
 通过 :ref:`project-configuration-menu` 可启用各种看门狗定时器。其中，TWDT 也可以在程序运行时启用。
+
+.. _app-hardware-watchdog-timers:
+
+硬件看门狗定时器
+----------------
+
+芯片有两组看门狗定时器：
+
+.. list::
+
+    :not esp32c2: - 主系统看门狗定时器 (MWDT_WDT) - 用于中断看门狗定时器 (IWDT) 和任务看门狗定时器 (TWDT)。
+    :esp32c2: - 主系统看门狗定时器 (MWDT_WDT) - 用于中断看门狗定时器 (IWDT)。
+    - RTC 看门狗定时器 (RTC_WDT) - 用于跟踪从上电到执行用户主函数的启动时间（默认情况下，RTC 看门狗在执行用户主函数之前会被立即禁用）。
+
+请参阅 :ref:`bootloader-watchdog` 小节，了解如何在引导加载程序中使用看门狗。
+
+用户可以调整应用程序行为，使 RTC 看门狗在应用程序启动后保持启用状态。应用程序需要显式重置（即喂狗）或禁用看门狗，以避免芯片重置。具体而言，用户可设置 :ref:`CONFIG_BOOTLOADER_WDT_DISABLE_IN_USER_CODE` 选项，根据需要修改应用程序并重新编译。此过程中应使用以下 API：
+
+.. list::
+
+    - :cpp:func:`wdt_hal_disable`：参考 :ref:`hw-abstraction-hal-layer-disable-rtc-wdt`
+    - :cpp:func:`wdt_hal_feed`：参考 :ref:`hw-abstraction-hal-layer-feed-rtc-wdt`
+    :esp32 or esp32s2: - :cpp:func:`rtc_wdt_feed`
+    :esp32 or esp32s2: - :cpp:func:`rtc_wdt_disable`
+
+如果未能及时重置或禁用 RTC_WDT，芯片将自动重置。请参阅 :ref:`RTC-Watchdog-Timeout` 了解更多信息。
 
 中断看门狗定时器 (IWDT)
 -------------------------------
@@ -29,7 +56,7 @@ IWDT 的目的是，确保中断服务例程 (ISR) 运行不会受到长时间�
 - 临界区（也会禁用中断）
 - 其他相同或更高优先级的 ISR，在完成前会阻止相同或较低优先级的 ISR
 
-IWDT 利用 {IDF_TARGET_IWDT_TIMER_GROUP} 中的看门狗定时器作为其底层硬件定时器，并在每个 CPU 上使用 FreeRTOS 时钟滴答中断，即 tick 中断。如果某个 CPU 上的 tick 中断没有在 IWDT 超时前运行，就表明该 CPU 上的 ISR 运行受阻（参见上文原因列表）。
+IWDT 利用 {IDF_TARGET_IWDT_TIMER_GROUP} 中的 MWDT_WDT 看门狗定时器作为其底层硬件定时器，并在每个 CPU 上使用 FreeRTOS 时钟滴答中断，即 tick 中断。如果某个 CPU 上的 tick 中断没有在 IWDT 超时前运行，就表明该 CPU 上的 ISR 运行受阻（参见上文原因列表）。
 
 当 IWDT 超时后，默认操作是调用紧急处理程序 (Panic Handler)，并显示 出错原因（ ``Interrupt wdt timeout on CPU0`` 或 ``Interrupt wdt timeout on CPU1``，视情况而定）。根据紧急处理程序的配置行为（参见 :ref:`CONFIG_ESP_SYSTEM_PANIC`），用户可通过回溯、OpenOCD、gdbstub 等来调试 IWDT 超时问题，也可以重置芯片（这在生产环境中可能是首选）。
 
@@ -63,7 +90,7 @@ IWDT 利用 {IDF_TARGET_IWDT_TIMER_GROUP} 中的看门狗定时器作为其底�
 
 .. only:: not esp32c2
 
-    TWDT 是基于定时器组 0 中的硬件看门狗定时器构建的。超时发生时会触发中断。
+    TWDT 是基于定时器组 0 中的 MWDT_WDT 看门狗定时器构建的。超时发生时会触发中断。
 
 .. only:: esp32c2
 
@@ -113,7 +140,7 @@ TWDT 的默认超时时间可以通过 :ref:`CONFIG_ESP_TASK_WDT_TIMEOUT_S` 配�
     - :ref:`CONFIG_ESP_TASK_WDT_EN` - 启用 TWDT 功能。如果禁用此选项， TWDT 即使运行时已初始化也无法使用。
     - :ref:`CONFIG_ESP_TASK_WDT_INIT` - TWDT 在启动期间自动初始化。禁用此选项时，仍可以调用 :cpp:func:`esp_task_wdt_init` 在运行时初始化 TWDT。
     - :ref:`CONFIG_ESP_TASK_WDT_CHECK_IDLE_TASK_CPU0` - {IDF_TARGET_IDLE_TASK}在启动时订阅了 TWDT。如果此选项被禁用，仍可以调用 :cpp:func:`esp_task_wdt_init` 再次订阅。
-    :not CONFIG_FREERTOS_UNICORE: - :ref:`CONFIG_ESP_TASK_WDT_CHECK_IDLE_TASK_CPU1` - CPU1 空闲任务在启动时订阅了 TWDT。
+    :SOC_HP_CPU_HAS_MULTIPLE_CORES: - :ref:`CONFIG_ESP_TASK_WDT_CHECK_IDLE_TASK_CPU1` - CPU1 空闲任务在启动时订阅了 TWDT。
 
 
 .. note::

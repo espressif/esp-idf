@@ -212,6 +212,8 @@ typedef union {
     } cfg_net_transmit_set;
 } bt_mesh_cfg_server_state_change_t;
 
+void bt_mesh_relay_local_set(bool enable);
+
 #ifdef __cplusplus
 }
 #endif

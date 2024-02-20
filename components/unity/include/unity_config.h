@@ -1,3 +1,9 @@
+/*
+ * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 #ifndef UNITY_CONFIG_H
 #define UNITY_CONFIG_H
 
@@ -7,6 +13,7 @@
 
 #include <esp_err.h>
 #include <stddef.h>
+#include <math.h>
 #include "sdkconfig.h"
 
 #ifdef CONFIG_UNITY_ENABLE_FLOAT
@@ -28,6 +35,18 @@
 #ifdef CONFIG_UNITY_ENABLE_COLOR
 #define UNITY_OUTPUT_COLOR
 #endif
+
+#ifndef __cplusplus
+#define UNITY_IS_NAN isnan
+#define UNITY_IS_INF isinf
+#else
+#define UNITY_IS_NAN std::isnan
+#define UNITY_IS_INF std::isinf
+#endif
+
+// Note, using __noreturn__ rather than noreturn
+// https://github.com/espressif/esp-idf/issues/11339
+#define UNITY_NORETURN __attribute__((__noreturn__))
 
 #define UNITY_EXCLUDE_TIME_H
 
@@ -51,6 +70,10 @@ uint32_t unity_exec_time_get_ms(void);
 #endif //CONFIG_UNITY_ENABLE_IDF_TEST_RUNNER
 
 #ifdef CONFIG_UNITY_ENABLE_FIXTURE
+// Two separate "extras" options here:
+// 1. Disable memory allocation wrappers in Unity Fixture
+#define UNITY_FIXTURE_NO_EXTRAS
+// 2. Add IDF-specific additions to Unity Fixture
 #include "unity_fixture_extras.h"
 #endif // CONFIG_UNITY_ENABLE_FIXTURE
 

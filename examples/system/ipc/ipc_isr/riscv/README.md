@@ -1,5 +1,5 @@
-| Supported Targets | ESP32P4 |
-| ----------------- | ------- |
+| Supported Targets | ESP32-P4 |
+| ----------------- | -------- |
 
 # IPC ISR Example
 

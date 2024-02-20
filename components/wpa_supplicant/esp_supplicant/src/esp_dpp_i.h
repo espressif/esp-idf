@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -55,4 +55,12 @@ struct esp_dpp_context_t {
 
 int esp_supp_rx_action(uint8_t *hdr, uint8_t *payload, size_t len, uint8_t channel);
 
+#ifdef CONFIG_ESP_WIFI_DPP_SUPPORT
+bool is_dpp_enabled(void);
+#else
+static inline bool is_dpp_enabled(void)
+{
+    return false;
+}
+#endif
 #endif /* ESP_DPP_I_H */

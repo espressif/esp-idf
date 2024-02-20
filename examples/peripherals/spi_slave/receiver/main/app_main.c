@@ -30,53 +30,20 @@ ready to send/receive data, this code uses a callback to set the handshake pin h
 sending a transaction. As soon as the transaction is done, the line gets set low again.
 */
 
-/*
-Pins in use. The SPI Master can use the GPIO mux, so feel free to change these if needed.
-*/
-#if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2
-#define GPIO_HANDSHAKE 2
-#define GPIO_MOSI 12
-#define GPIO_MISO 13
-#define GPIO_SCLK 15
-#define GPIO_CS 14
-
-#elif CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32C2
-#define GPIO_HANDSHAKE 3
-#define GPIO_MOSI 7
-#define GPIO_MISO 2
-#define GPIO_SCLK 6
-#define GPIO_CS 10
-
-#elif CONFIG_IDF_TARGET_ESP32C6
-#define GPIO_HANDSHAKE 15
-#define GPIO_MOSI 19
-#define GPIO_MISO 20
-#define GPIO_SCLK 18
-#define GPIO_CS 9
-
-#elif CONFIG_IDF_TARGET_ESP32H2
-#define GPIO_HANDSHAKE 2
-#define GPIO_MOSI 5
-#define GPIO_MISO 0
-#define GPIO_SCLK 4
-#define GPIO_CS 1
-
-#elif CONFIG_IDF_TARGET_ESP32S3
-#define GPIO_HANDSHAKE 2
-#define GPIO_MOSI 11
-#define GPIO_MISO 13
-#define GPIO_SCLK 12
-#define GPIO_CS 10
-
-#endif //CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2
-
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////// Please update the following configuration according to your HardWare spec /////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
 #ifdef CONFIG_IDF_TARGET_ESP32
 #define RCV_HOST    HSPI_HOST
-
 #else
 #define RCV_HOST    SPI2_HOST
-
 #endif
+
+#define GPIO_HANDSHAKE      2
+#define GPIO_MOSI           12
+#define GPIO_MISO           13
+#define GPIO_SCLK           15
+#define GPIO_CS             14
 
 //Called after a transaction is queued and ready for pickup by master. We use this to set the handshake line high.
 void my_post_setup_cb(spi_slave_transaction_t *trans)
@@ -119,7 +86,7 @@ void app_main(void)
     gpio_config_t io_conf = {
         .intr_type = GPIO_INTR_DISABLE,
         .mode = GPIO_MODE_OUTPUT,
-        .pin_bit_mask = (1 << GPIO_HANDSHAKE)
+        .pin_bit_mask = BIT64(GPIO_HANDSHAKE),
     };
 
     //Configure handshake line as output

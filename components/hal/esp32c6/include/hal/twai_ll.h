@@ -123,13 +123,13 @@ static inline void twai_ll_reset_register(int group_id)
 /**
  * @brief Enable TWAI module clock
  *
- * @param hw Start address of the TWAI registers
+ * @param group_id Group ID
  * @param en true to enable, false to disable
  */
 __attribute__((always_inline))
-static inline void twai_ll_enable_clock(twai_dev_t *hw, bool en)
+static inline void twai_ll_enable_clock(int group_id, bool en)
 {
-    if (hw == &TWAI0) {
+    if (group_id == 0) {
         PCR.twai0_func_clk_conf.twai0_func_clk_en = en;
     } else {
         PCR.twai1_func_clk_conf.twai1_func_clk_en = en;
@@ -139,11 +139,11 @@ static inline void twai_ll_enable_clock(twai_dev_t *hw, bool en)
 /**
  * @brief Set clock source for TWAI module
  *
- * @param hw Start address of the TWAI registers
+ * @param group_id Group ID
  * @param clk_src Clock source
  */
 __attribute__((always_inline))
-static inline void twai_ll_set_clock_source(twai_dev_t *hw, twai_clock_source_t clk_src)
+static inline void twai_ll_set_clock_source(int group_id, twai_clock_source_t clk_src)
 {
     uint32_t clk_id = 0;
     bool valid = true;
@@ -158,7 +158,7 @@ static inline void twai_ll_set_clock_source(twai_dev_t *hw, twai_clock_source_t 
     }
 
     if (valid) {
-        if (hw == &TWAI0) {
+        if (group_id == 0) {
             PCR.twai0_func_clk_conf.twai0_func_clk_sel = clk_id;
         } else {
             PCR.twai1_func_clk_conf.twai1_func_clk_sel = clk_id;

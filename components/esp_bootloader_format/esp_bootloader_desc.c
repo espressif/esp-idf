@@ -9,7 +9,6 @@
 #include "esp_bootloader_desc.h"
 #include "sdkconfig.h"
 
-
 // Bootloader version info
 const __attribute__((weak)) __attribute__((section(".data_bootloader_desc"))) esp_bootloader_desc_t esp_bootloader_desc = {
     .magic_byte = ESP_BOOTLOADER_DESC_MAGIC_BYTE,

@@ -15,6 +15,9 @@
 #include "esp_memory_utils.h"
 #include "unity.h"
 #include "test_utils.h"
+#include "esp_freertos_hooks.h"
+#include <string.h>
+#include <inttypes.h>
 
 /*
 Test ...Create...WithCaps() functions
@@ -163,3 +166,88 @@ TEST_CASE("IDF additions: Event group creation with memory caps", "[freertos]")
     // Free the event group
     vEventGroupDelete(evt_group_handle);
 }
+
+#if !CONFIG_FREERTOS_SMP
+/*
+Scheduler suspension behavior has changed in SMP FreeRTOS, thus these test are disabled for SMP FreeRTOS.
+See IDF-5201
+*/
+
+/* ---------------------------------------------------------------------------------------------------------------------
+IDF additions: IDF tick hooks during scheduler suspension
+
+Purpose:
+    - Test that the IDF tick hooks are called even with scheduler suspension
+
+Procedure:
+    Each core gets tested in the role of core X
+        - Create suspend_task pinned to core X which will register a tick hook on core X and suspend scheduler on core X
+        - Register tick hook on core X
+        - suspend_task suspends scheduling on core X for Y milliseconds and then resumes scheduling
+        - Delay suspend_task for Y milliseconds more after scheduler resumption
+        - De-register the tick hook
+        - Verify the tick hook callback count
+
+Expected:
+        - The tick hook is called for Y * 2 times
+--------------------------------------------------------------------------------------------------------------------- */
+
+#define TEST_DELAY_MS 200
+static uint32_t tick_hook_count[portNUM_PROCESSORS];
+
+static void IRAM_ATTR tick_hook(void)
+{
+    tick_hook_count[portGET_CORE_ID()] += portTICK_PERIOD_MS;
+}
+
+static void suspend_task(void *arg)
+{
+    TaskHandle_t main_task_hdl = (TaskHandle_t)arg;
+
+    /* Fetch the current core ID */
+    BaseType_t xCoreID = portGET_CORE_ID();
+
+    /* Register tick hook */
+    memset(tick_hook_count, 0, sizeof(tick_hook_count));
+    esp_register_freertos_tick_hook_for_cpu(tick_hook, xCoreID);
+
+    /* Suspend scheduler */
+    vTaskSuspendAll();
+
+    /* Suspend for TEST_DELAY_MS milliseconds */
+    esp_rom_delay_us(TEST_DELAY_MS * 1000);
+
+    /* Resume scheduler */
+    xTaskResumeAll();
+
+    /* Delay for a further TEST_DELAY_MS milliseconds after scheduler resumption */
+    vTaskDelay(pdMS_TO_TICKS(TEST_DELAY_MS));
+
+    /* De-register tick hook */
+    esp_deregister_freertos_tick_hook_for_cpu(tick_hook, xCoreID);
+
+    /* Verify that the tick hook callback count equals the scheduler suspension time + the delay time.
+     * We add a variation of 2 ticks to account for delays encountered during test setup and teardown.
+     */
+    printf("Core%d tick_hook_count = %"PRIu32"\n", xCoreID, tick_hook_count[xCoreID]);
+    TEST_ASSERT_INT_WITHIN(portTICK_PERIOD_MS * 2, TEST_DELAY_MS * 2, tick_hook_count[xCoreID]);
+
+    /* Signal main task of test completion */
+    xTaskNotifyGive(main_task_hdl);
+
+    /* Cleanup */
+    vTaskDelete(NULL);
+}
+
+TEST_CASE("IDF additions: IDF tick hooks during scheduler suspension", "[freertos]")
+{
+    /* Run test for each core */
+    for (int x = 0; x < portNUM_PROCESSORS; x++) {
+        xTaskCreatePinnedToCore(&suspend_task, "suspend_task", 8192, (void *)xTaskGetCurrentTaskHandle(), UNITY_FREERTOS_PRIORITY, NULL, x);
+
+        /* Wait for test completion */
+        ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+    }
+}
+
+#endif // !CONFIG_FREERTOS_SMP

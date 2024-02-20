@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,6 +12,7 @@
 */
 const spi_signal_conn_t spi_periph_signal[SOC_SPI_PERIPH_NUM] = {
     {
+        // MSPI has dedicated iomux pins
         .spiclk_out = SPICLK_OUT_MUX_IDX,
         .spiclk_in = 0,/* SPI clock is not an input signal*/
         .spid_out = SPID_OUT_IDX,
@@ -35,6 +36,7 @@ const spi_signal_conn_t spi_periph_signal[SOC_SPI_PERIPH_NUM] = {
         .module = PERIPH_SPI_MODULE,
         .hw = (spi_dev_t *) &SPIMEM1,
         .func = SPI_FUNC_NUM,
+
     }, {
         .spiclk_out = FSPICLK_OUT_MUX_IDX,
         .spiclk_in = FSPICLK_IN_IDX,

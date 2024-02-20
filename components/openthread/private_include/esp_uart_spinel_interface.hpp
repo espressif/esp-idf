@@ -21,18 +21,12 @@ namespace openthread {
  * This class defines an UART interface to the Radio Co-processor (RCP).
  *
  */
-class UartSpinelInterface {
+class UartSpinelInterface : public ot::Spinel::SpinelInterface {
 public:
     /**
      * @brief   This constructor of object.
-     *
-     * @param[in] callback         Callback on frame received
-     * @param[in] callback_context  Callback context
-     * @param[in] frame_buffer      A reference to a `RxFrameBuffer` object.
-     *
      */
-    UartSpinelInterface(ot::Spinel::SpinelInterface::ReceiveFrameCallback callback, void *callback_context,
-                        ot::Spinel::SpinelInterface::RxFrameBuffer &frame_buffer);
+    UartSpinelInterface(void);
 
     /**
      * @brief   This destructor of the object.
@@ -41,65 +35,92 @@ public:
     ~UartSpinelInterface(void);
 
     /**
-     * @brief   This method initializes the HDLC interface.
+     * Initializes the interface to the Radio Co-processor (RCP).
      *
-     * @return
-     *      - ESP_OK on success
-     *      - ESP_ERR_NO_MEM if allocation has failed
-     *      - ESP_ERROR on failure
+     * @note This method should be called before reading and sending spinel frames to the interface.
+     *
+     * @param[in] aCallback         Callback on frame received
+     * @param[in] aCallbackContext  Callback context
+     * @param[in] aFrameBuffer      A reference to a `RxFrameBuffer` object.
+     *
+     * @retval OT_ERROR_NONE       The interface is initialized successfully
+     * @retval OT_ERROR_ALREADY    The interface is already initialized.
+     * @retval OT_ERROR_FAILED     Failed to initialize the interface.
+     *
      */
-    esp_err_t Init(const esp_openthread_uart_config_t &radio_uart_config);
+    otError Init(ReceiveFrameCallback aCallback, void *aCallbackContext, RxFrameBuffer &aFrameBuffer);
 
     /**
-     * @brief  This method deinitializes the HDLC interface.
+     * Deinitializes the interface to the RCP.
      *
      */
-    esp_err_t Deinit(void);
+    void Deinit(void);
 
     /**
-     * @brief   This method encodes and sends a spinel frame to Radio Co-processor (RCP) over the socket.
+     * Encodes and sends a spinel frame to Radio Co-processor (RCP) over the socket.
      *
-     * @note    This is blocking call, i.e., if the socket is not writable, this method waits for it to become writable
-     * for up to `kMaxWaitTime` interval.
+     * @param[in] aFrame     A pointer to buffer containing the spinel frame to send.
+     * @param[in] aLength    The length (number of bytes) in the frame.
      *
-     * @param[in] frame     A pointer to buffer containing the spinel frame to send.
-     * @param[in] length    The length (number of bytes) in the frame.
-     *
-     * @return
-     *      -OT_ERROR_NONE     Successfully encoded and sent the spinel frame.
-     *      -OT_ERROR_NO_BUFS  Insufficient buffer space available to encode the frame.
-     *      -OT_ERROR_FAILED   Failed to send due to socket not becoming writable within `kMaxWaitTime`.
+     * @retval OT_ERROR_NONE     Successfully encoded and sent the spinel frame.
+     * @retval OT_ERROR_BUSY     Failed due to another operation is on going.
+     * @retval OT_ERROR_NO_BUFS  Insufficient buffer space available to encode the frame.
+     * @retval OT_ERROR_FAILED   Failed to call the SPI driver to send the frame.
      *
      */
-    otError SendFrame(const uint8_t *frame, uint16_t length);
+    otError SendFrame(const uint8_t *aFrame, uint16_t aLength);
 
     /**
-     * This method waits for receiving part or all of spinel frame within specified timeout.
+     * Waits for receiving part or all of spinel frame within specified interval.
      *
-     * @param[in]  timeout_us  The timeout value in microseconds.
+     * @param[in]  aTimeout  The timeout value in microseconds.
      *
-     * @return
-     *      -OT_ERROR_NONE             Part or all of spinel frame is received.
-     *      -OT_ERROR_RESPONSE_TIMEOUT No spinel frame is received within @p timeout_us.
+     * @retval OT_ERROR_NONE             Part or all of spinel frame is received.
+     * @retval OT_ERROR_RESPONSE_TIMEOUT No spinel frame is received within @p aTimeout.
      *
      */
-    otError WaitForFrame(uint64_t timeout_us);
+    otError WaitForFrame(uint64_t aTimeoutUs);
 
     /**
-     * This method performs uart processing to the RCP.
+     * Updates the file descriptor sets with file descriptors used by the radio driver.
      *
-     * @param[in]  mainloop     The mainloop context
+     * @param[in,out]   aMainloopContext  A pointer to the mainloop context.
      *
      */
-    void Process(const void *mainloop);
+    void UpdateFdSet(void *aMainloopContext);
 
     /**
-     * This methods updates the mainloop context.
+     * Performs radio driver processing.
      *
-     * @param[inout] mainloop   The mainloop context.
+     * @param[in]   aMainloopContext  A pointer to the mainloop context.
      *
      */
-    void Update(void *mainloop);
+    void Process(const void *aMainloopContext);
+
+    /**
+     * Returns the bus speed between the host and the radio.
+     *
+     * @returns   Bus speed in bits/second.
+     *
+     */
+    uint32_t GetBusSpeed(void) const;
+
+    /**
+     * Hardware resets the RCP.
+     *
+     * @retval OT_ERROR_NONE            Successfully reset the RCP.
+     * @retval OT_ERROR_NOT_IMPLEMENT   The hardware reset is not implemented.
+     *
+     */
+    otError HardwareReset(void);
+
+    /**
+     * Returns the RCP interface metrics.
+     *
+     * @returns The RCP interface metrics.
+     *
+     */
+    const otRcpInterfaceMetrics *GetRcpInterfaceMetrics(void) const { return &mInterfaceMetrics; }
 
     /**
      * This methods registers the callback for RCP failure.
@@ -110,26 +131,31 @@ public:
     void RegisterRcpFailureHandler(esp_openthread_rcp_failure_handler handler) { mRcpFailureHandler = handler; }
 
     /**
-     * This method is called when RCP failure detected and resets internal states of the interface.
-     *
-     */
-    otError HardwareReset(void);
-
-    /**
      * This method is called when RCP is reset to recreate the connection with it.
      * Intentionally empty.
      *
      */
     otError ResetConnection(void) { return OT_ERROR_NONE; }
 
-private:
-    enum {
-        /**
-         * Maximum spinel frame size.
-         *
-         */
-        kMaxFrameSize = ot::Spinel::SpinelInterface::kMaxFrameSize,
+    /**
+     * @brief   This method enable the HDLC interface.
+     *
+     * @return
+     *      - ESP_OK on success
+     *      - ESP_ERR_NO_MEM if allocation has failed
+     *      - ESP_ERROR on failure
+     */
+    esp_err_t Enable(const esp_openthread_uart_config_t &radio_uart_config);
 
+    /**
+     * @brief  This method disable the HDLC interface.
+     *
+     */
+    esp_err_t Disable(void);
+
+private:
+
+    enum {
         /**
          * Maximum wait time in Milliseconds for socket to become writable (see `SendFrame`).
          *
@@ -152,9 +178,9 @@ private:
     static void HandleHdlcFrame(void *context, otError error);
     void HandleHdlcFrame(otError error);
 
-    ot::Spinel::SpinelInterface::ReceiveFrameCallback m_receiver_frame_callback;
+    ReceiveFrameCallback m_receiver_frame_callback;
     void *m_receiver_frame_context;
-    ot::Spinel::SpinelInterface::RxFrameBuffer &m_receive_frame_buffer;
+    RxFrameBuffer *m_receive_frame_buffer;
 
     ot::Hdlc::Decoder m_hdlc_decoder;
     uint8_t *m_uart_rx_buffer;
@@ -162,11 +188,15 @@ private:
     esp_openthread_uart_config_t m_uart_config;
     int m_uart_fd;
 
+    otRcpInterfaceMetrics mInterfaceMetrics;
+
     // Non-copyable, intentionally not implemented.
     UartSpinelInterface(const UartSpinelInterface &);
     UartSpinelInterface &operator=(const UartSpinelInterface &);
 
     esp_openthread_rcp_failure_handler mRcpFailureHandler;
+
+    ot::Spinel::FrameBuffer<kMaxFrameSize> encoder_buffer;
 };
 
 } // namespace openthread

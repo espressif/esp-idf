@@ -171,6 +171,62 @@ TEST_CASE("heap_caps metadata test", "[heap]")
     TEST_ASSERT(after.minimum_free_bytes < original.total_free_bytes);
 }
 
+TEST_CASE("heap caps minimum free bytes monitoring", "[heap]")
+{
+    printf("heap caps minimum free bytes monitoring local minimum\n");
+
+    uint32_t caps = MALLOC_CAP_DEFAULT;
+    size_t minimum_free_size_reference = heap_caps_get_minimum_free_size(caps);
+
+    // start monitoring the value of minimum free bytes
+    esp_err_t ret_val = heap_caps_monitor_local_minimum_free_size_start();
+    TEST_ASSERT_EQUAL(ret_val, ESP_OK);
+
+    // get the heap info and check that the value of minimum free bytes return
+    // is different from the previous one (before monitoring)
+    size_t local_minimum_free_size = heap_caps_get_minimum_free_size(caps);
+    TEST_ASSERT(local_minimum_free_size >= minimum_free_size_reference);
+
+    // allocate and free 400 bytes of memory.
+    size_t alloc_size = 400;
+    void *ptr = heap_caps_malloc(400, caps);
+    TEST_ASSERT(ptr != NULL);
+    heap_caps_free(ptr);
+    // Check the new value of minimum free bytes to make sure
+    // it is now lower than the previous one.
+    TEST_ASSERT(heap_caps_get_minimum_free_size(caps) <= local_minimum_free_size - alloc_size);
+
+    // stop monitoring
+    ret_val = heap_caps_monitor_local_minimum_free_size_stop();
+    TEST_ASSERT_EQUAL(ret_val, ESP_OK);
+
+    // get the heap info and check that the value of minimum free bytes is lower than
+    // the local minimum (since the local minimum didn't create a new all time minimum)
+    size_t free_size = heap_caps_get_minimum_free_size(caps);
+    TEST_ASSERT(local_minimum_free_size >= free_size);
+}
+
+TEST_CASE("heap caps minimum free bytes fault cases", "[heap]")
+{
+    printf("heap caps minimum free bytes fault cases\n");
+
+    // start monitoring the value of minimum free bytes
+    esp_err_t ret_val = heap_caps_monitor_local_minimum_free_size_start();
+    TEST_ASSERT_EQUAL(ret_val, ESP_OK);
+
+    // calling start again should be allowed
+    ret_val = heap_caps_monitor_local_minimum_free_size_start();
+    TEST_ASSERT_EQUAL(ret_val, ESP_OK);
+
+    // stop the monitoring
+    ret_val = heap_caps_monitor_local_minimum_free_size_stop();
+    TEST_ASSERT_EQUAL(ret_val, ESP_OK);
+
+    // calling stop monitoring when monitoring is not active should fail
+    ret_val = heap_caps_monitor_local_minimum_free_size_stop();
+    TEST_ASSERT_NOT_EQUAL(ret_val, ESP_OK);
+}
+
 /* Small function runs from IRAM to check that malloc/free/realloc
    all work OK when cache is disabled...
 */

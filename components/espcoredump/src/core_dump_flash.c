@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,7 +15,7 @@
 
 #define BLANK_COREDUMP_SIZE 0xFFFFFFFF
 
-const static DRAM_ATTR char TAG[] __attribute__((unused)) = "esp_core_dump_flash";
+const static char TAG[] __attribute__((unused)) = "esp_core_dump_flash";
 
 #if CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH
 
@@ -27,6 +27,10 @@ typedef struct _core_dump_partition_t
     uint32_t size;
     /* Flag set to true if the partition is encrypted. */
     bool encrypted;
+#if CONFIG_ESP_COREDUMP_FLASH_NO_OVERWRITE
+    /* Flag set to true if the partition is empty. */
+    bool empty;
+#endif
 } core_dump_partition_t;
 
 typedef uint32_t core_dump_crc_t;
@@ -82,6 +86,18 @@ void esp_core_dump_flash_init(void)
     s_core_flash_config.partition.start      = core_part->address;
     s_core_flash_config.partition.size       = core_part->size;
     s_core_flash_config.partition.encrypted  = core_part->encrypted;
+
+#if CONFIG_ESP_COREDUMP_FLASH_NO_OVERWRITE
+    uint32_t core_size = 0;
+    esp_err_t err = esp_partition_read(core_part, 0, &core_size, sizeof(core_size));
+    if (err == ESP_OK) {
+        s_core_flash_config.partition.empty = (core_size == BLANK_COREDUMP_SIZE);
+    } else {
+        ESP_COREDUMP_LOGE("Failed to read core dump data size (%d)!", err);
+        s_core_flash_config.partition.empty = false;
+    }
+#endif
+
     s_core_flash_config.partition_config_crc = esp_core_dump_calc_flash_config_crc();
 
     if (esp_flash_encryption_enabled() && !core_part->encrypted) {
@@ -318,6 +334,13 @@ void esp_core_dump_to_flash(panic_info_t *info)
         return;
     }
 
+#if CONFIG_ESP_COREDUMP_FLASH_NO_OVERWRITE
+    if (!s_core_flash_config.partition.empty) {
+        ESP_COREDUMP_LOGW("Core dump already exists in flash, will not overwrite it with a new core dump");
+        return;
+    }
+#endif
+
     /* Initialize non-OS flash access critical section. */
     spi_flash_guard_set(&g_flash_guard_no_os_ops);
     esp_flash_app_disable_protect(true);
@@ -456,6 +479,13 @@ esp_err_t esp_core_dump_image_erase(void)
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Failed to write core dump partition size (%d)!", err);
     }
+
+#if CONFIG_ESP_COREDUMP_FLASH_NO_OVERWRITE
+    if (!s_core_flash_config.partition.empty) {
+        s_core_flash_config.partition.empty = true;
+        s_core_flash_config.partition_config_crc = esp_core_dump_calc_flash_config_crc();
+    }
+#endif
 
     return err;
 }

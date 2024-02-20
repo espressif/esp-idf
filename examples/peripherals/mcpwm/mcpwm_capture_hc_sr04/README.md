@@ -13,7 +13,7 @@ The signal that HC-SR04 produces (and what can be handled by this example) is a 
 
 Typical signals:
 
-```
+```text
 Trig       +-----+
            |     |
            |     |
@@ -36,19 +36,21 @@ Echo                   +-----+
 
 Connection :
 
+```text
+        +------+              +--------------------------------------+
++-------+      |              |                                      |
+|       |  VCC +--------------+ 5V                                   |
++-------+      |              |                                      |
+        + Echo +----=====>----+ HC_SR04_ECHO_GPIO (internal pull up) |
+        |      |              |                                      |
+        + Trig +----<=====----+ HC_SR04_TRIG_GPIO                    |
++-------|      |              |                                      |
+|       |  GND +--------------+ GND                                  |
++-------|      |              |                                      |
+        +------+              +--------------------------------------+
 ```
-        +------+              +---------------------------------+
-+-------+      |              |                                 |
-|       |  VCC +--------------+ 5V                              |
-+-------+      |              |                                 |
-        + Echo +----=====>----+ GPIO18 (internal pull up)       |
-        |      |              |                                 |
-        + Trig +----<=====----+ GPIO19                          |
-+-------|      |              |                                 |
-|       |  GND +--------------+ GND                             |
-+-------|      |              |                                 |
-        +------+              +---------------------------------+
-```
+
+You can change the GPIO number according to your board, by `HC_SR04_TRIG_GPIO` and `HC_SR04_ECHO_GPIO` in the [source code](main/mcpwm_capture_hc_sr04.c).
 
 ### Build and Flash
 
@@ -60,7 +62,7 @@ See the [Getting Started Guide](https://docs.espressif.com/projects/esp-idf/en/l
 
 ## Example Output
 
-```
+```text
 I (0) cpu_start: Starting scheduler on APP CPU.
 I (304) example: Create capture queue
 I (304) example: Install capture timer
@@ -78,7 +80,7 @@ I (734) example: Pulse width: 188.98us, Measured distance: 3.26cm
 I (834) example: Pulse width: 188.99us, Measured distance: 3.26cm
 ```
 
-This example runs at 10Hz sampling rate. Measure data that out of the range is dropped and only valid measurement is printed out.
+This example runs at 10 Hz sampling rate. Measure data that out of the range is dropped and only valid measurement is printed out.
 
 ## Troubleshooting
 

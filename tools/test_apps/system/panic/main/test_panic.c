@@ -19,6 +19,8 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
+#include "hal/mpu_hal.h"
+
 /* Test utility function */
 
 extern void esp_restart_noos(void) __attribute__ ((noreturn));
@@ -112,16 +114,6 @@ void test_task_wdt_cpu1(void)
     }
 }
 
-void test_task_wdt_both_cpus(void)
-{
-    xTaskCreatePinnedToCore(infinite_loop, "Infinite loop", 1024, NULL, 4, NULL, 1);
-    /* Give some time to the task on CPU 1 to be scheduled */
-    vTaskDelay(1);
-    xTaskCreatePinnedToCore(infinite_loop, "Infinite loop", 1024, NULL, 4, NULL, 0);
-    while (true) {
-        ;
-    }
-}
 #endif
 
 void __attribute__((no_sanitize_undefined)) test_storeprohibited(void)
@@ -202,3 +194,31 @@ void test_ub(void)
     uint8_t stuff[1] = {rand()};
     printf("%d\n", stuff[rand()]);
 }
+
+/* NOTE: The following test verifies the behaviour for the
+ * Xtensa-specific MPU instructions (Refer WDTLB, DSYNC, WDTIB, ISYNC)
+ * used for memory protection.
+ *
+ * However, this test is not valid for S2 and S3, because they have PMS
+ * enabled on top of this, giving unpredicatable results.
+ */
+#if CONFIG_IDF_TARGET_ESP32
+void test_illegal_access(void)
+{
+    intptr_t addr = 0x80000000; // MPU region 4
+    volatile int __attribute__((unused)) val = INT16_MAX;
+
+    // Marked as an illegal access region at startup in ESP32, ESP32S2.
+    // Make accessible temporarily.
+    mpu_hal_set_region_access(4, MPU_REGION_RW);
+
+    val = *((int*) addr);
+    printf("[1] val: %d at %p\n", val, (void *)addr);
+
+    // Make access to region illegal again.
+    mpu_hal_set_region_access(4, MPU_REGION_ILLEGAL);
+    val = *((int*) addr);
+    // Does not reach here as device resets due to illegal access
+    printf("[2] val: %d at %p\n", val, (void *)addr);
+}
+#endif

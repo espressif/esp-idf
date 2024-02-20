@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -50,12 +50,12 @@ TEST_CASE("portMUX spinlocks (no contention)", "[freertos]")
     BENCHMARK_END("no contention lock");
 
 #ifdef CONFIG_FREERTOS_UNICORE
-    TEST_PERFORMANCE_LESS_THAN(FREERTOS_SPINLOCK_CYCLES_PER_OP_UNICORE, "%"PRIu32" cycles/op", ((end - start)/REPEAT_OPS));
+    TEST_PERFORMANCE_LESS_THAN(FREERTOS_SPINLOCK_CYCLES_PER_OP_UNICORE, "%"PRIu32" cycles/op", ((end - start) / REPEAT_OPS));
 #else
 #if CONFIG_SPIRAM
-    TEST_PERFORMANCE_LESS_THAN(FREERTOS_SPINLOCK_CYCLES_PER_OP_PSRAM, "%"PRIu32" cycles/op", ((end - start)/REPEAT_OPS));
+    TEST_PERFORMANCE_LESS_THAN(FREERTOS_SPINLOCK_CYCLES_PER_OP_PSRAM, "%"PRIu32" cycles/op", ((end - start) / REPEAT_OPS));
 #else
-    TEST_PERFORMANCE_LESS_THAN(FREERTOS_SPINLOCK_CYCLES_PER_OP, "%"PRIu32" cycles/op", ((end - start)/REPEAT_OPS));
+    TEST_PERFORMANCE_LESS_THAN(FREERTOS_SPINLOCK_CYCLES_PER_OP, "%"PRIu32" cycles/op", ((end - start) / REPEAT_OPS));
 #endif
 #endif
 }
@@ -107,8 +107,8 @@ TEST_CASE("portMUX cross-core locking", "[freertos]")
     xTaskCreatePinnedToCore(task_shared_value_increment, "INC0", 2048, NULL, UNITY_FREERTOS_PRIORITY + 1, NULL, UNITY_FREERTOS_CPU ? 0 : 1);
     xTaskCreatePinnedToCore(task_shared_value_increment, "INC1", 2048, NULL, UNITY_FREERTOS_PRIORITY + 1, NULL, UNITY_FREERTOS_CPU);
 
-    for(int i = 0; i < 2; i++) {
-        if(!xSemaphoreTake(done_sem, 10000/portTICK_PERIOD_MS)) {
+    for (int i = 0; i < 2; i++) {
+        if (!xSemaphoreTake(done_sem, 10000 / portTICK_PERIOD_MS)) {
             TEST_FAIL_MESSAGE("done_sem not released by test task");
         }
     }
@@ -139,8 +139,8 @@ void portmux_high_contention_test(uint32_t lock_malloc_caps)
         xTaskCreatePinnedToCore(task_shared_value_increment, "INC1", 2048, NULL, tskIDLE_PRIORITY + 1 + i, NULL, UNITY_FREERTOS_CPU);
     }
 
-    for(int i = 0; i < TOTAL_TASKS; i++) {
-        if(!xSemaphoreTake(done_sem, 10000/portTICK_PERIOD_MS)) {
+    for (int i = 0; i < TOTAL_TASKS; i++) {
+        if (!xSemaphoreTake(done_sem, 10000 / portTICK_PERIOD_MS)) {
             TEST_FAIL_MESSAGE("done_sem not released by test task");
         }
     }

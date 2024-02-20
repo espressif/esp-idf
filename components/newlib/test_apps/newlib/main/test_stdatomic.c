@@ -218,104 +218,139 @@ TEST_EXCLUSION(8)
 
 #define ITER_COUNT 20000
 
-#define TEST_RACE_OPERATION(NAME, LHSTYPE, PRE, POST, INIT, FINAL)           \
-                                                                             \
-static _Atomic LHSTYPE var_##NAME = (INIT);                                  \
-                                                                             \
-static void *test_thread_##NAME (void *arg)                                  \
-{                                                                            \
-  for (int i = 0; i < ITER_COUNT; i++)                                       \
-    {                                                                        \
-      PRE var_##NAME POST;                                                   \
-    }                                                                        \
-  return NULL;                                                               \
-}                                                                            \
-                                                                             \
-TEST_CASE("stdatomic - test_" #NAME, "[newlib_stdatomic]")                  \
-{                                                                            \
-  pthread_t thread_id1;                                                      \
-  pthread_t thread_id2;                                                      \
-  esp_pthread_cfg_t cfg = esp_pthread_get_default_config();                  \
-  cfg.pin_to_core = (xPortGetCoreID() + 1) % portNUM_PROCESSORS;             \
-  esp_pthread_set_cfg(&cfg);                                                 \
-  pthread_create (&thread_id1, NULL, test_thread_##NAME, NULL);              \
-  cfg.pin_to_core = xPortGetCoreID();                                        \
-  esp_pthread_set_cfg(&cfg);                                                 \
-  pthread_create (&thread_id2, NULL, test_thread_##NAME, NULL);              \
-  pthread_join (thread_id1, NULL);                                           \
-  pthread_join (thread_id2, NULL);                                           \
-  TEST_ASSERT_EQUAL((FINAL), var_##NAME);                                    \
+#define TEST_RACE_OPERATION(ASSERT_SUFFIX, NAME, LHSTYPE, PRE, POST, INIT, FINAL) \
+                                                                                  \
+static _Atomic LHSTYPE var_##NAME;                                                \
+                                                                                  \
+static void *test_thread_##NAME (void *arg)                                       \
+{                                                                                 \
+  for (int i = 0; i < ITER_COUNT; i++)                                            \
+    {                                                                             \
+      PRE var_##NAME POST;                                                        \
+    }                                                                             \
+  return NULL;                                                                    \
+}                                                                                 \
+                                                                                  \
+TEST_CASE("stdatomic - test_" #NAME, "[newlib_stdatomic]")                        \
+{                                                                                 \
+  pthread_t thread_id1;                                                           \
+  pthread_t thread_id2;                                                           \
+  var_##NAME = (INIT);                                                            \
+  esp_pthread_cfg_t cfg = esp_pthread_get_default_config();                       \
+  cfg.pin_to_core = (xPortGetCoreID() + 1) % portNUM_PROCESSORS;                  \
+  esp_pthread_set_cfg(&cfg);                                                      \
+  pthread_create (&thread_id1, NULL, test_thread_##NAME, NULL);                   \
+  cfg.pin_to_core = xPortGetCoreID();                                             \
+  esp_pthread_set_cfg(&cfg);                                                      \
+  pthread_create (&thread_id2, NULL, test_thread_##NAME, NULL);                   \
+  pthread_join (thread_id1, NULL);                                                \
+  pthread_join (thread_id2, NULL);                                                \
+  TEST_ASSERT_EQUAL##ASSERT_SUFFIX((FINAL), var_##NAME);                          \
 }
 
-TEST_RACE_OPERATION (uint8_add, uint8_t, , += 1, 0, (uint8_t) (2*ITER_COUNT))
-TEST_RACE_OPERATION (uint8_add_3, uint8_t, , += 3, 0, (uint8_t) (6*ITER_COUNT))
-TEST_RACE_OPERATION (uint8_postinc, uint8_t, , ++, 0, (uint8_t) (2*ITER_COUNT))
-TEST_RACE_OPERATION (uint8_preinc, uint8_t, ++, , 0, (uint8_t) (2*ITER_COUNT))
-TEST_RACE_OPERATION (uint8_sub, uint8_t, , -= 1, 0, (uint8_t) -(2*ITER_COUNT))
-TEST_RACE_OPERATION (uint8_sub_3, uint8_t, , -= 3, 0, (uint8_t) -(6*ITER_COUNT))
-TEST_RACE_OPERATION (uint8_postdec, uint8_t, , --, 0, (uint8_t) -(2*ITER_COUNT))
-TEST_RACE_OPERATION (uint8_predec, uint8_t, --, , 0, (uint8_t) -(2*ITER_COUNT))
-TEST_RACE_OPERATION (uint8_mul, uint8_t, , *= 3, 1, (uint8_t) 0x1)
+// Note that the assert at the end is doing an excat bitwise comparison.
+// This easily can fail due to rounding errors. However, there is currently
+// no corresponding Unity assert macro for long double. USE THIS WITH CARE!
+#define TEST_RACE_OPERATION_LONG_DOUBLE(NAME, LHSTYPE, PRE, POST, INIT, FINAL) \
+                                                                               \
+static _Atomic LHSTYPE var_##NAME;                                             \
+                                                                               \
+static void *test_thread_##NAME (void *arg)                                    \
+{                                                                              \
+  for (int i = 0; i < ITER_COUNT; i++)                                         \
+    {                                                                          \
+      PRE var_##NAME POST;                                                     \
+    }                                                                          \
+  return NULL;                                                                 \
+}                                                                              \
+                                                                               \
+TEST_CASE("stdatomic - test_" #NAME, "[newlib_stdatomic]")                     \
+{                                                                              \
+  pthread_t thread_id1;                                                        \
+  pthread_t thread_id2;                                                        \
+  var_##NAME = (INIT);                                                         \
+  const LHSTYPE EXPECTED = (FINAL);                                            \
+  esp_pthread_cfg_t cfg = esp_pthread_get_default_config();                    \
+  cfg.pin_to_core = (xPortGetCoreID() + 1) % portNUM_PROCESSORS;               \
+  esp_pthread_set_cfg(&cfg);                                                   \
+  pthread_create (&thread_id1, NULL, test_thread_##NAME, NULL);                \
+  cfg.pin_to_core = xPortGetCoreID();                                          \
+  esp_pthread_set_cfg(&cfg);                                                   \
+  pthread_create (&thread_id2, NULL, test_thread_##NAME, NULL);                \
+  pthread_join (thread_id1, NULL);                                             \
+  pthread_join (thread_id2, NULL);                                             \
+  TEST_ASSERT(EXPECTED == var_##NAME);                                         \
+}
 
-TEST_RACE_OPERATION (uint16_add, uint16_t, , += 1, 0, (uint16_t) (2*ITER_COUNT))
-TEST_RACE_OPERATION (uint16_add_3, uint16_t, , += 3, 0, (uint16_t) (6*ITER_COUNT))
-TEST_RACE_OPERATION (uint16_postinc, uint16_t, , ++, 0, (uint16_t) (2*ITER_COUNT))
-TEST_RACE_OPERATION (uint16_preinc, uint16_t, ++, , 0, (uint16_t) (2*ITER_COUNT))
-TEST_RACE_OPERATION (uint16_sub, uint16_t, , -= 1, 0, (uint16_t) -(2*ITER_COUNT))
-TEST_RACE_OPERATION (uint16_sub_3, uint16_t, , -= 3, 0, (uint16_t) -(6*ITER_COUNT))
-TEST_RACE_OPERATION (uint16_postdec, uint16_t, , --, 0, (uint16_t) -(2*ITER_COUNT))
-TEST_RACE_OPERATION (uint16_predec, uint16_t, --, , 0, (uint16_t) -(2*ITER_COUNT))
-TEST_RACE_OPERATION (uint16_mul, uint16_t, , *= 3, 1, (uint16_t) 0x6D01)
+TEST_RACE_OPERATION ( ,uint8_add, uint8_t, , += 1, 0, (uint8_t) (2*ITER_COUNT))
+TEST_RACE_OPERATION ( ,uint8_add_3, uint8_t, , += 3, 0, (uint8_t) (6*ITER_COUNT))
+TEST_RACE_OPERATION ( ,uint8_postinc, uint8_t, , ++, 0, (uint8_t) (2*ITER_COUNT))
+TEST_RACE_OPERATION ( ,uint8_preinc, uint8_t, ++, , 0, (uint8_t) (2*ITER_COUNT))
+TEST_RACE_OPERATION ( ,uint8_sub, uint8_t, , -= 1, 0, (uint8_t) -(2*ITER_COUNT))
+TEST_RACE_OPERATION ( ,uint8_sub_3, uint8_t, , -= 3, 0, (uint8_t) -(6*ITER_COUNT))
+TEST_RACE_OPERATION ( ,uint8_postdec, uint8_t, , --, 0, (uint8_t) -(2*ITER_COUNT))
+TEST_RACE_OPERATION ( ,uint8_predec, uint8_t, --, , 0, (uint8_t) -(2*ITER_COUNT))
+TEST_RACE_OPERATION ( ,uint8_mul, uint8_t, , *= 3, 1, (uint8_t) 0x1)
 
-TEST_RACE_OPERATION (uint32_add, uint32_t, , += 1, 0, (uint32_t) (2*ITER_COUNT))
-TEST_RACE_OPERATION (uint32_add_3, uint32_t, , += 3, 0, (uint32_t) (6*ITER_COUNT))
-TEST_RACE_OPERATION (uint32_postinc, uint32_t, , ++, 0, (uint32_t) (2*ITER_COUNT))
-TEST_RACE_OPERATION (uint32_preinc, uint32_t, ++, , 0, (uint32_t) (2*ITER_COUNT))
-TEST_RACE_OPERATION (uint32_sub, uint32_t, , -= 1, 0, (uint32_t) -(2*ITER_COUNT))
-TEST_RACE_OPERATION (uint32_sub_3, uint32_t, , -= 3, 0, (uint32_t) -(6*ITER_COUNT))
-TEST_RACE_OPERATION (uint32_postdec, uint32_t, , --, 0, (uint32_t) -(2*ITER_COUNT))
-TEST_RACE_OPERATION (uint32_predec, uint32_t, --, , 0, (uint32_t) -(2*ITER_COUNT))
-TEST_RACE_OPERATION (uint32_mul, uint32_t, , *= 3, 1, (uint32_t) 0xC1E36D01U)
+TEST_RACE_OPERATION ( ,uint16_add, uint16_t, , += 1, 0, (uint16_t) (2*ITER_COUNT))
+TEST_RACE_OPERATION ( ,uint16_add_3, uint16_t, , += 3, 0, (uint16_t) (6*ITER_COUNT))
+TEST_RACE_OPERATION ( ,uint16_postinc, uint16_t, , ++, 0, (uint16_t) (2*ITER_COUNT))
+TEST_RACE_OPERATION ( ,uint16_preinc, uint16_t, ++, , 0, (uint16_t) (2*ITER_COUNT))
+TEST_RACE_OPERATION ( ,uint16_sub, uint16_t, , -= 1, 0, (uint16_t) -(2*ITER_COUNT))
+TEST_RACE_OPERATION ( ,uint16_sub_3, uint16_t, , -= 3, 0, (uint16_t) -(6*ITER_COUNT))
+TEST_RACE_OPERATION ( ,uint16_postdec, uint16_t, , --, 0, (uint16_t) -(2*ITER_COUNT))
+TEST_RACE_OPERATION ( ,uint16_predec, uint16_t, --, , 0, (uint16_t) -(2*ITER_COUNT))
+TEST_RACE_OPERATION ( ,uint16_mul, uint16_t, , *= 3, 1, (uint16_t) 0x6D01)
 
-TEST_RACE_OPERATION (uint64_add, uint64_t, , += 1, 0, (uint64_t) (2*ITER_COUNT))
-TEST_RACE_OPERATION (uint64_add_3, uint64_t, , += 3, 0, (uint64_t) (6*ITER_COUNT))
-TEST_RACE_OPERATION (uint64_add_neg, uint64_t, , += 1, -10000, (uint64_t) (2*ITER_COUNT-10000))
-TEST_RACE_OPERATION (uint64_postinc, uint64_t, , ++, 0, (uint64_t) (2*ITER_COUNT))
-TEST_RACE_OPERATION (uint64_postinc_neg, uint64_t, , ++, -10000, (uint64_t) (2*ITER_COUNT-10000))
-TEST_RACE_OPERATION (uint64_preinc, uint64_t, ++, , 0, (uint64_t) (2*ITER_COUNT))
-TEST_RACE_OPERATION (uint64_preinc_neg, uint64_t, ++, , -10000, (uint64_t) (2*ITER_COUNT-10000))
-TEST_RACE_OPERATION (uint64_sub, uint64_t, , -= 1, 0, (uint64_t) -(2*ITER_COUNT))
-TEST_RACE_OPERATION (uint64_sub_3, uint64_t, , -= 3, 0, (uint64_t) -(6*ITER_COUNT))
-TEST_RACE_OPERATION (uint64_sub_neg, uint64_t, , -= 1, 10000, (uint64_t) ((-2*ITER_COUNT)+10000))
-TEST_RACE_OPERATION (uint64_postdec, uint64_t, , --, 0, (uint64_t) -(2*ITER_COUNT))
-TEST_RACE_OPERATION (uint64_postdec_neg, uint64_t, , --, 10000, (uint64_t) ((-2*ITER_COUNT)+10000))
-TEST_RACE_OPERATION (uint64_predec, uint64_t, --, , 0, (uint64_t) -(2*ITER_COUNT))
-TEST_RACE_OPERATION (uint64_predec_neg, uint64_t, --, , 10000, (uint64_t) ((-2*ITER_COUNT)+10000))
-TEST_RACE_OPERATION (uint64_mul, uint64_t, , *= 3, 1, (uint64_t) 0x988EE974C1E36D01ULL)
+TEST_RACE_OPERATION ( ,uint32_add, uint32_t, , += 1, 0, (uint32_t) (2*ITER_COUNT))
+TEST_RACE_OPERATION ( ,uint32_add_3, uint32_t, , += 3, 0, (uint32_t) (6*ITER_COUNT))
+TEST_RACE_OPERATION ( ,uint32_postinc, uint32_t, , ++, 0, (uint32_t) (2*ITER_COUNT))
+TEST_RACE_OPERATION ( ,uint32_preinc, uint32_t, ++, , 0, (uint32_t) (2*ITER_COUNT))
+TEST_RACE_OPERATION ( ,uint32_sub, uint32_t, , -= 1, 0, (uint32_t) -(2*ITER_COUNT))
+TEST_RACE_OPERATION ( ,uint32_sub_3, uint32_t, , -= 3, 0, (uint32_t) -(6*ITER_COUNT))
+TEST_RACE_OPERATION ( ,uint32_postdec, uint32_t, , --, 0, (uint32_t) -(2*ITER_COUNT))
+TEST_RACE_OPERATION ( ,uint32_predec, uint32_t, --, , 0, (uint32_t) -(2*ITER_COUNT))
+TEST_RACE_OPERATION ( ,uint32_mul, uint32_t, , *= 3, 1, (uint32_t) 0xC1E36D01U)
 
-TEST_RACE_OPERATION (float_add, float, , += 1, 0, (2*ITER_COUNT))
-TEST_RACE_OPERATION (complex_float_add, _Complex float, , += 1, 0, (2*ITER_COUNT))
-TEST_RACE_OPERATION (float_postinc, float, , ++, 0, (2*ITER_COUNT))
-TEST_RACE_OPERATION (float_preinc, float, ++, , 0, (2*ITER_COUNT))
-TEST_RACE_OPERATION (float_sub, float, , -= 1, 0, -(2*ITER_COUNT))
-TEST_RACE_OPERATION (complex_float_sub, _Complex float, , -= 1, 0, -(2*ITER_COUNT))
-TEST_RACE_OPERATION (float_postdec, float, , --, 0, -(2*ITER_COUNT))
-TEST_RACE_OPERATION (float_predec, float, --, , 0, -(2*ITER_COUNT))
+TEST_RACE_OPERATION ( ,uint64_add, uint64_t, , += 1, 0, (uint64_t) (2*ITER_COUNT))
+TEST_RACE_OPERATION ( ,uint64_add_3, uint64_t, , += 3, 0, (uint64_t) (6*ITER_COUNT))
+TEST_RACE_OPERATION ( ,uint64_add_neg, uint64_t, , += 1, -10000, (uint64_t) (2*ITER_COUNT-10000))
+TEST_RACE_OPERATION ( ,uint64_postinc, uint64_t, , ++, 0, (uint64_t) (2*ITER_COUNT))
+TEST_RACE_OPERATION ( ,uint64_postinc_neg, uint64_t, , ++, -10000, (uint64_t) (2*ITER_COUNT-10000))
+TEST_RACE_OPERATION ( ,uint64_preinc, uint64_t, ++, , 0, (uint64_t) (2*ITER_COUNT))
+TEST_RACE_OPERATION ( ,uint64_preinc_neg, uint64_t, ++, , -10000, (uint64_t) (2*ITER_COUNT-10000))
+TEST_RACE_OPERATION ( ,uint64_sub, uint64_t, , -= 1, 0, (uint64_t) -(2*ITER_COUNT))
+TEST_RACE_OPERATION ( ,uint64_sub_3, uint64_t, , -= 3, 0, (uint64_t) -(6*ITER_COUNT))
+TEST_RACE_OPERATION ( ,uint64_sub_neg, uint64_t, , -= 1, 10000, (uint64_t) ((-2*ITER_COUNT)+10000))
+TEST_RACE_OPERATION ( ,uint64_postdec, uint64_t, , --, 0, (uint64_t) -(2*ITER_COUNT))
+TEST_RACE_OPERATION ( ,uint64_postdec_neg, uint64_t, , --, 10000, (uint64_t) ((-2*ITER_COUNT)+10000))
+TEST_RACE_OPERATION ( ,uint64_predec, uint64_t, --, , 0, (uint64_t) -(2*ITER_COUNT))
+TEST_RACE_OPERATION ( ,uint64_predec_neg, uint64_t, --, , 10000, (uint64_t) ((-2*ITER_COUNT)+10000))
+TEST_RACE_OPERATION ( ,uint64_mul, uint64_t, , *= 3, 1, (uint64_t) 0x988EE974C1E36D01ULL)
 
-TEST_RACE_OPERATION (double_add, double, , += 1, 0, (2*ITER_COUNT))
-TEST_RACE_OPERATION (complex_double_add, _Complex double, , += 1, 0, (2*ITER_COUNT))
-TEST_RACE_OPERATION (double_postinc, double, , ++, 0, (2*ITER_COUNT))
-TEST_RACE_OPERATION (double_preinc, double, ++, , 0, (2*ITER_COUNT))
-TEST_RACE_OPERATION (double_sub, double, , -= 1, 0, -(2*ITER_COUNT))
-TEST_RACE_OPERATION (complex_double_sub, _Complex double, , -= 1, 0, -(2*ITER_COUNT))
-TEST_RACE_OPERATION (double_postdec, double, , --, 0, -(2*ITER_COUNT))
-TEST_RACE_OPERATION (double_predec, double, --, , 0, -(2*ITER_COUNT))
+TEST_RACE_OPERATION (_FLOAT ,float_add, float, , += 1, 0, (2*ITER_COUNT))
+TEST_RACE_OPERATION (_FLOAT ,complex_float_add, _Complex float, , += 1, 0, (2*ITER_COUNT))
+TEST_RACE_OPERATION (_FLOAT ,float_postinc, float, , ++, 0, (2*ITER_COUNT))
+TEST_RACE_OPERATION (_FLOAT ,float_preinc, float, ++, , 0, (2*ITER_COUNT))
+TEST_RACE_OPERATION (_FLOAT ,float_sub, float, , -= 1, 0, -(2*ITER_COUNT))
+TEST_RACE_OPERATION (_FLOAT ,complex_float_sub, _Complex float, , -= 1, 0, -(2*ITER_COUNT))
+TEST_RACE_OPERATION (_FLOAT ,float_postdec, float, , --, 0, -(2*ITER_COUNT))
+TEST_RACE_OPERATION (_FLOAT ,float_predec, float, --, , 0, -(2*ITER_COUNT))
 
-TEST_RACE_OPERATION (long_double_add, long double, , += 1, 0, (2*ITER_COUNT))
-TEST_RACE_OPERATION (complex_long_double_add, _Complex long double, , += 1, 0, (2*ITER_COUNT))
-TEST_RACE_OPERATION (long_double_postinc, long double, , ++, 0, (2*ITER_COUNT))
-TEST_RACE_OPERATION (long_double_sub, long double, , -= 1, 0, -(2*ITER_COUNT))
-TEST_RACE_OPERATION (long_double_preinc, long double, ++, , 0, (2*ITER_COUNT))
-TEST_RACE_OPERATION (complex_long_double_sub, _Complex long double, , -= 1, 0, -(2*ITER_COUNT))
-TEST_RACE_OPERATION (long_double_postdec, long double, , --, 0, -(2*ITER_COUNT))
-TEST_RACE_OPERATION (long_double_predec, long double, --, , 0, -(2*ITER_COUNT))
+TEST_RACE_OPERATION (_DOUBLE ,double_add, double, , += 1, 0, (2*ITER_COUNT))
+TEST_RACE_OPERATION (_DOUBLE ,complex_double_add, _Complex double, , += 1, 0, (2*ITER_COUNT))
+TEST_RACE_OPERATION (_DOUBLE ,double_postinc, double, , ++, 0, (2*ITER_COUNT))
+TEST_RACE_OPERATION (_DOUBLE ,double_preinc, double, ++, , 0, (2*ITER_COUNT))
+TEST_RACE_OPERATION (_DOUBLE ,double_sub, double, , -= 1, 0, -(2*ITER_COUNT))
+TEST_RACE_OPERATION (_DOUBLE ,complex_double_sub, _Complex double, , -= 1, 0, -(2*ITER_COUNT))
+TEST_RACE_OPERATION (_DOUBLE ,double_postdec, double, , --, 0, -(2*ITER_COUNT))
+TEST_RACE_OPERATION (_DOUBLE ,double_predec, double, --, , 0, -(2*ITER_COUNT))
+
+TEST_RACE_OPERATION_LONG_DOUBLE (long_double_add, long double, , += 1, 0, (2*ITER_COUNT))
+TEST_RACE_OPERATION_LONG_DOUBLE (complex_long_double_add, _Complex long double, , += 1, 0, (2*ITER_COUNT))
+TEST_RACE_OPERATION_LONG_DOUBLE (long_double_postinc, long double, , ++, 0, (2*ITER_COUNT))
+TEST_RACE_OPERATION_LONG_DOUBLE (long_double_sub, long double, , -= 1, 0, -(2*ITER_COUNT))
+TEST_RACE_OPERATION_LONG_DOUBLE (long_double_preinc, long double, ++, , 0, (2*ITER_COUNT))
+TEST_RACE_OPERATION_LONG_DOUBLE (complex_long_double_sub, _Complex long double, , -= 1, 0, -(2*ITER_COUNT))
+TEST_RACE_OPERATION_LONG_DOUBLE (long_double_postdec, long double, , --, 0, -(2*ITER_COUNT))
+TEST_RACE_OPERATION_LONG_DOUBLE (long_double_predec, long double, --, , 0, -(2*ITER_COUNT))

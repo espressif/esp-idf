@@ -83,7 +83,15 @@ void i2c_hal_master_init(i2c_hal_context_t *hal);
  *
  * @return None
  */
-void i2c_hal_set_bus_timing(i2c_hal_context_t *hal, int scl_freq, i2c_clock_source_t src_clk, int source_freq);
+void _i2c_hal_set_bus_timing(i2c_hal_context_t *hal, int scl_freq, i2c_clock_source_t src_clk, int source_freq);
+
+#if SOC_PERIPH_CLK_CTRL_SHARED
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define i2c_hal_set_bus_timing(...) do {(void)__DECLARE_RCC_ATOMIC_ENV; _i2c_hal_set_bus_timing(__VA_ARGS__);} while(0)
+#else
+#define i2c_hal_set_bus_timing(...)   _i2c_hal_set_bus_timing(__VA_ARGS__)
+#endif
 
 /**
  * @brief  I2C hardware FSM reset
@@ -120,14 +128,30 @@ void i2c_hal_master_handle_rx_event(i2c_hal_context_t *hal, i2c_intr_event_t *ev
  * @param hal Context of the HAL
  * @param i2c_port I2C port number.
  */
-void i2c_hal_init(i2c_hal_context_t *hal, int i2c_port);
+void _i2c_hal_init(i2c_hal_context_t *hal, int i2c_port);
+
+#if SOC_PERIPH_CLK_CTRL_SHARED
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define i2c_hal_init(...) do {(void)__DECLARE_RCC_ATOMIC_ENV; _i2c_hal_init(__VA_ARGS__);} while(0)
+#else
+#define i2c_hal_init(...)   _i2c_hal_init(__VA_ARGS__)
+#endif
 
 /**
  * @brief Deinit I2C hal layer
  *
  * @param hal Context of the HAL
  */
-void i2c_hal_deinit(i2c_hal_context_t *hal);
+void _i2c_hal_deinit(i2c_hal_context_t *hal);
+
+#if SOC_PERIPH_CLK_CTRL_SHARED
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define i2c_hal_deinit(...) do {(void)__DECLARE_RCC_ATOMIC_ENV; _i2c_hal_deinit(__VA_ARGS__);} while(0)
+#else
+#define i2c_hal_deinit(...)   _i2c_hal_deinit(__VA_ARGS__)
+#endif
 
 /**
  * @brief Start I2C master transaction

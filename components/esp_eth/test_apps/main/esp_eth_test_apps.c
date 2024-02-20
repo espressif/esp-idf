@@ -164,6 +164,23 @@ TEST_CASE("ethernet io speed/duplex/autonegotiation", "[ethernet]")
     // set new speed
     TEST_ESP_OK(esp_eth_ioctl(eth_handle, ETH_CMD_S_SPEED, &speed));
 
+// *** LAN8720 deviation ***
+// Rationale: When the device is in manual 100BASE-TX or 10BASE-T modes with Auto-MDIX enabled, the PHY does not link to a
+//            link partner that is configured for auto-negotiation. See LAN8720 errata for more details.
+#ifdef CONFIG_TARGET_ETH_PHY_DEVICE_LAN8720
+    esp_eth_phy_reg_rw_data_t reg;
+    uint32_t reg_val;
+    reg.reg_addr = 27;
+    reg.reg_value_p = &reg_val;
+    TEST_ESP_OK(esp_eth_ioctl(eth_handle, ETH_CMD_READ_PHY_REG, &reg));
+    reg_val |= 0x8000;
+    TEST_ESP_OK(esp_eth_ioctl(eth_handle, ETH_CMD_WRITE_PHY_REG, &reg));
+    uint32_t reg_val_act;
+    reg.reg_value_p = &reg_val_act;
+    TEST_ESP_OK(esp_eth_ioctl(eth_handle, ETH_CMD_READ_PHY_REG, &reg));
+    TEST_ASSERT_EQUAL(reg_val, reg_val_act);
+#endif
+
     // start the driver and wait for connection establish
     esp_eth_start(eth_handle);
     bits = xEventGroupWaitBits(eth_event_group, ETH_CONNECT_BIT, true, true, pdMS_TO_TICKS(ETH_CONNECT_TIMEOUT_MS));
@@ -242,6 +259,19 @@ TEST_CASE("ethernet io speed/duplex/autonegotiation", "[ethernet]")
     esp_eth_stop(eth_handle);
     auto_nego_en = true;
     esp_eth_ioctl(eth_handle, ETH_CMD_S_AUTONEGO, &auto_nego_en);
+
+// *** LAN8720 deviation ***
+// Rationale: See above
+#ifdef CONFIG_TARGET_ETH_PHY_DEVICE_LAN8720
+    reg.reg_value_p = &reg_val;
+    TEST_ESP_OK(esp_eth_ioctl(eth_handle, ETH_CMD_READ_PHY_REG, &reg));
+    reg_val &= ~0x8000;
+    TEST_ESP_OK(esp_eth_ioctl(eth_handle, ETH_CMD_WRITE_PHY_REG, &reg));
+    reg.reg_value_p = &reg_val_act;
+    TEST_ESP_OK(esp_eth_ioctl(eth_handle, ETH_CMD_READ_PHY_REG, &reg));
+    TEST_ASSERT_EQUAL(reg_val, reg_val_act);
+#endif
+
     esp_eth_start(eth_handle);
     bits = xEventGroupWaitBits(eth_event_group, ETH_CONNECT_BIT, true, true, pdMS_TO_TICKS(ETH_CONNECT_TIMEOUT_MS));
     TEST_ASSERT((bits & ETH_CONNECT_BIT) == ETH_CONNECT_BIT);
@@ -273,7 +303,7 @@ TEST_CASE("ethernet io speed/duplex/autonegotiation", "[ethernet]")
 static SemaphoreHandle_t loopback_test_case_data_received;
 static esp_err_t loopback_test_case_incoming_handler(esp_eth_handle_t eth_handle, uint8_t *buffer, uint32_t length, void *priv)
 {
-    TEST_ASSERT(memcmp(priv, buffer, LOOPBACK_TEST_PACKET_SIZE) == 0)
+    TEST_ASSERT(memcmp(priv, buffer, LOOPBACK_TEST_PACKET_SIZE) == 0);
     xSemaphoreGive(loopback_test_case_data_received);
     free(buffer);
     return ESP_OK;
@@ -328,7 +358,7 @@ TEST_CASE("ethernet io loopback", "[ethernet]")
             ESP_LOGI(TAG, "Test with %s Mbps %s duplex.", expected_speed == ETH_SPEED_10M ? "10" : "100", expected_duplex == ETH_DUPLEX_HALF ? "half" : "full");
 // *** KSZ80XX, KSZ8851SNL and DM9051 deviation ***
 // Rationale: do not support loopback at 10 Mbps
-#if defined(CONFIG_TARGET_ETH_PHY_DEVICE_KSZ80XX) || defined(CONFIG_TARGET_ETH_PHY_DEVICE_DM9051)
+#if defined(CONFIG_TARGET_ETH_PHY_DEVICE_KSZ8041) || defined(CONFIG_TARGET_ETH_PHY_DEVICE_DM9051)
             if ((expected_speed == ETH_SPEED_10M)) {
                 TEST_ASSERT_EQUAL(ESP_ERR_INVALID_STATE, esp_eth_ioctl(eth_handle, ETH_CMD_S_SPEED, &expected_speed));
                 continue;
@@ -378,7 +408,7 @@ TEST_CASE("ethernet io loopback", "[ethernet]")
 // *** RTL8201, DP83848 and LAN87xx deviation ***
 // Rationale: do not support autonegotiation with loopback enabled.
 #if defined(CONFIG_TARGET_ETH_PHY_DEVICE_RTL8201) || defined(CONFIG_TARGET_ETH_PHY_DEVICE_DP83848) || \
-    defined(CONFIG_TARGET_ETH_PHY_DEVICE_LAN87XX)
+    defined(CONFIG_TARGET_ETH_PHY_DEVICE_LAN8720)
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_STATE, esp_eth_ioctl(eth_handle, ETH_CMD_S_AUTONEGO, &auto_nego_en));
     goto cleanup;
 #endif
@@ -397,7 +427,7 @@ TEST_CASE("ethernet io loopback", "[ethernet]")
     TEST_ASSERT((bits & ETH_STOP_BIT) == ETH_STOP_BIT);
 // *** W5500, LAN87xx, RTL8201 and DP83848 deviation ***
 // Rationale: in those cases 'goto cleanup' is used to skip part of the test code. Incasing in #if block is done to prevent unused label error
-#if defined(CONFIG_TARGET_ETH_PHY_DEVICE_W5500) || defined(CONFIG_TARGET_ETH_PHY_DEVICE_LAN87XX) || \
+#if defined(CONFIG_TARGET_ETH_PHY_DEVICE_W5500) || defined(CONFIG_TARGET_ETH_PHY_DEVICE_LAN8720) || \
     defined(CONFIG_TARGET_ETH_PHY_DEVICE_RTL8201) || defined(CONFIG_TARGET_ETH_PHY_DEVICE_DP83848)
 cleanup:
 #endif

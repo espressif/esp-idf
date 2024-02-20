@@ -1,4 +1,4 @@
-GCC 
+GCC
 ***
 
 :link_to_translation:`zh_CN:[中文]`
@@ -104,14 +104,14 @@ The types ``int32_t`` and ``uint32_t`` have been changed from the previous ``int
    :widths: 20 45 35
    :header-rows: 1
 
-   * - 
+   * -
      - 2021r2 and older, GCC 8
      - 2022r1, GCC 11
    * - Xtensa
      - (unsigned) int
      - (unsigned) long
    * - riscv32
-     - (unsigned) long 
+     - (unsigned) long
      - (unsigned) long
 
 
@@ -124,7 +124,7 @@ In common, ``int32_t`` and ``int``, as well as ``uint32_t`` and ``unsigned int``
 If users do not make the aforementioned updates to format strings in their applications, the following error will be reported during compilation:
 
 .. code-block:: none
-    
+
     /Users/name/esp/esp-rainmaker/components/esp-insights/components/esp_diagnostics/include/esp_diagnostics.h:238:29: error: format '%u' expects argument of type 'unsigned int', but argument 3 has type 'uint32_t' {aka 'long unsigned int'} [-Werror=format=]
     238 |     esp_diag_log_event(tag, "EV (%u) %s: " format, esp_log_timestamp(), tag, ##__VA_ARGS__); \
         |                             ^~~~~~~~~~~~~~         ~~~~~~~~~~~~~~~~~~~

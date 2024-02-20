@@ -5,7 +5,6 @@ tools/ci/check_*.txt
 tools/ci/check_*.sh
 tools/ci/check_copyright_config.yaml
 tools/ci/get_all_test_results.py
-tools/ci/idf_unity_tester.py
 tools/gdb_panic_server.py
 tools/check_term.py
 tools/check_python_dependencies.py
@@ -24,7 +23,6 @@ tools/ci/executable-list.txt
 tools/ci/fix_empty_prototypes.sh
 tools/ci/get-full-sources.sh
 tools/ci/idf_ci_utils.py
-tools/ci/ignore_build_warnings.txt
 tools/ci/mirror-submodule-update.sh
 tools/ci/multirun_with_pyenv.sh
 tools/ci/mypy_ignore_list.txt
@@ -39,4 +37,16 @@ tools/templates/sample_component/CMakeLists.txt
 tools/templates/sample_component/include/main.h
 tools/templates/sample_component/main.c
 tools/ci/cleanup_ignore_lists.py
-tools/ci/idf_pytest/**/*
+tools/ci/artifacts_handler.py
+tools/ci/get_known_failure_cases_file.py
+tools/unit-test-app/**/*
+tools/ci/gitlab_yaml_linter.py
+tools/ci/dynamic_pipelines/**/*
+tools/ci/idf_ci/**/*
+tools/ci/get_supported_examples.sh
+tools/ci/python_packages/common_test_methods.py
+tools/ci/python_packages/gitlab_api.py
+tools/ci/python_packages/idf_http_server_test/**/*
+tools/ci/python_packages/idf_iperf_test_util/**/*
+tools/esp_prov/**/*
+tools/ci/sort_yaml.py

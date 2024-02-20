@@ -751,8 +751,9 @@ void btsnd_hcic_vendor_spec_cmd (BT_HDR *buffer, UINT16 opcode,
 #define HCIC_PARAM_SIZE_BLE_SET_ADDR_RESOLUTION_ENABLE  1
 #define HCIC_PARAM_SIZE_BLE_SET_RAND_PRIV_ADDR_TIMOUT   2
 #define HCIC_PARAM_SIZE_BLE_SET_DATA_LENGTH             6
-#define HCIC_PARAM_SIZE_BLE_WRITE_EXTENDED_SCAN_PARAM  11
-#define HCIC_PARAM_SIZE_BLE_UPDATE_ADV_FLOW_CONTROL    2
+#define HCIC_PARAM_SIZE_BLE_WRITE_EXTENDED_SCAN_PARAM   11
+#define HCIC_PARAM_SIZE_BLE_UPDATE_ADV_FLOW_CONTROL     2
+#define HCIC_PARAM_SIZE_BLE_CLEAR_ADV                   0
 #if (BLE_50_FEATURE_SUPPORT == TRUE)
 #define HCIC_PARAM_SIZE_BLE_READ_PHY                   2
 #define HCIC_PARAM_SIZE_BLE_SET_DEF_PHY                3
@@ -905,6 +906,8 @@ BOOLEAN btsnd_hcic_ble_read_resolvable_addr_local (UINT8 addr_type_peer,
 BOOLEAN btsnd_hcic_ble_set_addr_resolution_enable (UINT8 addr_resolution_enable);
 
 BOOLEAN btsnd_hcic_ble_set_rand_priv_addr_timeout (UINT16 rpa_timout);
+
+BOOLEAN btsnd_hcic_ble_clear_adv(void);
 
 #endif /* BLE_INCLUDED */
 #if (BLE_50_FEATURE_SUPPORT == TRUE)

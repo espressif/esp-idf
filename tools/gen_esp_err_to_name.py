@@ -17,8 +17,7 @@ from typing import Any, List, Optional, TextIO
 ignore_files: list  = list()
 
 # add directories here which should not be parsed, this is a tuple since it will be used with *.startswith()
-ignore_dirs = (os.path.join('examples'),
-               os.path.join('components', 'cmock', 'CMock', 'test'),
+ignore_dirs = (os.path.join('components', 'cmock', 'CMock', 'test'),
                os.path.join('components', 'spi_flash', 'sim'))
 
 # macros from here have higher priorities in case of collisions
@@ -312,7 +311,7 @@ def main() -> None:
     include_as_pattern = re.compile(r'\s*//\s*{}: [^"]* "([^"]+)"'.format(os.path.basename(__file__)))
     define_pattern = re.compile(r'\s*#define\s+(ESP_ERR_|ESP_OK|ESP_FAIL)')
 
-    for root, dirnames, filenames in os.walk(idf_path, topdown=True):
+    for root, dirnames, filenames in os.walk(os.path.join(idf_path, 'components'), topdown=True):
         # When topdown is True, we can modify the dirnames list in-place
         # walk() will only recurse into the subdirectories whose names remain in dirnames
         dirnames[:] = [d for d in dirnames if d not in exclude_search_dirs]

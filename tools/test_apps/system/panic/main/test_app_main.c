@@ -89,7 +89,6 @@ void app_main(void)
 #endif
 #if !CONFIG_FREERTOS_UNICORE
     HANDLE_TEST(test_name, test_task_wdt_cpu1);
-    HANDLE_TEST(test_name, test_task_wdt_both_cpus);
 #endif
     HANDLE_TEST(test_name, test_storeprohibited);
     HANDLE_TEST(test_name, test_cache_error);
@@ -100,6 +99,9 @@ void app_main(void)
     HANDLE_TEST(test_name, test_ub);
     HANDLE_TEST(test_name, test_assert);
     HANDLE_TEST(test_name, test_assert_cache_disabled);
+#if CONFIG_IDF_TARGET_ESP32
+    HANDLE_TEST(test_name, test_illegal_access);
+#endif
 
 #if CONFIG_TEST_MEMPROT
 

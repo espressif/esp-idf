@@ -92,6 +92,7 @@ typedef union  {
 #define spi_flash_ll_set_hold(dev, hold_n)                   spimem_flash_ll_set_hold((spi_mem_dev_t*)dev, hold_n)
 #define spi_flash_ll_set_cs_setup(dev, cs_setup_time)        spimem_flash_ll_set_cs_setup((spi_mem_dev_t*)dev, cs_setup_time)
 #define spi_flash_ll_set_extra_address(dev, extra_addr)      spimem_flash_ll_set_extra_address((spi_mem_dev_t*)dev, extra_addr)
+#define spi_flash_ll_get_ctrl_val(dev)                       spimem_flash_ll_get_ctrl_val((spi_mem_dev_t*)dev)
 
 #endif
 

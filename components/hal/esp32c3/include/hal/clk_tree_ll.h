@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,7 +9,6 @@
 #include <stdint.h>
 #include "soc/soc.h"
 #include "soc/clk_tree_defs.h"
-#include "soc/rtc.h"
 #include "soc/system_reg.h"
 #include "soc/rtc_cntl_reg.h"
 #include "hal/regi2c_ctrl.h"
@@ -31,6 +30,10 @@ extern "C" {
 #define CLK_LL_PLL_480M_FREQ_MHZ   (480)
 
 #define CLK_LL_AHB_MAX_FREQ_MHZ    CLK_LL_PLL_80M_FREQ_MHZ
+
+/* RC_FAST clock enable/disable wait time */
+#define CLK_LL_RC_FAST_WAIT_DEFAULT            20
+#define CLK_LL_RC_FAST_ENABLE_WAIT_DEFAULT     5
 
 #define CLK_LL_XTAL32K_CONFIG_DEFAULT() { \
     .dac = 3, \
@@ -120,7 +123,7 @@ static inline __attribute__((always_inline)) bool clk_ll_xtal32k_is_enabled(void
     bool xtal_xpd_sw = (xtal_conf & RTC_CNTL_XTAL32K_XPD_FORCE) >> RTC_CNTL_XTAL32K_XPD_FORCE_S;
     /* If xtal xpd software control is on */
     bool xtal_xpd_st = (xtal_conf & RTC_CNTL_XPD_XTAL_32K) >> RTC_CNTL_XPD_XTAL_32K_S;
-    // disabled = xtal_xpd_sw && !xtal_xpd_st; enabled = !disbaled
+    // disabled = xtal_xpd_sw && !xtal_xpd_st; enabled = !disabled
     bool enabled = !xtal_xpd_sw || xtal_xpd_st;
     return enabled;
 }
@@ -131,7 +134,7 @@ static inline __attribute__((always_inline)) bool clk_ll_xtal32k_is_enabled(void
 static inline __attribute__((always_inline)) void clk_ll_rc_fast_enable(void)
 {
     CLEAR_PERI_REG_MASK(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_ENB_CK8M);
-    REG_SET_FIELD(RTC_CNTL_TIMER1_REG, RTC_CNTL_CK8M_WAIT, RTC_CK8M_ENABLE_WAIT_DEFAULT);
+    REG_SET_FIELD(RTC_CNTL_TIMER1_REG, RTC_CNTL_CK8M_WAIT, CLK_LL_RC_FAST_ENABLE_WAIT_DEFAULT);
 }
 
 /**
@@ -140,7 +143,7 @@ static inline __attribute__((always_inline)) void clk_ll_rc_fast_enable(void)
 static inline __attribute__((always_inline)) void clk_ll_rc_fast_disable(void)
 {
     SET_PERI_REG_MASK(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_ENB_CK8M);
-    REG_SET_FIELD(RTC_CNTL_TIMER1_REG, RTC_CNTL_CK8M_WAIT, RTC_CNTL_CK8M_WAIT_DEFAULT);
+    REG_SET_FIELD(RTC_CNTL_TIMER1_REG, RTC_CNTL_CK8M_WAIT, CLK_LL_RC_FAST_WAIT_DEFAULT);
 }
 
 /**
@@ -311,7 +314,7 @@ static inline __attribute__((always_inline)) void clk_ll_bbpll_set_config(uint32
     if (pll_freq_mhz == CLK_LL_PLL_480M_FREQ_MHZ) {
         /* Configure 480M PLL */
         switch (xtal_freq_mhz) {
-        case RTC_XTAL_FREQ_40M:
+        case SOC_XTAL_FREQ_40M:
             div_ref = 0;
             div7_0 = 8;
             dr1 = 0;
@@ -320,7 +323,7 @@ static inline __attribute__((always_inline)) void clk_ll_bbpll_set_config(uint32
             dcur = 3;
             dbias = 2;
             break;
-        case RTC_XTAL_FREQ_32M:
+        case SOC_XTAL_FREQ_32M:
             div_ref = 1;
             div7_0 = 26;
             dr1 = 1;
@@ -343,7 +346,7 @@ static inline __attribute__((always_inline)) void clk_ll_bbpll_set_config(uint32
     } else {
         /* Configure 320M PLL */
         switch (xtal_freq_mhz) {
-        case RTC_XTAL_FREQ_40M:
+        case SOC_XTAL_FREQ_40M:
             div_ref = 0;
             div7_0 = 4;
             dr1 = 0;
@@ -352,7 +355,7 @@ static inline __attribute__((always_inline)) void clk_ll_bbpll_set_config(uint32
             dcur = 3;
             dbias = 2;
             break;
-        case RTC_XTAL_FREQ_32M:
+        case SOC_XTAL_FREQ_32M:
             div_ref = 1;
             div7_0 = 6;
             dr1 = 0;

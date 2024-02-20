@@ -14,8 +14,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_log.h"
-#include "esp_vfs.h"
-#include "esp_vfs_dev.h"
+#include "driver/uart_vfs.h"
 #include "driver/uart.h"
 
 static const char* TAG = "uart_select_example";
@@ -48,7 +47,7 @@ static void uart_select_task(void *arg)
         }
 
         // We have a driver now installed so set up the read/write functions to use driver also.
-        esp_vfs_dev_uart_use_driver(0);
+        uart_vfs_dev_use_driver(0);
 
         while (1) {
             int s;

@@ -26,7 +26,7 @@ iram_dram_offset = 0x6f0000;
 /* These lengths can be adjusted, if necessary: */
 bootloader_usable_dram_end = 0x3fce9700;
 bootloader_stack_overhead = 0x2000; /* For safety margin between bootloader data section and startup stacks */
-bootloader_dram_seg_len = 0x4000;
+bootloader_dram_seg_len = 0x5000;
 bootloader_iram_loader_seg_len = 0x7000;
 bootloader_iram_seg_len = 0x3000;
 
@@ -49,7 +49,7 @@ MEMORY
  * 2. Update the value in this assert.
  * 3. Update SRAM_IRAM_END in components/esp_system/ld/esp32s3/memory.ld.in to the same value.
  */
-ASSERT(bootloader_iram_loader_seg_start == 0x403cc700, "bootloader_iram_loader_seg_start inconsistent with SRAM_IRAM_END");
+ASSERT(bootloader_iram_loader_seg_start == 0x403CB700, "bootloader_iram_loader_seg_start inconsistent with SRAM_IRAM_END");
 
 /* Default entry point: */
 ENTRY(call_start_cpu0);

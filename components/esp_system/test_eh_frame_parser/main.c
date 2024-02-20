@@ -1,6 +1,6 @@
 
 /*
- * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -181,7 +181,8 @@ static uint32_t iteration = 1;
  * @brief Override the default function called when a backtrace step is
  * generated.
  */
-void esp_eh_frame_generated_step(uint32_t pc, uint32_t sp) {
+void esp_eh_frame_generated_step(uint32_t pc, uint32_t sp)
+{
     /* The first PCs in the backtrace are calls to `browse_list()` + 2.
      * This is due to the fact that the list contains all the numbers
      * between NUMBER_TO_TEST to 0 included. Moreover, another call
@@ -198,18 +199,18 @@ void esp_eh_frame_generated_step(uint32_t pc, uint32_t sp) {
          * browse_list (NUMBER_TO_TEST + 2 iterations), is_even
          * (NUMBER_TO_TEST/2 calls) and is_odd (NUMBER_TO_TEST/2 calls) calls.
          */
-        if (iteration >= NUMBER_OF_ITERATION)
+        if (iteration >= NUMBER_OF_ITERATION) {
             return;
-        else if (iteration % 2 == 0)
+        } else if (iteration % 2 == 0) {
             assert(is_pc_in_function(pc, "is_odd"));
-        else
+        } else {
             assert(is_pc_in_function(pc, "is_even"));
+        }
     }
 
     /* Number of times this function has been entered. */
     iteration++;
 }
-
 
 /**
  * @brief Handler called when SIGSEV signal is sent to the program.
@@ -219,7 +220,8 @@ void esp_eh_frame_generated_step(uint32_t pc, uint32_t sp) {
  * @param ucontext Context of the program when the error occurred. This
  *                 is used to retrieve the CPU registers value.
  */
-void signal_handler(int signal, siginfo_t *info, void *ucontext) {
+void signal_handler(int signal, siginfo_t *info, void *ucontext)
+{
     /* Setup the execution frame as expected by the eh_frame_parser.
      * Indeed, the registers index defined in ucontext.h are NOT the same
      * the registers index DWARF is expecting. */
@@ -250,7 +252,7 @@ void signal_handler(int signal, siginfo_t *info, void *ucontext) {
         printf("\e[32m\e[1mAll tests passed \e[0m\r\n");
     } else {
         printf("\e[31m\e[1mWrong length of backtrace (%d iteration, expected %d) \e[0m\r\n",
-        iteration, NUMBER_OF_ITERATION);
+               iteration, NUMBER_OF_ITERATION);
         exit(1);
     }
 
@@ -265,7 +267,8 @@ void signal_handler(int signal, siginfo_t *info, void *ucontext) {
  *
  * @param l List to browse.
  */
-void browse_list(struct list_t* l) {
+void browse_list(struct list_t* l)
+{
     browse_list(l->next);
 }
 
@@ -274,7 +277,8 @@ void browse_list(struct list_t* l) {
  *
  * @param n Number to add in the list.
  */
-void add_number_to_list(uint32_t n) {
+void add_number_to_list(uint32_t n)
+{
     struct list_t* l = malloc(sizeof(struct list_t));
     l->value = n;
     l->next = head.next;
@@ -289,7 +293,8 @@ void add_number_to_list(uint32_t n) {
  *
  * @return true if even, false else.
  */
-bool is_even(uint32_t n) {
+bool is_even(uint32_t n)
+{
     add_number_to_list(n);
     if (n == 0) {
         browse_list(head.next);
@@ -306,7 +311,8 @@ bool is_even(uint32_t n) {
  *
  * @return true if odd, false else.
  */
-bool is_odd(uint32_t n) {
+bool is_odd(uint32_t n)
+{
     add_number_to_list(n);
     if (n == 0) {
         browse_list(head.next);
@@ -331,8 +337,9 @@ static inline void initialize_functions_info(void)
          * Thus, we will look for these instructions. */
         uint8_t* instructions = (uint8_t*) funs[i].start;
         while ((instructions[0] != 0xc9 || instructions[1] != 0xc3) &&
-               (instructions[0] != 0x5d || instructions[1] != 0xc3) )
+                (instructions[0] != 0x5d || instructions[1] != 0xc3)) {
             instructions++;
+        }
         instructions += 1;
         funs[i].end = (uintptr_t) instructions;
     }
@@ -341,7 +348,8 @@ static inline void initialize_functions_info(void)
 /**
  * Test the eh_frame_parser for backtracing
  */
-void test2(void) {
+void test2(void)
+{
     /* Initialize the structure holding information about the signal to override. */
     struct sigaction sig = {
         .sa_mask = 0,
@@ -367,7 +375,8 @@ void test2(void) {
  * Important: the stack must still be alive when analyzing it, thus it must be done
  * within the nested functions.
  */
-int analyse_callstack() {
+int analyse_callstack()
+{
     unw_context_t ucp = { 0 };
     unw_cursor_t cur = { 0 };
     unw_word_t pc = 0;
@@ -393,15 +402,18 @@ int analyse_callstack() {
     return UNW_ESUCCESS;
 }
 
-int __attribute__((noinline)) inner_function2(void) {
+int __attribute__((noinline)) inner_function2(void)
+{
     return analyse_callstack();
 }
 
-int __attribute__((noinline)) inner_function1(void) {
+int __attribute__((noinline)) inner_function1(void)
+{
     return inner_function2();
 }
 
-void __attribute__((noinline)) test1() {
+void __attribute__((noinline)) test1()
+{
     (void) inner_function1();
 }
 

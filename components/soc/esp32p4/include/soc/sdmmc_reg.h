@@ -163,7 +163,7 @@ extern "C" {
  *  Clock source selection register
  */
 #define SDHOST_CLKSRC_REG (DR_REG_SDHOST_BASE + 0xc)
-/** SDHOST_CLKSRC_REG : R/W; bitpos: [3:0]; default: 0;
+/** SDHOST_CLKSRC : R/W; bitpos: [3:0]; default: 0;
  *  Clock divider source for two SD cards is supported. Each card has two bits assigned
  *  to it. For example, bit[1:0] are assigned for card 0, bit[3:2] are assigned for
  *  card 1. Card 0 maps and internally routes clock divider[0:3] outputs to
@@ -173,10 +173,10 @@ extern "C" {
  *  10 : Clock divider 2;
  *  11 : Clock divider 3.
  */
-#define SDHOST_CLKSRC_REG    0x0000000FU
-#define SDHOST_CLKSRC_REG_M  (SDHOST_CLKSRC_REG_V << SDHOST_CLKSRC_REG_S)
-#define SDHOST_CLKSRC_REG_V  0x0000000FU
-#define SDHOST_CLKSRC_REG_S  0
+#define SDHOST_CLKSRC    0x0000000FU
+#define SDHOST_CLKSRC_M  (SDHOST_CLKSRC_V << SDHOST_CLKSRC_S)
+#define SDHOST_CLKSRC_V  0x0000000FU
+#define SDHOST_CLKSRC_S  0
 
 /** SDHOST_CLKENA_REG register
  *  Clock enable register
@@ -321,13 +321,13 @@ extern "C" {
  *  Command argument data register
  */
 #define SDHOST_CMDARG_REG (DR_REG_SDHOST_BASE + 0x28)
-/** SDHOST_CMDARG_REG : R/W; bitpos: [31:0]; default: 0;
+/** SDHOST_CMDARG : R/W; bitpos: [31:0]; default: 0;
  *  Value indicates command argument to be passed to the card.
  */
-#define SDHOST_CMDARG_REG    0xFFFFFFFFU
-#define SDHOST_CMDARG_REG_M  (SDHOST_CMDARG_REG_V << SDHOST_CMDARG_REG_S)
-#define SDHOST_CMDARG_REG_V  0xFFFFFFFFU
-#define SDHOST_CMDARG_REG_S  0
+#define SDHOST_CMDARG    0xFFFFFFFFU
+#define SDHOST_CMDARG_M  (SDHOST_CMDARG_V << SDHOST_CMDARG_S)
+#define SDHOST_CMDARG_V  0xFFFFFFFFU
+#define SDHOST_CMDARG_S  0
 
 /** SDHOST_CMD_REG register
  *  Command and boot configuration register
@@ -808,25 +808,25 @@ extern "C" {
  *  Transferred byte count register
  */
 #define SDHOST_TCBCNT_REG (DR_REG_SDHOST_BASE + 0x5c)
-/** SDHOST_TCBCNT_REG : RO; bitpos: [31:0]; default: 0;
+/** SDHOST_TCBCNT : RO; bitpos: [31:0]; default: 0;
  *  Number of bytes transferred by CIU unit to card.
  */
-#define SDHOST_TCBCNT_REG    0xFFFFFFFFU
-#define SDHOST_TCBCNT_REG_M  (SDHOST_TCBCNT_REG_V << SDHOST_TCBCNT_REG_S)
-#define SDHOST_TCBCNT_REG_V  0xFFFFFFFFU
-#define SDHOST_TCBCNT_REG_S  0
+#define SDHOST_TCBCNT    0xFFFFFFFFU
+#define SDHOST_TCBCNT_M  (SDHOST_TCBCNT_V << SDHOST_TCBCNT_S)
+#define SDHOST_TCBCNT_V  0xFFFFFFFFU
+#define SDHOST_TCBCNT_S  0
 
 /** SDHOST_TBBCNT_REG register
  *  Transferred byte count register
  */
 #define SDHOST_TBBCNT_REG (DR_REG_SDHOST_BASE + 0x60)
-/** SDHOST_TBBCNT_REG : RO; bitpos: [31:0]; default: 0;
+/** SDHOST_TBBCNT : RO; bitpos: [31:0]; default: 0;
  *  Number of bytes transferred between Host/DMA memory and BIU FIFO.
  */
-#define SDHOST_TBBCNT_REG    0xFFFFFFFFU
-#define SDHOST_TBBCNT_REG_M  (SDHOST_TBBCNT_REG_V << SDHOST_TBBCNT_REG_S)
-#define SDHOST_TBBCNT_REG_V  0xFFFFFFFFU
-#define SDHOST_TBBCNT_REG_S  0
+#define SDHOST_TBBCNT    0xFFFFFFFFU
+#define SDHOST_TBBCNT_M  (SDHOST_TBBCNT_V << SDHOST_TBBCNT_S)
+#define SDHOST_TBBCNT_V  0xFFFFFFFFU
+#define SDHOST_TBBCNT_S  0
 
 /** SDHOST_DEBNCE_REG register
  *  Debounce filter time configuration register
@@ -846,26 +846,26 @@ extern "C" {
  *  User ID (scratchpad) register
  */
 #define SDHOST_USRID_REG (DR_REG_SDHOST_BASE + 0x68)
-/** SDHOST_USRID_REG : R/W; bitpos: [31:0]; default: 0;
+/** SDHOST_USRID : R/W; bitpos: [31:0]; default: 0;
  *  User identification register, value set by user. Can also be used as a scratchpad
  *  register by user.
  */
-#define SDHOST_USRID_REG    0xFFFFFFFFU
-#define SDHOST_USRID_REG_M  (SDHOST_USRID_REG_V << SDHOST_USRID_REG_S)
-#define SDHOST_USRID_REG_V  0xFFFFFFFFU
-#define SDHOST_USRID_REG_S  0
+#define SDHOST_USRID    0xFFFFFFFFU
+#define SDHOST_USRID_M  (SDHOST_USRID_V << SDHOST_USRID_S)
+#define SDHOST_USRID_V  0xFFFFFFFFU
+#define SDHOST_USRID_S  0
 
 /** SDHOST_VERID_REG register
  *  Version ID (scratchpad) register
  */
 #define SDHOST_VERID_REG (DR_REG_SDHOST_BASE + 0x6c)
-/** SDHOST_VERSIONID_REG : RO; bitpos: [31:0]; default: 1412572938;
+/** SDHOST_VERSIONID : RO; bitpos: [31:0]; default: 1412572938;
  *  Hardware version register. Can also be read by fireware.
  */
-#define SDHOST_VERSIONID_REG    0xFFFFFFFFU
-#define SDHOST_VERSIONID_REG_M  (SDHOST_VERSIONID_REG_V << SDHOST_VERSIONID_REG_S)
-#define SDHOST_VERSIONID_REG_V  0xFFFFFFFFU
-#define SDHOST_VERSIONID_REG_S  0
+#define SDHOST_VERSIONID    0xFFFFFFFFU
+#define SDHOST_VERSIONID_M  (SDHOST_VERSIONID_V << SDHOST_VERSIONID_S)
+#define SDHOST_VERSIONID_V  0xFFFFFFFFU
+#define SDHOST_VERSIONID_S  0
 
 /** SDHOST_HCON_REG register
  *  Hardware feature register
@@ -1036,15 +1036,15 @@ extern "C" {
  *  Descriptor base address register
  */
 #define SDHOST_DBADDR_REG (DR_REG_SDHOST_BASE + 0x88)
-/** SDHOST_DBADDR_REG : R/W; bitpos: [31:0]; default: 0;
+/** SDHOST_DBADDR : R/W; bitpos: [31:0]; default: 0;
  *  Start of Descriptor List. Contains the base address of the First Descriptor. The
  *  LSB bits [1:0] are ignored and taken as all-zero by the IDMAC internally. Hence
  *  these LSB bits may be treated as read-only.
  */
-#define SDHOST_DBADDR_REG    0xFFFFFFFFU
-#define SDHOST_DBADDR_REG_M  (SDHOST_DBADDR_REG_V << SDHOST_DBADDR_REG_S)
-#define SDHOST_DBADDR_REG_V  0xFFFFFFFFU
-#define SDHOST_DBADDR_REG_S  0
+#define SDHOST_DBADDR    0xFFFFFFFFU
+#define SDHOST_DBADDR_M  (SDHOST_DBADDR_V << SDHOST_DBADDR_S)
+#define SDHOST_DBADDR_V  0xFFFFFFFFU
+#define SDHOST_DBADDR_S  0
 
 /** SDHOST_IDSTS_REG register
  *  IDMAC status register
@@ -1220,29 +1220,29 @@ extern "C" {
  *  Host descriptor address pointer
  */
 #define SDHOST_DSCADDR_REG (DR_REG_SDHOST_BASE + 0x94)
-/** SDHOST_DSCADDR_REG : RO; bitpos: [31:0]; default: 0;
+/** SDHOST_DSCADDR : RO; bitpos: [31:0]; default: 0;
  *  Host Descriptor Address Pointer, updated by IDMAC during operation and cleared on
  *  reset. This register points to the start address of the current descriptor read by
  *  the IDMAC.
  */
-#define SDHOST_DSCADDR_REG    0xFFFFFFFFU
-#define SDHOST_DSCADDR_REG_M  (SDHOST_DSCADDR_REG_V << SDHOST_DSCADDR_REG_S)
-#define SDHOST_DSCADDR_REG_V  0xFFFFFFFFU
-#define SDHOST_DSCADDR_REG_S  0
+#define SDHOST_DSCADDR    0xFFFFFFFFU
+#define SDHOST_DSCADDR_M  (SDHOST_DSCADDR_V << SDHOST_DSCADDR_S)
+#define SDHOST_DSCADDR_V  0xFFFFFFFFU
+#define SDHOST_DSCADDR_S  0
 
 /** SDHOST_BUFADDR_REG register
  *  Host buffer address pointer register
  */
 #define SDHOST_BUFADDR_REG (DR_REG_SDHOST_BASE + 0x98)
-/** SDHOST_BUFADDR_REG : RO; bitpos: [31:0]; default: 0;
+/** SDHOST_BUFADDR : RO; bitpos: [31:0]; default: 0;
  *  Host Buffer Address Pointer, updated by IDMAC during operation and cleared on
  *  reset. This register points to the current Data Buffer Address being accessed by
  *  the IDMAC.
  */
-#define SDHOST_BUFADDR_REG    0xFFFFFFFFU
-#define SDHOST_BUFADDR_REG_M  (SDHOST_BUFADDR_REG_V << SDHOST_BUFADDR_REG_S)
-#define SDHOST_BUFADDR_REG_V  0xFFFFFFFFU
-#define SDHOST_BUFADDR_REG_S  0
+#define SDHOST_BUFADDR    0xFFFFFFFFU
+#define SDHOST_BUFADDR_M  (SDHOST_BUFADDR_V << SDHOST_BUFADDR_S)
+#define SDHOST_BUFADDR_V  0xFFFFFFFFU
+#define SDHOST_BUFADDR_S  0
 
 /** SDHOST_CARDTHRCTL_REG register
  *  Card Threshold Control register
@@ -1328,14 +1328,14 @@ extern "C" {
  *  CPU write and read transmit data by FIFO
  */
 #define SDHOST_BUFFIFO_REG (DR_REG_SDHOST_BASE + 0x200)
-/** SDHOST_BUFFIFO_REG : R/W; bitpos: [31:0]; default: 0;
+/** SDHOST_BUFFIFO : R/W; bitpos: [31:0]; default: 0;
  *  CPU write and read transmit data by FIFO. This register points to the current Data
  *  FIFO .
  */
-#define SDHOST_BUFFIFO_REG    0xFFFFFFFFU
-#define SDHOST_BUFFIFO_REG_M  (SDHOST_BUFFIFO_REG_V << SDHOST_BUFFIFO_REG_S)
-#define SDHOST_BUFFIFO_REG_V  0xFFFFFFFFU
-#define SDHOST_BUFFIFO_REG_S  0
+#define SDHOST_BUFFIFO    0xFFFFFFFFU
+#define SDHOST_BUFFIFO_M  (SDHOST_BUFFIFO_V << SDHOST_BUFFIFO_S)
+#define SDHOST_BUFFIFO_V  0xFFFFFFFFU
+#define SDHOST_BUFFIFO_S  0
 
 /** SDHOST_CLK_EDGE_SEL_REG register
  *  SDIO control register.
@@ -1492,6 +1492,34 @@ extern "C" {
 #define SDHOST_DLL_CAL_END_M  (SDHOST_DLL_CAL_END_V << SDHOST_DLL_CAL_END_S)
 #define SDHOST_DLL_CAL_END_V  0x00000001U
 #define SDHOST_DLL_CAL_END_S  1
+
+
+#define SDMMC_INTMASK_IO_SLOT1  BIT(17)
+#define SDMMC_INTMASK_IO_SLOT0  BIT(16)
+#define SDMMC_INTMASK_EBE       BIT(15)
+#define SDMMC_INTMASK_ACD       BIT(14)
+#define SDMMC_INTMASK_SBE       BIT(13)
+#define SDMMC_INTMASK_HLE       BIT(12)
+#define SDMMC_INTMASK_FRUN      BIT(11)
+#define SDMMC_INTMASK_HTO       BIT(10)
+#define SDMMC_INTMASK_DTO       BIT(9)
+#define SDMMC_INTMASK_RTO       BIT(8)
+#define SDMMC_INTMASK_DCRC      BIT(7)
+#define SDMMC_INTMASK_RCRC      BIT(6)
+#define SDMMC_INTMASK_RXDR      BIT(5)
+#define SDMMC_INTMASK_TXDR      BIT(4)
+#define SDMMC_INTMASK_DATA_OVER BIT(3)
+#define SDMMC_INTMASK_CMD_DONE  BIT(2)
+#define SDMMC_INTMASK_RESP_ERR  BIT(1)
+#define SDMMC_INTMASK_CD        BIT(0)
+
+#define SDMMC_IDMAC_INTMASK_AI  BIT(9)
+#define SDMMC_IDMAC_INTMASK_NI  BIT(8)
+#define SDMMC_IDMAC_INTMASK_CES BIT(5)
+#define SDMMC_IDMAC_INTMASK_DU  BIT(4)
+#define SDMMC_IDMAC_INTMASK_FBE BIT(2)
+#define SDMMC_IDMAC_INTMASK_RI  BIT(1)
+#define SDMMC_IDMAC_INTMASK_TI  BIT(0)
 
 #ifdef __cplusplus
 }

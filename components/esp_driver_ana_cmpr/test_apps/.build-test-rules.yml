@@ -1,0 +1,12 @@
+# Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
+
+components/esp_driver_ana_cmpr/test_apps/analog_comparator:
+  disable:
+    - if: SOC_ANA_CMPR_SUPPORTED != 1
+  disable_test:
+    - if: IDF_TARGET == "esp32p4"
+      temporary: true
+      reason: not supported yet
+  depends_components:
+    - esp_driver_gpio
+    - esp_driver_ana_cmpr

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2016-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2016-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -67,6 +67,7 @@ typedef struct adc_digi_context_t {
     gdma_channel_handle_t           rx_dma_channel;             //dma rx channel handle
 #elif CONFIG_IDF_TARGET_ESP32S2
     spi_host_device_t               spi_host;                   //ADC uses this SPI DMA
+    spi_dma_ctx_t                   *spi_dma_ctx;               //spi_dma context
     intr_handle_t                   intr_hdl;                   //Interrupt handler
 #elif CONFIG_IDF_TARGET_ESP32
     i2s_port_t                      i2s_host;                   //ADC uses this I2S DMA
@@ -167,7 +168,7 @@ esp_err_t adc_digi_deinitialize(void)
     gdma_del_channel(s_adc_digi_ctx->rx_dma_channel);
 #elif CONFIG_IDF_TARGET_ESP32S2
     esp_intr_free(s_adc_digi_ctx->intr_hdl);
-    spicommon_dma_chan_free(s_adc_digi_ctx->spi_host);
+    spicommon_dma_chan_free(s_adc_digi_ctx->spi_dma_ctx);
     spicommon_periph_free(s_adc_digi_ctx->spi_host);
 #elif CONFIG_IDF_TARGET_ESP32
     esp_intr_free(s_adc_digi_ctx->intr_hdl);
@@ -176,7 +177,7 @@ esp_err_t adc_digi_deinitialize(void)
     free(s_adc_digi_ctx);
     s_adc_digi_ctx = NULL;
 
-    periph_module_disable(PERIPH_SARADC_MODULE);
+    adc_apb_periph_free();
 
     return ESP_OK;
 }
@@ -274,13 +275,14 @@ esp_err_t adc_digi_initialize(const adc_digi_init_config_t *init_config)
     uint32_t dma_chan = 0;
 
     spi_success = spicommon_periph_claim(SPI3_HOST, "adc");
-    ret = spicommon_dma_chan_alloc(SPI3_HOST, SPI_DMA_CH_AUTO, &dma_chan, &dma_chan);
+    ret = spicommon_dma_chan_alloc(SPI3_HOST, SPI_DMA_CH_AUTO, &s_adc_digi_ctx->spi_dma_ctx);
     if (ret == ESP_OK) {
         s_adc_digi_ctx->spi_host = SPI3_HOST;
     }
     if (!spi_success || (s_adc_digi_ctx->spi_host != SPI3_HOST)) {
         goto cleanup;
     }
+    dma_chan = s_adc_digi_ctx->spi_dma_ctx->rx_dma_chan.chan_id;
 
     ret = esp_intr_alloc(spicommon_irqdma_source_for_host(s_adc_digi_ctx->spi_host), 0, adc_dma_intr_handler,
                         (void *)s_adc_digi_ctx, &s_adc_digi_ctx->intr_hdl);
@@ -319,10 +321,7 @@ esp_err_t adc_digi_initialize(const adc_digi_init_config_t *init_config)
     };
     adc_hal_dma_ctx_config(&s_adc_digi_ctx->hal, &config);
 
-    //enable ADC digital part
-    periph_module_enable(PERIPH_SARADC_MODULE);
-    //reset ADC digital part
-    periph_module_reset(PERIPH_SARADC_MODULE);
+    adc_apb_periph_claim();
 
 #if SOC_ADC_CALIBRATION_V1_SUPPORTED
     adc_hal_calibration_init(ADC_UNIT_1);
@@ -396,6 +395,8 @@ esp_err_t adc_digi_start(void)
         ESP_LOGE(ADC_TAG, "The driver is already started");
         return ESP_ERR_INVALID_STATE;
     }
+    //reset ADC digital part to reset ADC sampling EOF counter
+    periph_module_reset(PERIPH_SARADC_MODULE);
     sar_periph_ctrl_adc_continuous_power_acquire();
     //reset flags
     s_adc_digi_ctx->ringbuf_overflow_flag = 0;

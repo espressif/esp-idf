@@ -1,17 +1,19 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 #include "WL_Ext_Perf.h"
+#include "Partition.h"
 #include <stdlib.h>
+#include <inttypes.h>
 #include "esp_log.h"
 
 static const char *TAG = "wl_ext_perf";
 
 #define WL_EXT_RESULT_CHECK(result) \
     if (result != ESP_OK) { \
-        ESP_LOGE(TAG,"%s(%d): result = 0x%08x", __FUNCTION__, __LINE__, result); \
+        ESP_LOGE(TAG,"%s(%d): result = 0x%08" PRIx32, __FUNCTION__, __LINE__, (uint32_t) result); \
         return (result); \
     }
 
@@ -25,7 +27,7 @@ WL_Ext_Perf::~WL_Ext_Perf()
     free(this->sector_buffer);
 }
 
-esp_err_t WL_Ext_Perf::config(WL_Config_s *cfg, Flash_Access *flash_drv)
+esp_err_t WL_Ext_Perf::config(WL_Config_s *cfg, Partition *partition)
 {
     wl_ext_cfg_t *ext_cfg = (wl_ext_cfg_t *)cfg;
 
@@ -44,7 +46,7 @@ esp_err_t WL_Ext_Perf::config(WL_Config_s *cfg, Flash_Access *flash_drv)
         return ESP_ERR_NO_MEM;
     }
 
-    return WL_Flash::config(cfg, flash_drv);
+    return WL_Flash::config(cfg, partition);
 }
 
 esp_err_t WL_Ext_Perf::init()
@@ -75,7 +77,7 @@ esp_err_t WL_Ext_Perf::erase_sector_fit(uint32_t first_erase_sector, uint32_t co
 {
     // This method works with one flash device sector and able to erase "count" of fatfs sectors from this first_erase_sector
     esp_err_t result = ESP_OK;
-    ESP_LOGV(TAG, "%s begin, first_erase_sector = 0x%08x, count = %i", __func__, first_erase_sector, count);
+    ESP_LOGV(TAG, "%s begin, first_erase_sector = 0x%08" PRIx32 ", count = %" PRIu32, __func__, first_erase_sector, count);
 
     uint32_t flash_sector_base_addr = first_erase_sector / this->flash_fat_sector_size_factor;
     uint32_t pre_check_start = first_erase_sector % this->flash_fat_sector_size_factor;
@@ -135,7 +137,7 @@ esp_err_t WL_Ext_Perf::erase_range(size_t start_address, size_t size)
     // erase complete sector and restore data of area which should not be erased.
     // For the rest check area, this operation not needed because complete flash device sector will be erased.
 
-    ESP_LOGV(TAG, "%s begin, addr = 0x%08x, size = %i", __func__, start_address, size);
+    ESP_LOGV(TAG, "%s begin, addr = 0x%08" PRIx32 ", size = %" PRIu32, __func__, (uint32_t) start_address, (uint32_t) size);
     uint32_t sectors_count = size / this->fat_sector_size;
 
     // Calculate pre check values
@@ -163,7 +165,7 @@ esp_err_t WL_Ext_Perf::erase_range(size_t start_address, size_t size)
         result = this->erase_sector_fit(start_address / this->fat_sector_size, pre_check_count);
         WL_EXT_RESULT_CHECK(result);
     }
-    ESP_LOGV(TAG, "%s rest_check_start = %i, pre_check_count=%i, rest_check_count=%i, post_check_count=%i", __func__, rest_check_start, pre_check_count, rest_check_count, post_check_count);
+    ESP_LOGV(TAG, "%s rest_check_start = %" PRIu32 ", pre_check_count=%" PRIu32 ", rest_check_count=%" PRIu32 ", post_check_count=%" PRIu32, __func__, rest_check_start, pre_check_count, rest_check_count, post_check_count);
 
     // Clear rest_check_count sectors
     if (rest_check_count > 0) {

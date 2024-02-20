@@ -1,0 +1,17 @@
+menu "ESP-Driver:GPIO Configurations"
+    config GPIO_ESP32_SUPPORT_SWITCH_SLP_PULL
+        bool "Support light sleep GPIO pullup/pulldown configuration for ESP32"
+        depends on IDF_TARGET_ESP32
+        help
+            This option is intended to fix the bug that ESP32 is not able to switch to configured
+            pullup/pulldown mode in sleep.
+            If this option is selected, chip will automatically emulate the behaviour of switching,
+            and about 450B of source codes would be placed into IRAM.
+
+    config GPIO_CTRL_FUNC_IN_IRAM
+        bool "Place GPIO control functions into IRAM"
+        default n
+        help
+            Place GPIO control functions (like intr_disable/set_level) into IRAM,
+            so that these functions can be IRAM-safe and able to be called in the other IRAM interrupt context.
+endmenu

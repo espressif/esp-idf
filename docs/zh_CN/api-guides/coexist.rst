@@ -6,7 +6,7 @@ RF 共存
 概览
 -----
 
-{IDF_TARGET_NAME} 只支持一路 RF，Bluetooth（BT 和 BLE）和 Wi-Fi 共享这一路 RF，无法同时收发数据，因此采用时分复用的方法进行收发数据包。
+ESP系列芯片最多支持三种射频收发模块: Bluetooth（BT 和 BLE）, IEEE802.15.4 和 Wi-Fi, 而每款芯片只支持一路被多个射频收发模块共享的 RF，不同模块无法同时使用 RF 收发数据，因此采用时分复用的方法调节不同模块的数据包收发。
 
 
 {IDF_TARGET_NAME} 支持的共存场景
@@ -69,6 +69,24 @@ RF 共存
       |       |        |TX         |Y       |Y            |Y    |Y         |Y          |
       +-------+--------+-----------+--------+-------------+-----+----------+-----------+
 
+.. only:: SOC_IEEE802154_SUPPORTED
+
+  .. table:: 表 3  Thread (IEEE802.15.4) 和 BLE 共存支持功能
+
+      +--------+-----------------+-----+------------+-----------+----------+
+      |                          |BLE                                      |
+      +                          +-----+------------+-----------+----------+
+      |                          |Scan |Advertising |Connecting |Connected |
+      +--------+-----------------+-----+------------+-----------+----------+
+      | Thread |Scan             |X    |Y           |Y          |Y         |
+      +        +-----------------+-----+------------+-----------+----------+
+      |        |Connecting       |X    |Y           |Y          |Y         |
+      +        +-----------------+-----+------------+-----------+----------+
+      |        |Connected        |X    |Y           |Y          |Y         |
+      +        +-----------------+-----+------------+-----------+----------+
+      |        |Connected        |     |            |           |          |
+      |        |(high throughput)|X    |C1          |C1         |C1        |
+      +--------+-----------------+-----+------------+-----------+----------+
 
 .. note::
 
@@ -102,15 +120,15 @@ RF 共存
       default_group_color = none;
 
       # node labels
-   	  Wi-Fi [shape = box];
-   	  Bluetooth [shape = box];
-   	  Coexistence [shape = box, label = 'Coexistence module'];
-   	  RF [shape = box, label = 'RF module'];
+      Wi-Fi [shape = box];
+      Bluetooth [shape = box];
+      Coexistence [shape = box, label = 'Coexistence module'];
+      RF [shape = box, label = 'RF module'];
 
       # node connections
-   	  Wi-Fi -> Coexistence;
-   	  Bluetooth  -> Coexistence;
-   	  Coexistence -> RF;
+      Wi-Fi -> Coexistence;
+      Bluetooth  -> Coexistence;
+      Coexistence -> RF;
     }
 
 
@@ -131,6 +149,9 @@ RF 共存
 
   Wi-Fi、BLE 二者对于 RF 的使用，主要是按照时间片来划分的。在 Wi-Fi 的时间片内，Wi-Fi 会向共存仲裁模块发出较高优先级的请求，在 Bluetooth 的时间片内，BLE 会具有较高优先级。共存周期大小和各个时间片占比根据 Wi-Fi 的状态分成四类：
 
+.. only:: SOC_IEEE802154_SUPPORTED
+
+  目前, 当 BLE 与 IEEE802.15.4 共存时, ESP 芯片使用的策略为 BLE 优先级始终优先于 IEEE802.15.4。
 
 .. list::
 
@@ -154,8 +175,7 @@ RF 共存
 动态优先级
 """""""""""""""""""
 
-共存模块对 Wi-Fi 和 Bluetooth 不同的状态赋予其不同的优先级。每种状态下的优先级并不是一成不变的，例如每 N 个广播事件 (Advertising event) 中会有一个广播事件使用高优先级。如果高优先级的广播事件发生在 Wi-Fi 时间片内，RF 的使用权可能会被 BLE 抢占。
-
+共存模块为每个模块的不同状态分配不同的优先级。每种状态下的优先级并不是一成不变的，例如对于 BLE，每 N 个广播事件 (Advertising event) 中会有一个广播事件使用高优先级。如果高优先级的广播事件发生在 Wi-Fi 时间片内，RF 的使用权可能会被 BLE 抢占。
 
 .. only:: SOC_WIFI_SUPPORTED
 
@@ -223,12 +243,13 @@ BLE MESH 共存状态描述
       #) :ref:`CONFIG_ESP_WIFI_RX_BA_WIN` 选择减少 Wi-Fi Block Ack RX 窗口的数量。
       #) :ref:`CONFIG_ESP_WIFI_MGMT_SBUF_NUM` 选择减少 Wi-Fi 管理短缓冲区的数量。
       #) :ref:`CONFIG_ESP_WIFI_RX_IRAM_OPT` 选择关闭此配置选项，关闭此配置选项将会减少大约 17 KB 的 IRAM 内存。
-      #) :ref:`CONFIG_LWIP_TCP_SND_BUF_DEFAULT` 选择减小 TCP 套接字默认发送缓存区大小。
-      #) :ref:`CONFIG_LWIP_TCP_WND_DEFAULT` 选择减小 TCP 套接字默认接收窗口的大小。
-      #) :ref:`CONFIG_LWIP_TCP_RECVMBOX_SIZE` 选择减小 TCP 接收邮箱的大小。
-      #) :ref:`CONFIG_LWIP_UDP_RECVMBOX_SIZE` 选择减小 UDP 接收邮箱的大小。
-      #) :ref:`CONFIG_LWIP_TCPIP_RECVMBOX_SIZE` 选择减小 TCPIP 任务接收邮箱大小。
+      #) :ref:`CONFIG_LWIP_TCP_SND_BUF_DEFAULT` 选择减小 TCP 套接字默认发送缓存区。
+      #) :ref:`CONFIG_LWIP_TCP_WND_DEFAULT` 选择减小 TCP 套接字默认接收窗口。
+      #) :ref:`CONFIG_LWIP_TCP_RECVMBOX_SIZE` 可配置减小 TCP 接收邮箱。接受邮箱负责缓冲 TCP 连接中的数据，确保数据流畅传输。
+      #) :ref:`CONFIG_LWIP_TCP_ACCEPTMBOX_SIZE` 管理传入的连接请求，可配置减小 TCP 接受邮箱。接受邮箱负责管理传入的连接请求，促进建立新的 TCP 连接。
+      #) :ref:`CONFIG_LWIP_UDP_RECVMBOX_SIZE` 选择减小 UDP 接收邮箱。
+      #) :ref:`CONFIG_LWIP_TCPIP_RECVMBOX_SIZE` 选择减小 TCPIP 任务接收邮箱。
 
 .. note::
 
-  由于共存配置选项依赖于蓝牙配置选项，所以请先打开蓝牙配置选项，然后在 Wi-Fi 配置选项中打开共存配置选项。
+  由于共存配置选项依赖于任何两个已启用的射频收发模块的存在，请在配置任何共存功能之前，确保至少使能了两个射频收发模块。

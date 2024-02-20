@@ -1,9 +1,9 @@
-# SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 from inspect import getmembers, isroutine
 from typing import Optional
 
-from construct import Const, Int8ul, Int16ul, Int32ul, PaddedString, Struct, core
+from construct import Bytes, Const, Int8ul, Int16ul, Int32ul, PaddedString, Padding, Struct, core
 
 from .exceptions import InconsistentFATAttributes, NotInitialized
 from .fatfs_state import BootSectorState
@@ -29,8 +29,7 @@ class BootSector:
     BOOT_HEADER_SIZE = 512
 
     BOOT_SECTOR_HEADER = Struct(
-        # this value reflects BS_jmpBoot used for ESP32 boot sector (any other accepted)
-        'BS_jmpBoot' / Const(b'\xeb\xfe\x90'),
+        'BS_jmpBoot' / Bytes(3),
         'BS_OEMName' / PaddedString(MAX_OEM_NAME_SIZE, SHORT_NAMES_ENCODING),
         'BPB_BytsPerSec' / Int16ul,
         'BPB_SecPerClus' / Int8ul,
@@ -45,12 +44,12 @@ class BootSector:
         'BPB_HiddSec' / Int32ul,
         'BPB_TotSec32' / Int32ul,  # zero if the FAT type is 12/16, otherwise number of sectors
         'BS_DrvNum' / Const(b'\x80'),
-        'BS_Reserved1' / Const(EMPTY_BYTE),
+        'BS_Reserved1' / Padding(1),
         'BS_BootSig' / Const(b'\x29'),
         'BS_VolID' / Int32ul,
         'BS_VolLab' / PaddedString(MAX_VOL_LAB_SIZE, SHORT_NAMES_ENCODING),
         'BS_FilSysType' / PaddedString(MAX_FS_TYPE_SIZE, SHORT_NAMES_ENCODING),
-        'BS_EMPTY' / Const(448 * EMPTY_BYTE),
+        'BS_EMPTY' / Padding(448),
         'Signature_word' / Const(FATDefaults.SIGNATURE_WORD)
     )
     assert BOOT_SECTOR_HEADER.sizeof() == BOOT_HEADER_SIZE
@@ -65,15 +64,17 @@ class BootSector:
             raise NotInitialized('The BootSectorState instance is not initialized!')
         volume_uuid = generate_4bytes_random()
         pad_header: bytes = (boot_sector_state.sector_size - BootSector.BOOT_HEADER_SIZE) * EMPTY_BYTE
-        data_content: bytes = boot_sector_state.data_sectors * boot_sector_state.sector_size * FULL_BYTE
-        root_dir_content: bytes = boot_sector_state.root_dir_sectors_cnt * boot_sector_state.sector_size * EMPTY_BYTE
         fat_tables_content: bytes = (boot_sector_state.sectors_per_fat_cnt
                                      * boot_sector_state.fat_tables_cnt
                                      * boot_sector_state.sector_size
                                      * EMPTY_BYTE)
+        root_dir_content: bytes = boot_sector_state.root_dir_sectors_cnt * boot_sector_state.sector_size * EMPTY_BYTE
+        data_content: bytes = boot_sector_state.data_sectors * boot_sector_state.sector_size * FULL_BYTE
+
         self.boot_sector_state.binary_image = (
             BootSector.BOOT_SECTOR_HEADER.build(
-                dict(BS_OEMName=pad_string(boot_sector_state.oem_name, size=BootSector.MAX_OEM_NAME_SIZE),
+                dict(BS_jmpBoot=(b'\xeb\xfe\x90'),
+                     BS_OEMName=pad_string(boot_sector_state.oem_name, size=BootSector.MAX_OEM_NAME_SIZE),
                      BPB_BytsPerSec=boot_sector_state.sector_size,
                      BPB_SecPerClus=boot_sector_state.sectors_per_cluster,
                      BPB_RsvdSecCnt=boot_sector_state.reserved_sectors_cnt,
@@ -91,8 +92,7 @@ class BootSector:
                      BS_VolLab=pad_string(boot_sector_state.volume_label,
                                           size=BootSector.MAX_VOL_LAB_SIZE),
                      BS_FilSysType=pad_string(boot_sector_state.file_sys_type,
-                                              size=BootSector.MAX_FS_TYPE_SIZE)
-                     )
+                                              size=BootSector.MAX_FS_TYPE_SIZE))
             ) + pad_header + fat_tables_content + root_dir_content + data_content
         )
 

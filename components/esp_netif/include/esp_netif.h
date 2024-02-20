@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -161,9 +161,9 @@ esp_err_t esp_netif_receive(esp_netif_t *esp_netif, void *buffer, size_t len, vo
  * @note This API can be directly used as event handler
  *
  * @param[in]  esp_netif Handle to esp-netif instance
- * @param base
- * @param event_id
- * @param data
+ * @param base The base type of the event
+ * @param event_id The specific ID of the event
+ * @param data Optional data associated with the event
  */
 void esp_netif_action_start(void *esp_netif, esp_event_base_t base, int32_t event_id, void *data);
 
@@ -173,9 +173,9 @@ void esp_netif_action_start(void *esp_netif, esp_event_base_t base, int32_t even
  * @note This API can be directly used as event handler
  *
  * @param[in]  esp_netif Handle to esp-netif instance
- * @param base
- * @param event_id
- * @param data
+ * @param base The base type of the event
+ * @param event_id The specific ID of the event
+ * @param data Optional data associated with the event
  */
 void esp_netif_action_stop(void *esp_netif, esp_event_base_t base, int32_t event_id, void *data);
 
@@ -185,9 +185,9 @@ void esp_netif_action_stop(void *esp_netif, esp_event_base_t base, int32_t event
  * @note This API can be directly used as event handler
  *
  * @param[in]  esp_netif Handle to esp-netif instance
- * @param base
- * @param event_id
- * @param data
+ * @param base The base type of the event
+ * @param event_id The specific ID of the event
+ * @param data Optional data associated with the event
  */
 void esp_netif_action_connected(void *esp_netif, esp_event_base_t base, int32_t event_id, void *data);
 
@@ -197,9 +197,9 @@ void esp_netif_action_connected(void *esp_netif, esp_event_base_t base, int32_t 
  * @note This API can be directly used as event handler
  *
  * @param[in]  esp_netif Handle to esp-netif instance
- * @param base
- * @param event_id
- * @param data
+ * @param base The base type of the event
+ * @param event_id The specific ID of the event
+ * @param data Optional data associated with the event
  */
 void esp_netif_action_disconnected(void *esp_netif, esp_event_base_t base, int32_t event_id, void *data);
 
@@ -209,9 +209,9 @@ void esp_netif_action_disconnected(void *esp_netif, esp_event_base_t base, int32
  * @note This API can be directly used as event handler
  *
  * @param[in]  esp_netif Handle to esp-netif instance
- * @param base
- * @param event_id
- * @param data
+ * @param base The base type of the event
+ * @param event_id The specific ID of the event
+ * @param data Optional data associated with the event
  */
 void esp_netif_action_got_ip(void *esp_netif, esp_event_base_t base, int32_t event_id, void *data);
 
@@ -221,9 +221,9 @@ void esp_netif_action_got_ip(void *esp_netif, esp_event_base_t base, int32_t eve
  * @note This API can be directly used as event handler
  *
  * @param[in]  esp_netif Handle to esp-netif instance
- * @param base
- * @param event_id
- * @param data
+ * @param base The base type of the event
+ * @param event_id The specific ID of the event
+ * @param data Optional data associated with the event
  */
 void esp_netif_action_join_ip6_multicast_group(void *esp_netif, esp_event_base_t base, int32_t event_id, void *data);
 
@@ -233,9 +233,9 @@ void esp_netif_action_join_ip6_multicast_group(void *esp_netif, esp_event_base_t
  * @note This API can be directly used as event handler
  *
  * @param[in]  esp_netif Handle to esp-netif instance
- * @param base
- * @param event_id
- * @param data
+ * @param base The base type of the event
+ * @param event_id The specific ID of the event
+ * @param data Optional data associated with the event
  */
 void esp_netif_action_leave_ip6_multicast_group(void *esp_netif, esp_event_base_t base, int32_t event_id, void *data);
 
@@ -245,9 +245,9 @@ void esp_netif_action_leave_ip6_multicast_group(void *esp_netif, esp_event_base_
  * @note This API can be directly used as event handler
  *
  * @param[in]  esp_netif Handle to esp-netif instance
- * @param base
- * @param event_id
- * @param data
+ * @param base The base type of the event
+ * @param event_id The specific ID of the event
+ * @param data Optional data associated with the event
  */
 void esp_netif_action_add_ip6_address(void *esp_netif, esp_event_base_t base, int32_t event_id, void *data);
 
@@ -257,9 +257,9 @@ void esp_netif_action_add_ip6_address(void *esp_netif, esp_event_base_t base, in
  * @note This API can be directly used as event handler
  *
  * @param[in]  esp_netif Handle to esp-netif instance
- * @param base
- * @param event_id
- * @param data
+ * @param base The base type of the event
+ * @param event_id The specific ID of the event
+ * @param data Optional data associated with the event
  */
 void esp_netif_action_remove_ip6_address(void *esp_netif, esp_event_base_t base, int32_t event_id, void *data);
 
@@ -821,6 +821,35 @@ esp_err_t esp_netif_get_ip6_global(esp_netif_t *esp_netif, esp_ip6_addr_t *if_ip
  *      number of returned IPv6 addresses
  */
 int esp_netif_get_all_ip6(esp_netif_t *esp_netif, esp_ip6_addr_t if_ip6[]);
+
+/**
+ * @brief  Cause the TCP/IP stack to add an IPv6 address to the interface
+ *
+ * @param[in]  esp_netif Handle to esp-netif instance
+ * @param[in]  addr      The address to be added
+ * @param[in]  preferred The preferred status of the address
+ *
+ * @return
+ *         - ESP_OK
+ *         - ESP_ERR_ESP_NETIF_INVALID_PARAMS
+ *         - ESP_ERR_ESP_NETIF_IP6_ADDR_FAILED
+ *         - ESP_ERR_NO_MEM
+ */
+esp_err_t esp_netif_add_ip6_address(esp_netif_t *esp_netif, const esp_ip6_addr_t addr, bool preferred);
+
+/**
+ * @brief  Cause the TCP/IP stack to remove an IPv6 address from the interface
+ *
+ * @param[in]  esp_netif Handle to esp-netif instance
+ * @param[in]  addr      The address to be removed
+ *
+ * @return
+ *         - ESP_OK
+ *         - ESP_ERR_ESP_NETIF_INVALID_PARAMS
+ *         - ESP_ERR_ESP_NETIF_IP6_ADDR_FAILED
+ *         - ESP_ERR_NO_MEM
+ */
+esp_err_t esp_netif_remove_ip6_address(esp_netif_t *esp_netif, const esp_ip6_addr_t *addr);
 #endif
 
 /**
@@ -975,11 +1004,49 @@ int32_t esp_netif_get_event_id(esp_netif_t *esp_netif, esp_netif_ip_event_type_t
 /**
  * @brief Iterates over list of interfaces. Returns first netif if NULL given as parameter
  *
+ * @note This API doesn't lock the list, nor the TCPIP context, as this it's usually required
+ * to get atomic access between iteration steps rather that within a single iteration.
+ * Therefore it is recommended to iterate over the interfaces inside esp_netif_tcpip_exec()
+ *
+ * @note This API is deprecated. Please use esp_netif_next_unsafe() directly if all the system
+ * interfaces are under your control and you can safely iterate over them.
+ * Otherwise, iterate over interfaces using esp_netif_tcpip_exec(), or use esp_netif_find_if()
+ * to search in the list of netifs with defined predicate.
+ *
  * @param[in]  esp_netif Handle to esp-netif instance
  *
  * @return First netif from the list if supplied parameter is NULL, next one otherwise
  */
-esp_netif_t *esp_netif_next(esp_netif_t *esp_netif);
+esp_netif_t *esp_netif_next(esp_netif_t *esp_netif)
+__attribute__((deprecated("use esp_netif_next_unsafe() either directly or via esp_netif_tcpip_exec")));
+
+/**
+ * @brief Iterates over list of interfaces without list locking. Returns first netif if NULL given as parameter
+ *
+ * Used for bulk search loops within TCPIP context, e.g. using esp_netif_tcpip_exec(), or if we're sure
+ * that the iteration is safe from our application perspective (e.g. no interface is removed between iterations)
+ *
+ * @param[in]  esp_netif Handle to esp-netif instance
+ *
+ * @return First netif from the list if supplied parameter is NULL, next one otherwise
+ */
+esp_netif_t* esp_netif_next_unsafe(esp_netif_t* esp_netif);
+
+/**
+ * @brief Predicate callback for esp_netif_find_if() used to find interface
+ *        which meets defined criteria
+ */
+typedef bool (*esp_netif_find_predicate_t)(esp_netif_t *netif, void *ctx);
+
+/**
+ * @brief Return a netif pointer for the first interface that meets criteria defined
+ * by the callback
+ *
+ * @param fn Predicate function returning true for the desired interface
+ * @param ctx Context pointer passed to the predicate, typically a descriptor to compare with
+ * @return valid netif pointer if found, NULL if not
+ */
+esp_netif_t *esp_netif_find_if(esp_netif_find_predicate_t fn, void *ctx);
 
 /**
  * @brief Returns number of registered esp_netif objects

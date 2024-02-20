@@ -42,8 +42,6 @@ static void tskTestRand(void *pvParameters)
     vTaskDelete(NULL);
 }
 
-
-
 // TODO: split this thing into separate orthogonal tests
 TEST_CASE("Test for per-task non-reentrant tasks", "[freertos]")
 {

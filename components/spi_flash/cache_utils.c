@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -402,12 +402,17 @@ IRAM_ATTR void esp_config_instruction_cache_mode(void)
 
 IRAM_ATTR void esp_config_data_cache_mode(void)
 {
+#define CACHE_SIZE_0KB  99  //If Cache set to 0 KB, cache is bypassed, the cache size doesn't take into effect. Set this macro to a unique value for log
+
     cache_size_t cache_size;
     cache_ways_t cache_ways;
     cache_line_size_t cache_line_size;
 
 #if CONFIG_ESP32S2_INSTRUCTION_CACHE_8KB
-#if CONFIG_ESP32S2_DATA_CACHE_8KB
+#if CONFIG_ESP32S2_DATA_CACHE_0KB
+    Cache_Allocate_SRAM(CACHE_MEMORY_ICACHE_LOW, CACHE_MEMORY_INVALID, CACHE_MEMORY_INVALID, CACHE_MEMORY_INVALID);
+    cache_size = CACHE_SIZE_0KB;
+#elif CONFIG_ESP32S2_DATA_CACHE_8KB
     Cache_Allocate_SRAM(CACHE_MEMORY_ICACHE_LOW, CACHE_MEMORY_DCACHE_LOW, CACHE_MEMORY_INVALID, CACHE_MEMORY_INVALID);
     cache_size = CACHE_SIZE_8KB;
 #else
@@ -415,7 +420,10 @@ IRAM_ATTR void esp_config_data_cache_mode(void)
     cache_size = CACHE_SIZE_16KB;
 #endif
 #else
-#if CONFIG_ESP32S2_DATA_CACHE_8KB
+#if CONFIG_ESP32S2_DATA_CACHE_0KB
+    Cache_Allocate_SRAM(CACHE_MEMORY_ICACHE_LOW, CACHE_MEMORY_ICACHE_HIGH, CACHE_MEMORY_INVALID, CACHE_MEMORY_INVALID);
+    cache_size = CACHE_SIZE_0KB;
+#elif CONFIG_ESP32S2_DATA_CACHE_8KB
     Cache_Allocate_SRAM(CACHE_MEMORY_ICACHE_LOW, CACHE_MEMORY_ICACHE_HIGH, CACHE_MEMORY_DCACHE_LOW, CACHE_MEMORY_INVALID);
     cache_size = CACHE_SIZE_8KB;
 #else
@@ -430,7 +438,7 @@ IRAM_ATTR void esp_config_data_cache_mode(void)
 #else
     cache_line_size = CACHE_LINE_SIZE_32B;
 #endif
-    ESP_EARLY_LOGI(TAG, "Data cache \t\t: size %dKB, %dWays, cache line size %dByte", cache_size == CACHE_SIZE_8KB ? 8 : 16, 4, cache_line_size == CACHE_LINE_SIZE_16B ? 16 : 32);
+    ESP_EARLY_LOGI(TAG, "Data cache \t\t: size %dKB, %dWays, cache line size %dByte", (cache_size == CACHE_SIZE_0KB) ? 0 : ((cache_size == CACHE_SIZE_8KB) ? 8 : 16), 4, cache_line_size == CACHE_LINE_SIZE_16B ? 16 : 32);
     Cache_Set_DCache_Mode(cache_size, cache_ways, cache_line_size);
     Cache_Invalidate_DCache_All();
 }

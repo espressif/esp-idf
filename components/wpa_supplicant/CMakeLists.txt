@@ -1,3 +1,18 @@
+idf_build_get_property(target IDF_TARGET)
+
+if(${target} STREQUAL "linux")
+    return() # This component is not supported by the POSIX/Linux simulator
+else()
+    set(linker_fragments linker.lf)
+endif()
+
+if(NOT CONFIG_ESP_WIFI_ENABLED AND NOT CMAKE_BUILD_EARLY_EXPANSION)
+    # This component provides only "esp_supplicant" headers if WiFi not enabled
+    # (implementation supported optionally in a managed component esp_wifi_remote)
+    idf_component_register(INCLUDE_DIRS esp_supplicant/include)
+    return()
+endif()
+
 set(srcs "port/os_xtensa.c"
     "port/eloop.c"
     "src/ap/ap_config.c"
@@ -172,7 +187,7 @@ if(CONFIG_ESP_WIFI_ENABLE_SAE_PK)
     "src/common/sae_pk.c")
 endif()
 
-if(CONFIG_ESP_WIFI_11KV_SUPPORT OR CONFIG_ESP_WIFI_11R_SUPPORT OR CONFIG_ESP_WIFI_ENABLE_SAE_PK)
+if(CONFIG_ESP_WIFI_11KV_SUPPORT OR CONFIG_ESP_WIFI_11R_SUPPORT)
     set(srcs ${srcs}
     "src/common/bss.c"
     "src/common/scan.c"
@@ -211,6 +226,7 @@ idf_component_register(SRCS "${srcs}" "${esp_srcs}" "${tls_src}" "${roaming_src}
                             "${crypto_src}" "${mbo_src}" "${dpp_src}" "${wps_registrar_src}"
                     INCLUDE_DIRS include port/include esp_supplicant/include
                     PRIV_INCLUDE_DIRS src src/utils esp_supplicant/src src/crypto
+                    LDFRAGMENTS   ${linker_fragments}
                     PRIV_REQUIRES mbedtls esp_timer esp_wifi)
 
 target_compile_options(${COMPONENT_LIB} PRIVATE -Wno-strict-aliasing -Wno-write-strings -Werror)

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -242,7 +242,7 @@ typedef int32_t (* esp_a2d_source_data_cb_t)(uint8_t *buf, int32_t len);
  *
  * @return
  *                  - ESP_OK: success
- *                  - ESP_INVALID_STATE: if bluetooth stack is not yet enabled
+ *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
  *                  - ESP_FAIL: if callback is a NULL function pointer
  *
  */
@@ -259,7 +259,7 @@ esp_err_t esp_a2d_register_callback(esp_a2d_cb_t callback);
  *
  * @return
  *                  - ESP_OK: success
- *                  - ESP_INVALID_STATE: if bluetooth stack is not yet enabled
+ *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
  *                  - ESP_FAIL: if callback is a NULL function pointer
  *
  */
@@ -276,7 +276,7 @@ esp_err_t esp_a2d_sink_register_data_callback(esp_a2d_sink_data_cb_t callback);
  *
  * @return
  *                  - ESP_OK: if the initialization request is sent successfully
- *                  - ESP_INVALID_STATE: if bluetooth stack is not yet enabled
+ *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
  *                  - ESP_FAIL: others
  *
  */
@@ -291,7 +291,7 @@ esp_err_t esp_a2d_sink_init(void);
  *
  * @return
  *                  - ESP_OK: if the deinitialization request is sent successfully
- *                  - ESP_INVALID_STATE: if bluetooth stack is not yet enabled
+ *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
  *                  - ESP_FAIL: others
  *
  */
@@ -307,7 +307,7 @@ esp_err_t esp_a2d_sink_deinit(void);
  *
  * @return
  *                  - ESP_OK: connect request is sent to lower layer successfully
- *                  - ESP_INVALID_STATE: if bluetooth stack is not yet enabled
+ *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
  *                  - ESP_FAIL: others
  *
  */
@@ -323,7 +323,7 @@ esp_err_t esp_a2d_sink_connect(esp_bd_addr_t remote_bda);
  *
  * @return
  *                  - ESP_OK: disconnect request is sent to lower layer successfully
- *                  - ESP_INVALID_STATE: if bluetooth stack is not yet enabled
+ *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
  *                  - ESP_FAIL: others
  *
  */
@@ -340,7 +340,7 @@ esp_err_t esp_a2d_sink_disconnect(esp_bd_addr_t remote_bda);
  *
  * @return
  *                  - ESP_OK: delay value is sent to lower layer successfully
- *                  - ESP_INVALID_STATE: if bluetooth stack is not yet enabled
+ *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
  *                  - ESP_FAIL: others
  *
  */
@@ -353,7 +353,7 @@ esp_err_t esp_a2d_sink_set_delay_value(uint16_t delay_value);
  *
  * @return
  *                  - ESP_OK: if the request is sent successfully
- *                  - ESP_INVALID_STATE: if bluetooth stack is not yet enabled
+ *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
  *                  - ESP_FAIL: others
  *
  */
@@ -369,7 +369,7 @@ esp_err_t esp_a2d_sink_get_delay_value(void);
  *
  * @return
  *                  - ESP_OK: control command is sent to lower layer successfully
- *                  - ESP_INVALID_STATE: if bluetooth stack is not yet enabled
+ *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
  *                  - ESP_FAIL: others
  *
  */
@@ -386,7 +386,7 @@ esp_err_t esp_a2d_media_ctrl(esp_a2d_media_ctrl_t ctrl);
  *
  * @return
  *                  - ESP_OK: if the initialization request is sent to lower layer successfully
- *                  - ESP_INVALID_STATE: if bluetooth stack is not yet enabled
+ *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
  *                  - ESP_FAIL: others
  *
  */
@@ -401,7 +401,7 @@ esp_err_t esp_a2d_source_init(void);
  *
  * @return
  *                  - ESP_OK: success
- *                  - ESP_INVALID_STATE: if bluetooth stack is not yet enabled
+ *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
  *                  - ESP_FAIL: others
  *
  */
@@ -418,7 +418,7 @@ esp_err_t esp_a2d_source_deinit(void);
  *
  * @return
  *                  - ESP_OK: success
- *                  - ESP_INVALID_STATE: if bluetooth stack is not yet enabled
+ *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
  *                  - ESP_FAIL: if callback is a NULL function pointer
  *
  */
@@ -434,7 +434,7 @@ esp_err_t esp_a2d_source_register_data_callback(esp_a2d_source_data_cb_t callbac
  *
  * @return
  *                  - ESP_OK: connect request is sent to lower layer successfully
- *                  - ESP_INVALID_STATE: if bluetooth stack is not yet enabled
+ *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
  *                  - ESP_FAIL: others
  *
  */
@@ -449,7 +449,7 @@ esp_err_t esp_a2d_source_connect(esp_bd_addr_t remote_bda);
  * @param[in]       remote_bda: remote bluetooth device address
  * @return
  *                  - ESP_OK: disconnect request is sent to lower layer
- *                  - ESP_INVALID_STATE: if bluetooth stack is not yet enabled
+ *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
  *                  - ESP_FAIL: others
  *
  */

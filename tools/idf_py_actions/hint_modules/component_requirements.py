@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import os
 import re
@@ -25,6 +25,10 @@ ENOENT_FULL_RE = re.compile(r'^(In file included.*No such file or directory)$',
                             flags=re.MULTILINE | re.DOTALL)
 # Regex to find original_filename in preprocessor's error message
 ORIGINAL_FILE_RE = re.compile(r'.*from (.*):[\d]+:')
+
+
+def _bug(msg: str) -> str:
+    return f'BUG: {os.path.basename(__file__)}: {msg}'
 
 
 def _get_absolute_path(filename: str, base: str) -> str:
@@ -58,7 +62,7 @@ def generate_hint(output: str) -> Optional[str]:
     # find the source_component that contains the source file
     found_source_component_name = None
     found_source_component_info = None
-    for component_name, component_info in proj_desc['build_component_info'].items():
+    for component_name, component_info in proj_desc['all_component_info'].items():
         # look if the source_filename is within a component directory, not only
         # at component_info['sources'], because the missing file may be included
         # from header file, which is not present in component_info['sources']
@@ -74,33 +78,42 @@ def generate_hint(output: str) -> Optional[str]:
         # we can't help much.
         return None
 
-    # find the original_component, which may be different from sourc_component
+    # find the original_component, which may be different from source_component
     found_original_component_name = found_source_component_name
     found_original_component_info = found_source_component_info
     original_filename = source_filename
     hint_match_full = ENOENT_FULL_RE.search(output)
     if hint_match_full:
-        lines = hint_match_full.group().splitlines()
+        # As a precaution remove empty lines, but there should be none.
+        lines = [line for line in hint_match_full.group().splitlines() if line]
         # second line from the end contains filename which is part of the
         # original_component
         original_file_match = ORIGINAL_FILE_RE.match(lines[-2])
         if original_file_match:
             original_filename = _get_absolute_path(original_file_match.group(1), proj_desc['build_dir'])
-            for component_name, component_info in proj_desc['build_component_info'].items():
+            for component_name, component_info in proj_desc['all_component_info'].items():
                 component_dir = os.path.normpath(component_info['dir'])
                 if original_filename.startswith(component_dir):
                     found_original_component_name = component_name
                     found_original_component_info = component_info
                     break
+            else:
+                # Original component not found. This should never happen, because the
+                # original_filename has to part of some component, which was added to
+                # the build.
+                return _bug((f'cannot find original component for source '
+                             f'component {found_source_component_name}'))
+
         else:
             # We should never reach this path. It would probably mean
-            # the preprocessor output was changed. Anyway we can still
-            # report something meaningful, so just keep going.
-            pass
+            # the preprocessor output was changed or we received malformed
+            # output.
+            return _bug((f'cannot match original component filename for '
+                         f'source component {found_source_component_name}'))
 
     # look for the header file in the public include directories of all components
     found_dep_component_names = []
-    for candidate_component_name, candidate_component_info in proj_desc['build_component_info'].items():
+    for candidate_component_name, candidate_component_info in proj_desc['all_component_info'].items():
         if candidate_component_name == found_source_component_name:
             # skip the component that contains the source file
             continue
@@ -117,7 +130,7 @@ def generate_hint(output: str) -> Optional[str]:
         # directories if we can find the missing header there and notify user about possible
         # missing entry in INCLUDE_DIRS.
         candidate_component_include_dirs = []
-        for component_name, component_info in proj_desc['build_component_info'].items():
+        for component_name, component_info in proj_desc['all_component_info'].items():
             component_dir = os.path.normpath(component_info['dir'])
             for root, _, _ in os.walk(component_dir):
                 full_path = os.path.normpath(os.path.join(root, missing_header))
@@ -154,7 +167,8 @@ def generate_hint(output: str) -> Optional[str]:
         if dep_component_name in all_reqs:
             # Oops. This component is already in the requirements list.
             # How did this happen?
-            return f'BUG: {missing_header} found in component {dep_component_name} which is already in the requirements list of {found_source_component_name}'
+            return _bug((f'{missing_header} found in component {dep_component_name} '
+                         f'which is already in the requirements list of {found_source_component_name}'))
 
     # try to figure out the correct require type: REQUIRES or PRIV_REQUIRES
     requires_type = None

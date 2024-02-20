@@ -1,4 +1,0 @@
-# This config is for all targets
-# The test is isolated as it requires particular memory layout
-TEST_COMPONENTS=test_utils
-CONFIG_ESP_IPC_TASK_STACK_SIZE=3072

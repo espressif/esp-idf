@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -46,7 +46,7 @@ ssize_t esp_mbedtls_get_bytes_avail(esp_tls_t *tls);
 /**
  * Internal Callback for creating ssl handle for mbedtls
  */
-esp_err_t esp_create_mbedtls_handle(const char *hostname, size_t hostlen, const void *cfg, esp_tls_t *tls);
+esp_err_t esp_create_mbedtls_handle(const char *hostname, size_t hostlen, const void *cfg, esp_tls_t *tls, void* server_params);
 
 /**
  * mbedTLS function for Initializing socket wrappers
@@ -61,13 +61,6 @@ static inline void esp_mbedtls_net_init(esp_tls_t *tls)
  */
 void *esp_mbedtls_get_ssl_context(esp_tls_t *tls);
 
-#ifdef CONFIG_ESP_TLS_SERVER
-/**
- * Internal Callback for set_server_config
- *
- * /note :- can only be used with mbedtls ssl library
- */
-esp_err_t set_server_config(esp_tls_cfg_server_t *cfg, esp_tls_t *tls);
 
 /**
  * Internal Callback for mbedtls_server_session_create
@@ -97,7 +90,6 @@ esp_err_t esp_mbedtls_server_session_ticket_ctx_init(esp_tls_server_session_tick
  * /note :- The function can only be used with mbedtls ssl library
  */
 void esp_mbedtls_server_session_ticket_ctx_free(esp_tls_server_session_ticket_ctx_t *cfg);
-#endif
 #endif
 
 /**

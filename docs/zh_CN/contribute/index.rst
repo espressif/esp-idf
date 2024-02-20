@@ -19,7 +19,7 @@
 
 * 要提交的代码是否符合 ESP-IDF :doc:`style-guide`？
 
-* 是否安装了 ESP-IDF :doc:`pre-commit hook <install-pre-commit-hook>`？
+* 是否安装了 ESP-IDF :doc:`pre-commit 钩子 <install-pre-commit-hook>`？
 
 * 代码文档是否符合 :doc:`documenting-code` 的要求？
 

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -21,37 +21,10 @@ extern "C" {
 static inline uint32_t periph_ll_get_clk_en_mask(periph_module_t periph)
 {
     switch (periph) {
-    case PERIPH_MSPI_FLASH_MODULE:
-        return HP_SYS_CLKRST_REG_FLASH_CORE_CLK_EN;
-    case PERIPH_MSPI_PSRAM_MODULE:
-        return HP_SYS_CLKRST_REG_PSRAM_CORE_CLK_EN;
     case PERIPH_EMAC_MODULE:
         return LP_CLKRST_HP_PAD_EMAC_TXRX_CLK_EN | LP_CLKRST_HP_PAD_EMAC_RX_CLK_EN | LP_CLKRST_HP_PAD_EMAC_TX_CLK_EN;
-    case PERIPH_MIPI_DSI_MODULE:
-        return HP_SYS_CLKRST_REG_MIPI_DSI_DPICLK_EN;
-    // IDF-6500
-    case PERIPH_MIPI_CSI_MODULE:
-        return 0;
-    case PERIPH_I2C0_MODULE:
-        return HP_SYS_CLKRST_REG_I2C0_APB_CLK_EN;
-    case PERIPH_I2C1_MODULE:
-        return HP_SYS_CLKRST_REG_I2C1_APB_CLK_EN;
-    case PERIPH_LCD_MODULE:
-        return HP_SYS_CLKRST_REG_LCD_CLK_EN;
-    case PERIPH_TWAI0_MODULE:
-        return HP_SYS_CLKRST_REG_TWAI0_CLK_EN;
-    case PERIPH_TWAI1_MODULE:
-        return HP_SYS_CLKRST_REG_TWAI1_CLK_EN;
-    case PERIPH_TWAI2_MODULE:
-        return HP_SYS_CLKRST_REG_TWAI2_CLK_EN;
     case PERIPH_I3C_MODULE:
         return HP_SYS_CLKRST_REG_I3C_MST_CLK_EN;
-    case PERIPH_CAM_MODULE:
-        return HP_SYS_CLKRST_REG_CAM_CLK_EN;
-    case PERIPH_SYSTIMER_MODULE:
-        return HP_SYS_CLKRST_REG_SYSTIMER_CLK_EN;
-    case PERIPH_LEDC_MODULE:
-        return HP_SYS_CLKRST_REG_LEDC_CLK_EN;
     case PERIPH_SARADC_MODULE:
         return HP_SYS_CLKRST_REG_ADC_CLK_EN;
     case PERIPH_PVT_MODULE:
@@ -85,42 +58,12 @@ static inline uint32_t periph_ll_get_rst_en_mask(periph_module_t periph, bool en
     switch (periph) {
     case PERIPH_PVT_MODULE:
         return HP_SYS_CLKRST_REG_RST_EN_PVT_TOP;
-    case PERIPH_MSPI_FLASH_MODULE:
-        return HP_SYS_CLKRST_REG_RST_EN_MSPI_AXI;
-    case PERIPH_MSPI_PSRAM_MODULE:
-        return HP_SYS_CLKRST_REG_RST_EN_DUAL_MSPI_AXI;
-    case PERIPH_MIPI_DSI_MODULE:
-        return HP_SYS_CLKRST_REG_RST_EN_DSI_BRG;
-    case PERIPH_MIPI_CSI_MODULE:
-        return HP_SYS_CLKRST_REG_RST_EN_CSI_BRG;
     case PERIPH_ISP_MODULE:
         return HP_SYS_CLKRST_REG_RST_EN_ISP;
-    case PERIPH_JPEG_MODULE:
-        return HP_SYS_CLKRST_REG_RST_EN_JPEG;
-    case PERIPH_DMA2D_MODULE:
-        return HP_SYS_CLKRST_REG_RST_EN_DMA2D;
-    case PERIPH_PPA_MODULE:
-        return HP_SYS_CLKRST_REG_RST_EN_PPA;
-    case PERIPH_SYSTIMER_MODULE:
-        return HP_SYS_CLKRST_REG_RST_EN_STIMER;
     case PERIPH_UHCI_MODULE:
         return HP_SYS_CLKRST_REG_RST_EN_UHCI;
     case PERIPH_I3C_MODULE:
         return HP_SYS_CLKRST_REG_RST_EN_I3CMST | HP_SYS_CLKRST_REG_RST_EN_I3CSLV;
-    case PERIPH_I2C0_MODULE:
-        return HP_SYS_CLKRST_REG_RST_EN_I2C0;
-    case PERIPH_I2C1_MODULE:
-        return HP_SYS_CLKRST_REG_RST_EN_I2C1;
-    case PERIPH_TWAI0_MODULE:
-        return HP_SYS_CLKRST_REG_RST_EN_CAN0;
-    case PERIPH_TWAI1_MODULE:
-        return HP_SYS_CLKRST_REG_RST_EN_CAN1;
-    case PERIPH_TWAI2_MODULE:
-        return HP_SYS_CLKRST_REG_RST_EN_CAN2;
-    case PERIPH_LEDC_MODULE:
-        return HP_SYS_CLKRST_REG_RST_EN_LEDC;
-    case PERIPH_LCD_MODULE:
-        return HP_SYS_CLKRST_REG_RST_EN_LCDCAM;
     case PERIPH_SARADC_MODULE:
         return HP_SYS_CLKRST_REG_RST_EN_ADC;
     case PERIPH_AES_MODULE:
@@ -158,8 +101,6 @@ static inline uint32_t periph_ll_get_rst_en_mask(periph_module_t periph, bool en
         return ret;
     case PERIPH_ECDSA_MODULE:
         return HP_SYS_CLKRST_REG_RST_EN_CRYPTO | HP_SYS_CLKRST_REG_RST_EN_ECDSA;
-    case PERIPH_SDMMC_MODULE:
-        return LP_CLKRST_RST_EN_SDMMC;
     case PERIPH_EMAC_MODULE:
         return LP_CLKRST_RST_EN_EMAC;
     default:
@@ -170,26 +111,7 @@ static inline uint32_t periph_ll_get_rst_en_mask(periph_module_t periph, bool en
 static inline uint32_t periph_ll_get_clk_en_reg(periph_module_t periph)
 {
     switch (periph) {
-    case PERIPH_MSPI_FLASH_MODULE:
-    case PERIPH_MSPI_PSRAM_MODULE:
-        return HP_SYS_CLKRST_PERI_CLK_CTRL00_REG;
-    case PERIPH_MIPI_DSI_MODULE:
-        return HP_SYS_CLKRST_PERI_CLK_CTRL03_REG;
-    case PERIPH_I2C0_MODULE:
-    case PERIPH_I2C1_MODULE:
-        return HP_SYS_CLKRST_SOC_CLK_CTRL2_REG;
-    case PERIPH_LCD_MODULE:
-        return HP_SYS_CLKRST_PERI_CLK_CTRL110_REG;
-    case PERIPH_TWAI0_MODULE:
-    case PERIPH_TWAI1_MODULE:
-    case PERIPH_TWAI2_MODULE:
-        return HP_SYS_CLKRST_PERI_CLK_CTRL116_REG;
     case PERIPH_I3C_MODULE:
-    case PERIPH_CAM_MODULE:
-        return HP_SYS_CLKRST_PERI_CLK_CTRL119_REG;
-    case PERIPH_SYSTIMER_MODULE:
-    case PERIPH_LEDC_MODULE:
-        return HP_SYS_CLKRST_PERI_CLK_CTRL21_REG;
     case PERIPH_SARADC_MODULE:
         return HP_SYS_CLKRST_PERI_CLK_CTRL22_REG;
     case PERIPH_PVT_MODULE:
@@ -216,24 +138,10 @@ static inline uint32_t periph_ll_get_rst_en_reg(periph_module_t periph)
 {
     switch (periph) {
     case PERIPH_PVT_MODULE:
-    case PERIPH_MSPI_FLASH_MODULE:
-    case PERIPH_MSPI_PSRAM_MODULE:
     case PERIPH_ISP_MODULE:
-    case PERIPH_JPEG_MODULE:
-    case PERIPH_DMA2D_MODULE:
         return HP_SYS_CLKRST_HP_RST_EN0_REG;
-    case PERIPH_PPA_MODULE:
-    case PERIPH_SYSTIMER_MODULE:
     case PERIPH_UHCI_MODULE:
     case PERIPH_I3C_MODULE:
-    case PERIPH_I2C0_MODULE:
-    case PERIPH_I2C1_MODULE:
-        return HP_SYS_CLKRST_HP_RST_EN1_REG;
-    case PERIPH_TWAI0_MODULE:
-    case PERIPH_TWAI1_MODULE:
-    case PERIPH_TWAI2_MODULE:
-    case PERIPH_LEDC_MODULE:
-    case PERIPH_CAM_MODULE:
     case PERIPH_SARADC_MODULE:
     case PERIPH_AES_MODULE:
     case PERIPH_DS_MODULE:
@@ -244,7 +152,6 @@ static inline uint32_t periph_ll_get_rst_en_reg(periph_module_t periph)
     case PERIPH_SHA_MODULE:
     case PERIPH_ECDSA_MODULE:
         return HP_SYS_CLKRST_HP_RST_EN2_REG;
-    case PERIPH_SDMMC_MODULE:
     case PERIPH_EMAC_MODULE:
         return LP_CLKRST_HP_SDMMC_EMAC_RST_CTRL_REG;
     default:

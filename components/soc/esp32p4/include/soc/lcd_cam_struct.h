@@ -820,7 +820,7 @@ typedef union {
 } lcdcam_lc_reg_date_reg_t;
 
 
-typedef struct lcdcam_dev_t {
+typedef struct lcd_cam_dev_t {
     volatile lcdcam_lcd_clock_reg_t lcd_clock;
     volatile lcdcam_cam_ctrl_reg_t cam_ctrl;
     volatile lcdcam_cam_ctrl1_reg_t cam_ctrl1;
@@ -843,12 +843,14 @@ typedef struct lcdcam_dev_t {
     volatile lcdcam_lc_dma_int_clr_reg_t lc_dma_int_clr;
     uint32_t reserved_074[34];
     volatile lcdcam_lc_reg_date_reg_t lc_reg_date;
-} lcdcam_dev_t;
+} lcd_cam_dev_t;
 
 
 #ifndef __cplusplus
-_Static_assert(sizeof(lcdcam_dev_t) == 0x100, "Invalid size of lcdcam_dev_t structure");
+_Static_assert(sizeof(lcd_cam_dev_t) == 0x100, "Invalid size of lcdcam_dev_t structure");
 #endif
+
+extern lcd_cam_dev_t LCD_CAM;
 
 #ifdef __cplusplus
 }

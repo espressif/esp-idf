@@ -19,6 +19,7 @@
 #include "esp_private/gdma.h"
 #elif CONFIG_IDF_TARGET_ESP32S2
 #include "hal/spi_types.h"
+#include "esp_private/spi_common_internal.h"
 #elif CONFIG_IDF_TARGET_ESP32
 #include "driver/i2s_types.h"
 #endif
@@ -77,6 +78,7 @@ struct adc_continuous_ctx_t {
     gdma_channel_handle_t           rx_dma_channel;             //dma rx channel handle
 #elif CONFIG_IDF_TARGET_ESP32S2
     spi_host_device_t               spi_host;                   //ADC uses this SPI DMA
+    spi_dma_ctx_t                   *spi_dma_ctx;               //spi_dma context
 #elif CONFIG_IDF_TARGET_ESP32
     i2s_port_t                      i2s_host;                   //ADC uses this I2S DMA
 #endif

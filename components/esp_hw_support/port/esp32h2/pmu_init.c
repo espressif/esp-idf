@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,7 +13,6 @@
 #include "soc/pmu_struct.h"
 #include "hal/pmu_hal.h"
 #include "pmu_param.h"
-#include "esp_rom_sys.h"
 #include "esp_private/esp_pmu.h"
 #include "soc/regi2c_pmu.h"
 #include "soc/regi2c_bias.h"
@@ -25,13 +24,13 @@ typedef struct {
     const pmu_hp_system_power_param_t     *power;
     const pmu_hp_system_clock_param_t     *clock;
     const pmu_hp_system_digital_param_t   *digital;
-    const pmu_hp_system_analog_param_t    *analog;
+    pmu_hp_system_analog_param_t          *analog;    //param determined at runtime
     const pmu_hp_system_retention_param_t *retent;
 } pmu_hp_system_param_t;
 
 typedef struct {
     const pmu_lp_system_power_param_t  *power;
-    const pmu_lp_system_analog_param_t *analog;
+    pmu_lp_system_analog_param_t       *analog;    //param determined at runtime
 } pmu_lp_system_param_t;
 
 pmu_context_t * __attribute__((weak)) IRAM_ATTR PMU_instance(void)
@@ -44,7 +43,7 @@ pmu_context_t * __attribute__((weak)) IRAM_ATTR PMU_instance(void)
     return &pmu_context;
 }
 
-void pmu_hp_system_init(pmu_context_t *ctx, pmu_hp_mode_t mode, pmu_hp_system_param_t *param)
+void pmu_hp_system_init(pmu_context_t *ctx, pmu_hp_mode_t mode, const pmu_hp_system_param_t *param)
 {
     const pmu_hp_system_power_param_t *power = param->power;
     const pmu_hp_system_clock_param_t *clock = param->clock;
@@ -103,7 +102,7 @@ void pmu_hp_system_init(pmu_context_t *ctx, pmu_hp_mode_t mode, pmu_hp_system_pa
     pmu_ll_hp_set_sleep_protect_mode(ctx->hal->dev, PMU_SLEEP_PROTECT_HP_LP_SLEEP);
 }
 
-void pmu_lp_system_init(pmu_context_t *ctx, pmu_lp_mode_t mode, pmu_lp_system_param_t *param)
+void pmu_lp_system_init(pmu_context_t *ctx, pmu_lp_mode_t mode, const pmu_lp_system_param_t *param)
 {
     const pmu_lp_system_power_param_t *power = param->power;
     const pmu_lp_system_analog_param_t *anlg = param->analog;
@@ -158,18 +157,26 @@ static inline void pmu_power_domain_force_default(pmu_context_t *ctx)
 
 static inline void pmu_hp_system_param_default(pmu_hp_mode_t mode, pmu_hp_system_param_t *param)
 {
+    assert (param->analog);
+
     param->power = pmu_hp_system_power_param_default(mode);
     param->clock = pmu_hp_system_clock_param_default(mode);
     param->digital = pmu_hp_system_digital_param_default(mode);
-    param->analog = pmu_hp_system_analog_param_default(mode);
+    *param->analog = *pmu_hp_system_analog_param_default(mode); //copy default value
     param->retent = pmu_hp_system_retention_param_default(mode);
+
+    if (mode == PMU_MODE_HP_ACTIVE || mode == PMU_MODE_HP_MODEM) {
+        param->analog->regulator0.dbias = get_act_hp_dbias();
+    }
 }
 
 static void pmu_hp_system_init_default(pmu_context_t *ctx)
 {
     assert(ctx);
-    pmu_hp_system_param_t param = { 0 };
     for (pmu_hp_mode_t mode = PMU_MODE_HP_ACTIVE; mode < PMU_MODE_HP_MAX; mode++) {
+        pmu_hp_system_analog_param_t analog = {};
+        pmu_hp_system_param_t param = {.analog = &analog};
+
         pmu_hp_system_param_default(mode, &param);
         pmu_hp_system_init(ctx, mode, &param);
     }
@@ -177,15 +184,23 @@ static void pmu_hp_system_init_default(pmu_context_t *ctx)
 
 static inline void pmu_lp_system_param_default(pmu_lp_mode_t mode, pmu_lp_system_param_t *param)
 {
+    assert (param->analog);
+
     param->power = pmu_lp_system_power_param_default(mode);
-    param->analog = pmu_lp_system_analog_param_default(mode);
+    *param->analog = *pmu_lp_system_analog_param_default(mode); //copy default value
+
+    if (mode == PMU_MODE_LP_ACTIVE) {
+        param->analog->regulator0.dbias = get_act_lp_dbias();
+    }
 }
 
 static void pmu_lp_system_init_default(pmu_context_t *ctx)
 {
     assert(ctx);
-    pmu_lp_system_param_t param;
     for (pmu_lp_mode_t mode = PMU_MODE_LP_ACTIVE; mode < PMU_MODE_LP_MAX; mode++) {
+        pmu_lp_system_analog_param_t analog = {};
+        pmu_lp_system_param_t param = {.analog = &analog};
+
         pmu_lp_system_param_default(mode, &param);
         pmu_lp_system_init(ctx, mode, &param);
     }
@@ -194,6 +209,9 @@ static void pmu_lp_system_init_default(pmu_context_t *ctx)
 void pmu_init()
 {
     /* No peripheral reg i2c power up required on the target */
+
+    REGI2C_WRITE_MASK(I2C_PMU, I2C_PMU_EN_I2C_RTC_DREG, 0);
+    REGI2C_WRITE_MASK(I2C_PMU, I2C_PMU_EN_I2C_DIG_DREG, 0);
     REGI2C_WRITE_MASK(I2C_PMU, I2C_PMU_EN_I2C_RTC_DREG_SLP, 0);
     REGI2C_WRITE_MASK(I2C_PMU, I2C_PMU_EN_I2C_DIG_DREG_SLP, 0);
     REGI2C_WRITE_MASK(I2C_PMU, I2C_PMU_OR_XPD_RTC_REG, 0);
@@ -213,12 +231,4 @@ void pmu_init()
     pmu_lp_system_init_default(PMU_instance());
 
     pmu_power_domain_force_default(PMU_instance());
-
-    pvt_auto_dbias_init();
-    charge_pump_init();
-
-    //HP dbias initialization
-    pvt_func_enable(1);
-    charge_pump_enable(1);
-    esp_rom_delay_us(1000);
 }

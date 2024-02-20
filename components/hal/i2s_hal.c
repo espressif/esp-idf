@@ -66,7 +66,42 @@ void i2s_hal_init(i2s_hal_context_t *hal, int port_id)
     hal->dev = I2S_LL_GET_HW(port_id);
 }
 
+#if SOC_PERIPH_CLK_CTRL_SHARED
 void _i2s_hal_set_tx_clock(i2s_hal_context_t *hal, const i2s_hal_clock_info_t *clk_info, i2s_clock_src_t clk_src)
+{
+    if (clk_info) {
+        hal_utils_clk_div_t mclk_div = {};
+#if SOC_I2S_HW_VERSION_2
+        _i2s_ll_tx_enable_clock(hal->dev);
+        _i2s_ll_mclk_bind_to_tx_clk(hal->dev);
+#endif
+        _i2s_ll_tx_clk_set_src(hal->dev, clk_src);
+        i2s_hal_calc_mclk_precise_division(clk_info->sclk, clk_info->mclk, &mclk_div);
+        _i2s_ll_tx_set_mclk(hal->dev, &mclk_div);
+        i2s_ll_tx_set_bck_div_num(hal->dev, clk_info->bclk_div);
+    } else {
+        _i2s_ll_tx_clk_set_src(hal->dev, clk_src);
+    }
+}
+
+void _i2s_hal_set_rx_clock(i2s_hal_context_t *hal, const i2s_hal_clock_info_t *clk_info, i2s_clock_src_t clk_src)
+{
+    if (clk_info) {
+        hal_utils_clk_div_t mclk_div = {};
+#if SOC_I2S_HW_VERSION_2
+        _i2s_ll_rx_enable_clock(hal->dev);
+        _i2s_ll_mclk_bind_to_rx_clk(hal->dev);
+#endif
+        _i2s_ll_rx_clk_set_src(hal->dev, clk_src);
+        i2s_hal_calc_mclk_precise_division(clk_info->sclk, clk_info->mclk, &mclk_div);
+        _i2s_ll_rx_set_mclk(hal->dev, &mclk_div);
+        i2s_ll_rx_set_bck_div_num(hal->dev, clk_info->bclk_div);
+    } else {
+        _i2s_ll_rx_clk_set_src(hal->dev, clk_src);
+    }
+}
+#else
+void i2s_hal_set_tx_clock(i2s_hal_context_t *hal, const i2s_hal_clock_info_t *clk_info, i2s_clock_src_t clk_src)
 {
     if (clk_info) {
         hal_utils_clk_div_t mclk_div = {};
@@ -83,7 +118,7 @@ void _i2s_hal_set_tx_clock(i2s_hal_context_t *hal, const i2s_hal_clock_info_t *c
     }
 }
 
-void _i2s_hal_set_rx_clock(i2s_hal_context_t *hal, const i2s_hal_clock_info_t *clk_info, i2s_clock_src_t clk_src)
+void i2s_hal_set_rx_clock(i2s_hal_context_t *hal, const i2s_hal_clock_info_t *clk_info, i2s_clock_src_t clk_src)
 {
     if (clk_info) {
         hal_utils_clk_div_t mclk_div = {};
@@ -99,6 +134,7 @@ void _i2s_hal_set_rx_clock(i2s_hal_context_t *hal, const i2s_hal_clock_info_t *c
         i2s_ll_rx_clk_set_src(hal->dev, clk_src);
     }
 }
+#endif  // SOC_PERIPH_CLK_CTRL_SHARED
 
 /*-------------------------------------------------------------------------
  |                    STD Specific Slot Configurations                    |
@@ -255,7 +291,7 @@ void i2s_hal_pdm_set_rx_slot(i2s_hal_context_t *hal, bool is_slave, const i2s_ha
 #if SOC_I2S_SUPPORTS_PDM_RX_HP_FILTER
     uint32_t param0;
     uint32_t param5;
-    s_i2s_hal_get_cut_off_coef(slot_cfg->pdm_rx.hp_cut_off_freq_hz, &param0, &param5);
+    s_i2s_hal_get_cut_off_coef(slot_cfg->pdm_rx.hp_cut_off_freq_hzx10, &param0, &param5);
     i2s_ll_rx_enable_pdm_hp_filter(hal->dev, slot_cfg->pdm_rx.hp_en);
     i2s_ll_rx_set_pdm_hp_filter_param0(hal->dev, param0);
     i2s_ll_rx_set_pdm_hp_filter_param5(hal->dev, param5);

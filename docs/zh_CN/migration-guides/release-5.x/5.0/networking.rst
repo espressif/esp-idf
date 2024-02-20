@@ -83,6 +83,15 @@ SPI 以太网模块的初始化过程已经简化。此前，你需要在实例�
 
 现在，SPI 设备已在内部分配，因此无需再调用 :cpp:func:`spi_bus_add_device`。:cpp:class:`eth_dm9051_config_t`、:cpp:class:`eth_w5500_config_t` 和 :cpp:class:`eth_ksz8851snl_config_t` 配置结构体现已包含 SPI 设备配置成员（例如，可以微调可能依赖 PCB 设计的 SPI 时序）。``ETH_DM9051_DEFAULT_CONFIG``、``ETH_W5500_DEFAULT_CONFIG`` 和 ``ETH_KSZ8851SNL_DEFAULT_CONFIG`` 配置初始化宏也已接受新的参数输入。了解 SPI 以太网模块初始化示例，请查看 :doc:`以太网 API 参考指南<../../../api-reference/network/esp_eth>`。
 
+Ethernet 驱动
+----------------
+
+用于创建 MAC 实例的 API (`esp_eth_mac_new_*()`) 的输入参数由一个配置参数改为两个，这两个参数用于
+
+* 供应商特定的 MAC 配置
+* Ethernet 驱动 MAC 配置
+
+该更新不仅适用于内部 Ethernet MAC :cpp:func:`esp_eth_mac_new_esp32()` 也适用于外部 MAC 设备，如 :cpp:func:`esp_eth_mac_new_ksz8851snl()`、 :cpp:func:`esp_eth_mac_new_dm9051()` 和 :cpp:func:`esp_eth_mac_new_w5500()`。
 
 .. _tcpip-adapter:
 

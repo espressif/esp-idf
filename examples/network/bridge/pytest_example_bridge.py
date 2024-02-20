@@ -1,14 +1,15 @@
-# SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
-
 import ipaddress
 import logging
 import re
 import socket
 import subprocess
 import time
-from concurrent.futures import Future, ThreadPoolExecutor
-from typing import List, Union
+from concurrent.futures import Future
+from concurrent.futures import ThreadPoolExecutor
+from typing import List
+from typing import Union
 
 import netifaces
 import paramiko  # type: ignore

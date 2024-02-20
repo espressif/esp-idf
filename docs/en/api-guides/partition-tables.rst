@@ -89,7 +89,7 @@ The ESP-IDF bootloader ignores any partition types other than ``app`` (0x00) and
 
 SubType
 ~~~~~~~
-{IDF_TARGET_ESP_PHY_REF:default = ":ref:`CONFIG_ESP_PHY_INIT_DATA_IN_PARTITION`", esp32p4="NOT UPDATED YET"}
+{IDF_TARGET_ESP_PHY_REF:default = ":ref:`CONFIG_ESP_PHY_INIT_DATA_IN_PARTITION`", esp32p4, esp32c5="NOT UPDATED YET"}
 
 The 8-bit SubType field is specific to a given partition type. ESP-IDF currently only specifies the meaning of the subtype field for ``app`` and ``data`` partition types.
 
@@ -150,27 +150,40 @@ Extra Partition SubTypes
 
 A component can define a new partition subtype by setting the ``EXTRA_PARTITION_SUBTYPES`` property. This property is a CMake list, each entry of which is a comma separated string with ``<type>, <subtype>, <value>`` format. The build system uses this property to add extra subtypes and creates fields named ``ESP_PARTITION_SUBTYPE_<type>_<subtype>`` in :cpp:type:`esp_partition_subtype_t`. The project can use this subtype to define partitions in the partitions table CSV file and use the new fields in :cpp:type:`esp_partition_subtype_t`.
 
+.. _partition-offset-and-size:
+
 Offset & Size
 ~~~~~~~~~~~~~
 
-The offset represents the partition address in the SPI flash, which sector size is 0x1000 (4 KB). Thus, the offset must be a multiple of 4 KB.
+.. list::
 
-Partitions with blank offsets in the CSV file will start after the previous partition, or after the partition table in the case of the first partition.
-
-Partitions of type ``app`` have to be placed at offsets aligned to 0x10000 (64 K). If you leave the offset field blank,  ``gen_esp32part.py`` will automatically align the partition. If you specify an unaligned offset for an app partition, the tool will return an error.
-
-Sizes and offsets can be specified as decimal numbers, hex numbers with the prefix 0x, or size multipliers K or M (1024 and 1024*1024 bytes).
+    - The offset represents the partition address in the SPI flash, which sector size is 0x1000 (4 KB). Thus, the offset must be a multiple of 4 KB.
+    - Partitions with blank offsets in the CSV file will start after the previous partition, or after the partition table in the case of the first partition.
+    - Partitions of type ``app`` have to be placed at offsets aligned to 0x10000 (64 KB). If you leave the offset field blank, ``gen_esp32part.py`` will automatically align the partition. If you specify an unaligned offset for an ``app`` partition, the tool will return an error.
+    - Partitions of type ``app`` should have the size aligned to the flash sector size (4 KB). If you specify an unaligned size for an ``app`` partition, the tool will return an error.
+    :SOC_SECURE_BOOT_V1: - If Secure Boot V1 is enabled, then the partition of type ``app`` needs to have size aligned to 0x10000 (64 KB) boundary.
+    - Sizes and offsets can be specified as decimal numbers, hex numbers with the prefix 0x, or size multipliers K or M (1024 and 1024*1024 bytes).
 
 If you want the partitions in the partition table to work relative to any placement (:ref:`CONFIG_PARTITION_TABLE_OFFSET`) of the table itself, leave the offset field (in CSV file) for all partitions blank. Similarly, if changing the partition table offset then be aware that all blank partition offsets may change to match, and that any fixed offsets may now collide with the partition table (causing an error).
 
 Flags
 ~~~~~
 
-Only one flag is currently supported, ``encrypted``. If this field is set to ``encrypted``, this partition will be encrypted if :doc:`/security/flash-encryption` is enabled.
+Two flags are currently supported, ``encrypted`` and ``readonly``:
 
-.. note::
+  - If ``encrypted`` flag is set, the partition will be encrypted if :doc:`/security/flash-encryption` is enabled.
 
-    ``app`` type partitions will always be encrypted, regardless of whether this flag is set or not.
+  .. note::
+
+      ``app`` type partitions will always be encrypted, regardless of whether this flag is set or not.
+
+  - If ``readonly`` flag is set, the partition will be read-only. This flag is only supported for ``data`` type partitions except ``ota``` and ``coredump``` subtypes. This flag can help to protect against accidental writes to a partition that contains critical device-specific configuration data, e.g., factory data partition.
+
+  .. note::
+
+      Using C file I/O API to open a file (``fopen```) in any write mode (``w``, ``w+``, ``a``, ``a+``, ``r+``) will fail and return ``NULL``. Using ``open`` with any other flag than ``O_RDONLY`` will fail and return ``-1`` while ``errno`` global variable will be set to ``EROFS``. This is also true for any other POSIX syscall function performing write or erase operations. Opening a handle in read-write mode for NVS on a read-only partition will fail and return :c:macro:`ESP_ERR_NOT_ALLOWED` error code. Using a lower level API like ``esp_partition``, ``spi_flash``, etc. to write to a read-only partition will result in :c:macro:`ESP_ERR_NOT_ALLOWED` error code.
+
+You can specify multiple flags by separating them with a colon. For example, ``encrypted:readonly``.
 
 Generating Binary Partition Table
 ---------------------------------
@@ -264,7 +277,7 @@ The starting point for using the tool's Python API to do is create a `ParttoolTa
 
 .. code-block:: python
 
-  # Create a partool.py target device connected on serial port /dev/ttyUSB1
+  # Create a parttool.py target device connected on serial port /dev/ttyUSB1
   target = ParttoolTarget("/dev/ttyUSB1")
 
 The created object can now be used to perform operations on the target device:

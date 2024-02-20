@@ -197,6 +197,10 @@ esp_err_t slave_init(essl_handle_t* handle)
     config.max_freq_khz = SDMMC_FREQ_DEFAULT;
 #endif
 
+    // Set this flag to allocate aligned buffer of 512 bytes to meet DMA's requirements for CMD53 byte mode. Mandatory
+    // when any buffer is behind the cache, or not aligned to 4 byte boundary.
+    config.flags |= SDMMC_HOST_FLAG_ALLOC_ALIGNED_BUF;
+
     sdmmc_slot_config_t slot_config = SDMMC_SLOT_CONFIG_DEFAULT();
     /* Note: For small devkits there may be no pullups on the board.
        This enables the internal pullups to help evaluate the driver quickly.
@@ -424,17 +428,13 @@ void job_write_reg(essl_handle_t handle, int value)
 //so first 5 packets (use 1+1+8+4+1=15 buffers) are sent, the others (513, 517) failed (timeout)
 int packet_len[] = {6, 12, 1024, 512, 3, 513, 517};
 //the sending buffer should be word aligned
-DMA_ATTR uint8_t send_buffer[READ_BUFFER_LEN];
+DRAM_DMA_ALIGNED_ATTR uint8_t send_buffer[READ_BUFFER_LEN];
 
 //send packets to the slave (they will return and be handled by the interrupt handler)
 void job_fifo(essl_handle_t handle)
 {
-    for (int i = 0; i < READ_BUFFER_LEN; i++) {
-        send_buffer[i] = 0x46 + i * 5;
-    }
-
     esp_err_t ret;
-    int pointer = 0;
+    int data_index = 0;
 
     ESP_LOGI(TAG, "========JOB: send fifos========");
     /* CAUTION: This example shows that we can send random length of packet to the slave.
@@ -443,16 +443,21 @@ void job_fifo(essl_handle_t handle)
      * Try to avoid unaligned packets if possible to get higher effeciency.
      */
     for (int i = 0; i < sizeof(packet_len) / sizeof(int); i++) {
-        const int wait_ms = 50;
+        //Prepare data to send. The length can be random, but data should start at the 32-bit boundary.
         int length = packet_len[i];
-        ret = essl_send_packet(handle, send_buffer + pointer, length, wait_ms);
+        for (int i = 0; i < length; i ++) {
+            send_buffer[i] = 0x46 + (data_index + i) * 5;
+        }
+        data_index += (length + 3) & (~3);  //get different data next time
+
+        const int wait_ms = 50;
+        ret = essl_send_packet(handle, send_buffer, length, wait_ms);
         if (ret == ESP_ERR_TIMEOUT || ret == ESP_ERR_NOT_FOUND) {
             ESP_LOGD(TAG, "slave not ready to receive packet %d", i); // And there are several packets expected to timeout.
         } else {
             ESP_ERROR_CHECK(ret);
             ESP_LOGI(TAG, "send packet length: %d", length);
         }
-        pointer += (length + 3) & (~3); //the length can be random, but data should start at the 32-bit boundary.
     }
 }
 

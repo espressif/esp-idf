@@ -27,9 +27,15 @@ ESP-IDF 中集成的电源管理算法可以根据应用程序组件的需求，
 
 通过调用 :cpp:func:`esp_pm_configure` 函数可以在应用程序中启用动态调频 (DFS) 功能和自动 Light-sleep 模式。此函数的参数 :cpp:class:`esp_pm_config_t` 定义了频率调节的相关设置。在此参数结构中，需要初始化以下三个字段：
 
-- ``max_freq_mhz``：最大 CPU 频率 (MHz)，即获取 ``ESP_PM_CPU_FREQ_MAX`` 锁后所使用的频率。该字段通常设置为 :ref:`CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ`。
-- ``min_freq_mhz``：最小 CPU 频率 (MHz)，即仅获取 ``ESP_PM_APB_FREQ_MAX`` 锁后所使用的频率。该字段可设置为晶振 (XTAL) 频率值，或者 XTAL 频率值除以整数。注意，10 MHz 是生成 1 MHz 的 REF_TICK 默认时钟所需的最小频率。
-- ``light_sleep_enable``：没有获取任何管理锁时，决定系统是否需要自动进入 Light-sleep 状态 (``true``/``false``)。
+.. list::
+
+    - ``max_freq_mhz``：最大 CPU 频率 (MHz)，即获取 ``ESP_PM_CPU_FREQ_MAX`` 锁后所使用的频率。该字段通常设置为 :ref:`CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ`。
+
+    :esp32 or esp32s2: - ``min_freq_mhz``：最小 CPU 频率 (MHz)，即未持有电源管理锁时所使用的频率。注意，10 MHz 是生成 1 MHz 的 REF_TICK 默认时钟所需的最小频率。
+
+    :not esp32 and not esp32s2: - ``min_freq_mhz``：最小 CPU 频率 (MHz)，即未持有电源管理锁时所使用的频率。
+
+    - ``light_sleep_enable``：没有获取任何管理锁时，决定系统是否需要自动进入 Light-sleep 状态 (``true``/``false``)。
 
 
   如果在 menuconfig 中启用了 :ref:`CONFIG_PM_DFS_INIT_AUTO` 选项，最大 CPU 频率将由 :ref:`CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ` 设置决定，最小 CPU 频率将锁定为 XTAL 频率。
@@ -142,7 +148,6 @@ Light-sleep 外设下电
     - SYSTIMER
 
     以下外设尚未支持：
-    - GDMA
     - ETM
     - TIMG1
     - ASSIST_DEBUG
@@ -169,4 +174,3 @@ API 参考
 -------------
 
 .. include-build-file:: inc/esp_pm.inc
-

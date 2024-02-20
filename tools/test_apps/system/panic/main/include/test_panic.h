@@ -32,7 +32,6 @@ void test_panic_extram_stack(void);
 
 #if !CONFIG_FREERTOS_UNICORE
 void test_task_wdt_cpu1(void);
-void test_task_wdt_both_cpus(void);
 #endif
 
 void test_storeprohibited(void);
@@ -52,6 +51,8 @@ void test_ub(void);
 void test_assert(void);
 
 void test_assert_cache_disabled(void);
+
+void test_illegal_access(void);
 
 #ifdef __cplusplus
 }

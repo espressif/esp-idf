@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -34,7 +34,7 @@
 #include "soc/rtc.h"
 #include "soc/rtc_cntl_reg.h"
 #include "soc/soc_memory_layout.h"
-#include "esp_coexist_internal.h"
+#include "private/esp_coexist_internal.h"
 #include "esp_timer.h"
 #include "esp_sleep.h"
 #include "esp_rom_sys.h"
@@ -43,8 +43,6 @@
 #include "riscv/interrupt.h"
 #include "esp32c3/rom/rom_layout.h"
 #else //CONFIG_IDF_TARGET_ESP32S3
-#include "freertos/xtensa_api.h"
-#include "xtensa/core-macros.h"
 #include "esp32s3/rom/rom_layout.h"
 #endif
 #if CONFIG_BT_ENABLED
@@ -465,9 +463,8 @@ static void interrupt_set_wrapper(int cpu_no, int intr_source, int intr_num, int
 {
     esp_rom_route_intr_matrix(cpu_no, intr_source, intr_num);
 #if __riscv
-    esprv_intc_int_set_priority(intr_num, intr_prio);
-    //esprv_intc_int_enable_level(1 << intr_num);
-    esprv_intc_int_set_type(intr_num, 0);
+    esprv_int_set_priority(intr_num, intr_prio);
+    esprv_int_set_type(intr_num, 0);
 #endif
 }
 
@@ -654,7 +651,7 @@ static bool IRAM_ATTR is_in_isr_wrapper(void)
 
 static void *malloc_internal_wrapper(size_t size)
 {
-    void *p = heap_caps_malloc(size, MALLOC_CAP_DEFAULT|MALLOC_CAP_INTERNAL|MALLOC_CAP_DMA);
+    void *p = heap_caps_malloc(size, MALLOC_CAP_INTERNAL|MALLOC_CAP_DMA);
     if(p == NULL) {
         ESP_LOGE(BT_LOG_TAG, "Malloc failed");
     }
@@ -723,19 +720,26 @@ static void btdm_sleep_enter_phase1_wrapper(uint32_t lpcycles)
         return;
     }
 
-    // start a timer to wake up and acquire the pm_lock before modem_sleep awakes
     uint32_t us_to_sleep = btdm_lpcycles_2_hus(lpcycles, NULL) >> 1;
 
 #define BTDM_MIN_TIMER_UNCERTAINTY_US      (1800)
+#define BTDM_RTC_SLOW_CLK_RC_DRIFT_PERCENT 7
     assert(us_to_sleep > BTDM_MIN_TIMER_UNCERTAINTY_US);
     // allow a maximum time uncertainty to be about 488ppm(1/2048) at least as clock drift
     // and set the timer in advance
     uint32_t uncertainty = (us_to_sleep >> 11);
+#if CONFIG_FREERTOS_USE_TICKLESS_IDLE
+    if (rtc_clk_slow_src_get() == SOC_RTC_SLOW_CLK_SRC_RC_SLOW) {
+        uncertainty = us_to_sleep * BTDM_RTC_SLOW_CLK_RC_DRIFT_PERCENT / 100;
+    }
+#endif
+
     if (uncertainty < BTDM_MIN_TIMER_UNCERTAINTY_US) {
         uncertainty = BTDM_MIN_TIMER_UNCERTAINTY_US;
     }
 
     assert (s_lp_stat.wakeup_timer_started == 0);
+    // start a timer to wake up and acquire the pm_lock before modem_sleep awakes
     if (esp_timer_start_once(s_btdm_slp_tmr, us_to_sleep - uncertainty) == ESP_OK) {
         s_lp_stat.wakeup_timer_started = 1;
     } else {
@@ -754,12 +758,12 @@ static void btdm_sleep_enter_phase2_wrapper(void)
             assert(0);
         }
 
-        if (s_lp_stat.pm_lock_released == 0) {
 #ifdef CONFIG_PM_ENABLE
+        if (s_lp_stat.pm_lock_released == 0) {
             esp_pm_lock_release(s_pm_lock);
-#endif
             s_lp_stat.pm_lock_released = 1;
         }
+#endif
     }
 }
 
@@ -1155,18 +1159,6 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
 
     btdm_controller_mem_init();
 
-#if CONFIG_MAC_BB_PD
-    if (esp_register_mac_bb_pd_callback(btdm_mac_bb_power_down_cb) != 0) {
-        err = ESP_ERR_INVALID_ARG;
-        goto error;
-    }
-
-    if (esp_register_mac_bb_pu_callback(btdm_mac_bb_power_up_cb) != 0) {
-        err = ESP_ERR_INVALID_ARG;
-        goto error;
-    }
-#endif
-
     osi_funcs_p = (struct osi_funcs_t *)malloc_internal_wrapper(sizeof(struct osi_funcs_t));
     if (osi_funcs_p == NULL) {
         return ESP_ERR_NO_MEM;
@@ -1407,11 +1399,6 @@ static void bt_controller_deinit_internal(void)
         btdm_lpcycle_us = 0;
     } while (0);
 
-#if CONFIG_MAC_BB_PD
-    esp_unregister_mac_bb_pd_callback(btdm_mac_bb_power_down_cb);
-    esp_unregister_mac_bb_pu_callback(btdm_mac_bb_power_up_cb);
-#endif
-
     esp_bt_power_domain_off();
 #if CONFIG_MAC_BB_PD
     esp_mac_bb_pd_mem_deinit();
@@ -1460,6 +1447,18 @@ esp_err_t esp_bt_controller_enable(esp_bt_mode_t mode)
         s_lp_stat.pm_lock_released = 0;
 #endif
 
+#if CONFIG_MAC_BB_PD
+        if (esp_register_mac_bb_pd_callback(btdm_mac_bb_power_down_cb) != 0) {
+            ret = ESP_ERR_INVALID_ARG;
+            goto error;
+        }
+
+        if (esp_register_mac_bb_pu_callback(btdm_mac_bb_power_up_cb) != 0) {
+            ret = ESP_ERR_INVALID_ARG;
+            goto error;
+        }
+#endif
+
         if (s_lp_cntl.enable) {
             btdm_controller_enable_sleep(true);
         }
@@ -1482,6 +1481,11 @@ esp_err_t esp_bt_controller_enable(esp_bt_mode_t mode)
 error:
     // disable low power mode
     do {
+#if CONFIG_MAC_BB_PD
+        esp_unregister_mac_bb_pd_callback(btdm_mac_bb_power_down_cb);
+        esp_unregister_mac_bb_pu_callback(btdm_mac_bb_power_up_cb);
+#endif
+
         btdm_controller_enable_sleep(false);
 #ifdef CONFIG_PM_ENABLE
         if (s_lp_cntl.no_light_sleep) {
@@ -1528,6 +1532,11 @@ esp_err_t esp_bt_controller_disable(void)
 
     // disable low power mode
     do {
+#if CONFIG_MAC_BB_PD
+        esp_unregister_mac_bb_pd_callback(btdm_mac_bb_power_down_cb);
+        esp_unregister_mac_bb_pu_callback(btdm_mac_bb_power_up_cb);
+#endif
+
 #ifdef CONFIG_PM_ENABLE
         if (s_lp_cntl.no_light_sleep) {
             esp_pm_lock_release(s_light_sleep_pm_lock);

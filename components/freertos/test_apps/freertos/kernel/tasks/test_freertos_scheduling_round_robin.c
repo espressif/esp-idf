@@ -70,7 +70,7 @@ static void spin_task(void *arg)
 
     //Last iteration of the last spin task on this core. Reenable this core's tick interrupt
     if (total_iter_count[xPortGetCoreID()] == (NUM_PINNED_SPIN_TASK_PER_CORE * SPIN_TASK_NUM_ITER)) {
-        esp_cpu_intr_enable(1 <<TICK_INTR_IDX);
+        esp_cpu_intr_enable(1 << TICK_INTR_IDX);
     }
     vTaskDelete(NULL);
 }

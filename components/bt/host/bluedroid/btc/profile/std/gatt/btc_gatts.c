@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,6 +16,8 @@
 #include "osi/allocator.h"
 #include "btc/btc_main.h"
 #include "esp_gatts_api.h"
+#include "btc/btc_storage.h"
+#include "common/bt_defs.h"
 
 #if (GATTS_INCLUDED == TRUE)
 
@@ -898,7 +900,17 @@ void btc_gatts_cb_handler(btc_msg_t *msg)
 
         btc_gatts_cb_to_app(ESP_GATTS_STOP_EVT, gatts_if, &param);
         break;
-    case BTA_GATTS_CONNECT_EVT:
+    case BTA_GATTS_CONNECT_EVT: {
+#if (SMP_INCLUDED == TRUE)
+        bt_bdaddr_t bt_addr;
+        memcpy(bt_addr.address, p_data->conn.remote_bda, sizeof(bt_addr.address));
+        if (btc_storage_update_active_device(&bt_addr)) {
+            BTC_TRACE_EVENT("Device: %02x:%02x:%02x:%02x:%02x:%02x, is not in bond list",
+                            bt_addr.address[0], bt_addr.address[1],
+                            bt_addr.address[2], bt_addr.address[3],
+                            bt_addr.address[4], bt_addr.address[5]);
+        }
+#endif  ///SMP_INCLUDED == TRUE
         gatts_if = p_data->conn.server_if;
         param.connect.conn_id = BTC_GATT_GET_CONN_ID(p_data->conn.conn_id);
         param.connect.link_role = p_data->conn.link_role;
@@ -910,6 +922,7 @@ void btc_gatts_cb_handler(btc_msg_t *msg)
         param.connect.conn_handle = p_data->conn.conn_handle;
         btc_gatts_cb_to_app(ESP_GATTS_CONNECT_EVT, gatts_if, &param);
         break;
+    }
     case BTA_GATTS_DISCONNECT_EVT:
         gatts_if = p_data->conn.server_if;
         param.disconnect.conn_id = BTC_GATT_GET_CONN_ID(p_data->conn.conn_id);

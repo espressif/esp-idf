@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,10 +8,13 @@
 #include <freertos/FreeRTOS.h>
 #include <esp_system.h>
 #include <esp_log.h>
+#ifdef CONFIG_BT_CONTROLLER_ENABLED
 #include "esp_bt.h"
+#endif
 #include <esp_gap_ble_api.h>
 #include <esp_gatts_api.h>
 #include <esp_bt_main.h>
+#include "esp_bt_device.h"
 #include <esp_gatt_common_api.h>
 
 #include "simple_ble.h"
@@ -91,7 +94,7 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_
             ESP_LOGE(TAG, "create attr table failed, error code = 0x%x", ret);
             return;
         }
-        ret = esp_ble_gap_set_device_name(g_ble_cfg_p->device_name);
+        ret = esp_bt_dev_set_device_name(g_ble_cfg_p->device_name);
         if (ret) {
             ESP_LOGE(TAG, "set device name failed, error code = 0x%x", ret);
             return;
@@ -213,6 +216,7 @@ esp_err_t simple_ble_start(simple_ble_cfg_t *cfg)
     ESP_LOGD(TAG, "Free mem at start of simple_ble_init %" PRIu32, esp_get_free_heap_size());
     esp_err_t ret;
 
+#ifdef CONFIG_BT_CONTROLLER_ENABLED
     esp_bt_controller_config_t bt_cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
     ret = esp_bt_controller_init(&bt_cfg);
     if (ret) {
@@ -232,6 +236,7 @@ esp_err_t simple_ble_start(simple_ble_cfg_t *cfg)
         ESP_LOGE(TAG, "%s enable controller failed %d", __func__, ret);
         return ret;
     }
+#endif
 
     esp_bluedroid_config_t bluedroid_cfg = BT_BLUEDROID_INIT_CONFIG_DEFAULT();
     ret = esp_bluedroid_init_with_cfg(&bluedroid_cfg);
@@ -307,6 +312,7 @@ esp_err_t simple_ble_stop(void)
         return err;
     }
     ESP_LOGD(TAG, "esp_bluedroid_deinit called successfully");
+#ifdef CONFIG_BT_CONTROLLER_ENABLED
     err = esp_bt_controller_disable();
     if (err != ESP_OK) {
         return ESP_FAIL;
@@ -321,7 +327,7 @@ esp_err_t simple_ble_stop(void)
         return ESP_FAIL;
     }
     ESP_LOGD(TAG, "esp_bt_controller_deinit called successfully");
-
+#endif
     ESP_LOGD(TAG, "Free mem at end of simple_ble_stop %" PRIu32, esp_get_free_heap_size());
     return ESP_OK;
 }

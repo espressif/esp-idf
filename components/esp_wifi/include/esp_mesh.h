@@ -136,10 +136,13 @@ extern "C" {
 /**
  * @brief Flag of mesh networking IE
  */
-#define MESH_ASSOC_FLAG_VOTE_IN_PROGRESS    (0x02)     /**< vote in progress */
+#define MESH_ASSOC_FLAG_MAP_ASSOC           (0x01)     /**< Mesh AP doesn't detect children leave yet */
+#define MESH_ASSOC_FLAG_VOTE_IN_PROGRESS    (0x02)     /**< station in vote, set when root vote start, clear when connect to router or when root switch*/
+#define MESH_ASSOC_FLAG_STA_VOTED           (0x04)     /**< station vote done, set when connect to router */
 #define MESH_ASSOC_FLAG_NETWORK_FREE        (0x08)     /**< no root in current network */
-#define MESH_ASSOC_FLAG_ROOTS_FOUND         (0x20)     /**< root conflict is found */
-#define MESH_ASSOC_FLAG_ROOT_FIXED          (0x40)     /**< fixed root */
+#define MESH_ASSOC_FLAG_STA_VOTE_EXPIRE     (0x10)     /**< the voted address is expired, means the voted device lose the chance to be root */
+#define MESH_ASSOC_FLAG_ROOTS_FOUND         (0x20)     /**< roots conflict is found, means that thre are at least two roots in the mesh network */
+#define MESH_ASSOC_FLAG_ROOT_FIXED          (0x40)     /**< the root is fixed in the mesh network */
 
 
 /**
@@ -1291,7 +1294,7 @@ int esp_mesh_get_capacity_num(void);
 /**
  * @brief      Set mesh IE crypto functions
  *
- * @attention  This API can be called at any time after mesh is initialized.
+ * @attention  This API can be called at any time after mesh is configured.
  *
  * @param[in]  crypto_funcs  crypto functions for mesh IE
  *           - If crypto_funcs is set to NULL, mesh IE is no longer encrypted.
@@ -1303,7 +1306,7 @@ esp_err_t esp_mesh_set_ie_crypto_funcs(const mesh_crypto_funcs_t *crypto_funcs);
 /**
  * @brief      Set mesh IE crypto key
  *
- * @attention  This API can be called at any time after mesh is initialized.
+ * @attention  This API can be called at any time after mesh is configured.
  *
  * @param[in]  key  ASCII crypto key
  * @param[in]  len  length in bytes, range:8~64

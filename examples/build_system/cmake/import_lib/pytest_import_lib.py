@@ -5,7 +5,8 @@ import pytest
 from pytest_embedded_qemu.dut import QemuDut
 
 
-@pytest.mark.esp32  # we only support qemu on esp32 for now
+@pytest.mark.esp32
+@pytest.mark.esp32c3
 @pytest.mark.host_test
 @pytest.mark.qemu
 def test_pytest_host(dut: QemuDut) -> None:

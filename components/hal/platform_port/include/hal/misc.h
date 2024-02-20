@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -66,11 +66,7 @@ extern "C" {
  * @param len The number of bytes to be copied
  * @return a pointer to destination
  */
-__attribute__((always_inline)) static inline void *hal_memcpy(void *dst_mem, const void *src_mem, size_t len)
-{
-    asm("" : "+r"(dst_mem), "+r"(src_mem));
-    return memcpy(dst_mem, src_mem, len);
-}
+#define hal_memcpy(dst_mem, src_mem, len) (__extension__({memcpy(dst_mem, src_mem, len);}))
 
 /**
  * @brief Sets the first num bytes of the block of memory pointed by ptr to the specified value
@@ -82,11 +78,7 @@ __attribute__((always_inline)) static inline void *hal_memcpy(void *dst_mem, con
  * @param len The number of bytes to be copied
  * @return a pointer to the memory area
  */
-__attribute__((always_inline)) static inline void *hal_memset(void *dst_mem, int value, size_t len)
-{
-    asm("" : "+r"(dst_mem));
-    return memset(dst_mem, value, len);
-}
+#define hal_memset(dst_mem, value, len) (__extension__({memset(dst_mem, value, len);}))
 
 #ifdef __cplusplus
 }

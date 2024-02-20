@@ -16,9 +16,11 @@ else()
         "vectors.S")
 
     if(CONFIG_SOC_INT_CLIC_SUPPORTED)
-        list(APPEND srcs "vectors_clic.S")
+        list(APPEND srcs "interrupt_clic.c" "vectors_clic.S")
+    elseif(CONFIG_SOC_INT_PLIC_SUPPORTED)
+        list(APPEND srcs "interrupt_plic.c" "vectors_intc.S")
     else()
-        list(APPEND srcs "vectors_intc.S")
+        list(APPEND srcs "interrupt_intc.c" "vectors_intc.S")
     endif()
 endif()
 
@@ -26,3 +28,5 @@ idf_component_register(SRCS "${srcs}"
                        LDFRAGMENTS linker.lf
                        INCLUDE_DIRS "include"
                        PRIV_REQUIRES ${priv_requires})
+
+target_linker_script(${COMPONENT_LIB} INTERFACE "ld/rom.api.ld")

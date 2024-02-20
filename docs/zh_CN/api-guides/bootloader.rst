@@ -3,8 +3,6 @@
 
 :link_to_translation:`en:[English]`
 
-{IDF_TARGET_BOOTLOADER_OFFSET:default="0x0", esp32="0x1000", esp32s2="0x1000"}
-
 ESP-IDF 软件引导加载程序 (Bootloader) 主要执行以下任务：
 
 1. 内部模块的最小化初始配置；
@@ -12,7 +10,7 @@ ESP-IDF 软件引导加载程序 (Bootloader) 主要执行以下任务：
 3. 根据分区表和 ota_data（如果存在）选择需要引导的应用程序 (app) 分区；
 4. 将此应用程序镜像加载到 RAM（IRAM 和 DRAM）中，最后把控制权转交给此应用程序。
 
-引导加载程序位于 flash 的 {IDF_TARGET_BOOTLOADER_OFFSET} 偏移地址处。
+引导加载程序位于 flash 的 {IDF_TARGET_CONFIG_BOOTLOADER_OFFSET_IN_FLASH} 偏移地址处。
 
 关于启动过程以及 ESP-IDF 引导加载程序的更多信息，请参考 :doc:`startup`。
 
@@ -34,12 +32,12 @@ ESP-IDF 软件引导加载程序 (Bootloader) 主要执行以下任务：
    ESP-IDF V2.1 之前的版本
    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-	与新版本相比，ESP-IDF V2.1 之前的版本构建的引导加载程序对硬件的配置更少。使用这些早期 ESP-IDF 版本的引导加载程序并构建新应用程序时，请启用配置选项 :ref:`CONFIG_APP_COMPATIBLE_PRE_V2_1_BOOTLOADERS`。
+   与新版本相比，ESP-IDF V2.1 之前的版本构建的引导加载程序对硬件的配置更少。使用这些早期 ESP-IDF 版本的引导加载程序并构建新应用程序时，请启用配置选项 :ref:`CONFIG_APP_COMPATIBLE_PRE_V2_1_BOOTLOADERS`。
 
    ESP-IDF V3.1 之前的版本
    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-	ESP-IDF V3.1 之前的版本构建的引导加载程序不支持分区表二进制文件中的 MD5 校验。使用这些 ESP-IDF 版本的引导加载程序并构建新应用程序时，请启用配置选项 :ref:`CONFIG_APP_COMPATIBLE_PRE_V3_1_BOOTLOADERS`。
+   ESP-IDF V3.1 之前的版本构建的引导加载程序不支持分区表二进制文件中的 MD5 校验。使用这些 ESP-IDF 版本的引导加载程序并构建新应用程序时，请启用配置选项 :ref:`CONFIG_APP_COMPATIBLE_PRE_V3_1_BOOTLOADERS`。
 
    ESP-IDF V5.1 之前的版本
    ^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -95,7 +93,7 @@ ROM 中的 :ref:`first-stage-bootloader` 从 flash 中读取 :ref:`second-stage-
 .. only:: SOC_RTC_FAST_MEM_SUPPORTED
 
     如果应用程序需要知道设备是否触发了出厂重置，可以通过调用 :cpp:func:`bootloader_common_get_rtc_retain_mem_factory_reset_state` 函数来确定：
-    
+
     - 如果读取到设备出厂重置状态为 true，会返回状态 true，说明设备已经触发出厂重置。此后会重置状态为 false，以便后续的出厂重置触发判断。
     - 如果读取到设备出厂重置状态为 false，会返回状态 false，说明设备并未触发出厂重置，或者保存此状态的内存区域已失效。
 
@@ -131,14 +129,16 @@ ROM 中的 :ref:`first-stage-bootloader` 从 flash 中读取 :ref:`second-stage-
 
 请参考 :doc:`OTA API 参考文档 </api-reference/system/ota>` 中的 :ref:`app_rollback` 和 :ref:`anti-rollback` 章节。
 
+.. _bootloader-watchdog:
+
 看门狗
 ----------
 
-默认情况下，硬件 RTC 看门狗定时器在引导加载程序运行时保持运行，如果 9 秒后没有应用程序成功启动，它将自动重置芯片。
+芯片配备两组看门狗定时器：主系统看门狗定时器 (MWDT_WDT) 和 RTC 看门狗定时器 (RTC_WDT)。芯片上电时，两组看门狗定时器都会被启用，但在引导加载程序中，两组看门狗定时器都会被禁用。设置 :ref:`CONFIG_BOOTLOADER_WDT_ENABLE` （默认设置）可以重新启用 RTC 看门狗定时器，用于跟踪从启用引导加载程序到调用用户主函数的时间。此期间内 RTC 看门狗定时器始终可用，并且如果在 9 秒内没有应用程序成功启动，则 RTC 看门狗定时器会自动重置芯片。这一功能可以有效防止启动过程中由于电源不稳定而导致的死机。
 
 - 可以通过设置 :ref:`CONFIG_BOOTLOADER_WDT_TIME_MS` 并重新编译引导加载程序来调整超时时间。
-- 可以通过调整应用程序的行为使 RTC 看门狗在应用程序启动后保持启用。看门狗需要由应用程序显示地重置（即“喂狗”），以避免重置。为此，请设置 :ref:`CONFIG_BOOTLOADER_WDT_DISABLE_IN_USER_CODE` 选项，根据需要修改应用程序，然后重新编译应用程序。
 - 通过禁用 :ref:`CONFIG_BOOTLOADER_WDT_ENABLE` 设置并重新编译引导加载程序，可以在引导加载程序中禁用 RTC 看门狗，但并不建议这样做。
+- 请参阅 :ref:`app-hardware-watchdog-timers`，了解如何在应用程序中使用 RTC_WDT。
 
 .. _bootloader-size:
 

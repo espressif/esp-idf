@@ -5,8 +5,8 @@ import pytest
 from pytest_embedded import Dut
 
 
-@pytest.mark.supported_targets
-@pytest.mark.generic
+@pytest.mark.esp32
+@pytest.mark.esp32c3
 @pytest.mark.parametrize(
     'config',
     [
@@ -23,7 +23,7 @@ def test_fatfs_flash_wl_generic(dut: Dut) -> None:
     dut.expect_unity_test_output(timeout=180)
 
 
-@pytest.mark.supported_targets
+@pytest.mark.esp32
 @pytest.mark.psram
 @pytest.mark.parametrize(
     'config',

@@ -177,21 +177,21 @@ void IRAM_ATTR int_handler2(void *arg)
     }
 }
 
+#if !SOC_RCC_IS_INDEPENDENT
+#define TEST_BUS_RCC_CLOCK_ATOMIC() PERIPH_RCC_ATOMIC()
+#else
+#define TEST_BUS_RCC_CLOCK_ATOMIC()
+#endif
 TEST_CASE("allocate 2 handlers for a same source and remove the later one", "[intr_alloc]")
 {
     intr_alloc_test_ctx_t ctx = {false, false, false, false };
     intr_handle_t handle1, handle2;
 
     // enable SPI2
-#if CONFIG_IDF_TARGET_ESP32P4   //deprecate clk_gate_ll start from p4, others in TODO: IDF-8159
-    PERIPH_RCC_ATOMIC() {
+    TEST_BUS_RCC_CLOCK_ATOMIC() {
         spi_ll_enable_bus_clock(1, true);
         spi_ll_reset_register(1);
-        spi_ll_enable_clock(1, true);
     }
-#else
-    periph_module_enable(spi_periph_signal[1].module);
-#endif
 
     esp_err_t r;
     r = esp_intr_alloc(spi_periph_signal[1].irq, ESP_INTR_FLAG_SHARED, int_handler1, &ctx, &handle1);

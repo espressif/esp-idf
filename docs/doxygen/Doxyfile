@@ -27,6 +27,7 @@ INPUT = \
     $(PROJECT_PATH)/components/bootloader_support/include/bootloader_random.h \
     $(PROJECT_PATH)/components/bootloader_support/include/esp_app_format.h \
     $(PROJECT_PATH)/components/bootloader_support/include/esp_flash_encrypt.h \
+    $(PROJECT_PATH)/components/esp_coex/include/esp_coexist.h \
     $(PROJECT_PATH)/components/bt/common/api/include/api/esp_blufi_api.h \
     $(PROJECT_PATH)/components/bt/esp_ble_mesh/api/core/include/esp_ble_mesh_common_api.h \
     $(PROJECT_PATH)/components/bt/esp_ble_mesh/api/core/include/esp_ble_mesh_local_data_operation_api.h \
@@ -72,58 +73,8 @@ INPUT = \
     $(PROJECT_PATH)/components/bt/host/bluedroid/api/include/api/esp_spp_api.h \
     $(PROJECT_PATH)/components/bt/host/nimble/esp-hci/include/esp_nimble_hci.h \
     $(PROJECT_PATH)/components/console/esp_console.h \
-    $(PROJECT_PATH)/components/driver/analog_comparator/include/driver/ana_cmpr.h \
-    $(PROJECT_PATH)/components/driver/analog_comparator/include/driver/ana_cmpr_etm.h \
-    $(PROJECT_PATH)/components/driver/analog_comparator/include/driver/ana_cmpr_types.h \
-    $(PROJECT_PATH)/components/driver/dac/include/driver/dac_continuous.h \
-    $(PROJECT_PATH)/components/driver/dac/include/driver/dac_cosine.h \
-    $(PROJECT_PATH)/components/driver/dac/include/driver/dac_oneshot.h \
-    $(PROJECT_PATH)/components/driver/dac/include/driver/dac_types.h \
-    $(PROJECT_PATH)/components/driver/gpio/include/driver/dedic_gpio.h \
-    $(PROJECT_PATH)/components/driver/gpio/include/driver/gpio.h \
-    $(PROJECT_PATH)/components/driver/gpio/include/driver/gpio_etm.h \
-    $(PROJECT_PATH)/components/driver/gpio/include/driver/gpio_filter.h \
-    $(PROJECT_PATH)/components/driver/gpio/include/driver/rtc_io.h \
-    $(PROJECT_PATH)/components/driver/gptimer/include/driver/gptimer.h \
-    $(PROJECT_PATH)/components/driver/gptimer/include/driver/gptimer_etm.h \
-    $(PROJECT_PATH)/components/driver/gptimer/include/driver/gptimer_types.h \
-    $(PROJECT_PATH)/components/driver/i2c/include/driver/i2c.h \
-    $(PROJECT_PATH)/components/driver/i2s/include/driver/i2s_common.h \
-    $(PROJECT_PATH)/components/driver/i2s/include/driver/i2s_pdm.h \
-    $(PROJECT_PATH)/components/driver/i2s/include/driver/i2s_std.h \
-    $(PROJECT_PATH)/components/driver/i2s/include/driver/i2s_tdm.h \
-    $(PROJECT_PATH)/components/driver/i2s/include/driver/i2s_types.h \
-    $(PROJECT_PATH)/components/driver/ledc/include/driver/ledc.h \
-    $(PROJECT_PATH)/components/driver/mcpwm/include/driver/mcpwm_cap.h \
-    $(PROJECT_PATH)/components/driver/mcpwm/include/driver/mcpwm_cmpr.h \
-    $(PROJECT_PATH)/components/driver/mcpwm/include/driver/mcpwm_etm.h \
-    $(PROJECT_PATH)/components/driver/mcpwm/include/driver/mcpwm_fault.h \
-    $(PROJECT_PATH)/components/driver/mcpwm/include/driver/mcpwm_gen.h \
-    $(PROJECT_PATH)/components/driver/mcpwm/include/driver/mcpwm_oper.h \
-    $(PROJECT_PATH)/components/driver/mcpwm/include/driver/mcpwm_sync.h \
-    $(PROJECT_PATH)/components/driver/mcpwm/include/driver/mcpwm_timer.h \
-    $(PROJECT_PATH)/components/driver/mcpwm/include/driver/mcpwm_types.h \
-    $(PROJECT_PATH)/components/driver/parlio/include/driver/parlio_tx.h \
-    $(PROJECT_PATH)/components/driver/parlio/include/driver/parlio_types.h \
-    $(PROJECT_PATH)/components/driver/pcnt/include/driver/pulse_cnt.h \
-    $(PROJECT_PATH)/components/driver/rmt/include/driver/rmt_common.h \
-    $(PROJECT_PATH)/components/driver/rmt/include/driver/rmt_encoder.h \
-    $(PROJECT_PATH)/components/driver/rmt/include/driver/rmt_rx.h \
-    $(PROJECT_PATH)/components/driver/rmt/include/driver/rmt_tx.h \
-    $(PROJECT_PATH)/components/driver/rmt/include/driver/rmt_types.h \
-    $(PROJECT_PATH)/components/driver/sdio_slave/include/driver/sdio_slave.h \
-    $(PROJECT_PATH)/components/driver/sigma_delta/include/driver/sdm.h \
-    $(PROJECT_PATH)/components/driver/sdmmc/include/driver/sdmmc_host.h \
-    $(PROJECT_PATH)/components/driver/sdmmc/include/driver/sdmmc_types.h \
-    $(PROJECT_PATH)/components/driver/spi/include/driver/sdspi_host.h \
-    $(PROJECT_PATH)/components/driver/spi/include/driver/spi_common.h \
-    $(PROJECT_PATH)/components/driver/spi/include/driver/spi_master.h \
-    $(PROJECT_PATH)/components/driver/spi/include/driver/spi_slave_hd.h \
-    $(PROJECT_PATH)/components/driver/spi/include/driver/spi_slave.h \
-    $(PROJECT_PATH)/components/driver/temperature_sensor/include/driver/temperature_sensor.h \
     $(PROJECT_PATH)/components/driver/touch_sensor/include/driver/touch_sensor_common.h \
     $(PROJECT_PATH)/components/driver/twai/include/driver/twai.h \
-    $(PROJECT_PATH)/components/driver/uart/include/driver/uart.h \
     $(PROJECT_PATH)/components/driver/test_apps/components/esp_serial_slave_link/include/esp_serial_slave_link/essl_sdio.h \
     $(PROJECT_PATH)/components/driver/test_apps/components/esp_serial_slave_link/include/esp_serial_slave_link/essl_spi.h \
     $(PROJECT_PATH)/components/driver/test_apps/components/esp_serial_slave_link/include/esp_serial_slave_link/essl.h \
@@ -138,6 +89,62 @@ INPUT = \
     $(PROJECT_PATH)/components/esp_common/include/esp_check.h \
     $(PROJECT_PATH)/components/esp_common/include/esp_err.h \
     $(PROJECT_PATH)/components/esp_common/include/esp_idf_version.h \
+    $(PROJECT_PATH)/components/esp_driver_ana_cmpr/include/driver/ana_cmpr.h \
+    $(PROJECT_PATH)/components/esp_driver_ana_cmpr/include/driver/ana_cmpr_etm.h \
+    $(PROJECT_PATH)/components/esp_driver_ana_cmpr/include/driver/ana_cmpr_types.h \
+    $(PROJECT_PATH)/components/esp_driver_dac/include/driver/dac_continuous.h \
+    $(PROJECT_PATH)/components/esp_driver_dac/include/driver/dac_cosine.h \
+    $(PROJECT_PATH)/components/esp_driver_dac/include/driver/dac_oneshot.h \
+    $(PROJECT_PATH)/components/esp_driver_dac/include/driver/dac_types.h \
+    $(PROJECT_PATH)/components/esp_driver_gpio/include/driver/dedic_gpio.h \
+    $(PROJECT_PATH)/components/esp_driver_gpio/include/driver/gpio.h \
+    $(PROJECT_PATH)/components/esp_driver_gpio/include/driver/gpio_etm.h \
+    $(PROJECT_PATH)/components/esp_driver_gpio/include/driver/gpio_filter.h \
+    $(PROJECT_PATH)/components/esp_driver_gpio/include/driver/lp_io.h \
+    $(PROJECT_PATH)/components/esp_driver_gpio/include/driver/rtc_io.h \
+    $(PROJECT_PATH)/components/esp_driver_gptimer/include/driver/gptimer.h \
+    $(PROJECT_PATH)/components/esp_driver_gptimer/include/driver/gptimer_etm.h \
+    $(PROJECT_PATH)/components/esp_driver_gptimer/include/driver/gptimer_types.h \
+    $(PROJECT_PATH)/components/esp_driver_ledc/include/driver/ledc.h \
+    $(PROJECT_PATH)/components/esp_driver_mcpwm/include/driver/mcpwm_cap.h \
+    $(PROJECT_PATH)/components/esp_driver_mcpwm/include/driver/mcpwm_cmpr.h \
+    $(PROJECT_PATH)/components/esp_driver_mcpwm/include/driver/mcpwm_etm.h \
+    $(PROJECT_PATH)/components/esp_driver_mcpwm/include/driver/mcpwm_fault.h \
+    $(PROJECT_PATH)/components/esp_driver_mcpwm/include/driver/mcpwm_gen.h \
+    $(PROJECT_PATH)/components/esp_driver_mcpwm/include/driver/mcpwm_oper.h \
+    $(PROJECT_PATH)/components/esp_driver_mcpwm/include/driver/mcpwm_sync.h \
+    $(PROJECT_PATH)/components/esp_driver_mcpwm/include/driver/mcpwm_timer.h \
+    $(PROJECT_PATH)/components/esp_driver_mcpwm/include/driver/mcpwm_types.h \
+    $(PROJECT_PATH)/components/esp_driver_parlio/include/driver/parlio_rx.h \
+    $(PROJECT_PATH)/components/esp_driver_parlio/include/driver/parlio_tx.h \
+    $(PROJECT_PATH)/components/esp_driver_parlio/include/driver/parlio_types.h \
+    $(PROJECT_PATH)/components/esp_driver_i2c/include/driver/i2c_master.h \
+    $(PROJECT_PATH)/components/esp_driver_i2c/include/driver/i2c_slave.h \
+    $(PROJECT_PATH)/components/esp_driver_i2c/include/driver/i2c_types.h \
+    $(PROJECT_PATH)/components/esp_driver_i2s/include/driver/i2s_common.h \
+    $(PROJECT_PATH)/components/esp_driver_i2s/include/driver/i2s_pdm.h \
+    $(PROJECT_PATH)/components/esp_driver_i2s/include/driver/i2s_std.h \
+    $(PROJECT_PATH)/components/esp_driver_i2s/include/driver/i2s_tdm.h \
+    $(PROJECT_PATH)/components/esp_driver_i2s/include/driver/i2s_types.h \
+    $(PROJECT_PATH)/components/esp_driver_pcnt/include/driver/pulse_cnt.h \
+    $(PROJECT_PATH)/components/esp_driver_rmt/include/driver/rmt_common.h \
+    $(PROJECT_PATH)/components/esp_driver_rmt/include/driver/rmt_encoder.h \
+    $(PROJECT_PATH)/components/esp_driver_rmt/include/driver/rmt_rx.h \
+    $(PROJECT_PATH)/components/esp_driver_rmt/include/driver/rmt_tx.h \
+    $(PROJECT_PATH)/components/esp_driver_rmt/include/driver/rmt_types.h \
+    $(PROJECT_PATH)/components/esp_driver_sdio/include/driver/sdio_slave.h \
+    $(PROJECT_PATH)/components/esp_driver_sdm/include/driver/sdm.h \
+    $(PROJECT_PATH)/components/esp_driver_sdmmc/include/driver/sdmmc_default_configs.h \
+    $(PROJECT_PATH)/components/esp_driver_sdmmc/include/driver/sdmmc_host.h \
+    $(PROJECT_PATH)/components/esp_driver_sdmmc/include/driver/sdmmc_types.h \
+    $(PROJECT_PATH)/components/esp_driver_sdspi/include/driver/sdspi_host.h \
+    $(PROJECT_PATH)/components/esp_driver_spi/include/driver/spi_common.h \
+    $(PROJECT_PATH)/components/esp_driver_spi/include/driver/spi_master.h \
+    $(PROJECT_PATH)/components/esp_driver_spi/include/driver/spi_slave_hd.h \
+    $(PROJECT_PATH)/components/esp_driver_spi/include/driver/spi_slave.h \
+    $(PROJECT_PATH)/components/esp_driver_tsens/include/driver/temperature_sensor.h \
+    $(PROJECT_PATH)/components/esp_driver_uart/include/driver/uart.h \
+    $(PROJECT_PATH)/components/esp_driver_uart/include/driver/uart_vfs.h \
     $(PROJECT_PATH)/components/esp_eth/include/esp_eth_com.h \
     $(PROJECT_PATH)/components/esp_eth/include/esp_eth_driver.h \
     $(PROJECT_PATH)/components/esp_eth/include/esp_eth_mac.h \
@@ -151,13 +158,13 @@ INPUT = \
     $(PROJECT_PATH)/components/esp_http_server/include/esp_http_server.h \
     $(PROJECT_PATH)/components/esp_https_ota/include/esp_https_ota.h \
     $(PROJECT_PATH)/components/esp_https_server/include/esp_https_server.h \
+    $(PROJECT_PATH)/components/esp_hw_support/dma/include/esp_dma_utils.h \
     $(PROJECT_PATH)/components/esp_hw_support/include/esp_clk_tree.h \
     $(PROJECT_PATH)/components/esp_hw_support/include/esp_async_memcpy.h \
     $(PROJECT_PATH)/components/esp_hw_support/include/esp_chip_info.h \
     $(PROJECT_PATH)/components/esp_hw_support/include/esp_cpu.h \
     $(PROJECT_PATH)/components/esp_hw_support/include/esp_crc.h \
     $(PROJECT_PATH)/components/esp_hw_support/include/esp_etm.h \
-    $(PROJECT_PATH)/components/esp_hw_support/include/esp_dma_utils.h \
     $(PROJECT_PATH)/components/esp_hw_support/include/esp_ds.h \
     $(PROJECT_PATH)/components/esp_hw_support/include/esp_hmac.h \
     $(PROJECT_PATH)/components/esp_hw_support/include/esp_intr_alloc.h \
@@ -167,8 +174,11 @@ INPUT = \
     $(PROJECT_PATH)/components/esp_hw_support/include/esp_sleep.h \
     $(PROJECT_PATH)/components/esp_lcd/include/esp_lcd_panel_io.h \
     $(PROJECT_PATH)/components/esp_lcd/include/esp_lcd_panel_ops.h \
-    $(PROJECT_PATH)/components/esp_lcd/include/esp_lcd_panel_rgb.h \
     $(PROJECT_PATH)/components/esp_lcd/include/esp_lcd_panel_vendor.h \
+    $(PROJECT_PATH)/components/esp_lcd/include/esp_lcd_panel_dev.h \
+    $(PROJECT_PATH)/components/esp_lcd/include/esp_lcd_panel_ssd1306.h \
+    $(PROJECT_PATH)/components/esp_lcd/include/esp_lcd_panel_st7789.h \
+    $(PROJECT_PATH)/components/esp_lcd/include/esp_lcd_panel_nt35510.h \
     $(PROJECT_PATH)/components/esp_lcd/include/esp_lcd_types.h \
     $(PROJECT_PATH)/components/esp_local_ctrl/include/esp_local_ctrl.h \
     $(PROJECT_PATH)/components/esp_mm/include/esp_mmu_map.h \
@@ -180,8 +190,6 @@ INPUT = \
     $(PROJECT_PATH)/components/esp_netif/include/esp_vfs_l2tap.h \
     $(PROJECT_PATH)/components/esp_netif/include/esp_netif_sntp.h \
     $(PROJECT_PATH)/components/esp_partition/include/esp_partition.h \
-    $(PROJECT_PATH)/components/esp_phy/include/esp_phy_init.h \
-    $(PROJECT_PATH)/components/esp_phy/include/esp_phy_cert_test.h \
     $(PROJECT_PATH)/components/esp_pm/include/esp_pm.h \
     $(PROJECT_PATH)/components/esp_ringbuf/include/freertos/ringbuf.h \
     $(PROJECT_PATH)/components/esp_rom/include/esp_rom_sys.h \
@@ -194,10 +202,14 @@ INPUT = \
     $(PROJECT_PATH)/components/esp_system/include/esp_task_wdt.h \
     $(PROJECT_PATH)/components/esp_system/include/esp_task.h \
     $(PROJECT_PATH)/components/esp_timer/include/esp_timer.h \
+    $(PROJECT_PATH)/components/esp_wifi/include/esp_mesh_internal.h \
     $(PROJECT_PATH)/components/esp_wifi/include/esp_mesh.h \
     $(PROJECT_PATH)/components/esp_wifi/include/esp_now.h \
     $(PROJECT_PATH)/components/esp_wifi/include/esp_smartconfig.h \
+    $(PROJECT_PATH)/components/esp_wifi/include/esp_wifi_ap_get_sta_list.h \
+    $(PROJECT_PATH)/components/esp_wifi/include/esp_wifi_crypto_types.h \
     $(PROJECT_PATH)/components/esp_wifi/include/esp_wifi_default.h \
+    $(PROJECT_PATH)/components/esp_wifi/include/esp_wifi_netif.h \
     $(PROJECT_PATH)/components/esp_wifi/include/esp_wifi_types.h \
     $(PROJECT_PATH)/components/esp_wifi/include/esp_wifi.h \
     $(PROJECT_PATH)/components/wpa_supplicant/esp_supplicant/include/esp_mbo.h  \
@@ -222,6 +234,7 @@ INPUT = \
     $(PROJECT_PATH)/components/freertos/FreeRTOS-Kernel/include/freertos/task.h \
     $(PROJECT_PATH)/components/freertos/FreeRTOS-Kernel/include/freertos/timers.h \
     $(PROJECT_PATH)/components/hal/include/hal/adc_types.h \
+    $(PROJECT_PATH)/components/hal/include/hal/color_types.h \
     $(PROJECT_PATH)/components/hal/include/hal/dac_types.h \
     $(PROJECT_PATH)/components/hal/include/hal/esp_flash_err.h \
     $(PROJECT_PATH)/components/hal/include/hal/gpio_types.h \
@@ -243,6 +256,7 @@ INPUT = \
     $(PROJECT_PATH)/components/hal/include/hal/twai_types.h \
     $(PROJECT_PATH)/components/hal/include/hal/uart_types.h \
     $(PROJECT_PATH)/components/hal/include/hal/efuse_hal.h \
+    $(PROJECT_PATH)/components/hal/include/hal/eth_types.h \
     $(PROJECT_PATH)/components/heap/include/esp_heap_caps_init.h \
     $(PROJECT_PATH)/components/heap/include/esp_heap_caps.h \
     $(PROJECT_PATH)/components/heap/include/esp_heap_trace.h \
@@ -253,6 +267,7 @@ INPUT = \
     $(PROJECT_PATH)/components/lwip/include/apps/esp_sntp.h \
     $(PROJECT_PATH)/components/lwip/include/apps/ping/ping_sock.h \
     $(PROJECT_PATH)/components/mbedtls/esp_crt_bundle/include/esp_crt_bundle.h \
+    $(PROJECT_PATH)/components/mbedtls/port/include/ecdsa/ecdsa_alt.h \
     $(PROJECT_PATH)/components/mqtt/esp-mqtt/include/mqtt_client.h \
     $(PROJECT_PATH)/components/nvs_flash/include/nvs_flash.h \
     $(PROJECT_PATH)/components/nvs_flash/include/nvs.h \
@@ -262,16 +277,15 @@ INPUT = \
     $(PROJECT_PATH)/components/openthread/include/esp_openthread_netif_glue.h \
     $(PROJECT_PATH)/components/openthread/include/esp_openthread_types.h \
     $(PROJECT_PATH)/components/openthread/include/esp_openthread.h \
-    $(PROJECT_PATH)/components/perfmon/include/xtensa_perfmon_access.h \
-    $(PROJECT_PATH)/components/perfmon/include/xtensa_perfmon_apis.h \
-    $(PROJECT_PATH)/components/perfmon/include/xtensa_perfmon_masks.h \
     $(PROJECT_PATH)/components/protocomm/include/common/protocomm.h \
     $(PROJECT_PATH)/components/protocomm/include/security/protocomm_security.h \
     $(PROJECT_PATH)/components/protocomm/include/security/protocomm_security0.h \
     $(PROJECT_PATH)/components/protocomm/include/security/protocomm_security1.h \
+    $(PROJECT_PATH)/components/protocomm/include/security/protocomm_security2.h \
     $(PROJECT_PATH)/components/protocomm/include/transports/protocomm_ble.h \
     $(PROJECT_PATH)/components/protocomm/include/transports/protocomm_console.h \
     $(PROJECT_PATH)/components/protocomm/include/transports/protocomm_httpd.h \
+    $(PROJECT_PATH)/components/protocomm/include/crypto/srp6a/esp_srp.h \
     $(PROJECT_PATH)/components/pthread/include/esp_pthread.h \
     $(PROJECT_PATH)/components/sdmmc/include/sdmmc_cmd.h \
     $(PROJECT_PATH)/components/soc/$(IDF_TARGET)/include/soc/adc_channel.h \
@@ -284,25 +298,6 @@ INPUT = \
     $(PROJECT_PATH)/components/spi_flash/include/spi_flash_mmap.h \
     $(PROJECT_PATH)/components/spi_flash/include/esp_spi_flash_counters.h \
     $(PROJECT_PATH)/components/spiffs/include/esp_spiffs.h \
-    $(PROJECT_PATH)/components/touch_element/include/touch_element/touch_button.h \
-    $(PROJECT_PATH)/components/touch_element/include/touch_element/touch_element.h \
-    $(PROJECT_PATH)/components/touch_element/include/touch_element/touch_matrix.h \
-    $(PROJECT_PATH)/components/touch_element/include/touch_element/touch_slider.h \
-    $(PROJECT_PATH)/components/ulp/ulp_common/include/ulp_common.h \
-    $(PROJECT_PATH)/components/ulp/ulp_fsm/include/ulp_fsm_common.h \
-    $(PROJECT_PATH)/components/ulp/ulp_riscv/include/ulp_riscv_lock.h \
-    $(PROJECT_PATH)/components/ulp/ulp_riscv/include/ulp_riscv.h \
-    $(PROJECT_PATH)/components/ulp/ulp_riscv/include/ulp_riscv_i2c.h \
-    $(PROJECT_PATH)/components/ulp/ulp_riscv/shared/include/ulp_riscv_lock_shared.h \
-    $(PROJECT_PATH)/components/ulp/lp_core/include/lp_core_i2c.h \
-    $(PROJECT_PATH)/components/ulp/lp_core/include/ulp_lp_core.h \
-    $(PROJECT_PATH)/components/ulp/lp_core/lp_core/include/ulp_lp_core_gpio.h \
-    $(PROJECT_PATH)/components/ulp/lp_core/lp_core/include/ulp_lp_core_i2c.h \
-    $(PROJECT_PATH)/components/ulp/lp_core/lp_core/include/ulp_lp_core_utils.h \
-    $(PROJECT_PATH)/components/usb/include/usb/usb_helpers.h \
-    $(PROJECT_PATH)/components/usb/include/usb/usb_host.h \
-    $(PROJECT_PATH)/components/usb/include/usb/usb_types_ch9.h \
-    $(PROJECT_PATH)/components/usb/include/usb/usb_types_stack.h \
     $(PROJECT_PATH)/components/vfs/include/esp_vfs_dev.h \
     $(PROJECT_PATH)/components/vfs/include/esp_vfs_eventfd.h \
     $(PROJECT_PATH)/components/vfs/include/esp_vfs_semihost.h \
@@ -341,11 +336,13 @@ PREDEFINED             = \
     configSUPPORT_DYNAMIC_ALLOCATION=1 \
     configSUPPORT_STATIC_ALLOCATION=1 \
     configQUEUE_REGISTRY_SIZE=1 \
+    configUSE_MUTEXES=1 \
     configUSE_RECURSIVE_MUTEXES=1 \
     configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS=1 \
     configNUM_THREAD_LOCAL_STORAGE_POINTERS=1 \
     configUSE_APPLICATION_TASK_TAG=1 \
     configTASKLIST_INCLUDE_COREID=1 \
+    configUSE_SB_COMPLETED_CALLBACK=1 \
     PRIVILEGED_FUNCTION= \
     "ESP_EVENT_DECLARE_BASE(x)=extern esp_event_base_t x"
 

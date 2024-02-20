@@ -120,7 +120,11 @@ void adc_hal_digi_init(adc_hal_dma_ctx_t *hal)
     i2s_ll_rx_set_sample_bit(hal->dev, SAMPLE_BITS, SAMPLE_BITS);
     i2s_ll_rx_enable_mono_mode(hal->dev, 1);
     i2s_ll_rx_force_enable_fifo_mod(hal->dev, 1);
-    i2s_ll_enable_builtin_adc(hal->dev, 1);
+    i2s_ll_rx_enable_right_first(hal->dev, false);
+    i2s_ll_rx_enable_msb_shift(hal->dev, false);
+    i2s_ll_rx_set_ws_width(hal->dev, 16);
+    i2s_ll_rx_select_std_slot(hal->dev, I2S_STD_SLOT_LEFT, false);
+    i2s_ll_enable_builtin_adc_dac(hal->dev, 1);
 #endif
 
     adc_oneshot_ll_disable_all_unit();

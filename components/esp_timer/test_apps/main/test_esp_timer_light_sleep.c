@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,7 +13,7 @@
 #include "esp_rom_sys.h"
 #include "esp_sleep.h"
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32P4) // TODO IDF-7528
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32P4) // TODO Light Sleep support - IDF-7528
 
 static void timer_cb1(void *arg)
 {
@@ -25,10 +25,10 @@ TEST_CASE("Test the periodic timer does not handle lost events during light slee
 
     int count_calls;
     const esp_timer_create_args_t timer_args = {
-            .name = "timer_cb1",
-            .arg  = &count_calls,
-            .callback = &timer_cb1,
-            .skip_unhandled_events = true,
+        .name = "timer_cb1",
+        .arg  = &count_calls,
+        .callback = &timer_cb1,
+        .skip_unhandled_events = true,
     };
     esp_timer_handle_t periodic_timer;
     esp_timer_create(&timer_args, &periodic_timer);

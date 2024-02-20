@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
 import http.server
 import multiprocessing
@@ -10,8 +10,14 @@ from typing import Tuple
 
 import pexpect
 import pytest
-from common_test_methods import get_env_config_variable, get_host_ip4_by_dest_ip
 from pytest_embedded import Dut
+
+try:
+    from common_test_methods import get_env_config_variable, get_host_ip4_by_dest_ip
+except ModuleNotFoundError:
+    idf_path = os.environ['IDF_PATH']
+    sys.path.insert(0, idf_path + '/tools/ci/python_packages')
+    from common_test_methods import get_env_config_variable, get_host_ip4_by_dest_ip
 
 server_cert = '-----BEGIN CERTIFICATE-----\n' \
               'MIIDWDCCAkACCQCbF4+gVh/MLjANBgkqhkiG9w0BAQsFADBuMQswCQYDVQQGEwJJ\n'\
@@ -124,7 +130,6 @@ def calc_all_sha256(dut: Dut) -> Tuple[str, str]:
 
 @pytest.mark.esp32
 @pytest.mark.esp32c3
-@pytest.mark.esp32s2
 @pytest.mark.esp32s3
 @pytest.mark.wifi_high_traffic
 def test_examples_protocol_simple_ota_example(dut: Dut) -> None:
@@ -170,9 +175,6 @@ def test_examples_protocol_simple_ota_example(dut: Dut) -> None:
 
 
 @pytest.mark.esp32
-@pytest.mark.esp32c3
-@pytest.mark.esp32s2
-@pytest.mark.esp32s3
 @pytest.mark.ethernet_ota
 @pytest.mark.parametrize('config', ['spiram',], indirect=True)
 def test_examples_protocol_simple_ota_example_ethernet_with_spiram_config(dut: Dut) -> None:
@@ -258,9 +260,6 @@ def test_examples_protocol_simple_ota_example_with_flash_encryption_wifi(dut: Du
 
 
 @pytest.mark.esp32
-@pytest.mark.esp32c3
-@pytest.mark.esp32s2
-@pytest.mark.esp32s3
 @pytest.mark.ethernet_ota
 @pytest.mark.parametrize('config', ['on_update_no_sb_ecdsa',], indirect=True)
 def test_examples_protocol_simple_ota_example_with_verify_app_signature_on_update_no_secure_boot_ecdsa(dut: Dut) -> None:
@@ -301,9 +300,6 @@ def test_examples_protocol_simple_ota_example_with_verify_app_signature_on_updat
 
 
 @pytest.mark.esp32
-@pytest.mark.esp32c3
-@pytest.mark.esp32s2
-@pytest.mark.esp32s3
 @pytest.mark.ethernet_ota
 @pytest.mark.parametrize('config', ['on_update_no_sb_rsa',], indirect=True)
 def test_examples_protocol_simple_ota_example_with_verify_app_signature_on_update_no_secure_boot_rsa(dut: Dut) -> None:

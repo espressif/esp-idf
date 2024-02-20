@@ -53,7 +53,7 @@ static esp_err_t print_real_time_stats(TickType_t xTicksToWait)
 {
     TaskStatus_t *start_array = NULL, *end_array = NULL;
     UBaseType_t start_array_size, end_array_size;
-    uint32_t start_run_time, end_run_time;
+    configRUN_TIME_COUNTER_TYPE start_run_time, end_run_time;
     esp_err_t ret;
 
     //Allocate array to store current task states

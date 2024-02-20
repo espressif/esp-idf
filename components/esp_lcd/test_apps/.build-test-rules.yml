@@ -3,6 +3,9 @@
 components/esp_lcd/test_apps/i2c_lcd:
   disable:
     - if: SOC_I2C_SUPPORTED != 1
+  depends_components:
+    - esp_lcd
+    - esp_driver_i2c
   disable_test:
     - if: IDF_TARGET not in ["esp32c3"]
       temporary: true
@@ -11,19 +14,45 @@ components/esp_lcd/test_apps/i2c_lcd:
 components/esp_lcd/test_apps/i2c_lcd_legacy:
   disable:
     - if: SOC_I2C_SUPPORTED != 1
+  depends_components:
+    - esp_lcd
+  depends_filepatterns:
+    - components/driver/i2c/**/*
   disable_test:
     - if: IDF_TARGET not in ["esp32c3"]
       temporary: true
       reason: insufficient runners
 
 components/esp_lcd/test_apps/i80_lcd:
+  depends_components:
+    - esp_lcd
+    - esp_driver_i2s
   disable:
     - if: SOC_LCD_I80_SUPPORTED != 1
 
+components/esp_lcd/test_apps/mipi_dsi_lcd:
+  depends_components:
+    - esp_lcd
+  disable:
+    - if: SOC_LCD_MIPI_DSI_SUPPORTED != 1
+  disable_test:
+    - if: IDF_TARGET == "esp32p4"
+      temporary: true
+      reason: lack of runners
+
 components/esp_lcd/test_apps/rgb_lcd:
+  depends_components:
+    - esp_lcd
   disable:
     - if: SOC_LCD_RGB_SUPPORTED != 1
 
 components/esp_lcd/test_apps/spi_lcd:
+  depends_components:
+    - esp_lcd
+    - esp_driver_spi
   disable:
     - if: SOC_GPSPI_SUPPORTED != 1
+  disable_test:
+    - if: IDF_TARGET == "esp32p4"
+      temporary: true
+      reason: test not pass, should be re-enable # TODO: IDF-8975

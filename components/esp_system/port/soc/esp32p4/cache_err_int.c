@@ -21,6 +21,18 @@
 static const char *TAG = "CACHE_ERR";
 
 //TODO: IDF-7515
+const char *esp_cache_err_panic_string(void)
+{
+    return NULL;
+}
+
+//TODO: IDF-7515
+bool esp_cache_err_has_active_err(void)
+{
+    return false;
+}
+
+//TODO: IDF-7515
 void esp_cache_err_int_init(void)
 {
     const uint32_t core_id = 0;
@@ -40,8 +52,8 @@ void esp_cache_err_int_init(void)
     esp_rom_route_intr_matrix(core_id, ETS_CACHE_INTR_SOURCE, ETS_CACHEERR_INUM);
 
     /* Set the type and priority to cache error interrupts. */
-    esprv_intc_int_set_type(ETS_CACHEERR_INUM, INTR_TYPE_LEVEL);
-    esprv_intc_int_set_priority(ETS_CACHEERR_INUM, SOC_INTERRUPT_LEVEL_MEDIUM);
+    esprv_int_set_type(ETS_CACHEERR_INUM, INTR_TYPE_LEVEL);
+    esprv_int_set_priority(ETS_CACHEERR_INUM, SOC_INTERRUPT_LEVEL_MEDIUM);
 
     ESP_DRAM_LOGV(TAG, "access error intr clr & ena mask is: 0x%x", CACHE_LL_L1_ACCESS_EVENT_MASK);
     /* On the hardware side, start by clearing all the bits reponsible for cache access error */
@@ -53,7 +65,7 @@ void esp_cache_err_int_init(void)
     ESP_INTR_ENABLE(ETS_CACHEERR_INUM);
 }
 
-int IRAM_ATTR esp_cache_err_get_cpuid(void)
+int esp_cache_err_get_cpuid(void)
 {
     //TODO: IDF-7515
     //Should return hart ID according to the cache error

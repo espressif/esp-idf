@@ -1,0 +1,5 @@
+components/esp_driver_cam/test_apps/csi:
+  disable:
+    - if: SOC_MIPI_CSI_SUPPORTED != 1
+  depends_components:
+    - esp_driver_cam

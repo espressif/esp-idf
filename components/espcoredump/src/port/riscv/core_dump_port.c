@@ -20,7 +20,7 @@
 #include "esp_core_dump_port.h"
 
 /* TAG used for logs */
-const static DRAM_ATTR char TAG[] __attribute__((unused)) = "esp_core_dump_port";
+const static char TAG[] __attribute__((unused)) = "esp_core_dump_port";
 
 /* Code associated to RISC-V in ELF format */
 #define COREDUMP_EM_RISCV                   0xF3
@@ -141,6 +141,7 @@ _Static_assert(sizeof(riscv_prstatus) == PRSTATUS_SIZE,
  */
 typedef struct {
     uint32_t crashed_task_tcb;
+    uint32_t isr_context;
 } riscv_extra_info_t;
 
 
@@ -157,9 +158,10 @@ static uint32_t s_fake_stacks_num = 0;
 /* Statically initialize the extra information structure. */
 static riscv_extra_info_t s_extra_info = { 0 };
 
-inline void esp_core_dump_port_init(panic_info_t *info)
+inline void esp_core_dump_port_init(panic_info_t *info, bool isr_context)
 {
     s_extra_info.crashed_task_tcb = COREDUMP_CURR_TASK_MARKER;
+    s_extra_info.isr_context = isr_context;
 }
 
 /**

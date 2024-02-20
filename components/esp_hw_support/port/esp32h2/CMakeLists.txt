@@ -5,7 +5,6 @@ set(srcs "rtc_clk_init.c"
          "pmu_sleep.c"
          "rtc_time.c"
          "chip_info.c"
-         "pmu_pvt_pump.c"
          )
 
 if(NOT BOOTLOADER_BUILD)
@@ -16,5 +15,4 @@ endif()
 add_prefix(srcs "${CMAKE_CURRENT_LIST_DIR}/" "${srcs}")
 
 target_sources(${COMPONENT_LIB} PRIVATE "${srcs}")
-target_include_directories(${COMPONENT_LIB} PUBLIC . private_include)
-target_include_directories(${COMPONENT_LIB} PRIVATE ../hal)
+target_include_directories(${COMPONENT_LIB} PUBLIC . include private_include)

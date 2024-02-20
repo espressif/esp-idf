@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2018-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,6 +15,11 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
+#include "esp_private/startup_internal.h"
+#if CONFIG_SPIRAM
+#include "esp_private/freertos_idf_additions_priv.h"
+#endif
+#include "esp_heap_caps.h"
 #include "soc/soc_memory_layout.h"
 
 #include "pthread_internal.h"
@@ -65,6 +70,11 @@ static int pthread_mutex_lock_internal(esp_pthread_mutex_t *mux, TickType_t tmo)
 static void esp_pthread_cfg_key_destructor(void *value)
 {
     free(value);
+}
+
+ESP_SYSTEM_INIT_FN(init_pthread, CORE, BIT(0), 120)
+{
+    return esp_pthread_init();
 }
 
 esp_err_t esp_pthread_init(void)
@@ -131,6 +141,19 @@ esp_err_t esp_pthread_set_cfg(const esp_pthread_cfg_t *cfg)
         return ESP_ERR_INVALID_ARG;
     }
 
+    // 0 is treated as default value, hence change caps to MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL in that case
+    int heap_caps;
+    if (cfg->stack_alloc_caps == 0) {
+        heap_caps = MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL;
+    } else {
+        // Check that memory is 8-bit capable
+        if (!(cfg->stack_alloc_caps & MALLOC_CAP_8BIT)) {
+            return ESP_ERR_INVALID_ARG;
+        }
+
+        heap_caps = cfg->stack_alloc_caps;
+    }
+
     /* If a value is already set, update that value */
     esp_pthread_cfg_t *p = pthread_getspecific(s_pthread_cfg_key);
     if (!p) {
@@ -140,6 +163,7 @@ esp_err_t esp_pthread_set_cfg(const esp_pthread_cfg_t *cfg)
         }
     }
     *p = *cfg;
+    p->stack_alloc_caps = heap_caps;
     pthread_setspecific(s_pthread_cfg_key, p);
     return 0;
 }
@@ -167,7 +191,8 @@ esp_pthread_cfg_t esp_pthread_get_default_config(void)
         .prio = CONFIG_PTHREAD_TASK_PRIO_DEFAULT,
         .inherit_cfg = false,
         .thread_name = NULL,
-        .pin_to_core = get_default_pthread_core()
+        .pin_to_core = get_default_pthread_core(),
+        .stack_alloc_caps = MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT,
     };
 
     return cfg;
@@ -201,6 +226,57 @@ static void pthread_task_func(void *arg)
     ESP_LOGV(TAG, "%s EXIT", __FUNCTION__);
 }
 
+#if CONFIG_SPIRAM && CONFIG_FREERTOS_SMP
+static UBaseType_t coreID_to_AffinityMask(BaseType_t core_id)
+{
+    UBaseType_t affinity_mask = tskNO_AFFINITY;
+    if (core_id != tskNO_AFFINITY) {
+        affinity_mask = 1 << core_id;
+    }
+    return affinity_mask;
+}
+#endif
+
+static BaseType_t pthread_create_freertos_task_with_caps(TaskFunction_t pxTaskCode,
+                                                        const char * const pcName,
+                                                        const configSTACK_DEPTH_TYPE usStackDepth,
+                                                        void * const pvParameters,
+                                                        UBaseType_t uxPriority,
+                                                        BaseType_t core_id,
+                                                        UBaseType_t uxStackMemoryCaps,
+                                                        TaskHandle_t * const pxCreatedTask)
+{
+#if CONFIG_SPIRAM
+    #if CONFIG_FREERTOS_SMP
+    return prvTaskCreateDynamicAffinitySetWithCaps(pxTaskCode,
+                                                   pcName,
+                                                   usStackDepth,
+                                                   pvParameters,
+                                                   uxPriority,
+                                                   coreID_to_AffinityMask(core_id),
+                                                   uxStackMemoryCaps,
+                                                   pxCreatedTask);
+    #else
+    return prvTaskCreateDynamicPinnedToCoreWithCaps(pxTaskCode,
+                                                    pcName,
+                                                    usStackDepth,
+                                                    pvParameters,
+                                                    uxPriority,
+                                                    core_id,
+                                                    uxStackMemoryCaps,
+                                                    pxCreatedTask);
+    #endif
+#else
+    return xTaskCreatePinnedToCore(pxTaskCode,
+                                   pcName,
+                                   usStackDepth,
+                                   pvParameters,
+                                   uxPriority,
+                                   pxCreatedTask,
+                                   core_id);
+#endif
+}
+
 int pthread_create(pthread_t *thread, const pthread_attr_t *attr,
                    void *(*start_routine) (void *), void *arg)
 {
@@ -224,6 +300,7 @@ int pthread_create(pthread_t *thread, const pthread_attr_t *attr,
     BaseType_t prio = CONFIG_PTHREAD_TASK_PRIO_DEFAULT;
     BaseType_t core_id = get_default_pthread_core();
     const char *task_name = CONFIG_PTHREAD_TASK_NAME_DEFAULT;
+    uint32_t stack_alloc_caps = MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT;
 
     esp_pthread_cfg_t *pthread_cfg = pthread_getspecific(s_pthread_cfg_key);
     if (pthread_cfg) {
@@ -252,6 +329,9 @@ int pthread_create(pthread_t *thread, const pthread_attr_t *attr,
             core_id = pthread_cfg->pin_to_core;
         }
 
+        // Note: validity has been checked during esp_pthread_set_cfg()
+        stack_alloc_caps = pthread_cfg->stack_alloc_caps;
+
         task_arg->cfg = *pthread_cfg;
     }
 
@@ -269,20 +349,23 @@ int pthread_create(pthread_t *thread, const pthread_attr_t *attr,
         }
     }
 
+    // stack_size is in bytes. This transformation ensures that the units are
+    // transformed to the units used in FreeRTOS.
+    // Note: float division of ceil(m / n) ==
+    //       integer division of (m + n - 1) / n
+    stack_size = (stack_size + sizeof(StackType_t) - 1) / sizeof(StackType_t);
     task_arg->func = start_routine;
     task_arg->arg = arg;
     pthread->task_arg = task_arg;
-    BaseType_t res = xTaskCreatePinnedToCore(&pthread_task_func,
+
+    BaseType_t res = pthread_create_freertos_task_with_caps(&pthread_task_func,
                                              task_name,
-                                             // stack_size is in bytes. This transformation ensures that the units are
-                                             // transformed to the units used in FreeRTOS.
-                                             // Note: float division of ceil(m / n) ==
-                                             //       integer division of (m + n - 1) / n
-                                             (stack_size + sizeof(StackType_t) - 1) / sizeof(StackType_t),
+                                             stack_size,
                                              task_arg,
                                              prio,
-                                             &xHandle,
-                                             core_id);
+                                             core_id,
+                                             stack_alloc_caps,
+                                             &xHandle);
 
     if (res != pdPASS) {
         ESP_LOGE(TAG, "Failed to create task!");

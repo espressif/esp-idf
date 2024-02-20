@@ -941,35 +941,6 @@ typedef union {
     uint32_t val;
 } i2c_date_reg_t;
 
-
-/** Group: Address register */
-/** Type of txfifo_start_addr register
- *  I2C TXFIFO base address register
- */
-typedef union {
-    struct {
-        /** txfifo_start_addr : RO; bitpos: [31:0]; default: 0;
-         *  This is the I2C txfifo first address.
-         */
-        uint32_t txfifo_start_addr:32;
-    };
-    uint32_t val;
-} i2c_txfifo_start_addr_reg_t;
-
-/** Type of rxfifo_start_addr register
- *  I2C RXFIFO base address register
- */
-typedef union {
-    struct {
-        /** rxfifo_start_addr : RO; bitpos: [31:0]; default: 0;
-         *  This is the I2C rxfifo first address.
-         */
-        uint32_t rxfifo_start_addr:32;
-    };
-    uint32_t val;
-} i2c_rxfifo_start_addr_reg_t;
-
-
 typedef struct {
     volatile i2c_scl_low_period_reg_t scl_low_period;
     volatile i2c_ctr_reg_t ctr;
@@ -1001,16 +972,15 @@ typedef struct {
     uint32_t reserved_088[28];
     volatile i2c_date_reg_t date;
     uint32_t reserved_0fc;
-    volatile i2c_txfifo_start_addr_reg_t txfifo_start_addr;
-    uint32_t reserved_104[31];
-    volatile i2c_rxfifo_start_addr_reg_t rxfifo_start_addr;
+    volatile uint32_t txfifo_mem[32];
+    volatile uint32_t rxfifo_mem[32];
 } i2c_dev_t;
 
 extern i2c_dev_t I2C0;
 extern i2c_dev_t I2C1;
 
 #ifndef __cplusplus
-_Static_assert(sizeof(i2c_dev_t) == 0x184, "Invalid size of i2c_dev_t structure");
+_Static_assert(sizeof(i2c_dev_t) == 0x200, "Invalid size of i2c_dev_t structure");
 #endif
 
 #ifdef __cplusplus

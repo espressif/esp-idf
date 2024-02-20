@@ -60,11 +60,11 @@
 #define ADC_TEST_HIGH_VAL        3350
 #define ADC_TEST_HIGH_THRESH     200
 
-#elif CONFIG_IDF_TARGET_ESP32H2  // TODO: IDF-6216
-#define ADC_TEST_LOW_VAL         2144
-#define ADC_TEST_LOW_THRESH      200
+#elif CONFIG_IDF_TARGET_ESP32H2
+#define ADC_TEST_LOW_VAL         0
+#define ADC_TEST_LOW_THRESH      17
 
-#define ADC_TEST_HIGH_VAL        4081
+#define ADC_TEST_HIGH_VAL        3390
 #define ADC_TEST_HIGH_THRESH     200
 
 #endif
@@ -110,10 +110,10 @@ TEST_CASE("Legacy ADC oneshot high/low test", "[legacy_adc_oneshot]")
     int adc_raw = 0;
     //ADC1 config
     TEST_ESP_OK(adc1_config_width(ADC_WIDTH_BIT_DEFAULT));
-    TEST_ESP_OK(adc1_config_channel_atten(ADC1_TEST_CHAN0, ADC_ATTEN_DB_11));
+    TEST_ESP_OK(adc1_config_channel_atten(ADC1_TEST_CHAN0, ADC_ATTEN_DB_12));
 #if ADC_TEST_ADC2
     //ADC2 config
-    TEST_ESP_OK(adc2_config_channel_atten(ADC2_TEST_CHAN0, ADC_ATTEN_DB_11));
+    TEST_ESP_OK(adc2_config_channel_atten(ADC2_TEST_CHAN0, ADC_ATTEN_DB_12));
 #endif
 
     test_adc_set_io_level(ADC_UNIT_1, (adc1_channel_t)ADC1_TEST_CHAN0, 0);

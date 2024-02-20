@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -22,15 +22,25 @@ extern "C" {
 /**
  * @brief Initializer macro for general configuration structure.
  *
- * This initializer macros allows the TX GPIO, RX GPIO, and operating mode to be
- * configured. The other members of the general configuration structure are
+ * This initializer macros allows the controller ID, TX GPIO, RX GPIO, and operating
+ * mode to be configured. The other members of the general configuration structure are
  * assigned default values.
  */
-#define TWAI_GENERAL_CONFIG_DEFAULT(tx_io_num, rx_io_num, op_mode) {.mode = op_mode, .tx_io = tx_io_num, .rx_io = rx_io_num,        \
+#define TWAI_GENERAL_CONFIG_DEFAULT_V2(controller_num, tx_io_num, rx_io_num, op_mode) {.controller_id = controller_num,             \
+                                                                    .mode = op_mode, .tx_io = tx_io_num, .rx_io = rx_io_num,        \
                                                                     .clkout_io = TWAI_IO_UNUSED, .bus_off_io = TWAI_IO_UNUSED,      \
                                                                     .tx_queue_len = 5, .rx_queue_len = 5,                           \
                                                                     .alerts_enabled = TWAI_ALERT_NONE,  .clkout_divider = 0,        \
                                                                     .intr_flags = ESP_INTR_FLAG_LEVEL1}
+
+/**
+ * @brief Initializer macro for general configuration structure.
+ *
+ * This initializer macros allows the TX GPIO, RX GPIO, and operating mode to be
+ * configured. Controller ID is set to 0 and he other members of the general configuration
+ * structure are assigned default values.
+ */
+#define TWAI_GENERAL_CONFIG_DEFAULT(tx_io_num, rx_io_num, op_mode) TWAI_GENERAL_CONFIG_DEFAULT_V2(0, tx_io_num, rx_io_num, op_mode)
 
 /**
  * @brief   Alert flags
@@ -70,6 +80,11 @@ extern "C" {
 /* ----------------------- Enum and Struct Definitions ---------------------- */
 
 /**
+ * @brief TWAI controller handle
+ */
+typedef struct twai_obj_t *twai_handle_t;
+
+/**
  * @brief   TWAI driver states
  */
 typedef enum {
@@ -85,6 +100,8 @@ typedef enum {
  * @note    Macro initializers are available for this structure
  */
 typedef struct {
+    int controller_id;              /**< TWAI controller ID, index from 0.
+                                         If you want to install TWAI driver with a non-zero controller_id, please use `twai_driver_install_v2` */
     twai_mode_t mode;               /**< Mode of TWAI controller */
     gpio_num_t tx_io;               /**< Transmit GPIO number */
     gpio_num_t rx_io;               /**< Receive GPIO number */
@@ -139,6 +156,26 @@ typedef struct {
 esp_err_t twai_driver_install(const twai_general_config_t *g_config, const twai_timing_config_t *t_config, const twai_filter_config_t *f_config);
 
 /**
+ * @brief Install TWAI driver and return a handle
+ *
+ * @note This is an advanced version of `twai_driver_install` that can return a driver handle, so that it allows you to install multiple TWAI drivers.
+ *       Don't forget to set the proper controller_id in the `twai_general_config_t`
+ *       Please refer to the documentation of `twai_driver_install` for more details.
+ *
+ * @param[in]   g_config    General configuration structure
+ * @param[in]   t_config    Timing configuration structure
+ * @param[in]   f_config    Filter configuration structure
+ * @param[out]  ret_twai    Pointer to a new created TWAI handle
+ *
+ * @return
+ *      - ESP_OK: Successfully installed TWAI driver
+ *      - ESP_ERR_INVALID_ARG: Arguments are invalid, e.g. invalid clock source, invalid quanta resolution, invalid controller ID
+ *      - ESP_ERR_NO_MEM: Insufficient memory
+ *      - ESP_ERR_INVALID_STATE: Driver is already installed
+ */
+esp_err_t twai_driver_install_v2(const twai_general_config_t *g_config, const twai_timing_config_t *t_config, const twai_filter_config_t *f_config, twai_handle_t *ret_twai);
+
+/**
  * @brief   Uninstall the TWAI driver
  *
  * This function uninstalls the TWAI driver, freeing the memory utilized by the
@@ -155,6 +192,20 @@ esp_err_t twai_driver_install(const twai_general_config_t *g_config, const twai_
 esp_err_t twai_driver_uninstall(void);
 
 /**
+ * @brief Uninstall the TWAI driver with a given handle
+ *
+ * @note This is an advanced version of `twai_driver_uninstall` that can uninstall a TWAI driver with a given handle.
+ *       Please refer to the documentation of `twai_driver_uninstall` for more details.
+ *
+ * @param[in] handle  TWAI driver handle returned by `twai_driver_install_v2`
+ *
+ * @return
+ *      - ESP_OK: Successfully uninstalled TWAI driver
+ *      - ESP_ERR_INVALID_STATE: Driver is not in stopped/bus-off state, or is not installed
+ */
+esp_err_t twai_driver_uninstall_v2(twai_handle_t handle);
+
+/**
  * @brief   Start the TWAI driver
  *
  * This function starts the TWAI driver, putting the TWAI driver into the running
@@ -168,6 +219,20 @@ esp_err_t twai_driver_uninstall(void);
  *      - ESP_ERR_INVALID_STATE: Driver is not in stopped state, or is not installed
  */
 esp_err_t twai_start(void);
+
+/**
+ * @brief Start the TWAI driver with a given handle
+ *
+ * @note This is an advanced version of `twai_start` that can start a TWAI driver with a given handle.
+ *       Please refer to the documentation of `twai_start` for more details.
+ *
+ * @param[in] handle  TWAI driver handle returned by `twai_driver_install_v2`
+ *
+ * @return
+ *      - ESP_OK: TWAI driver is now running
+ *      - ESP_ERR_INVALID_STATE: Driver is not in stopped state, or is not installed
+ */
+esp_err_t twai_start_v2(twai_handle_t handle);
 
 /**
  * @brief   Stop the TWAI driver
@@ -187,6 +252,20 @@ esp_err_t twai_start(void);
  *      - ESP_ERR_INVALID_STATE: Driver is not in running state, or is not installed
  */
 esp_err_t twai_stop(void);
+
+/**
+ * @brief Stop the TWAI driver with a given handle
+ *
+ * @note This is an advanced version of `twai_stop` that can stop a TWAI driver with a given handle.
+ *       Please refer to the documentation of `twai_stop` for more details.
+ *
+ * @param[in] handle  TWAI driver handle returned by `twai_driver_install_v2`
+ *
+ * @return
+ *      - ESP_OK: TWAI driver is now Stopped
+ *      - ESP_ERR_INVALID_STATE: Driver is not in running state, or is not installed
+ */
+esp_err_t twai_stop_v2(twai_handle_t handle);
 
 /**
  * @brief   Transmit a TWAI message
@@ -220,6 +299,26 @@ esp_err_t twai_stop(void);
 esp_err_t twai_transmit(const twai_message_t *message, TickType_t ticks_to_wait);
 
 /**
+ * @brief Transmit a TWAI message via a given handle
+ *
+ * @note This is an advanced version of `twai_transmit` that can transmit a TWAI message with a given handle.
+ *       Please refer to the documentation of `twai_transmit` for more details.
+ *
+ * @param[in] handle  TWAI driver handle returned by `twai_driver_install_v2`
+ * @param[in] message Message to transmit
+ * @param[in] ticks_to_wait   Number of FreeRTOS ticks to block on the TX queue
+ *
+ * @return
+ *      - ESP_OK: Transmission successfully queued/initiated
+ *      - ESP_ERR_INVALID_ARG: Arguments are invalid
+ *      - ESP_ERR_TIMEOUT: Timed out waiting for space on TX queue
+ *      - ESP_FAIL: TX queue is disabled and another message is currently transmitting
+ *      - ESP_ERR_INVALID_STATE: TWAI driver is not in running state, or is not installed
+ *      - ESP_ERR_NOT_SUPPORTED: Listen Only Mode does not support transmissions
+ */
+esp_err_t twai_transmit_v2(twai_handle_t handle, const twai_message_t *message, TickType_t ticks_to_wait);
+
+/**
  * @brief   Receive a TWAI message
  *
  * This function receives a message from the RX queue. The flags field of the
@@ -239,6 +338,24 @@ esp_err_t twai_transmit(const twai_message_t *message, TickType_t ticks_to_wait)
  *      - ESP_ERR_INVALID_STATE: TWAI driver is not installed
  */
 esp_err_t twai_receive(twai_message_t *message, TickType_t ticks_to_wait);
+
+/**
+ * @brief Receive a TWAI message via a given handle
+ *
+ * @note This is an advanced version of `twai_receive` that can receive a TWAI message with a given handle.
+ *       Please refer to the documentation of `twai_receive` for more details.
+ *
+ * @param[in]   handle          TWAI driver handle returned by `twai_driver_install_v2`
+ * @param[out]  message         Received message
+ * @param[in]   ticks_to_wait   Number of FreeRTOS ticks to block on RX queue
+ *
+ * @return
+ *      - ESP_OK: Message successfully received from RX queue
+ *      - ESP_ERR_TIMEOUT: Timed out waiting for message
+ *      - ESP_ERR_INVALID_ARG: Arguments are invalid
+ *      - ESP_ERR_INVALID_STATE: TWAI driver is not installed
+ */
+esp_err_t twai_receive_v2(twai_handle_t handle, twai_message_t *message, TickType_t ticks_to_wait);
 
 /**
  * @brief   Read TWAI driver alerts
@@ -262,6 +379,24 @@ esp_err_t twai_receive(twai_message_t *message, TickType_t ticks_to_wait);
 esp_err_t twai_read_alerts(uint32_t *alerts, TickType_t ticks_to_wait);
 
 /**
+ * @brief Read TWAI driver alerts with a given handle
+ *
+ * @note This is an advanced version of `twai_read_alerts` that can read TWAI driver alerts with a given handle.
+ *       Please refer to the documentation of `twai_read_alerts` for more details.
+ *
+ * @param[in]   handle          TWAI driver handle returned by `twai_driver_install_v2`
+ * @param[out]  alerts          Bit field of raised alerts (see documentation for alert flags)
+ * @param[in]   ticks_to_wait   Number of FreeRTOS ticks to block for alert
+ *
+ * @return
+ *      - ESP_OK: Alerts read
+ *      - ESP_ERR_TIMEOUT: Timed out waiting for alerts
+ *      - ESP_ERR_INVALID_ARG: Arguments are invalid
+ *      - ESP_ERR_INVALID_STATE: TWAI driver is not installed
+ */
+esp_err_t twai_read_alerts_v2(twai_handle_t handle, uint32_t *alerts, TickType_t ticks_to_wait);
+
+/**
  * @brief   Reconfigure which alerts are enabled
  *
  * This function reconfigures which alerts are enabled. If there are alerts
@@ -276,6 +411,22 @@ esp_err_t twai_read_alerts(uint32_t *alerts, TickType_t ticks_to_wait);
  *      - ESP_ERR_INVALID_STATE: TWAI driver is not installed
  */
 esp_err_t twai_reconfigure_alerts(uint32_t alerts_enabled, uint32_t *current_alerts);
+
+/**
+ * @brief Reconfigure which alerts are enabled, with a given handle
+ *
+ * @note This is an advanced version of `twai_reconfigure_alerts` that can reconfigure which alerts are enabled with a given handle.
+ *       Please refer to the documentation of `twai_reconfigure_alerts` for more details.
+ *
+ * @param[in]   handle          TWAI driver handle returned by `twai_driver_install_v2`
+ * @param[in]   alerts_enabled  Bit field of alerts to enable (see documentation for alert flags)
+ * @param[out]  current_alerts  Bit field of currently raised alerts. Set to NULL if unused
+ *
+ * @return
+ *      - ESP_OK: Alerts reconfigured
+ *      - ESP_ERR_INVALID_STATE: TWAI driver is not installed
+ */
+esp_err_t twai_reconfigure_alerts_v2(twai_handle_t handle, uint32_t alerts_enabled, uint32_t *current_alerts);
 
 /**
  * @brief   Start the bus recovery process
@@ -296,6 +447,20 @@ esp_err_t twai_reconfigure_alerts(uint32_t alerts_enabled, uint32_t *current_ale
 esp_err_t twai_initiate_recovery(void);
 
 /**
+ * @brief Start the bus recovery process with a given handle
+ *
+ * @note This is an advanced version of `twai_initiate_recovery` that can start the bus recovery process with a given handle.
+ *       Please refer to the documentation of `twai_initiate_recovery` for more details.
+ *
+ * @param[in] handle  TWAI driver handle returned by `twai_driver_install_v2`
+ *
+ * @return
+ *      - ESP_OK: Bus recovery started
+ *      - ESP_ERR_INVALID_STATE: TWAI driver is not in the bus-off state, or is not installed
+ */
+esp_err_t twai_initiate_recovery_v2(twai_handle_t handle);
+
+/**
  * @brief   Get current status information of the TWAI driver
  *
  * @param[out]  status_info     Status information
@@ -306,6 +471,22 @@ esp_err_t twai_initiate_recovery(void);
  *      - ESP_ERR_INVALID_STATE: TWAI driver is not installed
  */
 esp_err_t twai_get_status_info(twai_status_info_t *status_info);
+
+/**
+ * @brief Get current status information of a given TWAI driver handle
+ *
+ * @note This is an advanced version of `twai_get_status_info` that can get current status information of a given TWAI driver handle.
+ *       Please refer to the documentation of `twai_get_status_info` for more details.
+ *
+ * @param[in] handle  TWAI driver handle returned by `twai_driver_install_v2`
+ * @param[out]  status_info     Status information
+ *
+ * @return
+ *      - ESP_OK: Status information retrieved
+ *      - ESP_ERR_INVALID_ARG: Arguments are invalid
+ *      - ESP_ERR_INVALID_STATE: TWAI driver is not installed
+ */
+esp_err_t twai_get_status_info_v2(twai_handle_t handle, twai_status_info_t *status_info);
 
 /**
  * @brief   Clear the transmit queue
@@ -322,6 +503,20 @@ esp_err_t twai_get_status_info(twai_status_info_t *status_info);
 esp_err_t twai_clear_transmit_queue(void);
 
 /**
+ * @brief Clear the transmit queue of a given TWAI driver handle
+ *
+ * @note This is an advanced version of `twai_clear_transmit_queue` that can clear the transmit queue of a given TWAI driver handle.
+ *       Please refer to the documentation of `twai_clear_transmit_queue` for more details.
+ *
+ * @param[in] handle  TWAI driver handle returned by `twai_driver_install_v2`
+ *
+ * @return
+ *      - ESP_OK: Transmit queue cleared
+ *      - ESP_ERR_INVALID_STATE: TWAI driver is not installed or TX queue is disabled
+ */
+esp_err_t twai_clear_transmit_queue_v2(twai_handle_t handle);
+
+/**
  * @brief   Clear the receive queue
  *
  * This function will clear the receive queue of all messages.
@@ -334,6 +529,20 @@ esp_err_t twai_clear_transmit_queue(void);
  *      - ESP_ERR_INVALID_STATE: TWAI driver is not installed
  */
 esp_err_t twai_clear_receive_queue(void);
+
+/**
+ * @brief   Clear the receive queue of a given TWAI driver handle
+ *
+ * @note This is an advanced version of `twai_clear_receive_queue` that can clear the receive queue of a given TWAI driver handle.
+ *       Please refer to the documentation of `twai_clear_receive_queue` for more details.
+ *
+ * @param[in] handle  TWAI driver handle returned by `twai_driver_install_v2`
+ *
+ * @return
+ *      - ESP_OK: Transmit queue cleared
+ *      - ESP_ERR_INVALID_STATE: TWAI driver is not installed
+ */
+esp_err_t twai_clear_receive_queue_v2(twai_handle_t handle);
 
 #ifdef __cplusplus
 }

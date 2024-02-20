@@ -64,7 +64,7 @@ esp_err_t mmu_config_psram_text_segment(uint32_t start_page, uint32_t psram_size
     //Enable the most high bus, which is used for copying FLASH .text to PSRAM
     cache_bus_mask_t bus_mask = cache_ll_l1_get_bus(0, SOC_EXTRAM_DATA_HIGH, 0);
     cache_ll_l1_enable_bus(0, bus_mask);
-#if !CONFIG_FREERTOS_UNICORE
+#if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
     bus_mask = cache_ll_l1_get_bus(1, SOC_EXTRAM_DATA_HIGH, 0);
     cache_ll_l1_enable_bus(1, bus_mask);
 #endif
@@ -108,7 +108,7 @@ esp_err_t mmu_config_psram_rodata_segment(uint32_t start_page, uint32_t psram_si
     //Enable the most high bus, which is used for copying FLASH .text to PSRAM
     cache_bus_mask_t bus_mask = cache_ll_l1_get_bus(0, SOC_EXTRAM_DATA_HIGH, 0);
     cache_ll_l1_enable_bus(0, bus_mask);
-#if !CONFIG_FREERTOS_UNICORE
+#if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
     bus_mask = cache_ll_l1_get_bus(1, SOC_EXTRAM_DATA_HIGH, 0);
     cache_ll_l1_enable_bus(1, bus_mask);
 #endif

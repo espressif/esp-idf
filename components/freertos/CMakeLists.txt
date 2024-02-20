@@ -31,11 +31,7 @@ idf_build_get_property(target IDF_TARGET)
 if(CONFIG_FREERTOS_SMP)
     set(kernel_impl "FreeRTOS-Kernel-SMP")
 else()
-    if(CONFIG_FREERTOS_USE_KERNEL_10_5_1)
-        set(kernel_impl "FreeRTOS-Kernel-V10.5.1")
-    else()
-        set(kernel_impl "FreeRTOS-Kernel")
-    endif()
+    set(kernel_impl "FreeRTOS-Kernel")
 endif()
 
 if(CONFIG_IDF_TARGET_ARCH_XTENSA)
@@ -73,52 +69,27 @@ list(APPEND srcs
     "${kernel_impl}/timers.c"
     "${kernel_impl}/event_groups.c"
     "${kernel_impl}/stream_buffer.c")
-if(NOT CONFIG_FREERTOS_USE_KERNEL_10_5_1)
-    list(APPEND srcs "${kernel_impl}/croutine.c")
-endif()
 
 # Add port source files
-if(CONFIG_FREERTOS_USE_KERNEL_10_5_1)
-    list(APPEND srcs
-        "FreeRTOS-Kernel/portable/${arch}/port.c")
-else()
-    list(APPEND srcs
-        "${kernel_impl}/portable/${arch}/port.c")
-endif()
+list(APPEND srcs
+    "${kernel_impl}/portable/${arch}/port.c")
 
 if(arch STREQUAL "linux")
-    if(CONFIG_FREERTOS_USE_KERNEL_10_5_1)
+    list(APPEND srcs
+        "${kernel_impl}/portable/${arch}/utils/wait_for_event.c")
+    if(kernel_impl STREQUAL "FreeRTOS-Kernel")
         list(APPEND srcs
-            "FreeRTOS-Kernel/portable/${arch}/utils/wait_for_event.c"
-            "FreeRTOS-Kernel/portable/${arch}/port_idf.c")
-    else()
-        list(APPEND srcs
-            "${kernel_impl}/portable/${arch}/utils/wait_for_event.c")
-        if(kernel_impl STREQUAL "FreeRTOS-Kernel")
-            list(APPEND srcs
-                "${kernel_impl}/portable/${arch}/port_idf.c")
-        endif()
+            "${kernel_impl}/portable/${arch}/port_idf.c")
     endif()
 else()
-    if(CONFIG_FREERTOS_USE_KERNEL_10_5_1)
-        list(APPEND srcs
-            "FreeRTOS-Kernel/portable/${arch}/portasm.S")
-    else()
-        list(APPEND srcs
-            "${kernel_impl}/portable/${arch}/portasm.S")
-    endif()
+    list(APPEND srcs
+        "${kernel_impl}/portable/${arch}/portasm.S")
 endif()
 
 if(arch STREQUAL "xtensa")
-    if(CONFIG_FREERTOS_USE_KERNEL_10_5_1)
-        list(APPEND srcs
-            "FreeRTOS-Kernel/portable/${arch}/xtensa_init.c"
-            "FreeRTOS-Kernel/portable/${arch}/xtensa_overlay_os_hook.c")
-    else()
-        list(APPEND srcs
-            "${kernel_impl}/portable/${arch}/xtensa_init.c"
-            "${kernel_impl}/portable/${arch}/xtensa_overlay_os_hook.c")
-    endif()
+    list(APPEND srcs
+        "${kernel_impl}/portable/${arch}/xtensa_init.c"
+        "${kernel_impl}/portable/${arch}/xtensa_overlay_os_hook.c")
 endif()
 
 # Add ESP-additions source files
@@ -128,11 +99,10 @@ list(APPEND srcs
 
 if(arch STREQUAL "linux")
     # Check if we need to address the FreeRTOS EINTR coexistence with linux system calls if we're building without
-    # lwIP, we need to use linux system select which will receive EINTR event on every FreeRTOS interrupt, we
+    # lwIP enabled, we need to use linux system select which will receive EINTR event on every FreeRTOS interrupt, we
     # workaround this problem by wrapping select() to bypass and silence the EINTR events
     set(BYPASS_EINTR_ISSUE 0)
-    idf_build_get_property(build_components BUILD_COMPONENTS)
-    if(NOT "lwip" IN_LIST build_components)
+    if(NOT CONFIG_LWIP_ENABLE)
         set(BYPASS_EINTR_ISSUE 1)
         list(APPEND srcs "esp_additions/FreeRTOSSimulator_wrappers.c")
     endif()
@@ -151,15 +121,9 @@ list(APPEND include_dirs
     "${kernel_impl}/include")       # FreeRTOS headers via `#include "freertos/xxx.h"`
 
 # Add port public include directories
-if(CONFIG_FREERTOS_USE_KERNEL_10_5_1)
-    list(APPEND include_dirs
-        "FreeRTOS-Kernel/portable/${arch}/include"               # For port headers via `#include "freertos/...h"`
-        "FreeRTOS-Kernel/portable/${arch}/include/freertos")     # For port headers via `#include "...h"`
-else()
-    list(APPEND include_dirs
-        "${kernel_impl}/portable/${arch}/include"               # For port headers via `#include "freertos/...h"`
-        "${kernel_impl}/portable/${arch}/include/freertos")     # For port headers via `#include "...h"`
-endif()
+list(APPEND include_dirs
+    "${kernel_impl}/portable/${arch}/include"               # For port headers via `#include "freertos/...h"`
+    "${kernel_impl}/portable/${arch}/include/freertos")     # For port headers via `#include "...h"`
 
 # Add ESP-additions public include directories
 list(APPEND include_dirs
@@ -181,13 +145,8 @@ list(APPEND private_include_dirs
 
 # Add port private include directories
 if(arch STREQUAL "linux")
-    if(CONFIG_FREERTOS_USE_KERNEL_10_5_1)
-        list(APPEND private_include_dirs
-            "FreeRTOS-Kernel/portable/${arch}/") # Linux port `#include "utils/wait_for_event.h"`
-    else()
-        list(APPEND private_include_dirs
-            "${kernel_impl}/portable/${arch}/") # Linux port `#include "utils/wait_for_event.h"`
-    endif()
+    list(APPEND private_include_dirs
+        "${kernel_impl}/portable/${arch}/") # Linux port `#include "utils/wait_for_event.h"`
 endif()
 
 # Add ESP-additions private include directories
@@ -222,8 +181,16 @@ if(arch STREQUAL "linux")
     target_compile_definitions(${COMPONENT_LIB} PUBLIC "projCOVERAGE_TEST=0")
     target_link_libraries(${COMPONENT_LIB} PUBLIC pthread)
     if(BYPASS_EINTR_ISSUE)
-        target_link_libraries(${COMPONENT_LIB} INTERFACE "-Wl,--wrap=select")
+        target_link_libraries(${COMPONENT_LIB} PRIVATE dl)
     endif()
+
+    # Disable strict prototype warnings in upstream code
+    # (struct event * event_create() is missing 'void')
+    set_source_files_properties(
+        "${kernel_impl}/portable/${arch}/utils/wait_for_event.c"
+        PROPERTIES COMPILE_OPTIONS
+        "-Wno-strict-prototypes"
+        )
 else()
     idf_component_get_property(COMPONENT_DIR freertos COMPONENT_DIR)
 

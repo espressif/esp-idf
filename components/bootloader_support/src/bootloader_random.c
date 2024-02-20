@@ -1,9 +1,10 @@
 /*
- * SPDX-FileCopyrightText: 2010-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2010-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 #include "sdkconfig.h"
+#include "esp_log.h"
 #include "bootloader_random.h"
 #include "esp_cpu.h"
 #include "soc/wdev_reg.h"
@@ -77,12 +78,9 @@
 #endif
     }
 }
+#endif // BOOTLOADER_BUILD
 
-#ifndef CONFIG_IDF_ENV_FPGA
-
-#else // CONFIG_IDF_ENV_FPGA
-#include "esp_log.h"
-
+#if CONFIG_IDF_ENV_FPGA
 static void s_non_functional(const char *func)
 {
     ESP_EARLY_LOGW("rand", "%s non-functional for FPGA builds", func);
@@ -97,7 +95,4 @@ void bootloader_random_disable()
 {
     s_non_functional(__func__);
 }
-
 #endif // CONFIG_IDF_ENV_FPGA
-
-#endif // BOOTLOADER_BUILD

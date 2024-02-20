@@ -134,3 +134,5 @@ entries:
       memp:do_memp_malloc_pool (noflash_text)
   if ESP_ALLOW_BSS_SEG_EXTERNAL_MEMORY = y:
     * (extram_bss)
+  if VFS_SELECT_IN_RAM = y:
+    vfs_lwip:lwip_stop_socket_select_isr (noflash)

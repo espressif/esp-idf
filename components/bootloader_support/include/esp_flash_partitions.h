@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -33,6 +33,7 @@ extern "C" {
 #define PART_SUBTYPE_END 0xff
 
 #define PART_FLAG_ENCRYPTED (1<<0)
+#define PART_FLAG_READONLY (1<<1)
 
 /* The md5sum value is found this many bytes after the ESP_PARTITION_MAGIC_MD5 offset */
 #define ESP_PARTITION_MD5_OFFSET 16
@@ -92,6 +93,15 @@ typedef struct {
  */
 esp_err_t esp_partition_table_verify(const esp_partition_info_t *partition_table, bool log_errors, int *num_partitions);
 
+/**
+ * Check whether the region on the main flash is not read-only.
+ *
+ * @param addr Start address of the region
+ * @param size Size of the region
+ *
+ * @return true if the region is safe to write, otherwise false.
+ */
+bool esp_partition_is_flash_region_writable(size_t addr, size_t size);
 
 /**
  * Check whether the region on the main flash is safe to write.

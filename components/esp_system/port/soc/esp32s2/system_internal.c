@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2018-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -22,7 +22,6 @@
 #include "soc/syscon_reg.h"
 #include "soc/rtc_periph.h"
 #include "hal/wdt_hal.h"
-#include "freertos/xtensa_api.h"
 #include "soc/soc_memory_layout.h"
 
 #include "esp32s2/rom/rtc.h"
@@ -34,8 +33,11 @@ extern int _bss_end;
 void IRAM_ATTR esp_system_reset_modules_on_exit(void)
 {
     // Flush any data left in UART FIFOs before reset the UART peripheral
-    esp_rom_uart_tx_wait_idle(0);
-    esp_rom_uart_tx_wait_idle(1);
+    for (int i = 0; i < SOC_UART_HP_NUM; ++i) {
+        if (uart_ll_is_enabled(i)) {
+            esp_rom_output_tx_wait_idle(i);
+        }
+    }
 
     // Reset wifi/bluetooth/ethernet/sdio (bb/mac)
     DPORT_SET_PERI_REG_MASK(DPORT_CORE_RST_EN_REG,
@@ -58,7 +60,7 @@ void IRAM_ATTR esp_system_reset_modules_on_exit(void)
 void IRAM_ATTR esp_restart_noos(void)
 {
     // Disable interrupts
-    xt_ints_off(0xFFFFFFFF);
+    esp_cpu_intr_disable(0xFFFFFFFF);
 
     // Enable RTC watchdog for 1 second
     wdt_hal_context_t rtc_wdt_ctx;

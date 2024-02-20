@@ -597,7 +597,7 @@ The detailed description of all instructions is presented below:
     -------------------------------------------------------
 
     **Syntax**
-    
+
       **STO**     **offset**
 
     **Operands**

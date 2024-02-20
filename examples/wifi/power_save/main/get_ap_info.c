@@ -6,7 +6,7 @@
 #include <string.h>
 #include "sdkconfig.h"
 #include "esp_log.h"
-#include "esp_vfs_dev.h"
+#include "driver/uart_vfs.h"
 #include "driver/uart.h"
 
 #if CONFIG_EXAMPLE_GET_AP_INFO_FROM_STDIN
@@ -23,10 +23,10 @@ void get_ap_info_from_stdin(void)
             256, 0, 0, NULL, 0) );
 
     /* Tell VFS to use UART driver */
-    esp_vfs_dev_uart_use_driver(CONFIG_ESP_CONSOLE_UART_NUM);
-    esp_vfs_dev_uart_port_set_rx_line_endings(CONFIG_ESP_CONSOLE_UART_NUM, ESP_LINE_ENDINGS_CR);
+    uart_vfs_dev_use_driver(CONFIG_ESP_CONSOLE_UART_NUM);
+    uart_vfs_dev_port_set_rx_line_endings(CONFIG_ESP_CONSOLE_UART_NUM, ESP_LINE_ENDINGS_CR);
     /* Move the caret to the beginning of the next line on '\n' */
-    esp_vfs_dev_uart_port_set_tx_line_endings(CONFIG_ESP_CONSOLE_UART_NUM, ESP_LINE_ENDINGS_CRLF);
+    uart_vfs_dev_port_set_tx_line_endings(CONFIG_ESP_CONSOLE_UART_NUM, ESP_LINE_ENDINGS_CRLF);
 
     ESP_LOGI(TAG, "Input SSID:");
 
@@ -44,7 +44,7 @@ void get_ap_info_from_stdin(void)
     }
 
     /* Back to use non-blocking vfs console*/
-    esp_vfs_dev_uart_use_nonblocking(CONFIG_ESP_CONSOLE_UART_NUM);
+    uart_vfs_dev_use_nonblocking(CONFIG_ESP_CONSOLE_UART_NUM);
     uart_driver_delete(CONFIG_ESP_CONSOLE_UART_NUM);
 }
 #endif

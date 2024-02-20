@@ -76,6 +76,11 @@ ESP x509 证书包 API 提供了一种简便的方法，帮助你安装自定义
 证书包嵌入到应用程序中，通过 OTA 更新与应用程序一起更新。如果想使用比目前 ESP-IDF 中的证书包更新的包，则可按照 :ref:`updating_bundle` 中的说明从 Mozilla 下载证书列表。
 
 
+定期同步
+-------------
+
+证书包会与 Mozilla 的 NSS 根证书商店定期同步。在 ESP-IDF 的次要版本或补丁版本中，为了保证兼容性，会将上游证书包中已弃用的证书添加到弃用列表。如有需要，可以通过 :ref:`CONFIG_MBEDTLS_CERTIFICATE_BUNDLE_DEPRECATED_LIST` 将弃用证书加入默认证书包。这些弃用证书将在下一个 ESP-IDF 主要版本中移除。
+
 应用示例
 ---------
 

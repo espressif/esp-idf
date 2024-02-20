@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,7 +17,7 @@
 #include "freertos/task.h"
 #include "esp_lcd_panel_interface.h"
 #include "esp_lcd_panel_io.h"
-#include "esp_lcd_panel_vendor.h"
+#include "esp_lcd_panel_ssd1306.h"
 #include "esp_lcd_panel_ops.h"
 #include "driver/gpio.h"
 #include "esp_log.h"
@@ -34,10 +34,12 @@ static const char *TAG = "lcd_panel.ssd1306";
 #define SSD1306_CMD_MIRROR_X_ON           0xA1
 #define SSD1306_CMD_INVERT_OFF            0xA6
 #define SSD1306_CMD_INVERT_ON             0xA7
+#define SSD1306_CMD_SET_MULTIPLEX         0xA8
 #define SSD1306_CMD_DISP_OFF              0xAE
 #define SSD1306_CMD_DISP_ON               0xAF
 #define SSD1306_CMD_MIRROR_Y_OFF          0xC0
 #define SSD1306_CMD_MIRROR_Y_ON           0xC8
+#define SSD1306_CMD_SET_COMPINS           0xDA
 
 static esp_err_t panel_ssd1306_del(esp_lcd_panel_t *panel);
 static esp_err_t panel_ssd1306_reset(esp_lcd_panel_t *panel);
@@ -52,11 +54,12 @@ static esp_err_t panel_ssd1306_disp_on_off(esp_lcd_panel_t *panel, bool off);
 typedef struct {
     esp_lcd_panel_t base;
     esp_lcd_panel_io_handle_t io;
+    uint8_t height;
     int reset_gpio_num;
-    bool reset_level;
     int x_gap;
     int y_gap;
     unsigned int bits_per_pixel;
+    bool reset_level;
     bool swap_axes;
 } ssd1306_panel_t;
 
@@ -69,6 +72,7 @@ esp_err_t esp_lcd_new_panel_ssd1306(const esp_lcd_panel_io_handle_t io, const es
     ssd1306_panel_t *ssd1306 = NULL;
     ESP_GOTO_ON_FALSE(io && panel_dev_config && ret_panel, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
     ESP_GOTO_ON_FALSE(panel_dev_config->bits_per_pixel == 1, ESP_ERR_INVALID_ARG, err, TAG, "bpp must be 1");
+    esp_lcd_panel_ssd1306_config_t *ssd1306_spec_config = (esp_lcd_panel_ssd1306_config_t *)panel_dev_config->vendor_config;
     ssd1306 = calloc(1, sizeof(ssd1306_panel_t));
     ESP_GOTO_ON_FALSE(ssd1306, ESP_ERR_NO_MEM, err, TAG, "no mem for ssd1306 panel");
 
@@ -84,6 +88,7 @@ esp_err_t esp_lcd_new_panel_ssd1306(const esp_lcd_panel_io_handle_t io, const es
     ssd1306->bits_per_pixel = panel_dev_config->bits_per_pixel;
     ssd1306->reset_gpio_num = panel_dev_config->reset_gpio_num;
     ssd1306->reset_level = panel_dev_config->flags.reset_active_high;
+    ssd1306->height = ssd1306_spec_config ? ssd1306_spec_config->height : 64;
     ssd1306->base.del = panel_ssd1306_del;
     ssd1306->base.reset = panel_ssd1306_reset;
     ssd1306->base.init = panel_ssd1306_init;
@@ -138,6 +143,13 @@ static esp_err_t panel_ssd1306_init(esp_lcd_panel_t *panel)
 {
     ssd1306_panel_t *ssd1306 = __containerof(panel, ssd1306_panel_t, base);
     esp_lcd_panel_io_handle_t io = ssd1306->io;
+
+    ESP_RETURN_ON_ERROR(esp_lcd_panel_io_tx_param(io, SSD1306_CMD_SET_MULTIPLEX, (uint8_t[]) {
+        ssd1306->height - 1 // set multiplex ratio
+    }, 1), TAG, "io tx param SSD1306_CMD_SET_MULTIPLEX failed");
+    ESP_RETURN_ON_ERROR(esp_lcd_panel_io_tx_param(io, SSD1306_CMD_SET_COMPINS, (uint8_t[1]) {
+        ssd1306->height == 64 ? 0x12 : 0x02 // set COM pins hardware configuration
+    }, 1), TAG, "io tx param SSD1306_CMD_SET_COMPINS failed");
     ESP_RETURN_ON_ERROR(esp_lcd_panel_io_tx_param(io, SSD1306_CMD_DISP_OFF, NULL, 0), TAG,
                         "io tx param SSD1306_CMD_DISP_OFF failed");
     ESP_RETURN_ON_ERROR(esp_lcd_panel_io_tx_param(io, SSD1306_CMD_SET_MEMORY_ADDR_MODE, (uint8_t[]) {

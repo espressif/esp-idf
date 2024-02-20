@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,7 +9,7 @@
 #include "soc/chip_revision.h"
 #include "hal/efuse_hal.h"
 
-#if !CONFIG_IDF_TARGET_ESP32C6 && !CONFIG_IDF_TARGET_ESP32H2 && !CONFIG_IDF_TARGET_ESP32P4// TODO: IDF-5645
+#if !CONFIG_IDF_TARGET_ESP32C6 && !CONFIG_IDF_TARGET_ESP32H2 && !CONFIG_IDF_TARGET_ESP32P4 && !CONFIG_IDF_TARGET_ESP32C5 // TODO: IDF-5645
 #include "soc/rtc_cntl_reg.h"
 #else
 #include "soc/lp_wdt_reg.h"
@@ -18,7 +18,7 @@
 #include "soc/pmu_reg.h"
 #endif
 
-#if CONFIG_IDF_TARGET_ESP32
+#if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32C5
 #include "hal/clk_tree_ll.h"
 #endif
 #include "esp_rom_sys.h"
@@ -31,7 +31,7 @@ __attribute__((weak)) void bootloader_clock_configure(void)
     // This is not needed on power on reset, when ROM bootloader is running at
     // 40 MHz. But in case of TG WDT reset, CPU may still be running at >80 MHZ,
     // and will be done with the bootloader much earlier than UART FIFO is empty.
-    esp_rom_uart_tx_wait_idle(0);
+    esp_rom_output_tx_wait_idle(0);
 
     /* Set CPU to a higher certain frequency. Keep other clocks unmodified. */
     int cpu_freq_mhz = CPU_CLK_FREQ_MHZ_BTLD;
@@ -53,12 +53,18 @@ __attribute__((weak)) void bootloader_clock_configure(void)
 
         clk_cfg.cpu_freq_mhz = cpu_freq_mhz;
 
+#if CONFIG_IDF_TARGET_ESP32C5
+        // TODO: [ESP32C5] IDF-9009 Check whether SOC_RTC_SLOW_CLK_SRC_RC_SLOW can be used on C5 MP
+        // RC150K can't do calibrate on ESP32C5MPW so not use it
+        clk_cfg.slow_clk_src = SOC_RTC_SLOW_CLK_SRC_RC32K;
+#else
         // Use RTC_SLOW clock source sel register field's default value, RC_SLOW, for 2nd stage bootloader
         // RTC_SLOW clock source will be switched according to Kconfig selection at application startup
         clk_cfg.slow_clk_src = rtc_clk_slow_src_get();
         if (clk_cfg.slow_clk_src == SOC_RTC_SLOW_CLK_SRC_INVALID) {
             clk_cfg.slow_clk_src = SOC_RTC_SLOW_CLK_SRC_RC_SLOW;
         }
+#endif
 
 #if CONFIG_IDF_TARGET_ESP32C6
         // TODO: IDF-5781 Some of esp32c6 SOC_RTC_FAST_CLK_SRC_XTAL_D2 rtc_fast clock has timing issue
@@ -75,6 +81,14 @@ __attribute__((weak)) void bootloader_clock_configure(void)
         rtc_clk_init(clk_cfg);
     }
 
+#if CONFIG_IDF_TARGET_ESP32C5
+    /* TODO: [ESP32C5] IDF-8649 temporary use xtal clock source,
+       need to change back SPLL(480M) and set divider to 6 to use the 80M MSPI，
+       and we need to check flash freq before restart as well */
+    clk_ll_mspi_fast_set_divider(1);
+    clk_ll_mspi_fast_set_src(MSPI_CLK_SRC_XTAL);
+#endif
+
     /* As a slight optimization, if 32k XTAL was enabled in sdkconfig, we enable
      * it here. Usually it needs some time to start up, so we amortize at least
      * part of the start up time by enabling 32k XTAL early.
@@ -86,7 +100,14 @@ __attribute__((weak)) void bootloader_clock_configure(void)
     }
 #endif // CONFIG_ESP_SYSTEM_RTC_EXT_XTAL
 
-#if CONFIG_IDF_TARGET_ESP32C6
+// TODO: IDF-8938 Need refactor! Does not belong to clock configuration.
+#if CONFIG_IDF_TARGET_ESP32C6 || CONFIG_IDF_TARGET_ESP32C5
+#if CONFIG_IDF_TARGET_ESP32C5
+#define LP_ANALOG_PERI_LP_ANA_LP_INT_ENA_REG            LP_ANA_LP_INT_ENA_REG
+#define LP_ANALOG_PERI_LP_ANA_BOD_MODE0_LP_INT_ENA      LP_ANA_BOD_MODE0_LP_INT_ENA
+#define LP_ANALOG_PERI_LP_ANA_LP_INT_CLR_REG            LP_ANA_LP_INT_CLR_REG
+#define LP_ANALOG_PERI_LP_ANA_BOD_MODE0_LP_INT_CLR      LP_ANA_BOD_MODE0_LP_INT_CLR
+#endif
     // CLR ENA
     CLEAR_PERI_REG_MASK(LP_WDT_INT_ENA_REG, LP_WDT_SUPER_WDT_INT_ENA);                                      /* SWD */
     CLEAR_PERI_REG_MASK(LP_TIMER_LP_INT_ENA_REG, LP_TIMER_MAIN_TIMER_LP_INT_ENA);                           /* MAIN_TIMER */
@@ -113,7 +134,18 @@ __attribute__((weak)) void bootloader_clock_configure(void)
     SET_PERI_REG_MASK(PMU_HP_INT_CLR_REG, PMU_SOC_WAKEUP_INT_CLR);                                          /* SLP_REJECT */
     SET_PERI_REG_MASK(PMU_HP_INT_CLR_REG, PMU_SOC_SLEEP_REJECT_INT_CLR);                                    /* SLP_WAKEUP */
 #elif CONFIG_IDF_TARGET_ESP32P4
-// TODO: IDF-8008
+    // CLR ENA
+    CLEAR_PERI_REG_MASK(LP_WDT_INT_ENA_REG, LP_WDT_SUPER_WDT_INT_ENA);                                      /* SWD */
+    CLEAR_PERI_REG_MASK(LP_TIMER_LP_INT_ENA_REG, LP_TIMER_MAIN_TIMER_LP_INT_ENA);                           /* MAIN_TIMER */
+    CLEAR_PERI_REG_MASK(LP_ANALOG_PERI_LP_INT_ENA_REG, LP_ANALOG_PERI_BOD_MODE0_LP_INT_ENA);                /* BROWN_OUT */
+    CLEAR_PERI_REG_MASK(LP_WDT_INT_ENA_REG, LP_WDT_LP_WDT_INT_ENA);                                         /* WDT */
+    CLEAR_PERI_REG_MASK(PMU_HP_INT_ENA_REG, PMU_SOC_WAKEUP_INT_ENA);                                        /* SLP_REJECT */
+    CLEAR_PERI_REG_MASK(PMU_HP_INT_ENA_REG, PMU_SOC_SLEEP_REJECT_INT_ENA);                                  /* SLP_WAKEUP */
+    // SET CLR
+    SET_PERI_REG_MASK(LP_WDT_INT_CLR_REG, LP_WDT_SUPER_WDT_INT_CLR);                                        /* SWD */
+    SET_PERI_REG_MASK(LP_TIMER_LP_INT_CLR_REG, LP_TIMER_MAIN_TIMER_LP_INT_CLR);                             /* MAIN_TIMER */
+    SET_PERI_REG_MASK(LP_ANALOG_PERI_LP_INT_CLR_REG, LP_ANALOG_PERI_LP_INT_CLR_REG);                        /* BROWN_OUT */
+    SET_PERI_REG_MASK(LP_WDT_INT_CLR_REG, LP_WDT_LP_WDT_INT_CLR);                                           /* WDT */
 #else
     REG_WRITE(RTC_CNTL_INT_ENA_REG, 0);
     REG_WRITE(RTC_CNTL_INT_CLR_REG, UINT32_MAX);

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -68,6 +68,14 @@ void rtc_cntl_hal_enable_cpu_retention(void *addr)
                 );
             rtc_cntl_ll_enable_cpu_retention_clock();
             rtc_cntl_ll_enable_cpu_retention();
+#if SOC_PM_SUPPORT_TAGMEM_PD
+            if (!retent->tagmem.dcache.enable) {
+                // Here we only need to care for the safety of the PSRAM data in the DCache.
+                // Since only rodata, bss, heap data may be placed in PSRAM, and these data won't be
+                // modified in the sleep process code after now, so it is safe to writeback here.
+                Cache_WriteBack_All();
+            }
+#endif
         }
     }
 }

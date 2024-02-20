@@ -1,10 +1,16 @@
 /*
- * SPDX-FileCopyrightText: 2019-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #pragma once
+
+#include <stdint.h>
+#include <stdbool.h>
+#include "esp_err.h"
+#include "esp_wifi_types.h"
+#include "esp_netif_types.h"
 
 #ifdef __cplusplus
 extern "C" {

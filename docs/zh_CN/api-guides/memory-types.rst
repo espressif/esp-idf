@@ -92,12 +92,12 @@ IRAM（指令 RAM）
 
 或者，也可以通过使用 ``IRAM_ATTR`` 宏在源代码中指定需要放入 IRAM 的代码::
 
-	#include "esp_attr.h"
+    #include "esp_attr.h"
 
-	void IRAM_ATTR gpio_isr_handler(void* arg)
-	{
-		// ...
-	}
+    void IRAM_ATTR gpio_isr_handler(void* arg)
+    {
+        // ...
+    }
 
 放入 IRAM 后可能会导致 IRAM 安全中断处理程序出现问题：
 
@@ -182,6 +182,14 @@ DROM（数据存储在 flash 中）
     .. only:: not esp32
 
         除非禁用 :ref:`CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP` 选项，否则剩余的 RTC FAST memory 会被添加到堆中。该部分内存可以和 :ref:`DRAM` 互换使用，但是访问速度稍慢一点。
+
+
+.. only:: SOC_MEM_TCM_SUPPORTED
+
+    紧密耦合内存 (TCM)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    TCM 是靠近 CPU 放置的内存，支持在 CPU 频率下直接访问，无需通过 cache。虽然在一般情况下，TCM 的效率或速度相较 cache 偏低，但是访问 TCM 所需的时间是可以预测且始终一致的。具有稳定的访问速度对于时间关键型例程来说十分重要，因此 TCM 对于此类例程而言非常有用。
 
 
 具备 DMA 功能

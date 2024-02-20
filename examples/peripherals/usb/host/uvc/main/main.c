@@ -24,10 +24,29 @@ static const char *TAG = "example";
 
 #define USB_DISCONNECT_PIN  GPIO_NUM_0
 
-#define FPS 30
-#define WIDTH 320
-#define HEIGHT 240
-#define FORMAT UVC_COLOR_FORMAT_MJPEG // UVC_COLOR_FORMAT_YUYV
+#if (CONFIG_EXAMPLE_UVC_PROTOCOL_MODE_AUTO)
+#define EXAMPLE_UVC_PROTOCOL_AUTO_COUNT     3
+typedef struct {
+    enum uvc_frame_format format;
+    int width;
+    int height;
+    int fps;
+    const char* name;
+} uvc_stream_profile_t;
+
+uvc_stream_profile_t uvc_stream_profiles[EXAMPLE_UVC_PROTOCOL_AUTO_COUNT] = {
+    {UVC_FRAME_FORMAT_MJPEG, 640, 480, 15, "640x480, fps 15"},
+    {UVC_FRAME_FORMAT_MJPEG, 320, 240, 30, "320x240, fps 30"},
+    {UVC_FRAME_FORMAT_MJPEG, 320, 240,  0, "320x240, any fps"}
+};
+#endif // CONFIG_EXAMPLE_UVC_PROTOCOL_MODE_AUTO
+
+#if (CONFIG_EXAMPLE_UVC_PROTOCOL_MODE_CUSTOM)
+#define FPS                 CONFIG_EXAMPLE_FPS_PARAM
+#define WIDTH               CONFIG_EXAMPLE_WIDTH_PARAM
+#define HEIGHT              CONFIG_EXAMPLE_HEIGHT_PARAM
+#define FORMAT              CONFIG_EXAMPLE_FORMAT_PARAM
+#endif // CONFIG_EXAMPLE_UVC_PROTOCOL_MODE_CUSTOM
 
 // Attached camera can be filtered out based on (non-zero value of) PID, VID, SERIAL_NUMBER
 #define PID 0
@@ -147,13 +166,59 @@ static EventBits_t wait_for_event(EventBits_t event)
     return xEventGroupWaitBits(app_flags, event, pdTRUE, pdFALSE, portMAX_DELAY) & event;
 }
 
+static uvc_error_t uvc_negotiate_stream_profile(uvc_device_handle_t *devh,
+                                                uvc_stream_ctrl_t *ctrl)
+{
+    uvc_error_t res;
+    int attempt = CONFIG_EXAMPLE_NEGOTIATION_ATTEMPTS;
+#if (CONFIG_EXAMPLE_UVC_PROTOCOL_MODE_AUTO)
+    for (int idx = 0; idx < EXAMPLE_UVC_PROTOCOL_AUTO_COUNT; idx++) {
+        do {
+            /*
+            The uvc_get_stream_ctrl_format_size() function will attempt to set the desired format size.
+            On first attempt, some cameras would reject the format, even if they support it.
+            So we ask 3x by default. The second attempt is usually successful.
+            */
+            ESP_LOGI(TAG, "Negotiate streaming profile %s ...", uvc_stream_profiles[idx].name);
+            res = uvc_get_stream_ctrl_format_size(devh,
+                                                  ctrl,
+                                                  uvc_stream_profiles[idx].format,
+                                                  uvc_stream_profiles[idx].width,
+                                                  uvc_stream_profiles[idx].height,
+                                                  uvc_stream_profiles[idx].fps);
+        } while (--attempt && !(UVC_SUCCESS == res));
+        if (UVC_SUCCESS == res) {
+            break;
+        }
+    }
+#endif // CONFIG_EXAMPLE_UVC_PROTOCOL_MODE_AUTO
+
+#if (CONFIG_EXAMPLE_UVC_PROTOCOL_MODE_CUSTOM)
+    while (attempt--) {
+        ESP_LOGI(TAG, "Negotiate streaming profile %dx%d, %d fps ...", WIDTH, HEIGHT, FPS);
+        res = uvc_get_stream_ctrl_format_size(devh, ctrl, FORMAT, WIDTH, HEIGHT, FPS);
+        if (UVC_SUCCESS == res) {
+            break;
+        }
+        ESP_LOGE(TAG, "Negotiation failed. Try again (%d) ...", attempt);
+    }
+#endif // CONFIG_EXAMPLE_UVC_PROTOCOL_MODE_CUSTOM
+
+    if (UVC_SUCCESS == res) {
+        ESP_LOGI(TAG, "Negotiation complete.");
+    } else {
+        ESP_LOGE(TAG, "Try another UVC USB device of change negotiation parameters.");
+    }
+
+    return res;
+}
+
 int app_main(int argc, char **argv)
 {
     uvc_context_t *ctx;
     uvc_device_t *dev;
     uvc_device_handle_t *devh;
     uvc_stream_ctrl_t ctrl;
-    uvc_error_t res;
 
     app_flags = xEventGroupCreate();
     assert(app_flags);
@@ -183,12 +248,13 @@ int app_main(int argc, char **argv)
 
     do {
 
-        printf("Waiting for device\n");
+        ESP_LOGI(TAG, "Waiting for USB UVC device connection ...");
         wait_for_event(UVC_DEVICE_CONNECTED);
 
         UVC_CHECK(uvc_find_device(ctx, &dev, PID, VID, SERIAL_NUMBER));
-        puts("Device found");
+        ESP_LOGI(TAG, "Device found");
 
+        // UVC Device open
         UVC_CHECK(uvc_open(dev, &devh));
 
         // Uncomment to print configuration descriptor
@@ -198,37 +264,32 @@ int app_main(int argc, char **argv)
 
         // Print known device information
         uvc_print_diag(devh, stderr);
-
         // Negotiate stream profile
-        res = uvc_get_stream_ctrl_format_size(devh, &ctrl, FORMAT, WIDTH, HEIGHT, FPS);
-        while (res != UVC_SUCCESS) {
-            printf("Negotiating streaming format failed, trying again...\n");
-            res = uvc_get_stream_ctrl_format_size(devh, &ctrl, FORMAT, WIDTH, HEIGHT, FPS);
-            sleep(1);
+        if (UVC_SUCCESS == uvc_negotiate_stream_profile(devh, &ctrl)) {
+            // dwMaxPayloadTransferSize has to be overwritten to MPS (maximum packet size)
+            // supported by ESP32-S2(S3), as libuvc selects the highest possible MPS by default.
+            ctrl.dwMaxPayloadTransferSize = 512;
+
+            uvc_print_stream_ctrl(&ctrl, stderr);
+
+            UVC_CHECK(uvc_start_streaming(devh, &ctrl, frame_callback, NULL, 0));
+            ESP_LOGI(TAG, "Streaming...");
+
+            wait_for_event(UVC_DEVICE_DISCONNECTED);
+
+            uvc_stop_streaming(devh);
+            ESP_LOGI(TAG, "Done streaming.");
+        } else {
+            wait_for_event(UVC_DEVICE_DISCONNECTED);
         }
-
-        // dwMaxPayloadTransferSize has to be overwritten to MPS (maximum packet size)
-        // supported by ESP32-S2(S3), as libuvc selects the highest possible MPS by default.
-        ctrl.dwMaxPayloadTransferSize = 512;
-
-        uvc_print_stream_ctrl(&ctrl, stderr);
-
-        UVC_CHECK(uvc_start_streaming(devh, &ctrl, frame_callback, NULL, 0));
-        puts("Streaming...");
-
-        wait_for_event(UVC_DEVICE_DISCONNECTED);
-
-        uvc_stop_streaming(devh);
-        puts("Done streaming.");
-
+        // UVC Device close
         uvc_close(devh);
-
     } while (gpio_get_level(USB_DISCONNECT_PIN) != 0);
 
     tcp_server_close_when_done();
 
     uvc_exit(ctx);
-    puts("UVC exited");
+    ESP_LOGI(TAG, "UVC exited");
 
     uninitialize_usb_host_lib();
 

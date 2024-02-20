@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <string.h>
+#include <inttypes.h>
 #if __has_include(<bsd/string.h>)
 // for strlcpy
 #include <bsd/string.h>
@@ -106,8 +107,8 @@ esp_err_t esp_partition_file_mmap(const uint8_t **part_desc_addr_start)
     if (strlen(s_esp_partition_file_mmap_ctrl_input.flash_file_name) > 0) {
         // Open existing file. If size or partition table file were specified, raise errors
         if (s_esp_partition_file_mmap_ctrl_input.flash_file_size > 0) {
-            ESP_LOGE(TAG, "Flash emulation file size: %u was specified while together with the file name: %s (illegal). Use file size = 0",
-                     s_esp_partition_file_mmap_ctrl_input.flash_file_size,
+            ESP_LOGE(TAG, "Flash emulation file size: %" PRIu32" was specified while together with the file name: %s (illegal). Use file size = 0",
+                     (uint32_t) s_esp_partition_file_mmap_ctrl_input.flash_file_size,
                      s_esp_partition_file_mmap_ctrl_input.flash_file_name);
             return ESP_ERR_INVALID_ARG;
         }
@@ -133,9 +134,9 @@ esp_err_t esp_partition_file_mmap(const uint8_t **part_desc_addr_start)
 
         // conflicting input
         if (has_partfile != has_len) {
-            ESP_LOGE(TAG, "Invalid combination of Partition file name: %s flash file size: %u was specified. Use either both parameters or none.",
+            ESP_LOGE(TAG, "Invalid combination of Partition file name: %s flash file size: %" PRIu32 " was specified. Use either both parameters or none.",
                      s_esp_partition_file_mmap_ctrl_input.partition_file_name,
-                     s_esp_partition_file_mmap_ctrl_input.flash_file_size);
+                     (uint32_t) s_esp_partition_file_mmap_ctrl_input.flash_file_size);
             return ESP_ERR_INVALID_ARG;
         }
 
@@ -211,7 +212,7 @@ esp_err_t esp_partition_file_mmap(const uint8_t **part_desc_addr_start)
                 break;
             }
 
-            ESP_LOGV(TAG, "SPIFLASH memory emulation file created: %s (size: %d B)", s_esp_partition_file_mmap_ctrl_act.flash_file_name, s_esp_partition_file_mmap_ctrl_act.flash_file_size);
+            ESP_LOGV(TAG, "SPIFLASH memory emulation file created: %s (size: %" PRIu32 " B)", s_esp_partition_file_mmap_ctrl_act.flash_file_name, (uint32_t) s_esp_partition_file_mmap_ctrl_act.flash_file_size);
 
             // create memory-mapping for the flash holder file
             if ((s_spiflash_mem_file_buf = mmap(NULL, s_esp_partition_file_mmap_ctrl_act.flash_file_size, PROT_READ | PROT_WRITE, MAP_SHARED, s_spiflash_mem_file_fd, 0)) == MAP_FAILED) {
@@ -242,10 +243,10 @@ esp_err_t esp_partition_file_mmap(const uint8_t **part_desc_addr_start)
 
             // check whether partition table fits into the memory mapped file
             if (partition_table_file_size + ESP_PARTITION_TABLE_OFFSET > s_esp_partition_file_mmap_ctrl_act.flash_file_size) {
-                ESP_LOGE(TAG, "Flash file: %s (size: %d B) cannot hold partition table requiring %d B",
+                ESP_LOGE(TAG, "Flash file: %s (size: %" PRIu32 " B) cannot hold partition table requiring %d B",
                          s_esp_partition_file_mmap_ctrl_act.flash_file_name,
-                         s_esp_partition_file_mmap_ctrl_act.flash_file_size,
-                         partition_table_file_size + ESP_PARTITION_TABLE_OFFSET);
+                         (uint32_t) s_esp_partition_file_mmap_ctrl_act.flash_file_size,
+                         (int) (partition_table_file_size + ESP_PARTITION_TABLE_OFFSET));
                 ret =  ESP_ERR_INVALID_SIZE;
                 break;
             }
@@ -294,9 +295,9 @@ esp_err_t esp_partition_file_mmap(const uint8_t **part_desc_addr_start)
         ESP_LOGV(TAG, " label: %s", p_part_item->label);
         ESP_LOGV(TAG, " type: %s", esp_partition_type_to_str(p_part_item->type));
         ESP_LOGV(TAG, " subtype: %s", esp_partition_subtype_to_str(p_part_item->type, p_part_item->subtype));
-        ESP_LOGV(TAG, " offset: 0x%08X", p_part_item->pos.offset);
-        ESP_LOGV(TAG, " size: %d", p_part_item->pos.size);
-        ESP_LOGV(TAG, " flags: %d", p_part_item->flags);
+        ESP_LOGV(TAG, " offset: 0x%08" PRIX32, (uint32_t) p_part_item->pos.offset);
+        ESP_LOGV(TAG, " size: %" PRIu32, (uint32_t) p_part_item->pos.size);
+        ESP_LOGV(TAG, " flags: %" PRIu32, (uint32_t) p_part_item->flags);
 
         part_ptr += sizeof(esp_partition_info_t);
     }
@@ -330,7 +331,7 @@ esp_err_t esp_partition_file_munmap(void)
         return ESP_ERR_NOT_FOUND;
     }
 
-    unload_partitions();
+    esp_partition_unload_all();
 
 #ifdef CONFIG_ESP_PARTITION_ENABLE_STATS
     free(s_esp_partition_stat_sector_erase_count);
@@ -369,6 +370,9 @@ esp_err_t esp_partition_write(const esp_partition_t *partition, size_t dst_offse
 {
     assert(partition != NULL && s_spiflash_mem_file_buf != NULL);
 
+    if (partition->readonly) {
+        return ESP_ERR_NOT_ALLOWED;
+    }
     if (partition->encrypted) {
         return ESP_ERR_NOT_SUPPORTED;
     }
@@ -380,7 +384,7 @@ esp_err_t esp_partition_write(const esp_partition_t *partition, size_t dst_offse
     }
 
     void *dst_addr = s_spiflash_mem_file_buf + partition->address + dst_offset;
-    ESP_LOGV(TAG, "esp_partition_write(): partition=%s dst_offset=%zu src=%p size=%zu (real dst address: %p)", partition->label, dst_offset, src, size, dst_addr);
+    ESP_LOGV(TAG, "esp_partition_write(): partition=%s dst_offset=%" PRIu32 " src=%p size=%" PRIu32 " (real dst address: %p)", partition->label, (uint32_t) dst_offset, src, (uint32_t) size, dst_addr);
 
     // local size, can be modified by the write hook in case of simulated power-off
     size_t new_size = size;
@@ -425,7 +429,7 @@ esp_err_t esp_partition_read(const esp_partition_t *partition, size_t src_offset
     }
 
     void *src_addr = s_spiflash_mem_file_buf + partition->address + src_offset;
-    ESP_LOGV(TAG, "esp_partition_read(): partition=%s src_offset=%zu dst=%p size=%zu (real src address: %p)", partition->label, src_offset, dst, size, src_addr);
+    ESP_LOGV(TAG, "esp_partition_read(): partition=%s src_offset=%" PRIu32 " dst=%p size=%" PRIu32 " (real src address: %p)", partition->label, (uint32_t) src_offset, dst, (uint32_t) size, src_addr);
 
     memcpy(dst, src_addr, size);
 
@@ -450,6 +454,9 @@ esp_err_t esp_partition_erase_range(const esp_partition_t *partition, size_t off
 {
     assert(partition != NULL);
 
+    if (partition->readonly) {
+        return ESP_ERR_NOT_ALLOWED;
+    }
     if (offset > partition->size || offset % partition->erase_size != 0) {
         return ESP_ERR_INVALID_ARG;
     }
@@ -458,7 +465,7 @@ esp_err_t esp_partition_erase_range(const esp_partition_t *partition, size_t off
     }
 
     void *target_addr = s_spiflash_mem_file_buf + partition->address + offset;
-    ESP_LOGV(TAG, "esp_partition_erase_range(): partition=%s offset=%zu size=%zu (real target address: %p)", partition->label, offset, size, target_addr);
+    ESP_LOGV(TAG, "esp_partition_erase_range(): partition=%s offset=%" PRIu32 " size=%" PRIu32 " (real target address: %p)", partition->label, (uint32_t) offset, (uint32_t) size, target_addr);
 
     // local size to be potentially updated by the hook in case of power-off event
     size_t new_size = size;
@@ -490,7 +497,7 @@ esp_err_t esp_partition_mmap(const esp_partition_t *partition, size_t offset, si
                              esp_partition_mmap_memory_t memory,
                              const void **out_ptr, esp_partition_mmap_handle_t *out_handle)
 {
-    ESP_LOGV(TAG, "esp_partition_mmap(): partition=%s offset=%zu size=%zu", partition->label, offset, size);
+    ESP_LOGV(TAG, "esp_partition_mmap(): partition=%s offset=%" PRIu32 " size=%" PRIu32 "", partition->label, (uint32_t) offset, (uint32_t) size);
 
     assert(partition != NULL);
     if (offset > partition->size) {

@@ -304,6 +304,65 @@ static int mbedtls_sha1_init_start(mbedtls_sha1_context *ctx)
   return 0;
 }
 
+#ifndef MBEDTLS_SHA1_ALT
+static int sha1_finish(mbedtls_sha1_context *ctx,
+                        unsigned char output[20])
+{
+    int ret = -1;
+    uint32_t used;
+    uint32_t high, low;
+
+    /*
+     * Add padding: 0x80 then 0x00 until 8 bytes remain for the length
+     */
+    used = ctx->MBEDTLS_PRIVATE(total)[0] & 0x3F;
+
+    ctx->MBEDTLS_PRIVATE(buffer)[used++] = 0x80;
+
+    if (used <= 56) {
+        /* Enough room for padding + length in current block */
+        memset(ctx->MBEDTLS_PRIVATE(buffer) + used, 0, 56 - used);
+    } else {
+        /* We'll need an extra block */
+        memset(ctx->MBEDTLS_PRIVATE(buffer) + used, 0, 64 - used);
+
+        if ((ret = mbedtls_internal_sha1_process(ctx, ctx->MBEDTLS_PRIVATE(buffer))) != 0) {
+            goto exit;
+        }
+
+        memset(ctx->MBEDTLS_PRIVATE(buffer), 0, 56);
+    }
+
+    /*
+     * Add message length
+     */
+    high = (ctx->MBEDTLS_PRIVATE(total)[0] >> 29)
+           | (ctx->MBEDTLS_PRIVATE(total)[1] <<  3);
+    low  = (ctx->MBEDTLS_PRIVATE(total)[0] <<  3);
+
+    write32_be(high, ctx->MBEDTLS_PRIVATE(buffer) + 56);
+    write32_be(low, ctx->MBEDTLS_PRIVATE(buffer) + 60);
+
+    if ((ret = mbedtls_internal_sha1_process(ctx, ctx->MBEDTLS_PRIVATE(buffer))) != 0) {
+        goto exit;
+    }
+
+    /*
+     * Output final state
+     */
+    write32_be(ctx->MBEDTLS_PRIVATE(state)[0], output);
+    write32_be(ctx->MBEDTLS_PRIVATE(state)[1], output + 4);
+    write32_be(ctx->MBEDTLS_PRIVATE(state)[2], output + 8);
+    write32_be(ctx->MBEDTLS_PRIVATE(state)[3], output + 12);
+    write32_be(ctx->MBEDTLS_PRIVATE(state)[4], output + 16);
+
+    ret = 0;
+
+exit:
+    return ret;
+}
+#endif
+
 DECL_PBKDF2(sha1,                           // _name
             64,                             // _blocksz
             20,                             // _hashsz
@@ -311,7 +370,11 @@ DECL_PBKDF2(sha1,                           // _name
             mbedtls_sha1_init_start,        // _init
             mbedtls_sha1_update,            // _update
             mbedtls_internal_sha1_process,  // _xform
+#if defined(MBEDTLS_SHA1_ALT)
             mbedtls_sha1_finish,            // _final
+#else
+            sha1_finish,                   // _final
+#endif
             sha1_cpy,                       // _xcpy
             sha1_extract,                   // _xtract
             sha1_xor)                       // _xxor

@@ -60,6 +60,10 @@ esp_err_t soft_uart_del(soft_uart_port_t port);
 /**
  * @brief Send the given bytes on the software UART port.
  *
+ * @note Since toggling fast GPIOs for the first time may be slow (~1us), the first byte may be corrupted.
+ *       If you are seeing this issue, prepend a dummy byte to the buffer to send when calling this
+ *       function for the first time.
+ *
  * @param port Software UART port to send data on.
  * @param write_buffer Buffer containing the bytes to send on the buffer. Must not be NULL.
  * @param write_size Size of the write buffer. Must not be 0.

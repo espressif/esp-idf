@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -44,9 +44,7 @@ static uint8_t psk_key_array[PSK_MAX_KEY_LEN];
 static uint8_t psk_key_max_len = 0;
 #endif /* CONFIG_ESP_TLS_PSK_VERIFICATION */
 
-#ifdef CONFIG_ESP_TLS_SERVER
 static esp_err_t set_server_config(esp_tls_cfg_server_t *cfg, esp_tls_t *tls);
-#endif /* CONFIG_ESP_TLS_SERVER */
 
 
 /* This function shall return the error message when appropriate log level has been set otherwise this function shall do nothing */
@@ -124,7 +122,7 @@ void *esp_wolfssl_get_ssl_context(esp_tls_t *tls)
     return (void*)tls->priv_ssl;
 }
 
-esp_err_t esp_create_wolfssl_handle(const char *hostname, size_t hostlen, const void *cfg, esp_tls_t *tls)
+esp_err_t esp_create_wolfssl_handle(const char *hostname, size_t hostlen, const void *cfg, esp_tls_t *tls, void *server_params)
 {
 #ifdef CONFIG_ESP_DEBUG_WOLFSSL
     wolfSSL_Debugging_ON();
@@ -152,16 +150,11 @@ esp_err_t esp_create_wolfssl_handle(const char *hostname, size_t hostlen, const 
             goto exit;
         }
     } else if (tls->role == ESP_TLS_SERVER) {
-#ifdef CONFIG_ESP_TLS_SERVER
         esp_ret = set_server_config((esp_tls_cfg_server_t *) cfg, tls);
         if (esp_ret != ESP_OK) {
             ESP_LOGE(TAG, "Failed to set server configurations, [0x%04X] (%s)", esp_ret, esp_err_to_name(esp_ret));
             goto exit;
         }
-#else
-        ESP_LOGE(TAG, "ESP_TLS_SERVER Not enabled in menuconfig");
-        goto exit;
-#endif
     }
     else {
         ESP_LOGE(TAG, "tls->role is not valid");
@@ -321,7 +314,6 @@ static esp_err_t set_client_config(const char *hostname, size_t hostlen, esp_tls
     return ESP_OK;
 }
 
-#ifdef CONFIG_ESP_TLS_SERVER
 static esp_err_t set_server_config(esp_tls_cfg_server_t *cfg, esp_tls_t *tls)
 {
     int ret = WOLFSSL_FAILURE;
@@ -378,7 +370,6 @@ static esp_err_t set_server_config(esp_tls_cfg_server_t *cfg, esp_tls_t *tls)
     wolfSSL_set_fd((WOLFSSL *)tls->priv_ssl, tls->sockfd);
     return ESP_OK;
 }
-#endif
 
 int esp_wolfssl_handshake(esp_tls_t *tls, const esp_tls_cfg_t *cfg)
 {
@@ -486,7 +477,6 @@ void esp_wolfssl_cleanup(esp_tls_t *tls)
     wolfSSL_Cleanup();
 }
 
-#ifdef CONFIG_ESP_TLS_SERVER
 /**
  * @brief       Create TLS/SSL server session
  */
@@ -497,7 +487,9 @@ int esp_wolfssl_server_session_create(esp_tls_cfg_server_t *cfg, int sockfd, esp
     }
     tls->role = ESP_TLS_SERVER;
     tls->sockfd = sockfd;
-    esp_err_t esp_ret = esp_create_wolfssl_handle(NULL, 0, cfg, tls);
+    esp_tls_server_params_t server_params = {};
+    server_params.set_server_cfg = &set_server_config;
+    esp_err_t esp_ret = esp_create_wolfssl_handle(NULL, 0, cfg, tls, &server_params);
     if (esp_ret != ESP_OK) {
         ESP_LOGE(TAG, "create_ssl_handle failed, [0x%04X] (%s)", esp_ret, esp_err_to_name(esp_ret));
         ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_ESP, esp_ret);
@@ -531,7 +523,6 @@ void esp_wolfssl_server_session_delete(esp_tls_t *tls)
         free(tls);
     }
 }
-#endif /* CONFIG_ESP_TLS_SERVER */
 
 esp_err_t esp_wolfssl_init_global_ca_store(void)
 {

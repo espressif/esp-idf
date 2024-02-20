@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -47,8 +47,9 @@ static esp_err_t lp_i2c_configure_io(gpio_num_t io_num, bool pullup_en)
 {
     /* Initialize IO Pin */
     ESP_RETURN_ON_ERROR(rtc_gpio_init(io_num), LPI2C_TAG, "LP GPIO Init failed for GPIO %d", io_num);
-    /* Set direction to input+output */
-    ESP_RETURN_ON_ERROR(rtc_gpio_set_direction(io_num, RTC_GPIO_MODE_INPUT_OUTPUT), LPI2C_TAG, "LP GPIO Set direction failed for %d", io_num);
+
+    /* Set direction to input+output open-drain mode */
+    ESP_RETURN_ON_ERROR(rtc_gpio_set_direction(io_num, RTC_GPIO_MODE_INPUT_OUTPUT_OD), LPI2C_TAG, "LP GPIO Set direction failed for %d", io_num);
     /* Disable pulldown on the io pin */
     ESP_RETURN_ON_ERROR(rtc_gpio_pulldown_dis(io_num), LPI2C_TAG, "LP GPIO pulldown disable failed for %d", io_num);
     /* Enable pullup based on pullup_en flag */
@@ -142,6 +143,10 @@ esp_err_t lp_core_i2c_master_init(i2c_port_t lp_i2c_num, const lp_core_i2c_cfg_t
 
     /* Initialize LP I2C Master mode */
     i2c_hal_master_init(&i2c_hal);
+
+    /* Enable internal open-drain mode for I2C IO lines */
+    i2c_hal.dev->ctr.sda_force_out = 0;
+    i2c_hal.dev->ctr.scl_force_out = 0;
 
     /* Configure LP I2C clock and timing paramters */
     ESP_RETURN_ON_ERROR(lp_i2c_config_clk(cfg), LPI2C_TAG, "Failed to configure LP I2C source clock");

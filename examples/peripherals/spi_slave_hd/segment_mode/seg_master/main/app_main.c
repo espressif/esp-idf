@@ -14,34 +14,15 @@
 #include "driver/spi_master.h"
 #include "esp_serial_slave_link/essl_spi.h"
 
-//Pin setting
-#if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////// Please update the following configuration according to your Hardware spec /////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
 #define GPIO_MOSI    11
 #define GPIO_MISO    13
 #define GPIO_SCLK    12
 #define GPIO_CS      10
 
-#elif CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32C2
-#define GPIO_MOSI    7
-#define GPIO_MISO    2
-#define GPIO_SCLK    6
-#define GPIO_CS      10
-
-#elif CONFIG_IDF_TARGET_ESP32C6
-#define GPIO_MOSI    19
-#define GPIO_MISO    20
-#define GPIO_SCLK    18
-#define GPIO_CS      9
-
-#elif CONFIG_IDF_TARGET_ESP32H2
-#define GPIO_HANDSHAKE 2
-#define GPIO_MOSI 5
-#define GPIO_MISO 0
-#define GPIO_SCLK 4
-#define GPIO_CS 1
-#endif
-
-#define MASTER_HOST SPI2_HOST
+#define MASTER_HOST  SPI2_HOST
 #define DMA_CHAN     SPI_DMA_CH_AUTO
 
 #define TX_SIZE_MIN  40

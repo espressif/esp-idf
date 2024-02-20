@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -111,7 +111,7 @@ esp_err_t esp_ota_begin(const esp_partition_t* partition, size_t image_size, esp
  * @param size    Size of data buffer in bytes.
  *
  * @return
- *    - ESP_OK: Data was written to flash successfully.
+ *    - ESP_OK: Data was written to flash successfully, or size = 0
  *    - ESP_ERR_INVALID_ARG: handle is invalid.
  *    - ESP_ERR_OTA_VALIDATE_FAILED: First byte of image contains invalid app image magic byte.
  *    - ESP_ERR_FLASH_OP_TIMEOUT or ESP_ERR_FLASH_OP_FAIL: Flash write failed.
@@ -350,10 +350,10 @@ typedef enum {
 } esp_ota_secure_boot_public_key_index_t;
 
 /**
- * @brief Revokes the old signature digest. To be called in the application after the rollback logic.
+ * @brief Revokes the signature digest denoted by the given index. This should be called in the application only after the rollback logic otherwise the device may end up in unrecoverable state.
  *
  * Relevant for Secure boot v2 on ESP32-S2, ESP32-S3, ESP32-C3, ESP32-C6, ESP32-H2 where up to 3 key digests can be stored (Key \#N-1, Key \#N, Key \#N+1).
- * When key \#N-1 used to sign an app is invalidated, an OTA update is to be sent with an app signed with key \#N-1 & Key \#N.
+ * When a key used to sign an app is invalidated, an OTA update is to be sent with an app signed with at least one of the other two keys which has not been revoked already.
  * After successfully booting the OTA app should call this function to revoke Key \#N-1.
  *
  * @param index - The index of the signature block to be revoked

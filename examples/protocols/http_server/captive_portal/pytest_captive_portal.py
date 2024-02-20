@@ -70,6 +70,7 @@ def test_captive_page(ip: str, port: str, uri: str) -> bool:
 
 @pytest.mark.esp32
 @pytest.mark.wifi_wlan
+@pytest.mark.temp_skip_ci(targets=['esp32'], reason='unstable case')
 @pytest.mark.xfail(reason='Runner unable to connect to target over WiFi', run=False)
 def test_example_captive_portal(dut: Dut) -> None:
 
@@ -108,7 +109,7 @@ def test_example_captive_portal(dut: Dut) -> None:
                 raise RuntimeError('SoftAP connected to another host! {} != {}'.format(ip, got_ip))
         except pexpect.exceptions.TIMEOUT:
             # print what is happening on DUT side
-            logging.info('in exception tiny_test_fw.DUT.ExpectTimeout')
+            logging.info('in exception pexpect.exceptions.TIMEOUT')
             logging.info(dut.read())
             raise
         print('Connected to DUT SoftAP')

@@ -37,6 +37,7 @@
 #include "proxy_client.h"
 #include "prov_pvnr.h"
 #include "pvnr_mgmt.h"
+#include "heartbeat.h"
 
 #if CONFIG_BLE_MESH_CFG_CLI
 #include "mesh/cfg_cli.h"
@@ -2367,6 +2368,16 @@ void btc_ble_mesh_prov_call_handler(btc_msg_t *msg)
         act = ESP_BLE_MESH_NODE_PROXY_GATT_DISABLE_COMP_EVT;
         param.node_proxy_gatt_disable_comp.err_code = bt_mesh_proxy_server_gatt_disable();
         break;
+#if CONFIG_BLE_MESH_PRB_SRV
+    case BTC_BLE_MESH_ACT_PRIVATE_PROXY_IDENTITY_ENABLE:
+        act = ESP_BLE_MESH_NODE_PRIVATE_PROXY_IDENTITY_ENABLE_COMP_EVT;
+        param.node_private_proxy_identity_enable_comp.err_code = bt_mesh_proxy_private_identity_enable();
+        break;
+    case BTC_BLE_MESH_ACT_PRIVATE_PROXY_IDENTITY_DISABLE:
+        act = ESP_BLE_MESH_NODE_PRIVATE_PROXY_IDENTITY_DISABLE_COMP_EVT;
+        param.node_private_proxy_identity_disable_comp.err_code = bt_mesh_proxy_private_identity_disable();
+        break;
+#endif /* CONFIG_BLE_MESH_PRB_SRV */
 #endif /* CONFIG_BLE_MESH_GATT_PROXY_SERVER */
 #endif /* (CONFIG_BLE_MESH_NODE && CONFIG_BLE_MESH_PB_GATT) || CONFIG_BLE_MESH_GATT_PROXY_SERVER */
 #if CONFIG_BLE_MESH_PROVISIONER
@@ -2550,14 +2561,14 @@ void btc_ble_mesh_prov_call_handler(btc_msg_t *msg)
         act = ESP_BLE_MESH_PROVISIONER_ENABLE_HEARTBEAT_RECV_COMP_EVT;
         param.provisioner_enable_heartbeat_recv_comp.enable = arg->enable_heartbeat_recv.enable;
         param.provisioner_enable_heartbeat_recv_comp.err_code =
-            bt_mesh_provisioner_recv_heartbeat(arg->enable_heartbeat_recv.enable ?
-                                               btc_ble_mesh_provisioner_recv_heartbeat_cb : NULL);
+            bt_mesh_pvnr_register_hb_recv_cb(arg->enable_heartbeat_recv.enable ?
+                                             btc_ble_mesh_provisioner_recv_heartbeat_cb : NULL);
         break;
     case BTC_BLE_MESH_ACT_PROVISIONER_SET_HEARTBEAT_FILTER_TYPE:
         act = ESP_BLE_MESH_PROVISIONER_SET_HEARTBEAT_FILTER_TYPE_COMP_EVT;
         param.provisioner_set_heartbeat_filter_type_comp.type = arg->set_heartbeat_filter_type.type;
         param.provisioner_set_heartbeat_filter_type_comp.err_code =
-            bt_mesh_provisioner_set_heartbeat_filter_type(arg->set_heartbeat_filter_type.type);
+            bt_mesh_pvnr_set_hb_recv_filter_type(arg->set_heartbeat_filter_type.type);
         break;
     case BTC_BLE_MESH_ACT_PROVISIONER_SET_HEARTBEAT_FILTER_INFO:
         act = ESP_BLE_MESH_PROVISIONER_SET_HEARTBEAT_FILTER_INFO_COMP_EVT;
@@ -2565,9 +2576,9 @@ void btc_ble_mesh_prov_call_handler(btc_msg_t *msg)
         param.provisioner_set_heartbeat_filter_info_comp.hb_src = arg->set_heartbeat_filter_info.hb_src;
         param.provisioner_set_heartbeat_filter_info_comp.hb_dst = arg->set_heartbeat_filter_info.hb_dst;
         param.provisioner_set_heartbeat_filter_info_comp.err_code =
-            bt_mesh_provisioner_set_heartbeat_filter_info(arg->set_heartbeat_filter_info.op,
-                                                          arg->set_heartbeat_filter_info.hb_src,
-                                                          arg->set_heartbeat_filter_info.hb_dst);
+            bt_mesh_pvnr_set_hb_recv_filter_info(arg->set_heartbeat_filter_info.op,
+                                                 arg->set_heartbeat_filter_info.hb_src,
+                                                 arg->set_heartbeat_filter_info.hb_dst);
         break;
 #endif /* CONFIG_BLE_MESH_PROVISIONER_RECV_HB */
 #if CONFIG_BLE_MESH_SETTINGS
@@ -2814,6 +2825,8 @@ void btc_ble_mesh_prov_call_handler(btc_msg_t *msg)
     case BTC_BLE_MESH_ACT_DEINIT_MESH:
         act = ESP_BLE_MESH_DEINIT_MESH_COMP_EVT;
         param.deinit_mesh_comp.err_code = bt_mesh_deinit((struct bt_mesh_deinit_param *)&arg->mesh_deinit.param);
+        /* Give the semaphore when BLE Mesh de-initialization is finished. */
+        xSemaphoreGive(arg->mesh_deinit.semaphore);
         break;
 #endif /* CONFIG_BLE_MESH_DEINIT */
     default:

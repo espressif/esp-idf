@@ -103,7 +103,7 @@ static httpd_uri_t* httpd_find_uri_handler(struct httpd_data *hd,
             hd->config.uri_match_fn(hd->hd_calls[i]->uri, uri, uri_len) :
             httpd_uri_match_simple(hd->hd_calls[i]->uri, uri, uri_len)) {
             /* URIs match. Now check if method is supported */
-            if (hd->hd_calls[i]->method == method) {
+            if (hd->hd_calls[i]->method == method || hd->hd_calls[i]->method == HTTP_ANY) {
                 /* Match found! */
                 if (err) {
                     /* Unset any error that may

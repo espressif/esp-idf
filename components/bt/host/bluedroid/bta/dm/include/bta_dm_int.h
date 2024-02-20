@@ -61,6 +61,7 @@ enum {
     BTA_DM_API_CONFIG_EIR_EVT,
     BTA_DM_API_PAGE_TO_SET_EVT,
     BTA_DM_API_PAGE_TO_GET_EVT,
+    BTA_DM_API_SET_ACL_PKT_TYPES_EVT,
 #endif
     BTA_DM_API_SET_AFH_CHANNELS_EVT,
 #if (SDP_INCLUDED == TRUE)
@@ -217,6 +218,7 @@ enum {
     BTA_DM_API_DTM_TX_START_EVT,
     BTA_DM_API_DTM_RX_START_EVT,
     BTA_DM_API_DTM_STOP_EVT,
+    BTA_DM_API_BLE_CLEAR_ADV_EVT,
 #endif
     BTA_DM_MAX_EVT
 };
@@ -297,6 +299,14 @@ typedef struct {
     BT_HDR              hdr;
     tBTM_CMPL_CB        *get_page_to_cb;
 } tBTA_DM_API_PAGE_TO_GET;
+
+/* data type for BTA_DM_API_SET_ACL_PKT_TYPES_EVT */
+typedef struct {
+    BT_HDR              hdr;
+    BD_ADDR             rmt_addr;
+    UINT16              pkt_types;
+    tBTM_CMPL_CB        *set_acl_pkt_types_cb;
+} tBTA_DM_API_SET_ACL_PKT_TYPES;
 
 /* data type for BTA_DM_API_GET_REMOTE_NAME_EVT */
 typedef struct {
@@ -896,6 +906,11 @@ typedef struct {
     tBTA_DTM_CMD_CMPL_CBACK *p_dtm_cmpl_cback;
 } tBTA_DM_API_BLE_DTM_STOP;
 
+typedef struct {
+    BT_HDR                  hdr;
+    tBTA_CLEAR_ADV_CMPL_CBACK       *p_clear_adv_cback;
+} tBTA_DM_API_CLEAR_ADV;
+
 #endif /* BLE_INCLUDED */
 
 /* data type for BTA_DM_API_REMOVE_ACL_EVT */
@@ -1152,6 +1167,7 @@ typedef union {
     tBTA_DM_API_SET_AFH_CHANNELS set_afh_channels;
     tBTA_DM_API_PAGE_TO_SET set_page_timeout;
     tBTA_DM_API_PAGE_TO_GET get_page_timeout;
+    tBTA_DM_API_SET_ACL_PKT_TYPES set_acl_pkt_types;
 #if (SDP_INCLUDED == TRUE)
     tBTA_DM_API_GET_REMOTE_NAME  get_rmt_name;
 #endif
@@ -1293,6 +1309,7 @@ typedef union {
     tBTA_DM_API_BLE_DTM_TX_START    dtm_tx_start;
     tBTA_DM_API_BLE_DTM_RX_START    dtm_rx_start;
     tBTA_DM_API_BLE_DTM_STOP        dtm_stop;
+    tBTA_DM_API_CLEAR_ADV           ble_clear_adv;
 #endif
 
     tBTA_DM_API_REMOVE_ACL              remove_acl;
@@ -1663,6 +1680,7 @@ extern void bta_dm_cfg_coex_status(tBTA_DM_MSG *p_data);
 extern void bta_dm_config_eir (tBTA_DM_MSG *p_data);
 extern void bta_dm_set_page_timeout (tBTA_DM_MSG *p_data);
 extern void bta_dm_get_page_timeout (tBTA_DM_MSG *p_data);
+extern void bta_dm_set_acl_pkt_types (tBTA_DM_MSG *p_data);
 #endif
 extern void bta_dm_set_afh_channels (tBTA_DM_MSG *p_data);
 extern void bta_dm_read_rmt_name(tBTA_DM_MSG *p_data);
@@ -1732,6 +1750,7 @@ extern void bta_dm_ble_multi_adv_enb(tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_gap_dtm_tx_start(tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_gap_dtm_rx_start(tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_gap_dtm_stop(tBTA_DM_MSG *p_data);
+extern void bta_dm_ble_gap_clear_adv(tBTA_DM_MSG *p_data);
 
 #if (BLE_50_FEATURE_SUPPORT == TRUE)
 extern void bta_dm_ble_gap_dtm_enhance_tx_start(tBTA_DM_MSG *p_data);
@@ -1808,7 +1827,7 @@ extern void bta_dm_search_cancel_notify (tBTA_DM_MSG *p_data);
 extern void bta_dm_search_cancel_transac_cmpl(tBTA_DM_MSG *p_data);
 extern void bta_dm_disc_rmt_name (tBTA_DM_MSG *p_data);
 extern tBTA_DM_PEER_DEVICE *bta_dm_find_peer_device(BD_ADDR peer_addr);
-void bta_dm_eir_update_uuid(UINT16 uuid16, BOOLEAN adding);
+void bta_dm_eir_update_uuid(tBT_UUID uuid, BOOLEAN adding);
 
 extern void bta_dm_enable_test_mode(tBTA_DM_MSG *p_data);
 extern void bta_dm_disable_test_mode(tBTA_DM_MSG *p_data);

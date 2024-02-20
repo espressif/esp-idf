@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -598,6 +598,15 @@ static inline void emac_ll_receive_poll_demand(emac_dma_dev_t *dma_regs, uint32_
 /*************** End of dma regs operation *********************/
 
 /************** Start of ext regs operation ********************/
+
+static inline eth_data_interface_t emac_ll_get_phy_intf(emac_ext_dev_t *ext_regs)
+{
+    if (ext_regs->ex_phyinf_conf.phy_intf_sel == 4) {
+        return EMAC_DATA_INTERFACE_RMII;
+    }
+    return EMAC_DATA_INTERFACE_MII;
+}
+
 static inline void emac_ll_clock_enable_mii(emac_ext_dev_t *ext_regs)
 {
     /* 0 for mii mode */

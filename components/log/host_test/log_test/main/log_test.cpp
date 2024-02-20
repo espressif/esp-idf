@@ -6,13 +6,12 @@
    software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
    CONDITIONS OF ANY KIND, either express or implied.
 */
-#define CATCH_CONFIG_MAIN
 #include <cstdio>
 #include <regex>
 #include <iostream>
 #include "esp_log.h"
 
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
 
 using namespace std;
 

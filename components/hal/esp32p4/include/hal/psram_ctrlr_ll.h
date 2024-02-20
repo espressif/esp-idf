@@ -16,8 +16,11 @@
 #include <stdbool.h>
 #include <sys/param.h>
 #include "hal/assert.h"
+#include "hal/misc.h"
 #include "soc/spi_mem_s_struct.h"
 #include "soc/spi_mem_s_reg.h"
+#include "soc/spi1_mem_s_reg.h"
+#include "soc/spi1_mem_s_struct.h"
 #include "soc/hp_sys_clkrst_struct.h"
 #include "soc/clk_tree_defs.h"
 #include "rom/opi_flash.h"
@@ -26,12 +29,14 @@
 extern "C" {
 #endif
 
-#define PSRAM_CTRLR_LL_MSPI_ID_2    2
-#define PSRAM_CTRLR_LL_MSPI_ID_3    3
+#define PSRAM_CTRLR_LL_MSPI_ID_2            2
+#define PSRAM_CTRLR_LL_MSPI_ID_3            3
 
 #define PSRAM_CTRLR_LL_PMS_REGION_NUMS      4
 #define PSRAM_CTRLR_LL_PMS_ATTR_WRITABLE    (1<<0)
 #define PSRAM_CTRLR_LL_PMS_ATTR_READABLE    (1<<1)
+
+#define PSRAM_CTRLR_LL_FIFO_MAX_BYTES       64
 
 
 /**
@@ -134,8 +139,11 @@ static inline void psram_ctrlr_ll_set_rd_dummy(uint32_t mspi_id, uint32_t dummy_
 __attribute__((always_inline))
 static inline void psram_ctrlr_ll_enable_variable_dummy(uint32_t mspi_id, bool en)
 {
-    (void)mspi_id;
-    SPIMEM2.smem_ddr.smem_var_dummy = en;
+    if (mspi_id == PSRAM_CTRLR_LL_MSPI_ID_2) {
+        SPIMEM2.smem_ddr.smem_var_dummy = en;
+    } else if (mspi_id == PSRAM_CTRLR_LL_MSPI_ID_3) {
+        SPIMEM3.ddr.fmem_var_dummy = en;
+    }
 }
 
 /**
@@ -350,14 +358,19 @@ static inline void psram_ctrlr_ll_select_clk_source(uint32_t mspi_id, soc_periph
 /**
  * @brief Set PSRAM core clock
  *
- * @param mspi_id       mspi_id
- * @param core_clk_mhz  core clock mhz
+ * @param mspi_id  mspi_id
+ * @param freqdiv  Divider value
  */
 __attribute__((always_inline))
-static inline void psram_ctrlr_ll_set_core_clock(uint8_t spi_num, uint32_t core_clk_mhz)
+static inline void psram_ctrlr_ll_set_core_clock(uint8_t spi_num, uint32_t freqdiv)
 {
-    //TODO: IDF-7517
+    HP_SYS_CLKRST.peri_clk_ctrl00.reg_psram_core_clk_en = 1;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl00, reg_psram_core_clk_div_num, freqdiv - 1);
 }
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define psram_ctrlr_ll_set_core_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; psram_ctrlr_ll_set_core_clock(__VA_ARGS__)
 
 /**
  * @brief Set PSRAM bus clock
@@ -368,12 +381,20 @@ static inline void psram_ctrlr_ll_set_core_clock(uint8_t spi_num, uint32_t core_
 __attribute__((always_inline))
 static inline void psram_ctrlr_ll_set_bus_clock(uint32_t mspi_id, uint32_t freqdiv)
 {
-    (void)mspi_id;
-    if (freqdiv == 1) {
-        WRITE_PERI_REG(SPI_MEM_S_SRAM_CLK_REG, SPI_MEM_S_SCLK_EQU_SYSCLK);
-    } else {
-        uint32_t freqbits = (((freqdiv - 1) << SPI_MEM_S_SCLKCNT_N_S)) | (((freqdiv / 2 - 1) << SPI_MEM_S_SCLKCNT_H_S)) | ((freqdiv - 1) << SPI_MEM_S_SCLKCNT_L_S);
-        WRITE_PERI_REG(SPI_MEM_S_SRAM_CLK_REG, freqbits);
+    if (mspi_id == PSRAM_CTRLR_LL_MSPI_ID_2) {
+        if (freqdiv == 1) {
+            WRITE_PERI_REG(SPI_MEM_S_SRAM_CLK_REG, SPI_MEM_S_SCLK_EQU_SYSCLK);
+        } else {
+            uint32_t freqbits = (((freqdiv - 1) << SPI_MEM_S_SCLKCNT_N_S)) | (((freqdiv / 2 - 1) << SPI_MEM_S_SCLKCNT_H_S)) | ((freqdiv - 1) << SPI_MEM_S_SCLKCNT_L_S);
+            WRITE_PERI_REG(SPI_MEM_S_SRAM_CLK_REG, freqbits);
+        }
+    } else if (mspi_id == PSRAM_CTRLR_LL_MSPI_ID_3) {
+        if (freqdiv == 1) {
+            WRITE_PERI_REG(SPI1_MEM_S_CLOCK_REG, SPI1_MEM_S_CLK_EQU_SYSCLK);
+        } else {
+            uint32_t freqbits = (((freqdiv - 1) << SPI1_MEM_S_CLKCNT_N_S)) | (((freqdiv / 2 - 1) << SPI1_MEM_S_CLKCNT_H_S)) | ((freqdiv - 1) << SPI1_MEM_S_CLKCNT_L_S);
+            WRITE_PERI_REG(SPI1_MEM_S_CLOCK_REG, freqbits);
+        }
     }
 }
 

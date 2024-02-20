@@ -15,6 +15,7 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+#include <inttypes.h>
 #include "sdmmc_common.h"
 
 static const char* TAG = "sdmmc_common";
@@ -52,14 +53,14 @@ esp_err_t sdmmc_init_ocr(sdmmc_card_t* card)
             return err;
         }
     }
-    ESP_LOGD(TAG, "host_ocr=0x%x card_ocr=0x%x", host_ocr, card->ocr);
+    ESP_LOGD(TAG, "host_ocr=0x%" PRIx32 " card_ocr=0x%" PRIx32, host_ocr, card->ocr);
 
     /* Clear all voltage bits in host's OCR which the card doesn't support.
      * Don't touch CCS bit because in SPI mode cards don't report CCS in ACMD41
      * response.
      */
     host_ocr &= (card->ocr | (~SD_OCR_VOL_MASK));
-    ESP_LOGD(TAG, "sdmmc_card_init: host_ocr=%08x, card_ocr=%08x", host_ocr, card->ocr);
+    ESP_LOGD(TAG, "sdmmc_card_init: host_ocr=%08" PRIx32 ", card_ocr=%08" PRIx32, host_ocr, card->ocr);
     return ESP_OK;
 }
 
@@ -286,12 +287,12 @@ void sdmmc_card_print_info(FILE* stream, const sdmmc_card_t* card)
 
     if (print_csd) {
         fprintf(stream, "CSD: ver=%d, sector_size=%d, capacity=%d read_bl_len=%d\n",
-                (card->is_mmc ? card->csd.csd_ver : card->csd.csd_ver + 1),
+                (int) (card->is_mmc ? card->csd.csd_ver : card->csd.csd_ver + 1),
                 card->csd.sector_size, card->csd.capacity, card->csd.read_block_len);
         if (card->is_mmc) {
-            fprintf(stream, "EXT CSD: bus_width=%d\n", (1 << card->log_bus_width));
+            fprintf(stream, "EXT CSD: bus_width=%" PRIu32 "\n", (uint32_t) (1 << card->log_bus_width));
         } else if (!card->is_sdio){ // make sure card is SD
-            fprintf(stream, "SSR: bus_width=%d\n", (card->ssr.cur_bus_width ? 4 : 1));
+            fprintf(stream, "SSR: bus_width=%" PRIu32 "\n", (uint32_t) (card->ssr.cur_bus_width ? 4 : 1));
         }
     }
     if (print_scr) {
@@ -320,6 +321,21 @@ esp_err_t sdmmc_fix_host_flags(sdmmc_card_t* card)
             card->host.flags &= ~width_mask;
             card->host.flags |= width_4bit;
         }
+    }
+    return ESP_OK;
+}
+
+esp_err_t sdmmc_allocate_aligned_buf(sdmmc_card_t* card)
+{
+    if (card->host.flags & SDMMC_HOST_FLAG_ALLOC_ALIGNED_BUF) {
+        void* buf = NULL;
+        size_t actual_size = 0;
+        esp_err_t ret = esp_dma_malloc(SDMMC_IO_BLOCK_SIZE, 0, &buf, &actual_size);
+        if (ret != ESP_OK) {
+            return ret;
+        }
+        assert(actual_size == SDMMC_IO_BLOCK_SIZE);
+        card->host.dma_aligned_buffer = buf;
     }
     return ESP_OK;
 }

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -25,7 +25,7 @@ void ulp_riscv_print_str(const char *str)
     }
 
     for (int i = 0; str[i] != 0; i++) {
-        s_print_ctx.putc(s_print_ctx.putc_ctx ,str[i]);
+        s_print_ctx.putc(s_print_ctx.putc_ctx, str[i]);
     }
 }
 
@@ -42,9 +42,9 @@ void ulp_riscv_print_hex(int h)
     for (x = 0; x < 8; x++) {
         c = (h >> 28) & 0xf; // extract the leftmost byte
         if (c < 10) {
-            s_print_ctx.putc(s_print_ctx.putc_ctx ,'0' + c);
+            s_print_ctx.putc(s_print_ctx.putc_ctx, '0' + c);
         } else {
-            s_print_ctx.putc(s_print_ctx.putc_ctx ,'a' + c - 10);
+            s_print_ctx.putc(s_print_ctx.putc_ctx, 'a' + c - 10);
         }
         h <<= 4; // move the 2nd leftmost byte to the left, to be extracted next
     }

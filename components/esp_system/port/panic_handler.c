@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -104,9 +104,10 @@ static void frame_to_panic_info(void *frame, panic_info_t *info, bool pseudo_exc
     info->exception = PANIC_EXCEPTION_FAULT;
     info->details = NULL;
     info->reason = "Unknown";
-    info->pseudo_excause = pseudo_excause;
 
-    if (pseudo_excause) {
+    info->pseudo_excause = panic_soc_check_pseudo_cause(frame, info) | pseudo_excause;
+
+    if (info->pseudo_excause) {
         panic_soc_fill_info(frame, info);
     } else {
         panic_arch_fill_info(frame, info);

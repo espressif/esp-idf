@@ -239,7 +239,6 @@ menu "mbedTLS"
         config MBEDTLS_SSL_KEEP_PEER_CERTIFICATE
             bool "Keep peer certificate after handshake completion"
             default y
-            depends on !MBEDTLS_DYNAMIC_FREE_PEER_CERT
             help
                 Keep the peer's certificate after completion of the handshake.
                 Disabling this option will save about 4kB of heap and some code size.
@@ -348,6 +347,21 @@ menu "mbedTLS"
                 Name of the custom certificate directory or file. This path is evaluated
                 relative to the project root directory.
 
+        config MBEDTLS_CERTIFICATE_BUNDLE_DEPRECATED_LIST
+            bool "Add deprecated root certificates"
+            depends on MBEDTLS_CERTIFICATE_BUNDLE && !MBEDTLS_CERTIFICATE_BUNDLE_DEFAULT_NONE
+            help
+                Include the deprecated list of root certificates in the bundle.
+                This list gets updated when a certificate is removed from the Mozilla's
+                NSS root certificate store. This config can be enabled if you would like
+                to ensure that none of the certificates that were deployed in the product
+                are affected because of the update to bundle. In turn, enabling this
+                config keeps expired, retracted certificates in the bundle and it may
+                pose a security risk.
+
+                - Deprecated cert list may grow based based on sync with upstream bundle
+                - Deprecated certs would be be removed in ESP-IDF (next) major release
+
         config MBEDTLS_CERTIFICATE_BUNDLE_MAX_CERTS
             int "Maximum no of certificates allowed in certificate bundle"
             default 200
@@ -391,6 +405,17 @@ menu "mbedTLS"
             This allows other code to run on the CPU while an AES operation is pending.
             Otherwise the CPU busy-waits.
 
+    config MBEDTLS_AES_INTERRUPT_LEVEL
+        int "AES hardware interrupt level"
+        default 0
+        depends on MBEDTLS_AES_USE_INTERRUPT
+        range 0 3
+        help
+            This config helps to set the interrupt priority level for the AES peripheral.
+            Value 0 (default) means that there is no preference regarding the interrupt
+            priority level and any level from 1 to 3 can be selected (based on the availability).
+            Note: Higher value indicates high interrupt priority.
+
     config MBEDTLS_HARDWARE_GCM
         bool "Enable partially hardware accelerated GCM"
         depends on SOC_AES_SUPPORT_GCM && MBEDTLS_HARDWARE_AES
@@ -424,6 +449,17 @@ menu "mbedTLS"
 
             This allows other code to run on the CPU while an MPI operation is pending.
             Otherwise the CPU busy-waits.
+
+    config MBEDTLS_MPI_INTERRUPT_LEVEL
+        int "MPI hardware interrupt level"
+        default 0
+        depends on MBEDTLS_MPI_USE_INTERRUPT
+        range 0 3
+        help
+            This config helps to set the interrupt priority level for the MPI peripheral.
+            Value 0 (default) means that there is no preference regarding the interrupt
+            priority level and any level from 1 to 3 can be selected (based on the availability).
+            Note: Higher value indicates high interrupt priority.
 
     config MBEDTLS_HARDWARE_SHA
         bool "Enable hardware SHA acceleration"
@@ -491,14 +527,14 @@ menu "mbedTLS"
         default n
         help
             This option enables hardware acceleration for ECDSA sign function, only
-            when using ATECC608A cryptoauth chip (integrated with ESP32-WROOM-32SE)
+            when using ATECC608A cryptoauth chip.
 
     config MBEDTLS_ATCA_HW_ECDSA_VERIFY
         bool "Enable hardware ECDSA verify acceleration when using ATECC608A"
         default n
         help
             This option enables hardware acceleration for ECDSA sign function, only
-            when using ATECC608A cryptoauth chip (integrated with ESP32-WROOM-32SE)
+            when using ATECC608A cryptoauth chip.
 
     config MBEDTLS_HAVE_TIME
         bool "Enable mbedtls time support"
@@ -1052,16 +1088,25 @@ menu "mbedTLS"
             then the ESP will be unable to process keys greater
             than SOC_RSA_MAX_BIT_LEN.
 
-    menuconfig MBEDTLS_SECURITY_RISKS
-        bool "Show configurations with potential security risks"
-        default n
-
-    config MBEDTLS_ALLOW_UNSUPPORTED_CRITICAL_EXT
-        bool "X.509 CRT parsing with unsupported critical extensions"
-        depends on MBEDTLS_SECURITY_RISKS
-        default n
+    config MBEDTLS_USE_CRYPTO_ROM_IMPL
+        bool "Use ROM implementation of the crypto algorithm"
+        depends on ESP_ROM_HAS_MBEDTLS_CRYPTO_LIB && IDF_EXPERIMENTAL_FEATURES
+        default "n"
+        select MBEDTLS_SHA512_C
+        select MBEDTLS_AES_C
+        select MBEDTLS_CCM_C
+        select MBEDTLS_ROM_MD5
+        select MBEDTLS_HARDWARE_SHA
         help
-            Allow the X.509 certificate parser to load certificates
-            with unsupported critical extensions
+            Enable this flag to use mbedtls crypto algorithm from ROM instead of ESP-IDF.
+
+            This configuration option saves flash footprint in the application binary.
+            Note that the version of mbedtls crypto algorithm library in ROM is v2.16.12.
+            We have done the security analysis of the mbedtls revision in ROM (v2.16.12)
+            and ensured that affected symbols have been patched (removed). If in the future
+            mbedtls revisions there are security issues that also affects the version in
+            ROM (v2.16.12) then we shall patch the relevant symbols. This would increase
+            the flash footprint and hence care must be taken to keep some reserved space
+            for the application binary in flash layout.
 
 endmenu  # mbedTLS

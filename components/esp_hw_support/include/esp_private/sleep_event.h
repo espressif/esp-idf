@@ -44,7 +44,7 @@ typedef enum {
  * @return None
  */
 
-typedef void (*esp_sleep_event_cb_t)(void *user_arg, void *ext_arg);
+typedef esp_err_t (*esp_sleep_event_cb_t)(void *user_arg, void *ext_arg);
 
 /**
  * @brief Function entry parameter types for light sleep event callback functions (if CONFIG_FREERTOS_USE_TICKLESS_IDLE)
@@ -111,11 +111,9 @@ esp_err_t esp_sleep_unregister_event_callback(esp_sleep_event_cb_index_t event_i
  *
  * @param event_id   Designed to annotate the corresponding event_cb in g_sleep_event_cbs_config
  * @param ext_arg    Designed to pass external parameters
- * @return
- *      - ESP_OK on success
- *      - ESP_ERR_INVALID_ARG if event_id is out of range
+ * @return None
  */
-esp_err_t esp_sleep_execute_event_callbacks(esp_sleep_event_cb_index_t event_id, void *ext_arg);
+void esp_sleep_execute_event_callbacks(esp_sleep_event_cb_index_t event_id, void *ext_arg);
 
 #ifdef __cplusplus
 }

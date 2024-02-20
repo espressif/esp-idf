@@ -1,11 +1,12 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <string.h>
 
 #include "btc/btc_storage.h"
+#include "btc/btc_ble_storage.h"
 #include "btc/btc_util.h"
 #include "osi/osi.h"
 #include "osi/allocator.h"
@@ -35,8 +36,32 @@ bt_status_t btc_storage_add_bonded_device(bt_bdaddr_t *remote_bd_addr,
         BOOLEAN sc_support)
 {
     bdstr_t bdstr;
-
+    bt_bdaddr_t bd_addr;
     bdaddr_to_string(remote_bd_addr, bdstr, sizeof(bdstr));
+
+    /* device not in bond list and exceed the maximum number of bonded devices, delete the inactive bonded device */
+    if (btc_storage_get_num_all_bond_devices() >= BTM_SEC_MAX_DEVICE_RECORDS && !btc_config_has_section(bdstr)) {
+        const btc_config_section_iter_t *iter = btc_config_section_begin();
+        const btc_config_section_iter_t *remove_iter = iter;
+        /* find the first device(the last node) */
+        while (iter != btc_config_section_end()) {
+            remove_iter = iter;
+            iter = btc_config_section_next(iter);
+        }
+        const char *remove_section = btc_config_section_name(remove_iter);
+
+        // delete device info
+        string_to_bdaddr(remove_section, &bd_addr);
+        BTA_DmRemoveDevice(bd_addr.address, BT_TRANSPORT_BR_EDR);
+        BTA_DmRemoveDevice(bd_addr.address, BT_TRANSPORT_LE);
+
+        // delete config info
+        if (btc_config_remove_section(remove_section)) {
+            BTC_TRACE_WARNING("exceeded the maximum nubmer of bonded devices, delete the first device info : %02x:%02x:%02x:%02x:%02x:%02x",
+                                bd_addr.address[0], bd_addr.address[1], bd_addr.address[2], bd_addr.address[3], bd_addr.address[4], bd_addr.address[5]);
+        }
+    }
+
     BTC_TRACE_DEBUG("add to storage: Remote device:%s\n", bdstr);
 
     btc_config_lock();
@@ -52,6 +77,46 @@ bt_status_t btc_storage_add_bonded_device(bt_bdaddr_t *remote_bd_addr,
     return ret ? BT_STATUS_SUCCESS : BT_STATUS_FAIL;
 }
 
+#if (SMP_INCLUDED == TRUE)
+static bt_status_t _btc_storage_in_fetch_bonded_bt_device(const char *remote_bd_addr, int add)
+{
+    BOOLEAN bt_linkkey_file_found = FALSE;
+    UINT8 sc_support = 0;
+
+    BTC_TRACE_DEBUG("Remote device:%s\n", remote_bd_addr);
+    LINK_KEY link_key;
+        size_t size = sizeof(link_key);
+        if (btc_config_get_bin(remote_bd_addr, BTC_STORAGE_LINK_KEY_STR, link_key, &size)) {
+            int linkkey_type;
+            if (btc_config_get_int(remote_bd_addr, BTC_STORAGE_LINK_KEY_TYPE_STR, &linkkey_type)) {
+                bt_bdaddr_t bd_addr;
+                string_to_bdaddr(remote_bd_addr, &bd_addr);
+                if (add) {
+                    DEV_CLASS dev_class = {0, 0, 0};
+                    int cod;
+                    int pin_length = 0;
+                    if (btc_config_get_int(remote_bd_addr, BTC_STORAGE_DEV_CLASS_STR, &cod)) {
+                        uint2devclass((UINT32)cod, dev_class);
+                    }
+                    btc_config_get_int(remote_bd_addr, BTC_STORAGE_PIN_LENGTH_STR, &pin_length);
+                    size = sizeof(sc_support);
+                    btc_config_get_bin(remote_bd_addr, BTC_STORAGE_SC_SUPPORT, &sc_support, &size);
+
+                    BTA_DmAddDevice(bd_addr.address, dev_class, link_key, 0, 0,
+                                    (UINT8)linkkey_type, 0, pin_length, (UINT8)sc_support);
+                }
+                bt_linkkey_file_found = TRUE;
+            } else {
+                BTC_TRACE_ERROR("bounded device:%s, LinkKeyType or PinLength is invalid\n", remote_bd_addr);
+            }
+        }
+        if (!bt_linkkey_file_found) {
+            BTC_TRACE_DEBUG("Remote device:%s, no link key\n", remote_bd_addr);
+        }
+
+    return BT_STATUS_SUCCESS;
+}
+
 /*******************************************************************************
 **
 ** Function         btc_in_fetch_bonded_devices
@@ -64,8 +129,10 @@ bt_status_t btc_storage_add_bonded_device(bt_bdaddr_t *remote_bd_addr,
 *******************************************************************************/
 static bt_status_t btc_in_fetch_bonded_devices(int add)
 {
-    BOOLEAN bt_linkkey_file_found = FALSE;
-    UINT8 sc_support = 0;
+    bt_status_t status = BT_STATUS_FAIL;
+    uint16_t dev_cnt = 0;
+    const btc_config_section_iter_t *remove_iter = NULL;
+    bt_bdaddr_t bd_addr;
 
     btc_config_lock();
     for (const btc_config_section_iter_t *iter = btc_config_section_begin(); iter != btc_config_section_end(); iter = btc_config_section_next(iter)) {
@@ -73,44 +140,46 @@ static bt_status_t btc_in_fetch_bonded_devices(int add)
         if (!string_is_bdaddr(name)) {
             continue;
         }
-
-        BTC_TRACE_DEBUG("Remote device:%s\n", name);
-        LINK_KEY link_key;
-        size_t size = sizeof(link_key);
-        if (btc_config_get_bin(name, BTC_STORAGE_LINK_KEY_STR, link_key, &size)) {
-            int linkkey_type;
-            if (btc_config_get_int(name, BTC_STORAGE_LINK_KEY_TYPE_STR, &linkkey_type)) {
-                bt_bdaddr_t bd_addr;
-                string_to_bdaddr(name, &bd_addr);
-                if (add) {
-                    DEV_CLASS dev_class = {0, 0, 0};
-                    int cod;
-                    int pin_length = 0;
-                    if (btc_config_get_int(name, BTC_STORAGE_DEV_CLASS_STR, &cod)) {
-                        uint2devclass((UINT32)cod, dev_class);
-                    }
-                    btc_config_get_int(name, BTC_STORAGE_PIN_LENGTH_STR, &pin_length);
-                    size = sizeof(sc_support);
-                    btc_config_get_bin(name, BTC_STORAGE_SC_SUPPORT, &sc_support, &size);
-#if (SMP_INCLUDED == TRUE)
-                    BTA_DmAddDevice(bd_addr.address, dev_class, link_key, 0, 0,
-                                    (UINT8)linkkey_type, 0, pin_length, (UINT8)sc_support);
-#endif  ///SMP_INCLUDED == TRUE
-                }
-                bt_linkkey_file_found = TRUE;
-            } else {
-                BTC_TRACE_ERROR("bounded device:%s, LinkKeyType or PinLength is invalid\n", name);
+        dev_cnt ++;
+        /* if the number of device stored in nvs not exceed to BTM_SEC_MAX_DEVICE_RECORDS, load it */
+        if (dev_cnt <= BTM_SEC_MAX_DEVICE_RECORDS) {
+            if (btc_config_exist(name, BTC_STORAGE_LINK_KEY_TYPE_STR) && btc_config_exist(name, BTC_STORAGE_PIN_LENGTH_STR) &&
+                btc_config_exist(name, BTC_STORAGE_SC_SUPPORT) && btc_config_exist(name, BTC_STORAGE_LINK_KEY_STR)) {
+                /* load bt device */
+                status = _btc_storage_in_fetch_bonded_bt_device(name, add);
             }
-        }
-        if (!bt_linkkey_file_found) {
-            BTC_TRACE_DEBUG("Remote device:%s, no link key\n", name);
+            if (btc_config_exist(name, BTC_BLE_STORAGE_DEV_TYPE_STR)) {
+#if (BLE_INCLUDED == TRUE)
+                /* load ble device */
+                status = _btc_storage_in_fetch_bonded_ble_device(name, add);
+#endif  ///BLE_INCLUDED == TRUE
+            }
+        } else {
+            /* delete the exceeded device info from nvs */
+            remove_iter = iter;
+            while (remove_iter != btc_config_section_end()) {
+                const char *remove_section = btc_config_section_name(remove_iter);
+                string_to_bdaddr(remove_section, &bd_addr);
+                if (!string_is_bdaddr(remove_section)) {
+                    remove_iter = btc_config_section_next(remove_iter);
+                    continue;
+                }
+                remove_iter = btc_config_section_next(remove_iter);
+                /* delete config info */
+                if (btc_config_remove_section(remove_section)) {
+                    BTC_TRACE_WARNING("exceeded the maximum number of bonded devices, delete the exceed device info : %02x:%02x:%02x:%02x:%02x:%02x",
+                                bd_addr.address[0], bd_addr.address[1], bd_addr.address[2], bd_addr.address[3], bd_addr.address[4], bd_addr.address[5]);
+                }
+            }
+            /* write into nvs */
+            btc_config_flush();
+            break;
         }
     }
     btc_config_unlock();
 
-    return BT_STATUS_SUCCESS;
+    return status;
 }
-
 
 /*******************************************************************************
 **
@@ -131,6 +200,33 @@ bt_status_t btc_storage_load_bonded_devices(void)
     BTC_TRACE_DEBUG("Storage load rslt %d\n", status);
     return status;
 }
+
+/*******************************************************************************
+**
+** Function         btc_storage_update_active_device
+**
+** Description      BTC storage API - Once an ACL link is established and remote
+**                  bd_addr is already stored in NVRAM, update the config and update
+**                  the remote device to be the newest active device, The updates will
+**                  not be stored into NVRAM immediately.
+**
+** Returns          BT_STATUS_SUCCESS if successful, BT_STATUS_FAIL otherwise
+**
+*******************************************************************************/
+bool btc_storage_update_active_device(bt_bdaddr_t *remote_bd_addr)
+{
+    bdstr_t bdstr;
+    bdaddr_to_string(remote_bd_addr, bdstr, sizeof(bdstr));
+    bool ret = false;
+    BTC_TRACE_DEBUG("Update active device: Remote device:%s\n", bdstr);
+
+    btc_config_lock();
+    ret = btc_config_update_newest_section(bdstr);
+    btc_config_unlock();
+
+    return ret ? BT_STATUS_SUCCESS : BT_STATUS_FAIL;
+}
+#endif  ///SMP_INCLUDED == TRUE
 
 /*******************************************************************************
 **
@@ -490,3 +586,18 @@ bt_status_t btc_storage_remove_hidd(bt_bdaddr_t *remote_bd_addr)
     return ret ? BT_STATUS_SUCCESS : BT_STATUS_FAIL;
 }
 #endif //(defined BTC_HD_INCLUDED && BTC_HD_INCLUDED == TRUE)
+
+int btc_storage_get_num_all_bond_devices(void) {
+    int num_dev = 0;
+
+    btc_config_lock();
+    for (const btc_config_section_iter_t *iter = btc_config_section_begin(); iter != btc_config_section_end();
+        iter = btc_config_section_next(iter)) {
+        const char *name = btc_config_section_name(iter);
+        if (string_is_bdaddr(name)) {
+            num_dev++;
+        }
+    }
+    btc_config_unlock();
+    return num_dev;
+}

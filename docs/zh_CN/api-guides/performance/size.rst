@@ -441,7 +441,7 @@ lwIP IPv6
 
   .. note::
 
-      如果禁用 IPv6， ``coap`` 和 :doc:`/api-reference/protocols/asio` 等组件将无法使用。
+      如果禁用 IPv6，:doc:`/api-reference/protocols/asio` 等组件将无法使用。
 
 lwIP IPv4
 @@@@@@@@@
@@ -518,6 +518,11 @@ MbedTLS 功能
    - 确保连接设备的任何 TLS 客户端仍然可以使用支持/推荐的密码套件进行连接。请注意，未来版本的客户端操作系统可能会移除对某些功能的支持，因此建议启用多个支持的密码套件或算法以实现冗余。
 
    如果依赖于第三方客户端或服务器，请密切关注其有关支持的 TLS 功能的公告和变更。否则，当所支持功能变更时，{IDF_TARGET_NAME} 设备可能无法访问。
+
+.. only:: CONFIG_ESP_ROM_HAS_MBEDTLS_CRYPTO_LIB
+
+   启用配置选项 :ref:`CONFIG_MBEDTLS_USE_CRYPTO_ROM_IMPL` 时 mbedtls 使用由 ROM 提供的加密算法。
+   禁用配置选项 :ref:`CONFIG_MBEDTLS_USE_CRYPTO_ROM_IMPL` 时mbedtls 完全使用由 ESP-IDF 中提供的加密算法。这会导致二进制文件大小增加。
 
 .. note::
 

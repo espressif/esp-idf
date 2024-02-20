@@ -18,7 +18,7 @@ void cache_hal_suspend(uint32_t cache_level, cache_type_t type)
 {
     s_cache_status[0] = cache_ll_l1_get_enabled_bus(0);
     cache_ll_l1_disable_cache(0);
-#if !CONFIG_FREERTOS_UNICORE
+#if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
     s_cache_status[1] = cache_ll_l1_get_enabled_bus(1);
     cache_ll_l1_disable_cache(1);
 #endif
@@ -29,7 +29,7 @@ void cache_hal_resume(uint32_t cache_level, cache_type_t type)
 {
     cache_ll_l1_enable_cache(0);
     cache_ll_l1_enable_bus(0, s_cache_status[0]);
-#if !CONFIG_FREERTOS_UNICORE
+#if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
     cache_ll_l1_enable_cache(1);
     cache_ll_l1_enable_bus(1, s_cache_status[1]);
 #endif
@@ -39,7 +39,7 @@ void cache_hal_resume(uint32_t cache_level, cache_type_t type)
 bool cache_hal_is_cache_enabled(uint32_t cache_level, cache_type_t type)
 {
     bool result = cache_ll_l1_is_cache_enabled(0, CACHE_TYPE_ALL);
-#if !CONFIG_FREERTOS_UNICORE
+#if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
     result = result && cache_ll_l1_is_cache_enabled(1, CACHE_TYPE_ALL);
 #endif
     return result;
@@ -55,8 +55,15 @@ bool cache_hal_vaddr_to_cache_level_id(uint32_t vaddr_start, uint32_t len, uint3
 
 uint32_t cache_hal_get_cache_line_size(uint32_t cache_level, cache_type_t type)
 {
-    HAL_ASSERT(cache_level && (cache_level <= CACHE_LL_LEVEL_NUMS));
-    return 4;
+    HAL_ASSERT(cache_level <= CACHE_LL_LEVEL_NUMS);
+
+    uint32_t line_size = 0;
+
+    if (cache_level == CACHE_LL_LEVEL_EXT_MEM) {
+        line_size = 4;
+    }
+
+    return line_size;
 }
 
 bool cache_hal_invalidate_addr(uint32_t vaddr, uint32_t size)

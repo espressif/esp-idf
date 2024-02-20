@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
 
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -15,6 +15,8 @@
 #include "common/bt_trace.h"
 #include "osi/allocator.h"
 #include "esp_gattc_api.h"
+#include "btc/btc_storage.h"
+#include "common/bt_defs.h"
 
 #if (GATTC_INCLUDED == TRUE)
 static inline void btc_gattc_cb_to_app(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_if, esp_ble_gattc_cb_param_t *param)
@@ -924,7 +926,17 @@ void btc_gattc_cb_handler(btc_msg_t *msg)
     }
     case BTA_GATTC_CONNECT_EVT: {
         tBTA_GATTC_CONNECT *connect = &arg->connect;
+#if (SMP_INCLUDED == TRUE)
+        bt_bdaddr_t bt_addr;
 
+        memcpy(bt_addr.address, connect->remote_bda, sizeof(bt_addr.address));
+        if (btc_storage_update_active_device(&bt_addr)) {
+            BTC_TRACE_EVENT("Device: %02x:%02x:%02x:%02x:%02x:%02x, is not in bond list",
+                            bt_addr.address[0], bt_addr.address[1],
+                            bt_addr.address[2], bt_addr.address[3],
+                            bt_addr.address[4], bt_addr.address[5]);
+        }
+#endif  ///SMP_INCLUDED == TRUE
         gattc_if = connect->client_if;
         param.connect.conn_id = BTC_GATT_GET_CONN_ID(connect->conn_id);
         param.connect.link_role = connect->link_role;

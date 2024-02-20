@@ -28,6 +28,10 @@ typedef struct esp_netif_ppp_config {
                                      *   The current session must be closed, settings will be applied upon connecting.
                                      *   */
 #endif // CONFIG_LWIP_ENABLE_LCP_ECHO
+#ifdef CONFIG_LWIP_PPP_SERVER_SUPPORT
+    esp_ip4_addr_t ppp_our_ip4_addr;   /**< Set our preferred address, typically used when we're the PPP server */
+    esp_ip4_addr_t ppp_their_ip4_addr; /**< Set our preferred address, typically used when we're the PPP server */
+#endif // CONFIG_LWIP_PPP_SERVER_SUPPORT
 } esp_netif_ppp_config_t;
 
 /** @brief event id offset for PHASE related events

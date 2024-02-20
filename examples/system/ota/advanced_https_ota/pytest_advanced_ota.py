@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
 import http.server
 import multiprocessing
@@ -13,7 +13,8 @@ from typing import Callable
 
 import pexpect
 import pytest
-from common_test_methods import get_env_config_variable, get_host_ip4_by_dest_ip
+from common_test_methods import get_env_config_variable
+from common_test_methods import get_host_ip4_by_dest_ip
 from pytest_embedded import Dut
 from RangeHTTPServer import RangeRequestHandler
 
@@ -94,9 +95,6 @@ def start_redirect_server(ota_image_dir: str, server_ip: str, server_port: int, 
 
 
 @pytest.mark.esp32
-@pytest.mark.esp32c3
-@pytest.mark.esp32s2
-@pytest.mark.esp32s3
 @pytest.mark.ethernet_ota
 def test_examples_protocol_advanced_https_ota_example(dut: Dut) -> None:
     """
@@ -135,9 +133,6 @@ def test_examples_protocol_advanced_https_ota_example(dut: Dut) -> None:
 
 
 @pytest.mark.esp32
-@pytest.mark.esp32c3
-@pytest.mark.esp32s2
-@pytest.mark.esp32s3
 @pytest.mark.ethernet_ota
 def test_examples_protocol_advanced_https_ota_example_truncated_bin(dut: Dut) -> None:
     """
@@ -189,9 +184,6 @@ def test_examples_protocol_advanced_https_ota_example_truncated_bin(dut: Dut) ->
 
 
 @pytest.mark.esp32
-@pytest.mark.esp32c3
-@pytest.mark.esp32s2
-@pytest.mark.esp32s3
 @pytest.mark.ethernet_ota
 def test_examples_protocol_advanced_https_ota_example_truncated_header(dut: Dut) -> None:
     """
@@ -233,7 +225,7 @@ def test_examples_protocol_advanced_https_ota_example_truncated_header(dut: Dut)
         dut.expect('Starting Advanced OTA example', timeout=30)
         print('writing to device: {}'.format('https://' + host_ip + ':' + str(server_port) + '/' + truncated_bin_name))
         dut.write('https://' + host_ip + ':' + str(server_port) + '/' + truncated_bin_name)
-        dut.expect('advanced_https_ota_example: esp_https_ota_read_img_desc failed', timeout=30)
+        dut.expect('advanced_https_ota_example: esp_https_ota_get_img_desc failed', timeout=30)
         try:
             os.remove(binary_file)
         except OSError:
@@ -243,9 +235,6 @@ def test_examples_protocol_advanced_https_ota_example_truncated_header(dut: Dut)
 
 
 @pytest.mark.esp32
-@pytest.mark.esp32c3
-@pytest.mark.esp32s2
-@pytest.mark.esp32s3
 @pytest.mark.ethernet_ota
 def test_examples_protocol_advanced_https_ota_example_random(dut: Dut) -> None:
     """
@@ -297,9 +286,6 @@ def test_examples_protocol_advanced_https_ota_example_random(dut: Dut) -> None:
 
 
 @pytest.mark.esp32
-@pytest.mark.esp32c3
-@pytest.mark.esp32s2
-@pytest.mark.esp32s3
 @pytest.mark.ethernet_ota
 def test_examples_protocol_advanced_https_ota_example_invalid_chip_id(dut: Dut) -> None:
     """
@@ -353,9 +339,6 @@ def test_examples_protocol_advanced_https_ota_example_invalid_chip_id(dut: Dut) 
 
 
 @pytest.mark.esp32
-@pytest.mark.esp32c3
-@pytest.mark.esp32s2
-@pytest.mark.esp32s3
 @pytest.mark.ethernet_ota
 def test_examples_protocol_advanced_https_ota_example_chunked(dut: Dut) -> None:
     """
@@ -392,9 +375,6 @@ def test_examples_protocol_advanced_https_ota_example_chunked(dut: Dut) -> None:
 
 
 @pytest.mark.esp32
-@pytest.mark.esp32c3
-@pytest.mark.esp32s2
-@pytest.mark.esp32s3
 @pytest.mark.ethernet_ota
 def test_examples_protocol_advanced_https_ota_example_redirect_url(dut: Dut) -> None:
     """
@@ -448,9 +428,6 @@ def test_examples_protocol_advanced_https_ota_example_redirect_url(dut: Dut) -> 
 
 
 @pytest.mark.esp32
-@pytest.mark.esp32c3
-@pytest.mark.esp32s2
-@pytest.mark.esp32s3
 @pytest.mark.ethernet_flash_8m
 @pytest.mark.parametrize('config', ['anti_rollback',], indirect=True)
 @pytest.mark.parametrize('skip_autoflash', ['y'], indirect=True)
@@ -519,9 +496,6 @@ def test_examples_protocol_advanced_https_ota_example_anti_rollback(dut: Dut) ->
 
 
 @pytest.mark.esp32
-@pytest.mark.esp32c3
-@pytest.mark.esp32s2
-@pytest.mark.esp32s3
 @pytest.mark.ethernet_ota
 @pytest.mark.parametrize('config', ['partial_download',], indirect=True)
 def test_examples_protocol_advanced_https_ota_example_partial_request(dut: Dut) -> None:
@@ -570,7 +544,6 @@ def test_examples_protocol_advanced_https_ota_example_partial_request(dut: Dut) 
 
 @pytest.mark.esp32
 @pytest.mark.esp32c3
-@pytest.mark.esp32s2
 @pytest.mark.esp32s3
 @pytest.mark.wifi_high_traffic
 @pytest.mark.parametrize('config', ['nimble',], indirect=True)
@@ -622,7 +595,6 @@ def test_examples_protocol_advanced_https_ota_example_nimble_gatts(dut: Dut) -> 
 
 @pytest.mark.esp32
 @pytest.mark.esp32c3
-@pytest.mark.esp32s2
 @pytest.mark.esp32s3
 @pytest.mark.wifi_high_traffic
 @pytest.mark.parametrize('config', ['bluedroid',], indirect=True)
@@ -674,9 +646,6 @@ def test_examples_protocol_advanced_https_ota_example_bluedroid_gatts(dut: Dut) 
 
 
 @pytest.mark.esp32
-@pytest.mark.esp32c3
-@pytest.mark.esp32s2
-@pytest.mark.esp32s3
 @pytest.mark.ethernet_ota
 def test_examples_protocol_advanced_https_ota_example_openssl_aligned_bin(dut: Dut) -> None:
     """

@@ -14,6 +14,7 @@
 #include <fcntl.h>
 #include "esp_err.h"
 #include "esp_log.h"
+#include "esp_cpu.h"
 #include "esp_vfs_semihost.h"
 
 static const char *TAG = "example";

@@ -7,4 +7,5 @@ else()
 endif()
 
 idf_component_register(SRCS ${src}
+                    PRIV_REQUIRES esp_driver_ana_cmpr esp_driver_gpio
                     INCLUDE_DIRS ".")

@@ -29,7 +29,9 @@
 #include "common/bt_trace.h"
 #include "common/bt_defs.h"
 #include "device/bdaddr.h"
+#if (BT_CONTROLLER_INCLUDED == TRUE)
 #include "esp_bt.h"
+#endif
 #include "esp_hf_ag_api.h"
 #include "osi/allocator.h"
 
@@ -66,7 +68,7 @@ static UINT16 btc_max_hf_clients = BTC_HF_NUM_CB;
 #if HFP_DYNAMIC_MEMORY == FALSE
 static hf_local_param_t hf_local_param[BTC_HF_NUM_CB];
 #else
-static hf_local_param_t *hf_local_param;
+static hf_local_param_t *hf_local_param = NULL;
 #endif
 
 #if (BTM_WBS_INCLUDED == TRUE)
@@ -315,6 +317,19 @@ bt_status_t btc_hf_init(void)
     int idx = 0;
 
     BTC_TRACE_DEBUG("%s - max_hf_clients=%d", __func__, btc_max_hf_clients);
+
+#if HFP_DYNAMIC_MEMORY == TRUE
+    if (hf_local_param != NULL) {
+        return BT_STATUS_FAIL;
+    }
+
+    if ((hf_local_param = (hf_local_param_t *)osi_malloc(BTC_HF_NUM_CB * sizeof(hf_local_param_t))) == NULL) {
+        APPL_TRACE_ERROR("%s malloc failed!", __func__);
+        return BT_STATUS_NOMEM;
+    }
+    memset((void *)hf_local_param, 0, BTC_HF_NUM_CB * sizeof(hf_local_param_t));
+#endif
+
     /* Invoke the enable service API to the core to set the appropriate service_id
      * Internally, the HSP_SERVICE_ID shall also be enabled if HFP is enabled (phone)
      * othwerwise only HSP is enabled (tablet)*/
@@ -328,12 +343,14 @@ bt_status_t btc_hf_init(void)
     // custom initialization here
     hf_local_param[idx].btc_hf_cb.initialized = true;
 // set audio path
+#if (BT_CONTROLLER_INCLUDED == TRUE)
 #if BTM_SCO_HCI_INCLUDED
     uint8_t data_path = ESP_SCO_DATA_PATH_HCI;
 #else
     uint8_t data_path = ESP_SCO_DATA_PATH_PCM;
 #endif
     esp_bredr_sco_datapath_set(data_path);
+#endif
     return BT_STATUS_SUCCESS;
 }
 
@@ -341,13 +358,16 @@ void btc_hf_deinit(void)
 {
     BTC_TRACE_EVENT("%s", __FUNCTION__);
     btc_dm_disable_service(BTA_HFP_SERVICE_ID);
+    hf_local_param[0].btc_hf_cb.initialized = false;
+}
+
+static void btc_hf_cb_release(void)
+{
 #if HFP_DYNAMIC_MEMORY == TRUE
     if (hf_local_param) {
         osi_free(hf_local_param);
         hf_local_param = NULL;
     }
-#else
-    hf_local_param[0].btc_hf_cb.initialized = false;
 #endif
 }
 
@@ -1247,9 +1267,12 @@ void btc_hf_cb_handler(btc_msg_t *msg)
 
     switch (event) {
         case BTA_AG_ENABLE_EVT:
-        case BTA_AG_DISABLE_EVT:
             break;
-
+        case BTA_AG_DISABLE_EVT:
+        {
+            btc_hf_cb_release();
+            break;
+        }
         case BTA_AG_REGISTER_EVT:
         {
             idx = p_data->hdr.handle - 1;

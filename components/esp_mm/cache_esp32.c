@@ -27,7 +27,7 @@ void cache_sync(void)
     }
 
     s_cache_drv.cache_flush(0);
-#if !CONFIG_FREERTOS_UNICORE
+#if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
     s_cache_drv.cache_flush(1);
-#endif // !CONFIG_FREERTOS_UNICORE
+#endif // !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
 }

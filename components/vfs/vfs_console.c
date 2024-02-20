@@ -1,24 +1,25 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "esp_vfs_console.h"
+#include "esp_err.h"
 #include "esp_rom_sys.h"
 #include "esp_vfs_cdcacm.h"
 #include "esp_vfs_private.h"
-#include "esp_vfs_usb_serial_jtag.h"
-#include "esp_vfs_dev.h"
 #include "esp_private/usb_console.h"
+#include "esp_vfs_console.h"
+#include "esp_private/esp_vfs_console.h"
 #include "sdkconfig.h"
+#include "esp_private/startup_internal.h"
 
 #define STRINGIFY(s) STRINGIFY2(s)
 #define STRINGIFY2(s) #s
 
 /**
  * This file is to concentrate all the vfs(UART, USB_SERIAL_JTAG, CDCACM) console into one single file.
- * Get the vfs information from their component (i.e. vfs_uart.c) through `esp_vfs_usb_xxx_get_console()`,
+ * Get the vfs information from their component (i.e. uart_vfs.c),
  * which can help us to output some string to two different ports(i.e both through uart and usb_serial_jtag).
  * Usually, we set a port as primary and another as secondary. For primary, it is used for all the features supported by each vfs implementation,
  * while the secondary is only used for output.
@@ -43,9 +44,11 @@ const static char *primary_path = "/dev/cdcacm";
 #if CONFIG_ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG
 const static char *secondary_path = "/dev/secondary";
 static int secondary_vfs_index;
+const static esp_vfs_t *secondary_vfs = NULL;
 #endif // Secondary part
 
 static int primary_vfs_index;
+const static esp_vfs_t *primary_vfs = NULL;
 
 static vfs_console_context_t vfs_console= {0};
 
@@ -55,7 +58,7 @@ int console_open(const char * path, int flags, int mode)
 #if CONFIG_ESP_CONSOLE_UART
     vfs_console.fd_primary = get_vfs_for_path(primary_path)->vfs.open("/"STRINGIFY(CONFIG_ESP_CONSOLE_UART_NUM), flags, mode);
 #elif CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG
-    vfs_console.fd_primary = esp_vfs_usb_serial_jtag_get_vfs()->open("/", flags, mode);
+    vfs_console.fd_primary = get_vfs_for_path(primary_path)->vfs.open("/", flags, mode);
 #elif CONFIG_ESP_CONSOLE_USB_CDC
     vfs_console.fd_primary = esp_vfs_cdcacm_get_vfs()->open("/", flags, mode);
 #endif
@@ -186,37 +189,33 @@ static const esp_vfs_t vfs = {
 #endif // CONFIG_VFS_SUPPORT_TERMIOS
 };
 
-esp_err_t esp_vfs_dev_console_register(void)
+static esp_err_t esp_vfs_dev_console_register(void)
 {
-    return esp_vfs_register("/dev/console", &vfs, NULL);
+    return esp_vfs_register(ESP_VFS_DEV_CONSOLE, &vfs, NULL);
 }
 
 esp_err_t esp_vfs_console_register(void)
 {
     esp_err_t err = ESP_OK;
 // Primary register part.
-#ifdef CONFIG_ESP_CONSOLE_UART
-    const esp_vfs_t *uart_vfs = esp_vfs_uart_get_vfs();
-    err = esp_vfs_register_common(primary_path, strlen(primary_path), uart_vfs, NULL, &primary_vfs_index);
+#if CONFIG_ESP_CONSOLE_UART || CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG
+    assert(primary_vfs);
 #elif CONFIG_ESP_CONSOLE_USB_CDC
-    const esp_vfs_t *cdcacm_vfs = esp_vfs_cdcacm_get_vfs();
+    primary_vfs = esp_vfs_cdcacm_get_vfs();
     err = esp_usb_console_init();
     if (err != ESP_OK) {
         return err;
     }
-    err = esp_vfs_register_common(primary_path, strlen(primary_path), cdcacm_vfs, NULL, &primary_vfs_index);
-#elif CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG
-    const esp_vfs_t *usb_serial_jtag_vfs = esp_vfs_usb_serial_jtag_get_vfs();
-    err = esp_vfs_register_common(primary_path, strlen(primary_path), usb_serial_jtag_vfs, NULL, &primary_vfs_index);
-#endif // CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG
+#endif
+    err = esp_vfs_register_common(primary_path, strlen(primary_path), primary_vfs, NULL, &primary_vfs_index);
     if (err != ESP_OK) {
         return err;
     }
 
 // Secondary register part.
 #if CONFIG_ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG
-    const esp_vfs_t *usb_serial_jtag_vfs = esp_vfs_usb_serial_jtag_get_vfs();
-    err = esp_vfs_register_common(secondary_path, strlen(secondary_path), usb_serial_jtag_vfs, NULL, &secondary_vfs_index);
+    assert(secondary_vfs);
+    err = esp_vfs_register_common(secondary_path, strlen(secondary_path), secondary_vfs, NULL, &secondary_vfs_index);
     if(err != ESP_OK) {
         return err;
     }
@@ -225,4 +224,26 @@ esp_err_t esp_vfs_console_register(void)
     return err;
 }
 
+void esp_vfs_set_primary_dev_vfs_def_struct(const esp_vfs_t *vfs)
+{
+    primary_vfs = vfs;
+}
+
+#if CONFIG_ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG
+void esp_vfs_set_secondary_dev_vfs_def_struct(const esp_vfs_t *vfs)
+{
+    secondary_vfs = vfs;
+}
+#endif
+
+ESP_SYSTEM_INIT_FN(init_vfs_console, CORE, BIT(0), 114)
+{
+    return esp_vfs_console_register();
+}
+
 #endif // CONFIG_VFS_SUPPORT_IO
+
+void esp_vfs_include_console_register(void)
+{
+    // Linker hook function, exists to make the linker examine this file
+}

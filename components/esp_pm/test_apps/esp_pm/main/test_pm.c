@@ -182,7 +182,7 @@ TEST_CASE("Can wake up from automatic light sleep by GPIO", "[pm][ignore]")
     rtc_gpio_set_level(ext1_wakeup_gpio, 0);
 
     /* Enable wakeup */
-    TEST_ESP_OK(esp_sleep_enable_ext1_wakeup(1ULL << ext1_wakeup_gpio, ESP_EXT1_WAKEUP_ANY_HIGH));
+    TEST_ESP_OK(esp_sleep_enable_ext1_wakeup_io(1ULL << ext1_wakeup_gpio, ESP_EXT1_WAKEUP_ANY_HIGH));
 
     /* To simplify test environment, we'll use a ULP program to set GPIO high */
     ulp_insn_t ulp_code[] = {

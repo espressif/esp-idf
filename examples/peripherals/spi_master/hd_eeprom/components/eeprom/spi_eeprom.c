@@ -51,16 +51,6 @@ typedef struct eeprom_context_t eeprom_context_t;
 
 static const char TAG[] = "eeprom";
 
-// Workaround: The driver depends on some data in the flash and cannot be placed to DRAM easily for
-// now. Using the version in LL instead.
-#define gpio_set_level  gpio_set_level_patch
-#include "hal/gpio_ll.h"
-static inline esp_err_t gpio_set_level_patch(gpio_num_t gpio_num, uint32_t level)
-{
-    gpio_ll_set_level(&GPIO, gpio_num, level);
-    return ESP_OK;
-}
-
 static esp_err_t eeprom_simple_cmd(eeprom_context_t *ctx, uint16_t cmd)
 {
     spi_transaction_t t = {
@@ -70,41 +60,53 @@ static esp_err_t eeprom_simple_cmd(eeprom_context_t *ctx, uint16_t cmd)
     return spi_device_polling_transmit(ctx->spi, &t);
 }
 
+static esp_err_t eeprom_wait_done_by_intr(eeprom_context_t* ctx)
+{
+    xSemaphoreTake(ctx->ready_sem, 0);
+    gpio_set_level(ctx->cfg.cs_io, 1);
+    gpio_intr_enable(ctx->cfg.miso_io);
+
+    //Max processing time is 5ms, tick=1 may happen very soon, set to 2 at least
+    uint32_t tick_to_wait = MAX(EEPROM_BUSY_TIMEOUT_MS / portTICK_PERIOD_MS, 2);
+    BaseType_t ret = xSemaphoreTake(ctx->ready_sem, tick_to_wait);
+    gpio_intr_disable(ctx->cfg.miso_io);
+    gpio_set_level(ctx->cfg.cs_io, 0);
+
+    if (ret != pdTRUE) {
+        return ESP_ERR_TIMEOUT;
+    }
+    return ESP_OK;
+}
+
+static esp_err_t eeprom_wait_done_by_polling(eeprom_context_t* ctx)
+{
+    bool timeout = true;
+    gpio_set_level(ctx->cfg.cs_io, 1);
+    for (int i = 0; i < EEPROM_BUSY_TIMEOUT_MS * 1000; i ++) {
+        if (gpio_get_level(ctx->cfg.miso_io)) {
+            timeout = false;
+            break;
+        }
+        usleep(1);
+    }
+    gpio_set_level(ctx->cfg.cs_io, 0);
+    if (timeout) {
+        return ESP_ERR_TIMEOUT;
+    }
+    return ESP_OK;
+}
+
 static esp_err_t eeprom_wait_done(eeprom_context_t* ctx)
 {
     //have to keep cs low for 250ns
     usleep(1);
-    //clear signal
+    esp_err_t ret = ESP_FAIL;
     if (ctx->cfg.intr_used) {
-        xSemaphoreTake(ctx->ready_sem, 0);
-        gpio_set_level(ctx->cfg.cs_io, 1);
-        gpio_intr_enable(ctx->cfg.miso_io);
-
-        //Max processing time is 5ms, tick=1 may happen very soon, set to 2 at least
-        uint32_t tick_to_wait = MAX(EEPROM_BUSY_TIMEOUT_MS / portTICK_PERIOD_MS, 2);
-        BaseType_t ret = xSemaphoreTake(ctx->ready_sem, tick_to_wait);
-        gpio_intr_disable(ctx->cfg.miso_io);
-        gpio_set_level(ctx->cfg.cs_io, 0);
-
-        if (ret != pdTRUE) {
-            return ESP_ERR_TIMEOUT;
-        }
+        ret = eeprom_wait_done_by_intr(ctx);
     } else {
-        bool timeout = true;
-        gpio_set_level(ctx->cfg.cs_io, 1);
-        for (int i = 0; i < EEPROM_BUSY_TIMEOUT_MS * 1000; i ++) {
-            if (gpio_get_level(ctx->cfg.miso_io)) {
-                timeout = false;
-                break;
-            }
-            usleep(1);
-        }
-        gpio_set_level(ctx->cfg.cs_io, 0);
-        if (timeout) {
-            return ESP_ERR_TIMEOUT;
-        }
+        ret = eeprom_wait_done_by_polling(ctx);
     }
-    return ESP_OK;
+    return ret;
 }
 
 static void cs_high(spi_transaction_t* t)

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -16,46 +16,8 @@
 // if you want to connect a specific device, add it's bda here
 esp_bd_addr_t hf_peer_addr = {0xB0, 0xF1, 0xA3, 0x01, 0x2D,0x2E};
 
-void hf_msg_show_usage(void)
-{
-    printf("########################################################################\n");
-    printf("HFP AG command usage manual\n");
-    printf("HFP AG commands begins with \"hf\" and end with \";\"\n");
-    printf("Supported commands are as follows, arguments are embraced with < and >\n\n");
-    printf("hf con;                   -- set up connection with peer device\n");
-    printf("hf dis;                   -- disconnection with peer device\n");
-    printf("hf cona;                  -- set up audio connection with peer device\n");
-    printf("hf disa;                  -- release audio connection with peer device\n");
-    printf("hf vron;                  -- start voice recognition\n");
-    printf("hf vroff;                 -- stop voice recognition\n");
-    printf("hf vu <tgt> <vol>;        -- volume update\n");
-    printf("     tgt: 0-speaker, 1-microphone\n");
-    printf("     vol: volume gain ranges from 0 to 15\n");
-    printf("hf ind <call> <ntk> <callsetup> <sig>;       -- unsolicited indication device status to HF Client\n");
-    printf("     call: call status [0,1]\n");
-    printf("     callsetup: call setup status [0,3]\n");
-    printf("     ntk: network status [0,1]\n");
-    printf("     sig: signal strength value from 0~5\n");
-    printf("hf ate <rep> <err>;       -- send extended at error code\n");
-    printf("     rep: response code from 0 to 7\n");
-    printf("     err: error code from 0 to 32\n");
-    printf("hf iron;                  -- in-band ring tone provided\n");
-    printf("hf iroff;                 -- in-band ring tone not provided\n");
-    printf("hf ac;                    -- Answer Incoming Call from AG\n");
-    printf("hf rc;                    -- Reject Incoming Call from AG\n");
-    printf("hf d <num>;               -- Dial Number by AG, e.g. hf d 11223344\n");
-    printf("hf end;                   -- End up a call by AG\n");
-    printf("hf h;                     -- to see the command for HFP AG\n");
-    printf("########################################################################\n");
-}
 
 #define HF_CMD_HANDLER(cmd)    static int hf_##cmd##_handler(int argn, char **argv)
-
-HF_CMD_HANDLER(help)
-{
-    hf_msg_show_usage();
-    return 0;
-}
 
 HF_CMD_HANDLER(conn)
 {
@@ -125,42 +87,65 @@ HF_CMD_HANDLER(volume_control)
 }
 
 //+CIEV
-HF_CMD_HANDLER(ind_change)
+HF_CMD_HANDLER(ciev_report)
 {
-    if (argn != 5) {
+    if (argn != 3) {
         printf("Insufficient number of arguments");
         return 1;
     }
 
-    int call_state, ntk_state, call_setup_state, signal;
+    int ind_type, value;
 
-    if (sscanf(argv[1], "%d", &call_state) != 1 ||
-        (call_state != ESP_HF_CALL_STATUS_NO_CALLS &&
-        call_state != ESP_HF_CALL_STATUS_CALL_IN_PROGRESS)) {
-        printf("Invalid argument for call state %s\n", argv[1]);
+    sscanf(argv[1], "%d", &ind_type);
+    sscanf(argv[2], "%d", &value);
+
+    if (ind_type > ESP_HF_IND_TYPE_CALLHELD) {
+        printf("Invalid argument for status type %s\n", argv[1]);
         return 1;
     }
-    if (sscanf(argv[2], "%d", &call_setup_state) != 1 ||
-        (call_setup_state < ESP_HF_CALL_SETUP_STATUS_IDLE || call_setup_state > ESP_HF_CALL_SETUP_STATUS_OUTGOING_ALERTING)) {
+    if ((ind_type == ESP_HF_IND_TYPE_CALL) &&
+        (value != ESP_HF_CALL_STATUS_NO_CALLS &&
+        value != ESP_HF_CALL_STATUS_CALL_IN_PROGRESS)) {
         printf("Invalid argument for callsetup state %s\n", argv[2]);
         return 1;
     }
-    if (sscanf(argv[3], "%d", &ntk_state) != 1 ||
-        (ntk_state != ESP_HF_NETWORK_STATE_NOT_AVAILABLE &&
-        ntk_state != ESP_HF_NETWORK_STATE_AVAILABLE)) {
-        printf("Invalid argument for network state %s\n", argv[3]);
+    if ((ind_type == ESP_HF_IND_TYPE_CALLSETUP) &&
+        (value < ESP_HF_CALL_SETUP_STATUS_IDLE ||
+        value > ESP_HF_CALL_SETUP_STATUS_OUTGOING_ALERTING)) {
+        printf("Invalid argument for call state %s\n", argv[2]);
         return 1;
     }
-    if (sscanf(argv[4], "%d", &signal) != 1 ||
-            (signal < 0 || signal > 5)) {
-        printf("Invalid argument for signal %s\n", argv[4]);
+    if ((ind_type == ESP_HF_IND_TYPE_SERVICE) &&
+        (value != ESP_HF_NETWORK_STATE_NOT_AVAILABLE &&
+        value != ESP_HF_NETWORK_STATE_AVAILABLE)) {
+        printf("Invalid argument for network state %s\n", argv[2]);
         return 1;
     }
+    if ((ind_type == ESP_HF_IND_TYPE_SIGNAL &&
+        (value < 0 || value > 5))) {
+        printf("Invalid argument for signal %s\n", argv[2]);
+        return 1;
+    }
+    if ((ind_type == ESP_HF_IND_TYPE_ROAM &&
+        (value != ESP_HF_ROAMING_STATUS_INACTIVE &&
+        value != ESP_HF_ROAMING_STATUS_ACTIVE))) {
+        printf("Invalid argument for roaming state %s\n", argv[2]);
+        return 1;
+    }
+    if ((ind_type == ESP_HF_IND_TYPE_BATTCHG &&
+        (value < 0 || value > 5))) {
+        printf("Invalid argument for battery %s\n", argv[2]);
+        return 1;
+    }
+    if ((ind_type == ESP_HF_IND_TYPE_CALLHELD) &&
+        (value < ESP_HF_CALL_HELD_STATUS_NONE ||
+        value > ESP_HF_CALL_HELD_STATUS_HELD)) {
+        printf("Invalid argument for call held state %s\n", argv[2]);
+        return 1;
+    }
+
     printf("Device Indicator Changed!\n");
-    esp_hf_ag_ciev_report(hf_peer_addr, ESP_HF_IND_TYPE_CALL, call_state);
-    esp_hf_ag_ciev_report(hf_peer_addr, ESP_HF_IND_TYPE_CALLSETUP, call_setup_state);
-    esp_hf_ag_ciev_report(hf_peer_addr, ESP_HF_IND_TYPE_SERVICE, ntk_state);
-    esp_hf_ag_ciev_report(hf_peer_addr, ESP_HF_IND_TYPE_SIGNAL, signal);
+    esp_hf_ag_ciev_report(hf_peer_addr, ind_type, value);
     return 0;
 }
 
@@ -234,7 +219,7 @@ HF_CMD_HANDLER(end)
 }
 
 //Dial Call from AG
-HF_CMD_HANDLER(d)
+HF_CMD_HANDLER(dn)
 {
     if (argn != 2) {
         printf("Insufficient number of arguments");
@@ -246,64 +231,52 @@ HF_CMD_HANDLER(d)
 }
 
 static hf_msg_hdl_t hf_cmd_tbl[] = {
-    {0,    "h",            hf_help_handler},
-    {5,    "con",          hf_conn_handler},
-    {10,   "dis",          hf_disc_handler},
-    {20,   "cona",         hf_conn_audio_handler},
-    {30,   "disa",         hf_disc_audio_handler},
-    {40,   "vu",           hf_volume_control_handler},
-    {50,   "ind",          hf_ind_change_handler},
-    {60,   "vron",         hf_vra_on_handler},
-    {70,   "vroff",        hf_vra_off_handler},
-    {80,   "ate",          hf_cme_err_handler},
-    {90,   "iron",         hf_ir_on_handler},
-    {100,  "iroff",        hf_ir_off_handler},
-    {110,  "ac",           hf_ac_handler},
-    {120,  "rc",           hf_rc_handler},
-    {130,  "end",          hf_end_handler},
-    {140,  "d",            hf_d_handler},
+    {"con",          hf_conn_handler},
+    {"dis",          hf_disc_handler},
+    {"cona",         hf_conn_audio_handler},
+    {"disa",         hf_disc_audio_handler},
+    {"vu",           hf_volume_control_handler},
+    {"ciev",         hf_ciev_report_handler},
+    {"vron",         hf_vra_on_handler},
+    {"vroff",        hf_vra_off_handler},
+    {"ate",          hf_cme_err_handler},
+    {"iron",         hf_ir_on_handler},
+    {"iroff",        hf_ir_off_handler},
+    {"ac",           hf_ac_handler},
+    {"rc",           hf_rc_handler},
+    {"end",          hf_end_handler},
+    {"dn",           hf_dn_handler},
 };
-
-hf_msg_hdl_t *hf_get_cmd_tbl(void)
-{
-    return hf_cmd_tbl;
-}
-
-size_t hf_get_cmd_tbl_size(void)
-{
-    return sizeof(hf_cmd_tbl) / sizeof(hf_msg_hdl_t);
-}
 
 #define HF_ORDER(name)   name##_cmd
-enum hf_cmd_name {
-    h = 0,      /*show command manual*/
-    con,        /*set up connection with peer device*/
-    dis,        /*disconnection with peer device*/
-    cona,       /*set up audio connection with peer device*/
-    disa,       /*release connection with peer device*/
-    vu,         /*volume update*/
-    ind,        /*unsolicited indication device status to HF Client*/
-    vron,       /*start voice recognition*/
-    vroff,      /*stop voice recognition*/
-    ate,        /*send extended at error code*/
-    iron,       /*in-band ring tone provided*/
-    iroff,      /*in-band ring tone not provided*/
-    ac,         /*Answer Incoming Call from AG*/
-    rc,         /*Reject Incoming Call from AG*/
-    end,        /*End up a call by AG*/
-    d           /*Dial Number by AG, e.g. d 11223344*/
+enum hf_cmd_idx {
+    HF_CMD_IDX_CON = 0,       /*set up connection with peer device*/
+    HF_CMD_IDX_DIS,           /*disconnection with peer device*/
+    HF_CMD_IDX_CONA,          /*set up audio connection with peer device*/
+    HF_CMD_IDX_DISA,          /*release audio connection with peer device*/
+    HF_CMD_IDX_VU,            /*volume update*/
+    HF_CMD_IDX_CIEV,          /*unsolicited indication device status to HF Client*/
+    HF_CMD_IDX_VRON,          /*start voice recognition*/
+    HF_CMD_IDX_VROFF,         /*stop voice recognition*/
+    HF_CMD_IDX_ATE,           /*send extended AT error code*/
+    HF_CMD_IDX_IRON,          /*in-band ring tone provided*/
+    HF_CMD_IDX_IROFF,         /*in-band ring tone not provided*/
+    HF_CMD_IDX_AC,            /*Answer Incoming Call from AG*/
+    HF_CMD_IDX_RC,            /*Reject Incoming Call from AG*/
+    HF_CMD_IDX_END,           /*End up a call by AG*/
+    HF_CMD_IDX_DN             /*Dial Number by AG, e.g. d 11223344*/
 };
+
 static char *hf_cmd_explain[] = {
-    "show command manual",
     "set up connection with peer device",
     "disconnection with peer device",
     "set up audio connection with peer device",
-    "release connection with peer device",
+    "release audio connection with peer device",
     "volume update",
     "unsolicited indication device status to HF Client",
     "start voice recognition",
     "stop voice recognition",
-    "send extended at error code",
+    "send extended AT error code",
     "in-band ring tone provided",
     "in-band ring tone not provided",
     "Answer Incoming Call from AG",
@@ -318,10 +291,8 @@ typedef struct {
 } vu_args_t;
 
 typedef struct {
-    struct arg_str *call;
-    struct arg_str *ntk;
-    struct arg_str *callsetup;
-    struct arg_str *sig;
+    struct arg_str *ind_type;
+    struct arg_str *value;
     struct arg_end *end;
 } ind_args_t;
 
@@ -340,77 +311,73 @@ void register_hfp_ag(void)
 
         const esp_console_cmd_t HF_ORDER(con) = {
             .command = "con",
-            .help = hf_cmd_explain[con],
+            .help = hf_cmd_explain[HF_CMD_IDX_CON],
             .hint = NULL,
-            .func = hf_cmd_tbl[con].handler,
+            .func = hf_cmd_tbl[HF_CMD_IDX_CON].handler,
         };
         ESP_ERROR_CHECK(esp_console_cmd_register(&HF_ORDER(con)));
 
         const esp_console_cmd_t HF_ORDER(dis) = {
             .command = "dis",
-            .help = hf_cmd_explain[dis],
+            .help = hf_cmd_explain[HF_CMD_IDX_DIS],
             .hint = NULL,
-            .func = hf_cmd_tbl[dis].handler,
+            .func = hf_cmd_tbl[HF_CMD_IDX_DIS].handler,
         };
         ESP_ERROR_CHECK(esp_console_cmd_register(&HF_ORDER(dis)));
 
         const esp_console_cmd_t HF_ORDER(cona) = {
             .command = "cona",
-            .help = hf_cmd_explain[cona],
+            .help = hf_cmd_explain[HF_CMD_IDX_CONA],
             .hint = NULL,
-            .func = hf_cmd_tbl[cona].handler,
+            .func = hf_cmd_tbl[HF_CMD_IDX_CONA].handler,
         };
         ESP_ERROR_CHECK(esp_console_cmd_register(&HF_ORDER(cona)));
 
         const esp_console_cmd_t HF_ORDER(disa) = {
             .command = "disa",
-            .help = hf_cmd_explain[disa],
+            .help = hf_cmd_explain[HF_CMD_IDX_DISA],
             .hint = NULL,
-            .func = hf_cmd_tbl[disa].handler,
+            .func = hf_cmd_tbl[HF_CMD_IDX_DISA].handler,
         };
         ESP_ERROR_CHECK(esp_console_cmd_register(&HF_ORDER(disa)));
 
-
-
         const esp_console_cmd_t HF_ORDER(ac) = {
             .command = "ac",
-            .help = hf_cmd_explain[ac],
+            .help = hf_cmd_explain[HF_CMD_IDX_AC],
             .hint = NULL,
-            .func = hf_cmd_tbl[ac].handler,
+            .func = hf_cmd_tbl[HF_CMD_IDX_AC].handler,
         };
         ESP_ERROR_CHECK(esp_console_cmd_register(&HF_ORDER(ac)));
 
         const esp_console_cmd_t HF_ORDER(rc) = {
             .command = "rc",
-            .help = hf_cmd_explain[rc],
+            .help = hf_cmd_explain[HF_CMD_IDX_RC],
             .hint = NULL,
-            .func = hf_cmd_tbl[rc].handler,
+            .func = hf_cmd_tbl[HF_CMD_IDX_RC].handler,
         };
         ESP_ERROR_CHECK(esp_console_cmd_register(&HF_ORDER(rc)));
 
-        const esp_console_cmd_t HF_ORDER(d) = {
-            .command = "d",
-            .help = hf_cmd_explain[d],
+        const esp_console_cmd_t HF_ORDER(dn) = {
+            .command = "dn",
+            .help = hf_cmd_explain[HF_CMD_IDX_DN],
             .hint = "<num>",
-            .func = hf_cmd_tbl[d].handler,
+            .func = hf_cmd_tbl[HF_CMD_IDX_DN].handler,
         };
-        ESP_ERROR_CHECK(esp_console_cmd_register(&HF_ORDER(d)));
-
-
+        ESP_ERROR_CHECK(esp_console_cmd_register(&HF_ORDER(dn)));
 
         const esp_console_cmd_t HF_ORDER(vron) = {
             .command = "vron",
-            .help = hf_cmd_explain[vron],
+            .help = hf_cmd_explain[HF_CMD_IDX_VRON],
             .hint = NULL,
-            .func = hf_cmd_tbl[vron].handler,
+            .func = hf_cmd_tbl[HF_CMD_IDX_VRON].handler,
         };
         ESP_ERROR_CHECK(esp_console_cmd_register(&HF_ORDER(vron)));
 
         const esp_console_cmd_t HF_ORDER(vroff) = {
             .command = "vroff",
-            .help = hf_cmd_explain[vroff],
+            .help = hf_cmd_explain[HF_CMD_IDX_VROFF],
             .hint = NULL,
-            .func = hf_cmd_tbl[vroff].handler,
+            .func = hf_cmd_tbl[HF_CMD_IDX_VROFF].handler,
         };
         ESP_ERROR_CHECK(esp_console_cmd_register(&HF_ORDER(vroff)));
 
@@ -419,59 +386,58 @@ void register_hfp_ag(void)
         vu_args.end = arg_end(1);
         const esp_console_cmd_t HF_ORDER(vu) = {
             .command = "vu",
-            .help = hf_cmd_explain[vu],
+            .help = hf_cmd_explain[HF_CMD_IDX_VU],
             .hint = NULL,
-            .func = hf_cmd_tbl[vu].handler,
+            .func = hf_cmd_tbl[HF_CMD_IDX_VU].handler,
             .argtable = &vu_args
         };
         ESP_ERROR_CHECK(esp_console_cmd_register(&HF_ORDER(vu)));
 
         const esp_console_cmd_t HF_ORDER(end) = {
             .command = "end",
-            .help = hf_cmd_explain[end],
+            .help = hf_cmd_explain[HF_CMD_IDX_END],
             .hint = NULL,
-            .func = hf_cmd_tbl[end].handler,
+            .func = hf_cmd_tbl[HF_CMD_IDX_END].handler,
         };
         ESP_ERROR_CHECK(esp_console_cmd_register(&HF_ORDER(end)));
 
         const esp_console_cmd_t HF_ORDER(iron) = {
             .command = "iron",
-            .help = hf_cmd_explain[iron],
+            .help = hf_cmd_explain[HF_CMD_IDX_IRON],
             .hint = NULL,
-            .func = hf_cmd_tbl[iron].handler,
+            .func = hf_cmd_tbl[HF_CMD_IDX_IRON].handler,
         };
         ESP_ERROR_CHECK(esp_console_cmd_register(&HF_ORDER(iron)));
 
         const esp_console_cmd_t HF_ORDER(iroff) = {
             .command = "iroff",
-            .help = hf_cmd_explain[iroff],
+            .help = hf_cmd_explain[HF_CMD_IDX_IROFF],
             .hint = NULL,
-            .func = hf_cmd_tbl[iroff].handler,
+            .func = hf_cmd_tbl[HF_CMD_IDX_IROFF].handler,
         };
         ESP_ERROR_CHECK(esp_console_cmd_register(&HF_ORDER(iroff)));
 
-        ind_args.call = arg_str1(NULL, NULL, "<call>", "call status [0,1]");
-        ind_args.callsetup = arg_str1(NULL, NULL, "<callsetup>", "call setup status [0,3]");
-        ind_args.ntk = arg_str1(NULL, NULL, "<ntk>", "network status [0,1]");
-        ind_args.sig = arg_str1(NULL, NULL, "<sig>", "signal strength value from 0~5");
+        ind_args.ind_type = arg_str1(NULL, NULL, "<ind_type>", "\n    1-call\n    2-callsetup\n    3-serval\n \
+   4-signal\n    5-roam\n    6-battery\n    7-callheld");
+        ind_args.value = arg_str1(NULL, NULL, "<value>", "value of indicator type");
         ind_args.end = arg_end(1);
-        const esp_console_cmd_t HF_ORDER(ind) = {
-            .command = "ind",
-            .help = hf_cmd_explain[ind],
+        const esp_console_cmd_t HF_ORDER(ciev) = {
+            .command = "ciev",
+            .help = hf_cmd_explain[HF_CMD_IDX_CIEV],
             .hint = NULL,
-            .func = hf_cmd_tbl[ind].handler,
+            .func = hf_cmd_tbl[HF_CMD_IDX_CIEV].handler,
             .argtable = &ind_args
         };
-        ESP_ERROR_CHECK(esp_console_cmd_register(&HF_ORDER(ind)));
+        ESP_ERROR_CHECK(esp_console_cmd_register(&HF_ORDER(ciev)));
 
         ate_args.err = arg_str1(NULL, NULL, "<err>", "error code from 0 to 32");
         ate_args.rep = arg_str1(NULL, NULL, "<rep>", "response code from 0 to 7");
         ate_args.end = arg_end(1);
         const esp_console_cmd_t HF_ORDER(ate) = {
             .command = "ate",
-            .help = hf_cmd_explain[ate],
+            .help = hf_cmd_explain[HF_CMD_IDX_ATE],
             .hint = NULL,
-            .func = hf_cmd_tbl[ate].handler,
+            .func = hf_cmd_tbl[HF_CMD_IDX_ATE].handler,
             .argtable = &ate_args
         };
         ESP_ERROR_CHECK(esp_console_cmd_register(&HF_ORDER(ate)));

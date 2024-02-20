@@ -5,7 +5,7 @@
 
 本节将介绍如何在 :ref:`Eclipse <jtag-debugging-examples-eclipse>` 和 :ref:`命令行 <jtag-debugging-examples-command-line>` 中使用 GDB 进行调试的示例。
 
-.. code-block:: none
+.. highlight:: none
 
 
 .. _jtag-debugging-examples-eclipse:
@@ -232,9 +232,9 @@
 
 请检查你的目标板是否已经准备好，并加载了 :example:`get-started/blink` 示例代码，然后按照 :ref:`jtag-debugging-using-debugger-command-line` 中介绍的步骤配置和启动调试器，最后选择让应用程序在 ``app_main()`` 建立的断点处停止运行 ::
 
-	Temporary breakpoint 1, app_main () at /home/user-name/esp/blink/main/./blink.c:43
-	43	    xTaskCreate(&blink_task, "blink_task", configMINIMAL_STACK_SIZE, NULL, 5, NULL);
-	(gdb)
+    Temporary breakpoint 1, app_main () at /home/user-name/esp/blink/main/./blink.c:43
+    43      xTaskCreate(&blink_task, "blink_task", configMINIMAL_STACK_SIZE, NULL, 5, NULL);
+    (gdb)
 
 
 本小节的示例
@@ -259,112 +259,112 @@
 
 要找到代码暂停的位置，输入 ``l`` 或者 ``list`` 命令，调试器会打印出暂停点（``blink.c`` 代码文件的第 43 行）附近的几行代码 ::
 
-	(gdb) l
-	38	    }
-	39	}
-	40
-	41	void app_main()
-	42	{
-	43	    xTaskCreate(&blink_task, "blink_task", configMINIMAL_STACK_SIZE, NULL, 5, NULL);
-	44	}
-	(gdb)
+    (gdb) l
+    38      }
+    39  }
+    40
+    41  void app_main()
+    42  {
+    43      xTaskCreate(&blink_task, "blink_task", configMINIMAL_STACK_SIZE, NULL, 5, NULL);
+    44  }
+    (gdb)
 
 
 也可以通过输入 ``l 30, 40`` 等命令来查看特定行号范围内的代码。
 
 使用 ``bt`` 或者 ``backtrace`` 来查看哪些函数最终导致了此代码被调用::
 
-	(gdb) bt
-	#0  app_main () at /home/user-name/esp/blink/main/./blink.c:43
-	#1  0x400d057e in main_task (args=0x0) at /home/user-name/esp/esp-idf/components/{IDF_TARGET_PATH_NAME}/./cpu_start.c:339
-	(gdb)
+    (gdb) bt
+    #0  app_main () at /home/user-name/esp/blink/main/./blink.c:43
+    #1  0x400d057e in main_task (args=0x0) at /home/user-name/esp/esp-idf/components/{IDF_TARGET_PATH_NAME}/./cpu_start.c:339
+    (gdb)
 
 输出的第 0 行表示应用程序暂停之前调用的最后一个函数，即我们之前列出的 ``app_main ()``。``app_main ()`` 又被位于 ``cpu_start.c`` 文件第 339 行的 ``main_task`` 函数调用。
 
 想查看 ``cpu_start.c`` 文件中 ``main_task`` 函数的上下文，需要输入 ``frame  N``，其中 N = 1，因为根据前面的输出，``main_task`` 位于 #1 下::
 
-	(gdb) frame 1
-	#1  0x400d057e in main_task (args=0x0) at /home/user-name/esp/esp-idf/components/{IDF_TARGET_PATH_NAME}/./cpu_start.c:339
-	339	    app_main();
-	(gdb)
+    (gdb) frame 1
+    #1  0x400d057e in main_task (args=0x0) at /home/user-name/esp/esp-idf/components/{IDF_TARGET_PATH_NAME}/./cpu_start.c:339
+    339     app_main();
+    (gdb)
 
 输入 ``l`` 将显示一段名为 ``app_main()`` 的代码（在第 339 行）::
 
-	(gdb) l
-	334	        ;
-	335	    }
-	336	#endif
-	337	    //Enable allocation in region where the startup stacks were located.
-	338	    heap_caps_enable_nonos_stack_heaps();
-	339	    app_main();
-	340	    vTaskDelete(NULL);
-	341	}
-	342
-	(gdb)
+    (gdb) l
+    334         ;
+    335     }
+    336 #endif
+    337     //Enable allocation in region where the startup stacks were located.
+    338     heap_caps_enable_nonos_stack_heaps();
+    339     app_main();
+    340     vTaskDelete(NULL);
+    341 }
+    342
+    (gdb)
 
 通过打印前面的一些行，你会看到我们一直在寻找的 ``main_task`` 函数::
 
-	(gdb) l 326, 341
-	326	static void main_task(void* args)
-	327	{
-	328	    // Now that the application is about to start, disable boot watchdogs
-	329	    REG_CLR_BIT(TIMG_WDTCONFIG0_REG(0), TIMG_WDT_FLASHBOOT_MOD_EN_S);
-	330	    REG_CLR_BIT(RTC_CNTL_WDTCONFIG0_REG, RTC_CNTL_WDT_FLASHBOOT_MOD_EN);
-	331	#if !CONFIG_FREERTOS_UNICORE
-	332	    // Wait for FreeRTOS initialization to finish on APP CPU, before replacing its startup stack
-	333	    while (port_xSchedulerRunning[1] == 0) {
-	334	        ;
-	335	    }
-	336	#endif
-	337	    //Enable allocation in region where the startup stacks were located.
-	338	    heap_caps_enable_nonos_stack_heaps();
-	339	    app_main();
-	340	    vTaskDelete(NULL);
-	341	}
-	(gdb)
+    (gdb) l 326, 341
+    326 static void main_task(void* args)
+    327 {
+    328     // Now that the application is about to start, disable boot watchdogs
+    329     REG_CLR_BIT(TIMG_WDTCONFIG0_REG(0), TIMG_WDT_FLASHBOOT_MOD_EN_S);
+    330     REG_CLR_BIT(RTC_CNTL_WDTCONFIG0_REG, RTC_CNTL_WDT_FLASHBOOT_MOD_EN);
+    331 #if !CONFIG_FREERTOS_UNICORE
+    332     // Wait for FreeRTOS initialization to finish on APP CPU, before replacing its startup stack
+    333     while (port_xSchedulerRunning[1] == 0) {
+    334         ;
+    335     }
+    336 #endif
+    337     //Enable allocation in region where the startup stacks were located.
+    338     heap_caps_enable_nonos_stack_heaps();
+    339     app_main();
+    340     vTaskDelete(NULL);
+    341 }
+    (gdb)
 
 如果要查看其他代码，可以输入 ``i threads`` 命令，则会输出目标板上运行的线程列表::
 
-	(gdb) i threads
-	  Id   Target Id         Frame
-	  8    Thread 1073411336 (dport) 0x400d0848 in dport_access_init_core (arg=<optimized out>)
-	    at /home/user-name/esp/esp-idf/components/{IDF_TARGET_PATH_NAME}/./dport_access.c:170
-	  7    Thread 1073408744 (ipc0) xQueueGenericReceive (xQueue=0x3ffae694, pvBuffer=0x0, xTicksToWait=1644638200,
-	    xJustPeeking=0) at /home/user-name/esp/esp-idf/components/freertos/./queue.c:1452
-	  6    Thread 1073431096 (Tmr Svc) prvTimerTask (pvParameters=0x0)
-	    at /home/user-name/esp/esp-idf/components/freertos/./timers.c:445
-	  5    Thread 1073410208 (ipc1 : Running) 0x4000bfea in ?? ()
-	  4    Thread 1073432224 (dport) dport_access_init_core (arg=0x0)
-	    at /home/user-name/esp/esp-idf/components/{IDF_TARGET_PATH_NAME}/./dport_access.c:150
-	  3    Thread 1073413156 (IDLE) prvIdleTask (pvParameters=0x0)
-	    at /home/user-name/esp/esp-idf/components/freertos/./tasks.c:3282
-	  2    Thread 1073413512 (IDLE) prvIdleTask (pvParameters=0x0)
-	    at /home/user-name/esp/esp-idf/components/freertos/./tasks.c:3282
-	* 1    Thread 1073411772 (main : Running) app_main () at /home/user-name/esp/blink/main/./blink.c:43
-	(gdb)
+    (gdb) i threads
+      Id   Target Id         Frame
+      8    Thread 1073411336 (dport) 0x400d0848 in dport_access_init_core (arg=<optimized out>)
+        at /home/user-name/esp/esp-idf/components/{IDF_TARGET_PATH_NAME}/./dport_access.c:170
+      7    Thread 1073408744 (ipc0) xQueueGenericReceive (xQueue=0x3ffae694, pvBuffer=0x0, xTicksToWait=1644638200,
+        xJustPeeking=0) at /home/user-name/esp/esp-idf/components/freertos/./queue.c:1452
+      6    Thread 1073431096 (Tmr Svc) prvTimerTask (pvParameters=0x0)
+        at /home/user-name/esp/esp-idf/components/freertos/./timers.c:445
+      5    Thread 1073410208 (ipc1 : Running) 0x4000bfea in ?? ()
+      4    Thread 1073432224 (dport) dport_access_init_core (arg=0x0)
+        at /home/user-name/esp/esp-idf/components/{IDF_TARGET_PATH_NAME}/./dport_access.c:150
+      3    Thread 1073413156 (IDLE) prvIdleTask (pvParameters=0x0)
+        at /home/user-name/esp/esp-idf/components/freertos/./tasks.c:3282
+      2    Thread 1073413512 (IDLE) prvIdleTask (pvParameters=0x0)
+        at /home/user-name/esp/esp-idf/components/freertos/./tasks.c:3282
+    * 1    Thread 1073411772 (main : Running) app_main () at /home/user-name/esp/blink/main/./blink.c:43
+    (gdb)
 
 线程列表显示了每个线程最后一个被调用的函数以及所在的 C 源文件名（如果存在的话）。
 
 你可以通过输入 ``thread N`` 进入特定的线程，其中 ``N`` 是线程 ID。我们进入 5 号线程来看一下它是如何工作的::
 
-	(gdb) thread 5
-	[Switching to thread 5 (Thread 1073410208)]
-	#0  0x4000bfea in ?? ()
-	(gdb)
+    (gdb) thread 5
+    [Switching to thread 5 (Thread 1073410208)]
+    #0  0x4000bfea in ?? ()
+    (gdb)
 
 然后查看回溯::
 
-	(gdb) bt
-	#0  0x4000bfea in ?? ()
-	#1  0x40083a85 in vPortCPUReleaseMutex (mux=<optimized out>) at /home/user-name/esp/esp-idf/components/freertos/./port.c:415
-	#2  0x40083fc8 in vTaskSwitchContext () at /home/user-name/esp/esp-idf/components/freertos/./tasks.c:2846
-	#3  0x4008532b in _frxt_dispatch ()
-	#4  0x4008395c in xPortStartScheduler () at /home/user-name/esp/esp-idf/components/freertos/./port.c:222
-	#5  0x4000000c in ?? ()
-	#6  0x4000000c in ?? ()
-	#7  0x4000000c in ?? ()
-	#8  0x4000000c in ?? ()
-	(gdb)
+    (gdb) bt
+    #0  0x4000bfea in ?? ()
+    #1  0x40083a85 in vPortCPUReleaseMutex (mux=<optimized out>) at /home/user-name/esp/esp-idf/components/freertos/./port.c:415
+    #2  0x40083fc8 in vTaskSwitchContext () at /home/user-name/esp/esp-idf/components/freertos/./tasks.c:2846
+    #3  0x4008532b in _frxt_dispatch ()
+    #4  0x4008395c in xPortStartScheduler () at /home/user-name/esp/esp-idf/components/freertos/./port.c:222
+    #5  0x4000000c in ?? ()
+    #6  0x4000000c in ?? ()
+    #7  0x4000000c in ?? ()
+    #8  0x4000000c in ?? ()
+    (gdb)
 
 如上所示，回溯可能会包含多个条目，方便查看直至目标停止运行的函数调用顺序。如果找不到某个函数的源码文件，将会使用问号 ``??`` 替代，这表示该函数是以二进制格式提供的。像 ``0x4000bfea`` 这样的值是被调用函数所在的内存地址。
 
@@ -435,16 +435,16 @@
 
 在此之前，请删除所有的断点，然后输入 ``c`` 恢复程序运行。接着输入 Ctrl+C，应用程序会停止在某个随机的位置，此时 LED 也将停止闪烁。调试器会打印如下信息::
 
-	(gdb) c
-	Continuing.
-	^CTarget halted. PRO_CPU: PC=0x400D0C00             APP_CPU: PC=0x400D0C00 (active)
-	[New Thread 1073433352]
+    (gdb) c
+    Continuing.
+    ^CTarget halted. PRO_CPU: PC=0x400D0C00             APP_CPU: PC=0x400D0C00 (active)
+    [New Thread 1073433352]
 
-	Program received signal SIGINT, Interrupt.
-	[Switching to Thread 1073413512]
-	0x400d0c00 in esp_vApplicationIdleHook () at /home/user-name/esp/esp-idf/components/{IDF_TARGET_PATH_NAME}/./freertos_hooks.c:52
-	52	        asm("waiti 0");
-	(gdb)
+    Program received signal SIGINT, Interrupt.
+    [Switching to Thread 1073413512]
+    0x400d0c00 in esp_vApplicationIdleHook () at /home/user-name/esp/esp-idf/components/{IDF_TARGET_PATH_NAME}/./freertos_hooks.c:52
+    52          asm("waiti 0");
+    (gdb)
 
 在上图所示的情况下，应用程序已经在 ``freertos_hooks.c`` 文件的第 52 行暂停运行，现在你可以通过输入 ``c`` 再次将其恢复运行或者进行如下所述的一些调试工作。
 
@@ -497,7 +497,7 @@
     Target halted. PRO_CPU: PC=0x400DB74B (active)    APP_CPU: PC=0x400D1128
     Target halted. PRO_CPU: PC=0x400DC04C (active)    APP_CPU: PC=0x400D1128
     Target halted. PRO_CPU: PC=0x400DC04F (active)    APP_CPU: PC=0x400D1128
-    gpio_set_level (gpio_num=GPIO_NUM_4, level=0) at /home/user-name/esp/esp-idf/components/driver/gpio/gpio.c:183
+    gpio_set_level (gpio_num=GPIO_NUM_4, level=0) at /home/user-name/esp/esp-idf/components/esp_driver_gpio/src/gpio.c:183
     183     GPIO_CHECK(GPIO_IS_VALID_OUTPUT_GPIO(gpio_num), "GPIO output gpio_num error", ESP_ERR_INVALID_ARG);
     (gdb)
 

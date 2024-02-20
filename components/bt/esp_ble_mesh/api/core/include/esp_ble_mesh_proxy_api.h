@@ -49,6 +49,30 @@ esp_err_t esp_ble_mesh_proxy_gatt_enable(void);
 esp_err_t esp_ble_mesh_proxy_gatt_disable(void);
 
 /**
+ * @brief   Enable advertising with Private Node Identity.
+ *
+ * @note    This API requires that GATT Proxy support be enabled. Once called,
+ *          each subnet starts advertising using Private Node Identity for the
+ *          next 60 seconds, and after 60s Private Network ID will be advertised.
+ *          Under normal conditions, the BLE Mesh Proxy Node Identity, Network
+ *          ID advertising, Proxy Private Node Identity and Private Network
+ *          ID advertising will be enabled automatically by BLE Mesh stack
+ *          after the device is provisioned.
+ *
+ * @return  ESP_OK on success or error code otherwise.
+ *
+ */
+esp_err_t esp_ble_mesh_private_proxy_identity_enable(void);
+
+/**
+ * @brief   Disable advertising with Private Node Identity.
+ *
+ * @return  ESP_OK on success or error code otherwise.
+ *
+ */
+esp_err_t esp_ble_mesh_private_proxy_identity_disable(void);
+
+/**
  * @brief        Proxy Client creates a connection with the Proxy Server.
  *
  * @param[in]    addr:      Device address of the Proxy Server.

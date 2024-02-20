@@ -98,7 +98,7 @@ osi_thread_t *btc_thread;
 static const btc_func_t profile_tab[BTC_PID_NUM] = {
 #ifdef CONFIG_BT_BLUEDROID_ENABLED
     [BTC_PID_MAIN_INIT]   = {btc_main_call_handler,       NULL                    },
-    [BTC_PID_DEV]         = {btc_dev_call_handler,        NULL                    },
+    [BTC_PID_DEV]         = {btc_dev_call_handler,        btc_dev_cb_handler      },
 #if (GATTS_INCLUDED == TRUE)
     [BTC_PID_GATTS]       = {btc_gatts_call_handler,      btc_gatts_cb_handler    },
 #endif  ///GATTS_INCLUDED == TRUE

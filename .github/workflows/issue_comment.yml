@@ -12,7 +12,7 @@ jobs:
     name: Sync Issue Comments to Jira
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Sync issue comments to JIRA
         uses: espressif/github-actions/sync_issues_to_jira@master
         env:

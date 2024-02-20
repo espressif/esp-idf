@@ -136,13 +136,13 @@ menu "Example Connection Configuration"
 
         choice EXAMPLE_ETHERNET_TYPE
             prompt "Ethernet Type"
-            default EXAMPLE_USE_INTERNAL_ETHERNET if IDF_TARGET_ESP32
+            default EXAMPLE_USE_INTERNAL_ETHERNET if SOC_EMAC_SUPPORTED
             default EXAMPLE_USE_W5500
             help
                 Select which kind of Ethernet will be used in the example.
 
             config EXAMPLE_USE_INTERNAL_ETHERNET
-                depends on IDF_TARGET_ESP32
+                depends on SOC_EMAC_SUPPORTED
                 select ETH_USE_ESP32_EMAC
                 bool "Internal EMAC"
                 help
@@ -227,14 +227,16 @@ menu "Example Connection Configuration"
             config EXAMPLE_ETH_MDC_GPIO
                 int "SMI MDC GPIO number"
                 range ENV_GPIO_RANGE_MIN ENV_GPIO_OUT_RANGE_MAX
-                default 23
+                default 23 if IDF_TARGET_ESP32
+                default 31 if IDF_TARGET_ESP32P4
                 help
                     Set the GPIO number used by SMI MDC.
 
             config EXAMPLE_ETH_MDIO_GPIO
                 int "SMI MDIO GPIO number"
                 range ENV_GPIO_RANGE_MIN ENV_GPIO_OUT_RANGE_MAX
-                default 18
+                default 18 if IDF_TARGET_ESP32
+                default 27 if IDF_TARGET_ESP32P4
                 help
                     Set the GPIO number used by SMI MDIO.
         endif
@@ -293,6 +295,7 @@ menu "Example Connection Configuration"
         config EXAMPLE_ETH_PHY_RST_GPIO
             int "PHY Reset GPIO number"
             range -1 ENV_GPIO_OUT_RANGE_MAX
+            default 26 if IDF_TARGET_ESP32P4
             default 5
             help
                 Set the GPIO number used to reset PHY chip.
@@ -306,16 +309,80 @@ menu "Example Connection Configuration"
                 Set PHY address according your board schematic.
     endif # EXAMPLE_CONNECT_ETHERNET
 
+    config EXAMPLE_CONNECT_PPP
+        bool "connect using Point to Point interface"
+        select LWIP_PPP_SUPPORT
+        help
+            Protocol examples can use PPP connection over serial line.
+            Choose this option to connect to the ppp server running
+            on your laptop over a serial line (either UART or USB ACM)
+
+    if EXAMPLE_CONNECT_PPP
+        choice EXAMPLE_CONNECT_PPP_DEVICE
+            prompt "Choose PPP device"
+            default EXAMPLE_CONNECT_PPP_DEVICE_USB
+            help
+                Select which peripheral to use to connect to the PPP server.
+
+            config EXAMPLE_CONNECT_PPP_DEVICE_USB
+                bool "USB"
+                depends on SOC_USB_OTG_SUPPORTED
+                select TINYUSB_CDC_ENABLED
+                help
+                    Use USB ACM device.
+
+            config EXAMPLE_CONNECT_PPP_DEVICE_UART
+                bool "UART"
+                help
+                    Use UART.
+
+        endchoice
+
+        menu "UART Configuration"
+            depends on EXAMPLE_CONNECT_PPP_DEVICE_UART
+            config EXAMPLE_CONNECT_UART_TX_PIN
+                int "TXD Pin Number"
+                default 4
+                range 0 31
+                help
+                    Pin number of UART TX.
+
+            config EXAMPLE_CONNECT_UART_RX_PIN
+                int "RXD Pin Number"
+                default 5
+                range 0 31
+                help
+                    Pin number of UART RX.
+
+            config EXAMPLE_CONNECT_UART_BAUDRATE
+                int "UART Baudrate"
+                default 115200
+                range 9600 3000000
+                help
+                    Baudrate of the UART device
+
+        endmenu
+
+        config EXAMPLE_PPP_CONN_MAX_RETRY
+            int "Maximum retry"
+            default 6
+            help
+                Set the Maximum retry to avoid station reconnecting if the pppd
+                is not available
+
+    endif # EXAMPLE_CONNECT_PPP
+
     config EXAMPLE_CONNECT_IPV4
         bool
         depends on LWIP_IPV4
         default y
 
     config EXAMPLE_CONNECT_IPV6
-        depends on EXAMPLE_CONNECT_WIFI || EXAMPLE_CONNECT_ETHERNET
+        depends on EXAMPLE_CONNECT_WIFI || EXAMPLE_CONNECT_ETHERNET || EXAMPLE_CONNECT_PPP
         bool "Obtain IPv6 address"
         default y
         select LWIP_IPV6
+        select LWIP_PPP_ENABLE_IPV6 if EXAMPLE_CONNECT_PPP
         help
             By default, examples will wait until IPv4 and IPv6 local link addresses are obtained.
             Disable this option if the network does not support IPv6.

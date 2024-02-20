@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -48,7 +48,15 @@ TEST(esp_netif, init_and_destroy_sntp)
 {
     esp_sntp_config_t config = ESP_NETIF_SNTP_DEFAULT_CONFIG("127.0.0.1");
     config.start = false;
-    esp_netif_sntp_init(&config);
+    TEST_ESP_OK(esp_netif_sntp_init(&config));
+    // Cannot initialize multiple times
+    TEST_ASSERT_NOT_EQUAL(ESP_OK, esp_netif_sntp_init(&config));
+    // Try again to see that the state didn't change
+    TEST_ASSERT_NOT_EQUAL(ESP_OK, esp_netif_sntp_init(&config));
+    esp_netif_sntp_deinit();
+
+    // Can initialize again once it's destroyed
+    TEST_ESP_OK(esp_netif_sntp_init(&config));
     esp_netif_sntp_deinit();
 }
 
@@ -127,6 +135,44 @@ TEST(esp_netif, create_delete_multiple_netifs)
         TEST_ASSERT_FALSE(esp_netif_is_netif_listed(netifs[i]));
     }
 
+}
+
+static bool desc_matches_with(esp_netif_t *netif, void *ctx)
+{
+    return strcmp(ctx, esp_netif_get_desc(netif)) == 0;
+}
+
+TEST(esp_netif, find_netifs)
+{
+    // Create some interfaces
+    const char* if_keys[] = { "if1", "if2", "if3", "if4", "if5"};
+    const int nr_of_netifs = sizeof(if_keys)/sizeof(char*);
+    esp_netif_t *netifs[nr_of_netifs];
+
+    for (int i=0; i<nr_of_netifs; ++i) {
+        // Create all interfaces, the same string is used as a key and as description
+        esp_netif_inherent_config_t base_netif_config = { .if_key = if_keys[i], .if_desc = if_keys[i] };
+        esp_netif_config_t cfg = { .base = &base_netif_config, .stack = ESP_NETIF_NETSTACK_DEFAULT_WIFI_STA };
+        netifs[i] = esp_netif_new(&cfg);
+        TEST_ASSERT_NOT_NULL(netifs[i]);
+    }
+
+    // not found
+    esp_netif_t *found_netif = esp_netif_find_if(desc_matches_with, "not_present");
+    TEST_ASSERT_EQUAL(found_netif, NULL);
+
+    // should find the same netif, as returned from esp_netif_get_handle_from_ifkey(), as the key is the same as description
+    for (int i=0; i<nr_of_netifs; ++i) {
+        found_netif = esp_netif_find_if(desc_matches_with, (void*)if_keys[i]);
+        TEST_ASSERT_EQUAL(found_netif, esp_netif_get_handle_from_ifkey(if_keys[i]));
+    }
+
+    // destroy one by one and check it's cannot be find per its description
+    for (int i=0; i<nr_of_netifs; ++i) {
+        esp_netif_destroy(netifs[i]);
+        found_netif = esp_netif_find_if(desc_matches_with, (void*)if_keys[i]);
+        TEST_ASSERT_EQUAL(found_netif, NULL);
+    }
 }
 
 #ifdef CONFIG_ESP_WIFI_ENABLED
@@ -463,6 +509,7 @@ TEST_GROUP_RUNNER(esp_netif)
     RUN_TEST_CASE(esp_netif, convert_ip_addresses)
     RUN_TEST_CASE(esp_netif, get_from_if_key)
     RUN_TEST_CASE(esp_netif, create_delete_multiple_netifs)
+    RUN_TEST_CASE(esp_netif, find_netifs)
 #ifdef CONFIG_ESP_WIFI_ENABLED
     RUN_TEST_CASE(esp_netif, create_custom_wifi_interfaces)
     RUN_TEST_CASE(esp_netif, create_destroy_default_wifi)

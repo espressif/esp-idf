@@ -4,17 +4,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <string.h>
+#include "hal/ecdsa_ll.h"
 #include "hal/ecdsa_hal.h"
 #include "esp_crypto_lock.h"
 #include "esp_efuse.h"
+#include "esp_private/esp_crypto_lock_internal.h"
 #include "mbedtls/error.h"
 #include "mbedtls/ecdsa.h"
 #include "mbedtls/asn1write.h"
 #include "mbedtls/platform_util.h"
-#include "esp_private/periph_ctrl.h"
 #include "ecdsa/ecdsa_alt.h"
 
-#define ECDSA_KEY_MAGIC             0xECD5A
+#define ECDSA_KEY_MAGIC             (short) 0xECD5A
 #define ECDSA_SHA_LEN               32
 #define MAX_ECDSA_COMPONENT_LEN     32
 
@@ -24,12 +25,17 @@ static void esp_ecdsa_acquire_hardware(void)
 {
     esp_crypto_ecdsa_lock_acquire();
 
-    periph_module_enable(PERIPH_ECDSA_MODULE);
+    ECDSA_RCC_ATOMIC() {
+        ecdsa_ll_enable_bus_clock(true);
+        ecdsa_ll_reset_register();
+    }
 }
 
 static void esp_ecdsa_release_hardware(void)
 {
-    periph_module_disable(PERIPH_ECDSA_MODULE);
+    ECDSA_RCC_ATOMIC() {
+        ecdsa_ll_enable_bus_clock(false);
+    }
 
     esp_crypto_ecdsa_lock_release();
 }
@@ -238,13 +244,12 @@ static int esp_ecdsa_sign(mbedtls_ecp_group *grp, mbedtls_mpi* r, mbedtls_mpi* s
         ecdsa_hal_config_t conf = {
             .mode = ECDSA_MODE_SIGN_GEN,
             .curve = curve,
-            .k_mode = ECDSA_K_USE_TRNG,
             .sha_mode = ECDSA_Z_USER_PROVIDED,
             .efuse_key_blk = d->MBEDTLS_PRIVATE(n),
             .use_km_key = 0, //TODO: IDF-7992
         };
 
-        ecdsa_hal_gen_signature(&conf, NULL, sha_le, r_le, s_le, len);
+        ecdsa_hal_gen_signature(&conf, sha_le, r_le, s_le, len);
     } while (!memcmp(r_le, zeroes, len) || !memcmp(s_le, zeroes, len));
 
     esp_ecdsa_release_hardware();
@@ -464,7 +469,6 @@ static int esp_ecdsa_verify(mbedtls_ecp_group *grp,
     ecdsa_hal_config_t conf = {
         .mode = ECDSA_MODE_SIGN_VERIFY,
         .curve = curve,
-        .k_mode = ECDSA_K_USE_TRNG,
         .sha_mode = ECDSA_Z_USER_PROVIDED,
     };
 

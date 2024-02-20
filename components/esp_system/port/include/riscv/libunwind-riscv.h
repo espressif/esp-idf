@@ -1,6 +1,6 @@
 
 /*
- * SPDX-FileCopyrightText: 2020-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,7 +15,6 @@
 #include <stddef.h>
 #include "esp_attr.h"
 #include "riscv/rvruntime-frames.h"
-
 
 #ifdef __cplusplus
 extern "C" {
@@ -114,7 +113,8 @@ typedef enum {
 /**
  * @brief Get the current context
  */
-FORCE_INLINE_ATTR void UNW_GET_CONTEXT(ExecutionFrame* frame) {
+FORCE_INLINE_ATTR void UNW_GET_CONTEXT(ExecutionFrame* frame)
+{
     __asm__ __volatile__("sw t0, %1(%0)\n"
                          "auipc t0, 0\n"
                          "sw t0, %2(%0)\n"
@@ -146,37 +146,37 @@ FORCE_INLINE_ATTR void UNW_GET_CONTEXT(ExecutionFrame* frame) {
                          "sw s11, %28(%0)\n"
                          "sw t3, %29(%0)\n"
                          :
-                         : "r" (frame),
-                           "i" (UNW_RISCV_T0 * ARCH_WORD_SIZE),
-                           "i" (UNW_RISCV_PC * ARCH_WORD_SIZE),
-                           "i" (UNW_RISCV_RA * ARCH_WORD_SIZE),
-                           "i" (UNW_RISCV_SP * ARCH_WORD_SIZE),
-                           "i" (UNW_RISCV_GP * ARCH_WORD_SIZE),
-                           "i" (UNW_RISCV_TP * ARCH_WORD_SIZE),
-                           "i" (UNW_RISCV_T1 * ARCH_WORD_SIZE),
-                           "i" (UNW_RISCV_T2 * ARCH_WORD_SIZE),
-                           "i" (UNW_RISCV_S0 * ARCH_WORD_SIZE),
-                           "i" (UNW_RISCV_S1 * ARCH_WORD_SIZE),
-                           "i" (UNW_RISCV_A0 * ARCH_WORD_SIZE),
-                           "i" (UNW_RISCV_A1 * ARCH_WORD_SIZE),
-                           "i" (UNW_RISCV_A2 * ARCH_WORD_SIZE),
-                           "i" (UNW_RISCV_A3 * ARCH_WORD_SIZE),
-                           "i" (UNW_RISCV_A4 * ARCH_WORD_SIZE),
-                           "i" (UNW_RISCV_A5 * ARCH_WORD_SIZE),
-                           "i" (UNW_RISCV_A6 * ARCH_WORD_SIZE),
-                           "i" (UNW_RISCV_A7 * ARCH_WORD_SIZE),
-                           "i" (UNW_RISCV_S2 * ARCH_WORD_SIZE),
-                           "i" (UNW_RISCV_S3 * ARCH_WORD_SIZE),
-                           "i" (UNW_RISCV_S4 * ARCH_WORD_SIZE),
-                           "i" (UNW_RISCV_S5 * ARCH_WORD_SIZE),
-                           "i" (UNW_RISCV_S6 * ARCH_WORD_SIZE),
-                           "i" (UNW_RISCV_S7 * ARCH_WORD_SIZE),
-                           "i" (UNW_RISCV_S8 * ARCH_WORD_SIZE),
-                           "i" (UNW_RISCV_S9 * ARCH_WORD_SIZE),
-                           "i" (UNW_RISCV_S10 * ARCH_WORD_SIZE),
-                           "i" (UNW_RISCV_S11 * ARCH_WORD_SIZE),
-                           "i" (UNW_RISCV_T3 * ARCH_WORD_SIZE)
-    );
+                         : "r"(frame),
+                         "i"(UNW_RISCV_T0 * ARCH_WORD_SIZE),
+                         "i"(UNW_RISCV_PC * ARCH_WORD_SIZE),
+                         "i"(UNW_RISCV_RA * ARCH_WORD_SIZE),
+                         "i"(UNW_RISCV_SP * ARCH_WORD_SIZE),
+                         "i"(UNW_RISCV_GP * ARCH_WORD_SIZE),
+                         "i"(UNW_RISCV_TP * ARCH_WORD_SIZE),
+                         "i"(UNW_RISCV_T1 * ARCH_WORD_SIZE),
+                         "i"(UNW_RISCV_T2 * ARCH_WORD_SIZE),
+                         "i"(UNW_RISCV_S0 * ARCH_WORD_SIZE),
+                         "i"(UNW_RISCV_S1 * ARCH_WORD_SIZE),
+                         "i"(UNW_RISCV_A0 * ARCH_WORD_SIZE),
+                         "i"(UNW_RISCV_A1 * ARCH_WORD_SIZE),
+                         "i"(UNW_RISCV_A2 * ARCH_WORD_SIZE),
+                         "i"(UNW_RISCV_A3 * ARCH_WORD_SIZE),
+                         "i"(UNW_RISCV_A4 * ARCH_WORD_SIZE),
+                         "i"(UNW_RISCV_A5 * ARCH_WORD_SIZE),
+                         "i"(UNW_RISCV_A6 * ARCH_WORD_SIZE),
+                         "i"(UNW_RISCV_A7 * ARCH_WORD_SIZE),
+                         "i"(UNW_RISCV_S2 * ARCH_WORD_SIZE),
+                         "i"(UNW_RISCV_S3 * ARCH_WORD_SIZE),
+                         "i"(UNW_RISCV_S4 * ARCH_WORD_SIZE),
+                         "i"(UNW_RISCV_S5 * ARCH_WORD_SIZE),
+                         "i"(UNW_RISCV_S6 * ARCH_WORD_SIZE),
+                         "i"(UNW_RISCV_S7 * ARCH_WORD_SIZE),
+                         "i"(UNW_RISCV_S8 * ARCH_WORD_SIZE),
+                         "i"(UNW_RISCV_S9 * ARCH_WORD_SIZE),
+                         "i"(UNW_RISCV_S10 * ARCH_WORD_SIZE),
+                         "i"(UNW_RISCV_S11 * ARCH_WORD_SIZE),
+                         "i"(UNW_RISCV_T3 * ARCH_WORD_SIZE)
+                        );
     /* GCC doesn't allow us to have more than 30 operands in a single
      * __asm__ __volatile__ definition, so we have to split it into 2 */
     __asm__ __volatile__("sw t4, %1(%0)\n"
@@ -195,17 +195,17 @@ FORCE_INLINE_ATTR void UNW_GET_CONTEXT(ExecutionFrame* frame) {
                          /* We have to restore t0 as it may be in use by the function that makes the use of this assembly snippet */
                          "lw t0, %9(%0)\n"
                          :
-                         : "r" (frame),
-                           "i" (UNW_RISCV_T4 * ARCH_WORD_SIZE),
-                           "i" (UNW_RISCV_T5 * ARCH_WORD_SIZE),
-                           "i" (UNW_RISCV_T6 * ARCH_WORD_SIZE),
-                           "i" (UNW_RISCV_MSTATUS * ARCH_WORD_SIZE),
-                           "i" (UNW_RISCV_MTVEC * ARCH_WORD_SIZE),
-                           "i" (UNW_RISCV_MCAUSE * ARCH_WORD_SIZE),
-                           "i" (UNW_RISCV_MTVAL * ARCH_WORD_SIZE),
-                           "i" (UNW_RISCV_MHARTID * ARCH_WORD_SIZE),
-                           "i" (UNW_RISCV_T0 * ARCH_WORD_SIZE)
-    );
+                         : "r"(frame),
+                         "i"(UNW_RISCV_T4 * ARCH_WORD_SIZE),
+                         "i"(UNW_RISCV_T5 * ARCH_WORD_SIZE),
+                         "i"(UNW_RISCV_T6 * ARCH_WORD_SIZE),
+                         "i"(UNW_RISCV_MSTATUS * ARCH_WORD_SIZE),
+                         "i"(UNW_RISCV_MTVEC * ARCH_WORD_SIZE),
+                         "i"(UNW_RISCV_MCAUSE * ARCH_WORD_SIZE),
+                         "i"(UNW_RISCV_MTVAL * ARCH_WORD_SIZE),
+                         "i"(UNW_RISCV_MHARTID * ARCH_WORD_SIZE),
+                         "i"(UNW_RISCV_T0 * ARCH_WORD_SIZE)
+                        );
 }
 
 #ifdef __cplusplus

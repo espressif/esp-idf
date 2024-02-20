@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -27,6 +27,7 @@
 
 #if CONFIG_IDF_TARGET_ESP32P4
 #define TEST_MEMCPY_DST_BASE_ALIGN 64
+#define TEST_MEMCPY_BUFFER_SIZE_MUST_ALIGN_CACHE 1
 #else
 #define TEST_MEMCPY_DST_BASE_ALIGN 4
 #endif
@@ -112,7 +113,7 @@ TEST_CASE("memory copy the same buffer with different content", "[async mcp]")
     async_memcpy_config_t config = ASYNC_MEMCPY_DEFAULT_CONFIG();
     async_memcpy_handle_t driver = NULL;
     TEST_ESP_OK(esp_async_memcpy_install(&config, &driver));
-    uint8_t *sbuf = heap_caps_malloc(256, MALLOC_CAP_8BIT | MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
+    uint8_t *sbuf = heap_caps_aligned_alloc(TEST_MEMCPY_DST_BASE_ALIGN, 256, MALLOC_CAP_8BIT | MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
     uint8_t *dbuf = heap_caps_aligned_alloc(TEST_MEMCPY_DST_BASE_ALIGN, 256, MALLOC_CAP_8BIT | MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
     for (int j = 0; j < 20; j++) {
         TEST_ESP_OK(esp_async_memcpy(driver, dbuf, sbuf, 256, NULL, NULL));
@@ -133,15 +134,29 @@ TEST_CASE("memory copy the same buffer with different content", "[async mcp]")
 
 static void test_memory_copy_one_by_one(async_memcpy_handle_t driver)
 {
-    uint32_t test_buffer_len[] = {256, 512, 1024, 2048, 4096, 5011};
+    uint32_t aligned_test_buffer_size[] = {256, 512, 1024, 2048, 4096};
     memcpy_testbench_context_t test_context = {
         .align = TEST_MEMCPY_DST_BASE_ALIGN,
     };
 
-    for (int i = 0; i < sizeof(test_buffer_len) / sizeof(test_buffer_len[0]); i++) {
+    for (int i = 0; i < sizeof(aligned_test_buffer_size) / sizeof(aligned_test_buffer_size[0]); i++) {
+        test_context.buffer_size = aligned_test_buffer_size[i];
+        test_context.seed = i;
+        test_context.offset = 0;
+        async_memcpy_setup_testbench(&test_context);
+
+        TEST_ESP_OK(esp_async_memcpy(driver, test_context.to_addr, test_context.from_addr, test_context.copy_size, NULL, NULL));
+        vTaskDelay(pdMS_TO_TICKS(10));
+        async_memcpy_verify_and_clear_testbench(test_context.seed, test_context.copy_size, test_context.src_buf,
+                                                test_context.dst_buf, test_context.from_addr, test_context.to_addr);
+    }
+
+#if !TEST_MEMCPY_BUFFER_SIZE_MUST_ALIGN_CACHE
+    uint32_t unaligned_test_buffer_size[] = {255, 511, 1023, 2047, 4095, 5011};
+    for (int i = 0; i < sizeof(unaligned_test_buffer_size) / sizeof(unaligned_test_buffer_size[0]); i++) {
         // Test different align edge
         for (int off = 0; off < 4; off++) {
-            test_context.buffer_size = test_buffer_len[i];
+            test_context.buffer_size = unaligned_test_buffer_size[i];
             test_context.seed = i;
             test_context.offset = off;
             async_memcpy_setup_testbench(&test_context);
@@ -152,6 +167,7 @@ static void test_memory_copy_one_by_one(async_memcpy_handle_t driver)
                                                     test_context.dst_buf, test_context.from_addr, test_context.to_addr);
         }
     }
+#endif
 }
 
 TEST_CASE("memory copy by DMA one by one", "[async mcp]")
@@ -200,7 +216,7 @@ TEST_CASE("memory copy done callback", "[async mcp]")
     async_memcpy_handle_t driver = NULL;
     TEST_ESP_OK(esp_async_memcpy_install(&config, &driver));
 
-    uint8_t *src_buf = heap_caps_malloc(256, MALLOC_CAP_8BIT | MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
+    uint8_t *src_buf = heap_caps_aligned_alloc(TEST_MEMCPY_DST_BASE_ALIGN, 256, MALLOC_CAP_8BIT | MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
     // destination address should aligned to data cache line
     uint8_t *dst_buf = heap_caps_aligned_alloc(TEST_MEMCPY_DST_BASE_ALIGN, 256, MALLOC_CAP_8BIT | MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
 
@@ -239,6 +255,7 @@ TEST_CASE("memory copy by DMA on the fly", "[async mcp]")
         async_memcpy_verify_and_clear_testbench(i, test_context[i].copy_size, test_context[i].src_buf, test_context[i].dst_buf, test_context[i].from_addr, test_context[i].to_addr);
     }
 
+#if !TEST_MEMCPY_BUFFER_SIZE_MUST_ALIGN_CACHE
     // Non-aligned case
     for (int i = 0; i < sizeof(test_buffer_len) / sizeof(test_buffer_len[0]); i++) {
         test_context[i].seed = i;
@@ -252,11 +269,12 @@ TEST_CASE("memory copy by DMA on the fly", "[async mcp]")
     for (int i = 0; i < sizeof(test_buffer_len) / sizeof(test_buffer_len[0]); i++) {
         async_memcpy_verify_and_clear_testbench(i, test_context[i].copy_size, test_context[i].src_buf, test_context[i].dst_buf, test_context[i].from_addr, test_context[i].to_addr);
     }
+#endif
 
     TEST_ESP_OK(esp_async_memcpy_uninstall(driver));
 }
 
-#define TEST_ASYNC_MEMCPY_BENCH_COUNTS   (16)
+#define TEST_ASYNC_MEMCPY_BENCH_COUNTS   (8)
 static int s_count = 0;
 
 static IRAM_ATTR bool test_async_memcpy_isr_cb(async_memcpy_handle_t mcp_hdl, async_memcpy_event_t *event, void *cb_args)

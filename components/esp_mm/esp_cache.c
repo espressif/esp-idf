@@ -108,15 +108,11 @@ esp_err_t esp_cache_aligned_malloc(size_t size, uint32_t flags, void **out_ptr, 
         }
     }
 
-#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
     data_cache_line_size = cache_hal_get_cache_line_size(cache_level, CACHE_TYPE_DATA);
-#else
-    if (cache_level == CACHE_LL_LEVEL_EXT_MEM) {
-        data_cache_line_size = cache_hal_get_cache_line_size(cache_level, CACHE_TYPE_DATA);
-    } else {
+    if (data_cache_line_size == 0) {
+        //default alignment
         data_cache_line_size = 4;
     }
-#endif
 
     size = ALIGN_UP_BY(size, data_cache_line_size);
     ptr = heap_caps_aligned_alloc(data_cache_line_size, size, heap_caps);
@@ -149,4 +145,26 @@ esp_err_t esp_cache_aligned_calloc(size_t n, size_t size, uint32_t flags, void *
     }
 
     return ret;
+}
+
+esp_err_t esp_cache_get_alignment(uint32_t flags, size_t *out_alignment)
+{
+    ESP_RETURN_ON_FALSE(out_alignment, ESP_ERR_INVALID_ARG, TAG, "null pointer");
+
+    uint32_t cache_level = CACHE_LL_LEVEL_INT_MEM;
+    uint32_t data_cache_line_size = 0;
+
+    if (flags & ESP_CACHE_MALLOC_FLAG_PSRAM) {
+        cache_level = CACHE_LL_LEVEL_EXT_MEM;
+    }
+
+    data_cache_line_size = cache_hal_get_cache_line_size(cache_level, CACHE_TYPE_DATA);
+    if (data_cache_line_size == 0) {
+        //default alignment
+        data_cache_line_size = 4;
+    }
+
+    *out_alignment = data_cache_line_size;
+
+    return ESP_OK;
 }

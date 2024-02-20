@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -66,7 +66,8 @@ static void list_setup(void);
 static void list_remove(heap_trace_record_t *r_remove);
 static heap_trace_record_t* list_add(const heap_trace_record_t *r_append);
 static heap_trace_record_t* list_pop_unused(void);
-static heap_trace_record_t* list_find_address_reverse(void *p);
+static heap_trace_record_t* list_find(void *p);
+static void list_find_and_remove(void* p);
 
 /* The actual records. */
 static records_t records;
@@ -86,7 +87,9 @@ static size_t r_get_idx;
 // We use a hash_map to make locating a record by memory address very fast.
 //   Key: addr                  // the memory address returned by malloc, calloc, realloc
 //   Value: hash_map[hash(key)] // a list of records ptrs, which contains the relevant record.
-static heap_trace_record_list_t* hash_map; // array of lists
+SLIST_HEAD(heap_trace_hash_list_struct_t, heap_trace_record_t);
+typedef struct heap_trace_hash_list_struct_t heap_trace_hash_list_t;
+static heap_trace_hash_list_t* hash_map; // array of lists
 static size_t total_hashmap_hits;
 static size_t total_hashmap_miss;
 
@@ -104,24 +107,45 @@ static HEAP_IRAM_ATTR size_t hash_idx(void* p)
 static HEAP_IRAM_ATTR void map_add(heap_trace_record_t *r_add)
 {
     size_t idx = hash_idx(r_add->address);
-    TAILQ_INSERT_TAIL(&hash_map[idx], r_add, tailq_hashmap);
+    SLIST_INSERT_HEAD(&hash_map[idx], r_add, slist_hashmap);
 }
 
 static HEAP_IRAM_ATTR void map_remove(heap_trace_record_t *r_remove)
 {
     size_t idx = hash_idx(r_remove->address);
-    TAILQ_REMOVE(&hash_map[idx], r_remove, tailq_hashmap);
+    SLIST_REMOVE(&hash_map[idx], r_remove, heap_trace_record_t, slist_hashmap);
 }
 
 static HEAP_IRAM_ATTR heap_trace_record_t* map_find(void *p)
 {
     size_t idx = hash_idx(p);
     heap_trace_record_t *r_cur = NULL;
-    TAILQ_FOREACH(r_cur, &hash_map[idx], tailq_hashmap) {
+    SLIST_FOREACH(r_cur, &hash_map[idx], slist_hashmap) {
         if (r_cur->address == p) {
             total_hashmap_hits++;
             return r_cur;
         }
+    }
+    total_hashmap_miss++;
+    return NULL;
+}
+
+static HEAP_IRAM_ATTR heap_trace_record_t* map_find_and_remove(void *p)
+{
+    size_t idx = hash_idx(p);
+    heap_trace_record_t *r_cur = NULL;
+    heap_trace_record_t *r_prev = NULL;
+    SLIST_FOREACH(r_cur, &hash_map[idx], slist_hashmap) {
+        if (r_cur->address == p) {
+            total_hashmap_hits++;
+            if (r_prev) {
+                SLIST_REMOVE_AFTER(r_prev, slist_hashmap);
+            } else {
+                SLIST_REMOVE_HEAD(&hash_map[idx], slist_hashmap);
+            }
+            return r_cur;
+        }
+        r_prev = r_cur;
     }
     total_hashmap_miss++;
     return NULL;
@@ -182,7 +206,7 @@ esp_err_t heap_trace_start(heap_trace_mode_t mode_param)
 
 #if CONFIG_HEAP_TRACE_HASH_MAP
     for (size_t i = 0; i < (size_t)CONFIG_HEAP_TRACE_HASH_MAP_SIZE; i++) {
-        TAILQ_INIT(&hash_map[i]);
+        SLIST_INIT(&hash_map[i]);
     }
 
     total_hashmap_hits = 0;
@@ -416,6 +440,11 @@ static HEAP_IRAM_ATTR void record_allocation(const heap_trace_record_t *r_alloca
 
             heap_trace_record_t *r_first = TAILQ_FIRST(&records.list);
 
+            // always remove from hashmap first since list_remove is setting address field
+            // of the record to 0x00
+#if CONFIG_HEAP_TRACE_HASH_MAP
+            map_remove(r_first);
+#endif
             list_remove(r_first);
         }
         // push onto end of list
@@ -453,18 +482,16 @@ static HEAP_IRAM_ATTR void record_free(void *p, void **callers)
 
         total_frees++;
 
-        heap_trace_record_t *r_found = list_find_address_reverse(p);
-        if (r_found) {
-            if (mode == HEAP_TRACE_ALL) {
-
+        if (mode == HEAP_TRACE_ALL) {
+            heap_trace_record_t *r_found = list_find(p);
+            if (r_found != NULL) {
                 // add 'freed_by' info to the record
                 memcpy(r_found->freed_by, callers, sizeof(void *) * STACK_DEPTH);
-
-            } else { // HEAP_TRACE_LEAKS
-                // Leak trace mode, once an allocation is freed
-                // we remove it from the list & hashmap
-                list_remove(r_found);
             }
+        } else { // HEAP_TRACE_LEAKS
+            // Leak trace mode, once an allocation is freed
+            // we remove it from the list & hashmap
+            list_find_and_remove(p);
         }
     }
 
@@ -490,10 +517,6 @@ static void list_setup(void)
 static HEAP_IRAM_ATTR void list_remove(heap_trace_record_t* r_remove)
 {
     assert(records.count > 0);
-
-#if CONFIG_HEAP_TRACE_HASH_MAP
-    map_remove(r_remove);
-#endif
 
     // remove from records.list
     TAILQ_REMOVE(&records.list, r_remove, tailq_list);
@@ -579,8 +602,8 @@ static HEAP_IRAM_ATTR heap_trace_record_t* list_add(const heap_trace_record_t *r
     }
 }
 
-// search records.list backwards for the allocation record matching this address
-static HEAP_IRAM_ATTR heap_trace_record_t* list_find_address_reverse(void* p)
+// search records.list for the allocation record matching this address
+static HEAP_IRAM_ATTR heap_trace_record_t* list_find(void* p)
 {
     heap_trace_record_t *r_found = NULL;
 
@@ -593,7 +616,6 @@ static HEAP_IRAM_ATTR heap_trace_record_t* list_find_address_reverse(void* p)
         }
 #endif
 
-    // Perf: We search backwards because new allocations are appended
     // to the end of the list and most allocations are short lived.
     heap_trace_record_t *r_cur = NULL;
     TAILQ_FOREACH(r_cur, &records.list, tailq_list) {
@@ -604,6 +626,24 @@ static HEAP_IRAM_ATTR heap_trace_record_t* list_find_address_reverse(void* p)
     }
 
     return r_found;
+}
+
+static HEAP_IRAM_ATTR void list_find_and_remove(void* p)
+{
+#if CONFIG_HEAP_TRACE_HASH_MAP
+    heap_trace_record_t *r_found = map_find_and_remove(p);
+    if (r_found != NULL) {
+        list_remove(r_found);
+        return;
+    }
+#endif
+    heap_trace_record_t *r_cur = NULL;
+    TAILQ_FOREACH(r_cur, &records.list, tailq_list) {
+        if (r_cur->address == p) {
+            list_remove(r_cur);
+            break;
+        }
+    }
 }
 
 #include "heap_trace.inc"

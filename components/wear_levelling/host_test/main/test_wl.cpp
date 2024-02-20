@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2016-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2016-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,7 +15,7 @@
 #include "crc32.h"
 
 
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
 
 #include "sdkconfig.h"
 
@@ -34,7 +34,6 @@ TEST_CASE("write and read back data", "[wear_levelling]")
     esp_err_t result;
     wl_handle_t wl_handle;
 
-    int flash_handle;
     const esp_partition_t *partition = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_ANY, "storage");
 
     // Mount wear-levelled partition
@@ -105,7 +104,6 @@ TEST_CASE("power down test", "[wear_levelling]")
     esp_err_t result;
     wl_handle_t wl_handle;
 
-    int flash_handle;
     const esp_partition_t *partition = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_ANY, "storage");
 
     // Disable power down failure counting
@@ -295,7 +293,6 @@ TEST_CASE("power down during WL status 1 update", "[wear_levelling]")
     esp_err_t result;
     wl_handle_t wl_handle;
 
-    int flash_handle;
     const esp_partition_t *partition = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_ANY, "storage");
 
     size_t offset_state_1, offset_state_2, size_state = 0;
@@ -339,7 +336,6 @@ TEST_CASE("power down during WL status 2 update", "[wear_levelling]")
     esp_err_t result;
     wl_handle_t wl_handle;
 
-    int flash_handle;
     const esp_partition_t *partition = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_ANY, "storage");
 
     size_t offset_state_1, offset_state_2, size_state = 0;
@@ -383,7 +379,6 @@ TEST_CASE("power down between WL status 1 and WL status 2 update", "[wear_levell
     esp_err_t result;
     wl_handle_t wl_handle;
 
-    int flash_handle;
     const esp_partition_t *partition = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_ANY, "storage");
 
     size_t offset_state_1, offset_state_2, size_state = 0;

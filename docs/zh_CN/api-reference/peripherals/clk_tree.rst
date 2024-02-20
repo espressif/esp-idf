@@ -3,15 +3,15 @@
 
 :link_to_translation:`en:[English]`
 
-{IDF_TARGET_RC_FAST_VAGUE_FREQ: default="8", esp32c3="17.5", esp32s3="17.5", esp32c2="17.5", esp32c6="17.5"}
+{IDF_TARGET_RC_FAST_VAGUE_FREQ: default="17.5", esp32="8", esp32s2="8", esp32h2="8"}
 
-{IDF_TARGET_RC_FAST_ADJUSTED_FREQ: default="8.5", esp32c3="17.5", esp32s3="17.5", esp32c2="17.5", esp32c6="17.5"}
+{IDF_TARGET_RC_FAST_ADJUSTED_FREQ: default="17.5", esp32="8.5", esp32s2="8.5", esp32h2="8.5"}
 
 {IDF_TARGET_XTAL_FREQ: default="40", esp32="2 ~ 40", esp32c2="40/26", esp32h2="32"}
 
 {IDF_TARGET_RC_SLOW_VAGUE_FREQ: default="136", esp32="150", esp32s2="90"}
 
-{IDF_TARGET_RC_SLOW_CLK: default="GPIO0", esp32c2="pin0（时钟信号频率不超过 136 kHz 时）", "esp32c6="GPIO0", esp32h2="GPIO13"}
+{IDF_TARGET_OSC_SLOW_PIN: default="GPIO0", esp32c2="pin0（时钟信号频率不超过 136 kHz 时）", "esp32c6="GPIO0", esp32h2="GPIO13"}
 
 {IDF_TARGET_NAME} 的时钟子系统用于从一系列根时钟中提取并分配系统/模块时钟。时钟树驱动程序负责维护系统时钟的基本功能，并管理模块时钟间的复杂关系。
 
@@ -63,7 +63,11 @@
 
                     ``XTAL32K_CLK`` 的时钟源可以是连接到 ``32K_XP`` 和 ``32K_XN`` 管脚的 32 kHz 晶振，也可以是外部电路生成的 32 kHz 时钟信号。如果使用外部电路生成的时钟信号，该信号必须连接到 ``32K_XN`` 管脚，并且在 ``32K_XP`` 管脚和地之间连接一个 1 nF 的电容。此时，``32K_XP`` 管脚不能用作 GPIO 管脚。
 
-                .. only:: not esp32
+                .. only:: esp32p4
+
+                    ``XTAL32K_CLK`` 的时钟源是连接到 ``XTAL_32K_P`` 和 ``XTAL_32K_N`` 管脚的 32 kHz 晶振。
+
+                .. only:: not esp32 and not esp32p4
 
                      ``XTAL32K_CLK`` 的时钟源可以是连接到 ``XTAL_32K_P`` 和 ``XTAL_32K_N`` 管脚的 32 kHz 晶振，也可以是外部电路生成的 32 kHZ 时钟信号。如果使用外部电路生成的时钟信号，该信号必须连接到 ``XTAL_32K_P`` 管脚。
 
@@ -73,7 +77,7 @@
 
             - 外部慢速时钟 - 可选 (OSC_SLOW)
 
-                将外部电路生成的时钟信号连接到 {IDF_TARGET_RC_SLOW_CLK}，可作为 ``RTC_SLOW_CLK`` 的时钟源。通过校准，可以计算该时钟信号的实际频率。
+                将外部电路生成的时钟信号连接到 {IDF_TARGET_OSC_SLOW_PIN}，可作为 ``RTC_SLOW_CLK`` 的时钟源。通过校准，可以计算该时钟信号的实际频率。
 
         .. only:: SOC_CLK_RC32K_SUPPORTED
 

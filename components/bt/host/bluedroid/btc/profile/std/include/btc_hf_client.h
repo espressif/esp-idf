@@ -102,7 +102,7 @@ typedef union {
     } send_dtmf;
 
     // BTC_HF_CLIENT_REGISTER_DATA_CALLBACK_EVT
-    struct reg_data_callback {
+    struct hf_client_reg_data_callback {
         esp_hf_client_incoming_data_cb_t recv;
         esp_hf_client_outgoing_data_cb_t send;
     } reg_data_cb;
@@ -120,7 +120,7 @@ typedef union {
     } send_iphoneaccev;
 
     // BTC_HF_CLIENT_REQUEST_PKT_STAT_EVT
-    struct req_pkt_stat_sync_handle {
+    struct hf_client_req_pkt_stat_sync_handle {
         UINT16            sync_conn_handle;
     } pkt_sync_hd;
 

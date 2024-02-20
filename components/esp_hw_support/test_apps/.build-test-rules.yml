@@ -1,18 +1,40 @@
 # Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
 
 components/esp_hw_support/test_apps/dma:
-  disable_test:
+  disable:
     - if: IDF_TARGET in ["esp32"]
       temporary: false
-      reason: Neither GDMA nor CPDMA is supported on ESP32
+      reason: No general DMA controller on ESP32
+  depends_filepatterns:
+    - components/esp_hw_support/dma/**/*
+
+components/esp_hw_support/test_apps/dma2d:
+  disable:
+    - if: SOC_DMA2D_SUPPORTED != 1
+  depends_filepatterns:
+    - components/esp_hw_support/dma/**/*
 
 components/esp_hw_support/test_apps/esp_hw_support_unity_tests:
   disable:
     - if: SOC_GPSPI_SUPPORTED != 1
+  disable_test:
+    - if: IDF_TARGET == "esp32p4"
+      temporary: true
+      reason: test not pass, should be re-enable # TODO: IDF-8972
 
 components/esp_hw_support/test_apps/etm:
   disable:
     - if: SOC_ETM_SUPPORTED != 1
+  disable_test:
+    - if: IDF_TARGET == "esp32p4"
+      temporary: true
+      reason: test not pass, should be re-enable # TODO: IDF-8974
+  depends_components:
+    - esp_driver_gptimer
+    - esp_driver_gpio
+    - esp_driver_mcpwm
+    - esp_timer
+    - esp_driver_ana_cmpr
 
 components/esp_hw_support/test_apps/host_test_linux:
   enable:
@@ -41,3 +63,7 @@ components/esp_hw_support/test_apps/rtc_power_modes:
     - if: IDF_TARGET in ["esp32s2", "esp32s3", "esp32c2", "esp32c3"]
       temporary: true
       reason: the other targets are not tested yet
+
+components/esp_hw_support/test_apps/wakeup_tests:
+  disable:
+    - if: IDF_TARGET in ["esp32c5", "esp32p4", "linux"]

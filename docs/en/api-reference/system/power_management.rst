@@ -27,9 +27,15 @@ Enabling power management features comes at the cost of increased interrupt late
 
 Dynamic frequency scaling (DFS) and automatic Light-sleep can be enabled in an application by calling the function :cpp:func:`esp_pm_configure`. Its argument is a structure defining the frequency scaling settings, :cpp:class:`esp_pm_config_t`. In this structure, three fields need to be initialized:
 
-- ``max_freq_mhz``: Maximum CPU frequency in MHz, i.e., the frequency used when the ``ESP_PM_CPU_FREQ_MAX`` lock is acquired. This field is usually set to the default CPU frequency.
-- ``min_freq_mhz``: Minimum CPU frequency in MHz, i.e., the frequency used when only the ``ESP_PM_APB_FREQ_MAX`` lock is acquired. This field can be set to the XTAL frequency value, or the XTAL frequency divided by an integer. Note that 10 MHz is the lowest frequency at which the default REF_TICK clock of 1 MHz can be generated.
-- ``light_sleep_enable``: Whether the system should automatically enter Light-sleep when no locks are acquired (``true``/``false``).
+.. list::
+
+    - ``max_freq_mhz``: Maximum CPU frequency in MHz, i.e., the frequency used when the ``ESP_PM_CPU_FREQ_MAX`` lock is acquired. This field is usually set to the default CPU frequency.
+
+    :esp32 or esp32s2: - ``min_freq_mhz``: Minimum CPU frequency in MHz, indicating the frequency used when not holding the power management lock. Note that 10 MHz is the minimum frequency required for generating a 1 MHz REF_TICK default clock.
+
+    :not esp32 and not esp32s2: - ``min_freq_mhz``: Minimum CPU frequency in MHz, indicating the frequency used when not holding the power management lock.
+
+    - ``light_sleep_enable``: Whether the system should automatically enter Light-sleep when no locks are acquired (``true``/``false``).
 
 
   Alternatively, if you enable the option :ref:`CONFIG_PM_DFS_INIT_AUTO` in menuconfig, the maximum CPU frequency will be determined by the :ref:`CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ` setting, and the minimum CPU frequency will be locked to the XTAL frequency.
@@ -92,7 +98,7 @@ Dynamic Frequency Scaling and Peripheral Drivers
 
 When DFS is enabled, the APB frequency can be changed multiple times within a single RTOS tick. The APB frequency change does not affect the operation of some peripherals, while other peripherals may have issues. For example, Timer Group peripheral timers keeps counting, however, the speed at which they count changes proportionally to the APB frequency.
 
-Peripheral clock sources such as ``REF_TICK``, ``XTAL``, ``RC_FAST`` (i.e. ``RTC_8M``), their frequencies will not be inflenced by APB frequency. And therefore, to ensure the peripheral behaves consistently during DFS, it is recommanded to select one of these clocks as the peripheral clock source. For more specific guidelines, please refer to the "Power Management" section of each peripheral's "API Reference > Peripherals API" page.
+Peripheral clock sources such as ``REF_TICK``, ``XTAL``, ``RC_FAST`` (i.e., ``RTC_8M``), their frequencies will not be inflenced by APB frequency. And therefore, to ensure the peripheral behaves consistently during DFS, it is recommanded to select one of these clocks as the peripheral clock source. For more specific guidelines, please refer to the "Power Management" section of each peripheral's "API Reference > Peripherals API" page.
 
 Currently, the following peripheral drivers are aware of DFS and use the ``ESP_PM_APB_FREQ_MAX`` lock for the duration of the transaction:
 
@@ -142,7 +148,6 @@ Light-sleep Peripheral Power Down
     - SYSTIMER
 
     The following peripherals are not yet supported:
-    - GDMA
     - ETM
     - TIMG1
     - ASSIST_DEBUG
@@ -169,4 +174,3 @@ API Reference
 -------------
 
 .. include-build-file:: inc/esp_pm.inc
-

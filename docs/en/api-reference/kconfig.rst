@@ -33,7 +33,7 @@ Format rules for Kconfig files are as follows:
 - Option names in any menus should have consistent prefixes. The prefix currently should have at least 3 characters.
 - The unit of indentation should be 4 spaces. All sub-items belonging to a parent item are indented by one level deeper. For example, ``menu`` is indented by 0 spaces, ``config``  ``menu`` by 4 spaces, ``help`` in ``config`` by 8 spaces, and the text under ``help`` by 12 spaces.
 - No trailing spaces are allowed at the end of the lines.
-- The maximum length of options is 40 characters.
+- The maximum length of options is 50 characters.
 - The maximum length of lines is 120 characters.
 
 .. note::
@@ -43,7 +43,11 @@ Format rules for Kconfig files are as follows:
 Format Checker
 --------------
 
-``tools/ci/check_kconfigs.py`` is provided for checking Kconfig files against the above format rules. The checker checks all Kconfig and ``Kconfig.projbuild`` files in the ESP-IDF directory, and generates a new file with suffix ``.new`` with some suggestions about how to fix issues (if there are any). Please note that the checker cannot correct all format issues and the responsibility of the developer is to final check and make corrections in order to pass the tests. For example, indentations will be corrected if there is not any misleading formatting, but it cannot come up with a common prefix for options inside a menu.
+``kconfcheck`` tool in esp-idf-kconfig_ package is provided for checking Kconfig files against the above format rules. The checker checks all Kconfig and ``Kconfig.projbuild`` files given as arguments, and generates a new file with suffix ``.new`` with some suggestions about how to fix issues (if there are any). Please note that the checker cannot correct all format issues and the responsibility of the developer is to final check and make corrections in order to pass the tests. For example, indentations will be corrected if there is not any misleading formatting, but it cannot come up with a common prefix for options inside a menu.
+
+The ``esp-idf-kconfig`` package is available in ESP-IDF environments, where the checker tool can be invoked by running command ``python -m kconfcheck <path_to_kconfig_file>``.
+
+For more information, please refer to `esp-idf-kconfig package documentation <https://github.com/espressif/esp-idf-kconfig/blob/master/docs/DOCUMENTATION.md>`__.
 
 .. _configuration-options-compatibility:
 

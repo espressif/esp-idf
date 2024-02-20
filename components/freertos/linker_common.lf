@@ -28,7 +28,7 @@ entries:
         tasks:xTaskGetCoreID (default)
         tasks:xTaskGetIdleTaskHandleForCore (default)
         tasks:xTaskGetCurrentTaskHandleForCore (default)
-        if FREERTOS_USE_KERNEL_10_5_1 = y && FREERTOS_GENERATE_RUN_TIME_STATS = y:
+        if FREERTOS_SMP = n && FREERTOS_GENERATE_RUN_TIME_STATS = y:
             tasks:ulTaskGetIdleRunTimeCounterForCore (default)
             tasks:ulTaskGetIdleRunTimePercentForCore (default)
         tasks:pxTaskGetStackStart (default)
@@ -39,8 +39,8 @@ entries:
             tasks:vTaskSetThreadLocalStoragePointerAndDelCallback (default)
     # Task Snapshot
     if FREERTOS_PLACE_SNAPSHOT_FUNS_INTO_FLASH = y:
-        tasks:pxGetNextTaskList (default)
-        tasks:pxTaskGetNext (default)
+        tasks:pxGetTaskListByIndex (default)
+        tasks:xTaskGetNext (default)
         tasks:uxTaskGetSnapshotAll (default)
 
     # ------------------------------------------------------------------------------------------------------------------

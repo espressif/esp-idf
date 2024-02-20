@@ -30,7 +30,7 @@
 
 /**
  * Restore regi2c analog calibration related configuration registers.
- * This is a workaround, and is fixed on later chips
+ * This is a workaround for calibration error when waking up from light sleep
  */
 #define REGI2C_ANA_CALI_PD_WORKAROUND    1
 #define REGI2C_ANA_CALI_BYTE_NUM         8

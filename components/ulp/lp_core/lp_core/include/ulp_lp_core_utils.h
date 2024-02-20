@@ -13,6 +13,19 @@ extern "C" {
 #include <stdint.h>
 #include <stdlib.h>
 
+/**
+ * @brief Traverse all possible wake-up sources and update the wake-up cause so that
+ *        ulp_lp_core_get_wakeup_cause can obtain the bitmap of the wake-up reasons.
+ */
+void ulp_lp_core_update_wakeup_cause(void);
+
+/**
+ * @brief Get the wakeup source which caused LP_CPU to wakeup from sleep
+ *
+ * @return  Wakeup cause in bit map, for the meaning of each bit, refer
+ *          to the definition of wakeup source in lp_core_ll.h
+ */
+uint32_t ulp_lp_core_get_wakeup_cause(void);
 
 /**
  * @brief Wakeup main CPU from sleep or deep sleep.

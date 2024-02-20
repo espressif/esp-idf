@@ -340,7 +340,6 @@ typedef struct {
     UINT32          handle;
     tBTA_JV_RFC_CB  *p_cb;
     tBTA_JV_PCB     *p_pcb;
-    tBTA_JV_RFCOMM_CBACK *p_cback;
     void            *user_data;
 } tBTA_JV_API_RFCOMM_CLOSE;
 #endif /* BTA_JV_RFCOMM_INCLUDED */

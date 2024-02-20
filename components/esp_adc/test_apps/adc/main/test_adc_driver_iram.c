@@ -84,7 +84,7 @@ TEST_CASE("ADC oneshot fast work with ISR and Flash", "[adc_oneshot]")
     //-------------ADC1 TEST Channel 0 Config---------------//
     adc_oneshot_chan_cfg_t config = {
         .bitwidth = ADC_BITWIDTH_DEFAULT,
-        .atten = ADC_ATTEN_DB_11,
+        .atten = ADC_ATTEN_DB_12,
     };
     TEST_ESP_OK(adc_oneshot_config_channel(oneshot_handle, ADC1_TEST_CHAN0, &config));
 

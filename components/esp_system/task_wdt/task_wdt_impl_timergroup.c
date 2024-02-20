@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -38,8 +38,6 @@ typedef struct {
  * task_wdt implementation as the implementation context in the
  * init function. */
 static twdt_ctx_hard_t init_context;
-
-
 
 esp_err_t esp_task_wdt_impl_timer_allocate(const esp_task_wdt_config_t *config,
                                            twdt_isr_callback callback,
@@ -81,7 +79,6 @@ esp_err_t esp_task_wdt_impl_timer_allocate(const esp_task_wdt_config_t *config,
     return ret;
 }
 
-
 esp_err_t esp_task_wdt_impl_timer_reconfigure(twdt_ctx_t obj, const esp_task_wdt_config_t *config)
 {
     esp_err_t ret = ESP_OK;
@@ -102,7 +99,6 @@ esp_err_t esp_task_wdt_impl_timer_reconfigure(twdt_ctx_t obj, const esp_task_wdt
 
     return ret;
 }
-
 
 void esp_task_wdt_impl_timer_free(twdt_ctx_t obj)
 {
@@ -125,7 +121,6 @@ void esp_task_wdt_impl_timer_free(twdt_ctx_t obj)
     }
 }
 
-
 esp_err_t esp_task_wdt_impl_timer_feed(twdt_ctx_t obj)
 {
     esp_err_t ret = ESP_OK;
@@ -144,7 +139,6 @@ esp_err_t esp_task_wdt_impl_timer_feed(twdt_ctx_t obj)
     return ret;
 }
 
-
 void esp_task_wdt_impl_timeout_triggered(twdt_ctx_t obj)
 {
     twdt_ctx_hard_t* ctx = (twdt_ctx_hard_t*) obj;
@@ -156,7 +150,6 @@ void esp_task_wdt_impl_timeout_triggered(twdt_ctx_t obj)
         wdt_hal_write_protect_enable(&ctx->hal);
     }
 }
-
 
 esp_err_t esp_task_wdt_impl_timer_stop(twdt_ctx_t obj)
 {
@@ -175,7 +168,6 @@ esp_err_t esp_task_wdt_impl_timer_stop(twdt_ctx_t obj)
 
     return ret;
 }
-
 
 esp_err_t esp_task_wdt_impl_timer_restart(twdt_ctx_t obj)
 {

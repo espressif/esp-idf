@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -211,15 +211,18 @@ static inline void lp_uart_ll_reset_register(int hw_id)
  */
 FORCE_INLINE_ATTR bool uart_ll_is_enabled(uint32_t uart_num)
 {
-    HAL_ASSERT(uart_num < SOC_UART_HP_NUM);
-    uint32_t uart_clk_config_reg = ((uart_num == 0) ? PCR_UART0_CONF_REG :
-                                    (uart_num == 1) ? PCR_UART1_CONF_REG : 0);
-    uint32_t uart_rst_bit = ((uart_num == 0) ? PCR_UART0_RST_EN :
-                            (uart_num == 1) ? PCR_UART1_RST_EN : 0);
-    uint32_t uart_en_bit  = ((uart_num == 0) ? PCR_UART0_CLK_EN :
-                            (uart_num == 1) ? PCR_UART1_CLK_EN : 0);
-    return REG_GET_BIT(uart_clk_config_reg, uart_rst_bit) == 0 &&
-        REG_GET_BIT(uart_clk_config_reg, uart_en_bit) != 0;
+    switch (uart_num) {
+    case 0:
+        return PCR.uart0_conf.uart0_clk_en && !PCR.uart0_conf.uart0_rst_en;
+    case 1:
+        return PCR.uart1_conf.uart1_clk_en && !PCR.uart1_conf.uart1_rst_en;
+    case 2: // LP_UART
+        return LPPERI.clk_en.lp_uart_ck_en && !LPPERI.reset_en.lp_uart_reset_en;
+    default:
+        // Unknown uart port number
+        HAL_ASSERT(false);
+        return false;
+    }
 }
 
 /**
@@ -266,25 +269,6 @@ static inline void uart_ll_reset_register(uart_port_t uart_num)
 }
 
 /**
- * @brief  Configure the UART core reset.
- *
- * @param  hw Beginning address of the peripheral registers.
- * @param  core_rst_en True to enable the core reset, otherwise set it false.
- *
- * @return None.
- */
-FORCE_INLINE_ATTR void uart_ll_set_reset_core(uart_dev_t *hw, bool core_rst_en)
-{
-    if ((hw) != &LP_UART) {
-        UART_LL_PCR_REG_SET(hw, conf, rst_en, core_rst_en);
-    } else {
-        // LP_UART reset shares the same register with other LP peripherals
-        // Needs to be protected with a lock, therefore, it has its unique LL function, and must be called from lp_periph_ctrl.c
-        abort();
-    }
-}
-
-/**
  * @brief  Enable the UART clock.
  *
  * @param  hw Beginning address of the peripheral registers.
@@ -297,7 +281,7 @@ FORCE_INLINE_ATTR void uart_ll_sclk_enable(uart_dev_t *hw)
         UART_LL_PCR_REG_SET(hw, sclk_conf, sclk_en, 1);
     } else {
         // LP_UART clk_en shares the same register with other LP peripherals
-        // Needs to be protected with a lock, therefore, it has its unique LL function, and must be called from lp_periph_ctrl.c
+        // Needs to be protected with a lock, therefore, it has its unique LL function
         abort();
     }
 }
@@ -315,7 +299,7 @@ FORCE_INLINE_ATTR void uart_ll_sclk_disable(uart_dev_t *hw)
         UART_LL_PCR_REG_SET(hw, sclk_conf, sclk_en, 0);
     } else {
         // LP_UART clk_en shares the same register with other LP peripherals
-        // Needs to be protected with a lock, therefore, it has its unique LL function, and must be called from lp_periph_ctrl.c
+        // Needs to be protected with a lock, therefore, it has its unique LL function
         abort();
     }
 }
@@ -350,7 +334,7 @@ FORCE_INLINE_ATTR void uart_ll_set_sclk(uart_dev_t *hw, soc_module_clk_t source_
         UART_LL_PCR_REG_SET(hw, sclk_conf, sclk_sel, sel_value);
     } else {
         // LP_UART clk_sel shares the same register with other LP peripherals
-        // Needs to be protected with a lock, therefore, it has its unique LL function, and must be called from lp_periph_ctrl.c
+        // Needs to be protected with a lock, therefore, it has its unique LL function
         abort();
     }
 }

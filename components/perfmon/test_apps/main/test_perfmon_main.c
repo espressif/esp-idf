@@ -7,6 +7,7 @@
 #include "unity.h"
 #include "unity_test_runner.h"
 #include "esp_heap_caps.h"
+#include "esp_newlib.h"
 
 #define TEST_MEMORY_LEAK_THRESHOLD_DEFAULT 0
 static int leak_threshold = TEST_MEMORY_LEAK_THRESHOLD_DEFAULT;
@@ -33,6 +34,7 @@ void setUp(void)
 
 void tearDown(void)
 {
+    esp_reent_cleanup();    //clean up some of the newlib's lazy allocations
     size_t after_free_8bit = heap_caps_get_free_size(MALLOC_CAP_8BIT);
     size_t after_free_32bit = heap_caps_get_free_size(MALLOC_CAP_32BIT);
     check_leak(before_free_8bit, after_free_8bit, "8BIT");

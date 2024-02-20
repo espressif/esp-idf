@@ -67,3 +67,52 @@ entries:
             gdma_hal_axi: gdma_axi_hal_stop (noflash)
             gdma_hal_axi: gdma_axi_hal_append (noflash)
             gdma_hal_axi: gdma_axi_hal_reset (noflash)
+
+[mapping:dw_gdma_driver]
+archive: libesp_hw_support.a
+entries:
+    # performance optimization, always put the DW_GDMA default interrupt handler in IRAM
+    if SOC_DW_GDMA_SUPPORTED = y:
+        dw_gdma: dw_gdma_channel_default_isr (noflash)
+
+    # put DW_GDMA control functions in IRAM
+    if DW_GDMA_CTRL_FUNC_IN_IRAM = y:
+        dw_gdma: dw_gdma_channel_continue (noflash)
+
+    if DW_GDMA_SETTER_FUNC_IN_IRAM = y:
+        dw_gdma: dw_gdma_channel_set_block_markers (noflash)
+        dw_gdma: dw_gdma_lli_set_block_markers (noflash)
+
+[mapping:dma2d_driver]
+archive: libesp_hw_support.a
+entries:
+    # performance optimization, always put the 2D-DMA default interrupt handler in IRAM
+    if SOC_DMA2D_SUPPORTED = y:
+        dma2d: acquire_free_channels_for_trans (noflash)
+        dma2d: free_up_channels (noflash)
+        dma2d: _dma2d_default_tx_isr (noflash)
+        dma2d: _dma2d_default_rx_isr (noflash)
+        dma2d: dma2d_default_isr (noflash)
+
+    # put 2D-DMA operation functions in IRAM
+    if DMA2D_OPERATION_FUNC_IN_IRAM = y:
+        dma2d: dma2d_connect (noflash)
+        dma2d: dma2d_register_tx_event_callbacks (noflash)
+        dma2d: dma2d_register_rx_event_callbacks (noflash)
+        dma2d: dma2d_set_desc_addr (noflash)
+        dma2d: dma2d_start (noflash)
+        dma2d: dma2d_stop (noflash)
+        dma2d: dma2d_append (noflash)
+        dma2d: dma2d_reset (noflash)
+        dma2d: dma2d_force_end (noflash)
+        dma2d: dma2d_apply_strategy (noflash)
+        dma2d: dma2d_set_transfer_ability (noflash)
+        dma2d: dma2d_configure_color_space_conversion (noflash)
+        dma2d: dma2d_enqueue (noflash)
+
+[mapping:dma2d_hal]
+archive: libhal.a
+entries:
+    if DMA2D_ISR_IRAM_SAFE = y || DMA2D_OPERATION_FUNC_IN_IRAM = y:
+        dma2d_hal: dma2d_hal_tx_reset_channel (noflash)
+        dma2d_hal: dma2d_hal_rx_reset_channel (noflash)

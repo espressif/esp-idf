@@ -10,6 +10,7 @@ from pytest_embedded import Dut
 @pytest.mark.esp32s3
 @pytest.mark.esp32c6
 @pytest.mark.esp32h2
+@pytest.mark.esp32p4
 @pytest.mark.generic
 def test_esp_rom(dut: Dut) -> None:
     dut.run_all_single_board_cases()

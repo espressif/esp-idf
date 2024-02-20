@@ -590,7 +590,7 @@ static int eap_sm_rx_eapol_internal(u8 *src_addr, u8 *buf, u32 len, uint8_t *bss
         break;
     case EAP_CODE_SUCCESS:
         if (sm->eapKeyData) {
-            wpa_set_pmk(sm->eapKeyData, NULL, false);
+            wpa_set_pmk(sm->eapKeyData, 0, NULL, false);
             os_free(sm->eapKeyData);
             sm->eapKeyData = NULL;
             wpa_printf(MSG_INFO, ">>>>>EAP FINISH");

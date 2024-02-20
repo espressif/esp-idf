@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -80,10 +80,27 @@ uint32_t hal_utils_calc_clk_div_frac_accurate(const hal_utils_clk_info_t *clk_in
  * @param[in]  clk_info     The clock infomation
  * @param[out] int_div      The clock integral division
  * @return
- *      - 0: Failed to get the result because the division is out of range
+ *      - 0: Failed to get the result because the division is out of range,
+ *           but parameter `int_div` will still be assigned to min/max division that given in `clk_info`,
+ *           incase the caller still want to use the min/max division in this case.
  *      - others: The real output clock frequency
  */
 uint32_t hal_utils_calc_clk_div_integer(const hal_utils_clk_info_t *clk_info, uint32_t *int_div);
+
+/**
+ * @brief Reverse the bit order of an 8-bit unsigned integer
+ *
+ * @param n The 8-bit unsigned integer to be reversed
+ * @return The 8-bit unsigned integer after reversing
+ */
+__attribute__((always_inline))
+static inline uint8_t hal_utils_bitwise_reverse8(uint8_t n)
+{
+    n = ((n & 0xf0) >> 4) | ((n & 0x0f) << 4);
+    n = ((n & 0xcc) >> 2) | ((n & 0x33) << 2);
+    n = ((n & 0xaa) >> 1) | ((n & 0x55) << 1);
+    return n;
+}
 
 #ifdef __cplusplus
 }

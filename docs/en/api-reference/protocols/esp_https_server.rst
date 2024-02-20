@@ -46,6 +46,23 @@ Performance
 
 The initial session setup can take about two seconds, or more with slower clock speed or more verbose logging. Subsequent requests through the open secure socket are much faster (down to under 100 ms).
 
+Event Handling
+--------------
+
+ESP HTTPS Server has various events for which a handler can be triggered by :doc:`the Event Loop library <../system/esp_event>` when the particular event occurs. The handler has to be registered using :cpp:func:`esp_event_handler_register`. This helps in event handling for ESP HTTPS Server.
+
+:cpp:enum:`esp_https_server_event_id_t` has all the events which can happen for ESP HTTPS server.
+
+Expected data type for different ESP HTTP server events in event loop:
+
+    - HTTPS_SERVER_EVENT_ERROR          :   ``esp_https_server_last_error_t``
+    - HTTPS_SERVER_EVENT_START          :   ``NULL``
+    - HTTPS_SERVER_EVENT_ON_CONNECTED   :   ``NULL``
+    - HTTPS_SERVER_EVENT_ON_DATA        :   ``int``
+    - HTTPS_SERVER_EVENT_SENT_DATA      :   ``NULL``
+    - HTTPS_SERVER_EVENT_DISCONNECTED   :   ``NULL``
+    - HTTPS_SERVER_EVENT_STOP           :   ``NULL``
+
 API Reference
 -------------
 

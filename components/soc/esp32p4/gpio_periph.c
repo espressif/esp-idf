@@ -63,8 +63,6 @@ const uint32_t GPIO_PIN_MUX_REG[] = {
     IO_MUX_GPIO52_REG,
     IO_MUX_GPIO53_REG,
     IO_MUX_GPIO54_REG,
-    IO_MUX_GPIO55_REG,
-    IO_MUX_GPIO56_REG,
 };
 
 ESP_STATIC_ASSERT(sizeof(GPIO_PIN_MUX_REG) == SOC_GPIO_PIN_COUNT * sizeof(uint32_t), "Invalid size of GPIO_PIN_MUX_REG");
@@ -125,8 +123,6 @@ const uint32_t GPIO_HOLD_MASK[] = {
     BIT(4),          //GPIO52
     BIT(5),          //GPIO53
     BIT(6),          //GPIO54
-    BIT(7),          //GPIO55
-    BIT(8),          //GPIO56
 };
 
 ESP_STATIC_ASSERT(sizeof(GPIO_HOLD_MASK) == SOC_GPIO_PIN_COUNT * sizeof(uint32_t), "Invalid size of GPIO_HOLD_MASK");

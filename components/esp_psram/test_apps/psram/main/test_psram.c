@@ -22,8 +22,7 @@
 
 __attribute__((unused)) const static char *TAG = "PSRAM";
 
-
-TEST_CASE("test psram heap allocable","[psram]")
+static void s_test_psram_heap_allocable(void)
 {
     size_t largest_size = heap_caps_get_largest_free_block(MALLOC_CAP_SPIRAM);
     ESP_LOGI(TAG, "largest size is %zu", largest_size);
@@ -47,6 +46,17 @@ TEST_CASE("test psram heap allocable","[psram]")
     free(ext_buffer);
 }
 
+TEST_CASE("test psram heap allocable", "[psram]")
+{
+    s_test_psram_heap_allocable();
+}
+
+TEST_CASE("stress test psram heap allocable", "[psram][manual][ignore]")
+{
+    for (int times = 0; times < 50; times++) {
+        s_test_psram_heap_allocable();
+    }
+}
 
 #if CONFIG_SPIRAM_FETCH_INSTRUCTIONS && CONFIG_SPIRAM_RODATA
 #include "esp_partition.h"
@@ -132,7 +142,6 @@ TEST_CASE("test spi1 flash operation after putting .text and .rodata into psram"
 }
 #endif  //CONFIG_SPIRAM_FETCH_INSTRUCTIONS && CONFIG_SPIRAM_RODATA
 
-
 TEST_CASE("test psram unaligned access", "[psram]")
 {
     size_t largest_size = heap_caps_get_largest_free_block(MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
@@ -173,7 +182,6 @@ TEST_CASE("test psram unaligned access", "[psram]")
             ESP_LOGV(TAG, "i is %d, j is %d, val_16bit val  is 0x%"PRIx16, i, j, val_16bit);
             uint32_t val_32bit = *(uint32_t *)unaligned_ptr;
             ESP_LOGV(TAG, "i is %d, j is %d, val_32bit val  is 0x%"PRIx32, i, j, val_32bit);
-
 
             uint8_t second_byte = ((i + j) & 0xff) + 1;
             uint8_t third_byte = ((i + j) & 0xff) + 2;

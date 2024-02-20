@@ -23,7 +23,7 @@ endfunction()
 #        also added to the internal list of build properties if it isn't there already.
 #
 # @param[in] property the property to set the value of
-# @param[out] value value of the property
+# @param[in] value value of the property
 #
 # @param[in, optional] APPEND (option) append the value to the current value of the
 #                     property instead of replacing it
@@ -129,7 +129,7 @@ function(__build_set_lang_version)
     if(NOT IDF_TARGET STREQUAL "linux")
         # Building for chip targets: we use a known version of the toolchain.
         # Use latest supported versions.
-        # Please update docs/en/api-guides/cplusplus.rst and
+        # Please update docs/en/api-guides/c.rst, docs/en/api-guides/cplusplus.rst and
         # tools/test_apps/system/cxx_build_test/main/test_cxx_standard.cpp when changing this.
         set(c_std gnu17)
         set(cxx_std gnu++2b)

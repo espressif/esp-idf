@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -31,6 +31,7 @@ esp_err_t esp_lcd_panel_del(esp_lcd_panel_handle_t panel)
 esp_err_t esp_lcd_panel_draw_bitmap(esp_lcd_panel_handle_t panel, int x_start, int y_start, int x_end, int y_end, const void *color_data)
 {
     ESP_RETURN_ON_FALSE(panel, ESP_ERR_INVALID_ARG, TAG, "invalid panel handle");
+    ESP_RETURN_ON_FALSE(panel->draw_bitmap, ESP_ERR_NOT_SUPPORTED, TAG, "draw_bitmap is not supported by this panel");
     return panel->draw_bitmap(panel, x_start, y_start, x_end, y_end, color_data);
 }
 
@@ -67,4 +68,11 @@ esp_err_t esp_lcd_panel_disp_on_off(esp_lcd_panel_handle_t panel, bool on_off)
 esp_err_t esp_lcd_panel_disp_off(esp_lcd_panel_handle_t panel, bool off)
 {
     return esp_lcd_panel_disp_on_off(panel, !off);
+}
+
+esp_err_t esp_lcd_panel_disp_sleep(esp_lcd_panel_handle_t panel, bool sleep)
+{
+    ESP_RETURN_ON_FALSE(panel, ESP_ERR_INVALID_ARG, TAG, "invalid panel handle");
+    ESP_RETURN_ON_FALSE(panel->disp_sleep, ESP_ERR_NOT_SUPPORTED, TAG, "sleep is not supported by this panel");
+    return panel->disp_sleep(panel, sleep);
 }

@@ -1,17 +1,16 @@
 /*
- * SPDX-FileCopyrightText: 2017-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 #include "bt_hidd.h"
 
 #if CONFIG_BT_HID_DEVICE_ENABLED
-#include "esp_bt.h"
 #include "esp_bt_defs.h"
 #include "esp_bt_main.h"
 #include "esp_hidd.h"
 #include "esp_hidd_api.h"
-#include "esp_hidd_private.h"
+#include "esp_private/esp_hidd_private.h"
 #include "esp_log.h"
 #include "osi/mutex.h"
 #include "string.h"

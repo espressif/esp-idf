@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2010-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2010-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -33,34 +33,29 @@ The prioritised capabilities work roughly like this:
 - For a malloc where 32-bit-aligned-only access is okay, first allocate IRAM, then DRAM, finally application IRAM.
 - Application mallocs (PIDx) will allocate IRAM first, if possible, then DRAM.
 - Most other malloc caps only fit in one region anyway.
-
 */
+
+enum {
+    SOC_MEMORY_TYPE_DRAM = 0,
+    SOC_MEMORY_TYPE_DIRAM = 1,
+    SOC_MEMORY_TYPE_IRAM = 2,
+    SOC_MEMORY_TYPE_SPIRAM = 3,
+    SOC_MEMORY_TYPE_RTCRAM = 4,
+    SOC_MEMORY_TYPE_NUM,
+};
+
 const soc_memory_type_desc_t soc_memory_types[] = {
     //Type 0: Plain ole D-port RAM
-    { "DRAM", { MALLOC_CAP_8BIT|MALLOC_CAP_DEFAULT, MALLOC_CAP_INTERNAL|MALLOC_CAP_DMA|MALLOC_CAP_32BIT, 0 }, false, false},
+    [SOC_MEMORY_TYPE_DRAM]  = { "DRAM", { MALLOC_CAP_8BIT|MALLOC_CAP_DEFAULT, MALLOC_CAP_INTERNAL|MALLOC_CAP_DMA|MALLOC_CAP_32BIT, 0 }},
     //Type 1: Plain ole D-port RAM which has an alias on the I-port
-    //(This DRAM is also the region used by ROM during startup)
-    { "D/IRAM", { 0, MALLOC_CAP_DMA|MALLOC_CAP_8BIT|MALLOC_CAP_INTERNAL|MALLOC_CAP_DEFAULT, MALLOC_CAP_32BIT|MALLOC_CAP_EXEC }, true, true},
+    //(This DRAM is also the region used by ROM during startup, and decrease the allocation priority to avoid MALLOC_CAP_EXEC memory running out too soon)
+    [SOC_MEMORY_TYPE_DIRAM]  = { "D/IRAM", { 0, MALLOC_CAP_DMA|MALLOC_CAP_8BIT|MALLOC_CAP_INTERNAL|MALLOC_CAP_DEFAULT, MALLOC_CAP_32BIT|MALLOC_CAP_EXEC }},
     //Type 2: IRAM
-    { "IRAM", { MALLOC_CAP_INTERNAL|MALLOC_IRAM_CAP, 0, 0 }, false, false},
-    //Type 3-8: PID 2-7 IRAM
-    { "PID2IRAM", { MALLOC_CAP_PID2|MALLOC_CAP_INTERNAL, 0, MALLOC_IRAM_CAP }, false, false},
-    { "PID3IRAM", { MALLOC_CAP_PID3|MALLOC_CAP_INTERNAL, 0, MALLOC_IRAM_CAP }, false, false},
-    { "PID4IRAM", { MALLOC_CAP_PID4|MALLOC_CAP_INTERNAL, 0, MALLOC_IRAM_CAP }, false, false},
-    { "PID5IRAM", { MALLOC_CAP_PID5|MALLOC_CAP_INTERNAL, 0, MALLOC_IRAM_CAP }, false, false},
-    { "PID6IRAM", { MALLOC_CAP_PID6|MALLOC_CAP_INTERNAL, 0, MALLOC_IRAM_CAP }, false, false},
-    { "PID7IRAM", { MALLOC_CAP_PID7|MALLOC_CAP_INTERNAL, 0, MALLOC_IRAM_CAP }, false, false},
-    //Type 9-14: PID 2-7 DRAM
-    { "PID2DRAM", { MALLOC_CAP_PID2|MALLOC_CAP_INTERNAL, MALLOC_CAP_8BIT, MALLOC_CAP_32BIT|MALLOC_CAP_DEFAULT }, false, false},
-    { "PID3DRAM", { MALLOC_CAP_PID3|MALLOC_CAP_INTERNAL, MALLOC_CAP_8BIT, MALLOC_CAP_32BIT|MALLOC_CAP_DEFAULT }, false, false},
-    { "PID4DRAM", { MALLOC_CAP_PID4|MALLOC_CAP_INTERNAL, MALLOC_CAP_8BIT, MALLOC_CAP_32BIT|MALLOC_CAP_DEFAULT }, false, false},
-    { "PID5DRAM", { MALLOC_CAP_PID5|MALLOC_CAP_INTERNAL, MALLOC_CAP_8BIT, MALLOC_CAP_32BIT|MALLOC_CAP_DEFAULT }, false, false},
-    { "PID6DRAM", { MALLOC_CAP_PID6|MALLOC_CAP_INTERNAL, MALLOC_CAP_8BIT, MALLOC_CAP_32BIT|MALLOC_CAP_DEFAULT }, false, false},
-    { "PID7DRAM", { MALLOC_CAP_PID7|MALLOC_CAP_INTERNAL, MALLOC_CAP_8BIT, MALLOC_CAP_32BIT|MALLOC_CAP_DEFAULT }, false, false},
-    //Type 15: SPI SRAM data
-    { "SPIRAM", { MALLOC_CAP_SPIRAM|MALLOC_CAP_DEFAULT, 0, MALLOC_CAP_8BIT|MALLOC_CAP_32BIT}, false, false},
-    //Type 16: RTC Fast RAM
-    { "RTCRAM", { MALLOC_CAP_RTCRAM, MALLOC_CAP_8BIT|MALLOC_CAP_DEFAULT, MALLOC_CAP_INTERNAL|MALLOC_CAP_32BIT }, false, false},
+    [SOC_MEMORY_TYPE_IRAM]  = { "IRAM", { MALLOC_CAP_INTERNAL|MALLOC_IRAM_CAP, 0, 0 }},
+    //Type 3: SPI SRAM data
+    [SOC_MEMORY_TYPE_SPIRAM]  = { "SPIRAM", { MALLOC_CAP_SPIRAM|MALLOC_CAP_DEFAULT, 0, MALLOC_CAP_8BIT|MALLOC_CAP_32BIT}},
+    //Type 4: RTC Fast RAM
+    [SOC_MEMORY_TYPE_RTCRAM]  = { "RTCRAM", { MALLOC_CAP_RTCRAM, MALLOC_CAP_8BIT|MALLOC_CAP_DEFAULT, MALLOC_CAP_INTERNAL|MALLOC_CAP_32BIT|MALLOC_CAP_EXEC }},
 };
 
 const size_t soc_memory_type_count = sizeof(soc_memory_types)/sizeof(soc_memory_type_desc_t);
@@ -73,53 +68,53 @@ from low to high start address.
 */
 const soc_memory_region_t soc_memory_regions[] = {
 #ifdef CONFIG_SPIRAM
-    { SOC_EXTRAM_DATA_LOW, SOC_EXTRAM_DATA_SIZE, 15, 0}, //SPI SRAM, if available
+    { SOC_EXTRAM_DATA_LOW, SOC_EXTRAM_DATA_SIZE, SOC_MEMORY_TYPE_SPIRAM, 0, false}, //SPI SRAM, if available
 #endif
-    { 0x3FFAE000, 0x2000, 0, 0}, //pool 16 <- used for rom code
-    { 0x3FFB0000, 0x8000, 0, 0}, //pool 15 <- if BT is enabled, used as BT HW shared memory
-    { 0x3FFB8000, 0x8000, 0, 0}, //pool 14 <- if BT is enabled, used data memory for BT ROM functions.
-    { 0x3FFC0000, 0x2000, 0, 0}, //pool 10-13, mmu page 0
-    { 0x3FFC2000, 0x2000, 0, 0}, //pool 10-13, mmu page 1
-    { 0x3FFC4000, 0x2000, 0, 0}, //pool 10-13, mmu page 2
-    { 0x3FFC6000, 0x2000, 0, 0}, //pool 10-13, mmu page 3
-    { 0x3FFC8000, 0x2000, 0, 0}, //pool 10-13, mmu page 4
-    { 0x3FFCA000, 0x2000, 0, 0}, //pool 10-13, mmu page 5
-    { 0x3FFCC000, 0x2000, 0, 0}, //pool 10-13, mmu page 6
-    { 0x3FFCE000, 0x2000, 0, 0}, //pool 10-13, mmu page 7
-    { 0x3FFD0000, 0x2000, 0, 0}, //pool 10-13, mmu page 8
-    { 0x3FFD2000, 0x2000, 0, 0}, //pool 10-13, mmu page 9
-    { 0x3FFD4000, 0x2000, 0, 0}, //pool 10-13, mmu page 10
-    { 0x3FFD6000, 0x2000, 0, 0}, //pool 10-13, mmu page 11
-    { 0x3FFD8000, 0x2000, 0, 0}, //pool 10-13, mmu page 12
-    { 0x3FFDA000, 0x2000, 0, 0}, //pool 10-13, mmu page 13
-    { 0x3FFDC000, 0x2000, 0, 0}, //pool 10-13, mmu page 14
-    { 0x3FFDE000, 0x2000, 0, 0}, //pool 10-13, mmu page 15
-    { 0x3FFE0000, 0x4000, 1, 0x400BC000}, //pool 9 blk 1
-    { 0x3FFE4000, 0x4000, 1, 0x400B8000}, //pool 9 blk 0
-    { 0x3FFE8000, 0x8000, 1, 0x400B0000}, //pool 8 <- can be remapped to ROM, used for MAC dump
-    { 0x3FFF0000, 0x8000, 1, 0x400A8000}, //pool 7 <- can be used for MAC dump
-    { 0x3FFF8000, 0x4000, 1, 0x400A4000}, //pool 6 blk 1 <- can be used as trace memory
-    { 0x3FFFC000, 0x4000, 1, 0x400A0000}, //pool 6 blk 0 <- can be used as trace memory
-    { 0x40070000, 0x8000, 2, 0}, //pool 0
-    { 0x40078000, 0x8000, 2, 0}, //pool 1
-    { 0x40080000, 0x2000, 2, 0}, //pool 2-5, mmu page 0
-    { 0x40082000, 0x2000, 2, 0}, //pool 2-5, mmu page 1
-    { 0x40084000, 0x2000, 2, 0}, //pool 2-5, mmu page 2
-    { 0x40086000, 0x2000, 2, 0}, //pool 2-5, mmu page 3
-    { 0x40088000, 0x2000, 2, 0}, //pool 2-5, mmu page 4
-    { 0x4008A000, 0x2000, 2, 0}, //pool 2-5, mmu page 5
-    { 0x4008C000, 0x2000, 2, 0}, //pool 2-5, mmu page 6
-    { 0x4008E000, 0x2000, 2, 0}, //pool 2-5, mmu page 7
-    { 0x40090000, 0x2000, 2, 0}, //pool 2-5, mmu page 8
-    { 0x40092000, 0x2000, 2, 0}, //pool 2-5, mmu page 9
-    { 0x40094000, 0x2000, 2, 0}, //pool 2-5, mmu page 10
-    { 0x40096000, 0x2000, 2, 0}, //pool 2-5, mmu page 11
-    { 0x40098000, 0x2000, 2, 0}, //pool 2-5, mmu page 12
-    { 0x4009A000, 0x2000, 2, 0}, //pool 2-5, mmu page 13
-    { 0x4009C000, 0x2000, 2, 0}, //pool 2-5, mmu page 14
-    { 0x4009E000, 0x2000, 2, 0}, //pool 2-5, mmu page 15
+    { 0x3FFAE000, 0x2000, SOC_MEMORY_TYPE_DRAM,     0,         false}, //pool 16 <- used for rom code
+    { 0x3FFB0000, 0x8000, SOC_MEMORY_TYPE_DRAM,     0,         false}, //pool 15 <- if BT is enabled, used as BT HW shared memory
+    { 0x3FFB8000, 0x8000, SOC_MEMORY_TYPE_DRAM,     0,         false}, //pool 14 <- if BT is enabled, used data memory for BT ROM functions.
+    { 0x3FFC0000, 0x2000, SOC_MEMORY_TYPE_DRAM,     0,         false}, //pool 10-13, mmu page 0
+    { 0x3FFC2000, 0x2000, SOC_MEMORY_TYPE_DRAM,     0,         false}, //pool 10-13, mmu page 1
+    { 0x3FFC4000, 0x2000, SOC_MEMORY_TYPE_DRAM,     0,         false}, //pool 10-13, mmu page 2
+    { 0x3FFC6000, 0x2000, SOC_MEMORY_TYPE_DRAM,     0,         false}, //pool 10-13, mmu page 3
+    { 0x3FFC8000, 0x2000, SOC_MEMORY_TYPE_DRAM,     0,         false}, //pool 10-13, mmu page 4
+    { 0x3FFCA000, 0x2000, SOC_MEMORY_TYPE_DRAM,     0,         false}, //pool 10-13, mmu page 5
+    { 0x3FFCC000, 0x2000, SOC_MEMORY_TYPE_DRAM,     0,         false}, //pool 10-13, mmu page 6
+    { 0x3FFCE000, 0x2000, SOC_MEMORY_TYPE_DRAM,     0,         false}, //pool 10-13, mmu page 7
+    { 0x3FFD0000, 0x2000, SOC_MEMORY_TYPE_DRAM,     0,         false}, //pool 10-13, mmu page 8
+    { 0x3FFD2000, 0x2000, SOC_MEMORY_TYPE_DRAM,     0,         false}, //pool 10-13, mmu page 9
+    { 0x3FFD4000, 0x2000, SOC_MEMORY_TYPE_DRAM,     0,         false}, //pool 10-13, mmu page 10
+    { 0x3FFD6000, 0x2000, SOC_MEMORY_TYPE_DRAM,     0,         false}, //pool 10-13, mmu page 11
+    { 0x3FFD8000, 0x2000, SOC_MEMORY_TYPE_DRAM,     0,         false}, //pool 10-13, mmu page 12
+    { 0x3FFDA000, 0x2000, SOC_MEMORY_TYPE_DRAM,     0,         false}, //pool 10-13, mmu page 13
+    { 0x3FFDC000, 0x2000, SOC_MEMORY_TYPE_DRAM,     0,         false}, //pool 10-13, mmu page 14
+    { 0x3FFDE000, 0x2000, SOC_MEMORY_TYPE_DRAM,     0,         false}, //pool 10-13, mmu page 15
+    { 0x3FFE0000, 0x4000, SOC_MEMORY_TYPE_DIRAM,    0x400BC000,true},  //pool 9 blk 1
+    { 0x3FFE4000, 0x4000, SOC_MEMORY_TYPE_DIRAM,    0x400B8000,true},  //pool 9 blk 0
+    { 0x3FFE8000, 0x8000, SOC_MEMORY_TYPE_DIRAM,    0x400B0000,true},  //pool 8 <- can be remapped to ROM, used for MAC dump
+    { 0x3FFF0000, 0x8000, SOC_MEMORY_TYPE_DIRAM,    0x400A8000,true},  //pool 7 <- can be used for MAC dump
+    { 0x3FFF8000, 0x4000, SOC_MEMORY_TYPE_DIRAM,    0x400A4000,true},  //pool 6 blk 1 <- can be used as trace memory
+    { 0x3FFFC000, 0x4000, SOC_MEMORY_TYPE_DIRAM,    0x400A0000,true},  //pool 6 blk 0 <- can be used as trace memory
+    { 0x40070000, 0x8000, SOC_MEMORY_TYPE_IRAM,     0,         false}, //pool 0
+    { 0x40078000, 0x8000, SOC_MEMORY_TYPE_IRAM,     0,         false}, //pool 1
+    { 0x40080000, 0x2000, SOC_MEMORY_TYPE_IRAM,     0,         false}, //pool 2-5, mmu page 0
+    { 0x40082000, 0x2000, SOC_MEMORY_TYPE_IRAM,     0,         false}, //pool 2-5, mmu page 1
+    { 0x40084000, 0x2000, SOC_MEMORY_TYPE_IRAM,     0,         false}, //pool 2-5, mmu page 2
+    { 0x40086000, 0x2000, SOC_MEMORY_TYPE_IRAM,     0,         false}, //pool 2-5, mmu page 3
+    { 0x40088000, 0x2000, SOC_MEMORY_TYPE_IRAM,     0,         false}, //pool 2-5, mmu page 4
+    { 0x4008A000, 0x2000, SOC_MEMORY_TYPE_IRAM,     0,         false}, //pool 2-5, mmu page 5
+    { 0x4008C000, 0x2000, SOC_MEMORY_TYPE_IRAM,     0,         false}, //pool 2-5, mmu page 6
+    { 0x4008E000, 0x2000, SOC_MEMORY_TYPE_IRAM,     0,         false}, //pool 2-5, mmu page 7
+    { 0x40090000, 0x2000, SOC_MEMORY_TYPE_IRAM,     0,         false}, //pool 2-5, mmu page 8
+    { 0x40092000, 0x2000, SOC_MEMORY_TYPE_IRAM,     0,         false}, //pool 2-5, mmu page 9
+    { 0x40094000, 0x2000, SOC_MEMORY_TYPE_IRAM,     0,         false}, //pool 2-5, mmu page 10
+    { 0x40096000, 0x2000, SOC_MEMORY_TYPE_IRAM,     0,         false}, //pool 2-5, mmu page 11
+    { 0x40098000, 0x2000, SOC_MEMORY_TYPE_IRAM,     0,         false}, //pool 2-5, mmu page 12
+    { 0x4009A000, 0x2000, SOC_MEMORY_TYPE_IRAM,     0,         false}, //pool 2-5, mmu page 13
+    { 0x4009C000, 0x2000, SOC_MEMORY_TYPE_IRAM,     0,         false}, //pool 2-5, mmu page 14
+    { 0x4009E000, 0x2000, SOC_MEMORY_TYPE_IRAM,     0,         false}, //pool 2-5, mmu page 15
 #ifdef CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP
-    { SOC_RTC_DRAM_LOW, 0x2000, 16, 0}, //RTC Fast Memory
+    { SOC_RTC_DRAM_LOW, 0x2000, SOC_MEMORY_TYPE_RTCRAM, 0, false}, //RTC Fast Memory
 #endif
 };
 
@@ -131,7 +126,7 @@ const size_t soc_memory_region_count = sizeof(soc_memory_regions)/sizeof(soc_mem
    These are removed from the soc_memory_regions array when heaps are created.
  */
 SOC_RESERVE_MEMORY_REGION(SOC_CACHE_PRO_LOW, SOC_CACHE_PRO_HIGH, cpu0_cache);
-#ifndef CONFIG_FREERTOS_UNICORE
+#ifndef CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
 SOC_RESERVE_MEMORY_REGION(SOC_CACHE_APP_LOW, SOC_CACHE_APP_HIGH, cpu1_cache);
 #endif
 
@@ -152,7 +147,7 @@ SOC_RESERVE_MEMORY_REGION(SOC_CACHE_APP_LOW, SOC_CACHE_APP_HIGH, cpu1_cache);
     */
 
 SOC_RESERVE_MEMORY_REGION(0x3ffe0000, 0x3ffe0440, rom_pro_data); //Reserve ROM PRO data region
-#ifndef CONFIG_FREERTOS_UNICORE
+#ifndef CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
 SOC_RESERVE_MEMORY_REGION(0x3ffe3f20, 0x3ffe4350, rom_app_data); //Reserve ROM APP data region
 #endif
 

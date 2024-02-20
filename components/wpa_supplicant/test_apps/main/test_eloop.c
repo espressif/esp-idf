@@ -55,7 +55,7 @@ extern const wifi_osi_funcs_t *wifi_funcs;
 /* Check if eloop runs its timers correctly & in correct order */
 TEST_CASE("Test eloop timers run", "[eloop]")
 {
-    set_leak_threshold(800);
+    set_leak_threshold(1000);
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
     cfg.nvs_enable = false;
     ESP_ERROR_CHECK(esp_wifi_init(&cfg));

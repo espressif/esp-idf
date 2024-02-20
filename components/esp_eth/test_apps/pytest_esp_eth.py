@@ -1,16 +1,18 @@
-# SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
-
 import contextlib
 import logging
 import os
 import socket
-from multiprocessing import Pipe, Process, connection
+from multiprocessing import connection
+from multiprocessing import Pipe
+from multiprocessing import Process
 from typing import Iterator
 
 import pytest
-from pytest_embedded import Dut
-from scapy.all import Ether, raw
+from pytest_embedded_idf import IdfDut
+from scapy.all import Ether
+from scapy.all import raw
 
 ETH_TYPE = 0x3300
 
@@ -24,6 +26,8 @@ class EthTestIntf(object):
     def find_target_if(self, my_if: str = '') -> None:
         # try to determine which interface to use
         netifs = os.listdir('/sys/class/net/')
+        # order matters - ETH NIC with the highest number is connected to DUT on CI runner
+        netifs.sort(reverse=True)
         logging.info('detected interfaces: %s', str(netifs))
 
         for netif in netifs:
@@ -99,26 +103,35 @@ class EthTestIntf(object):
             except Exception as e:
                 raise e
 
+    def eth_loopback(self, mac: str, pipe_rcv:connection.Connection) -> None:
+        with self.configure_eth_if(self.eth_type) as so:
+            so.settimeout(30)
+            try:
+                while pipe_rcv.poll() is not True:
+                    try:
+                        eth_frame = Ether(so.recv(1522))
+                    except Exception as e:
+                        raise e
+                    if mac == eth_frame.src:
+                        eth_frame.dst = eth_frame.src
+                        eth_frame.src = so.getsockname()[4]
+                        so.send(raw(eth_frame))
+                    else:
+                        logging.warning('Received frame from unexpected source')
+                        logging.warning('Source MAC %s', eth_frame.src)
+            except Exception as e:
+                raise e
 
-def ethernet_test(dut: Dut) -> None:
-    dut.expect_exact('Press ENTER to see the list of tests')
-    dut.write('\n')
 
-    dut.expect_exact('Enter test for running.')
-    dut.write('[ethernet]')
-    dut.expect_unity_test_output(timeout=980)
+def ethernet_test(dut: IdfDut) -> None:
+    dut.run_all_single_board_cases(group='ethernet', timeout=980)
 
 
-def ethernet_int_emac_hal_test(dut: Dut) -> None:
-    dut.expect_exact('Press ENTER to see the list of tests')
-    dut.write('\n')
-
-    dut.expect_exact('Enter test for running.')
-    dut.write('[emac_hal]')
-    dut.expect_unity_test_output()
+def ethernet_int_emac_hal_test(dut: IdfDut) -> None:
+    dut.run_all_single_board_cases(group='emac_hal')
 
 
-def ethernet_l2_test(dut: Dut) -> None:
+def ethernet_l2_test(dut: IdfDut) -> None:
     target_if = EthTestIntf(ETH_TYPE)
 
     dut.expect_exact('Press ENTER to see the list of tests')
@@ -159,7 +172,7 @@ def ethernet_l2_test(dut: Dut) -> None:
     # (there might be slight delay due to the RSTP execution)
     target_if.recv_resp_poke(mac=dut_mac)
     target_if.send_eth_packet('ff:ff:ff:ff:ff:ff')  # broadcast frame
-    target_if.send_eth_packet('01:00:00:00:00:00')  # multicast frame
+    target_if.send_eth_packet('01:00:5e:00:00:00')  # IPv4 multicast frame (some SPI Eth modules filter multicast other than IP)
     target_if.send_eth_packet(mac=dut_mac)  # unicast frame
     dut.expect_unity_test_output(extra_before=res.group(1))
 
@@ -172,7 +185,7 @@ def ethernet_l2_test(dut: Dut) -> None:
     # Start/stop under heavy Tx traffic
     for tx_i in range(10):
         target_if.recv_resp_poke(dut_mac, tx_i)
-        dut.expect_exact('Ethernet stopped')
+        dut.expect_exact('Ethernet Stopped')
 
     for rx_i in range(10):
         target_if.recv_resp_poke(dut_mac, rx_i)
@@ -180,7 +193,7 @@ def ethernet_l2_test(dut: Dut) -> None:
         pipe_rcv, pipe_send = Pipe(False)
         tx_proc = Process(target=target_if.traffic_gen, args=(dut_mac, pipe_rcv, ))
         tx_proc.start()
-        dut.expect_exact('Ethernet stopped')
+        dut.expect_exact('Ethernet Stopped')
         pipe_send.send(0)  # just send some dummy data
         tx_proc.join(5)
         if tx_proc.exitcode is None:
@@ -189,6 +202,37 @@ def ethernet_l2_test(dut: Dut) -> None:
     dut.expect_unity_test_output(extra_before=res.group(1))
 
 
+def ethernet_heap_alloc_test(dut: IdfDut) -> None:
+    target_if = EthTestIntf(ETH_TYPE)
+
+    dut.expect_exact('Press ENTER to see the list of tests')
+    dut.write('\n')
+    dut.expect_exact('Enter test for running.')
+    dut.write('"heap utilization"')
+    res = dut.expect(r'DUT PHY: (\w+)')
+    dut_phy = res.group(1).decode('utf-8')
+    # W5500 does not support internal loopback, we need to loopback for it
+    if 'W5500' in dut_phy:
+        logging.info('Starting loopback server...')
+        res = dut.expect(
+            r'DUT MAC: ([0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2})'
+        )
+        dut_mac = res.group(1).decode('utf-8')
+        pipe_rcv, pipe_send = Pipe(False)
+        loopback_proc = Process(target=target_if.eth_loopback, args=(dut_mac, pipe_rcv, ))
+        loopback_proc.start()
+
+        target_if.recv_resp_poke(mac=dut_mac)
+        dut.expect_exact('Ethernet Stopped')
+        pipe_send.send(0)  # just send some dummy data
+        loopback_proc.join(5)
+        if loopback_proc.exitcode is None:
+            loopback_proc.terminate()
+
+    dut.expect_unity_test_output()
+
+
+# ----------- IP101 -----------
 @pytest.mark.esp32
 @pytest.mark.ethernet
 @pytest.mark.parametrize('config', [
@@ -197,7 +241,7 @@ def ethernet_l2_test(dut: Dut) -> None:
     'single_core_ip101'
 ], indirect=True)
 @pytest.mark.flaky(reruns=3, reruns_delay=5)
-def test_esp_ethernet(dut: Dut) -> None:
+def test_esp_ethernet(dut: IdfDut) -> None:
     ethernet_test(dut)
 
 
@@ -206,23 +250,109 @@ def test_esp_ethernet(dut: Dut) -> None:
 @pytest.mark.parametrize('config', [
     'default_ip101',
 ], indirect=True)
-def test_esp_emac_hal(dut: Dut) -> None:
+def test_esp_emac_hal(dut: IdfDut) -> None:
     ethernet_int_emac_hal_test(dut)
+    dut.serial.hard_reset()
+    ethernet_heap_alloc_test(dut)
 
 
 @pytest.mark.esp32
-@pytest.mark.ip101
+@pytest.mark.eth_ip101
 @pytest.mark.parametrize('config', [
     'default_ip101',
 ], indirect=True)
-def test_esp_eth_ip101(dut: Dut) -> None:
+def test_esp_eth_ip101(dut: IdfDut) -> None:
     ethernet_l2_test(dut)
 
 
+# ----------- LAN8720 -----------
 @pytest.mark.esp32
-@pytest.mark.lan8720
+@pytest.mark.eth_lan8720
 @pytest.mark.parametrize('config', [
     'default_lan8720',
 ], indirect=True)
-def test_esp_eth_lan8720(dut: Dut) -> None:
+def test_esp_eth_lan8720(dut: IdfDut) -> None:
+    ethernet_test(dut)
+    dut.serial.hard_reset()
     ethernet_l2_test(dut)
+
+
+# ----------- RTL8201 -----------
+@pytest.mark.esp32
+@pytest.mark.eth_rtl8201
+@pytest.mark.parametrize('config', [
+    'default_rtl8201',
+], indirect=True)
+def test_esp_eth_rtl8201(dut: IdfDut) -> None:
+    ethernet_test(dut)
+    dut.serial.hard_reset()
+    ethernet_l2_test(dut)
+
+
+# ----------- KSZ8041 -----------
+@pytest.mark.esp32
+@pytest.mark.eth_ksz8041
+@pytest.mark.parametrize('config', [
+    'default_ksz8041',
+], indirect=True)
+def test_esp_eth_ksz8041(dut: IdfDut) -> None:
+    ethernet_test(dut)
+    dut.serial.hard_reset()
+    ethernet_l2_test(dut)
+
+
+# ----------- DP83848 -----------
+@pytest.mark.esp32
+@pytest.mark.eth_dp83848
+@pytest.mark.parametrize('config', [
+    'default_dp83848',
+], indirect=True)
+def test_esp_eth_dp83848(dut: IdfDut) -> None:
+    ethernet_test(dut)
+    dut.serial.hard_reset()
+    ethernet_l2_test(dut)
+
+
+# ----------- W5500 -----------
+@pytest.mark.esp32
+@pytest.mark.eth_w5500
+@pytest.mark.parametrize('config', [
+    'default_w5500',
+    'poll_w5500',
+], indirect=True)
+def test_esp_eth_w5500(dut: IdfDut) -> None:
+    ethernet_test(dut)
+    dut.serial.hard_reset()
+    ethernet_l2_test(dut)
+    dut.serial.hard_reset()
+    ethernet_heap_alloc_test(dut)
+
+
+# ----------- KSZ8851SNL -----------
+@pytest.mark.esp32
+@pytest.mark.eth_ksz8851snl
+@pytest.mark.parametrize('config', [
+    'default_ksz8851snl',
+    'poll_ksz8851snl',
+], indirect=True)
+def test_esp_eth_ksz8851snl(dut: IdfDut) -> None:
+    ethernet_test(dut)
+    dut.serial.hard_reset()
+    ethernet_l2_test(dut)
+    dut.serial.hard_reset()
+    ethernet_heap_alloc_test(dut)
+
+
+# ----------- DM9051 -----------
+@pytest.mark.esp32
+@pytest.mark.eth_dm9051
+@pytest.mark.parametrize('config', [
+    'default_dm9051',
+    'poll_dm9051',
+], indirect=True)
+def test_esp_eth_dm9051(dut: IdfDut) -> None:
+    ethernet_test(dut)
+    dut.serial.hard_reset()
+    ethernet_l2_test(dut)
+    dut.serial.hard_reset()
+    ethernet_heap_alloc_test(dut)

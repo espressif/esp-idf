@@ -45,13 +45,49 @@ void spi_slave_hal_user_start(const spi_slave_hal_context_t *hal)
     spi_ll_user_start(hal->hw);
 }
 
+#if SOC_NON_CACHEABLE_OFFSET
+#define ADDR_DMA_2_CPU(addr)   ((typeof(addr))((uint32_t)(addr) + SOC_NON_CACHEABLE_OFFSET))
+#define ADDR_CPU_2_DMA(addr)   ((typeof(addr))((uint32_t)(addr) - SOC_NON_CACHEABLE_OFFSET))
+#else
+#define ADDR_DMA_2_CPU(addr)   (addr)
+#define ADDR_CPU_2_DMA(addr)   (addr)
+#endif
+
+static void s_spi_slave_hal_dma_desc_setup_link(spi_dma_desc_t *dmadesc, const void *data, int len, bool is_rx)
+{
+    dmadesc = ADDR_DMA_2_CPU(dmadesc);
+    int n = 0;
+    while (len) {
+        int dmachunklen = len;
+        if (dmachunklen > DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED) {
+            dmachunklen = DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED;
+        }
+        if (is_rx) {
+            //Receive needs DMA length rounded to next 32-bit boundary
+            dmadesc[n].dw0.size = (dmachunklen + 3) & (~3);
+        } else {
+            dmadesc[n].dw0.size = dmachunklen;
+            dmadesc[n].dw0.length = dmachunklen;
+        }
+        dmadesc[n].buffer = (uint8_t *)data;
+        dmadesc[n].dw0.suc_eof = 0;
+        dmadesc[n].dw0.owner = DMA_DESCRIPTOR_BUFFER_OWNER_DMA;
+        dmadesc[n].next = ADDR_CPU_2_DMA(&dmadesc[n + 1]);
+        len -= dmachunklen;
+        data += dmachunklen;
+        n++;
+    }
+    dmadesc[n - 1].dw0.suc_eof = 1; //Mark last DMA desc as end of stream.
+    dmadesc[n - 1].next = NULL;
+}
+
 void spi_slave_hal_prepare_data(const spi_slave_hal_context_t *hal)
 {
     if (hal->use_dma) {
 
         //Fill DMA descriptors
         if (hal->rx_buffer) {
-            lldesc_setup_link(hal->dmadesc_rx, hal->rx_buffer, ((hal->bitlen + 7) / 8), true);
+            s_spi_slave_hal_dma_desc_setup_link(hal->dmadesc_rx, hal->rx_buffer, ((hal->bitlen + 7) / 8), true);
 
             //reset dma inlink, this should be reset before spi related reset
             spi_dma_ll_rx_reset(hal->dma_in, hal->rx_dma_chan);
@@ -60,10 +96,10 @@ void spi_slave_hal_prepare_data(const spi_slave_hal_context_t *hal)
             spi_ll_infifo_full_clr(hal->hw);
 
             spi_ll_dma_rx_enable(hal->hw, 1);
-            spi_dma_ll_rx_start(hal->dma_in, hal->rx_dma_chan, hal->dmadesc_rx);
+            spi_dma_ll_rx_start(hal->dma_in, hal->rx_dma_chan, (lldesc_t *)hal->dmadesc_rx);
         }
         if (hal->tx_buffer) {
-            lldesc_setup_link(hal->dmadesc_tx, hal->tx_buffer, (hal->bitlen + 7) / 8, false);
+            s_spi_slave_hal_dma_desc_setup_link(hal->dmadesc_tx, hal->tx_buffer, (hal->bitlen + 7) / 8, false);
 
             //reset dma outlink, this should be reset before spi related reset
             spi_dma_ll_tx_reset(hal->dma_out, hal->tx_dma_chan);
@@ -72,7 +108,7 @@ void spi_slave_hal_prepare_data(const spi_slave_hal_context_t *hal)
             spi_ll_outfifo_empty_clr(hal->hw);
 
             spi_ll_dma_tx_enable(hal->hw, 1);
-            spi_dma_ll_tx_start(hal->dma_out, hal->tx_dma_chan, hal->dmadesc_tx);
+            spi_dma_ll_tx_start(hal->dma_out, hal->tx_dma_chan, (lldesc_t *)hal->dmadesc_tx);
         }
     } else {
         //No DMA. Turn off SPI and copy data to transmit buffers.
@@ -125,8 +161,8 @@ bool spi_slave_hal_dma_need_reset(const spi_slave_hal_context_t *hal)
         //In case CS goes high too soon, the transfer is aborted while the DMA channel still thinks it's going. This
         //leads to issues later on, so in that case we need to reset the channel. The state can be detected because
         //the DMA system doesn't give back the offending descriptor; the owner is still set to DMA.
-        for (i = 0; hal->dmadesc_rx[i].eof == 0 && hal->dmadesc_rx[i].owner == 0; i++) {}
-        if (hal->dmadesc_rx[i].owner) {
+        for (i = 0; hal->dmadesc_rx[i].dw0.suc_eof == 0 && hal->dmadesc_rx[i].dw0.owner == 0; i++) {}
+        if (hal->dmadesc_rx[i].dw0.owner) {
             ret = true;
         }
     }

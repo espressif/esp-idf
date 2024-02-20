@@ -5,16 +5,25 @@ idf_build_get_property(target IDF_TARGET)
 idf_build_get_property(python PYTHON)
 idf_build_get_property(idf_path IDF_PATH)
 
+
 set(chip_model ${target})
+
+# TODO: [ESP32C5] remove this 'if' block when esp32C5 beta3 is no longer supported
+if(target STREQUAL "esp32c5")
+    if(CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION)
+        set(chip_model esp32c5beta3)
+    endif()
+endif()
 
 set(ESPTOOLPY ${python} "$ENV{ESPTOOL_WRAPPER}" "${CMAKE_CURRENT_LIST_DIR}/esptool/esptool.py" --chip ${chip_model})
 set(ESPSECUREPY ${python} "${CMAKE_CURRENT_LIST_DIR}/esptool/espsecure.py")
 set(ESPEFUSEPY ${python} "${CMAKE_CURRENT_LIST_DIR}/esptool/espefuse.py")
 set(ESPMONITOR ${python} -m esp_idf_monitor)
+set(ESPMKUF2 ${python} "${idf_path}/tools/mkuf2.py" write --chip ${chip_model})
 set(ESPTOOLPY_CHIP "${chip_model}")
 
 if(NOT CONFIG_APP_BUILD_TYPE_RAM AND CONFIG_APP_BUILD_GENERATE_BINARIES)
-    if(CONFIG_SPI_FLASH_HPM_ENABLE)
+    if(CONFIG_BOOTLOADER_FLASH_DC_AWARE)
     # When set flash frequency to 120M, must keep 1st bootloader work under ``DOUT`` mode
     # because on some flash chips, 120M will modify the status register,
     # which will make ROM won't work.
@@ -100,8 +109,6 @@ endif()
 list(APPEND esptool_elf2image_args --min-rev-full ${CONFIG_ESP_REV_MIN_FULL})
 list(APPEND esptool_elf2image_args --max-rev-full ${CONFIG_ESP_REV_MAX_FULL})
 
-set(monitor_rev_args "--revision;${CONFIG_ESP_REV_MIN_FULL}")
-
 if(CONFIG_ESPTOOLPY_HEADER_FLASHSIZE_UPDATE)
     # Set ESPFLASHSIZE to 'detect' *after* esptool_elf2image_args are generated,
     # as elf2image can't have 'detect' as an option...
@@ -121,7 +128,6 @@ idf_build_get_property(build_dir BUILD_DIR)
 
 idf_build_get_property(elf_name EXECUTABLE_NAME GENERATOR_EXPRESSION)
 idf_build_get_property(elf EXECUTABLE GENERATOR_EXPRESSION)
-idf_build_get_property(elf_dir EXECUTABLE_DIR GENERATOR_EXPRESSION)
 
 if(CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES AND NOT BOOTLOADER_BUILD)
     set(unsigned_project_binary "${elf_name}-unsigned.bin")
@@ -137,10 +143,10 @@ set(PROJECT_BIN "${elf_name}.bin")
 if(CONFIG_APP_BUILD_GENERATE_BINARIES)
     add_custom_command(OUTPUT "${build_dir}/.bin_timestamp"
         COMMAND ${ESPTOOLPY} elf2image ${esptool_elf2image_args}
-            -o "${build_dir}/${unsigned_project_binary}" "${elf_dir}/${elf}"
+            -o "${build_dir}/${unsigned_project_binary}" "$<TARGET_FILE:$<GENEX_EVAL:${elf}>>"
         COMMAND ${CMAKE_COMMAND} -E echo "Generated ${build_dir}/${unsigned_project_binary}"
         COMMAND ${CMAKE_COMMAND} -E md5sum "${build_dir}/${unsigned_project_binary}" > "${build_dir}/.bin_timestamp"
-        DEPENDS ${elf}
+        DEPENDS "$<TARGET_FILE:$<GENEX_EVAL:${elf}>>"
         VERBATIM
         WORKING_DIRECTORY ${build_dir}
         COMMENT "Generating binary image from built executable"
@@ -208,11 +214,54 @@ add_custom_target(erase_flash
     VERBATIM
     )
 
+set(UF2_ARGS --json "${CMAKE_CURRENT_BINARY_DIR}/flasher_args.json")
+
+add_custom_target(uf2
+    COMMAND ${CMAKE_COMMAND}
+    -D "IDF_PATH=${idf_path}"
+    -D "SERIAL_TOOL=${ESPMKUF2}"
+    -D "SERIAL_TOOL_ARGS=${UF2_ARGS};-o;${CMAKE_CURRENT_BINARY_DIR}/uf2.bin"
+    -P run_serial_tool.cmake
+    WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
+    USES_TERMINAL
+    VERBATIM
+    )
+
+add_custom_target(uf2-app
+    COMMAND ${CMAKE_COMMAND}
+    -D "IDF_PATH=${idf_path}"
+    -D "SERIAL_TOOL=${ESPMKUF2}"
+    -D "SERIAL_TOOL_ARGS=${UF2_ARGS};-o;${CMAKE_CURRENT_BINARY_DIR}/uf2-app.bin;--bin;app"
+    -P run_serial_tool.cmake
+    WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
+    USES_TERMINAL
+    VERBATIM
+    )
+
+
+set(MONITOR_ARGS "")
+
+list(APPEND MONITOR_ARGS "--toolchain-prefix;${_CMAKE_TOOLCHAIN_PREFIX};")
+
+if(CONFIG_ESP_COREDUMP_DECODE)
+list(APPEND MONITOR_ARGS "--decode-coredumps;${CONFIG_ESP_COREDUMP_DECODE};")
+endif()
+
+list(APPEND MONITOR_ARGS "--target;${target};")
+
+list(APPEND MONITOR_ARGS "--revision;${CONFIG_ESP_REV_MIN_FULL};")
+
+if(CONFIG_IDF_TARGET_ARCH_RISCV)
+    list(APPEND MONITOR_ARGS "--decode-panic;backtrace;")
+endif()
+
+list(APPEND MONITOR_ARGS "$<TARGET_FILE:$<GENEX_EVAL:${elf}>>")
+
 add_custom_target(monitor
     COMMAND ${CMAKE_COMMAND}
     -D "IDF_PATH=${idf_path}"
     -D "SERIAL_TOOL=${ESPMONITOR}"
-    -D "SERIAL_TOOL_ARGS=--target;${target};${monitor_rev_args};${elf_dir}/${elf}"
+    -D "SERIAL_TOOL_ARGS=${MONITOR_ARGS}"
     -D "WORKING_DIRECTORY=${build_dir}"
     -P run_serial_tool.cmake
     WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}

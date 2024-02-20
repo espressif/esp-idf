@@ -13,7 +13,7 @@ In ``esp_lcd``, an LCD panel is represented by :cpp:type:`esp_lcd_panel_handle_t
 
 .. list::
 
-    - Controller based LCD driver involves multiple steps to get a panel handle, like bus allocation, IO device registration and controller driver install. The frame buffer is located in the controller's internal GRAM (Graphical RAM). ESP-IDF provides only a limited number of LCD controller drivers out of the box (e.g., ST7789, SSD1306), :ref:`more_controller_based_lcd_drivers` are maintained in the `Espressif Component Registry <https://components.espressif.com/>_`.
+    - Controller based LCD driver involves multiple steps to get a panel handle, like bus allocation, IO device registration and controller driver install. The frame buffer is located in the controller's internal GRAM (Graphical RAM). ESP-IDF provides only a limited number of LCD controller drivers out of the box (e.g., ST7789, SSD1306), :ref:`more_controller_based_lcd_drivers` are maintained in the `Espressif Component Registry <https://components.espressif.com/>`__.
     - :ref:`spi_lcd_panel` describes the steps to install the SPI LCD IO driver and then get the panel handle.
     - :ref:`i2c_lcd_panel` describes the steps to install the I2C LCD IO driver and then get the panel handle.
     :SOC_LCD_I80_SUPPORTED: - :ref:`i80_lcd_panel` describes the steps to install the I80 LCD IO driver and then get the panel handle.
@@ -448,13 +448,14 @@ More LCD panel drivers and touch drivers are available in `ESP-IDF Component Reg
 
     .. _lcd_panel_operations:
 
-LCD Panel IO Operations
------------------------
+LCD Panel Basic Operations
+--------------------------
 
 * :cpp:func:`esp_lcd_panel_reset` can reset the LCD panel.
 * :cpp:func:`esp_lcd_panel_init` performs a basic initialization of the panel. To perform more manufacture specific initialization, please go to :ref:`steps_add_manufacture_init`.
 * Through combined use of :cpp:func:`esp_lcd_panel_swap_xy` and :cpp:func:`esp_lcd_panel_mirror`, you can rotate the LCD screen.
-* :cpp:func:`esp_lcd_panel_disp_on_off` can turn on or off the LCD screen (different from LCD backlight).
+* :cpp:func:`esp_lcd_panel_disp_on_off` can turn on or off the LCD screen by cutting down the output path from the frame buffer to the LCD screen.
+* :cpp:func:`esp_lcd_panel_disp_sleep` can reduce the power consumption of the LCD screen by entering the sleep mode. The internal frame buffer is still retained.
 * :cpp:func:`esp_lcd_panel_draw_bitmap` is the most significant function, which does the magic to draw the user provided color buffer to the LCD screen, where the draw window is also configurable.
 
 .. _steps_add_manufacture_init:
@@ -462,7 +463,7 @@ LCD Panel IO Operations
 Steps to Add Manufacture Specific Initialization
 -------------------------------------------------
 
-The LCD controller drivers (e.g., st7789) in esp-idf only provide basic initialization in the :cpp:func:`esp_lcd_panel_init`, leaving the vast majority of settings to the default values. Some LCD modules needs to set a bunch of manufacture specific configurations before it can display normally. These configurations usually include gamma, power voltage and so on. If you want to add manufacture specific initialization, please follow the steps below:
+The LCD controller drivers (e.g., st7789) in ESP-IDF only provide basic initialization in the :cpp:func:`esp_lcd_panel_init`, leaving the vast majority of settings to the default values. Some LCD modules needs to set a bunch of manufacture specific configurations before it can display normally. These configurations usually include gamma, power voltage and so on. If you want to add manufacture specific initialization, please follow the steps below:
 
 .. code:: c
 
@@ -497,5 +498,8 @@ API Reference
 .. include-build-file:: inc/esp_lcd_types.inc
 .. include-build-file:: inc/esp_lcd_panel_io.inc
 .. include-build-file:: inc/esp_lcd_panel_ops.inc
-.. include-build-file:: inc/esp_lcd_panel_rgb.inc
 .. include-build-file:: inc/esp_lcd_panel_vendor.inc
+
+.. only:: SOC_LCD_RGB_SUPPORTED
+
+    .. include-build-file:: inc/esp_lcd_panel_rgb.inc

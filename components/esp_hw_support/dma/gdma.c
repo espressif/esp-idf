@@ -47,6 +47,10 @@
 #include "hal/cache_hal.h"
 #include "hal/cache_ll.h"
 
+#if CONFIG_PM_ENABLE && SOC_PM_SUPPORT_TOP_PD
+#include "esp_private/gdma_sleep_retention.h"
+#endif
+
 static const char *TAG = "gdma";
 
 #if !SOC_RCC_IS_INDEPENDENT
@@ -213,9 +217,6 @@ esp_err_t gdma_new_ahb_channel(const gdma_channel_alloc_config_t *config, gdma_c
     };
     return do_allocate_gdma_channel(&search_info, config, ret_chan);
 }
-
-esp_err_t gdma_new_channel(const gdma_channel_alloc_config_t *config, gdma_channel_handle_t *ret_chan)
-__attribute__((alias("gdma_new_ahb_channel")));
 #endif // SOC_AHB_GDMA_SUPPORTED
 
 #if SOC_AXI_GDMA_SUPPORTED
@@ -231,6 +232,14 @@ esp_err_t gdma_new_axi_channel(const gdma_channel_alloc_config_t *config, gdma_c
     return do_allocate_gdma_channel(&search_info, config, ret_chan);
 }
 #endif // SOC_AXI_GDMA_SUPPORTED
+
+#if SOC_AHB_GDMA_SUPPORTED
+esp_err_t gdma_new_channel(const gdma_channel_alloc_config_t *config, gdma_channel_handle_t *ret_chan)
+__attribute__((alias("gdma_new_ahb_channel")));
+#elif SOC_AXI_GDMA_SUPPORTED
+esp_err_t gdma_new_channel(const gdma_channel_alloc_config_t *config, gdma_channel_handle_t *ret_chan)
+__attribute__((alias("gdma_new_axi_channel")));
+#endif
 
 esp_err_t gdma_del_channel(gdma_channel_handle_t dma_chan)
 {
@@ -358,15 +367,15 @@ esp_err_t gdma_set_transfer_ability(gdma_channel_handle_t dma_chan, const gdma_t
     ESP_RETURN_ON_FALSE((sram_alignment & (sram_alignment - 1)) == 0, ESP_ERR_INVALID_ARG,
                         TAG, "invalid sram alignment: %zu", sram_alignment);
 
-    uint32_t data_cache_line_size = cache_hal_get_cache_line_size(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_DATA);
+    uint32_t ext_mem_cache_line_size = cache_hal_get_cache_line_size(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_DATA);
     if (psram_alignment == 0) {
         // fall back to use the same size of the psram data cache line size
-        psram_alignment = data_cache_line_size;
+        psram_alignment = ext_mem_cache_line_size;
     }
-    if (psram_alignment > data_cache_line_size) {
-        ESP_RETURN_ON_FALSE(((psram_alignment % data_cache_line_size) == 0), ESP_ERR_INVALID_ARG,
-                            TAG, "psram_alignment(%d) should be multiple of the data_cache_line_size(%"PRIu32")",
-                            psram_alignment, data_cache_line_size);
+    if (psram_alignment > ext_mem_cache_line_size) {
+        ESP_RETURN_ON_FALSE(((psram_alignment % ext_mem_cache_line_size) == 0), ESP_ERR_INVALID_ARG,
+                            TAG, "psram_alignment(%d) should be multiple of the ext_mem_cache_line_size(%"PRIu32")",
+                            psram_alignment, ext_mem_cache_line_size);
     }
 
     // if the DMA can't access the PSRAM, this HAL function is no-op
@@ -535,7 +544,7 @@ esp_err_t gdma_register_rx_event_callbacks(gdma_channel_handle_t dma_chan, gdma_
 
     // enable/disable GDMA interrupt events for RX channel
     portENTER_CRITICAL(&pair->spinlock);
-    gdma_hal_enable_intr(hal, pair->pair_id, GDMA_CHANNEL_DIRECTION_RX, GDMA_LL_EVENT_RX_SUC_EOF, cbs->on_recv_eof != NULL);
+    gdma_hal_enable_intr(hal, pair->pair_id, GDMA_CHANNEL_DIRECTION_RX, GDMA_LL_EVENT_RX_SUC_EOF | GDMA_LL_EVENT_RX_ERR_EOF, cbs->on_recv_eof != NULL);
     gdma_hal_enable_intr(hal, pair->pair_id, GDMA_CHANNEL_DIRECTION_RX, GDMA_LL_EVENT_RX_DESC_ERROR, cbs->on_descr_err != NULL);
     gdma_hal_enable_intr(hal, pair->pair_id, GDMA_CHANNEL_DIRECTION_RX, GDMA_LL_EVENT_RX_DONE, cbs->on_recv_done != NULL);
     portEXIT_CRITICAL(&pair->spinlock);
@@ -689,6 +698,9 @@ static void gdma_release_pair_handle(gdma_pair_t *pair)
 
     if (do_deinitialize) {
         free(pair);
+#if CONFIG_PM_ENABLE && SOC_PM_SUPPORT_TOP_PD
+        gdma_sleep_retention_deinit(group->group_id, pair_id);
+#endif
         ESP_LOGD(TAG, "del pair (%d,%d)", group->group_id, pair_id);
         gdma_release_group_handle(group);
     }
@@ -726,6 +738,9 @@ static gdma_pair_t *gdma_acquire_pair_handle(gdma_group_t *group, int pair_id)
         s_platform.group_ref_counts[group->group_id]++;
         portEXIT_CRITICAL(&s_platform.spinlock);
 
+#if CONFIG_PM_ENABLE && SOC_PM_SUPPORT_TOP_PD
+        gdma_sleep_retention_init(group->group_id, pair_id);
+#endif
         ESP_LOGD(TAG, "new pair (%d,%d) at %p", group->group_id, pair_id, pair);
     } else {
         free(pre_alloc_pair);
@@ -799,39 +814,44 @@ void gdma_default_rx_isr(void *args)
     gdma_hal_context_t *hal = &group->hal;
     int pair_id = pair->pair_id;
     bool need_yield = false;
-    // clear pending interrupt event
-    uint32_t intr_status = gdma_hal_read_intr_status(hal, pair_id, GDMA_CHANNEL_DIRECTION_RX);
+    bool abnormal_eof = false;
+    bool normal_eof = false;
+
+    // clear pending interrupt event first
+    // reading the raw interrupt status because we also want to know the EOF status, even if the EOF interrupt is not enabled
+    uint32_t intr_status = gdma_hal_read_intr_status(hal, pair_id, GDMA_CHANNEL_DIRECTION_RX, true);
     gdma_hal_clear_intr(hal, pair_id, GDMA_CHANNEL_DIRECTION_RX, intr_status);
 
-    /* Call on_recv_done before eof callbacks to ensure a correct sequence */
-    if ((intr_status & GDMA_LL_EVENT_RX_DONE) && rx_chan->cbs.on_recv_done) {
-        /* Here we don't return an event data in this callback.
-         * Because we can't get a determinant descriptor address
-         * that just finished processing by DMA controller.
-         * When the `rx_done` interrupt triggers, the finished descriptor should ideally
-         * stored in `in_desc_bf1` register, however, as it takes a while to
-         * get the `in_desc_bf1` in software, `in_desc_bf1` might have already refreshed,
-         * Therefore, instead of returning an unreliable descriptor, we choose to return nothing.
-         */
-        need_yield |= rx_chan->cbs.on_recv_done(&rx_chan->base, NULL, rx_chan->user_data);
+    // prepare data for different events
+    uint32_t eof_addr = 0;
+    if (intr_status & GDMA_LL_EVENT_RX_SUC_EOF) {
+        eof_addr = gdma_hal_get_eof_desc_addr(&group->hal, pair->pair_id, GDMA_CHANNEL_DIRECTION_RX, true);
+        normal_eof = true;
     }
+    if (intr_status & GDMA_LL_EVENT_RX_ERR_EOF) {
+        eof_addr = gdma_hal_get_eof_desc_addr(&group->hal, pair->pair_id, GDMA_CHANNEL_DIRECTION_RX, false);
+        abnormal_eof = true;
+    }
+    gdma_event_data_t edata = {
+        .rx_eof_desc_addr = eof_addr,
+        .flags = {
+            .abnormal_eof = abnormal_eof,
+            .normal_eof = normal_eof,
+        }
+    };
+
     if ((intr_status & GDMA_LL_EVENT_RX_DESC_ERROR) && rx_chan->cbs.on_descr_err) {
+        // in the future, we may add more information about the error descriptor into the event data,
+        // but for now, we just pass NULL
         need_yield |= rx_chan->cbs.on_descr_err(&rx_chan->base, NULL, rx_chan->user_data);
     }
-    if ((intr_status & GDMA_LL_EVENT_RX_SUC_EOF) && rx_chan->cbs.on_recv_eof) {
-        uint32_t eof_addr = gdma_hal_get_eof_desc_addr(&group->hal, pair->pair_id, GDMA_CHANNEL_DIRECTION_RX, true);
-        gdma_event_data_t suc_eof_data = {
-            .rx_eof_desc_addr = eof_addr,
-        };
-        need_yield |= rx_chan->cbs.on_recv_eof(&rx_chan->base, &suc_eof_data, rx_chan->user_data);
+
+    // we expect the caller will do data process in the recv_done callback first, and handle the EOF event later
+    if ((intr_status & GDMA_LL_EVENT_RX_DONE) && rx_chan->cbs.on_recv_done) {
+        need_yield |= rx_chan->cbs.on_recv_done(&rx_chan->base, &edata, rx_chan->user_data);
     }
-    if ((intr_status & GDMA_LL_EVENT_RX_ERR_EOF) && rx_chan->cbs.on_recv_eof) {
-        uint32_t eof_addr = gdma_hal_get_eof_desc_addr(&group->hal, pair->pair_id, GDMA_CHANNEL_DIRECTION_RX, false);
-        gdma_event_data_t err_eof_data = {
-            .rx_eof_desc_addr = eof_addr,
-            .flags.abnormal_eof = true,
-        };
-        need_yield |= rx_chan->cbs.on_recv_eof(&rx_chan->base, &err_eof_data, rx_chan->user_data);
+    if ((intr_status & (GDMA_LL_EVENT_RX_SUC_EOF | GDMA_LL_EVENT_RX_ERR_EOF)) && rx_chan->cbs.on_recv_eof) {
+        need_yield |= rx_chan->cbs.on_recv_eof(&rx_chan->base, &edata, rx_chan->user_data);
     }
 
     if (need_yield) {
@@ -848,13 +868,14 @@ void gdma_default_tx_isr(void *args)
     int pair_id = pair->pair_id;
     bool need_yield = false;
     // clear pending interrupt event
-    uint32_t intr_status = gdma_hal_read_intr_status(hal, pair_id, GDMA_CHANNEL_DIRECTION_TX);
+    uint32_t intr_status = gdma_hal_read_intr_status(hal, pair_id, GDMA_CHANNEL_DIRECTION_TX, false);
     gdma_hal_clear_intr(hal, pair_id, GDMA_CHANNEL_DIRECTION_TX, intr_status);
 
     if ((intr_status & GDMA_LL_EVENT_TX_EOF) && tx_chan->cbs.on_trans_eof) {
         uint32_t eof_addr = gdma_hal_get_eof_desc_addr(hal, pair_id, GDMA_CHANNEL_DIRECTION_TX, true);
         gdma_event_data_t edata = {
             .tx_eof_desc_addr = eof_addr,
+            .flags.normal_eof = true,
         };
         need_yield |= tx_chan->cbs.on_trans_eof(&tx_chan->base, &edata, tx_chan->user_data);
     }

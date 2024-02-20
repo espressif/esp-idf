@@ -371,8 +371,7 @@ static int provisioner_start_prov_pb_adv(const uint8_t uuid[16], const bt_mesh_a
 
     for (i = 0; i < CONFIG_BLE_MESH_PBA_SAME_TIME; i++) {
         if (!bt_mesh_atomic_test_bit(prov_links[i].flags, LINK_ACTIVE) &&
-            !bt_mesh_atomic_test_bit(prov_links[i].flags, LINK_CLOSING)
-            ) {
+            !bt_mesh_atomic_test_bit(prov_links[i].flags, LINK_CLOSING)) {
             memcpy(prov_links[i].uuid, uuid, 16);
             prov_links[i].oob_info = oob_info;
             if (addr) {
@@ -1070,14 +1069,24 @@ static void reset_adv_link(struct bt_mesh_prov_link *link, uint8_t reason)
 
 static void send_link_open(struct bt_mesh_prov_link *link)
 {
+    uint8_t count;
     int i;
 
-    /* Generate link ID, and may need to check if this id is
-     * currently being used, which may will not happen ever.
-     */
-    bt_mesh_rand(&link->link_id, sizeof(link->link_id));
+    link->link_id = 0;
 
     while (1) {
+        count = 0;
+
+        /* Make sure the generated Link ID is not 0 */
+        while(link->link_id == 0) {
+            bt_mesh_rand(&link->link_id, sizeof(link->link_id));
+            if (count++ > 10) {
+                BT_ERR("Link ID error: all zero");
+                return;
+            }
+        }
+
+        /* Check if the generated Link ID is the same with other links */
         for (i = 0; i < CONFIG_BLE_MESH_PBA_SAME_TIME; i++) {
             if (bt_mesh_atomic_test_bit(prov_links[i].flags, LINK_ACTIVE) &&
                 prov_links[i].link_id == link->link_id) {
@@ -1085,6 +1094,7 @@ static void send_link_open(struct bt_mesh_prov_link *link)
                 break;
             }
         }
+
         if (i == CONFIG_BLE_MESH_PBA_SAME_TIME) {
             break;
         }
@@ -2958,7 +2968,7 @@ static bool notify_unprov_dev_info(bt_mesh_prov_bearer_t bearer, const uint8_t u
         if (i == ARRAY_SIZE(unprov_dev)) {
             BT_DBG("Device not in queue, notify to app layer");
 
-            if (bt_mesh_prov_svc_adv_filter()) {
+            if (adv_type == BLE_MESH_ADV_IND && bt_mesh_prov_svc_adv_filter()) {
                 return true;
             }
 
@@ -3037,8 +3047,8 @@ void bt_mesh_provisioner_prov_adv_recv(struct net_buf_simple *buf,
 
     uuid = buf->data;
     net_buf_simple_pull(buf, 16);
-    /* Mesh beacon uses big-endian to send beacon data */
-    oob_info = net_buf_simple_pull_be16(buf);
+    /* According CSS, all the field within adv data shall be little-endian */
+    oob_info = net_buf_simple_pull_le16(buf);
 
     if (provisioner_check_unprov_dev_info(uuid, BLE_MESH_PROV_GATT)) {
         return;

@@ -30,7 +30,6 @@ const static char *TAG = "CACHE_TEST";
 #define TEST_NUM                10
 #define TEST_BUF                {0x0, 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8, 0x9}
 
-
 #define TEST_OFFSET       0x100000
 #if CONFIG_IDF_TARGET_ESP32S2
 #define TEST_SYNC_START   (SOC_DPORT_CACHE_ADDRESS_LOW + TEST_OFFSET)
@@ -41,12 +40,10 @@ const static char *TAG = "CACHE_TEST";
 #endif
 #define TEST_SYNC_SIZE    0x8000
 
-
 #define RECORD_TIME_PREPARE()   uint32_t __t1, __t2
 #define RECORD_TIME_START()     do {__t1 = esp_cpu_get_cycle_count();} while(0)
 #define RECORD_TIME_END(p_time) do{__t2 = esp_cpu_get_cycle_count(); p_time = (__t2 - __t1);} while(0)
 #define GET_US_BY_CCOUNT(t)     ((double)(t)/CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ)
-
 
 static void s_test_with_msync_cb(void *arg)
 {
@@ -155,7 +152,6 @@ TEST_CASE("test cache msync work with Flash operation when XIP from PSRAM", "[ca
     TEST_ESP_OK(esp_timer_delete(timer));
 }
 #endif  //#if CONFIG_SPIRAM_FETCH_INSTRUCTIONS && CONFIG_SPIRAM_RODATA
-
 
 #if CONFIG_SPIRAM
 /*---------------------------------------------------------------

@@ -385,8 +385,8 @@ typedef struct {
     uint32_t reserved_0f4[22];
     volatile gpio_status_next_reg_t status_next;
     uint32_t reserved_150;
-    volatile gpio_func_in_sel_cfg_reg_t func_in_sel_cfg[125];
-    uint32_t reserved_348[131];
+    volatile gpio_func_in_sel_cfg_reg_t func_in_sel_cfg[128];
+    uint32_t reserved_34b[128];
     volatile gpio_func_out_sel_cfg_reg_t func_out_sel_cfg[32];
     uint32_t reserved_5d4[22];
     volatile gpio_clock_gate_reg_t clock_gate;

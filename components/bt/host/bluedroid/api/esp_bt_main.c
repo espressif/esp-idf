@@ -5,10 +5,13 @@
  */
 
 
+#include "common/bt_target.h"
 #include "esp_bt_main.h"
 #include "btc/btc_task.h"
 #include "btc/btc_main.h"
+#if (BT_CONTROLLER_INCLUDED == TRUE)
 #include "esp_bt.h"
+#endif
 #include "osi/future.h"
 #include "osi/allocator.h"
 #include "config/stack_config.h"
@@ -123,10 +126,12 @@ esp_err_t esp_bluedroid_init_with_cfg(esp_bluedroid_config_t *cfg)
         return ESP_ERR_INVALID_ARG;
     }
 
+#if (BT_CONTROLLER_INCLUDED == TRUE)
     if (esp_bt_controller_get_status() != ESP_BT_CONTROLLER_STATUS_ENABLED) {
         LOG_ERROR("Controller not initialised\n");
         return ESP_ERR_INVALID_STATE;
     }
+#endif
 
     if (bd_already_init) {
         LOG_ERROR("Bluedroid already initialised\n");

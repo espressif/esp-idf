@@ -1,0 +1,7 @@
+CONFIG_IDF_TARGET="esp32c6"
+
+#
+# Sleep Config
+#
+CONFIG_ESP_PHY_MAC_BB_PD=y
+# end of Sleep Config

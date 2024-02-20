@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,7 +11,7 @@
 #include "soc/soc_caps.h"
 
 // TODO: IDF-5645
-#if CONFIG_IDF_TARGET_ESP32C6 || CONFIG_IDF_TARGET_ESP32H2
+#if CONFIG_IDF_TARGET_ESP32C6 || CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP32C5
 #include "soc/lp_aon_reg.h"
 #include "soc/pcr_reg.h"
 #define SYSTEM_CPU_PER_CONF_REG PCR_CPU_WAITI_CONF_REG
@@ -50,7 +50,11 @@ void esp_cpu_stall(int core_id)
 #if SOC_CPU_CORES_NUM > 1   // We don't allow stalling of the current core
 #if CONFIG_IDF_TARGET_ESP32P4
     //TODO: IDF-7848
-    REG_SET_FIELD(PMU_CPU_SW_STALL_REG, core_id ? PMU_HPCORE1_SW_STALL_CODE : PMU_HPCORE0_SW_STALL_CODE, 0x86);
+    if (core_id == 0) {
+        REG_SET_FIELD(PMU_CPU_SW_STALL_REG, PMU_HPCORE0_SW_STALL_CODE, 0x86);
+    } else {
+        REG_SET_FIELD(PMU_CPU_SW_STALL_REG, PMU_HPCORE1_SW_STALL_CODE, 0x86);
+    }
 #else
     /*
     We need to write the value "0x86" to stall a particular core. The write location is split into two separate
@@ -79,7 +83,8 @@ void esp_cpu_unstall(int core_id)
 #if SOC_CPU_CORES_NUM > 1   // We don't allow stalling of the current core
 #if CONFIG_IDF_TARGET_ESP32P4
     //TODO: IDF-7848
-    REG_SET_FIELD(PMU_CPU_SW_STALL_REG, core_id ? PMU_HPCORE1_SW_STALL_CODE : PMU_HPCORE0_SW_STALL_CODE, 0);
+    int pmu_core_stall_mask = (core_id == 0) ? PMU_HPCORE0_SW_STALL_CODE_M : PMU_HPCORE1_SW_STALL_CODE_M;
+    CLEAR_PERI_REG_MASK(PMU_CPU_SW_STALL_REG, pmu_core_stall_mask);
 #else
     /*
     We need to write clear the value "0x86" to unstall a particular core. The location of this value is split into
@@ -107,7 +112,7 @@ void esp_cpu_reset(int core_id)
     else
         REG_SET_BIT(LP_CLKRST_HPCPU_RESET_CTRL0_REG, LP_CLKRST_HPCORE1_SW_RESET);
 #else
-#if CONFIG_IDF_TARGET_ESP32C6 || CONFIG_IDF_TARGET_ESP32H2// TODO: IDF-5645
+#if CONFIG_IDF_TARGET_ESP32C6 || CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP32C5 // TODO: IDF-5645
     SET_PERI_REG_MASK(LP_AON_CPUCORE0_CFG_REG, LP_AON_CPU_CORE0_SW_RESET);
 #else
     assert(core_id >= 0 && core_id < SOC_CPU_CORES_NUM);
@@ -387,11 +392,19 @@ esp_err_t esp_cpu_set_watchpoint(int wp_num, const void *wp_addr, size_t size, e
 {
     /*
     Todo:
-    - Check that wp_num is in range
     - Check if the wp_num is already in use
     */
-    // Check if size is 2^n, where n is in [0...6]
-    if (size < 1 || size > 64 || (size & (size - 1)) != 0) {
+    if (wp_num < 0 || wp_num >= SOC_CPU_WATCHPOINTS_NUM) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    // Check that the watched region's start address is naturally aligned to the size of the region
+    if ((uint32_t)wp_addr % size) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    // Check if size is 2^n, and size is in the range of [1 ... SOC_CPU_WATCHPOINT_MAX_REGION_SIZE]
+    if (size < 1 || size > SOC_CPU_WATCHPOINT_MAX_REGION_SIZE || (size & (size - 1)) != 0) {
         return ESP_ERR_INVALID_ARG;
     }
     bool on_read = (trigger == ESP_CPU_WATCHPOINT_LOAD || trigger == ESP_CPU_WATCHPOINT_ACCESS);

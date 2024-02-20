@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -95,6 +95,7 @@ typedef enum {
 } ieee802154_ll_rx_abort_reason_t;
 
 typedef uint32_t ieee802154_ll_rx_abort_events;
+#define IEEE802154_RX_ABORT_ALL 0x7fffffff
 
 /**
  * @brief IEEE802154 transmission failed reason.
@@ -118,6 +119,7 @@ typedef enum {
 } ieee802154_ll_tx_abort_reason_t;
 
 typedef uint32_t ieee802154_ll_tx_abort_events;
+#define IEEE802154_TX_ABORT_ALL 0x7fffffff
 
 /**
  * @brief IEEE802154 CCA mode.
@@ -168,6 +170,8 @@ typedef enum {
     IEEE802154_ED_SAMPLE_AVG = 0x01,
 } ieee802154_ll_ed_sample_mode_t;
 
+#define IEEE802154_RX_STATUS_RECEIVE_SFD 0x1
+
 FORCE_INLINE_ATTR void ieee802154_ll_set_cmd(ieee802154_ll_cmd_t cmd)
 {
     IEEE802154.cmd.cmd = cmd;
@@ -191,6 +195,11 @@ FORCE_INLINE_ATTR void ieee802154_ll_clear_events(ieee802154_ll_events events)
 FORCE_INLINE_ATTR ieee802154_ll_events ieee802154_ll_get_events(void)
 {
     return (ieee802154_ll_events)(IEEE802154.event_status.events);
+}
+
+FORCE_INLINE_ATTR bool ieee802154_ll_is_current_rx_frame(void)
+{
+    return (IEEE802154.rx_status.rx_state > IEEE802154_RX_STATUS_RECEIVE_SFD);
 }
 
 static inline void ieee802154_ll_enable_rx_abort_events(ieee802154_ll_rx_abort_events events)
@@ -455,6 +464,85 @@ static inline void ieee802154_ll_disable_coex(void)
     IEEE802154.pti.hw_ack_pti = 1;
 }
 
+static inline void ieee802154_ll_clear_debug_cnt(uint32_t clear_bits)
+{
+    IEEE802154.debug_cnt_clr.val = clear_bits;
+}
+
+static inline uint32_t ieee802154_ll_get_sfd_timeout_cnt(void)
+{
+    return IEEE802154.debug_sfd_timeout_cnt;
+}
+
+static inline uint32_t ieee802154_ll_get_crc_error_cnt(void)
+{
+    return IEEE802154.debug_crc_error_cnt;
+}
+
+static inline uint32_t ieee802154_ll_get_ed_abort_cnt(void)
+{
+    return IEEE802154.debug_ed_abort_cnt;
+}
+
+static inline uint32_t ieee802154_ll_get_cca_fail_cnt(void)
+{
+    return IEEE802154.debug_cca_fail_cnt;
+}
+
+static inline uint32_t ieee802154_ll_get_rx_fliter_fail_cnt(void)
+{
+    return IEEE802154.debug_rx_filter_fail_cnt;
+}
+
+static inline uint32_t ieee802154_ll_get_no_rss_detect_cnt(void)
+{
+    return IEEE802154.debug_no_rss_detect_cnt;
+}
+
+static inline uint32_t ieee802154_ll_get_rx_abort_coex_cnt(void)
+{
+    return IEEE802154.debug_rx_abort_coex_cnt;
+}
+
+static inline uint32_t ieee802154_ll_get_rx_restart_cnt(void)
+{
+    return IEEE802154.debug_rx_restart_cnt;
+}
+
+static inline uint32_t ieee802154_ll_get_tx_ack_abort_coex_cnt(void)
+{
+    return IEEE802154.debug_tx_ack_abort_coex_cnt;
+}
+
+static inline uint32_t ieee802154_ll_get_ed_scan_coex_cnt(void)
+{
+    return IEEE802154.debug_ed_scan_break_coex_cnt;
+}
+
+static inline uint32_t ieee802154_ll_get_rx_ack_abort_coex_cnt(void)
+{
+    return IEEE802154.debug_rx_ack_abort_coex_cnt;
+}
+
+static inline uint32_t ieee802154_ll_get_rx_ack_timeout_cnt(void)
+{
+    return IEEE802154.debug_rx_ack_timeout_cnt;
+}
+
+static inline uint32_t ieee802154_ll_get_tx_break_coex_cnt(void)
+{
+    return IEEE802154.debug_tx_break_coex_cnt;
+}
+
+static inline uint32_t ieee802154_ll_get_tx_security_error_cnt(void)
+{
+    return IEEE802154.debug_tx_security_error_cnt;
+}
+
+static inline uint32_t ieee802154_ll_get_cca_busy_cnt(void)
+{
+    return IEEE802154.debug_cca_busy_cnt;
+}
 #endif
 
 #ifdef __cplusplus

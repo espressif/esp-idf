@@ -3,11 +3,11 @@
 Secure Boot V2
 ==============
 
-{IDF_TARGET_SBV2_SCHEME:default="RSA-PSS", esp32c2="ECDSA", esp32c6 or esp32h2="RSA-PSS or ECDSA"}
+{IDF_TARGET_SBV2_SCHEME:default="RSA-PSS", esp32c2="ECDSA", esp32c6="RSA-PSS or ECDSA", esp32h2="RSA-PSS or ECDSA", esp32p4="RSA-PSS or ECDSA"}
 
-{IDF_TARGET_SBV2_KEY:default="RSA-3072", esp32c2="ECDSA-256 or ECDSA-192", esp32c6 or esp32h2="RSA-3072, ECDSA-256, or ECDSA-192"}
+{IDF_TARGET_SBV2_KEY:default="RSA-3072", esp32c2="ECDSA-256 or ECDSA-192", esp32c6="RSA-3072, ECDSA-256, or ECDSA-192", esp32h2="RSA-3072, ECDSA-256, or ECDSA-192", esp32p4="RSA-3072, ECDSA-256, or ECDSA-192"}
 
-{IDF_TARGET_SECURE_BOOT_OPTION_TEXT:default="", esp32c6 or esp32h2="RSA is recommended because of faster verification time. You can choose between RSA and ECDSA scheme from the menu."}
+{IDF_TARGET_SECURE_BOOT_OPTION_TEXT:default="", esp32c6="RSA is recommended because of faster verification time. You can choose between RSA and ECDSA scheme from the menu.", esp32h2="RSA is recommended because of faster verification time. You can choose between RSA and ECDSA scheme from the menu.", esp32p4="RSA is recommended because of faster verification time. You can choose between RSA and ECDSA scheme from the menu."}
 
 {IDF_TARGET_ECO_VERSION:default="", esp32="(ECO 3 onwards)", esp32c3="(ECO 3 onwards)"}
 
@@ -138,21 +138,23 @@ The signature block starts on a 4 KB aligned boundary and has a flash sector of 
 
         RSA is recommended for use cases where fast bootup time is required whereas ECDSA is recommended for use cases where shorter key length is required.
 
-        .. list-table:: Comparison between signature verification time
-            :widths: 10 10 20
-            :header-rows: 1
+        .. only:: not esp32p4
 
-            * - **Verification scheme**
-              - **Time**
-              - **CPU Frequency**
-            * - RSA-3072
-              - {IDF_TARGET_RSA_TIME}
-              - {IDF_TARGET_CPU_FREQ}
-            * - ECDSA-P256
-              - {IDF_TARGET_ECDSA_TIME}
-              - {IDF_TARGET_CPU_FREQ}
+            .. list-table:: Comparison between signature verification time
+                :widths: 10 10 20
+                :header-rows: 1
 
-        The above table compares the time taken to verify a signature in a particular scheme. It does not indicate the bootup time.
+                * - **Verification scheme**
+                  - **Time**
+                  - **CPU Frequency**
+                * - RSA-3072
+                  - {IDF_TARGET_RSA_TIME}
+                  - {IDF_TARGET_CPU_FREQ}
+                * - ECDSA-P256
+                  - {IDF_TARGET_ECDSA_TIME}
+                  - {IDF_TARGET_CPU_FREQ}
+
+          The above table compares the time taken to verify a signature in a particular scheme. It does not indicate the bootup time.
 
 The content of each signature block is shown in the following table:
 
@@ -547,6 +549,12 @@ Secure Boot Best Practices
     * Applications should be signed with only one key at a time, to minimize the exposure of unused private keys.
     * The bootloader can be signed with multiple keys from the factory.
 
+    .. note::
+
+        Note that enabling the config :ref:`CONFIG_SECURE_BOOT_ALLOW_UNUSED_DIGEST_SLOTS` only makes sure that the **app** does not revoke the unused digest slots.
+        But if you plan to enable secure boot during the fist boot up, the bootloader will intentionally revoke the unused digest slots while enabling secure boot, even if the above config is enabled because keeping the unused key slots un-revoked would a security hazard.
+        In case for any development workflow if you need to avoid this revocation, you should enable secure boot externally (:ref:`enable-secure-boot-v2-externally`) rather than enabling it during the boot up, so that the bootloader would not need to enable secure boot and thus you could avoid its revocation strategy.
+
     Conservative Approach:
     ~~~~~~~~~~~~~~~~~~~~~~
 
@@ -556,8 +564,8 @@ Secure Boot Best Practices
     2. The new OTA update is written to an unused OTA app partition.
     3. The new application's signature block is validated. The public keys are checked against the digests programmed in the eFuse & the application is verified using the verified public key.
     4. The active partition is set to the new OTA application's partition.
-    5. Device resets, loads the bootloader (verified with key #N-1) which then boots new app (verified with key #N).
-    6. The new app verifies bootloader with key #N (as a final check) and then runs code to revoke key #N-1 (sets KEY_REVOKE eFuse bit).
+    5. Device resets, loads the bootloader (verified with key #N-1 and #N) which then boots new app (verified with key #N).
+    6. The new app verifies bootloader and application with key #N (as a final check) and then runs code to revoke key #N-1 (sets KEY_REVOKE eFuse bit).
     7. The API `esp_ota_revoke_secure_boot_public_key()` can be used to revoke the key #N-1.
 
     * A similar approach can also be used to physically re-flash with a new key. For physical re-flashing, the bootloader content can also be changed at the same time.

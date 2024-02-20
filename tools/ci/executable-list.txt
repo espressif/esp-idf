@@ -1,5 +1,4 @@
 components/app_update/otatool.py
-components/bt/esp_ble_mesh/v1.1/lib/lib_copy.sh
 components/efuse/efuse_table_gen.py
 components/efuse/test_efuse_host/efuse_tests.py
 components/esp_coex/test_md5/test_md5.sh
@@ -63,7 +62,6 @@ tools/ci/check_kconfigs.py
 tools/ci/check_readme_links.py
 tools/ci/check_requirement_files.py
 tools/ci/check_rules_components_patterns.py
-tools/ci/check_rules_yml.py
 tools/ci/check_soc_struct_headers.py
 tools/ci/check_tools_files_patterns.py
 tools/ci/check_type_comments.py
@@ -75,11 +73,12 @@ tools/ci/fix_empty_prototypes.sh
 tools/ci/generate_rules.py
 tools/ci/get-full-sources.sh
 tools/ci/get_supported_examples.sh
+tools/ci/gitlab_yaml_linter.py
 tools/ci/mirror-submodule-update.sh
 tools/ci/multirun_with_pyenv.sh
 tools/ci/push_to_github.sh
-tools/ci/test_autocomplete.py
-tools/ci/test_check_kconfigs.py
+tools/ci/sort_yaml.py
+tools/ci/test_autocomplete/test_autocomplete.py
 tools/ci/test_configure_ci_environment.sh
 tools/ci/test_reproducible_build.sh
 tools/docker/entrypoint.sh
@@ -111,8 +110,6 @@ tools/set-submodules-to-github.sh
 tools/test_apps/system/no_embedded_paths/check_for_file_paths.py
 tools/test_idf_py/test_hints.py
 tools/test_idf_py/test_idf_py.py
+tools/test_idf_py/test_idf_qemu.py
 tools/test_idf_tools/test_idf_tools.py
 tools/test_mkdfu/test_mkdfu.py
-tools/test_mkuf2/test_mkuf2.py
-tools/unit-test-app/tools/get_available_configs.sh
-tools/unit-test-app/unit_test.py

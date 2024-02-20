@@ -46,38 +46,38 @@ static int test_adc_io;
 static bool test_list[TEST_NUM] = {1, 1, 0, 0, 1, 0, 1, 0};
 
 static void wifi_event_handler(void* arg, esp_event_base_t event_base,
-                                int32_t event_id, void* event_data)
+                               int32_t event_id, void* event_data)
 {
     printf("ev_handle_called.\n");
-    switch(event_id) {
-        case WIFI_EVENT_STA_START:
-            ESP_LOGI(TAG, "WIFI_EVENT_STA_START");
-    //do not actually connect in test case
-            //;
-            break;
-        case WIFI_EVENT_STA_DISCONNECTED:
-            ESP_LOGI(TAG, "WIFI_EVENT_STA_DISCONNECTED");
-            TEST_ESP_OK(esp_wifi_connect());
-            break;
-        default:
-            break;
+    switch (event_id) {
+    case WIFI_EVENT_STA_START:
+        ESP_LOGI(TAG, "WIFI_EVENT_STA_START");
+        //do not actually connect in test case
+        //;
+        break;
+    case WIFI_EVENT_STA_DISCONNECTED:
+        ESP_LOGI(TAG, "WIFI_EVENT_STA_DISCONNECTED");
+        TEST_ESP_OK(esp_wifi_connect());
+        break;
+    default:
+        break;
     }
     return ;
 }
 
 static void ip_event_handler(void* arg, esp_event_base_t event_base,
-                                int32_t event_id, void* event_data)
+                             int32_t event_id, void* event_data)
 {
     ip_event_got_ip_t *event;
     printf("ev_handle_called.\n");
-    switch(event_id) {
-        case IP_EVENT_STA_GOT_IP:
-            event = (ip_event_got_ip_t*)event_data;
-            ESP_LOGI(TAG, "IP_EVENT_STA_GOT_IP");
-            ESP_LOGI(TAG, "got ip:" IPSTR, IP2STR(&event->ip_info.ip));
-            break;
-        default:
-            break;
+    switch (event_id) {
+    case IP_EVENT_STA_GOT_IP:
+        event = (ip_event_got_ip_t*)event_data;
+        ESP_LOGI(TAG, "IP_EVENT_STA_GOT_IP");
+        ESP_LOGI(TAG, "got ip:" IPSTR, IP2STR(&event->ip_info.ip));
+        break;
+    default:
+        break;
     }
 
     return ;
@@ -133,7 +133,7 @@ __attribute__((unused)) static void adc_work_with_wifi(adc_unit_t unit_id, adc_c
         TEST_ESP_OK(nvs_flash_erase());
         r = nvs_flash_init();
     }
-    TEST_ESP_OK( r);
+    TEST_ESP_OK(r);
     esp_netif_init();
     event_init();
     esp_netif_create_default_wifi_sta();
@@ -170,7 +170,7 @@ __attribute__((unused)) static void adc_work_with_wifi(adc_unit_t unit_id, adc_c
     //-------------ADC TEST Channel Config---------------//
     adc_oneshot_chan_cfg_t config = {
         .bitwidth = ADC_BITWIDTH_DEFAULT,
-        .atten = ADC_ATTEN_DB_11,
+        .atten = ADC_ATTEN_DB_12,
     };
     TEST_ESP_OK(adc_oneshot_config_channel(adc_handle, channel, &config));
 
@@ -179,12 +179,10 @@ __attribute__((unused)) static void adc_work_with_wifi(adc_unit_t unit_id, adc_c
         test_adc_set_io_level(unit_id, channel, test_list[i]);
         target_value = test_list[i] ? ADC_TEST_HIGH_VAL : ADC_TEST_LOW_VAL;
 
-
         /* ADC single read before WIFI start */
         TEST_ESP_OK(adc_oneshot_read(adc_handle, channel, &read_raw));
         printf("Before WiFi starts, ADC read: %d (target_value: %d)\n", read_raw, target_value);
         TEST_ASSERT_INT_WITHIN(ADC_ERROR_THRES, target_value, read_raw);
-
 
         /* ADC single read when WIFI is on */
         TEST_ESP_OK(esp_wifi_start());
@@ -220,7 +218,7 @@ __attribute__((unused)) static void adc_work_with_wifi(adc_unit_t unit_id, adc_c
 #if CONFIG_IDF_TARGET_ESP32C6
 // On ESP32C6, ADC need to call two modem clocks: modem_syscon_ll_enable_fe_80m_clock and modem_syscon_ll_enable_fe_apb_clock.
 // Without calling these two clocks, PWDET mode will not take into effect, so ADC readings will be wrong.
-TEST_CASE("ADC1 work with WiFi","[adc]")
+TEST_CASE("ADC1 work with WiFi", "[adc]")
 {
     adc_work_with_wifi(ADC_UNIT_1, ADC1_WIFI_TEST_CHAN0);
 }
@@ -228,7 +226,7 @@ TEST_CASE("ADC1 work with WiFi","[adc]")
 
 #if (SOC_ADC_PERIPH_NUM >= 2) && !CONFIG_IDF_TARGET_ESP32C3
 // On ESP32C3, ADC2 is no longer supported, due to its HW limitation.
-TEST_CASE("ADC2 work with WiFi","[adc]")
+TEST_CASE("ADC2 work with WiFi", "[adc]")
 {
     adc_work_with_wifi(ADC_UNIT_2, ADC2_WIFI_TEST_CHAN0);
 }

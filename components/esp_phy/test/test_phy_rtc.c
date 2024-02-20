@@ -46,7 +46,7 @@ static void test_phy_rtc_init(void)
         ret = nvs_flash_init();
     }
     TEST_ESP_OK(ret);
-#if CONFIG_WIFI_ENABLED
+#if CONFIG_ESP_WIFI_ENABLED
     esp_phy_enable(PHY_MODEM_WIFI);
 #endif
 #if CONFIG_BT_ENABLED

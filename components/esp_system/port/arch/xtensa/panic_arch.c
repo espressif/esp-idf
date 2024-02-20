@@ -1,10 +1,10 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "freertos/xtensa_context.h"
+#include "xtensa_context.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
@@ -120,7 +120,6 @@ static void print_illegal_instruction_details(const void *f)
     panic_print_hex(*(pepc + 2));
 }
 
-
 static void print_debug_exception_details(const void *f)
 {
     int debug_rsn;
@@ -146,7 +145,7 @@ static void print_debug_exception_details(const void *f)
             }
 #endif
 
-            const char *name = pcTaskGetName(xTaskGetCurrentTaskHandleForCPU(core));
+            const char *name = pcTaskGetName(xTaskGetCurrentTaskHandleForCore(core));
             panic_print_str("Stack canary watchpoint triggered (");
             panic_print_str(name);
             panic_print_str(") ");
@@ -360,7 +359,6 @@ static inline void print_cache_err_details(const void *f)
 }
 #endif
 
-
 void panic_arch_fill_info(void *f, panic_info_t *info)
 {
     XtExcFrame *frame = (XtExcFrame *) f;
@@ -389,7 +387,18 @@ void panic_arch_fill_info(void *f, panic_info_t *info)
         info->details = print_illegal_instruction_details;
     }
 
-    info->addr = ((void *) ((XtExcFrame *) frame)->pc);
+    info->addr = ((void *)((XtExcFrame *) frame)->pc);
+}
+
+/**
+ * This function will be called before the SoC-level panic is handled,
+ * allowing us to check and override the exception cause for certain
+ * pseudo-causes that do not have their own trigger
+ */
+bool panic_soc_check_pseudo_cause(void *f, panic_info_t *info)
+{
+    // Currently only needed on riscv targets
+    return false;
 }
 
 void panic_soc_fill_info(void *f, panic_info_t *info)
@@ -436,7 +445,7 @@ void panic_soc_fill_info(void *f, panic_info_t *info)
 #if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
     if (frame->exccause == PANIC_RSN_CACHEERR) {
 #if CONFIG_ESP_SYSTEM_MEMPROT_FEATURE && CONFIG_IDF_TARGET_ESP32S2
-        if ( esp_memprot_is_intr_ena_any() ) {
+        if (esp_memprot_is_intr_ena_any()) {
             info->details = print_memprot_err_details;
             info->reason = "Memory protection fault";
         } else

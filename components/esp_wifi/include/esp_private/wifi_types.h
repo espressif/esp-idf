@@ -1,19 +1,13 @@
-// Copyright 2015-2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #ifndef _WIFI_TYPES_H
 #define _WIFI_TYPES_H
+#include <stdbool.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -46,6 +40,26 @@ typedef struct {
         wifi_ht2040_coex_t ht2040_coex; /**< Configuration of STA's HT2040 coexist management */
     } data;                             /**< Configuration of ioctl command */
 } wifi_ioctl_config_t;
+
+/**
+  * @brief WiFi beacon monitor parameter configuration
+  *
+  */
+typedef struct {
+    bool        enable;                     /**< Enable or disable beacon monitor */
+    uint8_t     loss_timeout;               /**< Beacon lost timeout */
+    uint8_t     loss_threshold;             /**< Maximum number of consecutive lost beacons allowed */
+    uint8_t     delta_intr_early;           /**< Delta early time for RF PHY on */
+    uint8_t     delta_loss_timeout;         /**< Delta timeout time for RF PHY off */
+#if MAC_SUPPORT_PMU_MODEM_STATE
+    uint8_t     beacon_abort: 1,            /**< Enable or disable beacon abort */
+                broadcast_wakeup: 1,        /**< Enable or disable TIM element multicast wakeup */
+                reserved: 6;                /**< Reserved */
+    uint8_t     tsf_time_sync_deviation;    /**< Deviation range to sync with AP TSF timestamp */
+    uint16_t    modem_state_consecutive;    /**< PMU MODEM state consecutive count limit */
+    uint16_t    rf_ctrl_wait_cycle;         /**< RF on wait time (unit: Modem APB clock cycle) */
+#endif
+} wifi_beacon_monitor_config_t;
 
 #ifdef __cplusplus
 }

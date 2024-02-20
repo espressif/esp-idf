@@ -149,7 +149,7 @@ class TestNestedModuleComponentRequirements(unittest.TestCase):
         self.projectdir.mkdir(parents=True)
         (self.projectdir / 'CMakeLists.txt').write_text((
             'cmake_minimum_required(VERSION 3.16)\n'
-            f'set(EXTRA_COMPONENT_DIRS "{components}")\n'
+            f'set(EXTRA_COMPONENT_DIRS "{components.as_posix()}")\n'
             'set(COMPONENTS main)\n'
             'include($ENV{IDF_PATH}/tools/cmake/project.cmake)\n'
             'project(foo)'))
@@ -164,8 +164,37 @@ class TestNestedModuleComponentRequirements(unittest.TestCase):
         # when components are nested. The main component should be identified as the
         # real source, not the component1 component.
         output = run_idf(['app'], self.projectdir)
-        self.assertNotIn('BUG: esp_timer.h found in component esp_timer which is already in the requirements list of component1', output)
+        self.assertNotIn('esp_timer.h found in component esp_timer which is already in the requirements list of component1', output)
         self.assertIn('To fix this, add esp_timer to PRIV_REQUIRES list of idf_component_register call', output)
+
+    def tearDown(self) -> None:
+        self.tmpdir.cleanup()
+
+
+class TestTrimmedModuleComponentRequirements(unittest.TestCase):
+    def setUp(self) -> None:
+        # Set up a dummy project with a trimmed down list of components and main component.
+        # The main component includes "esp_http_client.h", but the esp_http_client
+        # component is not added to main's requirements.
+        self.tmpdir = tempfile.TemporaryDirectory()
+        self.tmpdirpath = Path(self.tmpdir.name)
+
+        self.projectdir = self.tmpdirpath / 'project'
+        self.projectdir.mkdir(parents=True)
+        (self.projectdir / 'CMakeLists.txt').write_text((
+            'cmake_minimum_required(VERSION 3.16)\n'
+            'set(COMPONENTS main)\n'
+            'include($ENV{IDF_PATH}/tools/cmake/project.cmake)\n'
+            'project(foo)'))
+
+        maindir = self.projectdir / 'main'
+        maindir.mkdir()
+        (maindir / 'CMakeLists.txt').write_text('idf_component_register(SRCS "foo.c")')
+        (maindir / 'foo.c').write_text('#include "esp_http_client.h"\nvoid app_main(){}')
+
+    def test_trimmed_component_requirements(self) -> None:
+        output = run_idf(['app'], self.projectdir)
+        self.assertIn('To fix this, add esp_http_client to PRIV_REQUIRES list of idf_component_register call in', output)
 
     def tearDown(self) -> None:
         self.tmpdir.cleanup()

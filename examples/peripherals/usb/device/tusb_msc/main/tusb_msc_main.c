@@ -15,10 +15,11 @@
 #include <dirent.h>
 #include "esp_console.h"
 #include "esp_check.h"
+#include "esp_partition.h"
 #include "driver/gpio.h"
 #include "tinyusb.h"
 #include "tusb_msc_storage.h"
-#ifdef CONFIG_EXAMPLE_STORAGE_MEDIA_SDMMCCARD
+#ifdef CONFIG_EXAMPLE_STORAGE_MEDIA_SDMMC
 #include "diskio_impl.h"
 #include "diskio_sdmmc.h"
 #endif
@@ -346,7 +347,8 @@ void app_main(void)
 
     const tinyusb_msc_spiflash_config_t config_spi = {
         .wl_handle = wl_handle,
-        .callback_mount_changed = storage_mount_changed_cb  /* First way to register the callback. This is while initializing the storage. */
+        .callback_mount_changed = storage_mount_changed_cb,  /* First way to register the callback. This is while initializing the storage. */
+        .mount_config.max_files = 5,
     };
     ESP_ERROR_CHECK(tinyusb_msc_storage_init_spiflash(&config_spi));
     ESP_ERROR_CHECK(tinyusb_msc_register_callback(TINYUSB_MSC_EVENT_MOUNT_CHANGED, storage_mount_changed_cb)); /* Other way to register the callback i.e. registering using separate API. If the callback had been already registered, it will be overwritten. */
@@ -356,7 +358,8 @@ void app_main(void)
 
     const tinyusb_msc_sdmmc_config_t config_sdmmc = {
         .card = card,
-        .callback_mount_changed = storage_mount_changed_cb  /* First way to register the callback. This is while initializing the storage. */
+        .callback_mount_changed = storage_mount_changed_cb,  /* First way to register the callback. This is while initializing the storage. */
+        .mount_config.max_files = 5,
     };
     ESP_ERROR_CHECK(tinyusb_msc_storage_init_sdmmc(&config_sdmmc));
     ESP_ERROR_CHECK(tinyusb_msc_register_callback(TINYUSB_MSC_EVENT_MOUNT_CHANGED, storage_mount_changed_cb)); /* Other way to register the callback i.e. registering using separate API. If the callback had been already registered, it will be overwritten. */

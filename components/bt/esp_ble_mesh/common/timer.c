@@ -207,7 +207,7 @@ int k_delayed_work_free(struct k_delayed_work *work)
 
     alarm = hash_map_get(bm_alarm_hash_map, work);
     if (alarm == NULL) {
-        BT_WARN("Free, alarm not found");
+        BT_DBG("Free, alarm not found");
         bt_mesh_alarm_unlock();
         return -EINVAL;
     }

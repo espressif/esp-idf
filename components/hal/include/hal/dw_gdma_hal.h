@@ -41,6 +41,13 @@ typedef struct {
  */
 void dw_gdma_hal_init(dw_gdma_hal_context_t *hal, const dw_gdma_hal_config_t *config);
 
+/**
+ * @brief DW_GDMA HAL driver deinitialization
+ *
+ * @param hal Pointer to the HAL driver context
+ */
+void dw_gdma_hal_deinit(dw_gdma_hal_context_t *hal);
+
 #ifdef __cplusplus
 }
 #endif

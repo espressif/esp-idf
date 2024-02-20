@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -24,9 +24,32 @@ extern "C" {
 #define CSR_PCMR_MACHINE    0x7e1
 #define CSR_PCCR_MACHINE    0x7e2
 
+#if SOC_CPU_HAS_FPU
+
+/* FPU bits in mstatus start at bit 13 */
+#define CSR_MSTATUS_FPU_SHIFT       13
+/* FPU registers are clean if bits are 0b10 */
+#define CSR_MSTATUS_FPU_CLEAN_STATE 2
+/* FPU status in mstatus are represented with two bits */
+#define CSR_MSTATUS_FPU_MASK        3
+/* FPU is enabled when writing 1 to FPU bits */
+#define CSR_MSTATUS_FPU_ENA         BIT(13)
+/* Set FPU registers state to clean (after being dirty) */
+#define CSR_MSTATUS_FPU_CLEAR       BIT(13)
+
+#endif /* SOC_CPU_HAS_FPU */
+
 /* SW defined level which the interrupt module will mask interrupt with priority less than threshold during critical sections
    and spinlocks */
 #define RVHAL_EXCM_LEVEL    4
+
+/* SW defined interrupt threshold level to allow all interrupts */
+#if SOC_INT_CLIC_SUPPORTED
+/* set global CLIC masking level. When CLIC is supported, all interrupt priority levels less than or equal to the threshold level are masked. */
+#define RVHAL_INTR_ENABLE_THRESH    0
+#else
+#define RVHAL_INTR_ENABLE_THRESH    1
+#endif /* SOC_INT_CLIC_SUPPORTED */
 
 /* --------------------------------------------------- CPU Control -----------------------------------------------------
  *
@@ -113,13 +136,30 @@ FORCE_INLINE_ATTR void rv_utils_set_mtvec(uint32_t mtvec_val)
     RV_WRITE_CSR(mtvec, mtvec_val);
 }
 
+#if SOC_INT_CLIC_SUPPORTED
+ FORCE_INLINE_ATTR __attribute__((pure)) uint32_t rv_utils_get_interrupt_level(void)
+{
+#if CONFIG_IDF_TARGET_ESP32P4
+    // As per CLIC specs, mintstatus CSR should be at 0xFB1, however esp32p4 implements it at 0x346
+    #define MINTSTATUS 0x346
+#elif CONFIG_IDF_TARGET_ESP32C5
+    // TODO: [ESP32C5] IDF-8654, IDF-8655 (inherit from P4) Check the correctness
+    #define MINTSTATUS 0x346
+#else
+    #error "rv_utils_get_mintstatus() is not implemented. Check for correct mintstatus register address."
+#endif /* CONFIG_IDF_TARGET_ESP32P4 */
+    uint32_t mintstatus = RV_READ_CSR(MINTSTATUS);
+    return ((mintstatus >> 24) & 0xFF); // Return the mintstatus[31:24] bits to get the mil field
+}
+#endif /* SOC_INT_CLIC_SUPPORTED */
+
 // ------------------ Interrupt Control --------------------
 
 FORCE_INLINE_ATTR void rv_utils_intr_enable(uint32_t intr_mask)
 {
     // Disable all interrupts to make updating of the interrupt mask atomic.
     unsigned old_mstatus = RV_CLEAR_CSR(mstatus, MSTATUS_MIE);
-    esprv_intc_int_enable(intr_mask);
+    esprv_int_enable(intr_mask);
     RV_SET_CSR(mstatus, old_mstatus & MSTATUS_MIE);
 }
 
@@ -127,7 +167,7 @@ FORCE_INLINE_ATTR void rv_utils_intr_disable(uint32_t intr_mask)
 {
     // Disable all interrupts to make updating of the interrupt mask atomic.
     unsigned old_mstatus = RV_CLEAR_CSR(mstatus, MSTATUS_MIE);
-    esprv_intc_int_disable(intr_mask);
+    esprv_int_disable(intr_mask);
     RV_SET_CSR(mstatus, old_mstatus & MSTATUS_MIE);
 }
 
@@ -208,6 +248,37 @@ FORCE_INLINE_ATTR void rv_utils_intr_global_disable(void)
     RV_CLEAR_CSR(mstatus, MSTATUS_MIE);
 }
 
+
+#if SOC_CPU_HAS_FPU
+
+/* ------------------------------------------------- FPU Related ----------------------------------------------------
+ *
+ * ------------------------------------------------------------------------------------------------------------------ */
+
+FORCE_INLINE_ATTR bool rv_utils_enable_fpu(void)
+{
+    /* Set mstatus[14:13] to 0b01 to start the floating-point unit initialization */
+    RV_SET_CSR(mstatus, CSR_MSTATUS_FPU_ENA);
+    /* On the ESP32-P4, the FPU can be used directly after setting `mstatus` bit 13.
+     * Since the interrupt handler expects the FPU states to be either 0b10 or 0b11,
+     * let's write the FPU CSR and clear the dirty bit afterwards. */
+    RV_WRITE_CSR(fcsr, 1);
+    RV_CLEAR_CSR(mstatus, CSR_MSTATUS_FPU_CLEAR);
+    const uint32_t mstatus = RV_READ_CSR(mstatus);
+    /* Make sure the FPU state is 0b10 (clean registers) */
+    return ((mstatus >> CSR_MSTATUS_FPU_SHIFT) & CSR_MSTATUS_FPU_MASK) == CSR_MSTATUS_FPU_CLEAN_STATE;
+}
+
+
+FORCE_INLINE_ATTR void rv_utils_disable_fpu(void)
+{
+    /* Clear mstatus[14:13] bits to disable the floating-point unit */
+    RV_CLEAR_CSR(mstatus, CSR_MSTATUS_FPU_MASK << CSR_MSTATUS_FPU_SHIFT);
+}
+
+#endif /* SOC_CPU_HAS_FPU */
+
+
 /* -------------------------------------------------- Memory Ports -----------------------------------------------------
  *
  * ------------------------------------------------------------------------------------------------------------------ */
@@ -238,30 +309,32 @@ FORCE_INLINE_ATTR void rv_utils_set_watchpoint(int wp_num,
     RV_WRITE_CSR(tcontrol, TCONTROL_MPTE | TCONTROL_MTE);
     RV_WRITE_CSR(tdata1, TDATA1_USER                   |
                          TDATA1_MACHINE                |
-                         TDATA1_MATCH                  |
+                         ((size == 1) ? TDATA1_MATCH_EXACT : TDATA1_MATCH_NAPOT) |
                          (on_read  ? TDATA1_LOAD  : 0) |
                          (on_write ? TDATA1_STORE : 0));
     /* From RISC-V Debug Specification:
-     * NAPOT (Naturally Aligned Power-Of-Two):
+     * tdata1(mcontrol) match = 0 : Exact byte match
+     *
+     * tdata1(mcontrol) match = 1 : NAPOT (Naturally Aligned Power-Of-Two):
      * Matches when the top M bits of any compare value match the top M bits of tdata2.
      * M is XLEN − 1 minus the index of the least-significant bit containing 0 in tdata2.
+     * Note: Expecting that size is number power of 2 (numbers should be in the range of 1 ~ 31)
      *
-     * Note: Expectng that size is number power of 2
+     * Examples for understanding how to calculate match pattern to tdata2:
      *
-     * Examples for understanding how to calculate NAPOT:
-     *
+     * nnnn...nnnnn 1-byte  Exact byte match
      * nnnn...nnnn0 2-byte  NAPOT range
      * nnnn...nnn01 4-byte  NAPOT range
      * nnnn...nn011 8-byte  NAPOT range
      * nnnn...n0111 16-byte NAPOT range
      * nnnn...01111 32-byte NAPOT range
+     * ...
+     * n011...11111 2^31 byte NAPOT range
      *  * where n are bits from original address
      */
-    const uint32_t half_size = size >> 1;
-    uint32_t napot = wp_addr;
-    napot &= ~half_size;      /* set the least-significant bit with zero */
-    napot |= half_size - 1;   /* fill all bits with ones after least-significant bit */
-    RV_WRITE_CSR(tdata2, napot);
+    uint32_t match_pattern = (wp_addr & ~(size-1)) | ((size-1) >> 1);
+
+    RV_WRITE_CSR(tdata2, match_pattern);
 }
 
 FORCE_INLINE_ATTR void rv_utils_clear_breakpoint(int bp_num)

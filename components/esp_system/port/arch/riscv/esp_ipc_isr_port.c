@@ -14,7 +14,6 @@
 #include "esp_attr.h"
 #include "sdkconfig.h"
 
-
 void esp_ipc_isr_port_init(const int cpuid)
 {
     uint32_t intr_source = ETS_FROM_CPU_INTR2_SOURCE + cpuid; // ETS_FROM_CPU_INTR2_SOURCE and ETS_FROM_CPU_INTR3_SOURCE
@@ -30,7 +29,7 @@ void esp_ipc_isr_port_init(const int cpuid)
 #elif CONFIG_ESP_SYSTEM_CHECK_INT_LEVEL_4
     esp_cpu_intr_set_priority(ETS_IPC_ISR_INUM, 4);
 #else
-    #error "CONFIG_ESP_SYSTEM_CHECK_INT_LEVEL is not defined!"
+#error "CONFIG_ESP_SYSTEM_CHECK_INT_LEVEL is not defined!"
 #endif
 
     esp_intr_enable_source(ETS_IPC_ISR_INUM);

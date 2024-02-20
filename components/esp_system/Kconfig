@@ -92,7 +92,7 @@ menu "ESP System Settings"
 
     config ESP_SYSTEM_RTC_FAST_MEM_AS_HEAP_DEPCHECK
         bool
-        default y if IDF_TARGET_ESP32 && FREERTOS_UNICORE
+        default y if IDF_TARGET_ESP32 && ESP_SYSTEM_SINGLE_CORE_MODE
         default y if IDF_TARGET_ESP32S2
         default y if IDF_TARGET_ESP32C3
         default y if IDF_TARGET_ESP32S3
@@ -275,13 +275,9 @@ menu "ESP System Settings"
         bool
         default y if ESP_CONSOLE_UART_DEFAULT || ESP_CONSOLE_UART_CUSTOM
 
-    config ESP_CONSOLE_MULTIPLE_UART
-        bool
-        default y if !IDF_TARGET_ESP32C3 && !IDF_TARGET_ESP32H2 && !IDF_TARGET_ESP32C2 && !IDF_TARGET_ESP32C6
-
     choice ESP_CONSOLE_UART_NUM
         prompt "UART peripheral to use for console output (0-1)"
-        depends on ESP_CONSOLE_UART_CUSTOM && ESP_CONSOLE_MULTIPLE_UART
+        depends on ESP_CONSOLE_UART_CUSTOM
         default ESP_CONSOLE_UART_CUSTOM_NUM_0
         help
             This UART peripheral is used for console output from the ESP-IDF Bootloader and the app.
@@ -301,18 +297,29 @@ menu "ESP System Settings"
     config ESP_CONSOLE_UART_NUM
         int
         default 0 if ESP_CONSOLE_UART_DEFAULT
-        default 0 if !ESP_CONSOLE_MULTIPLE_UART
         default 0 if ESP_CONSOLE_UART_CUSTOM_NUM_0
         default 1 if ESP_CONSOLE_UART_CUSTOM_NUM_1
         default -1 if !ESP_CONSOLE_UART
 
+    config ESP_CONSOLE_ROM_SERIAL_PORT_NUM
+        # This config is used for the correct serial number used in ROM uart function.
+        int
+        default 0 if ESP_CONSOLE_UART_DEFAULT
+        default 0 if ESP_CONSOLE_UART_CUSTOM_NUM_0
+        default 1 if ESP_CONSOLE_UART_CUSTOM_NUM_1
+        # Can be extended if we have more uarts.
+        default ESP_ROM_USB_SERIAL_DEVICE_NUM if ESP_CONSOLE_USB_SERIAL_JTAG
+        default ESP_ROM_USB_OTG_NUM if ESP_CONSOLE_USB_CDC
+        default -1 if ESP_CONSOLE_NONE
+
     config ESP_CONSOLE_UART_TX_GPIO
         int "UART TX on GPIO#"
         depends on ESP_CONSOLE_UART_CUSTOM
-        range 0 46
+        range 0 SOC_GPIO_OUT_RANGE_MAX
         default 1 if IDF_TARGET_ESP32
         default 20 if IDF_TARGET_ESP32C2
         default 21 if IDF_TARGET_ESP32C3
+        default 10 if IDF_TARGET_ESP32C5
         default 16 if IDF_TARGET_ESP32C6
         default 37 if IDF_TARGET_ESP32P4
         default 24 if IDF_TARGET_ESP32H2
@@ -327,10 +334,11 @@ menu "ESP System Settings"
     config ESP_CONSOLE_UART_RX_GPIO
         int "UART RX on GPIO#"
         depends on ESP_CONSOLE_UART_CUSTOM
-        range 0 46
+        range 0 SOC_GPIO_IN_RANGE_MAX
         default 3 if IDF_TARGET_ESP32
         default 19 if IDF_TARGET_ESP32C2
         default 20 if IDF_TARGET_ESP32C3
+        default 11 if IDF_TARGET_ESP32C5
         default 17 if IDF_TARGET_ESP32C6
         default 38 if IDF_TARGET_ESP32P4
         default 23 if IDF_TARGET_ESP32H2
@@ -350,6 +358,7 @@ menu "ESP System Settings"
         prompt "UART console baud rate" if ESP_CONSOLE_UART_CUSTOM
         depends on ESP_CONSOLE_UART
         default 74880 if (IDF_TARGET_ESP32C2 && XTAL_FREQ_26)
+        default 138240 if (IDF_TARGET_ESP32C5_BETA3_VERSION && XTAL_FREQ_48)
         default 115200
         range 1200 4000000 if !PM_ENABLE
         range 1200 1000000 if PM_ENABLE
@@ -568,6 +577,15 @@ menu "ESP System Settings"
             This config allows to trigger a panic interrupt when Stack Pointer register goes out of allocated stack
             memory bounds.
 
+    config ESP_SYSTEM_BBPLL_RECALIB
+        bool "Re-calibration BBPLL at startup"
+        depends on IDF_TARGET_ESP32C2 || IDF_TARGET_ESP32S3 || IDF_TARGET_ESP32C6 || IDF_TARGET_ESP32H2
+        default y
+        help
+            This configuration helps to address an BBPLL inaccurate issue when boot from certain bootloader version,
+            which may increase about the boot-up time by about 200 us. Disable this when your bootloader is built with
+            ESP-IDF version v5.2 and above.
+
 endmenu  # ESP System Settings
 
 menu "IPC (Inter-Processor Call)"
@@ -595,7 +613,7 @@ menu "IPC (Inter-Processor Call)"
 
     config ESP_IPC_ISR_ENABLE
         bool
-        default y if !FREERTOS_UNICORE
+        default y if !ESP_SYSTEM_SINGLE_CORE_MODE
         help
             The IPC ISR feature is similar to the IPC feature except that the callback function is executed in the
             context of a High Priority Interrupt. The IPC ISR feature is intended for low latency execution of simple

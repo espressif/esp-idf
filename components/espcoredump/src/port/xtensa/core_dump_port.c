@@ -14,14 +14,14 @@
 #include "soc/soc_memory_layout.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "freertos/xtensa_context.h"
+#include "xtensa_context.h"
 #include "esp_rom_sys.h"
 #include "esp_core_dump_common.h"
 #include "esp_core_dump_port.h"
 #include "esp_debug_helpers.h"
 #include "esp_cpu_utils.h"
 
-const static DRAM_ATTR char TAG[] __attribute__((unused)) = "esp_core_dump_port";
+const static char TAG[] __attribute__((unused)) = "esp_core_dump_port";
 
 #define min(a,b) ((a) < (b) ? (a) : (b))
 #define max(a,b) ((a) < (b) ? (b) : (a))
@@ -95,6 +95,7 @@ typedef struct
     core_dump_reg_pair_t exccause;
     core_dump_reg_pair_t excvaddr;
     core_dump_reg_pair_t extra_regs[COREDUMP_EXTRA_REG_NUM];
+    uint32_t isr_context;
 } __attribute__((packed)) xtensa_extra_info_t;
 
 // Xtensa Program Status for GDB
@@ -259,7 +260,7 @@ static esp_err_t esp_core_dump_get_regs_from_stack(void* stack_addr,
     return ESP_OK;
 }
 
-inline void esp_core_dump_port_init(panic_info_t *info)
+inline void esp_core_dump_port_init(panic_info_t *info, bool isr_context)
 {
     s_extra_info.crashed_task_tcb = COREDUMP_CURR_TASK_MARKER;
     // Initialize exccause register to default value (required if current task corrupted)
@@ -271,6 +272,7 @@ inline void esp_core_dump_port_init(panic_info_t *info)
     if (info->pseudo_excause) {
         s_exc_frame->exccause += XCHAL_EXCCAUSE_NUM;
     }
+    s_extra_info.isr_context = isr_context;
 }
 
 /**
@@ -290,16 +292,17 @@ void esp_core_dump_reset_fake_stacks(void)
 /* Get the top of the ISR stack.
  * Check core dump port interface for more information about this function.
  */
-uint8_t* esp_core_dump_get_isr_stack_top(void) {
-    extern uint8_t port_IntStack;
-    return &port_IntStack;
+uint8_t* esp_core_dump_get_isr_stack_top(void)
+{
+    extern uint8_t port_IntStack[];
+    return port_IntStack;
 }
 
- uint32_t esp_core_dump_get_isr_stack_end(void)
- {
+uint32_t esp_core_dump_get_isr_stack_end(void)
+{
     uint8_t* isr_top_stack = esp_core_dump_get_isr_stack_top();
     return (uint32_t)(isr_top_stack + (xPortGetCoreID()+1)*configISR_STACK_SIZE);
- }
+}
 
 
 static inline bool esp_core_dump_task_stack_end_is_sane(uint32_t sp)

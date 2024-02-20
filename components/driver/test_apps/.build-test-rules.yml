@@ -1,59 +1,10 @@
 # Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
 
-components/driver/test_apps/analog_comparator:
-  disable:
-    - if: SOC_ANA_CMPR_SUPPORTED != 1
-  disable_test:
-    - if: IDF_TARGET == "esp32p4"
-      temporary: true
-      reason: not supported yet
-
-components/driver/test_apps/dac_test_apps/dac:
-  disable:
-    - if: SOC_DAC_SUPPORTED != 1
-
 components/driver/test_apps/dac_test_apps/legacy_dac_driver:
   disable:
     - if: SOC_DAC_SUPPORTED != 1
-
-components/driver/test_apps/gpio_extensions:
-  disable:
-    - if: IDF_TARGET == "esp32p4"
-      temporary: true
-      reason: not supported yet # TODO: IDF-7551
-
-components/driver/test_apps/gptimer:
-  disable:
-    - if: SOC_GPTIMER_SUPPORTED != 1
-
-components/driver/test_apps/i2c_test_apps:
-  disable:
-    - if: SOC_I2C_SUPPORTED != 1 # TODO: IDF-8070
-
-components/driver/test_apps/i2s_test_apps:
-  disable:
-    - if: SOC_I2S_SUPPORTED != 1
-  disable_test:
-    - if: IDF_TARGET == "esp32p4"
-      temporary: true
-      reason: lack of runners
-
-components/driver/test_apps/i2s_test_apps/i2s:
-  disable:
-    - if: SOC_I2S_SUPPORTED != 1
-  disable_test:
-    - if: IDF_TARGET == "esp32p4"
-      temporary: true
-      reason: lack of runners
-
-components/driver/test_apps/i2s_test_apps/i2s_multi_dev:
-  disable:
-    - if: SOC_I2S_SUPPORTED != 1
-    - if: SOC_I2S_HW_VERSION_2 != 1
-  disable_test:
-    - if: IDF_TARGET == "esp32p4"
-      temporary: true
-      reason: lack of runners
+  depends_components:
+    - esp_adc
 
 components/driver/test_apps/i2s_test_apps/legacy_i2s_adc_dac:
   disable:
@@ -62,125 +13,81 @@ components/driver/test_apps/i2s_test_apps/legacy_i2s_adc_dac:
 components/driver/test_apps/i2s_test_apps/legacy_i2s_driver:
   disable:
     - if: SOC_I2S_SUPPORTED != 1
-  disable_test:
-    - if: IDF_TARGET == "esp32p4"
-      temporary: true
-      reason: lack of runners
-
-components/driver/test_apps/ledc:
-  disable:
-    - if: SOC_LEDC_SUPPORTED != 1
 
 components/driver/test_apps/legacy_adc_driver:
   disable:
     - if: SOC_ADC_SUPPORTED != 1
+  depends_components:
+    - efuse
+    - esp_driver_i2s
+    - esp_driver_spi
+  depends_filepatterns:
+    - components/driver/deprecated/**/*adc*
 
 components/driver/test_apps/legacy_i2c_driver:
-  disable:
+  disable_test:
     - if: IDF_TARGET == "esp32p4"
       temporary: true
-      reason: not supported yet  # TODO: IDF-8070
+      reason: lack of runner
+  depends_filepatterns:
+    - components/driver/i2c/**
 
 components/driver/test_apps/legacy_mcpwm_driver:
   disable:
     - if: SOC_MCPWM_SUPPORTED != 1
+  depends_filepatterns:
+    - components/driver/deprecated/**/*mcpwm*
 
 components/driver/test_apps/legacy_pcnt_driver:
   disable:
     - if: SOC_PCNT_SUPPORTED != 1
+  depends_filepatterns:
+    - components/driver/deprecated/**/*pcnt*
 
 components/driver/test_apps/legacy_rmt_driver:
   disable:
     - if: SOC_RMT_SUPPORTED != 1
+  depends_filepatterns:
+    - components/driver/deprecated/**/*rmt*
 
 components/driver/test_apps/legacy_rtc_temp_driver:
   disable:
     - if: SOC_TEMP_SENSOR_SUPPORTED != 1
 
+components/driver/test_apps/legacy_sigma_delta_driver:
+  disable:
+    - if: SOC_SDM_SUPPORTED != 1
+  depends_filepatterns:
+    - components/driver/deprecated/**/*sigma*
+  depends_components:
+    - esp_driver_gpio
+
 components/driver/test_apps/legacy_timer_driver:
   disable:
     - if: SOC_GPTIMER_SUPPORTED != 1
-
-components/driver/test_apps/mcpwm:
-  disable:
-    - if: SOC_MCPWM_SUPPORTED != 1
-
-components/driver/test_apps/parlio:
-  disable:
-    - if: SOC_PARLIO_SUPPORTED != 1
   disable_test:
     - if: IDF_TARGET == "esp32p4"
       temporary: true
-      reason: lack of runner
-
-components/driver/test_apps/pulse_cnt:
-  disable:
-    - if: SOC_PCNT_SUPPORTED != 1
-
-components/driver/test_apps/rmt:
-  disable:
-    - if: SOC_RMT_SUPPORTED != 1
-
-components/driver/test_apps/rs485:
-  disable:
-    - if: IDF_TARGET in ["esp32p4"]
-      temporary: true
-      reason: target(s) is not supported yet # TODO: IDF-6511
-  disable_test:
-    - if: IDF_TARGET != "esp32"
-      temporary: true
-      reason: lack of runners
-
-components/driver/test_apps/sdio:
-  disable:
-    - if: SOC_SDIO_SLAVE_SUPPORTED != 1
-  disable_test:
-    - if: IDF_TARGET == "esp32c6"
-      temporary: true
-      reason: lack of runners
-
-components/driver/test_apps/spi/master:
-  disable:
-    - if: SOC_GPSPI_SUPPORTED != 1
-
-components/driver/test_apps/spi/param:
-  disable:
-    - if: SOC_GPSPI_SUPPORTED != 1
-    - if: IDF_TARGET in ["esp32p4"]
-      temporary: true
-      reason: target(s) is not supported yet # TODO: IDF-7503
-
-components/driver/test_apps/spi/slave:
-  disable:
-    - if: SOC_GPSPI_SUPPORTED != 1
-    - if: IDF_TARGET in ["esp32p4"]
-      temporary: true
-      reason: target(s) is not supported yet # TODO: IDF-7503 slave support
-
-components/driver/test_apps/spi/slave_hd:
-  disable:
-    - if: SOC_GPSPI_SUPPORTED != 1
-    - if: SOC_SPI_SUPPORT_SLAVE_HD_VER2 != 1
-
-components/driver/test_apps/temperature_sensor:
-  disable:
-    - if: SOC_TEMP_SENSOR_SUPPORTED != 1
+      reason: test not pass, should be re-enable # TODO: IDF-8962
+  depends_filepatterns:
+    - components/driver/deprecated/**/*timer*
 
 components/driver/test_apps/touch_sensor_v1:
   disable:
-    - if: SOC_TOUCH_VERSION_1 != 1
+    - if: SOC_TOUCH_SENSOR_VERSION != 1
 
 components/driver/test_apps/touch_sensor_v2:
   disable:
-    - if: SOC_TOUCH_VERSION_2 != 1
+    - if: SOC_TOUCH_SENSOR_VERSION != 2
 
 components/driver/test_apps/twai:
   disable:
     - if: SOC_TWAI_SUPPORTED != 1
-
-components/driver/test_apps/uart:
-  disable:
-    - if: SOC_UART_SUPPORTED != 1
-    - if: IDF_TARGET in ["esp32p4"]
+  disable_test:
+    - if: IDF_TARGET == "esp32p4"
       temporary: true
-      reason: target(s) is not supported yet # TODO: IDF-6511
+      reason: test not pass, should be re-enable # TODO: IDF-8966
+  depends_filepatterns:
+    - components/driver/twai/**/*
+  depends_components:
+    - esp_driver_gpio

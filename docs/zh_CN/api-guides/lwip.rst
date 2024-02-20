@@ -13,6 +13,8 @@ ESP-IDF 支持以下 lwIP TCP/IP 协议栈功能：
 - `BSD 套接字 API`_
 - `Netconn API`_ 已启用，但暂无对 ESP-IDF 应用程序的官方支持
 
+.. _lwip-dns-limitation:
+
 适配的 API
 ^^^^^^^^^^^^
 
@@ -23,6 +25,12 @@ ESP-IDF 支持以下 lwIP TCP/IP 协议栈功能：
 ESP-IDF 间接支持以下常见的 lwIP 应用程序 API：
 
 - 动态主机设置协议 (DHCP) 服务器和客户端，由 :doc:`/api-reference/network/esp_netif` 功能间接支持。
+- 域名系统 (DNS)；获取 DHCP 地址时，可以自动分配 DNS 服务器，也可以通过 :doc:`/api-reference/network/esp_netif` API 手动配置。
+
+.. note::
+
+    lwIP 中的 DNS 服务器配置为全局配置，而非针对特定接口的配置。如需同时使用不同 DNS 服务器的多个网络接口，在从一个接口获取 DHCP 租约时，请注意避免意外覆盖另一个接口的 DNS 设置。
+
 - 简单网络时间协议 (SNTP)，由 :doc:`/api-reference/network/esp_netif` 功能间接支持，或通过 :component_file:`lwip/include/apps/esp_sntp.h` 中的函数直接支持。该函数还为 :component_file:`lwip/lwip/src/include/lwip/apps/sntp.h` 函数提供了线程安全的 API，请参阅 :ref:`system-time-sntp-sync`。
 - ICMP Ping，由 lwIP ping API 的变体支持，请参阅 :doc:`/api-reference/protocols/icmp_echo`。
 - ICMPv6 Ping，由 lwIP 的 ICMPv6 Echo API 支持，用于测试 IPv6 网络连接情况。有关详细信息，请参阅 :example:`protocols/sockets/icmpv6_ping`。
@@ -411,6 +419,16 @@ IP 层特性
 
 - 支持 IPV4 映射 IPV6 地址
 
+NAPT 和端口转发
+++++++++++++++++++++++++
+
+支持 IPv4 网络地址端口转换（NAPT）和端口转发。然而，仅限于单个接口启用 NAPT。
+
+- 要在两个接口之间使用 NAPT 转发数据包，必须在连接到目标网络的接口上启用 NAPT。例如，为了通过 Wi-Fi 接口为以太网流量启用互联网访问，必须在以太网接口上启用 NAPT。
+- NAPT 的使用示例可参考 :example:`network/vlan_support`。
+
+.. _lwip-custom-hooks:
+
 自定义 lwIP 钩子
 +++++++++++++++++++++
 
@@ -422,9 +440,24 @@ IP 层特性
    target_compile_options(${lwip} PRIVATE "-I${PROJECT_DIR}/main")
    target_compile_definitions(${lwip} PRIVATE "-DESP_IDF_LWIP_HOOK_FILENAME=\"my_hook.h\"")
 
+使用 ESP-IDF 构建系统自定义 lwIP 选项
+++++++++++++++++++++++++++++++++++++++++++++++++++
+
+组件配置菜单可以配置常见的 lwIP 选项，但是一些自定义选项需要通过命令行添加。CMake 函数 ``target_compile_definitions()`` 可以用于定义宏，示例如下：
+
+.. code-block:: cmake
+
+   idf_component_get_property(lwip lwip COMPONENT_LIB)
+   target_compile_definitions(${lwip} PRIVATE "-DETHARP_SUPPORT_VLAN=1")
+
+使用这种方法可能无法定义函数式宏。虽然 GCC 支持此类定义，但是未必所有编译器都会接受。为了解决这一限制，可以使用 ``add_definitions()`` 函数为整个项目定义宏，例如 ``add_definitions("-DFALLBACK_DNS_SERVER_ADDRESS(addr)=\"IP_ADDR4((addr), 8,8,8,8)\"")``。
+
+另一种方法是在头文件中定义函数式宏，该头文件将预先包含在 lwIP 钩子文件中，请参考 :ref:`lwip-custom-hooks`。
 
 限制
 ^^^^^^^^^^^
+
+如 :ref:`lwip-dns-limitation` 所述，ESP-IDF 中的 lwIP 扩展功能仍然受到全局 DNS 限制的影响。为了在应用程序代码中解决这一限制，可以使用 ``FALLBACK_DNS_SERVER_ADDRESS()`` 宏定义所有接口能够访问的全局 DNS 备用服务器，或者单独维护每个接口的 DNS 服务器，并在默认接口更改时重新配置。
 
 在 UDP 套接字上重复调用 ``send()`` 或 ``sendto()`` 最终可能会导致错误。此时 ``errno`` 报错为 ``ENOMEM``，错误原因是底层网络接口驱动程序中的 buffer 大小有限。当所有驱动程序的传输 buffer 已满时，UDP 传输事务失败。如果应用程序需要发送大量 UDP 数据报，且不希望发送方丢弃数据报，建议检查错误代码，采用短延迟的重传机制。
 
@@ -446,15 +479,13 @@ IP 层特性
 最大吞吐量
 ^^^^^^^^^^^^^^^^^^
 
-在 :example:`wifi/iperf` 示例中，乐鑫测试了在射频密封的封闭环境下 ESP-IDF 的 TCP/IP 吞吐量。
-
-iperf 示例下的 :example_file:`wifi/iperf/sdkconfig.defaults` 文件包含已知可最大化 TCP/IP 吞吐量的设置，但该设置会占用更多 RAM。要牺牲其他性能，在应用程序中最大化 TCP/IP 吞吐量，建议将该示例文件中的设置应用到项目的 sdkconfig 文件中。
+乐鑫使用 iperf 测试应用程序 https://iperf.fr/ 测试了 ESP-IDF 的 TCP/IP 吞吐量。关于实际测试和优化配置的更多信息，请参考 :ref:`improve-network-speed`。
 
 .. important::
 
   建议逐步应用更改，并在每次更改后，通过特定应用程序的工作负载检查性能。
 
-- 如果系统中有许多任务抢占 CPU 时间，可以考虑调整 lwIP 任务的 CPU 亲和性 (:ref:`CONFIG_LWIP_TCPIP_TASK_AFFINITY`)，并以固定优先级 (18) 运行。为优化 CPU 使用，可以考虑将竞争任务分配给不同核心，或将其优先级调整至较低值。有关内置任务优先级的更多详情，请参阅 :ref:`built-in-task-priorities`。
+- 如果系统中有许多任务抢占 CPU 时间，可以考虑调整 lwIP 任务的 CPU 亲和性 (:ref:`CONFIG_LWIP_TCPIP_TASK_AFFINITY`)，并以固定优先级 (18, ``ESP_TASK_TCPIP_PRIO``) 运行。为优化 CPU 使用，可以考虑将竞争任务分配给不同核心，或将其优先级调整至较低值。有关内置任务优先级的更多详情，请参阅 :ref:`built-in-task-priorities`。
 
 - 如果使用仅带有套接字参数的 ``select()`` 函数，禁用 :ref:`CONFIG_VFS_SUPPORT_SELECT` 可以更快地调用 ``select()``。
 
@@ -480,6 +511,7 @@ iperf 示例下的 :example_file:`wifi/iperf/sdkconfig.defaults` 文件包含已
 
 - 减少 :ref:`CONFIG_LWIP_MAX_SOCKETS` 可以减少系统中的最大套接字数量。更改此设置，会让处于 ``WAIT_CLOSE`` 状态的 TCP 套接字在需要打开新套接字时更快地关闭和复用，进一步降低峰值 RAM 使用量。
 - 减少 :ref:`CONFIG_LWIP_TCPIP_RECVMBOX_SIZE`、:ref:`CONFIG_LWIP_TCP_RECVMBOX_SIZE` 和 :ref:`CONFIG_LWIP_UDP_RECVMBOX_SIZE` 可以减少 RAM 使用量，但会影响吞吐量，具体取决于使用情况。
+- 减少 :ref:`CONFIG_LWIP_TCP_ACCEPTMBOX_SIZE` 可以通过限制同时接受的连接数来减少 RAM 使用量。
 - 减少 :ref:`CONFIG_LWIP_TCP_MSL` 和 :ref:`CONFIG_LWIP_TCP_FIN_WAIT_TIMEOUT` 可以减少系统中的最大分段寿命，同时会使处于 ``TIME_WAIT`` 和 ``FIN_WAIT_2`` 状态的 TCP 套接字能更快地关闭和复用。
 - 禁用 :ref:`CONFIG_LWIP_IPV6` 可以在系统启动时节省大约 39 KB 的固件大小和 2 KB 的 RAM，并在运行 TCP/IP 栈时节省 7 KB 的 RAM。如果无需支持 IPV6，可以禁用 IPv6，减少 flash 和 RAM 占用。
 - 禁用 :ref:`CONFIG_LWIP_IPV4` 可以在系统启动时节省大约 26 KB 的固件大小和 600 B 的 RAM，并在运行 TCP/IP 栈时节省 6 KB 的 RAM。如果本地网络仅支持 IPv6 配置，可以禁用 IPv4，减少 flash 和 RAM 占用。

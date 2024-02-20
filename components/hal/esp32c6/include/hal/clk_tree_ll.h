@@ -9,7 +9,6 @@
 #include <stdint.h>
 #include "soc/soc.h"
 #include "soc/clk_tree_defs.h"
-#include "soc/rtc.h"
 #include "soc/pcr_struct.h"
 #include "soc/lp_clkrst_struct.h"
 #include "soc/pmu_reg.h"
@@ -307,7 +306,7 @@ static inline __attribute__((always_inline)) void clk_ll_bbpll_set_config(uint32
 
     /* Configure 480M PLL */
     switch (xtal_freq_mhz) {
-    case RTC_XTAL_FREQ_40M:
+    case SOC_XTAL_FREQ_40M:
     default:
         div_ref = 0;
         div7_0 = 8;

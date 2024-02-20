@@ -30,6 +30,7 @@
 #include "mesh/common.h"
 #include "prov_pvnr.h"
 #include "net.h"
+#include "beacon.h"
 
 #include "mesh_v1.1/utils.h"
 
@@ -102,6 +103,11 @@ static tBTA_GATTC_IF bt_mesh_gattc_if;
 #endif
 
 int bt_mesh_host_init(void)
+{
+    return 0;
+}
+
+int bt_mesh_host_deinit(void)
 {
     return 0;
 }
@@ -323,6 +329,7 @@ int bt_le_adv_start(const struct bt_mesh_adv_param *param,
     tBLE_ADDR_TYPE addr_type_own = 0U;
     tBLE_BD_ADDR p_dir_bda = {0};
     tBTM_BLE_AFP adv_fil_pol = 0U;
+    uint16_t interval = 0U;
     uint8_t adv_type = 0U;
     int err = 0;
 
@@ -369,7 +376,15 @@ int bt_le_adv_start(const struct bt_mesh_adv_param *param,
     }
 
 #if CONFIG_BLE_MESH_PRB_SRV
-    addr_type_own = bt_mesh_private_beacon_update_addr_type(ad);
+    /* NOTE: When a Mesh Private beacon is advertised, the Mesh Private beacon shall
+     * use a resolvable private address or a non-resolvable private address in the
+     * AdvA field of the advertising PDU.
+     */
+    if (ad->type == BLE_MESH_DATA_MESH_BEACON && ad->data[0] == BEACON_TYPE_PRIVATE) {
+        addr_type_own = BLE_MESH_ADDR_RANDOM;
+    } else {
+        addr_type_own = BLE_MESH_ADDR_PUBLIC;
+    }
 #else
     addr_type_own = BLE_MESH_ADDR_PUBLIC;
 #endif
@@ -378,9 +393,24 @@ int bt_le_adv_start(const struct bt_mesh_adv_param *param,
     adv_fil_pol = BLE_MESH_AP_SCAN_CONN_ALL;
     p_start_adv_cb = start_adv_completed_cb;
 
+    interval = param->interval_min;
+
+#if CONFIG_BLE_MESH_RANDOM_ADV_INTERVAL
+    /* If non-connectable mesh packets are transmitted with an adv interval
+     * not smaller than 10ms, then we will use a random adv interval between
+     * [interval / 2, interval] for them.
+     */
+    if (adv_type == BLE_MESH_ADV_NONCONN_IND && interval >= 16) {
+        interval >>= 1;
+        interval += (bt_mesh_get_rand() % (interval + 1));
+
+        BT_INFO("%u->%u", param->interval_min, interval);
+    }
+#endif
+
     /* Check if we can start adv using BTM_BleSetAdvParamsStartAdvCheck */
     BLE_MESH_BTM_CHECK_STATUS(
-        BTM_BleSetAdvParamsAll(param->interval_min, param->interval_max, adv_type,
+        BTM_BleSetAdvParamsAll(interval, interval, adv_type,
                                addr_type_own, &p_dir_bda,
                                channel_map, adv_fil_pol, p_start_adv_cb));
     BLE_MESH_BTM_CHECK_STATUS(BTM_BleStartAdv());
@@ -1978,7 +2008,7 @@ int bt_mesh_update_exceptional_list(uint8_t sub_code, uint32_t type, void *info)
 
     if ((sub_code > BLE_MESH_EXCEP_LIST_SUB_CODE_CLEAN) ||
         (sub_code < BLE_MESH_EXCEP_LIST_SUB_CODE_CLEAN &&
-         type > BLE_MESH_EXCEP_LIST_TYPE_MESH_PROXY_ADV) ||
+         type >= BLE_MESH_EXCEP_LIST_TYPE_MAX) ||
         (sub_code == BLE_MESH_EXCEP_LIST_SUB_CODE_CLEAN &&
          !(type & BLE_MESH_EXCEP_LIST_CLEAN_ALL_LIST))) {
         BT_ERR("%s, Invalid parameter", __func__);
@@ -1990,6 +2020,16 @@ int bt_mesh_update_exceptional_list(uint8_t sub_code, uint32_t type, void *info)
             BT_ERR("Invalid Provisioning Link ID");
             return -EINVAL;
         }
+
+        /* When removing an unused link (i.e., Link ID is 0), and since
+         * Controller has never added this Link ID, it will cause error
+         * log been wrongly reported.
+         * Therefore, add this check here to avoid such occurrences.
+         */
+        if (*(uint32_t *)info == 0) {
+            return 0;
+        }
+
         sys_memcpy_swap(value, info, sizeof(uint32_t));
     }
 

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,7 +19,7 @@ extern "C" {
 #include "core_dump_checksum.h"
 
 #if CONFIG_ESP_COREDUMP_LOGS
-#define ESP_COREDUMP_LOG( level, format, ... )  if (LOG_LOCAL_LEVEL >= level)   { esp_rom_printf(DRAM_STR(format), esp_log_early_timestamp(), (const char *)TAG, ##__VA_ARGS__); }
+#define ESP_COREDUMP_LOG( level, format, ... )  if (LOG_LOCAL_LEVEL >= level)   { esp_rom_printf((format), esp_log_early_timestamp(), (const char *)TAG, ##__VA_ARGS__); }
 #else
 #define ESP_COREDUMP_LOG( level, format, ... )  // dummy define doing nothing
 #endif
@@ -29,6 +29,11 @@ extern "C" {
 #define ESP_COREDUMP_LOGI( format, ... )  ESP_COREDUMP_LOG(ESP_LOG_INFO, LOG_FORMAT(I, format), ##__VA_ARGS__)
 #define ESP_COREDUMP_LOGD( format, ... )  ESP_COREDUMP_LOG(ESP_LOG_DEBUG, LOG_FORMAT(D, format), ##__VA_ARGS__)
 #define ESP_COREDUMP_LOGV( format, ... )  ESP_COREDUMP_LOG(ESP_LOG_VERBOSE, LOG_FORMAT(V, format), ##__VA_ARGS__)
+
+/**
+ * @brief Always print the given message, regardless of the log level
+ */
+#define ESP_COREDUMP_PRINT( format, ... ) do { esp_rom_printf((format), ##__VA_ARGS__); } while(0)
 
 /**
  * @brief Assertion to be verified in a release context. Cannot be muted.
@@ -91,15 +96,13 @@ extern "C" {
  */
 #define COREDUMP_VERSION_CHIP CONFIG_IDF_FIRMWARE_CHIP_ID
 
-
 typedef struct _core_dump_write_data_t
 {
     uint32_t off; /*!< Current offset of data being written */
     uint8_t  cached_data[COREDUMP_CACHE_SIZE]; /*!< Cache used to write to flash */
     uint8_t  cached_bytes; /*!< Number of bytes filled in the cached */
-    core_dump_checksum_ctx* checksum_ctx; /*!< Checksum context */
+    void *checksum_ctx; /*!< Checksum context */
 } core_dump_write_data_t;
-
 
 /**
  * @brief Types below define the signatures of the callbacks that are used

@@ -37,11 +37,16 @@ entries:
 archive: libespcoredump.a
 entries:
     if ESP_PANIC_HANDLER_IRAM = y:
-        core_dump_uart (noflash_text)
-        core_dump_flash (noflash_text)
-        core_dump_common (noflash_text)
-        core_dump_port (noflash_text)
-        core_dump_elf (noflash_text)
+        core_dump_uart (noflash)
+        core_dump_flash (noflash)
+        core_dump_common (noflash)
+        core_dump_port (noflash)
+        core_dump_elf (noflash)
+        core_dump_binary (noflash)
+        core_dump_crc (noflash)
+        # ESP32 uses mbedtls for the sha and mbedtls is in the flash
+        if IDF_TARGET_ESP32 = n:
+            core_dump_sha (noflash)
     else:
         * (default)
 

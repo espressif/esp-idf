@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -48,14 +48,16 @@ static esp_event_loop_args_t test_event_get_default_loop_args(void)
 
 struct EV_LoopFix {
 public:
-    EV_LoopFix(size_t queue_size = CONFIG_ESP_SYSTEM_EVENT_QUEUE_SIZE, const char *task_name = NULL) {
+    EV_LoopFix(size_t queue_size = CONFIG_ESP_SYSTEM_EVENT_QUEUE_SIZE, const char *task_name = NULL)
+    {
         esp_event_loop_args_t loop_args = test_event_get_default_loop_args();
         loop_args.task_name = task_name;
         loop_args.queue_size = queue_size;
         TEST_ESP_OK(esp_event_loop_create(&loop_args, &loop));
     }
 
-    ~EV_LoopFix() {
+    ~EV_LoopFix()
+    {
         esp_event_loop_delete(loop);
     }
 
@@ -86,17 +88,17 @@ TEST_CASE("can post events up to loop's max queue size", "[event][linux]")
     EV_LoopFix loop_fix(2);
 
     TEST_ASSERT_EQUAL(ESP_OK, esp_event_post_to(loop_fix.loop,
-            s_test_base1,
-            TEST_EVENT_BASE1_EV1,
-            NULL,
-            0,
-            pdMS_TO_TICKS(10)));
+                                                s_test_base1,
+                                                TEST_EVENT_BASE1_EV1,
+                                                NULL,
+                                                0,
+                                                pdMS_TO_TICKS(10)));
     TEST_ASSERT_EQUAL(ESP_OK, esp_event_post_to(loop_fix.loop,
-            s_test_base1,
-            TEST_EVENT_BASE1_EV1,
-            NULL,
-            0,
-            pdMS_TO_TICKS(10)));
+                                                s_test_base1,
+                                                TEST_EVENT_BASE1_EV1,
+                                                NULL,
+                                                0,
+                                                pdMS_TO_TICKS(10)));
 }
 
 TEST_CASE("posting to full event loop times out", "[event][linux]")
@@ -104,11 +106,11 @@ TEST_CASE("posting to full event loop times out", "[event][linux]")
     EV_LoopFix loop_fix(1);
 
     TEST_ASSERT_EQUAL(ESP_OK,
-            esp_event_post_to(loop_fix.loop, s_test_base1, TEST_EVENT_BASE1_EV1, NULL, 0, pdMS_TO_TICKS(0)));
+                      esp_event_post_to(loop_fix.loop, s_test_base1, TEST_EVENT_BASE1_EV1, NULL, 0, pdMS_TO_TICKS(0)));
     TEST_ASSERT_EQUAL(ESP_ERR_TIMEOUT,
-            esp_event_post_to(loop_fix.loop, s_test_base1, TEST_EVENT_BASE1_EV1, NULL, 0, pdMS_TO_TICKS(0)));
+                      esp_event_post_to(loop_fix.loop, s_test_base1, TEST_EVENT_BASE1_EV1, NULL, 0, pdMS_TO_TICKS(0)));
     TEST_ASSERT_EQUAL(ESP_ERR_TIMEOUT,
-            esp_event_post_to(loop_fix.loop, s_test_base1, TEST_EVENT_BASE1_EV1, NULL, 0, pdMS_TO_TICKS(10)));
+                      esp_event_post_to(loop_fix.loop, s_test_base1, TEST_EVENT_BASE1_EV1, NULL, 0, pdMS_TO_TICKS(10)));
 }
 
 TEST_CASE("can post to loop and run loop without registration", "[event][linux]")
@@ -116,7 +118,7 @@ TEST_CASE("can post to loop and run loop without registration", "[event][linux]"
     EV_LoopFix loop_fix;
 
     TEST_ASSERT_EQUAL(ESP_OK,
-            esp_event_post_to(loop_fix.loop, s_test_base1, TEST_EVENT_BASE1_EV1, NULL, 0, pdMS_TO_TICKS(10)));
+                      esp_event_post_to(loop_fix.loop, s_test_base1, TEST_EVENT_BASE1_EV1, NULL, 0, pdMS_TO_TICKS(10)));
     TEST_ESP_OK(esp_event_loop_run(loop_fix.loop, ZERO_DELAY));
 }
 
@@ -126,16 +128,17 @@ static void test_handler_inc(void* event_handler_arg, esp_event_base_t event_bas
     (*target)++;
 }
 
-TEST_CASE("registering event handler instance without instance context works", "[event][linux]") {
+TEST_CASE("registering event handler instance without instance context works", "[event][linux]")
+{
     EV_LoopFix loop_fix;
     int count = 0;
 
     TEST_ESP_OK(esp_event_handler_instance_register_with(loop_fix.loop,
-            s_test_base1,
-            TEST_EVENT_BASE1_EV1,
-            test_handler_inc,
-            &count,
-            NULL));
+                                                         s_test_base1,
+                                                         TEST_EVENT_BASE1_EV1,
+                                                         test_handler_inc,
+                                                         &count,
+                                                         NULL));
 
     TEST_ESP_OK(esp_event_post_to(loop_fix.loop, s_test_base1, TEST_EVENT_BASE1_EV1, NULL, 0, portMAX_DELAY));
     TEST_ESP_OK(esp_event_loop_run(loop_fix.loop, ZERO_DELAY));
@@ -148,17 +151,18 @@ TEST_CASE("registering event handler instance without instance context works", "
  * This aims to verify: 1) Handler's argument to be updated
  *                      2) Registration not to leak memory
  */
-TEST_CASE("registering event twice with same handler yields updated handler arg", "[event][linux]") {
+TEST_CASE("registering event twice with same handler yields updated handler arg", "[event][linux]")
+{
     EV_LoopFix loop_fix;
 
     int count_first = 0;
     int count_second = 0;
 
     TEST_ESP_OK(esp_event_handler_register_with(loop_fix.loop,
-            ESP_EVENT_ANY_BASE,
-            ESP_EVENT_ANY_ID,
-            test_handler_inc,
-            &count_first));
+                                                ESP_EVENT_ANY_BASE,
+                                                ESP_EVENT_ANY_ID,
+                                                test_handler_inc,
+                                                &count_first));
 
     TEST_ESP_OK(esp_event_post_to(loop_fix.loop, s_test_base1, TEST_EVENT_BASE1_EV1, NULL, 0, portMAX_DELAY));
     TEST_ESP_OK(esp_event_loop_run(loop_fix.loop, ZERO_DELAY));
@@ -167,10 +171,10 @@ TEST_CASE("registering event twice with same handler yields updated handler arg"
 
     // overriding the former registration of the same event
     TEST_ESP_OK(esp_event_handler_register_with(loop_fix.loop,
-            ESP_EVENT_ANY_BASE,
-            ESP_EVENT_ANY_ID,
-            test_handler_inc,
-            &count_second));
+                                                ESP_EVENT_ANY_BASE,
+                                                ESP_EVENT_ANY_ID,
+                                                test_handler_inc,
+                                                &count_second));
 
     TEST_ESP_OK(esp_event_post_to(loop_fix.loop, s_test_base1, TEST_EVENT_BASE1_EV1, NULL, 0, portMAX_DELAY));
     TEST_ESP_OK(esp_event_loop_run(loop_fix.loop, ZERO_DELAY));
@@ -179,7 +183,8 @@ TEST_CASE("registering event twice with same handler yields updated handler arg"
     TEST_ASSERT_EQUAL(1, count_second);
 }
 
-TEST_CASE("registering event handler instance twice works", "[event][linux]") {
+TEST_CASE("registering event handler instance twice works", "[event][linux]")
+{
     EV_LoopFix loop_fix;
     int count_1 = 0;
     int count_2 = 0;
@@ -187,17 +192,17 @@ TEST_CASE("registering event handler instance twice works", "[event][linux]") {
     esp_event_handler_instance_t ctx_2;
 
     TEST_ESP_OK(esp_event_handler_instance_register_with(loop_fix.loop,
-            ESP_EVENT_ANY_BASE,
-            ESP_EVENT_ANY_ID,
-            test_handler_inc,
-            &count_1,
-            &ctx_1));
+                                                         ESP_EVENT_ANY_BASE,
+                                                         ESP_EVENT_ANY_ID,
+                                                         test_handler_inc,
+                                                         &count_1,
+                                                         &ctx_1));
     TEST_ESP_OK(esp_event_handler_instance_register_with(loop_fix.loop,
-            ESP_EVENT_ANY_BASE,
-            ESP_EVENT_ANY_ID,
-            test_handler_inc,
-            &count_2,
-            &ctx_2));
+                                                         ESP_EVENT_ANY_BASE,
+                                                         ESP_EVENT_ANY_ID,
+                                                         test_handler_inc,
+                                                         &count_2,
+                                                         &ctx_2));
 
     TEST_ESP_OK(esp_event_post_to(loop_fix.loop, s_test_base1, TEST_EVENT_BASE1_EV1, NULL, 0, pdMS_TO_TICKS(10)));
     TEST_ESP_OK(esp_event_loop_run(loop_fix.loop, ZERO_DELAY));
@@ -207,23 +212,24 @@ TEST_CASE("registering event handler instance twice works", "[event][linux]") {
     TEST_ASSERT_EQUAL(1, count_2);
 }
 
-TEST_CASE("registering with ANY_BASE but specific ID fails", "[event][linux]") {
+TEST_CASE("registering with ANY_BASE but specific ID fails", "[event][linux]")
+{
     EV_LoopFix loop_fix;
     int count = 0;
     int count_instance = 0;
     esp_event_handler_instance_t ctx;
 
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_event_handler_register_with(loop_fix.loop,
-            ESP_EVENT_ANY_BASE,
-            TEST_EVENT_BASE1_EV1,
-            test_handler_inc,
-            &count));
+                                                                           ESP_EVENT_ANY_BASE,
+                                                                           TEST_EVENT_BASE1_EV1,
+                                                                           test_handler_inc,
+                                                                           &count));
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_event_handler_instance_register_with(loop_fix.loop,
-            ESP_EVENT_ANY_BASE,
-            TEST_EVENT_BASE1_EV1,
-            test_handler_inc,
-            &count_instance,
-            &ctx));
+                                                                                    ESP_EVENT_ANY_BASE,
+                                                                                    TEST_EVENT_BASE1_EV1,
+                                                                                    test_handler_inc,
+                                                                                    &count_instance,
+                                                                                    &ctx));
 
     TEST_ESP_OK(esp_event_post_to(loop_fix.loop, s_test_base1, TEST_EVENT_BASE1_EV1, NULL, 0, portMAX_DELAY));
     TEST_ESP_OK(esp_event_loop_run(loop_fix.loop, ZERO_DELAY));
@@ -232,23 +238,24 @@ TEST_CASE("registering with ANY_BASE but specific ID fails", "[event][linux]") {
     TEST_ASSERT_EQUAL(0, count_instance);
 }
 
-TEST_CASE("registration of ANY_BASE and ANY_ID always called", "[event][linux]") {
+TEST_CASE("registration of ANY_BASE and ANY_ID always called", "[event][linux]")
+{
     EV_LoopFix loop_fix;
     int count = 0;
     int count_instance = 0;
     esp_event_handler_instance_t ctx;
 
     TEST_ESP_OK(esp_event_handler_register_with(loop_fix.loop,
-            ESP_EVENT_ANY_BASE,
-            ESP_EVENT_ANY_ID,
-            test_handler_inc,
-            &count));
+                                                ESP_EVENT_ANY_BASE,
+                                                ESP_EVENT_ANY_ID,
+                                                test_handler_inc,
+                                                &count));
     TEST_ESP_OK(esp_event_handler_instance_register_with(loop_fix.loop,
-            ESP_EVENT_ANY_BASE,
-            ESP_EVENT_ANY_ID,
-            test_handler_inc,
-            &count_instance,
-            &ctx));
+                                                         ESP_EVENT_ANY_BASE,
+                                                         ESP_EVENT_ANY_ID,
+                                                         test_handler_inc,
+                                                         &count_instance,
+                                                         &ctx));
 
     // handlers should always be triggered
     TEST_ESP_OK(esp_event_post_to(loop_fix.loop, s_test_base1, TEST_EVENT_BASE1_EV1, NULL, 0, portMAX_DELAY));
@@ -263,23 +270,24 @@ TEST_CASE("registration of ANY_BASE and ANY_ID always called", "[event][linux]")
     TEST_ASSERT_EQUAL(4, count_instance);
 }
 
-TEST_CASE("registration of ANY_ID not called from wrong base", "[event][linux]") {
+TEST_CASE("registration of ANY_ID not called from wrong base", "[event][linux]")
+{
     EV_LoopFix loop_fix;
     int count = 0;
     int count_instance = 0;
     esp_event_handler_instance_t ctx;
 
     TEST_ESP_OK(esp_event_handler_register_with(loop_fix.loop,
-            s_test_base1,
-            ESP_EVENT_ANY_ID,
-            test_handler_inc,
-            &count));
+                                                s_test_base1,
+                                                ESP_EVENT_ANY_ID,
+                                                test_handler_inc,
+                                                &count));
     TEST_ESP_OK(esp_event_handler_instance_register_with(loop_fix.loop,
-            s_test_base1,
-            ESP_EVENT_ANY_ID,
-            test_handler_inc,
-            &count_instance,
-            &ctx));
+                                                         s_test_base1,
+                                                         ESP_EVENT_ANY_ID,
+                                                         test_handler_inc,
+                                                         &count_instance,
+                                                         &ctx));
 
     // handlers shouldn't be triggered with different base
     TEST_ESP_OK(esp_event_post_to(loop_fix.loop, s_test_base2, TEST_EVENT_BASE1_EV1, NULL, 0, portMAX_DELAY));
@@ -291,23 +299,24 @@ TEST_CASE("registration of ANY_ID not called from wrong base", "[event][linux]")
     TEST_ASSERT_EQUAL(0, count_instance);
 }
 
-TEST_CASE("registration of ANY_ID called from correct base", "[event][linux]") {
+TEST_CASE("registration of ANY_ID called from correct base", "[event][linux]")
+{
     EV_LoopFix loop_fix;
     int count = 0;
     int count_instance = 0;
     esp_event_handler_instance_t ctx;
 
     TEST_ESP_OK(esp_event_handler_register_with(loop_fix.loop,
-            s_test_base1,
-            ESP_EVENT_ANY_ID,
-            test_handler_inc,
-            &count));
+                                                s_test_base1,
+                                                ESP_EVENT_ANY_ID,
+                                                test_handler_inc,
+                                                &count));
     TEST_ESP_OK(esp_event_handler_instance_register_with(loop_fix.loop,
-            s_test_base1,
-            ESP_EVENT_ANY_ID,
-            test_handler_inc,
-            &count_instance,
-            &ctx));
+                                                         s_test_base1,
+                                                         ESP_EVENT_ANY_ID,
+                                                         test_handler_inc,
+                                                         &count_instance,
+                                                         &ctx));
 
     // for all events with correct base, it should be triggered
     TEST_ESP_OK(esp_event_post_to(loop_fix.loop, s_test_base1, TEST_EVENT_BASE1_EV1, NULL, 0, portMAX_DELAY));
@@ -319,23 +328,24 @@ TEST_CASE("registration of ANY_ID called from correct base", "[event][linux]") {
     TEST_ASSERT_EQUAL(2, count_instance);
 }
 
-TEST_CASE("registering specific event posting different base and different event ID", "[event][linux]") {
+TEST_CASE("registering specific event posting different base and different event ID", "[event][linux]")
+{
     EV_LoopFix loop_fix;
     int count = 0;
     int count_instance = 0;
     esp_event_handler_instance_t ctx;
 
     TEST_ESP_OK(esp_event_handler_register_with(loop_fix.loop,
-            s_test_base1,
-            TEST_EVENT_BASE1_EV1,
-            test_handler_inc,
-            &count));
+                                                s_test_base1,
+                                                TEST_EVENT_BASE1_EV1,
+                                                test_handler_inc,
+                                                &count));
     TEST_ESP_OK(esp_event_handler_instance_register_with(loop_fix.loop,
-            s_test_base1,
-            TEST_EVENT_BASE1_EV1,
-            test_handler_inc,
-            &count_instance,
-            &ctx));
+                                                         s_test_base1,
+                                                         TEST_EVENT_BASE1_EV1,
+                                                         test_handler_inc,
+                                                         &count_instance,
+                                                         &ctx));
 
     // handlers should not be triggered with different base and different ID
     TEST_ESP_OK(esp_event_post_to(loop_fix.loop, s_test_base2, TEST_EVENT_BASE1_EV2, NULL, 0, portMAX_DELAY));
@@ -345,23 +355,24 @@ TEST_CASE("registering specific event posting different base and different event
     TEST_ASSERT_EQUAL(0, count_instance);
 }
 
-TEST_CASE("registering specific event posting different base", "[event][linux]") {
+TEST_CASE("registering specific event posting different base", "[event][linux]")
+{
     EV_LoopFix loop_fix;
     int count = 0;
     int count_instance = 0;
     esp_event_handler_instance_t ctx;
 
     TEST_ESP_OK(esp_event_handler_register_with(loop_fix.loop,
-            s_test_base1,
-            TEST_EVENT_BASE1_EV1,
-            test_handler_inc,
-            &count));
+                                                s_test_base1,
+                                                TEST_EVENT_BASE1_EV1,
+                                                test_handler_inc,
+                                                &count));
     TEST_ESP_OK(esp_event_handler_instance_register_with(loop_fix.loop,
-            s_test_base1,
-            TEST_EVENT_BASE1_EV1,
-            test_handler_inc,
-            &count_instance,
-            &ctx));
+                                                         s_test_base1,
+                                                         TEST_EVENT_BASE1_EV1,
+                                                         test_handler_inc,
+                                                         &count_instance,
+                                                         &ctx));
 
     // handlers should not be triggered with different base
     TEST_ESP_OK(esp_event_post_to(loop_fix.loop, s_test_base2, TEST_EVENT_BASE1_EV1, NULL, 0, portMAX_DELAY));
@@ -373,23 +384,24 @@ TEST_CASE("registering specific event posting different base", "[event][linux]")
     TEST_ASSERT_EQUAL(0, count_instance);
 }
 
-TEST_CASE("registering specific event posting incorrect event ID", "[event][linux]") {
+TEST_CASE("registering specific event posting incorrect event ID", "[event][linux]")
+{
     EV_LoopFix loop_fix;
     int count = 0;
     int count_instance = 0;
     esp_event_handler_instance_t ctx;
 
     TEST_ESP_OK(esp_event_handler_register_with(loop_fix.loop,
-            s_test_base1,
-            TEST_EVENT_BASE1_EV1,
-            test_handler_inc,
-            &count));
+                                                s_test_base1,
+                                                TEST_EVENT_BASE1_EV1,
+                                                test_handler_inc,
+                                                &count));
     TEST_ESP_OK(esp_event_handler_instance_register_with(loop_fix.loop,
-            s_test_base1,
-            TEST_EVENT_BASE1_EV1,
-            test_handler_inc,
-            &count_instance,
-            &ctx));
+                                                         s_test_base1,
+                                                         TEST_EVENT_BASE1_EV1,
+                                                         test_handler_inc,
+                                                         &count_instance,
+                                                         &ctx));
 
     // for incorrect id, it should not be triggered with different ID
     TEST_ESP_OK(esp_event_post_to(loop_fix.loop, s_test_base1, TEST_EVENT_BASE1_EV2, NULL, 0, portMAX_DELAY));
@@ -399,23 +411,24 @@ TEST_CASE("registering specific event posting incorrect event ID", "[event][linu
     TEST_ASSERT_EQUAL(0, count_instance);
 }
 
-TEST_CASE("registering specific event posting correct event and base", "[event][linux]") {
+TEST_CASE("registering specific event posting correct event and base", "[event][linux]")
+{
     EV_LoopFix loop_fix;
     int count = 0;
     int count_instance = 0;
     esp_event_handler_instance_t ctx;
 
     TEST_ESP_OK(esp_event_handler_register_with(loop_fix.loop,
-            s_test_base1,
-            TEST_EVENT_BASE1_EV1,
-            test_handler_inc,
-            &count));
+                                                s_test_base1,
+                                                TEST_EVENT_BASE1_EV1,
+                                                test_handler_inc,
+                                                &count));
     TEST_ESP_OK(esp_event_handler_instance_register_with(loop_fix.loop,
-            s_test_base1,
-            TEST_EVENT_BASE1_EV1,
-            test_handler_inc,
-            &count_instance,
-            &ctx));
+                                                         s_test_base1,
+                                                         TEST_EVENT_BASE1_EV1,
+                                                         test_handler_inc,
+                                                         &count_instance,
+                                                         &ctx));
 
     // for correct event and base, it should be triggered
     TEST_ESP_OK(esp_event_post_to(loop_fix.loop, s_test_base1, TEST_EVENT_BASE1_EV1, NULL, 0, portMAX_DELAY));
@@ -425,49 +438,51 @@ TEST_CASE("registering specific event posting correct event and base", "[event][
     TEST_ASSERT_EQUAL(1, count_instance);
 }
 
-TEST_CASE("posting ANY_EVENT or ANY_ID fails", "[event][linux]") {
+TEST_CASE("posting ANY_EVENT or ANY_ID fails", "[event][linux]")
+{
     EV_LoopFix loop_fix;
     int count = 0;
     int count_instance = 0;
     esp_event_handler_instance_t ctx;
 
     TEST_ESP_OK(esp_event_handler_register_with(loop_fix.loop,
-            ESP_EVENT_ANY_BASE,
-            ESP_EVENT_ANY_ID,
-            test_handler_inc,
-            &count));
+                                                ESP_EVENT_ANY_BASE,
+                                                ESP_EVENT_ANY_ID,
+                                                test_handler_inc,
+                                                &count));
     TEST_ESP_OK(esp_event_handler_register_with(loop_fix.loop,
-            s_test_base1,
-            ESP_EVENT_ANY_ID,
-            test_handler_inc,
-            &count));
+                                                s_test_base1,
+                                                ESP_EVENT_ANY_ID,
+                                                test_handler_inc,
+                                                &count));
     TEST_ESP_OK(esp_event_handler_register_with(loop_fix.loop,
-            s_test_base1,
-            TEST_EVENT_BASE1_EV1,
-            test_handler_inc,
-            &count));
+                                                s_test_base1,
+                                                TEST_EVENT_BASE1_EV1,
+                                                test_handler_inc,
+                                                &count));
 
     // normal and "instance" registration are decently close to each other, don't exercise all cases here
     TEST_ESP_OK(esp_event_handler_instance_register_with(loop_fix.loop,
-            ESP_EVENT_ANY_BASE,
-            ESP_EVENT_ANY_ID,
-            test_handler_inc,
-            &count_instance,
-            &ctx));
+                                                         ESP_EVENT_ANY_BASE,
+                                                         ESP_EVENT_ANY_ID,
+                                                         test_handler_inc,
+                                                         &count_instance,
+                                                         &ctx));
 
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG,
-            esp_event_post_to(loop_fix.loop, ESP_EVENT_ANY_BASE, ESP_EVENT_ANY_ID, NULL, 0, portMAX_DELAY));
+                      esp_event_post_to(loop_fix.loop, ESP_EVENT_ANY_BASE, ESP_EVENT_ANY_ID, NULL, 0, portMAX_DELAY));
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG,
-            esp_event_post_to(loop_fix.loop, s_test_base1, ESP_EVENT_ANY_ID, NULL, 0, portMAX_DELAY));
+                      esp_event_post_to(loop_fix.loop, s_test_base1, ESP_EVENT_ANY_ID, NULL, 0, portMAX_DELAY));
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG,
-            esp_event_post_to(loop_fix.loop, ESP_EVENT_ANY_BASE, TEST_EVENT_BASE1_EV1, NULL, 0, portMAX_DELAY));
+                      esp_event_post_to(loop_fix.loop, ESP_EVENT_ANY_BASE, TEST_EVENT_BASE1_EV1, NULL, 0, portMAX_DELAY));
     TEST_ESP_OK(esp_event_loop_run(loop_fix.loop, ZERO_DELAY));
 
     TEST_ASSERT_EQUAL(0, count);
     TEST_ASSERT_EQUAL(0, count_instance);
 }
 
-TEST_CASE("posting to loop with multiple registrations at every level", "[event][linux]") {
+TEST_CASE("posting to loop with multiple registrations at every level", "[event][linux]")
+{
     EV_LoopFix loop_fix;
     int count_loop = 0;
     int count_loop_inst = 0;
@@ -482,45 +497,45 @@ TEST_CASE("posting to loop with multiple registrations at every level", "[event]
     esp_event_handler_instance_t id_ctx_2;
 
     TEST_ESP_OK(esp_event_handler_register_with(loop_fix.loop,
-            ESP_EVENT_ANY_BASE,
-            ESP_EVENT_ANY_ID,
-            test_handler_inc,
-            &count_loop));
+                                                ESP_EVENT_ANY_BASE,
+                                                ESP_EVENT_ANY_ID,
+                                                test_handler_inc,
+                                                &count_loop));
     TEST_ESP_OK(esp_event_handler_register_with(loop_fix.loop,
-            s_test_base1,
-            ESP_EVENT_ANY_ID,
-            test_handler_inc,
-            &count_base));
+                                                s_test_base1,
+                                                ESP_EVENT_ANY_ID,
+                                                test_handler_inc,
+                                                &count_base));
     TEST_ESP_OK(esp_event_handler_register_with(loop_fix.loop,
-            s_test_base1,
-            TEST_EVENT_BASE1_EV1,
-            test_handler_inc,
-            &count_id));
+                                                s_test_base1,
+                                                TEST_EVENT_BASE1_EV1,
+                                                test_handler_inc,
+                                                &count_id));
 
     TEST_ESP_OK(esp_event_handler_instance_register_with(loop_fix.loop,
-            ESP_EVENT_ANY_BASE,
-            ESP_EVENT_ANY_ID,
-            test_handler_inc,
-            &count_loop_inst,
-            &loop_ctx));
+                                                         ESP_EVENT_ANY_BASE,
+                                                         ESP_EVENT_ANY_ID,
+                                                         test_handler_inc,
+                                                         &count_loop_inst,
+                                                         &loop_ctx));
     TEST_ESP_OK(esp_event_handler_instance_register_with(loop_fix.loop,
-            s_test_base1,
-            ESP_EVENT_ANY_ID,
-            test_handler_inc,
-            &count_base_inst,
-            &base_ctx));
+                                                         s_test_base1,
+                                                         ESP_EVENT_ANY_ID,
+                                                         test_handler_inc,
+                                                         &count_base_inst,
+                                                         &base_ctx));
     TEST_ESP_OK(esp_event_handler_instance_register_with(loop_fix.loop,
-            ESP_EVENT_ANY_BASE,
-            ESP_EVENT_ANY_ID,
-            test_handler_inc,
-            &count_id_inst_1,
-            &id_ctx_1));
+                                                         ESP_EVENT_ANY_BASE,
+                                                         ESP_EVENT_ANY_ID,
+                                                         test_handler_inc,
+                                                         &count_id_inst_1,
+                                                         &id_ctx_1));
     TEST_ESP_OK(esp_event_handler_instance_register_with(loop_fix.loop,
-            ESP_EVENT_ANY_BASE,
-            ESP_EVENT_ANY_ID,
-            test_handler_inc,
-            &count_id_inst_2,
-            &id_ctx_2));
+                                                         ESP_EVENT_ANY_BASE,
+                                                         ESP_EVENT_ANY_ID,
+                                                         test_handler_inc,
+                                                         &count_id_inst_2,
+                                                         &id_ctx_2));
 
     TEST_ESP_OK(esp_event_post_to(loop_fix.loop, s_test_base1, TEST_EVENT_BASE1_EV1, NULL, 0, portMAX_DELAY));
     TEST_ESP_OK(esp_event_loop_run(loop_fix.loop, ZERO_DELAY));
@@ -540,13 +555,13 @@ TEST_CASE("unregistering ANY_BASE and specific ID fails", "[event][linux]")
     esp_event_handler_instance_t handler_inst = (esp_event_handler_instance_t) 1; // avoid triggering NULL check
 
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_event_handler_unregister_with(loop_fix.loop,
-            ESP_EVENT_ANY_BASE,
-            TEST_EVENT_BASE1_EV1,
-            test_handler_inc));
+                                                                             ESP_EVENT_ANY_BASE,
+                                                                             TEST_EVENT_BASE1_EV1,
+                                                                             test_handler_inc));
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_event_handler_instance_unregister_with(loop_fix.loop,
-            ESP_EVENT_ANY_BASE,
-            TEST_EVENT_BASE1_EV1,
-            handler_inst));
+                                                                                      ESP_EVENT_ANY_BASE,
+                                                                                      TEST_EVENT_BASE1_EV1,
+                                                                                      handler_inst));
 }
 
 TEST_CASE("unregistering NULL instance fails", "[event][linux]")
@@ -555,9 +570,9 @@ TEST_CASE("unregistering NULL instance fails", "[event][linux]")
     esp_event_handler_instance_t handler_inst = NULL;
 
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_event_handler_instance_unregister_with(loop_fix.loop,
-            ESP_EVENT_ANY_BASE,
-            ESP_EVENT_ANY_ID,
-            handler_inst));
+                                                                                      ESP_EVENT_ANY_BASE,
+                                                                                      ESP_EVENT_ANY_ID,
+                                                                                      handler_inst));
 }
 
 TEST_CASE("unregistered handler is not executed", "[event][linux]")
@@ -568,20 +583,20 @@ TEST_CASE("unregistered handler is not executed", "[event][linux]")
     int id_count = 0;
 
     TEST_ESP_OK(esp_event_handler_register_with(loop_fix.loop,
-            ESP_EVENT_ANY_BASE,
-            ESP_EVENT_ANY_ID,
-            test_handler_inc,
-            &loop_count));
+                                                ESP_EVENT_ANY_BASE,
+                                                ESP_EVENT_ANY_ID,
+                                                test_handler_inc,
+                                                &loop_count));
     TEST_ESP_OK(esp_event_handler_register_with(loop_fix.loop,
-            s_test_base1,
-            ESP_EVENT_ANY_ID,
-            test_handler_inc,
-            &base_count));
+                                                s_test_base1,
+                                                ESP_EVENT_ANY_ID,
+                                                test_handler_inc,
+                                                &base_count));
     TEST_ESP_OK(esp_event_handler_register_with(loop_fix.loop,
-            s_test_base1,
-            TEST_EVENT_BASE1_EV1,
-            test_handler_inc,
-            &id_count));
+                                                s_test_base1,
+                                                TEST_EVENT_BASE1_EV1,
+                                                test_handler_inc,
+                                                &id_count));
 
     TEST_ESP_OK(esp_event_post_to(loop_fix.loop, s_test_base1, TEST_EVENT_BASE1_EV1, NULL, 0, portMAX_DELAY));
     TEST_ESP_OK(esp_event_loop_run(loop_fix.loop, ZERO_DELAY));
@@ -591,17 +606,17 @@ TEST_CASE("unregistered handler is not executed", "[event][linux]")
     TEST_ASSERT_EQUAL(id_count, 1);
 
     TEST_ESP_OK(esp_event_handler_unregister_with(loop_fix.loop,
-            ESP_EVENT_ANY_BASE,
-            ESP_EVENT_ANY_ID,
-            test_handler_inc));
+                                                  ESP_EVENT_ANY_BASE,
+                                                  ESP_EVENT_ANY_ID,
+                                                  test_handler_inc));
     TEST_ESP_OK(esp_event_handler_unregister_with(loop_fix.loop,
-            s_test_base1,
-            ESP_EVENT_ANY_ID,
-            test_handler_inc));
+                                                  s_test_base1,
+                                                  ESP_EVENT_ANY_ID,
+                                                  test_handler_inc));
     TEST_ESP_OK(esp_event_handler_unregister_with(loop_fix.loop,
-            s_test_base1,
-            TEST_EVENT_BASE1_EV1,
-            test_handler_inc));
+                                                  s_test_base1,
+                                                  TEST_EVENT_BASE1_EV1,
+                                                  test_handler_inc));
     TEST_ESP_OK(esp_event_post_to(loop_fix.loop, s_test_base1, TEST_EVENT_BASE1_EV1, NULL, 0, portMAX_DELAY));
     TEST_ESP_OK(esp_event_loop_run(loop_fix.loop, ZERO_DELAY));
 
@@ -621,23 +636,23 @@ TEST_CASE("unregistered handler instance is not executed", "[event][linux]")
     esp_event_handler_instance_t id_handler_inst;
 
     TEST_ESP_OK(esp_event_handler_instance_register_with(loop_fix.loop,
-            ESP_EVENT_ANY_BASE,
-            ESP_EVENT_ANY_ID,
-            test_handler_inc,
-            &loop_count,
-            &loop_handler_inst));
+                                                         ESP_EVENT_ANY_BASE,
+                                                         ESP_EVENT_ANY_ID,
+                                                         test_handler_inc,
+                                                         &loop_count,
+                                                         &loop_handler_inst));
     TEST_ESP_OK(esp_event_handler_instance_register_with(loop_fix.loop,
-            s_test_base1,
-            ESP_EVENT_ANY_ID,
-            test_handler_inc,
-            &base_count,
-            &base_handler_inst));
+                                                         s_test_base1,
+                                                         ESP_EVENT_ANY_ID,
+                                                         test_handler_inc,
+                                                         &base_count,
+                                                         &base_handler_inst));
     TEST_ESP_OK(esp_event_handler_instance_register_with(loop_fix.loop,
-            s_test_base1,
-            TEST_EVENT_BASE1_EV1,
-            test_handler_inc,
-            &id_count,
-            &id_handler_inst));
+                                                         s_test_base1,
+                                                         TEST_EVENT_BASE1_EV1,
+                                                         test_handler_inc,
+                                                         &id_count,
+                                                         &id_handler_inst));
 
     TEST_ESP_OK(esp_event_post_to(loop_fix.loop, s_test_base1, TEST_EVENT_BASE1_EV1, NULL, 0, portMAX_DELAY));
     TEST_ESP_OK(esp_event_loop_run(loop_fix.loop, ZERO_DELAY));
@@ -647,17 +662,17 @@ TEST_CASE("unregistered handler instance is not executed", "[event][linux]")
     TEST_ASSERT_EQUAL(id_count, 1);
 
     TEST_ESP_OK(esp_event_handler_instance_unregister_with(loop_fix.loop,
-            ESP_EVENT_ANY_BASE,
-            ESP_EVENT_ANY_ID,
-            loop_handler_inst));
+                                                           ESP_EVENT_ANY_BASE,
+                                                           ESP_EVENT_ANY_ID,
+                                                           loop_handler_inst));
     TEST_ESP_OK(esp_event_handler_instance_unregister_with(loop_fix.loop,
-            s_test_base1,
-            ESP_EVENT_ANY_ID,
-            base_handler_inst));
+                                                           s_test_base1,
+                                                           ESP_EVENT_ANY_ID,
+                                                           base_handler_inst));
     TEST_ESP_OK(esp_event_handler_instance_unregister_with(loop_fix.loop,
-            s_test_base1,
-            TEST_EVENT_BASE1_EV1,
-            id_handler_inst));
+                                                           s_test_base1,
+                                                           TEST_EVENT_BASE1_EV1,
+                                                           id_handler_inst));
     TEST_ESP_OK(esp_event_post_to(loop_fix.loop, s_test_base1, TEST_EVENT_BASE1_EV1, NULL, 0, portMAX_DELAY));
     TEST_ESP_OK(esp_event_loop_run(loop_fix.loop, ZERO_DELAY));
 
@@ -674,20 +689,20 @@ TEST_CASE("unregistering handler does not influence other handlers", "[event][li
     int different_base_count = 0;
 
     TEST_ESP_OK(esp_event_handler_register_with(loop_fix.loop,
-            s_test_base1,
-            TEST_EVENT_BASE1_EV1,
-            test_handler_inc,
-            &unregister_count));
+                                                s_test_base1,
+                                                TEST_EVENT_BASE1_EV1,
+                                                test_handler_inc,
+                                                &unregister_count));
     TEST_ESP_OK(esp_event_handler_register_with(loop_fix.loop,
-            s_test_base2,
-            TEST_EVENT_BASE1_EV1,
-            test_handler_inc,
-            &different_id_count));
+                                                s_test_base2,
+                                                TEST_EVENT_BASE1_EV1,
+                                                test_handler_inc,
+                                                &different_id_count));
     TEST_ESP_OK(esp_event_handler_register_with(loop_fix.loop,
-            s_test_base1,
-            TEST_EVENT_BASE1_EV2,
-            test_handler_inc,
-            &different_base_count));
+                                                s_test_base1,
+                                                TEST_EVENT_BASE1_EV2,
+                                                test_handler_inc,
+                                                &different_base_count));
 
     TEST_ESP_OK(esp_event_post_to(loop_fix.loop, s_test_base1, TEST_EVENT_BASE1_EV1, NULL, 0, portMAX_DELAY));
     TEST_ESP_OK(esp_event_post_to(loop_fix.loop, s_test_base2, TEST_EVENT_BASE1_EV1, NULL, 0, portMAX_DELAY));
@@ -701,9 +716,9 @@ TEST_CASE("unregistering handler does not influence other handlers", "[event][li
     TEST_ASSERT_EQUAL(different_base_count, 1);
 
     TEST_ESP_OK(esp_event_handler_unregister_with(loop_fix.loop,
-            s_test_base1,
-            TEST_EVENT_BASE1_EV1,
-            test_handler_inc));
+                                                  s_test_base1,
+                                                  TEST_EVENT_BASE1_EV1,
+                                                  test_handler_inc));
     TEST_ESP_OK(esp_event_post_to(loop_fix.loop, s_test_base1, TEST_EVENT_BASE1_EV1, NULL, 0, portMAX_DELAY));
     TEST_ESP_OK(esp_event_post_to(loop_fix.loop, s_test_base2, TEST_EVENT_BASE1_EV1, NULL, 0, portMAX_DELAY));
     TEST_ESP_OK(esp_event_post_to(loop_fix.loop, s_test_base1, TEST_EVENT_BASE1_EV2, NULL, 0, portMAX_DELAY));
@@ -723,15 +738,15 @@ TEST_CASE("unregistering ESP_EVENT_ANY_ID does not affect other handlers with sa
     int specific_id_count = 0;
 
     TEST_ESP_OK(esp_event_handler_register_with(loop_fix.loop,
-            s_test_base1,
-            ESP_EVENT_ANY_ID,
-            test_handler_inc,
-            &any_id_count));
+                                                s_test_base1,
+                                                ESP_EVENT_ANY_ID,
+                                                test_handler_inc,
+                                                &any_id_count));
     TEST_ESP_OK(esp_event_handler_register_with(loop_fix.loop,
-            s_test_base1,
-            TEST_EVENT_BASE1_EV1,
-            test_handler_inc,
-            &specific_id_count));
+                                                s_test_base1,
+                                                TEST_EVENT_BASE1_EV1,
+                                                test_handler_inc,
+                                                &specific_id_count));
 
     TEST_ESP_OK(esp_event_post_to(loop_fix.loop, s_test_base1, TEST_EVENT_BASE1_EV1, NULL, 0, portMAX_DELAY));
     TEST_ESP_OK(esp_event_loop_run(loop_fix.loop, ZERO_DELAY));
@@ -755,15 +770,15 @@ TEST_CASE("unregistering ESP_EVENT_ANY_BASE does not affect handlers with specif
     int any_id_count = 0;
 
     TEST_ESP_OK(esp_event_handler_register_with(loop_fix.loop,
-            ESP_EVENT_ANY_BASE,
-            ESP_EVENT_ANY_ID,
-            test_handler_inc,
-            &any_base_count));
+                                                ESP_EVENT_ANY_BASE,
+                                                ESP_EVENT_ANY_ID,
+                                                test_handler_inc,
+                                                &any_base_count));
     TEST_ESP_OK(esp_event_handler_register_with(loop_fix.loop,
-            s_test_base1,
-            ESP_EVENT_ANY_ID,
-            test_handler_inc,
-            &any_id_count));
+                                                s_test_base1,
+                                                ESP_EVENT_ANY_ID,
+                                                test_handler_inc,
+                                                &any_id_count));
 
     TEST_ESP_OK(esp_event_post_to(loop_fix.loop, s_test_base1, TEST_EVENT_BASE1_EV1, NULL, 0, portMAX_DELAY));
     TEST_ESP_OK(esp_event_loop_run(loop_fix.loop, ZERO_DELAY));
@@ -772,9 +787,9 @@ TEST_CASE("unregistering ESP_EVENT_ANY_BASE does not affect handlers with specif
     TEST_ASSERT_EQUAL(any_id_count, 1);
 
     TEST_ESP_OK(esp_event_handler_unregister_with(loop_fix.loop,
-            ESP_EVENT_ANY_BASE,
-            ESP_EVENT_ANY_ID,
-            test_handler_inc));
+                                                  ESP_EVENT_ANY_BASE,
+                                                  ESP_EVENT_ANY_ID,
+                                                  test_handler_inc));
 
     TEST_ESP_OK(esp_event_post_to(loop_fix.loop, s_test_base1, TEST_EVENT_BASE1_EV1, NULL, 0, portMAX_DELAY));
     TEST_ESP_OK(esp_event_loop_run(loop_fix.loop, ZERO_DELAY));
@@ -790,9 +805,9 @@ typedef struct {
 } unregister_test_data_t;
 
 static void test_handler_unregister_itself(void* event_handler_arg,
-            esp_event_base_t event_base,
-            int32_t event_id,
-            void* event_data)
+                                           esp_event_base_t event_base,
+                                           int32_t event_id,
+                                           void* event_data)
 {
     unregister_test_data_t *test_data = (unregister_test_data_t*) event_handler_arg;
 
@@ -800,9 +815,9 @@ static void test_handler_unregister_itself(void* event_handler_arg,
 
     // Unregister this handler for this event
     TEST_ESP_OK(esp_event_handler_unregister_with(test_data->loop,
-            event_base,
-            event_id,
-            test_handler_unregister_itself));
+                                                  event_base,
+                                                  event_id,
+                                                  test_handler_unregister_itself));
 }
 
 TEST_CASE("handler can unregister itself", "[event][linux]")
@@ -816,9 +831,9 @@ TEST_CASE("handler can unregister itself", "[event][linux]")
     };
 
     TEST_ESP_OK(esp_event_handler_register_with(loop_fix.loop,
-            s_test_base1,
-            TEST_EVENT_BASE1_EV1,
-            test_handler_unregister_itself, &test_data));
+                                                s_test_base1,
+                                                TEST_EVENT_BASE1_EV1,
+                                                test_handler_unregister_itself, &test_data));
 
     TEST_ESP_OK(esp_event_post_to(loop_fix.loop, s_test_base1, TEST_EVENT_BASE1_EV1, NULL, 0, portMAX_DELAY));
     TEST_ESP_OK(esp_event_loop_run(loop_fix.loop, ZERO_DELAY));
@@ -826,20 +841,20 @@ TEST_CASE("handler can unregister itself", "[event][linux]")
     TEST_ASSERT_EQUAL(1, test_data.count);
 
     TEST_ESP_OK(esp_event_post_to(loop_fix.loop,
-            s_test_base1,
-            TEST_EVENT_BASE1_EV1,
-            &loop_fix.loop,
-            sizeof(&loop_fix.loop),
-            portMAX_DELAY));
+                                  s_test_base1,
+                                  TEST_EVENT_BASE1_EV1,
+                                  &loop_fix.loop,
+                                  sizeof(&loop_fix.loop),
+                                  portMAX_DELAY));
     TEST_ESP_OK(esp_event_loop_run(loop_fix.loop, pdMS_TO_TICKS(10)));
 
     TEST_ASSERT_EQUAL(1, test_data.count);
 }
 
 static void test_handler_instance_unregister_itself(void* event_handler_arg,
-            esp_event_base_t event_base,
-            int32_t event_id,
-            void* event_data)
+                                                    esp_event_base_t event_base,
+                                                    int32_t event_id,
+                                                    void* event_data)
 {
     unregister_test_data_t *test_data = (unregister_test_data_t*) event_handler_arg;
 
@@ -860,11 +875,11 @@ TEST_CASE("handler instance can unregister itself", "[event][linux]")
     };
 
     TEST_ESP_OK(esp_event_handler_instance_register_with(loop_fix.loop,
-            s_test_base1,
-            TEST_EVENT_BASE1_EV1,
-            test_handler_instance_unregister_itself,
-            &test_data,
-            &(test_data.context)));
+                                                         s_test_base1,
+                                                         TEST_EVENT_BASE1_EV1,
+                                                         test_handler_instance_unregister_itself,
+                                                         &test_data,
+                                                         &(test_data.context)));
 
     TEST_ESP_OK(esp_event_post_to(loop_fix.loop, s_test_base1, TEST_EVENT_BASE1_EV1, NULL, 0, portMAX_DELAY));
     TEST_ESP_OK(esp_event_loop_run(loop_fix.loop, ZERO_DELAY));
@@ -872,11 +887,11 @@ TEST_CASE("handler instance can unregister itself", "[event][linux]")
     TEST_ASSERT_EQUAL(1, test_data.count);
 
     TEST_ESP_OK(esp_event_post_to(loop_fix.loop,
-            s_test_base1,
-            TEST_EVENT_BASE1_EV1,
-            &loop_fix.loop,
-            sizeof(&loop_fix.loop),
-            portMAX_DELAY));
+                                  s_test_base1,
+                                  TEST_EVENT_BASE1_EV1,
+                                  &loop_fix.loop,
+                                  sizeof(&loop_fix.loop),
+                                  portMAX_DELAY));
     TEST_ESP_OK(esp_event_loop_run(loop_fix.loop, ZERO_DELAY));
 
     TEST_ASSERT_EQUAL(1, test_data.count);
@@ -888,10 +903,10 @@ typedef struct {
 } ordered_dispatch_test_data_t;
 
 static void test_event_ordered_dispatch(void* event_handler_arg,
-        esp_event_base_t event_base,
-        int32_t event_id,
-        void* event_data,
-        size_t handler_index)
+                                        esp_event_base_t event_base,
+                                        int32_t event_id,
+                                        void* event_data,
+                                        size_t handler_index)
 {
     ordered_dispatch_test_data_t *test_data = (ordered_dispatch_test_data_t*) event_handler_arg;
     test_data->test_data[handler_index] = test_data->counter;
@@ -899,33 +914,33 @@ static void test_event_ordered_dispatch(void* event_handler_arg,
 }
 
 static void test_event_ordered_dispatch_0(void* event_handler_arg,
-        esp_event_base_t event_base,
-        int32_t event_id,
-        void* event_data)
+                                          esp_event_base_t event_base,
+                                          int32_t event_id,
+                                          void* event_data)
 {
     test_event_ordered_dispatch(event_handler_arg, event_base, event_id, event_data, 0);
 }
 
 static void test_event_ordered_dispatch_1(void* event_handler_arg,
-        esp_event_base_t event_base,
-        int32_t event_id,
-        void* event_data)
+                                          esp_event_base_t event_base,
+                                          int32_t event_id,
+                                          void* event_data)
 {
     test_event_ordered_dispatch(event_handler_arg, event_base, event_id, event_data, 1);
 }
 
 static void test_event_ordered_dispatch_2(void* event_handler_arg,
-        esp_event_base_t event_base,
-        int32_t event_id,
-        void* event_data)
+                                          esp_event_base_t event_base,
+                                          int32_t event_id,
+                                          void* event_data)
 {
     test_event_ordered_dispatch(event_handler_arg, event_base, event_id, event_data, 2);
 }
 
 static void test_event_ordered_dispatch_3(void* event_handler_arg,
-        esp_event_base_t event_base,
-        int32_t event_id,
-        void* event_data)
+                                          esp_event_base_t event_base,
+                                          int32_t event_id,
+                                          void* event_data)
 {
     test_event_ordered_dispatch(event_handler_arg, event_base, event_id, event_data, 3);
 }
@@ -940,25 +955,25 @@ TEST_CASE("events handlers for specific ID are dispatched in the order they are 
     };
 
     TEST_ESP_OK(esp_event_handler_register_with(loop_fix.loop,
-            s_test_base1,
-            TEST_EVENT_BASE1_EV1,
-            test_event_ordered_dispatch_0,
-            &test_data));
+                                                s_test_base1,
+                                                TEST_EVENT_BASE1_EV1,
+                                                test_event_ordered_dispatch_0,
+                                                &test_data));
     TEST_ESP_OK(esp_event_handler_register_with(loop_fix.loop,
-            s_test_base1,
-            TEST_EVENT_BASE1_EV1,
-            test_event_ordered_dispatch_1,
-            &test_data));
+                                                s_test_base1,
+                                                TEST_EVENT_BASE1_EV1,
+                                                test_event_ordered_dispatch_1,
+                                                &test_data));
     TEST_ESP_OK(esp_event_handler_register_with(loop_fix.loop,
-            s_test_base1,
-            TEST_EVENT_BASE1_EV1,
-            test_event_ordered_dispatch_2,
-            &test_data));
+                                                s_test_base1,
+                                                TEST_EVENT_BASE1_EV1,
+                                                test_event_ordered_dispatch_2,
+                                                &test_data));
     TEST_ESP_OK(esp_event_handler_register_with(loop_fix.loop,
-            s_test_base1,
-            TEST_EVENT_BASE1_EV1,
-            test_event_ordered_dispatch_3,
-            &test_data));
+                                                s_test_base1,
+                                                TEST_EVENT_BASE1_EV1,
+                                                test_event_ordered_dispatch_3,
+                                                &test_data));
 
     esp_event_dump(stdout);
 
@@ -984,25 +999,25 @@ TEST_CASE("events handlers for specific base are dispatched in the order they ar
     };
 
     TEST_ESP_OK(esp_event_handler_register_with(loop_fix.loop,
-            s_test_base1,
-            ESP_EVENT_ANY_ID,
-            test_event_ordered_dispatch_0,
-            &test_data));
+                                                s_test_base1,
+                                                ESP_EVENT_ANY_ID,
+                                                test_event_ordered_dispatch_0,
+                                                &test_data));
     TEST_ESP_OK(esp_event_handler_register_with(loop_fix.loop,
-            s_test_base1,
-            ESP_EVENT_ANY_ID,
-            test_event_ordered_dispatch_1,
-            &test_data));
+                                                s_test_base1,
+                                                ESP_EVENT_ANY_ID,
+                                                test_event_ordered_dispatch_1,
+                                                &test_data));
     TEST_ESP_OK(esp_event_handler_register_with(loop_fix.loop,
-            s_test_base1,
-            ESP_EVENT_ANY_ID,
-            test_event_ordered_dispatch_2,
-            &test_data));
+                                                s_test_base1,
+                                                ESP_EVENT_ANY_ID,
+                                                test_event_ordered_dispatch_2,
+                                                &test_data));
     TEST_ESP_OK(esp_event_handler_register_with(loop_fix.loop,
-            s_test_base1,
-            ESP_EVENT_ANY_ID,
-            test_event_ordered_dispatch_3,
-            &test_data));
+                                                s_test_base1,
+                                                ESP_EVENT_ANY_ID,
+                                                test_event_ordered_dispatch_3,
+                                                &test_data));
 
     esp_event_dump(stdout);
 
@@ -1028,25 +1043,25 @@ TEST_CASE("events handlers for any base are dispatched in the order they are reg
     };
 
     TEST_ESP_OK(esp_event_handler_register_with(loop_fix.loop,
-            ESP_EVENT_ANY_BASE,
-            ESP_EVENT_ANY_ID,
-            test_event_ordered_dispatch_0,
-            &test_data));
+                                                ESP_EVENT_ANY_BASE,
+                                                ESP_EVENT_ANY_ID,
+                                                test_event_ordered_dispatch_0,
+                                                &test_data));
     TEST_ESP_OK(esp_event_handler_register_with(loop_fix.loop,
-            ESP_EVENT_ANY_BASE,
-            ESP_EVENT_ANY_ID,
-            test_event_ordered_dispatch_1,
-            &test_data));
+                                                ESP_EVENT_ANY_BASE,
+                                                ESP_EVENT_ANY_ID,
+                                                test_event_ordered_dispatch_1,
+                                                &test_data));
     TEST_ESP_OK(esp_event_handler_register_with(loop_fix.loop,
-            ESP_EVENT_ANY_BASE,
-            ESP_EVENT_ANY_ID,
-            test_event_ordered_dispatch_2,
-            &test_data));
+                                                ESP_EVENT_ANY_BASE,
+                                                ESP_EVENT_ANY_ID,
+                                                test_event_ordered_dispatch_2,
+                                                &test_data));
     TEST_ESP_OK(esp_event_handler_register_with(loop_fix.loop,
-            ESP_EVENT_ANY_BASE,
-            ESP_EVENT_ANY_ID,
-            test_event_ordered_dispatch_3,
-            &test_data));
+                                                ESP_EVENT_ANY_BASE,
+                                                ESP_EVENT_ANY_ID,
+                                                test_event_ordered_dispatch_3,
+                                                &test_data));
 
     esp_event_dump(stdout);
 
@@ -1079,15 +1094,15 @@ TEST_CASE("can create and delete loop from handler", "[event][linux]")
     esp_event_loop_handle_t test_loop;
 
     TEST_ESP_OK(esp_event_handler_register_with(loop_fix.loop,
-            s_test_base1,
-            TEST_EVENT_BASE1_EV1,
-            test_create_loop_handler,
-            &test_loop));
+                                                s_test_base1,
+                                                TEST_EVENT_BASE1_EV1,
+                                                test_create_loop_handler,
+                                                &test_loop));
     TEST_ESP_OK(esp_event_handler_register_with(loop_fix.loop,
-            s_test_base1,
-            TEST_EVENT_BASE1_EV2,
-            test_create_loop_handler,
-            &test_loop));
+                                                s_test_base1,
+                                                TEST_EVENT_BASE1_EV2,
+                                                test_create_loop_handler,
+                                                &test_loop));
 
     TEST_ESP_OK(esp_event_post_to(loop_fix.loop, s_test_base1, TEST_EVENT_BASE1_EV1, NULL, 0, portMAX_DELAY));
     TEST_ESP_OK(esp_event_loop_run(loop_fix.loop, ZERO_DELAY));
@@ -1119,15 +1134,15 @@ TEST_CASE("can post to loop from handler", "[event][linux]")
     int secondary_handler_count = 0;
 
     TEST_ESP_OK(esp_event_handler_register_with(loop_fix.loop,
-            s_test_base1,
-            TEST_EVENT_BASE1_EV1,
-            test_handler_post,
-            &arg));
+                                                s_test_base1,
+                                                TEST_EVENT_BASE1_EV1,
+                                                test_handler_post,
+                                                &arg));
     TEST_ESP_OK(esp_event_handler_register_with(loop_fix.loop,
-            s_test_base1,
-            TEST_EVENT_BASE1_EV2,
-            test_handler_inc,
-            &secondary_handler_count));
+                                                s_test_base1,
+                                                TEST_EVENT_BASE1_EV2,
+                                                test_handler_inc,
+                                                &secondary_handler_count));
 
     // Test that a handler can post to a different loop while there is still slots on the queue
     TEST_ESP_OK(esp_event_post_to(loop_fix.loop, s_test_base1, TEST_EVENT_BASE1_EV1, NULL, 0, portMAX_DELAY));
@@ -1150,16 +1165,16 @@ TEST_CASE("can post to loop from handler instance", "[event][linux]")
     int secondary_handler_count = 0;
 
     TEST_ESP_OK(esp_event_handler_instance_register_with(loop_fix.loop,
-            s_test_base1,
-            TEST_EVENT_BASE1_EV1,
-            test_handler_post,
-            &arg,
-            &ctx));
+                                                         s_test_base1,
+                                                         TEST_EVENT_BASE1_EV1,
+                                                         test_handler_post,
+                                                         &arg,
+                                                         &ctx));
     TEST_ESP_OK(esp_event_handler_register_with(loop_fix.loop,
-            s_test_base1,
-            TEST_EVENT_BASE1_EV2,
-            test_handler_inc,
-            &secondary_handler_count));
+                                                s_test_base1,
+                                                TEST_EVENT_BASE1_EV2,
+                                                test_handler_inc,
+                                                &secondary_handler_count));
 
     // Test that a handler can post to a different loop while there is still slots on the queue
     TEST_ESP_OK(esp_event_post_to(loop_fix.loop, s_test_base1, TEST_EVENT_BASE1_EV1, NULL, 0, portMAX_DELAY));
@@ -1175,11 +1190,11 @@ static void test_handler_post_timeout(void* handler_arg, esp_event_base_t base, 
     posting_handler_data_t* data = (posting_handler_data_t*) handler_arg;
     TEST_ESP_OK(esp_event_post_to(data->loop, s_test_base1, TEST_EVENT_BASE1_EV2, NULL, 0, portMAX_DELAY));
     TEST_ASSERT_EQUAL(ESP_ERR_TIMEOUT, esp_event_post_to(data->loop,
-            s_test_base1,
-            TEST_EVENT_BASE1_EV2,
-            NULL,
-            0,
-            1));
+                                                         s_test_base1,
+                                                         TEST_EVENT_BASE1_EV2,
+                                                         NULL,
+                                                         0,
+                                                         1));
     data->count++;
 }
 
@@ -1194,15 +1209,15 @@ TEST_CASE("posting to loop from handler times out", "[event][linux]")
     int secondary_handler_count = 0;
 
     TEST_ESP_OK(esp_event_handler_register_with(loop_fix.loop,
-            s_test_base1,
-            TEST_EVENT_BASE1_EV1,
-            test_handler_post_timeout,
-            &arg));
+                                                s_test_base1,
+                                                TEST_EVENT_BASE1_EV1,
+                                                test_handler_post_timeout,
+                                                &arg));
     TEST_ESP_OK(esp_event_handler_register_with(loop_fix.loop,
-            s_test_base1,
-            TEST_EVENT_BASE1_EV2,
-            test_handler_inc,
-            &secondary_handler_count));
+                                                s_test_base1,
+                                                TEST_EVENT_BASE1_EV2,
+                                                test_handler_inc,
+                                                &secondary_handler_count));
 
     // Test that a handler can post to a different loop while there is still slots on the queue
     TEST_ESP_OK(esp_event_post_to(loop_fix.loop, s_test_base1, TEST_EVENT_BASE1_EV1, NULL, 0, portMAX_DELAY));
@@ -1225,6 +1240,16 @@ static void test_handler_give_sem(void* handler_arg, esp_event_base_t base, int3
     TEST_ASSERT_EQUAL(pdTRUE, xSemaphoreGive(sem));
 }
 
+const TickType_t ONE_TICK = 1;
+
+static void wait_taken(SemaphoreHandle_t sem, TickType_t delay_ticks_if_not_taken)
+{
+    while (xSemaphoreTake(sem, ONE_TICK) == pdTRUE) {
+        xSemaphoreGive(sem);
+        vTaskDelay(delay_ticks_if_not_taken);
+    }
+}
+
 TEST_CASE("can post while handler is executing - dedicated task", "[event][linux]")
 {
     EV_LoopFix loop_fix(1, "loop_task");
@@ -1235,29 +1260,32 @@ TEST_CASE("can post while handler is executing - dedicated task", "[event][linux
     TEST_ASSERT(ev2_sem);
 
     TEST_ESP_OK(esp_event_handler_register_with(loop_fix.loop,
-            s_test_base1,
-            TEST_EVENT_BASE1_EV1,
-            test_handler_take_sem,
-            ev1_sem));
+                                                s_test_base1,
+                                                TEST_EVENT_BASE1_EV1,
+                                                test_handler_take_sem,
+                                                ev1_sem));
     TEST_ESP_OK(esp_event_handler_register_with(loop_fix.loop,
-            s_test_base1,
-            TEST_EVENT_BASE1_EV2,
-            test_handler_give_sem,
-            ev2_sem));
+                                                s_test_base1,
+                                                TEST_EVENT_BASE1_EV2,
+                                                test_handler_give_sem,
+                                                ev2_sem));
 
     // Trigger waiting by sending first event
     TEST_ESP_OK(esp_event_post_to(loop_fix.loop, s_test_base1, TEST_EVENT_BASE1_EV1, NULL, 0, portMAX_DELAY));
+
+    // Wait until semaphore is actually taken, which means handler is running and blocked
+    wait_taken(ev1_sem, 2);
 
     // Check that event can be posted while handler is running (waiting on the semaphore)
     TEST_ESP_OK(esp_event_post_to(loop_fix.loop, s_test_base1, TEST_EVENT_BASE1_EV2, NULL, 0, portMAX_DELAY));
 
     // Now the event queue has to be full, expect timeout
     TEST_ASSERT_EQUAL(ESP_ERR_TIMEOUT, esp_event_post_to(loop_fix.loop,
-            s_test_base1,
-            TEST_EVENT_BASE1_EV2,
-            NULL,
-            0,
-            1));
+                                                         s_test_base1,
+                                                         TEST_EVENT_BASE1_EV2,
+                                                         NULL,
+                                                         0,
+                                                         1));
 
     // Run all events
     xSemaphoreGive(ev1_sem);
@@ -1291,44 +1319,41 @@ TEST_CASE("can not post while handler is executing - no dedicated task", "[event
 
     TaskHandle_t mtask;
     xTaskCreate(test_post_from_handler_loop_task,
-            "task",
-            2584,
-            (void*) loop_fix.loop,
-            uxTaskPriorityGet(NULL) + 1,
-            &mtask);
+                "task",
+                2584,
+                (void*) loop_fix.loop,
+                uxTaskPriorityGet(NULL) + 1,
+                &mtask);
 
     TEST_ESP_OK(esp_event_handler_register_with(loop_fix.loop,
-            s_test_base1,
-            TEST_EVENT_BASE1_EV1,
-            test_handler_take_sem,
-            sem));
+                                                s_test_base1,
+                                                TEST_EVENT_BASE1_EV1,
+                                                test_handler_take_sem,
+                                                sem));
     TEST_ESP_OK(esp_event_handler_register_with(loop_fix.loop,
-            s_test_base1,
-            TEST_EVENT_BASE1_EV2,
-            never_run,
-            NULL));
+                                                s_test_base1,
+                                                TEST_EVENT_BASE1_EV2,
+                                                never_run,
+                                                NULL));
     TEST_ESP_OK(esp_event_handler_register_with(loop_fix.loop,
-            s_test_base2,
-            TEST_EVENT_BASE1_EV1,
-            test_handler_give_sem,
-            wait_done_sem));
+                                                s_test_base2,
+                                                TEST_EVENT_BASE1_EV1,
+                                                test_handler_give_sem,
+                                                wait_done_sem));
 
     // Trigger waiting by sending first event
     TEST_ESP_OK(esp_event_post_to(loop_fix.loop, s_test_base1, TEST_EVENT_BASE1_EV1, NULL, 0, portMAX_DELAY));
 
     // Wait until semaphore is actually taken, which means handler is running and blocked
-    while (xSemaphoreTake(sem, 1) == pdTRUE) {
-        xSemaphoreGive(sem);
-        vTaskDelay(2);
-    }
+    wait_taken(sem, 2);
 
     // For loop without tasks, posting is more restrictive. Posting should wait until execution of handler finishes
     TEST_ASSERT_EQUAL(ESP_ERR_TIMEOUT, esp_event_post_to(loop_fix.loop,
-            s_test_base1,
-            TEST_EVENT_BASE1_EV2,
-            NULL,
-            0,
-            1));
+                                                         s_test_base1,
+                                                         TEST_EVENT_BASE1_EV2,
+                                                         NULL,
+                                                         0,
+                                                         1));
 
     // Being running all events
     xSemaphoreGive(sem);
@@ -1366,10 +1391,10 @@ TEST_CASE("event data null", "[event][linux]")
     EventData saved_ev_data(0);
 
     TEST_ESP_OK(esp_event_handler_register_with(loop_fix.loop,
-            s_test_base1,
-            TEST_EVENT_BASE1_EV1,
-            save_ev_data,
-            &saved_ev_data));
+                                                s_test_base1,
+                                                TEST_EVENT_BASE1_EV1,
+                                                save_ev_data,
+                                                &saved_ev_data));
 
     TEST_ESP_OK(esp_event_post_to(loop_fix.loop, s_test_base1, TEST_EVENT_BASE1_EV1, NULL, 0, portMAX_DELAY));
     TEST_ESP_OK(esp_event_loop_run(loop_fix.loop, ZERO_DELAY));
@@ -1384,17 +1409,17 @@ TEST_CASE("event data one nonzero byte", "[event][linux]")
     EventData saved_ev_data(1);
 
     TEST_ESP_OK(esp_event_handler_register_with(loop_fix.loop,
-            s_test_base1,
-            TEST_EVENT_BASE1_EV1,
-            save_ev_data,
-            &saved_ev_data));
+                                                s_test_base1,
+                                                TEST_EVENT_BASE1_EV1,
+                                                save_ev_data,
+                                                &saved_ev_data));
 
     TEST_ESP_OK(esp_event_post_to(loop_fix.loop,
-            s_test_base1,
-            TEST_EVENT_BASE1_EV1,
-            &ev_data,
-            sizeof(ev_data),
-            portMAX_DELAY));
+                                  s_test_base1,
+                                  TEST_EVENT_BASE1_EV1,
+                                  &ev_data,
+                                  sizeof(ev_data),
+                                  portMAX_DELAY));
     TEST_ESP_OK(esp_event_loop_run(loop_fix.loop, ZERO_DELAY));
 
     TEST_ASSERT_NOT_EQUAL(NULL, saved_ev_data.event_arg);
@@ -1411,18 +1436,18 @@ TEST_CASE("event data one zero byte", "[event][linux]")
     esp_event_handler_instance_t ctx;
 
     TEST_ESP_OK(esp_event_handler_instance_register_with(loop_fix.loop,
-            s_test_base2,
-            TEST_EVENT_BASE1_EV1,
-            save_ev_data,
-            &saved_ev_data,
-            &ctx));
+                                                         s_test_base2,
+                                                         TEST_EVENT_BASE1_EV1,
+                                                         save_ev_data,
+                                                         &saved_ev_data,
+                                                         &ctx));
 
     TEST_ESP_OK(esp_event_post_to(loop_fix.loop,
-            s_test_base2,
-            TEST_EVENT_BASE1_EV1,
-            &ev_data,
-            sizeof(ev_data),
-            portMAX_DELAY));
+                                  s_test_base2,
+                                  TEST_EVENT_BASE1_EV1,
+                                  &ev_data,
+                                  sizeof(ev_data),
+                                  portMAX_DELAY));
     TEST_ESP_OK(esp_event_loop_run(loop_fix.loop, ZERO_DELAY));
 
     TEST_ASSERT_NOT_EQUAL(NULL, saved_ev_data.event_arg);
@@ -1436,17 +1461,17 @@ TEST_CASE("event data many bytes", "[event][linux]")
     EventData saved_ev_data(16);
 
     TEST_ESP_OK(esp_event_handler_register_with(loop_fix.loop,
-            s_test_base1,
-            TEST_EVENT_BASE1_EV1,
-            save_ev_data,
-            &saved_ev_data));
+                                                s_test_base1,
+                                                TEST_EVENT_BASE1_EV1,
+                                                save_ev_data,
+                                                &saved_ev_data));
 
     TEST_ESP_OK(esp_event_post_to(loop_fix.loop,
-            s_test_base1,
-            TEST_EVENT_BASE1_EV1,
-            &ev_data,
-            sizeof(ev_data),
-            portMAX_DELAY));
+                                  s_test_base1,
+                                  TEST_EVENT_BASE1_EV1,
+                                  &ev_data,
+                                  sizeof(ev_data),
+                                  portMAX_DELAY));
     TEST_ESP_OK(esp_event_loop_run(loop_fix.loop, ZERO_DELAY));
 
     TEST_ASSERT_NOT_EQUAL(NULL, saved_ev_data.event_arg);
@@ -1462,18 +1487,18 @@ TEST_CASE("event data one byte is copied on post", "[event][linux]")
     esp_event_handler_instance_t ctx;
 
     TEST_ESP_OK(esp_event_handler_instance_register_with(loop_fix.loop,
-            s_test_base2,
-            TEST_EVENT_BASE1_EV1,
-            save_ev_data,
-            &saved_ev_data,
-            &ctx));
+                                                         s_test_base2,
+                                                         TEST_EVENT_BASE1_EV1,
+                                                         save_ev_data,
+                                                         &saved_ev_data,
+                                                         &ctx));
 
     TEST_ESP_OK(esp_event_post_to(loop_fix.loop,
-            s_test_base2,
-            TEST_EVENT_BASE1_EV1,
-            &ev_data,
-            sizeof(ev_data),
-            portMAX_DELAY));
+                                  s_test_base2,
+                                  TEST_EVENT_BASE1_EV1,
+                                  &ev_data,
+                                  sizeof(ev_data),
+                                  portMAX_DELAY));
     ev_data = 42;
     TEST_ESP_OK(esp_event_loop_run(loop_fix.loop, ZERO_DELAY));
 
@@ -1489,17 +1514,17 @@ TEST_CASE("event data many bytes are copied on post", "[event][linux]")
     EventData saved_ev_data(16);
 
     TEST_ESP_OK(esp_event_handler_register_with(loop_fix.loop,
-            s_test_base1,
-            TEST_EVENT_BASE1_EV1,
-            save_ev_data,
-            &saved_ev_data));
+                                                s_test_base1,
+                                                TEST_EVENT_BASE1_EV1,
+                                                save_ev_data,
+                                                &saved_ev_data));
 
     TEST_ESP_OK(esp_event_post_to(loop_fix.loop,
-            s_test_base1,
-            TEST_EVENT_BASE1_EV1,
-            &ev_data,
-            sizeof(ev_data),
-            portMAX_DELAY));
+                                  s_test_base1,
+                                  TEST_EVENT_BASE1_EV1,
+                                  &ev_data,
+                                  sizeof(ev_data),
+                                  portMAX_DELAY));
     memset(ev_data, 0, sizeof(ev_data));
     TEST_ESP_OK(esp_event_loop_run(loop_fix.loop, ZERO_DELAY));
 
@@ -1511,10 +1536,10 @@ TEST_CASE("default loop: registering fails on uninitialized default loop", "[eve
 {
     esp_event_handler_instance_t instance;
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_STATE, esp_event_handler_instance_register(s_test_base1,
-            TEST_EVENT_BASE1_EV1,
-            never_run,
-            NULL,
-            &instance));
+                                                                                 TEST_EVENT_BASE1_EV1,
+                                                                                 never_run,
+                                                                                 NULL,
+                                                                                 &instance));
 }
 
 TEST_CASE("default loop: can create and delete loop", "[event][default][linux]")
@@ -1533,18 +1558,18 @@ TEST_CASE("default loop: registering/unregistering event works", "[event][defaul
 
         esp_event_handler_instance_t instance = NULL;
         TEST_ESP_OK(esp_event_handler_instance_register(s_test_base1,
-                TEST_EVENT_BASE1_EV1,
-                test_handler_give_sem,
-                waiter,
-                &instance));
+                                                        TEST_EVENT_BASE1_EV1,
+                                                        test_handler_give_sem,
+                                                        waiter,
+                                                        &instance));
         TEST_ASSERT(instance);
         TEST_ESP_OK(esp_event_post(s_test_base1, TEST_EVENT_BASE1_EV1, NULL, 0, portMAX_DELAY));
 
         TEST_ASSERT_EQUAL(pdTRUE, xSemaphoreTake(waiter, pdMS_TO_TICKS(50)));
 
         TEST_ESP_OK(esp_event_handler_instance_unregister(s_test_base1,
-                TEST_EVENT_BASE1_EV1,
-                instance));
+                                                          TEST_EVENT_BASE1_EV1,
+                                                          instance));
         TEST_ESP_OK(esp_event_post(s_test_base1, TEST_EVENT_BASE1_EV1, NULL, 0, portMAX_DELAY));
 
         TEST_ASSERT_EQUAL(pdFALSE, xSemaphoreTake(waiter, pdMS_TO_TICKS(50)));
@@ -1555,7 +1580,8 @@ TEST_CASE("default loop: registering/unregistering event works", "[event][defaul
     TEST_ESP_OK(esp_event_loop_delete_default());
 }
 
-TEST_CASE("default event loop: registering event handler instance without instance context works", "[event][default][linux]") {
+TEST_CASE("default event loop: registering event handler instance without instance context works", "[event][default][linux]")
+{
     TEST_ESP_OK(esp_event_loop_create_default());
 
     if (TEST_PROTECT()) {

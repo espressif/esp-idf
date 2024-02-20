@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,7 +17,6 @@
 #include "unity.h"
 #include "test_utils.h"
 
-
 static void counter_task(void *param)
 {
     volatile uint32_t *counter = (volatile uint32_t *)param;
@@ -25,7 +24,6 @@ static void counter_task(void *param)
         (*counter)++;
     }
 }
-
 
 TEST_CASE("Get/Set Priorities", "[freertos]")
 {
@@ -38,7 +36,7 @@ TEST_CASE("Get/Set Priorities", "[freertos]")
     /* create a matrix of counter tasks on each core */
     for (int cpu = 0; cpu < portNUM_PROCESSORS; cpu++) {
         for (int task = 0; task < 2; task++) {
-            xTaskCreatePinnedToCore(counter_task, "count", 2048, (void *)&(counters[cpu][task]), UNITY_FREERTOS_PRIORITY - task, &(tasks[cpu][task]), cpu);
+            xTaskCreatePinnedToCore(counter_task, "count", 2048, (void *) & (counters[cpu][task]), UNITY_FREERTOS_PRIORITY - task, &(tasks[cpu][task]), cpu);
         }
     }
 
@@ -65,7 +63,7 @@ TEST_CASE("Get/Set Priorities", "[freertos]")
 
     /* check priorities have swapped... */
     for (int cpu = 0; cpu < portNUM_PROCESSORS; cpu++) {
-        TEST_ASSERT_EQUAL(UNITY_FREERTOS_PRIORITY -1, uxTaskPriorityGet(tasks[cpu][0]));
+        TEST_ASSERT_EQUAL(UNITY_FREERTOS_PRIORITY - 1, uxTaskPriorityGet(tasks[cpu][0]));
         TEST_ASSERT_EQUAL(UNITY_FREERTOS_PRIORITY, uxTaskPriorityGet(tasks[cpu][1]));
     }
 

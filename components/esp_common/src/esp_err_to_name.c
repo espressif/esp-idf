@@ -134,6 +134,9 @@ static const esp_err_msg_t esp_err_msg_table[] = {
 #   ifdef      ESP_ERR_NOT_FINISHED
     ERR_TBL_IT(ESP_ERR_NOT_FINISHED),                           /*   268 0x10c Operation has not fully completed */
 #   endif
+#   ifdef      ESP_ERR_NOT_ALLOWED
+    ERR_TBL_IT(ESP_ERR_NOT_ALLOWED),                            /*   269 0x10d Operation is not allowed */
+#   endif
     // components/nvs_flash/include/nvs.h
 #   ifdef      ESP_ERR_NVS_BASE
     ERR_TBL_IT(ESP_ERR_NVS_BASE),                               /*  4352 0x1100 Starting number of error codes */
@@ -414,6 +417,9 @@ static const esp_err_msg_t esp_err_msg_table[] = {
 #   ifdef      ESP_ERR_WIFI_DISCARD
     ERR_TBL_IT(ESP_ERR_WIFI_DISCARD),                           /* 12315 0x301b Discard frame */
 #   endif
+#   ifdef      ESP_ERR_WIFI_ROC_IN_PROGRESS
+    ERR_TBL_IT(ESP_ERR_WIFI_ROC_IN_PROGRESS),                   /* 12316 0x301c ROC op is in progress */
+#   endif
     // components/wpa_supplicant/esp_supplicant/include/esp_wps.h
 #   ifdef      ESP_ERR_WIFI_REGISTRAR
     ERR_TBL_IT(ESP_ERR_WIFI_REGISTRAR),                         /* 12339 0x3033 WPS registrar is not supported */
@@ -452,6 +458,9 @@ static const esp_err_msg_t esp_err_msg_table[] = {
 #   ifdef      ESP_ERR_ESPNOW_IF
     ERR_TBL_IT(ESP_ERR_ESPNOW_IF),                              /* 12396 0x306c Interface error */
 #   endif
+#   ifdef      ESP_ERR_ESPNOW_CHAN
+    ERR_TBL_IT(ESP_ERR_ESPNOW_CHAN),                            /* 12397 0x306d Channel error */
+#   endif
     // components/wpa_supplicant/esp_supplicant/include/esp_dpp.h
 #   ifdef      ESP_ERR_DPP_FAILURE
     ERR_TBL_IT(ESP_ERR_DPP_FAILURE),                            /* 12439 0x3097 Generic failure during DPP Operation */
@@ -461,6 +470,9 @@ static const esp_err_msg_t esp_err_msg_table[] = {
 #   endif
 #   ifdef      ESP_ERR_DPP_INVALID_ATTR
     ERR_TBL_IT(ESP_ERR_DPP_INVALID_ATTR),                       /* 12441 0x3099 Encountered invalid DPP Attribute */
+#   endif
+#   ifdef      ESP_ERR_DPP_AUTH_TIMEOUT
+    ERR_TBL_IT(ESP_ERR_DPP_AUTH_TIMEOUT),                       /* 12442 0x309a DPP Auth response was not recieved in time */
 #   endif
     // components/esp_common/include/esp_err.h
 #   ifdef      ESP_ERR_MESH_BASE
@@ -881,7 +893,7 @@ const char *esp_err_to_name(esp_err_t code)
 #ifdef CONFIG_ESP_ERR_TO_NAME_LOOKUP
     size_t i;
 
-    for (i = 0; i < sizeof(esp_err_msg_table)/sizeof(esp_err_msg_table[0]); ++i) {
+    for (i = 0; i < sizeof(esp_err_msg_table) / sizeof(esp_err_msg_table[0]); ++i) {
         if (esp_err_msg_table[i].code == code) {
             return esp_err_msg_table[i].msg;
         }
@@ -896,7 +908,7 @@ const char *esp_err_to_name_r(esp_err_t code, char *buf, size_t buflen)
 #ifdef CONFIG_ESP_ERR_TO_NAME_LOOKUP
     size_t i;
 
-    for (i = 0; i < sizeof(esp_err_msg_table)/sizeof(esp_err_msg_table[0]); ++i) {
+    for (i = 0; i < sizeof(esp_err_msg_table) / sizeof(esp_err_msg_table[0]); ++i) {
         if (esp_err_msg_table[i].code == code) {
             strlcpy(buf, esp_err_msg_table[i].msg, buflen);
             return buf;

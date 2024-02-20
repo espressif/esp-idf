@@ -1,11 +1,13 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #ifndef __RVRUNTIME_FRAMES_H__
 #define __RVRUNTIME_FRAMES_H__
+
+#include "soc/soc_caps.h"
 
 /* Align a value up to nearest n-byte boundary, where n is a power of 2. */
 #define ALIGNUP(n, val) (((val) + (n) - 1) & -(n))
@@ -81,6 +83,82 @@ STRUCT_FIELD (long, 4, RV_STK_MCAUSE,  mcause)     /* Machine Trap Cause */
 STRUCT_FIELD (long, 4, RV_STK_MTVAL,   mtval)      /* Machine Trap Value */
 STRUCT_FIELD (long, 4, RV_STK_MHARTID, mhartid)    /* Hardware Thread ID in machine mode */
 STRUCT_END(RvExcFrame)
+
+#if SOC_CPU_COPROC_NUM > 0
+
+#if SOC_CPU_HAS_FPU
+/**
+ * @brief Floating-Point Unit save area
+ */
+STRUCT_BEGIN
+STRUCT_FIELD (long, 4, RV_FPU_FT0,  ft0)    /* ft0-ft7: Floating Point temporaries */
+STRUCT_FIELD (long, 4, RV_FPU_FT1,  ft1)
+STRUCT_FIELD (long, 4, RV_FPU_FT2,  ft2)
+STRUCT_FIELD (long, 4, RV_FPU_FT3,  ft3)
+STRUCT_FIELD (long, 4, RV_FPU_FT4,  ft4)
+STRUCT_FIELD (long, 4, RV_FPU_FT5,  ft5)
+STRUCT_FIELD (long, 4, RV_FPU_FT6,  ft6)
+STRUCT_FIELD (long, 4, RV_FPU_FT7,  ft7)
+STRUCT_FIELD (long, 4, RV_FPU_FS0,  fs0)    /* fs0-fs1: Floating Point saved registers */
+STRUCT_FIELD (long, 4, RV_FPU_FS1,  fs1)
+STRUCT_FIELD (long, 4, RV_FPU_FA0,  fa0)    /* fa0-fa1: Floating Point arguments/return values */
+STRUCT_FIELD (long, 4, RV_FPU_FA1,  fa1)
+STRUCT_FIELD (long, 4, RV_FPU_FA2,  fa2)    /* fa2-fa7: Floating Point arguments */
+STRUCT_FIELD (long, 4, RV_FPU_FA3,  fa3)
+STRUCT_FIELD (long, 4, RV_FPU_FA4,  fa4)
+STRUCT_FIELD (long, 4, RV_FPU_FA5,  fa5)
+STRUCT_FIELD (long, 4, RV_FPU_FA6,  fa6)
+STRUCT_FIELD (long, 4, RV_FPU_FA7,  fa7)
+STRUCT_FIELD (long, 4, RV_FPU_FS2,  fs2)    /* fs2-fs11: Floating Point saved registers */
+STRUCT_FIELD (long, 4, RV_FPU_FS3,  fs3)
+STRUCT_FIELD (long, 4, RV_FPU_FS4,  fs4)
+STRUCT_FIELD (long, 4, RV_FPU_FS5,  fs5)
+STRUCT_FIELD (long, 4, RV_FPU_FS6,  fs6)
+STRUCT_FIELD (long, 4, RV_FPU_FS7,  fs7)
+STRUCT_FIELD (long, 4, RV_FPU_FS8,  fs8)
+STRUCT_FIELD (long, 4, RV_FPU_FS9,  fs9)
+STRUCT_FIELD (long, 4, RV_FPU_FS10, fs10)
+STRUCT_FIELD (long, 4, RV_FPU_FS11, fs11)
+STRUCT_FIELD (long, 4, RV_FPU_FT8,  ft8)    /* ft8-ft11: Floating Point temporary registers */
+STRUCT_FIELD (long, 4, RV_FPU_FT9,  ft9)
+STRUCT_FIELD (long, 4, RV_FPU_FT10, ft10)
+STRUCT_FIELD (long, 4, RV_FPU_FT11, ft11)
+STRUCT_FIELD (long, 4, RV_FPU_FCSR, fcsr)   /* fcsr special register */
+STRUCT_END(RvFPUSaveArea)
+
+/* Floating-Point Unit coprocessor is now considered coprocessor 0 */
+#define FPU_COPROC_IDX  0
+/* PIE/AIA coprocessor is coprocessor 1 */
+#define PIE_COPROC_IDX  1
+
+/* Define the size of each coprocessor save area */
+#if defined(_ASMLANGUAGE) || defined(__ASSEMBLER__)
+#define RV_COPROC0_SIZE RvFPUSaveAreaSize
+#define RV_COPROC1_SIZE 0   // PIE/AIA coprocessor area
+#else
+#define RV_COPROC0_SIZE sizeof(RvFPUSaveArea)
+#define RV_COPROC1_SIZE 0   // PIE/AIA coprocessor area
+#endif /* defined(_ASMLANGUAGE) || defined(__ASSEMBLER__) */
+
+#endif /* SOC_CPU_HAS_FPU */
+
+/**
+ * @brief Coprocessors save area, containing each coprocessor save area
+ */
+STRUCT_BEGIN
+/* Enable bitmap: BIT(i) represents coprocessor i, 1 is used, 0 else */
+STRUCT_FIELD  (long, 4, RV_COPROC_ENABLE, sa_enable)
+/* Address of the original lowest stack address, convenient when the stack needs to re-initialized */
+STRUCT_FIELD  (void*, 4, RV_COPROC_TCB_STACK, sa_tcbstack)
+/* Address of the pool of memory used to allocate coprocessors save areas */
+STRUCT_FIELD  (long, 4, RV_COPROC_ALLOCATOR, sa_allocator)
+/* Pointer to the coprocessors save areas */
+STRUCT_AFIELD (void*, 4, RV_COPROC_SA, sa_coprocs, SOC_CPU_COPROC_NUM)
+STRUCT_END(RvCoprocSaveArea)
+
+
+#endif /* SOC_CPU_COPROC_NUM > 0 */
+
 
 #if defined(_ASMLANGUAGE) || defined(__ASSEMBLER__)
 #define RV_STK_SZ1     RvExcFrameSize

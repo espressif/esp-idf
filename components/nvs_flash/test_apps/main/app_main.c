@@ -6,11 +6,27 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "unity.h"
+#include "esp_partition.h"
+#ifdef CONFIG_NVS_ENCRYPTION
+#include "mbedtls/aes.h"
+#endif
 #include "memory_checks.h"
 
 /* setUp runs before every test */
 void setUp(void)
 {
+    // Execute mbedtls_aes_init operation to allocate AES interrupt
+    // allocation memory which is considered as memory leak otherwise
+#if defined(CONFIG_NVS_ENCRYPTION) && defined(SOC_AES_SUPPORTED)
+    mbedtls_aes_context ctx;
+    mbedtls_aes_init(&ctx);
+#endif
+
+    // Calling esp_partition_find_first ensures that the paritions have been loaded
+    // and subsequent calls to esp_partition_find_first from the tests would not
+    // load partitions which otherwise gets considered as a memory leak.
+    esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_NVS, NULL);
+
     test_utils_record_free_mem();
     test_utils_set_leak_level(CONFIG_UNITY_CRITICAL_LEAK_LEVEL_GENERAL, ESP_LEAK_TYPE_CRITICAL, ESP_COMP_LEAK_GENERAL);
     test_utils_set_leak_level(CONFIG_UNITY_WARN_LEAK_LEVEL_GENERAL, ESP_LEAK_TYPE_WARNING, ESP_COMP_LEAK_GENERAL);

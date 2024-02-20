@@ -3,8 +3,6 @@ Bootloader
 
 :link_to_translation:`zh_CN:[中文]`
 
-{IDF_TARGET_BOOTLOADER_OFFSET:default="0x0", esp32="0x1000", esp32s2="0x1000"}
-
 The ESP-IDF Software Bootloader performs the following functions:
 
 1. Minimal initial configuration of internal modules;
@@ -12,7 +10,7 @@ The ESP-IDF Software Bootloader performs the following functions:
 3. Select the application partition to boot, based on the partition table and ota_data (if any);
 4. Load this image to RAM (IRAM & DRAM) and transfer management to the image that was just loaded.
 
-Bootloader is located at the address {IDF_TARGET_BOOTLOADER_OFFSET} in the flash.
+Bootloader is located at the address {IDF_TARGET_CONFIG_BOOTLOADER_OFFSET_IN_FLASH} in the flash.
 
 For a full description of the startup process including the ESP-IDF bootloader, see :doc:`startup`.
 
@@ -95,10 +93,10 @@ In addition, the following configuration options control the reset condition:
 .. only:: SOC_RTC_FAST_MEM_SUPPORTED
 
     If an application needs to know if the factory reset has occurred, users can call the function :cpp:func:`bootloader_common_get_rtc_retain_mem_factory_reset_state`.
-    
+
     - If the status is read as true, the function will return the status, indicating that the factory reset has occurred. The function then resets the status to false for subsequent factory reset judgement.
     - If the status is read as false, the function will return the status, indicating that the factory reset has not occurred, or the memory where this status is stored is invalid.
-    
+
     Note that this feature reserves some RTC FAST memory (the same size as the :ref:`CONFIG_BOOTLOADER_SKIP_VALIDATE_IN_DEEP_SLEEP` feature).
 
 .. only:: not SOC_RTC_FAST_MEM_SUPPORTED
@@ -131,14 +129,16 @@ Rollback and anti-rollback features must be configured in the bootloader as well
 
 Consult the :ref:`app_rollback` and :ref:`anti-rollback` sections in the :doc:`OTA API reference document </api-reference/system/ota>`.
 
+.. _bootloader-watchdog:
+
 Watchdog
 --------
 
-By default, the hardware RTC Watchdog timer remains running while the bootloader is running and will automatically reset the chip if no app has successfully started after 9 seconds.
+The chips come equipped with two groups of watchdog timers: Main System Watchdog Timer (MWDT_WDT) and RTC Watchdog Timer (RTC_WDT). Both watchdog timer groups are enabled when the chip is powered up. However, in the bootloader, they will both be disabled. If :ref:`CONFIG_BOOTLOADER_WDT_ENABLE` is set (which is the default behavior), RTC_WDT is re-enabled. It tracks the time from the bootloader is enabled until the user's main function is called. In this scenario, RTC_WDT remains operational and will automatically reset the chip if no application successfully starts within 9 seconds. This functionality is particularly useful in preventing lockups caused by an unstable power source during startup.
 
 - The timeout period can be adjusted by setting :ref:`CONFIG_BOOTLOADER_WDT_TIME_MS` and recompiling the bootloader.
-- The app's behaviour can be adjusted so the RTC Watchdog remains enabled after app startup. The Watchdog would need to be explicitly reset (i.e., fed) by the app to avoid a reset. To do this, set the :ref:`CONFIG_BOOTLOADER_WDT_DISABLE_IN_USER_CODE` option, modify the app as needed, and then recompile the app.
 - The RTC Watchdog can be disabled in the bootloader by disabling the :ref:`CONFIG_BOOTLOADER_WDT_ENABLE` setting and recompiling the bootloader. This is not recommended.
+- See :ref:`app-hardware-watchdog-timers` to learn how RTC_WDT is used in the application.
 
 .. _bootloader-size:
 

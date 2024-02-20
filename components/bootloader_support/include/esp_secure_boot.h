@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,6 +14,24 @@
 #include "sdkconfig.h"
 #include "esp_rom_crc.h"
 #include "hal/efuse_ll.h"
+
+#if CONFIG_IDF_TARGET_ESP32
+#include "esp32/rom/secure_boot.h"
+#elif CONFIG_IDF_TARGET_ESP32S2
+#include "esp32s2/rom/secure_boot.h"
+#elif CONFIG_IDF_TARGET_ESP32C3
+#include "esp32c3/rom/secure_boot.h"
+#elif CONFIG_IDF_TARGET_ESP32S3
+#include "esp32s3/rom/secure_boot.h"
+#elif CONFIG_IDF_TARGET_ESP32C2
+#include "esp32c2/rom/secure_boot.h"
+#elif CONFIG_IDF_TARGET_ESP32C6
+#include "esp32c6/rom/secure_boot.h"
+#elif CONFIG_IDF_TARGET_ESP32H2
+#include "esp32h2/rom/secure_boot.h"
+#elif CONFIG_IDF_TARGET_ESP32P4
+#include "esp32p4/rom/secure_boot.h"
+#endif
 
 #ifdef CONFIG_SECURE_BOOT_V1_ENABLED
 #if !defined(CONFIG_SECURE_SIGNED_ON_BOOT) || !defined(CONFIG_SECURE_SIGNED_ON_UPDATE) || !defined(CONFIG_SECURE_SIGNED_APPS)
@@ -192,6 +210,24 @@ typedef struct {
 esp_err_t esp_secure_boot_verify_ecdsa_signature_block(const esp_secure_boot_sig_block_t *sig_block, const uint8_t *image_digest, uint8_t *verified_digest);
 
 #if !CONFIG_IDF_TARGET_ESP32 || CONFIG_ESP32_REV_MIN_FULL >= 300
+
+#if CONFIG_SECURE_BOOT_V2_ENABLED || CONFIG_SECURE_SIGNED_APPS_NO_SECURE_BOOT
+
+/** @brief Verify the secure boot signature block for Secure Boot V2.
+ *
+ *  Performs RSA-PSS or ECDSA verification of the SHA-256 image based on the public key
+ *  in the signature block, compared against the public key digest stored in efuse.
+ *
+ * Similar to esp_secure_boot_verify_signature(), but can be used when the digest is precalculated.
+ * @param[in] sig_block Pointer to signature block data
+ * @param[in] image_digest Pointer to 32 byte buffer holding SHA-256 hash.
+ * @param[out] verified_digest Pointer to 32 byte buffer that will receive verified digest if verification completes. (Used during bootloader implementation only, result is invalid otherwise.)
+ *
+ */
+esp_err_t esp_secure_boot_verify_sbv2_signature_block(const ets_secure_boot_signature_t *sig_block, const uint8_t *image_digest, uint8_t *verified_digest);
+
+#endif /* CONFIG_SECURE_BOOT_V2_ENABLED || CONFIG_SECURE_SIGNED_APPS_NO_SECURE_BOOT */
+
 /**
  * @brief Structure to hold public key digests calculated from the signature blocks of a single image.
  *
@@ -281,6 +317,23 @@ esp_err_t esp_secure_boot_enable_secure_features(void);
  *  - False - not all eFuses are configured correctly.
  */
 bool esp_secure_boot_cfg_verify_release_mode(void);
+
+
+#if !defined(BOOTLOADER_BUILD) && SOC_SUPPORT_SECURE_BOOT_REVOKE_KEY && CONFIG_SECURE_BOOT_V2_ENABLED
+
+/** @brief Returns the verification status of the image pointed by the part_pos argument against the public key digest present at index `efuse_digest_index`
+ *
+ * @param index[in]         Index of public key digest present in efuse against which the image is to be verified
+ * @param part_pos[in]      It is a pointer to the bootloader/app partition.
+ *
+ * @return
+ *  - ESP_OK - if the image can be verified by the key at efuse_index.
+ *  - ESP_FAIL - if the image cannot be verified by the key at efuse_index.
+ *  - ESP_ERR_INVALID_ARG: Error in the passed arguments.
+ */
+esp_err_t esp_secure_boot_verify_with_efuse_digest_index(int efuse_digest_index, esp_partition_pos_t *part_pos);
+
+#endif // !defined(BOOTLOADER_BUILD) && SOC_SUPPORT_SECURE_BOOT_REVOKE_KEY && CONFIG_SECURE_BOOT_V2_ENABLED
 
 #ifdef __cplusplus
 }

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,13 +13,26 @@
 
 #include "soc/soc_caps.h"
 
+#if SOC_PMU_SUPPORTED
+#include "hal/pmu_hal.h"
+#include "pmu_param.h"
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+/**
+ * @brief PMU ICG modem code of HP system
+ * @note  This type is required in rtc_clk_init.c when PMU not fully supported
+ */
+typedef enum {
+    PMU_HP_ICG_MODEM_CODE_SLEEP = 0,
+    PMU_HP_ICG_MODEM_CODE_MODEM = 1,
+    PMU_HP_ICG_MODEM_CODE_ACTIVE = 2,
+} pmu_hp_icg_modem_mode_t;
+
 #if SOC_PMU_SUPPORTED
-#include "hal/pmu_hal.h"
-#include "pmu_param.h"
 
 #define RTC_SLEEP_PD_DIG                PMU_SLEEP_PD_TOP        //!< Deep sleep (power down digital domain, includes all power domains
                                                                 //   except CPU, Modem, LP peripheral, AON，VDDSDIO, MEM and clock power domains)
@@ -41,31 +54,64 @@ extern "C" {
 #else
 #define RTC_EXT0_TRIG_EN            0
 #endif
+
 #if SOC_PM_SUPPORT_EXT1_WAKEUP
 #define RTC_EXT1_TRIG_EN            PMU_EXT1_WAKEUP_EN      //!< EXT1 wakeup
+#else
+#define RTC_EXT1_TRIG_EN            0
 #endif
+
 #define RTC_GPIO_TRIG_EN            PMU_GPIO_WAKEUP_EN      //!< GPIO wakeup
+
+#if SOC_LP_TIMER_SUPPORTED
 #define RTC_TIMER_TRIG_EN           PMU_LP_TIMER_WAKEUP_EN  //!< Timer wakeup
+#else
+#define RTC_TIMER_TRIG_EN           0
+#endif
+
+#if SOC_WIFI_SUPPORTED
 #define RTC_WIFI_TRIG_EN            PMU_WIFI_SOC_WAKEUP_EN  //!< WIFI wakeup (light sleep only)
+#else
+#define RTC_WIFI_TRIG_EN            0
+#endif
+
+#if SOC_UART_SUPPORT_WAKEUP_INT
 #define RTC_UART0_TRIG_EN           PMU_UART0_WAKEUP_EN     //!< UART0 wakeup (light sleep only)
 #define RTC_UART1_TRIG_EN           PMU_UART1_WAKEUP_EN     //!< UART1 wakeup (light sleep only)
+#else
+#define RTC_UART0_TRIG_EN           0
+#define RTC_UART1_TRIG_EN           0
+#endif
+
+#if SOC_BT_SUPPORTED
 #define RTC_BT_TRIG_EN              PMU_BLE_SOC_WAKEUP_EN   //!< BT wakeup (light sleep only)
+#else
+#define RTC_BT_TRIG_EN              0
+#endif
+
 #define RTC_USB_TRIG_EN             PMU_USB_WAKEUP_EN
+
 #if SOC_LP_CORE_SUPPORTED
 #define RTC_LP_CORE_TRIG_EN         PMU_LP_CORE_WAKEUP_EN   //!< LP core wakeup
+#else
+#define RTC_LP_CORE_TRIG_EN         0
 #endif //SOC_LP_CORE_SUPPORTED
+
 #define RTC_XTAL32K_DEAD_TRIG_EN    0 // TODO
 #define RTC_BROWNOUT_DET_TRIG_EN    0 // TODO
 
 /**
  * RTC_SLEEP_REJECT_MASK records sleep reject sources supported by chip
  */
-#define RTC_SLEEP_REJECT_MASK (RTC_GPIO_TRIG_EN         | \
+#define RTC_SLEEP_REJECT_MASK (RTC_EXT0_TRIG_EN         | \
+                               RTC_EXT1_TRIG_EN         | \
+                               RTC_GPIO_TRIG_EN         | \
                                RTC_TIMER_TRIG_EN        | \
                                RTC_WIFI_TRIG_EN         | \
                                RTC_UART0_TRIG_EN        | \
                                RTC_UART1_TRIG_EN        | \
                                RTC_BT_TRIG_EN           | \
+                               RTC_LP_CORE_TRIG_EN      | \
                                RTC_XTAL32K_DEAD_TRIG_EN | \
                                RTC_USB_TRIG_EN          | \
                                RTC_BROWNOUT_DET_TRIG_EN)
@@ -139,16 +185,6 @@ typedef enum pmu_sleep_regdma_entry {
     PMU_SLEEP_REGDMA_ENTRY_3,
     PMU_SLEEP_REGDMA_ENTRY_MAX
 } pmu_sleep_regdma_entry_t;
-
-/**
- * @brief PMU ICG modem code of HP system
- */
-typedef enum {
-    PMU_HP_ICG_MODEM_CODE_SLEEP = 0,
-    PMU_HP_ICG_MODEM_CODE_MODEM = 1,
-    PMU_HP_ICG_MODEM_CODE_ACTIVE = 2,
-} pmu_hp_icg_modem_mode_t;
-
 
 /**
   * @brief  Enable_regdma_backup.
@@ -250,32 +286,6 @@ bool pmu_sleep_finish(void);
 void pmu_init(void);
 
 /**
- * @brief Initialize PVT related parameters
- */
-void pvt_auto_dbias_init(void);
-
-/**
- * @brief Enable or disable PVT functions
- */
-void pvt_func_enable(bool enable);
-
-/**
- * @brief Initialize charge pump related parameters
- */
-void charge_pump_init(void);
-
-/**
- * @brief Enable or disable charge pump functions
- */
-void charge_pump_enable(bool enable);
-
-/**
- * @brief Get Hp_dbias from register
- */
-uint32_t get_pvt_dbias(void);
-
-
-/**
  * @brief Enable or disable system clock in PMU HP sleep state
  *
  * This API only used for fix BLE 40 MHz low power clock source issue
@@ -284,6 +294,11 @@ uint32_t get_pvt_dbias(void);
  */
 void pmu_sleep_enable_hp_sleep_sysclk(bool enable);
 
+/**
+ * Get the time overhead used by regdma to work on the retention link during the hardware wake-up process
+ * @return  regdma time cost during hardware wake-up stage in microseconds
+ */
+uint32_t pmu_sleep_get_wakup_retention_cost(void);
 
 #endif //#if SOC_PMU_SUPPORTED
 

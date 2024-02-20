@@ -57,7 +57,7 @@ void test_pxp_deinit_io(void)
 }
 #endif
 
-#define TOUCH_READ_INVALID_VAL          (SOC_TOUCH_PAD_THRESHOLD_MAX)
+#define TOUCH_READ_INVALID_VAL          (TOUCH_PAD_THRESHOLD_MAX)
 #define TOUCH_READ_ERROR_THRESH         (0.1) // 10% error
 #define TOUCH_INTR_THRESHOLD            (0.1)
 #define TOUCH_EXCEED_TIME_MS            (1000)

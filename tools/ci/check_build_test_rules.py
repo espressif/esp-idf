@@ -1,19 +1,20 @@
 #!/usr/bin/env python
-
-# SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-
 import argparse
 import inspect
 import os
 import re
 import sys
-from io import StringIO
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Dict
+from typing import List
+from typing import Optional
+from typing import Tuple
 
 import yaml
-from idf_ci_utils import IDF_PATH, get_ttfw_cases
+from idf_ci_utils import get_all_manifest_files
+from idf_ci_utils import IDF_PATH
 
 YES = u'\u2713'
 NO = u'\u2717'
@@ -31,6 +32,7 @@ USUAL_TO_FORMAL = {
     'esp32c3': 'ESP32-C3',
     'esp32c2': 'ESP32-C2',
     'esp32c6': 'ESP32-C6',
+    'esp32c5': 'ESP32-C5',
     'esp32h2': 'ESP32-H2',
     'esp32p4': 'ESP32-P4',
     'linux': 'Linux',
@@ -43,6 +45,7 @@ FORMAL_TO_USUAL = {
     'ESP32-C3': 'esp32c3',
     'ESP32-C2': 'esp32c2',
     'ESP32-C6': 'esp32c6',
+    'ESP32-C5': 'esp32c5',
     'ESP32-H2': 'esp32h2',
     'ESP32-P4': 'esp32p4',
     'Linux': 'linux',
@@ -92,7 +95,7 @@ def check_readme(
         if not _readme_path:
             return None, SUPPORTED_TARGETS
 
-        with open(_readme_path) as _fr:
+        with open(_readme_path, encoding='utf8') as _fr:
             _readme_str = _fr.read()
 
         support_string = SUPPORTED_TARGETS_TABLE_REGEX.findall(_readme_str)
@@ -146,9 +149,7 @@ def check_readme(
             'all',
             recursive=True,
             exclude_list=exclude_dirs or [],
-            manifest_files=[
-                str(p) for p in Path(IDF_PATH).glob('**/.build-test-rules.yml')
-            ],
+            manifest_files=get_all_manifest_files(),
             default_build_targets=SUPPORTED_TARGETS + extra_default_build_targets,
         )
     )
@@ -228,34 +229,14 @@ def check_test_scripts(
     def check_enable_test(
         _app: App,
         _pytest_app_dir_targets_dict: Dict[str, Dict[str, str]],
-        _ttfw_app_dir_targets_dict: Dict[str, Dict[str, str]],
     ) -> bool:
         if _app.app_dir in _pytest_app_dir_targets_dict:
             test_script_path = _pytest_app_dir_targets_dict[_app.app_dir]['script_path']
             actual_verified_targets = sorted(
                 set(_pytest_app_dir_targets_dict[_app.app_dir]['targets'])
             )
-        elif _app.app_dir in _ttfw_app_dir_targets_dict:
-            test_script_path = _ttfw_app_dir_targets_dict[_app.app_dir]['script_path']
-            actual_verified_targets = sorted(
-                set(_ttfw_app_dir_targets_dict[_app.app_dir]['targets'])
-            )
         else:
             return True  # no test case
-
-        if (
-            _app.app_dir in _pytest_app_dir_targets_dict
-            and _app.app_dir in _ttfw_app_dir_targets_dict
-        ):
-            print(
-                f'''
-            Both pytest and ttfw test cases are found for {_app.app_dir},
-            please remove one of them.
-            pytest script: {_pytest_app_dir_targets_dict[_app.app_dir]['script_path']}
-            ttfw script: {_ttfw_app_dir_targets_dict[_app.app_dir]['script_path']}
-            '''
-            )
-            return False
 
         actual_extra_tested_targets = set(actual_verified_targets) - set(
             _app.verified_targets
@@ -297,9 +278,6 @@ def check_test_scripts(
             If you want to enable test targets in the pytest test scripts, please add `@pytest.mark.MISSING_TARGET`
             marker above the test case function.
 
-            If you want to enable test targets in the ttfw test scripts, please add/extend the keyword `targets` in
-            the ttfw decorator, e.g. `@ttfw_idf.idf_example_test(..., target=['esp32', 'MISSING_TARGET'])`
-
             If you want to disable the test targets in the manifest file, please modify your manifest file with
             the following code snippet:
 
@@ -325,19 +303,15 @@ def check_test_scripts(
             'all',
             recursive=True,
             exclude_list=exclude_dirs or [],
-            manifest_files=[
-                str(p) for p in Path(IDF_PATH).glob('**/.build-test-rules.yml')
-            ],
+            manifest_files=get_all_manifest_files(),
             default_build_targets=SUPPORTED_TARGETS + extra_default_build_targets,
         )
     )
     exit_code = 0
 
     pytest_cases = get_pytest_cases(paths)
-    ttfw_cases = get_ttfw_cases(paths)
 
     pytest_app_dir_targets_dict = {}
-    ttfw_app_dir_targets_dict = {}
     for case in pytest_cases:
         for pytest_app in case.apps:
             app_dir = os.path.relpath(pytest_app.path, IDF_PATH)
@@ -351,18 +325,6 @@ def check_test_scripts(
                     pytest_app.target
                 )
 
-    for case in ttfw_cases:
-        app_dir = case.case_info['app_dir']
-        if app_dir not in ttfw_app_dir_targets_dict:
-            ttfw_app_dir_targets_dict[app_dir] = {
-                'script_path': case.case_info['script_path'],
-                'targets': [case.case_info['target'].lower()],
-            }
-        else:
-            ttfw_app_dir_targets_dict[app_dir]['targets'].append(
-                case.case_info['target'].lower()
-            )
-
     checked_app_dirs = set()
     for app in apps:
         if app.app_dir not in checked_app_dirs:
@@ -371,7 +333,7 @@ def check_test_scripts(
             continue
 
         success = check_enable_test(
-            app, pytest_app_dir_targets_dict, ttfw_app_dir_targets_dict
+            app, pytest_app_dir_targets_dict
         )
         if not success:
             print(f'check_enable_test failed for app: {app}')
@@ -382,42 +344,10 @@ def check_test_scripts(
     sys.exit(exit_code)
 
 
-def sort_yaml(files: List[str]) -> None:
-    from ruamel.yaml import YAML, CommentedMap
-
-    yaml = YAML()
-    yaml.indent(mapping=2, sequence=4, offset=2)
-    yaml.width = 4096  # avoid wrap lines
-
-    exit_code = 0
-    for f in files:
-        with open(f) as fr:
-            file_s = fr.read()
-            fr.seek(0)
-            file_d: CommentedMap = yaml.load(fr)
-
-        sorted_yaml = CommentedMap(dict(sorted(file_d.items())))
-        file_d.copy_attributes(sorted_yaml)
-
-        with StringIO() as s:
-            yaml.dump(sorted_yaml, s)
-
-            string = s.getvalue()
-            if string != file_s:
-                with open(f, 'w') as fw:
-                    fw.write(string)
-                print(
-                    f'Sorted yaml file {f}. Please take a look. sometimes the format is a bit messy'
-                )
-                exit_code = 1
-
-    sys.exit(exit_code)
-
-
 def check_exist() -> None:
     exit_code = 0
 
-    config_files = [str(p) for p in Path(IDF_PATH).glob('**/.build-test-rules.yml')]
+    config_files = get_all_manifest_files()
     for file in config_files:
         if 'managed_components' in Path(file).parts:
             continue
@@ -459,9 +389,6 @@ if __name__ == '__main__':
         help='default build test rules config file',
     )
 
-    _sort_yaml = action.add_parser('sort-yaml')
-    _sort_yaml.add_argument('files', nargs='+', help='all specified yaml files')
-
     _check_exist = action.add_parser('check-exist')
 
     arg = parser.parse_args()
@@ -471,9 +398,7 @@ if __name__ == '__main__':
         os.path.join(os.path.dirname(__file__), '..', '..')
     )
 
-    if arg.action == 'sort-yaml':
-        sort_yaml(arg.files)
-    elif arg.action == 'check-exist':
+    if arg.action == 'check-exist':
         check_exist()
     else:
         check_dirs = set()
@@ -518,6 +443,8 @@ if __name__ == '__main__':
                 )
 
         if arg.action == 'check-readmes':
+            os.environ['INCLUDE_NIGHTLY_RUN'] = '1'
+            os.environ['NIGHTLY_RUN'] = '1'
             check_readme(
                 list(check_dirs),
                 exclude_dirs=_exclude_dirs,
@@ -525,6 +452,7 @@ if __name__ == '__main__':
             )
         elif arg.action == 'check-test-scripts':
             os.environ['INCLUDE_NIGHTLY_RUN'] = '1'
+            os.environ['NIGHTLY_RUN'] = '1'
             check_test_scripts(
                 list(check_dirs),
                 exclude_dirs=_exclude_dirs,

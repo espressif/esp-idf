@@ -7,620 +7,637 @@ menu "Wi-Fi"
         bool
         default y if SOC_WIFI_SUPPORTED
 
-    config ESP_WIFI_STATIC_RX_BUFFER_NUM
-        int "Max number of WiFi static RX buffers"
-        range 2 25 if !SOC_WIFI_HE_SUPPORT
-        range 2 128 if SOC_WIFI_HE_SUPPORT
-        default 10 if !SPIRAM_TRY_ALLOCATE_WIFI_LWIP
-        default 16 if SPIRAM_TRY_ALLOCATE_WIFI_LWIP
-        help
-            Set the number of WiFi static RX buffers. Each buffer takes approximately 1.6KB of RAM.
-            The static rx buffers are allocated when esp_wifi_init is called, they are not freed
-            until esp_wifi_deinit is called.
-
-            WiFi hardware use these buffers to receive all 802.11 frames.
-            A higher number may allow higher throughput but increases memory use. If ESP_WIFI_AMPDU_RX_ENABLED
-            is enabled, this value is recommended to set equal or bigger than ESP_WIFI_RX_BA_WIN in order to
-            achieve better throughput and compatibility with both stations and APs.
-
-    config ESP_WIFI_DYNAMIC_RX_BUFFER_NUM
-        int "Max number of WiFi dynamic RX buffers"
-        range 0 128 if !LWIP_WND_SCALE
-        range 0 1024 if LWIP_WND_SCALE
-        default 32
-        help
-            Set the number of WiFi dynamic RX buffers, 0 means unlimited RX buffers will be allocated
-            (provided sufficient free RAM). The size of each dynamic RX buffer depends on the size of
-            the received data frame.
-
-            For each received data frame, the WiFi driver makes a copy to an RX buffer and then delivers
-            it to the high layer TCP/IP stack. The dynamic RX buffer is freed after the higher layer has
-            successfully received the data frame.
-
-            For some applications, WiFi data frames may be received faster than the application can
-            process them. In these cases we may run out of memory if RX buffer number is unlimited (0).
-
-            If a dynamic RX buffer limit is set, it should be at least the number of static RX buffers.
-
-    choice ESP_WIFI_TX_BUFFER
-        prompt "Type of WiFi TX buffers"
-        default ESP_WIFI_DYNAMIC_TX_BUFFER
-        help
-            Select type of WiFi TX buffers:
-
-            If "Static" is selected, WiFi TX buffers are allocated when WiFi is initialized and released
-            when WiFi is de-initialized. The size of each static TX buffer is fixed to about 1.6KB.
-
-            If "Dynamic" is selected, each WiFi TX buffer is allocated as needed when a data frame is
-            delivered to the Wifi driver from the TCP/IP stack. The buffer is freed after the data frame
-            has been sent by the WiFi driver. The size of each dynamic TX buffer depends on the length
-            of each data frame sent by the TCP/IP layer.
-
-            If PSRAM is enabled, "Static" should be selected to guarantee enough WiFi TX buffers.
-            If PSRAM is disabled, "Dynamic" should be selected to improve the utilization of RAM.
-
-        config ESP_WIFI_STATIC_TX_BUFFER
-            bool "Static"
-        config ESP_WIFI_DYNAMIC_TX_BUFFER
-            bool "Dynamic"
-            depends on !SPIRAM_USE_MALLOC
-    endchoice
-
-    config ESP_WIFI_TX_BUFFER_TYPE
-        int
-        default 0 if ESP_WIFI_STATIC_TX_BUFFER
-        default 1 if ESP_WIFI_DYNAMIC_TX_BUFFER
-
-    config ESP_WIFI_STATIC_TX_BUFFER_NUM
-        int "Max number of WiFi static TX buffers"
-        depends on ESP_WIFI_STATIC_TX_BUFFER
-        range 1 64
-        default 16
-        help
-            Set the number of WiFi static TX buffers. Each buffer takes approximately 1.6KB of RAM.
-            The static RX buffers are allocated when esp_wifi_init() is called, they are not released
-            until esp_wifi_deinit() is called.
-
-            For each transmitted data frame from the higher layer TCP/IP stack, the WiFi driver makes a
-            copy of it in a TX buffer.  For some applications especially UDP applications, the upper
-            layer can deliver frames faster than WiFi layer can transmit. In these cases, we may run out
-            of TX buffers.
-
-    config ESP_WIFI_CACHE_TX_BUFFER_NUM
-        int "Max number of WiFi cache TX buffers"
-        depends on SPIRAM
-        range 16 128
-        default 32
-        help
-            Set the number of WiFi cache TX buffer number.
-
-            For each TX packet from uplayer, such as LWIP etc, WiFi driver needs to allocate a static TX
-            buffer and makes a copy of uplayer packet. If WiFi driver fails to allocate the static TX buffer,
-            it caches the uplayer packets to a dedicated buffer queue, this option is used to configure the
-            size of the cached TX queue.
-
-    config ESP_WIFI_DYNAMIC_TX_BUFFER_NUM
-        int "Max number of WiFi dynamic TX buffers"
-        depends on ESP_WIFI_DYNAMIC_TX_BUFFER
-        range 1 128
-        default 32
-        help
-            Set the number of WiFi dynamic TX buffers. The size of each dynamic TX buffer is not fixed,
-            it depends on the size of each transmitted data frame.
-
-            For each transmitted frame from the higher layer TCP/IP stack, the WiFi driver makes a copy
-            of it in a TX buffer. For some applications, especially UDP applications, the upper layer
-            can deliver frames faster than WiFi layer can transmit. In these cases, we may run out of TX
-            buffers.
-
-    choice ESP_WIFI_MGMT_RX_BUFFER
-        prompt "Type of WiFi RX MGMT buffers"
-        default ESP_WIFI_STATIC_RX_MGMT_BUFFER
-        help
-            Select type of WiFi RX MGMT buffers:
-
-            If "Static" is selected, WiFi RX MGMT buffers are allocated when WiFi is initialized and released
-            when WiFi is de-initialized. The size of each static RX MGMT buffer is fixed to about 500 Bytes.
-
-            If "Dynamic" is selected, each WiFi RX MGMT buffer is allocated as needed when a MGMT data frame is
-            received. The MGMT buffer is freed after the MGMT data frame has been processed by the WiFi driver.
-
-
-        config ESP_WIFI_STATIC_RX_MGMT_BUFFER
-            bool "Static"
-        config ESP_WIFI_DYNAMIC_RX_MGMT_BUFFER
-            bool "Dynamic"
-    endchoice
-
-    config ESP_WIFI_DYNAMIC_RX_MGMT_BUF
-        int
-        default 0 if ESP_WIFI_STATIC_RX_MGMT_BUFFER
-        default 1 if ESP_WIFI_DYNAMIC_RX_MGMT_BUFFER
-
-    config ESP_WIFI_RX_MGMT_BUF_NUM_DEF
-        int "Max number of WiFi RX MGMT buffers"
-        range 1 10
-        default 5
-        help
-            Set the number of WiFi RX_MGMT buffers.
-
-            For Management buffers, the number of dynamic and static management buffers is the same.
-            In order to prevent memory fragmentation, the management buffer type should be set to static first.
-
-    config ESP_WIFI_CSI_ENABLED
-        bool "WiFi CSI(Channel State Information)"
-        depends on SOC_WIFI_CSI_SUPPORT
-        default n
-        help
-            Select this option to enable CSI(Channel State Information) feature. CSI takes about
-            CONFIG_ESP_WIFI_STATIC_RX_BUFFER_NUM KB of RAM. If CSI is not used, it is better to disable
-            this feature in order to save memory.
-
-    config ESP_WIFI_AMPDU_TX_ENABLED
-        bool "WiFi AMPDU TX"
-        default y
-        help
-            Select this option to enable AMPDU TX feature
-
-
-    config ESP_WIFI_TX_BA_WIN
-        int "WiFi AMPDU TX BA window size"
-        depends on ESP_WIFI_AMPDU_TX_ENABLED
-        range 2 32 if !SOC_WIFI_HE_SUPPORT
-        range 2 64 if SOC_WIFI_HE_SUPPORT
-        default 6
-        help
-            Set the size of WiFi Block Ack TX window. Generally a bigger value means higher throughput but
-            more memory. Most of time we should NOT change the default value unless special reason, e.g.
-            test the maximum UDP TX throughput with iperf etc. For iperf test in shieldbox, the recommended
-            value is 9~12.
-
-    config ESP_WIFI_AMPDU_RX_ENABLED
-        bool "WiFi AMPDU RX"
-        default y
-        help
-            Select this option to enable AMPDU RX feature
-
-    config ESP_WIFI_RX_BA_WIN
-        int "WiFi AMPDU RX BA window size"
-        depends on ESP_WIFI_AMPDU_RX_ENABLED
-        range 2 32 if !SOC_WIFI_HE_SUPPORT
-        range 2 64 if SOC_WIFI_HE_SUPPORT
-        default 6 if !SPIRAM_TRY_ALLOCATE_WIFI_LWIP
-        default 16 if SPIRAM_TRY_ALLOCATE_WIFI_LWIP
-        help
-            Set the size of WiFi Block Ack RX window. Generally a bigger value means higher throughput and better
-            compatibility but more memory. Most of time we should NOT change the default value unless special
-            reason, e.g. test the maximum UDP RX throughput with iperf etc. For iperf test in shieldbox, the
-            recommended value is 9~12. If PSRAM is used and WiFi memory is prefered to allocat in PSRAM first,
-            the default and minimum value should be 16 to achieve better throughput and compatibility with both
-            stations and APs.
-
-    config ESP_WIFI_AMSDU_TX_ENABLED
-        bool "WiFi AMSDU TX"
-        depends on SPIRAM
-        default n
-        help
-            Select this option to enable AMSDU TX feature
-
-    config ESP_WIFI_NVS_ENABLED
-        bool "WiFi NVS flash"
-        default y
-        help
-            Select this option to enable WiFi NVS flash
-
-    choice ESP_WIFI_TASK_CORE_ID
-        depends on !FREERTOS_UNICORE
-        prompt "WiFi Task Core ID"
-        default ESP_WIFI_TASK_PINNED_TO_CORE_0
-        help
-            Pinned WiFi task to core 0 or core 1.
-
-        config ESP_WIFI_TASK_PINNED_TO_CORE_0
-            bool "Core 0"
-        config ESP_WIFI_TASK_PINNED_TO_CORE_1
-            bool "Core 1"
-    endchoice
-
-    config ESP_WIFI_SOFTAP_BEACON_MAX_LEN
-        int "Max length of WiFi SoftAP Beacon"
-        range 752 1256
-        default 752
-        help
-            ESP-MESH utilizes beacon frames to detect and resolve root node conflicts (see documentation). However the
-            default length of a beacon frame can simultaneously hold only five root node identifier structures,
-            meaning that a root node conflict of up to five nodes can be detected at one time. In the occurence of
-            more root nodes conflict involving more than five root nodes, the conflict resolution process will detect
-            five of the root nodes, resolve the conflict, and re-detect more root nodes. This process will repeat
-            until all root node conflicts are resolved. However this process can generally take a very long time.
-
-            To counter this situation, the beacon frame length can be increased such that more root nodes can be
-            detected simultaneously. Each additional root node will require 36 bytes and should be added ontop of the
-            default beacon frame length of
-            752 bytes. For example, if you want to detect 10 root nodes simultaneously, you need to set the beacon
-            frame length as
-            932 (752+36*5).
-
-            Setting a longer beacon length also assists with debugging as the conflicting root nodes can be identified
-            more quickly.
-
-    config ESP_WIFI_MGMT_SBUF_NUM
-        int "WiFi mgmt short buffer number"
-        range 6 32
-        default 32
-        help
-            Set the number of WiFi management short buffer.
-
-    config ESP_WIFI_IRAM_OPT
-        bool "WiFi IRAM speed optimization"
-        default n if (BT_ENABLED && SPIRAM && IDF_TARGET_ESP32)
-        default y
-        help
-            Select this option to place frequently called Wi-Fi library functions in IRAM.
-            When this option is disabled, more than 10Kbytes of IRAM memory will be saved
-            but Wi-Fi throughput will be reduced.
-
-    config ESP_WIFI_EXTRA_IRAM_OPT
-        bool "WiFi EXTRA IRAM speed optimization"
-        default y if IDF_TARGET_ESP32C6
-        default n
-        help
-            Select this option to place additional frequently called Wi-Fi library functions
-            in IRAM. When this option is disabled, more than 5Kbytes of IRAM memory will be saved
-            but Wi-Fi throughput will be reduced.
-
-    config ESP_WIFI_RX_IRAM_OPT
-        bool "WiFi RX IRAM speed optimization"
-        default n if (BT_ENABLED && SPIRAM && IDF_TARGET_ESP32)
-        default y
-        help
-            Select this option to place frequently called Wi-Fi library RX functions in IRAM.
-            When this option is disabled, more than 17Kbytes of IRAM memory will be saved
-            but Wi-Fi performance will be reduced.
-
-    config ESP_WIFI_ENABLE_WPA3_SAE
-        bool "Enable WPA3-Personal"
-        default y
-        select ESP_WIFI_MBEDTLS_CRYPTO
-        help
-            Select this option to allow the device to establish a WPA3-Personal connection with eligible AP's.
-            PMF (Protected Management Frames) is a prerequisite feature for a WPA3 connection, it needs to be
-            explicitly configured before attempting connection. Please refer to the Wi-Fi Driver API Guide for details.
-
-    config ESP_WIFI_ENABLE_SAE_PK
-        bool "Enable SAE-PK"
-        default y
-        depends on ESP_WIFI_ENABLE_WPA3_SAE
-        help
-            Select this option to enable SAE-PK
-
-    config ESP_WIFI_SOFTAP_SAE_SUPPORT
-        bool "Enable WPA3 Personal(SAE) SoftAP"
-        default y
-        depends on ESP_WIFI_ENABLE_WPA3_SAE
-        depends on ESP_WIFI_SOFTAP_SUPPORT
-        help
-            Select this option to enable SAE support in softAP mode.
-
-    config ESP_WIFI_ENABLE_WPA3_OWE_STA
-        bool "Enable OWE STA"
-        default y
-        select ESP_WIFI_MBEDTLS_CRYPTO
-        help
-            Select this option to allow the device to establish OWE connection with eligible AP's.
-            PMF (Protected Management Frames) is a prerequisite feature for a WPA3 connection, it needs to be
-            explicitly configured before attempting connection. Please refer to the Wi-Fi Driver API Guide for details.
-
-    config ESP_WIFI_SLP_IRAM_OPT
-        bool "WiFi SLP IRAM speed optimization"
-        select PM_SLP_DEFAULT_PARAMS_OPT
-        select PERIPH_CTRL_FUNC_IN_IRAM
-        help
-            Select this option to place called Wi-Fi library TBTT process and receive beacon functions in IRAM.
-            Some functions can be put in IRAM either by ESP_WIFI_IRAM_OPT and ESP_WIFI_RX_IRAM_OPT, or this one.
-            If already enabled ESP_WIFI_IRAM_OPT, the other 7.3KB IRAM memory would be taken by this option.
-            If already enabled ESP_WIFI_RX_IRAM_OPT, the other 1.3KB IRAM memory would be taken by this option.
-            If neither of them are enabled, the other 7.4KB IRAM memory would be taken by this option.
-            Wi-Fi power-save mode average current would be reduced if this option is enabled.
-
-    config ESP_WIFI_SLP_DEFAULT_MIN_ACTIVE_TIME
-        int "Minimum active time"
-        range 8 60
-        default 50
-        depends on ESP_WIFI_SLP_IRAM_OPT
-        help
-            The minimum timeout for waiting to receive data, unit: milliseconds.
-
-    config ESP_WIFI_SLP_DEFAULT_MAX_ACTIVE_TIME
-        int "Maximum keep alive time"
-        range 10 60
-        default 10
-        depends on ESP_WIFI_SLP_IRAM_OPT
-        help
-            The maximum time that wifi keep alive, unit: seconds.
-
-    config ESP_WIFI_FTM_ENABLE
-        bool "WiFi FTM"
-        default n
-        depends on SOC_WIFI_FTM_SUPPORT
-        help
-            Enable feature Fine Timing Measurement for calculating WiFi Round-Trip-Time (RTT).
-
-    config ESP_WIFI_FTM_INITIATOR_SUPPORT
-        bool "FTM Initiator support"
-        default y
-        depends on ESP_WIFI_FTM_ENABLE
-
-    config ESP_WIFI_FTM_RESPONDER_SUPPORT
-        bool "FTM Responder support"
-        default y
-        depends on ESP_WIFI_FTM_ENABLE
-
-    config ESP_WIFI_STA_DISCONNECTED_PM_ENABLE
-        bool "Power Management for station at disconnected"
-        default y
-        help
-            Select this option to enable power_management for station when disconnected.
-            Chip will do modem-sleep when rf module is not in use any more.
-
-    config ESP_WIFI_GCMP_SUPPORT
-        bool "WiFi GCMP Support(GCMP128 and GCMP256)"
-        default n
-        depends on SOC_WIFI_GCMP_SUPPORT
-        help
-            Select this option to enable GCMP support. GCMP support is compulsory for WiFi Suite-B support.
-
-    config ESP_WIFI_GMAC_SUPPORT
-        bool "WiFi GMAC Support(GMAC128 and GMAC256)"
-        default n
-        help
-            Select this option to enable GMAC support. GMAC support is compulsory for WiFi 192 bit certification.
-
-    config ESP_WIFI_SOFTAP_SUPPORT
-        bool "WiFi SoftAP Support"
-        default y
-        help
-            WiFi module can be compiled without SoftAP to save code size.
-
-    config ESP_WIFI_ENHANCED_LIGHT_SLEEP
-        bool "WiFi modem automatically receives the beacon"
-        default n
-        depends on ESP_PHY_MAC_BB_PD && SOC_PM_SUPPORT_BEACON_WAKEUP
-        help
-            The wifi modem automatically receives the beacon frame during light sleep.
-
-    config ESP_WIFI_SLP_BEACON_LOST_OPT
-        bool "Wifi sleep optimize when beacon lost"
-        help
-            Enable wifi sleep optimization when beacon loss occurs and immediately enter
-            sleep mode when the WiFi module detects beacon loss.
-
-    config ESP_WIFI_SLP_BEACON_LOST_TIMEOUT
-        int "Beacon loss timeout"
-        range 5 100
-        default 10
-        depends on ESP_WIFI_SLP_BEACON_LOST_OPT
-        help
-            Timeout time for close rf phy when beacon loss occurs, Unit: 1024 microsecond.
-
-    config ESP_WIFI_SLP_BEACON_LOST_THRESHOLD
-        int "Maximum number of consecutive lost beacons allowed"
-        range 0 8
-        default 3
-        depends on ESP_WIFI_SLP_BEACON_LOST_OPT
-        help
-            Maximum number of consecutive lost beacons allowed, WiFi keeps Rx state when
-            the number of consecutive beacons lost is greater than the given threshold.
-
-    config ESP_WIFI_SLP_PHY_ON_DELTA_EARLY_TIME
-        int "Delta early time for RF PHY on"
-        range 0 100
-        default 2
-        depends on ESP_WIFI_SLP_BEACON_LOST_OPT && SOC_WIFI_SUPPORT_VARIABLE_BEACON_WINDOW
-        help
-            Delta early time for rf phy on, When the beacon is lost, the next rf phy on will
-            be earlier the time specified by the configuration item, Unit: 32 microsecond.
-
-    config ESP_WIFI_SLP_PHY_OFF_DELTA_TIMEOUT_TIME
-        int "Delta timeout time for RF PHY off"
-        range 0 8
-        default 2
-        depends on ESP_WIFI_SLP_BEACON_LOST_OPT && SOC_WIFI_SUPPORT_VARIABLE_BEACON_WINDOW
-        help
-            Delta timeout time for rf phy off, When the beacon is lost, the next rf phy off will
-            be delayed for the time specified by the configuration item. Unit: 1024 microsecond.
-
-    config ESP_WIFI_ESPNOW_MAX_ENCRYPT_NUM
-        int "Maximum espnow encrypt peers number"
-        range 0 4 if IDF_TARGET_ESP32C2
-        range 0 17 if (!IDF_TARGET_ESP32C2)
-        default 2 if IDF_TARGET_ESP32C2
-        default 7 if (!IDF_TARGET_ESP32C2)
-        help
-            Maximum number of encrypted peers supported by espnow.
-            The number of hardware keys for encryption is fixed. And the espnow and SoftAP share the same
-            hardware keys. So this configuration will affect the maximum connection number of SoftAP.
-            Maximum espnow encrypted peers number + maximum number of connections of SoftAP = Max hardware keys number.
-            When using ESP mesh, this value should be set to a maximum of 6.
-
-    config ESP_WIFI_NAN_ENABLE
-        bool "WiFi Aware"
-        default n
-        depends on SOC_WIFI_NAN_SUPPORT
-        help
-            Enable WiFi Aware (NAN) feature.
-
-    config ESP_WIFI_ENABLE_WIFI_TX_STATS
-        bool "Enable Wi-Fi transmission statistics"
-        depends on SOC_WIFI_HE_SUPPORT
-        default "y"
-        help
-            Enable Wi-Fi transmission statistics. Total support 4 access category. Each access category
-            will use 346 bytes memory.
-
-    config ESP_WIFI_MBEDTLS_CRYPTO
-        bool "Use MbedTLS crypto APIs"
-        default y
-        select MBEDTLS_AES_C
-        select MBEDTLS_ECP_C
-        select MBEDTLS_ECDH_C
-        select MBEDTLS_ECDSA_C
-        select MBEDTLS_CMAC_C
-        select MBEDTLS_ECP_DP_SECP256R1_ENABLED
-        help
-            Select this option to enable the use of MbedTLS crypto APIs.
-            The internal crypto support within the supplicant is limited
-            and may not suffice for all new security features, including WPA3.
-
-            It is recommended to always keep this option enabled. Additionally,
-            note that MbedTLS can leverage hardware acceleration if available,
-            resulting in significantly faster cryptographic operations.
-
-    if ESP_WIFI_MBEDTLS_CRYPTO
-        config ESP_WIFI_MBEDTLS_TLS_CLIENT
-            bool "Use MbedTLS TLS client for WiFi Enterprise connection"
+    if ESP_WIFI_ENABLED
+
+        config ESP_WIFI_STATIC_RX_BUFFER_NUM
+            int "Max number of WiFi static RX buffers"
+            range 2 25 if !SOC_WIFI_HE_SUPPORT
+            range 2 128 if SOC_WIFI_HE_SUPPORT
+            default 10 if !SPIRAM_TRY_ALLOCATE_WIFI_LWIP
+            default 16 if SPIRAM_TRY_ALLOCATE_WIFI_LWIP
+            help
+                Set the number of WiFi static RX buffers. Each buffer takes approximately 1.6KB of RAM.
+                The static rx buffers are allocated when esp_wifi_init is called, they are not freed
+                until esp_wifi_deinit is called.
+
+                WiFi hardware use these buffers to receive all 802.11 frames.
+                A higher number may allow higher throughput but increases memory use. If ESP_WIFI_AMPDU_RX_ENABLED
+                is enabled, this value is recommended to set equal or bigger than ESP_WIFI_RX_BA_WIN in order to
+                achieve better throughput and compatibility with both stations and APs.
+
+        config ESP_WIFI_DYNAMIC_RX_BUFFER_NUM
+            int "Max number of WiFi dynamic RX buffers"
+            range 0 128 if !LWIP_WND_SCALE
+            range 0 1024 if LWIP_WND_SCALE
+            default 32
+            help
+                Set the number of WiFi dynamic RX buffers, 0 means unlimited RX buffers will be allocated
+                (provided sufficient free RAM). The size of each dynamic RX buffer depends on the size of
+                the received data frame.
+
+                For each received data frame, the WiFi driver makes a copy to an RX buffer and then delivers
+                it to the high layer TCP/IP stack. The dynamic RX buffer is freed after the higher layer has
+                successfully received the data frame.
+
+                For some applications, WiFi data frames may be received faster than the application can
+                process them. In these cases we may run out of memory if RX buffer number is unlimited (0).
+
+                If a dynamic RX buffer limit is set, it should be at least the number of static RX buffers.
+
+        choice ESP_WIFI_TX_BUFFER
+            prompt "Type of WiFi TX buffers"
+            default ESP_WIFI_DYNAMIC_TX_BUFFER
+            help
+                Select type of WiFi TX buffers:
+
+                If "Static" is selected, WiFi TX buffers are allocated when WiFi is initialized and released
+                when WiFi is de-initialized. The size of each static TX buffer is fixed to about 1.6KB.
+
+                If "Dynamic" is selected, each WiFi TX buffer is allocated as needed when a data frame is
+                delivered to the Wifi driver from the TCP/IP stack. The buffer is freed after the data frame
+                has been sent by the WiFi driver. The size of each dynamic TX buffer depends on the length
+                of each data frame sent by the TCP/IP layer.
+
+                If PSRAM is enabled, "Static" should be selected to guarantee enough WiFi TX buffers.
+                If PSRAM is disabled, "Dynamic" should be selected to improve the utilization of RAM.
+
+            config ESP_WIFI_STATIC_TX_BUFFER
+                bool "Static"
+            config ESP_WIFI_DYNAMIC_TX_BUFFER
+                bool "Dynamic"
+                depends on !SPIRAM_USE_MALLOC
+        endchoice
+
+        config ESP_WIFI_TX_BUFFER_TYPE
+            int
+            default 0 if ESP_WIFI_STATIC_TX_BUFFER
+            default 1 if ESP_WIFI_DYNAMIC_TX_BUFFER
+
+        config ESP_WIFI_STATIC_TX_BUFFER_NUM
+            int "Max number of WiFi static TX buffers"
+            depends on ESP_WIFI_STATIC_TX_BUFFER
+            range 1 64
+            default 16
+            help
+                Set the number of WiFi static TX buffers. Each buffer takes approximately 1.6KB of RAM.
+                The static RX buffers are allocated when esp_wifi_init() is called, they are not released
+                until esp_wifi_deinit() is called.
+
+                For each transmitted data frame from the higher layer TCP/IP stack, the WiFi driver makes a
+                copy of it in a TX buffer.  For some applications especially UDP applications, the upper
+                layer can deliver frames faster than WiFi layer can transmit. In these cases, we may run out
+                of TX buffers.
+
+        config ESP_WIFI_CACHE_TX_BUFFER_NUM
+            int "Max number of WiFi cache TX buffers"
+            depends on SPIRAM
+            range 16 128
+            default 32
+            help
+                Set the number of WiFi cache TX buffer number.
+
+                For each TX packet from uplayer, such as LWIP etc, WiFi driver needs to allocate a static TX
+                buffer and makes a copy of uplayer packet. If WiFi driver fails to allocate the static TX buffer,
+                it caches the uplayer packets to a dedicated buffer queue, this option is used to configure the
+                size of the cached TX queue.
+
+        config ESP_WIFI_DYNAMIC_TX_BUFFER_NUM
+            int "Max number of WiFi dynamic TX buffers"
+            depends on ESP_WIFI_DYNAMIC_TX_BUFFER
+            range 1 128
+            default 32
+            help
+                Set the number of WiFi dynamic TX buffers. The size of each dynamic TX buffer is not fixed,
+                it depends on the size of each transmitted data frame.
+
+                For each transmitted frame from the higher layer TCP/IP stack, the WiFi driver makes a copy
+                of it in a TX buffer. For some applications, especially UDP applications, the upper layer
+                can deliver frames faster than WiFi layer can transmit. In these cases, we may run out of TX
+                buffers.
+
+        choice ESP_WIFI_MGMT_RX_BUFFER
+            prompt "Type of WiFi RX MGMT buffers"
+            default ESP_WIFI_STATIC_RX_MGMT_BUFFER
+            help
+                Select type of WiFi RX MGMT buffers:
+
+                If "Static" is selected, WiFi RX MGMT buffers are allocated when WiFi is initialized and released
+                when WiFi is de-initialized. The size of each static RX MGMT buffer is fixed to about 500 Bytes.
+
+                If "Dynamic" is selected, each WiFi RX MGMT buffer is allocated as needed when a MGMT data frame is
+                received. The MGMT buffer is freed after the MGMT data frame has been processed by the WiFi driver.
+
+
+            config ESP_WIFI_STATIC_RX_MGMT_BUFFER
+                bool "Static"
+            config ESP_WIFI_DYNAMIC_RX_MGMT_BUFFER
+                bool "Dynamic"
+        endchoice
+
+        config ESP_WIFI_DYNAMIC_RX_MGMT_BUF
+            int
+            default 0 if ESP_WIFI_STATIC_RX_MGMT_BUFFER
+            default 1 if ESP_WIFI_DYNAMIC_RX_MGMT_BUFFER
+
+        config ESP_WIFI_RX_MGMT_BUF_NUM_DEF
+            int "Max number of WiFi RX MGMT buffers"
+            range 1 10
+            default 5
+            help
+                Set the number of WiFi RX_MGMT buffers.
+
+                For Management buffers, the number of dynamic and static management buffers is the same.
+                In order to prevent memory fragmentation, the management buffer type should be set to static first.
+
+        config ESP_WIFI_CSI_ENABLED
+            bool "WiFi CSI(Channel State Information)"
+            depends on SOC_WIFI_CSI_SUPPORT
+            default n
+            help
+                Select this option to enable CSI(Channel State Information) feature. CSI takes about
+                CONFIG_ESP_WIFI_STATIC_RX_BUFFER_NUM KB of RAM. If CSI is not used, it is better to disable
+                this feature in order to save memory.
+
+        config ESP_WIFI_AMPDU_TX_ENABLED
+            bool "WiFi AMPDU TX"
             default y
-            select MBEDTLS_TLS_ENABLED
             help
-                Select this option to use MbedTLS TLS client for WPA2 enterprise connection.
-                Please note that from MbedTLS-3.0 onwards, MbedTLS does not support SSL-3.0
-                TLS-v1.0, TLS-v1.1 versions. Incase your server is using one of these version,
-                it is advisable to update your server.
-                Please disable this option for compatibilty with older TLS versions.
-    endif
+                Select this option to enable AMPDU TX feature
 
-    config ESP_WIFI_WAPI_PSK
-        bool "Enable WAPI PSK support"
-        depends on SOC_WIFI_WAPI_SUPPORT
-        default n
-        help
-            Select this option to enable WAPI-PSK
-            which is a Chinese National Standard Encryption for Wireless LANs (GB 15629.11-2003).
 
-    config ESP_WIFI_SUITE_B_192
-        bool "Enable NSA suite B support with 192 bit key"
-        default n
-        depends on SOC_WIFI_GCMP_SUPPORT
-        select ESP_WIFI_GCMP_SUPPORT
-        select ESP_WIFI_GMAC_SUPPORT
-        help
-            Select this option to enable 192 bit NSA suite-B.
-            This is necessary to support WPA3 192 bit security.
+        config ESP_WIFI_TX_BA_WIN
+            int "WiFi AMPDU TX BA window size"
+            depends on ESP_WIFI_AMPDU_TX_ENABLED
+            range 2 32 if !SOC_WIFI_HE_SUPPORT
+            range 2 64 if SOC_WIFI_HE_SUPPORT
+            default 6
+            help
+                Set the size of WiFi Block Ack TX window. Generally a bigger value means higher throughput but
+                more memory. Most of time we should NOT change the default value unless special reason, e.g.
+                test the maximum UDP TX throughput with iperf etc. For iperf test in shieldbox, the recommended
+                value is 9~12.
 
-    config ESP_WIFI_11KV_SUPPORT
-        bool "Enable 802.11k, 802.11v APIs Support"
-        default n
-        help
-            Select this option to enable 802.11k 802.11v APIs(RRM and BTM support).
-            Only APIs which are helpful for network assisted roaming
-            are supported for now.
-            Enable this option with BTM and RRM enabled in sta config
-            to make device ready for network assisted roaming.
-            BTM: BSS transition management enables an AP to request a station to transition
-            to a specific AP, or to indicate to a station a set of preferred APs.
-            RRM: Radio measurements enable STAs to understand the radio environment,
-            it enables STAs to observe and gather data on radio link performance
-            and on the radio environment. Current implementation adds beacon report,
-            link measurement, neighbor report.
+        config ESP_WIFI_AMPDU_RX_ENABLED
+            bool "WiFi AMPDU RX"
+            default y
+            help
+                Select this option to enable AMPDU RX feature
 
-    config ESP_WIFI_SCAN_CACHE
-        bool "Keep scan results in cache"
-        depends on ESP_WIFI_11KV_SUPPORT
-        default n
-        help
-            Keep scan results in cache, if not enabled, those
-            will be flushed immediately.
+        config ESP_WIFI_RX_BA_WIN
+            int "WiFi AMPDU RX BA window size"
+            depends on ESP_WIFI_AMPDU_RX_ENABLED
+            range 2 32 if !SOC_WIFI_HE_SUPPORT
+            range 2 64 if SOC_WIFI_HE_SUPPORT
+            default 6 if !SPIRAM_TRY_ALLOCATE_WIFI_LWIP
+            default 16 if SPIRAM_TRY_ALLOCATE_WIFI_LWIP
+            help
+                Set the size of WiFi Block Ack RX window. Generally a bigger value means higher throughput and better
+                compatibility but more memory. Most of time we should NOT change the default value unless special
+                reason, e.g. test the maximum UDP RX throughput with iperf etc. For iperf test in shieldbox, the
+                recommended value is 9~12. If PSRAM is used and WiFi memory is prefered to allocat in PSRAM first,
+                the default and minimum value should be 16 to achieve better throughput and compatibility with both
+                stations and APs.
 
-    config ESP_WIFI_MBO_SUPPORT
-        bool "Enable Multi Band Operation Certification Support"
-        default n
-        select ESP_WIFI_11KV_SUPPORT
-        select ESP_WIFI_SCAN_CACHE
-        help
-            Select this option to enable WiFi Multiband operation certification support.
-
-    config ESP_WIFI_DPP_SUPPORT
-        bool "Enable DPP support"
-        default n
-        select ESP_WIFI_MBEDTLS_CRYPTO
-        help
-            Select this option to enable WiFi Easy Connect Support.
-
-    config ESP_WIFI_11R_SUPPORT
-        bool "Enable 802.11R (Fast Transition) Support"
-        default n
-        help
-            Select this option to enable WiFi Fast Transition Support.
-
-    config ESP_WIFI_WPS_SOFTAP_REGISTRAR
-        bool "Add WPS Registrar support in SoftAP mode"
-        depends on ESP_WIFI_SOFTAP_SUPPORT
-        default n
-        help
-            Select this option to enable WPS registrar support in softAP mode.
-
-    config ESP_WIFI_ENABLE_WIFI_RX_STATS
-        bool "Enable Wi-Fi reception statistics"
-        depends on SOC_WIFI_HE_SUPPORT
-        default "y"
-        help
-            Enable Wi-Fi reception statistics. Total support 2 access category. Each access category
-            will use 190 bytes memory.
-
-    config ESP_WIFI_ENABLE_WIFI_RX_MU_STATS
-        bool "Enable Wi-Fi DL MU-MIMO and DL OFDMA reception statistics"
-        depends on ESP_WIFI_ENABLE_WIFI_RX_STATS
-        default "y"
-        help
-            Enable Wi-Fi DL MU-MIMO and DL OFDMA reception statistics. Will use 10932 bytes memory.
-
-    menu "WPS Configuration Options"
-        config ESP_WIFI_WPS_STRICT
-            bool "Strictly validate all WPS attributes"
+        config ESP_WIFI_AMSDU_TX_ENABLED
+            bool "WiFi AMSDU TX"
+            depends on SPIRAM
             default n
             help
-                Select this option to enable validate each WPS attribute
-                rigorously. Disabling this add the workaorunds with various APs.
-                Enabling this may cause inter operability issues with some APs.
+                Select this option to enable AMSDU TX feature
 
-        config ESP_WIFI_WPS_PASSPHRASE
-            bool "Get WPA2 passphrase in WPS config"
+        config ESP_WIFI_NVS_ENABLED
+            bool "WiFi NVS flash"
+            default y
+            help
+                Select this option to enable WiFi NVS flash
+
+        choice ESP_WIFI_TASK_CORE_ID
+            depends on !FREERTOS_UNICORE
+            prompt "WiFi Task Core ID"
+            default ESP_WIFI_TASK_PINNED_TO_CORE_0
+            help
+                Pinned WiFi task to core 0 or core 1.
+
+            config ESP_WIFI_TASK_PINNED_TO_CORE_0
+                bool "Core 0"
+            config ESP_WIFI_TASK_PINNED_TO_CORE_1
+                bool "Core 1"
+        endchoice
+
+        config ESP_WIFI_SOFTAP_BEACON_MAX_LEN
+            int "Max length of WiFi SoftAP Beacon"
+            range 752 1256
+            default 752
+            help
+                ESP-MESH utilizes beacon frames to detect and resolve root node conflicts (see documentation). However
+                the default length of a beacon frame can simultaneously hold only five root node identifier structures,
+                meaning that a root node conflict of up to five nodes can be detected at one time. In the occurence of
+                more root nodes conflict involving more than five root nodes, the conflict resolution process will
+                detect five of the root nodes, resolve the conflict, and re-detect more root nodes. This process will
+                repeat until all root node conflicts are resolved. However this process can generally take a very long
+                time.
+
+                To counter this situation, the beacon frame length can be increased such that more root nodes can be
+                detected simultaneously. Each additional root node will require 36 bytes and should be added ontop of
+                the default beacon frame length of
+                752 bytes. For example, if you want to detect 10 root nodes simultaneously, you need to set the beacon
+                frame length as
+                932 (752+36*5).
+
+                Setting a longer beacon length also assists with debugging as the conflicting root nodes can be
+                identified more quickly.
+
+        config ESP_WIFI_MGMT_SBUF_NUM
+            int "WiFi mgmt short buffer number"
+            range 6 32
+            default 32
+            help
+                Set the number of WiFi management short buffer.
+
+        config ESP_WIFI_IRAM_OPT
+            bool "WiFi IRAM speed optimization"
+            default n if (BT_ENABLED && SPIRAM && IDF_TARGET_ESP32)
+            default y
+            help
+                Select this option to place frequently called Wi-Fi library functions in IRAM.
+                When this option is disabled, more than 10Kbytes of IRAM memory will be saved
+                but Wi-Fi throughput will be reduced.
+
+        config ESP_WIFI_EXTRA_IRAM_OPT
+            bool "WiFi EXTRA IRAM speed optimization"
+            default y if IDF_TARGET_ESP32C6
             default n
             help
-                Select this option to get passphrase during WPS configuration.
-                This option fakes the virtual display capabilites to get the
-                configuration in passphrase mode.
-                Not recommanded to be used since WPS credentials should not
-                be shared to other devices, making it in readable format increases
-                that risk, also passphrase requires pbkdf2 to convert in psk.
+                Select this option to place additional frequently called Wi-Fi library functions
+                in IRAM. When this option is disabled, more than 5Kbytes of IRAM memory will be saved
+                but Wi-Fi throughput will be reduced.
 
-    endmenu # "WPS Configuration Options"
+        config ESP_WIFI_RX_IRAM_OPT
+            bool "WiFi RX IRAM speed optimization"
+            default n if (BT_ENABLED && SPIRAM && IDF_TARGET_ESP32)
+            default y
+            help
+                Select this option to place frequently called Wi-Fi library RX functions in IRAM.
+                When this option is disabled, more than 17Kbytes of IRAM memory will be saved
+                but Wi-Fi performance will be reduced.
+
+        config ESP_WIFI_ENABLE_WPA3_SAE
+            bool "Enable WPA3-Personal"
+            default y
+            select ESP_WIFI_MBEDTLS_CRYPTO
+            help
+                Select this option to allow the device to establish a WPA3-Personal connection with eligible AP's.
+                PMF (Protected Management Frames) is a prerequisite feature for a WPA3 connection, it needs to be
+                explicitly configured before attempting connection. Please refer to the Wi-Fi Driver API Guide
+                for details.
+
+        config ESP_WIFI_ENABLE_SAE_PK
+            bool "Enable SAE-PK"
+            default y
+            depends on ESP_WIFI_ENABLE_WPA3_SAE
+            help
+                Select this option to enable SAE-PK
+
+        config ESP_WIFI_SOFTAP_SAE_SUPPORT
+            bool "Enable WPA3 Personal(SAE) SoftAP"
+            default y
+            depends on ESP_WIFI_ENABLE_WPA3_SAE
+            depends on ESP_WIFI_SOFTAP_SUPPORT
+            help
+                Select this option to enable SAE support in softAP mode.
+
+        config ESP_WIFI_ENABLE_WPA3_OWE_STA
+            bool "Enable OWE STA"
+            default y
+            select ESP_WIFI_MBEDTLS_CRYPTO
+            help
+                Select this option to allow the device to establish OWE connection with eligible AP's.
+                PMF (Protected Management Frames) is a prerequisite feature for a WPA3 connection, it needs to be
+                explicitly configured before attempting connection. Please refer to the Wi-Fi Driver API Guide
+                for details.
+
+        config ESP_WIFI_SLP_IRAM_OPT
+            bool "WiFi SLP IRAM speed optimization"
+            select PM_SLP_DEFAULT_PARAMS_OPT
+            select PERIPH_CTRL_FUNC_IN_IRAM
+            help
+                Select this option to place called Wi-Fi library TBTT process and receive beacon functions in IRAM.
+                Some functions can be put in IRAM either by ESP_WIFI_IRAM_OPT and ESP_WIFI_RX_IRAM_OPT, or this one.
+                If already enabled ESP_WIFI_IRAM_OPT, the other 7.3KB IRAM memory would be taken by this option.
+                If already enabled ESP_WIFI_RX_IRAM_OPT, the other 1.3KB IRAM memory would be taken by this option.
+                If neither of them are enabled, the other 7.4KB IRAM memory would be taken by this option.
+                Wi-Fi power-save mode average current would be reduced if this option is enabled.
+
+        config ESP_WIFI_SLP_DEFAULT_MIN_ACTIVE_TIME
+            int "Minimum active time"
+            range 8 60
+            default 50
+            depends on ESP_WIFI_SLP_IRAM_OPT
+            help
+                The minimum timeout for waiting to receive data, unit: milliseconds.
+
+        config ESP_WIFI_SLP_DEFAULT_MAX_ACTIVE_TIME
+            int "Maximum keep alive time"
+            range 10 60
+            default 10
+            depends on ESP_WIFI_SLP_IRAM_OPT
+            help
+                The maximum time that wifi keep alive, unit: seconds.
+
+        config ESP_WIFI_FTM_ENABLE
+            bool "WiFi FTM"
+            default n
+            depends on SOC_WIFI_FTM_SUPPORT
+            help
+                Enable feature Fine Timing Measurement for calculating WiFi Round-Trip-Time (RTT).
+
+        config ESP_WIFI_FTM_INITIATOR_SUPPORT
+            bool "FTM Initiator support"
+            default y
+            depends on ESP_WIFI_FTM_ENABLE
+
+        config ESP_WIFI_FTM_RESPONDER_SUPPORT
+            bool "FTM Responder support"
+            default y
+            depends on ESP_WIFI_FTM_ENABLE
+
+        config ESP_WIFI_STA_DISCONNECTED_PM_ENABLE
+            bool "Power Management for station at disconnected"
+            default y
+            help
+                Select this option to enable power_management for station when disconnected.
+                Chip will do modem-sleep when rf module is not in use any more.
+
+        config ESP_WIFI_GCMP_SUPPORT
+            bool "WiFi GCMP Support(GCMP128 and GCMP256)"
+            default n
+            depends on SOC_WIFI_GCMP_SUPPORT
+            help
+                Select this option to enable GCMP support. GCMP support is compulsory for WiFi Suite-B support.
+
+        config ESP_WIFI_GMAC_SUPPORT
+            bool "WiFi GMAC Support(GMAC128 and GMAC256)"
+            default n
+            help
+                Select this option to enable GMAC support. GMAC support is compulsory for WiFi 192 bit certification.
+
+        config ESP_WIFI_SOFTAP_SUPPORT
+            bool "WiFi SoftAP Support"
+            default y
+            help
+                WiFi module can be compiled without SoftAP to save code size.
+
+        config ESP_WIFI_ENHANCED_LIGHT_SLEEP
+            bool "WiFi modem automatically receives the beacon"
+            default n
+            depends on ESP_PHY_MAC_BB_PD && SOC_PM_SUPPORT_BEACON_WAKEUP
+            help
+                The wifi modem automatically receives the beacon frame during light sleep.
+
+        config ESP_WIFI_SLP_BEACON_LOST_OPT
+            bool "Wifi sleep optimize when beacon lost"
+            help
+                Enable wifi sleep optimization when beacon loss occurs and immediately enter
+                sleep mode when the WiFi module detects beacon loss.
+
+        config ESP_WIFI_SLP_BEACON_LOST_TIMEOUT
+            int "Beacon loss timeout"
+            range 5 100
+            default 10
+            depends on ESP_WIFI_SLP_BEACON_LOST_OPT
+            help
+                Timeout time for close rf phy when beacon loss occurs, Unit: 1024 microsecond.
+
+        config ESP_WIFI_SLP_BEACON_LOST_THRESHOLD
+            int "Maximum number of consecutive lost beacons allowed"
+            range 0 8
+            default 3
+            depends on ESP_WIFI_SLP_BEACON_LOST_OPT
+            help
+                Maximum number of consecutive lost beacons allowed, WiFi keeps Rx state when
+                the number of consecutive beacons lost is greater than the given threshold.
+
+        config ESP_WIFI_SLP_PHY_ON_DELTA_EARLY_TIME
+            int "Delta early time for RF PHY on"
+            range 0 100
+            default 2
+            depends on ESP_WIFI_SLP_BEACON_LOST_OPT && SOC_WIFI_SUPPORT_VARIABLE_BEACON_WINDOW
+            help
+                Delta early time for rf phy on, When the beacon is lost, the next rf phy on will
+                be earlier the time specified by the configuration item, Unit: 32 microsecond.
+
+        config ESP_WIFI_SLP_PHY_OFF_DELTA_TIMEOUT_TIME
+            int "Delta timeout time for RF PHY off"
+            range 0 8
+            default 2
+            depends on ESP_WIFI_SLP_BEACON_LOST_OPT && SOC_WIFI_SUPPORT_VARIABLE_BEACON_WINDOW
+            help
+                Delta timeout time for rf phy off, When the beacon is lost, the next rf phy off will
+                be delayed for the time specified by the configuration item. Unit: 1024 microsecond.
+
+        config ESP_WIFI_ESPNOW_MAX_ENCRYPT_NUM
+            int "Maximum espnow encrypt peers number"
+            range 0 4 if IDF_TARGET_ESP32C2
+            range 0 17 if (!IDF_TARGET_ESP32C2)
+            default 2 if IDF_TARGET_ESP32C2
+            default 7 if (!IDF_TARGET_ESP32C2)
+            help
+                Maximum number of encrypted peers supported by espnow.
+                The number of hardware keys for encryption is fixed. And the espnow and SoftAP share the same
+                hardware keys. So this configuration will affect the maximum connection number of SoftAP.
+                Maximum espnow encrypted peers number + maximum number of connections of SoftAP = Max hardware
+                keys number. When using ESP mesh, this value should be set to a maximum of 6.
+
+        config ESP_WIFI_NAN_ENABLE
+            bool "WiFi Aware"
+            default n
+            depends on SOC_WIFI_NAN_SUPPORT
+            help
+                Enable WiFi Aware (NAN) feature.
+
+        config ESP_WIFI_ENABLE_WIFI_TX_STATS
+            bool "Enable Wi-Fi transmission statistics"
+            depends on SOC_WIFI_HE_SUPPORT
+            default "y"
+            help
+                Enable Wi-Fi transmission statistics. Total support 4 access category. Each access category
+                will use 346 bytes memory.
+
+        config ESP_WIFI_MBEDTLS_CRYPTO
+            bool "Use MbedTLS crypto APIs"
+            default y
+            select MBEDTLS_AES_C
+            select MBEDTLS_ECP_C
+            select MBEDTLS_ECDH_C
+            select MBEDTLS_ECDSA_C
+            select MBEDTLS_CMAC_C
+            select MBEDTLS_ECP_DP_SECP256R1_ENABLED
+            help
+                Select this option to enable the use of MbedTLS crypto APIs.
+                The internal crypto support within the supplicant is limited
+                and may not suffice for all new security features, including WPA3.
+
+                It is recommended to always keep this option enabled. Additionally,
+                note that MbedTLS can leverage hardware acceleration if available,
+                resulting in significantly faster cryptographic operations.
+
+        if ESP_WIFI_MBEDTLS_CRYPTO
+            config ESP_WIFI_MBEDTLS_TLS_CLIENT
+                bool "Use MbedTLS TLS client for WiFi Enterprise connection"
+                depends on ESP_WIFI_ENTERPRISE_SUPPORT
+                default y
+                select MBEDTLS_TLS_ENABLED
+                help
+                    Select this option to use MbedTLS TLS client for WPA2 enterprise connection.
+                    Please note that from MbedTLS-3.0 onwards, MbedTLS does not support SSL-3.0
+                    TLS-v1.0, TLS-v1.1 versions. Incase your server is using one of these version,
+                    it is advisable to update your server.
+                    Please disable this option for compatibilty with older TLS versions.
+        endif
+
+        config ESP_WIFI_WAPI_PSK
+            bool "Enable WAPI PSK support"
+            depends on SOC_WIFI_WAPI_SUPPORT
+            default n
+            help
+                Select this option to enable WAPI-PSK
+                which is a Chinese National Standard Encryption for Wireless LANs (GB 15629.11-2003).
+
+        config ESP_WIFI_SUITE_B_192
+            bool "Enable NSA suite B support with 192 bit key"
+            default n
+            depends on SOC_WIFI_GCMP_SUPPORT
+            select ESP_WIFI_GCMP_SUPPORT
+            select ESP_WIFI_GMAC_SUPPORT
+            help
+                Select this option to enable 192 bit NSA suite-B.
+                This is necessary to support WPA3 192 bit security.
+
+        config ESP_WIFI_11KV_SUPPORT
+            bool "Enable 802.11k, 802.11v APIs Support"
+            default n
+            help
+                Select this option to enable 802.11k 802.11v APIs(RRM and BTM support).
+                Only APIs which are helpful for network assisted roaming
+                are supported for now.
+                Enable this option with BTM and RRM enabled in sta config
+                to make device ready for network assisted roaming.
+                BTM: BSS transition management enables an AP to request a station to transition
+                to a specific AP, or to indicate to a station a set of preferred APs.
+                RRM: Radio measurements enable STAs to understand the radio environment,
+                it enables STAs to observe and gather data on radio link performance
+                and on the radio environment. Current implementation adds beacon report,
+                link measurement, neighbor report.
+
+        config ESP_WIFI_SCAN_CACHE
+            bool "Keep scan results in cache"
+            depends on ESP_WIFI_11KV_SUPPORT
+            default n
+            help
+                Keep scan results in cache, if not enabled, those
+                will be flushed immediately.
+
+        config ESP_WIFI_MBO_SUPPORT
+            bool "Enable Multi Band Operation Certification Support"
+            default n
+            select ESP_WIFI_11KV_SUPPORT
+            select ESP_WIFI_SCAN_CACHE
+            help
+                Select this option to enable WiFi Multiband operation certification support.
+
+        config ESP_WIFI_DPP_SUPPORT
+            bool "Enable DPP support"
+            default n
+            select ESP_WIFI_MBEDTLS_CRYPTO
+            help
+                Select this option to enable WiFi Easy Connect Support.
+
+        config ESP_WIFI_11R_SUPPORT
+            bool "Enable 802.11R (Fast Transition) Support"
+            default n
+            help
+                Select this option to enable WiFi Fast Transition Support.
+
+        config ESP_WIFI_WPS_SOFTAP_REGISTRAR
+            bool "Add WPS Registrar support in SoftAP mode"
+            depends on ESP_WIFI_SOFTAP_SUPPORT
+            default n
+            help
+                Select this option to enable WPS registrar support in softAP mode.
+
+        config ESP_WIFI_ENABLE_WIFI_RX_STATS
+            bool "Enable Wi-Fi reception statistics"
+            depends on SOC_WIFI_HE_SUPPORT
+            default "y"
+            help
+                Enable Wi-Fi reception statistics. Total support 2 access category. Each access category
+                will use 190 bytes memory.
+
+        config ESP_WIFI_ENABLE_WIFI_RX_MU_STATS
+            bool "Enable Wi-Fi DL MU-MIMO and DL OFDMA reception statistics"
+            depends on ESP_WIFI_ENABLE_WIFI_RX_STATS
+            default "y"
+            help
+                Enable Wi-Fi DL MU-MIMO and DL OFDMA reception statistics. Will use 10932 bytes memory.
+
+        menu "WPS Configuration Options"
+            config ESP_WIFI_WPS_STRICT
+                bool "Strictly validate all WPS attributes"
+                default n
+                help
+                    Select this option to enable validate each WPS attribute
+                    rigorously. Disabling this add the workaorunds with various APs.
+                    Enabling this may cause inter operability issues with some APs.
+
+            config ESP_WIFI_WPS_PASSPHRASE
+                bool "Get WPA2 passphrase in WPS config"
+                default n
+                help
+                    Select this option to get passphrase during WPS configuration.
+                    This option fakes the virtual display capabilites to get the
+                    configuration in passphrase mode.
+                    Not recommanded to be used since WPS credentials should not
+                    be shared to other devices, making it in readable format increases
+                    that risk, also passphrase requires pbkdf2 to convert in psk.
+
+        endmenu # "WPS Configuration Options"
 
 
-    config ESP_WIFI_DEBUG_PRINT
-        bool "Print debug messages from WPA Supplicant"
-        default n
-        help
-            Select this option to print logging information from WPA supplicant,
-            this includes handshake information and key hex dumps depending
-            on the project logging level.
+        config ESP_WIFI_DEBUG_PRINT
+            bool "Print debug messages from WPA Supplicant"
+            default n
+            help
+                Select this option to print logging information from WPA supplicant,
+                this includes handshake information and key hex dumps depending
+                on the project logging level.
 
-            Enabling this could increase the build size ~60kb
-            depending on the project logging level.
+                Enabling this could increase the build size ~60kb
+                depending on the project logging level.
 
-    config ESP_WIFI_TESTING_OPTIONS
-        bool "Add DPP testing code"
-        default n
-        help
-            Select this to enable unity test for DPP.
+        config ESP_WIFI_TESTING_OPTIONS
+            bool "Add DPP testing code"
+            default n
+            help
+                Select this to enable unity test for DPP.
 
-    config ESP_WIFI_ENTERPRISE_SUPPORT
-        bool "Enable enterprise option"
-        default y
-        help
-            Select this to enable/disable enterprise connection support.
+        config ESP_WIFI_ENTERPRISE_SUPPORT
+            bool "Enable enterprise option"
+            default y
+            help
+                Select this to enable/disable enterprise connection support.
 
-            disabling this will reduce binary size.
-            disabling this will disable the use of any esp_wifi_sta_wpa2_ent_* (as APIs will be meaningless)
+                disabling this will reduce binary size.
+                disabling this will disable the use of any esp_wifi_sta_wpa2_ent_* (as APIs will be meaningless)
+
+        config ESP_WIFI_ENT_FREE_DYNAMIC_BUFFER
+            bool "Free dynamic buffers during WiFi enterprise connection"
+            depends on ESP_WIFI_ENTERPRISE_SUPPORT
+            default y if IDF_TARGET_ESP32C2
+            default n if !IDF_TARGET_ESP32C2
+            help
+                Select this configuration to free dynamic buffers during WiFi enterprise connection.
+                This will enable chip to reduce heap consumption during WiFi enterprise connection.
+
+    endif # wifi enabled
 
 endmenu # Wi-Fi

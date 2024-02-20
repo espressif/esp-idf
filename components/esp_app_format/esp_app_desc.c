@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,6 +10,11 @@
 #include "esp_app_desc.h"
 #include "sdkconfig.h"
 
+#include "hal/efuse_hal.h"
+#include "esp_log.h"
+#include "esp_private/startup_internal.h"
+
+static const char *TAG = "app_init";
 
 // Application version info
 const __attribute__((weak)) __attribute__((section(".rodata_desc")))  esp_app_desc_t esp_app_desc = {
@@ -42,7 +47,6 @@ const __attribute__((weak)) __attribute__((section(".rodata_desc")))  esp_app_de
 #endif
 };
 
-
 #ifndef CONFIG_APP_EXCLUDE_PROJECT_VER_VAR
 _Static_assert(sizeof(PROJECT_VER) <= sizeof(esp_app_desc.version), "PROJECT_VER is longer than version field in structure");
 #endif
@@ -64,7 +68,7 @@ char app_elf_sha256_str[CONFIG_APP_RETRIEVE_LEN_ELF_SHA + 1] = { 0 };
  * For this reason we do a reading of esp_app_desc.app_elf_sha256 and convert to string while start up in esp_system_init_app_elf_sha256()
  * and keep it in the static app_elf_sha256_str variable.
  */
-__attribute__((constructor)) void esp_app_format_init_elf_sha256(void)
+static void esp_app_format_init_elf_sha256(void)
 {
     if (*((int *)&app_elf_sha256_str) != 0) {
         // app_elf_sha256_str is already set
@@ -95,4 +99,39 @@ int esp_app_get_elf_sha256(char* dst, size_t size)
     memcpy(dst, app_elf_sha256_str, n);
     dst[n - 1] = 0;
     return n;
+}
+
+ESP_SYSTEM_INIT_FN(init_show_app_info, CORE, BIT(0), 20)
+{
+    // Load the current ELF SHA256
+    esp_app_format_init_elf_sha256();
+
+    // Display information about the current running image.
+    if (LOG_LOCAL_LEVEL >= ESP_LOG_INFO) {
+        ESP_EARLY_LOGI(TAG, "Application information:");
+#ifndef CONFIG_APP_EXCLUDE_PROJECT_NAME_VAR
+        ESP_EARLY_LOGI(TAG, "Project name:     %s", esp_app_desc.project_name);
+#endif
+#ifndef CONFIG_APP_EXCLUDE_PROJECT_VER_VAR
+        ESP_EARLY_LOGI(TAG, "App version:      %s", esp_app_desc.version);
+#endif
+#ifdef CONFIG_BOOTLOADER_APP_SECURE_VERSION
+        ESP_EARLY_LOGI(TAG, "Secure version:   %d", esp_app_desc.secure_version);
+#endif
+#ifdef CONFIG_APP_COMPILE_TIME_DATE
+        ESP_EARLY_LOGI(TAG, "Compile time:     %s %s", esp_app_desc.date, esp_app_desc.time);
+#endif
+        char buf[17];
+        esp_app_get_elf_sha256(buf, sizeof(buf));
+        ESP_EARLY_LOGI(TAG, "ELF file SHA256:  %s...", buf);
+        ESP_EARLY_LOGI(TAG, "ESP-IDF:          %s", esp_app_desc.idf_ver);
+
+        // TODO: To be moved to the eFuse initialization routine
+        ESP_EARLY_LOGI(TAG, "Min chip rev:     v%d.%d", CONFIG_ESP_REV_MIN_FULL / 100, CONFIG_ESP_REV_MIN_FULL % 100);
+        ESP_EARLY_LOGI(TAG, "Max chip rev:     v%d.%d %s", CONFIG_ESP_REV_MAX_FULL / 100, CONFIG_ESP_REV_MAX_FULL % 100,
+                       efuse_hal_get_disable_wafer_version_major() ? "(constraint ignored)" : "");
+        unsigned revision = efuse_hal_chip_revision();
+        ESP_EARLY_LOGI(TAG, "Chip rev:         v%d.%d", revision / 100, revision % 100);
+    }
+    return ESP_OK;
 }

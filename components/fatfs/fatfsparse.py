@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import argparse
 import os
@@ -57,7 +57,7 @@ def traverse_folder_tree(directory_bytes_: bytes,
         try:
             obj_: dict = Entry.ENTRY_FORMAT_SHORT_NAME.parse(
                 directory_bytes_[obj_address_: obj_address_ + FATDefaults.ENTRY_SIZE])
-        except (construct.core.ConstError, UnicodeDecodeError):
+        except (construct.core.ConstError, UnicodeDecodeError, construct.core.StringError):
             args.long_name_support = True
             continue
 
@@ -100,7 +100,7 @@ def remove_wear_levelling_if_exists(fs_: bytes) -> bytes:
         boot_sector__.parse_boot_sector(fs_)
         if boot_sector__.boot_sector_state.size == len(fs_):
             return fs_
-    except construct.core.ConstError:
+    except (UnicodeDecodeError, construct.core.StringError):
         pass
     plain_fs: bytes = remove_wl(fs_)
     return plain_fs
@@ -124,6 +124,9 @@ if __name__ == '__main__':
                                  default=None,
                                  help="If detection doesn't work correctly, "
                                       'you can force analyzer to or not to assume WL.')
+    argument_parser.add_argument('--verbose',
+                                 action='store_true',
+                                 help='Prints details about FAT image.')
 
     args = argument_parser.parse_args()
 
@@ -157,6 +160,10 @@ if __name__ == '__main__':
 
     boot_sector_ = BootSector()
     boot_sector_.parse_boot_sector(fs)
+
+    if args.verbose:
+        print(str(boot_sector_))
+
     fat = FAT(boot_sector_.boot_sector_state, init_=False)
 
     boot_dir_start_ = boot_sector_.boot_sector_state.root_directory_start

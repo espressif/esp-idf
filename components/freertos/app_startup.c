@@ -51,7 +51,7 @@ For now, AMP is not supported (i.e., running FreeRTOS on one core and a bare met
 CONFIG_FREERTOS_UNICORE and CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE should be identical. We add a check for this here.
 */
 #if CONFIG_FREERTOS_UNICORE != CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
-    #error "AMP not supported. FreeRTOS number of cores and system number of cores must be identical"
+#error "AMP not supported. FreeRTOS number of cores and system number of cores must be identical"
 #endif
 
 // -------------------- Declarations -----------------------

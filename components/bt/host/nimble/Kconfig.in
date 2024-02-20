@@ -201,6 +201,17 @@ config BT_NIMBLE_LL_CFG_FEAT_LE_ENCRYPTION
     help
             Enable encryption connection
 
+config BT_NIMBLE_SM_SC_LVL
+    int "Security level"
+    depends on BT_NIMBLE_SECURITY_ENABLE
+    default 0
+    help
+        LE Security Mode 1 Levels:
+        1. No Security
+        2. Unauthenticated pairing with encryption
+        3. Authenticated pairing with encryption
+        4. Authenticated LE Secure Connections pairing with encryption using a 128-bit strength encryption key.
+
 config BT_NIMBLE_DEBUG
     bool "Enable extra runtime asserts and host debugging"
     default n
@@ -275,6 +286,15 @@ menu "Memory Settings"
         default 320
         help
                 Dynamic memory size of block 2
+
+    config BT_NIMBLE_MSYS_BUF_FROM_HEAP
+        bool "Get Msys Mbuf from heap"
+        default y
+        depends on BT_LE_MSYS_INIT_IN_CONTROLLER
+        help
+            This option sets the source of the shared msys mbuf memory between
+            the Host and the Controller. Allocate the memory from the heap if
+            this option is sets, from the mempool otherwise.
 
     config BT_NIMBLE_TRANSPORT_ACL_FROM_LL_COUNT
         int "ACL Buffer count"
@@ -611,31 +631,35 @@ config BT_NIMBLE_PERIODIC_ADV_ENH
     help
         Enable the periodic advertising enhancements
 
-choice BT_NIMBLE_COEX_PHY_CODED_TX_RX_TLIM
-    prompt "Coexistence: limit on MAX Tx/Rx time for coded-PHY connection"
-    default BT_NIMBLE_COEX_PHY_CODED_TX_RX_TLIM_DIS
-    depends on ESP_WIFI_SW_COEXIST_ENABLE && BT_NIMBLE_ENABLED
+menuconfig BT_NIMBLE_GATT_CACHING
+    bool "Enable GATT caching"
+    depends on BT_NIMBLE_ENABLED && BT_NIMBLE_50_FEATURE_SUPPORT
     help
-            When using PHY-Coded in BLE connection, limitation on max tx/rx time can be applied to
-            better avoid dramatic performance deterioration of Wi-Fi.
-
-        config BT_NIMBLE_COEX_PHY_CODED_TX_RX_TLIM_EN
-            bool "Force Enable"
-            help
-                Always enable the limitation on max tx/rx time for Coded-PHY connection
-
-        config BT_NIMBLE_COEX_PHY_CODED_TX_RX_TLIM_DIS
-            bool "Force Disable"
-            help
-                Disable the limitation on max tx/rx time for Coded-PHY connection
-endchoice
-
-config BT_NIMBLE_COEX_PHY_CODED_TX_RX_TLIM_EFF
-    int
-    default 0 if !(ESP_WIFI_SW_COEXIST_ENABLE && BT_NIMBLE_ENABLED)
-    default 1 if BT_NIMBLE_COEX_PHY_CODED_TX_RX_TLIM_EN
-    default 0 if BT_NIMBLE_COEX_PHY_CODED_TX_RX_TLIM_DIS
-
+            Enable GATT caching
+config BT_NIMBLE_GATT_CACHING_MAX_CONNS
+    int "Maximum connections to be cached"
+    depends on BT_NIMBLE_GATT_CACHING
+    default 1
+    help
+        Set this option to set the upper limit on number of connections to be cached.
+config BT_NIMBLE_GATT_CACHING_MAX_SVCS
+    int "Maximum number of services per connection"
+    depends on BT_NIMBLE_GATT_CACHING
+    default 64
+    help
+        Set this option to set the upper limit on number of services per connection to be cached.
+config BT_NIMBLE_GATT_CACHING_MAX_CHRS
+    int "Maximum number of characteristics per connection"
+    depends on BT_NIMBLE_GATT_CACHING
+    default 64
+    help
+        Set this option to set the upper limit on number of characteristics per connection to be cached.
+config BT_NIMBLE_GATT_CACHING_MAX_DSCS
+    int "Maximum number of descriptors per connection"
+    depends on BT_NIMBLE_GATT_CACHING
+    default 64
+    help
+        Set this option to set the upper limit on number of discriptors per connection to be cached.
 
 config BT_NIMBLE_WHITELIST_SIZE
     int "BLE white list size"
@@ -835,6 +859,29 @@ menu "GAP Service"
 
 endmenu
 
+menu "BLE Services"
+    menuconfig BT_NIMBLE_HID_SERVICE
+        bool "HID service"
+        depends on BT_NIMBLE_ENABLED
+        default n
+        help
+            Enable HID service support
+
+    config BT_NIMBLE_SVC_HID_MAX_INSTANCES
+        depends on BT_NIMBLE_HID_SERVICE
+        int "Maximum HID service instances"
+        default 2
+        help
+            Defines maximum number of HID service instances
+
+    config BT_NIMBLE_SVC_HID_MAX_RPTS
+        depends on BT_NIMBLE_HID_SERVICE
+        int "Maximum HID Report characteristics per service instance"
+        default 3
+        help
+            Defines maximum number of report characteristics per service instance
+endmenu
+
 config BT_NIMBLE_VS_SUPPORT
     bool "Enable support for VSC and VSE"
     help
@@ -879,3 +926,26 @@ config BT_NIMBLE_HOST_QUEUE_CONG_CHECK
         When scanning and scan duplicate is not enabled, if there are a lot of adv packets around
         or application layer handling adv packets is slow, it will cause the controller memory
         to run out. if enabled, adv packets will be lost when host queue is congested.
+
+menu "Host-controller Transport"
+    config BT_NIMBLE_TRANSPORT_UART
+        bool "Enable Uart Transport"
+        default y
+        depends on BT_CONTROLLER_DISABLED
+        help
+            Use UART transport
+
+    config BT_NIMBLE_UART_RX_PIN
+        int "Rx pin for Nimble Uart"
+        depends on BT_CONTROLLER_DISABLED && BT_NIMBLE_TRANSPORT_UART
+        default 5
+        help
+            Rx pin for Nimble Transport
+
+    config BT_NIMBLE_UART_TX_PIN
+        int "Tx pin for Nimble Uart"
+        depends on BT_CONTROLLER_DISABLED && BT_NIMBLE_TRANSPORT_UART
+        default 4
+        help
+            Tx pin for Nimble Transport
+endmenu

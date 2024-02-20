@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -62,8 +62,8 @@ typedef enum {
 
 struct esp_timer {
     uint64_t alarm;
-    uint64_t period:56;
-    flags_t flags:8;
+    uint64_t period: 56;
+    flags_t flags: 8;
     union {
         esp_timer_cb_t callback;
         uint32_t event_id;
@@ -95,13 +95,13 @@ __attribute__((unused)) static const char* TAG = "esp_timer";
 
 // lists of currently armed timers for two dispatch methods: ISR and TASK
 static LIST_HEAD(esp_timer_list, esp_timer) s_timers[ESP_TIMER_MAX] = {
-    [0 ... (ESP_TIMER_MAX - 1)] = LIST_HEAD_INITIALIZER(s_timers)
+    [0 ...(ESP_TIMER_MAX - 1)] = LIST_HEAD_INITIALIZER(s_timers)
 };
 #if WITH_PROFILING
 // lists of unarmed timers for two dispatch methods: ISR and TASK,
 // used only to be able to dump statistics about all the timers
 static LIST_HEAD(esp_inactive_timer_list, esp_timer) s_inactive_timers[ESP_TIMER_MAX] = {
-    [0 ... (ESP_TIMER_MAX - 1)] = LIST_HEAD_INITIALIZER(s_timers)
+    [0 ...(ESP_TIMER_MAX - 1)] = LIST_HEAD_INITIALIZER(s_timers)
 };
 #endif
 // task used to dispatch timer callbacks
@@ -109,7 +109,7 @@ static TaskHandle_t s_timer_task;
 
 // lock protecting s_timers, s_inactive_timers
 static portMUX_TYPE s_timer_lock[ESP_TIMER_MAX] = {
-    [0 ... (ESP_TIMER_MAX - 1)] = portMUX_INITIALIZER_UNLOCKED
+    [0 ...(ESP_TIMER_MAX - 1)] = portMUX_INITIALIZER_UNLOCKED
 };
 
 #ifdef CONFIG_ESP_TIMER_SUPPORTS_ISR_DISPATCH_METHOD
@@ -124,7 +124,7 @@ esp_err_t esp_timer_create(const esp_timer_create_args_t* args,
         return ESP_ERR_INVALID_STATE;
     }
     if (args == NULL || args->callback == NULL || out_handle == NULL ||
-        args->dispatch_method < 0 || args->dispatch_method >= ESP_TIMER_MAX) {
+            args->dispatch_method < 0 || args->dispatch_method >= ESP_TIMER_MAX) {
         return ESP_ERR_INVALID_ARG;
     }
     esp_timer_handle_t result = (esp_timer_handle_t) heap_caps_calloc(1, sizeof(*result), MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL);
@@ -473,7 +473,7 @@ static bool timer_process_alarm(esp_timer_dispatch_t dispatch_method)
 
 static void timer_task(void* arg)
 {
-    while (true){
+    while (true) {
         ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
         // all deferred events are processed at a time
         timer_process_alarm(ESP_TIMER_TASK);
@@ -531,9 +531,9 @@ static esp_err_t init_timer_task(void)
         err = ESP_ERR_INVALID_STATE;
     } else {
         int ret = xTaskCreatePinnedToCore(
-                    &timer_task, "esp_timer",
-                    ESP_TASK_TIMER_STACK, NULL, ESP_TASK_TIMER_PRIO,
-                    &s_timer_task, CONFIG_ESP_TIMER_TASK_AFFINITY);
+                      &timer_task, "esp_timer",
+                      ESP_TASK_TIMER_STACK, NULL, ESP_TASK_TIMER_PRIO,
+                      &s_timer_task, CONFIG_ESP_TIMER_TASK_AFFINITY);
         if (ret != pdPASS) {
             ESP_EARLY_LOGE(TAG, "Not enough memory to create timer task");
             err = ESP_ERR_NO_MEM;
@@ -574,7 +574,15 @@ esp_err_t esp_timer_init(void)
     return err;
 }
 
-ESP_SYSTEM_INIT_FN(esp_timer_startup_init, CONFIG_ESP_TIMER_ISR_AFFINITY, 100)
+#if CONFIG_ESP_TIMER_ISR_AFFINITY_CPU0
+#define ESP_TIMER_INIT_MASK BIT(0)
+#elif CONFIG_ESP_TIMER_ISR_AFFINITY_CPU1
+#define ESP_TIMER_INIT_MASK BIT(1)
+#elif CONFIG_ESP_TIMER_ISR_AFFINITY_NO_AFFINITY
+#define ESP_TIMER_INIT_MASK ESP_SYSTEM_INIT_ALL_CORES
+#endif // CONFIG_ESP_TIMER_ISR_AFFINITY_*
+
+ESP_SYSTEM_INIT_FN(esp_timer_startup_init, SECONDARY, ESP_TIMER_INIT_MASK, 100)
 {
     return esp_timer_init();
 }
@@ -619,8 +627,8 @@ static void print_timer_info(esp_timer_handle_t t, char** dst, size_t* dst_size)
         cb = snprintf(*dst, *dst_size, "timer@%-10p  ", t);
     }
     cb += snprintf(*dst + cb, *dst_size + cb, "%-10lld  %-12lld  %-12d  %-12d  %-12d  %-12lld\n",
-                    (uint64_t)t->period, t->alarm, t->times_armed,
-                    t->times_triggered, t->times_skipped, t->total_callback_run_time);
+                   (uint64_t)t->period, t->alarm, t->times_armed,
+                   t->times_triggered, t->times_skipped, t->total_callback_run_time);
     /* keep this in sync with the format string, used in esp_timer_dump */
 #define TIMER_INFO_LINE_LEN 90
 #else
@@ -630,7 +638,6 @@ static void print_timer_info(esp_timer_handle_t t, char** dst, size_t* dst_size)
     *dst += cb;
     *dst_size -= cb;
 }
-
 
 esp_err_t esp_timer_dump(FILE* stream)
 {

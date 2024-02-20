@@ -1,0 +1,16 @@
+# Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
+
+components/esp_driver_gpio/test_apps:
+  disable_test:
+    - if: IDF_TARGET == "esp32p4"
+      temporary: true
+      reason: test not pass, should be re-enable # TODO: IDF-8968
+  depends_components:
+    - esp_driver_gpio
+
+components/esp_driver_gpio/test_apps/gpio_extensions:
+  enable:
+    - if: SOC_DEDICATED_GPIO_SUPPORTED == 1
+    - if: SOC_GPIO_SUPPORT_PIN_GLITCH_FILTER == 1 or SOC_GPIO_FLEX_GLITCH_FILTER_NUM > 0
+  depends_components:
+    - esp_driver_gpio

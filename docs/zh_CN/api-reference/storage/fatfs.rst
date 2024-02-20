@@ -19,30 +19,32 @@ FatFs 与 VFS 配合使用
 
 多数应用程序在使用 ``esp_vfs_fat_`` 函数时，采用如下步骤：
 
-1. 调用 :cpp:func:`esp_vfs_fat_register`，指定：
+#. 调用 :cpp:func:`esp_vfs_fat_register`，指定：
     - 挂载文件系统的路径前缀（例如，``"/sdcard"`` 或 ``"/spiflash"``）
     - FatFs 驱动编号
     - 一个用于接收指向 ``FATFS`` 结构指针的变量
 
-2. 调用 :cpp:func:`ff_diskio_register`，为步骤 1 中的驱动编号注册磁盘 I/O 驱动；
+#. 调用 :cpp:func:`ff_diskio_register`，为步骤 1 中的驱动编号注册磁盘 I/O 驱动；
 
-3. 调用 FatFs 函数 ``f_mount``，随后调用 ``f_fdisk`` 或 ``f_mkfs``，并使用与传递到 :cpp:func:`esp_vfs_fat_register` 相同的驱动编号挂载文件系统。请参考 `FatFs 文档 <http://elm-chan.org/fsw/ff/doc/mount.html>`_，查看更多信息；
+#. 如需使用与传递到 :cpp:func:`esp_vfs_fat_register` 相同的驱动编号挂载文件系统，可调用 FatFs 函数 :cpp:func:`f_mount`。如果目标逻辑驱动上不存在该文件系统，:cpp:func:`f_mount` 将调用失败并报告 ``FR_NO_FILESYSTEM`` 错误。此时，应首先调用 :cpp:func:`f_mkfs`，在驱动上创建新的 FatFS 结构体，然后重新调用 :cpp:func:`f_mount`。注意，应在上述步骤之前调用 :cpp:func:`f_fdisk` 对 SD 卡进行分区。请参考 `FatFs 文档 <http://elm-chan.org/fsw/ff/doc/mount.html>`_，查看更多信息；
 
-4. 调用 C 标准库和 POSIX API 对路径中带有步骤 1 中所述前缀的文件（例如，``"/sdcard/hello.txt"``）执行打开、读取、写入、擦除、复制等操作。文件系统默认使用 `8.3 文件名 <https://en.wikipedia.org/wiki/8.3_filename>`_ 格式 (SFN)。如需使用长文件名 (LFN)，启用 :ref:`CONFIG_FATFS_LONG_FILENAMES` 选项。请参考 `here <http://elm-chan.org/fsw/ff/doc/filename.html>`_，查看更多信息；
+#. 调用 C 标准库和 POSIX API 对路径中带有步骤 1 中所述前缀的文件（例如，``"/sdcard/hello.txt"``）执行打开、读取、写入、擦除、复制等操作。文件系统默认使用 `8.3 文件名 <https://en.wikipedia.org/wiki/8.3_filename>`_ 格式 (SFN)。如需使用长文件名 (LFN)，启用 :ref:`CONFIG_FATFS_LONG_FILENAMES` 选项。请参考 `FatFs 文件系统 <http://elm-chan.org/fsw/ff/doc/filename.html>`_，查看更多信息；
 
-5. 选择启用 :ref:`CONFIG_FATFS_USE_FASTSEEK` 选项，可以使用 POSIX lseek 实现快速执行。快速查找不适用于编辑模式下的文件，所以，使用快速查找时，应在只读模式下打开（或者关闭然后重新打开）文件；
+#. 可以直接调用 FatFs 库函数，但需要使用没有 VFS 前缀的路径，如 ``"/hello.txt"``；
 
-6. 也可选择直接调用 FatFs 库函数，但需要使用没有 VFS 前缀的路径（例如，``"/hello.txt"``）；
+#. 关闭所有打开的文件；
 
-7. 关闭所有打开的文件；
+#. 调用 FatFs 函数 :cpp:func:`f_mount` 并使用 NULL ``FATFS*`` 参数，为与上述编号相同的驱动卸载文件系统；
 
-8. 调用 FatFs 函数 ``f_mount`` 并使用 NULL ``FATFS*`` 参数，为与上述编号相同的驱动卸载文件系统；
+#. 调用 FatFs 函数 :cpp:func:`ff_diskio_register` 并使用 NULL ``ff_diskio_impl_t*`` 参数和相同的驱动编号，来释放注册的磁盘 I/O 驱动；
 
-9. 调用 FatFs 函数 :cpp:func:`ff_diskio_register` 并使用 NULL ``ff_diskio_impl_t*`` 参数和相同的驱动编号，来释放注册的磁盘 I/O 驱动；
-
-10. 调用 :cpp:func:`esp_vfs_fat_unregister_path` 并使用文件系统挂载的路径将 FatFs 从 VFS 中移除，并释放步骤 1 中分配的 ``FATFS`` 结构。
+#. 调用 :cpp:func:`esp_vfs_fat_unregister_path` 并使用文件系统挂载的路径将 FatFs 从 VFS 中移除，并释放步骤 1 中分配的 ``FATFS`` 结构。
 
 便捷函数 :cpp:func:`esp_vfs_fat_sdmmc_mount`、:cpp:func:`esp_vfs_fat_sdspi_mount` 和 :cpp:func:`esp_vfs_fat_sdcard_unmount` 对上述步骤进行了封装，并加入了对 SD 卡初始化的处理。我们将在下一章节详细介绍以上函数。
+
+.. note::
+
+    FAT 文件系统不支持硬链接，因此调用 :cpp:func:`link` 后会复制文件内容（仅适用于 FatFs 卷上的文件）。
 
 
 FatFs 与 VFS 和 SD 卡配合使用
@@ -57,6 +59,15 @@ FatFs 与 VFS 配合使用（只读模式下）
 --------------------------------------
 
 头文件 :component_file:`fatfs/vfs/esp_vfs_fat.h` 也定义了两个便捷函数 :cpp:func:`esp_vfs_fat_spiflash_mount_ro` 和 :cpp:func:`esp_vfs_fat_spiflash_unmount_ro`。上述两个函数分别对 FAT 只读分区执行步骤 1-3 和步骤 7-9。有些数据分区仅在工厂配置时写入一次，之后在整个硬件生命周期内都不会再有任何改动。利用上述两个函数处理这种数据分区非常方便。
+
+配置选项
+--------
+
+FatFs 组件有以下配置选项：
+
+* :ref:`CONFIG_FATFS_USE_FASTSEEK` - 如果启用该选项，POSIX :cpp:func:`lseek` 函数将以更快的速度执行。快速查找不适用于编辑模式下的文件，所以，使用快速查找时，应在只读模式下打开（或者关闭然后重新打开）文件。
+* :ref:`CONFIG_FATFS_IMMEDIATE_FSYNC` - 如果启用该选项，FatFs 将在每次调用 :cpp:func:`write`、:cpp:func:`pwrite`、:cpp:func:`link`、:cpp:func:`truncate` 和 :cpp:func:`ftruncate` 函数后，自动调用 :cpp:func:`f_sync` 以同步最近的文件改动。该功能可提高文件系统中文件的一致性和文件大小报告的准确性，但由于需要频繁进行磁盘操作，性能将会受到影响。
+* :ref:`CONFIG_FATFS_LINK_LOCK` - 如果启用该选项，可保证 API 的线程安全，但如果应用程序需要快速频繁地进行小文件操作（例如将日志记录到文件），则可能有必要禁用该选项。请注意，如果禁用该选项，调用 :cpp:func:`link` 后的复制操作将是非原子的，此时如果在不同任务中对同一卷上的大文件调用 :cpp:func:`link`，则无法确保线程安全。
 
 
 FatFs 磁盘 I/O 层
@@ -107,14 +118,15 @@ FatFs 分区生成器
 
 该函数的参数如下：
 
-1. partition - 分区的名称，需要在分区表中定义（如 :example_file:`storage/fatfsgen/partitions_example.csv`）。
+#. partition - 分区的名称，需要在分区表中定义（如 :example_file:`storage/fatfsgen/partitions_example.csv`）。
 
-2. base_dir - 目录名称，该目录会被编码为 FatFs 分区，也可以选择将其被烧录进设备。但注意必须在分区表中指定合适的分区大小。
+#. base_dir - 目录名称，该目录会被编码为 FatFs 分区，也可以选择将其被烧录进设备。但注意必须在分区表中指定合适的分区大小。
 
-3. ``FLASH_IN_PROJECT`` 标志 - 可选参数，用户可以通过指定 ``FLASH_IN_PROJECT``，选择在执行 ``idf.py flash -p <PORT>`` 时让分区镜像自动与应用程序二进制文件、分区表等一同烧录进设备。
+#. ``FLASH_IN_PROJECT`` 标志 - 可选参数，用户可以通过指定 ``FLASH_IN_PROJECT``，选择在执行 ``idf.py flash -p <PORT>`` 时让分区镜像自动与应用程序二进制文件、分区表等一同烧录进设备。
 
-4. ``PRESERVE_TIME`` 标志 - 可选参数，用户可强制让目标镜像保留源文件夹的时间戳。如果不保留，每个目标镜像的时间戳都将设置为 FATFS 默认初始时间（1980 年 1 月 1 日）。
+#. ``PRESERVE_TIME`` 标志 - 可选参数，用户可强制让目标镜像保留源文件夹的时间戳。如果不保留，每个目标镜像的时间戳都将设置为 FATFS 默认初始时间（1980 年 1 月 1 日）。
 
+#. ``ONE_FAT`` 标志 - 可选参数，支持生成仅包含单个 FAT（文件分配表）的 FATFS 卷。与包含两个 FAT 的 FATFS 卷相比，这样做可以拥有相对较大的可用空间（通过 ``FAT 使用的扇区数 * 扇区大小`` 计算），但会增加 FATFS 卷损坏的风险。
 
 例如::
 
@@ -134,8 +146,9 @@ FatFs 分区分析器
 
 可以使用::
 
-    ./fatfsparse.py [-h] [--wl-layer {detect,enabled,disabled}] fatfs_image.img
+    ./fatfsparse.py [-h] [--wl-layer {detect,enabled,disabled}] [--verbose] fatfs_image.img
 
+生成文件夹结构之前，参数 --verbose 将根据 FatFs 镜像的引导扇区在终端打印详细信息。
 
 高级 API 参考
 ------------------------

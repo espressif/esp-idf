@@ -175,8 +175,9 @@ g_flash_guard_ops = 0x4ff3fff0;
  ***************************************/
 
 /* Functions */
-systimer_hal_init = 0x4fc00228;
-systimer_hal_deinit = 0x4fc0022c;
+/* The following ROM functions are commented out because they're patched in the esp_rom_systimer.c */
+/* systimer_hal_init = 0x4fc00228; */
+/* systimer_hal_deinit = 0x4fc0022c; */
 systimer_hal_set_tick_rate_ops = 0x4fc00230;
 systimer_hal_get_counter_value = 0x4fc00234;
 systimer_hal_get_time = 0x4fc00238;

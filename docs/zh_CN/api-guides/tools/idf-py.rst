@@ -140,8 +140,6 @@ ESP-IDF 支持多个目标芯片，运行 ``idf.py --list-targets`` 查看当前
 
 命令 ``idf.py`` 支持 bash、zsh 和 fish shell 的 `shell 自动补全 <https://click.palletsprojects.com/shell-completion/>`_。
 
-为实现 `shell 自动补全 <https://click.palletsprojects.com/shell-completion/>`_，请确保 Python 版本为 3.5 及以上，`click <https://click.palletsprojects.com/>`_ 版本为 7.1 及以上（请参阅 :ref:`软件 <get-started-get-prerequisites>`）。
-
 调用命令 ``export`` 为 ``idf.py`` 启用自动补全（:ref:`第四步：设置环境变量 <get-started-set-up-env>`），按 TAB 键启动自动补全。输入 ``idf.py -`` 并按 TAB 键以自动补全选项。
 
 预计未来版本将支持 PowerShell 自动补全。
@@ -220,6 +218,15 @@ ESP-IDF 支持多个目标芯片，运行 ``idf.py --list-targets`` 查看当前
 
   idf.py uf2-app
 
+读取 Otadata 分区：``read-otadata``
+--------------------------------------
+
+.. code-block:: bash
+
+  idf.py read-otadata
+
+此命令将打印 ``otadata`` 分区的内容，该分区存储当前所选 OTA 应用程序分区的信息。有关 ``otadata`` 分区的更多信息，请参阅 :doc:`/api-reference/system/ota`。
+
 全局选项
 ==============
 
@@ -236,6 +243,23 @@ ESP-IDF 支持多个目标芯片，运行 ``idf.py --list-targets`` 查看当前
 - ``-v`` 会使 ``idf.py`` 和构建系统生成详细的构建输出，有助于调试构建错误。
 - ``--cmake-warn-uninitialized`` （或 ``-w``）将使 CMake 只显示在工程目录中发现的变量未初始化的警告，该选项仅控制 CMake 内部的 CMake 变量警告，不控制其他类型的构建警告。将环境变量 ``IDF_CMAKE_WARN_UNINITIALIZED`` 设置为非零值，可永久启用该选项。
 - ``--no-hints`` 用于禁用有关错误处理的提示并禁用捕获输出。
+
+通过 ``@file`` 传递参数
+---------------------------------
+
+可以通过文件向 ``idf.py`` 传递多个参数。该文件或文件路径须在开头使用 ``@`` 进行标注。文件中的参数支持通过换行或空格分隔，并按其在 idf.py 命令行中的顺序扩展。
+
+例如，当前有文件 `custom_flash.txt`：
+
+.. code-block:: bash
+
+  flash --baud 115200
+
+运行命令：``idf.py @custom_flash.txt monitor``
+
+文件中的参数可以与额外的命令行参数结合使用，也支持同时使用带有 ``@`` 标注的多个文件。例如，另有一个文件 ``another_config.txt``，此时，可以通过指定 ``idf.py @custom_flash.txt @another_config.txt monitor`` 同时使用两个文件。
+
+关于参数文件的更多示例，如通过 @filename 创建配置文件概要，请参阅 :example_file:`多个构建配置示例 <build_system/cmake/multi_config/README.md>`。
 
 .. _cmake: https://cmake.org
 .. _ninja: https://ninja-build.org

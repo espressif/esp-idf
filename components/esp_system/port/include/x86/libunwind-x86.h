@@ -33,8 +33,7 @@ extern "C" {
  * @brief Definition of the x86 DWARF registers set.
  * The following registers order has been taken from GCC's `i386.c` file:
  */
-typedef struct x86ExcFrame
-{
+typedef struct x86ExcFrame {
     union {
         struct {
             uint32_t eax;

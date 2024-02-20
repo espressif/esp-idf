@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -225,9 +225,9 @@ static void rtc_clk_bbpll_enable(void)
     clk_ll_bbpll_enable();
 }
 
-static void rtc_clk_bbpll_configure(rtc_xtal_freq_t xtal_freq, int pll_freq)
+static void rtc_clk_bbpll_configure(soc_xtal_freq_t xtal_freq, int pll_freq)
 {
-    assert(xtal_freq == RTC_XTAL_FREQ_40M);
+    assert(xtal_freq == SOC_XTAL_FREQ_40M);
 
     /* Digital part */
     clk_ll_bbpll_set_freq_mhz(pll_freq);
@@ -353,7 +353,7 @@ void rtc_clk_cpu_freq_set_config(const rtc_cpu_freq_config_t* config)
         }
     } else if (config->source == SOC_CPU_CLK_SRC_PLL) {
         rtc_clk_bbpll_enable();
-        rtc_clk_bbpll_configure((rtc_xtal_freq_t)CLK_LL_XTAL_FREQ_MHZ, config->source_freq_mhz);
+        rtc_clk_bbpll_configure((soc_xtal_freq_t)CLK_LL_XTAL_FREQ_MHZ, config->source_freq_mhz);
         rtc_clk_cpu_freq_to_pll_mhz(config->freq_mhz);
     } else if (config->source == SOC_CPU_CLK_SRC_RC_FAST) {
         rtc_clk_cpu_freq_to_8m();
@@ -471,10 +471,10 @@ static void rtc_clk_cpu_freq_to_8m(void)
     rtc_clk_apb_freq_update(SOC_CLK_RC_FAST_FREQ_APPROX);
 }
 
-rtc_xtal_freq_t rtc_clk_xtal_freq_get(void)
+soc_xtal_freq_t rtc_clk_xtal_freq_get(void)
 {
     // Note, inside esp32s2-only code it's better to use CLK_LL_XTAL_FREQ_MHZ constant
-    return (rtc_xtal_freq_t)CLK_LL_XTAL_FREQ_MHZ;
+    return (soc_xtal_freq_t)CLK_LL_XTAL_FREQ_MHZ;
 }
 
 void rtc_clk_apb_freq_update(uint32_t apb_freq)

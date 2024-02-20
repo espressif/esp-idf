@@ -36,7 +36,7 @@ void IRAM_ATTR modem_clock_hal_set_clock_domain_icg_bitmap(modem_clock_hal_conte
     case MODEM_CLOCK_DOMAIN_BT:
         modem_syscon_ll_set_bt_icg_bitmap(hal->syscon_dev, bitmap);
         break;
-    case MODEM_CLOCK_DOMAIN_MODEM_PRIVATE_FE:
+    case MODEM_CLOCK_DOMAIN_MODEM_FE:
         modem_syscon_ll_set_fe_icg_bitmap(hal->syscon_dev, bitmap);
         break;
     case MODEM_CLOCK_DOMAIN_IEEE802154:
@@ -55,11 +55,11 @@ void IRAM_ATTR modem_clock_hal_set_clock_domain_icg_bitmap(modem_clock_hal_conte
         modem_lpcon_ll_set_wifipwr_icg_bitmap(hal->lpcon_dev, bitmap);
         break;
     default:
-        break;
+        HAL_ASSERT(0);
     }
 }
 
-uint32_t modem_clock_hal_get_clock_domain_icg_bitmap(modem_clock_hal_context_t *hal, modem_clock_domain_t domain)
+uint32_t IRAM_ATTR modem_clock_hal_get_clock_domain_icg_bitmap(modem_clock_hal_context_t *hal, modem_clock_domain_t domain)
 {
     HAL_ASSERT(domain < MODEM_CLOCK_DOMAIN_MAX);
     uint32_t bitmap = 0;
@@ -77,7 +77,7 @@ uint32_t modem_clock_hal_get_clock_domain_icg_bitmap(modem_clock_hal_context_t *
     case MODEM_CLOCK_DOMAIN_BT:
         bitmap = modem_syscon_ll_get_bt_icg_bitmap(hal->syscon_dev);
         break;
-    case MODEM_CLOCK_DOMAIN_MODEM_PRIVATE_FE:
+    case MODEM_CLOCK_DOMAIN_MODEM_FE:
         bitmap = modem_syscon_ll_get_fe_icg_bitmap(hal->syscon_dev);
         break;
     case MODEM_CLOCK_DOMAIN_IEEE802154:
@@ -96,7 +96,7 @@ uint32_t modem_clock_hal_get_clock_domain_icg_bitmap(modem_clock_hal_context_t *
         bitmap = modem_lpcon_ll_get_wifipwr_icg_bitmap(hal->lpcon_dev);
         break;
     default:
-        break;
+        HAL_ASSERT(0);
     }
     return bitmap;
 }
@@ -163,7 +163,7 @@ void modem_clock_hal_select_ble_rtc_timer_lpclk_source(modem_clock_hal_context_t
         modem_lpcon_ll_select_modem_32k_clock_source(hal->lpcon_dev, MODEM_CLOCK_EXT32K_CODE);
         break;
     default:
-        break;
+        HAL_ASSERT(0);
     }
 }
 
@@ -203,7 +203,7 @@ void modem_clock_hal_select_coex_lpclk_source(modem_clock_hal_context_t *hal, mo
         modem_lpcon_ll_select_modem_32k_clock_source(hal->lpcon_dev, MODEM_CLOCK_EXT32K_CODE);
         break;
     default:
-        break;
+        HAL_ASSERT(0);
     }
 }
 
@@ -243,7 +243,7 @@ void modem_clock_hal_select_wifi_lpclk_source(modem_clock_hal_context_t *hal, mo
         modem_lpcon_ll_select_modem_32k_clock_source(hal->lpcon_dev, MODEM_CLOCK_EXT32K_CODE);
         break;
     default:
-        break;
+        HAL_ASSERT(0);
     }
 }
 

@@ -182,7 +182,7 @@ int lp_core_uart_read_bytes(uart_port_t lp_uart_num, void *buf, size_t size, int
             /* We have some data to read from the Rx FIFO. Check Rx interrupt status */
             intr_status = uart_hal_get_intsts_mask(&hal);
             if ((intr_status & UART_INTR_RXFIFO_FULL) ||
-                (intr_status & UART_INTR_RXFIFO_TOUT)) {
+                    (intr_status & UART_INTR_RXFIFO_TOUT)) {
                 /* This is expected. Clear interrupt status and break */
                 uart_hal_clr_intsts_mask(&hal, intr_mask);
                 break;

@@ -1,7 +1,7 @@
 LED PWM 控制器
 ==============
 
-{IDF_TARGET_LEDC_MAX_FADE_RANGE_NUM: default="1", esp32c6="16", esp32h2="16"}
+{IDF_TARGET_LEDC_MAX_FADE_RANGE_NUM: default="1", esp32c6="16", esp32h2="16", esp32p4="16"}
 
 :link_to_translation:`en:[English]`
 
@@ -88,7 +88,7 @@ LED PWM 控制器可在无需 CPU 干预的情况下自动改变占空比，实�
        * - RC_FAST_CLK
          - ~ 8 MHz
          - 低速
-         - 支持动态调频 (DFS) 功能，支持Light-sleep模式
+         - 支持动态调频（DFS）功能，支持 Light-sleep 模式
 
 .. only:: esp32s2
 
@@ -107,7 +107,7 @@ LED PWM 控制器可在无需 CPU 干预的情况下自动改变占空比，实�
          - 支持动态调频 (DFS) 功能
        * - RC_FAST_CLK
          - ~ 8 MHz
-         - 支持动态调频 (DFS) 功能，支持 Light-sleep 模式
+         - 支持动态调频（DFS）功能，支持 Light-sleep 模式
        * - XTAL_CLK
          - 40 MHz
          - 支持动态调频 (DFS) 功能
@@ -145,12 +145,12 @@ LED PWM 控制器可在无需 CPU 干预的情况下自动改变占空比，实�
          - /
        * - RC_FAST_CLK
          - ~ 20 MHz
-         - 支持动态调频 (DFS) 功能，支持Light-sleep模式
+         - 支持动态调频（DFS）功能，支持 Light-sleep 模式
        * - XTAL_CLK
          - 40 MHz
          - 支持动态调频 (DFS) 功能
 
-.. only:: esp32c6
+.. only:: esp32c6 or esp32p4
 
     .. list-table:: {IDF_TARGET_NAME} LEDC 时钟源特性
        :widths: 10 10 30
@@ -164,7 +164,7 @@ LED PWM 控制器可在无需 CPU 干预的情况下自动改变占空比，实�
          - /
        * - RC_FAST_CLK
          - ~ 20 MHz
-         - 支持动态调频 (DFS) 功能，支持 Light-sleep 模式
+         - 支持动态调频（DFS）功能，支持 Light-sleep 模式
        * - XTAL_CLK
          - 40 MHz
          - 支持动态调频 (DFS) 功能
@@ -183,7 +183,7 @@ LED PWM 控制器可在无需 CPU 干预的情况下自动改变占空比，实�
          - /
        * - RC_FAST_CLK
          - ~ 8 MHz
-         - 支持动态调频 (DFS) 功能，支持 Light-sleep 模式
+         - 支持动态调频（DFS）功能，支持 Light-sleep 模式
        * - XTAL_CLK
          - 32 MHz
          - 支持动态调频 (DFS) 功能
@@ -201,6 +201,8 @@ LED PWM 控制器可在无需 CPU 干预的情况下自动改变占空比，实�
     .. only:: not SOC_LEDC_HAS_TIMER_SPECIFIC_MUX
 
         2. {IDF_TARGET_NAME} 的所有定时器共用一个时钟源。因此 {IDF_TARGET_NAME} 不支持给不同的定时器配置不同的时钟源。
+
+LEDC 驱动提供了一个辅助函数 :cpp:func:`ledc_find_suitable_duty_resolution`。传入时钟源频率及期望的 PWM 信号频率，这个函数可以直接找到最大可配的占空比分辨率值。
 
 当一个定时器不再被任何通道所需要时，可以通过调用相同的函数 :cpp:func:`ledc_timer_config` 来重置这个定时器。此时，函数入参的配置结构体需要指定：
 

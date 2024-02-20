@@ -38,6 +38,9 @@ typedef struct transport_esp_tls {
     bool                     ssl_initialized;
     transport_ssl_conn_state_t conn_state;
     int                      sockfd;
+#ifdef CONFIG_ESP_TLS_CLIENT_SESSION_TICKETS
+    esp_tls_client_session_t *session_ticket;
+#endif
 } transport_esp_tls_t;
 
 /**
@@ -341,6 +344,12 @@ void esp_transport_ssl_enable_global_ca_store(esp_transport_handle_t t)
     ssl->cfg.use_global_ca_store = true;
 }
 
+void esp_transport_ssl_set_tls_version(esp_transport_handle_t t, esp_tls_proto_ver_t tls_version)
+{
+    GET_SSL_FROM_TRANSPORT_OR_RETURN(ssl, t);
+    ssl->cfg.tls_version = tls_version;
+}
+
 #ifdef CONFIG_ESP_TLS_PSK_VERIFICATION
 void esp_transport_ssl_set_psk_key_hint(esp_transport_handle_t t, const psk_hint_key_t *psk_hint_key)
 {
@@ -517,6 +526,9 @@ esp_transport_handle_t esp_transport_ssl_init(void)
 
 void esp_transport_esp_tls_destroy(struct transport_esp_tls *transport_esp_tls)
 {
+#ifdef CONFIG_ESP_TLS_CLIENT_SESSION_TICKETS
+    esp_tls_free_client_session(transport_esp_tls->session_ticket);
+#endif
     free(transport_esp_tls);
 }
 
@@ -542,3 +554,32 @@ void esp_transport_tcp_set_interface_name(esp_transport_handle_t t, struct ifreq
 {
     return esp_transport_ssl_set_interface_name(t, if_name);
 }
+
+#ifdef CONFIG_ESP_TLS_CLIENT_SESSION_TICKETS
+esp_err_t esp_transport_ssl_session_ticket_operation(esp_transport_handle_t t, esp_transport_session_ticket_operation_t operation)
+{
+    transport_esp_tls_t *ssl = ssl_get_context_data(t);
+    if (!ssl) {
+        return ESP_FAIL;
+    }
+    switch (operation) {
+        case ESP_TRANSPORT_SESSION_TICKET_INIT:
+            break;
+        case ESP_TRANSPORT_SESSION_TICKET_SAVE:
+            esp_tls_free_client_session(ssl->session_ticket);
+            ssl->session_ticket = esp_tls_get_client_session(ssl->tls);
+            break;
+        case ESP_TRANSPORT_SESSION_TICKET_USE:
+            if (ssl->session_ticket == NULL) {
+                return ESP_ERR_INVALID_STATE;
+            }
+            ssl->cfg.client_session = ssl->session_ticket;
+            break;
+        case ESP_TRANSPORT_SESSION_TICKET_FREE:
+            esp_tls_free_client_session(ssl->session_ticket);
+            ssl->session_ticket = NULL;
+            break;
+    }
+    return ESP_OK;
+}
+#endif // CONFIG_ESP_TLS_CLIENT_SESSION_TICKETS

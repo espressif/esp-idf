@@ -223,9 +223,9 @@ ESP-BLE-MESH 示例
 
 * :example_file:`Wi-Fi 和 BLE-Mesh 共存 <bluetooth/esp_ble_mesh/wifi_coexist/tutorial/BLE_Mesh_WiFi_Coexist_Example_Walkthrough.md>` - 该示例用于演示 Wi-Fi 和 ESP-BLE-MESH 共存的功能。简而言之，用户可在运行 ESP-BLE-MESH 时使用 Wi-Fi，示例请见 :example:`example code <bluetooth/esp_ble_mesh/wifi_coexist>`。
 
-* 远程配网(v1.1 新增) - :example_file:`Client, Server and device <bluetooth/esp_ble_mesh/remote_provisioning/tutorial/BLE_Mesh_Remote_Provisioning_Example_Walkthrough.md>` - 该示例用于演示 mesh 协议 v1.1 中新增的远程配网功能, 示例请见： :example:`example client code <bluetooth/esp_ble_mesh/remote_provisioning/rpr_client>`, :example:`example server code <bluetooth/esp_ble_mesh/remote_provisioning/rpr_server>` and :example:`example device code <bluetooth/esp_ble_mesh/remote_provisioning/unprov_dev>`.
+* 远程配网（v1.1 新增）- :example_file:`Client, Server and device <bluetooth/esp_ble_mesh/remote_provisioning/tutorial/BLE_Mesh_Remote_Provisioning_Example_Walkthrough.md>` - 该示例用于演示 mesh 协议 v1.1 中新增的远程配网功能, 示例请见： :example:`example client code <bluetooth/esp_ble_mesh/remote_provisioning/rpr_client>`, :example:`example server code <bluetooth/esp_ble_mesh/remote_provisioning/rpr_server>` and :example:`example device code <bluetooth/esp_ble_mesh/remote_provisioning/unprov_dev>`.
 
-* 定向转发(v1.1 新增) - :example_file:`Client and Server <bluetooth/esp_ble_mesh/directed_forwarding/tutorial/BLE_Mesh_Directed_Forwarding_Example_Walkthrough.md>` - 该示例用于演示 mesh 协议 v1.1 中新增的定向转发功能。只有路径上的节点才会对定向消息进行转发，而其他节点不参与转发, 示例请见 :example:`example client code <bluetooth/esp_ble_mesh/remote_provisioning/rpr_client>` and :example:`example server code <bluetooth/esp_ble_mesh/remote_provisioning/rpr_server>`.
+* 定向转发（v1.1 新增）- :example_file:`Client and Server <bluetooth/esp_ble_mesh/directed_forwarding/tutorial/BLE_Mesh_Directed_Forwarding_Example_Walkthrough.md>` - 该示例用于演示 mesh 协议 v1.1 中新增的定向转发功能。只有路径上的节点才会对定向消息进行转发，而其他节点不参与转发, 示例请见 :example:`example client code <bluetooth/esp_ble_mesh/remote_provisioning/rpr_client>` and :example:`example server code <bluetooth/esp_ble_mesh/remote_provisioning/rpr_server>`.
 
 
 .. _esp-ble-mesh-demo-videos:

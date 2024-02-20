@@ -316,7 +316,7 @@ esp_adc_cal_value_t esp_adc_cal_characterize(adc_unit_t adc_num,
     chars->bit_width = bit_width;
     chars->vref = (EFUSE_VREF_ENABLED && efuse_vref_present) ? read_efuse_vref() : default_vref;
     //Initialize fields for lookup table if necessary
-    if (LUT_ENABLED && atten == ADC_ATTEN_DB_11) {
+    if (LUT_ENABLED && atten == ADC_ATTEN_DB_12) {
         chars->low_curve = (adc_num == ADC_UNIT_1) ? lut_adc1_low : lut_adc2_low;
         chars->high_curve = (adc_num == ADC_UNIT_1) ? lut_adc1_high : lut_adc2_high;
     } else {
@@ -336,8 +336,8 @@ uint32_t esp_adc_cal_raw_to_voltage(uint32_t adc_reading, const esp_adc_cal_char
         adc_reading = ADC_12_BIT_RES - 1;    //Set to 12bit res max
     }
 
-    if (LUT_ENABLED && (chars->atten == ADC_ATTEN_DB_11) && (adc_reading >= LUT_LOW_THRESH)) {  //Check if in non-linear region
-        //Use lookup table to get voltage in non linear portion of ADC_ATTEN_DB_11
+    if (LUT_ENABLED && (chars->atten == ADC_ATTEN_DB_12) && (adc_reading >= LUT_LOW_THRESH)) {  //Check if in non-linear region
+        //Use lookup table to get voltage in non linear portion of ADC_ATTEN_DB_12
         uint32_t lut_voltage = calculate_voltage_lut(adc_reading, chars->vref, chars->low_curve, chars->high_curve);
         if (adc_reading <= LUT_HIGH_THRESH) {   //If ADC is transitioning from linear region to non-linear region
             //Linearly interpolate between linear voltage and lut voltage

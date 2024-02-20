@@ -6,7 +6,6 @@
 
 #include "hal/clk_tree_hal.h"
 #include "hal/clk_tree_ll.h"
-#include "soc/rtc.h"
 #include "hal/assert.h"
 #include "hal/log.h"
 
@@ -50,7 +49,7 @@ uint32_t clk_hal_cpu_get_freq_hz(void)
     }
 }
 
-uint32_t clk_hal_ahb_get_freq_hz(void)
+static uint32_t clk_hal_ahb_get_freq_hz(void)
 {
     // AHB_CLK path is highly dependent on CPU_CLK path
     switch (clk_ll_cpu_get_src()) {
@@ -89,14 +88,14 @@ uint32_t clk_hal_xtal_get_freq_mhz(void)
 {
     uint32_t freq = clk_ll_xtal_load_freq_mhz();
     if (freq == 0) {
-        return (uint32_t)RTC_XTAL_FREQ_AUTO;
+        return (uint32_t)SOC_XTAL_FREQ_AUTO;
     }
     return freq;
 }
 
 uint32_t clk_hal_apll_get_freq_hz(void)
 {
-    uint64_t xtal_freq_hz = clk_hal_xtal_get_freq_mhz() * MHZ ;
+    uint64_t xtal_freq_hz = (uint64_t)clk_hal_xtal_get_freq_mhz() * 1000000ULL;
     uint32_t o_div = 0;
     uint32_t sdm0 = 0;
     uint32_t sdm1 = 0;

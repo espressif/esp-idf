@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: MIT
  *
- * SPDX-FileContributor: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2022-2024 Espressif Systems (Shanghai) CO LTD
  */
 
 #include <stdlib.h>
@@ -61,7 +61,7 @@ static const uint8_t s_midi_cfg_desc[] = {
     TUD_CONFIG_DESCRIPTOR(1, ITF_COUNT, 0, TUSB_DESCRIPTOR_TOTAL_LEN, 0, 100),
 
     // Interface number, string index, EP Out & EP In address, EP size
-    TUD_MIDI_DESCRIPTOR(ITF_NUM_MIDI, 4, EPNUM_MIDI, (0x80 | EPNUM_MIDI), 64),
+    TUD_MIDI_DESCRIPTOR(ITF_NUM_MIDI, 4, EPNUM_MIDI, (0x80 | EPNUM_MIDI), TUD_OPT_HIGH_SPEED ? 512 : 64),
 };
 
 static void midi_task_read_example(void *arg)

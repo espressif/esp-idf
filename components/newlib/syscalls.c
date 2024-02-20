@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -32,7 +32,7 @@ ssize_t _write_r_console(struct _reent *r, int fd, const void * data, size_t siz
     const char* cdata = (const char*) data;
     if (fd == STDOUT_FILENO || fd == STDERR_FILENO) {
         for (size_t i = 0; i < size; ++i) {
-            esp_rom_uart_tx_one_char(cdata[i]);
+            esp_rom_output_tx_one_char(cdata[i]);
         }
         return size;
     }
@@ -46,7 +46,7 @@ ssize_t _read_r_console(struct _reent *r, int fd, void * data, size_t size)
     if (fd == STDIN_FILENO) {
         size_t received;
         for (received = 0; received < size; ++received) {
-            int status = esp_rom_uart_rx_one_char((uint8_t*) &cdata[received]);
+            int status = esp_rom_output_rx_one_char((uint8_t*) &cdata[received]);
             if (status != 0) {
                 break;
             }
@@ -76,13 +76,7 @@ static ssize_t _fstat_r_console(struct _reent *r, int fd, struct stat * st)
 static int _fsync_console(int fd)
 {
     if (fd == STDOUT_FILENO || fd == STDERR_FILENO) {
-#ifdef CONFIG_ESP_CONSOLE_UART
-        esp_rom_uart_flush_tx(CONFIG_ESP_CONSOLE_UART_NUM);
-#elif defined(CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG)
-        esp_rom_uart_flush_tx(CONFIG_ESP_ROM_USB_SERIAL_DEVICE_NUM);
-#elif defined(CONFIG_ESP_CONSOLE_USB_CDC)
-        esp_rom_uart_flush_tx(CONFIG_ESP_ROM_USB_OTG_NUM);
-#endif
+        esp_rom_output_flush_tx(CONFIG_ESP_CONSOLE_ROM_SERIAL_PORT_NUM);
         return 0;
     }
     errno = EBADF;

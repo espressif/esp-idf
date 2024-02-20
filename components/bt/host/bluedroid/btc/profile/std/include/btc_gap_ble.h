@@ -99,6 +99,9 @@ typedef enum {
     BTC_GAP_BLE_DTM_RX_START,
 #endif // #if (BLE_42_FEATURE_SUPPORT == TRUE)
     BTC_GAP_BLE_DTM_STOP,
+#if (BLE_42_FEATURE_SUPPORT == TRUE)
+    BTC_GAP_BLE_ACT_CLEAR_ADV,
+#endif // #if (BLE_42_FEATURE_SUPPORT == TRUE)
 } btc_gap_ble_act_t;
 
 /* btc_ble_gap_args_t */

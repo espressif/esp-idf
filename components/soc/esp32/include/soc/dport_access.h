@@ -107,7 +107,7 @@ uint32_t esp_dport_access_sequence_reg_read(uint32_t reg);
  */
 void esp_dport_access_read_buffer(uint32_t *buff_out, uint32_t address, uint32_t num_words);
 
-#if defined(BOOTLOADER_BUILD) || defined(CONFIG_FREERTOS_UNICORE) || !SOC_DPORT_WORKAROUND
+#if defined(BOOTLOADER_BUILD) || defined(CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE) || !SOC_DPORT_WORKAROUND
     #define DPORT_INTERRUPT_DISABLE()
     #define DPORT_INTERRUPT_RESTORE()
     #define DPORT_REG_READ(reg)          _DPORT_REG_READ(reg)
@@ -128,7 +128,7 @@ void esp_dport_access_read_buffer(uint32_t *buff_out, uint32_t address, uint32_t
                 __asm__ __volatile__("wsr.ps %0 ; rsync\n" \
                                     : : "a" (__tmp) : "memory" ); \
                 }while(0)
-#endif // defined(BOOTLOADER_BUILD) || defined(CONFIG_FREERTOS_UNICORE) || !SOC_DPORT_WORKAROUND
+#endif // defined(BOOTLOADER_BUILD) || defined(CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE) || !SOC_DPORT_WORKAROUND
 
 //get bit or get bits from register
 #define DPORT_REG_GET_BIT(_r, _b)  (DPORT_REG_READ(_r) & (_b))

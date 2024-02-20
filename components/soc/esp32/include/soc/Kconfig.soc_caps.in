@@ -155,6 +155,22 @@ config SOC_CLK_TREE_SUPPORTED
     bool
     default y
 
+config SOC_MPU_SUPPORTED
+    bool
+    default y
+
+config SOC_WDT_SUPPORTED
+    bool
+    default y
+
+config SOC_SPI_FLASH_SUPPORTED
+    bool
+    default y
+
+config SOC_RNG_SUPPORTED
+    bool
+    default y
+
 config SOC_DPORT_WORKAROUND_DIS_INTERRUPT_LVL
     int
     default 5
@@ -263,6 +279,10 @@ config SOC_CPU_HAS_FPU
     bool
     default y
 
+config SOC_HP_CPU_HAS_MULTIPLE_CORES
+    bool
+    default y
+
 config SOC_CPU_BREAKPOINTS_NUM
     int
     default 2
@@ -271,7 +291,7 @@ config SOC_CPU_WATCHPOINTS_NUM
     int
     default 2
 
-config SOC_CPU_WATCHPOINT_SIZE
+config SOC_CPU_WATCHPOINT_MAX_REGION_SIZE
     int
     default 64
 
@@ -299,9 +319,21 @@ config SOC_GPIO_VALID_GPIO_MASK
     hex
     default 0xFFFFFFFFFF
 
+config SOC_GPIO_IN_RANGE_MAX
+    int
+    default 39
+
+config SOC_GPIO_OUT_RANGE_MAX
+    int
+    default 33
+
 config SOC_GPIO_VALID_DIGITAL_IO_PAD_MASK
     hex
     default 0xEF0FEA
+
+config SOC_GPIO_CLOCKOUT_BY_IO_MUX
+    bool
+    default y
 
 config SOC_I2C_NUM
     int
@@ -635,21 +667,17 @@ config SOC_TIMER_GROUP_SUPPORT_APB
     bool
     default y
 
-config SOC_TOUCH_VERSION_1
-    bool
-    default y
+config SOC_TOUCH_SENSOR_VERSION
+    int
+    default 1
 
 config SOC_TOUCH_SENSOR_NUM
     int
     default 10
 
-config SOC_TOUCH_PAD_MEASURE_WAIT_MAX
-    hex
-    default 0xFF
-
-config SOC_TOUCH_PAD_THRESHOLD_MAX
-    bool
-    default n
+config SOC_TOUCH_SAMPLER_NUM
+    int
+    default 1
 
 config SOC_TWAI_CONTROLLER_NUM
     int
@@ -880,5 +908,9 @@ config SOC_ULP_HAS_ADC
     default y
 
 config SOC_PHY_COMBO_MODULE
+    bool
+    default y
+
+config SOC_EMAC_RMII_CLK_OUT_INTERNAL_LOOPBACK
     bool
     default y

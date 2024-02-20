@@ -1,8 +1,5 @@
-set(srcs "tusb_composite_main.c")
-set(requires fatfs wear_levelling)
-
 idf_component_register(
-    SRCS "${srcs}"
+    SRCS tusb_composite_main.c
     INCLUDE_DIRS .
-    REQUIRES "${requires}"
+    PRIV_REQUIRES fatfs wear_levelling esp_partition
 )

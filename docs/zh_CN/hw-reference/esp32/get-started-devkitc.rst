@@ -88,7 +88,7 @@ ESP32-DevKitC V4 开发板的主要组件、接口及控制方式见下。
 
 .. warning::
 
-	上述供电模式 **不可同时连接**，否则可能会损坏开发板和/或电源。
+  上述供电模式 **不可同时连接**，否则可能会损坏开发板和/或电源。
 
 
 排针
@@ -210,6 +210,7 @@ ESP32-DevKitC V4 上电前，请首先确认开发板完好无损。
 * `《ESP32 技术规格书》 <https://www.espressif.com/sites/default/files/documentation/esp32_datasheet_cn.pdf>`_ (PDF)
 * `《ESP32-WROOM-32 技术规格书》 <https://espressif.com/sites/default/files/documentation/esp32-wroom-32_datasheet_cn.pdf>`_ (PDF)
 * `《ESP32-WROOM-32D & ESP32-WROOM-32U 技术规格书》 <https://www.espressif.com/sites/default/files/documentation/esp32-wroom-32d_esp32-wroom-32u_datasheet_cn.pdf>`_ (PDF)
+* `《ESP32-WROOM-32E & ESP32-WROOM-32UE 技术规格书》 <https://www.espressif.com/sites/default/files/documentation/esp32-wroom-32e_esp32-wroom-32ue_datasheet_cn.pdf>`_ (PDF)
 * `《ESP32-WROOM-DA 技术规格书》 <https://www.espressif.com/sites/default/files/documentation/esp32-wroom-da_datasheet_cn.pdf>`_ (PDF)
 * `《ESP32-WROVER 技术规格书》 <https://espressif.com/sites/default/files/documentation/esp32-wrover_datasheet_cn.pdf>`_ (PDF)
 * `《ESP32-WROVER-B 技术规格书》 <https://www.espressif.com/sites/default/files/documentation/esp32-wrover-b_datasheet_cn.pdf>`_ (PDF)
@@ -219,6 +220,6 @@ ESP32-DevKitC V4 上电前，请首先确认开发板完好无损。
 
 
 .. toctree::
-	:hidden:
+  :hidden:
 
-	get-started-devkitc-v2
+  get-started-devkitc-v2

@@ -6,7 +6,7 @@
 
 #include "sdkconfig.h"
 
-#if CONFIG_BT_BLE_ENABLED || CONFIG_BT_NIMBLE_ENABLED
+#if CONFIG_BT_CONTROLLER_ENABLED && (CONFIG_BT_BLE_ENABLED || CONFIG_BT_NIMBLE_ENABLED)
 
 #include "ble_api.h"
 #include "esp_log.h"

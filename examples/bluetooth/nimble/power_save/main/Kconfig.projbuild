@@ -156,4 +156,19 @@ menu "Example Configuration"
         help
             Use this option to enable resolving peer's address.
 
+    config EXAMPLE_USE_CI_ADDRESS
+        bool
+        default n
+        prompt "Advertise using Test address(Internal Test ONLY)"
+        help
+            Used for internal test ONLY.
+            Use this option to advertise in a specific random address.
+
+    config EXAMPLE_CI_ADDRESS_OFFSET
+        string
+        prompt "Advertise using Test address(Internal Test ONLY)"
+        depends on EXAMPLE_USE_CI_ADDRESS
+        help
+            Used for internal test ONLY.
+            Use this option to advertise in a specific random address.
 endmenu

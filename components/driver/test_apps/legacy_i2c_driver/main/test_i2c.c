@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -20,21 +20,21 @@
 #include "hal/gpio_hal.h"
 #include "hal/uart_ll.h"
 #include "hal/i2c_types.h"
+#include "soc/uart_periph.h"
 #include "test_utils.h"
 
 #define DATA_LENGTH          512  /*!<Data buffer length for test buffer*/
 #define RW_TEST_LENGTH       129  /*!<Data length for r/w test, any value from 0-DATA_LENGTH*/
 
-#define I2C_SLAVE_SCL_IO     0     /*!<gpio number for i2c slave clock  */
-#define I2C_SLAVE_SDA_IO     2     /*!<gpio number for i2c slave data */
+#define I2C_SLAVE_SCL_IO     4     /*!<gpio number for i2c slave clock  */
+#define I2C_SLAVE_SDA_IO     5     /*!<gpio number for i2c slave data  */
 
 #define I2C_SLAVE_NUM I2C_NUM_0    /*!<I2C port number for slave dev */
 #define I2C_SLAVE_TX_BUF_LEN  (2*DATA_LENGTH) /*!<I2C slave tx buffer size */
 #define I2C_SLAVE_RX_BUF_LEN  (2*DATA_LENGTH) /*!<I2C slave rx buffer size */
 
-
-#define I2C_MASTER_SCL_IO     0     /*!<gpio number for i2c master clock  */
-#define I2C_MASTER_SDA_IO     2     /*!<gpio number for i2c master data */
+#define I2C_MASTER_SCL_IO     4     /*!<gpio number for i2c master clock  */
+#define I2C_MASTER_SDA_IO     5     /*!<gpio number for i2c master data  */
 
 #define I2C_MASTER_NUM I2C_NUM_0   /*!< I2C port number for master dev */
 #define I2C_MASTER_TX_BUF_DISABLE   0   /*!< I2C master do not need buffer */
@@ -508,6 +508,66 @@ static void i2c_slave_repeat_read(void)
 
 TEST_CASE_MULTIPLE_DEVICES("I2C repeat write test", "[i2c][test_env=generic_multi_device][timeout=150]", i2c_master_repeat_write, i2c_slave_repeat_read);
 
+#if SOC_I2C_NUM > 1
+
+static void i2c_master_write_test_more_ports(void)
+{
+    uint8_t *data_wr = (uint8_t *) malloc(DATA_LENGTH);
+    int i;
+
+    i2c_config_t conf_master = i2c_master_init();
+    TEST_ESP_OK(i2c_param_config(I2C_NUM_1, &conf_master));
+
+    TEST_ESP_OK(i2c_driver_install(I2C_NUM_1, I2C_MODE_MASTER,
+                                   I2C_MASTER_RX_BUF_DISABLE,
+                                   I2C_MASTER_TX_BUF_DISABLE, 0));
+    unity_wait_for_signal("i2c slave init finish");
+
+    unity_send_signal("master write");
+    for (i = 0; i < DATA_LENGTH / 2; i++) {
+        data_wr[i] = i;
+    }
+    i2c_master_write_slave(I2C_NUM_1, data_wr, DATA_LENGTH / 2);
+    disp_buf(data_wr, i);
+    free(data_wr);
+    unity_wait_for_signal("ready to delete");
+    TEST_ESP_OK(i2c_driver_delete(I2C_NUM_1));
+}
+
+static void i2c_slave_read_test_more_ports(void)
+{
+    uint8_t *data_rd = (uint8_t *) malloc(DATA_LENGTH);
+    int size_rd = 0;
+    int len = 0;
+
+    i2c_config_t conf_slave = i2c_slave_init();
+    TEST_ESP_OK(i2c_param_config( I2C_NUM_1, &conf_slave));
+    TEST_ESP_OK(i2c_driver_install(I2C_NUM_1, I2C_MODE_SLAVE,
+                                   I2C_SLAVE_RX_BUF_LEN,
+                                   I2C_SLAVE_TX_BUF_LEN, 0));
+    unity_send_signal("i2c slave init finish");
+
+    unity_wait_for_signal("master write");
+    while (1) {
+        len = i2c_slave_read_buffer( I2C_NUM_1, data_rd + size_rd, DATA_LENGTH, 10000 / portTICK_PERIOD_MS);
+        if (len == 0) {
+            break;
+        }
+        size_rd += len;
+    }
+    disp_buf(data_rd, size_rd);
+    for (int i = 0; i < size_rd; i++) {
+        TEST_ASSERT(data_rd[i] == i);
+    }
+    free(data_rd);
+    unity_send_signal("ready to delete");
+    TEST_ESP_OK(i2c_driver_delete(I2C_NUM_1));
+}
+
+TEST_CASE_MULTIPLE_DEVICES("I2C master write slave test, more ports", "[i2c][test_env=generic_multi_device][timeout=150]", i2c_master_write_test_more_ports, i2c_slave_read_test_more_ports);
+
+#endif
+
 static volatile bool exit_flag;
 static bool test_read_func;
 
@@ -622,8 +682,8 @@ static void uart_aut_baud_det_init(int rxd_io_num)
 {
     gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[rxd_io_num], PIN_FUNC_GPIO);
     gpio_set_direction(rxd_io_num, GPIO_MODE_INPUT_OUTPUT);
-    esp_rom_gpio_connect_out_signal(rxd_io_num, I2CEXT0_SCL_OUT_IDX, 0, 0);
-    esp_rom_gpio_connect_in_signal(rxd_io_num, U1RXD_IN_IDX, 0);
+    esp_rom_gpio_connect_out_signal(rxd_io_num, i2c_periph_signal[0].scl_out_sig, 0, 0);
+    esp_rom_gpio_connect_in_signal(rxd_io_num, UART_PERIPH_SIGNAL(1, SOC_UART_RX_PIN_IDX), 0);
     periph_module_enable(PERIPH_UART1_MODULE);
     /* Reset all the bits */
     uart_ll_disable_intr_mask(&UART1, ~0);

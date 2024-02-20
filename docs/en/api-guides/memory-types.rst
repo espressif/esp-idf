@@ -92,12 +92,12 @@ If some specific application code needs to be placed into IRAM, it can be done b
 
 Alternatively, it is possible to specify IRAM placement in the source code using the ``IRAM_ATTR`` macro::
 
-	#include "esp_attr.h"
+    #include "esp_attr.h"
 
-	void IRAM_ATTR gpio_isr_handler(void* arg)
-	{
-		// ...
-	}
+    void IRAM_ATTR gpio_isr_handler(void* arg)
+    {
+        // ...
+    }
 
 There are some possible issues with placement in IRAM, that may cause problems with IRAM-safe interrupt handlers:
 
@@ -182,6 +182,14 @@ The ``DRAM_ATTR`` attribute can be used to force constants from DROM into the :r
     .. only:: not esp32
 
         Remaining RTC FAST memory is added to the heap unless the option :ref:`CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP` is disabled. This memory can be used interchangeably with :ref:`DRAM`, but is slightly slower to access.
+
+
+.. only:: SOC_MEM_TCM_SUPPORTED
+
+    TCM (Tightly-Coupled Memory)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    TCM is memory placed near the CPU, accessible at CPU frequency without passing through a cache. Even though on average, it may not surpass the efficiency or speed of cached memory, it does provide predictable and consistent access times. TCM can be useful for time-critical routines where having a deterministic access speed is important.
 
 
 DMA-Capable Requirement

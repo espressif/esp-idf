@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import logging
 import os
@@ -25,12 +25,14 @@ def test_spaces_bundle1(idf_copy: Path) -> None:
     logging.info('Running test spaces bundle 1')
     # test_build
     run_idf_py('build', workdir=(idf_copy / 'examples' / 'get-started' / 'hello_world'))
-    # test build ulp_fsm
-    run_idf_py('build', workdir=(idf_copy / 'examples' / 'system' / 'ulp' / 'ulp_fsm' / 'ulp'))
-    # test build ulp_riscv
-    run_idf_py('-DIDF_TARGET=esp32s2', 'build', workdir=(idf_copy / 'examples' / 'system' / 'ulp' / 'ulp_riscv' / 'gpio'))
     # test spiffsgen
     run_idf_py('build', workdir=(idf_copy / 'examples' / 'storage' / 'spiffsgen'))
+    # bug reported in IDF-9151
+    if sys.platform != 'win32':
+        # test build ulp_fsm
+        run_idf_py('build', workdir=(idf_copy / 'examples' / 'system' / 'ulp' / 'ulp_fsm' / 'ulp'))
+        # test build ulp_riscv
+        run_idf_py('-DIDF_TARGET=esp32s2', 'build', workdir=(idf_copy / 'examples' / 'system' / 'ulp' / 'ulp_riscv' / 'gpio'))
 
 
 @pytest.mark.idf_copy('esp idf with spaces')

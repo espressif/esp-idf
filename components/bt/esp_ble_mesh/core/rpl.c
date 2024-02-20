@@ -64,6 +64,10 @@ static bool rpl_check_and_store(struct bt_mesh_net_rx *rx, struct bt_mesh_rpl **
                 return false;
             }
 
+#if CONFIG_BLE_MESH_NOT_RELAY_REPLAY_MSG
+            rx->replay_msg = 1;
+#endif
+
             return true;
         }
     }
@@ -84,11 +88,6 @@ bool bt_mesh_rpl_check(struct bt_mesh_net_rx *rx, struct bt_mesh_rpl **match)
         return false;
     }
 
-    return rpl_check_and_store(rx, match);
-}
-
-bool bt_mesh_bridge_rpl_check(struct bt_mesh_net_rx *rx, struct bt_mesh_rpl **match)
-{
     return rpl_check_and_store(rx, match);
 }
 

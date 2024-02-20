@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  *
- * SPDX-FileContributor: 2019-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2019-2023 Espressif Systems (Shanghai) CO LTD
  */
 
 #include <assert.h>
@@ -37,11 +37,19 @@ static const char *TAG = "Timer";
 #error "not defined SOC_ESP_NIMBLE_CONTROLLER or SOC_ESP_NIMBLE_CONTROLLER is zero"
 #endif
 
+#if CONFIG_BT_NIMBLE_ENABLED
 #define BLE_HOST_CO_COUNT    (8)
 #define BLE_HOST_EV_COUNT    (11 + BLE_HOST_CO_COUNT)
 #define BLE_HOST_EVQ_COUNT   (3)
 #define BLE_HOST_SEM_COUNT   (10)
 #define BLE_HOST_MUTEX_COUNT (4)
+#else
+#define BLE_HOST_CO_COUNT    (0)
+#define BLE_HOST_EV_COUNT    (0)
+#define BLE_HOST_EVQ_COUNT   (0)
+#define BLE_HOST_SEM_COUNT   (0)
+#define BLE_HOST_MUTEX_COUNT (0)
+#endif
 
 struct os_mempool ble_freertos_ev_pool;
 static os_membuf_t *ble_freertos_ev_buf = NULL;
@@ -133,6 +141,9 @@ npl_freertos_eventq_init(struct ble_npl_eventq *evq)
         memset(eventq, 0, sizeof(*eventq));
         eventq->q = xQueueCreate(ble_freertos_total_event_cnt, sizeof(struct ble_npl_eventq *));
         BLE_LL_ASSERT(eventq->q);
+    } else {
+        eventq = (struct ble_npl_eventq_freertos*)evq->eventq;
+        xQueueReset(eventq->q);
     }
 #else
     if(!evq->eventq) {
@@ -142,6 +153,9 @@ npl_freertos_eventq_init(struct ble_npl_eventq *evq)
         memset(eventq, 0, sizeof(*eventq));
         eventq->q = xQueueCreate(ble_freertos_total_event_cnt, sizeof(struct ble_npl_eventq *));
         BLE_LL_ASSERT(eventq->q);
+    } else {
+        eventq = (struct ble_npl_eventq_freertos*)evq->eventq;
+        xQueueReset(eventq->q);
     }
 #endif
 }
@@ -229,6 +243,32 @@ IRAM_ATTR npl_freertos_eventq_put(struct ble_npl_eventq *evq, struct ble_npl_eve
         }
     } else {
         ret = xQueueSendToBack(eventq->q, &ev, portMAX_DELAY);
+    }
+
+    BLE_LL_ASSERT(ret == pdPASS);
+}
+
+void
+IRAM_ATTR npl_freertos_eventq_put_to_front(struct ble_npl_eventq *evq, struct ble_npl_event *ev)
+{
+    BaseType_t woken;
+    BaseType_t ret;
+    struct ble_npl_eventq_freertos *eventq = (struct ble_npl_eventq_freertos *)evq->eventq;
+    struct ble_npl_event_freertos *event = (struct ble_npl_event_freertos *)ev->event;
+
+    if (event->queued) {
+        return;
+    }
+
+    event->queued = true;
+
+    if (in_isr()) {
+        ret = xQueueSendToFrontFromISR(eventq->q, &ev, &woken);
+        if( woken == pdTRUE ) {
+            portYIELD_FROM_ISR();
+        }
+    } else {
+        ret = xQueueSendToFront(eventq->q, &ev, portMAX_DELAY);
     }
 
     BLE_LL_ASSERT(ret == pdPASS);
@@ -720,12 +760,12 @@ npl_freertos_callout_deinit(struct ble_npl_callout *co)
     }
 #else
     xTimerDelete(callout->handle, portMAX_DELAY);
+#endif // BLE_NPL_USE_ESP_TIMER
 #if OS_MEM_ALLOC
     os_memblock_put(&ble_freertos_co_pool,callout);
 #else
     free((void *)callout);
 #endif // OS_MEM_ALLOC
-#endif // BLE_NPL_USE_ESP_TIMER
     co->co = NULL;
     memset(co, 0, sizeof(struct ble_npl_callout));
 }
@@ -980,6 +1020,7 @@ const struct npl_funcs_t npl_funcs_ro = {
     .p_ble_npl_eventq_deinit = npl_freertos_eventq_deinit,
     .p_ble_npl_eventq_get = npl_freertos_eventq_get,
     .p_ble_npl_eventq_put = npl_freertos_eventq_put,
+    .p_ble_npl_eventq_put_to_front = npl_freertos_eventq_put_to_front,
     .p_ble_npl_eventq_remove = npl_freertos_eventq_remove,
     .p_ble_npl_event_run = npl_freertos_event_run,
     .p_ble_npl_eventq_is_empty = npl_freertos_eventq_is_empty,

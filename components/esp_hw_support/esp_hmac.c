@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,11 +13,14 @@
 #include "esp_hmac.h"
 #include "esp_log.h"
 #include "esp_crypto_lock.h"
+#include "esp_private/esp_crypto_lock_internal.h"
 #include "soc/hwcrypto_reg.h"
 #include "soc/system_reg.h"
 
 #if !CONFIG_IDF_TARGET_ESP32S2
+#include "hal/ds_ll.h"
 #include "hal/hmac_hal.h"
+#include "hal/hmac_ll.h"
 #include "esp_private/periph_ctrl.h"
 #endif
 
@@ -67,9 +70,17 @@ esp_err_t esp_hmac_calculate(hmac_key_id_t key_id,
     esp_crypto_hmac_lock_acquire();
 
     // We also enable SHA and DS here. SHA is used by HMAC, DS will otherwise hold SHA in reset state.
-    periph_module_enable(PERIPH_HMAC_MODULE);
+    HMAC_RCC_ATOMIC() {
+        hmac_ll_enable_bus_clock(true);
+        hmac_ll_reset_register();
+    }
+
     periph_module_enable(PERIPH_SHA_MODULE);
-    periph_module_enable(PERIPH_DS_MODULE);
+
+    DS_RCC_ATOMIC() {
+        ds_ll_enable_bus_clock(true);
+        ds_ll_reset_register();
+    }
 
     hmac_hal_start();
 
@@ -131,9 +142,15 @@ esp_err_t esp_hmac_calculate(hmac_key_id_t key_id,
     // Read back result (bit swapped)
     hmac_hal_read_result_256(hmac);
 
-    periph_module_disable(PERIPH_DS_MODULE);
+    DS_RCC_ATOMIC() {
+        ds_ll_enable_bus_clock(false);
+    }
+
     periph_module_disable(PERIPH_SHA_MODULE);
-    periph_module_disable(PERIPH_HMAC_MODULE);
+
+    HMAC_RCC_ATOMIC() {
+        hmac_ll_enable_bus_clock(false);
+    }
 
     esp_crypto_hmac_lock_release();
 
@@ -180,7 +197,9 @@ esp_err_t esp_hmac_jtag_enable(hmac_key_id_t key_id, const uint8_t *token)
 esp_err_t esp_hmac_jtag_disable()
 {
     esp_crypto_hmac_lock_acquire();
+    ets_hmac_enable();
     REG_WRITE(HMAC_SET_INVALIDATE_JTAG_REG, 1);
+    ets_hmac_disable();
     esp_crypto_hmac_lock_release();
 
     ESP_LOGD(TAG, "Invalidate JTAG result register. JTAG disabled.");
@@ -262,7 +281,9 @@ esp_err_t esp_hmac_jtag_disable()
 {
     esp_crypto_dma_lock_acquire();
 
+    ets_hmac_enable();
     REG_WRITE(HMAC_SET_INVALIDATE_JTAG_REG, 1);
+    ets_hmac_disable();
 
     esp_crypto_dma_lock_release();
 

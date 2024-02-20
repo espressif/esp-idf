@@ -10,13 +10,46 @@
 #include <sys/param.h>
 #include "hal/assert.h"
 #include "hal/mpi_types.h"
-#include "soc/rsa_reg.h"
+#include "soc/hp_sys_clkrst_struct.h"
 #include "soc/mpi_periph.h"
+#include "soc/rsa_reg.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+/**
+ * @brief Enable the bus clock for MPI peripheral module
+ *
+ * @param enable true to enable the module, false to disable the module
+ */
+static inline void mpi_ll_enable_bus_clock(bool enable)
+{
+    HP_SYS_CLKRST.peri_clk_ctrl25.reg_crypto_rsa_clk_en = enable;
+}
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define mpi_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; mpi_ll_enable_bus_clock(__VA_ARGS__)
+
+/**
+ * @brief Reset the MPI peripheral module
+ */
+static inline void mpi_ll_reset_register(void)
+{
+    HP_SYS_CLKRST.hp_rst_en2.reg_rst_en_rsa = 1;
+    HP_SYS_CLKRST.hp_rst_en2.reg_rst_en_rsa = 0;
+    HP_SYS_CLKRST.hp_rst_en2.reg_rst_en_crypto = 1;
+    HP_SYS_CLKRST.hp_rst_en2.reg_rst_en_crypto = 0;
+
+    // Clear reset on digital signature and ECDSA, otherwise RSA is held in reset
+    HP_SYS_CLKRST.hp_rst_en2.reg_rst_en_ds = 0;
+    HP_SYS_CLKRST.hp_rst_en2.reg_rst_en_ecdsa = 0;
+}
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define mpi_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; mpi_ll_reset_register(__VA_ARGS__)
 
 static inline size_t mpi_ll_calculate_hardware_words(size_t words)
 {

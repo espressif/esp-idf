@@ -49,7 +49,7 @@ void unity_utils_task_delete(TaskHandle_t thandle)
 #if CONFIG_FREERTOS_UNICORE
     vTaskDelete(thandle);
 #else // CONFIG_FREERTOS_UNICORE
-    const BaseType_t tsk_affinity = xTaskGetAffinity(thandle);
+    const BaseType_t tsk_affinity = xTaskGetCoreID(thandle);
     const BaseType_t core_id = xPortGetCoreID();
 
     printf("Task_affinity: 0x%x, current_core: %d\n", tsk_affinity, core_id);

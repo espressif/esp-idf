@@ -148,7 +148,8 @@ extern "C" {
 #define TDATA1_EXECUTE   (1<<2)  /*R/W,Fire trigger on instruction fetch address match*/
 #define TDATA1_USER      (1<<3)  /*R/W,allow trigger to be fired in user mode*/
 #define TDATA1_MACHINE   (1<<6)  /*R/W,Allow trigger to be fired while hart is executing in machine mode*/
-#define TDATA1_MATCH     (1<<7)
+#define TDATA1_MATCH_EXACT  (0)
+#define TDATA1_MATCH_NAPOT  (1<<7)
 #define TDATA1_MATCH_V   (0xF)   /*R/W,Address match type :0 : Exact byte match  1 : NAPOT range match */
 #define TDATA1_MATCH_S   (7)
 #define TDATA1_HIT_S     (20)

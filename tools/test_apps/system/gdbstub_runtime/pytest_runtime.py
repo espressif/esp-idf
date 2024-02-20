@@ -19,6 +19,7 @@ def get_line_number(lookup: str, offset: int = 0) -> int:
     return -1
 
 
+@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='esp32p4 support TBD')  # TODO: IDF-8992
 @pytest.mark.supported_targets
 @pytest.mark.generic
 def test_gdbstub_runtime(dut: PanicTestDut) -> None:

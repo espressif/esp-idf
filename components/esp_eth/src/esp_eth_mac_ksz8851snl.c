@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: MIT
  *
- * SPDX-FileContributor: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2021-2024 Espressif Systems (Shanghai) CO LTD
  */
 
 #include <string.h>
@@ -18,6 +18,7 @@
 #include "freertos/semphr.h"
 #include "esp_eth_driver.h"
 #include "ksz8851.h"
+#include "esp_timer.h"
 
 
 #define KSZ8851_ETH_MAC_RX_BUF_SIZE_AUTO (0)
@@ -42,6 +43,8 @@ typedef struct {
     TaskHandle_t rx_task_hdl;
     uint32_t sw_reset_timeout_ms;
     int int_gpio_num;
+    esp_timer_handle_t poll_timer;
+    uint32_t poll_period_ms;
     uint8_t *rx_buffer;
     uint8_t *tx_buffer;
 } emac_ksz8851snl_t;
@@ -83,6 +86,12 @@ IRAM_ATTR static void ksz8851_isr_handler(void *arg)
     if (high_task_wakeup != pdFALSE) {
         portYIELD_FROM_ISR();
     }
+}
+
+static void ksz8851_poll_timer(void *arg)
+{
+    emac_ksz8851snl_t *emac = (emac_ksz8851snl_t *)arg;
+    xTaskNotifyGive(emac->rx_task_hdl);
 }
 
 static void *ksz8851_spi_init(const void *spi_config)
@@ -298,7 +307,7 @@ static esp_err_t init_set_defaults(emac_ksz8851snl_t *emac)
     ESP_GOTO_ON_ERROR(ksz8851_set_bits(emac, KSZ8851_RXDTTR, RXDTTR_INIT_VALUE), err, TAG, "RXDTTR write failed");
     ESP_GOTO_ON_ERROR(ksz8851_set_bits(emac, KSZ8851_RXDBCTR, RXDBCTR_INIT_VALUE), err, TAG, "RXDBCTR write failed");
     ESP_GOTO_ON_ERROR(ksz8851_set_bits(emac, KSZ8851_RXCR1,
-                                       RXCR1_RXUDPFCC | RXCR1_RXTCPFCC | RXCR1_RXIPFCC | RXCR1_RXPAFMA | RXCR1_RXFCE | RXCR1_RXBE | RXCR1_RXUE | RXCR1_RXME), err, TAG, "RXCR1 write failed");
+                                       RXCR1_RXUDPFCC | RXCR1_RXTCPFCC | RXCR1_RXIPFCC | RXCR1_RXPAFMA | RXCR1_RXFCE | RXCR1_RXUE | RXCR1_RXME | RXCR1_RXMAFMA | RXCR1_RXAE), err, TAG, "RXCR1 write failed");
     ESP_GOTO_ON_ERROR(ksz8851_set_bits(emac, KSZ8851_RXCR2,
                                        (4 << RXCR2_SRDBL_SHIFT) | RXCR2_IUFFP | RXCR2_RXIUFCEZ | RXCR2_UDPLFE | RXCR2_RXICMPFCC), err, TAG, "RXCR2 write failed");
     ESP_GOTO_ON_ERROR(ksz8851_set_bits(emac, KSZ8851_RXQCR, RXQCR_RXFCTE | RXQCR_ADRFE), err, TAG, "RXQCR write failed");
@@ -317,12 +326,14 @@ static esp_err_t emac_ksz8851_init(esp_eth_mac_t *mac)
     esp_err_t ret           = ESP_OK;
     emac_ksz8851snl_t *emac = __containerof(mac, emac_ksz8851snl_t, parent);
     esp_eth_mediator_t *eth = emac->eth;
-    esp_rom_gpio_pad_select_gpio(emac->int_gpio_num);
-    gpio_set_direction(emac->int_gpio_num, GPIO_MODE_INPUT);
-    gpio_set_pull_mode(emac->int_gpio_num, GPIO_PULLUP_ONLY);
-    gpio_set_intr_type(emac->int_gpio_num, GPIO_INTR_NEGEDGE); // NOTE(v.chistyakov): active low
-    gpio_intr_enable(emac->int_gpio_num);
-    gpio_isr_handler_add(emac->int_gpio_num, ksz8851_isr_handler, emac);
+    if (emac->int_gpio_num >= 0) {
+        esp_rom_gpio_pad_select_gpio(emac->int_gpio_num);
+        gpio_set_direction(emac->int_gpio_num, GPIO_MODE_INPUT);
+        gpio_set_pull_mode(emac->int_gpio_num, GPIO_PULLUP_ONLY);
+        gpio_set_intr_type(emac->int_gpio_num, GPIO_INTR_NEGEDGE); // NOTE(v.chistyakov): active low
+        gpio_intr_enable(emac->int_gpio_num);
+        gpio_isr_handler_add(emac->int_gpio_num, ksz8851_isr_handler, emac);
+    }
     ESP_GOTO_ON_ERROR(eth->on_state_changed(eth, ETH_STATE_LLINIT, NULL), err, TAG, "lowlevel init failed");
 
     // NOTE(v.chistyakov): soft reset
@@ -338,8 +349,10 @@ static esp_err_t emac_ksz8851_init(esp_eth_mac_t *mac)
     return ESP_OK;
 err:
     ESP_LOGD(TAG, "MAC initialization failed");
-    gpio_isr_handler_remove(emac->int_gpio_num);
-    gpio_reset_pin(emac->int_gpio_num);
+    if (emac->int_gpio_num >= 0) {
+        gpio_isr_handler_remove(emac->int_gpio_num);
+        gpio_reset_pin(emac->int_gpio_num);
+    }
     eth->on_state_changed(eth, ETH_STATE_DEINIT, NULL);
     return ret;
 }
@@ -349,8 +362,13 @@ static esp_err_t emac_ksz8851_deinit(esp_eth_mac_t *mac)
     emac_ksz8851snl_t *emac = __containerof(mac, emac_ksz8851snl_t, parent);
     esp_eth_mediator_t *eth = emac->eth;
     mac->stop(mac);
-    gpio_isr_handler_remove(emac->int_gpio_num);
-    gpio_reset_pin(emac->int_gpio_num);
+    if (emac->int_gpio_num >= 0) {
+        gpio_isr_handler_remove(emac->int_gpio_num);
+        gpio_reset_pin(emac->int_gpio_num);
+    }
+    if (emac->poll_timer && esp_timer_is_active(emac->poll_timer)) {
+        esp_timer_stop(emac->poll_timer);
+    }
     eth->on_state_changed(eth, ETH_STATE_DEINIT, NULL);
     ESP_LOGD(TAG, "MAC deinitialized");
     return ESP_OK;
@@ -626,13 +644,22 @@ err:
 static esp_err_t emac_ksz8851_set_link(esp_eth_mac_t *mac, eth_link_t link)
 {
     esp_err_t ret = ESP_OK;
+    emac_ksz8851snl_t *emac = __containerof(mac, emac_ksz8851snl_t, parent);
     switch (link) {
     case ETH_LINK_UP:
         ESP_GOTO_ON_ERROR(mac->start(mac), err, TAG, "ksz8851 start failed");
+        if (emac->poll_timer) {
+            ESP_GOTO_ON_ERROR(esp_timer_start_periodic(emac->poll_timer, emac->poll_period_ms * 1000),
+                                err, TAG, "start poll timer failed");
+        }
         ESP_LOGD(TAG, "link is up");
         break;
     case ETH_LINK_DOWN:
         ESP_GOTO_ON_ERROR(mac->stop(mac), err, TAG, "ksz8851 stop failed");
+        if (emac->poll_timer) {
+            ESP_GOTO_ON_ERROR(esp_timer_stop(emac->poll_timer),
+                                err, TAG, "stop poll timer failed");
+        }
         ESP_LOGD(TAG, "link is down");
         break;
     default: ESP_GOTO_ON_FALSE(false, ESP_ERR_INVALID_ARG, err, TAG, "unknown link status"); break;
@@ -650,13 +677,13 @@ static esp_err_t emac_ksz8851_set_promiscuous(esp_eth_mac_t *mac, bool enable)
     if (enable) {
         // NOTE(v.chistyakov): set promiscuous mode
         ESP_LOGD(TAG, "setting promiscuous mode");
-        rxcr1 |= RXCR1_RXINVF | RXCR1_RXAE;
+        rxcr1 |= RXCR1_RXAE | RXCR1_RXINVF;
         rxcr1 &= ~(RXCR1_RXPAFMA | RXCR1_RXMAFMA);
     } else {
         // NOTE(v.chistyakov): set hash perfect (default)
-        ESP_LOGD(TAG, "setting hash perfect mode");
-        rxcr1 |= RXCR1_RXPAFMA;
-        rxcr1 &= ~(RXCR1_RXINVF | RXCR1_RXAE | RXCR1_RXMAFMA);
+        ESP_LOGD(TAG, "setting perfect with multicast passed");
+        rxcr1 |= RXCR1_RXAE| RXCR1_RXPAFMA | RXCR1_RXMAFMA;
+        rxcr1 &= ~RXCR1_RXINVF;
     }
     ESP_GOTO_ON_ERROR(ksz8851_write_reg(emac, KSZ8851_RXCR1, rxcr1), err, TAG, "RXCR1 write failed");
 err:
@@ -689,8 +716,16 @@ static esp_err_t emac_ksz8851_set_peer_pause_ability(esp_eth_mac_t *mac, uint32_
 static void emac_ksz8851snl_task(void *arg)
 {
     emac_ksz8851snl_t *emac = (emac_ksz8851snl_t *)arg;
+    esp_err_t ret;
     while (1) {
-        ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+        if (emac->int_gpio_num >= 0) {                                   // if in interrupt mode
+            if (ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(1000)) == 0 &&   // if no notification ...
+                gpio_get_level(emac->int_gpio_num) != 0) {               // ...and no interrupt asserted
+                continue;                                                // -> just continue to check again
+            }
+        } else {
+            ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+        }
 
         uint16_t interrupt_status;
         ksz8851_read_reg(emac, KSZ8851_ISR, &interrupt_status);
@@ -742,31 +777,35 @@ static void emac_ksz8851snl_task(void *arg)
                 /* define max expected frame len */
                 uint32_t frame_len = ETH_MAX_PACKET_SIZE;
                 uint8_t *buffer;
-                emac_ksz8851_alloc_recv_buf(emac, &buffer, &frame_len);
-                /* we have memory to receive the frame of maximal size previously defined */
-                if (buffer != NULL) {
-                    uint32_t buf_len = KSZ8851_ETH_MAC_RX_BUF_SIZE_AUTO;
-                    if (emac->parent.receive(&emac->parent, buffer, &buf_len) == ESP_OK) {
-                        if (buf_len == 0) {
+                if ((ret = emac_ksz8851_alloc_recv_buf(emac, &buffer, &frame_len)) == ESP_OK) {
+                    if (buffer != NULL) {
+                        /* we have memory to receive the frame of maximal size previously defined */
+                        uint32_t buf_len = KSZ8851_ETH_MAC_RX_BUF_SIZE_AUTO;
+                        if (emac->parent.receive(&emac->parent, buffer, &buf_len) == ESP_OK) {
+                            if (buf_len == 0) {
+                                emac_ksz8851_flush_recv_queue(emac);
+                                free(buffer);
+                            } else if (frame_len > buf_len) {
+                                ESP_LOGE(TAG, "received frame was truncated");
+                                free(buffer);
+                            } else {
+                                ESP_LOGD(TAG, "receive len=%u", buf_len);
+                                /* pass the buffer to stack (e.g. TCP/IP layer) */
+                                emac->eth->stack_input(emac->eth, buffer, buf_len);
+                            }
+                        } else {
+                            ESP_LOGE(TAG, "frame read from module failed");
                             emac_ksz8851_flush_recv_queue(emac);
                             free(buffer);
-                        } else if (frame_len > buf_len) {
-                            ESP_LOGE(TAG, "received frame was truncated");
-                            free(buffer);
-                        } else {
-                            ESP_LOGD(TAG, "receive len=%u", buf_len);
-                            /* pass the buffer to stack (e.g. TCP/IP layer) */
-                            emac->eth->stack_input(emac->eth, buffer, buf_len);
                         }
-                    } else {
-                        ESP_LOGE(TAG, "frame read from module failed");
-                        emac_ksz8851_flush_recv_queue(emac);
-                        free(buffer);
+                    } else if (frame_len) {
+                        ESP_LOGE(TAG, "invalid combination of frame_len(%u) and buffer pointer(%p)", frame_len, buffer);
                     }
-                /* if allocation failed and there is a waiting frame */
-                } else if (frame_len) {
+                } else if (ret == ESP_ERR_NO_MEM) {
                     ESP_LOGE(TAG, "no mem for receive buffer");
                     emac_ksz8851_flush_recv_queue(emac);
+                } else {
+                    ESP_LOGE(TAG, "unexpected error 0x%x", ret);
                 }
             }
             ksz8851_write_reg(emac, KSZ8851_IER, ier);
@@ -778,6 +817,9 @@ static void emac_ksz8851snl_task(void *arg)
 static esp_err_t emac_ksz8851_del(esp_eth_mac_t *mac)
 {
     emac_ksz8851snl_t *emac = __containerof(mac, emac_ksz8851snl_t, parent);
+    if (emac->poll_timer) {
+        esp_timer_delete(emac->poll_timer);
+    }
     vTaskDelete(emac->rx_task_hdl);
     emac->spi.deinit(emac->spi.ctx);
     vSemaphoreDelete(emac->spi_lock);
@@ -794,13 +836,14 @@ esp_eth_mac_t *esp_eth_mac_new_ksz8851snl(const eth_ksz8851snl_config_t *ksz8851
     emac_ksz8851snl_t *emac = NULL;
 
     ESP_GOTO_ON_FALSE(ksz8851snl_config && mac_config, NULL, err, TAG, "arguments can not be null");
-    ESP_GOTO_ON_FALSE(ksz8851snl_config->int_gpio_num >= 0, NULL, err, TAG, "invalid interrupt gpio number");
+    ESP_GOTO_ON_FALSE((ksz8851snl_config->int_gpio_num >= 0) != (ksz8851snl_config->poll_period_ms > 0), NULL, err, TAG, "invalid configuration argument combination");
 
     emac = calloc(1, sizeof(emac_ksz8851snl_t));
     ESP_GOTO_ON_FALSE(emac, NULL, err, TAG, "no mem for MAC instance");
 
     emac->sw_reset_timeout_ms           = mac_config->sw_reset_timeout_ms;
     emac->int_gpio_num                  = ksz8851snl_config->int_gpio_num;
+    emac->poll_period_ms                = ksz8851snl_config->poll_period_ms;
     emac->parent.set_mediator           = emac_ksz8851_set_mediator;
     emac->parent.init                   = emac_ksz8851_init;
     emac->parent.deinit                 = emac_ksz8851_deinit;
@@ -856,10 +899,24 @@ esp_eth_mac_t *esp_eth_mac_new_ksz8851snl(const eth_ksz8851snl_config_t *ksz8851
     BaseType_t xReturned = xTaskCreatePinnedToCore(emac_ksz8851snl_task, "ksz8851snl_tsk", mac_config->rx_task_stack_size,
                            emac, mac_config->rx_task_prio, &emac->rx_task_hdl, core_num);
     ESP_GOTO_ON_FALSE(xReturned == pdPASS, NULL, err, TAG, "create ksz8851 task failed");
+
+    if (emac->int_gpio_num < 0) {
+        const esp_timer_create_args_t poll_timer_args = {
+            .callback = ksz8851_poll_timer,
+            .name = "emac_spi_poll_timer",
+            .arg = emac,
+            .skip_unhandled_events = true
+        };
+        ESP_GOTO_ON_FALSE(esp_timer_create(&poll_timer_args, &emac->poll_timer) == ESP_OK, NULL, err, TAG, "create poll timer failed");
+    }
+
     return &(emac->parent);
 
 err:
     if (emac) {
+        if (emac->poll_timer) {
+            esp_timer_delete(emac->poll_timer);
+        }
         if (emac->rx_task_hdl) {
             vTaskDelete(emac->rx_task_hdl);
         }

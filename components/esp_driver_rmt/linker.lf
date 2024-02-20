@@ -1,0 +1,7 @@
+[mapping:rmt_driver]
+archive: libesp_driver_rmt.a
+entries:
+    if RMT_RECV_FUNC_IN_IRAM = y:
+        rmt_rx: rmt_receive (noflash)
+        if SOC_RMT_SUPPORT_DMA = y:
+            rmt_rx: rmt_rx_mount_dma_buffer (noflash)

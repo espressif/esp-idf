@@ -13,6 +13,21 @@ menu "OpenThread"
         help
             Select this option to enable dynamic log level control for OpenThread
 
+    choice OPENTHREAD_CONSOLE_TYPE
+        prompt "OpenThread console type"
+        depends on OPENTHREAD_ENABLED
+        default OPENTHREAD_CONSOLE_TYPE_UART
+        help
+            Select OpenThread console type
+
+        config OPENTHREAD_CONSOLE_TYPE_UART
+            depends on ESP_CONSOLE_UART_DEFAULT || ESP_CONSOLE_UART_CUSTOM
+            bool "OpenThread console type UART"
+        config OPENTHREAD_CONSOLE_TYPE_USB_SERIAL_JTAG
+            depends on ESP_CONSOLE_USB_SERIAL_JTAG || ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG
+            bool "OpenThread console type USB Serial/JTAG Controller"
+    endchoice #OPENTHREAD_CONSOLE_TYPE
+
     choice OPENTHREAD_LOG_LEVEL
         prompt "OpenThread log verbosity"
         depends on OPENTHREAD_ENABLED && !OPENTHREAD_LOG_LEVEL_DYNAMIC
@@ -99,6 +114,7 @@ menu "OpenThread"
                 Select this to use the native 15.4 radio.
 
         config OPENTHREAD_RADIO_SPINEL_UART
+            select UART_ISR_IN_IRAM
             bool "Connect via UART"
             help
                 Select this to connect to a Radio Co-Processor via UART.
@@ -142,15 +158,24 @@ menu "OpenThread"
         default OPENTHREAD_RCP_UART
 
         config OPENTHREAD_RCP_UART
+            select UART_ISR_IN_IRAM
             bool "UART RCP"
             help
                 Select this to enable UART connection to host.
 
         config OPENTHREAD_RCP_SPI
             bool "SPI RCP"
+            select GPIO_CTRL_FUNC_IN_IRAM
             help
                 Select this to enable SPI connection to host.
     endchoice
+
+    config OPENTHREAD_NCP_VENDOR_HOOK
+        bool "Enable vendor command for RCP"
+        depends on OPENTHREAD_RADIO
+        default n
+        help
+            Select this to enable OpenThread NCP vendor commands.
 
     config OPENTHREAD_CLI
         bool "Enable Openthread Command-Line Interface"
@@ -237,7 +262,7 @@ menu "OpenThread"
 
     config OPENTHREAD_SPINEL_RX_FRAME_BUFFER_SIZE
         int "The size of openthread spinel rx frame buffer"
-        depends on OPENTHREAD_ENABLED
+        depends on OPENTHREAD_ENABLED || OPENTHREAD_SPINEL_ONLY
         default 1024
         range 512 8192
 
@@ -270,7 +295,7 @@ menu "OpenThread"
     config OPENTHREAD_UART_BUFFER_SIZE
         int "The uart received buffer size of openthread"
         depends on OPENTHREAD_ENABLED
-        default 256
+        default 768
         range 128 1024
         help
             Set the OpenThread UART buffer size.
@@ -337,5 +362,47 @@ menu "OpenThread"
         help
             Select this option to enable time synchronization feature, the devices in the same Thread network could
             sync to the same network time.
+
+    config OPENTHREAD_RADIO_STATS_ENABLE
+        bool "Enable Radio Statistics feature"
+        depends on OPENTHREAD_FTD || OPENTHREAD_MTD
+        default n
+        help
+            Select this option to enable the radio statistics feature, you can use radio command to print some radio
+            Statistics informations.
+
+    config OPENTHREAD_SPINEL_ONLY
+        bool "Enable OpenThread External Radio Spinel feature"
+        default n
+        help
+            Select this option to enable the OpenThread Radio Spinel for external protocol stack, such as Zigbee.
+
+    config OPENTHREAD_RX_ON_WHEN_IDLE
+        bool "Enable OpenThread radio capibility rx on when idle"
+        default y if !ESP_COEX_SW_COEXIST_ENABLE
+        default n if ESP_COEX_SW_COEXIST_ENABLE
+        help
+            Select this option to enable OpenThread radio capibility rx on when idle. Do not support this feature when
+            SW coexistence is enabled.
+
+    menu "Thread Address Query Config"
+        config OPENTHREAD_ADDRESS_QUERY_TIMEOUT
+            int "Timeout value (in seconds) for a address notification response after sending an address query."
+            depends on OPENTHREAD_FTD || OPENTHREAD_MTD
+            default 3
+            range 1 10
+
+        config OPENTHREAD_ADDRESS_QUERY_RETRY_DELAY
+            int "Initial retry delay for address query (in seconds)."
+            depends on OPENTHREAD_FTD || OPENTHREAD_MTD
+            default 15
+            range 1 120
+
+        config OPENTHREAD_ADDRESS_QUERY_MAX_RETRY_DELAY
+            int "Maximum retry delay for address query (in seconds)."
+            depends on OPENTHREAD_FTD || OPENTHREAD_MTD
+            default 120
+            range OPENTHREAD_ADDRESS_QUERY_RETRY_DELAY 960
+    endmenu
 
 endmenu

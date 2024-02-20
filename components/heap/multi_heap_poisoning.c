@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -51,7 +51,6 @@
 
 typedef struct {
     uint32_t head_canary;
-    MULTI_HEAP_BLOCK_OWNER
     size_t alloc_size;
 } poison_head_t;
 
@@ -72,7 +71,6 @@ __attribute__((noinline))  static uint8_t *poison_allocated_region(poison_head_t
     poison_tail_t *tail = (poison_tail_t *)(data + alloc_size);
     head->alloc_size = alloc_size;
     head->head_canary = HEAD_CANARY_PATTERN;
-    MULTI_HEAP_SET_BLOCK_OWNER(head);
 
     uint32_t tail_canary = TAIL_CANARY_PATTERN;
     if ((intptr_t)tail % sizeof(void *) == 0) {
@@ -208,6 +206,11 @@ void block_absorb_post_hook(void *start, size_t size, bool is_free)
 
 void *multi_heap_aligned_alloc(multi_heap_handle_t heap, size_t size, size_t alignment)
 {
+    return multi_heap_aligned_alloc_offs(heap, size, alignment, 0);
+}
+
+void *multi_heap_aligned_alloc_offs(multi_heap_handle_t heap, size_t size, size_t alignment, size_t offset)
+{
     if (!size) {
         return NULL;
     }
@@ -218,7 +221,7 @@ void *multi_heap_aligned_alloc(multi_heap_handle_t heap, size_t size, size_t ali
 
     multi_heap_internal_lock(heap);
     poison_head_t *head = multi_heap_aligned_alloc_impl_offs(heap, size + POISON_OVERHEAD,
-                                                             alignment, sizeof(poison_head_t));
+                                                             alignment, offset + sizeof(poison_head_t));
     uint8_t *data = NULL;
     if (head != NULL) {
         data = poison_allocated_region(head, size);
@@ -349,11 +352,6 @@ void *multi_heap_get_block_address(multi_heap_block_handle_t block)
 {
     char *head = multi_heap_get_block_address_impl(block);
     return head + sizeof(poison_head_t);
-}
-
-void *multi_heap_get_block_owner(multi_heap_block_handle_t block)
-{
-    return MULTI_HEAP_GET_BLOCK_OWNER((poison_head_t*)multi_heap_get_block_address_impl(block));
 }
 
 multi_heap_handle_t multi_heap_register(void *start, size_t size)

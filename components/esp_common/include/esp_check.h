@@ -303,7 +303,6 @@ extern "C" {
 
 #endif // !CONFIG_COMPILER_OPTIMIZATION_CHECKS_SILENT
 
-
 #ifdef __cplusplus
 }
 #endif

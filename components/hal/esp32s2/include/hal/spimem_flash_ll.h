@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -215,6 +215,19 @@ static inline void spimem_flash_ll_auto_wait_idle_init(spi_mem_dev_t *dev, bool 
 {
     HAL_FORCE_MODIFY_U32_REG_FIELD(dev->flash_waiti_ctrl, waiti_cmd, 0x05); // Set the command to send, to fetch flash status reg value.
     dev->flash_waiti_ctrl.waiti_en = auto_waiti;  // enable auto wait-idle function.
+}
+
+/**
+ * This function is used to set dummy phase when auto suspend is enabled.
+ *
+ * @note This function is only used when timing tuning is enabled.
+ *
+ * @param dev Beginning address of the peripheral registers.
+ * @param extra_dummy extra dummy length. Get from timing tuning.
+ */
+static inline void spimem_flash_ll_set_wait_idle_dummy_phase(spi_mem_dev_t *dev, uint32_t extra_dummy)
+{
+    // Not supported on this chip.
 }
 
 /**
@@ -583,6 +596,25 @@ static inline uint32_t spimem_flash_ll_calculate_clock_reg(uint8_t clkdiv)
     return div_parameter;
 }
 
+/**
+ * @brief Write protect signal output when SPI is idle
+
+ * @param level 1: 1: output high, 0: output low
+ */
+static inline void spimem_flash_ll_set_wp_level(spi_mem_dev_t *dev, bool level)
+{
+    dev->ctrl.wp = level;
+}
+
+/**
+ * @brief Get the ctrl value of mspi
+ *
+ * @return uint32_t The value of ctrl register
+ */
+static inline uint32_t spimem_flash_ll_get_ctrl_val(spi_mem_dev_t *dev)
+{
+    return dev->ctrl.val;
+}
 
 #ifdef __cplusplus
 }

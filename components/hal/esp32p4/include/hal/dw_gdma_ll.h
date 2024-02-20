@@ -8,15 +8,25 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include "hal/assert.h"
+#include "esp_assert.h"
+#include "hal/misc.h"
+#include "hal/dw_gdma_types.h"
 #include "soc/dw_gdma_struct.h"
 #include "soc/hp_sys_clkrst_struct.h"
+#include "soc/reg_base.h"
 
 #define DW_GDMA_LL_GET_HW() (&DW_GDMA)
+
+#define DW_GDMA_LL_GROUPS              1 // there's one DW-GDMA instance connected to the AXI bus
+#define DW_GDMA_LL_CHANNELS_PER_GROUP  4 // there are 4 independent channels in the DW-GDMA
 
 #define DW_GDMA_LL_MASTER_PORT_MIPI_DSI 0 // DW_GDMA master 0 can access DSI bridge
 #define DW_GDMA_LL_MASTER_PORT_MIPI_CSI 0 // DW_GDMA master 0 can access CSI bridge
 #define DW_GDMA_LL_MASTER_PORT_MEMORY   1 // DW_GDMA master 1 can only access L2MEM & ROM & MSPI Flash/PSRAM
+
+#define DW_GDMA_LL_MAX_OUTSTANDING_REQUESTS 16 // maximum number of outstanding requests
+
+#define DW_GDMA_LL_LINK_LIST_ALIGNMENT 64 // link list item must be aligned to 64 bytes
 
 // Common event bitmap
 #define DW_GDMA_LL_COMMON_EVENT_SLVIF_DEC_ERR                  (0x1 << 0)
@@ -58,70 +68,12 @@
 #define DW_GDMA_LL_CHANNEL_EVENT_DISABLED                       (0x1 << 30)
 #define DW_GDMA_LL_CHANNEL_EVENT_ABORTED                        (0x1 << 31)
 
+#define DW_GDMA_LL_CHANNEL_EVENT_MASK(chan)                     (1 << (chan))
+#define DW_GDMA_LL_COMMON_EVENT_MASK                            (1 << 16)
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-/**
- * @brief DW_GDMA transfer width
- */
-typedef enum {
-    DW_GDMA_LL_TRANS_WIDTH_8,   /*!< Data transfer width: 8 bits */
-    DW_GDMA_LL_TRANS_WIDTH_16,  /*!< Data transfer width: 16 bits */
-    DW_GDMA_LL_TRANS_WIDTH_32,  /*!< Data transfer width: 32 bits */
-    DW_GDMA_LL_TRANS_WIDTH_64,  /*!< Data transfer width: 64 bits */
-    DW_GDMA_LL_TRANS_WIDTH_128, /*!< Data transfer width: 128 bits */
-    DW_GDMA_LL_TRANS_WIDTH_256, /*!< Data transfer width: 256 bits */
-    DW_GDMA_LL_TRANS_WIDTH_512, /*!< Data transfer width: 512 bits */
-} dw_gdma_ll_transfer_width_t;
-
-/**
- * @brief DW_GDMA burst items
- */
-typedef enum {
-    DW_GDMA_LL_BURST_ITEMS_1,    /*!< 1 data items in the burst transaction */
-    DW_GDMA_LL_BURST_ITEMS_4,    /*!< 4 data items in the burst transaction */
-    DW_GDMA_LL_BURST_ITEMS_8,    /*!< 8 data items in the burst transaction */
-    DW_GDMA_LL_BURST_ITEMS_16,   /*!< 16 data items in the burst transaction */
-    DW_GDMA_LL_BURST_ITEMS_32,   /*!< 32 data items in the burst transaction */
-    DW_GDMA_LL_BURST_ITEMS_64,   /*!< 64 data items in the burst transaction */
-    DW_GDMA_LL_BURST_ITEMS_128,  /*!< 128 data items in the burst transaction */
-    DW_GDMA_LL_BURST_ITEMS_256,  /*!< 256 data items in the burst transaction */
-    DW_GDMA_LL_BURST_ITEMS_512,  /*!< 512 data items in the burst transaction */
-    DW_GDMA_LL_BURST_ITEMS_1024, /*!< 1024 data items in the burst transaction */
-} dw_gdma_ll_burst_items_t;
-
-/**
- * @brief Multi block transfer type
- */
-typedef enum {
-    DW_GDMA_LL_MULTI_BLOCK_CONTIGUOUS,  /*!< Contiguous */
-    DW_GDMA_LL_MULTI_BLOCK_RELOAD,      /*!< Reload */
-    DW_GDMA_LL_MULTI_BLOCK_SHADOW_REG,  /*!< Shadow register */
-    DW_GDMA_LL_MULTI_BLOCK_LINK_LIST,   /*!< Link list */
-} dw_gdma_ll_multi_block_type_t;
-
-/**
- * @brief Transfer type and flow control
- */
-typedef enum {
-    DW_GDMA_LL_FLOW_M2M_DMAC, /*!< Flow: memory to memory, controller: DMA engine */
-    DW_GDMA_LL_FLOW_M2P_DMAC, /*!< Flow: memory to peripheral, controller: DMA engine */
-    DW_GDMA_LL_FLOW_P2M_DMAC, /*!< Flow: peripheral to memory, controller: DMA engine */
-    DW_GDMA_LL_FLOW_P2P_DMAC, /*!< Flow: peripheral to peripheral, controller: DMA engine */
-    DW_GDMA_LL_FLOW_P2M_SRC,  /*!< Flow: peripheral to memory, controller: source peripheral */
-    DW_GDMA_LL_FLOW_P2P_SRC,  /*!< Flow: peripheral to peripheral, controller: source peripheral */
-    DW_GDMA_LL_FLOW_M2P_DST,  /*!< Flow: memory to peripheral, controller: destination peripheral */
-    DW_GDMA_LL_FLOW_P2P_DST,  /*!< Flow: peripheral to peripheral, controller: destination peripheral */
-} dw_gdma_ll_trans_flow_t;
-
-/**
- * @brief Handshake interface
- */
-typedef enum {
-    DW_GDMA_LL_HANDSHAKE_HW, /*!< Transaction requests are initiated by hardware */
-    DW_GDMA_LL_HANDSHAKE_SW, /*!< Transaction requests are initiated by software */
-} dw_gdma_ll_handshake_interface_t;
 
 /**
  * @brief Handshake number for different peripherals
@@ -131,14 +83,6 @@ typedef enum {
     DW_GDMA_LL_HW_HANDSHAKE_PERIPH_CSI, /*!< Handshake peripheral is CSI */
     DW_GDMA_LL_HW_HANDSHAKE_PERIPH_ISP, /*!< Handshake peripheral is ISP */
 } dw_gdma_ll_hw_handshake_periph_t;
-
-/**
- * @brief Channel lock level
- */
-typedef enum {
-    DW_GDMA_LL_LOCK_LEVEL_FULL_TRANS,  /*!< Lock over complete DMA transfer */
-    DW_GDMA_LL_LOCK_LEVEL_BLOCK_TRANS, /*!< Lock over DMA block transfer */
-} dw_gdma_ll_lock_level_t;
 
 /**
  * @brief Enable the bus clock for the DMA module
@@ -205,14 +149,14 @@ static inline void dw_gdma_ll_enable_intr_global(dw_gdma_dev_t *dev, bool en)
 }
 
 /**
- * @brief Check if the common register interrupt is active
+ * @brief Get the address of the interrupt status register
  *
  * @param dev Pointer to the DW_GDMA registers
- * @return True: common register interrupt is active, False: common register interrupt is inactive
+ * @return Address of the interrupt status register
  */
-static inline bool dw_gdma_ll_is_common_intr_active(dw_gdma_dev_t *dev)
+static inline volatile void *dw_gdma_ll_get_intr_status_reg(dw_gdma_dev_t *dev)
 {
-    return dev->int_st0.commonreg_intstat;
+    return &dev->int_st0;
 }
 
 /**
@@ -312,7 +256,8 @@ static inline void dw_gdma_ll_channel_enable_intr_propagation(dw_gdma_dev_t *dev
  * @param channel Channel number
  * @return Mask of the channel interrupt status
  */
-static inline uint32_t dw_gdma_ll_channel_get_inr_status(dw_gdma_dev_t *dev, uint8_t channel)
+__attribute__((always_inline))
+static inline uint32_t dw_gdma_ll_channel_get_intr_status(dw_gdma_dev_t *dev, uint8_t channel)
 {
     return dev->ch[channel].int_st0.val;
 }
@@ -324,6 +269,7 @@ static inline uint32_t dw_gdma_ll_channel_get_inr_status(dw_gdma_dev_t *dev, uin
  * @param channel Channel number
  * @param mask Mask of the interrupt to clear
  */
+__attribute__((always_inline))
 static inline void dw_gdma_ll_channel_clear_intr(dw_gdma_dev_t *dev, uint8_t channel, uint32_t mask)
 {
     dev->ch[channel].int_clr0.val = mask;
@@ -381,24 +327,13 @@ static inline void dw_gdma_ll_channel_abort(dw_gdma_dev_t *dev, uint8_t channel)
 }
 
 /**
- * @brief Check if the DMA channel interrupt is active
- *
- * @param dev Pointer to the DW_GDMA registers
- * @param channel Channel number
- * @return True: channel interrupt is active, False: channel interrupt is inactive
- */
-static inline bool dw_gdma_ll_channel_is_interrupt_active(dw_gdma_dev_t *dev, uint8_t channel)
-{
-    return dev->int_st0.val & (1 << channel);
-}
-
-/**
  * @brief Set the source address of the DMA transfer
  *
  * @param dev Pointer to the DW_GDMA registers
  * @param channel Channel number
  * @param src_addr Source address
  */
+__attribute__((always_inline))
 static inline void dw_gdma_ll_channel_set_src_addr(dw_gdma_dev_t *dev, uint8_t channel, uint32_t src_addr)
 {
     dev->ch[channel].sar0.sar0 = src_addr;
@@ -411,6 +346,7 @@ static inline void dw_gdma_ll_channel_set_src_addr(dw_gdma_dev_t *dev, uint8_t c
  * @param channel Channel number
  * @param dst_addr Destination address
  */
+__attribute__((always_inline))
 static inline void dw_gdma_ll_channel_set_dst_addr(dw_gdma_dev_t *dev, uint8_t channel, uint32_t dst_addr)
 {
     dev->ch[channel].dar0.dar0 = dst_addr;
@@ -419,71 +355,80 @@ static inline void dw_gdma_ll_channel_set_dst_addr(dw_gdma_dev_t *dev, uint8_t c
 /**
  * @brief Set the number of data to be transferred
  *
- * @note data_transfer_width * item_amount determins the total bytes in one block transfer.
+ * @note "transfer width" * "transfer block size" = the total bytes in one block transfer
  *
  * @param dev Pointer to the DW_GDMA registers
  * @param channel Channel number
- * @param item_numbers Number of transfer items
+ * @param sz Number of transfer items
  */
-static inline void dw_gdma_ll_channel_set_trans_amount(dw_gdma_dev_t *dev, uint8_t channel, uint32_t item_numbers)
+__attribute__((always_inline))
+static inline void dw_gdma_ll_channel_set_trans_block_size(dw_gdma_dev_t *dev, uint8_t channel, uint32_t sz)
 {
-    dev->ch[channel].block_ts0.block_ts = item_numbers - 1;
+    dev->ch[channel].block_ts0.block_ts = sz - 1;
 }
 
 /**
- * @brief Set the source master port
- *
- * @note The choice of master port depends on the location of the source data.
+ * @brief Set the source master port based on the memory address
  *
  * @param dev Pointer to the DW_GDMA registers
  * @param channel Channel number
- * @param port Source master port
+ * @param mem_addr Memory address
  */
-static inline void dw_gdma_ll_channel_set_src_master_port(dw_gdma_dev_t *dev, uint8_t channel, uint32_t port)
+__attribute__((always_inline))
+static inline void dw_gdma_ll_channel_set_src_master_port(dw_gdma_dev_t *dev, uint8_t channel, intptr_t mem_addr)
 {
-    dev->ch[channel].ctl0.sms = port;
+    if (mem_addr == MIPI_CSI_BRG_MEM_BASE) {
+        dev->ch[channel].ctl0.sms = DW_GDMA_LL_MASTER_PORT_MIPI_CSI;
+    } else {
+        dev->ch[channel].ctl0.sms = DW_GDMA_LL_MASTER_PORT_MEMORY;
+    }
 }
 
 /**
- * @brief Set the destination master port
- *
- * @note The choice of master port depends on the location of the destination data.
+ * @brief Set the destination master port based on the memory address
  *
  * @param dev Pointer to the DW_GDMA registers
  * @param channel Channel number
- * @param port Destination master port
+ * @param mem_addr Memory address
  */
-static inline void dw_gdma_ll_channel_set_dst_master_port(dw_gdma_dev_t *dev, uint8_t channel, uint32_t port)
+__attribute__((always_inline))
+static inline void dw_gdma_ll_channel_set_dst_master_port(dw_gdma_dev_t *dev, uint8_t channel, intptr_t mem_addr)
 {
-    dev->ch[channel].ctl0.dms = port;
+    if (mem_addr == MIPI_DSI_BRG_MEM_BASE) {
+        dev->ch[channel].ctl0.dms = DW_GDMA_LL_MASTER_PORT_MIPI_DSI;
+    } else {
+        dev->ch[channel].ctl0.dms = DW_GDMA_LL_MASTER_PORT_MEMORY;
+    }
 }
 
 /**
- * @brief Enable the source address increment
+ * @brief Enable the source address burst mode
  *
  * @note Increase the source address by the data width after each transfer
  *
  * @param dev Pointer to the DW_GDMA registers
  * @param channel Channel number
- * @param en True to enable, false to disable
+ * @param mode Address burst mode
  */
-static inline void dw_gdma_ll_channel_enable_src_addr_increment(dw_gdma_dev_t *dev, uint8_t channel, bool en)
+__attribute__((always_inline))
+static inline void dw_gdma_ll_channel_set_src_burst_mode(dw_gdma_dev_t *dev, uint8_t channel, dw_gdma_burst_mode_t mode)
 {
-    dev->ch[channel].ctl0.sinc = !en;
+    dev->ch[channel].ctl0.sinc = mode;
 }
 
 /**
- * @brief Enable the destination address increment
+ * @brief Enable the destination address burst mode
  *
  * @note Increase the destination address by the data width after each transfer
  *
  * @param dev Pointer to the DW_GDMA registers
  * @param channel Channel number
- * @param en True to enable, false to disable
+ * @param mode Address burst mode
  */
-static inline void dw_gdma_ll_channel_enable_dst_addr_increment(dw_gdma_dev_t *dev, uint8_t channel, bool en)
+__attribute__((always_inline))
+static inline void dw_gdma_ll_channel_set_dst_burst_mode(dw_gdma_dev_t *dev, uint8_t channel, dw_gdma_burst_mode_t mode)
 {
-    dev->ch[channel].ctl0.dinc = !en;
+    dev->ch[channel].ctl0.dinc = mode;
 }
 
 /**
@@ -493,7 +438,8 @@ static inline void dw_gdma_ll_channel_enable_dst_addr_increment(dw_gdma_dev_t *d
  * @param channel Channel number
  * @param width Transfer width
  */
-static inline void dw_gdma_ll_channel_set_src_trans_width(dw_gdma_dev_t *dev, uint8_t channel, dw_gdma_ll_transfer_width_t width)
+__attribute__((always_inline))
+static inline void dw_gdma_ll_channel_set_src_trans_width(dw_gdma_dev_t *dev, uint8_t channel, dw_gdma_transfer_width_t width)
 {
     dev->ch[channel].ctl0.src_tr_width = width;
 }
@@ -505,7 +451,8 @@ static inline void dw_gdma_ll_channel_set_src_trans_width(dw_gdma_dev_t *dev, ui
  * @param channel Channel number
  * @param width Transfer width
  */
-static inline void dw_gdma_ll_channel_set_dst_trans_width(dw_gdma_dev_t *dev, uint8_t channel, dw_gdma_ll_transfer_width_t width)
+__attribute__((always_inline))
+static inline void dw_gdma_ll_channel_set_dst_trans_width(dw_gdma_dev_t *dev, uint8_t channel, dw_gdma_transfer_width_t width)
 {
     dev->ch[channel].ctl0.dst_tr_width = width;
 }
@@ -517,7 +464,8 @@ static inline void dw_gdma_ll_channel_set_dst_trans_width(dw_gdma_dev_t *dev, ui
  * @param channel Channel number
  * @param items Number of data items
  */
-static inline void dw_gdma_ll_channel_set_src_burst_items(dw_gdma_dev_t *dev, uint8_t channel, dw_gdma_ll_burst_items_t items)
+__attribute__((always_inline))
+static inline void dw_gdma_ll_channel_set_src_burst_items(dw_gdma_dev_t *dev, uint8_t channel, dw_gdma_burst_items_t items)
 {
     dev->ch[channel].ctl0.src_msize = items;
 }
@@ -529,7 +477,8 @@ static inline void dw_gdma_ll_channel_set_src_burst_items(dw_gdma_dev_t *dev, ui
  * @param channel Channel number
  * @param items Number of data items
  */
-static inline void dw_gdma_ll_channel_set_dst_burst_items(dw_gdma_dev_t *dev, uint8_t channel, dw_gdma_ll_burst_items_t items)
+__attribute__((always_inline))
+static inline void dw_gdma_ll_channel_set_dst_burst_items(dw_gdma_dev_t *dev, uint8_t channel, dw_gdma_burst_items_t items)
 {
     dev->ch[channel].ctl0.dst_msize = items;
 }
@@ -543,10 +492,11 @@ static inline void dw_gdma_ll_channel_set_dst_burst_items(dw_gdma_dev_t *dev, ui
  * @param channel Channel number
  * @param len Burst length
  */
-static inline void dw_gdma_ll_channel_set_src_burst_len(dw_gdma_dev_t *dev, uint8_t channel, uint32_t len)
+__attribute__((always_inline))
+static inline void dw_gdma_ll_channel_set_src_burst_len(dw_gdma_dev_t *dev, uint8_t channel, uint8_t len)
 {
-    dev->ch[channel].ctl1.arlen_en = 1;
-    dev->ch[channel].ctl1.arlen = len - 1;
+    dev->ch[channel].ctl1.arlen_en = len > 0;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(dev->ch[channel].ctl1, arlen, len);
 }
 
 /**
@@ -556,22 +506,59 @@ static inline void dw_gdma_ll_channel_set_src_burst_len(dw_gdma_dev_t *dev, uint
  * @param channel Channel number
  * @param len Burst length
  */
-static inline void dw_gdma_ll_channel_set_dst_burst_len(dw_gdma_dev_t *dev, uint8_t channel, uint32_t len)
+__attribute__((always_inline))
+static inline void dw_gdma_ll_channel_set_dst_burst_len(dw_gdma_dev_t *dev, uint8_t channel, uint8_t len)
 {
-    dev->ch[channel].ctl1.awlen_en = 1;
-    dev->ch[channel].ctl1.awlen = len - 1;
+    dev->ch[channel].ctl1.awlen_en = len > 0;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(dev->ch[channel].ctl1, awlen, len);
 }
 
 /**
- * @brief Enable to generate an interrupt when the block transfer is done
+ * @brief Set block markers
+ *
+ * @note This is only valid for `DW_GDMA_BLOCK_TRANSFER_SHADOW` transfer type
  *
  * @param dev Pointer to the DW_GDMA registers
  * @param channel Channel number
- * @param en True to enable, false to disable
+ * @param en_intr True to generate an interrupt when the block transfer is done, false to disable
+ * @param is_last True to mark the block transfer as the last one
+ * @param is_valid True to mark the block transfer as valid
  */
-static inline void dw_gdma_ll_channel_enable_intr_block_trans_done(dw_gdma_dev_t *dev, uint8_t channel, bool en)
+__attribute__((always_inline))
+static inline void dw_gdma_ll_channel_set_block_markers(dw_gdma_dev_t *dev, uint8_t channel, bool en_intr, bool is_last, bool is_valid)
 {
-    dev->ch[channel].ctl1.ioc_blktfr = en;
+    dmac_chn_ctl1_reg_t ctrl1;
+    ctrl1.val = dev->ch[channel].ctl1.val;
+    ctrl1.shadowreg_or_lli_last = is_last;
+    ctrl1.ioc_blktfr = en_intr;
+    ctrl1.shadowreg_or_lli_valid = is_valid;
+    dev->ch[channel].ctl1.val = ctrl1.val;
+}
+
+/**
+ * @brief Whether to enable the status write back for the source peripheral
+ *
+ * @param dev Pointer to the DW_GDMA registers
+ * @param channel Channel number
+ * @param en True to enable write back, false to disable
+ */
+__attribute__((always_inline))
+static inline void dw_gdma_ll_channel_enable_src_periph_status_write_back(dw_gdma_dev_t *dev, uint8_t channel, bool en)
+{
+    dev->ch[channel].ctl1.src_stat_en = en;
+}
+
+/**
+ * @brief Whether to enable the status write back for the destination peripheral
+ *
+ * @param dev Pointer to the DW_GDMA registers
+ * @param channel Channel number
+ * @param en True to enable write back, false to disable
+ */
+__attribute__((always_inline))
+static inline void dw_gdma_ll_channel_enable_dst_periph_status_write_back(dw_gdma_dev_t *dev, uint8_t channel, bool en)
+{
+    dev->ch[channel].ctl1.dst_stat_en = en;
 }
 
 /**
@@ -581,7 +568,7 @@ static inline void dw_gdma_ll_channel_enable_intr_block_trans_done(dw_gdma_dev_t
  * @param channel Channel number
  * @param type Multi block transfer type
  */
-static inline void dw_gdma_ll_channel_set_src_multi_block_type(dw_gdma_dev_t *dev, uint8_t channel, dw_gdma_ll_multi_block_type_t type)
+static inline void dw_gdma_ll_channel_set_src_multi_block_type(dw_gdma_dev_t *dev, uint8_t channel, dw_gdma_block_transfer_type_t type)
 {
     dev->ch[channel].cfg0.src_multblk_type = type;
 }
@@ -593,49 +580,70 @@ static inline void dw_gdma_ll_channel_set_src_multi_block_type(dw_gdma_dev_t *de
  * @param channel Channel number
  * @param type Multi block transfer type
  */
-static inline void dw_gdma_ll_channel_set_dst_multi_block_type(dw_gdma_dev_t *dev, uint8_t channel, dw_gdma_ll_multi_block_type_t type)
+static inline void dw_gdma_ll_channel_set_dst_multi_block_type(dw_gdma_dev_t *dev, uint8_t channel, dw_gdma_block_transfer_type_t type)
 {
     dev->ch[channel].cfg0.dst_multblk_type = type;
 }
 
 /**
- * @brief Set the unique ID for the source peripheral
- *
- * @note This ID is related to Out-of-order transaction
- *
- * @param dev Pointer to the DW_GDMA registers
- * @param channel Channel number
- * @param uid Unique ID
+ * @brief Transfer type and flow control
  */
-static inline void dw_gdma_ll_channel_set_src_uid(dw_gdma_dev_t *dev, uint8_t channel, uint32_t uid)
-{
-    dev->ch[channel].cfg0.rd_uid = uid;
-}
+typedef enum {
+    DW_GDMA_LL_FLOW_M2M_DMAC, /*!< Flow: memory to memory, controller: DMA engine */
+    DW_GDMA_LL_FLOW_M2P_DMAC, /*!< Flow: memory to peripheral, controller: DMA engine */
+    DW_GDMA_LL_FLOW_P2M_DMAC, /*!< Flow: peripheral to memory, controller: DMA engine */
+    DW_GDMA_LL_FLOW_P2P_DMAC, /*!< Flow: peripheral to peripheral, controller: DMA engine */
+    DW_GDMA_LL_FLOW_P2M_SRC,  /*!< Flow: peripheral to memory, controller: source peripheral */
+    DW_GDMA_LL_FLOW_P2P_SRC,  /*!< Flow: peripheral to peripheral, controller: source peripheral */
+    DW_GDMA_LL_FLOW_M2P_DST,  /*!< Flow: memory to peripheral, controller: destination peripheral */
+    DW_GDMA_LL_FLOW_P2P_DST,  /*!< Flow: peripheral to peripheral, controller: destination peripheral */
+} dw_gdma_ll_trans_flow_t;
+
+#define _MAKE_GDMA_FLOW_CTRL_CODE(src, dst, con) ((src) << 3 | (dst) << 2 | (con))
 
 /**
- * @brief Set the unique ID for the destination peripheral
- *
- * @note This ID is related to Out-of-order transaction
+ * @brief Set transfer flow controller
  *
  * @param dev Pointer to the DW_GDMA registers
  * @param channel Channel number
- * @param uid Unique ID
+ * @param src_role Source target role
+ * @param dst_role Destination target role
+ * @param controller Flow controller
  */
-static inline void dw_gdma_ll_channel_set_dst_uid(dw_gdma_dev_t *dev, uint8_t channel, uint32_t uid)
+static inline void dw_gdma_ll_channel_set_trans_flow(dw_gdma_dev_t *dev, uint8_t channel, dw_gdma_role_t src_role, dw_gdma_role_t dst_role, dw_gdma_flow_controller_t controller)
 {
-    dev->ch[channel].cfg0.wr_uid = uid;
-}
-
-/**
- * @brief Set transfer type and flow control
- *
- * @param dev Pointer to the DW_GDMA registers
- * @param channel Channel number
- * @param flow Transfer flow control
- */
-static inline void dw_gdma_ll_channel_set_trans_flow(dw_gdma_dev_t *dev, uint8_t channel, dw_gdma_ll_trans_flow_t flow)
-{
-    dev->ch[channel].cfg1.tt_fc = flow;
+    bool src_is_perih = (src_role != DW_GDMA_ROLE_MEM);
+    bool dst_is_perih = (dst_role != DW_GDMA_ROLE_MEM);
+    uint32_t fc_code = _MAKE_GDMA_FLOW_CTRL_CODE(src_is_perih, dst_is_perih, controller);
+    switch (fc_code) {
+    case _MAKE_GDMA_FLOW_CTRL_CODE(0, 0, DW_GDMA_FLOW_CTRL_SELF):
+        dev->ch[channel].cfg1.tt_fc = DW_GDMA_LL_FLOW_M2M_DMAC;
+        break;
+    case _MAKE_GDMA_FLOW_CTRL_CODE(0, 1, DW_GDMA_FLOW_CTRL_SELF):
+        dev->ch[channel].cfg1.tt_fc = DW_GDMA_LL_FLOW_M2P_DMAC;
+        break;
+    case _MAKE_GDMA_FLOW_CTRL_CODE(1, 0, DW_GDMA_FLOW_CTRL_SELF):
+        dev->ch[channel].cfg1.tt_fc = DW_GDMA_LL_FLOW_P2M_DMAC;
+        break;
+    case _MAKE_GDMA_FLOW_CTRL_CODE(1, 1, DW_GDMA_FLOW_CTRL_SELF):
+        dev->ch[channel].cfg1.tt_fc = DW_GDMA_LL_FLOW_P2P_DMAC;
+        break;
+    case _MAKE_GDMA_FLOW_CTRL_CODE(1, 0, DW_GDMA_FLOW_CTRL_SRC):
+        dev->ch[channel].cfg1.tt_fc = DW_GDMA_LL_FLOW_P2M_SRC;
+        break;
+    case _MAKE_GDMA_FLOW_CTRL_CODE(1, 1, DW_GDMA_FLOW_CTRL_SRC):
+        dev->ch[channel].cfg1.tt_fc = DW_GDMA_LL_FLOW_P2P_SRC;
+        break;
+    case _MAKE_GDMA_FLOW_CTRL_CODE(0, 1, DW_GDMA_FLOW_CTRL_DST):
+        dev->ch[channel].cfg1.tt_fc = DW_GDMA_LL_FLOW_M2P_DST;
+        break;
+    case _MAKE_GDMA_FLOW_CTRL_CODE(1, 1, DW_GDMA_FLOW_CTRL_DST):
+        dev->ch[channel].cfg1.tt_fc = DW_GDMA_LL_FLOW_P2P_DST;
+        break;
+    default:
+        abort();
+        break;
+    }
 }
 
 /**
@@ -647,7 +655,7 @@ static inline void dw_gdma_ll_channel_set_trans_flow(dw_gdma_dev_t *dev, uint8_t
  * @param channel Channel number
  * @param hs Handshaking interface
  */
-static inline void dw_gdma_ll_channel_set_src_handshake_interface(dw_gdma_dev_t *dev, uint8_t channel, dw_gdma_ll_handshake_interface_t hs)
+static inline void dw_gdma_ll_channel_set_src_handshake_interface(dw_gdma_dev_t *dev, uint8_t channel, dw_gdma_handshake_type_t hs)
 {
     dev->ch[channel].cfg1.hs_sel_src = hs;
 }
@@ -661,7 +669,7 @@ static inline void dw_gdma_ll_channel_set_src_handshake_interface(dw_gdma_dev_t 
  * @param channel Channel number
  * @param hs Handshaking interface
  */
-static inline void dw_gdma_ll_channel_set_dst_handshake_interface(dw_gdma_dev_t *dev, uint8_t channel, dw_gdma_ll_handshake_interface_t hs)
+static inline void dw_gdma_ll_channel_set_dst_handshake_interface(dw_gdma_dev_t *dev, uint8_t channel, dw_gdma_handshake_type_t hs)
 {
     dev->ch[channel].cfg1.hs_sel_dst = hs;
 }
@@ -675,9 +683,22 @@ static inline void dw_gdma_ll_channel_set_dst_handshake_interface(dw_gdma_dev_t 
  * @param channel Channel number
  * @param periph Peripheral ID
  */
-static inline void dw_gdma_ll_channel_set_src_handshake_periph(dw_gdma_dev_t *dev, uint8_t channel, dw_gdma_ll_hw_handshake_periph_t periph)
+static inline void dw_gdma_ll_channel_set_src_handshake_periph(dw_gdma_dev_t *dev, uint8_t channel, dw_gdma_role_t periph)
 {
-    dev->ch[channel].cfg1.src_per = periph;
+    switch (periph) {
+    case DW_GDMA_ROLE_PERIPH_DSI:
+        dev->ch[channel].cfg1.src_per = DW_GDMA_LL_HW_HANDSHAKE_PERIPH_DSI;
+        break;
+    case DW_GDMA_ROLE_PERIPH_CSI:
+        dev->ch[channel].cfg1.src_per = DW_GDMA_LL_HW_HANDSHAKE_PERIPH_CSI;
+        break;
+    case DW_GDMA_ROLE_PERIPH_ISP:
+        dev->ch[channel].cfg1.src_per = DW_GDMA_LL_HW_HANDSHAKE_PERIPH_ISP;
+        break;
+    default:
+        abort();
+        break;
+    }
 }
 
 /**
@@ -689,9 +710,22 @@ static inline void dw_gdma_ll_channel_set_src_handshake_periph(dw_gdma_dev_t *de
  * @param channel Channel number
  * @param periph Peripheral ID
  */
-static inline void dw_gdma_ll_channel_set_dst_handshake_periph(dw_gdma_dev_t *dev, uint8_t channel, dw_gdma_ll_hw_handshake_periph_t periph)
+static inline void dw_gdma_ll_channel_set_dst_handshake_periph(dw_gdma_dev_t *dev, uint8_t channel, dw_gdma_role_t periph)
 {
-    dev->ch[channel].cfg1.dst_per = periph;
+    switch (periph) {
+    case DW_GDMA_ROLE_PERIPH_DSI:
+        dev->ch[channel].cfg1.dst_per = DW_GDMA_LL_HW_HANDSHAKE_PERIPH_DSI;
+        break;
+    case DW_GDMA_ROLE_PERIPH_CSI:
+        dev->ch[channel].cfg1.dst_per = DW_GDMA_LL_HW_HANDSHAKE_PERIPH_CSI;
+        break;
+    case DW_GDMA_ROLE_PERIPH_ISP:
+        dev->ch[channel].cfg1.dst_per = DW_GDMA_LL_HW_HANDSHAKE_PERIPH_ISP;
+        break;
+    default:
+        abort();
+        break;
+    }
 }
 
 /**
@@ -715,7 +749,7 @@ static inline void dw_gdma_ll_channel_set_priority(dw_gdma_dev_t *dev, uint8_t c
  * @param channel Channel number
  * @param lock_level At which level the lock is applied
  */
-static inline void dw_gdma_ll_channel_lock(dw_gdma_dev_t *dev, uint8_t channel, dw_gdma_ll_lock_level_t lock_level)
+static inline void dw_gdma_ll_channel_lock(dw_gdma_dev_t *dev, uint8_t channel, dw_gdma_lock_level_t lock_level)
 {
     dev->ch[channel].cfg1.lock_ch_l = lock_level;
     dev->ch[channel].cfg1.lock_ch = 1;
@@ -764,11 +798,27 @@ static inline void dw_gdma_ll_channel_set_dst_outstanding_limit(dw_gdma_dev_t *d
  *
  * @param dev Pointer to the DW_GDMA registers
  * @param channel Channel number
- * @param addr Address of the first link list item, it must be aligned 64
+ * @param addr Address of the first link list item, it must be aligned 64 bytes
  */
 static inline void dw_gdma_ll_channel_set_link_list_head_addr(dw_gdma_dev_t *dev, uint8_t channel, uint32_t addr)
 {
     dev->ch[channel].llp0.loc0 = addr >> 6;
+    dev->ch[channel].llp1.val = 0;
+}
+
+/**
+ * @brief Get the current link list item address
+ *
+ * @note When the DMA detects an invalid block, this function can tell which link list item is invalid
+ *
+ * @param dev Pointer to the DW_GDMA registers
+ * @param channel Channel number
+ * @return Address of the current link list item
+ */
+__attribute__((always_inline))
+static inline intptr_t dw_gdma_ll_channel_get_current_link_list_item_addr(dw_gdma_dev_t *dev, uint8_t channel)
+{
+    return (intptr_t)dev->ch[channel].llp0.loc0 << 6;
 }
 
 /**
@@ -784,18 +834,32 @@ static inline void dw_gdma_ll_channel_set_link_list_master_port(dw_gdma_dev_t *d
 }
 
 /**
- * @brief Get the total number of data that transferred for the previous block transfer.
+ * @brief Get the total number of data that got transferred
  *
- * @note for normal transfer, this value is the same as the value of `dw_gdma_ll_channel_set_trans_amount`
+ * @note for normal transfer, this value is the same as the value of `dw_gdma_ll_channel_set_trans_block_size`
  * @note if any error occurs, the transfer might be terminated early, this function returns actual data transferred without error.
  *
  * @param dev Pointer to the DW_GDMA registers
  * @param channel Channel number
- * @return Total number of data that transferred for the previous block transfer
+ * @return Total number of data that got transferred
  */
 static inline uint32_t dw_gdma_ll_channel_get_trans_amount(dw_gdma_dev_t *dev, uint8_t channel)
 {
     return dev->ch[channel].status0.cmpltd_blk_tfr_size;
+}
+
+/**
+ * @brief Get the total number of data left in the channel FIFO after completing the current block transfer
+ *
+ * @note for normal transfer completion without errors, this function should always return 0
+ *
+ * @param dev Pointer to the DW_GDMA registers
+ * @param channel Channel number
+ * @return Total number of data left in the channel FIFO
+ */
+static inline uint32_t dw_gdma_ll_channel_get_fifo_remain(dw_gdma_dev_t *dev, uint8_t channel)
+{
+    return dev->ch[channel].status1.data_left_in_fifo;
 }
 
 /**
@@ -806,6 +870,7 @@ static inline uint32_t dw_gdma_ll_channel_get_trans_amount(dw_gdma_dev_t *dev, u
  * @param dev Pointer to the DW_GDMA registers
  * @param channel Channel number
  */
+__attribute__((always_inline))
 static inline void dw_gdma_ll_channel_resume_multi_block_transfer(dw_gdma_dev_t *dev, uint8_t channel)
 {
     // this register is write-only, we can't do read-modify-write
@@ -813,27 +878,365 @@ static inline void dw_gdma_ll_channel_resume_multi_block_transfer(dw_gdma_dev_t 
 }
 
 /**
- * @brief Set the address to fetch the source status of the DMA channel
+ * @brief Set the address where to fetch the status of the source peripheral
+ *
+ * @note Status of the source peripheral can be read by `dw_gdma_ll_channel_get_src_periph_status`
  *
  * @param dev Pointer to the DW_GDMA registers
  * @param channel Channel number
- * @param addr Address to fetch the source status of the DMA channel
+ * @param addr Address to fetch the status
  */
-static inline void dw_gdma_ll_channel_set_src_status_fetch_addr(dw_gdma_dev_t *dev, uint8_t channel, uint32_t addr)
+static inline void dw_gdma_ll_channel_set_src_periph_status_addr(dw_gdma_dev_t *dev, uint8_t channel, uint32_t addr)
 {
     dev->ch[channel].sstatar0.sstatar0 = addr;
 }
 
 /**
- * @brief Set the address to fetch the destination status of the DMA channel
+ * @brief Set the address where to fetch the status of the destination peripheral
+ *
+ * @note Status of the destination peripheral can be read by `dw_gdma_ll_channel_get_dst_periph_status`
  *
  * @param dev Pointer to the DW_GDMA registers
  * @param channel Channel number
- * @param addr Address to fetch the destination status of the DMA channel
+ * @param addr Address to fetch the status
  */
-static inline void dw_gdma_ll_channel_set_dst_status_fetch_addr(dw_gdma_dev_t *dev, uint8_t channel, uint32_t addr)
+static inline void dw_gdma_ll_channel_set_dst_periph_status_addr(dw_gdma_dev_t *dev, uint8_t channel, uint32_t addr)
 {
     dev->ch[channel].dstatar0.dstatar0 = addr;
+}
+
+/**
+ * @brief Get the status of the source peripheral
+ *
+ * @param dev Pointer to the DW_GDMA registers
+ * @param channel Channel number
+ * @return Status of the source peripheral
+ */
+static inline uint32_t dw_gdma_ll_channel_get_src_periph_status(dw_gdma_dev_t *dev, uint8_t channel)
+{
+    return dev->ch[channel].sstat0.val;
+}
+
+/**
+ * @brief Get the status of the destination peripheral
+ *
+ * @param dev Pointer to the DW_GDMA registers
+ * @param channel Channel number
+ * @return Status of the destination peripheral
+ */
+static inline uint32_t dw_gdma_ll_channel_get_dst_periph_status(dw_gdma_dev_t *dev, uint8_t channel)
+{
+    return dev->ch[channel].dstat0.val;
+}
+
+/**
+ * @brief Type of DW-DMA link list item
+ */
+typedef struct dw_gdma_link_list_item_t {
+    dmac_chn_sar0_reg_t sar_lo;   /*!< Source address low 32 bits */
+    dmac_chn_sar1_reg_t sar_hi;   /*!< Source address high 32 bits */
+    dmac_chn_dar0_reg_t dar_lo;   /*!< Destination address low 32 bits */
+    dmac_chn_dar1_reg_t dar_hi;   /*!< Destination address high 32 bits */
+    dmac_chn_block_ts0_reg_t block_ts_lo; /*!< Block transfer size, specify the number of data items to be transferred in a block */
+    uint32_t reserved_14;
+    dmac_chn_llp0_reg_t llp_lo;   /*!< Pointer to the next link list item low 32 bits. Set to zero to indicate the end of the list */
+    dmac_chn_llp1_reg_t llp_hi;   /*!< Pointer to the next link list item high 32 bits. Set to zero to indicate the end of the list */
+    dmac_chn_ctl0_reg_t ctrl_lo;  /*!< Control word low 32 bits */
+    dmac_chn_ctl1_reg_t ctrl_hi;  /*!< Control word high 32 bits */
+    dmac_chn_sstat0_reg_t sstat;  /*!< Status of the source peripheral */
+    dmac_chn_dstat0_reg_t dstat;  /*!< Status of the destination peripheral */
+    dmac_chn_status0_reg_t status_lo; /*!< Channel status low 32 bits */
+    dmac_chn_status1_reg_t status_hi; /*!< Channel status high 32 bits */
+    uint32_t reserved_38;
+    uint32_t reserved_3c;
+} dw_gdma_link_list_item_t __attribute__((aligned(DW_GDMA_LL_LINK_LIST_ALIGNMENT)));
+
+ESP_STATIC_ASSERT(sizeof(dw_gdma_link_list_item_t) == DW_GDMA_LL_LINK_LIST_ALIGNMENT, "Invalid size of dw_gdma_link_list_item_t structure");
+
+/**
+ * @brief Set the transfer width of the source data
+ *
+ * @param lli Link list item
+ * @param width Transfer width
+ */
+__attribute__((always_inline))
+static inline void dw_gdma_ll_lli_set_src_trans_width(dw_gdma_link_list_item_t *lli, dw_gdma_transfer_width_t width)
+{
+    lli->ctrl_lo.src_tr_width = width;
+}
+
+/**
+ * @brief Set the transfer width of the destination data
+ *
+ * @param lli Link list item
+ * @param width Transfer width
+ */
+__attribute__((always_inline))
+static inline void dw_gdma_ll_lli_set_dst_trans_width(dw_gdma_link_list_item_t *lli, dw_gdma_transfer_width_t width)
+{
+    lli->ctrl_lo.dst_tr_width = width;
+}
+
+/**
+ * @brief Set the source master port based on the memory address
+ *
+ * @param lli Link list item
+ * @param mem_addr Memory address
+ */
+__attribute__((always_inline))
+static inline void dw_gdma_ll_lli_set_src_master_port(dw_gdma_link_list_item_t *lli, intptr_t mem_addr)
+{
+    if (mem_addr == MIPI_CSI_BRG_MEM_BASE) {
+        lli->ctrl_lo.sms = DW_GDMA_LL_MASTER_PORT_MIPI_CSI;
+    } else {
+        lli->ctrl_lo.sms = DW_GDMA_LL_MASTER_PORT_MEMORY;
+    }
+}
+
+/**
+ * @brief Set the destination master port based on the memory address
+ *
+ * @param lli Link list item
+ * @param mem_addr Memory address
+ */
+__attribute__((always_inline))
+static inline void dw_gdma_ll_lli_set_dst_master_port(dw_gdma_link_list_item_t *lli, intptr_t mem_addr)
+{
+    if (mem_addr == MIPI_DSI_BRG_MEM_BASE) {
+        lli->ctrl_lo.dms = DW_GDMA_LL_MASTER_PORT_MIPI_DSI;
+    } else {
+        lli->ctrl_lo.dms = DW_GDMA_LL_MASTER_PORT_MEMORY;
+    }
+}
+
+/**
+ * @brief Set the source address of the DMA transfer
+ *
+ * @param lli Link list item
+ * @param src_addr Source address
+ */
+__attribute__((always_inline))
+static inline void dw_gdma_ll_lli_set_src_addr(dw_gdma_link_list_item_t *lli, uint32_t src_addr)
+{
+    lli->sar_lo.sar0 = src_addr;
+}
+
+/**
+ * @brief Set the destination address of the DMA transfer
+ *
+ * @param lli Link list item
+ * @param dst_addr Destination address
+ */
+__attribute__((always_inline))
+static inline void dw_gdma_ll_lli_set_dst_addr(dw_gdma_link_list_item_t *lli, uint32_t dst_addr)
+{
+    lli->dar_lo.dar0 = dst_addr;
+}
+
+/**
+ * @brief Set the number of data to be transferred
+ *
+ * @note "transfer width" * "transfer size" = the total bytes in one block transfer
+ *
+ * @param lli Link list item
+ * @param sz Number of transfer items
+ */
+__attribute__((always_inline))
+static inline void dw_gdma_ll_lli_set_trans_block_size(dw_gdma_link_list_item_t *lli, uint32_t sz)
+{
+    lli->block_ts_lo.block_ts = sz - 1;
+}
+
+/**
+ * @brief Enable the source address burst mode
+ *
+ * @note Increase the source address by the data width after each transfer
+ *
+ * @param lli Link list item
+ * @param mode Address burst mode
+ */
+__attribute__((always_inline))
+static inline void dw_gdma_ll_lli_set_src_burst_mode(dw_gdma_link_list_item_t *lli, dw_gdma_burst_mode_t mode)
+{
+    lli->ctrl_lo.sinc = mode;
+}
+
+/**
+ * @brief Enable the destination address burst mode
+ *
+ * @note Increase the destination address by the data width after each transfer
+ *
+ * @param lli Link list item
+ * @param mode Address burst mode
+ */
+__attribute__((always_inline))
+static inline void dw_gdma_ll_lli_set_dst_burst_mode(dw_gdma_link_list_item_t *lli, dw_gdma_burst_mode_t mode)
+{
+    lli->ctrl_lo.dinc = mode;
+}
+
+/**
+ * @brief Set the number of data items that can be transferred in a single burst transaction for the source master port
+ *
+ * @param lli Link list item
+ * @param items Number of data items
+ */
+__attribute__((always_inline))
+static inline void dw_gdma_ll_lli_set_src_burst_items(dw_gdma_link_list_item_t *lli, dw_gdma_burst_items_t items)
+{
+    lli->ctrl_lo.src_msize = items;
+}
+
+/**
+ * @brief Set the number of data items that can be transferred in a single burst transaction for the destination master port
+ *
+ * @param lli Link list item
+ * @param items Number of data items
+ */
+__attribute__((always_inline))
+static inline void dw_gdma_ll_lli_set_dst_burst_items(dw_gdma_link_list_item_t *lli, dw_gdma_burst_items_t items)
+{
+    lli->ctrl_lo.dst_msize = items;
+}
+
+/**
+ * @brief Set the source burst length
+ *
+ * @note This controls how many times the DMA controller will ask for data from the source device in a single burst transaction.
+ *
+ * @param lli Link list item
+ * @param len Burst length
+ */
+__attribute__((always_inline))
+static inline void dw_gdma_ll_lli_set_src_burst_len(dw_gdma_link_list_item_t *lli, uint8_t len)
+{
+    lli->ctrl_hi.arlen_en = len > 0;
+    lli->ctrl_hi.arlen = len;
+}
+
+/**
+ * @brief Set the destination burst length
+ *
+ * @param lli Link list item
+ * @param len Burst length
+ */
+__attribute__((always_inline))
+static inline void dw_gdma_ll_lli_set_dst_burst_len(dw_gdma_link_list_item_t *lli, uint8_t len)
+{
+    lli->ctrl_hi.awlen_en = len > 0;
+    lli->ctrl_hi.awlen = len;
+}
+
+/**
+ * @brief Set block markers
+ *
+ * @note This is only valid for `DW_GDMA_BLOCK_TRANSFER_SHADOW` transfer type
+ *
+ * @param lli Link list item
+ * @param en_intr True to generate an interrupt when the block transfer is done, false to disable
+ * @param is_last True to mark the block transfer as the last one
+ * @param is_valid True to mark the block transfer as valid
+ */
+__attribute__((always_inline))
+static inline void dw_gdma_ll_lli_set_block_markers(dw_gdma_link_list_item_t *lli, bool en_intr, bool is_last, bool is_valid)
+{
+    lli->ctrl_hi.ioc_blktfr = en_intr;
+    lli->ctrl_hi.shadowreg_or_lli_last = is_last;
+    lli->ctrl_hi.shadowreg_or_lli_valid = is_valid;
+}
+
+/**
+ * @brief Whether to enable the status write back for the source peripheral
+ *
+ * @param lli Link list item
+ * @param en True to enable write back, false to disable
+ */
+__attribute__((always_inline))
+static inline void dw_gdma_ll_lli_enable_src_periph_status_write_back(dw_gdma_link_list_item_t *lli, bool en)
+{
+    lli->ctrl_hi.src_stat_en = en;
+}
+
+/**
+ * @brief Whether to enable the status write back for the destination peripheral
+ *
+ * @param lli Link list item
+ * @param en True to enable write back, false to disable
+ */
+__attribute__((always_inline))
+static inline void dw_gdma_ll_lli_enable_dst_periph_status_write_back(dw_gdma_link_list_item_t *lli, bool en)
+{
+    lli->ctrl_hi.dst_stat_en = en;
+}
+
+/**
+ * @brief Get the status of the source peripheral
+ *
+ * @param lli Link list item
+ * @return Status of the source peripheral
+ */
+static inline uint32_t dw_gdma_ll_lli_get_src_periph_status(dw_gdma_link_list_item_t *lli)
+{
+    return lli->sstat.val;
+}
+
+/**
+ * @brief Get the status of the destination peripheral
+ *
+ * @param lli Link list item
+ * @return Status of the destination peripheral
+ */
+static inline uint32_t dw_gdma_ll_lli_get_dst_periph_status(dw_gdma_link_list_item_t *lli)
+{
+    return lli->dstat.val;
+}
+
+/**
+ * @brief Set the master port of the memory which holds the link list
+ *
+ * @param lli Link list item
+ * @param port Master port
+ */
+static inline void dw_gdma_ll_lli_set_link_list_master_port(dw_gdma_link_list_item_t *lli, uint32_t port)
+{
+    lli->llp_lo.lms = port;
+}
+
+/**
+ * @brief Set the address of the next link list item
+ *
+ * @param lli Link list item
+ * @param addr Address of the next link list item, it must be aligned 64 bytes
+ */
+static inline void dw_gdma_ll_lli_set_next_item_addr(dw_gdma_link_list_item_t *lli, uint32_t addr)
+{
+    lli->llp_lo.loc0 = addr >> 6;
+    lli->llp_hi.val = 0;
+}
+
+/**
+ * @brief Get the total number of data that got transferred
+ *
+ * @note for normal transfer, this value is the same as the value of `dw_gdma_ll_lli_set_trans_block_size`
+ * @note if any error occurs, the transfer might be terminated early, this function returns actual data transferred without error.
+ *
+ * @param lli Link list item
+ * @return Total number of data that got transferred
+ */
+static inline uint32_t dw_gdma_ll_lli_get_trans_amount(dw_gdma_link_list_item_t *lli)
+{
+    return lli->status_lo.cmpltd_blk_tfr_size;
+}
+
+/**
+ * @brief Get the total number of data left in the channel FIFO after completing the current block transfer
+ *
+ * @param lli Link list item
+ * @return Total number of data left in the channel FIFO
+ */
+static inline uint32_t dw_gdma_ll_lli_get_fifo_remain(dw_gdma_link_list_item_t *lli)
+{
+    return lli->status_hi.data_left_in_fifo;
 }
 
 #ifdef __cplusplus

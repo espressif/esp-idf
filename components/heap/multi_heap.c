@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,6 +11,7 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <sys/cdefs.h>
+#include <sys/param.h>
 #include "multi_heap.h"
 #include "multi_heap_internal.h"
 
@@ -26,7 +27,14 @@
 /* Defines compile-time configuration macros */
 #include "multi_heap_config.h"
 
-#if (!defined MULTI_HEAP_POISONING) && (!defined CONFIG_HEAP_TLSF_USE_ROM_IMPL)
+#if (!defined MULTI_HEAP_POISONING)
+
+void *multi_heap_aligned_alloc_offs(multi_heap_handle_t heap, size_t size, size_t alignment, size_t offset)
+{
+    return multi_heap_aligned_alloc_impl_offs(heap, size, alignment, offset);
+}
+
+#if (!defined CONFIG_HEAP_TLSF_USE_ROM_IMPL)
 /* if no heap poisoning, public API aliases directly to these implementations */
 void *multi_heap_malloc(multi_heap_handle_t heap, size_t size)
     __attribute__((alias("multi_heap_malloc_impl")));
@@ -61,12 +69,8 @@ size_t multi_heap_minimum_free_size(multi_heap_handle_t heap)
 void *multi_heap_get_block_address(multi_heap_block_handle_t block)
     __attribute__((alias("multi_heap_get_block_address_impl")));
 
-void *multi_heap_get_block_owner(multi_heap_block_handle_t block)
-{
-    return NULL;
-}
-
-#endif
+#endif // !CONFIG_HEAP_TLSF_USE_ROM_IMPL
+#endif // !MULTI_HEAP_POISONING
 
 #define ALIGN(X) ((X) & ~(sizeof(void *)-1))
 #define ALIGN_UP(X) ALIGN((X)+sizeof(void *)-1)
@@ -426,4 +430,22 @@ void multi_heap_get_info_impl(multi_heap_handle_t heap, multi_heap_info_t *info)
     info->largest_free_block = tlsf_fit_size(heap->heap_data, info->largest_free_block);
     multi_heap_internal_unlock(heap);
 }
-#endif
+
+#endif // CONFIG_HEAP_TLSF_USE_ROM_IMPL
+
+size_t multi_heap_reset_minimum_free_bytes(multi_heap_handle_t heap)
+{
+    multi_heap_internal_lock(heap);
+    const size_t old_minimum = heap->minimum_free_bytes;
+    heap->minimum_free_bytes = heap->free_bytes;
+    multi_heap_internal_unlock(heap);
+    return old_minimum;
+}
+
+void multi_heap_restore_minimum_free_bytes(multi_heap_handle_t heap, const size_t new_minimum_free_bytes_value)
+{
+    multi_heap_internal_lock(heap);
+    // keep the value of minimum_free_bytes if it is lower than the value passed as parameter
+    heap->minimum_free_bytes = MIN(heap->minimum_free_bytes, new_minimum_free_bytes_value);
+    multi_heap_internal_unlock(heap);
+}

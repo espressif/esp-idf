@@ -47,8 +47,8 @@ void rtc_clk_init(rtc_clk_config_t cfg)
     regi2c_ctrl_ll_i2c_bbpll_enable(); // TODO: This should be moved to bbpll_set_config
     regi2c_ctrl_ll_i2c_apll_enable(); // TODO: This should be moved to apll_set_config
 
-    rtc_xtal_freq_t xtal_freq = cfg.xtal_freq;
-    esp_rom_uart_tx_wait_idle(0);
+    soc_xtal_freq_t xtal_freq = cfg.xtal_freq;
+    esp_rom_output_tx_wait_idle(0);
     rtc_clk_apb_freq_update(xtal_freq * MHZ);
 
     /* Set CPU frequency */

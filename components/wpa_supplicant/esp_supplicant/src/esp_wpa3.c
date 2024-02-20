@@ -17,10 +17,6 @@
 #include "esp_hostap.h"
 #include <inttypes.h>
 
-#ifdef CONFIG_SAE_PK
-#include "common/bss.h"
-extern struct wpa_supplicant g_wpa_supp;
-#endif
 
 static struct sae_pt *g_sae_pt;
 static struct sae_data g_sae_data;
@@ -33,12 +29,56 @@ static esp_err_t wpa3_build_sae_commit(u8 *bssid, size_t *sae_msg_len)
 {
     int default_group = IANA_SECP256R1;
     u32 len = 0;
+    uint8_t use_pt = 0;
     u8 own_addr[ETH_ALEN];
     const u8 *pw = (const u8 *)esp_wifi_sta_get_prof_password_internal();
     struct wifi_ssid *ssid = esp_wifi_sta_get_prof_ssid_internal();
-    uint8_t use_pt = esp_wifi_sta_get_use_h2e_internal();
+    uint8_t sae_pwe = esp_wifi_get_config_sae_pwe_h2e_internal(WIFI_IF_STA);
     char sae_pwd_id[SAE_H2E_IDENTIFIER_LEN+1] = {0};
     bool valid_pwd_id = false;
+    const u8 *rsnxe;
+    u8 rsnxe_capa = 0;
+
+    if (wpa_key_mgmt_sae_ext_key(gWpaSm.key_mgmt)) {
+        use_pt = 1;
+    }
+
+   rsnxe = esp_wifi_sta_get_rsnxe();
+   if (rsnxe && rsnxe[1] >= 1) {
+       rsnxe_capa = rsnxe[2];
+   }
+
+#ifdef CONFIG_SAE_PK
+    bool use_pk = false;
+    uint8_t sae_pk_mode = esp_wifi_sta_get_config_sae_pk_internal();
+    if ((rsnxe_capa & BIT(WLAN_RSNX_CAPAB_SAE_PK)) &&
+         sae_pk_mode != WPA3_SAE_PK_MODE_DISABLED &&
+         ((pw && sae_pk_valid_password((const char*)pw)))) {
+        use_pt = 1;
+        use_pk = true;
+    }
+
+    if (sae_pk_mode == WPA3_SAE_PK_MODE_ONLY && !use_pk) {
+        wpa_printf(MSG_DEBUG,
+           "SAE: Cannot use PK with the selected AP");
+        return ESP_FAIL;
+    }
+#endif /* CONFIG_SAE_PK */
+    if (use_pt || sae_pwe == SAE_PWE_HASH_TO_ELEMENT ||
+        sae_pwe == SAE_PWE_BOTH) {
+        use_pt = !!(rsnxe_capa & BIT(WLAN_RSNX_CAPAB_SAE_H2E));
+
+        if ((sae_pwe == SAE_PWE_HASH_TO_ELEMENT ||
+            wpa_key_mgmt_sae_ext_key(gWpaSm.key_mgmt)
+#ifdef CONFIG_SAE_PK
+            || (use_pk && sae_pk_mode == WPA3_SAE_PK_MODE_ONLY)
+#endif /* CONFIG_SAE_PK */
+            ) && !use_pt) {
+            wpa_printf(MSG_DEBUG,
+              "SAE: Cannot use H2E with the selected AP");
+            return ESP_FAIL;
+        }
+    }
 
     if (use_pt != 0) {
         memcpy(sae_pwd_id, esp_wifi_sta_get_sae_identifier_internal(), SAE_H2E_IDENTIFIER_LEN);
@@ -73,45 +113,13 @@ static esp_err_t wpa3_build_sae_commit(u8 *bssid, size_t *sae_msg_len)
         return ESP_FAIL;
     }
 
+    g_sae_data.akmp = gWpaSm.key_mgmt;
+
     esp_wifi_get_macaddr_internal(WIFI_IF_STA, own_addr);
     if (!bssid) {
         wpa_printf(MSG_ERROR, "wpa3: cannot prepare SAE commit with no BSSID!");
         return ESP_FAIL;
     }
-
-#ifdef CONFIG_SAE_PK
-    bool use_pk = false;
-    uint8_t sae_pk_mode = esp_wifi_sta_get_config_sae_pk_internal();
-    u8 rsnxe_capa = 0;
-    struct wpa_bss *bss = wpa_bss_get_bssid(&g_wpa_supp, (uint8_t *)bssid);
-    if (!bss) {
-        wpa_printf(MSG_ERROR,
-                "SAE: BSS not available, update scan result to get BSS");
-       // TODO: should we trigger scan again.
-        return ESP_FAIL;
-    }
-    if (bss) {
-        const u8 *rsnxe;
-
-        rsnxe = wpa_bss_get_ie(bss, WLAN_EID_RSNX);
-        if (rsnxe && rsnxe[1] >= 1) {
-            rsnxe_capa = rsnxe[2];
-        }
-    }
-
-    if (use_pt && (rsnxe_capa & BIT(WLAN_RSNX_CAPAB_SAE_PK)) &&
-        sae_pk_mode != WPA3_SAE_PK_MODE_DISABLED &&
-        ((pw && sae_pk_valid_password((const char*)pw)))) {
-        use_pt = 1;
-        use_pk = true;
-    }
-
-    if (sae_pk_mode == WPA3_SAE_PK_MODE_ONLY && !use_pk) {
-        wpa_printf(MSG_DEBUG,
-           "SAE: Cannot use PK with the selected AP");
-    return ESP_FAIL;
-    }
-#endif /* CONFIG_SAE_PK */
 
     if (use_pt &&
             sae_prepare_commit_pt(&g_sae_data, g_sae_pt,
@@ -294,7 +302,7 @@ static int wpa3_parse_sae_confirm(u8 *buf, u32 len)
     }
     g_sae_data.state = SAE_ACCEPTED;
 
-    wpa_set_pmk(g_sae_data.pmk, g_sae_data.pmkid, true);
+    wpa_set_pmk(g_sae_data.pmk, g_sae_data.pmk_len, g_sae_data.pmkid, true);
 
     return ESP_OK;
 }

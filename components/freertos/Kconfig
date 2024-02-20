@@ -3,17 +3,9 @@ menu "FreeRTOS"
     menu "Kernel"
         # Upstream FreeRTOS configurations go here
 
-        config FREERTOS_USE_KERNEL_10_5_1
-            bool "Use v10.5.1 Kernel (BETA)"
-            default n
-            help
-                This option enables building for FreeRTOS v10.5.1 kernel.
-
-                Note: The v10.5.1 kernel is still in BETA, thus is not production ready.
-
         config FREERTOS_SMP
             bool "Run the Amazon SMP FreeRTOS kernel instead (FEATURE UNDER DEVELOPMENT)"
-            depends on !FREERTOS_USE_KERNEL_10_5_1 && !IDF_TARGET_ESP32P4 #TODO: IDF-8113: Enable P4 support on AMZ SMP
+            depends on !IDF_TARGET_ESP32P4 #TODO: IDF-8113: Enable P4 support on AMZ SMP
             default  "n"
             help
                 Amazon has released an SMP version of the FreeRTOS Kernel which can be found via the following link:
@@ -174,6 +166,28 @@ menu "FreeRTOS"
             help
                 Sets the timer task's name (see configTIMER_SERVICE_TASK_NAME documentation for more details).
 
+        choice FREERTOS_TIMER_SERVICE_TASK_CORE_AFFINITY
+            prompt "configTIMER_SERVICE_TASK_CORE_AFFINITY"
+            default FREERTOS_TIMER_TASK_NO_AFFINITY
+            help
+                Sets the timer task's core affinity
+                (see configTIMER_SERVICE_TASK_CORE_AFFINITY documentation for more details).
+
+            config FREERTOS_TIMER_TASK_AFFINITY_CPU0
+                bool "CPU0"
+            config FREERTOS_TIMER_TASK_AFFINITY_CPU1
+                bool "CPU1"
+                depends on !FREERTOS_UNICORE
+            config FREERTOS_TIMER_TASK_NO_AFFINITY
+                bool "No affinity"
+        endchoice
+
+        config FREERTOS_TIMER_SERVICE_TASK_CORE_AFFINITY
+            hex
+            default 0x0 if FREERTOS_TIMER_TASK_AFFINITY_CPU0
+            default 0x1 if FREERTOS_TIMER_TASK_AFFINITY_CPU1
+            default FREERTOS_NO_AFFINITY if FREERTOS_TIMER_TASK_NO_AFFINITY
+
         config FREERTOS_TIMER_TASK_PRIORITY
             int "configTIMER_TASK_PRIORITY"
             range 1 25
@@ -232,6 +246,14 @@ menu "FreeRTOS"
                 ``vTaskList()`` and ``vTaskGetRunTimeStats()`` functions in the build (see
                 configUSE_STATS_FORMATTING_FUNCTIONS documentation for more details).
 
+        config FREERTOS_USE_LIST_DATA_INTEGRITY_CHECK_BYTES
+            bool "configUSE_LIST_DATA_INTEGRITY_CHECK_BYTES"
+            #TODO: Enable by default for debug builds (IDF-8517)
+            default n
+            help
+                Enable list integrity checker
+                (see configUSE_LIST_DATA_INTEGRITY_CHECK_BYTES documentation for more details).
+
         config FREERTOS_VTASKLIST_INCLUDE_COREID
             # Core affinity is supported in stats for Amazon FreeRTOS SMP by default
             bool "Enable display of xCoreID in vTaskList"
@@ -251,6 +273,25 @@ menu "FreeRTOS"
                 documentation for more details).
 
                 Note: The clock used for run time statistics can be configured in FREERTOS_RUN_TIME_STATS_CLK.
+
+        choice FREERTOS_RUN_TIME_COUNTER_TYPE
+            prompt "configRUN_TIME_COUNTER_TYPE"
+            depends on FREERTOS_GENERATE_RUN_TIME_STATS && !FREERTOS_SMP
+            default FREERTOS_RUN_TIME_COUNTER_TYPE_U32
+            help
+                Sets the data type used for the FreeRTOS run time stats. A larger data type can be used to reduce the
+                frequency of the counter overflowing.
+
+            config FREERTOS_RUN_TIME_COUNTER_TYPE_U32
+                bool "uint32_t"
+                help
+                    configRUN_TIME_COUNTER_TYPE is set to uint32_t
+
+            config FREERTOS_RUN_TIME_COUNTER_TYPE_U64
+                bool "uint64_t"
+                help
+                    configRUN_TIME_COUNTER_TYPE is set to uint64_t
+        endchoice # FREERTOS_RUN_TIME_COUNTER_TYPE
 
         config FREERTOS_USE_TICKLESS_IDLE
             # Todo: Currently not supported in SMP FreeRTOS yet (IDF-4986)

@@ -35,7 +35,6 @@ extern "C" {
  * - A Slot is the vaddr range between 2 blocks.
  */
 
-
 /**
  * MMAP flags
  */

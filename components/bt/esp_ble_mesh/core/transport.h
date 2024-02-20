@@ -94,13 +94,14 @@ struct bt_mesh_ctl_friend_sub_confirm {
     uint8_t xact;
 } __attribute__((packed));
 
-uint8_t bt_mesh_get_seg_retrans_num(void);
+uint8_t bt_mesh_get_seg_rtx_num(void);
 
-int32_t bt_mesh_get_seg_retrans_timeout(uint8_t ttl);
-
-void bt_mesh_set_hb_sub_dst(uint16_t addr);
+int32_t bt_mesh_get_seg_rtx_timeout(uint16_t dst, uint8_t ttl);
 
 struct bt_mesh_app_key *bt_mesh_app_key_get(uint16_t app_idx);
+
+int bt_mesh_upper_key_get(const struct bt_mesh_subnet *subnet, uint16_t app_idx,
+                          const uint8_t **key, uint8_t *aid, uint16_t dst);
 
 bool bt_mesh_tx_in_progress(void);
 
@@ -120,11 +121,6 @@ int bt_mesh_trans_recv(struct net_buf_simple *buf, struct bt_mesh_net_rx *rx);
 
 void bt_mesh_trans_init(void);
 void bt_mesh_trans_deinit(bool erase);
-
-void bt_mesh_heartbeat_send(void);
-
-int bt_mesh_upper_key_get(const struct bt_mesh_subnet *subnet, uint16_t app_idx,
-                          const uint8_t **key, uint8_t *aid, uint16_t dst);
 
 #ifdef __cplusplus
 }

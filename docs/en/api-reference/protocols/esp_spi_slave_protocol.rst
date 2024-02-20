@@ -14,21 +14,21 @@ ESP SPI Slave HD (Half Duplex) Mode Protocol
 SPI Slave Capabilities of Espressif Chips
 -----------------------------------------
 
-+------------------+-------+----------+----------+----------+----------+----------+----------+
-|                  | ESP32 | ESP32-S2 | ESP32-C3 | ESP32-S3 | ESP32-C2 | ESP32-C6 | ESP32-H2 |
-+------------------+-------+----------+----------+----------+----------+----------+----------+
-| SPI Slave HD     | N     | Y (v2)   | Y (v2)   | Y (v2)   | Y (v2)   | Y (v2)   | Y (v2)   |
-+------------------+-------+----------+----------+----------+----------+----------+----------+
-| Tohost intr      |       | N        | N        | N        | N        | N        | N        |
-+------------------+-------+----------+----------+----------+----------+----------+----------+
-| Frhost intr      |       | 2 \*     | 2 \*     | 2 \*     | 2 \*     | 2 \*     | 2 \*     |
-+------------------+-------+----------+----------+----------+----------+----------+----------+
-| TX DMA           |       | Y        | Y        | Y        | Y        | Y        | Y        |
-+------------------+-------+----------+----------+----------+----------+----------+----------+
-| RX DMA           |       | Y        | Y        | Y        | Y        | Y        | Y        |
-+------------------+-------+----------+----------+----------+----------+----------+----------+
-| Shared registers |       | 72       | 64       | 64       | 64       | 64       | 64       |
-+------------------+-------+----------+----------+----------+----------+----------+----------+
++------------------+-------+----------+----------+----------+----------+----------+----------+----------+
+|                  | ESP32 | ESP32-S2 | ESP32-C3 | ESP32-S3 | ESP32-C2 | ESP32-C6 | ESP32-H2 | ESP32-P4 |
++------------------+-------+----------+----------+----------+----------+----------+----------+----------+
+| SPI Slave HD     | N     | Y (v2)   | Y (v2)   | Y (v2)   | Y (v2)   | Y (v2)   | Y (v2)   | Y (v2)   |
++------------------+-------+----------+----------+----------+----------+----------+----------+----------+
+| Tohost intr      |       | N        | N        | N        | N        | N        | N        | N        |
++------------------+-------+----------+----------+----------+----------+----------+----------+----------+
+| Frhost intr      |       | 2 \*     | 2 \*     | 2 \*     | 2 \*     | 2 \*     | 2 \*     | 2 \*     |
++------------------+-------+----------+----------+----------+----------+----------+----------+----------+
+| TX DMA           |       | Y        | Y        | Y        | Y        | Y        | Y        | Y        |
++------------------+-------+----------+----------+----------+----------+----------+----------+----------+
+| RX DMA           |       | Y        | Y        | Y        | Y        | Y        | Y        | Y        |
++------------------+-------+----------+----------+----------+----------+----------+----------+----------+
+| Shared registers |       | 72       | 64       | 64       | 64       | 64       | 64       | 64       |
++------------------+-------+----------+----------+----------+----------+----------+----------+----------+
 
 Introduction
 ------------
@@ -43,9 +43,17 @@ In the half duplex mode, the master has to use the protocol defined by the slave
 
     For some commands (WRBUF, RDBUF), this phase specifies the address of the shared register to write to/read from. For other commands with this phase, they are meaningless but still have to exist in the transaction.
 
-- Dummy: 8-bit, floating, optional
+.. only:: esp32s2
 
-    This phase is the turnaround time between the master and the slave on the bus, and also provides enough time for the slave to prepare the data to send to the master.
+    - Dummy: 8-bit (for 1-bit mode) or 4-bit (for 2/4-bit mode), floating, optional
+
+        This phase is the turnaround time between the master and the slave on the bus, and also provides enough time for the slave to prepare the data to send to the master.
+
+.. only:: not esp32s2
+
+    - Dummy: 8-bit, floating, optional
+
+        This phase is the turnaround time between the master and the slave on the bus, and also provides enough time for the slave to prepare the data to send to the master.
 
 - Data: variable length, the direction is also determined by the command.
 

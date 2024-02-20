@@ -6,7 +6,6 @@
 
 #include "hal/clk_tree_hal.h"
 #include "hal/clk_tree_ll.h"
-#include "soc/rtc.h"
 #include "hal/assert.h"
 #include "hal/log.h"
 
@@ -36,7 +35,7 @@ uint32_t clk_hal_cpu_get_freq_hz(void)
    return clk_hal_soc_root_get_freq_mhz(source) * MHZ / clk_ll_cpu_get_divider();
 }
 
-uint32_t clk_hal_ahb_get_freq_hz(void)
+static uint32_t clk_hal_ahb_get_freq_hz(void)
 {
     soc_cpu_clk_src_t source = clk_ll_cpu_get_src();
     return clk_hal_soc_root_get_freq_mhz(source) * MHZ / clk_ll_ahb_get_divider();
@@ -70,7 +69,7 @@ uint32_t clk_hal_xtal_get_freq_mhz(void)
     uint32_t freq = clk_ll_xtal_load_freq_mhz();
     if (freq == 0) {
         HAL_LOGW(CLK_HAL_TAG, "invalid RTC_XTAL_FREQ_REG value, assume 32MHz");
-        return (uint32_t)RTC_XTAL_FREQ_32M;
+        return (uint32_t)SOC_XTAL_FREQ_32M;
     }
     return freq;
 }

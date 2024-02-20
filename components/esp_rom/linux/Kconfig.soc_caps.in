@@ -1,0 +1,12 @@
+#####################################################
+# This file is auto-generated from SoC caps
+# using gen_soc_caps_kconfig.py, do not edit manually
+#####################################################
+
+config ESP_ROM_USB_OTG_NUM
+    int
+    default -1
+
+config ESP_ROM_USB_SERIAL_DEVICE_NUM
+    int
+    default -1

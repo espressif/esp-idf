@@ -366,6 +366,17 @@ void vPortSetStackWatchpoint(void *pxStackStart);
 // -------------------- Heap Related -----------------------
 
 /**
+ * @brief Checks if a given piece of memory can be used to store a FreeRTOS list
+ *
+ * - Defined in heap_idf.c
+ *
+ * @param ptr Pointer to memory
+ * @return true Memory can be used to store a List
+ * @return false Otherwise
+ */
+bool xPortCheckValidListMem(const void *ptr);
+
+/**
  * @brief Checks if a given piece of memory can be used to store a task's TCB
  *
  * - Defined in heap_idf.c
@@ -387,6 +398,7 @@ bool xPortCheckValidTCBMem(const void *ptr);
  */
 bool xPortcheckValidStackMem(const void *ptr);
 
+#define portVALID_LIST_MEM(ptr)     xPortCheckValidListMem(ptr)
 #define portVALID_TCB_MEM(ptr)      xPortCheckValidTCBMem(ptr)
 #define portVALID_STACK_MEM(ptr)    xPortcheckValidStackMem(ptr)
 
@@ -424,7 +436,7 @@ portmacro.h. Therefore, we need to keep these headers around for now to allow th
 #include "portbenchmark.h"
 #include <limits.h>
 #include <xtensa/config/system.h>
-#include <xtensa/xtensa_api.h>
+#include <xtensa_api.h>
 
 /* [refactor-todo] introduce a port wrapper function to avoid including esp_timer.h into the public header */
 #if CONFIG_FREERTOS_RUN_TIME_STATS_USING_ESP_TIMER

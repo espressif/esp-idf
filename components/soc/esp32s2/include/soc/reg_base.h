@@ -56,7 +56,6 @@
 #define DR_REG_SYSCON_BASE                      0x3f426000
 #define DR_REG_APB_CTRL_BASE                    0x3f426000    /* Old name for SYSCON, to be removed */
 #define DR_REG_I2C1_EXT_BASE                    0x3f427000
-#define DR_REG_SPI4_BASE                        0x3f437000
 #define DR_REG_USB_WRAP_BASE                    0x3f439000
 #define DR_REG_APB_SARADC_BASE                  0x3f440000
 #define DR_REG_USB_BASE                         0x60080000

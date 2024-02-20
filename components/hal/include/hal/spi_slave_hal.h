@@ -27,8 +27,11 @@
 #include "sdkconfig.h"
 #include "esp_types.h"
 #include "soc/soc_caps.h"
+#include "hal/dma_types.h"
+#if SOC_GDMA_SUPPORTED
+#include "soc/gdma_channel.h"
+#endif
 #if SOC_GPSPI_SUPPORTED
-#include "soc/lldesc.h"
 #include "hal/spi_ll.h"
 #endif
 
@@ -37,6 +40,11 @@ extern "C" {
 #endif
 
 #if SOC_GPSPI_SUPPORTED
+#if (SOC_GDMA_TRIG_PERIPH_SPI2_BUS == SOC_GDMA_BUS_AHB)
+typedef dma_descriptor_align4_t spi_dma_desc_t;
+#else
+typedef dma_descriptor_align8_t spi_dma_desc_t;
+#endif
 
 /**
  * Context that should be maintained by both the driver and the HAL.
@@ -47,11 +55,11 @@ typedef struct {
     spi_dma_dev_t *dma_in;          ///< Address of the DMA peripheral registers which stores the data received from a peripheral into RAM.
     spi_dma_dev_t *dma_out;         ///< Address of the DMA peripheral registers which transmits the data from RAM to a peripheral.
     /* should be configured by driver at initialization */
-    lldesc_t      *dmadesc_rx;      /**< Array of DMA descriptor used by the TX DMA.
+    spi_dma_desc_t *dmadesc_rx;     /**< Array of DMA descriptor used by the TX DMA.
                                      *   The amount should be larger than dmadesc_n. The driver should ensure that
                                      *   the data to be sent is shorter than the descriptors can hold.
                                      */
-    lldesc_t      *dmadesc_tx;      /**< Array of DMA descriptor used by the RX DMA.
+    spi_dma_desc_t *dmadesc_tx;     /**< Array of DMA descriptor used by the RX DMA.
                                      *   The amount should be larger than dmadesc_n. The driver should ensure that
                                      *   the data to be sent is shorter than the descriptors can hold.
                                      */

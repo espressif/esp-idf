@@ -1,4 +1,4 @@
-menu "High resolution timer (esp_timer)"
+menu "ESP Timer (High Resolution Timer)"
 
     config ESP_TIMER_PROFILING
         bool "Enable esp_timer profiling features"
@@ -38,8 +38,8 @@ menu "High resolution timer (esp_timer)"
         range 1 3 if IDF_TARGET_ESP32
         range 1 1 if !IDF_TARGET_ESP32
         help
-            It sets the interrupt level for esp_timer ISR in range 1..3.
-            A higher level (3) helps to decrease the ISR esp_timer latency.
+            This sets the interrupt priority level for esp_timer ISR.
+            A higher value reduces interrupt latency by minimizing the timer processing delay.
 
     config ESP_TIMER_SHOW_EXPERIMENTAL
         bool "show esp_timer's experimental features"
@@ -73,12 +73,6 @@ menu "High resolution timer (esp_timer)"
             bool "No affinity"
             depends on !FREERTOS_UNICORE && ESP_TIMER_SHOW_EXPERIMENTAL
     endchoice
-
-    config ESP_TIMER_ISR_AFFINITY
-        hex
-        default 0x1 if ESP_TIMER_ISR_AFFINITY_CPU0
-        default 0x2 if ESP_TIMER_ISR_AFFINITY_CPU1
-        default FREERTOS_NO_AFFINITY if ESP_TIMER_ISR_AFFINITY_NO_AFFINITY
 
     choice ESP_TIMER_ISR_AFFINITY
         prompt "timer interrupt core affinity"

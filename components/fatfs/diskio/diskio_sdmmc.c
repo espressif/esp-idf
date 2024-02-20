@@ -53,7 +53,7 @@ DRESULT ff_sdmmc_read (BYTE pdrv, BYTE* buff, DWORD sector, UINT count)
     assert(card);
     esp_err_t err = sdmmc_read_sectors(card, buff, sector, count);
     if (unlikely(err != ESP_OK)) {
-        ESP_LOGE(TAG, "sdmmc_read_blocks failed (%d)", err);
+        ESP_LOGE(TAG, "sdmmc_read_blocks failed (0x%x)", err);
         return RES_ERROR;
     }
     return RES_OK;
@@ -65,7 +65,7 @@ DRESULT ff_sdmmc_write (BYTE pdrv, const BYTE* buff, DWORD sector, UINT count)
     assert(card);
     esp_err_t err = sdmmc_write_sectors(card, buff, sector, count);
     if (unlikely(err != ESP_OK)) {
-        ESP_LOGE(TAG, "sdmmc_write_blocks failed (%d)", err);
+        ESP_LOGE(TAG, "sdmmc_write_blocks failed (0x%x)", err);
         return RES_ERROR;
     }
     return RES_OK;
@@ -105,6 +105,9 @@ DRESULT ff_sdmmc_ioctl (BYTE pdrv, BYTE cmd, void* buff)
             return RES_ERROR;
 #if FF_USE_TRIM
         case CTRL_TRIM:
+            if (sdmmc_can_trim(card) != ESP_OK) {
+                return RES_PARERR;
+            }
             return ff_sdmmc_trim (pdrv, *((DWORD*)buff), //start_sector
                     (*((DWORD*)buff + 1) - *((DWORD*)buff) + 1)); //sector_count
 #endif //FF_USE_TRIM

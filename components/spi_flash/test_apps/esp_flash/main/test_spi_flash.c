@@ -122,7 +122,7 @@ TEST_CASE("flash write and erase work both on PRO CPU and on APP CPU", "[spi_fla
 }
 
 //  TODO: This test is disabled on S3 with legacy impl - IDF-3505
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32, ESP32S2, ESP32S3, ESP32C3)
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32, ESP32S2, ESP32S3, ESP32C3, ESP32P4)
 
 #if portNUM_PROCESSORS > 1
 TEST_CASE("spi_flash deadlock with high priority busy-waiting task", "[spi_flash][esp_flash]")

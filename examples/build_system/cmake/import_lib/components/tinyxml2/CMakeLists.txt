@@ -20,7 +20,7 @@ externalproject_add(tinyxml2_proj
     # Download the source code of the third party project from the following URL.
     # (Two URLs are provided, the 2nd one is the mirror for Chinese users)
     URL https://github.com/leethomason/tinyxml2/archive/refs/tags/9.0.0.zip
-        https://gitcode.net/mirrors/leethomason/tinyxml2/-/archive/9.0.0/tinyxml2-9.0.0.zip
+        https://dl.espressif.com/dl/tinyxml2/9.0.0.zip
     # (Downloading is not the only option; the library can also be located in your source tree.
     #  Consult ExternalProject_Add function documentation for other options.)
 

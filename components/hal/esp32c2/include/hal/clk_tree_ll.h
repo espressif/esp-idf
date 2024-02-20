@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,7 +9,6 @@
 #include <stdint.h>
 #include "soc/soc.h"
 #include "soc/clk_tree_defs.h"
-#include "soc/rtc.h"
 #include "soc/system_reg.h"
 #include "soc/rtc_cntl_reg.h"
 #include "hal/regi2c_ctrl.h"
@@ -32,6 +31,10 @@ extern "C" {
 #define CLK_LL_PLL_480M_FREQ_MHZ   (480)
 
 #define CLK_LL_AHB_MAX_FREQ_MHZ    CLK_LL_PLL_40M_FREQ_MHZ
+
+/* RC_FAST clock enable/disable wait time */
+#define CLK_LL_RC_FAST_WAIT_DEFAULT            20
+#define CLK_LL_RC_FAST_ENABLE_WAIT_DEFAULT     5
 
 /**
  * @brief XTAL32K_CLK enable modes
@@ -65,7 +68,7 @@ static inline __attribute__((always_inline)) void clk_ll_bbpll_disable(void)
 static inline __attribute__((always_inline)) void clk_ll_rc_fast_enable(void)
 {
     CLEAR_PERI_REG_MASK(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_ENB_CK8M);
-    REG_SET_FIELD(RTC_CNTL_TIMER1_REG, RTC_CNTL_CK8M_WAIT, RTC_CK8M_ENABLE_WAIT_DEFAULT);
+    REG_SET_FIELD(RTC_CNTL_TIMER1_REG, RTC_CNTL_CK8M_WAIT, CLK_LL_RC_FAST_ENABLE_WAIT_DEFAULT);
 }
 
 /**
@@ -74,7 +77,7 @@ static inline __attribute__((always_inline)) void clk_ll_rc_fast_enable(void)
 static inline __attribute__((always_inline)) void clk_ll_rc_fast_disable(void)
 {
     SET_PERI_REG_MASK(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_ENB_CK8M);
-    REG_SET_FIELD(RTC_CNTL_TIMER1_REG, RTC_CNTL_CK8M_WAIT, RTC_CNTL_CK8M_WAIT_DEFAULT);
+    REG_SET_FIELD(RTC_CNTL_TIMER1_REG, RTC_CNTL_CK8M_WAIT, CLK_LL_RC_FAST_WAIT_DEFAULT);
 }
 
 /**
@@ -238,7 +241,7 @@ static inline __attribute__((always_inline)) void clk_ll_bbpll_set_config(uint32
 
     /* Configure 480M PLL */
     switch (xtal_freq_mhz) {
-    case RTC_XTAL_FREQ_26M:
+    case SOC_XTAL_FREQ_26M:
         div_ref = 12;
         div7_0 = 236;
         dr1 = 4;
@@ -247,7 +250,7 @@ static inline __attribute__((always_inline)) void clk_ll_bbpll_set_config(uint32
         dcur = 0;
         dbias = 2;
         break;
-    case RTC_XTAL_FREQ_32M:
+    case SOC_XTAL_FREQ_32M:
         div_ref = 0;
         div7_0 = 11;
         dr1 = 0;
@@ -256,7 +259,7 @@ static inline __attribute__((always_inline)) void clk_ll_bbpll_set_config(uint32
         dcur = 3;
         dbias = 2;
         break;
-    case RTC_XTAL_FREQ_40M:
+    case SOC_XTAL_FREQ_40M:
     default:
         div_ref = 0;
         div7_0 = 8;

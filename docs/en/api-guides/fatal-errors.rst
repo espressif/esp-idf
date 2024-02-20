@@ -221,7 +221,7 @@ If :doc:`IDF Monitor <tools/idf-monitor>` is used, Program Counter values will b
         Backtrace:
 
         0x42006686 in bar (ptr=ptr@entry=0x0) at ../main/hello_world_main.c:18
-        18	    *ptr = 0x42424242;
+        18      *ptr = 0x42424242;
         #0  0x42006686 in bar (ptr=ptr@entry=0x0) at ../main/hello_world_main.c:18
         #1  0x42006692 in foo () at ../main/hello_world_main.c:22
         #2  0x420066ac in app_main () at ../main/hello_world_main.c:28
@@ -282,7 +282,7 @@ The GDB prompt can be used to inspect CPU registers, local and static variables,
 
 RTC Watchdog Timeout
 --------------------
-{IDF_TARGET_RTCWDT_RTC_RESET:default="Not updated", esp32="RTCWDT_RTC_RESET", esp32s2="RTCWDT_RTC_RST", esp32s3="RTCWDT_RTC_RST", esp32c3="RTCWDT_RTC_RST", esp32c2="RTCWDT_RTC_RST", esp32c6="LP_WDT_SYS", esp32h2="LP_WDT_SYS"}
+{IDF_TARGET_RTCWDT_RTC_RESET:default="Not updated", esp32="RTCWDT_RTC_RESET", esp32s2="RTCWDT_RTC_RST", esp32s3="RTCWDT_RTC_RST", esp32c3="RTCWDT_RTC_RST", esp32c2="RTCWDT_RTC_RST", esp32c6="LP_WDT_SYS", esp32h2="LP_WDT_SYS", esp32p4="LP_WDT_SYS"}
 
 The RTC watchdog is used in the startup code to keep track of execution time and it also helps to prevent a lock-up caused by an unstable power source. It is enabled by default (see :ref:`CONFIG_BOOTLOADER_WDT_ENABLE`). If the execution time is exceeded, the RTC watchdog will restart the system. In this case, the ROM bootloader will print a message with the ``RTC Watchdog Timeout`` reason for the reboot.
 

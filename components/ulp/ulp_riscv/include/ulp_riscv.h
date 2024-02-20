@@ -112,7 +112,6 @@ esp_err_t ulp_riscv_load_binary(const uint8_t* program_binary, size_t program_si
  */
 void ulp_riscv_timer_stop(void);
 
-
 /**
  * @brief Resumes the ULP timer
  *
@@ -120,7 +119,6 @@ void ulp_riscv_timer_stop(void);
  *
  */
 void ulp_riscv_timer_resume(void);
-
 
 /**
  * @brief Halts the program currently running on the ULP-RISC-V

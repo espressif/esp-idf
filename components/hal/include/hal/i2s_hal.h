@@ -94,7 +94,7 @@ typedef struct {
             i2s_pdm_slot_mask_t     slot_mask;          /*!< Choose the slots to activate */
 #if SOC_I2S_SUPPORTS_PDM_RX_HP_FILTER
             bool                    hp_en;              /*!< High pass filter enable */
-            float                   hp_cut_off_freq_hz; /*!< High pass filter cut-off frequency, range 23.3Hz ~ 185Hz, see cut-off frequency sheet above */
+            uint32_t                hp_cut_off_freq_hzx10; /*!< High pass filter cut-off frequency times 10, range 23.3Hz ~ 185Hz, see cut-off frequency sheet above */
             uint32_t                amplify_num;        /*!< The amplification number of the final conversion result */
 #endif  // SOC_I2S_SUPPORTS_PDM_RX_HP_FILTER
 
@@ -139,6 +139,7 @@ void i2s_hal_init(i2s_hal_context_t *hal, int port_id);
  */
 void i2s_hal_calc_mclk_precise_division(uint32_t sclk, uint32_t mclk, hal_utils_clk_div_t *mclk_div);
 
+#if SOC_PERIPH_CLK_CTRL_SHARED
 /**
  * @brief Set tx channel clock
  *
@@ -147,14 +148,19 @@ void i2s_hal_calc_mclk_precise_division(uint32_t sclk, uint32_t mclk, hal_utils_
  * @param clk_src clock source
  */
 void _i2s_hal_set_tx_clock(i2s_hal_context_t *hal, const i2s_hal_clock_info_t *clk_info, i2s_clock_src_t clk_src);
-
-#if SOC_PERIPH_CLK_CTRL_SHARED
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
 #define i2s_hal_set_tx_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; _i2s_hal_set_tx_clock(__VA_ARGS__)
 #else
-#define i2s_hal_set_tx_clock(...)   _i2s_hal_set_tx_clock(__VA_ARGS__)
-#endif
+/**
+ * @brief Set tx channel clock
+ *
+ * @param hal Context of the HAL layer
+ * @param clk_info clock information, if it is NULL, only set the clock source
+ * @param clk_src clock source
+ */
+void i2s_hal_set_tx_clock(i2s_hal_context_t *hal, const i2s_hal_clock_info_t *clk_info, i2s_clock_src_t clk_src);
+#endif  // SOC_PERIPH_CLK_CTRL_SHARED
 
 /**
  * @brief Set rx channel clock

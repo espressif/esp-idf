@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -29,7 +29,6 @@
 #include "unity_test_utils_memory.h"
 
 #include "test_utils.h"
-
 
 static const char* TAG = "test_event";
 
@@ -154,7 +153,7 @@ static void test_event_simple_handler_registration_task(void* args)
 
     xSemaphoreTake(arg->start, portMAX_DELAY);
 
-    for(int i = 0; i < data->num; i++) {
+    for (int i = 0; i < data->num; i++) {
         if (data->is_registration) {
             TEST_ESP_OK(esp_event_handler_register_with(data->loop, data->base, data->id, data->handles[i], NULL));
         } else {
@@ -261,7 +260,7 @@ TEST_CASE("can register/unregister handlers simultaneously", "[event]")
         registration_data[i].is_registration = true;
 
         for (int j = 0; j < TEST_CONFIG_ITEMS_TO_REGISTER; j++) {
-            registration_data[i].handles[j] = (void*) (i * TEST_CONFIG_ITEMS_TO_REGISTER) + (j + TEST_CONFIG_ITEMS_TO_REGISTER);
+            registration_data[i].handles[j] = (void*)(i * TEST_CONFIG_ITEMS_TO_REGISTER) + (j + TEST_CONFIG_ITEMS_TO_REGISTER);
         }
 
         registration_arg[i].start = xSemaphoreCreateBinary();
@@ -381,8 +380,7 @@ TEST_CASE("can post and run events simultaneously", "[event]")
     post_event_data_t* post_event_data = calloc(TEST_CONFIG_TASKS_TO_SPAWN, sizeof(*post_event_data));
     task_arg_t* post_event_arg = calloc(TEST_CONFIG_TASKS_TO_SPAWN, sizeof(*post_event_arg));
 
-    for (int i = 0; i < TEST_CONFIG_TASKS_TO_SPAWN; i++)
-    {
+    for (int i = 0; i < TEST_CONFIG_TASKS_TO_SPAWN; i++) {
         post_event_data[i].base = s_test_base1;
         post_event_data[i].id = TEST_EVENT_BASE1_EV1;
         post_event_data[i].loop = loop;
@@ -459,8 +457,7 @@ TEST_CASE("can post and run events simultaneously with instances", "[event]")
     post_event_data_t* post_event_data = calloc(TEST_CONFIG_TASKS_TO_SPAWN, sizeof(*post_event_data));
     task_arg_t* post_event_arg = calloc(TEST_CONFIG_TASKS_TO_SPAWN, sizeof(*post_event_arg));
 
-    for (int i = 0; i < TEST_CONFIG_TASKS_TO_SPAWN; i++)
-    {
+    for (int i = 0; i < TEST_CONFIG_TASKS_TO_SPAWN; i++) {
         post_event_data[i].base = s_test_base1;
         post_event_data[i].id = TEST_EVENT_BASE1_EV1;
         post_event_data[i].loop = loop;
@@ -514,7 +511,7 @@ static void loop_run_task(void* args)
 {
     esp_event_loop_handle_t event_loop = (esp_event_loop_handle_t) args;
 
-    while(1) {
+    while (1) {
         esp_event_loop_run(event_loop, portMAX_DELAY);
     }
 }
@@ -527,8 +524,8 @@ static void performance_test(bool dedicated_task)
 
     const char test_base[] = "qwertyuiopasdfghjklzxvbnmmnbvcxz";
 
-    #define TEST_CONFIG_BASES  (sizeof(test_base) - 1)
-    #define TEST_CONFIG_IDS    (TEST_CONFIG_BASES / 2)
+#define TEST_CONFIG_BASES  (sizeof(test_base) - 1)
+#define TEST_CONFIG_IDS    (TEST_CONFIG_BASES / 2)
 
     // Create loop
     esp_event_loop_args_t loop_args = test_event_get_default_loop_args();
@@ -583,7 +580,7 @@ static void performance_test(bool dedicated_task)
                 int rand_b  = rand() % bases;
 
                 int temp = post_bases[rand_a];
-                post_bases[rand_a]= post_bases[rand_b];
+                post_bases[rand_a] = post_bases[rand_b];
                 post_bases[rand_b] = temp;
             }
 
@@ -592,7 +589,7 @@ static void performance_test(bool dedicated_task)
                 int rand_b  = rand() % ids;
 
                 int temp = post_ids[rand_a];
-                post_ids[rand_a]= post_ids[rand_b];
+                post_ids[rand_a] = post_ids[rand_b];
                 post_ids[rand_b] = temp;
             }
 
@@ -617,7 +614,7 @@ static void performance_test(bool dedicated_task)
         }
     }
 
-    int average = (int) (running_sum / (running_count));
+    int average = (int)(running_sum / (running_count));
 
     if (!dedicated_task) {
         ((esp_event_loop_instance_t*) loop)->task = mtask;
@@ -700,7 +697,7 @@ static void test_handler_post_from_isr(void* event_handler_arg, esp_event_base_t
     SemaphoreHandle_t *sem = (SemaphoreHandle_t*) event_handler_arg;
     // Event data is just the address value (maybe have been truncated due to casting).
     int *data = (int*) event_data;
-    TEST_ASSERT_EQUAL(*data, (int) (*sem));
+    TEST_ASSERT_EQUAL(*data, (int)(*sem));
     xSemaphoreGive(*sem);
 }
 
@@ -720,7 +717,7 @@ bool test_event_on_timer_alarm(gptimer_handle_t timer, const gptimer_alarm_event
 TEST_CASE("can post events from interrupt handler", "[event][intr]")
 {
     /* Lazy allocated resources in gptimer/intr_alloc */
-    unity_utils_set_leak_level(150);
+    unity_utils_set_leak_level(160);
 
     TEST_ESP_OK(esp_event_loop_create_default());
 

@@ -104,6 +104,13 @@ ethernet_component:
     - Apache-2.0
     - MIT           # To allow contributed drivers
 
+linux_component:
+  include:
+    - 'components/linux/fls.c'
+  allowed_licenses:
+    - Apache-2.0
+    - BSD-4-Clause-UC
+
 systemview:
   include:
     - 'components/app_trace/sys_view'
@@ -121,7 +128,7 @@ spiffs:
 
 sdmmc:
   include:
-    - 'components/driver/sdmmc/include/driver/'
+    - 'components/esp_driver_sdmmc/include/driver/'
     - 'components/sdmmc/'
   allowed_licenses:
     - Apache-2.0
@@ -140,6 +147,20 @@ md5_hash:
   allowed_licenses:
     - BSD-3-Clause
     - Apache-2.0
+
+# OpenOCD project is licensed under GPLv2.0, which is incompatible with Apache-2.0
+# The source files built by the OpenOCD stub flasher, need to be dual-licensed for the upstreaming.
+# MIT is chosen as the dual license, ensuring compatibility with GPLv2.0.
+app_trace:
+  include:
+    - components/app_trace/app_trace.c
+    - components/app_trace/app_trace_membufs_proto.c
+    - components/app_trace/app_trace_util.c
+    - components/app_trace/port/riscv/port.c
+    - components/app_trace/port/xtensa/port.c
+  allowed_licenses:
+    - Apache-2.0
+    - MIT
 
 xtensa:
   include:

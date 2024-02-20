@@ -8,7 +8,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-
+#include <stddef.h>
 #include "soc/soc.h"
 #include "soc/lp_aon_reg.h"
 #include "soc/reset_reasons.h"

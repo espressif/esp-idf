@@ -55,8 +55,8 @@
             hint_variables: ['esp_spiram_get_chip_size and esp_spiram_get_size', 'esp_psram_get_size()']
 
 -
-    re: "error: implicit declaration of function 'esp_secure_boot_verify_sbv2_signature_block|esp_secure_boot_verify_rsa_signature_block'"
-    hint: "'esp_secure_boot_verify_sbv2_signature_block()' and 'esp_secure_boot_verify_rsa_signature_block()' and have been made private and are no longer available."
+    re: "error: implicit declaration of function 'esp_secure_boot_verify_rsa_signature_block'"
+    hint: "'esp_secure_boot_verify_rsa_signature_block()' has been made private and is no longer available."
 
 -
     re: "error: implicit declaration of function '{}'"
@@ -276,6 +276,35 @@
     hint: "``esp_vfs_fat_sdmmc_unmount()`` is now deprecated, you can use :cpp:func:`esp_vfs_fat_sdcard_unmount()` instead. See Storage migration guide 5.1 for more details"
 
 -
+    re: "vfs_fat_sdmmc: sdmmc_card_init failed"
+    hint: "Please verify if there is an SD card inserted into the SD slot. Then, try rebooting the board."
+
+-
+    re: "sdmmc_common: sdmmc_init_ocr: send_op_cond"
+    hint: "Please reboot the board and then try again"
+
+-
+    re: "sdmmc_io: sdmmc_io_read_byte: sdmmc_io_rw_direct"
+    hint: "Please verify that card supports IO capabilities. Refer 'IDF_PATH/examples/peripherals/sdio/host/README.md' for more details"
+
+-
+    re: "example: Failed to initialize the card \\({}\\). Make sure SD card lines have pull-up resistors in place."
+    hint: "Please refer ./README.md for details"
+    variables:
+        -
+            re_variables: ['ESP_ERR_TIMEOUT']
+            hint_variables: []
+        -
+            re_variables: ['ESP_ERR_INVALID_RESPONSE']
+            hint_variables: []
+        -
+            re_variables: ['ESP_ERR_INVALID_STATE']
+            hint_variables: []
+        -
+            re_variables: ['ESP_ERR_INVALID_ARG']
+            hint_variables: []
+
+-
     re: "esp_usb_jtag: could not find or open device!"
     hint: "Please check the wire connection to debugging device or access rights to a serial port."
 
@@ -286,6 +315,10 @@
 -
     re: "Error: libusb_open\\(\\) failed with LIBUSB_ERROR_ACCESS"
     hint: "OpenOCD process does not have permissions to access the USB JTAG/serial device. Please use 'LIBUSB_DEBUG=1 idf.py openocd' to find out the device name and check its access rights."
+
+-
+    re: "Error: libusb_open\\(\\) failed with LIBUSB_ERROR_NOT_FOUND"
+    hint: "Device drivers are not correct.\nPlease check configuration of USB drivers: https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/jtag-debugging/configure-ft2232h-jtag.html?highlight=zadig#configure-usb-drivers"
 
 -
     re: "(-Werror=address|-Werror=use-after-free)"
@@ -384,3 +417,8 @@
 -
     re: "assert failed: [\\w]+ tlsf.c:[\\d]+"
     hint: "CORRUPT HEAP: heap metadata corrupted resulting in TLSF malfunction.\nMake sure you are not making out of bound writing on the memory you allocate in your application.\nMake sure you are not writing on freed memory.\nFor more information run 'idf.py docs -sp api-reference/system/heap_debug.html'."
+
+-
+    re: "-Werror=(xor-used-as-pow|enum-int-mismatch|self-move|dangling-reference)"
+    hint: "The warning(s) '{}' may appear after compiler update above GCC-13\nTo suppress these warnings use 'idf.py menuconfig' to enable configure option 'Compiler options' -> 'Disable new warnings introduced in GCC 13'\nPlease note that this is not a permanent solution, and this option will be removed in a future update of the ESP-IDF.\nIt is strongly recommended to fix all warnings, as they may indicate potential issues!"
+    match_to_output: True

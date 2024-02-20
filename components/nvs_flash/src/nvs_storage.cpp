@@ -683,6 +683,26 @@ esp_err_t Storage::eraseNamespace(uint8_t nsIndex)
 
 }
 
+esp_err_t Storage::findKey(const uint8_t nsIndex, const char* key, ItemType* datatype)
+{
+    if (mState != StorageState::ACTIVE) {
+        return ESP_ERR_NVS_NOT_INITIALIZED;
+    }
+
+    Item item;
+    Page* findPage = nullptr;
+    auto err = findItem(nsIndex, ItemType::ANY, key, findPage, item);
+    if (err != ESP_OK) {
+        return err;
+    }
+
+    if(datatype != nullptr) {
+        *datatype = item.datatype;
+    }
+
+    return err;
+}
+
 esp_err_t Storage::getItemDataSize(uint8_t nsIndex, ItemType datatype, const char* key, size_t& dataSize)
 {
     if (mState != StorageState::ACTIVE) {

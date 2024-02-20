@@ -1,5 +1,5 @@
 =============================
-ESP32-S2-Kaluga-1 套件 v1.2 
+ESP32-S2-Kaluga-1 套件 v1.2
 =============================
 
 :link_to_translation:`en:[English]`
@@ -294,14 +294,14 @@ ESP32-S2-Kaluga-1 的主要组件和连接方式如下图所示。
      - 暂无解决方法。
    * - TouchA v1.1 + LCD32 v1.1
      - IO11、IO6
-     - ESP-LyraP-TouchA 因管脚 IO11 复用，导致无法触发触摸动作；ESP-LyraP-LCD32 因 BK (BLCT) 管脚连接至 IO6 管脚复用，因此也无法使用。 
+     - ESP-LyraP-TouchA 因管脚 IO11 复用，导致无法触发触摸动作；ESP-LyraP-LCD32 因 BK (BLCT) 管脚连接至 IO6 管脚复用，因此也无法使用。
      - 不要初始化 ESP-LyraP-TouchA 扩展板的 IO11 (NETWORK) 和 IO6 (PHOTO) 管脚。
    * - 8311A v1.2 + LCD32 v1.1
      - IO6
      - 这两款扩展板可以同时使用，但由于 ESP32-S2-Kaluga-1 的 BK (BLCT) 管脚已连接至 IO6，因此，ESP-LyraT-8311A 的 BT_ADC 管脚和 6 个按钮均无法使用。
      - 用户也可通过以下配置使用 ESP-LyraT-8311A 的 BT_ADC 管脚：移除 ESP-LyraP-LCD32 扩展板上的 R39，将 R41 换为 100 欧，并将 BLCT_L 开关打开。注意，此配置将导致用户无法通过软件控制显示屏的背光亮度。
    * - TouchA v1.1 + 8311A v1.2
-     - ESP-LyraT-8311A 的 BT_ADC 管脚 
+     - ESP-LyraT-8311A 的 BT_ADC 管脚
      - 这两款扩展板可以同时使用。然而，当 ESP-LyraT-8311A 的 BT_ADC 管脚用于初始化扩展板的 6 个按钮时，ESP-LyraP-TouchA 无法成功触发。
      - 如果计划使用 ESP-LyraT-8311A 的 BT_ADC 管脚，请不要初始化 ESP-LyraP-TouchA 扩展板的 IO6 管脚 (PHOTO)。
    * - TouchA v1.1 + CAM v1.0

@@ -182,6 +182,10 @@
         "url": {
           "type": "string",
           "description": "Download URL"
+        },
+        "rename_dist": {
+          "type": "string",
+          "description": "Filename under which the archive should be downloaded"
         }
       },
       "required": [
@@ -241,6 +245,36 @@
         }
       },
       "required": ["platforms"]
+    }
+  },
+  "$comment": "Condition verifying that version 1 of tools.json must not contain 'rename_dist' keyword in any of #/definitions/versionInfo properties.",
+  "if": {
+    "properties": {
+      "version": {
+        "const": 1
+      }
+    }
+  },
+  "then": {
+    "properties": {
+      "tools": {
+        "items": {
+          "properties": {
+            "versions": {
+              "items": {
+                "additionalProperties": {
+                  "not": {
+                    "type": "object",
+                    "required": [
+                      "rename_dist"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
     }
   }
 }

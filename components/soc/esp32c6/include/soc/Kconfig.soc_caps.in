@@ -179,10 +179,6 @@ config SOC_PMU_SUPPORTED
     bool
     default y
 
-config SOC_PMU_PVT_SUPPORTED
-    bool
-    default y
-
 config SOC_PAU_SUPPORTED
     bool
     default y
@@ -212,6 +208,18 @@ config SOC_CLK_TREE_SUPPORTED
     default y
 
 config SOC_ASSIST_DEBUG_SUPPORTED
+    bool
+    default y
+
+config SOC_WDT_SUPPORTED
+    bool
+    default y
+
+config SOC_SPI_FLASH_SUPPORTED
+    bool
+    default y
+
+config SOC_RNG_SUPPORTED
     bool
     default y
 
@@ -371,7 +379,7 @@ config SOC_CPU_WATCHPOINTS_NUM
     int
     default 4
 
-config SOC_CPU_WATCHPOINT_SIZE
+config SOC_CPU_WATCHPOINT_MAX_REGION_SIZE
     hex
     default 0x80000000
 
@@ -455,6 +463,14 @@ config SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
     bool
     default y
 
+config SOC_GPIO_IN_RANGE_MAX
+    int
+    default 30
+
+config SOC_GPIO_OUT_RANGE_MAX
+    int
+    default 30
+
 config SOC_GPIO_DEEP_SLEEP_WAKE_VALID_GPIO_MASK
     int
     default 0
@@ -468,6 +484,10 @@ config SOC_GPIO_SUPPORT_FORCE_HOLD
     default y
 
 config SOC_GPIO_SUPPORT_HOLD_SINGLE_IO_IN_DSLP
+    bool
+    default y
+
+config SOC_GPIO_CLOCKOUT_BY_GPIO_MATRIX
     bool
     default y
 
@@ -515,6 +535,10 @@ config SOC_I2C_SUPPORT_SLAVE
     bool
     default y
 
+config SOC_I2C_SUPPORT_HW_FSM_RST
+    bool
+    default y
+
 config SOC_I2C_SUPPORT_HW_CLR_BUS
     bool
     default y
@@ -528,6 +552,22 @@ config SOC_I2C_SUPPORT_RTC
     default y
 
 config SOC_I2C_SUPPORT_10BIT_ADDR
+    bool
+    default y
+
+config SOC_I2C_SLAVE_SUPPORT_BROADCAST
+    bool
+    default y
+
+config SOC_I2C_SLAVE_CAN_GET_STRETCH_CAUSE
+    bool
+    default y
+
+config SOC_I2C_SLAVE_SUPPORT_I2CRAM_ACCESS
+    bool
+    default y
+
+config SOC_I2C_SLAVE_SUPPORT_SLAVE_UNMATCH
     bool
     default y
 
@@ -1089,7 +1129,7 @@ config SOC_SUPPORT_SECURE_BOOT_REVOKE_KEY
 
 config SOC_FLASH_ENCRYPTED_XTS_AES_BLOCK_MAX
     int
-    default 32
+    default 64
 
 config SOC_FLASH_ENCRYPTION_XTS_AES
     bool

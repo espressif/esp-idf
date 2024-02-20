@@ -81,8 +81,8 @@ void rtc_clk_init(rtc_clk_config_t cfg)
 
     clk_ll_rc_fast_tick_conf();
 
-    rtc_xtal_freq_t xtal_freq = cfg.xtal_freq;
-    esp_rom_uart_tx_wait_idle(0);
+    soc_xtal_freq_t xtal_freq = cfg.xtal_freq;
+    esp_rom_output_tx_wait_idle(0);
     rtc_clk_xtal_freq_update(xtal_freq);
 
     // On ESP32C6, MSPI source clock's default HS divider leads to 120MHz, which is unusable before calibration

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,7 +20,8 @@
 #include <string.h>
 
 #include "soc/spi_periph.h"
-#include "soc/spi_mem_struct.h"
+#include "soc/spi1_mem_c_struct.h"
+#include "soc/spi1_mem_c_reg.h"
 #include "hal/assert.h"
 #include "hal/spi_types.h"
 #include "hal/spi_flash_types.h"
@@ -208,7 +209,7 @@ static inline void spimem_flash_ll_res_check_sus_setup(spi_mem_dev_t *dev, bool 
  */
 static inline void spimem_flash_ll_set_read_sus_status(spi_mem_dev_t *dev, uint32_t sus_conf)
 {
-    dev->flash_sus_ctrl.frd_sus_2b = 0;
+    dev->flash_sus_ctrl.fmem_rd_sus_2b = 0;
     HAL_FORCE_MODIFY_U32_REG_FIELD(dev->flash_sus_ctrl, pesr_end_msk, sus_conf);
 }
 
@@ -249,6 +250,24 @@ static inline void spimem_flash_ll_auto_wait_idle_init(spi_mem_dev_t *dev, bool 
     HAL_FORCE_MODIFY_U32_REG_FIELD(dev->flash_waiti_ctrl, waiti_cmd, 0x05);
     dev->flash_sus_ctrl.flash_per_wait_en = auto_waiti;
     dev->flash_sus_ctrl.flash_pes_wait_en = auto_waiti;
+}
+
+/**
+ * This function is used to set dummy phase when auto suspend is enabled.
+ *
+ * @note This function is only used when timing tuning is enabled. This function is only used in quad flash
+ *
+ * @param dev Beginning address of the peripheral registers.
+ * @param extra_dummy extra dummy length. Get from timing tuning.
+ */
+static inline void spimem_flash_ll_set_wait_idle_dummy_phase(spi_mem_dev_t *dev, uint32_t extra_dummy)
+{
+    if (extra_dummy > 0) {
+        dev->flash_waiti_ctrl.waiti_dummy_cyclelen = extra_dummy - 1;
+        dev->flash_waiti_ctrl.waiti_dummy = 1;
+    } else {
+        dev->flash_waiti_ctrl.waiti_dummy = 0;
+    }
 }
 
 /**
@@ -436,8 +455,8 @@ static inline void spimem_flash_ll_set_read_mode(spi_mem_dev_t *dev, esp_flash_i
 {
     typeof (dev->ctrl) ctrl;
     ctrl.val = dev->ctrl.val;
-    ctrl.val &= ~(SPI_MEM_FREAD_QIO_M | SPI_MEM_FREAD_QUAD_M | SPI_MEM_FREAD_DIO_M | SPI_MEM_FREAD_DUAL_M);
-    ctrl.val |= SPI_MEM_FASTRD_MODE_M;
+    ctrl.val &= ~(SPI1_MEM_C_FREAD_QIO_M | SPI1_MEM_C_FREAD_QUAD_M | SPI1_MEM_C_FREAD_DIO_M | SPI1_MEM_C_FREAD_DUAL_M);
+    ctrl.val |= SPI1_MEM_C_FASTRD_MODE_M;
     switch (read_mode) {
     case SPI_FLASH_FASTRD:
         //the default option
@@ -547,7 +566,7 @@ static inline void spimem_flash_ll_set_addr_bitlen(spi_mem_dev_t *dev, uint32_t 
  */
 static inline void spimem_flash_ll_set_extra_address(spi_mem_dev_t *dev, uint32_t extra_addr)
 {
-    dev->cache_fctrl.usr_addr_4byte = 0;
+    dev->cache_fctrl.cache_usr_addr_4byte = 0;
     dev->rd_status.wb_mode = extra_addr;
 }
 
@@ -594,10 +613,7 @@ static inline void spimem_flash_ll_set_dummy(spi_mem_dev_t *dev, uint32_t dummy_
  */
 static inline void spimem_flash_ll_set_hold(spi_mem_dev_t *dev, uint32_t hold_n)
 {
-    if (hold_n > 0) {
-        dev->ctrl2.cs_hold_time = hold_n - 1;
-    }
-    dev->user.cs_hold = hold_n > 0;
+    // Not supported on esp32p4
 }
 
 /**
@@ -608,10 +624,12 @@ static inline void spimem_flash_ll_set_hold(spi_mem_dev_t *dev, uint32_t hold_n)
  */
 static inline void spimem_flash_ll_set_cs_setup(spi_mem_dev_t *dev, uint32_t cs_setup_time)
 {
-    if (cs_setup_time > 0) {
-        dev->ctrl2.cs_setup_time = cs_setup_time - 1;
-    }
-    dev->user.cs_setup = (cs_setup_time > 0 ? 1 : 0);
+    // Not supported on esp32p4
+}
+
+static inline void spimem_flash_ll_set_extra_dummy(spi_mem_dev_t *dev, uint32_t extra_dummy)
+{
+    //for compatibility
 }
 
 /**
@@ -644,6 +662,26 @@ static inline uint32_t spimem_flash_ll_calculate_clock_reg(uint8_t clkdiv)
         div_parameter = ((clkdiv - 1) | (((clkdiv - 1) / 2 & 0xff) << 8 ) | (((clkdiv - 1) & 0xff) << 16));
     }
     return div_parameter;
+}
+
+/**
+ * @brief Write protect signal output when SPI is idle
+
+ * @param level 1: 1: output high, 0: output low
+ */
+static inline void spimem_flash_ll_set_wp_level(spi_mem_dev_t *dev, bool level)
+{
+    dev->ctrl.wp_reg = level;
+}
+
+/**
+ * @brief Get the ctrl value of mspi
+ *
+ * @return uint32_t The value of ctrl register
+ */
+static inline uint32_t spimem_flash_ll_get_ctrl_val(spi_mem_dev_t *dev)
+{
+    return dev->ctrl.val;
 }
 
 #ifdef __cplusplus

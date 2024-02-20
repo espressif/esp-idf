@@ -264,7 +264,7 @@ You can find a brief introduction to SNTP in general, its initialization code, a
 
 This section provides more details about specific use cases of the SNTP service, with statically configured servers, or use the DHCP-provided servers, or both. The workflow is usually very simple:
 
-1) Initialize and configure the service using :cpp:func:`esp_netif_sntp_init()`.
+1) Initialize and configure the service using :cpp:func:`esp_netif_sntp_init()`. This operations can only be called once (unless the SNTP service has been destroyed by :cpp:func:`esp_netif_sntp_deinit()`)
 2) Start the service via :cpp:func:`esp_netif_sntp_start()`. This step is not needed if we auto-started the service in the previous step (default). It is useful to start the service explicitly after connecting if we want to use the DHCP-obtained NTP servers. Please note, this option needs to be enabled before connecting, but the SNTP service should be started after.
 3) Wait for the system time to synchronize using :cpp:func:`esp_netif_sntp_sync_wait()` (only if needed).
 4) Stop and destroy the service using :cpp:func:`esp_netif_sntp_deinit()`.

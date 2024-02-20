@@ -30,3 +30,15 @@ config ESP_ROM_NEEDS_SWSETUP_WORKAROUND
 config ESP_ROM_HAS_NEWLIB_NANO_FORMAT
     bool
     default y
+
+config ESP_ROM_HAS_SW_FLOAT
+    bool
+    default y
+
+config ESP_ROM_USB_OTG_NUM
+    int
+    default -1
+
+config ESP_ROM_USB_SERIAL_DEVICE_NUM
+    int
+    default -1

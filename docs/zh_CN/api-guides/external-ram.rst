@@ -1,10 +1,10 @@
 片外 RAM
-************************
+*************
 
 :link_to_translation:`en:[English]`
 
 .. toctree::
-   :maxdepth: 1
+    :maxdepth: 1
 
 简介
 ============
@@ -24,7 +24,15 @@
 
 .. note::
 
-    PSRAM 芯片的工作电压分为 1.8 V 和 3.3 V。其工作电压必须与 flash 的工作电压匹配。请查询相应 PSRAM 芯片以及 {IDF_TARGET_NAME} 的技术规格书获取准确的工作电压。对于 1.8 V 的 PSRAM 芯片，请确保在启动时将 MTDI 管脚设置为高电平，或者将 {IDF_TARGET_NAME} 中的 eFuses 设置为始终使用 1.8 V 的 VDD_SIO 电平，否则有可能会损坏 PSRAM 和/或 flash 芯片。
+    .. only:: esp32 or esp32s2 or esp32s3
+
+        PSRAM 芯片的工作电压分为 1.8 V 和 3.3 V。其工作电压必须与 flash 的工作电压匹配。请查询相应 PSRAM 芯片以及 {IDF_TARGET_NAME} 的技术规格书获取准确的工作电压。对于 1.8 V 的 PSRAM 芯片，请确保在启动时将 MTDI 管脚设置为高电平，或者将 {IDF_TARGET_NAME} 中的 eFuses 设置为始终使用 1.8 V 的 VDD_SIO 电平，否则有可能会损坏 PSRAM 和/或 flash 芯片。
+
+    .. only:: esp32p4
+
+        请查询相应 PSRAM 芯片以及 {IDF_TARGET_NAME} 的技术规格书获取准确的工作电压。
+
+        PSRAM 默认由片上 LDO2 供电。可设置 :ref:`CONFIG_ESP_VDD_PSRAM_LDO_ID` 来切换相应的 LDO ID，将该值设为 -1 表示使用外部电源，即不使用片上 LDO。默认情况下，连接到 LDO 的 PSRAM 会基于所使用的乐鑫模组设置正确电压。如果未使用乐鑫模组，仍可设置 :ref:`CONFIG_ESP_VDD_PSRAM_LDO_VOLTAGE_MV` 来选择 LDO 输出电压。使用外部电源时，该选项不存在。
 
 .. note::
 
@@ -106,7 +114,7 @@ ESP-IDF 启动过程中，片外 RAM 被映射到数据虚拟地址空间，该�
 
 通过勾选 :ref:`CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY` 启用该选项。
 
-启用该选项后，PSRAM 被映射到的数据虚拟地址空间将用于存储来自 lwip、net80211、libpp 和 bluedroid ESP-IDF 库中零初始化的数据（BSS 段）。
+启用该选项后，PSRAM 被映射到的数据虚拟地址空间将用于存储来自 lwip、net80211、libpp, wpa_supplicant 和 bluedroid ESP-IDF 库中零初始化的数据（BSS 段）。
 
 通过将宏 ``EXT_RAM_BSS_ATTR`` 应用于任何静态声明（未初始化为非零值），可以将附加数据从内部 BSS 段移到片外 RAM。
 
@@ -164,24 +172,23 @@ ESP-IDF 启动过程中，片外 RAM 被映射到数据虚拟地址空间，该�
 
 使用片外 RAM 有下面一些限制：
 
- * flash cache 禁用时（比如，正在写入 flash），片外 RAM 将无法访问；同样，对片外 RAM 的读写操作也将导致 cache 访问异常。出于这个原因，ESP-IDF 不会在片外 RAM 中分配任务堆栈（详见下文）。
+.. list::
 
-.. only:: SOC_PSRAM_DMA_CAPABLE and not esp32s3
+    - flash cache 禁用时（比如，正在写入 flash），片外 RAM 将无法访问；同样，对片外 RAM 的读写操作也将导致 cache 访问异常。因此，ESP-IDF 不会在片外 RAM 中分配任务堆栈（详见下文）。
 
-    * 片外 RAM 不能用于储存 DMA 事务描述符，也不能用作 DMA 读写操作的缓冲区 (Buffer)。因此，当片外 RAM 启用时，与 DMA 搭配使用的 Buffer 必须先使用 ``heap_caps_malloc(size, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL)`` 进行分配，之后可以调用标准 ``free()`` 回调释放 Buffer。注意，尽管 {IDF_TARGET_NAME} 中已有硬件支持 DMA 与片外 RAM，但在 ESP-IDF 中，尚未提供软件支持。
+    :esp32s2: - 片外 RAM 不能用于存储 DMA 事务描述符，也不能用作 DMA 传输读写信息的 buffer。因此，当启用片外 RAM 时，任何与 DMA 结合使用的 buffer 必须使用 ``heap_caps_malloc(size, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL)`` 进行分配，之后调用标准的 ``free()`` 来释放。注意，尽管 {IDF_TARGET_NAME} 具有与外部 RAM 进行 DMA 传输的硬件支持，但在 ESP-IDF 中，尚未提供软件支持。
 
-.. only:: esp32s3
+    :esp32s3: - 尽管 {IDF_TARGET_NAME} 具有与外部 RAM 进行 DMA 传输的硬件支持，但仍有以下限制：
 
-    注意，尽管 {IDF_TARGET_NAME} 中已有硬件支持 DMA 与片外 RAM，但仍有以下限制：
+        :esp32s3: - DMA 事务描述符不能放在 PSRAM 中。
+        :esp32s3: - DMA 访问片外 RAM 的带宽非常有限，尤其是当内核尝试同时访问片外 RAM 时。
+        :esp32s3: - 将八线 PSRAM 的 :ref:`CONFIG_SPIRAM_SPEED` 配置为 120 MHz 可提高带宽，但使用此选项仍有一定限制。更多信息请参见 :ref:`所有支持的 PSRAM 模式和速度 <flash-psram-combination>`。
 
-    - DMA 访问外部 RAM 的带宽十分有限，尤其是当 CPU 同时访问外部 RAM 时。
-    - 将八线 PSRAM 的 :ref:`CONFIG_SPIRAM_SPEED` 配置为 120 MHz 可提高带宽，但使用此选项仍有一定限制，更多信息请参见 :ref:`所有支持的 PSRAM 模式和速度 <flash-psram-combination>`。
+    - 片外 RAM 与片外 flash 使用相同的 cache 区域，这意味着频繁在片外 RAM 访问的变量可以像在片上 RAM 中一样快速读取和修改。但访问大块数据时（大于 32 KB），cache 空间可能会不足，访问速度将降低到片外 RAM 的访问速度。此外，访问大块数据会挤出 flash cache，可能在之后降低代码的执行速度。
 
-* 片外 RAM 与片外 flash 使用相同的 cache 区域，这意味着频繁在片外 RAM 访问的变量可以像在片上 RAM 中一样快速读取和修改。但访问大块数据时（大于 32 KB），cache 空间可能会不足，访问速度将回落到片外 RAM 访问速度。此外，访问大块数据会挤出 flash cache，可能降低代码执行速度。
+    - 一般来说，片外 RAM 不会用作任务堆栈存储器。:cpp:func:`xTaskCreate` 及类似函数始终会为堆栈和任务 TCB 分配片上储存器。
 
- * 一般来说，片外 RAM 不会用作任务堆栈存储器。:cpp:func:`xTaskCreate` 及类似函数始终会为堆栈和任务 TCB 分配片上储存器。
-
-可以使用 :ref:`CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY` 选项将任务堆栈放入片外存储器。这时，必须使用 :cpp:func:`xTaskCreateStatic` 指定从片外存储器分配的任务堆栈缓冲区，否则任务堆栈将会从片上存储器分配。
+可以使用 :ref:`CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY` 选项将任务堆栈放入片外存储器。这时，必须使用 :cpp:func:`xTaskCreateStatic` 指定从片外存储器分配的任务堆栈缓冲区，否则任务堆栈将仍从片上存储器分配。
 
 
 初始化失败
@@ -189,7 +196,7 @@ ESP-IDF 启动过程中，片外 RAM 被映射到数据虚拟地址空间，该�
 
 默认情况下，片外 RAM 初始化失败将终止 ESP-IDF 启动。如果想禁用此功能，可启用 :ref:`CONFIG_SPIRAM_IGNORE_NOTFOUND` 配置选项。
 
- .. only:: esp32 or esp32s2
+.. only:: esp32 or esp32s2
 
     如果启用 :ref:`CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY`，忽略失败的选项将无法使用，这是因为在链接时，链接器已经向片外存储器分配标志符。
 

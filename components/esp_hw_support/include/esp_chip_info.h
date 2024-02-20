@@ -27,6 +27,7 @@ typedef enum {
     CHIP_ESP32C2 = 12, //!< ESP32-C2
     CHIP_ESP32C6 = 13, //!< ESP32-C6
     CHIP_ESP32H2 = 16, //!< ESP32-H2
+    CHIP_ESP32C5 = 17, //!< ESP32-C5 beta3 TODO: [ESP32-C5] update when MP supported
     CHIP_ESP32P4 = 18, //!< ESP32-P4
     CHIP_POSIX_LINUX = 999, //!< The code is running on POSIX/Linux simulator
 } esp_chip_model_t;

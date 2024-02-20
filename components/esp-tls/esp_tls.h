@@ -81,6 +81,16 @@ typedef enum esp_tls_addr_family {
     ESP_TLS_AF_INET6,                     /**< IPv6 address family. */
 } esp_tls_addr_family_t;
 
+/*
+* @brief ESP-TLS TLS Protocol version
+*/
+typedef enum {
+   ESP_TLS_VER_ANY = 0,         /* No preference */
+   ESP_TLS_VER_TLS_1_2 = 0x1,   /* (D)TLS 1.2 */
+   ESP_TLS_VER_TLS_1_3 = 0x2,   /* (D)TLS 1.3 */
+   ESP_TLS_VER_TLS_MAX,         /* to indicate max */
+} esp_tls_proto_ver_t;
+
 /**
  * @brief      ESP-TLS configuration parameters
  *
@@ -160,7 +170,7 @@ typedef struct esp_tls_cfg {
                                                  blocking mode after tls session is established */
 
     bool use_secure_element;                /*!< Enable this option to use secure element or
-                                                 atecc608a chip ( Integrated with ESP32-WROOM-32SE ) */
+                                                 atecc608a chip */
 
     int timeout_ms;                         /*!< Network timeout in milliseconds.
                                                  Note: If this value is not set, by default the timeout is
@@ -200,9 +210,9 @@ typedef struct esp_tls_cfg {
     esp_tls_addr_family_t addr_family;      /*!< The address family to use when connecting to a host. */
     const int *ciphersuites_list;           /*!< Pointer to a zero-terminated array of IANA identifiers of TLS ciphersuites.
                                                 Please check the list validity by esp_tls_get_ciphersuites_list() API */
+    esp_tls_proto_ver_t tls_version;        /*!< TLS protocol version of the connection, e.g., TLS 1.2, TLS 1.3 (default - no preference) */
 } esp_tls_cfg_t;
 
-#ifdef CONFIG_ESP_TLS_SERVER
 #if defined(CONFIG_ESP_TLS_SERVER_SESSION_TICKETS)
 /**
  * @brief Data structures necessary to support TLS session tickets according to RFC5077
@@ -217,7 +227,7 @@ typedef struct esp_tls_server_session_ticket_ctx {
 } esp_tls_server_session_ticket_ctx_t;
 #endif
 
-
+#if defined(CONFIG_ESP_TLS_SERVER_CERT_SELECT_HOOK)
 /**
  * @brief tls handshake callback
  * Can be used to configure per-handshake attributes for the TLS connection.
@@ -228,7 +238,15 @@ typedef struct esp_tls_server_session_ticket_ctx {
  *         or a specific MBEDTLS_ERR_XXX code, which will cause the handhsake to abort
  */
 typedef mbedtls_ssl_hs_cb_t esp_tls_handshake_callback;
+#else
+// When CONFIG_ESP_TLS_SERVER_CERT_SELECT_HOOK is not defined,
+// the following typedef is only kept for compatibility reasons, not to be used.
+typedef void* esp_tls_handshake_callback;
+#endif
 
+/**
+ * @brief ESP-TLS Server configuration parameters
+ */
 typedef struct esp_tls_cfg_server {
     const char **alpn_protos;                   /*!< Application protocols required for HTTP2.
                                                      If HTTP2/ALPN support is required, a list
@@ -285,7 +303,7 @@ typedef struct esp_tls_cfg_server {
     uint8_t ecdsa_key_efuse_blk;                /*!< The efuse block where ECDSA key is stored */
 
     bool use_secure_element;                    /*!< Enable this option to use secure element or
-                                                 atecc608a chip ( Integrated with ESP32-WROOM-32SE ) */
+                                                 atecc608a chip */
 
 
 #if defined(CONFIG_ESP_TLS_SERVER_SESSION_TICKETS)
@@ -330,7 +348,6 @@ esp_err_t esp_tls_cfg_server_session_tickets_init(esp_tls_cfg_server_t *cfg);
  * @param cfg server configuration as esp_tls_cfg_server_t
  */
 void esp_tls_cfg_server_session_tickets_free(esp_tls_cfg_server_t *cfg);
-#endif /* ! CONFIG_ESP_TLS_SERVER */
 
 typedef struct esp_tls esp_tls_t;
 
@@ -670,7 +687,6 @@ mbedtls_x509_crt *esp_tls_get_global_ca_store(void);
  */
 const int *esp_tls_get_ciphersuites_list(void);
 #endif /* CONFIG_ESP_TLS_USING_MBEDTLS */
-#ifdef CONFIG_ESP_TLS_SERVER
 /**
  * @brief      Create TLS/SSL server session
  *
@@ -696,7 +712,6 @@ int esp_tls_server_session_create(esp_tls_cfg_server_t *cfg, int sockfd, esp_tls
  * @param[in]  tls  pointer to esp_tls_t
  */
 void esp_tls_server_session_delete(esp_tls_t *tls);
-#endif /* ! CONFIG_ESP_TLS_SERVER */
 
 /**
  * @brief Creates a plain TCP connection, returning a valid socket fd on success or an error handle

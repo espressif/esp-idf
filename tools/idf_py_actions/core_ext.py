@@ -19,7 +19,7 @@ from idf_py_actions.constants import GENERATORS, PREVIEW_TARGETS, SUPPORTED_TARG
 from idf_py_actions.errors import FatalError
 from idf_py_actions.global_options import global_options
 from idf_py_actions.tools import (PropertyDict, TargetChoice, ensure_build_directory, generate_hints, get_target,
-                                  idf_version, merge_action_lists, run_target, yellow_print)
+                                  idf_version, merge_action_lists, print_warning, run_target, yellow_print)
 
 
 def action_extensions(base_actions: Dict, project_path: str) -> Any:
@@ -33,7 +33,8 @@ def action_extensions(base_actions: Dict, project_path: str) -> Any:
         ensure_build_directory(args, ctx.info_name)
         run_target(target_name, args, force_progression=GENERATORS[args.generator].get('force_progression', False))
 
-    def size_target(target_name: str, ctx: Context, args: PropertyDict, output_format: str, output_file: str) -> None:
+    def size_target(target_name: str, ctx: Context, args: PropertyDict, output_format: str,
+                    output_file: str, legacy: bool) -> None:
         """
         Builds the app and then executes a size-related target passed in 'target_name'.
         `tool_error_handler` handler is used to suppress errors during the build,
@@ -43,6 +44,27 @@ def action_extensions(base_actions: Dict, project_path: str) -> Any:
         def tool_error_handler(e: int, stdout: str, stderr: str) -> None:
             for hint in generate_hints(stdout, stderr):
                 yellow_print(hint)
+
+        if not legacy and output_format != 'json':
+            try:
+                import esp_idf_size.ng  # noqa: F401
+            except ImportError:
+                print_warning('WARNING: refactored esp-idf-size not installed, using legacy mode')
+                legacy = True
+            else:
+                # Legacy mode is used only when explicitly requested with --legacy option
+                # or when "--format json" option is specified. Here we enable the
+                # esp-idf-size refactored version with ESP_IDF_SIZE_NG env. variable.
+                os.environ['ESP_IDF_SIZE_NG'] = '1'
+                # ESP_IDF_SIZE_FORCE_TERMINAL is set to force terminal control codes even
+                # if stdout is not attached to terminal. This is set to pass color codes
+                # from esp-idf-size to idf.py.
+                os.environ['ESP_IDF_SIZE_FORCE_TERMINAL'] = '1'
+
+        if legacy and output_format in ['json2', 'raw', 'tree']:
+            # These formats are supported in new version only.
+            # We would get error from the esp-idf-size anyway, so print error early.
+            raise FatalError(f'Legacy esp-idf-size does not support {output_format} format')
 
         os.environ['SIZE_OUTPUT_FORMAT'] = output_format
         if output_file:
@@ -75,6 +97,14 @@ def action_extensions(base_actions: Dict, project_path: str) -> Any:
             style = style.encode(sys.getfilesystemencoding() or 'utf-8')
         os.environ['MENUCONFIG_STYLE'] = style
         args.no_hints = True
+        build_target(target_name, ctx, args)
+
+    def save_defconfig(target_name: str, ctx: Context, args: PropertyDict, add_menu_labels: bool) -> None:
+        if add_menu_labels:
+            os.environ['ESP_IDF_KCONFIG_MIN_LABELS'] = '1'
+        else:
+            # unset variable
+            os.environ.pop('ESP_IDF_KCONFIG_MIN_LABELS', None)
         build_target(target_name, ctx, args)
 
     def fallback_target(target_name: str, ctx: Context, args: PropertyDict) -> None:
@@ -346,9 +376,13 @@ def action_extensions(base_actions: Dict, project_path: str) -> Any:
     # if the user explicitly specified the format or not. If the format is not specified, then
     # the legacy OUTPUT_JSON CMake variable will be taken into account.
     size_options = [{'names': ['--format', 'output_format'],
-                     'type': click.Choice(['default', 'text', 'csv', 'json']),
-                     'help': 'Specify output format: text (same as "default"), csv or json.',
+                     'type': click.Choice(['default', 'text', 'csv', 'json', 'json2', 'tree', 'raw']),
+                     'help': 'Specify output format: text (same as "default"), csv, json, json2, tree or raw.',
                      'default': 'default'},
+                    {'names': ['--legacy', '-l'],
+                     'is_flag': True,
+                     'default': os.environ.get('ESP_IDF_SIZE_LEGACY', '0') == '1',
+                     'help': 'Use legacy esp-idf-size version'},
                     {'names': ['--output-file', 'output_file'],
                      'help': 'Print output to the specified file instead of to the standard output'}]
 
@@ -491,9 +525,13 @@ def action_extensions(base_actions: Dict, project_path: str) -> Any:
                 ]
             },
             'save-defconfig': {
-                'callback': build_target,
+                'callback': save_defconfig,
                 'help': 'Generate a sdkconfig.defaults with options different from the default ones',
-                'options': global_options
+                'options': global_options + [{
+                    'names': ['--add-menu-labels'],
+                    'is_flag': True,
+                    'help': 'Add menu labels to minimal config.',
+                }]
             }
         }
     }

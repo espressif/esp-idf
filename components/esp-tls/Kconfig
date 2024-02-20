@@ -21,7 +21,7 @@ menu "ESP-TLS"
         select ATCA_MBEDTLS_ECDSA_VERIFY
         help
             Enable use of Secure Element for ESP-TLS, this enables internal support for
-            ATECC608A peripheral on ESPWROOM32SE, which can be used for TLS connection.
+            ATECC608A peripheral, which can be used for TLS connection.
 
     config ESP_TLS_USE_DS_PERIPHERAL
         bool "Use Digital Signature (DS) Peripheral with ESP-TLS"
@@ -38,16 +38,9 @@ menu "ESP-TLS"
         help
             Enable session ticket support as specified in RFC5077.
 
-    config ESP_TLS_SERVER
-        bool "Enable ESP-TLS Server"
-        depends on (ESP_TLS_USING_MBEDTLS && MBEDTLS_TLS_SERVER) || ESP_TLS_USING_WOLFSSL
-        help
-            Enable support for creating server side SSL/TLS session, available for mbedTLS
-            as well as wolfSSL TLS library.
-
     config ESP_TLS_SERVER_SESSION_TICKETS
         bool "Enable server session tickets"
-        depends on ESP_TLS_SERVER && ESP_TLS_USING_MBEDTLS && MBEDTLS_SERVER_SSL_SESSION_TICKETS
+        depends on ESP_TLS_USING_MBEDTLS && MBEDTLS_SERVER_SSL_SESSION_TICKETS
         help
             Enable session ticket support as specified in RFC5077
 
@@ -60,7 +53,7 @@ menu "ESP-TLS"
 
     config ESP_TLS_SERVER_CERT_SELECT_HOOK
         bool "Certificate selection hook"
-        depends on ESP_TLS_USING_MBEDTLS && ESP_TLS_SERVER
+        depends on ESP_TLS_USING_MBEDTLS
         help
             Ability to configure and use a certificate selection callback during server handshake,
             to select a certificate to present to the client based on the TLS extensions supplied in
@@ -68,7 +61,7 @@ menu "ESP-TLS"
 
     config ESP_TLS_SERVER_MIN_AUTH_MODE_OPTIONAL
         bool "ESP-TLS Server: Set minimum Certificate Verification mode to Optional"
-        depends on ESP_TLS_SERVER && ESP_TLS_USING_MBEDTLS
+        depends on ESP_TLS_USING_MBEDTLS
         help
             When this option is enabled, the peer (here, the client) certificate is checked by the server,
             however the handshake continues even if verification failed. By default, the

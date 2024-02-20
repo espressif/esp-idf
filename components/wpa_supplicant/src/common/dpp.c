@@ -43,7 +43,7 @@ struct dpp_global {
 static const struct dpp_curve_params dpp_curves[] = {
 	/* The mandatory to support and the default NIST P-256 curve needs to
 	 * be the first entry on this list. */
-	{ "sec256r1", 32, 32, 16, 32, "P-256", 19, "ES256" },
+	{ "secp256r1", 32, 32, 16, 32, "P-256", 19, "ES256" },
 	{ "secp384r1", 48, 48, 24, 48, "P-384", 20, "ES384" },
 	{ "secp521r1", 64, 64, 32, 66, "P-521", 21, "ES512" },
 	{ "brainpoolP256r1", 32, 32, 16, 32, "BP-256", 28, "BS256" },
@@ -4669,7 +4669,8 @@ static struct crypto_key * dpp_parse_jwk(struct json_token *jwk,
 {
 	struct json_token *token;
 	const struct dpp_curve_params *curve;
-	struct wpabuf *x = NULL, *y = NULL, *a = NULL;
+	struct wpabuf *x = NULL, *y = NULL;
+	unsigned char *a = NULL;
 	struct crypto_ec_group *group;
 	struct crypto_key *pkey = NULL;
 	size_t len;
@@ -4731,17 +4732,19 @@ static struct crypto_key * dpp_parse_jwk(struct json_token *jwk,
 		goto fail;
 	}
 
-	len = wpabuf_len(x);
-	a = wpabuf_concat(x, y);
-	pkey = crypto_ec_set_pubkey_point(group, wpabuf_head(a),
-					  len);
+	len = wpabuf_len(x) + wpabuf_len(y);
+	a = os_zalloc(len);
+	os_memcpy(a, wpabuf_head(x), wpabuf_len(x));
+	os_memcpy(a + wpabuf_len(x), wpabuf_head(y), wpabuf_len(y));
+	pkey = crypto_ec_set_pubkey_point(group, a, len);
+
 	crypto_ec_deinit((struct crypto_ec *)group);
 	*key_curve = curve;
 
 fail:
-	wpabuf_free(a);
 	wpabuf_free(x);
 	wpabuf_free(y);
+	os_free(a);
 
 	return pkey;
 }

@@ -143,11 +143,11 @@ The following table shows a typical comparison between WolfSSL and MbedTLS when 
     ATECC608A (Secure Element) with ESP-TLS
     --------------------------------------------------
 
-    ESP-TLS provides support for using ATECC608A cryptoauth chip with ESP32-WROOM-32SE. The use of ATECC608A is supported only when ESP-TLS is used with MbedTLS as its underlying SSL/TLS stack. ESP-TLS uses MbedTLS as its underlying TLS/SSL stack by default unless changed manually.
+    ESP-TLS provides support for using ATECC608A cryptoauth chip with ESP32 series of SoCs. The use of ATECC608A is supported only when ESP-TLS is used with MbedTLS as its underlying SSL/TLS stack. ESP-TLS uses MbedTLS as its underlying TLS/SSL stack by default unless changed manually.
 
     .. note::
 
-        ATECC608A chip on ESP32-WROOM-32SE must be already configured, for details refer `esp_cryptoauth_utility <https://github.com/espressif/esp-cryptoauthlib/blob/master/esp_cryptoauth_utility/README.md#esp_cryptoauth_utility>`_.
+        ATECC608A chip interfaced to ESP32 must be already configured. For details, please refer to `esp_cryptoauth_utility <https://github.com/espressif/esp-cryptoauthlib/blob/master/esp_cryptoauth_utility/README.md#esp_cryptoauth_utility>`_.
 
     To enable the secure element support, and use it in your project for TLS connection, you have to follow the below steps:
 
@@ -203,6 +203,8 @@ The following table shows a typical comparison between WolfSSL and MbedTLS when 
 
 .. only:: SOC_ECDSA_SUPPORTED
 
+    .. _ecdsa-peri-with-esp-tls:
+
     ECDSA Peripheral with ESP-TLS
     -----------------------------
 
@@ -243,6 +245,26 @@ ESP-TLS will not check the validity of ``ciphersuites_list`` that was set, you s
 .. note::
 
    This feature is supported only in the MbedTLS stack.
+
+TLS Protocol Version
+--------------------
+
+ESP-TLS provides the ability to set the TLS protocol version for the respective TLS connection. Once the version is specified, it should be exclusively used to establish the TLS connection. This provides an ability to route different TLS connections to different protocol versions like TLS 1.2 and TLS 1.3 at runtime.
+
+.. note::
+
+   At the moment, the feature is supported only when ESP-TLS is used with MbedTLS as its underlying SSL/TLS stack.
+
+To set TLS protocol version with ESP-TLS, set :cpp:member:`esp_tls_cfg_t::tls_version` to the required protocol version from :cpp:type:`esp_tls_proto_ver_t`. If the protocol version field is not set, then the default policy is to allow TLS connection based on the server requirement.
+
+The ESP-TLS connection can be configured to use the specified protocol version as follows:
+
+    .. code-block:: c
+
+        #include "esp_tls.h"
+        esp_tls_cfg_t cfg = {
+            .tls_version = ESP_TLS_VER_TLS_1_2,
+        };
 
 API Reference
 -------------

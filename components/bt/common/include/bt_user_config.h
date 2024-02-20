@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -27,6 +27,12 @@
 #define UC_BT_STACK_NO_LOG               CONFIG_BT_STACK_NO_LOG
 #else
 #define UC_BT_STACK_NO_LOG               FALSE
+#endif
+
+#ifdef CONFIG_BT_CONTROLLER_ENABLED
+#define UC_BT_CONTROLLER_INCLUDED        TRUE
+#else
+#define UC_BT_CONTROLLER_INCLUDED        FALSE
 #endif
 
 /**********************************************************

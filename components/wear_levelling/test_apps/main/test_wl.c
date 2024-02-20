@@ -1,9 +1,10 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <string.h>
+#include <inttypes.h>
 #include "unity.h"
 #include "unity_fixture.h"
 #include "wear_levelling.h"
@@ -120,7 +121,7 @@ static void read_write_task(void *param)
             uint32_t rval;
             err = wl_read(args->handle, args->offset + i * sizeof(rval), &rval, sizeof(rval));
             if (err != ESP_OK || rval != val) {
-                printf("E: i=%d, cnt=%d rval=%d val=%d\n\n", i, args->word_count, rval, val);
+                printf("E: i=%" PRIu32 ", cnt=%" PRIu32 " rval=%" PRIu32 " val=%" PRIu32 "\n\n", (uint32_t) i, (uint32_t) args->word_count, rval, val);
                 args->result = ESP_FAIL;
                 goto done;
             }
@@ -225,7 +226,7 @@ TEST(wear_levelling, write_doesnt_touch_other_sectors)
     // Erase 8 sectors
     TEST_ESP_OK(wl_erase_range(handle, 0, sector_size * TEST_SECTORS_COUNT));
     // Write data to all sectors
-    printf("Check 1 sector_size=0x%08x\n", sector_size);
+    printf("Check 1 sector_size=0x%08" PRIx32 "\n", (uint32_t) sector_size);
     // Set initial random value
     uint32_t init_val = rand();
 
@@ -256,7 +257,7 @@ TEST(wear_levelling, write_doesnt_touch_other_sectors)
         uint32_t end;
         end = esp_cpu_get_cycle_count();
         uint32_t ms = (end - start) / (esp_clk_cpu_freq() / 1000);
-        printf("loop %4i pass, time= %ims\n", m, ms);
+        printf("loop %4d pass, time= %" PRIu32 "ms\n", m, ms);
         if (ms > 10000) {
             break;
         }
@@ -288,13 +289,13 @@ TEST(wear_levelling, version_update)
     }
     fake_partition.size = (size_t)(test_partition_v1_bin_end - test_partition_v1_bin_start);
 
-    printf("Data file size = %i, partition address = 0x%08x, file addr=0x%08x\n", (uint32_t)fake_partition.size, (uint32_t)fake_partition.address, (uint32_t)test_partition_v1_bin_start);
+    printf("Data file size = %" PRIu32 ", partition address = 0x%08" PRIx32 ", file addr=0x%08" PRIx32 "\n", (uint32_t) fake_partition.size, (uint32_t) fake_partition.address, (uint32_t) test_partition_v1_bin_start);
 
     esp_partition_erase_range(&fake_partition, 0, fake_partition.size);
 
     esp_partition_write(&fake_partition, 0, test_partition_v1_bin_start,  fake_partition.size);
     for (int i = 0; i < 3; i++) {
-        printf("Pass %i\n", i);
+        printf("Pass %d\n", i);
         wl_handle_t handle;
         TEST_ESP_OK(wl_mount(&fake_partition, &handle));
         size_t sector_size = wl_sector_size(handle);
@@ -308,7 +309,7 @@ TEST(wear_levelling, version_update)
             for (int i = 0; i < sector_size / sizeof(uint32_t); i++) {
                 uint32_t compare_val = init_val + i +  m * sector_size;
                 if (buff[i] != compare_val) {
-                    printf("error compare: 0x%08x != 0x%08x \n", buff[i], compare_val);
+                    printf("error compare: 0x%08" PRIx32 " != 0x%08" PRIx32 " \n", buff[i], compare_val);
                 }
                 TEST_ASSERT_EQUAL( buff[i], compare_val);
             }

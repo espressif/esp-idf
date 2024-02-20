@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -25,7 +25,7 @@
 #include "esp_private/eh_frame_parser.h"
 
 #if UNW_UNKNOWN_TARGET
-    #error "Unsupported architecture for unwinding"
+#error "Unsupported architecture for unwinding"
 #endif
 
 /**
@@ -41,15 +41,15 @@
  * are encoded.
  */
 /* DWARF Exception Exception Header value format. */
-#define DW_EH_PE_omit	 0xff /*!< No value is present */
+#define DW_EH_PE_omit    0xff /*!< No value is present */
 #define DW_EH_PE_uleb128 0x01 /*!< Unsigned value encoded in LEB128 (Little Endian Base 128). */
-#define DW_EH_PE_udata2	 0x02 /*!< Unsigned 16-bit value. */
-#define DW_EH_PE_udata4	 0x03 /*!< Unsigned 32-bit value. */
-#define DW_EH_PE_udata8	 0x04 /*!< Unsigned 64-bit value. */
+#define DW_EH_PE_udata2  0x02 /*!< Unsigned 16-bit value. */
+#define DW_EH_PE_udata4  0x03 /*!< Unsigned 32-bit value. */
+#define DW_EH_PE_udata8  0x04 /*!< Unsigned 64-bit value. */
 #define DW_EH_PE_sleb128 0x09 /*!< Signed value encoded in LEB128 (Little Endian Base 128). */
-#define DW_EH_PE_sdata2	 0x0A /*!< Signed 16-bit value. */
-#define DW_EH_PE_sdata4	 0x0B /*!< Signed 32-bit value. */
-#define DW_EH_PE_sdata8	 0x0C /*!< Signed 64-bit value. */
+#define DW_EH_PE_sdata2  0x0A /*!< Signed 16-bit value. */
+#define DW_EH_PE_sdata4  0x0B /*!< Signed 32-bit value. */
+#define DW_EH_PE_sdata8  0x0C /*!< Signed 64-bit value. */
 
 /* DWARF Exception Exception Header value application.
  * These values are in fact represented in the high nibble of a given data.
@@ -188,7 +188,7 @@ typedef struct {
  * DW_CFA_REMEMBER_STATE and DW_CFA_RESTORE_STATE instructions.
  */
 #if EXECUTION_FRAME_MAX_REGS > 255
-    #error "Too many registers defined for the target ExecutionFrame"
+#error "Too many registers defined for the target ExecutionFrame"
 #endif
 #define ESP_EH_FRAME_CFA_REG_VALID(reg)         (reg < EXECUTION_FRAME_MAX_REGS)
 #define ESP_EH_FRAME_CFA_OFF_VALID(off)         (((off) >> 24) == 0)
@@ -199,7 +199,6 @@ typedef struct {
 #define ESP_EH_FRAME_SET_CFA_OFF(value, off)    (((value) & 0xff) | ((off) << 8))
 #define ESP_EH_FRAME_GET_CFA_REG(value)         ((value) & 0xff)
 #define ESP_EH_FRAME_GET_CFA_OFF(value)         ((value) >> 8)
-
 
 /**
  * @brief Unsupported opcode value to return when exeucting 0-opcode type instructions.
@@ -250,13 +249,12 @@ typedef struct {
 #define DW_LEB128_SIGN_BIT(byte)    (((byte) >> 6) & 1)
 #define DW_LEB128_MAX_SHIFT         (31)
 
-
 /**
  * @brief Symbols defined by the linker.
  * Retrieve the addresses of both .eh_frame_hdr and .eh_frame sections.
  */
-extern char __eh_frame_hdr;
-extern char __eh_frame;
+extern void *__eh_frame_hdr;
+extern void *__eh_frame;
 
 /**
  * @brief Decode multiple bytes encoded in LEB128.
@@ -274,12 +272,13 @@ static uint32_t decode_leb128(const uint8_t* bytes, bool is_signed, uint32_t* le
     uint32_t size = 0;
     uint8_t byte = 0;
 
-    while(1) {
+    while (1) {
         byte = bytes[size++];
         res |= (byte & 0x7f) << shf;
         shf += 7;
-        if (DW_LEB128_HIGHEST_BIT(byte) == 0)
+        if (DW_LEB128_HIGHEST_BIT(byte) == 0) {
             break;
+        }
     }
 
     if (is_signed && shf <= DW_LEB128_MAX_SHIFT && DW_LEB128_SIGN_BIT(byte)) {
@@ -319,43 +318,43 @@ static uint32_t esp_eh_frame_get_encoded(void* data, uint8_t encoding, uint32_t*
     }
 
     switch (low) {
-        case DW_EH_PE_udata2:
-            size = 2;
-            uvalue = *((uint16_t*) data);
-            break;
-        case DW_EH_PE_udata4:
-            size = 4;
-            uvalue = *((uint32_t*) data);
-            break;
-        case DW_EH_PE_sdata2:
-            size = 2;
-            svalue = *((int16_t*) data);
-            break;
-        case DW_EH_PE_sdata4:
-            size = 4;
-            svalue = *((int32_t*) data);
-            break;
-        default:
-            /* Unsupported yet. */
-            assert(false);
-            break;
+    case DW_EH_PE_udata2:
+        size = 2;
+        uvalue = *((uint16_t*) data);
+        break;
+    case DW_EH_PE_udata4:
+        size = 4;
+        uvalue = *((uint32_t*) data);
+        break;
+    case DW_EH_PE_sdata2:
+        size = 2;
+        svalue = *((int16_t*) data);
+        break;
+    case DW_EH_PE_sdata4:
+        size = 4;
+        svalue = *((int32_t*) data);
+        break;
+    default:
+        /* Unsupported yet. */
+        assert(false);
+        break;
     }
 
     switch (high) {
-        case DW_EH_PE_absptr:
-            /* Do not change the values, as one of them will be 0, fvalue will
-             * contain the data no matter whether it is signed or unsigned. */
-            fvalue = svalue + uvalue;
-            break;
-        case DW_EH_PE_pcrel:
-            /* Relative to the address of the data.
-             * svalue has been casted to an 32-bit value, so even if it was a
-             * 2-byte signed value, fvalue will be calculated correctly here. */
-            fvalue = (uint32_t) data + svalue + uvalue;
-            break;
-        case DW_EH_PE_datarel:
-            fvalue = (uint32_t) EH_FRAME_HDR_ADDR + svalue + uvalue;
-            break;
+    case DW_EH_PE_absptr:
+        /* Do not change the values, as one of them will be 0, fvalue will
+         * contain the data no matter whether it is signed or unsigned. */
+        fvalue = svalue + uvalue;
+        break;
+    case DW_EH_PE_pcrel:
+        /* Relative to the address of the data.
+         * svalue has been casted to an 32-bit value, so even if it was a
+         * 2-byte signed value, fvalue will be calculated correctly here. */
+        fvalue = (uint32_t) data + svalue + uvalue;
+        break;
+    case DW_EH_PE_datarel:
+        fvalue = (uint32_t) EH_FRAME_HDR_ADDR + svalue + uvalue;
+        break;
     }
 
     *psize = size;
@@ -428,29 +427,31 @@ static const table_entry* esp_eh_frame_find_entry(const table_entry* sorted_tabl
         const uint32_t nxt_addr = sorted_table[middle + 1].fun_addr;
 
         if (pc_relative) {
-            ra = return_address - (uint32_t) (sorted_table + middle);
+            ra = return_address - (uint32_t)(sorted_table + middle);
         }
 
         if (is_signed) {
             /* Signed comparisons. */
             const int32_t sfun_addr = (int32_t) fun_addr;
             const int32_t snxt_addr = (int32_t) nxt_addr;
-            if (sfun_addr <= ra && snxt_addr > ra)
+            if (sfun_addr <= ra && snxt_addr > ra) {
                 found = true;
-            else if (snxt_addr <= ra)
+            } else if (snxt_addr <= ra) {
                 begin = middle + 1;
-            else
+            } else {
                 end = middle;
+            }
 
         } else {
             /* Unsigned comparisons. */
             const uint32_t ura = (uint32_t) ra;
-            if (fun_addr <= ura && nxt_addr > ura)
+            if (fun_addr <= ura && nxt_addr > ura) {
                 found = true;
-            else if (nxt_addr <= ura)
+            } else if (nxt_addr <= ura) {
                 begin = middle + 1;
-            else
+            } else {
                 end = middle;
+            }
         }
 
         middle = (end + begin) / 2;
@@ -476,12 +477,13 @@ static inline uint32_t* esp_eh_frame_decode_address(const uint32_t* addr,
 {
     uint32_t* decoded = 0;
 
-    if (ESP_ENCODING_FRAME_HDR_REL(encoding))
-        decoded = (uint32_t*) (*addr + (uint32_t) EH_FRAME_HDR_ADDR);
-    else if (ESP_ENCODING_PC_REL(encoding))
-        decoded = (uint32_t*) (*addr + (uint32_t) addr);
-    else
-        decoded = (uint32_t*) (*addr);
+    if (ESP_ENCODING_FRAME_HDR_REL(encoding)) {
+        decoded = (uint32_t*)(*addr + (uint32_t) EH_FRAME_HDR_ADDR);
+    } else if (ESP_ENCODING_PC_REL(encoding)) {
+        decoded = (uint32_t*)(*addr + (uint32_t) addr);
+    } else {
+        decoded = (uint32_t*)(*addr);
+    }
 
     return decoded;
 }
@@ -503,80 +505,79 @@ static inline uint32_t esp_eh_frame_execute_opcode_0(const uint32_t opcode, cons
     uint32_t operand2 = 0;
     uint32_t used_operands2 = 0;
 
-    switch(opcode) {
-        case DW_CFA_NOP:
-            break;
-        case DW_CFA_ADVANCE_LOC1:
-            /* Advance location with a 1-byte delta. */
-            used_operands = 1;
-            state->location += *operands;
-            break;
-        case DW_CFA_ADVANCE_LOC2:
-            /* Advance location with a 2-byte delta. */
-            used_operands = 2;
-            state->location += *((const uint16_t*) operands);
-            break;
-        case DW_CFA_ADVANCE_LOC4:
-            /* Advance location with a 4-byte delta. */
-            used_operands = 4;
-            state->location += *((const uint32_t*) operands);
-            break;
-        case DW_CFA_REMEMBER_STATE:
-            assert(state->offset_idx == 0);
-            memcpy(state->regs_offset[1], state->regs_offset[0],
-                   EXECUTION_FRAME_MAX_REGS * sizeof(uint32_t));
-            state->offset_idx++;
-            break;
-        case DW_CFA_RESTORE_STATE:
-            assert(state->offset_idx == 1);
-            /* Drop the saved state. */
-            state->offset_idx--;
-            break;
-        case DW_CFA_DEF_CFA:
-            /* CFA changes according to a register and an offset.
-             * This instruction appears when the assembly code saves the
-             * SP in the middle of a routine, before modifying it.
-             * For example (on RISC-V):
-             * addi s0, sp, 80
-             * addi sp, sp, -10
-             * ... */
-            /* Operand1 is the register containing the CFA value. */
-            operand1 = decode_leb128(operands, false, &used_operands);
-            /* Offset for the register's value. */
-            operand2 = decode_leb128(operands + used_operands, false, &used_operands2);
-            /* Calculate the number of bytes  */
-            used_operands += used_operands2;
-            /* Assert that the register and the offset are valid. */
-            assert(ESP_EH_FRAME_CFA_REG_VALID(operand1));
-            assert(ESP_EH_FRAME_CFA_OFF_VALID(operand2));
-            ESP_EH_FRAME_CFA(state) = ESP_EH_FRAME_NEW_CFA(operand1, operand2);
-            break;
-        case DW_CFA_DEF_CFA_REGISTER:
-            /* Define the register of the current frame address (CFA).
-             * Its operand is in the next bytes, its type is ULEB128. */
-            operand1 = decode_leb128(operands, false, &used_operands);
-            /* Check whether the value is valid or not. */
-            assert(ESP_EH_FRAME_CFA_OFF_VALID(operand1));
-            /* Offset will be unchanged, only register changes. */
-            ESP_EH_FRAME_CFA(state) = ESP_EH_FRAME_SET_CFA_REG(ESP_EH_FRAME_CFA(state), operand1);
-            break;
-        case DW_CFA_DEF_CFA_OFFSET:
-            /* Same as above but for the offset. The register of CFA remains unchanged. */
-            operand1 = decode_leb128(operands, false, &used_operands);
-            assert(ESP_EH_FRAME_CFA_OFF_VALID(operand1));
-            ESP_EH_FRAME_CFA(state) = ESP_EH_FRAME_SET_CFA_OFF(ESP_EH_FRAME_CFA(state), operand1);
-            break;
-        default:
-            panic_print_str("\r\nUnsupported DWARF opcode 0: 0x");
-            panic_print_hex(opcode);
-            panic_print_str("\r\n");
-            used_operands = ESP_EH_FRAME_UNSUPPORTED_OPCODE;
-            break;
+    switch (opcode) {
+    case DW_CFA_NOP:
+        break;
+    case DW_CFA_ADVANCE_LOC1:
+        /* Advance location with a 1-byte delta. */
+        used_operands = 1;
+        state->location += *operands;
+        break;
+    case DW_CFA_ADVANCE_LOC2:
+        /* Advance location with a 2-byte delta. */
+        used_operands = 2;
+        state->location += *((const uint16_t*) operands);
+        break;
+    case DW_CFA_ADVANCE_LOC4:
+        /* Advance location with a 4-byte delta. */
+        used_operands = 4;
+        state->location += *((const uint32_t*) operands);
+        break;
+    case DW_CFA_REMEMBER_STATE:
+        assert(state->offset_idx == 0);
+        memcpy(state->regs_offset[1], state->regs_offset[0],
+               EXECUTION_FRAME_MAX_REGS * sizeof(uint32_t));
+        state->offset_idx++;
+        break;
+    case DW_CFA_RESTORE_STATE:
+        assert(state->offset_idx == 1);
+        /* Drop the saved state. */
+        state->offset_idx--;
+        break;
+    case DW_CFA_DEF_CFA:
+        /* CFA changes according to a register and an offset.
+         * This instruction appears when the assembly code saves the
+         * SP in the middle of a routine, before modifying it.
+         * For example (on RISC-V):
+         * addi s0, sp, 80
+         * addi sp, sp, -10
+         * ... */
+        /* Operand1 is the register containing the CFA value. */
+        operand1 = decode_leb128(operands, false, &used_operands);
+        /* Offset for the register's value. */
+        operand2 = decode_leb128(operands + used_operands, false, &used_operands2);
+        /* Calculate the number of bytes  */
+        used_operands += used_operands2;
+        /* Assert that the register and the offset are valid. */
+        assert(ESP_EH_FRAME_CFA_REG_VALID(operand1));
+        assert(ESP_EH_FRAME_CFA_OFF_VALID(operand2));
+        ESP_EH_FRAME_CFA(state) = ESP_EH_FRAME_NEW_CFA(operand1, operand2);
+        break;
+    case DW_CFA_DEF_CFA_REGISTER:
+        /* Define the register of the current frame address (CFA).
+         * Its operand is in the next bytes, its type is ULEB128. */
+        operand1 = decode_leb128(operands, false, &used_operands);
+        /* Check whether the value is valid or not. */
+        assert(ESP_EH_FRAME_CFA_OFF_VALID(operand1));
+        /* Offset will be unchanged, only register changes. */
+        ESP_EH_FRAME_CFA(state) = ESP_EH_FRAME_SET_CFA_REG(ESP_EH_FRAME_CFA(state), operand1);
+        break;
+    case DW_CFA_DEF_CFA_OFFSET:
+        /* Same as above but for the offset. The register of CFA remains unchanged. */
+        operand1 = decode_leb128(operands, false, &used_operands);
+        assert(ESP_EH_FRAME_CFA_OFF_VALID(operand1));
+        ESP_EH_FRAME_CFA(state) = ESP_EH_FRAME_SET_CFA_OFF(ESP_EH_FRAME_CFA(state), operand1);
+        break;
+    default:
+        panic_print_str("\r\nUnsupported DWARF opcode 0: 0x");
+        panic_print_hex(opcode);
+        panic_print_str("\r\n");
+        used_operands = ESP_EH_FRAME_UNSUPPORTED_OPCODE;
+        break;
     }
 
     return used_operands;
 }
-
 
 /**
  * @brief Execute DWARF instructions.
@@ -603,42 +604,43 @@ static bool esp_eh_frame_execute(const uint8_t* instructions, const uint32_t ins
         /* Decode the instructions. According to DWARF documentation, there are three
          * types of Call Frame Instructions. The upper 2 bits defines the type. */
         switch (DW_GET_OPCODE(instr)) {
-            case DW_CFA_0_OPCODE:
-                used_operands = esp_eh_frame_execute_opcode_0(param, &instructions[i + 1], state);
-                /* Exit the function if an unsupported opcode was met. */
-                if (used_operands == ESP_EH_FRAME_UNSUPPORTED_OPCODE) {
-                    return false;
-                }
-                i += used_operands;
-                break;
-            case DW_CFA_ADVANCE_LOC:
-                /* Move the location forward. This instruction will mark when to stop:
-                 * once we reach the instruction where the PC left, we can break out of the loop
-                 * The delta is part of the lowest 6 bits.
-                 */
-                state->location += param;
-                break;
-            case DW_CFA_OFFSET:
-                operand1 = decode_leb128(&instructions[i + 1], false, &size);
-                assert(ESP_EH_FRAME_CFA_OFFSET_VALID(operand1));
-                state->regs_offset[state->offset_idx][param] = ESP_EH_FRAME_SET_REG_OFFSET(operand1);
-                i += size;
-                break;
+        case DW_CFA_0_OPCODE:
+            used_operands = esp_eh_frame_execute_opcode_0(param, &instructions[i + 1], state);
+            /* Exit the function if an unsupported opcode was met. */
+            if (used_operands == ESP_EH_FRAME_UNSUPPORTED_OPCODE) {
+                return false;
+            }
+            i += used_operands;
+            break;
+        case DW_CFA_ADVANCE_LOC:
+            /* Move the location forward. This instruction will mark when to stop:
+             * once we reach the instruction where the PC left, we can break out of the loop
+             * The delta is part of the lowest 6 bits.
+             */
+            state->location += param;
+            break;
+        case DW_CFA_OFFSET:
+            operand1 = decode_leb128(&instructions[i + 1], false, &size);
+            assert(ESP_EH_FRAME_CFA_OFFSET_VALID(operand1));
+            state->regs_offset[state->offset_idx][param] = ESP_EH_FRAME_SET_REG_OFFSET(operand1);
+            i += size;
+            break;
 
-            case DW_CFA_RESTORE:
-                state->regs_offset[state->offset_idx][param] = ESP_EH_FRAME_REG_SAME;
-                break;
-            default:
-                /* Illegal opcode */
-                assert(false);
-                break;
+        case DW_CFA_RESTORE:
+            state->regs_offset[state->offset_idx][param] = ESP_EH_FRAME_REG_SAME;
+            break;
+        default:
+            /* Illegal opcode */
+            assert(false);
+            break;
         }
 
         /* As the state->location can also be modified by 0-opcode instructions (in the function)
          * and also because we need to break the loop (and not only the switch), let's put this
          * check here, after the execution of the instruction, outside of the switch block. */
-        if (state->location >= EXECUTION_FRAME_PC(*frame))
+        if (state->location >= EXECUTION_FRAME_PC(*frame)) {
             break;
+        }
     }
 
     /* Everything went fine, no unsupported opcode was met, return true. */
@@ -674,7 +676,7 @@ static uint32_t esp_eh_frame_initialize_state(const uint8_t* cie, ExecutionFrame
     uint8_t* cie_data = (uint8_t*) cie + ESP_CIE_VARIABLE_FIELDS_IDX;
 
     /* Next field is a null-terminated UTF-8 string. Ignore it, look for the end. */
-    while((c = *cie_data++) != 0);
+    while ((c = *cie_data++) != 0);
 
     /* Field alignment factor shall be 1. It is encoded in ULEB128. */
     const uint32_t code_align = decode_leb128(cie_data, false, &size);
@@ -739,15 +741,15 @@ static uint32_t esp_eh_frame_restore_caller_state(const uint32_t* fde,
      * we have to compute:
      * fun_addr = &fde[IDX] +/- fde[IDX]
      */
-    const uint8_t* cie = (uint8_t*) ((uint32_t) &fde[ESP_FDE_CIE_IDX] - fde[ESP_FDE_CIE_IDX]);
+    const uint8_t* cie = (uint8_t*)((uint32_t) &fde[ESP_FDE_CIE_IDX] - fde[ESP_FDE_CIE_IDX]);
     const uint32_t initial_location = ((uint32_t) &fde[ESP_FDE_INITLOC_IDX] + fde[ESP_FDE_INITLOC_IDX]);
     const uint32_t range_length = fde[ESP_FDE_RANGELEN_IDX];
-    const uint8_t augmentation = *((uint8_t*) (fde + ESP_FDE_AUGMENTATION_IDX));
+    const uint8_t augmentation = *((uint8_t*)(fde + ESP_FDE_AUGMENTATION_IDX));
 
     /* The length, in byte, of the instructions is the size of the FDE header minus
      * the above fields' length. */
     const uint32_t instructions_length = length - 3 * sizeof(uint32_t) - sizeof(uint8_t);
-    const uint8_t* instructions = ((uint8_t*) (fde + ESP_FDE_AUGMENTATION_IDX)) + 1;
+    const uint8_t* instructions = ((uint8_t*)(fde + ESP_FDE_AUGMENTATION_IDX)) + 1;
 
     /* Make sure this FDE is the correct one for the PC given. */
     assert(initial_location <= EXECUTION_FRAME_PC(*frame) &&
@@ -817,7 +819,8 @@ static uint32_t esp_eh_frame_restore_caller_state(const uint32_t* fde,
  *
  * @return true is DWARF information are missing, false else.
  */
-static bool esp_eh_frame_missing_info(const uint32_t* fde, uint32_t pc) {
+static bool esp_eh_frame_missing_info(const uint32_t* fde, uint32_t pc)
+{
     if (fde == NULL) {
         return true;
     }
@@ -871,7 +874,7 @@ void esp_eh_frame_print_backtrace(const void *frame_or)
 
     /* Make enc_values point to the end of the structure, where the encoded
      * values start. */
-    enc_values = (uint8_t*) (header + 1);
+    enc_values = (uint8_t*)(header + 1);
 
     /* Retrieve the encoded value eh_frame_ptr. Get the size of the data also. */
     const uint32_t eh_frame_ptr = esp_eh_frame_get_encoded(enc_values, header->eh_frame_ptr_enc, &size);
@@ -938,7 +941,8 @@ void esp_eh_frame_print_backtrace(const void *frame_or)
  * Check the header libunwind.h for more information
  */
 
-int unw_init_local(unw_cursor_t* c, unw_context_t* ctxt) {
+int unw_init_local(unw_cursor_t* c, unw_context_t* ctxt)
+{
     /* In our implementation, a context and a cursor is the same, so we simply need
      * to copy a structure inside another one */
     _Static_assert(sizeof(unw_cursor_t) >= sizeof(unw_context_t), "unw_cursor_t size must be greater or equal to unw_context_t's");
@@ -950,7 +954,8 @@ int unw_init_local(unw_cursor_t* c, unw_context_t* ctxt) {
     return ret;
 }
 
-int unw_step(unw_cursor_t* cp) {
+int unw_step(unw_cursor_t* cp)
+{
     static dwarf_regs state = { 0 };
     ExecutionFrame* frame = (ExecutionFrame*) cp;
     uint32_t size = 0;
@@ -964,7 +969,7 @@ int unw_step(unw_cursor_t* cp) {
 
     /* Make enc_values point to the end of the structure, where the encoded
      * values start. */
-    enc_values = (uint8_t*) (header + 1);
+    enc_values = (uint8_t*)(header + 1);
 
     /* Retrieve the encoded value eh_frame_ptr. Get the size of the data also. */
     const uint32_t eh_frame_ptr = esp_eh_frame_get_encoded(enc_values, header->eh_frame_ptr_enc, &size);
@@ -978,7 +983,7 @@ int unw_step(unw_cursor_t* cp) {
     /* enc_values points now at the beginning of the sorted table. */
     /* Only support 4-byte entries. */
     const uint32_t table_enc = header->table_enc;
-    if ( ((table_enc >> 4) != 0x3) && ((table_enc >> 4) != 0xB) ) {
+    if (((table_enc >> 4) != 0x3) && ((table_enc >> 4) != 0xB)) {
         goto badversion;
     }
 
@@ -1020,7 +1025,8 @@ stopunwind:
     return 0;
 }
 
-int unw_get_reg(unw_cursor_t* cp, unw_regnum_t reg, unw_word_t* valp) {
+int unw_get_reg(unw_cursor_t* cp, unw_regnum_t reg, unw_word_t* valp)
+{
     if (cp == NULL || valp == NULL) {
         goto invalid;
     }
@@ -1036,7 +1042,8 @@ badreg:
     return -UNW_EBADREG;
 }
 
-int unw_set_reg(unw_cursor_t* cp, unw_regnum_t reg, unw_word_t val) {
+int unw_set_reg(unw_cursor_t* cp, unw_regnum_t reg, unw_word_t val)
+{
     if (cp == NULL) {
         goto invalid;
     }

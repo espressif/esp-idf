@@ -14,12 +14,12 @@ submodules:
     - "/components/bt/controller/lib_esp32c6/esp32c6-bt-lib/"
     - "/components/bt/controller/lib_esp32h2/esp32h2-bt-lib/"
     - "/components/bt/host/nimble/nimble/"
+    - "/components/bt/esp_ble_mesh/lib/lib/"
     - "/components/cmock/CMock/"
     - "/components/esp_coex/lib/"
     - "/components/esp_phy/lib/"
     - "/components/esp_wifi/lib/"
     - "/components/heap/tlsf/"
-    - "/components/ieee802154/lib/"
     - "/components/json/cJSON/"
     - "/components/lwip/lwip/"
     - "/components/mbedtls/mbedtls/"
@@ -38,7 +38,8 @@ components_not_formatted_temporary:
   #    To reformat the files:
   #    - Remove the directory from this exclude list
   #    - Run 'git add .astyle-rules.yml'
-  #    - Run 'pre-commit run --all-files'
+  #    - Run 'pre-commit run --all-files' to run all pre-commit hooks
+  #    - Run 'pre-commit run astyle_py --all-files' to run only the astyle_py hook
   # 2. If no, move it to 'components_not_formatted_permanent' section below.
   check: false
   include:
@@ -52,12 +53,8 @@ components_not_formatted_temporary:
     - "/components/cxx/"
     - "/components/driver/"
     - "/components/efuse/"
-    - "/components/esp_app_format/"
-    - "/components/esp_bootloader_format/"
     - "/components/esp_coex/"
-    - "/components/esp_common/"
     - "/components/esp_eth/"
-    - "/components/esp_event/"
     - "/components/esp_gdbstub/"
     - "/components/esp_hid/"
     - "/components/esp_http_client/"
@@ -70,23 +67,17 @@ components_not_formatted_temporary:
     - "/components/esp_partition/"
     - "/components/esp_phy/"
     - "/components/esp_pm/"
-    - "/components/esp_ringbuf/"
     - "/components/esp_rom/"
-    - "/components/esp_system/"
-    - "/components/esp_timer/"
     - "/components/esp_wifi/"
     - "/components/esp-tls/"
     - "/components/espcoredump/"
     - "/components/esptool_py/"
     - "/components/fatfs/"
-    - "/components/freertos/"
     - "/components/hal/"
     - "/components/heap/"
     - "/components/idf_test/"
     - "/components/ieee802154/"
     - "/components/json/"
-    - "/components/linux/"
-    - "/components/log/"
     - "/components/lwip/"
     - "/components/mbedtls/"
     - "/components/mqtt/"
@@ -106,9 +97,7 @@ components_not_formatted_temporary:
     - "/components/spiffs/"
     - "/components/tcp_transport/"
     - "/components/touch_element/"
-    - "/components/ulp/"
     - "/components/unity/"
-    - "/components/usb/"
     - "/components/vfs/"
     - "/components/wear_levelling/"
     - "/components/wifi_provisioning/"
@@ -159,10 +148,13 @@ components_not_formatted_permanent:
     - "/components/console/linenoise/"
     # Catch (upstream source code)
     - "/tools/catch/catch.hpp"
-    # FreeRTOS kernel files (upstream source code).
+    # FreeRTOS kernel files (upstream source code)
     - "/components/freertos/FreeRTOS-Kernel/"
     - "/components/freertos/FreeRTOS-Kernel-SMP/"
-    - "/components/freertos/FreeRTOS-Kernel-V10.5.1/"
+    # FreeRTOS additions to the upstream source code
+    - "/components/freertos/esp_additions/"
+    # FreeRTOS config files maintained in upstream format
+    - "/components/freertos/config/"
     # Segger SystemView (upstream source code).
     # Could also try to find suitable astyle options, instead.
     - "/components/app_trace/sys_view/Config/"

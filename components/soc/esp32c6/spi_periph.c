@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,20 +12,31 @@
 */
 const spi_signal_conn_t spi_periph_signal[SOC_SPI_PERIPH_NUM] = {
     {
-        .spiclk_in = 0,/* SPI clock is not an input signal*/
-        .spics_in = 0,/* SPI cs is not an input signal*/
-        .spiclk_iomux_pin = SPI_IOMUX_PIN_NUM_CLK,
-        .spid_iomux_pin = SPI_IOMUX_PIN_NUM_MOSI,
-        .spiq_iomux_pin = SPI_IOMUX_PIN_NUM_MISO,
-        .spiwp_iomux_pin = SPI_IOMUX_PIN_NUM_WP,
-        .spihd_iomux_pin = SPI_IOMUX_PIN_NUM_HD,
-        .spics0_iomux_pin = SPI_IOMUX_PIN_NUM_CS,
-        .irq = ETS_MSPI_INTR_SOURCE,
+        // MSPI has dedicated iomux pins
+        .spiclk_out = -1,
+        .spiclk_in = -1,
+        .spid_out = -1,
+        .spiq_out = -1,
+        .spiwp_out = -1,
+        .spihd_out = -1,
+        .spid_in = -1,
+        .spiq_in = -1,
+        .spiwp_in = -1,
+        .spihd_in = -1,
+        .spics_out = {-1},
+        .spics_in = -1,
+        .spiclk_iomux_pin = -1,
+        .spid_iomux_pin = -1,
+        .spiq_iomux_pin = -1,
+        .spiwp_iomux_pin = -1,
+        .spihd_iomux_pin = -1,
+        .spics0_iomux_pin = -1,
+        .irq = -1,
         .irq_dma = -1,
-        .module = PERIPH_SPI_MODULE,
-        .hw = (spi_dev_t *) &SPIMEM1,
-        .func = SPI_FUNC_NUM,
-    }, { // TODO: IDF-5334 Need check
+        .module = -1,
+        .hw = NULL,
+        .func = -1,
+    }, {
         .spiclk_out = FSPICLK_OUT_IDX,
         .spiclk_in = FSPICLK_IN_IDX,
         .spid_out = FSPID_OUT_IDX,

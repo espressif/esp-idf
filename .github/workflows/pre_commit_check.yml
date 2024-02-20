@@ -10,9 +10,11 @@ permissions:
 jobs:
   pre_commit_check:
     runs-on: ubuntu-latest
+    env:
+      SKIP: "cleanup-ignore-lists"  # Comma-separated string of ignored pre-commit check IDs
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Fetch head and base refs
         # This is necessary for pre-commit to check the changes in the PR branch
         run: |
