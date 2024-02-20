@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "sdkconfig.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include "freertos/FreeRTOS.h"
@@ -954,8 +955,8 @@ TEST_CASE("Test ring buffer SMP", "[esp_ringbuf]")
 
         for (int prior_mod = -1; prior_mod < 2; prior_mod++) {  //Test different relative priorities
             //Test every permutation of core affinity
-            for (int send_core = 0; send_core < portNUM_PROCESSORS; send_core++) {
-                for (int rec_core = 0; rec_core < portNUM_PROCESSORS; rec_core ++) {
+            for (int send_core = 0; send_core < CONFIG_FREERTOS_NUMBER_OF_CORES; send_core++) {
+                for (int rec_core = 0; rec_core < CONFIG_FREERTOS_NUMBER_OF_CORES; rec_core ++) {
                     esp_rom_printf("Type: %d, PM: %d, SC: %d, RC: %d\n", buf_type, prior_mod, send_core, rec_core);
                     xTaskCreatePinnedToCore(send_task, "send tsk", 2048, (void *)&task_args, 10 + prior_mod, NULL, send_core);
                     xTaskCreatePinnedToCore(rec_task, "rec tsk", 2048, (void *)&task_args, 10, NULL, rec_core);
@@ -998,8 +999,8 @@ TEST_CASE("Test static ring buffer SMP", "[esp_ringbuf]")
 
         for (int prior_mod = -1; prior_mod < 2; prior_mod++) {  //Test different relative priorities
             //Test every permutation of core affinity
-            for (int send_core = 0; send_core < portNUM_PROCESSORS; send_core++) {
-                for (int rec_core = 0; rec_core < portNUM_PROCESSORS; rec_core ++) {
+            for (int send_core = 0; send_core < CONFIG_FREERTOS_NUMBER_OF_CORES; send_core++) {
+                for (int rec_core = 0; rec_core < CONFIG_FREERTOS_NUMBER_OF_CORES; rec_core ++) {
                     esp_rom_printf("Type: %d, PM: %d, SC: %d, RC: %d\n", buf_type, prior_mod, send_core, rec_core);
                     xTaskCreatePinnedToCore(send_task, "send tsk", 2048, (void *)&task_args, 10 + prior_mod, NULL, send_core);
                     xTaskCreatePinnedToCore(rec_task, "rec tsk", 2048, (void *)&task_args, 10, NULL, rec_core);

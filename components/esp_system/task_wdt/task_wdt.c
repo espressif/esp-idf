@@ -86,8 +86,8 @@ static twdt_obj_t *p_twdt_obj = NULL;
 
 #if CONFIG_FREERTOS_SMP
 #define CORE_USER_NAME_LEN      8   // Long enough for "CPU XXX"
-static esp_task_wdt_user_handle_t core_user_handles[portNUM_PROCESSORS] = {NULL};
-static char core_user_names[portNUM_PROCESSORS][CORE_USER_NAME_LEN];
+static esp_task_wdt_user_handle_t core_user_handles[CONFIG_FREERTOS_NUMBER_OF_CORES] = {NULL};
+static char core_user_names[CONFIG_FREERTOS_NUMBER_OF_CORES][CORE_USER_NAME_LEN];
 #endif
 
 // ----------------------------------------------------- Private -------------------------------------------------------
@@ -338,7 +338,7 @@ static UBaseType_t get_task_affinity(const TaskHandle_t xTask)
     if (xTask == NULL) {
         /* User entry, we cannot predict on which core it is scheduled to run,
          * so let's mark all cores as failing */
-#if configNUM_CORES > 1
+#if CONFIG_FREERTOS_NUMBER_OF_CORES > 1
         return BIT(1) | BIT(0);
 #else
         return BIT(0);
@@ -346,7 +346,7 @@ static UBaseType_t get_task_affinity(const TaskHandle_t xTask)
     }
 
 #if CONFIG_FREERTOS_SMP
-#if configNUM_CORES > 1
+#if CONFIG_FREERTOS_NUMBER_OF_CORES > 1
     return vTaskCoreAffinityGet(xTask);
 #else
     return BIT(0);
@@ -487,7 +487,7 @@ static void task_wdt_isr(void *arg)
     }
 
     ESP_EARLY_LOGE(TAG, "%s", DRAM_STR("Tasks currently running:"));
-    for (int x = 0; x < portNUM_PROCESSORS; x++) {
+    for (int x = 0; x < CONFIG_FREERTOS_NUMBER_OF_CORES; x++) {
         ESP_EARLY_LOGE(TAG, "CPU %d: %s", x, pcTaskGetName(xTaskGetCurrentTaskHandleForCore(x)));
     }
     portEXIT_CRITICAL_ISR(&spinlock);
@@ -511,7 +511,7 @@ static void task_wdt_isr(void *arg)
 
 esp_err_t esp_task_wdt_init(const esp_task_wdt_config_t *config)
 {
-    ESP_RETURN_ON_FALSE((config != NULL && config->idle_core_mask < (1 << portNUM_PROCESSORS)), ESP_ERR_INVALID_ARG, TAG, "Invalid arguments");
+    ESP_RETURN_ON_FALSE((config != NULL && config->idle_core_mask < (1 << CONFIG_FREERTOS_NUMBER_OF_CORES)), ESP_ERR_INVALID_ARG, TAG, "Invalid arguments");
     ESP_RETURN_ON_FALSE(p_twdt_obj == NULL, ESP_ERR_INVALID_STATE, TAG, "TWDT already initialized");
     esp_err_t ret = ESP_OK;
     twdt_obj_t *obj = NULL;
@@ -554,7 +554,7 @@ err:
 
 esp_err_t esp_task_wdt_reconfigure(const esp_task_wdt_config_t *config)
 {
-    ESP_RETURN_ON_FALSE((config != NULL && config->idle_core_mask < (1 << portNUM_PROCESSORS)), ESP_ERR_INVALID_ARG, TAG, "Invalid arguments");
+    ESP_RETURN_ON_FALSE((config != NULL && config->idle_core_mask < (1 << CONFIG_FREERTOS_NUMBER_OF_CORES)), ESP_ERR_INVALID_ARG, TAG, "Invalid arguments");
     ESP_RETURN_ON_FALSE(p_twdt_obj != NULL, ESP_ERR_INVALID_STATE, TAG, "TWDT not initialized yet");
     uint32_t old_core_mask = 0;
     esp_err_t ret = ESP_OK;

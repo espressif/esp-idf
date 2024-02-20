@@ -11,6 +11,7 @@
    software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
    CONDITIONS OF ANY KIND, either express or implied.
 */
+#include "sdkconfig.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/event_groups.h"
 #include "freertos/queue.h"
@@ -282,7 +283,7 @@ esp_err_t  esp_wifi_set_ant_soft_switch(const wifi_antenna_auto_switch_config_t 
     /**< Select the optimal antenna*/
     antenna_switch_function(config);
 
-    ret = xTaskCreatePinnedToCore(antenna_soft_switching_task, SOFT_SWITCHING_NAME, SOFT_SWITCHING_STACK, (void *)config, SOFT_SWITCHING_PRIORITY, &antenna_task_handle, portNUM_PROCESSORS - 1);
+    ret = xTaskCreatePinnedToCore(antenna_soft_switching_task, SOFT_SWITCHING_NAME, SOFT_SWITCHING_STACK, (void *)config, SOFT_SWITCHING_PRIORITY, &antenna_task_handle, CONFIG_FREERTOS_NUMBER_OF_CORES - 1);
     if (ret != pdPASS) {
         ESP_LOGE(TAG, "create task %s failed", SOFT_SWITCHING_NAME);
         return ESP_FAIL;

@@ -7,6 +7,7 @@
    CONDITIONS OF ANY KIND, either express or implied.
 */
 
+#include "sdkconfig.h"
 #include <inttypes.h>
 #include "esp_sysview_trace.h"
 #include "esp_heap_trace.h"
@@ -50,7 +51,7 @@ static void alloc_task(void *p)
         return;
     }
     snprintf(task_name, sizeof(task_name), "free%d", task_args->idx);
-    xTaskCreatePinnedToCore(free_task, task_name, 2500, queue, 5, NULL, portNUM_PROCESSORS-1);
+    xTaskCreatePinnedToCore(free_task, task_name, 2500, queue, 5, NULL, CONFIG_FREERTOS_NUMBER_OF_CORES-1);
 
     // here GDB will stop at brekpoint and execute OpenOCD command to start tracing
     for(int i = 1; i < 10; i++) {

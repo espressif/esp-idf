@@ -6,6 +6,7 @@
 
 #include <vector>
 #include <numeric>
+#include "sdkconfig.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
@@ -105,7 +106,7 @@ TEST_CASE("static initialization guards work as expected", "[misc]")
     int task_count = 0;
     // four tasks competing for static initialization of one object
     task_count += start_slow_init_task<1>(0, PRO_CPU_NUM);
-#if portNUM_PROCESSORS == 2
+#if CONFIG_FREERTOS_NUMBER_OF_CORES == 2
     task_count += start_slow_init_task<1>(1, APP_CPU_NUM);
 #endif
     task_count += start_slow_init_task<1>(2, PRO_CPU_NUM);
@@ -113,7 +114,7 @@ TEST_CASE("static initialization guards work as expected", "[misc]")
 
     // four tasks competing for static initialization of another object
     task_count += start_slow_init_task<2>(0, PRO_CPU_NUM);
-#if portNUM_PROCESSORS == 2
+#if CONFIG_FREERTOS_NUMBER_OF_CORES == 2
     task_count += start_slow_init_task<2>(1, APP_CPU_NUM);
 #endif
     task_count += start_slow_init_task<2>(2, PRO_CPU_NUM);

@@ -25,6 +25,7 @@
  *       the following test cases (see Queue Registry test cases instead)
  * For more details please refer the the ESP-IDF FreeRTOS changes documentation
  */
+#include "sdkconfig.h"
 #include <stdio.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -167,7 +168,7 @@ TEST_CASE("Test FreeRTOS backported Queue and Semphr functions", "[freertos]")
 
 static StackType_t task_stack[STACK_SIZE];  //Static buffer for task stack
 static StaticTask_t task_buffer;            //Static buffer for TCB
-static bool has_run[portNUM_PROCESSORS];
+static bool has_run[CONFIG_FREERTOS_NUMBER_OF_CORES];
 
 static void task(void *arg)
 {
@@ -177,7 +178,7 @@ static void task(void *arg)
 
 TEST_CASE("Test FreeRTOS static task allocation", "[freertos]")
 {
-    for (int core = 0; core < portNUM_PROCESSORS; core++) {
+    for (int core = 0; core < CONFIG_FREERTOS_NUMBER_OF_CORES; core++) {
         has_run[core] = false;     //Clear has_run flag
         TaskHandle_t handle = xTaskCreateStaticPinnedToCore(task, "static task", STACK_SIZE, NULL,
                                                             UNITY_FREERTOS_PRIORITY + 1, (StackType_t *)&task_stack,

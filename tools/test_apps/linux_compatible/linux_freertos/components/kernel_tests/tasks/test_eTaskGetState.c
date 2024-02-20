@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "sdkconfig.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "unity.h"
@@ -48,13 +49,13 @@ static void loop_task(void *arg)
 
 TEST_CASE("Test eTaskGetState", "[freertos]")
 {
-    TaskHandle_t blocked_tasks[portNUM_PROCESSORS];
-    TaskHandle_t suspended_tasks[portNUM_PROCESSORS];
-    TaskHandle_t ready_tasks[portNUM_PROCESSORS];
-    TaskHandle_t running_tasks[portNUM_PROCESSORS];
+    TaskHandle_t blocked_tasks[configNUM_CORES];
+    TaskHandle_t suspended_tasks[configNUM_CORES];
+    TaskHandle_t ready_tasks[configNUM_CORES];
+    TaskHandle_t running_tasks[configNUM_CORES];
 
     // Create tasks of each state on each core
-    for (int i = 0; i < portNUM_PROCESSORS; i++) {
+    for (int i = 0; i < configNUM_CORES; i++) {
         TEST_ASSERT_EQUAL(pdPASS, xTaskCreatePinnedToCore(blocked_task, "blkd", configMINIMAL_STACK_SIZE * 2, NULL, CONFIG_UNITY_FREERTOS_PRIORITY - 1, &blocked_tasks[i], i));
         TEST_ASSERT_EQUAL(pdPASS, xTaskCreatePinnedToCore(suspended_task, "susp", configMINIMAL_STACK_SIZE * 2, NULL, CONFIG_UNITY_FREERTOS_PRIORITY - 1, &suspended_tasks[i], i));
         TEST_ASSERT_EQUAL(pdPASS, xTaskCreatePinnedToCore(loop_task, "rdy", configMINIMAL_STACK_SIZE * 2, NULL, CONFIG_UNITY_FREERTOS_PRIORITY - 1, &ready_tasks[i], i));
@@ -69,7 +70,7 @@ TEST_CASE("Test eTaskGetState", "[freertos]")
     vTaskDelay(10);
 
     // Check the state of the created tasks
-    for (int i = 0; i < portNUM_PROCESSORS; i++) {
+    for (int i = 0; i < configNUM_CORES; i++) {
         TEST_ASSERT_EQUAL(eBlocked, eTaskGetState(blocked_tasks[i]));
         TEST_ASSERT_EQUAL(eSuspended, eTaskGetState(suspended_tasks[i]));
         TEST_ASSERT_EQUAL(eReady, eTaskGetState(ready_tasks[i]));
@@ -77,7 +78,7 @@ TEST_CASE("Test eTaskGetState", "[freertos]")
     }
 
     // Clean up created tasks
-    for (int i = 0; i < portNUM_PROCESSORS; i++) {
+    for (int i = 0; i < configNUM_CORES; i++) {
         vTaskDelete(blocked_tasks[i]);
         vTaskDelete(suspended_tasks[i]);
         vTaskDelete(ready_tasks[i]);

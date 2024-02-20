@@ -20,7 +20,7 @@ menu "FreeRTOS"
                 their implementation and features.
 
         config FREERTOS_UNICORE
-            # Todo: Replace with CONFIG_NUM_CORES (IDF-4986)
+            # Todo: Replace with CONFIG_NUMBER_OF_CORES (IDF-9156)
             bool "Run FreeRTOS only on first core"
             default "y" if IDF_TARGET_ESP32S2 || IDF_TARGET_LINUX
             select ESP_SYSTEM_SINGLE_CORE_MODE
@@ -582,5 +582,13 @@ menu "FreeRTOS"
         bool
         default y
         depends on !ESP_PANIC_HANDLER_IRAM
+
+    config FREERTOS_NUMBER_OF_CORES
+        # Invisible option to configure the number of cores on which FreeRTOS runs
+        # Todo: Unhide this option and deprecate CONFIG_FREERTOS_UNICORE (IDF-9156)
+        int
+        range 1 2
+        default 1 if FREERTOS_UNICORE
+        default 2 if !FREERTOS_UNICORE
 
 endmenu # FreeRTOS

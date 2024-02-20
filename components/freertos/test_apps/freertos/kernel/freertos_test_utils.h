@@ -4,10 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "sdkconfig.h"
 #include <stdint.h>
 #include "FreeRTOS.h"
 
-#if ( configNUM_CORES > 1 )
+#if ( CONFIG_FREERTOS_NUMBER_OF_CORES > 1 )
 
 /**
  * @brief Prototype for test function.
@@ -29,4 +30,4 @@ typedef void (* TestFunction_t)(void *);
  */
 void vTestOnAllCores(TestFunction_t pxTestCode, void * pvTestCodeArg, uint32_t ulStackDepth, UBaseType_t uxPriority);
 
-#endif /* ( configNUM_CORES > 1 ) */
+#endif /* ( CONFIG_FREERTOS_NUMBER_OF_CORES > 1 ) */
