@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -266,7 +266,7 @@ static void s_init_psram_pins(void)
     REG_SET_FIELD(SPI_MEM_DATE_REG(0), SPI_MEM_SPI_SMEM_SPICLK_FUN_DRV, 3);
 
     // Preserve psram pins
-    esp_gpio_reserve_pins(BIT64(OCT_PSRAM_CS1_IO));
+    esp_gpio_reserve(BIT64(OCT_PSRAM_CS1_IO));
 }
 
 /**

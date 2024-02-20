@@ -46,7 +46,7 @@ typedef struct {
 typedef struct {
     int source;               /*!< ISR source */
     int intr_alloc_flags;     /*!< ISR alloc flag */
-    void (*fn)(void*);        /*!< ISR function */
+    void (*fn)(void *);       /*!< ISR function */
     void *arg;                /*!< ISR function args*/
     void *handle;             /*!< ISR handle */
     esp_err_t ret;
@@ -1016,7 +1016,7 @@ esp_err_t gpio_dump_io_configuration(FILE *out_stream, uint64_t io_bit_mask)
         uint32_t drv, fun_sel, sig_out;
         gpio_hal_get_io_config(gpio_context.gpio_hal, gpio_num, &pu, &pd, &ie, &oe, &od, &drv, &fun_sel, &sig_out, &slp_sel);
 
-        fprintf(out_stream, "IO[%"PRIu32"]%s -\n", gpio_num, esp_gpio_is_pin_reserved(gpio_num) ? " **RESERVED**" : "");
+        fprintf(out_stream, "IO[%"PRIu32"]%s -\n", gpio_num, esp_gpio_is_reserved(BIT64(gpio_num)) ? " **RESERVED**" : "");
         fprintf(out_stream, "  Pullup: %d, Pulldown: %d, DriveCap: %"PRIu32"\n", pu, pd, drv);
         fprintf(out_stream, "  InputEn: %d, OutputEn: %d, OpenDrain: %d\n", ie, oe, od);
         fprintf(out_stream, "  FuncSel: %"PRIu32" (%s)\n", fun_sel, (fun_sel == PIN_FUNC_GPIO) ? "GPIO" : "IOMUX");

@@ -13,8 +13,6 @@ entries:
     cpu: esp_cpu_compare_and_set (noflash)
     esp_memory_utils (noflash)
     rtc_clk (noflash)
-    esp_gpio_reserve: esp_gpio_reserve_pins (noflash)
-    esp_gpio_reserve: esp_gpio_is_pin_reserved (noflash)
     if SOC_CONFIGURABLE_VDDSDIO_SUPPORTED = y:
         rtc_init:rtc_vddsdio_get_config (noflash)
         rtc_init:rtc_vddsdio_set_config (noflash)
