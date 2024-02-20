@@ -1,24 +1,13 @@
-if IDF_TARGET_ESP32C5_BETA3_VERSION
-    orsource "../../beta3/include/soc/Kconfig.soc_caps.in"
-endif
+#####################################################
+# This file is auto-generated from SoC caps
+# using gen_soc_caps_kconfig.py, do not edit manually
+#####################################################
 
 config SOC_UART_SUPPORTED
     bool
     default y
 
-config SOC_GDMA_SUPPORTED
-    bool
-    default y
-
-config SOC_AHB_GDMA_SUPPORTED
-    bool
-    default y
-
 config SOC_GPTIMER_SUPPORTED
-    bool
-    default y
-
-config SOC_ASYNC_MEMCPY_SUPPORTED
     bool
     default y
 
@@ -38,27 +27,11 @@ config SOC_RTC_MEM_SUPPORTED
     bool
     default y
 
-config SOC_I2C_SUPPORTED
-    bool
-    default y
-
 config SOC_SYSTIMER_SUPPORTED
     bool
     default y
 
-config SOC_ECC_SUPPORTED
-    bool
-    default y
-
-config SOC_ECC_EXTENDED_MODES_SUPPORTED
-    bool
-    default y
-
 config SOC_FLASH_ENC_SUPPORTED
-    bool
-    default y
-
-config SOC_LP_PERIPHERALS_SUPPORTED
     bool
     default y
 
@@ -134,61 +107,17 @@ config SOC_CPU_IDRAM_SPLIT_USING_PMP
     bool
     default y
 
-config SOC_AHB_GDMA_VERSION
-    int
-    default 1
-
-config SOC_GDMA_NUM_GROUPS_MAX
-    int
-    default 1
-
-config SOC_GDMA_PAIRS_PER_GROUP_MAX
-    int
-    default 3
-
-config SOC_GPIO_PORT
-    int
-    default 1
-
 config SOC_GPIO_PIN_COUNT
     int
-    default 27
-
-config SOC_GPIO_SUPPORT_PIN_HYS_FILTER
-    bool
-    default y
-
-config SOC_GPIO_ETM_EVENTS_PER_GROUP
-    int
-    default 8
-
-config SOC_GPIO_ETM_TASKS_PER_GROUP
-    int
-    default 8
-
-config SOC_GPIO_SUPPORT_RTC_INDEPENDENT
-    bool
-    default y
+    default 31
 
 config SOC_GPIO_IN_RANGE_MAX
     int
-    default 26
+    default 30
 
 config SOC_GPIO_OUT_RANGE_MAX
     int
-    default 26
-
-config SOC_GPIO_DEEP_SLEEP_WAKE_VALID_GPIO_MASK
-    int
-    default 0
-
-config SOC_GPIO_VALID_DIGITAL_IO_PAD_MASK
-    hex
-    default 0x0000000007FFFF00
-
-config SOC_GPIO_SUPPORT_FORCE_HOLD
-    bool
-    default y
+    default 30
 
 config SOC_GPIO_SUPPORT_HOLD_SINGLE_IO_IN_DSLP
     bool
@@ -200,47 +129,7 @@ config SOC_RTCIO_PIN_COUNT
 
 config SOC_I2C_NUM
     int
-    default 1
-
-config SOC_I2C_FIFO_LEN
-    int
-    default 32
-
-config SOC_I2C_CMD_REG_NUM
-    int
-    default 8
-
-config SOC_I2C_SUPPORT_SLAVE
-    bool
-    default y
-
-config SOC_I2C_SUPPORT_HW_FSM_RST
-    bool
-    default y
-
-config SOC_I2C_SUPPORT_HW_CLR_BUS
-    bool
-    default y
-
-config SOC_I2C_SUPPORT_XTAL
-    bool
-    default y
-
-config SOC_I2C_SUPPORT_10BIT_ADDR
-    bool
-    default y
-
-config SOC_I2C_SLAVE_SUPPORT_BROADCAST
-    bool
-    default y
-
-config SOC_I2C_SLAVE_CAN_GET_STRETCH_CAUSE
-    bool
-    default y
-
-config SOC_I2C_SLAVE_SUPPORT_I2CRAM_ACCESS
-    bool
-    default y
+    default 2
 
 config SOC_LEDC_SUPPORT_PLL_DIV_CLOCK
     bool
@@ -378,23 +267,7 @@ config SOC_LP_UART_FIFO_LEN
     int
     default 16
 
-config SOC_UART_BITRATE_MAX
-    int
-    default 5000000
-
-config SOC_UART_SUPPORT_PLL_F80M_CLK
-    bool
-    default y
-
 config SOC_UART_SUPPORT_XTAL_CLK
-    bool
-    default y
-
-config SOC_UART_SUPPORT_WAKEUP_INT
-    bool
-    default y
-
-config SOC_UART_SUPPORT_FSM_TX_WAIT_SEND
     bool
     default y
 
@@ -419,6 +292,10 @@ config SOC_PM_SUPPORT_RC_FAST_PD
     default y
 
 config SOC_PM_SUPPORT_VDDSDIO_PD
+    bool
+    default y
+
+config SOC_PM_SUPPORT_TOP_PD
     bool
     default y
 
