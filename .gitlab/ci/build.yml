@@ -266,8 +266,6 @@ generate_build_child_pipeline:
     when: always
   script:
     - run_cmd python tools/ci/dynamic_pipelines/scripts/generate_build_child_pipeline.py
-      --modified-components ${MR_MODIFIED_COMPONENTS}
-      --modified-files ${MR_MODIFIED_FILES}
 
 build_child_pipeline:
   stage: build
