@@ -2,12 +2,9 @@
 #
 # Checks all public headers in IDF in the ci
 #
-# SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 #
-
-from __future__ import print_function, unicode_literals
-
 import argparse
 import fnmatch
 import json
@@ -16,9 +13,13 @@ import queue
 import re
 import subprocess
 import tempfile
-from io import open
-from threading import Event, Thread
-from typing import List, Optional, Set, Tuple, Union
+from threading import Event
+from threading import Thread
+from typing import List
+from typing import Optional
+from typing import Set
+from typing import Tuple
+from typing import Union
 
 
 class HeaderFailed(Exception):
@@ -105,7 +106,7 @@ class PublicHeaderChecker:
         self.kconfig_macro = re.compile(r'\bCONFIG_[A-Z0-9_]+')
         self.static_assert = re.compile(r'(_Static_assert|static_assert)')
         self.defines_assert = re.compile(r'#define[ \t]+ESP_STATIC_ASSERT')
-        self.auto_soc_header = re.compile(r'components/soc/esp[a-z0-9_]+/include(?:/rev[0-9]+)?/(soc|modem)/[a-zA-Z0-9_]+.h')
+        self.auto_soc_header = re.compile(r'components/soc/esp[a-z0-9_]+(?:/\w+)?/include(?:/rev[0-9]+)?/(soc|modem)/[a-zA-Z0-9_]+.h')
         self.assembly_nocode = r'^\s*(\.file|\.text|\.ident|\.option|\.attribute).*$'
         self.check_threads: List[Thread] = []
 

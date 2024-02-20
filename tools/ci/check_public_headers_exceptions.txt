@@ -97,6 +97,8 @@ components/esp_rom/include/esp32c3/rom/rtc.h
 components/esp_rom/include/esp32s2/rom/rtc.h
 components/esp_rom/include/esp32s3/rom/rtc.h
 components/esp_rom/include/esp32c2/rom/rtc.h
+# TODO: IDF-9197
+components/esp_rom/include/esp32c5/beta3/esp32c5/rom/rtc.h
 components/esp_rom/include/esp32c6/rom/rtc.h
 components/esp_rom/include/esp32h2/rom/rtc.h
 components/esp_rom/include/esp32p4/rom/rtc.h

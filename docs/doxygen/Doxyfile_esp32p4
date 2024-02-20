@@ -15,3 +15,8 @@ INPUT += \
     $(PROJECT_PATH)/components/hal/include/hal/jpeg_types.h \
     $(PROJECT_PATH)/components/esp_driver_jpeg/include/driver/jpeg_decode.h \
     $(PROJECT_PATH)/components/esp_driver_jpeg/include/driver/jpeg_types.h \
+	$(PROJECT_PATH)/components/soc/$(IDF_TARGET)/include/soc/adc_channel.h \
+    $(PROJECT_PATH)/components/soc/$(IDF_TARGET)/include/soc/clk_tree_defs.h \
+    $(PROJECT_PATH)/components/soc/$(IDF_TARGET)/include/soc/gpio_num.h \
+    $(PROJECT_PATH)/components/soc/$(IDF_TARGET)/include/soc/soc_caps.h \
+    $(PROJECT_PATH)/components/soc/$(IDF_TARGET)/include/soc/uart_channel.h \

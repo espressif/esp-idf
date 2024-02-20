@@ -10,7 +10,7 @@
     :SOC_ADC_DMA_SUPPORTED: adc_continuous
     :SOC_ADC_SUPPORTED: adc_calibration
     :SOC_ANA_CMPR_SUPPORTED: ana_cmpr
-    clk_tree
+    :SOC_CLK_TREE_SUPPORTED: clk_tree
     :SOC_DAC_SUPPORTED: dac
     :SOC_ECDSA_SUPPORTED: ecdsa
     :SOC_ETM_SUPPORTED: etm
