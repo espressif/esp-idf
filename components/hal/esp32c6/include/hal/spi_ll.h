@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -307,7 +307,7 @@ static inline void spi_ll_slave_reset(spi_dev_t *hw)
 /**
  * Reset SPI CPU TX FIFO
  *
- * On ESP32C3, this function is not seperated
+ * On ESP32C6, this function is not seperated
  *
  * @param hw Beginning address of the peripheral registers.
  */
@@ -320,7 +320,7 @@ static inline void spi_ll_cpu_tx_fifo_reset(spi_dev_t *hw)
 /**
  * Reset SPI CPU RX FIFO
  *
- * On ESP32C3, this function is not seperated
+ * On ESP32C6, this function is not seperated
  *
  * @param hw Beginning address of the peripheral registers.
  */
@@ -903,7 +903,7 @@ static inline void spi_ll_set_miso_bitlen(spi_dev_t *hw, size_t bitlen)
  */
 static inline void spi_ll_slave_set_rx_bitlen(spi_dev_t *hw, size_t bitlen)
 {
-    //This is not used in esp32c3
+    //This is not used in esp32c6
 }
 
 /**
@@ -914,7 +914,7 @@ static inline void spi_ll_slave_set_rx_bitlen(spi_dev_t *hw, size_t bitlen)
  */
 static inline void spi_ll_slave_set_tx_bitlen(spi_dev_t *hw, size_t bitlen)
 {
-    //This is not used in esp32c3
+    //This is not used in esp32c6
 }
 
 /**
