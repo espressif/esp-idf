@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -54,14 +54,14 @@ static void msc_client_event_cb(const usb_host_client_event_msg_t *event_msg, vo
 {
     msc_client_obj_t *msc_obj = (msc_client_obj_t *)arg;
     switch (event_msg->event) {
-        case USB_HOST_CLIENT_EVENT_NEW_DEV:
-            TEST_ASSERT_EQUAL(TEST_STAGE_WAIT_CONN, msc_obj->cur_stage);
-            msc_obj->next_stage = TEST_STAGE_DEV_OPEN;
-            msc_obj->dev_addr_to_open = event_msg->new_dev.address;
-            break;
-        default:
-            abort();    //Should never occur in this test
-            break;
+    case USB_HOST_CLIENT_EVENT_NEW_DEV:
+        TEST_ASSERT_EQUAL(TEST_STAGE_WAIT_CONN, msc_obj->cur_stage);
+        msc_obj->next_stage = TEST_STAGE_DEV_OPEN;
+        msc_obj->dev_addr_to_open = event_msg->new_dev.address;
+        break;
+    default:
+        abort();    //Should never occur in this test
+        break;
 
     }
 }
@@ -81,7 +81,7 @@ void msc_client_async_enum_task(void *arg)
         .max_num_event_msg = MSC_ASYNC_CLIENT_MAX_EVENT_MSGS,
         .async = {
             .client_event_callback = msc_client_event_cb,
-            .callback_arg = (void *)&msc_obj,
+            .callback_arg = (void *) &msc_obj,
         },
     };
     TEST_ASSERT_EQUAL(ESP_OK, usb_host_client_register(&client_config, &msc_obj.client_hdl));
@@ -104,78 +104,78 @@ void msc_client_async_enum_task(void *arg)
         msc_obj.cur_stage = msc_obj.next_stage;
 
         switch (msc_obj.cur_stage) {
-            case TEST_STAGE_WAIT_CONN: {
-                //Wait for connection, nothing to do
-                break;
-            }
-            case TEST_STAGE_DEV_OPEN: {
-                ESP_LOGD(MSC_CLIENT_TAG, "Open");
-                //Open the device
-                TEST_ASSERT_EQUAL(ESP_OK, usb_host_device_open(msc_obj.client_hdl, msc_obj.dev_addr_to_open, &msc_obj.dev_hdl));
-                msc_obj.next_stage = TEST_STAGE_CHECK_DEV_DESC;
-                skip_event_handling = true; //Need to execute TEST_STAGE_CHECK_DEV_DESC
-                break;
-            }
-            case TEST_STAGE_CHECK_DEV_DESC: {
-                //Check the device descriptor
-                const usb_device_desc_t *device_desc;
-                const usb_device_desc_t *device_desc_ref = &mock_msc_scsi_dev_desc;
-                TEST_ASSERT_EQUAL(ESP_OK, usb_host_get_device_descriptor(msc_obj.dev_hdl, &device_desc));
-                TEST_ASSERT_EQUAL(device_desc_ref->bLength, device_desc->bLength);
-                TEST_ASSERT_EQUAL_MEMORY_MESSAGE(device_desc_ref, device_desc, device_desc_ref->bLength, "Device descriptors do not match.");
-                msc_obj.next_stage = TEST_STAGE_CHECK_CONFIG_DESC;
-                skip_event_handling = true; //Need to execute TEST_STAGE_CHECK_CONFIG_DESC
-                break;
-            }
+        case TEST_STAGE_WAIT_CONN: {
+            //Wait for connection, nothing to do
+            break;
+        }
+        case TEST_STAGE_DEV_OPEN: {
+            ESP_LOGD(MSC_CLIENT_TAG, "Open");
+            //Open the device
+            TEST_ASSERT_EQUAL(ESP_OK, usb_host_device_open(msc_obj.client_hdl, msc_obj.dev_addr_to_open, &msc_obj.dev_hdl));
+            msc_obj.next_stage = TEST_STAGE_CHECK_DEV_DESC;
+            skip_event_handling = true; //Need to execute TEST_STAGE_CHECK_DEV_DESC
+            break;
+        }
+        case TEST_STAGE_CHECK_DEV_DESC: {
+            //Check the device descriptor
+            const usb_device_desc_t *device_desc;
+            const usb_device_desc_t *device_desc_ref = &mock_msc_scsi_dev_desc;
+            TEST_ASSERT_EQUAL(ESP_OK, usb_host_get_device_descriptor(msc_obj.dev_hdl, &device_desc));
+            TEST_ASSERT_EQUAL(device_desc_ref->bLength, device_desc->bLength);
+            TEST_ASSERT_EQUAL_MEMORY_MESSAGE(device_desc_ref, device_desc, device_desc_ref->bLength, "Device descriptors do not match.");
+            msc_obj.next_stage = TEST_STAGE_CHECK_CONFIG_DESC;
+            skip_event_handling = true; //Need to execute TEST_STAGE_CHECK_CONFIG_DESC
+            break;
+        }
 
-            case TEST_STAGE_CHECK_CONFIG_DESC: {
-                //Check the configuration descriptor
-                const usb_config_desc_t *config_desc;
-                const usb_config_desc_t *config_desc_ref = (const usb_config_desc_t *)mock_msc_scsi_config_desc;
-                TEST_ASSERT_EQUAL(ESP_OK, usb_host_get_active_config_descriptor(msc_obj.dev_hdl, &config_desc));
-                TEST_ASSERT_EQUAL_MESSAGE(config_desc_ref->wTotalLength, config_desc->wTotalLength, "Incorrent length of CFG descriptor");
-                TEST_ASSERT_EQUAL_MEMORY_MESSAGE(config_desc_ref, config_desc, config_desc_ref->wTotalLength, "Configuration descriptors do not match");
-                msc_obj.next_stage = TEST_STAGE_CHECK_STR_DESC;
-                skip_event_handling = true; //Need to execute TEST_STAGE_CHECK_STR_DESC
-                break;
-            }
-            case TEST_STAGE_CHECK_STR_DESC: {
-                usb_device_info_t dev_info;
-                TEST_ASSERT_EQUAL(ESP_OK, usb_host_device_info(msc_obj.dev_hdl, &dev_info));
-                //Check manufacturer string descriptors
-                const usb_str_desc_t *manu_str_desc_ref = (const usb_str_desc_t *)mock_msc_scsi_str_desc_manu;
-                const usb_str_desc_t *product_str_desc_ref = (const usb_str_desc_t *)mock_msc_scsi_str_desc_prod;
-                const usb_str_desc_t *ser_num_str_desc_ref = (const usb_str_desc_t *)mock_msc_scsi_str_desc_ser_num;
-                TEST_ASSERT_EQUAL(manu_str_desc_ref->bLength, dev_info.str_desc_manufacturer->bLength);
-                TEST_ASSERT_EQUAL(product_str_desc_ref->bLength, dev_info.str_desc_product->bLength);
-                TEST_ASSERT_EQUAL(ser_num_str_desc_ref->bLength, dev_info.str_desc_serial_num->bLength);
-                TEST_ASSERT_EQUAL_MEMORY_MESSAGE(manu_str_desc_ref, dev_info.str_desc_manufacturer , manu_str_desc_ref->bLength, "Manufacturer string descriptors do not match.");
-                TEST_ASSERT_EQUAL_MEMORY_MESSAGE(product_str_desc_ref, dev_info.str_desc_product , manu_str_desc_ref->bLength, "Product string descriptors do not match.");
-                //TEST_ASSERT_EQUAL_MEMORY_MESSAGE(ser_num_str_desc_ref, dev_info.str_desc_serial_num , manu_str_desc_ref->bLength, "Serial number string descriptors do not match.");
-                //Get dev info and compare
-                msc_obj.next_stage = TEST_STAGE_DEV_CLOSE;
-                skip_event_handling = true; //Need to execute TEST_STAGE_DEV_CLOSE
-                break;
-            }
+        case TEST_STAGE_CHECK_CONFIG_DESC: {
+            //Check the configuration descriptor
+            const usb_config_desc_t *config_desc;
+            const usb_config_desc_t *config_desc_ref = (const usb_config_desc_t *)mock_msc_scsi_config_desc;
+            TEST_ASSERT_EQUAL(ESP_OK, usb_host_get_active_config_descriptor(msc_obj.dev_hdl, &config_desc));
+            TEST_ASSERT_EQUAL_MESSAGE(config_desc_ref->wTotalLength, config_desc->wTotalLength, "Incorrent length of CFG descriptor");
+            TEST_ASSERT_EQUAL_MEMORY_MESSAGE(config_desc_ref, config_desc, config_desc_ref->wTotalLength, "Configuration descriptors do not match");
+            msc_obj.next_stage = TEST_STAGE_CHECK_STR_DESC;
+            skip_event_handling = true; //Need to execute TEST_STAGE_CHECK_STR_DESC
+            break;
+        }
+        case TEST_STAGE_CHECK_STR_DESC: {
+            usb_device_info_t dev_info;
+            TEST_ASSERT_EQUAL(ESP_OK, usb_host_device_info(msc_obj.dev_hdl, &dev_info));
+            //Check manufacturer string descriptors
+            const usb_str_desc_t *manu_str_desc_ref = (const usb_str_desc_t *)mock_msc_scsi_str_desc_manu;
+            const usb_str_desc_t *product_str_desc_ref = (const usb_str_desc_t *)mock_msc_scsi_str_desc_prod;
+            const usb_str_desc_t *ser_num_str_desc_ref = (const usb_str_desc_t *)mock_msc_scsi_str_desc_ser_num;
+            TEST_ASSERT_EQUAL(manu_str_desc_ref->bLength, dev_info.str_desc_manufacturer->bLength);
+            TEST_ASSERT_EQUAL(product_str_desc_ref->bLength, dev_info.str_desc_product->bLength);
+            TEST_ASSERT_EQUAL(ser_num_str_desc_ref->bLength, dev_info.str_desc_serial_num->bLength);
+            TEST_ASSERT_EQUAL_MEMORY_MESSAGE(manu_str_desc_ref, dev_info.str_desc_manufacturer, manu_str_desc_ref->bLength, "Manufacturer string descriptors do not match.");
+            TEST_ASSERT_EQUAL_MEMORY_MESSAGE(product_str_desc_ref, dev_info.str_desc_product, manu_str_desc_ref->bLength, "Product string descriptors do not match.");
+            //TEST_ASSERT_EQUAL_MEMORY_MESSAGE(ser_num_str_desc_ref, dev_info.str_desc_serial_num , manu_str_desc_ref->bLength, "Serial number string descriptors do not match.");
+            //Get dev info and compare
+            msc_obj.next_stage = TEST_STAGE_DEV_CLOSE;
+            skip_event_handling = true; //Need to execute TEST_STAGE_DEV_CLOSE
+            break;
+        }
 
-            case TEST_STAGE_DEV_CLOSE: {
-                ESP_LOGD(MSC_CLIENT_TAG, "Close");
-                TEST_ASSERT_EQUAL(ESP_OK, usb_host_device_close(msc_obj.client_hdl, msc_obj.dev_hdl));
-                enum_iter++;
-                if (enum_iter < TEST_ENUM_ITERATIONS) {
-                    //Start the next test iteration by disconnecting the device, then going back to TEST_STAGE_WAIT_CONN stage
-                    test_usb_set_phy_state(false, 0);
-                    test_usb_set_phy_state(true, 0);
-                    msc_obj.next_stage = TEST_STAGE_WAIT_CONN;
-                    skip_event_handling = true; //Need to execute TEST_STAGE_WAIT_CONN
-                } else {
-                    exit_loop = true;
-                }
-                break;
+        case TEST_STAGE_DEV_CLOSE: {
+            ESP_LOGD(MSC_CLIENT_TAG, "Close");
+            TEST_ASSERT_EQUAL(ESP_OK, usb_host_device_close(msc_obj.client_hdl, msc_obj.dev_hdl));
+            enum_iter++;
+            if (enum_iter < TEST_ENUM_ITERATIONS) {
+                //Start the next test iteration by disconnecting the device, then going back to TEST_STAGE_WAIT_CONN stage
+                test_usb_set_phy_state(false, 0);
+                test_usb_set_phy_state(true, 0);
+                msc_obj.next_stage = TEST_STAGE_WAIT_CONN;
+                skip_event_handling = true; //Need to execute TEST_STAGE_WAIT_CONN
+            } else {
+                exit_loop = true;
             }
-            default:
-                abort();
-                break;
+            break;
+        }
+        default:
+            abort();
+            break;
         }
     }
     //Free transfers and deregister the client

@@ -108,7 +108,6 @@ components_not_formatted_temporary:
     - "/components/touch_element/"
     - "/components/ulp/"
     - "/components/unity/"
-    - "/components/usb/"
     - "/components/vfs/"
     - "/components/wear_levelling/"
     - "/components/wifi_provisioning/"

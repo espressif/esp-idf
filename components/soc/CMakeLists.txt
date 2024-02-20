@@ -107,7 +107,7 @@ endif()
 
 if(CONFIG_SOC_USB_OTG_SUPPORTED)
     list(APPEND srcs "${target}/usb_periph.c"
-                     "${target}/usb_otg_periph.c")
+                     "${target}/usb_dwc_periph.c")
 endif()
 
 if(CONFIG_SOC_DAC_SUPPORTED)

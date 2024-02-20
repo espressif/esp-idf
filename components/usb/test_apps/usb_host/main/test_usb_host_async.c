@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -169,20 +169,20 @@ static void test_async_client_cb(const usb_host_client_event_msg_t *event_msg, v
     client_test_stage_t *stage = (client_test_stage_t *)arg;
 
     switch (event_msg->event) {
-        case USB_HOST_CLIENT_EVENT_NEW_DEV:
-            if (dev_addr == 0) {
-                dev_addr = event_msg->new_dev.address;
-            } else {
-                TEST_ASSERT_EQUAL(dev_addr, event_msg->new_dev.address);
-            }
-            *stage = CLIENT_TEST_STAGE_CONN;
-            break;
-        case USB_HOST_CLIENT_EVENT_DEV_GONE:
-            *stage = CLIENT_TEST_STAGE_DCONN;
-            break;
-        default:
-            abort();
-            break;
+    case USB_HOST_CLIENT_EVENT_NEW_DEV:
+        if (dev_addr == 0) {
+            dev_addr = event_msg->new_dev.address;
+        } else {
+            TEST_ASSERT_EQUAL(dev_addr, event_msg->new_dev.address);
+        }
+        *stage = CLIENT_TEST_STAGE_CONN;
+        break;
+    case USB_HOST_CLIENT_EVENT_DEV_GONE:
+        *stage = CLIENT_TEST_STAGE_DCONN;
+        break;
+    default:
+        abort();
+        break;
     }
 }
 
@@ -197,7 +197,7 @@ TEST_CASE("Test USB Host async API", "[usb_host][full_speed][low_speed]")
         .max_num_event_msg = 5,
         .async = {
             .client_event_callback = test_async_client_cb,
-            .callback_arg = (void *)&client0_stage,
+            .callback_arg = (void *) &client0_stage,
         },
     };
     usb_host_client_handle_t client0_hdl;
