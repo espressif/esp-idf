@@ -135,6 +135,7 @@ pipeline_variables:
     # MODIFIED_FILES is a list of files that changed, could be used everywhere
     - MODIFIED_FILES=$(echo "$GIT_DIFF_OUTPUT" | xargs)
     - echo "MODIFIED_FILES=$MODIFIED_FILES" >> pipeline.env
+    - echo "REPORT_EXIT_CODE=0" >> pipeline.env
     # MR_MODIFIED_FILES and MR_MODIFIED_COMPONENTS are semicolon separated lists that is used in MR only
     # for non MR pipeline, these are empty lists
     - |
@@ -157,6 +158,7 @@ pipeline_variables:
       if [ -n "$CI_PYTHON_CONSTRAINT_BRANCH" ]; then
         echo "BUILD_AND_TEST_ALL_APPS=1" >> pipeline.env
       fi
+    - python tools/ci/ci_process_description.py
     - cat pipeline.env
     - python tools/ci/artifacts_handler.py upload --type modified_files_and_components_report
   artifacts:

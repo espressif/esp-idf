@@ -102,6 +102,8 @@ variables:
   CCACHE_DIR: "/cache/idf_ccache"
   CCACHE_MAXSIZE: "50G"
 
+  FF_USE_NEW_BASH_EVAL_STRATEGY: "true"
+
 ################################################
 # `before_script` and `after_script` Templates #
 ################################################

@@ -323,6 +323,7 @@ build_child_pipeline:
     MR_MODIFIED_FILES: $MR_MODIFIED_FILES
     PARENT_PIPELINE_ID: $CI_PIPELINE_ID
     BUILD_AND_TEST_ALL_APPS: $BUILD_AND_TEST_ALL_APPS
+    REPORT_EXIT_CODE: $REPORT_EXIT_CODE
   # https://gitlab.com/gitlab-org/gitlab/-/issues/214340
   inherit:
     variables: false

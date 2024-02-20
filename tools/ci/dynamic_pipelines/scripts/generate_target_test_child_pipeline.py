@@ -110,6 +110,10 @@ def get_target_test_jobs(
     else:
         extra_include_yml = ['tools/ci/dynamic_pipelines/templates/generate_target_test_report.yml']
 
+    fast_pipeline_flag = int(os.getenv('REPORT_EXIT_CODE', 0)) == 30
+    if fast_pipeline_flag:
+        extra_include_yml = ['tools/ci/dynamic_pipelines/templates/fast_pipeline.yml']
+
     issues['no_env_marker_test_cases'] = sorted(issues['no_env_marker_test_cases'])
     issues['no_runner_tags'] = sorted(issues['no_runner_tags'])
 

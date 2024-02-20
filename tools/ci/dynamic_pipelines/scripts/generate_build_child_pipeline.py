@@ -213,6 +213,9 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
+    if test_case_filters := os.getenv('TEST_CASE_FILTERS', None):
+        args.filter_expr = test_case_filters
+
     if os.getenv('IS_MR_PIPELINE') == '0' or os.getenv('BUILD_AND_TEST_ALL_APPS') == '1':
         print('Build and run all test cases, and compile all cmake apps')
         args.modified_components = None
