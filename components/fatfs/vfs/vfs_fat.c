@@ -11,6 +11,7 @@
 #include <sys/errno.h>
 #include <sys/fcntl.h>
 #include <sys/lock.h>
+#include "esp_vfs_fat.h"
 #include "esp_vfs.h"
 #include "esp_log.h"
 #include "ff.h"
@@ -112,7 +113,17 @@ static size_t find_unused_context_index(void)
 
 esp_err_t esp_vfs_fat_register(const char* base_path, const char* fat_drive, size_t max_files, FATFS** out_fs)
 {
-    size_t ctx = find_context_index_by_path(base_path);
+    esp_vfs_fat_conf_t conf = {
+        .base_path = base_path,
+        .fat_drive = fat_drive,
+        .max_files = max_files,
+    };
+    return esp_vfs_fat_register_cfg(&conf, out_fs);
+}
+
+esp_err_t esp_vfs_fat_register_cfg(const esp_vfs_fat_conf_t* conf, FATFS** out_fs)
+{
+    size_t ctx = find_context_index_by_path(conf->base_path);
     if (ctx < FF_VOLUMES) {
         return ESP_ERR_INVALID_STATE;
     }
@@ -153,6 +164,7 @@ esp_err_t esp_vfs_fat_register(const char* base_path, const char* fat_drive, siz
 #endif // CONFIG_VFS_SUPPORT_DIR
     };
 
+    size_t max_files = conf->max_files;
     if (max_files < 1) {
         max_files = 1;  // ff_memalloc(max_files * sizeof(bool)) below will fail if max_files == 0
     }
@@ -170,10 +182,10 @@ esp_err_t esp_vfs_fat_register(const char* base_path, const char* fat_drive, siz
     }
     memset(fat_ctx->o_append, 0, max_files * sizeof(bool));
     fat_ctx->max_files = max_files;
-    strlcpy(fat_ctx->fat_drive, fat_drive, sizeof(fat_ctx->fat_drive) - 1);
-    strlcpy(fat_ctx->base_path, base_path, sizeof(fat_ctx->base_path) - 1);
+    strlcpy(fat_ctx->fat_drive, conf->fat_drive, sizeof(fat_ctx->fat_drive) - 1);
+    strlcpy(fat_ctx->base_path, conf->base_path, sizeof(fat_ctx->base_path) - 1);
 
-    esp_err_t err = esp_vfs_register(base_path, &vfs, fat_ctx);
+    esp_err_t err = esp_vfs_register(conf->base_path, &vfs, fat_ctx);
     if (err != ESP_OK) {
         free(fat_ctx->o_append);
         free(fat_ctx);
