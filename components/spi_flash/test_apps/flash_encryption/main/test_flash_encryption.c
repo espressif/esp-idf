@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -20,6 +20,7 @@
 #include "test_utils.h"
 #include "ccomp_timer.h"
 #include "test_flash_utils.h"
+#include "sdkconfig.h"
 
 /*-------------------- For running this test, some configurations are necessary -------------------*/
 /*     ESP32    |           CONFIG_SECURE_FLASH_ENC_ENABLED         |             SET              */
@@ -371,4 +372,14 @@ TEST_CASE("test read & write encrypted data with large buffer in ram", "[flash_e
     free(buf);
 }
 
+TEST_CASE("test encrypted writes to dangerous regions like bootloader", "[flash_encryption]")
+{
+    TEST_ASSERT_EQUAL_HEX(ESP_ERR_INVALID_ARG, esp_flash_erase_region(NULL, CONFIG_BOOTLOADER_OFFSET_IN_FLASH, 4*4096));
+    TEST_ASSERT_EQUAL_HEX(ESP_ERR_INVALID_ARG, esp_flash_erase_region(NULL, CONFIG_PARTITION_TABLE_OFFSET, 4096));
+    char buffer[32] = {0xa5};
+    // Encrypted writes to bootloader region not allowed
+    TEST_ASSERT_EQUAL_HEX(ESP_ERR_INVALID_ARG, esp_flash_write_encrypted(NULL, CONFIG_BOOTLOADER_OFFSET_IN_FLASH, buffer, sizeof(buffer)));
+    // Encrypted writes to partition table region not allowed
+    TEST_ASSERT_EQUAL_HEX(ESP_ERR_INVALID_ARG, esp_flash_write_encrypted(NULL, CONFIG_PARTITION_TABLE_OFFSET, buffer, sizeof(buffer)));
+}
 #endif // CONFIG_SECURE_FLASH_ENC_ENABLED
