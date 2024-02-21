@@ -455,14 +455,20 @@ void gpio_iomux_out(uint8_t gpio_num, int func, bool oen_inv);
   * This function will immediately cause all pads to latch the current values of input enable, output enable,
   * output value, function, and drive strength values.
   *
-  * @warning This function will hold flash and UART pins as well. Therefore, this function, and all code run afterwards
-  * (till calling `gpio_force_unhold_all` to disable this feature), MUST be placed in internal RAM as holding the flash
-  * pins will halt SPI flash operation, and holding the UART pins will halt any UART logging.
+  * @warning
+  *   1. This function will hold flash and UART pins as well. Therefore, this function, and all code run afterwards
+  *      (till calling `gpio_force_unhold_all` to disable this feature), MUST be placed in internal RAM as holding the flash
+  *      pins will halt SPI flash operation, and holding the UART pins will halt any UART logging.
+  *   2. The hold state of all pads will be cancelled during ROM boot, so it is not recommended to use this API to hold
+  *      the pads state during deepsleep and reset.
   * */
 esp_err_t gpio_force_hold_all(void);
 
 /**
-  * @brief Force unhold all digital and rtc gpio pads.
+  * @brief Unhold all digital and rtc gpio pads.
+  *
+  * @note  The global hold signal and the hold signal of each IO act on the PAD through 'or' logic, so if a pad has already
+  *        been configured to hold by `gpio_hold_en`, this API can't release its hold state.
   * */
 esp_err_t gpio_force_unhold_all(void);
 #endif
