@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -34,6 +34,7 @@
 #else
 #include "mbedtls/config.h"
 #endif
+#include "mbedtls/platform.h"
 #include "eap_peer/eap.h"
 
 
@@ -676,6 +677,59 @@ int tls_connection_set_verify(void *tls_ctx, struct tls_connection *conn,
 	return -1;
 }
 
+#ifdef CONFIG_ESP_WIFI_ENT_FREE_DYNAMIC_BUFFER
+static void esp_mbedtls_free_dhm(mbedtls_ssl_context *ssl)
+{
+#ifdef CONFIG_MBEDTLS_DHM_C
+	const mbedtls_ssl_config *conf = mbedtls_ssl_context_get_config(ssl);
+	mbedtls_mpi_free((mbedtls_mpi *)&conf->MBEDTLS_PRIVATE(dhm_P));
+	mbedtls_mpi_free((mbedtls_mpi *)&conf->MBEDTLS_PRIVATE(dhm_G));
+#endif /* CONFIG_MBEDTLS_DHM_C */
+}
+
+static void esp_mbedtls_free_keycert(mbedtls_ssl_context *ssl)
+{
+	mbedtls_ssl_config *conf = (mbedtls_ssl_config * )mbedtls_ssl_context_get_config(ssl);
+	mbedtls_ssl_key_cert *keycert = conf->MBEDTLS_PRIVATE(key_cert), *next;
+
+	while (keycert) {
+		next = keycert->next;
+
+		if (keycert) {
+			mbedtls_free(keycert);
+		}
+
+		keycert = next;
+	}
+
+	conf->MBEDTLS_PRIVATE(key_cert) = NULL;
+}
+
+static void esp_mbedtls_free_keycert_key(mbedtls_ssl_context *ssl)
+{
+	const mbedtls_ssl_config *conf = mbedtls_ssl_context_get_config(ssl);
+	mbedtls_ssl_key_cert *keycert = conf->MBEDTLS_PRIVATE(key_cert);
+
+	while (keycert) {
+		if (keycert->key) {
+			mbedtls_pk_free(keycert->key);
+			keycert->key = NULL;
+		}
+		keycert = keycert->next;
+	}
+}
+
+static void esp_mbedtls_free_cacert(mbedtls_ssl_context *ssl)
+{
+	if (ssl->MBEDTLS_PRIVATE(conf)->MBEDTLS_PRIVATE(ca_chain)) {
+		mbedtls_ssl_config *conf = (mbedtls_ssl_config * )mbedtls_ssl_context_get_config(ssl);
+
+		mbedtls_x509_crt_free(conf->MBEDTLS_PRIVATE(ca_chain));
+		conf->MBEDTLS_PRIVATE(ca_chain) = NULL;
+	}
+}
+#endif
+
 struct wpabuf * tls_connection_handshake(void *tls_ctx,
 					 struct tls_connection *conn,
 					 const struct wpabuf *in_data,
@@ -684,6 +738,7 @@ struct wpabuf * tls_connection_handshake(void *tls_ctx,
 	tls_context_t *tls = conn->tls;
 	int ret = 0;
 	struct wpabuf *resp;
+	int cli_state;
 
 	/* data freed by sender */
 	conn->tls_io_data.out_data = NULL;
@@ -693,7 +748,8 @@ struct wpabuf * tls_connection_handshake(void *tls_ctx,
 
 	/* Multiple reads */
 	while (!mbedtls_ssl_is_handshake_over(&tls->ssl)) {
-		if (tls->ssl.MBEDTLS_PRIVATE(state) == MBEDTLS_SSL_CLIENT_CERTIFICATE) {
+		cli_state = tls->ssl.MBEDTLS_PRIVATE(state);
+		if (cli_state == MBEDTLS_SSL_CLIENT_CERTIFICATE) {
 			/* Read random data before session completes, not present after handshake */
 			if (tls->ssl.MBEDTLS_PRIVATE(handshake)) {
 				os_memcpy(conn->randbytes, tls->ssl.MBEDTLS_PRIVATE(handshake)->randbytes,
@@ -703,8 +759,20 @@ struct wpabuf * tls_connection_handshake(void *tls_ctx,
 		}
 		ret = mbedtls_ssl_handshake_step(&tls->ssl);
 
-		if (ret < 0)
+		if (ret < 0) {
 			break;
+		}
+#ifdef CONFIG_ESP_WIFI_ENT_FREE_DYNAMIC_BUFFER
+		if (mbedtls_ssl_get_version_number(&tls->ssl) == MBEDTLS_SSL_VERSION_TLS1_2) {
+			if (cli_state == MBEDTLS_SSL_SERVER_CERTIFICATE) {
+				esp_mbedtls_free_cacert(&tls->ssl);
+			} else if (cli_state == MBEDTLS_SSL_CERTIFICATE_VERIFY) {
+				esp_mbedtls_free_dhm(&tls->ssl);
+				esp_mbedtls_free_keycert_key(&tls->ssl);
+				esp_mbedtls_free_keycert(&tls->ssl);
+			}
+		}
+#endif
 	}
 	if (ret < 0 && ret != MBEDTLS_ERR_SSL_WANT_READ) {
 		wpa_printf(MSG_INFO, "%s: ret is %d line:%d", __func__, ret, __LINE__);
