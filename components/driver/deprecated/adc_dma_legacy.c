@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2016-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2016-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -176,7 +176,7 @@ esp_err_t adc_digi_deinitialize(void)
     free(s_adc_digi_ctx);
     s_adc_digi_ctx = NULL;
 
-    periph_module_disable(PERIPH_SARADC_MODULE);
+    adc_apb_periph_free();
 
     return ESP_OK;
 }
@@ -319,10 +319,7 @@ esp_err_t adc_digi_initialize(const adc_digi_init_config_t *init_config)
     };
     adc_hal_dma_ctx_config(&s_adc_digi_ctx->hal, &config);
 
-    //enable ADC digital part
-    periph_module_enable(PERIPH_SARADC_MODULE);
-    //reset ADC digital part
-    periph_module_reset(PERIPH_SARADC_MODULE);
+    adc_apb_periph_claim();
 
 #if SOC_ADC_CALIBRATION_V1_SUPPORTED
     adc_hal_calibration_init(ADC_UNIT_1);
