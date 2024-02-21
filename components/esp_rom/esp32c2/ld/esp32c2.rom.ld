@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -1632,9 +1632,9 @@ hal_mac_set_txq_invalid = 0x40001d60;
 hal_mac_txq_disable = 0x40001d64;
 hal_mac_is_txq_enabled = 0x40001d68;
 hal_mac_get_txq_pmd = 0x40001d6c;
-lmacDiscardFrameExchangeSequence = 0x40001d70;
-lmacDisableTransmit = 0x40001d74;
-lmacProcessTxTimeout = 0x40001d78;
+/*lmacDiscardFrameExchangeSequence = 0x40001d70;*/
+/*lmacDisableTransmit = 0x40001d74;*/
+/*lmacProcessTxTimeout = 0x40001d78;*/
 /*lmacProcessTxSuccess = 0x40001d7c;*/
 lmacProcessCollision = 0x40001d80;
 lmacProcessTxRtsError = 0x40001d84;
@@ -1666,7 +1666,7 @@ mac_last_rxbuf_init = 0x40001de8;
 hal_attenna_init = 0x40001dec;
 hal_timer_update_by_rtc = 0x40001df0;
 hal_coex_pti_init = 0x40001df4;
-lmac_stop_hw_txq = 0x40001df8;
+/*lmac_stop_hw_txq = 0x40001df8;*/
 ppDirectRecycleAmpdu = 0x40001dfc;
 esp_wifi_internal_set_rts = 0x40001e00;
 esp_wifi_internal_get_rts = 0x40001e04;
