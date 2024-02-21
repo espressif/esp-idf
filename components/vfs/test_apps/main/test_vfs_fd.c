@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,6 +18,10 @@
 #include "esp_log.h"
 #include "test_utils.h"
 #include "ccomp_timer.h"
+#include "driver/uart.h"
+#include "driver/uart_vfs.h"
+#include "lwip/sockets.h"
+#include "lwip/netdb.h"
 
 #define VFS_PREF1       "/vfs1"
 #define VFS_PREF2       "/vfs2"
@@ -288,4 +292,45 @@ TEST_CASE("esp_vfs_register_fd_range checks for overlap", "[vfs]")
 
     TEST_ESP_OK(esp_vfs_unregister("/test"));
     TEST_ESP_ERR(ESP_ERR_INVALID_ARG, err);
+}
+
+static void socket_init(int *socket_fd)
+{
+    const struct addrinfo hints = {
+        .ai_family = AF_INET,
+        .ai_socktype = SOCK_DGRAM,
+    };
+    struct addrinfo *res;
+    int err;
+
+    err = getaddrinfo("localhost", "80", &hints, &res);
+    TEST_ASSERT_EQUAL(err, 0);
+    TEST_ASSERT_NOT_NULL(res);
+
+    *socket_fd = socket(res->ai_family, res->ai_socktype, 0);
+    TEST_ASSERT(*socket_fd >= 0);
+    freeaddrinfo(res);
+}
+
+TEST_CASE("esp_vfs_dump_fds displays all registered fds in vfs", "[vfs]")
+{
+    int uart_fd0, uart_fd1, uart_fd2;
+    int socket_fd=-1;
+
+    uart_fd0 = open("/dev/uart/0", O_RDWR);
+    TEST_ASSERT_NOT_EQUAL_MESSAGE(uart_fd0, -1, "Cannot open UART");
+    uart_fd1 = open("/dev/uart/1", O_RDWR);
+    TEST_ASSERT_NOT_EQUAL_MESSAGE(uart_fd1, -1, "Cannot open UART");
+    uart_fd2 = open("/dev/uart/1", O_RDWR);
+    TEST_ASSERT_NOT_EQUAL_MESSAGE(uart_fd2, -1, "Cannot open UART");
+
+    test_case_uses_tcpip();
+    socket_init(&socket_fd);
+
+    esp_vfs_dump_fds(stdout);
+
+    close(uart_fd0);
+    close(uart_fd1);
+    close(uart_fd2);
+    close(socket_fd);
 }

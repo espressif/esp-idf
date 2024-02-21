@@ -469,6 +469,25 @@ ssize_t esp_vfs_pread(int fd, void *dst, size_t size, off_t offset);
  */
 ssize_t esp_vfs_pwrite(int fd, const void *src, size_t size, off_t offset);
 
+/**
+ *
+ * @brief Dump the existing VFS FDs data to FILE* fp
+ *
+ * Dump the FDs in the format:
+ @verbatim
+         <VFS Path Prefix>-<FD seen by App>-<FD seen by driver>
+
+    where:
+     VFS Path Prefix   : file prefix used in the esp_vfs_register call
+     FD seen by App    : file descriptor returned by the vfs to the application for the path prefix
+     FD seen by driver : file descriptor used by the driver for the same file prefix.
+
+ @endverbatim
+ *
+ * @param fp         File descriptor where data will be dumped
+ */
+void esp_vfs_dump_fds(FILE *fp);
+
 #ifdef __cplusplus
 } // extern "C"
 #endif

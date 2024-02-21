@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -268,6 +268,26 @@ esp_err_t esp_vfs_unregister_fd(esp_vfs_id_t vfs_id, int fd)
     ESP_LOGD(TAG, "esp_vfs_unregister_fd(%d, %d) finished with %s", vfs_id, fd, esp_err_to_name(ret));
 
     return ret;
+}
+
+void esp_vfs_dump_fds(FILE *fp)
+{
+    const vfs_entry_t* vfs;
+    fprintf(fp, "------------------------------------------------------\n");
+    fprintf(fp, "<VFS Path Prefix>-<FD seen by App>-<FD seen by driver>\n");
+    fprintf(fp, "------------------------------------------------------\n");
+    _lock_acquire(&s_fd_table_lock);
+    for (int index = 0; index < MAX_FDS; index++) {
+        if (s_fd_table[index].vfs_index != -1) {
+            vfs = s_vfs[s_fd_table[index].vfs_index];
+            if (strcmp(vfs->path_prefix, "")) {
+                fprintf(fp, "(%s) - 0x%x - 0x%x\n", vfs->path_prefix, index, s_fd_table[index].local_fd);
+            } else {
+                fprintf(fp, "(socket) - 0x%x - 0x%x\n", index, s_fd_table[index].local_fd);
+            }
+        }
+    }
+    _lock_release(&s_fd_table_lock);
 }
 
 /*
