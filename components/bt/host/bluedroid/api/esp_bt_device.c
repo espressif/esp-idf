@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -54,14 +54,9 @@ esp_err_t esp_bt_dev_set_device_name(const char *name)
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_DEV;
     msg.act = BTC_DEV_ACT_SET_DEVICE_NAME;
-    arg.set_dev_name.device_name = (char *)osi_malloc((BTC_MAX_LOC_BD_NAME_LEN + 1) * sizeof(char));
-    if (!arg.set_dev_name.device_name) {
-        return ESP_ERR_NO_MEM;
-    }
+    arg.set_dev_name.device_name = (char *)name;
 
-    strcpy(arg.set_dev_name.device_name, name);
-
-    return (btc_transfer_context(&msg, &arg, sizeof(btc_dev_args_t), NULL, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_dev_args_t), btc_dev_call_arg_deep_copy, btc_dev_call_arg_deep_free) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
 esp_err_t esp_bt_dev_get_device_name(void)
