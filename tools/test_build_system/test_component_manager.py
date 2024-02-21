@@ -3,23 +3,18 @@
 import os.path
 from pathlib import Path
 
-import pytest
 from test_build_system_helpers import IdfPyFunc
 from test_build_system_helpers import replace_in_file
 
 
-@pytest.mark.test_app_copy('examples/get-started/blink')
 def test_dependency_lock(idf_py: IdfPyFunc, test_app_copy: Path) -> None:
-    with open(test_app_copy / 'CMakeLists.txt', 'r+') as fw:
-        data = fw.read()
-        fw.seek(0)
-        fw.write(
-            data.replace(
-                'project(blink)',
-                'idf_build_set_property(DEPENDENCIES_LOCK dependencies.lock.${IDF_TARGET})\nproject(blink)',
-            )
-        )
+    replace_in_file(
+        test_app_copy / 'CMakeLists.txt',
+        search='# placeholder_after_include_project_cmake',
+        replace='idf_build_set_property(DEPENDENCIES_LOCK dependencies.lock.${IDF_TARGET})',
+    )
 
+    idf_py('add-dependency', 'example/cmp')
     idf_py('fullclean')
     idf_py('reconfigure')
     assert os.path.isfile(test_app_copy / 'dependencies.lock.esp32')
