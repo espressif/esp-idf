@@ -1,8 +1,4 @@
 components/hal/test_apps/crypto:
-  disable_test:
-    - if: IDF_TARGET == "esp32p4"
-      temporary: true
-      reason: test not pass, should be re-enable # TODO: IDF-8982
   depends_components:
     - efuse
 
