@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -22,11 +22,11 @@
 #include "soc/lp_aon_struct.h"
 #include "soc/lp_io_struct.h"
 #include "soc/pmu_struct.h"
-#include "soc/usb_serial_jtag_reg.h"
 #include "soc/pcr_struct.h"
 #include "soc/clk_tree_defs.h"
+#include "soc/usb_serial_jtag_struct.h"
+#include "soc/io_mux_struct.h"
 #include "hal/gpio_types.h"
-#include "hal/misc.h"
 #include "hal/assert.h"
 
 #ifdef __cplusplus
@@ -58,18 +58,15 @@ static inline void gpio_ll_get_io_config(gpio_dev_t *hw, uint32_t gpio_num,
                                          bool *pu, bool *pd, bool *ie, bool *oe, bool *od, uint32_t *drv,
                                          uint32_t *fun_sel, uint32_t *sig_out, bool *slp_sel)
 {
-    // TODO: [ESP32C5] IDF-8717
-    uint32_t bit_mask = 1 << gpio_num;
-    uint32_t iomux_reg_val = REG_READ(GPIO_PIN_MUX_REG[gpio_num]);
-    *pu = (iomux_reg_val & FUN_PU_M) >> FUN_PU_S;
-    *pd = (iomux_reg_val & FUN_PD_M) >> FUN_PD_S;
-    *ie = (iomux_reg_val & FUN_IE_M) >> FUN_IE_S;
-    *oe = (hw->enable.val & bit_mask) >> gpio_num;
+    *pu = IOMUX.gpio[gpio_num].fun_wpu;
+    *pd = IOMUX.gpio[gpio_num].fun_wpd;
+    *ie = IOMUX.gpio[gpio_num].fun_ie;
+    *oe = (hw->enable.val & (1 << gpio_num)) >> gpio_num;
     *od = hw->pin[gpio_num].pad_driver;
-    *drv = (iomux_reg_val & FUN_DRV_M) >> FUN_DRV_S;
-    *fun_sel = (iomux_reg_val & MCU_SEL_M) >> MCU_SEL_S;
+    *drv = IOMUX.gpio[gpio_num].fun_drv;
+    *fun_sel = IOMUX.gpio[gpio_num].mcu_sel;
     *sig_out = hw->func_out_sel_cfg[gpio_num].out_sel;
-    *slp_sel = (iomux_reg_val & SLP_SEL_M) >> SLP_SEL_S;
+    *slp_sel = IOMUX.gpio[gpio_num].slp_sel;
 }
 
 /**
@@ -80,8 +77,7 @@ static inline void gpio_ll_get_io_config(gpio_dev_t *hw, uint32_t gpio_num,
   */
 static inline void gpio_ll_pullup_en(gpio_dev_t *hw, uint32_t gpio_num)
 {
-    // TODO: [ESP32C5] IDF-8717
-    REG_SET_BIT(IO_MUX_GPIO0_REG + (gpio_num * 4), FUN_PU);
+    IOMUX.gpio[gpio_num].fun_wpu = 1;
 }
 
 /**
@@ -93,8 +89,7 @@ static inline void gpio_ll_pullup_en(gpio_dev_t *hw, uint32_t gpio_num)
 __attribute__((always_inline))
 static inline void gpio_ll_pullup_dis(gpio_dev_t *hw, uint32_t gpio_num)
 {
-    // TODO: [ESP32C5] IDF-8717
-    REG_CLR_BIT(IO_MUX_GPIO0_REG + (gpio_num * 4), FUN_PU);
+    IOMUX.gpio[gpio_num].fun_wpu = 0;
 }
 
 /**
@@ -105,8 +100,7 @@ static inline void gpio_ll_pullup_dis(gpio_dev_t *hw, uint32_t gpio_num)
   */
 static inline void gpio_ll_pulldown_en(gpio_dev_t *hw, uint32_t gpio_num)
 {
-    // TODO: [ESP32C5] IDF-8717
-    REG_SET_BIT(IO_MUX_GPIO0_REG + (gpio_num * 4), FUN_PD);
+    IOMUX.gpio[gpio_num].fun_wpd = 1;
 }
 
 /**
@@ -118,17 +112,16 @@ static inline void gpio_ll_pulldown_en(gpio_dev_t *hw, uint32_t gpio_num)
 __attribute__((always_inline))
 static inline void gpio_ll_pulldown_dis(gpio_dev_t *hw, uint32_t gpio_num)
 {
-    // TODO: [ESP32C5] IDF-8717
     // The pull-up value of the USB pins are controlled by the pins’ pull-up value together with USB pull-up value
     // USB DP pin is default to PU enabled
     // Note that esp32C5 has supported USB_EXCHG_PINS feature. If this efuse is burnt, the gpio pin
     // which should be checked is USB_INT_PHY0_DM_GPIO_NUM instead.
     // TODO: read the specific efuse with efuse_ll.h
     if (gpio_num == USB_INT_PHY0_DP_GPIO_NUM) {
-        SET_PERI_REG_MASK(USB_SERIAL_JTAG_CONF0_REG, USB_SERIAL_JTAG_PAD_PULL_OVERRIDE);
-        CLEAR_PERI_REG_MASK(USB_SERIAL_JTAG_CONF0_REG, USB_SERIAL_JTAG_DP_PULLUP);
+        USB_SERIAL_JTAG.conf0.pad_pull_override = 1;
+        USB_SERIAL_JTAG.conf0.dp_pullup = 0;
     }
-    REG_CLR_BIT(IO_MUX_GPIO0_REG + (gpio_num * 4), FUN_PD);
+    IOMUX.gpio[gpio_num].fun_wpd = 0;
 }
 
 /**
@@ -140,7 +133,6 @@ static inline void gpio_ll_pulldown_dis(gpio_dev_t *hw, uint32_t gpio_num)
  */
 static inline void gpio_ll_set_intr_type(gpio_dev_t *hw, uint32_t gpio_num, gpio_int_type_t intr_type)
 {
-    // TODO: [ESP32C5] IDF-8717
     hw->pin[gpio_num].int_type = intr_type;
 }
 
@@ -154,7 +146,6 @@ static inline void gpio_ll_set_intr_type(gpio_dev_t *hw, uint32_t gpio_num, gpio
 __attribute__((always_inline))
 static inline void gpio_ll_get_intr_status(gpio_dev_t *hw, uint32_t core_id, uint32_t *status)
 {
-    // TODO: [ESP32C5] IDF-8717
     (void)core_id;
     *status = hw->pcpu_int.procpu_int;
 }
@@ -169,7 +160,6 @@ static inline void gpio_ll_get_intr_status(gpio_dev_t *hw, uint32_t core_id, uin
 __attribute__((always_inline))
 static inline void gpio_ll_get_intr_status_high(gpio_dev_t *hw, uint32_t core_id, uint32_t *status)
 {
-    // TODO: [ESP32C5] IDF-8717
     *status = 0; // Less than 32 GPIOs in ESP32-C5
 }
 
@@ -182,7 +172,6 @@ static inline void gpio_ll_get_intr_status_high(gpio_dev_t *hw, uint32_t core_id
 __attribute__((always_inline))
 static inline void gpio_ll_clear_intr_status(gpio_dev_t *hw, uint32_t mask)
 {
-    // TODO: [ESP32C5] IDF-8717
     hw->status_w1tc.status_w1tc = mask;
 }
 
@@ -195,7 +184,6 @@ static inline void gpio_ll_clear_intr_status(gpio_dev_t *hw, uint32_t mask)
 __attribute__((always_inline))
 static inline void gpio_ll_clear_intr_status_high(gpio_dev_t *hw, uint32_t mask)
 {
-    // TODO: [ESP32C5] IDF-8717
     // Less than 32 GPIOs on ESP32-C5 Do nothing.
 }
 
@@ -209,7 +197,6 @@ static inline void gpio_ll_clear_intr_status_high(gpio_dev_t *hw, uint32_t mask)
 __attribute__((always_inline))
 static inline void gpio_ll_intr_enable_on_core(gpio_dev_t *hw, uint32_t core_id, uint32_t gpio_num)
 {
-    // TODO: [ESP32C5] IDF-8717
     HAL_ASSERT(core_id == 0 && "target SoC only has a single core");
     GPIO.pin[gpio_num].int_ena = GPIO_LL_PRO_CPU_INTR_ENA;     //enable pro cpu intr
 }
@@ -223,7 +210,6 @@ static inline void gpio_ll_intr_enable_on_core(gpio_dev_t *hw, uint32_t core_id,
 __attribute__((always_inline))
 static inline void gpio_ll_intr_disable(gpio_dev_t *hw, uint32_t gpio_num)
 {
-    // TODO: [ESP32C5] IDF-8717
     hw->pin[gpio_num].int_ena = 0;                             //disable GPIO intr
 }
 
@@ -236,8 +222,7 @@ static inline void gpio_ll_intr_disable(gpio_dev_t *hw, uint32_t gpio_num)
 __attribute__((always_inline))
 static inline void gpio_ll_input_disable(gpio_dev_t *hw, uint32_t gpio_num)
 {
-    // TODO: [ESP32C5] IDF-8717
-    PIN_INPUT_DISABLE(IO_MUX_GPIO0_REG + (gpio_num * 4));
+    IOMUX.gpio[gpio_num].fun_ie = 0;
 }
 
 /**
@@ -248,8 +233,7 @@ static inline void gpio_ll_input_disable(gpio_dev_t *hw, uint32_t gpio_num)
   */
 static inline void gpio_ll_input_enable(gpio_dev_t *hw, uint32_t gpio_num)
 {
-    // TODO: [ESP32C5] IDF-8717
-    PIN_INPUT_ENABLE(IO_MUX_GPIO0_REG + (gpio_num * 4));
+    IOMUX.gpio[gpio_num].fun_ie = 1;
 }
 
 /**
@@ -260,8 +244,7 @@ static inline void gpio_ll_input_enable(gpio_dev_t *hw, uint32_t gpio_num)
  */
 static inline void gpio_ll_pin_filter_enable(gpio_dev_t *hw, uint32_t gpio_num)
 {
-    // TODO: [ESP32C5] IDF-8717
-    PIN_FILTER_EN(IO_MUX_GPIO0_REG + (gpio_num * 4));
+    IOMUX.gpio[gpio_num].filter_en = 1;
 }
 
 /**
@@ -272,8 +255,35 @@ static inline void gpio_ll_pin_filter_enable(gpio_dev_t *hw, uint32_t gpio_num)
  */
 static inline void gpio_ll_pin_filter_disable(gpio_dev_t *hw, uint32_t gpio_num)
 {
-    // TODO: [ESP32C5] IDF-8717
-    PIN_FILTER_DIS(IO_MUX_GPIO0_REG + (gpio_num * 4));
+    IOMUX.gpio[gpio_num].filter_en = 0;
+}
+
+/**
+  * @brief Enable GPIO hysteresis
+  *
+  * @param hw Peripheral GPIO hardware instance address.
+  * @param gpio_num GPIO number
+  */
+static inline void gpio_ll_pin_input_hysteresis_enable(gpio_dev_t *hw, uint32_t gpio_num)
+{
+    // On ESP32C5, there is an efuse bit that controls the hysteresis enable or not for all IOs.
+    // We are not going to use the hardware control in IDF for C5.
+    // Therefore, we need to always switch to use software control first.
+    // i.e. Swt hys_sel to 1, so that hys_en determines whether hysteresis is enabled or not
+    IOMUX.gpio[gpio_num].hys_sel = 1;
+    IOMUX.gpio[gpio_num].hys_en = 1;
+}
+
+/**
+  * @brief Disable GPIO hysteresis
+  *
+  * @param hw Peripheral GPIO hardware instance address.
+  * @param gpio_num GPIO number
+  */
+static inline void gpio_ll_pin_input_hysteresis_disable(gpio_dev_t *hw, uint32_t gpio_num)
+{
+    IOMUX.gpio[gpio_num].hys_sel = 1;
+    IOMUX.gpio[gpio_num].hys_en = 0;
 }
 
 /**
@@ -285,11 +295,9 @@ static inline void gpio_ll_pin_filter_disable(gpio_dev_t *hw, uint32_t gpio_num)
 __attribute__((always_inline))
 static inline void gpio_ll_output_disable(gpio_dev_t *hw, uint32_t gpio_num)
 {
-    // TODO: [ESP32C5] IDF-8717
     hw->enable_w1tc.enable_w1tc = (0x1 << gpio_num);
     // Ensure no other output signal is routed via GPIO matrix to this pin
-    REG_WRITE(GPIO_FUNC0_OUT_SEL_CFG_REG + (gpio_num * 4),
-              SIG_GPIO_OUT_IDX);
+    hw->func_out_sel_cfg[gpio_num].out_sel = SIG_GPIO_OUT_IDX;
 }
 
 /**
@@ -301,7 +309,6 @@ static inline void gpio_ll_output_disable(gpio_dev_t *hw, uint32_t gpio_num)
 __attribute__((always_inline))
 static inline void gpio_ll_output_enable(gpio_dev_t *hw, uint32_t gpio_num)
 {
-    // TODO: [ESP32C5] IDF-8717
     hw->enable_w1ts.enable_w1ts = (0x1 << gpio_num);
 }
 
@@ -313,7 +320,6 @@ static inline void gpio_ll_output_enable(gpio_dev_t *hw, uint32_t gpio_num)
   */
 static inline void gpio_ll_od_disable(gpio_dev_t *hw, uint32_t gpio_num)
 {
-    // TODO: [ESP32C5] IDF-8717
     hw->pin[gpio_num].pad_driver = 0;
 }
 
@@ -325,7 +331,6 @@ static inline void gpio_ll_od_disable(gpio_dev_t *hw, uint32_t gpio_num)
   */
 static inline void gpio_ll_od_enable(gpio_dev_t *hw, uint32_t gpio_num)
 {
-    // TODO: [ESP32C5] IDF-8717
     hw->pin[gpio_num].pad_driver = 1;
 }
 
@@ -339,7 +344,6 @@ static inline void gpio_ll_od_enable(gpio_dev_t *hw, uint32_t gpio_num)
 __attribute__((always_inline))
 static inline void gpio_ll_set_level(gpio_dev_t *hw, uint32_t gpio_num, uint32_t level)
 {
-    // TODO: [ESP32C5] IDF-8717
     if (level) {
         hw->out_w1ts.out_w1ts = (1 << gpio_num);
     } else {
@@ -362,9 +366,7 @@ static inline void gpio_ll_set_level(gpio_dev_t *hw, uint32_t gpio_num, uint32_t
 __attribute__((always_inline))
 static inline int gpio_ll_get_level(gpio_dev_t *hw, uint32_t gpio_num)
 {
-    // TODO: [ESP32C5] IDF-8717
     return (hw->in.in_data_next >> gpio_num) & 0x1;
-    return (int)0;
 }
 
 /**
@@ -375,8 +377,7 @@ static inline int gpio_ll_get_level(gpio_dev_t *hw, uint32_t gpio_num)
  */
 static inline void gpio_ll_wakeup_enable(gpio_dev_t *hw, uint32_t gpio_num)
 {
-    // TODO: [ESP32C5] IDF-8717
-    hw->pin[gpio_num].wakeup_enable = 0x1;
+    hw->pin[gpio_num].wakeup_enable = 1;
 }
 
 /**
@@ -387,7 +388,6 @@ static inline void gpio_ll_wakeup_enable(gpio_dev_t *hw, uint32_t gpio_num)
  */
 static inline void gpio_ll_wakeup_disable(gpio_dev_t *hw, uint32_t gpio_num)
 {
-    // TODO: [ESP32C5] IDF-8717
     hw->pin[gpio_num].wakeup_enable = 0;
 }
 
@@ -400,8 +400,7 @@ static inline void gpio_ll_wakeup_disable(gpio_dev_t *hw, uint32_t gpio_num)
   */
 static inline void gpio_ll_set_drive_capability(gpio_dev_t *hw, uint32_t gpio_num, gpio_drive_cap_t strength)
 {
-    // TODO: [ESP32C5] IDF-8717
-    SET_PERI_REG_BITS(IO_MUX_GPIO0_REG + (gpio_num * 4), FUN_DRV_V, strength, FUN_DRV_S);
+    IOMUX.gpio[gpio_num].fun_drv = strength;
 }
 
 /**
@@ -413,8 +412,7 @@ static inline void gpio_ll_set_drive_capability(gpio_dev_t *hw, uint32_t gpio_nu
   */
 static inline void gpio_ll_get_drive_capability(gpio_dev_t *hw, uint32_t gpio_num, gpio_drive_cap_t *strength)
 {
-    // TODO: [ESP32C5] IDF-8717
-    *strength = (gpio_drive_cap_t)GET_PERI_REG_BITS2(IO_MUX_GPIO0_REG + (gpio_num * 4), FUN_DRV_V, FUN_DRV_S);
+    *strength = (gpio_drive_cap_t)(IOMUX.gpio[gpio_num].fun_drv);
 }
 
 /**
@@ -425,7 +423,6 @@ static inline void gpio_ll_get_drive_capability(gpio_dev_t *hw, uint32_t gpio_nu
   */
 static inline void gpio_ll_hold_en(gpio_dev_t *hw, uint32_t gpio_num)
 {
-    // TODO: [ESP32C5] IDF-8717
     LP_AON.gpio_hold0.gpio_hold0 |= GPIO_HOLD_MASK[gpio_num];
 }
 
@@ -437,7 +434,6 @@ static inline void gpio_ll_hold_en(gpio_dev_t *hw, uint32_t gpio_num)
   */
 static inline void gpio_ll_hold_dis(gpio_dev_t *hw, uint32_t gpio_num)
 {
-    // TODO: [ESP32C5] IDF-8717
     LP_AON.gpio_hold0.gpio_hold0 &= ~GPIO_HOLD_MASK[gpio_num];
 }
 
@@ -456,9 +452,7 @@ static inline void gpio_ll_hold_dis(gpio_dev_t *hw, uint32_t gpio_num)
 __attribute__((always_inline))
 static inline bool gpio_ll_is_digital_io_hold(gpio_dev_t *hw, uint32_t gpio_num)
 {
-    // TODO: [ESP32C5] IDF-8717
     return !!(LP_AON.gpio_hold0.gpio_hold0 & BIT(gpio_num));
-    return (bool)0;
 }
 
 /**
@@ -471,9 +465,8 @@ static inline bool gpio_ll_is_digital_io_hold(gpio_dev_t *hw, uint32_t gpio_num)
 __attribute__((always_inline))
 static inline void gpio_ll_iomux_in(gpio_dev_t *hw, uint32_t gpio, uint32_t signal_idx)
 {
-    // TODO: [ESP32C5] IDF-8717
     hw->func_in_sel_cfg[signal_idx].sig_in_sel = 0;
-    PIN_INPUT_ENABLE(IO_MUX_GPIO0_REG + (gpio * 4));
+    IOMUX.gpio[gpio].fun_ie = 1;
 }
 
 /**
@@ -484,10 +477,9 @@ static inline void gpio_ll_iomux_in(gpio_dev_t *hw, uint32_t gpio, uint32_t sign
  */
 static inline void gpio_ll_iomux_func_sel(uint32_t pin_name, uint32_t func)
 {
-    // TODO: [ESP32C5] IDF-8717
-    // Disable USB Serial JTAG if pins 12 or pins 13 needs to select an IOMUX function
-    if (pin_name == IO_MUX_GPIO12_REG || pin_name == IO_MUX_GPIO13_REG) {
-        CLEAR_PERI_REG_MASK(USB_SERIAL_JTAG_CONF0_REG, USB_SERIAL_JTAG_USB_PAD_ENABLE);
+    // Disable USB Serial JTAG if pins 25 or pins 26 needs to select an IOMUX function
+    if (pin_name == IO_MUX_GPIO25_REG || pin_name == IO_MUX_GPIO26_REG) {
+        USB_SERIAL_JTAG.conf0.usb_pad_enable = 0;
     }
     PIN_FUNC_SELECT(pin_name, func);
 }
@@ -501,7 +493,6 @@ static inline void gpio_ll_iomux_func_sel(uint32_t pin_name, uint32_t func)
  */
 static inline __attribute__((always_inline)) void gpio_ll_set_pin_ctrl(uint32_t val, uint32_t bmap, uint32_t shift)
 {
-    // TODO: [ESP32C5] IDF-8717
     SET_PERI_REG_BITS(PIN_CTRL, bmap, val, shift);
 }
 
@@ -515,12 +506,11 @@ static inline __attribute__((always_inline)) void gpio_ll_set_pin_ctrl(uint32_t 
 __attribute__((always_inline))
 static inline void gpio_ll_func_sel(gpio_dev_t *hw, uint8_t gpio_num, uint32_t func)
 {
-    // TODO: [ESP32C5] IDF-8717
-    // Disable USB Serial JTAG if pins 12 or pins 13 needs to select an IOMUX function
+    // Disable USB Serial JTAG if pins 25 or pins 26 needs to select an IOMUX function
     if (gpio_num == USB_INT_PHY0_DM_GPIO_NUM || gpio_num == USB_INT_PHY0_DP_GPIO_NUM) {
-        CLEAR_PERI_REG_MASK(USB_SERIAL_JTAG_CONF0_REG, USB_SERIAL_JTAG_USB_PAD_ENABLE);
+        USB_SERIAL_JTAG.conf0.usb_pad_enable = 0;
     }
-    PIN_FUNC_SELECT(IO_MUX_GPIO0_REG + (gpio_num * 4), func);
+    IOMUX.gpio[gpio_num].mcu_sel = func;
 }
 
 /**
@@ -534,7 +524,6 @@ static inline void gpio_ll_func_sel(gpio_dev_t *hw, uint8_t gpio_num, uint32_t f
   */
 static inline void gpio_ll_iomux_out(gpio_dev_t *hw, uint8_t gpio_num, int func, uint32_t oen_inv)
 {
-    // TODO: [ESP32C5] IDF-8717
     hw->func_out_sel_cfg[gpio_num].oen_sel = 0;
     hw->func_out_sel_cfg[gpio_num].oen_inv_sel = oen_inv;
     gpio_ll_func_sel(hw, gpio_num, func);
@@ -547,13 +536,15 @@ static inline void gpio_ll_iomux_out(gpio_dev_t *hw, uint8_t gpio_num, int func,
  */
 static inline void gpio_ll_iomux_set_clk_src(soc_module_clk_t src)
 {
-    // TODO: [ESP32C5] IDF-8717
     switch (src) {
-    case SOC_MOD_CLK_XTAL:
-        PCR.iomux_clk_conf.iomux_func_clk_sel = 3;
+     case SOC_MOD_CLK_XTAL:
+        PCR.iomux_clk_conf.iomux_func_clk_sel = 0;
+        break;
+    case SOC_MOD_CLK_RC_FAST:
+        PCR.iomux_clk_conf.iomux_func_clk_sel = 1;
         break;
     case SOC_MOD_CLK_PLL_F80M:
-        PCR.iomux_clk_conf.iomux_func_clk_sel = 1;
+        PCR.iomux_clk_conf.iomux_func_clk_sel = 2;
         break;
     default:
         // Unsupported IO_MUX clock source
@@ -573,11 +564,9 @@ static inline void gpio_ll_iomux_set_clk_src(soc_module_clk_t src)
  */
 static inline int gpio_ll_get_in_signal_connected_io(gpio_dev_t *hw, uint32_t in_sig_idx)
 {
-    // TODO: [ESP32C5] IDF-8717
     gpio_func_in_sel_cfg_reg_t reg;
     reg.val = hw->func_in_sel_cfg[in_sig_idx].val;
     return (reg.sig_in_sel ? reg.in_sel : -1);
-    return (int)0;
 }
 
 /**
@@ -608,8 +597,7 @@ static inline void gpio_ll_force_unhold_all(void)
   */
 static inline void gpio_ll_sleep_sel_en(gpio_dev_t *hw, uint32_t gpio_num)
 {
-    // TODO: [ESP32C5] IDF-8717
-    PIN_SLP_SEL_ENABLE(IO_MUX_GPIO0_REG + (gpio_num * 4));
+    IOMUX.gpio[gpio_num].slp_sel = 1;
 }
 
 /**
@@ -621,8 +609,7 @@ static inline void gpio_ll_sleep_sel_en(gpio_dev_t *hw, uint32_t gpio_num)
   */
 static inline void gpio_ll_sleep_sel_dis(gpio_dev_t *hw, uint32_t gpio_num)
 {
-    // TODO: [ESP32C5] IDF-8717
-    PIN_SLP_SEL_DISABLE(IO_MUX_GPIO0_REG + (gpio_num * 4));
+    IOMUX.gpio[gpio_num].slp_sel = 0;
 }
 
 /**
@@ -633,8 +620,7 @@ static inline void gpio_ll_sleep_sel_dis(gpio_dev_t *hw, uint32_t gpio_num)
   */
 static inline void gpio_ll_sleep_pullup_dis(gpio_dev_t *hw, uint32_t gpio_num)
 {
-    // TODO: [ESP32C5] IDF-8717
-    PIN_SLP_PULLUP_DISABLE(IO_MUX_GPIO0_REG + (gpio_num * 4));
+    IOMUX.gpio[gpio_num].mcu_wpu = 0;
 }
 
 /**
@@ -645,8 +631,7 @@ static inline void gpio_ll_sleep_pullup_dis(gpio_dev_t *hw, uint32_t gpio_num)
   */
 static inline void gpio_ll_sleep_pullup_en(gpio_dev_t *hw, uint32_t gpio_num)
 {
-    // TODO: [ESP32C5] IDF-8717
-    PIN_SLP_PULLUP_ENABLE(IO_MUX_GPIO0_REG + (gpio_num * 4));
+    IOMUX.gpio[gpio_num].mcu_wpu = 1;
 }
 
 /**
@@ -657,8 +642,7 @@ static inline void gpio_ll_sleep_pullup_en(gpio_dev_t *hw, uint32_t gpio_num)
   */
 static inline void gpio_ll_sleep_pulldown_en(gpio_dev_t *hw, uint32_t gpio_num)
 {
-    // TODO: [ESP32C5] IDF-8717
-    PIN_SLP_PULLDOWN_ENABLE(IO_MUX_GPIO0_REG + (gpio_num * 4));
+    IOMUX.gpio[gpio_num].mcu_wpd = 1;
 }
 
 /**
@@ -669,8 +653,7 @@ static inline void gpio_ll_sleep_pulldown_en(gpio_dev_t *hw, uint32_t gpio_num)
   */
 static inline void gpio_ll_sleep_pulldown_dis(gpio_dev_t *hw, uint32_t gpio_num)
 {
-    // TODO: [ESP32C5] IDF-8717
-    PIN_SLP_PULLDOWN_DISABLE(IO_MUX_GPIO0_REG + (gpio_num * 4));
+    IOMUX.gpio[gpio_num].mcu_wpd = 0;
 }
 
 /**
@@ -681,8 +664,7 @@ static inline void gpio_ll_sleep_pulldown_dis(gpio_dev_t *hw, uint32_t gpio_num)
   */
 static inline void gpio_ll_sleep_input_disable(gpio_dev_t *hw, uint32_t gpio_num)
 {
-    // TODO: [ESP32C5] IDF-8717
-    PIN_SLP_INPUT_DISABLE(IO_MUX_GPIO0_REG + (gpio_num * 4));
+    IOMUX.gpio[gpio_num].mcu_ie = 0;
 }
 
 /**
@@ -693,8 +675,7 @@ static inline void gpio_ll_sleep_input_disable(gpio_dev_t *hw, uint32_t gpio_num
   */
 static inline void gpio_ll_sleep_input_enable(gpio_dev_t *hw, uint32_t gpio_num)
 {
-    // TODO: [ESP32C5] IDF-8717
-    PIN_SLP_INPUT_ENABLE(IO_MUX_GPIO0_REG + (gpio_num * 4));
+    IOMUX.gpio[gpio_num].mcu_ie = 1;
 }
 
 /**
@@ -705,8 +686,7 @@ static inline void gpio_ll_sleep_input_enable(gpio_dev_t *hw, uint32_t gpio_num)
   */
 static inline void gpio_ll_sleep_output_disable(gpio_dev_t *hw, uint32_t gpio_num)
 {
-    // TODO: [ESP32C5] IDF-8717
-    PIN_SLP_OUTPUT_DISABLE(IO_MUX_GPIO0_REG + (gpio_num * 4));
+    IOMUX.gpio[gpio_num].mcu_oe = 0;
 }
 
 /**
@@ -717,8 +697,7 @@ static inline void gpio_ll_sleep_output_disable(gpio_dev_t *hw, uint32_t gpio_nu
   */
 static inline void gpio_ll_sleep_output_enable(gpio_dev_t *hw, uint32_t gpio_num)
 {
-    // TODO: [ESP32C5] IDF-8717
-    PIN_SLP_OUTPUT_ENABLE(IO_MUX_GPIO0_REG + (gpio_num * 4));
+    IOMUX.gpio[gpio_num].mcu_oe = 1;
 }
 
 #ifdef __cplusplus

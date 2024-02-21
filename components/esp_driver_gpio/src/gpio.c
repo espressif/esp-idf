@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -337,7 +337,6 @@ esp_err_t gpio_set_direction(gpio_num_t gpio_num, gpio_mode_t mode)
 esp_err_t gpio_config(const gpio_config_t *pGPIOConfig)
 {
     uint64_t gpio_pin_mask = (pGPIOConfig->pin_bit_mask);
-    uint32_t io_reg = 0;
     uint32_t io_num = 0;
     uint8_t input_en = 0;
     uint8_t output_en = 0;
@@ -358,10 +357,7 @@ esp_err_t gpio_config(const gpio_config_t *pGPIOConfig)
     }
 
     do {
-        io_reg = GPIO_PIN_MUX_REG[io_num];
-
         if (((gpio_pin_mask >> io_num) & BIT(0))) {
-            assert(io_reg != (intptr_t)NULL);
 
 #if SOC_RTCIO_PIN_COUNT > 0
             if (rtc_gpio_is_valid_gpio(io_num)) {
@@ -427,7 +423,7 @@ esp_err_t gpio_config(const gpio_config_t *pGPIOConfig)
 #endif  //SOC_GPIO_SUPPORT_PIN_HYS_FILTER
 
             /* By default, all the pins have to be configured as GPIO pins. */
-            gpio_hal_iomux_func_sel(io_reg, PIN_FUNC_GPIO);
+            gpio_hal_func_sel(gpio_context.gpio_hal, io_num, PIN_FUNC_GPIO);
         }
 
         io_num++;

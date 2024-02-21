@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,8 +9,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-// TODO: [ESP32C5] IDF-8717
 
 /**
  * @brief GPIO number
@@ -44,10 +42,6 @@ typedef enum {
     GPIO_NUM_24 = 24,   /*!< GPIO24, input and output */
     GPIO_NUM_25 = 25,   /*!< GPIO25, input and output */
     GPIO_NUM_26 = 26,   /*!< GPIO26, input and output */
-    GPIO_NUM_27 = 27,   /*!< GPIO27, input and output */
-    GPIO_NUM_28 = 28,   /*!< GPIO28, input and output */
-    GPIO_NUM_29 = 29,   /*!< GPIO29, input and output */
-    GPIO_NUM_30 = 30,   /*!< GPIO30, input and output */
     GPIO_NUM_MAX,
 } gpio_num_t;
 
