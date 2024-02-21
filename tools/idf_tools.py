@@ -311,7 +311,8 @@ class Platforms:
         if platform_alias == 'any' and CURRENT_PLATFORM:
             platform_alias = CURRENT_PLATFORM
         platform_name = Platforms.PLATFORM_FROM_NAME.get(platform_alias, None)
-        platform_name = Platforms.detect_linux_arm_platform(platform_name)
+        if sys.platform == 'linux':
+            platform_name = Platforms.detect_linux_arm_platform(platform_name)
 
         if not platform_name:
             raise ValueError(f'Support for platform \'{platform_alias}\' hasn\'t been added yet.')
