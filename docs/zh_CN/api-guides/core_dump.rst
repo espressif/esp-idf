@@ -116,36 +116,45 @@ ELF 格式具备扩展特性，支持在发生崩溃时保存更多关于错误�
     ===============================================================
     ==================== ESP32 CORE DUMP START ====================
 
-    Crashed task handle: 0x3ffc5640, name: 'main', GDB name: 'process 1073501760'
+    Crashed task handle: 0x3ffafba0, name: 'main', GDB name: 'process 1073413024'
+    Crashed task is not in the interrupt context
+    Panic reason: abort() was called at PC 0x400d66b9 on core 0
 
     ================== CURRENT THREAD REGISTERS ===================
     exccause       0x1d (StoreProhibitedCause)
     excvaddr       0x0
-    epc1           0x40027657
+    epc1           0x40084013
     epc2           0x0
     ...
     ==================== CURRENT THREAD STACK =====================
-    #0  0x400251cd in panic_abort (details=0x3ffc553b "abort() was called at PC 0x40087b84 on core 0") at /home/User/esp/esp-idf/components/esp_system/panic.c:452
-    #1  0x40028970 in esp_system_abort (details=0x3ffc553b "abort() was called at PC 0x40087b84 on core 0") at /home/User/esp/esp-idf/components/esp_system/port/esp_system_chip.c:93
+    #0  0x4008110d in panic_abort (details=0x3ffb4f0b "abort() was called at PC 0x400d66b9 on core 0") at /builds/espressif/esp-idf/components/esp_system/panic.c:472
+    #1  0x4008510c in esp_system_abort (details=0x3ffb4f0b "abort() was called at PC 0x400d66b9 on core 0") at /builds/espressif/esp-idf/components/esp_system/port/esp_system_chip.c:93
     ...
     ======================== THREADS INFO =========================
-    Id   Target Id          Frame
-    * 1    process 1073501760 0x400251cd in panic_abort (details=0x3ffc553b "abort() was called at PC 0x40087b84 on core 0") at /home/User/esp/esp-idf/components/esp_system/panic.c:452
-    2    process 1073503644 vPortTaskWrapper (pxCode=0x0, pvParameters=0x0) at /home/User/esp/esp-idf/components/freertos/FreeRTOS-Kernel/portable/xtensa/port.c:161
+      Id   Target Id          Frame
+    * 1    process 1073413024 0x4008110d in panic_abort (details=0x3ffb4f0b "abort() was called at PC 0x400d66b9 on core 0") at /builds/espressif/esp-idf/components/esp_system/panic.c:472
+      2    process 1073413368 vPortTaskWrapper (pxCode=0x0, pvParameters=0x0) at /builds/espressif/esp-idf/components/freertos/FreeRTOS-Kernel/portable/xtensa/port.c:133
     ...
-    ==================== THREAD 1 (TCB: 0x3ffc5640, name: 'main') =====================
-    #0  0x400251cd in panic_abort (details=0x3ffc553b "abort() was called at PC 0x40087b84 on core 0") at /home/User/esp/esp-idf/components/esp_system/panic.c:452
-    #1  0x40028970 in esp_system_abort (details=0x3ffc553b "abort() was called at PC 0x40087b84 on core 0") at /home/User/esp/esp-idf/components/esp_system/port/esp_system_chip.c:93
+           TCB             NAME PRIO C/B  STACK USED/FREE
+    ---------- ---------------- -------- ----------------
+    0x3ffafba0             main      1/1         368/3724
+    0x3ffafcf8            IDLE0      0/0         288/1240
+    0x3ffafe50            IDLE1      0/0         416/1108
     ...
-    ==================== THREAD 2 (TCB: 0x3ffc5d9c, name: 'IDLE') =====================
-    #0  vPortTaskWrapper (pxCode=0x0, pvParameters=0x0) at /home/User/esp/esp-idf/components/freertos/FreeRTOS-Kernel/portable/xtensa/port.c:161
+    ==================== THREAD 1 (TCB: 0x3ffafba0, name: 'main') =====================
+    #0  0x4008110d in panic_abort (details=0x3ffb4f0b "abort() was called at PC 0x400d66b9 on core 0") at /builds/espressif/esp-idf/components/esp_system/panic.c:472
+    #1  0x4008510c in esp_system_abort (details=0x3ffb4f0b "abort() was called at PC 0x400d66b9 on core 0") at /builds/espressif/esp-idf/components/esp_system/port/esp_system_chip.c:93
+    ...
+    ==================== THREAD 2 (TCB: 0x3ffafcf8, name: 'IDLE0') =====================
+    #0  vPortTaskWrapper (pxCode=0x0, pvParameters=0x0) at /builds/espressif/esp-idf/components/freertos/FreeRTOS-Kernel/portable/xtensa/port.c:133
     #1  0x40000000 in ?? ()
     ...
     ======================= ALL MEMORY REGIONS ========================
     Name   Address   Size   Attrs
     ...
-    .iram0.vectors 0x40024000 0x403 R XA
-    .dram0.data 0x3ffbf1c0 0x2c0c RW A
+    .iram0.vectors 0x40080000 0x403 R XA
+    .iram0.text 0x40080404 0xb8ab R XA
+    .dram0.data 0x3ffb0000 0x2114 RW A
     ...
     ===================== ESP32 CORE DUMP END =====================
     ===============================================================
