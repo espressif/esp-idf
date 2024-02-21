@@ -37,8 +37,8 @@ CONSTR = 'Constraint file: {}'.format(os.path.join(TOOLS_DIR, 'espidf.constraint
 # Set default global paths for idf_tools. If some test needs to
 # use functions from idf_tools with custom paths, it should
 # set it in setUp() and change them back to defaults in tearDown().
-idf_tools.global_idf_path = IDF_PATH
-idf_tools.global_idf_tools_path = TOOLS_DIR
+idf_tools.g.idf_path = IDF_PATH
+idf_tools.g.idf_tools_path = TOOLS_DIR
 
 
 def setUpModule():  # type: () -> None
