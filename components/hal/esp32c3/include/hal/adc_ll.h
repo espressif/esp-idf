@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -58,6 +58,13 @@ extern "C" {
 #define ADC_LL_CLKM_DIV_A_DEFAULT         0
 #define ADC_LL_DEFAULT_CONV_LIMIT_EN      0
 #define ADC_LL_DEFAULT_CONV_LIMIT_NUM     10
+
+/**
+ * Workaround: on ESP32C3, the internal hardware counter that counts ADC samples will not be automatically cleared,
+ * and there is no dedicated register to manually clear it. (see section 3.2 of the errata document).
+ * Therefore, traverse from 0 to the value configured last time, so as to clear the ADC sample counter.
+ */
+#define ADC_LL_WORKAROUND_CLEAR_EOF_COUNTER            (1)
 
 /*---------------------------------------------------------------
                     PWDET (Power Detect)
@@ -484,6 +491,18 @@ static inline void adc_ll_digi_monitor_clear_intr(void)
 static inline void adc_ll_digi_dma_set_eof_num(uint32_t num)
 {
     HAL_FORCE_MODIFY_U32_REG_FIELD(APB_SARADC.dma_conf, apb_adc_eof_num, num);
+}
+
+/**
+ * Clear ADC sample counter of adc digital controller.
+ */
+static inline void adc_ll_digi_dma_clr_eof(void)
+{
+    uint32_t eof_num = HAL_FORCE_READ_U32_REG_FIELD(APB_SARADC.dma_conf, apb_adc_eof_num);
+    for (int i = 0; i <= eof_num; i++)
+    {
+        HAL_FORCE_MODIFY_U32_REG_FIELD(APB_SARADC.dma_conf, apb_adc_eof_num, i);
+    }
 }
 
 /**
