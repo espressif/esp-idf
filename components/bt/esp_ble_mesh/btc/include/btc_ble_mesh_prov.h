@@ -341,6 +341,7 @@ typedef union {
     } model_unsub_group_addr;
     struct ble_mesh_deinit_args {
         esp_ble_mesh_deinit_param_t param;
+        SemaphoreHandle_t semaphore;
     } mesh_deinit;
 } btc_ble_mesh_prov_args_t;
 

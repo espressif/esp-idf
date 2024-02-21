@@ -2825,6 +2825,8 @@ void btc_ble_mesh_prov_call_handler(btc_msg_t *msg)
     case BTC_BLE_MESH_ACT_DEINIT_MESH:
         act = ESP_BLE_MESH_DEINIT_MESH_COMP_EVT;
         param.deinit_mesh_comp.err_code = bt_mesh_deinit((struct bt_mesh_deinit_param *)&arg->mesh_deinit.param);
+        /* Give the semaphore when BLE Mesh de-initialization is finished. */
+        xSemaphoreGive(arg->mesh_deinit.semaphore);
         break;
 #endif /* CONFIG_BLE_MESH_DEINIT */
     default:
