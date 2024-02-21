@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding=utf-8
 #
-# SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -27,7 +27,6 @@
 # * To start using the tools, run `eval "$(idf_tools.py export)"` — this will update
 #   the PATH to point to the installed tools and set up other environment variables
 #   needed by the tools.
-
 import argparse
 import contextlib
 import copy
@@ -47,7 +46,8 @@ import sys
 import tarfile
 import tempfile
 import time
-from collections import OrderedDict, namedtuple
+from collections import namedtuple
+from collections import OrderedDict
 from json import JSONEncoder
 from ssl import SSLContext  # noqa: F401
 from tarfile import TarFile  # noqa: F401
@@ -96,6 +96,9 @@ IDF_TOOLS_INSTALL_CMD = os.environ.get('IDF_TOOLS_INSTALL_CMD')
 IDF_TOOLS_EXPORT_CMD = os.environ.get('IDF_TOOLS_INSTALL_CMD')
 IDF_DL_URL = 'https://dl.espressif.com/dl/esp-idf'
 IDF_PIP_WHEELS_URL = os.environ.get('IDF_PIP_WHEELS_URL', 'https://dl.espressif.com/pypi')
+PYTHON_VENV_DIR_TEMPLATE = 'idf{}_py{}_env'
+PYTHON_VER_MAJOR_MINOR = f'{sys.version_info.major}.{sys.version_info.minor}'
+VENV_VER_FILE = 'idf_version.txt'
 
 PYTHON_PLATFORM = platform.system() + '-' + platform.machine()
 
@@ -1401,11 +1404,11 @@ def get_idf_version() -> str:
 
 
 def get_python_env_path() -> Tuple[str, str, str, str]:
-    python_ver_major_minor = '{}.{}'.format(sys.version_info.major, sys.version_info.minor)
-
     idf_version = get_idf_version()
-    idf_python_env_path = os.getenv('IDF_PYTHON_ENV_PATH') or os.path.join(global_idf_tools_path or '', 'python_env',
-                                                                           'idf{}_py{}_env'.format(idf_version, python_ver_major_minor))
+    idf_python_env_path = os.getenv('IDF_PYTHON_ENV_PATH') or os.path.join(global_idf_tools_path or '',
+                                                                           'python_env',
+                                                                           PYTHON_VENV_DIR_TEMPLATE.format(idf_version,
+                                                                                                           PYTHON_VER_MAJOR_MINOR))
 
     python_exe, subdir = get_python_exe_and_subdir()
     idf_python_export_path = os.path.join(idf_python_env_path, subdir)
@@ -1766,6 +1769,23 @@ def process_tool(
     return tool_export_paths, tool_export_vars, tool_found
 
 
+def check_python_venv_compatibility(idf_python_env_path: str, idf_version: str) -> None:
+    try:
+        with open(os.path.join(idf_python_env_path, VENV_VER_FILE), 'r') as f:
+            read_idf_version = f.read().strip()
+        if read_idf_version != idf_version:
+            fatal(f'Python environment is set to {idf_python_env_path} which was generated for '
+                  f'ESP-IDF {read_idf_version} instead of the current {idf_version}. '
+                  'The issue can be solved by (1) removing the directory and re-running the install script, '
+                  'or (2) unsetting the IDF_PYTHON_ENV_PATH environment variable, or (3) '
+                  're-runing the install script from a clean shell where an ESP-IDF environment is '
+                  'not active.')
+            raise SystemExit(1)
+    except OSError as e:
+        # perhaps the environment was generated before the support for VENV_VER_FILE was added
+        warn(f'Error while accessing the ESP-IDF version file in the Python environment: {e}')
+
+
 def action_export(args):  # type: ignore
     if args.deactivate and different_idf_detected():
         deactivate_statement(args)
@@ -1803,6 +1823,8 @@ def action_export(args):  # type: ignore
     idf_version = get_idf_version()
     if os.getenv('ESP_IDF_VERSION') != idf_version:
         export_vars['ESP_IDF_VERSION'] = idf_version
+
+    check_python_venv_compatibility(idf_python_env_path, idf_version)
 
     idf_tools_dir = os.path.join(global_idf_path, 'tools')
     idf_tools_dir = to_shell_specific_paths([idf_tools_dir])[0]
@@ -2163,7 +2185,9 @@ def action_install_python_env(args):  # type: ignore
 
     venv_can_upgrade = False
 
-    if not os.path.exists(virtualenv_python):
+    if os.path.exists(virtualenv_python):
+        check_python_venv_compatibility(idf_python_env_path, idf_version)
+    else:
         if subprocess.run([sys.executable, '-m', 'venv', '-h'], check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode == 0:
             # venv available
             virtualenv_options = ['--clear']  # delete environment if already exists
@@ -2173,10 +2197,34 @@ def action_install_python_env(args):  # type: ignore
                 venv_can_upgrade = True
 
             info('Creating a new Python environment in {}'.format(idf_python_env_path))
+
+            try:
+                environ_idf_python_env_path = os.environ['IDF_PYTHON_ENV_PATH']
+                correct_env_path = environ_idf_python_env_path.endswith(PYTHON_VENV_DIR_TEMPLATE.format(idf_version,
+                                                                                                        PYTHON_VER_MAJOR_MINOR))
+                if not correct_env_path and re.search(PYTHON_VENV_DIR_TEMPLATE.format(r'\d+\.\d+', r'\d+\.\d+'),
+                                                      environ_idf_python_env_path):
+                    warn(f'IDF_PYTHON_ENV_PATH is set to {environ_idf_python_env_path} but it does not match '
+                         f'the detected {idf_version} ESP-IDF version and/or the used {PYTHON_VER_MAJOR_MINOR} '
+                         'version of Python. If you have not set IDF_PYTHON_ENV_PATH intentionally then it is '
+                         'recommended to re-run this script from a clean shell where an ESP-IDF environment is '
+                         'not active.')
+
+            except KeyError:
+                # if IDF_PYTHON_ENV_PATH not defined then the above checks can be skipped
+                pass
+
             subprocess.check_call([sys.executable, '-m', 'venv',
                                   *virtualenv_options,
                                   idf_python_env_path],
                                   stdout=sys.stdout, stderr=sys.stderr)
+
+            try:
+                with open(os.path.join(idf_python_env_path, VENV_VER_FILE), 'w') as f:
+                    f.write(idf_version)
+            except OSError as e:
+                warn(f'Error while generating the ESP-IDF version file in the Python environment: {e}')
+
         else:
             # The embeddable Python for Windows doesn't have the built-in venv module
             install_legacy_python_virtualenv(idf_python_env_path)
