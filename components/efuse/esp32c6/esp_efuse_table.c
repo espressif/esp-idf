@@ -9,7 +9,7 @@
 #include <assert.h>
 #include "esp_efuse_table.h"
 
-// md5_digest_table fd5a35cea89bfad954e834bc92bed385
+// md5_digest_table 0d9c0c6a65ccf2d4a7279ede32b6f797
 // This file was generated from the file esp_efuse_table.csv. DO NOT CHANGE THIS FILE MANUALLY.
 // If you want to change some fields, you need to change esp_efuse_table.csv file
 // then run `efuse_common_table` or `efuse_custom_table` command it will generate this file.
@@ -185,6 +185,34 @@ static const esp_efuse_desc_t WR_DIS_MAC[] = {
 
 static const esp_efuse_desc_t WR_DIS_MAC_EXT[] = {
     {EFUSE_BLK0, 20, 1}, 	 // [] wr_dis of MAC_EXT,
+};
+
+static const esp_efuse_desc_t WR_DIS_ACTIVE_HP_DBIAS[] = {
+    {EFUSE_BLK0, 20, 1}, 	 // [] wr_dis of ACTIVE_HP_DBIAS,
+};
+
+static const esp_efuse_desc_t WR_DIS_ACTIVE_LP_DBIAS[] = {
+    {EFUSE_BLK0, 20, 1}, 	 // [] wr_dis of ACTIVE_LP_DBIAS,
+};
+
+static const esp_efuse_desc_t WR_DIS_LSLP_HP_DBG[] = {
+    {EFUSE_BLK0, 20, 1}, 	 // [] wr_dis of LSLP_HP_DBG,
+};
+
+static const esp_efuse_desc_t WR_DIS_LSLP_HP_DBIAS[] = {
+    {EFUSE_BLK0, 20, 1}, 	 // [] wr_dis of LSLP_HP_DBIAS,
+};
+
+static const esp_efuse_desc_t WR_DIS_DSLP_LP_DBG[] = {
+    {EFUSE_BLK0, 20, 1}, 	 // [] wr_dis of DSLP_LP_DBG,
+};
+
+static const esp_efuse_desc_t WR_DIS_DSLP_LP_DBIAS[] = {
+    {EFUSE_BLK0, 20, 1}, 	 // [] wr_dis of DSLP_LP_DBIAS,
+};
+
+static const esp_efuse_desc_t WR_DIS_DBIAS_VOL_GAP[] = {
+    {EFUSE_BLK0, 20, 1}, 	 // [] wr_dis of DBIAS_VOL_GAP,
 };
 
 static const esp_efuse_desc_t WR_DIS_WAFER_VERSION_MINOR[] = {
@@ -553,6 +581,34 @@ static const esp_efuse_desc_t MAC_EXT[] = {
     {EFUSE_BLK1, 48, 8}, 	 // [] Stores the extended bits of MAC address,
 };
 
+static const esp_efuse_desc_t ACTIVE_HP_DBIAS[] = {
+    {EFUSE_BLK1, 64, 5}, 	 // [] Stores the active hp dbias,
+};
+
+static const esp_efuse_desc_t ACTIVE_LP_DBIAS[] = {
+    {EFUSE_BLK1, 69, 5}, 	 // [] Stores the active lp dbias,
+};
+
+static const esp_efuse_desc_t LSLP_HP_DBG[] = {
+    {EFUSE_BLK1, 74, 2}, 	 // [] Stores the lslp hp dbg,
+};
+
+static const esp_efuse_desc_t LSLP_HP_DBIAS[] = {
+    {EFUSE_BLK1, 76, 4}, 	 // [] Stores the lslp hp dbias,
+};
+
+static const esp_efuse_desc_t DSLP_LP_DBG[] = {
+    {EFUSE_BLK1, 80, 3}, 	 // [] Stores the dslp lp dbg,
+};
+
+static const esp_efuse_desc_t DSLP_LP_DBIAS[] = {
+    {EFUSE_BLK1, 83, 4}, 	 // [] Stores the dslp lp dbias,
+};
+
+static const esp_efuse_desc_t DBIAS_VOL_GAP[] = {
+    {EFUSE_BLK1, 87, 5}, 	 // [] Stores the hp and lp dbias vol gap,
+};
+
 static const esp_efuse_desc_t WAFER_VERSION_MINOR[] = {
     {EFUSE_BLK1, 114, 4}, 	 // [],
 };
@@ -909,6 +965,41 @@ const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_MAC[] = {
 
 const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_MAC_EXT[] = {
     &WR_DIS_MAC_EXT[0],    		// [] wr_dis of MAC_EXT
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ACTIVE_HP_DBIAS[] = {
+    &WR_DIS_ACTIVE_HP_DBIAS[0],    		// [] wr_dis of ACTIVE_HP_DBIAS
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ACTIVE_LP_DBIAS[] = {
+    &WR_DIS_ACTIVE_LP_DBIAS[0],    		// [] wr_dis of ACTIVE_LP_DBIAS
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_LSLP_HP_DBG[] = {
+    &WR_DIS_LSLP_HP_DBG[0],    		// [] wr_dis of LSLP_HP_DBG
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_LSLP_HP_DBIAS[] = {
+    &WR_DIS_LSLP_HP_DBIAS[0],    		// [] wr_dis of LSLP_HP_DBIAS
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_DSLP_LP_DBG[] = {
+    &WR_DIS_DSLP_LP_DBG[0],    		// [] wr_dis of DSLP_LP_DBG
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_DSLP_LP_DBIAS[] = {
+    &WR_DIS_DSLP_LP_DBIAS[0],    		// [] wr_dis of DSLP_LP_DBIAS
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_DBIAS_VOL_GAP[] = {
+    &WR_DIS_DBIAS_VOL_GAP[0],    		// [] wr_dis of DBIAS_VOL_GAP
     NULL
 };
 
@@ -1365,6 +1456,41 @@ const esp_efuse_desc_t* ESP_EFUSE_MAC[] = {
 const esp_efuse_desc_t* ESP_EFUSE_MAC_EXT[] = {
     &MAC_EXT[0],    		// [] Stores the extended bits of MAC address
     &MAC_EXT[1],    		// [] Stores the extended bits of MAC address
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_ACTIVE_HP_DBIAS[] = {
+    &ACTIVE_HP_DBIAS[0],    		// [] Stores the active hp dbias
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_ACTIVE_LP_DBIAS[] = {
+    &ACTIVE_LP_DBIAS[0],    		// [] Stores the active lp dbias
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_LSLP_HP_DBG[] = {
+    &LSLP_HP_DBG[0],    		// [] Stores the lslp hp dbg
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_LSLP_HP_DBIAS[] = {
+    &LSLP_HP_DBIAS[0],    		// [] Stores the lslp hp dbias
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_DSLP_LP_DBG[] = {
+    &DSLP_LP_DBG[0],    		// [] Stores the dslp lp dbg
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_DSLP_LP_DBIAS[] = {
+    &DSLP_LP_DBIAS[0],    		// [] Stores the dslp lp dbias
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_DBIAS_VOL_GAP[] = {
+    &DBIAS_VOL_GAP[0],    		// [] Stores the hp and lp dbias vol gap
     NULL
 };
 

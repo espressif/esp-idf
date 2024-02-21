@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,10 +17,34 @@
 #include "hal/lp_aon_hal.h"
 #include "esp_private/esp_pmu.h"
 #include "pmu_param.h"
+#include "hal/efuse_ll.h"
+#include "hal/efuse_hal.h"
+#include "esp_hw_log.h"
+
+static __attribute__((unused)) const char *TAG = "pmu_sleep";
 
 #define HP(state)   (PMU_MODE_HP_ ## state)
 #define LP(state)   (PMU_MODE_LP_ ## state)
 
+uint32_t get_slp_lp_dbias(void)
+{
+    /* pmu_lp_dbias_sleep_0v7 is read from efuse to ensure that the HP_LDO_voltage is close to 0.68V,
+    ** and the LP_LDO_voltage is close to 0.73V
+    */
+    uint32_t pmu_lp_dbias_sleep_0v7 = PMU_LP_DBIAS_SLEEP_0V7_DEFAULT;
+    unsigned blk_version = efuse_hal_blk_version();
+    if (blk_version >= 3) {
+        pmu_lp_dbias_sleep_0v7 = efuse_ll_get_dslp_dbias();
+        if (pmu_lp_dbias_sleep_0v7 == 0) {
+            pmu_lp_dbias_sleep_0v7 = PMU_LP_DBIAS_SLEEP_0V7_DEFAULT;
+            ESP_HW_LOGD(TAG, "slp dbias not burnt in efuse or wrong value was burnt in blk version: %d\n", blk_version);
+        }
+    } else {
+        ESP_HW_LOGD(TAG, "blk_version is less than 3, slp dbias not burnt in efuse\n");
+    }
+
+    return pmu_lp_dbias_sleep_0v7;
+}
 
 void pmu_sleep_enable_regdma_backup(void)
 {
@@ -122,21 +146,24 @@ const pmu_sleep_config_t* pmu_sleep_config_default(
 
     if (dslp) {
         pmu_sleep_analog_config_t analog_default = PMU_SLEEP_ANALOG_DSLP_CONFIG_DEFAULT(pd_flags);
+        analog_default.lp_sys[LP(SLEEP)].analog.dbias = get_slp_lp_dbias();
         config->analog = analog_default;
     } else {
         pmu_sleep_digital_config_t digital_default = PMU_SLEEP_DIGITAL_LSLP_CONFIG_DEFAULT(pd_flags);
         config->digital = digital_default;
 
         pmu_sleep_analog_config_t analog_default = PMU_SLEEP_ANALOG_LSLP_CONFIG_DEFAULT(pd_flags);
+        analog_default.hp_sys.analog.dbias = PMU_HP_DBIAS_LIGHTSLEEP_0V6_DEFAULT;
+        analog_default.lp_sys[LP(SLEEP)].analog.dbias = get_slp_lp_dbias();
         if (!(pd_flags & PMU_SLEEP_PD_XTAL)){
             analog_default.hp_sys.analog.xpd_trx = PMU_XPD_TRX_SLEEP_ON;
-            analog_default.hp_sys.analog.dbias = HP_CALI_DBIAS;
+            analog_default.hp_sys.analog.dbias = get_act_hp_dbias();
             analog_default.hp_sys.analog.pd_cur = PMU_PD_CUR_SLEEP_ON;
             analog_default.hp_sys.analog.bias_sleep = PMU_BIASSLP_SLEEP_ON;
 
             analog_default.lp_sys[LP(SLEEP)].analog.pd_cur = PMU_PD_CUR_SLEEP_ON;
             analog_default.lp_sys[LP(SLEEP)].analog.bias_sleep = PMU_BIASSLP_SLEEP_ON;
-            analog_default.lp_sys[LP(SLEEP)].analog.dbias = LP_CALI_DBIAS;
+            analog_default.lp_sys[LP(SLEEP)].analog.dbias = get_act_lp_dbias();
         }
         config->analog = analog_default;
     }
