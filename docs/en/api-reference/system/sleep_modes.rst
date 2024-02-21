@@ -254,7 +254,13 @@ RTC peripherals or RTC memories do not need to be powered on during sleep in thi
 
     .. only:: SOC_PM_SUPPORT_EXT1_WAKEUP_MODE_PER_PIN
 
-        The RTC controller also supports triggering wakeup, allowing configurable IO to use different wakeup levels simultaneously. This can be configured with :cpp:func`esp_sleep_enable_ext1_wakeup_io`.
+        The RTC controller also supports triggering wakeup, allowing configurable IO to use different wakeup levels simultaneously. This can be configured with :cpp:func:`esp_sleep_enable_ext1_wakeup_io`.
+
+    .. only:: not SOC_PM_SUPPORT_EXT1_WAKEUP_MODE_PER_PIN
+
+        .. note::
+
+           Due to hardware limitation, When we use multi-IOs for EXT1 wakeup, it is not allowed to configue these IOs to different triggering modes, and there is corresponding inspection mechanism in :cpp:func:`esp_sleep_enable_ext1_wakeup_io`.
 
     .. warning::
 
