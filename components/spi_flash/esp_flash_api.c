@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -82,12 +82,12 @@ _Static_assert(sizeof(io_mode_str)/IO_STR_LEN == SPI_FLASH_READ_MODE_MAX, "the i
 
 esp_err_t esp_flash_read_chip_id(esp_flash_t* chip, uint32_t* flash_id);
 
-#ifndef CONFIG_SPI_FLASH_ROM_IMPL
+#if !CONFIG_SPI_FLASH_ROM_IMPL || ESP_ROM_HAS_ENC_WRITES_USING_LEGACY_DRV
 static esp_err_t spiflash_start_default(esp_flash_t *chip);
 static esp_err_t spiflash_end_default(esp_flash_t *chip, esp_err_t err);
 static esp_err_t check_chip_pointer_default(esp_flash_t **inout_chip);
 static esp_err_t flash_end_flush_cache(esp_flash_t* chip, esp_err_t err, bool bus_acquired, uint32_t address, uint32_t length);
-#endif //CONFIG_SPI_FLASH_ROM_IMPL
+#endif // !CONFIG_SPI_FLASH_ROM_IMPL || ESP_ROM_HAS_ENC_WRITES_USING_LEGACY_DRV
 
 typedef struct {
     esp_err_t (*start)(esp_flash_t *chip);
@@ -96,7 +96,7 @@ typedef struct {
     esp_err_t (*flash_end_flush_cache)(esp_flash_t* chip, esp_err_t err, bool bus_acquired, uint32_t address, uint32_t length);
 } rom_spiflash_api_func_t;
 
-#ifndef CONFIG_SPI_FLASH_ROM_IMPL
+#if !CONFIG_SPI_FLASH_ROM_IMPL || ESP_ROM_HAS_ENC_WRITES_USING_LEGACY_DRV
 // These functions can be placed in the ROM. For now we use the code in IDF.
 DRAM_ATTR static rom_spiflash_api_func_t default_spiflash_rom_api = {
     .start = spiflash_start_default,
@@ -109,14 +109,14 @@ DRAM_ATTR rom_spiflash_api_func_t *rom_spiflash_api_funcs = &default_spiflash_ro
 #else
 extern rom_spiflash_api_func_t *esp_flash_api_funcs;
 #define rom_spiflash_api_funcs esp_flash_api_funcs
-#endif // CONFIG_SPI_FLASH_ROM_IMPL
+#endif // !CONFIG_SPI_FLASH_ROM_IMPL || ESP_ROM_HAS_ENC_WRITES_USING_LEGACY_DRV
 
 /* Static function to notify OS of a new SPI flash operation.
 
    If returns an error result, caller must abort. If returns ESP_OK, caller must
    call rom_spiflash_api_funcs->end() before returning.
 */
-#ifndef CONFIG_SPI_FLASH_ROM_IMPL
+#if !CONFIG_SPI_FLASH_ROM_IMPL || ESP_ROM_HAS_ENC_WRITES_USING_LEGACY_DRV
 static esp_err_t IRAM_ATTR spiflash_start_default(esp_flash_t *chip)
 {
     if (chip->os_func != NULL && chip->os_func->start != NULL) {
@@ -175,7 +175,7 @@ static IRAM_ATTR esp_err_t flash_end_flush_cache(esp_flash_t* chip, esp_err_t er
     }
     return rom_spiflash_api_funcs->end(chip, err);
 }
-#endif //CONFIG_SPI_FLASH_ROM_IMPL
+#endif // !CONFIG_SPI_FLASH_ROM_IMPL || ESP_ROM_HAS_ENC_WRITES_USING_LEGACY_DRV
 
 /* Top-level API functions, calling into chip_drv functions via chip->drv */
 
@@ -943,6 +943,81 @@ esp_err_t IRAM_ATTR esp_flash_write(esp_flash_t *chip, const void *buffer, uint3
     return rom_spiflash_api_funcs->flash_end_flush_cache(chip, err, bus_acquired, address, length);
 }
 
+inline static IRAM_ATTR bool regions_overlap(uint32_t a_start, uint32_t a_len,uint32_t b_start, uint32_t b_len)
+{
+    uint32_t a_end = a_start + a_len;
+    uint32_t b_end = b_start + b_len;
+    return (a_end > b_start && b_end > a_start);
+}
+
+esp_err_t IRAM_ATTR esp_flash_read_encrypted(esp_flash_t *chip, uint32_t address, void *out_buffer, uint32_t length)
+{
+    esp_err_t err = rom_spiflash_api_funcs->chip_check(&chip);
+    if (err != ESP_OK) {
+        return err;
+    }
+    if (address + length > g_rom_flashchip.chip_size) {
+        return ESP_ERR_INVALID_SIZE;
+    }
+    if (length == 0) {
+        return ESP_OK;
+    }
+    if (out_buffer == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    const uint8_t *map;
+    spi_flash_mmap_handle_t map_handle;
+    size_t map_src = address & ~(SPI_FLASH_MMU_PAGE_SIZE - 1);
+    size_t map_size = length + (address - map_src);
+
+    err = spi_flash_mmap(map_src, map_size, SPI_FLASH_MMAP_DATA, (const void **)&map, &map_handle);
+    if (err != ESP_OK) {
+        return err;
+    }
+    memcpy(out_buffer, map + (address - map_src), length);
+    spi_flash_munmap(map_handle);
+
+    return err;
+}
+
+// test only, non-public
+IRAM_ATTR esp_err_t esp_flash_get_io_mode(esp_flash_t* chip, bool* qe)
+{
+    esp_err_t err = rom_spiflash_api_funcs->chip_check(&chip);
+    VERIFY_CHIP_OP(get_io_mode);
+    esp_flash_io_mode_t io_mode;
+
+    err = rom_spiflash_api_funcs->start(chip);
+    if (err != ESP_OK) {
+        return err;
+    }
+    err = chip->chip_drv->get_io_mode(chip, &io_mode);
+    err = rom_spiflash_api_funcs->end(chip, err);
+    if (err == ESP_OK) {
+        *qe = (io_mode == SPI_FLASH_QOUT);
+    }
+    return err;
+}
+
+IRAM_ATTR esp_err_t esp_flash_set_io_mode(esp_flash_t* chip, bool qe)
+{
+    esp_err_t err = rom_spiflash_api_funcs->chip_check(&chip);
+    VERIFY_CHIP_OP(set_io_mode);
+
+    chip->read_mode = (qe? SPI_FLASH_QOUT: SPI_FLASH_SLOWRD);
+    err = rom_spiflash_api_funcs->start(chip);
+    if (err != ESP_OK) {
+        return err;
+    }
+    err = chip->chip_drv->set_io_mode(chip);
+    return rom_spiflash_api_funcs->end(chip, err);
+}
+#endif //CONFIG_SPI_FLASH_ROM_IMPL
+
+#if !CONFIG_SPI_FLASH_ROM_IMPL || ESP_ROM_HAS_ENC_WRITES_USING_LEGACY_DRV
+// use `esp_flash_write_encrypted` ROM version not in C3 and S3
+
 esp_err_t IRAM_ATTR esp_flash_write_encrypted(esp_flash_t *chip, uint32_t address, const void *buffer, uint32_t length)
 {
     esp_err_t err = rom_spiflash_api_funcs->chip_check(&chip);
@@ -1067,74 +1142,7 @@ esp_err_t IRAM_ATTR esp_flash_write_encrypted(esp_flash_t *chip, uint32_t addres
     return rom_spiflash_api_funcs->flash_end_flush_cache(chip, err, bus_acquired, address, length);
 }
 
-inline static IRAM_ATTR bool regions_overlap(uint32_t a_start, uint32_t a_len,uint32_t b_start, uint32_t b_len)
-{
-    uint32_t a_end = a_start + a_len;
-    uint32_t b_end = b_start + b_len;
-    return (a_end > b_start && b_end > a_start);
-}
-
-esp_err_t IRAM_ATTR esp_flash_read_encrypted(esp_flash_t *chip, uint32_t address, void *out_buffer, uint32_t length)
-{
-    esp_err_t err = rom_spiflash_api_funcs->chip_check(&chip);
-    if (err != ESP_OK) return err;
-    if (address + length > g_rom_flashchip.chip_size) {
-        return ESP_ERR_INVALID_SIZE;
-    }
-    if (length == 0) {
-        return ESP_OK;
-    }
-    if (out_buffer == NULL) {
-        return ESP_ERR_INVALID_ARG;
-    }
-
-    const uint8_t *map;
-    spi_flash_mmap_handle_t map_handle;
-    size_t map_src = address & ~(SPI_FLASH_MMU_PAGE_SIZE - 1);
-    size_t map_size = length + (address - map_src);
-
-    err = spi_flash_mmap(map_src, map_size, SPI_FLASH_MMAP_DATA, (const void **)&map, &map_handle);
-    if (err != ESP_OK) {
-        return err;
-    }
-    memcpy(out_buffer, map + (address - map_src), length);
-    spi_flash_munmap(map_handle);
-    return err;
-}
-
-// test only, non-public
-IRAM_ATTR esp_err_t esp_flash_get_io_mode(esp_flash_t* chip, bool* qe)
-{
-    esp_err_t err = rom_spiflash_api_funcs->chip_check(&chip);
-    VERIFY_CHIP_OP(get_io_mode);
-    esp_flash_io_mode_t io_mode;
-
-    err = rom_spiflash_api_funcs->start(chip);
-    if (err != ESP_OK) {
-        return err;
-    }
-    err = chip->chip_drv->get_io_mode(chip, &io_mode);
-    err = rom_spiflash_api_funcs->end(chip, err);
-    if (err == ESP_OK) {
-        *qe = (io_mode == SPI_FLASH_QOUT);
-    }
-    return err;
-}
-
-IRAM_ATTR esp_err_t esp_flash_set_io_mode(esp_flash_t* chip, bool qe)
-{
-    esp_err_t err = rom_spiflash_api_funcs->chip_check(&chip);
-    VERIFY_CHIP_OP(set_io_mode);
-
-    chip->read_mode = (qe? SPI_FLASH_QOUT: SPI_FLASH_SLOWRD);
-    err = rom_spiflash_api_funcs->start(chip);
-    if (err != ESP_OK) {
-        return err;
-    }
-    err = chip->chip_drv->set_io_mode(chip);
-    return rom_spiflash_api_funcs->end(chip, err);
-}
-#endif //CONFIG_SPI_FLASH_ROM_IMPL
+#endif // !CONFIG_SPI_FLASH_ROM_IMPL || ESP_ROM_HAS_ENC_WRITES_USING_LEGACY_DRV
 
 //init suspend mode cmd, uses internal.
 esp_err_t esp_flash_suspend_cmd_init(esp_flash_t* chip)
