@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -69,6 +69,10 @@
 
 #include "esp_rom_caps.h"
 #include "esp_rom_sys.h"
+
+#if SOC_BOD_SUPPORTED
+#include "hal/brownout_ll.h"
+#endif
 
 #if CONFIG_SPIRAM
 #include "esp_psram.h"
@@ -295,7 +299,11 @@ static void do_core_init(void)
     // [refactor-todo] leads to call chain rtc_is_register (driver) -> esp_intr_alloc (esp32/esp32s2) ->
     // malloc (newlib) -> heap_caps_malloc (heap), so heap must be at least initialized
     esp_brownout_init();
-#endif
+#else
+#if SOC_CAPS_NO_RESET_BY_ANA_BOD
+    brownout_ll_ana_reset_enable(false);
+#endif // SOC_CAPS_NO_RESET_BY_ANA_BOD
+#endif // CONFIG_ESP_BROWNOUT_DET
 
     esp_newlib_time_init();
 

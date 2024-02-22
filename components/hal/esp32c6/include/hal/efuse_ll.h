@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -60,6 +60,41 @@ __attribute__((always_inline)) static inline uint32_t efuse_ll_get_chip_wafer_ve
 __attribute__((always_inline)) static inline bool efuse_ll_get_disable_wafer_version_major(void)
 {
     return EFUSE.rd_repeat_data4.disable_wafer_version_major;
+}
+
+__attribute__((always_inline)) static inline uint32_t efuse_ll_get_active_hp_dbias(void)
+{
+    return EFUSE.rd_mac_spi_sys_2.active_hp_dbias;
+}
+
+__attribute__((always_inline)) static inline uint32_t efuse_ll_get_active_lp_dbias(void)
+{
+    return EFUSE.rd_mac_spi_sys_2.active_lp_dbias;
+}
+
+__attribute__((always_inline)) static inline uint32_t efuse_ll_get_lslp_dbg(void)
+{
+    return EFUSE.rd_mac_spi_sys_2.lslp_hp_dbg;
+}
+
+__attribute__((always_inline)) static inline uint32_t efuse_ll_get_lslp_hp_dbias(void)
+{
+    return EFUSE.rd_mac_spi_sys_2.lslp_hp_dbias;
+}
+
+__attribute__((always_inline)) static inline uint32_t efuse_ll_get_dslp_dbg(void)
+{
+    return EFUSE.rd_mac_spi_sys_2.dslp_lp_dbg;
+}
+
+__attribute__((always_inline)) static inline uint32_t efuse_ll_get_dslp_lp_dbias(void)
+{
+    return EFUSE.rd_mac_spi_sys_2.dslp_lp_dbias;
+}
+
+__attribute__((always_inline)) static inline int32_t efuse_ll_get_dbias_vol_gap(void)
+{
+    return EFUSE.rd_mac_spi_sys_2.dbias_vol_gap;
 }
 
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_blk_version_major(void)
