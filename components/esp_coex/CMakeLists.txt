@@ -36,6 +36,9 @@ if(CONFIG_ESP_COEX_SW_COEXIST_ENABLE OR CONFIG_ESP_COEX_EXTERNAL_COEXIST_ENABLE)
         add_prebuilt_library(${blob} "${CMAKE_CURRENT_SOURCE_DIR}/lib/${target_name}/lib${blob}.a"
                                 REQUIRES ${COMPONENT_NAME})
         target_link_libraries(${COMPONENT_LIB} PUBLIC ${blob})
+        if(CONFIG_IDF_TARGET_ESP32)
+            target_link_libraries(${COMPONENT_LIB} PRIVATE btdm_app)
+        endif()
     endif()
 
     target_compile_options(${COMPONENT_LIB} PRIVATE "-Wno-format")
