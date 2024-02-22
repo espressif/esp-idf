@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: CC0-1.0
  */
@@ -7,14 +7,13 @@
 #include <stdio.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "esp_timer.h"
 #include "esp_lcd_panel_io.h"
 #include "esp_lcd_panel_ops.h"
-#include "driver/i2c.h"
 #include "esp_err.h"
 #include "esp_log.h"
-#include "lvgl.h"
+#include "driver/i2c_master.h"
 #include "esp_lvgl_port.h"
+#include "lvgl.h"
 
 #if CONFIG_EXAMPLE_LCD_CONTROLLER_SH1107
 #include "esp_lcd_sh1107.h"
@@ -24,7 +23,7 @@
 
 static const char *TAG = "example";
 
-#define I2C_HOST  0
+#define I2C_BUS_PORT  0
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////// Please update the following configuration according to your LCD spec //////////////////////////////
@@ -49,34 +48,25 @@ static const char *TAG = "example";
 
 extern void example_lvgl_demo_ui(lv_disp_t *disp);
 
-/* The LVGL port component calls esp_lcd_panel_draw_bitmap API for send data to the screen. There must be called
-lvgl_port_flush_ready(disp) after each transaction to display. The best way is to use on_color_trans_done
-callback from esp_lcd IO config structure. In IDF 5.1 and higher, it is solved inside LVGL port component. */
-static bool notify_lvgl_flush_ready(esp_lcd_panel_io_handle_t panel_io, esp_lcd_panel_io_event_data_t *edata, void *user_ctx)
-{
-    lv_disp_t * disp = (lv_disp_t *)user_ctx;
-    lvgl_port_flush_ready(disp);
-    return false;
-}
-
 void app_main(void)
 {
     ESP_LOGI(TAG, "Initialize I2C bus");
-    i2c_config_t i2c_conf = {
-        .mode = I2C_MODE_MASTER,
+    i2c_master_bus_handle_t i2c_bus = NULL;
+    i2c_master_bus_config_t bus_config = {
+        .clk_source = I2C_CLK_SRC_DEFAULT,
+        .glitch_ignore_cnt = 7,
+        .i2c_port = I2C_BUS_PORT,
         .sda_io_num = EXAMPLE_PIN_NUM_SDA,
         .scl_io_num = EXAMPLE_PIN_NUM_SCL,
-        .sda_pullup_en = GPIO_PULLUP_ENABLE,
-        .scl_pullup_en = GPIO_PULLUP_ENABLE,
-        .master.clk_speed = EXAMPLE_LCD_PIXEL_CLOCK_HZ,
+        .flags.enable_internal_pullup = true,
     };
-    ESP_ERROR_CHECK(i2c_param_config(I2C_HOST, &i2c_conf));
-    ESP_ERROR_CHECK(i2c_driver_install(I2C_HOST, I2C_MODE_MASTER, 0, 0, 0));
+    ESP_ERROR_CHECK(i2c_new_master_bus(&bus_config, &i2c_bus));
 
     ESP_LOGI(TAG, "Install panel IO");
     esp_lcd_panel_io_handle_t io_handle = NULL;
     esp_lcd_panel_io_i2c_config_t io_config = {
         .dev_addr = EXAMPLE_I2C_HW_ADDR,
+        .scl_speed_hz = EXAMPLE_LCD_PIXEL_CLOCK_HZ,
         .control_phase_bytes = 1,               // According to SSD1306 datasheet
         .lcd_cmd_bits = EXAMPLE_LCD_CMD_BITS,   // According to SSD1306 datasheet
         .lcd_param_bits = EXAMPLE_LCD_CMD_BITS, // According to SSD1306 datasheet
@@ -90,7 +80,7 @@ void app_main(void)
         }
 #endif
     };
-    ESP_ERROR_CHECK(esp_lcd_new_panel_io_i2c((esp_lcd_i2c_bus_handle_t)I2C_HOST, &io_config, &io_handle));
+    ESP_ERROR_CHECK(esp_lcd_new_panel_io_i2c(i2c_bus, &io_config, &io_handle));
 
     ESP_LOGI(TAG, "Install SSD1306 panel driver");
     esp_lcd_panel_handle_t panel_handle = NULL;
@@ -130,12 +120,7 @@ void app_main(void)
             .mirror_y = false,
         }
     };
-    lv_disp_t * disp = lvgl_port_add_disp(&disp_cfg);
-    /* Register done callback for IO */
-    const esp_lcd_panel_io_callbacks_t cbs = {
-        .on_color_trans_done = notify_lvgl_flush_ready,
-    };
-    esp_lcd_panel_io_register_event_callbacks(io_handle, &cbs, disp);
+    lv_disp_t *disp = lvgl_port_add_disp(&disp_cfg);
 
     /* Rotation of the screen */
     lv_disp_set_rotation(disp, LV_DISP_ROT_NONE);
