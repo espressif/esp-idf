@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -82,7 +82,7 @@ static void dbg_lwip_tcp_pcb_one_show(struct tcp_pcb* pcb)
     ESP_LWIP_LOGI("local_port=%d, remote_port=%d", pcb->local_port, pcb->remote_port);
     ESP_LWIP_LOGI("flags=%x", pcb->flags);
     ESP_LWIP_LOGI("pooltmr=%d pollinterval=%d, last_tmr=%d tmr=%" PRIu32 " rtmer=%d", pcb->polltmr, pcb->pollinterval, pcb->last_timer, pcb->tmr, pcb->rtime);
-    ESP_LWIP_LOGI("recv_nxt=%" PRIu32 " recv_wnd=%d recv_ann_wnd=%d recv_ann_right_edge=%" PRIu32, pcb->rcv_nxt, pcb->rcv_wnd, pcb->rcv_ann_wnd, pcb->rcv_ann_right_edge);
+    ESP_LWIP_LOGI("recv_nxt=%" PRIu32 " recv_wnd=%"TCPWNDSIZE_F" recv_ann_wnd=%"TCPWNDSIZE_F" recv_ann_right_edge=%" PRIu32, pcb->rcv_nxt, pcb->rcv_wnd, pcb->rcv_ann_wnd, pcb->rcv_ann_right_edge);
     ESP_LWIP_LOGI("mss=%d", pcb->mss);
     ESP_LWIP_LOGI("rttest=%" PRIu32 " rtseq=%" PRIu32 " sa=%d sv=%d", pcb->rttest, pcb->rtseq, pcb->sa, pcb->sv);
     ESP_LWIP_LOGI("rto=%d nrtx=%d", pcb->rto, pcb->nrtx);
@@ -90,11 +90,11 @@ static void dbg_lwip_tcp_pcb_one_show(struct tcp_pcb* pcb)
 #if ESP_PER_SOC_TCP_WND
     ESP_LWIP_LOGI("per_soc_window=%d per_soc_snd_buf=%d", pcb->per_soc_tcp_wnd, pcb->per_soc_tcp_snd_buf);
 #endif
-    ESP_LWIP_LOGI("cwnd=%d ssthreash=%d", pcb->cwnd, pcb->ssthresh);
+    ESP_LWIP_LOGI("cwnd=%"TCPWNDSIZE_F" ssthreash=%"TCPWNDSIZE_F, pcb->cwnd, pcb->ssthresh);
     ESP_LWIP_LOGI("snd_next=%" PRIu32 " snd_wl1=%" PRIu32 " snd_wl2=%" PRIu32, pcb->snd_nxt, pcb->snd_wl1, pcb->snd_wl2);
-    ESP_LWIP_LOGI("snd_lbb=%" PRIu32 " snd_wnd=%d snd_wnd_max=%d", pcb->snd_lbb, pcb->snd_wnd, pcb->snd_wnd_max);
+    ESP_LWIP_LOGI("snd_lbb=%" PRIu32 " snd_wnd=%"TCPWNDSIZE_F" snd_wnd_max=%"TCPWNDSIZE_F, pcb->snd_lbb, pcb->snd_wnd, pcb->snd_wnd_max);
     //ESP_LWIP_LOGI("acked=%d", pcb->acked);
-    ESP_LWIP_LOGI("snd_buf=%d snd_queuelen=%d", pcb->snd_buf, pcb->snd_queuelen);
+    ESP_LWIP_LOGI("snd_buf=%"TCPWNDSIZE_F" snd_queuelen=%d", pcb->snd_buf, pcb->snd_queuelen);
     ESP_LWIP_LOGI("unsent_oversize=%d", pcb->unsent_oversize);
     ESP_LWIP_LOGI("keep_idle=%" PRIu32 " keep_intvl=%" PRIu32 " keep_cnt=%" PRIu32, pcb->keep_idle, pcb->keep_intvl, pcb->keep_cnt);
     ESP_LWIP_LOGI("persist_cnt=%d persist_backoff=%d", pcb->persist_cnt, pcb->persist_backoff);
