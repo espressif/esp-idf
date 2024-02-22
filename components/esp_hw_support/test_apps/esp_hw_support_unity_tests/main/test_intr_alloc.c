@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -287,7 +287,7 @@ void isr_free_task(void *param)
     vTaskDelete(NULL);
 }
 
-void isr_alloc_free_test(void)
+void isr_alloc_free_test(bool isr_free_task_no_affinity)
 {
     intr_handle_t test_handle = NULL;
     esp_err_t ret = esp_intr_alloc(spi_periph_signal[1].irq, 0, int_handler1, NULL, &test_handle);
@@ -296,16 +296,27 @@ void isr_alloc_free_test(void)
     } else {
         printf("alloc isr handle on core %d\n", esp_intr_get_cpu(test_handle));
     }
-    TEST_ASSERT(ret == ESP_OK);
-    xTaskCreatePinnedToCore(isr_free_task, "isr_free_task", 1024 * 2, (void *)&test_handle, 10, NULL, !xPortGetCoreID());
-    vTaskDelay(1000 / portTICK_PERIOD_MS);
-    TEST_ASSERT(test_handle == NULL);
+    TEST_ESP_OK(ret);
+    if (isr_free_task_no_affinity) {
+        xTaskCreate(isr_free_task, "isr_free_task", 1024 * 2, (void *)&test_handle, 3, NULL);
+        esp_rom_delay_us(500);
+        vTaskDelay(500 / portTICK_PERIOD_MS);
+    } else {
+        xTaskCreatePinnedToCore(isr_free_task, "isr_free_task", 1024 * 2, (void *)&test_handle, 10, NULL, !xPortGetCoreID());
+        vTaskDelay(1000 / portTICK_PERIOD_MS);
+    }
+    TEST_ASSERT_NULL(test_handle);
     printf("test passed\n");
 }
 
 TEST_CASE("alloc and free isr handle on different core", "[intr_alloc]")
 {
-    isr_alloc_free_test();
+    isr_alloc_free_test(false);
+}
+
+TEST_CASE("alloc and free isr handle on different core when isr_free_task is NO_AFFINITY", "[intr_alloc]")
+{
+    isr_alloc_free_test(true);
 }
 #endif
 
