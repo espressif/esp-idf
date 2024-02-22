@@ -1398,3 +1398,7 @@ config SOC_BLE_USE_WIFI_PWR_CLK_WORKAROUND
 config SOC_PHY_COMBO_MODULE
     bool
     default y
+
+config SOC_CAPS_NO_RESET_BY_ANA_BOD
+    bool
+    default y

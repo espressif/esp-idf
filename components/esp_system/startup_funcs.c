@@ -51,6 +51,10 @@
 #include "esp_rom_caps.h"
 #include "esp_rom_sys.h"
 
+#if SOC_BOD_SUPPORTED
+#include "hal/brownout_ll.h"
+#endif
+
 #if CONFIG_SPIRAM
 #include "esp_psram.h"
 #include "esp_private/esp_psram_extram.h"
@@ -98,15 +102,19 @@ ESP_SYSTEM_INIT_FN(init_psram_heap, CORE, BIT(0), 103)
     return ESP_OK;
 }
 
-#if CONFIG_ESP_BROWNOUT_DET
 ESP_SYSTEM_INIT_FN(init_brownout, CORE, BIT(0), 104)
 {
     // [refactor-todo] leads to call chain rtc_is_register (driver) -> esp_intr_alloc (esp32/esp32s2) ->
     // malloc (newlib) -> heap_caps_malloc (heap), so heap must be at least initialized
+#if CONFIG_ESP_BROWNOUT_DET
     esp_brownout_init();
+#else
+#if SOC_CAPS_NO_RESET_BY_ANA_BOD
+    brownout_ll_ana_reset_enable(false);
+#endif // SOC_CAPS_NO_RESET_BY_ANA_BOD
+#endif // CONFIG_ESP_BROWNOUT_DET
     return ESP_OK;
 }
-#endif
 
 ESP_SYSTEM_INIT_FN(init_newlib_time, CORE, BIT(0), 105)
 {
