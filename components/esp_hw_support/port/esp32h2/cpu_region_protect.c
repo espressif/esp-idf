@@ -125,7 +125,7 @@ void esp_cpu_configure_region_protection(void)
      *      We also lock these entries so the R/W/X permissions are enforced even for machine mode
      */
     const unsigned NONE    = PMP_L;
-    const unsigned R       = PMP_L | PMP_R;
+    __attribute__((unused)) const unsigned R       = PMP_L | PMP_R;
     const unsigned RW      = PMP_L | PMP_R | PMP_W;
     const unsigned RX      = PMP_L | PMP_R | PMP_X;
     const unsigned RWX     = PMP_L | PMP_R | PMP_W | PMP_X;
@@ -144,15 +144,10 @@ void esp_cpu_configure_region_protection(void)
     PMP_ENTRY_SET(0, pmpaddr0, PMP_NAPOT | RWX);
     _Static_assert(SOC_CPU_SUBSYSTEM_LOW < SOC_CPU_SUBSYSTEM_HIGH, "Invalid CPU subsystem region");
 
-    // 2.1 I-ROM
+    // 2.1 I/D-ROM
     PMP_ENTRY_SET(1, SOC_IROM_MASK_LOW, NONE);
     PMP_ENTRY_SET(2, SOC_IROM_MASK_HIGH, PMP_TOR | RX);
-    _Static_assert(SOC_IROM_MASK_LOW < SOC_IROM_MASK_HIGH, "Invalid I-ROM region");
-
-    // 2.2 D-ROM
-    PMP_ENTRY_SET(3, SOC_DROM_MASK_LOW, NONE);
-    PMP_ENTRY_SET(4, SOC_DROM_MASK_HIGH, PMP_TOR | R);
-    _Static_assert(SOC_DROM_MASK_LOW < SOC_DROM_MASK_HIGH, "Invalid D-ROM region");
+    _Static_assert(SOC_IROM_MASK_LOW < SOC_IROM_MASK_HIGH, "Invalid I/D-ROM region");
 
     if (esp_cpu_dbgr_is_attached()) {
         // Anti-FI check that cpu is really in ocd mode
