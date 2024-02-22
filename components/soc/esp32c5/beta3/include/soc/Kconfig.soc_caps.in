@@ -55,6 +55,14 @@ config SOC_SYSTIMER_SUPPORTED
     bool
     default y
 
+config SOC_MPI_SUPPORTED
+    bool
+    default y
+
+config SOC_RSA_SUPPORTED
+    bool
+    default y
+
 config SOC_ECC_SUPPORTED
     bool
     default y
@@ -338,6 +346,14 @@ config SOC_RMT_SUPPORT_TX_CARRIER_DATA_ONLY
 config SOC_RMT_SUPPORT_XTAL
     bool
     default y
+
+config SOC_MPI_MEM_BLOCKS_NUM
+    int
+    default 4
+
+config SOC_MPI_OPERATIONS_NUM
+    int
+    default 3
 
 config SOC_RSA_MAX_BIT_LEN
     int
