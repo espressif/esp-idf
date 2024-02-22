@@ -59,6 +59,14 @@ static void bt_app_gap_cb(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_param_t *pa
         } else {
             ESP_LOGE(BT_AV_TAG, "authentication failed, status: %d", param->auth_cmpl.stat);
         }
+        ESP_LOGI(BT_AV_TAG, "link key type of current link is: %d", param->auth_cmpl.lk_type);
+        break;
+    }
+    case ESP_BT_GAP_ENC_CHG_EVT: {
+        char *str_enc[3] = {"OFF", "E0", "AES"};
+        bda = (uint8_t *)param->enc_chg.bda;
+        ESP_LOGI(BT_AV_TAG, "Encryption mode to [%02x:%02x:%02x:%02x:%02x:%02x] changed to %s",
+                 bda[0], bda[1], bda[2], bda[3], bda[4], bda[5], str_enc[param->enc_chg.enc_mode]);
         break;
     }
 

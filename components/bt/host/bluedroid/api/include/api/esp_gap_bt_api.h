@@ -226,6 +226,22 @@ typedef enum {
     ESP_BT_GAP_DISCOVERY_STARTED,                   /*!< Device discovery started */
 } esp_bt_gap_discovery_state_t;
 
+/// Type of link key
+#define ESP_BT_LINK_KEY_COMB                (0x00)  /*!< Combination Key */
+#define ESP_BT_LINK_KEY_DBG_COMB            (0x03)  /*!< Debug Combination Key */
+#define ESP_BT_LINK_KEY_UNAUTHED_COMB_P192  (0x04)  /*!< Unauthenticated Combination Key generated from P-192 */
+#define ESP_BT_LINK_KEY_AUTHED_COMB_P192    (0x05)  /*!< Authenticated Combination Key generated from P-192 */
+#define ESP_BT_LINK_KEY_CHG_COMB            (0x06)  /*!< Changed Combination Key */
+#define ESP_BT_LINK_KEY_UNAUTHED_COMB_P256  (0x07)  /*!< Unauthenticated Combination Key generated from P-256 */
+#define ESP_BT_LINK_KEY_AUTHED_COMB_P256    (0x08)  /*!< Authenticated Combination Key generated from P-256 */
+typedef uint8_t esp_bt_link_key_type_t;
+
+/// Type of encryption
+#define ESP_BT_ENC_MODE_OFF                 (0x00)  /*!< Link Level Encryption is OFF */
+#define ESP_BT_ENC_MODE_E0                  (0x01)  /*!< Link Level Encryption is ON with E0 */
+#define ESP_BT_ENC_MODE_AES                 (0x02)  /*!< Link Level Encryption is ON with AES-CCM */
+typedef uint8_t esp_bt_enc_mode_t;
+
 /// BT GAP callback events
 typedef enum {
     ESP_BT_GAP_DISC_RES_EVT = 0,                    /*!< Device discovery result event */
@@ -249,6 +265,7 @@ typedef enum {
     ESP_BT_GAP_SET_PAGE_TO_EVT,                     /*!< Set page timeout event */
     ESP_BT_GAP_GET_PAGE_TO_EVT,                     /*!< Get page timeout event */
     ESP_BT_GAP_ACL_PKT_TYPE_CHANGED_EVT,            /*!< Set ACL packet types event */
+    ESP_BT_GAP_ENC_CHG_EVT,                         /*!< Encryption change event */
     ESP_BT_GAP_EVT_MAX,
 } esp_bt_gap_cb_event_t;
 
@@ -331,8 +348,17 @@ typedef union {
     struct auth_cmpl_param {
         esp_bd_addr_t bda;                     /*!< remote bluetooth device address*/
         esp_bt_status_t stat;                  /*!< authentication complete status */
+        esp_bt_link_key_type_t lk_type;        /*!< type of link key generated */
         uint8_t device_name[ESP_BT_GAP_MAX_BDNAME_LEN + 1]; /*!< device name */
     } auth_cmpl;                               /*!< authentication complete parameter struct */
+
+    /**
+     * @brief ESP_BT_GAP_ENC_CHG_EVT
+     */
+    struct enc_chg_param {
+        esp_bd_addr_t bda;                     /*!< remote bluetooth device address*/
+        esp_bt_enc_mode_t enc_mode;            /*!< encryption mode */
+    } enc_chg;                                 /*!< encryption change parameter struct */
 
     /**
      * @brief ESP_BT_GAP_PIN_REQ_EVT

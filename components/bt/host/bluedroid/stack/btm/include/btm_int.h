@@ -668,6 +668,9 @@ struct tBTM_SEC_DEV_REC{
     secure connection. This will be helpful to know when peer device downgrades it's security. */
 
     UINT16              ble_hci_handle;         /* use in DUMO connection */
+
+#define BTM_ENC_MODE_UNKNOWN  0xff
+    UINT8               enc_mode;               /* encryption mode of current link */
     UINT8               enc_key_size;           /* current link encryption key size */
     tBT_DEVICE_TYPE     device_type;
     BOOLEAN             new_encryption_key_is_p256; /* Set to TRUE when the newly generated LK
