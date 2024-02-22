@@ -274,7 +274,7 @@ config BT_GATTC_CACHE_NVS_FLASH
 config BT_GATTC_CONNECT_RETRY_COUNT
     int "The number of attempts to reconnect if the connection establishment failed"
     depends on BT_GATTC_ENABLE
-    range 0 7
+    range 0 255
     default 3
     help
         The number of attempts to reconnect if the connection establishment failed
