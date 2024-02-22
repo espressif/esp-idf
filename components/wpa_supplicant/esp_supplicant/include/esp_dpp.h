@@ -10,6 +10,7 @@
 #include <stdbool.h>
 
 #include "esp_err.h"
+#include "esp_wifi_types.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -32,6 +33,7 @@ typedef enum dpp_bootstrap_type {
 typedef enum {
     ESP_SUPP_DPP_URI_READY,     /**< URI is ready through Bootstrapping */
     ESP_SUPP_DPP_CFG_RECVD,     /**< Config received via DPP Authentication */
+    ESP_SUPP_DPP_PDR_RECVD,     /**< Peer Discovery Response is received */
     ESP_SUPP_DPP_FAIL,          /**< DPP Authentication failure */
 } esp_supp_dpp_event_t;
 
@@ -62,8 +64,11 @@ esp_err_t esp_supp_dpp_init(esp_supp_dpp_event_cb_t evt_cb);
   * @brief De-initalize DPP Supplicant
   *
   *        Frees memory from DPP Supplicant Data Structures.
+  *
+  * @return
+  *    - ESP_OK: Success
   */
-void esp_supp_dpp_deinit(void);
+esp_err_t esp_supp_dpp_deinit(void);
 
 /**
   * @brief Generates Bootstrap Information as an Enrollee.
@@ -101,8 +106,12 @@ esp_err_t esp_supp_dpp_start_listen(void);
   * @brief Stop listening on Channels.
   *
   *        Stops listening on Channels and cancels ongoing listen operation.
+  *
+  * @return
+  *    - ESP_OK: Success
+  *    - ESP_FAIL: Failure
   */
-void esp_supp_dpp_stop_listen(void);
+esp_err_t esp_supp_dpp_stop_listen(void);
 
 #ifdef __cplusplus
 }

@@ -40,6 +40,11 @@
 #include "wps/wps_defs.h"
 #include "wps/wps.h"
 
+#ifdef CONFIG_DPP
+#include "common/dpp.h"
+#include "esp_dpp_i.h"
+#endif
+
 const wifi_osi_funcs_t *wifi_funcs;
 struct wpa_funcs *wpa_cb;
 
@@ -198,6 +203,26 @@ bool wpa_deattach(void)
     return true;
 }
 
+#ifdef CONFIG_DPP
+int dpp_connect(uint8_t *bssid, bool pdr_done)
+{
+    int res = 0;
+    if (!pdr_done) {
+        if (esp_wifi_sta_get_prof_authmode_internal() == WPA3_AUTH_DPP) {
+            esp_dpp_post_evt(SIG_DPP_START_NET_INTRO, (u32)bssid);
+        }
+    } else {
+        res = wpa_config_bss(bssid);
+        if (res) {
+            wpa_printf(MSG_DEBUG, "Rejecting bss, validation failed");
+            return res;
+        }
+        res = esp_wifi_sta_connect_internal(bssid);
+    }
+    return res;
+}
+#endif
+
 int wpa_sta_connect(uint8_t *bssid)
 {
     /* use this API to set AP specific IEs during connection */
@@ -213,7 +238,16 @@ int wpa_sta_connect(uint8_t *bssid)
         esp_set_assoc_ie((uint8_t *)bssid, NULL, 0, false);
     }
 
-    return 0;
+#ifdef CONFIG_DPP
+    struct wpa_sm *sm = &gWpaSm;
+    if (sm->key_mgmt == WPA_KEY_MGMT_DPP) {
+        ret = dpp_connect(bssid, false);
+    } else
+#endif
+    {
+        ret = esp_wifi_sta_connect_internal(bssid);
+    }
+    return ret;
 }
 
 void wpa_config_done(void)

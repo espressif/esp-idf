@@ -57,10 +57,6 @@ int wpa3_hostap_post_evt(uint32_t evt_id, uint32_t data);
 void esp_wifi_register_wpa3_ap_cb(struct wpa_funcs *wpa_cb);
 int wpa3_hostap_auth_init(void *data);
 bool wpa3_hostap_auth_deinit(void);
-int esp_send_sae_auth_reply(struct hostapd_data *hapd,
-               const u8 *dst, const u8 *bssid,
-               u16 auth_alg, u16 auth_transaction, u16 resp,
-               const u8 *ies, size_t ies_len);
 
 #else /* CONFIG_SAE */
 
