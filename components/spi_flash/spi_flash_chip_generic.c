@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,6 +13,7 @@
 #include "esp_log.h"
 #include "esp_attr.h"
 #include "esp_private/spi_flash_os.h"
+#include "esp_rom_caps.h"
 
 typedef struct flash_chip_dummy {
     uint8_t dio_dummy_bitlen;
@@ -303,69 +304,6 @@ esp_err_t spi_flash_chip_generic_write(esp_flash_t *chip, const void *buffer, ui
     return err;
 }
 
-esp_err_t spi_flash_chip_generic_write_encrypted(esp_flash_t *chip, const void *buffer, uint32_t address, uint32_t length)
-{
-    spi_flash_encryption_t *esp_flash_encryption = &esp_flash_encryption_default;
-    esp_err_t err = ESP_OK;
-    // Encryption must happen on main flash.
-    if (chip != esp_flash_default_chip) {
-        return ESP_ERR_NOT_SUPPORTED;
-    }
-
-    /* Check if the buffer and length can qualify the requirments */
-    if (esp_flash_encryption->flash_encryption_check(address, length) != true) {
-        return ESP_ERR_NOT_SUPPORTED;
-    }
-
-    const uint8_t *data_bytes = (const uint8_t *)buffer;
-    esp_flash_encryption->flash_encryption_enable();
-    while (length > 0) {
-        int block_size;
-        /* Write the largest block if possible */
-        if (address % 64 == 0 && length >= 64) {
-            block_size = 64;
-        } else if (address % 32 == 0 && length >= 32) {
-            block_size = 32;
-        } else {
-            block_size = 16;
-        }
-        // Prepare the flash chip (same time as AES operation, for performance)
-        esp_flash_encryption->flash_encryption_data_prepare(address, (uint32_t *)data_bytes, block_size);
-        err = chip->chip_drv->set_chip_write_protect(chip, false);
-        if (err != ESP_OK) {
-            return err;
-        }
-        // Waiting for encrypting buffer to finish and making result visible for SPI1
-        esp_flash_encryption->flash_encryption_done();
-
-        // Note: For encryption function, after write flash command is sent. The hardware will write the encrypted buffer
-        // prepared in XTS_FLASH_ENCRYPTION register in function `flash_encryption_data_prepare`, instead of the origin
-        // buffer named `data_bytes`.
-
-        err = chip->chip_drv->write(chip, (uint32_t *)data_bytes, address, length);
-        if (err != ESP_OK) {
-            return err;
-        }
-        err = chip->chip_drv->wait_idle(chip, chip->chip_drv->timeout->page_program_timeout);
-        if (err != ESP_OK) {
-            return err;
-        }
-
-        // Note: we don't wait for idle status here, because this way
-        // the AES peripheral can start encrypting the next
-        // block while the SPI flash chip is busy completing the write
-
-        esp_flash_encryption->flash_encryption_destroy();
-
-        length -= block_size;
-        data_bytes += block_size;
-        address += block_size;
-    }
-
-    esp_flash_encryption->flash_encryption_disable();
-    return err;
-}
-
 esp_err_t spi_flash_chip_generic_set_write_protect(esp_flash_t *chip, bool write_protect)
 {
     esp_err_t err = ESP_OK;
@@ -561,6 +499,71 @@ esp_err_t spi_flash_chip_generic_set_io_mode(esp_flash_t *chip)
                                         BIT_QE);
 }
 #endif // CONFIG_SPI_FLASH_ROM_IMPL
+
+#if !CONFIG_SPI_FLASH_ROM_IMPL || ESP_ROM_HAS_ENCRYPTED_WRITES_USING_LEGACY_DRV
+esp_err_t spi_flash_chip_generic_write_encrypted(esp_flash_t *chip, const void *buffer, uint32_t address, uint32_t length)
+{
+    spi_flash_encryption_t *esp_flash_encryption = &esp_flash_encryption_default;
+    esp_err_t err = ESP_OK;
+    // Encryption must happen on main flash.
+    if (chip != esp_flash_default_chip) {
+        return ESP_ERR_NOT_SUPPORTED;
+    }
+
+    /* Check if the buffer and length can qualify the requirments */
+    if (esp_flash_encryption->flash_encryption_check(address, length) != true) {
+        return ESP_ERR_NOT_SUPPORTED;
+    }
+
+    const uint8_t *data_bytes = (const uint8_t *)buffer;
+    esp_flash_encryption->flash_encryption_enable();
+    while (length > 0) {
+        int block_size;
+        /* Write the largest block if possible */
+        if (address % 64 == 0 && length >= 64) {
+            block_size = 64;
+        } else if (address % 32 == 0 && length >= 32) {
+            block_size = 32;
+        } else {
+            block_size = 16;
+        }
+        // Prepare the flash chip (same time as AES operation, for performance)
+        esp_flash_encryption->flash_encryption_data_prepare(address, (uint32_t *)data_bytes, block_size);
+        err = chip->chip_drv->set_chip_write_protect(chip, false);
+        if (err != ESP_OK) {
+            return err;
+        }
+        // Waiting for encrypting buffer to finish and making result visible for SPI1
+        esp_flash_encryption->flash_encryption_done();
+
+        // Note: For encryption function, after write flash command is sent. The hardware will write the encrypted buffer
+        // prepared in XTS_FLASH_ENCRYPTION register in function `flash_encryption_data_prepare`, instead of the origin
+        // buffer named `data_bytes`.
+
+        err = chip->chip_drv->write(chip, (uint32_t *)data_bytes, address, length);
+        if (err != ESP_OK) {
+            return err;
+        }
+        err = chip->chip_drv->wait_idle(chip, chip->chip_drv->timeout->page_program_timeout);
+        if (err != ESP_OK) {
+            return err;
+        }
+
+        // Note: we don't wait for idle status here, because this way
+        // the AES peripheral can start encrypting the next
+        // block while the SPI flash chip is busy completing the write
+
+        esp_flash_encryption->flash_encryption_destroy();
+
+        length -= block_size;
+        data_bytes += block_size;
+        address += block_size;
+    }
+
+    esp_flash_encryption->flash_encryption_disable();
+    return err;
+}
+#endif // !CONFIG_SPI_FLASH_ROM_IMPL || ESP_ROM_HAS_ENCRYPTED_WRITES_USING_LEGACY_DRV
 
 esp_err_t spi_flash_chip_generic_read_unique_id(esp_flash_t *chip, uint64_t* flash_unique_id)
 {
