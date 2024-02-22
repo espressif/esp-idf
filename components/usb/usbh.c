@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -35,7 +35,7 @@ typedef enum {
     DEV_ACTION_FREE_AND_RECOVER     = (1 << 5),     // Free the device object, but send a USBH_HUB_REQ_PORT_RECOVER request afterwards.
     DEV_ACTION_FREE                 = (1 << 6),     // Free the device object
     DEV_ACTION_PORT_DISABLE         = (1 << 7),     // Request the hub driver to disable the port of the device
-    DEV_ACTION_PROP_NEW             = (1 << 8),     // Propagate a USBH_EVENT_DEV_NEW event
+    DEV_ACTION_PROP_NEW             = (1 << 8),     // Propagate a USBH_EVENT_NEW_DEV event
 } dev_action_t;
 
 typedef struct device_s device_t;
@@ -500,7 +500,14 @@ static inline void handle_prop_gone_evt(device_t *dev_obj)
 {
     // Flush EP0's pipe. Then propagate a USBH_EVENT_DEV_GONE event
     ESP_LOGE(USBH_TAG, "Device %d gone", dev_obj->constant.address);
-    p_usbh_obj->constant.event_cb((usb_device_handle_t)dev_obj, USBH_EVENT_DEV_GONE, p_usbh_obj->constant.event_cb_arg);
+    usbh_event_data_t event_data = {
+        .event = USBH_EVENT_DEV_GONE,
+        .dev_gone_data = {
+            .dev_addr = dev_obj->constant.address,
+            .dev_hdl = (usb_device_handle_t)dev_obj,
+        },
+    };
+    p_usbh_obj->constant.event_cb(&event_data, p_usbh_obj->constant.event_cb_arg);
 }
 
 static void handle_free_and_recover(device_t *dev_obj, bool recover_port)
@@ -526,10 +533,13 @@ static void handle_free_and_recover(device_t *dev_obj, bool recover_port)
     xSemaphoreGive(p_usbh_obj->constant.mux_lock);
     device_free(dev_obj);
 
-    // If all devices have been freed, propagate a USBH_EVENT_DEV_ALL_FREE event
+    // If all devices have been freed, propagate a USBH_EVENT_ALL_FREE event
     if (all_free) {
         ESP_LOGD(USBH_TAG, "Device all free");
-        p_usbh_obj->constant.event_cb((usb_device_handle_t)NULL, USBH_EVENT_DEV_ALL_FREE, p_usbh_obj->constant.event_cb_arg);
+        usbh_event_data_t event_data = {
+            .event = USBH_EVENT_ALL_FREE,
+        };
+        p_usbh_obj->constant.event_cb(&event_data, p_usbh_obj->constant.event_cb_arg);
     }
     // Check if we need to recover the device's port
     if (recover_port) {
@@ -547,7 +557,13 @@ static inline void handle_port_disable(device_t *dev_obj)
 static inline void handle_prop_new_evt(device_t *dev_obj)
 {
     ESP_LOGD(USBH_TAG, "New device %d", dev_obj->constant.address);
-    p_usbh_obj->constant.event_cb((usb_device_handle_t)dev_obj, USBH_EVENT_DEV_NEW, p_usbh_obj->constant.event_cb_arg);
+    usbh_event_data_t event_data = {
+        .event = USBH_EVENT_NEW_DEV,
+        .new_dev_data = {
+            .dev_addr = dev_obj->constant.address,
+        },
+    };
+    p_usbh_obj->constant.event_cb(&event_data, p_usbh_obj->constant.event_cb_arg);
 }
 
 // ------------------------------------------------- USBH Functions ----------------------------------------------------
