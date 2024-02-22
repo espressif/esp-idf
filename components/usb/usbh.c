@@ -110,8 +110,6 @@ typedef struct {
         void *hub_req_cb_arg;
         usbh_event_cb_t event_cb;
         void *event_cb_arg;
-        usbh_ctrl_xfer_cb_t ctrl_xfer_cb;
-        void *ctrl_xfer_cb_arg;
         SemaphoreHandle_t mux_lock;
     } constant;
 } usbh_t;
@@ -482,7 +480,14 @@ static inline void handle_ep0_dequeue(device_t *dev_obj)
     urb_t *urb = hcd_urb_dequeue(dev_obj->constant.default_pipe);
     while (urb != NULL) {
         num_urbs++;
-        p_usbh_obj->constant.ctrl_xfer_cb((usb_device_handle_t)dev_obj, urb, p_usbh_obj->constant.ctrl_xfer_cb_arg);
+        usbh_event_data_t event_data = {
+            .event = USBH_EVENT_CTRL_XFER,
+            .ctrl_xfer_data = {
+                .dev_hdl = (usb_device_handle_t)dev_obj,
+                .urb = urb,
+            },
+        };
+        p_usbh_obj->constant.event_cb(&event_data, p_usbh_obj->constant.event_cb_arg);
         urb = hcd_urb_dequeue(dev_obj->constant.default_pipe);
     }
     USBH_ENTER_CRITICAL();
@@ -589,8 +594,6 @@ esp_err_t usbh_install(const usbh_config_t *usbh_config)
     usbh_obj->constant.proc_req_cb_arg = usbh_config->proc_req_cb_arg;
     usbh_obj->constant.event_cb = usbh_config->event_cb;
     usbh_obj->constant.event_cb_arg = usbh_config->event_cb_arg;
-    usbh_obj->constant.ctrl_xfer_cb = usbh_config->ctrl_xfer_cb;
-    usbh_obj->constant.ctrl_xfer_cb_arg = usbh_config->ctrl_xfer_cb_arg;
     usbh_obj->constant.mux_lock = mux_lock;
 
     // Assign USBH object pointer

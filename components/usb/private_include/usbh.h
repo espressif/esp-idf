@@ -33,6 +33,7 @@ typedef struct usbh_ep_handle_s *usbh_ep_handle_t;
  * @brief Enumerator for various USBH events
  */
 typedef enum {
+    USBH_EVENT_CTRL_XFER,           /**< A control transfer has completed */
     USBH_EVENT_NEW_DEV,             /**< A new device has been enumerated and added to the device pool */
     USBH_EVENT_DEV_GONE,            /**< A device is gone. Clients should close the device */
     USBH_EVENT_ALL_FREE,            /**< All devices have been freed */
@@ -44,6 +45,10 @@ typedef enum {
 typedef struct {
     usbh_event_t event;
     union {
+        struct {
+            usb_device_handle_t dev_hdl;
+            urb_t *urb;
+        } ctrl_xfer_data;
         struct {
             uint8_t dev_addr;
         } new_dev_data;
@@ -119,12 +124,6 @@ typedef enum {
 // ---------------------- Callbacks ------------------------
 
 /**
- * @brief Callback used to indicate completion of control transfers submitted usbh_dev_submit_ctrl_urb()
- * @note This callback is called from within usbh_process()
- */
-typedef void (*usbh_ctrl_xfer_cb_t)(usb_device_handle_t dev_hdl, urb_t *urb, void *arg);
-
-/**
  * @brief Callback used to indicate that the USBH has an event
  *
  * @note This callback is called from within usbh_process()
@@ -166,8 +165,6 @@ typedef struct {
 typedef struct {
     usb_proc_req_cb_t proc_req_cb;          /**< Processing request callback */
     void *proc_req_cb_arg;                  /**< Processing request callback argument */
-    usbh_ctrl_xfer_cb_t ctrl_xfer_cb;       /**< Control transfer callback */
-    void *ctrl_xfer_cb_arg;                 /**< Control transfer callback argument */
     usbh_event_cb_t event_cb;               /**< USBH event callback */
     void *event_cb_arg;                     /**< USBH event callback argument */
 } usbh_config_t;
