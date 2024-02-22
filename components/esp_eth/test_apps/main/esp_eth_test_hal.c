@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -13,6 +13,10 @@
 #define ETHERTYPE_TX_STD        0x2222  // frame transmitted via emac_hal_transmit_frame
 #define ETHERTYPE_TX_MULTI_2    0x2223  // frame transmitted via emac_hal_transmit_multiple_buf_frame (2 buffers)
 #define ETHERTYPE_TX_MULTI_3    0x2224  // frame transmitted via emac_hal_transmit_multiple_buf_frame (3 buffers)
+
+#define MINIMUM_TEST_FRAME_SIZE 64
+
+#define MAX(a, b) ((a) > (b) ? (a) : (b))
 
 static const char *TAG = "esp32_eth_test_hal";
 
@@ -123,8 +127,32 @@ TEST_CASE("hal receive/transmit", "[emac_hal]")
         test_pkt->data[i] = i & 0xFF;
     }
 
-    // verify that HAL driver correctly processes frame from EMAC descriptors
-    uint16_t transmit_size = CONFIG_ETH_DMA_BUFFER_SIZE;
+    uint16_t transmit_size;
+
+    ESP_LOGI(TAG, "Verify DMA descriptors are returned back to owner");
+    // find if Rx or Tx buffer number is bigger and work with bigger number
+    uint32_t config_eth_dma_max_buffer_num = MAX(CONFIG_ETH_DMA_RX_BUFFER_NUM, CONFIG_ETH_DMA_TX_BUFFER_NUM);
+    // start with short frames since EMAC Rx FIFO may be different of size for different chips => it may help with following fail isolation
+    for (int32_t i = 0; i < config_eth_dma_max_buffer_num*2; i++) {
+        transmit_size = MINIMUM_TEST_FRAME_SIZE;
+        ESP_LOGI(TAG, "transmit frame size: %" PRIu16 ", i = %" PRIi32, transmit_size, i);
+        recv_info.expected_size = transmit_size;
+        TEST_ESP_OK(esp_eth_transmit(eth_handle, test_pkt, transmit_size));
+        TEST_ASSERT(xSemaphoreTake(recv_info.mutex, pdMS_TO_TICKS(500)));
+    }
+
+    ESP_LOGI(TAG, "Verify that we are able to transmit/receive all frame sizes");
+    // iteration over different sizes may help with fail isolation
+    for (int i = 1; (MINIMUM_TEST_FRAME_SIZE *i) < ETH_MAX_PAYLOAD_LEN; i++) {
+        transmit_size = MINIMUM_TEST_FRAME_SIZE * i;
+        ESP_LOGI(TAG, "transmit frame size: %" PRIu16, transmit_size);
+        recv_info.expected_size = transmit_size;
+        TEST_ESP_OK(esp_eth_transmit(eth_handle, test_pkt, transmit_size));
+        TEST_ASSERT(xSemaphoreTake(recv_info.mutex, pdMS_TO_TICKS(500)));
+    }
+
+    ESP_LOGI(TAG, "Verify that DMA driver correctly processes frame from EMAC descriptors at boundary conditions");
+    transmit_size = CONFIG_ETH_DMA_BUFFER_SIZE;
     ESP_LOGI(TAG, "transmit frame size: %" PRIu16, transmit_size);
     recv_info.expected_size = transmit_size;
     TEST_ESP_OK(esp_eth_transmit(eth_handle, test_pkt, transmit_size));
