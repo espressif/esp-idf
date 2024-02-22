@@ -114,6 +114,8 @@
 
   - "tools/split_paths_by_spaces.py"
 
+  - "tools/check_python_dependencies.py"
+
 .patterns-docker: &patterns-docker
   - "tools/docker/**/*"
 
