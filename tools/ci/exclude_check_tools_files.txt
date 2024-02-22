@@ -8,7 +8,6 @@ tools/ci/check_copyright_config.yaml
 tools/ci/get_all_test_results.py
 tools/gdb_panic_server.py
 tools/check_term.py
-tools/check_python_dependencies.py
 tools/python_version_checker.py
 tools/generate_debug_prefix_map.py
 tools/ci/checkout_project_ref.py
