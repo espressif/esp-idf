@@ -35,6 +35,10 @@ config ESP_ROM_HAS_ERASE_0_REGION_BUG
     bool
     default y
 
+config ESP_ROM_HAS_ENCRYPTED_WRITES_USING_LEGACY_DRV
+    bool
+    default y
+
 config ESP_ROM_GET_CLK_FREQ
     bool
     default y
