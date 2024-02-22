@@ -26,6 +26,7 @@
 #include "soc/i2c_periph.h"
 #include "esp_clk_tree.h"
 #include "clk_ctrl_os.h"
+#include "esp_private/gpio.h"
 #if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
 #include "esp_private/sleep_retention.h"
 #endif
@@ -249,7 +250,7 @@ esp_err_t i2c_common_set_pins(i2c_bus_handle_t handle)
     };
     ESP_RETURN_ON_ERROR(gpio_set_level(handle->sda_num, 1), TAG, "i2c sda pin set level failed");
     ESP_RETURN_ON_ERROR(gpio_config(&sda_conf), TAG, "config GPIO failed");
-    gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[handle->sda_num], PIN_FUNC_GPIO);
+    gpio_func_sel(handle->sda_num, PIN_FUNC_GPIO);
     esp_rom_gpio_connect_out_signal(handle->sda_num, i2c_periph_signal[port_id].sda_out_sig, 0, 0);
     esp_rom_gpio_connect_in_signal(handle->sda_num, i2c_periph_signal[port_id].sda_in_sig, 0);
 
@@ -263,7 +264,7 @@ esp_err_t i2c_common_set_pins(i2c_bus_handle_t handle)
     };
     ESP_RETURN_ON_ERROR(gpio_set_level(handle->scl_num, 1), TAG, "i2c scl pin set level failed");
     ESP_RETURN_ON_ERROR(gpio_config(&scl_conf), TAG, "config GPIO failed");
-    gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[handle->scl_num], PIN_FUNC_GPIO);
+    gpio_func_sel(handle->scl_num, PIN_FUNC_GPIO);
     esp_rom_gpio_connect_out_signal(handle->scl_num, i2c_periph_signal[port_id].scl_out_sig, 0, 0);
     esp_rom_gpio_connect_in_signal(handle->scl_num, i2c_periph_signal[port_id].scl_in_sig, 0);
     return ret;

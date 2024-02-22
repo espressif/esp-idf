@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -2124,6 +2124,13 @@ typedef union {
     uint32_t val;
 } pcr_date_reg_t;
 
+/**
+ * @brief The struct of I2C configuration registers
+ */
+typedef struct {
+    pcr_i2c_conf_reg_t i2c_conf;
+    pcr_i2c_sclk_conf_reg_t i2c_sclk_conf;
+} pcr_i2c_reg_t;
 
 typedef struct pcr_dev_t {
     volatile pcr_uart0_conf_reg_t uart0_conf;
@@ -2134,8 +2141,7 @@ typedef struct pcr_dev_t {
     volatile pcr_uart1_pd_ctrl_reg_t uart1_pd_ctrl;
     volatile pcr_mspi_conf_reg_t mspi_conf;
     volatile pcr_mspi_clk_conf_reg_t mspi_clk_conf;
-    volatile pcr_i2c_conf_reg_t i2c_conf;
-    volatile pcr_i2c_sclk_conf_reg_t i2c_sclk_conf;
+    volatile pcr_i2c_reg_t i2c[1];
     volatile pcr_twai0_conf_reg_t twai0_conf;
     volatile pcr_twai0_func_clk_conf_reg_t twai0_func_clk_conf;
     volatile pcr_twai1_conf_reg_t twai1_conf;

@@ -22,7 +22,6 @@ PROVIDE ( TWAI1               = 0x6000D000 );
 PROVIDE ( APB_SARADC          = 0x6000E000 );
 PROVIDE ( USB_SERIAL_JTAG     = 0x6000F000 );
 PROVIDE ( INTMTX              = 0x60010000 );
-PROVIDE ( I2C1                = 0x60011000 );
 PROVIDE ( PCNT                = 0x60012000 );
 PROVIDE ( SOC_ETM             = 0x60013000 );
 PROVIDE ( MCPWM               = 0x60014000 );

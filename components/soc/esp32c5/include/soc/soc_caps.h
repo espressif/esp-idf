@@ -43,7 +43,7 @@
 // #define SOC_SDM_SUPPORTED               1  // TODO: [ESP32C5] IDF-8687
 // #define SOC_GPSPI_SUPPORTED             1  // TODO: [ESP32C5] IDF-8698, IDF-8699
 // #define SOC_LEDC_SUPPORTED              1  // TODO: [ESP32C5] IDF-8684
-// #define SOC_I2C_SUPPORTED               1  // TODO: [ESP32C5] IDF-8694, IDF-8696
+#define SOC_I2C_SUPPORTED               1
 #define SOC_SYSTIMER_SUPPORTED          1     // TODO: [ESP32C5] IDF-8707
 // #define SOC_AES_SUPPORTED               1  // TODO: [ESP32C5] IDF-8627
 // #define SOC_MPI_SUPPORTED               1
@@ -226,23 +226,23 @@
 // #define SOC_DEDIC_PERIPH_ALWAYS_ENABLE  (1) /*!< The dedicated GPIO (a.k.a. fast GPIO) is featured by some customized CPU instructions, which is always enabled */
 
 /*-------------------------- I2C CAPS ----------------------------------------*/
-// ESP32-C5 has 2 I2C
-#define SOC_I2C_NUM                 (2)
+// ESP32-C5 has 1 I2C
+#define SOC_I2C_NUM                 (1UL)
 
-// #define SOC_I2C_FIFO_LEN            (32) /*!< I2C hardware FIFO depth */
-// #define SOC_I2C_CMD_REG_NUM         (8)  /*!< Number of I2C command registers */
-// #define SOC_I2C_SUPPORT_SLAVE       (1)
+#define SOC_I2C_FIFO_LEN            (32) /*!< I2C hardware FIFO depth */
+#define SOC_I2C_CMD_REG_NUM         (8)  /*!< Number of I2C command registers */
+#define SOC_I2C_SUPPORT_SLAVE       (1)
 
-// FSM_RST only resets the FSM, not using it. So SOC_I2C_SUPPORT_HW_FSM_RST not defined.
-// #define SOC_I2C_SUPPORT_HW_CLR_BUS  (1)
+#define SOC_I2C_SUPPORT_HW_FSM_RST  (1)
+#define SOC_I2C_SUPPORT_HW_CLR_BUS  (1)
 
-// #define SOC_I2C_SUPPORT_XTAL        (1)
-// #define SOC_I2C_SUPPORT_RTC         (1)
-// #define SOC_I2C_SUPPORT_10BIT_ADDR   (1)
-// #define SOC_I2C_SLAVE_SUPPORT_BROADCAST    (1)
-// #define SOC_I2C_SLAVE_CAN_GET_STRETCH_CAUSE    (1)
-// #define SOC_I2C_SLAVE_SUPPORT_I2CRAM_ACCESS   (1)
-// #define SOC_I2C_SLAVE_SUPPORT_SLAVE_UNMATCH    (1)
+#define SOC_I2C_SUPPORT_XTAL        (1)
+// #define SOC_I2C_SUPPORT_RTC         (1)   // TODO: [ESP32C5] IDF-8667
+#define SOC_I2C_SUPPORT_10BIT_ADDR   (1)
+#define SOC_I2C_SLAVE_SUPPORT_BROADCAST    (1)
+#define SOC_I2C_SLAVE_CAN_GET_STRETCH_CAUSE    (1)
+#define SOC_I2C_SLAVE_SUPPORT_I2CRAM_ACCESS   (1)
+
 
 /*-------------------------- LP_I2C CAPS -------------------------------------*/
 // ESP32-C5 has 1 LP_I2C
