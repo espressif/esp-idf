@@ -262,22 +262,22 @@ static bool proc_req_callback(usb_proc_req_source_t source, bool in_isr, void *a
     return yield;
 }
 
-static void ctrl_xfer_callback(usb_device_handle_t dev_hdl, urb_t *urb, void *arg)
-{
-    assert(urb->usb_host_client != NULL);
-    // Redistribute done control transfer to the clients that submitted them
-    client_t *client_obj = (client_t *)urb->usb_host_client;
-
-    HOST_ENTER_CRITICAL();
-    TAILQ_INSERT_TAIL(&client_obj->dynamic.done_ctrl_xfer_tailq, urb, tailq_entry);
-    client_obj->dynamic.num_done_ctrl_xfer++;
-    _unblock_client(client_obj, false);
-    HOST_EXIT_CRITICAL();
-}
-
 static void usbh_event_callback(usbh_event_data_t *event_data, void *arg)
 {
     switch (event_data->event) {
+    case USBH_EVENT_CTRL_XFER: {
+        assert(event_data->ctrl_xfer_data.urb != NULL);
+        assert(event_data->ctrl_xfer_data.urb->usb_host_client != NULL);
+        // Redistribute done control transfer to the clients that submitted them
+        client_t *client_obj = (client_t *)event_data->ctrl_xfer_data.urb->usb_host_client;
+
+        HOST_ENTER_CRITICAL();
+        TAILQ_INSERT_TAIL(&client_obj->dynamic.done_ctrl_xfer_tailq, event_data->ctrl_xfer_data.urb, tailq_entry);
+        client_obj->dynamic.num_done_ctrl_xfer++;
+        _unblock_client(client_obj, false);
+        HOST_EXIT_CRITICAL();
+        break;
+    }
     case USBH_EVENT_NEW_DEV: {
         // Prepare a NEW_DEV client event message, the send it to all clients
         usb_host_client_event_msg_t event_msg = {
@@ -394,8 +394,6 @@ esp_err_t usb_host_install(const usb_host_config_t *config)
     usbh_config_t usbh_config = {
         .proc_req_cb = proc_req_callback,
         .proc_req_cb_arg = NULL,
-        .ctrl_xfer_cb = ctrl_xfer_callback,
-        .ctrl_xfer_cb_arg = NULL,
         .event_cb = usbh_event_callback,
         .event_cb_arg = NULL,
     };
