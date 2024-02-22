@@ -141,6 +141,11 @@ bool bt_mesh_prov_pdu_check(uint8_t type, uint16_t length, uint8_t *reason)
 #define XACT_SEG_DATA(link, _seg)   (&link->rx.buf->data[20 + (((_seg) - 1) * 23)])
 #define XACT_SEG_RECV(link, _seg)   (link->rx.seg &= ~(1 << (_seg)))
 
+static uint8_t bt_mesh_prov_buf_type_get(struct net_buf_simple *buf)
+{
+    return buf->data[PROV_BUF_HEADROOM];
+}
+
 uint8_t node_next_xact_id(struct bt_mesh_prov_link *link)
 {
     if (link->tx.id != 0 && link->tx.id != 0xFF) {
@@ -677,6 +682,13 @@ int bt_mesh_prov_send(struct bt_mesh_prov_link *link, struct net_buf_simple *buf
 #endif /* CONFIG_BLE_MESH_PB_GATT */
 
 #if CONFIG_BLE_MESH_PB_ADV
+    if (bt_mesh_prov_buf_type_get(buf) == PROV_FAILED) {
+        /* For case MESH/NODE/PROV/BV-10-C, Node must send Transaction
+         * ACK before Provisioning Failed message is transmitted.
+         */
+        bt_mesh_gen_prov_ack_send(link, link->rx.id);
+    }
+
     return bt_mesh_prov_send_adv(link, buf);
 #endif /* CONFIG_BLE_MESH_PB_ADV */
 
