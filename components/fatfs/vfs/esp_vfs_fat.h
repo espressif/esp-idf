@@ -406,7 +406,7 @@ esp_err_t esp_vfs_fat_info(const char* base_path, uint64_t* out_total_bytes, uin
  * @deprecated Please use `esp_vfs_fat_register_cfg` instead
  */
 esp_err_t esp_vfs_fat_register(const char* base_path, const char* fat_drive,
-        size_t max_files, FATFS** out_fs) __attribute__((deprecated("Please use esp_vfs_fat_register_cfg instead")));
+        size_t max_files, FATFS** out_fs);
 
 /**
  * @deprecated Please use `esp_vfs_fat_spiflash_mount_rw_wl` instead
