@@ -64,8 +64,8 @@ static void bootloader_check_wdt_reset(void)
 {
     int wdt_rst = 0;
     soc_reset_reason_t rst_reason = esp_rom_get_reset_reason(0);
-    if (rst_reason == RESET_REASON_SYS_HP_WDT || rst_reason == RESET_REASON_SYS_LP_WDT || rst_reason == RESET_REASON_CORE_HP_WDT ||
-        rst_reason == RESET_REASON_CORE_LP_WDT || rst_reason == RESET_REASON_CHIP_LP_WDT) {
+    if (rst_reason == RESET_REASON_CPU_MWDT || rst_reason == RESET_REASON_CPU_RWDT || rst_reason == RESET_REASON_CORE_MWDT ||
+        rst_reason == RESET_REASON_CORE_RWDT || rst_reason == RESET_REASON_SYS_RWDT) {
         ESP_LOGW(TAG, "CPU has been reset by WDT.");
         wdt_rst = 1;
     }
