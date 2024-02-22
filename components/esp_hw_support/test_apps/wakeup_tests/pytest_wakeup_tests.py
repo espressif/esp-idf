@@ -1,6 +1,5 @@
 # SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
-
 from time import sleep
 from typing import Tuple
 
@@ -11,10 +10,6 @@ TEST_CONFIGS = [
     pytest.param('default'),
 ]
 
-# TODO: PM-66
-# ESP32: need to fix GPIO16 and GPIO17 bug
-# ESP32S2: need to fix GPIO43 bug
-# ESP32S3: need to fix GPIO33, GPIO34 and GPIO43 bug
 available_gpio_nums = {
     'esp32': [2, 4, 5, 12, 13, 14, 15, 18, 19, 21, 22, 23, 27],
     'esp32s2': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 21, 33, 34, 35, 36, 37, 38, 39, 40, 42, 45],

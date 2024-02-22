@@ -105,12 +105,12 @@ static int process_ext1_wakeup(int argc, char **argv)
     ESP_LOGI(TAG, "io_wakeup_level = %d\n", io_wakeup_level);
 
     if (ext1_wakeup_args.disable->count) {
-        ESP_ERROR_CHECK(esp_sleep_disable_ext1_wakeup_io(1ULL << io_wakeup_num));
+        ESP_ERROR_CHECK(esp_sleep_enable_ext1_wakeup(0ULL, 0));
     } else {
 #if CONFIG_IDF_TARGET_ESP32
-        ESP_ERROR_CHECK(esp_sleep_enable_ext1_wakeup_io(1ULL << io_wakeup_num, io_wakeup_level == 0 ? ESP_EXT1_WAKEUP_ALL_LOW : ESP_EXT1_WAKEUP_ANY_HIGH));
+        ESP_ERROR_CHECK(esp_sleep_enable_ext1_wakeup(1ULL << io_wakeup_num, io_wakeup_level == 0 ? ESP_EXT1_WAKEUP_ALL_LOW : ESP_EXT1_WAKEUP_ANY_HIGH));
 #else
-        ESP_ERROR_CHECK(esp_sleep_enable_ext1_wakeup_io(1ULL << io_wakeup_num, io_wakeup_level == 0 ? ESP_EXT1_WAKEUP_ANY_LOW : ESP_EXT1_WAKEUP_ANY_HIGH));
+        ESP_ERROR_CHECK(esp_sleep_enable_ext1_wakeup(1ULL << io_wakeup_num, io_wakeup_level == 0 ? ESP_EXT1_WAKEUP_ANY_LOW : ESP_EXT1_WAKEUP_ANY_HIGH));
 #endif
     }
     return 0;
