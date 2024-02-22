@@ -1311,13 +1311,13 @@ void bt_mesh_ext_prov_clear_tx(void *link, bool cancel)
 
 uint8_t bt_mesh_ext_prov_node_next_xact_id(void *link)
 {
-#if CONFIG_BLE_MESH_NODE
+#if CONFIG_BLE_MESH_NODE && CONFIG_BLE_MESH_PB_ADV
     extern uint8_t node_next_xact_id(struct bt_mesh_prov_link *link);
     return node_next_xact_id(link);
 #else
     assert(0);
     return 0;
-#endif /* CONFIG_BLE_MESH_NODE */
+#endif /* CONFIG_BLE_MESH_NODE && CONFIG_BLE_MESH_PB_ADV */
 }
 
 void *bt_mesh_ext_prov_node_get_link(void)
