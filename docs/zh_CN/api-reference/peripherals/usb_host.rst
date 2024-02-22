@@ -390,6 +390,47 @@ UVC
 * USB 视频设备 Class 的主机 Class 驱动程序作为托管组件通过 `ESP-IDF 组件注册器 <https://components.espressif.com/component/espressif/usb_host_uvc>`__ 分发。
 * 示例 :example:`peripherals/usb/host/uvc` 展示了如何使用 UVC 主机驱动程序接收来自 USB 摄像头的视频流，并可选择将该流通过 Wi-Fi 转发。
 
+.. ---------------------------------------------- USB Host Menuconfig --------------------------------------------------
+
+主机栈配置
+----------
+
+非兼容设备支持
+^^^^^^^^^^^^^^
+
+为了支持在某些情况下非兼容或会表现出特定行为的 USB 设备，可以对 USB 主机栈进行配置。
+
+USB 设备可能是热插拔的，因此必须配置电源开关和设备连接之间的延迟，以及设备内部电源稳定后的延迟。
+
+枚举配置
+""""""""
+
+在枚举已连接 USB 设备的过程中，一些超时值可确保设备正常运行。
+
+.. figure:: ../../../_static/usb_host/poweron-timings.png
+    :align: center
+    :alt: USB 根集线器上电和连接事件时序
+    :figclass: align-center
+
+    USB 根集线器上电和连接事件时序
+
+上图展示了与连接设备时开启端口电源和热插拔设备相关的所有超时值。
+
+* 端口复位或恢复运行后，USB 系统软件应提供 10 毫秒的恢复时间，此后连接到端口的设备才会响应数据传输。
+* 恢复时间结束后，如果设备收到 ``SetAddress()`` 请求，设备必须能够完成对该请求的处理，并能在 50 毫秒内成功完成请求的状态 (Status) 阶段。
+* 状态阶段结束后，设备允许有 2 毫秒的 ``SetAddress()`` 恢复时间。
+
+.. note::
+
+    有关连接事件时序的更多信息，请参阅 *通用串行总线 2.0 规范* > 第 7.1.7.3 章 *连接和断开信令*。
+
+可通过 Menuconfig 选项设置 USB 主机栈的可配置参数。
+
+* :ref:`CONFIG_USB_HOST_DEBOUNCE_DELAY_MS` 用于配置防抖延迟。
+* :ref:`CONFIG_USB_HOST_RESET_HOLD_MS` 用于配置重置保持时间。
+* :ref:`CONFIG_USB_HOST_RESET_RECOVERY_MS` 用于配置重置恢复时间。
+* :ref:`CONFIG_USB_HOST_SET_ADDR_RECOVERY_MS` 用于配置 ``SetAddress()`` 恢复时间。
+
 .. -------------------------------------------------- API Reference ----------------------------------------------------
 
 API 参考

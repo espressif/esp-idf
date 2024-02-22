@@ -390,6 +390,62 @@ UVC
 * A host class driver for the USB Video Device Class is distributed as a managed component via the `ESP-IDF Component Registry <https://components.espressif.com/component/espressif/usb_host_uvc>`__.
 * The :example:`peripherals/usb/host/uvc` example demonstrates the usage of the UVC host driver to receive a video stream from a USB camera and optionally forward that stream over Wi-Fi.
 
+.. ---------------------------------------------- USB Host Menuconfig --------------------------------------------------
+
+Host Stack Configuration
+------------------------
+
+Non-Compliant Device Support
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+To support USB devices that are non-compliant in various scenarios or exhibit specific behaviors, it is possible to configure the USB Host stack.
+
+As a USB device may be hot-plugged, it is essential to have the configurable delays between power switching and device attachment, and when the device's internal power has stabilized.
+
+Enumeration Configuration
+"""""""""""""""""""""""""
+
+During the process of enumerating connected USB devices, several timeout values ensure the proper functioning of the device.
+
+.. figure:: ../../../_static/usb_host/poweron-timings.png
+    :align: center
+    :alt: USB Root Hub Power-on and Connection Events Timing
+    :figclass: align-center
+
+    USB Root Hub Power-on and Connection Events Timing
+
+The figure above shows all the timeouts associated with both turning on port power with a device connected and hot-plugging a device.
+
+* After a port is reset or resumed, the USB system software is expected to provide a "recovery" interval of 10 ms before the device attached to the port is expected to respond to data transfers.
+* After the reset/resume recovery interval, if a device receives a ``SetAddress()`` request, the device must be able to complete processing of the request and be able to successfully complete the Status stage of the request within 50 ms.
+* After successful completion of the Status stage, the device is allowed a ``SetAddress()`` recovery interval of 2 ms.
+
+.. note::
+
+    For more details regarding connection event timings, please refer to *Universal Serial Bus 2.0 Specification* > Chapter 7.1.7.3 *Connect and Disconnect Signaling*.
+
+Configurable parameters of the USB host stack can be configured with multiple options via Menuconfig.
+
+* For debounce delay, refer to :ref:`CONFIG_USB_HOST_DEBOUNCE_DELAY_MS`.
+* For reset hold interval, refer to :ref:`CONFIG_USB_HOST_RESET_HOLD_MS`.
+* For reset recovery interval, refer to :ref:`CONFIG_USB_HOST_RESET_RECOVERY_MS`.
+* For ``SetAddress()`` recovery interval, refer to :ref:`CONFIG_USB_HOST_SET_ADDR_RECOVERY_MS`.
+
+Multiple Configuration Support
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+To support USB devices that have more than one configuration, it is possible to specify the desired configuration number during a device's enumeration process.
+
+Enumeration Filter
+""""""""""""""""""
+
+The enumeration filter is a callback function of type :cpp:type:`usb_host_enum_filter_cb_t` called at the beginning of the enumeration process once a device descriptor is read from a newly attached USB device. Consequently, the user is provided with the obtained device descriptor. Through this callback, the user can:
+
+* Select the configuration of the USB device.
+* Filter which USB devices should be enumerated.
+
+To use the enumeration filter, users should enable the :ref:`CONFIG_USB_HOST_ENABLE_ENUM_FILTER_CALLBACK` option using menuconfig. Users can specify the callback by setting :cpp:member:`usb_host_config_t::enum_filter_cb` which is then passed to the Host Library when calling :cpp:func:`usb_host_install`.
+
 .. -------------------------------------------------- API Reference ----------------------------------------------------
 
 API Reference
