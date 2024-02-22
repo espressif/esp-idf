@@ -147,7 +147,7 @@ repos:
         require_serial: true
         files: 'tools/test_apps/.+|examples/.+|components/.+'
         additional_dependencies:
-          - idf_build_apps
+          - idf_build_apps~=1.0
       - id: sort-build-test-rules-ymls
         name: sort .build-test-rules.yml files
         entry: tools/ci/check_build_test_rules.py sort-yaml
