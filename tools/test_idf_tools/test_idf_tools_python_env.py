@@ -29,7 +29,7 @@ PYTHON_DIR = os.path.join(TOOLS_DIR, 'python_env')
 PYTHON_DIR_BACKUP = tempfile.mkdtemp()
 PYTHON_BINARY = os.path.join('Scripts', 'python.exe') if sys.platform == 'win32' else os.path.join('bin', 'python')
 REQ_SATISFIED = 'Python requirements are satisfied'
-REQ_MISSING = "{}' - was not found and is required by the application"
+REQ_MISSING = 'Package was not found and is required by the application: {}'
 REQ_CORE = '- {}'.format(os.path.join(IDF_PATH, 'tools', 'requirements', 'requirements.core.txt'))
 REQ_GDBGUI = '- {}'.format(os.path.join(IDF_PATH, 'tools', 'requirements', 'requirements.gdbgui.txt'))
 CONSTR = 'Constraint file: {}'.format(os.path.join(TOOLS_DIR, 'espidf.constraints'))
