@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -401,6 +401,76 @@ static void i2c_slave_repeat_read(void)
 }
 
 TEST_CASE_MULTIPLE_DEVICES("I2C repeat write test", "[i2c][test_env=generic_multi_device][timeout=150]", i2c_master_repeat_write, i2c_slave_repeat_read);
+
+static void master_read_slave_1b_test(void)
+{
+    uint8_t data_rd[1] = {0};
+    i2c_master_bus_config_t i2c_mst_config = {
+        .clk_source = I2C_CLK_SRC_DEFAULT,
+        .i2c_port = TEST_I2C_PORT,
+        .scl_io_num = I2C_MASTER_SCL_IO,
+        .sda_io_num = I2C_MASTER_SDA_IO,
+        .flags.enable_internal_pullup = true,
+    };
+    i2c_master_bus_handle_t bus_handle;
+    TEST_ESP_OK(i2c_new_master_bus(&i2c_mst_config, &bus_handle));
+
+    i2c_device_config_t dev_cfg = {
+        .dev_addr_length = I2C_ADDR_BIT_LEN_7,
+        .device_address = 0x58,
+        .scl_speed_hz = 100000,
+    };
+
+    i2c_master_dev_handle_t dev_handle;
+    TEST_ESP_OK(i2c_master_bus_add_device(bus_handle, &dev_cfg, &dev_handle));
+
+    unity_wait_for_signal("i2c slave init finish");
+
+    printf("Slave please write data to buffer\n");
+
+    unity_send_signal("slave write");
+    unity_wait_for_signal("master read");
+
+    TEST_ESP_OK(i2c_master_receive(dev_handle, data_rd, 1, -1));
+    vTaskDelay(100 / portTICK_PERIOD_MS);
+    printf("%x\n", data_rd[0]);
+    TEST_ASSERT(data_rd[0] == 0xe);
+    unity_send_signal("ready to delete master read test");
+
+    TEST_ESP_OK(i2c_master_bus_rm_device(dev_handle));
+    TEST_ESP_OK(i2c_del_master_bus(bus_handle));
+}
+
+static void slave_write_buffer_1b_test(void)
+{
+    uint8_t data_wr[1] = {0};
+
+    i2c_slave_config_t i2c_slv_config = {
+        .addr_bit_len = I2C_ADDR_BIT_LEN_7,
+        .clk_source = I2C_CLK_SRC_DEFAULT,
+        .i2c_port = TEST_I2C_PORT,
+        .send_buf_depth = 256,
+        .scl_io_num = I2C_SLAVE_SCL_IO,
+        .sda_io_num = I2C_SLAVE_SDA_IO,
+        .slave_addr = 0x58,
+    };
+
+    i2c_slave_dev_handle_t slave_handle;
+    TEST_ESP_OK(i2c_new_slave_device(&i2c_slv_config, &slave_handle));
+
+    unity_send_signal("i2c slave init finish");
+
+    unity_wait_for_signal("slave write");
+    data_wr[0] = 0xe;
+
+    TEST_ESP_OK(i2c_slave_transmit(slave_handle, data_wr, 1, -1));
+    disp_buf(data_wr, 1);
+    unity_send_signal("master read");
+    unity_wait_for_signal("ready to delete master read test");
+    TEST_ESP_OK(i2c_del_slave_device(slave_handle));
+}
+
+TEST_CASE_MULTIPLE_DEVICES("I2C master read slave 1 byte test", "[i2c][test_env=generic_multi_device][timeout=150]", master_read_slave_1b_test, slave_write_buffer_1b_test);
 
 #if SOC_I2C_NUM > 1
 // Now chips with mutiple I2C controllers are up to 2, can change this to interation when we have more I2C controllers.
