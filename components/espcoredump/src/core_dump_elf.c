@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,7 +9,6 @@
 #include "esp_flash_encrypt.h"
 #include "sdkconfig.h"
 #include "core_dump_checksum.h"
-#include "core_dump_elf.h"
 #include "esp_core_dump_port.h"
 #include "esp_core_dump_port_impl.h"
 #include "esp_core_dump_common.h"
@@ -80,7 +79,7 @@ typedef struct _core_dump_elf_t
     uint16_t                        elf_stage;
     uint32_t                        elf_next_data_offset;
     uint16_t                        segs_count;
-    core_dump_write_config_t *      write_cfg;
+    core_dump_write_data_t          write_data;
 } core_dump_elf_t;
 
 // Represents lightweight implementation to save core dump data into ELF formatted binary
@@ -126,7 +125,7 @@ static int elf_write_file_header(core_dump_elf_t *self, uint32_t seg_count)
         elf_hdr.e_shnum = 0;                       // initial section counter is 0
         elf_hdr.e_shstrndx = SHN_UNDEF;            // do not use string table
         // write built elf header into elf image
-        esp_err_t err = self->write_cfg->write(self->write_cfg->priv, (void*)&elf_hdr, sizeof(elf_hdr));
+        esp_err_t err = esp_core_dump_write_data(&self->write_data, &elf_hdr, sizeof(elf_hdr));
         ELF_CHECK_ERR((err == ESP_OK), ELF_PROC_ERR_WRITE_FAIL,
                         "Write ELF header failure (%d)", err);
         ESP_COREDUMP_LOG_PROCESS("Add file header %u bytes", sizeof(elf_hdr));
@@ -142,7 +141,7 @@ static int elf_write_segment_header(core_dump_elf_t *self, elf_phdr* phdr)
 
     phdr->p_offset = self->elf_next_data_offset;
     // set segment data information and write it into image
-    esp_err_t err = self->write_cfg->write(self->write_cfg->priv, (void*)phdr, sizeof(elf_phdr));
+    esp_err_t err = esp_core_dump_write_data(&self->write_data, phdr, sizeof(elf_phdr));
     ELF_CHECK_ERR((err == ESP_OK), ELF_PROC_ERR_WRITE_FAIL,
                     "Write ELF segment header failure (%d)", err);
     ESP_COREDUMP_LOG_PROCESS("Add segment header %u bytes: type %d, sz %u, off = 0x%x",
@@ -185,7 +184,7 @@ static int elf_add_segment(core_dump_elf_t *self,
                                 (uint32_t)data_len, self->elf_next_data_offset);
     // write segment data only when write function is set and phdr = NULL
     // write data into segment
-    err = self->write_cfg->write(self->write_cfg->priv, data, (uint32_t)data_len);
+    err = esp_core_dump_write_data(&self->write_data, data, (uint32_t)data_len);
     ELF_CHECK_ERR((err == ESP_OK), ELF_PROC_ERR_WRITE_FAIL,
                     "Write ELF segment data failure (%d)", err);
     self->elf_next_data_offset += data_len;
@@ -222,15 +221,15 @@ static int elf_write_note(core_dump_elf_t *self,
         note_hdr.n_descsz = data_sz;
         note_hdr.n_type = type;
         // write note header
-        err = self->write_cfg->write(self->write_cfg->priv, (void*)&note_hdr, sizeof(note_hdr));
+        err = esp_core_dump_write_data(&self->write_data, (void*)&note_hdr, sizeof(note_hdr));
         ELF_CHECK_ERR((err == ESP_OK), ELF_PROC_ERR_WRITE_FAIL,
                 "Write ELF note header failure (%d)", err);
         // write note name
-        err = self->write_cfg->write(self->write_cfg->priv, (void*)name_buffer, name_len);
+        err = esp_core_dump_write_data(&self->write_data, (void*)name_buffer, name_len);
         ELF_CHECK_ERR((err == ESP_OK), ELF_PROC_ERR_WRITE_FAIL,
                         "Write ELF note name failure (%d)", err);
         // write note data
-        err = self->write_cfg->write(self->write_cfg->priv, (void*)data, data_len);
+        err = esp_core_dump_write_data(&self->write_data, (void*)data, data_len);
         ELF_CHECK_ERR((err == ESP_OK), ELF_PROC_ERR_WRITE_FAIL,
                         "Write ELF note data failure (%d)", err);
         ESP_COREDUMP_LOG_PROCESS("Add note size=%d, start_off=0x%x",
@@ -572,17 +571,13 @@ static int esp_core_dump_do_write_elf_pass(core_dump_elf_t *self)
     return tot_len;
 }
 
-esp_err_t esp_core_dump_write_elf(core_dump_write_config_t *write_cfg)
+esp_err_t esp_core_dump_write_elf(void)
 {
-    static core_dump_elf_t self = { 0 };
-    static core_dump_header_t dump_hdr = { 0 };
+    core_dump_elf_t self = { 0 };
+    core_dump_header_t dump_hdr = { 0 };
     esp_err_t err = ESP_OK;
     int tot_len = sizeof(dump_hdr);
     int write_len = sizeof(dump_hdr);
-
-    ELF_CHECK_ERR((write_cfg), ESP_ERR_INVALID_ARG, "Invalid input data.");
-
-    self.write_cfg = write_cfg;
 
     // On first pass (do not write actual data), but calculate data length needed to allocate memory
     self.elf_stage = ELF_STAGE_CALC_SPACE;
@@ -594,21 +589,17 @@ esp_err_t esp_core_dump_write_elf(core_dump_write_config_t *write_cfg)
     ESP_COREDUMP_LOG_PROCESS("============== Data size = %d bytes ============", tot_len);
 
     // Prepare write elf
-    if (write_cfg->prepare) {
-        err = write_cfg->prepare(write_cfg->priv, (uint32_t*)&tot_len);
-        if (err != ESP_OK) {
-            ESP_COREDUMP_LOGE("Failed to prepare core dump storage (%d)!", err);
-            return err;
-        }
+    err = esp_core_dump_write_prepare(&self.write_data, (uint32_t*)&tot_len);
+    if (err != ESP_OK) {
+        ESP_COREDUMP_LOGE("Failed to prepare core dump storage (%d)!", err);
+        return err;
     }
 
     // Write start
-    if (write_cfg->start) {
-        err = write_cfg->start(write_cfg->priv);
-        if (err != ESP_OK) {
-            ESP_COREDUMP_LOGE("Failed to start core dump (%d)!", err);
-            return err;
-        }
+    err = esp_core_dump_write_start(&self.write_data);
+    if (err != ESP_OK) {
+        ESP_COREDUMP_LOGE("Failed to start core dump (%d)!", err);
+        return err;
     }
 
     // Write core dump header
@@ -617,7 +608,7 @@ esp_err_t esp_core_dump_write_elf(core_dump_write_config_t *write_cfg)
     dump_hdr.tasks_num = 0; // unused in ELF format
     dump_hdr.tcb_sz = 0; // unused in ELF format
     dump_hdr.mem_segs_num = 0; // unused in ELF format
-    err = write_cfg->write(write_cfg->priv,
+    err = esp_core_dump_write_data(&self.write_data,
                            (void*)&dump_hdr,
                            sizeof(core_dump_header_t));
     if (err != ESP_OK) {
@@ -642,13 +633,11 @@ esp_err_t esp_core_dump_write_elf(core_dump_write_config_t *write_cfg)
     ESP_COREDUMP_LOG_PROCESS("=========== Data written size = %d bytes ==========", write_len);
 
     // Write end, update checksum
-    if (write_cfg->end) {
-        err = write_cfg->end(write_cfg->priv);
-        if (err != ESP_OK) {
-            ESP_COREDUMP_LOGE("Failed to end core dump (%d)!", err);
-            return err;
-        }
+    err = esp_core_dump_write_end(&self.write_data);
+    if (err != ESP_OK) {
+        ESP_COREDUMP_LOGE("Failed to end core dump (%d)!", err);
     }
+
     return err;
 }
 

@@ -39,6 +39,11 @@ typedef struct _core_dump_flash_config_t {
 /* Core dump flash data. */
 static core_dump_flash_config_t s_core_flash_config;
 
+esp_err_t esp_core_dump_write_prepare(core_dump_write_data_t *wr_data, uint32_t *data_len) __attribute__((alias("esp_core_dump_flash_write_prepare")));
+esp_err_t esp_core_dump_write_start(core_dump_write_data_t *wr_data) __attribute__((alias("esp_core_dump_flash_write_start")));
+esp_err_t esp_core_dump_write_end(core_dump_write_data_t *wr_data) __attribute__((alias("esp_core_dump_flash_write_end")));
+esp_err_t esp_core_dump_write_data(core_dump_write_data_t *wr_data, void *data, uint32_t data_len) __attribute__((alias("esp_core_dump_flash_write_data")));
+
 #define ESP_COREDUMP_FLASH_WRITE(_off_, _data_, _len_)           esp_flash_write(esp_flash_default_chip, _data_, _off_, _len_)
 #define ESP_COREDUMP_FLASH_WRITE_ENCRYPTED(_off_, _data_, _len_) esp_flash_write_encrypted(esp_flash_default_chip, _off_, _data_, _len_)
 #define ESP_COREDUMP_FLASH_ERASE(_off_, _len_)                   esp_flash_erase_region(esp_flash_default_chip, _off_, _len_)
@@ -86,9 +91,8 @@ void esp_core_dump_flash_init(void)
     }
 }
 
-static esp_err_t esp_core_dump_flash_write_data(core_dump_write_data_t* priv, uint8_t* data, uint32_t data_size)
+static esp_err_t esp_core_dump_flash_write_data(core_dump_write_data_t* wr_data, uint8_t* data, uint32_t data_size)
 {
-    core_dump_write_data_t *wr_data = (core_dump_write_data_t *)priv;
     esp_err_t err = ESP_OK;
     uint32_t written = 0;
     uint32_t wr_sz = 0;
@@ -178,9 +182,8 @@ static esp_err_t esp_core_dump_flash_write_data(core_dump_write_data_t* priv, ui
     return ESP_OK;
 }
 
-static esp_err_t esp_core_dump_flash_write_prepare(core_dump_write_data_t *priv, uint32_t *data_len)
+static esp_err_t esp_core_dump_flash_write_prepare(core_dump_write_data_t *wr_data, uint32_t *data_len)
 {
-    core_dump_write_data_t *wr_data = (core_dump_write_data_t *)priv;
     esp_err_t err = ESP_OK;
     uint32_t sec_num = 0;
     uint32_t cs_len = 0;
@@ -230,19 +233,17 @@ static esp_err_t esp_core_dump_flash_write_prepare(core_dump_write_data_t *priv,
     return err;
 }
 
-static esp_err_t esp_core_dump_flash_write_start(core_dump_write_data_t* priv)
+static esp_err_t esp_core_dump_flash_write_start(core_dump_write_data_t *wr_data)
 {
-    core_dump_write_data_t *wr_data = (core_dump_write_data_t *)priv;
     esp_core_dump_checksum_init(&wr_data->checksum_ctx);
     return ESP_OK;
 }
 
-static esp_err_t esp_core_dump_flash_write_end(core_dump_write_data_t* priv)
+static esp_err_t esp_core_dump_flash_write_end(core_dump_write_data_t *wr_data)
 {
     esp_err_t err = ESP_OK;
     core_dump_checksum_bytes checksum = NULL;
     uint32_t cs_len = 0;
-    core_dump_write_data_t *wr_data = (core_dump_write_data_t *)priv;
 
     /* Get the size, in bytes of the checksum. */
     cs_len  = esp_core_dump_checksum_size();
@@ -299,9 +300,6 @@ static esp_err_t esp_core_dump_flash_write_end(core_dump_write_data_t* priv)
 
 void esp_core_dump_to_flash(panic_info_t *info)
 {
-    core_dump_write_config_t wr_cfg = { 0 };
-    core_dump_write_data_t wr_data = { 0 };
-
     /* Check core dump partition configuration. */
     core_dump_crc_t crc = esp_core_dump_calc_flash_config_crc();
     if (s_core_flash_config.partition_config_crc != crc) {
@@ -319,15 +317,8 @@ void esp_core_dump_to_flash(panic_info_t *info)
     spi_flash_guard_set(&g_flash_guard_no_os_ops);
     esp_flash_app_disable_protect(true);
 
-    /* Register the callbacks that will be called later by the generic part. */
-    wr_cfg.prepare = esp_core_dump_flash_write_prepare;
-    wr_cfg.start = esp_core_dump_flash_write_start;
-    wr_cfg.end = esp_core_dump_flash_write_end;
-    wr_cfg.write = (esp_core_dump_flash_write_data_t) esp_core_dump_flash_write_data;
-    wr_cfg.priv = &wr_data;
-
     ESP_COREDUMP_LOGI("Save core dump to flash...");
-    esp_core_dump_write(info, &wr_cfg);
+    esp_core_dump_write(info);
     ESP_COREDUMP_LOGI("Core dump has been saved to flash.");
 }
 
