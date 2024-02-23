@@ -1043,3 +1043,10 @@ esp_err_t gpio_dump_io_configuration(FILE *out_stream, uint64_t io_bit_mask)
     fprintf(out_stream, "=================IO DUMP End==================\n");
     return ESP_OK;
 }
+
+esp_err_t gpio_func_sel(gpio_num_t gpio_num, uint32_t func)
+{
+    GPIO_CHECK(GPIO_IS_VALID_GPIO(gpio_num), "GPIO number error", ESP_ERR_INVALID_ARG);
+    gpio_hal_func_sel(gpio_context.gpio_hal, gpio_num, func);
+    return ESP_OK;
+}

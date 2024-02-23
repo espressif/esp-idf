@@ -6,10 +6,13 @@
 
 #include "esp_check.h"
 #include "sdkconfig.h"
-#include "hal/gpio_hal.h"
 #include "esp_rom_gpio.h"
 #include "driver/gpio.h"
 #include "soc/soc_caps.h"
+#include "soc/gpio_sig_map.h"
+#include "soc/io_mux_reg.h"
+#include "soc/gpio_periph.h"
+#include "esp_private/gpio.h"
 #include "esp_private/eth_mac_esp_gpio.h"
 #include "esp_log.h"
 
@@ -17,10 +20,6 @@ static const char *TAG = "esp.emac.gpio";
 
 void emac_esp32_gpio_init_smi(emac_esp_smi_gpio_config_t *smi_gpio)
 {
-    gpio_hal_context_t gpio_hal = {
-        .dev = GPIO_HAL_GET_HW(GPIO_PORT_0)
-    };
-
     if (smi_gpio->mdc_num >= 0) {
         /* Setup SMI MDC GPIO */
         gpio_set_direction(smi_gpio->mdc_num, GPIO_MODE_OUTPUT);
@@ -29,7 +28,7 @@ void emac_esp32_gpio_init_smi(emac_esp_smi_gpio_config_t *smi_gpio)
 #elif CONFIG_IDF_TARGET_ESP32P4
         esp_rom_gpio_connect_out_signal(smi_gpio->mdc_num, GMII_MDC_PAD_OUT_IDX, false, false);
 #endif
-        gpio_hal_func_sel(&gpio_hal, smi_gpio->mdc_num, PIN_FUNC_GPIO);
+        gpio_func_sel(smi_gpio->mdc_num, PIN_FUNC_GPIO);
     }
     if (smi_gpio->mdio_num >= 0) {
         /* Setup SMI MDIO GPIO */
@@ -41,7 +40,7 @@ void emac_esp32_gpio_init_smi(emac_esp_smi_gpio_config_t *smi_gpio)
         esp_rom_gpio_connect_out_signal(smi_gpio->mdio_num, GMII_MDO_PAD_OUT_IDX, false, false);
         esp_rom_gpio_connect_in_signal(smi_gpio->mdio_num, GMII_MDI_PAD_IN_IDX, false);
 #endif
-        gpio_hal_func_sel(&gpio_hal, smi_gpio->mdio_num, PIN_FUNC_GPIO);
+        gpio_func_sel(smi_gpio->mdio_num, PIN_FUNC_GPIO);
     }
 }
 
@@ -49,45 +48,42 @@ esp_err_t emac_esp_iomux_init_mii(emac_esp_mii_gpio_config_t *mii_gpio)
 {
     (void)mii_gpio;
 #if CONFIG_IDF_TARGET_ESP32
-    gpio_hal_context_t gpio_hal = {
-        .dev = GPIO_HAL_GET_HW(GPIO_PORT_0)
-    };
     /* TX_CLK to GPIO0 */
-    gpio_hal_func_sel(&gpio_hal, 0, FUNC_GPIO0_EMAC_TX_CLK);
+    gpio_func_sel(0, FUNC_GPIO0_EMAC_TX_CLK);
     PIN_INPUT_ENABLE(GPIO_PIN_MUX_REG[0]);
     /* TX_EN to GPIO21 */
-    gpio_hal_func_sel(&gpio_hal, 21, FUNC_GPIO21_EMAC_TX_EN);
+    gpio_func_sel(21, FUNC_GPIO21_EMAC_TX_EN);
     PIN_INPUT_DISABLE(GPIO_PIN_MUX_REG[21]);
     /* TXD0 to GPIO19 */
-    gpio_hal_func_sel(&gpio_hal, 19, FUNC_GPIO19_EMAC_TXD0);
+    gpio_func_sel(19, FUNC_GPIO19_EMAC_TXD0);
     PIN_INPUT_DISABLE(GPIO_PIN_MUX_REG[19]);
     /* TXD1 to GPIO22 */
-    gpio_hal_func_sel(&gpio_hal, 22, FUNC_GPIO22_EMAC_TXD1);
+    gpio_func_sel(22, FUNC_GPIO22_EMAC_TXD1);
     PIN_INPUT_DISABLE(GPIO_PIN_MUX_REG[22]);
     /* TXD2 to MTMS */
-    gpio_hal_func_sel(&gpio_hal, 14, FUNC_MTMS_EMAC_TXD2);
+    gpio_func_sel(14, FUNC_MTMS_EMAC_TXD2);
     PIN_INPUT_DISABLE(GPIO_PIN_MUX_REG[14]);
     /* TXD3 to MTDI */
-    gpio_hal_func_sel(&gpio_hal, 12, FUNC_MTDI_EMAC_TXD3);
+    gpio_func_sel(12, FUNC_MTDI_EMAC_TXD3);
     PIN_INPUT_DISABLE(GPIO_PIN_MUX_REG[12]);
 
     /* RX_CLK to GPIO5 */
-    gpio_hal_func_sel(&gpio_hal, 5, FUNC_GPIO5_EMAC_RX_CLK);
+    gpio_func_sel(5, FUNC_GPIO5_EMAC_RX_CLK);
     PIN_INPUT_ENABLE(GPIO_PIN_MUX_REG[5]);
     /* RX_DV to GPIO27 */
-    gpio_hal_func_sel(&gpio_hal, 27, FUNC_GPIO27_EMAC_RX_DV);
+    gpio_func_sel(27, FUNC_GPIO27_EMAC_RX_DV);
     PIN_INPUT_ENABLE(GPIO_PIN_MUX_REG[27]);
     /* RXD0 to GPIO25 */
-    gpio_hal_func_sel(&gpio_hal, 25, FUNC_GPIO25_EMAC_RXD0);
+    gpio_func_sel(25, FUNC_GPIO25_EMAC_RXD0);
     PIN_INPUT_ENABLE(GPIO_PIN_MUX_REG[25]);
     /* RXD1 to GPIO26 */
-    gpio_hal_func_sel(&gpio_hal, 26, FUNC_GPIO26_EMAC_RXD1);
+    gpio_func_sel(26, FUNC_GPIO26_EMAC_RXD1);
     PIN_INPUT_ENABLE(GPIO_PIN_MUX_REG[26]);
     /* RXD2 to U0TXD */
-    gpio_hal_func_sel(&gpio_hal, 1, FUNC_U0TXD_EMAC_RXD2);
+    gpio_func_sel(1, FUNC_U0TXD_EMAC_RXD2);
     PIN_INPUT_ENABLE(GPIO_PIN_MUX_REG[1]);
     /* RXD3 to MTDO */
-    gpio_hal_func_sel(&gpio_hal, 15, FUNC_MTDO_EMAC_RXD3);
+    gpio_func_sel(15, FUNC_MTDO_EMAC_RXD3);
     PIN_INPUT_ENABLE(GPIO_PIN_MUX_REG[15]);
     return ESP_OK;
 #elif CONFIG_IDF_TARGET_ESP32P4
@@ -98,29 +94,26 @@ esp_err_t emac_esp_iomux_init_mii(emac_esp_mii_gpio_config_t *mii_gpio)
 
 esp_err_t emac_esp_iomux_rmii_clk_input(int num)
 {
-    gpio_hal_context_t gpio_hal = {
-        .dev = GPIO_HAL_GET_HW(GPIO_PORT_0)
-    };
 #if CONFIG_IDF_TARGET_ESP32
     if (num != 0) {
         return ESP_ERR_INVALID_ARG;
     }
     /* REF_CLK(RMII mode) to GPIO0 */
-    gpio_hal_func_sel(&gpio_hal, 0, FUNC_GPIO0_EMAC_TX_CLK);
+    gpio_func_sel(0, FUNC_GPIO0_EMAC_TX_CLK);
     PIN_INPUT_ENABLE(GPIO_PIN_MUX_REG[0]);
 #elif CONFIG_IDF_TARGET_ESP32P4
     /* REF_CLK(RMII mode) to `num` */
     switch(num) {
     case 32:
-        gpio_hal_func_sel(&gpio_hal, num, FUNC_GPIO32_GMAC_RMII_CLK_PAD);
+        gpio_func_sel(num, FUNC_GPIO32_GMAC_RMII_CLK_PAD);
         PIN_INPUT_ENABLE(GPIO_PIN_MUX_REG[32]);
         break;
     case 44:
-        gpio_hal_func_sel(&gpio_hal, num, FUNC_GPIO44_GMAC_RMII_CLK_PAD);
+        gpio_func_sel(num, FUNC_GPIO44_GMAC_RMII_CLK_PAD);
         PIN_INPUT_ENABLE(GPIO_PIN_MUX_REG[44]);
         break;
     case 50:
-        gpio_hal_func_sel(&gpio_hal, num, FUNC_GPIO50_GMAC_RMII_CLK_PAD);
+        gpio_func_sel(num, FUNC_GPIO50_GMAC_RMII_CLK_PAD);
         PIN_INPUT_ENABLE(GPIO_PIN_MUX_REG[50]);
         break;
     default:
@@ -133,24 +126,21 @@ esp_err_t emac_esp_iomux_rmii_clk_input(int num)
 
 esp_err_t emac_esp_iomux_rmii_clk_ouput(int num)
 {
-    gpio_hal_context_t gpio_hal = {
-        .dev = GPIO_HAL_GET_HW(GPIO_PORT_0)
-    };
 #if CONFIG_IDF_TARGET_ESP32
     switch (num) {
     case 0:
         /* APLL clock output to GPIO0 (must be configured to 50MHz!) */
-        gpio_hal_func_sel(&gpio_hal, num, FUNC_GPIO0_CLK_OUT1);
+        gpio_func_sel(num, FUNC_GPIO0_CLK_OUT1);
         PIN_INPUT_DISABLE(GPIO_PIN_MUX_REG[0]);
         break;
     case 16:
         /* RMII CLK (50MHz) output to GPIO16 */
-        gpio_hal_func_sel(&gpio_hal, num, FUNC_GPIO16_EMAC_CLK_OUT);
+        gpio_func_sel(num, FUNC_GPIO16_EMAC_CLK_OUT);
         PIN_INPUT_DISABLE(GPIO_PIN_MUX_REG[16]);
         break;
     case 17:
         /* RMII CLK (50MHz) output to GPIO17 */
-        gpio_hal_func_sel(&gpio_hal, num, FUNC_GPIO17_EMAC_CLK_OUT_180);
+        gpio_func_sel(num, FUNC_GPIO17_EMAC_CLK_OUT_180);
         PIN_INPUT_DISABLE(GPIO_PIN_MUX_REG[17]);
         break;
     default:
@@ -161,11 +151,11 @@ esp_err_t emac_esp_iomux_rmii_clk_ouput(int num)
     /*RMII CLK output to num */
     switch (num) {
     case 23:
-        gpio_hal_func_sel(&gpio_hal, num, FUNC_GPIO23_REF_50M_CLK_PAD);
+        gpio_func_sel(num, FUNC_GPIO23_REF_50M_CLK_PAD);
         PIN_INPUT_DISABLE(GPIO_PIN_MUX_REG[23]);
         break;
     case 39:
-        gpio_hal_func_sel(&gpio_hal, num, FUNC_GPIO39_REF_50M_CLK_PAD);
+        gpio_func_sel(num, FUNC_GPIO39_REF_50M_CLK_PAD);
         PIN_INPUT_DISABLE(GPIO_PIN_MUX_REG[39]);
         break;
     default:
@@ -178,29 +168,26 @@ esp_err_t emac_esp_iomux_rmii_clk_ouput(int num)
 
 esp_err_t emac_esp_iomux_init_rmii(emac_esp_rmii_gpio_config_t *rmii_gpio)
 {
-    gpio_hal_context_t gpio_hal = {
-        .dev = GPIO_HAL_GET_HW(GPIO_PORT_0)
-    };
 #if CONFIG_IDF_TARGET_ESP32
     (void)rmii_gpio;
     /* TX_EN to GPIO21 */
-    gpio_hal_func_sel(&gpio_hal, 21, FUNC_GPIO21_EMAC_TX_EN);
+    gpio_func_sel(21, FUNC_GPIO21_EMAC_TX_EN);
     PIN_INPUT_DISABLE(GPIO_PIN_MUX_REG[21]);
     /* TXD0 to GPIO19 */
-    gpio_hal_func_sel(&gpio_hal, 19, FUNC_GPIO19_EMAC_TXD0);
+    gpio_func_sel(19, FUNC_GPIO19_EMAC_TXD0);
     PIN_INPUT_DISABLE(GPIO_PIN_MUX_REG[19]);
     /* TXD1 to GPIO22 */
-    gpio_hal_func_sel(&gpio_hal, 22, FUNC_GPIO22_EMAC_TXD1);
+    gpio_func_sel(22, FUNC_GPIO22_EMAC_TXD1);
     PIN_INPUT_DISABLE(GPIO_PIN_MUX_REG[22]);
 
     /* CRS_DV to GPIO27 */
-    gpio_hal_func_sel(&gpio_hal, 27, FUNC_GPIO27_EMAC_RX_DV);
+    gpio_func_sel(27, FUNC_GPIO27_EMAC_RX_DV);
     PIN_INPUT_ENABLE(GPIO_PIN_MUX_REG[27]);
     /* RXD0 to GPIO25 */
-    gpio_hal_func_sel(&gpio_hal, 25, FUNC_GPIO25_EMAC_RXD0);
+    gpio_func_sel(25, FUNC_GPIO25_EMAC_RXD0);
     PIN_INPUT_ENABLE(GPIO_PIN_MUX_REG[25]);
     /* RXD1 to GPIO26 */
-    gpio_hal_func_sel(&gpio_hal, 26, FUNC_GPIO26_EMAC_RXD1);
+    gpio_func_sel(26, FUNC_GPIO26_EMAC_RXD1);
     PIN_INPUT_ENABLE(GPIO_PIN_MUX_REG[26]);
     return ESP_OK;
 #elif CONFIG_IDF_TARGET_ESP32P4
@@ -210,15 +197,15 @@ esp_err_t emac_esp_iomux_init_rmii(emac_esp_rmii_gpio_config_t *rmii_gpio)
     /* TX_EN */
     switch(rmii_gpio->tx_en_num) {
     case 33:
-        gpio_hal_func_sel(&gpio_hal, rmii_gpio->tx_en_num, FUNC_GPIO33_GMAC_PHY_TXEN_PAD);
+        gpio_func_sel(rmii_gpio->tx_en_num, FUNC_GPIO33_GMAC_PHY_TXEN_PAD);
         PIN_INPUT_DISABLE(GPIO_PIN_MUX_REG[33]);
         break;
     case 40:
-        gpio_hal_func_sel(&gpio_hal, rmii_gpio->tx_en_num, FUNC_GPIO40_GMAC_PHY_TXEN_PAD);
+        gpio_func_sel(rmii_gpio->tx_en_num, FUNC_GPIO40_GMAC_PHY_TXEN_PAD);
         PIN_INPUT_DISABLE(GPIO_PIN_MUX_REG[40]);
         break;
     case 49:
-        gpio_hal_func_sel(&gpio_hal, rmii_gpio->tx_en_num, FUNC_GPIO49_GMAC_PHY_TXEN_PAD);
+        gpio_func_sel(rmii_gpio->tx_en_num, FUNC_GPIO49_GMAC_PHY_TXEN_PAD);
         PIN_INPUT_DISABLE(GPIO_PIN_MUX_REG[49]);
         break;
     default:
@@ -228,11 +215,11 @@ esp_err_t emac_esp_iomux_init_rmii(emac_esp_rmii_gpio_config_t *rmii_gpio)
     /* TXD0 */
     switch(rmii_gpio->txd0_num) {
     case 34:
-        gpio_hal_func_sel(&gpio_hal, rmii_gpio->txd0_num, FUNC_GPIO34_GMAC_PHY_TXD0_PAD);
+        gpio_func_sel(rmii_gpio->txd0_num, FUNC_GPIO34_GMAC_PHY_TXD0_PAD);
         PIN_INPUT_DISABLE(GPIO_PIN_MUX_REG[34]);
         break;
     case 41:
-        gpio_hal_func_sel(&gpio_hal, rmii_gpio->txd0_num, FUNC_GPIO41_GMAC_PHY_TXD0_PAD);
+        gpio_func_sel(rmii_gpio->txd0_num, FUNC_GPIO41_GMAC_PHY_TXD0_PAD);
         PIN_INPUT_DISABLE(GPIO_PIN_MUX_REG[41]);
         break;
     default:
@@ -242,11 +229,11 @@ esp_err_t emac_esp_iomux_init_rmii(emac_esp_rmii_gpio_config_t *rmii_gpio)
     /* TXD1 */
     switch(rmii_gpio->txd1_num) {
     case 35:
-        gpio_hal_func_sel(&gpio_hal, rmii_gpio->txd1_num, FUNC_GPIO35_GMAC_PHY_TXD1_PAD );
+        gpio_func_sel(rmii_gpio->txd1_num, FUNC_GPIO35_GMAC_PHY_TXD1_PAD );
         PIN_INPUT_DISABLE(GPIO_PIN_MUX_REG[35]);
         break;
     case 42:
-        gpio_hal_func_sel(&gpio_hal, rmii_gpio->txd1_num, FUNC_GPIO42_GMAC_PHY_TXD1_PAD );
+        gpio_func_sel(rmii_gpio->txd1_num, FUNC_GPIO42_GMAC_PHY_TXD1_PAD );
         PIN_INPUT_DISABLE(GPIO_PIN_MUX_REG[42]);
         break;
     default:
@@ -257,15 +244,15 @@ esp_err_t emac_esp_iomux_init_rmii(emac_esp_rmii_gpio_config_t *rmii_gpio)
     /* CRS_DV */
     switch(rmii_gpio->crs_dv_num) {
     case 28:
-        gpio_hal_func_sel(&gpio_hal, rmii_gpio->crs_dv_num, FUNC_GPIO28_GMAC_PHY_RXDV_PAD);
+        gpio_func_sel(rmii_gpio->crs_dv_num, FUNC_GPIO28_GMAC_PHY_RXDV_PAD);
         PIN_INPUT_ENABLE(GPIO_PIN_MUX_REG[28]);
         break;
     case 45:
-        gpio_hal_func_sel(&gpio_hal, rmii_gpio->crs_dv_num, FUNC_GPIO45_GMAC_PHY_RXDV_PAD);
+        gpio_func_sel(rmii_gpio->crs_dv_num, FUNC_GPIO45_GMAC_PHY_RXDV_PAD);
         PIN_INPUT_ENABLE(GPIO_PIN_MUX_REG[45]);
         break;
     case 51:
-        gpio_hal_func_sel(&gpio_hal, rmii_gpio->crs_dv_num, FUNC_GPIO51_GMAC_PHY_RXDV_PAD);
+        gpio_func_sel(rmii_gpio->crs_dv_num, FUNC_GPIO51_GMAC_PHY_RXDV_PAD);
         PIN_INPUT_ENABLE(GPIO_PIN_MUX_REG[51]);
         break;
     default:
@@ -275,15 +262,15 @@ esp_err_t emac_esp_iomux_init_rmii(emac_esp_rmii_gpio_config_t *rmii_gpio)
     /* RXD0 */
     switch(rmii_gpio->rxd0_num) {
     case 29:
-        gpio_hal_func_sel(&gpio_hal, rmii_gpio->rxd0_num, FUNC_GPIO29_GMAC_PHY_RXD0_PAD);
+        gpio_func_sel(rmii_gpio->rxd0_num, FUNC_GPIO29_GMAC_PHY_RXD0_PAD);
         PIN_INPUT_ENABLE(GPIO_PIN_MUX_REG[29]);
         break;
     case 46:
-        gpio_hal_func_sel(&gpio_hal, rmii_gpio->rxd0_num, FUNC_GPIO46_GMAC_PHY_RXD0_PAD);
+        gpio_func_sel(rmii_gpio->rxd0_num, FUNC_GPIO46_GMAC_PHY_RXD0_PAD);
         PIN_INPUT_ENABLE(GPIO_PIN_MUX_REG[46]);
         break;
     case 52:
-        gpio_hal_func_sel(&gpio_hal, rmii_gpio->rxd0_num, FUNC_GPIO52_GMAC_PHY_RXD0_PAD);
+        gpio_func_sel(rmii_gpio->rxd0_num, FUNC_GPIO52_GMAC_PHY_RXD0_PAD);
         PIN_INPUT_ENABLE(GPIO_PIN_MUX_REG[52]);
         break;
     default:
@@ -293,15 +280,15 @@ esp_err_t emac_esp_iomux_init_rmii(emac_esp_rmii_gpio_config_t *rmii_gpio)
     /* RXD1 */
     switch(rmii_gpio->rxd1_num) {
     case 30:
-        gpio_hal_func_sel(&gpio_hal, rmii_gpio->rxd1_num, FUNC_GPIO30_GMAC_PHY_RXD1_PAD);
+        gpio_func_sel(rmii_gpio->rxd1_num, FUNC_GPIO30_GMAC_PHY_RXD1_PAD);
         PIN_INPUT_ENABLE(GPIO_PIN_MUX_REG[30]);
         break;
     case 47:
-        gpio_hal_func_sel(&gpio_hal, rmii_gpio->rxd1_num, FUNC_GPIO47_GMAC_PHY_RXD1_PAD);
+        gpio_func_sel(rmii_gpio->rxd1_num, FUNC_GPIO47_GMAC_PHY_RXD1_PAD);
         PIN_INPUT_ENABLE(GPIO_PIN_MUX_REG[47]);
         break;
     case 53:
-        gpio_hal_func_sel(&gpio_hal, rmii_gpio->rxd1_num, FUNC_GPIO53_GMAC_PHY_RXD1_PAD);
+        gpio_func_sel(rmii_gpio->rxd1_num, FUNC_GPIO53_GMAC_PHY_RXD1_PAD);
         PIN_INPUT_ENABLE(GPIO_PIN_MUX_REG[53]);
         break;
     default:
@@ -314,24 +301,21 @@ esp_err_t emac_esp_iomux_init_rmii(emac_esp_rmii_gpio_config_t *rmii_gpio)
 
 esp_err_t emac_esp_iomux_init_tx_er(int num)
 {
-    gpio_hal_context_t gpio_hal = {
-        .dev = GPIO_HAL_GET_HW(GPIO_PORT_0)
-    };
 #if CONFIG_IDF_TARGET_ESP32
     (void)num;
     /* TX_ER to GPIO4 */
-    gpio_hal_func_sel(&gpio_hal, 4, FUNC_GPIO4_EMAC_TX_ER);
+    gpio_func_sel(4, FUNC_GPIO4_EMAC_TX_ER);
     PIN_INPUT_DISABLE(GPIO_PIN_MUX_REG[4]);
 #elif CONFIG_IDF_TARGET_ESP32P4
     /* TX_ER */
     switch (num)
     {
     case 36:
-        gpio_hal_func_sel(&gpio_hal, num, FUNC_GPIO36_GMAC_PHY_TXER_PAD);
+        gpio_func_sel(num, FUNC_GPIO36_GMAC_PHY_TXER_PAD);
         PIN_INPUT_DISABLE(GPIO_PIN_MUX_REG[36]);
         break;
     case 43:
-        gpio_hal_func_sel(&gpio_hal, num, FUNC_GPIO43_GMAC_PHY_TXER_PAD);
+        gpio_func_sel(num, FUNC_GPIO43_GMAC_PHY_TXER_PAD);
         PIN_INPUT_DISABLE(GPIO_PIN_MUX_REG[43]);
         break;
     default:
@@ -344,28 +328,25 @@ esp_err_t emac_esp_iomux_init_tx_er(int num)
 
 esp_err_t emac_esp_iomux_init_rx_er(int num)
 {
-    gpio_hal_context_t gpio_hal = {
-        .dev = GPIO_HAL_GET_HW(GPIO_PORT_0)
-    };
 #if CONFIG_IDF_TARGET_ESP32
     (void)num;
     /* RX_ER to MTCK */
-    gpio_hal_func_sel(&gpio_hal, 13, FUNC_MTCK_EMAC_RX_ER);
+    gpio_func_sel(13, FUNC_MTCK_EMAC_RX_ER);
     PIN_INPUT_ENABLE(GPIO_PIN_MUX_REG[13]);
 #elif CONFIG_IDF_TARGET_ESP32P4
     /* RX_ER */
     switch (num)
     {
     case 31:
-        gpio_hal_func_sel(&gpio_hal, num, FUNC_GPIO31_GMAC_PHY_RXER_PAD);
+        gpio_func_sel(num, FUNC_GPIO31_GMAC_PHY_RXER_PAD);
         PIN_INPUT_ENABLE(GPIO_PIN_MUX_REG[31]);
         break;
     case 48:
-        gpio_hal_func_sel(&gpio_hal, num, FUNC_GPIO48_GMAC_PHY_RXER_PAD);
+        gpio_func_sel(num, FUNC_GPIO48_GMAC_PHY_RXER_PAD);
         PIN_INPUT_ENABLE(GPIO_PIN_MUX_REG[48]);
         break;
     case 54:
-        gpio_hal_func_sel(&gpio_hal, num, FUNC_GPIO54_GMAC_PHY_RXER_PAD);
+        gpio_func_sel(num, FUNC_GPIO54_GMAC_PHY_RXER_PAD);
         PIN_INPUT_ENABLE(GPIO_PIN_MUX_REG[54]);
         break;
     default:
