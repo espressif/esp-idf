@@ -56,6 +56,10 @@ if(CONFIG_ESP32_WIFI_ENABLED)
             set_property(TARGET ${blob} APPEND PROPERTY INTERFACE_LINK_LIBRARIES ${blob_reqs})
             target_link_libraries(${COMPONENT_LIB} PUBLIC ${blob})
         endforeach()
+
+        if(CONFIG_ESP32_WIFI_SW_COEXIST_ENABLE AND CONFIG_IDF_TARGET_ESP32)
+            target_link_libraries(${COMPONENT_LIB} PRIVATE btdm_app)
+        endif()
     endif()
 
     if(CONFIG_SPIRAM)
