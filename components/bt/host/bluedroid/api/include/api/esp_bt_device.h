@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -29,6 +29,17 @@ extern "C" {
 #define ESP_BT_DEV_COEX_OP_SET                    0x01
 typedef uint8_t esp_bt_dev_coex_op_t;
 
+#define VENDOR_HCI_CMD_MASK                       (0x3F << 10) /**!< 0xFC00 */
+
+/**
+ * @brief Vendor HCI command parameters
+ */
+typedef struct {
+    uint16_t opcode;                /*!< vendor hci command opcode */
+    uint8_t param_len;              /*!< the length of parameter */
+    uint8_t *p_param_buf;           /*!< the point of parameter buffer */
+} esp_bt_dev_vendor_cmd_params_t;
+
 /**
  * @brief Bluetooth device coex type
  */
@@ -40,6 +51,7 @@ typedef enum {
 /// BT device callback events
 typedef enum {
     ESP_BT_DEV_NAME_RES_EVT = 0,                    /*!< Device name result event */
+    ESP_BT_DEV_VENDOR_CMD_COMPLETE_EVT,             /*!< When vendor hci command complete, the event comes */
     ESP_BT_DEV_EVT_MAX,
 } esp_bt_dev_cb_event_t;
 
@@ -52,6 +64,14 @@ typedef union {
         esp_bt_status_t status;                /*!< Status of getting device name */
         char *name;                            /*!< Name of Bluetooth device */
     } name_res;                                /*!< discovery result parameter struct */
+    /**
+     * @brief ESP_BT_DEV_VENDOR_CMD_COMPLETE_EVT
+     */
+    struct vendor_cmd_cmpl_evt_param {
+        uint16_t        opcode;                     /*!< vendor hci command opcode */
+        uint16_t        param_len;                  /*!< The lenght of parameter buffer */
+        uint8_t         *p_param_buf;               /*!< The point of parameter buffer */
+    } vendor_cmd_cmpl;                              /*!< Event parameter of ESP_BT_DEV_VENDOR_CMD_COMPLETE_EVT */
 } esp_bt_dev_cb_param_t;
 
 /**
@@ -139,6 +159,19 @@ esp_err_t esp_bt_dev_coex_status_config(esp_bt_dev_coex_type_t type, esp_bt_dev_
  *
  */
 esp_err_t esp_bt_config_file_path_update(const char *file_path);
+
+/**
+ * @brief           This function is called to send vendor hci comamnd.
+ *
+ *
+ *
+ * @param[in]       vendor_cmd_param: vendor hci command parameters
+ *
+ * @return
+ *                  - ESP_OK : success
+ *                  - other  : failed
+ */
+esp_err_t esp_bt_dev_vendor_command_send(esp_bt_dev_vendor_cmd_params_t *vendor_cmd_param);
 
 #ifdef __cplusplus
 }

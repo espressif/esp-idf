@@ -417,6 +417,8 @@ typedef void (tBTA_UPDATE_DUPLICATE_EXCEPTIONAL_LIST_CMPL_CBACK) (tBTA_STATUS st
 
 typedef void (tBTA_SET_ADV_DATA_CMPL_CBACK) (tBTA_STATUS status);
 
+typedef tBTM_VSC_CMPL_CB tBTA_SEND_VENDOR_HCI_CMPL_CBACK;
+
 typedef tBTM_START_ADV_CMPL_CBACK tBTA_START_ADV_CMPL_CBACK;
 
 typedef tBTM_START_STOP_ADV_CMPL_CBACK tBTA_START_STOP_ADV_CMPL_CBACK;
@@ -432,6 +434,8 @@ typedef tBTM_SET_RAND_ADDR_CBACK tBTA_SET_RAND_ADDR_CBACK;
 typedef tBTM_SET_LOCAL_PRIVACY_CBACK tBTA_SET_LOCAL_PRIVACY_CBACK;
 
 typedef tBTM_CMPL_CB tBTA_CMPL_CB;
+
+typedef tBTM_VSC_CMPL tBTA_VSC_CMPL;
 
 typedef tBTM_TX_POWER_RESULTS tBTA_TX_POWER_RESULTS;
 
@@ -1743,6 +1747,8 @@ extern void BTA_DmGetDeviceName(tBTA_GET_DEV_NAME_CBACK *p_cback);
 #if (ESP_COEX_VSC_INCLUDED == TRUE)
 extern void BTA_DmCfgCoexStatus(UINT8 op, UINT8 type, UINT8 status);
 #endif
+
+extern void BTA_DmsendVendorHciCmd(UINT16 opcode, UINT8 param_len, UINT8 *p_param_buf, tBTA_SEND_VENDOR_HCI_CMPL_CBACK p_vendor_cmd_complete_cback);
 
 /*******************************************************************************
 **
