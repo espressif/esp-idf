@@ -8,41 +8,43 @@ ESP 本地控制
 
 通过 ESP-IDF 的 ESP 本地控制 (**esp_local_ctrl**) 组件，可使用 HTTPS 或 BLE 协议控制 ESP 设备。通过一系列可配置的处理程序，该组件允许你对应用程序定义的读/写 **属性** 进行访问。
 
-通过 BLE 传输协议初始化 **esp_local_ctrl** 的过程如下：
+.. only:: SOC_BT_SUPPORTED
 
-    .. code-block:: c
+    通过 BLE 传输协议初始化 **esp_local_ctrl** 的过程如下：
 
-        esp_local_ctrl_config_t config = {
-            .transport = ESP_LOCAL_CTRL_TRANSPORT_BLE,
-            .transport_config = {
-                .ble = & (protocomm_ble_config_t) {
-                    .device_name  = SERVICE_NAME,
-                    .service_uuid = {
-                        /* LSB <---------------------------------------
-                        * ---------------------------------------> MSB */
-                        0x21, 0xd5, 0x3b, 0x8d, 0xbd, 0x75, 0x68, 0x8a,
-                        0xb4, 0x42, 0xeb, 0x31, 0x4a, 0x1e, 0x98, 0x3d
+        .. code-block:: c
+
+            esp_local_ctrl_config_t config = {
+                .transport = ESP_LOCAL_CTRL_TRANSPORT_BLE,
+                .transport_config = {
+                    .ble = & (protocomm_ble_config_t) {
+                        .device_name  = SERVICE_NAME,
+                        .service_uuid = {
+                            /* LSB <---------------------------------------
+                            * ---------------------------------------> MSB */
+                            0x21, 0xd5, 0x3b, 0x8d, 0xbd, 0x75, 0x68, 0x8a,
+                            0xb4, 0x42, 0xeb, 0x31, 0x4a, 0x1e, 0x98, 0x3d
+                        }
                     }
-                }
-            },
-            .proto_sec = {
-                .version = PROTOCOM_SEC0,
-                .custom_handle = NULL,
-                .sec_params = NULL,
-            },
-            .handlers = {
-                /* User defined handler functions */
-                .get_prop_values = get_property_values,
-                .set_prop_values = set_property_values,
-                .usr_ctx         = NULL,
-                .usr_ctx_free_fn = NULL
-            },
-            /* Maximum number of properties that may be set */
-            .max_properties = 10
-        };
+                },
+                .proto_sec = {
+                    .version = PROTOCOM_SEC0,
+                    .custom_handle = NULL,
+                    .sec_params = NULL,
+                },
+                .handlers = {
+                    /* User defined handler functions */
+                    .get_prop_values = get_property_values,
+                    .set_prop_values = set_property_values,
+                    .usr_ctx         = NULL,
+                    .usr_ctx_free_fn = NULL
+                },
+                /* Maximum number of properties that may be set */
+                .max_properties = 10
+            };
 
-        /* Start esp_local_ctrl service */
-        ESP_ERROR_CHECK(esp_local_ctrl_start(&config));
+            /* Start esp_local_ctrl service */
+            ESP_ERROR_CHECK(esp_local_ctrl_start(&config));
 
 
 同样，对于 HTTP 传输：

@@ -93,7 +93,6 @@ api-reference/network/esp_nan.rst
 api-reference/network/esp_wifi.rst
 api-reference/network/index.rst
 api-reference/system/sleep_modes.rst
-api-reference/system/ota.rst
 api-reference/system/app_trace.rst
 api-reference/system/ulp_macros.rst
 api-reference/system/ulp-lp-core.rst
@@ -103,19 +102,11 @@ api-reference/system/random.rst
 api-reference/system/power_management.rst
 api-reference/system/misc_system_api.rst
 api-reference/system/inc/power_management_esp32p4.rst
-api-reference/system/esp_https_ota.rst
 api-reference/system/ulp-risc-v.rst
 api-reference/index.rst
 api-reference/protocols/icmp_echo.rst
 api-reference/protocols/esp_serial_slave_link.rst
-api-reference/protocols/mbedtls.rst
-api-reference/protocols/esp_http_server.rst
 api-reference/protocols/esp_sdio_slave_protocol.rst
-api-reference/protocols/esp_local_ctrl.rst
-api-reference/protocols/esp_crt_bundle.rst
-api-reference/protocols/esp_http_client.rst
-api-reference/protocols/esp_https_server.rst
-api-reference/protocols/esp_tls.rst
 api-reference/protocols/index.rst
 security/host-based-security-workflows.rst
 security/flash-encryption.rst

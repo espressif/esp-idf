@@ -225,7 +225,7 @@ static void free_str(void *arg)
 /* Function used by app_main to start the esp_local_ctrl service */
 void start_esp_local_ctrl_service(void)
 {
-#ifdef CONFIG_EXAMPLE_LOCAL_CTRL_TRANSPORT_SOFTAP
+#ifdef CONFIG_EXAMPLE_LOCAL_CTRL_TRANSPORT_HTTP
 #ifdef CONFIG_ESP_HTTPS_SERVER_ENABLE
     /* Set the configuration */
     httpd_ssl_config_t https_conf = HTTPD_SSL_CONFIG_DEFAULT();
@@ -262,7 +262,7 @@ void start_esp_local_ctrl_service(void)
             0xb4, 0x42, 0xeb, 0x31, 0x4a, 0x1e, 0x98, 0x3d,
         }
     };
-#endif /* CONFIG_EXAMPLE_LOCAL_CTRL_TRANSPORT_SOFTAP */
+#endif /* CONFIG_EXAMPLE_LOCAL_CTRL_TRANSPORT_HTTP */
 
 #ifdef CONFIG_EXAMPLE_PROTOCOMM_SECURITY_VERSION_1
     /* What is the security level that we want (0, 1, 2):
@@ -306,7 +306,7 @@ void start_esp_local_ctrl_service(void)
 
 #endif
     esp_local_ctrl_config_t config = {
-#ifdef CONFIG_EXAMPLE_LOCAL_CTRL_TRANSPORT_SOFTAP
+#ifdef CONFIG_EXAMPLE_LOCAL_CTRL_TRANSPORT_HTTP
         .transport = ESP_LOCAL_CTRL_TRANSPORT_HTTPD,
         .transport_config = {
 #ifdef CONFIG_ESP_HTTPS_SERVER_ENABLE
@@ -320,7 +320,7 @@ void start_esp_local_ctrl_service(void)
         .transport_config = {
             .ble = ble_conf,
         },
-#endif /* CONFIG_EXAMPLE_LOCAL_CTRL_TRANSPORT_SOFTAP */
+#endif /* CONFIG_EXAMPLE_LOCAL_CTRL_TRANSPORT_HTTP */
         .proto_sec = {
             .version = security,
             .custom_handle = NULL,
@@ -337,7 +337,7 @@ void start_esp_local_ctrl_service(void)
         .max_properties = 10
     };
 
-#ifdef CONFIG_EXAMPLE_LOCAL_CTRL_TRANSPORT_SOFTAP
+#ifdef CONFIG_EXAMPLE_LOCAL_CTRL_TRANSPORT_HTTP
     mdns_init();
     mdns_hostname_set(SERVICE_NAME);
 #endif
