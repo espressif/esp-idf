@@ -5,12 +5,20 @@ if defined MSYSTEM (
     goto :eof
 )
 
+set SCRIPT_EXIT_CODE=0
+
 :: Missing requirements check
 set MISSING_REQUIREMENTS=
 python.exe --version >NUL 2>NUL
-if %errorlevel% neq 0 set "MISSING_REQUIREMENTS=  python &echo\"
+if %errorlevel% neq 0 (
+    set SCRIPT_EXIT_CODE=%errorlevel%
+    set "MISSING_REQUIREMENTS=  python &echo\"
+)
 git.exe --version >NUL 2>NUL
-if %errorlevel% neq 0 set "MISSING_REQUIREMENTS=%MISSING_REQUIREMENTS%  git"
+if %errorlevel% neq 0 (
+    set SCRIPT_EXIT_CODE=%errorlevel%
+    set "MISSING_REQUIREMENTS=%MISSING_REQUIREMENTS%  git"
+)
 
 if not "%MISSING_REQUIREMENTS%" == "" goto :__error_missing_requirements
 
@@ -32,7 +40,10 @@ echo Adding ESP-IDF tools to PATH...
 :: but that way it is impossible to get the exit code of idf_tools.py.
 set "IDF_TOOLS_EXPORTS_FILE=%TEMP%\idf_export_vars.tmp"
 python.exe "%IDF_PATH%\tools\idf_tools.py" export --format key-value >"%IDF_TOOLS_EXPORTS_FILE%"
-if %errorlevel% neq 0 goto :__end
+if %errorlevel% neq 0 (
+    set SCRIPT_EXIT_CODE=%errorlevel%
+    goto :__end
+)
 
 for /f "usebackq tokens=1,2 eol=# delims==" %%a in ("%IDF_TOOLS_EXPORTS_FILE%") do (
       call set "%%a=%%b"
@@ -53,7 +64,10 @@ DOSKEY parttool.py=python.exe "%IDF_PATH%\components\partition_table\parttool.py
 
 echo Checking if Python packages are up to date...
 python.exe "%IDF_PATH%\tools\check_python_dependencies.py"
-if %errorlevel% neq 0 goto :__end
+if %errorlevel% neq 0 (
+    set SCRIPT_EXIT_CODE=%errorlevel%
+    goto :__end
+)
 
 echo.
 echo Done! You can now compile ESP-IDF projects.
@@ -95,3 +109,4 @@ set IDF_TOOLS_JSON_PATH=
 set OLD_PATH=
 set PATH_ADDITIONS=
 set MISSING_REQUIREMENTS=
+exit /b %SCRIPT_EXIT_CODE%
