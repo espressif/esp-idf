@@ -91,6 +91,39 @@ extern "C" {
 #error "Coredump cache size must be a multiple of 16"
 #endif
 
+typedef uint32_t core_dump_crc_t;
+
+#if CONFIG_ESP_COREDUMP_CHECKSUM_CRC32
+
+typedef struct {
+    core_dump_crc_t crc;
+    uint32_t total_bytes_checksum;  /* Number of bytes used to calculate the checksum */
+} core_dump_crc_ctx_t;
+
+typedef core_dump_crc_ctx_t checksum_ctx_t;
+
+#else
+
+#if CONFIG_IDF_TARGET_ESP32
+#include "mbedtls/sha256.h" /* mbedtls_sha256_context */
+typedef mbedtls_sha256_context sha256_ctx_t;
+#else
+#include "hal/sha_types.h"  /* SHA_CTX */
+typedef SHA_CTX sha256_ctx_t;
+#endif
+
+#define COREDUMP_SHA256_LEN     32
+
+typedef struct {
+    sha256_ctx_t ctx;
+    uint8_t result[COREDUMP_SHA256_LEN];
+    uint32_t total_bytes_checksum;  /* Number of bytes used to calculate the checksum */
+} core_dump_sha_ctx_t;
+
+typedef core_dump_sha_ctx_t checksum_ctx_t;
+
+#endif
+
 /**
  * @brief Chip ID associated to this implementation.
  */
@@ -100,7 +133,7 @@ typedef struct _core_dump_write_data_t {
     uint32_t off; /*!< Current offset of data being written */
     uint8_t  cached_data[COREDUMP_CACHE_SIZE]; /*!< Cache used to write to flash */
     uint8_t  cached_bytes; /*!< Number of bytes filled in the cached */
-    void *checksum_ctx; /*!< Checksum context */
+    checksum_ctx_t checksum_ctx; /*!< Checksum context */
 } core_dump_write_data_t;
 
 /**

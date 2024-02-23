@@ -72,7 +72,7 @@ static esp_err_t esp_core_dump_uart_write_end(core_dump_write_data_t *priv)
     core_dump_checksum_bytes cs_addr = NULL;
     core_dump_write_data_t *wr_data = (core_dump_write_data_t *)priv;
     if (wr_data) {
-        size_t cs_len = esp_core_dump_checksum_finish(wr_data->checksum_ctx, &cs_addr);
+        size_t cs_len = esp_core_dump_checksum_finish(&wr_data->checksum_ctx, &cs_addr);
         wr_data->off += cs_len;
         esp_core_dump_b64_encode((const uint8_t *)cs_addr, cs_len, (uint8_t*)&buf[0]);
         ESP_COREDUMP_PRINT("%s\r\n", buf);
@@ -111,7 +111,7 @@ static esp_err_t esp_core_dump_uart_write_data(core_dump_write_data_t *priv, voi
 
     if (wr_data) {
         wr_data->off += data_len;
-        esp_core_dump_checksum_update(wr_data->checksum_ctx, data, data_len);
+        esp_core_dump_checksum_update(&wr_data->checksum_ctx, data, data_len);
     }
     return err;
 }
