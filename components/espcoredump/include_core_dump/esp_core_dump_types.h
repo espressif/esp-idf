@@ -138,38 +138,6 @@ typedef struct _core_dump_write_data_t
 } core_dump_write_data_t;
 
 /**
- * @brief Types below define the signatures of the callbacks that are used
- * to output a core dump. The destination of the dump is implementation
- * dependant.
- */
-typedef esp_err_t (*esp_core_dump_write_prepare_t)(core_dump_write_data_t* priv, uint32_t *data_len);
-typedef esp_err_t (*esp_core_dump_write_start_t)(core_dump_write_data_t* priv);
-typedef esp_err_t (*esp_core_dump_write_end_t)(core_dump_write_data_t* priv);
-typedef esp_err_t (*esp_core_dump_flash_write_data_t)(core_dump_write_data_t* priv,
-                                                      void * data,
-                                                      uint32_t data_len);
-
-
-/**
- * @brief Core dump emitter control structure.
- * This structure contains the functions that are called in order to write
- * the core dump to the destination (UART or flash).
- * The function are called in this order:
- * - prepare
- * - start
- * - write （called once or more）
- * - end
- */
-typedef struct _core_dump_write_config_t
-{
-    esp_core_dump_write_prepare_t    prepare;  /*!< Function called for sanity checks */
-    esp_core_dump_write_start_t      start; /*!< Function called at the beginning of data writing */
-    esp_core_dump_flash_write_data_t write; /*!< Function called to write data chunk */
-    esp_core_dump_write_end_t        end; /*!< Function called once all data have been written */
-    core_dump_write_data_t*          priv; /*!< Private context to pass to every function of this structure */
-} core_dump_write_config_t;
-
-/**
  * @brief Core dump data header
  * This header predecesses the actual core dump data (ELF or binary). */
 typedef struct _core_dump_header_t
@@ -216,7 +184,7 @@ void esp_core_dump_flash_init(void);
 /**
  * @brief Common core dump write function
  */
-void esp_core_dump_write(panic_info_t *info, core_dump_write_config_t *write_cfg);
+void esp_core_dump_write(panic_info_t *info);
 
 #ifdef __cplusplus
 }

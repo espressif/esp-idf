@@ -12,8 +12,6 @@
 #include "esp_rom_sys.h"
 #include "esp_core_dump_port.h"
 #include "esp_core_dump_common.h"
-#include "core_dump_elf.h"
-#include "core_dump_binary.h"
 
 const static char TAG[] __attribute__((unused)) = "esp_core_dump_common";
 
@@ -145,7 +143,7 @@ FORCE_INLINE_ATTR void esp_core_dump_report_stack_usage(void)
 
 static void* s_exc_frame = NULL;
 
-inline void esp_core_dump_write(panic_info_t *info, core_dump_write_config_t *write_cfg)
+inline void esp_core_dump_write(panic_info_t *info)
 {
 #ifndef CONFIG_ESP_COREDUMP_ENABLE_TO_NONE
     esp_err_t err = ESP_ERR_NOT_SUPPORTED;
@@ -156,9 +154,11 @@ inline void esp_core_dump_write(panic_info_t *info, core_dump_write_config_t *wr
     esp_core_dump_setup_stack();
     esp_core_dump_port_init(info, isr_context);
 #if CONFIG_ESP_COREDUMP_DATA_FORMAT_BIN
-    err = esp_core_dump_write_binary(write_cfg);
+    esp_err_t esp_core_dump_write_binary(void);
+    err = esp_core_dump_write_binary();
 #elif CONFIG_ESP_COREDUMP_DATA_FORMAT_ELF
-    err = esp_core_dump_write_elf(write_cfg);
+    esp_err_t esp_core_dump_write_elf(void);
+    err = esp_core_dump_write_elf();
 #endif
     if (err != ESP_OK) {
         ESP_COREDUMP_LOGE("Core dump write binary failed with error=%d", err);

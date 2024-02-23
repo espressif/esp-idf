@@ -97,6 +97,26 @@ uint32_t esp_core_dump_get_user_ram_size(void);
 
 
 /**
+ * @brief Function called to prepare flash/uart for the data storage
+ */
+esp_err_t esp_core_dump_write_prepare(core_dump_write_data_t *wr_data, uint32_t *data_len);
+
+/**
+ * @brief Function called at the beginning of data writing
+ */
+esp_err_t esp_core_dump_write_start(core_dump_write_data_t *wr_data);
+
+/**
+ * @brief Function called to write data chunk
+ */
+esp_err_t esp_core_dump_write_data(core_dump_write_data_t *wr_data, void *data, uint32_t data_len);
+
+/**
+ * @brief Function called once all data have been written
+ */
+esp_err_t esp_core_dump_write_end(core_dump_write_data_t *wr_data);
+
+/**
  * @brief Get TCB length, in bytes.
  *
  * @return Length of TCB, in bytes.
