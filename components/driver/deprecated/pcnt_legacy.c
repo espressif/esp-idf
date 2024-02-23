@@ -37,7 +37,6 @@
 #define PCNT_RCC_ATOMIC()
 #endif
 
-
 static const char *TAG = "pcnt(legacy)";
 
 #define PCNT_CHECK(a, str, ret_val) ESP_RETURN_ON_FALSE(a, ret_val, TAG, "%s", str)

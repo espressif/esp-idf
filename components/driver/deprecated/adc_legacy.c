@@ -39,7 +39,6 @@
 #include "esp_efuse_rtc_calib.h"
 #endif
 
-
 static const char *ADC_TAG = "ADC";
 
 #define ADC_GET_IO_NUM(periph, channel) (adc_channel_io_map[periph][channel])
@@ -77,7 +76,6 @@ static _lock_t adc1_dma_lock;
 #define SARADC1_ACQUIRE() _lock_acquire( &adc1_dma_lock )
 #define SARADC1_RELEASE() _lock_release( &adc1_dma_lock )
 #endif
-
 
 /*
 In ADC2, there're two locks used for different cases:
@@ -218,21 +216,21 @@ esp_err_t adc_set_data_width(adc_unit_t adc_unit, adc_bits_width_t width_bit)
     if ((uint32_t)width_bit == (uint32_t)ADC_BITWIDTH_DEFAULT) {
         bitwidth = SOC_ADC_RTC_MAX_BITWIDTH;
     } else {
-        switch(width_bit) {
-            case ADC_WIDTH_BIT_9:
-                bitwidth = ADC_BITWIDTH_9;
-                break;
-            case ADC_WIDTH_BIT_10:
-                bitwidth = ADC_BITWIDTH_10;
-                break;
-            case ADC_WIDTH_BIT_11:
-                bitwidth = ADC_BITWIDTH_11;
-                break;
-            case ADC_WIDTH_BIT_12:
-                bitwidth = ADC_BITWIDTH_12;
-                break;
-            default:
-                return ESP_ERR_INVALID_ARG;
+        switch (width_bit) {
+        case ADC_WIDTH_BIT_9:
+            bitwidth = ADC_BITWIDTH_9;
+            break;
+        case ADC_WIDTH_BIT_10:
+            bitwidth = ADC_BITWIDTH_10;
+            break;
+        case ADC_WIDTH_BIT_11:
+            bitwidth = ADC_BITWIDTH_11;
+            break;
+        case ADC_WIDTH_BIT_12:
+            bitwidth = ADC_BITWIDTH_12;
+            break;
+        default:
+            return ESP_ERR_INVALID_ARG;
         }
     }
 #elif CONFIG_IDF_TARGET_ESP32S2
@@ -307,21 +305,21 @@ esp_err_t adc1_config_width(adc_bits_width_t width_bit)
     if ((uint32_t)width_bit == (uint32_t)ADC_BITWIDTH_DEFAULT) {
         bitwidth = SOC_ADC_RTC_MAX_BITWIDTH;
     } else {
-        switch(width_bit) {
-            case ADC_WIDTH_BIT_9:
-                bitwidth = ADC_BITWIDTH_9;
-                break;
-            case ADC_WIDTH_BIT_10:
-                bitwidth = ADC_BITWIDTH_10;
-                break;
-            case ADC_WIDTH_BIT_11:
-                bitwidth = ADC_BITWIDTH_11;
-                break;
-            case ADC_WIDTH_BIT_12:
-                bitwidth = ADC_BITWIDTH_12;
-                break;
-            default:
-                return ESP_ERR_INVALID_ARG;
+        switch (width_bit) {
+        case ADC_WIDTH_BIT_9:
+            bitwidth = ADC_BITWIDTH_9;
+            break;
+        case ADC_WIDTH_BIT_10:
+            bitwidth = ADC_BITWIDTH_10;
+            break;
+        case ADC_WIDTH_BIT_11:
+            bitwidth = ADC_BITWIDTH_11;
+            break;
+        case ADC_WIDTH_BIT_12:
+            bitwidth = ADC_BITWIDTH_12;
+            break;
+        default:
+            return ESP_ERR_INVALID_ARG;
         }
     }
 #elif CONFIG_IDF_TARGET_ESP32S2
@@ -342,7 +340,7 @@ esp_err_t adc1_dma_mode_acquire(void)
     /* Use locks to avoid digtal and RTC controller conflicts.
        for adc1, block until acquire the lock. */
     SARADC1_ACQUIRE();
-    ESP_LOGD( ADC_TAG, "dma mode takes adc1 lock." );
+    ESP_LOGD(ADC_TAG, "dma mode takes adc1 lock.");
 
     sar_periph_ctrl_adc_continuous_power_acquire();
 
@@ -484,19 +482,19 @@ static inline void adc2_init(void)
 #endif  //CONFIG_IDF_TARGET_ESP32S2
 }
 
-static inline void adc2_dac_disable( adc2_channel_t channel)
+static inline void adc2_dac_disable(adc2_channel_t channel)
 {
 #if SOC_DAC_SUPPORTED
 #ifdef CONFIG_IDF_TARGET_ESP32
-    if ( channel == ADC2_CHANNEL_8 ) { // the same as DAC channel 0
+    if (channel == ADC2_CHANNEL_8) {   // the same as DAC channel 0
         dac_ll_power_down(DAC_CHAN_0);
-    } else if ( channel == ADC2_CHANNEL_9 ) {
+    } else if (channel == ADC2_CHANNEL_9) {
         dac_ll_power_down(DAC_CHAN_1);
     }
 #else
-    if ( channel == ADC2_CHANNEL_6 ) { // the same as DAC channel 0
+    if (channel == ADC2_CHANNEL_6) {   // the same as DAC channel 0
         dac_ll_power_down(DAC_CHAN_0);
-    } else if ( channel == ADC2_CHANNEL_7 ) {
+    } else if (channel == ADC2_CHANNEL_7) {
         dac_ll_power_down(DAC_CHAN_1);
     }
 #endif
@@ -522,21 +520,21 @@ esp_err_t adc2_get_raw(adc2_channel_t channel, adc_bits_width_t width_bit, int *
     if ((uint32_t)width_bit == (uint32_t)ADC_BITWIDTH_DEFAULT) {
         bitwidth = SOC_ADC_RTC_MAX_BITWIDTH;
     } else {
-        switch(width_bit) {
-            case ADC_WIDTH_BIT_9:
-                bitwidth = ADC_BITWIDTH_9;
-                break;
-            case ADC_WIDTH_BIT_10:
-                bitwidth = ADC_BITWIDTH_10;
-                break;
-            case ADC_WIDTH_BIT_11:
-                bitwidth = ADC_BITWIDTH_11;
-                break;
-            case ADC_WIDTH_BIT_12:
-                bitwidth = ADC_BITWIDTH_12;
-                break;
-            default:
-                return ESP_ERR_INVALID_ARG;
+        switch (width_bit) {
+        case ADC_WIDTH_BIT_9:
+            bitwidth = ADC_BITWIDTH_9;
+            break;
+        case ADC_WIDTH_BIT_10:
+            bitwidth = ADC_BITWIDTH_10;
+            break;
+        case ADC_WIDTH_BIT_11:
+            bitwidth = ADC_BITWIDTH_11;
+            break;
+        case ADC_WIDTH_BIT_12:
+            bitwidth = ADC_BITWIDTH_12;
+            break;
+        default:
+            return ESP_ERR_INVALID_ARG;
         }
     }
 #elif CONFIG_IDF_TARGET_ESP32S2
@@ -650,7 +648,6 @@ esp_err_t adc_vref_to_gpio(adc_unit_t adc_unit, gpio_num_t gpio)
 #endif //SOC_ADC_RTC_CTRL_SUPPORTED
 #endif  //#if (SOC_ADC_PERIPH_NUM >= 2)
 
-
 #if SOC_ADC_DIG_CTRL_SUPPORTED && !SOC_ADC_RTC_CTRL_SUPPORTED
 /*---------------------------------------------------------------
             Legacy ADC Single Read Mode
@@ -666,7 +663,6 @@ static adc_atten_t s_atten1_single[ADC1_CHANNEL_MAX];    //Array saving attenuat
 #if (SOC_ADC_PERIPH_NUM >= 2)
 static adc_atten_t s_atten2_single[ADC2_CHANNEL_MAX];    //Array saving attenuate of each channel of ADC2, used by single read API
 #endif
-
 
 static int8_t adc_digi_get_io_num(adc_unit_t adc_unit, uint8_t adc_channel)
 {
@@ -860,7 +856,6 @@ esp_err_t adc2_get_raw(adc2_channel_t channel, adc_bits_width_t width_bit, int *
 #endif //#if (SOC_ADC_PERIPH_NUM >= 2)
 #endif  //#if SOC_ADC_DIG_CTRL_SUPPORTED && !SOC_ADC_RTC_CTRL_SUPPORTED
 
-
 static void adc_hal_onetime_start(adc_unit_t adc_n, uint32_t clk_src_freq_hz)
 {
 #if SOC_ADC_DIG_CTRL_SUPPORTED && !SOC_ADC_RTC_CTRL_SUPPORTED
@@ -876,7 +871,7 @@ static void adc_hal_onetime_start(adc_unit_t adc_n, uint32_t clk_src_freq_hz)
     //3 ADC digital controller clock cycle
     delay = delay * 3;
     //This coefficient (8) is got from test, and verified from DT. When digi_clk is not smaller than ``APB_CLK_FREQ/8``, no delay is needed.
-    if (digi_clk >= APB_CLK_FREQ/8) {
+    if (digi_clk >= APB_CLK_FREQ / 8) {
         delay = 0;
     }
 

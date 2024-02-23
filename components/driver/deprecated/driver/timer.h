@@ -359,7 +359,6 @@ void timer_group_set_alarm_value_in_isr(timer_group_t group_num, timer_idx_t tim
  */
 void timer_group_set_counter_enable_in_isr(timer_group_t group_num, timer_idx_t timer_num, timer_start_t counter_en);
 
-
 /** @brief Get interrupt status, just used in ISR
  *
  * @param group_num Timer group number, 0 for TIMERG0 or 1 for TIMERG1

@@ -285,7 +285,7 @@ esp_err_t adc_digi_initialize(const adc_digi_init_config_t *init_config)
     dma_chan = s_adc_digi_ctx->spi_dma_ctx->rx_dma_chan.chan_id;
 
     ret = esp_intr_alloc(spicommon_irqdma_source_for_host(s_adc_digi_ctx->spi_host), 0, adc_dma_intr_handler,
-                        (void *)s_adc_digi_ctx, &s_adc_digi_ctx->intr_hdl);
+                         (void *)s_adc_digi_ctx, &s_adc_digi_ctx->intr_hdl);
     if (ret != ESP_OK) {
         goto cleanup;
     }
@@ -300,7 +300,7 @@ esp_err_t adc_digi_initialize(const adc_digi_init_config_t *init_config)
 
     s_adc_digi_ctx->i2s_host = I2S_NUM_0;
     ret = esp_intr_alloc(i2s_periph_signal[s_adc_digi_ctx->i2s_host].irq, 0, adc_dma_intr_handler,
-                        (void *)s_adc_digi_ctx, &s_adc_digi_ctx->intr_hdl);
+                         (void *)s_adc_digi_ctx, &s_adc_digi_ctx->intr_hdl);
     if (ret != ESP_OK) {
         goto cleanup;
     }
