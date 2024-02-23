@@ -6,7 +6,7 @@ import tempfile
 import time
 from io import open
 
-import debug_backend
+import esp_debug_backend as debug_backend
 import ttfw_idf
 
 
