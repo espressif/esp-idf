@@ -593,7 +593,7 @@ static esp_err_t emac_w5500_receive(esp_eth_mac_t *mac, uint8_t *buf, uint32_t *
     remain_bytes -= rx_len + 2;
     emac->packets_remain = remain_bytes > 0;
 
-    *length = rx_len;
+    *length = copy_len;
     return ret;
 err:
     *length = 0;
