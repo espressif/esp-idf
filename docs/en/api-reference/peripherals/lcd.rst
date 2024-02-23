@@ -13,7 +13,7 @@ In ``esp_lcd``, an LCD panel is represented by :cpp:type:`esp_lcd_panel_handle_t
 
 .. list::
 
-    - Controller based LCD driver involves multiple steps to get a panel handle, like bus allocation, IO device registration and controller driver install. The frame buffer is located in the controller's internal GRAM (Graphical RAM). ESP-IDF provides only a limited number of LCD controller drivers out of the box (e.g. ST7789, SSD1306), :ref:`more_controller_based_lcd_drivers` are maintained in the `Espressif Component Registry <https://components.espressif.com/>_`.
+    - Controller based LCD driver involves multiple steps to get a panel handle, like bus allocation, IO device registration and controller driver install. The frame buffer is located in the controller's internal GRAM (Graphical RAM). ESP-IDF provides only a limited number of LCD controller drivers out of the box (e.g., ST7789, SSD1306), :ref:`more_controller_based_lcd_drivers` are maintained in the `Espressif Component Registry <https://components.espressif.com/>`__.
     - :ref:`spi_lcd_panel` describes the steps to install the SPI LCD IO driver and then get the panel handle.
     - :ref:`i2c_lcd_panel` describes the steps to install the I2C LCD IO driver and then get the panel handle.
     :SOC_LCD_I80_SUPPORTED: - :ref:`i80_lcd_panel` describes the steps to install the I80 LCD IO driver and then get the panel handle.
