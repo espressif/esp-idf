@@ -59,6 +59,9 @@ class AppUploader(AppDownloader):
         ArtifactType.LOGS: [
             DEFAULT_BUILD_LOG_FILENAME,
         ],
+        ArtifactType.SIZE_REPORTS: [
+            '**/build*/size.json',
+        ],
     }
 
     def __init__(self, pipeline_id: t.Union[str, int, None] = None) -> None:
@@ -91,7 +94,6 @@ class AppUploader(AppDownloader):
         try:
             if has_file:
                 obj_name = self.get_app_object_name(app_path, zip_filename, artifact_type)
-                print(f'Created archive file: {zip_filename}, uploading as {obj_name}')
                 self._client.fput_object(getenv('IDF_S3_BUCKET'), obj_name, zip_filename)
                 uploaded = True
         finally:
@@ -101,14 +103,13 @@ class AppUploader(AppDownloader):
     def upload_app(self, app_build_path: str, artifact_type: t.Optional[ArtifactType] = None) -> None:
         uploaded = False
         if not artifact_type:
-            for _artifact_type in [
-                ArtifactType.MAP_AND_ELF_FILES,
-                ArtifactType.BUILD_DIR_WITHOUT_MAP_AND_ELF_FILES,
-                ArtifactType.LOGS,
-            ]:
-                uploaded |= self._upload_app(app_build_path, _artifact_type)
+            upload_types: t.Iterable[ArtifactType] = self.TYPE_PATTERNS_DICT.keys()
         else:
-            uploaded = self._upload_app(app_build_path, artifact_type)
+            upload_types = [artifact_type]
+
+        print(f'Uploading {app_build_path} {[k.value for k in upload_types]} to minio server')
+        for upload_type in upload_types:
+            uploaded |= self._upload_app(app_build_path, upload_type)
 
         if uploaded:
             rmdir(app_build_path, exclude_file_patterns=DEFAULT_BUILD_LOG_FILENAME)

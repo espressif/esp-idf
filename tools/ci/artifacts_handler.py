@@ -53,6 +53,7 @@ TYPE_PATTERNS_DICT = {
     ],
     ArtifactType.JUNIT_REPORTS: [
         'XUNIT_RESULT*.xml',
+        'build_summary*.xml',
     ],
     ArtifactType.MODIFIED_FILES_AND_COMPONENTS_REPORT: [
         'pipeline.env',
