@@ -260,7 +260,7 @@ RTC peripherals or RTC memories do not need to be powered on during sleep in thi
 
         .. note::
 
-           Due to hardware limitation, When we use multi-IOs for EXT1 wakeup, it is not allowed to configue these IOs to different triggering modes, and there is corresponding inspection mechanism in :cpp:func:`esp_sleep_enable_ext1_wakeup_io`.
+           Due to hardware limitation, when we use more than one IO for EXT1 wakeup, it is not allowed to configure different wakeup levels for the IOs, and there is corresponding inspection mechanism in :cpp:func:`esp_sleep_enable_ext1_wakeup_io`.
 
     .. warning::
 
