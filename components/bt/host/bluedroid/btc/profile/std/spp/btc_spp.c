@@ -424,19 +424,6 @@ static void *btc_spp_rfcomm_inter_cb(tBTA_JV_EVT event, tBTA_JV *p_data, void *u
         slot->rfc_port_handle = BTA_JvRfcommGetPortHdl(p_data->rfc_open.handle);
         BTA_JvSetPmProfile(p_data->rfc_open.handle, BTA_JV_PM_ID_1, BTA_JV_CONN_OPEN);
         break;
-    case BTA_JV_RFCOMM_CLOSE_EVT:
-        slot = spp_find_slot_by_id(id);
-        if (!slot) {
-            BTC_TRACE_ERROR("%s unable to find RFCOMM slot, event:%d!", __func__, event);
-            p_data->rfc_close.status = ESP_SPP_NO_CONNECTION;
-            break;
-        }
-        if (slot->rfc_handle && p_data->rfc_close.port_status != PORT_LOCAL_CLOSED) {
-            BTA_JvRfcommClose(slot->rfc_handle, NULL, (void *)slot->id);
-        }
-        p_data->rfc_close.status = BTA_JV_SUCCESS;
-        p_data->rfc_close.user_data = (void *)(uintptr_t)slot->id;
-        break;
     case BTA_JV_RFCOMM_DATA_IND_EVT:
         break;
     case BTA_JV_FREE_SCN_EVT:
@@ -608,8 +595,7 @@ static void btc_spp_uninit(void)
         // first, remove all connection
         for (size_t i = 1; i <= MAX_RFC_PORTS; i++) {
             if (spp_local_param.spp_slots[i] != NULL && !spp_local_param.spp_slots[i]->is_server) {
-                BTA_JvRfcommClose(spp_local_param.spp_slots[i]->rfc_handle, (tBTA_JV_RFCOMM_CBACK *)btc_spp_rfcomm_inter_cb,
-                                  (void *)spp_local_param.spp_slots[i]->id);
+                BTA_JvRfcommClose(spp_local_param.spp_slots[i]->rfc_handle, (void *)spp_local_param.spp_slots[i]->id);
             }
         }
         // second, remove all server
@@ -727,7 +713,7 @@ static void btc_spp_disconnect(btc_spp_args_t *arg)
             ret = ESP_SPP_NO_CONNECTION;
             break;
         }
-        BTA_JvRfcommClose(arg->disconnect.handle, (tBTA_JV_RFCOMM_CBACK *)btc_spp_rfcomm_inter_cb, (void *)slot->id);
+        BTA_JvRfcommClose(arg->disconnect.handle, (void *)slot->id);
         osi_mutex_unlock(&spp_local_param.spp_slot_mutex);
     } while(0);
 
@@ -835,9 +821,7 @@ static void btc_spp_stop_srv(btc_spp_args_t *arg)
                 if (spp_local_param.spp_slots[i] != NULL && !spp_local_param.spp_slots[i]->is_server &&
                     spp_local_param.spp_slots[i]->sdp_handle > 0 &&
                     spp_local_param.spp_slots[i]->scn == srv_scn_arr[j]) {
-                    BTA_JvRfcommClose(spp_local_param.spp_slots[i]->rfc_handle,
-                                      (tBTA_JV_RFCOMM_CBACK *)btc_spp_rfcomm_inter_cb,
-                                      (void *)spp_local_param.spp_slots[i]->id);
+                    BTA_JvRfcommClose(spp_local_param.spp_slots[i]->rfc_handle, (void *)spp_local_param.spp_slots[i]->id);
                 }
             }
         }
@@ -1175,28 +1159,27 @@ void btc_spp_cb_handler(btc_msg_t *msg)
         osi_mutex_unlock(&spp_local_param.spp_slot_mutex);
         break;
     case BTA_JV_RFCOMM_CLOSE_EVT:
-        param.close.status = p_data->rfc_close.status;
+        param.close.status = BTA_JV_SUCCESS;
         param.close.port_status = p_data->rfc_close.port_status;
         param.close.handle = p_data->rfc_close.handle;
         param.close.async = p_data->rfc_close.async;
         if (spp_local_param.spp_mode == ESP_SPP_MODE_CB) {
-            btc_spp_cb_to_app(ESP_SPP_CLOSE_EVT, &param);
             osi_mutex_lock(&spp_local_param.spp_slot_mutex, OSI_MUTEX_MAX_TIMEOUT);
-            uint32_t id = (uintptr_t)p_data->rfc_close.user_data;
-            slot = spp_find_slot_by_id(id);
+            slot = spp_find_slot_by_handle(p_data->rfc_close.handle);
             if (!slot) {
+                param.close.status = ESP_SPP_NO_CONNECTION;
                 osi_mutex_unlock(&spp_local_param.spp_slot_mutex);
                 BTC_TRACE_ERROR("%s unable to find RFCOMM slot, event:%d!", __func__, event);
                 break;
             }
             spp_free_slot(slot);
             osi_mutex_unlock(&spp_local_param.spp_slot_mutex);
+            btc_spp_cb_to_app(ESP_SPP_CLOSE_EVT, &param);
         } else {
             bool need_call = true;
             do {
                 osi_mutex_lock(&spp_local_param.spp_slot_mutex, OSI_MUTEX_MAX_TIMEOUT);
-                uint32_t id = (uintptr_t)p_data->rfc_close.user_data;
-                slot = spp_find_slot_by_id(id);
+                slot = spp_find_slot_by_handle(p_data->rfc_close.handle);
                 if (!slot) {
                     param.close.status = ESP_SPP_NO_CONNECTION;
                     osi_mutex_unlock(&spp_local_param.spp_slot_mutex);
