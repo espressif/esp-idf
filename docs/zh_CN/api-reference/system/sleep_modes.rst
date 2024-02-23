@@ -260,7 +260,7 @@ RTC 控制器中内嵌定时器，可用于在预定义的时间到达后唤醒�
 
        .. note::
 
-           由于硬件限制，当我们将多个 IO 用于 EXT1 唤醒，此时不允许将这些 IO 配制成不同的触发模式，在 :cpp:func:`esp_sleep_enable_ext1_wakeup_io` 已有相应的内部检查机制。
+           由于硬件限制，当我们将多个 IO 用于 EXT1 唤醒，此时不允许将这些 IO 的唤醒模式配置成不同的电平，在 :cpp:func:`esp_sleep_enable_ext1_wakeup_io` 已有相应的内部检查机制。
 
     .. warning::
 
