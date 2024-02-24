@@ -189,7 +189,7 @@ esp_err_t i2c_new_slave_device(const i2c_slave_config_t *slave_config, i2c_slave
     ESP_RETURN_ON_FALSE(slave_config->i2c_port < SOC_I2C_NUM || slave_config->i2c_port == -1, ESP_ERR_INVALID_ARG, TAG, "invalid i2c port number");
     ESP_RETURN_ON_FALSE((slave_config->send_buf_depth > 0), ESP_ERR_INVALID_ARG, TAG, "invalid SCL speed");
 #if SOC_I2C_SLAVE_SUPPORT_BROADCAST
-    ESP_GOTO_ON_FALSE(((slave_config->addr_bit_len != I2C_ADDR_BIT_LEN_10) || (!slave_config->flags.broadcast_en)), ESP_ERR_INVALID_STATE, err, TAG, "10bits address cannot used together with broadcast");
+    ESP_RETURN_ON_FALSE(((slave_config->addr_bit_len != I2C_ADDR_BIT_LEN_10) || (!slave_config->flags.broadcast_en)), ESP_ERR_INVALID_STATE, TAG, "10bits address cannot used together with broadcast");
 #endif
 
     int i2c_port_num = slave_config->i2c_port;

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -28,6 +28,10 @@
 #include "esp_rom_sys.h"
 #include <sys/param.h>
 #include "soc/clk_tree_defs.h"
+#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
+#include "esp_private/sleep_retention.h"
+#endif
+
 
 #if SOC_I2C_SUPPORT_APB || SOC_I2C_SUPPORT_XTAL
 #include "esp_private/esp_clk.h"
@@ -316,6 +320,7 @@ esp_err_t i2c_driver_install(i2c_port_t i2c_num, i2c_mode_t mode, size_t slv_rx_
 #if CONFIG_SPIRAM_USE_MALLOC
         p_i2c->intr_alloc_flags = intr_alloc_flags;
 #endif
+
 #if SOC_I2C_SUPPORT_SLAVE
         if (mode == I2C_MODE_SLAVE) {
 
@@ -409,6 +414,11 @@ esp_err_t i2c_driver_install(i2c_port_t i2c_num, i2c_mode_t mode, size_t slv_rx_
         i2c_ll_slave_enable_rx_it(i2c_context[i2c_num].hal.dev);
     }
 #endif // SOC_I2C_SUPPORT_SLAVE
+
+#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
+        ret = sleep_retention_entries_create(i2c_regs_retention[i2c_num].link_list, i2c_regs_retention[i2c_num].link_num, REGDMA_LINK_PRI_7, I2C_SLEEP_RETENTION_MODULE(i2c_num));
+        ESP_GOTO_ON_ERROR(ret, err, I2C_TAG, "failed to allocate mem for sleep retention");
+#endif
     return ESP_OK;
 
 err:
@@ -460,6 +470,10 @@ esp_err_t i2c_driver_delete(i2c_port_t i2c_num)
     i2c_ll_disable_intr_mask(i2c_context[i2c_num].hal.dev, I2C_LL_INTR_MASK);
     esp_intr_free(p_i2c->intr_handle);
     p_i2c->intr_handle = NULL;
+
+#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
+    sleep_retention_entries_destroy(I2C_SLEEP_RETENTION_MODULE(i2c_num));
+#endif
 
     if (p_i2c->cmd_mux) {
         // Let any command in progress finish.

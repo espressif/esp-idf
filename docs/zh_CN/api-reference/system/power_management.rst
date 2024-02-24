@@ -154,7 +154,6 @@ Light-sleep 外设下电
     - Trace
     - Crypto: AES/ECC/HMAC/RSA/SHA/DS/XTA_AES/ECDSA
     - SPI2
-    - I2C
     - I2S
     - PCNT
     - USB-Serial-JTAG

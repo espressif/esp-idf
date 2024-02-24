@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -26,6 +26,9 @@
 #include "soc/i2c_periph.h"
 #include "esp_clk_tree.h"
 #include "clk_ctrl_os.h"
+#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
+#include "esp_private/sleep_retention.h"
+#endif
 
 static const char *TAG = "i2c.common";
 
@@ -54,6 +57,11 @@ static esp_err_t s_i2c_bus_handle_aquire(i2c_port_num_t port_num, i2c_bus_handle
             bus->port_num = port_num;
             bus->spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
             bus->bus_mode = mode;
+
+#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
+            ret = sleep_retention_entries_create(i2c_regs_retention[port_num].link_list, i2c_regs_retention[port_num].link_num, REGDMA_LINK_PRI_7, I2C_SLEEP_RETENTION_MODULE(port_num));
+            ESP_RETURN_ON_ERROR(ret, TAG, "failed to allocate mem for sleep retention");
+#endif
 
             // Enable the I2C module
             I2C_RCC_ATOMIC() {
@@ -128,6 +136,9 @@ esp_err_t i2c_release_bus_handle(i2c_bus_handle_t i2c_bus)
         if (s_i2c_platform.count[port_num] == 0) {
             do_deinitialize = true;
             s_i2c_platform.buses[port_num] = NULL;
+#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
+            sleep_retention_entries_destroy(I2C_SLEEP_RETENTION_MODULE(port_num));
+#endif
             if (i2c_bus->intr_handle) {
                 ESP_RETURN_ON_ERROR(esp_intr_free(i2c_bus->intr_handle), TAG, "delete interrupt service failed");
             }

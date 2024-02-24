@@ -75,6 +75,9 @@ typedef enum {
 #define I2C_LL_SLAVE_TX_EVENT_INTR  (I2C_TXFIFO_WM_INT_ENA_M)
 #define I2C_LL_RESET_SLV_SCL_PULSE_NUM_DEFAULT   (9)
 
+// I2C sleep retention module
+#define I2C_SLEEP_RETENTION_MODULE(i2c_num) ((i2c_num == 0) ? SLEEP_RETENTION_MODULE_I2C0 : SLEEP_RETENTION_MODULE_I2C1)
+
 /**
  * @brief  Calculate I2C bus frequency
  *         Note that the clock accuracy is affected by the external pull-up resistor,

@@ -38,6 +38,7 @@ typedef enum periph_retention_module_bitmap {
     SLEEP_RETENTION_MODULE_GDMA_CH0     = BIT(24),
     SLEEP_RETENTION_MODULE_GDMA_CH1     = BIT(25),
     SLEEP_RETENTION_MODULE_GDMA_CH2     = BIT(26),
+    SLEEP_RETENTION_MODULE_I2C0         = BIT(27),
     SLEEP_RETENTION_MODULE_ALL          = (uint32_t)-1
 } periph_retention_module_bitmap_t;
 
