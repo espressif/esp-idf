@@ -35,6 +35,7 @@ no_runner_tags:
   - esp32,psram,quad_psram
   - esp32,quad_psram
   - esp32c2,jtag,xtal_40mhz
+  - esp32c3,flash_multi
   - esp32c3,sdcard_sdmode
   - esp32c6,jtag
   - esp32c6_2,wifi_two_dut
