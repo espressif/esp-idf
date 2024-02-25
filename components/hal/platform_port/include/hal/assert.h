@@ -38,7 +38,7 @@ extern void abort(void);
 #elif CONFIG_HAL_DEFAULT_ASSERTION_LEVEL == 2 // full assertion
 #define HAL_ASSERT(__e) (__builtin_expect(!!(__e), 1) ? (void)0 : __assert_func(__FILE__, __LINE__, __ASSERT_FUNC, #__e))
 #else // no assert
-#define HAL_ASSERT(__e) ((void)(__e))
+#define HAL_ASSERT(__e) ((void)(__e), __builtin_unreachable())
 #endif
 
 #ifdef __cplusplus
