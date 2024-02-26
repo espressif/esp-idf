@@ -18,7 +18,7 @@
 
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 
-static const char *TAG = "esp32_eth_test_hal";
+static const char *TAG = "eth_test_esp_emac";
 
 typedef struct
 {
@@ -26,12 +26,12 @@ typedef struct
     uint16_t expected_size;
     uint16_t expected_size_2;
     uint16_t expected_size_3;
-} recv_hal_check_info_t;
+} recv_esp_emac_check_info_t;
 
-static esp_err_t eth_recv_hal_check_cb(esp_eth_handle_t hdl, uint8_t *buffer, uint32_t length, void *priv)
+static esp_err_t eth_recv_esp_emac_check_cb(esp_eth_handle_t hdl, uint8_t *buffer, uint32_t length, void *priv)
 {
     emac_frame_t *pkt = (emac_frame_t *)buffer;
-    recv_hal_check_info_t *recv_info = (recv_hal_check_info_t *)priv;
+    recv_esp_emac_check_info_t *recv_info = (recv_esp_emac_check_info_t *)priv;
     uint16_t expected_size = recv_info->expected_size + recv_info->expected_size_2 + recv_info->expected_size_3;
 
     ESP_LOGI(TAG, "recv frame size: %" PRIu16, expected_size);
@@ -75,9 +75,9 @@ static esp_err_t eth_recv_hal_check_cb(esp_eth_handle_t hdl, uint8_t *buffer, ui
     return ESP_OK;
 }
 
-TEST_CASE("hal receive/transmit", "[emac_hal]")
+TEST_CASE("internal emac receive/transmit", "[esp_emac]")
 {
-    recv_hal_check_info_t recv_info;
+    recv_esp_emac_check_info_t recv_info;
     recv_info.mutex = xSemaphoreCreateBinary();
     TEST_ASSERT_NOT_NULL(recv_info.mutex);
     recv_info.expected_size = 0;
@@ -106,7 +106,7 @@ TEST_CASE("hal receive/transmit", "[emac_hal]")
     bool loopback_en = true;
     esp_eth_ioctl(eth_handle, ETH_CMD_S_PHY_LOOPBACK, &loopback_en);
 
-    TEST_ESP_OK(esp_eth_update_input_path(eth_handle, eth_recv_hal_check_cb, &recv_info));
+    TEST_ESP_OK(esp_eth_update_input_path(eth_handle, eth_recv_esp_emac_check_cb, &recv_info));
 
     // start the driver
     TEST_ESP_OK(esp_eth_start(eth_handle));
@@ -297,11 +297,71 @@ TEST_CASE("hal receive/transmit", "[emac_hal]")
     vSemaphoreDelete(recv_info.mutex);
 }
 
+TEST_CASE("internal emac interrupt priority", "[esp_emac]")
+{
+    EventBits_t bits = 0;
+    EventGroupHandle_t eth_event_group = xEventGroupCreate();
+    TEST_ASSERT(eth_event_group != NULL);
+    test_case_uses_tcpip();
+    TEST_ESP_OK(esp_event_loop_create_default());
+    for (int i = -1; i <= 4; i++) {
+        // create TCP/IP netif
+        esp_netif_config_t netif_cfg = ESP_NETIF_DEFAULT_ETH();
+        esp_netif_t *eth_netif = esp_netif_new(&netif_cfg);
+        eth_esp32_emac_config_t esp32_emac_config = ETH_ESP32_EMAC_DEFAULT_CONFIG();
+        esp32_emac_config.intr_priority = i;
+        ESP_LOGI(TAG, "set interrupt priority %i: ", i);
+        esp_eth_mac_t *mac = mac_init(&esp32_emac_config, NULL);
+        if (i >= 4) {
+            TEST_ASSERT_NULL(mac);
+        }
+        else {
+            TEST_ASSERT_NOT_NULL(mac);
+            esp_eth_phy_t *phy = phy_init(NULL);
+            TEST_ASSERT_NOT_NULL(phy);
+            esp_eth_config_t eth_config = ETH_DEFAULT_CONFIG(mac, phy);
+            esp_eth_handle_t eth_handle = NULL;
+            // install Ethernet driver
+            TEST_ESP_OK(esp_eth_driver_install(&eth_config, &eth_handle));
+            extra_eth_config(eth_handle);
+            // combine driver with netif
+            esp_eth_netif_glue_handle_t glue = esp_eth_new_netif_glue(eth_handle);
+            TEST_ESP_OK(esp_netif_attach(eth_netif, glue));
+            // register user defined event handers
+            TEST_ESP_OK(esp_event_handler_register(ETH_EVENT, ESP_EVENT_ANY_ID, &eth_event_handler, eth_event_group));
+            TEST_ESP_OK(esp_event_handler_register(IP_EVENT, IP_EVENT_ETH_GOT_IP, &got_ip_event_handler, eth_event_group));
+
+            // start Ethernet driver
+            TEST_ESP_OK(esp_eth_start(eth_handle));
+            /* wait for IP lease */
+            bits = xEventGroupWaitBits(eth_event_group, ETH_GOT_IP_BIT, true, true, pdMS_TO_TICKS(ETH_GET_IP_TIMEOUT_MS));
+            TEST_ASSERT((bits & ETH_GOT_IP_BIT) == ETH_GOT_IP_BIT);
+            // stop Ethernet driveresp_event_handler_unregister
+            TEST_ESP_OK(esp_eth_stop(eth_handle));
+            /* wait for connection stop */
+            bits = xEventGroupWaitBits(eth_event_group, ETH_STOP_BIT, true, true, pdMS_TO_TICKS(ETH_STOP_TIMEOUT_MS));
+            TEST_ASSERT((bits & ETH_STOP_BIT) == ETH_STOP_BIT);
+
+            TEST_ESP_OK(esp_eth_del_netif_glue(glue));
+            /* driver should be uninstalled within 2 seconds */
+            TEST_ESP_OK(esp_eth_driver_uninstall(eth_handle));
+            TEST_ESP_OK(phy->del(phy));
+            TEST_ESP_OK(mac->del(mac));
+            TEST_ESP_OK(esp_event_handler_unregister(IP_EVENT, IP_EVENT_ETH_GOT_IP, got_ip_event_handler));
+            TEST_ESP_OK(esp_event_handler_unregister(ETH_EVENT, ESP_EVENT_ANY_ID, eth_event_handler));
+            extra_cleanup();
+        }
+        esp_netif_destroy(eth_netif);
+    }
+    TEST_ESP_OK(esp_event_loop_delete_default());
+    vEventGroupDelete(eth_event_group);
+}
+
 #if CONFIG_IDF_TARGET_ESP32P4 // IDF-8993
 #include "hal/emac_hal.h"
 #include "hal/emac_ll.h"
 #include "soc/emac_mac_struct.h"
-static esp_err_t eth_recv_err_hal_check_cb(esp_eth_handle_t hdl, uint8_t *buffer, uint32_t length, void *priv)
+static esp_err_t eth_recv_err_esp_emac_check_cb(esp_eth_handle_t hdl, uint8_t *buffer, uint32_t length, void *priv)
 {
     SemaphoreHandle_t mutex = (SemaphoreHandle_t)priv;
     free(buffer);
@@ -309,7 +369,7 @@ static esp_err_t eth_recv_err_hal_check_cb(esp_eth_handle_t hdl, uint8_t *buffer
     return ESP_OK;
 }
 
-TEST_CASE("hal erroneous frames", "[emac_hal]")
+TEST_CASE("internal emac erroneous frames", "[esp_emac]")
 {
     SemaphoreHandle_t mutex = xSemaphoreCreateBinary();
     TEST_ASSERT_NOT_NULL(mutex);
@@ -334,7 +394,7 @@ TEST_CASE("hal erroneous frames", "[emac_hal]")
     bool loopback_en = true;
     esp_eth_ioctl(eth_handle, ETH_CMD_S_PHY_LOOPBACK, &loopback_en);
 
-    TEST_ESP_OK(esp_eth_update_input_path(eth_handle, eth_recv_err_hal_check_cb, mutex));
+    TEST_ESP_OK(esp_eth_update_input_path(eth_handle, eth_recv_err_esp_emac_check_cb, mutex));
 
     // start the driver
     TEST_ESP_OK(esp_eth_start(eth_handle));

@@ -127,8 +127,8 @@ def ethernet_test(dut: IdfDut) -> None:
     dut.run_all_single_board_cases(group='ethernet', timeout=980)
 
 
-def ethernet_int_emac_hal_test(dut: IdfDut) -> None:
-    dut.run_all_single_board_cases(group='emac_hal')
+def ethernet_int_emac_test(dut: IdfDut) -> None:
+    dut.run_all_single_board_cases(group='esp_emac', timeout=120)
 
 
 def ethernet_l2_test(dut: IdfDut) -> None:
@@ -250,8 +250,8 @@ def test_esp_ethernet(dut: IdfDut) -> None:
 @pytest.mark.parametrize('config', [
     'default_ip101',
 ], indirect=True)
-def test_esp_emac_hal(dut: IdfDut) -> None:
-    ethernet_int_emac_hal_test(dut)
+def test_esp_emac(dut: IdfDut) -> None:
+    ethernet_int_emac_test(dut)
     dut.serial.hard_reset()
     ethernet_heap_alloc_test(dut)
 
