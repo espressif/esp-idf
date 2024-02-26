@@ -107,7 +107,7 @@ esp_err_t touch_pad_isr_register(intr_handler_t fn, void *arg, touch_pad_intr_ma
 #endif
     esp_err_t ret = rtc_isr_register(fn, arg, en_msk, 0);
     /* Must ensure: After being registered, it is executed first. */
-    if ( (ret == ESP_OK) && (reg_flag == false) && (intr_mask & (TOUCH_PAD_INTR_MASK_SCAN_DONE | TOUCH_PAD_INTR_MASK_TIMEOUT)) ) {
+    if ((ret == ESP_OK) && (reg_flag == false) && (intr_mask & (TOUCH_PAD_INTR_MASK_SCAN_DONE | TOUCH_PAD_INTR_MASK_TIMEOUT))) {
         rtc_isr_register(touch_pad_workaround_isr_internal, NULL, RTC_CNTL_TOUCH_SCAN_DONE_INT_ST_M | RTC_CNTL_TOUCH_TIMEOUT_INT_ST_M, 0);
         reg_flag = true;
     }

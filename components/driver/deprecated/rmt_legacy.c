@@ -1011,7 +1011,7 @@ esp_err_t rmt_driver_install(rmt_channel_t channel, size_t rx_buf_size, int intr
     }
 
 #if CONFIG_RINGBUF_PLACE_ISR_FUNCTIONS_INTO_FLASH
-    if (intr_alloc_flags & ESP_INTR_FLAG_IRAM ) {
+    if (intr_alloc_flags & ESP_INTR_FLAG_IRAM) {
         ESP_LOGE(TAG, "ringbuf ISR functions in flash, but used in IRAM interrupt");
         return ESP_ERR_INVALID_ARG;
     }

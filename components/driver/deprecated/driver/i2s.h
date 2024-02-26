@@ -378,7 +378,6 @@ esp_err_t i2s_adc_disable(i2s_port_t i2s_num);
 esp_err_t i2s_set_dac_mode(i2s_dac_mode_t dac_mode);
 #endif //SOC_I2S_SUPPORTS_DAC
 
-
 #ifdef __cplusplus
 }
 #endif

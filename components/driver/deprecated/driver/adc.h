@@ -278,7 +278,6 @@ esp_err_t adc2_get_raw(adc2_channel_t channel, adc_bits_width_t width_bit, int *
 esp_err_t adc_vref_to_gpio(adc_unit_t adc_unit, gpio_num_t gpio);
 #endif  //#if (SOC_ADC_PERIPH_NUM >= 2)
 
-
 /*---------------------------------------------------------------
             ADC DMA Read Setting
 ---------------------------------------------------------------*/

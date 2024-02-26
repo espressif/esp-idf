@@ -207,7 +207,6 @@ typedef struct  {
 } i2s_pdm_tx_upsample_cfg_t;
 #endif
 
-
 /**
  * @brief I2S driver configuration parameters
  *

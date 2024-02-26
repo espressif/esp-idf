@@ -23,7 +23,6 @@ typedef enum {
     TSENS_DAC_DEFAULT = TSENS_DAC_L2,
 } temp_sensor_dac_offset_t;
 
-
 /**
  * @brief Configuration for temperature sensor reading
  */

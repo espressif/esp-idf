@@ -23,7 +23,6 @@
  */
 void test_fill_random_to_buffers_dualboard(uint32_t seed, uint8_t *dut0_buffer, uint8_t *dut1_buffer, size_t buffer_size);
 
-
 /**
  * Fill tx buffer with random numbers
  *
@@ -32,7 +31,6 @@ void test_fill_random_to_buffers_dualboard(uint32_t seed, uint8_t *dut0_buffer, 
  * @param buffer_size     Buffer size
  */
 void test_fill_random_to_buffer(uint32_t seed, uint8_t *buffer, size_t buffer_size);
-
 
 /**
  * Calloc a pool, filled with random numbers

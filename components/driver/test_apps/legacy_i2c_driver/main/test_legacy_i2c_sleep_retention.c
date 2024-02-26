@@ -40,12 +40,11 @@
 #define WRITE_BIT  I2C_MASTER_WRITE /*!< I2C master write */
 #define ACK_CHECK_EN   0x1     /*!< I2C master will check ack from slave*/
 
-
 static esp_err_t i2c_master_write_slave(i2c_port_t i2c_num, uint8_t *data_wr, size_t size)
 {
     i2c_cmd_handle_t cmd = i2c_cmd_link_create();
     i2c_master_start(cmd);
-    TEST_ESP_OK(i2c_master_write_byte(cmd, ( ESP_SLAVE_ADDR << 1 ) | WRITE_BIT, ACK_CHECK_EN));
+    TEST_ESP_OK(i2c_master_write_byte(cmd, (ESP_SLAVE_ADDR << 1) | WRITE_BIT, ACK_CHECK_EN));
     TEST_ESP_OK(i2c_master_write(cmd, data_wr, size, ACK_CHECK_EN));
     TEST_ESP_OK(i2c_master_stop(cmd));
     esp_err_t ret = i2c_master_cmd_begin(i2c_num, cmd, 5000 / portTICK_PERIOD_MS);
@@ -87,7 +86,7 @@ static void disp_buf(uint8_t *buf, int len)
     int i;
     for (i = 0; i < len; i++) {
         printf("%02x ", buf[i]);
-        if (( i + 1 ) % 16 == 0) {
+        if ((i + 1) % 16 == 0) {
             printf("\n");
         }
     }
@@ -143,7 +142,7 @@ static void i2c_slave_read_sleep_test(void)
     int len = 0;
 
     i2c_config_t conf_slave = i2c_slave_init();
-    TEST_ESP_OK(i2c_param_config( I2C_SLAVE_NUM, &conf_slave));
+    TEST_ESP_OK(i2c_param_config(I2C_SLAVE_NUM, &conf_slave));
     TEST_ESP_OK(i2c_driver_install(I2C_SLAVE_NUM, I2C_MODE_SLAVE,
                                    I2C_SLAVE_RX_BUF_LEN,
                                    I2C_SLAVE_TX_BUF_LEN, 0));
@@ -151,7 +150,7 @@ static void i2c_slave_read_sleep_test(void)
 
     unity_wait_for_signal("master write and sleep");
     while (1) {
-        len = i2c_slave_read_buffer( I2C_SLAVE_NUM, data_rd + size_rd, DATA_LENGTH, 10000 / portTICK_PERIOD_MS);
+        len = i2c_slave_read_buffer(I2C_SLAVE_NUM, data_rd + size_rd, DATA_LENGTH, 10000 / portTICK_PERIOD_MS);
         if (len == 0) {
             break;
         }
@@ -173,7 +172,7 @@ static void i2c_slave_read_sleep_test(void)
     memset(data_rd, 0, DATA_LENGTH);
     size_rd = 0;
     while (1) {
-        len = i2c_slave_read_buffer( I2C_SLAVE_NUM, data_rd + size_rd, DATA_LENGTH, 10000 / portTICK_PERIOD_MS);
+        len = i2c_slave_read_buffer(I2C_SLAVE_NUM, data_rd + size_rd, DATA_LENGTH, 10000 / portTICK_PERIOD_MS);
         if (len == 0) {
             break;
         }

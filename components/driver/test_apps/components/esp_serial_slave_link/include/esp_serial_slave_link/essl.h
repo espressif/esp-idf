@@ -6,7 +6,6 @@
 
 #pragma once
 
-
 #include "esp_err.h"
 
 #ifdef __cplusplus
@@ -66,7 +65,6 @@ esp_err_t essl_get_tx_buffer_num(essl_handle_t handle, uint32_t *out_tx_num, uin
  *      - One of the error codes from SDMMC/SPI host controller
  */
 esp_err_t essl_get_rx_data_size(essl_handle_t handle, uint32_t *out_rx_size, uint32_t wait_ms);
-
 
 /** Reset the counters of this component. Usually you don't need to do this unless you know the slave is reset.
  *
