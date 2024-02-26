@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -404,6 +404,23 @@ void esp_deep_sleep_deregister_hook(esp_deep_sleep_cb_t old_dslp_cb)
     portEXIT_CRITICAL(&spinlock_rtc_deep_sleep);
 }
 
+static int s_cache_suspend_cnt = 0;
+
+static void IRAM_ATTR suspend_cache(void) {
+    s_cache_suspend_cnt++;
+    if (s_cache_suspend_cnt == 1) {
+        cache_hal_suspend(CACHE_TYPE_ALL);
+    }
+}
+
+static void IRAM_ATTR resume_cache(void) {
+    s_cache_suspend_cnt--;
+    assert(s_cache_suspend_cnt >= 0 && "cache resume doesn't match suspend ops");
+    if (s_cache_suspend_cnt == 0) {
+        cache_hal_resume(CACHE_TYPE_ALL);
+    }
+}
+
 // [refactor-todo] provide target logic for body of uart functions below
 static void IRAM_ATTR flush_uarts(void)
 {
@@ -477,7 +494,12 @@ static bool light_sleep_uart_prepare(uint32_t pd_flags, int64_t sleep_duration)
 #if !SOC_PM_SUPPORT_TOP_PD || !CONFIG_ESP_CONSOLE_UART
     suspend_uarts();
 #else
-    if (pd_flags & PMU_SLEEP_PD_TOP) {
+#ifdef CONFIG_ESP_SLEEP_CACHE_SAFE_ASSERTION
+#define FORCE_FLUSH_CONSOLE_UART 1
+#else
+#define FORCE_FLUSH_CONSOLE_UART 0
+#endif
+    if (FORCE_FLUSH_CONSOLE_UART || (pd_flags & PMU_SLEEP_PD_TOP)) {
         if ((s_config.wakeup_triggers & RTC_TIMER_TRIG_EN) &&
             // +1 is for cover the last character flush time
             (sleep_duration < (int64_t)((UART_LL_FIFO_DEF_LEN - uart_ll_get_txfifo_len(CONSOLE_UART_DEV) + 1) * UART_FLUSH_US_PER_CHAR) + SLEEP_UART_FLUSH_DONE_TO_SLEEP_US)) {
@@ -775,8 +797,8 @@ static esp_err_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t m
 #endif
 #endif // SOC_PM_SUPPORT_DEEPSLEEP_CHECK_STUB_ONLY
         } else {
-            /* Wait cache idle in cache suspend to avoid cache load wrong data after spi io isolation */
-            cache_hal_suspend(CACHE_TYPE_ALL);
+            /* Cache Suspend 1: will wait cache idle in cache suspend to avoid cache load wrong data after spi io isolation */
+            suspend_cache();
             /* On esp32c6, only the lp_aon pad hold function can only hold the GPIO state in the active mode.
                In order to avoid the leakage of the SPI cs pin, hold it here */
 #if (CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && CONFIG_ESP_SLEEP_FLASH_LEAKAGE_WORKAROUND)
@@ -809,8 +831,8 @@ static esp_err_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t m
             }
 #endif
 #endif
-            /* Resume cache for continue running */
-            cache_hal_resume(CACHE_TYPE_ALL);
+            /* Cache Resume 1: Resume cache for continue running*/
+            resume_cache();
         }
 
 #if CONFIG_ESP_SLEEP_SYSTIMER_STALL_WORKAROUND
@@ -819,6 +841,14 @@ static esp_err_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t m
             }
 #endif
     }
+
+#if CONFIG_ESP_SLEEP_CACHE_SAFE_ASSERTION
+    if (pd_flags & RTC_SLEEP_PD_VDDSDIO) {
+        /* Cache Suspend 2: If previous sleep powerdowned the flash, suspend cache here so that the
+           access to flash before flash ready can be explicitly exposed. */
+        suspend_cache();
+    }
+#endif
 
     // Restore CPU frequency
 #if SOC_PM_SUPPORT_PMU_MODEM_STATE
@@ -1008,6 +1038,13 @@ static esp_err_t esp_light_sleep_inner(uint32_t pd_flags,
         // Wait for the flash chip to start up
         esp_rom_delay_us(flash_enable_time_us);
     }
+
+#if CONFIG_ESP_SLEEP_CACHE_SAFE_ASSERTION
+    if (pd_flags & RTC_SLEEP_PD_VDDSDIO) {
+        /* Cache Resume 2: flash is ready now, we can resume the cache and access flash safely after */
+        resume_cache();
+        }
+#endif
 
     return reject;
 }
