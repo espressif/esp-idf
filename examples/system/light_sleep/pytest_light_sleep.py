@@ -1,6 +1,5 @@
 # SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
-
 import logging
 import time
 
@@ -8,7 +7,6 @@ import pytest
 from pytest_embedded import Dut
 
 
-@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='esp32p4 support TBD')
 @pytest.mark.supported_targets
 @pytest.mark.generic
 def test_light_sleep(dut: Dut) -> None:
@@ -17,7 +15,7 @@ def test_light_sleep(dut: Dut) -> None:
     EXIT_SLEEP_REGEX = r'Returned from light sleep, reason: (\w+), t=(\d+) ms, slept for (\d+) ms'
     EXIT_SLEEP_PIN_REGEX = r'Returned from light sleep, reason: (pin), t=(\d+) ms, slept for (\d+) ms'
     EXIT_SLEEP_UART_REGEX = r'Returned from light sleep, reason: (uart), t=(\d+) ms, slept for (\d+) ms'
-    WAITING_FOR_GPIO_STR = r'Waiting for GPIO\d to go high...'
+    WAITING_FOR_GPIO_STR = r'Waiting for GPIO\d+ to go high...'
 
     WAKEUP_INTERVAL_MS = 2000
 

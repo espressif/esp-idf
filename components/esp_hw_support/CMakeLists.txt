@@ -166,7 +166,6 @@ if(NOT BOOTLOADER_BUILD)
         list(REMOVE_ITEM srcs
                 "sleep_cpu.c"         # TODO: IDF-7528, IDF-7529
                 "sleep_wake_stub.c"   # TODO: IDF-7529
-                "sleep_gpio.c"        # TODO: IDF-7528, IDF-7529
             )
     endif()
     if(CONFIG_IDF_TARGET_ESP32C5)

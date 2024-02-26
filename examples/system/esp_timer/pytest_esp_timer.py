@@ -28,7 +28,6 @@ ONE_SHOT_TIMER_PERIOD = 5000000
 
 
 @pytest.mark.supported_targets
-@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='Light Sleep support TBD')  # TODO: IDF-7528
 @pytest.mark.generic
 @pytest.mark.parametrize(
     'config',
