@@ -89,9 +89,9 @@ examples/protocols/https_mbedtls:
 examples/protocols/https_request:
   <<: *default_dependencies
   disable:
-    - if: IDF_TARGET in ["esp32h2"]
+    - if: IDF_TARGET in ["esp32h2", "esp32p4"]
       temporary: true
-      reason: not supported on h2 # TODO: IDF-9076 (H2)
+      reason: not supported on h2 and p4 # TODO: IDF-9076 (H2)
   disable_test:
     - if: IDF_TARGET != "esp32"
       reason: only test on esp32
