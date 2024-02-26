@@ -64,17 +64,17 @@ static const char *TAG = "example";
 
 static SemaphoreHandle_t lvgl_api_mux = NULL;
 
-extern void example_lvgl_demo_ui(lv_disp_t *disp);
+extern void example_lvgl_demo_ui(lv_display_t *disp);
 
-static void example_lvgl_flush_cb(lv_disp_drv_t *drv, const lv_area_t *area, lv_color_t *color_map)
+static void example_lvgl_flush_cb(lv_display_t *disp, const lv_area_t *area, uint8_t *px_map)
 {
-    esp_lcd_panel_handle_t panel_handle = (esp_lcd_panel_handle_t) drv->user_data;
+    esp_lcd_panel_handle_t panel_handle = lv_display_get_user_data(disp);
     int offsetx1 = area->x1;
     int offsetx2 = area->x2;
     int offsety1 = area->y1;
     int offsety2 = area->y2;
     // pass the draw buffer to the driver
-    esp_lcd_panel_draw_bitmap(panel_handle, offsetx1, offsety1, offsetx2 + 1, offsety2 + 1, color_map);
+    esp_lcd_panel_draw_bitmap(panel_handle, offsetx1, offsety1, offsetx2 + 1, offsety2 + 1, px_map);
 }
 
 static void example_increase_lvgl_tick(void *arg)
@@ -118,8 +118,8 @@ static void example_lvgl_port_task(void *arg)
 
 static bool example_notify_lvgl_flush_ready(esp_lcd_panel_handle_t panel, esp_lcd_dpi_panel_event_data_t *edata, void *user_ctx)
 {
-    lv_disp_drv_t *disp_driver = (lv_disp_drv_t *)user_ctx;
-    lv_disp_flush_ready(disp_driver);
+    lv_display_t *disp = (lv_display_t *)user_ctx;
+    lv_display_flush_ready(disp);
     return false;
 }
 
@@ -161,9 +161,6 @@ static void example_bsp_set_lcd_backlight(uint32_t level)
 
 void app_main(void)
 {
-    static lv_disp_draw_buf_t disp_buf; // contains internal graphic buffer(s) called draw buffer(s)
-    static lv_disp_drv_t disp_drv;      // contains callback functions
-
     example_bsp_enable_dsi_phy_power();
     example_bsp_init_lcd_backlight();
     example_bsp_set_lcd_backlight(EXAMPLE_LCD_BK_LIGHT_OFF_LEVEL);
@@ -190,7 +187,7 @@ void app_main(void)
     // create ILI9881C control panel
     esp_lcd_panel_handle_t ili9881c_ctrl_panel;
     esp_lcd_panel_dev_config_t lcd_dev_config = {
-        .bits_per_pixel = 16,
+        .bits_per_pixel = 24,
         .rgb_ele_order = LCD_RGB_ELEMENT_ORDER_RGB,
         .reset_gpio_num = EXAMPLE_PIN_NUM_LCD_RST,
     };
@@ -205,7 +202,7 @@ void app_main(void)
         .virtual_channel = 0,
         .dpi_clk_src = MIPI_DSI_DPI_CLK_SRC_DEFAULT,
         .dpi_clock_freq_mhz = EXAMPLE_MIPI_DSI_DPI_CLK_MHZ,
-        .pixel_format = LCD_COLOR_PIXEL_FORMAT_RGB565,
+        .pixel_format = LCD_COLOR_PIXEL_FORMAT_RGB888,
         .video_timing = {
             .h_size = EXAMPLE_MIPI_DSI_LCD_H_RES,
             .v_size = EXAMPLE_MIPI_DSI_LCD_V_RES,
@@ -221,36 +218,40 @@ void app_main(void)
 #endif
     };
     ESP_ERROR_CHECK(esp_lcd_new_panel_dpi(mipi_dsi_bus, &dpi_config, &mipi_dpi_panel));
-    // register event callbacks
-    esp_lcd_dpi_panel_event_callbacks_t cbs = {
-        .on_color_trans_done = example_notify_lvgl_flush_ready,
-    };
-    ESP_ERROR_CHECK(esp_lcd_dpi_panel_register_event_callbacks(mipi_dpi_panel, &cbs, &disp_drv));
     ESP_ERROR_CHECK(esp_lcd_panel_init(mipi_dpi_panel));
-
     // turn on backlight
     example_bsp_set_lcd_backlight(EXAMPLE_LCD_BK_LIGHT_ON_LEVEL);
 
     ESP_LOGI(TAG, "Initialize LVGL library");
     lv_init();
+    // create a lvgl display
+    lv_display_t *display = lv_display_create(EXAMPLE_MIPI_DSI_LCD_H_RES, EXAMPLE_MIPI_DSI_LCD_V_RES);
+    // associate the mipi panel handle to the display
+    lv_display_set_user_data(display, mipi_dpi_panel);
+    // create draw buffer
     void *buf1 = NULL;
     void *buf2 = NULL;
-    ESP_LOGI(TAG, "Allocate separate LVGL draw buffers from PSRAM");
-    buf1 = heap_caps_malloc(EXAMPLE_MIPI_DSI_LCD_H_RES * EXAMPLE_LVGL_DRAW_BUF_LINES * sizeof(lv_color_t), MALLOC_CAP_SPIRAM);
+    ESP_LOGI(TAG, "Allocate separate LVGL draw buffers");
+    // Note:
+    // Keep the display buffer in **internal** RAM can speed up the UI because LVGL uses it a lot and it should have a fast access time
+    // This example allocate the buffer from PSRAM mainly because we want to save the internal RAM
+    size_t draw_buffer_sz = EXAMPLE_MIPI_DSI_LCD_H_RES * EXAMPLE_LVGL_DRAW_BUF_LINES * sizeof(lv_color_t);
+    buf1 = heap_caps_malloc(draw_buffer_sz, MALLOC_CAP_SPIRAM);
     assert(buf1);
-    buf2 = heap_caps_malloc(EXAMPLE_MIPI_DSI_LCD_H_RES * EXAMPLE_LVGL_DRAW_BUF_LINES * sizeof(lv_color_t), MALLOC_CAP_SPIRAM);
+    buf2 = heap_caps_malloc(draw_buffer_sz, MALLOC_CAP_SPIRAM);
     assert(buf2);
     // initialize LVGL draw buffers
-    lv_disp_draw_buf_init(&disp_buf, buf1, buf2, EXAMPLE_MIPI_DSI_LCD_H_RES * EXAMPLE_LVGL_DRAW_BUF_LINES);
+    lv_display_set_buffers(display, buf1, buf2, draw_buffer_sz, LV_DISPLAY_RENDER_MODE_PARTIAL);
+    // set color depth
+    lv_display_set_color_format(display, LV_COLOR_FORMAT_RGB888);
+    // set the callback which can copy the rendered image to an area of the display
+    lv_display_set_flush_cb(display, example_lvgl_flush_cb);
 
-    // register display driver to LVGL library
-    lv_disp_drv_init(&disp_drv);
-    disp_drv.hor_res = EXAMPLE_MIPI_DSI_LCD_H_RES;
-    disp_drv.ver_res = EXAMPLE_MIPI_DSI_LCD_V_RES;
-    disp_drv.flush_cb = example_lvgl_flush_cb;
-    disp_drv.draw_buf = &disp_buf;
-    disp_drv.user_data = mipi_dpi_panel;
-    lv_disp_t *disp = lv_disp_drv_register(&disp_drv);
+    ESP_LOGI(TAG, "Register DPI panel event callback for LVGL flush ready notification");
+    esp_lcd_dpi_panel_event_callbacks_t cbs = {
+        .on_color_trans_done = example_notify_lvgl_flush_ready,
+    };
+    ESP_ERROR_CHECK(esp_lcd_dpi_panel_register_event_callbacks(mipi_dpi_panel, &cbs, display));
 
     ESP_LOGI(TAG, "Use esp_timer as LVGL tick timer");
     const esp_timer_create_args_t lvgl_tick_timer_args = {
@@ -271,7 +272,7 @@ void app_main(void)
     ESP_LOGI(TAG, "Display LVGL Meter Widget");
     // Lock the mutex due to the LVGL APIs are not thread-safe
     if (example_lvgl_lock(-1)) {
-        example_lvgl_demo_ui(disp);
+        example_lvgl_demo_ui(display);
         // Release the mutex
         example_lvgl_unlock();
     }
