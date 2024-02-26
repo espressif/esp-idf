@@ -88,7 +88,7 @@ LED PWM 控制器可在无需 CPU 干预的情况下自动改变占空比，实�
        * - RC_FAST_CLK
          - ~ 8 MHz
          - 低速
-         - 支持动态调频（DFS）功能，支持 Light-sleep 模式
+         - 支持动态调频 (DFS) 功能，支持 Light-sleep 模式
 
 .. only:: esp32s2
 
@@ -107,7 +107,7 @@ LED PWM 控制器可在无需 CPU 干预的情况下自动改变占空比，实�
          - 支持动态调频 (DFS) 功能
        * - RC_FAST_CLK
          - ~ 8 MHz
-         - 支持动态调频（DFS）功能，支持 Light-sleep 模式
+         - 支持动态调频 (DFS) 功能，支持 Light-sleep 模式
        * - XTAL_CLK
          - 40 MHz
          - 支持动态调频 (DFS) 功能
@@ -126,10 +126,10 @@ LED PWM 控制器可在无需 CPU 干预的情况下自动改变占空比，实�
          - /
        * - RC_FAST_CLK
          - ~ 20 MHz
-         - 支持动态调频（DFS）功能，支持 Light-sleep 模式
+         - 支持动态调频 (DFS) 功能，支持 Light-sleep 模式
        * - XTAL_CLK
          - 40 MHz
-         - 支持动态调频（DFS）功能
+         - 支持动态调频 (DFS) 功能
 
 .. only:: esp32c2
 
@@ -145,12 +145,31 @@ LED PWM 控制器可在无需 CPU 干预的情况下自动改变占空比，实�
          - /
        * - RC_FAST_CLK
          - ~ 20 MHz
-         - 支持动态调频（DFS）功能，支持 Light-sleep 模式
+         - 支持动态调频 (DFS) 功能，支持 Light-sleep 模式
        * - XTAL_CLK
          - 40 MHz
          - 支持动态调频 (DFS) 功能
 
-.. only:: esp32c6 or esp32p4
+.. only:: esp32c6
+
+    .. list-table:: {IDF_TARGET_NAME} LEDC 时钟源特性
+       :widths: 10 10 30
+       :header-rows: 1
+
+       * - 时钟名称
+         - 时钟频率
+         - 时钟功能
+       * - PLL_80M_CLK
+         - 80 MHz
+         - /
+       * - RC_FAST_CLK
+         - ~ 17.5 MHz
+         - 支持动态调频 (DFS) 功能，支持 Light-sleep 模式
+       * - XTAL_CLK
+         - 40 MHz
+         - 支持动态调频 (DFS) 功能
+
+.. only:: esp32p4
 
     .. list-table:: {IDF_TARGET_NAME} LEDC 时钟源特性
        :widths: 10 10 30
@@ -164,7 +183,7 @@ LED PWM 控制器可在无需 CPU 干预的情况下自动改变占空比，实�
          - /
        * - RC_FAST_CLK
          - ~ 20 MHz
-         - 支持动态调频（DFS）功能，支持 Light-sleep 模式
+         - 支持动态调频 (DFS) 功能，支持 Light-sleep 模式
        * - XTAL_CLK
          - 40 MHz
          - 支持动态调频 (DFS) 功能
@@ -183,7 +202,7 @@ LED PWM 控制器可在无需 CPU 干预的情况下自动改变占空比，实�
          - /
        * - RC_FAST_CLK
          - ~ 8 MHz
-         - 支持动态调频（DFS）功能，支持 Light-sleep 模式
+         - 支持动态调频 (DFS) 功能，支持 Light-sleep 模式
        * - XTAL_CLK
          - 32 MHz
          - 支持动态调频 (DFS) 功能

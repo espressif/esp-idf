@@ -150,7 +150,26 @@ The source clock can also limit the PWM frequency. The higher the source clock f
          - 40 MHz
          - Dynamic Frequency Scaling compatible
 
-.. only:: esp32c6 or esp32p4
+.. only:: esp32c6
+
+    .. list-table:: Characteristics of {IDF_TARGET_NAME} LEDC source clocks
+       :widths: 15 15 30
+       :header-rows: 1
+
+       * - Clock name
+         - Clock freq
+         - Clock capabilities
+       * - PLL_80M_CLK
+         - 80 MHz
+         - /
+       * - RC_FAST_CLK
+         - ~ 17.5 MHz
+         - Dynamic Frequency Scaling compatible, Light sleep compatible
+       * - XTAL_CLK
+         - 40 MHz
+         - Dynamic Frequency Scaling compatible
+
+.. only:: esp32p4
 
     .. list-table:: Characteristics of {IDF_TARGET_NAME} LEDC source clocks
        :widths: 15 15 30
@@ -270,7 +289,7 @@ The LEDC hardware provides the means to gradually transition from one duty cycle
 
     On {IDF_TARGET_NAME}, the hardware additionally allows to perform up to {IDF_TARGET_LEDC_MAX_FADE_RANGE_NUM} consecutive linear fades without CPU intervention. This feature can be useful if you want to do a fade with gamma correction.
 
-    The luminance perceived by human eyes does not have a linear relationship with the PWM duty cycle. In order to make human feel the LED is dimming or lightening linearly, the change in duty cycle should be non-linear, which is the so-called gamma correction. The LED controller can simulate a gamma curve fading by piecewise linear approximation. :cpp:func:`ledc_fill_multi_fade_param_list` is a function that can help to construct the parameters for the piecewise linear fades. First, you need to allocate a memory block for saving the fade parameters, then by providing start/end PWM duty cycle values, gamma correction function, and the total number of desired linear segments to the helper function, it will fill the calculation results into the allocated space. You can also construct the array of :cpp:type:`ledc_fade_param_config_t` manually. Once the fade parameter structs are prepared, a consecutive fading can be configured by passing the pointer to the prepared :cpp:type:`ledc_fade_param_config_t` list and the total number of fade ranges to :cpp:func:`ledc_set_multi_fade`.
+    The luminance perceived by human eyes does not have a linear relationship with the PWM duty cycle. In order to make human feel the LED is dimming or lighting linearly, the change in duty cycle should be non-linear, which is the so-called gamma correction. The LED controller can simulate a gamma curve fading by piecewise linear approximation. :cpp:func:`ledc_fill_multi_fade_param_list` is a function that can help to construct the parameters for the piecewise linear fades. First, you need to allocate a memory block for saving the fade parameters, then by providing start/end PWM duty cycle values, gamma correction function, and the total number of desired linear segments to the helper function, it will fill the calculation results into the allocated space. You can also construct the array of :cpp:type:`ledc_fade_param_config_t` manually. Once the fade parameter structs are prepared, a consecutive fading can be configured by passing the pointer to the prepared :cpp:type:`ledc_fade_param_config_t` list and the total number of fade ranges to :cpp:func:`ledc_set_multi_fade`.
 
 .. only:: esp32
 
