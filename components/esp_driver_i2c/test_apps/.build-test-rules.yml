@@ -9,3 +9,8 @@ components/esp_driver_i2c/test_apps/i2c_test_apps:
       reason: lack of runners
   depends_components:
     - esp_driver_i2c
+    # Following dependency is needed because they might increase lazy installed memory
+    # that can cause sleep retention memory leak check failed.
+    - components/ieee802154/**
+    - components/esp_coex/**
+    - components/esp_phy/**

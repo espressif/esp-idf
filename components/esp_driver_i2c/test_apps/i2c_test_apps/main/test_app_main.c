@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,10 +8,15 @@
 #include "unity_test_runner.h"
 #include "unity_test_utils_memory.h"
 #include "esp_heap_caps.h"
+#include "sdkconfig.h"
 
 // Some resources are lazy allocated in I2C driver, so we reserved this threshold when checking memory leak
 // A better way to check a potential memory leak is running a same case by twice, for the second time, the memory usage delta should be zero
-#define LEAKS (1000)
+#if CONFIG_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP
+#define LEAKS (1200) // For 802154 usage
+#else
+#define LEAKS (400)
+#endif
 
 void setUp(void)
 {
