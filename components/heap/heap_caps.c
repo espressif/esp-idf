@@ -871,7 +871,7 @@ typedef struct walker_data {
         heap_t *heap;
 } walker_data_t;
 
-__attribute__((noinline)) static void heap_caps_walker(void* block_ptr, size_t block_size, int block_used, void *user_data)
+__attribute__((noinline)) static bool heap_caps_walker(void* block_ptr, size_t block_size, int block_used, void *user_data)
 {
     walker_data_t *walker_data = (walker_data_t*)user_data;
 
@@ -885,7 +885,7 @@ __attribute__((noinline)) static void heap_caps_walker(void* block_ptr, size_t b
         (bool)block_used
     };
 
-    walker_data->cb_func(heap_info, block_info, walker_data->opaque_ptr);
+    return walker_data->cb_func(heap_info, block_info, walker_data->opaque_ptr);
 }
 
 void heap_caps_walk(uint32_t caps, heap_caps_walker_cb_t walker_func, void *user_data)

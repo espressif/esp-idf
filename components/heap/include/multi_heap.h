@@ -214,8 +214,11 @@ void multi_heap_restore_minimum_free_bytes(multi_heap_handle_t heap, const size_
  * @param block_size The size of the block
  * @param block_used Block status. 0 if free, else, false
  * @param user_data Opaque pointer to user defined data
+ *
+ * @return True if the walker is expected to continue the heap traversal
+ *         False if the walker is expected to stop the traversal of the heap
  */
-typedef void (*multi_heap_walker_cb_t)(void *block_ptr, size_t block_size, int block_used, void *user_data);
+typedef bool (*multi_heap_walker_cb_t)(void *block_ptr, size_t block_size, int block_used, void *user_data);
 
 /**
  * @brief Call the tlsf_walk_pool function of the heap given as parameter with

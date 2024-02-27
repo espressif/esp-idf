@@ -355,10 +355,11 @@ bool multi_heap_check(multi_heap_handle_t heap, bool print_errors)
     return valid;
 }
 
-__attribute__((noinline)) static void multi_heap_dump_tlsf(void *ptr, size_t size, int used, void *user)
+__attribute__((noinline)) static bool multi_heap_dump_tlsf(void *ptr, size_t size, int used, void *user)
 {
     (void)user;
     MULTI_HEAP_STDERR_PRINTF("Block %p data, size: %d bytes, Free: %s \n", (void *)ptr, size, used ? "No" : "Yes");
+    return true;
 }
 
 void multi_heap_dump(multi_heap_handle_t heap)
@@ -389,7 +390,7 @@ size_t multi_heap_minimum_free_size_impl(multi_heap_handle_t heap)
     return heap->minimum_free_bytes;
 }
 
-__attribute__((noinline)) static void multi_heap_get_info_tlsf(void* ptr, size_t size, int used, void* user)
+__attribute__((noinline)) static bool multi_heap_get_info_tlsf(void* ptr, size_t size, int used, void* user)
 {
     multi_heap_info_t *info = user;
 
@@ -404,6 +405,7 @@ __attribute__((noinline)) static void multi_heap_get_info_tlsf(void* ptr, size_t
     }
 
     info->total_blocks++;
+    return true;
 }
 
 void multi_heap_get_info_impl(multi_heap_handle_t heap, multi_heap_info_t *info)

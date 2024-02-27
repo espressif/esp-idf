@@ -464,10 +464,18 @@ typedef struct walker_block_info {
 } walker_block_info_t;
 
 /**
- * @brief Function callback used to walk the heaps
- * @see Definition in multi_heap.h
+ * @brief Function callback used to get information of memory block
+ * during calls to heap_caps_walk or heap_caps_walk_all
+ *
+ * @param heap_info See walker_heap_into_t
+ * @param block_info See walker_block_info_t
+ * @param user_data Opaque pointer to user defined data
+ *
+ * @return True to proceed with the heap traversal
+ *         False to stop th traversal of the current heap and continue
+ *         with the traversal of the next heap (if any)
  */
-typedef void (*heap_caps_walker_cb_t)(walker_heap_into_t heap_info, walker_block_info_t block_info, void *user_data);
+typedef bool (*heap_caps_walker_cb_t)(walker_heap_into_t heap_info, walker_block_info_t block_info, void *user_data);
 
 /**
  * @brief Function called to walk through the heaps with the given set of capabilities
