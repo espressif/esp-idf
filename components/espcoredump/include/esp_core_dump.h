@@ -47,50 +47,48 @@ typedef struct {
  */
 void esp_core_dump_init(void);
 
-/**
- * @brief  Saves core dump to flash.
- *
- * The structure of data stored in flash is as follows:
- *
- * |  TOTAL_LEN |  VERSION    | TASKS_NUM   | TCB_SIZE |
- * | TCB_ADDR_1 | STACK_TOP_1 | STACK_END_1 | TCB_1    | STACK_1 |
- * .            .       .         .
- * .            .       .         .
- * | TCB_ADDR_N | STACK_TOP_N | STACK_END_N | TCB_N    | STACK_N |
- * |  CHECKSUM  |
- *
- * Core dump in flash consists of header and data for every task in the system at the moment of crash.
- * For flash data integrity, a checksum is used at the end of core the dump data.
- * The structure of core dump data is described below in details.
- * 1) Core dump starts with header:
- * 1.1) TOTAL_LEN is total length of core dump data in flash including the checksum. Size is 4 bytes.
- * 1.2) VERSION field keeps 4 byte version of core dump.
- * 1.2) TASKS_NUM is the number of tasks for which data are stored. Size is 4 bytes.
- * 1.3) TCB_SIZE is the size of task's TCB structure. Size is 4 bytes.
- * 2) Core dump header is followed by the data for every task in the system.
- *    Task data are started with task header:
- * 2.1) TCB_ADDR is the address of TCB in memory. Size is 4 bytes.
- * 2.2) STACK_TOP is the top of task's stack (address of the topmost stack item). Size is 4 bytes.
- * 2.2) STACK_END is the end of task's stack (address from which task's stack starts). Size is 4 bytes.
- * 3) Task header is followed by TCB data. Size is TCB_SIZE bytes.
- * 4) Task's stack is placed after TCB data. Size is (STACK_END - STACK_TOP) bytes.
- * 5) The checksum is placed at the end of the data.
- */
-void esp_core_dump_to_flash(panic_info_t *info);
-
-/**
- * @brief  Print base64-encoded core dump to UART.
- *
- * The structure of core dump data is the same as for data stored in flash (@see esp_core_dump_to_flash) with some notes:
- * 1) The checksum is not present in core dump printed to UART.
- * 2) Since checksum is omitted TOTAL_LEN does not include its size.
- * 3) Printed base64 data are surrounded with special messages to help user recognize the start and end of actual data.
- */
-void esp_core_dump_to_uart(panic_info_t *info);
-
 /**************************************************************************************/
 /*********************************** USER MODE API ************************************/
 /**************************************************************************************/
+
+/**
+ * Core dump file consists of header and data (in binary or ELF format) for every task in the system at the moment of crash.
+ * For the data integrity, a checksum is used at the end of core the dump data.
+ * The structure of core dump file is described below in details.
+ * 1) Core dump starts with header:
+ * 1.1) TOTAL_LEN is total length of core dump data in flash including the checksum. Size is 4 bytes.
+ * 1.2) VERSION field keeps 4 byte version of core dump.
+ * 1.2) TASKS_NUM is the number of tasks for which data are stored. Size is 4 bytes. Unused in ELF format
+ * 1.3) TCB_SIZE is the size of task's TCB structure. Size is 4 bytes. Unused in ELF format
+ * 1.4) MEM_SEG_NUM is the number of memory segment. Size is 4 bytes. Unused in ELF format
+ * 1.5) CHIP_REV is the revision of the chip. Size is 4 bytes.
+ * 2) Core dump header is followed by the data for every task in the system. Data part is differs for the binary
+ *  and elf formats.
+ * 2.1) The core dump file uses a subset of the ELF structures to store the crash information.
+ *  Loadable ELF segments and ELF notes (ELF.PT_NOTE) used with a special name and type (CORE, NT_PRSTATUS type)
+ * 2.2) In Binary format task data are started with the task header:
+ * 2.2.1) TCB_ADDR is the address of TCB in memory. Size is 4 bytes.
+ * 2.2.2) STACK_TOP is the top of task's stack (address of the topmost stack item). Size is 4 bytes.
+ * 2.2.3) STACK_END is the end of task's stack (address from which task's stack starts). Size is 4 bytes.
+ * 2.2.4) Task header is followed by TCB data. Size is TCB_SIZE bytes.
+ * 2.2.5) Task's stack is placed after TCB data. Size is (STACK_END - STACK_TOP) bytes.
+ * 2.3) The checksum is placed at the end of the data.
+ * 3) The structure of the uart data is the same as the data stored in flash
+ * 3.1) Uart data is printed in base64 format surrounded with special messages to help user recognize the start and
+ * end of actual data.
+ *
+ * For more information about the implementation please check api-guides/core_dump_internals.rst
+ *
+ */
+
+/**
+ * @brief  Print/store coredump data to the selected destination uart or flash.
+ *
+ * @param  info  Pointer to the panic information. It contains the execution frame.
+ *
+ * @return ESP_OK on success, otherwise \see esp_err_t
+ */
+void esp_core_dump_write(panic_info_t *info);
 
 /**
  * @brief  Check integrity of coredump data in flash.

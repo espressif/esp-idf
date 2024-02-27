@@ -140,28 +140,19 @@ FORCE_INLINE_ATTR void esp_core_dump_report_stack_usage(void)
 
 static void* s_exc_frame = NULL;
 
-inline void esp_core_dump_write(panic_info_t *info)
+inline static void esp_core_dump_write_internal(panic_info_t *info)
 {
-#ifndef CONFIG_ESP_COREDUMP_ENABLE_TO_NONE
-    esp_err_t err = ESP_ERR_NOT_SUPPORTED;
-    s_exc_frame = (void*) info->frame;
-
     bool isr_context = esp_core_dump_in_isr_context();
+
+    s_exc_frame = (void *)info->frame;
 
     esp_core_dump_setup_stack();
     esp_core_dump_port_init(info, isr_context);
-#if CONFIG_ESP_COREDUMP_DATA_FORMAT_BIN
-    esp_err_t esp_core_dump_write_binary(void);
-    err = esp_core_dump_write_binary();
-#elif CONFIG_ESP_COREDUMP_DATA_FORMAT_ELF
-    esp_err_t esp_core_dump_write_elf(void);
-    err = esp_core_dump_write_elf();
-#endif
+    esp_err_t err = esp_core_dump_store();
     if (err != ESP_OK) {
-        ESP_COREDUMP_LOGE("Core dump write binary failed with error=%d", err);
+        ESP_COREDUMP_LOGE("Core dump write failed with error=%d", err);
     }
     esp_core_dump_report_stack_usage();
-#endif
 }
 
 void __attribute__((weak)) esp_core_dump_init(void)
@@ -309,6 +300,17 @@ inline bool esp_core_dump_in_isr_context(void)
 #else // CONFIG_ESP_TASK_WDT_EN
     return xPortInterruptedFromISRContext();
 #endif // CONFIG_ESP_TASK_WDT_EN
+}
+
+void esp_core_dump_write(panic_info_t *info)
+{
+#if CONFIG_ESP_COREDUMP_ENABLE_TO_UART && CONFIG_ESP_SYSTEM_PANIC_SILENT_REBOOT
+    return;
+#endif
+
+    esp_core_dump_print_write_start();
+    esp_core_dump_write_internal(info);
+    esp_core_dump_print_write_end();
 }
 
 #endif

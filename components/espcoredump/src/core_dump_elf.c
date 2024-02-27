@@ -97,6 +97,8 @@ typedef struct {
 #endif
 #define ALIGN_UP(x, a) (((x) + (a) - 1) & ~((a) - 1))
 
+esp_err_t esp_core_dump_store(void) __attribute__((alias("esp_core_dump_write_elf")));
+
 // Builds elf header and check all data offsets
 static int elf_write_file_header(core_dump_elf_t *self, uint32_t seg_count)
 {
@@ -667,13 +669,18 @@ static int esp_core_dump_do_write_elf_pass(core_dump_elf_t *self)
     return tot_len;
 }
 
-esp_err_t esp_core_dump_write_elf(void)
+static esp_err_t esp_core_dump_write_elf(void)
 {
     core_dump_elf_t self = { 0 };
     core_dump_header_t dump_hdr = { 0 };
-    esp_err_t err = ESP_OK;
     int tot_len = sizeof(dump_hdr);
     int write_len = sizeof(dump_hdr);
+
+    esp_err_t err = esp_core_dump_write_init();
+    if (err != ESP_OK) {
+        ESP_COREDUMP_LOGE("Elf write init failed!");
+        return ESP_FAIL;
+    }
 
     // On first pass (do not write actual data), but calculate data length needed to allocate memory
     self.elf_stage = ELF_STAGE_CALC_SPACE;
