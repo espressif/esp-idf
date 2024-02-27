@@ -5,6 +5,7 @@ Pytest Related Constants. Don't import third-party packages here.
 """
 import os
 import typing as t
+import warnings
 from dataclasses import dataclass
 from enum import Enum
 from functools import cached_property
@@ -174,6 +175,7 @@ class PytestCase:
     apps: t.List[PytestApp]
 
     item: Function
+    multi_dut_without_param: bool
 
     def __hash__(self) -> int:
         return hash((self.path, self.name, self.apps, self.all_markers))
@@ -188,7 +190,22 @@ class PytestCase:
 
     @cached_property
     def targets(self) -> t.List[str]:
-        return [app.target for app in self.apps]
+        if not self.multi_dut_without_param:
+            return [app.target for app in self.apps]
+
+        # multi-dut test cases without parametrize
+        skip = True
+        for _t in [app.target for app in self.apps]:
+            if _t in self.target_markers:
+                skip = False
+                warnings.warn(f'`pytest.mark.[TARGET]` defined in parametrize for multi-dut test cases is deprecated. '
+                              f'Please use parametrize instead for test case {self.item.nodeid}')
+                break
+
+        if not skip:
+            return [app.target for app in self.apps]
+
+        return [''] * len(self.apps)  # this will help to filter these cases out later
 
     @cached_property
     def is_single_dut_test_case(self) -> bool:

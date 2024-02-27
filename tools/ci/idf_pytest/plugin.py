@@ -104,7 +104,7 @@ class IdfPytestEmbedded:
 
         return item.callspec.params.get(key, default) or default
 
-    def item_to_pytest_case(self, item: Function) -> PytestCase:
+    def item_to_pytest_case(self, item: Function) -> t.Optional[PytestCase]:
         """
         Turn pytest item to PytestCase
         """
@@ -113,10 +113,23 @@ class IdfPytestEmbedded:
         # default app_path is where the test script locates
         app_paths = to_list(parse_multi_dut_args(count, self.get_param(item, 'app_path', os.path.dirname(item.path))))
         configs = to_list(parse_multi_dut_args(count, self.get_param(item, 'config', DEFAULT_SDKCONFIG)))
-        targets = to_list(parse_multi_dut_args(count, self.get_param(item, 'target', self.target[0])))
+        targets = to_list(parse_multi_dut_args(count, self.get_param(item, 'target')))
+
+        multi_dut_without_param = False
+        if count > 1 and targets == [None] * count:
+            multi_dut_without_param = True
+            try:
+                targets = to_list(parse_multi_dut_args(count, '|'.join(self.target)))  # check later while collecting
+            except ValueError:  # count doesn't match
+                return None
+
+        elif targets is None:
+            targets = self.target
 
         return PytestCase(
-            [PytestApp(app_paths[i], targets[i], configs[i]) for i in range(count)], item
+            apps=[PytestApp(app_paths[i], targets[i], configs[i]) for i in range(count)],
+            item=item,
+            multi_dut_without_param=multi_dut_without_param
         )
 
     @pytest.hookimpl(tryfirst=True)
@@ -167,7 +180,11 @@ class IdfPytestEmbedded:
         # 2. Add markers according to special markers
         item_to_case_dict: t.Dict[Function, PytestCase] = {}
         for item in items:
-            item.stash[ITEM_PYTEST_CASE_KEY] = item_to_case_dict[item] = self.item_to_pytest_case(item)
+            case = self.item_to_pytest_case(item)
+            if case is None:
+                continue
+
+            item.stash[ITEM_PYTEST_CASE_KEY] = item_to_case_dict[item] = case
             if 'supported_targets' in item.keywords:
                 for _target in SUPPORTED_TARGETS:
                     item.add_marker(_target)
@@ -177,6 +194,7 @@ class IdfPytestEmbedded:
             if 'all_targets' in item.keywords:
                 for _target in [*SUPPORTED_TARGETS, *PREVIEW_TARGETS]:
                     item.add_marker(_target)
+        items[:] = [_item for _item in items if _item in item_to_case_dict]
 
         # 3.1. CollectMode.SINGLE_SPECIFIC, like `pytest --target esp32`
         if self.collect_mode == CollectMode.SINGLE_SPECIFIC:

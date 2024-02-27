@@ -1,5 +1,6 @@
 # SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
+import textwrap
 from pathlib import Path
 
 from idf_pytest.constants import CollectMode
@@ -86,3 +87,34 @@ def test_get_pytest_cases_all(work_dirpath: Path) -> None:
 
     assert cases[5].targets == ['esp32s2']
     assert cases[5].name == 'test_foo_single'
+
+
+def test_multi_with_marker_and_app_path(work_dirpath: Path) -> None:
+    script = work_dirpath / 'pytest_multi_with_marker_and_app_path.py'
+    script.write_text(
+        textwrap.dedent(
+            '''
+        import pytest
+
+        @pytest.mark.esp32c2
+        @pytest.mark.parametrize(
+            'count,app_path', [
+                (2, 'foo|bar'),
+                (3, 'foo|bar|baz'),
+            ], indirect=True
+        )
+        def test_foo_multi_with_marker_and_app_path(dut):
+            pass
+    '''
+        )
+    )
+    cases = get_pytest_cases([str(work_dirpath)], 'esp32c3,esp32c3')
+    assert len(cases) == 0
+
+    cases = get_pytest_cases([str(work_dirpath)], 'esp32c2,esp32c2')
+    assert len(cases) == 1
+    assert cases[0].targets == ['esp32c2', 'esp32c2']
+
+    cases = get_pytest_cases([str(work_dirpath)], 'esp32c2,esp32c2,esp32c2')
+    assert len(cases) == 1
+    assert cases[0].targets == ['esp32c2', 'esp32c2', 'esp32c2']
