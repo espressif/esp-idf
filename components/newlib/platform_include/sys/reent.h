@@ -21,14 +21,13 @@
 
 #include_next<sys/reent.h>
 
-
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 #if __NEWLIB__ > 4 || ( __NEWLIB__ == 4 && __NEWLIB_MINOR__ > 1 ) /* TODO: IDF-8134 */
 
-extern void   __sinit (struct _reent *);
+extern void   __sinit(struct _reent *);
 
 extern struct _glue __sglue;
 extern struct _reent * _global_impure_ptr;

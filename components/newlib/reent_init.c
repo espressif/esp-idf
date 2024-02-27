@@ -49,7 +49,7 @@ void esp_reent_cleanup(void)
 
     /* Clean up "glue" (lazily-allocated FILE objects) */
     struct _glue* prev = &_REENT_SGLUE(_GLOBAL_REENT);
-    for (struct _glue* cur = _REENT_SGLUE(_GLOBAL_REENT)._next; cur != NULL;) {
+    for (struct _glue * cur = _REENT_SGLUE(_GLOBAL_REENT)._next; cur != NULL;) {
         if (cur->_niobs == 0) {
             cur = cur->_next;
             continue;
@@ -67,7 +67,7 @@ void esp_reent_cleanup(void)
             cur = cur->_next;
             continue;
         }
-        struct _glue* next = cur->_next;
+        struct _glue * next = cur->_next;
         prev->_next = next;
         free(cur);
         cur = next;

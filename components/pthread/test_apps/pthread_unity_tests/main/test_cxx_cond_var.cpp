@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -24,10 +24,13 @@ static void waits(int idx, int timeout_ms)
     std::unique_lock<std::mutex> lk(cv_m);
     auto now = std::chrono::system_clock::now();
 
-    if(cv.wait_until(lk, now + std::chrono::milliseconds(timeout_ms), [](){return i == 1;}))
-        std::cout << "Thread " << idx << " finished waiting. i == " << i << '\n';
-    else
+    if (cv.wait_until(lk, now + std::chrono::milliseconds(timeout_ms), []() {
+    return i == 1;
+}))
+    std::cout << "Thread " << idx << " finished waiting. i == " << i << '\n';
+    else {
         std::cout << "Thread " << idx << " timed out. i == " << i << '\n';
+    }
 }
 
 static void signals(int signal_ms)
@@ -53,7 +56,6 @@ TEST_CASE("C++ condition_variable", "[std::condition_variable]")
     std::cout << "All threads joined\n";
 }
 
-
 TEST_CASE("cxx: condition_variable can timeout", "[cxx]")
 {
     std::condition_variable cv;
@@ -76,19 +78,20 @@ TEST_CASE("cxx: condition_variable timeout never before deadline", "[cxx]")
     std::unique_lock<std::mutex> lock(mutex);
 
     for (int i = 0; i < 25; ++i) {
-        auto timeout = std::chrono::milliseconds(portTICK_PERIOD_MS * (i+1));
+        auto timeout = std::chrono::milliseconds(portTICK_PERIOD_MS * (i + 1));
         auto deadline = SysClock::now() + timeout;
 
         auto secs = std::chrono::time_point_cast<std::chrono::seconds>(deadline);
         auto nsecs = std::chrono::duration_cast<std::chrono::nanoseconds>
-                (deadline - secs);
+                     (deadline - secs);
         struct timespec ts = {
-                .tv_sec = static_cast<time_t>(secs.time_since_epoch().count()),
-                .tv_nsec = static_cast<long>(nsecs.count())};
+            .tv_sec = static_cast<time_t>(secs.time_since_epoch().count()),
+            .tv_nsec = static_cast<long>(nsecs.count())
+        };
         int rc = ::pthread_cond_timedwait(cond.native_handle(),
                                           lock.mutex()->native_handle(), &ts);
         auto status = (rc == ETIMEDOUT) ? std::cv_status::timeout :
-                                          std::cv_status::no_timeout;
+                      std::cv_status::no_timeout;
         auto end = SysClock::now();
         auto extra = end - deadline;
         auto extra_us = extra / std::chrono::microseconds(1);

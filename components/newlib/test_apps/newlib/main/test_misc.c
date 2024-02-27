@@ -18,7 +18,6 @@
 #include "esp_heap_caps.h"
 #include "esp_vfs.h"
 
-
 TEST_CASE("misc - posix_memalign", "[newlib_misc]")
 {
     void* outptr = NULL;
