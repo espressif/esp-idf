@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,7 +10,7 @@ extern "C" {
 
 #include "esp_efuse.h"
 
-// md5_digest_table 78dff63df528392f0f37f4880b83c6db
+// md5_digest_table 2eb36a43d52e9922e08cf545d0e23381
 // This file was generated from the file esp_efuse_table.csv. DO NOT CHANGE THIS FILE MANUALLY.
 // If you want to change some fields, you need to change esp_efuse_table.csv file
 // then run `efuse_common_table` or `efuse_custom_table` command it will generate this file.
@@ -39,11 +39,26 @@ extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_SECURE_BOOT_EN[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_BLK1[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_MAC[];
 #define ESP_EFUSE_WR_DIS_MAC_FACTORY ESP_EFUSE_WR_DIS_MAC
-extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_MAC_EXT[];
-extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_BLOCK_SYS_DATA1[];
-#define ESP_EFUSE_WR_DIS_SYS_DATA_PART1 ESP_EFUSE_WR_DIS_BLOCK_SYS_DATA1
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_WAFER_VERSION_MINOR[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_WAFER_VERSION_MAJOR[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_DISABLE_WAFER_VERSION_MAJOR[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_DISABLE_BLK_VERSION_MAJOR[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_BLK_VERSION_MINOR[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_BLK_VERSION_MAJOR[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_FLASH_CAP[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_FLASH_TEMP[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_FLASH_VENDOR[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_PSRAM_CAP[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_PSRAM_TEMP[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_PSRAM_VENDOR[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_PKG_VERSION[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_SYS_DATA_PART1[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_OPTIONAL_UNIQUE_ID[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_BLOCK_USR_DATA[];
 #define ESP_EFUSE_WR_DIS_USER_DATA ESP_EFUSE_WR_DIS_BLOCK_USR_DATA
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_CUSTOM_MAC[];
+#define ESP_EFUSE_WR_DIS_MAC_CUSTOM ESP_EFUSE_WR_DIS_CUSTOM_MAC
+#define ESP_EFUSE_WR_DIS_USER_DATA_MAC_CUSTOM ESP_EFUSE_WR_DIS_CUSTOM_MAC
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_BLOCK_KEY0[];
 #define ESP_EFUSE_WR_DIS_KEY0 ESP_EFUSE_WR_DIS_BLOCK_KEY0
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_BLOCK_KEY1[];
@@ -85,8 +100,7 @@ extern const esp_efuse_desc_t* ESP_EFUSE_SOFT_DIS_JTAG[];
 extern const esp_efuse_desc_t* ESP_EFUSE_DIS_PAD_JTAG[];
 extern const esp_efuse_desc_t* ESP_EFUSE_DIS_DOWNLOAD_MANUAL_ENCRYPT[];
 extern const esp_efuse_desc_t* ESP_EFUSE_USB_PHY_SEL[];
-extern const esp_efuse_desc_t* ESP_EFUSE_KM_HUK_GEN_STATE_LOW[];
-extern const esp_efuse_desc_t* ESP_EFUSE_KM_HUK_GEN_STATE_HIGH[];
+extern const esp_efuse_desc_t* ESP_EFUSE_KM_HUK_GEN_STATE[];
 extern const esp_efuse_desc_t* ESP_EFUSE_KM_RND_SWITCH_CYCLE[];
 extern const esp_efuse_desc_t* ESP_EFUSE_KM_DEPLOY_ONLY_ONCE[];
 extern const esp_efuse_desc_t* ESP_EFUSE_FORCE_USE_KEY_MANAGER_KEY[];
@@ -142,9 +156,20 @@ extern const esp_efuse_desc_t* ESP_EFUSE_DIS_WDT[];
 extern const esp_efuse_desc_t* ESP_EFUSE_DIS_SWD[];
 extern const esp_efuse_desc_t* ESP_EFUSE_MAC[];
 #define ESP_EFUSE_MAC_FACTORY ESP_EFUSE_MAC
-extern const esp_efuse_desc_t* ESP_EFUSE_MAC_EXT[];
-extern const esp_efuse_desc_t* ESP_EFUSE_BLOCK_SYS_DATA1[];
-#define ESP_EFUSE_SYS_DATA_PART1 ESP_EFUSE_BLOCK_SYS_DATA1
+extern const esp_efuse_desc_t* ESP_EFUSE_WAFER_VERSION_MINOR[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WAFER_VERSION_MAJOR[];
+extern const esp_efuse_desc_t* ESP_EFUSE_DISABLE_WAFER_VERSION_MAJOR[];
+extern const esp_efuse_desc_t* ESP_EFUSE_DISABLE_BLK_VERSION_MAJOR[];
+extern const esp_efuse_desc_t* ESP_EFUSE_BLK_VERSION_MINOR[];
+extern const esp_efuse_desc_t* ESP_EFUSE_BLK_VERSION_MAJOR[];
+extern const esp_efuse_desc_t* ESP_EFUSE_FLASH_CAP[];
+extern const esp_efuse_desc_t* ESP_EFUSE_FLASH_TEMP[];
+extern const esp_efuse_desc_t* ESP_EFUSE_FLASH_VENDOR[];
+extern const esp_efuse_desc_t* ESP_EFUSE_PSRAM_CAP[];
+extern const esp_efuse_desc_t* ESP_EFUSE_PSRAM_TEMP[];
+extern const esp_efuse_desc_t* ESP_EFUSE_PSRAM_VENDOR[];
+extern const esp_efuse_desc_t* ESP_EFUSE_PKG_VERSION[];
+extern const esp_efuse_desc_t* ESP_EFUSE_OPTIONAL_UNIQUE_ID[];
 extern const esp_efuse_desc_t* ESP_EFUSE_USER_DATA[];
 #define ESP_EFUSE_BLOCK_USR_DATA ESP_EFUSE_USER_DATA
 extern const esp_efuse_desc_t* ESP_EFUSE_USER_DATA_MAC_CUSTOM[];

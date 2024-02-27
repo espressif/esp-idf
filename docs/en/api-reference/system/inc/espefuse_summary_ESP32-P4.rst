@@ -2,7 +2,7 @@
 
     espefuse.py -p PORT summary
 
-    espefuse.py v4.7.dev1
+    espefuse.py v4.7.0
     Connecting....
     Detecting chip type... ESP32-P4
 
@@ -16,9 +16,7 @@
                                                        d. 1: enabled. 0: disabled
     DIS_TWAI (BLOCK0)                                  Represents whether TWAI function is disabled or en = False R/W (0b0)
                                                        abled. 1: disabled. 0: enabled
-    KM_HUK_GEN_STATE_LOW (BLOCK0)                      Set this bit to control validation of HUK generate = 0 R/W (0b000000)
-                                                        mode. Odd of 1 is invalid; even of 1 is valid
-    KM_HUK_GEN_STATE_HIGH (BLOCK0)                     Set this bit to control validation of HUK generate = 0 R/W (0b000)
+    KM_HUK_GEN_STATE (BLOCK0)                          Set this bit to control validation of HUK generate = 0 R/W (0b000000000)
                                                         mode. Odd of 1 is invalid; even of 1 is valid
     KM_RND_SWITCH_CYCLE (BLOCK0)                       Set bits to control key manager random number swit = 0 R/W (0b00)
                                                        ch cycle. 0: control by register. 1: 8 km clk cycl
@@ -43,8 +41,9 @@
     HP_PWR_SRC_SEL (BLOCK0)                            HP system power source select. 0:LDO. 1: DCDC      = False R/W (0b0)
     DCDC_VSET_EN (BLOCK0)                              Select dcdc vset use efuse_dcdc_vset               = False R/W (0b0)
     DIS_SWD (BLOCK0)                                   Set this bit to disable super-watchdog             = False R/W (0b0)
-    BLOCK_SYS_DATA1 (BLOCK2)                           System data part 1
-       = 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 R/W
+    PSRAM_CAP (BLOCK1)                                 PSRAM capacity                                     = 0 R/W (0b00)
+    PSRAM_TEMP (BLOCK1)                                PSRAM temperature                                  = 0 R/W (0b00)
+    PSRAM_VENDOR (BLOCK1)                              PSRAM vendor                                       = 0 R/W (0b00)
     BLOCK_USR_DATA (BLOCK3)                            User data
        = 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 R/W
     BLOCK_SYS_DATA2 (BLOCK10)                          System data part 2 (reserved)
@@ -62,6 +61,20 @@
     FORCE_SEND_RESUME (BLOCK0)                         Represents whether ROM code is forced to send a re = False R/W (0b0)
                                                        sume command during SPI boot. 1: forced. 0:not for
                                                        ced
+    FLASH_CAP (BLOCK1)                                 Flash capacity                                     = 0 R/W (0b000)
+    FLASH_TEMP (BLOCK1)                                Flash temperature                                  = 0 R/W (0b00)
+    FLASH_VENDOR (BLOCK1)                              Flash vendor                                       = 0 R/W (0b000)
+
+    Identity fuses:
+    WAFER_VERSION_MINOR (BLOCK1)                       Minor chip version                                 = 0 R/W (0x0)
+    WAFER_VERSION_MAJOR (BLOCK1)                       Major chip version                                 = 0 R/W (0b00)
+    DISABLE_WAFER_VERSION_MAJOR (BLOCK1)               Disables check of wafer version major              = False R/W (0b0)
+    DISABLE_BLK_VERSION_MAJOR (BLOCK1)                 Disables check of blk version major                = False R/W (0b0)
+    BLK_VERSION_MINOR (BLOCK1)                         BLK_VERSION_MINOR of BLOCK2                        = 0 R/W (0b000)
+    BLK_VERSION_MAJOR (BLOCK1)                         BLK_VERSION_MAJOR of BLOCK2                        = 0 R/W (0b00)
+    PKG_VERSION (BLOCK1)                               Package version                                    = 0 R/W (0b000)
+    OPTIONAL_UNIQUE_ID (BLOCK2)                        Optional unique 128-bit ID
+       = 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 R/W
 
     Jtag fuses:
     JTAG_SEL_ENABLE (BLOCK0)                           Represents whether the selection between usb_to_jt = False R/W (0b0)
@@ -76,11 +89,9 @@
 
     Mac fuses:
     MAC (BLOCK1)                                       MAC address
+       = 60:55:f9:f8:80:40 (OK) R/W
+    CUSTOM_MAC (BLOCK3)                                Custom MAC
        = 00:00:00:00:00:00 (OK) R/W
-    MAC_EXT (BLOCK1)                                   Stores the extended bits of MAC address            = 00:00 (OK) R/W
-    MAC_EUI64 (BLOCK1)                                 calc MAC_EUI64 = MAC[0]:MAC[1]:MAC[2]:MAC_EXT[0]:M
-       = 00:00:00:00:00:00:00:00 (OK) R/W
-                                                       AC_EXT[1]:MAC[3]:MAC[4]:MAC[5]
 
     Security fuses:
     DIS_FORCE_DOWNLOAD (BLOCK0)                        Represents whether the function that forces chip i = False R/W (0b0)
