@@ -356,6 +356,11 @@ static void do_core_init(void)
 #endif
 #endif
 
+#if CONFIG_BOOTLOADER_APP_ANTI_ROLLBACK
+    // For anti-rollback case, recheck security version before we boot-up the current application
+    assert(esp_efuse_check_secure_version(esp_app_get_description()->secure_version) == true && "Incorrect secure version of app");
+#endif
+
 #ifdef CONFIG_SECURE_FLASH_ENC_ENABLED
     esp_flash_encryption_init_checks();
 #endif

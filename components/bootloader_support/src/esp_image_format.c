@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,6 +19,8 @@
 #include "bootloader_util.h"
 #include "bootloader_common.h"
 #include "esp_rom_sys.h"
+#include "esp_efuse.h"
+#include "esp_app_desc.h"
 #include "bootloader_memory_utils.h"
 #include "soc/soc_caps.h"
 #if CONFIG_IDF_TARGET_ESP32
@@ -85,10 +87,10 @@ static bool should_map(uint32_t load_addr);
 
 static esp_err_t process_segments(esp_image_metadata_t *data, bool silent, bool do_load, bootloader_sha256_handle_t sha_handle, uint32_t *checksum);
 /* Load or verify a segment */
-static esp_err_t process_segment(int index, uint32_t flash_addr, esp_image_segment_header_t *header, bool silent, bool do_load, bootloader_sha256_handle_t sha_handle, uint32_t *checksum);
+static esp_err_t process_segment(int index, uint32_t flash_addr, esp_image_segment_header_t *header, bool silent, bool do_load, bootloader_sha256_handle_t sha_handle, uint32_t *checksum, esp_image_metadata_t *metadata);
 
 /* split segment and verify if data_len is too long */
-static esp_err_t process_segment_data(intptr_t load_addr, uint32_t data_addr, uint32_t data_len, bool do_load, bootloader_sha256_handle_t sha_handle, uint32_t *checksum);
+static esp_err_t process_segment_data(int segment, intptr_t load_addr, uint32_t data_addr, uint32_t data_len, bool do_load, bootloader_sha256_handle_t sha_handle, uint32_t *checksum, esp_image_metadata_t *metadata);
 
 /* Verify the main image header */
 static esp_err_t verify_image_header(uint32_t src_addr, const esp_image_header_t *image, bool silent);
@@ -233,6 +235,21 @@ static esp_err_t image_load(esp_image_load_mode_t mode, const esp_partition_pos_
             }
         }
     }
+
+#if CONFIG_BOOTLOADER_APP_ANTI_ROLLBACK
+    /* For anti-rollback case, reconfirm security version of the application to prevent FI attacks */
+    bool sec_ver = false;
+    if (do_load) {
+        sec_ver = esp_efuse_check_secure_version(data->secure_version);
+        if (!sec_ver) {
+            err = ESP_FAIL;
+            goto err;
+        }
+    }
+    /* Ensure that the security version check passes for image loading scenario */
+    ESP_FAULT_ASSERT(!do_load || sec_ver == true);
+#endif // CONFIG_BOOTLOADER_APP_ANTI_ROLLBACK
+
 #endif // BOOTLOADER_BUILD
 
     // Success!
@@ -509,7 +526,7 @@ static esp_err_t process_segments(esp_image_metadata_t *data, bool silent, bool 
     for (int i = 0; i < data->image.segment_count; i++) {
         esp_image_segment_header_t *header = &data->segments[i];
         ESP_LOGV(TAG, "loading segment header %d at offset 0x%"PRIx32, i, next_addr);
-        CHECK_ERR(process_segment(i, next_addr, header, silent, do_load, sha_handle, checksum));
+        CHECK_ERR(process_segment(i, next_addr, header, silent, do_load, sha_handle, checksum, data));
         next_addr += sizeof(esp_image_segment_header_t);
         data->segment_data[i] = next_addr;
         next_addr += header->data_len;
@@ -530,7 +547,7 @@ err:
     return err;
 }
 
-static esp_err_t process_segment(int index, uint32_t flash_addr, esp_image_segment_header_t *header, bool silent, bool do_load, bootloader_sha256_handle_t sha_handle, uint32_t *checksum)
+static esp_err_t process_segment(int index, uint32_t flash_addr, esp_image_segment_header_t *header, bool silent, bool do_load, bootloader_sha256_handle_t sha_handle, uint32_t *checksum, esp_image_metadata_t *metadata)
 {
     esp_err_t err;
 
@@ -588,7 +605,7 @@ static esp_err_t process_segment(int index, uint32_t flash_addr, esp_image_segme
         uint32_t offset_page = ((data_addr & MMAP_ALIGNED_MASK) != 0) ? 1 : 0;
         /* Data we could map in case we are not aligned to PAGE boundary is one page size lesser. */
         data_len = MIN(data_len_remain, ((free_page_count - offset_page) * SPI_FLASH_MMU_PAGE_SIZE));
-        CHECK_ERR(process_segment_data(load_addr, data_addr, data_len, do_load, sha_handle, checksum));
+        CHECK_ERR(process_segment_data(index, load_addr, data_addr, data_len, do_load, sha_handle, checksum, metadata));
         data_addr += data_len;
         data_len_remain -= data_len;
     }
@@ -603,7 +620,42 @@ err:
     return err;
 }
 
-static esp_err_t process_segment_data(intptr_t load_addr, uint32_t data_addr, uint32_t data_len, bool do_load, bootloader_sha256_handle_t sha_handle, uint32_t *checksum)
+#if CONFIG_BOOTLOADER_APP_ANTI_ROLLBACK
+/* The __attribute__((optimize("O0"))) is used to disable optimizations for this function,
+ * preventing the compiler from potentially optimizing data_buffer and reading data directly from src.
+ * This is crucial as we want to read from Flash only once, ensuring the integrity of the data.
+ */
+__attribute__((optimize("O0")))
+static size_t process_esp_app_desc_data(const uint32_t *src, bootloader_sha256_handle_t sha_handle, uint32_t *checksum, esp_image_metadata_t *metadata)
+{
+    /* Using data_buffer here helps to securely read secure_version
+     * (for anti-rollback) from esp_app_desc_t, preventing FI attack.
+     * We read data from Flash into this buffer, which is covered by sha256.
+     * Therefore, if the flash is under attackers control and contents are modified
+     * the sha256 comparison will fail.
+     *
+     * The esp_app_desc_t structure is located in DROM and is always in segment #0.
+     *
+     * esp_app_desc_t is always at #0 segment (index==0).
+     * secure_version field of esp_app_desc_t is located at #2 word (w_i==1).
+     */
+    uint32_t data_buffer[2];
+    memcpy(data_buffer, src, sizeof(data_buffer));
+    assert(data_buffer[0] == ESP_APP_DESC_MAGIC_WORD);
+    metadata->secure_version = data_buffer[1];
+    if (checksum != NULL) {
+        *checksum ^= data_buffer[0] ^ data_buffer[1];
+    }
+    if (sha_handle != NULL) {
+        bootloader_sha256_data(sha_handle, data_buffer, sizeof(data_buffer));
+    }
+    ESP_FAULT_ASSERT(memcmp(data_buffer, src, sizeof(data_buffer)) == 0);
+    ESP_FAULT_ASSERT(memcmp(&metadata->secure_version, &src[1], sizeof(uint32_t)) == 0);
+    return sizeof(data_buffer);
+}
+#endif // CONFIG_BOOTLOADER_APP_ANTI_ROLLBACK
+
+static esp_err_t process_segment_data(int segment, intptr_t load_addr, uint32_t data_addr, uint32_t data_len, bool do_load, bootloader_sha256_handle_t sha_handle, uint32_t *checksum, esp_image_metadata_t *metadata)
 {
     // If we are not loading, and the checksum is empty, skip processing this
     // segment for data
@@ -636,9 +688,23 @@ static esp_err_t process_segment_data(intptr_t load_addr, uint32_t data_addr, ui
 #endif
     }
     uint32_t *dest = (uint32_t *)load_addr;
-#endif
+#endif // BOOTLOADER_BUILD
 
     const uint32_t *src = data;
+
+#if CONFIG_BOOTLOADER_APP_ANTI_ROLLBACK
+    // Case I: Bootloader verifying application
+    // Case II: Bootloader verifying bootloader
+    // Anti-rollback check should handle only Case I from above.
+    if (segment == 0 && metadata->start_addr != ESP_BOOTLOADER_OFFSET) {
+        ESP_LOGD(TAG, "additional anti-rollback check 0x%"PRIx32, data_addr);
+        // The esp_app_desc_t structure is located in DROM and is always in segment #0.
+        size_t len = process_esp_app_desc_data(src, sha_handle, checksum, metadata);
+        data_len -= len;
+        src += len / 4;
+        // In BOOTLOADER_BUILD, for DROM (segment #0) we do not load it into dest (only map it), do_load = false.
+    }
+#endif // CONFIG_BOOTLOADER_APP_ANTI_ROLLBACK
 
     for (size_t i = 0; i < data_len; i += 4) {
         int w_i = i / 4; // Word index
