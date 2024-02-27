@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import json
 import os
@@ -387,15 +387,21 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
         gdb = project_desc['monitor_toolprefix'] + 'gdb'
         generate_gdbinit_files(gdb, gdbinit, project_desc)
 
-        # this is a workaround for gdbgui
-        # gdbgui is using shlex.split for the --gdb-args option. When the input is:
-        # - '"-x=foo -x=bar"', would return ['foo bar']
-        # - '-x=foo', would return ['-x', 'foo'] and mess up the former option '--gdb-args'
-        # so for one item, use extra double quotes. for more items, use no extra double quotes.
         gdb_args_list = get_gdb_args(project_desc)
-        gdb_args = '"{}"'.format(' '.join(gdb_args_list)) if len(gdb_args_list) == 1 else ' '.join(gdb_args_list)
-        args = ['gdbgui', '-g', gdb, '--gdb-args', gdb_args]
-        print(args)
+        if sys.version_info[:2] >= (3, 11):
+            # If we use Python 3.11+ then the only compatible gdbgui doesn't support the --gdb-args argument. This
+            # check is easier than checking gdbgui version or re-running the process in case of gdb-args-related
+            # failure.
+            gdb_args = ' '.join(gdb_args_list)
+            args = ['gdbgui', '-g', ' '.join((gdb, gdb_args))]
+        else:
+            # this is a workaround for gdbgui
+            # gdbgui is using shlex.split for the --gdb-args option. When the input is:
+            # - '"-x=foo -x=bar"', would return ['foo bar']
+            # - '-x=foo', would return ['-x', 'foo'] and mess up the former option '--gdb-args'
+            # so for one item, use extra double quotes. for more items, use no extra double quotes.
+            gdb_args = '"{}"'.format(' '.join(gdb_args_list)) if len(gdb_args_list) == 1 else ' '.join(gdb_args_list)
+            args = ['gdbgui', '-g', gdb, '--gdb-args', gdb_args]
 
         if gdbgui_port is not None:
             args += ['--port', gdbgui_port]
@@ -407,10 +413,11 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
         # pygdbmi).
         env['PURE_PYTHON'] = '1'
         try:
+            print('Running: ', args)
             process = subprocess.Popen(args, stdout=gdbgui_out, stderr=subprocess.STDOUT, bufsize=1, env=env)
         except (OSError, subprocess.CalledProcessError) as e:
             print(e)
-            if sys.version_info[:2] >= (3, 11):
+            if sys.version_info[:2] >= (3, 11) and sys.platform == 'win32':
                 raise SystemExit('Unfortunately, gdbgui is supported only with Python 3.10 or older. '
                                  'See: https://github.com/espressif/esp-idf/issues/10116. '
                                  'Please use "idf.py gdb" or debug in Eclipse/Vscode instead.')
