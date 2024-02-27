@@ -174,17 +174,6 @@ typedef struct _core_dump_mem_seg_header_t
     uint32_t size;  /*!< Memory region size */
 } core_dump_mem_seg_header_t;
 
-/**
- * @brief Core dump flash init function
- */
-void esp_core_dump_flash_init(void);
-
-
-/**
- * @brief Common core dump write function
- */
-void esp_core_dump_write(panic_info_t *info);
-
 #ifdef __cplusplus
 }
 #endif

@@ -17,6 +17,9 @@ const static char TAG[] __attribute__((unused)) = "esp_core_dump_uart";
 
 #if CONFIG_ESP_COREDUMP_ENABLE_TO_UART
 
+void esp_core_dump_print_write_start(void) __attribute__((alias("esp_core_dump_uart_print_write_start")));
+void esp_core_dump_print_write_end(void) __attribute__((alias("esp_core_dump_uart_print_write_end")));
+esp_err_t esp_core_dump_write_init(void) __attribute__((alias("esp_core_dump_uart_hw_init")));
 esp_err_t esp_core_dump_write_prepare(core_dump_write_data_t *wr_data, uint32_t *data_len) __attribute__((alias("esp_core_dump_uart_write_prepare")));
 esp_err_t esp_core_dump_write_start(core_dump_write_data_t *wr_data) __attribute__((alias("esp_core_dump_uart_write_start")));
 esp_err_t esp_core_dump_write_end(core_dump_write_data_t *wr_data) __attribute__((alias("esp_core_dump_uart_write_end")));
@@ -49,6 +52,16 @@ static void esp_core_dump_b64_encode(const uint8_t *src, uint32_t src_len, uint8
         dst[j++] = '=';
     }
     dst[j++] = '\0';
+}
+
+static void esp_core_dump_uart_print_write_start(void)
+{
+    ESP_COREDUMP_LOGI("Print core dump to uart...");
+}
+
+static void esp_core_dump_uart_print_write_end(void)
+{
+    ESP_COREDUMP_LOGI("Core dump has been written to uart.");
 }
 
 static esp_err_t esp_core_dump_uart_write_start(core_dump_write_data_t *wr_data)
@@ -124,7 +137,7 @@ static int esp_core_dump_uart_get_char(void) {
     return i;
 }
 
-void esp_core_dump_to_uart(panic_info_t *info)
+static esp_err_t esp_core_dump_uart_hw_init(void)
 {
     uint32_t tm_end = 0;
     uint32_t tm_cur = 0;
@@ -148,9 +161,8 @@ void esp_core_dump_to_uart(panic_info_t *info)
         }
         ch = esp_core_dump_uart_get_char();
     }
-    ESP_COREDUMP_LOGI("Print core dump to uart...");
-    esp_core_dump_write(info);
-    ESP_COREDUMP_LOGI("Core dump has been written to uart.");
+
+    return ESP_OK;
 }
 
 void esp_core_dump_init(void)
