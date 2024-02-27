@@ -48,7 +48,7 @@
 /* Maximum retry/error count for SEND_OP_COND (CMD1).
  * These are somewhat arbitrary, values originate from OpenBSD driver.
  */
-#define SDMMC_SEND_OP_COND_MAX_RETRIES  100
+#define SDMMC_SEND_OP_COND_MAX_RETRIES  300
 #define SDMMC_SEND_OP_COND_MAX_ERRORS   3
 
 /* supported arguments for erase command 38 */
