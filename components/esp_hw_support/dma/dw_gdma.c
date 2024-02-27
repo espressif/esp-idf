@@ -470,6 +470,16 @@ dw_gdma_lli_handle_t dw_gdma_link_list_get_item(dw_gdma_link_list_handle_t list,
     return lli;
 }
 
+esp_err_t dw_gdma_lli_set_next(dw_gdma_lli_handle_t lli, dw_gdma_lli_handle_t next)
+{
+    ESP_RETURN_ON_FALSE(lli && next, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+
+    // the next field must use a cached address
+    dw_gdma_ll_lli_set_next_item_addr(lli, CACHE_LL_L2MEM_CACHE_ADDR(next));
+
+    return ESP_OK;
+}
+
 esp_err_t dw_gdma_channel_config_transfer(dw_gdma_channel_handle_t chan, const dw_gdma_block_transfer_config_t *config)
 {
     ESP_RETURN_ON_FALSE(chan && config, ESP_ERR_INVALID_ARG, TAG, "invalid argument");

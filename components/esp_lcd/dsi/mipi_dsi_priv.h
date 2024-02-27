@@ -24,6 +24,8 @@
 
 #define DSI_MEM_ALLOC_CAPS MALLOC_CAP_DEFAULT
 
+#define DPI_PANEL_MAX_FB_NUM 3 // maximum number of supported frame buffers for DPI panel
+
 #ifdef __cplusplus
 extern "C" {
 #endif
