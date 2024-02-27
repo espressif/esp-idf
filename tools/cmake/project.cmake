@@ -119,7 +119,7 @@ function(paths_with_spaces_to_list variable_name)
     endif()
 endfunction()
 
-function(__component_info components output)
+function(__build_component_info components output)
     set(components_json "")
     foreach(name ${components})
         __component_get_target(target ${name})
@@ -173,6 +173,62 @@ function(__component_info components output)
             "            \"managed_priv_reqs\": ${managed_priv_reqs},"
             "            \"file\": \"${file}\","
             "            \"sources\": ${sources},"
+            "            \"include_dirs\": ${include_dirs}"
+            "        }"
+        )
+        string(CONFIGURE "${component_json}" component_json)
+        if(NOT "${components_json}" STREQUAL "")
+            string(APPEND components_json ",\n")
+        endif()
+        string(APPEND components_json "${component_json}")
+    endforeach()
+    string(PREPEND components_json "{\n")
+    string(APPEND components_json "\n    }")
+    set(${output} "${components_json}" PARENT_SCOPE)
+endfunction()
+
+function(__all_component_info output)
+    set(components_json "")
+
+    idf_build_get_property(build_prefix __PREFIX)
+    idf_build_get_property(component_targets __COMPONENT_TARGETS)
+
+    foreach(target ${component_targets})
+        __component_get_property(name ${target} COMPONENT_NAME)
+        __component_get_property(alias ${target} COMPONENT_ALIAS)
+        __component_get_property(prefix ${target} __PREFIX)
+        __component_get_property(dir ${target} COMPONENT_DIR)
+        __component_get_property(type ${target} COMPONENT_TYPE)
+        __component_get_property(lib ${target} COMPONENT_LIB)
+        __component_get_property(reqs ${target} REQUIRES)
+        __component_get_property(include_dirs ${target} INCLUDE_DIRS)
+        __component_get_property(priv_reqs ${target} PRIV_REQUIRES)
+        __component_get_property(managed_reqs ${target} MANAGED_REQUIRES)
+        __component_get_property(managed_priv_reqs ${target} MANAGED_PRIV_REQUIRES)
+
+        if(prefix STREQUAL build_prefix)
+            set(name ${name})
+        else()
+            set(name ${alias})
+        endif()
+
+        make_json_list("${reqs}" reqs)
+        make_json_list("${priv_reqs}" priv_reqs)
+        make_json_list("${managed_reqs}" managed_reqs)
+        make_json_list("${managed_priv_reqs}" managed_priv_reqs)
+        make_json_list("${include_dirs}" include_dirs)
+
+        string(JOIN "\n" component_json
+            "        \"${name}\": {"
+            "            \"alias\": \"${alias}\","
+            "            \"target\": \"${target}\","
+            "            \"prefix\": \"${prefix}\","
+            "            \"dir\": \"${dir}\","
+            "            \"lib\": \"${lib}\","
+            "            \"reqs\": ${reqs},"
+            "            \"priv_reqs\": ${priv_reqs},"
+            "            \"managed_reqs\": ${managed_reqs},"
+            "            \"managed_priv_reqs\": ${managed_priv_reqs},"
             "            \"include_dirs\": ${include_dirs}"
             "        }"
         )
@@ -251,7 +307,8 @@ function(__project_info test_components)
     make_json_list("${build_component_paths};${test_component_paths}" build_component_paths_json)
     make_json_list("${common_component_reqs}" common_component_reqs_json)
 
-    __component_info("${build_components};${test_components}" build_component_info_json)
+    __build_component_info("${build_components};${test_components}" build_component_info_json)
+    __all_component_info(all_component_info_json)
 
     # The configure_file function doesn't process generator expressions, which are needed
     # e.g. to get component target library(TARGET_LINKER_FILE), so the project_description
