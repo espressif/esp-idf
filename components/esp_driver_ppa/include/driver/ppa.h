@@ -100,6 +100,10 @@ typedef struct {
         color_conv_std_rgb_yuv_t yuv_std;
         bool rgb_swap;
         bool byte_swap;
+        ppa_alpha_mode_t alpha_mode;
+        uint32_t alpha_value;                       /*!< When PPA_ALPHA_FIX_VALUE mode is selected, alpha_value is the alpha value to be replaced with (output_alpha = alpha_value)
+                                                     When PPA_ALPHA_SCALE mode is selected, alpha_value/256 is the multiplier to the input alpha value (output_alpha = input_alpha * alpha_value / 256)
+                                                     When other alpha modes are selected, this field is not used */
     } in_color;
 
     struct {
@@ -107,11 +111,6 @@ typedef struct {
         color_range_t yuv_range;
         color_conv_std_rgb_yuv_t yuv_std;
     } out_color;
-
-    ppa_alpha_mode_t alpha_mode;
-    uint32_t alpha_value;                       /*!< When PPA_ALPHA_FIX_VALUE mode is selected, alpha_value is the alpha value to be replaced with (output_alpha = alpha_value)
-                                                     When PPA_ALPHA_SCALE mode is selected, alpha_value/256 is the multiplier to the input alpha value (output_alpha = input_alpha * alpha_value / 256)
-                                                     When other alpha modes are selected, this field is not used*/
 } ppa_sr_trans_config_t;
 
 /**
@@ -192,6 +191,7 @@ typedef struct {
  */
 esp_err_t ppa_do_blend(ppa_invoker_handle_t ppa_invoker, const ppa_blend_trans_config_t *config, ppa_trans_mode_t mode);
 
+// TODO: FILL
 typedef struct {
     void *out_buffer;
 } ppa_fill_trans_config_t;
@@ -218,8 +218,6 @@ esp_err_t ppa_do_fill(ppa_invoker_handle_t ppa_invoker, const ppa_fill_trans_con
 
 // Consider blocking and non-blocking options
 // Non-blocking may require notification of process done event
-
-// dma2d done/eof callback, when/how to free dma2d transaction content
 
 // cache writeback/invalidate
 
