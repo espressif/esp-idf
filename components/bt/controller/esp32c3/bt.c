@@ -723,19 +723,26 @@ static void btdm_sleep_enter_phase1_wrapper(uint32_t lpcycles)
         return;
     }
 
-    // start a timer to wake up and acquire the pm_lock before modem_sleep awakes
     uint32_t us_to_sleep = btdm_lpcycles_2_hus(lpcycles, NULL) >> 1;
 
 #define BTDM_MIN_TIMER_UNCERTAINTY_US      (1800)
+#define BTDM_RTC_SLOW_CLK_RC_DRIFT_PERCENT 7
     assert(us_to_sleep > BTDM_MIN_TIMER_UNCERTAINTY_US);
     // allow a maximum time uncertainty to be about 488ppm(1/2048) at least as clock drift
     // and set the timer in advance
     uint32_t uncertainty = (us_to_sleep >> 11);
+#if CONFIG_FREERTOS_USE_TICKLESS_IDLE
+    if (rtc_clk_slow_src_get() == SOC_RTC_SLOW_CLK_SRC_RC_SLOW) {
+        uncertainty = us_to_sleep * BTDM_RTC_SLOW_CLK_RC_DRIFT_PERCENT / 100;
+    }
+#endif
+
     if (uncertainty < BTDM_MIN_TIMER_UNCERTAINTY_US) {
         uncertainty = BTDM_MIN_TIMER_UNCERTAINTY_US;
     }
 
     assert (s_lp_stat.wakeup_timer_started == 0);
+    // start a timer to wake up and acquire the pm_lock before modem_sleep awakes
     if (esp_timer_start_once(s_btdm_slp_tmr, us_to_sleep - uncertainty) == ESP_OK) {
         s_lp_stat.wakeup_timer_started = 1;
     } else {
@@ -754,12 +761,12 @@ static void btdm_sleep_enter_phase2_wrapper(void)
             assert(0);
         }
 
-        if (s_lp_stat.pm_lock_released == 0) {
 #ifdef CONFIG_PM_ENABLE
+        if (s_lp_stat.pm_lock_released == 0) {
             esp_pm_lock_release(s_pm_lock);
-#endif
             s_lp_stat.pm_lock_released = 1;
         }
+#endif
     }
 }
 
