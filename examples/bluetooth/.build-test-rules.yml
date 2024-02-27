@@ -243,14 +243,19 @@ examples/bluetooth/nimble/ble_spp:
       reason: The runner doesn't support yet
 
 examples/bluetooth/nimble/blecent:
-  enable:
-    - if: IDF_TARGET in ["esp32", "esp32c2", "esp32c3", "esp32c6" , "esp32s3", "esp32h2" ]
-      temporary: true
-      reason: the other targets are not tested yet
-  disable_test:
-    - if: IDF_TARGET in ["esp32c2", "esp32c3", "esp32h2", "esp32s3", "esp32c6"]
-      temporary: true
-      reason: The runner doesn't support yet
+  disable:
+    - if: SOC_BLE_SUPPORTED != 1
+  depends_components:
+    - bt
+    - esp_phy
+    - esp_event
+    - esp_coex
+    - esp_pm
+  depends_filepatterns:
+    - examples/bluetooth/nimble/common/**/*
+    - examples/bluetooth/nimble/blecent/**/*
+    - examples/bluetooth/nimble/power_save/**/*
+    - examples/bluetooth/nimble/pytest_nimble_test.py
 
 examples/bluetooth/nimble/blehr:
   enable:
@@ -303,7 +308,16 @@ examples/bluetooth/nimble/hci:
       reason: The runner doesn't support yet
 
 examples/bluetooth/nimble/power_save:
-  enable:
-    - if: IDF_TARGET in ["esp32", "esp32c3", "esp32s3", "esp32c6", "esp32h2"]
-      temporary: true
-      reason: the other targets are not tested yet
+  disable:
+    - if: SOC_BLE_SUPPORTED != 1
+  depends_components:
+    - bt
+    - esp_phy
+    - esp_event
+    - esp_coex
+    - esp_pm
+  depends_filepatterns:
+    - examples/bluetooth/nimble/common/**/*
+    - examples/bluetooth/nimble/blecent/**/*
+    - examples/bluetooth/nimble/power_save/**/*
+    - examples/bluetooth/nimble/pytest_nimble_test.py
