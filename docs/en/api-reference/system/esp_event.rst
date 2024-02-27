@@ -100,13 +100,13 @@ Event base declaration:
 
 .. code-block:: c
 
-    ESP_EVENT_DECLARE_BASE(EVENT_BASE)
+    ESP_EVENT_DECLARE_BASE(EVENT_BASE);
 
 Event base definition:
 
 .. code-block:: c
 
-    ESP_EVENT_DEFINE_BASE(EVENT_BASE)
+    ESP_EVENT_DEFINE_BASE(EVENT_BASE);
 
 .. note::
 
