@@ -116,6 +116,7 @@ void app_main(void)
     HANDLE_TEST(test_name, test_assert_cache_disabled);
     HANDLE_TEST(test_name, test_assert_cache_write_back_error_can_print_backtrace);
     HANDLE_TEST(test_name, test_assert_cache_write_back_error_can_print_backtrace2);
+    HANDLE_TEST(test_name, test_tcb_corrupted);
 #if CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH && CONFIG_ESP_COREDUMP_DATA_FORMAT_ELF
     HANDLE_TEST(test_name, test_setup_coredump_summary);
     HANDLE_TEST(test_name, test_coredump_summary);

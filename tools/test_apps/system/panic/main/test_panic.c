@@ -301,6 +301,15 @@ void test_coredump_summary(void)
 }
 #endif
 
+void test_tcb_corrupted(void)
+{
+    uint32_t *tcb_ptr = (uint32_t *)xTaskGetIdleTaskHandleForCore(0);
+    for (size_t i = 0; i < sizeof(StaticTask_t) / sizeof(uint32_t); ++i) {
+        tcb_ptr[i] = 0xDEADBEE0;
+    }
+    vTaskDelay(2);
+}
+
 /* NOTE: The following test verifies the behaviour for the
  * Xtensa-specific MPU instructions (Refer WDTLB, DSYNC, WDTIB, ISYNC)
  * used for memory protection.
