@@ -39,6 +39,9 @@ typedef struct _core_dump_flash_config_t {
 /* Core dump flash data. */
 static core_dump_flash_config_t s_core_flash_config;
 
+void esp_core_dump_print_write_start(void) __attribute__((alias("esp_core_dump_flash_print_write_start")));
+void esp_core_dump_print_write_end(void) __attribute__((alias("esp_core_dump_flash_print_write_end")));
+esp_err_t esp_core_dump_write_init(void) __attribute__((alias("esp_core_dump_flash_hw_init")));
 esp_err_t esp_core_dump_write_prepare(core_dump_write_data_t *wr_data, uint32_t *data_len) __attribute__((alias("esp_core_dump_flash_write_prepare")));
 esp_err_t esp_core_dump_write_start(core_dump_write_data_t *wr_data) __attribute__((alias("esp_core_dump_flash_write_start")));
 esp_err_t esp_core_dump_write_end(core_dump_write_data_t *wr_data) __attribute__((alias("esp_core_dump_flash_write_end")));
@@ -50,6 +53,16 @@ esp_err_t esp_core_dump_write_data(core_dump_write_data_t *wr_data, void *data, 
 
 esp_err_t esp_core_dump_image_check(void);
 static esp_err_t esp_core_dump_partition_and_size_get(const esp_partition_t **partition, uint32_t* size);
+
+static void esp_core_dump_flash_print_write_start(void)
+{
+    ESP_COREDUMP_LOGI("Save core dump to flash...");
+}
+
+static void esp_core_dump_flash_print_write_end(void)
+{
+    ESP_COREDUMP_LOGI("Core dump has been saved to flash.");
+}
 
 static esp_err_t esp_core_dump_flash_custom_write(uint32_t address, const void *buffer, uint32_t length)
 {
@@ -69,7 +82,35 @@ static inline core_dump_crc_t esp_core_dump_calc_flash_config_crc(void)
     return esp_rom_crc32_le(0, (uint8_t const *)&s_core_flash_config.partition, sizeof(s_core_flash_config.partition));
 }
 
-void esp_core_dump_flash_init(void)
+static esp_err_t esp_core_dump_flash_hw_init(void)
+{
+    /* Check core dump partition configuration. */
+    core_dump_crc_t crc = esp_core_dump_calc_flash_config_crc();
+    if (s_core_flash_config.partition_config_crc != crc) {
+        ESP_COREDUMP_LOGE("Core dump flash config is corrupted! CRC=0x%x instead of 0x%x", crc, s_core_flash_config.partition_config_crc);
+        return ESP_FAIL;
+    }
+
+    /* Make sure that the partition can at least hold the data length. */
+    if (s_core_flash_config.partition.start == 0 || s_core_flash_config.partition.size < sizeof(uint32_t)) {
+        ESP_COREDUMP_LOGE("Invalid flash partition config!");
+        return ESP_FAIL;
+    }
+
+#if CONFIG_ESP_COREDUMP_FLASH_NO_OVERWRITE
+    if (!s_core_flash_config.partition.empty) {
+        ESP_COREDUMP_LOGW("Core dump already exists in flash, will not overwrite it with a new core dump");
+        return ESP_FAIL;
+    }
+#endif
+
+    /* Initialize non-OS flash access critical section. */
+    spi_flash_guard_set(&g_flash_guard_no_os_ops);
+    esp_flash_app_disable_protect(true);
+    return ESP_OK;
+}
+
+static void esp_core_dump_partition_init(void)
 {
     const esp_partition_t *core_part = NULL;
 
@@ -298,33 +339,9 @@ static esp_err_t esp_core_dump_flash_write_end(core_dump_write_data_t *wr_data)
     return err;
 }
 
-void esp_core_dump_to_flash(panic_info_t *info)
-{
-    /* Check core dump partition configuration. */
-    core_dump_crc_t crc = esp_core_dump_calc_flash_config_crc();
-    if (s_core_flash_config.partition_config_crc != crc) {
-        ESP_COREDUMP_LOGE("Core dump flash config is corrupted! CRC=0x%x instead of 0x%x", crc, s_core_flash_config.partition_config_crc);
-        return;
-    }
-
-    /* Make sure that the partition can at least hold the data length. */
-    if (s_core_flash_config.partition.start == 0 || s_core_flash_config.partition.size < sizeof(uint32_t)) {
-        ESP_COREDUMP_LOGE("Invalid flash partition config!");
-        return;
-    }
-
-    /* Initialize non-OS flash access critical section. */
-    spi_flash_guard_set(&g_flash_guard_no_os_ops);
-    esp_flash_app_disable_protect(true);
-
-    ESP_COREDUMP_LOGI("Save core dump to flash...");
-    esp_core_dump_write(info);
-    ESP_COREDUMP_LOGI("Core dump has been saved to flash.");
-}
-
 void esp_core_dump_init(void)
 {
-    esp_core_dump_flash_init();
+    esp_core_dump_partition_init();
 
 #if CONFIG_ESP_COREDUMP_CHECK_BOOT
     const esp_partition_t *partition = 0;

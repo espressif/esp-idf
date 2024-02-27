@@ -15,6 +15,8 @@
 
 const static char TAG[] __attribute__((unused)) = "esp_core_dump_binary";
 
+esp_err_t esp_core_dump_store(void) __attribute__((alias("esp_core_dump_write_binary")));
+
 static esp_err_t esp_core_dump_save_task(core_dump_write_data_t *write_data, core_dump_task_header_t *task)
 {
     esp_err_t err = ESP_FAIL;
@@ -79,9 +81,8 @@ static esp_err_t esp_core_dump_save_mem_segment(core_dump_write_data_t* write_da
     return ESP_OK;
 }
 
-esp_err_t esp_core_dump_write_binary(void)
+static esp_err_t esp_core_dump_write_binary(void)
 {
-    esp_err_t err = ESP_OK;
     uint32_t tcb_sz = esp_core_dump_get_tcb_len();
     uint32_t data_len = 0;
     uint32_t bad_tasks_num = 0;
@@ -91,6 +92,12 @@ esp_err_t esp_core_dump_write_binary(void)
     core_dump_mem_seg_header_t mem_seg = { 0 };
     TaskIterator_t task_iter;
     void *cur_task = NULL;
+
+    esp_err_t err = esp_core_dump_write_init();
+    if (err != ESP_OK) {
+        ESP_COREDUMP_LOGE("Binary write init failed!");
+        return ESP_FAIL;
+    }
 
     // Verifies all tasks in the snapshot
     esp_core_dump_reset_tasks_snapshots_iter();
