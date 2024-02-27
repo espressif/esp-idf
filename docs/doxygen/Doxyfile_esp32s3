@@ -1,7 +1,7 @@
 INPUT += \
          $(PROJECT_PATH)/components/driver/touch_sensor/$(IDF_TARGET)/include/driver/touch_sensor.h \
          $(PROJECT_PATH)/components/esp_lcd/rgb/include/esp_lcd_panel_rgb.h \
-		 $(PROJECT_PATH)/components/soc/$(IDF_TARGET)/include/soc/adc_channel.h \
+         $(PROJECT_PATH)/components/soc/$(IDF_TARGET)/include/soc/adc_channel.h \
          $(PROJECT_PATH)/components/soc/$(IDF_TARGET)/include/soc/clk_tree_defs.h \
          $(PROJECT_PATH)/components/soc/$(IDF_TARGET)/include/soc/gpio_num.h \
          $(PROJECT_PATH)/components/soc/$(IDF_TARGET)/include/soc/soc_caps.h \

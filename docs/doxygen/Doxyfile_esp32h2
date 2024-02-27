@@ -3,7 +3,7 @@ INPUT += \
     $(PROJECT_PATH)/components/esp_phy/include/esp_phy_init.h \
     $(PROJECT_PATH)/components/esp_phy/include/esp_phy_cert_test.h \
     $(PROJECT_PATH)/components/esp_coex/include/esp_coex_i154.h \
-	$(PROJECT_PATH)/components/soc/$(IDF_TARGET)/include/soc/adc_channel.h \
+    $(PROJECT_PATH)/components/soc/$(IDF_TARGET)/include/soc/adc_channel.h \
     $(PROJECT_PATH)/components/soc/$(IDF_TARGET)/include/soc/clk_tree_defs.h \
     $(PROJECT_PATH)/components/soc/$(IDF_TARGET)/include/soc/gpio_num.h \
     $(PROJECT_PATH)/components/soc/$(IDF_TARGET)/include/soc/soc_caps.h \
