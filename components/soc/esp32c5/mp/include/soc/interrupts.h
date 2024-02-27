@@ -1,11 +1,10 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #pragma once
-
 #include <stdint.h>
 
 #ifdef __cplusplus
@@ -19,7 +18,7 @@ typedef enum {
     ETS_WIFI_MAC_INTR_SOURCE = 0,               /**< interrupt of WiFi MAC, level*/
     ETS_WIFI_MAC_NMI_SOURCE,                    /**< interrupt of WiFi MAC, NMI, use if MAC have bug to fix in NMI*/
     ETS_WIFI_PWR_INTR_SOURCE,                   /**< */
-    ETS_WIFI_BB_INTR_SOURCE,                    /**< interrupt of WiFi BB, level, we can do some calibartion*/
+    ETS_WIFI_BB_INTR_SOURCE,                    /**< interrupt of WiFi BB, level, we can do some calibration*/
     ETS_BT_MAC_INTR_SOURCE,                     /**< will be cancelled*/
     ETS_BT_BB_INTR_SOURCE,                      /**< interrupt of BT BB, level*/
     ETS_BT_BB_NMI_SOURCE,                       /**< interrupt of BT BB, NMI, use if BB have bug to fix in NMI*/
@@ -28,7 +27,7 @@ typedef enum {
     ETS_BLE_TIMER_INTR_SOURCE,
     ETS_BLE_SEC_INTR_SOURCE,
     ETS_I2C_MASTER_SOURCE,                      /**< interrupt of I2C Master, level*/
-    ETS_ZB_MAC_SOURCE,
+    ETS_ZB_MAC_INTR_SOURCE,
     ETS_PMU_INTR_SOURCE,
     ETS_EFUSE_INTR_SOURCE,                      /**< interrupt of efuse, level, not likely to use*/
     ETS_LP_RTC_TIMER_INTR_SOURCE,
@@ -39,8 +38,8 @@ typedef enum {
     ETS_LP_APM_M0_INTR_SOURCE,
     ETS_LP_APM_M1_INTR_SOURCE,
     ETS_HUK_INTR_SOURCE,
-    ETS_FROM_CPU_INTR0_SOURCE,                  /**< interrupt0 generated from a CPU, level*/ /* Used for FreeRTOS */
-    ETS_FROM_CPU_INTR1_SOURCE,                  /**< interrupt1 generated from a CPU, level*/ /* Used for FreeRTOS */
+    ETS_FROM_CPU_INTR0_SOURCE,                  /**< interrupt0 generated from a CPU, level*/
+    ETS_FROM_CPU_INTR1_SOURCE,                  /**< interrupt1 generated from a CPU, level*/
     ETS_FROM_CPU_INTR2_SOURCE,                  /**< interrupt2 generated from a CPU, level*/
     ETS_FROM_CPU_INTR3_SOURCE,                  /**< interrupt3 generated from a CPU, level*/
     ETS_ASSIST_DEBUG_INTR_SOURCE,               /**< interrupt of Assist debug module, LEVEL*/
@@ -48,7 +47,7 @@ typedef enum {
     ETS_CACHE_INTR_SOURCE,
     ETS_CPU_PERI_TIMEOUT_INTR_SOURCE,
     ETS_GPIO_INTR_SOURCE,                       /**< interrupt of GPIO, level*/
-    ETS_GPIO_INTR_EXT_SOURCE,                        /**< interrupt of GPIO, NMI*/
+    ETS_GPIO_NMI_SOURCE,                        /**< interrupt of GPIO, NMI*/
     ETS_PAU_INTR_SOURCE,
     ETS_HP_PERI_TIMEOUT_INTR_SOURCE,
     ETS_MODEM_PERI_TIMEOUT_INTR_SOURCE,
@@ -78,10 +77,7 @@ typedef enum {
     ETS_SYSTIMER_TARGET0_INTR_SOURCE,           /**< interrupt of system timer 0 */
     ETS_SYSTIMER_TARGET1_INTR_SOURCE,           /**< interrupt of system timer 1 */
     ETS_SYSTIMER_TARGET2_INTR_SOURCE,           /**< interrupt of system timer 2 */
-    ETS_SYSTIMER_TARGET0_EDGE_INTR_SOURCE = ETS_SYSTIMER_TARGET0_INTR_SOURCE, /**< use ETS_SYSTIMER_TARGET0_INTR_SOURCE */
-    ETS_SYSTIMER_TARGET1_EDGE_INTR_SOURCE = ETS_SYSTIMER_TARGET1_INTR_SOURCE, /**< use ETS_SYSTIMER_TARGET1_INTR_SOURCE */
-    ETS_SYSTIMER_TARGET2_EDGE_INTR_SOURCE = ETS_SYSTIMER_TARGET2_INTR_SOURCE, /**< use ETS_SYSTIMER_TARGET2_INTR_SOURCE */
-    ETS_APB_ADC_INTR_SOURCE = 62,               /**< interrupt of APB ADC, LEVEL*/
+    ETS_APB_ADC_INTR_SOURCE,                    /**< interrupt of APB ADC, LEVEL*/
     ETS_MCPWM0_INTR_SOURCE,                     /**< interrupt of MCPWM0, LEVEL*/
     ETS_PCNT_INTR_SOURCE,
     ETS_PARL_IO_TX_INTR_SOURCE,
@@ -100,7 +96,7 @@ typedef enum {
     ETS_ECDSA_INTR_SOURCE,
     ETS_KM_INTR_SOURCE,
     ETS_MAX_INTR_SOURCE,
-} periph_interrput_t;
+} periph_interrupt_t;
 
 extern const char * const esp_isr_names[ETS_MAX_INTR_SOURCE];
 
