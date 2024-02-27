@@ -93,28 +93,28 @@ print_mbuf(const struct os_mbuf *om)
 
 static int
 nimble_on_read(uint16_t conn_handle,
-                const struct ble_gatt_error *error,
-                struct ble_gatt_attr *attr,
-                void *arg)
+               const struct ble_gatt_error *error,
+               struct ble_gatt_attr *attr,
+               void *arg)
 {
     int old_offset;
     MODLOG_DFLT(INFO, "Read complete; status=%d conn_handle=%d", error->status,
                 conn_handle);
     s_read_status = error->status;
-    switch(s_read_status) {
-        case 0:
-            MODLOG_DFLT(DEBUG, " attr_handle=%d value=", attr->handle);
-            old_offset = s_read_data_len;
-            s_read_data_len += OS_MBUF_PKTLEN(attr->om);
-            s_read_data_val = realloc(s_read_data_val, s_read_data_len + 1); // 1 extra byte to store null char
-            ble_hs_mbuf_to_flat(attr->om, s_read_data_val + old_offset, OS_MBUF_PKTLEN(attr->om), NULL);
-            print_mbuf(attr->om);
-            return 0;
-        case BLE_HS_EDONE:
-            s_read_data_val[s_read_data_len] = 0; // to insure strings are ended with \0 */
-            s_read_status = 0;
-            SEND_CB();
-            return 0;
+    switch (s_read_status) {
+    case 0:
+        MODLOG_DFLT(DEBUG, " attr_handle=%d value=", attr->handle);
+        old_offset = s_read_data_len;
+        s_read_data_len += OS_MBUF_PKTLEN(attr->om);
+        s_read_data_val = realloc(s_read_data_val, s_read_data_len + 1); // 1 extra byte to store null char
+        ble_hs_mbuf_to_flat(attr->om, s_read_data_val + old_offset, OS_MBUF_PKTLEN(attr->om), NULL);
+        print_mbuf(attr->om);
+        return 0;
+    case BLE_HS_EDONE:
+        s_read_data_val[s_read_data_len] = 0; // to insure strings are ended with \0 */
+        s_read_status = 0;
+        SEND_CB();
+        return 0;
     }
     return 0;
 }
@@ -161,7 +161,7 @@ static int read_descr(uint16_t conn_handle, uint16_t handle, uint8_t **out, uint
 
 static int
 svc_disced(uint16_t conn_handle, const struct ble_gatt_error *error,
-                const struct ble_gatt_svc *service, void *arg)
+           const struct ble_gatt_svc *service, void *arg)
 {
     int rc;
     struct ble_gatt_svc *service_result;
@@ -211,7 +211,7 @@ svc_disced(uint16_t conn_handle, const struct ble_gatt_error *error,
 
 static int
 chr_disced(uint16_t conn_handle, const struct ble_gatt_error *error,
-                const struct ble_gatt_chr *chr, void *arg)
+           const struct ble_gatt_chr *chr, void *arg)
 {
     struct ble_gatt_chr *chrs;
     int rc;
@@ -221,8 +221,8 @@ chr_disced(uint16_t conn_handle, const struct ble_gatt_error *error,
     status = error->status;
     switch (error->status) {
     case 0:
-        ESP_LOGD(TAG,"Char discovered : def handle : %04x, val_handle : %04x, properties : %02x\n, uuid : %04x",
-                    chr->def_handle, chr->val_handle,chr->properties, ble_uuid_u16(&chr->uuid.u));
+        ESP_LOGD(TAG, "Char discovered : def handle : %04x, val_handle : %04x, properties : %02x\n, uuid : %04x",
+                 chr->def_handle, chr->val_handle, chr->properties, ble_uuid_u16(&chr->uuid.u));
         memcpy(chrs + chrs_discovered, chr, sizeof(struct ble_gatt_chr));
         chrs_discovered++;
         break;
@@ -249,8 +249,8 @@ chr_disced(uint16_t conn_handle, const struct ble_gatt_error *error,
 
 static int
 desc_disced(uint16_t conn_handle, const struct ble_gatt_error *error,
-                uint16_t chr_val_handle, const struct ble_gatt_dsc *dsc,
-                void *arg)
+            uint16_t chr_val_handle, const struct ble_gatt_dsc *dsc,
+            void *arg)
 {
     int rc;
     struct ble_gatt_dsc *dscr;
@@ -260,8 +260,8 @@ desc_disced(uint16_t conn_handle, const struct ble_gatt_error *error,
     status = error->status;
     switch (error->status) {
     case 0:
-        ESP_LOGD(TAG,"DISC discovered : handle : %04x, uuid : %04x",
-                    dsc->handle, ble_uuid_u16(&dsc->uuid.u));
+        ESP_LOGD(TAG, "DISC discovered : handle : %04x, uuid : %04x",
+                 dsc->handle, ble_uuid_u16(&dsc->uuid.u));
         memcpy(dscr + dscs_discovered, dsc, sizeof(struct ble_gatt_dsc));
         dscs_discovered++;
         break;
@@ -307,12 +307,12 @@ static void read_device_services(esp_hidh_dev_t *dev)
     int rc;
 
     rc = ble_gattc_disc_all_svcs(dev->ble.conn_id, svc_disced, service_result);
-    if(rc != 0) {
+    if (rc != 0) {
         ESP_LOGD(TAG, "Error discovering services : %d", rc);
         assert(rc != 0);
     }
     WAIT_CB();
-    if(status != 0) {
+    if (status != 0) {
         ESP_LOGE(TAG, "failed to find services");
         assert(status == 0);
     }
@@ -351,8 +351,8 @@ static void read_device_services(esp_hidh_dev_t *dev)
             rc = ble_gattc_disc_all_chrs(dev->ble.conn_id, service_result[s].start_handle,
                                          service_result[s].end_handle, chr_disced, char_result);
             WAIT_CB();
-            if(status != 0) {
-                ESP_LOGE(TAG, "failed to find chars for service : %d",s);
+            if (status != 0) {
+                ESP_LOGE(TAG, "failed to find chars for service : %d", s);
                 assert(status == 0);
             }
             ccount = chrs_discovered;
@@ -365,8 +365,8 @@ static void read_device_services(esp_hidh_dev_t *dev)
 
                     if (suuid == BLE_SVC_GAP_UUID16) {
                         if (dev->config.device_name == NULL && cuuid == BLE_SVC_GAP_CHR_UUID16_DEVICE_NAME
-                            && (char_result[c].properties & BLE_GATT_CHR_PROP_READ) != 0) {
-                            if (read_char(dev->ble.conn_id, chandle,&rdata, &rlen) == 0 && rlen) {
+                                && (char_result[c].properties & BLE_GATT_CHR_PROP_READ) != 0) {
+                            if (read_char(dev->ble.conn_id, chandle, &rdata, &rlen) == 0 && rlen) {
                                 dev->config.device_name = (const char *)rdata;
                             }
                         } else {
@@ -374,7 +374,7 @@ static void read_device_services(esp_hidh_dev_t *dev)
                         }
                     } else if (suuid == BLE_SVC_BAS_UUID16) {
                         if (cuuid == BLE_SVC_BAS_CHR_UUID16_BATTERY_LEVEL &&
-                            (char_result[c].properties & BLE_GATT_CHR_PROP_READ) != 0) {
+                                (char_result[c].properties & BLE_GATT_CHR_PROP_READ) != 0) {
                             dev->ble.battery_handle = chandle;
                         } else {
                             continue;
@@ -400,7 +400,7 @@ static void read_device_services(esp_hidh_dev_t *dev)
                         }
                         continue;
                     } else {
-                        if(cuuid == BLE_SVC_HID_CHR_UUID16_PROTOCOL_MODE) {
+                        if (cuuid == BLE_SVC_HID_CHR_UUID16_PROTOCOL_MODE) {
                             if (char_result[c].properties & BLE_GATT_CHR_PROP_READ) {
                                 if (read_char(dev->ble.conn_id, chandle, &rdata, &rlen) == 0 && rlen) {
                                     dev->protocol_mode[hidindex] = *((uint8_t *)rdata);
@@ -457,17 +457,16 @@ static void read_device_services(esp_hidh_dev_t *dev)
                     struct ble_gatt_dsc descr_result[20];
                     uint16_t dcount = 20;
                     uint16_t chr_end_handle;
-                    if(c + 1 < ccount) {
+                    if (c + 1 < ccount) {
                         chr_end_handle = char_result[c + 1].def_handle;
-                    }
-                    else {
+                    } else {
                         chr_end_handle = service_result[s].end_handle;
                     }
                     rc = ble_gattc_disc_all_dscs(dev->ble.conn_id, char_result[c].val_handle,
                                                  chr_end_handle, desc_disced, descr_result);
                     WAIT_CB();
-                    if(status != 0) {
-                        ESP_LOGE(TAG, "failed to find discriptors for characteristic : %d",c);
+                    if (status != 0) {
+                        ESP_LOGE(TAG, "failed to find discriptors for characteristic : %d", c);
                         assert(status == 0);
                     }
                     dcount = dscs_discovered;
@@ -479,7 +478,7 @@ static void read_device_services(esp_hidh_dev_t *dev)
 
                             if (suuid == BLE_SVC_BAS_UUID16) {
                                 if (duuid == BLE_GATT_DSC_CLT_CFG_UUID16 &&
-                                    (char_result[c].properties & BLE_GATT_CHR_PROP_NOTIFY) != 0) {
+                                        (char_result[c].properties & BLE_GATT_CHR_PROP_NOTIFY) != 0) {
                                     dev->ble.battery_ccc_handle = dhandle;
                                 }
                             } else if (suuid == BLE_SVC_HID_UUID16 && report != NULL) {
@@ -549,12 +548,12 @@ static void read_device_services(esp_hidh_dev_t *dev)
 
 static int
 on_subscribe(uint16_t conn_handle,
-                     const struct ble_gatt_error *error,
-                     struct ble_gatt_attr *attr,
-                     void *arg)
+             const struct ble_gatt_error *error,
+             struct ble_gatt_attr *attr,
+             void *arg)
 {
     uint16_t conn_id;
-    conn_id =*((uint16_t*) arg);
+    conn_id = *((uint16_t*) arg);
 
     assert(conn_id == conn_handle);
 
@@ -572,22 +571,22 @@ static void register_for_notify(uint16_t conn_handle, uint16_t handle)
     int rc;
     value[0] = 1;
     value[1] = 0;
-    rc = ble_gattc_write_flat(conn_handle, handle, value, sizeof value, on_subscribe,(void *)&conn_handle);
+    rc = ble_gattc_write_flat(conn_handle, handle, value, sizeof value, on_subscribe, (void *)&conn_handle);
     if (rc != 0) {
         ESP_LOGE(TAG, "Error: Failed to subscribe to characteristic; "
-                    "rc=%d\n", rc);
+                 "rc=%d\n", rc);
     }
     WAIT_CB();
 }
 
 static int
 on_write(uint16_t conn_handle,
-                     const struct ble_gatt_error *error,
-                     struct ble_gatt_attr *attr,
-                     void *arg)
+         const struct ble_gatt_error *error,
+         struct ble_gatt_attr *attr,
+         void *arg)
 {
     uint16_t conn_id;
-    conn_id =*((uint16_t*) arg);
+    conn_id = *((uint16_t*) arg);
 
     assert(conn_id == conn_handle);
 
@@ -652,7 +651,7 @@ esp_hidh_gattc_event_handler(struct ble_gap_event *event, void *arg)
             rc = ble_gap_conn_find(event->connect.conn_handle, &desc);
             assert(rc == 0);
             dev = esp_hidh_dev_get_by_bda(desc.peer_ota_addr.val);
-            if(!dev) {
+            if (!dev) {
                 ESP_LOGE(TAG, "Connect received for unknown device");
             }
             dev->status = -1; // set to not found and clear if HID service is found
@@ -660,7 +659,7 @@ esp_hidh_gattc_event_handler(struct ble_gap_event *event, void *arg)
 
             /* Try to set the mtu to the max value */
             rc = ble_att_set_preferred_mtu(BLE_ATT_MTU_MAX);
-            if(rc != 0) {
+            if (rc != 0) {
                 ESP_LOGE(TAG, "att preferred mtu set failed");
             }
             rc = ble_gattc_exchange_mtu(event->connect.conn_handle, NULL, NULL);
@@ -671,9 +670,9 @@ esp_hidh_gattc_event_handler(struct ble_gap_event *event, void *arg)
         } else {
             MODLOG_DFLT(ERROR, "Error: Connection failed; status=%d\n",
                         event->connect.status);
-                dev->status = event->connect.status; // ESP_GATT_CONN_FAIL_ESTABLISH;
-                dev->ble.conn_id = -1;
-                SEND_CB(); // return from connection
+            dev->status = event->connect.status; // ESP_GATT_CONN_FAIL_ESTABLISH;
+            dev->ble.conn_id = -1;
+            SEND_CB(); // return from connection
         }
         return 0;
 
@@ -738,7 +737,7 @@ esp_hidh_gattc_event_handler(struct ble_gap_event *event, void *arg)
                     esp_hidh_event_data_t *p_param = NULL;
                     size_t event_data_size = sizeof(esp_hidh_event_data_t);
 
-                    if(report->protocol_mode != dev->protocol_mode[report->map_index]) {
+                    if (report->protocol_mode != dev->protocol_mode[report->map_index]) {
                         /* only pass the notifications in the current protocol mode */
                         ESP_LOGD(TAG, "Wrong protocol mode, dropping notification");
                         return 0;
@@ -861,9 +860,9 @@ static void esp_ble_hidh_dev_dump(esp_hidh_dev_t *dev, FILE *fp)
         while (report) {
             if (report->map_index == d) {
                 fprintf(fp, "    %8s %7s %6s, ID: %2u, Length: %3u, Permissions: 0x%02x, Handle: %3u, CCC Handle: %3u\n",
-                       esp_hid_usage_str(report->usage), esp_hid_report_type_str(report->report_type),
-                       esp_hid_protocol_mode_str(report->protocol_mode), report->report_id, report->value_len,
-                       report->permissions, report->handle, report->ccc_handle);
+                        esp_hid_usage_str(report->usage), esp_hid_report_type_str(report->report_type),
+                        esp_hid_protocol_mode_str(report->protocol_mode), report->report_id, report->value_len,
+                        report->permissions, report->handle, report->ccc_handle);
             }
             report = report->next;
         }
@@ -883,10 +882,11 @@ static void esp_ble_hidh_event_handler_wrapper(void *event_handler_arg, esp_even
     esp_hidh_post_process_event_handler(event_handler_arg, event_base, event_id, event_data);
 }
 
-static void nimble_host_synced(void) {
-/*
-    no need to perform anything here
-*/
+static void nimble_host_synced(void)
+{
+    /*
+        no need to perform anything here
+    */
 }
 
 static void nimble_host_reset(int reason)

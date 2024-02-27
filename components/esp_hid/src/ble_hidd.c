@@ -141,7 +141,6 @@ struct esp_ble_hidd_dev_s {
     esp_hid_device_config_t     config;
     uint16_t                    appearance;
 
-
     bool                        connected;
     uint16_t                    conn_id;
     esp_bd_addr_t               remote_bda;
@@ -158,7 +157,6 @@ struct esp_ble_hidd_dev_s {
     uint16_t                    bat_level_handle;
     uint16_t                    bat_ccc_handle;
 
-
     uint8_t                     pnp[7];
 
     hidd_dev_map_t             *devices;
@@ -173,7 +171,6 @@ static const uint8_t hidInfo[4] = {
     ESP_HID_FLAGS_REMOTE_WAKE | ESP_HID_FLAGS_NORMALLY_CONNECTABLE   // Flags
 };
 
-
 #define WAIT_CB(d) xSemaphoreTake(d->sem, portMAX_DELAY)
 #define SEND_CB(d) xSemaphoreGive(d->sem)
 
@@ -181,7 +178,7 @@ static const char *gatts_evt_names[25] = { "REG", "READ", "WRITE", "EXEC_WRITE",
 
 static const char *gatts_evt_str(uint8_t event)
 {
-    if (event >= (sizeof(gatts_evt_names)/sizeof(*gatts_evt_names))) {
+    if (event >= (sizeof(gatts_evt_names) / sizeof(*gatts_evt_names))) {
         return "UNKNOWN";
     }
     return gatts_evt_names[event];
@@ -230,8 +227,8 @@ static esp_err_t create_info_db(esp_ble_hidd_dev_t *dev)
         uint8_t pnp_val[7] = {
             0x02, //0x1=BT, 0x2=USB
             dev->config.vendor_id & 0xFF, (dev->config.vendor_id >> 8) & 0xFF, //VID
-            dev->config.product_id & 0xFF, (dev->config.product_id >> 8) & 0xFF, //PID
-            dev->config.version & 0xFF, (dev->config.version >> 8) & 0xFF  //VERSION
+                       dev->config.product_id & 0xFF, (dev->config.product_id >> 8) & 0xFF, //PID
+                       dev->config.version & 0xFF, (dev->config.version >> 8) & 0xFF  //VERSION
         };
         memcpy(dev->pnp, pnp_val, 7);
         add_db_record(_last_db, index++, (uint8_t *)&s_character_declaration_uuid, ESP_GATT_PERM_READ, 1, 1, (uint8_t *)&s_char_prop_read);
@@ -334,7 +331,6 @@ static esp_err_t create_hid_db(esp_ble_hidd_dev_t *dev, int device_index)
     esp_err_t err = esp_ble_gatts_create_attr_tab(_last_db, dev->devices[device_index].hid_svc.gatt_if, index, device_index);
     return err;
 }
-
 
 static void link_report_handles(hidd_dev_map_t *dev, uint16_t *handles)
 {
@@ -601,7 +597,7 @@ static void hid_event_handler(esp_ble_hidd_dev_t *dev, int device_index, esp_gat
     }
 }
 
-static int get_device_map_index_by_gatts_if (esp_ble_hidd_dev_t *dev, esp_gatt_if_t gatts_if)
+static int get_device_map_index_by_gatts_if(esp_ble_hidd_dev_t *dev, esp_gatt_if_t gatts_if)
 {
     for (uint8_t d = 0; d < dev->devices_len; d++) {
         if (dev->devices[d].hid_svc.gatt_if && gatts_if == dev->devices[d].hid_svc.gatt_if) {
@@ -780,7 +776,7 @@ void esp_hidd_gatts_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatt
     } else if (s_dev->info_svc.gatt_if && gatts_if == s_dev->info_svc.gatt_if) {
         info_event_handler(s_dev, event, gatts_if, param);
     } else {
-        int devi = get_device_map_index_by_gatts_if (s_dev, gatts_if);
+        int devi = get_device_map_index_by_gatts_if(s_dev, gatts_if);
         if (devi >= 0) {
             hid_event_handler(s_dev, devi, event, gatts_if, param);
         } else {
@@ -970,7 +966,6 @@ esp_err_t esp_ble_hidd_dev_init(esp_hidd_dev_t *dev_p, const esp_hid_device_conf
         ble_hidd_dev_free();
         return ESP_FAIL;
     }
-
 
     esp_event_loop_args_t event_task_args = {
         .queue_size = 5,
