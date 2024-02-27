@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -1034,14 +1034,16 @@ static void btc_sdp_remove_record(btc_sdp_args_t *arg)
         } else {
             BTC_TRACE_ERROR("%s SDP record with handle %d not found",
                                 __func__, arg->remove_record.record_handle);
-            return;
+            ret = ESP_SDP_NO_CREATE_RECORD;
+            break;
         }
 
         /* Get the Record handle, and free the slot */
         /* The application layer record_handle is equivalent to the id of the btc layer */
         int slot = get_sdp_slot_id_by_handle(arg->remove_record.record_handle);
         if (slot < 0) {
-            return;
+            ret = ESP_SDP_NO_CREATE_RECORD;
+            break;
         }
 
         handle = free_sdp_slot(slot);
