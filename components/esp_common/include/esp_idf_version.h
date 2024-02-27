@@ -23,7 +23,7 @@ extern "C" {
 /** Minor version number (x.X.x) */
 #define ESP_IDF_VERSION_MINOR   4
 /** Patch version number (x.x.X) */
-#define ESP_IDF_VERSION_PATCH   6
+#define ESP_IDF_VERSION_PATCH   7
 
 /**
  * Macro to convert IDF version number into an integer
