@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# SPDX-FileCopyrightText: 2018-2021 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2018-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 
 from __future__ import print_function, unicode_literals
@@ -32,7 +32,7 @@ IGNORE_DIRS = (
 
 SPACES_PER_INDENT = 4
 
-CONFIG_NAME_MAX_LENGTH = 40
+CONFIG_NAME_MAX_LENGTH = 50
 
 CONFIG_NAME_MIN_PREFIX_LENGTH = 3
 
@@ -103,7 +103,7 @@ class LineRuleChecker(BaseChecker):
                 if suppress_errors:
                     # just print but no failure
                     e = InputError(self.path_in_idf, line_number, rule[1], line)
-                    print(e)
+                    print(f'NOERROR: {e}')
                 else:
                     errors.append(rule[1])
                 if rule[2]:
@@ -298,6 +298,9 @@ class IndentAndNameChecker(BaseChecker):
         if len(stripped_line) == 0:
             self.force_next_indent = 0
             return
+        # Ignore comment lines
+        if stripped_line.startswith('#'):
+            return
         current_level = len(self.level_stack)
         m = re.search(r'\S', line)  # indent found as the first non-space character
         if m:
@@ -327,8 +330,6 @@ class IndentAndNameChecker(BaseChecker):
                              'Line-wrap with backslash is not supported here',
                              line)  # no suggestion for this
 
-        self.check_name_and_update_prefix(stripped_line, line_number)
-
         m = self.re_increase_level.search(line)
         if m:
             current_level = self.update_level_for_inc_pattern(m.group(1))
@@ -341,6 +342,10 @@ class IndentAndNameChecker(BaseChecker):
                     # endif doesn't require to check the prefix because the items inside if/endif belong to the
                     # same prefix level
                     self.check_common_prefix(line, line_number)
+
+        # name has to be checked after increase/decrease indentation level
+        # otherwise false-positive indentation error for lines bellow name is raised
+        self.check_name_and_update_prefix(stripped_line, line_number)
 
         expected_indent = current_level * SPACES_PER_INDENT
 
@@ -373,7 +378,12 @@ def validate_kconfig_file(kconfig_full_path, verbose=False):  # type: (str, bool
         try:
             for line_number, line in enumerate(f, start=1):
                 try:
-                    for checker in [line_checker, indent_and_name_checker, source_checker]:
+                    for checker in [
+                        indent_and_name_checker,    # indent checker has to be before line checker, otherwise
+                                                    # false-positive indent error if error in line_checker
+                        line_checker,
+                        source_checker
+                    ]:
                         checker.process_line(line, line_number)
                     # The line is correct therefore we echo it to the output file
                     f_o.write(line)
