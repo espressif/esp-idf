@@ -285,8 +285,8 @@ static int free_sdp_slot(int id)
         // Record have already been freed
         handle = -1;
     }
-    osi_free(slot);
-    slot = NULL;
+    osi_free(sdp_local_param.sdp_slots[id]);
+    sdp_local_param.sdp_slots[id] = NULL;
 
     return handle;
 }
