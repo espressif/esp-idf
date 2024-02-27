@@ -67,6 +67,8 @@ void test_illegal_access(void);
 
 void test_capture_dram(void);
 
+void test_tcb_corrupted(void);
+
 #if CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH && CONFIG_ESP_COREDUMP_DATA_FORMAT_ELF
 void test_setup_coredump_summary(void);
 void test_coredump_summary(void);

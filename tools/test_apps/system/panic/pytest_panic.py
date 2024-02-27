@@ -1,8 +1,11 @@
 # SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
 import re
+from typing import Any
 from typing import List
 from typing import Optional
+from typing import Pattern
+from typing import Sequence
 from typing import Union
 
 import pexpect
@@ -107,7 +110,7 @@ def get_default_backtrace(config: str) -> List[str]:
 
 
 def common_test(dut: PanicTestDut, config: str, expected_backtrace: Optional[List[str]] = None, check_cpu_reset: Optional[bool] = True,
-                expected_coredump: Optional[List[Union[str, re.Pattern]]] = None) -> None:
+                expected_coredump: Optional[Sequence[Union[str, Pattern[Any]]]] = None) -> None:
     if 'gdbstub' in config:
         dut.expect_exact('Entering gdb stub now.')
         dut.start_gdb_for_gdbstub()
@@ -1019,3 +1022,38 @@ def test_coredump_summary(dut: PanicTestDut) -> None:
 @pytest.mark.parametrize('config', CONFIG_COREDUMP_SUMMARY_FLASH_ENCRYPTED, indirect=True)
 def test_coredump_summary_flash_encrypted(dut: PanicTestDut, config: str) -> None:
     _test_coredump_summary(dut, True, config == 'coredump_flash_encrypted')
+
+
+@pytest.mark.parametrize('config', [pytest.param('coredump_flash_elf_sha', marks=TARGETS_ALL)], indirect=True)
+@pytest.mark.generic
+def test_tcb_corrupted(dut: PanicTestDut, target: str, config: str, test_func_name: str) -> None:
+    dut.run_test_func(test_func_name)
+    if dut.is_xtensa:
+        dut.expect_gme('LoadProhibited')
+        dut.expect_reg_dump(0)
+        dut.expect_corrupted_backtrace()
+    else:
+        dut.expect_gme('Load access fault')
+        dut.expect_reg_dump(0)
+        dut.expect_stack_dump()
+
+    dut.expect_elf_sha256()
+    dut.expect_none('Guru Meditation')
+
+    #        TCB             NAME
+    # ---------- ----------------
+    if dut.is_multi_core:
+        regex_patterns = [rb'[0-9xa-fA-F]             main',
+                          rb'[0-9xa-fA-F]             ipc0',
+                          rb'[0-9xa-fA-F]             ipc1']
+    else:
+        regex_patterns = [rb'[0-9xa-fA-F]             main']
+
+    coredump_pattern = [re.compile(pattern.decode('utf-8')) for pattern in regex_patterns]
+
+    common_test(
+        dut,
+        config,
+        expected_backtrace=None,
+        expected_coredump=coredump_pattern
+    )
