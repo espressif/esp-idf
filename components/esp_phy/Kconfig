@@ -172,5 +172,10 @@ menu "PHY"
             help
                 If enabled, there will be some logs while pll tracking
 
+        config ESP_PHY_RECORD_USED_TIME
+            bool "Record PHY used time"
+            default n
+            help
+                Select to support record and query phy used time.
     endif
 endmenu  # PHY
