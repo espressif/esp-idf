@@ -1001,6 +1001,33 @@ menu "LWIP"
         help
             Set maximum number of ports a bridge can consists of.
 
+    menu "DNS"
+
+        config LWIP_DNS_MAX_SERVERS
+            int "Maximum number of DNS servers"
+            default 3
+            range 1 4
+            help
+                Set maximum number of DNS servers.
+                If fallback DNS servers are supported,
+                the number of DNS servers needs to be greater than or equal to 3.
+
+        config LWIP_FALLBACK_DNS_SERVER_SUPPORT
+            bool "Enable DNS fallback server support"
+            default n
+            depends on LWIP_DNS_MAX_SERVERS >= 3
+            help
+                Enable this feature to support DNS fallback server.
+
+        config LWIP_FALLBACK_DNS_SERVER_ADDRESS
+            string "DNS fallback server address"
+            default "114.114.114.114"
+            depends on LWIP_FALLBACK_DNS_SERVER_SUPPORT
+            help
+                This option allows you to config dns fallback server address.
+
+    endmenu # DNS
+
     config LWIP_ESP_LWIP_ASSERT
         bool "Enable LWIP ASSERT checks"
         default y
