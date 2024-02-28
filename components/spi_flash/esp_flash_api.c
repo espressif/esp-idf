@@ -946,11 +946,13 @@ esp_err_t IRAM_ATTR esp_flash_write(esp_flash_t *chip, const void *buffer, uint3
 esp_err_t IRAM_ATTR esp_flash_write_encrypted(esp_flash_t *chip, uint32_t address, const void *buffer, uint32_t length)
 {
     esp_err_t err = rom_spiflash_api_funcs->chip_check(&chip);
+    VERIFY_CHIP_OP(write);
     // Flash encryption only support on main flash.
     if (chip != esp_flash_default_chip) {
         return ESP_ERR_NOT_SUPPORTED;
     }
-    if (err != ESP_OK) return err;
+    CHECK_WRITE_ADDRESS(chip, address, length);
+
     if (buffer == NULL || address + length > chip->size) {
         return ESP_ERR_INVALID_ARG;
     }
