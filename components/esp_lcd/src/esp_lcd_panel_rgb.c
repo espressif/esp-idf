@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -98,11 +98,11 @@ struct esp_rgb_panel_t {
     uint8_t *fbs[RGB_LCD_PANEL_MAX_FB_NUM]; // Frame buffers
     uint8_t cur_fb_index;  // Current frame buffer index
     uint8_t bb_fb_index;  // Current frame buffer index which used by bounce buffer
-    size_t fb_size;        // Size of frame buffer
+    size_t fb_size;        // Size of frame buffer, in bytes
     int data_gpio_nums[SOC_LCD_RGB_DATA_WIDTH]; // GPIOs used for data lines, we keep these GPIOs for action like "invert_color"
     uint32_t src_clk_hz;   // Peripheral source clock resolution
     esp_lcd_rgb_timing_t timings;   // RGB timing parameters (e.g. pclk, sync pulse, porch width)
-    size_t bb_size;                 // If not-zero, the driver uses two bounce buffers allocated from internal memory
+    size_t bb_size;                 // Size of the bounce buffer, in bytes. If not-zero, the driver uses two bounce buffers allocated from internal memory
     int bounce_pos_px;              // Position in whatever source material is used for the bounce buffer, in pixels
     uint8_t *bounce_buffer[RGB_LCD_PANEL_BOUNCE_BUF_NUM]; // Pointer to the bounce buffers
     gdma_channel_handle_t dma_chan; // DMA channel handle
@@ -307,16 +307,16 @@ esp_err_t esp_lcd_new_rgb_panel(const esp_lcd_rgb_panel_config_t *rgb_panel_conf
 
     // install DMA service
     rgb_panel->flags.stream_mode = !rgb_panel_config->flags.refresh_on_demand;
+    rgb_panel->fb_bits_per_pixel = fb_bits_per_pixel;
     ret = lcd_rgb_panel_create_trans_link(rgb_panel);
     ESP_GOTO_ON_ERROR(ret, err, TAG, "install DMA failed");
     // configure GPIO
     ret = lcd_rgb_panel_configure_gpio(rgb_panel, rgb_panel_config);
     ESP_GOTO_ON_ERROR(ret, err, TAG, "configure GPIO failed");
     // fill other rgb panel runtime parameters
-    memcpy(rgb_panel->data_gpio_nums, rgb_panel_config->data_gpio_nums, SOC_LCD_RGB_DATA_WIDTH);
+    memcpy(rgb_panel->data_gpio_nums, rgb_panel_config->data_gpio_nums, sizeof(rgb_panel->data_gpio_nums));
     rgb_panel->timings = rgb_panel_config->timings;
     rgb_panel->data_width = rgb_panel_config->data_width;
-    rgb_panel->fb_bits_per_pixel = fb_bits_per_pixel;
     rgb_panel->output_bits_per_pixel = fb_bits_per_pixel; // by default, the output bpp is the same as the frame buffer bpp
     rgb_panel->disp_gpio_num = rgb_panel_config->disp_gpio_num;
     rgb_panel->flags.disp_en_level = !rgb_panel_config->flags.disp_active_low;
@@ -757,8 +757,10 @@ static esp_err_t rgb_panel_invert_color(esp_lcd_panel_t *panel, bool invert_colo
     int panel_id = rgb_panel->panel_id;
     // inverting the data line by GPIO matrix
     for (int i = 0; i < rgb_panel->data_width; i++) {
-        esp_rom_gpio_connect_out_signal(rgb_panel->data_gpio_nums[i], lcd_periph_signals.panels[panel_id].data_sigs[i],
-                                        invert_color_data, false);
+        if (rgb_panel->data_gpio_nums[i] >= 0) {
+            esp_rom_gpio_connect_out_signal(rgb_panel->data_gpio_nums[i], lcd_periph_signals.panels[panel_id].data_sigs[i],
+                                            invert_color_data, false);
+        }
     }
     return ESP_OK;
 }
@@ -804,24 +806,14 @@ static esp_err_t rgb_panel_disp_on_off(esp_lcd_panel_t *panel, bool on_off)
 static esp_err_t lcd_rgb_panel_configure_gpio(esp_rgb_panel_t *panel, const esp_lcd_rgb_panel_config_t *panel_config)
 {
     int panel_id = panel->panel_id;
-    // check validation of GPIO number
-    bool valid_gpio = (panel_config->pclk_gpio_num >= 0);
-    if (panel_config->de_gpio_num < 0) {
-        // Hsync and Vsync are required in HV mode
-        valid_gpio = valid_gpio && (panel_config->hsync_gpio_num >= 0) && (panel_config->vsync_gpio_num >= 0);
-    }
-    for (size_t i = 0; i < panel_config->data_width; i++) {
-        valid_gpio = valid_gpio && (panel_config->data_gpio_nums[i] >= 0);
-    }
-    if (!valid_gpio) {
-        return ESP_ERR_INVALID_ARG;
-    }
     // connect peripheral signals via GPIO matrix
     for (size_t i = 0; i < panel_config->data_width; i++) {
-        gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[panel_config->data_gpio_nums[i]], PIN_FUNC_GPIO);
-        gpio_set_direction(panel_config->data_gpio_nums[i], GPIO_MODE_OUTPUT);
-        esp_rom_gpio_connect_out_signal(panel_config->data_gpio_nums[i],
-                                        lcd_periph_signals.panels[panel_id].data_sigs[i], false, false);
+        if (panel_config->data_gpio_nums[i] >= 0) {
+            gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[panel_config->data_gpio_nums[i]], PIN_FUNC_GPIO);
+            gpio_set_direction(panel_config->data_gpio_nums[i], GPIO_MODE_OUTPUT);
+            esp_rom_gpio_connect_out_signal(panel_config->data_gpio_nums[i],
+                                            lcd_periph_signals.panels[panel_id].data_sigs[i], false, false);
+        }
     }
     if (panel_config->hsync_gpio_num >= 0) {
         gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[panel_config->hsync_gpio_num], PIN_FUNC_GPIO);
@@ -929,7 +921,7 @@ static IRAM_ATTR bool lcd_rgb_panel_eof_handler(gdma_channel_handle_t dma_chan, 
 
 // If we restart GDMA, many pixels already have been transferred to the LCD peripheral.
 // Looks like that has 16 pixels of FIFO plus one holding register.
-#define LCD_FIFO_PRESERVE_SIZE_PX (GDMA_LL_L2FIFO_BASE_SIZE + 1)
+#define LCD_FIFO_PRESERVE_SIZE_PX (LCD_LL_FIFO_DEPTH + 1)
 
 static esp_err_t lcd_rgb_panel_create_trans_link(esp_rgb_panel_t *panel)
 {
@@ -970,7 +962,7 @@ static esp_err_t lcd_rgb_panel_create_trans_link(esp_rgb_panel_t *panel)
     // so we use a dedicated DMA node to restart the DMA transaction
     // see also `lcd_rgb_panel_try_restart_transmission`
     memcpy(&panel->dma_restart_node, &panel->dma_nodes[0], sizeof(panel->dma_restart_node));
-    int restart_skip_bytes = LCD_FIFO_PRESERVE_SIZE_PX * sizeof(uint16_t);
+    int restart_skip_bytes = LCD_FIFO_PRESERVE_SIZE_PX * (panel->fb_bits_per_pixel / 8);
     uint8_t *p = (uint8_t *)panel->dma_restart_node.buffer;
     panel->dma_restart_node.buffer = &p[restart_skip_bytes];
     panel->dma_restart_node.dw0.length -= restart_skip_bytes;
@@ -1008,6 +1000,7 @@ static esp_err_t lcd_rgb_panel_create_trans_link(esp_rgb_panel_t *panel)
 // time to reset DMA.
 static IRAM_ATTR void lcd_rgb_panel_try_restart_transmission(esp_rgb_panel_t *panel)
 {
+    int bb_size_px = panel->bb_size / (panel->fb_bits_per_pixel / 8);
     bool do_restart = false;
 #if CONFIG_LCD_RGB_RESTART_IN_VSYNC
     do_restart = true;
@@ -1026,11 +1019,11 @@ static IRAM_ATTR void lcd_rgb_panel_try_restart_transmission(esp_rgb_panel_t *pa
 
     if (panel->bb_size) {
         // Catch de-synced frame buffer and reset if needed.
-        if (panel->bounce_pos_px > panel->bb_size) {
+        if (panel->bounce_pos_px > bb_size_px * 2) {
             panel->bounce_pos_px = 0;
         }
         // Pre-fill bounce buffer 0, if the EOF ISR didn't do that already
-        if (panel->bounce_pos_px < panel->bb_size / 2) {
+        if (panel->bounce_pos_px < bb_size_px) {
             lcd_rgb_panel_fill_bounce_buffer(panel, panel->bounce_buffer[0]);
         }
     }
@@ -1041,10 +1034,11 @@ static IRAM_ATTR void lcd_rgb_panel_try_restart_transmission(esp_rgb_panel_t *pa
 
     if (panel->bb_size) {
         // Fill 2nd bounce buffer while 1st is being sent out, if needed.
-        if (panel->bounce_pos_px < panel->bb_size) {
-            lcd_rgb_panel_fill_bounce_buffer(panel, panel->bounce_buffer[0]);
+        if (panel->bounce_pos_px < bb_size_px * 2) {
+            lcd_rgb_panel_fill_bounce_buffer(panel, panel->bounce_buffer[1]);
         }
     }
+
 }
 
 static void lcd_rgb_panel_start_transmission(esp_rgb_panel_t *rgb_panel)
