@@ -177,6 +177,7 @@ TEST_CASE("error log level")
     CHECK(regex_search(fix.get_print_buffer_string(), test_print) == true);
 }
 
+#if CONFIG_LOG_DYNAMIC_LEVEL_CONTROL
 TEST_CASE("changing log level")
 {
     PrintFixture fix(ESP_LOG_INFO);
@@ -197,6 +198,7 @@ TEST_CASE("changing log level")
     ESP_LOGI(TEST_TAG, "must indeed be printed");
     CHECK(regex_search(fix.get_print_buffer_string(), test_print) == true);
 }
+#endif // CONFIG_LOG_DYNAMIC_LEVEL_CONTROL
 
 TEST_CASE("log buffer")
 {
@@ -302,6 +304,7 @@ TEST_CASE("early error log level")
     CHECK(regex_search(fix.get_print_buffer_string(), test_print) == true);
 }
 
+#if CONFIG_LOG_DYNAMIC_LEVEL_CONTROL
 TEST_CASE("changing early log level")
 {
     PutcFixture fix(ESP_LOG_INFO);
@@ -322,6 +325,7 @@ TEST_CASE("changing early log level")
     ESP_EARLY_LOGI(TEST_TAG, "must indeed be printed");
     CHECK(regex_search(fix.get_print_buffer_string(), test_print) == true);
 }
+#endif // CONFIG_LOG_DYNAMIC_LEVEL_CONTROL
 
 TEST_CASE("esp_log_util_cvt")
 {
