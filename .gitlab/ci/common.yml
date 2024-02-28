@@ -302,7 +302,7 @@ variables:
 # git describe requires commit history until the latest tag
 .before_script:fetch:git_describe:
   variables:
-    GIT_STRAEGY: none
+    GIT_STRATEGY: none
   before_script:
     - *git_init
     - *git_fetch_from_mirror_url_if_exists
