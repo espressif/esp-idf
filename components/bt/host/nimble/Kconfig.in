@@ -511,7 +511,7 @@ config BT_NIMBLE_ENABLE_CONN_REATTEMPT
 
 config BT_NIMBLE_MAX_CONN_REATTEMPT
     int "Maximum number connection reattempts"
-    range 1 7
+    range 1 255
     default 3
     depends on BT_NIMBLE_ENABLED && BT_NIMBLE_ENABLE_CONN_REATTEMPT
     help
