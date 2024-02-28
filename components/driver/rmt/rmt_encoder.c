@@ -258,7 +258,7 @@ esp_err_t rmt_new_bytes_encoder(const rmt_bytes_encoder_config_t *config, rmt_en
 {
     esp_err_t ret = ESP_OK;
     ESP_GOTO_ON_FALSE(config && ret_encoder, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
-    rmt_bytes_encoder_t *encoder = heap_caps_calloc(1, sizeof(rmt_bytes_encoder_t), RMT_MEM_ALLOC_CAPS);
+    rmt_bytes_encoder_t *encoder = rmt_alloc_encoder_mem(sizeof(rmt_bytes_encoder_t));
     ESP_GOTO_ON_FALSE(encoder, ESP_ERR_NO_MEM, err, TAG, "no mem for bytes encoder");
     encoder->base.encode = rmt_encode_bytes;
     encoder->base.del = rmt_del_bytes_encoder;
@@ -287,7 +287,7 @@ esp_err_t rmt_new_copy_encoder(const rmt_copy_encoder_config_t *config,  rmt_enc
 {
     esp_err_t ret = ESP_OK;
     ESP_GOTO_ON_FALSE(config && ret_encoder, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
-    rmt_copy_encoder_t *encoder = heap_caps_calloc(1, sizeof(rmt_copy_encoder_t), RMT_MEM_ALLOC_CAPS);
+    rmt_copy_encoder_t *encoder = rmt_alloc_encoder_mem(sizeof(rmt_copy_encoder_t));
     ESP_GOTO_ON_FALSE(encoder, ESP_ERR_NO_MEM, err, TAG, "no mem for copy encoder");
     encoder->base.encode = rmt_encode_copy;
     encoder->base.del = rmt_del_copy_encoder;
@@ -309,4 +309,9 @@ esp_err_t rmt_encoder_reset(rmt_encoder_handle_t encoder)
 {
     ESP_RETURN_ON_FALSE(encoder, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
     return encoder->reset(encoder);
+}
+
+void* rmt_alloc_encoder_mem(size_t size)
+{
+    return heap_caps_calloc(1, size, RMT_MEM_ALLOC_CAPS);
 }
