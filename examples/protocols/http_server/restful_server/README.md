@@ -88,6 +88,7 @@ cd path_to_this_example/front/web-demo
 npm install
 npm run build
 ```
+> **_NOTE:_** This example needs `nodejs` version `v10.19.0`
 
 After a while, you will see a `dist` directory which contains all the website files (e.g. html, js, css, images).
 
