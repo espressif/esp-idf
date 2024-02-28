@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: MIT
  *
- * SPDX-FileContributor: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2021-2024 Espressif Systems (Shanghai) CO LTD
  */
 
 #include <string.h>
@@ -638,6 +638,7 @@ static esp_err_t emac_ksz8851_set_peer_pause_ability(esp_eth_mac_t *mac, uint32_
 static void emac_ksz8851snl_task(void *arg)
 {
     emac_ksz8851snl_t *emac = (emac_ksz8851snl_t *)arg;
+    esp_err_t ret;
     while (1) {
         ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
 
@@ -691,31 +692,35 @@ static void emac_ksz8851snl_task(void *arg)
                 /* define max expected frame len */
                 uint32_t frame_len = ETH_MAX_PACKET_SIZE;
                 uint8_t *buffer;
-                emac_ksz8851_alloc_recv_buf(emac, &buffer, &frame_len);
-                /* we have memory to receive the frame of maximal size previously defined */
-                if (buffer != NULL) {
-                    uint32_t buf_len = KSZ8851_ETH_MAC_RX_BUF_SIZE_AUTO;
-                    if (emac->parent.receive(&emac->parent, buffer, &buf_len) == ESP_OK) {
-                        if (buf_len == 0) {
+                if ((ret = emac_ksz8851_alloc_recv_buf(emac, &buffer, &frame_len)) == ESP_OK) {
+                    if (buffer != NULL) {
+                        /* we have memory to receive the frame of maximal size previously defined */
+                        uint32_t buf_len = KSZ8851_ETH_MAC_RX_BUF_SIZE_AUTO;
+                        if (emac->parent.receive(&emac->parent, buffer, &buf_len) == ESP_OK) {
+                            if (buf_len == 0) {
+                                emac_ksz8851_flush_recv_queue(emac);
+                                free(buffer);
+                            } else if (frame_len > buf_len) {
+                                ESP_LOGE(TAG, "received frame was truncated");
+                                free(buffer);
+                            } else {
+                                ESP_LOGD(TAG, "receive len=%u", buf_len);
+                                /* pass the buffer to stack (e.g. TCP/IP layer) */
+                                emac->eth->stack_input(emac->eth, buffer, buf_len);
+                            }
+                        } else {
+                            ESP_LOGE(TAG, "frame read from module failed");
                             emac_ksz8851_flush_recv_queue(emac);
                             free(buffer);
-                        } else if (frame_len > buf_len) {
-                            ESP_LOGE(TAG, "received frame was truncated");
-                            free(buffer);
-                        } else {
-                            ESP_LOGD(TAG, "receive len=%u", buf_len);
-                            /* pass the buffer to stack (e.g. TCP/IP layer) */
-                            emac->eth->stack_input(emac->eth, buffer, buf_len);
                         }
-                    } else {
-                        ESP_LOGE(TAG, "frame read from module failed");
-                        emac_ksz8851_flush_recv_queue(emac);
-                        free(buffer);
+                    } else if (frame_len) {
+                        ESP_LOGE(TAG, "invalid combination of frame_len(%u) and buffer pointer(%p)", frame_len, buffer);
                     }
-                /* if allocation failed and there is a waiting frame */
-                } else if (frame_len) {
+                } else if (ret == ESP_ERR_NO_MEM) {
                     ESP_LOGE(TAG, "no mem for receive buffer");
                     emac_ksz8851_flush_recv_queue(emac);
+                } else {
+                    ESP_LOGE(TAG, "unexpected error 0x%x", ret);
                 }
             }
             ksz8851_write_reg(emac, KSZ8851_IER, ier);

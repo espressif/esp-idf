@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -789,6 +789,7 @@ static void emac_dm9051_task(void *arg)
 {
     emac_dm9051_t *emac = (emac_dm9051_t *)arg;
     uint8_t status = 0;
+    esp_err_t ret;
     while (1) {
         // check if the task receives any notification
         if (ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(1000)) == 0 &&    // if no notification ...
@@ -804,31 +805,35 @@ static void emac_dm9051_task(void *arg)
                 /* define max expected frame len */
                 uint32_t frame_len = ETH_MAX_PACKET_SIZE;
                 uint8_t *buffer;
-                dm9051_alloc_recv_buf(emac, &buffer, &frame_len);
-                /* we have memory to receive the frame of maximal size previously defined */
-                if (buffer != NULL) {
-                    uint32_t buf_len = DM9051_ETH_MAC_RX_BUF_SIZE_AUTO;
-                    if (emac->parent.receive(&emac->parent, buffer, &buf_len) == ESP_OK) {
-                        if (buf_len == 0) {
+                if ((ret = dm9051_alloc_recv_buf(emac, &buffer, &frame_len)) == ESP_OK) {
+                    if (buffer != NULL) {
+                        /* we have memory to receive the frame of maximal size previously defined */
+                        uint32_t buf_len = DM9051_ETH_MAC_RX_BUF_SIZE_AUTO;
+                        if (emac->parent.receive(&emac->parent, buffer, &buf_len) == ESP_OK) {
+                            if (buf_len == 0) {
+                                dm9051_flush_recv_frame(emac);
+                                free(buffer);
+                            } else if (frame_len > buf_len) {
+                                ESP_LOGE(TAG, "received frame was truncated");
+                                free(buffer);
+                            } else {
+                                ESP_LOGD(TAG, "receive len=%u", buf_len);
+                                /* pass the buffer to stack (e.g. TCP/IP layer) */
+                                emac->eth->stack_input(emac->eth, buffer, buf_len);
+                            }
+                        } else {
+                            ESP_LOGE(TAG, "frame read from module failed");
                             dm9051_flush_recv_frame(emac);
                             free(buffer);
-                        } else if (frame_len > buf_len) {
-                            ESP_LOGE(TAG, "received frame was truncated");
-                            free(buffer);
-                        } else {
-                            ESP_LOGD(TAG, "receive len=%u", buf_len);
-                            /* pass the buffer to stack (e.g. TCP/IP layer) */
-                            emac->eth->stack_input(emac->eth, buffer, buf_len);
                         }
-                    } else {
-                        ESP_LOGE(TAG, "frame read from module failed");
-                        dm9051_flush_recv_frame(emac);
-                        free(buffer);
+                    } else if (frame_len) {
+                        ESP_LOGE(TAG, "invalid combination of frame_len(%u) and buffer pointer(%p)", frame_len, buffer);
                     }
-                /* if allocation failed and there is a waiting frame */
-                } else if (frame_len) {
+                } else if (ret == ESP_ERR_NO_MEM) {
                     ESP_LOGE(TAG, "no mem for receive buffer");
                     dm9051_flush_recv_frame(emac);
+                } else {
+                    ESP_LOGE(TAG, "unexpected error 0x%x", ret);
                 }
             } while (emac->packets_remain);
         }
