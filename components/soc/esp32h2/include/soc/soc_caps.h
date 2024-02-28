@@ -220,6 +220,7 @@
  * for hold, wake & 32kHz crystal functions - via LP_AON registers */
 #define SOC_RTCIO_PIN_COUNT         (8U)
 #define SOC_RTCIO_HOLD_SUPPORTED    (1)
+#define SOC_RTCIO_VALID_RTCIO_MASK  (0x7F80)
 
 /*-------------------------- Dedicated GPIO CAPS -----------------------------*/
 #define SOC_DEDIC_GPIO_OUT_CHANNELS_NUM (8) /*!< 8 outward channels on each CPU core */
