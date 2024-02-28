@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -55,6 +55,7 @@ typedef enum {
     USB_PHY_SPEED_UNDEFINED,
     USB_PHY_SPEED_LOW,              /**< USB Low Speed (1.5 Mbit/s)  */
     USB_PHY_SPEED_FULL,             /**< USB Full Speed (12 Mbit/s)  */
+    USB_PHY_SPEED_HIGH,             /**< USB High Speed (480 Mbit/s) */
     USB_PHY_SPEED_MAX,
 } usb_phy_speed_t;
 

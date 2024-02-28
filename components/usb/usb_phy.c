@@ -141,13 +141,7 @@ esp_err_t usb_phy_otg_dev_set_speed(usb_phy_handle_t handle, usb_phy_speed_t spe
                         USBPHY_TAG, "set speed not supported");
 
     handle->otg_speed = speed;
-    usb_priv_speed_t hal_speed = 0;
-    if (speed == USB_PHY_SPEED_LOW) {
-        hal_speed = USB_PRIV_SPEED_LOW;
-    } else if (speed == USB_PHY_SPEED_FULL) {
-        hal_speed = USB_PRIV_SPEED_FULL;
-    }
-    usb_phy_hal_int_load_conf_dev(&(handle->hal_context), hal_speed);
+    usb_phy_hal_int_load_conf_dev(&(handle->hal_context), speed);
     return ESP_OK;
 }
 

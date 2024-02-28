@@ -42,10 +42,10 @@ void usb_phy_hal_int_load_conf_host(usb_phy_hal_context_t *hal)
     usb_phy_ll_int_load_conf(hal->wrap_dev, false, true, false, true);
 }
 
-void usb_phy_hal_int_load_conf_dev(usb_phy_hal_context_t *hal, usb_priv_speed_t speed)
+void usb_phy_hal_int_load_conf_dev(usb_phy_hal_context_t *hal, usb_phy_speed_t speed)
 {
     // DEVICE - downstream
-    if (speed == USB_PRIV_SPEED_LOW) {
+    if (speed == USB_PHY_SPEED_LOW) {
         // LS: dm_pu = 1
         usb_phy_ll_int_load_conf(hal->wrap_dev, false, false, true, false);
     } else {
