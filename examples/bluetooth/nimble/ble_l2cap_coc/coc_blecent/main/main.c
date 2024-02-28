@@ -72,8 +72,8 @@ blecent_l2cap_coc_send_data(struct ble_l2cap_chan *chan)
         MODLOG_DFLT(INFO, "Data sent successfully");
     } else {
         MODLOG_DFLT(INFO, "Data sending failed, rc = %d", rc);
+        os_mbuf_free_chain(sdu_rx_data);
     }
-    os_mbuf_free(sdu_rx_data);
 }
 
 /**
