@@ -303,7 +303,7 @@ esp_err_t esp_eth_stop(esp_eth_handle_t hdl)
     esp_err_t ret = ESP_OK;
     esp_eth_driver_t *eth_driver = (esp_eth_driver_t *)hdl;
     ESP_GOTO_ON_FALSE(eth_driver, ESP_ERR_INVALID_ARG, err, TAG, "ethernet driver handle can't be null");
-    esp_eth_mac_t *mac = eth_driver->mac;
+    esp_eth_phy_t *phy = eth_driver->phy;
     // check if driver has started
     esp_eth_fsm_t expected_fsm = ESP_ETH_FSM_START;
     ESP_GOTO_ON_FALSE(atomic_compare_exchange_strong(&eth_driver->fsm, &expected_fsm, ESP_ETH_FSM_STOP),
@@ -312,10 +312,8 @@ esp_err_t esp_eth_stop(esp_eth_handle_t hdl)
 
     eth_link_t expected_link = ETH_LINK_UP;
     if (atomic_compare_exchange_strong(&eth_driver->link, &expected_link, ETH_LINK_DOWN)){
-        // MAC is stopped by setting link down
-        ESP_GOTO_ON_ERROR(mac->set_link(mac, ETH_LINK_DOWN), err, TAG, "ethernet mac set link failed");
-        ESP_GOTO_ON_ERROR(esp_event_post(ETH_EVENT, ETHERNET_EVENT_DISCONNECTED, &eth_driver, sizeof(esp_eth_driver_t *), 0), err,
-                            TAG, "send ETHERNET_EVENT_DISCONNECTED event failed");
+        // MAC is stopped by setting link down at PHY layer
+        ESP_GOTO_ON_ERROR(phy->set_link(phy, ETH_LINK_DOWN), err, TAG, "ethernet phy reset link failed");
     }
 
     ESP_GOTO_ON_ERROR(esp_event_post(ETH_EVENT, ETHERNET_EVENT_STOP, &eth_driver, sizeof(esp_eth_driver_t *), 0),
