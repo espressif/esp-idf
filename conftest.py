@@ -133,6 +133,7 @@ ENV_MARKERS = {
     # multi-dut markers
     'ieee802154': 'ieee802154 related tests should run on ieee802154 runners.',
     'openthread_br': 'tests should be used for openthread border router.',
+    'openthread_sleep': 'tests should be used for openthread sleepy device.',
     'wifi_two_dut': 'tests should be run on runners which has two wifi duts connected.',
     'generic_multi_device': 'generic multiple devices whose corresponding gpio pins are connected to each other.',
     'twai_network': 'multiple runners form a TWAI network.',

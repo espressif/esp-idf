@@ -172,6 +172,20 @@
     - "build:example_test"
     - build:target_test
 
+# For openthread sleepy
+"test:example_test-otsleepy":
+  patterns:
+    - "example_test-otsleepy"
+    - "target_test-i154"
+  labels:
+    - target_test
+    - example_test
+  included_in:
+    - "build:example_test-esp32c6"
+    - "build:example_test-esp32h2"
+    - "build:example_test"
+    - build:target_test
+
 "test:host_test":
   labels:
     - host_test

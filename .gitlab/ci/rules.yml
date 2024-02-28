@@ -93,6 +93,13 @@
   - "examples/common_components/iperf/**/*"
   - "examples/openthread/**/*"
 
+.patterns-example_test-otsleepy: &patterns-example_test-otsleepy
+  - "components/esp_hw_support/**/*"
+  - "components/esp_netif/**/*"
+  - "components/lwip/**/*"
+  - "components/openthread/**/*"
+  - "examples/openthread/**/*"
+
 .patterns-target_test-wifi: &patterns-target_test-wifi
   - "components/esp_netif/**/*"
   - "components/lwip/**/*"
@@ -1122,6 +1129,8 @@
     - <<: *if-dev-push
       changes: *patterns-example_test-i154
     - <<: *if-dev-push
+      changes: *patterns-example_test-otsleepy
+    - <<: *if-dev-push
       changes: *patterns-example_test-sdio
     - <<: *if-dev-push
       changes: *patterns-example_test-usb
@@ -1292,6 +1301,8 @@
     - <<: *if-dev-push
       changes: *patterns-example_test-i154
     - <<: *if-dev-push
+      changes: *patterns-example_test-otsleepy
+    - <<: *if-dev-push
       changes: *patterns-example_test-sdio
     - <<: *if-dev-push
       changes: *patterns-example_test-usb
@@ -1333,6 +1344,8 @@
       changes: *patterns-example_test-ethernet
     - <<: *if-dev-push
       changes: *patterns-example_test-i154
+    - <<: *if-dev-push
+      changes: *patterns-example_test-otsleepy
     - <<: *if-dev-push
       changes: *patterns-example_test-sdio
     - <<: *if-dev-push
@@ -1513,6 +1526,8 @@
       changes: *patterns-example_test-ethernet
     - <<: *if-dev-push
       changes: *patterns-example_test-i154
+    - <<: *if-dev-push
+      changes: *patterns-example_test-otsleepy
     - <<: *if-dev-push
       changes: *patterns-example_test-sdio
     - <<: *if-dev-push
@@ -2631,6 +2646,20 @@
     - <<: *if-label-target_test
     - <<: *if-dev-push
       changes: *patterns-example_test-i154
+    - <<: *if-dev-push
+      changes: *patterns-target_test-i154
+
+.rules:test:example_test-otsleepy:
+  rules:
+    - <<: *if-revert-branch
+      when: never
+    - <<: *if-protected
+    - <<: *if-label-build-only
+      when: never
+    - <<: *if-label-example_test
+    - <<: *if-label-target_test
+    - <<: *if-dev-push
+      changes: *patterns-example_test-otsleepy
     - <<: *if-dev-push
       changes: *patterns-target_test-i154
 

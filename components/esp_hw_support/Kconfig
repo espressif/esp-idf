@@ -172,6 +172,12 @@ menu "Hardware Settings"
                 For chips after esp32, the delay will be executed only in light sleep flow, the delay
                 controlled by the EFUSE_FLASH_TPUW in ROM will be executed in deepsleep wake up flow.)
 
+        config ESP_SLEEP_DEBUG
+            bool "esp sleep debug"
+            default n
+            help
+                Enable esp sleep debug.
+
         config ESP_SLEEP_GPIO_ENABLE_INTERNAL_RESISTORS
             bool "Allow to enable internal pull-up/downs for the Deep-Sleep wakeup IOs"
             default y

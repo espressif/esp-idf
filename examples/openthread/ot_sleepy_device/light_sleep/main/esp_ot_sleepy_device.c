@@ -28,6 +28,13 @@
 #include "openthread/logging.h"
 #include "openthread/thread.h"
 
+#if CONFIG_ESP_SLEEP_DEBUG
+#include "esp_timer.h"
+#include "esp_sleep.h"
+#include "esp_private/esp_pmu.h"
+#include "esp_private/esp_sleep_internal.h"
+#endif
+
 #ifdef CONFIG_PM_ENABLE
 #include "esp_pm.h"
 #endif
@@ -68,6 +75,17 @@ static esp_netif_t *init_openthread_netif(const esp_openthread_platform_config_t
     return netif;
 }
 
+#if CONFIG_ESP_SLEEP_DEBUG
+static esp_sleep_context_t s_sleep_ctx;
+
+static void print_sleep_flag(void *arg)
+{
+    ESP_LOGD(TAG, "sleep_flags %lu", s_sleep_ctx.sleep_flags);
+    ESP_LOGD(TAG, "PMU_SLEEP_PD_TOP: %s", (s_sleep_ctx.sleep_flags & PMU_SLEEP_PD_TOP) ? "True":"False");
+    ESP_LOGD(TAG, "PMU_SLEEP_PD_MODEM: %s", (s_sleep_ctx.sleep_flags & PMU_SLEEP_PD_MODEM) ? "True":"False");
+}
+#endif
+
 static void ot_task_worker(void *aContext)
 {
     esp_openthread_platform_config_t config = {
@@ -89,6 +107,23 @@ static void ot_task_worker(void *aContext)
     esp_netif_set_default_netif(openthread_netif);
 
     create_config_network(esp_openthread_get_instance());
+
+#if CONFIG_ESP_SLEEP_DEBUG
+    esp_sleep_set_sleep_context(&s_sleep_ctx);
+    esp_log_level_set(TAG, ESP_LOG_DEBUG);
+
+    // create a timer to print the status of sleepy device
+    int periods = 2000;
+    const esp_timer_create_args_t timer_args = {
+            .name = "print_sleep_flag",
+            .arg  = NULL,
+            .callback = &print_sleep_flag,
+            .skip_unhandled_events = true,
+    };
+    esp_timer_handle_t periodic_timer;
+    ESP_ERROR_CHECK(esp_timer_create(&timer_args, &periodic_timer));
+    ESP_ERROR_CHECK(esp_timer_start_periodic(periodic_timer, periods * 1000));
+#endif
 
     // Run the main loop
     esp_openthread_launch_mainloop();
