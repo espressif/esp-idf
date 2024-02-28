@@ -63,19 +63,30 @@ esp_eth_mac_t *mac_init(void *vendor_emac_config, eth_mac_config_t *mac_config)
     };
 #if CONFIG_TARGET_ETH_PHY_DEVICE_W5500
     eth_w5500_config_t w5500_config = ETH_W5500_DEFAULT_CONFIG(DEFAULT_TARGET_SPI_HOST, &devcfg);
+#if CONFIG_TARGET_ETH_SPI_POLL_MS > 0
+    w5500_config.int_gpio_num = -1;
+    w5500_config.poll_period_ms = CONFIG_TARGET_ETH_SPI_POLL_MS;
+#endif
     if (vendor_emac_config == NULL) {
         vendor_emac_config = &w5500_config;
     }
     mac = esp_eth_mac_new_w5500(vendor_emac_config, mac_config);
 #elif CONFIG_TARGET_ETH_PHY_DEVICE_KSZ8851SNL
     eth_ksz8851snl_config_t ksz8851snl_config = ETH_KSZ8851SNL_DEFAULT_CONFIG(DEFAULT_TARGET_SPI_HOST, &devcfg);
-    ksz8851snl_config.int_gpio_num = 4;
+#if CONFIG_TARGET_ETH_SPI_POLL_MS > 0
+    ksz8851snl_config.int_gpio_num = -1;
+    ksz8851snl_config.poll_period_ms = CONFIG_TARGET_ETH_SPI_POLL_MS;
+#endif
     if (vendor_emac_config == NULL) {
         vendor_emac_config = &ksz8851snl_config;
     }
     mac = esp_eth_mac_new_ksz8851snl(vendor_emac_config, mac_config);
 #elif CONFIG_TARGET_ETH_PHY_DEVICE_DM9051
     eth_dm9051_config_t dm9051_config = ETH_DM9051_DEFAULT_CONFIG(DEFAULT_TARGET_SPI_HOST, &devcfg);
+#if CONFIG_TARGET_ETH_SPI_POLL_MS > 0
+    dm9051_config.int_gpio_num = -1;
+    dm9051_config.poll_period_ms = CONFIG_TARGET_ETH_SPI_POLL_MS;
+#endif
     if (vendor_emac_config == NULL) {
         vendor_emac_config = &dm9051_config ;
     }

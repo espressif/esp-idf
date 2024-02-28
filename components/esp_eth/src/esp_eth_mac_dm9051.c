@@ -25,6 +25,7 @@
 #include "esp_rom_gpio.h"
 #include "esp_rom_sys.h"
 #include "esp_cpu.h"
+#include "esp_timer.h"
 
 static const char *TAG = "dm9051.mac";
 
@@ -67,6 +68,8 @@ typedef struct {
     TaskHandle_t rx_task_hdl;
     uint32_t sw_reset_timeout_ms;
     int int_gpio_num;
+    esp_timer_handle_t poll_timer;
+    uint32_t poll_period_ms;
     uint8_t addr[6];
     bool packets_remain;
     bool flow_ctrl_enabled;
@@ -421,6 +424,12 @@ IRAM_ATTR static void dm9051_isr_handler(void *arg)
     }
 }
 
+static void dm9051_poll_timer(void *arg)
+{
+    emac_dm9051_t *emac = (emac_dm9051_t *)arg;
+    xTaskNotifyGive(emac->rx_task_hdl);
+}
+
 static esp_err_t emac_dm9051_set_mediator(esp_eth_mac_t *mac, esp_eth_mediator_t *eth)
 {
     esp_err_t ret = ESP_OK;
@@ -514,12 +523,21 @@ err:
 static esp_err_t emac_dm9051_set_link(esp_eth_mac_t *mac, eth_link_t link)
 {
     esp_err_t ret = ESP_OK;
+    emac_dm9051_t *emac = __containerof(mac, emac_dm9051_t, parent);
     switch (link) {
     case ETH_LINK_UP:
         ESP_GOTO_ON_ERROR(mac->start(mac), err, TAG, "dm9051 start failed");
+        if (emac->poll_timer) {
+            ESP_GOTO_ON_ERROR(esp_timer_start_periodic(emac->poll_timer, emac->poll_period_ms * 1000),
+                                err, TAG, "start poll timer failed");
+        }
         break;
     case ETH_LINK_DOWN:
         ESP_GOTO_ON_ERROR(mac->stop(mac), err, TAG, "dm9051 stop failed");
+        if (emac->poll_timer) {
+            ESP_GOTO_ON_ERROR(esp_timer_stop(emac->poll_timer),
+                                err, TAG, "stop poll timer failed");
+        }
         break;
     default:
         ESP_GOTO_ON_FALSE(false, ESP_ERR_INVALID_ARG, err, TAG, "unknown link status");
@@ -777,12 +795,14 @@ static esp_err_t emac_dm9051_init(esp_eth_mac_t *mac)
     esp_err_t ret = ESP_OK;
     emac_dm9051_t *emac = __containerof(mac, emac_dm9051_t, parent);
     esp_eth_mediator_t *eth = emac->eth;
-    esp_rom_gpio_pad_select_gpio(emac->int_gpio_num);
-    gpio_set_direction(emac->int_gpio_num, GPIO_MODE_INPUT);
-    gpio_set_pull_mode(emac->int_gpio_num, GPIO_PULLDOWN_ONLY);
-    gpio_set_intr_type(emac->int_gpio_num, GPIO_INTR_POSEDGE);
-    gpio_intr_enable(emac->int_gpio_num);
-    gpio_isr_handler_add(emac->int_gpio_num, dm9051_isr_handler, emac);
+    if (emac->int_gpio_num >= 0) {
+        esp_rom_gpio_pad_select_gpio(emac->int_gpio_num);
+        gpio_set_direction(emac->int_gpio_num, GPIO_MODE_INPUT);
+        gpio_set_pull_mode(emac->int_gpio_num, GPIO_PULLDOWN_ONLY);
+        gpio_set_intr_type(emac->int_gpio_num, GPIO_INTR_POSEDGE);
+        gpio_intr_enable(emac->int_gpio_num);
+        gpio_isr_handler_add(emac->int_gpio_num, dm9051_isr_handler, emac);
+    }
     ESP_GOTO_ON_ERROR(eth->on_state_changed(eth, ETH_STATE_LLINIT, NULL), err, TAG, "lowlevel init failed");
     /* reset dm9051 */
     ESP_GOTO_ON_ERROR(dm9051_reset(emac), err, TAG, "reset dm9051 failed");
@@ -796,8 +816,10 @@ static esp_err_t emac_dm9051_init(esp_eth_mac_t *mac)
     ESP_GOTO_ON_ERROR(dm9051_get_mac_addr(emac), err, TAG, "fetch ethernet mac address failed");
     return ESP_OK;
 err:
-    gpio_isr_handler_remove(emac->int_gpio_num);
-    gpio_reset_pin(emac->int_gpio_num);
+    if (emac->int_gpio_num >= 0) {
+        gpio_isr_handler_remove(emac->int_gpio_num);
+        gpio_reset_pin(emac->int_gpio_num);
+    }
     eth->on_state_changed(eth, ETH_STATE_DEINIT, NULL);
     return ret;
 }
@@ -807,8 +829,13 @@ static esp_err_t emac_dm9051_deinit(esp_eth_mac_t *mac)
     emac_dm9051_t *emac = __containerof(mac, emac_dm9051_t, parent);
     esp_eth_mediator_t *eth = emac->eth;
     mac->stop(mac);
-    gpio_isr_handler_remove(emac->int_gpio_num);
-    gpio_reset_pin(emac->int_gpio_num);
+    if (emac->int_gpio_num >= 0) {
+        gpio_isr_handler_remove(emac->int_gpio_num);
+        gpio_reset_pin(emac->int_gpio_num);
+    }
+    if (emac->poll_timer && esp_timer_is_active(emac->poll_timer)) {
+        esp_timer_stop(emac->poll_timer);
+    }
     eth->on_state_changed(eth, ETH_STATE_DEINIT, NULL);
     return ESP_OK;
 }
@@ -820,9 +847,13 @@ static void emac_dm9051_task(void *arg)
     esp_err_t ret;
     while (1) {
         // check if the task receives any notification
-        if (ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(1000)) == 0 &&    // if no notification ...
-            gpio_get_level(emac->int_gpio_num) == 0) {               // ...and no interrupt asserted
-            continue;                                                // -> just continue to check again
+        if (emac->int_gpio_num >= 0) {                                   // if in interrupt mode
+            if (ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(1000)) == 0 &&   // if no notification ...
+                gpio_get_level(emac->int_gpio_num) == 0) {               // ...and no interrupt asserted
+                continue;                                                // -> just continue to check again
+            }
+        } else {
+            ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
         }
         /* clear interrupt status */
         dm9051_register_read(emac, DM9051_ISR, &status);
@@ -872,6 +903,9 @@ static void emac_dm9051_task(void *arg)
 static esp_err_t emac_dm9051_del(esp_eth_mac_t *mac)
 {
     emac_dm9051_t *emac = __containerof(mac, emac_dm9051_t, parent);
+    if (emac->poll_timer) {
+        esp_timer_delete(emac->poll_timer);
+    }
     vTaskDelete(emac->rx_task_hdl);
     emac->spi.deinit(emac->spi.ctx);
     heap_caps_free(emac->rx_buffer);
@@ -885,13 +919,13 @@ esp_eth_mac_t *esp_eth_mac_new_dm9051(const eth_dm9051_config_t *dm9051_config, 
     emac_dm9051_t *emac = NULL;
     ESP_GOTO_ON_FALSE(dm9051_config, NULL, err, TAG, "can't set dm9051 specific config to null");
     ESP_GOTO_ON_FALSE(mac_config, NULL, err, TAG, "can't set mac config to null");
+    ESP_GOTO_ON_FALSE((dm9051_config->int_gpio_num >= 0) != (dm9051_config->poll_period_ms > 0), NULL, err, TAG, "invalid configuration argument combination");
     emac = calloc(1, sizeof(emac_dm9051_t));
     ESP_GOTO_ON_FALSE(emac, NULL, err, TAG, "calloc emac failed");
-    /* dm9051 receive is driven by interrupt only for now*/
-    ESP_GOTO_ON_FALSE(dm9051_config->int_gpio_num >= 0, NULL, err, TAG, "error interrupt gpio number");
     /* bind methods and attributes */
     emac->sw_reset_timeout_ms = mac_config->sw_reset_timeout_ms;
     emac->int_gpio_num = dm9051_config->int_gpio_num;
+    emac->poll_period_ms = dm9051_config->poll_period_ms;
     emac->parent.set_mediator = emac_dm9051_set_mediator;
     emac->parent.init = emac_dm9051_init;
     emac->parent.deinit = emac_dm9051_deinit;
@@ -942,10 +976,23 @@ esp_eth_mac_t *esp_eth_mac_new_dm9051(const eth_dm9051_config_t *dm9051_config, 
     emac->rx_buffer = heap_caps_malloc(ETH_MAX_PACKET_SIZE + DM9051_RX_HDR_SIZE, MALLOC_CAP_DMA);
     ESP_GOTO_ON_FALSE(emac->rx_buffer, NULL, err, TAG, "RX buffer allocation failed");
 
+    if (emac->int_gpio_num < 0) {
+        const esp_timer_create_args_t poll_timer_args = {
+            .callback = dm9051_poll_timer,
+            .name = "emac_spi_poll_timer",
+            .arg = emac,
+            .skip_unhandled_events = true
+        };
+        ESP_GOTO_ON_FALSE(esp_timer_create(&poll_timer_args, &emac->poll_timer) == ESP_OK, NULL, err, TAG, "create poll timer failed");
+    }
+
     return &(emac->parent);
 
 err:
     if (emac) {
+        if (emac->poll_timer) {
+            esp_timer_delete(emac->poll_timer);
+        }
         if (emac->rx_task_hdl) {
             vTaskDelete(emac->rx_task_hdl);
         }

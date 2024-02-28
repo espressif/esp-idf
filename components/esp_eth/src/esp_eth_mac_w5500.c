@@ -17,6 +17,7 @@
 #include "esp_heap_caps.h"
 #include "esp_rom_gpio.h"
 #include "esp_cpu.h"
+#include "esp_timer.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
@@ -57,6 +58,8 @@ typedef struct {
     TaskHandle_t rx_task_hdl;
     uint32_t sw_reset_timeout_ms;
     int int_gpio_num;
+    esp_timer_handle_t poll_timer;
+    uint32_t poll_period_ms;
     uint8_t addr[6];
     bool packets_remain;
     uint8_t *rx_buffer;
@@ -456,14 +459,23 @@ err:
 static esp_err_t emac_w5500_set_link(esp_eth_mac_t *mac, eth_link_t link)
 {
     esp_err_t ret = ESP_OK;
+    emac_w5500_t *emac = __containerof(mac, emac_w5500_t, parent);
     switch (link) {
     case ETH_LINK_UP:
         ESP_LOGD(TAG, "link is up");
         ESP_GOTO_ON_ERROR(mac->start(mac), err, TAG, "w5500 start failed");
+        if (emac->poll_timer) {
+            ESP_GOTO_ON_ERROR(esp_timer_start_periodic(emac->poll_timer, emac->poll_period_ms * 1000),
+                                err, TAG, "start poll timer failed");
+        }
         break;
     case ETH_LINK_DOWN:
         ESP_LOGD(TAG, "link is down");
         ESP_GOTO_ON_ERROR(mac->stop(mac), err, TAG, "w5500 stop failed");
+        if (emac->poll_timer) {
+            ESP_GOTO_ON_ERROR(esp_timer_stop(emac->poll_timer),
+                                err, TAG, "stop poll timer failed");
+        }
         break;
     default:
         ESP_GOTO_ON_FALSE(false, ESP_ERR_INVALID_ARG, err, TAG, "unknown link status");
@@ -725,6 +737,12 @@ IRAM_ATTR static void w5500_isr_handler(void *arg)
     }
 }
 
+static void w5500_poll_timer(void *arg)
+{
+    emac_w5500_t *emac = (emac_w5500_t *)arg;
+    xTaskNotifyGive(emac->rx_task_hdl);
+}
+
 static void emac_w5500_task(void *arg)
 {
     emac_w5500_t *emac = (emac_w5500_t *)arg;
@@ -735,9 +753,13 @@ static void emac_w5500_task(void *arg)
     esp_err_t ret;
     while (1) {
         /* check if the task receives any notification */
-        if (ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(1000)) == 0 &&    // if no notification ...
-            gpio_get_level(emac->int_gpio_num) != 0) {               // ...and no interrupt asserted
-            continue;                                                // -> just continue to check again
+        if (emac->int_gpio_num >= 0) {                                   // if in interrupt mode
+            if (ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(1000)) == 0 &&   // if no notification ...
+                gpio_get_level(emac->int_gpio_num) != 0) {               // ...and no interrupt asserted
+                continue;                                                // -> just continue to check again
+            }
+        } else {
+            ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
         }
         /* read interrupt status */
         w5500_read(emac, W5500_REG_SOCK_IR(0), &status, sizeof(status));
@@ -788,12 +810,14 @@ static esp_err_t emac_w5500_init(esp_eth_mac_t *mac)
     esp_err_t ret = ESP_OK;
     emac_w5500_t *emac = __containerof(mac, emac_w5500_t, parent);
     esp_eth_mediator_t *eth = emac->eth;
-    esp_rom_gpio_pad_select_gpio(emac->int_gpio_num);
-    gpio_set_direction(emac->int_gpio_num, GPIO_MODE_INPUT);
-    gpio_set_pull_mode(emac->int_gpio_num, GPIO_PULLUP_ONLY);
-    gpio_set_intr_type(emac->int_gpio_num, GPIO_INTR_NEGEDGE); // active low
-    gpio_intr_enable(emac->int_gpio_num);
-    gpio_isr_handler_add(emac->int_gpio_num, w5500_isr_handler, emac);
+    if (emac->int_gpio_num >= 0) {
+        esp_rom_gpio_pad_select_gpio(emac->int_gpio_num);
+        gpio_set_direction(emac->int_gpio_num, GPIO_MODE_INPUT);
+        gpio_set_pull_mode(emac->int_gpio_num, GPIO_PULLUP_ONLY);
+        gpio_set_intr_type(emac->int_gpio_num, GPIO_INTR_NEGEDGE); // active low
+        gpio_intr_enable(emac->int_gpio_num);
+        gpio_isr_handler_add(emac->int_gpio_num, w5500_isr_handler, emac);
+    }
     ESP_GOTO_ON_ERROR(eth->on_state_changed(eth, ETH_STATE_LLINIT, NULL), err, TAG, "lowlevel init failed");
     /* reset w5500 */
     ESP_GOTO_ON_ERROR(w5500_reset(emac), err, TAG, "reset w5500 failed");
@@ -803,8 +827,10 @@ static esp_err_t emac_w5500_init(esp_eth_mac_t *mac)
     ESP_GOTO_ON_ERROR(w5500_setup_default(emac), err, TAG, "w5500 default setup failed");
     return ESP_OK;
 err:
-    gpio_isr_handler_remove(emac->int_gpio_num);
-    gpio_reset_pin(emac->int_gpio_num);
+    if (emac->int_gpio_num >= 0) {
+        gpio_isr_handler_remove(emac->int_gpio_num);
+        gpio_reset_pin(emac->int_gpio_num);
+    }
     eth->on_state_changed(eth, ETH_STATE_DEINIT, NULL);
     return ret;
 }
@@ -814,8 +840,13 @@ static esp_err_t emac_w5500_deinit(esp_eth_mac_t *mac)
     emac_w5500_t *emac = __containerof(mac, emac_w5500_t, parent);
     esp_eth_mediator_t *eth = emac->eth;
     mac->stop(mac);
-    gpio_isr_handler_remove(emac->int_gpio_num);
-    gpio_reset_pin(emac->int_gpio_num);
+    if (emac->int_gpio_num >= 0) {
+        gpio_isr_handler_remove(emac->int_gpio_num);
+        gpio_reset_pin(emac->int_gpio_num);
+    }
+    if (emac->poll_timer && esp_timer_is_active(emac->poll_timer)) {
+        esp_timer_stop(emac->poll_timer);
+    }
     eth->on_state_changed(eth, ETH_STATE_DEINIT, NULL);
     return ESP_OK;
 }
@@ -823,6 +854,9 @@ static esp_err_t emac_w5500_deinit(esp_eth_mac_t *mac)
 static esp_err_t emac_w5500_del(esp_eth_mac_t *mac)
 {
     emac_w5500_t *emac = __containerof(mac, emac_w5500_t, parent);
+    if (emac->poll_timer) {
+        esp_timer_delete(emac->poll_timer);
+    }
     vTaskDelete(emac->rx_task_hdl);
     emac->spi.deinit(emac->spi.ctx);
     heap_caps_free(emac->rx_buffer);
@@ -835,13 +869,13 @@ esp_eth_mac_t *esp_eth_mac_new_w5500(const eth_w5500_config_t *w5500_config, con
     esp_eth_mac_t *ret = NULL;
     emac_w5500_t *emac = NULL;
     ESP_GOTO_ON_FALSE(w5500_config && mac_config, NULL, err, TAG, "invalid argument");
+    ESP_GOTO_ON_FALSE((w5500_config->int_gpio_num >= 0) != (w5500_config->poll_period_ms > 0), NULL, err, TAG, "invalid configuration argument combination");
     emac = calloc(1, sizeof(emac_w5500_t));
     ESP_GOTO_ON_FALSE(emac, NULL, err, TAG, "no mem for MAC instance");
-    /* w5500 driver is interrupt driven */
-    ESP_GOTO_ON_FALSE(w5500_config->int_gpio_num >= 0, NULL, err, TAG, "invalid interrupt gpio number");
     /* bind methods and attributes */
     emac->sw_reset_timeout_ms = mac_config->sw_reset_timeout_ms;
     emac->int_gpio_num = w5500_config->int_gpio_num;
+    emac->poll_period_ms = w5500_config->poll_period_ms;
     emac->parent.set_mediator = emac_w5500_set_mediator;
     emac->parent.init = emac_w5500_init;
     emac->parent.deinit = emac_w5500_deinit;
@@ -892,10 +926,23 @@ esp_eth_mac_t *esp_eth_mac_new_w5500(const eth_w5500_config_t *w5500_config, con
     emac->rx_buffer = heap_caps_malloc(ETH_MAX_PACKET_SIZE, MALLOC_CAP_DMA);
     ESP_GOTO_ON_FALSE(emac->rx_buffer, NULL, err, TAG, "RX buffer allocation failed");
 
+    if (emac->int_gpio_num < 0) {
+        const esp_timer_create_args_t poll_timer_args = {
+            .callback = w5500_poll_timer,
+            .name = "emac_spi_poll_timer",
+            .arg = emac,
+            .skip_unhandled_events = true
+        };
+        ESP_GOTO_ON_FALSE(esp_timer_create(&poll_timer_args, &emac->poll_timer) == ESP_OK, NULL, err, TAG, "create poll timer failed");
+    }
+
     return &(emac->parent);
 
 err:
     if (emac) {
+        if (emac->poll_timer) {
+            esp_timer_delete(emac->poll_timer);
+        }
         if (emac->rx_task_hdl) {
             vTaskDelete(emac->rx_task_hdl);
         }
