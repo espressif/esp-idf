@@ -1406,3 +1406,11 @@ config SOC_MEM_TCM_SUPPORTED
 config SOC_EMAC_USE_IO_MUX
     bool
     default y
+
+config SOC_JPEG_CODEC_SUPPORTED
+    bool
+    default y
+
+config SOC_JPEG_DECODE_SUPPORTED
+    bool
+    default y

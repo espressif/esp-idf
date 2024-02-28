@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,6 +8,7 @@
 #include "esp_assert.h"
 #include "hal/lcd_types.h"
 #include "hal/mipi_dsi_types.h"
+#include "hal/color_types.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -34,8 +35,8 @@ typedef struct esp_lcd_panel_t *esp_lcd_panel_handle_t;       /*!< Type of LCD p
  * @brief RGB element order
  */
 typedef enum {
-    LCD_RGB_ELEMENT_ORDER_RGB, /*!< RGB element order: RGB */
-    LCD_RGB_ELEMENT_ORDER_BGR, /*!< RGB element order: BGR */
+    LCD_RGB_ELEMENT_ORDER_RGB = COLOR_RGB_ELEMENT_ORDER_RGB, /*!< RGB element order: RGB */
+    LCD_RGB_ELEMENT_ORDER_BGR = COLOR_RGB_ELEMENT_ORDER_BGR, /*!< RGB element order: BGR */
 } lcd_rgb_element_order_t;
 
 /** @cond */
