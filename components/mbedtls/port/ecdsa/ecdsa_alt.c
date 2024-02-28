@@ -1,9 +1,10 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <string.h>
+#include "hal/ecc_ll.h"
 #include "hal/ecdsa_ll.h"
 #include "hal/ecdsa_hal.h"
 #include "esp_crypto_lock.h"
@@ -25,6 +26,11 @@ static void esp_ecdsa_acquire_hardware(void)
 {
     esp_crypto_ecdsa_lock_acquire();
 
+    ECC_RCC_ATOMIC() {
+        ecc_ll_enable_bus_clock(true);
+        ecc_ll_reset_register();
+    }
+
     ECDSA_RCC_ATOMIC() {
         ecdsa_ll_enable_bus_clock(true);
         ecdsa_ll_reset_register();
@@ -33,6 +39,10 @@ static void esp_ecdsa_acquire_hardware(void)
 
 static void esp_ecdsa_release_hardware(void)
 {
+    ECC_RCC_ATOMIC() {
+        ecc_ll_enable_bus_clock(false);
+    }
+
     ECDSA_RCC_ATOMIC() {
         ecdsa_ll_enable_bus_clock(false);
     }

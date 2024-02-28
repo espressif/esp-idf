@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: CC0-1.0
  */
@@ -8,10 +8,12 @@
 #include <stdbool.h>
 #include <string.h>
 
+#include "esp_crypto_lock.h"
 #include "esp_efuse_chip.h"
 #include "esp_private/esp_crypto_lock_internal.h"
 #include "esp_random.h"
 #include "hal/clk_gate_ll.h"
+#include "hal/ecc_ll.h"
 #include "hal/ecdsa_hal.h"
 #include "hal/ecdsa_ll.h"
 #include "hal/ecdsa_types.h"
@@ -24,6 +26,13 @@
 
 static void ecdsa_enable_and_reset(void)
 {
+    esp_crypto_ecdsa_lock_acquire();
+
+    ECC_RCC_ATOMIC() {
+        ecc_ll_enable_bus_clock(true);
+        ecc_ll_reset_register();
+    }
+
     ECDSA_RCC_ATOMIC() {
         ecdsa_ll_enable_bus_clock(true);
         ecdsa_ll_reset_register();
@@ -32,9 +41,15 @@ static void ecdsa_enable_and_reset(void)
 
 static void ecdsa_disable(void)
 {
+    ECC_RCC_ATOMIC() {
+        ecc_ll_enable_bus_clock(false);
+    }
+
     ECDSA_RCC_ATOMIC() {
         ecdsa_ll_enable_bus_clock(false);
     }
+
+    esp_crypto_ecdsa_lock_release();
 }
 
 static void ecc_be_to_le(const uint8_t* be_point, uint8_t *le_point, uint8_t len)
