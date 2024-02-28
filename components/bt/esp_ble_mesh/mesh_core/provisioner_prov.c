@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -1459,16 +1459,27 @@ static int bearer_ctl_send(const uint8_t idx, uint8_t op, void *data, uint8_t da
 static void send_link_open(const uint8_t idx)
 {
     int j;
+    uint8_t count;
 
-    /** Generate link ID, and may need to check if this id is
-     *  currently being used, which may will not happen ever.
-     */
-    bt_mesh_rand(&link[idx].link_id, sizeof(uint32_t));
+    link[idx].link_id = 0;
+
     while (1) {
+        count = 0;
+
+        /* Make sure the generated Link ID is not 0 */
+        while(link[idx].link_id == 0) {
+            bt_mesh_rand(&link[idx].link_id, sizeof(link[idx].link_id));
+            if (count++ > 10) {
+                BT_ERR("Link ID error: all zero");
+                return;
+            }
+        }
+
+        /* Check if the generated Link ID is the same with other links */
         for (j = 0; j < CONFIG_BLE_MESH_PBA_SAME_TIME; j++) {
             if (bt_mesh_atomic_test_bit(link[j].flags, LINK_ACTIVE) || link[j].linking) {
                 if (link[idx].link_id == link[j].link_id) {
-                    bt_mesh_rand(&link[idx].link_id, sizeof(uint32_t));
+                    bt_mesh_rand(&link[idx].link_id, sizeof(link[idx].link_id));
                     break;
                 }
             }
