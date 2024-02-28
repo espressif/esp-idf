@@ -89,7 +89,7 @@ do{\
 } while(0)
 
 #define OSI_FUNCS_TIME_BLOCKING  0xffffffff
-#define OSI_VERSION              0x00010004
+#define OSI_VERSION              0x00010005
 #define OSI_MAGIC_VALUE          0xFADEBEAD
 
 /* Types definition
@@ -177,6 +177,7 @@ struct osi_funcs_t {
     void (*_interrupt_l3_restore)(void);
     void *(* _customer_queue_create)(uint32_t queue_len, uint32_t item_size);
     int (* _coex_version_get)(unsigned int *major, unsigned int *minor, unsigned int *patch);
+    void (* _patch_apply)(void);
     uint32_t _magic;
 };
 
@@ -258,6 +259,10 @@ extern uint32_t _nimble_data_end;
 extern uint32_t _btdm_data_start;
 extern uint32_t _btdm_data_end;
 
+extern void config_bt_funcs_reset(void);
+extern void config_ble_funcs_reset(void);
+extern void config_btdm_funcs_reset(void);
+
 /* Local Function Declare
  *********************************************************************
  */
@@ -330,6 +335,7 @@ static void *customer_queue_create_hlevel_wrapper(uint32_t queue_len, uint32_t i
 static void interrupt_l3_disable(void);
 static void interrupt_l3_restore(void);
 static void bt_controller_deinit_internal(void);
+static void patch_apply(void);
 
 /* Local variable definition
  ***************************************************************************
@@ -417,6 +423,7 @@ static const struct osi_funcs_t osi_funcs_ro = {
     ._customer_queue_create = NULL,
 #endif /* CONFIG_BTDM_CTRL_HLI */
     ._coex_version_get = coex_version_get_wrapper,
+    ._patch_apply = patch_apply,
     ._magic = OSI_MAGIC_VALUE,
 };
 
@@ -1699,6 +1706,18 @@ static void bt_shutdown(void)
     return;
 }
 
+static void patch_apply(void)
+{
+    config_btdm_funcs_reset();
+
+#ifndef CONFIG_BTDM_CTRL_MODE_BLE_ONLY
+    config_bt_funcs_reset();
+#endif
+
+#ifndef CONFIG_BTDM_CTRL_MODE_BR_EDR_ONLY
+    config_ble_funcs_reset();
+#endif
+}
 
 esp_err_t esp_bt_controller_enable(esp_bt_mode_t mode)
 {
