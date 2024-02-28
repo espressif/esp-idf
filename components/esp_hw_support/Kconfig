@@ -173,6 +173,7 @@ menu "Hardware Settings"
         config ESP_SLEEP_CACHE_SAFE_ASSERTION
             bool "Check the cache safety of the sleep wakeup code in sleep process"
             default n
+            select ESP_PANIC_HANDLER_IRAM
             help
                 Enabling it will check the cache safety of the code before the flash power is ready after
                 light sleep wakeup, and check PM_SLP_IRAM_OPT related code cache safety. This option is
