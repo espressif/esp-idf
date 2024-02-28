@@ -980,9 +980,13 @@ static esp_err_t verify_secure_boot_signature(bootloader_sha256_handle_t sha_han
         return ESP_ERR_IMAGE_INVALID;
     }
 
-#if CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME || CONFIG_SECURE_SIGNED_APPS_ECDSA_V2_SCHEME
     // Adjust image length result to include the appended signature
+#if CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME || CONFIG_SECURE_SIGNED_APPS_ECDSA_V2_SCHEME
     data->image_len = end - data->start_addr + sizeof(ets_secure_boot_signature_t);
+#elif defined(CONFIG_SECURE_SIGNED_APPS_ECDSA_SCHEME)
+    if (data->start_addr != ESP_BOOTLOADER_OFFSET) {
+        data->image_len = end - data->start_addr + sizeof(esp_secure_boot_sig_block_t);
+    }
 #endif
 
 #endif // SECURE_BOOT_CHECK_SIGNATURE
