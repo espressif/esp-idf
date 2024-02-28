@@ -91,6 +91,9 @@ RUN : \
   && rm -rf $IDF_TOOLS_PATH/dist \
   && :
 
+# Add get_idf as alias
+RUN echo 'alias get_idf=". /opt/esp/idf/export.sh"' >> /root/.bashrc
+
 # The constraint file has been downloaded and the right Python package versions installed. No need to check and
 # download this at every invocation of the container.
 ENV IDF_PYTHON_CHECK_CONSTRAINTS=no
