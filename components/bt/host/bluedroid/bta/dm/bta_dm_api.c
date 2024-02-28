@@ -2906,7 +2906,6 @@ void BTA_VendorCleanup (void)
     }
 #endif
 
-    btm_ble_multi_adv_cleanup();
 }
 #if (BLE_50_FEATURE_SUPPORT == TRUE)
 void BTA_DmBleGapReadPHY(BD_ADDR addr)
