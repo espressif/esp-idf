@@ -74,6 +74,9 @@ typedef enum {
     JPEG_LL_EN_FRAME_EOF_LACK = (1 << 16),
 } jpeg_ll_encoder_intr_t;
 
+#define JPEG_LL_ENCODER_EVENT_INTR (JPEG_LL_RLE_PARALLEL_ERR | \
+                                    JPEG_LL_EN_FRAME_EOF_ERR)
+
 /**
  * @brief Enable the hardware clock for JPEG module
  *

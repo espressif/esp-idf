@@ -12,3 +12,6 @@ INPUT += \
     $(PROJECT_PATH)/components/usb/include/usb/usb_host.h \
     $(PROJECT_PATH)/components/usb/include/usb/usb_types_ch9.h \
     $(PROJECT_PATH)/components/usb/include/usb/usb_types_stack.h \
+    $(PROJECT_PATH)/components/hal/include/hal/jpeg_types.h \
+    $(PROJECT_PATH)/components/esp_driver_jpeg/include/driver/jpeg_decode.h \
+    $(PROJECT_PATH)/components/esp_driver_jpeg/include/driver/jpeg_types.h \

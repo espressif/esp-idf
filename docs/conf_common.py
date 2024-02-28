@@ -150,6 +150,8 @@ ANA_CMPR_DOCS = ['api-reference/peripherals/ana_cmpr.rst']
 
 SPI_SLAVE_HD_DOCS = ['api-reference/peripherals/spi_slave_hd.rst']
 
+JPEG_DOCS = ['api-reference/peripherals/jpeg.rst']
+
 QEMU_DOCS = ['api-guides/tools/qemu.rst']
 
 ESP32_DOCS = ['api-reference/system/himem.rst',
@@ -235,6 +237,7 @@ conditional_include_dict = {'SOC_BT_SUPPORTED':BT_DOCS,
                             'SOC_WIFI_MESH_SUPPORT':WIFI_MESH_DOCS,
                             'SOC_SPI_SUPPORT_SLAVE_HD_VER2':SPI_SLAVE_HD_DOCS,
                             'SOC_WIFI_NAN_SUPPORT':NAN_DOCS,
+                            'SOC_JPEG_CODEC_SUPPORTED':JPEG_DOCS,
                             'esp32':ESP32_DOCS,
                             'esp32s2':ESP32S2_DOCS,
                             'esp32s3':ESP32S3_DOCS,

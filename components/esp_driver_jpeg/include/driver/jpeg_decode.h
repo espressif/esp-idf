@@ -19,9 +19,7 @@ extern "C" {
  */
 typedef struct {
     jpeg_dec_output_format_t output_format;   /*!< JPEG decoder output format */
-    union {
-        jpeg_dec_rgb_element_order rgb_order; /*!< JPEG decoder output order */
-    };
+    jpeg_dec_rgb_element_order rgb_order; /*!< JPEG decoder output order */
     jpeg_yuv_rgb_conv_std_t conv_std;         /*!< JPEG decoder yuv->rgb standard */
 } jpeg_decode_cfg_t;
 
@@ -30,6 +28,7 @@ typedef struct {
  */
 typedef struct {
     int intr_priority;                    /*!< JPEG interrupt priority, if set to 0, driver will select the default priority (1,2,3). */
+    int timeout_ms;                  /*!< JPEG timeout threshold for handling a picture, should larger than valid decode time in ms. For example, for 30fps decode, this value must larger than 34. -1 means wait forever */
 } jpeg_decode_engine_cfg_t;
 
 /**
@@ -45,16 +44,16 @@ typedef struct {
  *
  * This function acquires a JPEG decode engine with the specified configuration. The configuration
  * parameters are provided through the `dec_eng_cfg` structure, and the resulting JPEG decoder handle
- * is returned through the `ret_jpgd_handle` pointer.
+ * is returned through the `ret_decoder` pointer.
  *
  * @param[in] dec_eng_cfg Pointer to the JPEG decode engine configuration.
- * @param[out] ret_jpgd_handle Pointer to a variable that will receive the JPEG decoder handle.
+ * @param[out] ret_decoder Pointer to a variable that will receive the JPEG decoder handle.
  * @return
  *      - ESP_OK: JPEG decoder initialized successfully.
  *      - ESP_ERR_INVALID_ARG: JPEG decoder initialization failed because of invalid argument.
  *      - ESP_ERR_NO_MEM: Create JPEG decoder failed because of out of memory.
  */
-esp_err_t jpeg_new_decoder_engine(const jpeg_decode_engine_cfg_t *dec_eng_cfg, jpeg_decoder_handle_t *ret_jpgd_handle);
+esp_err_t jpeg_new_decoder_engine(const jpeg_decode_engine_cfg_t *dec_eng_cfg, jpeg_decoder_handle_t *ret_decoder);
 
 /**
  * @brief Helper function for getting information about a JPEG image.
@@ -67,7 +66,7 @@ esp_err_t jpeg_new_decoder_engine(const jpeg_decode_engine_cfg_t *dec_eng_cfg, j
  * user can get picture width and height via this function and malloc a reasonable size buffer for jpeg engine process.
  *
  * @param[in] bit_stream Pointer to the buffer containing the JPEG image data.
- * @param[in] stream_size Size of the JPEG image data in bytes.
+ * @param[in] stream_size Size of the JPEG image data in bytes. Note that parse beginning partial of picture also works, but the beginning partial should be enough given.
  * @param[out] picture_info Pointer to the structure that will receive the image information.
  * @return
  *      - ESP_OK: JPEG decoder get jpg image header successfully.

@@ -22,7 +22,7 @@ void jpeg_hal_deinit(jpeg_hal_context_t *hal)
 /* Config huffman code tables with a DHT segment                         */
 /*-----------------------------------------------------------------------*/
 
-static void jpeg_create_minicode_tbl(uint8_t *huffbits, uint32_t *huffmin, uint32_t *tmp_huff)
+static void jpeg_hal_create_minicode_tbl(uint8_t *huffbits, uint32_t *huffmin, uint32_t *tmp_huff)
 {
     int total_len = 0;
     /* Re-build huffman code word table */
@@ -48,7 +48,7 @@ static void jpeg_create_minicode_tbl(uint8_t *huffbits, uint32_t *huffmin, uint3
 void jpeg_hal_config_ac0_table(jpeg_hal_context_t *hal, uint8_t *huffbits, uint8_t *huffcode, uint32_t *tmp_huff)
 {
     uint32_t huffmin[JPEG_HUFFMAN_AC_VALUE_TABLE_LEN] = {};
-    jpeg_create_minicode_tbl(huffbits, huffmin, tmp_huff);
+    jpeg_hal_create_minicode_tbl(huffbits, huffmin, tmp_huff);
     jpeg_ll_dht_ac0_write_codeword(hal->dev, huffbits, huffmin);
     jpeg_ll_dht_ac0_write_value(hal->dev, huffcode);
 }
@@ -56,7 +56,7 @@ void jpeg_hal_config_ac0_table(jpeg_hal_context_t *hal, uint8_t *huffbits, uint8
 void jpeg_hal_config_ac1_table(jpeg_hal_context_t *hal, uint8_t *huffbits, uint8_t *huffcode, uint32_t *tmp_huff)
 {
     uint32_t huffmin[JPEG_HUFFMAN_AC_VALUE_TABLE_LEN] = {};
-    jpeg_create_minicode_tbl(huffbits, huffmin, tmp_huff);
+    jpeg_hal_create_minicode_tbl(huffbits, huffmin, tmp_huff);
     jpeg_ll_dht_ac1_write_codeword(hal->dev, huffbits, huffmin);
     jpeg_ll_dht_ac1_write_value(hal->dev, huffcode);
 }
@@ -64,7 +64,7 @@ void jpeg_hal_config_ac1_table(jpeg_hal_context_t *hal, uint8_t *huffbits, uint8
 void jpeg_hal_config_dc0_table(jpeg_hal_context_t *hal, uint8_t *huffbits, uint8_t *huffcode, uint32_t *tmp_huff)
 {
     uint32_t huffmin[JPEG_HUFFMAN_AC_VALUE_TABLE_LEN] = {};
-    jpeg_create_minicode_tbl(huffbits, huffmin, tmp_huff);
+    jpeg_hal_create_minicode_tbl(huffbits, huffmin, tmp_huff);
     jpeg_ll_dht_dc0_write_codeword(hal->dev, huffbits, huffmin);
     jpeg_ll_dht_dc0_write_value(hal->dev, huffcode);
 }
@@ -72,7 +72,7 @@ void jpeg_hal_config_dc0_table(jpeg_hal_context_t *hal, uint8_t *huffbits, uint8
 void jpeg_hal_config_dc1_table(jpeg_hal_context_t *hal, uint8_t *huffbits, uint8_t *huffcode, uint32_t *tmp_huff)
 {
     uint32_t huffmin[JPEG_HUFFMAN_AC_VALUE_TABLE_LEN] = {};
-    jpeg_create_minicode_tbl(huffbits, huffmin, tmp_huff);
+    jpeg_hal_create_minicode_tbl(huffbits, huffmin, tmp_huff);
     jpeg_ll_dht_dc1_write_codeword(hal->dev, huffbits, huffmin);
     jpeg_ll_dht_dc1_write_value(hal->dev, huffcode);
 }

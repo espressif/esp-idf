@@ -55,14 +55,14 @@ static void jpeg_decoder_isr_handle_default(void *arg)
     uint32_t value = jpeg_ll_get_intr_status(hal->dev);
     jpeg_ll_clear_intr_mask(hal->dev, value);
     dec_evt.jpgd_status = value;
-    xQueueSendFromISR(decoder_engine->evt_handle, &dec_evt, &HPTaskAwoken);
+    xQueueSendFromISR(decoder_engine->evt_queue, &dec_evt, &HPTaskAwoken);
 
     if (HPTaskAwoken == pdTRUE) {
         portYIELD_FROM_ISR();
     }
 }
 
-esp_err_t jpeg_new_decoder_engine(const jpeg_decode_engine_cfg_t *dec_eng_cfg, jpeg_decoder_handle_t *ret_jpgd_handle)
+esp_err_t jpeg_new_decoder_engine(const jpeg_decode_engine_cfg_t *dec_eng_cfg, jpeg_decoder_handle_t *ret_decoder)
 {
 #if CONFIG_JPEG_ENABLE_DEBUG_LOG
     esp_log_level_set(TAG, ESP_LOG_DEBUG);
@@ -90,11 +90,11 @@ esp_err_t jpeg_new_decoder_engine(const jpeg_decode_engine_cfg_t *dec_eng_cfg, j
     ESP_GOTO_ON_ERROR(jpeg_acquire_codec_handle(&decoder_engine->codec_base), err, TAG, "JPEG decode acquires codec handle failed");
     jpeg_hal_context_t *hal = &decoder_engine->codec_base->hal;
 
+    decoder_engine->timeout_tick = (dec_eng_cfg->timeout_ms == -1) ? portMAX_DELAY : pdMS_TO_TICKS(dec_eng_cfg->timeout_ms);
     /// init jpeg interrupt.
-    portENTER_CRITICAL(&decoder_engine->codec_base->spinlock);
     jpeg_ll_clear_intr_mask(hal->dev, JPEG_LL_DECODER_EVENT_INTR);
-    portEXIT_CRITICAL(&decoder_engine->codec_base->spinlock);
 
+    ESP_GOTO_ON_ERROR(jpeg_check_intr_priority(decoder_engine->codec_base, dec_eng_cfg->intr_priority), err, TAG, "set group intrrupt priority failed");
     if (dec_eng_cfg->intr_priority) {
         ESP_RETURN_ON_FALSE(1 << (dec_eng_cfg->intr_priority) & JPEG_ALLOW_INTR_PRIORITY_MASK, ESP_ERR_INVALID_ARG, TAG, "invalid interrupt priority:%d", dec_eng_cfg->intr_priority);
     }
@@ -103,16 +103,14 @@ esp_err_t jpeg_new_decoder_engine(const jpeg_decode_engine_cfg_t *dec_eng_cfg, j
         isr_flags |= 1 << (dec_eng_cfg->intr_priority);
     }
 
-    ret = esp_intr_alloc_intrstatus(ETS_JPEG_INTR_SOURCE, isr_flags, (uint32_t)jpeg_ll_get_interrupt_status_reg(hal->dev), JPEG_LL_DECODER_EVENT_INTR, jpeg_decoder_isr_handle_default, decoder_engine, &decoder_engine->intr_handle);
+    ret = jpeg_isr_register(decoder_engine->codec_base, jpeg_decoder_isr_handle_default, decoder_engine, JPEG_LL_DECODER_EVENT_INTR, isr_flags, &decoder_engine->intr_handle);
     ESP_GOTO_ON_ERROR(ret, err, TAG, "install jpeg decode interrupt failed");
 
-    portENTER_CRITICAL(&decoder_engine->codec_base->spinlock);
     jpeg_ll_enable_intr_mask(hal->dev, JPEG_LL_DECODER_EVENT_INTR);
-    portEXIT_CRITICAL(&decoder_engine->codec_base->spinlock);
 
     // Initialize queue
-    decoder_engine->evt_handle = xQueueCreateWithCaps(2, sizeof(jpeg_dma2d_dec_evt_t), JPEG_MEM_ALLOC_CAPS);
-    ESP_GOTO_ON_FALSE(decoder_engine->evt_handle, ESP_ERR_NO_MEM, err, TAG, "No memory for event queue");
+    decoder_engine->evt_queue = xQueueCreateWithCaps(2, sizeof(jpeg_dma2d_dec_evt_t), JPEG_MEM_ALLOC_CAPS);
+    ESP_GOTO_ON_FALSE(decoder_engine->evt_queue, ESP_ERR_NO_MEM, err, TAG, "No memory for event queue");
 
     dma2d_pool_config_t dma2d_client_config = {
         .pool_id = 0,
@@ -123,7 +121,7 @@ esp_err_t jpeg_new_decoder_engine(const jpeg_decode_engine_cfg_t *dec_eng_cfg, j
     decoder_engine->trans_desc = (dma2d_trans_t *)heap_caps_calloc(1, SIZEOF_DMA2D_TRANS_T, JPEG_MEM_ALLOC_CAPS);
     ESP_GOTO_ON_FALSE(decoder_engine->trans_desc, ESP_ERR_NO_MEM, err, TAG, "No memory for dma2d descriptor");
 
-    *ret_jpgd_handle = decoder_engine;
+    *ret_decoder = decoder_engine;
     return ESP_OK;
 
 err:
@@ -177,15 +175,20 @@ esp_err_t jpeg_decoder_get_info(const uint8_t *in_buf, uint32_t inbuf_len, jpeg_
 esp_err_t jpeg_decoder_process(jpeg_decoder_handle_t decoder_engine, const jpeg_decode_cfg_t *decode_cfg, const uint8_t *bit_stream, uint32_t stream_size, uint8_t *decode_outbuf, uint32_t *out_size)
 {
     ESP_RETURN_ON_FALSE(decoder_engine, ESP_ERR_INVALID_ARG, TAG, "jpeg decode handle is null");
+    ESP_RETURN_ON_FALSE(decode_cfg, ESP_ERR_INVALID_ARG, TAG, "jpeg decode config is null");
     ESP_RETURN_ON_FALSE(decode_outbuf, ESP_ERR_INVALID_ARG, TAG, "jpeg decode picture buffer is null");
     ESP_RETURN_ON_FALSE(((uintptr_t)bit_stream % cache_hal_get_cache_line_size(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_DATA)) == 0, ESP_ERR_INVALID_ARG, TAG, "jpeg decode bit stream is not aligned, please use jpeg_alloc_decoder_mem to malloc your buffer");
     ESP_RETURN_ON_FALSE(((uintptr_t)decode_outbuf % cache_hal_get_cache_line_size(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_DATA)) == 0, ESP_ERR_INVALID_ARG, TAG, "jpeg decode decode_outbuf is not aligned, please use jpeg_alloc_decoder_mem to malloc your buffer");
 
     esp_err_t ret = ESP_OK;
 
-    xSemaphoreTake(decoder_engine->codec_base->codec_mux, portMAX_DELAY);
+    if (decoder_engine->codec_base->pm_lock) {
+        ESP_RETURN_ON_ERROR(esp_pm_lock_acquire(decoder_engine->codec_base->pm_lock), TAG, "acquire pm_lock failed");
+    }
+
+    xSemaphoreTake(decoder_engine->codec_base->codec_mutex, portMAX_DELAY);
     /* Reset queue */
-    xQueueReset(decoder_engine->evt_handle);
+    xQueueReset(decoder_engine->evt_queue);
 
     decoder_engine->output_format = decode_cfg->output_format;
     decoder_engine->rgb_order = decode_cfg->rgb_order;
@@ -218,19 +221,15 @@ esp_err_t jpeg_decoder_process(jpeg_decoder_handle_t decoder_engine, const jpeg_
     // Blocking for JPEG decode transaction finishes.
     while (1) {
         jpeg_dma2d_dec_evt_t jpeg_dma2d_event;
-        BaseType_t ret = xQueueReceive(decoder_engine->evt_handle, &jpeg_dma2d_event, portMAX_DELAY);
-        if (ret == pdFALSE) {
-            ESP_LOGE(TAG, "jpeg-dma2d handle jpeg decode timeout");
-            xSemaphoreGive(decoder_engine->codec_base->codec_mux);
-            return ESP_ERR_TIMEOUT;
-        }
+        BaseType_t ret = xQueueReceive(decoder_engine->evt_queue, &jpeg_dma2d_event, decoder_engine->timeout_tick);
+        ESP_GOTO_ON_FALSE(ret == pdTRUE, ESP_ERR_TIMEOUT, err, TAG, "jpeg-dma2d handle jpeg decode timeout, please check `timeout_ms` ");
 
         // Dealing with JPEG event
         if (jpeg_dma2d_event.jpgd_status != 0) {
             uint32_t status = jpeg_dma2d_event.jpgd_status;
             s_decoder_error_log_print(status);
             dma2d_force_end(decoder_engine->trans_desc, &need_yield);
-            xSemaphoreGive(decoder_engine->codec_base->codec_mux);
+            xSemaphoreGive(decoder_engine->codec_base->codec_mutex);
             return ESP_ERR_INVALID_STATE;
         }
 
@@ -239,13 +238,13 @@ esp_err_t jpeg_decoder_process(jpeg_decoder_handle_t decoder_engine, const jpeg_
         }
     }
 
-    *out_size = decoder_engine->header_info->origin_h * decoder_engine->header_info->origin_v * decoder_engine->pixel;
-
-    xSemaphoreGive(decoder_engine->codec_base->codec_mux);
-    return ESP_OK;
+    *out_size = decoder_engine->header_info->process_h * decoder_engine->header_info->process_v * decoder_engine->pixel;
 
 err:
-    xSemaphoreGive(decoder_engine->codec_base->codec_mux);
+    xSemaphoreGive(decoder_engine->codec_base->codec_mutex);
+    if (decoder_engine->codec_base->pm_lock) {
+        ESP_RETURN_ON_ERROR(esp_pm_lock_release(decoder_engine->codec_base->pm_lock), TAG, "release pm_lock failed");
+    }
     return ret;
 }
 
@@ -264,14 +263,14 @@ esp_err_t jpeg_del_decoder_engine(jpeg_decoder_handle_t decoder_engine)
         if (decoder_engine->header_info) {
             free(decoder_engine->header_info);
         }
-        if (decoder_engine->intr_handle) {
-            esp_intr_free(decoder_engine->intr_handle);
-        }
-        if (decoder_engine->evt_handle) {
-            vQueueDeleteWithCaps(decoder_engine->evt_handle);
+        if (decoder_engine->evt_queue) {
+            vQueueDeleteWithCaps(decoder_engine->evt_queue);
         }
         if (decoder_engine->dma2d_group_handle) {
             dma2d_release_pool(decoder_engine->dma2d_group_handle);
+        }
+        if (decoder_engine->intr_handle) {
+            jpeg_isr_deregister(decoder_engine->codec_base, decoder_engine->intr_handle);
         }
         free(decoder_engine);
     }
@@ -348,7 +347,7 @@ static bool jpeg_rx_eof(dma2d_channel_handle_t dma2d_chan, dma2d_event_data_t *e
     };
     jpeg_decoder_handle_t decoder_engine = (jpeg_decoder_handle_t) user_data;
     dec_evt.dma_evt = JPEG_DMA2D_RX_EOF;
-    xQueueSendFromISR(decoder_engine->evt_handle, &dec_evt, &higher_priority_task_awoken);
+    xQueueSendFromISR(decoder_engine->evt_queue, &dec_evt, &higher_priority_task_awoken);
 
     return higher_priority_task_awoken;
 }

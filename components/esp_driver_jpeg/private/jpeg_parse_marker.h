@@ -21,6 +21,8 @@ extern "C" {
  * @param header_info The handle to the JPEG information.
  * @param num_bytes   The number of bytes to retrieve from the decoder.
  *
+ * @note num_bytes should not larger than 4, because the return value is uint32.
+ *
  * @return The retrieved bytes as a 32-bit unsigned integer.
  */
 uint32_t jpeg_get_bytes(jpeg_dec_header_info_t *header_info, uint8_t num_bytes);

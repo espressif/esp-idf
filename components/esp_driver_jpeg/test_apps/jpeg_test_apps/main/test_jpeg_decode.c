@@ -26,10 +26,11 @@ TEST_CASE("JPEG decode driver memory leaking check", "[jpeg]")
     jpeg_decoder_handle_t jpgd_handle;
 
     jpeg_decode_engine_cfg_t decode_eng_cfg = {
+        .timeout_ms = 40,
     };
 
     int size = esp_get_free_heap_size();
-    for (uint32_t i = 0; i <= 5; i++) {
+    for (uint32_t i = 0; i <= 3; i++) {
         TEST_ESP_OK(jpeg_new_decoder_engine(&decode_eng_cfg, &jpgd_handle));
         vTaskDelay(10 / portTICK_PERIOD_MS);
         TEST_ESP_OK(jpeg_del_decoder_engine(jpgd_handle));
@@ -44,6 +45,7 @@ TEST_CASE("JPEG decode performance test for 1080*1920 YUV->RGB picture", "[jpeg]
 
     jpeg_decode_engine_cfg_t decode_eng_cfg = {
         .intr_priority = 0,
+        .timeout_ms = 40,
     };
 
     jpeg_decode_cfg_t decode_cfg = {

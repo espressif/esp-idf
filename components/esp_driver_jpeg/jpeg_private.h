@@ -8,6 +8,7 @@
 
 #include <stdint.h>
 #include <stdatomic.h>
+#include "sys/queue.h"
 #include "esp_private/dma2d.h"
 #include "driver/jpeg_types.h"
 #include "freertos/FreeRTOS.h"
@@ -15,6 +16,7 @@
 #include "freertos/task.h"
 #include "hal/jpeg_hal.h"
 #include "esp_intr_types.h"
+#include "esp_pm.h"
 #include "sdkconfig.h"
 
 #ifdef __cplusplus
@@ -26,16 +28,28 @@ extern "C" {
 #define JPEG_ALLOW_INTR_PRIORITY_MASK     (ESP_INTR_FLAG_LOWMED)
 
 // JPEG encoder and decoder shares same interrupt ID.
-#define JPEG_INTR_ALLOC_FLAG              (ESP_INTR_FLAG_SHARED | ESP_INTR_FLAG_LOWMED)
+#define JPEG_INTR_ALLOC_FLAG              (ESP_INTR_FLAG_SHARED)
 
 typedef struct jpeg_decoder_t jpeg_decoder_t;
 typedef struct jpeg_codec_t jpeg_codec_t;
 typedef struct jpeg_codec_t *jpeg_codec_handle_t;
 
+typedef struct jpeg_isr_handler_ {
+    uint32_t mask;
+    intr_handler_t handler;
+    void* handler_arg;
+    uint32_t flags;
+    SLIST_ENTRY(jpeg_isr_handler_) next;
+} jpeg_isr_handler_t;
+
 struct jpeg_codec_t {
-    SemaphoreHandle_t codec_mux;    // pretend that one picture is in process, no other picture can interrupt current stage.
-    jpeg_hal_context_t hal;         // Hal layer for each port(bus)
-    portMUX_TYPE spinlock;          // To protect pre-group register level concurrency access
+    SemaphoreHandle_t codec_mutex;    // pretend that one picture is in process, no other picture can interrupt current stage.
+    jpeg_hal_context_t hal;           // Hal layer for each port(bus)
+    portMUX_TYPE spinlock;            // To protect pre-group register level concurrency access
+    intr_handle_t intr_handle;        // jpeg codec interrupt handler
+    int intr_priority;                // jpeg codec interrupt priority
+    SLIST_HEAD(jpeg_isr_handler_list_, jpeg_isr_handler_) jpeg_isr_handler_list; // List for jpeg interrupt.
+    esp_pm_lock_handle_t pm_lock; // power manange lock
 };
 
 typedef enum {
@@ -82,12 +96,13 @@ struct jpeg_decoder_t {
     jpeg_dec_rgb_element_order rgb_order;        // RGB pixel order
     jpeg_yuv_rgb_conv_std_t conv_std;            // YUV RGB conversion standard
     uint8_t pixel;                               // size per pixel
-    QueueHandle_t evt_handle;                    // jpeg event from 2DDMA and JPEG engine
+    QueueHandle_t evt_queue;                     // jpeg event from 2DDMA and JPEG engine
     uint8_t *decoded_buf;                        // pointer to the rx buffer.
     uint32_t total_size;                         // jpeg picture origin size (in bytes)
-    intr_handle_t intr_handle;                   // jpeg decoder interrupt handler
+    TickType_t timeout_tick;                     // timeout value for jpeg decoder (in cpu tick).
+    jpeg_isr_handler_t *intr_handle;             // jpeg decoder interrupt handler
     //dma handles
-    dma2d_pool_handle_t dma2d_group_handle;     // 2D-DMA group handle
+    dma2d_pool_handle_t dma2d_group_handle;      // 2D-DMA group handle
     dma2d_descriptor_t *rxlink;                  // Pointer to 2D-DMA rx descriptor
     dma2d_descriptor_t *txlink;                  // Pointer to 2D-DMA tx descriptor
     uint32_t dma_desc_size;                      // tx and rx linker alignment
@@ -137,6 +152,45 @@ esp_err_t jpeg_acquire_codec_handle(jpeg_codec_handle_t *jpeg_new_codec);
  *         - Other error codes indicating the cause of the failure.
  */
 esp_err_t jpeg_release_codec_handle(jpeg_codec_handle_t jpeg_codec);
+
+/**
+ * @brief Register an ISR handler for JPEG interrupt
+ *
+ * This function registers an Interrupt Service Routine (ISR) handler for JPEG interrupt.
+ *
+ * @param jpeg_codec The JPEG codec handle
+ * @param handler The ISR handler function to be registered
+ * @param handler_arg An argument to be passed to the ISR handler function
+ * @param jpeg_intr_mask The JPEG interrupt mask value
+ * @param flags Additional flags for ISR registration
+ * @param jpeg_intr_handler JPEG interrupt handler
+ * @return esp_err_t Returns ESP_OK on success, or an error code on failure
+ */
+esp_err_t jpeg_isr_register(jpeg_codec_handle_t jpeg_codec, intr_handler_t handler, void* handler_arg, uint32_t jpeg_intr_mask, uint32_t flags, jpeg_isr_handler_t** jpeg_intr_handler);
+
+/**
+ * @brief Deregister an ISR handler for JPEG interrupt
+ *
+ * This function deregisters an Interrupt Service Routine (ISR) handler for JPEG interrupt.
+ *
+ * @param jpeg_codec The JPEG codec handle
+ * @param handler The ISR handler function to be deregistered
+ * @param handler_arg The argument previously passed to the ISR handler function
+ * @param jpeg_intr_handler JPEG interrupt handler
+ * @return esp_err_t Returns ESP_OK on success, or an error code on failure
+ */
+esp_err_t jpeg_isr_deregister(jpeg_codec_handle_t jpeg_codec, jpeg_isr_handler_t *jpeg_intr_handler);
+
+/**
+ * @brief Check the interrupt priority for JPEG codec
+ *
+ * This function checks the interrupt priority for the JPEG codec to ensure it meets the specified requirements.
+ *
+ * @param jpeg_codec The JPEG codec handle
+ * @param intr_priority The interrupt priority value to be checked
+ * @return esp_err_t Returns ESP_OK if the interrupt priority meets the requirements, or an error code on failure
+ */
+esp_err_t jpeg_check_intr_priority(jpeg_codec_handle_t jpeg_codec, int intr_priority);
 
 #ifdef __cplusplus
 }
