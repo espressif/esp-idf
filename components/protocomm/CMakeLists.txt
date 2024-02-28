@@ -7,8 +7,9 @@ endif()
 set(include_dirs include/common
                  include/security
                  include/transports
-                 include/crypto/srp6a)
-set(priv_include_dirs proto-c src/common)
+                 include/crypto/srp6a
+                 proto-c)
+set(priv_include_dirs src/common)
 set(srcs
     "src/common/protocomm.c"
     "proto-c/constants.pb-c.c"
