@@ -1,7 +1,9 @@
 set(include_dirs include/common
                  include/security
-                 include/transports)
-set(priv_include_dirs proto-c src/common src/crypto/srp6a/include)
+                 include/transports
+                 proto-c)
+set(priv_include_dirs src/common
+                      src/crypto/srp6a/include)
 set(srcs
     "src/common/protocomm.c"
     "proto-c/constants.pb-c.c"
