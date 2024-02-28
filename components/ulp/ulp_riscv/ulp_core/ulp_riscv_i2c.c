@@ -141,6 +141,9 @@ void ulp_riscv_i2c_master_read_from_device(uint8_t *data_rd, size_t size)
         return;
     }
 
+    // Workaround for IDF-9145
+    ULP_RISCV_ENTER_CRITICAL();
+
     /* By default, RTC I2C controller is hard wired to use CMD2 register onwards for read operations */
     cmd_idx = 2;
 
@@ -201,6 +204,9 @@ void ulp_riscv_i2c_master_read_from_device(uint8_t *data_rd, size_t size)
     /* Clear the RTC I2C transmission bits */
     CLEAR_PERI_REG_MASK(SENS_SAR_I2C_CTRL_REG, SENS_SAR_I2C_START_FORCE);
     CLEAR_PERI_REG_MASK(SENS_SAR_I2C_CTRL_REG, SENS_SAR_I2C_START);
+
+    // Workaround for IDF-9145
+    ULP_RISCV_EXIT_CRITICAL();
 }
 
 /*
@@ -229,6 +235,9 @@ void ulp_riscv_i2c_master_write_to_device(uint8_t *data_wr, size_t size)
         // Quietly return
         return;
     }
+
+    // Workaround for IDF-9145
+    ULP_RISCV_ENTER_CRITICAL();
 
     /* By default, RTC I2C controller is hard wired to use CMD0 and CMD1 registers for write operations */
     cmd_idx = 0;
@@ -269,4 +278,7 @@ void ulp_riscv_i2c_master_write_to_device(uint8_t *data_wr, size_t size)
     /* Clear the RTC I2C transmission bits */
     CLEAR_PERI_REG_MASK(SENS_SAR_I2C_CTRL_REG, SENS_SAR_I2C_START_FORCE);
     CLEAR_PERI_REG_MASK(SENS_SAR_I2C_CTRL_REG, SENS_SAR_I2C_START);
+
+    // Workaround for IDF-9145
+    ULP_RISCV_EXIT_CRITICAL();
 }

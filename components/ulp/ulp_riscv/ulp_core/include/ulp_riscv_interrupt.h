@@ -14,6 +14,8 @@ extern "C"
 {
 #endif
 
+#if CONFIG_ULP_RISCV_INTERRUPT_ENABLE
+
 /* ULP RISC-V Interrupt sources */
 typedef enum {
     ULP_RISCV_SW_INTR_SOURCE = 0,           /**< Interrupt triggered by SW */
@@ -61,6 +63,8 @@ esp_err_t ulp_riscv_intr_alloc(ulp_riscv_interrupt_source_t source, intr_handler
  * @return esp_err_t    ESP_OK when successful
  */
 esp_err_t ulp_riscv_intr_free(ulp_riscv_interrupt_source_t source);
+
+#endif /* CONFIG_ULP_RISCV_INTERRUPT_ENABLE */
 
 #ifdef __cplusplus
 }

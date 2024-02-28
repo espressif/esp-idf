@@ -1,9 +1,10 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "sdkconfig.h"
 #include "ulp_riscv_interrupt_ops.h"
 #include "riscv/rvruntime-frames.h"
     .equ SAVE_REGS, 17
@@ -69,6 +70,7 @@
 reset_vector:
 	j __start
 
+#if CONFIG_ULP_RISCV_INTERRUPT_ENABLE
 /* Interrupt handler */
 .balign 0x10
 irq_vector:
@@ -89,3 +91,5 @@ irq_vector:
 
     /* Exit interrupt handler by executing the custom retirq instruction which will retore pc and re-enable interrupts */
     retirq_insn()
+
+#endif /* CONFIG_ULP_RISCV_INTERRUPT_ENABLE */

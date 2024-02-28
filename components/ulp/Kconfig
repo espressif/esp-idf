@@ -43,6 +43,13 @@ menu "Ultra Low Power (ULP) Co-processor"
     menu "ULP RISC-V Settings"
         depends on ULP_COPROC_TYPE_RISCV
 
+        config ULP_RISCV_INTERRUPT_ENABLE
+            bool
+            prompt "Enable ULP RISC-V interrupts"
+            default "n"
+            help
+                Turn on this setting to enabled interrupts on the ULP RISC-V core.
+
         config ULP_RISCV_UART_BAUDRATE
             int
             prompt "Baudrate used by the bitbanged ULP RISC-V UART driver"

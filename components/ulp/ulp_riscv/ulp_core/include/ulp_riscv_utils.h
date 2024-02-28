@@ -111,6 +111,7 @@ void static inline ulp_riscv_delay_cycles(uint32_t cycles)
  */
 void ulp_riscv_gpio_wakeup_clear(void);
 
+#if CONFIG_ULP_RISCV_INTERRUPT_ENABLE
 /**
  * @brief Enable ULP RISC-V SW Interrupt
  *
@@ -130,6 +131,34 @@ void ulp_riscv_disable_sw_intr(void);
  * @note The SW interrupt will only trigger if it has been enabled previously using ulp_riscv_enable_sw_intr().
  */
 void ulp_riscv_trigger_sw_intr(void);
+
+/**
+ * @brief Enter a critical section by disabling all interrupts
+ *        This inline assembly construct uses the t0 register and is equivalent to:
+ *
+ *        li t0, 0x80000007
+ *        maskirq_insn(zero, t0)    // Mask all interrupt bits
+ */
+#define ULP_RISCV_ENTER_CRITICAL()  \
+    asm volatile (                  \
+        "li t0, 0x80000007\n"       \
+        ".word 0x0602e00b"          \
+    );                              \
+
+/**
+ * @brief Exit a critical section by enabling all interrupts
+ *        This inline assembly construct is equivalent to:
+ *
+ *        maskirq_insn(zero, zero)  // Unmask all interrupt bits
+ */
+#define ULP_RISCV_EXIT_CRITICAL()   asm volatile (".word 0x0600600b");
+
+#else /* CONFIG_ULP_RISCV_INTERRUPT_ENABLE */
+
+#define ULP_RISCV_ENTER_CRITICAL()
+#define ULP_RISCV_EXIT_CRITICAL()
+
+#endif /* CONFIG_ULP_RISCV_INTERRUPT_ENABLE */
 
 #ifdef __cplusplus
 }
