@@ -48,7 +48,6 @@ void btc_dev_call_handler(btc_msg_t *msg);
 void btc_dev_cb_handler(btc_msg_t *msg);
 void btc_dev_call_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src);
 void btc_dev_call_arg_deep_free(btc_msg_t *msg);
-
 void btc_dev_cb_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src);
 void btc_dev_cb_arg_deep_free(btc_msg_t *msg);
 

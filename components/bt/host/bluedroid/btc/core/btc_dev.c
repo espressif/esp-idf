@@ -34,15 +34,9 @@ static void btc_dev_get_dev_name_callback(UINT8 status, char *name)
     msg.act = ESP_BT_DEV_NAME_RES_EVT;
 
     param.name_res.status = btc_btm_status_to_esp_status(status);
-    param.name_res.name = (char *)osi_malloc(BTC_MAX_LOC_BD_NAME_LEN + 1);
-    if (param.name_res.name) {
-        BCM_STRNCPY_S(param.name_res.name, name, BTC_MAX_LOC_BD_NAME_LEN);
-        param.name_res.name[BTC_MAX_LOC_BD_NAME_LEN] = '\0';
-    } else {
-        param.name_res.status = ESP_BT_STATUS_NOMEM;
-    }
+    param.name_res.name = name;
 
-    ret = btc_transfer_context(&msg, &param, sizeof(esp_bt_dev_cb_param_t), NULL, NULL);
+    ret = btc_transfer_context(&msg, &param, sizeof(esp_bt_dev_cb_param_t), btc_dev_cb_arg_deep_copy, btc_dev_cb_arg_deep_free);
     if (ret != BT_STATUS_SUCCESS) {
         BTC_TRACE_ERROR("%s btc_transfer_context failed\n", __func__);
     }
@@ -82,18 +76,18 @@ static void btc_dev_vendor_hci_cmd_complete_callback(tBTA_VSC_CMPL *p_param)
     if (ret != BT_STATUS_SUCCESS) {
         BTC_TRACE_ERROR("%s btc_transfer_context failed\n", __func__);
     }
-
 }
+
 
 void btc_dev_call_arg_deep_free(btc_msg_t *msg)
 {
     BTC_TRACE_DEBUG("%s \n", __func__);
+    btc_dev_args_t *arg = (btc_dev_args_t *)msg->arg;
 
     switch (msg->act) {
     case BTC_DEV_ACT_SET_DEVICE_NAME:{
-        char *device_name = ((btc_dev_args_t *)msg->arg)->set_dev_name.device_name;
-        if (device_name) {
-            osi_free(device_name);
+        if (arg->set_dev_name.device_name) {
+            osi_free(arg->set_dev_name.device_name);
         }
         break;
     }
@@ -117,10 +111,12 @@ void btc_dev_call_arg_deep_free(btc_msg_t *msg)
 
 void btc_dev_call_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
 {
+    BTC_TRACE_DEBUG("%s \n", __func__);
+    btc_dev_args_t *dst = (btc_dev_args_t *)p_dest;
+    btc_dev_args_t *src = (btc_dev_args_t *)p_src;
+
     switch (msg->act) {
     case BTC_DEV_ACT_VENDOR_HCI_CMD_EVT: {
-        btc_dev_args_t *src = (btc_dev_args_t *)p_src;
-        btc_dev_args_t *dst = (btc_dev_args_t *)p_dest;
         if (src->vendor_cmd_send.param_len) {
             dst->vendor_cmd_send.p_param_buf = osi_malloc(src->vendor_cmd_send.param_len);
             if (dst->vendor_cmd_send.p_param_buf) {
@@ -131,6 +127,21 @@ void btc_dev_call_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
         }
         break;
     }
+    case BTC_DEV_ACT_SET_DEVICE_NAME:{
+        dst->set_dev_name.device_name = (char *)osi_malloc((BTC_MAX_LOC_BD_NAME_LEN + 1) * sizeof(char));
+        if (dst->set_dev_name.device_name) {
+            BCM_STRNCPY_S(dst->set_dev_name.device_name, src->set_dev_name.device_name, BTC_MAX_LOC_BD_NAME_LEN);
+            dst->set_dev_name.device_name[BTC_MAX_LOC_BD_NAME_LEN] = '\0';
+        } else {
+            BTC_TRACE_ERROR("%s %d no mem\n",__func__, msg->act);
+        }
+        break;
+    }
+    case BTC_DEV_ACT_GET_DEVICE_NAME:
+#if (ESP_COEX_VSC_INCLUDED == TRUE)
+    case BTC_DEV_ACT_CFG_COEX_STATUS:
+#endif
+        break;
     default:
         BTC_TRACE_ERROR("Unhandled deep copy %d\n", msg->act);
         break;
@@ -139,11 +150,11 @@ void btc_dev_call_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
 
 void btc_dev_cb_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
 {
+    esp_bt_dev_cb_param_t *src = (esp_bt_dev_cb_param_t *)p_src;
+    esp_bt_dev_cb_param_t  *dst = (esp_bt_dev_cb_param_t *) p_dest;
+
     switch (msg->act) {
     case ESP_BT_DEV_VENDOR_CMD_COMPLETE_EVT: {
-        esp_bt_dev_cb_param_t *src = (esp_bt_dev_cb_param_t *)p_src;
-        esp_bt_dev_cb_param_t  *dst = (esp_bt_dev_cb_param_t *) p_dest;
-
         if (src->vendor_cmd_cmpl.param_len) {
             dst->vendor_cmd_cmpl.p_param_buf = osi_malloc(src->vendor_cmd_cmpl.param_len);
             if (dst->vendor_cmd_cmpl.p_param_buf) {
@@ -152,6 +163,16 @@ void btc_dev_cb_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
             } else {
                 BTC_TRACE_ERROR("%s, malloc failed\n", __func__);
             }
+        }
+        break;
+    }
+    case ESP_BT_DEV_NAME_RES_EVT:{
+        dst->name_res.name = (char *)osi_malloc((BTC_MAX_LOC_BD_NAME_LEN + 1) * sizeof(char));
+        if (dst->name_res.name) {
+            BCM_STRNCPY_S(dst->name_res.name, src->name_res.name, BTC_MAX_LOC_BD_NAME_LEN);
+            dst->name_res.name[BTC_MAX_LOC_BD_NAME_LEN] = '\0';
+        } else {
+            BTC_TRACE_ERROR("%s, malloc failed\n", __func__);
         }
         break;
     }
