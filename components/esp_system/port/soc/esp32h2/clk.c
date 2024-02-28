@@ -28,6 +28,7 @@
 #include "hal/i2c_ll.h"
 #include "hal/rmt_ll.h"
 #include "hal/ledc_ll.h"
+#include "hal/lp_clkrst_ll.h"
 #include "hal/timer_ll.h"
 #include "hal/twai_ll.h"
 #include "hal/i2s_ll.h"
@@ -279,8 +280,8 @@ __attribute__((weak)) void esp_perip_clk_init(void)
 
     if (rst_reason == RESET_REASON_CHIP_POWER_ON || rst_reason == RESET_REASON_CHIP_BROWN_OUT \
             || rst_reason == RESET_REASON_SYS_RTC_WDT || rst_reason == RESET_REASON_SYS_SUPER_WDT) {
+        _lp_clkrst_ll_enable_rng_clock(false);
         CLEAR_PERI_REG_MASK(LPPERI_CLK_EN_REG, LPPERI_OTP_DBG_CK_EN);
-        CLEAR_PERI_REG_MASK(LPPERI_CLK_EN_REG, LPPERI_RNG_CK_EN);
         CLEAR_PERI_REG_MASK(LPPERI_CLK_EN_REG, LPPERI_LP_ANA_I2C_CK_EN);
         CLEAR_PERI_REG_MASK(LPPERI_CLK_EN_REG, LPPERI_LP_IO_CK_EN);
         WRITE_PERI_REG(LP_CLKRST_LP_CLK_PO_EN_REG, 0);
