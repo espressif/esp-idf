@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -96,23 +96,31 @@ esp_eth_phy_t *phy_init(eth_phy_config_t *phy_config)
     phy_config->phy_addr = ESP_ETH_PHY_ADDR_AUTO;
 #if CONFIG_TARGET_ETH_PHY_DEVICE_IP101
     phy = esp_eth_phy_new_ip101(phy_config);
+    ESP_LOGI(TAG, "DUT PHY: IP101");
 #elif CONFIG_TARGET_ETH_PHY_DEVICE_LAN8720
     phy = esp_eth_phy_new_lan87xx(phy_config);
+    ESP_LOGI(TAG, "DUT PHY: LAN8720");
 #elif CONFIG_TARGET_ETH_PHY_DEVICE_KSZ8041
     phy = esp_eth_phy_new_ksz80xx(phy_config);
+    ESP_LOGI(TAG, "DUT PHY: KSZ8041");
 #elif CONFIG_TARGET_ETH_PHY_DEVICE_RTL8201
     phy = esp_eth_phy_new_rtl8201(phy_config);
+    ESP_LOGI(TAG, "DUT PHY: RTL8201");
 #elif CONFIG_TARGET_ETH_PHY_DEVICE_DP83848
     phy = esp_eth_phy_new_dp83848(phy_config);
+    ESP_LOGI(TAG, "DUT PHY: DP83848");
 #endif // CONFIG_TARGET_ETH_PHY_DEVICE_IP101
 #elif CONFIG_TARGET_USE_SPI_ETHERNET
     phy_config->reset_gpio_num = -1;
 #if CONFIG_TARGET_ETH_PHY_DEVICE_W5500
     phy = esp_eth_phy_new_w5500(phy_config);
+    ESP_LOGI(TAG, "DUT PHY: W5500");
 #elif CONFIG_TARGET_ETH_PHY_DEVICE_KSZ8851SNL
     phy = esp_eth_phy_new_ksz8851snl(phy_config);
+    ESP_LOGI(TAG, "DUT PHY: KSZ8851SNL");
 #elif CONFIG_TARGET_ETH_PHY_DEVICE_DM9051
     phy = esp_eth_phy_new_dm9051(phy_config);
+    ESP_LOGI(TAG, "DUT PHY: DM9051");
 #endif // CONFIG_TARGET_ETH_PHY_DEVICE_W5500
 #endif // CONFIG_TARGET_USE_INTERNAL_ETHERNET
     return phy;
@@ -145,14 +153,18 @@ void eth_event_handler(void *arg, esp_event_base_t event_base,
     EventGroupHandle_t eth_event_group = (EventGroupHandle_t)arg;
     switch (event_id) {
     case ETHERNET_EVENT_CONNECTED:
+        ESP_LOGI(TAG, "Ethernet Link Up");
         xEventGroupSetBits(eth_event_group, ETH_CONNECT_BIT);
         break;
     case ETHERNET_EVENT_DISCONNECTED:
+        ESP_LOGI(TAG, "Ethernet Link Down");
         break;
     case ETHERNET_EVENT_START:
+        ESP_LOGI(TAG, "Ethernet Started");
         xEventGroupSetBits(eth_event_group, ETH_START_BIT);
     break;
     case ETHERNET_EVENT_STOP:
+        ESP_LOGI(TAG, "Ethernet Stopped");
         xEventGroupSetBits(eth_event_group, ETH_STOP_BIT);
         break;
     default:
