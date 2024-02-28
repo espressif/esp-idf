@@ -1,16 +1,8 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <stdlib.h>
 #include <string.h>
@@ -331,6 +323,13 @@ static void btc_deinit_mem(void) {
 #endif
 #endif
 
+#if BTC_HF_INCLUDED == TRUE && HFP_DYNAMIC_MEMORY == TRUE
+    if (hf_local_param_ptr) {
+        osi_free(hf_local_param_ptr);
+        hf_local_param_ptr = NULL;
+    }
+#endif
+
 #if BTC_HF_CLIENT_INCLUDED == TRUE && HFP_DYNAMIC_MEMORY == TRUE
     if (hf_client_local_param_ptr) {
         osi_free(hf_client_local_param_ptr);
@@ -384,6 +383,13 @@ static bt_status_t btc_init_mem(void) {
     }
     memset((void *)blufi_env_ptr, 0, sizeof(tBLUFI_ENV));
 #endif
+#endif
+
+#if BTC_HF_INCLUDED == TRUE && HFP_DYNAMIC_MEMORY == TRUE
+    if ((hf_local_param_ptr = (hf_local_param_t *)osi_malloc(BTC_HF_NUM_CB * sizeof(hf_local_param_t))) == NULL) {
+        goto error_exit;
+    }
+    memset((void *)hf_local_param_ptr, 0, BTC_HF_NUM_CB * sizeof(hf_local_param_t));
 #endif
 
 #if BTC_HF_CLIENT_INCLUDED == TRUE && HFP_DYNAMIC_MEMORY == TRUE
