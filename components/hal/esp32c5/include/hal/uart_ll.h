@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -84,8 +84,6 @@ typedef enum {
     UART_INTR_CMD_CHAR_DET     = (0x1 << 18),
     UART_INTR_WAKEUP           = (0x1 << 19),
 } uart_intr_t;
-
-// TODO: [ESP32C5] IDF-8722, IDF-8633
 
 /**
  * @brief Sync the update to UART core clock domain
@@ -213,15 +211,18 @@ static inline void lp_uart_ll_reset_register(int hw_id)
  */
 FORCE_INLINE_ATTR bool uart_ll_is_enabled(uint32_t uart_num)
 {
-    HAL_ASSERT(uart_num < SOC_UART_HP_NUM);
-    uint32_t uart_clk_config_reg = ((uart_num == 0) ? PCR_UART0_CONF_REG :
-                                    (uart_num == 1) ? PCR_UART1_CONF_REG : 0);
-    uint32_t uart_rst_bit = ((uart_num == 0) ? PCR_UART0_RST_EN :
-                            (uart_num == 1) ? PCR_UART1_RST_EN : 0);
-    uint32_t uart_en_bit  = ((uart_num == 0) ? PCR_UART0_CLK_EN :
-                            (uart_num == 1) ? PCR_UART1_CLK_EN : 0);
-    return REG_GET_BIT(uart_clk_config_reg, uart_rst_bit) == 0 &&
-        REG_GET_BIT(uart_clk_config_reg, uart_en_bit) != 0;
+    switch (uart_num) {
+    case 0:
+        return PCR.uart0_conf.uart0_clk_en && !PCR.uart0_conf.uart0_rst_en;
+    case 1:
+        return PCR.uart1_conf.uart1_clk_en && !PCR.uart1_conf.uart1_rst_en;
+    case 2: // LP_UART
+        return LPPERI.clk_en.lp_uart_ck_en && !LPPERI.reset_en.lp_uart_reset_en;
+    default:
+        // Unknown uart port number
+        HAL_ASSERT(false);
+        return false;
+    }
 }
 
 /**
@@ -336,14 +337,14 @@ FORCE_INLINE_ATTR void uart_ll_set_sclk(uart_dev_t *hw, soc_module_clk_t source_
     if ((hw) != &LP_UART) {
         uint32_t sel_value = 0;
         switch (source_clk) {
-        case UART_SCLK_PLL_F80M:
-            sel_value = 2;
+        case UART_SCLK_XTAL:
+            sel_value = 0;
             break;
         case UART_SCLK_RTC:
             sel_value = 1;
             break;
-        case UART_SCLK_XTAL:
-            sel_value = 0;
+        case UART_SCLK_PLL_F80M:
+            sel_value = 2;
             break;
         default:
             // Invalid HP_UART clock source
@@ -370,14 +371,14 @@ FORCE_INLINE_ATTR void uart_ll_get_sclk(uart_dev_t *hw, soc_module_clk_t *source
     if ((hw) != &LP_UART) {
         switch (UART_LL_PCR_REG_GET(hw, sclk_conf, sclk_sel)) {
         default:
-        case 1:
-            *source_clk = (soc_module_clk_t)UART_SCLK_PLL_F80M;
+        case 0:
+            *source_clk = (soc_module_clk_t)UART_SCLK_XTAL;
             break;
-        case 2:
+        case 1:
             *source_clk = (soc_module_clk_t)UART_SCLK_RTC;
             break;
-        case 3:
-            *source_clk = (soc_module_clk_t)UART_SCLK_XTAL;
+        case 2:
+            *source_clk = (soc_module_clk_t)UART_SCLK_PLL_F80M;
             break;
         }
     } else {

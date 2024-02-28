@@ -8,8 +8,6 @@
 
 #pragma once
 
-// TODO: [ESP32C5] IDF-8722
-
 //UART channels
 #define UART_GPIO10_DIRECT_CHANNEL      UART_NUM_0
 #define UART_NUM_0_TXD_DIRECT_GPIO_NUM  10
