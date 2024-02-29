@@ -110,6 +110,7 @@ TEST_CASE("Temperature sensor callback test", "[temperature_sensor]")
     temperature_sensor_config_t temp_sensor = TEMPERATURE_SENSOR_CONFIG_DEFAULT(10, 50);
     temperature_sensor_handle_t temp_handle = NULL;
     TEST_ESP_OK(temperature_sensor_install(&temp_sensor, &temp_handle));
+    TEST_ESP_OK(temperature_sensor_enable(temp_handle));
 
     temperature_sensor_event_callbacks_t cbs = {
         .on_threshold = temp_sensor_cbs_test,
@@ -124,7 +125,6 @@ TEST_CASE("Temperature sensor callback test", "[temperature_sensor]")
     TEST_ESP_OK(temperature_sensor_set_absolute_threshold(temp_handle, &threshold_cfg));
     temperature_sensor_register_callbacks(temp_handle, &cbs, &temperature_alarm);
 
-    TEST_ESP_OK(temperature_sensor_enable(temp_handle));
 #if CONFIG_TEMP_SENSOR_ISR_IRAM_SAFE
     printf("disable flash cache and check if we can still get temperature intr\r\n");
     for (int i = 0; i < 100; i++) {
