@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -127,6 +127,19 @@ struct esp_eth_phy_s {
     *
     */
     esp_err_t (*get_link)(esp_eth_phy_t *phy);
+
+    /**
+    * @brief Set Ethernet PHY link status
+    *
+    * @param[in] phy: Ethernet PHY instance
+    * @param[in] link new link status
+    *
+    * @return
+    *      - ESP_OK: set Ethernet PHY link status successfully
+    *      - ESP_FAIL: set Ethernet PHY link status failed because some error occurred
+    *
+    */
+    esp_err_t (*set_link)(esp_eth_phy_t *phy, eth_link_t link);
 
     /**
     * @brief Power control of Ethernet PHY
