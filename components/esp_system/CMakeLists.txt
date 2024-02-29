@@ -143,3 +143,7 @@ if(NOT BOOTLOADER_BUILD)
         idf_component_optional_requires(PRIVATE esp_psram)
     endif()
 endif()
+
+if(CONFIG_SOC_MEM_NON_CONTIGUOUS_SRAM)
+    target_link_options(${COMPONENT_LIB} INTERFACE "-Wl,--enable-non-contiguous-regions")
+endif()

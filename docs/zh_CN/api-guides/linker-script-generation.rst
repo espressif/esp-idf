@@ -532,26 +532,53 @@
 
 如需引用一个 ``目标`` 标记下的所有存放规则，请使用以下语法：
 
-.. code-block:: none
+.. only:: SOC_MEM_NON_CONTIGUOUS_SRAM
 
-    mapping[target]
+    .. code-block:: none
+
+        arrays[target]
+        mapping[target]
+
+.. only:: not SOC_MEM_NON_CONTIGUOUS_SRAM
+
+    .. code-block:: none
+
+        mapping[target]
 
 示例：
 
 以下示例是某个链接器脚本模板的摘录，定义了输出段 ``.iram0.text``，该输出段包含一个引用目标 ``iram0_text`` 的标记。
 
-.. code-block:: none
+.. only:: SOC_MEM_NON_CONTIGUOUS_SRAM
 
-    .iram0.text :
-    {
-        /* 标记 IRAM 空间不足 */
-        _iram_text_start = ABSOLUTE(.);
+    .. code-block:: none
 
-        /* 引用 iram0_text */
-        mapping[iram0_text]
+        .iram0.text :
+        {
+            /* 标记 IRAM 空间不足 */
+            _iram_text_start = ABSOLUTE(.);
 
-        _iram_text_end = ABSOLUTE(.);
-    } > iram0_0_seg
+            /* 引用 iram0_text */
+            arrays[iram0_text]
+            mapping[iram0_text]
+
+            _iram_text_end = ABSOLUTE(.);
+        } > iram0_0_seg
+
+.. only:: not SOC_MEM_NON_CONTIGUOUS_SRAM
+
+    .. code-block:: none
+
+        .iram0.text :
+        {
+            /* 标记 IRAM 空间不足 */
+            _iram_text_start = ABSOLUTE(.);
+
+            /* 引用 iram0_text */
+            mapping[iram0_text]
+
+            _iram_text_end = ABSOLUTE(.);
+        } > iram0_0_seg
 
 假设链接器脚本生成器收集到了以下片段定义：
 

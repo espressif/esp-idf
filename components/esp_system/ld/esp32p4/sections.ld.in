@@ -4,6 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "sdkconfig.h"
+#include "ld.common"
+
 /* Default entry point */
 ENTRY(call_start_cpu0);
 
@@ -18,6 +21,7 @@ SECTIONS
     . = ALIGN(4);
     _rtc_fast_start = ABSOLUTE(.);
 
+    arrays[rtc_text]
     mapping[rtc_text]
 
     *rtc_wake_stub*.*(.literal .text .literal.* .text.*)
@@ -40,10 +44,12 @@ SECTIONS
     . = ALIGN(4);
     _rtc_force_fast_start = ABSOLUTE(.);
 
+    arrays[rtc_force_fast]
     mapping[rtc_force_fast]
 
     *(.rtc.force_fast .rtc.force_fast.*)
     . = ALIGN(4) ;
+
     _rtc_force_fast_end = ABSOLUTE(.);
   } > lp_ram_seg
 
@@ -57,6 +63,7 @@ SECTIONS
   {
     _rtc_data_start = ABSOLUTE(.);
 
+    arrays[rtc_data]
     mapping[rtc_data]
 
     *rtc_wake_stub*.*(.data .rodata .data.* .rodata.* .srodata.*)
@@ -70,6 +77,7 @@ SECTIONS
     *rtc_wake_stub*.*(.bss .bss.* .sbss .sbss.*)
     *rtc_wake_stub*.*(COMMON)
 
+    arrays[rtc_bss]
     mapping[rtc_bss]
 
     _rtc_bss_end = ABSOLUTE(.);
@@ -145,6 +153,7 @@ SECTIONS
     /* Code marked as running out of TCM */
     _tcm_text_start = ABSOLUTE(.);
 
+    arrays[tcm_text]
     mapping[tcm_text]
 
     _tcm_text_end = ABSOLUTE(.);
@@ -155,6 +164,7 @@ SECTIONS
   {
     _tcm_data_start = ABSOLUTE(.);
 
+    arrays[tcm_data]
     mapping[tcm_data]
 
     _tcm_data_end = ABSOLUTE(.);
@@ -177,9 +187,10 @@ SECTIONS
     /* Code marked as running out of IRAM */
     _iram_text_start = ABSOLUTE(.);
 
+    arrays[iram0_text]
     mapping[iram0_text]
 
-  } > iram0_0_seg
+  } > sram_low
 
   /* Marks the end of IRAM code segment */
   .iram0.text_end (NOLOAD) :
@@ -190,38 +201,31 @@ SECTIONS
     /* iram_end_test section exists for use by memprot unit tests only */
     *(.iram_end_test)
     _iram_text_end = ABSOLUTE(.);
-  } > iram0_0_seg
+  } > sram_low
 
   .iram0.data :
   {
     . = ALIGN(16);
     _iram_data_start = ABSOLUTE(.);
 
+    arrays[iram0_data]
     mapping[iram0_data]
 
     _iram_data_end = ABSOLUTE(.);
-  } > iram0_0_seg
+  } > sram_low
 
   .iram0.bss (NOLOAD) :
   {
     . = ALIGN(16);
     _iram_bss_start = ABSOLUTE(.);
 
+    arrays[iram0_bss]
     mapping[iram0_bss]
 
     _iram_bss_end = ABSOLUTE(.);
     . = ALIGN(16);
     _iram_end = ABSOLUTE(.);
-  } > iram0_0_seg
-
-  /**
-   * This section is required to skip .iram0.text area because iram0_0_seg and
-   * dram0_0_seg reflect the same address space on different buses.
-   */
-  .dram0.dummy (NOLOAD):
-  {
-    . = ORIGIN(dram0_0_seg) + _iram_end - _iram_start;
-  } > dram0_0_seg
+  } > sram_low
 
   .dram0.data :
   {
@@ -235,11 +239,12 @@ SECTIONS
     *(.gnu.linkonce.s2.*)
     *(.jcr)
 
+    arrays[dram0_data]
     mapping[dram0_data]
 
     _data_end = ABSOLUTE(.);
     . = ALIGN(4);
-  } > dram0_0_seg
+  } > sram_low
 
   /**
    * This section holds data that should not be initialized at power up.
@@ -254,33 +259,7 @@ SECTIONS
     *(.noinit .noinit.*)
     . = ALIGN(4) ;
     _noinit_end = ABSOLUTE(.);
-  } > dram0_0_seg
-
-  /* Shared RAM */
-  .dram0.bss (NOLOAD) :
-  {
-    . = ALIGN (8);
-    _bss_start = ABSOLUTE(.);
-
-    mapping[dram0_bss]
-
-    *(.dynsbss)
-    *(.sbss)
-    *(.sbss.*)
-    *(.gnu.linkonce.sb.*)
-    *(.scommon)
-    *(.sbss2)
-    *(.sbss2.*)
-    *(.gnu.linkonce.sb2.*)
-    *(.dynbss)
-    *(.share.mem)
-    *(.gnu.linkonce.b.*)
-
-    . = ALIGN (8);
-    _bss_end = ABSOLUTE(.);
-  } > dram0_0_seg
-
-  ASSERT(((_bss_end - ORIGIN(dram0_0_seg)) <= LENGTH(dram0_0_seg)), "DRAM segment data does not fit.")
+  } > sram_low
 
   .flash.text :
   {
@@ -288,6 +267,7 @@ SECTIONS
     _instruction_reserved_start = ABSOLUTE(.);  /* This is a symbol marking the flash.text start, this can be used for mmu driver to maintain virtual address */
     _text_start = ABSOLUTE(.);
 
+    arrays[flash_text]
     mapping[flash_text]
 
     *(.stub .gnu.warning .gnu.linkonce.literal.* .gnu.linkonce.t.*.literal .gnu.linkonce.t.*)
@@ -313,7 +293,7 @@ SECTIONS
      * the flash.text segment.
      */
     _flash_cache_start = ABSOLUTE(0);
-  } > default_code_seg
+  } > text_seg_low
 
   /**
    * This dummy section represents the .flash.text section but in default_rodata_seg.
@@ -329,7 +309,7 @@ SECTIONS
     /* Prepare the alignment of the section above. Few bytes (0x20) must be
      * added for the mapping header. */
     . = ALIGN(_esp_mmu_block_size) + 0x20;
-  } > default_rodata_seg
+  } > rodata_seg_low
 
   .flash.appdesc : ALIGN(0x10)
   {
@@ -343,12 +323,14 @@ SECTIONS
      * section will match .flash.rodata's begin address. Thus, both sections
      * will be merged when creating the final bin image. */
     . = ALIGN(ALIGNOF(.flash.rodata));
-  } > default_rodata_seg
+  } > rodata_seg_low
+  ASSERT_SECTIONS_GAP(.flash.appdesc, .flash.rodata)
 
   .flash.rodata : ALIGN(0x10)
   {
     _flash_rodata_start = ABSOLUTE(.);
 
+    arrays[flash_rodata]
     mapping[flash_rodata]
 
     *(.irom1.text) /* catch stray ICACHE_RODATA_ATTR */
@@ -359,6 +341,10 @@ SECTIONS
     *(.gcc_except_table .gcc_except_table.*)
     *(.gnu.linkonce.e.*)
     *(.gnu.version_r)
+  } > rodata_seg_low
+
+  .flash.init_array :
+  {
     . = (. + 7) & ~ 3;
     /*
      * C++ constructor and destructor tables
@@ -403,7 +389,12 @@ SECTIONS
     *(.lit4.*)
     *(.gnu.linkonce.lit4.*)
     _lit4_end = ABSOLUTE(.);
-    . = ALIGN(4);
+    . = ALIGN(ALIGNOF(.flash.tls));
+  } > rodata_seg_low
+  ASSERT_SECTIONS_GAP(.flash.init_array, .flash.tls)
+
+  .flash.tls : ALIGN(8)
+  {
     _thread_local_start = ABSOLUTE(.);
     *(.tdata)
     *(.tdata.*)
@@ -411,7 +402,8 @@ SECTIONS
     *(.tbss.*)
     _thread_local_end = ABSOLUTE(.);
     . = ALIGN(ALIGNOF(.eh_frame));
-  } > default_rodata_seg
+  } > rodata_seg_low
+  ASSERT_SECTIONS_GAP(.flash.tls, .eh_frame)
 
   /* Keep this section shall be at least aligned on 4 */
   .eh_frame : ALIGN(8)
@@ -422,7 +414,8 @@ SECTIONS
     /* Guarantee that this section and the next one will be merged by making
      * them adjacent. */
     . = ALIGN(ALIGNOF(.eh_frame_hdr));
-  } > default_rodata_seg
+  } > rodata_seg_low
+  ASSERT_SECTIONS_GAP(.eh_frame, .eh_frame_hdr)
 
   /* To avoid any exception in C++ exception frame unwinding code, this section
    * shall be aligned on 8. */
@@ -431,7 +424,8 @@ SECTIONS
     __eh_frame_hdr = ABSOLUTE(.);
     KEEP (*(.eh_frame_hdr))
     __eh_frame_hdr_end = ABSOLUTE(.);
-  } > default_rodata_seg
+    . = ALIGN(ALIGNOF(.flash.rodata));
+  } > rodata_seg_low
 
   /*
     This section is a place where we dump all the rodata which aren't used at runtime,
@@ -445,19 +439,46 @@ SECTIONS
     */
     _rodata_reserved_end = ABSOLUTE(.);
     . = ALIGN (4);
+    arrays[rodata_noload]
     mapping[rodata_noload]
-  } > default_rodata_seg
+  } > rodata_seg_low
+
+  .dram0.bss (NOLOAD) :
+  {
+    . = ALIGN(4);
+    _bss_start_low = ABSOLUTE(.);
+
+    /* ldgen places all bss-related data to mapping[dram0_bss] (See esp_system/app.lf). */
+    arrays[dram0_bss]
+    mapping[dram0_bss]
+
+    . = ALIGN(4);
+    _bss_end_low = ABSOLUTE(.);
+  } > sram_low
+
+  .dram1.bss (NOLOAD) :
+  {
+    . = ALIGN(4);
+    _bss_start_high = ABSOLUTE(.);
+
+    /* ldgen places all bss-related data to mapping[dram0_bss] (See esp_system/app.lf). */
+    mapping[dram0_bss]
+
+    . = ALIGN(4);
+    _bss_end_high = ABSOLUTE(.);
+  } > sram_high
 
   /* Marks the end of data, bss and possibly rodata  */
-  .dram0.heap_start (NOLOAD) :
+  .dram0.heap_start_low (NOLOAD) :
   {
     . = ALIGN (16);
-    _heap_start = ABSOLUTE(.);
-  } > dram0_0_seg
+    _heap_start_low = ABSOLUTE(.);
+  } > sram_low
+
+    /* Marks the end of data, bss and possibly rodata  */
+  .dram1.heap_start_high (NOLOAD) :
+  {
+    . = ALIGN (16);
+    _heap_start_high = ABSOLUTE(.);
+  } > sram_high
 }
-
-ASSERT(((_iram_end - ORIGIN(iram0_0_seg)) <= LENGTH(iram0_0_seg)),
-          "IRAM0 segment data does not fit.")
-
-ASSERT(((_heap_start - ORIGIN(dram0_0_seg)) <= LENGTH(dram0_0_seg)),
-          "DRAM segment data does not fit.")

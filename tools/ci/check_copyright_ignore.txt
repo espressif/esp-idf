@@ -1241,7 +1241,6 @@ tools/ldgen/test/data/linker_script.ld
 tools/templates/sample_component/include/main.h
 tools/templates/sample_component/main.c
 tools/test_apps/build_system/embed_test/main/test_main.c
-tools/test_apps/build_system/ldalign_test/main/test_main.c
 tools/test_apps/build_system/ldgen_test/main/src1.c
 tools/test_apps/build_system/ldgen_test/main/src2.c
 tools/test_apps/build_system/ldgen_test/main/test_main.c
