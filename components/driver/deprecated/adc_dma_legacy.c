@@ -393,6 +393,8 @@ esp_err_t adc_digi_start(void)
         ESP_LOGE(ADC_TAG, "The driver is already started");
         return ESP_ERR_INVALID_STATE;
     }
+    //reset ADC digital part to reset ADC sampling EOF counter
+    periph_module_reset(PERIPH_SARADC_MODULE);
     sar_periph_ctrl_adc_continuous_power_acquire();
     //reset flags
     s_adc_digi_ctx->ringbuf_overflow_flag = 0;
