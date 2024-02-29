@@ -428,7 +428,7 @@ static void test_parse_ep_by_address(const usb_config_desc_t *config_desc)
     TEST_ASSERT_NULL(ep_desc);
 }
 
-TEST_CASE("Test USB Helpers descriptor parsing", "[helpers][full_speed]")
+TEST_CASE("Test USB Helpers descriptor parsing", "[helpers][full_speed][high_speed]")
 {
     const usb_config_desc_t *config_desc = (const usb_config_desc_t *)config_desc_bytes;
     test_walk_desc(config_desc);

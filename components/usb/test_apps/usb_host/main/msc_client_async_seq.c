@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -53,6 +53,7 @@ typedef struct {
     usb_host_client_handle_t client_hdl;
     usb_device_handle_t dev_hdl;
     int num_sectors_read;
+    usb_speed_t dev_speed;
 } msc_client_obj_t;
 
 static void msc_transfer_cb(usb_transfer_t *transfer)
@@ -141,7 +142,7 @@ void msc_client_async_seq_task(void *arg)
     usb_transfer_t *xfer_out = NULL;    //Must be large enough to contain CBW and MSC reset control transfer
     usb_transfer_t *xfer_in = NULL;     //Must be large enough to contain CSW and Data
     size_t out_worst_case_size = MAX(sizeof(mock_msc_bulk_cbw_t), sizeof(usb_setup_packet_t));
-    size_t in_worst_case_size = usb_round_up_to_mps(MAX(MOCK_MSC_SCSI_SECTOR_SIZE * msc_obj.test_param.num_sectors_per_xfer, sizeof(mock_msc_bulk_csw_t)), MOCK_MSC_SCSI_BULK_EP_MPS);
+    size_t in_worst_case_size = usb_round_up_to_mps(MAX(MOCK_MSC_SCSI_SECTOR_SIZE * msc_obj.test_param.num_sectors_per_xfer, sizeof(mock_msc_bulk_csw_t)), MOCK_MSC_SCSI_BULK_EP_MPS_HS);
     TEST_ASSERT_EQUAL(ESP_OK, usb_host_transfer_alloc(out_worst_case_size, 0, &xfer_out));
     TEST_ASSERT_EQUAL(ESP_OK, usb_host_transfer_alloc(in_worst_case_size, 0, &xfer_in));
     xfer_out->callback = msc_transfer_cb;
@@ -178,6 +179,10 @@ void msc_client_async_seq_task(void *arg)
             TEST_ASSERT_EQUAL(ESP_OK, usb_host_get_device_descriptor(msc_obj.dev_hdl, &device_desc));
             TEST_ASSERT_EQUAL(msc_obj.test_param.idVendor, device_desc->idVendor);
             TEST_ASSERT_EQUAL(msc_obj.test_param.idProduct, device_desc->idProduct);
+            //Get device info to get device speed
+            usb_device_info_t dev_info;
+            TEST_ASSERT_EQUAL(ESP_OK, usb_host_device_info(msc_obj.dev_hdl, &dev_info));
+            msc_obj.dev_speed = dev_info.speed;
             //Claim the MSC interface
             TEST_ASSERT_EQUAL(ESP_OK, usb_host_interface_claim(msc_obj.client_hdl, msc_obj.dev_hdl, MOCK_MSC_SCSI_INTF_NUMBER, MOCK_MSC_SCSI_INTF_ALT_SETTING));
             msc_obj.next_stage = TEST_STAGE_MSC_RESET;
@@ -209,7 +214,10 @@ void msc_client_async_seq_task(void *arg)
         }
         case TEST_STAGE_MSC_DATA: {
             ESP_LOGD(MSC_CLIENT_TAG, "Data");
-            xfer_in->num_bytes = usb_round_up_to_mps(MOCK_MSC_SCSI_SECTOR_SIZE * msc_obj.test_param.num_sectors_per_xfer, MOCK_MSC_SCSI_BULK_EP_MPS);
+            const int bulk_ep_mps = (msc_obj.dev_speed == USB_SPEED_HIGH)
+                                    ? MOCK_MSC_SCSI_BULK_EP_MPS_HS
+                                    : MOCK_MSC_SCSI_BULK_EP_MPS_FS;
+            xfer_in->num_bytes = usb_round_up_to_mps(MOCK_MSC_SCSI_SECTOR_SIZE * msc_obj.test_param.num_sectors_per_xfer, bulk_ep_mps);
             xfer_in->bEndpointAddress = MOCK_MSC_SCSI_BULK_IN_EP_ADDR;
             TEST_ASSERT_EQUAL(ESP_OK, usb_host_transfer_submit(xfer_in));
             //Test that an inflight transfer cannot be resubmitted
@@ -219,7 +227,10 @@ void msc_client_async_seq_task(void *arg)
         }
         case TEST_STAGE_MSC_CSW: {
             ESP_LOGD(MSC_CLIENT_TAG, "CSW");
-            xfer_in->num_bytes = usb_round_up_to_mps(sizeof(mock_msc_bulk_csw_t), MOCK_MSC_SCSI_BULK_EP_MPS);
+            const int bulk_ep_mps = (msc_obj.dev_speed == USB_SPEED_HIGH)
+                                    ? MOCK_MSC_SCSI_BULK_EP_MPS_HS
+                                    : MOCK_MSC_SCSI_BULK_EP_MPS_FS;
+            xfer_in->num_bytes = usb_round_up_to_mps(sizeof(mock_msc_bulk_csw_t), bulk_ep_mps);
             xfer_in->bEndpointAddress = MOCK_MSC_SCSI_BULK_IN_EP_ADDR;
             TEST_ASSERT_EQUAL(ESP_OK, usb_host_transfer_submit(xfer_in));
             //Test that an inflight transfer cannot be resubmitted

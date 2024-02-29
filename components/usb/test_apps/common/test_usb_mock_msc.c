@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -60,22 +60,42 @@ uint8_t mock_msc_scsi_config_desc[255];
 uint16_t mock_msc_scsi_str_desc_manu[128];
 uint16_t mock_msc_scsi_str_desc_prod[128];
 uint16_t mock_msc_scsi_str_desc_ser_num[128];
+usb_ep_desc_t mock_msc_scsi_bulk_out_ep_desc;
+usb_ep_desc_t mock_msc_scsi_bulk_in_ep_desc;
 
-const usb_ep_desc_t mock_msc_scsi_bulk_out_ep_desc = {
+const usb_ep_desc_t mock_msc_scsi_bulk_out_ep_desc_fs = {
     .bLength = sizeof(usb_ep_desc_t),
     .bDescriptorType = USB_B_DESCRIPTOR_TYPE_ENDPOINT,
     .bEndpointAddress = MOCK_MSC_SCSI_BULK_OUT_EP_ADDR,       //EP 1 OUT
     .bmAttributes = USB_BM_ATTRIBUTES_XFER_BULK,
-    .wMaxPacketSize = MOCK_MSC_SCSI_BULK_EP_MPS,           //MPS of 64 bytes
+    .wMaxPacketSize = MOCK_MSC_SCSI_BULK_EP_MPS_FS,           //MPS of 64 bytes
     .bInterval = 0,
 };
 
-const usb_ep_desc_t mock_msc_scsi_bulk_in_ep_desc = {
+const usb_ep_desc_t mock_msc_scsi_bulk_out_ep_desc_hs = {
+    .bLength = sizeof(usb_ep_desc_t),
+    .bDescriptorType = USB_B_DESCRIPTOR_TYPE_ENDPOINT,
+    .bEndpointAddress = MOCK_MSC_SCSI_BULK_OUT_EP_ADDR,       //EP 1 OUT
+    .bmAttributes = USB_BM_ATTRIBUTES_XFER_BULK,
+    .wMaxPacketSize = MOCK_MSC_SCSI_BULK_EP_MPS_HS,           //MPS of 512 bytes
+    .bInterval = 0,
+};
+
+const usb_ep_desc_t mock_msc_scsi_bulk_in_ep_desc_fs = {
     .bLength = sizeof(usb_ep_desc_t),
     .bDescriptorType = USB_B_DESCRIPTOR_TYPE_ENDPOINT,
     .bEndpointAddress = MOCK_MSC_SCSI_BULK_IN_EP_ADDR,
     .bmAttributes = USB_BM_ATTRIBUTES_XFER_BULK,
-    .wMaxPacketSize = MOCK_MSC_SCSI_BULK_EP_MPS,           //MPS of 64 bytes
+    .wMaxPacketSize = MOCK_MSC_SCSI_BULK_EP_MPS_FS,           //MPS of 64 bytes
+    .bInterval = 0,
+};
+
+const usb_ep_desc_t mock_msc_scsi_bulk_in_ep_desc_hs = {
+    .bLength = sizeof(usb_ep_desc_t),
+    .bDescriptorType = USB_B_DESCRIPTOR_TYPE_ENDPOINT,
+    .bEndpointAddress = MOCK_MSC_SCSI_BULK_IN_EP_ADDR,
+    .bmAttributes = USB_BM_ATTRIBUTES_XFER_BULK,
+    .wMaxPacketSize = MOCK_MSC_SCSI_BULK_EP_MPS_HS,           //MPS of 512 bytes
     .bInterval = 0,
 };
 
@@ -130,9 +150,10 @@ void mock_msc_scsi_init_reference_descriptors(void)
     dest_ptr += USB_CONFIG_DESC_SIZE;
     memcpy(dest_ptr, (void*)&mock_msc_intf_desc, sizeof(mock_msc_intf_desc));
     dest_ptr += USB_INTF_DESC_SIZE;
-    memcpy(dest_ptr, (void*)&mock_msc_scsi_bulk_in_ep_desc, sizeof(mock_msc_scsi_bulk_in_ep_desc));
+    // Set endpoint descriptors with zeroes, FS or HS device has not been connected
+    memset(dest_ptr, 0, sizeof(usb_ep_desc_t));
     dest_ptr += USB_EP_DESC_SIZE;
-    memcpy(dest_ptr, (void*)&mock_msc_scsi_bulk_out_ep_desc, sizeof(mock_msc_scsi_bulk_out_ep_desc));
+    memset(dest_ptr, 0, sizeof(usb_ep_desc_t));
 
     // String descriptors
     const char *str = MOCK_MSC_SCSI_STRING_1;
