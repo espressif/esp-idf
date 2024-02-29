@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -74,6 +74,9 @@ typedef enum {
     JPEG_LL_EN_FRAME_EOF_LACK = (1 << 16),
 } jpeg_ll_encoder_intr_t;
 
+#define JPEG_LL_ENCODER_EVENT_INTR (JPEG_LL_RLE_PARALLEL_ERR | \
+                                    JPEG_LL_EN_FRAME_EOF_ERR)
+
 /**
  * @brief Enable the hardware clock for JPEG module
  *
@@ -112,7 +115,7 @@ static inline void jpeg_ll_reset_module_register(void)
 static inline void jpeg_ll_dht_ac0_write_codeword(jpeg_dev_t *hw, uint8_t *huffman_bits_table, uint32_t *minimum_code_table)
 {
     uint32_t element_number = 0;
-    for (int idx = 0; idx < JEPG_HUFFMAN_BITS_LEN_TABLE_LEN; idx++) {
+    for (int idx = 0; idx < JPEG_HUFFMAN_BITS_LEN_TABLE_LEN; idx++) {
         element_number += (uint32_t)huffman_bits_table[idx];
         hw->dht_totlen_ac0.dht_totlen_ac0 = element_number;
         hw->dht_codemin_ac0.dht_codemin_ac0 = minimum_code_table[idx];
@@ -143,7 +146,7 @@ static inline void jpeg_ll_dht_ac0_write_value(jpeg_dev_t *hw, uint8_t *huffman_
 static inline void jpeg_ll_dht_ac1_write_codeword(jpeg_dev_t *hw, uint8_t *huffman_bits_table, uint32_t *minimum_code_table)
 {
     uint32_t element_number = 0;
-    for (int idx = 0; idx < JEPG_HUFFMAN_BITS_LEN_TABLE_LEN; idx++) {
+    for (int idx = 0; idx < JPEG_HUFFMAN_BITS_LEN_TABLE_LEN; idx++) {
         element_number += (uint32_t)huffman_bits_table[idx];
         hw->dht_totlen_ac1.dht_totlen_ac1 = element_number;
         hw->dht_codemin_ac1.dht_codemin_ac1 = minimum_code_table[idx];
@@ -174,7 +177,7 @@ static inline void jpeg_ll_dht_ac1_write_value(jpeg_dev_t *hw, uint8_t *huffman_
 static inline void jpeg_ll_dht_dc0_write_codeword(jpeg_dev_t *hw, uint8_t *huffman_bits_table, uint32_t *minimum_code_table)
 {
     uint32_t element_number = 0;
-    for (int idx = 0; idx < JEPG_HUFFMAN_BITS_LEN_TABLE_LEN; idx++) {
+    for (int idx = 0; idx < JPEG_HUFFMAN_BITS_LEN_TABLE_LEN; idx++) {
         element_number += (uint32_t)huffman_bits_table[idx];
         hw->dht_totlen_dc0.dht_totlen_dc0 = element_number;
         hw->dht_codemin_dc0.dht_codemin_dc0 = minimum_code_table[idx];
@@ -205,7 +208,7 @@ static inline void jpeg_ll_dht_dc0_write_value(jpeg_dev_t *hw, uint8_t *huffman_
 static inline void jpeg_ll_dht_dc1_write_codeword(jpeg_dev_t *hw, uint8_t *huffman_bits_table, uint32_t *minimum_code_table)
 {
     uint32_t element_number = 0;
-    for (int idx = 0; idx < JEPG_HUFFMAN_BITS_LEN_TABLE_LEN; idx++) {
+    for (int idx = 0; idx < JPEG_HUFFMAN_BITS_LEN_TABLE_LEN; idx++) {
         element_number += (uint32_t)huffman_bits_table[idx];
         hw->dht_totlen_dc1.dht_totlen_dc1 = element_number;
         hw->dht_codemin_dc1.dht_codemin_dc1 = minimum_code_table[idx];

@@ -116,6 +116,12 @@ examples/peripherals/i2s/i2s_recorder:
     - esp_driver_spi
     - esp_driver_i2s
 
+examples/peripherals/jpeg/jpeg_decode:
+  disable:
+    - if: SOC_JPEG_CODEC_SUPPORTED != 1
+  depends_components:
+    - esp_driver_jpeg
+
 examples/peripherals/lcd/i2c_oled:
   disable:
     - if: SOC_I2C_SUPPORTED != 1

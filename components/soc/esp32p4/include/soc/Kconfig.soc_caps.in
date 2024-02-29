@@ -1410,3 +1410,11 @@ config SOC_MEM_NON_CONTIGUOUS_SRAM
 config SOC_EMAC_USE_IO_MUX
     bool
     default y
+
+config SOC_JPEG_CODEC_SUPPORTED
+    bool
+    default y
+
+config SOC_JPEG_DECODE_SUPPORTED
+    bool
+    default y

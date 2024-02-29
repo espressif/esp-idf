@@ -138,6 +138,18 @@ typedef enum {
     COLOR_CONV_STD_RGB_YUV_BT709, /*!< YUV<->RGB conversion standard: BT.709 */
 } color_conv_std_rgb_yuv_t;
 
+/*---------------------------------------------------------------
+                      Color Endian
+---------------------------------------------------------------*/
+
+/**
+ * @brief RGB element order
+ */
+typedef enum {
+    COLOR_RGB_ELEMENT_ORDER_RGB, /*!< RGB element order: RGB */
+    COLOR_RGB_ELEMENT_ORDER_BGR, /*!< RGB element order: BGR */
+} color_rgb_element_order_t;
+
 #ifdef __cplusplus
 }
 #endif
