@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -42,11 +42,23 @@ static inline void key_mgr_ll_enable_bus_clock(bool enable)
 #define key_mgr_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; key_mgr_ll_enable_bus_clock(__VA_ARGS__)
 
 /**
+ * @brief Enable the peripheral clock for Key Manager
+ *
+ * @param true to enable, false to disable
+ */
+static inline void key_mgr_ll_enable_peripheral_clock(bool enable)
+{
+    HP_SYS_CLKRST.peri_clk_ctrl25.reg_crypto_km_clk_en = enable;
+}
+
+#define key_mgr_ll_enable_peripheral_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; key_mgr_ll_enable_bus_clock(__VA_ARGS__)
+
+/**
  * @brief Reset the Key Manager peripheral */
 static inline void key_mgr_ll_reset_register(void)
 {
-    HP_SYS_CLKRST.peri_clk_ctrl25.reg_crypto_km_clk_en = 1;
-    HP_SYS_CLKRST.peri_clk_ctrl25.reg_crypto_km_clk_en = 0;
+    HP_SYS_CLKRST.hp_rst_en2.reg_rst_en_km = 1;
+    HP_SYS_CLKRST.hp_rst_en2.reg_rst_en_km = 0;
     HP_SYS_CLKRST.hp_rst_en2.reg_rst_en_crypto = 1;
     HP_SYS_CLKRST.hp_rst_en2.reg_rst_en_crypto = 0;
 }

@@ -112,13 +112,9 @@ void esp_crypto_ecdsa_lock_release(void)
 void esp_crypto_key_manager_lock_acquire(void)
 {
     _lock_acquire(&s_crypto_key_manager_lock);
-    esp_crypto_ecc_lock_acquire();
-    esp_crypto_sha_aes_lock_acquire();
 }
 
 void esp_crypto_key_manager_lock_release(void)
 {
-    esp_crypto_sha_aes_lock_release();
-    esp_crypto_ecc_lock_release();
     _lock_release(&s_crypto_key_manager_lock);
 }
