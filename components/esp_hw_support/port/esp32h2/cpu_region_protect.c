@@ -13,16 +13,44 @@
 #ifdef BOOTLOADER_BUILD
 // Without L bit set
 #define CONDITIONAL_NONE        0x0
+#define CONDITIONAL_R           PMP_R
 #define CONDITIONAL_RX          PMP_R | PMP_X
 #define CONDITIONAL_RW          PMP_R | PMP_W
 #define CONDITIONAL_RWX         PMP_R | PMP_W | PMP_X
 #else
 // With L bit set
 #define CONDITIONAL_NONE        NONE
+#define CONDITIONAL_R           R
 #define CONDITIONAL_RX          RX
 #define CONDITIONAL_RW          RW
 #define CONDITIONAL_RWX         RWX
 #endif
+
+#define ALIGN_UP_TO_MMU_PAGE_SIZE(addr) (((addr) + (SOC_MMU_PAGE_SIZE) - 1) & ~((SOC_MMU_PAGE_SIZE) - 1))
+#define ALIGN_DOWN_TO_MMU_PAGE_SIZE(addr)  ((addr) & ~((SOC_MMU_PAGE_SIZE) - 1))
+
+/**
+ * @brief Generate the PMP address field value for PMPCFG.A == NAPOT
+ *
+ * NOTE: Here, (end-start) must be a power of 2 size and start must
+ * be aligned to this size. This API returns UINT32_MAX on failing
+ * these conditions, which when plugged into the PMP entry registers
+ * does nothing. This skips the corresponding region's protection.
+ *
+ * @param start      Region starting address
+ * @param end        Region ending address
+ *
+ * @return uint32_t PMP address field value
+ */
+static inline uint32_t pmpaddr_napot(uint32_t start, uint32_t end)
+{
+    uint32_t size = end - start;
+    if ((size & (size - 1)) || (start % size)) {
+        return UINT32_MAX;
+    }
+
+    return start | ((size - 1) >> 1);
+}
 
 static void esp_cpu_configure_invalid_regions(void)
 {
@@ -97,7 +125,7 @@ void esp_cpu_configure_region_protection(void)
      *      We also lock these entries so the R/W/X permissions are enforced even for machine mode
      */
     const unsigned NONE    = PMP_L;
-    const unsigned R       = PMP_L | PMP_R;
+    __attribute__((unused)) const unsigned R       = PMP_L | PMP_R;
     const unsigned RW      = PMP_L | PMP_R | PMP_W;
     const unsigned RX      = PMP_L | PMP_R | PMP_X;
     const unsigned RWX     = PMP_L | PMP_R | PMP_W | PMP_X;
@@ -116,15 +144,10 @@ void esp_cpu_configure_region_protection(void)
     PMP_ENTRY_SET(0, pmpaddr0, PMP_NAPOT | RWX);
     _Static_assert(SOC_CPU_SUBSYSTEM_LOW < SOC_CPU_SUBSYSTEM_HIGH, "Invalid CPU subsystem region");
 
-    // 2.1 I-ROM
+    // 2.1 I/D-ROM
     PMP_ENTRY_SET(1, SOC_IROM_MASK_LOW, NONE);
     PMP_ENTRY_SET(2, SOC_IROM_MASK_HIGH, PMP_TOR | RX);
-    _Static_assert(SOC_IROM_MASK_LOW < SOC_IROM_MASK_HIGH, "Invalid I-ROM region");
-
-    // 2.2 D-ROM
-    PMP_ENTRY_SET(3, SOC_DROM_MASK_LOW, NONE);
-    PMP_ENTRY_SET(4, SOC_DROM_MASK_HIGH, PMP_TOR | R);
-    _Static_assert(SOC_DROM_MASK_LOW < SOC_DROM_MASK_HIGH, "Invalid D-ROM region");
+    _Static_assert(SOC_IROM_MASK_LOW < SOC_IROM_MASK_HIGH, "Invalid I/D-ROM region");
 
     if (esp_cpu_dbgr_is_attached()) {
         // Anti-FI check that cpu is really in ocd mode
@@ -155,15 +178,30 @@ void esp_cpu_configure_region_protection(void)
 #endif
     }
 
+#if CONFIG_ESP_SYSTEM_PMP_IDRAM_SPLIT && !BOOTLOADER_BUILD
+    extern int _instruction_reserved_end;
+    extern int _rodata_reserved_start;
+    extern int _rodata_reserved_end;
+
+    const uint32_t irom_resv_end = ALIGN_UP_TO_MMU_PAGE_SIZE((uint32_t)(&_instruction_reserved_end));
+    const uint32_t drom_resv_start = ALIGN_DOWN_TO_MMU_PAGE_SIZE((uint32_t)(&_rodata_reserved_start));
+    const uint32_t drom_resv_end = ALIGN_UP_TO_MMU_PAGE_SIZE((uint32_t)(&_rodata_reserved_end));
+
     // 4. I_Cache (flash)
-    const uint32_t pmpaddr8 = PMPADDR_NAPOT(SOC_IROM_LOW, SOC_IROM_HIGH);
+    PMP_ENTRY_CFG_RESET(8);
+    const uint32_t pmpaddr8 = pmpaddr_napot(SOC_IROM_LOW, irom_resv_end);
     PMP_ENTRY_SET(8, pmpaddr8, PMP_NAPOT | RX);
-    _Static_assert(SOC_IROM_LOW < SOC_IROM_HIGH, "Invalid I_Cache region");
 
     // 5. D_Cache (flash)
-    const uint32_t pmpaddr9 = PMPADDR_NAPOT(SOC_DROM_LOW, SOC_DROM_HIGH);
+    PMP_ENTRY_CFG_RESET(9);
+    const uint32_t pmpaddr9 = pmpaddr_napot(drom_resv_start, drom_resv_end);
     PMP_ENTRY_SET(9, pmpaddr9, PMP_NAPOT | R);
-    _Static_assert(SOC_DROM_LOW < SOC_DROM_HIGH, "Invalid D_Cache region");
+#else
+    // 4. I_Cache / D_Cache (flash)
+    const uint32_t pmpaddr8 = PMPADDR_NAPOT(SOC_IROM_LOW, SOC_IROM_HIGH);
+    PMP_ENTRY_SET(8, pmpaddr8, PMP_NAPOT | CONDITIONAL_RX);
+    _Static_assert(SOC_IROM_LOW < SOC_IROM_HIGH, "Invalid I/D_Cache region");
+#endif
 
     // 6. LP memory
 #if CONFIG_ESP_SYSTEM_PMP_IDRAM_SPLIT && !BOOTLOADER_BUILD
