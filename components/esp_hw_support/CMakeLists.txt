@@ -70,8 +70,11 @@ if(NOT BOOTLOADER_BUILD)
 
     if(CONFIG_SOC_GDMA_SUPPORTED)
         list(APPEND srcs "dma/gdma.c")
-        if(CONFIG_SOC_PM_SUPPORT_TOP_PD)
+        if(CONFIG_SOC_GDMA_SUPPORT_SLEEP_RETENTION)
             list(APPEND srcs "dma/gdma_sleep_retention.c")
+        endif()
+        if(CONFIG_SOC_GDMA_SUPPORT_ETM)
+            list(APPEND srcs "dma/gdma_etm.c")
         endif()
     endif()
 
@@ -91,10 +94,6 @@ if(NOT BOOTLOADER_BUILD)
             list(APPEND srcs "dma/async_memcpy_cp_dma.c")
         endif() # CONFIG_SOC_CP_DMA_SUPPORTED
     endif() # CONFIG_SOC_ASYNC_MEMCPY_SUPPORTED
-
-    if(CONFIG_SOC_GDMA_SUPPORT_ETM)
-        list(APPEND srcs "dma/gdma_etm.c")
-    endif()
 
     if(CONFIG_SOC_DW_GDMA_SUPPORTED)
         list(APPEND srcs "dma/dw_gdma.c")

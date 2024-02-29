@@ -1,12 +1,10 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #pragma once
-
-// TODO: [ESP32C5] IDF-8710
 
 // The following macros have a format SOC_[periph][instance_id] to make it work with `GDMA_MAKE_TRIGGER`
 #define SOC_GDMA_TRIG_PERIPH_M2M0    (-1)
