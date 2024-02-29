@@ -12,7 +12,7 @@
 
 每个 UART 控制器可以独立配置波特率、数据位长度、位顺序、停止位位数、奇偶校验位等参数。所有具备完整功能的 UART 控制器都能与不同制造商的 UART 设备兼容，并且支持红外数据协会 (IrDA) 定义的标准协议。
 
-.. only:: SOC_UART_LP_NUM
+.. only:: SOC_UART_HAS_LP_UART
 
     此外，{IDF_TARGET_NAME} 芯片还有一个满足低功耗需求的 LP UART 控制器。LP UART 是原 UART 的功能剪裁版本。它只支持基础 UART 功能，不支持 IrDA 或 RS485 协议，并且只有一块较小的 RAM 存储空间。想要全面了解的 UART 及 LP UART 功能区别，请参考 **{IDF_TARGET_NAME} 技术参考手册** > UART 控制器 (UART) > 主要特性 [`PDF <{IDF_TARGET_TRM_EN_URL}#uart>`__]。
 
@@ -29,6 +29,10 @@
 6. :ref:`uart-api-deleting-driver` - 如无需 UART 通信，则释放已分配的资源
 
 步骤 1 到 3 为配置阶段，步骤 4 为 UART 运行阶段，步骤 5 和 6 为可选步骤。
+
+.. only:: SOC_UART_HAS_LP_UART
+
+    此外，LP UART 控制器的编程需要注意 :ref:`uart-api-lp-uart-driver`。
 
 UART 驱动程序函数通过 :cpp:type:`uart_port_t` 识别不同的 UART 控制器。调用以下所有函数均需此标识。
 
@@ -239,38 +243,35 @@ API 提供了一种便利的方法来处理本文所讨论的特定中断，即�
     - 禁用中断：调用 :cpp:func:`uart_disable_pattern_det_intr`
 
 
-宏指令
-^^^^^^^^^^^^
-
-API 还定义了一些宏指令。例如，:c:macro:`UART_HW_FIFO_LEN` 定义了硬件 FIFO 缓冲区的长度，:c:macro:`UART_BITRATE_MAX` 定义了 UART 控制器支持的最大波特率。
-
-
-.. only:: SOC_UART_LP_NUM
-
-    使用主核驱动 LP UART 控制器
-    ^^^^^^^^^^^^^^^^^^^^^^^^
-
-    UART 驱动程序还适配了在 Active 模式下对 LP UART 控制器的驱动。LP UART 的配置流程和普通 UART 没有本质上的差别，除了有以下几点需要注意：
-
-    1. LP UART 控制器的端口号为 :c:macro:`LP_UART_NUM_0`。
-    2. LP UART 控制器的可选时钟源可以在 :cpp:type:`lp_uart_sclk_t` 中找到。
-    3. LP UART 控制器的硬件 FIFO 大小要远小于普通 UART 控制器的硬件 FIFO 大小，其值为 :c:macro:`SOC_LP_UART_FIFO_LEN`。
-
-    .. only:: SOC_LP_GPIO_MATRIX_SUPPORTED
-
-        4. LP UART 控制器的 GPIO 引脚只能从 LP GPIO 引脚中选择。
-
-    .. only:: not SOC_LP_GPIO_MATRIX_SUPPORTED
-
-        4. 由于该芯片没有 LP GPIO 交换矩阵，LP UART 控制器的 GPIO 引脚不可改变。具体的引脚号请查看 **{IDF_TARGET_NAME} 技术参考手册** > **IO MUX 和 GPIO 交换矩阵 (GPIO, IO MUX)** > **LP IO MUX 管脚功能列表** [`PDF <{IDF_TARGET_TRM_CN_URL}#lp-io-mux-func-list>`__]。
-
-
 .. _uart-api-deleting-driver:
 
 删除驱动程序
 ^^^^^^^^^^^^^^^^^^^^^^^
 
 如不再需要与 :cpp:func:`uart_driver_install` 建立通信，则可调用 :cpp:func:`uart_driver_delete` 删除驱动程序，释放已分配的资源。
+
+
+宏指令
+^^^^^^^^^^^^
+
+API 还定义了一些宏指令。例如，:c:macro:`UART_HW_FIFO_LEN` 定义了硬件 FIFO 缓冲区的长度，:c:macro:`UART_BITRATE_MAX` 定义了 UART 控制器支持的最大波特率。
+
+.. only:: SOC_UART_HAS_LP_UART
+
+    .. _uart-api-lp-uart-driver:
+
+    使用主核驱动 LP UART 控制器
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    UART 驱动程序还适配了在 Active 模式下对 LP UART 控制器的驱动。LP UART 的配置流程和普通 UART 没有本质上的差别，除了有以下几点需要注意：
+
+    .. list::
+
+        - LP UART 控制器的端口号为 :c:macro:`LP_UART_NUM_0`。
+        - LP UART 控制器的可选时钟源可以在 :cpp:type:`lp_uart_sclk_t` 中找到。
+        - LP UART 控制器的硬件 FIFO 大小要远小于普通 UART 控制器的硬件 FIFO 大小，其值为 :c:macro:`SOC_LP_UART_FIFO_LEN`。
+        :SOC_LP_GPIO_MATRIX_SUPPORTED: - LP UART 控制器的 GPIO 引脚只能从 LP GPIO 引脚中选择。
+        :not SOC_LP_GPIO_MATRIX_SUPPORTED: - 由于该芯片没有 LP GPIO 交换矩阵，LP UART 控制器的 GPIO 引脚不可改变。具体的引脚号请查看 **{IDF_TARGET_NAME} 技术参考手册** > **IO MUX 和 GPIO 交换矩阵 (GPIO, IO MUX)** > **LP IO MUX 管脚功能列表** [`PDF <{IDF_TARGET_TRM_CN_URL}#lp-io-mux-func-list>`__]。
 
 
 RS485 特定通信模式简介

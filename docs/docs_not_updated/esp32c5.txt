@@ -147,7 +147,6 @@ api-reference/peripherals/sd_pullup_requirements.rst
 api-reference/peripherals/spi_master.rst
 api-reference/peripherals/index.rst
 api-reference/peripherals/sdmmc_host.rst
-api-reference/peripherals/uart.rst
 api-reference/peripherals/ecdsa.rst
 api-reference/peripherals/rmt.rst
 api-reference/kconfig.rst
