@@ -165,8 +165,13 @@ typedef struct spi_device_t *spi_device_handle_t;  ///< Handle for a device on a
  * peripheral and routes it to the indicated GPIO. All SPI master devices have three CS pins and can thus control
  * up to three devices.
  *
- * @note While in general, speeds up to 80MHz on the dedicated SPI pins and 40MHz on GPIO-matrix-routed pins are
- *       supported, full-duplex transfers routed over the GPIO matrix only support speeds up to 26MHz.
+ * @note On ESP32, due to the delay of GPIO matrix, the maximum frequency SPI Master can correctly samples the slave's
+ *       output is lower than the case using IOMUX. Typical maximum frequency communicating with an ideal slave
+ *       without data output delay: 80MHz (IOMUX pins) and 26MHz (GPIO matrix pins). With the help of extra dummy
+ *       cycles in half-duplex mode, the delay can be compensated by setting `input_delay_ns` in `dev_config` structure
+ *       correctly.
+ *
+ *       There's no notable delay on chips other than ESP32.
  *
  * @param host_id SPI peripheral to allocate device on
  * @param dev_config SPI interface protocol config for the device
