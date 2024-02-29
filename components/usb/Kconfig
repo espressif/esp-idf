@@ -93,7 +93,6 @@ menu "USB-OTG"
 
                 The default value is set to 10 ms to be safe.
 
-
     endmenu #Root Hub configuration
 
     # Hidden or compatibility options
@@ -114,5 +113,12 @@ menu "USB-OTG"
 
             If enabled, the enumeration filter callback can be set via 'usb_host_config_t' when calling
             'usb_host_install()'.
+
+    config USB_HOST_EXT_HUB_SUPPORT
+        depends on IDF_EXPERIMENTAL_FEATURES
+        bool "Support USB HUB (Experimental)"
+        default n
+        help
+            Feature is under development.
 
 endmenu #USB-OTG
