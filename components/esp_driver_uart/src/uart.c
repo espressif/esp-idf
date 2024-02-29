@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -25,6 +25,7 @@
 #include "driver/rtc_io.h"
 #include "driver/uart_select.h"
 #include "driver/lp_io.h"
+#include "esp_private/gpio.h"
 #include "esp_private/uart_share_hw_ctrl.h"
 #include "esp_clk_tree.h"
 #include "sdkconfig.h"
@@ -678,7 +679,7 @@ esp_err_t uart_set_pin(uart_port_t uart_num, int tx_io_num, int rx_io_num, int r
     /* In the following statements, if the io_num is negative, no need to configure anything. */
     if (tx_io_num >= 0 && !uart_try_set_iomux_pin(uart_num, tx_io_num, SOC_UART_TX_PIN_IDX)) {
         if (uart_num < SOC_UART_HP_NUM) {
-            gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[tx_io_num], PIN_FUNC_GPIO);
+            gpio_func_sel(tx_io_num, PIN_FUNC_GPIO);
             gpio_set_level(tx_io_num, 1);
             esp_rom_gpio_connect_out_signal(tx_io_num, UART_PERIPH_SIGNAL(uart_num, SOC_UART_TX_PIN_IDX), 0, 0);
         }
@@ -695,7 +696,7 @@ esp_err_t uart_set_pin(uart_port_t uart_num, int tx_io_num, int rx_io_num, int r
 
     if (rx_io_num >= 0 && !uart_try_set_iomux_pin(uart_num, rx_io_num, SOC_UART_RX_PIN_IDX)) {
         if (uart_num < SOC_UART_HP_NUM) {
-            gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[rx_io_num], PIN_FUNC_GPIO);
+            gpio_func_sel(rx_io_num, PIN_FUNC_GPIO);
             gpio_set_pull_mode(rx_io_num, GPIO_PULLUP_ONLY);
             gpio_set_direction(rx_io_num, GPIO_MODE_INPUT);
             esp_rom_gpio_connect_in_signal(rx_io_num, UART_PERIPH_SIGNAL(uart_num, SOC_UART_RX_PIN_IDX), 0);
@@ -713,7 +714,7 @@ esp_err_t uart_set_pin(uart_port_t uart_num, int tx_io_num, int rx_io_num, int r
 
     if (rts_io_num >= 0 && !uart_try_set_iomux_pin(uart_num, rts_io_num, SOC_UART_RTS_PIN_IDX)) {
         if (uart_num < SOC_UART_HP_NUM) {
-            gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[rts_io_num], PIN_FUNC_GPIO);
+            gpio_func_sel(rts_io_num, PIN_FUNC_GPIO);
             gpio_set_direction(rts_io_num, GPIO_MODE_OUTPUT);
             esp_rom_gpio_connect_out_signal(rts_io_num, UART_PERIPH_SIGNAL(uart_num, SOC_UART_RTS_PIN_IDX), 0, 0);
         }
@@ -729,7 +730,7 @@ esp_err_t uart_set_pin(uart_port_t uart_num, int tx_io_num, int rx_io_num, int r
 
     if (cts_io_num >= 0  && !uart_try_set_iomux_pin(uart_num, cts_io_num, SOC_UART_CTS_PIN_IDX)) {
         if (uart_num < SOC_UART_HP_NUM) {
-            gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[cts_io_num], PIN_FUNC_GPIO);
+            gpio_func_sel(cts_io_num, PIN_FUNC_GPIO);
             gpio_set_pull_mode(cts_io_num, GPIO_PULLUP_ONLY);
             gpio_set_direction(cts_io_num, GPIO_MODE_INPUT);
             esp_rom_gpio_connect_in_signal(cts_io_num, UART_PERIPH_SIGNAL(uart_num, SOC_UART_CTS_PIN_IDX), 0);

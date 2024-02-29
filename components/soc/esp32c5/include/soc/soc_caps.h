@@ -19,7 +19,7 @@
 /*-------------------------- COMMON CAPS ---------------------------------------*/
 // #define SOC_ADC_SUPPORTED               1  // TODO: [ESP32C5] IDF-8701
 // #define SOC_DEDICATED_GPIO_SUPPORTED    1  // TODO: [ESP32C5] IDF-8725
-#define SOC_UART_SUPPORTED              1     // TODO: [ESP32C5] IDF-8722
+#define SOC_UART_SUPPORTED              1
 #define SOC_GDMA_SUPPORTED              1
 #define SOC_AHB_GDMA_SUPPORTED          1
 #define SOC_GPTIMER_SUPPORTED           1
@@ -61,7 +61,7 @@
 // #define SOC_PAU_SUPPORTED               1  // TODO: [ESP32C5] IDF-8638, IDF-8640
 // #define SOC_LP_TIMER_SUPPORTED          1  // TODO: [ESP32C5] IDF-8636
 // #define SOC_LP_AON_SUPPORTED            1  // TODO: [ESP32C5] IDF-8638, IDF-8640
-// #define SOC_LP_PERIPHERALS_SUPPORTED    1  // TODO: [ESP32C5] IDF-8695, IDF-8723, IDF-8719
+#define SOC_LP_PERIPHERALS_SUPPORTED    1
 // #define SOC_LP_I2C_SUPPORTED            1  // TODO: [ESP32C5] IDF-8634
 // #define SOC_ULP_LP_UART_SUPPORTED       1  // TODO: [ESP32C5] IDF-8633
 // #define SOC_CLK_TREE_SUPPORTED          1  // TODO: [ESP32C5] IDF-8642
@@ -475,14 +475,14 @@
 #define SOC_UART_LP_NUM                 (1U)
 #define SOC_UART_FIFO_LEN               (128)       /*!< The UART hardware FIFO length */
 #define SOC_LP_UART_FIFO_LEN            (16)        /*!< The LP UART hardware FIFO length */
-// #define SOC_UART_BITRATE_MAX            (5000000)   /*!< Max bit rate supported by UART */
-// #define SOC_UART_SUPPORT_PLL_F80M_CLK   (1)         /*!< Support PLL_F80M as the clock source */
-// #define SOC_UART_SUPPORT_RTC_CLK        (1)         /*!< Support RTC clock as the clock source */
+#define SOC_UART_BITRATE_MAX            (5000000)   /*!< Max bit rate supported by UART */
+#define SOC_UART_SUPPORT_PLL_F80M_CLK   (1)         /*!< Support PLL_F80M as the clock source */
+// #define SOC_UART_SUPPORT_RTC_CLK        (1)         // TODO: [ESP32C5] IDF-8642
 #define SOC_UART_SUPPORT_XTAL_CLK       (1)         /*!< Support XTAL clock as the clock source */
-// #define SOC_UART_SUPPORT_WAKEUP_INT     (1)         /*!< Support UART wakeup interrupt */
+#define SOC_UART_SUPPORT_WAKEUP_INT     (1)         /*!< Support UART wakeup interrupt */
 
 // UART has an extra TX_WAIT_SEND state when the FIFO is not empty and XOFF is enabled
-// #define SOC_UART_SUPPORT_FSM_TX_WAIT_SEND   (1)
+#define SOC_UART_SUPPORT_FSM_TX_WAIT_SEND   (1)
 
 /*-------------------------- COEXISTENCE HARDWARE PTI CAPS -------------------------------*/
 // #define SOC_COEX_HW_PTI                 (1)

@@ -38,6 +38,9 @@ uint32_t *freq_value)
     case SOC_MOD_CLK_PLL_F240M:
         clk_src_freq = CLK_LL_PLL_240M_FREQ_MHZ * MHZ;
         break;
+    case SOC_MOD_CLK_RTC_FAST:
+        clk_src_freq = 20 * MHZ;
+        break;
     case SOC_MOD_CLK_SPLL:
         clk_src_freq = CLK_LL_PLL_480M_FREQ_MHZ * MHZ;
         break;

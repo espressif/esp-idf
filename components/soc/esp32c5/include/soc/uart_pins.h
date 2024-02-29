@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,14 +8,12 @@
 
 #include "soc/io_mux_reg.h"
 
-// TODO: [ESP32C5] IDF-8722
-
 /* Specify the number of pins for UART */
 #define SOC_UART_PINS_COUNT  (4)
 
 /* Specify the GPIO pin number for each UART signal in the IOMUX */
-#define U0RXD_GPIO_NUM 17
-#define U0TXD_GPIO_NUM 16
+#define U0RXD_GPIO_NUM 11
+#define U0TXD_GPIO_NUM 10
 #define U0RTS_GPIO_NUM (-1)
 #define U0CTS_GPIO_NUM (-1)
 
