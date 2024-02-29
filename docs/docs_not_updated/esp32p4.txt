@@ -97,7 +97,6 @@ api-reference/peripherals/dedic_gpio.rst
 api-reference/peripherals/sd_pullup_requirements.rst
 api-reference/peripherals/index.rst
 api-reference/peripherals/sdmmc_host.rst
-api-reference/peripherals/uart.rst
 api-reference/network/esp_openthread.rst
 api-reference/network/esp_eth.rst
 api-reference/network/esp_netif_driver.rst
