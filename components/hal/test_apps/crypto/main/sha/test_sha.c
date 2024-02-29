@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: CC0-1.0
  */
@@ -221,11 +221,12 @@ TEST(sha, test_sha1_block)
     test_sha1(0);
 }
 
+#if SOC_SHA_SUPPORT_DMA
 TEST(sha, test_sha1_dma)
 {
     test_sha1(1);
 }
-
+#endif /* SOC_SHA_SUPPORT_DMA*/
 #endif /* SOC_SHA_SUPPORT_SHA1 */
 
 
@@ -236,11 +237,12 @@ TEST(sha, test_sha224_block)
     test_sha224(0);
 }
 
+#if SOC_SHA_SUPPORT_DMA
 TEST(sha, test_sha224_dma)
 {
     test_sha224(1);
 }
-
+#endif /* SOC_SHA_SUPPORT_DMA*/
 #endif /* SOC_SHA_SUPPORT_SHA224 */
 
 
@@ -251,11 +253,12 @@ TEST(sha, test_sha256_block)
     test_sha256(0);
 }
 
+#if SOC_SHA_SUPPORT_DMA
 TEST(sha, test_sha256_dma)
 {
     test_sha256(1);
 }
-
+#endif /* SOC_SHA_SUPPORT_DMA*/
 #endif /* SOC_SHA_SUPPORT_SHA256 */
 
 
@@ -266,10 +269,12 @@ TEST(sha, test_sha384_block)
     test_sha384(0);
 }
 
+#if SOC_SHA_SUPPORT_DMA
 TEST(sha, test_sha384_dma)
 {
     test_sha384(1);
 }
+#endif /* SOC_SHA_SUPPORT_DMA*/
 #endif /* SOC_SHA_SUPPORT_SHA384 */
 
 #if SOC_SHA_SUPPORT_SHA512
@@ -279,10 +284,12 @@ TEST(sha, test_sha512_block)
     test_sha512(0);
 }
 
+#if SOC_SHA_SUPPORT_DMA
 TEST(sha, test_sha512_dma)
 {
     test_sha512(1);
 }
+#endif /* SOC_SHA_SUPPORT_DMA*/
 #endif /* SOC_SHA_SUPPORT_SHA512 */
 
 
@@ -293,11 +300,12 @@ TEST(sha, test_sha512t_block)
     test_sha512t(0);
 }
 
+#if SOC_SHA_SUPPORT_DMA
 TEST(sha, test_sha512t_dma)
 {
     test_sha512t(1);
 }
-
+#endif /* SOC_SHA_SUPPORT_DMA*/
 #endif // SOC_SHA_SUPPORT_SHA512_T
 
 #endif // SOC_SHA_SUPPORTED
@@ -308,32 +316,44 @@ TEST_GROUP_RUNNER(sha)
 
 #if SOC_SHA_SUPPORT_SHA1
     RUN_TEST_CASE(sha, test_sha1_block);
+#if SOC_SHA_SUPPORT_DMA
     RUN_TEST_CASE(sha, test_sha1_dma);
+#endif /* SOC_SHA_SUPPORT_DMA*/
 #endif /* SOC_SHA_SUPPORT_SHA1 */
 
 #if SOC_SHA_SUPPORT_SHA224
     RUN_TEST_CASE(sha, test_sha224_block);
+#if SOC_SHA_SUPPORT_DMA
     RUN_TEST_CASE(sha, test_sha224_dma);
+#endif /* SOC_SHA_SUPPORT_DMA*/
 #endif /* SOC_SHA_SUPPORT_SHA224 */
 
 #if SOC_SHA_SUPPORT_SHA256
     RUN_TEST_CASE(sha, test_sha256_block);
+#if SOC_SHA_SUPPORT_DMA
     RUN_TEST_CASE(sha, test_sha256_dma);
+#endif /* SOC_SHA_SUPPORT_DMA*/
 #endif /* SOC_SHA_SUPPORT_SHA256 */
 
 #if SOC_SHA_SUPPORT_SHA384
     RUN_TEST_CASE(sha, test_sha384_block);
+#if SOC_SHA_SUPPORT_DMA
     RUN_TEST_CASE(sha, test_sha384_dma);
+#endif /* SOC_SHA_SUPPORT_DMA*/
 #endif /* SOC_SHA_SUPPORT_SHA384 */
 
 #if SOC_SHA_SUPPORT_SHA512
     RUN_TEST_CASE(sha, test_sha512_block);
+#if SOC_SHA_SUPPORT_DMA
     RUN_TEST_CASE(sha, test_sha512_dma);
+#endif /* SOC_SHA_SUPPORT_DMA*/
 #endif /* SOC_SHA_SUPPORT_SHA512 */
 
 #if SOC_SHA_SUPPORT_SHA512_T
     RUN_TEST_CASE(sha, test_sha512t_block);
+#if SOC_SHA_SUPPORT_DMA
     RUN_TEST_CASE(sha, test_sha512t_dma);
+#endif /* SOC_SHA_SUPPORT_DMA*/
 #endif // SOC_SHA_SUPPORT_SHA512_T
 
 #endif /* SOC_SHA_SUPPORTED */
