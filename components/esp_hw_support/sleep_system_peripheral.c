@@ -245,11 +245,15 @@ error:
 
 bool IRAM_ATTR peripheral_domain_pd_allowed(void)
 {
+#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
     const uint32_t inited_modules = sleep_retention_get_inited_modules();
     const uint32_t created_modules = sleep_retention_get_created_modules();
     const uint32_t mask = (const uint32_t) (BIT(SLEEP_RETENTION_MODULE_SYS_PERIPH));
 
     return ((inited_modules & mask) == (created_modules & mask));
+#else
+    return false;
+#endif
 }
 
 #if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
