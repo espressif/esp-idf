@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -24,6 +24,7 @@
 #include "soc/soc.h"
 #include "soc/soc_caps.h"
 #include "soc/interrupts.h"
+#include "soc/soc_etm_source.h"
 #include "hal/temperature_sensor_types.h"
 #include "hal/assert.h"
 #include "hal/misc.h"
@@ -39,6 +40,17 @@ extern "C" {
 #define TEMPERATURE_SENSOR_LL_MEASURE_MIN    (-40)
 
 #define TEMPERATURE_SENSOR_LL_INTR_MASK      TSENS_COCPU_TSENS_WAKE_INT_ST
+
+#define TEMPERATURE_SENSOR_LL_ETM_EVENT_TABLE(event)                     \
+    (uint32_t [TEMPERATURE_SENSOR_EVENT_MAX]){                           \
+        [TEMPERATURE_SENSOR_EVENT_OVER_LIMIT] = TMPSNSR_EVT_OVER_LIMIT,  \
+    }[event]
+
+#define TEMPERATURE_SENSOR_LL_ETM_TASK_TABLE(task)                     \
+    (uint32_t [TEMPERATURE_SENSOR_TASK_MAX]){                           \
+        [TEMPERATURE_SENSOR_TASK_START] = TMPSNSR_TASK_START_SAMPLE,    \
+        [TEMPERATURE_SENSOR_TASK_STOP] = TMPSNSR_TASK_STOP_SAMPLE,      \
+    }[task]
 
 typedef enum {
     TEMPERATURE_SENSOR_LL_WAKE_ABSOLUTE = 0,
