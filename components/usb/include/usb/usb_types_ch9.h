@@ -96,7 +96,7 @@ typedef union {
         uint16_t wValue;                    /**< Word-sized field that varies according to request */
         uint16_t wIndex;                    /**< Word-sized field that varies according to request; typically used to pass an index or offset */
         uint16_t wLength;                   /**< Number of bytes to transfer if there is a data stage */
-    } __attribute__((packed));
+    } USB_DESC_ATTR;                        /**< USB descriptor attributes */
     uint8_t val[USB_SETUP_PACKET_SIZE];     /**< Descriptor value */
 } usb_setup_packet_t;
 ESP_STATIC_ASSERT(sizeof(usb_setup_packet_t) == USB_SETUP_PACKET_SIZE, "Size of usb_setup_packet_t incorrect");
