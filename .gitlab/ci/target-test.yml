@@ -175,6 +175,14 @@ example_test_pytest_esp32_wifi_wlan:
     - build_pytest_examples_esp32
   tags: [ esp32, wifi_wlan ]
 
+example_test_pytest_esp32_ethernet_ip101:
+  extends:
+    - .pytest_examples_dir_template
+    - .rules:test:example_test-esp32
+  needs:
+    - build_pytest_examples_esp32
+  tags: [ esp32, eth_ip101 ]
+
 example_test_pytest_esp32_flash_encryption:
   extends:
     - .pytest_examples_dir_template
@@ -299,6 +307,14 @@ component_ut_pytest_esp32_adc:
   needs:
     - build_pytest_components_esp32
   tags: [ esp32, adc ]
+
+component_ut_pytest_esp32_ip101:
+  extends:
+    - .pytest_components_dir_template
+    - .rules:test:component_ut-esp32
+  needs:
+    - build_pytest_components_esp32
+  tags: [ esp32, eth_ip101 ]
 
 component_ut_pytest_esp32_lan8720:
   extends:

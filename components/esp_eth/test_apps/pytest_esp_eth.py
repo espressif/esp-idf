@@ -24,6 +24,7 @@ class EthTestIntf(object):
     def find_target_if(self, my_if: str = '') -> None:
         # try to determine which interface to use
         netifs = os.listdir('/sys/class/net/')
+        # order matters - ETH NIC with the highest number is connected to DUT on CI runner
         netifs.sort(reverse=True)
         logging.info('detected interfaces: %s', str(netifs))
 
@@ -173,7 +174,7 @@ def actual_test(dut: Dut) -> None:
 
 
 @pytest.mark.esp32
-@pytest.mark.ip101
+@pytest.mark.eth_ip101
 @pytest.mark.parametrize('config', [
     'ip101',
 ], indirect=True)
