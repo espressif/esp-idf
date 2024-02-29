@@ -332,7 +332,7 @@ typedef enum {  // TODO: [ESP32C5] IDF-8713 (inherit from C6)
 /**
  * @brief Type of I2C clock source.
  */
-typedef enum {  // TODO: [ESP32C5] IDF-8694, IDF-8696 (inherit from C6)
+typedef enum {
     I2C_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,                        /*!< Select XTAL as the source clock */
     I2C_CLK_SRC_RC_FAST = SOC_MOD_CLK_RC_FAST,                  /*!< Select RC_FAST as the source clock */
     I2C_CLK_SRC_DEFAULT = SOC_MOD_CLK_XTAL,                     /*!< Select XTAL as the default source clock */
