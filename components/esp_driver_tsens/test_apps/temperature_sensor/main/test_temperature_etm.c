@@ -15,10 +15,14 @@
 #include "driver/temperature_sensor.h"
 #include "soc/soc_etm_struct.h"
 
+// To run this example, you need a facility that can make the temperature change
+// on board. Like a heat gun.
+// Then after the temperature meet the threshold, you can see the gpio level changes
+// from 0 to 1 on logic analyzer or oscilloscope.
 TEST_CASE("temperature sensor alarm cause gpio pull up", "[etm]")
 {
     const uint32_t output_gpio = 5;
-    // temperature sensor alarm ---> ETM channel A ---> GPIO toggle
+    // temperature sensor alarm ---> ETM channel A ---> GPIO level to high
     printf("allocate etm channel\r\n");
     esp_etm_channel_config_t etm_config = {};
     esp_etm_channel_handle_t etm_channel_a;
@@ -27,7 +31,7 @@ TEST_CASE("temperature sensor alarm cause gpio pull up", "[etm]")
     printf("allocate GPIO etm task\r\n");
     esp_etm_task_handle_t gpio_task = NULL;
     gpio_etm_task_config_t gpio_task_config = {
-        .action = GPIO_ETM_TASK_ACTION_TOG,
+        .action = GPIO_ETM_TASK_ACTION_SET,
     };
     TEST_ESP_OK(gpio_new_etm_task(&gpio_task_config, &gpio_task));
     // set gpio number for the gpio etm primitives
@@ -46,13 +50,13 @@ TEST_CASE("temperature sensor alarm cause gpio pull up", "[etm]")
     temperature_sensor_config_t temp_sensor = TEMPERATURE_SENSOR_CONFIG_DEFAULT(10, 50);
     temperature_sensor_handle_t temp_handle = NULL;
     TEST_ESP_OK(temperature_sensor_install(&temp_sensor, &temp_handle));
-    TEST_ESP_OK(temperature_sensor_enable(temp_handle));
 
     temperature_sensor_abs_threshold_config_t threshold_cfg = {
         .high_threshold = 50,
         .low_threshold = -10,
     };
     TEST_ESP_OK(temperature_sensor_set_absolute_threshold(temp_handle, &threshold_cfg));
+    TEST_ESP_OK(temperature_sensor_enable(temp_handle));
     printf("Temperature sensor started\n");
 
     temperature_sensor_etm_event_config_t tsens_etm_event = {

@@ -103,7 +103,7 @@ esp_err_t temperature_sensor_install(const temperature_sensor_config_t *tsens_co
     ESP_RETURN_ON_FALSE((s_tsens_attribute_copy == NULL), ESP_ERR_INVALID_STATE, TAG, "Already installed");
     temperature_sensor_handle_t tsens = NULL;
     tsens = (temperature_sensor_obj_t *) heap_caps_calloc(1, sizeof(temperature_sensor_obj_t), MALLOC_CAP_DEFAULT);
-    ESP_GOTO_ON_FALSE(tsens != NULL, ESP_ERR_NO_MEM, err, TAG, "no mem for temp sensor");
+    ESP_RETURN_ON_FALSE((tsens != NULL), ESP_ERR_NO_MEM, TAG, "no mem for temp sensor");
     tsens->clk_src = tsens_config->clk_src;
 
     temperature_sensor_power_acquire();
@@ -260,7 +260,7 @@ esp_err_t temperature_sensor_set_absolute_threshold(temperature_sensor_handle_t 
 {
     esp_err_t ret = ESP_OK;
     ESP_RETURN_ON_FALSE((tsens != NULL), ESP_ERR_INVALID_ARG, TAG, "Temperature sensor has not been installed");
-    ESP_RETURN_ON_FALSE(tsens->fsm == TEMP_SENSOR_FSM_ENABLE, ESP_ERR_INVALID_STATE, TAG, "temperature sensor is not in enable state");
+    ESP_RETURN_ON_FALSE(tsens->fsm == TEMP_SENSOR_FSM_INIT, ESP_ERR_INVALID_STATE, TAG, "temperature sensor is not in init state");
     ESP_RETURN_ON_FALSE(abs_cfg, ESP_ERR_INVALID_ARG, TAG, "Invalid callback configuration");
 
     temperature_sensor_ll_set_sample_rate(0xffff);
@@ -275,7 +275,7 @@ esp_err_t temperature_sensor_set_delta_threshold(temperature_sensor_handle_t tse
 {
     esp_err_t ret = ESP_OK;
     ESP_RETURN_ON_FALSE((tsens != NULL), ESP_ERR_INVALID_ARG, TAG, "Temperature sensor has not been installed");
-    ESP_RETURN_ON_FALSE(tsens->fsm == TEMP_SENSOR_FSM_ENABLE, ESP_ERR_INVALID_STATE, TAG, "temperature sensor is not in enable state");
+    ESP_RETURN_ON_FALSE(tsens->fsm == TEMP_SENSOR_FSM_INIT, ESP_ERR_INVALID_STATE, TAG, "temperature sensor is not in init state");
     ESP_RETURN_ON_FALSE(delta_cfg, ESP_ERR_INVALID_ARG, TAG, "Invalid callback configuration");
 
     temperature_sensor_ll_set_sample_rate(0xffff);
@@ -290,7 +290,7 @@ esp_err_t temperature_sensor_register_callbacks(temperature_sensor_handle_t tsen
 {
     esp_err_t ret = ESP_OK;
     ESP_RETURN_ON_FALSE((tsens != NULL), ESP_ERR_INVALID_ARG, TAG, "Temperature sensor has not been installed");
-    ESP_RETURN_ON_FALSE(tsens->fsm == TEMP_SENSOR_FSM_ENABLE, ESP_ERR_INVALID_STATE, TAG, "temperature sensor is not in enable state");
+    ESP_RETURN_ON_FALSE(tsens->fsm == TEMP_SENSOR_FSM_INIT, ESP_ERR_INVALID_STATE, TAG, "temperature sensor is not in init state");
     ESP_RETURN_ON_FALSE(cbs, ESP_ERR_INVALID_ARG, TAG, "callback group pointer is invalid");
 
 #if CONFIG_TEMP_SENSOR_ISR_IRAM_SAFE

@@ -71,6 +71,7 @@ Other Peripheral Events
     :SOC_GDMA_SUPPORT_ETM: - Refer to :doc:`/api-reference/system/async_memcpy` for how to get the ETM event handle from async memcpy.
     :SOC_MCPWM_SUPPORT_ETM: - Refer to :doc:`/api-reference/peripherals/mcpwm` for how to get the ETM event handle from MCPWM.
     :SOC_ANA_CMPR_SUPPORT_ETM: - Refer to :doc:`/api-reference/peripherals/ana_cmpr` for how to get the ETM event handle from analog comparator.
+    :SOC_TEMPERATURE_SENSOR_SUPPORT_ETM: - Refer to :doc:`/api-reference/peripherals/temp_sensor` for how to get the ETM event handle from temperature sensor.
 
 .. _etm-task:
 
@@ -96,6 +97,7 @@ Other Peripheral Tasks
 .. list::
 
     :SOC_TIMER_SUPPORT_ETM: - Refer to :doc:`GPTimer </api-reference/peripherals/gptimer>` for how to get the ETM task handle from GPTimer.
+    :SOC_TEMPERATURE_SENSOR_SUPPORT_ETM: - Refer to :doc:`/api-reference/peripherals/temp_sensor` for how to get the ETM task handle from temperature sensor.
 
 .. _etm-channel-control:
 

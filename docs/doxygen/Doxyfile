@@ -143,6 +143,7 @@ INPUT = \
     $(PROJECT_PATH)/components/esp_driver_spi/include/driver/spi_slave_hd.h \
     $(PROJECT_PATH)/components/esp_driver_spi/include/driver/spi_slave.h \
     $(PROJECT_PATH)/components/esp_driver_tsens/include/driver/temperature_sensor.h \
+    $(PROJECT_PATH)/components/esp_driver_tsens/include/driver/temperature_sensor_etm.h \
     $(PROJECT_PATH)/components/esp_driver_uart/include/driver/uart.h \
     $(PROJECT_PATH)/components/esp_driver_uart/include/driver/uart_vfs.h \
     $(PROJECT_PATH)/components/esp_eth/include/esp_eth_com.h \
@@ -251,6 +252,7 @@ INPUT = \
     $(PROJECT_PATH)/components/hal/include/hal/sdm_types.h \
     $(PROJECT_PATH)/components/hal/include/hal/spi_flash_types.h \
     $(PROJECT_PATH)/components/hal/include/hal/spi_types.h \
+    $(PROJECT_PATH)/components/hal/include/hal/temperature_sensor_types.h \
     $(PROJECT_PATH)/components/hal/include/hal/timer_types.h \
     $(PROJECT_PATH)/components/hal/include/hal/touch_sensor_types.h \
     $(PROJECT_PATH)/components/hal/include/hal/twai_types.h \
