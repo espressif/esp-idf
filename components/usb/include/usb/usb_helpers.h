@@ -12,9 +12,12 @@ Warning: The USB Host Library API is still a beta version and may be subject to 
 
 #include <stdint.h>
 #include "esp_err.h"
+#include "sdkconfig.h"
 #include "usb/usb_types_stack.h"
 #include "usb/usb_types_ch9.h"
+#if (CONFIG_USB_HOST_EXT_HUB_SUPPORT)
 #include "usb/usb_types_ch11.h"
+#endif // CONFIG_USB_HOST_EXT_HUB_SUPPORT
 
 #ifdef __cplusplus
 extern "C" {
