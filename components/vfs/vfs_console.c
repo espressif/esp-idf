@@ -207,10 +207,12 @@ esp_err_t esp_vfs_console_register(void)
         return err;
     }
 #endif
+#if !CONFIG_ESP_CONSOLE_NONE
     err = esp_vfs_register_common(primary_path, strlen(primary_path), primary_vfs, NULL, &primary_vfs_index);
     if (err != ESP_OK) {
         return err;
     }
+#endif // !CONFIG_ESP_CONSOLE_NONE
 
 // Secondary register part.
 #if CONFIG_ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG

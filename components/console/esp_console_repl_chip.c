@@ -22,7 +22,9 @@
 
 #include "console_private.h"
 
+#if !CONFIG_ESP_CONSOLE_NONE
 static const char *TAG = "console.repl";
+#endif // !CONFIG_ESP_CONSOLE_NONE
 
 #if CONFIG_ESP_CONSOLE_UART_DEFAULT || CONFIG_ESP_CONSOLE_UART_CUSTOM
 static esp_err_t esp_console_repl_uart_delete(esp_console_repl_t *repl);
