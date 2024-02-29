@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -386,7 +386,11 @@ esp_err_t esp_eth_phy_802_3_reset_hw(phy_802_3_t *phy_802_3, uint32_t reset_asse
         esp_rom_gpio_pad_select_gpio(phy_802_3->reset_gpio_num);
         gpio_set_direction(phy_802_3->reset_gpio_num, GPIO_MODE_OUTPUT);
         gpio_set_level(phy_802_3->reset_gpio_num, 0);
-        esp_rom_delay_us(reset_assert_us);
+        if (reset_assert_us < 10000) {
+            esp_rom_delay_us(reset_assert_us);
+        } else {
+            vTaskDelay(pdMS_TO_TICKS(reset_assert_us/1000));
+        }
         gpio_set_level(phy_802_3->reset_gpio_num, 1);
     }
     return ESP_OK;
