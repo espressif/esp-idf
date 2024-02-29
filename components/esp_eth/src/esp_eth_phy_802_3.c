@@ -87,6 +87,12 @@ static esp_err_t set_duplex(esp_eth_phy_t *phy, eth_duplex_t duplex)
     return esp_eth_phy_802_3_set_duplex(phy_802_3, duplex);
 }
 
+static esp_err_t set_link(esp_eth_phy_t *phy, eth_link_t link)
+{
+    phy_802_3_t *phy_802_3 = esp_eth_phy_into_phy_802_3(phy);
+    return esp_eth_phy_802_3_set_link(phy_802_3, link);
+}
+
 static esp_err_t init(esp_eth_phy_t *phy)
 {
     phy_802_3_t *phy_802_3 = esp_eth_phy_into_phy_802_3(phy);
@@ -344,6 +350,20 @@ err:
     return ret;
 }
 
+esp_err_t esp_eth_phy_802_3_set_link(phy_802_3_t *phy_802_3, eth_link_t link)
+{
+    esp_err_t ret = ESP_OK;
+    esp_eth_mediator_t *eth = phy_802_3->eth;
+
+    if (phy_802_3->link_status != link) {
+        phy_802_3->link_status = link;
+        // link status changed, inmiedately report to upper layers
+        ESP_GOTO_ON_ERROR(eth->on_state_changed(eth, ETH_STATE_LINK, (void *)phy_802_3->link_status), err, TAG, "change link failed");
+    }
+err:
+    return ret;
+}
+
 esp_err_t esp_eth_phy_802_3_init(phy_802_3_t *phy_802_3)
 {
     return esp_eth_phy_802_3_basic_phy_init(phy_802_3);
@@ -495,6 +515,7 @@ esp_err_t esp_eth_phy_802_3_obj_config_init(phy_802_3_t *phy_802_3, const eth_ph
     phy_802_3->parent.set_speed = set_speed;
     phy_802_3->parent.set_duplex = set_duplex;
     phy_802_3->parent.del = del;
+    phy_802_3->parent.set_link = set_link;
     phy_802_3->parent.get_link = NULL;
     phy_802_3->parent.custom_ioctl = NULL;
 

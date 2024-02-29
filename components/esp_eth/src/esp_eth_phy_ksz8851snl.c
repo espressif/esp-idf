@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: MIT
  *
- * SPDX-FileContributor: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2021-2024 Espressif Systems (Shanghai) CO LTD
  */
 #include <stdlib.h>
 #include "esp_check.h"
@@ -223,6 +223,21 @@ static esp_err_t phy_ksz8851_get_link(esp_eth_phy_t *phy)
     return ksz8851_update_link_duplex_speed(ksz8851);
 }
 
+static esp_err_t phy_ksz8851_set_link(esp_eth_phy_t *phy, eth_link_t link)
+{
+    esp_err_t ret = ESP_OK;
+    phy_ksz8851snl_t *ksz8851 = __containerof(phy, phy_ksz8851snl_t, parent);
+    esp_eth_mediator_t *eth   = ksz8851->eth;
+
+    if (ksz8851->link_status != link) {
+        ksz8851->link_status = link;
+        // link status changed, inmiedately report to upper layers
+        ESP_GOTO_ON_ERROR(eth->on_state_changed(eth, ETH_STATE_LINK, (void *)ksz8851->link_status), err, TAG, "change link failed");
+    }
+err:
+    return ret;
+}
+
 static esp_err_t phy_ksz8851_set_addr(esp_eth_phy_t *phy, uint32_t addr)
 {
     phy_ksz8851snl_t *ksz8851 = __containerof(phy, phy_ksz8851snl_t, parent);
@@ -361,6 +376,7 @@ esp_eth_phy_t *esp_eth_phy_new_ksz8851snl(const eth_phy_config_t *config)
     ksz8851->parent.deinit                  = phy_ksz8851_deinit;
     ksz8851->parent.autonego_ctrl           = phy_ksz8851_autonego_ctrl;
     ksz8851->parent.get_link                = phy_ksz8851_get_link;
+    ksz8851->parent.set_link                = phy_ksz8851_set_link;
     ksz8851->parent.pwrctl                  = phy_ksz8851_pwrctl;
     ksz8851->parent.set_addr                = phy_ksz8851_set_addr;
     ksz8851->parent.get_addr                = phy_ksz8851_get_addr;
