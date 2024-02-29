@@ -10,6 +10,7 @@
 #include "btc/btc_common.h"
 #include "btc/btc_dm.h"
 #include "btc/btc_main.h"
+#include "btc/btc_util.h"
 #include "common/bt_trace.h"
 #include "common/bt_target.h"
 #include "btc/btc_storage.h"
@@ -717,14 +718,14 @@ static void btc_dm_acl_link_stat(tBTA_DM_ACL_LINK_STAT *p_acl_link_stat)
     switch (p_acl_link_stat->event) {
     case BTA_ACL_LINK_STAT_CONN_CMPL: {
         event = ESP_BT_GAP_ACL_CONN_CMPL_STAT_EVT;
-        param.acl_conn_cmpl_stat.stat = p_acl_link_stat->link_act.conn_cmpl.status | ESP_BT_STATUS_BASE_FOR_HCI_ERR;
+        param.acl_conn_cmpl_stat.stat = btc_hci_to_esp_status(p_acl_link_stat->link_act.conn_cmpl.status);
         param.acl_conn_cmpl_stat.handle = p_acl_link_stat->link_act.conn_cmpl.handle;
         memcpy(param.acl_conn_cmpl_stat.bda, p_acl_link_stat->link_act.conn_cmpl.bd_addr, ESP_BD_ADDR_LEN);
         break;
     }
     case BTA_ACL_LINK_STAT_DISCONN_CMPL: {
         event = ESP_BT_GAP_ACL_DISCONN_CMPL_STAT_EVT;
-        param.acl_disconn_cmpl_stat.reason = p_acl_link_stat->link_act.disconn_cmpl.reason | ESP_BT_STATUS_BASE_FOR_HCI_ERR;
+        param.acl_disconn_cmpl_stat.reason = btc_hci_to_esp_status(p_acl_link_stat->link_act.disconn_cmpl.reason);
         param.acl_disconn_cmpl_stat.handle = p_acl_link_stat->link_act.disconn_cmpl.handle;
         memcpy(param.acl_disconn_cmpl_stat.bda, p_acl_link_stat->link_act.disconn_cmpl.bd_addr, ESP_BD_ADDR_LEN);
         break;

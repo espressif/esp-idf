@@ -338,8 +338,11 @@ esp_bt_status_t btc_hci_to_esp_status(uint8_t hci_status)
         case HCI_ERR_ILLEGAL_PARAMETER_FMT:
             esp_status = ESP_BT_STATUS_ERR_ILLEGAL_PARAMETER_FMT;
             break;
+        case HCI_ERR_UNSUPPORTED_VALUE:
+            esp_status = ESP_BT_STATUS_UNSUPPORTED;
+            break;
         default:
-            esp_status = ESP_BT_STATUS_FAIL;
+            esp_status = hci_status | ESP_BT_STATUS_BASE_FOR_HCI_ERR;
             break;
     }
 
