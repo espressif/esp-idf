@@ -453,7 +453,7 @@ UBaseType_t xPortSetInterruptMaskFromISR(void)
     RV_SET_CSR(mstatus, old_mstatus & MSTATUS_MIE);
 #else
     /* When CLIC is supported, all interrupt priority levels less than or equal to the threshold level are masked. */
-    prev_int_level = rv_utils_mask_int_level_lower_than(RVHAL_EXCM_LEVEL);
+    prev_int_level = rv_utils_set_intlevel_regval(RVHAL_EXCM_LEVEL_CLIC);
 #endif /* !SOC_INIT_CLIC_SUPPORTED */
     /**
      * In theory, this function should not return immediately as there is a
@@ -474,7 +474,7 @@ void vPortClearInterruptMaskFromISR(UBaseType_t prev_int_level)
 #if !SOC_INT_CLIC_SUPPORTED
     REG_WRITE(INTERRUPT_CURRENT_CORE_INT_THRESH_REG, prev_int_level);
 #else
-    rv_utils_restore_intlevel(prev_int_level);
+    rv_utils_restore_intlevel_regval(prev_int_level);
 #endif /* SOC_INIT_CLIC_SUPPORTED */
     /**
      * The delay between the moment we unmask the interrupt threshold register

@@ -51,6 +51,19 @@ extern "C" {
 #define RVHAL_INTR_ENABLE_THRESH    1
 #endif /* SOC_INT_CLIC_SUPPORTED */
 
+/* On CLIC, the interrupt threshold is stored in the upper (NLBITS) of the mintthresh register, with the other (8 - NLBITS)
+ * defaulted to 1. We form the interrupt level bits here to avoid doing this at run time */
+#if SOC_INT_CLIC_SUPPORTED
+/* Helper macro to translate absolute interrupt level to CLIC interrupt threshold bits in the mintthresh reg */
+#define CLIC_INT_THRESH(intlevel)       (((((intlevel) << (8 - NLBITS))) | 0x1f) << CLIC_CPU_INT_THRESH_S)
+
+/* Helper macro to set interrupt level RVHAL_EXCM_LEVEL. Used during critical sections */
+#define RVHAL_EXCM_LEVEL_CLIC           (CLIC_INT_THRESH(RVHAL_EXCM_LEVEL - 1))
+
+/* Helper macro to enable interrupts. */
+#define RVHAL_INTR_ENABLE_THRESH_CLIC   (CLIC_INT_THRESH(RVHAL_INTR_ENABLE_THRESH))
+#endif /* SOC_INT_CLIC_SUPPORTED */
+
 /* --------------------------------------------------- CPU Control -----------------------------------------------------
  *
  * ------------------------------------------------------------------------------------------------------------------ */
@@ -189,6 +202,38 @@ FORCE_INLINE_ATTR uint32_t __attribute__((always_inline)) rv_utils_set_intlevel(
     REG_READ(CLIC_INT_THRESH_REG);
     RV_SET_CSR(mstatus, old_mstatus & MSTATUS_MIE);
 
+    return old_thresh;
+}
+
+/* Direct register write version of rv_utils_restore_intlevel(). Used to speed up critical sections. */
+FORCE_INLINE_ATTR void __attribute__((always_inline)) rv_utils_restore_intlevel_regval(uint32_t restoreval)
+{
+    /* This function expects restoreval to be in the format needed to restore the interrupt level with
+     * a single write to the mintthresh register without further manipulations needed.
+     * This is done to quicken up exit for critical sections */
+    REG_WRITE(CLIC_INT_THRESH_REG, restoreval);
+}
+
+/* Direct register write version of rv_utils_set_intlevel(). Used to speed up critical sections. */
+FORCE_INLINE_ATTR uint32_t __attribute__((always_inline)) rv_utils_set_intlevel_regval(uint32_t intlevel)
+{
+    uint32_t old_mstatus = RV_CLEAR_CSR(mstatus, MSTATUS_MIE);
+    uint32_t old_thresh = REG_READ(CLIC_INT_THRESH_REG);
+
+    /* This function expects the interrupt level to be available in the format needed for mintthresh reg.
+     * Providing an absolute interrupt level will result in incorrect behavior.
+     * See CLIC_INT_THRESH() macro for details of how the interrupt level must be provided. */
+    REG_WRITE(CLIC_INT_THRESH_REG, intlevel);
+    /**
+     * After writing the threshold register, the new threshold is not directly taken into account by the CPU.
+     * By executing ~8 nop instructions, or by performing a memory load right now, the previous memory write
+     * operations is forced, making the new threshold active. It is then safe to re-enable MIE bit in mstatus.
+     */
+    REG_READ(CLIC_INT_THRESH_REG);
+    RV_SET_CSR(mstatus, old_mstatus & MSTATUS_MIE);
+
+    /* We return the mintthresh register value and NOT the absolute interrupt threshold level.
+     * This is done to avoid extra bit manipulations during critical sections. */
     return old_thresh;
 }
 
