@@ -5,4 +5,4 @@
  */
 
 #warning "{target}/rom/miniz.h is deprecated, please use (#include "miniz.h") instead"
-#include "../../miniz.h"
+#include "../../../../miniz.h"

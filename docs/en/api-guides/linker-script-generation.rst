@@ -629,4 +629,10 @@ Then the corresponding excerpt from the generated linker script will be as follo
 
     Rule generated from the default scheme entry ``iram -> iram0_text``. Since the default scheme specifies an ``iram -> iram0_text`` entry, it too is placed wherever ``iram0_text`` is referenced by a marker. Since it is a rule generated from the default scheme, it comes first among all other rules collected under the same target name.
 
+.. only:: not esp32c5
+
     The linker script template currently used is :component_file:`esp_system/ld/{IDF_TARGET_PATH_NAME}/sections.ld.in`; the generated output script ``sections.ld`` is put under its build directory.
+
+.. only:: esp32c5
+
+    The linker script template currently used is :component_file:`esp_system/ld/esp32c5/beta3/sections.ld.in`; the generated output script ``sections.ld`` is put under its build directory.

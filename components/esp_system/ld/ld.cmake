@@ -19,8 +19,16 @@ string(REPLACE "\\n" "\n" TEXT "${PREPROCESSED_LINKER_SCRIPT}")
 file(WRITE "${TARGET}" "${TEXT}")
 ]=])
 
+if(CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION)
+    set(target_folder "esp32c5/beta3")
+elseif(CONFIG_IDF_TARGET_ESP32C5_MP_VERSION)
+    set(target_folder "esp32c5/mp")
+else()
+    set(target_folder "${target}")
+endif()
+
 function(preprocess_linker_file name_in name_out out_path)
-    set(script_in "${CMAKE_CURRENT_LIST_DIR}/${target}/${name_in}")
+    set(script_in "${CMAKE_CURRENT_LIST_DIR}/${target_folder}/${name_in}")
     set(script_out "${CMAKE_CURRENT_BINARY_DIR}/ld/${name_out}")
     set(${out_path} ${script_out} PARENT_SCOPE)
 

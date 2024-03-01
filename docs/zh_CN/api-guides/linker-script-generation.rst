@@ -629,4 +629,10 @@
 
     这是根据默认协议条目 ``iram -> iram0_text`` 生成的规则。默认协议指定了 ``iram -> iram0_text`` 条目，因此生成的规则同样也放在被 ``iram0_text`` 标记的地方。由于该规则是根据默认协议生成的，因此在同一目标下收集的所有规则下排在第一位。
 
+.. only:: not esp32c5
+
     目前使用的链接器脚本模板是 :component_file:`esp_system/ld/{IDF_TARGET_PATH_NAME}/sections.ld.in`，生成的脚本存放在构建目录下。
+
+.. only:: esp32c5
+
+    目前使用的链接器脚本模板是 :component_file:`esp_system/ld/esp32c5/beta3/sections.ld.in`，生成的脚本存放在构建目录下。

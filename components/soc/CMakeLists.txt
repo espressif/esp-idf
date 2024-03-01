@@ -1,143 +1,151 @@
 idf_build_get_property(target IDF_TARGET)
 
+if(CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION)
+    set(target_folder "esp32c5/beta3")
+elseif(CONFIG_IDF_TARGET_ESP32C5_MP_VERSION)
+    set(target_folder "esp32c5/mp")
+else()
+    set(target_folder "${target}")
+endif()
+
 # On Linux the soc component is a simple wrapper, without much functionality
 if(NOT ${target} STREQUAL "linux")
     set(srcs "lldesc.c"
              "dport_access_common.c"
-             "${target}/interrupts.c"
-             "${target}/gpio_periph.c"
-             "${target}/uart_periph.c")
+             "${target_folder}/interrupts.c"
+             "${target_folder}/gpio_periph.c"
+             "${target_folder}/uart_periph.c")
 endif()
 
-set(includes "include" "${target}")
+set(includes "include" "${target_folder}")
 
-if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${target}/include")
-    list(APPEND includes "${target}/include")
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${target_folder}/include")
+    list(APPEND includes "${target_folder}/include")
 endif()
 
 if(target STREQUAL "esp32")
-    list(APPEND srcs "${target}/dport_access.c")
+    list(APPEND srcs "${target_folder}/dport_access.c")
 endif()
 
 if(CONFIG_SOC_ADC_SUPPORTED)
-    list(APPEND srcs "${target}/adc_periph.c")
+    list(APPEND srcs "${target_folder}/adc_periph.c")
 endif()
 
 if(CONFIG_SOC_ANA_CMPR_SUPPORTED)
-    list(APPEND srcs "${target}/ana_cmpr_periph.c")
+    list(APPEND srcs "${target_folder}/ana_cmpr_periph.c")
 endif()
 
 if(CONFIG_SOC_DEDICATED_GPIO_SUPPORTED)
-    list(APPEND srcs "${target}/dedic_gpio_periph.c")
+    list(APPEND srcs "${target_folder}/dedic_gpio_periph.c")
 endif()
 
 if(CONFIG_SOC_GDMA_SUPPORTED)
-    list(APPEND srcs "${target}/gdma_periph.c")
+    list(APPEND srcs "${target_folder}/gdma_periph.c")
 endif()
 
 if(CONFIG_SOC_DMA2D_SUPPORTED)
-    list(APPEND srcs "${target}/dma2d_periph.c")
+    list(APPEND srcs "${target_folder}/dma2d_periph.c")
 endif()
 
 if(CONFIG_SOC_GPSPI_SUPPORTED)
-    list(APPEND srcs "${target}/spi_periph.c")
+    list(APPEND srcs "${target_folder}/spi_periph.c")
 endif()
 
 if(CONFIG_SOC_LEDC_SUPPORTED)
-    list(APPEND srcs "${target}/ledc_periph.c")
+    list(APPEND srcs "${target_folder}/ledc_periph.c")
 endif()
 
 if(CONFIG_SOC_PCNT_SUPPORTED)
-    list(APPEND srcs "${target}/pcnt_periph.c")
+    list(APPEND srcs "${target_folder}/pcnt_periph.c")
 endif()
 
 if(CONFIG_SOC_RMT_SUPPORTED)
-    list(APPEND srcs "${target}/rmt_periph.c")
+    list(APPEND srcs "${target_folder}/rmt_periph.c")
 endif()
 
 if(CONFIG_SOC_SDM_SUPPORTED)
-    list(APPEND srcs "${target}/sdm_periph.c")
+    list(APPEND srcs "${target_folder}/sdm_periph.c")
 endif()
 
 if(CONFIG_SOC_I2S_SUPPORTED)
-    list(APPEND srcs "${target}/i2s_periph.c")
+    list(APPEND srcs "${target_folder}/i2s_periph.c")
 endif()
 
 if(CONFIG_SOC_I2C_SUPPORTED)
-    list(APPEND srcs "${target}/i2c_periph.c")
+    list(APPEND srcs "${target_folder}/i2c_periph.c")
 endif()
 
 if(CONFIG_SOC_TEMP_SENSOR_SUPPORTED)
-    list(APPEND srcs "${target}/temperature_sensor_periph.c")
+    list(APPEND srcs "${target_folder}/temperature_sensor_periph.c")
 endif()
 
 if(CONFIG_SOC_GPTIMER_SUPPORTED)
-    list(APPEND srcs "${target}/timer_periph.c")
+    list(APPEND srcs "${target_folder}/timer_periph.c")
 endif()
 
 if(CONFIG_SOC_LCDCAM_SUPPORTED OR CONFIG_SOC_LCD_I80_SUPPORTED)
-    list(APPEND srcs "${target}/lcd_periph.c")
+    list(APPEND srcs "${target_folder}/lcd_periph.c")
 endif()
 
 if(CONFIG_SOC_MIPI_DSI_SUPPORTED)
-    list(APPEND srcs "${target}/mipi_dsi_periph.c")
+    list(APPEND srcs "${target_folder}/mipi_dsi_periph.c")
 endif()
 
 if(CONFIG_SOC_MIPI_CSI_SUPPORTED)
-    list(APPEND srcs "${target}/mipi_csi_periph.c")
+    list(APPEND srcs "${target_folder}/mipi_csi_periph.c")
 endif()
 
 if(CONFIG_SOC_PARLIO_SUPPORTED)
-    list(APPEND srcs "${target}/parlio_periph.c")
+    list(APPEND srcs "${target_folder}/parlio_periph.c")
 endif()
 
 if(CONFIG_SOC_MCPWM_SUPPORTED)
-    list(APPEND srcs "${target}/mcpwm_periph.c")
+    list(APPEND srcs "${target_folder}/mcpwm_periph.c")
 endif()
 
 if(CONFIG_SOC_MPI_SUPPORTED)
-    list(APPEND srcs "${target}/mpi_periph.c")
+    list(APPEND srcs "${target_folder}/mpi_periph.c")
 endif()
 
 if(CONFIG_SOC_SDMMC_HOST_SUPPORTED)
-    list(APPEND srcs "${target}/sdmmc_periph.c")
+    list(APPEND srcs "${target_folder}/sdmmc_periph.c")
 endif()
 
 if(CONFIG_SOC_TOUCH_SENSOR_SUPPORTED)
-    list(APPEND srcs "${target}/touch_sensor_periph.c")
+    list(APPEND srcs "${target_folder}/touch_sensor_periph.c")
 endif()
 
 if(CONFIG_SOC_TWAI_SUPPORTED)
-    list(APPEND srcs "${target}/twai_periph.c")
+    list(APPEND srcs "${target_folder}/twai_periph.c")
 endif()
 
 if(CONFIG_SOC_IEEE802154_SUPPORTED)
     if(NOT target STREQUAL "esp32h4")
-        list(APPEND srcs "${target}/ieee802154_periph.c")
+        list(APPEND srcs "${target_folder}/ieee802154_periph.c")
     endif()
 endif()
 
 if(CONFIG_SOC_USB_OTG_SUPPORTED)
     if(NOT ${target} STREQUAL "esp32p4")
-        list(APPEND srcs "${target}/usb_periph.c"
-                         "${target}/usb_dwc_periph.c")
+        list(APPEND srcs "${target_folder}/usb_periph.c"
+                         "${target_folder}/usb_dwc_periph.c")
     endif()
 endif()
 
 if(CONFIG_SOC_DAC_SUPPORTED)
-    list(APPEND srcs "${target}/dac_periph.c")
+    list(APPEND srcs "${target_folder}/dac_periph.c")
 endif()
 
 if(CONFIG_SOC_RTCIO_PIN_COUNT GREATER 0)
-    list(APPEND srcs "${target}/rtc_io_periph.c")
+    list(APPEND srcs "${target_folder}/rtc_io_periph.c")
 endif()
 
 if(CONFIG_SOC_SDIO_SLAVE_SUPPORTED)
-    list(APPEND srcs "${target}/sdio_slave_periph.c")
+    list(APPEND srcs "${target_folder}/sdio_slave_periph.c")
 endif()
 
 if(CONFIG_SOC_PAU_SUPPORTED)
-    list(APPEND srcs "${target}/system_retention_periph.c")
+    list(APPEND srcs "${target_folder}/system_retention_periph.c")
 endif()
 
 idf_component_register(SRCS ${srcs}
@@ -158,5 +166,5 @@ if(target STREQUAL "esp32")
 endif()
 
 if(NOT CONFIG_IDF_TARGET_LINUX)
-     target_linker_script(${COMPONENT_LIB} INTERFACE "${target}/ld/${target}.peripherals.ld")
+     target_linker_script(${COMPONENT_LIB} INTERFACE "${target_folder}/ld/${target}.peripherals.ld")
 endif()

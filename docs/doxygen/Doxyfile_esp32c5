@@ -1,1 +1,7 @@
+# TODO: IDF-9197 Use beta3 in doc temprory
 INPUT += \
+        $(PROJECT_PATH)/components/soc/$(IDF_TARGET)/beta3/include/soc/soc_caps.h \
+        $(PROJECT_PATH)/components/soc/$(IDF_TARGET)/beta3/include/soc/adc_channel.h \
+        $(PROJECT_PATH)/components/soc/$(IDF_TARGET)/beta3/include/soc/clk_tree_defs.h \
+        $(PROJECT_PATH)/components/soc/$(IDF_TARGET)/beta3/include/soc/gpio_num.h \
+        $(PROJECT_PATH)/components/soc/$(IDF_TARGET)/beta3/include/soc/uart_channel.h \

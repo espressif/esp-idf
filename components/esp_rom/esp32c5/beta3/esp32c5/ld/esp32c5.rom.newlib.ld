@@ -1,3 +1,8 @@
+/*
+ * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 /* ROM function interface esp32c5.rom.newlib.ld for esp32c5
  *
  *
@@ -92,4 +97,3 @@ __swsetup_r = 0x400005cc;
 /* Data (.data, .bss, .rodata) */
 syscall_table_ptr = 0x4087ffd4;
 _global_impure_ptr = 0x4087ffd0;
-
