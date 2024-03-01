@@ -6,6 +6,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <sys/cdefs.h>
+#include <inttypes.h>
 #include "driver/gpio.h"
 #include "driver/spi_master.h"
 #include "esp_attr.h"
@@ -84,7 +85,7 @@ static void *w5500_spi_init(const void *spi_config)
                             NULL, err, TAG, "incorrect SPI frame format (command_bits/address_bits)");
     }
     ESP_GOTO_ON_FALSE(spi_bus_add_device(w5500_config->spi_host_id, &spi_devcfg, &spi->hdl) == ESP_OK, NULL,
-                                            err, TAG, "adding device to SPI host #%d failed", w5500_config->spi_host_id + 1);
+                                            err, TAG, "adding device to SPI host #%i failed", w5500_config->spi_host_id + 1);
     /* create mutex */
     spi->lock = xSemaphoreCreateMutex();
     ESP_GOTO_ON_FALSE(spi->lock, NULL, err, TAG, "create lock failed");
@@ -326,7 +327,7 @@ static esp_err_t w5500_verify_id(emac_w5500_t *emac)
         vTaskDelay(pdMS_TO_TICKS(10));
     }
 
-    ESP_LOGE(TAG, "W5500 version mismatched, expected 0x%02x, got 0x%02x", W5500_CHIP_VERSION, version);
+    ESP_LOGE(TAG, "W5500 version mismatched, expected 0x%02x, got 0x%02" PRIx8, W5500_CHIP_VERSION, version);
     return ESP_ERR_INVALID_VERSION;
 err:
     return ret;
@@ -570,11 +571,11 @@ static esp_err_t emac_w5500_transmit(esp_eth_mac_t *mac, uint8_t *buf, uint32_t 
     uint16_t offset = 0;
 
     ESP_GOTO_ON_FALSE(length <= ETH_MAX_PACKET_SIZE, ESP_ERR_INVALID_ARG, err,
-                        TAG, "frame size is too big (actual %u, maximum %u)", length, ETH_MAX_PACKET_SIZE);
+                        TAG, "frame size is too big (actual %" PRIu32 ", maximum %u)", length, ETH_MAX_PACKET_SIZE);
     // check if there're free memory to store this packet
     uint16_t free_size = 0;
     ESP_GOTO_ON_ERROR(w5500_get_tx_free_size(emac, &free_size), err, TAG, "get free size failed");
-    ESP_GOTO_ON_FALSE(length <= free_size, ESP_ERR_NO_MEM, err, TAG, "free size (%d) < send length (%d)", free_size, length);
+    ESP_GOTO_ON_FALSE(length <= free_size, ESP_ERR_NO_MEM, err, TAG, "free size (%" PRIu16 ") < send length (%" PRIu32 ")", free_size, length);
     // get current write pointer
     ESP_GOTO_ON_ERROR(w5500_read(emac, W5500_REG_SOCK_TX_WR(0), &offset, sizeof(offset)), err, TAG, "read TX WR failed");
     offset = __builtin_bswap16(offset);
@@ -624,7 +625,7 @@ static esp_err_t emac_w5500_alloc_recv_buf(emac_w5500_t *emac, uint8_t **buf, ui
         // frames larger than expected will be truncated
         copy_len = rx_len > *length ? *length : rx_len;
         // runt frames are not forwarded by W5500 (tested on target), but check the length anyway since it could be corrupted at SPI bus
-        ESP_GOTO_ON_FALSE(copy_len >= ETH_MIN_PACKET_SIZE - ETH_CRC_LEN, ESP_ERR_INVALID_SIZE, err, TAG, "invalid frame length %u", copy_len);
+        ESP_GOTO_ON_FALSE(copy_len >= ETH_MIN_PACKET_SIZE - ETH_CRC_LEN, ESP_ERR_INVALID_SIZE, err, TAG, "invalid frame length %" PRIu32, copy_len);
         *buf = malloc(copy_len);
         if (*buf != NULL) {
             emac_w5500_auto_buf_info_t *buff_info = (emac_w5500_auto_buf_info_t *)*buf;
@@ -677,7 +678,7 @@ static esp_err_t emac_w5500_receive(esp_eth_mac_t *mac, uint8_t *buf, uint32_t *
     // 2 bytes of header
     offset += 2;
     // read the payload
-    ESP_GOTO_ON_ERROR(w5500_read_buffer(emac, emac->rx_buffer, copy_len, offset), err, TAG, "read payload failed, len=%d, offset=%d", rx_len, offset);
+    ESP_GOTO_ON_ERROR(w5500_read_buffer(emac, emac->rx_buffer, copy_len, offset), err, TAG, "read payload failed, len=%" PRIu16 ", offset=%" PRIu16, rx_len, offset);
     memcpy(buf, emac->rx_buffer, copy_len);
     offset += rx_len;
     // update read pointer
@@ -782,7 +783,7 @@ static void emac_w5500_task(void *arg)
                                 ESP_LOGE(TAG, "received frame was truncated");
                                 free(buffer);
                             } else {
-                                ESP_LOGD(TAG, "receive len=%u", buf_len);
+                                ESP_LOGD(TAG, "receive len=%" PRIu32, buf_len);
                                 /* pass the buffer to stack (e.g. TCP/IP layer) */
                                 emac->eth->stack_input(emac->eth, buffer, buf_len);
                             }
@@ -791,7 +792,7 @@ static void emac_w5500_task(void *arg)
                             free(buffer);
                         }
                     } else if (frame_len) {
-                        ESP_LOGE(TAG, "invalid combination of frame_len(%u) and buffer pointer(%p)", frame_len, buffer);
+                        ESP_LOGE(TAG, "invalid combination of frame_len(%" PRIu32 ") and buffer pointer(%p)", frame_len, buffer);
                     }
                 } else if (ret == ESP_ERR_NO_MEM) {
                     ESP_LOGE(TAG, "no mem for receive buffer");

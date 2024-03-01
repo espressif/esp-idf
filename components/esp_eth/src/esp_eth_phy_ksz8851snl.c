@@ -242,7 +242,7 @@ static esp_err_t phy_ksz8851_set_addr(esp_eth_phy_t *phy, uint32_t addr)
 {
     phy_ksz8851snl_t *ksz8851 = __containerof(phy, phy_ksz8851snl_t, parent);
     ksz8851->addr             = addr;
-    ESP_LOGD(TAG, "setting PHY addr to %u", addr);
+    ESP_LOGD(TAG, "setting PHY addr to %" PRIu32, addr);
     return ESP_OK;
 }
 

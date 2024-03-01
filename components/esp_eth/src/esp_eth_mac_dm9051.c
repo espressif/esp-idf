@@ -7,6 +7,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <sys/cdefs.h>
+#include <inttypes.h>
 #include "driver/gpio.h"
 #include "driver/spi_master.h"
 #include "esp_attr.h"
@@ -95,7 +96,7 @@ static void *dm9051_spi_init(const void *spi_config)
                             NULL, err, TAG, "incorrect SPI frame format (command_bits/address_bits)");
     }
     ESP_GOTO_ON_FALSE(spi_bus_add_device(dm9051_config->spi_host_id, &spi_devcfg, &spi->hdl) == ESP_OK,
-                                            NULL, err, TAG, "adding device to SPI host #%d failed", dm9051_config->spi_host_id + 1);
+                                            NULL, err, TAG, "adding device to SPI host #%i failed", dm9051_config->spi_host_id + 1);
 
     /* create mutex */
     spi->lock = xSemaphoreCreateMutex();
@@ -632,7 +633,7 @@ static esp_err_t emac_dm9051_transmit(esp_eth_mac_t *mac, uint8_t *buf, uint32_t
     uint8_t tcr = 0;
 
     ESP_GOTO_ON_FALSE(length <= ETH_MAX_PACKET_SIZE, ESP_ERR_INVALID_ARG, err,
-                        TAG, "frame size is too big (actual %u, maximum %u)", length, ETH_MAX_PACKET_SIZE);
+                        TAG, "frame size is too big (actual %" PRIu32 ", maximum %d)", length, ETH_MAX_PACKET_SIZE);
 
     int64_t wait_time =  esp_timer_get_time();
     do {
@@ -698,7 +699,7 @@ static esp_err_t dm9051_get_recv_byte_count(emac_dm9051_t *emac, uint16_t *size)
         if (header.status & 0xBF) {
             /* erroneous frames should not be forwarded by DM9051, however, if it happens, just skip it */
             dm9051_skip_recv_frame(emac, rx_len);
-            ESP_GOTO_ON_FALSE(false, ESP_FAIL, err, TAG, "receive status error: %xH", header.status);
+            ESP_GOTO_ON_FALSE(false, ESP_FAIL, err, TAG, "receive status error: %" PRIx8 "H", header.status);
         }
         *size = rx_len;
     }
@@ -733,7 +734,7 @@ static esp_err_t dm9051_alloc_recv_buf(emac_dm9051_t *emac, uint8_t **buf, uint3
     // frames larger than expected will be truncated
     uint16_t copy_len = rx_len > *length ? *length : rx_len;
     // runt frames are not forwarded, but check the length anyway since it could be corrupted at SPI bus
-    ESP_GOTO_ON_FALSE(copy_len >= ETH_MIN_PACKET_SIZE - ETH_CRC_LEN, ESP_ERR_INVALID_SIZE, err, TAG, "invalid frame length %u", copy_len);
+    ESP_GOTO_ON_FALSE(copy_len >= ETH_MIN_PACKET_SIZE - ETH_CRC_LEN, ESP_ERR_INVALID_SIZE, err, TAG, "invalid frame length %" PRIu16, copy_len);
     *buf = malloc(copy_len);
     if (*buf != NULL) {
         dm9051_auto_buf_info_t *buff_info = (dm9051_auto_buf_info_t *)*buf;
@@ -876,7 +877,7 @@ static void emac_dm9051_task(void *arg)
                                 ESP_LOGE(TAG, "received frame was truncated");
                                 free(buffer);
                             } else {
-                                ESP_LOGD(TAG, "receive len=%u", buf_len);
+                                ESP_LOGD(TAG, "receive len=%" PRIu32, buf_len);
                                 /* pass the buffer to stack (e.g. TCP/IP layer) */
                                 emac->eth->stack_input(emac->eth, buffer, buf_len);
                             }
@@ -886,7 +887,7 @@ static void emac_dm9051_task(void *arg)
                             free(buffer);
                         }
                     } else if (frame_len) {
-                        ESP_LOGE(TAG, "invalid combination of frame_len(%u) and buffer pointer(%p)", frame_len, buffer);
+                        ESP_LOGE(TAG, "invalid combination of frame_len(%" PRIu32 ") and buffer pointer(%p)", frame_len, buffer);
                     }
                 } else if (ret == ESP_ERR_NO_MEM) {
                     ESP_LOGE(TAG, "no mem for receive buffer");

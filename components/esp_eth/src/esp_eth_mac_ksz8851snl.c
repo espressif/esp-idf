@@ -7,6 +7,7 @@
  */
 
 #include <string.h>
+#include <inttypes.h>
 #include "esp_log.h"
 #include "esp_check.h"
 #include "esp_cpu.h"
@@ -103,7 +104,7 @@ static void *ksz8851_spi_init(const void *spi_config)
 
     // SPI device init
     ESP_GOTO_ON_FALSE(spi_bus_add_device(ksz8851snl_config->spi_host_id, ksz8851snl_config->spi_devcfg, &spi->hdl) == ESP_OK, NULL,
-                                            err, TAG, "adding device to SPI host #%d failed", ksz8851snl_config->spi_host_id + 1);
+                                            err, TAG, "adding device to SPI host #%i failed", ksz8851snl_config->spi_host_id + 1);
     ret = spi;
     return ret;
 err:
@@ -203,7 +204,7 @@ static esp_err_t ksz8851_read_reg(emac_ksz8851snl_t *emac, uint32_t reg_addr, ui
         ret = ESP_ERR_TIMEOUT;
     }
     ksz8851_mutex_unlock(emac);
-    ESP_LOGV(TAG, "reading reg 0x%02x == 0x%02x", reg_addr, *value);
+    ESP_LOGV(TAG, "reading reg 0x%02" PRIx32 " = 0x%02" PRIx16, reg_addr, *value);
 
 err:
     return ret;
@@ -213,7 +214,7 @@ static esp_err_t ksz8851_write_reg(emac_ksz8851snl_t *emac, uint32_t reg_addr, u
 {
     esp_err_t ret = ESP_OK;
     ESP_GOTO_ON_FALSE((reg_addr & ~KSZ8851_VALID_ADDRESS_MASK) == 0U, ESP_ERR_INVALID_ARG, err, TAG, "address is out of bounds");
-    ESP_LOGV(TAG, "writing reg 0x%02x = 0x%02x", reg_addr, value);
+    ESP_LOGV(TAG, "writing reg 0x%02" PRIx32 " = 0x%02" PRIx16, reg_addr, value);
 
     // NOTE(v.chistyakov): select upper or lower word inside a dword
     const unsigned byte_mask = 0x3U << (KSZ8851_SPI_BYTE_MASK_SHIFT + (reg_addr & 0x2U));
@@ -236,9 +237,9 @@ static esp_err_t ksz8851_set_bits(emac_ksz8851snl_t *emac, uint32_t address, uin
 {
     esp_err_t ret = ESP_OK;
     uint16_t old;
-    ESP_GOTO_ON_ERROR(ksz8851_read_reg(emac, address, &old), err, TAG, "failed to read reg 0x%x", address);
+    ESP_GOTO_ON_ERROR(ksz8851_read_reg(emac, address, &old), err, TAG, "failed to read reg 0x%" PRIx32, address);
     old |= value;
-    ESP_GOTO_ON_ERROR(ksz8851_write_reg(emac, address, old), err, TAG, "failed to write reg 0x%x", address);
+    ESP_GOTO_ON_ERROR(ksz8851_write_reg(emac, address, old), err, TAG, "failed to write reg 0x%" PRIx32, address);
 err:
     return ret;
 }
@@ -247,9 +248,9 @@ static esp_err_t ksz8851_clear_bits(emac_ksz8851snl_t *emac, uint32_t address, u
 {
     esp_err_t ret = ESP_OK;
     uint16_t old;
-    ESP_GOTO_ON_ERROR(ksz8851_read_reg(emac, address, &old), err, TAG, "failed to read reg 0x%x", address);
+    ESP_GOTO_ON_ERROR(ksz8851_read_reg(emac, address, &old), err, TAG, "failed to read reg 0x%" PRIx32, address);
     old &= ~value;
-    ESP_GOTO_ON_ERROR(ksz8851_write_reg(emac, address, old), err, TAG, "failed to write reg 0x%x", address);
+    ESP_GOTO_ON_ERROR(ksz8851_write_reg(emac, address, old), err, TAG, "failed to write reg 0x%" PRIx32, address);
 err:
     return ret;
 }
@@ -288,7 +289,7 @@ static esp_err_t init_verify_chipid(emac_ksz8851snl_t *emac)
     uint8_t family_id = (id & CIDER_FAMILY_ID_MASK) >> CIDER_FAMILY_ID_SHIFT;
     uint8_t chip_id   = (id & CIDER_CHIP_ID_MASK) >> CIDER_CHIP_ID_SHIFT;
     uint8_t revision  = (id & CIDER_REVISION_ID_MASK) >> CIDER_REVISION_ID_SHIFT;
-    ESP_LOGI(TAG, "Family ID = 0x%x\t Chip ID = 0x%x\t Revision ID = 0x%x", family_id, chip_id, revision);
+    ESP_LOGI(TAG, "Family ID = 0x%" PRIx8 "\t Chip ID = 0x%" PRIx8 "\t Revision ID = 0x%" PRIx8, family_id, chip_id, revision);
     ESP_GOTO_ON_FALSE(family_id == CIDER_KSZ8851SNL_FAMILY_ID, ESP_FAIL, err, TAG, "wrong family id");
     ESP_GOTO_ON_FALSE(chip_id == CIDER_KSZ8851SNL_CHIP_ID, ESP_FAIL, err, TAG, "wrong chip id");
     return ESP_OK;
@@ -400,7 +401,7 @@ static esp_err_t emac_ksz8851snl_transmit(esp_eth_mac_t *mac, uint8_t *buf, uint
 {
     static unsigned s_frame_id = 0U;
 
-    ESP_LOGV(TAG, "transmitting frame of size %u", length);
+    ESP_LOGV(TAG, "transmitting frame of size %" PRIu32, length);
     esp_err_t ret           = ESP_OK;
     emac_ksz8851snl_t *emac = __containerof(mac, emac_ksz8851snl_t, parent);
     // Lock SPI since once `SDA Start DMA Access` bit is set, all registers access are disabled.
@@ -409,13 +410,13 @@ static esp_err_t emac_ksz8851snl_transmit(esp_eth_mac_t *mac, uint8_t *buf, uint
     }
 
     ESP_GOTO_ON_FALSE(length <= KSZ8851_QMU_PACKET_LENGTH, ESP_ERR_INVALID_ARG, err,
-                        TAG, "frame size is too big (actual %u, maximum %u)", length, ETH_MAX_PACKET_SIZE);
+                        TAG, "frame size is too big (actual %" PRIu32 ", maximum %d)", length, ETH_MAX_PACKET_SIZE);
     // NOTE(v.chistyakov): 4 bytes header + length aligned to 4 bytes
     unsigned transmit_length = 4U + ((length + 3U) & ~0x3U);
 
     uint16_t free_space;
     ESP_GOTO_ON_ERROR(ksz8851_read_reg(emac, KSZ8851_TXMIR, &free_space), err, TAG, "TXMIR read failed");
-    ESP_GOTO_ON_FALSE(transmit_length <= free_space, ESP_FAIL, err, TAG, "TXQ free space (%d) < send length (%d)", free_space,
+    ESP_GOTO_ON_FALSE(transmit_length <= free_space, ESP_FAIL, err, TAG, "TXQ free space (%" PRIu16 ") < send length (%" PRIu16 ")", free_space,
                       transmit_length);
 
     emac->tx_buffer[0] = ++s_frame_id & TXSR_TXFID_MASK;
@@ -474,7 +475,7 @@ static esp_err_t emac_ksz8851_alloc_recv_buf(emac_ksz8851snl_t *emac, uint8_t **
     // frames larger than expected will be truncated
     uint16_t copy_len = rx_len > *length ? *length : rx_len;
     // runt frames are not forwarded, but check the length anyway since it could be corrupted at SPI bus
-    ESP_GOTO_ON_FALSE(copy_len >= ETH_MIN_PACKET_SIZE - ETH_CRC_LEN, ESP_ERR_INVALID_SIZE, err, TAG, "invalid frame length %u", copy_len);
+    ESP_GOTO_ON_FALSE(copy_len >= ETH_MIN_PACKET_SIZE - ETH_CRC_LEN, ESP_ERR_INVALID_SIZE, err, TAG, "invalid frame length %" PRIu16, copy_len);
     *buf = malloc(copy_len);
     if (*buf != NULL) {
         ksz8851_auto_buf_info_t *buff_info = (ksz8851_auto_buf_info_t *)*buf;
@@ -789,7 +790,7 @@ static void emac_ksz8851snl_task(void *arg)
                                 ESP_LOGE(TAG, "received frame was truncated");
                                 free(buffer);
                             } else {
-                                ESP_LOGD(TAG, "receive len=%u", buf_len);
+                                ESP_LOGD(TAG, "receive len=%" PRIu32, buf_len);
                                 /* pass the buffer to stack (e.g. TCP/IP layer) */
                                 emac->eth->stack_input(emac->eth, buffer, buf_len);
                             }
@@ -799,7 +800,7 @@ static void emac_ksz8851snl_task(void *arg)
                             free(buffer);
                         }
                     } else if (frame_len) {
-                        ESP_LOGE(TAG, "invalid combination of frame_len(%u) and buffer pointer(%p)", frame_len, buffer);
+                        ESP_LOGE(TAG, "invalid combination of frame_len(%" PRIu32 ") and buffer pointer(%p)", frame_len, buffer);
                     }
                 } else if (ret == ESP_ERR_NO_MEM) {
                     ESP_LOGE(TAG, "no mem for receive buffer");

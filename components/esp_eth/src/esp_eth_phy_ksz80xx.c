@@ -1,11 +1,12 @@
 /*
- * SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <string.h>
 #include <stdlib.h>
 #include <sys/cdefs.h>
+#include <inttypes.h>
 #include "esp_log.h"
 #include "esp_check.h"
 #include "esp_eth_phy_802_3.h"
@@ -74,7 +75,7 @@ static esp_err_t ksz80xx_update_link_duplex_speed(phy_ksz80xx_t * ksz80xx)
         /* when link up, read negotiation result */
         if (link == ETH_LINK_UP) {
             uint32_t reg_value = 0;
-            ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, addr, ksz80xx->op_mode_reg, &reg_value), err, TAG, "read %#04x failed", ksz80xx->op_mode_reg);
+            ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, addr, ksz80xx->op_mode_reg, &reg_value), err, TAG, "read %#04" PRIx32 " failed", ksz80xx->op_mode_reg);
             uint8_t op_mode = (reg_value >> ksz80xx->op_mode_offset) & 0x07;
             switch (op_mode) {
             case 1: //10Base-T half-duplex
@@ -170,7 +171,7 @@ static esp_err_t ksz80xx_init(esp_eth_phy_t *phy)
             break;
         }
     }
-    ESP_GOTO_ON_FALSE(supported_model_name != NULL && ksz80xx_init_model(ksz80xx), ESP_FAIL, err, TAG, "unsupported model number: %#04x", ksz80xx->model_number);
+    ESP_GOTO_ON_FALSE(supported_model_name != NULL && ksz80xx_init_model(ksz80xx), ESP_FAIL, err, TAG, "unsupported model number: %#04" PRIx8, ksz80xx->model_number);
     ESP_LOGI(TAG, "auto detected phy KSZ80%s", supported_model_name);
     return ESP_OK;
 err:
