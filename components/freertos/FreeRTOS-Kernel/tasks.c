@@ -3319,7 +3319,7 @@ BaseType_t xTaskIncrementTick( void )
             {
                 /* Guard against the tick hook being called when the pended tick
                  * count is being unwound (when the scheduler is being unlocked). */
-                if( xPendedTicksTemp == ( TickType_t ) 0 )
+                if( xPendedTicks == ( TickType_t ) 0 )
                 {
                     xCallTickHook = pdTRUE;
                 }
