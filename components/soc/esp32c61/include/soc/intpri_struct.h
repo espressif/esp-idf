@@ -116,7 +116,7 @@ typedef struct {
     volatile intpri_rnd_eco_high_reg_t rnd_eco_high;
 } intpri_dev_t;
 
-extern intpri_dev_t INTPRI_REG;
+extern intpri_dev_t INTPRI;
 
 #ifndef __cplusplus
 _Static_assert(sizeof(intpri_dev_t) == 0x400, "Invalid size of intpri_dev_t structure");
