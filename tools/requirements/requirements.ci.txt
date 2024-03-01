@@ -9,3 +9,4 @@ junit_xml
 python-gitlab
 pyyaml
 SimpleWebSocketServer
+minio
