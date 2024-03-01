@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stdatomic.h>
 #include "esp_openthread_radio.h"
 
 #include "error.h"
@@ -51,7 +52,7 @@ typedef struct {
 typedef struct {
     uint8_t head;
     uint8_t tail;
-    uint8_t used;
+    atomic_uint_fast8_t used;
 } esp_openthread_circular_queue_info_t;
 
 static otRadioFrame s_transmit_frame;
@@ -216,7 +217,7 @@ esp_err_t esp_openthread_radio_process(otInstance *aInstance, const esp_openthre
         otPlatRadioEnergyScanDone(aInstance, s_ed_power);
     }
 
-    while (s_recv_queue.used) {
+    while (atomic_load(&s_recv_queue.used)) {
         if (s_receive_frame[s_recv_queue.head].mPsdu != NULL) {
 #if OPENTHREAD_CONFIG_DIAG_ENABLE
             if (otPlatDiagModeGet()) {
@@ -229,7 +230,7 @@ esp_err_t esp_openthread_radio_process(otInstance *aInstance, const esp_openthre
             esp_ieee802154_receive_handle_done(s_receive_frame[s_recv_queue.head].mPsdu - 1);
             s_receive_frame[s_recv_queue.head].mPsdu = NULL;
             s_recv_queue.head = (s_recv_queue.head + 1) % CONFIG_IEEE802154_RX_BUFFER_SIZE;
-            s_recv_queue.used--;
+            atomic_fetch_sub(&s_recv_queue.used, 1);
         }
     }
 
@@ -681,7 +682,7 @@ void IRAM_ATTR esp_ieee802154_receive_done(uint8_t *data, esp_ieee802154_frame_i
     otRadioFrame ot_frame;
     ot_frame.mPsdu = data + 1;
 
-    if (s_recv_queue.used == CONFIG_IEEE802154_RX_BUFFER_SIZE) {
+    if (atomic_load(&s_recv_queue.used) == CONFIG_IEEE802154_RX_BUFFER_SIZE) {
         ESP_EARLY_LOGE(OT_PLAT_LOG_TAG, "radio receive buffer full!");
         return;
     }
@@ -699,7 +700,7 @@ void IRAM_ATTR esp_ieee802154_receive_done(uint8_t *data, esp_ieee802154_frame_i
     s_with_security_enh_ack = false;
 #endif // OPENTHREAD_CONFIG_THREAD_VERSION >= OT_THREAD_VERSION_1_2
     s_recv_queue.tail = (s_recv_queue.tail + 1) % CONFIG_IEEE802154_RX_BUFFER_SIZE;
-    s_recv_queue.used++;
+    atomic_fetch_add(&s_recv_queue.used, 1);
     set_event(EVENT_RX_DONE);
 }
 
