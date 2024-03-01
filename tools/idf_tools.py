@@ -27,7 +27,6 @@
 # * To start using the tools, run `eval "$(idf_tools.py export)"` — this will update
 #   the PATH to point to the installed tools and set up other environment variables
 #   needed by the tools.
-
 import argparse
 import contextlib
 import copy
@@ -44,7 +43,8 @@ import subprocess
 import sys
 import tarfile
 import time
-from collections import OrderedDict, namedtuple
+from collections import namedtuple
+from collections import OrderedDict
 from ssl import SSLContext  # noqa: F401
 from tarfile import TarFile  # noqa: F401
 from zipfile import ZipFile
@@ -1046,7 +1046,7 @@ def dump_tools_json(tools_info):  # type: ignore
     return json.dumps(file_json, indent=2, separators=(',', ': '), sort_keys=True)
 
 
-def get_python_env_path():  # type: () -> Tuple[str, str, str]
+def get_python_env_path():  # type: () -> Tuple[str, str, str, str]
     python_ver_major_minor = '{}.{}'.format(sys.version_info.major, sys.version_info.minor)
 
     version_file_path = os.path.join(global_idf_path, 'version.txt')  # type: ignore
@@ -1097,7 +1097,7 @@ def get_python_env_path():  # type: () -> Tuple[str, str, str]
     idf_python_export_path = os.path.join(idf_python_env_path, subdir)
     virtualenv_python = os.path.join(idf_python_export_path, python_exe)
 
-    return idf_python_env_path, idf_python_export_path, virtualenv_python
+    return idf_python_env_path, idf_python_export_path, virtualenv_python, idf_version
 
 
 def get_idf_env():  # type: () -> Any
@@ -1314,13 +1314,16 @@ def action_export(args):  # type: ignore
                 export_vars[k] = v
 
     current_path = os.getenv('PATH')
-    idf_python_env_path, idf_python_export_path, virtualenv_python = get_python_env_path()
+    idf_python_env_path, idf_python_export_path, virtualenv_python, idf_version = get_python_env_path()
     if os.path.exists(virtualenv_python):
         idf_python_env_path = to_shell_specific_paths([idf_python_env_path])[0]
         if os.getenv('IDF_PYTHON_ENV_PATH') != idf_python_env_path:
             export_vars['IDF_PYTHON_ENV_PATH'] = to_shell_specific_paths([idf_python_env_path])[0]
         if idf_python_export_path not in current_path:
             paths_to_export.append(idf_python_export_path)
+
+    if os.getenv('ESP_IDF_VERSION') != idf_version:
+        export_vars['ESP_IDF_VERSION'] = idf_version
 
     idf_tools_dir = os.path.join(global_idf_path, 'tools')
     idf_tools_dir = to_shell_specific_paths([idf_tools_dir])[0]
@@ -1554,7 +1557,7 @@ def get_wheels_dir():  # type: () -> Optional[str]
 
 def action_install_python_env(args):  # type: ignore
     reinstall = args.reinstall
-    idf_python_env_path, _, virtualenv_python = get_python_env_path()
+    idf_python_env_path, _, virtualenv_python, _ = get_python_env_path()
 
     is_virtualenv = hasattr(sys, 'real_prefix') or (hasattr(sys, 'base_prefix') and sys.base_prefix != sys.prefix)
     if is_virtualenv and (not os.path.exists(idf_python_env_path) or reinstall):
