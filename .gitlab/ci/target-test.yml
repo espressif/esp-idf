@@ -24,7 +24,7 @@
       junit: XUNIT_RESULT.xml
     expire_in: 1 week
   script:
-    - retry_failed git clone $KNOWN_FAILURE_CASES_REPO known_failure_cases
+    - python tools/ci/get_known_failure_cases_file.py
     # get runner env config file
     - retry_failed git clone $TEST_ENV_CONFIG_REPO
     - python $CHECKOUT_REF_SCRIPT ci-test-runner-configs ci-test-runner-configs
@@ -32,7 +32,7 @@
     # Runner tags are comma separated, replace the comma with " and " for markers
     - job_tags=$(python tools/ci/python_packages/gitlab_api.py get_job_tags $CI_PROJECT_ID --job_id $CI_JOB_ID)
     - markers=$(echo $job_tags | sed -e "s/,/ and /g")
-    - run_cmd pytest $TEST_DIR -m \"${markers}\" --junitxml=XUNIT_RESULT.xml --known-failure-cases-file known_failure_cases/known_failure_cases.txt
+    - run_cmd pytest $TEST_DIR -m \"${markers}\" --junitxml=XUNIT_RESULT.xml --known-failure-cases-file ${KNOWN_FAILURE_CASES_FILE_NAME}
 
 .pytest_examples_dir_template:
   extends: .pytest_template
@@ -550,10 +550,10 @@ test_app_test_pytest_esp32s3_mspi_f4r4:
     - retry_failed git clone $TEST_ENV_CONFIG_REPO
     - python $CHECKOUT_REF_SCRIPT ci-test-runner-configs ci-test-runner-configs
     # git clone the known failure cases repo, run test
-    - retry_failed git clone $KNOWN_FAILURE_CASES_REPO known_failure_cases
+    - python tools/ci/get_known_failure_cases_file.py
     # run test
     - cd tools/ci/python_packages/tiny_test_fw/bin
-    - run_cmd python Runner.py $TEST_CASE_PATH -c $CONFIG_FILE -e $ENV_FILE --known_failure_cases_file $CI_PROJECT_DIR/known_failure_cases/known_failure_cases.txt
+    - run_cmd python Runner.py $TEST_CASE_PATH -c $CONFIG_FILE -e $ENV_FILE --known_failure_cases_file $CI_PROJECT_DIR/${KNOWN_FAILURE_CASES_FILE_NAME}
 
 .example_test_template:
   extends: .target_test_job_template

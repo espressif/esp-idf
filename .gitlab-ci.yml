@@ -96,6 +96,9 @@ variables:
   # This is used only if CI_PYTHON_TOOL_REPO is not empty.
   CI_PYTHON_TOOL_BRANCH: ""
 
+  # Set this variable to specify the file name for the known failure cases.
+  KNOWN_FAILURE_CASES_FILE_NAME: "5.0.txt"
+
   IDF_CI_BUILD: 1
 
 cache:
