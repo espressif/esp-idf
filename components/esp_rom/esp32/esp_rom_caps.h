@@ -14,3 +14,4 @@
 #define ESP_ROM_NEEDS_SWSETUP_WORKAROUND    (1) // ROM uses 32-bit time_t. A workaround is required to prevent printf functions from crashing
 #define ESP_ROM_HAS_NEWLIB_NANO_FORMAT  (1) // ROM has the newlib nano version of formatting functions
 #define ESP_ROM_HAS_SW_FLOAT            (1) // ROM has libgcc software floating point emulation functions
+#define ESP_ROM_USB_SERIAL_DEVICE_NUM       (-1) // No USB_SERIAL_JTAG in the ROM, set -1 for Kconfig usage.

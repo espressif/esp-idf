@@ -299,6 +299,9 @@ menu "ESP System Settings"
         default 0 if ESP_CONSOLE_UART_DEFAULT
         default 0 if ESP_CONSOLE_UART_CUSTOM_NUM_0
         default 1 if ESP_CONSOLE_UART_CUSTOM_NUM_1
+        default 0 if ESP_CONSOLE_NONE
+        # Temporarily workaround for serial_jtag usage.
+        default ESP_ROM_USB_SERIAL_DEVICE_NUM if ESP_CONSOLE_USB_SERIAL_JTAG
         default -1 if !ESP_CONSOLE_UART
 
     config ESP_CONSOLE_UART_TX_GPIO

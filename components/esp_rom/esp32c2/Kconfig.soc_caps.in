@@ -70,3 +70,7 @@ config ESP_ROM_HAS_MBEDTLS_CRYPTO_LIB
 config ESP_ROM_HAS_SW_FLOAT
     bool
     default y
+
+config ESP_ROM_USB_SERIAL_DEVICE_NUM
+    int
+    default -1

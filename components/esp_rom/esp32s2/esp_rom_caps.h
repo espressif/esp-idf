@@ -15,3 +15,4 @@
 #define ESP_ROM_USB_OTG_NUM                 (3) // The serial port ID (UART, USB, ...) of USB_OTG CDC in the ROM.
 #define ESP_ROM_HAS_FLASH_COUNT_PAGES_BUG   (1) // ROM api Cache_Count_Flash_Pages will return unexpected value
 #define ESP_ROM_HAS_SW_FLOAT            (1) // ROM has libgcc software floating point emulation functions
+#define ESP_ROM_USB_SERIAL_DEVICE_NUM       (-1) // No USB_SERIAL_JTAG in the ROM, set -1 for Kconfig usage.
