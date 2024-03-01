@@ -18,7 +18,6 @@
 #include "test_board.h"
 #include "esp_sleep.h"
 #include "esp_private/sleep_cpu.h"
-#include "esp_ieee802154.h"
 #include "esp_pm.h"
 
 #define DATA_LENGTH 100
@@ -69,7 +68,6 @@ static void i2c_master_write_sleep_retention_test(void)
     TEST_ESP_OK(i2c_master_transmit(dev_handle, data_wr, DATA_LENGTH, -1));
     unity_wait_for_signal("i2c slave receive once, master to sleep");
 
-    TEST_ESP_OK(esp_ieee802154_enable());
     TEST_ESP_OK(sleep_cpu_configure(true));
     TEST_ESP_OK(esp_sleep_enable_timer_wakeup(3 * 1000 * 1000));
     TEST_ESP_OK(esp_light_sleep_start());
@@ -87,7 +85,6 @@ static void i2c_master_write_sleep_retention_test(void)
 
     unity_wait_for_signal("ready to delete");
     TEST_ESP_OK(sleep_cpu_configure(false));
-    TEST_ESP_OK(esp_ieee802154_disable());
     TEST_ESP_OK(i2c_master_bus_rm_device(dev_handle));
 
     TEST_ESP_OK(i2c_del_master_bus(bus_handle));
@@ -131,7 +128,6 @@ static void i2c_slave_read_sleep_retention_test(void)
 
     unity_send_signal("i2c slave receive once, master to sleep");
     // Slave sleep as well..
-    TEST_ESP_OK(esp_ieee802154_enable());
     TEST_ESP_OK(sleep_cpu_configure(true));
     TEST_ESP_OK(esp_sleep_enable_timer_wakeup(1 * 1000 * 1000));
     TEST_ESP_OK(esp_light_sleep_start());
@@ -152,7 +148,6 @@ static void i2c_slave_read_sleep_retention_test(void)
     vQueueDelete(s_receive_queue);
     unity_send_signal("ready to delete");
     TEST_ESP_OK(sleep_cpu_configure(false));
-    TEST_ESP_OK(esp_ieee802154_disable());
     TEST_ESP_OK(i2c_del_slave_device(slave_handle));
 }
 
