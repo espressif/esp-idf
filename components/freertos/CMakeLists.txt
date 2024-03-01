@@ -82,6 +82,7 @@ else()
 
         set(include_dirs
             FreeRTOS-Kernel/include
+            FreeRTOS-Kernel/include/freertos
             esp_additions/include/freertos          # For files with #include "FreeRTOSConfig.h"
             FreeRTOS-Kernel/portable/xtensa/include # For arch-specific FreeRTOSConfig_arch.h in portable/<arch>/include
             esp_additions/include)                  # For files with #include "freertos/FreeRTOSConfig.h"
