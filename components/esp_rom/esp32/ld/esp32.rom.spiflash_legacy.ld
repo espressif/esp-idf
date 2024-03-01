@@ -1,4 +1,9 @@
 /*
+ * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/*
 	Address table for SPI driver functions in ESP32 ROM.
 	These functions are only linked from ROM when SPI_FLASH_ROM_DRIVER_PATCH is not set in configuration.
 */

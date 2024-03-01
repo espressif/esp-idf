@@ -422,7 +422,6 @@ components/esp_rom/esp32/ld/esp32.rom.newlib-locale.ld
 components/esp_rom/esp32/ld/esp32.rom.newlib-nano.ld
 components/esp_rom/esp32/ld/esp32.rom.newlib-time.ld
 components/esp_rom/esp32/ld/esp32.rom.redefined.ld
-components/esp_rom/esp32/ld/esp32.rom.spiflash.ld
 components/esp_rom/esp32/ld/esp32.rom.syscalls.ld
 components/esp_rom/esp32c3/ld/esp32c3.rom.api.ld
 components/esp_rom/esp32c3/ld/esp32c3.rom.eco3.ld
@@ -437,7 +436,6 @@ components/esp_rom/esp32s2/ld/esp32s2.rom.libgcc.ld
 components/esp_rom/esp32s2/ld/esp32s2.rom.newlib-data.ld
 components/esp_rom/esp32s2/ld/esp32s2.rom.newlib-funcs.ld
 components/esp_rom/esp32s2/ld/esp32s2.rom.newlib-nano.ld
-components/esp_rom/esp32s2/ld/esp32s2.rom.spiflash.ld
 components/esp_rom/esp32s3/ld/esp32s3.rom.api.ld
 components/esp_rom/esp32s3/ld/esp32s3.rom.ld
 components/esp_rom/esp32s3/ld/esp32s3.rom.libgcc.ld
