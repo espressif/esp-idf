@@ -295,7 +295,7 @@ function(__kconfig_generate_config sdkconfig sdkconfig_defaults)
 
         set(MENUCONFIG_CMD ${mconf})
     else()
-        set(MENUCONFIG_CMD ${python} -m menuconfig)
+        set(MENUCONFIG_CMD ${python} ${idf_path}/tools/kconfig_new/menuconfig_wrapper.py)
         set(TERM_CHECK_CMD ${python} ${idf_path}/tools/check_term.py)
     endif()
 
