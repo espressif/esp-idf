@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,11 +18,11 @@ a definition for vApplicationTickHook(). Thus this test cannot be run.
 #include "unity.h"
 #include "test_utils.h"
 
-#ifndef CONFIG_FREERTOS_SMP
+#if !CONFIG_FREERTOS_SMP
 /*
 Test FreeRTOS idle hook. Only compiled in if FreeRTOS idle hooks are enabled.
 */
-#if ( configUSE_IDLE_HOOK == 1 )
+#if CONFIG_FREERTOS_USE_IDLE_HOOK
 
 static volatile unsigned idle_count;
 
@@ -38,12 +38,12 @@ TEST_CASE("FreeRTOS idle hook", "[freertos]")
     TEST_ASSERT_NOT_EQUAL(0, idle_count); // The legacy idle hook should be called at least once
 }
 
-#endif // configUSE_IDLE_HOOK
+#endif // CONFIG_FREERTOS_USE_IDLE_HOOK
 
 /*
 Test the FreeRTOS tick hook. Only compiled in if FreeRTOS tick hooks are enabled.
 */
-#if ( configUSE_TICK_HOOK == 1 )
+#if CONFIG_FREERTOS_USE_TICK_HOOK
 
 static volatile unsigned tick_count;
 
@@ -62,8 +62,8 @@ TEST_CASE("FreeRTOS tick hook", "[freertos]")
                                       "The FreeRTOS tick hook should have been called approx 1 time per tick per CPU");
 }
 
-#endif // configUSE_TICK_HOOK
-#endif // CONFIG_FREERTOS_SMP
+#endif // CONFIG_FREERTOS_USE_TICK_HOOK
+#endif // !CONFIG_FREERTOS_SMP
 
 #if CONFIG_FREERTOS_TASK_PRE_DELETION_HOOK
 
