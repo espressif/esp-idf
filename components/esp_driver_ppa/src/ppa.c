@@ -55,9 +55,17 @@ typedef struct ppa_engine_t ppa_engine_t;
 
 typedef struct ppa_invoker_t ppa_invoker_t;
 
-typedef ppa_sr_trans_config_t ppa_sr_transaction_t;
+typedef struct {
+    PPA_SR_TRANS_CONFIG;
+    uint32_t scale_x_int;
+    uint32_t scale_x_frag;
+    uint32_t scale_y_int;
+    uint32_t scale_y_frag;
+} ppa_sr_transaction_t;
 
 typedef ppa_blend_trans_config_t ppa_blend_transaction_t;
+
+typedef ppa_fill_trans_config_t ppa_fill_transaction_t;
 
 typedef struct ppa_trans_s {
     STAILQ_ENTRY(ppa_trans_s) entry; // link entry
@@ -71,7 +79,8 @@ typedef struct {
     union {
         ppa_sr_transaction_t *sr_desc;
         ppa_blend_transaction_t *blend_desc;
-        // ppa_fill_transaction_t
+        ppa_fill_transaction_t *fill_desc;
+        void *op_desc;
     };
     ppa_engine_t *ppa_engine;
     ppa_trans_t *trans_elm;
@@ -146,18 +155,19 @@ static esp_err_t ppa_engine_acquire(const ppa_engine_config_t *config, ppa_engin
 static esp_err_t ppa_engine_release(ppa_engine_t *ppa_engine);
 static bool ppa_sr_transaction_on_picked(uint32_t num_chans, const dma2d_trans_channel_info_t *dma2d_chans, void *user_config);
 static bool ppa_blend_transaction_on_picked(uint32_t num_chans, const dma2d_trans_channel_info_t *dma2d_chans, void *user_config);
+static bool ppa_fill_transaction_on_picked(uint32_t num_chans, const dma2d_trans_channel_info_t *dma2d_chans, void *user_config);
 
-extern uint32_t dma2d_tx_channel_reserved_mask[SOC_DMA2D_GROUPS];
-extern uint32_t dma2d_rx_channel_reserved_mask[SOC_DMA2D_GROUPS];
-static uint32_t ppa_specified_tx_channel_mask = 0;
-static uint32_t ppa_specified_rx_channel_mask = 0;
-static __attribute__((constructor)) void ppa_reserve_dma2d_channels(void)
-{
-    // ppa_specified_tx_channel_mask = 1 << 0;
-    // ppa_specified_rx_channel_mask = 1 << 0;
-    dma2d_tx_channel_reserved_mask[0] |= ppa_specified_tx_channel_mask;
-    dma2d_rx_channel_reserved_mask[0] |= ppa_specified_rx_channel_mask;
-}
+// extern uint32_t dma2d_tx_channel_reserved_mask[SOC_DMA2D_GROUPS];
+// extern uint32_t dma2d_rx_channel_reserved_mask[SOC_DMA2D_GROUPS];
+// static uint32_t ppa_specified_tx_channel_mask = 0;
+// static uint32_t ppa_specified_rx_channel_mask = 0;
+// static __attribute__((constructor)) void ppa_reserve_dma2d_channels(void)
+// {
+//     // ppa_specified_tx_channel_mask = 1 << 0;
+//     // ppa_specified_rx_channel_mask = 1 << 0;
+//     dma2d_tx_channel_reserved_mask[0] |= ppa_specified_tx_channel_mask;
+//     dma2d_rx_channel_reserved_mask[0] |= ppa_specified_rx_channel_mask;
+// }
 
 // TODO: acquire pm_lock?
 static esp_err_t ppa_engine_acquire(const ppa_engine_config_t *config, ppa_engine_t **ret_engine)
@@ -694,11 +704,7 @@ static void ppa_recycle_transaction(ppa_trans_t *trans_elm)
         if (trans_elm->trans_desc) {
             ppa_dma2d_trans_on_picked_config_t *trans_on_picked_desc = (ppa_dma2d_trans_on_picked_config_t *)trans_elm->trans_desc->user_config;
             if (trans_on_picked_desc) {
-                if (trans_on_picked_desc->trigger_periph == DMA2D_TRIG_PERIPH_PPA_SR) {
-                    free(trans_on_picked_desc->sr_desc);
-                } else if (trans_on_picked_desc->trigger_periph == DMA2D_TRIG_PERIPH_PPA_BLEND) {
-                    free(trans_on_picked_desc->blend_desc);
-                }
+                free(trans_on_picked_desc->op_desc);
                 free(trans_on_picked_desc);
             }
             free(trans_elm->trans_desc);
@@ -710,7 +716,7 @@ static void ppa_recycle_transaction(ppa_trans_t *trans_elm)
     }
 }
 
-static esp_err_t ppa_do_operation(ppa_invoker_handle_t ppa_invoker, ppa_engine_t *ppa_engine_base, ppa_operation_t ppa_operation, const void *config, ppa_trans_mode_t mode)
+static esp_err_t ppa_prepare_trans_elm(ppa_invoker_handle_t ppa_invoker, ppa_engine_t *ppa_engine_base, ppa_operation_t ppa_operation, const void *config, ppa_trans_t **trans_elm, ppa_trans_mode_t mode)
 {
     esp_err_t ret = ESP_OK;
     ppa_engine_type_t engine_type = ppa_engine_base->type;
@@ -720,7 +726,8 @@ static esp_err_t ppa_do_operation(ppa_invoker_handle_t ppa_invoker, ppa_engine_t
     dma2d_trans_config_t *dma_trans_desc = (dma2d_trans_config_t *)heap_caps_calloc(1, sizeof(dma2d_trans_config_t), PPA_MEM_ALLOC_CAPS);
     ppa_dma2d_trans_on_picked_config_t *trans_on_picked_desc = (ppa_dma2d_trans_on_picked_config_t *)heap_caps_calloc(1, sizeof(ppa_dma2d_trans_on_picked_config_t), PPA_MEM_ALLOC_CAPS);
     size_t ppa_trans_desc_size = (ppa_operation == PPA_OPERATION_SR) ? sizeof(ppa_sr_transaction_t) :
-                                 (ppa_operation == PPA_OPERATION_BLEND) ? sizeof(ppa_blend_transaction_t) : 0;
+                                 (ppa_operation == PPA_OPERATION_BLEND) ? sizeof(ppa_blend_transaction_t) :
+                                 (ppa_operation == PPA_OPERATION_FILL) ? sizeof(ppa_fill_transaction_t) : 0;
     assert(ppa_trans_desc_size != 0);
     void *ppa_trans_desc = heap_caps_calloc(1, ppa_trans_desc_size, PPA_MEM_ALLOC_CAPS);
     ESP_GOTO_ON_FALSE(new_trans_elm && dma_trans_elm && dma_trans_desc && trans_on_picked_desc && ppa_trans_desc, ESP_ERR_NO_MEM, err, TAG, "no mem for transaction storage");
@@ -728,32 +735,51 @@ static esp_err_t ppa_do_operation(ppa_invoker_handle_t ppa_invoker, ppa_engine_t
         new_trans_elm->sem = xSemaphoreCreateBinaryWithCaps(PPA_MEM_ALLOC_CAPS);
         ESP_GOTO_ON_FALSE(new_trans_elm->sem, ESP_ERR_NO_MEM, err, TAG, "no mem for transaction storage");
     }
-    memcpy(ppa_trans_desc, config, ppa_trans_desc_size);
 
-    trans_on_picked_desc->blend_desc = ppa_trans_desc;
+    size_t cpy_size = (ppa_operation == PPA_OPERATION_SR) ? sizeof(ppa_sr_trans_config_t) :
+                      (ppa_operation == PPA_OPERATION_BLEND) ? sizeof(ppa_blend_trans_config_t) :
+                      (ppa_operation == PPA_OPERATION_FILL) ? sizeof(ppa_fill_trans_config_t) : 0;
+    memcpy(ppa_trans_desc, config, cpy_size);
+
+    trans_on_picked_desc->op_desc = ppa_trans_desc;
     trans_on_picked_desc->ppa_engine = ppa_engine_base;
     trans_on_picked_desc->trans_elm = new_trans_elm;
     trans_on_picked_desc->trigger_periph = (engine_type == PPA_ENGINE_TYPE_SR) ? DMA2D_TRIG_PERIPH_PPA_SR : DMA2D_TRIG_PERIPH_PPA_BLEND;
 
     dma_trans_desc->tx_channel_num = (ppa_operation == PPA_OPERATION_SR) ? 1 :
-                                     (ppa_operation == PPA_OPERATION_BLEND) ? 2 : 0;
+                                     (ppa_operation == PPA_OPERATION_BLEND) ? 2 : 0; // PPA_OPERATION_FILL does not have data input
     dma_trans_desc->rx_channel_num = 1;
-    if (ppa_operation == PPA_OPERATION_SR) {
-        dma_trans_desc->specified_tx_channel_mask = ppa_specified_tx_channel_mask;
-        dma_trans_desc->specified_rx_channel_mask = ppa_specified_rx_channel_mask;
-    }
+
+    // dma_trans_desc->specified_tx_channel_mask = ppa_specified_tx_channel_mask;
+    // dma_trans_desc->specified_rx_channel_mask = ppa_specified_rx_channel_mask;
+
     dma_trans_desc->user_config = (void *)trans_on_picked_desc;
     dma_trans_desc->on_job_picked = (ppa_operation == PPA_OPERATION_SR) ? ppa_sr_transaction_on_picked :
-                                    (ppa_operation == PPA_OPERATION_BLEND) ? ppa_blend_transaction_on_picked : NULL;
+                                    (ppa_operation == PPA_OPERATION_BLEND) ? ppa_blend_transaction_on_picked :
+                                    (ppa_operation == PPA_OPERATION_FILL) ? ppa_fill_transaction_on_picked : NULL;
 
     new_trans_elm->trans_desc = dma_trans_desc;
     new_trans_elm->dma_trans_placeholder = dma_trans_elm;
     new_trans_elm->invoker = ppa_invoker;
 
+    *trans_elm = new_trans_elm;
+err:
+    if (ret != ESP_OK) {
+        ppa_recycle_transaction(new_trans_elm);
+        *trans_elm = NULL;
+    }
+    return ret;
+}
+
+static esp_err_t ppa_do_operation(ppa_invoker_handle_t ppa_invoker, ppa_engine_t *ppa_engine_base, ppa_trans_t *trans_elm, ppa_trans_mode_t mode)
+{
+    esp_err_t ret = ESP_OK;
+    ppa_engine_type_t engine_type = ppa_engine_base->type;
+
     portENTER_CRITICAL(&ppa_invoker->spinlock);
     if (ppa_invoker->in_accepting_trans_state) {
         // Send transaction into PPA engine queue
-        STAILQ_INSERT_TAIL(&ppa_engine_base->trans_stailq, new_trans_elm, entry);
+        STAILQ_INSERT_TAIL(&ppa_engine_base->trans_stailq, trans_elm, entry);
         if (engine_type == PPA_ENGINE_TYPE_SR) {
             ppa_invoker->sr_trans_cnt++;
         } else {
@@ -777,17 +803,17 @@ static esp_err_t ppa_do_operation(ppa_invoker_handle_t ppa_invoker, ppa_engine_t
         ppa_trans_t *temp = NULL;
         portENTER_CRITICAL(&ppa_engine_base->spinlock);
         STAILQ_FOREACH(temp, &ppa_engine_base->trans_stailq, entry) {
-            if (temp == new_trans_elm) {
+            if (temp == trans_elm) {
                 found = true;
                 break;
             }
         }
         portEXIT_CRITICAL(&ppa_engine_base->spinlock);
         if (found) {
-            ret = ppa_dma2d_enqueue(new_trans_elm);
+            ret = ppa_dma2d_enqueue(trans_elm);
             if (ret != ESP_OK) {
                 portENTER_CRITICAL(&ppa_engine_base->spinlock);
-                STAILQ_REMOVE(&ppa_engine_base->trans_stailq, new_trans_elm, ppa_trans_s, entry);
+                STAILQ_REMOVE(&ppa_engine_base->trans_stailq, trans_elm, ppa_trans_s, entry);
                 portEXIT_CRITICAL(&ppa_engine_base->spinlock);
                 xSemaphoreGive(ppa_engine_base->sem);
                 goto err;
@@ -801,15 +827,12 @@ static esp_err_t ppa_do_operation(ppa_invoker_handle_t ppa_invoker, ppa_engine_t
         // while (1) {
         //     printf("ppa intr: %ld\n", PPA.int_raw.val);
         // }
-        xSemaphoreTake(new_trans_elm->sem, portMAX_DELAY); // Given in the ISR
+        xSemaphoreTake(trans_elm->sem, portMAX_DELAY); // Given in the ISR
         // Sanity check new_trans_elm not in trans_stailq anymore? (loop takes time tho)
-        ppa_recycle_transaction(new_trans_elm);
+        ppa_recycle_transaction(trans_elm);
     }
 
 err:
-    if (ret != ESP_OK) {
-        ppa_recycle_transaction(new_trans_elm);
-    }
     return ret;
 }
 
@@ -1011,8 +1034,8 @@ static bool ppa_sr_transaction_on_picked(uint32_t num_chans, const dma2d_trans_c
     // TODO: sr_macro_bk_ro_bypass
     // PPA.sr_byte_order.sr_macro_bk_ro_bypass = 1;
     ppa_ll_sr_set_rotation_angle(s_platform.hal.dev, sr_trans_desc->rotation_angle);
-    ppa_ll_sr_set_scaling_x(s_platform.hal.dev, (uint32_t)sr_trans_desc->scale_x, (uint32_t)(sr_trans_desc->scale_x * (PPA_LL_SR_SCALING_FRAG_MAX + 1)) & PPA_LL_SR_SCALING_FRAG_MAX);
-    ppa_ll_sr_set_scaling_y(s_platform.hal.dev, (uint32_t)sr_trans_desc->scale_y, (uint32_t)(sr_trans_desc->scale_y * (PPA_LL_SR_SCALING_FRAG_MAX + 1)) & PPA_LL_SR_SCALING_FRAG_MAX);
+    ppa_ll_sr_set_scaling_x(s_platform.hal.dev, sr_trans_desc->scale_x_int, sr_trans_desc->scale_x_frag);
+    ppa_ll_sr_set_scaling_y(s_platform.hal.dev, sr_trans_desc->scale_y_int, sr_trans_desc->scale_y_frag);
     ppa_ll_sr_enable_mirror_x(s_platform.hal.dev, sr_trans_desc->mirror_x);
     ppa_ll_sr_enable_mirror_y(s_platform.hal.dev, sr_trans_desc->mirror_y);
 
@@ -1039,7 +1062,25 @@ esp_err_t ppa_do_scale_and_rotate(ppa_invoker_handle_t ppa_invoker, const ppa_sr
 
     // TODO: Maybe do buffer writeback and invalidation here, instead of in on_picked?
 
-    return ppa_do_operation(ppa_invoker, ppa_invoker->sr_engine, PPA_OPERATION_SR, (void *)config, mode);
+    ppa_trans_t *trans_elm = NULL;
+    esp_err_t ret = ppa_prepare_trans_elm(ppa_invoker, ppa_invoker->sr_engine, PPA_OPERATION_SR, (void *)config, &trans_elm, mode);
+    if (ret == ESP_OK) {
+        assert(trans_elm);
+
+        // Pre-process some data
+        ppa_dma2d_trans_on_picked_config_t *trans_on_picked_desc = trans_elm->trans_desc->user_config;
+        ppa_sr_transaction_t *sr_trans_desc = trans_on_picked_desc->sr_desc;
+        sr_trans_desc->scale_x_int = (uint32_t)sr_trans_desc->scale_x;
+        sr_trans_desc->scale_x_frag = (uint32_t)(sr_trans_desc->scale_x * (PPA_LL_SR_SCALING_FRAG_MAX + 1)) & PPA_LL_SR_SCALING_FRAG_MAX;
+        sr_trans_desc->scale_y_int = (uint32_t)sr_trans_desc->scale_y;
+        sr_trans_desc->scale_y_frag = (uint32_t)(sr_trans_desc->scale_y * (PPA_LL_SR_SCALING_FRAG_MAX + 1)) & PPA_LL_SR_SCALING_FRAG_MAX;
+
+        ret = ppa_do_operation(ppa_invoker, ppa_invoker->sr_engine, trans_elm, mode);
+        if (ret != ESP_OK) {
+            ppa_recycle_transaction(trans_elm);
+        }
+    }
+    return ret;
 }
 
 static bool ppa_blend_transaction_on_picked(uint32_t num_chans, const dma2d_trans_channel_info_t *dma2d_chans, void *user_config)
@@ -1210,10 +1251,113 @@ esp_err_t ppa_do_blend(ppa_invoker_handle_t ppa_invoker, const ppa_blend_trans_c
 
     // TODO: Maybe do buffer writeback and invalidation here, instead of in on_picked?
 
-    return ppa_do_operation(ppa_invoker, ppa_invoker->blending_engine, PPA_OPERATION_BLEND, (void *)config, mode);
+    ppa_trans_t *trans_elm = NULL;
+    esp_err_t ret = ppa_prepare_trans_elm(ppa_invoker, ppa_invoker->blending_engine, PPA_OPERATION_BLEND, (void *)config, &trans_elm, mode);
+    if (ret == ESP_OK) {
+        assert(trans_elm);
+
+        ret = ppa_do_operation(ppa_invoker, ppa_invoker->blending_engine, trans_elm, mode);
+        if (ret != ESP_OK) {
+            ppa_recycle_transaction(trans_elm);
+        }
+    }
+    return ret;
+}
+
+static bool ppa_fill_transaction_on_picked(uint32_t num_chans, const dma2d_trans_channel_info_t *dma2d_chans, void *user_config)
+{
+    assert(num_chans == 1 && dma2d_chans && user_config);
+    ppa_dma2d_trans_on_picked_config_t *trans_on_picked_desc = (ppa_dma2d_trans_on_picked_config_t *)user_config;
+    assert(trans_on_picked_desc->trigger_periph == DMA2D_TRIG_PERIPH_PPA_BLEND && trans_on_picked_desc->fill_desc && trans_on_picked_desc->ppa_engine);
+
+    ppa_fill_transaction_t *fill_trans_desc = trans_on_picked_desc->fill_desc;
+    ppa_blend_engine_t *blend_engine = __containerof(trans_on_picked_desc->ppa_engine, ppa_blend_engine_t, base);
+
+    // Free 2D-DMA transaction placeholder (transaction has already been moved out from 2D-DMA queue)
+    free(trans_on_picked_desc->trans_elm->dma_trans_placeholder);
+
+    // Get the required 2D-DMA channel handles
+    assert(dma2d_chans[0].dir == DMA2D_CHANNEL_DIRECTION_RX);
+    dma2d_channel_handle_t dma2d_rx_chan = dma2d_chans[0].chan;
+
+    // Invalidate is performed on the entire picture (the window content is not continuous in the buffer)
+    color_space_pixel_format_t out_pixel_format = {
+        .color_type_id = fill_trans_desc->out_color.mode,
+    };
+    uint32_t out_buffer_len = fill_trans_desc->out_pic_w * fill_trans_desc->out_pic_h * color_hal_pixel_format_get_bit_depth(out_pixel_format) / 8;
+    esp_cache_msync(fill_trans_desc->out_buffer, out_buffer_len, ESP_CACHE_MSYNC_FLAG_DIR_M2C);
+
+    // Fill 2D-DMA descriptors
+    blend_engine->dma_rx_desc->vb_size = fill_trans_desc->fill_block_h;
+    blend_engine->dma_rx_desc->hb_length = fill_trans_desc->fill_block_w;
+    blend_engine->dma_rx_desc->err_eof = 0;
+    blend_engine->dma_rx_desc->dma2d_en = 1;
+    blend_engine->dma_rx_desc->suc_eof = 1;
+    blend_engine->dma_rx_desc->owner = DMA2D_DESCRIPTOR_BUFFER_OWNER_DMA;
+    blend_engine->dma_rx_desc->va_size = fill_trans_desc->out_pic_h;
+    blend_engine->dma_rx_desc->ha_length = fill_trans_desc->out_pic_w;
+    blend_engine->dma_rx_desc->pbyte = dma2d_desc_pixel_format_to_pbyte_value(out_pixel_format);
+    blend_engine->dma_rx_desc->y = fill_trans_desc->out_block_offset_y;
+    blend_engine->dma_rx_desc->x = fill_trans_desc->out_block_offset_x;
+    blend_engine->dma_rx_desc->mode = DMA2D_DESCRIPTOR_BLOCK_RW_MODE_SINGLE;
+    blend_engine->dma_rx_desc->buffer = (void *)fill_trans_desc->out_buffer;
+    blend_engine->dma_rx_desc->next = NULL;
+
+    esp_cache_msync((void *)blend_engine->dma_rx_desc, s_platform.dma_desc_mem_size, ESP_CACHE_MSYNC_FLAG_DIR_C2M);
+
+    // Configure 2D-DMA channels
+    dma2d_trigger_t trig_periph = {
+        .periph = DMA2D_TRIG_PERIPH_PPA_BLEND,
+        .periph_sel_id = SOC_DMA2D_TRIG_PERIPH_PPA_BLEND_RX,
+    };
+    dma2d_connect(dma2d_rx_chan, &trig_periph);
+
+    dma2d_transfer_ability_t dma_transfer_ability = {
+        .data_burst_length = DMA2D_DATA_BURST_LENGTH_128,
+        .desc_burst_en = true,
+        .mb_size = DMA2D_MACRO_BLOCK_SIZE_NONE,
+    };
+    dma2d_set_transfer_ability(dma2d_rx_chan, &dma_transfer_ability);
+
+    dma2d_rx_event_callbacks_t dma_event_cbs = {
+        .on_recv_eof = ppa_transaction_done_cb,
+    };
+    dma2d_register_rx_event_callbacks(dma2d_rx_chan, &dma_event_cbs, (void *)trans_on_picked_desc->trans_elm);
+
+    ppa_ll_blend_reset(s_platform.hal.dev);
+
+    dma2d_set_desc_addr(dma2d_rx_chan, (intptr_t)blend_engine->dma_rx_desc);
+    dma2d_start(dma2d_rx_chan);
+
+    // Configure PPA Blending engine
+    ppa_ll_blend_configure_filling_block(s_platform.hal.dev, fill_trans_desc->fill_argb_color, fill_trans_desc->fill_block_w, fill_trans_desc->fill_block_h);
+    ppa_ll_blend_set_tx_color_mode(s_platform.hal.dev, fill_trans_desc->out_color.mode);
+
+    ppa_ll_blend_start(s_platform.hal.dev, PPA_LL_BLEND_TRANS_MODE_FILL);
+
+    // No need to yield
+    return false;
 }
 
 esp_err_t ppa_do_fill(ppa_invoker_handle_t ppa_invoker, const ppa_fill_trans_config_t *config, ppa_trans_mode_t mode)
 {
-    return ESP_OK;
+    ESP_RETURN_ON_FALSE(ppa_invoker && config, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    ESP_RETURN_ON_FALSE(ppa_invoker->blending_engine, ESP_ERR_INVALID_ARG, TAG, "invoker did not register to Blending engine");
+    ESP_RETURN_ON_FALSE(mode <= PPA_TRANS_MODE_NON_BLOCKING, ESP_ERR_INVALID_ARG, TAG, "invalid mode");
+    // TODO: ARG CHECK
+    // fill_block_w <= PPA_BLEND_HB_V, fill_block_h <= PPA_BLEND_VB_V
+
+    // TODO: Maybe do buffer invalidation here, instead of in on_picked?
+
+    ppa_trans_t *trans_elm = NULL;
+    esp_err_t ret = ppa_prepare_trans_elm(ppa_invoker, ppa_invoker->blending_engine, PPA_OPERATION_FILL, (void *)config, &trans_elm, mode);
+    if (ret == ESP_OK) {
+        assert(trans_elm);
+
+        ret = ppa_do_operation(ppa_invoker, ppa_invoker->blending_engine, trans_elm, mode);
+        if (ret != ESP_OK) {
+            ppa_recycle_transaction(trans_elm);
+        }
+    }
+    return ret;
 }

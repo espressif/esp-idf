@@ -638,7 +638,7 @@ static inline void ppa_ll_blend_configure_rx_fg_alpha(ppa_dev_t *dev, ppa_alpha_
  * @param dev Peripheral instance address
  * @param data The fix data to be filled to the image block pixels in ARGB8888 format
  * @param hb The horizontal width of image block that would be filled in fix pixel filling mode. The unit is pixel.
- * @param vb The vertical width of image block that would be filled in fix pixel filling mode. The unit is pixel.
+ * @param vb The vertical height of image block that would be filled in fix pixel filling mode. The unit is pixel.
  */
 static inline void ppa_ll_blend_configure_filling_block(ppa_dev_t *dev, uint32_t data, uint32_t hb, uint32_t vb)
 {
