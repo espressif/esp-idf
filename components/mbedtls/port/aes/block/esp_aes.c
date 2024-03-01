@@ -33,12 +33,13 @@
 #include "soc/hwcrypto_periph.h"
 #include <sys/lock.h>
 #include "hal/aes_hal.h"
+#include "hal/aes_ll.h"
 #include "esp_aes_internal.h"
 
 #include <freertos/FreeRTOS.h>
 
 #include <stdio.h>
-#include "esp_private/periph_ctrl.h"
+#include "esp_private/esp_crypto_lock_internal.h"
 
 
 static const char *TAG = "esp-aes";
@@ -58,13 +59,18 @@ void esp_aes_acquire_hardware( void )
     portENTER_CRITICAL(&aes_spinlock);
 
     /* Enable AES hardware */
-    periph_module_enable(PERIPH_AES_MODULE);
+    AES_RCC_ATOMIC() {
+        aes_ll_enable_bus_clock(true);
+        aes_ll_reset_register();
+    }
 }
 
 void esp_aes_release_hardware( void )
 {
     /* Disable AES hardware */
-    periph_module_disable(PERIPH_AES_MODULE);
+    AES_RCC_ATOMIC() {
+        aes_ll_enable_bus_clock(false);
+    }
 
     portEXIT_CRITICAL(&aes_spinlock);
 }
