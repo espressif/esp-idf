@@ -44,6 +44,7 @@
 #include "hal/efuse_hal.h"
 #include "soc/regi2c_syspll.h"
 #include "soc/regi2c_cpll.h"
+#include "soc/regi2c_bias.h"
 
 static const char *TAG = "boot.esp32p4";
 
@@ -97,6 +98,8 @@ static inline void bootloader_hardware_init(void)
     REGI2C_WRITE_MASK(I2C_CPLL, I2C_CPLL_OC_DIV_7_0, 6); // lower default cpu_pll freq to 400M
     REGI2C_WRITE_MASK(I2C_SYSPLL, I2C_SYSPLL_OC_DIV_7_0, 8); // lower default sys_pll freq to 480M
     esp_rom_delay_us(100);
+    REGI2C_WRITE_MASK(I2C_BIAS, I2C_BIAS_DREG_1P1, 10);
+    REGI2C_WRITE_MASK(I2C_BIAS, I2C_BIAS_DREG_1P1_PVT, 10);
 }
 
 static inline void bootloader_ana_reset_config(void)
