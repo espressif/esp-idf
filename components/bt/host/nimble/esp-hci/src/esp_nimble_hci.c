@@ -15,7 +15,9 @@
 #include "esp_nimble_hci.h"
 #include "esp_nimble_mem.h"
 #include "bt_osi_mem.h"
+#if CONFIG_BT_CONTROLLER_ENABLED
 #include "esp_bt.h"
+#endif
 #include "freertos/semphr.h"
 #include "esp_compiler.h"
 #include "soc/soc_caps.h"

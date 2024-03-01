@@ -287,6 +287,16 @@ examples/bluetooth/nimble/bleprph:
       temporary: true
       reason: The runner doesn't support yet
 
+examples/bluetooth/nimble/bleprph_host_only:
+  enable:
+    - if: IDF_TARGET in ["esp32", "esp32c2", "esp32c3", "esp32c6" , "esp32s3", "esp32h2" ]
+      temporary: true
+      reason: the other targets are not tested yet
+  disable_test:
+    - if: IDF_TARGET in ["esp32c2", "esp32c3", "esp32h2", "esp32s3", "esp32c6"]
+      temporary: true
+      reason: The runner doesn't support yet
+
 examples/bluetooth/nimble/bleprph_wifi_coex:
   enable:
     - if: IDF_TARGET in ["esp32", "esp32c2", "esp32c3", "esp32s3"]
