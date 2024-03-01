@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2010-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2010-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: CC0-1.0
  */
@@ -55,7 +55,19 @@ static SemaphoreHandle_t done_sem;
 
 static void twai_transmit_task(void *arg)
 {
-    twai_message_t tx_msg = {.data_length_code = 1, .identifier = MSG_ID, .self = 1};
+    twai_message_t tx_msg = {
+        // Message type and format settings
+        .extd = 0,              // Standard Format message (11-bit ID)
+        .rtr = 0,               // Send a data frame
+        .ss = 0,                // Not single shot
+        .self = 1,              // Message is a self reception request (loopback)
+        .dlc_non_comp = 0,      // DLC is less than 8
+        // Message ID and payload
+        .identifier = MSG_ID,
+        .data_length_code = 1,
+        .data = {0},
+    };
+
     for (int iter = 0; iter < NO_OF_ITERS; iter++) {
         xSemaphoreTake(tx_sem, portMAX_DELAY);
         for (int i = 0; i < NO_OF_MSGS; i++) {
@@ -77,7 +89,7 @@ static void twai_receive_task(void *arg)
         for (int i = 0; i < NO_OF_MSGS; i++) {
             //Receive message and print message data
             ESP_ERROR_CHECK(twai_receive(&rx_message, portMAX_DELAY));
-            ESP_LOGI(EXAMPLE_TAG, "Msg received - Data = %d", rx_message.data[0]);
+            ESP_LOGI(EXAMPLE_TAG, "Msg received\tID 0x%lx\tData = %d", rx_message.identifier, rx_message.data[0]);
         }
         //Indicate to control task all messages received for this iteration
         xSemaphoreGive(ctrl_sem);
