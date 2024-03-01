@@ -1,21 +1,30 @@
 /*
- * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #pragma once
 
+#include "soc/soc_caps.h"
+/*
+This header is shared across all targets. Resolve to an empty header for targets
+that don't support USB OTG.
+*/
+#if SOC_USB_OTG_SUPPORTED
+#include <stdint.h>
+#include <stdbool.h>
+#include "soc/usb_dwc_struct.h"
+#include "soc/usb_dwc_cfg.h"
+#include "hal/usb_dwc_types.h"
+#include "hal/misc.h"
+#endif // SOC_USB_OTG_SUPPORTED
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#include <stdint.h>
-#include <stdbool.h>
-#include "soc/usb_dwc_struct.h"
-#include "hal/usb_dwc_types.h"
-#include "hal/misc.h"
-
+#if SOC_USB_OTG_SUPPORTED
 
 /* -----------------------------------------------------------------------------
 --------------------------------- DWC Constants --------------------------------
@@ -23,88 +32,6 @@ extern "C" {
 
 #define USB_DWC_QTD_LIST_MEM_ALIGN              512
 #define USB_DWC_FRAME_LIST_MEM_ALIGN            512     // The frame list needs to be 512 bytes aligned (contrary to the databook)
-/*
-Although we have a 256 lines, only 200 lines are useable due to EPINFO_CTL.
-Todo: Check sizes again and express this macro in terms of DWC config options (IDF-7384)
-*/
-#define USB_DWC_FIFO_TOTAL_USABLE_LINES         200
-
-/* -----------------------------------------------------------------------------
------------------------------- DWC Configuration -------------------------------
------------------------------------------------------------------------------ */
-
-/**
- * @brief Default FIFO sizes (see 2.1.2.4 for programming guide)
- *
- * RXFIFO
- * - Recommended: ((LPS/4) * 2) + 2
- * - Actual: Whatever leftover size: USB_DWC_FIFO_TOTAL_USABLE_LINES(200) - 48 - 48 = 104
- * - Worst case can accommodate two packets of 204 bytes, or one packet of 408
- * NPTXFIFO
- * - Recommended: (LPS/4) * 2
- * - Actual: Assume LPS is 64, and 3 packets: (64/4) * 3 = 48
- * - Worst case can accommodate three packets of 64 bytes or one packet of 192
- * PTXFIFO
- * - Recommended: (LPS/4) * 2
- * - Actual: Assume LPS is 64, and 3 packets: (64/4) * 3 = 48
- * - Worst case can accommodate three packets of 64 bytes or one packet of 192
- */
-#define USB_DWC_FIFO_RX_LINES_DEFAULT    104
-#define USB_DWC_FIFO_NPTX_LINES_DEFAULT  48
-#define USB_DWC_FIFO_PTX_LINES_DEFAULT   48
-
-/**
- * @brief FIFO sizes that bias to giving RX FIFO more capacity
- *
- * RXFIFO
- * - Recommended: ((LPS/4) * 2) + 2
- * - Actual: Whatever leftover size: USB_DWC_FIFO_TOTAL_USABLE_LINES(200) - 32 - 16 = 152
- * - Worst case can accommodate two packets of 300 bytes or one packet of 600 bytes
- * NPTXFIFO
- * - Recommended: (LPS/4) * 2
- * - Actual: Assume LPS is 64, and 1 packets: (64/4) * 1 = 16
- * - Worst case can accommodate one packet of 64 bytes
- * PTXFIFO
- * - Recommended: (LPS/4) * 2
- * - Actual: Assume LPS is 64, and 3 packets: (64/4) * 2 = 32
- * - Worst case can accommodate two packets of 64 bytes or one packet of 128
- */
-#define USB_DWC_FIFO_RX_LINES_BIASRX     152
-#define USB_DWC_FIFO_NPTX_LINES_BIASRX   16
-#define USB_DWC_FIFO_PTX_LINES_BIASRX    32
-
-/**
- * @brief FIFO sizes that bias to giving Periodic TX FIFO more capacity (i.e., ISOC OUT)
- *
- * RXFIFO
- * - Recommended: ((LPS/4) * 2) + 2
- * - Actual: Assume LPS is 64, and 2 packets: ((64/4) * 2) + 2 = 34
- * - Worst case can accommodate two packets of 64 bytes or one packet of 128
- * NPTXFIFO
- * - Recommended: (LPS/4) * 2
- * - Actual: Assume LPS is 64, and 1 packets: (64/4) * 1 = 16
- * - Worst case can accommodate one packet of 64 bytes
- * PTXFIFO
- * - Recommended: (LPS/4) * 2
- * - Actual: Whatever leftover size: USB_DWC_FIFO_TOTAL_USABLE_LINES(200) - 34 - 16 = 150
- * - Worst case can accommodate two packets of 300 bytes or one packet of 600 bytes
- */
-#define USB_DWC_FIFO_RX_LINES_BIASTX     34
-#define USB_DWC_FIFO_NPTX_LINES_BIASTX   16
-#define USB_DWC_FIFO_PTX_LINES_BIASTX    150
-
-
-/*
- * List of relevant DWC configurations. See DWC OTG databook Chapter 3 for more
- * details.
- */
-#define USB_DWC_FSPHY_INTERFACE             1
-#define USB_DWC_NUM_EPS                     6
-#define USB_DWC_NUM_IN_EPS                  5       // Todo: Add check for when number of IN channels exceeds limit (IDF-8556)
-#define USB_DWC_NUM_HOST_CHAN               8
-#define USB_DWC_DFIFO_DEPTH                 256
-#define USB_DWC_RX_DFIFO_DEPTH              256
-#define USB_DWC_TX_DFIFO_DEPTH              256     // Same value applies to HNPERIO, NPERIO, HPERIO, and DINEP
 
 /* -----------------------------------------------------------------------------
 ------------------------------- Global Registers -------------------------------
@@ -853,28 +780,48 @@ static inline uint32_t usb_dwc_ll_hctsiz_get_pid(volatile usb_dwc_host_chan_regs
 
 static inline void usb_dwc_ll_hctsiz_set_qtd_list_len(volatile usb_dwc_host_chan_regs_t *chan, int qtd_list_len)
 {
-    HAL_FORCE_MODIFY_U32_REG_FIELD(chan->hctsiz_reg, ntd, qtd_list_len - 1);    //Set the length of the descriptor list
+    usb_dwc_hctsiz_reg_t hctsiz;
+    hctsiz.val = chan->hctsiz_reg.val;
+    //Set the length of the descriptor list. NTD occupies xfersize[15:8]
+    hctsiz.xfersize &= ~(0xFF << 8);
+    hctsiz.xfersize |= ((qtd_list_len - 1) & 0xFF) << 8;
+    chan->hctsiz_reg.val = hctsiz.val;
 }
 
 static inline void usb_dwc_ll_hctsiz_init(volatile usb_dwc_host_chan_regs_t *chan)
 {
-    chan->hctsiz_reg.dopng = 0;         //Don't do ping
-    HAL_FORCE_MODIFY_U32_REG_FIELD(chan->hctsiz_reg, sched_info, 0xFF); //Schedinfo is always 0xFF for fullspeed. Not used in Bulk/Ctrl channels
+    usb_dwc_hctsiz_reg_t hctsiz;
+    hctsiz.val = chan->hctsiz_reg.val;
+    hctsiz.dopng = 0;         //Don't do ping
+    /*
+    Set SCHED_INFO which occupies xfersize[7:0]
+    It is always set to 0xFF for full speed and not used in Bulk/Ctrl channels
+    */
+    hctsiz.xfersize |= 0xFF;
+    chan->hctsiz_reg.val = hctsiz.val;
 }
 
 // ---------------------------- HCDMAi Register --------------------------------
 
 static inline void usb_dwc_ll_hcdma_set_qtd_list_addr(volatile usb_dwc_host_chan_regs_t *chan, void *dmaaddr, uint32_t qtd_idx)
 {
-    //Set HCDMAi
-    chan->hcdma_reg.val = 0;
-    chan->hcdma_reg.non_iso.dmaaddr = (((uint32_t)dmaaddr) >> 9) & 0x7FFFFF;  //MSB of 512 byte aligned address
-    chan->hcdma_reg.non_iso.ctd = qtd_idx;
+    usb_dwc_hcdma_reg_t hcdma;
+    /*
+    Set the base address portion of the field which is dmaaddr[31:9]. This is
+    the based address of the QTD list and must be 512 bytes aligned
+    */
+    hcdma.dmaaddr = ((uint32_t)dmaaddr) & 0xFFFFFE00;
+    //Set the current QTD index in the QTD list which is dmaaddr[8:3]
+    hcdma.dmaaddr |= (qtd_idx & 0x3F) << 3;
+    //dmaaddr[2:0] is reserved thus doesn't not need to be set
+
+    chan->hcdma_reg.val = hcdma.val;
 }
 
 static inline int usb_dwc_ll_hcdam_get_cur_qtd_idx(usb_dwc_host_chan_regs_t *chan)
 {
-    return chan->hcdma_reg.non_iso.ctd;
+    //The current QTD index is dmaaddr[8:3]
+    return (chan->hcdma_reg.dmaaddr >> 3) & 0x3F;
 }
 
 // ---------------------------- HCDMABi Register -------------------------------
@@ -993,6 +940,8 @@ static inline void usb_dwc_ll_qtd_get_status(usb_dwc_ll_dma_qtd_t *qtd, int *rem
     //Clear the QTD just for safety
     qtd->buffer_status_val = 0;
 }
+
+#endif // SOC_USB_OTG_SUPPORTED
 
 #ifdef __cplusplus
 }

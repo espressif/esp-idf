@@ -107,7 +107,7 @@ menu "PHY"
 
     config ESP_PHY_ENABLE_USB
         bool "Enable USB when phy init"
-        depends on USB_OTG_SUPPORTED || ESP_CONSOLE_USB_SERIAL_JTAG || ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG
+        depends on SOC_USB_OTG_SUPPORTED || ESP_CONSOLE_USB_SERIAL_JTAG || ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG
         default y if IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3
         default n
         help

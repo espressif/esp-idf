@@ -179,6 +179,13 @@ if(NOT BOOTLOADER_BUILD)
         list(APPEND srcs "ds_hal.c")
     endif()
 
+    if(CONFIG_SOC_USB_OTG_SUPPORTED)
+        list(APPEND srcs
+                    "usb_hal.c"
+                    "usb_dwc_hal.c"
+                    "usb_fsls_phy_hal.c")
+    endif()
+
     if(${target} STREQUAL "esp32")
         list(APPEND srcs
             "touch_sensor_hal.c"
@@ -190,24 +197,18 @@ if(NOT BOOTLOADER_BUILD)
         list(APPEND srcs
                     "spi_flash_hal_gpspi.c"
                     "touch_sensor_hal.c"
-                    "usb_hal.c"
-                    "usb_phy_hal.c"
                     "xt_wdt_hal.c"
                     "esp32s2/cp_dma_hal.c"
-                    "esp32s2/touch_sensor_hal.c"
-                    "usb_dwc_hal.c")
+                    "esp32s2/touch_sensor_hal.c")
     endif()
 
     if(${target} STREQUAL "esp32s3")
         list(APPEND srcs
             "spi_flash_hal_gpspi.c"
             "touch_sensor_hal.c"
-            "usb_hal.c"
-            "usb_phy_hal.c"
             "xt_wdt_hal.c"
             "esp32s3/touch_sensor_hal.c"
-            "esp32s3/rtc_cntl_hal.c"
-            "usb_dwc_hal.c")
+            "esp32s3/rtc_cntl_hal.c")
     endif()
 
     if(${target} STREQUAL "esp32c3")

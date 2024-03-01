@@ -6,21 +6,22 @@
 
 #pragma once
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
+#include "soc/soc_caps.h"
 /*
-NOTE: Thread safety is the responsibility fo the HAL user. All USB Host HAL
-      functions must be called from critical sections unless specified otherwise
+This header is shared across all targets. Resolve to an empty header for targets
+that don't support USB OTG.
 */
-
-#include <stdlib.h>
-#include <stddef.h>
-#include "soc/usb_dwc_struct.h"
+#if SOC_USB_OTG_SUPPORTED
+#include <stdint.h>
+#include <stdbool.h>
 #include "hal/usb_dwc_ll.h"
 #include "hal/usb_dwc_types.h"
 #include "hal/assert.h"
+#endif // SOC_USB_OTG_SUPPORTED
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #if SOC_USB_OTG_SUPPORTED
 
@@ -139,7 +140,7 @@ typedef struct {
         uint32_t val;
     };
     struct {
-        usb_hal_interval_t interval;        /**< The interval of the endpoint */
+        unsigned int interval;              /**< The interval of the endpoint in frames (FS) or microframes (HS) */
         uint32_t phase_offset_frames;       /**< Phase offset in number of frames */
     } periodic;     /**< Characteristic for periodic (interrupt/isochronous) endpoints only */
 } usb_dwc_hal_ep_char_t;
@@ -175,7 +176,7 @@ typedef struct {
     uint32_t *periodic_frame_list;                 /**< Pointer to scheduling frame list */
     usb_hal_frame_list_len_t frame_list_len;       /**< Length of the periodic scheduling frame list */
     //FIFO related
-    const usb_dwc_hal_fifo_config_t *fifo_config;  /**< FIFO sizes configuration */
+    usb_dwc_hal_fifo_config_t fifo_config;         /**< FIFO sizes configuration */
     union {
         struct {
             uint32_t dbnc_lock_enabled: 1;      /**< Debounce lock enabled */
@@ -190,7 +191,7 @@ typedef struct {
     struct {
         int num_allocd;                             /**< Number of channels currently allocated */
         uint32_t chan_pend_intrs_msk;               /**< Bit mask of channels with pending interrupts */
-        usb_dwc_hal_chan_t *hdls[USB_DWC_NUM_HOST_CHAN];    /**< Handles of each channel. Set to NULL if channel has not been allocated */
+        usb_dwc_hal_chan_t *hdls[OTG_NUM_HOST_CHAN];    /**< Handles of each channel. Set to NULL if channel has not been allocated */
     } channels;
 } usb_dwc_hal_context_t;
 

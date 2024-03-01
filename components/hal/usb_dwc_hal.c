@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,9 +9,9 @@
 #include <string.h>
 #include "sdkconfig.h"
 #include "soc/chip_revision.h"
-#include "hal/efuse_hal.h"
 #include "hal/usb_dwc_hal.h"
 #include "hal/usb_dwc_ll.h"
+#include "hal/efuse_hal.h"
 #include "hal/assert.h"
 
 // ------------------------------------------------ Macros and Types ---------------------------------------------------
@@ -21,40 +21,7 @@
 #define BENDPOINTADDRESS_NUM_MSK     0x0F   //Endpoint number mask of the bEndpointAddress field of an endpoint descriptor
 #define BENDPOINTADDRESS_DIR_MSK     0x80   //Endpoint direction mask of the bEndpointAddress field of an endpoint descriptor
 
-#define CORE_REG_GSNPSID    0x4F54400A
-#define CORE_REG_GHWCFG1    0x00000000
-#define CORE_REG_GHWCFG2    0x224DD930
-#define CORE_REG_GHWCFG3    0x00C804B5
-#define CORE_REG_GHWCFG4    0xD3F0A030
-
-// ----------------------- Configs -------------------------
-
-/**
- * @brief Default FIFO sizes (see 2.1.2.4 for programming guide)
- */
-const usb_dwc_hal_fifo_config_t fifo_config_default = {
-    .rx_fifo_lines =   USB_DWC_FIFO_RX_LINES_DEFAULT,
-    .nptx_fifo_lines = USB_DWC_FIFO_NPTX_LINES_DEFAULT,
-    .ptx_fifo_lines =  USB_DWC_FIFO_PTX_LINES_DEFAULT,
-};
-
-/**
- * @brief FIFO sizes that bias to giving RX FIFO more capacity
- */
-const usb_dwc_hal_fifo_config_t fifo_config_bias_rx = {
-    .rx_fifo_lines = USB_DWC_FIFO_RX_LINES_BIASRX,
-    .nptx_fifo_lines = USB_DWC_FIFO_NPTX_LINES_BIASRX,
-    .ptx_fifo_lines = USB_DWC_FIFO_PTX_LINES_BIASRX,
-};
-
-/**
- * @brief FIFO sizes that bias to giving Periodic TX FIFO more capacity (i.e., ISOC OUT)
- */
-const usb_dwc_hal_fifo_config_t fifo_config_bias_ptx = {
-    .rx_fifo_lines = USB_DWC_FIFO_RX_LINES_BIASTX,
-    .nptx_fifo_lines = USB_DWC_FIFO_NPTX_LINES_BIASTX,
-    .ptx_fifo_lines = USB_DWC_FIFO_PTX_LINES_BIASTX,
-};
+#define CORE_REG_GSNPSID    0x4F54400A      //Release number of USB_DWC used in Espressif's SoCs
 
 // -------------------- Configurable -----------------------
 
@@ -188,42 +155,69 @@ void usb_dwc_hal_core_soft_reset(usb_dwc_hal_context_t *hal)
     hal->flags.val = 0;
     hal->channels.num_allocd = 0;
     hal->channels.chan_pend_intrs_msk = 0;
-    memset(hal->channels.hdls, 0, sizeof(usb_dwc_hal_chan_t *) * USB_DWC_NUM_HOST_CHAN);
+    memset(hal->channels.hdls, 0, sizeof(usb_dwc_hal_chan_t *) * OTG_NUM_HOST_CHAN);
 }
 
 void usb_dwc_hal_set_fifo_bias(usb_dwc_hal_context_t *hal, const usb_hal_fifo_bias_t fifo_bias)
 {
-    const usb_dwc_hal_fifo_config_t *fifo_config;
+    /*
+    * EPINFO_CTL is located at the end of FIFO, its size is fixed in HW.
+    * The reserved size is always the worst-case, which is device mode that requires 4 locations per EP direction (including EP0).
+    * Here we just read the FIFO size from HW register, to avoid any ambivalence
+    */
+    uint32_t ghwcfg1, ghwcfg2, ghwcfg3, ghwcfg4;
+    usb_dwc_ll_ghwcfg_get_hw_config(hal->dev, &ghwcfg1, &ghwcfg2, &ghwcfg3, &ghwcfg4);
+    const uint16_t fifo_size_lines = ((usb_dwc_ghwcfg3_reg_t)ghwcfg3).dfifodepth;
+
+    /*
+    * Recommended FIFO sizes (see 2.1.2.4 for programming guide)
+    *
+    * RXFIFO:   ((LPS/4) * 2) + 2
+    * NPTXFIFO: (LPS/4) * 2
+    * PTXFIFO:  (LPS/4) * 2
+    *
+    * Recommended sizes fit 2 packets of each type. For S2 and S3 we can't fit even one MPS ISOC packet (1023 FS and 1024 HS).
+    * So the calculations below are compromises between the available FIFO size and optimal performance.
+    */
+    usb_dwc_hal_fifo_config_t fifo_config;
     switch (fifo_bias) {
+        // Define minimum viable (fits at least 1 MPS) FIFO sizes for non-biased FIFO types
+        // Allocate the remaining size to the biased FIFO type
         case USB_HAL_FIFO_BIAS_DEFAULT:
-            fifo_config = &fifo_config_default;
+            fifo_config.nptx_fifo_lines = OTG_DFIFO_DEPTH / 4;
+            fifo_config.ptx_fifo_lines  = OTG_DFIFO_DEPTH / 8;
+            fifo_config.rx_fifo_lines   = fifo_size_lines - fifo_config.ptx_fifo_lines - fifo_config.nptx_fifo_lines;
             break;
         case USB_HAL_FIFO_BIAS_RX:
-            fifo_config = &fifo_config_bias_rx;
+            fifo_config.nptx_fifo_lines = OTG_DFIFO_DEPTH / 16;
+            fifo_config.ptx_fifo_lines  = OTG_DFIFO_DEPTH / 8;
+            fifo_config.rx_fifo_lines   = fifo_size_lines - fifo_config.ptx_fifo_lines - fifo_config.nptx_fifo_lines;
             break;
         case USB_HAL_FIFO_BIAS_PTX:
-            fifo_config = &fifo_config_bias_ptx;
+            fifo_config.rx_fifo_lines   = OTG_DFIFO_DEPTH / 8 + 2; // 2 extra lines are allocated for status information. See USB-OTG Programming Guide, chapter 2.1.2.1
+            fifo_config.nptx_fifo_lines = OTG_DFIFO_DEPTH / 16;
+            fifo_config.ptx_fifo_lines  = fifo_size_lines - fifo_config.nptx_fifo_lines - fifo_config.rx_fifo_lines;
             break;
         default:
             abort();
     }
 
-    HAL_ASSERT((fifo_config->rx_fifo_lines + fifo_config->nptx_fifo_lines + fifo_config->ptx_fifo_lines) <= USB_DWC_FIFO_TOTAL_USABLE_LINES);
+    HAL_ASSERT((fifo_config.rx_fifo_lines + fifo_config.nptx_fifo_lines + fifo_config.ptx_fifo_lines) <= fifo_size_lines);
     //Check that none of the channels are active
-    for (int i = 0; i < USB_DWC_NUM_HOST_CHAN; i++) {
+    for (int i = 0; i < OTG_NUM_HOST_CHAN; i++) {
         if (hal->channels.hdls[i] != NULL) {
             HAL_ASSERT(!hal->channels.hdls[i]->flags.active);
         }
     }
     //Set the new FIFO lengths
-    usb_dwc_ll_grxfsiz_set_fifo_size(hal->dev, fifo_config->rx_fifo_lines);
-    usb_dwc_ll_gnptxfsiz_set_fifo_size(hal->dev, fifo_config->rx_fifo_lines, fifo_config->nptx_fifo_lines);
-    usb_dwc_ll_hptxfsiz_set_ptx_fifo_size(hal->dev, fifo_config->rx_fifo_lines + fifo_config->nptx_fifo_lines, fifo_config->ptx_fifo_lines);
+    usb_dwc_ll_grxfsiz_set_fifo_size(hal->dev, fifo_config.rx_fifo_lines);
+    usb_dwc_ll_gnptxfsiz_set_fifo_size(hal->dev, fifo_config.rx_fifo_lines, fifo_config.nptx_fifo_lines);
+    usb_dwc_ll_hptxfsiz_set_ptx_fifo_size(hal->dev, fifo_config.rx_fifo_lines + fifo_config.nptx_fifo_lines, fifo_config.ptx_fifo_lines);
     //Flush the FIFOs
     usb_dwc_ll_grstctl_flush_nptx_fifo(hal->dev);
     usb_dwc_ll_grstctl_flush_ptx_fifo(hal->dev);
     usb_dwc_ll_grstctl_flush_rx_fifo(hal->dev);
-    hal->fifo_config = fifo_config;
+    hal->fifo_config = fifo_config; // Implicit struct copy
     hal->flags.fifo_sizes_set = 1;
 }
 
@@ -232,7 +226,7 @@ void usb_dwc_hal_get_mps_limits(usb_dwc_hal_context_t *hal, usb_hal_fifo_mps_lim
     HAL_ASSERT(hal && mps_limits);
     HAL_ASSERT(hal->flags.fifo_sizes_set);
 
-    const usb_dwc_hal_fifo_config_t *fifo_config = hal->fifo_config;
+    const usb_dwc_hal_fifo_config_t *fifo_config = &(hal->fifo_config);
     mps_limits->in_mps = (fifo_config->rx_fifo_lines - 2) * 4; // Two lines are reserved for status quadlets internally by USB_DWC
     mps_limits->non_periodic_out_mps = fifo_config->nptx_fifo_lines * 4;
     mps_limits->periodic_out_mps = fifo_config->ptx_fifo_lines * 4;
@@ -264,11 +258,11 @@ bool usb_dwc_hal_chan_alloc(usb_dwc_hal_context_t *hal, usb_dwc_hal_chan_t *chan
 {
     HAL_ASSERT(hal->flags.fifo_sizes_set);  //FIFO sizes should be set befor attempting to allocate a channel
     //Attempt to allocate channel
-    if (hal->channels.num_allocd == USB_DWC_NUM_HOST_CHAN) {
+    if (hal->channels.num_allocd == OTG_NUM_HOST_CHAN) {
         return false;    //Out of free channels
     }
     int chan_idx = -1;
-    for (int i = 0; i < USB_DWC_NUM_HOST_CHAN; i++) {
+    for (int i = 0; i < OTG_NUM_HOST_CHAN; i++) {
         if (hal->channels.hdls[i] == NULL) {
             hal->channels.hdls[i] = chan_obj;
             chan_idx = i;

@@ -68,10 +68,11 @@ TEST_CASE("Test HCD bulk pipe URBs", "[bulk][full_speed]")
     //Create URBs for CBW, Data, and CSW transport. IN Buffer sizes are rounded up to nearest MPS
     urb_t *urb_cbw = test_hcd_alloc_urb(0, sizeof(mock_msc_bulk_cbw_t));
     urb_t *urb_data = test_hcd_alloc_urb(0, TEST_NUM_SECTORS_PER_XFER * MOCK_MSC_SCSI_SECTOR_SIZE);
-    urb_t *urb_csw = test_hcd_alloc_urb(0, sizeof(mock_msc_bulk_csw_t) + (mock_msc_scsi_bulk_in_ep_desc.wMaxPacketSize - (sizeof(mock_msc_bulk_csw_t) % mock_msc_scsi_bulk_in_ep_desc.wMaxPacketSize)));
+    const uint16_t mps = USB_EP_DESC_GET_MPS(&mock_msc_scsi_bulk_in_ep_desc) ;
+    urb_t *urb_csw = test_hcd_alloc_urb(0, sizeof(mock_msc_bulk_csw_t) + (mps - (sizeof(mock_msc_bulk_csw_t) % mps)));
     urb_cbw->transfer.num_bytes = sizeof(mock_msc_bulk_cbw_t);
     urb_data->transfer.num_bytes = TEST_NUM_SECTORS_PER_XFER * MOCK_MSC_SCSI_SECTOR_SIZE;
-    urb_csw->transfer.num_bytes = sizeof(mock_msc_bulk_csw_t) + (mock_msc_scsi_bulk_in_ep_desc.wMaxPacketSize - (sizeof(mock_msc_bulk_csw_t) % mock_msc_scsi_bulk_in_ep_desc.wMaxPacketSize));
+    urb_csw->transfer.num_bytes = sizeof(mock_msc_bulk_csw_t) + (mps - (sizeof(mock_msc_bulk_csw_t) % mps));
 
     for (int block_num = 0; block_num < TEST_NUM_SECTORS_TOTAL; block_num += TEST_NUM_SECTORS_PER_XFER) {
         //Initialize CBW URB, then send it on the BULK OUT pipe
