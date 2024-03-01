@@ -15,30 +15,7 @@
 #include "esp_rom_uart.h"
 #include "sdkconfig.h"
 #if CONFIG_IDF_TARGET_ESP32
-#include "soc/dport_reg.h"
 #include "esp32/rom/cache.h"
-#elif CONFIG_IDF_TARGET_ESP32S2
-#elif CONFIG_IDF_TARGET_ESP32S3
-#elif CONFIG_IDF_TARGET_ESP32C3
-#include "esp32c3/rom/crc.h"
-#include "esp32c3/rom/uart.h"
-#elif CONFIG_IDF_TARGET_ESP32C2
-#include "esp32c2/rom/crc.h"
-#include "esp32c2/rom/rtc.h"
-#include "esp32c2/rom/uart.h"
-#elif CONFIG_IDF_TARGET_ESP32C6
-#include "esp32c6/rom/crc.h"
-#include "esp32c6/rom/rtc.h"
-#include "esp32c6/rom/uart.h"
-#elif CONFIG_IDF_TARGET_ESP32C5
-#elif CONFIG_IDF_TARGET_ESP32H2
-#include "esp32h2/rom/crc.h"
-#include "esp32h2/rom/rtc.h"
-#include "esp32h2/rom/uart.h"
-#elif CONFIG_IDF_TARGET_ESP32P4
-
-#else // CONFIG_IDF_TARGET_*
-#error "Unsupported IDF_TARGET"
 #endif
 #include "esp_rom_spiflash.h"
 

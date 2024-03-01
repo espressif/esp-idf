@@ -23,15 +23,6 @@
 #include "bootloader_memory_utils.h"
 #include "soc/soc_caps.h"
 #include "hal/cache_ll.h"
-#if CONFIG_IDF_TARGET_ESP32C2
-#include "esp32c2/rom/rtc.h"
-#elif CONFIG_IDF_TARGET_ESP32C6
-#include "esp32c6/rom/rtc.h"
-#elif CONFIG_IDF_TARGET_ESP32H2
-#include "esp32h2/rom/rtc.h"
-#elif CONFIG_IDF_TARGET_ESP32P4
-#include "esp32p4/rom/rtc.h"
-#endif
 
 #define ALIGN_UP(num, align) (((num) + ((align) - 1)) & ~((align) - 1))
 
