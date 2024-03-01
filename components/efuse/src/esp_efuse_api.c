@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -291,4 +291,65 @@ esp_err_t esp_efuse_batch_write_commit(void)
 esp_err_t esp_efuse_check_errors(void)
 {
     return esp_efuse_utility_check_errors();
+}
+
+static esp_err_t destroy_block(esp_efuse_block_t block)
+{
+#if CONFIG_IDF_TARGET_ESP32C2
+    bool is_read_protected = esp_efuse_read_field_bit(ESP_EFUSE_RD_DIS_KEY0_LOW) && esp_efuse_read_field_bit(ESP_EFUSE_RD_DIS_KEY0_HI);
+#else
+    bool is_read_protected = esp_efuse_get_key_dis_read(block);
+#endif
+    bool is_read_protection_locked = esp_efuse_read_field_bit(ESP_EFUSE_WR_DIS_RD_DIS);
+    bool is_write_protected = esp_efuse_get_key_dis_write(block);
+
+    // 1. Destroy data in the block, if possible.
+    if (!is_write_protected) {
+        // The block is not write-protected, so the data in that block can be overwritten.
+        // Set the rest unset bits to 1
+        // If it is already read-protected then data is all zeros and
+        unsigned blk_len_bit = 256;
+#if CONFIG_IDF_TARGET_ESP32
+        if (esp_efuse_get_coding_scheme(block) == EFUSE_CODING_SCHEME_3_4) {
+            blk_len_bit = 192;
+        }
+#endif // CONFIG_IDF_TARGET_ESP32
+        uint32_t data[8 + 3]; // 8 words are data and 3 words are RS coding data
+        esp_efuse_read_block(block, data, 0, blk_len_bit);
+        // Inverse data to set only unset bit
+        for (unsigned i = 0; i < blk_len_bit / 32; i++) {
+            data[i] = ~data[i];
+        }
+        esp_efuse_write_block(block, data, 0, blk_len_bit);
+        esp_efuse_utility_burn_chip_opt(true, false);
+        ESP_LOGI(TAG, "Data has been destroyed in BLOCK%d", block);
+    }
+
+    // 2. Additionally we set the read-protection.
+    // Or if data can not be destroyed due to Block is write-protected.
+    if (!is_read_protected && !is_read_protection_locked) {
+#if CONFIG_IDF_TARGET_ESP32C2
+        esp_efuse_write_field_bit(ESP_EFUSE_RD_DIS_KEY0_LOW);
+        esp_efuse_write_field_bit(ESP_EFUSE_RD_DIS_KEY0_HI);
+#else
+        esp_efuse_set_key_dis_read(block);
+#endif
+        ESP_LOGI(TAG, "Data access has been disabled in BLOCK%d (read-protection is on)", block);
+    } else if (is_write_protected) {
+        ESP_LOGE(TAG, "Nothing is destroyed, data remains available in BLOCK%d", block);
+        ESP_LOGE(TAG, "BLOCK is already write-protected and read protection can not be set either");
+        return ESP_FAIL;
+    }
+    return ESP_OK;
+}
+
+esp_err_t esp_efuse_destroy_block(esp_efuse_block_t block)
+{
+    if (block < EFUSE_BLK_KEY0 || block >= EFUSE_BLK_KEY_MAX) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    EFUSE_LOCK_ACQUIRE_RECURSIVE();
+    esp_err_t error = destroy_block(block);
+    EFUSE_LOCK_RELEASE_RECURSIVE();
+    return error;
 }
