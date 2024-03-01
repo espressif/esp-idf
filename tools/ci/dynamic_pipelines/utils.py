@@ -1,6 +1,5 @@
 # SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-
 import typing as t
 
 import yaml
@@ -22,11 +21,10 @@ def dump_jobs_to_yaml(
                 'tools/ci/dynamic_pipelines/templates/.dynamic_jobs.yml',
                 '.gitlab/ci/common.yml',
             ],
-            # https://gitlab.com/gitlab-org/gitlab/-/issues/222370#note_662695503
             'workflow': {
                 'rules': [
-                    {'if': '$CI_MERGE_REQUEST_IID'},
-                    {'if': '$CI_COMMIT_BRANCH'},
+                    # always run the child pipeline, if they are created
+                    {'when': 'always'},
                 ],
             },
         }
