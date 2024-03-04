@@ -71,6 +71,7 @@ SUBTYPES = {
         'esphttpd': 0x80,
         'fat': 0x81,
         'spiffs': 0x82,
+        'littlefs': 0x83,
     },
 }
 
