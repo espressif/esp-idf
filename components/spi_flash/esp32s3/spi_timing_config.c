@@ -145,8 +145,8 @@ static uint32_t spi_timing_config_get_dummy(void)
         abort();
     }
 
-#if CONFIG_SPI_FLASH_HPM_ENABLE
-    if (spi_flash_hpm_dummy_adjust()) { // HPM is enabled
+#if CONFIG_SPI_FLASH_HPM_DC_ON
+    if (spi_flash_hpm_dummy_adjust()) { // HPM-DC is enabled
         const spi_flash_hpm_dummy_conf_t *hpm_dummy = spi_flash_hpm_get_dummy();
         switch (ctrl_reg & MULTI_LINE_MASK_QUAD_FLASH) {
             case SPI_FLASH_QIO_MODE:
@@ -166,7 +166,7 @@ static uint32_t spi_timing_config_get_dummy(void)
         }
     } else
 #endif
-    { // HPM is not enabled
+    { // HPM-DC is not enabled
         switch (ctrl_reg & MULTI_LINE_MASK_QUAD_FLASH) {
             case SPI_FLASH_QIO_MODE:
                 return SPI1_R_QIO_DUMMY_CYCLELEN;

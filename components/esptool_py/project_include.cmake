@@ -20,7 +20,7 @@ set(ESPSECUREPY ${python} "${CMAKE_CURRENT_LIST_DIR}/esptool/espsecure.py")
 set(ESPEFUSEPY ${python} "${CMAKE_CURRENT_LIST_DIR}/esptool/espefuse.py")
 set(ESPMONITOR ${python} "${idf_path}/tools/idf_monitor.py")
 
-if(CONFIG_SPI_FLASH_HPM_ENABLE)
+if(CONFIG_BOOTLOADER_FLASH_DC_AWARE)
 # When set flash frequency to 120M, must keep 1st bootloader work under ``DOUT`` mode
 # because on some flash chips, 120M will modify the status register,
 # which will make ROM won't work.

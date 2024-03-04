@@ -167,12 +167,10 @@ esp_err_t IRAM_ATTR spi_flash_init_chip_state(void)
 #if CONFIG_ESPTOOLPY_OCT_FLASH
     return esp_opiflash_init(rom_spiflash_legacy_data->chip.device_id);
 #else
-#if CONFIG_IDF_TARGET_ESP32S3
-    // Currently, only esp32s3 allows high performance mode.
+#if CONFIG_SPI_FLASH_HPM_ON
     return spi_flash_enable_high_performance_mode();
-#else
+#endif // CONFIG_SPI_FLASH_HPM_ON
     return ESP_OK;
-#endif // CONFIG_IDF_TARGET_ESP32S3
 #endif // CONFIG_ESPTOOLPY_OCT_FLASH
 }
 
