@@ -620,7 +620,6 @@ components/esp_system/test_eh_frame_parser/linker.ld
 components/esp_system/ubsan.c
 components/esp_wifi/include/esp_private/esp_wifi_types_private.h
 components/esp_wifi/include/esp_private/wifi_types.h
-components/esp_wifi/include/esp_smartconfig.h
 components/esp_wifi/src/lib_printf.c
 components/esp_wifi/src/mesh_event.c
 components/esp_wifi/src/smartconfig.c
