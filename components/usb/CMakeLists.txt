@@ -14,6 +14,7 @@ set(priv_requires driver) # usb_phy driver relies on gpio driver API
 
 if(CONFIG_SOC_USB_OTG_SUPPORTED)
     list(APPEND srcs "hcd_dwc.c"
+                     "enum.c"
                      "hub.c"
                      "usb_helpers.c"
                      "usb_host.c"
