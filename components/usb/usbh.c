@@ -447,6 +447,8 @@ static bool _dev_set_actions(device_t *dev_obj, uint32_t action_flags)
         dev_obj->dynamic.flags.in_pending_list = 1;
         call_proc_req_cb = true;
     } else {
+        // The device is already on the callback list, thus a processing request is already pending.
+        dev_obj->dynamic.action_flags |= action_flags;
         call_proc_req_cb = false;
     }
     return call_proc_req_cb;
