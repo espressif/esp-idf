@@ -1,12 +1,10 @@
 #!/usr/bin/env python
 #
-# SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-
 """
 Generate Kconfig.soc_caps.in with defines from soc_caps.h
 """
-
 import argparse
 import inspect
 import io
@@ -18,8 +16,19 @@ from pathlib import Path
 from string import Template
 
 import pyparsing
-from pyparsing import (CaselessLiteral, Char, Combine, Group, Literal, OneOrMore,  # pylint: disable=unused-import
-                       Optional, ParserElement, QuotedString, Word, alphas, hexnums, nums)
+from pyparsing import alphas
+from pyparsing import CaselessLiteral
+from pyparsing import Char
+from pyparsing import Combine
+from pyparsing import Group
+from pyparsing import hexnums
+from pyparsing import Literal
+from pyparsing import nums
+from pyparsing import OneOrMore
+from pyparsing import Optional
+from pyparsing import ParserElement
+from pyparsing import QuotedString
+from pyparsing import Word
 
 pyparsing.usePackrat = True
 
@@ -107,7 +116,7 @@ def parse_define(define_line):  # type: (str) -> typing.Any[typing.Type[ParserEl
 
     # Define value, either a hex, int or a string
     hex_value = Combine(Literal('0x') + Word(hexnums) + Optional(literal_suffix).suppress())('hex_value')
-    int_value = Word(nums)('int_value') + ~Char('.') + Optional(literal_suffix)('literal_suffix')
+    int_value = Combine(Optional('-') + Word(nums))('int_value') + ~Char('.') + Optional(literal_suffix)('literal_suffix')
     str_value = QuotedString('"')('str_value')
 
     # Remove optional parenthesis around values
