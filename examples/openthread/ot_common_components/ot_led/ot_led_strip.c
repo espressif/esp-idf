@@ -45,13 +45,13 @@ static void ot_indicator_change_callback(otChangedFlags changed_flags, void* ctx
     if (role == OT_DEVICE_ROLE_DISABLED) {
         esp_openthread_state_indicator_clear();
     } else if (role == OT_DEVICE_ROLE_DETACHED) {
-        esp_openthread_state_indicator_set(0, 40, 0, 0);
+        esp_openthread_state_indicator_set(0, CONFIG_DETACHED_INDICATOR_RED, CONFIG_DETACHED_INDICATOR_GREEN, CONFIG_DETACHED_INDICATOR_BLUE);
     } else if (role == OT_DEVICE_ROLE_LEADER) {
-        esp_openthread_state_indicator_set(0, 0, 40, 0);
+        esp_openthread_state_indicator_set(0, CONFIG_LEADER_INDICATOR_RED, CONFIG_LEADER_INDICATOR_GREEN, CONFIG_LEADER_INDICATOR_BLUE);
     } else if (role == OT_DEVICE_ROLE_ROUTER) {
-        esp_openthread_state_indicator_set(0, 0, 0, 40);
+        esp_openthread_state_indicator_set(0, CONFIG_ROUTER_INDICATOR_RED, CONFIG_ROUTER_INDICATOR_GREEN, CONFIG_ROUTER_INDICATOR_BLUE);
     } else if (role == OT_DEVICE_ROLE_CHILD) {
-        esp_openthread_state_indicator_set(0, 40, 8, 60);
+        esp_openthread_state_indicator_set(0, CONFIG_CHILD_INDICATOR_RED, CONFIG_CHILD_INDICATOR_GREEN, CONFIG_CHILD_INDICATOR_BLUE);
     }
 }
 
