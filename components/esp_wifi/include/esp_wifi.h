@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -401,6 +401,7 @@ esp_err_t esp_wifi_restore(void);
   *    - ESP_OK: succeed
   *    - ESP_ERR_WIFI_NOT_INIT: WiFi is not initialized by esp_wifi_init
   *    - ESP_ERR_WIFI_NOT_STARTED: WiFi is not started by esp_wifi_start
+  *    - ESP_ERR_WIFI_MODE: WiFi mode error
   *    - ESP_ERR_WIFI_CONN: WiFi internal error, station or soft-AP control block wrong
   *    - ESP_ERR_WIFI_SSID: SSID of AP which station connects is invalid
   */
@@ -1467,9 +1468,10 @@ esp_err_t esp_wifi_sta_get_negotiated_phymode(wifi_phy_mode_t *phymode);
 esp_err_t esp_wifi_set_dynamic_cs(bool enabled);
 
 /**
-  * @brief      Get the rssi info after station connected to AP
+  * @brief      Get the rssi information of AP to which the device is associated with
   *
-  * @attention  This API should be called after station connected to AP.
+  * @attention 1. This API should be called after station connected to AP.
+  * @attention 2. Use this API only in WIFI_MODE_STA or WIFI_MODE_APSTA mode.
   *
   * @param      rssi store the rssi info received from last beacon.
   *
