@@ -49,19 +49,19 @@ void ppa_hal_deinit(ppa_hal_context_t *hal)
     hal->dev = NULL;
 }
 
-// PPA module contains SR engine and Blending engine
+// PPA module contains SRM engine and Blending engine
 
 typedef struct ppa_engine_t ppa_engine_t;
 
 typedef struct ppa_invoker_t ppa_invoker_t;
 
 typedef struct {
-    PPA_SR_OPERATION_CONFIG;
+    PPA_SRM_OPERATION_CONFIG;
     uint32_t scale_x_int;
     uint32_t scale_x_frag;
     uint32_t scale_y_int;
     uint32_t scale_y_frag;
-} ppa_sr_oper_t;
+} ppa_srm_oper_t;
 
 typedef ppa_blend_operation_config_t ppa_blend_oper_t;
 
@@ -77,7 +77,7 @@ typedef struct ppa_trans_s {
 
 typedef struct {
     union {
-        ppa_sr_oper_t *sr_desc;
+        ppa_srm_oper_t *srm_desc;
         ppa_blend_oper_t *blend_desc;
         ppa_fill_oper_t *fill_desc;
         void *op_desc;
@@ -97,11 +97,11 @@ struct ppa_engine_t {
     // dma2d_rx_event_callbacks_t event_cbs;
 };
 
-typedef struct ppa_sr_engine_t {
+typedef struct ppa_srm_engine_t {
     ppa_engine_t base;
     dma2d_descriptor_t *dma_tx_desc;
     dma2d_descriptor_t *dma_rx_desc;
-} ppa_sr_engine_t;
+} ppa_srm_engine_t;
 
 typedef struct ppa_blend_engine_t {
     ppa_engine_t base;
@@ -111,9 +111,9 @@ typedef struct ppa_blend_engine_t {
 } ppa_blend_engine_t;
 
 struct ppa_invoker_t {
-    ppa_engine_t *sr_engine;
+    ppa_engine_t *srm_engine;
     ppa_engine_t *blending_engine;
-    uint32_t sr_trans_cnt;
+    uint32_t srm_trans_cnt;
     uint32_t blending_trans_cnt;
     portMUX_TYPE spinlock;
     bool in_accepting_trans_state;
@@ -122,9 +122,10 @@ struct ppa_invoker_t {
 };
 
 typedef enum {
-    PPA_OPERATION_SR,
+    PPA_OPERATION_SRM,
     PPA_OPERATION_BLEND,
     PPA_OPERATION_FILL,
+    PPA_OPERATION_NUM,
 } ppa_operation_t;
 
 typedef struct ppa_platform_t {
@@ -132,9 +133,9 @@ typedef struct ppa_platform_t {
     portMUX_TYPE spinlock;                      // platform level spinlock
     ppa_hal_context_t hal;
     dma2d_pool_handle_t dma2d_pool_handle;
-    ppa_sr_engine_t *sr;
+    ppa_srm_engine_t *srm;
     ppa_blend_engine_t *blending;
-    uint32_t sr_engine_ref_count;
+    uint32_t srm_engine_ref_count;
     uint32_t blend_engine_ref_count;
     uint32_t dma_desc_mem_size;
 } ppa_platform_t;
@@ -152,9 +153,15 @@ typedef struct {
 
 static esp_err_t ppa_engine_acquire(const ppa_engine_config_t *config, ppa_engine_t **ret_engine);
 static esp_err_t ppa_engine_release(ppa_engine_t *ppa_engine);
-static bool ppa_sr_transaction_on_picked(uint32_t num_chans, const dma2d_trans_channel_info_t *dma2d_chans, void *user_config);
+static bool ppa_srm_transaction_on_picked(uint32_t num_chans, const dma2d_trans_channel_info_t *dma2d_chans, void *user_config);
 static bool ppa_blend_transaction_on_picked(uint32_t num_chans, const dma2d_trans_channel_info_t *dma2d_chans, void *user_config);
 static bool ppa_fill_transaction_on_picked(uint32_t num_chans, const dma2d_trans_channel_info_t *dma2d_chans, void *user_config);
+
+const dma2d_trans_on_picked_callback_t ppa_oper_trans_on_picked_func[PPA_OPERATION_NUM] = {
+    ppa_srm_transaction_on_picked,
+    ppa_blend_transaction_on_picked,
+    ppa_fill_transaction_on_picked,
+};
 
 // extern uint32_t dma2d_tx_channel_reserved_mask[SOC_DMA2D_GROUPS];
 // extern uint32_t dma2d_rx_channel_reserved_mask[SOC_DMA2D_GROUPS];
@@ -173,7 +180,7 @@ static esp_err_t ppa_engine_acquire(const ppa_engine_config_t *config, ppa_engin
 {
     esp_err_t ret = ESP_OK;
     ESP_RETURN_ON_FALSE(config && ret_engine, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
-    ESP_RETURN_ON_FALSE(config->engine == PPA_ENGINE_TYPE_SR || config->engine == PPA_ENGINE_TYPE_BLEND, ESP_ERR_INVALID_ARG, TAG, "invalid engine");
+    ESP_RETURN_ON_FALSE(config->engine == PPA_ENGINE_TYPE_SRM || config->engine == PPA_ENGINE_TYPE_BLEND, ESP_ERR_INVALID_ARG, TAG, "invalid engine");
 
     *ret_engine = NULL;
 
@@ -185,39 +192,42 @@ static esp_err_t ppa_engine_acquire(const ppa_engine_config_t *config, ppa_engin
         s_platform.dma_desc_mem_size = ALIGN_UP(sizeof(dma2d_descriptor_align8_t), alignment);
     }
 
-    if (config->engine == PPA_ENGINE_TYPE_SR) {
-        if (!s_platform.sr) {
-            ppa_sr_engine_t *sr_engine = heap_caps_calloc(1, sizeof(ppa_sr_engine_t), PPA_MEM_ALLOC_CAPS);
-            SemaphoreHandle_t sr_sem = xSemaphoreCreateBinaryWithCaps(PPA_MEM_ALLOC_CAPS);
-            dma2d_descriptor_t *sr_tx_dma_desc = (dma2d_descriptor_t *)heap_caps_aligned_calloc(alignment, 1, s_platform.dma_desc_mem_size, MALLOC_CAP_DMA | PPA_MEM_ALLOC_CAPS);
-            dma2d_descriptor_t *sr_rx_dma_desc = (dma2d_descriptor_t *)heap_caps_aligned_calloc(alignment, 1, s_platform.dma_desc_mem_size, MALLOC_CAP_DMA | PPA_MEM_ALLOC_CAPS);
-            if (sr_engine && sr_sem && sr_tx_dma_desc && sr_rx_dma_desc) {
-                sr_engine->dma_tx_desc = sr_tx_dma_desc;
-                sr_engine->dma_rx_desc = sr_rx_dma_desc;
-                sr_engine->base.type = PPA_ENGINE_TYPE_SR;
-                sr_engine->base.spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
-                sr_engine->base.sem = sr_sem;
-                xSemaphoreGive(sr_engine->base.sem);
-                // sr_engine->base.in_accepting_trans_state = true;
-                STAILQ_INIT(&sr_engine->base.trans_stailq);
-                // sr_engine->base.event_cbs
-                s_platform.sr = sr_engine;
-                s_platform.sr_engine_ref_count++;
-                *ret_engine = &sr_engine->base;
+    if (config->engine == PPA_ENGINE_TYPE_SRM) {
+        if (!s_platform.srm) {
+            ppa_srm_engine_t *srm_engine = heap_caps_calloc(1, sizeof(ppa_srm_engine_t), PPA_MEM_ALLOC_CAPS);
+            SemaphoreHandle_t srm_sem = xSemaphoreCreateBinaryWithCaps(PPA_MEM_ALLOC_CAPS);
+            dma2d_descriptor_t *srm_tx_dma_desc = (dma2d_descriptor_t *)heap_caps_aligned_calloc(alignment, 1, s_platform.dma_desc_mem_size, MALLOC_CAP_DMA | PPA_MEM_ALLOC_CAPS);
+            dma2d_descriptor_t *srm_rx_dma_desc = (dma2d_descriptor_t *)heap_caps_aligned_calloc(alignment, 1, s_platform.dma_desc_mem_size, MALLOC_CAP_DMA | PPA_MEM_ALLOC_CAPS);
+            if (srm_engine && srm_sem && srm_tx_dma_desc && srm_rx_dma_desc) {
+                srm_engine->dma_tx_desc = srm_tx_dma_desc;
+                srm_engine->dma_rx_desc = srm_rx_dma_desc;
+                srm_engine->base.type = PPA_ENGINE_TYPE_SRM;
+                srm_engine->base.spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
+                srm_engine->base.sem = srm_sem;
+                xSemaphoreGive(srm_engine->base.sem);
+                // srm_engine->base.in_accepting_trans_state = true;
+                STAILQ_INIT(&srm_engine->base.trans_stailq);
+                // srm_engine->base.event_cbs
+                s_platform.srm = srm_engine;
+                s_platform.srm_engine_ref_count++;
+                *ret_engine = &srm_engine->base;
+
+                // TODO: Register PPA interrupt? Useful for SRM parameter error. If SRM parameter error, blocks at 2D-DMA, transaction can never finish, stuck...
+                // need a way to force end
             } else {
                 ret = ESP_ERR_NO_MEM;
-                ESP_LOGE(TAG, "no mem to register PPA SR engine");
-                free(sr_engine);
-                if (sr_sem) {
-                    vSemaphoreDeleteWithCaps(sr_sem);
+                ESP_LOGE(TAG, "no mem to register PPA SRM engine");
+                free(srm_engine);
+                if (srm_sem) {
+                    vSemaphoreDeleteWithCaps(srm_sem);
                 }
-                free(sr_tx_dma_desc);
-                free(sr_rx_dma_desc);
+                free(srm_tx_dma_desc);
+                free(srm_rx_dma_desc);
             }
         } else {
-            // SR engine already registered
-            s_platform.sr_engine_ref_count++;
-            *ret_engine = &s_platform.sr->base;
+            // SRM engine already registered
+            s_platform.srm_engine_ref_count++;
+            *ret_engine = &s_platform.srm->base;
         }
     } else if (config->engine == PPA_ENGINE_TYPE_BLEND) {
         if (!s_platform.blending) {
@@ -295,23 +305,23 @@ static esp_err_t ppa_engine_release(ppa_engine_t *ppa_engine)
     ESP_RETURN_ON_FALSE(ppa_engine, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
 
     _lock_acquire(&s_platform.mutex);
-    if (ppa_engine->type == PPA_ENGINE_TYPE_SR) {
-        ppa_sr_engine_t *sr_engine = __containerof(ppa_engine, ppa_sr_engine_t, base);
-        s_platform.sr_engine_ref_count--;
-        if (s_platform.sr_engine_ref_count == 0) {
-            // // Stop accepting new transactions to SR engine
-            // portENTER_CRITICAL(&sr_engine->base.spinlock);
-            // sr_engine->base.in_accepting_trans_state = false;
-            // portEXIT_CRITICAL(&sr_engine->base.spinlock);
+    if (ppa_engine->type == PPA_ENGINE_TYPE_SRM) {
+        ppa_srm_engine_t *srm_engine = __containerof(ppa_engine, ppa_srm_engine_t, base);
+        s_platform.srm_engine_ref_count--;
+        if (s_platform.srm_engine_ref_count == 0) {
+            // // Stop accepting new transactions to SRM engine
+            // portENTER_CRITICAL(&srm_engine->base.spinlock);
+            // srm_engine->base.in_accepting_trans_state = false;
+            // portEXIT_CRITICAL(&srm_engine->base.spinlock);
             // // Wait until all transactions get processed
-            // while (!STAILQ_EMPTY(&sr_engine->base.trans_stailq)); // TODO: Think twice, looks like I am not able to use engine semaphore to decide
-            assert(STAILQ_EMPTY(&sr_engine->base.trans_stailq));
+            // while (!STAILQ_EMPTY(&srm_engine->base.trans_stailq)); // TODO: Think twice, looks like I am not able to use engine semaphore to decide
+            assert(STAILQ_EMPTY(&srm_engine->base.trans_stailq));
             // Now, time to free
-            s_platform.sr = NULL;
-            free(sr_engine->dma_tx_desc);
-            free(sr_engine->dma_rx_desc);
-            vSemaphoreDeleteWithCaps(sr_engine->base.sem);
-            free(sr_engine);
+            s_platform.srm = NULL;
+            free(srm_engine->dma_tx_desc);
+            free(srm_engine->dma_rx_desc);
+            vSemaphoreDeleteWithCaps(srm_engine->base.sem);
+            free(srm_engine);
         }
     } else if (ppa_engine->type == PPA_ENGINE_TYPE_BLEND) {
         ppa_blend_engine_t *blending_engine = __containerof(ppa_engine, ppa_blend_engine_t, base);
@@ -334,8 +344,8 @@ static esp_err_t ppa_engine_release(ppa_engine_t *ppa_engine)
         }
     }
 
-    if (!s_platform.sr && !s_platform.blending) {
-        assert(s_platform.sr_engine_ref_count == 0 && s_platform.blend_engine_ref_count == 0);
+    if (!s_platform.srm && !s_platform.blending) {
+        assert(s_platform.srm_engine_ref_count == 0 && s_platform.blend_engine_ref_count == 0);
 
         if (s_platform.dma2d_pool_handle) {
             dma2d_release_pool(s_platform.dma2d_pool_handle); // TODO: check return value. If not ESP_OK, then must be error on other 2D-DMA clients :( Give a warning log?
@@ -363,11 +373,11 @@ esp_err_t ppa_register_invoker(const ppa_invoker_config_t *config, ppa_invoker_h
 
     invoker->spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
     invoker->in_accepting_trans_state = true;
-    if (config->operation_flag & PPA_OPERATION_FLAG_SR) {
+    if (config->operation_flag & PPA_OPERATION_FLAG_SRM) {
         ppa_engine_config_t engine_config = {
-            .engine = PPA_ENGINE_TYPE_SR,
+            .engine = PPA_ENGINE_TYPE_SRM,
         };
-        ESP_GOTO_ON_ERROR(ppa_engine_acquire(&engine_config, &invoker->sr_engine), err, TAG, "unable to acquire SR engine");
+        ESP_GOTO_ON_ERROR(ppa_engine_acquire(&engine_config, &invoker->srm_engine), err, TAG, "unable to acquire SRM engine");
     }
     if (config->operation_flag & PPA_OPERATION_FLAG_BLEND || config->operation_flag & PPA_OPERATION_FLAG_FILL) {
         ppa_engine_config_t engine_config = {
@@ -390,15 +400,15 @@ esp_err_t ppa_unregister_invoker(ppa_invoker_handle_t ppa_invoker)
 
     bool do_unregister = false;
     portENTER_CRITICAL(&ppa_invoker->spinlock);
-    if (ppa_invoker->sr_trans_cnt == 0 && ppa_invoker->blending_trans_cnt == 0) {
+    if (ppa_invoker->srm_trans_cnt == 0 && ppa_invoker->blending_trans_cnt == 0) {
         ppa_invoker->in_accepting_trans_state = false;
         do_unregister = true;
     }
     portEXIT_CRITICAL(&ppa_invoker->spinlock);
     ESP_RETURN_ON_FALSE(do_unregister, ESP_ERR_INVALID_STATE, TAG, "invoker still has unprocessed trans");
 
-    if (ppa_invoker->sr_engine) {
-        ppa_engine_release(ppa_invoker->sr_engine);
+    if (ppa_invoker->srm_engine) {
+        ppa_engine_release(ppa_invoker->srm_engine);
     }
     if (ppa_invoker->blending_engine) {
         ppa_engine_release(ppa_invoker->blending_engine);
@@ -445,30 +455,30 @@ esp_err_t ppa_unregister_invoker(ppa_invoker_handle_t ppa_invoker)
 //     //     }
 //     // }
 
-//     // // Register PPA SR engine
-//     // if (ret == ESP_OK && config->sr_engine_en && !s_platform.group[group_id]->sr) {
-//     //     ppa_sr_engine_t *sr_engine = heap_caps_calloc(1, sizeof(ppa_sr_engine_t), PPA_MEM_ALLOC_CAPS);
-//     //     SemaphoreHandle_t sr_sem = xSemaphoreCreateBinary();
-//     //     dma2d_descriptor_t *sr_tx_dma_desc = (dma2d_descriptor_t *)heap_caps_aligned_calloc(64, 1, 64, PPA_MEM_ALLOC_CAPS); // TODO: get cache line size by API
-//     //     dma2d_descriptor_t *sr_rx_dma_desc = (dma2d_descriptor_t *)heap_caps_aligned_calloc(64, 1, 64, PPA_MEM_ALLOC_CAPS);
-//     //     if (sr_engine && sr_sem && sr_tx_dma_desc && sr_rx_dma_desc) {
-//     //         sr_engine->dma_tx_desc = sr_tx_dma_desc;
-//     //         sr_engine->dma_rx_desc = sr_rx_dma_desc;
-//     //         sr_engine->base.group = s_platform.group[group_id];
-//     //         sr_engine->base.spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
-//     //         sr_engine->base.sem = sr_sem;
-//     //         xSemaphoreGive(sr_engine->base.sem);
-//     //         sr_engine->base.in_accepting_trans_state = true;
-//     //         STAILQ_INIT(&sr_engine->base.trans_stailq);
-//     //         // sr_engine->base.event_cbs
-//     //         s_platform.group[group_id]->sr = sr_engine;
+//     // // Register PPA SRM engine
+//     // if (ret == ESP_OK && config->srm_engine_en && !s_platform.group[group_id]->srm) {
+//     //     ppa_srm_engine_t *srm_engine = heap_caps_calloc(1, sizeof(ppa_srm_engine_t), PPA_MEM_ALLOC_CAPS);
+//     //     SemaphoreHandle_t srm_sem = xSemaphoreCreateBinary();
+//     //     dma2d_descriptor_t *srm_tx_dma_desc = (dma2d_descriptor_t *)heap_caps_aligned_calloc(64, 1, 64, PPA_MEM_ALLOC_CAPS); // TODO: get cache line size by API
+//     //     dma2d_descriptor_t *srm_rx_dma_desc = (dma2d_descriptor_t *)heap_caps_aligned_calloc(64, 1, 64, PPA_MEM_ALLOC_CAPS);
+//     //     if (srm_engine && srm_sem && srm_tx_dma_desc && srm_rx_dma_desc) {
+//     //         srm_engine->dma_tx_desc = srm_tx_dma_desc;
+//     //         srm_engine->dma_rx_desc = srm_rx_dma_desc;
+//     //         srm_engine->base.group = s_platform.group[group_id];
+//     //         srm_engine->base.spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
+//     //         srm_engine->base.sem = srm_sem;
+//     //         xSemaphoreGive(srm_engine->base.sem);
+//     //         srm_engine->base.in_accepting_trans_state = true;
+//     //         STAILQ_INIT(&srm_engine->base.trans_stailq);
+//     //         // srm_engine->base.event_cbs
+//     //         s_platform.group[group_id]->srm = srm_engine;
 //     //     } else {
 //     //         ret = ESP_ERR_NO_MEM;
-//     //         ESP_LOGE(TAG, "no mem to register PPA SR engine");
-//     //         free(sr_engine);
-//     //         if (sr_sem) vSemaphoreDelete(sr_sem);
-//     //         free(sr_tx_dma_desc);
-//     //         free(sr_rx_dma_desc);
+//     //         ESP_LOGE(TAG, "no mem to register PPA SRM engine");
+//     //         free(srm_engine);
+//     //         if (srm_sem) vSemaphoreDelete(srm_sem);
+//     //         free(srm_tx_dma_desc);
+//     //         free(srm_rx_dma_desc);
 //     //     }
 //     // }
 
@@ -506,12 +516,12 @@ esp_err_t ppa_unregister_invoker(ppa_invoker_handle_t ppa_invoker)
 //     // ppa_module_release
 
 //     bool new_group = false;
-//     bool new_sr_engine = false;
+//     bool new_srm_engine = false;
 //     bool new_blending_engine = false;
 //     ppa_group_t *pre_alloc_group = heap_caps_calloc(1, sizeof(ppa_group_t), PPA_MEM_ALLOC_CAPS);
-//     ppa_sr_engine_t *sr_engine = NULL;
+//     ppa_srm_engine_t *srm_engine = NULL;
 //     ppa_blend_engine_t *blending_engine = NULL;
-//     SemaphoreHandle_t sr_sem = NULL, blending_sem = NULL;
+//     SemaphoreHandle_t srm_sem = NULL, blending_sem = NULL;
 
 //     // portENTER_CRITICAL(&s_platform.spinlock);
 //     if (!s_platform.group[group_id]) {
@@ -544,33 +554,33 @@ esp_err_t ppa_unregister_invoker(ppa_invoker_handle_t ppa_invoker)
 //         }
 //     }
 
-//     if (ret == ESP_OK && config->sr_engine_en) {
-//         sr_engine = heap_caps_calloc(1, sizeof(ppa_sr_engine_t), PPA_MEM_ALLOC_CAPS);
-//         sr_sem = xSemaphoreCreateBinary();
-//         dma2d_descriptor_t *sr_tx_dma_desc = (dma2d_descriptor_t *)heap_caps_aligned_calloc(64, 1, 64, PPA_MEM_ALLOC_CAPS); // TODO: get cache line size by API
-//         dma2d_descriptor_t *sr_rx_dma_desc = (dma2d_descriptor_t *)heap_caps_aligned_calloc(64, 1, 64, PPA_MEM_ALLOC_CAPS);
-//          // Register PPA SR engine
+//     if (ret == ESP_OK && config->srm_engine_en) {
+//         srm_engine = heap_caps_calloc(1, sizeof(ppa_srm_engine_t), PPA_MEM_ALLOC_CAPS);
+//         srm_sem = xSemaphoreCreateBinary();
+//         dma2d_descriptor_t *srm_tx_dma_desc = (dma2d_descriptor_t *)heap_caps_aligned_calloc(64, 1, 64, PPA_MEM_ALLOC_CAPS); // TODO: get cache line size by API
+//         dma2d_descriptor_t *srm_rx_dma_desc = (dma2d_descriptor_t *)heap_caps_aligned_calloc(64, 1, 64, PPA_MEM_ALLOC_CAPS);
+//          // Register PPA SRM engine
 //         portENTER_CRITICAL(&s_platform.group[group_id]->spinlock);
-//         if (!s_platform.group[group_id]->sr) {
-//             if (sr_engine && sr_sem && sr_tx_dma_desc && sr_rx_dma_desc) {
-//                 new_sr_engine = true;
-//                 sr_engine->dma_tx_desc = sr_tx_dma_desc;
-//                 sr_engine->dma_rx_desc = sr_rx_dma_desc;
-//                 sr_engine->base.group = s_platform.group[group_id];
-//                 sr_engine->base.spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
-//                 sr_engine->base.sem = sr_sem;
-//                 xSemaphoreGive(sr_engine->base.sem);
-//                 sr_engine->base.in_accepting_trans_state = true;
-//                 STAILQ_INIT(&sr_engine->base.trans_stailq);
-//                 // sr_engine->base.event_cbs
-//                 s_platform.group[group_id]->sr = sr_engine;
+//         if (!s_platform.group[group_id]->srm) {
+//             if (srm_engine && srm_sem && srm_tx_dma_desc && srm_rx_dma_desc) {
+//                 new_srm_engine = true;
+//                 srm_engine->dma_tx_desc = srm_tx_dma_desc;
+//                 srm_engine->dma_rx_desc = srm_rx_dma_desc;
+//                 srm_engine->base.group = s_platform.group[group_id];
+//                 srm_engine->base.spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
+//                 srm_engine->base.sem = srm_sem;
+//                 xSemaphoreGive(srm_engine->base.sem);
+//                 srm_engine->base.in_accepting_trans_state = true;
+//                 STAILQ_INIT(&srm_engine->base.trans_stailq);
+//                 // srm_engine->base.event_cbs
+//                 s_platform.group[group_id]->srm = srm_engine;
 //             } else {
 //                 ret = ESP_ERR_NO_MEM;
 //             }
 //         }
 //         portEXIT_CRITICAL(&s_platform.group[group_id]->spinlock);
 //         if (ret == ESP_ERR_NO_MEM) {
-//             ESP_LOGE(TAG, "no mem to register PPA SR engine");
+//             ESP_LOGE(TAG, "no mem to register PPA SRM engine");
 //         }
 //     }
 
@@ -606,9 +616,9 @@ esp_err_t ppa_unregister_invoker(ppa_invoker_handle_t ppa_invoker)
 //         }
 //     }
 
-//     if (!new_sr_engine) {
-//         free(sr_engine);
-//         if (sr_sem) vSemaphoreDelete(sr_sem);
+//     if (!new_srm_engine) {
+//         free(srm_engine);
+//         if (srm_sem) vSemaphoreDelete(srm_sem);
 //         // TODO: free desc
 //     }
 //     if (!new_blending_engine) {
@@ -636,18 +646,18 @@ esp_err_t ppa_unregister_invoker(ppa_invoker_handle_t ppa_invoker)
 
 //     bool do_deinitialize = false;
 //     int group_id = ppa_group->group_id;
-//     ppa_sr_engine_t *sr_engine = ppa_group->sr;
+//     ppa_srm_engine_t *srm_engine = ppa_group->srm;
 //     ppa_blend_engine_t *blending_engine = ppa_group->blending;
-//     bool sr_no_waiting_trans = true;
+//     bool srm_no_waiting_trans = true;
 //     bool blending_no_waiting_trans = true;
 
 //     // portENTER_CRITICAL(&s_platform.spinlock);
 //     portENTER_CRITICAL(&ppa_group->spinlock);
-//     if (sr_engine) {
-//         sr_engine->base.in_accepting_trans_state = false;
-//         portENTER_CRITICAL(&sr_engine->base.spinlock);
-//         sr_no_waiting_trans = STAILQ_EMPTY(&sr_engine->base.trans_stailq);
-//         portEXIT_CRITICAL(&sr_engine->base.spinlock);
+//     if (srm_engine) {
+//         srm_engine->base.in_accepting_trans_state = false;
+//         portENTER_CRITICAL(&srm_engine->base.spinlock);
+//         srm_no_waiting_trans = STAILQ_EMPTY(&srm_engine->base.trans_stailq);
+//         portEXIT_CRITICAL(&srm_engine->base.spinlock);
 //     }
 //     if (blending_engine) {
 //         blending_engine->base.in_accepting_trans_state = false;
@@ -656,9 +666,9 @@ esp_err_t ppa_unregister_invoker(ppa_invoker_handle_t ppa_invoker)
 //         portEXIT_CRITICAL(&blending_engine->base.spinlock);
 //     }
 //     portEXIT_CRITICAL(&ppa_group->spinlock);
-//     if (sr_no_waiting_trans && blending_no_waiting_trans) {
+//     if (srm_no_waiting_trans && blending_no_waiting_trans) {
 //         do_deinitialize = true;
-//         ppa_group->sr = NULL;
+//         ppa_group->srm = NULL;
 //         ppa_group->blending = NULL;
 //         s_platform.group[group_id] = NULL;
 //     } else {
@@ -667,11 +677,11 @@ esp_err_t ppa_unregister_invoker(ppa_invoker_handle_t ppa_invoker)
 //     // portEXIT_CRITICAL(&s_platform.spinlock);
 
 //     if (do_deinitialize) {
-//         if (sr_engine) {
-//             free(sr_engine->dma_tx_desc);
-//             free(sr_engine->dma_rx_desc);
-//             vSemaphoreDelete(sr_engine->base.sem);
-//             free(sr_engine);
+//         if (srm_engine) {
+//             free(srm_engine->dma_tx_desc);
+//             free(srm_engine->dma_rx_desc);
+//             vSemaphoreDelete(srm_engine->base.sem);
+//             free(srm_engine);
 //         }
 //         if (blending_engine) {
 //             free(blending_engine->dma_tx_bg_desc);
@@ -724,7 +734,7 @@ static esp_err_t ppa_prepare_trans_elm(ppa_invoker_handle_t ppa_invoker, ppa_eng
     dma2d_trans_t *dma_trans_elm = (dma2d_trans_t *)heap_caps_calloc(1, SIZEOF_DMA2D_TRANS_T, PPA_MEM_ALLOC_CAPS);
     dma2d_trans_config_t *dma_trans_desc = (dma2d_trans_config_t *)heap_caps_calloc(1, sizeof(dma2d_trans_config_t), PPA_MEM_ALLOC_CAPS);
     ppa_dma2d_trans_on_picked_config_t *trans_on_picked_desc = (ppa_dma2d_trans_on_picked_config_t *)heap_caps_calloc(1, sizeof(ppa_dma2d_trans_on_picked_config_t), PPA_MEM_ALLOC_CAPS);
-    size_t ppa_trans_desc_size = (ppa_operation == PPA_OPERATION_SR) ? sizeof(ppa_sr_oper_t) :
+    size_t ppa_trans_desc_size = (ppa_operation == PPA_OPERATION_SRM) ? sizeof(ppa_srm_oper_t) :
                                  (ppa_operation == PPA_OPERATION_BLEND) ? sizeof(ppa_blend_oper_t) :
                                  (ppa_operation == PPA_OPERATION_FILL) ? sizeof(ppa_fill_oper_t) : 0;
     assert(ppa_trans_desc_size != 0);
@@ -735,7 +745,7 @@ static esp_err_t ppa_prepare_trans_elm(ppa_invoker_handle_t ppa_invoker, ppa_eng
         ESP_GOTO_ON_FALSE(new_trans_elm->sem, ESP_ERR_NO_MEM, err, TAG, "no mem for transaction storage");
     }
 
-    size_t cpy_size = (ppa_operation == PPA_OPERATION_SR) ? sizeof(ppa_sr_operation_config_t) :
+    size_t cpy_size = (ppa_operation == PPA_OPERATION_SRM) ? sizeof(ppa_srm_operation_config_t) :
                       (ppa_operation == PPA_OPERATION_BLEND) ? sizeof(ppa_blend_operation_config_t) :
                       (ppa_operation == PPA_OPERATION_FILL) ? sizeof(ppa_fill_operation_config_t) : 0;
     memcpy(ppa_trans_desc, oper_config, cpy_size);
@@ -743,9 +753,9 @@ static esp_err_t ppa_prepare_trans_elm(ppa_invoker_handle_t ppa_invoker, ppa_eng
     trans_on_picked_desc->op_desc = ppa_trans_desc;
     trans_on_picked_desc->ppa_engine = ppa_engine_base;
     trans_on_picked_desc->trans_elm = new_trans_elm;
-    trans_on_picked_desc->trigger_periph = (engine_type == PPA_ENGINE_TYPE_SR) ? DMA2D_TRIG_PERIPH_PPA_SR : DMA2D_TRIG_PERIPH_PPA_BLEND;
+    trans_on_picked_desc->trigger_periph = (engine_type == PPA_ENGINE_TYPE_SRM) ? DMA2D_TRIG_PERIPH_PPA_SRM : DMA2D_TRIG_PERIPH_PPA_BLEND;
 
-    dma_trans_desc->tx_channel_num = (ppa_operation == PPA_OPERATION_SR) ? 1 :
+    dma_trans_desc->tx_channel_num = (ppa_operation == PPA_OPERATION_SRM) ? 1 :
                                      (ppa_operation == PPA_OPERATION_BLEND) ? 2 : 0; // PPA_OPERATION_FILL does not have data input
     dma_trans_desc->rx_channel_num = 1;
 
@@ -753,9 +763,7 @@ static esp_err_t ppa_prepare_trans_elm(ppa_invoker_handle_t ppa_invoker, ppa_eng
     // dma_trans_desc->specified_rx_channel_mask = ppa_specified_rx_channel_mask;
 
     dma_trans_desc->user_config = (void *)trans_on_picked_desc;
-    dma_trans_desc->on_job_picked = (ppa_operation == PPA_OPERATION_SR) ? ppa_sr_transaction_on_picked :
-                                    (ppa_operation == PPA_OPERATION_BLEND) ? ppa_blend_transaction_on_picked :
-                                    (ppa_operation == PPA_OPERATION_FILL) ? ppa_fill_transaction_on_picked : NULL;
+    dma_trans_desc->on_job_picked = ppa_oper_trans_on_picked_func[ppa_operation];
 
     new_trans_elm->trans_desc = dma_trans_desc;
     new_trans_elm->dma_trans_placeholder = dma_trans_elm;
@@ -779,8 +787,8 @@ static esp_err_t ppa_do_operation(ppa_invoker_handle_t ppa_invoker, ppa_engine_t
     if (ppa_invoker->in_accepting_trans_state) {
         // Send transaction into PPA engine queue
         STAILQ_INSERT_TAIL(&ppa_engine_base->trans_stailq, trans_elm, entry);
-        if (engine_type == PPA_ENGINE_TYPE_SR) {
-            ppa_invoker->sr_trans_cnt++;
+        if (engine_type == PPA_ENGINE_TYPE_SRM) {
+            ppa_invoker->srm_trans_cnt++;
         } else {
             ppa_invoker->blending_trans_cnt++;
         }
@@ -868,8 +876,8 @@ static bool ppa_transaction_done_cb(dma2d_channel_handle_t dma2d_chan, dma2d_eve
     }
 
     portENTER_CRITICAL_ISR(&invoker->spinlock);
-    if (engine_type == PPA_ENGINE_TYPE_SR) {
-        invoker->sr_trans_cnt--;
+    if (engine_type == PPA_ENGINE_TYPE_SRM) {
+        invoker->srm_trans_cnt--;
     } else {
         invoker->blending_trans_cnt--;
     }
@@ -880,14 +888,14 @@ static bool ppa_transaction_done_cb(dma2d_channel_handle_t dma2d_chan, dma2d_eve
     return need_yield;
 }
 
-static bool ppa_sr_transaction_on_picked(uint32_t num_chans, const dma2d_trans_channel_info_t *dma2d_chans, void *user_config)
+static bool ppa_srm_transaction_on_picked(uint32_t num_chans, const dma2d_trans_channel_info_t *dma2d_chans, void *user_config)
 {
     assert(num_chans == 2 && dma2d_chans && user_config);
     ppa_dma2d_trans_on_picked_config_t *trans_on_picked_desc = (ppa_dma2d_trans_on_picked_config_t *)user_config;
-    assert(trans_on_picked_desc->trigger_periph == DMA2D_TRIG_PERIPH_PPA_SR && trans_on_picked_desc->sr_desc && trans_on_picked_desc->ppa_engine);
+    assert(trans_on_picked_desc->trigger_periph == DMA2D_TRIG_PERIPH_PPA_SRM && trans_on_picked_desc->srm_desc && trans_on_picked_desc->ppa_engine);
 
-    ppa_sr_oper_t *sr_trans_desc = trans_on_picked_desc->sr_desc;
-    ppa_sr_engine_t *sr_engine = __containerof(trans_on_picked_desc->ppa_engine, ppa_sr_engine_t, base);
+    ppa_srm_oper_t *srm_trans_desc = trans_on_picked_desc->srm_desc;
+    ppa_srm_engine_t *srm_engine = __containerof(trans_on_picked_desc->ppa_engine, ppa_srm_engine_t, base);
 
     // Free 2D-DMA transaction placeholder (transaction has already been moved out from 2D-DMA queue)
     free(trans_on_picked_desc->trans_elm->dma_trans_placeholder);
@@ -905,62 +913,62 @@ static bool ppa_sr_transaction_on_picked(uint32_t num_chans, const dma2d_trans_c
     // Write back and invalidate are performed on the entire picture (the window content is not continuous in the buffer)
     // Write back in_buffer
     color_space_pixel_format_t in_pixel_format = {
-        .color_type_id = sr_trans_desc->in_color.mode,
+        .color_type_id = srm_trans_desc->in_color.mode,
     };
-    uint32_t in_buffer_len = sr_trans_desc->in_pic_w * sr_trans_desc->in_pic_h * color_hal_pixel_format_get_bit_depth(in_pixel_format) / 8;
-    esp_cache_msync(sr_trans_desc->in_buffer, in_buffer_len, ESP_CACHE_MSYNC_FLAG_DIR_C2M);
+    uint32_t in_buffer_len = srm_trans_desc->in_pic_w * srm_trans_desc->in_pic_h * color_hal_pixel_format_get_bit_depth(in_pixel_format) / 8;
+    esp_cache_msync(srm_trans_desc->in_buffer, in_buffer_len, ESP_CACHE_MSYNC_FLAG_DIR_C2M);
     // Invalidate out_buffer
     color_space_pixel_format_t out_pixel_format = {
-        .color_type_id = sr_trans_desc->out_color.mode,
+        .color_type_id = srm_trans_desc->out_color.mode,
     };
-    uint32_t out_buffer_len = sr_trans_desc->out_pic_w * sr_trans_desc->out_pic_h * color_hal_pixel_format_get_bit_depth(out_pixel_format) / 8;
-    esp_cache_msync(sr_trans_desc->out_buffer, out_buffer_len, ESP_CACHE_MSYNC_FLAG_DIR_M2C);
+    uint32_t out_buffer_len = srm_trans_desc->out_pic_w * srm_trans_desc->out_pic_h * color_hal_pixel_format_get_bit_depth(out_pixel_format) / 8;
+    esp_cache_msync(srm_trans_desc->out_buffer, out_buffer_len, ESP_CACHE_MSYNC_FLAG_DIR_M2C);
 
     // Fill 2D-DMA descriptors
-    sr_engine->dma_tx_desc->vb_size = sr_trans_desc->in_block_h;
-    sr_engine->dma_tx_desc->hb_length = sr_trans_desc->in_block_w;
-    sr_engine->dma_tx_desc->err_eof = 0;
-    sr_engine->dma_tx_desc->dma2d_en = 1;
-    sr_engine->dma_tx_desc->suc_eof = 1;
-    sr_engine->dma_tx_desc->owner = DMA2D_DESCRIPTOR_BUFFER_OWNER_DMA;
-    sr_engine->dma_tx_desc->va_size = sr_trans_desc->in_pic_h;
-    sr_engine->dma_tx_desc->ha_length = sr_trans_desc->in_pic_w;
-    sr_engine->dma_tx_desc->pbyte = dma2d_desc_pixel_format_to_pbyte_value(in_pixel_format);
-    sr_engine->dma_tx_desc->y = sr_trans_desc->in_block_offset_y;
-    sr_engine->dma_tx_desc->x = sr_trans_desc->in_block_offset_x;
-    sr_engine->dma_tx_desc->mode = DMA2D_DESCRIPTOR_BLOCK_RW_MODE_SINGLE;
-    sr_engine->dma_tx_desc->buffer = (void *)sr_trans_desc->in_buffer;
-    sr_engine->dma_tx_desc->next = NULL;
+    srm_engine->dma_tx_desc->vb_size = srm_trans_desc->in_block_h;
+    srm_engine->dma_tx_desc->hb_length = srm_trans_desc->in_block_w;
+    srm_engine->dma_tx_desc->err_eof = 0;
+    srm_engine->dma_tx_desc->dma2d_en = 1;
+    srm_engine->dma_tx_desc->suc_eof = 1;
+    srm_engine->dma_tx_desc->owner = DMA2D_DESCRIPTOR_BUFFER_OWNER_DMA;
+    srm_engine->dma_tx_desc->va_size = srm_trans_desc->in_pic_h;
+    srm_engine->dma_tx_desc->ha_length = srm_trans_desc->in_pic_w;
+    srm_engine->dma_tx_desc->pbyte = dma2d_desc_pixel_format_to_pbyte_value(in_pixel_format);
+    srm_engine->dma_tx_desc->y = srm_trans_desc->in_block_offset_y;
+    srm_engine->dma_tx_desc->x = srm_trans_desc->in_block_offset_x;
+    srm_engine->dma_tx_desc->mode = DMA2D_DESCRIPTOR_BLOCK_RW_MODE_SINGLE;
+    srm_engine->dma_tx_desc->buffer = (void *)srm_trans_desc->in_buffer;
+    srm_engine->dma_tx_desc->next = NULL;
 
     // vb_size, hb_length can be any value (auto writeback). However, if vb_size/hb_length is 0, it triggers 2D-DMA DESC_ERROR interrupt, and dma2d driver will automatically ends the transaction. Therefore, to avoid this, we set them to 1.
-    sr_engine->dma_rx_desc->vb_size = 1;
-    sr_engine->dma_rx_desc->hb_length = 1;
-    sr_engine->dma_rx_desc->err_eof = 0;
-    sr_engine->dma_rx_desc->dma2d_en = 1;
-    sr_engine->dma_rx_desc->suc_eof = 1;
-    sr_engine->dma_rx_desc->owner = DMA2D_DESCRIPTOR_BUFFER_OWNER_DMA;
-    sr_engine->dma_rx_desc->va_size = sr_trans_desc->out_pic_h;
-    sr_engine->dma_rx_desc->ha_length = sr_trans_desc->out_pic_w;
+    srm_engine->dma_rx_desc->vb_size = 1;
+    srm_engine->dma_rx_desc->hb_length = 1;
+    srm_engine->dma_rx_desc->err_eof = 0;
+    srm_engine->dma_rx_desc->dma2d_en = 1;
+    srm_engine->dma_rx_desc->suc_eof = 1;
+    srm_engine->dma_rx_desc->owner = DMA2D_DESCRIPTOR_BUFFER_OWNER_DMA;
+    srm_engine->dma_rx_desc->va_size = srm_trans_desc->out_pic_h;
+    srm_engine->dma_rx_desc->ha_length = srm_trans_desc->out_pic_w;
     // pbyte can be any value
-    sr_engine->dma_rx_desc->y = sr_trans_desc->out_block_offset_y;
-    sr_engine->dma_rx_desc->x = sr_trans_desc->out_block_offset_x;
-    sr_engine->dma_rx_desc->mode = DMA2D_DESCRIPTOR_BLOCK_RW_MODE_SINGLE;
-    sr_engine->dma_rx_desc->buffer = (void *)sr_trans_desc->out_buffer;
-    sr_engine->dma_rx_desc->next = NULL;
+    srm_engine->dma_rx_desc->y = srm_trans_desc->out_block_offset_y;
+    srm_engine->dma_rx_desc->x = srm_trans_desc->out_block_offset_x;
+    srm_engine->dma_rx_desc->mode = DMA2D_DESCRIPTOR_BLOCK_RW_MODE_SINGLE;
+    srm_engine->dma_rx_desc->buffer = (void *)srm_trans_desc->out_buffer;
+    srm_engine->dma_rx_desc->next = NULL;
 
-    esp_cache_msync((void *)sr_engine->dma_tx_desc, s_platform.dma_desc_mem_size, ESP_CACHE_MSYNC_FLAG_DIR_C2M);
-    esp_cache_msync((void *)sr_engine->dma_rx_desc, s_platform.dma_desc_mem_size, ESP_CACHE_MSYNC_FLAG_DIR_C2M);
+    esp_cache_msync((void *)srm_engine->dma_tx_desc, s_platform.dma_desc_mem_size, ESP_CACHE_MSYNC_FLAG_DIR_C2M);
+    esp_cache_msync((void *)srm_engine->dma_rx_desc, s_platform.dma_desc_mem_size, ESP_CACHE_MSYNC_FLAG_DIR_C2M);
 
-    // printf("desc addr: %p\n", sr_engine->dma_rx_desc);
-    // printf("desc content: %08lX, %08lX, %08lX, %08lX, %08lX\n", *(uint32_t *)sr_engine->dma_rx_desc, *(uint32_t *)((uint32_t)sr_engine->dma_rx_desc + 4), *(uint32_t *)((uint32_t)sr_engine->dma_rx_desc + 8), *(uint32_t *)((uint32_t)sr_engine->dma_rx_desc + 12), *(uint32_t *)((uint32_t)sr_engine->dma_rx_desc + 16));
+    // printf("desc addr: %p\n", srm_engine->dma_rx_desc);
+    // printf("desc content: %08lX, %08lX, %08lX, %08lX, %08lX\n", *(uint32_t *)srm_engine->dma_rx_desc, *(uint32_t *)((uint32_t)srm_engine->dma_rx_desc + 4), *(uint32_t *)((uint32_t)srm_engine->dma_rx_desc + 8), *(uint32_t *)((uint32_t)srm_engine->dma_rx_desc + 12), *(uint32_t *)((uint32_t)srm_engine->dma_rx_desc + 16));
 
     // Configure 2D-DMA channels
     dma2d_trigger_t trig_periph = {
-        .periph = DMA2D_TRIG_PERIPH_PPA_SR,
-        .periph_sel_id = SOC_DMA2D_TRIG_PERIPH_PPA_SR_TX,
+        .periph = DMA2D_TRIG_PERIPH_PPA_SRM,
+        .periph_sel_id = SOC_DMA2D_TRIG_PERIPH_PPA_SRM_TX,
     };
     dma2d_connect(dma2d_tx_chan, &trig_periph);
-    trig_periph.periph_sel_id = SOC_DMA2D_TRIG_PERIPH_PPA_SR_RX;
+    trig_periph.periph_sel_id = SOC_DMA2D_TRIG_PERIPH_PPA_SRM_RX;
     dma2d_connect(dma2d_rx_chan, &trig_periph);
 
     dma2d_transfer_ability_t dma_transfer_ability = {
@@ -972,20 +980,20 @@ static bool ppa_sr_transaction_on_picked(uint32_t num_chans, const dma2d_trans_c
     dma2d_set_transfer_ability(dma2d_rx_chan, &dma_transfer_ability);
 
     // YUV444 and YUV422 are not supported by PPA module, need to utilize 2D-DMA color space conversion feature to do a conversion
-    ppa_sr_color_mode_t ppa_in_color_mode = sr_trans_desc->in_color.mode;
-    if (ppa_in_color_mode == PPA_SR_COLOR_MODE_YUV444) {
-        ppa_in_color_mode = PPA_SR_COLOR_MODE_RGB888;
+    ppa_srm_color_mode_t ppa_in_color_mode = srm_trans_desc->in_color.mode;
+    if (ppa_in_color_mode == PPA_SRM_COLOR_MODE_YUV444) {
+        ppa_in_color_mode = PPA_SRM_COLOR_MODE_RGB888;
         dma2d_csc_config_t dma_tx_csc = {0};
-        if (sr_trans_desc->in_color.yuv_std == COLOR_CONV_STD_RGB_YUV_BT601) {
+        if (srm_trans_desc->in_color.yuv_std == COLOR_CONV_STD_RGB_YUV_BT601) {
             dma_tx_csc.tx_csc_option = DMA2D_CSC_TX_YUV444_TO_RGB888_601;
         } else {
             dma_tx_csc.tx_csc_option = DMA2D_CSC_TX_YUV444_TO_RGB888_709;
         }
         dma2d_configure_color_space_conversion(dma2d_tx_chan, &dma_tx_csc);
-    } else if (ppa_in_color_mode == PPA_SR_COLOR_MODE_YUV422) {
-        ppa_in_color_mode = PPA_SR_COLOR_MODE_RGB888;
+    } else if (ppa_in_color_mode == PPA_SRM_COLOR_MODE_YUV422) {
+        ppa_in_color_mode = PPA_SRM_COLOR_MODE_RGB888;
         dma2d_csc_config_t dma_tx_csc = {0};
-        if (sr_trans_desc->in_color.yuv_std == COLOR_CONV_STD_RGB_YUV_BT601) {
+        if (srm_trans_desc->in_color.yuv_std == COLOR_CONV_STD_RGB_YUV_BT601) {
             dma_tx_csc.tx_csc_option = DMA2D_CSC_TX_YUV422_TO_RGB888_601;
         } else {
             dma_tx_csc.tx_csc_option = DMA2D_CSC_TX_YUV422_TO_RGB888_709;
@@ -993,9 +1001,9 @@ static bool ppa_sr_transaction_on_picked(uint32_t num_chans, const dma2d_trans_c
         dma2d_configure_color_space_conversion(dma2d_tx_chan, &dma_tx_csc);
     }
 
-    ppa_sr_color_mode_t ppa_out_color_mode = sr_trans_desc->out_color.mode;
-    if (ppa_out_color_mode == PPA_SR_COLOR_MODE_YUV444) {
-        ppa_out_color_mode = PPA_SR_COLOR_MODE_YUV420;
+    ppa_srm_color_mode_t ppa_out_color_mode = srm_trans_desc->out_color.mode;
+    if (ppa_out_color_mode == PPA_SRM_COLOR_MODE_YUV444) {
+        ppa_out_color_mode = PPA_SRM_COLOR_MODE_YUV420;
         dma2d_csc_config_t dma_rx_csc = {
             .rx_csc_option = DMA2D_CSC_RX_YUV420_TO_YUV444,
         };
@@ -1007,74 +1015,76 @@ static bool ppa_sr_transaction_on_picked(uint32_t num_chans, const dma2d_trans_c
     };
     dma2d_register_rx_event_callbacks(dma2d_rx_chan, &dma_event_cbs, (void *)trans_on_picked_desc->trans_elm);
 
-    ppa_ll_sr_reset(s_platform.hal.dev);
+    ppa_ll_srm_reset(s_platform.hal.dev);
 
-    dma2d_set_desc_addr(dma2d_tx_chan, (intptr_t)sr_engine->dma_tx_desc);
-    dma2d_set_desc_addr(dma2d_rx_chan, (intptr_t)sr_engine->dma_rx_desc);
+    dma2d_set_desc_addr(dma2d_tx_chan, (intptr_t)srm_engine->dma_tx_desc);
+    dma2d_set_desc_addr(dma2d_rx_chan, (intptr_t)srm_engine->dma_rx_desc);
     dma2d_start(dma2d_tx_chan);
     dma2d_start(dma2d_rx_chan);
 
-    // Configure PPA SR engine
-    ppa_ll_sr_set_rx_color_mode(s_platform.hal.dev, ppa_in_color_mode);
+    // Configure PPA SRM engine
+    ppa_ll_srm_set_rx_color_mode(s_platform.hal.dev, ppa_in_color_mode);
     if (COLOR_SPACE_TYPE(ppa_in_color_mode) == COLOR_SPACE_YUV) {
-        ppa_ll_sr_set_rx_yuv_range(s_platform.hal.dev, sr_trans_desc->in_color.yuv_range);
-        ppa_ll_sr_set_yuv2rgb_std(s_platform.hal.dev, sr_trans_desc->in_color.yuv_std);
+        ppa_ll_srm_set_rx_yuv_range(s_platform.hal.dev, srm_trans_desc->in_color.yuv_range);
+        ppa_ll_srm_set_yuv2rgb_std(s_platform.hal.dev, srm_trans_desc->in_color.yuv_std);
     }
-    ppa_ll_sr_enable_rx_byte_swap(s_platform.hal.dev, sr_trans_desc->in_color.byte_swap);
-    ppa_ll_sr_enable_rx_rgb_swap(s_platform.hal.dev, sr_trans_desc->in_color.rgb_swap);
-    ppa_ll_sr_configure_rx_alpha(s_platform.hal.dev, sr_trans_desc->in_color.alpha_mode, sr_trans_desc->in_color.alpha_value);
+    ppa_ll_srm_enable_rx_byte_swap(s_platform.hal.dev, srm_trans_desc->in_color.byte_swap);
+    ppa_ll_srm_enable_rx_rgb_swap(s_platform.hal.dev, srm_trans_desc->in_color.rgb_swap);
+    ppa_ll_srm_configure_rx_alpha(s_platform.hal.dev, srm_trans_desc->in_color.alpha_mode, srm_trans_desc->in_color.alpha_value);
 
-    ppa_ll_sr_set_tx_color_mode(s_platform.hal.dev, ppa_out_color_mode);
+    ppa_ll_srm_set_tx_color_mode(s_platform.hal.dev, ppa_out_color_mode);
     if (COLOR_SPACE_TYPE(ppa_out_color_mode) == COLOR_SPACE_YUV) {
-        ppa_ll_sr_set_rx_yuv_range(s_platform.hal.dev, sr_trans_desc->out_color.yuv_range);
-        ppa_ll_sr_set_yuv2rgb_std(s_platform.hal.dev, sr_trans_desc->out_color.yuv_std);
+        ppa_ll_srm_set_rx_yuv_range(s_platform.hal.dev, srm_trans_desc->out_color.yuv_range);
+        ppa_ll_srm_set_yuv2rgb_std(s_platform.hal.dev, srm_trans_desc->out_color.yuv_std);
     }
 
     // TODO: sr_macro_bk_ro_bypass
     // PPA.sr_byte_order.sr_macro_bk_ro_bypass = 1;
-    ppa_ll_sr_set_rotation_angle(s_platform.hal.dev, sr_trans_desc->rotation_angle);
-    ppa_ll_sr_set_scaling_x(s_platform.hal.dev, sr_trans_desc->scale_x_int, sr_trans_desc->scale_x_frag);
-    ppa_ll_sr_set_scaling_y(s_platform.hal.dev, sr_trans_desc->scale_y_int, sr_trans_desc->scale_y_frag);
-    ppa_ll_sr_enable_mirror_x(s_platform.hal.dev, sr_trans_desc->mirror_x);
-    ppa_ll_sr_enable_mirror_y(s_platform.hal.dev, sr_trans_desc->mirror_y);
+    ppa_ll_srm_set_rotation_angle(s_platform.hal.dev, srm_trans_desc->rotation_angle);
+    ppa_ll_srm_set_scaling_x(s_platform.hal.dev, srm_trans_desc->scale_x_int, srm_trans_desc->scale_x_frag);
+    ppa_ll_srm_set_scaling_y(s_platform.hal.dev, srm_trans_desc->scale_y_int, srm_trans_desc->scale_y_frag);
+    ppa_ll_srm_enable_mirror_x(s_platform.hal.dev, srm_trans_desc->mirror_x);
+    ppa_ll_srm_enable_mirror_y(s_platform.hal.dev, srm_trans_desc->mirror_y);
 
-    ppa_ll_sr_start(s_platform.hal.dev);
+    ppa_ll_srm_start(s_platform.hal.dev);
 
     // No need to yield
     return false;
 }
 
-esp_err_t ppa_do_scale_and_rotate(ppa_invoker_handle_t ppa_invoker, const ppa_sr_operation_config_t *oper_config, const ppa_trans_config_t *trans_config)
+esp_err_t ppa_do_scale_rotate_mirror(ppa_invoker_handle_t ppa_invoker, const ppa_srm_operation_config_t *oper_config, const ppa_trans_config_t *trans_config)
 {
     ESP_RETURN_ON_FALSE(ppa_invoker && oper_config && trans_config, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
-    ESP_RETURN_ON_FALSE(ppa_invoker->sr_engine, ESP_ERR_INVALID_ARG, TAG, "invoker did not register to SR engine");
+    ESP_RETURN_ON_FALSE(ppa_invoker->srm_engine, ESP_ERR_INVALID_ARG, TAG, "invoker did not register to SRM engine");
     ESP_RETURN_ON_FALSE(trans_config->mode <= PPA_TRANS_MODE_NON_BLOCKING, ESP_ERR_INVALID_ARG, TAG, "invalid mode");
     // Any restrictions on in/out buffer address? alignment? alignment restriction comes from cache, its addr and size need to be aligned to cache line size on 912!
     // buffer on stack/heap
     // ESP_RETURN_ON_FALSE(config->rotation_angle)
     // ESP_RETURN_ON_FALSE(config->in/out_color_mode)
     // what if in_color is YUV420, out is RGB, what is out RGB range? Full range?
-    ESP_RETURN_ON_FALSE(oper_config->scale_x < (PPA_LL_SR_SCALING_INT_MAX + 1) && oper_config->scale_x >= (1.0 / PPA_LL_SR_SCALING_FRAG_MAX) &&
-                        oper_config->scale_y < (PPA_LL_SR_SCALING_INT_MAX + 1) && oper_config->scale_y >= (1.0 / PPA_LL_SR_SCALING_FRAG_MAX),
+    ESP_RETURN_ON_FALSE(oper_config->scale_x < (PPA_LL_SRM_SCALING_INT_MAX + 1) && oper_config->scale_x >= (1.0 / PPA_LL_SRM_SCALING_FRAG_MAX) &&
+                        oper_config->scale_y < (PPA_LL_SRM_SCALING_INT_MAX + 1) && oper_config->scale_y >= (1.0 / PPA_LL_SRM_SCALING_FRAG_MAX),
                         ESP_ERR_INVALID_ARG, TAG, "invalid scale");
     // byte/rgb swap with color mode only to (A)RGB color space?
+
+    // YUV420: in desc, ha/hb/va/vb/x/y must be even number
 
     // TODO: Maybe do buffer writeback and invalidation here, instead of in on_picked?
 
     ppa_trans_t *trans_elm = NULL;
-    esp_err_t ret = ppa_prepare_trans_elm(ppa_invoker, ppa_invoker->sr_engine, PPA_OPERATION_SR, (void *)oper_config, trans_config->mode, &trans_elm);
+    esp_err_t ret = ppa_prepare_trans_elm(ppa_invoker, ppa_invoker->srm_engine, PPA_OPERATION_SRM, (void *)oper_config, trans_config->mode, &trans_elm);
     if (ret == ESP_OK) {
         assert(trans_elm);
 
         // Pre-process some data
         ppa_dma2d_trans_on_picked_config_t *trans_on_picked_desc = trans_elm->trans_desc->user_config;
-        ppa_sr_oper_t *sr_trans_desc = trans_on_picked_desc->sr_desc;
-        sr_trans_desc->scale_x_int = (uint32_t)sr_trans_desc->scale_x;
-        sr_trans_desc->scale_x_frag = (uint32_t)(sr_trans_desc->scale_x * (PPA_LL_SR_SCALING_FRAG_MAX + 1)) & PPA_LL_SR_SCALING_FRAG_MAX;
-        sr_trans_desc->scale_y_int = (uint32_t)sr_trans_desc->scale_y;
-        sr_trans_desc->scale_y_frag = (uint32_t)(sr_trans_desc->scale_y * (PPA_LL_SR_SCALING_FRAG_MAX + 1)) & PPA_LL_SR_SCALING_FRAG_MAX;
+        ppa_srm_oper_t *srm_trans_desc = trans_on_picked_desc->srm_desc;
+        srm_trans_desc->scale_x_int = (uint32_t)srm_trans_desc->scale_x;
+        srm_trans_desc->scale_x_frag = (uint32_t)(srm_trans_desc->scale_x * (PPA_LL_SRM_SCALING_FRAG_MAX + 1)) & PPA_LL_SRM_SCALING_FRAG_MAX;
+        srm_trans_desc->scale_y_int = (uint32_t)srm_trans_desc->scale_y;
+        srm_trans_desc->scale_y_frag = (uint32_t)(srm_trans_desc->scale_y * (PPA_LL_SRM_SCALING_FRAG_MAX + 1)) & PPA_LL_SRM_SCALING_FRAG_MAX;
 
-        ret = ppa_do_operation(ppa_invoker, ppa_invoker->sr_engine, trans_elm, trans_config->mode);
+        ret = ppa_do_operation(ppa_invoker, ppa_invoker->srm_engine, trans_elm, trans_config->mode);
         if (ret != ESP_OK) {
             ppa_recycle_transaction(trans_elm);
         }
@@ -1247,6 +1257,7 @@ esp_err_t ppa_do_blend(ppa_invoker_handle_t ppa_invoker, const ppa_blend_operati
     ESP_RETURN_ON_FALSE(ppa_invoker->blending_engine, ESP_ERR_INVALID_ARG, TAG, "invoker did not register to Blending engine");
     ESP_RETURN_ON_FALSE(trans_config->mode <= PPA_TRANS_MODE_NON_BLOCKING, ESP_ERR_INVALID_ARG, TAG, "invalid mode");
     // TODO: ARG CHECK
+    // 当输入类型为 L4、A4 时，图像块的尺寸 hb 以及在图像中的偏移 x 必须为偶数
 
     // TODO: Maybe do buffer writeback and invalidation here, instead of in on_picked?
 

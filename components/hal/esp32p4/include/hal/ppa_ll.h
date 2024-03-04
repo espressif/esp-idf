@@ -24,8 +24,8 @@ extern "C" {
 #define PPA_LL_BLEND0_CLUT_MEM_ADDR_OFFSET  0x400
 #define PPA_LL_BLEND1_CLUT_MEM_ADDR_OFFSET  0x800
 
-#define PPA_LL_SR_SCALING_INT_MAX   PPA_SR_SCAL_X_INT_V
-#define PPA_LL_SR_SCALING_FRAG_MAX  PPA_SR_SCAL_X_FRAG_V
+#define PPA_LL_SRM_SCALING_INT_MAX   PPA_SR_SCAL_X_INT_V
+#define PPA_LL_SRM_SCALING_FRAG_MAX  PPA_SR_SCAL_X_FRAG_V
 
 /**
  * @brief Enumeration of PPA blending mode
@@ -64,13 +64,13 @@ static inline void ppa_ll_reset_register(void)
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
 #define ppa_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; ppa_ll_reset_register(__VA_ARGS__)
 
-/////////////////////////// Scaling and Rotating (SR) ////////////////////////////////
+///////////////////////// Scaling, Rotating, Mirroring (SRM) //////////////////////////////
 /**
- * @brief Reset PPA scaling and rotating engine
+ * @brief Reset PPA scaling-rotating-mirroring engine
  *
  * @param dev Peripheral instance address
  */
-static inline void ppa_ll_sr_reset(ppa_dev_t *dev)
+static inline void ppa_ll_srm_reset(ppa_dev_t *dev)
 {
     dev->sr_scal_rotate.scal_rotate_rst = 1;
     dev->sr_scal_rotate.scal_rotate_rst = 0;
@@ -83,7 +83,7 @@ static inline void ppa_ll_sr_reset(ppa_dev_t *dev)
  * @param x_int The integrated part of scaling coefficient in X direction, 0 - 255
  * @param x_frag The fragment part of scaling coefficient in X direction, 0 - 15. Corresponding fractional value is x_frag/16.
  */
-static inline void ppa_ll_sr_set_scaling_x(ppa_dev_t *dev, uint32_t x_int, uint32_t x_frag)
+static inline void ppa_ll_srm_set_scaling_x(ppa_dev_t *dev, uint32_t x_int, uint32_t x_frag)
 {
     HAL_ASSERT(x_int <= PPA_SR_SCAL_X_INT_V && x_frag <= PPA_SR_SCAL_X_FRAG_V);
     HAL_FORCE_MODIFY_U32_REG_FIELD(dev->sr_scal_rotate, sr_scal_x_int, x_int);
@@ -97,7 +97,7 @@ static inline void ppa_ll_sr_set_scaling_x(ppa_dev_t *dev, uint32_t x_int, uint3
  * @param y_int The integrated part of scaling coefficient in Y direction, 0 - 255
  * @param y_frag The fragment part of scaling coefficient in Y direction, 0 - 15. Corresponding fractional value is y_frag/16.
  */
-static inline void ppa_ll_sr_set_scaling_y(ppa_dev_t *dev, uint32_t y_int, uint32_t y_frag)
+static inline void ppa_ll_srm_set_scaling_y(ppa_dev_t *dev, uint32_t y_int, uint32_t y_frag)
 {
     HAL_ASSERT(y_int <= PPA_SR_SCAL_Y_INT_V && y_frag <= PPA_SR_SCAL_Y_FRAG_V);
     HAL_FORCE_MODIFY_U32_REG_FIELD(dev->sr_scal_rotate, sr_scal_y_int, y_int);
@@ -108,22 +108,22 @@ static inline void ppa_ll_sr_set_scaling_y(ppa_dev_t *dev, uint32_t y_int, uint3
  * @brief Set PPA rotation angle (in the counterclockwise direction)
  *
  * @param dev Peripheral instance address
- * @param angle One of the values in ppa_sr_rotation_angle_t
+ * @param angle One of the values in ppa_srm_rotation_angle_t
  */
-static inline void ppa_ll_sr_set_rotation_angle(ppa_dev_t *dev, ppa_sr_rotation_angle_t angle)
+static inline void ppa_ll_srm_set_rotation_angle(ppa_dev_t *dev, ppa_srm_rotation_angle_t angle)
 {
     uint32_t val = 0;
     switch (angle) {
-    case PPA_SR_ROTATION_ANGLE_0:
+    case PPA_SRM_ROTATION_ANGLE_0:
         val = 0;
         break;
-    case PPA_SR_ROTATION_ANGLE_90:
+    case PPA_SRM_ROTATION_ANGLE_90:
         val = 1;
         break;
-    case PPA_SR_ROTATION_ANGLE_180:
+    case PPA_SRM_ROTATION_ANGLE_180:
         val = 2;
         break;
-    case PPA_SR_ROTATION_ANGLE_270:
+    case PPA_SRM_ROTATION_ANGLE_270:
         val = 3;
         break;
     default:
@@ -139,7 +139,7 @@ static inline void ppa_ll_sr_set_rotation_angle(ppa_dev_t *dev, ppa_sr_rotation_
  * @param dev Peripheral instance address
  * @param enable True to enable; False to disable
  */
-static inline void ppa_ll_sr_enable_mirror_x(ppa_dev_t *dev, bool enable)
+static inline void ppa_ll_srm_enable_mirror_x(ppa_dev_t *dev, bool enable)
 {
     dev->sr_scal_rotate.sr_mirror_x = enable;
 }
@@ -150,86 +150,86 @@ static inline void ppa_ll_sr_enable_mirror_x(ppa_dev_t *dev, bool enable)
  * @param dev Peripheral instance address
  * @param enable True to enable; False to disable
  */
-static inline void ppa_ll_sr_enable_mirror_y(ppa_dev_t *dev, bool enable)
+static inline void ppa_ll_srm_enable_mirror_y(ppa_dev_t *dev, bool enable)
 {
     dev->sr_scal_rotate.sr_mirror_y = enable;
 }
 
 /**
- * @brief Start PPA scaling and rotating engine to perform PPA SR
+ * @brief Start PPA scaling and rotating engine to perform PPA SRM
  *
  * @param dev Peripheral instance address
  */
-static inline void ppa_ll_sr_start(ppa_dev_t *dev)
+static inline void ppa_ll_srm_start(ppa_dev_t *dev)
 {
     dev->sr_scal_rotate.scal_rotate_start = 1;
 }
 
 /**
- * @brief Set the source image color mode for PPA Scaling and Rotating engine RX
+ * @brief Set the source image color mode for PPA Scaling-Rotating-Mirroring engine RX
  *
  * @param dev Peripheral instance address
- * @param color_mode One of the values in ppa_sr_color_mode_t
+ * @param color_mode One of the values in ppa_srm_color_mode_t
  */
-static inline void ppa_ll_sr_set_rx_color_mode(ppa_dev_t *dev, ppa_sr_color_mode_t color_mode)
+static inline void ppa_ll_srm_set_rx_color_mode(ppa_dev_t *dev, ppa_srm_color_mode_t color_mode)
 {
     uint32_t val = 0;
     switch (color_mode) {
-    case PPA_SR_COLOR_MODE_ARGB8888:
+    case PPA_SRM_COLOR_MODE_ARGB8888:
         val = 0;
         break;
-    case PPA_SR_COLOR_MODE_RGB888:
+    case PPA_SRM_COLOR_MODE_RGB888:
         val = 1;
         break;
-    case PPA_SR_COLOR_MODE_RGB565:
+    case PPA_SRM_COLOR_MODE_RGB565:
         val = 2;
         break;
-    case PPA_SR_COLOR_MODE_YUV420:
+    case PPA_SRM_COLOR_MODE_YUV420:
         val = 8;
         break;
     default:
-        // Unsupported SR rx color mode
+        // Unsupported SRM rx color mode
         abort();
     }
     dev->sr_color_mode.sr_rx_cm = val;
 }
 
 /**
- * @brief Set the destination image color mode for PPA Scaling and Rotating engine TX
+ * @brief Set the destination image color mode for PPA Scaling-Rotating-Mirroring engine TX
  *
  * @param dev Peripheral instance address
- * @param color_mode One of the values in ppa_sr_color_mode_t
+ * @param color_mode One of the values in ppa_srm_color_mode_t
  */
-static inline void ppa_ll_sr_set_tx_color_mode(ppa_dev_t *dev, ppa_sr_color_mode_t color_mode)
+static inline void ppa_ll_srm_set_tx_color_mode(ppa_dev_t *dev, ppa_srm_color_mode_t color_mode)
 {
     uint32_t val = 0;
     switch (color_mode) {
-    case PPA_SR_COLOR_MODE_ARGB8888:
+    case PPA_SRM_COLOR_MODE_ARGB8888:
         val = 0;
         break;
-    case PPA_SR_COLOR_MODE_RGB888:
+    case PPA_SRM_COLOR_MODE_RGB888:
         val = 1;
         break;
-    case PPA_SR_COLOR_MODE_RGB565:
+    case PPA_SRM_COLOR_MODE_RGB565:
         val = 2;
         break;
-    case PPA_SR_COLOR_MODE_YUV420:
+    case PPA_SRM_COLOR_MODE_YUV420:
         val = 8;
         break;
     default:
-        // Unsupported SR tx color mode
+        // Unsupported SRM tx color mode
         abort();
     }
     dev->sr_color_mode.sr_tx_cm = val;
 }
 
 /**
- * @brief Set YUV to RGB protocol when PPA SR RX pixel color space is YUV
+ * @brief Set YUV to RGB protocol when PPA SRM RX pixel color space is YUV
  *
  * @param dev Peripheral instance address
  * @param std One of the RGB-YUV conversion standards in color_conv_std_rgb_yuv_t
  */
-static inline void ppa_ll_sr_set_yuv2rgb_std(ppa_dev_t *dev, color_conv_std_rgb_yuv_t std)
+static inline void ppa_ll_srm_set_yuv2rgb_std(ppa_dev_t *dev, color_conv_std_rgb_yuv_t std)
 {
     switch (std) {
     case COLOR_CONV_STD_RGB_YUV_BT601:
@@ -245,12 +245,12 @@ static inline void ppa_ll_sr_set_yuv2rgb_std(ppa_dev_t *dev, color_conv_std_rgb_
 }
 
 /**
- * @brief Set RGB to YUV protocol when PPA SR TX pixel color space is YUV
+ * @brief Set RGB to YUV protocol when PPA SRM TX pixel color space is YUV
  *
  * @param dev Peripheral instance address
  * @param std One of the RGB-YUV conversion standards in color_conv_std_rgb_yuv_t
  */
-static inline void ppa_ll_sr_set_rgb2yuv_std(ppa_dev_t *dev, color_conv_std_rgb_yuv_t std)
+static inline void ppa_ll_srm_set_rgb2yuv_std(ppa_dev_t *dev, color_conv_std_rgb_yuv_t std)
 {
     switch (std) {
     case COLOR_CONV_STD_RGB_YUV_BT601:
@@ -266,12 +266,12 @@ static inline void ppa_ll_sr_set_rgb2yuv_std(ppa_dev_t *dev, color_conv_std_rgb_
 }
 
 /**
- * @brief Set PPA SR YUV input range
+ * @brief Set PPA SRM YUV input range
  *
  * @param dev Peripheral instance address
  * @param range One of color range options in color_range_t
  */
-static inline void ppa_ll_sr_set_rx_yuv_range(ppa_dev_t *dev, color_range_t range)
+static inline void ppa_ll_srm_set_rx_yuv_range(ppa_dev_t *dev, color_range_t range)
 {
     switch (range) {
     case COLOR_RANGE_LIMIT:
@@ -287,12 +287,12 @@ static inline void ppa_ll_sr_set_rx_yuv_range(ppa_dev_t *dev, color_range_t rang
 }
 
 /**
- * @brief Set PPA SR YUV output range
+ * @brief Set PPA SRM YUV output range
  *
  * @param dev Peripheral instance address
  * @param range One of color range options in color_range_t
  */
-static inline void ppa_ll_sr_set_tx_yuv_range(ppa_dev_t *dev, color_range_t range)
+static inline void ppa_ll_srm_set_tx_yuv_range(ppa_dev_t *dev, color_range_t range)
 {
     switch (range) {
     case COLOR_RANGE_LIMIT:
@@ -308,31 +308,31 @@ static inline void ppa_ll_sr_set_tx_yuv_range(ppa_dev_t *dev, color_range_t rang
 }
 
 /**
- * @brief Enable PPA SR input data wrap in RGB (e.g. ARGB becomes BGRA, RGB becomes BGR)
+ * @brief Enable PPA SRM input data wrap in RGB (e.g. ARGB becomes BGRA, RGB becomes BGR)
  *
  * @param dev Peripheral instance address
  * @param enable True to enable; False to disable
  */
-static inline void ppa_ll_sr_enable_rx_rgb_swap(ppa_dev_t *dev, bool enable)
+static inline void ppa_ll_srm_enable_rx_rgb_swap(ppa_dev_t *dev, bool enable)
 {
     dev->sr_byte_order.sr_rx_rgb_swap_en = enable;
 }
 
 /**
- * @brief Enable PPA SR input data swap in byte (The Byte0 and Byte1 would be swapped while byte 2 and byte 3 would be swappped)
+ * @brief Enable PPA SRM input data swap in byte (The Byte0 and Byte1 would be swapped while byte 2 and byte 3 would be swappped)
  *
  * Only supported when input color mode is ARGB8888 or RGB565.
  *
  * @param dev Peripheral instance address
  * @param enable True to enable; False to disable
  */
-static inline void ppa_ll_sr_enable_rx_byte_swap(ppa_dev_t *dev, bool enable)
+static inline void ppa_ll_srm_enable_rx_byte_swap(ppa_dev_t *dev, bool enable)
 {
     dev->sr_byte_order.sr_rx_byte_swap_en = enable;
 }
 
 /**
- * @brief Configure PPA SR alpha value transformation mode
+ * @brief Configure PPA SRM alpha value transformation mode
  *
  * @param dev Peripheral instance address
  * @param mode Alpha value transformation mode, one of the values in ppa_alpha_mode_t
@@ -340,7 +340,7 @@ static inline void ppa_ll_sr_enable_rx_byte_swap(ppa_dev_t *dev, bool enable)
  *            When PPA_ALPHA_SCALE mode is selected, val/256 is the multiplier to the input alpha value (output_alpha = input_alpha * val / 256)
  *            When other modes are selected, this field is not used
  */
-static inline void ppa_ll_sr_configure_rx_alpha(ppa_dev_t *dev, ppa_alpha_mode_t mode, uint32_t val)
+static inline void ppa_ll_srm_configure_rx_alpha(ppa_dev_t *dev, ppa_alpha_mode_t mode, uint32_t val)
 {
     switch (mode) {
     case PPA_ALPHA_NO_CHANGE:

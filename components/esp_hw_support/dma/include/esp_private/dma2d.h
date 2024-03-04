@@ -104,7 +104,7 @@ typedef struct {
  * @return Whether a task switch is needed after the callback function returns,
  *         this is usually due to the callback wakes up some high priority task.
  */
-typedef bool (*dma2d_trans_callback_t)(uint32_t num_chans, const dma2d_trans_channel_info_t *dma2d_chans, void *user_config);
+typedef bool (*dma2d_trans_on_picked_callback_t)(uint32_t num_chans, const dma2d_trans_channel_info_t *dma2d_chans, void *user_config);
 
 /**
  * @brief 2D-DMA channel special function flags
@@ -131,7 +131,7 @@ typedef struct {
     uint32_t specified_tx_channel_mask;     /*!< Bit mask of the specific TX channels to be used, the specified TX channels should have been reserved */
     uint32_t specified_rx_channel_mask;     /*!< Bit mask of the specific RX channels to be used, the specified RX channels should have been reserved */
 
-    dma2d_trans_callback_t on_job_picked;   /*!< Callback function to be called when all necessary channels to do the transaction have been acquired */
+    dma2d_trans_on_picked_callback_t on_job_picked;   /*!< Callback function to be called when all necessary channels to do the transaction have been acquired */
     void *user_config;                      /*!< User registered data to be passed into `on_job_picked` callback */
 } dma2d_trans_config_t;
 

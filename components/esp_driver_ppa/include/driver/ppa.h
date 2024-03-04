@@ -25,7 +25,7 @@ typedef struct ppa_invoker_t *ppa_invoker_handle_t;
  * These flags are supposed to be used to specify the PPA operations that are going to be used by the invoker, so that
  * the corresponding engines can be acquired when registering the invoker with `ppa_register_invoker`.
  */
-#define PPA_OPERATION_FLAG_SR       (1 << 0)
+#define PPA_OPERATION_FLAG_SRM      (1 << 0)
 #define PPA_OPERATION_FLAG_BLEND    (1 << 1)
 #define PPA_OPERATION_FLAG_FILL     (1 << 2)
 
@@ -75,7 +75,7 @@ typedef struct {
     ppa_trans_mode_t mode;          /*!< Determines whether to block inside the operation functions, see `ppa_trans_mode_t` */
 } ppa_trans_config_t;
 
-#define PPA_SR_OPERATION_CONFIG struct { \
+#define PPA_SRM_OPERATION_CONFIG struct { \
     void *in_buffer; /*!< TODO: could be a buffer list, link descriptors together, process a batch
     uint32_t batch_num; However, is it necessary? psram can not store too many pictures */ \
     uint32_t in_pic_w; \
@@ -91,14 +91,14 @@ typedef struct {
     uint32_t out_block_offset_x; \
     uint32_t out_block_offset_y; \
     \
-    ppa_sr_rotation_angle_t rotation_angle; \
+    ppa_srm_rotation_angle_t rotation_angle; \
     float scale_x; \
     float scale_y; \
     bool mirror_x; \
     bool mirror_y; \
     \
     struct { \
-        ppa_sr_color_mode_t mode; \
+        ppa_srm_color_mode_t mode; \
         color_range_t yuv_range; \
         color_conv_std_rgb_yuv_t yuv_std; \
         bool rgb_swap; \
@@ -110,22 +110,22 @@ typedef struct {
     } in_color; \
     \
     struct { \
-        ppa_sr_color_mode_t mode; \
+        ppa_srm_color_mode_t mode; \
         color_range_t yuv_range; \
         color_conv_std_rgb_yuv_t yuv_std; \
     } out_color; \
 }
 
 /**
- * @brief A collection of configuration items to perform a PPA SR operation
+ * @brief A collection of configuration items to perform a PPA SRM operation
  */
-typedef PPA_SR_OPERATION_CONFIG ppa_sr_operation_config_t;
+typedef PPA_SRM_OPERATION_CONFIG ppa_srm_operation_config_t;
 
 /**
- * @brief Perform a scaling-and-rotating (SR) operation to a picture
+ * @brief Perform a scaling-rotating-mirroring (SRM) operation to a picture
  *
- * @param[in] ppa_invoker PPA invoker handle that has acquired the PPA SR engine
- * @param[in] oper_config Pointer to a collection of configurations for the SR operation, ppa_sr_operation_config_t
+ * @param[in] ppa_invoker PPA invoker handle that has acquired the PPA SRM engine
+ * @param[in] oper_config Pointer to a collection of configurations for the SRM operation, ppa_srm_operation_config_t
  * @param[in] trans_config Pointer to a collection of configurations for the transaction, ppa_trans_config_t
  *
  * @return
@@ -134,7 +134,7 @@ typedef PPA_SR_OPERATION_CONFIG ppa_sr_operation_config_t;
  *      - ESP_ERR_NO_MEM:
  *      - ESP_FAIL:
  */
-esp_err_t ppa_do_scale_and_rotate(ppa_invoker_handle_t ppa_invoker, const ppa_sr_operation_config_t *oper_config, const ppa_trans_config_t *trans_config);
+esp_err_t ppa_do_scale_rotate_mirror(ppa_invoker_handle_t ppa_invoker, const ppa_srm_operation_config_t *oper_config, const ppa_trans_config_t *trans_config);
 
 typedef struct {
     void *in_bg_buffer;
@@ -234,7 +234,7 @@ esp_err_t ppa_do_fill(ppa_invoker_handle_t ppa_invoker, const ppa_fill_operation
 
 // argb color conversion (bypass blend)
 
-// SR and Blending are independent, can work at the same time
+// SRM and Blending are independent, can work at the same time
 // Fill is in blend, so fill and blend cannot work at the same time
 
 // Consider blocking and non-blocking options

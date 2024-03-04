@@ -104,7 +104,7 @@ typedef enum {
     DMA2D_TRIG_PERIPH_M2M,              /*!< 2D-DMA trigger peripheral: M2M */
     DMA2D_TRIG_PERIPH_JPEG_ENCODER,     /*!< 2D-DMA trigger peripheral: JPEG Encoder */
     DMA2D_TRIG_PERIPH_JPEG_DECODER,     /*!< 2D-DMA trigger peripheral: JPEG Decoder */
-    DMA2D_TRIG_PERIPH_PPA_SR,           /*!< 2D-DMA trigger peripheral: PPA SR engine */
+    DMA2D_TRIG_PERIPH_PPA_SRM,          /*!< 2D-DMA trigger peripheral: PPA SRM engine */
     DMA2D_TRIG_PERIPH_PPA_BLEND,        /*!< 2D-DMA trigger peripheral: PPA Blending engine */
 } dma2d_trigger_peripheral_t;
 

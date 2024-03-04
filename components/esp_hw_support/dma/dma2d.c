@@ -571,7 +571,7 @@ esp_err_t dma2d_connect(dma2d_channel_handle_t dma2d_chan, const dma2d_trigger_t
         // Configure reorder functionality
         dma2d_ll_tx_enable_reorder(group->hal.dev, channel_id, dma2d_chan->status.reorder_en);
         // Assume dscr_port enable or not can be directly derived from trig_periph
-        dma2d_ll_tx_enable_dscr_port(group->hal.dev, channel_id, trig_periph->periph == DMA2D_TRIG_PERIPH_PPA_SR);
+        dma2d_ll_tx_enable_dscr_port(group->hal.dev, channel_id, trig_periph->periph == DMA2D_TRIG_PERIPH_PPA_SRM);
 
         // Reset to certain settings
         dma2d_ll_tx_enable_owner_check(group->hal.dev, channel_id, false);
@@ -596,7 +596,7 @@ esp_err_t dma2d_connect(dma2d_channel_handle_t dma2d_chan, const dma2d_trigger_t
         // Configure reorder functionality
         dma2d_ll_rx_enable_reorder(group->hal.dev, channel_id, dma2d_chan->status.reorder_en);
         // Assume dscr_port enable or not can be directly derived from trig_periph
-        dma2d_ll_rx_enable_dscr_port(group->hal.dev, channel_id, trig_periph->periph == DMA2D_TRIG_PERIPH_PPA_SR);
+        dma2d_ll_rx_enable_dscr_port(group->hal.dev, channel_id, trig_periph->periph == DMA2D_TRIG_PERIPH_PPA_SRM);
 
         // Reset to certain settings
         dma2d_ll_rx_enable_owner_check(group->hal.dev, channel_id, false);
