@@ -156,6 +156,17 @@ menu "Ethernet"
                 The KSZ8851SNL is a single-chip Fast Ethernet controller consisting of
                 a 10/100 physical layer transceiver (PHY), a MAC, and a Serial Peripheral Interface (SPI).
                 Select this to enable KSZ8851SNL driver.
+
+        config ETH_SPI_ETHERNET_CH390
+            bool "Use CH390"
+            help
+                CH390 is an industrial-grade Ethernet controller IC with 10/100M
+                Ethernet Media Transport Layer (MAC) and Physical Layer Transceiver (PHY),
+                supporting CAT3, 4, 5 and CAT5 and 6 connections for 10BASE-TX and 100BASE-TX,
+                supporting HP Auto-MDIX, low power design, and IEEE 802.3u compliant.
+                The CH390 has a built-in 16K byte SRAM, supports 3.3V or 2.5V parallel interface
+                and SPI serial interface.
+                Select this to enable KSZ8851SNL driver.
     endif # ETH_USE_SPI_ETHERNET
 
     menuconfig ETH_USE_OPENETH

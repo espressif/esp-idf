@@ -126,6 +126,12 @@ menu "Example Ethernet Configuration"
                 help
                     Select external SPI-Ethernet module (KSZ8851SNL).
 
+            config EXAMPLE_USE_CH390
+                bool "CH390 Module"
+                select ETH_SPI_ETHERNET_CH390
+                help
+                    Select external SPI-Ethernet module (CH390).
+
             config EXAMPLE_USE_W5500
                 bool "W5500 Module"
                 select ETH_SPI_ETHERNET_W5500

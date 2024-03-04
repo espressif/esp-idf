@@ -192,6 +192,15 @@ static esp_eth_handle_t eth_init_spi(spi_eth_module_config_t *spi_eth_module_con
     ksz8851snl_config.poll_period_ms = spi_eth_module_config->polling_ms;
     esp_eth_mac_t *mac = esp_eth_mac_new_ksz8851snl(&ksz8851snl_config, &mac_config);
     esp_eth_phy_t *phy = esp_eth_phy_new_ksz8851snl(&phy_config);
+#elif CONFIG_EXAMPLE_USE_CH390
+    #if CONFIG_EXAMPLE_ETH_SPI_CLOCK_MHZ > 50
+        #error SPI Clock of CH390 should not be over 50 MHz
+    #endif
+    eth_ch390_config_t ch390_config = ETH_CH390_DEFAULT_CONFIG(CONFIG_EXAMPLE_ETH_SPI_HOST, &spi_devcfg);
+    ch390_config.int_gpio_num = spi_eth_module_config->int_gpio;
+    ch390_config.poll_period_ms = spi_eth_module_config->polling_ms;
+    esp_eth_mac_t *mac = esp_eth_mac_new_ch390(&ch390_config, &mac_config);
+    esp_eth_phy_t *phy = esp_eth_phy_new_ch390(&phy_config);
 #elif CONFIG_EXAMPLE_USE_DM9051
     eth_dm9051_config_t dm9051_config = ETH_DM9051_DEFAULT_CONFIG(CONFIG_EXAMPLE_ETH_SPI_HOST, &spi_devcfg);
     dm9051_config.int_gpio_num = spi_eth_module_config->int_gpio;

@@ -761,6 +761,45 @@ typedef struct {
 esp_eth_mac_t *esp_eth_mac_new_ksz8851snl(const eth_ksz8851snl_config_t *ksz8851snl_config, const eth_mac_config_t *mac_config);
 #endif // CONFIG_ETH_SPI_ETHERNET_KSZ8851
 
+#if CONFIG_ETH_SPI_ETHERNET_CH390
+/**
+ * @brief CH390 specific configuration
+ *
+ */
+typedef struct {
+    int int_gpio_num;                                   /*!< Interrupt GPIO number */
+    uint32_t poll_period_ms;                            /*!< Period in ms to poll rx status when interrupt mode is not used */
+    spi_host_device_t spi_host_id;                      /*!< SPI peripheral (this field is invalid when custom SPI driver is defined) */
+    spi_device_interface_config_t *spi_devcfg;          /*!< SPI device configuration (this field is invalid when custom SPI driver is defined) */
+    eth_spi_custom_driver_config_t custom_spi_driver;   /*!< Custom SPI driver definitions */
+} eth_ch390_config_t;
+
+/**
+ * @brief Default CH390 specific configuration
+ *
+ */
+#define ETH_CH390_DEFAULT_CONFIG(spi_host, spi_devcfg_p) \
+    {                                           \
+        .int_gpio_num = 0,                      \
+        .spi_host_id = spi_host,                \
+        .spi_devcfg = spi_devcfg_p,             \
+        .custom_spi_driver = ETH_DEFAULT_SPI,   \
+    }
+
+/**
+* @brief Create CH390 Ethernet MAC instance
+*
+* @param ch390_config: CH390 specific configuration
+* @param mac_config: Ethernet MAC configuration
+*
+* @return
+*      - instance: create MAC instance successfully
+*      - NULL: create MAC instance failed because some error occurred
+*/
+esp_eth_mac_t *esp_eth_mac_new_ch390(const eth_ch390_config_t *ch390_config, const eth_mac_config_t *mac_config);
+#endif
+
+
 #if CONFIG_ETH_USE_OPENETH
 /**
 * @brief Create OpenCores Ethernet MAC instance
