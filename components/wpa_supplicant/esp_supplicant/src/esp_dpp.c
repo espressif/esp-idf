@@ -237,8 +237,9 @@ static int esp_dpp_handle_config_obj(struct dpp_authentication *auth,
         wpa_printf(MSG_INFO, DPP_EVENT_CONNECTOR "%s",
                    conf->connector);
     }
-    s_dpp_listen_in_progress = true;
-    esp_wifi_action_tx_req(WIFI_OFFCHAN_TX_CANCEL, 0, 0, NULL);
+    if (s_dpp_listen_in_progress) {
+        esp_supp_dpp_stop_listen();
+    }
     esp_dpp_call_cb(ESP_SUPP_DPP_CFG_RECVD, wifi_cfg);
 
     return 0;
@@ -664,6 +665,9 @@ static void offchan_event_handler(void *arg, esp_event_base_t event_base,
 
         if (evt->status) {
             eloop_cancel_timeout(esp_dpp_auth_conf_wait_timeout, NULL, NULL);
+            if (s_dpp_listen_in_progress) {
+                esp_supp_dpp_stop_listen();
+            }
             esp_dpp_call_cb(ESP_SUPP_DPP_FAIL, (void *)ESP_ERR_DPP_TX_FAILURE);
         }
 
