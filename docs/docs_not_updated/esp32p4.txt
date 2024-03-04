@@ -83,7 +83,6 @@ api-reference/peripherals/i2c.rst
 api-reference/peripherals/dedic_gpio.rst
 api-reference/peripherals/sd_pullup_requirements.rst
 api-reference/peripherals/index.rst
-api-reference/peripherals/uart.rst
 api-reference/network/esp_openthread.rst
 api-reference/network/esp_dpp.rst
 api-reference/network/esp_now.rst
