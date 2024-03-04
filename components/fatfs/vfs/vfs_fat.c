@@ -6,6 +6,7 @@
 
 #include <string.h>
 #include <stdlib.h>
+#include <limits.h>
 #include <unistd.h>
 #include <dirent.h>
 #include <sys/errno.h>
@@ -16,6 +17,8 @@
 #include "esp_log.h"
 #include "ff.h"
 #include "diskio_impl.h"
+
+#define F_WRITE_MALLOC_ZEROING_BUF_SIZE_LIMIT 512
 
 typedef struct {
     char fat_drive[8];  /* FAT drive name */
@@ -993,6 +996,49 @@ static int vfs_fat_access(void* ctx, const char *path, int amode)
     return ret;
 }
 
+static FRESULT f_write_zero_mem(FIL* fp, FSIZE_t data_size, FSIZE_t buf_size, UINT* bytes_written)
+{
+    if (fp == NULL || data_size <= 0 || buf_size <= 0) {
+        return FR_INVALID_PARAMETER;
+    }
+
+    void* buf = ff_memalloc(buf_size);
+    if (buf == NULL) {
+        return FR_DISK_ERR;
+    }
+    memset(buf, 0, buf_size);
+
+    FRESULT res = FR_OK;
+    UINT bw = 0;
+    FSIZE_t i = 0;
+    if (bytes_written != NULL) {
+        *bytes_written = 0;
+    }
+
+    if (data_size > buf_size) { // prevent unsigned underflow
+        for (; i < (data_size - buf_size); i += buf_size) { // write chunks of buf_size
+            res = f_write(fp, buf, (UINT) buf_size, &bw);
+            if (res != FR_OK) {
+                goto out;
+            }
+            if (bytes_written != NULL) {
+                *bytes_written += bw;
+            }
+        }
+    }
+
+    if (i < data_size) { // write the remaining data
+        res = f_write(fp, buf, (UINT) (data_size - i), &bw);
+        if (res == FR_OK && bytes_written != NULL) {
+            *bytes_written += bw;
+        }
+    }
+
+out:
+    ff_memfree(buf);
+    return res;
+}
+
 static int vfs_fat_truncate(void* ctx, const char *path, off_t length)
 {
     FRESULT res;
@@ -1031,31 +1077,55 @@ static int vfs_fat_truncate(void* ctx, const char *path, off_t length)
         goto out;
     }
 
-    long sz = f_size(file);
-    if (sz < length) {
-        _lock_release(&fat_ctx->lock);
-        ESP_LOGD(TAG, "truncate does not support extending size");
-        errno = EPERM;
-        ret = -1;
-        goto close;
-    }
+    FSIZE_t seek_ptr_pos = (FSIZE_t) f_tell(file); // current seek pointer position
+    FSIZE_t sz = (FSIZE_t) f_size(file); // current file size (end of file position)
 
     res = f_lseek(file, length);
-    if (res != FR_OK) {
-        _lock_release(&fat_ctx->lock);
-        ESP_LOGD(TAG, "%s: fresult=%d", __func__, res);
-        errno = fresult_to_errno(res);
-        ret = -1;
-        goto close;
+    if (res != FR_OK || f_tell(file) != length) {
+        goto lseek_or_write_fail;
     }
 
-    res = f_truncate(file);
+    if (sz < length) {
+        res = f_lseek(file, sz); // go to the previous end of file
+        if (res != FR_OK) {
+            goto lseek_or_write_fail;
+        }
 
-    if (res != FR_OK) {
-        ESP_LOGD(TAG, "%s: fresult=%d", __func__, res);
-        errno = fresult_to_errno(res);
-        ret = -1;
-        goto close;
+        FSIZE_t new_free_space = ((FSIZE_t) length) - sz;
+        UINT written;
+
+        if (new_free_space > UINT32_MAX) {
+            _lock_release(&fat_ctx->lock);
+            ESP_LOGE(TAG, "%s: Cannot extend the file more than 4GB at once", __func__);
+            ret = -1;
+            goto close;
+        }
+
+        FSIZE_t buf_size_limit = F_WRITE_MALLOC_ZEROING_BUF_SIZE_LIMIT;
+        FSIZE_t buf_size = new_free_space < buf_size_limit ? new_free_space : buf_size_limit;
+        res = f_write_zero_mem(file, new_free_space, buf_size, &written);
+
+        if (res != FR_OK) {
+            goto lseek_or_write_fail;
+        } else if (written != (UINT) new_free_space) {
+            res = FR_DISK_ERR;
+            goto lseek_or_write_fail;
+        }
+
+        res = f_lseek(file, seek_ptr_pos); // return to the original position
+        if (res != FR_OK) {
+            goto lseek_or_write_fail;
+        }
+    } else {
+        res = f_truncate(file);
+
+        if (res != FR_OK) {
+            _lock_release(&fat_ctx->lock);
+            ESP_LOGD(TAG, "%s: fresult=%d", __func__, res);
+            errno = fresult_to_errno(res);
+            ret = -1;
+            goto close;
+        }
     }
 
 #if CONFIG_FATFS_IMMEDIATE_FSYNC
@@ -1083,6 +1153,13 @@ close:
 out:
     free(file);
     return ret;
+
+lseek_or_write_fail:
+    _lock_release(&fat_ctx->lock);
+    ESP_LOGD(TAG, "%s: fresult=%d", __func__, res);
+    errno = fresult_to_errno(res);
+    ret = -1;
+    goto close;
 }
 
 static int vfs_fat_ftruncate(void* ctx, int fd, off_t length)
@@ -1109,29 +1186,50 @@ static int vfs_fat_ftruncate(void* ctx, int fd, off_t length)
         goto out;
     }
 
-    long sz = f_size(file);
-    if (sz < length) {
-        ESP_LOGD(TAG, "ftruncate does not support extending size");
-        errno = EPERM;
-        ret = -1;
-        goto out;
-    }
+    FSIZE_t seek_ptr_pos = (FSIZE_t) f_tell(file); // current seek pointer position
+    FSIZE_t sz = (FSIZE_t) f_size(file); // current file size (end of file position)
 
     res = f_lseek(file, length);
-    if (res != FR_OK) {
-        ESP_LOGD(TAG, "%s: fresult=%d", __func__, res);
-        errno = fresult_to_errno(res);
-        ret = -1;
-        goto out;
+    if (res != FR_OK || f_tell(file) != length) {
+        goto fail;
     }
 
-    res = f_truncate(file);
+    if (sz < length) {
+        res = f_lseek(file, sz); // go to the previous end of file
+        if (res != FR_OK) {
+            goto fail;
+        }
 
-    if (res != FR_OK) {
-        ESP_LOGD(TAG, "%s: fresult=%d", __func__, res);
-        errno = fresult_to_errno(res);
-        ret = -1;
-        goto out;
+        FSIZE_t new_free_space = ((FSIZE_t) length) - sz;
+        UINT written;
+
+        if (new_free_space > UINT32_MAX) {
+            ESP_LOGE(TAG, "%s: Cannot extend the file more than 4GB at once", __func__);
+            ret = -1;
+            goto out;
+        }
+
+        FSIZE_t buf_size_limit = F_WRITE_MALLOC_ZEROING_BUF_SIZE_LIMIT;
+        FSIZE_t buf_size = new_free_space < buf_size_limit ? new_free_space : buf_size_limit;
+        res = f_write_zero_mem(file, new_free_space, buf_size, &written);
+
+        if (res != FR_OK) {
+            goto fail;
+        } else if (written != (UINT) new_free_space) {
+            res = FR_DISK_ERR;
+            goto fail;
+        }
+
+        res = f_lseek(file, seek_ptr_pos); // return to the original position
+        if (res != FR_OK) {
+            goto fail;
+        }
+    } else {
+        res = f_truncate(file);
+
+        if (res != FR_OK) {
+            goto fail;
+        }
     }
 
 #if CONFIG_FATFS_IMMEDIATE_FSYNC
@@ -1146,6 +1244,12 @@ static int vfs_fat_ftruncate(void* ctx, int fd, off_t length)
 out:
     _lock_release(&fat_ctx->lock);
     return ret;
+
+fail:
+    ESP_LOGD(TAG, "%s: fresult=%d", __func__, res);
+    errno = fresult_to_errno(res);
+    ret = -1;
+    goto out;
 }
 
 static int vfs_fat_utime(void *ctx, const char *path, const struct utimbuf *times)
@@ -1201,3 +1305,138 @@ static int vfs_fat_utime(void *ctx, const char *path, const struct utimbuf *time
 }
 
 #endif // CONFIG_VFS_SUPPORT_DIR
+
+esp_err_t esp_vfs_fat_create_contiguous_file(const char* base_path, const char* full_path, uint64_t size, bool alloc_now)
+{
+    if (base_path == NULL || full_path == NULL || size <= 0) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    size_t ctx = find_context_index_by_path(base_path);
+    if (ctx == FF_VOLUMES) {
+        return ESP_ERR_INVALID_STATE;
+    }
+    vfs_fat_ctx_t* fat_ctx = s_fat_ctxs[ctx];
+
+    _lock_acquire(&fat_ctx->lock);
+    const char* file_path = full_path + strlen(base_path); // shift the pointer and omit the base_path
+    prepend_drive_to_path(fat_ctx, &file_path, NULL);
+
+    FIL* file = (FIL*) ff_memalloc(sizeof(FIL));
+    if (file == NULL) {
+        _lock_release(&fat_ctx->lock);
+        ESP_LOGD(TAG, "esp_vfs_fat_create_contiguous_file alloc failed");
+        errno = ENOMEM;
+        return -1;
+    }
+    memset(file, 0, sizeof(*file));
+
+    FRESULT res = f_open(file, file_path, FA_WRITE | FA_OPEN_ALWAYS);
+    if (res != FR_OK) {
+        goto fail;
+    }
+
+    res = f_expand(file, size, alloc_now ? 1 : 0);
+    if (res != FR_OK) {
+        f_close(file);
+        goto fail;
+    }
+
+    res = f_close(file);
+    if (res != FR_OK) {
+        goto fail;
+    }
+
+    _lock_release(&fat_ctx->lock);
+
+    return 0;
+fail:
+    _lock_release(&fat_ctx->lock);
+    ESP_LOGD(TAG, "%s: fresult=%d", __func__, res);
+    errno = fresult_to_errno(res);
+    return -1;
+}
+
+static FRESULT test_contiguous_file( // From FATFS examples
+    FIL* fp,    /* [IN]  Open file object to be checked */
+    int* cont   /* [OUT] 1:Contiguous, 0:Fragmented or zero-length */
+) {
+    DWORD clst, clsz, step;
+    FSIZE_t fsz;
+    FRESULT fr;
+
+    *cont = 0;
+    fr = f_rewind(fp);              /* Validates and prepares the file */
+    if (fr != FR_OK) return fr;
+
+#if FF_MAX_SS == FF_MIN_SS
+    clsz = (DWORD)fp->obj.fs->csize * FF_MAX_SS;    /* Cluster size */
+#else
+    clsz = (DWORD)fp->obj.fs->csize * fp->obj.fs->ssize;
+#endif
+    fsz = f_size(fp);
+    if (fsz > 0) {
+        clst = fp->obj.sclust - 1;  /* A cluster leading the first cluster for first test */
+        while (fsz) {
+            step = (fsz >= clsz) ? clsz : (DWORD)fsz;
+            fr = f_lseek(fp, f_tell(fp) + step);    /* Advances file pointer a cluster */
+            if (fr != FR_OK) return fr;
+            if (clst + 1 != fp->clust) break;       /* Is not the cluster next to previous one? */
+            clst = fp->clust; fsz -= step;          /* Get current cluster for next test */
+        }
+        if (fsz == 0) *cont = 1;    /* All done without fail? */
+    }
+
+    return FR_OK;
+}
+
+esp_err_t esp_vfs_fat_test_contiguous_file(const char* base_path, const char* full_path, bool* is_contiguous)
+{
+    if (base_path == NULL || full_path == NULL || is_contiguous == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    size_t ctx = find_context_index_by_path(base_path);
+    if (ctx == FF_VOLUMES) {
+        return ESP_ERR_INVALID_STATE;
+    }
+    vfs_fat_ctx_t* fat_ctx = s_fat_ctxs[ctx];
+
+    _lock_acquire(&fat_ctx->lock);
+    const char* file_path = full_path + strlen(base_path); // shift the pointer and omit the base_path
+    prepend_drive_to_path(fat_ctx, &file_path, NULL);
+
+    FIL* file = (FIL*) ff_memalloc(sizeof(FIL));
+    if (file == NULL) {
+        _lock_release(&fat_ctx->lock);
+        ESP_LOGD(TAG, "esp_vfs_fat_test_contiguous_file alloc failed");
+        errno = ENOMEM;
+        return -1;
+    }
+    memset(file, 0, sizeof(*file));
+
+    FRESULT res = f_open(file, file_path, FA_WRITE | FA_OPEN_ALWAYS);
+    if (res != FR_OK) {
+        goto fail;
+    }
+
+    res = test_contiguous_file(file, (int*) is_contiguous);
+    if (res != FR_OK) {
+        f_close(file);
+        goto fail;
+    }
+
+    res = f_close(file);
+    if (res != FR_OK) {
+        goto fail;
+    }
+
+    _lock_release(&fat_ctx->lock);
+
+    return 0;
+fail:
+    _lock_release(&fat_ctx->lock);
+    ESP_LOGD(TAG, "%s: fresult=%d", __func__, res);
+    errno = fresult_to_errno(res);
+    return -1;
+}

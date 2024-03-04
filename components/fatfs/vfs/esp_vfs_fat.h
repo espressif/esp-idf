@@ -401,6 +401,38 @@ esp_err_t esp_vfs_fat_spiflash_unmount_ro(const char* base_path, const char* par
  */
 esp_err_t esp_vfs_fat_info(const char* base_path, uint64_t* out_total_bytes, uint64_t* out_free_bytes);
 
+/**
+ * @brief Create a file with contiguous space at given path
+ *
+ * @note The file cannot exist before calling this function (or the file size has to be 0)
+ *       For more information see documentation for `f_expand` from FATFS library
+ *
+ * @param base_path  Base path of the partition examined (e.g. "/spiflash")
+ * @param full_path  Full path of the file (e.g. "/spiflash/ABC.TXT")
+ * @param size       File size expanded to, number of bytes in size to prepare or allocate for the file
+ * @param alloc_now  True == allocate space now, false == prepare to allocate -- see `f_expand` from FATFS
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_INVALID_ARG if invalid arguments (e.g. any of arguments are NULL or size lower or equal to 0)
+ *      - ESP_ERR_INVALID_STATE if partition not found
+ *      - ESP_FAIL if another FRESULT error (saved in errno)
+ */
+esp_err_t esp_vfs_fat_create_contiguous_file(const char* base_path, const char* full_path, uint64_t size, bool alloc_now);
+
+/**
+ * @brief Test if a file is contiguous in the FAT filesystem
+ *
+ * @param base_path  Base path of the partition examined (e.g. "/spiflash")
+ * @param full_path  Full path of the file (e.g. "/spiflash/ABC.TXT")
+ * @param[out] is_contiguous  True == allocate space now, false == prepare to allocate -- see `f_expand` from FATFS
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_INVALID_ARG if invalid arguments (e.g. any of arguments are NULL)
+ *      - ESP_ERR_INVALID_STATE if partition not found
+ *      - ESP_FAIL if another FRESULT error (saved in errno)
+ */
+esp_err_t esp_vfs_fat_test_contiguous_file(const char* base_path, const char* full_path, bool* is_contiguous);
+
 /** @cond */
 /**
  * @deprecated Please use `esp_vfs_fat_register_cfg` instead
