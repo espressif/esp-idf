@@ -43,8 +43,7 @@ typedef struct {
     uint8_t                     devices_len;
 } esp_bt_hidd_dev_t;
 
-typedef struct
-{
+typedef struct {
     osi_mutex_t mutex;
     esp_bt_hidd_dev_t *dev;
     esp_hidd_app_param_t app_param;
@@ -313,7 +312,7 @@ static bool esp_bt_hidd_dev_connected(void *devp)
             ret = false;
             break;
         }
-    } while(0);
+    } while (0);
     if (ret) {
         ret = dev->connected;
     }
@@ -337,7 +336,7 @@ static esp_err_t esp_bt_hidd_dev_deinit(void *devp)
             ESP_LOGE(TAG, "Wrong HID device provided");
             ret = ESP_FAIL;
         }
-    } while(0);
+    } while (0);
     osi_mutex_unlock(&s_hidd_param.mutex);
 
     if (ret == ESP_OK) {
@@ -369,7 +368,7 @@ static esp_err_t esp_bt_hidd_dev_disconnect(void *devp)
             ESP_LOGW(TAG, "already disconnected");
             return ESP_OK;
         }
-    } while(0);
+    } while (0);
     osi_mutex_unlock(&s_hidd_param.mutex);
 
     if (ret == ESP_OK) {
@@ -423,7 +422,7 @@ static esp_err_t esp_bt_hidd_dev_input_set(void *devp, size_t index, size_t id, 
             ret = ESP_FAIL;
             break;
         }
-    } while(0);
+    } while (0);
     osi_mutex_unlock(&s_hidd_param.mutex);
 
     if (ret == ESP_OK) {
@@ -469,7 +468,7 @@ static esp_err_t esp_bt_hidd_dev_feature_set(void *devp, size_t index, size_t id
             ret = ESP_FAIL;
             break;
         }
-    } while(0);
+    } while (0);
     osi_mutex_unlock(&s_hidd_param.mutex);
 
     if (ret == ESP_OK) {

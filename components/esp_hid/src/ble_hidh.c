@@ -28,7 +28,7 @@ static const char *s_gattc_evt_names[] = {"REG", "UNREG", "OPEN", "READ_CHAR", "
 
 const char *gattc_evt_str(uint8_t event)
 {
-    if (event >= (sizeof(s_gattc_evt_names)/sizeof(*s_gattc_evt_names))) {
+    if (event >= (sizeof(s_gattc_evt_names) / sizeof(*s_gattc_evt_names))) {
         return "UNKNOWN";
     }
     return s_gattc_evt_names[event];
@@ -396,7 +396,6 @@ void esp_hidh_gattc_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_t gatt
         SEND_CB();//return from open
         break;
 
-
     case ESP_GATTC_READ_CHAR_EVT:
     case ESP_GATTC_READ_DESCR_EVT: {
         dev = esp_hidh_dev_get_by_conn_id(p_data->read.conn_id);
@@ -607,8 +606,8 @@ static void esp_ble_hidh_dev_dump(esp_hidh_dev_t *dev, FILE *fp)
         while (report) {
             if (report->map_index == d) {
                 fprintf(fp, "    %8s %7s %6s, ID: %2u, Length: %3u, Permissions: 0x%02x, Handle: %3u, CCC Handle: %3u\n",
-                       esp_hid_usage_str(report->usage), esp_hid_report_type_str(report->report_type), esp_hid_protocol_mode_str(report->protocol_mode),
-                       report->report_id, report->value_len, report->permissions, report->handle, report->ccc_handle);
+                        esp_hid_usage_str(report->usage), esp_hid_report_type_str(report->report_type), esp_hid_protocol_mode_str(report->protocol_mode),
+                        report->report_id, report->value_len, report->permissions, report->handle, report->ccc_handle);
             }
             report = report->next;
         }

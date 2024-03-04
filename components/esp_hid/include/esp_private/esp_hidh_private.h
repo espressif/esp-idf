@@ -69,15 +69,15 @@ struct esp_hidh_dev_s {
     SemaphoreHandle_t        semaphore;
     SemaphoreHandle_t        mutex;
 
-    esp_err_t               (*close)        (esp_hidh_dev_t *dev);
-    esp_err_t               (*report_write) (esp_hidh_dev_t *dev, size_t map_index, size_t report_id, int report_type, uint8_t *data, size_t len);
-    esp_err_t               (*report_read)  (esp_hidh_dev_t *dev, size_t map_index, size_t report_id, int report_type, size_t max_length, uint8_t *value, size_t *value_len);
-    esp_err_t               (*set_report)   (esp_hidh_dev_t *dev, size_t map_index, size_t report_id, int report_type, uint8_t *data, size_t len);
-    esp_err_t               (*get_idle)     (esp_hidh_dev_t *dev);
-    esp_err_t               (*set_idle)     (esp_hidh_dev_t *dev, uint8_t idle_time);
-    esp_err_t               (*get_protocol) (esp_hidh_dev_t *dev);
-    esp_err_t               (*set_protocol) (esp_hidh_dev_t *dev, uint8_t protocol_mode);
-    void                    (*dump)         (esp_hidh_dev_t *dev, FILE *fp);
+    esp_err_t (*close)(esp_hidh_dev_t *dev);
+    esp_err_t (*report_write)(esp_hidh_dev_t *dev, size_t map_index, size_t report_id, int report_type, uint8_t *data, size_t len);
+    esp_err_t (*report_read)(esp_hidh_dev_t *dev, size_t map_index, size_t report_id, int report_type, size_t max_length, uint8_t *value, size_t *value_len);
+    esp_err_t (*set_report)(esp_hidh_dev_t *dev, size_t map_index, size_t report_id, int report_type, uint8_t *data, size_t len);
+    esp_err_t (*get_idle)(esp_hidh_dev_t *dev);
+    esp_err_t (*set_idle)(esp_hidh_dev_t *dev, uint8_t idle_time);
+    esp_err_t (*get_protocol)(esp_hidh_dev_t *dev);
+    esp_err_t (*set_protocol)(esp_hidh_dev_t *dev, uint8_t protocol_mode);
+    void (*dump)(esp_hidh_dev_t *dev, FILE *fp);
 
     union {
 #if CONFIG_BT_HID_HOST_ENABLED

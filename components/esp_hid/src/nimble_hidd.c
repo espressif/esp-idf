@@ -32,7 +32,6 @@
 static const char *TAG = "NIMBLE_HIDD";
 #define BLE_SVC_BAS_UUID16                    0x180F
 
-
 typedef struct esp_ble_hidd_dev_s esp_ble_hidd_dev_t;
 // there can be only one BLE HID device
 static esp_ble_hidd_dev_t *s_dev = NULL;
@@ -47,8 +46,6 @@ typedef struct {
     uint16_t                    hid_control_handle;
     uint16_t                    hid_protocol_handle;
 } hidd_dev_map_t;
-
-
 
 struct esp_ble_hidd_dev_s {
     esp_hidd_dev_t             *dev;
@@ -119,7 +116,7 @@ static int create_hid_db(int device_index)
                 if (report->usage == ESP_HID_USAGE_KEYBOARD) { //Boot Keyboard Input
                     hparams.kbd_inp_present = 1;
                 } else { //Boot Mouse Input
-                hparams.mouse_inp_present = 1;
+                    hparams.mouse_inp_present = 1;
                 }
             } else { //Boot Keyboard Output
                 hparams.kbd_out_present = 1;
@@ -129,14 +126,14 @@ static int create_hid_db(int device_index)
     hparams.rpts_len = report_mode_rpts;
     /* Add service */
     rc = ble_svc_hid_add(hparams);
-    if(rc != 0) {
+    if (rc != 0) {
         return rc;
     }
     return rc;
 }
 
-
-static int ble_hid_create_info_db() {
+static int ble_hid_create_info_db()
+{
     int rc;
 
     rc = 0;
@@ -144,8 +141,8 @@ static int ble_hid_create_info_db() {
     uint8_t pnp_val[7] = {
         0x02, //0x1=BT, 0x2=USB
         s_dev->config.vendor_id & 0xFF, (s_dev->config.vendor_id >> 8) & 0xFF, //VID
-        s_dev->config.product_id & 0xFF, (s_dev->config.product_id >> 8) & 0xFF, //PID
-        s_dev->config.version & 0xFF, (s_dev->config.version >> 8) & 0xFF  //VERSION
+                     s_dev->config.product_id & 0xFF, (s_dev->config.product_id >> 8) & 0xFF, //PID
+                     s_dev->config.version & 0xFF, (s_dev->config.version >> 8) & 0xFF  //VERSION
     };
     memcpy(s_dev->pnp, pnp_val, 7);
     ble_svc_dis_pnp_id_set((char *)s_dev->pnp);
@@ -170,7 +167,7 @@ static int nimble_hid_start_gatts(void)
 
     for (uint8_t d = 0; d < s_dev->devices_len; d++) {
         rc = create_hid_db(d);
-        if(rc != 0) {
+        if (rc != 0) {
             return rc;
         }
     }
@@ -273,7 +270,8 @@ static int ble_hid_free_config(esp_ble_hidd_dev_t *dev)
     return ESP_OK;
 }
 
-static int nimble_hidd_dev_deinit(void *devp) {
+static int nimble_hidd_dev_deinit(void *devp)
+{
     esp_ble_hidd_dev_t *dev = (esp_ble_hidd_dev_t *)devp;
     if (!s_dev) {
         ESP_LOGE(TAG, "HID device profile already uninitialized");
@@ -322,24 +320,26 @@ static int nimble_hidd_dev_battery_set(void *devp, uint8_t level)
 }
 
 /* if mode is NULL, find the first matching report */
-static hidd_le_report_item_t* find_report(uint8_t id, uint8_t type, uint8_t *mode) {
+static hidd_le_report_item_t* find_report(uint8_t id, uint8_t type, uint8_t *mode)
+{
     hidd_le_report_item_t *rpt;
     for (uint8_t d = 0; d < s_dev->devices_len; d++) {
         for (uint8_t i = 0; i < s_dev->devices[d].reports_len; i++) {
             rpt = &s_dev->devices[d].reports[i];
-            if(rpt->report_id == id && rpt->report_type == type && (!mode || (mode && *mode == rpt->protocol_mode))) {
+            if (rpt->report_id == id && rpt->report_type == type && (!mode || (mode && *mode == rpt->protocol_mode))) {
                 return rpt;
             }
         }
     }
     return NULL;
 }
-static hidd_le_report_item_t* find_report_by_usage_and_type(uint8_t usage, uint8_t type, uint8_t *mode) {
+static hidd_le_report_item_t* find_report_by_usage_and_type(uint8_t usage, uint8_t type, uint8_t *mode)
+{
     hidd_le_report_item_t *rpt;
     for (uint8_t d = 0; d < s_dev->devices_len; d++) {
         for (uint8_t i = 0; i < s_dev->devices[d].reports_len; i++) {
             rpt = &s_dev->devices[d].reports[i];
-            if(rpt->usage == usage && rpt->report_type == type && (!mode || (mode && *mode == rpt->protocol_mode))) {
+            if (rpt->usage == usage && rpt->report_type == type && (!mode || (mode && *mode == rpt->protocol_mode))) {
                 return rpt;
             }
         }
@@ -365,12 +365,12 @@ static int nimble_hidd_dev_input_set(void *devp, size_t index, size_t id, uint8_
     /* check the protocol mode */
     /* as the protocol mode is always present, its safe to read the characteristic */
     rc = ble_att_svr_read_local(s_dev->devices[index].hid_protocol_handle, &om);
-    if(rc != 0) {
+    if (rc != 0) {
         ESP_LOGE(TAG, "Unable to fetch protocol_mode\n");
         return ESP_FAIL;
     }
     rc = ble_hs_mbuf_to_flat(om, &dev->protocol, sizeof(dev->protocol), NULL);
-    if(rc != 0) {
+    if (rc != 0) {
         return ESP_FAIL;
     }
     /* free the mbuf */
@@ -409,12 +409,12 @@ static int nimble_hidd_dev_feature_set(void *devp, size_t index, size_t id, uint
     /* check the protocol mode */
     /* as the protocol mode is always present, its safe to read the characteristic */
     rc = ble_att_svr_read_local(s_dev->devices[index].hid_protocol_handle, &om);
-    if(rc != 0) {
+    if (rc != 0) {
         ESP_LOGE(TAG, "Unable to fetch protocol_mode\n");
         return ESP_FAIL;
     }
     rc = ble_hs_mbuf_to_flat(om, &dev->protocol, sizeof(dev->protocol), NULL);
-    if(rc != 0) {
+    if (rc != 0) {
         return ESP_FAIL;
     }
     /* free the mbuf */
@@ -488,11 +488,11 @@ static int nimble_hid_gap_event(struct ble_gap_event *event, void *arg)
         /* reset the protocol mode value */
         data = ESP_HID_PROTOCOL_MODE_REPORT;
         om = ble_hs_mbuf_from_flat(&data, 1);
-        if(om == NULL) {
+        if (om == NULL) {
             ESP_LOGD(TAG, "No memory to allocate mbuf");
         }
         /* NOTE : om is freed by stack */
-        for(int i = 0; i < s_dev->devices_len; i++) {
+        for (int i = 0; i < s_dev->devices_len; i++) {
             rc = ble_att_svr_write_local(s_dev->devices[i].hid_protocol_handle, om);
             if (rc != 0) {
                 ESP_LOGE(TAG, "Write on Protocol Mode Failed: %d", rc);
@@ -541,7 +541,7 @@ static void nimble_gatt_svr_register_cb(struct ble_gatt_register_ctxt *ctxt, voi
                  ble_uuid_to_str(ctxt->svc.svc_def->uuid, buf),
                  ctxt->svc.handle);
         uuid16 = ble_uuid_u16(ctxt->svc.svc_def->uuid);
-        if(uuid16 == BLE_SVC_HID_UUID16) {
+        if (uuid16 == BLE_SVC_HID_UUID16) {
             ++service_index;
             s_dev->devices[service_index].hid_svc = ctxt->svc.handle;
         }
@@ -555,36 +555,36 @@ static void nimble_gatt_svr_register_cb(struct ble_gatt_register_ctxt *ctxt, voi
                  ctxt->chr.def_handle,
                  ctxt->chr.val_handle);
         uuid16 = ble_uuid_u16(ctxt->chr.chr_def->uuid);
-        if(uuid16 == BLE_SVC_HID_CHR_UUID16_HID_CTRL_PT) {
+        if (uuid16 == BLE_SVC_HID_CHR_UUID16_HID_CTRL_PT) {
             /* assuming this characteristic is from the last registered hid service */
             s_dev->devices[service_index].hid_control_handle = ctxt->chr.val_handle;
         }
-        if(uuid16 == BLE_SVC_HID_CHR_UUID16_PROTOCOL_MODE) {
+        if (uuid16 == BLE_SVC_HID_CHR_UUID16_PROTOCOL_MODE) {
             /* assuming this characteristic is from the last registered hid service */
             s_dev->devices[service_index].hid_protocol_handle = ctxt->chr.val_handle;
         }
-        if(uuid16 == BLE_SVC_HID_CHR_UUID16_BOOT_KBD_INP) {
+        if (uuid16 == BLE_SVC_HID_CHR_UUID16_BOOT_KBD_INP) {
             protocol_mode = ESP_HID_PROTOCOL_MODE_BOOT;
             rpt = find_report_by_usage_and_type(ESP_HID_USAGE_KEYBOARD, ESP_HID_REPORT_TYPE_INPUT, &protocol_mode);
-            if(rpt == NULL) {
+            if (rpt == NULL) {
                 ESP_LOGE(TAG, "Unknown boot kbd input report registration");
                 return;
             }
             rpt->handle = ctxt->chr.val_handle;
         }
-        if(uuid16 == BLE_SVC_HID_CHR_UUID16_BOOT_KBD_OUT) {
+        if (uuid16 == BLE_SVC_HID_CHR_UUID16_BOOT_KBD_OUT) {
             protocol_mode = ESP_HID_PROTOCOL_MODE_BOOT;
             rpt = find_report_by_usage_and_type(ESP_HID_USAGE_KEYBOARD, ESP_HID_REPORT_TYPE_OUTPUT, &protocol_mode);
-            if(rpt == NULL) {
+            if (rpt == NULL) {
                 ESP_LOGE(TAG, "Unknown boot kbd output report registration");
                 return;
             }
             rpt->handle = ctxt->chr.val_handle;
         }
-        if(uuid16 == BLE_SVC_HID_CHR_UUID16_BOOT_MOUSE_INP) {
+        if (uuid16 == BLE_SVC_HID_CHR_UUID16_BOOT_MOUSE_INP) {
             protocol_mode = ESP_HID_PROTOCOL_MODE_BOOT;
             rpt = find_report_by_usage_and_type(ESP_HID_USAGE_MOUSE, ESP_HID_REPORT_TYPE_INPUT, &protocol_mode);
-            if(rpt == NULL) {
+            if (rpt == NULL) {
                 ESP_LOGE(TAG, "Unknown boot mouse input report registration");
                 return;
             }
@@ -597,7 +597,7 @@ static void nimble_gatt_svr_register_cb(struct ble_gatt_register_ctxt *ctxt, voi
                  ble_uuid_to_str(ctxt->dsc.dsc_def->uuid, buf),
                  ctxt->dsc.handle);
         uuid16 = ble_uuid_u16(ctxt->dsc.dsc_def->uuid);
-        if(uuid16 == BLE_SVC_HID_DSC_UUID16_RPT_REF) {
+        if (uuid16 == BLE_SVC_HID_DSC_UUID16_RPT_REF) {
             rc = ble_att_svr_read_local(ctxt->dsc.handle, &om);
             assert(rc == 0);
 
@@ -621,7 +621,8 @@ static void nimble_gatt_svr_register_cb(struct ble_gatt_register_ctxt *ctxt, voi
     }
 }
 
-static void nimble_host_synced(void) {
+static void nimble_host_synced(void)
+{
     esp_event_post_to(s_dev->event_loop_handle, ESP_HIDD_EVENTS, ESP_HIDD_START_EVENT, NULL, 0, portMAX_DELAY);
 }
 
@@ -699,11 +700,11 @@ esp_err_t esp_ble_hidd_dev_init(esp_hidd_dev_t *dev_p, const esp_hid_device_conf
     ble_hs_cfg.sync_cb = nimble_host_synced;
     ble_hs_cfg.gatts_register_cb = nimble_gatt_svr_register_cb;
     rc = nimble_hid_start_gatts();
-    if(rc != ESP_OK) {
+    if (rc != ESP_OK) {
         return rc;
     }
     ble_gap_event_listener_register(&nimble_gap_event_listener,
-                                nimble_hid_gap_event, NULL);
+                                    nimble_hid_gap_event, NULL);
 
     return rc;
 }

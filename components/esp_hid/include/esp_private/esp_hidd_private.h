@@ -41,15 +41,15 @@ struct esp_hidd_dev_s {
     void *dev;
     esp_hid_transport_t transport;
 
-    bool        (*connected)                (void *dev);
-    esp_err_t   (*deinit)                   (void *dev);
-    esp_err_t   (*disconnect)               (void *dev);
-    esp_err_t   (*virtual_unplug)           (void *dev);
-    esp_err_t   (*battery_set)              (void *dev, uint8_t level);
-    esp_err_t   (*input_set)                (void *dev, size_t map_index, size_t report_id, uint8_t *data, size_t length);
-    esp_err_t   (*feature_set)              (void *dev, size_t map_index, size_t report_id, uint8_t *data, size_t length);
-    esp_err_t   (*event_handler_register)   (void *dev, esp_event_handler_t callback, esp_hidd_event_t event);
-    esp_err_t   (*event_handler_unregister) (void *dev, esp_event_handler_t callback, esp_hidd_event_t event);
+    bool (*connected)(void *dev);
+    esp_err_t (*deinit)(void *dev);
+    esp_err_t (*disconnect)(void *dev);
+    esp_err_t (*virtual_unplug)(void *dev);
+    esp_err_t (*battery_set)(void *dev, uint8_t level);
+    esp_err_t (*input_set)(void *dev, size_t map_index, size_t report_id, uint8_t *data, size_t length);
+    esp_err_t (*feature_set)(void *dev, size_t map_index, size_t report_id, uint8_t *data, size_t length);
+    esp_err_t (*event_handler_register)(void *dev, esp_event_handler_t callback, esp_hidd_event_t event);
+    esp_err_t (*event_handler_unregister)(void *dev, esp_event_handler_t callback, esp_hidd_event_t event);
 };
 
 typedef struct esp_hidd_dev_s esp_hidd_dev_t;

@@ -55,7 +55,6 @@ components_not_formatted_temporary:
     - "/components/esp_coex/"
     - "/components/esp_eth/"
     - "/components/esp_gdbstub/"
-    - "/components/esp_hid/"
     - "/components/esp_http_client/"
     - "/components/esp_http_server/"
     - "/components/esp_https_ota/"

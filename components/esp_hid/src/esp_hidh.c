@@ -37,7 +37,6 @@ static inline void unlock_devices(void)
     }
 }
 
-
 /*
  * Public Functions
  * */
@@ -504,7 +503,6 @@ esp_err_t esp_hidh_dev_report_maps_get(esp_hidh_dev_t *dev, size_t *num_maps, es
     return ESP_OK;
 }
 
-
 /*
  * Private Functions
  * */
@@ -557,7 +555,7 @@ esp_hidh_dev_report_t *esp_hidh_dev_get_report_by_id_type_proto(esp_hidh_dev_t *
     esp_hidh_dev_report_t *r = dev->reports;
     while (r) {
         if (r->map_index == map_index && r->report_type == report_type && r->report_id == report_id &&
-            r->protocol_mode == protocol_mode) {
+                r->protocol_mode == protocol_mode) {
             return r;
         }
         r = r->next;
@@ -614,7 +612,7 @@ esp_hidh_dev_report_t *esp_hidh_dev_get_input_report_by_proto_and_data(esp_hidh_
     // first, assume data not include report id
     while (r) {
         if (r->value_len == len && r->report_id == 0 && (r->report_type & ESP_HID_REPORT_TYPE_INPUT) &&
-            r->protocol_mode == protocol_mode) {
+                r->protocol_mode == protocol_mode) {
             *has_report_id = false;
             break;
         }
@@ -630,7 +628,7 @@ esp_hidh_dev_report_t *esp_hidh_dev_get_input_report_by_proto_and_data(esp_hidh_
         r = dev->reports;
         while (r) {
             if (r->value_len == len - 1 && r->report_id == *data && (r->report_type & ESP_HID_REPORT_TYPE_INPUT) &&
-                r->protocol_mode == protocol_mode) {
+                    r->protocol_mode == protocol_mode) {
                 *has_report_id = true;
                 break;
             }

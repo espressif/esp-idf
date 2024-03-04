@@ -55,7 +55,8 @@ static const char *s_esp_hh_status_names[] = {"OK",
                                               "NO_DATA",
                                               "NEED_INIT",
                                               "NEED_DEINIT",
-                                              "NO_CONNECTION"};
+                                              "NO_CONNECTION"
+                                             };
 
 static esp_hidh_dev_t *hidh_dev_ctor(esp_bd_addr_t bda);
 
@@ -418,7 +419,7 @@ static void esp_hh_cb(esp_hidh_cb_event_t event, esp_hidh_cb_param_t *param)
             esp_hidh_dev_lock(dev);
             dev->added = param->add_dev.status == ESP_HIDH_OK ? true : false;
             esp_hidh_dev_unlock(dev);
-        } while(0);
+        } while (0);
 
         if (param->add_dev.status != ESP_HIDH_OK) {
             ESP_LOGE(TAG, "ADD_DEV ERROR: %s", s_esp_hh_status_names[param->add_dev.status]);
@@ -460,7 +461,7 @@ static void esp_hh_cb(esp_hidh_cb_event_t event, esp_hidh_cb_param_t *param)
             // free the device in the wrapper event handler
             dev->in_use = false;
             esp_hidh_dev_unlock(dev);
-        } while(0);
+        } while (0);
 
         if (param->close.status != ESP_HIDH_OK) {
             ESP_LOGE(TAG, "CLOSE ERROR: %s", s_esp_hh_status_names[param->close.status]);
@@ -535,7 +536,7 @@ static void esp_hh_cb(esp_hidh_cb_event_t event, esp_hidh_cb_param_t *param)
         reset_trans(dev);
         break;
     }
-    case ESP_HIDH_GET_IDLE_EVT:{
+    case ESP_HIDH_GET_IDLE_EVT: {
         if (param->get_idle.status != ESP_HIDH_OK) {
             ESP_LOGE(TAG, "GET_IDLE ERROR: handle: %d, status: %s", param->get_idle.handle,
                      s_esp_hh_status_names[param->get_idle.status]);
@@ -684,7 +685,7 @@ static void esp_hh_cb(esp_hidh_cb_event_t event, esp_hidh_cb_param_t *param)
                 }
             } else {
                 report = esp_hidh_dev_get_input_report_by_proto_and_data(
-                    dev, ESP_HID_PROTOCOL_MODE_REPORT, param->data_ind.len, param->data_ind.data, &has_report_id);
+                             dev, ESP_HID_PROTOCOL_MODE_REPORT, param->data_ind.len, param->data_ind.data, &has_report_id);
                 if (report == NULL) {
                     esp_hidh_dev_unlock(dev);
                     ESP_LOGE(TAG, "Not find report handle: %d mode: %s", param->data_ind.handle,
@@ -903,7 +904,7 @@ static esp_err_t esp_bt_hidh_dev_get_idle(esp_hidh_dev_t *dev)
         if (ret == ESP_OK) {
             set_trans(dev, ESP_HID_TRANS_GET_IDLE);
         }
-    } while(0);
+    } while (0);
 
     return ret;
 }
@@ -926,7 +927,7 @@ static esp_err_t esp_bt_hidh_dev_set_idle(esp_hidh_dev_t *dev, uint8_t idle_time
         if (ret == ESP_OK) {
             set_trans(dev, ESP_HID_TRANS_SET_IDLE);
         }
-    } while(0);
+    } while (0);
 
     return ret;
 }
@@ -949,7 +950,7 @@ static esp_err_t esp_bt_hidh_dev_get_protocol(esp_hidh_dev_t *dev)
         if (ret == ESP_OK) {
             set_trans(dev, ESP_HID_TRANS_GET_PROTOCOL);
         }
-    } while(0);
+    } while (0);
 
     return ret;
 }
@@ -973,7 +974,7 @@ static esp_err_t esp_bt_hidh_dev_set_protocol(esp_hidh_dev_t *dev, uint8_t proto
         if (ret == ESP_OK) {
             set_trans(dev, ESP_HID_TRANS_SET_PROTOCOL);
         }
-    } while(0);
+    } while (0);
 
     return ret;
 }
@@ -987,8 +988,8 @@ static void esp_bt_hidh_dev_dump(esp_hidh_dev_t *dev, FILE *fp)
     esp_hidh_dev_report_t *report = dev->reports;
     while (report) {
         fprintf(fp, "  %8s %7s %6s, ID: %3u, Length: %3u\n",
-               esp_hid_usage_str(report->usage), esp_hid_report_type_str(report->report_type), get_protocol_mode(report->protocol_mode),
-               report->report_id, report->value_len);
+                esp_hid_usage_str(report->usage), esp_hid_report_type_str(report->report_type), get_protocol_mode(report->protocol_mode),
+                report->report_id, report->value_len);
         report = report->next;
     }
 }
