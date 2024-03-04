@@ -20,19 +20,20 @@ extern "C" {
 typedef struct ppa_invoker_t *ppa_invoker_handle_t;
 
 /**
- * @brief PPA engine type flags
+ * @brief PPA operation type flags
  *
- * These flags are supposed to be used to specify the PPA engines that are required by the invoker, so that the engines
- * can be acquired when registering the invoker with `ppa_register_invoker`.
+ * These flags are supposed to be used to specify the PPA operations that are going to be used by the invoker, so that
+ * the corresponding engines can be acquired when registering the invoker with `ppa_register_invoker`.
  */
-#define PPA_ENGINE_FLAG_SR      (1 << PPA_ENGINE_TYPE_SR)
-#define PPA_ENGINE_FLAG_BLEND   (1 << PPA_ENGINE_TYPE_BLEND)
+#define PPA_OPERATION_FLAG_SR       (1 << 0)
+#define PPA_OPERATION_FLAG_BLEND    (1 << 1)
+#define PPA_OPERATION_FLAG_FILL     (1 << 2)
 
 /**
  * @brief A collection of configuration items that used for registering a PPA invoker
  */
 typedef struct {
-    uint32_t engine_flag;           /*!< Bitwise OR of `PPA_ENGINE_FLAG_*` flags indicating the required engines for the invoker */
+    uint32_t operation_flag;           /*!< Bitwise OR of `PPA_OPERATION_FLAG_*` flags indicating the required operations for the invoker */
     // done_cb
     // user_data
 } ppa_invoker_config_t;
@@ -67,7 +68,14 @@ typedef enum {
     PPA_TRANS_MODE_NON_BLOCKING,    /*!< `ppa_do_xxx` function will return immediately after the PPA operation is pushed to the internal queue */
 } ppa_trans_mode_t;
 
-#define PPA_SR_TRANS_CONFIG struct { \
+/**
+ * @brief A collection of configuration items to perform a PPA transaction
+ */
+typedef struct {
+    ppa_trans_mode_t mode;          /*!< Determines whether to block inside the operation functions, see `ppa_trans_mode_t` */
+} ppa_trans_config_t;
+
+#define PPA_SR_OPERATION_CONFIG struct { \
     void *in_buffer; /*!< TODO: could be a buffer list, link descriptors together, process a batch
     uint32_t batch_num; However, is it necessary? psram can not store too many pictures */ \
     uint32_t in_pic_w; \
@@ -111,14 +119,14 @@ typedef enum {
 /**
  * @brief A collection of configuration items to perform a PPA SR operation
  */
-typedef PPA_SR_TRANS_CONFIG ppa_sr_trans_config_t;
+typedef PPA_SR_OPERATION_CONFIG ppa_sr_operation_config_t;
 
 /**
  * @brief Perform a scaling-and-rotating (SR) operation to a picture
  *
  * @param[in] ppa_invoker PPA invoker handle that has acquired the PPA SR engine
- * @param[in] config Pointer to a collection of configurations for the SR operation, ppa_sr_trans_config_t
- * @param[in] mode Select one mode from ppa_trans_mode_t
+ * @param[in] oper_config Pointer to a collection of configurations for the SR operation, ppa_sr_operation_config_t
+ * @param[in] trans_config Pointer to a collection of configurations for the transaction, ppa_trans_config_t
  *
  * @return
  *      - ESP_OK:
@@ -126,7 +134,7 @@ typedef PPA_SR_TRANS_CONFIG ppa_sr_trans_config_t;
  *      - ESP_ERR_NO_MEM:
  *      - ESP_FAIL:
  */
-esp_err_t ppa_do_scale_and_rotate(ppa_invoker_handle_t ppa_invoker, const ppa_sr_trans_config_t *config, ppa_trans_mode_t mode);
+esp_err_t ppa_do_scale_and_rotate(ppa_invoker_handle_t ppa_invoker, const ppa_sr_operation_config_t *oper_config, const ppa_trans_config_t *trans_config);
 
 typedef struct {
     void *in_bg_buffer;
@@ -174,14 +182,14 @@ typedef struct {
     } out_color;
 
     // TODO: colorkey
-} ppa_blend_trans_config_t;
+} ppa_blend_operation_config_t;
 
 /**
  * @brief Perform a blending operation to a picture
  *
  * @param[in] ppa_invoker PPA invoker handle that has acquired the PPA Blend engine
- * @param[in] config Pointer to a collection of configurations for the blending operation, ppa_blend_trans_config_t
- * @param[in] mode Select one mode from ppa_trans_mode_t
+ * @param[in] oper_config Pointer to a collection of configurations for the blending operation, ppa_blend_operation_config_t
+ * @param[in] trans_config Pointer to a collection of configurations for the transaction, ppa_trans_config_t
  *
  * @return
  *      - ESP_OK:
@@ -189,7 +197,7 @@ typedef struct {
  *      - ESP_ERR_NO_MEM:
  *      - ESP_FAIL:
  */
-esp_err_t ppa_do_blend(ppa_invoker_handle_t ppa_invoker, const ppa_blend_trans_config_t *config, ppa_trans_mode_t mode);
+esp_err_t ppa_do_blend(ppa_invoker_handle_t ppa_invoker, const ppa_blend_operation_config_t *oper_config, const ppa_trans_config_t *trans_config);
 
 typedef struct {
     uint32_t fill_block_w;
@@ -207,14 +215,14 @@ typedef struct {
     } out_color;
 
     // colorkey???
-} ppa_fill_trans_config_t;
+} ppa_fill_operation_config_t;
 
 /**
  * @brief Perform a filling operation to a picture
  *
  * @param[in] ppa_invoker PPA invoker handle that has acquired the PPA Blend engine
- * @param[in] config Pointer to a collection of configurations for the filling operation, ppa_fill_trans_config_t
- * @param[in] mode Select one mode from ppa_trans_mode_t
+ * @param[in] oper_config Pointer to a collection of configurations for the filling operation, ppa_fill_operation_config_t
+ * @param[in] trans_config Pointer to a collection of configurations for the transaction, ppa_trans_config_t
  *
  * @return
  *      - ESP_OK:
@@ -222,7 +230,7 @@ typedef struct {
  *      - ESP_ERR_NO_MEM:
  *      - ESP_FAIL:
  */
-esp_err_t ppa_do_fill(ppa_invoker_handle_t ppa_invoker, const ppa_fill_trans_config_t *config, ppa_trans_mode_t mode);
+esp_err_t ppa_do_fill(ppa_invoker_handle_t ppa_invoker, const ppa_fill_operation_config_t *oper_config, const ppa_trans_config_t *trans_config);
 
 // argb color conversion (bypass blend)
 

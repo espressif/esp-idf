@@ -56,16 +56,16 @@ typedef struct ppa_engine_t ppa_engine_t;
 typedef struct ppa_invoker_t ppa_invoker_t;
 
 typedef struct {
-    PPA_SR_TRANS_CONFIG;
+    PPA_SR_OPERATION_CONFIG;
     uint32_t scale_x_int;
     uint32_t scale_x_frag;
     uint32_t scale_y_int;
     uint32_t scale_y_frag;
-} ppa_sr_transaction_t;
+} ppa_sr_oper_t;
 
-typedef ppa_blend_trans_config_t ppa_blend_transaction_t;
+typedef ppa_blend_operation_config_t ppa_blend_oper_t;
 
-typedef ppa_fill_trans_config_t ppa_fill_transaction_t;
+typedef ppa_fill_operation_config_t ppa_fill_oper_t;
 
 typedef struct ppa_trans_s {
     STAILQ_ENTRY(ppa_trans_s) entry; // link entry
@@ -77,9 +77,9 @@ typedef struct ppa_trans_s {
 
 typedef struct {
     union {
-        ppa_sr_transaction_t *sr_desc;
-        ppa_blend_transaction_t *blend_desc;
-        ppa_fill_transaction_t *fill_desc;
+        ppa_sr_oper_t *sr_desc;
+        ppa_blend_oper_t *blend_desc;
+        ppa_fill_oper_t *fill_desc;
         void *op_desc;
     };
     ppa_engine_t *ppa_engine;
@@ -92,7 +92,6 @@ struct ppa_engine_t {
     portMUX_TYPE spinlock;
     SemaphoreHandle_t sem;
     // bool in_accepting_trans_state;
-    // pending transactions queue? union ppa_sr_trans_config_t, ppa_blending_trans_config_t? handle when to free (at trans start or at trans end?)
     STAILQ_HEAD(trans, ppa_trans_s) trans_stailq; // link head of pending transactions for the PPA engine
     // callback func? Here or in the struct above?
     // dma2d_rx_event_callbacks_t event_cbs;
@@ -169,7 +168,7 @@ static bool ppa_fill_transaction_on_picked(uint32_t num_chans, const dma2d_trans
 //     dma2d_rx_channel_reserved_mask[0] |= ppa_specified_rx_channel_mask;
 // }
 
-// TODO: acquire pm_lock?
+// TODO: acquire pm_lock per transaction?
 static esp_err_t ppa_engine_acquire(const ppa_engine_config_t *config, ppa_engine_t **ret_engine)
 {
     esp_err_t ret = ESP_OK;
@@ -364,13 +363,13 @@ esp_err_t ppa_register_invoker(const ppa_invoker_config_t *config, ppa_invoker_h
 
     invoker->spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
     invoker->in_accepting_trans_state = true;
-    if (config->engine_flag & PPA_ENGINE_FLAG_SR) {
+    if (config->operation_flag & PPA_OPERATION_FLAG_SR) {
         ppa_engine_config_t engine_config = {
             .engine = PPA_ENGINE_TYPE_SR,
         };
         ESP_GOTO_ON_ERROR(ppa_engine_acquire(&engine_config, &invoker->sr_engine), err, TAG, "unable to acquire SR engine");
     }
-    if (config->engine_flag & PPA_ENGINE_FLAG_BLEND) {
+    if (config->operation_flag & PPA_OPERATION_FLAG_BLEND || config->operation_flag & PPA_OPERATION_FLAG_FILL) {
         ppa_engine_config_t engine_config = {
             .engine = PPA_ENGINE_TYPE_BLEND,
         };
@@ -716,7 +715,7 @@ static void ppa_recycle_transaction(ppa_trans_t *trans_elm)
     }
 }
 
-static esp_err_t ppa_prepare_trans_elm(ppa_invoker_handle_t ppa_invoker, ppa_engine_t *ppa_engine_base, ppa_operation_t ppa_operation, const void *config, ppa_trans_t **trans_elm, ppa_trans_mode_t mode)
+static esp_err_t ppa_prepare_trans_elm(ppa_invoker_handle_t ppa_invoker, ppa_engine_t *ppa_engine_base, ppa_operation_t ppa_operation, const void *oper_config, ppa_trans_mode_t mode, ppa_trans_t **trans_elm)
 {
     esp_err_t ret = ESP_OK;
     ppa_engine_type_t engine_type = ppa_engine_base->type;
@@ -725,9 +724,9 @@ static esp_err_t ppa_prepare_trans_elm(ppa_invoker_handle_t ppa_invoker, ppa_eng
     dma2d_trans_t *dma_trans_elm = (dma2d_trans_t *)heap_caps_calloc(1, SIZEOF_DMA2D_TRANS_T, PPA_MEM_ALLOC_CAPS);
     dma2d_trans_config_t *dma_trans_desc = (dma2d_trans_config_t *)heap_caps_calloc(1, sizeof(dma2d_trans_config_t), PPA_MEM_ALLOC_CAPS);
     ppa_dma2d_trans_on_picked_config_t *trans_on_picked_desc = (ppa_dma2d_trans_on_picked_config_t *)heap_caps_calloc(1, sizeof(ppa_dma2d_trans_on_picked_config_t), PPA_MEM_ALLOC_CAPS);
-    size_t ppa_trans_desc_size = (ppa_operation == PPA_OPERATION_SR) ? sizeof(ppa_sr_transaction_t) :
-                                 (ppa_operation == PPA_OPERATION_BLEND) ? sizeof(ppa_blend_transaction_t) :
-                                 (ppa_operation == PPA_OPERATION_FILL) ? sizeof(ppa_fill_transaction_t) : 0;
+    size_t ppa_trans_desc_size = (ppa_operation == PPA_OPERATION_SR) ? sizeof(ppa_sr_oper_t) :
+                                 (ppa_operation == PPA_OPERATION_BLEND) ? sizeof(ppa_blend_oper_t) :
+                                 (ppa_operation == PPA_OPERATION_FILL) ? sizeof(ppa_fill_oper_t) : 0;
     assert(ppa_trans_desc_size != 0);
     void *ppa_trans_desc = heap_caps_calloc(1, ppa_trans_desc_size, PPA_MEM_ALLOC_CAPS);
     ESP_GOTO_ON_FALSE(new_trans_elm && dma_trans_elm && dma_trans_desc && trans_on_picked_desc && ppa_trans_desc, ESP_ERR_NO_MEM, err, TAG, "no mem for transaction storage");
@@ -736,10 +735,10 @@ static esp_err_t ppa_prepare_trans_elm(ppa_invoker_handle_t ppa_invoker, ppa_eng
         ESP_GOTO_ON_FALSE(new_trans_elm->sem, ESP_ERR_NO_MEM, err, TAG, "no mem for transaction storage");
     }
 
-    size_t cpy_size = (ppa_operation == PPA_OPERATION_SR) ? sizeof(ppa_sr_trans_config_t) :
-                      (ppa_operation == PPA_OPERATION_BLEND) ? sizeof(ppa_blend_trans_config_t) :
-                      (ppa_operation == PPA_OPERATION_FILL) ? sizeof(ppa_fill_trans_config_t) : 0;
-    memcpy(ppa_trans_desc, config, cpy_size);
+    size_t cpy_size = (ppa_operation == PPA_OPERATION_SR) ? sizeof(ppa_sr_operation_config_t) :
+                      (ppa_operation == PPA_OPERATION_BLEND) ? sizeof(ppa_blend_operation_config_t) :
+                      (ppa_operation == PPA_OPERATION_FILL) ? sizeof(ppa_fill_operation_config_t) : 0;
+    memcpy(ppa_trans_desc, oper_config, cpy_size);
 
     trans_on_picked_desc->op_desc = ppa_trans_desc;
     trans_on_picked_desc->ppa_engine = ppa_engine_base;
@@ -887,7 +886,7 @@ static bool ppa_sr_transaction_on_picked(uint32_t num_chans, const dma2d_trans_c
     ppa_dma2d_trans_on_picked_config_t *trans_on_picked_desc = (ppa_dma2d_trans_on_picked_config_t *)user_config;
     assert(trans_on_picked_desc->trigger_periph == DMA2D_TRIG_PERIPH_PPA_SR && trans_on_picked_desc->sr_desc && trans_on_picked_desc->ppa_engine);
 
-    ppa_sr_transaction_t *sr_trans_desc = trans_on_picked_desc->sr_desc;
+    ppa_sr_oper_t *sr_trans_desc = trans_on_picked_desc->sr_desc;
     ppa_sr_engine_t *sr_engine = __containerof(trans_on_picked_desc->ppa_engine, ppa_sr_engine_t, base);
 
     // Free 2D-DMA transaction placeholder (transaction has already been moved out from 2D-DMA queue)
@@ -1045,37 +1044,37 @@ static bool ppa_sr_transaction_on_picked(uint32_t num_chans, const dma2d_trans_c
     return false;
 }
 
-esp_err_t ppa_do_scale_and_rotate(ppa_invoker_handle_t ppa_invoker, const ppa_sr_trans_config_t *config, ppa_trans_mode_t mode)
+esp_err_t ppa_do_scale_and_rotate(ppa_invoker_handle_t ppa_invoker, const ppa_sr_operation_config_t *oper_config, const ppa_trans_config_t *trans_config)
 {
-    ESP_RETURN_ON_FALSE(ppa_invoker && config, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    ESP_RETURN_ON_FALSE(ppa_invoker && oper_config && trans_config, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
     ESP_RETURN_ON_FALSE(ppa_invoker->sr_engine, ESP_ERR_INVALID_ARG, TAG, "invoker did not register to SR engine");
-    ESP_RETURN_ON_FALSE(mode <= PPA_TRANS_MODE_NON_BLOCKING, ESP_ERR_INVALID_ARG, TAG, "invalid mode");
+    ESP_RETURN_ON_FALSE(trans_config->mode <= PPA_TRANS_MODE_NON_BLOCKING, ESP_ERR_INVALID_ARG, TAG, "invalid mode");
     // Any restrictions on in/out buffer address? alignment? alignment restriction comes from cache, its addr and size need to be aligned to cache line size on 912!
     // buffer on stack/heap
     // ESP_RETURN_ON_FALSE(config->rotation_angle)
     // ESP_RETURN_ON_FALSE(config->in/out_color_mode)
     // what if in_color is YUV420, out is RGB, what is out RGB range? Full range?
-    ESP_RETURN_ON_FALSE(config->scale_x < (PPA_LL_SR_SCALING_INT_MAX + 1) && config->scale_x >= (1.0 / PPA_LL_SR_SCALING_FRAG_MAX) &&
-                        config->scale_y < (PPA_LL_SR_SCALING_INT_MAX + 1) && config->scale_y >= (1.0 / PPA_LL_SR_SCALING_FRAG_MAX),
+    ESP_RETURN_ON_FALSE(oper_config->scale_x < (PPA_LL_SR_SCALING_INT_MAX + 1) && oper_config->scale_x >= (1.0 / PPA_LL_SR_SCALING_FRAG_MAX) &&
+                        oper_config->scale_y < (PPA_LL_SR_SCALING_INT_MAX + 1) && oper_config->scale_y >= (1.0 / PPA_LL_SR_SCALING_FRAG_MAX),
                         ESP_ERR_INVALID_ARG, TAG, "invalid scale");
     // byte/rgb swap with color mode only to (A)RGB color space?
 
     // TODO: Maybe do buffer writeback and invalidation here, instead of in on_picked?
 
     ppa_trans_t *trans_elm = NULL;
-    esp_err_t ret = ppa_prepare_trans_elm(ppa_invoker, ppa_invoker->sr_engine, PPA_OPERATION_SR, (void *)config, &trans_elm, mode);
+    esp_err_t ret = ppa_prepare_trans_elm(ppa_invoker, ppa_invoker->sr_engine, PPA_OPERATION_SR, (void *)oper_config, trans_config->mode, &trans_elm);
     if (ret == ESP_OK) {
         assert(trans_elm);
 
         // Pre-process some data
         ppa_dma2d_trans_on_picked_config_t *trans_on_picked_desc = trans_elm->trans_desc->user_config;
-        ppa_sr_transaction_t *sr_trans_desc = trans_on_picked_desc->sr_desc;
+        ppa_sr_oper_t *sr_trans_desc = trans_on_picked_desc->sr_desc;
         sr_trans_desc->scale_x_int = (uint32_t)sr_trans_desc->scale_x;
         sr_trans_desc->scale_x_frag = (uint32_t)(sr_trans_desc->scale_x * (PPA_LL_SR_SCALING_FRAG_MAX + 1)) & PPA_LL_SR_SCALING_FRAG_MAX;
         sr_trans_desc->scale_y_int = (uint32_t)sr_trans_desc->scale_y;
         sr_trans_desc->scale_y_frag = (uint32_t)(sr_trans_desc->scale_y * (PPA_LL_SR_SCALING_FRAG_MAX + 1)) & PPA_LL_SR_SCALING_FRAG_MAX;
 
-        ret = ppa_do_operation(ppa_invoker, ppa_invoker->sr_engine, trans_elm, mode);
+        ret = ppa_do_operation(ppa_invoker, ppa_invoker->sr_engine, trans_elm, trans_config->mode);
         if (ret != ESP_OK) {
             ppa_recycle_transaction(trans_elm);
         }
@@ -1089,7 +1088,7 @@ static bool ppa_blend_transaction_on_picked(uint32_t num_chans, const dma2d_tran
     ppa_dma2d_trans_on_picked_config_t *trans_on_picked_desc = (ppa_dma2d_trans_on_picked_config_t *)user_config;
     assert(trans_on_picked_desc->trigger_periph == DMA2D_TRIG_PERIPH_PPA_BLEND && trans_on_picked_desc->blend_desc && trans_on_picked_desc->ppa_engine);
 
-    ppa_blend_transaction_t *blend_trans_desc = trans_on_picked_desc->blend_desc;
+    ppa_blend_oper_t *blend_trans_desc = trans_on_picked_desc->blend_desc;
     ppa_blend_engine_t *blend_engine = __containerof(trans_on_picked_desc->ppa_engine, ppa_blend_engine_t, base);
 
     // Free 2D-DMA transaction placeholder (transaction has already been moved out from 2D-DMA queue)
@@ -1242,21 +1241,21 @@ static bool ppa_blend_transaction_on_picked(uint32_t num_chans, const dma2d_tran
     return false;
 }
 
-esp_err_t ppa_do_blend(ppa_invoker_handle_t ppa_invoker, const ppa_blend_trans_config_t *config, ppa_trans_mode_t mode)
+esp_err_t ppa_do_blend(ppa_invoker_handle_t ppa_invoker, const ppa_blend_operation_config_t *oper_config, const ppa_trans_config_t *trans_config)
 {
-    ESP_RETURN_ON_FALSE(ppa_invoker && config, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    ESP_RETURN_ON_FALSE(ppa_invoker && oper_config && trans_config, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
     ESP_RETURN_ON_FALSE(ppa_invoker->blending_engine, ESP_ERR_INVALID_ARG, TAG, "invoker did not register to Blending engine");
-    ESP_RETURN_ON_FALSE(mode <= PPA_TRANS_MODE_NON_BLOCKING, ESP_ERR_INVALID_ARG, TAG, "invalid mode");
+    ESP_RETURN_ON_FALSE(trans_config->mode <= PPA_TRANS_MODE_NON_BLOCKING, ESP_ERR_INVALID_ARG, TAG, "invalid mode");
     // TODO: ARG CHECK
 
     // TODO: Maybe do buffer writeback and invalidation here, instead of in on_picked?
 
     ppa_trans_t *trans_elm = NULL;
-    esp_err_t ret = ppa_prepare_trans_elm(ppa_invoker, ppa_invoker->blending_engine, PPA_OPERATION_BLEND, (void *)config, &trans_elm, mode);
+    esp_err_t ret = ppa_prepare_trans_elm(ppa_invoker, ppa_invoker->blending_engine, PPA_OPERATION_BLEND, (void *)oper_config, trans_config->mode, &trans_elm);
     if (ret == ESP_OK) {
         assert(trans_elm);
 
-        ret = ppa_do_operation(ppa_invoker, ppa_invoker->blending_engine, trans_elm, mode);
+        ret = ppa_do_operation(ppa_invoker, ppa_invoker->blending_engine, trans_elm, trans_config->mode);
         if (ret != ESP_OK) {
             ppa_recycle_transaction(trans_elm);
         }
@@ -1270,7 +1269,7 @@ static bool ppa_fill_transaction_on_picked(uint32_t num_chans, const dma2d_trans
     ppa_dma2d_trans_on_picked_config_t *trans_on_picked_desc = (ppa_dma2d_trans_on_picked_config_t *)user_config;
     assert(trans_on_picked_desc->trigger_periph == DMA2D_TRIG_PERIPH_PPA_BLEND && trans_on_picked_desc->fill_desc && trans_on_picked_desc->ppa_engine);
 
-    ppa_fill_transaction_t *fill_trans_desc = trans_on_picked_desc->fill_desc;
+    ppa_fill_oper_t *fill_trans_desc = trans_on_picked_desc->fill_desc;
     ppa_blend_engine_t *blend_engine = __containerof(trans_on_picked_desc->ppa_engine, ppa_blend_engine_t, base);
 
     // Free 2D-DMA transaction placeholder (transaction has already been moved out from 2D-DMA queue)
@@ -1339,22 +1338,22 @@ static bool ppa_fill_transaction_on_picked(uint32_t num_chans, const dma2d_trans
     return false;
 }
 
-esp_err_t ppa_do_fill(ppa_invoker_handle_t ppa_invoker, const ppa_fill_trans_config_t *config, ppa_trans_mode_t mode)
+esp_err_t ppa_do_fill(ppa_invoker_handle_t ppa_invoker, const ppa_fill_operation_config_t *oper_config, const ppa_trans_config_t *trans_config)
 {
-    ESP_RETURN_ON_FALSE(ppa_invoker && config, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    ESP_RETURN_ON_FALSE(ppa_invoker && oper_config && trans_config, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
     ESP_RETURN_ON_FALSE(ppa_invoker->blending_engine, ESP_ERR_INVALID_ARG, TAG, "invoker did not register to Blending engine");
-    ESP_RETURN_ON_FALSE(mode <= PPA_TRANS_MODE_NON_BLOCKING, ESP_ERR_INVALID_ARG, TAG, "invalid mode");
+    ESP_RETURN_ON_FALSE(trans_config->mode <= PPA_TRANS_MODE_NON_BLOCKING, ESP_ERR_INVALID_ARG, TAG, "invalid mode");
     // TODO: ARG CHECK
     // fill_block_w <= PPA_BLEND_HB_V, fill_block_h <= PPA_BLEND_VB_V
 
     // TODO: Maybe do buffer invalidation here, instead of in on_picked?
 
     ppa_trans_t *trans_elm = NULL;
-    esp_err_t ret = ppa_prepare_trans_elm(ppa_invoker, ppa_invoker->blending_engine, PPA_OPERATION_FILL, (void *)config, &trans_elm, mode);
+    esp_err_t ret = ppa_prepare_trans_elm(ppa_invoker, ppa_invoker->blending_engine, PPA_OPERATION_FILL, (void *)oper_config, trans_config->mode, &trans_elm);
     if (ret == ESP_OK) {
         assert(trans_elm);
 
-        ret = ppa_do_operation(ppa_invoker, ppa_invoker->blending_engine, trans_elm, mode);
+        ret = ppa_do_operation(ppa_invoker, ppa_invoker->blending_engine, trans_elm, trans_config->mode);
         if (ret != ESP_OK) {
             ppa_recycle_transaction(trans_elm);
         }
