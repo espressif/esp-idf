@@ -60,8 +60,10 @@
 
 #define XFER_LIST_LEN_CTRL                      3   // One descriptor for each stage
 #define XFER_LIST_LEN_BULK                      2   // One descriptor for transfer, one to support an extra zero length packet
+// Same length as the frame list makes it easier to schedule. Must be power of 2
+// FS: Must be 2-64. HS: Must be 8-256. See USB-OTG databook Table 5-47
 #define XFER_LIST_LEN_INTR                      FRAME_LIST_LEN
-#define XFER_LIST_LEN_ISOC                      FRAME_LIST_LEN  // Same length as the frame list makes it easier to schedule. Must be power of 2
+#define XFER_LIST_LEN_ISOC                      FRAME_LIST_LEN
 
 // ------------------------ Flags --------------------------
 
@@ -1745,27 +1747,14 @@ static void pipe_set_ep_char(const hcd_pipe_config_t *pipe_config, usb_transfer_
         } else {
             interval_value = (1 << (pipe_config->ep_desc->bInterval - 1));
         }
-        // Round down interval to nearest power of 2
-        if (interval_value >= 32) {
-            interval_value = 32;
-        } else if (interval_value >= 16) {
-            interval_value = 16;
-        } else if (interval_value >= 8) {
-            interval_value = 8;
-        } else if (interval_value >= 4) {
-            interval_value = 4;
-        } else if (interval_value >= 2) {
-            interval_value = 2;
-        } else if (interval_value >= 1) {
-            interval_value = 1;
-        }
         ep_char->periodic.interval = interval_value;
         // We are the Nth pipe to be allocated. Use N as a phase offset
         unsigned int xfer_list_len = (type == USB_TRANSFER_TYPE_INTR) ? XFER_LIST_LEN_INTR : XFER_LIST_LEN_ISOC;
-        ep_char->periodic.phase_offset_frames = pipe_idx & (xfer_list_len - 1);
+        ep_char->periodic.offset = (pipe_idx % xfer_list_len) % interval_value;
+        ep_char->periodic.is_hs = (pipe_config->dev_speed == USB_SPEED_HIGH);
     } else {
         ep_char->periodic.interval = 0;
-        ep_char->periodic.phase_offset_frames = 0;
+        ep_char->periodic.offset = 0;
     }
 }
 
@@ -2219,14 +2208,16 @@ static inline void _buffer_fill_intr(dma_buffer_block_t *buffer, usb_transfer_t 
     buffer->flags.intr.zero_len_packet = zero_len_packet;
 }
 
-static inline void _buffer_fill_isoc(dma_buffer_block_t *buffer, usb_transfer_t *transfer, bool is_in, int mps, int interval, int start_idx)
+static inline void IRAM_ATTR _buffer_fill_isoc(dma_buffer_block_t *buffer, usb_transfer_t *transfer, bool is_in, int mps, int interval, int start_idx)
 {
     assert(interval > 0);
+    assert(__builtin_popcount(interval) == 1); // Isochronous interval must be power of 2 according to USB2.0 specification
     int total_num_desc = transfer->num_isoc_packets * interval;
     assert(total_num_desc <= XFER_LIST_LEN_ISOC);
     int desc_idx = start_idx;
     int bytes_filled = 0;
-    // For each packet, fill in a descriptor and a interval-1 blank descriptor after it
+    // Zeroize the whole QTD, so we can focus only on the active descriptors
+    memset(buffer->xfer_desc_list, 0, XFER_LIST_LEN_ISOC * sizeof(usb_dwc_ll_dma_qtd_t));
     for (int pkt_idx = 0; pkt_idx < transfer->num_isoc_packets; pkt_idx++) {
         int xfer_len = transfer->isoc_packet_desc[pkt_idx].num_bytes;
         uint32_t flags = (is_in) ? USB_DWC_HAL_XFER_DESC_FLAG_IN : 0;
@@ -2236,16 +2227,8 @@ static inline void _buffer_fill_isoc(dma_buffer_block_t *buffer, usb_transfer_t 
         }
         usb_dwc_hal_xfer_desc_fill(buffer->xfer_desc_list, desc_idx, &transfer->data_buffer[bytes_filled], xfer_len, flags);
         bytes_filled += xfer_len;
-        if (++desc_idx >= XFER_LIST_LEN_ISOC) {
-            desc_idx = 0;
-        }
-        // Clear descriptors for unscheduled frames
-        for (int i = 0; i < interval - 1; i++) {
-            usb_dwc_hal_xfer_desc_clear(buffer->xfer_desc_list, desc_idx);
-            if (++desc_idx >= XFER_LIST_LEN_ISOC) {
-                desc_idx = 0;
-            }
-        }
+        desc_idx += interval;
+        desc_idx %= XFER_LIST_LEN_ISOC;
     }
     // Update buffer members and flags
     buffer->flags.isoc.num_qtds = total_num_desc;
@@ -2254,7 +2237,7 @@ static inline void _buffer_fill_isoc(dma_buffer_block_t *buffer, usb_transfer_t 
     buffer->flags.isoc.next_start_idx = desc_idx;
 }
 
-static void _buffer_fill(pipe_t *pipe)
+static void IRAM_ATTR _buffer_fill(pipe_t *pipe)
 {
     // Get an URB from the pending tailq
     urb_t *urb = TAILQ_FIRST(&pipe->pending_urb_tailq);
@@ -2276,29 +2259,46 @@ static void _buffer_fill(pipe_t *pipe)
         break;
     }
     case USB_DWC_XFER_TYPE_ISOCHRONOUS: {
-        uint32_t start_idx;
+        uint16_t start_idx;
+        // Interval in frames (FS) or microframes (HS). But it does not matter here, as each QTD represents one transaction in a frame or microframe
+        unsigned int interval = pipe->ep_char.periodic.interval;
+        if (interval > XFER_LIST_LEN_ISOC) {
+            // Each QTD in the list corresponds to one frame/microframe. Interval > Descriptor_list does not make sense here.
+            interval = XFER_LIST_LEN_ISOC;
+        }
         if (pipe->multi_buffer_control.buffer_num_to_exec == 0) {
             // There are no more previously filled buffers to execute. We need to calculate a new start index based on HFNUM and the pipe's schedule
-            uint32_t cur_frame_num = usb_dwc_hal_port_get_cur_frame_num(pipe->port->hal);
-            uint32_t cur_mod_idx_no_offset = (cur_frame_num - pipe->ep_char.periodic.phase_offset_frames) & (XFER_LIST_LEN_ISOC - 1);    // Get the modulated index (i.e., the Nth desc in the descriptor list)
-            // This is the non-offset modulated QTD index of the last scheduled interval
-            uint32_t last_interval_mod_idx_no_offset = (cur_mod_idx_no_offset / pipe->ep_char.periodic.interval) * pipe->ep_char.periodic.interval; // Floor divide and the multiply again
-            uint32_t next_interval_idx_no_offset = (last_interval_mod_idx_no_offset + pipe->ep_char.periodic.interval);
-            // We want at least a half interval or 2 frames of buffer space
-            if (next_interval_idx_no_offset - cur_mod_idx_no_offset > (pipe->ep_char.periodic.interval / 2)
-                    && next_interval_idx_no_offset - cur_mod_idx_no_offset >= 2) {
-                start_idx = (next_interval_idx_no_offset + pipe->ep_char.periodic.phase_offset_frames) & (XFER_LIST_LEN_ISOC - 1);
-            } else {
-                // Not enough time until the next schedule, add another interval to it.
-                start_idx = (next_interval_idx_no_offset + pipe->ep_char.periodic.interval + pipe->ep_char.periodic.phase_offset_frames) & (XFER_LIST_LEN_ISOC - 1);
+            uint16_t cur_frame_num = usb_dwc_hal_port_get_cur_frame_num(pipe->port->hal);
+            start_idx = cur_frame_num + 1; // This is the next frame that the periodic scheduler will fetch
+            uint16_t rem_time = usb_dwc_ll_hfnum_get_frame_time_rem(pipe->port->hal->dev);
+
+            // If there is not enough time remaining in this frame, consider the next frame as start index
+            // The remaining time is in USB PHY clocks. The threshold value is time between buffer fill and execute (6-11us) = 180 + 5 x num_packets
+            if (rem_time < 195 + 5 * transfer->num_isoc_packets) {
+                if (rem_time > 165 + 5 * transfer->num_isoc_packets) {
+                    // If the remaining time is +-15 PHY clocks around the threshold value we cannot be certain whether we will schedule it in time for this frame
+                    // Busy wait 10us to be sure that we are at the beginning of next frame/microframe
+                    esp_rom_delay_us(10);
+                }
+                start_idx++;
             }
+
+            // Only every (interval + offset) transfer belongs to this channel
+            // Following calculation effectively rounds up to nearest (interval + offset)
+            if (interval > 1) {
+                uint32_t interval_offset = (start_idx - pipe->ep_char.periodic.offset) % interval; // Can be <0, interval)
+                if (interval_offset > 0) {
+                    start_idx += interval - interval_offset;
+                }
+            }
+            start_idx %= XFER_LIST_LEN_ISOC;
         } else {
             // Start index is based on previously filled buffer
             uint32_t prev_buffer_idx = (pipe->multi_buffer_control.wr_idx - 1) & (NUM_BUFFERS - 1);
             dma_buffer_block_t *prev_filled_buffer = pipe->buffers[prev_buffer_idx];
             start_idx = prev_filled_buffer->flags.isoc.next_start_idx;
         }
-        _buffer_fill_isoc(buffer_to_fill, transfer, is_in, mps, (int)pipe->ep_char.periodic.interval, start_idx);
+        _buffer_fill_isoc(buffer_to_fill, transfer, is_in, mps, (int)interval, start_idx);
         break;
     }
     case USB_DWC_XFER_TYPE_BULK: {
@@ -2324,7 +2324,7 @@ static void _buffer_fill(pipe_t *pipe)
     pipe->multi_buffer_control.buffer_num_to_exec++;
 }
 
-static void _buffer_exec(pipe_t *pipe)
+static void IRAM_ATTR _buffer_exec(pipe_t *pipe)
 {
     assert(pipe->multi_buffer_control.rd_idx != pipe->multi_buffer_control.wr_idx || pipe->multi_buffer_control.buffer_num_to_exec > 0);
     dma_buffer_block_t *buffer_to_exec = pipe->buffers[pipe->multi_buffer_control.rd_idx];
@@ -2621,6 +2621,12 @@ esp_err_t hcd_urb_enqueue(hcd_pipe_handle_t pipe_hdl, urb_t *urb)
     // Check that URB has not already been enqueued
     HCD_CHECK(urb->hcd_ptr == NULL && urb->hcd_var == URB_HCD_STATE_IDLE, ESP_ERR_INVALID_STATE);
     pipe_t *pipe = (pipe_t *)pipe_hdl;
+    // Check if the ISOC pipe can handle all packets:
+    // In case the pipe's interval is too long and there are too many ISOC packets, they might not fit into the transfer descriptor list
+    HCD_CHECK(
+        !((pipe->ep_char.type == USB_DWC_XFER_TYPE_ISOCHRONOUS) && (urb->transfer.num_isoc_packets * pipe->ep_char.periodic.interval > XFER_LIST_LEN_ISOC)),
+        ESP_ERR_INVALID_SIZE
+    );
 
     // Sync user's data from cache to memory. For OUT and CTRL transfers
     CACHE_SYNC_DATA_BUFFER_C2M(pipe, urb);
