@@ -1,16 +1,8 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #ifndef __ESP_SPP_API_H__
 #define __ESP_SPP_API_H__
@@ -35,10 +27,18 @@ typedef enum {
 } esp_spp_status_t;
 
 /* Security Setting Mask
-Use these three mask mode:
+Use these three mask modes on both sides:
 1. ESP_SPP_SEC_NONE
 2. ESP_SPP_SEC_AUTHENTICATE
-3. (ESP_SPP_SEC_ENCRYPT|ESP_SPP_SEC_AUTHENTICATE)
+3. (ESP_SPP_SEC_AUTHENTICATE | ESP_SPP_SEC_ENCRYPT)
+Use these three mask modes only on acceptor side:
+1. ESP_SPP_SEC_IN_16_DIGITS
+2. (ESP_SPP_SEC_IN_16_DIGITS | ESP_SPP_SEC_AUTHENTICATE)
+3. (ESP_SPP_SEC_IN_16_DIGITS | ESP_SPP_SEC_AUTHENTICATE | ESP_SPP_SEC_ENCRYPT)
+Due to certain limitations, do not use these mask modes:
+1. ESP_SPP_SEC_AUTHORIZE
+2. ESP_SPP_SEC_MODE4_LEVEL4
+3. ESP_SPP_SEC_MITM
 */
 #define ESP_SPP_SEC_NONE            0x0000    /*!< No security. relate to BTA_SEC_NONE in bta/bta_api.h */
 #define ESP_SPP_SEC_AUTHORIZE       0x0001    /*!< Authorization required (only needed for out going connection ) relate to BTA_SEC_AUTHORIZE in bta/bta_api.h*/
