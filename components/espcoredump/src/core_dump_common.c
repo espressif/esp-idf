@@ -15,7 +15,7 @@
 #include "core_dump_elf.h"
 #include "core_dump_binary.h"
 
-const static DRAM_ATTR char TAG[] __attribute__((unused)) = "esp_core_dump_common";
+const static char TAG[] __attribute__((unused)) = "esp_core_dump_common";
 
 #if CONFIG_ESP_COREDUMP_ENABLE
 
