@@ -9,6 +9,9 @@ Pre-encrypted firmware binary must be hosted on OTA update server.
 This firmware will be fetched and then decrypted on device before being flashed.
 This allows firmware to remain `confidential` on the OTA update channel irrespective of underlying transport (e.g., non-TLS).
 
+> [!CAUTION]
+> Using the Pre-encrypted Binary OTA provides confidentiality of the firmware, but it does not ensure authenticity of the firmware. For ensuring that the firmware is coming from trusted source, please consider enabling secure boot feature along with the Pre-encrypted binary OTA. Please refer to security guide in the ESP-IDF docs for more details.
+
 ## ESP Encrypted Image Abstraction Layer
 
 This example uses `esp_encrypted_img` component hosted at [idf-extra-components/esp_encrypted_img](https://github.com/espressif/idf-extra-components/blob/master/esp_encrypted_img) and available though the [IDF component manager](https://components.espressif.com/component/espressif/esp_encrypted_img).
