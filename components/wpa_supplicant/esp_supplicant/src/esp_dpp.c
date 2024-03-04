@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -64,20 +64,31 @@ esp_err_t esp_dpp_post_evt(uint32_t evt_id, uint32_t data)
     if (evt_id != SIG_DPP_DEL_TASK) {
         DPP_API_UNLOCK();
     }
+    wpa_printf(MSG_DEBUG,"DPP: Sent event %d to DPP task", evt_id);
 
     return ret;
 end:
     if (evt) {
         os_free(evt);
     }
+    wpa_printf(MSG_ERROR,"DPP: Failed to send event %d to DPP task", evt_id);
     return ret;
+}
+
+static uint8_t esp_dpp_deinit_auth(void)
+{
+    esp_err_t ret = esp_dpp_post_evt(SIG_DPP_DEINIT_AUTH, 0);
+    if (ESP_OK != ret) {
+            wpa_printf(MSG_ERROR, "Failed to post DPP auth deinit to DPP Task(status=%d)", ret);
+            return ret;
+   }
+   return ESP_OK;
 }
 
 static void esp_dpp_call_cb(esp_supp_dpp_event_t evt, void *data)
 {
     if ( evt == ESP_SUPP_DPP_FAIL && s_dpp_ctx.dpp_auth) {
-        dpp_auth_deinit(s_dpp_ctx.dpp_auth);
-        s_dpp_ctx.dpp_auth = NULL;
+        esp_dpp_deinit_auth();
     }
     s_dpp_ctx.dpp_event_cb(evt, data);
 }
@@ -89,10 +100,6 @@ static void esp_dpp_auth_conf_wait_timeout(void *eloop_ctx, void *timeout_ctx)
 
     wpa_printf(MSG_DEBUG,
            "DPP: Terminate authentication exchange due to Auth Confirm timeout");
-    if (s_dpp_ctx.dpp_auth) {
-        dpp_auth_deinit(s_dpp_ctx.dpp_auth);
-        s_dpp_ctx.dpp_auth = NULL;
-    }
     esp_dpp_call_cb(ESP_SUPP_DPP_FAIL, (void *)ESP_ERR_DPP_AUTH_TIMEOUT);
 }
 
@@ -575,6 +582,15 @@ static void esp_dpp_task(void *pvParameters )
 
             case SIG_DPP_START_NET_INTRO: {
                 esp_dpp_start_net_intro_protocol((uint8_t*)evt->data);
+            }
+            break;
+
+            case SIG_DPP_DEINIT_AUTH: {
+                if (s_dpp_ctx.dpp_auth) {
+                    dpp_auth_deinit(s_dpp_ctx.dpp_auth);
+                    s_dpp_ctx.dpp_auth = NULL;
+                }
+                wpa_printf(MSG_DEBUG, "DPP auth deinintialized");
             }
             break;
 
