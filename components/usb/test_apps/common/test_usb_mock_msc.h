@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -63,7 +63,7 @@ bLength                  : 0x07 (7 bytes)
 bDescriptorType          : 0x05 (Endpoint Descriptor)
 bEndpointAddress         : 0x81 (Direction=IN EndpointID=1)
 bmAttributes             : 0x02 (TransferType=Bulk)
-wMaxPacketSize           : 0x0040 (max 64 bytes)
+wMaxPacketSize           : 0x0040 (max 64 bytes for FS, 512 bytes for HS)
 bInterval                : 0x00 (never NAKs)
 Data (HexDump)           : 07 05 81 02 40 00 00
 
@@ -72,7 +72,7 @@ bLength                  : 0x07 (7 bytes)
 bDescriptorType          : 0x05 (Endpoint Descriptor)
 bEndpointAddress         : 0x02 (Direction=OUT EndpointID=2)
 bmAttributes             : 0x02 (TransferType=Bulk)
-wMaxPacketSize           : 0x0040 (max 64 bytes)
+wMaxPacketSize           : 0x0040 (max 64 bytes for FS, 512 bytest for HS)
 bInterval                : 0x00 (never NAKs)
 Data (HexDump)           : 07 05 02 02 40 00 00
 
@@ -85,8 +85,12 @@ extern uint8_t mock_msc_scsi_config_desc[255];
 extern uint16_t mock_msc_scsi_str_desc_manu[128];
 extern uint16_t mock_msc_scsi_str_desc_prod[128];
 extern uint16_t mock_msc_scsi_str_desc_ser_num[128];
-extern const usb_ep_desc_t mock_msc_scsi_bulk_out_ep_desc;
-extern const usb_ep_desc_t mock_msc_scsi_bulk_in_ep_desc;
+extern usb_ep_desc_t mock_msc_scsi_bulk_out_ep_desc;
+extern usb_ep_desc_t mock_msc_scsi_bulk_in_ep_desc;
+extern const usb_ep_desc_t mock_msc_scsi_bulk_out_ep_desc_fs;
+extern const usb_ep_desc_t mock_msc_scsi_bulk_in_ep_desc_fs;
+extern const usb_ep_desc_t mock_msc_scsi_bulk_out_ep_desc_hs;
+extern const usb_ep_desc_t mock_msc_scsi_bulk_in_ep_desc_hs;
 
 #define MOCK_MSC_SCSI_DEV_ID_VENDOR     0x0781 // Western Digital, Sandisk
 #define MOCK_MSC_SCSI_DEV_ID_PRODUCT    0x5595
@@ -99,7 +103,8 @@ extern const usb_ep_desc_t mock_msc_scsi_bulk_in_ep_desc;
 #define MOCK_MSC_SCSI_INTF_ALT_SETTING  0
 #define MOCK_MSC_SCSI_BULK_OUT_EP_ADDR  0x02
 #define MOCK_MSC_SCSI_BULK_IN_EP_ADDR   0x81
-#define MOCK_MSC_SCSI_BULK_EP_MPS       64
+#define MOCK_MSC_SCSI_BULK_EP_MPS_FS    64      // FS wMaxPacketSize
+#define MOCK_MSC_SCSI_BULK_EP_MPS_HS    512     // HS wMaxPacketSize
 #define MOCK_MSC_SCSI_STRING_1          (" USB")
 #define MOCK_MSC_SCSI_STRING_2          (" SanDisk 3.2Gen1")
 #define MOCK_MSC_SCSI_STRING_3          ("0101cdd1e856b427bbb796f870561a4b2b817af9da9872c8d75217cccdd5d5eccb3a0000000000000000000096abe1a3ff83610095558107aea948b4") // This string is NOT checked by the enum test

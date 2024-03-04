@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -48,6 +48,7 @@ typedef struct {
     uint8_t dev_addr_to_open;
     usb_host_client_handle_t client_hdl;
     usb_device_handle_t dev_hdl;
+    usb_speed_t dev_speed;
 } msc_client_obj_t;
 
 static void msc_client_event_cb(const usb_host_client_event_msg_t *event_msg, void *arg)
@@ -64,6 +65,24 @@ static void msc_client_event_cb(const usb_host_client_event_msg_t *event_msg, vo
         break;
 
     }
+}
+
+static void mock_msc_scsi_init_reference_ep_descriptors(const msc_client_obj_t *msc_obj)
+{
+    uint8_t *dest_ptr = mock_msc_scsi_config_desc;
+    dest_ptr += USB_CONFIG_DESC_SIZE;
+    dest_ptr += USB_INTF_DESC_SIZE;
+
+    const usb_ep_desc_t en_desc_in = (msc_obj->dev_speed == USB_SPEED_HIGH)
+                                     ? mock_msc_scsi_bulk_in_ep_desc_hs
+                                     : mock_msc_scsi_bulk_in_ep_desc_fs;
+    const usb_ep_desc_t en_desc_out = (msc_obj->dev_speed == USB_SPEED_HIGH)
+                                      ? mock_msc_scsi_bulk_out_ep_desc_hs
+                                      : mock_msc_scsi_bulk_out_ep_desc_fs;
+
+    memcpy(dest_ptr, (void*)&en_desc_in, sizeof(en_desc_in));
+    dest_ptr += USB_EP_DESC_SIZE;
+    memcpy(dest_ptr, (void*)&en_desc_out, sizeof(en_desc_out));
 }
 
 void msc_client_async_enum_task(void *arg)
@@ -113,6 +132,11 @@ void msc_client_async_enum_task(void *arg)
             //Open the device
             TEST_ASSERT_EQUAL(ESP_OK, usb_host_device_open(msc_obj.client_hdl, msc_obj.dev_addr_to_open, &msc_obj.dev_hdl));
             msc_obj.next_stage = TEST_STAGE_CHECK_DEV_DESC;
+            //Get device info to get device speed
+            usb_device_info_t dev_info;
+            TEST_ASSERT_EQUAL(ESP_OK, usb_host_device_info(msc_obj.dev_hdl, &dev_info));
+            msc_obj.dev_speed = dev_info.speed;
+            mock_msc_scsi_init_reference_ep_descriptors(&msc_obj);
             skip_event_handling = true; //Need to execute TEST_STAGE_CHECK_DEV_DESC
             break;
         }

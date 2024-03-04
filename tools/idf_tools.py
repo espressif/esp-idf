@@ -3155,11 +3155,7 @@ def main(argv: List[str]) -> None:
     if 'unset' in args and args.unset:
         args.deactivate = True
 
-    g.idf_path = os.environ.get('IDF_PATH')  # type: ignore
-    if args.idf_path:
-        g.idf_path = args.idf_path
-    if not g.idf_path:
-        g.idf_path = os.path.realpath(os.path.join(os.path.dirname(__file__), '..'))
+    g.idf_path = args.idf_path or os.environ.get('IDF_PATH') or os.path.realpath(os.path.join(os.path.dirname(__file__), '..'))
     os.environ['IDF_PATH'] = g.idf_path
 
     g.idf_tools_path = os.environ.get('IDF_TOOLS_PATH') or os.path.expanduser(IDF_TOOLS_PATH_DEFAULT)

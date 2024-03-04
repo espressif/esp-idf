@@ -116,6 +116,12 @@ examples/peripherals/i2s/i2s_recorder:
     - esp_driver_spi
     - esp_driver_i2s
 
+examples/peripherals/jpeg/jpeg_decode:
+  disable:
+    - if: SOC_JPEG_CODEC_SUPPORTED != 1
+  depends_components:
+    - esp_driver_jpeg
+
 examples/peripherals/lcd/i2c_oled:
   disable:
     - if: SOC_I2C_SUPPORTED != 1
@@ -450,7 +456,7 @@ examples/peripherals/usb/host:
   disable:
     - if: SOC_USB_OTG_SUPPORTED != 1
   disable_test:
-    - if: IDF_TARGET not in ["esp32s3"]
+    - if: IDF_TARGET not in ["esp32s3", "esp32p4"]
       temporary: true
       reason: lack of runners with usb_host_flash_disk tag
   depends_components:

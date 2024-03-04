@@ -467,14 +467,19 @@ The following code snippet demonstrates how to transmit a message via the usage 
 
     ...
 
-    //Configure message to transmit
-    twai_message_t message;
-    message.identifier = 0xAAAA;
-    message.extd = 1;
-    message.data_length_code = 4;
-    for (int i = 0; i < 4; i++) {
-        message.data[i] = 0;
-    }
+    // Configure message to transmit
+    twai_message_t message = {
+        // Message type and format settings
+        .extd = 1,              // Standard vs extended format
+        .rtr = 0,               // Data vs RTR frame
+        .ss = 0,                // Whether the message is single shot (i.e., does not repeat on error)
+        .self = 0,              // Whether the message is a self reception request (loopback)
+        .dlc_non_comp = 0,      // DLC is less than 8
+        // Message ID and payload
+        .identifier = 0xAAAA,
+        .data_length_code = 4,
+        .data = {0, 1, 2, 3},
+    };
 
     //Queue message for transmission
     if (twai_transmit(&message, pdMS_TO_TICKS(1000)) == ESP_OK) {

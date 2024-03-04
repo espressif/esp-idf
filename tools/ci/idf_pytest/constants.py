@@ -102,6 +102,7 @@ ENV_MARKERS = {
     'nvs_encr_hmac': 'Runner with test HMAC key programmed in efuse',
     'i2c_oled': 'Runner with ssd1306 I2C oled connected',
     'httpbin': 'runner for tests that need to access the httpbin service',
+    'flash_4mb': 'C2 runners with 4 MB flash',
     # multi-dut markers
     'multi_dut_modbus_rs485': 'a pair of runners connected by RS485 bus',
     'ieee802154': 'ieee802154 related tests should run on ieee802154 runners.',

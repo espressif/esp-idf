@@ -597,3 +597,8 @@
 #define SOC_MEM_NON_CONTIGUOUS_SRAM                (1)
 /*--------------------------- EMAC --------------------------------*/
 #define SOC_EMAC_USE_IO_MUX                        (1) /*!< GPIO matrix is used to select GPIO pads */
+
+/*--------------------------- JPEG --------------------------------*/
+#define SOC_JPEG_CODEC_SUPPORTED                  (1)
+#define SOC_JPEG_DECODE_SUPPORTED                 (1)
+// #define SOC_JPEG_ENCODE_SUPPORTED                 (1) // TODO: IDF-6512

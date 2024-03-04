@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -241,6 +241,20 @@ const char *esp_sntp_getservername(u8_t idx)
 const ip_addr_t* esp_sntp_getserver(u8_t idx)
 {
     return sntp_getserver(idx);
+}
+
+uint8_t esp_sntp_getreachability(uint8_t idx)
+{
+#if SNTP_MONITOR_SERVER_REACHABILITY
+    return sntp_getreachability(idx);
+#endif
+    LWIP_ERROR("sntp_getreachability() in not enabled in lwipopts", false, );
+    return 0;
+}
+
+esp_sntp_operatingmode_t esp_sntp_getoperatingmode(void)
+{
+    return (esp_sntp_operatingmode_t)sntp_getoperatingmode();
 }
 
 #if LWIP_DHCP_GET_NTP_SRV

@@ -10,7 +10,7 @@ Peripherals API
     :SOC_ADC_DMA_SUPPORTED: adc_continuous
     :SOC_ADC_SUPPORTED: adc_calibration
     :SOC_ANA_CMPR_SUPPORTED: ana_cmpr
-    clk_tree
+    :SOC_CLK_TREE_SUPPORTED: clk_tree
     :SOC_DAC_SUPPORTED: dac
     :SOC_ECDSA_SUPPORTED: ecdsa
     :SOC_ETM_SUPPORTED: etm
@@ -36,6 +36,7 @@ Peripherals API
     spi_master
     spi_slave
     :SOC_SPI_SUPPORT_SLAVE_HD_VER2: spi_slave_hd
+    :SOC_JPEG_CODEC_SUPPORTED: jpeg
     :SOC_TEMP_SENSOR_SUPPORTED: temp_sensor
     :SOC_TOUCH_SENSOR_SUPPORTED: touch_pad
     :esp32s2: touch_element

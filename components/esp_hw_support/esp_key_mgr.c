@@ -59,30 +59,42 @@ static void esp_key_mgr_release_key_lock(esp_key_mgr_key_type_t key_type)
 {
     switch (key_type) {
     case ESP_KEY_MGR_ECDSA_KEY:
-        _lock_release(&s_key_mgr_xts_aes_key_lock);
+        _lock_release(&s_key_mgr_ecdsa_key_lock);
         break;
     case ESP_KEY_MGR_XTS_AES_128_KEY:
     case ESP_KEY_MGR_XTS_AES_256_KEY:
-        _lock_release(&s_key_mgr_ecdsa_key_lock);
+        _lock_release(&s_key_mgr_xts_aes_key_lock);
         break;
     }
 }
 
-static void esp_key_mgr_acquire_hardware(void)
+static void esp_key_mgr_acquire_hardware(bool deployment_mode)
 {
-    esp_crypto_key_manager_lock_acquire();
+    if (deployment_mode) {
+        // We only need explicit locks in the deployment mode
+        esp_crypto_ecc_lock_acquire();
+        esp_crypto_sha_aes_lock_acquire();
+        esp_crypto_key_manager_lock_acquire();
+    }
     // Reset the Key Manager Clock
     KEY_MANAGER_RCC_ATOMIC() {
         key_mgr_ll_enable_bus_clock(true);
+        key_mgr_ll_enable_peripheral_clock(true);
         key_mgr_ll_reset_register();
     }
 }
 
-static void esp_key_mgr_release_hardware(void)
+static void esp_key_mgr_release_hardware(bool deployment_mode)
 {
-    esp_crypto_key_manager_lock_release();
+    if (deployment_mode) {
+        esp_crypto_ecc_lock_release();
+        esp_crypto_sha_aes_lock_release();
+        esp_crypto_key_manager_lock_release();
+    }
+
     // Reset the Key Manager Clock
     KEY_MANAGER_RCC_ATOMIC() {
+        key_mgr_ll_enable_peripheral_clock(false);
         key_mgr_ll_enable_bus_clock(false);
         key_mgr_ll_reset_register();
     }
@@ -301,7 +313,7 @@ esp_err_t esp_key_mgr_deploy_key_in_aes_mode(const esp_key_mgr_aes_key_config_t 
         return ESP_ERR_INVALID_ARG;
     }
 
-    esp_key_mgr_acquire_hardware();
+    esp_key_mgr_acquire_hardware(true);
 
     esp_err_t esp_ret = key_mgr_deploy_key_aes_mode(&aes_deploy_config);
     if (esp_ret != ESP_OK) {
@@ -320,10 +332,7 @@ esp_err_t esp_key_mgr_deploy_key_in_aes_mode(const esp_key_mgr_aes_key_config_t 
     // Set the Key Manager Static Register to use own key for the respective key type
     key_mgr_hal_set_key_usage(key_type, ESP_KEY_MGR_USE_OWN_KEY);
 
-    KEY_MANAGER_RCC_ATOMIC() {
-        key_mgr_ll_enable_bus_clock(false);
-        key_mgr_ll_reset_register();
-    }
+    esp_key_mgr_release_hardware(true);
     return esp_ret;
 }
 
@@ -420,7 +429,7 @@ esp_err_t esp_key_mgr_activate_key(esp_key_mgr_key_recovery_info_t *key_recovery
     key_recovery_config.key_recovery_info = key_recovery_info;
     key_recovery_config.key_purpose = key_purpose;
 
-    esp_key_mgr_acquire_hardware();
+    esp_key_mgr_acquire_hardware(false);
 
     esp_ret = key_mgr_recover_key(&key_recovery_config);
     if (esp_ret != ESP_OK) {
@@ -439,18 +448,17 @@ esp_err_t esp_key_mgr_activate_key(esp_key_mgr_key_recovery_info_t *key_recovery
 
     // Set the Key Manager Static Register to use own key for the respective key type
     key_mgr_hal_set_key_usage(key_recovery_info->key_type, ESP_KEY_MGR_USE_OWN_KEY);
+    return ESP_OK;
 
 cleanup:
-
-    esp_key_mgr_release_hardware();
+    esp_key_mgr_release_hardware(false);
     return esp_ret;
 }
 
 esp_err_t esp_key_mgr_deactivate_key(esp_key_mgr_key_type_t key_type)
 {
     esp_key_mgr_release_key_lock(key_type);
-    esp_key_mgr_acquire_hardware();
-    esp_key_mgr_release_hardware();
+    esp_key_mgr_release_hardware(false);
     return ESP_OK;
 }
 
@@ -564,7 +572,7 @@ esp_err_t esp_key_mgr_deploy_key_in_ecdh0_mode(const esp_key_mgr_ecdh0_key_confi
         return ESP_ERR_INVALID_ARG;
     }
 
-    esp_key_mgr_acquire_hardware();
+    esp_key_mgr_acquire_hardware(true);
 
     esp_err_t esp_ret = key_mgr_deploy_key_ecdh0_mode(&ecdh0_deploy_config);
     if (esp_ret != ESP_OK) {
@@ -584,8 +592,7 @@ esp_err_t esp_key_mgr_deploy_key_in_ecdh0_mode(const esp_key_mgr_ecdh0_key_confi
     // Set the Key Manager Static Register to use own key for the respective key type
     key_mgr_hal_set_key_usage(key_type, ESP_KEY_MGR_USE_OWN_KEY);
 
-    esp_key_mgr_release_hardware();
-
+    esp_key_mgr_release_hardware(true);
     return ESP_OK;
 }
 
@@ -661,7 +668,6 @@ static esp_err_t key_mgr_deploy_key_random_mode(random_deploy_config_t *config)
         config->key_info->key_info[0].crc = esp_rom_crc32_le(0, key_recovery_info, KEY_MGR_KEY_RECOVERY_INFO_SIZE);
     }
     heap_caps_free(key_recovery_info);
-
     return ESP_OK;
 }
 
@@ -685,7 +691,7 @@ esp_err_t esp_key_mgr_deploy_key_in_random_mode(const esp_key_mgr_random_key_con
         return ESP_ERR_INVALID_ARG;
     }
 
-    esp_key_mgr_acquire_hardware();
+    esp_key_mgr_acquire_hardware(true);
 
     esp_err_t esp_ret = key_mgr_deploy_key_random_mode(&random_deploy_config);
     if (esp_ret != ESP_OK) {
@@ -705,7 +711,6 @@ esp_err_t esp_key_mgr_deploy_key_in_random_mode(const esp_key_mgr_random_key_con
     // Set the Key Manager Static Register to use own key for the respective key type
     key_mgr_hal_set_key_usage(key_config->key_type, ESP_KEY_MGR_USE_OWN_KEY);
 
-    esp_key_mgr_release_hardware();
-
+    esp_key_mgr_release_hardware(true);
     return esp_ret;
 }

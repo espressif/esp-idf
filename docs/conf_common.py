@@ -79,6 +79,10 @@ COEXISTENCE_DOCS = ['api-guides/coexist.rst']
 
 MM_SYNC_DOCS = ['api-reference/system/mm_sync.rst']
 
+CLK_TREE_DOCS = ['api-reference/peripherals/clk_tree.rst']
+
+UART_DOCS = ['api-reference/peripherals/uart.rst']
+
 SDMMC_DOCS = ['api-reference/peripherals/sdmmc_host.rst']
 
 SDIO_SLAVE_DOCS = ['api-reference/peripherals/sdio_slave.rst',
@@ -150,6 +154,8 @@ ANA_CMPR_DOCS = ['api-reference/peripherals/ana_cmpr.rst']
 
 SPI_SLAVE_HD_DOCS = ['api-reference/peripherals/spi_slave_hd.rst']
 
+JPEG_DOCS = ['api-reference/peripherals/jpeg.rst']
+
 QEMU_DOCS = ['api-guides/tools/qemu.rst']
 
 ESP32_DOCS = ['api-reference/system/himem.rst',
@@ -202,6 +208,8 @@ conditional_include_dict = {'SOC_BT_SUPPORTED':BT_DOCS,
                             'SOC_SUPPORT_COEXISTENCE':COEXISTENCE_DOCS,
                             'SOC_PSRAM_DMA_CAPABLE':MM_SYNC_DOCS,
                             'SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE':MM_SYNC_DOCS,
+                            'SOC_CLK_TREE_SUPPORTED':CLK_TREE_DOCS,
+                            'SOC_UART_SUPPORTED':UART_DOCS,
                             'SOC_SDMMC_HOST_SUPPORTED':SDMMC_DOCS,
                             'SOC_SDIO_SLAVE_SUPPORTED':SDIO_SLAVE_DOCS,
                             'SOC_MCPWM_SUPPORTED':MCPWM_DOCS,
@@ -235,6 +243,7 @@ conditional_include_dict = {'SOC_BT_SUPPORTED':BT_DOCS,
                             'SOC_WIFI_MESH_SUPPORT':WIFI_MESH_DOCS,
                             'SOC_SPI_SUPPORT_SLAVE_HD_VER2':SPI_SLAVE_HD_DOCS,
                             'SOC_WIFI_NAN_SUPPORT':NAN_DOCS,
+                            'SOC_JPEG_CODEC_SUPPORTED':JPEG_DOCS,
                             'esp32':ESP32_DOCS,
                             'esp32s2':ESP32S2_DOCS,
                             'esp32s3':ESP32S3_DOCS,

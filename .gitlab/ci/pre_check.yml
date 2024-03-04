@@ -75,7 +75,7 @@ check_chip_support_components:
     expire_in: 1 week
   script:
     - python tools/ci/check_soc_headers_leak.py
-    - find ${IDF_PATH}/components/soc/*/include/soc/ -name "*_struct.h" -print0 | xargs -0 -n1 ./tools/ci/check_soc_struct_headers.py
+    - find ${IDF_PATH}/components/soc/**/include/soc/ -name "*_struct.h" -print0 | xargs -0 -n1 ./tools/ci/check_soc_struct_headers.py
     - tools/ci/check_esp_memory_utils_headers.sh
 
 check_esp_err_to_name:

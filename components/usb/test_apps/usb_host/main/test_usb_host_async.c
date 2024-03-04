@@ -44,7 +44,7 @@ Procedure:
     - Uninstall USB Host Library
 */
 
-TEST_CASE("Test USB Host async client (single client)", "[usb_host][full_speed]")
+TEST_CASE("Test USB Host async client (single client)", "[usb_host][full_speed][high_speed]")
 {
     //Create task to run client that communicates with MSC SCSI interface
     msc_client_test_param_t params = {
@@ -94,7 +94,7 @@ Procedure:
     - Free all devices
     - Uninstall USB Host Library
 */
-TEST_CASE("Test USB Host async client (multi client)", "[usb_host][full_speed]")
+TEST_CASE("Test USB Host async client (multi client)", "[usb_host][full_speed][high_speed]")
 {
     //Create task to run the MSC client
     msc_client_test_param_t msc_params = {

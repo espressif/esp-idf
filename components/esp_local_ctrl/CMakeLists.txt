@@ -5,7 +5,7 @@ if(${target} STREQUAL "linux")
 endif()
 
 set(include_dirs include)
-set(priv_include_dirs proto-c src ../protocomm/proto-c)
+set(priv_include_dirs proto-c src)
 set(srcs  "src/esp_local_ctrl.c"
           "src/esp_local_ctrl_handler.c"
           "proto-c/esp_local_ctrl.pb-c.c")

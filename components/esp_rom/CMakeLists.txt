@@ -1,6 +1,15 @@
 idf_build_get_property(target IDF_TARGET)
 
-set(include_dirs "include" "include/${target}")
+# TODO: IDF-9197
+if(CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION)
+    set(target_folder "esp32c5/beta3/esp32c5")
+elseif(CONFIG_IDF_TARGET_ESP32C5_MP_VERSION)
+    set(target_folder "esp32c5/mp/esp32c5")
+else()
+    set(target_folder "${target}")
+endif()
+
+set(include_dirs "include" "include/${target_folder}")
 
 set(private_required_comp "")
 
@@ -12,7 +21,10 @@ if(target STREQUAL "linux")
                         "${target}/esp_rom_md5.c"
                         "${target}/esp_rom_efuse.c")
 else()
-    list(APPEND include_dirs "${target}")
+    list(APPEND include_dirs "${target_folder}")
+    if(CONFIG_IDF_TARGET_ESP32C5)
+        list(APPEND include_dirs "include/${target_folder}/..")
+    endif()
     list(APPEND sources "patches/esp_rom_crc.c"
                         "patches/esp_rom_sys.c"
                         "patches/esp_rom_uart.c"
@@ -67,7 +79,7 @@ set(ld_folder "ld")
 # Append a target linker script at the target-specific path,
 # only the 'name' part is different for each script
 function(rom_linker_script name)
-    target_linker_script(${COMPONENT_LIB} INTERFACE "${target}/${ld_folder}/${target}.rom.${name}.ld")
+    target_linker_script(${COMPONENT_LIB} INTERFACE "${target_folder}/${ld_folder}/${target}.rom.${name}.ld")
 endfunction()
 
 if(target STREQUAL "linux")
@@ -79,7 +91,7 @@ if(target STREQUAL "linux")
         target_compile_options(${COMPONENT_LIB} PRIVATE -Wno-integer-overflow -Wno-shift-count-overflow)
     endif()
 else()
-    target_linker_script(${COMPONENT_LIB} INTERFACE "${target}/${ld_folder}/${target}.rom.ld")
+    target_linker_script(${COMPONENT_LIB} INTERFACE "${target_folder}/${ld_folder}/${target}.rom.ld")
     rom_linker_script("api")
 
     if(CONFIG_COMPILER_FLOAT_LIB_FROM_GCCLIB)
