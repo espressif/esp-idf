@@ -17,9 +17,12 @@
 ########### CORE startup stage ###########
 # [refactor-todo]: move init calls into respective components
 
+CORE:   1: init_efuse_check in components/efuse/src/esp_efuse_startup.c on BIT(0)
+
 # Log some information about the system
 CORE:  10: init_show_cpu_freq in components/esp_system/startup_funcs.c on BIT(0)
 CORE:  20: init_show_app_info in components/esp_app_format/esp_app_desc.c on BIT(0)
+CORE:  21: init_efuse_show_app_info in components/efuse/src/esp_efuse_startup.c on BIT(0)
 
 # Initialize heap allocator. WARNING: This *needs* to happen *after* the app cpu has booted.
 # If the heap allocator is initialized first, it will put free memory linked list items into
@@ -52,9 +55,7 @@ CORE: 115: init_newlib_stdio in components/newlib/newlib_init.c on BIT(0)
 
 CORE: 120: init_pthread in components/pthread/pthread.c on BIT(0)
 CORE: 130: init_flash in components/esp_system/startup_funcs.c on BIT(0)
-CORE: 140: init_virtual_efuse in components/esp_system/startup_funcs.c on BIT(0)
-CORE: 150: init_secure in components/esp_system/startup_funcs.c on BIT(0)
-CORE: 160: init_rom_log in components/esp_system/startup_funcs.c on BIT(0)
+CORE: 140: init_efuse in components/efuse/src/esp_efuse_startup.c on BIT(0)
 CORE: 170: init_xt_wdt in components/esp_system/startup_funcs.c on BIT(0)
 
 

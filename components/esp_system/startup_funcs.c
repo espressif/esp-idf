@@ -17,11 +17,6 @@
 #include "spi_flash_mmap.h"
 #include "esp_flash_internal.h"
 #include "esp_newlib.h"
-#include "esp_efuse.h"
-#include "esp_efuse_table.h"
-#include "esp_flash_encrypt.h"
-#include "esp_partition.h"
-#include "esp_secure_boot.h"
 #include "esp_xt_wdt.h"
 #include "esp_cpu.h"
 #include "esp_private/startup_internal.h"
@@ -29,14 +24,9 @@
 #include "hal/wdt_hal.h"
 #include "hal/uart_types.h"
 #include "hal/uart_ll.h"
-#include "hal/efuse_hal.h"
 
 #if CONFIG_SW_COEXIST_ENABLE || CONFIG_EXTERNAL_COEX_ENABLE
 #include "private/esp_coexist_internal.h"
-#endif
-
-#if __has_include("esp_app_desc.h")
-#include "esp_app_desc.h"
 #endif
 
 #if CONFIG_PM_ENABLE
@@ -139,88 +129,6 @@ ESP_SYSTEM_INIT_FN(init_flash, CORE, BIT(0), 130)
     return ESP_OK;
 }
 #endif // !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
-
-#ifdef CONFIG_EFUSE_VIRTUAL
-ESP_SYSTEM_INIT_FN(init_virtual_efuse, CORE, BIT(0), 140)
-{
-    ESP_LOGW(TAG, "eFuse virtual mode is enabled. If Secure boot or Flash encryption is enabled then it does not provide any security. FOR TESTING ONLY!");
-#ifdef CONFIG_EFUSE_VIRTUAL_KEEP_IN_FLASH
-    const esp_partition_t *efuse_partition = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_EFUSE_EM, NULL);
-    if (efuse_partition) {
-        esp_efuse_init_virtual_mode_in_flash(efuse_partition->address, efuse_partition->size);
-    }
-#endif
-    return ESP_OK;
-}
-#endif // CONFIG_EFUSE_VIRTUAL
-
-ESP_SYSTEM_INIT_FN(init_secure, CORE, BIT(0), 150)
-{
-#if CONFIG_BOOTLOADER_APP_ANTI_ROLLBACK
-    // For anti-rollback case, recheck security version before we boot-up the current application
-    const esp_app_desc_t *desc = esp_app_get_description();
-    ESP_RETURN_ON_FALSE(esp_efuse_check_secure_version(desc->secure_version), ESP_FAIL, TAG, "Incorrect secure version of app");
-#endif
-
-#ifdef CONFIG_SECURE_FLASH_ENC_ENABLED
-    esp_flash_encryption_init_checks();
-#endif
-
-#if defined(CONFIG_SECURE_BOOT) || defined(CONFIG_SECURE_SIGNED_ON_UPDATE_NO_SECURE_BOOT)
-    // Note: in some configs this may read flash, so placed after flash init
-    esp_secure_boot_init_checks();
-#endif
-
-#if SOC_EFUSE_ECDSA_USE_HARDWARE_K
-    if (esp_efuse_find_purpose(ESP_EFUSE_KEY_PURPOSE_ECDSA_KEY, NULL)) {
-        // ECDSA key purpose block is present and hence permanently enable
-        // the hardware TRNG supplied k mode (most secure mode)
-        ESP_RETURN_ON_ERROR(esp_efuse_write_field_bit(ESP_EFUSE_ECDSA_FORCE_USE_HARDWARE_K), TAG, "Failed to enable hardware k mode");
-    }
-#endif
-
-#if CONFIG_SECURE_DISABLE_ROM_DL_MODE
-    ESP_RETURN_ON_ERROR(esp_efuse_disable_rom_download_mode(), TAG, "Failed to disable ROM download mode");
-#endif
-
-#if CONFIG_SECURE_ENABLE_SECURE_ROM_DL_MODE
-    ESP_RETURN_ON_ERROR(esp_efuse_enable_rom_secure_download_mode(), TAG, "Failed to enable Secure Download mode");
-#endif
-
-#if CONFIG_ESP32_DISABLE_BASIC_ROM_CONSOLE
-    esp_efuse_disable_basic_rom_console();
-#endif
-    return ESP_OK;
-}
-
-// Set efuse ROM_LOG_MODE on first boot
-//
-// For CONFIG_BOOT_ROM_LOG_ALWAYS_ON (default) or undefined (ESP32), leave
-// ROM_LOG_MODE undefined (no need to call this function during startup)
-#if CONFIG_BOOT_ROM_LOG_ALWAYS_OFF
-#define ROM_LOG_MODE ESP_EFUSE_ROM_LOG_ALWAYS_OFF
-#elif CONFIG_BOOT_ROM_LOG_ON_GPIO_LOW
-#define ROM_LOG_MODE ESP_EFUSE_ROM_LOG_ON_GPIO_LOW
-#elif CONFIG_BOOT_ROM_LOG_ON_GPIO_HIGH
-#define ROM_LOG_MODE ESP_EFUSE_ROM_LOG_ON_GPIO_HIGH
-#endif
-
-#ifdef ROM_LOG_MODE
-ESP_SYSTEM_INIT_FN(init_rom_log, CORE, BIT(0), 160)
-{
-    if (ets_efuse_get_uart_print_control() == ROM_LOG_MODE) {
-        return ESP_OK;
-    }
-
-    esp_err_t err = esp_efuse_set_rom_log_scheme(ROM_LOG_MODE);
-
-    if (err == ESP_ERR_NOT_SUPPORTED) {
-        err = ESP_OK;
-    }
-    ESP_RETURN_ON_ERROR(err, TAG, "Failed to set ROM log scheme");
-    return ESP_OK;
-}
-#endif // ROM_LOG_MODE
 
 #if CONFIG_ESP_XT_WDT
 ESP_SYSTEM_INIT_FN(init_xt_wdt, CORE, BIT(0), 170)

@@ -14,11 +14,9 @@
 #include "esp_log.h"
 #include "esp_chip_info.h"
 
-#include "esp_efuse.h"
 #include "esp_private/cache_err_int.h"
 #include "esp_clk_internal.h"
 
-#include "esp_rom_efuse.h"
 #include "esp_rom_uart.h"
 #include "esp_rom_sys.h"
 #include "esp_rom_caps.h"
@@ -509,9 +507,6 @@ void IRAM_ATTR call_start_cpu0(void)
     extern void esp_config_l2_cache_mode(void);
     esp_config_l2_cache_mode();
 #endif
-    if (esp_efuse_check_errors() != ESP_OK) {
-        esp_restart();
-    }
 
 #if ESP_ROM_NEEDS_SET_CACHE_MMU_SIZE
 #if CONFIG_APP_BUILD_TYPE_ELF_RAM
