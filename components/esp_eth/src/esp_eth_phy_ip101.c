@@ -26,6 +26,9 @@
 
 static const char *TAG = "ip101";
 
+#define IP101_PHY_RESET_ASSERTION_TIME_MS 10
+#define IP101_PHY_POST_RESET_INIT_TIME_MS 10
+
 /***************Vendor Specific Register***************/
 
 /**
@@ -224,8 +227,9 @@ static esp_err_t ip101_reset_hw(esp_eth_phy_t *phy)
         esp_rom_gpio_pad_select_gpio(ip101->reset_gpio_num);
         gpio_set_direction(ip101->reset_gpio_num, GPIO_MODE_OUTPUT);
         gpio_set_level(ip101->reset_gpio_num, 0);
-        esp_rom_delay_us(100); // insert min input assert time
+        vTaskDelay(pdMS_TO_TICKS(IP101_PHY_RESET_ASSERTION_TIME_MS));
         gpio_set_level(ip101->reset_gpio_num, 1);
+        vTaskDelay(pdMS_TO_TICKS(IP101_PHY_POST_RESET_INIT_TIME_MS));
     }
     return ESP_OK;
 }
