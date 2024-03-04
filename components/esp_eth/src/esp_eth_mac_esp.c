@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <sys/cdefs.h>
 #include <stdarg.h>
+#include <inttypes.h>
 #include "esp_private/periph_ctrl.h"
 #include "esp_attr.h"
 #include "esp_log.h"
@@ -217,7 +218,7 @@ static esp_err_t emac_esp32_set_speed(esp_eth_mac_t *mac, eth_speed_t speed)
         }
 #endif
         emac_hal_set_speed(&emac->hal, speed);
-        ESP_LOGD(TAG, "working in %dMbps", speed == ETH_SPEED_10M ? 10 : 100);
+        ESP_LOGD(TAG, "working in %iMbps", speed == ETH_SPEED_10M ? 10 : 100);
         return ESP_OK;
     }
     return ret;
@@ -334,7 +335,7 @@ static void emac_esp32_rx_task(void *arg)
                     ESP_LOGE(TAG, "received frame was truncated");
                     free(buffer);
                 } else {
-                    ESP_LOGD(TAG, "receive len= %d", recv_len);
+                    ESP_LOGD(TAG, "receive len= %" PRIu32, recv_len);
                     emac->eth->stack_input(emac->eth, buffer, recv_len);
                 }
                 /* if allocation failed and there is a waiting frame */
@@ -368,7 +369,7 @@ static esp_err_t emac_config_pll_clock(emac_esp32_t *emac)
     esp_err_t ret = periph_rtc_apll_freq_set(expt_freq, &real_freq);
     ESP_RETURN_ON_FALSE(ret != ESP_ERR_INVALID_ARG, ESP_FAIL, TAG, "Set APLL clock coefficients failed");
     if (ret == ESP_ERR_INVALID_STATE) {
-        ESP_LOGW(TAG, "APLL is occupied already, it is working at %d Hz", real_freq);
+        ESP_LOGW(TAG, "APLL is occupied already, it is working at %" PRIu32 " Hz", real_freq);
     }
 #elif CONFIG_IDF_TARGET_ESP32P4
     // the RMII reference comes from the MPLL
@@ -376,7 +377,7 @@ static esp_err_t emac_config_pll_clock(emac_esp32_t *emac)
     emac->use_pll = true;
     esp_err_t ret = periph_rtc_mpll_freq_set(expt_freq * 2, &real_freq); // cannot set 50MHz at MPLL, the nearest possible freq is 100 MHz
     if (ret == ESP_ERR_INVALID_STATE) {
-        ESP_LOGW(TAG, "MPLL is occupied already, it is working at %d Hz", real_freq);
+        ESP_LOGW(TAG, "MPLL is occupied already, it is working at %" PRIu32 " Hz", real_freq);
     }
     // Set divider of MPLL clock
     if (real_freq > RMII_CLK_HZ) {
@@ -388,7 +389,7 @@ static esp_err_t emac_config_pll_clock(emac_esp32_t *emac)
 #endif
     // If the difference of real RMII CLK frequency is not within 50 ppm, i.e. 2500 Hz, the (A/M)PLL is unusable
     ESP_RETURN_ON_FALSE(abs((int)real_freq - (int)expt_freq) <= 2500,
-                        ESP_ERR_INVALID_STATE, TAG, "The (A/M)PLL is working at an unusable frequency %lu Hz", real_freq);
+                        ESP_ERR_INVALID_STATE, TAG, "The (A/M)PLL is working at an unusable frequency %" PRIu32 " Hz", real_freq);
     return ESP_OK;
 }
 
@@ -651,7 +652,7 @@ static esp_err_t esp_emac_config_data_interface(const eth_esp32_emac_config_t *e
         }
         break;
     default:
-        ESP_GOTO_ON_FALSE(false, ESP_ERR_INVALID_ARG, err, TAG, "invalid EMAC Data Interface:%d", esp32_emac_config->interface);
+        ESP_GOTO_ON_FALSE(false, ESP_ERR_INVALID_ARG, err, TAG, "invalid EMAC Data Interface:%i", esp32_emac_config->interface);
     }
 err:
     return ret;
