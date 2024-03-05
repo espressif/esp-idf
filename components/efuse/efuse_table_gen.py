@@ -4,11 +4,9 @@
 #
 # Converts efuse table to header file efuse_table.h.
 #
-# SPDX-FileCopyrightText: 2017-2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2017-2024 Espressif Systems (Shanghai) CO LTD
 #
 # SPDX-License-Identifier: Apache-2.0
-from __future__ import division, print_function
-
 import argparse
 import hashlib
 import os
@@ -261,7 +259,11 @@ class FuseTable(list):
         last_field_name = ''
         for p in self:
             if (p.field_name != last_field_name):
-                rows += ['extern const esp_efuse_desc_t* ' + 'ESP_EFUSE_' + p.field_name.replace('.', '_') + '[];']
+                name = 'ESP_EFUSE_' + p.field_name.replace('.', '_')
+                rows += ['extern const esp_efuse_desc_t* ' + name + '[];']
+                for alt_name in p.get_alt_names():
+                    alt_name = 'ESP_EFUSE_' + alt_name.replace('.', '_')
+                    rows += ['#define ' + alt_name + ' ' + name]
                 last_field_name = p.field_name
 
         rows += ['',
@@ -433,6 +435,12 @@ class FuseDefinition(object):
         return ', '.join([start + self.efuse_block,
                          str(self.bit_start),
                          str(self.get_bit_count()) + '}, \t // ' + self.comment])
+
+    def get_alt_names(self):
+        result = re.search(r'^\[(.*?)\]', self.comment)
+        if result:
+            return result.group(1).split()
+        return []
 
 
 def process_input_file(file, type_table):

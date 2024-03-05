@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,6 +8,8 @@
 
 
 #include "soc.h"
+#include "efuse_defs.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -560,27 +562,127 @@ apping gpio10 when both reg_dis_usb_jtag and reg_dis_pad_jtag are equal to 0..*/
 #define EFUSE_SPI_PAD_CONF_1_V  0xFFFFFFFF
 #define EFUSE_SPI_PAD_CONF_1_S  0
 
-#define EFUSE_RD_MAC_SPI_SYS_3_REG          (DR_REG_EFUSE_BASE + 0x50)
-/* EFUSE_SYS_DATA_PART0_0 : RO ;bitpos:[31:18] ;default: 14'h0 ; */
-/*description: Stores the fist 14 bits of the zeroth part of system data..*/
-#define EFUSE_SYS_DATA_PART0_0    0x00003FFF
-#define EFUSE_SYS_DATA_PART0_0_M  ((EFUSE_SYS_DATA_PART0_0_V)<<(EFUSE_SYS_DATA_PART0_0_S))
-#define EFUSE_SYS_DATA_PART0_0_V  0x3FFF
-#define EFUSE_SYS_DATA_PART0_0_S  18
-/* EFUSE_SPI_PAD_CONF_2 : RO ;bitpos:[17:0] ;default: 18'h0 ; */
-/*description: Stores the second part of SPI_PAD_CONF..*/
-#define EFUSE_SPI_PAD_CONF_2    0x0003FFFF
-#define EFUSE_SPI_PAD_CONF_2_M  ((EFUSE_SPI_PAD_CONF_2_V)<<(EFUSE_SPI_PAD_CONF_2_S))
-#define EFUSE_SPI_PAD_CONF_2_V  0x3FFFF
-#define EFUSE_SPI_PAD_CONF_2_S  0
+/** EFUSE_RD_MAC_SPI_SYS_3_REG register
+ *  BLOCK1 data register 3.
+ */
+#define EFUSE_RD_MAC_SPI_SYS_3_REG (DR_REG_EFUSE_BASE + 0x50)
+/** EFUSE_SPI_PAD_CONFIG_D5 : R; bitpos: [5:0]; default: 0;
+ *  SPI_PAD_configure D5
+ */
+#define EFUSE_SPI_PAD_CONFIG_D5    0x0000003FU
+#define EFUSE_SPI_PAD_CONFIG_D5_M  (EFUSE_SPI_PAD_CONFIG_D5_V << EFUSE_SPI_PAD_CONFIG_D5_S)
+#define EFUSE_SPI_PAD_CONFIG_D5_V  0x0000003FU
+#define EFUSE_SPI_PAD_CONFIG_D5_S  0
+/** EFUSE_SPI_PAD_CONFIG_D6 : R; bitpos: [11:6]; default: 0;
+ *  SPI_PAD_configure D6
+ */
+#define EFUSE_SPI_PAD_CONFIG_D6    0x0000003FU
+#define EFUSE_SPI_PAD_CONFIG_D6_M  (EFUSE_SPI_PAD_CONFIG_D6_V << EFUSE_SPI_PAD_CONFIG_D6_S)
+#define EFUSE_SPI_PAD_CONFIG_D6_V  0x0000003FU
+#define EFUSE_SPI_PAD_CONFIG_D6_S  6
+/** EFUSE_SPI_PAD_CONFIG_D7 : R; bitpos: [17:12]; default: 0;
+ *  SPI_PAD_configure D7
+ */
+#define EFUSE_SPI_PAD_CONFIG_D7    0x0000003FU
+#define EFUSE_SPI_PAD_CONFIG_D7_M  (EFUSE_SPI_PAD_CONFIG_D7_V << EFUSE_SPI_PAD_CONFIG_D7_S)
+#define EFUSE_SPI_PAD_CONFIG_D7_V  0x0000003FU
+#define EFUSE_SPI_PAD_CONFIG_D7_S  12
+/** EFUSE_WAFER_VERSION_MINOR_LO : R; bitpos: [20:18]; default: 0;
+ *  WAFER_VERSION_MINOR least significant bits
+ */
+#define EFUSE_WAFER_VERSION_MINOR_LO    0x00000007U
+#define EFUSE_WAFER_VERSION_MINOR_LO_M  (EFUSE_WAFER_VERSION_MINOR_LO_V << EFUSE_WAFER_VERSION_MINOR_LO_S)
+#define EFUSE_WAFER_VERSION_MINOR_LO_V  0x00000007U
+#define EFUSE_WAFER_VERSION_MINOR_LO_S  18
+/** EFUSE_PKG_VERSION : R; bitpos: [23:21]; default: 0;
+ *  Package version
+ */
+#define EFUSE_PKG_VERSION    0x00000007U
+#define EFUSE_PKG_VERSION_M  (EFUSE_PKG_VERSION_V << EFUSE_PKG_VERSION_S)
+#define EFUSE_PKG_VERSION_V  0x00000007U
+#define EFUSE_PKG_VERSION_S  21
+/** EFUSE_BLK_VERSION_MINOR : R; bitpos: [26:24]; default: 0;
+ *  BLK_VERSION_MINOR
+ */
+#define EFUSE_BLK_VERSION_MINOR    0x00000007U
+#define EFUSE_BLK_VERSION_MINOR_M  (EFUSE_BLK_VERSION_MINOR_V << EFUSE_BLK_VERSION_MINOR_S)
+#define EFUSE_BLK_VERSION_MINOR_V  0x00000007U
+#define EFUSE_BLK_VERSION_MINOR_S  24
+/** EFUSE_FLASH_CAP : R; bitpos: [29:27]; default: 0;
+ *  Flash capacity
+ */
+#define EFUSE_FLASH_CAP    0x00000007U
+#define EFUSE_FLASH_CAP_M  (EFUSE_FLASH_CAP_V << EFUSE_FLASH_CAP_S)
+#define EFUSE_FLASH_CAP_V  0x00000007U
+#define EFUSE_FLASH_CAP_S  27
+/** EFUSE_FLASH_TEMP : R; bitpos: [31:30]; default: 0;
+ *  Flash temperature
+ */
+#define EFUSE_FLASH_TEMP    0x00000003U
+#define EFUSE_FLASH_TEMP_M  (EFUSE_FLASH_TEMP_V << EFUSE_FLASH_TEMP_S)
+#define EFUSE_FLASH_TEMP_V  0x00000003U
+#define EFUSE_FLASH_TEMP_S  30
 
-#define EFUSE_RD_MAC_SPI_SYS_4_REG          (DR_REG_EFUSE_BASE + 0x54)
-/* EFUSE_SYS_DATA_PART0_1 : RO ;bitpos:[31:0] ;default: 32'h0 ; */
-/*description: Stores the fist 32 bits of the zeroth part of system data..*/
-#define EFUSE_SYS_DATA_PART0_1    0xFFFFFFFF
-#define EFUSE_SYS_DATA_PART0_1_M  ((EFUSE_SYS_DATA_PART0_1_V)<<(EFUSE_SYS_DATA_PART0_1_S))
-#define EFUSE_SYS_DATA_PART0_1_V  0xFFFFFFFF
-#define EFUSE_SYS_DATA_PART0_1_S  0
+/** EFUSE_RD_MAC_SPI_SYS_4_REG register
+ *  BLOCK1 data register 4.
+ */
+#define EFUSE_RD_MAC_SPI_SYS_4_REG (DR_REG_EFUSE_BASE + 0x54)
+/** EFUSE_FLASH_VENDOR : R; bitpos: [2:0]; default: 0;
+ *  Flash vendor
+ */
+#define EFUSE_FLASH_VENDOR    0x00000007U
+#define EFUSE_FLASH_VENDOR_M  (EFUSE_FLASH_VENDOR_V << EFUSE_FLASH_VENDOR_S)
+#define EFUSE_FLASH_VENDOR_V  0x00000007U
+#define EFUSE_FLASH_VENDOR_S  0
+/** EFUSE_PSRAM_CAP : R; bitpos: [4:3]; default: 0;
+ *  PSRAM capacity
+ */
+#define EFUSE_PSRAM_CAP    0x00000003U
+#define EFUSE_PSRAM_CAP_M  (EFUSE_PSRAM_CAP_V << EFUSE_PSRAM_CAP_S)
+#define EFUSE_PSRAM_CAP_V  0x00000003U
+#define EFUSE_PSRAM_CAP_S  3
+/** EFUSE_PSRAM_TEMP : R; bitpos: [6:5]; default: 0;
+ *  PSRAM temperature
+ */
+#define EFUSE_PSRAM_TEMP    0x00000003U
+#define EFUSE_PSRAM_TEMP_M  (EFUSE_PSRAM_TEMP_V << EFUSE_PSRAM_TEMP_S)
+#define EFUSE_PSRAM_TEMP_V  0x00000003U
+#define EFUSE_PSRAM_TEMP_S  5
+/** EFUSE_PSRAM_VENDOR : R; bitpos: [8:7]; default: 0;
+ *  PSRAM vendor
+ */
+#define EFUSE_PSRAM_VENDOR    0x00000003U
+#define EFUSE_PSRAM_VENDOR_M  (EFUSE_PSRAM_VENDOR_V << EFUSE_PSRAM_VENDOR_S)
+#define EFUSE_PSRAM_VENDOR_V  0x00000003U
+#define EFUSE_PSRAM_VENDOR_S  7
+/** EFUSE_RESERVED_1_137 : R; bitpos: [12:9]; default: 0;
+ *  reserved
+ */
+#define EFUSE_RESERVED_1_137    0x0000000FU
+#define EFUSE_RESERVED_1_137_M  (EFUSE_RESERVED_1_137_V << EFUSE_RESERVED_1_137_S)
+#define EFUSE_RESERVED_1_137_V  0x0000000FU
+#define EFUSE_RESERVED_1_137_S  9
+/** EFUSE_K_RTC_LDO : R; bitpos: [19:13]; default: 0;
+ *  BLOCK1 K_RTC_LDO
+ */
+#define EFUSE_K_RTC_LDO    0x0000007FU
+#define EFUSE_K_RTC_LDO_M  (EFUSE_K_RTC_LDO_V << EFUSE_K_RTC_LDO_S)
+#define EFUSE_K_RTC_LDO_V  0x0000007FU
+#define EFUSE_K_RTC_LDO_S  13
+/** EFUSE_K_DIG_LDO : R; bitpos: [26:20]; default: 0;
+ *  BLOCK1 K_DIG_LDO
+ */
+#define EFUSE_K_DIG_LDO    0x0000007FU
+#define EFUSE_K_DIG_LDO_M  (EFUSE_K_DIG_LDO_V << EFUSE_K_DIG_LDO_S)
+#define EFUSE_K_DIG_LDO_V  0x0000007FU
+#define EFUSE_K_DIG_LDO_S  20
+/** EFUSE_V_RTC_DBIAS20 : R; bitpos: [31:27]; default: 0;
+ *  BLOCK1 voltage of rtc dbias20
+ */
+#define EFUSE_V_RTC_DBIAS20    0x0000001FU
+#define EFUSE_V_RTC_DBIAS20_M  (EFUSE_V_RTC_DBIAS20_V << EFUSE_V_RTC_DBIAS20_S)
+#define EFUSE_V_RTC_DBIAS20_V  0x0000001FU
+#define EFUSE_V_RTC_DBIAS20_S  27
 
 #define EFUSE_RD_MAC_SPI_SYS_5_REG          (DR_REG_EFUSE_BASE + 0x58)
 /* EFUSE_SYS_DATA_PART0_2 : RO ;bitpos:[31:0] ;default: 32'h0 ; */
