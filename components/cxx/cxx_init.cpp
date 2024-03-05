@@ -9,7 +9,7 @@
 #include "esp_private/startup_internal.h"
 
 namespace {
-    const char *TAG = "C++ init";
+const char *TAG = "C++ init";
 }
 
 #ifdef CONFIG_COMPILER_CXX_EXCEPTIONS

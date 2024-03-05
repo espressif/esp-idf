@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -28,8 +28,7 @@ extern "C" void tearDown()
 
 static const char* TAG = "cxx";
 
-class NonPOD
-{
+class NonPOD {
 public:
     NonPOD(int a_) : a(a_) { }
     int a;
@@ -60,12 +59,12 @@ TEST_CASE("can use static initializers for non-POD types", "[restart_init]")
 static SemaphoreHandle_t s_slow_init_sem = NULL;
 
 template<int obj>
-class SlowInit
-{
+class SlowInit {
 public:
-    SlowInit(int arg) {
+    SlowInit(int arg)
+    {
         ESP_LOGD(TAG, "init obj=%d start, arg=%d", obj, arg);
-        vTaskDelay(300/portTICK_PERIOD_MS);
+        vTaskDelay(300 / portTICK_PERIOD_MS);
         TEST_ASSERT_EQUAL(-1, mInitBy);
         TEST_ASSERT_EQUAL(0, mInitCount);
         mInitBy = arg;
@@ -73,7 +72,8 @@ public:
         ESP_LOGD(TAG, "init obj=%d done", obj);
     }
 
-    static void task(void* arg) {
+    static void task(void* arg)
+    {
         int taskId = reinterpret_cast<int>(arg);
         ESP_LOGD(TAG, "obj=%d before static init, task=%d", obj, taskId);
         static SlowInit slowinit(taskId);
@@ -95,7 +95,7 @@ template<int obj>
 static int start_slow_init_task(int id, int affinity)
 {
     return xTaskCreatePinnedToCore(&SlowInit<obj>::task, "slow_init", 2048,
-            reinterpret_cast<void*>(id), 3, NULL, affinity) ? 1 : 0;
+                                   reinterpret_cast<void*>(id), 3, NULL, affinity) ? 1 : 0;
 }
 
 TEST_CASE("static initialization guards work as expected", "[misc]")
@@ -122,16 +122,16 @@ TEST_CASE("static initialization guards work as expected", "[misc]")
 
     // All tasks should
     for (int i = 0; i < task_count; ++i) {
-        TEST_ASSERT_TRUE(xSemaphoreTake(s_slow_init_sem, 500/portTICK_PERIOD_MS));
+        TEST_ASSERT_TRUE(xSemaphoreTake(s_slow_init_sem, 500 / portTICK_PERIOD_MS));
     }
     vSemaphoreDelete(s_slow_init_sem);
 
     vTaskDelay(10); // Allow tasks to clean up, avoids race with leak detector
 }
 
-struct GlobalInitTest
-{
-    GlobalInitTest() : index(order++) {
+struct GlobalInitTest {
+    GlobalInitTest() : index(order++)
+    {
     }
     int index;
     static int order;
@@ -150,8 +150,7 @@ TEST_CASE("global initializers run in the correct order", "[misc]")
     TEST_ASSERT_EQUAL(2, g_init_test3.index);
 }
 
-struct StaticInitTestBeforeScheduler
-{
+struct StaticInitTestBeforeScheduler {
     StaticInitTestBeforeScheduler()
     {
         static int first_init_order = getOrder();
@@ -181,8 +180,7 @@ TEST_CASE("before scheduler has started, static initializers work correctly", "[
     TEST_ASSERT_EQUAL(2, StaticInitTestBeforeScheduler::order);
 }
 
-struct PriorityInitTest
-{
+struct PriorityInitTest {
     PriorityInitTest()
     {
         index = getOrder();
@@ -220,15 +218,13 @@ TEST_CASE("can use new and delete", "[misc]")
     delete[] int_array;
 }
 
-class Base
-{
+class Base {
 public:
     virtual ~Base() = default;
     virtual void foo() = 0;
 };
 
-class Derived : public Base
-{
+class Derived : public Base {
 public:
     virtual void foo() { }
 };
@@ -236,7 +232,7 @@ public:
 TEST_CASE("can call virtual functions", "[misc]")
 {
     Derived d;
-    Base& b = static_cast<Base&>(d);
+    Base &b = static_cast<Base &>(d);
     b.foo();
 }
 
@@ -278,7 +274,7 @@ static void recur_and_smash_cxx()
 {
     static int cnt;
     volatile uint8_t buf[50];
-    volatile int num = sizeof(buf)+10;
+    volatile int num = sizeof(buf) + 10;
 
     if (cnt++ < 1) {
         recur_and_smash_cxx();
