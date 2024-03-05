@@ -23,6 +23,7 @@ def test_fatfs_sdcard_generic_sdmmc(dut: Dut) -> None:
 
 
 @pytest.mark.esp32
+@pytest.mark.temp_skip_ci(targets=['esp32'], reason='IDFCI-2058, temporary lack runner')
 @pytest.mark.esp32c3
 @pytest.mark.sdcard_spimode
 @pytest.mark.parametrize(
@@ -58,6 +59,7 @@ def test_fatfs_sdcard_psram_sdmmc(dut: Dut) -> None:
 
 
 @pytest.mark.esp32
+@pytest.mark.temp_skip_ci(targets=['esp32'], reason='IDFCI-2058, temporary lack runner')
 @pytest.mark.sdcard_spimode
 @pytest.mark.psram
 @pytest.mark.parametrize(

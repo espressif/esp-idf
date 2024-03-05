@@ -1,7 +1,5 @@
 # SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
-
-
 import pytest
 from pytest_embedded import Dut
 
@@ -52,6 +50,7 @@ def test_examples_perf_benchmark_sdcard_sdmmc(dut: Dut) -> None:
 
 
 @pytest.mark.esp32
+@pytest.mark.temp_skip_ci(targets=['esp32'], reason='IDFCI-2059, temporary lack runner')
 @pytest.mark.esp32c3
 @pytest.mark.esp32s2
 @pytest.mark.sdcard_spimode
