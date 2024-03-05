@@ -104,4 +104,15 @@ menu "USB-OTG"
         bool
         default y
 
+    config USB_HOST_ENABLE_ENUM_FILTER_CALLBACK
+        bool "Enable enumeration filter callback"
+        default n
+        help
+            The enumeration filter callback is called before enumeration of each newly attached device. This callback
+            allows users to control whether a device should be enumerated, and what configuration number to use when
+            enumerating a device.
+
+            If enabled, the enumeration filter callback can be set via 'usb_host_config_t' when calling
+            'usb_host_install()'.
+
 endmenu #USB-OTG
