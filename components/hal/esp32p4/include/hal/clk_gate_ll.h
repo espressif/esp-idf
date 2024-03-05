@@ -67,40 +67,40 @@ static inline uint32_t periph_ll_get_rst_en_mask(periph_module_t periph, bool en
     case PERIPH_SARADC_MODULE:
         return HP_SYS_CLKRST_REG_RST_EN_ADC;
     case PERIPH_AES_MODULE:
-        ret = HP_SYS_CLKRST_REG_RST_EN_CRYPTO | HP_SYS_CLKRST_REG_RST_EN_AES;
+        ret = HP_SYS_CLKRST_REG_RST_EN_AES;
         if (enable == true) {
             // Clear reset on digital signature, otherwise AES unit is held in reset
             ret |= HP_SYS_CLKRST_REG_RST_EN_DS;
         }
         return ret;
     case PERIPH_DS_MODULE:
-        return HP_SYS_CLKRST_REG_RST_EN_CRYPTO | HP_SYS_CLKRST_REG_RST_EN_DS;
+        return HP_SYS_CLKRST_REG_RST_EN_DS;
     case PERIPH_ECC_MODULE:
-        ret = HP_SYS_CLKRST_REG_RST_EN_CRYPTO | HP_SYS_CLKRST_REG_RST_EN_ECC;
+        ret = HP_SYS_CLKRST_REG_RST_EN_ECC;
         if (enable == true) {
             ret |= HP_SYS_CLKRST_REG_RST_EN_ECDSA;
         }
         return ret;
     case PERIPH_HMAC_MODULE:
-        return HP_SYS_CLKRST_REG_RST_EN_CRYPTO | HP_SYS_CLKRST_REG_RST_EN_HMAC;
+        return HP_SYS_CLKRST_REG_RST_EN_HMAC;
     case PERIPH_RSA_MODULE:
-        ret = HP_SYS_CLKRST_REG_RST_EN_CRYPTO | HP_SYS_CLKRST_REG_RST_EN_RSA;
+        ret = HP_SYS_CLKRST_REG_RST_EN_RSA;
         if (enable == true) {
             // Clear reset on digital signature, and ECDSA, otherwise RSA is held in reset
             ret |= HP_SYS_CLKRST_REG_RST_EN_DS | HP_SYS_CLKRST_REG_RST_EN_ECDSA;
         }
         return ret;
     case PERIPH_SEC_MODULE:
-        return HP_SYS_CLKRST_REG_RST_EN_CRYPTO | HP_SYS_CLKRST_REG_RST_EN_SEC;
+        return HP_SYS_CLKRST_REG_RST_EN_SEC;
     case PERIPH_SHA_MODULE:
-        ret = HP_SYS_CLKRST_REG_RST_EN_CRYPTO | HP_SYS_CLKRST_REG_RST_EN_SHA;
+        ret = HP_SYS_CLKRST_REG_RST_EN_SHA;
         if (enable == true) {
             // Clear reset on digital signature, HMAC and ECDSA, otherwise SHA is held in reset
             ret |= (HP_SYS_CLKRST_REG_RST_EN_HMAC | HP_SYS_CLKRST_REG_RST_EN_DS | HP_SYS_CLKRST_REG_RST_EN_ECDSA);
         }
         return ret;
     case PERIPH_ECDSA_MODULE:
-        return HP_SYS_CLKRST_REG_RST_EN_CRYPTO | HP_SYS_CLKRST_REG_RST_EN_ECDSA;
+        return HP_SYS_CLKRST_REG_RST_EN_ECDSA;
     case PERIPH_EMAC_MODULE:
         return LP_CLKRST_RST_EN_EMAC;
     default:
