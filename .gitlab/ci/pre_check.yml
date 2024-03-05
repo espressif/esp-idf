@@ -50,7 +50,13 @@ check_version:
   extends:
     - .pre_check_template
     - .rules:protected
-    - .before_script:fetch:git_describe
+  tags: [ brew, github_sync ]
+  variables:
+    # need a full clone to get the latest tag
+    # the --shallow-since=$(git log -1 --format=%as $LATEST_GIT_TAG) option is not accurate
+    GIT_STRATEGY: fetch
+    SUBMODULES_TO_FETCH: "none"
+    GIT_DEPTH: 0
   script:
     - export IDF_PATH=$PWD
     - tools/ci/check_idf_version.sh
@@ -144,7 +150,13 @@ check_version_tag:
   extends:
     - .pre_check_template
     - .rules:tag:release
-    - .before_script:fetch:git_describe
+  tags: [ brew, github_sync ]
+  variables:
+    # need a full clone to get the latest tag
+    # the --shallow-since=$(git log -1 --format=%as $LATEST_GIT_TAG) option is not accurate
+    GIT_STRATEGY: fetch
+    SUBMODULES_TO_FETCH: "none"
+    GIT_DEPTH: 0
   script:
     - (git cat-file -t $CI_COMMIT_REF_NAME | grep tag) || (echo "ESP-IDF versions must be annotated tags." && exit 1)
 
