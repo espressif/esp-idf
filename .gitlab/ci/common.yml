@@ -20,8 +20,14 @@ variables:
   MAKEFLAGS: "-j5 --no-keep-going"
 
 # GitLab-CI environment
-
-  # now we have pack-objects cache, so clone strategy is faster than fetch
+  # Thanks to pack-objects cache, clone strategy should behave faster than fetch
+  #   so we pick "clone" as default git strategy
+  # Shiny runners by default remove the CI_PROJECT_DIR every time at the beginning of one job
+  #   and clone with a --depth=1
+  # Brew runners will fetch from locally mirror first, and cache the local CI_PROJECT_DIR
+  # In conclusion
+  # - set GIT_STRATEGY: "clone" to shiny runners
+  # - set GIT_STRATEGY: "fetch" to brew runners
   GIT_STRATEGY: clone
   # we will download archive for each submodule instead of clone.
   # we don't do "recursive" when fetch submodule as they're not used in CI now.
@@ -294,21 +300,6 @@ variables:
         git fetch origin $CI_COMMIT_SHA --depth=2 ${GIT_FETCH_EXTRA_FLAGS}
         export GIT_DIFF_OUTPUT=$(git diff --name-only $CI_COMMIT_SHA~1 $CI_COMMIT_SHA)
       fi
-    - *git_checkout_fetch_head
-    - *common-before_scripts
-    - *setup_tools_and_idf_python_venv
-    - add_gitlab_ssh_keys
-
-# git describe requires commit history until the latest tag
-.before_script:fetch:git_describe:
-  variables:
-    GIT_STRATEGY: none
-  before_script:
-    - *git_init
-    - *git_fetch_from_mirror_url_if_exists
-    - git fetch origin refs/tags/"${LATEST_GIT_TAG}":refs/tags/"${LATEST_GIT_TAG}" --depth=1
-    - git repack -d
-    - git fetch origin $PIPELINE_COMMIT_SHA --shallow-since=$(git log -1 --format=%as "${LATEST_GIT_TAG}")
     - *git_checkout_fetch_head
     - *common-before_scripts
     - *setup_tools_and_idf_python_venv
