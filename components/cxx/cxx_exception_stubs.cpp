@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -35,11 +35,6 @@ static T abort_return()
 }
 
 // unwind-dw2-fde.o
-extern "C" void __wrap__Unwind_SetEnableExceptionFdeSorting(unsigned char enable)
-{
-    abort();
-}
-
 extern "C" void __wrap___register_frame_info_bases (const void *begin, struct object *ob, void *tbase, void *dbase)
 {
     abort();
