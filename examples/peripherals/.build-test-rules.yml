@@ -472,29 +472,6 @@ examples/peripherals/usb/host:
     - components/soc/esp32*/include/soc/usb_wrap_*.h
     - examples/peripherals/usb/host/**/*
 
-
-# Temporarily override and disable cdc_acm_vcp due to component manager CI issue
-examples/peripherals/usb/host/cdc/cdc_acm_vcp:
-  disable:
-    - if: SOC_USB_OTG_SUPPORTED != 1 or IDF_TARGET == "esp32p4"
-      temporary: true
-      reason: CI failing for P4 # IDFCI-2042
-  disable_test:
-    - if: IDF_TARGET not in ["esp32s3"]
-      temporary: true
-      reason: lack of runners with usb_host_flash_disk tag
-  depends_components:
-    - usb
-  depends_filepatterns:
-    - components/hal/usb*.c
-    - components/hal/include/hal/usb*.h
-    - components/hal/esp32*/include/hal/usb*.h
-    - components/soc/esp32*/usb*.c
-    - components/soc/include/soc/usb*.h
-    - components/soc/esp32*/include/soc/usb_dwc_*.h
-    - components/soc/esp32*/include/soc/usb_wrap_*.h
-    - examples/peripherals/usb/host/**/*
-
 examples/peripherals/usb_serial_jtag/usb_serial_jtag_echo:
   disable:
     - if: SOC_USB_SERIAL_JTAG_SUPPORTED != 1
