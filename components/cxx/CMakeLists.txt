@@ -12,7 +12,6 @@ idf_component_register(SRCS "cxx_exception_stubs.cpp"
 
 if(NOT CONFIG_CXX_EXCEPTIONS)
     set(WRAP_FUNCTIONS
-        _Unwind_SetEnableExceptionFdeSorting
         __register_frame_info_bases
         __register_frame_info
         __register_frame
