@@ -1,8 +1,5 @@
-# SPDX-FileCopyrightText: 2018-2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2018-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-
-from __future__ import print_function
-
 import binascii
 from collections import namedtuple
 from io import BytesIO
@@ -19,10 +16,7 @@ from pytest_embedded import Dut
 #   espefuse.py --do-not-confirm -p $ESPPORT burn_efuse FLASH_CRYPT_CONFIG 0xf
 #   espefuse.py --do-not-confirm -p $ESPPORT burn_efuse FLASH_CRYPT_CNT 0x1
 #   espefuse.py --do-not-confirm -p $ESPPORT burn_key flash_encryption key.bin
-@pytest.mark.esp32
-@pytest.mark.esp32c3
-@pytest.mark.flash_encryption
-def test_examples_security_flash_encryption(dut: Dut) -> None:
+def _test_flash_encryption(dut: Dut) -> None:
     # Erase the nvs_key partition
     dut.serial.erase_partition('nvs_key')
     # calculate the expected ciphertext
@@ -66,3 +60,23 @@ def test_examples_security_flash_encryption(dut: Dut) -> None:
     ]
     for line in lines:
         dut.expect(line, timeout=20)
+
+
+@pytest.mark.esp32
+@pytest.mark.esp32c3
+@pytest.mark.flash_encryption
+def test_examples_security_flash_encryption(dut: Dut) -> None:
+    _test_flash_encryption(dut)
+
+
+@pytest.mark.esp32c3
+@pytest.mark.flash_encryption
+@pytest.mark.parametrize(
+    'config',
+    [
+        'rom_impl',
+    ],
+    indirect=True,
+)
+def test_examples_security_flash_encryption_rom_impl(dut: Dut) -> None:
+    _test_flash_encryption(dut)
