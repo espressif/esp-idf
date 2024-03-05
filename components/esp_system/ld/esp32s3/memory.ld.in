@@ -118,6 +118,8 @@ MEMORY
   extern_ram_seg(RWX) :              org = 0x3c000020 , len = 0x2000000-0x20
 }
 
+_diram_i_start = SRAM_DIRAM_I_START;
+
 #if CONFIG_ESP32S3_USE_FIXED_STATIC_RAM_SIZE
 /* static data ends at defined address */
 _heap_start = SRAM_DRAM_ORG + DRAM0_0_SEG_LEN;
