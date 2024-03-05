@@ -72,7 +72,6 @@ static void time_adc_test_task(void* arg)
     vTaskDelete(NULL);
 }
 
-
 TEST_CASE("Reading RTC registers on APP CPU doesn't affect clock", "[newlib]")
 {
     SemaphoreHandle_t done = xSemaphoreCreateBinary();
@@ -82,7 +81,7 @@ TEST_CASE("Reading RTC registers on APP CPU doesn't affect clock", "[newlib]")
     for (int i = 0; i < 4; ++i) {
         struct timeval tv_start;
         gettimeofday(&tv_start, NULL);
-        vTaskDelay(1000/portTICK_PERIOD_MS);
+        vTaskDelay(1000 / portTICK_PERIOD_MS);
         struct timeval tv_stop;
         gettimeofday(&tv_stop, NULL);
         float time_sec = tv_stop.tv_sec - tv_start.tv_sec + 1e-6f * (tv_stop.tv_usec - tv_start.tv_usec);
@@ -190,7 +189,9 @@ static void adjtimeTask2(void *pvParameters)
     while (exit_flag == false) {
         delta.tv_sec += 1;
         delta.tv_usec = 900000;
-        if (delta.tv_sec >= 2146) delta.tv_sec = 1;
+        if (delta.tv_sec >= 2146) {
+            delta.tv_sec = 1;
+        }
         adjtime(&delta, &outdelta);
     }
     xSemaphoreGive(*sema);
@@ -242,7 +243,7 @@ TEST_CASE("test for no interlocking adjtime, gettimeofday and settimeofday funct
     // set exit flag to let thread exit
     exit_flag = true;
     for (int i = 0; i < max_tasks; ++i) {
-        if (!xSemaphoreTake(exit_sema[i], 2000/portTICK_PERIOD_MS)) {
+        if (!xSemaphoreTake(exit_sema[i], 2000 / portTICK_PERIOD_MS)) {
             TEST_FAIL_MESSAGE("exit_sema not released by test task");
         }
         vSemaphoreDelete(exit_sema[i]);
@@ -284,7 +285,7 @@ static int64_t calc_correction(const char* tag, int64_t* sys_time, int64_t* real
     int64_t real_correction_us = dt_sys_time_us - dt_real_time_us;
     int64_t error_us = calc_correction_us - real_correction_us;
     printf("%s: dt_real_time = %lli us, dt_sys_time = %lli us, calc_correction = %lli us, error = %lli us\n",
-            tag, dt_real_time_us, dt_sys_time_us, calc_correction_us, error_us);
+           tag, dt_real_time_us, dt_sys_time_us, calc_correction_us, error_us);
 
     TEST_ASSERT_TRUE(dt_sys_time_us > 0 && dt_real_time_us > 0);
     TEST_ASSERT_INT_WITHIN(100, 0, error_us);
@@ -349,7 +350,7 @@ TEST_CASE("test time adjustment happens linearly", "[newlib][timeout=15]")
     exit_flag = true;
 
     for (int i = 0; i < 2; ++i) {
-        if (!xSemaphoreTake(exit_sema[i], 2100/portTICK_PERIOD_MS)) {
+        if (!xSemaphoreTake(exit_sema[i], 2100 / portTICK_PERIOD_MS)) {
             TEST_FAIL_MESSAGE("exit_sema not released by test task");
         }
     }
@@ -360,7 +361,7 @@ TEST_CASE("test time adjustment happens linearly", "[newlib][timeout=15]")
 }
 #endif
 
-void test_posix_timers_clock (void)
+void test_posix_timers_clock(void)
 {
 #ifndef _POSIX_TIMERS
     TEST_ASSERT_MESSAGE(false, "_POSIX_TIMERS - is not defined");
@@ -475,7 +476,7 @@ static struct timeval get_time(const char *desc, char *buffer)
 TEST_CASE("test time_t wide 64 bits", "[newlib]")
 {
     static char buffer[32];
-    ESP_LOGI("TAG", "sizeof(time_t): %d (%d-bit)", sizeof(time_t), sizeof(time_t)*8);
+    ESP_LOGI("TAG", "sizeof(time_t): %d (%d-bit)", sizeof(time_t), sizeof(time_t) * 8);
     TEST_ASSERT_EQUAL(8, sizeof(time_t));
 
     // mktime takes current timezone into account, this test assumes it's UTC+0
@@ -562,7 +563,6 @@ TEST_CASE("test time functions wide 64 bits", "[newlib]")
 
 extern int64_t s_microseconds_offset;
 static const uint64_t s_start_timestamp  = 1606838354;
-
 
 static __NOINIT_ATTR uint64_t s_saved_time;
 static __NOINIT_ATTR uint64_t s_time_in_reboot;
@@ -661,7 +661,6 @@ static void check_time(void)
     TEST_ASSERT_GREATER_OR_EQUAL(0, dt);
     TEST_ASSERT_LESS_OR_EQUAL(latency_before_run_ut, dt);
 }
-
 
 TEST_CASE_MULTIPLE_STAGES("Timestamp after abort is correct in case RTC & High-res timer have + big error", "[newlib][reset=abort,SW_CPU_RESET]", set_timestamp1, check_time);
 TEST_CASE_MULTIPLE_STAGES("Timestamp after restart is correct in case RTC & High-res timer have + big error", "[newlib][reset=SW_CPU_RESET]", set_timestamp2, check_time);

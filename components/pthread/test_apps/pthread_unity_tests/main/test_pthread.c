@@ -232,7 +232,7 @@ static void test_mutex_lock_unlock(int mutex_type)
 
         res = pthread_mutex_lock(&mutex);
 
-        if(mutex_type == PTHREAD_MUTEX_ERRORCHECK) {
+        if (mutex_type == PTHREAD_MUTEX_ERRORCHECK) {
             TEST_ASSERT_EQUAL_INT(EDEADLK, res);
         } else {
             TEST_ASSERT_EQUAL_INT(0, res);

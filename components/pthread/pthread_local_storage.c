@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,7 +17,7 @@
 
 /* Sanity check to ensure that the number of FreeRTOS TLSPs is at least 1 */
 #if (CONFIG_FREERTOS_THREAD_LOCAL_STORAGE_POINTERS < 1)
-    #error "CONFIG_FREERTOS_THREAD_LOCAL_STORAGE_POINTERS cannot be 0 for pthread TLS"
+#error "CONFIG_FREERTOS_THREAD_LOCAL_STORAGE_POINTERS cannot be 0 for pthread TLS"
 #endif
 
 #define PTHREAD_TLS_INDEX 0
@@ -77,7 +77,7 @@ static key_entry_t *find_key(pthread_key_t key)
     portENTER_CRITICAL(&s_keys_lock);
     key_entry_t *result = NULL;;
     SLIST_FOREACH(result, &s_keys, next) {
-        if(result->key == key) {
+        if (result->key == key) {
             break;
         }
     }
@@ -171,7 +171,7 @@ static value_entry_t *find_value(const values_list_t *list, pthread_key_t key)
 {
     value_entry_t *result = NULL;;
     SLIST_FOREACH(result, list, next) {
-        if(result->key == key) {
+        if (result->key == key) {
             break;
         }
     }
@@ -186,7 +186,7 @@ void *pthread_getspecific(pthread_key_t key)
     }
 
     value_entry_t *entry = find_value(tls, key);
-    if(entry != NULL) {
+    if (entry != NULL) {
         return entry->value;
     }
     return NULL;

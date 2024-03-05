@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -18,12 +18,12 @@
 
 TEST_CASE("test ctype functions", "[newlib]")
 {
-    TEST_ASSERT_TRUE( isalnum('a') && isalnum('A') && isalnum('z') && isalnum('Z') && isalnum('0') && isalnum('9') );
-    TEST_ASSERT_FALSE( isalnum('(') || isalnum('-') || isalnum(' ') || isalnum('\x81') || isalnum('.') || isalnum('\\') );
-    TEST_ASSERT_TRUE( isalpha('a') && isalpha('A') && isalpha('z') && isalpha('Z') );
-    TEST_ASSERT_FALSE( isalpha('0') || isalpha('9') || isalpha(')') || isalpha('\t') || isalpha(' ') || isalpha('\x81') );
-    TEST_ASSERT_TRUE( isspace(' ') && isspace('\t') && isspace('\n') && isspace('\r') );
-    TEST_ASSERT_FALSE( isspace('0') || isspace('9') || isspace(')') || isspace('A') || isspace('*') || isspace('\x81') || isspace('a'));
+    TEST_ASSERT_TRUE(isalnum('a') && isalnum('A') && isalnum('z') && isalnum('Z') && isalnum('0') && isalnum('9'));
+    TEST_ASSERT_FALSE(isalnum('(') || isalnum('-') || isalnum(' ') || isalnum('\x81') || isalnum('.') || isalnum('\\'));
+    TEST_ASSERT_TRUE(isalpha('a') && isalpha('A') && isalpha('z') && isalpha('Z'));
+    TEST_ASSERT_FALSE(isalpha('0') || isalpha('9') || isalpha(')') || isalpha('\t') || isalpha(' ') || isalpha('\x81'));
+    TEST_ASSERT_TRUE(isspace(' ') && isspace('\t') && isspace('\n') && isspace('\r'));
+    TEST_ASSERT_FALSE(isspace('0') || isspace('9') || isspace(')') || isspace('A') || isspace('*') || isspace('\x81') || isspace('a'));
 }
 
 TEST_CASE("test atoX functions", "[newlib]")
@@ -74,27 +74,26 @@ TEST_CASE("test time functions", "[newlib]")
     setenv("TZ", "UTC-8", 1);
     tzset();
     struct tm *tm_utc = gmtime(&now);
-    TEST_ASSERT_EQUAL( 28, tm_utc->tm_sec);
-    TEST_ASSERT_EQUAL( 41, tm_utc->tm_min);
-    TEST_ASSERT_EQUAL(  7, tm_utc->tm_hour);
-    TEST_ASSERT_EQUAL( 26, tm_utc->tm_mday);
-    TEST_ASSERT_EQUAL(  4, tm_utc->tm_mon);
+    TEST_ASSERT_EQUAL(28, tm_utc->tm_sec);
+    TEST_ASSERT_EQUAL(41, tm_utc->tm_min);
+    TEST_ASSERT_EQUAL(7, tm_utc->tm_hour);
+    TEST_ASSERT_EQUAL(26, tm_utc->tm_mday);
+    TEST_ASSERT_EQUAL(4, tm_utc->tm_mon);
     TEST_ASSERT_EQUAL(116, tm_utc->tm_year);
-    TEST_ASSERT_EQUAL(  4, tm_utc->tm_wday);
+    TEST_ASSERT_EQUAL(4, tm_utc->tm_wday);
     TEST_ASSERT_EQUAL(146, tm_utc->tm_yday);
 
     struct tm *tm_local = localtime(&now);
-    TEST_ASSERT_EQUAL( 28, tm_local->tm_sec);
-    TEST_ASSERT_EQUAL( 41, tm_local->tm_min);
-    TEST_ASSERT_EQUAL( 15, tm_local->tm_hour);
-    TEST_ASSERT_EQUAL( 26, tm_local->tm_mday);
-    TEST_ASSERT_EQUAL(  4, tm_local->tm_mon);
+    TEST_ASSERT_EQUAL(28, tm_local->tm_sec);
+    TEST_ASSERT_EQUAL(41, tm_local->tm_min);
+    TEST_ASSERT_EQUAL(15, tm_local->tm_hour);
+    TEST_ASSERT_EQUAL(26, tm_local->tm_mday);
+    TEST_ASSERT_EQUAL(4, tm_local->tm_mon);
     TEST_ASSERT_EQUAL(116, tm_local->tm_year);
-    TEST_ASSERT_EQUAL(  4, tm_local->tm_wday);
+    TEST_ASSERT_EQUAL(4, tm_local->tm_wday);
     TEST_ASSERT_EQUAL(146, tm_local->tm_yday);
 
 }
-
 
 TEST_CASE("test asctime", "[newlib]")
 {
@@ -204,7 +203,6 @@ TEST_CASE("test 64bit int formats", "[newlib]")
 }
 #endif // CONFIG_NEWLIB_NANO_FORMAT
 
-
 TEST_CASE("fmod and fmodf work as expected", "[newlib]")
 {
     TEST_ASSERT_EQUAL(0.1, fmod(10.1, 2.0));
@@ -215,7 +213,6 @@ TEST_CASE("newlib: can link 'system', 'raise'", "[newlib]")
 {
     printf("system: %p, raise: %p\n", &system, &raise);
 }
-
 
 TEST_CASE("newlib: rom and toolchain localtime func gives the same result", "[newlib]")
 {

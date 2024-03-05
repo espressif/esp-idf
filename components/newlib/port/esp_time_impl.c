@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -50,8 +50,6 @@
 #include "esp32p4/rtc.h"
 #endif
 
-
-
 // Offset between High resolution timer and the RTC.
 // Initialized after reset or light sleep.
 #if defined(CONFIG_ESP_TIME_FUNCS_USE_RTC_TIMER) && defined(CONFIG_ESP_TIME_FUNCS_USE_ESP_TIMER)
@@ -94,13 +92,12 @@ uint64_t esp_time_impl_get_time(void)
 
 #endif // defined( CONFIG_ESP_TIME_FUNCS_USE_ESP_TIMER ) || defined( CONFIG_ESP_TIME_FUNCS_USE_RTC_TIMER )
 
-
 void esp_time_impl_set_boot_time(uint64_t time_us)
 {
     _lock_acquire(&s_boot_time_lock);
 #ifdef CONFIG_ESP_TIME_FUNCS_USE_RTC_TIMER
-    REG_WRITE(RTC_BOOT_TIME_LOW_REG, (uint32_t) (time_us & 0xffffffff));
-    REG_WRITE(RTC_BOOT_TIME_HIGH_REG, (uint32_t) (time_us >> 32));
+    REG_WRITE(RTC_BOOT_TIME_LOW_REG, (uint32_t)(time_us & 0xffffffff));
+    REG_WRITE(RTC_BOOT_TIME_HIGH_REG, (uint32_t)(time_us >> 32));
 #else
     s_boot_time = time_us;
 #endif

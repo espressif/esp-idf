@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -24,7 +24,7 @@ int sem_destroy(sem_t * semaphore)
         return -1;
     }
 
-    SemaphoreHandle_t freertos_semaphore = (SemaphoreHandle_t) *semaphore;
+    SemaphoreHandle_t freertos_semaphore = (SemaphoreHandle_t) * semaphore;
     vSemaphoreDelete(freertos_semaphore);
     return 0;
 }
@@ -60,7 +60,7 @@ int sem_post(sem_t * semaphore)
         return -1;
     }
 
-    SemaphoreHandle_t freertos_semaphore = (SemaphoreHandle_t) *semaphore;
+    SemaphoreHandle_t freertos_semaphore = (SemaphoreHandle_t) * semaphore;
     BaseType_t ret = xSemaphoreGive(freertos_semaphore);
 
     if (ret == pdFALSE) {
@@ -96,7 +96,7 @@ int sem_timedwait(sem_t * restrict semaphore, const struct timespec *restrict ab
         long timeout_msec;
         // Round up timeout nanoseconds to the next millisecond
         timeout_msec = (diff_time.tv_sec * 1000) +
-            ((diff_time.tv_nsec + (1 * MIO) - 1) / (1 * MIO));
+                       ((diff_time.tv_nsec + (1 * MIO) - 1) / (1 * MIO));
 
         // Round up milliseconds to the next tick
         timeout_ticks = (timeout_msec + portTICK_PERIOD_MS - 1) / portTICK_PERIOD_MS;
@@ -112,7 +112,7 @@ int sem_timedwait(sem_t * restrict semaphore, const struct timespec *restrict ab
         timeout_ticks += 1;
     }
 
-    SemaphoreHandle_t freertos_semaphore = (SemaphoreHandle_t) *semaphore;
+    SemaphoreHandle_t freertos_semaphore = (SemaphoreHandle_t) * semaphore;
     BaseType_t sem_take_result;
     sem_take_result = xSemaphoreTake(freertos_semaphore, timeout_ticks);
     if (sem_take_result == pdFALSE) {
@@ -130,7 +130,7 @@ int sem_trywait(sem_t * semaphore)
         return -1;
     }
 
-    SemaphoreHandle_t freertos_semaphore = (SemaphoreHandle_t) *semaphore;
+    SemaphoreHandle_t freertos_semaphore = (SemaphoreHandle_t) * semaphore;
 
     BaseType_t ret = xSemaphoreTake(freertos_semaphore, 0);
 
@@ -149,7 +149,7 @@ int sem_wait(sem_t * semaphore)
         return -1;
     }
 
-    SemaphoreHandle_t freertos_semaphore = (SemaphoreHandle_t) *semaphore;
+    SemaphoreHandle_t freertos_semaphore = (SemaphoreHandle_t) * semaphore;
 
     // Only returns failure if block time expires, but we block indefinitely, hence not return code check
     xSemaphoreTake(freertos_semaphore, portMAX_DELAY);
@@ -168,7 +168,7 @@ int sem_getvalue(sem_t *restrict semaphore, int *restrict sval)
         return -1;
     }
 
-    SemaphoreHandle_t freertos_semaphore = (SemaphoreHandle_t) *semaphore;
+    SemaphoreHandle_t freertos_semaphore = (SemaphoreHandle_t) * semaphore;
     *sval = uxSemaphoreGetCount(freertos_semaphore);
     return 0;
 }

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,14 +11,13 @@
 #include <malloc.h>
 #include "esp_heap_caps.h"
 
-
 /*
  These contain the business logic for the malloc() and realloc() implementation. Because of heap tracing
  wrapping reasons, we do not want these to be a public api, however, so they're not defined publicly.
 */
-extern void *heap_caps_malloc_default( size_t size );
-extern void *heap_caps_realloc_default( void *ptr, size_t size );
-extern void *heap_caps_aligned_alloc_default( size_t alignment, size_t size );
+extern void *heap_caps_malloc_default(size_t size);
+extern void *heap_caps_realloc_default(void *ptr, size_t size);
+extern void *heap_caps_aligned_alloc_default(size_t alignment, size_t size);
 
 void* malloc(size_t size)
 {
@@ -52,7 +51,7 @@ void _free_r(struct _reent *r, void* ptr)
 
 void* _realloc_r(struct _reent *r, void* ptr, size_t size)
 {
-    return heap_caps_realloc_default( ptr, size );
+    return heap_caps_realloc_default(ptr, size);
 }
 
 void* _calloc_r(struct _reent *r, size_t nmemb, size_t size)

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -297,7 +297,6 @@ CLANG_DECLARE_ALIAS( __sync_lock_test_and_set_ ## n )
 }                                                                                \
 CLANG_DECLARE_ALIAS( __sync_lock_release_ ## n )
 
-
 #if !HAS_ATOMICS_32
 
 _Static_assert(sizeof(unsigned char) == 1, "atomics require a 1-byte type");
@@ -376,21 +375,21 @@ SYNC_OP_FETCH(sub, 1, unsigned char)
 SYNC_OP_FETCH(sub, 2, short unsigned int)
 SYNC_OP_FETCH(sub, 4, unsigned int)
 
-SYNC_FETCH_OP(and, 1, unsigned char)
-SYNC_FETCH_OP(and, 2, short unsigned int)
-SYNC_FETCH_OP(and, 4, unsigned int)
+SYNC_FETCH_OP( and, 1, unsigned char)
+SYNC_FETCH_OP( and, 2, short unsigned int)
+SYNC_FETCH_OP( and, 4, unsigned int)
 
-SYNC_OP_FETCH(and, 1, unsigned char)
-SYNC_OP_FETCH(and, 2, short unsigned int)
-SYNC_OP_FETCH(and, 4, unsigned int)
+SYNC_OP_FETCH( and, 1, unsigned char)
+SYNC_OP_FETCH( and, 2, short unsigned int)
+SYNC_OP_FETCH( and, 4, unsigned int)
 
-SYNC_FETCH_OP(or, 1, unsigned char)
-SYNC_FETCH_OP(or, 2, short unsigned int)
-SYNC_FETCH_OP(or, 4, unsigned int)
+SYNC_FETCH_OP( or, 1, unsigned char)
+SYNC_FETCH_OP( or, 2, short unsigned int)
+SYNC_FETCH_OP( or, 4, unsigned int)
 
-SYNC_OP_FETCH(or, 1, unsigned char)
-SYNC_OP_FETCH(or, 2, short unsigned int)
-SYNC_OP_FETCH(or, 4, unsigned int)
+SYNC_OP_FETCH( or, 1, unsigned char)
+SYNC_OP_FETCH( or, 2, short unsigned int)
+SYNC_OP_FETCH( or, 4, unsigned int)
 
 SYNC_FETCH_OP(xor, 1, unsigned char)
 SYNC_FETCH_OP(xor, 2, short unsigned int)
@@ -416,7 +415,6 @@ SYNC_VAL_CMP_EXCHANGE(1, unsigned char)
 SYNC_VAL_CMP_EXCHANGE(2, short unsigned int)
 SYNC_VAL_CMP_EXCHANGE(4, unsigned int)
 
-
 SYNC_LOCK_TEST_AND_SET(1, unsigned char)
 SYNC_LOCK_TEST_AND_SET(2, short unsigned int)
 SYNC_LOCK_TEST_AND_SET(4, unsigned int)
@@ -436,15 +434,17 @@ ATOMIC_STORE(4, unsigned int)
 
 #elif __riscv_atomic == 1
 
-bool CLANG_ATOMIC_SUFFIX(__atomic_always_lock_free) (unsigned int size, const volatile void *) {
-  return size <= sizeof(int);
+bool CLANG_ATOMIC_SUFFIX(__atomic_always_lock_free)(unsigned int size, const volatile void *)
+{
+    return size <= sizeof(int);
 }
-CLANG_DECLARE_ALIAS( __atomic_always_lock_free)
+CLANG_DECLARE_ALIAS(__atomic_always_lock_free)
 
-bool CLANG_ATOMIC_SUFFIX(__atomic_is_lock_free) (unsigned int size, const volatile void *) {
-  return size <= sizeof(int);
+bool CLANG_ATOMIC_SUFFIX(__atomic_is_lock_free)(unsigned int size, const volatile void *)
+{
+    return size <= sizeof(int);
 }
-CLANG_DECLARE_ALIAS( __atomic_is_lock_free)
+CLANG_DECLARE_ALIAS(__atomic_is_lock_free)
 
 #endif // !HAS_ATOMICS_32
 
@@ -484,9 +484,9 @@ SYNC_FETCH_OP(add, 8, long long unsigned int)
 
 SYNC_FETCH_OP(sub, 8, long long unsigned int)
 
-SYNC_FETCH_OP(and, 8, long long unsigned int)
+SYNC_FETCH_OP( and, 8, long long unsigned int)
 
-SYNC_FETCH_OP(or, 8, long long unsigned int)
+SYNC_FETCH_OP( or, 8, long long unsigned int)
 
 SYNC_FETCH_OP(xor, 8, long long unsigned int)
 
@@ -496,9 +496,9 @@ SYNC_OP_FETCH(add, 8, long long unsigned int)
 
 SYNC_OP_FETCH(sub, 8, long long unsigned int)
 
-SYNC_OP_FETCH(and, 8, long long unsigned int)
+SYNC_OP_FETCH( and, 8, long long unsigned int)
 
-SYNC_OP_FETCH(or, 8, long long unsigned int)
+SYNC_OP_FETCH( or, 8, long long unsigned int)
 
 SYNC_OP_FETCH(xor, 8, long long unsigned int)
 
@@ -519,21 +519,24 @@ ATOMIC_STORE(8, long long unsigned int)
 #endif // !HAS_ATOMICS_64
 
 // Clang generates calls to the __atomic_load/__atomic_store functions for object size more then 4 bytes
-void CLANG_ATOMIC_SUFFIX( __atomic_load ) (size_t size, const volatile void *src, void *dest, int model) {
+void CLANG_ATOMIC_SUFFIX(__atomic_load)(size_t size, const volatile void *src, void *dest, int model)
+{
     unsigned state = _ATOMIC_ENTER_CRITICAL();
     memcpy(dest, (const void *)src, size);
     _ATOMIC_EXIT_CRITICAL(state);
 }
-CLANG_DECLARE_ALIAS( __atomic_load )
+CLANG_DECLARE_ALIAS(__atomic_load)
 
-void CLANG_ATOMIC_SUFFIX( __atomic_store ) (size_t size, volatile void *dest, void *src, int model) {
+void CLANG_ATOMIC_SUFFIX(__atomic_store)(size_t size, volatile void *dest, void *src, int model)
+{
     unsigned state = _ATOMIC_ENTER_CRITICAL();
     memcpy((void *)dest, (const void *)src, size);
     _ATOMIC_EXIT_CRITICAL(state);
 }
-CLANG_DECLARE_ALIAS( __atomic_store)
+CLANG_DECLARE_ALIAS(__atomic_store)
 
-bool CLANG_ATOMIC_SUFFIX(__atomic_compare_exchange) (size_t size, volatile void *ptr, void *expected, void *desired, int success_memorder, int failure_memorder) {
+bool CLANG_ATOMIC_SUFFIX(__atomic_compare_exchange)(size_t size, volatile void *ptr, void *expected, void *desired, int success_memorder, int failure_memorder)
+{
     bool ret = false;
     unsigned state = _ATOMIC_ENTER_CRITICAL();
     if (!memcmp((void *)ptr, expected, size)) {
@@ -545,4 +548,4 @@ bool CLANG_ATOMIC_SUFFIX(__atomic_compare_exchange) (size_t size, volatile void 
     _ATOMIC_EXIT_CRITICAL(state);
     return ret;
 }
-CLANG_DECLARE_ALIAS( __atomic_compare_exchange)
+CLANG_DECLARE_ALIAS(__atomic_compare_exchange)

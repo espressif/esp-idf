@@ -1,6 +1,6 @@
 
 /*
- * SPDX-FileCopyrightText: 2018-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,15 +17,15 @@
 #endif
 
 #ifndef EAI_SOCKTYPE
-#define	EAI_SOCKTYPE	10	/* ai_socktype not supported */
+#define EAI_SOCKTYPE    10  /* ai_socktype not supported */
 #endif
 
 #ifndef EAI_AGAIN
-#define	EAI_AGAIN	     2   /* temporary failure in name resolution */
+#define EAI_AGAIN        2   /* temporary failure in name resolution */
 #endif
 
 #ifndef EAI_BADFLAGS
-#define	EAI_BADFLAGS	 3	 /* invalid value for ai_flags */
+#define EAI_BADFLAGS     3   /* invalid value for ai_flags */
 #endif
 
 #endif // _ESP_PLATFORM_ERRNO_H_
