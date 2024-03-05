@@ -166,7 +166,7 @@ menu "Ethernet"
                 supporting HP Auto-MDIX, low power design, and IEEE 802.3u compliant.
                 The CH390 has a built-in 16K byte SRAM, supports 3.3V or 2.5V parallel interface
                 and SPI serial interface.
-                Select this to enable KSZ8851SNL driver.
+                Select this to enable CH390 driver.
     endif # ETH_USE_SPI_ETHERNET
 
     menuconfig ETH_USE_OPENETH
