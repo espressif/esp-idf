@@ -151,10 +151,14 @@ static esp_err_t lcd_rgb_panel_alloc_frame_buffers(const esp_lcd_rgb_panel_confi
             if (fb_in_psram) {
                 // the low level malloc function will help check the validation of alignment
                 rgb_panel->fbs[i] = heap_caps_aligned_calloc(psram_trans_align, 1, rgb_panel->fb_size, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
+                ESP_RETURN_ON_FALSE(rgb_panel->fbs[i], ESP_ERR_NO_MEM, TAG, "no mem for frame buffer");
+                // calloc not only allocates but also zero's the buffer. We have to make sure this is
+                // properly committed to the PSRAM, otherwise all sorts of visual corruption will happen.
+                Cache_WriteBack_Addr((uint32_t)rgb_panel->fbs[i], rgb_panel->fb_size);
             } else {
                 rgb_panel->fbs[i] = heap_caps_aligned_calloc(sram_trans_align, 1, rgb_panel->fb_size, MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA);
+                ESP_RETURN_ON_FALSE(rgb_panel->fbs[i], ESP_ERR_NO_MEM, TAG, "no mem for frame buffer");
             }
-            ESP_RETURN_ON_FALSE(rgb_panel->fbs[i], ESP_ERR_NO_MEM, TAG, "no mem for frame buffer");
         }
     }
 
