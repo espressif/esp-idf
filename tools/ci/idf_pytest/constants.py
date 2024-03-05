@@ -58,7 +58,6 @@ ENV_MARKERS = {
     'eth_dm9051': 'SPI Ethernet module with two DM9051',
     'quad_psram': 'runners with quad psram',
     'octal_psram': 'runners with octal psram',
-    'usb_host': 'usb host runners',
     'usb_host_flash_disk': 'usb host runners with USB flash disk attached',
     'usb_device': 'usb device runners',
     'ethernet_ota': 'ethernet OTA runners',
