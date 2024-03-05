@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  *
- * SPDX-FileContributor: 2019-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2019-2024 Espressif Systems (Shanghai) CO LTD
  */
 
 #include <assert.h>
@@ -842,15 +842,35 @@ ble_npl_time_t
 IRAM_ATTR npl_freertos_callout_get_ticks(struct ble_npl_callout *co)
 {
 #if BLE_NPL_USE_ESP_TIMER
-   /* Currently, esp_timer does not support an API which gets the expiry time for
-    * current timer.
-    * Returning 0 from here should not cause any effect.
+
+     uint32_t exp = 0;
+
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
+     uint64_t expiry = 0;
+     esp_err_t err;
+
+     struct ble_npl_callout_freertos *callout = (struct ble_npl_callout_freertos *)co->co;
+
+     //Fetch expiry time in microseconds
+     err = esp_timer_get_expiry_time((esp_timer_handle_t)(callout->handle), &expiry);
+     if (err != ESP_OK) {
+         //Error. Could not fetch the expiry time
+         return 0;
+     }
+
+     //Convert microseconds to ticks
+     npl_freertos_time_ms_to_ticks((uint32_t)(expiry / 1000), &exp);
+#else
+     //esp_timer_get_expiry_time() is only available from IDF 5.0 onwards
+    /* Returning 0 from here should not cause any effect.
     * Drawback of this approach is that existing code to reset timer would be called
     * more often (since the if condition to invoke reset timer would always succeed if
     * timer is active).
     */
+     exp = 0;
+#endif //ESP_IDF_VERSION
 
-    return 0;
+    return exp;
 #else
     struct ble_npl_callout_freertos *callout = (struct ble_npl_callout_freertos *)co->co;
     return xTimerGetExpiryTime(callout->handle);
