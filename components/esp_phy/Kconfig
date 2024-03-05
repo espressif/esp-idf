@@ -154,4 +154,10 @@ menu "PHY"
             high interference, enable this option will sacrifice Wi-Fi OFDM receive performance.
             But to guarantee 11b receive performance serves as a bottom line in this case.
 
+    config ESP_PHY_PLL_TRACK_DEBUG
+        bool "Enable pll track logging"
+        default n
+        help
+            If enabled, there will be some logs while pll tracking
+
 endmenu  # PHY
