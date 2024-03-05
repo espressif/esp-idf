@@ -107,7 +107,11 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdio.h>
-#include <stdio_ext.h>
+#if !CONFIG_IDF_TARGET_LINUX
+// On Linux, we don't need __fbufsize (see comments below), and
+// __fbufsize not available on MacOS (which is also considered "Linux" target)
+#include <stdio_ext.h> // for __fbufsize
+#endif
 #include <errno.h>
 #include <string.h>
 #include <stdlib.h>
@@ -216,9 +220,14 @@ bool linenoiseIsDumbMode(void) {
 }
 
 static void flushWrite(void) {
+// On Linux, we set stdout to unbuffered mode to facilitate interaction with tools.
+// Performance on Linux is not considered as critical as on chip targets. Additionally,
+// MacOS does not have __fbufsize.
+#if !CONFIG_IDF_TARGET_LINUX
     if (__fbufsize(stdout) > 0) {
         fflush(stdout);
     }
+#endif
     fsync(fileno(stdout));
 }
 
