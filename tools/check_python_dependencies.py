@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 #
-# SPDX-FileCopyrightText: 2018-2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2018-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-
 import argparse
 import os
 import re
@@ -18,11 +17,11 @@ except ImportError:
     sys.exit(1)
 
 try:
-    from importlib.metadata import PackageNotFoundError, requires
+    from importlib.metadata import requires
     from importlib.metadata import version as get_version
 except ImportError:
     # compatibility for python <=3.7
-    from importlib_metadata import PackageNotFoundError, requires  # type: ignore
+    from importlib_metadata import requires  # type: ignore
     from importlib_metadata import version as get_version  # type: ignore
 
 try:
@@ -92,8 +91,10 @@ if __name__ == '__main__':
         if not req.marker or req.marker.evaluate():
             try:
                 version_check(req)
-            except PackageNotFoundError as e:
-                not_satisfied.append(f"'{e}' - was not found and is required by the application")
+            except Exception as e:
+                # Catch general exception, because get_version may return None (https://github.com/python/cpython/issues/91216)
+                # log package name alongside the error message for easier debugging
+                not_satisfied.append(f"Error while checking requirement '{req}'. Package was not found and is required by the application: {e}")
                 new_req_list.remove(req)
         else:
             new_req_list.remove(req)
@@ -120,8 +121,10 @@ if __name__ == '__main__':
                 # version is taken into account as well because packages can have different requirements for a given
                 # Python package. The dependencies need to be checked for all of them because they can be different.
                 new_req_list.extend(dependency_requirements - already_checked)
-            except PackageNotFoundError as e:
-                not_satisfied.append(f"'{e}' - was not found and is required by the application")
+            except Exception as e:
+                # Catch general exception, because get_version may return None (https://github.com/python/cpython/issues/91216)
+                # log package name alongside the error message for easier debugging
+                not_satisfied.append(f"Error while checking requirement '{req}'. Package was not found and is required by the application: {e}")
 
     if len(not_satisfied) > 0:
         print('The following Python requirements are not satisfied:')
