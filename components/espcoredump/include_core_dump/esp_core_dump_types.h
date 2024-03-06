@@ -96,15 +96,13 @@ extern "C" {
  */
 #define COREDUMP_VERSION_CHIP CONFIG_IDF_FIRMWARE_CHIP_ID
 
-
 typedef struct _core_dump_write_data_t
 {
     uint32_t off; /*!< Current offset of data being written */
     uint8_t  cached_data[COREDUMP_CACHE_SIZE]; /*!< Cache used to write to flash */
     uint8_t  cached_bytes; /*!< Number of bytes filled in the cached */
-    core_dump_checksum_ctx* checksum_ctx; /*!< Checksum context */
+    void *checksum_ctx; /*!< Checksum context */
 } core_dump_write_data_t;
-
 
 /**
  * @brief Types below define the signatures of the callbacks that are used

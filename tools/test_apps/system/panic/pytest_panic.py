@@ -1,8 +1,9 @@
-# SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
-
 import re
-from typing import List, Optional, Union
+from typing import List
+from typing import Optional
+from typing import Union
 
 import pexpect
 import pytest
@@ -25,7 +26,7 @@ TARGETS_TESTED = [
 # with some exceptions.
 CONFIGS = [
     pytest.param('coredump_flash_bin_crc', marks=TARGETS_TESTED),
-    pytest.param('coredump_flash_elf_sha', marks=[pytest.mark.esp32]),  # sha256 only supported on esp32, IDF-1820
+    pytest.param('coredump_flash_elf_sha', marks=TARGETS_TESTED),
     pytest.param('coredump_uart_bin_crc', marks=TARGETS_TESTED),
     pytest.param('coredump_uart_elf_crc', marks=TARGETS_TESTED),
     pytest.param('gdbstub', marks=TARGETS_TESTED),
@@ -36,7 +37,7 @@ CONFIGS = [
 TARGETS_DUAL_CORE = [pytest.mark.esp32, pytest.mark.esp32s3]
 CONFIGS_DUAL_CORE = [
     pytest.param('coredump_flash_bin_crc', marks=TARGETS_DUAL_CORE),
-    pytest.param('coredump_flash_elf_sha', marks=[pytest.mark.esp32]),  # sha256 only supported on esp32, IDF-1820
+    pytest.param('coredump_flash_elf_sha', marks=TARGETS_DUAL_CORE),
     pytest.param('coredump_uart_bin_crc', marks=TARGETS_DUAL_CORE),
     pytest.param('coredump_uart_elf_crc', marks=TARGETS_DUAL_CORE),
     pytest.param('gdbstub', marks=TARGETS_DUAL_CORE),
