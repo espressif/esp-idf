@@ -7,6 +7,10 @@
 #ifndef _BLE_MESH_FAST_PROV_SERVER_MODEL_H_
 #define _BLE_MESH_FAST_PROV_SERVER_MODEL_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "ble_mesh_fast_prov_common.h"
 
 #define DISABLE_FAST_PROV_TIMEOUT       K_SECONDS(10)
@@ -90,5 +94,9 @@ esp_err_t example_handle_fast_prov_status_send_comp_evt(int err_code, uint32_t o
         esp_ble_mesh_model_t *model, esp_ble_mesh_msg_ctx_t *ctx);
 
 esp_err_t example_fast_prov_server_init(esp_ble_mesh_model_t *model);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _BLE_MESH_FAST_PROV_SERVER_MODEL_H_ */
