@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -42,12 +42,21 @@ typedef enum {
 
 /**
  * @brief The multiple of MCLK to sample rate
+ * @note  MCLK is the minimum resolution of the I2S clock.
+ *        Increasing mclk multiple can reduce the clock jitter of BCLK and WS,
+ *        which is also useful for the codec that don't require MCLK but have strict requirement to BCLK.
+ *        For the 24-bit slot width, please choose a multiple that can be divided by 3 (i.e. 24-bit compatible).
  */
 typedef enum {
     I2S_MCLK_MULTIPLE_128       = 128,     /*!< MCLK = sample_rate * 128 */
+    I2S_MCLK_MULTIPLE_192       = 192,     /*!< MCLK = sample_rate * 192 (24-bit compatible) */
     I2S_MCLK_MULTIPLE_256       = 256,     /*!< MCLK = sample_rate * 256 */
-    I2S_MCLK_MULTIPLE_384       = 384,     /*!< MCLK = sample_rate * 384 */
+    I2S_MCLK_MULTIPLE_384       = 384,     /*!< MCLK = sample_rate * 384 (24-bit compatible) */
     I2S_MCLK_MULTIPLE_512       = 512,     /*!< MCLK = sample_rate * 512 */
+    I2S_MCLK_MULTIPLE_576       = 576,     /*!< MCLK = sample_rate * 576 (24-bit compatible) */
+    I2S_MCLK_MULTIPLE_768       = 768,     /*!< MCLK = sample_rate * 768 (24-bit compatible) */
+    I2S_MCLK_MULTIPLE_1024      = 1024,    /*!< MCLK = sample_rate * 1024 */
+    I2S_MCLK_MULTIPLE_1152      = 1152,    /*!< MCLK = sample_rate * 1152 (24-bit compatible) */
 } i2s_mclk_multiple_t;
 
 /**
