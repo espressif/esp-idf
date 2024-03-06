@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,7 +15,7 @@
 #include "soc/soc.h"
 
 #include "test_memprot.h"
-
+#include "sdkconfig.h"
 
 #define RND_VAL     (0xA5A5A5A5)
 #define SPIN_ITER   (16)
@@ -213,3 +213,36 @@ static void __attribute__((constructor)) test_print_rtc_var_func(void)
     printf("foo_s: %p | var_s: %p\n", &foo_s, &var_s);
 #endif
 }
+
+
+/* ---------------------------------------------------- I/D Cache (Flash) Violation Checks ---------------------------------------------------- */
+
+#if CONFIG_ESP_SYSTEM_PMP_IDRAM_SPLIT
+static const uint16_t foo_buf[8] = {
+    0x0001, 0x0001, 0x0001, 0x0001,
+    0x0001, 0x0001, 0x0001, 0x0001,
+};
+
+void test_irom_reg_write_violation(void)
+{
+    extern int _instruction_reserved_end;
+    uint32_t *test_addr = (uint32_t *)((uint32_t)(&_instruction_reserved_end - 0x100));
+    printf("Flash (IROM): Write operation | Address: %p\n", test_addr);
+    *test_addr = RND_VAL;
+}
+
+void test_drom_reg_write_violation(void)
+{
+    uint32_t *test_addr = (uint32_t *)((uint32_t)(foo_buf));
+    printf("Flash (DROM): Write operation | Address: %p\n", test_addr);
+    *test_addr = RND_VAL;
+}
+
+void test_drom_reg_execute_violation(void)
+{
+    printf("Flash (DROM): Execute operation | Address: %p\n", foo_buf);
+    void (*func_ptr)(void);
+    func_ptr = (void(*)(void))foo_buf;
+    func_ptr();
+}
+#endif
