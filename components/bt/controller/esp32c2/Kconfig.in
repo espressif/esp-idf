@@ -421,6 +421,26 @@ config BT_LE_SLEEP_ENABLE
     help
         Enable BLE sleep
 
+choice BT_LE_LP_CLK_SRC
+    prompt "BLE low power clock source"
+    default BT_LE_LP_CLK_SRC_MAIN_XTAL
+    config BT_LE_LP_CLK_SRC_MAIN_XTAL
+        bool "Use main XTAL as RTC clock source"
+        help
+            User main XTAL as RTC clock source.
+            This option is recommended if external 32.768k XTAL is not available.
+            Using the external 32.768 kHz XTAL will have lower current consumption
+            in light sleep compared to using the main XTAL.
+
+    config BT_LE_LP_CLK_SRC_DEFAULT
+        bool "Use system RTC slow clock source"
+        help
+            Use the same slow clock source as system RTC
+            Using any clock source other than external 32.768 kHz XTAL at pin0 supports only
+            legacy ADV and SCAN due to low clock accuracy.
+
+endchoice
+
 config BT_LE_USE_ESP_TIMER
     bool "Use Esp Timer for callout"
     depends on !BT_NIMBLE_ENABLED
