@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -95,9 +95,16 @@ void app_main(void)
     /* Register commands */
     esp_console_register_help_command();
     register_system_common();
-    register_system_sleep();
-    register_nvs();
+#if SOC_LIGHT_SLEEP_SUPPORTED
+    register_system_light_sleep();
+#endif
+#if SOC_DEEP_SLEEP_SUPPORTED
+    register_system_deep_sleep();
+#endif
+#if SOC_WIFI_SUPPORTED
     register_wifi();
+#endif
+    register_nvs();
 
     /* Prompt to be printed before each line.
      * This can be customized, made dynamic, etc.
