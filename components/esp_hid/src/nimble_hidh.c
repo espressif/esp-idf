@@ -9,6 +9,7 @@
 #include "esp_private/esp_hidh_private.h"
 #include "esp_err.h"
 #include "esp_log.h"
+#include "esp_check.h"
 
 #include "esp_hid_common.h"
 
@@ -59,7 +60,6 @@ static esp_event_loop_handle_t event_loop_handle;
 static uint8_t *s_read_data_val = NULL;
 static uint16_t s_read_data_len = 0;
 static int s_read_status = 0;
-static esp_event_handler_t s_event_callback;
 
 /**
  * Utility function to log an array of bytes.
@@ -870,18 +870,6 @@ static void esp_ble_hidh_dev_dump(esp_hidh_dev_t *dev, FILE *fp)
 
 }
 
-static void esp_ble_hidh_event_handler_wrapper(void *event_handler_arg, esp_event_base_t event_base, int32_t event_id,
-                                               void *event_data)
-{
-    esp_hidh_preprocess_event_handler(event_handler_arg, event_base, event_id, event_data);
-
-    if (s_event_callback) {
-        s_event_callback(event_handler_arg, event_base, event_id, event_data);
-    }
-
-    esp_hidh_post_process_event_handler(event_handler_arg, event_base, event_id, event_data);
-}
-
 static void nimble_host_synced(void)
 {
     /*
@@ -896,50 +884,14 @@ static void nimble_host_reset(int reason)
 
 esp_err_t esp_ble_hidh_init(const esp_hidh_config_t *config)
 {
-    esp_err_t ret;
-    if (config == NULL) {
-        ESP_LOGE(TAG, "Config is NULL");
-        return ESP_FAIL;
-    }
-    if (s_ble_hidh_cb_semaphore != NULL) {
-        ESP_LOGE(TAG, "Already initialised");
-        return ESP_FAIL;
-    }
+    esp_err_t ret = ESP_OK;
+    ESP_RETURN_ON_FALSE(config, ESP_ERR_INVALID_ARG, TAG, "Config is NULL");
+    ESP_RETURN_ON_FALSE(!s_ble_hidh_cb_semaphore, ESP_ERR_INVALID_STATE, TAG, "Already initialized");
+
+    event_loop_handle = esp_hidh_get_event_loop();
     s_ble_hidh_cb_semaphore = xSemaphoreCreateBinary();
-    if (s_ble_hidh_cb_semaphore == NULL) {
-        ESP_LOGE(TAG, "xSemaphoreCreateMutex failed!");
-        return ESP_FAIL;
-    }
-    esp_event_loop_args_t event_task_args = {
-        .queue_size = 5,
-        .task_name = "esp_ble_hidh_events",
-        .task_priority = uxTaskPriorityGet(NULL),
-        .task_stack_size = config->event_stack_size > 0 ? config->event_stack_size : 2048,
-        .task_core_id = tskNO_AFFINITY
-    };
-
-    do {
-        ret = esp_event_loop_create(&event_task_args, &event_loop_handle);
-        if (ret != ESP_OK) {
-            ESP_LOGE(TAG, "%s esp_event_loop_create failed!", __func__);
-            break;
-        }
-
-        s_event_callback = config->callback;
-        ret = esp_event_handler_register_with(event_loop_handle, ESP_HIDH_EVENTS, ESP_EVENT_ANY_ID,
-                                              esp_ble_hidh_event_handler_wrapper, config->callback_arg);
-    } while (0);
-
-    if (ret != ESP_OK) {
-        if (event_loop_handle) {
-            esp_event_loop_delete(event_loop_handle);
-        }
-
-        if (s_ble_hidh_cb_semaphore) {
-            vSemaphoreDelete(s_ble_hidh_cb_semaphore);
-            s_ble_hidh_cb_semaphore = NULL;
-        }
-    }
+    ESP_RETURN_ON_FALSE(s_ble_hidh_cb_semaphore,
+                        ESP_ERR_NO_MEM, TAG, "Allocation failed");
 
     ble_hs_cfg.reset_cb = nimble_host_reset;
     ble_hs_cfg.sync_cb = nimble_host_synced;
@@ -948,19 +900,13 @@ esp_err_t esp_ble_hidh_init(const esp_hidh_config_t *config)
 
 esp_err_t esp_ble_hidh_deinit(void)
 {
-    if (s_ble_hidh_cb_semaphore == NULL) {
-        ESP_LOGE(TAG, "Already deinitialised");
-        return ESP_FAIL;
+    ESP_RETURN_ON_FALSE(s_ble_hidh_cb_semaphore, ESP_ERR_INVALID_STATE, TAG, "Already deinitialized");
+    if (s_ble_hidh_cb_semaphore) {
+        vSemaphoreDelete(s_ble_hidh_cb_semaphore);
+        s_ble_hidh_cb_semaphore = NULL;
     }
 
-    if (event_loop_handle) {
-        esp_event_loop_delete(event_loop_handle);
-    }
-    vSemaphoreDelete(s_ble_hidh_cb_semaphore);
-    s_ble_hidh_cb_semaphore = NULL;
-    s_event_callback = NULL;
-
-    return 0;
+    return ESP_OK;
 }
 
 esp_hidh_dev_t *esp_ble_hidh_dev_open(uint8_t *bda, uint8_t address_type)
