@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -392,6 +392,9 @@ static void s_i2c_send_commands(i2c_master_bus_handle_t i2c_master, TickType_t t
     uint8_t fifo_fill = 0;
     uint8_t address_fill = 0;
 
+    // Initialise event queue.
+    xQueueReset(i2c_master->event_queue);
+    i2c_master->event = I2C_EVENT_ALIVE;
     while (i2c_master->i2c_trans.cmd_count) {
         if (xSemaphoreTake(i2c_master->cmd_semphr, ticks_to_wait) != pdTRUE) {
             // Software timeout, clear the command link and finish this transaction.
@@ -429,10 +432,17 @@ static void s_i2c_send_commands(i2c_master_bus_handle_t i2c_master, TickType_t t
     }
     i2c_hal_master_trans_start(hal);
 
-    // For blocking implementation, we must wait `done` interrupt to update the status.
-    while (i2c_master->trans_done == false) {};
-    if (i2c_master->status != I2C_STATUS_ACK_ERROR && i2c_master->status != I2C_STATUS_TIMEOUT) {
-        atomic_store(&i2c_master->status, I2C_STATUS_DONE);
+    // For blocking implementation, we must wait event interrupt to update the status.
+    // Otherwise, update status to timeout.
+    i2c_master_event_t event;
+    if (xQueueReceive(i2c_master->event_queue, &event, ticks_to_wait) == pdTRUE) {
+        if (event == I2C_EVENT_DONE) {
+            atomic_store(&i2c_master->status, I2C_STATUS_DONE);
+        }
+    } else {
+        i2c_master->cmd_idx = 0;
+        i2c_master->trans_idx = 0;
+        atomic_store(&i2c_master->status, I2C_STATUS_TIMEOUT);
     }
     xSemaphoreGive(i2c_master->cmd_semphr);
 }
@@ -573,14 +583,18 @@ static void IRAM_ATTR i2c_master_isr_handler_default(void *arg)
         return;
     }
 
-    if (int_mask == I2C_LL_INTR_NACK) {
+    if (int_mask & I2C_LL_INTR_NACK) {
         atomic_store(&i2c_master->status, I2C_STATUS_ACK_ERROR);
         i2c_master->event = I2C_EVENT_NACK;
-    } else if (int_mask == I2C_LL_INTR_TIMEOUT || int_mask == I2C_LL_INTR_ARBITRATION) {
+    } else if (int_mask & I2C_LL_INTR_TIMEOUT || int_mask & I2C_LL_INTR_ARBITRATION) {
         atomic_store(&i2c_master->status, I2C_STATUS_TIMEOUT);
-    } else if (int_mask == I2C_LL_INTR_MST_COMPLETE) {
+        i2c_master->event = I2C_EVENT_TIMEOUT;
+    } else if (int_mask & I2C_LL_INTR_MST_COMPLETE) {
         i2c_master->trans_done = true;
         i2c_master->event = I2C_EVENT_DONE;
+    }
+    if (i2c_master->event != I2C_EVENT_ALIVE) {
+        xQueueSendFromISR(i2c_master->event_queue, (void *)&i2c_master->event, &HPTaskAwoken);
     }
     if (i2c_master->contains_read == true) {
         i2c_isr_receive_handler(i2c_master);
@@ -671,6 +685,9 @@ static esp_err_t i2c_master_bus_destroy(i2c_master_bus_handle_t bus_handle)
             if (i2c_master->cmd_semphr) {
                 vSemaphoreDeleteWithCaps(i2c_master->cmd_semphr);
                 i2c_master->cmd_semphr = NULL;
+            }
+            if (i2c_master->event_queue) {
+                vQueueDeleteWithCaps(i2c_master->event_queue);
             }
             if (i2c_master->queues_storage) {
                 free(i2c_master->queues_storage);
@@ -816,6 +833,9 @@ esp_err_t i2c_new_master_bus(const i2c_master_bus_config_t *bus_config, i2c_mast
 
     i2c_master->cmd_semphr = xSemaphoreCreateBinaryWithCaps(I2C_MEM_ALLOC_CAPS);
     ESP_GOTO_ON_FALSE(i2c_master->cmd_semphr, ESP_ERR_NO_MEM, err, TAG, "no memory for i2c semaphore struct");
+
+    i2c_master->event_queue = xQueueCreateWithCaps(1, sizeof(i2c_master_event_t), I2C_MEM_ALLOC_CAPS);
+    ESP_GOTO_ON_FALSE(i2c_master->event_queue, ESP_ERR_NO_MEM, err, TAG, "no memory for i2c queue struct");
 
     portENTER_CRITICAL(&i2c_master->base->spinlock);
     i2c_ll_clear_intr_mask(hal->dev, I2C_LL_MASTER_EVENT_INTR);

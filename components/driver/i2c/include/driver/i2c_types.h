@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -34,11 +34,14 @@ typedef enum {
     I2C_STATUS_TIMEOUT,   /*!< I2C bus status error, and operation timeout */
 } i2c_master_status_t;
 
-
+/**
+ * @brief Enumeration for I2C event.
+ */
 typedef enum {
     I2C_EVENT_ALIVE,      /*!< i2c bus in alive status.*/
     I2C_EVENT_DONE,       /*!< i2c bus transaction done */
     I2C_EVENT_NACK,       /*!< i2c bus nack */
+    I2C_EVENT_TIMEOUT,    /*!< i2c bus timeout */
 } i2c_master_event_t;
 
 /**
