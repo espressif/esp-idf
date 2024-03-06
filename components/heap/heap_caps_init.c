@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,10 +14,18 @@
 #include "esp_heap_caps_init.h"
 #include "heap_memory_layout.h"
 
+#include "esp_private/startup_internal.h"
+
 static const char *TAG = "heap_init";
 
 /* Linked-list of registered heaps */
 struct registered_heap_ll registered_heaps;
+
+ESP_SYSTEM_INIT_FN(init_heap, CORE, BIT(0), 100)
+{
+    heap_caps_init();
+    return ESP_OK;
+}
 
 static void register_heap(heap_t *region)
 {

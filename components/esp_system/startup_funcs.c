@@ -13,7 +13,6 @@
 #include "esp_check.h"
 #include "esp_system.h"
 #include "esp_log.h"
-#include "esp_heap_caps_init.h"
 #include "spi_flash_mmap.h"
 #include "esp_flash_internal.h"
 #include "esp_newlib.h"
@@ -66,12 +65,6 @@ ESP_SYSTEM_INIT_FN(init_show_cpu_freq, CORE, BIT(0), 10)
     int cpu_freq = esp_clk_cpu_freq();
     ESP_EARLY_LOGI(TAG, "cpu freq: %d Hz", cpu_freq);
 
-    return ESP_OK;
-}
-
-ESP_SYSTEM_INIT_FN(init_heap, CORE, BIT(0), 100)
-{
-    heap_caps_init();
     return ESP_OK;
 }
 
