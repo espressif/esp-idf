@@ -131,6 +131,7 @@ struct i2c_master_bus_t {
     i2c_operation_t i2c_ops[I2C_STATIC_OPERATION_ARRAY_MAX];         // I2C operation array
     _Atomic uint16_t trans_idx;                                      // Index of I2C transaction command.
     SemaphoreHandle_t cmd_semphr;                                    // Semaphore between task and interrupt, using for synchronizing ISR and I2C task.
+    SemaphoreHandle_t in_progress_semphr;                            // Used to prevent busy-waiting during IO
     uint32_t read_buf_pos;                                           // Read buffer position
     bool contains_read;                                              // Whether command array includes read operation, true: yes, otherwise, false.
     uint32_t read_len_static;                                        // Read static buffer length

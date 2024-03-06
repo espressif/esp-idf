@@ -432,10 +432,28 @@ static void s_i2c_send_commands(i2c_master_bus_handle_t i2c_master, TickType_t t
             s_i2c_start_end_command(i2c_master, i2c_operation, &address_fill, NULL);
         }
     }
+
+    // Flush the in_progress semaphore in case a previous request timed out but
+    // the request still completed later in the ISR. Such a case would cause
+    // the ISR to Give but would never have been Taken.  This zero-wait Take
+    // loop will reset to a zero-count state:
+    while (xSemaphoreTake(i2c_master->in_progress_semphr, 0) == pdTRUE) {}
+
+    // Start the transaction:
     i2c_hal_master_trans_start(hal);
 
-    // For blocking implementation, we must wait `done` interrupt to update the status.
-    while (i2c_master->trans_done == false) {};
+    // For blocking implementation, the `i2c_master_isr_handler_default` will
+    // unlock (Give) the `in_progress_semphr` when the transaction is complete.
+    // If the ISR is already done, then this xSemaphoreTake will fall through
+    // immediately without blocking:
+    if (xSemaphoreTake(i2c_master->in_progress_semphr, ticks_to_wait) == pdTRUE)
+        assert(i2c_master->trans_done == true);
+    else {
+        i2c_master->cmd_idx = 0;
+        i2c_master->trans_idx = 0;
+        i2c_master->status = I2C_STATUS_TIMEOUT;
+    }
+
     if (i2c_master->status != I2C_STATUS_ACK_ERROR && i2c_master->status != I2C_STATUS_TIMEOUT) {
         atomic_store(&i2c_master->status, I2C_STATUS_DONE);
     }
@@ -645,7 +663,15 @@ static void IRAM_ATTR i2c_master_isr_handler_default(void *arg)
             }
         }
     } else {
+        // If the sync transaction is done, then signal s_i2c_send_commands to proceed:
+        portBASE_TYPE HPTaskAwokenInProgress = pdFALSE;
+        if (i2c_master->trans_done == true)
+            xSemaphoreGiveFromISR(i2c_master->in_progress_semphr, &HPTaskAwokenInProgress);
+
         xSemaphoreGiveFromISR(i2c_master->cmd_semphr, &HPTaskAwoken);
+
+        // True if either Give resulted in a high priority task to wake:
+        HPTaskAwoken = HPTaskAwoken || HPTaskAwokenInProgress;
     }
 
     if (HPTaskAwoken == pdTRUE) {
@@ -681,6 +707,10 @@ static esp_err_t i2c_master_bus_destroy(i2c_master_bus_handle_t bus_handle)
             if (i2c_master->cmd_semphr) {
                 vSemaphoreDeleteWithCaps(i2c_master->cmd_semphr);
                 i2c_master->cmd_semphr = NULL;
+            }
+            if (i2c_master->in_progress_semphr) {
+                vSemaphoreDeleteWithCaps(i2c_master->in_progress_semphr);
+                i2c_master->in_progress_semphr = NULL;
             }
             if (i2c_master->queues_storage) {
                 free(i2c_master->queues_storage);
@@ -828,6 +858,10 @@ esp_err_t i2c_new_master_bus(const i2c_master_bus_config_t *bus_config, i2c_mast
 
     i2c_master->cmd_semphr = xSemaphoreCreateBinaryWithCaps(I2C_MEM_ALLOC_CAPS);
     ESP_GOTO_ON_FALSE(i2c_master->cmd_semphr, ESP_ERR_NO_MEM, err, TAG, "no memory for i2c semaphore struct");
+
+    // We do not Give on initialization because the ISR will Give when a sync operation is complete:
+    i2c_master->in_progress_semphr = xSemaphoreCreateBinaryWithCaps(I2C_MEM_ALLOC_CAPS);
+    ESP_GOTO_ON_FALSE(i2c_master->in_progress_semphr, ESP_ERR_NO_MEM, err, TAG, "no memory for i2c progress mutex");
 
     portENTER_CRITICAL(&i2c_master->base->spinlock);
     i2c_ll_clear_intr_mask(hal->dev, I2C_LL_MASTER_EVENT_INTR);
