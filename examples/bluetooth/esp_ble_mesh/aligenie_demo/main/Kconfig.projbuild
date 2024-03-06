@@ -23,6 +23,7 @@ menu "AliGenie Example Configuration"
     menu "light driver config"
         config LIGHT_GPIO_RED
             int "Light red pin GPIO number"
+            range -1 48 if IDF_TARGET_ESP32S3
             range -1 33
             default 25
             help
@@ -33,6 +34,7 @@ menu "AliGenie Example Configuration"
 
         config LIGHT_GPIO_GREEN
             int "Light green pin GPIO number"
+            range -1 48 if IDF_TARGET_ESP32S3
             range -1 33
             default 26
             help
@@ -43,6 +45,7 @@ menu "AliGenie Example Configuration"
 
         config LIGHT_GPIO_BLUE
             int "Light blue pin GPIO number"
+            range -1 48 if IDF_TARGET_ESP32S3
             range -1 33
             default 27
             help
@@ -53,6 +56,7 @@ menu "AliGenie Example Configuration"
 
         config LIGHT_GPIO_COLD
             int "Light cold colors pin GPIO number"
+            range -1 48 if IDF_TARGET_ESP32S3
             range -1 33
             default -1
             help
@@ -63,6 +67,7 @@ menu "AliGenie Example Configuration"
 
         config LIGHT_GPIO_WARM
             int "Light warm color pin GPIO number"
+            range -1 48 if IDF_TARGET_ESP32S3
             range -1 33
             default -1
             help
