@@ -792,8 +792,13 @@ tBTM_STATUS BTM_BlePeriodicAdvCreateSync(tBTM_BLE_Periodic_Sync_Params *params)
         || (params->reports_disabled > 0x01)
         || (params->filter_duplicates > 0x01)
         #endif
-        || (params->addr_type > 0x01) ||
-        (params->sid > 0xf) || (params->skip > 0x01F3)) {
+        /*If the Periodic Advertiser List is not used,
+        the Advertising_SID, Advertiser Address_Type, and Advertiser Address
+        parameters specify the periodic advertising device to listen to; otherwise they
+        shall be ignored.*/
+        || (params->filter_policy == 0 && params->addr_type > 0x01)
+        || (params->filter_policy == 0 && params->sid > 0xf)
+        || (params->skip > 0x01F3)) {
             status = BTM_ILLEGAL_VALUE;
             BTM_TRACE_ERROR("%s, The sync parameters is invalid.", __func__);
             goto end;
