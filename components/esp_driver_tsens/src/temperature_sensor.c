@@ -104,7 +104,11 @@ esp_err_t temperature_sensor_install(const temperature_sensor_config_t *tsens_co
     temperature_sensor_handle_t tsens = NULL;
     tsens = (temperature_sensor_obj_t *) heap_caps_calloc(1, sizeof(temperature_sensor_obj_t), MALLOC_CAP_DEFAULT);
     ESP_RETURN_ON_FALSE((tsens != NULL), ESP_ERR_NO_MEM, TAG, "no mem for temp sensor");
-    tsens->clk_src = tsens_config->clk_src;
+    if (tsens->clk_src == 0) {
+        tsens->clk_src = TEMPERATURE_SENSOR_CLK_SRC_DEFAULT;
+    } else {
+        tsens->clk_src = tsens_config->clk_src;
+    }
 
     temperature_sensor_power_acquire();
     temperature_sensor_ll_clk_sel(tsens->clk_src);
