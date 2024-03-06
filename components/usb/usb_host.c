@@ -262,46 +262,41 @@ static bool proc_req_callback(usb_proc_req_source_t source, bool in_isr, void *a
     return yield;
 }
 
-static void ctrl_xfer_callback(usb_device_handle_t dev_hdl, urb_t *urb, void *arg)
+static void usbh_event_callback(usbh_event_data_t *event_data, void *arg)
 {
-    assert(urb->usb_host_client != NULL);
-    // Redistribute done control transfer to the clients that submitted them
-    client_t *client_obj = (client_t *)urb->usb_host_client;
+    switch (event_data->event) {
+    case USBH_EVENT_CTRL_XFER: {
+        assert(event_data->ctrl_xfer_data.urb != NULL);
+        assert(event_data->ctrl_xfer_data.urb->usb_host_client != NULL);
+        // Redistribute done control transfer to the clients that submitted them
+        client_t *client_obj = (client_t *)event_data->ctrl_xfer_data.urb->usb_host_client;
 
-    HOST_ENTER_CRITICAL();
-    TAILQ_INSERT_TAIL(&client_obj->dynamic.done_ctrl_xfer_tailq, urb, tailq_entry);
-    client_obj->dynamic.num_done_ctrl_xfer++;
-    _unblock_client(client_obj, false);
-    HOST_EXIT_CRITICAL();
-}
-
-static void dev_event_callback(usb_device_handle_t dev_hdl, usbh_event_t usbh_event, void *arg)
-{
-    // Check usbh_event. The data type of event_arg depends on the type of event
-    switch (usbh_event) {
-    case USBH_EVENT_DEV_NEW: {
+        HOST_ENTER_CRITICAL();
+        TAILQ_INSERT_TAIL(&client_obj->dynamic.done_ctrl_xfer_tailq, event_data->ctrl_xfer_data.urb, tailq_entry);
+        client_obj->dynamic.num_done_ctrl_xfer++;
+        _unblock_client(client_obj, false);
+        HOST_EXIT_CRITICAL();
+        break;
+    }
+    case USBH_EVENT_NEW_DEV: {
         // Prepare a NEW_DEV client event message, the send it to all clients
-        uint8_t dev_addr;
-        ESP_ERROR_CHECK(usbh_dev_get_addr(dev_hdl, &dev_addr));
         usb_host_client_event_msg_t event_msg = {
             .event = USB_HOST_CLIENT_EVENT_NEW_DEV,
-            .new_dev.address = dev_addr,
+            .new_dev.address = event_data->new_dev_data.dev_addr,
         };
         send_event_msg_to_clients(&event_msg, true, 0);
         break;
     }
     case USBH_EVENT_DEV_GONE: {
         // Prepare event msg, send only to clients that have opened the device
-        uint8_t dev_addr;
-        ESP_ERROR_CHECK(usbh_dev_get_addr(dev_hdl, &dev_addr));
         usb_host_client_event_msg_t event_msg = {
             .event = USB_HOST_CLIENT_EVENT_DEV_GONE,
-            .dev_gone.dev_hdl = dev_hdl,
+            .dev_gone.dev_hdl = event_data->dev_gone_data.dev_hdl,
         };
-        send_event_msg_to_clients(&event_msg, false, dev_addr);
+        send_event_msg_to_clients(&event_msg, false, event_data->dev_gone_data.dev_addr);
         break;
     }
-    case USBH_EVENT_DEV_ALL_FREE: {
+    case USBH_EVENT_ALL_FREE: {
         // Notify the lib handler that all devices are free
         HOST_ENTER_CRITICAL();
         p_host_lib_obj->dynamic.lib_event_flags |= USB_HOST_LIB_EVENT_FLAGS_ALL_FREE;
@@ -399,9 +394,7 @@ esp_err_t usb_host_install(const usb_host_config_t *config)
     usbh_config_t usbh_config = {
         .proc_req_cb = proc_req_callback,
         .proc_req_cb_arg = NULL,
-        .ctrl_xfer_cb = ctrl_xfer_callback,
-        .ctrl_xfer_cb_arg = NULL,
-        .event_cb = dev_event_callback,
+        .event_cb = usbh_event_callback,
         .event_cb_arg = NULL,
     };
     ret = usbh_install(&usbh_config);
