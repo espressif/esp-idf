@@ -9,9 +9,6 @@
 #
 # SPDX-FileCopyrightText: 2016-2021 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-
-from __future__ import division, print_function, unicode_literals
-
 import argparse
 import binascii
 import errno
@@ -71,7 +68,6 @@ SUBTYPES = {
         'esphttpd': 0x80,
         'fat': 0x81,
         'spiffs': 0x82,
-        'littlefs': 0x83,
     },
 }
 
