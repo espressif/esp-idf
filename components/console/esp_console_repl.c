@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2016-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2016-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -21,7 +21,9 @@
 #include "driver/usb_serial_jtag.h"
 #include "linenoise/linenoise.h"
 
+#if !CONFIG_ESP_CONSOLE_NONE
 static const char *TAG = "console.repl";
+#endif // !CONFIG_ESP_CONSOLE_NONE
 
 #define CONSOLE_PROMPT_MAX_LEN (32)
 #define CONSOLE_PATH_MAX_LEN   (ESP_VFS_PATH_MAX)
@@ -46,7 +48,6 @@ typedef struct {
     int uart_channel;                // uart channel number
 } esp_console_repl_universal_t;
 
-static void esp_console_repl_task(void *args);
 #if CONFIG_ESP_CONSOLE_UART_DEFAULT || CONFIG_ESP_CONSOLE_UART_CUSTOM
 static esp_err_t esp_console_repl_uart_delete(esp_console_repl_t *repl);
 #endif // CONFIG_ESP_CONSOLE_UART_DEFAULT || CONFIG_ESP_CONSOLE_UART_CUSTOM
@@ -56,9 +57,12 @@ static esp_err_t esp_console_repl_usb_cdc_delete(esp_console_repl_t *repl);
 #if CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG
 static esp_err_t esp_console_repl_usb_serial_jtag_delete(esp_console_repl_t *repl);
 #endif //CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG
+#if !CONFIG_ESP_CONSOLE_NONE
+static void esp_console_repl_task(void *args);
 static esp_err_t esp_console_common_init(size_t max_cmdline_length, esp_console_repl_com_t *repl_com);
 static esp_err_t esp_console_setup_prompt(const char *prompt, esp_console_repl_com_t *repl_com);
 static esp_err_t esp_console_setup_history(const char *history_path, uint32_t max_history_len, esp_console_repl_com_t *repl_com);
+#endif // !CONFIG_ESP_CONSOLE_NONE
 
 #if CONFIG_ESP_CONSOLE_USB_CDC
 esp_err_t esp_console_new_repl_usb_cdc(const esp_console_dev_usb_cdc_config_t *dev_config, const esp_console_repl_config_t *repl_config, esp_console_repl_t **ret_repl)
@@ -323,6 +327,7 @@ _exit:
     return ret;
 }
 
+#if !CONFIG_ESP_CONSOLE_NONE
 static esp_err_t esp_console_setup_prompt(const char *prompt, esp_console_repl_com_t *repl_com)
 {
     /* set command line prompt */
@@ -347,7 +352,9 @@ static esp_err_t esp_console_setup_prompt(const char *prompt, esp_console_repl_c
 
     return ESP_OK;
 }
+#endif // !CONFIG_ESP_CONSOLE_NONE
 
+#if !CONFIG_ESP_CONSOLE_NONE
 static esp_err_t esp_console_setup_history(const char *history_path, uint32_t max_history_len, esp_console_repl_com_t *repl_com)
 {
     esp_err_t ret = ESP_OK;
@@ -368,7 +375,9 @@ static esp_err_t esp_console_setup_history(const char *history_path, uint32_t ma
 _exit:
     return ret;
 }
+#endif // !CONFIG_ESP_CONSOLE_NONE
 
+#if !CONFIG_ESP_CONSOLE_NONE
 static esp_err_t esp_console_common_init(size_t max_cmdline_length, esp_console_repl_com_t *repl_com)
 {
     esp_err_t ret = ESP_OK;
@@ -408,6 +417,7 @@ static esp_err_t esp_console_common_init(size_t max_cmdline_length, esp_console_
 _exit:
     return ret;
 }
+#endif // !CONFIG_ESP_CONSOLE_NONE
 
 #if CONFIG_ESP_CONSOLE_UART_DEFAULT || CONFIG_ESP_CONSOLE_UART_CUSTOM
 static esp_err_t esp_console_repl_uart_delete(esp_console_repl_t *repl)
@@ -473,6 +483,7 @@ _exit:
 }
 #endif // CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG
 
+#if !CONFIG_ESP_CONSOLE_NONE
 static void esp_console_repl_task(void *args)
 {
     esp_console_repl_universal_t *repl_conf = (esp_console_repl_universal_t *) args;
@@ -547,3 +558,4 @@ static void esp_console_repl_task(void *args)
     ESP_LOGD(TAG, "The End");
     vTaskDelete(NULL);
 }
+#endif // !CONFIG_ESP_CONSOLE_NONE
