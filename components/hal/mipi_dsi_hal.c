@@ -99,6 +99,9 @@ void mipi_dsi_hal_phy_write_register(mipi_dsi_hal_context_t *hal, uint8_t reg_ad
 void mipi_dsi_hal_host_gen_write_dcs_command(mipi_dsi_hal_context_t *hal, uint8_t vc,
                                              uint32_t command, uint32_t command_bytes, const void *param, uint16_t param_size)
 {
+    mipi_dsi_data_type_t dt = 0;
+    uint8_t pkt_hdr_msb = 0;
+    uint8_t pkt_hdr_lsb = 0;
     const uint8_t *payload = param;
     // the payload size is the command size plus the parameter size
     uint32_t payload_size = command_bytes + param_size;
@@ -109,30 +112,45 @@ void mipi_dsi_hal_host_gen_write_dcs_command(mipi_dsi_hal_context_t *hal, uint8_
     for (int i = 0; i < merged_size; i++) {
         temp |= payload[i] << (8 * (i + command_bytes));
     }
-    while (mipi_dsi_host_ll_gen_is_write_fifo_full(hal->host));
-    mipi_dsi_host_ll_gen_write_payload_fifo(hal->host, temp);
 
-    // write the remaining parameters into FIFO
-    payload += merged_size;
-    uint32_t remain_size = param_size - merged_size;
-    while (remain_size >= 4) {
-        temp = *(uint32_t *)payload;
+    if (payload_size > 2) {
+        // write the first 32-bit word into FIFO
         while (mipi_dsi_host_ll_gen_is_write_fifo_full(hal->host));
         mipi_dsi_host_ll_gen_write_payload_fifo(hal->host, temp);
-        payload += 4;
-        remain_size -= 4;
-    }
-    if (remain_size) {
-        temp = *(uint32_t *)payload;
-        temp &= (1 << (8 * remain_size)) - 1;
-        while (mipi_dsi_host_ll_gen_is_write_fifo_full(hal->host));
-        mipi_dsi_host_ll_gen_write_payload_fifo(hal->host, temp);
+
+        // write the remaining parameters into FIFO
+        payload += merged_size;
+        uint32_t remain_size = param_size - merged_size;
+        while (remain_size >= 4) {
+            temp = *(uint32_t *)payload;
+            while (mipi_dsi_host_ll_gen_is_write_fifo_full(hal->host));
+            mipi_dsi_host_ll_gen_write_payload_fifo(hal->host, temp);
+            payload += 4;
+            remain_size -= 4;
+        }
+        if (remain_size) {
+            temp = *(uint32_t *)payload;
+            temp &= (1 << (8 * remain_size)) - 1;
+            while (mipi_dsi_host_ll_gen_is_write_fifo_full(hal->host));
+            mipi_dsi_host_ll_gen_write_payload_fifo(hal->host, temp);
+        }
+
+        dt = MIPI_DSI_DT_DCS_LONG_WRITE;
+        pkt_hdr_msb = (payload_size >> 8) & 0xFF;
+        pkt_hdr_lsb = payload_size & 0xFF;
+    } else if (payload_size == 2) {
+        dt = MIPI_DSI_DT_DCS_SHORT_WRITE_1;
+        pkt_hdr_msb = (temp >> 8) & 0xFF;
+        pkt_hdr_lsb = temp & 0xFF;
+    } else if (payload_size == 1) {
+        dt = MIPI_DSI_DT_DCS_SHORT_WRITE_0;
+        pkt_hdr_msb = (temp >> 8) & 0xFF;
+        pkt_hdr_lsb = temp & 0xFF;
     }
 
-    uint8_t wc_msb = (payload_size >> 8) & 0xFF;
-    uint8_t wc_lsb = payload_size & 0xFF;
+    // write the packet header
     while (mipi_dsi_host_ll_gen_is_cmd_fifo_full(hal->host));
-    mipi_dsi_host_ll_gen_set_packet_header(hal->host, vc, MIPI_DSI_DT_DCS_LONG_WRITE, wc_msb, wc_lsb);
+    mipi_dsi_host_ll_gen_set_packet_header(hal->host, vc, dt, pkt_hdr_msb, pkt_hdr_lsb);
 }
 
 void mipi_dsi_hal_host_gen_write_short_packet(mipi_dsi_hal_context_t *hal, uint8_t vc, mipi_dsi_data_type_t dt, uint16_t header_data)
