@@ -1,0 +1,58 @@
+/*
+ * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+PROVIDE ( UART0               = 0x60000000 );
+PROVIDE ( UART1               = 0x60001000 );
+PROVIDE ( SPIMEM0             = 0x60002000 );
+PROVIDE ( SPIMEM1             = 0x60003000 );
+PROVIDE ( I2C                 = 0x60004000 );
+PROVIDE ( UART2               = 0x60006000 );
+PROVIDE ( LEDC                = 0x60007000 );
+PROVIDE ( TIMERG0             = 0x60008000 );
+PROVIDE ( TIMERG1             = 0x60009000 );
+PROVIDE ( SYSTIMER            = 0x6000A000 );
+PROVIDE ( I2S                 = 0x6000C000 );
+PROVIDE ( ADC                 = 0x6000E000 );
+PROVIDE ( USB_SERIAL_JTAG     = 0x6000F000 );
+PROVIDE ( INTMTX              = 0x60010000 );
+PROVIDE ( SOC_ETM             = 0x60013000 );
+PROVIDE ( PVT_MONITOR         = 0x60019000 );
+PROVIDE ( PSRAM_MEM_MONITOR   = 0x6001A000 );
+PROVIDE ( GDMA                = 0x60080000 );
+PROVIDE ( GPSPI2              = 0x60081000 );
+PROVIDE ( SHA                 = 0x60089000 );
+PROVIDE ( ECC                 = 0x6008B000 );
+PROVIDE ( ECDSA               = 0x6008E000 );
+PROVIDE ( IO_MUX              = 0x60090000 );
+PROVIDE ( GPIO                = 0x60091000 );
+PROVIDE ( TCM_MEM_MONITOR     = 0x60092000 );
+PROVIDE ( PAU                 = 0x60093000 );
+PROVIDE ( HP_SYSTEM           = 0x60095000 );
+PROVIDE ( PCR                 = 0x60096000 );
+PROVIDE ( TEE                 = 0x60098000 );
+PROVIDE ( HP_APM              = 0x60099000 );
+PROVIDE ( MISC                = 0x6009F000 );
+PROVIDE ( MODEM0              = 0x600A0000 );
+PROVIDE ( MODEM1              = 0x600AC000 );
+PROVIDE ( MODEM_PWR0          = 0x600AD000 );
+PROVIDE ( MODEM_PWR1          = 0x600AF000 );
+PROVIDE ( PMU                 = 0x600B0000 );
+PROVIDE ( LP_CLKRST           = 0x600B0400 );
+PROVIDE ( LP_TIMER            = 0x600B0C00 );
+PROVIDE ( LP_AON              = 0x600B1000 );
+PROVIDE ( LP_WDT              = 0x600B1C00 );
+PROVIDE ( LPPERI              = 0x600B2800 );
+PROVIDE ( LP_ANA              = 0x600B2C00 );
+PROVIDE ( LP_TEE              = 0x600B3400 );
+PROVIDE ( LP_APM              = 0x600B3800 );
+PROVIDE ( LP_IO_MUX           = 0x600B4000 );
+PROVIDE ( LP_GPIO             = 0x600B4400 );
+PROVIDE ( EFUSE_AND_OTP_DEBUG0= 0x600B4800 );
+PROVIDE ( EFUSE_AND_OTP_DEBUG1= 0x600B4C00 );
+PROVIDE ( TRACE               = 0x600C0000 );
+PROVIDE ( BUS_MONITOR         = 0x600C2000 );
+PROVIDE ( INTPRI_REG          = 0x600C5000 );
+PROVIDE ( CACHE_CFG           = 0x600C8000 );
