@@ -7,9 +7,6 @@
  */
 
 #include <string.h>
-#if __has_include(<bsd/string.h>)
-#include <bsd/string.h>
-#endif
 #include <unistd.h>
 #include <sys/time.h>
 #include "esp_err.h"

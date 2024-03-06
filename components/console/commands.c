@@ -6,10 +6,6 @@
 
 #include <stdio.h>
 #include <string.h>
-#if __has_include(<bsd/string.h>)
-// for strlcpy
-#include <bsd/string.h>
-#endif
 #include <stdlib.h>
 #include <sys/param.h>
 #include "esp_heap_caps.h"
