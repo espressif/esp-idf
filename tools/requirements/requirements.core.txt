@@ -21,6 +21,3 @@ windows-curses; sys_platform == 'win32'
 
 # gdb extensions dependencies
 freertos_gdb
-
-# littlefs-python has to be this specific version due to minimal Python version in IDF v5.0 and v5.1
-littlefs-python == 0.9.3; python_version < "3.8"

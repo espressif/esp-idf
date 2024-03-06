@@ -1,3 +1,0 @@
-## IDF Component Manager Manifest File
-dependencies:
-  joltwallet/littlefs: "~=1.13.0"
