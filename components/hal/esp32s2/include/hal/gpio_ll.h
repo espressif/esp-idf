@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -218,6 +218,7 @@ static inline void gpio_ll_input_disable(gpio_dev_t *hw, uint32_t gpio_num)
   * @param hw Peripheral GPIO hardware instance address.
   * @param gpio_num GPIO number
   */
+__attribute__((always_inline))
 static inline void gpio_ll_input_enable(gpio_dev_t *hw, uint32_t gpio_num)
 {
     PIN_INPUT_ENABLE(IO_MUX_GPIO0_REG + (gpio_num * 4));
@@ -271,7 +272,8 @@ static inline void gpio_ll_output_disable(gpio_dev_t *hw, uint32_t gpio_num)
   * @param hw Peripheral GPIO hardware instance address.
   * @param gpio_num GPIO number
   */
-static inline __attribute__((always_inline)) void gpio_ll_output_enable(gpio_dev_t *hw, uint32_t gpio_num)
+__attribute__((always_inline))
+static inline void gpio_ll_output_enable(gpio_dev_t *hw, uint32_t gpio_num)
 {
     if (gpio_num < 32) {
         hw->enable_w1ts = (0x1 << gpio_num);
@@ -286,7 +288,8 @@ static inline __attribute__((always_inline)) void gpio_ll_output_enable(gpio_dev
   * @param hw Peripheral GPIO hardware instance address.
   * @param gpio_num GPIO number
   */
-static inline __attribute__((always_inline)) void gpio_ll_od_disable(gpio_dev_t *hw, uint32_t gpio_num)
+__attribute__((always_inline))
+static inline void gpio_ll_od_disable(gpio_dev_t *hw, uint32_t gpio_num)
 {
     hw->pin[gpio_num].pad_driver = 0;
 }
@@ -309,7 +312,8 @@ static inline void gpio_ll_od_enable(gpio_dev_t *hw, uint32_t gpio_num)
  * @param  gpio_num GPIO number
  * @param  func Function to assign to the pin
  */
-static inline __attribute__((always_inline)) void gpio_ll_func_sel(gpio_dev_t *hw, uint8_t gpio_num, uint32_t func)
+__attribute__((always_inline))
+static inline void gpio_ll_func_sel(gpio_dev_t *hw, uint8_t gpio_num, uint32_t func)
 {
     PIN_FUNC_SELECT(IO_MUX_GPIO0_REG + (gpio_num * 4), func);
 }
@@ -503,7 +507,8 @@ static inline void gpio_ll_iomux_in(gpio_dev_t *hw, uint32_t gpio, uint32_t sign
  * @param  pin_name Pin name to configure
  * @param  func Function to assign to the pin
  */
-static inline __attribute__((always_inline)) void gpio_ll_iomux_func_sel(uint32_t pin_name, uint32_t func)
+__attribute__((always_inline))
+static inline void gpio_ll_iomux_func_sel(uint32_t pin_name, uint32_t func)
 {
     PIN_FUNC_SELECT(pin_name, func);
 }
@@ -515,7 +520,8 @@ static inline __attribute__((always_inline)) void gpio_ll_iomux_func_sel(uint32_
  * @param  val    Control value
  * @param  shift  write mask shift of control value
  */
-static inline __attribute__((always_inline)) void gpio_ll_set_pin_ctrl(uint32_t val, uint32_t bmap, uint32_t shift)
+__attribute__((always_inline))
+static inline void gpio_ll_set_pin_ctrl(uint32_t val, uint32_t bmap, uint32_t shift)
 {
     SET_PERI_REG_BITS(PIN_CTRL, bmap, val, shift);
 }
