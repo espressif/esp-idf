@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -63,7 +63,7 @@ const DRAM_ATTR uint32_t offset_pxEndOfStack = offsetof(StaticTask_t, pxDummy8);
 const DRAM_ATTR uint32_t offset_cpsa = XT_CP_SIZE;  /* Offset to start of the CPSA area on the stack. See uxInitialiseStackCPSA(). */
 #if configNUM_CORES > 1
 /* Offset to TCB_t.uxCoreAffinityMask member. Used to pin unpinned tasks that use the FPU. */
-const DRAM_ATTR uint32_t offset_uxCoreAffinityMask = offsetof(StaticTask_t, uxDummy25);
+const DRAM_ATTR uint32_t offset_uxCoreAffinityMask = offsetof(StaticTask_t, uxDummy26);
 #if configUSE_CORE_AFFINITY != 1
 #error "configUSE_CORE_AFFINITY must be 1 on multicore targets with coprocessor support"
 #endif
@@ -72,9 +72,11 @@ const DRAM_ATTR uint32_t offset_uxCoreAffinityMask = offsetof(StaticTask_t, uxDu
 
 volatile unsigned port_xSchedulerRunning[portNUM_PROCESSORS] = {0}; // Indicates whether scheduler is running on a per-core basis
 unsigned int port_interruptNesting[portNUM_PROCESSORS] = {0};  // Interrupt nesting level. Increased/decreased in portasm.c, _frxt_int_enter/_frxt_int_exit
+#if ( configNUMBER_OF_CORES > 1 )
 //FreeRTOS SMP Locks
 portMUX_TYPE port_xTaskLock = portMUX_INITIALIZER_UNLOCKED;
 portMUX_TYPE port_xISRLock = portMUX_INITIALIZER_UNLOCKED;
+#endif /* configNUMBER_OF_CORES > 1 */
 
 /* ------------------------------------------------ IDF Compatibility --------------------------------------------------
  * - These need to be defined for IDF to compile
@@ -204,6 +206,7 @@ BaseType_t xPortCheckIfInISR(void)
 
 // ------------------ Critical Sections --------------------
 
+#if ( configNUMBER_OF_CORES > 1 )
 void vPortTakeLock( portMUX_TYPE *lock )
 {
     spinlock_acquire( lock, portMUX_NO_TIMEOUT);
@@ -213,6 +216,7 @@ void vPortReleaseLock( portMUX_TYPE *lock )
 {
     spinlock_release( lock );
 }
+#endif /* configNUMBER_OF_CORES > 1 */
 
 // ---------------------- Yielding -------------------------
 
@@ -262,7 +266,7 @@ static void vPortCleanUpCoprocArea( void *pxTCB )
     uxCoprocArea = STACKPTR_ALIGN_DOWN(16, uxCoprocArea - XT_CP_SIZE);
 
     /* Extract core ID from the affinity mask */
-    xTargetCoreID = ( ( StaticTask_t * ) pxTCB )->uxDummy25 ;
+    xTargetCoreID = ( ( StaticTask_t * ) pxTCB )->uxDummy26;
     xTargetCoreID = ( BaseType_t ) __builtin_ffs( ( int ) xTargetCoreID );
     assert( xTargetCoreID >= 1 ); // __builtin_ffs always returns first set index + 1
     xTargetCoreID -= 1;
@@ -667,21 +671,21 @@ void  __attribute__((weak)) vApplicationStackOverflowHook( TaskHandle_t xTask, c
 #endif
 
 extern void esp_vApplicationIdleHook(void);
-#if CONFIG_FREERTOS_USE_MINIMAL_IDLE_HOOK
+#if CONFIG_FREERTOS_USE_PASSIVE_IDLE_HOOK
 /*
-By default, the port uses vApplicationMinimalIdleHook() to run IDF style idle
-hooks. However, users may also want to provide their own vApplicationMinimalIdleHook().
-In this case, we use to -Wl,--wrap option to wrap the user provided vApplicationMinimalIdleHook()
+By default, the port uses vApplicationPassiveIdleHook() to run IDF style idle
+hooks. However, users may also want to provide their own vApplicationPassiveIdleHook().
+In this case, we use to -Wl,--wrap option to wrap the user provided vApplicationPassiveIdleHook()
 */
-extern void __real_vApplicationMinimalIdleHook( void );
-void __wrap_vApplicationMinimalIdleHook( void )
+extern void __real_vApplicationPassiveIdleHook( void );
+void __wrap_vApplicationPassiveIdleHook( void )
 {
     esp_vApplicationIdleHook(); //Run IDF style hooks
-    __real_vApplicationMinimalIdleHook(); //Call the user provided vApplicationMinimalIdleHook()
+    __real_vApplicationPassiveIdleHook(); //Call the user provided vApplicationPassiveIdleHook()
 }
-#else // CONFIG_FREERTOS_USE_MINIMAL_IDLE_HOOK
-void vApplicationMinimalIdleHook( void )
+#else // CONFIG_FREERTOS_USE_PASSIVE_IDLE_HOOK
+void vApplicationPassiveIdleHook( void )
 {
     esp_vApplicationIdleHook(); //Run IDF style hooks
 }
-#endif // CONFIG_FREERTOS_USE_MINIMAL_IDLE_HOOK
+#endif // CONFIG_FREERTOS_USE_PASSIVE_IDLE_HOOK

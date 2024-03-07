@@ -262,10 +262,11 @@
  * - All Amazon SMP FreeRTOS specific configurations
  * ------------------------------------------------------------------------------------------------------------------ */
 
-#if CONFIG_FREERTOS_SMP
+#if CONFIG_FREERTOS_SMP && ( CONFIG_FREERTOS_NUMBER_OF_CORES > 1 )
+    #define configUSE_CORE_AFFINITY              1
     #define configRUN_MULTIPLE_PRIORITIES        1
     #define configUSE_TASK_PREEMPTION_DISABLE    1
-#endif /* CONFIG_FREERTOS_SMP */
+#endif /* CONFIG_FREERTOS_SMP && ( CONFIG_FREERTOS_NUMBER_OF_CORES > 1 ) */
 
 /* -------------------------------------------------- IDF FreeRTOS -----------------------------------------------------
  * - All IDF FreeRTOS specific configurations
@@ -290,4 +291,4 @@
 /* portNUM_PROCESSORS is deprecated and will be removed in ESP-IDF v6.0 (IDF-8785)
  * Please use the Kconfig option CONFIG_FREERTOS_NUMBER_OF_CORES instead.
  */
-#define portNUM_PROCESSORS                          configNUMBER_OF_CORES
+#define portNUM_PROCESSORS    configNUMBER_OF_CORES

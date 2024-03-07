@@ -6,7 +6,7 @@
  *
  * SPDX-License-Identifier: MIT
  *
- * SPDX-FileContributor: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
  * this software and associated documentation files (the "Software"), to deal in
@@ -110,15 +110,16 @@ BaseType_t xPortCheckIfInISR(void);
 
 // ------------------ Critical Sections --------------------
 
+#if ( configNUMBER_OF_CORES > 1 )
 /*
 These are always called with interrupts already disabled. We simply need to get/release the spinlocks
 */
-
 extern portMUX_TYPE port_xTaskLock;
 extern portMUX_TYPE port_xISRLock;
 
 void vPortTakeLock( portMUX_TYPE *lock );
 void vPortReleaseLock( portMUX_TYPE *lock );
+#endif /* configNUMBER_OF_CORES > 1 */
 
 // ---------------------- Yielding -------------------------
 
@@ -151,18 +152,9 @@ void vPortCleanUpTCB ( void *pxTCB );
 
 #define portDISABLE_INTERRUPTS()                    xPortSetInterruptMask()
 #define portENABLE_INTERRUPTS()                     vPortClearInterruptMask(0)
-#define portRESTORE_INTERRUPTS(x)                   vPortClearInterruptMask(x)
 
 // ------------------ Critical Sections --------------------
 
-#define portGET_TASK_LOCK()                         vPortTakeLock(&port_xTaskLock)
-#define portRELEASE_TASK_LOCK()                     vPortReleaseLock(&port_xTaskLock)
-#define portGET_ISR_LOCK()                          vPortTakeLock(&port_xISRLock)
-#define portRELEASE_ISR_LOCK()                      vPortReleaseLock(&port_xISRLock)
-
-//Critical sections used by FreeRTOS SMP
-extern void vTaskEnterCritical( void );
-extern void vTaskExitCritical( void );
 #define portENTER_CRITICAL_SMP()                    vTaskEnterCritical();
 #define portEXIT_CRITICAL_SMP()                     vTaskExitCritical();
 
@@ -286,8 +278,8 @@ void vPortExitCriticalIDF(void);
 
 // ---------------------- Yielding -------------------------
 
-// Added for backward compatibility with IDF
-#define portYIELD_WITHIN_API()                      vTaskYieldWithinAPI()
+extern void vPortYield( void );
+#define portYIELD() vPortYield()
 
 // ----------------------- System --------------------------
 

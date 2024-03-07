@@ -30,9 +30,37 @@
  *
  */
 
+#ifndef INC_NEWLIB_FREERTOS_H
+#define INC_NEWLIB_FREERTOS_H
 
-#ifndef _MSC_VER /* Visual Studio doesn't support #warning. */
-    #warning The name of this file has changed to stack_macros.h.  Please update your code accordingly.  This source file (which has the original name) will be removed in a future release.
+/* Note Newlib support has been included by popular demand, but is not
+ * used by the FreeRTOS maintainers themselves.  FreeRTOS is not
+ * responsible for resulting newlib operation.  User must be familiar with
+ * newlib and must provide system-wide implementations of the necessary
+ * stubs. Be warned that (at the time of writing) the current newlib design
+ * implements a system-wide malloc() that must be provided with locks.
+ *
+ * See the third party link http://www.nadler.com/embedded/newlibAndFreeRTOS.html
+ * for additional information. */
+
+#include <reent.h>
+
+#define configUSE_C_RUNTIME_TLS_SUPPORT    1
+
+#ifndef configTLS_BLOCK_TYPE
+    #define configTLS_BLOCK_TYPE           struct _reent
 #endif
 
-#include "stack_macros.h"
+#ifndef configINIT_TLS_BLOCK
+    #define configINIT_TLS_BLOCK( xTLSBlock, pxTopOfStack )    _REENT_INIT_PTR( &( xTLSBlock ) )
+#endif
+
+#ifndef configSET_TLS_BLOCK
+    #define configSET_TLS_BLOCK( xTLSBlock )    ( _impure_ptr = &( xTLSBlock ) )
+#endif
+
+#ifndef configDEINIT_TLS_BLOCK
+    #define configDEINIT_TLS_BLOCK( xTLSBlock )    _reclaim_reent( &( xTLSBlock ) )
+#endif
+
+#endif /* INC_NEWLIB_FREERTOS_H */

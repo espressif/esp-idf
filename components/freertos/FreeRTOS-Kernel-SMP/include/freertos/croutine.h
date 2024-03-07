@@ -1,6 +1,12 @@
 /*
- * FreeRTOS SMP Kernel V202110.00
- * Copyright (C) 2020 Amazon.com, Inc. or its affiliates.  All Rights Reserved.
+ * FreeRTOS Kernel V11.0.1
+ * Copyright (C) 2021 Amazon.com, Inc. or its affiliates.  All Rights Reserved.
+ *
+ * SPDX-FileCopyrightText: 2021 Amazon.com, Inc. or its affiliates
+ *
+ * SPDX-License-Identifier: MIT
+ *
+ * SPDX-FileContributor: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
  * this software and associated documentation files (the "Software"), to deal in
@@ -45,28 +51,28 @@
 typedef void * CoRoutineHandle_t;
 
 /* Defines the prototype to which co-routine functions must conform. */
-typedef void (* crCOROUTINE_CODE)( CoRoutineHandle_t,
-                                   UBaseType_t );
+typedef void (* crCOROUTINE_CODE)( CoRoutineHandle_t xHandle,
+                                   UBaseType_t uxIndex );
 
 typedef struct corCoRoutineControlBlock
 {
     crCOROUTINE_CODE pxCoRoutineFunction;
-    ListItem_t xGenericListItem; /*< List item used to place the CRCB in ready and blocked queues. */
-    ListItem_t xEventListItem;   /*< List item used to place the CRCB in event lists. */
-    UBaseType_t uxPriority;      /*< The priority of the co-routine in relation to other co-routines. */
-    UBaseType_t uxIndex;         /*< Used to distinguish between co-routines when multiple co-routines use the same co-routine function. */
-    uint16_t uxState;            /*< Used internally by the co-routine implementation. */
+    ListItem_t xGenericListItem; /**< List item used to place the CRCB in ready and blocked queues. */
+    ListItem_t xEventListItem;   /**< List item used to place the CRCB in event lists. */
+    UBaseType_t uxPriority;      /**< The priority of the co-routine in relation to other co-routines. */
+    UBaseType_t uxIndex;         /**< Used to distinguish between co-routines when multiple co-routines use the same co-routine function. */
+    uint16_t uxState;            /**< Used internally by the co-routine implementation. */
 } CRCB_t;                        /* Co-routine control block.  Note must be identical in size down to uxPriority with TCB_t. */
 
 /**
  * croutine. h
- * <pre>
+ * @code{c}
  * BaseType_t xCoRoutineCreate(
  *                               crCOROUTINE_CODE pxCoRoutineCode,
  *                               UBaseType_t uxPriority,
  *                               UBaseType_t uxIndex
  *                             );
- * </pre>
+ * @endcode
  *
  * Create a new co-routine and add it to the list of co-routines that are
  * ready to run.
@@ -86,7 +92,7 @@ typedef struct corCoRoutineControlBlock
  * list, otherwise an error code defined with ProjDefs.h.
  *
  * Example usage:
- * <pre>
+ * @code{c}
  * // Co-routine to be created.
  * void vFlashCoRoutine( CoRoutineHandle_t xHandle, UBaseType_t uxIndex )
  * {
@@ -127,7 +133,7 @@ typedef struct corCoRoutineControlBlock
  *       xCoRoutineCreate( vFlashCoRoutine, 0, uxIndex );
  *   }
  * }
- * </pre>
+ * @endcode
  * \defgroup xCoRoutineCreate xCoRoutineCreate
  * \ingroup Tasks
  */
@@ -138,9 +144,9 @@ BaseType_t xCoRoutineCreate( crCOROUTINE_CODE pxCoRoutineCode,
 
 /**
  * croutine. h
- * <pre>
+ * @code{c}
  * void vCoRoutineSchedule( void );
- * </pre>
+ * @endcode
  *
  * Run a co-routine.
  *
@@ -154,7 +160,7 @@ BaseType_t xCoRoutineCreate( crCOROUTINE_CODE pxCoRoutineCode,
  * hook).
  *
  * Example usage:
- * <pre>
+ * @code{c}
  * // This idle task hook will schedule a co-routine each time it is called.
  * // The rest of the idle task will execute between co-routine calls.
  * void vApplicationIdleHook( void )
@@ -172,7 +178,7 @@ BaseType_t xCoRoutineCreate( crCOROUTINE_CODE pxCoRoutineCode,
  *      vCoRoutineSchedule();
  *  }
  * }
- * </pre>
+ * @endcode
  * \defgroup vCoRoutineSchedule vCoRoutineSchedule
  * \ingroup Tasks
  */
@@ -180,14 +186,14 @@ void vCoRoutineSchedule( void );
 
 /**
  * croutine. h
- * <pre>
+ * @code{c}
  * crSTART( CoRoutineHandle_t xHandle );
- * </pre>
+ * @endcode
  *
  * This macro MUST always be called at the start of a co-routine function.
  *
  * Example usage:
- * <pre>
+ * @code{c}
  * // Co-routine to be created.
  * void vACoRoutine( CoRoutineHandle_t xHandle, UBaseType_t uxIndex )
  * {
@@ -205,7 +211,7 @@ void vCoRoutineSchedule( void );
  *   // Must end every co-routine with a call to crEND();
  *   crEND();
  * }
- * </pre>
+ * @endcode
  * \defgroup crSTART crSTART
  * \ingroup Tasks
  */
@@ -215,14 +221,14 @@ void vCoRoutineSchedule( void );
 
 /**
  * croutine. h
- * <pre>
+ * @code{c}
  * crEND();
- * </pre>
+ * @endcode
  *
  * This macro MUST always be called at the end of a co-routine function.
  *
  * Example usage:
- * <pre>
+ * @code{c}
  * // Co-routine to be created.
  * void vACoRoutine( CoRoutineHandle_t xHandle, UBaseType_t uxIndex )
  * {
@@ -240,7 +246,7 @@ void vCoRoutineSchedule( void );
  *   // Must end every co-routine with a call to crEND();
  *   crEND();
  * }
- * </pre>
+ * @endcode
  * \defgroup crSTART crSTART
  * \ingroup Tasks
  */
@@ -259,9 +265,9 @@ void vCoRoutineSchedule( void );
 
 /**
  * croutine. h
- * <pre>
+ * @code{c}
  * crDELAY( CoRoutineHandle_t xHandle, TickType_t xTicksToDelay );
- * </pre>
+ * @endcode
  *
  * Delay a co-routine for a fixed period of time.
  *
@@ -278,7 +284,7 @@ void vCoRoutineSchedule( void );
  * can be used to convert ticks to milliseconds.
  *
  * Example usage:
- * <pre>
+ * @code{c}
  * // Co-routine to be created.
  * void vACoRoutine( CoRoutineHandle_t xHandle, UBaseType_t uxIndex )
  * {
@@ -301,19 +307,21 @@ void vCoRoutineSchedule( void );
  *   // Must end every co-routine with a call to crEND();
  *   crEND();
  * }
- * </pre>
+ * @endcode
  * \defgroup crDELAY crDELAY
  * \ingroup Tasks
  */
-#define crDELAY( xHandle, xTicksToDelay )                      \
-    if( ( xTicksToDelay ) > 0 )                                \
-    {                                                          \
-        vCoRoutineAddToDelayedList( ( xTicksToDelay ), NULL ); \
-    }                                                          \
-    crSET_STATE0( ( xHandle ) );
+#define crDELAY( xHandle, xTicksToDelay )                          \
+    do {                                                           \
+        if( ( xTicksToDelay ) > 0 )                                \
+        {                                                          \
+            vCoRoutineAddToDelayedList( ( xTicksToDelay ), NULL ); \
+        }                                                          \
+        crSET_STATE0( ( xHandle ) );                               \
+    } while( 0 )
 
 /**
- * <pre>
+ * @code{c}
  * crQUEUE_SEND(
  *                CoRoutineHandle_t xHandle,
  *                QueueHandle_t pxQueue,
@@ -321,7 +329,7 @@ void vCoRoutineSchedule( void );
  *                TickType_t xTicksToWait,
  *                BaseType_t *pxResult
  *           )
- * </pre>
+ * @endcode
  *
  * The macro's crQUEUE_SEND() and crQUEUE_RECEIVE() are the co-routine
  * equivalent to the xQueueSend() and xQueueReceive() functions used by tasks.
@@ -361,7 +369,7 @@ void vCoRoutineSchedule( void );
  * error defined within ProjDefs.h.
  *
  * Example usage:
- * <pre>
+ * @code{c}
  * // Co-routine function that blocks for a fixed period then posts a number onto
  * // a queue.
  * static void prvCoRoutineFlashTask( CoRoutineHandle_t xHandle, UBaseType_t uxIndex )
@@ -393,12 +401,12 @@ void vCoRoutineSchedule( void );
  *  // Co-routines must end with a call to crEND().
  *  crEND();
  * }
- * </pre>
+ * @endcode
  * \defgroup crQUEUE_SEND crQUEUE_SEND
  * \ingroup Tasks
  */
 #define crQUEUE_SEND( xHandle, pxQueue, pvItemToQueue, xTicksToWait, pxResult )           \
-    {                                                                                     \
+    do {                                                                                  \
         *( pxResult ) = xQueueCRSend( ( pxQueue ), ( pvItemToQueue ), ( xTicksToWait ) ); \
         if( *( pxResult ) == errQUEUE_BLOCKED )                                           \
         {                                                                                 \
@@ -410,11 +418,11 @@ void vCoRoutineSchedule( void );
             crSET_STATE1( ( xHandle ) );                                                  \
             *pxResult = pdPASS;                                                           \
         }                                                                                 \
-    }
+    } while( 0 )
 
 /**
  * croutine. h
- * <pre>
+ * @code{c}
  * crQUEUE_RECEIVE(
  *                   CoRoutineHandle_t xHandle,
  *                   QueueHandle_t pxQueue,
@@ -422,7 +430,7 @@ void vCoRoutineSchedule( void );
  *                   TickType_t xTicksToWait,
  *                   BaseType_t *pxResult
  *               )
- * </pre>
+ * @endcode
  *
  * The macro's crQUEUE_SEND() and crQUEUE_RECEIVE() are the co-routine
  * equivalent to the xQueueSend() and xQueueReceive() functions used by tasks.
@@ -461,7 +469,7 @@ void vCoRoutineSchedule( void );
  * an error code as defined within ProjDefs.h.
  *
  * Example usage:
- * <pre>
+ * @code{c}
  * // A co-routine receives the number of an LED to flash from a queue.  It
  * // blocks on the queue until the number is received.
  * static void prvCoRoutineFlashWorkTask( CoRoutineHandle_t xHandle, UBaseType_t uxIndex )
@@ -487,12 +495,12 @@ void vCoRoutineSchedule( void );
  *
  *  crEND();
  * }
- * </pre>
+ * @endcode
  * \defgroup crQUEUE_RECEIVE crQUEUE_RECEIVE
  * \ingroup Tasks
  */
 #define crQUEUE_RECEIVE( xHandle, pxQueue, pvBuffer, xTicksToWait, pxResult )           \
-    {                                                                                   \
+    do {                                                                                \
         *( pxResult ) = xQueueCRReceive( ( pxQueue ), ( pvBuffer ), ( xTicksToWait ) ); \
         if( *( pxResult ) == errQUEUE_BLOCKED )                                         \
         {                                                                               \
@@ -504,17 +512,17 @@ void vCoRoutineSchedule( void );
             crSET_STATE1( ( xHandle ) );                                                \
             *( pxResult ) = pdPASS;                                                     \
         }                                                                               \
-    }
+    } while( 0 )
 
 /**
  * croutine. h
- * <pre>
+ * @code{c}
  * crQUEUE_SEND_FROM_ISR(
  *                          QueueHandle_t pxQueue,
  *                          void *pvItemToQueue,
  *                          BaseType_t xCoRoutinePreviouslyWoken
  *                     )
- * </pre>
+ * @endcode
  *
  * The macro's crQUEUE_SEND_FROM_ISR() and crQUEUE_RECEIVE_FROM_ISR() are the
  * co-routine equivalent to the xQueueSendFromISR() and xQueueReceiveFromISR()
@@ -549,7 +557,7 @@ void vCoRoutineSchedule( void );
  * the ISR.
  *
  * Example usage:
- * <pre>
+ * @code{c}
  * // A co-routine that blocks on a queue waiting for characters to be received.
  * static void vReceivingCoRoutine( CoRoutineHandle_t xHandle, UBaseType_t uxIndex )
  * {
@@ -598,7 +606,7 @@ void vCoRoutineSchedule( void );
  *       xCRWokenByPost = crQUEUE_SEND_FROM_ISR( xCommsRxQueue, &cRxedChar, xCRWokenByPost );
  *   }
  * }
- * </pre>
+ * @endcode
  * \defgroup crQUEUE_SEND_FROM_ISR crQUEUE_SEND_FROM_ISR
  * \ingroup Tasks
  */
@@ -608,13 +616,13 @@ void vCoRoutineSchedule( void );
 
 /**
  * croutine. h
- * <pre>
+ * @code{c}
  * crQUEUE_SEND_FROM_ISR(
  *                          QueueHandle_t pxQueue,
  *                          void *pvBuffer,
  *                          BaseType_t * pxCoRoutineWoken
  *                     )
- * </pre>
+ * @endcode
  *
  * The macro's crQUEUE_SEND_FROM_ISR() and crQUEUE_RECEIVE_FROM_ISR() are the
  * co-routine equivalent to the xQueueSendFromISR() and xQueueReceiveFromISR()
@@ -649,7 +657,7 @@ void vCoRoutineSchedule( void );
  * pdFALSE.
  *
  * Example usage:
- * <pre>
+ * @code{c}
  * // A co-routine that posts a character to a queue then blocks for a fixed
  * // period.  The character is incremented each time.
  * static void vSendingCoRoutine( CoRoutineHandle_t xHandle, UBaseType_t uxIndex )
@@ -714,7 +722,7 @@ void vCoRoutineSchedule( void );
  *       }
  *   }
  * }
- * </pre>
+ * @endcode
  * \defgroup crQUEUE_RECEIVE_FROM_ISR crQUEUE_RECEIVE_FROM_ISR
  * \ingroup Tasks
  */

@@ -9,6 +9,10 @@
 #include "esp_private/hw_stack_guard.h"
 #endif
 
+#if CONFIG_FREERTOS_UNICORE
+#define pxCurrentTCBs   pxCurrentTCB
+#endif
+
     .global uxInterruptNesting
     .global uxSchedulerRunning
     .global xIsrStackTop

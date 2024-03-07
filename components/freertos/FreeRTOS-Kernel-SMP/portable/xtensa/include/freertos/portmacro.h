@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -100,15 +100,16 @@ BaseType_t xPortCheckIfInISR(void);
 UBaseType_t uxPortEnterCriticalFromISR( void );
 void vPortExitCriticalFromISR( UBaseType_t level );
 
+#if ( configNUMBER_OF_CORES > 1 )
 /*
 These are always called with interrupts already disabled. We simply need to get/release the spinlocks
 */
-
 extern portMUX_TYPE port_xTaskLock;
 extern portMUX_TYPE port_xISRLock;
 
 void vPortTakeLock( portMUX_TYPE *lock );
 void vPortReleaseLock( portMUX_TYPE *lock );
+#endif /* configNUMBER_OF_CORES > 1 */
 
 // ---------------------- Yielding -------------------------
 
@@ -151,35 +152,42 @@ void vPortTCBPreDeleteHook( void *pxTCB );
 
 // --------------------- Interrupts ------------------------
 
-#define portDISABLE_INTERRUPTS()            ({ \
+#define portSET_INTERRUPT_MASK()            ({ \
     unsigned int prev_level = XTOS_SET_INTLEVEL(XCHAL_EXCM_LEVEL); \
     portbenchmarkINTERRUPT_DISABLE(); \
     prev_level = ((prev_level >> XCHAL_PS_INTLEVEL_SHIFT) & XCHAL_PS_INTLEVEL_MASK); \
     prev_level; \
 })
-
-#define portENABLE_INTERRUPTS()             ({ \
-    portbenchmarkINTERRUPT_RESTORE(0); \
-    XTOS_SET_INTLEVEL(0); \
-})
+#define portSET_INTERRUPT_MASK_FROM_ISR()   portSET_INTERRUPT_MASK()
+#define portDISABLE_INTERRUPTS()            portSET_INTERRUPT_MASK()
 
 /*
-Note: XTOS_RESTORE_INTLEVEL() will overwrite entire PS register on XEA2. So we need ot make the value INTLEVEL field ourselves
+Note: XTOS_RESTORE_INTLEVEL() will overwrite entire PS register on XEA2. So we need to set the value of the INTLEVEL field ourselves
 */
-#define portRESTORE_INTERRUPTS(x)           ({ \
+#define portCLEAR_INTERRUPT_MASK(x)         ({ \
     unsigned int ps_reg; \
     RSR(PS, ps_reg); \
     ps_reg = (ps_reg & ~XCHAL_PS_INTLEVEL_MASK); \
     ps_reg |= ((x << XCHAL_PS_INTLEVEL_SHIFT) & XCHAL_PS_INTLEVEL_MASK); \
     XTOS_RESTORE_INTLEVEL(ps_reg); \
 })
+#define portCLEAR_INTERRUPT_MASK_FROM_ISR(x)    portCLEAR_INTERRUPT_MASK(x)
+#define portENABLE_INTERRUPTS()     ({ \
+    portbenchmarkINTERRUPT_RESTORE(0); \
+    XTOS_SET_INTLEVEL(0); \
+})
+
+/* Compatibility */
+#define portRESTORE_INTERRUPTS(x)   portCLEAR_INTERRUPT_MASK(x)
 
 // ------------------ Critical Sections --------------------
 
+#if ( configNUMBER_OF_CORES > 1 )
 #define portGET_TASK_LOCK()                         vPortTakeLock(&port_xTaskLock)
 #define portRELEASE_TASK_LOCK()                     vPortReleaseLock(&port_xTaskLock)
 #define portGET_ISR_LOCK()                          vPortTakeLock(&port_xISRLock)
 #define portRELEASE_ISR_LOCK()                      vPortReleaseLock(&port_xISRLock)
+#endif /* configNUMBER_OF_CORES > 1 */
 
 //Critical sections used by FreeRTOS SMP
 extern void vTaskEnterCritical( void );
@@ -195,17 +203,10 @@ extern void vTaskExitCritical( void );
 #define portEXIT_CRITICAL(...)                      CHOOSE_MACRO_VA_ARG(portEXIT_CRITICAL_IDF, portEXIT_CRITICAL_SMP, ##__VA_ARGS__)(__VA_ARGS__)
 #endif
 
-#define portSET_INTERRUPT_MASK_FROM_ISR() ({ \
-    unsigned int cur_level; \
-    RSR(PS, cur_level); \
-    cur_level = (cur_level & XCHAL_PS_INTLEVEL_MASK) >> XCHAL_PS_INTLEVEL_SHIFT; \
-    vTaskEnterCritical(); \
-    cur_level; \
-})
-#define portCLEAR_INTERRUPT_MASK_FROM_ISR(x) ({ \
-    vTaskExitCritical(); \
-    portRESTORE_INTERRUPTS(x); \
-})
+extern UBaseType_t vTaskEnterCriticalFromISR( void );
+extern void vTaskExitCriticalFromISR( UBaseType_t uxSavedInterruptStatus );
+#define portENTER_CRITICAL_FROM_ISR() vTaskEnterCriticalFromISR()
+#define portEXIT_CRITICAL_FROM_ISR(x) vTaskExitCriticalFromISR(x)
 
 // ---------------------- Yielding -------------------------
 
@@ -356,8 +357,8 @@ static inline bool IRAM_ATTR xPortCanYield(void)
     return ((ps_reg & PS_INTLEVEL_MASK) == 0);
 }
 
-// Added for backward compatibility with IDF
-#define portYIELD_WITHIN_API()                      vTaskYieldWithinAPI()
+// Defined even for configNUMBER_OF_CORES > 1 for IDF compatibility
+#define portYIELD_WITHIN_API()                      esp_crosscore_int_send_yield(xPortGetCoreID())
 
 // ----------------------- System --------------------------
 

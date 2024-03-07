@@ -33,6 +33,10 @@
 
 #define TOPOFSTACK_OFFS                 0x00    /* StackType_t *pxTopOfStack */
 
+#if CONFIG_FREERTOS_UNICORE
+#define pxCurrentTCBs   pxCurrentTCB
+#endif
+
 .extern pxCurrentTCBs
 #if XCHAL_CP_NUM > 0
 /* Offsets used to get a task's coprocessor save area (CPSA) from its TCB */
