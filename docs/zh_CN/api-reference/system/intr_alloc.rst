@@ -65,16 +65,18 @@
     外部外设中断
     ^^^^^^^^^^^^^^^^^^^^
 
-    剩余的中断源来自外部外设，在 ``soc/interrupts.h`` 中定义为 ``ETS_*_INTR_SOURCE``。
+    其余中断源来自外部外设。
 
 .. only:: esp32p4
 
     多核问题
     --------
 
-.. only:: SOC_HP_CPU_HAS_MULTIPLE_CORES
+    每个 {IDF_TARGET_NAME} 内核都同时提供内部中断和外部中断，内部中断由内核自身触发，外部中断由外设触发。但 ESP-IDF 仅使用 {IDF_TARGET_NAME} 上的外部中断。大多数 {IDF_TARGET_NAME} 中断源都属于外部中断。
 
-    两个 CPU 的非内部中断源槽都与中断矩阵相连，可以将任何外部中断源发送到这些中断槽中。
+    每个内核的各个外部中断槽都与中断矩阵相连。通过中断矩阵可将任何外部中断源连接到任何中断槽，也可将多个外部中断源映射到同一个中断槽。外部中断源在 ``soc/interrupts.h`` 中定义为 ``ETS_*_INTR_SOURCE``。
+
+.. only:: SOC_HP_CPU_HAS_MULTIPLE_CORES
 
     - 外部中断会始终被分配到执行该分配的内核上。
     - 释放外部中断必须在分配该中断的内核上进行。
