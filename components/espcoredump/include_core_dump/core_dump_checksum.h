@@ -55,31 +55,31 @@ uint32_t esp_core_dump_elf_version(void);
 /**
  * @brief Initialize checksum calculation for the given context.
  *
- * @param wr_data Core dump checksum context to fill.
+ * @param ctx Core dump checksum context to fill.
  */
-void esp_core_dump_checksum_init(void ** wr_data);
+void esp_core_dump_checksum_init(void *ctx);
 
 /**
  * @brief Update checksum calculation by integrating the given data in the context.
  *
- * @param wr_data Core dump checksum context.
+ * @param ctx Core dump checksum context.
  * @param data    Pointer to the data to integrate in the checksum calculation.
  *                This is usually the new data to write (or already written) on
  *                the flash.
  */
-void esp_core_dump_checksum_update(void* wr_data, void* data, size_t data_len);
+void esp_core_dump_checksum_update(void *ctx, void *data, size_t data_len);
 
 /**
  * @brief Terminate and return checksum calculated for the given context.
  *
- * @param wr_data Core dump checksum context.
+ * @param ctx Core dump checksum context.
  * @param chs_ptr Pointer used to return the checksum calculated. It can be
  *                NULL, in this case, it will be ignored but the correct size
  *                of the checksum will be returned.
  *
  * @return The size, in bytes, of the checksum.
  */
-uint32_t esp_core_dump_checksum_finish(void* wr_data, core_dump_checksum_bytes* chs_ptr);
+uint32_t esp_core_dump_checksum_finish(void *ctx, core_dump_checksum_bytes *chs_ptr);
 
 /**
  * @brief Return the size of the checksums.
