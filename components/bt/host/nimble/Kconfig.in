@@ -388,8 +388,7 @@ config BT_NIMBLE_RPA_TIMEOUT
     depends on BT_NIMBLE_ENABLED
     default 900
     help
-        Time interval between RPA address change. This is applicable in case of
-        Host based RPA
+        Time interval between RPA address change.
 
 menuconfig BT_NIMBLE_MESH
     bool "Enable BLE mesh functionality"
