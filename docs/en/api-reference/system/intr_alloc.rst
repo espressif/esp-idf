@@ -69,12 +69,12 @@ To illustrate why shard interrupts can only be level-triggered, take the scenari
 
 .. only:: esp32p4
 
-    Multicore considerations
+    Multicore Considerations
     ------------------------
 
-    Despite providing internal interrupts, part of the RISC-V core, ESP-IDF only makes the use of the external interrupts, within the {IDF_TARGET_NAME} but outside the RISC-V cores themselves. Most {IDF_TARGET_NAME} peripherals are of this type.
+    Each core on {IDF_TARGET_NAME} provides internal interrupts that are triggered by the core itself and external interrupts that are triggered by peripherals. However, ESP-IDF only makes use of the external interrupts on {IDF_TARGET_NAME}. Most {IDF_TARGET_NAME} interrupt sources are external interrupts.
 
-    External interrupt slots in both CPU cores are wired to an interrupt matrix, which can be used to route any external interrupt source, defined in ``soc/interrupts.h`` as ``ETS_*_INTR_SOURCE``, to any of these interrupt slots.
+    Each external interrupt slot of each core is wired to the interrupt matrix. The interrupt matrix allows any interrupt slot to be connected to any external interrupt source. Mapping multiple external interrupts sources to a single slot is also supported. These external interrupt sources are defined in ``soc/interrupts.h`` as ``ETS_*_INTR_SOURCE``.
 
 .. only:: SOC_HP_CPU_HAS_MULTIPLE_CORES
 
