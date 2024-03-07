@@ -11,7 +11,7 @@ The example enables the following wakeup sources:
 
 - Timer: wake up the chip in 2 seconds
 - EXT0: wake up the chip if a button attached to GPIO0 is pressed (i.e. if GPIO0 goes low)
-- UART0: wake up the chip when the uart rx pin (default GPIO6) receive more than 3 edges.
+- UART0: wake up the chip when the uart rx pin receive more than or equal to 3 rising edges.
 
 The example also prints time spent in light sleep mode to illustrate that timekeeping continues while the chip is in light sleep.
 
@@ -60,11 +60,13 @@ For this example, the wake-up GPIO is bound to the 'BOOT' button on the board, w
 
 For this example, the wake-up UART is bound to the default console port (UART_NUM_0), we can wake-up the chip from light sleep by inputting some keys on the key board. We can see the wake-up reason is `uart` in this case.
 
-Note #1: the UART wake-up threshould is set to 3 in this example, which means the ascii code of the input character should has at least 3 edges, for example, the ascii code of character `0` is `0011 0000` in binary, which only contains 2 edges, so the character `0` is not enough to wakeup the chip.
+Note #1: the UART wake-up threshould is set to 3 in this example, which means the ascii code of the input character to wake-up the chip should has at least 3 rising edges (including the stop bit per character), for example, the ascii code of character `0` is `0011 0000` in binary, which only contains 2 rising edges, so the character `0` is not enough to wakeup the chip.
 
 Note #2: only UART0 and UART1 (if has) are supported to be configured as wake up source. And for ESP32, we have to use iomux pin for RX signal (i.e. GPIO3 for UART0 & GPIO9 for UART1), otherwise it won't success.
 
 Note #3: due to limitation of the HW, the bytes that received during light sleep is only used for waking up, and it will not be received by UART peripheral or passed to the driver.
+
+Note #4: after waking-up from UART, you should send some extra data through the UART port, so that the internal wakeup indication signal can be cleared. Otherwises, the next UART wake-up would trigger with two less rising edges than the configured threshold value.
 
 ### Wake-up by Touch Pad
 
