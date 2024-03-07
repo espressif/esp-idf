@@ -1,9 +1,10 @@
 menu "GDB Stub"
 
-    # Hidden option which is selected from the "Panic handler behavior"
+    # Hidden option which adds GDBStub on panic option to the "Panic handler behavior"
     # menu in the target component.
     config ESP_GDBSTUB_ENABLED
         bool
+        default y
 
     config ESP_SYSTEM_GDBSTUB_RUNTIME
         bool "GDBStub at runtime"

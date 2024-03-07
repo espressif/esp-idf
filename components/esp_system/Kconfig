@@ -38,7 +38,7 @@ menu "ESP System Settings"
 
         config ESP_SYSTEM_PANIC_GDBSTUB
             bool "GDBStub on panic"
-            select ESP_GDBSTUB_ENABLED
+            depends on ESP_GDBSTUB_ENABLED
             help
                 Invoke gdbstub on the serial port, allowing for gdb to attach to it to do a postmortem
                 of the crash.

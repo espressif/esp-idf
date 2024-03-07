@@ -66,6 +66,10 @@
 
   启动 GDB 服务器，通过控制台 UART 接口与 GDB 进行通信。该选项只提供只读调试或者事后调试，详细信息请参阅 `GDB Stub`_。
 
+.. note::
+
+  仅当构建中包含组件 ``esp_gdbstub`` 时，配置选项 :ref:`CONFIG_ESP_SYSTEM_PANIC` 中的 ``CONFIG_ESP_SYSTEM_PANIC_GDBSTUB`` 选项可用。
+
 紧急处理程序的行为还受到另外两个配置项的影响：
 
 - 如果使能了 :ref:`CONFIG_ESP_DEBUG_OCDAWARE` （默认），紧急处理程序会检测 {IDF_TARGET_NAME} 是否已经连接 JTAG 调试器。如果检测成功，程序会暂停运行，并将控制权交给调试器。在这种情况下，寄存器和回溯不会被打印到控制台，并且也不会使用 GDB Stub 和 Core Dump 的功能。
