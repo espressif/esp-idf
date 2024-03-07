@@ -12,7 +12,7 @@
 #include "hal/crypto_dma_ll.h"
 
 
-esp_err_t esp_sha_dma_start(const lldesc_t *input)
+esp_err_t esp_sha_dma_start(const crypto_dma_desc_t *input)
 {
     crypto_dma_ll_set_mode(CRYPTO_DMA_SHA);
     crypto_dma_ll_reset();

@@ -27,7 +27,7 @@ extern "C" {
  *                   GDMA_TRIG_PERIPH_SHA
  * @return esp_err_t ESP_FAIL if no GDMA channel available
  */
-esp_err_t esp_crypto_shared_gdma_start(const lldesc_t *input, const lldesc_t *output, gdma_trigger_peripheral_t peripheral);
+esp_err_t esp_crypto_shared_gdma_start(const lldesc_t *input, const lldesc_t *output, gdma_trigger_peripheral_t peripheral) __attribute__((deprecated("use esp_crypto_shared_gdma_start_axi_ahb instead")));
 
 /**
  * @brief Start a GDMA transfer on the shared crypto DMA channel
