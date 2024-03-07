@@ -423,7 +423,7 @@ static esp_err_t encrypt_partition(int index, const esp_partition_info_t *partit
         return ESP_OK;
     } else {
         /* should_encrypt */
-        ESP_LOGI(TAG, "Encrypting partition %d at offset 0x%x (length 0x%x)...", index, partition->pos.offset, size);
+        ESP_LOGI(TAG, "Encrypting partition %d at offset 0x%" PRIx32 " (length 0x%" PRIx32 ")...", index, partition->pos.offset, size);
 
         err = esp_flash_encrypt_region(partition->pos.offset, size);
         ESP_LOGI(TAG, "Done encrypting");
@@ -441,7 +441,7 @@ esp_err_t esp_flash_encrypt_region(uint32_t src_addr, size_t data_length)
     uint32_t buf[FLASH_SECTOR_SIZE / sizeof(uint32_t)];
 
     if (src_addr % FLASH_SECTOR_SIZE != 0) {
-        ESP_LOGE(TAG, "esp_flash_encrypt_region bad src_addr 0x%x", src_addr);
+        ESP_LOGE(TAG, "esp_flash_encrypt_region bad src_addr 0x%" PRIx32, src_addr);
         return ESP_FAIL;
     }
 

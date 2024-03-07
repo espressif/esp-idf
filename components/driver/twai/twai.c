@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -107,11 +107,11 @@ static void twai_alert_handler(twai_obj_t *p_twai_obj, uint32_t alert_code, int 
 #ifndef CONFIG_TWAI_ISR_IN_IRAM     //Only log if ISR is not in IRAM
         if (p_twai_obj->alerts_enabled & TWAI_ALERT_AND_LOG) {
             if (alert_code >= ALERT_LOG_LEVEL_ERROR) {
-                ESP_EARLY_LOGE(TWAI_TAG, "Alert %d", alert_code);
+                ESP_EARLY_LOGE(TWAI_TAG, "Alert %" PRIu32, alert_code);
             } else if (alert_code >= ALERT_LOG_LEVEL_WARNING) {
-                ESP_EARLY_LOGW(TWAI_TAG, "Alert %d", alert_code);
+                ESP_EARLY_LOGW(TWAI_TAG, "Alert %" PRIu32, alert_code);
             } else {
-                ESP_EARLY_LOGI(TWAI_TAG, "Alert %d", alert_code);
+                ESP_EARLY_LOGI(TWAI_TAG, "Alert %" PRIu32, alert_code);
             }
         }
 #endif  //CONFIG_TWAI_ISR_IN_IRAM

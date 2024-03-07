@@ -735,7 +735,7 @@ static esp_err_t test_touch_check_ch_intr_timeout(touch_pad_t pad_num)
                     touch_pad_timeout_resume();
                     break;
                 } else {
-                    esp_rom_printf("-timeout %x T[%"PRIu32"] status %"PRIx32", evt_msk %x -\n",
+                    esp_rom_printf("-timeout %" PRIx32 " T[%"PRIu32"] status %"PRIx32", evt_msk %x -\n",
                                    s_touch_timeout_mask, evt.pad_num, evt.pad_status, evt.intr_mask);
                     touch_pad_timeout_resume();
                 }

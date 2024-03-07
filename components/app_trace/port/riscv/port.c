@@ -159,7 +159,7 @@ static esp_err_t esp_apptrace_riscv_init(esp_apptrace_riscv_data_t *hw_data)
     ESP_APPTRACE_LOGI("Apptrace initialized on CPU%d. Tracing control block @ %p.", core_id, &s_tracing_ctrl[core_id]);
     s_tracing_ctrl[core_id].mem_blocks = hw_data->membufs.blocks;
     for (int i = 0; i < 2; i++) {
-        ESP_APPTRACE_LOGD("Mem buf[%d] %d bytes @ %p (%p/%p)", i,
+        ESP_APPTRACE_LOGD("Mem buf[%d] %" PRIu32 " bytes @ %p (%p/%p)", i,
             s_tracing_ctrl[core_id].mem_blocks[i].sz, s_tracing_ctrl[core_id].mem_blocks[i].start,
             &(s_tracing_ctrl[core_id].mem_blocks[i].start), &(s_tracing_ctrl[core_id].mem_blocks[i].sz));
     }
@@ -325,7 +325,7 @@ static esp_err_t esp_apptrace_riscv_buffer_swap_start(uint32_t curr_block_id)
         uint32_t acked_block = ESP_APPTRACE_RISCV_BLOCK_ID_GET(ctrl_reg);
         uint32_t host_to_read = ESP_APPTRACE_RISCV_BLOCK_LEN_GET(ctrl_reg);
         if (host_to_read != 0 || acked_block != (curr_block_id & ESP_APPTRACE_RISCV_BLOCK_ID_MSK)) {
-            ESP_APPTRACE_LOGD("[%d]: Can not switch %x %d %x %x/%lx", esp_cpu_get_core_id(), ctrl_reg, host_to_read, acked_block,
+            ESP_APPTRACE_LOGD("[%d]: Can not switch %" PRIx32 " %" PRIu32 " %" PRIx32 " %" PRIx32 "/%" PRIx32, esp_cpu_get_core_id(), ctrl_reg, host_to_read, acked_block,
                 curr_block_id & ESP_APPTRACE_RISCV_BLOCK_ID_MSK, curr_block_id);
             res = ESP_ERR_NO_MEM;
             goto _on_err;

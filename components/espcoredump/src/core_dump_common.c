@@ -85,7 +85,7 @@ FORCE_INLINE_ATTR void esp_core_dump_setup_stack(void)
      * current stack pointer, in order to be able too restore it later.
      * This function must be inlined. */
     esp_core_dump_replace_sp(s_core_dump_sp, &s_stack_context);
-    ESP_COREDUMP_LOGI("Backing up stack @ %p and use core dump stack @ %p",
+    ESP_COREDUMP_LOGI("Backing up stack @ 0x%" PRIx32 " and use core dump stack @ %p",
                       s_stack_context.sp, esp_cpu_get_sp());
 
 #if CONFIG_ESP_SYSTEM_HW_STACK_GUARD
@@ -120,12 +120,12 @@ FORCE_INLINE_ATTR void esp_core_dump_report_stack_usage(void)
 {
 #if CONFIG_ESP_COREDUMP_LOGS
     uint32_t bytes_free = esp_core_dump_free_stack_space(s_coredump_stack);
-    ESP_COREDUMP_LOGI("Core dump used %u bytes on stack. %u bytes left free.",
+    ESP_COREDUMP_LOGI("Core dump used %" PRIu32 " bytes on stack. %" PRIu32 " bytes left free.",
                       s_core_dump_sp - s_coredump_stack - bytes_free, bytes_free);
 #endif
 
     /* Restore the stack pointer. */
-    ESP_COREDUMP_LOGI("Restoring stack @ %p", s_stack_context.sp);
+    ESP_COREDUMP_LOGI("Restoring stack @ 0x%" PRIx32, s_stack_context.sp);
 #if CONFIG_ESP_SYSTEM_HW_STACK_GUARD
     esp_hw_stack_guard_monitor_stop();
 #endif // CONFIG_ESP_SYSTEM_HW_STACK_GUARD
@@ -196,7 +196,7 @@ static void esp_core_dump_switch_task_stack_to_isr(core_dump_task_header_t *task
     }
     task->stack_start = (uint32_t) s_exc_frame;
     task->stack_end = esp_core_dump_get_isr_stack_end();
-    ESP_COREDUMP_LOG_PROCESS("Switched task %x to ISR stack [%x...%x]", task->tcb_addr,
+    ESP_COREDUMP_LOG_PROCESS("Switched task %p to ISR stack [%" PRIx32 "...%" PRIx32 "]", task->tcb_addr,
                              task->stack_start,
                              task->stack_end);
 }
@@ -226,11 +226,11 @@ bool esp_core_dump_get_task_snapshot(void *handle, core_dump_task_header_t *task
         task->stack_start = (uint32_t) s_exc_frame;
     }
     if (!esp_core_dump_check_task(task)) {
-        ESP_COREDUMP_LOG_PROCESS("Task %x is broken!", handle);
+        ESP_COREDUMP_LOG_PROCESS("Task %p is broken!", handle);
         return false;
     }
     if (handle == esp_core_dump_get_current_task_handle()) {
-        ESP_COREDUMP_LOG_PROCESS("Crashed task %x", handle);
+        ESP_COREDUMP_LOG_PROCESS("Crashed task %p", handle);
         esp_core_dump_port_set_crashed_tcb((uint32_t)handle);
         if (esp_core_dump_in_isr_context()) {
             esp_core_dump_switch_task_stack_to_isr(task, interrupted_stack);

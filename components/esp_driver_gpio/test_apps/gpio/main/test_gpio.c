@@ -105,7 +105,7 @@ TEST_CASE("GPIO_config_parameters_test", "[gpio]")
 static void gpio_isr_edge_handler(void *arg)
 {
     uint32_t gpio_num = (uint32_t) arg;
-    esp_rom_printf("GPIO[%d] intr on core %d, val: %d\n", gpio_num, esp_cpu_get_core_id(), gpio_get_level(gpio_num));
+    esp_rom_printf("GPIO[%" PRIu32 "] intr on core %d, val: %d\n", gpio_num, esp_cpu_get_core_id(), gpio_get_level(gpio_num));
     edge_intr_times++;
 }
 
@@ -114,7 +114,7 @@ static void gpio_isr_level_handler(void *arg)
 {
     uint32_t gpio_num = (uint32_t) arg;
     disable_intr_times++;
-    esp_rom_printf("GPIO[%d] intr, val: %d, disable_intr_times = %d\n", gpio_num, gpio_get_level(gpio_num), disable_intr_times);
+    esp_rom_printf("GPIO[%" PRIu32 "] intr, val: %d, disable_intr_times = %d\n", gpio_num, gpio_get_level(gpio_num), disable_intr_times);
     gpio_intr_disable(gpio_num);
 }
 
@@ -123,7 +123,7 @@ static void gpio_isr_level_handler2(void *arg)
 {
     uint32_t gpio_num = (uint32_t) arg;
     level_intr_times++;
-    esp_rom_printf("GPIO[%d] intr, val: %d, level_intr_times = %d\n", gpio_num, gpio_get_level(gpio_num), level_intr_times);
+    esp_rom_printf("GPIO[%" PRIu32 "] intr, val: %d, level_intr_times = %d\n", gpio_num, gpio_get_level(gpio_num), level_intr_times);
     if (gpio_get_level(gpio_num)) {
         gpio_set_level(gpio_num, 0);
     } else {

@@ -184,7 +184,7 @@ TEST_CASE("mcpwm_capture_software_catch", "[mcpwm]")
     // check user data
     TEST_ASSERT_EQUAL(2, test_callback_data.cap_data_index);
     uint32_t delta = test_callback_data.cap_data[1] - test_callback_data.cap_data[0];
-    esp_rom_printf("duration=%u ticks\r\n", delta);
+    esp_rom_printf("duration=%" PRIu32 " ticks\r\n", delta);
     uint32_t clk_src_res;
     TEST_ESP_OK(mcpwm_capture_timer_get_resolution(cap_timer, &clk_src_res));
     clk_src_res /= 1000; // convert to kHz

@@ -470,7 +470,7 @@ uint32_t get_act_hp_dbias(void)
             }
         } else {
             hp_cali_dbias = HP_CALI_DBIAS_DEFAULT;
-            ESP_HW_LOGD(TAG, "hp_cali_dbias not burnt in efuse or wrong value was burnt in blk version: %d\n", blk_version);
+            ESP_HW_LOGD(TAG, "hp_cali_dbias not burnt in efuse or wrong value was burnt in blk version: %" PRIu32 "\n", blk_version);
         }
     }
 
@@ -494,7 +494,7 @@ uint32_t get_act_lp_dbias(void)
             }
         } else {
             lp_cali_dbias = LP_CALI_DBIAS_DEFAULT;
-            ESP_HW_LOGD(TAG, "lp_cali_dbias not burnt in efuse or wrong value was burnt in blk version: %d\n", blk_version);
+            ESP_HW_LOGD(TAG, "lp_cali_dbias not burnt in efuse or wrong value was burnt in blk version: %" PRIu32 "\n", blk_version);
         }
     } else {
         ESP_HW_LOGD(TAG, "blk_version is less than 3, act dbias not burnt in efuse\n");

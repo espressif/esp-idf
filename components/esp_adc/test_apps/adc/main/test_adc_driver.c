@@ -196,13 +196,13 @@ TEST_CASE("ADC continuous big conv_frame_size test", "[adc_continuous]")
         uint32_t cnt = 0;
         ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
         TEST_ESP_OK(adc_continuous_read(handle, result, ADC_FRAME_TEST_SIZE, &ret_num, ADC_MAX_DELAY));
-        esp_rom_printf("ret_num: %d\n", ret_num);
+        esp_rom_printf("ret_num: %" PRIu32 "\n", ret_num);
         for (int i = 0; i < ret_num; i += SOC_ADC_DIGI_RESULT_BYTES) {
             adc_digi_output_data_t *p = (adc_digi_output_data_t*)&result[i];
             sum += ADC_DRIVER_TEST_GET_DATA(p);
             cnt++;
         }
-        esp_rom_printf("avg: %d\n", sum / cnt);
+        esp_rom_printf("avg: %" PRIu32 "\n", sum / cnt);
         TEST_ASSERT_INT_WITHIN(ADC_TEST_LOW_THRESH, ADC_TEST_LOW_VAL, sum / cnt);
     }
 

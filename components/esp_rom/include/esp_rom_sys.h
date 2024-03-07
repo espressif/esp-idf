@@ -7,6 +7,7 @@
 #pragma once
 #include "sdkconfig.h"
 #include <stdint.h>
+#include <inttypes.h>
 #include "soc/reset_reasons.h"
 
 #ifdef __cplusplus

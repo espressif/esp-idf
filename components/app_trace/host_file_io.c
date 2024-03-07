@@ -122,7 +122,7 @@ static esp_err_t esp_apptrace_file_rsp_recv(esp_apptrace_dest_t dest, uint8_t *b
             ESP_EARLY_LOGE(TAG, "Failed to read (%d)!", ret);
             return ret;
         }
-        ESP_EARLY_LOGV(TAG, "%s read %d bytes", __FUNCTION__, rd_size);
+        ESP_EARLY_LOGV(TAG, "%s read %" PRIu32 " bytes", __FUNCTION__, rd_size);
         tot_rd += rd_size;
     }
 

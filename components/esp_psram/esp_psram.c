@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -123,7 +123,7 @@ esp_err_t esp_psram_init(void)
     ret = esp_psram_impl_get_physical_size(&psram_physical_size);
     assert(ret == ESP_OK);
 
-    ESP_EARLY_LOGI(TAG, "Found %dMB PSRAM device", psram_physical_size / (1024 * 1024));
+    ESP_EARLY_LOGI(TAG, "Found %" PRIu32 "MB PSRAM device", psram_physical_size / (1024 * 1024));
     ESP_EARLY_LOGI(TAG, "Speed: %dMHz", CONFIG_SPIRAM_SPEED);
 #if CONFIG_IDF_TARGET_ESP32
 #if CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
@@ -159,7 +159,7 @@ esp_err_t esp_psram_init(void)
     }
     start_page += used_page;
     psram_available_size -= MMU_PAGE_TO_BYTES(used_page);
-    ESP_EARLY_LOGV(TAG, "after copy .text, used page is %d, start_page is %d, psram_available_size is %d B", used_page, start_page, psram_available_size);
+    ESP_EARLY_LOGV(TAG, "after copy .text, used page is %" PRIu32 ", start_page is %" PRIu32 ", psram_available_size is %" PRIu32 " B", used_page, start_page, psram_available_size);
 #endif  //#if CONFIG_SPIRAM_FETCH_INSTRUCTIONS
 
     //------------------------------------Copy Flash .rodata to PSRAM-------------------------------------//
@@ -171,7 +171,7 @@ esp_err_t esp_psram_init(void)
     }
     start_page += used_page;
     psram_available_size -= MMU_PAGE_TO_BYTES(used_page);
-    ESP_EARLY_LOGV(TAG, "after copy .rodata, used page is %d, start_page is %d, psram_available_size is %d B", used_page, start_page, psram_available_size);
+    ESP_EARLY_LOGV(TAG, "after copy .rodata, used page is %" PRIu32 ", start_page is %" PRIu32 ", psram_available_size is %" PRIu32 " B", used_page, start_page, psram_available_size);
 #endif  //#if CONFIG_SPIRAM_RODATA
 
     //----------------------------------Map the PSRAM physical range to MMU-----------------------------//
@@ -202,7 +202,7 @@ esp_err_t esp_psram_init(void)
     mmu_hal_map_region(0, MMU_TARGET_PSRAM0, (intptr_t)v_start_8bit_aligned, MMU_PAGE_TO_BYTES(start_page), size_to_map, &actual_mapped_len);
 #endif
     start_page += BYTES_TO_MMU_PAGE(actual_mapped_len);
-    ESP_EARLY_LOGV(TAG, "8bit-aligned-region: actual_mapped_len is 0x%x bytes", actual_mapped_len);
+    ESP_EARLY_LOGV(TAG, "8bit-aligned-region: actual_mapped_len is 0x%" PRIx32 " bytes", actual_mapped_len);
 
     cache_bus_mask_t bus_mask = cache_ll_l1_get_bus(0, (uint32_t)v_start_8bit_aligned, actual_mapped_len);
     cache_ll_l1_enable_bus(0, bus_mask);
@@ -218,7 +218,7 @@ esp_err_t esp_psram_init(void)
     s_psram_ctx.regions_to_heap[PSRAM_MEM_8BIT_ALIGNED].size = size_to_map;
     s_psram_ctx.regions_to_heap[PSRAM_MEM_8BIT_ALIGNED].vaddr_start = (intptr_t)v_start_8bit_aligned;
     s_psram_ctx.regions_to_heap[PSRAM_MEM_8BIT_ALIGNED].vaddr_end = (intptr_t)v_start_8bit_aligned + size_to_map;
-    ESP_EARLY_LOGV(TAG, "8bit-aligned-range: 0x%x B, starting from: 0x%x", s_psram_ctx.mapped_regions[PSRAM_MEM_8BIT_ALIGNED].size, v_start_8bit_aligned);
+    ESP_EARLY_LOGV(TAG, "8bit-aligned-range: 0x%x B, starting from: %p", s_psram_ctx.mapped_regions[PSRAM_MEM_8BIT_ALIGNED].size, v_start_8bit_aligned);
     total_mapped_size += size_to_map;
 
 #if CONFIG_IDF_TARGET_ESP32S2
@@ -242,7 +242,7 @@ esp_err_t esp_psram_init(void)
         assert(ret == ESP_OK);
 
         mmu_hal_map_region(0, MMU_TARGET_PSRAM0, (intptr_t)v_start_32bit_aligned, MMU_PAGE_TO_BYTES(start_page), size_to_map, &actual_mapped_len);
-        ESP_EARLY_LOGV(TAG, "32bit-aligned-region: actual_mapped_len is 0x%x bytes", actual_mapped_len);
+        ESP_EARLY_LOGV(TAG, "32bit-aligned-region: actual_mapped_len is 0x%" PRIx32 " bytes", actual_mapped_len);
 
         cache_bus_mask_t bus_mask = cache_ll_l1_get_bus(0, (uint32_t)v_start_32bit_aligned, actual_mapped_len);
         cache_ll_l1_enable_bus(0, bus_mask);
@@ -253,7 +253,7 @@ esp_err_t esp_psram_init(void)
         s_psram_ctx.regions_to_heap[PSRAM_MEM_32BIT_ALIGNED].size = size_to_map;
         s_psram_ctx.regions_to_heap[PSRAM_MEM_32BIT_ALIGNED].vaddr_start = (intptr_t)v_start_32bit_aligned;
         s_psram_ctx.regions_to_heap[PSRAM_MEM_32BIT_ALIGNED].vaddr_end = (intptr_t)v_start_32bit_aligned + size_to_map;
-        ESP_EARLY_LOGV(TAG, "32bit-aligned-range: 0x%x B, starting from: 0x%x", s_psram_ctx.mapped_regions[PSRAM_MEM_32BIT_ALIGNED].size, v_start_32bit_aligned);
+        ESP_EARLY_LOGV(TAG, "32bit-aligned-range: 0x%x B, starting from: %p", s_psram_ctx.mapped_regions[PSRAM_MEM_32BIT_ALIGNED].size, v_start_32bit_aligned);
         total_mapped_size += size_to_map;
     }
 #endif  //  #if CONFIG_IDF_TARGET_ESP32S2
@@ -270,14 +270,14 @@ esp_err_t esp_psram_init(void)
 #if CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
     //should never be negative number
     uint32_t ext_bss_size = ((intptr_t)&_ext_ram_bss_end - (intptr_t)&_ext_ram_bss_start);
-    ESP_EARLY_LOGV(TAG, "ext_bss_size is %d", ext_bss_size);
+    ESP_EARLY_LOGV(TAG, "ext_bss_size is %" PRIu32, ext_bss_size);
     s_psram_ctx.regions_to_heap[PSRAM_MEM_8BIT_ALIGNED].vaddr_start += ext_bss_size;
     s_psram_ctx.regions_to_heap[PSRAM_MEM_8BIT_ALIGNED].size -= ext_bss_size;
 #endif  //#if CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
 
 #if CONFIG_SPIRAM_ALLOW_NOINIT_SEG_EXTERNAL_MEMORY
     uint32_t ext_noinit_size = ((intptr_t)&_ext_ram_noinit_end - (intptr_t)&_ext_ram_noinit_start);
-    ESP_EARLY_LOGV(TAG, "ext_noinit_size is %d", ext_noinit_size);
+    ESP_EARLY_LOGV(TAG, "ext_noinit_size is %" PRIu32, ext_noinit_size);
     s_psram_ctx.regions_to_heap[PSRAM_MEM_8BIT_ALIGNED].vaddr_start += ext_noinit_size;
     s_psram_ctx.regions_to_heap[PSRAM_MEM_8BIT_ALIGNED].size -= ext_noinit_size;
 #endif
@@ -417,7 +417,7 @@ static bool s_test_psram(intptr_t v_start, size_t size, intptr_t reserved_start,
         }
     }
     if (errct) {
-        ESP_EARLY_LOGE(TAG, "SPI SRAM memory test fail. %d/%d writes failed, first @ %X\n", errct, size / 32, initial_err + v_start);
+        ESP_EARLY_LOGE(TAG, "SPI SRAM memory test fail. %d/%d writes failed, first @ %X", errct, size / 32, initial_err + v_start);
         return false;
     } else {
         ESP_EARLY_LOGI(TAG, "SPI SRAM memory test OK");
