@@ -1,7 +1,8 @@
 
 set(srcs
     "test_app_main.c"
-    "test_spi_slave_hd.c"
+    "test_spi_slave.c"
+    "test_spi_slave_queue.c"
 )
 
 
@@ -9,6 +10,6 @@ set(srcs
 # the component can be registered as WHOLE_ARCHIVE
 idf_component_register(
     SRCS ${srcs}
-    PRIV_REQUIRES test_utils driver test_driver_utils esp_serial_slave_link sdmmc
+    PRIV_REQUIRES esp_driver_spi spi_flash
     WHOLE_ARCHIVE
 )

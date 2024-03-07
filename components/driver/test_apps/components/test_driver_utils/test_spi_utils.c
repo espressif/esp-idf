@@ -7,6 +7,7 @@
 #include "driver/spi_slave.h"
 #include "esp_log.h"
 #include "driver/gpio.h"
+#include "esp_private/gpio.h"
 #include "hal/gpio_hal.h"
 #include "esp_rom_gpio.h"
 
@@ -220,13 +221,13 @@ void master_free_device_bus(spi_device_handle_t spi)
 
 void spitest_gpio_output_sel(uint32_t gpio_num, int func, uint32_t signal_idx)
 {
-    gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[gpio_num], func);
+    gpio_func_sel(gpio_num, func);
     esp_rom_gpio_connect_out_signal(gpio_num, signal_idx, 0, 0);
 }
 
 void spitest_gpio_input_sel(uint32_t gpio_num, int func, uint32_t signal_idx)
 {
-    gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[gpio_num], func);
+    gpio_func_sel(gpio_num, func);
     esp_rom_gpio_connect_in_signal(gpio_num, signal_idx, 0);
 }
 
