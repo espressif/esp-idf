@@ -6,7 +6,6 @@ import pytest
 from pytest_embedded import Dut
 
 
-@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='esp32p4 support TBD')  # TODO: IDF-8989
 @pytest.mark.supported_targets
 @pytest.mark.generic
 @pytest.mark.parametrize('config', [
