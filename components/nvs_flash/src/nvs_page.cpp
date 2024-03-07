@@ -907,7 +907,7 @@ esp_err_t Page::findItem(uint8_t nsIndex, ItemType datatype, const char* key, si
     // For BLOB_DATA, we may need to search for all chunk indexes, so the hash list won't help
     // mHashIndex caluclates hash from nsIndex, key, chunkIdx
     // We may not use mHashList if datatype is BLOB_DATA and chunkIdx is CHUNK_ANY as CHUNK_ANY is used by BLOB_INDEX
-    if (nsIndex != NS_ANY && key != NULL && (datatype == ItemType::BLOB_DATA && chunkIdx != CHUNK_ANY)) {
+    if (nsIndex != NS_ANY && key != NULL && (datatype != ItemType::BLOB_DATA || chunkIdx != CHUNK_ANY)) {
         size_t cachedIndex = mHashList.find(start, Item(nsIndex, datatype, 0, key, chunkIdx));
         if (cachedIndex < ENTRY_COUNT) {
             start = cachedIndex;
