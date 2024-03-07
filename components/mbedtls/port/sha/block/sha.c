@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,10 +8,12 @@
 
 #include "soc/soc_caps.h"
 #include "soc/periph_defs.h"
+#include "esp_private/esp_crypto_lock_internal.h"
 #include "esp_private/periph_ctrl.h"
 
 #include "sha/sha_block.h"
 #include "hal/sha_hal.h"
+#include "hal/sha_ll.h"
 
 
 static _lock_t s_sha_lock;
@@ -56,13 +58,20 @@ inline static size_t block_length(esp_sha_type type)
 void esp_sha_acquire_hardware()
 {
     _lock_acquire(&s_sha_lock); /* Released when releasing hw with esp_sha_release_hardware() */
-    periph_module_enable(PERIPH_SHA_MODULE);
+
+    SHA_RCC_ATOMIC() {
+        sha_ll_enable_bus_clock(true);
+        sha_ll_reset_register();
+    }
 }
 
 /* Disable SHA peripheral block and then release it */
 void esp_sha_release_hardware()
 {
-    periph_module_disable(PERIPH_SHA_MODULE);
+    SHA_RCC_ATOMIC() {
+        sha_ll_enable_bus_clock(false);
+    }
+
     _lock_release(&s_sha_lock);
 }
 

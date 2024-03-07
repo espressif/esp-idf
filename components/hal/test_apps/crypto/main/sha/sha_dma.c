@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: CC0-1.0
  */
@@ -19,8 +19,9 @@
 
 #include "soc/periph_defs.h"
 #include "esp_private/periph_ctrl.h"
+#include "esp_private/esp_crypto_lock_internal.h"
 #include "hal/sha_hal.h"
-#include "hal/clk_gate_ll.h"
+#include "hal/sha_ll.h"
 #include "sha_dma.h"
 
 #if CONFIG_SOC_SHA_GDMA
@@ -68,20 +69,26 @@ static esp_err_t esp_sha_dma_start(const lldesc_t *input)
 
 static void acquire_hardware(void)
 {
+    SHA_RCC_ATOMIC() {
+        sha_ll_enable_bus_clock(true);
 #if SOC_AES_CRYPTO_DMA
-    periph_ll_enable_clk_clear_rst(PERIPH_SHA_DMA_MODULE);
-#elif SOC_AES_GDMA
-    periph_ll_enable_clk_clear_rst(PERIPH_SHA_MODULE);
+        crypto_dma_ll_enable_bus_clock(true);
 #endif
+        sha_ll_reset_register();
+#if SOC_AES_CRYPTO_DMA
+        crypto_dma_ll_reset_register();
+#endif
+    }
 }
 
 static void release_hardware(void)
 {
+    SHA_RCC_ATOMIC() {
+        sha_ll_enable_bus_clock(false);
 #if SOC_AES_CRYPTO_DMA
-    periph_ll_disable_clk_set_rst(PERIPH_SHA_DMA_MODULE);
-#elif SOC_AES_GDMA
-    periph_ll_disable_clk_set_rst(PERIPH_SHA_MODULE);
+        crypto_dma_ll_enable_bus_clock(false);
 #endif
+    }
 }
 
 static int esp_sha_dma_process(esp_sha_type sha_type, const void *input, uint32_t ilen,

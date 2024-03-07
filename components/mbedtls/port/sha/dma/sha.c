@@ -30,6 +30,7 @@
 #include <sys/lock.h>
 
 #include "esp_dma_utils.h"
+#include "esp_private/esp_crypto_lock_internal.h"
 #include "esp_private/esp_cache_private.h"
 #include "esp_log.h"
 #include "esp_memory_utils.h"
@@ -49,6 +50,7 @@
 
 #include "sha/sha_dma.h"
 #include "hal/sha_hal.h"
+#include "hal/sha_ll.h"
 #include "soc/soc_caps.h"
 #include "esp_sha_dma_priv.h"
 
@@ -58,6 +60,7 @@
 #elif SOC_SHA_CRYPTO_DMA
 #define SHA_LOCK() esp_crypto_dma_lock_acquire()
 #define SHA_RELEASE() esp_crypto_dma_lock_release()
+#include "hal/crypto_dma_ll.h"
 #endif
 
 const static char *TAG = "esp-sha";
@@ -103,23 +106,27 @@ void esp_sha_acquire_hardware()
 {
     SHA_LOCK(); /* Released when releasing hw with esp_sha_release_hardware() */
 
-    /* Enable SHA and DMA hardware */
-#if SOC_SHA_CRYPTO_DMA
-    periph_module_enable(PERIPH_SHA_DMA_MODULE);
-#elif SOC_SHA_GDMA
-    periph_module_enable(PERIPH_SHA_MODULE);
+    SHA_RCC_ATOMIC() {
+        sha_ll_enable_bus_clock(true);
+#if SOC_AES_CRYPTO_DMA
+        crypto_dma_ll_enable_bus_clock(true);
 #endif
+        sha_ll_reset_register();
+#if SOC_AES_CRYPTO_DMA
+        crypto_dma_ll_reset_register();
+#endif
+    }
 }
 
 /* Disable SHA peripheral block and then release it */
 void esp_sha_release_hardware()
 {
-    /* Disable SHA and DMA hardware */
-#if SOC_SHA_CRYPTO_DMA
-    periph_module_disable(PERIPH_SHA_DMA_MODULE);
-#elif SOC_SHA_GDMA
-    periph_module_disable(PERIPH_SHA_MODULE);
+    SHA_RCC_ATOMIC() {
+        sha_ll_enable_bus_clock(false);
+#if SOC_AES_CRYPTO_DMA
+        crypto_dma_ll_enable_bus_clock(false);
 #endif
+    }
 
     SHA_RELEASE();
 }

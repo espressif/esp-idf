@@ -1,18 +1,50 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 #pragma once
 
 #include <stdbool.h>
-#include "soc/hwcrypto_reg.h"
 #include "hal/sha_types.h"
+#include "soc/hp_sys_clkrst_struct.h"
+#include "soc/hwcrypto_reg.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+/**
+ * @brief Enable the bus clock for SHA peripheral module
+ *
+ * @param enable true to enable the module, false to disable the module
+ */
+static inline void sha_ll_enable_bus_clock(bool enable)
+{
+    HP_SYS_CLKRST.peri_clk_ctrl25.reg_crypto_sha_clk_en = enable;
+}
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define sha_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; sha_ll_enable_bus_clock(__VA_ARGS__)
+
+/**
+ * @brief Reset the SHA peripheral module
+ */
+static inline void sha_ll_reset_register(void)
+{
+    HP_SYS_CLKRST.hp_rst_en2.reg_rst_en_sha = 1;
+    HP_SYS_CLKRST.hp_rst_en2.reg_rst_en_sha = 0;
+
+    // Clear reset on digital signature, hmac and ecdsa, otherwise SHA is held in reset
+    HP_SYS_CLKRST.hp_rst_en2.reg_rst_en_ds = 0;
+    HP_SYS_CLKRST.hp_rst_en2.reg_rst_en_hmac = 0;
+    HP_SYS_CLKRST.hp_rst_en2.reg_rst_en_ecdsa = 0;
+}
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define sha_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; sha_ll_reset_register(__VA_ARGS__)
 
 /**
  * @brief Start a new SHA block conversions (no initial hash in HW)

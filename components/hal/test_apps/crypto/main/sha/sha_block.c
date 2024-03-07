@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: CC0-1.0
  */
@@ -12,8 +12,9 @@
 
 #include "soc/periph_defs.h"
 #include "esp_private/periph_ctrl.h"
+#include "esp_private/esp_crypto_lock_internal.h"
 #include "hal/sha_hal.h"
-#include "hal/clk_gate_ll.h"
+#include "hal/sha_ll.h"
 #include "sha_block.h"
 
 #if defined(SOC_SHA_SUPPORT_SHA1)
@@ -43,7 +44,10 @@ static void sha1_update_block(sha1_ctx* ctx, esp_sha_type sha_type, const unsign
 
     if ( (ilen >= 64) || local_len) {
         /* Enable peripheral module */
-        periph_ll_enable_clk_clear_rst(PERIPH_SHA_MODULE);
+        SHA_RCC_ATOMIC() {
+            sha_ll_enable_bus_clock(true);
+            sha_ll_reset_register();
+        }
 
         if (ctx->first_block == 0) {
             /* Writes the message digest to the SHA engine */
@@ -72,7 +76,9 @@ static void sha1_update_block(sha1_ctx* ctx, esp_sha_type sha_type, const unsign
         sha_hal_read_digest(sha_type, ctx->state);
 
         /* Disable peripheral module */
-        periph_ll_disable_clk_set_rst(PERIPH_SHA_MODULE);
+        SHA_RCC_ATOMIC() {
+            sha_ll_enable_bus_clock(false);
+        }
     }
 
     if ( ilen > 0 ) {
@@ -139,7 +145,10 @@ static void sha256_update_block(sha256_ctx* ctx, esp_sha_type sha_type, const un
 
     if ( (ilen >= 64) || local_len) {
         /* Enable peripheral module */
-        periph_ll_enable_clk_clear_rst(PERIPH_SHA_MODULE);
+        SHA_RCC_ATOMIC() {
+            sha_ll_enable_bus_clock(true);
+            sha_ll_reset_register();
+        }
 
         if (ctx->first_block == 0) {
             /* Writes the message digest to the SHA engine */
@@ -168,7 +177,9 @@ static void sha256_update_block(sha256_ctx* ctx, esp_sha_type sha_type, const un
         sha_hal_read_digest(sha_type, ctx->state);
 
         /* Disable peripheral module */
-        periph_ll_disable_clk_set_rst(PERIPH_SHA_MODULE);
+        SHA_RCC_ATOMIC() {
+            sha_ll_enable_bus_clock(false);
+        }
     }
 
     if ( ilen > 0 ) {
@@ -280,7 +291,10 @@ static void sha512_update_block(sha512_ctx* ctx, esp_sha_type sha_type, const un
     if ( (ilen >= 128) || local_len) {
 
         /* Enable peripheral module */
-        periph_ll_enable_clk_clear_rst(PERIPH_SHA_MODULE);
+        SHA_RCC_ATOMIC() {
+            sha_ll_enable_bus_clock(true);
+            sha_ll_reset_register();
+        }
 
         if (ctx->first_block && sha_type == SHA2_512T){
             sha_512_t_init_hash_block(ctx->t_val);
@@ -313,7 +327,9 @@ static void sha512_update_block(sha512_ctx* ctx, esp_sha_type sha_type, const un
         sha_hal_read_digest(sha_type, ctx->state);
 
         /* Disable peripheral module */
-        periph_ll_disable_clk_set_rst(PERIPH_SHA_MODULE);
+        SHA_RCC_ATOMIC() {
+            sha_ll_enable_bus_clock(false);
+        }
     }
 
     if ( ilen > 0 ) {

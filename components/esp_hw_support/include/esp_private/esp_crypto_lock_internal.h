@@ -20,6 +20,7 @@ extern "C" {
 #define DS_RCC_ATOMIC()
 #define ECDSA_RCC_ATOMIC()
 #define AES_RCC_ATOMIC()
+#define SHA_RCC_ATOMIC()
 #else /* !SOC_RCC_IS_INDEPENDENT */
 #define MPI_RCC_ATOMIC() PERIPH_RCC_ATOMIC()
 #define ECC_RCC_ATOMIC() PERIPH_RCC_ATOMIC()
@@ -27,6 +28,7 @@ extern "C" {
 #define DS_RCC_ATOMIC() PERIPH_RCC_ATOMIC()
 #define ECDSA_RCC_ATOMIC() PERIPH_RCC_ATOMIC()
 #define AES_RCC_ATOMIC() PERIPH_RCC_ATOMIC()
+#define SHA_RCC_ATOMIC() PERIPH_RCC_ATOMIC()
 #endif /* SOC_RCC_IS_INDEPENDENT */
 
 #ifdef __cplusplus

@@ -21,6 +21,7 @@
 #include "hal/ds_ll.h"
 #include "hal/hmac_hal.h"
 #include "hal/hmac_ll.h"
+#include "hal/sha_ll.h"
 #include "esp_private/periph_ctrl.h"
 #endif
 
@@ -75,7 +76,10 @@ esp_err_t esp_hmac_calculate(hmac_key_id_t key_id,
         hmac_ll_reset_register();
     }
 
-    periph_module_enable(PERIPH_SHA_MODULE);
+    SHA_RCC_ATOMIC() {
+        sha_ll_enable_bus_clock(true);
+        sha_ll_reset_register();
+    }
 
     DS_RCC_ATOMIC() {
         ds_ll_enable_bus_clock(true);
@@ -146,7 +150,9 @@ esp_err_t esp_hmac_calculate(hmac_key_id_t key_id,
         ds_ll_enable_bus_clock(false);
     }
 
-    periph_module_disable(PERIPH_SHA_MODULE);
+    SHA_RCC_ATOMIC() {
+        sha_ll_enable_bus_clock(false);
+    }
 
     HMAC_RCC_ATOMIC() {
         hmac_ll_enable_bus_clock(false);
