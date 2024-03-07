@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -111,6 +111,7 @@ wifi_static_queue_t* wifi_create_queue( int queue_len, int item_size)
     }
 
 #if CONFIG_SPIRAM_USE_MALLOC
+    /* Wi-Fi still use internal RAM */
 
     queue->storage = heap_caps_calloc(1, sizeof(StaticQueue_t) + (queue_len*item_size), MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT);
     if (!queue->storage) {
@@ -248,7 +249,37 @@ static int32_t IRAM_ATTR mutex_unlock_wrapper(void *mutex)
 
 static void * queue_create_wrapper(uint32_t queue_len, uint32_t item_size)
 {
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 1, 0)
+    /*
+     * Since release/v5.1, FreeRTOS has been updated to always use internal memory (i.e., DRAM)
+     * for dynamic memory allocation. Calling FreeRTOS creation functions (e.g., xTaskCreate(), xQueueCreate())
+     * will guarantee that the memory allocated for those tasks/objects is from internal memory.
+     * For more details, please refer to the Migration Guide in release/v5.1.
+     */
+#if CONFIG_SPIRAM_USE_MALLOC
+    /* Use xQueueCreateWithCaps() to allocate from SPIRAM */
+    return (void *)xQueueCreateWithCaps(queue_len, item_size, MALLOC_CAP_SPIRAM);
+#else
     return (void *)xQueueCreate(queue_len, item_size);
+#endif
+#else
+    return (void *)xQueueCreate(queue_len, item_size);
+#endif
+}
+
+static void queue_delete_wrapper(void *queue)
+{
+    if (queue) {
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 1, 0)
+#if CONFIG_SPIRAM_USE_MALLOC
+        vQueueDeleteWithCaps(queue);
+#else
+        vQueueDelete(queue);
+#endif
+#else
+        vQueueDelete(queue);
+#endif
+    }
 }
 
 static int32_t queue_send_wrapper(void *queue, void *item, uint32_t block_time_tick)
@@ -597,7 +628,7 @@ wifi_osi_funcs_t g_wifi_osi_funcs = {
     ._mutex_lock = mutex_lock_wrapper,
     ._mutex_unlock = mutex_unlock_wrapper,
     ._queue_create = queue_create_wrapper,
-    ._queue_delete = (void(*)(void *))vQueueDelete,
+    ._queue_delete = queue_delete_wrapper,
     ._queue_send = queue_send_wrapper,
     ._queue_send_from_isr = queue_send_from_isr_wrapper,
     ._queue_send_to_back = queue_send_to_back_wrapper,
