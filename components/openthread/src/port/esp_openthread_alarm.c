@@ -101,8 +101,8 @@ void esp_openthread_alarm_deinit(void)
 void esp_openthread_alarm_update(esp_openthread_mainloop_context_t *mainloop)
 {
     struct timeval *timeout = &mainloop->timeout;
-    int32_t remain_min_time_us = INT32_MAX;
-    int32_t remaining_us = 0;
+    int64_t remain_min_time_us = INT64_MAX;
+    int64_t remaining_us = 0;
     if (s_is_ms_running) {
         remaining_us = calculate_duration(s_alarm_ms, otPlatAlarmMilliGetNow()) * US_PER_MS;
         if (remain_min_time_us > remaining_us) {
