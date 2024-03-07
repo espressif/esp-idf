@@ -20,10 +20,6 @@ examples/peripherals/adc/oneshot_read:
 examples/peripherals/analog_comparator:
   disable:
     - if: SOC_ANA_CMPR_SUPPORTED != 1
-  disable_test:
-    - if: IDF_TARGET == "esp32p4"
-      temporary: true
-      reason: not supported yet
   depends_components:
     - esp_driver_gpio
     - esp_driver_ana_cmpr
