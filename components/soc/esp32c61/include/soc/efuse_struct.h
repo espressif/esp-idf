@@ -3356,8 +3356,8 @@ typedef struct {
     volatile efuse_apb2otp_en_reg_t apb2otp_en;
 } efuse_dev_t;
 
-extern efuse_dev_t EFUSE_AND_OTP_DEBUG0;
-extern efuse_dev_t EFUSE_AND_OTP_DEBUG1;
+extern efuse_dev_t EFUSE0;
+extern efuse_dev_t EFUSE1;
 
 #ifndef __cplusplus
 _Static_assert(sizeof(efuse_dev_t) == 0x70c, "Invalid size of efuse_dev_t structure");

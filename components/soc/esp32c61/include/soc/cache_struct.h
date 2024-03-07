@@ -5750,7 +5750,7 @@ typedef struct {
     volatile cache_date_reg_t date;
 } cache_dev_t;
 
-extern cache_dev_t CACHE_CFG;
+extern cache_dev_t CACHE;
 
 #ifndef __cplusplus
 _Static_assert(sizeof(cache_dev_t) == 0x400, "Invalid size of cache_dev_t structure");

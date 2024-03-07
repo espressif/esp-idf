@@ -6,6 +6,7 @@
 
 #pragma once
 
+// version date 2310090
 #define EXT_ADC_START_IDX                       0
 #define LEDC_LS_SIG_OUT0_IDX                    0
 #define LEDC_LS_SIG_OUT1_IDX                    1
@@ -175,4 +176,5 @@
 #define MODEM_DIAG29_IDX                        158
 #define MODEM_DIAG30_IDX                        159
 #define MODEM_DIAG31_IDX                        160
-// version date 2310090
+
+#define SIG_GPIO_OUT_IDX                        256

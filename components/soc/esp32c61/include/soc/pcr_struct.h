@@ -1628,7 +1628,7 @@ typedef union {
          *  3: RC_SLOW_CLK\\
          *  4: RC_FAST_CLK\\
          */
-        uint32_t 32k_sel:3;
+        uint32_t clk_32k_sel:3;
         uint32_t reserved_3:5;
         /** fosc_tick_num : R/W; bitpos: [15:8]; default: 7;
          *  When PCR_32K_SEL set as 4, This field PCR_FOSC_TICK_NUM is used to set the divider

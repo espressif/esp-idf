@@ -442,7 +442,7 @@ typedef union {
         /** clkdiv : R/W; bitpos: [11:0]; default: 694;
          *  Configures the integral part of the divisor for baud rate generation.
          */
-        uint32_t clkdiv:12;
+        uint32_t clkdiv_int:12;
         uint32_t reserved_12:8;
         /** clkdiv_frag : R/W; bitpos: [23:20]; default: 0;
          *  Configures the fractional part of the divisor for baud rate generation.
@@ -1294,7 +1294,7 @@ typedef union {
 } uart_id_reg_t;
 
 
-typedef struct {
+typedef struct uart_dev_s {
     volatile uart_fifo_reg_t fifo;
     volatile uart_int_raw_reg_t int_raw;
     volatile uart_int_st_reg_t int_st;
