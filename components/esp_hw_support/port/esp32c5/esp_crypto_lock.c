@@ -32,6 +32,9 @@ static _lock_t s_crypto_sha_aes_lock;
 /* Lock for ECC peripheral */
 static _lock_t s_crypto_ecc_lock;
 
+/* Lock for ECDSA peripheral */
+static _lock_t s_crypto_ecdsa_lock;
+
 void esp_crypto_hmac_lock_acquire(void)
 {
     _lock_acquire(&s_crypto_hmac_lock);
@@ -86,4 +89,16 @@ void esp_crypto_ecc_lock_acquire(void)
 void esp_crypto_ecc_lock_release(void)
 {
     _lock_release(&s_crypto_ecc_lock);
+}
+
+void esp_crypto_ecdsa_lock_acquire(void)
+{
+    _lock_acquire(&s_crypto_ecdsa_lock);
+    esp_crypto_ecc_lock_acquire();
+}
+
+void esp_crypto_ecdsa_lock_release(void)
+{
+    esp_crypto_ecc_lock_release();
+    _lock_release(&s_crypto_ecdsa_lock);
 }

@@ -69,7 +69,7 @@
 // #define SOC_WDT_SUPPORTED               1  // TODO: [ESP32C5] IDF-8650
 #define SOC_SPI_FLASH_SUPPORTED         1     // TODO: [ESP32C5] IDF-8715
 // #define SOC_BITSCRAMBLER_SUPPORTED      1  // TODO: [ESP32C5] IDF-8711
-// #define SOC_ECDSA_SUPPORTED             1  // TODO: [ESP32C5] IDF-8618
+#define SOC_ECDSA_SUPPORTED             1
 // #define SOC_KEY_MANAGER_SUPPORTED       1  // TODO: [ESP32C5] IDF-8621
 // #define SOC_HUK_SUPPORTED               1  // TODO: [ESP32C5] IDF-8617
 // #define SOC_MODEM_CLOCK_SUPPORTED       1  // TODO: [ESP32C5] IDF-8845
@@ -376,7 +376,7 @@
 #define SOC_SHA_SUPPORT_SHA256          (1)
 
 /*--------------------------- ECDSA CAPS ---------------------------------------*/
-// #define SOC_ECDSA_SUPPORT_EXPORT_PUBKEY     (1)
+#define SOC_ECDSA_SUPPORT_EXPORT_PUBKEY     (1)
 
 /*-------------------------- Sigma Delta Modulator CAPS -----------------*/
 // #define SOC_SDM_GROUPS               1U
