@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -42,6 +42,11 @@ void test_rtc_slow_reg1_execute_violation(void);
 
 void test_rtc_slow_reg2_execute_violation(void);
 
+void test_irom_reg_write_violation(void);
+
+void test_drom_reg_write_violation(void);
+
+void test_drom_reg_execute_violation(void);
 
 #ifdef __cplusplus
 }
