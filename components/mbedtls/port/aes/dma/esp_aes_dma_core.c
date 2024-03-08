@@ -863,12 +863,44 @@ cleanup:
  * 3. If AES interrupt is enabled and ISR initialisation fails
  * 4. Failure in any of the AES operations
  */
-int esp_aes_process_dma_gcm(esp_aes_context *ctx, const unsigned char *input, unsigned char *output, size_t len, crypto_dma_desc_t *aad_desc, size_t aad_len)
+int esp_aes_process_dma_gcm(esp_aes_context *ctx, const unsigned char *input, unsigned char *output, size_t len, const unsigned char *aad, size_t aad_len)
 {
+    crypto_dma_desc_t aad_desc[2] = {};
+    crypto_dma_desc_t *aad_head_desc = NULL;
     crypto_dma_desc_t *in_desc_head = NULL, *out_desc_head = NULL, *len_desc = NULL;
     crypto_dma_desc_t *out_desc_tail = NULL; /* pointer to the final output descriptor */
     crypto_dma_desc_t stream_in_desc, stream_out_desc;
     crypto_dma_desc_t *block_desc = NULL, *block_in_desc = NULL, *block_out_desc = NULL;
+
+    uint8_t stream_in_aad[AES_BLOCK_BYTES] = {};
+    unsigned stream_bytes_aad = aad_len % AES_BLOCK_BYTES;     // bytes which aren't in a full block
+    unsigned block_bytes_aad = aad_len - stream_bytes_aad;     // bytes which are in a full block
+
+    assert(esp_ptr_dma_capable(stream_in_aad));
+
+    if (block_bytes_aad > 0) {
+        aad_desc[0].dw0.length = block_bytes_aad;
+        aad_desc[0].dw0.size = block_bytes_aad;
+        aad_desc[0].dw0.owner = 1;
+        aad_desc[0].buffer = (void*)aad;
+    }
+
+    if (stream_bytes_aad > 0) {
+        memcpy(stream_in_aad, aad + block_bytes_aad, stream_bytes_aad);
+
+        aad_desc[0].next = &aad_desc[1];
+        aad_desc[1].dw0.length = AES_BLOCK_BYTES;
+        aad_desc[1].dw0.size = AES_BLOCK_BYTES;
+        aad_desc[1].dw0.owner = 1;
+        aad_desc[1].buffer = (void*)stream_in_aad;
+    }
+
+    if (block_bytes_aad > 0) {
+        aad_head_desc = &aad_desc[0];
+    } else if (stream_bytes_aad > 0) {
+        aad_head_desc = &aad_desc[1];
+    }
+
     size_t crypto_dma_desc_num = 0;
     uint32_t len_buf[4] = {};
     uint8_t stream_in[16] = {};
@@ -906,8 +938,8 @@ int esp_aes_process_dma_gcm(esp_aes_context *ctx, const unsigned char *input, un
     len_desc = block_desc + crypto_dma_desc_num;
     block_out_desc = block_desc + crypto_dma_desc_num + 1;
 
-    if (aad_desc != NULL) {
-        dma_desc_append(&in_desc_head, aad_desc);
+    if (aad_head_desc != NULL) {
+        dma_desc_append(&in_desc_head, aad_head_desc);
     }
 
     if (block_bytes > 0) {

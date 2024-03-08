@@ -43,7 +43,7 @@ int esp_aes_process_dma(esp_aes_context *ctx, const unsigned char *input, unsign
  * @param aad_len   GCM additional data length
  * @return int      -1 on error
  */
-int esp_aes_process_dma_gcm(esp_aes_context *ctx, const unsigned char *input, unsigned char *output, size_t len, crypto_dma_desc_t *aad_desc, size_t aad_len);
+int esp_aes_process_dma_gcm(esp_aes_context *ctx, const unsigned char *input, unsigned char *output, size_t len, const unsigned char *aad_desc, size_t aad_len);
 #endif
 
 #ifdef __cplusplus
