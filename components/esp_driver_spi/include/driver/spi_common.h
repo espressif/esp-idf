@@ -89,7 +89,8 @@ typedef spi_common_dma_t spi_dma_chan_t;
  *
  * You can use this structure to specify the GPIO pins of the bus. Normally, the driver will use the
  * GPIO matrix to route the signals. An exception is made when all signals either can be routed through
- * the IO_MUX or are -1. In that case, the IO_MUX is used, allowing for >40MHz speeds.
+ * the IO_MUX or are -1. In that case, the IO_MUX is used. On ESP32, using GPIO matrix will bring about 25ns of input
+ * delay, which may cause incorrect read for >40MHz speeds.
  *
  * @note Be advised that the slave driver does not use the quadwp/quadhd lines and fields in spi_bus_config_t refering to these lines will be ignored and can thus safely be left uninitialized.
  */
