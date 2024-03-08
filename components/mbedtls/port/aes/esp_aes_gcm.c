@@ -251,6 +251,27 @@ int esp_aes_gcm_setkey( esp_gcm_context *ctx,
                         const unsigned char *key,
                         unsigned int keybits )
 {
+    /* Fallback to software implementation of GCM operation when a non-AES
+     * cipher is selected, as we support hardware acceleration only for a
+     * GCM operation using AES cipher.
+     */
+#if defined(MBEDTLS_GCM_NON_AES_CIPHER_SOFT_FALLBACK)
+    if (ctx->ctx_soft != NULL) {
+        mbedtls_gcm_free_soft(ctx->ctx_soft);
+        free(ctx->ctx_soft);
+        ctx->ctx_soft = NULL;
+    }
+
+    if (cipher != MBEDTLS_CIPHER_ID_AES) {
+        ctx->ctx_soft = (mbedtls_gcm_context_soft*) malloc(sizeof(mbedtls_gcm_context_soft));
+        if (ctx->ctx_soft == NULL) {
+            return MBEDTLS_ERR_CIPHER_ALLOC_FAILED;
+        }
+        mbedtls_gcm_init_soft(ctx->ctx_soft);
+        return mbedtls_gcm_setkey_soft(ctx->ctx_soft, cipher, key, keybits);
+    }
+#endif
+
 #if !SOC_AES_SUPPORT_AES_192
     if (keybits == 192) {
         return MBEDTLS_ERR_PLATFORM_FEATURE_UNSUPPORTED;
@@ -332,6 +353,14 @@ void esp_aes_gcm_free( esp_gcm_context *ctx)
     if (ctx == NULL) {
         return;
     }
+#if defined(MBEDTLS_GCM_NON_AES_CIPHER_SOFT_FALLBACK)
+    if (ctx->ctx_soft != NULL) {
+        mbedtls_gcm_free_soft(ctx->ctx_soft);
+        free(ctx->ctx_soft);
+        /* Note that the value of ctx->ctx_soft should be NULL'ed out
+        and here it is taken care by the bzero call below */
+    }
+#endif
     bzero(ctx, sizeof(esp_gcm_context));
 }
 
@@ -341,6 +370,11 @@ int esp_aes_gcm_starts( esp_gcm_context *ctx,
                         const unsigned char *iv,
                         size_t iv_len )
 {
+#if defined(MBEDTLS_GCM_NON_AES_CIPHER_SOFT_FALLBACK)
+    if (ctx->ctx_soft != NULL) {
+        return mbedtls_gcm_starts_soft(ctx->ctx_soft, mode, iv, iv_len);
+    }
+#endif
     /* IV is limited to 2^32 bits, so 2^29 bytes */
     /* IV is not allowed to be zero length */
     if ( iv_len == 0 ||
@@ -407,6 +441,11 @@ int esp_aes_gcm_update_ad( esp_gcm_context *ctx,
                            const unsigned char *aad,
                            size_t aad_len )
 {
+#if defined(MBEDTLS_GCM_NON_AES_CIPHER_SOFT_FALLBACK)
+    if (ctx->ctx_soft != NULL) {
+        return mbedtls_gcm_update_ad_soft(ctx->ctx_soft, aad, aad_len);
+    }
+#endif
     /* AD are limited to 2^32 bits, so 2^29 bytes */
     if ( ( (uint32_t) aad_len ) >> 29 != 0 ) {
         return ( MBEDTLS_ERR_GCM_BAD_INPUT );
@@ -442,6 +481,11 @@ int esp_aes_gcm_update( esp_gcm_context *ctx,
                         unsigned char *output, size_t output_size,
                         size_t *output_length )
 {
+#if defined(MBEDTLS_GCM_NON_AES_CIPHER_SOFT_FALLBACK)
+    if (ctx->ctx_soft != NULL) {
+        return mbedtls_gcm_update_soft(ctx->ctx_soft, input, input_length, output, output_size, output_length);
+    }
+#endif
     size_t nc_off = 0;
     uint8_t nonce_counter[AES_BLOCK_BYTES] = {0};
     uint8_t stream[AES_BLOCK_BYTES] = {0};
@@ -512,6 +556,11 @@ int esp_aes_gcm_finish( esp_gcm_context *ctx,
                         size_t *output_length,
                         unsigned char *tag, size_t tag_len )
 {
+#if defined(MBEDTLS_GCM_NON_AES_CIPHER_SOFT_FALLBACK)
+    if (ctx->ctx_soft != NULL) {
+        return mbedtls_gcm_finish_soft(ctx->ctx_soft, output, output_size, output_length, tag, tag_len);
+    }
+#endif
     size_t nc_off = 0;
     uint8_t len_block[AES_BLOCK_BYTES] = {0};
     uint8_t stream[AES_BLOCK_BYTES] = {0};
@@ -607,6 +656,11 @@ int esp_aes_gcm_crypt_and_tag( esp_gcm_context *ctx,
                                size_t tag_len,
                                unsigned char *tag )
 {
+#if defined(MBEDTLS_GCM_NON_AES_CIPHER_SOFT_FALLBACK)
+    if (ctx->ctx_soft != NULL) {
+        return mbedtls_gcm_crypt_and_tag_soft(ctx->ctx_soft, mode, length, iv, iv_len, aad, aad_len, input, output, tag_len, tag);
+    }
+#endif
 #if CONFIG_MBEDTLS_HARDWARE_GCM
     int ret;
     lldesc_t aad_desc[2] = {};
@@ -727,6 +781,11 @@ int esp_aes_gcm_auth_decrypt( esp_gcm_context *ctx,
                               const unsigned char *input,
                               unsigned char *output )
 {
+#if defined(MBEDTLS_GCM_NON_AES_CIPHER_SOFT_FALLBACK)
+    if (ctx->ctx_soft != NULL) {
+        return mbedtls_gcm_auth_decrypt_soft(ctx->ctx_soft, length, iv, iv_len, aad, aad_len, tag, tag_len, input, output);
+    }
+#endif
     int ret;
     unsigned char check_tag[16];
     size_t i;
