@@ -941,9 +941,35 @@ menu "Host-controller Transport"
         help
             Uart port
 
+    choice BT_NIMBLE_HCI_USE_UART_BAUDRATE
+        prompt "Uart Hci Baud Rate"
+        default UART_BAUDRATE_921600
+        depends on BT_CONTROLLER_DISABLED && BT_NIMBLE_TRANSPORT_UART
+        help
+            Uart Baud Rate
+
+        config UART_BAUDRATE_115200
+            bool "115200"
+        config UART_BAUDRATE_230400
+            bool "230400"
+        config UART_BAUDRATE_460800
+            bool "460800"
+        config UART_BAUDRATE_921600
+            bool "921600"
+    endchoice
+
+    config BT_NIMBLE_HCI_UART_BAUDRATE
+        depends on BT_CONTROLLER_DISABLED && BT_NIMBLE_TRANSPORT_UART
+        int
+        default 115200 if  UART_BAUDRATE_115200
+        default 230400 if  UART_BAUDRATE_230400
+        default 460800 if  UART_BAUDRATE_460800
+        default 921600 if  UART_BAUDRATE_921600
+
     choice BT_NIMBLE_USE_HCI_UART_PARITY
         prompt "Uart PARITY"
         default UART_PARITY_NONE
+        depends on BT_CONTROLLER_DISABLED && BT_NIMBLE_TRANSPORT_UART
         help
             Uart Parity
 
@@ -959,16 +985,19 @@ menu "Host-controller Transport"
         int
         default 0 if !UART_PARITY_NONE
         default 1 if UART_PARITY_NONE
+        depends on BT_CONTROLLER_DISABLED && BT_NIMBLE_TRANSPORT_UART
 
     config BT_NIMBLE_TRANSPORT_UART_PARITY_ODD
         int
         default 0 if !UART_PARITY_ODD
         default 1 if UART_PARITY_ODD
+        depends on BT_CONTROLLER_DISABLED && BT_NIMBLE_TRANSPORT_UART
 
     config BT_NIMBLE_TRANSPORT_UART_PARITY_EVEN
         int
         default 0 if !UART_PARITY_EVEN
         default 1 if UART_PARITY_EVEN
+        depends on BT_CONTROLLER_DISABLED && BT_NIMBLE_TRANSPORT_UART
 
     config BT_NIMBLE_UART_RX_PIN
         int "UART Rx pin"
