@@ -249,6 +249,92 @@ static inline void aes_ll_interrupt_clear(void)
     REG_WRITE(AES_INT_CLEAR_REG, 1);
 }
 
+/**
+ * @brief Continue a previous started transform
+ *
+ * @note Only used when doing GCM
+ */
+static inline void aes_ll_cont_transform(void)
+{
+    REG_WRITE(AES_CONTINUE_REG, 1);
+}
+
+/**
+ * @brief Reads the AES-GCM hash sub-key H
+ *
+ * @param gcm_hash hash value
+ */
+static inline void aes_ll_gcm_read_hash(uint8_t *gcm_hash)
+{
+    const size_t REG_WIDTH = sizeof(uint32_t);
+    uint32_t hash_word;
+
+    for (size_t i = 0; i < AES_BLOCK_WORDS; i++) {
+        hash_word = REG_READ(AES_H_MEM + (i * REG_WIDTH));
+        /* Memcpy to avoid potential unaligned access */
+        memcpy(gcm_hash + i * 4, &hash_word, sizeof(hash_word));
+    }
+}
+
+/**
+ * @brief Sets the number of Additional Authenticated Data (AAD) blocks
+ *
+ * @note Only affects AES-GCM
+
+ * @param aad_num_blocks the number of Additional Authenticated Data (AAD) blocks
+ */
+static inline void aes_ll_gcm_set_aad_num_blocks(size_t aad_num_blocks)
+{
+    REG_WRITE(AES_AAD_BLOCK_NUM_REG, aad_num_blocks);
+}
+
+/**
+ * @brief Sets the J0 value, for more information see the GCM subchapter in the TRM
+ *
+ * @note Only affects AES-GCM
+ *
+ * @param j0 J0 value
+ */
+static inline void aes_ll_gcm_set_j0(const uint8_t *j0)
+{
+    uint32_t *reg_addr_buf = (uint32_t *)(AES_J0_MEM);
+    uint32_t j0_word;
+
+    for (int i = 0; i < AES_BLOCK_WORDS; i++) {
+        /* Memcpy to avoid potential unaligned access */
+        memcpy(&j0_word, j0 + 4 * i, sizeof(j0_word));
+        REG_WRITE(&reg_addr_buf[i], j0_word);
+    }
+}
+
+/**
+ * @brief Sets the number of effective bits of incomplete blocks in plaintext/cipertext.
+ *
+ * @note Only affects AES-GCM
+ *
+ * @param num_valid_bits the number of effective bits of incomplete blocks in plaintext/cipertext.
+ */
+static inline void aes_ll_gcm_set_num_valid_bit(size_t num_valid_bits)
+{
+    REG_WRITE(AES_REMAINDER_BIT_NUM_REG, num_valid_bits);
+}
+
+/**
+ * @brief Read the tag after a AES-GCM transform
+ *
+ * @param tag Pointer to where to store the result with length TAG_WORDS
+ */
+static inline void aes_ll_gcm_read_tag(uint8_t *tag)
+{
+    uint32_t tag_word;
+    const size_t REG_WIDTH = sizeof(uint32_t);
+
+    for (size_t i = 0; i < TAG_WORDS; i++) {
+        tag_word = REG_READ(AES_T0_MEM + (i * REG_WIDTH));
+        /* Memcpy to avoid potential unaligned access */
+        memcpy(tag + i * 4, &tag_word, sizeof(tag_word));
+    }
+}
 
 #ifdef __cplusplus
 }

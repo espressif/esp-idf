@@ -243,6 +243,10 @@ config SOC_AES_SUPPORT_DMA
     bool
     default y
 
+config SOC_AES_SUPPORT_GCM
+    bool
+    default y
+
 config SOC_AES_GDMA
     bool
     default y
