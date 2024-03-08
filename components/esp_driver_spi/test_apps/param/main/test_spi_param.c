@@ -11,6 +11,7 @@
 #include "test_spi_utils.h"
 #include "driver/spi_master.h"
 #include "driver/spi_slave.h"
+#include "spi_performance.h"
 
 #if SOC_SPI_SUPPORT_SLAVE_HD_VER2
 #include "esp_serial_slave_link/essl_spi.h"

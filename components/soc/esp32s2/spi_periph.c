@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stddef.h>
 #include "soc/spi_periph.h"
-#include "stddef.h"
 
 /*
  Bunch of constants for every SPI peripheral: GPIO signals, irqs, hw addr of registers etc

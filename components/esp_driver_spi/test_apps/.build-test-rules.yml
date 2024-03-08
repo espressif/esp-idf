@@ -3,8 +3,10 @@
     - esp_mm  # for cache
     - esp_driver_spi
     - esp_driver_gpio
+  depends_filepatterns:
+    - components/driver/test_apps/components/test_driver_utils/**/*
 
-components/esp_driver_spi/test_apps/spi/master:
+components/esp_driver_spi/test_apps/master:
   disable:
     - if: SOC_GPSPI_SUPPORTED != 1
   disable_test:
@@ -13,7 +15,7 @@ components/esp_driver_spi/test_apps/spi/master:
       reason: not supported # TODO: IDF-8942
   <<: *spi_depends_default
 
-components/esp_driver_spi/test_apps/spi/param:
+components/esp_driver_spi/test_apps/param:
   disable:
     - if: SOC_GPSPI_SUPPORTED != 1
   disable_test:
@@ -22,7 +24,7 @@ components/esp_driver_spi/test_apps/spi/param:
       reason: not supported # TODO: IDF-8942
   <<: *spi_depends_default
 
-components/esp_driver_spi/test_apps/spi/slave:
+components/esp_driver_spi/test_apps/slave:
   disable:
     - if: SOC_GPSPI_SUPPORTED != 1
   disable_test:
@@ -31,7 +33,7 @@ components/esp_driver_spi/test_apps/spi/slave:
       reason: not supported # TODO: IDF-8942
   <<: *spi_depends_default
 
-components/esp_driver_spi/test_apps/spi/slave_hd:
+components/esp_driver_spi/test_apps/slave_hd:
   disable:
     - if: SOC_GPSPI_SUPPORTED != 1
     - if: SOC_SPI_SUPPORT_SLAVE_HD_VER2 != 1

@@ -1,0 +1,9 @@
+dependencies:
+  test_utils:
+    path: ${IDF_PATH}/tools/unit-test-app/components/test_utils
+  test_driver_utils:
+    path: ${IDF_PATH}/components/driver/test_apps/components/test_driver_utils
+  spi_bench_mark:
+    path: ${IDF_PATH}/components/esp_driver_spi/test_apps/components/spi_bench_mark
+  esp_serial_slave_link:
+    path: ${IDF_PATH}/components/driver/test_apps/components/esp_serial_slave_link
