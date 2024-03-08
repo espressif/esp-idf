@@ -300,6 +300,10 @@ bool rtc_clk_cpu_freq_mhz_to_config(uint32_t freq_mhz, rtc_cpu_freq_config_t *ou
     return true;
 }
 
+__attribute__((weak)) void rtc_clk_set_cpu_switch_to_pll(int event_id)
+{
+}
+
 void rtc_clk_cpu_freq_set_config(const rtc_cpu_freq_config_t *config)
 {
     soc_cpu_clk_src_t old_cpu_clk_src = clk_ll_cpu_get_src();
@@ -310,6 +314,7 @@ void rtc_clk_cpu_freq_set_config(const rtc_cpu_freq_config_t *config)
         }
     } else if (config->source == SOC_CPU_CLK_SRC_CPLL) {
         if (old_cpu_clk_src != SOC_CPU_CLK_SRC_CPLL) {
+            rtc_clk_set_cpu_switch_to_pll(SLEEP_EVENT_HW_PLL_EN_START);
             rtc_clk_cpll_enable();
         }
         if (config->source_freq_mhz != s_cur_cpll_freq) {
@@ -319,6 +324,7 @@ void rtc_clk_cpu_freq_set_config(const rtc_cpu_freq_config_t *config)
             rtc_clk_cpll_configure(xtal_freq_mhz, config->source_freq_mhz);
         }
         rtc_clk_cpu_freq_to_cpll_mhz(config->freq_mhz, (hal_utils_clk_div_t *)&config->div);
+        rtc_clk_set_cpu_switch_to_pll(SLEEP_EVENT_HW_PLL_EN_STOP);
     } else if (config->source == SOC_CPU_CLK_SRC_RC_FAST) {
         rtc_clk_cpu_freq_to_8m();
         if (old_cpu_clk_src == SOC_CPU_CLK_SRC_CPLL) {

@@ -298,7 +298,7 @@ bool rtc_clk_cpu_freq_mhz_to_config(uint32_t freq_mhz, rtc_cpu_freq_config_t *ou
     return true;
 }
 
-__attribute__((weak)) void rtc_clk_set_cpu_switch_to_bbpll(int event_id)
+__attribute__((weak)) void rtc_clk_set_cpu_switch_to_pll(int event_id)
 {
 }
 
@@ -313,12 +313,12 @@ void rtc_clk_cpu_freq_set_config(const rtc_cpu_freq_config_t *config)
         }
     } else if (config->source == SOC_CPU_CLK_SRC_PLL) {
         if (old_cpu_clk_src != SOC_CPU_CLK_SRC_PLL && old_cpu_clk_src != SOC_CPU_CLK_SRC_FLASH_PLL) {
-            rtc_clk_set_cpu_switch_to_bbpll(SLEEP_EVENT_HW_BBPLL_EN_START);
+            rtc_clk_set_cpu_switch_to_pll(SLEEP_EVENT_HW_PLL_EN_START);
             rtc_clk_bbpll_enable();
             rtc_clk_bbpll_configure(rtc_clk_xtal_freq_get(), config->source_freq_mhz);
         }
         rtc_clk_cpu_freq_to_pll_mhz(config->freq_mhz);
-        rtc_clk_set_cpu_switch_to_bbpll(SLEEP_EVENT_HW_BBPLL_EN_STOP);
+        rtc_clk_set_cpu_switch_to_pll(SLEEP_EVENT_HW_PLL_EN_STOP);
     } else if (config->source == SOC_CPU_CLK_SRC_RC_FAST) {
         rtc_clk_cpu_freq_to_8m();
         if ((old_cpu_clk_src == SOC_CPU_CLK_SRC_PLL || old_cpu_clk_src == SOC_CPU_CLK_SRC_FLASH_PLL) &&
@@ -329,12 +329,12 @@ void rtc_clk_cpu_freq_set_config(const rtc_cpu_freq_config_t *config)
         if (old_cpu_clk_src != SOC_CPU_CLK_SRC_PLL && old_cpu_clk_src != SOC_CPU_CLK_SRC_FLASH_PLL) {
             // On ESP32H2, FLASH_PLL (64MHz) is directly derived from the BBPLL (96MHz)
             // Therefore, enabling and configuration are applied to BBPLL.
-            rtc_clk_set_cpu_switch_to_bbpll(SLEEP_EVENT_HW_FLASH_BBPLL_EN_START);
+            rtc_clk_set_cpu_switch_to_pll(SLEEP_EVENT_HW_FLASH_BBPLL_EN_START);
             rtc_clk_bbpll_enable();
             rtc_clk_bbpll_configure(rtc_clk_xtal_freq_get(), CLK_LL_PLL_96M_FREQ_MHZ);
         }
         rtc_clk_cpu_freq_to_flash_pll(config->freq_mhz, config->div);
-        rtc_clk_set_cpu_switch_to_bbpll(SLEEP_EVENT_HW_FLASH_BBPLL_EN_STOP);
+        rtc_clk_set_cpu_switch_to_pll(SLEEP_EVENT_HW_FLASH_BBPLL_EN_STOP);
     }
 }
 
