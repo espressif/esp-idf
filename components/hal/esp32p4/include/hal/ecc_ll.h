@@ -46,8 +46,6 @@ static inline void ecc_ll_reset_register(void)
 {
     HP_SYS_CLKRST.hp_rst_en2.reg_rst_en_ecc = 1;
     HP_SYS_CLKRST.hp_rst_en2.reg_rst_en_ecc = 0;
-    HP_SYS_CLKRST.hp_rst_en2.reg_rst_en_crypto = 1;
-    HP_SYS_CLKRST.hp_rst_en2.reg_rst_en_crypto = 0;
 
     // Clear reset on ECDSA, otherwise ECC is held in reset
     HP_SYS_CLKRST.hp_rst_en2.reg_rst_en_ecdsa = 0;

@@ -91,8 +91,6 @@ static inline void ecdsa_ll_reset_register(void)
 {
     HP_SYS_CLKRST.hp_rst_en2.reg_rst_en_ecdsa = 1;
     HP_SYS_CLKRST.hp_rst_en2.reg_rst_en_ecdsa = 0;
-    HP_SYS_CLKRST.hp_rst_en2.reg_rst_en_crypto = 1;
-    HP_SYS_CLKRST.hp_rst_en2.reg_rst_en_crypto = 0;
 }
 
 /**

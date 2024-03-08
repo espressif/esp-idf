@@ -53,8 +53,6 @@ static inline void hmac_ll_reset_register(void)
 {
     HP_SYS_CLKRST.hp_rst_en2.reg_rst_en_hmac = 1;
     HP_SYS_CLKRST.hp_rst_en2.reg_rst_en_hmac = 0;
-    HP_SYS_CLKRST.hp_rst_en2.reg_rst_en_crypto = 1;
-    HP_SYS_CLKRST.hp_rst_en2.reg_rst_en_crypto = 0;
 }
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
