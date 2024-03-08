@@ -700,6 +700,164 @@ config BT_NIMBLE_BLE_GATT_BLOB_TRANSFER
         This option is used when data to be sent is more than 512 bytes. For peripheral role,
         BT_NIMBLE_MSYS_1_BLOCK_COUNT needs to be increased according to the need.
 
+menu "GAP Service"
+    menu "GAP Appearance write permissions"
+        config BT_NIMBLE_SVC_GAP_APPEAR_WRITE
+            bool "Write"
+            default n
+            help
+                Enable write permission (BLE_GATT_CHR_F_WRITE)
+
+        config BT_NIMBLE_SVC_GAP_APPEAR_WRITE_ENC
+            depends on BT_NIMBLE_SVC_GAP_APPEAR_WRITE
+            bool "Write with encryption"
+            default n
+            help
+                Enable write with encryption permission (BLE_GATT_CHR_F_WRITE_ENC)
+
+        config BT_NIMBLE_SVC_GAP_APPEAR_WRITE_AUTHEN
+            depends on BT_NIMBLE_SVC_GAP_APPEAR_WRITE
+            bool "Write with authentication"
+            default n
+            help
+                Enable write with authentication permission (BLE_GATT_CHR_F_WRITE_AUTHEN)
+
+        config BT_NIMBLE_SVC_GAP_APPEAR_WRITE_AUTHOR
+            depends on BT_NIMBLE_SVC_GAP_APPEAR_WRITE
+            bool "Write with authorisation"
+            default n
+            help
+                Enable write with authorisation permission (BLE_GATT_CHR_F_WRITE_AUTHOR)
+    endmenu
+
+    config BT_NIMBLE_SVC_GAP_APPEAR_WRITE_PERM
+        int
+        default 0 if !BT_NIMBLE_SVC_GAP_APPEAR_WRITE
+        default 8 if BT_NIMBLE_SVC_GAP_APPEAR_WRITE
+
+    config BT_NIMBLE_SVC_GAP_APPEAR_WRITE_PERM_ENC
+        int
+        default 0 if !BT_NIMBLE_SVC_GAP_APPEAR_WRITE_ENC
+        default 4096 if BT_NIMBLE_SVC_GAP_APPEAR_WRITE_ENC
+
+    config BT_NIMBLE_SVC_GAP_APPEAR_WRITE_PERM_ATHN
+        int
+        default 0 if !BT_NIMBLE_SVC_GAP_APPEAR_WRITE_AUTHEN
+        default 8192 if BT_NIMBLE_SVC_GAP_APPEAR_WRITE_AUTHEN
+
+    config BT_NIMBLE_SVC_GAP_APPEAR_WRITE_PERM_ATHR
+        int
+        default 0 if !BT_NIMBLE_SVC_GAP_APPEAR_WRITE_AUTHOR
+        default 16384 if BT_NIMBLE_SVC_GAP_APPEAR_WRITE_AUTHOR
+
+    choice BT_NIMBLE_SVC_GAP_CENT_ADDR_RESOLUTION
+        prompt "GAP Characteristic - Central Address Resolution"
+        default BT_NIMBLE_SVC_GAP_CAR_CHAR_NOT_SUPP
+        help
+            Weather or not Central Address Resolution characteristic is supported on
+            the device, and if supported, weather or not Central Address Resolution
+            is supported.
+
+            - Central Address Resolution characteristic not supported
+            - Central Address Resolution not supported
+            - Central Address Resolution supported
+
+        config BT_NIMBLE_SVC_GAP_CAR_CHAR_NOT_SUPP
+            bool "Characteristic not supported"
+
+        config BT_NIMBLE_SVC_GAP_CAR_NOT_SUPP
+            bool "Central Address Resolution not supported"
+
+        config BT_NIMBLE_SVC_GAP_CAR_SUPP
+            bool "Central Address Resolution supported"
+    endchoice
+
+    config BT_NIMBLE_SVC_GAP_CENT_ADDR_RESOLUTION
+        int
+        default -1 if BT_NIMBLE_SVC_GAP_CAR_CHAR_NOT_SUPP
+        default 0 if BT_NIMBLE_SVC_GAP_CAR_NOT_SUPP
+        default 1 if BT_NIMBLE_SVC_GAP_CAR_SUPP
+
+    menu "GAP device name write permissions"
+        config BT_NIMBLE_SVC_GAP_NAME_WRITE
+            bool "Write"
+            default n
+            help
+                Enable write permission (BLE_GATT_CHR_F_WRITE)
+
+        config BT_NIMBLE_SVC_GAP_NAME_WRITE_ENC
+            depends on BT_NIMBLE_SVC_GAP_NAME_WRITE
+            bool "Write with encryption"
+            default n
+            help
+                Enable write with encryption permission (BLE_GATT_CHR_F_WRITE_ENC)
+
+        config BT_NIMBLE_SVC_GAP_NAME_WRITE_AUTHEN
+            depends on BT_NIMBLE_SVC_GAP_NAME_WRITE
+            bool "Write with authentication"
+            default n
+            help
+                Enable write with authentication permission (BLE_GATT_CHR_F_WRITE_AUTHEN)
+
+        config BT_NIMBLE_SVC_GAP_NAME_WRITE_AUTHOR
+            depends on BT_NIMBLE_SVC_GAP_NAME_WRITE
+            bool "Write with authorisation"
+            default n
+            help
+                Enable write with authorisation permission (BLE_GATT_CHR_F_WRITE_AUTHOR)
+    endmenu
+
+    config BT_NIMBLE_SVC_GAP_NAME_WRITE_PERM
+        int
+        default 0 if !BT_NIMBLE_SVC_GAP_NAME_WRITE
+        default 8 if BT_NIMBLE_SVC_GAP_NAME_WRITE
+
+    config BT_NIMBLE_SVC_GAP_NAME_WRITE_PERM_ENC
+        int
+        default 0 if !BT_NIMBLE_SVC_GAP_NAME_WRITE_ENC
+        default 4096 if BT_NIMBLE_SVC_GAP_NAME_WRITE_ENC
+
+    config BT_NIMBLE_SVC_GAP_NAME_WRITE_PERM_AUTHEN
+        int
+        default 0 if !BT_NIMBLE_SVC_GAP_NAME_WRITE_AUTHEN
+        default 8192 if BT_NIMBLE_SVC_GAP_NAME_WRITE_AUTHEN
+
+    config BT_NIMBLE_SVC_GAP_NAME_WRITE_PERM_AUTHOR
+        int
+        default 0 if !BT_NIMBLE_SVC_GAP_NAME_WRITE_AUTHOR
+        default 16384 if BT_NIMBLE_SVC_GAP_NAME_WRITE_AUTHOR
+
+    config BT_NIMBLE_SVC_GAP_PPCP_MAX_CONN_INTERVAL
+        int "PPCP Connection Interval Max (Unit: 1.25 ms)"
+        depends on BT_NIMBLE_ROLE_PERIPHERAL
+        default 0
+        help
+            Peripheral Preferred Connection Parameter: Connection Interval maximum value
+            Interval Max = value * 1.25 ms
+
+    config BT_NIMBLE_SVC_GAP_PPCP_MIN_CONN_INTERVAL
+        int "PPCP Connection Interval Min (Unit: 1.25 ms)"
+        depends on BT_NIMBLE_ROLE_PERIPHERAL
+        default 0
+        help
+            Peripheral Preferred Connection Parameter: Connection Interval minimum value
+            Interval Min = value * 1.25 ms
+
+    config BT_NIMBLE_SVC_GAP_PPCP_SLAVE_LATENCY
+        int "PPCP Slave Latency"
+        default 0
+        help
+            Peripheral Preferred Connection Parameter: Slave Latency
+
+    config BT_NIMBLE_SVC_GAP_PPCP_SUPERVISION_TMO
+        int "PPCP Supervision Timeout (Uint: 10 ms)"
+        default 0
+        help
+            Peripheral Preferred Connection Parameter: Supervision Timeout
+            Timeout = Value * 10 ms
+
+endmenu
+
 menu "BLE Services"
     menuconfig BT_NIMBLE_HID_SERVICE
         bool "HID service"
