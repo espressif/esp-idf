@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -347,5 +347,50 @@ TEST_CASE("eventfd multiple selects", "[vfs][eventfd]")
 
     vQueueDelete(args.queue);
     TEST_ASSERT_EQUAL(0, close(fd));
+    TEST_ESP_OK(esp_vfs_eventfd_unregister());
+}
+
+typedef struct {
+    int *value;
+    int fd;
+} select_block_task_args_t;
+
+static void select_block_task(void *arg)
+{
+    int fd = ((select_block_task_args_t *)arg)->fd;
+    fd_set read_fds;
+
+    FD_ZERO(&read_fds);
+    FD_SET(fd, &read_fds);
+
+    select(fd + 1, &read_fds, NULL, NULL, NULL);
+    *(((select_block_task_args_t *)arg)->value) = 1;
+    vTaskDelete(NULL);
+}
+
+TEST_CASE("eventfd select block", "[vfs][eventfd]")
+{
+    esp_vfs_eventfd_config_t config = ESP_VFS_EVENTD_CONFIG_DEFAULT();
+    TEST_ESP_OK(esp_vfs_eventfd_register(&config));
+
+    select_block_task_args_t args;
+    args.fd = eventfd(0, 0);
+    TEST_ASSERT_GREATER_OR_EQUAL(0, args.fd);
+    int a = 0;
+    args.value = &a;
+
+    int fd_write = eventfd(0, 0);
+    TEST_ASSERT_GREATER_OR_EQUAL(0, fd_write);
+
+    xTaskCreate(select_block_task, "select_block_task", 2048, &args, 5, NULL);
+    vTaskDelay(pdMS_TO_TICKS(2000));
+
+    uint64_t val = 1;
+    TEST_ASSERT_EQUAL(sizeof(val), write(fd_write, &val, sizeof(val)));
+    vTaskDelay(pdMS_TO_TICKS(2000));
+
+    TEST_ASSERT_EQUAL(0, *(args.value));
+    TEST_ASSERT_EQUAL(0, close(args.fd));
+    TEST_ASSERT_EQUAL(0, close(fd_write));
     TEST_ESP_OK(esp_vfs_eventfd_unregister());
 }
