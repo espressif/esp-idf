@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -217,17 +217,19 @@ static void usb_task(void *args)
     };
     ESP_ERROR_CHECK(msc_host_install(&msc_config));
 
+    bool has_clients = true;
     while (true) {
         uint32_t event_flags;
         usb_host_lib_handle_events(portMAX_DELAY, &event_flags);
 
         // Release devices once all clients has deregistered
         if (event_flags & USB_HOST_LIB_EVENT_FLAGS_NO_CLIENTS) {
+            has_clients = false;
             if (usb_host_device_free_all() == ESP_OK) {
                 break;
             };
         }
-        if (event_flags & USB_HOST_LIB_EVENT_FLAGS_ALL_FREE) {
+        if (event_flags & USB_HOST_LIB_EVENT_FLAGS_ALL_FREE && !has_clients) {
             break;
         }
     }
