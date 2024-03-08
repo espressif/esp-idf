@@ -49,8 +49,20 @@ if(CONFIG_SOC_SHA_SUPPORTED)
    if(NOT CONFIG_SOC_SHA_SUPPORT_PARALLEL_ENG)
       list(APPEND srcs "sha/test_sha.c"
                         "sha/sha_block.c")
+      list(APPEND priv_include_dirs "sha/include"
+                                    "$ENV{IDF_PATH}/components/mbedtls/port/include")
+
       if(CONFIG_SOC_SHA_SUPPORT_DMA)
-         list(APPEND srcs "sha/sha_dma.c")
+         list(APPEND srcs "sha/sha_dma.c"
+                           "$ENV{IDF_PATH}/components/mbedtls/port/sha/dma/sha.c")
+         list(APPEND priv_include_dirs "$ENV{IDF_PATH}/components/mbedtls/port/sha/dma/include")
+
+         if(NOT CONFIG_SOC_SHA_GDMA)
+            list(APPEND srcs "$ENV{IDF_PATH}/components/mbedtls/port/sha/dma/esp_sha_crypto_dma_impl.c")
+         else()
+            list(APPEND srcs "$ENV{IDF_PATH}/components/mbedtls/port/sha/dma/esp_sha_gdma_impl.c"
+                              "$ENV{IDF_PATH}/components/mbedtls/port/crypto_shared_gdma/esp_crypto_shared_gdma.c")
+         endif()
       endif()
    endif()
 endif()
