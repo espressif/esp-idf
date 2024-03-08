@@ -200,8 +200,8 @@ config SOC_GPIO_SUPPORT_HOLD_SINGLE_IO_IN_DSLP
     default y
 
 config SOC_RTCIO_PIN_COUNT
-    bool
-    default n
+    int
+    default 0
 
 config SOC_I2C_NUM
     int
