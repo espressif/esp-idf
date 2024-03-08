@@ -9,8 +9,7 @@ set(includes "")
 
 if(CONFIG_ULP_COPROC_ENABLED OR (CONFIG_IDF_DOC_BUILD AND CONFIG_SOC_ULP_SUPPORTED))
     list(APPEND includes
-        ulp_common/include
-        ulp_common/include/${target})
+        ulp_common/include)
 endif()
 
 if(CONFIG_ULP_COPROC_TYPE_FSM OR (CONFIG_IDF_DOC_BUILD AND CONFIG_SOC_ULP_FSM_SUPPORTED))
@@ -53,13 +52,19 @@ endif()
 if(CONFIG_ULP_COPROC_TYPE_LP_CORE)
     list(APPEND srcs
         "lp_core/lp_core.c"
-        "lp_core/shared/ulp_lp_core_memory_shared.c"
-        "lp_core/shared/ulp_lp_core_lp_timer_shared.c"
-        "lp_core/lp_core_uart.c")
+        "lp_core/shared/ulp_lp_core_memory_shared.c")
 
-    if(CONFIG_IDF_TARGET_ESP32C6)
+    if(CONFIG_SOC_ULP_LP_UART_SUPPORTED)
+        list(APPEND srcs "lp_core/lp_core_uart.c")
+    endif()
+
+    if(CONFIG_SOC_LP_I2C_SUPPORTED)
         # Add to P4 TODO IDF-7540
         list(APPEND srcs "lp_core/lp_core_i2c.c")
+    endif()
+
+    if(CONFIG_SOC_LP_TIMER_SUPPORTED)
+        list(APPEND srcs "lp_core/shared/ulp_lp_core_lp_timer_shared.c")
     endif()
 endif()
 

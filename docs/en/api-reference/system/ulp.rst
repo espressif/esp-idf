@@ -184,6 +184,5 @@ API Reference
 
 .. include-build-file:: inc/ulp_fsm_common.inc
 .. include-build-file:: inc/ulp_common.inc
-.. include-build-file:: inc/ulp_common_defs.inc
 
 .. _binutils-esp32ulp toolchain: https://github.com/espressif/binutils-gdb

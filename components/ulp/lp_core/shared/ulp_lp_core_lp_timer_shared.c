@@ -4,6 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include "ulp_lp_core_lp_timer_shared.h"
+#include "soc/soc_caps.h"
+
+#if SOC_LP_TIMER_SUPPORTED
 #include "hal/lp_timer_ll.h"
 #include "hal/clk_tree_ll.h"
 #include "soc/rtc.h"
@@ -49,3 +52,5 @@ void ulp_lp_core_lp_timer_disable(void)
     lp_timer_ll_set_target_enable(lp_timer_context.dev, TIMER_ID, false);
     lp_timer_ll_clear_lp_alarm_intr_status(lp_timer_context.dev);
 }
+
+#endif //SOC_LP_TIMER_SUPPORTED

@@ -63,6 +63,8 @@
 // #define SOC_LP_AON_SUPPORTED            1  // TODO: [ESP32C5] IDF-8638, IDF-8640
 #define SOC_LP_PERIPHERALS_SUPPORTED    1
 // #define SOC_LP_I2C_SUPPORTED            1  // TODO: [ESP32C5] IDF-8634
+#define SOC_ULP_SUPPORTED               1
+#define SOC_LP_CORE_SUPPORTED           1
 // #define SOC_ULP_LP_UART_SUPPORTED       1  // TODO: [ESP32C5] IDF-8633
 // #define SOC_CLK_TREE_SUPPORTED          1  // TODO: [ESP32C5] IDF-8642
 // #define SOC_ASSIST_DEBUG_SUPPORTED      1  // TODO: [ESP32C5] IDF-8663
