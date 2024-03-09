@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2013-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2013-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -299,7 +299,7 @@ static void psram_gpio_config(void)
     esp_rom_spiflash_select_qio_pins(wp_io, spiconfig);
 
     // Reserve psram pins
-    esp_gpio_reserve_pins(BIT64(cs1_io) | BIT64(wp_io));
+    esp_gpio_reserve(BIT64(cs1_io) | BIT64(wp_io));
 }
 
 esp_err_t esp_psram_impl_enable(void)   //psram init

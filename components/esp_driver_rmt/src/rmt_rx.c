@@ -146,6 +146,9 @@ static void rmt_rx_unregister_from_group(rmt_channel_t *channel, rmt_group_t *gr
 
 static esp_err_t rmt_rx_destroy(rmt_rx_channel_t *rx_channel)
 {
+    if (rx_channel->base.gpio_num >= 0) {
+        gpio_reset_pin(rx_channel->base.gpio_num);
+    }
     if (rx_channel->base.intr) {
         ESP_RETURN_ON_ERROR(esp_intr_free(rx_channel->base.intr), TAG, "delete interrupt service failed");
     }
@@ -177,21 +180,23 @@ esp_err_t rmt_new_rx_channel(const rmt_rx_channel_config_t *config, rmt_channel_
     rmt_rx_channel_t *rx_channel = NULL;
     // Check if priority is valid
     if (config->intr_priority) {
-        ESP_GOTO_ON_FALSE((config->intr_priority) > 0, ESP_ERR_INVALID_ARG, err, TAG, "invalid interrupt priority:%d", config->intr_priority);
-        ESP_GOTO_ON_FALSE(1 << (config->intr_priority) & RMT_ALLOW_INTR_PRIORITY_MASK, ESP_ERR_INVALID_ARG, err, TAG, "invalid interrupt priority:%d", config->intr_priority);
+        ESP_RETURN_ON_FALSE((config->intr_priority) > 0, ESP_ERR_INVALID_ARG, TAG, "invalid interrupt priority:%d", config->intr_priority);
+        ESP_RETURN_ON_FALSE(1 << (config->intr_priority) & RMT_ALLOW_INTR_PRIORITY_MASK, ESP_ERR_INVALID_ARG, TAG, "invalid interrupt priority:%d", config->intr_priority);
     }
-    ESP_GOTO_ON_FALSE(config && ret_chan && config->resolution_hz, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
-    ESP_GOTO_ON_FALSE(GPIO_IS_VALID_GPIO(config->gpio_num), ESP_ERR_INVALID_ARG, err, TAG, "invalid GPIO number");
-    ESP_GOTO_ON_FALSE((config->mem_block_symbols & 0x01) == 0 && config->mem_block_symbols >= SOC_RMT_MEM_WORDS_PER_CHANNEL,
-                      ESP_ERR_INVALID_ARG, err, TAG, "mem_block_symbols must be even and at least %d", SOC_RMT_MEM_WORDS_PER_CHANNEL);
+    ESP_RETURN_ON_FALSE(config && ret_chan && config->resolution_hz, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    ESP_RETURN_ON_FALSE(GPIO_IS_VALID_GPIO(config->gpio_num), ESP_ERR_INVALID_ARG, TAG, "invalid GPIO number %d", config->gpio_num);
+    ESP_RETURN_ON_FALSE((config->mem_block_symbols & 0x01) == 0 && config->mem_block_symbols >= SOC_RMT_MEM_WORDS_PER_CHANNEL,
+                        ESP_ERR_INVALID_ARG, TAG, "mem_block_symbols must be even and at least %d", SOC_RMT_MEM_WORDS_PER_CHANNEL);
 #if !SOC_RMT_SUPPORT_DMA
-    ESP_GOTO_ON_FALSE(config->flags.with_dma == 0, ESP_ERR_NOT_SUPPORTED, err, TAG, "DMA not supported");
+    ESP_RETURN_ON_FALSE(config->flags.with_dma == 0, ESP_ERR_NOT_SUPPORTED, TAG, "DMA not supported");
 #endif // SOC_RMT_SUPPORT_DMA
 
     // malloc channel memory
     uint32_t mem_caps = RMT_MEM_ALLOC_CAPS;
     rx_channel = heap_caps_calloc(1, sizeof(rmt_rx_channel_t), mem_caps);
     ESP_GOTO_ON_FALSE(rx_channel, ESP_ERR_NO_MEM, err, TAG, "no mem for rx channel");
+    // gpio is not configured yet
+    rx_channel->base.gpio_num = -1;
     // create DMA descriptor
     size_t num_dma_nodes = 0;
     if (config->flags.with_dma) {
@@ -266,16 +271,16 @@ esp_err_t rmt_new_rx_channel(const rmt_rx_channel_config_t *config, rmt_channel_
 #endif
 
     // GPIO Matrix/MUX configuration
-    rx_channel->base.gpio_num = config->gpio_num;
     gpio_config_t gpio_conf = {
         .intr_type = GPIO_INTR_DISABLE,
         // also enable the input path is `io_loop_back` is on, this is useful for debug
         .mode = GPIO_MODE_INPUT | (config->flags.io_loop_back ? GPIO_MODE_OUTPUT : 0),
         .pull_down_en = false,
         .pull_up_en = true,
-        .pin_bit_mask = 1ULL << config->gpio_num,
+        .pin_bit_mask = BIT64(config->gpio_num),
     };
     ESP_GOTO_ON_ERROR(gpio_config(&gpio_conf), err, TAG, "config GPIO failed");
+    rx_channel->base.gpio_num = config->gpio_num;
     esp_rom_gpio_connect_in_signal(config->gpio_num,
                                    rmt_periph_signals.groups[group_id].channels[channel_id + RMT_RX_CHANNEL_OFFSET_IN_GROUP].rx_sig,
                                    config->flags.invert_in);

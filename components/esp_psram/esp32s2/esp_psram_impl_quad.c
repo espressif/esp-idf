@@ -1,12 +1,12 @@
 /*
- Driver bits for PSRAM chips (at the moment only the ESP-PSRAM32 chip).
-*/
-
-/*
- * SPDX-FileCopyrightText: 2013-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2013-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+/*
+ Driver bits for PSRAM chips (at the moment only the ESP-PSRAM32 chip).
+*/
 
 #include "sdkconfig.h"
 #include "string.h"
@@ -383,14 +383,14 @@ static void IRAM_ATTR psram_gpio_config(psram_cache_speed_t mode)
     s_psram_cs_io = psram_io.psram_cs_io;
 
     // Preserve psram pins
-    esp_gpio_reserve_pins(BIT64(psram_io.flash_clk_io)        |
-                          BIT64(psram_io.flash_cs_io)         |
-                          BIT64(psram_io.psram_clk_io)        |
-                          BIT64(psram_io.psram_cs_io)         |
-                          BIT64(psram_io.psram_spiq_sd0_io)   |
-                          BIT64(psram_io.psram_spid_sd1_io)   |
-                          BIT64(psram_io.psram_spihd_sd2_io)  |
-                          BIT64(psram_io.psram_spiwp_sd3_io));
+    esp_gpio_reserve(BIT64(psram_io.flash_clk_io)        |
+                     BIT64(psram_io.flash_cs_io)         |
+                     BIT64(psram_io.psram_clk_io)        |
+                     BIT64(psram_io.psram_cs_io)         |
+                     BIT64(psram_io.psram_spiq_sd0_io)   |
+                     BIT64(psram_io.psram_spid_sd1_io)   |
+                     BIT64(psram_io.psram_spihd_sd2_io)  |
+                     BIT64(psram_io.psram_spiwp_sd3_io));
 }
 
 //used in UT only

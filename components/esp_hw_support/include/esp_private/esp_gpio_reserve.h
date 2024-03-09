@@ -1,18 +1,25 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
 /**
- * File Introduction:
- * This file is used to reserve the GPIOs runtime, which has been occupied by FLASH/PSRAM or
- * the GPIOs that not fan out.
+ * Background:
  *
- * The FLASH pins can be tuned according to eFuse, pins will be reserved in the `esp_mspi_pin_init`
- * while starting the CPU.
+ * - On some **modules**, specific GPIOs are connected to the PSRAM or Flash, and they shouldn't be used as general purpose IOs in the user's projects.
+ * - Some GPIO may be not fan-out in the SiP variant.
+ * - GPIO A is driven by peripheral M, we don't want peripheral N to use the same GPIO.
+ * - User may deliver a board where a GPIO is used for a special purpose or even not fan-out on the PCB, they want to reserve it in the BSP package.
+ * ...
+ */
+
+/**
+ * Usage Attention:
  *
- * As for the PSRAM pins, they are initialized after CPU started. They will be reserved in
- * the `psram_gpio_config` when enabling the PSRAM.
+ * - If a GPIO is used by IO MUX, no matter it's used as Input or Output, we should reserve it, because IO MUX's different "FUNC" has its dedicated peripheral.
+ * - If a GPIO is used by Matrix, and only use its output path, we should reserve it, because we can't bind multiple peripheral output signals to the same GPIO.
+ * - When doing GPIO reserve, we must check its return value, to ensure the same GPIO is not reserved already.
  */
 
 #pragma once
@@ -24,22 +31,30 @@ extern "C" {
 #endif
 
 /**
- * @brief Set the reserved pin
- * @note  A same gpio can be reserve repetitively, but can't be clear once it is reserved
+ * @brief Reserve the given GPIOs by mask, so they can't be used by others
  *
- * @param[in]  mask Mask of GPIO reserved pins
+ * @param gpio_mask Mask of the GPIOs to be reserved
+ * @return The mask of the GPIOs that were already reserved before this call
  */
-void esp_gpio_reserve_pins(uint64_t mask);
+uint64_t esp_gpio_reserve(uint64_t gpio_mask);
 
 /**
- * @brief Check whether the pin has been reserved
+ * @brief Revoke the given GPIOs by mask, so they can be reused again by others
  *
- * @param[in]  gpio_num  GPIO pin number, please input a gpio number within `SOC_GPIO_PIN_COUNT`
- * @return
- *      - true  This gpio is reserved for FLASH or PSRAM
- *      - false This gpio is available for other purposes
+ * @param gpio_mask Mask of the GPIOs to be revoked
+ * @return The mask of the GPIOs that were already reserved before this call
  */
-bool esp_gpio_is_pin_reserved(uint32_t gpio_num);
+uint64_t esp_gpio_revoke(uint64_t gpio_mask);
+
+/**
+ * @brief Check whether the given GPIOs are reserved
+ *
+ * @param gpio_mask Mask of the GPIOs to be checked
+ * @return
+ *      - true  Aay of the given GPIO(s) is reserved
+ *      - false Aay of the given GPIO(s) is not reserved
+ */
+bool esp_gpio_is_reserved(uint64_t gpio_mask);
 
 #ifdef __cplusplus
 }
