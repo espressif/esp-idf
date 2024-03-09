@@ -377,7 +377,7 @@ typedef union {
         /** continue : WT; bitpos: [0]; default: 0;
          *  Set this bit to continue GCM operation.
          */
-        uint32_t continue:1;
+        uint32_t conti:1;
         uint32_t reserved_1:31;
     };
     uint32_t val;
@@ -478,7 +478,7 @@ typedef struct {
     volatile aes_inc_sel_reg_t inc_sel;
     volatile aes_aad_block_num_reg_t aad_block_num;
     volatile aes_remainder_bit_num_reg_t remainder_bit_num;
-    volatile aes_continue_reg_t continue;
+    volatile aes_continue_reg_t conti;
     volatile aes_int_clear_reg_t int_clear;
     volatile aes_int_ena_reg_t int_ena;
     volatile aes_date_reg_t date;
