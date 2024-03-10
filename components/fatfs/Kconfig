@@ -205,6 +205,63 @@ menu "FAT Filesystem support"
             file is opened in write-mode, the seek mechanism will automatically fallback
             to the default implementation.
 
+    choice FATFS_USE_STRFUNC_CHOICE
+        prompt "Enable string functions, f_gets(), f_putc(), f_puts() and f_printf()"
+        default FATFS_USE_STRFUNC_NONE
+        help
+            These are specialized alternatives to stdio functions for working
+            directly with FATFS without VFS.  Legacy code may need functions,
+            but for new development, it is advised to use stdio under VFS.
+
+            0: Disable. FF_PRINT_LLI, FF_PRINT_FLOAT and FF_STRF_ENCODE have no effect.
+            1: Enable without LF-CRLF conversion.
+            2: Enable with LF-CRLF conversion.
+
+        config FATFS_USE_STRFUNC_NONE
+            bool "0:Disable"
+
+        config FATFS_USE_STRFUNC_WITHOUT_CRLF_CONV
+            bool "1:Enable without LF-CRLF conversion"
+
+        config FATFS_USE_STRFUNC_WITH_CRLF_CONV
+            bool "2:Enable with LF-CRLF conversion"
+    endchoice
+
+    config FATFS_PRINT_LLI
+        depends on !FATFS_USE_STRFUNC_NONE
+        bool "Make fatfs f_printf() support long long argument"
+        default 0
+
+    config FATFS_PRINT_FLOAT
+        depends on !FATFS_USE_STRFUNC_NONE
+        bool "Make fatfs f_printf() support floating point argument"
+        default 0
+
+    choice FATFS_STRF_ENCODE_CHOICE
+        prompt "FatFS string functions: convert character encoding"
+        depends on !FATFS_LFN_NONE && !FATFS_USE_STRFUNC_NONE
+        default FATFS_STRF_ENCODE_UTF8
+        help
+            When FF_LFN_UNICODE >= 1 with LFN enabled, string functions convert the character
+            encoding in it. FF_STRF_ENCODE selects assumption of character encoding ON THE FILE
+            to be read/written via those functions.
+             0: ANSI/OEM in current CP
+             1: Unicode in UTF-16LE
+             2: Unicode in UTF-16BE
+             3: Unicode in UTF-8
+
+        config FATFS_STRF_ENCODE_ANSI
+            bool "0:ANSI/OEM in current CP"
+
+        config FATFS_STRF_ENCODE_UTF16LE
+            bool "1:Unicode in UTF-16LE"
+
+        config FATFS_STRF_ENCODE_UTF16BE
+            bool "2:Unicode in UTF-16BE"
+
+        config FATFS_STRF_ENCODE_UTF8
+            bool "3:Unicode in UTF-8"
+    endchoice
 
     config FATFS_FAST_SEEK_BUFFER_SIZE
         int "Fast seek CLMT buffer size"
