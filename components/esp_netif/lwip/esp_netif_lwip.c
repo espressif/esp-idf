@@ -1242,6 +1242,13 @@ void esp_netif_free_rx_buffer(void *h, void* buffer)
 
 esp_err_t esp_netif_transmit(esp_netif_t *esp_netif, void* data, size_t len)
 {
+#ifdef CONFIG_ESP_NETIF_REPORT_DATA_TRAFFIC
+    ip_event_transmit_receive_t evt = {
+        .esp_netif = esp_netif,
+        .len = len,
+    };
+    esp_event_post(IP_EVENT, IP_EVENT_TRANSMIT, &evt, sizeof(evt), 0);
+#endif
     return (esp_netif->driver_transmit)(esp_netif->driver_handle, data, len);
 }
 
@@ -1252,6 +1259,13 @@ esp_err_t esp_netif_transmit_wrap(esp_netif_t *esp_netif, void *data, size_t len
 
 esp_err_t esp_netif_receive(esp_netif_t *esp_netif, void *buffer, size_t len, void *eb)
 {
+#ifdef CONFIG_ESP_NETIF_REPORT_DATA_TRAFFIC
+    ip_event_transmit_receive_t evt = {
+        .esp_netif = esp_netif,
+        .len = len,
+    };
+    esp_event_post(IP_EVENT, IP_EVENT_RECEIVE, &evt, sizeof(evt), 0);
+#endif
 #ifdef CONFIG_ESP_NETIF_RECEIVE_REPORT_ERRORS
     return esp_netif->lwip_input_fn(esp_netif->netif_handle, buffer, len, eb);
 #else

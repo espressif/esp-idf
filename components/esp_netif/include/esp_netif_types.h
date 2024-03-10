@@ -101,6 +101,10 @@ typedef enum {
     IP_EVENT_ETH_LOST_IP,              /*!< ethernet lost IP and the IP is reset to 0 */
     IP_EVENT_PPP_GOT_IP,               /*!< PPP interface got IP */
     IP_EVENT_PPP_LOST_IP,              /*!< PPP interface lost IP */
+#ifdef CONFIG_ESP_NETIF_REPORT_DATA_TRAFFIC
+    IP_EVENT_TRANSMIT,                 /*!< transmitting data */
+    IP_EVENT_RECEIVE,                  /*!< receiving data */
+#endif
 } ip_event_t;
 
 /** @brief IP event base declaration */
@@ -151,6 +155,13 @@ typedef struct {
     uint8_t mac[6];    /*!< MAC address of the connected client */
 } ip_event_ap_staipassigned_t;
 
+#ifdef CONFIG_ESP_NETIF_REPORT_DATA_TRAFFIC
+/** Event structure for IP_EVENT_TRANSMIT and IP_EVENT_RECEIVE */
+typedef struct {
+    esp_netif_t *esp_netif; /*!< Pointer to the associated netif handle */
+    size_t len; /*!< Length of the data */
+} ip_event_transmit_receive_t;
+#endif
 
 typedef enum esp_netif_flags {
     ESP_NETIF_DHCP_CLIENT = 1 << 0,
