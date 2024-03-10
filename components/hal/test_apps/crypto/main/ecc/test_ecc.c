@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: CC0-1.0
  */
@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <string.h>
+#include <sys/param.h>
 #include "sdkconfig.h"
 #include "esp_private/esp_crypto_lock_internal.h"
 #include "esp_log.h"
@@ -17,8 +18,8 @@
 
 #include "memory_checks.h"
 #include "unity_fixture.h"
+#include "ccomp_timer.h"
 
-#define _DEBUG_                             0
 #define SOC_ECC_SUPPORT_POINT_MULT          1
 #define SOC_ECC_SUPPORT_POINT_VERIFY        1
 
@@ -86,6 +87,9 @@ static void ecc_point_mul(const uint8_t *k_le, const uint8_t *x_le, const uint8_
     } else {
         ecc_hal_set_mode(ECC_MODE_POINT_MUL);
     }
+#ifdef SOC_ECC_CONSTANT_TIME_POINT_MUL
+    ecc_hal_enable_constant_time_point_mul(true);
+#endif /* SOC_ECC_CONSTANT_TIME_POINT_MUL */
     ecc_hal_start_calc();
 
     while (!ecc_hal_is_calc_finished()) {
@@ -118,13 +122,11 @@ static void test_ecc_point_mul_inner(bool verify_first)
     ecc_be_to_le(ecc_p256_mul_res_x, x_mul_le, 32);
     ecc_be_to_le(ecc_p256_mul_res_y, y_mul_le, 32);
 
-#if _DEBUG_
-    ESP_LOG_BUFFER_HEX("Expected X:", x_mul_le, 32);
-    ESP_LOG_BUFFER_HEX("Got X:", x_res_le, 32);
+    ESP_LOG_BUFFER_HEXDUMP("Expected X:", x_mul_le, 32, ESP_LOG_DEBUG);
+    ESP_LOG_BUFFER_HEXDUMP("Got X:", x_res_le, 32, ESP_LOG_DEBUG);
 
-    ESP_LOG_BUFFER_HEX("Expected Y:", y_mul_le, 32);
-    ESP_LOG_BUFFER_HEX("Got Y:", y_res_le, 32);
-#endif
+    ESP_LOG_BUFFER_HEXDUMP("Expected Y:", y_mul_le, 32, ESP_LOG_DEBUG);
+    ESP_LOG_BUFFER_HEXDUMP("Got Y:", y_res_le, 32, ESP_LOG_DEBUG);
 
     TEST_ASSERT_EQUAL_MEMORY_MESSAGE(x_mul_le, x_res_le, 32, "X coordinate of P256 point multiplication ");
     TEST_ASSERT_EQUAL_MEMORY_MESSAGE(y_mul_le, y_res_le, 32, "Y coordinate of P256 point multiplication ");
@@ -144,13 +146,11 @@ static void test_ecc_point_mul_inner(bool verify_first)
     ecc_be_to_le(ecc_p192_mul_res_x, x_mul_le, 24);
     ecc_be_to_le(ecc_p192_mul_res_y, y_mul_le, 24);
 
-#if _DEBUG_
-    ESP_LOG_BUFFER_HEX("Expected X:", x_mul_le, 32);
-    ESP_LOG_BUFFER_HEX("Got X:", x_res_le, 32);
+    ESP_LOG_BUFFER_HEXDUMP("Expected X:", x_mul_le, 32, ESP_LOG_DEBUG);
+    ESP_LOG_BUFFER_HEXDUMP("Got X:", x_res_le, 32, ESP_LOG_DEBUG);
 
-    ESP_LOG_BUFFER_HEX("Expected Y:", y_mul_le, 32);
-    ESP_LOG_BUFFER_HEX("Got Y:", y_res_le, 32);
-#endif
+    ESP_LOG_BUFFER_HEXDUMP("Expected Y:", y_mul_le, 32, ESP_LOG_DEBUG);
+    ESP_LOG_BUFFER_HEXDUMP("Got Y:", y_res_le, 32, ESP_LOG_DEBUG);
 
     TEST_ASSERT_EQUAL_MEMORY_MESSAGE(x_mul_le, x_res_le, 24, "X coordinate of P192 point multiplication ");
     TEST_ASSERT_EQUAL_MEMORY_MESSAGE(y_mul_le, y_res_le, 24, "Y coordinate of P192 point multiplication ");
@@ -160,6 +160,74 @@ TEST(ecc, ecc_point_multiplication_on_SECP192R1_and_SECP256R1)
 {
     test_ecc_point_mul_inner(false);
 }
+
+#if SOC_ECC_CONSTANT_TIME_POINT_MUL
+
+#define CONST_TIME_DEVIATION_PERCENT 0.002
+
+static void test_ecc_point_mul_inner_constant_time(void)
+{
+    uint8_t scalar_le[32];
+    uint8_t x_le[32];
+    uint8_t y_le[32];
+
+    /* P256 */
+    ecc_be_to_le(ecc_p256_scalar, scalar_le, 32);
+    ecc_be_to_le(ecc_p256_point_x, x_le, 32);
+    ecc_be_to_le(ecc_p256_point_y, y_le, 32);
+
+    uint8_t x_res_le[32];
+    uint8_t y_res_le[32];
+
+    double deviation = 0;
+    uint32_t elapsed_time, mean_elapsed_time, total_elapsed_time = 0;
+    uint32_t max_time = 0, min_time = UINT32_MAX;
+    int loop_count = 10;
+
+    for (int i = 0; i < loop_count; i++) {
+        ccomp_timer_start();
+        ecc_point_mul(scalar_le, x_le, y_le, 32, 0, x_res_le, y_res_le);
+        elapsed_time = ccomp_timer_stop();
+
+        max_time = MAX(elapsed_time, max_time);
+        min_time = MIN(elapsed_time, min_time);
+        total_elapsed_time += elapsed_time;
+    }
+    mean_elapsed_time = total_elapsed_time / loop_count;
+    deviation = ((double)(max_time - mean_elapsed_time) / mean_elapsed_time);
+
+    TEST_ASSERT_LESS_THAN_DOUBLE(CONST_TIME_DEVIATION_PERCENT, deviation);
+
+    /* P192 */
+    ecc_be_to_le(ecc_p192_scalar, scalar_le, 24);
+    ecc_be_to_le(ecc_p192_point_x, x_le, 24);
+    ecc_be_to_le(ecc_p192_point_y, y_le, 24);
+
+    max_time = 0;
+    min_time = UINT32_MAX;
+    total_elapsed_time = 0;
+
+    for (int i = 0; i < loop_count; i++) {
+        ccomp_timer_start();
+        ecc_point_mul(scalar_le, x_le, y_le, 24, 0, x_res_le, y_res_le);
+        elapsed_time = ccomp_timer_stop();
+
+        max_time = MAX(elapsed_time, max_time);
+        min_time = MIN(elapsed_time, min_time);
+        total_elapsed_time += elapsed_time;
+    }
+    mean_elapsed_time = total_elapsed_time / loop_count;
+    deviation = ((double)(max_time - mean_elapsed_time) / mean_elapsed_time);
+
+    TEST_ASSERT_LESS_THAN_DOUBLE(CONST_TIME_DEVIATION_PERCENT, deviation);
+}
+
+TEST(ecc, ecc_point_multiplication_const_time_check_on_SECP192R1_and_SECP256R1)
+{
+    test_ecc_point_mul_inner_constant_time();
+}
+#endif
+
 #endif
 
 #if SOC_ECC_SUPPORT_POINT_VERIFY && !defined(SOC_ECC_SUPPORT_POINT_VERIFY_QUIRK)
@@ -493,6 +561,9 @@ TEST_GROUP_RUNNER(ecc)
 {
 #if SOC_ECC_SUPPORT_POINT_MULT
     RUN_TEST_CASE(ecc, ecc_point_multiplication_on_SECP192R1_and_SECP256R1);
+#if SOC_ECC_CONSTANT_TIME_POINT_MUL
+    RUN_TEST_CASE(ecc, ecc_point_multiplication_const_time_check_on_SECP192R1_and_SECP256R1);
+#endif
 #endif
 
 #if SOC_ECC_SUPPORT_POINT_VERIFY && !defined(SOC_ECC_SUPPORT_POINT_VERIFY_QUIRK)
@@ -534,5 +605,4 @@ TEST_GROUP_RUNNER(ecc)
 #if SOC_ECC_SUPPORT_MOD_MUL
     RUN_TEST_CASE(ecc, ecc_mod_multiplication_using_SECP192R1_and_SECP256R1_order_of_curve);
 #endif
-
 }
