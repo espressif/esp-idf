@@ -1136,7 +1136,7 @@ esp_err_t SPI_MASTER_ISR_ATTR spi_device_acquire_bus(spi_device_t *device, TickT
     }
     host->device_acquiring_lock = device;
 
-    ESP_LOGD(SPI_TAG, "device%d locked the bus", device->id);
+    ESP_LOGV(SPI_TAG, "device%d locked the bus", device->id);
 
 #ifdef CONFIG_PM_ENABLE
     // though we don't suggest to block the task before ``release_bus``, still allow doing so.
@@ -1180,7 +1180,7 @@ void SPI_MASTER_ISR_ATTR spi_device_release_bus(spi_device_t *dev)
     //Release APB frequency lock
     esp_pm_lock_release(host->bus_attr->pm_lock);
 #endif
-    ESP_LOGD(SPI_TAG, "device%d release bus", dev->id);
+    ESP_LOGV(SPI_TAG, "device%d release bus", dev->id);
 
     host->device_acquiring_lock = NULL;
     esp_err_t ret = spi_bus_lock_acquire_end(dev->dev_lock);

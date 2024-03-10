@@ -513,7 +513,7 @@ static bool IRAM_ATTR i2s_dma_rx_callback(gdma_channel_handle_t dma_chan, gdma_e
     esp_cache_msync((void *)finish_desc->buf, handle->dma.buf_size, ESP_CACHE_MSYNC_FLAG_INVALIDATE);
 #endif
     i2s_event_data_t evt = {
-        .data = &(finish_desc->buf),
+        .data = finish_desc->buf,
         .size = handle->dma.buf_size,
     };
     if (handle->callbacks.on_recv) {
@@ -542,9 +542,16 @@ static bool IRAM_ATTR i2s_dma_tx_callback(gdma_channel_handle_t dma_chan, gdma_e
 
     finish_desc = (lldesc_t *)event_data->tx_eof_desc_addr;
     i2s_event_data_t evt = {
-        .data = &(finish_desc->buf),
+        .data = finish_desc->buf,
         .size = handle->dma.buf_size,
     };
+    if (handle->dma.auto_clear) {
+        uint8_t *sent_buf = (uint8_t *)finish_desc->buf;
+        memset(sent_buf, 0, handle->dma.buf_size);
+#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
+        esp_cache_msync(sent_buf, handle->dma.buf_size, ESP_CACHE_MSYNC_FLAG_DIR_C2M);
+#endif
+    }
     if (handle->callbacks.on_sent) {
         user_need_yield |= handle->callbacks.on_sent(handle, &evt, handle->user_data);
     }
@@ -554,13 +561,6 @@ static bool IRAM_ATTR i2s_dma_tx_callback(gdma_channel_handle_t dma_chan, gdma_e
             evt.data = NULL;
             user_need_yield |= handle->callbacks.on_send_q_ovf(handle, &evt, handle->user_data);
         }
-    }
-    if (handle->dma.auto_clear) {
-        uint8_t *sent_buf = (uint8_t *)finish_desc->buf;
-        memset(sent_buf, 0, handle->dma.buf_size);
-#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
-        esp_cache_msync(sent_buf, handle->dma.buf_size, ESP_CACHE_MSYNC_FLAG_DIR_C2M);
-#endif
     }
     xQueueSendFromISR(handle->msg_queue, &(finish_desc->buf), &need_yield2);
 
@@ -587,7 +587,7 @@ static void IRAM_ATTR i2s_dma_rx_callback(void *arg)
 
     if (handle && (status & I2S_LL_EVENT_RX_EOF)) {
         i2s_hal_get_in_eof_des_addr(&(handle->controller->hal), (uint32_t *)&finish_desc);
-        evt.data = &(finish_desc->buf);
+        evt.data = finish_desc->buf;
         evt.size = handle->dma.buf_size;
         if (handle->callbacks.on_recv) {
             user_need_yield |= handle->callbacks.on_recv(handle, &evt, handle->user_data);
@@ -625,7 +625,7 @@ static void IRAM_ATTR i2s_dma_tx_callback(void *arg)
 
     if (handle && (status & I2S_LL_EVENT_TX_EOF)) {
         i2s_hal_get_out_eof_des_addr(&(handle->controller->hal), (uint32_t *)&finish_desc);
-        evt.data = &(finish_desc->buf);
+        evt.data = finish_desc->buf;
         evt.size = handle->dma.buf_size;
         if (handle->callbacks.on_sent) {
             user_need_yield |= handle->callbacks.on_sent(handle, &evt, handle->user_data);
