@@ -61,6 +61,8 @@ void test_assert_cache_disabled(void);
 
 void test_illegal_access(void);
 
+void test_capture_dram(void);
+
 #ifdef __cplusplus
 }
 #endif
