@@ -1,16 +1,8 @@
-// Copyright 2015-2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <stdlib.h>
 #include "spi_flash_chip_generic.h"
@@ -32,6 +24,26 @@ esp_err_t spi_flash_chip_mxic_probe(esp_flash_t *chip, uint32_t flash_id)
         return ESP_ERR_NOT_FOUND;
     }
 
+    return ESP_OK;
+}
+
+esp_err_t spi_flash_chip_mxic_detect_size(esp_flash_t *chip, uint32_t *size)
+{
+    uint32_t id = chip->chip_id;
+    *size = 0;
+
+    /* Can't detect size unless the high byte of the product ID matches the same convention, which is usually 0x40 or
+     * 0xC0 or similar. */
+    if (((id & 0xFFFF) == 0x0000) || ((id & 0xFFFF) == 0xFFFF)) {
+        return ESP_ERR_FLASH_UNSUPPORTED_CHIP;
+    }
+
+    uint32_t mem_density = (id & 0xFF);
+    if (mem_density > 0x30) { // For OPI chips
+        mem_density -= 0x20;
+    }
+
+    *size = (mem_density <= 31) ? (1U << mem_density) : 0;
     return ESP_OK;
 }
 
@@ -61,7 +73,7 @@ const spi_flash_chip_t esp_flash_chip_mxic = {
     .timeout = &spi_flash_chip_generic_timeout,
     .probe = spi_flash_chip_mxic_probe,
     .reset = spi_flash_chip_generic_reset,
-    .detect_size = spi_flash_chip_generic_detect_size,
+    .detect_size = spi_flash_chip_mxic_detect_size,
     .erase_chip = spi_flash_chip_generic_erase_chip,
     .erase_sector = spi_flash_chip_generic_erase_sector,
     .erase_block = spi_flash_chip_generic_erase_block,
