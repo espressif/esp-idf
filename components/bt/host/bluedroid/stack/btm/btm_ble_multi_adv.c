@@ -824,6 +824,13 @@ void btm_ble_multi_adv_init(void)
 *******************************************************************************/
 void btm_ble_multi_adv_cleanup(void)
 {
+#if BTM_DYNAMIC_MEMORY == TRUE
+    if (btm_multi_adv_cb_ptr == NULL)
+    {
+        BTM_TRACE_WARNING("%s memory has been freed", __func__);
+        return;
+    }
+#endif
     if (btm_multi_adv_cb.p_adv_inst) {
         osi_free(btm_multi_adv_cb.p_adv_inst);
         btm_multi_adv_cb.p_adv_inst = NULL;
