@@ -37,6 +37,7 @@ static const char *TAG  = "genie_demo";
 
 #define MESH_ELEM_COUNT         1
 #define MESH_ELEM_STATE_COUNT   MESH_ELEM_COUNT
+#define LIGHT_STATUS_STORE_KEY   "light_status"
 
 nvs_handle_t NVS_HANDLE;
 
@@ -416,12 +417,34 @@ void user_genie_event_handle(genie_event_t event, void *p_arg)
     switch (event) {
     case GENIE_EVT_RESET_BY_REPEAT_NOTIFY:
         ESP_LOGI(TAG, "GENIE_EVT_RESET_BY_REPEAT_NOTIFY");
-        light_driver_breath_start(0, 255, 0);   /**< green blink */
+        lightbulb_set_switch(false);
+        lightbulb_effect_config_t effect1 = {
+            .red = 0,
+            .green = 255,
+            .blue = 0,
+            .max_brightness = 100,
+            .min_brightness = 0,
+            .effect_cycle_ms = CONFIG_LIGHT_BLINK_PERIOD_MS,
+            .effect_type = EFFECT_BLINK,
+            .mode = WORK_COLOR,
+        };
+        lightbulb_basic_effect_start(&effect1);   /**< green blink */
         break;
     case GENIE_EVT_SW_RESET:
     case GENIE_EVT_HW_RESET_START:
         ESP_LOGI(TAG, "GENIE_EVT_HW_RESET_START");
-        light_driver_breath_start(0, 255, 0);   /**< green blink */
+        lightbulb_set_switch(false);
+        lightbulb_effect_config_t effect2 = {
+            .red = 0,
+            .green = 255,
+            .blue = 0,
+            .max_brightness = 100,
+            .min_brightness = 0,
+            .effect_cycle_ms = CONFIG_LIGHT_BLINK_PERIOD_MS,
+            .effect_type = EFFECT_BLINK,
+            .mode = WORK_COLOR,
+        };
+        lightbulb_basic_effect_start(&effect2);   /**< green blink */
         ble_mesh_nvs_erase(NVS_HANDLE, LIGHT_STATUS_STORE_KEY); // erase led status
         reset_light_para();
         break;
@@ -442,7 +465,7 @@ void user_genie_event_handle(genie_event_t event, void *p_arg)
         g_indication_flag |= INDICATION_FLAG_CTL;
 #endif
         ESP_LOGI(TAG, "light_driver_breath_stop %s", __FUNCTION__);
-        light_driver_breath_stop();
+        lightbulb_basic_effect_stop();
         // update led status
         genie_event(GENIE_EVT_SDK_ANALYZE_MSG, &g_elem_state[0]);
         break;
@@ -1290,7 +1313,18 @@ static esp_err_t ble_mesh_init(void)
         ESP_LOGW(TAG, "node already provisioned");
     } else {
         ESP_LOGW(TAG, "node not provisioned");
-        light_driver_breath_start(0, 255, 0); /**< green blink */
+        lightbulb_set_switch(false);
+        lightbulb_effect_config_t effect3 = {
+            .red = 0,
+            .green = 255,
+            .blue = 0,
+            .max_brightness = 100,
+            .min_brightness = 0,
+            .effect_cycle_ms = CONFIG_LIGHT_BLINK_PERIOD_MS,
+            .effect_type = EFFECT_BLINK,
+            .mode = WORK_COLOR,
+        };
+        lightbulb_basic_effect_start(&effect3); /**< green blink */
     }
 
     return err;

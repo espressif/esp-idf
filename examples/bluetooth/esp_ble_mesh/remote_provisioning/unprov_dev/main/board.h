@@ -15,7 +15,6 @@ extern "C" {
 #endif /**< __cplusplus */
 
 #include "driver/gpio.h"
-#include "led_strip_encoder.h"
 
 #if defined(CONFIG_BLE_MESH_ESP_WROOM_32)
 #define LED_R GPIO_NUM_25
