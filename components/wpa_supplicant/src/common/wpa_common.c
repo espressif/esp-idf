@@ -429,7 +429,7 @@ int wpa_parse_wpa_ie_rsn(const u8 *rsn_ie, size_t rsn_ie_len,
 	data->num_pmkid = 0;
 	data->mgmt_group_cipher = WPA_CIPHER_AES_128_CMAC;
 
-	wpa_hexdump(MSG_DEBUG, "rsn_ie", rsn_ie, rsn_ie_len);
+	wpa_hexdump(MSG_MSGDUMP, "rsn_ie", rsn_ie, rsn_ie_len);
 	if (rsn_ie_len == 0) {
 		/* No RSN IE - fail silently */
 		return -1;
