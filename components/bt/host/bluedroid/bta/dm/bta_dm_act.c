@@ -612,6 +612,11 @@ void bta_dm_disable (tBTA_DM_MSG *p_data)
     btm_ble_resolving_list_cleanup ();  //by TH, because cmn_ble_vsc_cb.max_filter has something mistake as btm_ble_adv_filter_cleanup
 #endif
 
+#if BLE_INCLUDED == TRUE
+    // btm_ble_multi_adv_init is called when the host is enabled, so btm_ble_multi_adv_cleanup is called when the host is disabled.
+    btm_ble_multi_adv_cleanup();
+#endif
+
 }
 
 /*******************************************************************************
