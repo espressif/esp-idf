@@ -6,7 +6,8 @@
 
 #include <stddef.h>
 #include <stdint.h>
-#include <string.h>
+#include <string.h> // For memset()
+#include <stdlib.h> // For abort()
 #include "sdkconfig.h"
 #include "soc/chip_revision.h"
 #include "hal/usb_dwc_hal.h"
@@ -322,12 +323,48 @@ void usb_dwc_hal_chan_set_ep_char(usb_dwc_hal_context_t *hal, usb_dwc_hal_chan_t
     chan_obj->type = ep_char->type;
     //If this is a periodic endpoint/channel, set its schedule in the frame list
     if (ep_char->type == USB_DWC_XFER_TYPE_ISOCHRONOUS || ep_char->type == USB_DWC_XFER_TYPE_INTR) {
-        HAL_ASSERT((int)ep_char->periodic.interval <= (int)hal->frame_list_len);    //Interval cannot exceed the length of the frame list
-        //Find the effective offset in the frame list (in case the phase_offset_frames > interval)
-        int offset = ep_char->periodic.phase_offset_frames % ep_char->periodic.interval;
-        //Schedule the channel in the frame list
-        for (int i = offset; i < hal->frame_list_len; i+= ep_char->periodic.interval) {
-            hal->periodic_frame_list[i] |= 1 << chan_obj->flags.chan_idx;
+        unsigned int interval_frame_list = ep_char->periodic.interval;
+        unsigned int offset_frame_list = ep_char->periodic.offset;
+        // Periodic Frame List works with USB frames. For HS endpoints we must divide interval[microframes] by 8 to get interval[frames]
+        if (ep_char->periodic.is_hs) {
+            interval_frame_list /= 8;
+            offset_frame_list /= 8;
+        }
+        // Interval in Periodic Frame List must be power of 2.
+        // This is not a HW restriction. It is just a lot easier to schedule channels like this.
+        if (interval_frame_list >= (int)hal->frame_list_len) { // Upper limits is Periodic Frame List length
+            interval_frame_list = (int)hal->frame_list_len;
+        } else if (interval_frame_list >= 32) {
+            interval_frame_list = 32;
+        } else if (interval_frame_list >= 16) {
+            interval_frame_list = 16;
+        } else if (interval_frame_list >= 8) {
+            interval_frame_list = 8;
+        } else if (interval_frame_list >= 4) {
+            interval_frame_list = 4;
+        } else if (interval_frame_list >= 2) {
+            interval_frame_list = 2;
+        } else {                                           // Lower limit is 1
+            interval_frame_list = 1;
+        }
+        // Schedule the channel in the frame list
+        for (int i = 0; i < hal->frame_list_len; i+= interval_frame_list) {
+            int index = (offset_frame_list + i) % hal->frame_list_len;
+            hal->periodic_frame_list[index] |= 1 << chan_obj->flags.chan_idx;
+        }
+        // For HS endpoints we must write to sched_info field of HCTSIZ register to schedule microframes
+        if (ep_char->periodic.is_hs) {
+            unsigned int tokens_per_frame;
+            if (ep_char->periodic.interval >= 8) {
+                tokens_per_frame = 1; // 1 token every 8 microframes
+            } else if (ep_char->periodic.interval >= 4) {
+                tokens_per_frame = 2; // 1 token every 4 microframes
+            } else if (ep_char->periodic.interval >= 2) {
+                tokens_per_frame = 4; // 1 token every 2 microframes
+            } else {
+                tokens_per_frame = 8; // 1 token every microframe
+            }
+            usb_dwc_ll_hctsiz_set_sched_info(chan_obj->regs, tokens_per_frame, ep_char->periodic.offset);
         }
     }
 }
@@ -477,7 +514,7 @@ usb_dwc_hal_chan_event_t usb_dwc_hal_chan_decode_intr(usb_dwc_hal_chan_t *chan_o
         */
         chan_event = USB_DWC_HAL_CHAN_EVENT_NONE;
     } else {
-        abort();    //Should never reach this point
+        abort();
     }
     return chan_event;
 }
