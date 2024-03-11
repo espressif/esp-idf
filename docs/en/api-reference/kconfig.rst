@@ -5,7 +5,7 @@ Project Configuration
 Introduction
 ============
 
-The esp-idf-kconfig_ package that ESP-IDF uses is based on kconfiglib_, which is a Python extension to the Kconfig_ system. Kconfig provides a compile-time project configuration mechanism and offers configuration options of several types (e.g., integers, strings, and boolens). Kconfig files specify dependencies between options, default values of options, the way options are grouped together, etc.
+The esp-idf-kconfig_ package that ESP-IDF uses is based on kconfiglib_, which is a Python extension to the Kconfig_ system. Kconfig provides a compile-time project configuration mechanism and offers configuration options of several types (e.g., integers, strings, and Booleans). Kconfig files specify dependencies between options, default values of options, the way options are grouped together, etc.
 
 For the full list of available features, please see Kconfig_ and `kconfiglib extentions`_.
 
