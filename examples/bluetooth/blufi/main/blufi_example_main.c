@@ -208,6 +208,7 @@ static void wifi_event_handler(void* arg, esp_event_base_t event_base,
         wifi_ap_record_t *ap_list = (wifi_ap_record_t *)malloc(sizeof(wifi_ap_record_t) * apCount);
         if (!ap_list) {
             BLUFI_ERROR("malloc error, ap_list is NULL");
+            esp_wifi_clear_ap_list();
             break;
         }
         ESP_ERROR_CHECK(esp_wifi_scan_get_ap_records(&apCount, ap_list));
