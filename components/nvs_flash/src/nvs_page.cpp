@@ -879,7 +879,10 @@ esp_err_t Page::findItem(uint8_t nsIndex, ItemType datatype, const char* key, si
         end = ENTRY_COUNT;
     }
 
-    if (nsIndex != NS_ANY && key != NULL) {
+    // For BLOB_DATA, we may need to search for all chunk indexes, so the hash list won't help
+    // mHashIndex caluclates hash from nsIndex, key, chunkIdx
+    // We may not use mHashList if datatype is BLOB_DATA and chunkIdx is CHUNK_ANY as CHUNK_ANY is used by BLOB_INDEX
+    if (nsIndex != NS_ANY && key != NULL && (datatype != ItemType::BLOB_DATA || chunkIdx != CHUNK_ANY)) {
         size_t cachedIndex = mHashList.find(start, Item(nsIndex, datatype, 0, key, chunkIdx));
         if (cachedIndex < ENTRY_COUNT) {
             start = cachedIndex;
@@ -934,6 +937,31 @@ esp_err_t Page::findItem(uint8_t nsIndex, ItemType datatype, const char* key, si
                 && item.chunkIndex != chunkIdx) {
             continue;
         }
+
+        // We may search for any chunk of BLOB_DATA but find BLOB_INDEX or BLOB instead as it
+        // uses default value of chunkIdx == CHUNK_ANY, then continue searching
+        if (chunkIdx == CHUNK_ANY
+                && datatype == ItemType::BLOB_DATA
+                && item.datatype != ItemType::BLOB_DATA) {
+            continue;
+        }
+
+        // We may search for BLOB but find BLOB_INDEX instead
+        // In this case it is expected to return ESP_ERR_NVS_TYPE_MISMATCH
+        if (chunkIdx == CHUNK_ANY
+                && datatype == ItemType::BLOB
+                && item.datatype == ItemType::BLOB_IDX) {
+            return ESP_ERR_NVS_TYPE_MISMATCH;
+        }
+
+        // We may search for BLOB but find BLOB_DATA instead
+        // Then continue
+        if (chunkIdx == CHUNK_ANY
+                && datatype == ItemType::BLOB
+                && item.datatype == ItemType::BLOB_DATA) {
+            continue;
+        }
+
         /* Blob-index will match the <ns,key> with blob data.
          * Skip data chunks when searching for blob index*/
         if (datatype == ItemType::BLOB_IDX

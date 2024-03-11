@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,6 +19,9 @@
 #define DEBUG_STORAGE
 #endif
 #endif // !ESP_PLATFORM
+
+#include "esp_log.h"
+#define TAG "nvs_storage"
 
 namespace nvs
 {
@@ -53,6 +56,9 @@ esp_err_t Storage::populateBlobIndices(TBlobIndexList& blobIdxList)
             entry->nsIndex = item.nsIndex;
             entry->chunkStart = item.blobIndex.chunkStart;
             entry->chunkCount = item.blobIndex.chunkCount;
+            entry->dataSize = item.blobIndex.dataSize;
+            entry->observedDataSize = 0;
+            entry->observedChunkCount = 0;
 
             blobIdxList.push_back(entry);
             itemIndex += item.span;
@@ -60,6 +66,76 @@ esp_err_t Storage::populateBlobIndices(TBlobIndexList& blobIdxList)
     }
 
     return ESP_OK;
+}
+
+// Check BLOB_DATA entries belonging to BLOB_INDEX entries for mismatched records.
+// BLOB_INDEX record is compared with information collected from BLOB_DATA records
+// matched using namespace index, key and chunk version. Mismatched summary length
+// or wrong number of chunks are checked. Mismatched BLOB_INDEX data are deleted
+// and removed from the blobIdxList. The BLOB_DATA are left as orphans and removed
+// later by the call to eraseOrphanDataBlobs().
+void Storage::eraseMismatchedBlobIndexes(TBlobIndexList& blobIdxList)
+{
+    for (auto it = mPageManager.begin(); it != mPageManager.end(); ++it) {
+        Page& p = *it;
+        size_t itemIndex = 0;
+        Item item;
+        /* Chunks with same <ns,key> and with chunkIndex in the following ranges
+         * belong to same family.
+         * 1) VER_0_OFFSET <= chunkIndex < VER_1_OFFSET-1 => Version0 chunks
+         * 2) VER_1_OFFSET <= chunkIndex < VER_ANY => Version1 chunks
+         */
+        while (p.findItem(Page::NS_ANY, ItemType::BLOB_DATA, nullptr, itemIndex, item) == ESP_OK) {
+
+            auto iter = std::find_if(blobIdxList.begin(),
+                    blobIdxList.end(),
+                    [=] (const BlobIndexNode& e) -> bool
+                    {return (strncmp(item.key, e.key, sizeof(e.key) - 1) == 0)
+                            && (item.nsIndex == e.nsIndex)
+                            && (item.chunkIndex >=  static_cast<uint8_t> (e.chunkStart))
+                            && (item.chunkIndex < static_cast<uint8_t> ((e.chunkStart == nvs::VerOffset::VER_0_OFFSET) ? nvs::VerOffset::VER_1_OFFSET : nvs::VerOffset::VER_ANY));});
+            if (iter != std::end(blobIdxList)) {
+                // accumulate the size
+                iter->observedDataSize += item.varLength.dataSize;
+                iter->observedChunkCount++;
+            }
+            itemIndex += item.span;
+        }
+    }
+
+    auto iter = blobIdxList.begin();
+    while (iter != blobIdxList.end())
+    {
+        if ( (iter->observedDataSize != iter->dataSize) || (iter->observedChunkCount != iter->chunkCount) )
+        {
+            // Delete blob_index from flash
+            // This is very rare case, so we can loop over all pages
+            for (auto it = mPageManager.begin(); it != mPageManager.end(); ++it) {
+                // skip pages in non eligible states
+                if (it->state() == nvs::Page::PageState::CORRUPT
+                    || it->state() == nvs::Page::PageState::INVALID
+                    || it->state() == nvs::Page::PageState::UNINITIALIZED){
+                    continue;
+                }
+
+                Page& p = *it;
+                if(p.eraseItem(iter->nsIndex, nvs::ItemType::BLOB_IDX, iter->key, 255, iter->chunkStart) == ESP_OK){
+                    break;
+                }
+            }
+
+            // Delete blob index from the blobIdxList
+            auto tmp = iter;
+            ++iter;
+            blobIdxList.erase(tmp);
+            delete (nvs::Storage::BlobIndexNode*)tmp;
+        }
+        else
+        {
+            // Blob index OK
+            ++iter;
+        }
+    }
 }
 
 void Storage::eraseOrphanDataBlobs(TBlobIndexList& blobIdxList)
@@ -85,6 +161,7 @@ void Storage::eraseOrphanDataBlobs(TBlobIndexList& blobIdxList)
             if (iter == std::end(blobIdxList)) {
                 p.eraseItem(item.nsIndex, item.datatype, item.key, item.chunkIndex);
             }
+
             itemIndex += item.span;
         }
     }
@@ -133,7 +210,6 @@ esp_err_t Storage::init(uint32_t baseSector, uint32_t sectorCount)
     if (mNamespaceUsage.set(255, true) != ESP_OK) {
         return ESP_FAIL;
     }
-    mState = StorageState::ACTIVE;
 
     // Populate list of multi-page index entries.
     TBlobIndexList blobIdxList;
@@ -143,11 +219,16 @@ esp_err_t Storage::init(uint32_t baseSector, uint32_t sectorCount)
         return ESP_ERR_NO_MEM;
     }
 
+    // remove blob indexes with mismatched blob data length or chunk count
+    eraseMismatchedBlobIndexes(blobIdxList);
+
     // Remove the entries for which there is no parent multi-page index.
     eraseOrphanDataBlobs(blobIdxList);
 
     // Purge the blob index list
     blobIdxList.clearAndFreeNodes();
+
+    mState = StorageState::ACTIVE;
 
 #ifdef DEBUG_STORAGE
     debugCheck();
@@ -512,6 +593,11 @@ esp_err_t Storage::readMultiPageBlob(uint8_t nsIndex, const char* key, void* dat
             }
             return err;
         }
+        if (item.varLength.dataSize > dataSize - offset) {
+            /* The size of the entry in the index is inconsistent with the sum of the sizes of chunks */
+            err = ESP_ERR_NVS_INVALID_LENGTH;
+            break;
+        }
         err = findPage->readItem(nsIndex, ItemType::BLOB_DATA, key, static_cast<uint8_t*>(data) + offset, item.varLength.dataSize, static_cast<uint8_t> (chunkStart) + chunkNum);
         if (err != ESP_OK) {
             return err;
@@ -520,11 +606,14 @@ esp_err_t Storage::readMultiPageBlob(uint8_t nsIndex, const char* key, void* dat
 
         offset += item.varLength.dataSize;
     }
+
+    if (err == ESP_ERR_NVS_NOT_FOUND || err == ESP_ERR_NVS_INVALID_LENGTH) {
+        // cleanup if a chunk is not found or the size is inconsistent
+        eraseMultiPageBlob(nsIndex, key);
+    }
+
     NVS_ASSERT_OR_RETURN(offset == dataSize, ESP_FAIL);
 
-    if (err == ESP_ERR_NVS_NOT_FOUND) {
-        eraseMultiPageBlob(nsIndex, key); // cleanup if a chunk is not found
-    }
     return err;
 }
 
@@ -605,34 +694,57 @@ esp_err_t Storage::eraseMultiPageBlob(uint8_t nsIndex, const char* key, VerOffse
     if (err != ESP_OK) {
         return err;
     }
-    /* Erase the index first and make children blobs orphan*/
+    // Erase the index first and make children blobs orphan
     err = findPage->eraseItem(nsIndex, ItemType::BLOB_IDX, key, Page::CHUNK_ANY, chunkStart);
     if (err != ESP_OK) {
         return err;
     }
 
-    uint8_t chunkCount = item.blobIndex.chunkCount;
-
-    if (chunkStart == VerOffset::VER_ANY) {
-        chunkStart = item.blobIndex.chunkStart;
-    } else {
-        NVS_ASSERT_OR_RETURN(chunkStart == item.blobIndex.chunkStart, ESP_FAIL);
+    // If caller requires delete of VER_ANY
+    // We may face dirty NVS partition and version duplicates can be there
+    // Make second attempt to delete index and ignore eventual not found
+    if(chunkStart == VerOffset::VER_ANY)
+    {
+        err = findItem(nsIndex, ItemType::BLOB_IDX, key, findPage, item, Page::CHUNK_ANY, chunkStart);
+        if (err == ESP_OK) {
+            err = findPage->eraseItem(nsIndex, ItemType::BLOB_IDX, key, Page::CHUNK_ANY, chunkStart);
+            if (err != ESP_OK) {
+                return err;
+            }
+        } else if (err != ESP_ERR_NVS_NOT_FOUND) {
+            return err;
+        }
     }
 
-    /* Now erase corresponding chunks*/
-    for (uint8_t chunkNum = 0; chunkNum < chunkCount; chunkNum++) {
-        err = findItem(nsIndex, ItemType::BLOB_DATA, key, findPage, item, static_cast<uint8_t> (chunkStart) + chunkNum);
+    // setup limits for chunkIndex-es to be deleted
+    uint8_t minChunkIndex = (uint8_t) VerOffset::VER_0_OFFSET;
+    uint8_t maxChunkIndex = (uint8_t) VerOffset::VER_ANY;
 
-        if (err != ESP_OK && err != ESP_ERR_NVS_NOT_FOUND) {
-            return err;
-        } else if (err == ESP_ERR_NVS_NOT_FOUND) {
-            continue; // Keep erasing other chunks
-        }
-        err = findPage->eraseItem(nsIndex, ItemType::BLOB_DATA, key, static_cast<uint8_t> (chunkStart) + chunkNum);
-        if (err != ESP_OK) {
-            return err;
-        }
+    if(chunkStart == VerOffset::VER_0_OFFSET) {
+        maxChunkIndex = (uint8_t) VerOffset::VER_1_OFFSET;
+    } else if (chunkStart == VerOffset::VER_1_OFFSET) {
+        minChunkIndex = (uint8_t) VerOffset::VER_1_OFFSET;
+    }
 
+    for (auto it = std::begin(mPageManager); it != std::end(mPageManager); ++it) {
+        size_t itemIndex = 0;
+        do {
+            err = it->findItem(nsIndex, ItemType::BLOB_DATA, key, itemIndex, item);
+            if (err == ESP_ERR_NVS_NOT_FOUND) {
+                break;
+            } else if (err == ESP_OK) {
+                // check if item.chunkIndex is within the version range indicated by chunkStart, if so, delete it
+                if((item.chunkIndex >= minChunkIndex) && (item.chunkIndex < maxChunkIndex)) {
+                    err = it->eraseEntryAndSpan(itemIndex);
+                }
+
+                // continue findItem until end of page
+                itemIndex += item.span;
+            }
+            if(err != ESP_OK) {
+                return err;
+            }
+        } while (err == ESP_OK && itemIndex < Page::ENTRY_COUNT);
     }
 
     return ESP_OK;

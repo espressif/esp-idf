@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -48,6 +48,9 @@ class Storage : public intrusive_list_node<Storage>, public ExceptionlessAllocat
             uint8_t nsIndex;
             uint8_t chunkCount;
             VerOffset chunkStart;
+            size_t dataSize;
+            size_t observedDataSize;
+            size_t observedChunkCount;
     };
 
     typedef intrusive_list<BlobIndexNode> TBlobIndexList;
@@ -143,6 +146,8 @@ protected:
     void clearNamespaces();
 
     esp_err_t populateBlobIndices(TBlobIndexList&);
+
+    void eraseMismatchedBlobIndexes(TBlobIndexList&);
 
     void eraseOrphanDataBlobs(TBlobIndexList&);
 

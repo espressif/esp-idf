@@ -98,6 +98,8 @@ public:
 
     esp_err_t findItem(uint8_t nsIndex, ItemType datatype, const char* key, size_t &itemIndex, Item& item, uint8_t chunkIdx = CHUNK_ANY, VerOffset chunkStart = VerOffset::VER_ANY);
 
+    esp_err_t eraseEntryAndSpan(size_t index);
+
     template<typename T>
     esp_err_t writeItem(uint8_t nsIndex, const char* key, const T& value)
     {
@@ -187,8 +189,6 @@ protected:
     esp_err_t writeEntry(const Item& item);
 
     esp_err_t writeEntryData(const uint8_t* data, size_t size);
-
-    esp_err_t eraseEntryAndSpan(size_t index);
 
     esp_err_t updateFirstUsedEntry(size_t index, size_t span);
 
