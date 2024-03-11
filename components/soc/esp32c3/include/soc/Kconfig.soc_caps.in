@@ -1035,6 +1035,10 @@ config SOC_WIFI_SUPPORT_VARIABLE_BEACON_WINDOW
     bool
     default y
 
+config SOC_WIFI_PHY_NEEDS_USB_WORKAROUND
+    bool
+    default y
+
 config SOC_BLE_SUPPORTED
     bool
     default y
