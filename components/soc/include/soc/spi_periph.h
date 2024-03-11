@@ -13,7 +13,6 @@
 
 //include soc related (generated) definitions
 #include "soc/soc_caps.h"
-#include "soc/soc_pins.h"
 #include "soc/spi_reg.h"
 #include "soc/spi_struct.h"
 #include "soc/spi_pins.h"

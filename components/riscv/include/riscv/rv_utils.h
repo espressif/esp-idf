@@ -149,6 +149,10 @@ FORCE_INLINE_ATTR void rv_utils_set_mtvec(uint32_t mtvec_val)
 #elif CONFIG_IDF_TARGET_ESP32C5
     // TODO: [ESP32C5] IDF-8654, IDF-8655 (inherit from P4) Check the correctness
     #define MINTSTATUS 0x346
+#elif CONFIG_IDF_TARGET_ESP32C61
+    // TODO: [ESP32C61] IDF-9261, IDF-9262 (inherit from c6) Check
+    #define MINTSTATUS 0xFB1
+    #define MINTTHRESH 0x347
 #else
     #error "rv_utils_get_mintstatus() is not implemented. Check for correct mintstatus register address."
 #endif /* CONFIG_IDF_TARGET_ESP32P4 */
@@ -180,11 +184,18 @@ FORCE_INLINE_ATTR void rv_utils_intr_disable(uint32_t intr_mask)
 
 FORCE_INLINE_ATTR void __attribute__((always_inline)) rv_utils_restore_intlevel(uint32_t restoreval)
 {
+    // TODO: [ESP32C61] IDF-9261, changed in verify code, pls check
+    // RV_WRITE_CSR(MINTTHRESH, restoreval);
     REG_SET_FIELD(CLIC_INT_THRESH_REG, CLIC_CPU_INT_THRESH, ((restoreval << (8 - NLBITS))) | 0x1f);
 }
 
 FORCE_INLINE_ATTR uint32_t __attribute__((always_inline)) rv_utils_set_intlevel(uint32_t intlevel)
 {
+// TODO: [ESP32C61] IDF-9261, added in verify code, pls check
+// #if CONFIG_IDF_TARGET_ESP32C61
+//     uint32_t old_thresh = RV_READ_CSR(MINTTHRESH);
+//     RV_WRITE_CSR(MINTTHRESH, ((intlevel << (8 - NLBITS)) | 0x1f));
+// #else
     uint32_t old_mstatus = RV_CLEAR_CSR(mstatus, MSTATUS_MIE);
     uint32_t old_thresh;
 
@@ -201,7 +212,7 @@ FORCE_INLINE_ATTR uint32_t __attribute__((always_inline)) rv_utils_set_intlevel(
      */
     REG_READ(CLIC_INT_THRESH_REG);
     RV_SET_CSR(mstatus, old_mstatus & MSTATUS_MIE);
-
+// #endif
     return old_thresh;
 }
 
