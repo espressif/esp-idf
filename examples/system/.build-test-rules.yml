@@ -285,7 +285,7 @@ examples/system/ulp/lp_core/lp_uart/lp_uart_echo:
     - if: SOC_ULP_LP_UART_SUPPORTED != 1
     - if: IDF_TARGET == "esp32p4"
       temporary: true
-      reason: target esp32p4 is not supported yet TODO IDF-7533
+      reason: target esp32p4 is not supported yet TODO IDF-9407
   depends_components:
     - ulp
 
@@ -294,7 +294,7 @@ examples/system/ulp/lp_core/lp_uart/lp_uart_print:
     - if: SOC_ULP_LP_UART_SUPPORTED != 1
     - if: IDF_TARGET == "esp32p4"
       temporary: true
-      reason: target esp32p4 is not supported yet TODO IDF-7533
+      reason: target esp32p4 is not supported yet TODO IDF-9407
   depends_components:
     - ulp
 

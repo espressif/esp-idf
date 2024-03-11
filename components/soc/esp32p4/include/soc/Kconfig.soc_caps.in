@@ -179,6 +179,10 @@ config SOC_LP_TIMER_SUPPORTED
     bool
     default y
 
+config SOC_ULP_LP_UART_SUPPORTED
+    bool
+    default y
+
 config SOC_LP_GPIO_MATRIX_SUPPORTED
     bool
     default y

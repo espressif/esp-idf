@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,6 +14,23 @@ extern "C" {
 #include "esp_err.h"
 #include "hal/uart_types.h"
 #include "hal/gpio_types.h"
+
+/**
+ * Default LP_IO Mux pins for LP UART
+ */
+#if CONFIG_IDF_TARGET_ESP32P4
+#define LP_UART_DEFAULT_TX_GPIO_NUM GPIO_NUM_14
+#define LP_UART_DEFAULT_RX_GPIO_NUM GPIO_NUM_15
+#define LP_UART_DEFAULT_RTS_GPIO_NUM (-1)
+#define LP_UART_DEFAULT_CTS_GPIO_NUM (-1)
+#elif CONFIG_IDF_TARGET_ESP32C6
+#define LP_UART_DEFAULT_TX_GPIO_NUM GPIO_NUM_5
+#define LP_UART_DEFAULT_RX_GPIO_NUM GPIO_NUM_4
+#define LP_UART_DEFAULT_RTS_GPIO_NUM GPIO_NUM_2
+#define LP_UART_DEFAULT_CTS_GPIO_NUM GPIO_NUM_3
+#else
+#error "LP IO Mux pins undefined for LP UART"
+#endif /* CONFIG_IDF_TARGET_ESP32P4 */
 
 /**
  * @brief LP UART IO pins configuration
@@ -47,11 +64,11 @@ typedef struct {
 } lp_core_uart_cfg_t;
 
 /* Default LP UART GPIO settings */
-#define LP_UART_DEFAULT_GPIO_CONFIG()           \
-        .uart_pin_cfg.tx_io_num = GPIO_NUM_5,   \
-        .uart_pin_cfg.rx_io_num = GPIO_NUM_4,   \
-        .uart_pin_cfg.rts_io_num = GPIO_NUM_2,  \
-        .uart_pin_cfg.cts_io_num = GPIO_NUM_3,  \
+#define LP_UART_DEFAULT_GPIO_CONFIG()                               \
+        .uart_pin_cfg.tx_io_num = LP_UART_DEFAULT_TX_GPIO_NUM,      \
+        .uart_pin_cfg.rx_io_num = LP_UART_DEFAULT_RX_GPIO_NUM,      \
+        .uart_pin_cfg.rts_io_num = LP_UART_DEFAULT_RTS_GPIO_NUM,    \
+        .uart_pin_cfg.cts_io_num = LP_UART_DEFAULT_CTS_GPIO_NUM,    \
 
 /* Default LP UART protocol config */
 #define LP_UART_DEFAULT_PROTO_CONFIG()                           \
