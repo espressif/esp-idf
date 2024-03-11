@@ -232,7 +232,7 @@ function(__kconfig_generate_config sdkconfig sdkconfig_defaults)
     idf_build_set_property(SDKCONFIG_JSON_MENUS ${sdkconfig_json_menus})
     idf_build_set_property(CONFIG_DIR ${config_dir})
 
-    set(MENUCONFIG_CMD ${python} -m menuconfig)
+    set(MENUCONFIG_CMD ${python} ${idf_path}/tools/kconfig_new/menuconfig_wrapper.py)
     set(TERM_CHECK_CMD ${python} ${idf_path}/tools/check_term.py)
 
     # Generate the menuconfig target
