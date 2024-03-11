@@ -24,6 +24,7 @@ public:
     BasicLogFixture(esp_log_level_t log_level = ESP_LOG_VERBOSE)
     {
         std::memset(print_buffer, 0, BUFFER_SIZE);
+        buffer_idx = 0;
         esp_log_level_set("*", log_level);
     }
 
@@ -40,11 +41,13 @@ public:
     void reset_buffer()
     {
         std::memset(print_buffer, 0, BUFFER_SIZE);
+        buffer_idx = 0;
         additional_reset();
     }
 
 protected:
     char print_buffer [BUFFER_SIZE];
+    int buffer_idx;
 
     virtual void additional_reset() { }
 };
@@ -75,7 +78,9 @@ private:
 
     int print_to_buffer(const char *format, va_list args)
     {
-        int ret = vsnprintf(print_buffer, BUFFER_SIZE, format, args);
+        // Added support for multi-line log, for example ESP_LOG_BUFFER...
+        int ret = vsnprintf(&print_buffer[buffer_idx], BUFFER_SIZE, format, args);
+        buffer_idx += ret;
         return ret;
     }
 
@@ -213,6 +218,19 @@ TEST_CASE("log bytes > 127")
     ESP_LOG_BUFFER_HEX(TEST_TAG, buffer, sizeof(buffer));
     const std::regex buffer_regex("I \\([0-9]*\\) test: ff 80", std::regex::ECMAScript);
     CHECK(regex_search(fix.get_print_buffer_string(), buffer_regex));
+}
+
+TEST_CASE("log buffer char")
+{
+    PrintFixture fix(ESP_LOG_INFO);
+    const char g[] = "The way to get started is to quit talking and begin doing. - Walt Disney";
+    const std::regex buffer_regex("I \\([0-9]*\\) test: The way to get s.*\n\
+.*I \\([0-9]*\\) test: tarted is to qui.*\n\
+.*I \\([0-9]*\\) test: t talking and be.*\n\
+.*I \\([0-9]*\\) test: gin doing. - Wal.*\n\
+.*I \\([0-9]*\\) test: t Disney", std::regex::ECMAScript);
+    ESP_LOG_BUFFER_CHAR(TEST_TAG, g, sizeof(g));
+    CHECK(regex_search(fix.get_print_buffer_string(), buffer_regex) == true);
 }
 
 TEST_CASE("log buffer dump")

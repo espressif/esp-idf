@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,23 +12,12 @@
 #include <inttypes.h>
 #include "sdkconfig.h"
 #include "esp_rom_sys.h"
+#include "esp_log_level.h"
+#include "esp_log_buffer.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-/**
- * @brief Log level
- *
- */
-typedef enum {
-    ESP_LOG_NONE,       /*!< No log output */
-    ESP_LOG_ERROR,      /*!< Critical errors, software module can not recover on its own */
-    ESP_LOG_WARN,       /*!< Error conditions from which recovery measures have been taken */
-    ESP_LOG_INFO,       /*!< Information messages which describe normal flow of events */
-    ESP_LOG_DEBUG,      /*!< Extra information which is not necessary for normal use (values, pointers, sizes, etc). */
-    ESP_LOG_VERBOSE     /*!< Bigger chunks of debugging information, or frequent messages which can potentially flood the output. */
-} esp_log_level_t;
 
 typedef int (*vprintf_like_t)(const char *, va_list);
 
@@ -171,113 +160,6 @@ void esp_log_write(esp_log_level_t level, const char* tag, const char* format, .
 void esp_log_writev(esp_log_level_t level, const char* tag, const char* format, va_list args);
 
 /** @cond */
-
-#include "esp_log_internal.h"
-
-#ifndef LOG_LOCAL_LEVEL
-#ifndef BOOTLOADER_BUILD
-#define LOG_LOCAL_LEVEL  CONFIG_LOG_MAXIMUM_LEVEL
-#else
-#define LOG_LOCAL_LEVEL  CONFIG_BOOTLOADER_LOG_LEVEL
-#endif
-#endif
-
-/** @endcond */
-
-/**
- * @brief Log a buffer of hex bytes at specified level, separated into 16 bytes each line.
- *
- * @param  tag      description tag
- * @param  buffer   Pointer to the buffer array
- * @param  buff_len length of buffer in bytes
- * @param  level    level of the log
- *
- */
-#define ESP_LOG_BUFFER_HEX_LEVEL( tag, buffer, buff_len, level ) \
-    do {\
-        if ( LOG_LOCAL_LEVEL >= (level) ) { \
-            esp_log_buffer_hex_internal( tag, buffer, buff_len, level ); \
-        } \
-    } while(0)
-
-/**
- * @brief Log a buffer of characters at specified level, separated into 16 bytes each line. Buffer should contain only printable characters.
- *
- * @param  tag      description tag
- * @param  buffer   Pointer to the buffer array
- * @param  buff_len length of buffer in bytes
- * @param  level    level of the log
- *
- */
-#define ESP_LOG_BUFFER_CHAR_LEVEL( tag, buffer, buff_len, level ) \
-    do {\
-        if ( LOG_LOCAL_LEVEL >= (level) ) { \
-            esp_log_buffer_char_internal( tag, buffer, buff_len, level ); \
-        } \
-    } while(0)
-
-/**
- * @brief Dump a buffer to the log at specified level.
- *
- * The dump log shows just like the one below:
- *
- *      W (195) log_example: 0x3ffb4280   45 53 50 33 32 20 69 73  20 67 72 65 61 74 2c 20  |ESP32 is great, |
- *      W (195) log_example: 0x3ffb4290   77 6f 72 6b 69 6e 67 20  61 6c 6f 6e 67 20 77 69  |working along wi|
- *      W (205) log_example: 0x3ffb42a0   74 68 20 74 68 65 20 49  44 46 2e 00              |th the IDF..|
- *
- * It is highly recommended to use terminals with over 102 text width.
- *
- * @param tag description tag
- * @param buffer Pointer to the buffer array
- * @param buff_len length of buffer in bytes
- * @param level level of the log
- */
-#define ESP_LOG_BUFFER_HEXDUMP( tag, buffer, buff_len, level ) \
-    do { \
-        if ( LOG_LOCAL_LEVEL >= (level) ) { \
-            esp_log_buffer_hexdump_internal( tag, buffer, buff_len, level); \
-        } \
-    } while(0)
-
-/**
- * @brief Log a buffer of hex bytes at Info level
- *
- * @param  tag      description tag
- * @param  buffer   Pointer to the buffer array
- * @param  buff_len length of buffer in bytes
- *
- * @see ``esp_log_buffer_hex_level``
- *
- */
-#define ESP_LOG_BUFFER_HEX(tag, buffer, buff_len) \
-    do { \
-        if (LOG_LOCAL_LEVEL >= ESP_LOG_INFO) { \
-            ESP_LOG_BUFFER_HEX_LEVEL( tag, buffer, buff_len, ESP_LOG_INFO ); \
-        }\
-    } while(0)
-
-/**
- * @brief Log a buffer of characters at Info level. Buffer should contain only printable characters.
- *
- * @param  tag      description tag
- * @param  buffer   Pointer to the buffer array
- * @param  buff_len length of buffer in bytes
- *
- * @see ``esp_log_buffer_char_level``
- *
- */
-#define ESP_LOG_BUFFER_CHAR(tag, buffer, buff_len) \
-    do { \
-        if (LOG_LOCAL_LEVEL >= ESP_LOG_INFO) { \
-            ESP_LOG_BUFFER_CHAR_LEVEL( tag, buffer, buff_len, ESP_LOG_INFO ); \
-        }\
-    } while(0)
-
-/** @cond */
-
-//to be back compatible
-#define esp_log_buffer_hex      ESP_LOG_BUFFER_HEX
-#define esp_log_buffer_char     ESP_LOG_BUFFER_CHAR
 
 #if CONFIG_LOG_COLORS
 #define LOG_COLOR_BLACK   "30"
