@@ -106,10 +106,19 @@ def test_task_wdt_cpu0(dut: PanicTestDut, config: str, test_func_name: str) -> N
     dut.expect_elf_sha256()
     dut.expect_none('Guru Meditation')
 
+    coredump_pattern = (PANIC_ABORT_PREFIX +
+                        'Task watchdog got triggered. '
+                        'The following tasks/users did not reset the watchdog in time:\n - ')
+    if dut.is_multi_core:
+        coredump_pattern += 'IDLE0 (CPU 0)'
+    else:
+        coredump_pattern += 'IDLE (CPU 0)'
+
     common_test(
         dut,
         config,
         expected_backtrace=get_default_backtrace(test_func_name),
+        expected_coredump=[coredump_pattern]
     )
 
 
@@ -134,10 +143,14 @@ def test_task_wdt_cpu1(dut: PanicTestDut, config: str, test_func_name: str) -> N
     dut.expect_elf_sha256()
     dut.expect_none('Guru Meditation')
 
+    coredump_pattern = (PANIC_ABORT_PREFIX +
+                        'Task watchdog got triggered. '
+                        'The following tasks/users did not reset the watchdog in time:\n - IDLE1 (CPU 1)')
     common_test(
         dut,
         config,
         expected_backtrace=expected_backtrace,
+        expected_coredump=[coredump_pattern]
     )
 
 
@@ -166,10 +179,14 @@ def test_task_wdt_both_cpus(dut: PanicTestDut, config: str, test_func_name: str)
     dut.expect_elf_sha256()
     dut.expect_none('Guru Meditation')
 
+    coredump_pattern = (PANIC_ABORT_PREFIX +
+                        'Task watchdog got triggered. '
+                        'The following tasks/users did not reset the watchdog in time:\n - IDLE1 (CPU 1)\n - IDLE0 (CPU 0)')
     common_test(
         dut,
         config,
         expected_backtrace=expected_backtrace,
+        expected_coredump=[coredump_pattern]
     )
 
 

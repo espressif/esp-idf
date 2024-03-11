@@ -12,6 +12,7 @@
 #include "esp_core_dump_port.h"
 #include "esp_core_dump_port_impl.h"
 #include "esp_core_dump_common.h"
+#include "esp_task_wdt.h"
 
 #ifdef CONFIG_ESP_COREDUMP_DATA_FORMAT_ELF
 #include <sys/param.h>      // for the MIN macro
@@ -32,6 +33,8 @@
 #define ELF_ESP_CORE_DUMP_PANIC_DETAILS_TYPE 679
 #define ELF_NOTE_NAME_MAX_SIZE 32
 #define ELF_APP_SHA256_SIZE 66
+
+#define ELF_ESP_CORE_DUMP_PANIC_DETAILS_NOTE_NAME "ESP_PANIC_DETAILS"
 
 #define ELF_CHECK_ERR(a, ret_val, str, ...) \
     if (!(a)) { \
@@ -80,18 +83,23 @@ typedef struct _core_dump_elf_t
     uint32_t                        elf_next_data_offset;
     uint16_t                        segs_count;
     core_dump_write_data_t          write_data;
+    uint32_t                        note_data_size; /* can be used where static storage needed */
 } core_dump_elf_t;
+
+typedef struct {
+    core_dump_elf_t *self;
+    uint32_t total_size;
+    bool size_only;
+} core_dump_elf_opaque_t;
 
 // Represents lightweight implementation to save core dump data into ELF formatted binary
 
-#define ALIGN(b, var) var = align(b, var)
-
 #if CONFIG_ESP_COREDUMP_DATA_FORMAT_ELF
 
-static inline uint32_t align(uint32_t width, uint32_t in)
-{
-  return (in + (width - 1)) & -width;
-}
+#ifdef ALIGN_UP
+#undef ALIGN_UP
+#endif
+#define ALIGN_UP(x, a) (((x) + (a) - 1) & ~((a) - 1))
 
 esp_err_t esp_core_dump_store(void) __attribute__((alias("esp_core_dump_write_elf")));
 
@@ -158,12 +166,10 @@ static int elf_add_segment(core_dump_elf_t *self,
 {
     esp_err_t err = ESP_FAIL;
     elf_phdr seg_hdr = { 0 };
-    int data_len = data_sz;
+    int data_len = ALIGN_UP(data_sz, 4);
 
     ELF_CHECK_ERR((data != NULL), ELF_PROC_ERR_OTHER,
                 "Invalid data for segment.");
-
-    ALIGN(4, data_len);
 
     if (self->elf_stage == ELF_STAGE_CALC_SPACE) {
         self->segs_count++;
@@ -193,6 +199,29 @@ static int elf_add_segment(core_dump_elf_t *self,
     return data_len;
 }
 
+static int elf_write_note_header(core_dump_elf_t *self,
+	const char* name, uint32_t name_len, uint32_t data_sz, uint32_t type)
+{
+    // temporary aligned buffer for note name
+    static char name_buffer[ELF_NOTE_NAME_MAX_SIZE] = { 0 };
+    elf_note note_hdr = { 0 };
+
+    memcpy((void*)name_buffer, (void*)name, name_len);
+    note_hdr.n_namesz = name_len;
+    note_hdr.n_descsz = data_sz;
+    note_hdr.n_type = type;
+    // write note header
+    esp_err_t err = esp_core_dump_write_data(&self->write_data, &note_hdr, sizeof(note_hdr));
+    ELF_CHECK_ERR((err == ESP_OK), ELF_PROC_ERR_WRITE_FAIL,
+            "Write ELF note header failure (%d)", err);
+    // write note name
+    err = esp_core_dump_write_data(&self->write_data, name_buffer, name_len);
+    ELF_CHECK_ERR((err == ESP_OK), ELF_PROC_ERR_WRITE_FAIL,
+                    "Write ELF note name failure (%d)", err);
+
+    return err;
+}
+
 static int elf_write_note(core_dump_elf_t *self,
                             const char* name,
                             uint32_t type,
@@ -200,38 +229,34 @@ static int elf_write_note(core_dump_elf_t *self,
                             uint32_t data_sz)
 {
     esp_err_t err = ESP_FAIL;
-    // temporary buffer for note name
-    static char name_buffer[ELF_NOTE_NAME_MAX_SIZE] = { 0 };
-    elf_note note_hdr = { 0 };
-    uint32_t name_len = strlen(name) + 1; // get name length including terminator
-    uint32_t data_len = data_sz;
+    uint32_t name_len = ALIGN_UP(strlen(name) + 1, 4); // get name length including terminator
+    uint32_t data_len = ALIGN_UP(data_sz, 4);
 
-    ELF_CHECK_ERR(data, ELF_PROC_ERR_OTHER,
-            "Invalid data pointer %x.", (uint32_t)data);
     ELF_CHECK_ERR((name_len <= ELF_NOTE_NAME_MAX_SIZE), 0,
                 "Segment note name is too long %d.", name_len);
 
-    ALIGN(4, data_len);
-    ALIGN(4, name_len);
-    uint32_t note_size = name_len + data_len + sizeof(elf_note);
-    ALIGN(4, note_size);
+    uint32_t note_size = ALIGN_UP(name_len + data_len + sizeof(elf_note), 4);
 
     // write segment data during second pass
     if (self->elf_stage == ELF_STAGE_PLACE_DATA) {
-        memcpy((void*)name_buffer, (void*)name, name_len);
-        note_hdr.n_namesz = name_len;
-        note_hdr.n_descsz = data_sz;
-        note_hdr.n_type = type;
-        // write note header
-        err = esp_core_dump_write_data(&self->write_data, (void*)&note_hdr, sizeof(note_hdr));
-        ELF_CHECK_ERR((err == ESP_OK), ELF_PROC_ERR_WRITE_FAIL,
-                "Write ELF note header failure (%d)", err);
-        // write note name
-        err = esp_core_dump_write_data(&self->write_data, (void*)name_buffer, name_len);
-        ELF_CHECK_ERR((err == ESP_OK), ELF_PROC_ERR_WRITE_FAIL,
-                        "Write ELF note name failure (%d)", err);
-        // write note data
-        err = esp_core_dump_write_data(&self->write_data, (void*)data, data_len);
+        ELF_CHECK_ERR(data, ELF_PROC_ERR_OTHER, "Invalid data pointer %x.", (uint32_t)data);
+        err = elf_write_note_header(self, name, name_len, data_sz, type);
+        if (err != ESP_OK) {
+            return err;
+        }
+
+        // note data must be aligned in memory. we write aligned byte structures and panic details in strings,
+        // which might not be aligned by default. Therefore, we need to verify alignment and add padding if necessary.
+        err = esp_core_dump_write_data(&self->write_data, data, data_sz);
+        if (err == ESP_OK) {
+            int pad_size = data_len - data_sz;
+            if (pad_size != 0) {
+                uint8_t pad_bytes[3] = {0};
+                ESP_COREDUMP_LOG_PROCESS("Core dump note data needs %d bytes padding", pad_size);
+                err = esp_core_dump_write_data(&self->write_data, pad_bytes, pad_size);
+            }
+        }
+
         ELF_CHECK_ERR((err == ESP_OK), ELF_PROC_ERR_WRITE_FAIL,
                         "Write ELF note data failure (%d)", err);
         ESP_COREDUMP_LOG_PROCESS("Add note size=%d, start_off=0x%x",
@@ -495,6 +520,65 @@ static int elf_write_core_dump_user_data(core_dump_elf_t *self)
     return total_sz;
 }
 
+#if CONFIG_ESP_TASK_WDT_EN
+static void elf_write_core_dump_note_cb(void *opaque, const char *data)
+{
+    core_dump_elf_opaque_t *param = opaque;
+    core_dump_elf_t *self = param->self;
+    const size_t data_len = strlen(data);
+
+    ESP_COREDUMP_LOG_PROCESS("Core dump note cb data_len:(%d)", data_len);
+
+    param->total_size += data_len;
+
+    if (!param->size_only) {
+        esp_err_t err = esp_core_dump_write_data(&self->write_data, (void *)data, data_len);
+        if (err != ESP_OK) {
+            param->total_size = 0;
+        }
+    }
+}
+
+static int elf_add_wdt_panic_details(core_dump_elf_t *self)
+{
+    uint32_t name_len = ALIGN_UP(sizeof(ELF_ESP_CORE_DUMP_PANIC_DETAILS_NOTE_NAME), 4);
+    core_dump_elf_opaque_t param = {
+        .self = self,
+        .total_size = 0,
+        .size_only = false,
+    };
+
+    if (self->elf_stage == ELF_STAGE_CALC_SPACE) {
+        param.size_only = true;
+        esp_task_wdt_print_triggered_tasks(elf_write_core_dump_note_cb, &param, NULL);
+        ELF_CHECK_ERR((param.total_size > 0), ELF_PROC_ERR_OTHER, "wdt panic message len is zero!");
+        self->note_data_size = param.total_size;
+    } else if (self->elf_stage == ELF_STAGE_PLACE_DATA) {
+        esp_err_t err = elf_write_note_header(self,
+                                        ELF_ESP_CORE_DUMP_PANIC_DETAILS_NOTE_NAME,
+                                        name_len,
+                                        self->note_data_size,
+                                        ELF_ESP_CORE_DUMP_PANIC_DETAILS_TYPE);
+        if (err != ESP_OK) {
+            return err;
+        }
+
+        esp_task_wdt_print_triggered_tasks(elf_write_core_dump_note_cb, &param, NULL);
+        ELF_CHECK_ERR((param.total_size > 0), ELF_PROC_ERR_WRITE_FAIL, "Write ELF note data failure (%d)", err);
+        const uint32_t mod = self->note_data_size & 3;
+        if (mod != 0) {
+            uint8_t pad_bytes[3] = {0};
+            uint32_t pad_size = 4 - mod;
+            ESP_COREDUMP_LOG_PROCESS("Core dump note needs %d bytes padding", pad_size);
+            err = esp_core_dump_write_data(&self->write_data, pad_bytes, pad_size);
+            ELF_CHECK_ERR((err == ESP_OK), ELF_PROC_ERR_WRITE_FAIL, "Write ELF note padding failure (%d)", err);
+        }
+    }
+
+	return ALIGN_UP(name_len + ALIGN_UP(self->note_data_size, 4) + sizeof(elf_note), 4);
+}
+#endif //CONFIG_ESP_TASK_WDT_EN
+
 static int elf_write_core_dump_info(core_dump_elf_t *self)
 {
     void *extra_info = NULL;
@@ -527,13 +611,22 @@ static int elf_write_core_dump_info(core_dump_elf_t *self)
     ELF_CHECK_ERR((ret > 0), ret, "Extra info note write failed. Returned (%d).", ret);
     data_len += ret;
 
+#if CONFIG_ESP_TASK_WDT_EN
+	extern bool g_twdt_isr;
+	if (g_twdt_isr) {
+	    ret = elf_add_wdt_panic_details(self);
+	    if (ret <= 0) { return ret; }
+	    data_len += ret;
+    }
+#endif
+
     if (g_panic_abort_details && strlen(g_panic_abort_details) > 0) {
         ret = elf_add_note(self,
-                        "ESP_PANIC_DETAILS",
-                        ELF_ESP_CORE_DUMP_PANIC_DETAILS_TYPE,
-                        g_panic_abort_details,
-                        strlen(g_panic_abort_details));
-        ELF_CHECK_ERR((ret > 0), ret, "Panic details note write failed. Returned (%d).", ret);
+			                ELF_ESP_CORE_DUMP_PANIC_DETAILS_NOTE_NAME,
+			                ELF_ESP_CORE_DUMP_PANIC_DETAILS_TYPE,
+			                g_panic_abort_details,
+			                strlen(g_panic_abort_details));
+	    ELF_CHECK_ERR((ret > 0), ret, "Panic details note write failed. Returned (%d).", ret);
         data_len += ret;
     }
 
@@ -760,8 +853,7 @@ static void esp_core_dump_parse_note_section(uint8_t *coredump_data, elf_note_co
 						break;
 					}
 				}
-                consumed_note_sz += note->n_namesz + note->n_descsz + sizeof(elf_note);
-                ALIGN(4, consumed_note_sz);
+                consumed_note_sz += ALIGN_UP(note->n_namesz + note->n_descsz + sizeof(elf_note), 4);
             }
         }
     }
