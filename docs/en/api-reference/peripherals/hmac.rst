@@ -132,7 +132,7 @@ JTAG enables
 2. Pass this key value when calling the :cpp:func:`esp_hmac_jtag_enable` function from the firmware.
 3. To re-disable JTAG in the firmware, reset the system or call :cpp:func:`esp_hmac_jtag_disable`.
 
-End-to-end example of soft disable and re-enable JTAG workflow: :example:`security/hmac_soft_jtag`
+End-to-end example of soft disable and re-enable JTAG workflow: :example:`security/hmac_soft_jtag`.
 
 For more details, see **{IDF_TARGET_NAME} Technical Reference Manual** > **HMAC Accelerator (HMAC)** [`PDF <{IDF_TARGET_TRM_EN_URL}#hmac>`__].
 

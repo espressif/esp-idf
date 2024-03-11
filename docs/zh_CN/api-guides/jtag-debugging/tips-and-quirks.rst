@@ -232,6 +232,10 @@ JTAG 与 flash 加密和安全引导
 
 默认情况下，开启了 flash 加密和（或者）安全引导后，系统在首次启动时，引导程序会烧写 eFuse 的某个比特，从而将 JTAG 永久关闭。
 
+.. only:: SOC_HMAC_SUPPORTED
+
+    请注意，一旦 JTAG 被永久禁用，就无法重新启用以访问 JTAG。但是我们也提供了暂时禁用 (soft disable) JTAG 的选项。有关如何暂时禁用以及重新启用 JTAG，请参考 :ref:`hmac_for_enabling_jtag`。
+
 Kconfig 配置项 :ref:`CONFIG_SECURE_BOOT_ALLOW_JTAG` 可以改变这个默认行为，使得用户即使开启了安全引导或者 flash 加密，仍会保留 JTAG 的功能。
 
 然而，因为设置 :ref:`软件断点 <jtag-debugging-tip-where-breakpoints>` 的需要，OpenOCD 会尝试自动读写 flash 中的内容，这会带来两个问题：
