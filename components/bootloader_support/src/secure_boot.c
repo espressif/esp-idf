@@ -298,23 +298,23 @@ bool esp_secure_boot_cfg_verify_release_mode(void)
     }
 #endif
 
-    bool soft_dis_jtag = false;
+    bool soft_dis_jtag_complete = false;
 #if SOC_EFUSE_SOFT_DIS_JTAG
     size_t soft_dis_jtag_cnt_val = 0;
     esp_efuse_read_field_cnt(ESP_EFUSE_SOFT_DIS_JTAG, &soft_dis_jtag_cnt_val);
-    soft_dis_jtag = (soft_dis_jtag_cnt_val == ESP_EFUSE_SOFT_DIS_JTAG[0]->bit_count);
-    if (soft_dis_jtag) {
+    soft_dis_jtag_complete = (soft_dis_jtag_cnt_val == ESP_EFUSE_SOFT_DIS_JTAG[0]->bit_count);
+    if (soft_dis_jtag_complete) {
         bool hmac_key_found = false;
             hmac_key_found = esp_efuse_find_purpose(ESP_EFUSE_KEY_PURPOSE_HMAC_DOWN_JTAG, NULL);
             hmac_key_found |= esp_efuse_find_purpose(ESP_EFUSE_KEY_PURPOSE_HMAC_DOWN_ALL, NULL);
         if (!hmac_key_found) {
             ESP_LOGW(TAG, "SOFT_DIS_JTAG is set but HMAC key with respective purpose not found");
-            soft_dis_jtag = false;
+            soft_dis_jtag_complete = false;
         }
     }
 #endif
 
-    if (!soft_dis_jtag) {
+    if (!soft_dis_jtag_complete) {
 #if SOC_EFUSE_HARD_DIS_JTAG
         secure = esp_efuse_read_field_bit(ESP_EFUSE_HARD_DIS_JTAG);
         result &= secure;
