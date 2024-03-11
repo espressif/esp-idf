@@ -1,5 +1,9 @@
 dependencies:
   cmd_system:
     path: ${IDF_PATH}/examples/system/console/advanced/components/cmd_system
-  iperf:
-    path: ${IDF_PATH}/examples/common_components/iperf
+  espressif/iperf-cmd:
+    version: "~0.1.1"
+  esp-qa/wifi-cmd:
+    version: "~0.0.2"
+  esp-qa/ping-cmd:
+    version: "~0.0.1"

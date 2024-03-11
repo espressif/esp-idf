@@ -11,8 +11,6 @@
     - lwip
     - openthread
   depends_filepatterns:
-    - examples/common_components/iperf/*
-    - examples/common_components/iperf/**/*
     - examples/openthread/*
     - examples/openthread/**/*
 

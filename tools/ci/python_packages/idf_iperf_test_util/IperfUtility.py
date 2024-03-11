@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import logging
 import os
@@ -33,7 +33,7 @@ class TestResult(object):
     """ record, analysis test result and convert data to output format """
 
     PC_BANDWIDTH_LOG_PATTERN = re.compile(r'(\d+\.\d+)\s*-\s*(\d+.\d+)\s+sec\s+[\d.]+\s+MBytes\s+([\d.]+)\s+Mbits\/sec')
-    DUT_BANDWIDTH_LOG_PATTERN = re.compile(r'(\d+)-\s+(\d+)\s+sec\s+([\d.]+)\s+Mbits/sec')
+    DUT_BANDWIDTH_LOG_PATTERN = re.compile(r'([\d.]+)\s*-\s*([\d.]+)\s+sec\s+([\d.]+)\s+Mbits/sec')
 
     ZERO_POINT_THRESHOLD = -88  # RSSI, dbm
     ZERO_THROUGHPUT_THRESHOLD = -92  # RSSI, dbm
@@ -278,7 +278,7 @@ class IperfTestUtility(object):
         self.dut.write('restart')
         self.dut.expect_exact("Type 'help' to get the list of commands.")
         self.dut.expect('iperf>')
-        self.dut.write('scan {}'.format(self.ap_ssid))
+        self.dut.write('sta_scan {}'.format(self.ap_ssid))
         for _ in range(SCAN_RETRY_COUNT):
             try:
                 rssi = int(self.dut.expect(r'\[{}]\[rssi=(-\d+)]'.format(self.ap_ssid),
@@ -288,7 +288,7 @@ class IperfTestUtility(object):
                 continue
         else:
             raise AssertionError('Failed to scan AP')
-        self.dut.write('sta {} {}'.format(self.ap_ssid, self.ap_password))
+        self.dut.write('sta_connect {} {}'.format(self.ap_ssid, self.ap_password))
         dut_ip = self.dut.expect(r'sta ip: ([\d.]+), mask: ([\d.]+), gw: ([\d.]+)').group(1)
         return dut_ip, rssi
 
@@ -338,7 +338,7 @@ class IperfTestUtility(object):
                     self.dut.write('iperf -s -i 1 -t {}'.format(TEST_TIME))
                     # wait until DUT TCP server created
                     try:
-                        self.dut.expect('iperf: Socket created', timeout=5)
+                        self.dut.expect('Socket created', timeout=5)
                     except pexpect.TIMEOUT:
                         # compatible with old iperf example binary
                         logging.info('create iperf tcp server fail')
@@ -358,7 +358,7 @@ class IperfTestUtility(object):
                     self.dut.write('iperf -s -u -i 1 -t {}'.format(TEST_TIME))
                     # wait until DUT TCP server created
                     try:
-                        self.dut.expect('iperf: Socket bound', timeout=5)
+                        self.dut.expect('Socket bound', timeout=5)
                     except pexpect.TIMEOUT:
                         # compatible with old iperf example binary
                         logging.info('create iperf udp server fail')

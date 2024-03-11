@@ -10,11 +10,8 @@
 extern "C" {
 #endif
 
-
-void register_wifi_cmd(void);
 void register_wifi_itwt(void);
 void register_wifi_stats(void);
-
 
 #ifdef __cplusplus
 }

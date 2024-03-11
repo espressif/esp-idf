@@ -26,10 +26,11 @@
 #include "nvs_flash.h"
 #include "esp_console.h"
 #include "cmd_system.h"
-#include "wifi_cmd.h"
 #include "esp_wifi_he.h"
 #include "esp_pm.h"
 #include "esp_timer.h"
+
+#include "wifi_cmd.h"
 
 /*******************************************************
  *                Constants
