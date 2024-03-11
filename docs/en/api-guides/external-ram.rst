@@ -91,8 +91,8 @@ This allows any application to use the external RAM without having to rewrite th
 
 An additional configuration item, :ref:`CONFIG_SPIRAM_MALLOC_ALWAYSINTERNAL`, can be used to set the size threshold when a single allocation should prefer external memory:
 
-- When allocating a size less than the threshold, the allocator will try internal memory first.
-- When allocating a size equal to or larger than the threshold, the allocator will try external memory first.
+- When allocating a size less than or equal to the threshold, the allocator will try internal memory first.
+- When allocating a size larger than the threshold, the allocator will try external memory first.
 
 If a suitable block of preferred internal/external memory is not available, the allocator will try the other type of memory.
 
