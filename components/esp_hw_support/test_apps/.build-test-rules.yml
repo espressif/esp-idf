@@ -41,3 +41,7 @@ components/esp_hw_support/test_apps/rtc_power_modes:
     - if: IDF_TARGET in ["esp32s2", "esp32s3", "esp32c2", "esp32c3"]
       temporary: true
       reason: the other targets are not tested yet
+
+components/esp_hw_support/test_apps/wakeup_tests:
+  disable:
+    - if: IDF_TARGET in ["esp32c5", "esp32p4", "linux"]

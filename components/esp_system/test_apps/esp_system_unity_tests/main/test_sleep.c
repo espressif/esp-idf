@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -41,7 +41,6 @@
 
 #define ESP_EXT0_WAKEUP_LEVEL_LOW 0
 #define ESP_EXT0_WAKEUP_LEVEL_HIGH 1
-
 __attribute__((unused)) static struct timeval tv_start, tv_stop;
 
 
@@ -391,72 +390,6 @@ TEST_CASE_MULTIPLE_STAGES("can set sleep wake stub from stack in RTC RAM", "[dee
 
 #if SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
 
-#if SOC_PM_SUPPORT_EXT0_WAKEUP
-TEST_CASE("wake up using ext0 (13 high)", "[deepsleep][ignore]")
-{
-    ESP_ERROR_CHECK(rtc_gpio_init(GPIO_NUM_13));
-    ESP_ERROR_CHECK(gpio_pullup_dis(GPIO_NUM_13));
-    ESP_ERROR_CHECK(gpio_pulldown_en(GPIO_NUM_13));
-    ESP_ERROR_CHECK(esp_sleep_enable_ext0_wakeup(GPIO_NUM_13, ESP_EXT0_WAKEUP_LEVEL_HIGH));
-    esp_deep_sleep_start();
-}
-
-TEST_CASE("wake up using ext0 (13 low)", "[deepsleep][ignore]")
-{
-    ESP_ERROR_CHECK(rtc_gpio_init(GPIO_NUM_13));
-    ESP_ERROR_CHECK(gpio_pullup_en(GPIO_NUM_13));
-    ESP_ERROR_CHECK(gpio_pulldown_dis(GPIO_NUM_13));
-    ESP_ERROR_CHECK(esp_sleep_enable_ext0_wakeup(GPIO_NUM_13, ESP_EXT0_WAKEUP_LEVEL_LOW));
-    esp_deep_sleep_start();
-}
-#endif // SOC_PM_SUPPORT_EXT0_WAKEUP
-
-#if SOC_PM_SUPPORT_EXT1_WAKEUP
-TEST_CASE("wake up using ext1 when RTC_PERIPH is off (13 high)", "[deepsleep][ignore]")
-{
-    // This test needs external pulldown
-    ESP_ERROR_CHECK(rtc_gpio_init(GPIO_NUM_13));
-    ESP_ERROR_CHECK(esp_sleep_enable_ext1_wakeup(BIT(GPIO_NUM_13), ESP_EXT1_WAKEUP_ANY_HIGH));
-    esp_deep_sleep_start();
-}
-
-TEST_CASE("wake up using ext1 when RTC_PERIPH is off (13 low)", "[deepsleep][ignore]")
-{
-    // This test needs external pullup
-    ESP_ERROR_CHECK(rtc_gpio_init(GPIO_NUM_13));
-#if CONFIG_IDF_TARGET_ESP32
-    ESP_ERROR_CHECK(esp_sleep_enable_ext1_wakeup(BIT(GPIO_NUM_13), ESP_EXT1_WAKEUP_ALL_LOW));
-#else
-    ESP_ERROR_CHECK(esp_sleep_enable_ext1_wakeup(BIT(GPIO_NUM_13), ESP_EXT1_WAKEUP_ANY_LOW));
-#endif
-    esp_deep_sleep_start();
-}
-
-TEST_CASE("wake up using ext1 when RTC_PERIPH is on (13 high)", "[deepsleep][ignore]")
-{
-    ESP_ERROR_CHECK(rtc_gpio_init(GPIO_NUM_13));
-    ESP_ERROR_CHECK(gpio_pullup_dis(GPIO_NUM_13));
-    ESP_ERROR_CHECK(gpio_pulldown_en(GPIO_NUM_13));
-    ESP_ERROR_CHECK(esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_PERIPH, ESP_PD_OPTION_ON));
-    ESP_ERROR_CHECK(esp_sleep_enable_ext1_wakeup(BIT(GPIO_NUM_13), ESP_EXT1_WAKEUP_ANY_HIGH));
-    esp_deep_sleep_start();
-}
-
-TEST_CASE("wake up using ext1 when RTC_PERIPH is on (13 low)", "[deepsleep][ignore]")
-{
-    ESP_ERROR_CHECK(rtc_gpio_init(GPIO_NUM_13));
-    ESP_ERROR_CHECK(gpio_pullup_en(GPIO_NUM_13));
-    ESP_ERROR_CHECK(gpio_pulldown_dis(GPIO_NUM_13));
-    ESP_ERROR_CHECK(esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_PERIPH, ESP_PD_OPTION_ON));
-#if CONFIG_IDF_TARGET_ESP32
-    ESP_ERROR_CHECK(esp_sleep_enable_ext1_wakeup(BIT(GPIO_NUM_13), ESP_EXT1_WAKEUP_ALL_LOW));
-#else
-    ESP_ERROR_CHECK(esp_sleep_enable_ext1_wakeup(BIT(GPIO_NUM_13), ESP_EXT1_WAKEUP_ANY_LOW));
-#endif
-    esp_deep_sleep_start();
-}
-#endif // SOC_PM_SUPPORT_EXT1_WAKEUP
-
 __attribute__((unused)) static float get_time_ms(void)
 {
     gettimeofday(&tv_stop, NULL);
@@ -646,30 +579,5 @@ static void check_time_deepsleep(void)
 }
 
 TEST_CASE_MULTIPLE_STAGES("check a time after wakeup from deep sleep", "[deepsleep][reset=DEEPSLEEP_RESET]", trigger_deepsleep, check_time_deepsleep);
-
-#if SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
-static void gpio_deepsleep_wakeup_config(void)
-{
-    gpio_config_t io_conf = {
-        .mode = GPIO_MODE_INPUT,
-        .pin_bit_mask = ((1ULL << 2) | (1ULL << 4))
-    };
-    ESP_ERROR_CHECK(gpio_config(&io_conf));
-}
-
-TEST_CASE("wake up using GPIO (2 or 4 high)", "[deepsleep][ignore]")
-{
-    gpio_deepsleep_wakeup_config();
-    ESP_ERROR_CHECK(esp_deep_sleep_enable_gpio_wakeup(((1ULL << 2) | (1ULL << 4)) , ESP_GPIO_WAKEUP_GPIO_HIGH));
-    esp_deep_sleep_start();
-}
-
-TEST_CASE("wake up using GPIO (2 or 4 low)", "[deepsleep][ignore]")
-{
-    gpio_deepsleep_wakeup_config();
-    ESP_ERROR_CHECK(esp_deep_sleep_enable_gpio_wakeup(((1ULL << 2) | (1ULL << 4)) , ESP_GPIO_WAKEUP_GPIO_LOW));
-    esp_deep_sleep_start();
-}
-#endif // SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
 
 #endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32P4)
