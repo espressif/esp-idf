@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,9 +8,14 @@
 #include <sys/cdefs.h>
 #include "esp_log.h"
 #include "esp_check.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 #include "esp_eth_phy_802_3.h"
 
 static const char *TAG = "ip101";
+
+#define IP101_PHY_RESET_ASSERTION_TIME_US 10000
+#define IP101_PHY_POST_RESET_INIT_TIME_MS 10
 
 /***************Vendor Specific Register***************/
 
@@ -166,6 +171,14 @@ err:
     return ret;
 }
 
+static esp_err_t ip101_reset_hw(esp_eth_phy_t *phy)
+{
+    phy_802_3_t *phy_802_3 = esp_eth_phy_into_phy_802_3(phy);
+    esp_err_t ret = esp_eth_phy_802_3_reset_hw(phy_802_3, IP101_PHY_RESET_ASSERTION_TIME_US);
+    vTaskDelay(pdMS_TO_TICKS(IP101_PHY_POST_RESET_INIT_TIME_MS));
+    return ret;
+}
+
 static esp_err_t ip101_init(esp_eth_phy_t *phy)
 {
     esp_err_t ret = ESP_OK;
@@ -197,6 +210,7 @@ esp_eth_phy_t *esp_eth_phy_new_ip101(const eth_phy_config_t *config)
     // redefine functions which need to be customized for sake of IP101
     ip101->phy_802_3.parent.init = ip101_init;
     ip101->phy_802_3.parent.get_link = ip101_get_link;
+    ip101->phy_802_3.parent.reset_hw = ip101_reset_hw;
 
     return &ip101->phy_802_3.parent;
 err:
