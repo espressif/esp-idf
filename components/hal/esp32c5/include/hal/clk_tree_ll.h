@@ -339,7 +339,7 @@ static inline __attribute__((always_inline)) void clk_ll_bbpll_set_config(uint32
 
     /* Configure 480M PLL */
     switch (xtal_freq_mhz) {
-    case RTC_XTAL_FREQ_40M:
+    case SOC_XTAL_FREQ_40M:
     default:
         div_ref = 0;
         div7_0 = 8;

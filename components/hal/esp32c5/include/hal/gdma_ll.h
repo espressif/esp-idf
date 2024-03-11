@@ -8,6 +8,8 @@
 #include <stddef.h> /* Required for NULL constant */
 #include <stdint.h>
 #include <stdbool.h>
+#include "soc/soc_caps.h"
+#if SOC_GDMA_SUPPORTED  // TODO: [ESP32C5] IDF-8710
 #include "hal/gdma_types.h"
 #include "soc/gdma_struct.h"
 #include "soc/gdma_reg.h"
@@ -625,3 +627,5 @@ static inline void gdma_ll_tx_enable_etm_task(gdma_dev_t *dev, uint32_t channel,
 #ifdef __cplusplus
 }
 #endif
+
+#endif  // SOC_GDMA_SUPPORTED

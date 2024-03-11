@@ -29,7 +29,9 @@
 #include "soc/soc_caps.h"
 #include "hal/spi_types.h"
 #include "hal/dma_types.h"
+#if SOC_GDMA_SUPPORTED
 #include "soc/gdma_channel.h"
+#endif
 #if SOC_GPSPI_SUPPORTED
 #include "hal/spi_ll.h"
 #endif

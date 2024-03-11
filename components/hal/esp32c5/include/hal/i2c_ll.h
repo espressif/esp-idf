@@ -9,8 +9,10 @@
 #pragma once
 
 #include <stdbool.h>
+#include "soc/soc_caps.h"
 #include "hal/misc.h"
 #include "hal/assert.h"
+#if SOC_I2C_SUPPORTED  // TODO: [ESP32C5] IDF-8694
 #include "soc/i2c_periph.h"
 #include "soc/soc_caps.h"
 #include "soc/i2c_struct.h"
@@ -1119,3 +1121,5 @@ static inline void i2c_ll_get_scl_timing(i2c_dev_t *hw, int *high_period, int *l
 #ifdef __cplusplus
 }
 #endif
+
+#endif  // SOC_I2C_SUPPORTED

@@ -8,7 +8,9 @@
 
 #include "soc/soc.h"
 #include "soc/soc_caps.h"
+#if SOC_ADC_SUPPORTED
 #include "soc/adc_channel.h"
+#endif
 
 #ifdef __cplusplus
 extern "C" {
