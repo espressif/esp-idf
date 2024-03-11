@@ -367,7 +367,7 @@ esp_err_t esp_event_post(esp_event_base_t event_base,
  * the copy's lifetime automatically (allocation + deletion); this ensures that the data the
  * handler receives is always valid.
  *
- * This function behaves in the same manner as esp_event_post_to, except the additional specification of the event loop
+ * This function behaves in the same manner as esp_event_post, except the additional specification of the event loop
  * to post the event to.
  *
  * @param[in] event_loop the event loop to post to, must not be NULL
