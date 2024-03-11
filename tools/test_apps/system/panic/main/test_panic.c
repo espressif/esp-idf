@@ -252,3 +252,30 @@ void test_illegal_access(void)
     printf("[2] val: %d at %p\n", val, (void *)addr);
 }
 #endif
+
+#if CONFIG_ESP_COREDUMP_CAPTURE_DRAM
+int g_data_var = 42;
+int g_bss_var;
+char *g_heap_ptr;
+COREDUMP_IRAM_DATA_ATTR uint32_t g_cd_iram = 0x4242;
+COREDUMP_DRAM_ATTR uint32_t g_cd_dram = 0x4343;
+#if SOC_RTC_MEM_SUPPORTED
+COREDUMP_RTC_FAST_ATTR uint32_t g_rtc_fast_var;
+COREDUMP_RTC_DATA_ATTR uint32_t g_rtc_data_var = 0x55A9;
+#endif
+
+void test_capture_dram(void)
+{
+    g_data_var++;
+    g_bss_var = 55;
+    g_heap_ptr = strdup("Coredump Test");
+    assert(g_heap_ptr);
+    g_cd_iram++;
+    g_cd_dram++;
+#if SOC_RTC_MEM_SUPPORTED
+    g_rtc_fast_var = 0xAABBCCDD;
+    g_rtc_data_var++;
+#endif
+    assert(0);
+}
+#endif

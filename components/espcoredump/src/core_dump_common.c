@@ -25,6 +25,25 @@ const static char TAG[] __attribute__((unused)) = "esp_core_dump_common";
 /**
  * @brief Memory regions to dump, defined at compile time.
  */
+#if CONFIG_ESP_COREDUMP_CAPTURE_DRAM
+#if !CONFIG_IDF_TARGET_ESP32P4
+extern int _bss_start;
+extern int _bss_end;
+extern int _data_start;
+extern int _data_end;
+#else
+extern int _bss_start_low;
+extern int _bss_end_low;
+extern int _data_start_low;
+extern int _data_end_low;
+extern int _bss_start_high;
+extern int _bss_end_high;
+extern int _data_start_high;
+extern int _data_end_high;
+#endif
+#endif
+
+/* Regions for the user defined variable locations */
 extern int _coredump_dram_start;
 extern int _coredump_dram_end;
 extern int _coredump_iram_start;
@@ -160,6 +179,7 @@ FORCE_INLINE_ATTR void esp_core_dump_setup_stack(void)
 FORCE_INLINE_ATTR void esp_core_dump_report_stack_usage(void)
 {
 }
+
 #endif // CONFIG_ESP_COREDUMP_STACK_SIZE > 0
 
 static void* s_exc_frame = NULL;
@@ -254,19 +274,29 @@ uint32_t esp_core_dump_get_user_ram_segments(void)
     return total_sz;
 }
 
-uint32_t esp_core_dump_get_user_ram_size(void)
-{
-    uint32_t total_sz = 0;
-
-    total_sz += COREDUMP_GET_MEMORY_SIZE(&_coredump_dram_end, &_coredump_dram_start);
-#if SOC_RTC_MEM_SUPPORTED
-    total_sz += COREDUMP_GET_MEMORY_SIZE(&_coredump_rtc_end, &_coredump_rtc_start);
-    total_sz += COREDUMP_GET_MEMORY_SIZE(&_coredump_rtc_fast_end, &_coredump_rtc_fast_start);
+static const struct {
+    int *start;
+    int *end;
+} s_memory_sections[COREDUMP_MEMORY_MAX] = {
+    [COREDUMP_MEMORY_IRAM] = { &_coredump_iram_start, &_coredump_iram_end },
+#if CONFIG_ESP_COREDUMP_CAPTURE_DRAM
+#if !CONFIG_IDF_TARGET_ESP32P4
+    [COREDUMP_MEMORY_DRAM_BSS] = { &_bss_start, &_bss_end },
+    [COREDUMP_MEMORY_DRAM_DATA] = { &_data_start, &_data_end },
+#else
+    [COREDUMP_MEMORY_DRAM_BSS] = { &_bss_start_low, &_bss_end_low },
+    [COREDUMP_MEMORY_DRAM_DATA] = { &_data_start_low, &_data_end_low },
+    [COREDUMP_MEMORY_DRAM_BSS_HIGH] = { &_bss_start_high, &_bss_end_high },
+    [COREDUMP_MEMORY_DRAM_DATA_HIGH] = { &_data_start_high, &_data_end_high },
 #endif
-    total_sz += COREDUMP_GET_MEMORY_SIZE(&_coredump_iram_end, &_coredump_iram_start);
-
-    return total_sz;
-}
+#else
+    [COREDUMP_MEMORY_DRAM] = { &_coredump_dram_start, &_coredump_dram_end },
+#endif
+#if SOC_RTC_MEM_SUPPORTED
+    [COREDUMP_MEMORY_RTC] = { &_coredump_rtc_start, &_coredump_rtc_end },
+    [COREDUMP_MEMORY_RTC_FAST] = { &_coredump_rtc_fast_start, &_coredump_rtc_fast_end },
+#endif
+};
 
 int esp_core_dump_get_user_ram_info(coredump_region_t region, uint32_t *start)
 {
@@ -274,35 +304,33 @@ int esp_core_dump_get_user_ram_info(coredump_region_t region, uint32_t *start)
 
     ESP_COREDUMP_DEBUG_ASSERT(start != NULL);
 
-    switch (region) {
-    case COREDUMP_MEMORY_DRAM:
-        *start = (uint32_t)&_coredump_dram_start;
-        total_sz = (uint8_t *)&_coredump_dram_end - (uint8_t *)&_coredump_dram_start;
-        break;
-
-    case COREDUMP_MEMORY_IRAM:
-        *start = (uint32_t)&_coredump_iram_start;
-        total_sz = (uint8_t *)&_coredump_iram_end - (uint8_t *)&_coredump_iram_start;
-        break;
-
-#if SOC_RTC_MEM_SUPPORTED
-    case COREDUMP_MEMORY_RTC:
-        *start = (uint32_t)&_coredump_rtc_start;
-        total_sz = (uint8_t *)&_coredump_rtc_end - (uint8_t *)&_coredump_rtc_start;
-        break;
-
-    case COREDUMP_MEMORY_RTC_FAST:
-        *start = (uint32_t)&_coredump_rtc_fast_start;
-        total_sz = (uint8_t *)&_coredump_rtc_fast_end - (uint8_t *)&_coredump_rtc_fast_start;
-        break;
-#endif
-
-    default:
-        break;
+    if (region >= COREDUMP_MEMORY_START && region < COREDUMP_MEMORY_MAX) {
+        total_sz = (uint8_t *)s_memory_sections[region].end - (uint8_t *)s_memory_sections[region].start;
+        *start = (uint32_t)s_memory_sections[region].start;
     }
 
     return total_sz;
 }
+
+#if CONFIG_ESP_COREDUMP_CAPTURE_DRAM
+void esp_core_dump_get_own_stack_info(uint32_t *addr, uint32_t *size)
+{
+#if CONFIG_ESP_COREDUMP_STACK_SIZE > 0
+    /* Custom stack reserved for the coredump */
+    *addr = (uint32_t)s_coredump_stack;
+    *size = sizeof(s_coredump_stack);
+#else
+    /* Shared stack with the crashed task */
+    core_dump_task_handle_t handle =  esp_core_dump_get_current_task_handle();
+    TaskSnapshot_t rtos_snapshot = { 0 };
+    vTaskGetSnapshot(handle, &rtos_snapshot);
+    StaticTask_t *current = (StaticTask_t *)handle;
+    *addr = (uint32_t)current->pxDummy6; //pxStack
+    *size = (uint32_t)rtos_snapshot.pxTopOfStack - (uint32_t)current->pxDummy6; /* free */
+#endif
+}
+
+#endif /* CONFIG_ESP_COREDUMP_CAPTURE_DRAM */
 
 inline bool esp_core_dump_tcb_addr_is_sane(uint32_t addr)
 {

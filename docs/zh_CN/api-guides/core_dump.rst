@@ -56,7 +56,25 @@ ELF 格式具备扩展特性，支持在发生崩溃时保存更多关于错误�
 
 .. note::
 
-   如果使用了独立的栈，建议栈大小应大于 800 字节，确保核心转储例程本身不会导致栈溢出。
+   如果使用了独立的栈，建议栈大小应大于 1300 字节，确保核心转储例程本身不会导致栈溢出。
+
+
+Core Dump Memory Regions
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+By default, core dumps typically save CPU registers, tasks data and summary of the panic reason. When the :ref:`CONFIG_ESP_COREDUMP_CAPTURE_DRAM` option is selected, ``.bss`` and ``.data`` sections and ``heap`` data will also be part of the dump.
+
+For a better debugging experience, it is recommended to dump these sections. However, this will result in a larger coredump file. The required additional storage space may vary based on the amount of DRAM the application uses.
+
+.. note::
+
+    .. only:: SOC_SPIRAM_SUPPORTED
+
+        Apart from the crashed task's TCB and stack, data located in the external RAM will not be stored in the core dump file, this include variables defined with ``EXT_RAM_BSS_ATTR`` or ``EXT_RAM_NOINIT_ATTR`` attributes, as well as any data stored in the ``extram_bss`` section.
+
+.. note::
+
+    This feature is only enabled when using the ELF file format.
 
 
 将核心转储保存到 flash

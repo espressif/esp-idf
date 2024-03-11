@@ -98,6 +98,9 @@ void app_main(void)
 #if CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH && CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY
     HANDLE_TEST(test_name, test_panic_extram_stack);
 #endif
+#if CONFIG_ESP_COREDUMP_CAPTURE_DRAM
+    HANDLE_TEST(test_name, test_capture_dram);
+#endif
 #if !CONFIG_FREERTOS_UNICORE
     HANDLE_TEST(test_name, test_task_wdt_cpu1);
 #endif

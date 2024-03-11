@@ -89,6 +89,8 @@ CONFIGS_HW_STACK_GUARD_DUAL_CORE = [
     pytest.param('panic', marks=TARGETS_RISCV_DUAL_CORE),
 ]
 
+CONFIG_CAPTURE_DRAM = [pytest.param('coredump_flash_capture_dram', marks=TARGETS_ALL)]
+
 # Panic abort information will start with this string.
 PANIC_ABORT_PREFIX = 'Panic reason: '
 
@@ -101,7 +103,7 @@ def common_test(dut: PanicTestDut, config: str, expected_backtrace: Optional[Lis
                 expected_coredump: Optional[List[Union[str, re.Pattern]]] = None) -> None:
     if 'gdbstub' in config:
         dut.expect_exact('Entering gdb stub now.')
-        dut.start_gdb()
+        dut.start_gdb_for_gdbstub()
         frames = dut.gdb_backtrace()
         if expected_backtrace is not None:
             dut.verify_gdb_backtrace(frames, expected_backtrace)
@@ -861,7 +863,7 @@ def test_gdbstub_coredump(dut: PanicTestDut) -> None:
     dut.process_coredump_uart()
 
     dut.expect_exact('Entering gdb stub now.')
-    dut.start_gdb()
+    dut.start_gdb_for_gdbstub()
     frames = dut.gdb_backtrace()
     dut.verify_gdb_backtrace(frames, get_default_backtrace(test_func_name))
     dut.revert_log_level()
@@ -913,3 +915,25 @@ def test_illegal_access(dut: PanicTestDut, config: str, test_func_name: str) -> 
         dut.expect_backtrace()
         dut.expect_elf_sha256()
         dut.expect_none('Guru Meditation')
+
+
+@pytest.mark.parametrize('config', CONFIG_CAPTURE_DRAM, indirect=True)
+@pytest.mark.generic
+def test_capture_dram(dut: PanicTestDut, config: str, test_func_name: str) -> None:
+    dut.run_test_func(test_func_name)
+
+    dut.expect_elf_sha256()
+    dut.expect_none(['Guru Meditation', 'Re-entered core dump'])
+
+    core_elf_file = dut.process_coredump_flash()
+    dut.start_gdb_for_coredump(core_elf_file)
+
+    assert dut.gdb_data_eval_expr('g_data_var') == '43'
+    assert dut.gdb_data_eval_expr('g_bss_var') == '55'
+    assert re.search(r'0x[0-9a-fA-F]+ "Coredump Test"', dut.gdb_data_eval_expr('g_heap_ptr'))
+    assert int(dut.gdb_data_eval_expr('g_cd_iram')) == 0x4243
+    assert int(dut.gdb_data_eval_expr('g_cd_dram')) == 0x4344
+
+    if dut.target != 'esp32c2':
+        assert int(dut.gdb_data_eval_expr('g_rtc_data_var')) == 0x55AA
+        assert int(dut.gdb_data_eval_expr('g_rtc_fast_var')) == 0xAABBCCDD
