@@ -118,3 +118,46 @@ def test_multi_with_marker_and_app_path(work_dirpath: Path) -> None:
     cases = get_pytest_cases([str(work_dirpath)], 'esp32c2,esp32c2,esp32c2')
     assert len(cases) == 1
     assert cases[0].targets == ['esp32c2', 'esp32c2', 'esp32c2']
+
+
+def test_filter_with_sdkconfig_name(work_dirpath: Path) -> None:
+    script = work_dirpath / 'pytest_filter_with_sdkconfig_name.py'
+    script.write_text(
+        textwrap.dedent(
+            '''
+        import pytest
+
+        @pytest.mark.esp32
+        @pytest.mark.parametrize(
+            'config', [
+                'foo',
+                'bar',
+            ], indirect=True
+        )
+        def test_filter_with_sdkconfig_name_single_dut(dut):
+            pass
+
+        @pytest.mark.esp32
+        @pytest.mark.parametrize(
+            'count', [2], indirect=True
+        )
+        @pytest.mark.parametrize(
+            'config', [
+                'foo|bar',
+                'bar|baz',
+            ], indirect=True
+        )
+        def test_filter_with_sdkconfig_name_multi_dut(dut):
+            pass
+    '''
+        )
+    )
+
+    cases = get_pytest_cases([str(work_dirpath)], 'esp32', config_name='foo')
+    assert len(cases) == 1
+
+    cases = get_pytest_cases([str(work_dirpath)], 'esp32,esp32', config_name='foo')
+    assert len(cases) == 1
+
+    cases = get_pytest_cases([str(work_dirpath)], 'esp32,esp32', config_name='bar')
+    assert len(cases) == 2

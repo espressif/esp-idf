@@ -48,6 +48,7 @@ class IdfPytestEmbedded:
         self,
         target: t.Union[t.List[str], str],
         *,
+        config_name: t.Optional[str] = None,
         single_target_duplicate_mode: bool = False,
         apps: t.Optional[t.List[App]] = None,
     ):
@@ -59,6 +60,8 @@ class IdfPytestEmbedded:
 
         if not self.target:
             raise ValueError('`target` should not be empty')
+
+        self.config_name = config_name
 
         # these are useful while gathering all the multi-dut test cases
         # when this mode is activated,
@@ -226,7 +229,18 @@ class IdfPytestEmbedded:
                 and self.get_param(_item, 'target', None) is not None
             ]
 
-        # 4. filter by `self.apps_list`, skip the test case if not listed
+        # 4. filter according to the sdkconfig, if there's param 'config' defined
+        if self.config_name:
+            _items = []
+            for item in items:
+                case = item_to_case_dict[item]
+                if self.config_name not in set(app.config or DEFAULT_SDKCONFIG for app in case.apps):
+                    self.additional_info[case.name]['skip_reason'] = f'Only run with sdkconfig {self.config_name}'
+                else:
+                    _items.append(item)
+            items[:] = _items
+
+        # 5. filter by `self.apps_list`, skip the test case if not listed
         #   should only be used in CI
         _items = []
         for item in items:
