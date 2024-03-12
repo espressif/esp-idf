@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -125,7 +125,13 @@ void app_main(void)
         .string_descriptor = NULL,
         .string_descriptor_count = 0,
         .external_phy = false,
+#if (TUD_OPT_HIGH_SPEED)
+        .fs_configuration_descriptor = NULL,
+        .hs_configuration_descriptor = NULL,
+        .qualifier_descriptor = NULL,
+#else
         .configuration_descriptor = NULL,
+#endif // TUD_OPT_HIGH_SPEED
     };
     ESP_ERROR_CHECK(tinyusb_driver_install(&tusb_cfg));
 
