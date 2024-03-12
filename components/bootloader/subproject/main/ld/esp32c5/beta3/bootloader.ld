@@ -6,7 +6,7 @@
 /** Simplified memory map for the bootloader.
  *  Make sure the bootloader can load into main memory without overwriting itself.
  *
- *  TODO: [ESP32C5] IDF-8653 Check this file whether need update
+ *  TODO: [ESP32C5] IDF-9358 Check this file whether need update for MP ROM
  *  ESP32-C5 ROM static data usage is as follows:
  *  - 0x4086b2b8 - 0x4087cbc0: Shared buffers, used in UART/USB/SPI download mode only
  *  - 0x4087cbc0 - 0x4087ebc0: PRO CPU stack, can be reclaimed as heap after RTOS startup
