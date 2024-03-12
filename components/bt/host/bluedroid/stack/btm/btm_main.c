@@ -133,20 +133,3 @@ uint8_t btm_acl_active_count(void)
 
     return count;
 }
-
-uint8_t btdm_sec_dev_active_count(void)
-{
-    tBTM_SEC_DEV_REC *p_dev_rec = NULL;
-    list_node_t *p_node = NULL;
-    uint8_t count = 0;
-
-    /* First look for the non-paired devices for the oldest entry */
-    for (p_node = list_begin(btm_cb.p_sec_dev_rec_list); p_node; p_node = list_next(p_node)) {
-        p_dev_rec = list_node(p_node);
-        if (p_dev_rec && (p_dev_rec->sec_flags & BTM_SEC_IN_USE)) {
-            count++;
-        }
-    }
-
-    return count;
-}
