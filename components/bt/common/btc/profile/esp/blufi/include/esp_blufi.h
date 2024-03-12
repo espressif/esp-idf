@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,6 +18,10 @@
 
 #ifdef CONFIG_BT_BLUEDROID_ENABLED
 #include "esp_gap_ble_api.h"
+#endif
+
+#ifdef __cplusplus
+extern "C" {
 #endif
 
 #define BLUFI_APP_UUID      0xFFFF
@@ -96,4 +100,7 @@ void esp_blufi_send_encap(void *arg);
 int esp_blufi_handle_gap_events(struct ble_gap_event *event, void *arg);
 #endif
 
+#ifdef __cplusplus
+}
+#endif
 #endif/* _ESP_BLUFI_ */
