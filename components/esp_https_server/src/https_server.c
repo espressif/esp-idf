@@ -327,6 +327,7 @@ static esp_err_t create_secure_context(const struct httpd_ssl_config *config, ht
             (*ssl_ctx)->tls_cfg->ecdsa_key_efuse_blk = config->ecdsa_key_efuse_blk;
 #else
             ESP_LOGE(TAG, "Please enable the support for signing using ECDSA peripheral in menuconfig.");
+            ret = ESP_ERR_NOT_SUPPORTED;
             goto exit;
 #endif
         } else if (config->prvtkey_pem != NULL && config->prvtkey_len > 0) {
