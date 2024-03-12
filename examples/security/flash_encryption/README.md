@@ -1,5 +1,5 @@
-| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C6 | ESP32-H2 | ESP32-P4 | ESP32-S2 | ESP32-S3 |
-| ----------------- | ----- | -------- | -------- | -------- | -------- | -------- | -------- | -------- |
+| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C5 | ESP32-C6 | ESP32-H2 | ESP32-P4 | ESP32-S2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- | -------- | -------- | -------- | -------- |
 
 # Flash Encryption
 
@@ -32,7 +32,7 @@ The configuration for NVS encryption involves generating the XTS encryption keys
 
     When NVS encryption is enabled the `nvs_flash_init` API function can internally generate the XTS encryption keys on the ESP chip. The API function finds the first [NVS key partition](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/storage/nvs_flash.html#nvs-key-partition) i.e. a partition of type  `data` and subtype `nvs_keys`.
     Then the API function automatically generates and stores the
-    nvs keys in that partition. New keys are generated and stored only when the respective key partiton is empty. (Consult the [`nvs_flash_init`](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/storage/nvs_flash.html#_CPPv414nvs_flash_initv) API documentation in the ESP-IDF programming guide for more details).
+    nvs keys in that partition. New keys are generated and stored only when the respective key partition is empty. (Consult the [`nvs_flash_init`](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/storage/nvs_flash.html#_CPPv414nvs_flash_initv) API documentation in the ESP-IDF programming guide for more details).
 
     **Please note that `nvs_keys` partition must be completely erased before starting the application. Otherwise the application may generate `ESP_ERR_NVS_CORRUPT_KEY_PART` error code assuming that `nvs_keys` partition was not empty and contains malformatted data.**
 
