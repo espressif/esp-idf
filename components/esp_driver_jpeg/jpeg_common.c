@@ -169,7 +169,9 @@ esp_err_t jpeg_isr_deregister(jpeg_codec_handle_t jpeg_codec, jpeg_isr_handler_t
             break;
         }
         prev = it;
-        free(prev);
+    }
+    if (found) {
+        free(it);
     }
     if (unlikely(found != true)) {
         return ESP_ERR_INVALID_STATE;

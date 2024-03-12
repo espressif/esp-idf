@@ -263,6 +263,9 @@ esp_err_t jpeg_del_decoder_engine(jpeg_decoder_handle_t decoder_engine)
         if (decoder_engine->header_info) {
             free(decoder_engine->header_info);
         }
+        if (decoder_engine->trans_desc) {
+            free(decoder_engine->trans_desc);
+        }
         if (decoder_engine->evt_queue) {
             vQueueDeleteWithCaps(decoder_engine->evt_queue);
         }
