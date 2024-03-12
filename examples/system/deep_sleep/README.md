@@ -14,11 +14,10 @@ The following wake up sources are demonstrated in this example (refer to the [Wa
 - **EXT1:** External wake up 1 which is tied to multiple RTC GPIOs. This example uses GPIO2 and GPIO4 to trigger a wake up with any one of the two pins are HIGH. (This wake up source is available on ESP32, ESP32-S2, ESP32-S3, ESP32-C6 and ESP32-H2.)
 - **GPIO:** Pads powered by VDD3P3_RTC can be used to trigger a wake up from deep sleep. You may choose the pin and trigger level in menuconfig. (This wake up source is unavailable on ESP32, ESP32-S2, ESP32-S3 and ESP32-H2.)
 - **Touch:** Touch pad sensor interrupt. This example uses touch pads connected to GPIO32, GPIO33 in ESP32 or GPIO9 in ESP32-S2/S3 to trigger a wake up when any of the pads are pressed.
-- **ULP:** Ultra Low Power Coprocessor which can continue to run during deep sleep. This example utilizes the ULP and constantly sample the chip's temperature and trigger a wake up if the chips temperature exceeds ~5 degrees Celsius.
 
 Note: Some wake up sources can be disabled via configuration (see section on [project configuration](#Configure-the-project))
 
-Warning: On ESP32, touch wake up source cannot be used together with EXT0 or ULP wake up source. If they co-exist, IDF will give a runtime error and the program will crash. By default in this example, touch wake up is enabled, and the other two are disabled. You can switch to enable the other wake up sources via menuconfig.
+Warning: On ESP32, touch wake up source cannot be used together with EXT0 wake up source. If they co-exist, IDF will give a runtime error and the program will crash. By default in this example, touch wake up is enabled, and the other two are disabled. You can switch to enable the other wake up sources via menuconfig.
 
 In this example, the `CONFIG_BOOTLOADER_SKIP_VALIDATE_IN_DEEP_SLEEP` Kconfig option is used, which allows you to reduce the boot time of the bootloader during waking up from deep sleep. The bootloader stores in rtc memory the address of a running partition and uses it when it wakes up. This example allows you to skip all image checks and speed up the boot.
 
@@ -26,7 +25,7 @@ In this example, the `CONFIG_BOOTLOADER_SKIP_VALIDATE_IN_DEEP_SLEEP` Kconfig opt
 
 ### Hardware Required
 
-This example should be able to run on any commonly available ESP32 series development board without any extra hardware if only **Timer** and **ULP** wake up sources are used. However, the following extra connections will be required for the remaining wake up sources.
+This example should be able to run on any commonly available ESP32 series development board without any extra hardware if only **Timer** wake up sources is used. However, the following extra connections will be required for the remaining wake up sources.
 
 - **EXT0:** Connect GPIO25 in ESP32 or GPIO3 in ESP32-S2/S3 to HIGH to trigger a wake up.
 
@@ -48,7 +47,6 @@ idf.py menuconfig
 * **GPIO wake up** can be enabled/disabled via `Example configuration > Enable wakeup from GPIO`
   Trigger pin can be chosen via `Example configuration > GPIO wakeup configuration > Enable wakeup from GPIO`
   Trigger level can be selected via `Example configuration > GPIO wakeup configuration > Enable GPIO high-level wakeup`
-* **ULP wake up** can be enabled/disabled via `Example configuration > Enable temperature monitoring by ULP`
 
 Wake up sources that are unused or unconnected should be disabled in configuration to prevent inadvertent triggering of wake up as a result of floating pins.
 
@@ -80,7 +78,6 @@ Enabling EXT1 wakeup on pins GPIO2, GPIO4
 Touch pad #8 average: 2148, wakeup threshold set to 2048.
 Touch pad #9 average: 2148, wakeup threshold set to 2048.
 Enabling touch pad wakeup
-Enabling ULP wakeup
 Entering deep sleep
 ```
 
@@ -91,13 +88,11 @@ The ESP32 will then enter deep sleep. When a wake up occurs, the ESP32 must unde
 I (304) cpu_start: Starting scheduler on PRO CPU.
 I (0) cpu_start: Starting scheduler on APP CPU.
 Wake up from timer. Time spent in deep sleep: 20313ms
-ULP did 110 temperature measurements in 20313 ms
 Initial T=87, latest T=87
 Enabling timer wakeup, 20s
 Enabling EXT1 wakeup on pins GPIO2, GPIO4
 Touch pad #8 average: 2149, wakeup threshold set to 2049.
 Touch pad #9 average: 2146, wakeup threshold set to 2046.
 Enabling touch pad wakeup
-Enabling ULP wakeup
 Entering deep sleep
 ```
