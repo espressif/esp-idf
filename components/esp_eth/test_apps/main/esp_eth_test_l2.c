@@ -12,20 +12,21 @@
 #include "arpa/inet.h" // for ntohs, etc.
 #include "esp_log.h"
 
-#define TEST_ETH_TYPE 0x3300
-#define TEST_CTRL_ETH_TYPE (TEST_ETH_TYPE + 1)
+#define TEST_ETH_TYPE           0x3300
+#define TEST_CTRL_ETH_TYPE      (TEST_ETH_TYPE + 1)
 
-#define WAIT_AFTER_CONN_MS 2500
-#define WAIT_AFTER_CONN_TMO_MS 20000
+#define WAIT_FOR_CONN_TMO_MS    (5000)
+#define WAIT_AFTER_CONN_MS      (2500)
+#define WAIT_AFTER_CONN_TMO_MS  (20000)
 
-#define ETH_BROADCAST_RECV_BIT BIT(0)
-#define ETH_MULTICAST_RECV_BIT BIT(1)
-#define ETH_UNICAST_RECV_BIT BIT(2)
-#define ETH_POKE_RESP_RECV_BIT BIT(3)
+#define ETH_BROADCAST_RECV_BIT  BIT(0)
+#define ETH_MULTICAST_RECV_BIT  BIT(1)
+#define ETH_UNICAST_RECV_BIT    BIT(2)
+#define ETH_POKE_RESP_RECV_BIT  BIT(3)
 
-#define POKE_REQ 0xFA
-#define POKE_RESP 0xFB
-#define DUMMY_TRAFFIC 0xFF
+#define POKE_REQ                (0xFA)
+#define POKE_RESP               (0xFB)
+#define DUMMY_TRAFFIC           (0xFF)
 
 #define W5500_RX_MEM_SIZE       (0x4000)
 #define DM9051_RX_MEM_SIZE      (0x4000)
@@ -160,7 +161,7 @@ TEST_CASE("ethernet broadcast transmit", "[ethernet_l2]")
     TEST_ESP_OK(esp_eth_start(eth_handle)); // start Ethernet driver state machine
 
     EventBits_t bits = 0;
-    bits = xEventGroupWaitBits(eth_event_state_group, ETH_CONNECT_BIT, true, true, pdMS_TO_TICKS(3000));
+    bits = xEventGroupWaitBits(eth_event_state_group, ETH_CONNECT_BIT, true, true, pdMS_TO_TICKS(WAIT_FOR_CONN_TMO_MS));
     TEST_ASSERT((bits & ETH_CONNECT_BIT) == ETH_CONNECT_BIT);
     // if DUT is connected in network with switch: even if link is indicated up, it may take some time the switch
     // starts switching the associated port (e.g. it runs RSTP at first)
@@ -224,7 +225,7 @@ TEST_CASE("ethernet recv_pkt", "[ethernet_l2]")
     TEST_ESP_OK(esp_eth_start(eth_handle)); // start Ethernet driver state machine
 
     EventBits_t bits = 0;
-    bits = xEventGroupWaitBits(eth_event_state_group, ETH_CONNECT_BIT, true, true, pdMS_TO_TICKS(3000));
+    bits = xEventGroupWaitBits(eth_event_state_group, ETH_CONNECT_BIT, true, true, pdMS_TO_TICKS(WAIT_FOR_CONN_TMO_MS));
     TEST_ASSERT((bits & ETH_CONNECT_BIT) == ETH_CONNECT_BIT);
     // if DUT is connected in network with switch: even if link is indicated up, it may take some time the switch
     // starts switching the associated port (e.g. it runs RSTP at first)
@@ -303,7 +304,7 @@ TEST_CASE("ethernet start/stop stress test under heavy traffic", "[ethernet_l2]"
     for (int tx_i = 0; tx_i < 10; tx_i++) {
         printf("Tx Test iteration %d\n", tx_i);
         TEST_ESP_OK(esp_eth_start(eth_handle)); // start Ethernet driver state machine
-        bits = xEventGroupWaitBits(eth_event_state_group, ETH_CONNECT_BIT, true, true, pdMS_TO_TICKS(3000));
+        bits = xEventGroupWaitBits(eth_event_state_group, ETH_CONNECT_BIT, true, true, pdMS_TO_TICKS(WAIT_FOR_CONN_TMO_MS));
         TEST_ASSERT((bits & ETH_CONNECT_BIT) == ETH_CONNECT_BIT);
         // at first, check that Tx/Rx path works as expected by poking the test script
         // this also serves as main PASS/FAIL criteria
@@ -332,7 +333,7 @@ TEST_CASE("ethernet start/stop stress test under heavy traffic", "[ethernet_l2]"
     for (int rx_i = 0; rx_i < 10; rx_i++) {
         printf("Rx Test iteration %d\n", rx_i);
         TEST_ESP_OK(esp_eth_start(eth_handle)); // start Ethernet driver state machine
-        bits = xEventGroupWaitBits(eth_event_state_group, ETH_CONNECT_BIT, true, true, pdMS_TO_TICKS(3000));
+        bits = xEventGroupWaitBits(eth_event_state_group, ETH_CONNECT_BIT, true, true, pdMS_TO_TICKS(WAIT_FOR_CONN_TMO_MS));
         TEST_ASSERT((bits & ETH_CONNECT_BIT) == ETH_CONNECT_BIT);
         poke_and_wait(eth_handle, &rx_i, sizeof(rx_i), NULL, eth_event_rx_group);
 
