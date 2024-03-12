@@ -739,7 +739,6 @@ components/spi_flash/include/spi_flash_chip_mxic.h
 components/spi_flash/include/spi_flash_chip_winbond.h
 components/spi_flash/spi_flash_chip_boya.c
 components/spi_flash/spi_flash_chip_issi.c
-components/spi_flash/spi_flash_chip_mxic.c
 components/tcp_transport/include/esp_transport_ws.h
 components/vfs/include/esp_vfs_common.h
 components/vfs/include/esp_vfs_eventfd.h
