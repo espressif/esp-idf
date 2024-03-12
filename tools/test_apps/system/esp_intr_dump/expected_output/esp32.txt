@@ -1,48 +1,14 @@
 CPU 0 interrupt status:
  Int  Level  Type   Status
   0     1    Level  Reserved
-  1     1    Level  Reserved
-  2     1    Level  Used: RTC_CORE
-  3     1    Level  Used: TG0_LACT_LEVEL
+  1     1    Level  Used: RTC_CORE
+  2     1    Level  Used: TG0_LACT_LEVEL
+  3     1    Level  Used: FROM_CPU0
   4     1    Level  Reserved
-  5     1    Level  Reserved
+  5     1    Level  Used: TG0_WDT_LEVEL
   6     1    Level  Reserved
   7     1    Level  CPU-internal
-  8     1    Level  Reserved
-  9     1    Level  Used: FROM_CPU0
- 10     1    Edge   Free (not general-use)
- 11     3    Level  CPU-internal
- 12     1    Level  Used: TG0_WDT_LEVEL
- 13     1    Level  Used: UART0
- 14     7    Level  Reserved
- 15     3    Level  CPU-internal
- 16     5    Level  CPU-internal
- 17     1    Level  Free
- 18     1    Level  Free
- 19     2    Level  Free
- 20     2    Level  Free
- 21     2    Level  Free
- 22     3    Edge   Reserved
- 23     3    Level  Free
- 24     4    Level  Reserved
- 25     4    Level  Reserved
- 26     5    Level  Free (not general-use)
- 27     3    Level  Reserved
- 28     4    Edge   Free (not general-use)
- 29     3    Level  CPU-internal
- 30     4    Edge   Reserved
- 31     5    Level  Reserved
-CPU 1 interrupt status:
- Int  Level  Type   Status
-  0     1    Level  Reserved
-  1     1    Level  Reserved
-  2     1    Level  Used: FROM_CPU1
-  3     1    Level  Free
-  4     1    Level  Free
-  5     1    Level  Reserved
-  6     1    Level  Reserved
-  7     1    Level  CPU-internal
-  8     1    Level  Reserved
+  8     1    Level  Used: UART0
   9     1    Level  Free
  10     1    Edge   Free (not general-use)
  11     3    Level  CPU-internal
@@ -58,13 +24,47 @@ CPU 1 interrupt status:
  21     2    Level  Free
  22     3    Edge   Free (not general-use)
  23     3    Level  Free
- 24     4    Level  Free (not general-use)
+ 24     4    Level  Reserved
  25     4    Level  Reserved
- 26     5    Level  Reserved
- 27     3    Level  Reserved
- 28     4    Edge   Free (not general-use)
+ 26     5    Level  Free (not general-use)
+ 27     3    Level  Free
+ 28     4    Edge   Reserved
  29     3    Level  CPU-internal
- 30     4    Edge   Reserved
- 31     5    Level  Reserved
-Interrupts available for general use: 17
+ 30     4    Edge   Free (not general-use)
+ 31     5    Level  Free (not general-use)
+CPU 1 interrupt status:
+ Int  Level  Type   Status
+  0     1    Level  Reserved
+  1     1    Level  Used: FROM_CPU1
+  2     1    Level  Free
+  3     1    Level  Free
+  4     1    Level  Free
+  5     1    Level  Free
+  6     1    Level  Reserved
+  7     1    Level  CPU-internal
+  8     1    Level  Free
+  9     1    Level  Free
+ 10     1    Edge   Free (not general-use)
+ 11     3    Level  CPU-internal
+ 12     1    Level  Free
+ 13     1    Level  Free
+ 14     7    Level  Reserved
+ 15     3    Level  CPU-internal
+ 16     5    Level  CPU-internal
+ 17     1    Level  Free
+ 18     1    Level  Free
+ 19     2    Level  Free
+ 20     2    Level  Free
+ 21     2    Level  Free
+ 22     3    Edge   Free (not general-use)
+ 23     3    Level  Free
+ 24     4    Level  Reserved
+ 25     4    Level  Reserved
+ 26     5    Level  Free (not general-use)
+ 27     3    Level  Free
+ 28     4    Edge   Reserved
+ 29     3    Level  CPU-internal
+ 30     4    Edge   Free (not general-use)
+ 31     5    Level  Free (not general-use)
+Interrupts available for general use: 25
 Shared interrupts: 0

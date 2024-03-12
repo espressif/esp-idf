@@ -23,25 +23,28 @@ typedef struct {
 
 
 const static intr_desc_t intr_desc_table [SOC_CPU_INTR_NUM] = {
+    /* Interrupt 0 reserved for WMAC (Wifi) */
     [0] = { 1, ESP_CPU_INTR_TYPE_LEVEL,  ESP_CPU_INTR_DESC_FLAG_RESVD   },
-    [1] = { 1, ESP_CPU_INTR_TYPE_LEVEL,  ESP_CPU_INTR_DESC_FLAG_RESVD   },
+    [1] = { 1, ESP_CPU_INTR_TYPE_LEVEL,  0                              },
     [2] = { 1, ESP_CPU_INTR_TYPE_LEVEL,  0                              },
     [3] = { 1, ESP_CPU_INTR_TYPE_LEVEL,  0                              },
+    /* Interrupt 4 reserved for WBB */
     [4] = { 1, ESP_CPU_INTR_TYPE_LEVEL,  ESP_CPU_INTR_DESC_FLAG_RESVD   },
-    [5] = { 1, ESP_CPU_INTR_TYPE_LEVEL,  ESP_CPU_INTR_DESC_FLAG_RESVD   },
+    [5] = { 1, ESP_CPU_INTR_TYPE_LEVEL,  0                              },
 #if CONFIG_FREERTOS_CORETIMER_0
     [6] = { 1, ESP_CPU_INTR_TYPE_NA,     ESP_CPU_INTR_DESC_FLAG_RESVD   },
 #else
     [6] = { 1, ESP_CPU_INTR_TYPE_NA,     ESP_CPU_INTR_DESC_FLAG_SPECIAL },
 #endif
     [7] = { 1, ESP_CPU_INTR_TYPE_NA,     ESP_CPU_INTR_DESC_FLAG_SPECIAL },
-    [8] = { 1, ESP_CPU_INTR_TYPE_LEVEL,  ESP_CPU_INTR_DESC_FLAG_RESVD   },
+    [8] = { 1, ESP_CPU_INTR_TYPE_LEVEL,  0                              },
     [9] = { 1, ESP_CPU_INTR_TYPE_LEVEL,  0                              },
     [10] = { 1, ESP_CPU_INTR_TYPE_EDGE,  0                              },
     [11] = { 3, ESP_CPU_INTR_TYPE_NA,    ESP_CPU_INTR_DESC_FLAG_SPECIAL },
     [12] = { 1, ESP_CPU_INTR_TYPE_LEVEL, 0                              },
     [13] = { 1, ESP_CPU_INTR_TYPE_LEVEL, 0                              },
-    [14] = { 7, ESP_CPU_INTR_TYPE_LEVEL, ESP_CPU_INTR_DESC_FLAG_RESVD   }, // NMI
+    /* Interrupt 14 reserved for NMI (Non-Maskable Interrupts) */
+    [14] = { 7, ESP_CPU_INTR_TYPE_LEVEL, ESP_CPU_INTR_DESC_FLAG_RESVD   },
 #if CONFIG_FREERTOS_CORETIMER_1
     [15] = { 3, ESP_CPU_INTR_TYPE_NA,    ESP_CPU_INTR_DESC_FLAG_RESVD   },
 #else
@@ -53,16 +56,18 @@ const static intr_desc_t intr_desc_table [SOC_CPU_INTR_NUM] = {
     [19] = { 2, ESP_CPU_INTR_TYPE_LEVEL, 0                              },
     [20] = { 2, ESP_CPU_INTR_TYPE_LEVEL, 0                              },
     [21] = { 2, ESP_CPU_INTR_TYPE_LEVEL, 0                              },
-    [22] = { 3, ESP_CPU_INTR_TYPE_EDGE,  ESP_CPU_INTR_DESC_FLAG_RESVD   },
+    [22] = { 3, ESP_CPU_INTR_TYPE_EDGE,  0                              },
     [23] = { 3, ESP_CPU_INTR_TYPE_LEVEL, 0                              },
+    /* Interrupt 24 reserved for T1 WDT */
     [24] = { 4, ESP_CPU_INTR_TYPE_LEVEL, ESP_CPU_INTR_DESC_FLAG_RESVD   },
+    /* Interrupt 25 reserved for memory access errors */
     [25] = { 4, ESP_CPU_INTR_TYPE_LEVEL, ESP_CPU_INTR_DESC_FLAG_RESVD   },
     [26] = { 5, ESP_CPU_INTR_TYPE_LEVEL, 0                              },
-    [27] = { 3, ESP_CPU_INTR_TYPE_LEVEL, ESP_CPU_INTR_DESC_FLAG_RESVD   },
+    [27] = { 3, ESP_CPU_INTR_TYPE_LEVEL, 0                              },
     [28] = { 4, ESP_CPU_INTR_TYPE_EDGE,  0                              },
     [29] = { 3, ESP_CPU_INTR_TYPE_NA,    ESP_CPU_INTR_DESC_FLAG_SPECIAL },
-    [30] = { 4, ESP_CPU_INTR_TYPE_EDGE,  ESP_CPU_INTR_DESC_FLAG_RESVD   },
-    [31] = { 5, ESP_CPU_INTR_TYPE_LEVEL, ESP_CPU_INTR_DESC_FLAG_RESVD   },
+    [30] = { 4, ESP_CPU_INTR_TYPE_EDGE,  0                              },
+    [31] = { 5, ESP_CPU_INTR_TYPE_LEVEL, 0                              },
 };
 
 

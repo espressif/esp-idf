@@ -5,15 +5,15 @@ CPU 0 interrupt status:
   2     1    Level  Used: LP_RTC_TIMER
   3     *      *    Reserved
   4     *      *    Reserved
-  5     *      *    Reserved
+  5     1    Level  Used: SYSTIMER_TARGET2
   6     *      *    Reserved
   7     *      *    Reserved
-  8     *      *    Reserved
-  9     1    Level  Used: SYSTIMER_TARGET2
- 10     1    Level  Used: CPUFROM_CPU_0
- 11     1    Level  Used: SYSTIMER_TARGET0
- 12     1    Level  Used: TG0_WDT
- 13     1    Level  Used: UART0
+  8     1    Level  Used: CPUFROM_CPU_0
+  9     1    Level  Used: SYSTIMER_TARGET0
+ 10     1    Level  Used: TG0_WDT
+ 11     1    Level  Used: UART0
+ 12     *      *    Free
+ 13     *      *    Free
  14     *      *    Free
  15     *      *    Free
  16     *      *    Free
@@ -32,5 +32,5 @@ CPU 0 interrupt status:
  29     *      *    Free
  30     *      *    Free
  31     *      *    Free
-Interrupts available for general use: 15
+Interrupts available for general use: 17
 Shared interrupts: 0
