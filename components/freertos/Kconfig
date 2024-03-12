@@ -324,6 +324,13 @@ menu "FreeRTOS"
                 esp_pm_dump_locks, if the proportion of rejected sleeps is too high, please increase
                 this value to improve scheduling efficiency
 
+        config FREERTOS_USE_APPLICATION_TASK_TAG
+            bool "configUSE_APPLICATION_TASK_TAG"
+            default n
+            help
+                Enables task tagging functionality and its associated API (see configUSE_APPLICATION_TASK_TAG
+                documentation for more details).
+
     endmenu # Kernel
 
     menu "Port"
