@@ -231,12 +231,6 @@ examples/system/select:
   depends_components:
     - vfs
 
-examples/system/startup_time:
-  disable_test:
-    - if: IDF_TARGET == "esp32p4"
-      temporary: true
-      reason: test not pass, should be re-enable # TODO: IDF-8989
-
 examples/system/sysview_tracing:
   disable:
     - if: SOC_GPTIMER_SUPPORTED != 1
