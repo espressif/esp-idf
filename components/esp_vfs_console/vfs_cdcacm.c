@@ -160,7 +160,6 @@ static ssize_t cdcacm_read(int fd, void *data, size_t size)
         xSemaphoreTake(s_rx_semaphore, portMAX_DELAY);
     }
 
-
     if (s_rx_mode == ESP_LINE_ENDINGS_CR || s_rx_mode == ESP_LINE_ENDINGS_LF) {
         /* This is easy. Just receive, and if needed replace \r by \n. */
         received = esp_usb_console_read_buf(data_c, size);
@@ -265,7 +264,6 @@ static int cdcacm_disable_blocking(void)
     s_blocking = false;
     return 0;
 }
-
 
 static int cdcacm_fcntl(int fd, int cmd, int arg)
 {

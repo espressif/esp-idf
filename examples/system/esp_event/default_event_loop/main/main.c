@@ -183,7 +183,7 @@ void app_main(void)
     ESP_LOGI(TAG, "starting event sources");
 
      // Create the event source task with the same priority as the current task
-    xTaskCreate(task_event_source, "task_event_source", 2048, NULL, uxTaskPriorityGet(NULL), NULL);
+    xTaskCreate(task_event_source, "task_event_source", 4096, NULL, uxTaskPriorityGet(NULL), NULL);
 
     ESP_ERROR_CHECK(esp_timer_start_periodic(TIMER, TIMER_PERIOD));
 

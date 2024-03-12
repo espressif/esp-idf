@@ -31,7 +31,7 @@ idf_component_register(SRCS ${srcs}
                             ${argtable_srcs}
                     INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}
                     PRIV_INCLUDE_DIRS private_include
-                    REQUIRES vfs
+                    REQUIRES vfs esp_vfs_console
                     PRIV_REQUIRES esp_driver_uart
                                   esp_driver_usb_serial_jtag
                     )
