@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,8 +12,6 @@
 #include "esp_rom_sys.h"
 #include "esp_core_dump_port.h"
 #include "esp_core_dump_common.h"
-#include "core_dump_elf.h"
-#include "core_dump_binary.h"
 
 const static char TAG[] __attribute__((unused)) = "esp_core_dump_common";
 
@@ -145,26 +143,19 @@ FORCE_INLINE_ATTR void esp_core_dump_report_stack_usage(void)
 
 static void* s_exc_frame = NULL;
 
-inline void esp_core_dump_write(panic_info_t *info, core_dump_write_config_t *write_cfg)
+inline static void esp_core_dump_write_internal(panic_info_t *info)
 {
-#ifndef CONFIG_ESP_COREDUMP_ENABLE_TO_NONE
-    esp_err_t err = ESP_ERR_NOT_SUPPORTED;
-    s_exc_frame = (void*) info->frame;
-
     bool isr_context = esp_core_dump_in_isr_context();
+
+    s_exc_frame = (void *)info->frame;
 
     esp_core_dump_setup_stack();
     esp_core_dump_port_init(info, isr_context);
-#if CONFIG_ESP_COREDUMP_DATA_FORMAT_BIN
-    err = esp_core_dump_write_binary(write_cfg);
-#elif CONFIG_ESP_COREDUMP_DATA_FORMAT_ELF
-    err = esp_core_dump_write_elf(write_cfg);
-#endif
+    esp_err_t err = esp_core_dump_store();
     if (err != ESP_OK) {
-        ESP_COREDUMP_LOGE("Core dump write binary failed with error=%d", err);
+        ESP_COREDUMP_LOGE("Core dump write failed with error=%d", err);
     }
     esp_core_dump_report_stack_usage();
-#endif
 }
 
 void __attribute__((weak)) esp_core_dump_init(void)
@@ -322,6 +313,17 @@ inline bool esp_core_dump_in_isr_context(void)
 inline core_dump_task_handle_t esp_core_dump_get_current_task_handle()
 {
     return (core_dump_task_handle_t) xTaskGetCurrentTaskHandleForCPU(xPortGetCoreID());
+}
+
+void esp_core_dump_write(panic_info_t *info)
+{
+#if CONFIG_ESP_COREDUMP_ENABLE_TO_UART && CONFIG_ESP_SYSTEM_PANIC_SILENT_REBOOT
+    return;
+#endif
+
+    esp_core_dump_print_write_start();
+    esp_core_dump_write_internal(info);
+    esp_core_dump_print_write_end();
 }
 
 #endif
