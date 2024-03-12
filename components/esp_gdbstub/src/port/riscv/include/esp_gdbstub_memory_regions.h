@@ -32,6 +32,9 @@ static inline bool __is_valid_memory_region(intptr_t addr)
 #if defined(SOC_CPU_SUBSYSTEM_LOW) && defined(SOC_CPU_SUBSYSTEM_HIGH)
            (addr >= SOC_CPU_SUBSYSTEM_LOW && addr < SOC_CPU_SUBSYSTEM_HIGH) ||
 #endif
+#if defined(SOC_EXTRAM_LOW) && defined(SOC_EXTRAM_HIGH)
+           (addr >= SOC_EXTRAM_LOW && addr < SOC_EXTRAM_HIGH) ||
+#endif
            (addr >= SOC_PERIPHERAL_LOW && addr < SOC_PERIPHERAL_HIGH);
 }
 
