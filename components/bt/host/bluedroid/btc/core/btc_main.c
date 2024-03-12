@@ -141,18 +141,34 @@ uint32_t btc_get_ble_status(void)
     }
 
     #if (SMP_INCLUDED == TRUE)
+    // Number of recorded devices
+    extern uint8_t btm_ble_sec_dev_active_count(void);
+    if (btm_ble_sec_dev_active_count()) {
+        status |= BIT(BTC_BLE_STATUS_KEYS);
+    }
+
     // Number of saved bonded devices
     if (btc_storage_get_num_ble_bond_devices()) {
         status |= BIT(BTC_BLE_STATUS_BOND);
     }
     #endif
+
+    #if (BLE_PRIVACY_SPT == TRUE)
+    // Privacy enabled
+    extern uint8_t btm_ble_privacy_is_enabled(void);
+    if (btm_ble_privacy_is_enabled()) {
+        status |= BIT(BTC_BLE_STATUS_PRIVACY);
+    }
+    #endif
     #endif
 
-    // Number of recorded devices
-    extern uint8_t btdm_sec_dev_active_count(void);
-    if (btdm_sec_dev_active_count()) {
-        status |= BIT(BTC_BLE_STATUS_DEV);
+    #if (BLE_50_FEATURE_SUPPORT == TRUE)
+    // Number of active extended advertsing
+    extern uint8_t btm_ble_ext_adv_active_count(void);
+    if (btm_ble_ext_adv_active_count()) {
+        status |= BIT(BTC_BLE_STATUS_EXT_ADV);
     }
+    #endif
 
     // Number of active ACL connection
     extern uint8_t btm_acl_active_count(void);
