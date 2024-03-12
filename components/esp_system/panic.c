@@ -378,14 +378,8 @@ void esp_panic_handler(panic_info_t *info)
     } else {
         disable_all_wdts();
         s_dumping_core = true;
-#if CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH
-        esp_core_dump_to_flash(info);
-#endif
-#if CONFIG_ESP_COREDUMP_ENABLE_TO_UART && !CONFIG_ESP_SYSTEM_PANIC_SILENT_REBOOT
-        esp_core_dump_to_uart(info);
-#endif
+        esp_core_dump_write(info);
         s_dumping_core = false;
-
         esp_panic_handler_reconfigure_wdts(1000);
     }
 #endif /* CONFIG_ESP_COREDUMP_ENABLE */

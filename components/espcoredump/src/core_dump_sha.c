@@ -10,29 +10,10 @@
 
 #include <string.h>
 #include "esp_core_dump_types.h"
-#if CONFIG_IDF_TARGET_ESP32
-#include "mbedtls/sha256.h" /* mbedtls_sha256_context */
-#else
-#include "hal/sha_types.h"  /* SHA_CTX */
-#endif
 
 const static char TAG[] __attribute__((unused)) = "esp_core_dump_sha";
 
-#define COREDUMP_SHA256_LEN     32
-
-typedef struct {
-#if CONFIG_IDF_TARGET_ESP32
-    mbedtls_sha256_context ctx;
-#else
-    SHA_CTX ctx;
-#endif
-    uint8_t result[COREDUMP_SHA256_LEN];
-    uint32_t total_bytes_checksum;  /* Number of bytes used to calculate the checksum */
-} core_dump_sha_ctx_t;
-
-static core_dump_sha_ctx_t s_core_dump_sha_ctx = { 0 };
-
-void esp_core_dump_checksum_init(core_dump_checksum_ctx *cks_ctx) __attribute__((alias("core_dump_sha_init")));
+void esp_core_dump_checksum_init(core_dump_checksum_ctx cks_ctx) __attribute__((alias("core_dump_sha_init")));
 void esp_core_dump_checksum_update(core_dump_checksum_ctx cks_ctx, void* data, size_t data_len) __attribute__((alias("core_dump_sha_update")));
 uint32_t esp_core_dump_checksum_finish(core_dump_checksum_ctx cks_ctx, core_dump_checksum_bytes* chs_ptr) __attribute__((alias("core_dump_sha_finish")));
 void esp_core_dump_print_checksum(const char* msg, core_dump_checksum_bytes checksum) __attribute__((alias("core_dump_sha256_print")));
@@ -107,12 +88,12 @@ static uint32_t core_dump_sha_version(void)
     return COREDUMP_VERSION_ELF_SHA256;
 }
 
-static void core_dump_sha_init(core_dump_checksum_ctx *out_ctx)
+static void core_dump_sha_init(core_dump_checksum_ctx cks_ctx)
 {
-    if (out_ctx) {
-        core_dump_sha256_start(&s_core_dump_sha_ctx);
-        s_core_dump_sha_ctx.total_bytes_checksum = 0;
-        *out_ctx = &s_core_dump_sha_ctx;
+    if (cks_ctx) {
+        core_dump_sha_ctx_t *sha_ctx = cks_ctx;
+        core_dump_sha256_start(sha_ctx);
+        sha_ctx->total_bytes_checksum = 0;
     }
 }
 

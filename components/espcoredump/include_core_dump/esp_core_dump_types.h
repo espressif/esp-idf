@@ -91,6 +91,39 @@ extern "C" {
     #error "Coredump cache size must be a multiple of 16"
 #endif
 
+typedef uint32_t core_dump_crc_t;
+
+#if CONFIG_ESP_COREDUMP_CHECKSUM_CRC32
+
+typedef struct {
+    core_dump_crc_t crc;
+    uint32_t total_bytes_checksum;  /* Number of bytes used to calculate the checksum */
+} core_dump_crc_ctx_t;
+
+typedef core_dump_crc_ctx_t checksum_ctx_t;
+
+#else
+
+#if CONFIG_IDF_TARGET_ESP32
+#include "mbedtls/sha256.h" /* mbedtls_sha256_context */
+typedef mbedtls_sha256_context sha256_ctx_t;
+#else
+#include "hal/sha_types.h"  /* SHA_CTX */
+typedef SHA_CTX sha256_ctx_t;
+#endif
+
+#define COREDUMP_SHA256_LEN     32
+
+typedef struct {
+    sha256_ctx_t ctx;
+    uint8_t result[COREDUMP_SHA256_LEN];
+    uint32_t total_bytes_checksum;  /* Number of bytes used to calculate the checksum */
+} core_dump_sha_ctx_t;
+
+typedef core_dump_sha_ctx_t checksum_ctx_t;
+
+#endif
+
 /**
  * @brief Chip ID associated to this implementation.
  */
@@ -101,40 +134,8 @@ typedef struct _core_dump_write_data_t
     uint32_t off; /*!< Current offset of data being written */
     uint8_t  cached_data[COREDUMP_CACHE_SIZE]; /*!< Cache used to write to flash */
     uint8_t  cached_bytes; /*!< Number of bytes filled in the cached */
-    void *checksum_ctx; /*!< Checksum context */
+    checksum_ctx_t checksum_ctx; /*!< Checksum context */
 } core_dump_write_data_t;
-
-/**
- * @brief Types below define the signatures of the callbacks that are used
- * to output a core dump. The destination of the dump is implementation
- * dependant.
- */
-typedef esp_err_t (*esp_core_dump_write_prepare_t)(core_dump_write_data_t* priv, uint32_t *data_len);
-typedef esp_err_t (*esp_core_dump_write_start_t)(core_dump_write_data_t* priv);
-typedef esp_err_t (*esp_core_dump_write_end_t)(core_dump_write_data_t* priv);
-typedef esp_err_t (*esp_core_dump_flash_write_data_t)(core_dump_write_data_t* priv,
-                                                      void * data,
-                                                      uint32_t data_len);
-
-
-/**
- * @brief Core dump emitter control structure.
- * This structure contains the functions that are called in order to write
- * the core dump to the destination (UART or flash).
- * The function are called in this order:
- * - prepare
- * - start
- * - write （called once or more）
- * - end
- */
-typedef struct _core_dump_write_config_t
-{
-    esp_core_dump_write_prepare_t    prepare;  /*!< Function called for sanity checks */
-    esp_core_dump_write_start_t      start; /*!< Function called at the beginning of data writing */
-    esp_core_dump_flash_write_data_t write; /*!< Function called to write data chunk */
-    esp_core_dump_write_end_t        end; /*!< Function called once all data have been written */
-    core_dump_write_data_t*          priv; /*!< Private context to pass to every function of this structure */
-} core_dump_write_config_t;
 
 /**
  * @brief Core dump data header
@@ -173,17 +174,6 @@ typedef struct _core_dump_mem_seg_header_t
     uint32_t start; /*!< Memory region start address */
     uint32_t size;  /*!< Memory region size */
 } core_dump_mem_seg_header_t;
-
-/**
- * @brief Core dump flash init function
- */
-void esp_core_dump_flash_init(void);
-
-
-/**
- * @brief Common core dump write function
- */
-void esp_core_dump_write(panic_info_t *info, core_dump_write_config_t *write_cfg);
 
 #ifdef __cplusplus
 }

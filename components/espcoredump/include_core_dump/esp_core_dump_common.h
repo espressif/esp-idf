@@ -97,6 +97,46 @@ uint32_t esp_core_dump_get_user_ram_size(void);
 
 
 /**
+ * @brief Prints write start info string according to destination.
+ */
+void esp_core_dump_print_write_start(void);
+
+/**
+ * @brief Prints write end info string according to destination.
+ */
+void esp_core_dump_print_write_end(void);
+
+/**
+ * @brief Initializes the flash/UART hardware for data storage.
+ */
+esp_err_t esp_core_dump_write_init(void);
+
+/**
+ * @brief Prepares the flash/UART for data storage
+ */
+esp_err_t esp_core_dump_write_prepare(core_dump_write_data_t *wr_data, uint32_t *data_len);
+
+/**
+ * @brief Initiates the beginning of data writing.
+ */
+esp_err_t esp_core_dump_write_start(core_dump_write_data_t *wr_data);
+
+/**
+ * @brief Writes a data chunk to the flash/UART
+ */
+esp_err_t esp_core_dump_write_data(core_dump_write_data_t *wr_data, void *data, uint32_t data_len);
+
+/**
+ * @brief Finalizes the data writing process
+ */
+esp_err_t esp_core_dump_write_end(core_dump_write_data_t *wr_data);
+
+/**
+ * @brief Stores the core dump in either binary or ELF format.
+ */
+esp_err_t esp_core_dump_store(void);
+
+/**
  * @brief Get TCB length, in bytes.
  *
  * @return Length of TCB, in bytes.
