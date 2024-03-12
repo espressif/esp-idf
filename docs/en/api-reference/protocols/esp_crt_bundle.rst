@@ -16,7 +16,7 @@ The bundle comes with the complete list of root certificates from Mozilla's NSS 
 
 When generating the bundle you may choose between:
 
- * The full root certificate bundle from Mozilla, containing more than 130 certificates. The current bundle was updated Tue Dec 12 04:12:04 2023 GMT.
+ * The full root certificate bundle from Mozilla, containing more than 130 certificates. The current bundle was updated Mon Mar 11 15:25:27 2024 GMT.
  * A pre-selected filter list of the name of the most commonly used root certificates, reducing the amount of certificates to around 41 while still having around 90% absolute usage coverage and 99% market share coverage according to SSL certificate authorities statistics.
 
 In addition, it is possible to specify a path to a certificate file or a directory containing certificates which then will be added to the generated bundle.
