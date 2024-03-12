@@ -8,6 +8,7 @@
 #include "esp_gdbstub.h"
 #include "esp_gdbstub_common.h"
 #include "esp_cpu.h"
+#include "esp_ipc_isr.h"
 #include "rv_decode.h"
 #include "sdkconfig.h"
 #include "esp_private/crosscore_int.h"
