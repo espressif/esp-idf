@@ -34,6 +34,7 @@ static tBTM_STATUS btm_ble_ext_adv_set_data_validate(UINT8 instance, UINT16 len,
 typedef struct {
     uint16_t ter_con_handle;
     bool invalid;
+    bool enabled;
     UINT8 instance;
     int duration;
     int max_events;
@@ -545,6 +546,7 @@ end:
             for (uint8_t i = 0; i < MAX_BLE_ADV_INSTANCE; i++)
             {
                 adv_record[i].invalid = false;
+                adv_record[i].enabled = false;
                 adv_record[i].instance = INVALID_VALUE;
                 adv_record[i].duration = INVALID_VALUE;
                 adv_record[i].max_events = INVALID_VALUE;
@@ -555,6 +557,7 @@ end:
             {
                 uint8_t index = ext_adv[i].instance;
                 adv_record[index].invalid = false;
+                adv_record[index].enabled = false;
                 adv_record[index].instance = INVALID_VALUE;
                 adv_record[index].duration = INVALID_VALUE;
                 adv_record[index].max_events = INVALID_VALUE;
@@ -568,6 +571,7 @@ end:
         {
             uint8_t index = ext_adv[i].instance;
             adv_record[index].invalid = true;
+            adv_record[index].enabled = true;
             adv_record[index].instance = ext_adv[i].instance;
             adv_record[index].duration = ext_adv[i].duration;
             adv_record[index].max_events = ext_adv[i].max_events;
@@ -1189,6 +1193,7 @@ void btm_ble_adv_set_terminated_evt(tBTM_BLE_ADV_TERMINAT *params)
         adv_record[params->adv_handle].ter_con_handle = INVALID_VALUE;
         adv_record[params->adv_handle].invalid = false;
     }
+    adv_record[params->adv_handle].enabled = false;
 
     memcpy(&cb_params.adv_term, params, sizeof(tBTM_BLE_ADV_TERMINAT));
 
@@ -1302,6 +1307,19 @@ void btm_ble_periodic_adv_sync_establish_evt(tBTM_BLE_PERIOD_ADV_SYNC_ESTAB *par
 
     return;
 
+}
+
+uint8_t btm_ble_ext_adv_active_count(void)
+{
+    uint8_t count = 0;
+
+    for (uint8_t i = 0; i < MAX_BLE_ADV_INSTANCE; i++) {
+        if (adv_record[i].enabled == true) {
+            count++;
+        }
+    }
+
+    return count;
 }
 
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)

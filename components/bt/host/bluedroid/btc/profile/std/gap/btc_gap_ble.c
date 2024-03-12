@@ -1060,7 +1060,7 @@ static void btc_ble_5_gap_callback(tBTA_DM_BLE_5_GAP_EVENT event,
             break;
         case BTA_DM_BLE_5_GAP_EXT_ADV_REPORT_EVT:
             msg.act = ESP_GAP_BLE_EXT_ADV_REPORT_EVT;
-            memcpy(&param.ext_adv_report.params, &params->ext_adv_report, sizeof(esp_ble_gap_ext_adv_reprot_t));
+            memcpy(&param.ext_adv_report.params, &params->ext_adv_report, sizeof(esp_ble_gap_ext_adv_report_t));
             if (params->ext_adv_report.adv_data) {
                 memcpy(param.ext_adv_report.params.adv_data,
                     params->ext_adv_report.adv_data, params->ext_adv_report.adv_data_len);
