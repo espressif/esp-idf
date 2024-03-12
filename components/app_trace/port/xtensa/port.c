@@ -288,7 +288,7 @@ static inline void esp_apptrace_trax_select_memory_block(int block_num)
                         : TRACEMEM_CORE0_MUX_BLK_BITS(TRACEMEM_MUX_BLK1_NUM);
     block_bits |= block_num ? TRACEMEM_CORE1_MUX_BLK_BITS(TRACEMEM_MUX_BLK0_NUM)
                         : TRACEMEM_CORE1_MUX_BLK_BITS(TRACEMEM_MUX_BLK1_NUM);
-    ESP_EARLY_LOGV(TAG, "Select block %d @ %p (bits 0x%x)", block_num, s_trax_blocks[block_num], block_bits);
+    ESP_EARLY_LOGV(TAG, "Select block %d @ %p (bits 0x%" PRIx32 ")", block_num, s_trax_blocks[block_num], block_bits);
     DPORT_WRITE_PERI_REG(SENSITIVE_INTERNAL_SRAM_USAGE_2_REG, block_bits);
 #endif
 }
@@ -498,7 +498,7 @@ static esp_err_t esp_apptrace_trax_buffer_swap_start(uint32_t curr_block_id)
         uint32_t acked_block = ESP_APPTRACE_TRAX_BLOCK_ID_GET(ctrl_reg);
         uint32_t host_to_read = ESP_APPTRACE_TRAX_BLOCK_LEN_GET(ctrl_reg);
         if (host_to_read != 0 || acked_block != (curr_block_id & ESP_APPTRACE_TRAX_BLOCK_ID_MSK)) {
-            ESP_APPTRACE_LOGD("HC[%d]: Can not switch %x %d %x %x/%lx", esp_cpu_get_core_id(), ctrl_reg, host_to_read, acked_block,
+            ESP_APPTRACE_LOGD("HC[%d]: Can not switch %" PRIx32 " %" PRIu32 " %" PRIx32 " %" PRIx32 "/%" PRIx32, esp_cpu_get_core_id(), ctrl_reg, host_to_read, acked_block,
                 curr_block_id & ESP_APPTRACE_TRAX_BLOCK_ID_MSK, curr_block_id);
             res = ESP_ERR_NO_MEM;
             goto _on_err;

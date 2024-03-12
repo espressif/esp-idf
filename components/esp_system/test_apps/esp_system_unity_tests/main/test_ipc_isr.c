@@ -61,7 +61,7 @@ TEST_CASE("Test ipc_isr blocking IPC function calls get_cycle_count_other_cpu", 
 {
     int val = 0x5a5a;
     esp_ipc_isr_call_blocking(esp_test_ipc_isr_get_cycle_count_other_cpu, &val);
-    esp_rom_printf("CCOUNT CPU0 = %d\n", esp_cpu_get_cycle_count());
+    esp_rom_printf("CCOUNT CPU0 = %" PRIu32 "\n", esp_cpu_get_cycle_count());
     esp_rom_printf("CCOUNT CPU1 = %d\n", val);
 }
 

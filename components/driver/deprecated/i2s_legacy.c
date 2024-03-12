@@ -272,7 +272,7 @@ static void IRAM_ATTR i2s_intr_handler_default(void *arg)
     BaseType_t tmp = 0;
     uint32_t  finish_desc = 0;
     if ((status & I2S_LL_EVENT_TX_DSCR_ERR) || (status & I2S_LL_EVENT_RX_DSCR_ERR)) {
-        ESP_EARLY_LOGE(TAG, "dma error, interrupt status: 0x%08x", status);
+        ESP_EARLY_LOGE(TAG, "dma error, interrupt status: 0x%08" PRIx32, status);
         if (p_i2s->i2s_queue) {
             i2s_event.type = I2S_EVENT_DMA_ERROR;
             if (xQueueIsQueueFullFromISR(p_i2s->i2s_queue)) {

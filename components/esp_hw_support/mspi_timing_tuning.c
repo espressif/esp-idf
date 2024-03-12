@@ -233,9 +233,9 @@ static void s_sweep_for_success_sample_points(uint8_t *reference_data, void *con
         }
     }
 
-    ESP_EARLY_LOGD(TAG, "test nums: %d, test result: [id][good/bad][good_times]:", s_tuning_cfg_drv.sweep_test_nums);
+    ESP_EARLY_LOGD(TAG, "test nums: %" PRIu32 ", test result: [id][good/bad][good_times]:", s_tuning_cfg_drv.sweep_test_nums);
     for (config_idx = 0; config_idx < timing_config->available_config_num; config_idx++) {
-        ESP_EARLY_LOGD(TAG, "[%"PRIu32"][%s][%d] ", config_idx, out_array[config_idx] == s_tuning_cfg_drv.sweep_test_nums ? "good" : "bad", out_array[config_idx]);
+        ESP_EARLY_LOGD(TAG, "[%"PRIu32"][%s][%" PRIu32 "] ", config_idx, out_array[config_idx] == s_tuning_cfg_drv.sweep_test_nums ? "good" : "bad", out_array[config_idx]);
     }
 }
 

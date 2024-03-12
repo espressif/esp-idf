@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -33,7 +33,7 @@ esp_err_t esp_secure_boot_verify_signature(uint32_t src_addr, uint32_t length)
     uint8_t verified_digest[ESP_SECURE_BOOT_DIGEST_LEN] = { 0 }; /* ignored in this function */
     const esp_secure_boot_sig_block_t *sigblock;
 
-    ESP_LOGD(TAG, "verifying signature src_addr 0x%x length 0x%x", src_addr, length);
+    ESP_LOGD(TAG, "verifying signature src_addr 0x%" PRIx32 " length 0x%" PRIx32, src_addr, length);
 
     esp_err_t err = bootloader_sha256_flash_contents(src_addr, length, digest);
     if (err != ESP_OK) {
@@ -43,7 +43,7 @@ esp_err_t esp_secure_boot_verify_signature(uint32_t src_addr, uint32_t length)
     // Map the signature block
     sigblock = (const esp_secure_boot_sig_block_t *) bootloader_mmap(src_addr + length, sizeof(esp_secure_boot_sig_block_t));
     if(!sigblock) {
-        ESP_LOGE(TAG, "bootloader_mmap(0x%x, 0x%x) failed", src_addr + length, sizeof(esp_secure_boot_sig_block_t));
+        ESP_LOGE(TAG, "bootloader_mmap(0x%" PRIx32 ", 0x%x) failed", src_addr + length, sizeof(esp_secure_boot_sig_block_t));
         return ESP_FAIL;
     }
     // Verify the signature
@@ -71,7 +71,7 @@ esp_err_t esp_secure_boot_verify_ecdsa_signature_block(const esp_secure_boot_sig
     }
 
     if (sig_block->version != 0) {
-        ESP_LOGE(TAG, "image has invalid signature version field 0x%08x (image without a signature?)", sig_block->version);
+        ESP_LOGE(TAG, "image has invalid signature version field 0x%08" PRIx32 " (image without a signature?)", sig_block->version);
         return ESP_FAIL;
     }
 

@@ -187,7 +187,7 @@ const void *bootloader_mmap(uint32_t src_paddr, uint32_t size)
         return NULL; /* can't map twice */
     }
     if (size > MMAP_MMU_SIZE) {
-        ESP_EARLY_LOGE(TAG, "bootloader_mmap excess size %x", size);
+        ESP_EARLY_LOGE(TAG, "bootloader_mmap excess size %" PRIx32, size);
         return NULL;
     }
 
@@ -214,13 +214,13 @@ const void *bootloader_mmap(uint32_t src_paddr, uint32_t size)
 #endif
 
     //---------------Do mapping------------------------
-    ESP_EARLY_LOGD(TAG, "rodata starts from paddr=0x%08x, size=0x%x, will be mapped to vaddr=0x%08x", src_paddr, size, MMU_BLOCK0_VADDR);
+    ESP_EARLY_LOGD(TAG, "rodata starts from paddr=0x%08" PRIx32 ", size=0x%" PRIx32 ", will be mapped to vaddr=0x%08" PRIx32, src_paddr, size, (uint32_t)MMU_BLOCK0_VADDR);
 #if CONFIG_IDF_TARGET_ESP32
     uint32_t count = GET_REQUIRED_MMU_PAGES(size, src_paddr);
     int e = cache_flash_mmu_set(0, 0, MMU_BLOCK0_VADDR, src_paddr_aligned, 64, count);
-    ESP_EARLY_LOGV(TAG, "after mapping, starting from paddr=0x%08x and vaddr=0x%08x, 0x%x bytes are mapped", src_paddr_aligned, MMU_BLOCK0_VADDR, count * SPI_FLASH_MMU_PAGE_SIZE);
+    ESP_EARLY_LOGV(TAG, "after mapping, starting from paddr=0x%08" PRIx32 " and vaddr=0x%08" PRIx32 ", 0x%" PRIx32 " bytes are mapped", src_paddr_aligned, (uint32_t)MMU_BLOCK0_VADDR, count * SPI_FLASH_MMU_PAGE_SIZE);
     if (e != 0) {
-        ESP_EARLY_LOGE(TAG, "cache_flash_mmu_set failed: %d\n", e);
+        ESP_EARLY_LOGE(TAG, "cache_flash_mmu_set failed: %d", e);
         Cache_Read_Enable(0);
         return NULL;
     }
@@ -231,7 +231,7 @@ const void *bootloader_mmap(uint32_t src_paddr, uint32_t size)
      */
     uint32_t actual_mapped_len = 0;
     mmu_hal_map_region(0, MMU_TARGET_FLASH0, MMU_BLOCK0_VADDR, src_paddr_aligned, size_after_paddr_aligned, &actual_mapped_len);
-    ESP_EARLY_LOGV(TAG, "after mapping, starting from paddr=0x%08x and vaddr=0x%08x, 0x%x bytes are mapped", src_paddr_aligned, MMU_BLOCK0_VADDR, actual_mapped_len);
+    ESP_EARLY_LOGV(TAG, "after mapping, starting from paddr=0x%08" PRIx32 " and vaddr=0x%08" PRIx32 ", 0x%" PRIx32 " bytes are mapped", src_paddr_aligned, (uint32_t)MMU_BLOCK0_VADDR, actual_mapped_len);
 #endif
 
     /**
@@ -326,7 +326,7 @@ static esp_err_t bootloader_flash_read_allow_decrypt(size_t src_addr, void *dest
 #endif
 
             //---------------Do mapping------------------------
-            ESP_EARLY_LOGD(TAG, "mmu set block paddr=0x%08x (was 0x%08x)", map_at, current_read_mapping);
+            ESP_EARLY_LOGD(TAG, "mmu set block paddr=0x%08" PRIx32 " (was 0x%08" PRIx32 ")", map_at, current_read_mapping);
 #if CONFIG_IDF_TARGET_ESP32
             //Should never fail if we only map a SPI_FLASH_MMU_PAGE_SIZE to the vaddr starting from FLASH_READ_VADDR
             int e = cache_flash_mmu_set(0, 0, FLASH_READ_VADDR, map_at, 64, 1);
@@ -735,7 +735,7 @@ esp_err_t IRAM_ATTR bootloader_flash_xmc_startup(void)
     // If the RDID value is a valid XMC one, may skip the flow
     const bool fast_check = true;
     if (fast_check && is_xmc_chip_strict(g_rom_flashchip.device_id)) {
-        BOOTLOADER_FLASH_LOG(D, "XMC chip detected by RDID (%08X), skip.", g_rom_flashchip.device_id);
+        BOOTLOADER_FLASH_LOG(D, "XMC chip detected by RDID (%08" PRIX32 "), skip.", g_rom_flashchip.device_id);
         return ESP_OK;
     }
 

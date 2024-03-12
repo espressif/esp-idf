@@ -558,7 +558,7 @@ static void sdio_intr_send(void *arg)
             }
 
             assert(returned_cnt == 0);
-            ESP_EARLY_LOGV(TAG, "end: %x", finished_arg);
+            ESP_EARLY_LOGV(TAG, "end: %p", finished_arg);
             ret = xQueueSendFromISR(context.ret_queue, &finished_arg, &yield);
             assert(ret == pdTRUE);
         }

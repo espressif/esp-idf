@@ -792,7 +792,7 @@ void regdma_link_show_memories(void *link, int entry)
             print_link_info(next, entry, 0);
         } while ((next = regdma_link_get_next(next, entry)) != NULL);
     } else {
-        ESP_EARLY_LOGW(TAG, "This REGDMA linked list is empty!\n");
+        ESP_EARLY_LOGW(TAG, "This REGDMA linked list is empty!");
     }
 }
 #endif

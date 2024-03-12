@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -31,18 +31,18 @@ esp_err_t esp_secure_boot_verify_signature(uint32_t src_addr, uint32_t length)
 
     /* Rounding off length to the upper 4k boundary */
     uint32_t padded_length = ALIGN_UP(length, FLASH_SECTOR_SIZE);
-    ESP_LOGD(TAG, "verifying signature src_addr 0x%x length 0x%x", src_addr, length);
+    ESP_LOGD(TAG, "verifying signature src_addr 0x%" PRIx32 " length 0x%" PRIx32, src_addr, length);
 
     /* Calculate digest of main image */
     esp_err_t err = bootloader_sha256_flash_contents(src_addr, padded_length, digest);
     if (err != ESP_OK) {
-        ESP_LOGE(TAG, "Digest calculation failed 0x%x, 0x%x", src_addr, padded_length);
+        ESP_LOGE(TAG, "Digest calculation failed 0x%" PRIx32 ", 0x%" PRIx32, src_addr, padded_length);
         return err;
     }
 
     const ets_secure_boot_signature_t *sig_block = bootloader_mmap(src_addr + padded_length, sizeof(ets_secure_boot_signature_t));
     if (sig_block == NULL) {
-        ESP_LOGE(TAG, "Failed to mmap data at offset 0x%x", src_addr + padded_length);
+        ESP_LOGE(TAG, "Failed to mmap data at offset 0x%" PRIx32, src_addr + padded_length);
         return ESP_FAIL;
     }
 

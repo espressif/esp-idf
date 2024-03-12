@@ -160,7 +160,7 @@ static void select_rtc_slow_clk(soc_rtc_slow_clk_src_t rtc_slow_clk_src)
             cal_val = (uint32_t)(cal_dividend / rtc_clk_slow_freq_get_hz());
         }
     } while (cal_val == 0);
-    ESP_EARLY_LOGD(TAG, "RTC_SLOW_CLK calibration value: %d", cal_val);
+    ESP_EARLY_LOGD(TAG, "RTC_SLOW_CLK calibration value: %" PRIu32, cal_val);
     esp_clk_slowclk_cal_set(cal_val);
 }
 

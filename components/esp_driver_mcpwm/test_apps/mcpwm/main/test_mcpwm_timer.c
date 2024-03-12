@@ -104,7 +104,7 @@ IRAM_ATTR static bool test_on_stop(mcpwm_timer_handle_t timer, const mcpwm_timer
 {
     test_mcpwm_timer_user_data_t *udata = (test_mcpwm_timer_user_data_t *)user_data;
     BaseType_t high_task_wakeup = pdFALSE;
-    esp_rom_printf("timer stopped at %u\r\n", edata->count_value);
+    esp_rom_printf("timer stopped at %" PRIu32 "\r\n", edata->count_value);
     TEST_ASSERT_EQUAL(0, edata->count_value);
     xEventGroupSetBitsFromISR(udata->event_group, TEST_MCPWM_TIMER_EVENT_BIT_STOP, &high_task_wakeup);
     return high_task_wakeup == pdTRUE;

@@ -115,7 +115,7 @@ ESP_SYSTEM_INIT_FN(init_show_app_info, CORE, BIT(0), 20)
         ESP_EARLY_LOGI(TAG, "App version:      %s", esp_app_desc.version);
 #endif
 #ifdef CONFIG_BOOTLOADER_APP_SECURE_VERSION
-        ESP_EARLY_LOGI(TAG, "Secure version:   %d", esp_app_desc.secure_version);
+        ESP_EARLY_LOGI(TAG, "Secure version:   %" PRIu32, esp_app_desc.secure_version);
 #endif
 #ifdef CONFIG_APP_COMPILE_TIME_DATE
         ESP_EARLY_LOGI(TAG, "Compile time:     %s %s", esp_app_desc.date, esp_app_desc.time);

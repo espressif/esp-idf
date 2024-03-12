@@ -27,7 +27,7 @@ static void core_dump_crc_print(const char *msg, const uint8_t *checksum)
     if (msg != NULL) {
         ESP_COREDUMP_PRINT("%s=", msg);
     }
-    ESP_COREDUMP_PRINT("'%08x'\r\n", *((const uint32_t*)checksum));
+    ESP_COREDUMP_PRINT("'%08" PRIx32 "'\r\n", *((const uint32_t*)checksum));
 }
 
 static uint32_t core_dump_crc_size(void)
@@ -70,7 +70,7 @@ static uint32_t core_dump_crc_finish(core_dump_checksum_ctx cks_ctx, core_dump_c
             *chs_ptr = (core_dump_checksum_bytes)&crc_ctx->crc;
         }
 
-        ESP_COREDUMP_LOG_PROCESS("Total length of hashed data: %d", crc_ctx->total_bytes_checksum);
+        ESP_COREDUMP_LOG_PROCESS("Total length of hashed data: %" PRIu32, crc_ctx->total_bytes_checksum);
     }
 
     return core_dump_crc_size();

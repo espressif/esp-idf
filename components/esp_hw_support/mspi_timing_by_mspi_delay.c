@@ -457,13 +457,13 @@ static uint32_t s_select_best_tuning_config_dtr(const mspi_timing_config_t *conf
             max_freq = temp_max_freq;
             best_point = current_point;
         }
-        ESP_EARLY_LOGD(TAG, "sample point %"PRIu32", max pll is %"PRIu32" mhz, min pll is %"PRIu32"\n", current_point, temp_max_freq, temp_min_freq);
+        ESP_EARLY_LOGD(TAG, "sample point %" PRIu32 ", max pll is %" PRIu32 " mhz, min pll is %" PRIu32, current_point, temp_max_freq, temp_min_freq);
     }
     if (max_freq == 0) {
-        ESP_EARLY_LOGW(TAG, "freq scan tuning fail, best point is fallen back to index %"PRIu32"", end + 1 - consecutive_length);
+        ESP_EARLY_LOGW(TAG, "freq scan tuning fail, best point is fallen back to index %" PRIu32, end + 1 - consecutive_length);
         best_point = end + 1 - consecutive_length;
     } else {
-        ESP_EARLY_LOGD(TAG, "freq scan success, max pll is %"PRIu32"mhz, best point is index %"PRIu32"", max_freq, best_point);
+        ESP_EARLY_LOGD(TAG, "freq scan success, max pll is %" PRIu32 "mhz, best point is index %" PRIu32, max_freq, best_point);
     }
 
     return best_point;

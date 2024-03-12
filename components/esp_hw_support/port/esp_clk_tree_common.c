@@ -64,7 +64,7 @@ static uint32_t clk_tree_rtc_slow_calibration(uint32_t slowclk_cycles)
         cal_val = (uint32_t)(cal_dividend / source_approx_freq);
     }
     if (cal_val) {
-        ESP_EARLY_LOGD(TAG, "RTC_SLOW_CLK calibration value: %"PRIu32"", cal_val);
+        ESP_EARLY_LOGD(TAG, "RTC_SLOW_CLK calibration value: %" PRIu32, cal_val);
         // Update the calibration value of RTC_SLOW_CLK
         esp_clk_slowclk_cal_set(cal_val);
     }

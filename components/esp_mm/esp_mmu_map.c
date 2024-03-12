@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -233,7 +233,7 @@ void esp_mmu_map_init(void)
             region_num++;
         }
     }
-    ESP_EARLY_LOGV(TAG, "after coalescing, %d regions are left", region_num);
+    ESP_EARLY_LOGV(TAG, "after coalescing, %" PRIu32 " regions are left", region_num);
 
     //Initialise `s_mmu_ctx.mem_regions[]`, as we've done all static allocation, to prepare available virtual memory regions
     uint32_t available_region_idx = 0;
@@ -318,7 +318,7 @@ esp_err_t esp_mmu_map_reserve_block_with_caps(size_t size, mmu_mem_caps_t caps, 
     laddr = (uint32_t)s_mmu_ctx.mem_regions[found_region_id].free_head;
     s_mmu_ctx.mem_regions[found_region_id].free_head += aligned_size;
     s_mmu_ctx.mem_regions[found_region_id].max_slot_size -= aligned_size;
-    ESP_EARLY_LOGV(TAG, "found laddr is 0x%x", laddr);
+    ESP_EARLY_LOGV(TAG, "found laddr is 0x%" PRIx32, laddr);
 
     uint32_t vaddr = 0;
     if (caps & MMU_MEM_CAP_EXEC) {
@@ -727,15 +727,15 @@ esp_err_t IRAM_ATTR esp_mmu_map_dump_mapped_blocks_private(void)
                 ESP_DRAM_LOGI(TAG, "block vaddr_start: 0x%x", mem_block->vaddr_start);
                 ESP_DRAM_LOGI(TAG, "block vaddr_end: 0x%x", mem_block->vaddr_end);
                 ESP_DRAM_LOGI(TAG, "block size: 0x%x", mem_block->size);
-                ESP_DRAM_LOGI(TAG, "block caps: 0x%x\n", mem_block->caps);
-                ESP_DRAM_LOGI(TAG, "block paddr_start: 0x%x\n", mem_block->paddr_start);
-                ESP_DRAM_LOGI(TAG, "block paddr_end: 0x%x\n", mem_block->paddr_end);
+                ESP_DRAM_LOGI(TAG, "block caps: 0x%x", mem_block->caps);
+                ESP_DRAM_LOGI(TAG, "block paddr_start: 0x%x", mem_block->paddr_start);
+                ESP_DRAM_LOGI(TAG, "block paddr_end: 0x%x", mem_block->paddr_end);
             }
         }
         ESP_DRAM_LOGI(TAG, "region bus_id: 0x%x", s_mmu_ctx.mem_regions[i].bus_id);
         ESP_DRAM_LOGI(TAG, "region start: 0x%x", s_mmu_ctx.mem_regions[i].start);
         ESP_DRAM_LOGI(TAG, "region end: 0x%x", s_mmu_ctx.mem_regions[i].end);
-        ESP_DRAM_LOGI(TAG, "region caps: 0x%x\n", s_mmu_ctx.mem_regions[i].caps);
+        ESP_DRAM_LOGI(TAG, "region caps: 0x%x", s_mmu_ctx.mem_regions[i].caps);
     }
 
     return ESP_OK;

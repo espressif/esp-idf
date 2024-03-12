@@ -41,14 +41,14 @@ static esp_err_t esp_core_dump_save_task(core_dump_write_data_t *write_data, cor
     // Save task stack
     err = esp_core_dump_write_data(write_data, (void *)stk_paddr, stk_len);
     if (err != ESP_OK) {
-        ESP_COREDUMP_LOGE("Failed to write stack for task (TCB:%x), stack_start=%x, error=%d!",
+        ESP_COREDUMP_LOGE("Failed to write stack for task (TCB:%p), stack_start=%" PRIx32 ", error=%d!",
                           task->tcb_addr,
                           stk_vaddr,
                           err);
         return err;
     }
 
-    ESP_COREDUMP_LOG_PROCESS("Task (TCB:%x) dump is saved.", task->tcb_addr);
+    ESP_COREDUMP_LOG_PROCESS("Task (TCB:%p) dump is saved.", task->tcb_addr);
 
     return ESP_OK;
 }
@@ -59,7 +59,7 @@ static esp_err_t esp_core_dump_save_mem_segment(core_dump_write_data_t* write_da
     esp_err_t err = ESP_FAIL;
 
     if (!esp_core_dump_mem_seg_is_sane(seg->start, seg->size)) {
-        ESP_COREDUMP_LOGE("Failed to write memory segment, (%x, %lu)!",
+        ESP_COREDUMP_LOGE("Failed to write memory segment, (%" PRIx32 ", %" PRIu32 ")!",
                           seg->start, seg->size);
         return ESP_FAIL;
     }
@@ -72,11 +72,11 @@ static esp_err_t esp_core_dump_save_mem_segment(core_dump_write_data_t* write_da
     // Save memory contents
     err = esp_core_dump_write_data(write_data, (void *)seg->start, seg->size);
     if (err != ESP_OK) {
-        ESP_COREDUMP_LOGE("Failed to write memory segment, (%x, %lu), error=%d!",
+        ESP_COREDUMP_LOGE("Failed to write memory segment, (%" PRIx32 ", %" PRIu32 "), error=%d!",
                           seg->start, seg->size, err);
         return err;
     }
-    ESP_COREDUMP_LOG_PROCESS("Memory segment (%x, %lu) is saved.",
+    ESP_COREDUMP_LOG_PROCESS("Memory segment (%" PRIx32 ", %" PRIu32 ") is saved.",
                              seg->start, seg->size);
     return ESP_OK;
 }
@@ -110,9 +110,9 @@ static esp_err_t esp_core_dump_write_binary(void)
         hdr.tasks_num++;
         if (task_iter.pxTaskHandle == esp_core_dump_get_current_task_handle()) {
             cur_task = task_iter.pxTaskHandle;
-            ESP_COREDUMP_LOG_PROCESS("Task %x %x is first crashed task.", cur_task, task_hdr.tcb_addr);
+            ESP_COREDUMP_LOG_PROCESS("Task %p %p is first crashed task.", cur_task, task_hdr.tcb_addr);
         }
-        ESP_COREDUMP_LOG_PROCESS("Stack len = %lu (%x %x)", task_hdr.stack_end - task_hdr.stack_start,
+        ESP_COREDUMP_LOG_PROCESS("Stack len = %" PRIu32 " (%" PRIx32 " %" PRIx32 ")", task_hdr.stack_end - task_hdr.stack_start,
                                  task_hdr.stack_start, task_hdr.stack_end);
         // Increase core dump size by task stack size
         uint32_t stk_vaddr = 0;
@@ -122,14 +122,14 @@ static esp_err_t esp_core_dump_write_binary(void)
         // Add tcb size
         data_len += (tcb_sz + sizeof(core_dump_task_header_t));
         if (mem_seg.size > 0) {
-            ESP_COREDUMP_LOG_PROCESS("Add interrupted task stack %lu bytes @ %x",
+            ESP_COREDUMP_LOG_PROCESS("Add interrupted task stack %" PRIu32 " bytes @ %" PRIx32,
                                      mem_seg.size, mem_seg.start);
             data_len += esp_core_dump_get_memory_len(mem_seg.start, mem_seg.start + mem_seg.size);
             data_len += sizeof(core_dump_mem_seg_header_t);
             hdr.mem_segs_num++;
         }
     }
-    ESP_COREDUMP_LOGI("Found tasks: good %d, bad %d, mem segs %d", hdr.tasks_num, bad_tasks_num, hdr.mem_segs_num);
+    ESP_COREDUMP_LOGI("Found tasks: good %" PRIu32 ", bad %" PRIu32 ", mem segs %" PRIu32, hdr.tasks_num, bad_tasks_num, hdr.mem_segs_num);
 
     // Check if current task TCB is broken
     if (cur_task == NULL) {
@@ -164,7 +164,7 @@ static esp_err_t esp_core_dump_write_binary(void)
     // Add core dump header size
     data_len += sizeof(core_dump_header_t);
 
-    ESP_COREDUMP_LOG_PROCESS("Core dump length=%lu, tasks processed: %d, broken tasks: %d",
+    ESP_COREDUMP_LOG_PROCESS("Core dump length=%" PRIu32 ", tasks processed: %" PRIu32 ", broken tasks: %" PRIu32,
                              data_len, hdr.tasks_num, bad_tasks_num);
     // Prepare write
     err = esp_core_dump_write_prepare(&write_data, &data_len);
@@ -194,11 +194,11 @@ static esp_err_t esp_core_dump_write_binary(void)
     // Save tasks
     esp_core_dump_reset_tasks_snapshots_iter();
     // Write first crashed task data first (not always first task in the snapshot)
-    ESP_COREDUMP_LOGD("Save first crashed task %x", cur_task);
+    ESP_COREDUMP_LOGD("Save first crashed task %p", cur_task);
     if (esp_core_dump_get_task_snapshot(cur_task, &task_hdr, NULL)) {
         err = esp_core_dump_save_task(&write_data, &task_hdr);
         if (err != ESP_OK) {
-            ESP_COREDUMP_LOGE("Failed to save first crashed task %x, error=%d!",
+            ESP_COREDUMP_LOGE("Failed to save first crashed task %p, error=%d!",
                               task_hdr.tcb_addr, err);
             return err;
         }
@@ -213,11 +213,11 @@ static esp_err_t esp_core_dump_write_binary(void)
         if (task_iter.pxTaskHandle == cur_task) {
             continue;
         }
-        ESP_COREDUMP_LOGD("Save task %x (TCB:%x, stack:%x..%x)",
+        ESP_COREDUMP_LOGD("Save task %p (TCB:%p, stack:%" PRIx32 "..%" PRIx32 ")",
                           task_iter.pxTaskHandle, task_hdr.tcb_addr, task_hdr.stack_start, task_hdr.stack_end);
         err = esp_core_dump_save_task(&write_data, &task_hdr);
         if (err != ESP_OK) {
-            ESP_COREDUMP_LOGE("Failed to save core dump task %x, error=%d!",
+            ESP_COREDUMP_LOGE("Failed to save core dump task %p, error=%d!",
                               task_hdr.tcb_addr, err);
             return err;
         }
@@ -232,7 +232,7 @@ static esp_err_t esp_core_dump_write_binary(void)
             continue;
         }
         if (mem_seg.size > 0) {
-            ESP_COREDUMP_LOG_PROCESS("Save interrupted task stack %lu bytes @ %x",
+            ESP_COREDUMP_LOG_PROCESS("Save interrupted task stack %" PRIu32 " bytes @ %" PRIx32,
                                      mem_seg.size, mem_seg.start);
             err = esp_core_dump_save_mem_segment(&write_data, &mem_seg);
             if (err != ESP_OK) {
@@ -256,7 +256,7 @@ static esp_err_t esp_core_dump_write_binary(void)
             if (data_sz > 0) {
                 mem_seg.start = start;
                 mem_seg.size = esp_core_dump_get_memory_len(start, start + data_sz);;
-                ESP_COREDUMP_LOG_PROCESS("Save user memory region %lu bytes @ %x",
+                ESP_COREDUMP_LOG_PROCESS("Save user memory region %" PRIu32 " bytes @ %" PRIx32,
                                          mem_seg.size, mem_seg.start);
                 err = esp_core_dump_save_mem_segment(&write_data, &mem_seg);
                 if (err != ESP_OK) {
@@ -275,7 +275,7 @@ static esp_err_t esp_core_dump_write_binary(void)
     }
 
     if (bad_tasks_num) {
-        ESP_COREDUMP_LOGE("Found %d broken tasks!", bad_tasks_num);
+        ESP_COREDUMP_LOGE("Found %" PRIu32 " broken tasks!", bad_tasks_num);
     }
     return err;
 }

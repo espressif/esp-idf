@@ -30,7 +30,7 @@
 
 static void test_gpio_hysteresis_intr_handler(void *args)
 {
-    esp_rom_printf("%d\n", ++ * ((uint32_t *)args));
+    esp_rom_printf("%" PRIu32 "\n", ++ * ((uint32_t *)args));
 }
 
 // This case is now tested only manually

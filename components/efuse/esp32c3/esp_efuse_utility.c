@@ -78,7 +78,7 @@ esp_err_t esp_efuse_utility_check_errors(void)
                 if (error_reg & data_reg) {
                     // For 0001 situation (4x coding scheme):
                     // an error bit points that data bit is wrong in case the data bit equals 1. (need to reboot in this case).
-                    ESP_EARLY_LOGE(TAG, "Error in EFUSE_RD_REPEAT_DATA%d_REG of BLOCK0 (error_reg=0x%08x, data_reg=0x%08x). Need to reboot", i, error_reg, data_reg);
+                    ESP_EARLY_LOGE(TAG, "Error in EFUSE_RD_REPEAT_DATA%d_REG of BLOCK0 (error_reg=0x%08" PRIx32 ", data_reg=0x%08" PRIx32 "). Need to reboot", i, error_reg, data_reg);
                     efuse_hal_read();
                     return ESP_FAIL;
                 }

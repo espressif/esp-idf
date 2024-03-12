@@ -902,7 +902,7 @@ esp_err_t IRAM_ATTR esp_psram_impl_enable(void)   //psram init
         psram_io.psram_clk_io = D0WDR2_V3_PSRAM_CLK_IO;
         psram_io.psram_cs_io  = D0WDR2_V3_PSRAM_CS_IO;
     } else {
-        ESP_EARLY_LOGE(TAG, "Not a valid or known package id: %d", pkg_ver);
+        ESP_EARLY_LOGE(TAG, "Not a valid or known package id: %" PRIu32, pkg_ver);
         abort();
     }
     s_psram_cs_io = psram_io.psram_cs_io;
@@ -985,7 +985,7 @@ esp_err_t IRAM_ATTR esp_psram_impl_enable(void)   //psram init
          */
         psram_read_id(spi_num, &s_psram_id);
         if (!PSRAM_IS_VALID(s_psram_id)) {
-            ESP_EARLY_LOGE(TAG, "PSRAM ID read error: 0x%08x, PSRAM chip not found or not supported", (uint32_t)s_psram_id);
+            ESP_EARLY_LOGE(TAG, "PSRAM ID read error: 0x%08" PRIx32 ", PSRAM chip not found or not supported", (uint32_t)s_psram_id);
             return ESP_ERR_NOT_SUPPORTED;
         }
     }

@@ -225,15 +225,15 @@ void esp_efuse_utility_debug_dump_single_block(int num_block, bool from_read)
     if (from_read) {
         for (uint32_t addr_rd_block = range_read_addr_blocks[num_block].start; addr_rd_block <= range_read_addr_blocks[num_block].end; addr_rd_block += 4, num_reg++) {
 #ifdef CONFIG_EFUSE_VIRTUAL
-            esp_rom_printf("0x%08x ", virt_blocks[num_block][num_reg]);
+            esp_rom_printf("0x%08" PRIx32, virt_blocks[num_block][num_reg]);
 #else
-            esp_rom_printf("0x%08x ", REG_READ(addr_rd_block));
+            esp_rom_printf("0x%08" PRIx32, REG_READ(addr_rd_block));
             (void) num_reg;
 #endif
         }
     } else {
         for (uint32_t addr_wr_block = range_write_addr_blocks[num_block].start; addr_wr_block <= range_write_addr_blocks[num_block].end; addr_wr_block += 4, num_reg++) {
-            esp_rom_printf("0x%08x ", REG_READ(addr_wr_block));
+            esp_rom_printf("0x%08" PRIx32, REG_READ(addr_wr_block));
         }
     }
     esp_rom_printf("\n");
@@ -261,7 +261,7 @@ esp_err_t esp_efuse_utility_write_reg(esp_efuse_block_t efuse_block, unsigned in
     esp_err_t err = ESP_OK;
     uint32_t reg = esp_efuse_utility_read_reg(efuse_block, num_reg);
     if (reg & reg_to_write) {
-        ESP_EARLY_LOGE(TAG, "Repeated programming of programmed bits is strictly forbidden 0x%08x", reg & reg_to_write);
+        ESP_EARLY_LOGE(TAG, "Repeated programming of programmed bits is strictly forbidden 0x%08" PRIx32, reg & reg_to_write);
         err = ESP_ERR_EFUSE_REPEATED_PROG;
     } else {
         write_reg(efuse_block, num_reg, reg_to_write);
@@ -451,7 +451,7 @@ void esp_efuse_utility_erase_efuses_in_flash(void)
 
 bool esp_efuse_utility_load_efuses_from_flash(void)
 {
-    ESP_EARLY_LOGW(TAG, "[Virtual] try loading efuses from flash: 0x%x (offset)", esp_efuse_flash_offset);
+    ESP_EARLY_LOGW(TAG, "[Virtual] try loading efuses from flash: 0x%" PRIx32 " (offset)", esp_efuse_flash_offset);
 
     if (esp_efuse_flash_offset == 0) {
         ESP_EARLY_LOGE(TAG, "[Virtual] no efuse partition in partition_table? (Flash is not updated)");
