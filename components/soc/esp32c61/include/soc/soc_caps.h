@@ -29,10 +29,10 @@
 // #define SOC_USB_SERIAL_JTAG_SUPPORTED   1    //TODO: [ESP32C61] IDF-9319
 // #define SOC_TEMP_SENSOR_SUPPORTED       1    //TODO: [ESP32C61] IDF-9322
 // #define SOC_WIFI_SUPPORTED              1
-// #define SOC_SUPPORTS_SECURE_DL_MODE     1
+#define SOC_SUPPORTS_SECURE_DL_MODE     1
 // #define SOC_ULP_SUPPORTED               1
 #define SOC_EFUSE_KEY_PURPOSE_FIELD     1
-#define SOC_EFUSE_SUPPORTED             1       //TODO: [ESP32C61] IDF-9282
+#define SOC_EFUSE_SUPPORTED             1
 #define SOC_RTC_FAST_MEM_SUPPORTED      1
 #define SOC_RTC_MEM_SUPPORTED           1       //TODO: [ESP32C61] IDF-9274
 // #define SOC_I2S_SUPPORTED               1    //TODO: [ESP32C61] IDF-9312, IDF-9313
@@ -443,11 +443,11 @@
 
 
 /*-------------------------- eFuse CAPS----------------------------*/
-#define SOC_EFUSE_DIS_DOWNLOAD_ICACHE 1
+#define SOC_EFUSE_DIS_DOWNLOAD_ICACHE 0
 #define SOC_EFUSE_DIS_PAD_JTAG 1
 #define SOC_EFUSE_DIS_USB_JTAG 1
 #define SOC_EFUSE_DIS_DIRECT_BOOT 1
-#define SOC_EFUSE_SOFT_DIS_JTAG 1
+#define SOC_EFUSE_SOFT_DIS_JTAG 0
 #define SOC_EFUSE_DIS_ICACHE 1
 #define SOC_EFUSE_BLOCK9_KEY_PURPOSE_QUIRK 1  // XTS-AES key purpose not supported for this block
 

@@ -7,6 +7,10 @@ config SOC_UART_SUPPORTED
     bool
     default y
 
+config SOC_SUPPORTS_SECURE_DL_MODE
+    bool
+    default y
+
 config SOC_EFUSE_KEY_PURPOSE_FIELD
     bool
     default y
@@ -873,7 +877,7 @@ config SOC_TWAI_SUPPORTS_RX_STATUS
 
 config SOC_EFUSE_DIS_DOWNLOAD_ICACHE
     bool
-    default y
+    default n
 
 config SOC_EFUSE_DIS_PAD_JTAG
     bool
@@ -889,7 +893,7 @@ config SOC_EFUSE_DIS_DIRECT_BOOT
 
 config SOC_EFUSE_SOFT_DIS_JTAG
     bool
-    default y
+    default n
 
 config SOC_EFUSE_DIS_ICACHE
     bool

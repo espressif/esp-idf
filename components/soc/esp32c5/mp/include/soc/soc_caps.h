@@ -32,10 +32,10 @@
 // #define SOC_USB_SERIAL_JTAG_SUPPORTED   1  // TODO: [ESP32C5] IDF-8721
 // #define SOC_TEMP_SENSOR_SUPPORTED       1  // TODO: [ESP32C5] IDF-8727
 // #define SOC_WIFI_SUPPORTED              1  // TODO: [ESP32C5] IDF-8851
-// #define SOC_SUPPORTS_SECURE_DL_MODE     1  // TODO: [ESP32C5] IDF-8622, IDF-8674
+#define SOC_SUPPORTS_SECURE_DL_MODE     1
 // #define SOC_LP_CORE_SUPPORTED           1  // TODO: [ESP32C5] IDF-8637
-#define SOC_EFUSE_KEY_PURPOSE_FIELD     1     // TODO: [ESP32C5] IDF-8674, need check
-#define SOC_EFUSE_SUPPORTED             1     // TODO: [ESP32C5] IDF-8674
+#define SOC_EFUSE_KEY_PURPOSE_FIELD     1
+#define SOC_EFUSE_SUPPORTED             1
 #define SOC_RTC_FAST_MEM_SUPPORTED      1
 #define SOC_RTC_MEM_SUPPORTED           1
 // #define SOC_I2S_SUPPORTED               1  // TODO: [ESP32C5] IDF-8713, IDF-8714
@@ -454,7 +454,7 @@
 /*-------------------------- Secure Boot CAPS----------------------------*/
 // #define SOC_SECURE_BOOT_V2_RSA              1
 // #define SOC_SECURE_BOOT_V2_ECC              1
-#define SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS   3  // TODO: [ESP32C5] IDF-8674
+#define SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS   3
 // #define SOC_EFUSE_REVOKE_BOOT_KEY_DIGESTS   1
 // #define SOC_SUPPORT_SECURE_BOOT_REVOKE_KEY  1
 

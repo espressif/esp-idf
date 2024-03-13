@@ -11,33 +11,150 @@ extern "C" {
 #endif
 
 /** Group: buffer0 registers */
-/** Type of pgm_datan register
- *  Represents pgm_datan
+/** Type of pgm_data0 register
+ *  Represents pgm_data0
  */
 typedef union {
     struct {
-        /** pgm_data_n : R/W; bitpos: [31:0]; default: 0;
-         *  Configures the nth 32-bit data to be programmed.
+        /** pgm_data_0 : R/W; bitpos: [31:0]; default: 0;
+         *  Configures the 0th 32-bit data to be programmed.
          */
-        uint32_t pgm_data_n:32;
+        uint32_t pgm_data_0:32;
     };
     uint32_t val;
-} efuse_pgm_datan_reg_t;
+} efuse_pgm_data0_reg_t;
+
+/** Type of pgm_data1 register
+ *  Represents pgm_data1
+ */
+typedef union {
+    struct {
+        /** pgm_data_1 : R/W; bitpos: [31:0]; default: 0;
+         *  Configures the 0th 32-bit data to be programmed.
+         */
+        uint32_t pgm_data_1:32;
+    };
+    uint32_t val;
+} efuse_pgm_data1_reg_t;
+
+/** Type of pgm_data2 register
+ *  Represents pgm_data2
+ */
+typedef union {
+    struct {
+        /** pgm_data_2 : R/W; bitpos: [31:0]; default: 0;
+         *  Configures the 0th 32-bit data to be programmed.
+         */
+        uint32_t pgm_data_2:32;
+    };
+    uint32_t val;
+} efuse_pgm_data2_reg_t;
+
+/** Type of pgm_data3 register
+ *  Represents pgm_data3
+ */
+typedef union {
+    struct {
+        /** pgm_data_3 : R/W; bitpos: [31:0]; default: 0;
+         *  Configures the 0th 32-bit data to be programmed.
+         */
+        uint32_t pgm_data_3:32;
+    };
+    uint32_t val;
+} efuse_pgm_data3_reg_t;
+
+/** Type of pgm_data4 register
+ *  Represents pgm_data4
+ */
+typedef union {
+    struct {
+        /** pgm_data_4 : R/W; bitpos: [31:0]; default: 0;
+         *  Configures the 0th 32-bit data to be programmed.
+         */
+        uint32_t pgm_data_4:32;
+    };
+    uint32_t val;
+} efuse_pgm_data4_reg_t;
+
+/** Type of pgm_data5 register
+ *  Represents pgm_data5
+ */
+typedef union {
+    struct {
+        /** pgm_data_5 : R/W; bitpos: [31:0]; default: 0;
+         *  Configures the 0th 32-bit data to be programmed.
+         */
+        uint32_t pgm_data_5:32;
+    };
+    uint32_t val;
+} efuse_pgm_data5_reg_t;
+
+/** Type of pgm_data6 register
+ *  Represents pgm_data6
+ */
+typedef union {
+    struct {
+        /** pgm_data_6 : R/W; bitpos: [31:0]; default: 0;
+         *  Configures the 0th 32-bit data to be programmed.
+         */
+        uint32_t pgm_data_6:32;
+    };
+    uint32_t val;
+} efuse_pgm_data6_reg_t;
+
+/** Type of pgm_data7 register
+ *  Represents pgm_data7
+ */
+typedef union {
+    struct {
+        /** pgm_data_7 : R/W; bitpos: [31:0]; default: 0;
+         *  Configures the 0th 32-bit data to be programmed.
+         */
+        uint32_t pgm_data_7:32;
+    };
+    uint32_t val;
+} efuse_pgm_data7_reg_t;
 
 
 /** Group: buffer1 registers */
-/** Type of pgm_check_valuen register
- *  Represents pgm_check_valuen
+/** Type of pgm_check_value0 register
+ *  Represents pgm_check_value0
  */
 typedef union {
     struct {
-        /** pgm_rs_data_n : R/W; bitpos: [31:0]; default: 0;
-         *  Configures the nth RS code to be programmed.
+        /** pgm_rs_data_0 : R/W; bitpos: [31:0]; default: 0;
+         *  Configures the 0th RS code to be programmed.
          */
-        uint32_t pgm_rs_data_n:32;
+        uint32_t pgm_rs_data_0:32;
     };
     uint32_t val;
-} efuse_pgm_check_valuen_reg_t;
+} efuse_pgm_check_value0_reg_t;
+
+/** Type of pgm_check_value1 register
+ *  Represents pgm_check_value1
+ */
+typedef union {
+    struct {
+        /** pgm_rs_data_1 : R/W; bitpos: [31:0]; default: 0;
+         *  Configures the 0th RS code to be programmed.
+         */
+        uint32_t pgm_rs_data_1:32;
+    };
+    uint32_t val;
+} efuse_pgm_check_value1_reg_t;
+
+/** Type of pgm_check_value2 register
+ *  Represents pgm_check_value2
+ */
+typedef union {
+    struct {
+        /** pgm_rs_data_2 : R/W; bitpos: [31:0]; default: 0;
+         *  Configures the 0th RS code to be programmed.
+         */
+        uint32_t pgm_rs_data_2:32;
+    };
+    uint32_t val;
+} efuse_pgm_check_value2_reg_t;
 
 
 /** Group: block0 registers */
@@ -65,7 +182,10 @@ typedef union {
          *  enabled.\\ 1: disabled\\ 0: enabled\\
          */
         uint32_t rd_dis:7;
-        uint32_t reserved_7:1;
+        /** rd_reserve_0_39 : RW; bitpos: [7]; default: 0;
+         *  Reserved, it was created by set_missed_fields_in_regs func
+         */
+        uint32_t rd_reserve_0_39:1;
         /** dis_icache : RO; bitpos: [8]; default: 0;
          *  Represents whether icache is disabled or enabled.\\ 1: disabled\\ 0: enabled\\
          */
@@ -75,7 +195,10 @@ typedef union {
          *  disabled\\ 0: enabled\\
          */
         uint32_t dis_usb_jtag:1;
-        uint32_t reserved_10:1;
+        /** rd_reserve_0_42 : RW; bitpos: [10]; default: 0;
+         *  Reserved, it was created by set_missed_fields_in_regs func
+         */
+        uint32_t rd_reserve_0_42:1;
         /** dis_usb_serial_jtag : RO; bitpos: [11]; default: 0;
          *  Represents whether USB-Serial-JTAG is disabled or enabled.\\ 1: disabled\\ 0:
          *  enabled\\
@@ -135,7 +258,10 @@ typedef union {
          *  functioned\\
          */
         uint32_t vdd_spi_as_gpio:1;
-        uint32_t reserved_27:5;
+        /** rd_reserve_0_59 : RW; bitpos: [31:27]; default: 0;
+         *  Reserved, it was created by set_missed_fields_in_regs func
+         */
+        uint32_t rd_reserve_0_59:5;
     };
     uint32_t val;
 } efuse_rd_repeat_data0_reg_t;
@@ -169,7 +295,10 @@ typedef union {
          *  Set this bit to disable software written init key, and force use efuse_init_key.
          */
         uint32_t force_disable_sw_init_key:1;
-        uint32_t reserved_15:1;
+        /** rd_reserve_0_79 : RW; bitpos: [15]; default: 0;
+         *  Reserved, it was created by set_missed_fields_in_regs func
+         */
+        uint32_t rd_reserve_0_79:1;
         /** wdt_delay_sel : RO; bitpos: [17:16]; default: 0;
          *  Represents the threshold level of the RTC watchdog STG0 timeout.\\ 0: Original
          *  threshold configuration value of STG0 *2 \\1: Original threshold configuration
@@ -234,7 +363,10 @@ typedef union {
          *  Represents the spa secure level by configuring the clock random divide mode.
          */
         uint32_t sec_dpa_level:2;
-        uint32_t reserved_18:2;
+        /** rd_reserve_0_114 : RW; bitpos: [19:18]; default: 0;
+         *  Reserved, it was created by set_missed_fields_in_regs func
+         */
+        uint32_t rd_reserve_0_114:2;
         /** secure_boot_en : RO; bitpos: [20]; default: 0;
          *  Represents whether secure boot is enabled or disabled.\\ 1: enabled\\ 0: disabled\\
          */
@@ -244,7 +376,10 @@ typedef union {
          *  enabled.\\ 0: disabled\\
          */
         uint32_t secure_boot_aggressive_revoke:1;
-        uint32_t reserved_22:5;
+        /** rd_reserve_0_118 : RW; bitpos: [26:22]; default: 0;
+         *  Reserved, it was created by set_missed_fields_in_regs func
+         */
+        uint32_t rd_reserve_0_118:5;
         /** km_xts_key_length_256 : RO; bitpos: [27]; default: 0;
          *  Set this bitto configure flash encryption use xts-128 key. else use xts-256 key.
          */
@@ -328,7 +463,10 @@ typedef union {
          *  Disable.\\
          */
         uint32_t xts_dpa_clk_enable:1;
-        uint32_t reserved_30:2;
+        /** rd_reserve_0_158 : RW; bitpos: [31:30]; default: 0;
+         *  Reserved, it was created by set_missed_fields_in_regs func
+         */
+        uint32_t rd_reserve_0_158:2;
     };
     uint32_t val;
 } efuse_rd_repeat_data3_reg_t;
@@ -363,7 +501,10 @@ typedef union {
          *  \\ 0: Disable.
          */
         uint32_t ecc_force_const_time:1;
-        uint32_t reserved_15:17;
+        /** rd_reserve_0_175 : RW; bitpos: [31:15]; default: 0;
+         *  Reserved, it was created by set_missed_fields_in_regs func
+         */
+        uint32_t rd_reserve_0_175:17;
     };
     uint32_t val;
 } efuse_rd_repeat_data4_reg_t;
@@ -462,138 +603,965 @@ typedef union {
 
 
 /** Group: block2 registers */
-/** Type of rd_sys_part1_datan register
- *  Represents rd_sys_part1_datan
+/** Type of rd_sys_part1_data0 register
+ *  Represents rd_sys_part1_data0
  */
 typedef union {
     struct {
-        /** sys_data_part1_n : RO; bitpos: [31:0]; default: 0;
+        /** sys_data_part1_0 : RO; bitpos: [31:0]; default: 0;
          *  Represents the zeroth 32-bit of first part of system data.
          */
-        uint32_t sys_data_part1_n:32;
+        uint32_t sys_data_part1_0:32;
     };
     uint32_t val;
-} efuse_rd_sys_part1_datan_reg_t;
+} efuse_rd_sys_part1_data0_reg_t;
+
+/** Type of rd_sys_part1_data1 register
+ *  Represents rd_sys_part1_data1
+ */
+typedef union {
+    struct {
+        /** sys_data_part1_1 : RO; bitpos: [31:0]; default: 0;
+         *  Represents the zeroth 32-bit of first part of system data.
+         */
+        uint32_t sys_data_part1_1:32;
+    };
+    uint32_t val;
+} efuse_rd_sys_part1_data1_reg_t;
+
+/** Type of rd_sys_part1_data2 register
+ *  Represents rd_sys_part1_data2
+ */
+typedef union {
+    struct {
+        /** sys_data_part1_2 : RO; bitpos: [31:0]; default: 0;
+         *  Represents the zeroth 32-bit of first part of system data.
+         */
+        uint32_t sys_data_part1_2:32;
+    };
+    uint32_t val;
+} efuse_rd_sys_part1_data2_reg_t;
+
+/** Type of rd_sys_part1_data3 register
+ *  Represents rd_sys_part1_data3
+ */
+typedef union {
+    struct {
+        /** sys_data_part1_3 : RO; bitpos: [31:0]; default: 0;
+         *  Represents the zeroth 32-bit of first part of system data.
+         */
+        uint32_t sys_data_part1_3:32;
+    };
+    uint32_t val;
+} efuse_rd_sys_part1_data3_reg_t;
+
+/** Type of rd_sys_part1_data4 register
+ *  Represents rd_sys_part1_data4
+ */
+typedef union {
+    struct {
+        /** sys_data_part1_4 : RO; bitpos: [31:0]; default: 0;
+         *  Represents the zeroth 32-bit of first part of system data.
+         */
+        uint32_t sys_data_part1_4:32;
+    };
+    uint32_t val;
+} efuse_rd_sys_part1_data4_reg_t;
+
+/** Type of rd_sys_part1_data5 register
+ *  Represents rd_sys_part1_data5
+ */
+typedef union {
+    struct {
+        /** sys_data_part1_5 : RO; bitpos: [31:0]; default: 0;
+         *  Represents the zeroth 32-bit of first part of system data.
+         */
+        uint32_t sys_data_part1_5:32;
+    };
+    uint32_t val;
+} efuse_rd_sys_part1_data5_reg_t;
+
+/** Type of rd_sys_part1_data6 register
+ *  Represents rd_sys_part1_data6
+ */
+typedef union {
+    struct {
+        /** sys_data_part1_6 : RO; bitpos: [31:0]; default: 0;
+         *  Represents the zeroth 32-bit of first part of system data.
+         */
+        uint32_t sys_data_part1_6:32;
+    };
+    uint32_t val;
+} efuse_rd_sys_part1_data6_reg_t;
+
+/** Type of rd_sys_part1_data7 register
+ *  Represents rd_sys_part1_data7
+ */
+typedef union {
+    struct {
+        /** sys_data_part1_7 : RO; bitpos: [31:0]; default: 0;
+         *  Represents the zeroth 32-bit of first part of system data.
+         */
+        uint32_t sys_data_part1_7:32;
+    };
+    uint32_t val;
+} efuse_rd_sys_part1_data7_reg_t;
 
 
 /** Group: block3 registers */
-/** Type of rd_usr_datan register
- *  Represents rd_usr_datan
+/** Type of rd_usr_data0 register
+ *  Represents rd_usr_data0
  */
 typedef union {
     struct {
-        /** usr_datan : RO; bitpos: [31:0]; default: 0;
+        /** usr_data0 : RO; bitpos: [31:0]; default: 0;
          *  Represents the zeroth 32-bit of block3 (user).
          */
-        uint32_t usr_datan:32;
+        uint32_t usr_data0:32;
     };
     uint32_t val;
-} efuse_rd_usr_datan_reg_t;
+} efuse_rd_usr_data0_reg_t;
+
+/** Type of rd_usr_data1 register
+ *  Represents rd_usr_data1
+ */
+typedef union {
+    struct {
+        /** usr_data1 : RO; bitpos: [31:0]; default: 0;
+         *  Represents the zeroth 32-bit of block3 (user).
+         */
+        uint32_t usr_data1:32;
+    };
+    uint32_t val;
+} efuse_rd_usr_data1_reg_t;
+
+/** Type of rd_usr_data2 register
+ *  Represents rd_usr_data2
+ */
+typedef union {
+    struct {
+        /** usr_data2 : RO; bitpos: [31:0]; default: 0;
+         *  Represents the zeroth 32-bit of block3 (user).
+         */
+        uint32_t usr_data2:32;
+    };
+    uint32_t val;
+} efuse_rd_usr_data2_reg_t;
+
+/** Type of rd_usr_data3 register
+ *  Represents rd_usr_data3
+ */
+typedef union {
+    struct {
+        /** usr_data3 : RO; bitpos: [31:0]; default: 0;
+         *  Represents the zeroth 32-bit of block3 (user).
+         */
+        uint32_t usr_data3:32;
+    };
+    uint32_t val;
+} efuse_rd_usr_data3_reg_t;
+
+/** Type of rd_usr_data4 register
+ *  Represents rd_usr_data4
+ */
+typedef union {
+    struct {
+        /** usr_data4 : RO; bitpos: [31:0]; default: 0;
+         *  Represents the zeroth 32-bit of block3 (user).
+         */
+        uint32_t usr_data4:32;
+    };
+    uint32_t val;
+} efuse_rd_usr_data4_reg_t;
+
+/** Type of rd_usr_data5 register
+ *  Represents rd_usr_data5
+ */
+typedef union {
+    struct {
+        /** usr_data5 : RO; bitpos: [31:0]; default: 0;
+         *  Represents the zeroth 32-bit of block3 (user).
+         */
+        uint32_t usr_data5:32;
+    };
+    uint32_t val;
+} efuse_rd_usr_data5_reg_t;
+
+/** Type of rd_usr_data6 register
+ *  Represents rd_usr_data6
+ */
+typedef union {
+    struct {
+        /** reserved_3_192 : R; bitpos: [7:0]; default: 0;
+         *  reserved
+         */
+        uint32_t reserved_3_192:8;
+        /** custom_mac : R; bitpos: [31:8]; default: 0;
+         *  Custom MAC
+         */
+        uint32_t custom_mac:24;
+    };
+    uint32_t val;
+} efuse_rd_usr_data6_reg_t;
+
+/** Type of rd_usr_data7 register
+ *  Represents rd_usr_data7
+ */
+typedef union {
+    struct {
+        /** custom_mac_1 : R; bitpos: [23:0]; default: 0;
+         *  Custom MAC
+         */
+        uint32_t custom_mac_1:24;
+        /** reserved_3_248 : R; bitpos: [31:24]; default: 0;
+         *  reserved
+         */
+        uint32_t reserved_3_248:8;
+    };
+    uint32_t val;
+} efuse_rd_usr_data7_reg_t;
 
 
 /** Group: block4 registers */
-/** Type of rd_key0_datan register
- *  Represents rd_key0_datan
+/** Type of rd_key0_data0 register
+ *  Represents rd_key0_data0
  */
 typedef union {
     struct {
-        /** key0_datan : RO; bitpos: [31:0]; default: 0;
+        /** key0_data0 : RO; bitpos: [31:0]; default: 0;
          *  Represents the zeroth 32-bit of key0.
          */
-        uint32_t key0_datan:32;
+        uint32_t key0_data0:32;
     };
     uint32_t val;
-} efuse_rd_key0_datan_reg_t;
+} efuse_rd_key0_data0_reg_t;
+
+/** Type of rd_key0_data1 register
+ *  Represents rd_key0_data1
+ */
+typedef union {
+    struct {
+        /** key0_data1 : RO; bitpos: [31:0]; default: 0;
+         *  Represents the zeroth 32-bit of key0.
+         */
+        uint32_t key0_data1:32;
+    };
+    uint32_t val;
+} efuse_rd_key0_data1_reg_t;
+
+/** Type of rd_key0_data2 register
+ *  Represents rd_key0_data2
+ */
+typedef union {
+    struct {
+        /** key0_data2 : RO; bitpos: [31:0]; default: 0;
+         *  Represents the zeroth 32-bit of key0.
+         */
+        uint32_t key0_data2:32;
+    };
+    uint32_t val;
+} efuse_rd_key0_data2_reg_t;
+
+/** Type of rd_key0_data3 register
+ *  Represents rd_key0_data3
+ */
+typedef union {
+    struct {
+        /** key0_data3 : RO; bitpos: [31:0]; default: 0;
+         *  Represents the zeroth 32-bit of key0.
+         */
+        uint32_t key0_data3:32;
+    };
+    uint32_t val;
+} efuse_rd_key0_data3_reg_t;
+
+/** Type of rd_key0_data4 register
+ *  Represents rd_key0_data4
+ */
+typedef union {
+    struct {
+        /** key0_data4 : RO; bitpos: [31:0]; default: 0;
+         *  Represents the zeroth 32-bit of key0.
+         */
+        uint32_t key0_data4:32;
+    };
+    uint32_t val;
+} efuse_rd_key0_data4_reg_t;
+
+/** Type of rd_key0_data5 register
+ *  Represents rd_key0_data5
+ */
+typedef union {
+    struct {
+        /** key0_data5 : RO; bitpos: [31:0]; default: 0;
+         *  Represents the zeroth 32-bit of key0.
+         */
+        uint32_t key0_data5:32;
+    };
+    uint32_t val;
+} efuse_rd_key0_data5_reg_t;
+
+/** Type of rd_key0_data6 register
+ *  Represents rd_key0_data6
+ */
+typedef union {
+    struct {
+        /** key0_data6 : RO; bitpos: [31:0]; default: 0;
+         *  Represents the zeroth 32-bit of key0.
+         */
+        uint32_t key0_data6:32;
+    };
+    uint32_t val;
+} efuse_rd_key0_data6_reg_t;
+
+/** Type of rd_key0_data7 register
+ *  Represents rd_key0_data7
+ */
+typedef union {
+    struct {
+        /** key0_data7 : RO; bitpos: [31:0]; default: 0;
+         *  Represents the zeroth 32-bit of key0.
+         */
+        uint32_t key0_data7:32;
+    };
+    uint32_t val;
+} efuse_rd_key0_data7_reg_t;
 
 
 /** Group: block5 registers */
-/** Type of rd_key1_datan register
- *  Represents rd_key1_datan
+/** Type of rd_key1_data0 register
+ *  Represents rd_key1_data0
  */
 typedef union {
     struct {
-        /** key1_datan : RO; bitpos: [31:0]; default: 0;
+        /** key1_data0 : RO; bitpos: [31:0]; default: 0;
          *  Represents the zeroth 32-bit of key1.
          */
-        uint32_t key1_datan:32;
+        uint32_t key1_data0:32;
     };
     uint32_t val;
-} efuse_rd_key1_datan_reg_t;
+} efuse_rd_key1_data0_reg_t;
+
+/** Type of rd_key1_data1 register
+ *  Represents rd_key1_data1
+ */
+typedef union {
+    struct {
+        /** key1_data1 : RO; bitpos: [31:0]; default: 0;
+         *  Represents the zeroth 32-bit of key1.
+         */
+        uint32_t key1_data1:32;
+    };
+    uint32_t val;
+} efuse_rd_key1_data1_reg_t;
+
+/** Type of rd_key1_data2 register
+ *  Represents rd_key1_data2
+ */
+typedef union {
+    struct {
+        /** key1_data2 : RO; bitpos: [31:0]; default: 0;
+         *  Represents the zeroth 32-bit of key1.
+         */
+        uint32_t key1_data2:32;
+    };
+    uint32_t val;
+} efuse_rd_key1_data2_reg_t;
+
+/** Type of rd_key1_data3 register
+ *  Represents rd_key1_data3
+ */
+typedef union {
+    struct {
+        /** key1_data3 : RO; bitpos: [31:0]; default: 0;
+         *  Represents the zeroth 32-bit of key1.
+         */
+        uint32_t key1_data3:32;
+    };
+    uint32_t val;
+} efuse_rd_key1_data3_reg_t;
+
+/** Type of rd_key1_data4 register
+ *  Represents rd_key1_data4
+ */
+typedef union {
+    struct {
+        /** key1_data4 : RO; bitpos: [31:0]; default: 0;
+         *  Represents the zeroth 32-bit of key1.
+         */
+        uint32_t key1_data4:32;
+    };
+    uint32_t val;
+} efuse_rd_key1_data4_reg_t;
+
+/** Type of rd_key1_data5 register
+ *  Represents rd_key1_data5
+ */
+typedef union {
+    struct {
+        /** key1_data5 : RO; bitpos: [31:0]; default: 0;
+         *  Represents the zeroth 32-bit of key1.
+         */
+        uint32_t key1_data5:32;
+    };
+    uint32_t val;
+} efuse_rd_key1_data5_reg_t;
+
+/** Type of rd_key1_data6 register
+ *  Represents rd_key1_data6
+ */
+typedef union {
+    struct {
+        /** key1_data6 : RO; bitpos: [31:0]; default: 0;
+         *  Represents the zeroth 32-bit of key1.
+         */
+        uint32_t key1_data6:32;
+    };
+    uint32_t val;
+} efuse_rd_key1_data6_reg_t;
+
+/** Type of rd_key1_data7 register
+ *  Represents rd_key1_data7
+ */
+typedef union {
+    struct {
+        /** key1_data7 : RO; bitpos: [31:0]; default: 0;
+         *  Represents the zeroth 32-bit of key1.
+         */
+        uint32_t key1_data7:32;
+    };
+    uint32_t val;
+} efuse_rd_key1_data7_reg_t;
 
 
 /** Group: block6 registers */
-/** Type of rd_key2_datan register
- *  Represents rd_key2_datan
+/** Type of rd_key2_data0 register
+ *  Represents rd_key2_data0
  */
 typedef union {
     struct {
-        /** key2_datan : RO; bitpos: [31:0]; default: 0;
+        /** key2_data0 : RO; bitpos: [31:0]; default: 0;
          *  Represents the zeroth 32-bit of key2.
          */
-        uint32_t key2_datan:32;
+        uint32_t key2_data0:32;
     };
     uint32_t val;
-} efuse_rd_key2_datan_reg_t;
+} efuse_rd_key2_data0_reg_t;
+
+/** Type of rd_key2_data1 register
+ *  Represents rd_key2_data1
+ */
+typedef union {
+    struct {
+        /** key2_data1 : RO; bitpos: [31:0]; default: 0;
+         *  Represents the zeroth 32-bit of key2.
+         */
+        uint32_t key2_data1:32;
+    };
+    uint32_t val;
+} efuse_rd_key2_data1_reg_t;
+
+/** Type of rd_key2_data2 register
+ *  Represents rd_key2_data2
+ */
+typedef union {
+    struct {
+        /** key2_data2 : RO; bitpos: [31:0]; default: 0;
+         *  Represents the zeroth 32-bit of key2.
+         */
+        uint32_t key2_data2:32;
+    };
+    uint32_t val;
+} efuse_rd_key2_data2_reg_t;
+
+/** Type of rd_key2_data3 register
+ *  Represents rd_key2_data3
+ */
+typedef union {
+    struct {
+        /** key2_data3 : RO; bitpos: [31:0]; default: 0;
+         *  Represents the zeroth 32-bit of key2.
+         */
+        uint32_t key2_data3:32;
+    };
+    uint32_t val;
+} efuse_rd_key2_data3_reg_t;
+
+/** Type of rd_key2_data4 register
+ *  Represents rd_key2_data4
+ */
+typedef union {
+    struct {
+        /** key2_data4 : RO; bitpos: [31:0]; default: 0;
+         *  Represents the zeroth 32-bit of key2.
+         */
+        uint32_t key2_data4:32;
+    };
+    uint32_t val;
+} efuse_rd_key2_data4_reg_t;
+
+/** Type of rd_key2_data5 register
+ *  Represents rd_key2_data5
+ */
+typedef union {
+    struct {
+        /** key2_data5 : RO; bitpos: [31:0]; default: 0;
+         *  Represents the zeroth 32-bit of key2.
+         */
+        uint32_t key2_data5:32;
+    };
+    uint32_t val;
+} efuse_rd_key2_data5_reg_t;
+
+/** Type of rd_key2_data6 register
+ *  Represents rd_key2_data6
+ */
+typedef union {
+    struct {
+        /** key2_data6 : RO; bitpos: [31:0]; default: 0;
+         *  Represents the zeroth 32-bit of key2.
+         */
+        uint32_t key2_data6:32;
+    };
+    uint32_t val;
+} efuse_rd_key2_data6_reg_t;
+
+/** Type of rd_key2_data7 register
+ *  Represents rd_key2_data7
+ */
+typedef union {
+    struct {
+        /** key2_data7 : RO; bitpos: [31:0]; default: 0;
+         *  Represents the zeroth 32-bit of key2.
+         */
+        uint32_t key2_data7:32;
+    };
+    uint32_t val;
+} efuse_rd_key2_data7_reg_t;
 
 
 /** Group: block7 registers */
-/** Type of rd_key3_datan register
- *  Represents rd_key3_datan
+/** Type of rd_key3_data0 register
+ *  Represents rd_key3_data0
  */
 typedef union {
     struct {
-        /** key3_datan : RO; bitpos: [31:0]; default: 0;
+        /** key3_data0 : RO; bitpos: [31:0]; default: 0;
          *  Represents the zeroth 32-bit of key3.
          */
-        uint32_t key3_datan:32;
+        uint32_t key3_data0:32;
     };
     uint32_t val;
-} efuse_rd_key3_datan_reg_t;
+} efuse_rd_key3_data0_reg_t;
+
+/** Type of rd_key3_data1 register
+ *  Represents rd_key3_data1
+ */
+typedef union {
+    struct {
+        /** key3_data1 : RO; bitpos: [31:0]; default: 0;
+         *  Represents the zeroth 32-bit of key3.
+         */
+        uint32_t key3_data1:32;
+    };
+    uint32_t val;
+} efuse_rd_key3_data1_reg_t;
+
+/** Type of rd_key3_data2 register
+ *  Represents rd_key3_data2
+ */
+typedef union {
+    struct {
+        /** key3_data2 : RO; bitpos: [31:0]; default: 0;
+         *  Represents the zeroth 32-bit of key3.
+         */
+        uint32_t key3_data2:32;
+    };
+    uint32_t val;
+} efuse_rd_key3_data2_reg_t;
+
+/** Type of rd_key3_data3 register
+ *  Represents rd_key3_data3
+ */
+typedef union {
+    struct {
+        /** key3_data3 : RO; bitpos: [31:0]; default: 0;
+         *  Represents the zeroth 32-bit of key3.
+         */
+        uint32_t key3_data3:32;
+    };
+    uint32_t val;
+} efuse_rd_key3_data3_reg_t;
+
+/** Type of rd_key3_data4 register
+ *  Represents rd_key3_data4
+ */
+typedef union {
+    struct {
+        /** key3_data4 : RO; bitpos: [31:0]; default: 0;
+         *  Represents the zeroth 32-bit of key3.
+         */
+        uint32_t key3_data4:32;
+    };
+    uint32_t val;
+} efuse_rd_key3_data4_reg_t;
+
+/** Type of rd_key3_data5 register
+ *  Represents rd_key3_data5
+ */
+typedef union {
+    struct {
+        /** key3_data5 : RO; bitpos: [31:0]; default: 0;
+         *  Represents the zeroth 32-bit of key3.
+         */
+        uint32_t key3_data5:32;
+    };
+    uint32_t val;
+} efuse_rd_key3_data5_reg_t;
+
+/** Type of rd_key3_data6 register
+ *  Represents rd_key3_data6
+ */
+typedef union {
+    struct {
+        /** key3_data6 : RO; bitpos: [31:0]; default: 0;
+         *  Represents the zeroth 32-bit of key3.
+         */
+        uint32_t key3_data6:32;
+    };
+    uint32_t val;
+} efuse_rd_key3_data6_reg_t;
+
+/** Type of rd_key3_data7 register
+ *  Represents rd_key3_data7
+ */
+typedef union {
+    struct {
+        /** key3_data7 : RO; bitpos: [31:0]; default: 0;
+         *  Represents the zeroth 32-bit of key3.
+         */
+        uint32_t key3_data7:32;
+    };
+    uint32_t val;
+} efuse_rd_key3_data7_reg_t;
 
 
 /** Group: block8 registers */
-/** Type of rd_key4_datan register
- *  Represents rd_key4_datan
+/** Type of rd_key4_data0 register
+ *  Represents rd_key4_data0
  */
 typedef union {
     struct {
-        /** key4_datan : RO; bitpos: [31:0]; default: 0;
+        /** key4_data0 : RO; bitpos: [31:0]; default: 0;
          *  Represents the zeroth 32-bit of key4.
          */
-        uint32_t key4_datan:32;
+        uint32_t key4_data0:32;
     };
     uint32_t val;
-} efuse_rd_key4_datan_reg_t;
+} efuse_rd_key4_data0_reg_t;
+
+/** Type of rd_key4_data1 register
+ *  Represents rd_key4_data1
+ */
+typedef union {
+    struct {
+        /** key4_data1 : RO; bitpos: [31:0]; default: 0;
+         *  Represents the zeroth 32-bit of key4.
+         */
+        uint32_t key4_data1:32;
+    };
+    uint32_t val;
+} efuse_rd_key4_data1_reg_t;
+
+/** Type of rd_key4_data2 register
+ *  Represents rd_key4_data2
+ */
+typedef union {
+    struct {
+        /** key4_data2 : RO; bitpos: [31:0]; default: 0;
+         *  Represents the zeroth 32-bit of key4.
+         */
+        uint32_t key4_data2:32;
+    };
+    uint32_t val;
+} efuse_rd_key4_data2_reg_t;
+
+/** Type of rd_key4_data3 register
+ *  Represents rd_key4_data3
+ */
+typedef union {
+    struct {
+        /** key4_data3 : RO; bitpos: [31:0]; default: 0;
+         *  Represents the zeroth 32-bit of key4.
+         */
+        uint32_t key4_data3:32;
+    };
+    uint32_t val;
+} efuse_rd_key4_data3_reg_t;
+
+/** Type of rd_key4_data4 register
+ *  Represents rd_key4_data4
+ */
+typedef union {
+    struct {
+        /** key4_data4 : RO; bitpos: [31:0]; default: 0;
+         *  Represents the zeroth 32-bit of key4.
+         */
+        uint32_t key4_data4:32;
+    };
+    uint32_t val;
+} efuse_rd_key4_data4_reg_t;
+
+/** Type of rd_key4_data5 register
+ *  Represents rd_key4_data5
+ */
+typedef union {
+    struct {
+        /** key4_data5 : RO; bitpos: [31:0]; default: 0;
+         *  Represents the zeroth 32-bit of key4.
+         */
+        uint32_t key4_data5:32;
+    };
+    uint32_t val;
+} efuse_rd_key4_data5_reg_t;
+
+/** Type of rd_key4_data6 register
+ *  Represents rd_key4_data6
+ */
+typedef union {
+    struct {
+        /** key4_data6 : RO; bitpos: [31:0]; default: 0;
+         *  Represents the zeroth 32-bit of key4.
+         */
+        uint32_t key4_data6:32;
+    };
+    uint32_t val;
+} efuse_rd_key4_data6_reg_t;
+
+/** Type of rd_key4_data7 register
+ *  Represents rd_key4_data7
+ */
+typedef union {
+    struct {
+        /** key4_data7 : RO; bitpos: [31:0]; default: 0;
+         *  Represents the zeroth 32-bit of key4.
+         */
+        uint32_t key4_data7:32;
+    };
+    uint32_t val;
+} efuse_rd_key4_data7_reg_t;
 
 
 /** Group: block9 registers */
-/** Type of rd_key5_datan register
- *  Represents rd_key5_datan
+/** Type of rd_key5_data0 register
+ *  Represents rd_key5_data0
  */
 typedef union {
     struct {
-        /** key5_datan : RO; bitpos: [31:0]; default: 0;
+        /** key5_data0 : RO; bitpos: [31:0]; default: 0;
          *  Represents the zeroth 32-bit of key5.
          */
-        uint32_t key5_datan:32;
+        uint32_t key5_data0:32;
     };
     uint32_t val;
-} efuse_rd_key5_datan_reg_t;
+} efuse_rd_key5_data0_reg_t;
+
+/** Type of rd_key5_data1 register
+ *  Represents rd_key5_data1
+ */
+typedef union {
+    struct {
+        /** key5_data1 : RO; bitpos: [31:0]; default: 0;
+         *  Represents the zeroth 32-bit of key5.
+         */
+        uint32_t key5_data1:32;
+    };
+    uint32_t val;
+} efuse_rd_key5_data1_reg_t;
+
+/** Type of rd_key5_data2 register
+ *  Represents rd_key5_data2
+ */
+typedef union {
+    struct {
+        /** key5_data2 : RO; bitpos: [31:0]; default: 0;
+         *  Represents the zeroth 32-bit of key5.
+         */
+        uint32_t key5_data2:32;
+    };
+    uint32_t val;
+} efuse_rd_key5_data2_reg_t;
+
+/** Type of rd_key5_data3 register
+ *  Represents rd_key5_data3
+ */
+typedef union {
+    struct {
+        /** key5_data3 : RO; bitpos: [31:0]; default: 0;
+         *  Represents the zeroth 32-bit of key5.
+         */
+        uint32_t key5_data3:32;
+    };
+    uint32_t val;
+} efuse_rd_key5_data3_reg_t;
+
+/** Type of rd_key5_data4 register
+ *  Represents rd_key5_data4
+ */
+typedef union {
+    struct {
+        /** key5_data4 : RO; bitpos: [31:0]; default: 0;
+         *  Represents the zeroth 32-bit of key5.
+         */
+        uint32_t key5_data4:32;
+    };
+    uint32_t val;
+} efuse_rd_key5_data4_reg_t;
+
+/** Type of rd_key5_data5 register
+ *  Represents rd_key5_data5
+ */
+typedef union {
+    struct {
+        /** key5_data5 : RO; bitpos: [31:0]; default: 0;
+         *  Represents the zeroth 32-bit of key5.
+         */
+        uint32_t key5_data5:32;
+    };
+    uint32_t val;
+} efuse_rd_key5_data5_reg_t;
+
+/** Type of rd_key5_data6 register
+ *  Represents rd_key5_data6
+ */
+typedef union {
+    struct {
+        /** key5_data6 : RO; bitpos: [31:0]; default: 0;
+         *  Represents the zeroth 32-bit of key5.
+         */
+        uint32_t key5_data6:32;
+    };
+    uint32_t val;
+} efuse_rd_key5_data6_reg_t;
+
+/** Type of rd_key5_data7 register
+ *  Represents rd_key5_data7
+ */
+typedef union {
+    struct {
+        /** key5_data7 : RO; bitpos: [31:0]; default: 0;
+         *  Represents the zeroth 32-bit of key5.
+         */
+        uint32_t key5_data7:32;
+    };
+    uint32_t val;
+} efuse_rd_key5_data7_reg_t;
 
 
 /** Group: block10 registers */
-/** Type of rd_sys_part2_datan register
- *  Represents rd_sys_part2_datan
+/** Type of rd_sys_part2_data0 register
+ *  Represents rd_sys_part2_data0
  */
 typedef union {
     struct {
-        /** sys_data_part2_n : RO; bitpos: [31:0]; default: 0;
+        /** sys_data_part2_0 : RO; bitpos: [31:0]; default: 0;
          *  Represents the zeroth 32-bit of second part of system data.
          */
-        uint32_t sys_data_part2_n:32;
+        uint32_t sys_data_part2_0:32;
     };
     uint32_t val;
-} efuse_rd_sys_part2_datan_reg_t;
+} efuse_rd_sys_part2_data0_reg_t;
+
+/** Type of rd_sys_part2_data1 register
+ *  Represents rd_sys_part2_data1
+ */
+typedef union {
+    struct {
+        /** sys_data_part2_1 : RO; bitpos: [31:0]; default: 0;
+         *  Represents the zeroth 32-bit of second part of system data.
+         */
+        uint32_t sys_data_part2_1:32;
+    };
+    uint32_t val;
+} efuse_rd_sys_part2_data1_reg_t;
+
+/** Type of rd_sys_part2_data2 register
+ *  Represents rd_sys_part2_data2
+ */
+typedef union {
+    struct {
+        /** sys_data_part2_2 : RO; bitpos: [31:0]; default: 0;
+         *  Represents the zeroth 32-bit of second part of system data.
+         */
+        uint32_t sys_data_part2_2:32;
+    };
+    uint32_t val;
+} efuse_rd_sys_part2_data2_reg_t;
+
+/** Type of rd_sys_part2_data3 register
+ *  Represents rd_sys_part2_data3
+ */
+typedef union {
+    struct {
+        /** sys_data_part2_3 : RO; bitpos: [31:0]; default: 0;
+         *  Represents the zeroth 32-bit of second part of system data.
+         */
+        uint32_t sys_data_part2_3:32;
+    };
+    uint32_t val;
+} efuse_rd_sys_part2_data3_reg_t;
+
+/** Type of rd_sys_part2_data4 register
+ *  Represents rd_sys_part2_data4
+ */
+typedef union {
+    struct {
+        /** sys_data_part2_4 : RO; bitpos: [31:0]; default: 0;
+         *  Represents the zeroth 32-bit of second part of system data.
+         */
+        uint32_t sys_data_part2_4:32;
+    };
+    uint32_t val;
+} efuse_rd_sys_part2_data4_reg_t;
+
+/** Type of rd_sys_part2_data5 register
+ *  Represents rd_sys_part2_data5
+ */
+typedef union {
+    struct {
+        /** sys_data_part2_5 : RO; bitpos: [31:0]; default: 0;
+         *  Represents the zeroth 32-bit of second part of system data.
+         */
+        uint32_t sys_data_part2_5:32;
+    };
+    uint32_t val;
+} efuse_rd_sys_part2_data5_reg_t;
+
+/** Type of rd_sys_part2_data6 register
+ *  Represents rd_sys_part2_data6
+ */
+typedef union {
+    struct {
+        /** sys_data_part2_6 : RO; bitpos: [31:0]; default: 0;
+         *  Represents the zeroth 32-bit of second part of system data.
+         */
+        uint32_t sys_data_part2_6:32;
+    };
+    uint32_t val;
+} efuse_rd_sys_part2_data6_reg_t;
+
+/** Type of rd_sys_part2_data7 register
+ *  Represents rd_sys_part2_data7
+ */
+typedef union {
+    struct {
+        /** sys_data_part2_7 : RO; bitpos: [31:0]; default: 0;
+         *  Represents the zeroth 32-bit of second part of system data.
+         */
+        uint32_t sys_data_part2_7:32;
+    };
+    uint32_t val;
+} efuse_rd_sys_part2_data7_reg_t;
 
 
 /** Group: block0 error report registers */
@@ -1062,6 +2030,7 @@ typedef union {
     uint32_t val;
 } efuse_conf_reg_t;
 
+/** Group: EFUSE Configure Registers */
 /** Type of dac_conf register
  *  Controls the eFuse programming voltage.
  */
@@ -1940,6 +2909,7 @@ typedef union {
     uint32_t val;
 } efuse_apb2otp_blk2_w11_reg_t;
 
+/** Group: EFUSE_APB2OTP Block2 Word11 Data */
 /** Type of apb2otp_blk10_w11 register
  *  eFuse apb2otp block10 data register11.
  */
@@ -3410,8 +4380,17 @@ typedef struct {
 } otp_debug_dev_t;
 
 typedef struct {
-    volatile efuse_pgm_datan_reg_t pgm_datan[8];
-    volatile efuse_pgm_check_valuen_reg_t pgm_check_valuen[3];
+    volatile efuse_pgm_data0_reg_t pgm_data0;
+    volatile efuse_pgm_data1_reg_t pgm_data1;
+    volatile efuse_pgm_data2_reg_t pgm_data2;
+    volatile efuse_pgm_data3_reg_t pgm_data3;
+    volatile efuse_pgm_data4_reg_t pgm_data4;
+    volatile efuse_pgm_data5_reg_t pgm_data5;
+    volatile efuse_pgm_data6_reg_t pgm_data6;
+    volatile efuse_pgm_data7_reg_t pgm_data7;
+    volatile efuse_pgm_check_value0_reg_t pgm_check_value0;
+    volatile efuse_pgm_check_value1_reg_t pgm_check_value1;
+    volatile efuse_pgm_check_value2_reg_t pgm_check_value2;
     volatile efuse_rd_wr_dis0_reg_t rd_wr_dis0;
     volatile efuse_rd_repeat_data0_reg_t rd_repeat_data0;
     volatile efuse_rd_repeat_data1_reg_t rd_repeat_data1;
@@ -3424,15 +4403,78 @@ typedef struct {
     volatile efuse_rd_mac_sys3_reg_t rd_mac_sys3;
     volatile efuse_rd_mac_sys4_reg_t rd_mac_sys4;
     volatile efuse_rd_mac_sys5_reg_t rd_mac_sys5;
-    volatile efuse_rd_sys_part1_datan_reg_t rd_sys_part1_datan[8];
-    volatile efuse_rd_usr_datan_reg_t rd_usr_datan[8];
-    volatile efuse_rd_key0_datan_reg_t rd_key0_datan[8];
-    volatile efuse_rd_key1_datan_reg_t rd_key1_datan[8];
-    volatile efuse_rd_key2_datan_reg_t rd_key2_datan[8];
-    volatile efuse_rd_key3_datan_reg_t rd_key3_datan[8];
-    volatile efuse_rd_key4_datan_reg_t rd_key4_datan[8];
-    volatile efuse_rd_key5_datan_reg_t rd_key5_datan[8];
-    volatile efuse_rd_sys_part2_datan_reg_t rd_sys_part2_datan[8];
+    volatile efuse_rd_sys_part1_data0_reg_t rd_sys_part1_data0;
+    volatile efuse_rd_sys_part1_data1_reg_t rd_sys_part1_data1;
+    volatile efuse_rd_sys_part1_data2_reg_t rd_sys_part1_data2;
+    volatile efuse_rd_sys_part1_data3_reg_t rd_sys_part1_data3;
+    volatile efuse_rd_sys_part1_data4_reg_t rd_sys_part1_data4;
+    volatile efuse_rd_sys_part1_data5_reg_t rd_sys_part1_data5;
+    volatile efuse_rd_sys_part1_data6_reg_t rd_sys_part1_data6;
+    volatile efuse_rd_sys_part1_data7_reg_t rd_sys_part1_data7;
+    volatile efuse_rd_usr_data0_reg_t rd_usr_data0;
+    volatile efuse_rd_usr_data1_reg_t rd_usr_data1;
+    volatile efuse_rd_usr_data2_reg_t rd_usr_data2;
+    volatile efuse_rd_usr_data3_reg_t rd_usr_data3;
+    volatile efuse_rd_usr_data4_reg_t rd_usr_data4;
+    volatile efuse_rd_usr_data5_reg_t rd_usr_data5;
+    volatile efuse_rd_usr_data6_reg_t rd_usr_data6;
+    volatile efuse_rd_usr_data7_reg_t rd_usr_data7;
+    volatile efuse_rd_key0_data0_reg_t rd_key0_data0;
+    volatile efuse_rd_key0_data1_reg_t rd_key0_data1;
+    volatile efuse_rd_key0_data2_reg_t rd_key0_data2;
+    volatile efuse_rd_key0_data3_reg_t rd_key0_data3;
+    volatile efuse_rd_key0_data4_reg_t rd_key0_data4;
+    volatile efuse_rd_key0_data5_reg_t rd_key0_data5;
+    volatile efuse_rd_key0_data6_reg_t rd_key0_data6;
+    volatile efuse_rd_key0_data7_reg_t rd_key0_data7;
+    volatile efuse_rd_key1_data0_reg_t rd_key1_data0;
+    volatile efuse_rd_key1_data1_reg_t rd_key1_data1;
+    volatile efuse_rd_key1_data2_reg_t rd_key1_data2;
+    volatile efuse_rd_key1_data3_reg_t rd_key1_data3;
+    volatile efuse_rd_key1_data4_reg_t rd_key1_data4;
+    volatile efuse_rd_key1_data5_reg_t rd_key1_data5;
+    volatile efuse_rd_key1_data6_reg_t rd_key1_data6;
+    volatile efuse_rd_key1_data7_reg_t rd_key1_data7;
+    volatile efuse_rd_key2_data0_reg_t rd_key2_data0;
+    volatile efuse_rd_key2_data1_reg_t rd_key2_data1;
+    volatile efuse_rd_key2_data2_reg_t rd_key2_data2;
+    volatile efuse_rd_key2_data3_reg_t rd_key2_data3;
+    volatile efuse_rd_key2_data4_reg_t rd_key2_data4;
+    volatile efuse_rd_key2_data5_reg_t rd_key2_data5;
+    volatile efuse_rd_key2_data6_reg_t rd_key2_data6;
+    volatile efuse_rd_key2_data7_reg_t rd_key2_data7;
+    volatile efuse_rd_key3_data0_reg_t rd_key3_data0;
+    volatile efuse_rd_key3_data1_reg_t rd_key3_data1;
+    volatile efuse_rd_key3_data2_reg_t rd_key3_data2;
+    volatile efuse_rd_key3_data3_reg_t rd_key3_data3;
+    volatile efuse_rd_key3_data4_reg_t rd_key3_data4;
+    volatile efuse_rd_key3_data5_reg_t rd_key3_data5;
+    volatile efuse_rd_key3_data6_reg_t rd_key3_data6;
+    volatile efuse_rd_key3_data7_reg_t rd_key3_data7;
+    volatile efuse_rd_key4_data0_reg_t rd_key4_data0;
+    volatile efuse_rd_key4_data1_reg_t rd_key4_data1;
+    volatile efuse_rd_key4_data2_reg_t rd_key4_data2;
+    volatile efuse_rd_key4_data3_reg_t rd_key4_data3;
+    volatile efuse_rd_key4_data4_reg_t rd_key4_data4;
+    volatile efuse_rd_key4_data5_reg_t rd_key4_data5;
+    volatile efuse_rd_key4_data6_reg_t rd_key4_data6;
+    volatile efuse_rd_key4_data7_reg_t rd_key4_data7;
+    volatile efuse_rd_key5_data0_reg_t rd_key5_data0;
+    volatile efuse_rd_key5_data1_reg_t rd_key5_data1;
+    volatile efuse_rd_key5_data2_reg_t rd_key5_data2;
+    volatile efuse_rd_key5_data3_reg_t rd_key5_data3;
+    volatile efuse_rd_key5_data4_reg_t rd_key5_data4;
+    volatile efuse_rd_key5_data5_reg_t rd_key5_data5;
+    volatile efuse_rd_key5_data6_reg_t rd_key5_data6;
+    volatile efuse_rd_key5_data7_reg_t rd_key5_data7;
+    volatile efuse_rd_sys_part2_data0_reg_t rd_sys_part2_data0;
+    volatile efuse_rd_sys_part2_data1_reg_t rd_sys_part2_data1;
+    volatile efuse_rd_sys_part2_data2_reg_t rd_sys_part2_data2;
+    volatile efuse_rd_sys_part2_data3_reg_t rd_sys_part2_data3;
+    volatile efuse_rd_sys_part2_data4_reg_t rd_sys_part2_data4;
+    volatile efuse_rd_sys_part2_data5_reg_t rd_sys_part2_data5;
+    volatile efuse_rd_sys_part2_data6_reg_t rd_sys_part2_data6;
+    volatile efuse_rd_sys_part2_data7_reg_t rd_sys_part2_data7;
     volatile efuse_rd_repeat_data_err0_reg_t rd_repeat_data_err0;
     volatile efuse_rd_repeat_data_err1_reg_t rd_repeat_data_err1;
     volatile efuse_rd_repeat_data_err2_reg_t rd_repeat_data_err2;

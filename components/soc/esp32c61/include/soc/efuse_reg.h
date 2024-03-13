@@ -28,7 +28,7 @@ extern "C" {
  */
 #define EFUSE_PGM_DATA1_REG (DR_REG_EFUSE0_BASE + 0x4)
 /** EFUSE_PGM_DATA_1 : R/W; bitpos: [31:0]; default: 0;
- *  Configures the 1th 32-bit data to be programmed.
+ *  Configures the 0th 32-bit data to be programmed.
  */
 #define EFUSE_PGM_DATA_1    0xFFFFFFFFU
 #define EFUSE_PGM_DATA_1_M  (EFUSE_PGM_DATA_1_V << EFUSE_PGM_DATA_1_S)
@@ -40,7 +40,7 @@ extern "C" {
  */
 #define EFUSE_PGM_DATA2_REG (DR_REG_EFUSE0_BASE + 0x8)
 /** EFUSE_PGM_DATA_2 : R/W; bitpos: [31:0]; default: 0;
- *  Configures the 2th 32-bit data to be programmed.
+ *  Configures the 0th 32-bit data to be programmed.
  */
 #define EFUSE_PGM_DATA_2    0xFFFFFFFFU
 #define EFUSE_PGM_DATA_2_M  (EFUSE_PGM_DATA_2_V << EFUSE_PGM_DATA_2_S)
@@ -52,7 +52,7 @@ extern "C" {
  */
 #define EFUSE_PGM_DATA3_REG (DR_REG_EFUSE0_BASE + 0xc)
 /** EFUSE_PGM_DATA_3 : R/W; bitpos: [31:0]; default: 0;
- *  Configures the 3th 32-bit data to be programmed.
+ *  Configures the 0th 32-bit data to be programmed.
  */
 #define EFUSE_PGM_DATA_3    0xFFFFFFFFU
 #define EFUSE_PGM_DATA_3_M  (EFUSE_PGM_DATA_3_V << EFUSE_PGM_DATA_3_S)
@@ -64,7 +64,7 @@ extern "C" {
  */
 #define EFUSE_PGM_DATA4_REG (DR_REG_EFUSE0_BASE + 0x10)
 /** EFUSE_PGM_DATA_4 : R/W; bitpos: [31:0]; default: 0;
- *  Configures the 4th 32-bit data to be programmed.
+ *  Configures the 0th 32-bit data to be programmed.
  */
 #define EFUSE_PGM_DATA_4    0xFFFFFFFFU
 #define EFUSE_PGM_DATA_4_M  (EFUSE_PGM_DATA_4_V << EFUSE_PGM_DATA_4_S)
@@ -76,7 +76,7 @@ extern "C" {
  */
 #define EFUSE_PGM_DATA5_REG (DR_REG_EFUSE0_BASE + 0x14)
 /** EFUSE_PGM_DATA_5 : R/W; bitpos: [31:0]; default: 0;
- *  Configures the 5th 32-bit data to be programmed.
+ *  Configures the 0th 32-bit data to be programmed.
  */
 #define EFUSE_PGM_DATA_5    0xFFFFFFFFU
 #define EFUSE_PGM_DATA_5_M  (EFUSE_PGM_DATA_5_V << EFUSE_PGM_DATA_5_S)
@@ -88,7 +88,7 @@ extern "C" {
  */
 #define EFUSE_PGM_DATA6_REG (DR_REG_EFUSE0_BASE + 0x18)
 /** EFUSE_PGM_DATA_6 : R/W; bitpos: [31:0]; default: 0;
- *  Configures the 6th 32-bit data to be programmed.
+ *  Configures the 0th 32-bit data to be programmed.
  */
 #define EFUSE_PGM_DATA_6    0xFFFFFFFFU
 #define EFUSE_PGM_DATA_6_M  (EFUSE_PGM_DATA_6_V << EFUSE_PGM_DATA_6_S)
@@ -100,7 +100,7 @@ extern "C" {
  */
 #define EFUSE_PGM_DATA7_REG (DR_REG_EFUSE0_BASE + 0x1c)
 /** EFUSE_PGM_DATA_7 : R/W; bitpos: [31:0]; default: 0;
- *  Configures the 7th 32-bit data to be programmed.
+ *  Configures the 0th 32-bit data to be programmed.
  */
 #define EFUSE_PGM_DATA_7    0xFFFFFFFFU
 #define EFUSE_PGM_DATA_7_M  (EFUSE_PGM_DATA_7_V << EFUSE_PGM_DATA_7_S)
@@ -124,7 +124,7 @@ extern "C" {
  */
 #define EFUSE_PGM_CHECK_VALUE1_REG (DR_REG_EFUSE0_BASE + 0x24)
 /** EFUSE_PGM_RS_DATA_1 : R/W; bitpos: [31:0]; default: 0;
- *  Configures the 1th RS code to be programmed.
+ *  Configures the 0th RS code to be programmed.
  */
 #define EFUSE_PGM_RS_DATA_1    0xFFFFFFFFU
 #define EFUSE_PGM_RS_DATA_1_M  (EFUSE_PGM_RS_DATA_1_V << EFUSE_PGM_RS_DATA_1_S)
@@ -136,7 +136,7 @@ extern "C" {
  */
 #define EFUSE_PGM_CHECK_VALUE2_REG (DR_REG_EFUSE0_BASE + 0x28)
 /** EFUSE_PGM_RS_DATA_2 : R/W; bitpos: [31:0]; default: 0;
- *  Configures the 2th RS code to be programmed.
+ *  Configures the 0th RS code to be programmed.
  */
 #define EFUSE_PGM_RS_DATA_2    0xFFFFFFFFU
 #define EFUSE_PGM_RS_DATA_2_M  (EFUSE_PGM_RS_DATA_2_V << EFUSE_PGM_RS_DATA_2_S)
@@ -280,30 +280,37 @@ extern "C" {
 #define EFUSE_SPI_BOOT_CRYPT_CNT_M  (EFUSE_SPI_BOOT_CRYPT_CNT_V << EFUSE_SPI_BOOT_CRYPT_CNT_S)
 #define EFUSE_SPI_BOOT_CRYPT_CNT_V  0x00000007U
 #define EFUSE_SPI_BOOT_CRYPT_CNT_S  23
-/** EFUSE_SECURE_BOOT_KEY_REVOKE_0 : RO; bitpos: [26]; default: 0;
+/** EFUSE_SECURE_BOOT_KEY_REVOKE0 : RO; bitpos: [26]; default: 0;
  *  Represents whether revoking first secure boot key is enabled or disabled.\\ 1:
  *  enabled\\ 0: disabled\\
  */
-#define EFUSE_SECURE_BOOT_KEY_REVOKE_0    (BIT(26))
-#define EFUSE_SECURE_BOOT_KEY_REVOKE_0_M  (EFUSE_SECURE_BOOT_KEY_REVOKE_0_V << EFUSE_SECURE_BOOT_KEY_REVOKE_0_S)
-#define EFUSE_SECURE_BOOT_KEY_REVOKE_0_V  0x00000001U
-#define EFUSE_SECURE_BOOT_KEY_REVOKE_0_S  26
-/** EFUSE_SECURE_BOOT_KEY_REVOKE_1 : RO; bitpos: [27]; default: 0;
+#define EFUSE_SECURE_BOOT_KEY_REVOKE0    (BIT(26))
+#define EFUSE_SECURE_BOOT_KEY_REVOKE0_M  (EFUSE_SECURE_BOOT_KEY_REVOKE0_V << EFUSE_SECURE_BOOT_KEY_REVOKE0_S)
+#define EFUSE_SECURE_BOOT_KEY_REVOKE0_V  0x00000001U
+#define EFUSE_SECURE_BOOT_KEY_REVOKE0_S  26
+/** EFUSE_SECURE_BOOT_KEY_REVOKE1 : RO; bitpos: [27]; default: 0;
  *  Represents whether revoking second secure boot key is enabled or disabled.\\ 1:
  *  enabled\\ 0: disabled\\
  */
-#define EFUSE_SECURE_BOOT_KEY_REVOKE_1    (BIT(27))
-#define EFUSE_SECURE_BOOT_KEY_REVOKE_1_M  (EFUSE_SECURE_BOOT_KEY_REVOKE_1_V << EFUSE_SECURE_BOOT_KEY_REVOKE_1_S)
-#define EFUSE_SECURE_BOOT_KEY_REVOKE_1_V  0x00000001U
-#define EFUSE_SECURE_BOOT_KEY_REVOKE_1_S  27
-/** EFUSE_SECURE_BOOT_KEY_REVOKE_2 : RO; bitpos: [28]; default: 0;
+#define EFUSE_SECURE_BOOT_KEY_REVOKE1    (BIT(27))
+#define EFUSE_SECURE_BOOT_KEY_REVOKE1_M  (EFUSE_SECURE_BOOT_KEY_REVOKE1_V << EFUSE_SECURE_BOOT_KEY_REVOKE1_S)
+#define EFUSE_SECURE_BOOT_KEY_REVOKE1_V  0x00000001U
+#define EFUSE_SECURE_BOOT_KEY_REVOKE1_S  27
+/** EFUSE_SECURE_BOOT_KEY_REVOKE2 : RO; bitpos: [28]; default: 0;
  *  Represents whether revoking third secure boot key is enabled or disabled.\\ 1:
  *  enabled\\ 0: disabled\\
  */
-#define EFUSE_SECURE_BOOT_KEY_REVOKE_2    (BIT(28))
-#define EFUSE_SECURE_BOOT_KEY_REVOKE_2_M  (EFUSE_SECURE_BOOT_KEY_REVOKE_2_V << EFUSE_SECURE_BOOT_KEY_REVOKE_2_S)
-#define EFUSE_SECURE_BOOT_KEY_REVOKE_2_V  0x00000001U
-#define EFUSE_SECURE_BOOT_KEY_REVOKE_2_S  28
+#define EFUSE_SECURE_BOOT_KEY_REVOKE2    (BIT(28))
+#define EFUSE_SECURE_BOOT_KEY_REVOKE2_M  (EFUSE_SECURE_BOOT_KEY_REVOKE2_V << EFUSE_SECURE_BOOT_KEY_REVOKE2_S)
+#define EFUSE_SECURE_BOOT_KEY_REVOKE2_V  0x00000001U
+#define EFUSE_SECURE_BOOT_KEY_REVOKE2_S  28
+/** EFUSE_RD_RESERVE_0_61 : RW; bitpos: [31:29]; default: 0;
+ *  Reserved, it was created by set_missed_fields_in_regs func
+ */
+#define EFUSE_RD_RESERVE_0_61    0x00000007U
+#define EFUSE_RD_RESERVE_0_61_M  (EFUSE_RD_RESERVE_0_61_V << EFUSE_RD_RESERVE_0_61_S)
+#define EFUSE_RD_RESERVE_0_61_V  0x00000007U
+#define EFUSE_RD_RESERVE_0_61_S  29
 
 /** EFUSE_RD_REPEAT_DATA1_REG register
  *  Represents rd_repeat_data
@@ -550,13 +557,13 @@ extern "C" {
 #define EFUSE_MAC_1_M  (EFUSE_MAC_1_V << EFUSE_MAC_1_S)
 #define EFUSE_MAC_1_V  0x0000FFFFU
 #define EFUSE_MAC_1_S  0
-/** EFUSE_MAC_EXT : RO; bitpos: [31:16]; default: 0;
- *  Represents the extended bits of MAC address.
+/** EFUSE_RD_RESERVE_1_48 : RW; bitpos: [31:16]; default: 0;
+ *  Reserved, it was created by set_missed_fields_in_regs func
  */
-#define EFUSE_MAC_EXT    0x0000FFFFU
-#define EFUSE_MAC_EXT_M  (EFUSE_MAC_EXT_V << EFUSE_MAC_EXT_S)
-#define EFUSE_MAC_EXT_V  0x0000FFFFU
-#define EFUSE_MAC_EXT_S  16
+#define EFUSE_RD_RESERVE_1_48    0x0000FFFFU
+#define EFUSE_RD_RESERVE_1_48_M  (EFUSE_RD_RESERVE_1_48_V << EFUSE_RD_RESERVE_1_48_S)
+#define EFUSE_RD_RESERVE_1_48_V  0x0000FFFFU
+#define EFUSE_RD_RESERVE_1_48_S  16
 
 /** EFUSE_RD_MAC_SYS2_REG register
  *  Represents rd_mac_sys
@@ -792,25 +799,39 @@ extern "C" {
  *  Represents rd_usr_data6
  */
 #define EFUSE_RD_USR_DATA6_REG (DR_REG_EFUSE0_BASE + 0x94)
-/** EFUSE_USR_DATA6 : RO; bitpos: [31:0]; default: 0;
- *  Represents the zeroth 32-bit of block3 (user).
+/** EFUSE_RESERVED_3_192 : R; bitpos: [7:0]; default: 0;
+ *  reserved
  */
-#define EFUSE_USR_DATA6    0xFFFFFFFFU
-#define EFUSE_USR_DATA6_M  (EFUSE_USR_DATA6_V << EFUSE_USR_DATA6_S)
-#define EFUSE_USR_DATA6_V  0xFFFFFFFFU
-#define EFUSE_USR_DATA6_S  0
+#define EFUSE_RESERVED_3_192    0x000000FFU
+#define EFUSE_RESERVED_3_192_M  (EFUSE_RESERVED_3_192_V << EFUSE_RESERVED_3_192_S)
+#define EFUSE_RESERVED_3_192_V  0x000000FFU
+#define EFUSE_RESERVED_3_192_S  0
+/** EFUSE_CUSTOM_MAC : R; bitpos: [31:8]; default: 0;
+ *  Custom MAC
+ */
+#define EFUSE_CUSTOM_MAC    0x00FFFFFFU
+#define EFUSE_CUSTOM_MAC_M  (EFUSE_CUSTOM_MAC_V << EFUSE_CUSTOM_MAC_S)
+#define EFUSE_CUSTOM_MAC_V  0x00FFFFFFU
+#define EFUSE_CUSTOM_MAC_S  8
 
 /** EFUSE_RD_USR_DATA7_REG register
  *  Represents rd_usr_data7
  */
 #define EFUSE_RD_USR_DATA7_REG (DR_REG_EFUSE0_BASE + 0x98)
-/** EFUSE_USR_DATA7 : RO; bitpos: [31:0]; default: 0;
- *  Represents the zeroth 32-bit of block3 (user).
+/** EFUSE_CUSTOM_MAC_1 : R; bitpos: [23:0]; default: 0;
+ *  Custom MAC
  */
-#define EFUSE_USR_DATA7    0xFFFFFFFFU
-#define EFUSE_USR_DATA7_M  (EFUSE_USR_DATA7_V << EFUSE_USR_DATA7_S)
-#define EFUSE_USR_DATA7_V  0xFFFFFFFFU
-#define EFUSE_USR_DATA7_S  0
+#define EFUSE_CUSTOM_MAC_1    0x00FFFFFFU
+#define EFUSE_CUSTOM_MAC_1_M  (EFUSE_CUSTOM_MAC_1_V << EFUSE_CUSTOM_MAC_1_S)
+#define EFUSE_CUSTOM_MAC_1_V  0x00FFFFFFU
+#define EFUSE_CUSTOM_MAC_1_S  0
+/** EFUSE_RESERVED_3_248 : R; bitpos: [31:24]; default: 0;
+ *  reserved
+ */
+#define EFUSE_RESERVED_3_248    0x000000FFU
+#define EFUSE_RESERVED_3_248_M  (EFUSE_RESERVED_3_248_V << EFUSE_RESERVED_3_248_S)
+#define EFUSE_RESERVED_3_248_V  0x000000FFU
+#define EFUSE_RESERVED_3_248_S  24
 
 /** EFUSE_RD_KEY0_DATA0_REG register
  *  Represents rd_key0_data0

@@ -10,8 +10,6 @@
 extern "C" {
 #endif
 
-// TODO: [ESP32C5] IDF-8674
-
 /**
  * @brief Type of eFuse blocks ESP32C5
  */
@@ -64,7 +62,7 @@ typedef enum {
  */
 typedef enum {
     ESP_EFUSE_KEY_PURPOSE_USER = 0,                         /**< User purposes (software-only use) */
-    ESP_EFUSE_KEY_PURPOSE_RESERVED = 1,                     /**< Reserved */
+    ESP_EFUSE_KEY_PURPOSE_ECDSA_KEY = 1,                    /**< ECDSA private key (Expected in little endian order)*/
     ESP_EFUSE_KEY_PURPOSE_XTS_AES_128_KEY = 4,              /**< XTS_AES_128_KEY (flash/PSRAM encryption) */
     ESP_EFUSE_KEY_PURPOSE_HMAC_DOWN_ALL = 5,                /**< HMAC Downstream mode */
     ESP_EFUSE_KEY_PURPOSE_HMAC_DOWN_JTAG = 6,               /**< JTAG soft enable key (uses HMAC Downstream mode) */
