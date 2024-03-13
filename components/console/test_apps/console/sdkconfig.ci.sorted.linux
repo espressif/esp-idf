@@ -1,0 +1,7 @@
+CONFIG_IDF_TARGET="linux"
+
+# Not necessary on Linux
+CONFIG_FREERTOS_WATCHPOINT_END_OF_STACK=n
+
+# enable sorted commands in the help command
+CONFIG_CONSOLE_SORTED_HELP=y

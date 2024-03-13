@@ -2,5 +2,5 @@
 
 components/console/test_apps/console:
   enable:
-    - if: INCLUDE_DEFAULT == 1 or IDF_TARGET == "linux"
-      reason: Tested on all chips before, now also testing on Linux
+    - if: IDF_TARGET in["esp32", "esp32c3", "linux"]
+      reason: Testing all major architectures
