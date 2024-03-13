@@ -1,14 +1,17 @@
 # SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-
 import argparse
 import binascii
 import os
 import uuid
 from datetime import datetime
-from typing import List, Optional, Tuple
+from typing import List
+from typing import Optional
+from typing import Tuple
 
-from construct import BitsInteger, BitStruct, Int16ul
+from construct import BitsInteger
+from construct import BitStruct
+from construct import Int16ul
 
 FAT12_MAX_CLUSTERS: int = 4085
 FAT16_MAX_CLUSTERS: int = 65525
@@ -200,6 +203,11 @@ def get_args_for_partition_generator(desc: str) -> argparse.Namespace:
                         Type of fat. Select 12 for fat12, 16 for fat16. Don't set, or set to 0 for automatic
                         calculation using cluster size and partition size.
                         """)
+    parser.add_argument('--wl_mode',
+                        default=None,
+                        type=str,
+                        choices=['safe', 'perf'],
+                        help='Wear levelling mode to use. Safe or performance. Only for sector size of 512')
 
     args = parser.parse_args()
     if args.fat_type == 0:
@@ -207,6 +215,9 @@ def get_args_for_partition_generator(desc: str) -> argparse.Namespace:
     args.partition_size = int(str(args.partition_size), 0)
     if not os.path.isdir(args.input_directory):
         raise NotADirectoryError(f'The target directory `{args.input_directory}` does not exist!')
+    if args.wl_mode is not None:
+        if args.sector_size != 512:
+            raise ValueError('Wear levelling mode can be set only for sector size 512')
     return args
 
 
