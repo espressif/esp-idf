@@ -10,8 +10,7 @@ _This entire section can be deleted if all items are checked._
 * [ ] All related links, including JIRA, backport, submodule MR, are mentioned in the `Related` subsection.
 * [ ] Any GitHub issues are linked inside the git commit message and corresponding release notes
 * [ ] Add label for the area this MR is part of
-* [ ] For documentation updates, check if label `Docs` and `needs translation:CN` or `needs translation:EN`  have been added when the other language version still needs the update. Skip adding the label if the document is not yet translated.
-* [ ] Check if documents requiring translation fall under get-started section. If yes, add the labels mentioned above. Then the documentation team will assign a translator for you. Please inform the translator to prepare translation once your MR is ready to merge. The translation should be included in your MR to get it merged. For more information, see documentation workflow in Wiki.
+* [ ] For documentation updates, check if label `needs translation:CN` or `needs translation:EN` have been added when the other language version still needs the update. Don't add such labels if the document updated has never been translated before and requires translation from scratch.
 * [ ] Any necessary "needs backport" labels are added
 * [ ] Check if this is a breaking change. If it is, add notes to the `Breaking change notes` subsection below
 * [ ] Release note entry if this is a new public feature, or a fix for an issue introduced in the previous release.
