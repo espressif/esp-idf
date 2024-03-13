@@ -14,7 +14,7 @@ extern "C" {
 /** UART_FIFO_REG register
  *  FIFO data register
  */
-#define UART_FIFO_REG (DR_REG_UART_BASE + 0x0)
+#define UART_FIFO_REG(i) (REG_UART_BASE(i) + 0x0)
 /** UART_RXFIFO_RD_BYTE : RO; bitpos: [7:0]; default: 0;
  *  Represents the data UART $n read from FIFO.\\
  *  Measurement unit: byte.
@@ -27,7 +27,7 @@ extern "C" {
 /** UART_INT_RAW_REG register
  *  Raw interrupt status
  */
-#define UART_INT_RAW_REG (DR_REG_UART_BASE + 0x4)
+#define UART_INT_RAW_REG(i) (REG_UART_BASE(i) + 0x4)
 /** UART_RXFIFO_FULL_INT_RAW : R/WTC/SS; bitpos: [0]; default: 0;
  *  The raw interrupt status of UART_RXFIFO_FULL_INT.
  */
@@ -172,7 +172,7 @@ extern "C" {
 /** UART_INT_ST_REG register
  *  Masked interrupt status
  */
-#define UART_INT_ST_REG (DR_REG_UART_BASE + 0x8)
+#define UART_INT_ST_REG(i) (REG_UART_BASE(i) + 0x8)
 /** UART_RXFIFO_FULL_INT_ST : RO; bitpos: [0]; default: 0;
  *  The masked interrupt status of UART_RXFIFO_FULL_INT.
  */
@@ -317,7 +317,7 @@ extern "C" {
 /** UART_INT_ENA_REG register
  *  Interrupt enable bits
  */
-#define UART_INT_ENA_REG (DR_REG_UART_BASE + 0xc)
+#define UART_INT_ENA_REG(i) (REG_UART_BASE(i) + 0xc)
 /** UART_RXFIFO_FULL_INT_ENA : R/W; bitpos: [0]; default: 0;
  *  Write 1 to enable UART_RXFIFO_FULL_INT.
  */
@@ -462,7 +462,7 @@ extern "C" {
 /** UART_INT_CLR_REG register
  *  Interrupt clear bits
  */
-#define UART_INT_CLR_REG (DR_REG_UART_BASE + 0x10)
+#define UART_INT_CLR_REG(i) (REG_UART_BASE(i) + 0x10)
 /** UART_RXFIFO_FULL_INT_CLR : WT; bitpos: [0]; default: 0;
  *  Write 1 to clear UART_RXFIFO_FULL_INT.
  */
@@ -607,7 +607,7 @@ extern "C" {
 /** UART_CLKDIV_SYNC_REG register
  *  Clock divider configuration
  */
-#define UART_CLKDIV_SYNC_REG (DR_REG_UART_BASE + 0x14)
+#define UART_CLKDIV_SYNC_REG(i) (REG_UART_BASE(i) + 0x14)
 /** UART_CLKDIV : R/W; bitpos: [11:0]; default: 694;
  *  Configures the integral part of the divisor for baud rate generation.
  */
@@ -626,7 +626,7 @@ extern "C" {
 /** UART_RX_FILT_REG register
  *  RX filter configuration
  */
-#define UART_RX_FILT_REG (DR_REG_UART_BASE + 0x18)
+#define UART_RX_FILT_REG(i) (REG_UART_BASE(i) + 0x18)
 /** UART_GLITCH_FILT : R/W; bitpos: [7:0]; default: 8;
  *  Configures the width of a pulse to be filtered.\\Measurement unit: UART Core's
  *  clock cycle.\\Pulses whose width is lower than this value will be ignored.
@@ -648,7 +648,7 @@ extern "C" {
 /** UART_STATUS_REG register
  *  UART status register
  */
-#define UART_STATUS_REG (DR_REG_UART_BASE + 0x1c)
+#define UART_STATUS_REG(i) (REG_UART_BASE(i) + 0x1c)
 /** UART_RXFIFO_CNT : RO; bitpos: [7:0]; default: 0;
  *  Represents the number of valid data bytes in RX FIFO.
  */
@@ -709,7 +709,7 @@ extern "C" {
 /** UART_CONF0_SYNC_REG register
  *  Configuration register 0
  */
-#define UART_CONF0_SYNC_REG (DR_REG_UART_BASE + 0x20)
+#define UART_CONF0_SYNC_REG(i) (REG_UART_BASE(i) + 0x20)
 /** UART_PARITY : R/W; bitpos: [0]; default: 0;
  *  Configures the parity check mode.\\
  *  0: Even parity\\
@@ -918,7 +918,7 @@ extern "C" {
 /** UART_CONF1_REG register
  *  Configuration register 1
  */
-#define UART_CONF1_REG (DR_REG_UART_BASE + 0x24)
+#define UART_CONF1_REG(i) (REG_UART_BASE(i) + 0x24)
 /** UART_RXFIFO_FULL_THRHD : R/W; bitpos: [7:0]; default: 96;
  *  Configures the threshold for RX FIFO being full.\\Measurement unit: byte.
  */
@@ -991,7 +991,7 @@ extern "C" {
 /** UART_HWFC_CONF_SYNC_REG register
  *  Hardware flow control configuration
  */
-#define UART_HWFC_CONF_SYNC_REG (DR_REG_UART_BASE + 0x2c)
+#define UART_HWFC_CONF_SYNC_REG(i) (REG_UART_BASE(i) + 0x2c)
 /** UART_RX_FLOW_THRHD : R/W; bitpos: [7:0]; default: 0;
  *  Configures the maximum number of data bytes that can be received  during hardware
  *  flow control.\\Measurement unit: byte.
@@ -1013,7 +1013,7 @@ extern "C" {
 /** UART_SLEEP_CONF0_REG register
  *  UART sleep configuration register 0
  */
-#define UART_SLEEP_CONF0_REG (DR_REG_UART_BASE + 0x30)
+#define UART_SLEEP_CONF0_REG(i) (REG_UART_BASE(i) + 0x30)
 /** UART_WK_CHAR1 : R/W; bitpos: [7:0]; default: 0;
  *  Configures wakeup character 1.
  */
@@ -1046,7 +1046,7 @@ extern "C" {
 /** UART_SLEEP_CONF1_REG register
  *  UART sleep configuration register 1
  */
-#define UART_SLEEP_CONF1_REG (DR_REG_UART_BASE + 0x34)
+#define UART_SLEEP_CONF1_REG(i) (REG_UART_BASE(i) + 0x34)
 /** UART_WK_CHAR0 : R/W; bitpos: [7:0]; default: 0;
  *  Configures wakeup character 0.
  */
@@ -1058,7 +1058,7 @@ extern "C" {
 /** UART_SLEEP_CONF2_REG register
  *  UART sleep configuration register 2
  */
-#define UART_SLEEP_CONF2_REG (DR_REG_UART_BASE + 0x38)
+#define UART_SLEEP_CONF2_REG(i) (REG_UART_BASE(i) + 0x38)
 /** UART_ACTIVE_THRESHOLD : R/W; bitpos: [9:0]; default: 240;
  *  Configures the number of RXD edge changes to wake up the chip in wakeup mode 0.
  */
@@ -1104,7 +1104,7 @@ extern "C" {
 /** UART_SWFC_CONF0_SYNC_REG register
  *  Software flow control character configuration
  */
-#define UART_SWFC_CONF0_SYNC_REG (DR_REG_UART_BASE + 0x3c)
+#define UART_SWFC_CONF0_SYNC_REG(i) (REG_UART_BASE(i) + 0x3c)
 /** UART_XON_CHAR : R/W; bitpos: [7:0]; default: 17;
  *  Configures the XON character for flow control.
  */
@@ -1188,7 +1188,7 @@ extern "C" {
 /** UART_SWFC_CONF1_REG register
  *  Software flow control character configuration
  */
-#define UART_SWFC_CONF1_REG (DR_REG_UART_BASE + 0x40)
+#define UART_SWFC_CONF1_REG(i) (REG_UART_BASE(i) + 0x40)
 /** UART_XON_THRESHOLD : R/W; bitpos: [7:0]; default: 0;
  *  Configures the threshold for data in RX FIFO to send XON characters in software
  *  flow control.\\Measurement unit: byte.
@@ -1209,7 +1209,7 @@ extern "C" {
 /** UART_TXBRK_CONF_SYNC_REG register
  *  TX break character configuration
  */
-#define UART_TXBRK_CONF_SYNC_REG (DR_REG_UART_BASE + 0x44)
+#define UART_TXBRK_CONF_SYNC_REG(i) (REG_UART_BASE(i) + 0x44)
 /** UART_TX_BRK_NUM : R/W; bitpos: [7:0]; default: 10;
  *  Configures the number of NULL characters to be sent after finishing data
  *  transmission.\\Valid only when UART_TXD_BRK is 1.
@@ -1222,7 +1222,7 @@ extern "C" {
 /** UART_IDLE_CONF_SYNC_REG register
  *  Frame end idle time configuration
  */
-#define UART_IDLE_CONF_SYNC_REG (DR_REG_UART_BASE + 0x48)
+#define UART_IDLE_CONF_SYNC_REG(i) (REG_UART_BASE(i) + 0x48)
 /** UART_RX_IDLE_THRHD : R/W; bitpos: [9:0]; default: 256;
  *  Configures the threshold to generate a frame end signal when the receiver takes
  *  more time to receive one data byte data.\\Measurement unit: bit time (the time to
@@ -1244,7 +1244,7 @@ extern "C" {
 /** UART_RS485_CONF_SYNC_REG register
  *  RS485 mode configuration
  */
-#define UART_RS485_CONF_SYNC_REG (DR_REG_UART_BASE + 0x4c)
+#define UART_RS485_CONF_SYNC_REG(i) (REG_UART_BASE(i) + 0x4c)
 /** UART_RS485_EN : R/W; bitpos: [0]; default: 0;
  *  Configures whether or not to enable RS485 mode.\\
  *  0: Disable\\
@@ -1312,7 +1312,7 @@ extern "C" {
 /** UART_AT_CMD_PRECNT_SYNC_REG register
  *  Pre-sequence timing configuration
  */
-#define UART_AT_CMD_PRECNT_SYNC_REG (DR_REG_UART_BASE + 0x50)
+#define UART_AT_CMD_PRECNT_SYNC_REG(i) (REG_UART_BASE(i) + 0x50)
 /** UART_PRE_IDLE_NUM : R/W; bitpos: [15:0]; default: 2305;
  *  Configures the idle time before the receiver receives the first
  *  AT_CMD.\\Measurement unit: bit time (the time to transmit 1 bit).
@@ -1325,7 +1325,7 @@ extern "C" {
 /** UART_AT_CMD_POSTCNT_SYNC_REG register
  *  Post-sequence timing configuration
  */
-#define UART_AT_CMD_POSTCNT_SYNC_REG (DR_REG_UART_BASE + 0x54)
+#define UART_AT_CMD_POSTCNT_SYNC_REG(i) (REG_UART_BASE(i) + 0x54)
 /** UART_POST_IDLE_NUM : R/W; bitpos: [15:0]; default: 2305;
  *  Configures the interval between the last AT_CMD and subsequent data.\\Measurement
  *  unit: bit time (the time to transmit 1 bit).
@@ -1338,7 +1338,7 @@ extern "C" {
 /** UART_AT_CMD_GAPTOUT_SYNC_REG register
  *  Timeout configuration
  */
-#define UART_AT_CMD_GAPTOUT_SYNC_REG (DR_REG_UART_BASE + 0x58)
+#define UART_AT_CMD_GAPTOUT_SYNC_REG(i) (REG_UART_BASE(i) + 0x58)
 /** UART_RX_GAP_TOUT : R/W; bitpos: [15:0]; default: 11;
  *  Configures the interval between two AT_CMD characters.\\Measurement unit: bit time
  *  (the time to transmit 1 bit).
@@ -1351,7 +1351,7 @@ extern "C" {
 /** UART_AT_CMD_CHAR_SYNC_REG register
  *  AT escape sequence detection configuration
  */
-#define UART_AT_CMD_CHAR_SYNC_REG (DR_REG_UART_BASE + 0x5c)
+#define UART_AT_CMD_CHAR_SYNC_REG(i) (REG_UART_BASE(i) + 0x5c)
 /** UART_AT_CMD_CHAR : R/W; bitpos: [7:0]; default: 43;
  *  Configures the AT_CMD character.
  */
@@ -1370,7 +1370,7 @@ extern "C" {
 /** UART_MEM_CONF_REG register
  *  UART memory power configuration
  */
-#define UART_MEM_CONF_REG (DR_REG_UART_BASE + 0x60)
+#define UART_MEM_CONF_REG(i) (REG_UART_BASE(i) + 0x60)
 /** UART_MEM_FORCE_PD : R/W; bitpos: [25]; default: 0;
  *  Set this bit to force power down UART memory.
  */
@@ -1389,7 +1389,7 @@ extern "C" {
 /** UART_TOUT_CONF_SYNC_REG register
  *  UART threshold and allocation configuration
  */
-#define UART_TOUT_CONF_SYNC_REG (DR_REG_UART_BASE + 0x64)
+#define UART_TOUT_CONF_SYNC_REG(i) (REG_UART_BASE(i) + 0x64)
 /** UART_RX_TOUT_EN : R/W; bitpos: [0]; default: 0;
  *  Configures whether or not to enable UART receiver's timeout function.\\
  *  0: Disable\\
@@ -1418,7 +1418,7 @@ extern "C" {
 /** UART_MEM_TX_STATUS_REG register
  *  TX FIFO write and read offset address
  */
-#define UART_MEM_TX_STATUS_REG (DR_REG_UART_BASE + 0x68)
+#define UART_MEM_TX_STATUS_REG(i) (REG_UART_BASE(i) + 0x68)
 /** UART_TX_SRAM_WADDR : RO; bitpos: [7:0]; default: 0;
  *  Represents the offset address to write TX FIFO.
  */
@@ -1437,7 +1437,7 @@ extern "C" {
 /** UART_MEM_RX_STATUS_REG register
  *  Rx FIFO write and read offset address
  */
-#define UART_MEM_RX_STATUS_REG (DR_REG_UART_BASE + 0x6c)
+#define UART_MEM_RX_STATUS_REG(i) (REG_UART_BASE(i) + 0x6c)
 /** UART_RX_SRAM_RADDR : RO; bitpos: [7:0]; default: 128;
  *  Represents the offset address to read RX FIFO.
  */
@@ -1456,7 +1456,7 @@ extern "C" {
 /** UART_FSM_STATUS_REG register
  *  UART transmit and receive status
  */
-#define UART_FSM_STATUS_REG (DR_REG_UART_BASE + 0x70)
+#define UART_FSM_STATUS_REG(i) (REG_UART_BASE(i) + 0x70)
 /** UART_ST_URX_OUT : RO; bitpos: [3:0]; default: 0;
  *  Represents the status of the receiver.
  */
@@ -1475,7 +1475,7 @@ extern "C" {
 /** UART_POSPULSE_REG register
  *  Autobaud high pulse register
  */
-#define UART_POSPULSE_REG (DR_REG_UART_BASE + 0x74)
+#define UART_POSPULSE_REG(i) (REG_UART_BASE(i) + 0x74)
 /** UART_POSEDGE_MIN_CNT : RO; bitpos: [11:0]; default: 4095;
  *  Represents the minimal input clock counter value between two positive edges. It is
  *  used for baud rate detection.
@@ -1488,7 +1488,7 @@ extern "C" {
 /** UART_NEGPULSE_REG register
  *  Autobaud low pulse register
  */
-#define UART_NEGPULSE_REG (DR_REG_UART_BASE + 0x78)
+#define UART_NEGPULSE_REG(i) (REG_UART_BASE(i) + 0x78)
 /** UART_NEGEDGE_MIN_CNT : RO; bitpos: [11:0]; default: 4095;
  *  Represents the minimal input clock counter value between two negative edges. It is
  *  used for baud rate detection.
@@ -1501,7 +1501,7 @@ extern "C" {
 /** UART_LOWPULSE_REG register
  *  Autobaud minimum low pulse duration register
  */
-#define UART_LOWPULSE_REG (DR_REG_UART_BASE + 0x7c)
+#define UART_LOWPULSE_REG(i) (REG_UART_BASE(i) + 0x7c)
 /** UART_LOWPULSE_MIN_CNT : RO; bitpos: [11:0]; default: 4095;
  *  Represents the minimum duration time of a low-level pulse. It is used for baud rate
  *  detection.\\Measurement unit: APB_CLK clock cycle.
@@ -1514,7 +1514,7 @@ extern "C" {
 /** UART_HIGHPULSE_REG register
  *  Autobaud minimum high pulse duration register
  */
-#define UART_HIGHPULSE_REG (DR_REG_UART_BASE + 0x80)
+#define UART_HIGHPULSE_REG(i) (REG_UART_BASE(i) + 0x80)
 /** UART_HIGHPULSE_MIN_CNT : RO; bitpos: [11:0]; default: 4095;
  *  Represents  the maximum duration time for a high-level pulse. It is used for baud
  *  rate detection.\\Measurement unit: APB_CLK clock cycle.
@@ -1527,7 +1527,7 @@ extern "C" {
 /** UART_RXD_CNT_REG register
  *  Autobaud edge change count register
  */
-#define UART_RXD_CNT_REG (DR_REG_UART_BASE + 0x84)
+#define UART_RXD_CNT_REG(i) (REG_UART_BASE(i) + 0x84)
 /** UART_RXD_EDGE_CNT : RO; bitpos: [9:0]; default: 0;
  *  Represents the number of RXD edge changes. It is used for baud rate detection.
  */
@@ -1539,7 +1539,7 @@ extern "C" {
 /** UART_CLK_CONF_REG register
  *  UART core clock configuration
  */
-#define UART_CLK_CONF_REG (DR_REG_UART_BASE + 0x88)
+#define UART_CLK_CONF_REG(i) (REG_UART_BASE(i) + 0x88)
 /** UART_TX_SCLK_EN : R/W; bitpos: [24]; default: 1;
  *  Configures whether or not to enable UART TX clock.\\
  *  0: Disable\\
@@ -1576,7 +1576,7 @@ extern "C" {
 /** UART_DATE_REG register
  *  UART version control register
  */
-#define UART_DATE_REG (DR_REG_UART_BASE + 0x8c)
+#define UART_DATE_REG(i) (REG_UART_BASE(i) + 0x8c)
 /** UART_DATE : R/W; bitpos: [31:0]; default: 36774432;
  *  Version control register.
  */
@@ -1588,7 +1588,7 @@ extern "C" {
 /** UART_AFIFO_STATUS_REG register
  *  UART asynchronous FIFO status
  */
-#define UART_AFIFO_STATUS_REG (DR_REG_UART_BASE + 0x90)
+#define UART_AFIFO_STATUS_REG(i) (REG_UART_BASE(i) + 0x90)
 /** UART_TX_AFIFO_FULL : RO; bitpos: [0]; default: 0;
  *  Represents whether or not the APB TX asynchronous FIFO is full.\\
  *  0: Not full\\
@@ -1629,7 +1629,7 @@ extern "C" {
 /** UART_REG_UPDATE_REG register
  *  UART register configuration update
  */
-#define UART_REG_UPDATE_REG (DR_REG_UART_BASE + 0x98)
+#define UART_REG_UPDATE_REG(i) (REG_UART_BASE(i) + 0x98)
 /** UART_REG_UPDATE : R/W/SC; bitpos: [0]; default: 0;
  *  Configures whether or not to synchronize registers.\\
  *  0: Not synchronize\\
@@ -1643,7 +1643,7 @@ extern "C" {
 /** UART_ID_REG register
  *  UART ID register
  */
-#define UART_ID_REG (DR_REG_UART_BASE + 0x9c)
+#define UART_ID_REG(i) (REG_UART_BASE(i) + 0x9c)
 /** UART_ID : R/W; bitpos: [31:0]; default: 1280;
  *  Configures the UART ID.
  */
