@@ -835,7 +835,6 @@ components/nvs_flash/src/nvs_pagemanager.hpp
 components/nvs_flash/src/nvs_partition.cpp
 components/nvs_flash/src/nvs_partition_lookup.cpp
 components/nvs_flash/src/nvs_partition_lookup.hpp
-components/nvs_flash/src/nvs_platform.hpp
 components/nvs_flash/src/nvs_test_api.h
 components/nvs_flash/src/nvs_types.cpp
 components/nvs_flash/src/partition.hpp

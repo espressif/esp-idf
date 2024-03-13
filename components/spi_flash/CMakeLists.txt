@@ -1,5 +1,7 @@
 idf_build_get_property(target IDF_TARGET)
 if(${target} STREQUAL "linux")
+    idf_component_register(INCLUDE_DIRS include
+                        PRIV_INCLUDE_DIRS include/spi_flash)
     return()
 endif()
 
