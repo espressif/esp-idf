@@ -57,6 +57,54 @@ extern portMUX_TYPE rtc_spinlock; //TODO: Will be placed in the appropriate posi
 
 #define INTERNAL_BUF_NUM 5
 
+#if SOC_AHB_GDMA_VERSION == 1
+#define ADC_GDMA_HOST                   0
+#define ADC_DMA_INTR_MASK               GDMA_LL_EVENT_RX_SUC_EOF
+#define ADC_DMA_INTR_MASK               GDMA_LL_EVENT_RX_SUC_EOF
+#define adc_dma_start(adc_dma, addr)    gdma_start(s_adc_digi_ctx->rx_dma_channel, (intptr_t)addr)
+#define adc_dma_stop(adc_dma)           gdma_stop(s_adc_digi_ctx->rx_dma_channel)
+#define adc_dma_reset(adc_dma)          gdma_reset(s_adc_digi_ctx->rx_dma_channel)
+#define adc_dma_clear_intr(adc_dma)
+#define adc_dma_enable_intr(adc_dma)
+#define adc_dma_disable_intr(adc_dma)
+#define adc_dma_deinit(adc_dma)         do { \
+                                            gdma_disconnect(s_adc_digi_ctx->rx_dma_channel); \
+                                            gdma_del_channel(s_adc_digi_ctx->rx_dma_channel); \
+                                        } while (0)
+
+#elif CONFIG_IDF_TARGET_ESP32S2
+#define ADC_DMA_SPI_HOST                SPI3_HOST
+#define ADC_DMA_INTR_MASK               SPI_LL_INTR_IN_SUC_EOF
+#define adc_dma_start(adc_dma, addr)    spi_dma_ll_rx_start(s_adc_digi_ctx->adc_spi_dev, s_adc_digi_ctx->spi_dma_ctx->rx_dma_chan.chan_id, (lldesc_t *)addr)
+#define adc_dma_stop(adc_dma)           spi_dma_ll_rx_stop(s_adc_digi_ctx->adc_spi_dev, s_adc_digi_ctx->spi_dma_ctx->rx_dma_chan.chan_id);
+#define adc_dma_reset(adc_dma)          spi_dma_ll_rx_reset(s_adc_digi_ctx->adc_spi_dev, s_adc_digi_ctx->spi_dma_ctx->rx_dma_chan.chan_id);
+#define adc_dma_clear_intr(adc_dma)     spi_ll_clear_intr(s_adc_digi_ctx->adc_spi_dev, ADC_DMA_INTR_MASK)
+#define adc_dma_enable_intr(adc_dma)    spi_ll_enable_intr(s_adc_digi_ctx->adc_spi_dev, ADC_DMA_INTR_MASK);
+#define adc_dma_disable_intr(adc_dma)   spi_ll_disable_intr(s_adc_digi_ctx->adc_spi_dev, ADC_DMA_INTR_MASK);
+#define adc_dma_deinit(adc_dma)         do { \
+                                            esp_intr_free(s_adc_digi_ctx->intr_hdl); \
+                                            spicommon_dma_chan_free(s_adc_digi_ctx->spi_dma_ctx); \
+                                            spicommon_periph_free(ADC_DMA_SPI_HOST); \
+                                        } while (0)
+
+#elif CONFIG_IDF_TARGET_ESP32
+#define ADC_DMA_I2S_HOST                I2S_NUM_0
+#define ADC_DMA_INTR_MASK               BIT(9)
+#define adc_dma_start(adc_dma, addr)    do { \
+                                            i2s_ll_enable_dma(s_adc_digi_ctx->adc_i2s_dev, true); \
+                                            i2s_ll_rx_start_link(s_adc_digi_ctx->adc_i2s_dev, (uint32_t)addr); \
+                                        } while (0)
+#define adc_dma_stop(adc_dma)           i2s_ll_rx_stop_link(s_adc_digi_ctx->adc_i2s_dev);
+#define adc_dma_reset(adc_dma)          i2s_ll_rx_reset_dma(s_adc_digi_ctx->adc_i2s_dev);
+#define adc_dma_clear_intr(adc_dma)     i2s_ll_clear_intr_status(s_adc_digi_ctx->adc_i2s_dev, ADC_DMA_INTR_MASK);
+#define adc_dma_enable_intr(adc_dma)    i2s_ll_enable_intr(s_adc_digi_ctx->adc_i2s_dev, ADC_DMA_INTR_MASK, true);
+#define adc_dma_disable_intr(adc_dma)   i2s_ll_enable_intr(s_adc_digi_ctx->adc_i2s_dev, ADC_DMA_INTR_MASK, false);
+#define adc_dma_deinit(adc_dma)         do { \
+                                            esp_intr_free(s_adc_digi_ctx->intr_hdl); \
+                                            i2s_platform_release_occupation(ADC_DMA_I2S_HOST); \
+                                        } while (0)
+#endif
+
 /*---------------------------------------------------------------
                     Digital Controller Context
 ---------------------------------------------------------------*/
@@ -69,9 +117,11 @@ typedef struct adc_digi_context_t {
     spi_host_device_t               spi_host;                   //ADC uses this SPI DMA
     spi_dma_ctx_t                   *spi_dma_ctx;               //spi_dma context
     intr_handle_t                   intr_hdl;                   //Interrupt handler
+    spi_dev_t                       *adc_spi_dev ;
 #elif CONFIG_IDF_TARGET_ESP32
     i2s_port_t                      i2s_host;                   //ADC uses this I2S DMA
     intr_handle_t                   intr_hdl;                   //Interrupt handler
+    i2s_dev_t                       *adc_i2s_dev;
 #endif
     RingbufHandle_t                 ringbuf_hdl;                //RX ringbuffer handler
     intptr_t                        rx_eof_desc_addr;           //eof descriptor address of RX channel
@@ -163,17 +213,8 @@ esp_err_t adc_digi_deinitialize(void)
     free(s_adc_digi_ctx->rx_dma_buf);
     free(s_adc_digi_ctx->hal.rx_desc);
     free(s_adc_digi_ctx->hal_digi_ctrlr_cfg.adc_pattern);
-#if SOC_GDMA_SUPPORTED
-    gdma_disconnect(s_adc_digi_ctx->rx_dma_channel);
-    gdma_del_channel(s_adc_digi_ctx->rx_dma_channel);
-#elif CONFIG_IDF_TARGET_ESP32S2
-    esp_intr_free(s_adc_digi_ctx->intr_hdl);
-    spicommon_dma_chan_free(s_adc_digi_ctx->spi_dma_ctx);
-    spicommon_periph_free(s_adc_digi_ctx->spi_host);
-#elif CONFIG_IDF_TARGET_ESP32
-    esp_intr_free(s_adc_digi_ctx->intr_hdl);
-    i2s_platform_release_occupation(s_adc_digi_ctx->i2s_host);
-#endif
+
+    adc_dma_deinit(s_adc_digi_ctx);
     free(s_adc_digi_ctx);
     s_adc_digi_ctx = NULL;
 
@@ -266,57 +307,46 @@ esp_err_t adc_digi_initialize(const adc_digi_init_config_t *init_config)
     };
     gdma_register_rx_event_callbacks(s_adc_digi_ctx->rx_dma_channel, &cbs, s_adc_digi_ctx);
 
-    int dma_chan;
-    gdma_get_channel_id(s_adc_digi_ctx->rx_dma_channel, &dma_chan);
-
 #elif CONFIG_IDF_TARGET_ESP32S2
     //ADC utilises SPI3 DMA on ESP32S2
     bool spi_success = false;
-    uint32_t dma_chan = 0;
 
-    spi_success = spicommon_periph_claim(SPI3_HOST, "adc");
-    ret = spicommon_dma_chan_alloc(SPI3_HOST, SPI_DMA_CH_AUTO, &s_adc_digi_ctx->spi_dma_ctx);
-    if (ret == ESP_OK) {
-        s_adc_digi_ctx->spi_host = SPI3_HOST;
-    }
-    if (!spi_success || (s_adc_digi_ctx->spi_host != SPI3_HOST)) {
+    spi_success = spicommon_periph_claim(ADC_DMA_SPI_HOST, "adc");
+    ret = spicommon_dma_chan_alloc(ADC_DMA_SPI_HOST, SPI_DMA_CH_AUTO, &(s_adc_digi_ctx->spi_dma_ctx));
+    if (ret != ESP_OK || spi_success != ESP_OK) {
         goto cleanup;
     }
-    dma_chan = s_adc_digi_ctx->spi_dma_ctx->rx_dma_chan.chan_id;
+    if (!spi_success || (s_adc_digi_ctx->spi_host != ADC_DMA_SPI_HOST)) {
+        goto cleanup;
+    }
 
-    ret = esp_intr_alloc(spicommon_irqdma_source_for_host(s_adc_digi_ctx->spi_host), 0, adc_dma_intr_handler,
+    ret = esp_intr_alloc(spicommon_irqdma_source_for_host(ADC_DMA_SPI_HOST), 0, adc_dma_intr_handler,
                          (void *)s_adc_digi_ctx, &s_adc_digi_ctx->intr_hdl);
     if (ret != ESP_OK) {
         goto cleanup;
     }
-
+    s_adc_digi_ctx->adc_spi_dev = SPI_LL_GET_HW(ADC_DMA_SPI_HOST);
 #elif CONFIG_IDF_TARGET_ESP32
     //ADC utilises I2S0 DMA on ESP32
-    uint32_t dma_chan = 0;
-    ret = i2s_platform_acquire_occupation(I2S_NUM_0, "adc");
+    ret = i2s_platform_acquire_occupation(ADC_DMA_I2S_HOST, "adc");
     if (ret != ESP_OK) {
+        ret = ESP_ERR_NOT_FOUND;
         goto cleanup;
     }
 
     s_adc_digi_ctx->i2s_host = I2S_NUM_0;
-    ret = esp_intr_alloc(i2s_periph_signal[s_adc_digi_ctx->i2s_host].irq, 0, adc_dma_intr_handler,
+
+    ret = esp_intr_alloc(i2s_periph_signal[ADC_DMA_I2S_HOST].irq, 0, adc_dma_intr_handler,
                          (void *)s_adc_digi_ctx, &s_adc_digi_ctx->intr_hdl);
     if (ret != ESP_OK) {
         goto cleanup;
     }
+    s_adc_digi_ctx->adc_i2s_dev = I2S_LL_GET_HW(ADC_DMA_I2S_HOST);
 #endif
 
     adc_hal_dma_config_t config = {
-#if SOC_GDMA_SUPPORTED
-        .dev = (void *)GDMA_LL_GET_HW(0),
-#elif CONFIG_IDF_TARGET_ESP32S2
-        .dev = (void *)SPI_LL_GET_HW(s_adc_digi_ctx->spi_host),
-#elif CONFIG_IDF_TARGET_ESP32
-        .dev = (void *)I2S_LL_GET_HW(s_adc_digi_ctx->i2s_host),
-#endif
         .eof_desc_num = INTERNAL_BUF_NUM,
         .eof_step = dma_desc_num_per_frame,
-        .dma_chan = dma_chan,
         .eof_num = init_config->conv_num_each_intr / SOC_ADC_DIGI_DATA_BYTES_PER_CONV
     };
     adc_hal_dma_ctx_config(&s_adc_digi_ctx->hal, &config);
@@ -348,16 +378,24 @@ static IRAM_ATTR void adc_dma_intr_handler(void *arg)
     adc_digi_context_t *ctx = (adc_digi_context_t *)arg;
     bool need_yield = false;
 
-    bool conversion_finish = adc_hal_check_event(&ctx->hal, ADC_HAL_DMA_INTR_MASK);
+#if CONFIG_IDF_TARGET_ESP32S2
+    bool conversion_finish = spi_ll_get_intr(s_adc_digi_ctx->adc_spi_dev, ADC_DMA_INTR_MASK);
     if (conversion_finish) {
-        adc_hal_digi_clr_intr(&s_adc_digi_ctx->hal, ADC_HAL_DMA_INTR_MASK);
-
-        intptr_t desc_addr = adc_hal_get_desc_addr(&ctx->hal);
-
+        spi_ll_clear_intr(s_adc_digi_ctx->adc_spi_dev, ADC_DMA_INTR_MASK);
+        intptr_t desc_addr = spi_dma_ll_get_in_suc_eof_desc_addr(s_adc_digi_ctx->adc_spi_dev, s_adc_digi_ctx->spi_dma_ctx->rx_dma_chan.chan_id);
         ctx->rx_eof_desc_addr = desc_addr;
         need_yield = s_adc_dma_intr(ctx);
     }
-
+#elif CONFIG_IDF_TARGET_ESP32
+    bool conversion_finish = i2s_ll_get_intr_status(s_adc_digi_ctx->adc_i2s_dev) & ADC_DMA_INTR_MASK;
+    if (conversion_finish) {
+        i2s_ll_clear_intr_status(s_adc_digi_ctx->adc_i2s_dev, ADC_DMA_INTR_MASK);
+        uint32_t desc_addr;
+        i2s_ll_rx_get_eof_des_addr(s_adc_digi_ctx->adc_i2s_dev, &desc_addr);
+        ctx->rx_eof_desc_addr = (intptr_t)desc_addr;
+        need_yield = s_adc_dma_intr(ctx);
+    }
+#endif
     if (need_yield) {
         portYIELD_FROM_ISR();
     }
@@ -433,8 +471,16 @@ esp_err_t adc_digi_start(void)
     adc_hal_digi_init(&s_adc_digi_ctx->hal);
     adc_hal_digi_controller_config(&s_adc_digi_ctx->hal, &s_adc_digi_ctx->hal_digi_ctrlr_cfg);
 
-    //start conversion
-    adc_hal_digi_start(&s_adc_digi_ctx->hal, s_adc_digi_ctx->rx_dma_buf);
+    adc_dma_stop(s_adc_digi_ctx);
+    adc_hal_digi_connect(false);
+
+    adc_dma_reset(s_adc_digi_ctx);
+    adc_hal_digi_reset();
+    adc_hal_digi_dma_link(&s_adc_digi_ctx->hal, s_adc_digi_ctx->rx_dma_buf);
+
+    adc_dma_start(s_adc_digi_ctx, s_adc_digi_ctx->hal.rx_desc);
+    adc_hal_digi_connect(true);
+    adc_hal_digi_enable(true);
 
     return ESP_OK;
 }
@@ -447,14 +493,12 @@ esp_err_t adc_digi_stop(void)
     }
     s_adc_digi_ctx->driver_start_flag = 0;
 
-    //disable the in suc eof intrrupt
-    adc_hal_digi_dis_intr(&s_adc_digi_ctx->hal, ADC_HAL_DMA_INTR_MASK);
-    //clear the in suc eof interrupt
-    adc_hal_digi_clr_intr(&s_adc_digi_ctx->hal, ADC_HAL_DMA_INTR_MASK);
-    //stop ADC
-    adc_hal_digi_stop(&s_adc_digi_ctx->hal);
+    adc_dma_stop(s_adc_digi_ctx);
+    adc_hal_digi_enable(false);
+    adc_hal_digi_connect(false);
 
-    adc_hal_digi_deinit(&s_adc_digi_ctx->hal);
+    adc_hal_digi_deinit();
+
 #if CONFIG_PM_ENABLE
     if (s_adc_digi_ctx->pm_lock) {
         esp_pm_lock_release(s_adc_digi_ctx->pm_lock);
