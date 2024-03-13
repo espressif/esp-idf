@@ -691,7 +691,7 @@ typedef enum {
     WIFI_PHY_RATE_MCS5_LGI  = 0x15, /**< MCS5 with long GI */
     WIFI_PHY_RATE_MCS6_LGI  = 0x16, /**< MCS6 with long GI */
     WIFI_PHY_RATE_MCS7_LGI  = 0x17, /**< MCS7 with long GI */
-#if CONFIG_SOC_WIFI_HE_SUPPORT || !CONFIG_SOC_WIFI_SUPPORT
+#if CONFIG_SOC_WIFI_HE_SUPPORT || !CONFIG_SOC_WIFI_SUPPORTED
     WIFI_PHY_RATE_MCS8_LGI,         /**< MCS8 with long GI */
     WIFI_PHY_RATE_MCS9_LGI,         /**< MCS9 with long GI */
 #endif
@@ -718,7 +718,7 @@ typedef enum {
     WIFI_PHY_RATE_MCS5_SGI,         /**< MCS5 with short GI */
     WIFI_PHY_RATE_MCS6_SGI,         /**< MCS6 with short GI */
     WIFI_PHY_RATE_MCS7_SGI,         /**< MCS7 with short GI */
-#if CONFIG_SOC_WIFI_HE_SUPPORT || !CONFIG_SOC_WIFI_SUPPORT
+#if CONFIG_SOC_WIFI_HE_SUPPORT || !CONFIG_SOC_WIFI_SUPPORTED
     WIFI_PHY_RATE_MCS8_SGI,         /**< MCS8 with short GI */
     WIFI_PHY_RATE_MCS9_SGI,         /**< MCS9 with short GI */
 #endif
