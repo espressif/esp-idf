@@ -266,9 +266,9 @@ Bluetooth SIG Documentation
 ---------------------------
 
 - `BLE Mesh Core Specification <https://www.bluetooth.org/docman/handlers/downloaddoc.ashx?doc_id=429633>`_
-- `BLE Mesh Protocol v1.1 Specification(draft) <https://www.bluetooth.org/DocMan/handlers/DownloadDoc.ashx?doc_id=554899>`_
+- `BLE Mesh Protocol v1.1 Specification <https://www.bluetooth.com/specifications/specs/mesh-protocol/>`_
 - `BLE Mesh Model Specification <https://www.bluetooth.org/docman/handlers/downloaddoc.ashx?doc_id=429634>`_
-- `BLE Mesh Model v1.1 Specification(draft) <https://www.bluetooth.org/DocMan/handlers/DownloadDoc.ashx?doc_id=557081>`_
+- `BLE Mesh Model v1.1 Specification <https://www.bluetooth.com/specifications/specs/mesh-model-1-1/>`_
 - `An Intro to Bluetooth Mesh Part 1 <https://www.bluetooth.com/blog/an-intro-to-bluetooth-mesh-part1>`_ / `Part 2 <https://www.bluetooth.com/blog/an-intro-to-bluetooth-mesh-part2>`__
 - `The Fundamental Concepts of Bluetooth Mesh Networking, Part 1 <https://www.bluetooth.com/blog/the-fundamental-concepts-of-bluetooth-mesh-networking-part-1>`_ / `Part 2 <https://www.bluetooth.com/blog/the-fundamental-concepts-of-bluetooth-mesh-networking-part-2>`__
 - `Bluetooth Mesh Networking: Friendship <https://www.bluetooth.com/blog/bluetooth-mesh-networking-series-friendship>`_
