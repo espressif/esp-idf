@@ -1104,6 +1104,16 @@ menu "LWIP"
             help
                 This option allows you to config dns fallback server address.
 
+        config LWIP_DNS_DYNAMIC_SORT
+            bool "Dynamically sort DNS results"
+            default n
+            help
+                Dynamically sorts DNS results by available source addresses (based on RFC 6724).
+                This allows a device to return results based on the current network
+                and work across IPv4-only, IPv6-only, and dual-stack networks.
+                If this option is disabled, DNS results have a static preference for IPv4,
+                which will work in most cases but fails for some network configurations
+
     endmenu # DNS
 
     config LWIP_BRIDGEIF_MAX_PORTS
