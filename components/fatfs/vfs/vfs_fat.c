@@ -1348,10 +1348,12 @@ esp_err_t esp_vfs_fat_create_contiguous_file(const char* base_path, const char* 
     }
 
     _lock_release(&fat_ctx->lock);
+    free(file);
 
     return 0;
 fail:
     _lock_release(&fat_ctx->lock);
+    free(file);
     ESP_LOGD(TAG, "%s: fresult=%d", __func__, res);
     errno = fresult_to_errno(res);
     return -1;
@@ -1432,10 +1434,12 @@ esp_err_t esp_vfs_fat_test_contiguous_file(const char* base_path, const char* fu
     }
 
     _lock_release(&fat_ctx->lock);
+    free(file);
 
     return 0;
 fail:
     _lock_release(&fat_ctx->lock);
+    free(file);
     ESP_LOGD(TAG, "%s: fresult=%d", __func__, res);
     errno = fresult_to_errno(res);
     return -1;
