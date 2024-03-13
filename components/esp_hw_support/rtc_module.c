@@ -20,20 +20,22 @@
 #include "esp_private/rtc_ctrl.h"
 #include "esp_attr.h"
 
+//TODO: [ESP32C61] IDF-9331, c61 don't have lp-core, check
+
 #ifndef NDEBUG
 // Enable built-in checks in queue.h in debug builds
 #define INVARIANTS
 #endif
 #include "sys/queue.h"
 
-#if CONFIG_IDF_TARGET_ESP32C6 || CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP32P4 || CONFIG_IDF_TARGET_ESP32C5 // TODO: IDF-8008
+#if !SOC_LP_PERIPH_SHARE_INTERRUPT // TODO: IDF-8008
 static const char *TAG = "rtc_module";
 #endif
 
 // rtc_spinlock is used by other peripheral drivers
 portMUX_TYPE rtc_spinlock = portMUX_INITIALIZER_UNLOCKED;
 
-#if !CONFIG_IDF_TARGET_ESP32C6 && !CONFIG_IDF_TARGET_ESP32H2 && !CONFIG_IDF_TARGET_ESP32P4 && !CONFIG_IDF_TARGET_ESP32C5 // TODO: IDF-8008
+#if SOC_LP_PERIPH_SHARE_INTERRUPT // TODO: IDF-8008
 
 #define NOT_REGISTERED      (-1)
 
@@ -97,11 +99,11 @@ out:
     portEXIT_CRITICAL(&s_rtc_isr_handler_list_lock);
     return err;
 }
-#endif // !CONFIG_IDF_TARGET_ESP32C6 TODO: IDF-8008
+#endif // SOC_LP_PERIPH_SHARE_INTERRUPT TODO: IDF-8008
 
 esp_err_t rtc_isr_register(intr_handler_t handler, void* handler_arg, uint32_t rtc_intr_mask, uint32_t flags)
 {
-#if CONFIG_IDF_TARGET_ESP32C6 || CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP32P4 || CONFIG_IDF_TARGET_ESP32C5 // TODO: IDF-8008
+#if !SOC_LP_PERIPH_SHARE_INTERRUPT // TODO: IDF-8008
     ESP_EARLY_LOGW(TAG, "rtc_isr_register() has not been implemented yet");
     return ESP_OK;
 #else
@@ -132,7 +134,7 @@ esp_err_t rtc_isr_register(intr_handler_t handler, void* handler_arg, uint32_t r
 
 esp_err_t rtc_isr_deregister(intr_handler_t handler, void* handler_arg)
 {
-#if CONFIG_IDF_TARGET_ESP32C6 || CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP32P4 || CONFIG_IDF_TARGET_ESP32C5 // TODO: IDF-8008
+#if !SOC_LP_PERIPH_SHARE_INTERRUPT // TODO: IDF-8008
     ESP_EARLY_LOGW(TAG, "rtc_isr_deregister() has not been implemented yet");
     return ESP_OK;
 #else
@@ -161,7 +163,7 @@ esp_err_t rtc_isr_deregister(intr_handler_t handler, void* handler_arg)
 #endif
 }
 
-#if !CONFIG_IDF_TARGET_ESP32C6 && !CONFIG_IDF_TARGET_ESP32H2 && !CONFIG_IDF_TARGET_ESP32P4 && !CONFIG_IDF_TARGET_ESP32C5 // TODO: IDF-8008
+#if SOC_LP_PERIPH_SHARE_INTERRUPT // TODO: IDF-8008
 /**
  * @brief This helper function can be used to avoid the interrupt to be triggered with cache disabled.
  *        There are lots of different signals on RTC module (i.e. sleep_wakeup, wdt, brownout_detect, etc.)
@@ -184,7 +186,7 @@ static void s_rtc_isr_noniram_hook_relieve(uint32_t rtc_intr_mask)
 
 IRAM_ATTR void rtc_isr_noniram_disable(uint32_t cpu)
 {
-#if !CONFIG_IDF_TARGET_ESP32C6 && !CONFIG_IDF_TARGET_ESP32H2 && !CONFIG_IDF_TARGET_ESP32P4 && !CONFIG_IDF_TARGET_ESP32C5 // TODO: IDF-8008
+#if SOC_LP_PERIPH_SHARE_INTERRUPT // TODO: IDF-8008
     if (rtc_isr_cpu == cpu) {
         rtc_intr_enabled |= RTCCNTL.int_ena.val;
         RTCCNTL.int_ena.val &= rtc_intr_cache;
@@ -194,7 +196,7 @@ IRAM_ATTR void rtc_isr_noniram_disable(uint32_t cpu)
 
 IRAM_ATTR void rtc_isr_noniram_enable(uint32_t cpu)
 {
-#if !CONFIG_IDF_TARGET_ESP32C6 && !CONFIG_IDF_TARGET_ESP32H2 && !CONFIG_IDF_TARGET_ESP32P4 && !CONFIG_IDF_TARGET_ESP32C5 // TODO: IDF-8008
+#if SOC_LP_PERIPH_SHARE_INTERRUPT // TODO: IDF-8008
     if (rtc_isr_cpu == cpu) {
         RTCCNTL.int_ena.val = rtc_intr_enabled;
         rtc_intr_enabled = 0;

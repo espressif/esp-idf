@@ -11,7 +11,8 @@
 #include "hal/clk_gate_ll.h"
 #endif
 
-#if SOC_MODEM_CLOCK_IS_INDEPENDENT
+// TODO: [ESP32C61] IDF-9513, modem support
+#if SOC_MODEM_CLOCK_IS_INDEPENDENT && SOC_MODEM_CLOCK_SUPPORTED
 #include "esp_private/esp_modem_clock.h"
 #endif
 

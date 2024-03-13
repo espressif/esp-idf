@@ -64,7 +64,7 @@ build_stage2() {
         --size-file size.json \
         --keep-going \
         --collect-size-info size_info.txt \
-        --default-build-targets esp32 esp32s2 esp32s3 esp32c2 esp32c3 esp32c5 esp32c6 esp32h2 esp32p4
+        --default-build-targets esp32 esp32s2 esp32s3 esp32c2 esp32c3 esp32c5 esp32c6 esp32h2 esp32p4 esp32c61
 }
 
 build_stage1() {
@@ -78,7 +78,7 @@ build_stage1() {
         --build-log ${BUILD_LOG_CMAKE} \
         --size-file size.json \
         --collect-size-info size_info.txt \
-        --default-build-targets esp32 esp32s2 esp32s3 esp32c2 esp32c3 esp32c5 esp32c6 esp32h2 esp32p4
+        --default-build-targets esp32 esp32s2 esp32s3 esp32c2 esp32c3 esp32c5 esp32c6 esp32h2 esp32p4 esp32c61
 }
 
 # TODO: IDF-9197 remove the additional test for esp32c5 beta3

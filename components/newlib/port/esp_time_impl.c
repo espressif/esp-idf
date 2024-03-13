@@ -39,6 +39,9 @@
 #elif CONFIG_IDF_TARGET_ESP32C6
 #include "esp32c6/rom/rtc.h"
 #include "esp32c6/rtc.h"
+#elif CONFIG_IDF_TARGET_ESP32C61    //TODO: IDF-9526, refactor this
+#include "esp32c61/rom/rtc.h"
+#include "esp32c61/rtc.h"
 #elif CONFIG_IDF_TARGET_ESP32C5
 #include "esp32c5/rom/rtc.h"
 #include "esp32c5/rtc.h"

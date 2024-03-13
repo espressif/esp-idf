@@ -1,0 +1,41 @@
+choice ESP32C61_REV_MIN
+    prompt "Minimum Supported ESP32-C61 Revision"
+    default ESP32C61_REV_MIN_0
+    help
+        Required minimum chip revision. ESP-IDF will check for it and
+        reject to boot if the chip revision fails the check.
+        This ensures the chip used will have some modifications (features, or bugfixes).
+
+        The complied binary will only support chips above this revision,
+        this will also help to reduce binary size.
+
+    config ESP32C61_REV_MIN_0
+        bool "Rev v0.0"
+endchoice
+
+config ESP32C61_REV_MIN_FULL
+    int
+    default 0 if ESP32C61_REV_MIN_0
+
+config ESP_REV_MIN_FULL
+    int
+    default ESP32C61_REV_MIN_FULL
+
+    #
+    # MAX Revision
+    #
+
+    comment "Maximum Supported ESP32-C61 Revision (Rev v0.99)"
+    # Maximum revision that IDF supports.
+    # It can not be changed by user.
+    # Only Espressif can change it when a new version will be supported in IDF.
+    # Supports all chips starting from ESP32C61_REV_MIN_FULL to ESP32C61_REV_MAX_FULL
+
+config ESP32C61_REV_MAX_FULL
+    int
+    default 99
+    # keep in sync the "Maximum Supported Revision" description with this value
+
+config ESP_REV_MAX_FULL
+    int
+    default ESP32C61_REV_MAX_FULL

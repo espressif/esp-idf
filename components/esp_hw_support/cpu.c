@@ -11,7 +11,7 @@
 #include "soc/soc_caps.h"
 
 // TODO: IDF-5645
-#if CONFIG_IDF_TARGET_ESP32C6 || CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP32C5
+#if CONFIG_IDF_TARGET_ESP32C6 || CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP32C5 || CONFIG_IDF_TARGET_ESP32C61
 #include "soc/lp_aon_reg.h"
 #include "soc/pcr_reg.h"
 #define SYSTEM_CPU_PER_CONF_REG PCR_CPU_WAITI_CONF_REG
@@ -87,7 +87,7 @@ void esp_cpu_unstall(int core_id)
     CLEAR_PERI_REG_MASK(PMU_CPU_SW_STALL_REG, pmu_core_stall_mask);
 #else
     /*
-    We need to write clear the value "0x86" to unstall a particular core. The location of this value is split into
+    We need to write clear the value "0x86" to uninstall a particular core. The location of this value is split into
     two separate bit fields named "c0" and "c1", and the two fields are located in different registers. Each core has
     its own pair of "c0" and "c1" bit fields.
 
@@ -112,7 +112,7 @@ void esp_cpu_reset(int core_id)
     else
         REG_SET_BIT(LP_CLKRST_HPCPU_RESET_CTRL0_REG, LP_CLKRST_HPCORE1_SW_RESET);
 #else
-#if CONFIG_IDF_TARGET_ESP32C6 || CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP32C5 // TODO: IDF-5645
+#if CONFIG_IDF_TARGET_ESP32C6 || CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP32C5 || CONFIG_IDF_TARGET_ESP32C61 // TODO: IDF-5645
     SET_PERI_REG_MASK(LP_AON_CPUCORE0_CFG_REG, LP_AON_CPU_CORE0_SW_RESET);
 #else
     assert(core_id >= 0 && core_id < SOC_CPU_CORES_NUM);
@@ -307,7 +307,7 @@ bool esp_cpu_compare_and_set(volatile uint32_t *addr, uint32_t compare_value, ui
         // Release the external RAM CAS lock
         external_ram_cas_lock = 0;
 exit:
-        // Reenable interrupts
+        // Re-enable interrupts
         __asm__ __volatile__ ("memw \n"
                               "wsr %0, ps\n"
                               :: "r"(intr_level));

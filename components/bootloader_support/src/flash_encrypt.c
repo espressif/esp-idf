@@ -13,6 +13,8 @@
 #include "esp_secure_boot.h"
 #include "hal/efuse_hal.h"
 
+//TODO:[ESP32C61] IDf-9232
+
 #if CONFIG_IDF_TARGET_ESP32
 #define CRYPT_CNT ESP_EFUSE_FLASH_CRYPT_CNT
 #define WR_DIS_CRYPT_CNT ESP_EFUSE_WR_DIS_FLASH_CRYPT_CNT
