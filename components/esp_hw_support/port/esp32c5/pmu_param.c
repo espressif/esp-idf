@@ -367,6 +367,12 @@ const pmu_hp_system_retention_param_t * pmu_hp_system_retention_param_default(pm
 # define PMU_SLOW_CLK_USE_EXT_XTAL  (0)
 #endif
 
+#if CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
+#define PMU_LP_DEFAULT_XPD_RC32K (1)
+#else
+#define PMU_LP_DEFAULT_XPD_RC32K (0)
+#endif
+
 #define PMU_LP_ACTIVE_POWER_CONFIG_DEFAULT() { \
     .dig_power = {              \
         .mem_dslp       = 0,    \
@@ -374,7 +380,7 @@ const pmu_hp_system_retention_param_t * pmu_hp_system_retention_param_default(pm
     }, \
     .clk_power = {              \
         .xpd_xtal32k    = PMU_SLOW_CLK_USE_EXT_XTAL,    \
-        .xpd_rc32k      = 1,    \
+        .xpd_rc32k      = PMU_LP_DEFAULT_XPD_RC32K,    \
         .xpd_fosc       = 1,    \
         .pd_osc         = 0     \
     } \

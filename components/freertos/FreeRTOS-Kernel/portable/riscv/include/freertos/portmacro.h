@@ -665,8 +665,11 @@ static inline void __attribute__((always_inline)) vPortExitCriticalSafe(portMUX_
 
 FORCE_INLINE_ATTR bool xPortCanYield(void)
 {
-    uint32_t threshold = REG_READ(INTERRUPT_CURRENT_CORE_INT_THRESH_REG);
+
 #if SOC_INT_CLIC_SUPPORTED
+// TODO: [ESP32C5] IDF-8655 simplify the code for c5 mp
+#if !CONFIG_IDF_TARGET_ESP32C5_MP_VERSION
+    uint32_t threshold = REG_READ(INTERRUPT_CURRENT_CORE_INT_THRESH_REG);
     /* When CLIC is supported:
      *  - The lowest interrupt threshold level is 0. Therefore, an interrupt threshold level above 0 would mean that we
      *    are in a critical section.
@@ -679,12 +682,22 @@ FORCE_INLINE_ATTR bool xPortCanYield(void)
     threshold = threshold >> (CLIC_CPU_INT_THRESH_S + (8 - NLBITS));
 
     return ((intr_level == 0) && (threshold == 0));
-#endif /* SOC_INT_CLIC_SUPPORTED */
+#else
+    #define MINTSTATUS         0xfb1
+    #define MINTTHRESH         0x347
+    uint32_t threshold1 = (RV_READ_CSR(MINTTHRESH)) >> (8 - NLBITS);
+    uint32_t threshold2 = (RV_READ_CSR(MINTSTATUS)) >> (24 + (8 - NLBITS));
+    return (threshold1 == 0) && (threshold2 == 0) ;
+#endif
+
+#else/* !SOC_INT_CLIC_SUPPORTED */
+    uint32_t threshold = REG_READ(INTERRUPT_CURRENT_CORE_INT_THRESH_REG);
     /* when enter critical code, FreeRTOS will mask threshold to RVHAL_EXCM_LEVEL
      * and exit critical code, will recover threshold value (1). so threshold <= 1
      * means not in critical code
      */
     return (threshold <= 1);
+#endif
 }
 
 

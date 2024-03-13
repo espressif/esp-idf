@@ -1,9 +1,14 @@
 choice RTC_CLK_SRC
     prompt "RTC clock source"
-    default RTC_CLK_SRC_INT_RC32K
+    # TODO: IDF-9197
+    default RTC_CLK_SRC_INT_RC if IDF_TARGET_ESP32C5_MP_VERSION
+    default RTC_CLK_SRC_INT_RC32K if IDF_TARGET_ESP32C5_BETA3_VERSION
     help
         Choose which clock is used as RTC clock source.
 
+    config RTC_CLK_SRC_INT_RC
+        depends on IDF_TARGET_ESP32C5_MP_VERSION
+        bool "Internal 136kHz RC oscillator"
     config RTC_CLK_SRC_EXT_CRYS
         bool "External 32kHz crystal"
         select ESP_SYSTEM_RTC_EXT_XTAL

@@ -13,6 +13,7 @@
 #include "esp_rom_uart.h"
 #include "esp_rom_sys.h"
 #include "esp_rom_spiflash.h"
+#include "soc/soc_caps.h"
 #include "soc/gpio_sig_map.h"
 #include "soc/io_mux_reg.h"
 #include "soc/assist_debug_reg.h"
@@ -41,7 +42,9 @@
 #include "soc/lp_wdt_reg.h"
 #include "hal/efuse_hal.h"
 #include "hal/lpwdt_ll.h"
+#if SOC_MODEM_CLOCK_SUPPORTED
 #include "modem/modem_lpcon_reg.h"
+#endif
 
 static const char *TAG = "boot.esp32c5";
 
@@ -85,12 +88,15 @@ static void bootloader_super_wdt_auto_feed(void)
 static inline void bootloader_hardware_init(void)
 {
     /* Enable analog i2c master clock */
+#if SOC_MODEM_CLOCK_SUPPORTED
     SET_PERI_REG_MASK(MODEM_LPCON_CLK_CONF_REG, MODEM_LPCON_CLK_I2C_MST_EN);
     SET_PERI_REG_MASK(MODEM_LPCON_I2C_MST_CLK_CONF_REG, MODEM_LPCON_CLK_I2C_MST_SEL_160M);
+#endif
 }
 
 static inline void bootloader_ana_reset_config(void)
 {
+// TODO: IDF-9197
     // TODO: [ESP32C5] IDF-8650
     //Enable super WDT reset.
     // bootloader_ana_super_wdt_reset_config(true);

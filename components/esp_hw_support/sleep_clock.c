@@ -33,7 +33,9 @@ esp_err_t sleep_clock_system_retention_init(void)
 {
 #if CONFIG_IDF_TARGET_ESP32C6
     #define N_REGS_PCR()    (((PCR_SRAM_POWER_CONF_REG - DR_REG_PCR_BASE) / 4) + 1)
-#elif CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP32C5
+#elif CONFIG_IDF_TARGET_ESP32C5_MP_VERSION
+    #define N_REGS_PCR()    (((PCR_SRAM_POWER_CONF_1_REG - DR_REG_PCR_BASE) / 4) + 1)
+#elif CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
     #define N_REGS_PCR()    (((PCR_PWDET_SAR_CLK_CONF_REG - DR_REG_PCR_BASE) / 4) + 1)
 #endif
     const static sleep_retention_entries_config_t pcr_regs_retention[] = {

@@ -99,6 +99,7 @@ menu "ESP System Settings"
         default y if IDF_TARGET_ESP32C6
         default n if IDF_TARGET_ESP32H2 # IDF-5667
         default y if IDF_TARGET_ESP32P4
+        default y if IDF_TARGET_ESP32C5
         depends on SOC_RTC_FAST_MEM_SUPPORTED
 
     config ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP
@@ -359,7 +360,8 @@ menu "ESP System Settings"
         prompt "UART console baud rate" if ESP_CONSOLE_UART_CUSTOM
         depends on ESP_CONSOLE_UART
         default 74880 if (IDF_TARGET_ESP32C2 && XTAL_FREQ_26)
-        default 138240 if (IDF_TARGET_ESP32C5_BETA3_VERSION && XTAL_FREQ_48)
+        # TODO: IDF-8651 Check if need update
+        default 138240 if (IDF_TARGET_ESP32C5 && XTAL_FREQ_48)
         default 115200
         range 1200 4000000 if !PM_ENABLE
         range 1200 1000000 if PM_ENABLE

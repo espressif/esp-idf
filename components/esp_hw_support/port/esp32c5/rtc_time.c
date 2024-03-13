@@ -211,7 +211,6 @@ static bool rtc_clk_cal_32k_valid(uint32_t xtal_freq, uint32_t slowclk_cycles, u
 uint32_t rtc_clk_cal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cycles)
 {
     soc_xtal_freq_t xtal_freq = rtc_clk_xtal_freq_get();
-
     // TODO: IDF-8642 Check whether this workaround still need for C5
     // /*The Fosc CLK of calibration circuit is divided by 32.
     //   So we need to divide the calibrate cycles of the FOSC by 32 to
@@ -221,7 +220,6 @@ uint32_t rtc_clk_cal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cycles)
     // }
 
     uint64_t xtal_cycles = rtc_clk_cal_internal(cal_clk, slowclk_cycles);
-
     if (cal_clk == RTC_CAL_32K_XTAL && !rtc_clk_cal_32k_valid((uint32_t)xtal_freq, slowclk_cycles, xtal_cycles)) {
         return 0;
     }
