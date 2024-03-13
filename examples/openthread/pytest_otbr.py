@@ -1,8 +1,6 @@
 # SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
 # !/usr/bin/env python3
-
-
 import copy
 import os.path
 import re
@@ -581,17 +579,14 @@ def test_ot_sleepy_device(dut: Tuple[IdfDut, IdfDut]) -> None:
         ocf.init_thread(leader)
         time.sleep(3)
         leader_para = ocf.thread_parameter('leader', '', '12', '7766554433221100', False)
-        leader_para.setnetworkname('OpenThread-ESP')
-        leader_para.setpanid('0x1234')
-        leader_para.setextpanid('dead00beef00cafe')
-        leader_para.setnetworkkey('aabbccddeeff00112233445566778899')
-        leader_para.setpskc('104810e2315100afd6bc9215a6bfac53')
         ocf.joinThreadNetwork(leader, leader_para)
         ocf.wait(leader, 5)
-        output = sleepy_device.expect(pexpect.TIMEOUT, timeout=5)
-        assert not bool(fail_info.search(str(output)))
-        ocf.clean_buffer(sleepy_device)
-        sleepy_device.serial.hard_reset()
+        dataset = ocf.getDataset(leader)
+        ocf.execute_command(sleepy_device, 'mode -')
+        ocf.execute_command(sleepy_device, 'pollperiod 3000')
+        ocf.execute_command(sleepy_device, 'dataset set active ' + dataset)
+        ocf.execute_command(sleepy_device, 'ifconfig up')
+        ocf.execute_command(sleepy_device, 'thread start')
         info = sleepy_device.expect(r'(.+)detached -> child', timeout=20)[1].decode(errors='replace')
         assert not bool(fail_info.search(str(info)))
         info = sleepy_device.expect(r'(.+)PMU_SLEEP_PD_TOP: True', timeout=10)[1].decode(errors='replace')
