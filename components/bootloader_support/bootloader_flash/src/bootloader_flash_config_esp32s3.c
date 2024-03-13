@@ -260,7 +260,7 @@ esp_err_t bootloader_init_spi_flash(void)
     }
 #endif
 
-#if CONFIG_SPI_FLASH_HPM_ENABLE
+#if CONFIG_BOOTLOADER_FLASH_DC_AWARE
     // Reset flash, clear volatile bits DC[0:1]. Make it work under default mode to boot.
     bootloader_spi_flash_reset();
 #endif
@@ -272,7 +272,7 @@ esp_err_t bootloader_init_spi_flash(void)
         bootloader_enable_qio_mode();
     }
 #endif
-#if CONFIG_SPI_FLASH_OCTAL_32BIT_ADDR_ENABLE
+#if CONFIG_BOOTLOADER_CACHE_32BIT_ADDR_OCTAL_FLASH
     bootloader_flash_32bits_address_map_enable(bootloader_flash_get_spi_mode());
 #endif
     print_flash_info(&bootloader_image_hdr);

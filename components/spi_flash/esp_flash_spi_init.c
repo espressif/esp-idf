@@ -353,6 +353,8 @@ esp_err_t esp_flash_init_default_chip(void)
     #endif
 
     #if CONFIG_ESPTOOLPY_OCT_FLASH
+    // Default value. When `CONFIG_ESPTOOLPY_FLASH_MODE_AUTO_DETECT` selected, if the selected mode not consistent with
+    // hardware, will be overwritten in s_esp_flash_choose_correct_mode.
     cfg.octal_mode_en = 1;
     cfg.default_io_mode = DEFAULT_FLASH_MODE;
     #endif
@@ -404,7 +406,7 @@ esp_err_t esp_flash_init_default_chip(void)
     }
 #endif
 
-#if CONFIG_SPI_FLASH_HPM_ENABLE
+#if CONFIG_SPI_FLASH_HPM_DC_ON
     if (spi_flash_hpm_dummy_adjust()) {
         default_chip.hpm_dummy_ena = 1;
     }

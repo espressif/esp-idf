@@ -413,7 +413,7 @@ esp_err_t bootloader_flash_erase_range(uint32_t start_addr, uint32_t size)
     return spi_to_esp_err(rc);
 }
 
-#if CONFIG_SPI_FLASH_OCTAL_32BIT_ADDR_ENABLE
+#if CONFIG_BOOTLOADER_CACHE_32BIT_ADDR_OCTAL_FLASH
 void bootloader_flash_32bits_address_map_enable(esp_rom_spiflash_read_mode_t flash_mode)
 {
     esp_rom_opiflash_spi0rd_t cache_rd = {};

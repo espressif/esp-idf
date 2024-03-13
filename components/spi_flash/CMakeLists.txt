@@ -13,7 +13,7 @@ else()
         list(APPEND srcs "${target}/spi_flash_oct_flash_init.c")
     endif()
 
-    if(CONFIG_IDF_TARGET_ESP32S3)
+    if(CONFIG_SPI_FLASH_HPM_ON)
         list(APPEND srcs
             "spi_flash_hpm_enable.c")
     endif()
