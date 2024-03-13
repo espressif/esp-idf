@@ -1,5 +1,11 @@
 idf_build_get_property(target IDF_TARGET)
 
+if(${target} STREQUAL "linux")
+# omit newlib for linux
+else()
+    list(APPEND priv_requires "newlib")
+endif()
+
 set(srcs "src/nvs_api.cpp"
          "src/nvs_cxx_api.cpp"
          "src/nvs_item_hash_list.cpp"
@@ -11,13 +17,13 @@ set(srcs "src/nvs_api.cpp"
          "src/nvs_partition.cpp"
          "src/nvs_partition_lookup.cpp"
          "src/nvs_partition_manager.cpp"
-         "src/nvs_types.cpp")
+         "src/nvs_types.cpp"
+         "src/nvs_platform.cpp")
 
 idf_component_register(SRCS "${srcs}"
-                    REQUIRES "esp_partition"
-                    PRIV_REQUIRES spi_flash
+                    REQUIRES "esp_partition" "spi_flash"
+                    PRIV_REQUIRES "${priv_requires}"
                     INCLUDE_DIRS "include"
-                    "../spi_flash/include"
                     PRIV_INCLUDE_DIRS "private_include")
 
 # If we use the linux target, we need to redirect the crc functions to the linux
