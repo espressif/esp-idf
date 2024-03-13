@@ -157,12 +157,6 @@ tools/test_apps/system/eh_frame:
       temporary: true
       reason: the other targets are not tested yet
 
-tools/test_apps/system/esp_intr_dump:
-  disable_test:
-    - if: IDF_TARGET == "esp32p4"
-      temporary: true
-      reason: test not pass, should be re-enable # TODO: IDF-8991
-
 tools/test_apps/system/g0_components:
   enable:
     - if: INCLUDE_DEFAULT == 1 or IDF_TARGET in ["esp32p4", "esp32c5"] # preview targets
