@@ -1,10 +1,11 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <stdint.h>
+#include <string.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <sys/queue.h>
@@ -331,6 +332,33 @@ static void subscribe_idle(uint32_t core_mask)
  *
  */
 
+static UBaseType_t get_task_affinity(const TaskHandle_t xTask)
+{
+    if (xTask == NULL) {
+    /* User entry, we cannot predict on which core it is scheduled to run,
+     * so let's mark all cores as failing */
+#if configNUM_CORES > 1
+        return BIT(1) | BIT(0);
+#else
+        return BIT(0);
+#endif
+    }
+
+#if CONFIG_FREERTOS_SMP
+    #if configNUM_CORES > 1
+        return vTaskCoreAffinityGet(xTask);
+    #else
+        return BIT(0);
+    #endif
+#else
+    BaseType_t task_affinity = xTaskGetAffinity(xTask);
+    if (task_affinity == 0 || task_affinity == 1) {
+        return BIT(task_affinity);
+    }
+    return BIT(1) | BIT(0);
+#endif
+}
+
 #if CONFIG_IDF_TARGET_ARCH_RISCV
 
 static void task_wdt_timeout_handling(int cores_fail, bool panic)
@@ -505,65 +533,17 @@ static void task_wdt_isr(void *arg)
     portENTER_CRITICAL_ISR(&spinlock);
     esp_task_wdt_impl_timeout_triggered(p_twdt_obj->impl_ctx);
 
-    // If there are no entries, there's nothing to do.
-    if (SLIST_EMPTY(&p_twdt_obj->entries_slist)) {
-        portEXIT_CRITICAL_ISR(&spinlock);
-        return;
-    }
-    // Find what entries triggered the TWDT timeout (i.e., which entries have not been reset)
-    /*
-    Note: We are currently in a critical section, thus under normal circumstances, logging should not be allowed.
-    However, TWDT timeouts count as fatal errors, thus reporting the fatal error is considered more important than
-    minimizing interrupt latency. Thus we allow logging in critical sections in this narrow case.
-    */
-    ESP_EARLY_LOGE(TAG, "Task watchdog got triggered. The following tasks/users did not reset the watchdog in time:");
-    twdt_entry_t *entry;
     /* Keep a bitmap of CPU cores having tasks that have not reset TWDT.
      * Bit 0 represents core 0, bit 1 represents core 1, and so on. */
     int cpus_fail = 0;
     bool panic = p_twdt_obj->panic;
 
-    SLIST_FOREACH(entry, &p_twdt_obj->entries_slist, slist_entry) {
-        if (!entry->has_reset) {
-            if (entry->task_handle) {
-#if CONFIG_FREERTOS_SMP
-#if configNUM_CORES > 1
-                // Log the task's name and its affinity
-                const UBaseType_t affinity = vTaskCoreAffinityGet(entry->task_handle);
-                ESP_EARLY_LOGE(TAG, " - %s (0x%x)", pcTaskGetName(entry->task_handle), affinity);
-                cpus_fail |= affinity;
-#else // configNUM_CORES > 1
-                // Log the task's name
-                ESP_EARLY_LOGE(TAG, " - %s", pcTaskGetName(entry->task_handle));
-                cpus_fail |= BIT(0);
-#endif // configNUM_CORES > 1
-#else // CONFIG_FREERTOS_SMP
-                BaseType_t task_affinity = xTaskGetAffinity(entry->task_handle);
-                const char *cpu;
-                if (task_affinity == 0) {
-                    cpu = DRAM_STR("CPU 0");
-                    cpus_fail |= BIT(0);
-                } else if (task_affinity == 1) {
-                    cpu = DRAM_STR("CPU 1");
-                    cpus_fail |= BIT(1);
-                } else {
-                    cpu = DRAM_STR("CPU 0/1");
-                    cpus_fail |= BIT(1) | BIT(0);
-                }
-                ESP_EARLY_LOGE(TAG, " - %s (%s)", pcTaskGetName(entry->task_handle), cpu);
-#endif // CONFIG_FREERTOS_SMP
-            } else {
-                /* User entry, we cannot predict on which core it is scheduled to run,
-                 * so let's mark all cores as failing */
-#if configNUM_CORES > 1
-                cpus_fail = BIT(1) | BIT(0);
-#else // configNUM_CORES > 1
-                cpus_fail = BIT(0);
-#endif // configNUM_CORES > 1
-                ESP_EARLY_LOGE(TAG, " - %s", entry->user_name);
-            }
-        }
-    }
+	if (esp_task_wdt_print_triggered_tasks(NULL, NULL, &cpus_fail) != ESP_OK) {
+        // If there are no entries, there's nothing to do.
+        portEXIT_CRITICAL_ISR(&spinlock);
+        return;
+	}
+
     ESP_EARLY_LOGE(TAG, "%s", DRAM_STR("Tasks currently running:"));
     for (int x = 0; x < portNUM_PROCESSORS; x++) {
         ESP_EARLY_LOGE(TAG, "CPU %d: %s", x, pcTaskGetName(xTaskGetCurrentTaskHandleForCPU(x)));
@@ -854,4 +834,48 @@ esp_err_t esp_task_wdt_status(TaskHandle_t task_handle)
     portEXIT_CRITICAL(&spinlock);
 
     return ret;
+}
+
+esp_err_t esp_task_wdt_print_triggered_tasks(task_wdt_msg_handler msg_handler, void *opaque, int *cpus_fail)
+{
+    if (SLIST_EMPTY(&p_twdt_obj->entries_slist)) {
+        return ESP_FAIL;
+    }
+
+    twdt_entry_t *entry;
+    const char *caption = "Task watchdog got triggered. "
+        "The following tasks/users did not reset the watchdog in time:";
+
+    if (msg_handler == NULL) {
+        ESP_EARLY_LOGE(TAG, "%s", caption);
+    } else {
+        msg_handler(opaque, caption);
+    }
+
+    // Find what entries triggered the TWDT timeout (i.e., which entries have not been reset)
+    SLIST_FOREACH(entry, &p_twdt_obj->entries_slist, slist_entry) {
+        if (!entry->has_reset) {
+            const char *cpu;
+            const char *name = entry->task_handle ? pcTaskGetName(entry->task_handle) : entry->user_name;
+            const UBaseType_t affinity = get_task_affinity(entry->task_handle);
+            if (cpus_fail) {
+                *cpus_fail |= affinity;
+            }
+            if (affinity == BIT(0)) {
+                cpu = " (CPU 0)";
+            } else if (affinity == BIT(1)) {
+                cpu = " (CPU 1)";
+            } else {
+                cpu = " (CPU 0/1)";
+            }
+            if (msg_handler == NULL) {
+                ESP_EARLY_LOGE(TAG, " - %s%s", name, cpu);
+            } else {
+                msg_handler(opaque, "\n - ");
+                msg_handler(opaque, name);
+                msg_handler(opaque, cpu);
+            }
+        }
+    }
+    return ESP_OK;
 }
