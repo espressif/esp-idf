@@ -50,10 +50,10 @@ As ESP-NOW is connectionless, the MAC header is a little different from that of 
 Security
 --------
 
-ESP-NOW uses the CCMP method, which is described in IEEE Std. 802.11-2012, to protect the vendor-specific action frame. The Wi-Fi device maintains a Primary Master Key (PMK) and several Local Master Keys (LMK). The lengths of both PMK and LMk are 16 bytes.
+ESP-NOW uses the CCMP method, which is described in IEEE Std. 802.11-2012, to protect the vendor-specific action frame. The Wi-Fi device maintains a Primary Master Key (PMK) and several Local Master Keys (LMKs, each paired device has one LMK). The lengths of both PMK and LMK are 16 bytes.
 
     * PMK is used to encrypt LMK with the AES-128 algorithm. Call :cpp:func:`esp_now_set_pmk()` to set PMK. If PMK is not set, a default PMK will be used.
-    * LMK of the paired device is used to encrypt the vendor-specific action frame with the CCMP method. The maximum number of different LMKs is six. If the LMK of the paired device is not set, the vendor-specific action frame will not be encrypted.
+    * LMK of the paired device is used to encrypt the vendor-specific action frame with the CCMP method. If the LMK of the paired device is not set, the vendor-specific action frame will not be encrypted.
 
 Encrypting multicast vendor-specific action frame is not supported.
 
