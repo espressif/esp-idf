@@ -5,7 +5,6 @@
  */
 #include "esp_rom_sys.h"
 #include "esp_attr.h"
-// TODO: [ESP32C5] IDF-8824 (inherit from C6)
 #include "soc/i2c_ana_mst_reg.h"
 #include "modem/modem_lpcon_reg.h"
 /**
@@ -83,10 +82,8 @@ uint8_t esp_rom_regi2c_read_mask(uint8_t block, uint8_t host_id, uint8_t reg_add
 void esp_rom_regi2c_write(uint8_t block, uint8_t host_id, uint8_t reg_add, uint8_t data) __attribute__((alias("regi2c_write_impl")));
 void esp_rom_regi2c_write_mask(uint8_t block, uint8_t host_id, uint8_t reg_add, uint8_t msb, uint8_t lsb, uint8_t data) __attribute__((alias("regi2c_write_mask_impl")));
 
-__attribute__((unused))
 static IRAM_ATTR uint8_t regi2c_enable_block(uint8_t block)
 {
-    // TODO: [ESP32C5] IDF-8824 (inherit from C6)
     uint32_t i2c_sel = 0;
 
     REG_SET_BIT(MODEM_LPCON_CLK_CONF_REG, MODEM_LPCON_CLK_I2C_MST_EN);
@@ -121,7 +118,6 @@ static IRAM_ATTR uint8_t regi2c_enable_block(uint8_t block)
 
 uint8_t IRAM_ATTR regi2c_read_impl(uint8_t block, uint8_t host_id, uint8_t reg_add)
 {
-    // TODO: [ESP32C5] IDF-8824 (inherit from C6)
     (void)host_id;
     uint8_t i2c_sel = regi2c_enable_block(block);
 
@@ -137,7 +133,6 @@ uint8_t IRAM_ATTR regi2c_read_impl(uint8_t block, uint8_t host_id, uint8_t reg_a
 
 uint8_t IRAM_ATTR regi2c_read_mask_impl(uint8_t block, uint8_t host_id, uint8_t reg_add, uint8_t msb, uint8_t lsb)
 {
-    // TODO: [ESP32C5] IDF-8824 (inherit from C6)
     assert(msb - lsb < 8);
     uint8_t i2c_sel = regi2c_enable_block(block);
 
@@ -155,7 +150,6 @@ uint8_t IRAM_ATTR regi2c_read_mask_impl(uint8_t block, uint8_t host_id, uint8_t 
 
 void IRAM_ATTR regi2c_write_impl(uint8_t block, uint8_t host_id, uint8_t reg_add, uint8_t data)
 {
-    // TODO: [ESP32C5] IDF-8824 (inherit from C6)
     (void)host_id;
     uint8_t i2c_sel = regi2c_enable_block(block);
 
@@ -170,7 +164,6 @@ void IRAM_ATTR regi2c_write_impl(uint8_t block, uint8_t host_id, uint8_t reg_add
 
 void IRAM_ATTR regi2c_write_mask_impl(uint8_t block, uint8_t host_id, uint8_t reg_add, uint8_t msb, uint8_t lsb, uint8_t data)
 {
-    // TODO: [ESP32C5] IDF-8824 (inherit from C6)
     (void)host_id;
     assert(msb - lsb < 8);
     uint8_t i2c_sel = regi2c_enable_block(block);
