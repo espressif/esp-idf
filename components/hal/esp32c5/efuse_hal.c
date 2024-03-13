@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -108,5 +108,5 @@ bool efuse_hal_is_coding_error_in_block(unsigned block)
     //     uint32_t error_reg = REG_READ(EFUSE_RD_RS_ERR0_REG + (block / 8) * 4);
     //     return ESP_EFUSE_BLOCK_ERROR_BITS(error_reg, block % 8) != 0;
     // }
-    // return false;
+    return false;
 }

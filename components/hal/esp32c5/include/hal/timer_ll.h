@@ -10,6 +10,7 @@
 #pragma once
 
 #include <stdbool.h>
+#include "sdkconfig.h"  // TODO: remove
 #include "hal/assert.h"
 #include "hal/misc.h"
 #include "hal/timer_types.h"
@@ -25,6 +26,7 @@ extern "C" {
 // Get timer group register base address with giving group number
 #define TIMER_LL_GET_HW(group_id) ((group_id == 0) ? (&TIMERG0) : (&TIMERG1))
 #define TIMER_LL_EVENT_ALARM(timer_id) (1 << (timer_id))
+
 
 /**
  * @brief Enable the bus clock for timer group module
@@ -131,7 +133,12 @@ static inline void timer_ll_enable_clock(timg_dev_t *hw, uint32_t timer_num, boo
 __attribute__((always_inline))
 static inline void timer_ll_enable_alarm(timg_dev_t *hw, uint32_t timer_num, bool en)
 {
+    (void)timer_num;
+#if CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
     hw->hw_timer[timer_num].config.tx_alarm_en = en;
+#elif CONFIG_IDF_TARGET_ESP32C5_MP_VERSION
+    abort();
+#endif
 }
 
 /**
@@ -147,8 +154,12 @@ static inline void timer_ll_set_clock_prescale(timg_dev_t *hw, uint32_t timer_nu
     if (divider >= 65536) {
         divider = 0;
     }
+#if CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
     HAL_FORCE_MODIFY_U32_REG_FIELD(hw->hw_timer[timer_num].config, tx_divider, divider);
     hw->hw_timer[timer_num].config.tx_divcnt_rst = 1;
+#elif CONFIG_IDF_TARGET_ESP32C5_MP_VERSION
+    abort();
+#endif
 }
 
 /**
@@ -162,7 +173,11 @@ static inline void timer_ll_set_clock_prescale(timg_dev_t *hw, uint32_t timer_nu
 __attribute__((always_inline))
 static inline void timer_ll_enable_auto_reload(timg_dev_t *hw, uint32_t timer_num, bool en)
 {
+#if CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
     hw->hw_timer[timer_num].config.tx_autoreload = en;
+#elif CONFIG_IDF_TARGET_ESP32C5_MP_VERSION
+    abort();
+#endif
 }
 
 /**
@@ -174,7 +189,11 @@ static inline void timer_ll_enable_auto_reload(timg_dev_t *hw, uint32_t timer_nu
  */
 static inline void timer_ll_set_count_direction(timg_dev_t *hw, uint32_t timer_num, gptimer_count_direction_t direction)
 {
+#if CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
     hw->hw_timer[timer_num].config.tx_increase = (direction == GPTIMER_COUNT_UP);
+#elif CONFIG_IDF_TARGET_ESP32C5_MP_VERSION
+    abort();
+#endif
 }
 
 /**
@@ -188,7 +207,11 @@ static inline void timer_ll_set_count_direction(timg_dev_t *hw, uint32_t timer_n
 __attribute__((always_inline))
 static inline void timer_ll_enable_counter(timg_dev_t *hw, uint32_t timer_num, bool en)
 {
+#if CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
     hw->hw_timer[timer_num].config.tx_en = en;
+#elif CONFIG_IDF_TARGET_ESP32C5_MP_VERSION
+    abort();
+#endif
 }
 
 /**
@@ -200,11 +223,15 @@ static inline void timer_ll_enable_counter(timg_dev_t *hw, uint32_t timer_num, b
 __attribute__((always_inline))
 static inline void timer_ll_trigger_soft_capture(timg_dev_t *hw, uint32_t timer_num)
 {
+#if CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
     hw->hw_timer[timer_num].update.tx_update = 1;
     // Timer register is in a different clock domain from Timer hardware logic
     // We need to wait for the update to take effect before fetching the count value
     while (hw->hw_timer[timer_num].update.tx_update) {
     }
+#elif CONFIG_IDF_TARGET_ESP32C5_MP_VERSION
+    abort();
+#endif
 }
 
 /**
@@ -218,7 +245,12 @@ static inline void timer_ll_trigger_soft_capture(timg_dev_t *hw, uint32_t timer_
 __attribute__((always_inline))
 static inline uint64_t timer_ll_get_counter_value(timg_dev_t *hw, uint32_t timer_num)
 {
+#if CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
     return ((uint64_t)hw->hw_timer[timer_num].hi.tx_hi << 32) | (hw->hw_timer[timer_num].lo.tx_lo);
+#elif CONFIG_IDF_TARGET_ESP32C5_MP_VERSION
+    abort();
+    return 0;
+#endif
 }
 
 /**
@@ -231,8 +263,12 @@ static inline uint64_t timer_ll_get_counter_value(timg_dev_t *hw, uint32_t timer
 __attribute__((always_inline))
 static inline void timer_ll_set_alarm_value(timg_dev_t *hw, uint32_t timer_num, uint64_t alarm_value)
 {
+#if CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
     hw->hw_timer[timer_num].alarmhi.tx_alarm_hi = (uint32_t)(alarm_value >> 32);
     hw->hw_timer[timer_num].alarmlo.tx_alarm_lo = (uint32_t)alarm_value;
+#elif CONFIG_IDF_TARGET_ESP32C5_MP_VERSION
+    abort();
+#endif
 }
 
 /**
@@ -245,8 +281,12 @@ static inline void timer_ll_set_alarm_value(timg_dev_t *hw, uint32_t timer_num, 
 __attribute__((always_inline))
 static inline void timer_ll_set_reload_value(timg_dev_t *hw, uint32_t timer_num, uint64_t reload_val)
 {
+#if CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
     hw->hw_timer[timer_num].loadhi.tx_load_hi = (uint32_t)(reload_val >> 32);
     hw->hw_timer[timer_num].loadlo.tx_load_lo = (uint32_t)reload_val;
+#elif CONFIG_IDF_TARGET_ESP32C5_MP_VERSION
+    abort();
+#endif
 }
 
 /**
@@ -259,7 +299,12 @@ static inline void timer_ll_set_reload_value(timg_dev_t *hw, uint32_t timer_num,
 __attribute__((always_inline))
 static inline uint64_t timer_ll_get_reload_value(timg_dev_t *hw, uint32_t timer_num)
 {
+#if CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
     return ((uint64_t)hw->hw_timer[timer_num].loadhi.tx_load_hi << 32) | (hw->hw_timer[timer_num].loadlo.tx_load_lo);
+#elif CONFIG_IDF_TARGET_ESP32C5_MP_VERSION
+    abort();
+    return 0;
+#endif
 }
 
 /**
@@ -271,7 +316,11 @@ static inline uint64_t timer_ll_get_reload_value(timg_dev_t *hw, uint32_t timer_
 __attribute__((always_inline))
 static inline void timer_ll_trigger_soft_reload(timg_dev_t *hw, uint32_t timer_num)
 {
+#if CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
     hw->hw_timer[timer_num].load.tx_load = 1;
+#elif CONFIG_IDF_TARGET_ESP32C5_MP_VERSION
+    abort();
+#endif
 }
 
 /**

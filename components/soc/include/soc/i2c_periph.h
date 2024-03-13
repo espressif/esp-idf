@@ -8,15 +8,18 @@
 #include "soc/i2c_reg.h"
 #include "soc/i2c_struct.h"
 #include "soc/soc_caps.h"
+#if SOC_I2C_SUPPORTED  // TODO: [ESP32C5] IDF-8694
 #include "soc/periph_defs.h"
 #if SOC_PM_SUPPORT_TOP_PD
 #include "soc/regdma.h"
 #endif
+#endif  // SOC_I2C_SUPPORTED
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+#if SOC_I2C_SUPPORTED
 typedef struct {
     const uint8_t sda_out_sig;
     const uint8_t sda_in_sig;
@@ -36,6 +39,7 @@ typedef struct {
 
 extern const i2c_reg_ctx_link_t i2c_regs_retention[SOC_I2C_NUM];
 #endif
+#endif  // SOC_I2C_SUPPORTED
 
 #ifdef __cplusplus
 }

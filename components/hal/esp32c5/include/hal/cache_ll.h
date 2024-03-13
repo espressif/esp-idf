@@ -9,9 +9,12 @@
 #pragma once
 
 #include <stdbool.h>
-// TODO: [ESP32C5] IDF-8646 (inherit from C6)
+#include "sdkconfig.h"  // TODO: remove
 #include "soc/cache_reg.h"
-// #include "soc/ext_mem_defs.h"
+#if CONFIG_IDF_TARGET_ESP32C5_MP_VERSION
+#include "soc/ext_mem_defs.h"
+#include "rom/cache.h"
+#endif
 #include "hal/cache_types.h"
 #include "hal/assert.h"
 #include "esp32c5/rom/cache.h"
@@ -66,8 +69,13 @@ __attribute__((always_inline))
 static inline void cache_ll_disable_cache(uint32_t cache_level, cache_type_t type, uint32_t cache_id)
 {
     // TODO: [ESP32C5] IDF-8646 (inherit from C6)
+#if CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
     (void) type;
     Cache_Disable_ICache();
+#elif CONFIG_IDF_TARGET_ESP32C5_MP_VERSION
+    (void) type;
+    Cache_Disable_Cache();
+#endif
 }
 
 /**
@@ -83,7 +91,11 @@ __attribute__((always_inline))
 static inline void cache_ll_enable_cache(uint32_t cache_level, cache_type_t type, uint32_t cache_id, bool inst_autoload_en, bool data_autoload_en)
 {
     // TODO: [ESP32C5] IDF-8646 (inherit from C6)
+#if CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
     Cache_Enable_ICache(inst_autoload_en ? CACHE_LL_L1_ICACHE_AUTOLOAD : 0);
+#elif CONFIG_IDF_TARGET_ESP32C5_MP_VERSION
+    Cache_Enable_Cache(inst_autoload_en ? CACHE_LL_L1_ICACHE_AUTOLOAD : 0);
+#endif
 }
 
 /**
@@ -97,7 +109,11 @@ __attribute__((always_inline))
 static inline void cache_ll_suspend_cache(uint32_t cache_level, cache_type_t type, uint32_t cache_id)
 {
     // TODO: [ESP32C5] IDF-8646 (inherit from C6)
+#if CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
     Cache_Suspend_ICache();
+#elif CONFIG_IDF_TARGET_ESP32C5_MP_VERSION
+    Cache_Suspend_Cache();
+#endif
 }
 
 /**
@@ -113,7 +129,11 @@ __attribute__((always_inline))
 static inline void cache_ll_resume_cache(uint32_t cache_level, cache_type_t type, uint32_t cache_id, bool inst_autoload_en, bool data_autoload_en)
 {
     // TODO: [ESP32C5] IDF-8646 (inherit from C6)
+#if CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
     Cache_Resume_ICache(inst_autoload_en ? CACHE_LL_L1_ICACHE_AUTOLOAD : 0);
+#elif CONFIG_IDF_TARGET_ESP32C5_MP_VERSION
+    Cache_Resume_Cache(inst_autoload_en ? CACHE_LL_L1_ICACHE_AUTOLOAD : 0);
+#endif
 }
 
 /**
@@ -145,7 +165,11 @@ __attribute__((always_inline))
 static inline void cache_ll_freeze_cache(uint32_t cache_level, cache_type_t type, uint32_t cache_id)
 {
     // TODO: [ESP32C5] IDF-8646 (inherit from C6)
+#if CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
     Cache_Freeze_ICache_Enable(CACHE_FREEZE_ACK_BUSY);
+#elif CONFIG_IDF_TARGET_ESP32C5_MP_VERSION
+    Cache_Freeze_Enable(CACHE_FREEZE_ACK_BUSY);
+#endif
 }
 
 /**
@@ -159,7 +183,11 @@ __attribute__((always_inline))
 static inline void cache_ll_unfreeze_cache(uint32_t cache_level, cache_type_t type, uint32_t cache_id)
 {
     // TODO: [ESP32C5] IDF-8646 (inherit from C6)
+#if CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
     Cache_Freeze_ICache_Disable();
+#elif CONFIG_IDF_TARGET_ESP32C5_MP_VERSION
+    Cache_Freeze_Disable();
+#endif
 }
 
 /**
@@ -175,9 +203,15 @@ __attribute__((always_inline))
 static inline uint32_t cache_ll_get_line_size(uint32_t cache_level, cache_type_t type, uint32_t cache_id)
 {
     // TODO: [ESP32C5] IDF-8646 (inherit from C6)
+#if CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
     uint32_t size = 0;
     size = Cache_Get_ICache_Line_Size();
     return size;
+#elif CONFIG_IDF_TARGET_ESP32C5_MP_VERSION
+    uint32_t size = 0;
+    size = Cache_Get_Line_Size(CACHE_MAP_FLASH_CACHE);
+    return size;
+#endif
 }
 
 /**
@@ -196,6 +230,7 @@ __attribute__((always_inline))
 static inline cache_bus_mask_t cache_ll_l1_get_bus(uint32_t cache_id, uint32_t vaddr_start, uint32_t len)
 {
     // TODO: [ESP32C5] IDF-8646 (inherit from C6)
+#if CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
     // HAL_ASSERT(cache_id <= CACHE_LL_ID_ALL);
     // cache_bus_mask_t mask = (cache_bus_mask_t)0;
     //     // uint32_t vaddr_end = vaddr_start + len - 1;
@@ -207,6 +242,20 @@ static inline cache_bus_mask_t cache_ll_l1_get_bus(uint32_t cache_id, uint32_t v
     // }
     //     // return mask;
     return (cache_bus_mask_t)0;
+#elif CONFIG_IDF_TARGET_ESP32C5_MP_VERSION
+    HAL_ASSERT(cache_id <= CACHE_LL_ID_ALL);
+    cache_bus_mask_t mask = (cache_bus_mask_t)0;
+
+    uint32_t vaddr_end = vaddr_start + len - 1;
+    if (vaddr_start >= SOC_IRAM0_CACHE_ADDRESS_LOW && vaddr_end < SOC_IRAM0_CACHE_ADDRESS_HIGH) {
+        //c6 the I/D bus memory are shared, so we always return `CACHE_BUS_IBUS0 | CACHE_BUS_DBUS0`
+        mask = (cache_bus_mask_t)(mask | (CACHE_BUS_IBUS0 | CACHE_BUS_DBUS0));
+    } else {
+        HAL_ASSERT(0);          //Out of region
+    }
+
+    return mask;
+#endif
 }
 
 /**
@@ -221,6 +270,7 @@ __attribute__((always_inline))
 static inline void cache_ll_l1_enable_bus(uint32_t cache_id, cache_bus_mask_t mask)
 {
     // TODO: [ESP32C5] IDF-8646 (inherit from C6)
+#if CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
     // HAL_ASSERT(cache_id <= CACHE_LL_ID_ALL);
     // //On esp32c5, only `CACHE_BUS_IBUS0` and `CACHE_BUS_DBUS0` are supported. Use `cache_ll_l1_get_bus()` to get your bus first
     // HAL_ASSERT((mask & (CACHE_BUS_IBUS1 | CACHE_BUS_IBUS2 | CACHE_BUS_DBUS1 | CACHE_BUS_DBUS2)) == 0);
@@ -230,6 +280,19 @@ static inline void cache_ll_l1_enable_bus(uint32_t cache_id, cache_bus_mask_t ma
     //     // uint32_t dbus_mask = 0;
     // dbus_mask = dbus_mask | ((mask & CACHE_BUS_DBUS0) ? EXTMEM_L1_CACHE_SHUT_DBUS : 0);
     // REG_CLR_BIT(EXTMEM_L1_CACHE_CTRL_REG, dbus_mask);
+#elif CONFIG_IDF_TARGET_ESP32C5_MP_VERSION
+    HAL_ASSERT(cache_id <= CACHE_LL_ID_ALL);
+    //On esp32c5, only `CACHE_BUS_IBUS0` and `CACHE_BUS_DBUS0` are supported. Use `cache_ll_l1_get_bus()` to get your bus first
+    HAL_ASSERT((mask & (CACHE_BUS_IBUS1 | CACHE_BUS_IBUS2 | CACHE_BUS_DBUS1 | CACHE_BUS_DBUS2)) == 0);
+
+    uint32_t ibus_mask = 0;
+    ibus_mask = ibus_mask | ((mask & CACHE_BUS_IBUS0) ? CACHE_L1_CACHE_SHUT_BUS0 : 0);
+    REG_CLR_BIT(CACHE_L1_CACHE_CTRL_REG, ibus_mask);
+
+    uint32_t dbus_mask = 0;
+    dbus_mask = dbus_mask | ((mask & CACHE_BUS_DBUS0) ? CACHE_L1_CACHE_SHUT_BUS1 : 0);
+    REG_CLR_BIT(CACHE_L1_CACHE_CTRL_REG, dbus_mask);
+#endif
 }
 
 /**
@@ -241,8 +304,9 @@ static inline void cache_ll_l1_enable_bus(uint32_t cache_id, cache_bus_mask_t ma
 __attribute__((always_inline))
 static inline void cache_ll_l1_disable_bus(uint32_t cache_id, cache_bus_mask_t mask)
 {
-    // TODO: [ESP32C5] IDF-8646 (inherit from C6)
     abort();
+    // TODO: [ESP32C5] IDF-8646 (inherit from C6)
+#if CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
     // HAL_ASSERT(cache_id <= CACHE_LL_ID_ALL);
     // //On esp32c5, only `CACHE_BUS_IBUS0` and `CACHE_BUS_DBUS0` are supported. Use `cache_ll_l1_get_bus()` to get your bus first
     // HAL_ASSERT((mask & (CACHE_BUS_IBUS1 | CACHE_BUS_IBUS2 | CACHE_BUS_DBUS1 | CACHE_BUS_DBUS2)) == 0);
@@ -252,6 +316,19 @@ static inline void cache_ll_l1_disable_bus(uint32_t cache_id, cache_bus_mask_t m
     //     // uint32_t dbus_mask = 0;
     // dbus_mask = dbus_mask | ((mask & CACHE_BUS_DBUS0) ? EXTMEM_L1_CACHE_SHUT_DBUS : 0);
     // REG_SET_BIT(EXTMEM_L1_CACHE_CTRL_REG, dbus_mask);
+#elif CONFIG_IDF_TARGET_ESP32C5_MP_VERSION
+    HAL_ASSERT(cache_id <= CACHE_LL_ID_ALL);
+    //On esp32c5, only `CACHE_BUS_IBUS0` and `CACHE_BUS_DBUS0` are supported. Use `cache_ll_l1_get_bus()` to get your bus first
+    HAL_ASSERT((mask & (CACHE_BUS_IBUS1 | CACHE_BUS_IBUS2 | CACHE_BUS_DBUS1 | CACHE_BUS_DBUS2)) == 0);
+
+    uint32_t ibus_mask = 0;
+    ibus_mask = ibus_mask | ((mask & CACHE_BUS_IBUS0) ? CACHE_L1_CACHE_SHUT_BUS0 : 0);
+    REG_SET_BIT(CACHE_L1_CACHE_CTRL_REG, ibus_mask);
+
+    uint32_t dbus_mask = 0;
+    dbus_mask = dbus_mask | ((mask & CACHE_BUS_DBUS0) ? CACHE_L1_CACHE_SHUT_BUS1 : 0);
+    REG_SET_BIT(CACHE_L1_CACHE_CTRL_REG, dbus_mask);
+#endif
 }
 
 /**
@@ -267,8 +344,9 @@ static inline void cache_ll_l1_disable_bus(uint32_t cache_id, cache_bus_mask_t m
 __attribute__((always_inline))
 static inline bool cache_ll_vaddr_to_cache_level_id(uint32_t vaddr_start, uint32_t len, uint32_t *out_level, uint32_t *out_id)
 {
-    // TODO: [ESP32C5] IDF-8646 (inherit from C6)
     abort();
+    // TODO: [ESP32C5] IDF-8646 (inherit from C6)
+#if CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
     // bool valid = false;
     // uint32_t vaddr_end = vaddr_start + len - 1;
     //     // valid |= (SOC_ADDRESS_IN_IRAM0_CACHE(vaddr_start) && SOC_ADDRESS_IN_IRAM0_CACHE(vaddr_end));
@@ -279,6 +357,20 @@ static inline bool cache_ll_vaddr_to_cache_level_id(uint32_t vaddr_start, uint32
     // }
     //     // return valid;
     return (bool)0;
+#elif CONFIG_IDF_TARGET_ESP32C5_MP_VERSION
+    bool valid = false;
+    uint32_t vaddr_end = vaddr_start + len - 1;
+
+    valid |= (SOC_ADDRESS_IN_IRAM0_CACHE(vaddr_start) && SOC_ADDRESS_IN_IRAM0_CACHE(vaddr_end));
+    valid |= (SOC_ADDRESS_IN_DRAM0_CACHE(vaddr_start) && SOC_ADDRESS_IN_DRAM0_CACHE(vaddr_end));
+
+    if (valid) {
+        *out_level = 1;
+        *out_id = 0;
+    }
+
+    return valid;
+#endif
 }
 
 /*------------------------------------------------------------------------------

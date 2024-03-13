@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,11 +8,16 @@
 
 #pragma once
 
+#include <stdint.h>
+#include <stdbool.h>
 #include "soc/spi_mem_reg.h"
 #include "soc/ext_mem_defs.h"
+#include "soc/soc_caps.h"
 #include "hal/assert.h"
 #include "hal/mmu_types.h"
+#if SOC_EFUSE_SUPPORTED
 #include "hal/efuse_ll.h"
+#endif
 
 
 #ifdef __cplusplus
@@ -53,10 +58,14 @@ static inline uint32_t mmu_ll_laddr_to_vaddr(uint32_t laddr, mmu_vaddr_t vaddr_t
 __attribute__((always_inline)) static inline bool mmu_ll_cache_encryption_enabled(void)
 {
     // TODO: [ESP32C5] IDF-8658 (inherit from C6)
+#if SOC_EFUSE_SUPPORTED
     unsigned cnt = efuse_ll_get_flash_crypt_cnt();
     // 3 bits wide, any odd number - 1 or 3 - bits set means encryption is on
     cnt = ((cnt >> 2) ^ (cnt >> 1) ^ cnt) & 0x1;
     return (cnt == 1);
+#else
+    return false;
+#endif
 }
 
 /**

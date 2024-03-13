@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "sdkconfig.h"  // TODO: IDF-9197
 #include "hal/clk_tree_hal.h"
 #include "hal/clk_tree_ll.h"
 #include "hal/assert.h"
@@ -16,10 +17,15 @@ uint32_t clk_hal_soc_root_get_freq_mhz(soc_cpu_clk_src_t cpu_clk_src)
     switch (cpu_clk_src) {
     case SOC_CPU_CLK_SRC_XTAL:
         return clk_hal_xtal_get_freq_mhz();
+#if CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
     case SOC_CPU_CLK_SRC_PLL_F160M:
         return CLK_LL_PLL_160M_FREQ_MHZ;
     case SOC_CPU_CLK_SRC_PLL_F240M:
         return CLK_LL_PLL_240M_FREQ_MHZ;
+#elif CONFIG_IDF_TARGET_ESP32C5_MP_VERSION
+    case SOC_CPU_CLK_SRC_PLL:
+        return clk_ll_bbpll_get_freq_mhz();
+#endif
     case SOC_CPU_CLK_SRC_RC_FAST:
         return SOC_CLK_RC_FAST_FREQ_APPROX / MHZ;
     default:
@@ -32,14 +38,22 @@ uint32_t clk_hal_soc_root_get_freq_mhz(soc_cpu_clk_src_t cpu_clk_src)
 uint32_t clk_hal_cpu_get_freq_hz(void)
 {
     soc_cpu_clk_src_t source = clk_ll_cpu_get_src();
+#if CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
     uint32_t divider = clk_ll_cpu_get_divider();
+#elif CONFIG_IDF_TARGET_ESP32C5_MP_VERSION
+    uint32_t divider = (source == SOC_CPU_CLK_SRC_PLL) ? clk_ll_cpu_get_hs_divider() : clk_ll_cpu_get_ls_divider();
+#endif
     return clk_hal_soc_root_get_freq_mhz(source) * MHZ / divider;
 }
 
 uint32_t clk_hal_ahb_get_freq_hz(void)
 {
     soc_cpu_clk_src_t source = clk_ll_cpu_get_src();
+#if CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
     uint32_t divider = clk_ll_ahb_get_divider();
+#elif CONFIG_IDF_TARGET_ESP32C5_MP_VERSION
+    uint32_t divider = (source == SOC_CPU_CLK_SRC_PLL) ? clk_ll_ahb_get_hs_divider() : clk_ll_ahb_get_ls_divider();
+#endif
     return clk_hal_soc_root_get_freq_mhz(source) * MHZ / divider;
 }
 
@@ -51,8 +65,10 @@ uint32_t clk_hal_apb_get_freq_hz(void)
 uint32_t clk_hal_lp_slow_get_freq_hz(void)
 {
     switch (clk_ll_rtc_slow_get_src()) {
-    // case SOC_RTC_SLOW_CLK_SRC_RC_SLOW:
-    //     return SOC_CLK_RC_SLOW_FREQ_APPROX;
+#if CONFIG_IDF_TARGET_ESP32C5_MP_VERSION
+    case SOC_RTC_SLOW_CLK_SRC_RC_SLOW:
+        return SOC_CLK_RC_SLOW_FREQ_APPROX;
+#endif
     case SOC_RTC_SLOW_CLK_SRC_XTAL32K:
         return SOC_CLK_XTAL32K_FREQ_APPROX;
     case SOC_RTC_SLOW_CLK_SRC_OSC_SLOW:

@@ -223,10 +223,10 @@ typedef union {
          *  Write 1 to continue Key Manager operation at LOAD/GAIN state.
          */
         uint32_t start:1;
-        /** continue : WT; bitpos: [1]; default: 0;
+        /** conti : WT; bitpos: [1]; default: 0;
          *  Write 1 to start Key Manager at IDLE state.
          */
-        uint32_t continue:1;
+        uint32_t conti:1;
         uint32_t reserved_2:30;
     };
     uint32_t val;
@@ -338,7 +338,7 @@ typedef struct {
     volatile keymng_int_st_reg_t int_st;
     volatile keymng_int_ena_reg_t int_ena;
     volatile keymng_int_clr_reg_t int_clr;
-    volatile keymng_static_reg_t static;
+    volatile keymng_static_reg_t static_cfg;
     volatile keymng_lock_reg_t lock;
     volatile keymng_conf_reg_t conf;
     volatile keymng_start_reg_t start;
