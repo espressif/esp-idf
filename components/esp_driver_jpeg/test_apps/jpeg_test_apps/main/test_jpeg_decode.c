@@ -30,7 +30,7 @@ TEST_CASE("JPEG decode driver memory leaking check", "[jpeg]")
     };
 
     int size = esp_get_free_heap_size();
-    for (uint32_t i = 0; i <= 3; i++) {
+    for (uint32_t i = 0; i <= 10; i++) {
         TEST_ESP_OK(jpeg_new_decoder_engine(&decode_eng_cfg, &jpgd_handle));
         vTaskDelay(10 / portTICK_PERIOD_MS);
         TEST_ESP_OK(jpeg_del_decoder_engine(jpgd_handle));
