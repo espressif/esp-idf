@@ -140,7 +140,8 @@ FORCE_INLINE_ATTR void rv_utils_set_mtvec(uint32_t mtvec_val)
     RV_WRITE_CSR(mtvec, mtvec_val);
 }
 
-#if SOC_INT_CLIC_SUPPORTED
+// TODO: [ESP32C5] IDF-8655 need refactor for C5 MP
+#if SOC_INT_CLIC_SUPPORTED && !CONFIG_IDF_TARGET_ESP32C5_MP_VERSION
  FORCE_INLINE_ATTR __attribute__((pure)) uint32_t rv_utils_get_interrupt_level(void)
 {
 #if CONFIG_IDF_TARGET_ESP32P4
@@ -184,20 +185,28 @@ FORCE_INLINE_ATTR void rv_utils_intr_disable(uint32_t intr_mask)
 
 FORCE_INLINE_ATTR void __attribute__((always_inline)) rv_utils_restore_intlevel(uint32_t restoreval)
 {
+    // TODO: [ESP32C5] IDF-8655 need refactor for C5 MP
+#if CONFIG_IDF_TARGET_ESP32C5_MP_VERSION
+    #define MINTTHRESH         0x347
+    RV_WRITE_CSR(MINTTHRESH, restoreval);
+#elif CONFIG_IDF_TARGET_ESP32C61
     // TODO: [ESP32C61] IDF-9261, changed in verify code, pls check
     // RV_WRITE_CSR(MINTTHRESH, restoreval);
+#else
     REG_SET_FIELD(CLIC_INT_THRESH_REG, CLIC_CPU_INT_THRESH, ((restoreval << (8 - NLBITS))) | 0x1f);
+#endif  // !CONFIG_IDF_TARGET_ESP32C5_MP_VERSION
 }
 
 FORCE_INLINE_ATTR uint32_t __attribute__((always_inline)) rv_utils_set_intlevel(uint32_t intlevel)
 {
-// TODO: [ESP32C61] IDF-9261, added in verify code, pls check
-// #if CONFIG_IDF_TARGET_ESP32C61
-//     uint32_t old_thresh = RV_READ_CSR(MINTTHRESH);
-//     RV_WRITE_CSR(MINTTHRESH, ((intlevel << (8 - NLBITS)) | 0x1f));
-// #else
-    uint32_t old_mstatus = RV_CLEAR_CSR(mstatus, MSTATUS_MIE);
     uint32_t old_thresh;
+    // TODO: [ESP32C5] IDF-8655 need refactor for C5 MP
+#if CONFIG_IDF_TARGET_ESP32C5_MP_VERSION
+    old_thresh = RV_READ_CSR(MINTTHRESH);
+    RV_WRITE_CSR(MINTTHRESH, ((intlevel << (8 - NLBITS)) | 0x1f));
+#else
+    // TODO: [ESP32C61] IDF-9261 pls check
+    uint32_t old_mstatus = RV_CLEAR_CSR(mstatus, MSTATUS_MIE);
 
     old_thresh = REG_GET_FIELD(CLIC_INT_THRESH_REG, CLIC_CPU_INT_THRESH);
     old_thresh = (old_thresh >> (8 - NLBITS));
@@ -212,7 +221,7 @@ FORCE_INLINE_ATTR uint32_t __attribute__((always_inline)) rv_utils_set_intlevel(
      */
     REG_READ(CLIC_INT_THRESH_REG);
     RV_SET_CSR(mstatus, old_mstatus & MSTATUS_MIE);
-// #endif
+#endif
     return old_thresh;
 }
 

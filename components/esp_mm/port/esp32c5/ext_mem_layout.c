@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -21,7 +21,7 @@ const mmu_mem_region_t g_mmu_mem_regions[SOC_MMU_LINEAR_ADDRESS_REGION_NUM] = {
         .end = SOC_MMU_IRAM0_LINEAR_ADDRESS_HIGH,
         .size = SOC_BUS_SIZE(SOC_MMU_IRAM0_LINEAR),
         .bus_id = CACHE_BUS_IBUS0 | CACHE_BUS_DBUS0,
-        .targets = MMU_TARGET_FLASH0,
-        .caps = MMU_MEM_CAP_EXEC | MMU_MEM_CAP_READ | MMU_MEM_CAP_32BIT | MMU_MEM_CAP_8BIT,
+        .targets = MMU_TARGET_FLASH0 | MMU_TARGET_PSRAM0,
+        .caps = MMU_MEM_CAP_EXEC | MMU_MEM_CAP_READ | MMU_MEM_CAP_WRITE | MMU_MEM_CAP_32BIT | MMU_MEM_CAP_8BIT,
     },
 };

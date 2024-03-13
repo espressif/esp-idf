@@ -29,6 +29,9 @@
 enum {
     SOC_MEMORY_TYPE_RAM     = 0,
     SOC_MEMORY_TYPE_RTCRAM  = 1,
+#if CONFIG_IDF_TARGET_ESP32C5_MP_VERSION
+    SOC_MEMORY_TYPE_SPIRAM  = 2,
+#endif
     SOC_MEMORY_TYPE_NUM,
 };
 
@@ -49,6 +52,9 @@ const soc_memory_type_desc_t soc_memory_types[SOC_MEMORY_TYPE_NUM] = {
     /*                           Mem Type Name   High Priority Matching                      Medium Priorty Matching    Low Priority Matching */
     [SOC_MEMORY_TYPE_RAM]    = { "RAM",          { ESP32C5_MEM_COMMON_CAPS | MALLOC_CAP_DMA, 0,                         0 }},
     [SOC_MEMORY_TYPE_RTCRAM] = { "RTCRAM",       { MALLOC_CAP_RTCRAM,                        ESP32C5_MEM_COMMON_CAPS,   0 }},
+#if CONFIG_IDF_TARGET_ESP32C5_MP_VERSION
+    [SOC_MEMORY_TYPE_SPIRAM] = { "SPIRAM",       { MALLOC_CAP_SPIRAM | MALLOC_CAP_DEFAULT, 0, MALLOC_CAP_8BIT | MALLOC_CAP_32BIT}},
+#endif
 };
 
 const size_t soc_memory_type_count = sizeof(soc_memory_types) / sizeof(soc_memory_type_desc_t);
@@ -67,10 +73,17 @@ const size_t soc_memory_type_count = sizeof(soc_memory_types) / sizeof(soc_memor
 #define APP_USABLE_DRAM_END           (SOC_ROM_STACK_START - SOC_ROM_STACK_SIZE)
 
 const soc_memory_region_t soc_memory_regions[] = {
+#if CONFIG_SPIRAM && CONFIG_IDF_TARGET_ESP32C5_MP_VERSION
+    { SOC_EXTRAM_DATA_LOW,  (SOC_EXTRAM_DATA_HIGH - SOC_EXTRAM_DATA_LOW),SOC_MEMORY_TYPE_SPIRAM,     0}, //SPI SRAM, if available
+#endif
     { 0x40800000,           0x20000,                                   SOC_MEMORY_TYPE_RAM, 0x40800000,             false}, //D/IRAM level0, can be used as trace memory
     { 0x40820000,           0x20000,                                   SOC_MEMORY_TYPE_RAM, 0x40820000,             false}, //D/IRAM level1, can be used as trace memory
+#if CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
     { 0x40840000,           0x20000,                                   SOC_MEMORY_TYPE_RAM, 0x40840000,             false}, //D/IRAM level2, can be used as trace memory
     { 0x40860000,           (APP_USABLE_DRAM_END-0x40860000),          SOC_MEMORY_TYPE_RAM, 0x40860000,             false}, //D/IRAM level3, can be used as trace memory
+#elif CONFIG_IDF_TARGET_ESP32C5_MP_VERSION
+    { 0x40840000,           (APP_USABLE_DRAM_END-0x40840000),          SOC_MEMORY_TYPE_RAM, 0x40840000,             false}, //D/IRAM level3, can be used as trace memory
+#endif
     { APP_USABLE_DRAM_END,  (SOC_DIRAM_DRAM_HIGH-APP_USABLE_DRAM_END), SOC_MEMORY_TYPE_RAM, APP_USABLE_DRAM_END,    true},  //D/IRAM level3, can be used as trace memory (ROM reserved area)
 #ifdef CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP
     { 0x50000000,           0x4000,                                    SOC_MEMORY_TYPE_RTCRAM,  0,                      false}, //LPRAM
@@ -101,3 +114,9 @@ SOC_RESERVE_MEMORY_REGION(SOC_RTC_DRAM_LOW, (intptr_t)&_rtc_force_slow_end, rtcr
 #endif
 
 SOC_RESERVE_MEMORY_REGION((intptr_t)&_rtc_reserved_start, (intptr_t)&_rtc_reserved_end, rtc_reserved_data);
+
+#ifdef CONFIG_SPIRAM
+/* Reserve the whole possible SPIRAM region here, spiram.c will add some or all of this
+ * memory to heap depending on the actual SPIRAM chip size. */
+SOC_RESERVE_MEMORY_REGION(SOC_DROM_LOW, SOC_DROM_HIGH, extram_data_region);
+#endif

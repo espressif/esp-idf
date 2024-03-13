@@ -13,6 +13,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
+#include "sdkconfig.h"  // TODO: [ESP32C5] IDF-8726
 #include "hal/misc.h"
 #include "hal/assert.h"
 #include "hal/rmt_types.h"
@@ -22,6 +23,8 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#if CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
 
 #define RMT_LL_EVENT_TX_DONE(channel)     (1 << (channel))
 #define RMT_LL_EVENT_TX_THRES(channel)    (1 << ((channel) + 8))
@@ -879,6 +882,8 @@ static inline uint32_t rmt_ll_get_tx_loop_interrupt_status(rmt_dev_t *dev)
 {
     return (dev->int_st.val >> 12) & 0x03;
 }
+
+#endif  // CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
 
 #ifdef __cplusplus
 }

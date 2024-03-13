@@ -1115,8 +1115,10 @@ typedef struct {
     volatile gpio_pin31_reg_t pin31;
     volatile gpio_pin32_reg_t pin32;
     uint32_t reserved_148[95];
-    volatile gpio_func_in_sel_cfg_reg_t func_in_sel_cfg[128]; // 1-5, 18-26, 36-40, 44-45, 67-69, 71-73, 93-96, 117-127 are reserved
-    uint32_t reserved_48d[384];
+    volatile gpio_func_in_sel_cfg_reg_t func_in_sel_cfg[256]; /* 1-5, 18-26, 36-40, 44-45, 67-69, 71-73, 93-96, 117-255 are reserved
+                                                               *  The length ought to match the SIG_GPIO_OUT_IDX that defined in `gpio_sig_map.h`
+                                                               */
+    uint32_t reserved_48d[256];
     volatile gpio_func_out_sel_cfg_reg_t func_out_sel_cfg[29];
     volatile gpio_func29_out_sel_cfg_reg_t func29_out_sel_cfg;
     volatile gpio_func30_out_sel_cfg_reg_t func30_out_sel_cfg;

@@ -96,7 +96,6 @@ static inline void bootloader_hardware_init(void)
 
 static inline void bootloader_ana_reset_config(void)
 {
-// TODO: IDF-9197
     // TODO: [ESP32C5] IDF-8650
     //Enable super WDT reset.
     // bootloader_ana_super_wdt_reset_config(true);
