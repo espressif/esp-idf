@@ -27,7 +27,15 @@ config ESP_ROM_NEEDS_SWSETUP_WORKAROUND
     bool
     default y
 
+config ESP_ROM_HAS_NEWLIB
+    bool
+    default y
+
 config ESP_ROM_HAS_NEWLIB_NANO_FORMAT
+    bool
+    default y
+
+config ESP_ROM_HAS_NEWLIB_32BIT_TIME
     bool
     default y
 

@@ -59,6 +59,14 @@ config ESP_ROM_WITHOUT_REGI2C
     bool
     default y
 
+config ESP_ROM_HAS_NEWLIB
+    bool
+    default y
+
 config ESP_ROM_HAS_NEWLIB_NANO_FORMAT
+    bool
+    default y
+
+config ESP_ROM_HAS_VERSION
     bool
     default y

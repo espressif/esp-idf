@@ -21,7 +21,9 @@
 #define ESP_ROM_HAS_LAYOUT_TABLE            (1) // ROM has the layout table
 #define ESP_ROM_HAS_SPI_FLASH               (1) // ROM has the implementation of SPI Flash driver
 #define ESP_ROM_WITHOUT_REGI2C              (1) // ROM has no regi2c APIs
+#define ESP_ROM_HAS_NEWLIB                  (1) // ROM has newlib (at least parts of it) functions included
 #define ESP_ROM_HAS_NEWLIB_NORMAL_FORMAT    (1) // ROM has the newlib normal/full version of formatting functions (as opposed to the nano versions)
 #define ESP_ROM_WDT_INIT_PATCH              (1) // ROM version does not configure the clock
 #define ESP_ROM_RAM_APP_NEEDS_MMU_INIT      (1) // ROM doesn't init cache MMU when it's a RAM APP, needs MMU hal to init
 #define ESP_ROM_USB_OTG_NUM                 (-1) // No USB_OTG CDC in the ROM, set -1 for Kconfig usage.
+#define ESP_ROM_HAS_VERSION                 (1) // ROM has version/eco information

@@ -23,7 +23,15 @@ config ESP_ROM_HAS_REGI2C_BUG
     bool
     default y
 
+config ESP_ROM_HAS_NEWLIB
+    bool
+    default y
+
 config ESP_ROM_HAS_NEWLIB_NANO_FORMAT
+    bool
+    default y
+
+config ESP_ROM_HAS_NEWLIB_32BIT_TIME
     bool
     default y
 

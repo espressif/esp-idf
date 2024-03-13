@@ -63,6 +63,10 @@ config ESP_ROM_HAS_REGI2C_BUG
     bool
     default y
 
+config ESP_ROM_HAS_NEWLIB
+    bool
+    default y
+
 config ESP_ROM_HAS_NEWLIB_NORMAL_FORMAT
     bool
     default y
@@ -90,3 +94,7 @@ config ESP_ROM_HAS_SW_FLOAT
 config ESP_ROM_USB_OTG_NUM
     int
     default -1
+
+config ESP_ROM_HAS_VERSION
+    bool
+    default y

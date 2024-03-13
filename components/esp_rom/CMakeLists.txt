@@ -101,64 +101,45 @@ else()
     endif()
 endif()
 
-idf_build_get_property(time_t_size TIME_T_SIZE)
+# Common API which is linked both for bootloader and app builds
+
+if(CONFIG_HAL_WDT_USE_ROM_IMPL)
+    rom_linker_script("wdt")
+endif()
+
+if(CONFIG_HAL_SYSTIMER_USE_ROM_IMPL)
+    rom_linker_script("systimer")
+endif()
+
+if(CONFIG_ESP_ROM_HAS_VERSION)
+    rom_linker_script("version")
+endif()
 
 if(BOOTLOADER_BUILD)
     if(target STREQUAL "esp32")
-        rom_linker_script("newlib-funcs")
         if(NOT CONFIG_SPI_FLASH_ROM_DRIVER_PATCH)
-            rom_linker_script("spiflash")
+            rom_linker_script("spiflash_legacy")
         endif()
         if(CONFIG_ESP32_REV_MIN_FULL GREATER_EQUAL 300)
             rom_linker_script("eco3")
         endif()
 
     elseif(target STREQUAL "esp32s2")
-        rom_linker_script("newlib-funcs")
-        rom_linker_script("spiflash")
-
-    elseif(target STREQUAL "esp32s3")
-        rom_linker_script("newlib")
-
-    elseif(target STREQUAL "esp32c3")
-        rom_linker_script("newlib")
-
-    elseif(target STREQUAL "esp32c2")
-        rom_linker_script("newlib")
+        rom_linker_script("spiflash_legacy")
 
     elseif(target STREQUAL "esp32c6")
-        rom_linker_script("newlib")
         # The linking of the bootloader needs to use the rom_i2c_writeReg_Mask in esp32c6.rom.phy.ld
         rom_linker_script("phy")
-        if(CONFIG_HAL_WDT_USE_ROM_IMPL)
-            rom_linker_script("wdt")
-        endif()
-        if(CONFIG_HAL_SYSTIMER_USE_ROM_IMPL)
-            rom_linker_script("systimer")
-        endif()
-        rom_linker_script("version")
-
-    elseif(target STREQUAL "esp32c5")
-        rom_linker_script("newlib")
-    elseif(target STREQUAL "esp32h2")
-        rom_linker_script("newlib")
-        if(CONFIG_HAL_WDT_USE_ROM_IMPL)
-            rom_linker_script("wdt")
-        endif()
-        if(CONFIG_HAL_SYSTIMER_USE_ROM_IMPL)
-            rom_linker_script("systimer")
-        endif()
-
-    elseif(target STREQUAL "esp32p4")
-        rom_linker_script("newlib")
-        if(CONFIG_HAL_WDT_USE_ROM_IMPL)
-            rom_linker_script("wdt")
-        endif()
-        if(CONFIG_HAL_SYSTIMER_USE_ROM_IMPL)
-            rom_linker_script("systimer")
-        endif()
-        rom_linker_script("version")
     endif()
+
+    if(CONFIG_ESP_ROM_HAS_NEWLIB)
+        if(target STREQUAL "esp32" OR target STREQUAL "esp32s2")
+            rom_linker_script("newlib-funcs")
+        else()
+            rom_linker_script("newlib")
+        endif()
+    endif()
+
 
 else() # Regular app build
     if(target STREQUAL "esp32")
@@ -169,22 +150,11 @@ else() # Regular app build
             # ESP32 only: these ROM functions may only be used if PSRAM cache workaround is disabled.
             # Otherwise we need to link to a multilib version of libc compiled with PSRAM workaround.
             rom_linker_script("newlib-funcs")
-
-            if(time_t_size EQUAL 4)
-                # The ROM functions listed in this linker script depend on sizeof(time_t).
-                # Since ROM for ESP32 was compiled for 32-bit time_t, only link these functions
-                # if the toolchain is also using 32-bit time_t.
-                rom_linker_script("newlib-time")
-
-                if(CONFIG_NEWLIB_NANO_FORMAT)
-                    # nano formatting functions in ROM are also built for 32-bit time_t.
-                    rom_linker_script("newlib-nano")
-                endif()
-            endif()
         endif()
 
         if(NOT CONFIG_SPI_FLASH_ROM_DRIVER_PATCH)
-            rom_linker_script("spiflash")
+            # For ESP32, inclusion of ROM driver do not depend on CONFIG_SPI_FLASH_ROM_IMPL
+            rom_linker_script("spiflash_legacy")
         endif()
 
         if(CONFIG_ESP32_REV_MIN_FULL GREATER_EQUAL 300)
@@ -194,51 +164,11 @@ else() # Regular app build
     elseif(target STREQUAL "esp32s2")
         rom_linker_script("newlib-funcs")
         rom_linker_script("newlib-data")
-        rom_linker_script("spiflash")
 
-        if(time_t_size EQUAL 4)
-            # The ROM functions listed in this linker script depend on sizeof(time_t).
-            # Since ROM for ESP32-S2 was compiled for 32-bit time_t, only link these functions
-            # if the toolchain is also using 32-bit time_t.
-            rom_linker_script("newlib-time")
-
-            if(CONFIG_NEWLIB_NANO_FORMAT)
-                # nano formatting functions in ROM are also built for 32-bit time_t.
-                rom_linker_script("newlib-nano")
-            endif()
-        endif()
-
-    elseif(target STREQUAL "esp32s3")
-        rom_linker_script("newlib")
-        rom_linker_script("version")
-
-        if(time_t_size EQUAL 4)
-            # The ROM functions listed in this linker script depend on sizeof(time_t).
-            # Since ROM for ESP32-S3 was compiled for 32-bit time_t, only link these functions
-            # if the toolchain is also using 32-bit time_t.
-            rom_linker_script("newlib-time")
-
-            if(CONFIG_NEWLIB_NANO_FORMAT)
-                # nano formatting functions in ROM are also built for 32-bit time_t.
-                rom_linker_script("newlib-nano")
-            endif()
-        endif()
+        # For ESP32S2, inclusion of ROM driver do not depend on CONFIG_SPI_FLASH_ROM_IMPL
+        rom_linker_script("spiflash_legacy")
 
     elseif(target STREQUAL "esp32c3")
-        rom_linker_script("newlib")
-        rom_linker_script("version")
-
-        if(time_t_size EQUAL 4)
-            # The ROM functions listed in this linker script depend on sizeof(time_t).
-            # Since ROM for ESP32-C3 was compiled for 32-bit time_t, only link these functions
-            # if the toolchain is also using 32-bit time_t.
-            rom_linker_script("newlib-time")
-
-            if(CONFIG_NEWLIB_NANO_FORMAT)
-                # nano formatting functions in ROM are also built for 32-bit time_t.
-                rom_linker_script("newlib-nano")
-            endif()
-        endif()
 
         if(CONFIG_ESP32C3_REV_MIN_FULL GREATER_EQUAL 3)
             rom_linker_script("eco3")
@@ -248,102 +178,30 @@ else() # Regular app build
             rom_linker_script("eco7")
         endif()
 
-    elseif(target STREQUAL "esp32c2")
-        rom_linker_script("newlib")
-        rom_linker_script("version")
-
-        if(CONFIG_MBEDTLS_USE_CRYPTO_ROM_IMPL)
-            rom_linker_script("mbedtls")
-        endif()
-
-        if(CONFIG_NEWLIB_NANO_FORMAT)
-            # nano formatting functions in ROM are also built for 64-bit time_t.
-            rom_linker_script("newlib-nano")
-        endif()
-
     elseif(target STREQUAL "esp32c6")
-        rom_linker_script("newlib")
-        rom_linker_script("version")
-
         # esp32c6.rom.api.ld has been split to several lds by components.
         # esp32c6.rom.api.ld is still reserved to map the APIs
         rom_linker_script("phy")
         rom_linker_script("coexist")
         rom_linker_script("net80211")
         rom_linker_script("pp")
+    endif()
 
-        if(CONFIG_SPI_FLASH_ROM_IMPL)
-            rom_linker_script("spiflash")
+    if(CONFIG_ESP_ROM_HAS_NEWLIB AND NOT target STREQUAL "esp32" AND NOT target STREQUAL "esp32s2")
+        # ESP32 and S2 are a bit different, keep them as special cases in the target specific include section
+        rom_linker_script("newlib")
+
+        if(CONFIG_ESP_ROM_HAS_NEWLIB_NANO_FORMAT AND CONFIG_NEWLIB_NANO_FORMAT)
+            if(NOT CONFIG_ESP_ROM_HAS_NEWLIB_32BIT_TIME)
+                # Newlib-nano functions contains time_t related functions
+                # and cannot be used if they were compiled with 32 bit time_t
+                rom_linker_script("newlib-nano")
+            endif()
         endif()
 
-        if(CONFIG_HAL_WDT_USE_ROM_IMPL)
-            rom_linker_script("wdt")
-        endif()
-
-        if(CONFIG_HAL_SYSTIMER_USE_ROM_IMPL)
-            rom_linker_script("systimer")
-        endif()
-
-        if(NOT CONFIG_NEWLIB_NANO_FORMAT)
-            # Normal(Non-nano) formatting functions in ROM are also built for 64-bit time_t.
+        if(CONFIG_ESP_ROM_HAS_NEWLIB_NORMAL_FORMAT AND NOT CONFIG_NEWLIB_NANO_FORMAT)
             rom_linker_script("newlib-normal")
         endif()
-
-    elseif(target STREQUAL "esp32c5")
-        rom_linker_script("newlib")
-        rom_linker_script("version")
-
-        # esp32c5.rom.api.ld has been split to several lds by components.
-        # esp32c5.rom.api.ld is still reserved to map the APIs
-        if(CONFIG_SPI_FLASH_ROM_IMPL)
-            rom_linker_script("spiflash")
-        endif()
-
-        if(NOT CONFIG_NEWLIB_NANO_FORMAT)
-            # Normal(Non-nano) formatting functions in ROM are also built for 64-bit time_t.
-            rom_linker_script("newlib-normal")
-        endif()
-
-    elseif(target STREQUAL "esp32h2")
-        rom_linker_script("newlib")
-        rom_linker_script("version")
-
-        if(CONFIG_SPI_FLASH_ROM_IMPL)
-            rom_linker_script("spiflash")
-        endif()
-
-        if(CONFIG_HAL_WDT_USE_ROM_IMPL)
-            rom_linker_script("wdt")
-        endif()
-
-        if(CONFIG_HAL_SYSTIMER_USE_ROM_IMPL)
-            rom_linker_script("systimer")
-        endif()
-
-        if(CONFIG_NEWLIB_NANO_FORMAT)
-            # nano formatting functions in ROM are also built for 64-bit time_t.
-            rom_linker_script("newlib-nano")
-        endif()
-
-    elseif(target STREQUAL "esp32p4")
-        rom_linker_script("newlib")
-        rom_linker_script("version")
-
-        # esp32p4 rom doesn't have esp_flash driver
-
-        if(CONFIG_HAL_WDT_USE_ROM_IMPL)
-            rom_linker_script("wdt")
-        endif()
-
-        if(CONFIG_HAL_SYSTIMER_USE_ROM_IMPL)
-            rom_linker_script("systimer")
-        endif()
-
-        if(CONFIG_NEWLIB_NANO_FORMAT)
-            # nano formatting functions in ROM are also built for 64-bit time_t.
-            rom_linker_script("newlib-nano")
-        endif()
-
     endif()
 
     if(CONFIG_HEAP_TLSF_USE_ROM_IMPL)
@@ -356,6 +214,17 @@ else() # Regular app build
         endif()
 
         rom_linker_script("heap")
+    endif()
+
+    if(CONFIG_SPI_FLASH_ROM_IMPL)
+        # Older targets do not have a separate ld file for spiflash
+        if(NOT target STREQUAL "esp32c3" AND NOT target STREQUAL "esp32s3" AND NOT target STREQUAL "esp32c2")
+            rom_linker_script("spiflash")
+        endif()
+    endif()
+
+    if(CONFIG_MBEDTLS_USE_CRYPTO_ROM_IMPL)
+        rom_linker_script("mbedtls")
     endif()
 
     if(CONFIG_IDF_TARGET_ARCH_XTENSA)

@@ -67,7 +67,15 @@ config ESP_ROM_HAS_ETS_PRINTF_BUG
     bool
     default y
 
+config ESP_ROM_HAS_NEWLIB
+    bool
+    default y
+
 config ESP_ROM_HAS_NEWLIB_NANO_FORMAT
+    bool
+    default y
+
+config ESP_ROM_HAS_NEWLIB_32BIT_TIME
     bool
     default y
 
@@ -92,5 +100,9 @@ config ESP_ROM_HAS_CACHE_WRITEBACK_BUG
     default y
 
 config ESP_ROM_HAS_SW_FLOAT
+    bool
+    default y
+
+config ESP_ROM_HAS_VERSION
     bool
     default y
