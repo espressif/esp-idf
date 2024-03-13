@@ -338,7 +338,9 @@ menu "FreeRTOS"
 
         config FREERTOS_TASK_FUNCTION_WRAPPER
             bool "Wrap task functions"
-            depends on COMPILER_OPTIMIZATION_DEBUG || ESP_COREDUMP_ENABLE || ESP_GDBSTUB_ENABLED
+            #TODO: Check if FreeRTOS Task Wrapper must depend on GDBStub (IDF-9505)
+            depends on COMPILER_OPTIMIZATION_DEBUG || ESP_COREDUMP_ENABLE \
+                || ESP_SYSTEM_PANIC_GDBSTUB || ESP_SYSTEM_GDBSTUB_RUNTIME
             default y
             help
                 If enabled, all FreeRTOS task functions will be enclosed in a wrapper function. If a task function
