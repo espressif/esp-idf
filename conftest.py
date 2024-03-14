@@ -436,6 +436,7 @@ def pytest_configure(config: Config) -> None:
 
     if '--collect-only' not in config.invocation_params.args:
         config.stash[IDF_PYTEST_EMBEDDED_KEY] = IdfPytestEmbedded(
+            config_name=config.getoption('sdkconfig'),
             target=target,
             apps=apps,
         )
