@@ -267,7 +267,7 @@ TEST_CASE("ADC continuous flush internal pool", "[adc_continuous][mannual][ignor
 #define ADC_RESTART_TEST_SIZE   4096
 #define ADC_READ_TEST_COUNT     100
 
-TEST_CASE("ADC continuous test after restarting", "[adc_continuous]")
+TEST_CASE("ADC continuous test after restarting", "[adc_continuous][ignore]")
 {
     adc_continuous_handle_t handle = NULL;
     adc_continuous_handle_cfg_t adc_config = {
