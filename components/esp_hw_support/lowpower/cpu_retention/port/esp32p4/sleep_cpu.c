@@ -413,7 +413,7 @@ static IRAM_ATTR esp_err_t do_cpu_retention(sleep_cpu_entry_cb_t goto_sleep,
         /* Minus 2 * sizeof(long) is for bypass `pmufunc` and `frame_crc` field */
         update_retention_frame_crc((uint32_t*)frame, RV_SLEEP_CTX_FRMSZ - 2 * sizeof(long), (uint32_t *)(&frame->frame_crc));
 #endif
-        REG_WRITE(LIGHT_SLEEP_WAKE_STUB_ADDR_REG, (uint32_t)rv_core_critical_regs_restore);
+        REG_WRITE(RTC_SLEEP_WAKE_STUB_ADDR_REG, (uint32_t)rv_core_critical_regs_restore);
 
 #if CONFIG_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP && !CONFIG_FREERTOS_UNICORE
         atomic_store(&s_smp_retention_state[core_id], SMP_BACKUP_DONE);
