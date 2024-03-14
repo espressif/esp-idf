@@ -1,6 +1,5 @@
-# SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
-
 import pytest
 from pytest_embedded import Dut
 
@@ -18,7 +17,7 @@ from pytest_embedded import Dut
     'pm_enable'
 ], indirect=True)
 def test_adc(dut: Dut) -> None:
-    dut.run_all_single_board_cases(timeout=120)
+    dut.run_all_single_board_cases(timeout=120, reset=True)
 
 
 # No PM test, as C2 doesn't support ADC continuous mode
@@ -34,7 +33,7 @@ def test_adc(dut: Dut) -> None:
     indirect=True,
 )
 def test_adc_esp32c2_xtal_26mhz(dut: Dut) -> None:
-    dut.run_all_single_board_cases(timeout=120)
+    dut.run_all_single_board_cases(timeout=120, reset=True)
 
 
 @pytest.mark.esp32s3
@@ -46,4 +45,4 @@ def test_adc_esp32c2_xtal_26mhz(dut: Dut) -> None:
     'gdma_iram_safe',
 ], indirect=True)
 def test_adc_gdma_iram(dut: Dut) -> None:
-    dut.run_all_single_board_cases(timeout=120)
+    dut.run_all_single_board_cases(timeout=120, reset=True)
