@@ -814,6 +814,27 @@ static inline void clk_ll_rc_fast_tick_conf(void)
 }
 
 
+/*
+ * Enable/Disable the clock gate for clock output signal source
+*/
+static inline void clk_ll_enable_clkout_source(soc_clkout_sig_id_t clk_src, bool en)
+{
+    switch (clk_src)
+    {
+        case CLKOUT_SIG_PLL:
+            PCR.ctrl_clk_out_en.clk160_oen = en;
+            break;
+        case CLKOUT_SIG_PLL_F80M:
+            PCR.ctrl_clk_out_en.clk80_oen = en;
+            break;
+        case CLKOUT_SIG_XTAL:
+            PCR.ctrl_clk_out_en.clk_xtal_oen = en;
+            break;
+        default:
+            break;
+    }
+}
+
 #ifdef __cplusplus
 }
 #endif

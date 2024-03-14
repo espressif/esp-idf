@@ -206,13 +206,13 @@ FORCE_INLINE_ATTR void usb_serial_jtag_ll_enable_pad(bool enable_pad)
  * @brief Enable the bus clock for  USB Serial_JTAG module
  * @param clk_en True if enable the clock of USB Serial_JTAG module
  */
-FORCE_INLINE_ATTR void usb_serial_jtag_ll_enable_bus_clock(bool clk_en)
+FORCE_INLINE_ATTR void _usb_serial_jtag_ll_enable_bus_clock(bool clk_en)
 {
     SYSTEM.perip_clk_en1.usb_device_clk_en = clk_en;
 }
 
 // SYSTEM.perip_clk_enx are shared registers, so this function must be used in an atomic way
-#define usb_serial_jtag_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; usb_serial_jtag_ll_enable_bus_clock(__VA_ARGS__)
+#define usb_serial_jtag_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; _usb_serial_jtag_ll_enable_bus_clock(__VA_ARGS__)
 
 /**
  * @brief Reset the usb serial jtag module

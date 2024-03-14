@@ -749,6 +749,16 @@ static inline void clk_ll_rc_fast_tick_conf(void)
     PCR.ctrl_tick_conf.fosc_tick_num = REG_FOSC_TICK_NUM;
 }
 
+/*
+ * Enable/Disable the clock gate for clock output signal source
+*/
+static inline void clk_ll_enable_clkout_source(soc_clkout_sig_id_t clk_src, bool en)
+{
+    if (clk_src == CLKOUT_SIG_XTAL) {
+        PCR.ctrl_clk_out_en.clk_xtal_oen = en;
+    }
+}
+
 #ifdef __cplusplus
 }
 #endif

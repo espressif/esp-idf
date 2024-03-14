@@ -824,14 +824,14 @@ static inline void lp_i2c_ll_set_source_clk(i2c_dev_t *hw, soc_periph_lp_i2c_clk
  * @param hw_id LP I2C instance ID
  * @param enable True to enable, False to disable
  */
-static inline void lp_i2c_ll_enable_bus_clock(int hw_id, bool enable)
+static inline void _lp_i2c_ll_enable_bus_clock(int hw_id, bool enable)
 {
     (void)hw_id;
     LPPERI.clk_en.lp_ext_i2c_ck_en = enable;
 }
 
 /// LPPERI.clk_en is a shared register, so this function must be used in an atomic way
-#define lp_i2c_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; lp_i2c_ll_enable_bus_clock(__VA_ARGS__)
+#define lp_i2c_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; _lp_i2c_ll_enable_bus_clock(__VA_ARGS__)
 
 /**
  * @brief Reset LP I2C module

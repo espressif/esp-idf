@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2016-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2016-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,9 +13,15 @@
 #include "esp_cpu.h"
 #include "soc/wdev_reg.h"
 #include "esp_private/esp_clk.h"
+#include "esp_private/startup_internal.h"
+#include "soc/soc_caps.h"
 
 #if SOC_LP_TIMER_SUPPORTED
 #include "hal/lp_timer_hal.h"
+#endif
+
+#if SOC_RNG_CLOCK_IS_INDEPENDENT
+#include "hal/lp_clkrst_ll.h"
 #endif
 
 #if defined CONFIG_IDF_TARGET_ESP32S3
@@ -103,3 +109,11 @@ void esp_fill_random(void *buf, size_t len)
         len -= to_copy;
     }
 }
+
+#if SOC_RNG_CLOCK_IS_INDEPENDENT
+ESP_SYSTEM_INIT_FN(init_rng_clock, SECONDARY, BIT(0), 102)
+{
+    _lp_clkrst_ll_enable_rng_clock(true);
+    return ESP_OK;
+}
+#endif

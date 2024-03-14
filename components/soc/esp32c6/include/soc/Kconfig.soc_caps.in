@@ -475,6 +475,10 @@ config SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
     bool
     default y
 
+config SOC_LP_IO_CLOCK_IS_INDEPENDENT
+    bool
+    default y
+
 config SOC_GPIO_IN_RANGE_MAX
     int
     default 30
@@ -503,6 +507,10 @@ config SOC_GPIO_CLOCKOUT_BY_GPIO_MATRIX
     bool
     default y
 
+config SOC_CLOCKOUT_HAS_SOURCE_GATE
+    bool
+    default y
+
 config SOC_RTCIO_PIN_COUNT
     int
     default 8
@@ -518,6 +526,10 @@ config SOC_RTCIO_HOLD_SUPPORTED
 config SOC_RTCIO_WAKE_SUPPORTED
     bool
     default y
+
+config SOC_RTCIO_VALID_RTCIO_MASK
+    hex
+    default 0xFF
 
 config SOC_DEDIC_GPIO_OUT_CHANNELS_NUM
     int
@@ -1344,6 +1356,10 @@ config SOC_TEMPERATURE_SENSOR_INTR_SUPPORT
     default y
 
 config SOC_TEMPERATURE_SENSOR_SUPPORT_ETM
+    bool
+    default y
+
+config SOC_RNG_CLOCK_IS_INDEPENDENT
     bool
     default y
 

@@ -21,6 +21,8 @@
 #include "soc/rtc_periph.h"
 #include "soc/i2s_reg.h"
 #include "hal/wdt_hal.h"
+#include "hal/usb_serial_jtag_ll.h"
+#include "hal/usb_fsls_phy_ll.h"
 #include "esp_private/periph_ctrl.h"
 #include "esp_private/esp_clk.h"
 #include "soc/syscon_reg.h"
@@ -241,6 +243,12 @@ __attribute__((weak)) void esp_perip_clk_init(void)
                            SYSTEM_WIFI_CLK_BT_EN_M |
                            SYSTEM_WIFI_CLK_I2C_CLK_EN |
                            SYSTEM_WIFI_CLK_UNUSED_BIT12;
+
+#if !CONFIG_USJ_ENABLE_USB_SERIAL_JTAG && !CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG_ENABLED
+        // Disable USB-Serial-JTAG clock and it's pad if not used
+        usb_fsls_phy_ll_int_jtag_disable(&USB_SERIAL_JTAG);
+        _usb_serial_jtag_ll_enable_bus_clock(false);
+#endif
     }
 
     //Reset the communication peripherals like I2C, SPI, UART, I2S and bring them to known state.
@@ -270,6 +278,13 @@ __attribute__((weak)) void esp_perip_clk_init(void)
     // TOCK(check replacement)
     // REG_SET_FIELD(I2S_CLKM_CONF_REG(0), I2S_CLK_SEL, I2S_CLK_AUDIO_PLL);
     // REG_SET_FIELD(I2S_CLKM_CONF_REG(1), I2S_CLK_SEL, I2S_CLK_AUDIO_PLL);
+
+#if !CONFIG_ESP_SYSTEM_HW_PC_RECORD
+    /* Disable ASSIST Debug module clock if PC recoreding function is not used,
+     * if stack guard function needs it, it will be re-enabled at esp_hw_stack_guard_init */
+    CLEAR_PERI_REG_MASK(SYSTEM_CPU_PERI_CLK_EN_REG, SYSTEM_CLK_EN_ASSIST_DEBUG);
+    SET_PERI_REG_MASK(SYSTEM_CPU_PERI_RST_EN_REG, SYSTEM_RST_EN_ASSIST_DEBUG);
+#endif
 
     /* Disable some peripheral clocks. */
     CLEAR_PERI_REG_MASK(SYSTEM_PERIP_CLK_EN0_REG, common_perip_clk);

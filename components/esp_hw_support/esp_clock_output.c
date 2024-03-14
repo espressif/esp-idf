@@ -13,6 +13,7 @@
 #include "esp_rom_gpio.h"
 #include "clkout_channel.h"
 #include "hal/gpio_hal.h"
+#include "hal/clk_tree_ll.h"
 #include "soc/soc_caps.h"
 #include "soc/io_mux_reg.h"
 
@@ -89,6 +90,9 @@ static clkout_channel_handle_t* clkout_channel_alloc(soc_clkout_sig_id_t clk_sig
 
         if (allocated_channel->ref_cnt == 1) {
             portENTER_CRITICAL(&s_clkout_lock);
+#if SOC_CLOCKOUT_HAS_SOURCE_GATE
+            clk_ll_enable_clkout_source(clk_sig, true);
+#endif
             gpio_ll_set_pin_ctrl(clk_sig, CLKOUT_CHANNEL_MASK(allocated_channel->channel_id), CLKOUT_CHANNEL_SHIFT(allocated_channel->channel_id));
             portEXIT_CRITICAL(&s_clkout_lock);
         }
@@ -142,10 +146,13 @@ static void clkout_channel_free(clkout_channel_handle_t *channel_hdl)
 {
     portENTER_CRITICAL(&channel_hdl->clkout_channel_lock);
     if (--channel_hdl->ref_cnt == 0) {
-        channel_hdl->mapped_clock = CLKOUT_SIG_INVALID;
         portENTER_CRITICAL(&s_clkout_lock);
+#if SOC_CLOCKOUT_HAS_SOURCE_GATE
+        clk_ll_enable_clkout_source(channel_hdl->mapped_clock, false);
+#endif
         gpio_ll_set_pin_ctrl(0, CLKOUT_CHANNEL_MASK(channel_hdl->channel_id), CLKOUT_CHANNEL_SHIFT(channel_hdl->channel_id));
         portEXIT_CRITICAL(&s_clkout_lock);
+        channel_hdl->mapped_clock = CLKOUT_SIG_INVALID;
         channel_hdl->is_mapped = false;
     }
     portEXIT_CRITICAL(&channel_hdl->clkout_channel_lock);

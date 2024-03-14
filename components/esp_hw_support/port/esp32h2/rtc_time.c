@@ -11,6 +11,7 @@
 #include "hal/clk_tree_ll.h"
 #include "hal/timer_ll.h"
 #include "soc/timer_group_reg.h"
+#include "soc/pcr_reg.h"
 #include "esp_rom_sys.h"
 #include "assert.h"
 #include "hal/efuse_hal.h"
@@ -154,10 +155,13 @@ static uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cyc
 
             /*The Fosc CLK of calibration circuit is divided by 32 for ECO2.
               So we need to multiply the frequency of the Fosc for ECO2 and above chips by 32 times.
-              And ensure that this modification will not affect ECO0 and ECO1.*/
+              And ensure that this modification will not affect ECO0 and ECO1.
+              And the 32-divider belongs to REF_TICK module, so we need to enable its clock during
+              calibration. */
             if (ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 2)) {
                 if (cal_clk == RTC_CAL_RC_FAST) {
                     cal_val = cal_val >> 5;
+                    CLEAR_PERI_REG_MASK(PCR_CTRL_TICK_CONF_REG, PCR_TICK_ENABLE);
                 }
             }
             break;
@@ -218,6 +222,7 @@ uint32_t rtc_clk_cal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cycles)
     if (ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 2)) {
         if (cal_clk == RTC_CAL_RC_FAST) {
             slowclk_cycles = slowclk_cycles >> 5;
+            SET_PERI_REG_MASK(PCR_CTRL_TICK_CONF_REG, PCR_TICK_ENABLE);
         }
     }
 
