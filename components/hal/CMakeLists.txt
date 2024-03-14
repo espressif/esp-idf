@@ -182,7 +182,7 @@ if(NOT BOOTLOADER_BUILD)
     if(CONFIG_SOC_USB_OTG_SUPPORTED)
         list(APPEND srcs
                     "usb_dwc_hal.c"
-                    "usb_fsls_phy_hal.c")
+                    "usb_wrap_hal.c")
     endif()
 
     if(${target} STREQUAL "esp32")
