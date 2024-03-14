@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -232,6 +232,11 @@ typedef struct
     esp_hf_incoming_data_cb_t          btc_hf_incoming_data_cb;
     esp_hf_outgoing_data_cb_t          btc_hf_outgoing_data_cb;
 } hf_local_param_t;
+
+#if HFP_DYNAMIC_MEMORY == TRUE
+extern hf_local_param_t *hf_local_param_ptr;
+#define hf_local_param (hf_local_param_ptr)
+#endif
 
 /*******************************************************************************
 **  BTC HF AG Handle Hub
