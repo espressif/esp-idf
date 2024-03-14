@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,101 +16,224 @@
 extern "C" {
 #endif
 
+/* ---------------------------- USB PHY Control  ---------------------------- */
+
 /**
- * @brief Configures the internal PHY for USB_OTG
+ * @brief Enables and sets the override value for the session end signal
  *
  * @param hw Start address of the USB Wrap registers
+ * @param sessend Session end override value. True means VBus < 0.2V, false means VBus > 0.8V
  */
-static inline void usb_fsls_phy_ll_int_otg_enable(usb_wrap_dev_t *hw)
+FORCE_INLINE_ATTR void usb_wrap_ll_phy_enable_srp_sessend_override(usb_wrap_dev_t *hw, bool sessend)
 {
-    hw->otg_conf.phy_sel = 0;
+    hw->otg_conf.srp_sessend_value = sessend;
+    hw->otg_conf.srp_sessend_override = 1;
 }
 
 /**
- * @brief Configures the external PHY for USB_OTG
+ * @brief Disable session end override
  *
  * @param hw Start address of the USB Wrap registers
  */
-static inline void usb_fsls_phy_ll_ext_otg_enable(usb_wrap_dev_t *hw)
+FORCE_INLINE_ATTR void usb_wrap_ll_phy_disable_srp_sessend_override(usb_wrap_dev_t *hw)
 {
-    //Enable external PHY
-    hw->otg_conf.phy_sel = 1;
+    hw->otg_conf.srp_sessend_override = 0;
 }
 
 /**
- * @brief Configures port loads for the internal PHY
+ * @brief Sets whether the USB Wrap's FSLS PHY interface routes to an internal or external PHY
  *
  * @param hw Start address of the USB Wrap registers
- * @param dp_pu D+ pullup load
- * @param dp_pd D+ pulldown load
- * @param dm_pu D- pullup load
- * @param dm_pd D- pulldown load
+ * @param enable Enables external PHY, internal otherwise
  */
-static inline void usb_fsls_phy_ll_int_load_conf(usb_wrap_dev_t *hw, bool dp_pu, bool dp_pd, bool dm_pu, bool dm_pd)
+FORCE_INLINE_ATTR void usb_wrap_ll_phy_enable_external(usb_wrap_dev_t *hw, bool enable)
 {
-    usb_wrap_otg_conf_reg_t conf;
-    conf.val = hw->otg_conf.val;
-    conf.pad_pull_override = 1;
-    conf.dp_pullup = dp_pu;
-    conf.dp_pulldown = dp_pd;
-    conf.dm_pullup = dm_pu;
-    conf.dm_pulldown = dm_pd;
-    hw->otg_conf.val = conf.val;
+    hw->otg_conf.phy_sel = enable;
 }
 
 /**
- * @brief Enable the internal PHY control to D+/D- pad
- * @param hw     Start address of the USB Wrap registers
- * @param pad_en Enable the PHY control to D+/D- pad
- */
-static inline void usb_fsls_phy_ll_usb_wrap_pad_enable(usb_wrap_dev_t *hw, bool pad_en)
-{
-    hw->otg_conf.pad_enable = pad_en;
-}
-
-/**
- * @brief Enable the internal PHY's test mode
+ * @brief Enables/disables exchanging of the D+/D- pins USB PHY
  *
  * @param hw Start address of the USB Wrap registers
- * @param en Whether to enable the internal PHY's test mode
+ * @param enable Enables pin exchange, disabled otherwise
  */
-static inline void usb_fsls_phy_ll_int_enable_test_mode(usb_wrap_dev_t *hw, bool en)
+FORCE_INLINE_ATTR void usb_wrap_ll_phy_enable_pin_exchg(usb_wrap_dev_t *hw, bool enable)
 {
-    if (en) {
-        // Clear USB_WRAP_TEST_CONF_REG
-        hw->test_conf.val = 0;
-        // Set USB test pad oen
-        hw->test_conf.test_usb_wrap_oe = 1;
-        // Enable USB test mode
-        hw->test_conf.test_enable = 1;
+    if (enable) {
+        hw->otg_conf.exchg_pins = 1;
+        hw->otg_conf.exchg_pins_override = 1;
     } else {
-        hw->test_conf.test_enable = 0;
+        hw->otg_conf.exchg_pins_override = 0;
+        hw->otg_conf.exchg_pins = 0;
     }
 }
+
+/**
+ * @brief Enables and sets voltage threshold overrides for USB FSLS PHY single-ended inputs
+ *
+ * @param hw Start address of the USB Wrap registers
+ * @param vrefh_step High voltage threshold. 0 to 3 indicating 80mV steps from 1.76V to 2V.
+ * @param vrefl_step Low voltage threshold. 0 to 3 indicating 80mV steps from 0.8V to 1.04V.
+ */
+FORCE_INLINE_ATTR void usb_wrap_ll_phy_enable_vref_override(usb_wrap_dev_t *hw, unsigned int vrefh_step, unsigned int vrefl_step)
+{
+    hw->otg_conf.vrefh = vrefh_step;
+    hw->otg_conf.vrefl = vrefl_step;
+    hw->otg_conf.vref_override = 1;
+}
+
+/**
+ * @brief Disables voltage threshold overrides for USB FSLS PHY single-ended inputs
+ *
+ * @param hw Start address of the USB Wrap registers
+ */
+FORCE_INLINE_ATTR void usb_wrap_ll_phy_disable_vref_override(usb_wrap_dev_t *hw)
+{
+    hw->otg_conf.vref_override = 0;
+}
+
+/**
+ * @brief Enable override of USB FSLS PHY's pull up/down resistors
+ *
+ * @param hw Start address of the USB Wrap registers
+ * @param dp_pu Enable D+ pullup
+ * @param dm_pu Enable D- pullup
+ * @param dp_pd Enable D+ pulldown
+ * @param dm_pd Enable D- pulldown
+ */
+FORCE_INLINE_ATTR void usb_wrap_ll_phy_enable_pull_override(usb_wrap_dev_t *hw, bool dp_pu, bool dm_pu, bool dp_pd, bool dm_pd)
+{
+    hw->otg_conf.dp_pullup = dp_pu;
+    hw->otg_conf.dp_pulldown = dp_pd;
+    hw->otg_conf.dm_pullup = dm_pu;
+    hw->otg_conf.dm_pulldown = dm_pd;
+    hw->otg_conf.pad_pull_override = 1;
+}
+
+/**
+ * @brief Disable override of USB FSLS PHY pull up/down resistors
+ *
+ * @param hw Start address of the USB Wrap registers
+ */
+FORCE_INLINE_ATTR void usb_wrap_ll_phy_disable_pull_override(usb_wrap_dev_t *hw)
+{
+    hw->otg_conf.pad_pull_override = 0;
+}
+
+/**
+ * @brief Sets the strength of the pullup resistor
+ *
+ * @param hw Start address of the USB Wrap registers
+ * @param strong True is a ~1.4K pullup, false is a ~2.4K pullup
+ */
+FORCE_INLINE_ATTR void usb_wrap_ll_phy_set_pullup_strength(usb_wrap_dev_t *hw, bool strong)
+{
+    hw->otg_conf.pullup_value = strong;
+}
+
+/**
+ * @brief Check if USB FSLS PHY pads are enabled
+ *
+ * @param hw Start address of the USB Wrap registers
+ * @return True if enabled, false otherwise
+ */
+FORCE_INLINE_ATTR bool usb_wrap_ll_phy_is_pad_enabled(usb_wrap_dev_t *hw)
+{
+    return hw->otg_conf.pad_enable;
+}
+
+/**
+ * @brief Enable the USB FSLS PHY pads
+ *
+ * @param hw Start address of the USB Wrap registers
+ * @param enable Whether to enable the USB FSLS PHY pads
+ */
+FORCE_INLINE_ATTR void usb_wrap_ll_phy_enable_pad(usb_wrap_dev_t *hw, bool enable)
+{
+    hw->otg_conf.pad_enable = enable;
+}
+
+/**
+ * @brief Set USB FSLS PHY TX output clock edge
+ *
+ * @param hw Start address of the USB Wrap registers
+ * @param clk_neg_edge True if TX output at negedge, posedge otherwise
+ */
+FORCE_INLINE_ATTR void usb_wrap_ll_phy_set_tx_edge(usb_wrap_dev_t *hw, bool clk_neg_edge)
+{
+    hw->otg_conf.phy_tx_edge_sel = clk_neg_edge;
+}
+
+/* ------------------------------ USB PHY Test ------------------------------ */
+
+/**
+ * @brief Enable the USB FSLS PHY's test mode
+ *
+ * @param hw Start address of the USB Wrap registers
+ * @param enable Whether to enable the USB FSLS PHY's test mode
+ */
+FORCE_INLINE_ATTR void usb_wrap_ll_phy_enable_test_mode(usb_wrap_dev_t *hw, bool enable)
+{
+    hw->test_conf.test_enable = enable;
+}
+
+/**
+ * @brief Set the USB FSLS PHY's signal test values
+ *
+ * @param hw Start address of the USB Wrap registers
+ * @param oen Output Enable (active low) signal
+ * @param tx_dp TX D+
+ * @param tx_dm TX D-
+ * @param rx_dp RX D+
+ * @param rx_dm RX D-
+ * @param rx_rcv RX RCV
+ */
+FORCE_INLINE_ATTR void usb_wrap_ll_phy_test_mode_set_signals(usb_wrap_dev_t *hw,
+                                                             bool oen,
+                                                             bool tx_dp,
+                                                             bool tx_dm,
+                                                             bool rx_dp,
+                                                             bool rx_dm,
+                                                             bool rx_rcv)
+{
+    usb_wrap_test_conf_reg_t test_conf;
+    test_conf.val = hw->test_conf.val;
+
+    test_conf.test_usb_wrap_oe = oen;
+    test_conf.test_tx_dp = tx_dp;
+    test_conf.test_tx_dm = tx_dm;
+    test_conf.test_rx_rcv = rx_rcv;
+    test_conf.test_rx_dp = rx_dp;
+    test_conf.test_rx_dm = rx_dm;
+
+    hw->test_conf.val = test_conf.val;
+}
+
+/* ----------------------------- RCC Functions  ----------------------------- */
 
 /**
  * Enable the bus clock for USB Wrap module
  * @param clk_en True if enable the clock of USB Wrap module
  */
-FORCE_INLINE_ATTR void usb_fsls_phy_ll_usb_wrap_enable_bus_clock(bool clk_en)
+FORCE_INLINE_ATTR void usb_wrap_ll_enable_bus_clock(bool clk_en)
 {
     REG_SET_FIELD(DPORT_PERIP_CLK_EN0_REG, DPORT_USB_CLK_EN, clk_en);
 }
 
 // SYSTEM.perip_clk_enx are shared registers, so this function must be used in an atomic way
-#define usb_fsls_phy_ll_usb_wrap_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; usb_fsls_phy_ll_usb_wrap_enable_bus_clock(__VA_ARGS__)
+#define usb_wrap_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; usb_wrap_ll_enable_bus_clock(__VA_ARGS__)
 
 /**
  * @brief Reset the USB Wrap module
  */
-FORCE_INLINE_ATTR void usb_fsls_phy_ll_usb_wrap_reset_register(void)
+FORCE_INLINE_ATTR void usb_wrap_ll_reset_register(void)
 {
     REG_SET_FIELD(DPORT_PERIP_RST_EN0_REG, DPORT_USB_RST, 1);
     REG_SET_FIELD(DPORT_PERIP_RST_EN0_REG, DPORT_USB_RST, 0);
 }
 
 // SYSTEM.perip_clk_enx are shared registers, so this function must be used in an atomic way
-#define usb_fsls_phy_ll_usb_wrap_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; usb_fsls_phy_ll_usb_wrap_reset_register(__VA_ARGS__)
+#define usb_wrap_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; usb_wrap_ll_reset_register(__VA_ARGS__)
 
 #ifdef __cplusplus
 }
