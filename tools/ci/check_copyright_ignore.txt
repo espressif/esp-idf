@@ -989,7 +989,6 @@ components/spi_flash/sim/sdkconfig/sdkconfig.h
 components/spi_flash/sim/stubs/bsd/strlcpy.c
 components/spi_flash/spi_flash_chip_boya.c
 components/spi_flash/spi_flash_chip_issi.c
-components/spi_flash/spi_flash_chip_mxic.c
 components/spi_flash/spi_flash_chip_winbond.c
 components/spi_flash/test/test_esp_flash.c
 components/spi_flash/test/test_flash_encryption.c
