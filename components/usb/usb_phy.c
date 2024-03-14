@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -214,8 +214,8 @@ static esp_err_t usb_phy_install(void)
         portEXIT_CRITICAL(&phy_spinlock);
         goto cleanup;
     }
-    usb_fsls_phy_ll_usb_wrap_enable_bus_clock(true);
-    usb_fsls_phy_ll_usb_wrap_reset_register();
+    usb_wrap_ll_enable_bus_clock(true);
+    usb_wrap_ll_reset_register();
     // Enable USB peripheral and reset the register
     portEXIT_CRITICAL(&phy_spinlock);
     return ESP_OK;
@@ -308,7 +308,7 @@ static void phy_uninstall(void)
         p_phy_ctrl_obj_free = p_phy_ctrl_obj;
         p_phy_ctrl_obj = NULL;
         // Disable USB peripheral without reset the module
-        usb_fsls_phy_ll_usb_wrap_enable_bus_clock(false);
+        usb_wrap_ll_enable_bus_clock(false);
     }
     portEXIT_CRITICAL(&phy_spinlock);
     free(p_phy_ctrl_obj_free);
@@ -324,8 +324,8 @@ esp_err_t usb_del_phy(usb_phy_handle_t handle)
         p_phy_ctrl_obj->external_phy = NULL;
     } else {
         // Clear pullup and pulldown loads on D+ / D-, and disable the pads
-        usb_fsls_phy_ll_int_load_conf(handle->hal_context.wrap_dev, false, false, false, false);
-        usb_fsls_phy_ll_usb_wrap_pad_enable(handle->hal_context.wrap_dev, false);
+        usb_wrap_ll_phy_enable_pull_override(handle->hal_context.wrap_dev, false, false, false, false);
+        usb_wrap_ll_phy_enable_pad(handle->hal_context.wrap_dev, false);
         p_phy_ctrl_obj->internal_phy = NULL;
     }
     portEXIT_CRITICAL(&phy_spinlock);
