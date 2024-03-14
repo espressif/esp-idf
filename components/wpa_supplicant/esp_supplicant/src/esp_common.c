@@ -260,12 +260,12 @@ static int ieee80211_handle_rx_frm(u8 type, u8 *frame, size_t len, u8 *sender,
 	int ret = 0;
 
 	switch (type) {
-#if defined(CONFIG_IEEE80211R) || defined(CONFIG_IEEE80211KV) || defined(CONFIG_SAE_PK)
+#if defined(CONFIG_IEEE80211R) || defined(CONFIG_IEEE80211KV)
 	case WLAN_FC_STYPE_BEACON:
 	case WLAN_FC_STYPE_PROBE_RESP:
 		ret = esp_handle_beacon_probe(type, frame, len, sender, rssi, channel, current_tsf);
 		break;
-#endif /* defined(CONFIG_IEEE80211KV) || defined(CONFIG_IEEE80211R) || defined(CONFIG_SAE_PK)*/
+#endif /* defined(CONFIG_IEEE80211KV) || defined(CONFIG_IEEE80211R) */
 #ifdef CONFIG_IEEE80211R
 	case WLAN_FC_STYPE_AUTH:
 		ret = handle_auth_frame(frame, len, sender, rssi, channel);
@@ -328,7 +328,7 @@ int esp_supplicant_common_init(struct wpa_funcs *wpa_cb)
 	struct wpa_supplicant *wpa_s = &g_wpa_supp;
 	int ret = 0;
 
-#if defined(CONFIG_IEEE80211KV) || defined(CONFIG_IEEE80211R) || defined(CONFIG_SAE_PK)
+#if defined(CONFIG_IEEE80211KV) || defined(CONFIG_IEEE80211R)
 #ifdef CONFIG_SUPPLICANT_TASK
 	if (!s_supplicant_api_lock) {
 		s_supplicant_api_lock = os_recursive_mutex_create();
@@ -361,7 +361,7 @@ int esp_supplicant_common_init(struct wpa_funcs *wpa_cb)
 #endif /* CONFIG_IEEE80211KV */
 	esp_scan_init(wpa_s);
 
-#endif /* defined(CONFIG_IEEE80211KV) || defined(CONFIG_IEEE80211R) || defined(CONFIG_SAE_PK)*/
+#endif /* defined(CONFIG_IEEE80211KV) || defined(CONFIG_IEEE80211R) */
 	wpa_s->type = 0;
 	wpa_s->subtype = 0;
 	wpa_s->type |= (1 << WLAN_FC_STYPE_ASSOC_RESP) | (1 << WLAN_FC_STYPE_REASSOC_RESP) | (1 << WLAN_FC_STYPE_AUTH);
@@ -386,13 +386,13 @@ void esp_supplicant_common_deinit(void)
 {
 	struct wpa_supplicant *wpa_s = &g_wpa_supp;
 
-#if defined(CONFIG_IEEE80211KV) || defined(CONFIG_IEEE80211R) || defined(CONFIG_SAE_PK)
+#if defined(CONFIG_IEEE80211KV) || defined(CONFIG_IEEE80211R)
 	esp_scan_deinit(wpa_s);
 #ifdef CONFIG_IEEE80211KV
 	wpas_rrm_reset(wpa_s);
 	wpas_clear_beacon_rep_data(wpa_s);
 #endif /* CONFIG_IEEE80211KV */
-#endif /* defined(CONFIG_IEEE80211KV) || defined(CONFIG_IEEE80211R) || defined(CONFIG_SAE_PK)*/
+#endif /* defined(CONFIG_IEEE80211KV) || defined(CONFIG_IEEE80211R) */
 	if (wpa_s->type) {
 		wpa_s->type = 0;
 		esp_wifi_register_mgmt_frame_internal(wpa_s->type, wpa_s->subtype);

@@ -174,7 +174,7 @@ if(CONFIG_ESP_WIFI_ENABLE_SAE_PK)
     "src/common/sae_pk.c")
 endif()
 
-if(CONFIG_ESP_WIFI_11KV_SUPPORT OR CONFIG_ESP_WIFI_11R_SUPPORT OR CONFIG_ESP_WIFI_ENABLE_SAE_PK)
+if(CONFIG_ESP_WIFI_11KV_SUPPORT OR CONFIG_ESP_WIFI_11R_SUPPORT)
     set(srcs ${srcs}
     "src/common/bss.c"
     "src/common/scan.c"
