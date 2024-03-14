@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -22,6 +22,8 @@
 #include "host/ble_hs_adv.h"
 #include "nimble/ble.h"
 #include "host/ble_sm.h"
+#else
+#include "esp_bt_device.h"
 #endif
 
 static const char *TAG = "ESP_HID_GAP";
@@ -697,9 +699,13 @@ esp_err_t esp_hid_ble_gap_adv_start(void)
     return esp_ble_gap_start_advertising(&hidd_adv_params);
 }
 #endif /* CONFIG_BT_BLE_ENABLED */
+
 #if CONFIG_BT_NIMBLE_ENABLED
-static struct ble_hs_adv_fields fields;
 #define GATT_SVR_SVC_HID_UUID 0x1812
+
+extern void ble_hid_task_start_up(void);
+static struct ble_hs_adv_fields fields;
+
 esp_err_t esp_hid_ble_gap_adv_init(uint16_t appearance, const char *device_name)
 {
     ble_uuid16_t *uuid16, *uuid16_1;
@@ -806,6 +812,7 @@ nimble_hid_gap_event(struct ble_gap_event *event, void *arg)
                 event->enc_change.status);
         rc = ble_gap_conn_find(event->enc_change.conn_handle, &desc);
         assert(rc == 0);
+        ble_hid_task_start_up();
         return 0;
 
     case BLE_GAP_EVENT_NOTIFY_TX:
