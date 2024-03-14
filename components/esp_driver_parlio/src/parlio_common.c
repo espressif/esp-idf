@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -42,8 +42,6 @@ parlio_group_t *parlio_acquire_group_handle(int group_id)
         if (group) {
             new_group = true;
             s_platform.groups[group_id] = group;
-            group->group_id = group_id;
-            group->spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
             PARLIO_RCC_ATOMIC() {
                 parlio_ll_enable_bus_clock(group_id, true);
                 parlio_ll_reset_register(group_id);
@@ -61,6 +59,8 @@ parlio_group_t *parlio_acquire_group_handle(int group_id)
     _lock_release(&s_platform.mutex);
 
     if (new_group) {
+        portMUX_INITIALIZE(&group->spinlock);
+        group->group_id = group_id;
         ESP_LOGD(TAG, "new group(%d) at %p", group_id, group);
     }
     return group;
@@ -81,11 +81,11 @@ void parlio_release_group_handle(parlio_group_t *group)
         PARLIO_RCC_ATOMIC() {
             parlio_ll_enable_bus_clock(group_id, false);
         }
-        free(group);
     }
     _lock_release(&s_platform.mutex);
 
     if (do_deinitialize) {
+        free(group);
         ESP_LOGD(TAG, "del group(%d)", group_id);
     }
 }
@@ -96,23 +96,20 @@ esp_err_t parlio_register_unit_to_group(parlio_unit_base_handle_t unit)
     int unit_id = -1;
     for (int i = 0; i < SOC_PARLIO_GROUPS; i++) {
         group = parlio_acquire_group_handle(i);
-        parlio_unit_base_handle_t *group_unit = NULL;
         ESP_RETURN_ON_FALSE(group, ESP_ERR_NO_MEM, TAG, "no memory for group (%d)", i);
         portENTER_CRITICAL(&group->spinlock);
         if (unit->dir == PARLIO_DIR_TX) {
             for (int j = 0; j < SOC_PARLIO_TX_UNITS_PER_GROUP; j++) {
-                group_unit = &group->tx_units[j];
-                if (*group_unit == NULL) {
-                    *group_unit = unit;
+                if (!group->tx_units[j]) {
+                    group->tx_units[j] = unit;
                     unit_id = j;
                     break;
                 }
             }
         } else {
             for (int j = 0; j < SOC_PARLIO_RX_UNITS_PER_GROUP; j++) {
-                group_unit = &group->rx_units[j];
-                if (*group_unit == NULL) {
-                    *group_unit = unit;
+                if (!group->rx_units[j]) {
+                    group->rx_units[j] = unit;
                     unit_id = j;
                     break;
                 }
@@ -122,7 +119,6 @@ esp_err_t parlio_register_unit_to_group(parlio_unit_base_handle_t unit)
         if (unit_id < 0) {
             /* didn't find a free unit slot in the group */
             parlio_release_group_handle(group);
-            group = NULL;
         } else {
             unit->unit_id = unit_id;
             unit->group = group;
@@ -138,11 +134,12 @@ void parlio_unregister_unit_from_group(parlio_unit_base_handle_t unit)
 {
     assert(unit);
     parlio_group_t *group = unit->group;
+    int unit_id = unit->unit_id;
     portENTER_CRITICAL(&group->spinlock);
     if (unit->dir == PARLIO_DIR_TX) {
-        group->tx_units[unit->unit_id] = NULL;
+        group->tx_units[unit_id] = NULL;
     } else {
-        group->rx_units[unit->unit_id] = NULL;
+        group->rx_units[unit_id] = NULL;
     }
     portEXIT_CRITICAL(&group->spinlock);
     /* the parlio unit has a reference of the group, release it now */

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -28,7 +28,6 @@
 #include "esp_pm.h"
 #include "soc/parlio_periph.h"
 #include "hal/parlio_ll.h"
-#include "hal/gpio_hal.h"
 #include "driver/gpio.h"
 #include "driver/parlio_tx.h"
 #include "parlio_private.h"
@@ -50,6 +49,9 @@ typedef struct parlio_tx_unit_t {
     intr_handle_t intr;    // allocated interrupt handle
     esp_pm_lock_handle_t pm_lock;   // power management lock
     gdma_channel_handle_t dma_chan; // DMA channel
+    parlio_dma_desc_t *dma_nodes;   // DMA descriptor nodes
+    parlio_dma_desc_t *dma_nodes_nc;// non-cached DMA descriptor nodes
+    size_t dma_nodes_num;           // number of DMA descriptor nodes
 #if CONFIG_PM_ENABLE
     char pm_lock_name[PARLIO_PM_LOCK_NAME_LEN_MAX]; // pm lock name
 #endif
@@ -64,7 +66,6 @@ typedef struct parlio_tx_unit_t {
     _Atomic parlio_tx_fsm_t fsm;       // Driver FSM state
     parlio_tx_done_callback_t on_trans_done; // callback function when the transmission is done
     void *user_data;                   // user data passed to the callback function
-    parlio_dma_desc_t *dma_nodes; // DMA descriptor nodes
     parlio_tx_trans_desc_t trans_desc_pool[];   // transaction descriptor pool
 } parlio_tx_unit_t;
 
@@ -122,7 +123,9 @@ static esp_err_t parlio_destroy_tx_unit(parlio_tx_unit_t *tx_unit)
         // de-register from group
         parlio_unregister_unit_from_group(&tx_unit->base);
     }
-    free(tx_unit->dma_nodes);
+    if (tx_unit->dma_nodes) {
+        free(tx_unit->dma_nodes);
+    }
     free(tx_unit);
     return ESP_OK;
 }
@@ -145,8 +148,7 @@ static esp_err_t parlio_tx_unit_configure_gpio(parlio_tx_unit_t *tx_unit, const 
             ESP_RETURN_ON_ERROR(gpio_config(&gpio_conf), TAG, "config data GPIO failed");
             esp_rom_gpio_connect_out_signal(config->data_gpio_nums[i],
                                             parlio_periph_signals.groups[group_id].tx_units[unit_id].data_sigs[i], false, false);
-            gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[config->data_gpio_nums[i]], PIN_FUNC_GPIO);
-
+            gpio_func_sel(config->data_gpio_nums[i], PIN_FUNC_GPIO);
         }
     }
     // Note: the valid signal will override TXD[PARLIO_LL_TX_DATA_LINE_AS_VALID_SIG]
@@ -156,14 +158,14 @@ static esp_err_t parlio_tx_unit_configure_gpio(parlio_tx_unit_t *tx_unit, const 
         esp_rom_gpio_connect_out_signal(config->valid_gpio_num,
                                         parlio_periph_signals.groups[group_id].tx_units[unit_id].data_sigs[PARLIO_LL_TX_DATA_LINE_AS_VALID_SIG],
                                         false, false);
-        gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[config->valid_gpio_num], PIN_FUNC_GPIO);
+        gpio_func_sel(config->valid_gpio_num, PIN_FUNC_GPIO);
     }
     if (config->clk_out_gpio_num >= 0) {
         gpio_conf.pin_bit_mask = BIT64(config->clk_out_gpio_num);
         ESP_RETURN_ON_ERROR(gpio_config(&gpio_conf), TAG, "config clk out GPIO failed");
         esp_rom_gpio_connect_out_signal(config->clk_out_gpio_num,
                                         parlio_periph_signals.groups[group_id].tx_units[unit_id].clk_out_sig, false, false);
-        gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[config->clk_out_gpio_num], PIN_FUNC_GPIO);
+        gpio_func_sel(config->clk_out_gpio_num, PIN_FUNC_GPIO);
     }
     if (config->clk_in_gpio_num >= 0) {
         gpio_conf.mode = config->flags.io_loop_back ? GPIO_MODE_INPUT_OUTPUT : GPIO_MODE_INPUT;
@@ -171,7 +173,7 @@ static esp_err_t parlio_tx_unit_configure_gpio(parlio_tx_unit_t *tx_unit, const 
         ESP_RETURN_ON_ERROR(gpio_config(&gpio_conf), TAG, "config clk in GPIO failed");
         esp_rom_gpio_connect_in_signal(config->clk_in_gpio_num,
                                        parlio_periph_signals.groups[group_id].tx_units[unit_id].clk_in_sig, false);
-        gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[config->clk_in_gpio_num], PIN_FUNC_GPIO);
+        gpio_func_sel(config->clk_in_gpio_num, PIN_FUNC_GPIO);
     }
     return ESP_OK;
 }
@@ -188,6 +190,12 @@ static esp_err_t parlio_tx_unit_init_dma(parlio_tx_unit_t *tx_unit)
         .owner_check = true,
     };
     gdma_apply_strategy(tx_unit->dma_chan, &gdma_strategy_conf);
+
+    // Link the descriptors
+    size_t dma_nodes_num = tx_unit->dma_nodes_num;
+    for (int i = 0; i < dma_nodes_num; i++) {
+        tx_unit->dma_nodes_nc[i].next = (i == dma_nodes_num - 1) ? NULL : &(tx_unit->dma_nodes[i + 1]);
+    }
     return ESP_OK;
 }
 
@@ -247,36 +255,51 @@ esp_err_t parlio_new_tx_unit(const parlio_tx_unit_config_t *config, parlio_tx_un
 #endif
     esp_err_t ret = ESP_OK;
     parlio_tx_unit_t *unit = NULL;
-    ESP_GOTO_ON_FALSE(config && ret_unit, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
+    ESP_RETURN_ON_FALSE(config && ret_unit, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
     size_t data_width = config->data_width;
     // data_width must be power of 2 and less than or equal to SOC_PARLIO_TX_UNIT_MAX_DATA_WIDTH
-    ESP_GOTO_ON_FALSE(data_width && (data_width <= SOC_PARLIO_TX_UNIT_MAX_DATA_WIDTH) && ((data_width & (data_width - 1)) == 0),
-                      ESP_ERR_INVALID_ARG, err, TAG, "invalid data width");
+    ESP_RETURN_ON_FALSE(data_width && (data_width <= SOC_PARLIO_TX_UNIT_MAX_DATA_WIDTH) && ((data_width & (data_width - 1)) == 0),
+                        ESP_ERR_INVALID_ARG, TAG, "invalid data width");
     // data_width must not conflict with the valid signal
-    ESP_GOTO_ON_FALSE(!(config->valid_gpio_num >= 0 && data_width > PARLIO_LL_TX_DATA_LINE_AS_VALID_SIG),
-                      ESP_ERR_INVALID_ARG, err, TAG, "valid signal conflicts with data signal");
-    ESP_GOTO_ON_FALSE(config->max_transfer_size && config->max_transfer_size <= PARLIO_LL_TX_MAX_BITS_PER_FRAME / 8,
-                      ESP_ERR_INVALID_ARG, err, TAG, "invalid max transfer size");
+    ESP_RETURN_ON_FALSE(!(config->valid_gpio_num >= 0 && data_width > PARLIO_LL_TX_DATA_LINE_AS_VALID_SIG),
+                        ESP_ERR_INVALID_ARG, TAG, "valid signal conflicts with data signal");
+    ESP_RETURN_ON_FALSE(config->max_transfer_size && config->max_transfer_size <= PARLIO_LL_TX_MAX_BITS_PER_FRAME / 8,
+                        ESP_ERR_INVALID_ARG, TAG, "invalid max transfer size");
 #if SOC_PARLIO_TX_CLK_SUPPORT_GATING
     // clock gating is controlled by either the MSB bit of data bus or the valid signal
-    ESP_GOTO_ON_FALSE(!(config->flags.clk_gate_en && config->valid_gpio_num < 0 && config->data_width <= PARLIO_LL_TX_DATA_LINE_AS_CLK_GATE),
-                      ESP_ERR_INVALID_ARG, err, TAG, "no gpio can control the clock gating");
+    ESP_RETURN_ON_FALSE(!(config->flags.clk_gate_en && config->valid_gpio_num < 0 && config->data_width <= PARLIO_LL_TX_DATA_LINE_AS_CLK_GATE),
+                        ESP_ERR_INVALID_ARG, TAG, "no gpio can control the clock gating");
 #else
-    ESP_GOTO_ON_FALSE(config->flags.clk_gate_en == 0, ESP_ERR_NOT_SUPPORTED, err, TAG, "clock gating is not supported");
+    ESP_RETURN_ON_FALSE(config->flags.clk_gate_en == 0, ESP_ERR_NOT_SUPPORTED, TAG, "clock gating is not supported");
 #endif // SOC_PARLIO_TX_CLK_SUPPORT_GATING
 
     // malloc unit memory
-    unit = heap_caps_calloc(1, sizeof(parlio_tx_unit_t) + sizeof(parlio_tx_trans_desc_t) * config->trans_queue_depth, PARLIO_MEM_ALLOC_CAPS);
+    uint32_t mem_caps = PARLIO_MEM_ALLOC_CAPS;
+    unit = heap_caps_calloc(1, sizeof(parlio_tx_unit_t) + sizeof(parlio_tx_trans_desc_t) * config->trans_queue_depth, mem_caps);
     ESP_GOTO_ON_FALSE(unit, ESP_ERR_NO_MEM, err, TAG, "no memory for tx unit");
-    size_t dma_nodes_num = config->max_transfer_size / DMA_DESCRIPTOR_BUFFER_MAX_SIZE + 1;
-    // DMA descriptors must be placed in internal SRAM
 
-    unit->dma_nodes = heap_caps_aligned_calloc(PARLIO_DMA_DESC_ALIGNMENT, dma_nodes_num, sizeof(parlio_dma_desc_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA);
-    ESP_GOTO_ON_FALSE(unit->dma_nodes, ESP_ERR_NO_MEM, err, TAG, "no memory for DMA nodes");
-    // Link the descriptors
-    for (int i = 0; i < dma_nodes_num; i++) {
-        unit->dma_nodes[i].next = (i == dma_nodes_num - 1) ? NULL : &(unit->dma_nodes[i + 1]);
+    // create DMA descriptors
+    // DMA descriptors must be placed in internal SRAM
+    mem_caps |= MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA;
+    size_t dma_nodes_num = config->max_transfer_size / DMA_DESCRIPTOR_BUFFER_MAX_SIZE + 1;
+    uint32_t data_cache_line_size = cache_hal_get_cache_line_size(CACHE_LL_LEVEL_INT_MEM, CACHE_TYPE_DATA);
+    // the alignment should meet both the DMA and cache requirement
+    size_t alignment = MAX(data_cache_line_size, PARLIO_DMA_DESC_ALIGNMENT);
+    size_t dma_nodes_mem_size = ALIGN_UP(dma_nodes_num * sizeof(parlio_dma_desc_t), alignment);
+    parlio_dma_desc_t *dma_nodes = heap_caps_aligned_calloc(alignment, 1, dma_nodes_mem_size, mem_caps);
+    ESP_GOTO_ON_FALSE(dma_nodes, ESP_ERR_NO_MEM, err, TAG, "no memory for DMA nodes");
+    unit->dma_nodes = dma_nodes;
+    unit->dma_nodes_num = dma_nodes_num;
+
+    // write back and then invalidate the cached dma_nodes, we will skip the cache (by non-cacheable address) when access the dma_nodes
+    if (data_cache_line_size) {
+        ESP_GOTO_ON_ERROR(esp_cache_msync(dma_nodes, dma_nodes_mem_size,
+                                          ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_INVALIDATE),
+                          err, TAG, "cache sync failed");
     }
+    // we will use the non-cached address to manipulate the DMA descriptor, for simplicity
+    unit->dma_nodes_nc = PARLIO_GET_NON_CACHED_DESC_ADDR(dma_nodes);
+
     unit->max_transfer_bits = config->max_transfer_size * 8;
     unit->base.dir = PARLIO_DIR_TX;
     unit->data_width = data_width;
@@ -362,27 +385,27 @@ esp_err_t parlio_del_tx_unit(parlio_tx_unit_handle_t unit)
     return parlio_destroy_tx_unit(unit);
 }
 
-static void IRAM_ATTR parlio_tx_mount_dma_data(parlio_dma_desc_t *desc_head, const void *buffer, size_t len)
+static void IRAM_ATTR parlio_tx_mount_dma_data(parlio_tx_unit_t *tx_unit, const void *buffer, size_t len)
 {
     size_t prepared_length = 0;
     uint8_t *data = (uint8_t *)buffer;
-    parlio_dma_desc_t *desc = desc_head;
+    parlio_dma_desc_t *desc_nc = tx_unit->dma_nodes_nc;
 
     while (len) {
-        parlio_dma_desc_t *non_cache_desc = PARLIO_GET_NON_CACHED_DESC_ADDR(desc);
         uint32_t mount_bytes = len > DMA_DESCRIPTOR_BUFFER_MAX_SIZE ? DMA_DESCRIPTOR_BUFFER_MAX_SIZE : len;
         len -= mount_bytes;
-        non_cache_desc->dw0.suc_eof = len == 0;    // whether the last frame
-        non_cache_desc->dw0.size = mount_bytes;
-        non_cache_desc->dw0.length = mount_bytes;
-        non_cache_desc->dw0.owner = DMA_DESCRIPTOR_BUFFER_OWNER_DMA;
-        non_cache_desc->buffer = &data[prepared_length];
-        desc = desc->next; // move to next descriptor
+        desc_nc->dw0.suc_eof = (len == 0);    // whether the last frame
+        desc_nc->dw0.size = mount_bytes;
+        desc_nc->dw0.length = mount_bytes;
+        desc_nc->dw0.owner = DMA_DESCRIPTOR_BUFFER_OWNER_DMA;
+        desc_nc->buffer = &data[prepared_length];
+        desc_nc = PARLIO_GET_NON_CACHED_DESC_ADDR(desc_nc->next);
         prepared_length += mount_bytes;
     }
+
 #if CONFIG_IDF_TARGET_ESP32P4
     // Write back to cache to synchronize the cache before DMA start
-    Cache_WriteBack_Addr(CACHE_MAP_L1_DCACHE, (uint32_t)buffer, len);
+    esp_cache_msync(buffer, len, ESP_CACHE_MSYNC_FLAG_DIR_C2M);
 #endif  // CONFIG_IDF_TARGET_ESP32P4
 }
 
@@ -428,7 +451,7 @@ static void IRAM_ATTR parlio_tx_do_transaction(parlio_tx_unit_t *tx_unit, parlio
     tx_unit->cur_trans = t;
 
     // DMA transfer data based on bytes not bits, so convert the bit length to bytes, round up
-    parlio_tx_mount_dma_data(tx_unit->dma_nodes, t->payload, (t->payload_bits + 7) / 8);
+    parlio_tx_mount_dma_data(tx_unit, t->payload, (t->payload_bits + 7) / 8);
 
     parlio_ll_tx_reset_fifo(hal->regs);
     PARLIO_RCC_ATOMIC() {
@@ -529,10 +552,14 @@ esp_err_t parlio_tx_unit_transmit(parlio_tx_unit_handle_t tx_unit, const void *p
     ESP_RETURN_ON_FALSE((payload_bits % 8) == 0, ESP_ERR_INVALID_ARG, TAG, "payload bit length must be multiple of 8");
 #endif // !SOC_PARLIO_TRANS_BIT_ALIGN
 
-    // acquire one transaction description from ready queue or complete queue
+    TickType_t queue_wait_ticks = portMAX_DELAY;
+    if (config->flags.queue_nonblocking) {
+        queue_wait_ticks = 0;
+    }
     parlio_tx_trans_desc_t *t = NULL;
+    // acquire one transaction description from ready queue or complete queue
     if (xQueueReceive(tx_unit->trans_queues[PARLIO_TX_QUEUE_READY], &t, 0) != pdTRUE) {
-        if (xQueueReceive(tx_unit->trans_queues[PARLIO_TX_QUEUE_COMPLETE], &t, 0) == pdTRUE) {
+        if (xQueueReceive(tx_unit->trans_queues[PARLIO_TX_QUEUE_COMPLETE], &t, queue_wait_ticks) == pdTRUE) {
             tx_unit->num_trans_inflight--;
         }
     }

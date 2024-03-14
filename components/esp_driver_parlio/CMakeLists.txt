@@ -8,5 +8,5 @@ endif()
 
 idf_component_register(SRCS ${srcs}
                        INCLUDE_DIRS ${public_include}
-                       PRIV_REQUIRES "esp_pm" "esp_driver_gpio"
+                       PRIV_REQUIRES "esp_pm" "esp_driver_gpio" "esp_mm"
                       )
