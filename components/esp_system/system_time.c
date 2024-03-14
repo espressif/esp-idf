@@ -13,6 +13,7 @@
 
 #include "sdkconfig.h"
 
+//TODO: IDF-9526, refactor this
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/rtc.h"
 #elif CONFIG_IDF_TARGET_ESP32S2
@@ -25,6 +26,8 @@
 #include "esp32c2/rtc.h"
 #elif CONFIG_IDF_TARGET_ESP32C6
 #include "esp32c6/rtc.h"
+#elif CONFIG_IDF_TARGET_ESP32C61
+#include "esp32c61/rtc.h"
 #elif CONFIG_IDF_TARGET_ESP32H2
 #include "esp32h2/rtc.h"
 #elif CONFIG_IDF_TARGET_ESP32P4

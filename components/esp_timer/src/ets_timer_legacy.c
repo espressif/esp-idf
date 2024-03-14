@@ -21,6 +21,8 @@
 #include "freertos/semphr.h"
 #include "sdkconfig.h"
 #include "esp_timer.h"
+
+//TODO: IDF-9526, refactor this
 // for ETSTimer type
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/rom/ets_sys.h"
@@ -34,6 +36,8 @@
 #include "esp32c2/rom/ets_sys.h"
 #elif CONFIG_IDF_TARGET_ESP32C6
 #include "esp32c6/rom/ets_sys.h"
+#elif CONFIG_IDF_TARGET_ESP32C61
+#include "esp32c61/rom/ets_sys.h"
 #elif CONFIG_IDF_TARGET_ESP32C5
 #include "esp32c5/rom/ets_sys.h"
 #elif CONFIG_IDF_TARGET_ESP32H2

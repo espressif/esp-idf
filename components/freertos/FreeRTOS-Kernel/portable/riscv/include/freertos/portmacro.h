@@ -663,6 +663,20 @@ static inline void __attribute__((always_inline)) vPortExitCriticalSafe(portMUX_
 
 // ---------------------- Yielding -------------------------
 
+// TODO: [ESP32C61] IDF-9280, changed in verify code, pls check
+#if CONFIG_IDF_TARGET_ESP32C61
+FORCE_INLINE_ATTR bool xPortCanYield(void)
+{
+#if SOC_INT_CLIC_SUPPORTED
+    uint32_t threshold1 = (RV_READ_CSR(MINTTHRESH)) >> (8 - NLBITS);
+    uint32_t threshold2 = (RV_READ_CSR(MINTSTATUS)) >> (24 + (8 - NLBITS));
+    return (threshold1 == 0) && (threshold2 == 0) ;
+#else
+    uint32_t threshold = REG_READ(INTERRUPT_CURRENT_CORE_INT_THRESH_REG);
+    return (threshold <= 1);
+#endif /* SOC_INT_CLIC_SUPPORTED */
+}
+#else
 FORCE_INLINE_ATTR bool xPortCanYield(void)
 {
 
@@ -699,8 +713,7 @@ FORCE_INLINE_ATTR bool xPortCanYield(void)
     return (threshold <= 1);
 #endif
 }
-
-
+#endif
 
 /* ------------------------------------------------------ Misc ---------------------------------------------------------
  * - Miscellaneous porting macros

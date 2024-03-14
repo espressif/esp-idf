@@ -50,6 +50,9 @@
 #include "esp32c6/rtc.h"
 #include "esp32c6/rom/cache.h"
 #include "esp_memprot.h"
+#elif CONFIG_IDF_TARGET_ESP32C61
+#include "esp32c61/rtc.h"
+#include "esp_memprot.h"
 #elif CONFIG_IDF_TARGET_ESP32C5
 #include "esp32c5/rtc.h"
 #include "esp32c5/rom/cache.h"
@@ -181,7 +184,6 @@ static void core_intr_matrix_clear(void)
         esprv_int_set_vectored(i, true);
     }
 #endif // SOC_INT_CLIC_SUPPORTED
-
 }
 
 #if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
@@ -702,12 +704,12 @@ void IRAM_ATTR call_start_cpu0(void)
 #endif
 #endif
 
-#if !CONFIG_IDF_TARGET_ESP32P4 && !CONFIG_IDF_TARGET_ESP32C5 //TODO: IDF-7529, IDF-8638
+#if SOC_DEEP_SLEEP_SUPPORTED //TODO: IDF-7529, IDF-8638, IDF-9245
     // Need to unhold the IOs that were hold right before entering deep sleep, which are used as wakeup pins
     if (rst_reas[0] == RESET_REASON_CORE_DEEP_SLEEP) {
         esp_deep_sleep_wakeup_io_reset();
     }
-#endif  //#if !CONFIG_IDF_TARGET_ESP32P4 & !CONFIG_IDF_TARGET_ESP32C5
+#endif  //#if SOC_DEEP_SLEEP_SUPPORTED
 
 #if !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
     esp_cache_err_int_init();

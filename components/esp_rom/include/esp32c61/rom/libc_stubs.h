@@ -20,7 +20,7 @@ extern "C" {
 #endif
 
 /*
-ESP32-C6 ROM code contains implementations of some of C library functions.
+ESP32-C61 ROM code contains implementations of some of C library functions.
 Whenever a function in ROM needs to use a syscall, it calls a pointer to the corresponding syscall
 implementation defined in the following struct.
 

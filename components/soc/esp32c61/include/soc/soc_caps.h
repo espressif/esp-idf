@@ -569,4 +569,4 @@
 #define SOC_PHY_COMBO_MODULE                  (1) /*!< Support Wi-Fi, BLE and 15.4*/
 
 /*------------------------------------- No Reset CAPS -------------------------------------*/
-#define SOC_CAPS_NO_RESET_BY_ANA_BOD           (1)
+// #define SOC_CAPS_NO_RESET_BY_ANA_BOD           (1)   //TODO: [ESP32C61] IDF-9254
