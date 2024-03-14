@@ -26,6 +26,8 @@
 #include "nimble/ble.h"
 #include "host/ble_sm.h"
 #define BLE_HID_SVC_UUID 0x1812          /* HID Service*/
+#else
+#include "esp_bt_device.h"
 #endif
 
 static const char *TAG = "ESP_HID_GAP";
