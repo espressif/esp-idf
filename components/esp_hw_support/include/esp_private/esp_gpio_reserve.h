@@ -51,8 +51,8 @@ uint64_t esp_gpio_revoke(uint64_t gpio_mask);
  *
  * @param gpio_mask Mask of the GPIOs to be checked
  * @return
- *      - true  Aay of the given GPIO(s) is reserved
- *      - false Aay of the given GPIO(s) is not reserved
+ *      - true  Any of the given GPIO(s) is reserved
+ *      - false Any of the given GPIO(s) is not reserved
  */
 bool esp_gpio_is_reserved(uint64_t gpio_mask);
 

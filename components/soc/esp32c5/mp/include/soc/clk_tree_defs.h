@@ -194,12 +194,12 @@ typedef enum {
 /**
  * @brief Array initializer for all supported clock sources of RMT
  */
-#define SOC_RMT_CLKS {SOC_MOD_CLK_PLL_F80M, SOC_MOD_CLK_RC_FAST, SOC_MOD_CLK_XTAL}
+#define SOC_RMT_CLKS {/*SOC_MOD_CLK_PLL_F80M, SOC_MOD_CLK_RC_FAST,*/ SOC_MOD_CLK_XTAL}
 
 /**
  * @brief Type of RMT clock source
  */
-typedef enum {  // TODO: [ESP32C5] IDF-8726 (inherit from C6)
+typedef enum {
     RMT_CLK_SRC_PLL_F80M = SOC_MOD_CLK_PLL_F80M, /*!< Select PLL_F80M as the source clock */
     RMT_CLK_SRC_RC_FAST = SOC_MOD_CLK_RC_FAST,   /*!< Select RC_FAST as the source clock */
     RMT_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,         /*!< Select XTAL as the source clock */
@@ -209,7 +209,7 @@ typedef enum {  // TODO: [ESP32C5] IDF-8726 (inherit from C6)
 /**
  * @brief Type of RMT clock source, reserved for the legacy RMT driver
  */
-typedef enum {  // TODO: [ESP32C5] IDF-8726 (inherit from C6)
+typedef enum {
     RMT_BASECLK_PLL_F80M = SOC_MOD_CLK_PLL_F80M, /*!< RMT source clock is PLL_F80M */
     RMT_BASECLK_XTAL = SOC_MOD_CLK_XTAL,         /*!< RMT source clock is XTAL */
     RMT_BASECLK_DEFAULT = SOC_MOD_CLK_PLL_F80M,  /*!< RMT source clock default choice is PLL_F80M */

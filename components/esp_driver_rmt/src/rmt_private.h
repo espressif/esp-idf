@@ -25,6 +25,7 @@
 #include "esp_attr.h"
 #include "esp_private/gdma.h"
 #include "esp_private/esp_gpio_reserve.h"
+#include "esp_private/gpio.h"
 #include "driver/rmt_common.h"
 
 #ifdef __cplusplus
@@ -66,6 +67,9 @@ typedef dma_descriptor_align4_t rmt_dma_descriptor_t;
 #else
 #define RMT_GET_NON_CACHE_ADDR(addr) (addr)
 #endif
+
+#define ALIGN_UP(num, align)    (((num) + ((align) - 1)) & ~((align) - 1))
+#define ALIGN_DOWN(num, align)  ((num) & ~((align) - 1))
 
 typedef struct {
     struct {

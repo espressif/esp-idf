@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,6 +13,7 @@
 #include "esp_check.h"
 #include "driver/gpio.h"
 #include "esp_private/periph_ctrl.h"
+#include "esp_private/gpio.h"
 #include "driver/rmt_types_legacy.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -537,7 +538,7 @@ esp_err_t rmt_set_gpio(rmt_channel_t channel, rmt_mode_t mode, gpio_num_t gpio_n
     ESP_RETURN_ON_FALSE(((GPIO_IS_VALID_GPIO(gpio_num) && (mode == RMT_MODE_RX)) ||
                          (GPIO_IS_VALID_OUTPUT_GPIO(gpio_num) && (mode == RMT_MODE_TX))), ESP_ERR_INVALID_ARG, TAG, RMT_GPIO_ERROR_STR);
 
-    gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[gpio_num], PIN_FUNC_GPIO);
+    gpio_func_sel(gpio_num, PIN_FUNC_GPIO);
     if (mode == RMT_MODE_TX) {
         ESP_RETURN_ON_FALSE(RMT_IS_TX_CHANNEL(channel), ESP_ERR_INVALID_ARG, TAG, RMT_CHANNEL_ERROR_STR);
         gpio_set_direction(gpio_num, GPIO_MODE_OUTPUT);
