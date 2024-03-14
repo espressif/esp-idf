@@ -9,7 +9,6 @@
 #include <stdatomic.h>
 #include "esp_log.h"
 #include "hal/usb_serial_jtag_ll.h"
-#include "hal/usb_fsls_phy_ll.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 #include "freertos/ringbuf.h"
@@ -187,7 +186,8 @@ esp_err_t usb_serial_jtag_driver_install(usb_serial_jtag_driver_config_t *usb_se
     atomic_store(&p_usb_serial_jtag_obj->fifo_status, FIFO_IDLE);
 
     // Configure PHY
-    usb_fsls_phy_ll_int_jtag_enable(&USB_SERIAL_JTAG);
+    usb_serial_jtag_ll_phy_enable_external(false);  // Use internal PHY
+    usb_serial_jtag_ll_phy_enable_pad(true);        // Enable USB PHY pads
 
     usb_serial_jtag_ll_clr_intsts_mask(USB_SERIAL_JTAG_INTR_SERIAL_IN_EMPTY |
                                        USB_SERIAL_JTAG_INTR_SERIAL_OUT_RECV_PKT);

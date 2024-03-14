@@ -41,7 +41,6 @@
 #include "hal/clk_gate_ll.h"
 #include "hal/temperature_sensor_ll.h"
 #include "hal/usb_serial_jtag_ll.h"
-#include "hal/usb_fsls_phy_ll.h"
 #include "esp_private/periph_ctrl.h"
 #include "esp_private/esp_clk.h"
 #include "esp_private/esp_pmu.h"
@@ -273,7 +272,7 @@ __attribute__((weak)) void esp_perip_clk_init(void)
 
 #if !CONFIG_USJ_ENABLE_USB_SERIAL_JTAG && !CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG_ENABLED
         // Disable USB-Serial-JTAG clock and it's pad if not used
-        usb_fsls_phy_ll_int_jtag_disable(&USB_SERIAL_JTAG);
+        usb_serial_jtag_ll_phy_enable_pad(false);
         usb_serial_jtag_ll_enable_bus_clock(false);
 #endif
     }
