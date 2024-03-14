@@ -6,6 +6,7 @@
 
 #include "sdkconfig.h"
 #include "bootloader_console.h"
+#include "soc/soc_caps.h"
 #include "soc/uart_periph.h"
 #include "soc/uart_channel.h"
 #include "soc/io_mux_reg.h"
@@ -18,8 +19,8 @@
 #include "esp32s2/rom/usb/cdc_acm.h"
 #include "esp32s2/rom/usb/usb_common.h"
 #endif
-#if SOC_USB_SERIAL_JTAG_SUPPORTED
-#include "hal/usb_fsls_phy_ll.h"
+#if CONFIG_ESP_CONSOLE_USB_CDC && SOC_USB_SERIAL_JTAG_SUPPORTED
+#include "hal/usb_wrap_ll.h"
 #endif
 #include "esp_rom_gpio.h"
 #include "esp_rom_uart.h"

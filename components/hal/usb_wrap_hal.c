@@ -4,8 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "hal/usb_fsls_phy_ll.h"
-#include "hal/usb_fsls_phy_hal.h"
+#include "soc/soc_caps.h"
+#include "soc/rtc_cntl_struct.h"
+#if SOC_USB_SERIAL_JTAG_SUPPORTED
+#include "hal/usb_serial_jtag_ll.h"
+#endif
+#include "hal/usb_wrap_ll.h"
+#include "hal/usb_wrap_hal.h"
 
 void usb_fsls_phy_hal_init(usb_fsls_phy_hal_context_t *hal)
 {
@@ -29,9 +34,18 @@ void usb_fsls_phy_hal_otg_conf(usb_fsls_phy_hal_context_t *hal, usb_phy_target_t
 void usb_fsls_phy_hal_jtag_conf(usb_fsls_phy_hal_context_t *hal, usb_phy_target_t phy_target)
 {
     if (phy_target == USB_PHY_TARGET_EXT) {
-        usb_fsls_phy_ll_ext_jtag_enable(hal->jtag_dev);
+        usb_serial_jtag_ll_phy_enable_external(true);   // USJ uses external PHY
+        // Enable SW control of muxing USB OTG vs USJ to the internal USB FSLS PHY
+        RTCCNTL.usb_conf.sw_hw_usb_phy_sel = 1;
+        // Internal USB FSLS PHY is mapped to the USJ
+        RTCCNTL.usb_conf.sw_usb_phy_sel = 1;
     } else if (phy_target == USB_PHY_TARGET_INT) {
-        usb_fsls_phy_ll_int_jtag_enable(hal->jtag_dev);
+        usb_serial_jtag_ll_phy_enable_external(true);   // USJ uses internal PHY
+        usb_serial_jtag_ll_phy_enable_pad(true);        // Enable USB PHY pads
+        // Enable SW control of muxing USB OTG vs USJ to the internal USB FSLS PHY
+        RTCCNTL.usb_conf.sw_hw_usb_phy_sel = 1;
+        // Internal USB FSLS PHY is mapped to the USJ
+        RTCCNTL.usb_conf.sw_usb_phy_sel = 0;
     }
 }
 #endif
