@@ -29,8 +29,9 @@ static const char *TAG = "rtc_time";
 // calibration is performed on their DIV_CLKs. The divider is configurable. We set:
 #define CLK_CAL_DIV_VAL(cal_clk) \
             ((cal_clk == RTC_CAL_RC_SLOW || cal_clk == RTC_CAL_RC32K || cal_clk == RTC_CAL_32K_XTAL) ? 1 : \
-             (cal_clk == RTC_CAL_LP_PLL) ? 50 : \
-             (cal_clk == RTC_CAL_RC_FAST) ? 200 : \
+             (cal_clk == RTC_CAL_LP_PLL) ? 25 : \
+             (cal_clk == RTC_CAL_RC_FAST) ? 50 : \
+             (cal_clk == RTC_CAL_APLL) ? 200 : \
              4000)
 
 // CLK_CAL_FREQ_APPROX = CLK_FREQ_APPROX / CLK_CAL_DIV_VAL
@@ -38,13 +39,13 @@ static const char *TAG = "rtc_time";
             ((cal_clk == RTC_CAL_MPLL) ? (CLK_LL_PLL_500M_FREQ_MHZ * MHZ / 4000) : \
              (cal_clk == RTC_CAL_SPLL) ? (CLK_LL_PLL_480M_FREQ_MHZ * MHZ / 4000) : \
              (cal_clk == RTC_CAL_CPLL) ? (CLK_LL_PLL_400M_FREQ_MHZ * MHZ / 4000) : \
-             (cal_clk == RTC_CAL_APLL) ? (105 * MHZ / 4000) : \
+             (cal_clk == RTC_CAL_APLL) ? (105 * MHZ / 200) : \
              (cal_clk == RTC_CAL_SDIO_PLL0 || cal_clk == RTC_CAL_SDIO_PLL1 || cal_clk == RTC_CAL_SDIO_PLL2) ? (200 * MHZ / 4000) : \
-             (cal_clk == RTC_CAL_RC_FAST) ? (SOC_CLK_RC_FAST_FREQ_APPROX / 200) : \
+             (cal_clk == RTC_CAL_RC_FAST) ? (SOC_CLK_RC_FAST_FREQ_APPROX / 50) : \
              (cal_clk == RTC_CAL_RC_SLOW) ? (SOC_CLK_RC_SLOW_FREQ_APPROX) : \
              (cal_clk == RTC_CAL_RC32K) ? (SOC_CLK_RC32K_FREQ_APPROX) : \
              (cal_clk == RTC_CAL_32K_XTAL) ? (SOC_CLK_XTAL32K_FREQ_APPROX) : \
-             (cal_clk == RTC_CAL_LP_PLL) ? (CLK_LL_PLL_8M_FREQ_MHZ * MHZ / 50) : \
+             (cal_clk == RTC_CAL_LP_PLL) ? (CLK_LL_PLL_8M_FREQ_MHZ * MHZ / 25) : \
              0)
 
 uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cycles)
@@ -142,6 +143,7 @@ uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cycles)
         }
     }
     CLEAR_PERI_REG_MASK(TIMG_RTCCALICFG_REG(0), TIMG_RTC_CALI_START);
+    CLEAR_PERI_REG_MASK(HP_SYS_CLKRST_PERI_CLK_CTRL21_REG, HP_SYS_CLKRST_REG_TIMERGRP0_TGRT_CLK_DIV_NUM_M);
 
     /* if dig_32k_xtal was originally off and enabled due to calibration, then set back to off state */
     if (cal_clk == RTC_CAL_32K_XTAL && !dig_32k_xtal_enabled) {
@@ -178,6 +180,7 @@ static bool rtc_clk_cal_32k_valid(uint32_t xtal_freq, uint32_t slowclk_cycles, u
 
 uint32_t rtc_clk_cal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cycles)
 {
+    slowclk_cycles /= (cal_clk == RTC_CAL_RTC_MUX) ? 1 : CLK_CAL_DIV_VAL(cal_clk);
     assert(slowclk_cycles);
     soc_xtal_freq_t xtal_freq = rtc_clk_xtal_freq_get();
     uint64_t xtal_cycles = rtc_clk_cal_internal(cal_clk, slowclk_cycles);

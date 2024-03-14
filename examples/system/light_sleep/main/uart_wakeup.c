@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -102,7 +102,11 @@ static esp_err_t uart_initialization(void)
         .parity     = UART_PARITY_DISABLE,
         .stop_bits  = UART_STOP_BITS_1,
         .flow_ctrl  = UART_HW_FLOWCTRL_DISABLE,
-        .source_clk = UART_SCLK_DEFAULT,
+#if SOC_UART_SUPPORT_REF_TICK
+        .source_clk = UART_SCLK_REF_TICK,
+#elif SOC_UART_SUPPORT_XTAL_CLK
+        .source_clk = UART_SCLK_XTAL
+#endif
     };
     //Install UART driver, and get the queue.
     ESP_RETURN_ON_ERROR(uart_driver_install(EXAMPLE_UART_NUM, EXAMPLE_UART_BUF_SIZE, EXAMPLE_UART_BUF_SIZE, 20, &uart_evt_que, 0),

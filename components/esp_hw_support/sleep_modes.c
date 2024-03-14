@@ -30,12 +30,10 @@
 #include "esp_private/pm_impl.h"
 #endif
 
-#if SOC_LP_AON_SUPPORTED
-#include "hal/lp_aon_hal.h"
-#else
+#if !SOC_PMU_SUPPORTED
 #include "hal/rtc_cntl_ll.h"
-#include "hal/rtc_hal.h"
 #endif
+#include "hal/rtc_hal.h"
 
 #include "soc/rtc.h"
 #include "soc/soc_caps.h"
@@ -90,6 +88,9 @@
 #include "esp32h2/rom/rtc.h"
 #include "soc/extmem_reg.h"
 #include "hal/gpio_ll.h"
+#elif CONFIG_IDF_TARGET_ESP32P4
+#include "esp32p4/rom/rtc.h"
+#include "hal/gpio_ll.h"
 #endif
 
 #if SOC_LP_TIMER_SUPPORTED
@@ -138,8 +139,12 @@
 #define DEFAULT_SLEEP_OUT_OVERHEAD_US       (318)
 #define DEFAULT_HARDWARE_OUT_OVERHEAD_US    (56)
 #elif CONFIG_IDF_TARGET_ESP32H2
-#define DEFAULT_SLEEP_OUT_OVERHEAD_US       (118)// TODO: IDF-6267
+#define DEFAULT_SLEEP_OUT_OVERHEAD_US       (118)
 #define DEFAULT_HARDWARE_OUT_OVERHEAD_US    (9)
+#elif CONFIG_IDF_TARGET_ESP32P4
+#define DEFAULT_SLEEP_OUT_OVERHEAD_US           (324)
+#define DEFAULT_HARDWARE_OUT_OVERHEAD_US        (240)
+#define LDO_POWER_TAKEOVER_PREPARATION_TIME_US  (185)
 #endif
 
 // Actually costs 80us, using the fastest slow clock 150K calculation takes about 16 ticks
@@ -204,6 +209,9 @@ typedef struct {
     uint32_t rtc_clk_cal_period;
     uint32_t fast_clk_cal_period;
     uint64_t rtc_ticks_at_sleep_start;
+#if SOC_DCDC_SUPPORTED
+    uint64_t rtc_ticks_at_ldo_prepare;
+#endif
 } sleep_config_t;
 
 
@@ -268,7 +276,7 @@ static void touch_wakeup_prepare(void);
 static void gpio_deep_sleep_wakeup_prepare(void);
 #endif
 
-#if SOC_RTC_FAST_MEM_SUPPORTED
+#if SOC_RTC_FAST_MEM_SUPPORTED && !CONFIG_IDF_TARGET_ESP32P4 // TODO: IDF-7529
 #if SOC_PM_SUPPORT_DEEPSLEEP_CHECK_STUB_ONLY
 static RTC_FAST_ATTR esp_deep_sleep_wake_stub_fn_t wake_stub_fn_handler = NULL;
 
@@ -561,10 +569,12 @@ FORCE_INLINE_ATTR void misc_modules_sleep_prepare(bool deep_sleep)
 #endif
     }
 
+#if !CONFIG_IDF_TARGET_ESP32P4 // TODO: IDF-6496
     // TODO: IDF-7370
     if (!(deep_sleep && s_adc_tsen_enabled)){
         sar_periph_ctrl_power_disable();
     }
+#endif
 }
 
 /**
@@ -575,7 +585,11 @@ FORCE_INLINE_ATTR void misc_modules_wake_prepare(void)
 #if SOC_USB_SERIAL_JTAG_SUPPORTED && !SOC_USB_SERIAL_JTAG_SUPPORT_LIGHT_SLEEP
     sleep_console_usj_pad_restore();
 #endif
+
+#if !CONFIG_IDF_TARGET_ESP32P4 // TODO: IDF-6496
     sar_periph_ctrl_power_enable();
+#endif
+
 #if SOC_PM_SUPPORT_CPU_PD && SOC_PM_CPU_RETENTION_BY_RTCCNTL
     sleep_disable_cpu_retention();
 #endif
@@ -767,6 +781,12 @@ static esp_err_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t m
     // Enter sleep
     esp_err_t result;
 #if SOC_PMU_SUPPORTED
+
+#if SOC_DCDC_SUPPORTED
+    s_config.rtc_ticks_at_ldo_prepare = rtc_time_get();
+    pmu_sleep_increase_ldo_volt();
+#endif
+
     pmu_sleep_config_t config;
     pmu_sleep_init(pmu_sleep_config_default(&config, sleep_flags, s_config.sleep_time_adjustment,
             s_config.rtc_clk_cal_period, s_config.fast_clk_cal_period,
@@ -809,7 +829,9 @@ static esp_err_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t m
 #endif
 
 #if SOC_PM_SUPPORT_DEEPSLEEP_CHECK_STUB_ONLY
+#if !CONFIG_IDF_TARGET_ESP32P4 // TODO: IDF-7529
             esp_set_deep_sleep_wake_stub_default_entry();
+#endif
             // Enter Deep Sleep
 #if SOC_PMU_SUPPORTED
             result = call_rtc_sleep_start(reject_triggers, config.power.hp_sys.dig_power.mem_dslp, deep_sleep);
@@ -840,6 +862,14 @@ static esp_err_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t m
                 gpio_ll_hold_en(&GPIO, SPI_CS0_GPIO_NUM);
             }
 #endif
+#endif
+
+#if SOC_DCDC_SUPPORTED
+            uint64_t ldo_increased_us = rtc_time_slowclk_to_us(rtc_time_get() - s_config.rtc_ticks_at_ldo_prepare, s_config.rtc_clk_cal_period);
+            if (ldo_increased_us < LDO_POWER_TAKEOVER_PREPARATION_TIME_US) {
+                esp_rom_delay_us(LDO_POWER_TAKEOVER_PREPARATION_TIME_US - ldo_increased_us);
+            }
+            pmu_sleep_shutdown_dcdc();
 #endif
 
 #if SOC_PMU_SUPPORTED

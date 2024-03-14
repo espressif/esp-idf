@@ -570,11 +570,9 @@ static esp_err_t ledc_set_timer_div(ledc_mode_t speed_mode, ledc_timer_t timer_n
 
         ESP_LOGD(LEDC_TAG, "In slow speed mode, global clk set: %d", glb_clk);
 
-#if !CONFIG_IDF_TARGET_ESP32P4 //depend on sleep support IDF-7528
         /* keep ESP_PD_DOMAIN_RC_FAST on during light sleep */
         extern void esp_sleep_periph_use_8m(bool use_or_not);
         esp_sleep_periph_use_8m(glb_clk == LEDC_SLOW_CLK_RC_FAST);
-#endif
     }
 
     /* The divisor is correct, we can write in the hardware. */
