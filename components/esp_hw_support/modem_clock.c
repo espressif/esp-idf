@@ -294,10 +294,9 @@ static IRAM_ATTR uint32_t modem_clock_get_module_deps(periph_module_t module)
  * of pmu SLEEP, MODEM and ACTIVE mode respectively */
 #define ICG_NOGATING_ACTIVE (BIT(PMU_HP_ICG_MODEM_CODE_ACTIVE))
 #define ICG_NOGATING_SLEEP  (BIT(PMU_HP_ICG_MODEM_CODE_SLEEP))
-#if SOC_PM_SUPPORT_PMU_MODEM_STATE
 #define ICG_NOGATING_MODEM  (BIT(PMU_HP_ICG_MODEM_CODE_MODEM))
-#endif
 
+#if !CONFIG_IDF_TARGET_ESP32H2
 static const DRAM_ATTR uint32_t initial_gating_mode[MODEM_CLOCK_DOMAIN_MAX] = {
     [MODEM_CLOCK_DOMAIN_MODEM_APB]      = ICG_NOGATING_ACTIVE | ICG_NOGATING_MODEM,
     [MODEM_CLOCK_DOMAIN_MODEM_PERIPH]   = ICG_NOGATING_ACTIVE,
@@ -310,16 +309,15 @@ static const DRAM_ATTR uint32_t initial_gating_mode[MODEM_CLOCK_DOMAIN_MAX] = {
     [MODEM_CLOCK_DOMAIN_COEX]           = ICG_NOGATING_ACTIVE | ICG_NOGATING_MODEM,
     [MODEM_CLOCK_DOMAIN_WIFIPWR]        = ICG_NOGATING_ACTIVE | ICG_NOGATING_MODEM,
 };
+#endif
 
 #if !CONFIG_IDF_TARGET_ESP32H2  //TODO: PM-92
 static IRAM_ATTR void modem_clock_module_icg_map_init_all(void)
 {
     portENTER_CRITICAL_SAFE(&MODEM_CLOCK_instance()->lock);
     for (int domain = 0; domain < MODEM_CLOCK_DOMAIN_MAX; domain++) {
-#if !CONFIG_IDF_TARGET_ESP32H2  //TODO: ESP32H2 need icg
         uint32_t code = modem_clock_hal_get_clock_domain_icg_bitmap(MODEM_CLOCK_instance()->hal, domain);
         modem_clock_hal_set_clock_domain_icg_bitmap(MODEM_CLOCK_instance()->hal, domain, initial_gating_mode[domain] | code);
-#endif
     }
     portEXIT_CRITICAL_SAFE(&MODEM_CLOCK_instance()->lock);
 }

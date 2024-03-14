@@ -29,9 +29,7 @@ extern "C" {
  */
 typedef enum {
     PMU_HP_ICG_MODEM_CODE_SLEEP = 0,
-#if SOC_PM_SUPPORT_PMU_MODEM_STATE
     PMU_HP_ICG_MODEM_CODE_MODEM = 1,
-#endif
     PMU_HP_ICG_MODEM_CODE_ACTIVE = 2,
 } pmu_hp_icg_modem_mode_t;
 
