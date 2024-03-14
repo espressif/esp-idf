@@ -9,6 +9,7 @@
 #include "esp_private/esp_hidh_private.h"
 #include <string.h>
 #include <stdbool.h>
+#include "esp_check.h"
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -27,7 +28,6 @@ typedef struct {
 typedef struct {
     fixed_queue_t *connection_queue; /* Queue of connection */
     esp_event_loop_handle_t event_loop_handle;
-    esp_event_handler_t event_callback;
 } hidh_local_param_t;
 
 static hidh_local_param_t hidh_local_param;
@@ -167,15 +167,9 @@ static inline bool is_trans_done(esp_hidh_dev_t *dev)
 
 static void free_local_param(void)
 {
-    if (hidh_local_param.event_loop_handle) {
-        esp_event_loop_delete(hidh_local_param.event_loop_handle);
-    }
-
     if (hidh_local_param.connection_queue) {
         fixed_queue_free(hidh_local_param.connection_queue, free);
     }
-
-    hidh_local_param.event_callback = NULL;
 }
 
 static void open_failed_cb(esp_hidh_dev_t *dev, esp_hidh_status_t status, esp_hidh_event_data_t *p,
@@ -994,68 +988,31 @@ static void esp_bt_hidh_dev_dump(esp_hidh_dev_t *dev, FILE *fp)
     }
 }
 
-static void esp_bt_hidh_event_handler_wrapper(void *event_handler_arg, esp_event_base_t event_base, int32_t event_id,
-                                              void *event_data)
-{
-    esp_hidh_preprocess_event_handler(event_handler_arg, event_base, event_id, event_data);
-
-    if (hidh_local_param.event_callback) {
-        hidh_local_param.event_callback(event_handler_arg, event_base, event_id, event_data);
-    }
-
-    esp_hidh_post_process_event_handler(event_handler_arg, event_base, event_id, event_data);
-}
-
 esp_err_t esp_bt_hidh_init(const esp_hidh_config_t *config)
 {
     esp_err_t ret = ESP_OK;
-    if (config == NULL) {
-        ESP_LOGE(TAG, "Config is NULL");
-        return ESP_ERR_INVALID_ARG;
-    }
-    esp_event_loop_args_t event_task_args = {
-        .queue_size = 5,
-        .task_name = "esp_bt_hidh_events",
-        .task_priority = uxTaskPriorityGet(NULL),
-        .task_stack_size = config->event_stack_size > 0 ? config->event_stack_size : 4096,
-        .task_core_id = tskNO_AFFINITY
-    };
+    ESP_RETURN_ON_FALSE(config, ESP_ERR_INVALID_ARG, TAG, "Config is NULL");
 
-    do {
-        if ((hidh_local_param.connection_queue = fixed_queue_new(QUEUE_SIZE_MAX)) == NULL) {
-            ESP_LOGE(TAG, "connection_queue create failed!");
-            ret = ESP_FAIL;
-            break;
-        }
-        ret = esp_event_loop_create(&event_task_args, &hidh_local_param.event_loop_handle);
-        if (ret != ESP_OK) {
-            ESP_LOGE(TAG, "esp_event_loop_create failed!");
-            ret = ESP_FAIL;
-            break;
-        }
+    hidh_local_param.connection_queue = fixed_queue_new(QUEUE_SIZE_MAX);
+    ESP_RETURN_ON_FALSE(hidh_local_param.connection_queue, ESP_ERR_NO_MEM, TAG, "Alloc failed");
+    hidh_local_param.event_loop_handle = esp_hidh_get_event_loop();
 
-        hidh_local_param.event_callback = config->callback;
-        ret = esp_event_handler_register_with(hidh_local_param.event_loop_handle, ESP_HIDH_EVENTS, ESP_EVENT_ANY_ID,
-                                              esp_bt_hidh_event_handler_wrapper, config->callback_arg);
-        if (ret != ESP_OK) {
-            ESP_LOGE(TAG, "event_loop register failed!");
-            ret = ESP_FAIL;
-            break;
-        }
-        ret = esp_bt_hid_host_register_callback(esp_hh_cb);
-        ret |= esp_bt_hid_host_init();
-    } while (0);
+    ESP_GOTO_ON_ERROR(
+        esp_bt_hid_host_register_callback(esp_hh_cb),
+        bt_hid_fail, TAG, "BT HID register failed");
+    ESP_GOTO_ON_ERROR(
+        esp_bt_hid_host_init(),
+        bt_hid_fail, TAG, "BT HID register failed");
+    return ret;
 
-    if (ret != ESP_OK) {
-        free_local_param();
-    }
+bt_hid_fail:
+    free_local_param();
     return ret;
 }
 
 esp_err_t esp_bt_hidh_deinit(void)
 {
-    esp_err_t ret = esp_bt_hid_host_deinit();
-    return ret;
+    return esp_bt_hid_host_deinit();
 }
 
 static esp_hidh_dev_t *hidh_dev_ctor(esp_bd_addr_t bda)

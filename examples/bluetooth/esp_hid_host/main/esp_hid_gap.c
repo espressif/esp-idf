@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -8,13 +8,16 @@
 #include <string.h>
 #include <stdbool.h>
 #include <inttypes.h>
+#include "sdkconfig.h"
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
 
-#include "esp_bt_device.h"
 #include "esp_hid_gap.h"
+#if CONFIG_BT_BLUEDROID_ENABLED
+#include "esp_bt_device.h"
+#endif
 #if CONFIG_BT_NIMBLE_ENABLED
 #include "host/ble_hs.h"
 #include "nimble/nimble_port.h"

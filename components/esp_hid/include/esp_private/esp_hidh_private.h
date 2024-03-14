@@ -45,9 +45,9 @@ struct esp_hidh_dev_s {
     esp_hid_usage_t         usage;
     esp_hid_transport_t     transport;      //BT, BLE or USB
     esp_hid_trans_type_t    trans_type;     //indicate what transaction is going on, new transaction only be allowed after the previous done
-    esp_timer_handle_t      trans_timer;    //transactiion timer
-    uint8_t                 report_type;    //Get_Report tansaction report_type
-    uint8_t                 report_id;      //Get_Report tansaction report_id
+    esp_timer_handle_t      trans_timer;    //transaction timer
+    uint8_t                 report_type;    //Get_Report transaction report_type
+    uint8_t                 report_id;      //Get_Report transaction report_id
 #if CONFIG_BT_NIMBLE_ENABLED
     uint8_t                 *protocol_mode;  // protocol mode is unique for each hid service instance
 #else
@@ -66,8 +66,8 @@ struct esp_hidh_dev_s {
     void                    *tmp;
     size_t                  tmp_len;
 
-    SemaphoreHandle_t        semaphore;
-    SemaphoreHandle_t        mutex;
+    SemaphoreHandle_t       semaphore;
+    SemaphoreHandle_t       mutex;
 
     esp_err_t (*close)(esp_hidh_dev_t *dev);
     esp_err_t (*report_write)(esp_hidh_dev_t *dev, size_t map_index, size_t report_id, int report_type, uint8_t *data, size_t len);
@@ -107,9 +107,35 @@ struct esp_hidh_dev_s {
     TAILQ_ENTRY(esp_hidh_dev_s) devices;
 };
 
-typedef TAILQ_HEAD(esp_hidh_dev_head_s, esp_hidh_dev_s) esp_hidh_dev_head_t;
+// ------------------------------------------------- Transport layer functions --------------------------------------------------
 
+/**
+ * @brief Get HIDH event loop
+ *
+ * Transport layers will post events into the loop
+ *
+ * @return esp_event_loop_handle_t Handle to HIDH event loop
+ */
+esp_event_loop_handle_t esp_hidh_get_event_loop(void);
+
+/**
+ * @brief Allocate HIDH device
+ *
+ * The resources can be freed by esp_hidh_dev_free_inner()
+ *
+ * @return esp_hidh_dev_t* Pointer to newly allocated HIDH device
+ */
 esp_hidh_dev_t *esp_hidh_dev_malloc(void);
+
+/**
+ * @brief Free HIDH device
+ *
+ * @param[in] dev Device handle obtained from esp_hidh_dev_malloc()
+ * @return
+ *     - ESP_OK:   Success
+ *     - ESP_FAIL: Parameter is NULL or it is not a valid HIDH device
+ */
+esp_err_t esp_hidh_dev_free_inner(esp_hidh_dev_t *dev);
 
 #if CONFIG_BLUEDROID_ENABLED
 esp_hidh_dev_t *esp_hidh_dev_get_by_bda(esp_bd_addr_t bda); //BT/BLE
@@ -130,13 +156,12 @@ esp_hidh_dev_report_t *esp_hidh_dev_get_input_report_by_proto_and_data(esp_hidh_
 esp_hidh_dev_report_t *esp_hidh_dev_get_report_by_handle(esp_hidh_dev_t *dev, uint16_t handle);  //BLE Only
 void esp_hidh_preprocess_event_handler(void *event_handler_arg, esp_event_base_t event_base, int32_t event_id,
                                        void *event_data);
-void esp_hidh_post_process_event_handler(void *event_handler_arg, esp_event_base_t event_base, int32_t event_id,
-                                         void *event_data);
+void esp_hidh_postprocess_event_handler(void *event_handler_arg, esp_event_base_t event_base, int32_t event_id,
+                                        void *event_data);
 void esp_hidh_dev_lock(esp_hidh_dev_t *dev);
 void esp_hidh_dev_unlock(esp_hidh_dev_t *dev);
 void esp_hidh_dev_wait(esp_hidh_dev_t *dev);
 void esp_hidh_dev_send(esp_hidh_dev_t *dev);
-esp_err_t esp_hidh_dev_free_inner(esp_hidh_dev_t *dev);
 #ifdef __cplusplus
 }
 #endif
