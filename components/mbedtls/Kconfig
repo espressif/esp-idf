@@ -402,6 +402,29 @@ menu "mbedTLS"
             mbedTLS will still use the hardware accelerated AES block operation, but
             on a single block at a time.
 
+    config MBEDTLS_GCM_SUPPORT_NON_AES_CIPHER
+        bool "Enable support for non-AES ciphers in GCM operation"
+        depends on MBEDTLS_HARDWARE_AES
+        default n
+        help
+            Enable this config to support fallback to software definitions for a non-AES
+            cipher GCM operation as we support hardware acceleration only for AES cipher.
+            Some of the non-AES ciphers used in a GCM operation are DES, ARIA, CAMELLIA,
+            CHACHA20, BLOWFISH.
+
+            If this config is disabled, performing a non-AES cipher GCM operation with
+            the config MBEDTLS_HARDWARE_AES enabled will result in calculation of an
+            AES-GCM operation instead for the given input values and thus could lead
+            to failure in certificate validation which would ultimately lead to a SSL
+            handshake failure.
+
+            This config being by-default enabled leads to an increase in binary size
+            footprint of ~2.5KB.
+            In case you are sure that your use case (for example, client and server
+            configurations in case of a TLS handshake) would not involve any GCM
+            operations using a non-AES cipher, you can safely disable this config,
+            leading to reduction in binary size footprint.
+
     config MBEDTLS_HARDWARE_MPI
         bool "Enable hardware MPI (bignum) acceleration"
         default y
