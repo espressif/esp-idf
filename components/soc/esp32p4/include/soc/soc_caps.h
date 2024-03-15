@@ -55,7 +55,7 @@
 #define SOC_LEDC_SUPPORTED              1
 #define SOC_I2C_SUPPORTED               1
 #define SOC_SYSTIMER_SUPPORTED          1
-// #define SOC_AES_SUPPORTED               1  //TODO: IDF-6519
+#define SOC_AES_SUPPORTED               1
 #define SOC_MPI_SUPPORTED               1
 // #define SOC_SHA_SUPPORTED               1  //TODO: IDF-7541
 #define SOC_HMAC_SUPPORTED              1

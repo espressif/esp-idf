@@ -1,15 +1,17 @@
 /*
- * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #pragma once
 
+#include <stdbool.h>
+#include <string.h>
 #include "soc/hwcrypto_reg.h"
 #include "soc/dport_access.h"
+#include "soc/dport_reg.h"
 #include "hal/aes_types.h"
-#include <string.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -25,6 +27,40 @@ typedef enum {
     ESP_AES_STATE_IDLE,     /* AES accelerator is idle */
 } esp_aes_state_t;
 
+/**
+ * @brief Enable the bus clock for AES peripheral module
+ *
+ * @param enable true to enable the module, false to disable the module
+ */
+static inline void aes_ll_enable_bus_clock(bool enable)
+{
+    if (enable) {
+        DPORT_SET_PERI_REG_MASK(DPORT_PERI_CLK_EN_REG, DPORT_PERI_EN_AES);
+    } else {
+        DPORT_CLEAR_PERI_REG_MASK(DPORT_PERI_CLK_EN_REG, DPORT_PERI_EN_AES);
+    }
+}
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define aes_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; aes_ll_enable_bus_clock(__VA_ARGS__)
+
+/**
+ * @brief Reset the AES peripheral module
+ */
+static inline void aes_ll_reset_register(void)
+{
+    DPORT_SET_PERI_REG_MASK(DPORT_PERI_RST_EN_REG, DPORT_PERI_EN_AES);
+    DPORT_CLEAR_PERI_REG_MASK(DPORT_PERI_RST_EN_REG, DPORT_PERI_EN_AES);
+
+    // Clear reset on digital signature and secure boot also, otherwise AES is held in reset
+    DPORT_CLEAR_PERI_REG_MASK(DPORT_PERI_RST_EN_REG, DPORT_PERI_EN_DIGITAL_SIGNATURE);
+    DPORT_CLEAR_PERI_REG_MASK(DPORT_PERI_RST_EN_REG, DPORT_PERI_EN_SECUREBOOT);
+}
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define aes_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; aes_ll_reset_register(__VA_ARGS__)
 
 /**
  * @brief Write the encryption/decryption key to hardware

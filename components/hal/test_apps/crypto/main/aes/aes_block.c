@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: CC0-1.0
  */
@@ -8,12 +8,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "soc/periph_defs.h"
-#include "esp_private/periph_ctrl.h"
-
+#include "esp_private/esp_crypto_lock_internal.h"
 #include "hal/aes_types.h"
 #include "hal/aes_hal.h"
-#include "hal/clk_gate_ll.h"
+#include "hal/aes_ll.h"
 
 #if SOC_AES_SUPPORTED
 
@@ -32,8 +30,10 @@ void aes_crypt_cbc_block(int mode,
     uint32_t *iv_words = (uint32_t *)iv;
     unsigned char temp[16];
 
-    /* Enable peripheral module by un-gating the clock and de-asserting the reset signal. */
-    periph_ll_enable_clk_clear_rst(PERIPH_AES_MODULE);
+    AES_RCC_ATOMIC() {
+        aes_ll_enable_bus_clock(true);
+        aes_ll_reset_register();
+    }
 
     /* Sets the key used for AES encryption/decryption */
     aes_hal_setkey(key, key_bytes, mode);
@@ -71,8 +71,9 @@ void aes_crypt_cbc_block(int mode,
         }
     }
 
-    /* Disable peripheral module by gating the clock and asserting the reset signal. */
-    periph_ll_disable_clk_set_rst(PERIPH_AES_MODULE);
+    AES_RCC_ATOMIC() {
+        aes_ll_enable_bus_clock(false);
+    }
 }
 
 
@@ -88,8 +89,10 @@ void aes_crypt_ctr_block(uint8_t key_bytes,
     int c, i;
     size_t n = *nc_off;
 
-    /* Enable peripheral module by un-gating the clock and de-asserting the reset signal. */
-    periph_ll_enable_clk_clear_rst(PERIPH_AES_MODULE);
+    AES_RCC_ATOMIC() {
+        aes_ll_enable_bus_clock(true);
+        aes_ll_reset_register();
+    }
 
     /* Sets the key used for AES encryption/decryption */
     aes_hal_setkey(key, key_bytes, ESP_AES_ENCRYPT);
@@ -110,8 +113,9 @@ void aes_crypt_ctr_block(uint8_t key_bytes,
 
     *nc_off = n;
 
-    /* Disable peripheral module by gating the clock and asserting the reset signal. */
-    periph_ll_disable_clk_set_rst(PERIPH_AES_MODULE);
+    AES_RCC_ATOMIC() {
+        aes_ll_enable_bus_clock(false);
+    }
 }
 
 #endif

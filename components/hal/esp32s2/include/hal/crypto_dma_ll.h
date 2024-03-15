@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -24,6 +24,37 @@ typedef enum {
     CRYPTO_DMA_AES= 0,
     CRYPTO_DMA_SHA,
 } crypto_dma_mode_t;
+
+/**
+ * @brief Enable the bus clock for crypto DMA peripheral module
+ *
+ * @param enable true to enable the module, false to disable the module
+ */
+static inline void crypto_dma_ll_enable_bus_clock(bool enable)
+{
+    if (enable) {
+        SET_PERI_REG_MASK(DPORT_PERIP_CLK_EN1_REG, DPORT_CRYPTO_DMA_CLK_EN);
+    } else {
+        CLEAR_PERI_REG_MASK(DPORT_PERIP_CLK_EN1_REG, DPORT_CRYPTO_DMA_CLK_EN);
+    }
+}
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define crypto_dma_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; crypto_dma_ll_enable_bus_clock(__VA_ARGS__)
+
+/**
+ * @brief Reset the crypto DMA peripheral module
+ */
+static inline void crypto_dma_ll_reset_register(void)
+{
+    SET_PERI_REG_MASK(DPORT_PERIP_RST_EN1_REG, DPORT_CRYPTO_DMA_RST);
+    CLEAR_PERI_REG_MASK(DPORT_PERIP_RST_EN1_REG, DPORT_CRYPTO_DMA_RST);
+}
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define crypto_dma_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; crypto_dma_ll_reset_register(__VA_ARGS__)
 
 /**
  * @brief Resets the DMA

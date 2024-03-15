@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -24,6 +24,7 @@
 #include "soc/soc_memory_layout.h"
 #else /* CONFIG_IDF_TARGET_ESP32S2 */
 #include "esp_private/periph_ctrl.h"
+#include "hal/aes_ll.h"
 #include "hal/ds_hal.h"
 #include "hal/ds_ll.h"
 #include "hal/hmac_hal.h"
@@ -438,7 +439,12 @@ esp_err_t esp_ds_encrypt_params(esp_ds_data_t *data,
     // but just the AES and SHA peripherals, so acquiring locks just for these peripherals
     // would be enough rather than acquiring a lock for the Digital Signature peripheral.
     esp_crypto_sha_aes_lock_acquire();
-    periph_module_enable(PERIPH_AES_MODULE);
+
+    AES_RCC_ATOMIC() {
+        aes_ll_enable_bus_clock(true);
+        aes_ll_reset_register();
+    }
+
     periph_module_enable(PERIPH_SHA_MODULE);
 
     ets_ds_data_t *ds_data = (ets_ds_data_t *) data;
@@ -451,7 +457,11 @@ esp_err_t esp_ds_encrypt_params(esp_ds_data_t *data,
     }
 
     periph_module_disable(PERIPH_SHA_MODULE);
-    periph_module_disable(PERIPH_AES_MODULE);
+
+    AES_RCC_ATOMIC() {
+        aes_ll_enable_bus_clock(false);
+    }
+
     esp_crypto_sha_aes_lock_release();
 
     return result;

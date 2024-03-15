@@ -18,7 +18,7 @@
 
 #include "aes/esp_aes.h"
 #include "aes/esp_aes_gcm.h"
-#include "aes/esp_aes_internal.h"
+#include "esp_aes_internal.h"
 #include "hal/aes_hal.h"
 
 #include "mbedtls/aes.h"
@@ -672,8 +672,8 @@ int esp_aes_gcm_crypt_and_tag( esp_gcm_context *ctx,
 #endif
 #if CONFIG_MBEDTLS_HARDWARE_GCM
     int ret;
-    lldesc_t aad_desc[2] = {};
-    lldesc_t *aad_head_desc = NULL;
+    crypto_dma_desc_t aad_desc[2] = {};
+    crypto_dma_desc_t *aad_head_desc = NULL;
     size_t remainder_bit;
     uint8_t stream_in[AES_BLOCK_BYTES] = {};
     unsigned stream_bytes = aad_len % AES_BLOCK_BYTES; // bytes which aren't in a full block
@@ -684,10 +684,13 @@ int esp_aes_gcm_crypt_and_tag( esp_gcm_context *ctx,
         return esp_aes_gcm_crypt_and_tag_partial_hw(ctx, mode, length, iv, iv_len, aad, aad_len, input, output, tag_len, tag);
     }
 
-    /* Limit aad len to a single DMA descriptor to simplify DMA handling
-       In practice, e.g. with mbedtls the length of aad will always be short
+    /*  Limit aad len to a single DMA descriptor to simplify DMA handling
+        In practice, e.g. with mbedtls the length of aad will always be short
+        the size field has 12 bits, but 0 not for 4096.
+        to avoid possible problem when the size is not word-aligned, we only use 4096-4 per desc.
+        Maximum size of data in the buffer that a DMA descriptor can hold.
     */
-    if (aad_len > LLDESC_MAX_NUM_PER_DESC) {
+    if (aad_len > DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED) {
         return MBEDTLS_ERR_GCM_BAD_INPUT;
     }
     /* IV and AD are limited to 2^32 bits, so 2^29 bytes */
@@ -723,20 +726,20 @@ int esp_aes_gcm_crypt_and_tag( esp_gcm_context *ctx,
     ctx->aes_ctx.key_in_hardware = aes_hal_setkey(ctx->aes_ctx.key, ctx->aes_ctx.key_bytes, mode);
 
     if (block_bytes > 0) {
-        aad_desc[0].length = block_bytes;
-        aad_desc[0].size = block_bytes;
-        aad_desc[0].owner = 1;
-        aad_desc[0].buf = aad;
+        aad_desc[0].dw0.length = block_bytes;
+        aad_desc[0].dw0.size = block_bytes;
+        aad_desc[0].dw0.owner = 1;
+        aad_desc[0].buffer = (void*)aad;
     }
 
     if (stream_bytes > 0) {
         memcpy(stream_in, aad + block_bytes, stream_bytes);
 
-        aad_desc[0].empty = (uint32_t)&aad_desc[1];
-        aad_desc[1].length = AES_BLOCK_BYTES;
-        aad_desc[1].size = AES_BLOCK_BYTES;
-        aad_desc[1].owner = 1;
-        aad_desc[1].buf = stream_in;
+        aad_desc[0].next = &aad_desc[1];
+        aad_desc[1].dw0.length = AES_BLOCK_BYTES;
+        aad_desc[1].dw0.size = AES_BLOCK_BYTES;
+        aad_desc[1].dw0.owner = 1;
+        aad_desc[1].buffer = (void*)stream_in;
     }
 
     if (block_bytes > 0) {

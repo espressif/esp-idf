@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,9 +8,9 @@
 
 #include <stdbool.h>
 #include <string.h>
-#include "soc/hwcrypto_reg.h"
-#include "soc/system_struct.h"
 #include "hal/aes_types.h"
+#include "soc/hp_sys_clkrst_struct.h"
+#include "soc/hwcrypto_reg.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -33,7 +33,7 @@ typedef enum {
  */
 static inline void aes_ll_enable_bus_clock(bool enable)
 {
-    SYSTEM.perip_clk_en1.crypto_aes_clk_en = enable;
+    HP_SYS_CLKRST.peri_clk_ctrl25.reg_crypto_aes_clk_en = enable;
 }
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
@@ -45,11 +45,11 @@ static inline void aes_ll_enable_bus_clock(bool enable)
  */
 static inline void aes_ll_reset_register(void)
 {
-    SYSTEM.perip_rst_en1.crypto_aes_rst = 1;
-    SYSTEM.perip_rst_en1.crypto_aes_rst = 0;
+    HP_SYS_CLKRST.hp_rst_en2.reg_rst_en_aes = 1;
+    HP_SYS_CLKRST.hp_rst_en2.reg_rst_en_aes = 0;
 
-    // Clear reset on digital signature also, otherwise AES is held in reset
-    SYSTEM.perip_rst_en1.crypto_ds_rst = 0;
+    // Clear reset on digital signature, otherwise AES is held in reset
+    HP_SYS_CLKRST.hp_rst_en2.reg_rst_en_ds = 0;
 }
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
@@ -72,7 +72,7 @@ static inline uint8_t aes_ll_write_key(const uint8_t *key, size_t key_word_len)
     uint32_t key_word;
     for (int i = 0; i < key_word_len; i++) {
         memcpy(&key_word, key + 4 * i, 4);
-        REG_WRITE(AES_KEY_BASE + i * 4,  key_word);
+        REG_WRITE(AES_KEY_0_REG + i * 4,  key_word);
         key_in_hardware += 4;
     }
     return key_in_hardware;
@@ -104,7 +104,7 @@ static inline void aes_ll_write_block(const void *input)
 
     for (int i = 0; i < AES_BLOCK_WORDS; i++) {
         memcpy(&input_word, (uint8_t*)input + 4 * i, 4);
-        REG_WRITE(AES_TEXT_IN_BASE + i * 4, input_word);
+        REG_WRITE(AES_TEXT_IN_0_REG + i * 4, input_word);
     }
 }
 
@@ -119,7 +119,7 @@ static inline void aes_ll_read_block(void *output)
     const size_t REG_WIDTH = sizeof(uint32_t);
 
     for (size_t i = 0; i < AES_BLOCK_WORDS; i++) {
-        output_word = REG_READ(AES_TEXT_OUT_BASE + (i * REG_WIDTH));
+        output_word = REG_READ(AES_TEXT_OUT_0_REG + (i * REG_WIDTH));
         /* Memcpy to avoid potential unaligned access */
         memcpy( (uint8_t*)output + i * 4, &output_word, sizeof(output_word));
     }
@@ -195,7 +195,7 @@ static inline void aes_ll_set_num_blocks(size_t num_blocks)
  */
 static inline void aes_ll_set_iv(const uint8_t *iv)
 {
-    uint32_t *reg_addr_buf = (uint32_t *)(AES_IV_BASE);
+    uint32_t *reg_addr_buf = (uint32_t *)(AES_IV_MEM);
     uint32_t iv_word;
 
     for (int i = 0; i < IV_WORDS; i++ ) {
@@ -214,7 +214,7 @@ static inline void aes_ll_read_iv(uint8_t *iv)
     const size_t REG_WIDTH = sizeof(uint32_t);
 
     for (size_t i = 0; i < IV_WORDS; i++) {
-        iv_word = REG_READ(AES_IV_BASE + (i * REG_WIDTH));
+        iv_word = REG_READ(AES_IV_MEM + (i * REG_WIDTH));
         /* Memcpy to avoid potential unaligned access */
         memcpy(iv + i * 4, &iv_word, sizeof(iv_word));
     }
