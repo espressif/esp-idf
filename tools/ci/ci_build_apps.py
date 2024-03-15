@@ -1,10 +1,8 @@
-# SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-
 """
 This file is used in CI generate binary files for different kinds of apps
 """
-
 import argparse
 import os
 import sys
@@ -14,10 +12,13 @@ from pathlib import Path
 
 import yaml
 from dynamic_pipelines.constants import DEFAULT_TEST_PATHS
-from idf_build_apps import build_apps, setup_logging
+from idf_build_apps import build_apps
+from idf_build_apps import setup_logging
 from idf_build_apps.utils import semicolon_separated_str_to_list
-from idf_pytest.constants import (DEFAULT_BUILD_TEST_RULES_FILEPATH, DEFAULT_CONFIG_RULES_STR,
-                                  DEFAULT_FULL_BUILD_TEST_FILEPATTERNS, DEFAULT_IGNORE_WARNING_FILEPATH)
+from idf_pytest.constants import DEFAULT_BUILD_TEST_RULES_FILEPATH
+from idf_pytest.constants import DEFAULT_CONFIG_RULES_STR
+from idf_pytest.constants import DEFAULT_FULL_BUILD_TEST_FILEPATTERNS
+from idf_pytest.constants import DEFAULT_IGNORE_WARNING_FILEPATH
 from idf_pytest.script import get_all_apps
 
 CI_ENV_VARS = {
@@ -26,6 +27,7 @@ CI_ENV_VARS = {
     'EXTRA_CXXFLAGS': '-Werror -Werror=deprecated-declarations -Werror=unused-variable '
     '-Werror=unused-but-set-variable -Werror=unused-function',
     'LDGEN_CHECK_MAPPING': '1',
+    'IDF_CI_BUILD': '1',
 }
 
 
@@ -237,7 +239,7 @@ if __name__ == '__main__':
     # skip setting flags in CI
     if not arguments.skip_setting_flags and not os.getenv('CI_JOB_ID'):
         for _k, _v in CI_ENV_VARS.items():
-            os.environ[_k] = _v
+            os.environ[_k] = _v  # type: ignore
             print(f'env var {_k} set to "{_v}"')
 
     if os.getenv('IS_MR_PIPELINE') == '0' or os.getenv('BUILD_AND_TEST_ALL_APPS') == '1':
