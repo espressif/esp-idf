@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,15 +10,19 @@
 
 #include <stdlib.h>
 #include <stdbool.h>
+#include "sdkconfig.h"  // TODO: [ESP32C5] IDF-8845 remove
 #include "soc/soc.h"
 #include "hal/assert.h"
+#if CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
 #include "modem/modem_syscon_struct.h"
 #include "hal/modem_clock_types.h"
+#endif
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+#if CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
 __attribute__((always_inline))
 static inline void modem_syscon_ll_enable_test_clk(modem_syscon_dev_t *hw, bool en)
 {
@@ -624,6 +628,7 @@ static inline uint32_t modem_syscon_ll_get_date(modem_syscon_dev_t *hw)
 {
     return hw->date.val;
 }
+#endif
 
 #ifdef __cplusplus
 }

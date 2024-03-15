@@ -74,6 +74,7 @@
 // #define SOC_HUK_SUPPORTED               1  // TODO: [ESP32C5] IDF-8617
 // #define SOC_LIGHT_SLEEP_SUPPORTED       1  // TODO: [ESP32C5] IDF-8640
 // #define SOC_DEEP_SLEEP_SUPPORTED        1  // TODO: [ESP32C5] IDF-8638
+#define SOC_MODEM_CLOCK_SUPPORTED       1     // TODO: [ESP32C5] IDF-8845 need check, it is opened because pll has been used on beta3
 
 /*-------------------------- XTAL CAPS ---------------------------------------*/
 #define SOC_XTAL_SUPPORT_40M            1
