@@ -966,6 +966,7 @@ esp_err_t esp_intr_dump(FILE *stream)
             if (vd == NULL) {
                 fprintf(stream, "   *      *    ");
             } else {
+                // # TODO: IDF-9512
                 // esp_cpu_intr_get_* functions need to be extended with cpu parameter.
                 // Showing info for the current cpu only, in the meantime.
                 if (esp_cpu_get_core_id() == cpu) {

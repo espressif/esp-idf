@@ -46,7 +46,7 @@ def test_esp_intr_dump_shared(dut: Dut) -> None:
     dut.expect_exact(PROMPT)
 
 
-@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='esp32p4 support TBD')  # TODO: IDF-8991
+# TODO: IDF-9512, Update the expected output of dual core RISC-V chips when the issue is resolved
 @pytest.mark.supported_targets
 @pytest.mark.generic
 def test_esp_intr_dump_expected_output(dut: Dut) -> None:
