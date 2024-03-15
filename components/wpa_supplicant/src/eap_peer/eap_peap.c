@@ -66,6 +66,7 @@ struct eap_peap_data {
 	u8 cmk[20];
 	int soh; /* Whether IF-TNCCS-SOH (Statement of Health; Microsoft NAP)
 		  * is enabled. */
+	enum { NO_AUTH, FOR_INITIAL, ALWAYS } phase2_auth;
 };
 
 
@@ -114,6 +115,19 @@ eap_peap_parse_phase1(struct eap_peap_data *data,
 		wpa_printf(MSG_DEBUG, "EAP-PEAP: Require cryptobinding");
 	}
 
+	if (os_strstr(phase1, "phase2_auth=0")) {
+		data->phase2_auth = NO_AUTH;
+		wpa_printf(MSG_DEBUG,
+			   "EAP-PEAP: Do not require Phase 2 authentication");
+	} else if (os_strstr(phase1, "phase2_auth=1")) {
+		data->phase2_auth = FOR_INITIAL;
+		wpa_printf(MSG_DEBUG,
+			   "EAP-PEAP: Require Phase 2 authentication for initial connection");
+	} else if (os_strstr(phase1, "phase2_auth=2")) {
+		data->phase2_auth = ALWAYS;
+		wpa_printf(MSG_DEBUG,
+			   "EAP-PEAP: Require Phase 2 authentication for all cases");
+	}
 #ifdef EAP_TNC
 	if (os_strstr(phase1, "tnc=soh2")) {
 		data->soh = 2;
@@ -145,6 +159,7 @@ eap_peap_init(struct eap_sm *sm)
 	data->force_peap_version = -1;
 	data->peap_outer_success = 2;
 	data->crypto_binding = OPTIONAL_BINDING;
+	data->phase2_auth = FOR_INITIAL;
 
 	if (config && config->phase1 &&
 	    eap_peap_parse_phase1(data, config->phase1) < 0) {
@@ -449,6 +464,19 @@ eap_tlv_validate_cryptobinding(struct eap_sm *sm,
 	return 0;
 }
 
+static bool peap_phase2_sufficient(struct eap_sm *sm,
+				   struct eap_peap_data *data)
+{
+	if ((data->phase2_auth == ALWAYS ||
+	     (data->phase2_auth == FOR_INITIAL &&
+	      !tls_connection_resumed(sm->ssl_ctx, data->ssl.conn) &&
+	      !data->ssl.client_cert_conf) ||
+	     data->phase2_eap_started) &&
+	    !data->phase2_eap_success)
+		return false;
+	return true;
+}
+
 
 /**
  * eap_tlv_process - Process a received EAP-TLV message and generate a response
@@ -563,6 +591,11 @@ eap_tlv_process(struct eap_sm *sm, struct eap_peap_data *data,
 			if (force_failure) {
 				wpa_printf(MSG_INFO, "EAP-TLV: Earlier failure"
 					   " - force failed Phase 2");
+				resp_status = EAP_TLV_RESULT_FAILURE;
+				ret->decision = DECISION_FAIL;
+			} else if (!peap_phase2_sufficient(sm, data)) {
+				wpa_printf(MSG_INFO,
+					   "EAP-PEAP: Server indicated Phase 2 success, but sufficient Phase 2 authentication has not been completed");
 				resp_status = EAP_TLV_RESULT_FAILURE;
 				ret->decision = DECISION_FAIL;
 			} else {
@@ -939,8 +972,7 @@ continue_req:
 			/* EAP-Success within TLS tunnel is used to indicate
 			 * shutdown of the TLS channel. The authentication has
 			 * been completed. */
-			if (data->phase2_eap_started &&
-			    !data->phase2_eap_success) {
+			if (!peap_phase2_sufficient(sm, data)) {
 				wpa_printf(MSG_DEBUG, "EAP-PEAP: Phase 2 "
 					   "Success used to indicate success, "
 					   "but Phase 2 EAP was not yet "
@@ -1200,8 +1232,9 @@ static bool
 eap_peap_has_reauth_data(struct eap_sm *sm, void *priv)
 {
 	struct eap_peap_data *data = priv;
+
 	return tls_connection_established(sm->ssl_ctx, data->ssl.conn) &&
-		data->phase2_success;
+		data->phase2_success && data->phase2_auth != ALWAYS;
 }
 
 
