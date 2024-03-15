@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -202,3 +202,8 @@ TEST_CASE("test cache msync work with PSRAM stack", "[cache]")
     free(stack_for_task);
 }
 #endif  //#if CONFIG_SPIRAM
+
+TEST_CASE("test cache msync unaligned flag not work with M2C direction", "[cache]")
+{
+    TEST_ASSERT(esp_cache_msync((void *)TEST_SYNC_START, 0x8000, ESP_CACHE_MSYNC_FLAG_UNALIGNED | ESP_CACHE_MSYNC_FLAG_DIR_M2C) == ESP_ERR_INVALID_ARG);
+}
