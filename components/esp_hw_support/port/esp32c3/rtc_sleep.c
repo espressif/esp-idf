@@ -222,6 +222,8 @@ void rtc_sleep_init(rtc_sleep_config_t cfg)
     }
     /* mem force pu */
     SET_PERI_REG_MASK(RTC_CNTL_DIG_PWC_REG, RTC_CNTL_LSLP_MEM_FORCE_PU);
+    SET_PERI_REG_MASK(RTC_CNTL_DIG_PWC_REG, RTC_CNTL_FASTMEM_FORCE_LPU);
+
     REG_SET_FIELD(RTC_CNTL_REG, RTC_CNTL_REGULATOR_FORCE_PU, cfg.rtc_regulator_fpu);
     if (!cfg.int_8m_pd_en) {
         SET_PERI_REG_MASK(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_CK8M_FORCE_PU);
