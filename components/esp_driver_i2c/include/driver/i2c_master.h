@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -38,6 +38,9 @@ typedef struct {
     i2c_addr_bit_len_t dev_addr_length;         /*!< Select the address length of the slave device. */
     uint16_t device_address;                    /*!< I2C device raw address. (The 7/10 bit address without read/write bit) */
     uint32_t scl_speed_hz;                      /*!< I2C SCL line frequency. */
+    struct {
+        uint32_t disable_ack_check:      1;     /*!< Disable ACK check. If this is set false, that means ack check is enabled, the transaction will be stoped and API returns error when nack is detected. */
+    } flags;                                    /*!< I2C device config flags */
 } i2c_device_config_t;
 
 /**
@@ -160,6 +163,19 @@ esp_err_t i2c_master_receive(i2c_master_dev_handle_t i2c_dev, uint8_t *read_buff
  * @param[in] bus_handle I2C master device handle that created by `i2c_master_bus_add_device`.
  * @param[in] address I2C device address that you want to probe.
  * @param[in] xfer_timeout_ms Wait timeout, in ms. Note: -1 means wait forever (Not recommended in this function).
+ *
+ * @attention Pull-ups must be connected to the SCL and SDA pins when this function is called. If you get `ESP_ERR_TIMEOUT
+ * while `xfer_timeout_ms` was parsed correctly, you should check the pull-up resistors. If you do not have proper resistors nearby.
+ * `flags.enable_internal_pullup` is also acceptable.
+ *
+ * @note The principle of this function is to sent device address with a write command. If the device on your I2C bus, there would be an ACK signal and function
+ * returns `ESP_OK`. If the device is not on your I2C bus, there would be a NACK signal and function returns `ESP_ERR_NOT_FOUND`. `ESP_ERR_TIMEOUT` is not an expected
+ * failure, which indicated that the i2c probe not works properly, usually caused by pull-up resistors not be connected properly. Suggestion check data on SDA/SCL line
+ * to see whether there is ACK/NACK signal is on line when i2c probe function fails.
+ *
+ * @note There are lots of I2C devices all over the world, we assume that not all I2C device support the behavior like `device_address+nack/ack`.
+ * So, if the on line data is strange and no ack/nack got respond. Please check the device datasheet.
+ *
  * @return
  *      - ESP_OK: I2C device probe successfully
  *      - ESP_ERR_NOT_FOUND: I2C probe failed, doesn't find the device with specific address you gave.
