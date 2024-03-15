@@ -481,4 +481,4 @@ esp_err_t lp_core_i2c_master_write_read_device(i2c_port_t lp_i2c_num, uint16_t d
     return ret;
 }
 
-#endif //!SOC_LP_I2C_SUPPORTED
+#endif /* SOC_LP_I2C_SUPPORTED */

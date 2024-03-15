@@ -75,6 +75,7 @@
 #define SOC_ULP_LP_UART_SUPPORTED       1
 #define SOC_LP_GPIO_MATRIX_SUPPORTED    1
 #define SOC_LP_PERIPHERALS_SUPPORTED    1
+#define SOC_LP_I2C_SUPPORTED            1
 #define SOC_SPIRAM_SUPPORTED            1
 #define SOC_PSRAM_DMA_CAPABLE           1
 // #define SOC_ULP_SUPPORTED               1  //TODO: IDF-7534
@@ -267,6 +268,12 @@
 #define SOC_I2C_SLAVE_SUPPORT_BROADCAST    (1)
 #define SOC_I2C_SLAVE_SUPPORT_I2CRAM_ACCESS   (1)
 #define SOC_I2C_SLAVE_SUPPORT_SLAVE_UNMATCH    (1)
+
+/*-------------------------- LP_I2C CAPS -------------------------------------*/
+// ESP32-P4 has 1 LP_I2C
+#define SOC_LP_I2C_NUM              (1U)
+
+#define SOC_LP_I2C_FIFO_LEN         (16) /*!< LP_I2C hardware FIFO depth */
 
 /*-------------------------- I2S CAPS ----------------------------------------*/
 #define SOC_I2S_NUM                 (3U)
