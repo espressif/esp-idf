@@ -4,6 +4,11 @@ if(${target} STREQUAL "linux")
     return() # This component is not supported by the POSIX/Linux simulator
 endif()
 
+set(include_dirs "platform_include")
+if(CMAKE_C_COMPILER_ID MATCHES "Clang")  # TODO LLVM-330
+    list(APPEND include_dirs "clang_include")
+endif()
+
 if(BOOTLOADER_BUILD)
     # Bootloader builds need the platform_include directory (for assert.h), but nothing else
     idf_component_register(INCLUDE_DIRS platform_include)
@@ -29,7 +34,6 @@ set(srcs
     "realpath.c"
     "scandir.c"
 )
-set(include_dirs platform_include)
 
 if(CONFIG_STDATOMIC_S32C1I_SPIRAM_WORKAROUND)
     list(APPEND srcs "port/xtensa/stdatomic_s32c1i.c")
@@ -42,7 +46,7 @@ endif()
 list(APPEND ldfragments "newlib.lf" "system_libs.lf")
 
 idf_component_register(SRCS "${srcs}"
-                    INCLUDE_DIRS platform_include
+                    INCLUDE_DIRS "${include_dirs}"
                     PRIV_INCLUDE_DIRS priv_include
                     PRIV_REQUIRES soc spi_flash
                     LDFRAGMENTS "${ldfragments}")
