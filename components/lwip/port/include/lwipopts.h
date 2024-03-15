@@ -1520,6 +1520,18 @@ static inline uint32_t timeout_from_offered(uint32_t lease, uint32_t min)
 #define SNTP_SET_SYSTEM_TIME_US(sec, us)  (sntp_set_system_time(sec, us))
 #define SNTP_GET_SYSTEM_TIME(sec, us)     (sntp_get_system_time(&(sec), &(us)))
 
+/**
+ * Configuring SNTP startup delay
+ */
+#ifdef CONFIG_LWIP_SNTP_STARTUP_DELAY
+#define SNTP_STARTUP_DELAY 1
+#ifdef CONFIG_LWIP_SNTP_MAXIMUM_STARTUP_DELAY
+#define SNTP_STARTUP_DELAY_FUNC     (LWIP_RAND() % CONFIG_LWIP_SNTP_MAXIMUM_STARTUP_DELAY)
+#endif /* CONFIG_LWIP_SNTP_MAXIMUM_STARTUP_DELAY */
+#else
+#define SNTP_STARTUP_DELAY 0
+#endif /* SNTP_STARTUP_DELAY */
+
 /*
    ---------------------------------------
    --------- ESP specific options --------

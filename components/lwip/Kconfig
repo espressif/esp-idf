@@ -1077,6 +1077,26 @@ menu "LWIP"
                 Default is 1 hour. Must not be below 15 seconds by specification.
                 (SNTPv4 RFC 4330 enforces a minimum update time of 15 seconds).
 
+        config LWIP_SNTP_STARTUP_DELAY
+            bool "Enable SNTP startup delay"
+            default y
+            help
+                It is recommended (RFC 4330) to delay the initial request after by a random timeout from 1 to 5 minutes
+                to reduce potential load of NTP servers after simultaneous power-up of many devices.
+                This option disables this initial delay. Please use this option with care, it could improve
+                a single device responsiveness but might cause peaks on the network after reset.
+                Another option to address responsiveness of devices while using the initial random delay
+                is to adjust LWIP_SNTP_MAXIMUM_STARTUP_DELAY.
+
+        config LWIP_SNTP_MAXIMUM_STARTUP_DELAY
+            int "Maximum startup delay (ms)"
+            depends on LWIP_SNTP_STARTUP_DELAY
+            range 100 300000
+            default 5000
+            help
+                RFC 4330 recommends a startup delay before sending the initial request.
+                LWIP calculates this delay to a random number of milliseconds between 0 and this value.
+
     endmenu # SNTP
 
     menu "DNS"
