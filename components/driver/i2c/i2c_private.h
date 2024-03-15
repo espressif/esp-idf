@@ -125,6 +125,7 @@ struct i2c_master_bus_t {
     uint32_t w_r_size;                                               // The size send/receive last time.
     bool trans_over_buffer;                                          // Data length is more than hardware fifo length, needs interrupt.
     bool async_trans;                                                // asynchronous transaction, true after callback is installed.
+    bool ack_check_disable;                                          // Disable ACK check
     volatile bool trans_done;                                                 // transaction command finish
     SLIST_HEAD(i2c_master_device_list_head, i2c_master_device_list) device_list;      // I2C device (instance) list
     // asnyc trans members
@@ -152,6 +153,7 @@ struct i2c_master_dev_t {
     uint16_t device_address;              // I2C device address
     uint32_t scl_speed_hz;                // SCL clock frequency
     i2c_addr_bit_len_t addr_10bits;       // Whether I2C device is a 10-bits address device.
+    bool ack_check_disable;               // Disable ACK check
     i2c_master_callback_t on_trans_done;  // I2C master transaction done callback.
     void *user_ctx;                       // Callback user context
 };

@@ -472,6 +472,60 @@ static void slave_write_buffer_1b_test(void)
 
 TEST_CASE_MULTIPLE_DEVICES("I2C master read slave 1 byte test", "[i2c][test_env=generic_multi_device][timeout=150]", master_read_slave_1b_test, slave_write_buffer_1b_test);
 
+static void master_probe_slave(void)
+{
+    i2c_master_bus_config_t i2c_mst_config = {
+        .clk_source = I2C_CLK_SRC_DEFAULT,
+        .i2c_port = TEST_I2C_PORT,
+        .scl_io_num = I2C_MASTER_SCL_IO,
+        .sda_io_num = I2C_MASTER_SDA_IO,
+        .flags.enable_internal_pullup = true,
+    };
+    i2c_master_bus_handle_t bus_handle;
+    TEST_ESP_OK(i2c_new_master_bus(&i2c_mst_config, &bus_handle));
+
+    unity_wait_for_signal("i2c slave init finish");
+
+    esp_err_t ret = ESP_OK;
+    for (uint8_t i = 0x01; i < 0x7F; i++) {
+        ret = i2c_master_probe(bus_handle, i, -1);
+        if (ret == ESP_OK) {
+            printf("The slave has been found, the address is %x\n", i);
+            TEST_ASSERT(i == 0x58);
+            break;
+        }
+        TEST_ASSERT(ret == ESP_ERR_NOT_FOUND);
+    }
+
+    unity_send_signal("probe finish");
+
+    TEST_ESP_OK(i2c_del_master_bus(bus_handle));
+}
+
+static void slave_init_for_probe(void)
+{
+    i2c_slave_config_t i2c_slv_config = {
+        .addr_bit_len = I2C_ADDR_BIT_LEN_7,
+        .clk_source = I2C_CLK_SRC_DEFAULT,
+        .i2c_port = TEST_I2C_PORT,
+        .send_buf_depth = 256,
+        .scl_io_num = I2C_SLAVE_SCL_IO,
+        .sda_io_num = I2C_SLAVE_SDA_IO,
+        .slave_addr = 0x58,
+    };
+
+    i2c_slave_dev_handle_t slave_handle;
+    TEST_ESP_OK(i2c_new_slave_device(&i2c_slv_config, &slave_handle));
+
+    unity_send_signal("i2c slave init finish");
+
+    unity_wait_for_signal("probe finish");
+
+    TEST_ESP_OK(i2c_del_slave_device(slave_handle));
+}
+
+TEST_CASE_MULTIPLE_DEVICES("I2C master probe slave test", "[i2c][test_env=generic_multi_device][timeout=150]", master_probe_slave, slave_init_for_probe);
+
 #if SOC_I2C_NUM > 1
 // Now chips with mutiple I2C controllers are up to 2, can change this to interation when we have more I2C controllers.
 static void i2c_master_write_test_more_port(void)
