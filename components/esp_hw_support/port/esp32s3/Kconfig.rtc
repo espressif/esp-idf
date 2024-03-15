@@ -20,7 +20,7 @@ config RTC_CLK_CAL_CYCLES
     int "Number of cycles for RTC_SLOW_CLK calibration"
     default 3000 if RTC_CLK_SRC_EXT_CRYS || RTC_CLK_SRC_EXT_OSC || RTC_CLK_SRC_INT_8MD256
     default 1024 if RTC_CLK_SRC_INT_RC
-    range 0 27000 if RTC_CLK_SRC_EXT_CRYS || RTC_CLK_SRC_EXT_OSC || RTC_CLK_SRC_INT_8MD256
+    range 0 8190 if RTC_CLK_SRC_EXT_CRYS || RTC_CLK_SRC_EXT_OSC || RTC_CLK_SRC_INT_8MD256
     range 0 32766 if RTC_CLK_SRC_INT_RC
     help
         When the startup code initializes RTC_SLOW_CLK, it can perform
