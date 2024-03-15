@@ -72,7 +72,7 @@
 #define SOC_DCDC_SUPPORTED              1
 // #define SOC_PAU_SUPPORTED               1  //TODO: IDF-7531
 #define SOC_LP_TIMER_SUPPORTED          1
-// #define SOC_ULP_LP_UART_SUPPORTED       1  //TODO: IDF-7533
+#define SOC_ULP_LP_UART_SUPPORTED       1
 #define SOC_LP_GPIO_MATRIX_SUPPORTED    1
 #define SOC_LP_PERIPHERALS_SUPPORTED    1
 #define SOC_SPIRAM_SUPPORTED            1
