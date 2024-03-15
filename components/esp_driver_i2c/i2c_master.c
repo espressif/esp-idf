@@ -793,6 +793,7 @@ static esp_err_t s_i2c_asynchronous_transaction(i2c_master_dev_handle_t i2c_dev,
 
 static esp_err_t s_i2c_synchronous_transaction(i2c_master_dev_handle_t i2c_dev, i2c_operation_t *i2c_ops, size_t ops_dim, int timeout_ms)
 {
+    esp_err_t ret = ESP_OK;
     i2c_dev->master_bus->trans_done = false;
     TickType_t ticks_to_wait = (timeout_ms == -1) ? portMAX_DELAY : pdMS_TO_TICKS(timeout_ms);
     if (xSemaphoreTake(i2c_dev->master_bus->bus_lock_mux, ticks_to_wait) != pdTRUE) {
@@ -809,9 +810,11 @@ static esp_err_t s_i2c_synchronous_transaction(i2c_master_dev_handle_t i2c_dev, 
     i2c_dev->master_bus->sent_all = false;
     i2c_dev->master_bus->trans_finish = false;
     i2c_dev->master_bus->queue_trans = false;
-    ESP_RETURN_ON_ERROR(s_i2c_transaction_start(i2c_dev, timeout_ms), TAG, "I2C transaction failed");
+    ESP_GOTO_ON_ERROR(s_i2c_transaction_start(i2c_dev, timeout_ms), err, TAG, "I2C transaction failed");
+
+err:
     xSemaphoreGive(i2c_dev->master_bus->bus_lock_mux);
-    return ESP_OK;
+    return ret;
 }
 
 esp_err_t i2c_new_master_bus(const i2c_master_bus_config_t *bus_config, i2c_master_bus_handle_t *ret_bus_handle)
