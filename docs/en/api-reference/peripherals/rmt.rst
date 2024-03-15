@@ -263,7 +263,7 @@ Once you created an encoder, you can initiate a TX transaction by calling :cpp:f
     - Increase the :cpp:member:`rmt_tx_channel_config_t::mem_block_symbols`. This approach does not work if the DMA backend is also enabled.
     - Customize an encoder and construct an infinite loop in the encoding function. See also :ref:`rmt-rmt-encoder`.
 
-Internally, :cpp:func:`rmt_transmit` constructs a transaction descriptor and sends it to a job queue, which is dispatched in the ISR. So it is possible that the transaction is not started yet when :cpp:func:`rmt_transmit` returns. To ensure all pending transactions to complete, the user can use :cpp:func:`rmt_tx_wait_all_done`.
+Internally, :cpp:func:`rmt_transmit` constructs a transaction descriptor and sends it to a job queue, which is dispatched in the ISR. So it is possible that the transaction is not started yet when :cpp:func:`rmt_transmit` returns. You cannot recycle or modify the payload buffer until the transaction is finished. You can get the transaction completion event by registering a callback function via :cpp:func:`rmt_tx_register_event_callbacks`. To ensure all pending transactions to complete, you can also use :cpp:func:`rmt_tx_wait_all_done`.
 
 .. _rmt-multiple-channels-simultaneous-transmission:
 
@@ -594,13 +594,14 @@ Application Examples
 FAQ
 ---
 
-* Why the RMT encoder results in more data than expected?
+* Why the RMT transmits more data than expected?
 
-The RMT encoding takes place in the ISR context. If your RMT encoding session takes a long time (e.g., by logging debug information) or the encoding session is deferred somehow because of interrupt latency, then it is possible the transmitting becomes **faster** than the encoding. As a result, the encoder can not prepare the next data in time, leading to the transmitter sending the previous data again. There is no way to ask the transmitter to stop and wait. You can mitigate the issue by combining the following ways:
+    The encoding for the RMT transmission is carried out within the ISR context. Should the RMT encoding process be prolonged (for example, through logging or tracing the procedure) or if it is delayed due to interrupt latency and preemptive interrupts, the hardware transmitter might read from the memory before the encoder has written to it. Consequently, the transmitter would end up sending outdated data. Although it's not possible to instruct the transmitter to pause and wait, this issue can be mitigated by employing a combination of the following strategies:
 
-    - Increase the :cpp:member:`rmt_tx_channel_config_t::mem_block_symbols`, in steps of {IDF_TARGET_SOC_RMT_MEM_WORDS_PER_CHANNEL}.
-    - Place the encoding function in the IRAM.
-    - Enables the :cpp:member:`rmt_tx_channel_config_t::with_dma` if it is available for your chip.
+        - Increase the :cpp:member:`rmt_tx_channel_config_t::mem_block_symbols`, in steps of {IDF_TARGET_SOC_RMT_MEM_WORDS_PER_CHANNEL}.
+        - Place the encoding function in the IRAM with ``IRAM_ATTR`` attribute.
+        - Enable the :cpp:member:`rmt_tx_channel_config_t::with_dma` if DMA is available.
+        - Install the RMT driver on a separate CPU core to avoid competing for the same CPU resources with other interrupt heavy peripherals (e.g. WiFi, Bluetooth).
 
 API Reference
 -------------

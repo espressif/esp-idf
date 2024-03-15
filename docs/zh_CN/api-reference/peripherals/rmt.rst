@@ -263,7 +263,7 @@ RMT 是一种特殊的通信外设，无法像 SPI 和 I2C 那样发送原始字
     - 增加 :cpp:member:`rmt_tx_channel_config_t::mem_block_symbols`。若此时启用了 DMA 后端，该方法将失效。
     - 自定义编码器，并在编码函数中构造一个无限循环，详情请参阅 :ref:`rmt-rmt-encoder`。
 
-:cpp:func:`rmt_transmit` 会在其内部构建一个事务描述符，并将其发送到作业队列中，该队列将在 ISR 中调度。因此，在 :cpp:func:`rmt_transmit` 返回时，事务可能尚未启动。为确保完成所有挂起的事务，请调用 :cpp:func:`rmt_tx_wait_all_done`。
+:cpp:func:`rmt_transmit` 会在其内部构建一个事务描述符，并将其发送到作业队列中，该队列通常会在 ISR 上下文中被调度。因此，在 :cpp:func:`rmt_transmit` 返回时，该事务可能尚未启动。注意，你不能在事务结束前就去回收或者修改 payload 中的内容。通过 :cpp:func:`rmt_tx_register_event_callbacks` 来注册事件回调，可以在事务完成的时候被通知。为确保完成所有挂起的事务，你还可以调用 :cpp:func:`rmt_tx_wait_all_done`。
 
 .. _rmt-multiple-channels-simultaneous-transmission:
 
@@ -594,13 +594,14 @@ Kconfig 选项
 FAQ
 ---
 
-* RMT 编码器为什么会产生比预期更多的数据？
+* RMT 为什么会发送比预期更多的数据？
 
-RMT 编码在 ISR 上下文中发生。如果 RMT 编码会话耗时较长（例如，记录调试信息），或者由于中断延迟导致编码会话延迟执行，则传输速率可能会超过编码速率。此时，编码器无法及时准备下一组数据，致使传输器再次发送先前的数据。由于传输器无法停止并等待，可以通过以下方法来缓解此问题：
+    RMT 的传输层编码是在 ISR 上下文中完成的，如果 RMT 编码耗时较长（例如，增加了过多的调试追踪信息），或者由于中断延迟和抢占导致编码工作被推迟执行，导致传输器在编码器更新内存数据之前就读取了老数据，致使传输器再次发送先前的数据。我们无法告诉硬件传输器自动等待新数据的更新，但是可以通过以下方法来缓解此问题：
 
-    - 增加 :cpp:member:`rmt_tx_channel_config_t::mem_block_symbols` 的值，步长为 {IDF_TARGET_SOC_RMT_MEM_WORDS_PER_CHANNEL}。
-    - 将编码函数放置在 IRAM 中。
-    - 如果所用芯片支持 :cpp:member:`rmt_tx_channel_config_t::with_dma`，请启用该选项。
+        - 增加 :cpp:member:`rmt_tx_channel_config_t::mem_block_symbols` 的值，步长为 {IDF_TARGET_SOC_RMT_MEM_WORDS_PER_CHANNEL}。
+        - 将编码函数放置在 IRAM 中。
+        - 如果所用芯片支持 :cpp:member:`rmt_tx_channel_config_t::with_dma`，请启用该选项。
+        - 将RMT驱动安装在另外一个CPU核上，避免和其他高中断频率的外设竞争同一个CPU资源。
 
 API 参考
 -------------
