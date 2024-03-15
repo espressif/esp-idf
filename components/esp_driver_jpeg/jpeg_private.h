@@ -93,7 +93,7 @@ struct jpeg_decoder_t {
     jpeg_dec_header_info_t *header_info;         // Pointer to current picture information
     jpeg_down_sampling_type_t sample_method;     // method of sampling the JPEG picture.
     jpeg_dec_output_format_t output_format;      // picture output format.
-    jpeg_dec_rgb_element_order rgb_order;        // RGB pixel order
+    jpeg_dec_rgb_element_order_t rgb_order;        // RGB pixel order
     jpeg_yuv_rgb_conv_std_t conv_std;            // YUV RGB conversion standard
     uint8_t pixel;                               // size per pixel
     QueueHandle_t evt_queue;                     // jpeg event from 2DDMA and JPEG engine
