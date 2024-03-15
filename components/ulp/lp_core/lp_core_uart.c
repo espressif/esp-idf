@@ -35,9 +35,6 @@ static esp_err_t lp_core_uart_param_config(const lp_core_uart_cfg_t *cfg)
         return ESP_ERR_INVALID_ARG;
     }
 
-    /* Initialize LP UART HAL with default parameters */
-    uart_hal_init(&hal, LP_UART_PORT_NUM);
-
     /* Get LP UART source clock frequency */
     uint32_t sclk_freq = 0;
     soc_periph_lp_uart_clk_src_t clk_src = cfg->lp_uart_source_clk ? cfg->lp_uart_source_clk : LP_UART_SCLK_DEFAULT;
@@ -49,8 +46,13 @@ static esp_err_t lp_core_uart_param_config(const lp_core_uart_cfg_t *cfg)
 
     // LP UART clock source is mixed with other peripherals in the same register
     LP_UART_SRC_CLK_ATOMIC() {
+        /* Enable LP UART bus clock */
+        lp_uart_ll_enable_bus_clock(0, true);
         lp_uart_ll_set_source_clk(hal.dev, clk_src);
     }
+
+    /* Initialize LP UART HAL with default parameters */
+    uart_hal_init(&hal, LP_UART_PORT_NUM);
 
     /* Override protocol parameters from the configuration */
     lp_uart_ll_set_baudrate(hal.dev, cfg->uart_proto_cfg.baud_rate, sclk_freq);
