@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -14,7 +14,7 @@ extern "C" {
 /** RTCADC_READER1_CTRL_REG register
  *  Control the read operation of ADC1.
  */
-#define RTCADC_READER1_CTRL_REG (DR_REG_RTCADC_BASE + 0x0)
+#define RTCADC_READER1_CTRL_REG (DR_REG_LP_ADC_BASE + 0x0)
 /** RTCADC_SAR1_CLK_DIV : R/W; bitpos: [7:0]; default: 2;
  *  Clock divider.
  */
@@ -47,7 +47,7 @@ extern "C" {
 /** RTCADC_MEAS1_CTRL2_REG register
  *  ADC1 configuration registers.
  */
-#define RTCADC_MEAS1_CTRL2_REG (DR_REG_RTCADC_BASE + 0xc)
+#define RTCADC_MEAS1_CTRL2_REG (DR_REG_LP_ADC_BASE + 0xc)
 /** RTCADC_MEAS1_DATA_SAR : RO; bitpos: [15:0]; default: 0;
  *  SAR ADC1 data.
  */
@@ -94,7 +94,7 @@ extern "C" {
 /** RTCADC_MEAS1_MUX_REG register
  *  SAR ADC1 MUX register.
  */
-#define RTCADC_MEAS1_MUX_REG (DR_REG_RTCADC_BASE + 0x10)
+#define RTCADC_MEAS1_MUX_REG (DR_REG_LP_ADC_BASE + 0x10)
 /** RTCADC_SAR1_DIG_FORCE : R/W; bitpos: [31]; default: 0;
  *  1: SAR ADC1 controlled by DIG ADC1 CTRL.
  */
@@ -106,7 +106,7 @@ extern "C" {
 /** RTCADC_ATTEN1_REG register
  *  ADC1 attenuation registers.
  */
-#define RTCADC_ATTEN1_REG (DR_REG_RTCADC_BASE + 0x14)
+#define RTCADC_ATTEN1_REG (DR_REG_LP_ADC_BASE + 0x14)
 /** RTCADC_SAR1_ATTEN : R/W; bitpos: [31:0]; default: 4294967295;
  *  2-bit attenuation for each pad.
  */
@@ -118,7 +118,7 @@ extern "C" {
 /** RTCADC_READER2_CTRL_REG register
  *  Control the read operation of ADC2.
  */
-#define RTCADC_READER2_CTRL_REG (DR_REG_RTCADC_BASE + 0x24)
+#define RTCADC_READER2_CTRL_REG (DR_REG_LP_ADC_BASE + 0x24)
 /** RTCADC_SAR2_CLK_DIV : R/W; bitpos: [7:0]; default: 2;
  *  Clock divider.
  */
@@ -158,7 +158,7 @@ extern "C" {
 /** RTCADC_MEAS2_CTRL1_REG register
  *  ADC2 configuration registers.
  */
-#define RTCADC_MEAS2_CTRL1_REG (DR_REG_RTCADC_BASE + 0x2c)
+#define RTCADC_MEAS2_CTRL1_REG (DR_REG_LP_ADC_BASE + 0x2c)
 /** RTCADC_SAR2_CNTL_STATE : RO; bitpos: [2:0]; default: 0;
  *  saradc2_cntl_fsm.
  */
@@ -191,7 +191,7 @@ extern "C" {
 /** RTCADC_MEAS2_CTRL2_REG register
  *  ADC2 configuration registers.
  */
-#define RTCADC_MEAS2_CTRL2_REG (DR_REG_RTCADC_BASE + 0x30)
+#define RTCADC_MEAS2_CTRL2_REG (DR_REG_LP_ADC_BASE + 0x30)
 /** RTCADC_MEAS2_DATA_SAR : RO; bitpos: [15:0]; default: 0;
  *  SAR ADC2 data.
  */
@@ -238,7 +238,7 @@ extern "C" {
 /** RTCADC_MEAS2_MUX_REG register
  *  SAR ADC2 MUX register.
  */
-#define RTCADC_MEAS2_MUX_REG (DR_REG_RTCADC_BASE + 0x34)
+#define RTCADC_MEAS2_MUX_REG (DR_REG_LP_ADC_BASE + 0x34)
 /** RTCADC_SAR2_PWDET_CCT : R/W; bitpos: [30:28]; default: 0;
  *  SAR2_PWDET_CCT.
  */
@@ -257,7 +257,7 @@ extern "C" {
 /** RTCADC_ATTEN2_REG register
  *  ADC1 attenuation registers.
  */
-#define RTCADC_ATTEN2_REG (DR_REG_RTCADC_BASE + 0x38)
+#define RTCADC_ATTEN2_REG (DR_REG_LP_ADC_BASE + 0x38)
 /** RTCADC_SAR2_ATTEN : R/W; bitpos: [31:0]; default: 4294967295;
  *  2-bit attenuation for each pad.
  */
@@ -269,7 +269,7 @@ extern "C" {
 /** RTCADC_FORCE_WPD_SAR_REG register
  *  In sleep, force to use rtc to control ADC
  */
-#define RTCADC_FORCE_WPD_SAR_REG (DR_REG_RTCADC_BASE + 0x3c)
+#define RTCADC_FORCE_WPD_SAR_REG (DR_REG_LP_ADC_BASE + 0x3c)
 /** RTCADC_FORCE_XPD_SAR1 : R/W; bitpos: [1:0]; default: 0;
  *  2'b11:software control, force on. 2'b10:software control, force off. 2'b0x:hardware
  *  control.
@@ -290,7 +290,7 @@ extern "C" {
 /** RTCADC_COCPU_INT_RAW_REG register
  *  Interrupt raw registers.
  */
-#define RTCADC_COCPU_INT_RAW_REG (DR_REG_RTCADC_BASE + 0x48)
+#define RTCADC_COCPU_INT_RAW_REG (DR_REG_LP_ADC_BASE + 0x48)
 /** RTCADC_COCPU_SARADC1_INT_RAW : R/WTC/SS; bitpos: [0]; default: 0;
  *  ADC1 Conversion is done, int raw.
  */
@@ -337,7 +337,7 @@ extern "C" {
 /** RTCADC_INT_ENA_REG register
  *  Interrupt enable registers.
  */
-#define RTCADC_INT_ENA_REG (DR_REG_RTCADC_BASE + 0x4c)
+#define RTCADC_INT_ENA_REG (DR_REG_LP_ADC_BASE + 0x4c)
 /** RTCADC_COCPU_SARADC1_INT_ENA : R/WTC; bitpos: [0]; default: 0;
  *  ADC1 Conversion is done, int enable.
  */
@@ -384,7 +384,7 @@ extern "C" {
 /** RTCADC_INT_ST_REG register
  *  Interrupt status registers.
  */
-#define RTCADC_INT_ST_REG (DR_REG_RTCADC_BASE + 0x50)
+#define RTCADC_INT_ST_REG (DR_REG_LP_ADC_BASE + 0x50)
 /** RTCADC_COCPU_SARADC1_INT_ST : RO; bitpos: [0]; default: 0;
  *  ADC1 Conversion is done, int status.
  */
@@ -431,7 +431,7 @@ extern "C" {
 /** RTCADC_INT_CLR_REG register
  *  Interrupt clear registers.
  */
-#define RTCADC_INT_CLR_REG (DR_REG_RTCADC_BASE + 0x54)
+#define RTCADC_INT_CLR_REG (DR_REG_LP_ADC_BASE + 0x54)
 /** RTCADC_COCPU_SARADC1_INT_CLR : WT; bitpos: [0]; default: 0;
  *  ADC1 Conversion is done, int clear.
  */
@@ -478,7 +478,7 @@ extern "C" {
 /** RTCADC_INT_ENA_W1TS_REG register
  *  Interrupt enable assert registers.
  */
-#define RTCADC_INT_ENA_W1TS_REG (DR_REG_RTCADC_BASE + 0x58)
+#define RTCADC_INT_ENA_W1TS_REG (DR_REG_LP_ADC_BASE + 0x58)
 /** RTCADC_COCPU_SARADC1_INT_ENA_W1TS : WT; bitpos: [0]; default: 0;
  *  ADC1 Conversion is done, write 1 to assert int enable.
  */
@@ -525,7 +525,7 @@ extern "C" {
 /** RTCADC_INT_ENA_W1TC_REG register
  *  Interrupt enable deassert registers.
  */
-#define RTCADC_INT_ENA_W1TC_REG (DR_REG_RTCADC_BASE + 0x5c)
+#define RTCADC_INT_ENA_W1TC_REG (DR_REG_LP_ADC_BASE + 0x5c)
 /** RTCADC_COCPU_SARADC1_INT_ENA_W1TC : WT; bitpos: [0]; default: 0;
  *  ADC1 Conversion is done, write 1 to deassert int enable.
  */
@@ -572,7 +572,7 @@ extern "C" {
 /** RTCADC_WAKEUP1_REG register
  *  ADC1 wakeup configuration registers.
  */
-#define RTCADC_WAKEUP1_REG (DR_REG_RTCADC_BASE + 0x60)
+#define RTCADC_WAKEUP1_REG (DR_REG_LP_ADC_BASE + 0x60)
 /** RTCADC_SAR1_WAKEUP_TH_LOW : R/W; bitpos: [11:0]; default: 0;
  *  Lower threshold.
  */
@@ -612,7 +612,7 @@ extern "C" {
 /** RTCADC_WAKEUP2_REG register
  *  ADC2 wakeup configuration registers.
  */
-#define RTCADC_WAKEUP2_REG (DR_REG_RTCADC_BASE + 0x64)
+#define RTCADC_WAKEUP2_REG (DR_REG_LP_ADC_BASE + 0x64)
 /** RTCADC_SAR2_WAKEUP_TH_LOW : R/W; bitpos: [11:0]; default: 0;
  *  Lower threshold.
  */
@@ -652,7 +652,7 @@ extern "C" {
 /** RTCADC_WAKEUP_SEL_REG register
  *  Wakeup source select register.
  */
-#define RTCADC_WAKEUP_SEL_REG (DR_REG_RTCADC_BASE + 0x68)
+#define RTCADC_WAKEUP_SEL_REG (DR_REG_LP_ADC_BASE + 0x68)
 /** RTCADC_SAR_WAKEUP_SEL : R/W; bitpos: [0]; default: 0;
  *  0: ADC1. 1: ADC2.
  */
@@ -664,7 +664,7 @@ extern "C" {
 /** RTCADC_SAR1_HW_WAKEUP_REG register
  *  Hardware automatic sampling registers for wakeup function.
  */
-#define RTCADC_SAR1_HW_WAKEUP_REG (DR_REG_RTCADC_BASE + 0x6c)
+#define RTCADC_SAR1_HW_WAKEUP_REG (DR_REG_LP_ADC_BASE + 0x6c)
 /** RTCADC_ADC1_HW_READ_EN_I : R/W; bitpos: [0]; default: 0;
  *  Enable hardware automatic sampling.
  */
@@ -683,7 +683,7 @@ extern "C" {
 /** RTCADC_SAR2_HW_WAKEUP_REG register
  *  Hardware automatic sampling registers for wakeup function.
  */
-#define RTCADC_SAR2_HW_WAKEUP_REG (DR_REG_RTCADC_BASE + 0x70)
+#define RTCADC_SAR2_HW_WAKEUP_REG (DR_REG_LP_ADC_BASE + 0x70)
 /** RTCADC_ADC2_HW_READ_EN_I : R/W; bitpos: [0]; default: 0;
  *  Enable hardware automatic sampling.
  */
