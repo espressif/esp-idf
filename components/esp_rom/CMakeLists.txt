@@ -122,6 +122,9 @@ if(BOOTLOADER_BUILD)
         if(CONFIG_HAL_WDT_USE_ROM_IMPL)
             rom_linker_script("wdt")
         endif()
+        if(CONFIG_HAL_SYSTIMER_USE_ROM_IMPL)
+            rom_linker_script("systimer")
+        endif()
         rom_linker_script("version")
 
     elseif(target STREQUAL "esp32h2")
@@ -129,11 +132,17 @@ if(BOOTLOADER_BUILD)
         if(CONFIG_HAL_WDT_USE_ROM_IMPL)
             rom_linker_script("wdt")
         endif()
+        if(CONFIG_HAL_SYSTIMER_USE_ROM_IMPL)
+            rom_linker_script("systimer")
+        endif()
 
     elseif(target STREQUAL "esp32p4")
         rom_linker_script("newlib")
         if(CONFIG_HAL_WDT_USE_ROM_IMPL)
             rom_linker_script("wdt")
+        endif()
+        if(CONFIG_HAL_SYSTIMER_USE_ROM_IMPL)
+            rom_linker_script("systimer")
         endif()
         rom_linker_script("version")
     endif()
@@ -257,6 +266,10 @@ else() # Regular app build
             rom_linker_script("wdt")
         endif()
 
+        if(CONFIG_HAL_SYSTIMER_USE_ROM_IMPL)
+            rom_linker_script("systimer")
+        endif()
+
         if(NOT CONFIG_NEWLIB_NANO_FORMAT)
             # Normal(Non-nano) formatting functions in ROM are also built for 64-bit time_t.
             rom_linker_script("newlib-normal")
@@ -274,6 +287,10 @@ else() # Regular app build
             rom_linker_script("wdt")
         endif()
 
+        if(CONFIG_HAL_SYSTIMER_USE_ROM_IMPL)
+            rom_linker_script("systimer")
+        endif()
+
         if(CONFIG_NEWLIB_NANO_FORMAT)
             # nano formatting functions in ROM are also built for 64-bit time_t.
             rom_linker_script("newlib-nano")
@@ -287,6 +304,10 @@ else() # Regular app build
 
         if(CONFIG_HAL_WDT_USE_ROM_IMPL)
             rom_linker_script("wdt")
+        endif()
+
+        if(CONFIG_HAL_SYSTIMER_USE_ROM_IMPL)
+            rom_linker_script("systimer")
         endif()
 
         if(CONFIG_NEWLIB_NANO_FORMAT)

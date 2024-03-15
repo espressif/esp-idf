@@ -1,6 +1,12 @@
 # Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
 
-components/esp_rom/test_apps:
+components/esp_rom/test_apps/rom_impl_components:
+  disable:
+    # For ROM impl build tests, disable them if none of the tested features are supported in the ROM
+    - if: CONFIG_NAME == "rom_impl_components" and ((ESP_ROM_HAS_HAL_WDT != 1  and ESP_ROM_HAS_HAL_SYSTIMER != 1) and (ESP_ROM_HAS_HEAP_TLSF != 1 and ESP_ROM_HAS_SPI_FLASH != 1))
+    - if: CONFIG_NAME == "no_rom_impl_components" and ((ESP_ROM_HAS_HAL_WDT != 1 and ESP_ROM_HAS_HAL_SYSTIMER != 1) and (ESP_ROM_HAS_HEAP_TLSF != 1 and ESP_ROM_HAS_SPI_FLASH != 1))
+
+components/esp_rom/test_apps/rom_tests:
   disable_test:
     - if: IDF_TARGET in ["esp32", "esp32c2"]
       temporary: false
