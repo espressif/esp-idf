@@ -17,6 +17,7 @@
 #include "freertos/idf_additions.h"
 #include "esp_heap_caps.h"
 #include "esp_cache.h"
+#include "esp_private/esp_cache_private.h"
 #include "hal/cache_hal.h"
 #include "hal/cache_ll.h"
 #include "driver/ppa.h"
@@ -28,6 +29,7 @@
 #include "hal/color_types.h"
 #include "hal/color_hal.h"
 #include "esp_private/periph_ctrl.h"
+#include "esp_memory_utils.h"
 
 #define ALIGN_UP(num, align)    (((num) + ((align) - 1)) & ~((align) - 1))
 
@@ -137,6 +139,7 @@ typedef struct ppa_platform_t {
     ppa_blend_engine_t *blending;
     uint32_t srm_engine_ref_count;
     uint32_t blend_engine_ref_count;
+    size_t buf_alignment_size;
     uint32_t dma_desc_mem_size;
 } ppa_platform_t;
 
@@ -190,6 +193,9 @@ static esp_err_t ppa_engine_acquire(const ppa_engine_config_t *config, ppa_engin
     _lock_acquire(&s_platform.mutex);
     if (s_platform.dma_desc_mem_size == 0) {
         s_platform.dma_desc_mem_size = ALIGN_UP(sizeof(dma2d_descriptor_align8_t), alignment);
+    }
+    if (s_platform.buf_alignment_size == 0) {
+        esp_cache_get_alignment(ESP_CACHE_MALLOC_FLAG_PSRAM | ESP_CACHE_MALLOC_FLAG_DMA, &s_platform.buf_alignment_size);
     }
 
     if (config->engine == PPA_ENGINE_TYPE_SRM) {
@@ -916,12 +922,13 @@ static bool ppa_srm_transaction_on_picked(uint32_t num_chans, const dma2d_trans_
         .color_type_id = srm_trans_desc->in_color.mode,
     };
     uint32_t in_buffer_len = srm_trans_desc->in_pic_w * srm_trans_desc->in_pic_h * color_hal_pixel_format_get_bit_depth(in_pixel_format) / 8;
-    esp_cache_msync(srm_trans_desc->in_buffer, in_buffer_len, ESP_CACHE_MSYNC_FLAG_DIR_C2M);
+    esp_cache_msync(srm_trans_desc->in_buffer, in_buffer_len, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED);
     // Invalidate out_buffer
     color_space_pixel_format_t out_pixel_format = {
         .color_type_id = srm_trans_desc->out_color.mode,
     };
     uint32_t out_buffer_len = srm_trans_desc->out_pic_w * srm_trans_desc->out_pic_h * color_hal_pixel_format_get_bit_depth(out_pixel_format) / 8;
+    out_buffer_len = ALIGN_UP(out_buffer_len, s_platform.buf_alignment_size);
     esp_cache_msync(srm_trans_desc->out_buffer, out_buffer_len, ESP_CACHE_MSYNC_FLAG_DIR_M2C);
 
     // Fill 2D-DMA descriptors
@@ -1057,6 +1064,9 @@ esp_err_t ppa_do_scale_rotate_mirror(ppa_invoker_handle_t ppa_invoker, const ppa
     ESP_RETURN_ON_FALSE(ppa_invoker && oper_config && trans_config, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
     ESP_RETURN_ON_FALSE(ppa_invoker->srm_engine, ESP_ERR_INVALID_ARG, TAG, "invoker did not register to SRM engine");
     ESP_RETURN_ON_FALSE(trans_config->mode <= PPA_TRANS_MODE_NON_BLOCKING, ESP_ERR_INVALID_ARG, TAG, "invalid mode");
+    // in_buffer could be anywhere (ram, flash, psram), out_buffer ptr cannot in flash region
+    ESP_RETURN_ON_FALSE(esp_ptr_internal(oper_config->out_buffer) || esp_ptr_external_ram(oper_config->out_buffer), ESP_ERR_INVALID_ARG, TAG, "invalid out_buffer addr");
+    ESP_RETURN_ON_FALSE((uintptr_t)oper_config->out_buffer % s_platform.buf_alignment_size == 0, ESP_ERR_INVALID_ARG, TAG, "out_buffer not aligned to cache line size");
     // Any restrictions on in/out buffer address? alignment? alignment restriction comes from cache, its addr and size need to be aligned to cache line size on 912!
     // buffer on stack/heap
     // ESP_RETURN_ON_FALSE(config->rotation_angle)
@@ -1128,7 +1138,7 @@ static bool ppa_blend_transaction_on_picked(uint32_t num_chans, const dma2d_tran
         .color_type_id = blend_trans_desc->in_bg_color.mode,
     };
     uint32_t in_bg_buffer_len = blend_trans_desc->in_bg_pic_w * blend_trans_desc->in_bg_pic_h * color_hal_pixel_format_get_bit_depth(in_bg_pixel_format) / 8;
-    esp_cache_msync(blend_trans_desc->in_bg_buffer, in_bg_buffer_len, ESP_CACHE_MSYNC_FLAG_DIR_C2M);
+    esp_cache_msync(blend_trans_desc->in_bg_buffer, in_bg_buffer_len, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED);
     color_space_pixel_format_t in_fg_pixel_format = {
         .color_type_id = blend_trans_desc->in_fg_color.mode,
     };
@@ -1139,6 +1149,7 @@ static bool ppa_blend_transaction_on_picked(uint32_t num_chans, const dma2d_tran
         .color_type_id = blend_trans_desc->out_color.mode,
     };
     uint32_t out_buffer_len = blend_trans_desc->out_pic_w * blend_trans_desc->out_pic_h * color_hal_pixel_format_get_bit_depth(out_pixel_format) / 8;
+    out_buffer_len = ALIGN_UP(out_buffer_len, s_platform.buf_alignment_size);
     esp_cache_msync(blend_trans_desc->out_buffer, out_buffer_len, ESP_CACHE_MSYNC_FLAG_DIR_M2C);
 
     // Fill 2D-DMA descriptors
@@ -1245,6 +1256,16 @@ static bool ppa_blend_transaction_on_picked(uint32_t num_chans, const dma2d_tran
 
     ppa_ll_blend_set_tx_color_mode(s_platform.hal.dev, blend_trans_desc->out_color.mode);
 
+    // Color keying
+    ppa_ll_blend_configure_rx_bg_ck_range(s_platform.hal.dev,
+                                          blend_trans_desc->in_bg_color.ck_en ? blend_trans_desc->in_bg_color.ck_rgb_low_thres : 0xFFFFFF,
+                                          blend_trans_desc->in_bg_color.ck_en ? blend_trans_desc->in_bg_color.ck_rgb_high_thres : 0);
+    ppa_ll_blend_configure_rx_fg_ck_range(s_platform.hal.dev,
+                                          blend_trans_desc->in_fg_color.ck_en ? blend_trans_desc->in_fg_color.ck_rgb_low_thres : 0xFFFFFF,
+                                          blend_trans_desc->in_fg_color.ck_en ? blend_trans_desc->in_fg_color.ck_rgb_high_thres : 0);
+    ppa_ll_blend_set_ck_default_rgb(s_platform.hal.dev, (blend_trans_desc->in_bg_color.ck_en && blend_trans_desc->in_fg_color.ck_en) ? blend_trans_desc->out_color.ck_rgb_default_val : 0);
+    ppa_ll_blend_enable_ck_fg_bg_reverse(s_platform.hal.dev, blend_trans_desc->out_color.ck_reverse_bg2fg);
+
     ppa_ll_blend_start(s_platform.hal.dev, PPA_LL_BLEND_TRANS_MODE_BLEND);
 
     // No need to yield
@@ -1256,6 +1277,10 @@ esp_err_t ppa_do_blend(ppa_invoker_handle_t ppa_invoker, const ppa_blend_operati
     ESP_RETURN_ON_FALSE(ppa_invoker && oper_config && trans_config, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
     ESP_RETURN_ON_FALSE(ppa_invoker->blending_engine, ESP_ERR_INVALID_ARG, TAG, "invoker did not register to Blending engine");
     ESP_RETURN_ON_FALSE(trans_config->mode <= PPA_TRANS_MODE_NON_BLOCKING, ESP_ERR_INVALID_ARG, TAG, "invalid mode");
+    // in_buffer could be anywhere (ram, flash, psram), out_buffer ptr cannot in flash region
+    ESP_RETURN_ON_FALSE(esp_ptr_internal(oper_config->out_buffer) || esp_ptr_external_ram(oper_config->out_buffer), ESP_ERR_INVALID_ARG, TAG, "invalid out_buffer addr");
+    ESP_RETURN_ON_FALSE((uintptr_t)oper_config->out_buffer % s_platform.buf_alignment_size == 0, ESP_ERR_INVALID_ARG, TAG, "out_buffer not aligned to cache line size");
+    // TODO: Check out_buffer size alignment to cacheline? Since invalidate cannot use ESP_CACHE_MSYNC_FLAG_UNALIGNED.
     // TODO: ARG CHECK
     // 当输入类型为 L4、A4 时，图像块的尺寸 hb 以及在图像中的偏移 x 必须为偶数
 
@@ -1295,6 +1320,8 @@ static bool ppa_fill_transaction_on_picked(uint32_t num_chans, const dma2d_trans
         .color_type_id = fill_trans_desc->out_color.mode,
     };
     uint32_t out_buffer_len = fill_trans_desc->out_pic_w * fill_trans_desc->out_pic_h * color_hal_pixel_format_get_bit_depth(out_pixel_format) / 8;
+    esp_cache_msync(fill_trans_desc->out_buffer, out_buffer_len, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED);
+    out_buffer_len = ALIGN_UP(out_buffer_len, s_platform.buf_alignment_size);
     esp_cache_msync(fill_trans_desc->out_buffer, out_buffer_len, ESP_CACHE_MSYNC_FLAG_DIR_M2C);
 
     // Fill 2D-DMA descriptors
@@ -1354,10 +1381,13 @@ esp_err_t ppa_do_fill(ppa_invoker_handle_t ppa_invoker, const ppa_fill_operation
     ESP_RETURN_ON_FALSE(ppa_invoker && oper_config && trans_config, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
     ESP_RETURN_ON_FALSE(ppa_invoker->blending_engine, ESP_ERR_INVALID_ARG, TAG, "invoker did not register to Blending engine");
     ESP_RETURN_ON_FALSE(trans_config->mode <= PPA_TRANS_MODE_NON_BLOCKING, ESP_ERR_INVALID_ARG, TAG, "invalid mode");
+    // out_buffer ptr cannot in flash region
+    ESP_RETURN_ON_FALSE(esp_ptr_internal(oper_config->out_buffer) || esp_ptr_external_ram(oper_config->out_buffer), ESP_ERR_INVALID_ARG, TAG, "invalid out_buffer addr");
+    ESP_RETURN_ON_FALSE((uintptr_t)oper_config->out_buffer % s_platform.buf_alignment_size == 0, ESP_ERR_INVALID_ARG, TAG, "out_buffer not aligned to cache line size");
     // TODO: ARG CHECK
     // fill_block_w <= PPA_BLEND_HB_V, fill_block_h <= PPA_BLEND_VB_V
 
-    // TODO: Maybe do buffer invalidation here, instead of in on_picked?
+    // TODO: Maybe do buffer writeback and invalidation here, instead of in on_picked?
 
     ppa_trans_t *trans_elm = NULL;
     esp_err_t ret = ppa_prepare_trans_elm(ppa_invoker, ppa_invoker->blending_engine, PPA_OPERATION_FILL, (void *)oper_config, trans_config->mode, &trans_elm);

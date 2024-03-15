@@ -157,8 +157,6 @@ typedef struct {
     uint32_t out_pic_h;
     uint32_t out_block_offset_x;
     uint32_t out_block_offset_y;
-    //out_block_w (auto or max/min(bg, fg))
-    //out_block_h
 
     struct {
         ppa_blend_color_mode_t mode;
@@ -166,6 +164,9 @@ typedef struct {
         bool byte_swap;
         ppa_alpha_mode_t alpha_mode;
         uint32_t alpha_value;
+        bool ck_en;
+        uint32_t ck_rgb_low_thres;              /*!< In RGB888 format (R[23:16], G[15: 8], B[7:0]) */
+        uint32_t ck_rgb_high_thres;             /*!< In RGB888 format (R[23:16], G[15: 8], B[7:0]) */
     } in_bg_color;
 
     struct {
@@ -175,13 +176,16 @@ typedef struct {
         ppa_alpha_mode_t alpha_mode;
         uint32_t alpha_value;
         uint32_t fix_rgb_val;                   /*!< When in_fg_color.mode is PPA_BLEND_COLOR_MODE_A8/4, this field can be used to set a fixed color for the foreground. In RGB888 format (R[23:16], G[15: 8], B[7:0]). */
+        bool ck_en;
+        uint32_t ck_rgb_low_thres;              /*!< In RGB888 format (R[23:16], G[15: 8], B[7:0]) */
+        uint32_t ck_rgb_high_thres;             /*!< In RGB888 format (R[23:16], G[15: 8], B[7:0]) */
     } in_fg_color;
 
     struct {
         ppa_blend_color_mode_t mode;
+        uint32_t ck_rgb_default_val;            /*!< In RGB888 format (R[23:16], G[15: 8], B[7:0]) */
+        bool ck_reverse_bg2fg;                  /*!< If this bit is set, in color keying, for the pixel, where its BG element is in the color range, but its FG element is not in the color range, it will output the FG element instead of the BG element */
     } out_color;
-
-    // TODO: colorkey
 } ppa_blend_operation_config_t;
 
 /**
@@ -213,8 +217,6 @@ typedef struct {
     struct {
         ppa_blend_color_mode_t mode;
     } out_color;
-
-    // colorkey???
 } ppa_fill_operation_config_t;
 
 /**
