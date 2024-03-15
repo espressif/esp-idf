@@ -536,8 +536,8 @@
 
     .. code-block:: none
 
-        arrays[target]
-        mapping[target]
+        arrays[target]      /* SURROUND 关键字下的对象 */
+        mapping[target]     /* 所有其他数据 */
 
 .. only:: not SOC_MEM_NON_CONTIGUOUS_SRAM
 
