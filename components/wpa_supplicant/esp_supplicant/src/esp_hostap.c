@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -59,10 +59,7 @@ void *hostap_init(void)
     auth_conf = (struct wpa_auth_config *)os_zalloc(sizeof(struct  wpa_auth_config));
 
     if (auth_conf == NULL) {
-        os_free(hapd->conf);
-        os_free(hapd);
-        hapd = NULL;
-        return NULL;
+        goto fail;
     }
 
     hapd->conf->sae_pwe = esp_wifi_get_config_sae_pwe_h2e_internal(WIFI_IF_AP);
@@ -145,23 +142,14 @@ void *hostap_init(void)
     hapd->conf->wpa_key_mgmt = auth_conf->wpa_key_mgmt;
     hapd->conf->ssid.wpa_passphrase = (char *)os_zalloc(WIFI_PASSWORD_LEN_MAX);
     if (hapd->conf->ssid.wpa_passphrase == NULL) {
-        os_free(auth_conf);
-        os_free(hapd->conf);
-        os_free(hapd);
-        hapd = NULL;
-        return NULL;
+        goto fail;
     }
 
 #ifdef CONFIG_SAE
     if (authmode == WIFI_AUTH_WPA3_PSK ||
         authmode == WIFI_AUTH_WPA2_WPA3_PSK) {
         if (wpa3_hostap_auth_init(hapd) != 0) {
-            os_free(hapd->conf->ssid.wpa_passphrase);
-            os_free(auth_conf);
-            os_free(hapd->conf);
-            os_free(hapd);
-            hapd = NULL;
-            return NULL;
+            goto fail;
         }
     }
 #endif /* CONFIG_SAE */
@@ -176,11 +164,26 @@ void *hostap_init(void)
     esp_wifi_get_macaddr_internal(WIFI_IF_AP, hapd->own_addr);
 
     hapd->wpa_auth = wpa_init(hapd->own_addr, auth_conf, NULL);
+    if (hapd->wpa_auth == NULL) {
+        goto fail;
+    }
+
     esp_wifi_set_appie_internal(WIFI_APPIE_WPA, hapd->wpa_auth->wpa_ie, (uint16_t)hapd->wpa_auth->wpa_ie_len, 0);
     os_free(auth_conf);
     global_hapd = hapd;
 
     return (void *)hapd;
+fail:
+    if (hapd->conf->ssid.wpa_passphrase != NULL) {
+        os_free(hapd->conf->ssid.wpa_passphrase);
+    }
+    if (auth_conf != NULL) {
+        os_free(auth_conf);
+    }
+    os_free(hapd->conf);
+    os_free(hapd);
+    hapd = NULL;
+    return NULL;
 }
 
 void hostapd_cleanup(struct hostapd_data *hapd)
