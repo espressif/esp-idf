@@ -326,6 +326,8 @@ UART 唤醒（仅适用于 Light-sleep 模式）
 
 可调用 :cpp:func:`esp_sleep_enable_uart_wakeup` 函数来启用此唤醒源。
 
+使用 UART 唤醒之后，在芯片 Active 模式下需要让 UART 接受一些数据用来清零内部的唤醒指示信号。不然的话，下一次 UART 唤醒的触发将只需要比配置的阈值少两个上升沿的数量。
+
     .. only:: esp32c6 or esp32h2
 
        .. note::
