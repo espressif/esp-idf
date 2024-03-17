@@ -7,11 +7,11 @@
 #include <freertos/FreeRTOS.h>
 #include "clk_ctrl_os.h"
 #include "soc/rtc.h"
+#include "esp_ldo_regulator.h"
 #include "esp_private/esp_clk_tree_common.h"
 #include "esp_check.h"
 #if SOC_CLK_MPLL_SUPPORTED
 #include "rtc_clk.h"
-#include "esp_private/esp_ldo_psram.h"
 #endif
 
 #if SOC_CLK_APLL_SUPPORTED || SOC_CLK_MPLL_SUPPORTED
@@ -30,7 +30,7 @@ static int s_apll_ref_cnt = 0;
 #if SOC_CLK_MPLL_SUPPORTED
 static uint32_t s_cur_mpll_freq = 0;
 static int s_mpll_ref_cnt = 0;
-static esp_ldo_unit_handle_t s_ldo_unit_hndl = NULL;
+static esp_ldo_channel_handle_t s_ldo_chan = NULL;
 #endif
 
 bool periph_rtc_dig_clk8m_enable(void)
@@ -125,7 +125,7 @@ esp_err_t periph_rtc_apll_freq_set(uint32_t expt_freq, uint32_t *real_freq)
 
     if (need_config) {
         ESP_LOGD(TAG, "APLL will working at %"PRIu32" Hz with coefficients [sdm0] %"PRIu32" [sdm1] %"PRIu32" [sdm2] %"PRIu32" [o_div] %"PRIu32"",
-                       apll_freq, sdm0, sdm1, sdm2, o_div);
+                 apll_freq, sdm0, sdm1, sdm2, o_div);
         /* Set coefficients for APLL, notice that it doesn't mean APLL will start */
         rtc_clk_apll_coeff_set(o_div, sdm0, sdm1, sdm2);
     } else {
@@ -137,51 +137,34 @@ esp_err_t periph_rtc_apll_freq_set(uint32_t expt_freq, uint32_t *real_freq)
 #endif // SOC_CLK_APLL_SUPPORTED
 
 #if SOC_CLK_MPLL_SUPPORTED
-void periph_rtc_mpll_early_acquire(void)
-{
-    portENTER_CRITICAL(&periph_spinlock);
-    s_mpll_ref_cnt++;
-    if (s_mpll_ref_cnt == 1) {
-#if SOC_PSRAM_VDD_POWER_MPLL
-        // configure MPPL power (MPLL power pin is the same as for the PSRAM)
-        s_ldo_unit_hndl = esp_ldo_vdd_psram_early_init();
-#endif
-        // For the first time enable MPLL, need to set power up
-        rtc_clk_mpll_enable();
-    }
-    portEXIT_CRITICAL(&periph_spinlock);
-}
-
 esp_err_t periph_rtc_mpll_acquire(void)
 {
-    esp_err_t ret = ESP_OK;
+    // power up LDO for the MPLL
+#if defined(CONFIG_ESP_LDO_CHAN_PSRAM_DOMAIN) && CONFIG_ESP_LDO_CHAN_PSRAM_DOMAIN != -1
+    esp_ldo_channel_config_t ldo_mpll_config = {
+        .chan_id = CONFIG_ESP_LDO_CHAN_PSRAM_DOMAIN,
+        .voltage_mv = CONFIG_ESP_LDO_VOLTAGE_PSRAM_DOMAIN,
+    };
+    ESP_RETURN_ON_ERROR(esp_ldo_acquire_channel(&ldo_mpll_config, &s_ldo_chan), TAG, "acquire internal LDO for MPLL failed");
+#endif
+
     portENTER_CRITICAL(&periph_spinlock);
     s_mpll_ref_cnt++;
     if (s_mpll_ref_cnt == 1) {
-#if SOC_PSRAM_VDD_POWER_MPLL
-        // configure MPPL power (MPLL power pin is the same as for the PSRAM)
-        ret = esp_ldo_vdd_psram_init(&s_ldo_unit_hndl);
-        // external power supply in use is a valid condition
-        if (ret == ESP_ERR_INVALID_STATE) {
-            ret = ESP_OK;
-        } else if (ret != ESP_OK ) {
-            portEXIT_CRITICAL(&periph_spinlock);
-            ESP_LOGE(TAG, "failed to initialize PSRAM internal LDO");
-            goto err;
-        }
-#endif
         // For the first time enable MPLL, need to set power up
         rtc_clk_mpll_enable();
     }
     portEXIT_CRITICAL(&periph_spinlock);
-#if SOC_PSRAM_VDD_POWER_MPLL
-err:
-#endif
-    return ret;
+    return ESP_OK;
 }
 
 void periph_rtc_mpll_release(void)
 {
+#if defined(CONFIG_ESP_LDO_CHAN_PSRAM_DOMAIN) && CONFIG_ESP_LDO_CHAN_PSRAM_DOMAIN != -1
+    if (s_ldo_chan) {
+        esp_ldo_release_channel(s_ldo_chan);
+    }
+#endif
     portENTER_CRITICAL(&periph_spinlock);
     assert(s_mpll_ref_cnt > 0);
     s_mpll_ref_cnt--;
@@ -189,11 +172,6 @@ void periph_rtc_mpll_release(void)
         // If there is no peripheral using MPLL, shut down the power
         s_cur_mpll_freq = 0;
         rtc_clk_mpll_disable();
-#if SOC_PSRAM_VDD_POWER_MPLL
-        if (s_ldo_unit_hndl) {
-            esp_ldo_vdd_psram_deinit(s_ldo_unit_hndl);
-        }
-#endif
     }
     portEXIT_CRITICAL(&periph_spinlock);
 }

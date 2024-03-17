@@ -9,7 +9,6 @@
 #include "esp_err.h"
 #include "esp_log.h"
 #include "esp_private/periph_ctrl.h"
-#include "esp_private/esp_ldo_psram.h"
 #include "esp_private/mspi_timing_tuning.h"
 #include "../esp_psram_impl.h"
 #include "hal/psram_ctrlr_ll.h"
@@ -366,7 +365,7 @@ static void s_configure_psram_ecc(void)
 esp_err_t esp_psram_impl_enable(void)
 {
 #if SOC_CLK_MPLL_SUPPORTED
-    periph_rtc_mpll_early_acquire();
+    periph_rtc_mpll_acquire();
     periph_rtc_mpll_freq_set(AP_HEX_PSRAM_MPLL_DEFAULT_FREQ_MHZ * 1000000, NULL);
 #endif
 

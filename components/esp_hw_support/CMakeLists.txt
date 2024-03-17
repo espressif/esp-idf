@@ -75,9 +75,6 @@ if(NOT BOOTLOADER_BUILD)
 
     if(CONFIG_SOC_GP_LDO_SUPPORTED)
         list(APPEND srcs "ldo/esp_ldo.c" "ldo/esp_ldo_regulator.c")
-        if(CONFIG_SPIRAM OR CONFIG_SOC_CLK_MPLL_SUPPORTED)
-            list(APPEND srcs "ldo/esp_ldo_psram.c")
-        endif()
     endif()
 
     if(CONFIG_SOC_ASYNC_MEMCPY_SUPPORTED)

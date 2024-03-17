@@ -331,10 +331,7 @@ menu "Hardware Settings"
 
     endmenu
 
-    menu "LDO Config"
-        depends on SOC_MULTI_USAGE_LDO_SUPPORTED
-        orsource "./port/$IDF_TARGET/Kconfig.ldo"
-    endmenu
+    orsource "./port/$IDF_TARGET/Kconfig.ldo"
 
     # Invisible bringup bypass options for esp_hw_support component
     config ESP_BRINGUP_BYPASS_CPU_CLK_SETTING
