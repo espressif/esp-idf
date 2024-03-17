@@ -1,0 +1,128 @@
+menu "OpenThread Device Role Indicator"
+
+    orsource "$IDF_PATH/examples/common_components/env_caps/$IDF_TARGET/Kconfig.env_caps"
+
+    config OPENTHREAD_STATE_INDICATOR_ENABLE
+        depends on SOC_RMT_SUPPORTED
+        bool 'Enable the LED for openthread deivce'
+        default False
+        help
+            If enabled, the LED of ESP Openthread Device will display different colors based on the current role.
+
+    config OPENTHREAD_STATE_INDICATOR_GPIO
+        depends on OPENTHREAD_STATE_INDICATOR_ENABLE
+        int "Blink GPIO number"
+        range ENV_GPIO_RANGE_MIN ENV_GPIO_OUT_RANGE_MAX
+        default 5 if IDF_TARGET_ESP32
+        default 18 if IDF_TARGET_ESP32S2
+        default 48 if IDF_TARGET_ESP32S3
+        default 8
+        help
+            GPIO number (IOxx) to blink on and off the LED.
+            Some GPIOs are used for other purposes (flash connections, etc.) and cannot be used to blink.
+
+    menu "Indicator of Leader Device"
+        config LEADER_INDICATOR_RED
+            depends on OPENTHREAD_STATE_INDICATOR_ENABLE
+            int "red config"
+            range 0 255
+            default 40
+            help
+                Red config of LED for OpenThread leader device
+
+        config LEADER_INDICATOR_GREEN
+            depends on OPENTHREAD_STATE_INDICATOR_ENABLE
+            int "green config"
+            range 0 255
+            default 0
+            help
+                Red config of LED for OpenThread leader device
+
+        config LEADER_INDICATOR_BLUE
+            depends on OPENTHREAD_STATE_INDICATOR_ENABLE
+            int "blue config"
+            range 0 255
+            default 0
+            help
+                Blue config of LED for OpenThread leader device
+    endmenu
+
+    menu "Indicator of Router Device"
+        config ROUTER_INDICATOR_RED
+            depends on OPENTHREAD_STATE_INDICATOR_ENABLE
+            int "red config"
+            range 0 255
+            default 0
+            help
+                Red config of LED for OpenThread router device
+
+        config ROUTER_INDICATOR_GREEN
+            depends on OPENTHREAD_STATE_INDICATOR_ENABLE
+            int "green config"
+            range 0 255
+            default 0
+            help
+                Green config of LED for OpenThread router device
+
+        config ROUTER_INDICATOR_BLUE
+            depends on OPENTHREAD_STATE_INDICATOR_ENABLE
+            int "blue config"
+            range 0 255
+            default 40
+            help
+                Blue config of LED for OpenThread router device
+    endmenu
+
+    menu "Indicator of Child Device"
+        config CHILD_INDICATOR_RED
+            depends on OPENTHREAD_STATE_INDICATOR_ENABLE
+            int "red config"
+            range 0 255
+            default 0
+            help
+                Red config of LED for OpenThread child device
+
+        config CHILD_INDICATOR_GREEN
+            depends on OPENTHREAD_STATE_INDICATOR_ENABLE
+            int "green config"
+            range 0 255
+            default 40
+            help
+                Green config of LED for OpenThread child device
+
+        config CHILD_INDICATOR_BLUE
+            depends on OPENTHREAD_STATE_INDICATOR_ENABLE
+            int "blue config"
+            range 0 255
+            default 0
+            help
+                Blue config of LED for OpenThread child device
+    endmenu
+
+    menu "Indicator of Detached Device"
+        config DETACHED_INDICATOR_RED
+            depends on OPENTHREAD_STATE_INDICATOR_ENABLE
+            int "red config"
+            range 0 255
+            default 20
+            help
+                Red config of LED for OpenThread detached device
+
+        config DETACHED_INDICATOR_GREEN
+            depends on OPENTHREAD_STATE_INDICATOR_ENABLE
+            int "green config"
+            range 0 255
+            default 20
+            help
+                Green config of LED for OpenThread detached device
+
+        config DETACHED_INDICATOR_BLUE
+            depends on OPENTHREAD_STATE_INDICATOR_ENABLE
+            int "blue config"
+            range 0 255
+            default 20
+            help
+                Blue config of LED for OpenThread detached device
+    endmenu
+
+endmenu
