@@ -94,7 +94,7 @@ static void eap_tls_params_from_conf1(struct tls_connection_params *params,
 static int eap_tls_params_from_conf(struct eap_sm *sm,
 				    struct eap_ssl_data *data,
 				    struct tls_connection_params *params,
-				    struct eap_peer_config *config)
+				    struct eap_peer_config *config, int phase2)
 {
 	os_memset(params, 0, sizeof(*params));
 	if (sm->workaround && data->eap_type != EAP_TYPE_FAST) {
@@ -132,6 +132,12 @@ static int eap_tls_params_from_conf(struct eap_sm *sm,
 		wpa_printf(MSG_INFO, "SSL: Failed to get configuration blobs");
 		return -1;
 	}
+
+	if (!phase2)
+		data->client_cert_conf = params->client_cert ||
+			params->client_cert_blob ||
+			params->private_key ||
+			params->private_key_blob;
 
 	return 0;
 }
@@ -210,7 +216,7 @@ int eap_peer_tls_ssl_init(struct eap_sm *sm, struct eap_ssl_data *data,
 	data->eap = sm;
 	data->eap_type = eap_type;
 	data->ssl_ctx = sm->ssl_ctx;
-	if (eap_tls_params_from_conf(sm, data, &params, config) < 0) /* no phase2 */
+	if (eap_tls_params_from_conf(sm, data, &params, config, data->phase2) < 0) /* no phase2 */
 		return -1;
 
 	if (eap_tls_init_connection(sm, data, config, &params) < 0)
