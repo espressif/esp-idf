@@ -125,7 +125,11 @@
 #define ESP_SLEEP_WAIT_FLASH_READY_DEFAULT_DELAY_US 700
 
 // Cycles for RTC Timer clock source (internal oscillator) calibrate
+#ifndef CONFIG_RTC_CLK_SLEEP_CAL_CYCLES
 #define RTC_CLK_SRC_CAL_CYCLES      (10)
+#else
+#define RTC_CLK_SRC_CAL_CYCLES CONFIG_RTC_CLK_SLEEP_CAL_CYCLES
+#endif
 #define FAST_CLK_SRC_CAL_CYCLES     (2048)  /* ~ 127.4 us */
 
 #ifdef CONFIG_IDF_TARGET_ESP32
@@ -617,7 +621,22 @@ FORCE_INLINE_ATTR void misc_modules_wake_prepare(void)
 
 static IRAM_ATTR void sleep_low_power_clock_calibration(bool is_dslp)
 {
+
+    // Calibrate rtc fast clock, only PMU supported chips sleep process is needed.
+#if SOC_PMU_SUPPORTED
+#if CONFIG_PM_ENABLE
+    if ((s_lightsleep_cnt % CONFIG_PM_LIGHTSLEEP_RTC_OSC_CAL_INTERVAL == 0) || is_dslp)
+#endif
+    {
+        s_config.fast_clk_cal_period = rtc_clk_cal(RTC_CAL_RC_FAST, FAST_CLK_SRC_CAL_CYCLES);
+    }
+#endif
+
     // Calibrate rtc slow clock
+    if (RTC_CLK_SRC_CAL_CYCLES <= 0)
+        s_config.rtc_clk_cal_period = esp_clk_slowclk_cal_get();
+        return;
+    }
 #ifdef CONFIG_ESP_SYSTEM_RTC_EXT_XTAL
     if (rtc_clk_slow_src_get() == SOC_RTC_SLOW_CLK_SRC_XTAL32K) {
         uint64_t time_per_us = 1000000ULL;
@@ -638,16 +657,6 @@ static IRAM_ATTR void sleep_low_power_clock_calibration(bool is_dslp)
     {
         s_config.rtc_clk_cal_period = rtc_clk_cal(RTC_CAL_RTC_MUX, RTC_CLK_SRC_CAL_CYCLES);
         esp_clk_slowclk_cal_set(s_config.rtc_clk_cal_period);
-    }
-#endif
-
-    // Calibrate rtc fast clock, only PMU supported chips sleep process is needed.
-#if SOC_PMU_SUPPORTED
-#if CONFIG_PM_ENABLE
-    if ((s_lightsleep_cnt % CONFIG_PM_LIGHTSLEEP_RTC_OSC_CAL_INTERVAL == 0) || is_dslp)
-#endif
-    {
-        s_config.fast_clk_cal_period = rtc_clk_cal(RTC_CAL_RC_FAST, FAST_CLK_SRC_CAL_CYCLES);
     }
 #endif
 }
