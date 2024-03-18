@@ -366,7 +366,7 @@ void btc_blufi_send_wifi_list(uint16_t apCount, esp_blufi_ap_record_t *list)
     int data_len;
     uint8_t *p;
     // malloc size: (len + RSSI + ssid buffer) * apCount;
-    uint malloc_size = (1 + 1 + sizeof(list->ssid)) * apCount;
+    uint32_t malloc_size = (1 + 1 + sizeof(list->ssid)) * apCount;
     p = data = osi_malloc(malloc_size);
     if (data == NULL) {
         BTC_TRACE_ERROR("malloc error\n");
@@ -375,7 +375,7 @@ void btc_blufi_send_wifi_list(uint16_t apCount, esp_blufi_ap_record_t *list)
     type = BLUFI_BUILD_TYPE(BLUFI_TYPE_DATA, BLUFI_TYPE_DATA_SUBTYPE_WIFI_LIST);
     for (int i = 0; i < apCount; ++i)
     {
-        uint len = strlen((const char *)list[i].ssid);
+        uint32_t len = strlen((const char *)list[i].ssid);
         data_len = (p - data);
         //current_len + ssid + rssi + total_len_value
         if((data_len + len + 1 + 1) >  malloc_size) {
