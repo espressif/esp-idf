@@ -1405,7 +1405,7 @@ static esp_err_t esp_netif_dhcpc_stop_api(esp_netif_api_msg_t *msg)
             return ESP_ERR_ESP_NETIF_IF_NOT_READY;
         }
     } else if (esp_netif->dhcpc_status == ESP_NETIF_DHCP_STOPPED) {
-        ESP_LOGD(TAG, "dhcp client already stoped");
+        ESP_LOGD(TAG, "dhcp client already stopped");
         return ESP_ERR_ESP_NETIF_DHCP_ALREADY_STOPPED;
     }
 
@@ -1568,7 +1568,7 @@ static esp_err_t esp_netif_dhcps_stop_api(esp_netif_api_msg_t *msg)
             return ESP_ERR_ESP_NETIF_IF_NOT_READY;
         }
     } else if (esp_netif->dhcps_status == ESP_NETIF_DHCP_STOPPED) {
-        ESP_LOGD(TAG, "dhcp server already stoped");
+        ESP_LOGD(TAG, "dhcp server already stopped");
         return ESP_ERR_ESP_NETIF_DHCP_ALREADY_STOPPED;
     }
 
@@ -1832,7 +1832,7 @@ static esp_err_t esp_netif_set_ip_info_api(esp_netif_api_msg_t *msg)
     if (p_netif != NULL && netif_is_up(p_netif)) {
         netif_set_addr(p_netif, (ip4_addr_t*)&ip_info->ip, (ip4_addr_t*)&ip_info->netmask, (ip4_addr_t*)&ip_info->gw);
         if (ESP_NETIF_FLAG_EVENT_IP_MODIFIED & esp_netif->flags) {
-            if (!(ip4_addr_isany_val(ip_info->ip) || ip4_addr_isany_val(ip_info->netmask) || ip4_addr_isany_val(ip_info->gw))) {
+            if (!ip4_addr_isany_val(ip_info->ip)) {
 
                 ip_event_t evt_id = esp_netif->get_ip_event;
                 ip_event_got_ip_t evt = { .esp_netif = esp_netif, .ip_changed = false};
