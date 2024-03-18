@@ -90,7 +90,6 @@ SECONDARY: 140: init_dbg_stubs in components/app_trace/debug_stubs.c on BIT(0)
 SECONDARY: 201: init_pm in components/esp_system/startup_funcs.c on BIT(0)
 SECONDARY: 203: init_apb_dma in components/esp_system/startup_funcs.c on BIT(0)
 SECONDARY: 204: init_coexist in components/esp_system/startup_funcs.c on BIT(0)
-SECONDARY: 205: init_cxx_exceptions in components/cxx/cxx_init.cpp on BIT(0)
 
 # usb_console needs to create an esp_timer at startup.
 # This can be done only after esp_timer initialization (esp_timer_init_os).

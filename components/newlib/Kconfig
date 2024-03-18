@@ -113,3 +113,7 @@ menu "Newlib"
     endchoice
 
 endmenu # Newlib
+
+config STDATOMIC_S32C1I_SPIRAM_WORKAROUND
+    bool
+    default SPIRAM && (IDF_TARGET_ESP32 || IDF_TARGET_ESP32S3) && !IDF_TOOLCHAIN_CLANG # TODO IDF-9032

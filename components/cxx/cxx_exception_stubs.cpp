@@ -35,11 +35,6 @@ static T abort_return()
 }
 
 // unwind-dw2-fde.o
-extern "C" void __wrap__Unwind_SetEnableExceptionFdeSorting(unsigned char enable)
-{
-    abort();
-}
-
 extern "C" void __wrap___register_frame_info_bases(const void *begin, struct object *ob, void *tbase, void *dbase)
 {
     abort();

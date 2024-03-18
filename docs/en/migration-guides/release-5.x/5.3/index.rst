@@ -7,6 +7,7 @@ Migration from 5.2 to 5.3
     :maxdepth: 1
 
     bluetooth-low-energy
+    gcc
     peripherals
     security
     storage

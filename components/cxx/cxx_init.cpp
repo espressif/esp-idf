@@ -12,18 +12,6 @@ namespace {
 const char *TAG = "C++ init";
 }
 
-#ifdef CONFIG_COMPILER_CXX_EXCEPTIONS
-// workaround for C++ exception large memory allocation
-extern "C" void _Unwind_SetEnableExceptionFdeSorting(unsigned char enable);
-
-ESP_SYSTEM_INIT_FN(init_cxx_exceptions, SECONDARY, BIT(0), 205)
-{
-    ESP_EARLY_LOGD(TAG, "Setting C++ exception workarounds.");
-    _Unwind_SetEnableExceptionFdeSorting(0);
-    return ESP_OK;
-}
-#endif // CONFIG_COMPILER_CXX_EXCEPTIONS
-
 /**
  * This function overwrites the same function of libsupc++ (part of libstdc++).
  * Consequently, libsupc++ will then follow our configured exception emergency pool size.

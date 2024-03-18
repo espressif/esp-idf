@@ -7,6 +7,7 @@
     :maxdepth: 1
 
     bluetooth-low-energy
+    gcc
     peripherals
     security
     storage
