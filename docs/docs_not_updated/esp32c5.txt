@@ -115,7 +115,6 @@ api-reference/peripherals/hmac.rst
 api-reference/peripherals/usb_device.rst
 api-reference/peripherals/gpio.rst
 api-reference/peripherals/sdspi_host.rst
-api-reference/peripherals/dac.rst
 api-reference/peripherals/spi_slave.rst
 api-reference/peripherals/etm.rst
 api-reference/peripherals/i2s.rst
@@ -128,7 +127,6 @@ api-reference/peripherals/ana_cmpr.rst
 api-reference/peripherals/ledc.rst
 api-reference/peripherals/temp_sensor.rst
 api-reference/peripherals/spi_features.rst
-api-reference/peripherals/sdio_slave.rst
 api-reference/peripherals/clk_tree.rst
 api-reference/peripherals/spi_flash/spi_flash_concurrency.rst
 api-reference/peripherals/spi_flash/spi_flash_override_driver.rst
@@ -165,14 +163,10 @@ api-reference/system/sleep_modes.rst
 api-reference/system/mm_sync.rst
 api-reference/system/ota.rst
 api-reference/system/app_trace.rst
-api-reference/system/ulp_macros.rst
 api-reference/system/perfmon.rst
-api-reference/system/ulp-lp-core.rst
-api-reference/system/ulp.rst
 api-reference/system/esp_function_with_shared_stack.rst
 api-reference/system/efuse.rst
 api-reference/system/chip_revision.rst
-api-reference/system/ulp_instruction_set.rst
 api-reference/system/async_memcpy.rst
 api-reference/system/random.rst
 api-reference/system/esp_timer.rst
@@ -198,7 +192,6 @@ api-reference/system/heap_debug.rst
 api-reference/system/mm.rst
 api-reference/system/ipc.rst
 api-reference/system/esp_https_ota.rst
-api-reference/system/ulp-risc-v.rst
 api-reference/system/esp_err.rst
 api-reference/system/freertos_idf.rst
 api-reference/system/console.rst
@@ -238,7 +231,6 @@ api-reference/protocols/esp_serial_slave_link.rst
 api-reference/protocols/mqtt.rst
 api-reference/protocols/mbedtls.rst
 api-reference/protocols/esp_http_server.rst
-api-reference/protocols/esp_sdio_slave_protocol.rst
 api-reference/protocols/esp_local_ctrl.rst
 api-reference/protocols/esp_crt_bundle.rst
 api-reference/protocols/esp_http_client.rst
