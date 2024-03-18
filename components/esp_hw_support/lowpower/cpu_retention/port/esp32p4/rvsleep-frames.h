@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -79,6 +79,7 @@ STRUCT_BEGIN
     STRUCT_FIELD (long, 4, RV_SLP_CTX_T6,       t6)
     STRUCT_FIELD (long, 4, RV_SLP_CTX_MSTATUS,  mstatus)    /* Machine Status */
     STRUCT_FIELD (long, 4, RV_SLP_CTX_MTVEC,    mtvec)      /* Machine Trap-Vector Base Address */
+    STRUCT_FIELD (long, 4, RV_SLP_CTX_MTVT,     mtvt)
     STRUCT_FIELD (long, 4, RV_SLP_CTX_MCAUSE,   mcause)     /* Machine Trap Cause */
     STRUCT_FIELD (long, 4, RV_SLP_CTX_MTVAL,    mtval)      /* Machine Trap Value */
     STRUCT_FIELD (long, 4, RV_SLP_CTX_MIE,      mie)        /* Machine intr enable */
@@ -111,7 +112,6 @@ STRUCT_END(RvCoreCriticalSleepFrame)
  */
 STRUCT_BEGIN
     STRUCT_FIELD (long, 4, RV_SLP_CTX_MSCRATCH,         mscratch)
-    STRUCT_FIELD (long, 4, RV_SLP_CTX_MIDELEG,          mideleg)
     STRUCT_FIELD (long, 4, RV_SLP_CTX_MISA,             misa)
     STRUCT_FIELD (long, 4, RV_SLP_CTX_TSELECT,          tselect)
     STRUCT_FIELD (long, 4, RV_SLP_CTX_TDATA1,           tdata1)
@@ -138,7 +138,6 @@ STRUCT_BEGIN
     STRUCT_FIELD (long, 4, RV_SLP_CTX_PMPCFG2,          pmpcfg2)
     STRUCT_FIELD (long, 4, RV_SLP_CTX_PMPCFG3,          pmpcfg3)
 
-#if SOC_CPU_HAS_PMA
     STRUCT_FIELD (long, 4, RV_SLP_CTX_PMAADDR0,         pmaaddr0)
     STRUCT_FIELD (long, 4, RV_SLP_CTX_PMAADDR1,         pmaaddr1)
     STRUCT_FIELD (long, 4, RV_SLP_CTX_PMAADDR2,         pmaaddr2)
@@ -171,23 +170,8 @@ STRUCT_BEGIN
     STRUCT_FIELD (long, 4, RV_SLP_CTX_PMACFG13,         pmacfg13)
     STRUCT_FIELD (long, 4, RV_SLP_CTX_PMACFG14,         pmacfg14)
     STRUCT_FIELD (long, 4, RV_SLP_CTX_PMACFG15,         pmacfg15)
-#endif // SOC_CPU_HAS_PMA
 
-    STRUCT_FIELD (long, 4, RV_SLP_CTX_UTVEC,            utvec)
-    STRUCT_FIELD (long, 4, RV_SLP_CTX_USTATUS,          ustatus)
-    STRUCT_FIELD (long, 4, RV_SLP_CTX_UEPC,             uepc)
-    STRUCT_FIELD (long, 4, RV_SLP_CTX_UCAUSE,           ucause)
-
-    STRUCT_FIELD (long, 4, RV_SLP_CTX_MPCER,            mpcer)
-    STRUCT_FIELD (long, 4, RV_SLP_CTX_MPCMR,            mpcmr)
-    STRUCT_FIELD (long, 4, RV_SLP_CTX_MPCCR,            mpccr)
-    STRUCT_FIELD (long, 4, RV_SLP_CTX_CPU_TESTBUS_CTRL, cpu_testbus_ctrl)
-    STRUCT_FIELD (long, 4, RV_SLP_CTX_UPCER,            upcer)
-    STRUCT_FIELD (long, 4, RV_SLP_CTX_UPCMR,            upcmr)
-    STRUCT_FIELD (long, 4, RV_SLP_CTX_UPCCR,            upccr)
-    STRUCT_FIELD (long, 4, RV_SLP_CTX_UGPIO_OEN,        ugpio_oen)
-    STRUCT_FIELD (long, 4, RV_SLP_CTX_UGPIO_IN,         ugpio_in)
-    STRUCT_FIELD (long, 4, RV_SLP_CTX_UGPIO_OUT,        ugpio_out)
+    STRUCT_FIELD (long, 4, RV_SLP_CTX_MCYCLE,           mcycle)
 #if CONFIG_PM_CHECK_SLEEP_RETENTION_FRAME
     STRUCT_FIELD (long, 4, RV_SLP_NCSF_CTX_CRC,         frame_crc)        /* Used to check RvCoreNonCriticalSleepFrame integrity */
 #endif

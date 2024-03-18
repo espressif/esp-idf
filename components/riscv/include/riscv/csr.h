@@ -182,6 +182,9 @@ extern "C" {
 #define RV_SET_CSR_FIELD(_r, _f, _v) ({ (RV_WRITE_CSR((_r),((RV_READ_CSR(_r) & ~((_f##_V) << (_f##_S)))|(((_v) & (_f##_V))<<(_f##_S)))));})
 #define RV_CLEAR_CSR_FIELD(_r, _f) ({ (RV_WRITE_CSR((_r),(RV_READ_CSR(_r) & ~((_f##_V) << (_f##_S)))));})
 
+#define RV_READ_MSTATUS_AND_DISABLE_INTR() ({ unsigned long __tmp; \
+  asm volatile ("csrrci %0, mstatus, 0x8"  : "=r"(__tmp)); __tmp; })
+
 #define _CSR_STRINGIFY(REG) #REG /* needed so the 'reg' argument can be a macro or a register name */
 
 #ifdef __cplusplus

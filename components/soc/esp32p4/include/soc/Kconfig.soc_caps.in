@@ -347,10 +347,6 @@ config SOC_CPU_HAS_FLEXIBLE_INTC
     bool
     default y
 
-config SOC_INT_PLIC_SUPPORTED
-    bool
-    default n
-
 config SOC_INT_CLIC_SUPPORTED
     bool
     default y
@@ -1365,7 +1361,7 @@ config SOC_PM_SUPPORT_DEEPSLEEP_CHECK_STUB_ONLY
 
 config SOC_PM_CPU_RETENTION_BY_SW
     bool
-    default n
+    default y
 
 config SOC_PM_PAU_LINK_NUM
     int

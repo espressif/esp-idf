@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -28,26 +28,30 @@
 extern "C" {
 #endif
 
+#if SOC_PM_SUPPORT_TAGMEM_PD
+typedef struct rtc_cntl_sleep_cache_tag_retent {
+    void     *link_addr;  /* Internal ram address for tagmem retention */
+    struct {
+        uint32_t start_point: 8,    /* the row of start for i-cache tag memory */
+                 vld_size: 8,       /* valid size of i-cache tag memory, unit: 4 i-cache tagmem blocks */
+                 size: 8,           /* i-cache tag memory size, unit: 4 i-cache tagmem blocks */
+                 enable: 1;         /* enable or disable i-cache tagmem retention */
+    } icache;
+    struct {
+        uint32_t start_point: 9,    /* the row of start for d-cache tag memory */
+                 vld_size: 9,       /* valid size of d-cache tag memory, unit: 4 d-cache tagmem blocks */
+                 size: 9,           /* d-cache tag memory size, unit: 4 d-cache tagmem blocks */
+                 enable: 1;         /* enable or disable d-cache tagmem retention */
+    } dcache;
+} rtc_cntl_sleep_cache_tag_retent_t;
+#endif
+
 typedef struct rtc_cntl_sleep_retent {
 #if SOC_PM_SUPPORT_CPU_PD
-    void     *cpu_pd_mem;   /* Internal ram address for cpu retention */
+    void     *cpu_pd_mem;           /* Internal ram address for cpu retention */
 #endif // SOC_PM_SUPPORT_CPU_PD
 #if SOC_PM_SUPPORT_TAGMEM_PD
-    struct {
-        void     *link_addr;  /* Internal ram address for tagmem retention */
-        struct {
-            uint32_t start_point: 8,    /* the row of start for i-cache tag memory */
-                     vld_size: 8,       /* valid size of i-cache tag memory, unit: 4 i-cache tagmem blocks */
-                     size: 8,           /* i-cache tag memory size, unit: 4 i-cache tagmem blocks */
-                     enable: 1;         /* enable or disable i-cache tagmem retention */
-        } icache;
-        struct {
-            uint32_t start_point: 9,    /* the row of start for d-cache tag memory */
-                     vld_size: 9,       /* valid size of d-cache tag memory, unit: 4 d-cache tagmem blocks */
-                     size: 9,           /* d-cache tag memory size, unit: 4 d-cache tagmem blocks */
-                     enable: 1;         /* enable or disable d-cache tagmem retention */
-        } dcache;
-    } tagmem;
+    rtc_cntl_sleep_cache_tag_retent_t tagmem; /* I/D Cache tag memory retention information */
 #endif // SOC_PM_SUPPORT_TAGMEM_PD
 } rtc_cntl_sleep_retent_t;
 

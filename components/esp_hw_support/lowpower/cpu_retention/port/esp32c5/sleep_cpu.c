@@ -18,51 +18,26 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_heap_caps.h"
+#include "riscv/csr.h"
 #include "soc/soc_caps.h"
+#include "soc/intpri_reg.h"
+#include "soc/cache_reg.h"
+#include "soc/clic_reg.h"
+#include "soc/clint_reg.h"
+#include "soc/rtc_periph.h"
+#include "esp_private/esp_pmu.h"
 #include "esp_private/sleep_cpu.h"
 #include "esp_private/sleep_event.h"
 #include "sdkconfig.h"
 
-#if SOC_PMU_SUPPORTED
-#include "esp_private/esp_pmu.h"
-#else
-#include "hal/rtc_hal.h"
-#endif
+#include "esp32c5/rom/rtc.h"
+#include "esp32c5/rom/cache.h"
+#include "rvsleep-frames.h"
 
 #if CONFIG_PM_CHECK_SLEEP_RETENTION_FRAME
 #include "esp_private/system_internal.h"
 #include "hal/clk_gate_ll.h"
 #include "hal/uart_hal.h"
-#endif
-
-#include "soc/rtc_periph.h"
-
-#ifdef CONFIG_IDF_TARGET_ESP32S3
-#include "esp32s3/rom/cache.h"
-#elif CONFIG_IDF_TARGET_ESP32C6
-#include "esp32c6/rom/rtc.h"
-#include "riscv/rvsleep-frames.h"
-#include "soc/intpri_reg.h"
-#include "soc/extmem_reg.h"
-#include "soc/plic_reg.h"
-#include "soc/clint_reg.h"
-#include "esp32c6/rom/cache.h"
-#elif CONFIG_IDF_TARGET_ESP32C5
-#include "esp32c5/rom/rtc.h"
-#include "riscv/rvsleep-frames.h"
-#include "soc/intpri_reg.h"
-#include "soc/cache_reg.h"
-#include "soc/clic_reg.h"
-#include "soc/clint_reg.h"
-#include "esp32c5/rom/cache.h"
-#elif CONFIG_IDF_TARGET_ESP32H2
-#include "esp32h2/rom/rtc.h"
-#include "riscv/rvsleep-frames.h"
-#include "soc/intpri_reg.h"
-#include "soc/extmem_reg.h"
-#include "soc/plic_reg.h"
-#include "soc/clint_reg.h"
-#include "esp32h2/rom/cache.h"
 #endif
 
 static __attribute__((unused)) const char *TAG = "sleep";
@@ -82,9 +57,6 @@ typedef struct {
  * Internal structure which holds all requested light sleep cpu retention parameters
  */
 typedef struct {
-#if SOC_PM_SUPPORT_CPU_PD && SOC_PM_CPU_RETENTION_BY_RTCCNTL
-    rtc_cntl_sleep_retent_t retent;
-#elif SOC_PM_SUPPORT_CPU_PD && SOC_PM_CPU_RETENTION_BY_SW
     struct {
         RvCoreCriticalSleepFrame *critical_frame;
         RvCoreNonCriticalSleepFrame *non_critical_frame;
@@ -93,196 +65,9 @@ typedef struct {
         cpu_domain_dev_sleep_frame_t *plic_frame;
         cpu_domain_dev_sleep_frame_t *clint_frame;
     } retent;
-#endif
 } sleep_cpu_retention_t;
 
 static DRAM_ATTR __attribute__((unused)) sleep_cpu_retention_t s_cpu_retention;
-
-#if SOC_PM_SUPPORT_TAGMEM_PD && SOC_PM_CPU_RETENTION_BY_RTCCNTL
-
-#if CONFIG_PM_RESTORE_CACHE_TAGMEM_AFTER_LIGHT_SLEEP
-static uint32_t cache_tagmem_retention_setup(uint32_t code_seg_vaddr, uint32_t code_seg_size, uint32_t data_seg_vaddr, uint32_t data_seg_size)
-{
-    uint32_t sets;   /* i/d-cache total set counts */
-    uint32_t index;  /* virtual address mapping i/d-cache row offset */
-    uint32_t waysgrp;
-    uint32_t icache_tagmem_blk_gs, dcache_tagmem_blk_gs;
-    struct cache_mode imode = { .icache = 1 };
-    struct cache_mode dmode = { .icache = 0 };
-
-    /* calculate/prepare i-cache tag memory retention parameters */
-    Cache_Get_Mode(&imode);
-    sets = imode.cache_size / imode.cache_ways / imode.cache_line_size;
-    index = (code_seg_vaddr / imode.cache_line_size) % sets;
-    waysgrp = imode.cache_ways >> 2;
-
-    code_seg_size = ALIGNUP(imode.cache_line_size, code_seg_size);
-
-    s_cpu_retention.retent.tagmem.icache.start_point = index;
-    s_cpu_retention.retent.tagmem.icache.size = (sets * waysgrp) & 0xff;
-    s_cpu_retention.retent.tagmem.icache.vld_size = s_cpu_retention.retent.tagmem.icache.size;
-    if (code_seg_size < imode.cache_size / imode.cache_ways) {
-        s_cpu_retention.retent.tagmem.icache.vld_size = (code_seg_size / imode.cache_line_size) * waysgrp;
-    }
-    s_cpu_retention.retent.tagmem.icache.enable = (code_seg_size != 0) ? 1 : 0;
-    icache_tagmem_blk_gs = s_cpu_retention.retent.tagmem.icache.vld_size ? s_cpu_retention.retent.tagmem.icache.vld_size : sets * waysgrp;
-    icache_tagmem_blk_gs = ALIGNUP(4, icache_tagmem_blk_gs);
-    ESP_LOGD(TAG, "I-cache size:%"PRIu32" KiB, line size:%d B, ways:%d, sets:%"PRIu32", index:%"PRIu32", tag block groups:%"PRIu32"", (imode.cache_size>>10),
-            imode.cache_line_size, imode.cache_ways, sets, index, icache_tagmem_blk_gs);
-
-    /* calculate/prepare d-cache tag memory retention parameters */
-    Cache_Get_Mode(&dmode);
-    sets = dmode.cache_size / dmode.cache_ways / dmode.cache_line_size;
-    index = (data_seg_vaddr / dmode.cache_line_size) % sets;
-    waysgrp = dmode.cache_ways >> 2;
-
-    data_seg_size = ALIGNUP(dmode.cache_line_size, data_seg_size);
-
-    s_cpu_retention.retent.tagmem.dcache.start_point = index;
-    s_cpu_retention.retent.tagmem.dcache.size = (sets * waysgrp) & 0x1ff;
-    s_cpu_retention.retent.tagmem.dcache.vld_size = s_cpu_retention.retent.tagmem.dcache.size;
-#ifndef CONFIG_ESP32S3_DATA_CACHE_16KB
-    if (data_seg_size < dmode.cache_size / dmode.cache_ways) {
-        s_cpu_retention.retent.tagmem.dcache.vld_size = (data_seg_size / dmode.cache_line_size) * waysgrp;
-    }
-    s_cpu_retention.retent.tagmem.dcache.enable = (data_seg_size != 0) ? 1 : 0;
-#else
-    s_cpu_retention.retent.tagmem.dcache.enable = 1;
-#endif
-    dcache_tagmem_blk_gs = s_cpu_retention.retent.tagmem.dcache.vld_size ? s_cpu_retention.retent.tagmem.dcache.vld_size : sets * waysgrp;
-    dcache_tagmem_blk_gs = ALIGNUP(4, dcache_tagmem_blk_gs);
-    ESP_LOGD(TAG, "D-cache size:%"PRIu32" KiB, line size:%d B, ways:%d, sets:%"PRIu32", index:%"PRIu32", tag block groups:%"PRIu32"", (dmode.cache_size>>10),
-            dmode.cache_line_size, dmode.cache_ways, sets, index, dcache_tagmem_blk_gs);
-
-    /* For I or D cache tagmem retention, backup and restore are performed through
-     * RTC DMA (its bus width is 128 bits), For I/D Cache tagmem blocks (i-cache
-     * tagmem blocks = 92 bits, d-cache tagmem blocks = 88 bits), RTC DMA automatically
-     * aligns its bit width to 96 bits, therefore, 3 times RTC DMA can transfer 4
-     * i/d-cache tagmem blocks (128 bits * 3 = 96 bits * 4) */
-    return (((icache_tagmem_blk_gs + dcache_tagmem_blk_gs) << 2) * 3);
-}
-#endif // CONFIG_PM_RESTORE_CACHE_TAGMEM_AFTER_LIGHT_SLEEP
-
-static esp_err_t esp_sleep_tagmem_pd_low_init(void)
-{
-#if CONFIG_PM_RESTORE_CACHE_TAGMEM_AFTER_LIGHT_SLEEP
-        if (s_cpu_retention.retent.tagmem.link_addr == NULL) {
-            extern char _stext[], _etext[];
-            uint32_t code_start = (uint32_t)_stext;
-            uint32_t code_size = (uint32_t)(_etext - _stext);
-#if !(CONFIG_SPIRAM && CONFIG_SOC_PM_SUPPORT_TAGMEM_PD)
-            extern char _rodata_start[], _rodata_reserved_end[];
-            uint32_t data_start = (uint32_t)_rodata_start;
-            uint32_t data_size = (uint32_t)(_rodata_reserved_end - _rodata_start);
-#else
-            uint32_t data_start = SOC_DROM_LOW;
-            uint32_t data_size = SOC_EXTRAM_DATA_SIZE;
-#endif
-            ESP_LOGI(TAG, "Code start at 0x%08"PRIx32", total %"PRIu32", data start at 0x%08"PRIx32", total %"PRIu32" Bytes",
-                    code_start, code_size, data_start, data_size);
-            uint32_t tagmem_sz = cache_tagmem_retention_setup(code_start, code_size, data_start, data_size);
-            void *buf = heap_caps_aligned_calloc(SOC_RTC_CNTL_TAGMEM_PD_DMA_ADDR_ALIGN, 1,
-                                                tagmem_sz + RTC_HAL_DMA_LINK_NODE_SIZE,
-                                                MALLOC_CAP_RETENTION);
-            if (buf) {
-                s_cpu_retention.retent.tagmem.link_addr = rtc_cntl_hal_dma_link_init(buf,
-                                      buf + RTC_HAL_DMA_LINK_NODE_SIZE, tagmem_sz, NULL);
-            } else {
-                s_cpu_retention.retent.tagmem.icache.enable = 0;
-                s_cpu_retention.retent.tagmem.dcache.enable = 0;
-                s_cpu_retention.retent.tagmem.link_addr = NULL;
-                return ESP_ERR_NO_MEM;
-            }
-        }
-#else // CONFIG_PM_RESTORE_CACHE_TAGMEM_AFTER_LIGHT_SLEEP
-        s_cpu_retention.retent.tagmem.icache.enable = 0;
-        s_cpu_retention.retent.tagmem.dcache.enable = 0;
-        s_cpu_retention.retent.tagmem.link_addr = NULL;
-#endif // CONFIG_PM_RESTORE_CACHE_TAGMEM_AFTER_LIGHT_SLEEP
-    return ESP_OK;
-}
-
-static esp_err_t esp_sleep_tagmem_pd_low_deinit(void)
-{
-#if SOC_PM_SUPPORT_TAGMEM_PD
-        if (s_cpu_retention.retent.tagmem.link_addr) {
-            heap_caps_free(s_cpu_retention.retent.tagmem.link_addr);
-            s_cpu_retention.retent.tagmem.icache.enable = 0;
-            s_cpu_retention.retent.tagmem.dcache.enable = 0;
-            s_cpu_retention.retent.tagmem.link_addr = NULL;
-        }
-#endif
-    return ESP_OK;
-}
-#endif // SOC_PM_SUPPORT_TAGMEM_PD && SOC_PM_CPU_RETENTION_BY_RTCCNTL
-
-#if SOC_PM_SUPPORT_CPU_PD && SOC_PM_CPU_RETENTION_BY_RTCCNTL
-
-esp_err_t esp_sleep_cpu_pd_low_init(void)
-{
-    if (s_cpu_retention.retent.cpu_pd_mem == NULL) {
-        void *buf = heap_caps_aligned_calloc(SOC_RTC_CNTL_CPU_PD_DMA_ADDR_ALIGN, 1,
-                                            SOC_RTC_CNTL_CPU_PD_RETENTION_MEM_SIZE + RTC_HAL_DMA_LINK_NODE_SIZE,
-                                            MALLOC_CAP_RETENTION);
-        if (buf) {
-            s_cpu_retention.retent.cpu_pd_mem = rtc_cntl_hal_dma_link_init(buf,
-                                  buf + RTC_HAL_DMA_LINK_NODE_SIZE, SOC_RTC_CNTL_CPU_PD_RETENTION_MEM_SIZE, NULL);
-        } else {
-            return ESP_ERR_NO_MEM;
-        }
-    }
-
-#if SOC_PM_SUPPORT_TAGMEM_PD && SOC_PM_CPU_RETENTION_BY_RTCCNTL
-    if (esp_sleep_tagmem_pd_low_init() != ESP_OK) {
-#ifdef CONFIG_ESP32S3_DATA_CACHE_16KB
-        esp_sleep_cpu_pd_low_deinit();
-        return ESP_ERR_NO_MEM;
-#endif
-    }
-#endif
-    return ESP_OK;
-}
-
-esp_err_t esp_sleep_cpu_pd_low_deinit(void)
-{
-    if (s_cpu_retention.retent.cpu_pd_mem) {
-        heap_caps_free(s_cpu_retention.retent.cpu_pd_mem);
-        s_cpu_retention.retent.cpu_pd_mem = NULL;
-    }
-
-#if SOC_PM_SUPPORT_TAGMEM_PD && SOC_PM_CPU_RETENTION_BY_RTCCNTL
-    if (esp_sleep_tagmem_pd_low_deinit() != ESP_OK) {
-#ifdef CONFIG_ESP32S3_DATA_CACHE_16KB
-        esp_sleep_cpu_pd_low_deinit();
-        return ESP_ERR_NO_MEM;
-#endif
-    }
-#endif
-    return ESP_OK;
-}
-
-void sleep_enable_cpu_retention(void)
-{
-    rtc_cntl_hal_enable_cpu_retention(&s_cpu_retention.retent);
-
-#if SOC_PM_SUPPORT_TAGMEM_PD
-    rtc_cntl_hal_enable_tagmem_retention(&s_cpu_retention.retent);
-#endif
-}
-
-void IRAM_ATTR sleep_disable_cpu_retention(void)
-{
-    rtc_cntl_hal_disable_cpu_retention(&s_cpu_retention.retent);
-
-#if SOC_PM_SUPPORT_TAGMEM_PD
-    rtc_cntl_hal_disable_tagmem_retention(&s_cpu_retention.retent);
-#endif
-}
-
-#endif
-
-
-#if SOC_PM_SUPPORT_CPU_PD && SOC_PM_CPU_RETENTION_BY_SW
 
 #define CUSTOM_CSR_PCER_MACHINE        0x7e0
 #define CUSTOM_CSR_PCMR_MACHINE        0x7e1
@@ -334,13 +119,8 @@ static inline void * cpu_domain_intpri_sleep_frame_alloc_and_init(void)
 static inline void * cpu_domain_cache_config_sleep_frame_alloc_and_init(void)
 {
     const static cpu_domain_dev_regs_region_t regions[] = {
-#if CONFIG_IDF_TARGET_ESP32C6
-        { .start = EXTMEM_L1_CACHE_CTRL_REG, .end = EXTMEM_L1_CACHE_CTRL_REG + 4 },
-        { .start = EXTMEM_L1_CACHE_WRAP_AROUND_CTRL_REG, .end = EXTMEM_L1_CACHE_WRAP_AROUND_CTRL_REG + 4 }
-#elif CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP32C5
         { .start = CACHE_L1_CACHE_CTRL_REG, .end = CACHE_L1_CACHE_CTRL_REG + 4 },
         { .start = CACHE_L1_CACHE_WRAP_AROUND_CTRL_REG, .end = CACHE_L1_CACHE_WRAP_AROUND_CTRL_REG + 4 }
-#endif
     };
     return cpu_domain_dev_sleep_frame_alloc_and_init(regions, sizeof(regions) / sizeof(regions[0]));
 }
@@ -446,20 +226,14 @@ static esp_err_t esp_sleep_cpu_retention_deinit_impl(void)
     return ESP_OK;
 }
 
-static inline IRAM_ATTR uint32_t save_mstatus_and_disable_global_int(void)
+FORCE_INLINE_ATTR uint32_t save_mstatus_and_disable_global_int(void)
 {
-    uint32_t mstatus;
-    __asm__ __volatile__ (
-            "csrr   %0, mstatus\n"
-            "csrci  mstatus, 0x8\n"
-            : "=r"(mstatus)
-        );
-    return mstatus;
+    return RV_READ_MSTATUS_AND_DISABLE_INTR();
 }
 
-static inline IRAM_ATTR void restore_mstatus(uint32_t mstatus)
+FORCE_INLINE_ATTR void restore_mstatus(uint32_t mstatus_val)
 {
-    __asm__ __volatile__ ("csrw mstatus, %0\n" :: "r"(mstatus));
+    RV_WRITE_CSR(mstatus, mstatus_val);
 }
 
 static IRAM_ATTR RvCoreNonCriticalSleepFrame * rv_core_noncritical_regs_save(void)
@@ -495,7 +269,6 @@ static IRAM_ATTR RvCoreNonCriticalSleepFrame * rv_core_noncritical_regs_save(voi
     frame->pmpcfg2   = RV_READ_CSR(pmpcfg2);
     frame->pmpcfg3   = RV_READ_CSR(pmpcfg3);
 
-#if SOC_CPU_HAS_PMA
     frame->pmaaddr0  = RV_READ_CSR(CSR_PMAADDR(0));
     frame->pmaaddr1  = RV_READ_CSR(CSR_PMAADDR(1));
     frame->pmaaddr2  = RV_READ_CSR(CSR_PMAADDR(2));
@@ -528,7 +301,6 @@ static IRAM_ATTR RvCoreNonCriticalSleepFrame * rv_core_noncritical_regs_save(voi
     frame->pmacfg13   = RV_READ_CSR(CSR_PMACFG(13));
     frame->pmacfg14   = RV_READ_CSR(CSR_PMACFG(14));
     frame->pmacfg15   = RV_READ_CSR(CSR_PMACFG(15));
-#endif // SOC_CPU_HAS_PMA
 
     frame->utvec     = RV_READ_CSR(utvec);
     frame->ustatus   = RV_READ_CSR(ustatus);
@@ -579,7 +351,6 @@ static IRAM_ATTR void rv_core_noncritical_regs_restore(RvCoreNonCriticalSleepFra
     RV_WRITE_CSR(pmpcfg2,  frame->pmpcfg2);
     RV_WRITE_CSR(pmpcfg3,  frame->pmpcfg3);
 
-#if SOC_CPU_HAS_PMA
     RV_WRITE_CSR(CSR_PMAADDR(0), frame->pmaaddr0);
     RV_WRITE_CSR(CSR_PMAADDR(1), frame->pmaaddr1);
     RV_WRITE_CSR(CSR_PMAADDR(2), frame->pmaaddr2);
@@ -612,7 +383,6 @@ static IRAM_ATTR void rv_core_noncritical_regs_restore(RvCoreNonCriticalSleepFra
     RV_WRITE_CSR(CSR_PMACFG(13),  frame->pmacfg13);
     RV_WRITE_CSR(CSR_PMACFG(14),  frame->pmacfg14);
     RV_WRITE_CSR(CSR_PMACFG(15),  frame->pmacfg15);
-#endif //SOC_CPU_HAS_PMA
 
     RV_WRITE_CSR(utvec,    frame->utvec);
     RV_WRITE_CSR(ustatus,  frame->ustatus);
@@ -670,11 +440,9 @@ static IRAM_ATTR void validate_retention_frame_crc(uint32_t *frame_ptr, uint32_t
     if(*(frame_crc_ptr) != esp_crc32_le(0, (void *)(frame_ptr), frame_check_size)){
         // resume uarts
         for (int i = 0; i < SOC_UART_NUM; ++i) {
-#ifndef CONFIG_IDF_TARGET_ESP32
             if (!uart_ll_is_enabled(i)) {
                 continue;
             }
-#endif
             uart_ll_force_xon(i);
         }
 
@@ -743,47 +511,24 @@ esp_err_t IRAM_ATTR esp_sleep_cpu_retention(uint32_t (*goto_sleep)(uint32_t, uin
     return err;
 }
 
-#endif // SOC_PM_SUPPORT_CPU_PD && SOC_PM_CPU_RETENTION_BY_SW
-
-
-#if SOC_PM_SUPPORT_CPU_PD
-
 esp_err_t esp_sleep_cpu_retention_init(void)
 {
-    esp_err_t err = ESP_OK;
-#if SOC_PM_CPU_RETENTION_BY_RTCCNTL
-    err = esp_sleep_cpu_pd_low_init();
-#elif SOC_PM_CPU_RETENTION_BY_SW
-    err = esp_sleep_cpu_retention_init_impl();
-#endif
-    return err;
+    return esp_sleep_cpu_retention_init_impl();
 }
 
 esp_err_t esp_sleep_cpu_retention_deinit(void)
 {
-    esp_err_t err = ESP_OK;
-#if SOC_PM_CPU_RETENTION_BY_RTCCNTL
-    err = esp_sleep_cpu_pd_low_deinit();
-#elif SOC_PM_CPU_RETENTION_BY_SW
-    err = esp_sleep_cpu_retention_deinit_impl();
-#endif
-    return err;
+    return esp_sleep_cpu_retention_deinit_impl();
 }
 
 bool cpu_domain_pd_allowed(void)
 {
-#if SOC_PM_CPU_RETENTION_BY_RTCCNTL
-    return (s_cpu_retention.retent.cpu_pd_mem != NULL);
-#elif SOC_PM_CPU_RETENTION_BY_SW
     return (s_cpu_retention.retent.critical_frame != NULL) && \
          (s_cpu_retention.retent.non_critical_frame != NULL) && \
          (s_cpu_retention.retent.intpri_frame != NULL) && \
          (s_cpu_retention.retent.cache_config_frame != NULL) && \
          (s_cpu_retention.retent.plic_frame != NULL) && \
          (s_cpu_retention.retent.clint_frame != NULL);
-#else
-    return false;
-#endif
 }
 
 esp_err_t sleep_cpu_configure(bool light_sleep_enable)
@@ -797,5 +542,3 @@ esp_err_t sleep_cpu_configure(bool light_sleep_enable)
 #endif
     return ESP_OK;
 }
-
-#endif
