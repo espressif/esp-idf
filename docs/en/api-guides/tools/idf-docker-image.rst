@@ -98,6 +98,10 @@ Then inside the container, use ``idf.py`` as usual:
 
     Commands which communicate with the development board, such as ``idf.py flash`` and ``idf.py monitor`` does not work in the container, unless the serial port is passed through into the container. This can be done with Docker for Linux with the `device option`_. However, currently, this is not possible with Docker for Windows (https://github.com/docker/for-win/issues/1018) and Docker for Mac (https://github.com/docker/for-mac/issues/900). This limitation may be overcome by using `remote serial ports`_. An example of how to do this can be found in the following `using remote serial port`_ section.
 
+.. note::
+
+    On Linux, when adding the host serial port device into the container using options like ``--device`` or ``--privileged``, and starting the container with a specific user using ``-u $UID``, ensure that this user has read/write access to the device. This can be achieved by adding the container user into the group ID that is assigned to the device on the host, using the ``--group-add`` option. For instance, if the host device has the ``dialout`` group assigned, you can utilize ``--group-add $(getent group dialout | cut -d':' -f3)`` to add the container user to the host's ``dialout`` group.
+
 
 .. _using remote serial port:
 
