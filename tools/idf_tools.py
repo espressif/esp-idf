@@ -1645,44 +1645,30 @@ def get_idf_version() -> str:
     """
     Return ESP-IDF version.
     """
-    version_file_path = os.path.join(g.idf_path, 'version.txt')  # type: ignore
+    idf_version: Optional[str] = None
+
+    version_file_path = os.path.join(g.idf_path, 'version.txt')
     if os.path.exists(version_file_path):
         with open(version_file_path, 'r') as version_file:
             idf_version_str = version_file.read()
-    else:
-        idf_version_str = ''
+
+        match = re.match(r'^v([0-9]+\.[0-9]+).*', idf_version_str)
+        if match:
+            idf_version = match.group(1)
+
+    if idf_version is None:
         try:
-            idf_version_str = subprocess.check_output(['git', 'describe'],
-                                                      cwd=g.idf_path, env=os.environ,
-                                                      stderr=subprocess.DEVNULL).decode()
-        except OSError:
-            # OSError should cover FileNotFoundError and WindowsError
-            warn('Git was not found')
-        except subprocess.CalledProcessError:
-            # This happens quite often when the repo is shallow. Don't print a warning because there are other
-            # possibilities for version detection.
-            pass
-    match = re.match(r'^v([0-9]+\.[0-9]+).*', idf_version_str)
-    if match:
-        idf_version: Optional[str] = match.group(1)
-    else:
-        idf_version = None
-        # fallback when IDF is a shallow clone
-        try:
-            with open(os.path.join(g.idf_path, 'components', 'esp_common', 'include', 'esp_idf_version.h')) as f:  # type: ignore
+            with open(os.path.join(g.idf_path, 'components', 'esp_common', 'include', 'esp_idf_version.h')) as f:
                 m = re.search(r'^#define\s+ESP_IDF_VERSION_MAJOR\s+(\d+).+?^#define\s+ESP_IDF_VERSION_MINOR\s+(\d+)',
                               f.read(), re.DOTALL | re.MULTILINE)
                 if m:
                     idf_version = '.'.join((m.group(1), m.group(2)))
                 else:
-                    warn('Reading IDF version from C header file failed!')
+                    fatal('Reading IDF version from C header file failed!')
+                    raise SystemExit(1)
         except Exception as e:
-            warn(f'Is it not possible to determine the IDF version: {e}')
-
-    if idf_version is None:
-        fatal('IDF version cannot be determined')
-        raise SystemExit(1)
-
+            fatal(f'It is not possible to determine the IDF version: {e}')
+            raise SystemExit(1)
     return idf_version
 
 
