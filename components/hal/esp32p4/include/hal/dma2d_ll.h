@@ -62,8 +62,9 @@ extern "C" {
 #define DMA2D_LL_RX_CHANNEL_SUPPORT_RO_MASK        (0U | BIT0) // RX channels that support reorder feature
 #define DMA2D_LL_RX_CHANNEL_SUPPORT_CSC_MASK       (0U | BIT0) // RX channels that support color space conversion feature
 
-// Any "dummy" peripheral selection ID can be used for M2M mode {4, 5, 6, 7}
-#define DMA2D_LL_CHANNEL_PERIPH_M2M_FREE_ID_MASK   (0xF0)
+// Any "dummy" peripheral selection ID can be used for M2M mode
+#define DMA2D_LL_TX_CHANNEL_PERIPH_M2M_AVAILABLE_ID_MASK   (0xF0)
+#define DMA2D_LL_RX_CHANNEL_PERIPH_M2M_AVAILABLE_ID_MASK   (0xF8)
 // Peripheral selection ID that disconnects 2D-DMA channel from any peripherals
 #define DMA2D_LL_CHANNEL_PERIPH_NO_CHOICE          (7)
 // Peripheral selection ID register field width
@@ -103,17 +104,6 @@ static inline void dma2d_ll_reset_register(int group_id)
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
 #define dma2d_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; dma2d_ll_reset_register(__VA_ARGS__)
-
-/**
- * @brief Configure 2D-DMA accessible internal and external memory start/end address (for both buffer and descriptor)
- */
-static inline void dma2d_ll_set_accessible_mem_range(dma2d_dev_t *dev)
-{
-    dev->intr_mem_start_addr.access_intr_mem_start_addr = SOC_DIRAM_DRAM_LOW; // L2MEM region (2D-DMA indeed is able to access TCM/LP_MEM regions, but will be restricted in IDF)
-    dev->intr_mem_end_addr.access_intr_mem_end_addr = SOC_DIRAM_DRAM_HIGH;
-    dev->extr_mem_start_addr.access_extr_mem_start_addr = SOC_EXTRAM_LOW;
-    dev->extr_mem_end_addr.access_extr_mem_end_addr = SOC_EXTRAM_HIGH;
-}
 
 /**
  * @brief Enable 2D-DMA module
@@ -230,7 +220,7 @@ static inline void dma2d_ll_rx_set_data_burst_length(dma2d_dev_t *dev, uint32_t 
 {
     uint32_t sel;
     switch (length) {
-    case DMA2D_DATA_BURST_LENGTH_1:
+    case DMA2D_DATA_BURST_LENGTH_8:
         sel = 0;
         break;
     case DMA2D_DATA_BURST_LENGTH_16:
@@ -384,13 +374,13 @@ static inline void dma2d_ll_rx_restart(dma2d_dev_t *dev, uint32_t channel)
 }
 
 /**
- * @brief Enable 2D-DMA RX to return the address of current descriptor when receives error
+ * @brief Configure the value of the owner field written back to the 2D-DMA RX descriptor
  */
 __attribute__((always_inline))
-static inline void dma2d_ll_rx_enable_auto_return(dma2d_dev_t *dev, uint32_t channel, bool enable)
+static inline void dma2d_ll_rx_set_auto_return_owner(dma2d_dev_t *dev, uint32_t channel, int owner)
 {
     volatile dma2d_in_link_conf_chn_reg_t *reg = (volatile dma2d_in_link_conf_chn_reg_t *)DMA2D_LL_IN_CHANNEL_GET_REG_ADDR(dev, channel, in_link_conf);
-    reg->inlink_auto_ret_chn = enable;
+    reg->inlink_auto_ret_chn = owner;
 }
 
 /**
@@ -767,7 +757,7 @@ static inline void dma2d_ll_tx_set_data_burst_length(dma2d_dev_t *dev, uint32_t 
 {
     uint32_t sel;
     switch (length) {
-    case DMA2D_DATA_BURST_LENGTH_1:
+    case DMA2D_DATA_BURST_LENGTH_8:
         sel = 0;
         break;
     case DMA2D_DATA_BURST_LENGTH_16:

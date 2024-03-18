@@ -98,8 +98,6 @@ static bool acquire_free_channels_for_trans(dma2d_group_t *dma2d_group, const dm
                 dma2d_group->tx_chans[channel_id]->base.status.periph_sel_id = -1;
                 if (trans_desc->channel_flags & DMA2D_CHANNEL_FUNCTION_FLAG_TX_REORDER) {
                     dma2d_group->tx_chans[channel_id]->base.status.reorder_en = true;
-                } else if (trans_desc->channel_flags & DMA2D_CHANNEL_FUNCTION_FLAG_SIBLING) {
-                    dma2d_group->tx_chans[channel_id]->base.status.has_sibling = true;
                 }
                 channel_handle_array[idx].chan = &dma2d_group->tx_chans[channel_id]->base;
                 channel_handle_array[idx].dir = DMA2D_CHANNEL_DIRECTION_TX;
@@ -137,8 +135,6 @@ static bool acquire_free_channels_for_trans(dma2d_group_t *dma2d_group, const dm
             dma2d_group->rx_chans[channel_id]->base.status.periph_sel_id = -1;
             if (trans_desc->channel_flags & DMA2D_CHANNEL_FUNCTION_FLAG_RX_REORDER) {
                 dma2d_group->rx_chans[channel_id]->base.status.reorder_en = true;
-            } else if (trans_desc->channel_flags & DMA2D_CHANNEL_FUNCTION_FLAG_SIBLING) {
-                dma2d_group->rx_chans[channel_id]->base.status.has_sibling = true;
             }
             channel_handle_array[idx].chan = &dma2d_group->rx_chans[channel_id]->base;
             channel_handle_array[idx].dir = DMA2D_CHANNEL_DIRECTION_RX;
@@ -176,6 +172,8 @@ static bool free_up_channels(dma2d_group_t *group, dma2d_rx_channel_t *rx_chan)
     uint32_t channel_id = rx_chan->base.channel_id;
     // 1. Clean up channels
     uint32_t bundled_tx_channel_mask = rx_chan->bundled_tx_channel_mask;
+    uint32_t tx_periph_sel_id_mask = 0;
+    uint32_t rx_periph_sel_id_mask = 0;
     // Disable RX channel interrupt
     portENTER_CRITICAL_SAFE(&rx_chan->base.spinlock);
     dma2d_ll_rx_enable_interrupt(group->hal.dev, channel_id, UINT32_MAX, false);
@@ -186,6 +184,9 @@ static bool free_up_channels(dma2d_group_t *group, dma2d_rx_channel_t *rx_chan)
     dma2d_ll_rx_disconnect_from_periph(group->hal.dev, channel_id);
     // Clear the pointer that points to the finished transaction
     rx_chan->base.status.transaction = NULL;
+    // Record its periph_sel_id
+    assert(rx_chan->base.status.periph_sel_id != -1);
+    rx_periph_sel_id_mask |= (1 << rx_chan->base.status.periph_sel_id);
     portEXIT_CRITICAL_SAFE(&rx_chan->base.spinlock);
     // For every bundled TX channels:
     while (rx_chan->bundled_tx_channel_mask) {
@@ -201,6 +202,9 @@ static bool free_up_channels(dma2d_group_t *group, dma2d_rx_channel_t *rx_chan)
         dma2d_ll_tx_disconnect_from_periph(group->hal.dev, nbit);
         // Clear the pointer that points to the finished transaction
         tx_chan->base.status.transaction = NULL;
+        // Record its periph_sel_id
+        assert(tx_chan->base.status.periph_sel_id != -1);
+        tx_periph_sel_id_mask |= (1 << tx_chan->base.status.periph_sel_id);
         portEXIT_CRITICAL_SAFE(&tx_chan->base.spinlock);
     }
     // Channel functionality flags will be reset and assigned new values inside `acquire_free_channels_for_trans`
@@ -212,12 +216,12 @@ static bool free_up_channels(dma2d_group_t *group, dma2d_rx_channel_t *rx_chan)
     dma2d_trans_channel_info_t channel_handle_array[DMA2D_MAX_CHANNEL_NUM_PER_TRANSACTION];
 
     portENTER_CRITICAL_SAFE(&group->spinlock);
+    // Release channels
     group->tx_channel_free_mask |= bundled_tx_channel_mask;
     group->rx_channel_free_mask |= (1 << channel_id);
-    int rx_periph_sel_id = group->rx_chans[channel_id]->base.status.periph_sel_id;
-    if (rx_periph_sel_id != -1 && ((1 << rx_periph_sel_id) & DMA2D_LL_CHANNEL_PERIPH_M2M_FREE_ID_MASK)) {
-        group->periph_m2m_free_id_mask |= (1 << rx_periph_sel_id); // release m2m periph_sel_id
-    }
+    // Release M2M periph_sel_id
+    group->tx_periph_m2m_free_id_mask |= (tx_periph_sel_id_mask & DMA2D_LL_TX_CHANNEL_PERIPH_M2M_AVAILABLE_ID_MASK);
+    group->rx_periph_m2m_free_id_mask |= (rx_periph_sel_id_mask & DMA2D_LL_RX_CHANNEL_PERIPH_M2M_AVAILABLE_ID_MASK);
 
     dma2d_trans_t *next_trans_elm = TAILQ_FIRST(&group->pending_trans_tailq);
     if (next_trans_elm) {
@@ -295,10 +299,10 @@ static NOINLINE_ATTR bool _dma2d_default_rx_isr(dma2d_group_t *group, int channe
     }
 
     // If last transcation completes (regardless success or not), free the channels
-    if ((intr_status & DMA2D_LL_EVENT_RX_SUC_EOF) ||
-        (intr_status & DMA2D_LL_EVENT_RX_ERR_EOF) ||
-        (intr_status & DMA2D_LL_EVENT_RX_DESC_ERROR)) {
-        assert(dma2d_ll_rx_is_fsm_idle(group->hal.dev, channel_id));
+    if (intr_status & (DMA2D_LL_EVENT_RX_SUC_EOF | DMA2D_LL_EVENT_RX_ERR_EOF | DMA2D_LL_EVENT_RX_DESC_ERROR)) {
+        if (!(intr_status & DMA2D_LL_EVENT_RX_ERR_EOF)) {
+            assert(dma2d_ll_rx_is_fsm_idle(group->hal.dev, channel_id));
+        }
         need_yield |= free_up_channels(group, rx_chan);
     }
 
@@ -365,7 +369,8 @@ esp_err_t dma2d_acquire_pool(const dma2d_pool_config_t *config, dma2d_pool_handl
             pre_alloc_group->rx_channel_free_mask = (1 << SOC_DMA2D_RX_CHANNELS_PER_GROUP) - 1;
             pre_alloc_group->tx_channel_reserved_mask = dma2d_tx_channel_reserved_mask[group_id];
             pre_alloc_group->rx_channel_reserved_mask = dma2d_rx_channel_reserved_mask[group_id];
-            pre_alloc_group->periph_m2m_free_id_mask = DMA2D_LL_CHANNEL_PERIPH_M2M_FREE_ID_MASK;
+            pre_alloc_group->tx_periph_m2m_free_id_mask = DMA2D_LL_TX_CHANNEL_PERIPH_M2M_AVAILABLE_ID_MASK;
+            pre_alloc_group->rx_periph_m2m_free_id_mask = DMA2D_LL_RX_CHANNEL_PERIPH_M2M_AVAILABLE_ID_MASK;
             pre_alloc_group->intr_priority = -1;
             for (int i = 0; i < SOC_DMA2D_TX_CHANNELS_PER_GROUP; i++) {
                 pre_alloc_group->tx_chans[i] = &pre_alloc_tx_channels[i];
@@ -393,8 +398,6 @@ esp_err_t dma2d_acquire_pool(const dma2d_pool_config_t *config, dma2d_pool_handl
             dma2d_hal_init(&pre_alloc_group->hal, group_id); // initialize HAL context
             // Enable 2D-DMA module clock
             dma2d_ll_hw_enable(s_platform.groups[group_id]->hal.dev, true);
-            // Configure 2D-DMA accessible memory range
-            dma2d_ll_set_accessible_mem_range(s_platform.groups[group_id]->hal.dev);
         } else {
             ret = ESP_ERR_NO_MEM;
             free(pre_alloc_tx_channels);
@@ -531,41 +534,30 @@ esp_err_t dma2d_connect(dma2d_channel_handle_t dma2d_chan, const dma2d_trigger_t
 
     // Find periph_sel_id for the channel
     int peri_sel_id = trig_periph->periph_sel_id;
+    uint32_t *periph_m2m_free_id_mask = NULL;
+    uint32_t periph_m2m_available_id_mask = 0;
+    if (dma2d_chan->direction == DMA2D_CHANNEL_DIRECTION_TX) {
+        periph_m2m_free_id_mask = &group->tx_periph_m2m_free_id_mask;
+        periph_m2m_available_id_mask = DMA2D_LL_TX_CHANNEL_PERIPH_M2M_AVAILABLE_ID_MASK;
+    } else {
+        periph_m2m_free_id_mask = &group->rx_periph_m2m_free_id_mask;
+        periph_m2m_available_id_mask = DMA2D_LL_RX_CHANNEL_PERIPH_M2M_AVAILABLE_ID_MASK;
+    }
     portENTER_CRITICAL_SAFE(&group->spinlock);
     if (trig_periph->periph == DMA2D_TRIG_PERIPH_M2M) {
-        // Assign peri_sel_id to one of {4, 5, 6, 7}
-        assert(dma2d_chan->status.has_sibling);
-        // First find out the peri_sel_id of its sibling channel
-        int sibling_periph_sel_id = -1;
-        if (dma2d_chan->direction == DMA2D_CHANNEL_DIRECTION_TX) {
-            sibling_periph_sel_id = group->rx_chans[channel_id]->base.status.periph_sel_id;
-        } else {
-            sibling_periph_sel_id = group->tx_chans[channel_id]->base.status.periph_sel_id;
-        }
-
         if (peri_sel_id == -1) {
             // Unspecified periph_sel_id, decide by the driver
-            if (sibling_periph_sel_id != -1 && ((1 << sibling_periph_sel_id) & DMA2D_LL_CHANNEL_PERIPH_M2M_FREE_ID_MASK)) {
-                peri_sel_id = sibling_periph_sel_id;
-            } else {
-                peri_sel_id = __builtin_ctz(group->periph_m2m_free_id_mask);
-            }
+            peri_sel_id = __builtin_ctz(*periph_m2m_free_id_mask);
         } else {
             // Check whether specified periph_sel_id is valid
-            if (sibling_periph_sel_id != -1) {
-                if (sibling_periph_sel_id != peri_sel_id) {
-                    peri_sel_id = -1; // Conflict id with its sibling channel
-                }
-            } else {
-                if (!((1 << peri_sel_id) & group->periph_m2m_free_id_mask & DMA2D_LL_CHANNEL_PERIPH_M2M_FREE_ID_MASK)) {
-                    peri_sel_id = -1; // Occupied or invalid m2m peri_sel_id
-                }
+            if (!((1 << peri_sel_id) & *periph_m2m_free_id_mask & periph_m2m_available_id_mask)) {
+                peri_sel_id = -1; // Occupied or invalid m2m peri_sel_id
             }
         }
     }
     if (peri_sel_id >= 0) {
         dma2d_chan->status.periph_sel_id = peri_sel_id;
-        group->periph_m2m_free_id_mask &= ~(1 << peri_sel_id); // acquire m2m periph_sel_id
+        *periph_m2m_free_id_mask &= ~(1 << peri_sel_id); // acquire m2m periph_sel_id
     }
     portEXIT_CRITICAL_SAFE(&group->spinlock);
     ESP_GOTO_ON_FALSE_ISR(peri_sel_id >= 0, ESP_ERR_INVALID_ARG, err, TAG, "invalid periph_sel_id");
@@ -608,6 +600,7 @@ esp_err_t dma2d_connect(dma2d_channel_handle_t dma2d_chan, const dma2d_trigger_t
 
         // Reset to certain settings
         dma2d_ll_rx_enable_owner_check(group->hal.dev, channel_id, false);
+        dma2d_ll_rx_set_auto_return_owner(group->hal.dev, channel_id, DMA2D_DESCRIPTOR_BUFFER_OWNER_CPU); // After auto write back, the owner field will be cleared
         dma2d_ll_rx_enable_descriptor_burst(group->hal.dev, channel_id, false);
         dma2d_ll_rx_set_data_burst_length(group->hal.dev, channel_id, DMA2D_DATA_BURST_LENGTH_128);
         dma2d_ll_rx_enable_page_bound_wrap(group->hal.dev, channel_id, true);
@@ -834,12 +827,10 @@ esp_err_t dma2d_set_transfer_ability(dma2d_channel_handle_t dma2d_chan, const dm
     if (dma2d_chan->direction == DMA2D_CHANNEL_DIRECTION_TX) {
         dma2d_ll_tx_enable_descriptor_burst(group->hal.dev, channel_id, ability->desc_burst_en);
         dma2d_ll_tx_set_data_burst_length(group->hal.dev, channel_id, ability->data_burst_length);
-        dma2d_ll_tx_enable_page_bound_wrap(group->hal.dev, channel_id, ability->data_burst_length != 1);
         dma2d_ll_tx_set_macro_block_size(group->hal.dev, channel_id, ability->mb_size);
     } else {
         dma2d_ll_rx_enable_descriptor_burst(group->hal.dev, channel_id, ability->desc_burst_en);
         dma2d_ll_rx_set_data_burst_length(group->hal.dev, channel_id, ability->data_burst_length);
-        dma2d_ll_rx_enable_page_bound_wrap(group->hal.dev, channel_id, ability->data_burst_length != 1);
         dma2d_ll_rx_set_macro_block_size(group->hal.dev, channel_id, ability->mb_size);
     }
 
@@ -942,7 +933,7 @@ err:
 
 esp_err_t dma2d_force_end(dma2d_trans_t *trans, bool *need_yield)
 {
-    ESP_RETURN_ON_FALSE_ISR(trans && trans->rx_chan, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    ESP_RETURN_ON_FALSE_ISR(trans && trans->rx_chan && need_yield, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
     assert(trans->rx_chan->direction == DMA2D_CHANNEL_DIRECTION_RX);
 
     dma2d_group_t *group = trans->rx_chan->group;
