@@ -173,6 +173,7 @@ INPUT = \
     $(PROJECT_PATH)/components/esp_hw_support/include/esp_mac.h \
     $(PROJECT_PATH)/components/esp_hw_support/include/esp_random.h \
     $(PROJECT_PATH)/components/esp_hw_support/include/esp_sleep.h \
+    $(PROJECT_PATH)/components/esp_hw_support/ldo/include/esp_ldo_regulator.h \
     $(PROJECT_PATH)/components/esp_lcd/include/esp_lcd_panel_io.h \
     $(PROJECT_PATH)/components/esp_lcd/include/esp_lcd_panel_ops.h \
     $(PROJECT_PATH)/components/esp_lcd/include/esp_lcd_panel_vendor.h \

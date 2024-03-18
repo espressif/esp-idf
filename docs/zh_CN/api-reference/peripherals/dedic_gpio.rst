@@ -156,7 +156,7 @@ GPIO 捆绑包操作
 
 .. list::
 
-    * 通过汇编代码使用专用的 CPU 指令来操作 GPIO 以模拟 UART/I2C/SPI 外设 :example:`peripherals/dedicated_gpio`.
+    * 通过汇编代码使用专用的 CPU 指令来操作 GPIO 以模拟 UART/I2C/SPI 协议（Bit Banging） :example:`peripherals/dedicated_gpio`.
     :SOC_DEDIC_GPIO_HAS_INTERRUPT: * 基于专用 GPIO 驱动的矩阵键盘：:example:`peripherals/gpio/matrix_keyboard`.
 
 
