@@ -293,16 +293,13 @@ static bool csi_dma_trans_done_callback(dw_gdma_channel_handle_t chan, const dw_
         csi_dma_transfer_config.dst.addr = (uint32_t)ctlr->backup_buffer;
     }
 
-    if (!use_backup) {
-        esp_err_t ret = esp_cache_msync((void *)(ctlr->trans.buffer), ctlr->trans.received_size, ESP_CACHE_MSYNC_FLAG_INVALIDATE);
-        assert(ret == ESP_OK);
-    }
-
     ESP_EARLY_LOGD(TAG, "new_trans.buffer: %p, new_trans.buflen: %d", new_trans.buffer, new_trans.buflen);
     dw_gdma_channel_config_transfer(chan, &csi_dma_transfer_config);
     dw_gdma_channel_enable_ctrl(chan, true);
 
     if (!use_backup) {
+        esp_err_t ret = esp_cache_msync((void *)(ctlr->trans.buffer), ctlr->trans.received_size, ESP_CACHE_MSYNC_FLAG_INVALIDATE);
+        assert(ret == ESP_OK);
         assert(ctlr->cbs.on_trans_finished);
         if (ctlr->cbs.on_trans_finished) {
             ctlr->trans.received_size = ctlr->fb_size_in_bytes;
