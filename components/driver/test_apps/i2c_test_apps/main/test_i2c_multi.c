@@ -26,6 +26,13 @@
 #include "esp_log.h"
 #include "test_utils.h"
 #include "test_board.h"
+// For clock checking
+#include "hal/uart_hal.h"
+#include "soc/uart_periph.h"
+#include "hal/clk_tree_hal.h"
+#include "esp_private/gpio.h"
+#include "hal/uart_ll.h"
+#include "esp_clk_tree.h"
 
 void disp_buf(uint8_t *buf, int len)
 {
@@ -609,3 +616,92 @@ static void i2c_slave_read_test_more_port(void)
 
 TEST_CASE_MULTIPLE_DEVICES("I2C master write slave test, more ports", "[i2c][test_env=generic_multi_device][timeout=150]", i2c_master_write_test_more_port, i2c_slave_read_test_more_port);
 #endif
+
+#if CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32S3
+// For now, we tested the chip which has such problem.
+// This test can be extended to all chip when how uart baud rate
+// works has been figured out.
+
+#if SOC_RCC_IS_INDEPENDENT
+#define HP_UART_BUS_CLK_ATOMIC()
+#else
+#define HP_UART_BUS_CLK_ATOMIC()       PERIPH_RCC_ATOMIC()
+#endif
+
+//Init uart baud rate detection
+static void uart_aut_baud_det_init(int rxd_io_num)
+{
+    gpio_ll_func_sel(&GPIO, rxd_io_num, PIN_FUNC_GPIO);
+    gpio_set_direction(rxd_io_num, GPIO_MODE_INPUT);
+    gpio_pullup_en(rxd_io_num);
+    esp_rom_gpio_connect_in_signal(rxd_io_num, UART_PERIPH_SIGNAL(1, SOC_UART_RX_PIN_IDX), 0);
+    HP_UART_BUS_CLK_ATOMIC() {
+        uart_ll_enable_bus_clock(1, true);
+        uart_ll_reset_register(1);
+    }
+    /* Reset all the bits */
+    uart_ll_disable_intr_mask(&UART1, ~0);
+    uart_ll_clr_intsts_mask(&UART1, ~0);
+    uart_ll_set_autobaud_en(&UART1, true);
+}
+
+static void i2c_master_write_fsm_reset(void)
+{
+    uint8_t data_wr[3] = { 0 };
+
+    i2c_master_bus_config_t i2c_mst_config = {
+        .clk_source = I2C_CLK_SRC_DEFAULT,
+        .i2c_port = TEST_I2C_PORT,
+        .scl_io_num = I2C_MASTER_SCL_IO,
+        .sda_io_num = I2C_MASTER_SDA_IO,
+        .flags.enable_internal_pullup = true,
+    };
+    i2c_master_bus_handle_t bus_handle;
+
+    TEST_ESP_OK(i2c_new_master_bus(&i2c_mst_config, &bus_handle));
+
+    i2c_device_config_t dev_cfg = {
+        .dev_addr_length = I2C_ADDR_BIT_LEN_7,
+        .device_address = 0x58,
+        .scl_speed_hz = 10000, // Not a typical value for I2C
+    };
+
+    i2c_master_dev_handle_t dev_handle;
+    TEST_ESP_OK(i2c_master_bus_add_device(bus_handle, &dev_cfg, &dev_handle));
+
+    // Nack will reset the bus
+    TEST_ESP_ERR(ESP_ERR_INVALID_STATE, i2c_master_transmit(dev_handle, data_wr, 3, -1));
+
+    unity_send_signal("i2c transmit fail--connect uart");
+    unity_wait_for_signal("uart connected");
+
+    TEST_ESP_ERR(ESP_ERR_INVALID_STATE, i2c_master_transmit(dev_handle, data_wr, 3, -1));
+
+    unity_send_signal("i2c transmit after fsm reset");
+    TEST_ESP_OK(i2c_master_bus_rm_device(dev_handle));
+
+    TEST_ESP_OK(i2c_del_master_bus(bus_handle));
+}
+
+static void uart_test_i2c_master_freq(void)
+{
+    unity_wait_for_signal("i2c transmit fail--connect uart");
+    uart_aut_baud_det_init(I2C_MASTER_SCL_IO);
+
+    unity_send_signal("uart connected");
+    unity_wait_for_signal("i2c transmit after fsm reset");
+    int pospulse_cnt = uart_ll_get_pos_pulse_cnt(&UART1);
+    int negpulse_cnt = uart_ll_get_neg_pulse_cnt(&UART1);
+    // Uart uses XTAL as default clock source
+    int freq_hz = (clk_hal_xtal_get_freq_mhz() * 1 * 1000 * 1000) / (pospulse_cnt + negpulse_cnt);
+    printf("The tested I2C SCL frequency is %d\n", freq_hz);
+    TEST_ASSERT_INT_WITHIN(500, 10000, freq_hz);
+    uart_ll_set_autobaud_en(&UART1, false);
+    HP_UART_BUS_CLK_ATOMIC() {
+        uart_ll_enable_bus_clock(1, false);
+    }
+}
+
+TEST_CASE_MULTIPLE_DEVICES("I2C master clock frequency test", "[i2c][test_env=generic_multi_device][timeout=150]", uart_test_i2c_master_freq, i2c_master_write_fsm_reset);
+
+#endif // CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32S3

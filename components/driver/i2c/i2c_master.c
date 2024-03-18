@@ -827,6 +827,8 @@ static esp_err_t s_i2c_synchronous_transaction(i2c_master_dev_handle_t i2c_dev, 
     i2c_dev->master_bus->queue_trans = false;
     i2c_dev->master_bus->ack_check_disable = i2c_dev->ack_check_disable;
     ESP_GOTO_ON_ERROR(s_i2c_transaction_start(i2c_dev, timeout_ms), err, TAG, "I2C transaction failed");
+    xSemaphoreGive(i2c_dev->master_bus->bus_lock_mux);
+    return ret;
 
 err:
     // When error occurs, reset hardware fsm in case not influence following transactions.

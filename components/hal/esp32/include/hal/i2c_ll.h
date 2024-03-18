@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -143,6 +143,44 @@ static inline void i2c_ll_master_set_bus_timing(i2c_dev_t *hw, i2c_hal_clk_confi
  * @param div_b The numerator of the frequency divider factor of the i2c function clock.
  */
 static inline void i2c_ll_master_set_fractional_divider(i2c_dev_t *hw, uint8_t div_a, uint8_t div_b)
+{
+    // Not supported on ESP32
+}
+
+/**
+ * @brief Set fractional divider
+ *
+ * @param hw Beginning address of the peripheral registers
+ * @param div_a The denominator of the frequency divider factor of the i2c function clock
+ * @param div_b The numerator of the frequency divider factor of the i2c function clock.
+ */
+static inline void i2c_ll_master_get_fractional_divider(i2c_dev_t *hw, uint32_t *div_a, uint32_t *div_b)
+{
+    // Not supported on ESP32
+}
+
+/**
+ * @brief Get clock configurations from registers
+ *
+ * @param hw Beginning address of the peripheral registers
+ * @param div_num div_num
+ * @param clk_sel clk_sel
+ * @param clk_active clk_active
+ */
+static inline void i2c_ll_master_save_clock_configurations(i2c_dev_t *hw, uint32_t *div_num, uint8_t *clk_sel, uint8_t *clk_active)
+{
+    // Not supported on ESP32
+}
+
+/**
+ * @brief Get clock configurations from registers
+ *
+ * @param hw Beginning address of the peripheral registers
+ * @param div_num div_num
+ * @param clk_sel clk_sel
+ * @param clk_active clk_active
+ */
+static inline void i2c_ll_master_restore_clock_configurations(i2c_dev_t *hw, uint32_t div_num, uint8_t clk_sel, uint8_t clk_active)
 {
     // Not supported on ESP32
 }

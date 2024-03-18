@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -59,6 +59,8 @@ void i2c_hal_deinit(i2c_hal_context_t *hal)
     hal->dev = NULL;
 }
 
+#if !SOC_I2C_SUPPORT_HW_FSM_RST
+
 void i2c_hal_get_timing_config(i2c_hal_context_t *hal, i2c_hal_timing_config_t *timing_config)
 {
     i2c_ll_get_scl_clk_timing(hal->dev, &timing_config->high_period, &timing_config->low_period, &timing_config->wait_high_period);
@@ -66,6 +68,8 @@ void i2c_hal_get_timing_config(i2c_hal_context_t *hal, i2c_hal_timing_config_t *
     i2c_ll_get_stop_timing(hal->dev, &timing_config->stop_setup, &timing_config->stop_hold);
     i2c_ll_get_sda_timing(hal->dev, &timing_config->sda_sample, &timing_config->sda_hold);
     i2c_ll_get_tout(hal->dev, &timing_config->timeout);
+    i2c_ll_master_save_clock_configurations(hal->dev, &timing_config->clk_cfg.clk_div.integer, &timing_config->clk_cfg.clk_sel, &timing_config->clk_cfg.clk_active);
+    i2c_ll_master_get_fractional_divider(hal->dev, &timing_config->clk_cfg.clk_div.numerator, &timing_config->clk_cfg.clk_div.denominator);
 }
 
 void i2c_hal_set_timing_config(i2c_hal_context_t *hal, i2c_hal_timing_config_t *timing_config)
@@ -75,4 +79,9 @@ void i2c_hal_set_timing_config(i2c_hal_context_t *hal, i2c_hal_timing_config_t *
     i2c_ll_master_set_stop_timing(hal->dev, timing_config->stop_setup, timing_config->stop_hold);
     i2c_ll_set_sda_timing(hal->dev, timing_config->sda_sample, timing_config->sda_hold);
     i2c_ll_set_tout(hal->dev, timing_config->timeout);
+    i2c_ll_master_restore_clock_configurations(hal->dev, timing_config->clk_cfg.clk_div.integer, timing_config->clk_cfg.clk_sel, timing_config->clk_cfg.clk_active);
+    i2c_ll_master_set_fractional_divider(hal->dev, timing_config->clk_cfg.clk_div.numerator, timing_config->clk_cfg.clk_div.denominator);
+
 }
+
+#endif // !SOC_I2C_SUPPORT_HW_FSM_RST
