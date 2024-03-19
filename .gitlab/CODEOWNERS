@@ -113,7 +113,6 @@
 /components/espcoredump/              @esp-idf-codeowners/debugging
 /components/esptool_py/               @esp-idf-codeowners/tools
 /components/fatfs/                    @esp-idf-codeowners/storage
-/components/fatfs/**/*.py             @esp-idf-codeowners/tools
 /components/freertos/                 @esp-idf-codeowners/system
 /components/hal/                      @esp-idf-codeowners/peripherals
 /components/heap/                     @esp-idf-codeowners/system
