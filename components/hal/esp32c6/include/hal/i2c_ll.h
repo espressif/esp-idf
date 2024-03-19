@@ -75,6 +75,7 @@ typedef enum {
 #define I2C_LL_SLAVE_RX_EVENT_INTR  (I2C_TRANS_COMPLETE_INT_ENA_M | I2C_RXFIFO_WM_INT_ENA_M | I2C_SLAVE_STRETCH_INT_ENA_M)
 #define I2C_LL_SLAVE_TX_EVENT_INTR  (I2C_TXFIFO_WM_INT_ENA_M)
 #define I2C_LL_RESET_SLV_SCL_PULSE_NUM_DEFAULT   (9)
+#define I2C_LL_SCL_WAIT_US_VAL_DEFAULT   (2000)  // Approximate value for SCL timeout regs (in us).
 
 // I2C sleep retention module
 #define I2C_SLEEP_RETENTION_MODULE(i2c_num) (SLEEP_RETENTION_MODULE_I2C0)
@@ -951,6 +952,19 @@ __attribute__((always_inline))
 static inline bool i2c_ll_master_is_cmd_done(i2c_dev_t *hw, int cmd_idx)
 {
     return hw->command[cmd_idx].command_done;
+}
+
+/**
+ * @brief Calculate SCL timeout us to reg value
+ *
+ * @param timeout_us timeout value in us
+ * @param src_clk_hz source clock frequency
+ * @return uint32_t reg value
+ */
+static inline uint32_t i2c_ll_calculate_timeout_us_to_reg_val(uint32_t src_clk_hz, uint32_t timeout_us)
+{
+    uint32_t clk_cycle_num_per_us = src_clk_hz / (1 * 1000 * 1000);
+    return 31 - __builtin_clz(clk_cycle_num_per_us * timeout_us);
 }
 
 //////////////////////////////////////////Deprecated Functions//////////////////////////////////////////////////////////

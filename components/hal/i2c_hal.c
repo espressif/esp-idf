@@ -58,6 +58,12 @@ void _i2c_hal_deinit(i2c_hal_context_t *hal)
     hal->dev = NULL;
 }
 
+void i2c_hal_master_set_scl_timeout_val(i2c_hal_context_t *hal, uint32_t timeout_us, uint32_t sclk_clock_hz)
+{
+    uint32_t reg_val = i2c_ll_calculate_timeout_us_to_reg_val(sclk_clock_hz, timeout_us);
+    i2c_ll_set_tout(hal->dev, reg_val);
+}
+
 #if !SOC_I2C_SUPPORT_HW_FSM_RST
 
 void i2c_hal_get_timing_config(i2c_hal_context_t *hal, i2c_hal_timing_config_t *timing_config)
