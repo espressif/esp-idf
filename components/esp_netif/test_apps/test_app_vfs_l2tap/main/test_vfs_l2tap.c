@@ -196,8 +196,6 @@ static void ethernet_deinit(test_vfs_eth_network_t *network_hndls)
 {
     TEST_ESP_OK(esp_eth_stop(network_hndls->eth_handle));
     TEST_ESP_OK(esp_eth_del_netif_glue(network_hndls->glue));
-    /* driver should be uninstalled within 2 seconds */
-    //TEST_ESP_OK(test_uninstall_driver(eth_handle, 2000));
     esp_eth_driver_uninstall(network_hndls->eth_handle);
     TEST_ESP_OK(network_hndls->phy->del(network_hndls->phy));
     TEST_ESP_OK(network_hndls->mac->del(network_hndls->mac));

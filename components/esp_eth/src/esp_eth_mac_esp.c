@@ -41,6 +41,8 @@ static const char *TAG = "esp.emac";
 #define FLOW_CONTROL_LOW_WATER_MARK     (CONFIG_ETH_DMA_RX_BUFFER_NUM / 3)
 #define FLOW_CONTROL_HIGH_WATER_MARK    (FLOW_CONTROL_LOW_WATER_MARK * 2)
 
+#define EMAC_ALLOW_INTR_PRIORITY_MASK   ESP_INTR_FLAG_LOWMED
+
 #define RMII_CLK_HZ                     (50000000)
 #define RMII_10M_SPEED_RX_TX_CLK_DIV    (19)
 #define RMII_100M_SPEED_RX_TX_CLK_DIV   (1)
@@ -664,6 +666,11 @@ esp_eth_mac_t *esp_eth_mac_new_esp32(const eth_esp32_emac_config_t *esp32_config
     esp_eth_mac_t *ret = NULL;
     emac_esp32_t *emac = NULL;
     ESP_RETURN_ON_FALSE(config, NULL, TAG, "can't set mac config to null");
+    if (esp32_config->intr_priority > 0) {
+        ESP_RETURN_ON_FALSE(1 << (esp32_config->intr_priority) & EMAC_ALLOW_INTR_PRIORITY_MASK, NULL,
+                            TAG, "invalid interrupt priority: %d", esp32_config->intr_priority);
+    }
+
     ret_code = esp_emac_alloc_driver_obj(config, &emac);
     ESP_RETURN_ON_FALSE(ret_code == ESP_OK, NULL, TAG, "alloc driver object failed");
 
@@ -675,14 +682,19 @@ esp_eth_mac_t *esp_eth_mac_new_esp32(const eth_esp32_emac_config_t *esp32_config
     }
     /* initialize hal layer driver */
     emac_hal_init(&emac->hal);
+
     /* alloc interrupt */
-    if (config->flags & ETH_MAC_FLAG_WORK_WITH_CACHE_DISABLE) {
-        ret_code = esp_intr_alloc(ETS_ETH_MAC_INTR_SOURCE, ESP_INTR_FLAG_IRAM,
-                                  emac_isr_default_handler, &emac->hal, &(emac->intr_hdl));
+    int isr_flags = 0;
+    if (esp32_config->intr_priority > 0) {
+        isr_flags |= 1 << (esp32_config->intr_priority);
     } else {
-        ret_code = esp_intr_alloc(ETS_ETH_MAC_INTR_SOURCE, 0,
-                                  emac_isr_default_handler, &emac->hal, &(emac->intr_hdl));
+        isr_flags |= ESP_INTR_FLAG_LOWMED;
     }
+    if (config->flags & ETH_MAC_FLAG_WORK_WITH_CACHE_DISABLE) {
+        isr_flags |= ESP_INTR_FLAG_IRAM;
+    }
+    ret_code = esp_intr_alloc(ETS_ETH_MAC_INTR_SOURCE, isr_flags,
+                              emac_isr_default_handler, &emac->hal, &(emac->intr_hdl));
     ESP_GOTO_ON_FALSE(ret_code == ESP_OK, NULL, err, TAG, "alloc emac interrupt failed");
 
 #ifdef SOC_EMAC_USE_IO_MUX
