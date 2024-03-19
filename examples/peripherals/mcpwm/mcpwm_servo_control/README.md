@@ -62,7 +62,7 @@ I (9345) example: Angle of rotation: 18
 ...
 ```
 
-The servo will rotate from -90 degree to 90 degree, and then turn back again.
+The servo will rotate from -60 degree to 60 degree, and then turn back again.
 
 ## Troubleshooting
 

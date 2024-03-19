@@ -2764,7 +2764,7 @@ extern "C" {
 #define MCPWM_CAP0_MODE_V  0x00000003U
 #define MCPWM_CAP0_MODE_S  1
 /** MCPWM_CAP0_PRESCALE : R/W; bitpos: [10:3]; default: 0;
- *  Configures prescale value on possitive edge of CAP0. Prescale value =
+ *  Configures prescale value on positive edge of CAP0. Prescale value =
  *  PWM_CAP0_PRESCALE + 1
  */
 #define MCPWM_CAP0_PRESCALE    0x000000FFU
@@ -2809,7 +2809,7 @@ extern "C" {
 #define MCPWM_CAP1_MODE_V  0x00000003U
 #define MCPWM_CAP1_MODE_S  1
 /** MCPWM_CAP1_PRESCALE : R/W; bitpos: [10:3]; default: 0;
- *  Configures prescale value on possitive edge of CAP1. Prescale value =
+ *  Configures prescale value on positive edge of CAP1. Prescale value =
  *  PWM_CAP1_PRESCALE + 1
  */
 #define MCPWM_CAP1_PRESCALE    0x000000FFU
@@ -2854,7 +2854,7 @@ extern "C" {
 #define MCPWM_CAP2_MODE_V  0x00000003U
 #define MCPWM_CAP2_MODE_S  1
 /** MCPWM_CAP2_PRESCALE : R/W; bitpos: [10:3]; default: 0;
- *  Configures prescale value on possitive edge of CAP2. Prescale value =
+ *  Configures prescale value on positive edge of CAP2. Prescale value =
  *  PWM_CAP2_PRESCALE + 1
  */
 #define MCPWM_CAP2_PRESCALE    0x000000FFU

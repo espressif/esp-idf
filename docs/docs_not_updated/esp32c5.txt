@@ -114,7 +114,6 @@ api-reference/peripherals/etm.rst
 api-reference/peripherals/gptimer.rst
 api-reference/peripherals/touch_element.rst
 api-reference/peripherals/lcd.rst
-api-reference/peripherals/mcpwm.rst
 api-reference/peripherals/ana_cmpr.rst
 api-reference/peripherals/ledc.rst
 api-reference/peripherals/temp_sensor.rst

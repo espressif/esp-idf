@@ -13,10 +13,6 @@ if(CONFIG_SOC_SYSTIMER_SUPPORT_ETM)
     list(APPEND srcs "test_systimer_etm.c")
 endif()
 
-if(CONFIG_SOC_MCPWM_SUPPORT_ETM)
-    list(APPEND srcs "test_mcpwm_etm.c")
-endif()
-
 if(CONFIG_SOC_ANA_CMPR_SUPPORT_ETM AND CONFIG_SOC_TIMER_SUPPORT_ETM)
     # Analog Comparator event test relies on GPTIMER task
     list(APPEND srcs "test_ana_cmpr_etm.c")
