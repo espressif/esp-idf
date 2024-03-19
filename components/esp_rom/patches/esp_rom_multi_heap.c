@@ -7,8 +7,6 @@
 /*
  * This file is a patch for the multi_heap.c file stored in ROM
  * - added function multi_heap_walk
- * - added function multi_heap_walker
- * - added structure walker_data_t
  */
 
 #include <stddef.h>
@@ -36,12 +34,6 @@ typedef struct multi_heap_info {
     size_t pool_size;
     void* heap_data;
 } heap_t;
-
-typedef struct walker_data {
-        void *opaque_ptr;
-        multi_heap_walker_cb_t walker;
-        multi_heap_handle_t heap;
-} walker_data_t;
 
 extern void tlsf_walk_pool(pool_t pool, tlsf_walker walker, void* user);
 extern pool_t tlsf_get_pool(tlsf_t tlsf);

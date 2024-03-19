@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -85,6 +85,9 @@ TEST_CASE("heap walker corrupted heap detection", "[heap]")
     size_t metadata_size_tail = 0;
     calculate_block_metadata_size(&metadata_size_head, &metadata_size_tail);
     (void)metadata_size_tail;
+
+    /* corrupting the size field of the block metadata with a size bigger
+     * than the heap itself */
     *((uint32_t*)default_ptr - (metadata_size_head / 4) - 1) = 0xFF000000;
 
     /* Write the pass code in the first word of the allocated memory */

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,10 +20,13 @@ typedef struct multi_heap_info *multi_heap_handle_t;
  *
  * @param block_ptr Pointer to the block data
  * @param block_size The size of the block
- * @param block_used Block status. True if free, false if used
+ * @param block_used Block status. 0: free, 1: allocated
  * @param user_data Opaque pointer to user defined data
+ *
+ * @return True if the walker is expected to continue the heap traversal
+ *         False if the walker is expected to stop the traversal of the heap
  */
-typedef void (*multi_heap_walker_cb_t)(void *block_ptr, size_t block_size, int block_used, void *user_data);
+typedef bool (*multi_heap_walker_cb_t)(void *block_ptr, size_t block_size, int block_used, void *user_data);
 
 /**
  * @brief Call the tlsf_walk_pool function of the heap given as parameter with

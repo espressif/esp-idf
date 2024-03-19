@@ -44,7 +44,7 @@ else()
         endif()
     endif()
 
-    if(CONFIG_HEAP_TLSF_USE_ROM_IMPL AND (CONFIG_ESP_ROM_TLSF_CHECK_PATCH OR CONFIG_HEAP_TLSF_CHECK_PATCH))
+    if(CONFIG_HEAP_TLSF_USE_ROM_IMPL AND CONFIG_ESP_ROM_TLSF_CHECK_PATCH)
         # This file shall be included in the build if TLSF in ROM is activated
         list(APPEND sources "patches/esp_rom_tlsf.c")
     endif()

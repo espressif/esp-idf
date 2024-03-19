@@ -460,7 +460,7 @@ typedef struct walker_heap_info {
 typedef struct walker_block_info {
     void *ptr; ///< Pointer to the block data
     size_t size; ///< The size of the block
-    bool used; ///< Block status. True if free, false if used
+    bool used; ///< Block status. True: used, False: free
 } walker_block_info_t;
 
 /**
@@ -472,7 +472,7 @@ typedef struct walker_block_info {
  * @param user_data Opaque pointer to user defined data
  *
  * @return True to proceed with the heap traversal
- *         False to stop th traversal of the current heap and continue
+ *         False to stop the traversal of the current heap and continue
  *         with the traversal of the next heap (if any)
  */
 typedef bool (*heap_caps_walker_cb_t)(walker_heap_into_t heap_info, walker_block_info_t block_info, void *user_data);

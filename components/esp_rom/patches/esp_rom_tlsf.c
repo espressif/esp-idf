@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,6 +15,7 @@
 #include <stddef.h>
 #include <stdbool.h>
 #include <string.h>
+#include <stdio.h>
 
 #include "esp_rom_caps.h"
 #include "esp_rom_tlsf.h"
@@ -24,12 +25,16 @@
  */
 typedef void* tlsf_t;
 typedef void* pool_t;
-typedef void* tlsf_walker;
+typedef ptrdiff_t tlsfptr_t;
 
 /* ----------------------------------------------------------------
  * Bring certain inline functions, macro and structures from the
  * tlsf ROM implementation to be able to compile the patch.
  * ---------------------------------------------------------------- */
+
+#if !defined (tlsf_assert)
+#define tlsf_assert assert
+#endif
 
 #define tlsf_cast(t, exp)	((t) (exp))
 
@@ -72,6 +77,30 @@ static inline __attribute__((always_inline)) block_header_t* block_from_ptr(cons
 		tlsf_cast(unsigned char*, ptr) - block_start_offset);
 }
 
+static inline __attribute__((always_inline)) block_header_t* offset_to_block(const void* ptr, size_t size)
+{
+	return tlsf_cast(block_header_t*, tlsf_cast(tlsfptr_t, ptr) + size);
+}
+
+static inline __attribute__((always_inline)) int block_is_last(const block_header_t* block)
+{
+	return block_size(block) == 0;
+}
+
+static inline __attribute__((always_inline)) void* block_to_ptr(const block_header_t* block)
+{
+	return tlsf_cast(void*,
+		tlsf_cast(unsigned char*, block) + block_start_offset);
+}
+
+static inline __attribute__((always_inline)) block_header_t* block_next(const block_header_t* block)
+{
+	block_header_t* next = offset_to_block(block_to_ptr(block),
+		block_size(block) - block_header_overhead);
+	tlsf_assert(!block_is_last(block));
+	return next;
+}
+
 /* ----------------------------------------------------------------
  * End of the environment necessary to compile and link the patch
  * defined below
@@ -92,7 +121,9 @@ typedef struct integrity_t
 	int status;
 } integrity_t;
 
-static void integrity_walker(void* ptr, size_t size, int used, void* user)
+typedef bool (*tlsf_walker)(void* ptr, size_t size, int used, void* user);
+
+static bool integrity_walker(void* ptr, size_t size, int used, void* user)
 {
 	block_header_t* block = block_from_ptr(ptr);
 	integrity_t* integ = tlsf_cast(integrity_t*, user);
@@ -124,9 +155,38 @@ static void integrity_walker(void* ptr, size_t size, int used, void* user)
 
 	integ->prev_status = this_status;
 	integ->status += status;
+
+    return true;
 }
 
-extern void tlsf_walk_pool(pool_t pool, tlsf_walker walker, void* user);
+static bool default_walker(void* ptr, size_t size, int used, void* user)
+{
+	(void)user;
+	printf("\t%p %s size: %x (%p)\n", ptr, used ? "used" : "free", (unsigned int)size, block_from_ptr(ptr));
+	return true;
+}
+
+void tlsf_walk_pool(pool_t pool, tlsf_walker walker, void* user)
+{
+	tlsf_walker pool_walker = walker ? walker : default_walker;
+	block_header_t* block =
+		offset_to_block(pool, -(int)block_header_overhead);
+
+	bool ret_val = true;
+	while (block && !block_is_last(block) && ret_val == true)
+	{
+		ret_val = pool_walker(
+			block_to_ptr(block),
+			block_size(block),
+			!block_is_free(block),
+			user);
+
+		if (ret_val == true) {
+			block = block_next(block);
+		}
+	}
+}
+
 int tlsf_check_pool(pool_t pool)
 {
 	/* Check that the blocks are physically correct. */

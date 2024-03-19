@@ -212,7 +212,7 @@ void multi_heap_restore_minimum_free_bytes(multi_heap_handle_t heap, const size_
  *
  * @param block_ptr Pointer to the block data
  * @param block_size The size of the block
- * @param block_used Block status. 0 if free, else, false
+ * @param block_used Block status. 0: free, 1: allocated
  * @param user_data Opaque pointer to user defined data
  *
  * @return True if the walker is expected to continue the heap traversal
