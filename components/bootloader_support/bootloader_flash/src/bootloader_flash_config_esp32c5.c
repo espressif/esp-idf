@@ -11,7 +11,14 @@
 #include "esp_log.h"
 #include "esp_rom_gpio.h"
 #include "esp32c5/rom/spi_flash.h"
+#include "esp32c5/rom/efuse.h"
 #include "soc/gpio_periph.h"
+#include "soc/io_mux_reg.h"
+// TODO: IDF-9197
+#if CONFIG_IDF_TARGET_ESP32C5_MP_VERSION
+#include "esp_rom_efuse.h"
+#include "soc/efuse_reg.h"
+#endif
 #include "soc/spi_reg.h"
 #include "soc/spi_mem_reg.h"
 #include "soc/soc_caps.h"
@@ -24,6 +31,7 @@
 #include "hal/mmu_ll.h"
 #include "hal/cache_hal.h"
 #include "hal/cache_ll.h"
+#include "hal/clk_tree_ll.h"
 
 void bootloader_flash_update_id()
 {
@@ -199,6 +207,20 @@ static void bootloader_spi_flash_resume(void)
 
 esp_err_t bootloader_init_spi_flash(void)
 {
+// TODO: IDF-9197
+#if CONFIG_IDF_TARGET_ESP32C5_MP_VERSION
+    // On ESP32C5, MSPI source clock's default HS divider leads to 120MHz, which is unusable before calibration
+    // Therefore, before switching SOC_ROOT_CLK to HS, we need to set MSPI source clock HS divider to make it run at
+    // 80MHz after the switch. PLL = 480MHz, so divider is 6.
+    clk_ll_mspi_fast_set_hs_divider(6);
+#elif CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
+    /* TODO: [ESP32C5] IDF-8649 temporary use xtal clock source,
+       need to change back SPLL(480M) and set divider to 6 to use the 80M MSPI，
+       and we need to check flash freq before restart as well */
+    clk_ll_mspi_fast_set_divider(1);
+    clk_ll_mspi_fast_set_src(MSPI_CLK_SRC_XTAL);
+#endif
+
     bootloader_init_flash_configure();
     bootloader_spi_flash_resume();
     bootloader_flash_unlock();

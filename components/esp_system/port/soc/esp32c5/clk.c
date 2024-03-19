@@ -15,18 +15,24 @@
 #include "esp32c5/rom/ets_sys.h"
 #include "esp32c5/rom/uart.h"
 #include "soc/soc.h"
+#include "soc/soc_caps.h"
 #include "soc/rtc.h"
 #include "soc/rtc_periph.h"
 #include "soc/i2s_reg.h"
 #include "esp_cpu.h"
 #include "hal/wdt_hal.h"
+#if SOC_MODEM_CLOCK_SUPPORTED
 #include "hal/modem_lpcon_ll.h"
+#endif
 #include "esp_private/esp_modem_clock.h"
 #include "esp_private/periph_ctrl.h"
 #include "esp_private/esp_clk.h"
 #include "esp_private/esp_pmu.h"
 #include "esp_rom_uart.h"
 #include "esp_rom_sys.h"
+#if CONFIG_IDF_TARGET_ESP32C5_MP_VERSION
+#include "ocode_init.h"
+#endif
 
 /* Number of cycles to wait from the 32k XTAL oscillator to consider it running.
  * Larger values increase startup delay. Smaller values may cause false positive
@@ -43,16 +49,30 @@ static const char *TAG = "clk";
 // TODO: [ESP32C5] IDF-8642
 __attribute__((weak)) void esp_clk_init(void)
 {
+#if CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
 #if SOC_PMU_SUPPORTED
     pmu_init();
 #endif
 
     assert((rtc_clk_xtal_freq_get() == SOC_XTAL_FREQ_40M) || (rtc_clk_xtal_freq_get() == SOC_XTAL_FREQ_48M));
-
+#if SOC_MODEM_CLOCK_SUPPORTED
     modem_lpcon_ll_set_pwr_tick_target(&MODEM_LPCON, rtc_clk_xtal_freq_get() - 1);
+#endif
+    rtc_clk_8m_enable(true);
+    rtc_clk_fast_src_set(SOC_RTC_FAST_CLK_SRC_RC_FAST);
+#elif CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
+#if !CONFIG_IDF_ENV_FPGA
+    pmu_init();
+    if (esp_rom_get_reset_reason(0) == RESET_REASON_CHIP_POWER_ON) {
+        esp_ocode_calib_init();
+    }
+
+    assert(rtc_clk_xtal_freq_get() == RTC_XTAL_FREQ_40M);
 
     rtc_clk_8m_enable(true);
     rtc_clk_fast_src_set(SOC_RTC_FAST_CLK_SRC_RC_FAST);
+#endif
+#endif
 
 #ifdef CONFIG_BOOTLOADER_WDT_ENABLE
     // WDT uses a SLOW_CLK clock source. After a function select_rtc_slow_clk a frequency of this source can changed.
@@ -76,7 +96,11 @@ __attribute__((weak)) void esp_clk_init(void)
 #elif defined(CONFIG_RTC_CLK_SRC_INT_RC32K)
     select_rtc_slow_clk(SOC_RTC_SLOW_CLK_SRC_RC32K);
 #else
+#if CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
     abort();
+#elif CONFIG_IDF_TARGET_ESP32C5_MP_VERSION
+    select_rtc_slow_clk(SOC_RTC_SLOW_CLK_SRC_RC_SLOW);
+#endif
 #endif
 
 #ifdef CONFIG_BOOTLOADER_WDT_ENABLE
@@ -141,7 +165,7 @@ static void select_rtc_slow_clk(soc_rtc_slow_clk_src_t rtc_slow_clk_src)
                     if (retry_32k_xtal-- > 0) {
                         continue;
                     }
-#if CONFIG_IDF_TARGET_ESP32C5
+#if CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
                     ESP_EARLY_LOGW(TAG, "32 kHz clock not found, switching to internal 32 kHz oscillator");
                     rtc_slow_clk_src = SOC_RTC_SLOW_CLK_SRC_RC32K;
 #else
@@ -182,7 +206,10 @@ void rtc_clk_select_rtc_slow_clk(void)
  */
 __attribute__((weak)) void esp_perip_clk_init(void)
 {
-#if 0  // TODO: [ESP32C5] IDF-8844
+// TODO: [ESP32C5] IDF-8844
+#if CONFIG_IDF_TARGET_ESP32C5_MP_VERSION
+    // modem_clock_domain_pmu_state_icg_map_init();
+#endif
     /* During system initialization, the low-power clock source of the modem
      * (WiFi, BLE or Coexist) follows the configuration of the slow clock source
      * of the system. If the WiFi, BLE or Coexist module needs a higher
@@ -190,15 +217,14 @@ __attribute__((weak)) void esp_perip_clk_init(void)
      * oscillator (40 MHz) to provide the clock during the sleep process in some
      * scenarios), the module needs to switch to the required clock source by
      * itself. */ //TODO - WIFI-5233
-    soc_rtc_slow_clk_src_t rtc_slow_clk_src = rtc_clk_slow_src_get();
-    modem_clock_lpclk_src_t modem_lpclk_src = (modem_clock_lpclk_src_t)(\
-                                                                        (rtc_slow_clk_src == SOC_RTC_SLOW_CLK_SRC_XTAL32K)  ? MODEM_CLOCK_LPCLK_SRC_XTAL32K  \
-                                                                        : (rtc_slow_clk_src == SOC_RTC_SLOW_CLK_SRC_RC32K)    ? MODEM_CLOCK_LPCLK_SRC_RC32K    \
-                                                                        : (rtc_slow_clk_src == SOC_RTC_SLOW_CLK_SRC_OSC_SLOW) ? MODEM_CLOCK_LPCLK_SRC_EXT32K   \
-                                                                        : MODEM_CLOCK_LPCLK_SRC_RC32K);
-
-    modem_clock_select_lp_clock_source(PERIPH_WIFI_MODULE, modem_lpclk_src, 0);
-#endif
+    // soc_rtc_slow_clk_src_t rtc_slow_clk_src = rtc_clk_slow_src_get();
+    // modem_clock_lpclk_src_t modem_lpclk_src = (modem_clock_lpclk_src_t)(
+    //                                               (rtc_slow_clk_src == SOC_RTC_SLOW_CLK_SRC_RC_SLOW)  ? MODEM_CLOCK_LPCLK_SRC_RC_SLOW
+    //                                               : (rtc_slow_clk_src == SOC_RTC_SLOW_CLK_SRC_XTAL32K)  ? MODEM_CLOCK_LPCLK_SRC_XTAL32K
+    //                                               : (rtc_slow_clk_src == SOC_RTC_SLOW_CLK_SRC_RC32K)    ? MODEM_CLOCK_LPCLK_SRC_RC32K
+    //                                               : (rtc_slow_clk_src == SOC_RTC_SLOW_CLK_SRC_OSC_SLOW) ? MODEM_CLOCK_LPCLK_SRC_EXT32K
+    //                                               : SOC_RTC_SLOW_CLK_SRC_RC_SLOW);
+    // modem_clock_select_lp_clock_source(PERIPH_WIFI_MODULE, modem_lpclk_src, 0);
 
     ESP_EARLY_LOGW(TAG, "esp_perip_clk_init() has not been implemented yet");
 #if 0  // TODO: [ESP32C5] IDF-8844
@@ -292,7 +318,11 @@ __attribute__((weak)) void esp_perip_clk_init(void)
 
     /* Set WiFi light sleep clock source to RTC slow clock */
     REG_SET_FIELD(SYSTEM_BT_LPCK_DIV_INT_REG, SYSTEM_BT_LPCK_DIV_NUM, 0);
+#if CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
     CLEAR_PERI_REG_MASK(SYSTEM_BT_LPCK_DIV_FRAC_REG, SYSTEM_LPCLK_SEL_XTAL32K | SYSTEM_LPCLK_SEL_XTAL | SYSTEM_LPCLK_SEL_8M | SYSTEM_LPCLK_SEL_RTC_SLOW);
+#elif CONFIG_IDF_TARGET_ESP32C5_MP_VERSION
+    CLEAR_PERI_REG_MASK(SYSTEM_BT_LPCK_DIV_FRAC_REG, SYSTEM_LPCLK_SEL_8M);
+#endif
     SET_PERI_REG_MASK(SYSTEM_BT_LPCK_DIV_FRAC_REG, SYSTEM_LPCLK_SEL_RTC_SLOW);
 
     /* Enable RNG clock. */

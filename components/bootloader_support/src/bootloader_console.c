@@ -25,6 +25,9 @@
 #include "esp_rom_uart.h"
 #include "esp_rom_sys.h"
 #include "esp_rom_caps.h"
+#if CONFIG_IDF_TARGET_ESP32C5
+#include "soc/pcr_reg.h"
+#endif
 
 #ifdef CONFIG_ESP_CONSOLE_NONE
 void bootloader_console_init(void)
@@ -85,6 +88,13 @@ void bootloader_console_init(void)
 #if ESP_ROM_UART_CLK_IS_XTAL
     clock_hz = (uint32_t)rtc_clk_xtal_freq_get() * MHZ; // From esp32-s3 on, UART clk source is selected to XTAL in ROM
 #endif
+#if CONFIG_IDF_TARGET_ESP32C5_MP_VERSION
+#if CONFIG_IDF_ENV_FPGA
+    clock_hz = CONFIG_XTAL_FREQ * MHZ;
+#else
+    clock_hz = REG_GET_FIELD(PCR_SYSCLK_CONF_REG, PCR_CLK_XTAL_FREQ) * MHZ;
+#endif  // CONFIG_IDF_ENV_FPGA
+#endif  // CONFIG_IDF_TARGET_ESP32C5_MP_VERSION
     esp_rom_uart_set_clock_baudrate(uart_num, clock_hz, CONFIG_ESP_CONSOLE_UART_BAUDRATE);
 }
 #endif // CONFIG_ESP_CONSOLE_UART

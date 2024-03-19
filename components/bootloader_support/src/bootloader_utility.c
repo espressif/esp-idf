@@ -645,6 +645,12 @@ static void load_image(const esp_image_metadata_t *image_data)
 #endif // CONFIG_SECURE_BOOT_FLASH_ENC_KEYS_BURN_TOGETHER
 
     if (!flash_encryption_enabled) {
+#if CONFIG_IDF_TARGET_ESP32C5
+        // TODO: [ESP32C5] IDF-8622 find a more proper place for these codes
+        REG_SET_BIT(KEYMNG_STATIC_REG, KEYMNG_USE_EFUSE_KEY_FLASH);
+        REG_SET_BIT(PCR_MSPI_CLK_CONF_REG, PCR_MSPI_AXI_RST_EN);
+        REG_CLR_BIT(PCR_MSPI_CLK_CONF_REG, PCR_MSPI_AXI_RST_EN);
+#endif
         err = esp_flash_encrypt_contents();
         if (err != ESP_OK) {
             ESP_LOGE(TAG, "Encryption flash contents failed (%d)", err);

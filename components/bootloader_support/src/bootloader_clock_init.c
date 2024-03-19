@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -66,7 +66,7 @@ __attribute__((weak)) void bootloader_clock_configure(void)
         }
 #endif
 
-#if CONFIG_IDF_TARGET_ESP32C6
+#if CONFIG_IDF_TARGET_ESP32C6 || CONFIG_IDF_TARGET_ESP32C5
         // TODO: IDF-5781 Some of esp32c6 SOC_RTC_FAST_CLK_SRC_XTAL_D2 rtc_fast clock has timing issue
         // Force to use SOC_RTC_FAST_CLK_SRC_RC_FAST since 2nd stage bootloader
         clk_cfg.fast_clk_src = SOC_RTC_FAST_CLK_SRC_RC_FAST;
@@ -80,14 +80,6 @@ __attribute__((weak)) void bootloader_clock_configure(void)
 #endif
         rtc_clk_init(clk_cfg);
     }
-
-#if CONFIG_IDF_TARGET_ESP32C5
-    /* TODO: [ESP32C5] IDF-8649 temporary use xtal clock source,
-       need to change back SPLL(480M) and set divider to 6 to use the 80M MSPI，
-       and we need to check flash freq before restart as well */
-    clk_ll_mspi_fast_set_divider(1);
-    clk_ll_mspi_fast_set_src(MSPI_CLK_SRC_XTAL);
-#endif
 
     /* As a slight optimization, if 32k XTAL was enabled in sdkconfig, we enable
      * it here. Usually it needs some time to start up, so we amortize at least
