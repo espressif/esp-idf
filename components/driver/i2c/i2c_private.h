@@ -152,6 +152,7 @@ struct i2c_master_dev_t {
     i2c_master_bus_t *master_bus;         // I2C master bus base class
     uint16_t device_address;              // I2C device address
     uint32_t scl_speed_hz;                // SCL clock frequency
+    uint32_t scl_wait_us;                // SCL await time (unit:us)
     i2c_addr_bit_len_t addr_10bits;       // Whether I2C device is a 10-bits address device.
     bool ack_check_disable;               // Disable ACK check
     i2c_master_callback_t on_trans_done;  // I2C master transaction done callback.
