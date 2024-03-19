@@ -936,7 +936,7 @@ static List_t * pxGetTaskListByIndex( UBaseType_t uxListIndex )
     {
         pxTaskList = &pxReadyTasksLists[ configMAX_PRIORITIES - 1 - uxListIndex ];
     }
-    else if( uxListIndex < configMAX_PRIORITIES + xNonReadyTaskListsCnt + 1 )
+    else if( uxListIndex < configMAX_PRIORITIES + xNonReadyTaskListsCnt )
     {
         pxTaskList = non_ready_task_lists[ uxListIndex - configMAX_PRIORITIES ];
     }
