@@ -258,7 +258,7 @@ if(NOT BOOTLOADER_BUILD)
     if(CONFIG_SOC_USB_OTG_SUPPORTED)
         list(APPEND srcs "usb_dwc_hal.c")
         if(NOT ${target} STREQUAL "esp32p4")
-            list(APPEND srcs "usb_fsls_phy_hal.c")
+            list(APPEND srcs "usb_wrap_hal.c")
         endif()
     endif()
 
