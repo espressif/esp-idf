@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,7 +16,6 @@
 #include "hal/hal_utils.h"
 #include "soc/hp_sys_clkrst_struct.h"
 #include "soc/parl_io_struct.h"
-#include "soc/hp_sys_clkrst_struct.h"
 
 #define PARLIO_LL_RX_MAX_BYTES_PER_FRAME 0xFFFF
 #define PARLIO_LL_RX_MAX_CLK_INT_DIV     0x100
@@ -41,13 +40,6 @@ extern "C" {
 #endif
 
 typedef enum {
-    PARLIO_LL_CLK_SRC_XTAL = PARLIO_CLK_SRC_XTAL,
-    PARLIO_LL_CLK_SRC_PLL_F160M = PARLIO_CLK_SRC_PLL_F160M,
-    PARLIO_LL_CLK_SRC_RC_FAST = PARLIO_CLK_SRC_RC_FAST,
-    PARLIO_LL_CLK_SRC_PAD = PARLIO_CLK_SRC_EXTERNAL, // clock source from GPIO pad
-} parlio_ll_clock_source_t;
-
-typedef enum {
     PARLIO_LL_RX_EOF_COND_RX_FULL,     /*!< RX unit generates EOF event when it receives enough data */
     PARLIO_LL_RX_EOF_COND_EN_INACTIVE, /*!< RX unit generates EOF event when the external enable signal becomes inactive */
 } parlio_ll_rx_eof_cond_t;
@@ -63,22 +55,23 @@ typedef enum {
  * @param group_id  The group id of the parlio module
  * @param enable    Set true to enable, false to disable
  */
-static inline void parlio_ll_enable_bus_clock(int group_id, bool enable)
+static inline void _parlio_ll_enable_bus_clock(int group_id, bool enable)
 {
     (void)group_id;
+    HP_SYS_CLKRST.soc_clk_ctrl1.reg_parlio_sys_clk_en = enable;
     HP_SYS_CLKRST.soc_clk_ctrl2.reg_parlio_apb_clk_en = enable;
 }
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define parlio_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; parlio_ll_enable_bus_clock(__VA_ARGS__)
+#define parlio_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; _parlio_ll_enable_bus_clock(__VA_ARGS__)
 
 /**
  * @brief Reset the parlio module
  *
  * @param group_id  The group id of the parlio module
  */
-static inline void parlio_ll_reset_register(int group_id)
+static inline void _parlio_ll_reset_register(int group_id)
 {
     (void)group_id;
     HP_SYS_CLKRST.hp_rst_en2.reg_rst_en_parlio = 1;
@@ -87,7 +80,7 @@ static inline void parlio_ll_reset_register(int group_id)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define parlio_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; parlio_ll_reset_register(__VA_ARGS__)
+#define parlio_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; _parlio_ll_reset_register(__VA_ARGS__)
 
 ///////////////////////////////////////RX Unit///////////////////////////////////////
 
@@ -97,21 +90,21 @@ static inline void parlio_ll_reset_register(int group_id)
  * @param dev Parallel IO register base address
  * @param src Clock source
  */
-static inline void parlio_ll_rx_set_clock_source(parl_io_dev_t *dev, parlio_ll_clock_source_t src)
+static inline void _parlio_ll_rx_set_clock_source(parl_io_dev_t *dev, parlio_clock_source_t src)
 {
     (void)dev;
     uint32_t clk_sel = 0;
     switch (src) {
-    case PARLIO_LL_CLK_SRC_XTAL:
+    case PARLIO_CLK_SRC_XTAL:
         clk_sel = 0;
         break;
-    case PARLIO_LL_CLK_SRC_RC_FAST:
+    case PARLIO_CLK_SRC_RC_FAST:
         clk_sel = 1;
         break;
-    case PARLIO_LL_CLK_SRC_PLL_F160M:
+    case PARLIO_CLK_SRC_PLL_F160M:
         clk_sel = 2;
         break;
-    case PARLIO_LL_CLK_SRC_PAD:
+    case PARLIO_CLK_SRC_EXTERNAL:
         clk_sel = 3;
         break;
 
@@ -124,7 +117,7 @@ static inline void parlio_ll_rx_set_clock_source(parl_io_dev_t *dev, parlio_ll_c
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define parlio_ll_rx_set_clock_source(...) (void)__DECLARE_RCC_ATOMIC_ENV; parlio_ll_rx_set_clock_source(__VA_ARGS__)
+#define parlio_ll_rx_set_clock_source(...) (void)__DECLARE_RCC_ATOMIC_ENV; _parlio_ll_rx_set_clock_source(__VA_ARGS__)
 
 /**
  * @brief Set the clock divider for the RX unit
@@ -132,7 +125,7 @@ static inline void parlio_ll_rx_set_clock_source(parl_io_dev_t *dev, parlio_ll_c
  * @param dev Parallel IO register base address
  * @param clk_div   Clock division with integral and decimal part
  */
-static inline void parlio_ll_rx_set_clock_div(parl_io_dev_t *dev, const hal_utils_clk_div_t *clk_div)
+static inline void _parlio_ll_rx_set_clock_div(parl_io_dev_t *dev, const hal_utils_clk_div_t *clk_div)
 {
     (void)dev;
     HAL_ASSERT(clk_div->integer > 0 && clk_div->integer <= PARLIO_LL_RX_MAX_CLK_INT_DIV);
@@ -143,14 +136,14 @@ static inline void parlio_ll_rx_set_clock_div(parl_io_dev_t *dev, const hal_util
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define parlio_ll_rx_set_clock_div(...) (void)__DECLARE_RCC_ATOMIC_ENV; parlio_ll_rx_set_clock_div(__VA_ARGS__)
+#define parlio_ll_rx_set_clock_div(...) (void)__DECLARE_RCC_ATOMIC_ENV; _parlio_ll_rx_set_clock_div(__VA_ARGS__)
 
 /**
  * @brief Reset the RX unit Core clock domain
  *
  * @param dev Parallel IO register base address
  */
-static inline void parlio_ll_rx_reset_clock(parl_io_dev_t *dev)
+static inline void _parlio_ll_rx_reset_clock(parl_io_dev_t *dev)
 {
     (void)dev;
     HP_SYS_CLKRST.hp_rst_en2.reg_rst_en_parlio_rx = 1;
@@ -159,7 +152,7 @@ static inline void parlio_ll_rx_reset_clock(parl_io_dev_t *dev)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define parlio_ll_rx_reset_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; parlio_ll_rx_reset_clock(__VA_ARGS__)
+#define parlio_ll_rx_reset_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; _parlio_ll_rx_reset_clock(__VA_ARGS__)
 
 /**
  * @brief Enable the RX unit Core clock domain
@@ -168,7 +161,7 @@ static inline void parlio_ll_rx_reset_clock(parl_io_dev_t *dev)
  * @param en True to enable, False to disable
  */
 __attribute__((always_inline))
-static inline void parlio_ll_rx_enable_clock(parl_io_dev_t *dev, bool en)
+static inline void _parlio_ll_rx_enable_clock(parl_io_dev_t *dev, bool en)
 {
     (void)dev;
     HP_SYS_CLKRST.peri_clk_ctrl117.reg_parlio_rx_clk_en = en;
@@ -176,7 +169,7 @@ static inline void parlio_ll_rx_enable_clock(parl_io_dev_t *dev, bool en)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define parlio_ll_rx_enable_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; parlio_ll_rx_enable_clock(__VA_ARGS__)
+#define parlio_ll_rx_enable_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; _parlio_ll_rx_enable_clock(__VA_ARGS__)
 
 /**
  * @brief Set the condition to generate the RX EOF event
@@ -420,21 +413,21 @@ static inline void parlio_ll_rx_update_config(parl_io_dev_t *dev)
  * @param dev Parallel IO register base address
  * @param src Clock source
  */
-static inline void parlio_ll_tx_set_clock_source(parl_io_dev_t *dev, parlio_ll_clock_source_t src)
+static inline void _parlio_ll_tx_set_clock_source(parl_io_dev_t *dev, parlio_clock_source_t src)
 {
     (void)dev;
     uint32_t clk_sel = 0;
     switch (src) {
-    case PARLIO_LL_CLK_SRC_XTAL:
+    case PARLIO_CLK_SRC_XTAL:
         clk_sel = 0;
         break;
-    case PARLIO_LL_CLK_SRC_RC_FAST:
+    case PARLIO_CLK_SRC_RC_FAST:
         clk_sel = 1;
         break;
-    case PARLIO_LL_CLK_SRC_PLL_F160M:
+    case PARLIO_CLK_SRC_PLL_F160M:
         clk_sel = 2;
         break;
-    case PARLIO_LL_CLK_SRC_PAD:
+    case PARLIO_CLK_SRC_EXTERNAL:
         clk_sel = 3;
         break;
 
@@ -447,7 +440,7 @@ static inline void parlio_ll_tx_set_clock_source(parl_io_dev_t *dev, parlio_ll_c
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define parlio_ll_tx_set_clock_source(...) (void)__DECLARE_RCC_ATOMIC_ENV; parlio_ll_tx_set_clock_source(__VA_ARGS__)
+#define parlio_ll_tx_set_clock_source(...) (void)__DECLARE_RCC_ATOMIC_ENV; _parlio_ll_tx_set_clock_source(__VA_ARGS__)
 
 /**
  * @brief Set the clock divider for the TX unit
@@ -455,7 +448,7 @@ static inline void parlio_ll_tx_set_clock_source(parl_io_dev_t *dev, parlio_ll_c
  * @param dev Parallel IO register base address
  * @param clk_div   Clock division with integral and decimal part
  */
-static inline void parlio_ll_tx_set_clock_div(parl_io_dev_t *dev, const hal_utils_clk_div_t *clk_div)
+static inline void _parlio_ll_tx_set_clock_div(parl_io_dev_t *dev, const hal_utils_clk_div_t *clk_div)
 {
     (void)dev;
     HAL_ASSERT(clk_div->integer > 0 && clk_div->integer <= PARLIO_LL_RX_MAX_CLK_INT_DIV);
@@ -466,7 +459,7 @@ static inline void parlio_ll_tx_set_clock_div(parl_io_dev_t *dev, const hal_util
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define parlio_ll_tx_set_clock_source(...) (void)__DECLARE_RCC_ATOMIC_ENV; parlio_ll_tx_set_clock_source(__VA_ARGS__)
+#define parlio_ll_tx_set_clock_div(...) (void)__DECLARE_RCC_ATOMIC_ENV; _parlio_ll_tx_set_clock_div(__VA_ARGS__)
 
 /**
  * @brief Reset the TX unit Core clock domain
@@ -474,7 +467,7 @@ static inline void parlio_ll_tx_set_clock_div(parl_io_dev_t *dev, const hal_util
  * @param dev Parallel IO register base address
  */
 __attribute__((always_inline))
-static inline void parlio_ll_tx_reset_clock(parl_io_dev_t *dev)
+static inline void _parlio_ll_tx_reset_clock(parl_io_dev_t *dev)
 {
     (void)dev;
     HP_SYS_CLKRST.hp_rst_en2.reg_rst_en_parlio_tx = 1;
@@ -483,7 +476,7 @@ static inline void parlio_ll_tx_reset_clock(parl_io_dev_t *dev)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define parlio_ll_tx_reset_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; parlio_ll_tx_reset_clock(__VA_ARGS__)
+#define parlio_ll_tx_reset_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; _parlio_ll_tx_reset_clock(__VA_ARGS__)
 
 /**
  * @brief Enable the TX unit Core clock domain
@@ -492,7 +485,7 @@ static inline void parlio_ll_tx_reset_clock(parl_io_dev_t *dev)
  * @param en True to enable, False to disable
  */
 __attribute__((always_inline))
-static inline void parlio_ll_tx_enable_clock(parl_io_dev_t *dev, bool en)
+static inline void _parlio_ll_tx_enable_clock(parl_io_dev_t *dev, bool en)
 {
     (void)dev;
     HP_SYS_CLKRST.peri_clk_ctrl118.reg_parlio_tx_clk_en = en;
@@ -500,7 +493,7 @@ static inline void parlio_ll_tx_enable_clock(parl_io_dev_t *dev, bool en)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define parlio_ll_tx_enable_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; parlio_ll_tx_enable_clock(__VA_ARGS__)
+#define parlio_ll_tx_enable_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; _parlio_ll_tx_enable_clock(__VA_ARGS__)
 
 /**
  * @brief Set the data length to be transmitted
