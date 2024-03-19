@@ -5,23 +5,26 @@
  */
 
 #include <stdint.h>
+#include "soc/soc_caps.h"
 #include "riscv/csr.h"
 #include "soc/soc.h"
 #include "soc/pmu_reg.h"
 #include "hal/misc.h"
 #include "hal/lp_core_ll.h"
-#include "hal/etm_ll.h"
-#include "hal/lp_timer_ll.h"
 #include "hal/pmu_ll.h"
 #include "hal/uart_ll.h"
 #include "hal/rtc_io_ll.h"
 
-/* LP_FAST_CLK is not very accurate, for now use a rough estimate */
-#if CONFIG_IDF_TARGET_ESP32C6
-#define LP_CORE_CPU_FREQUENCY_HZ 16000000
-#elif CONFIG_IDF_TARGET_ESP32P4
-#define LP_CORE_CPU_FREQUENCY_HZ 16000000 // TRM says 20 MHz by default, but we tune it closer to 16 MHz
+#if SOC_ETM_SUPPORTED
+#include "hal/etm_ll.h"
 #endif
+
+#if SOC_LP_TIMER_SUPPORTED
+#include "hal/lp_timer_ll.h"
+#endif
+
+/* LP_FAST_CLK is not very accurate, for now use a rough estimate */
+#define LP_CORE_CPU_FREQUENCY_HZ 16000000 // For P4 TRM says 20 MHz by default, but we tune it closer to 16 MHz
 
 static uint32_t lp_wakeup_cause = 0;
 
@@ -45,17 +48,22 @@ void ulp_lp_core_update_wakeup_cause(void)
         rtcio_ll_clear_interrupt_status();
     }
 
+#if SOC_ETM_SUPPORTED
     if ((lp_core_ll_get_wakeup_source() & LP_CORE_LL_WAKEUP_SOURCE_ETM) \
             && etm_ll_is_lpcore_wakeup_triggered()) {
         lp_wakeup_cause |= LP_CORE_LL_WAKEUP_SOURCE_ETM;
         etm_ll_clear_lpcore_wakeup_status();
     }
+#endif /* SOC_ETM_SUPPORTED */
 
+#if SOC_LP_TIMER_SUPPORTED
     if ((lp_core_ll_get_wakeup_source() & LP_CORE_LL_WAKEUP_SOURCE_LP_TIMER) \
             && (lp_timer_ll_get_lp_intr_raw(&LP_TIMER) & LP_TIMER_MAIN_TIMER_LP_INT_RAW)) {
         lp_wakeup_cause |= LP_CORE_LL_WAKEUP_SOURCE_LP_TIMER;
         lp_timer_ll_clear_lp_intsts_mask(&LP_TIMER, LP_TIMER_MAIN_TIMER_LP_INT_CLR);
     }
+#endif /* SOC_LP_TIMER_SUPPORTED */
+
 }
 
 uint32_t ulp_lp_core_get_wakeup_cause()

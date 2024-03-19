@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -669,6 +669,17 @@ FORCE_INLINE_ATTR uint32_t pmu_ll_hp_get_digital_power_up_wait_cycle(pmu_dev_t *
 FORCE_INLINE_ATTR uint32_t pmu_ll_get_sysclk_sleep_select_state(pmu_dev_t *hw)
 {
     return hw->clk_state0.sysclk_slp_sel;
+}
+
+
+FORCE_INLINE_ATTR uint32_t pmu_ll_lp_get_interrupt_raw(pmu_dev_t *hw)
+{
+    return hw->lp_ext.int_raw.val;
+}
+
+FORCE_INLINE_ATTR void pmu_ll_lp_clear_intsts_mask(pmu_dev_t *hw, uint32_t mask)
+{
+    hw->lp_ext.int_clr.val = mask;
 }
 
 #ifdef __cplusplus

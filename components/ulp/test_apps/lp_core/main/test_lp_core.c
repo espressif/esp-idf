@@ -7,10 +7,15 @@
 #include <stdio.h>
 #include <inttypes.h>
 #include <sys/time.h>
+#include "soc/soc_caps.h"
 #include "esp_rom_caps.h"
 #include "lp_core_test_app.h"
 #include "lp_core_test_app_counter.h"
+
+#if SOC_LP_TIMER_SUPPORTED
 #include "lp_core_test_app_set_timer_wakeup.h"
+#endif
+
 #include "lp_core_test_app_gpio.h"
 #include "ulp_lp_core.h"
 #include "ulp_lp_core_lp_timer_shared.h"
@@ -116,7 +121,7 @@ TEST_CASE("Test LP core delay", "[lp_core]")
 #define LP_TIMER_TEST_DURATION_S        (5)
 #define LP_TIMER_TEST_SLEEP_DURATION_US (20000)
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32P4)
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32P4, ESP32C5)
 
 static void do_ulp_wakeup_deepsleep(lp_core_test_commands_t ulp_cmd)
 {
@@ -207,7 +212,7 @@ TEST_CASE_MULTIPLE_STAGES("LP Timer can wakeup lp core periodically during deep 
                           do_ulp_wakeup_with_lp_timer_deepsleep,
                           check_reset_reason_and_sleep_duration);
 
-#endif //#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32P4)
+#endif //#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32P4, ESP32C5)
 
 TEST_CASE("LP Timer can wakeup lp core periodically", "[lp_core]")
 {
@@ -271,6 +276,7 @@ TEST_CASE("LP core can be stopped and and started again from main CPU", "[ulp]")
     }
 }
 
+#if SOC_LP_TIMER_SUPPORTED
 TEST_CASE("LP core can schedule next wake-up time by itself", "[ulp]")
 {
     int64_t start, test_duration;
@@ -313,3 +319,5 @@ TEST_CASE("LP core gpio tests", "[ulp]")
 
     TEST_ASSERT_TRUE(ulp_gpio_test_succeeded);
 }
+
+#endif //SOC_LP_TIMER_SUPPORTED
