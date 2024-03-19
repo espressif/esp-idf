@@ -88,6 +88,14 @@ void app_main(void)
         .output_format = JPEG_DECODE_OUT_FORMAT_GRAY,
     };
 
+    jpeg_decode_memory_alloc_cfg_t rx_mem_cfg = {
+        .buffer_direction = JPEG_DEC_ALLOC_OUTPUT_BUFFER,
+    };
+
+    jpeg_decode_memory_alloc_cfg_t tx_mem_cfg = {
+        .buffer_direction = JPEG_DEC_ALLOC_INPUT_BUFFER,
+    };
+
     FILE *file_jpg_1080p = fopen(jpg_file_1080, "rb");
     ESP_LOGI(TAG, "jpg_file_1080:%s", jpg_file_1080);
     if (file_jpg_1080p == NULL) {
@@ -98,7 +106,8 @@ void app_main(void)
     fseek(file_jpg_1080p, 0, SEEK_END);
     int jpeg_size_1080p = ftell(file_jpg_1080p);
     fseek(file_jpg_1080p, 0, SEEK_SET);
-    uint8_t *tx_buf_1080p = (uint8_t*)jpeg_alloc_decoder_mem(jpeg_size_1080p);
+    size_t tx_buffer_size_1080p = 0;
+    uint8_t *tx_buf_1080p = (uint8_t*)jpeg_alloc_decoder_mem(jpeg_size_1080p, &tx_mem_cfg, &tx_buffer_size_1080p);
     if (tx_buf_1080p == NULL) {
         ESP_LOGE(TAG, "alloc 1080p tx buffer error");
         return;
@@ -115,7 +124,8 @@ void app_main(void)
     fseek(file_jpg_720p, 0, SEEK_END);
     int jpeg_size_720p = ftell(file_jpg_720p);
     fseek(file_jpg_720p, 0, SEEK_SET);
-    uint8_t *tx_buf_720p = (uint8_t*)jpeg_alloc_decoder_mem(jpeg_size_720p);
+    size_t tx_buffer_size_720p = 0;
+    uint8_t *tx_buf_720p = (uint8_t*)jpeg_alloc_decoder_mem(jpeg_size_720p, &tx_mem_cfg, &tx_buffer_size_720p);
     if (tx_buf_720p == NULL) {
         ESP_LOGE(TAG, "alloc 720p tx buffer error");
         return;
@@ -123,8 +133,10 @@ void app_main(void)
     fread(tx_buf_720p, 1, jpeg_size_720p, file_jpg_720p);
     fclose(file_jpg_720p);
 
-    uint8_t *rx_buf_1080p = (uint8_t*)jpeg_alloc_decoder_mem(1920 * 1080 * 3);
-    uint8_t *rx_buf_720p = (uint8_t*)jpeg_alloc_decoder_mem(720 * 1280);
+    size_t rx_buffer_size_1080p = 0;
+    size_t rx_buffer_size_720p = 0;
+    uint8_t *rx_buf_1080p = (uint8_t*)jpeg_alloc_decoder_mem(1920 * 1088 * 3, &rx_mem_cfg, &rx_buffer_size_1080p);
+    uint8_t *rx_buf_720p = (uint8_t*)jpeg_alloc_decoder_mem(720 * 1280, &rx_mem_cfg, &rx_buffer_size_720p);
     if (rx_buf_1080p == NULL) {
         ESP_LOGE(TAG, "alloc 1080p rx buffer error");
         return;
@@ -141,8 +153,8 @@ void app_main(void)
 
     uint32_t out_size_1080p = 0;
     uint32_t out_size_720p = 0;
-    ESP_ERROR_CHECK(jpeg_decoder_process(jpgd_handle, &decode_cfg_rgb, tx_buf_1080p, jpeg_size_1080p, rx_buf_1080p, &out_size_1080p));
-    ESP_ERROR_CHECK(jpeg_decoder_process(jpgd_handle, &decode_cfg_gray, tx_buf_720p, jpeg_size_720p, rx_buf_720p, &out_size_720p));
+    ESP_ERROR_CHECK(jpeg_decoder_process(jpgd_handle, &decode_cfg_rgb, tx_buf_1080p, jpeg_size_1080p, rx_buf_1080p, rx_buffer_size_1080p, &out_size_1080p));
+    ESP_ERROR_CHECK(jpeg_decoder_process(jpgd_handle, &decode_cfg_gray, tx_buf_720p, jpeg_size_720p, rx_buf_720p, rx_buffer_size_720p, &out_size_720p));
 
     // Write two pictures.
     FILE *file_rgb_1080p = fopen(raw_file_1080, "wb");

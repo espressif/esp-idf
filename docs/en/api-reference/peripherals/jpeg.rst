@@ -67,8 +67,19 @@ Overall, You can take following code as reference, the code is going to decode a
         .rgb_order = JPEG_DEC_RGB_ELEMENT_ORDER_BGR,
     };
 
-    uint8_t *bit_stream = (uint8_t*)heap_caps_aligned_calloc(JPEG_BUFFER_MALLOC_ALIGN_VALUE, 1, bit_stream_size, MALLOC_CAP_SPIRAM);
-    uint8_t *out_buf = (uint8_t*)heap_caps_aligned_calloc(JPEG_BUFFER_MALLOC_ALIGN_VALUE, 1, 1920 * 1080 * 3, MALLOC_CAP_SPIRAM); // Sufficient space for output images.
+    size_t tx_buffer_size;
+    size_t rx_buffer_size;
+
+    jpeg_decode_memory_alloc_cfg_t rx_mem_cfg = {
+        .buffer_direction = JPEG_DEC_ALLOC_OUTPUT_BUFFER,
+    };
+
+    jpeg_decode_memory_alloc_cfg_t tx_mem_cfg = {
+        .buffer_direction = JPEG_DEC_ALLOC_INPUT_BUFFER,
+    };
+
+    uint8_t *bit_stream = (uint8_t*)jpeg_alloc_decoder_mem(jpeg_size, &tx_mem_cfg, &tx_buffer_size);
+    uint8_t *out_buf = (uint8_t*)jpeg_alloc_decoder_mem(1920 * 1088 * 3, &rx_mem_cfg, &rx_buffer_size);
 
     jpeg_decode_picture_info_t header_info;
     ESP_ERROR_CHECK(jpeg_decoder_get_info(bit_stream, bit_stream_size, &header_info));
@@ -77,8 +88,9 @@ Overall, You can take following code as reference, the code is going to decode a
 
 .. note::
 
-    Firstly, in above code, you should make sure the `bit_stream` and `out_buf` should be :c:macro:`JPEG_BUFFER_MALLOC_ALIGN_VALUE` byte aligned.
+    Firstly, in above code, you should make sure the `bit_stream` and `out_buf` should be aligned by certain rules. We provide a helper function :cpp:func:`jpeg_alloc_decoder_mem` to help you malloc a buffer which is aligned in both size and address.
     Secondly, the content of `bit_stream` buffer should not be changed until :cpp:func:`jpeg_decoder_process` returns.
+    Thirdly, the width and hight of output picture would be 16 bytes aligned if original picture is formatted by YUV420 or YUV422. For example, if the input picture is 1080*1920, the output picture will be 1088*1920. That is the restriction of jpeg protocol. Please provide sufficient output buffer memory.
 
 Thread Safety
 ^^^^^^^^^^^^^

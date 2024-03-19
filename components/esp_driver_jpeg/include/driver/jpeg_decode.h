@@ -19,7 +19,7 @@ extern "C" {
  */
 typedef struct {
     jpeg_dec_output_format_t output_format;   /*!< JPEG decoder output format */
-    jpeg_dec_rgb_element_order rgb_order; /*!< JPEG decoder output order */
+    jpeg_dec_rgb_element_order_t rgb_order; /*!< JPEG decoder output order */
     jpeg_yuv_rgb_conv_std_t conv_std;         /*!< JPEG decoder yuv->rgb standard */
 } jpeg_decode_cfg_t;
 
@@ -38,6 +38,13 @@ typedef struct {
     uint32_t width;          /*!< Number of pixels in the horizontal direction */
     uint32_t height;         /*!< Number of pixels in the vertical direction */
 } jpeg_decode_picture_info_t;
+
+/**
+ * @brief JPEG decoder memory allocation config
+ */
+typedef struct {
+    jpeg_dec_buffer_alloc_direction_t buffer_direction;  /*!< Buffer direction for jpeg decoder memory allocation */
+} jpeg_decode_memory_alloc_cfg_t;
 
 /**
  * @brief Acquire a JPEG decode engine with the specified configuration.
@@ -82,19 +89,21 @@ esp_err_t jpeg_decoder_get_info(const uint8_t *bit_stream, uint32_t stream_size,
  * decoded image data is written to the `decode_outbuf` buffer, and the length of the output image data is
  * returned through the `out_size` pointer.
  *
- * @note Please make sure that the content of `bit_stream` pointer cannot be modified until this function returns.
+ * @note 1.Please make sure that the content of `bit_stream` pointer cannot be modified until this function returns.
+ *       2.Please note that the output size of image is always the multiple of 16 depends on protocol of JPEG.
  *
  * @param[in] decoder_engine Handle of the JPEG decoder instance to use for processing.
  * @param[in] decode_cfg Config structure of decoder.
  * @param[in] bit_stream Pointer to the buffer containing the input JPEG image data.
  * @param[in] stream_size Size of the input JPEG image data in bytes.
- * @param[out] decode_outbuf Pointer to the buffer that will receive the decoded image data.
+ * @param[in] decode_outbuf Pointer to the buffer that will receive the decoded image data.
+ * @param[in] outbuf_size The size of `decode_outbuf`
  * @param[out] out_size Pointer to a variable that will receive the length of the output image data.
  * @return
  *      - ESP_OK: JPEG decoder process successfully.
  *      - ESP_ERR_INVALID_ARG: JPEG decoder process failed because of invalid argument.
  */
-esp_err_t jpeg_decoder_process(jpeg_decoder_handle_t decoder_engine, const jpeg_decode_cfg_t *decode_cfg, const uint8_t *bit_stream, uint32_t stream_size, uint8_t *decode_outbuf, uint32_t *out_size);
+esp_err_t jpeg_decoder_process(jpeg_decoder_handle_t decoder_engine, const jpeg_decode_cfg_t *decode_cfg, const uint8_t *bit_stream, uint32_t stream_size, uint8_t *decode_outbuf, uint32_t outbuf_size, uint32_t *out_size);
 
 /**
  * @brief Release resources used by a JPEG decoder instance.
@@ -112,10 +121,12 @@ esp_err_t jpeg_del_decoder_engine(jpeg_decoder_handle_t decoder_engine);
 /**
  * @brief A helper function to allocate memory space for JPEG decoder.
  *
- * @param size The size of memory to allocate.
+ * @param[in] size The size of memory to allocate.
+ * @param[in] mem_cfg Memory configuration for memory allocation
+ * @param[out] allocated_size Actual allocated buffer size.
  * @return Pointer to the allocated memory space, or NULL if allocation fails.
  */
-void * jpeg_alloc_decoder_mem(size_t size);
+void *jpeg_alloc_decoder_mem(size_t size, jpeg_decode_memory_alloc_cfg_t *mem_cfg, size_t *allocated_size);
 
 #ifdef __cplusplus
 }

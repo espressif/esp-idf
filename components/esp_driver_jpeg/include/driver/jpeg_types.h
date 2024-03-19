@@ -36,7 +36,15 @@ typedef enum {
 typedef enum {
     JPEG_DEC_RGB_ELEMENT_ORDER_BGR = COLOR_RGB_ELEMENT_ORDER_BGR,         /*!< Output the color component in small endian */
     JPEG_DEC_RGB_ELEMENT_ORDER_RGB = COLOR_RGB_ELEMENT_ORDER_RGB,         /*!< Output the color component in big endian */
-} jpeg_dec_rgb_element_order;
+} jpeg_dec_rgb_element_order_t;
+
+/**
+ * @brief Enumeration for jpeg decoder alloc buffer direction.
+ */
+typedef enum {
+    JPEG_DEC_ALLOC_INPUT_BUFFER = 0,                   /*!< Alloc the picture input buffer, (compressed format in decoder) */
+    JPEG_DEC_ALLOC_OUTPUT_BUFFER = 1,                  /*!< Alloc the picture output buffer, (decompressed format in decoder) */
+} jpeg_dec_buffer_alloc_direction_t;
 
 /**
  * @brief Type of jpeg decoder handle

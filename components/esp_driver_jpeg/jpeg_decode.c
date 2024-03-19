@@ -24,6 +24,7 @@
 #include "soc/dma2d_channel.h"
 #include "soc/interrupts.h"
 #include "esp_dma_utils.h"
+#include "esp_private/esp_cache_private.h"
 #if CONFIG_JPEG_ENABLE_DEBUG_LOG
 // The local log level must be defined before including esp_log.h
 // Set the maximum log level for this source file
@@ -172,13 +173,12 @@ esp_err_t jpeg_decoder_get_info(const uint8_t *in_buf, uint32_t inbuf_len, jpeg_
     return ESP_OK;
 }
 
-esp_err_t jpeg_decoder_process(jpeg_decoder_handle_t decoder_engine, const jpeg_decode_cfg_t *decode_cfg, const uint8_t *bit_stream, uint32_t stream_size, uint8_t *decode_outbuf, uint32_t *out_size)
+esp_err_t jpeg_decoder_process(jpeg_decoder_handle_t decoder_engine, const jpeg_decode_cfg_t *decode_cfg, const uint8_t *bit_stream, uint32_t stream_size, uint8_t *decode_outbuf, uint32_t outbuf_size, uint32_t *out_size)
 {
     ESP_RETURN_ON_FALSE(decoder_engine, ESP_ERR_INVALID_ARG, TAG, "jpeg decode handle is null");
     ESP_RETURN_ON_FALSE(decode_cfg, ESP_ERR_INVALID_ARG, TAG, "jpeg decode config is null");
     ESP_RETURN_ON_FALSE(decode_outbuf, ESP_ERR_INVALID_ARG, TAG, "jpeg decode picture buffer is null");
-    ESP_RETURN_ON_FALSE(((uintptr_t)bit_stream % cache_hal_get_cache_line_size(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_DATA)) == 0, ESP_ERR_INVALID_ARG, TAG, "jpeg decode bit stream is not aligned, please use jpeg_alloc_decoder_mem to malloc your buffer");
-    ESP_RETURN_ON_FALSE(((uintptr_t)decode_outbuf % cache_hal_get_cache_line_size(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_DATA)) == 0, ESP_ERR_INVALID_ARG, TAG, "jpeg decode decode_outbuf is not aligned, please use jpeg_alloc_decoder_mem to malloc your buffer");
+    ESP_RETURN_ON_FALSE(esp_dma_is_buffer_aligned(decode_outbuf, outbuf_size, ESP_DMA_BUF_LOCATION_PSRAM), ESP_ERR_INVALID_ARG, TAG, "jpeg decode decode_outbuf or out_buffer size is not aligned, please use jpeg_alloc_decoder_mem to malloc your buffer");
 
     esp_err_t ret = ESP_OK;
 
@@ -200,6 +200,9 @@ esp_err_t jpeg_decoder_process(jpeg_decoder_handle_t decoder_engine, const jpeg_
     ESP_GOTO_ON_ERROR(jpeg_parse_header_info_to_hw(decoder_engine), err, TAG, "write header info to hw failed");
     ESP_GOTO_ON_ERROR(jpeg_dec_config_dma_descriptor(decoder_engine), err, TAG, "config dma descriptor failed");
 
+    *out_size = decoder_engine->header_info->process_h * decoder_engine->header_info->process_v * decoder_engine->pixel;
+    ESP_GOTO_ON_FALSE((*out_size <= outbuf_size), ESP_ERR_INVALID_ARG, err, TAG, "Given buffer size % " PRId32 " is smaller than actual jpeg decode output size % " PRId32 "the hight and width of output picture size will be adjusted to 16 bytes aligned automatically", outbuf_size, *out_size);
+
     dma2d_trans_config_t trans_desc = {
         .tx_channel_num = 1,
         .rx_channel_num = 1,
@@ -210,10 +213,6 @@ esp_err_t jpeg_decoder_process(jpeg_decoder_handle_t decoder_engine, const jpeg_
 
     // Before 2DDMA starts. sync buffer from cache to psram
     ret = esp_cache_msync((void*)decoder_engine->header_info->buffer_offset, decoder_engine->header_info->buffer_left, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED);
-    assert(ret == ESP_OK);
-
-    // Before 2DDMA starts. invalid memory space of decoded buffer
-    ret = esp_cache_msync((void*)decoder_engine->decoded_buf, decoder_engine->header_info->process_h * decoder_engine->header_info->process_v * decoder_engine->pixel, ESP_CACHE_MSYNC_FLAG_DIR_M2C | ESP_CACHE_MSYNC_FLAG_UNALIGNED);
     assert(ret == ESP_OK);
 
     ESP_GOTO_ON_ERROR(dma2d_enqueue(decoder_engine->dma2d_group_handle, &trans_desc, decoder_engine->trans_desc), err, TAG, "enqueue dma2d failed");
@@ -234,11 +233,11 @@ esp_err_t jpeg_decoder_process(jpeg_decoder_handle_t decoder_engine, const jpeg_
         }
 
         if (jpeg_dma2d_event.dma_evt & JPEG_DMA2D_RX_EOF) {
+            ret = esp_cache_msync((void*)decoder_engine->decoded_buf, outbuf_size, ESP_CACHE_MSYNC_FLAG_DIR_M2C);
+            assert(ret == ESP_OK);
             break;
         }
     }
-
-    *out_size = decoder_engine->header_info->process_h * decoder_engine->header_info->process_v * decoder_engine->pixel;
 
 err:
     xSemaphoreGive(decoder_engine->codec_base->codec_mutex);
@@ -280,9 +279,23 @@ esp_err_t jpeg_del_decoder_engine(jpeg_decoder_handle_t decoder_engine)
     return ESP_OK;
 }
 
-void * jpeg_alloc_decoder_mem(size_t size)
+void *jpeg_alloc_decoder_mem(size_t size, jpeg_decode_memory_alloc_cfg_t *mem_cfg, size_t *allocated_size)
 {
-    return heap_caps_aligned_calloc(cache_hal_get_cache_line_size(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_DATA), 1, size, JPEG_MEM_ALLOC_CAPS);
+    /*
+       Principle of buffer align.
+       For output buffer(for decoder is 2DDMA write to PSRAM), both address and size should be aligned according to cache invalidate.
+       FOr input buffer(for decoder is PSRAM write to 2DDMA), no restriction for any align (both cache writeback and requirement from 2DDMA).
+    */
+    size_t cache_align = 0;
+    esp_cache_get_alignment(ESP_CACHE_MALLOC_FLAG_PSRAM, &cache_align);
+    if (mem_cfg->buffer_direction == JPEG_DEC_ALLOC_OUTPUT_BUFFER) {
+        size = ALIGN_UP(size, cache_align);
+        *allocated_size = size;
+        return heap_caps_aligned_calloc(cache_align, 1, size, MALLOC_CAP_SPIRAM);
+    } else {
+        *allocated_size = size;
+        return heap_caps_calloc(1, size, MALLOC_CAP_SPIRAM);
+    }
 }
 
 /****************************************************************
