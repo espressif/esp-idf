@@ -1202,10 +1202,11 @@ FORCE_INLINE_ATTR esp_err_t s_encryption_write_lock(esp_flash_t *chip) {
 }
 
 FORCE_INLINE_ATTR esp_err_t s_encryption_write_unlock(esp_flash_t *chip) {
+    esp_err_t err = rom_spiflash_api_funcs->end(chip, ESP_OK);
 #if CONFIG_IDF_TARGET_ESP32S2
     esp_crypto_dma_lock_release();
 #endif //CONFIG_IDF_TARGET_ESP32S2
-    return rom_spiflash_api_funcs->end(chip, ESP_OK);
+    return err;
 }
 
 
