@@ -1,25 +1,25 @@
 set(srcs "partition.c")
-set(priv_reqs esp_system bootloader_support spi_flash app_update partition_table)
+set(priv_reqs esp_system spi_flash partition_table)
 set(reqs)
-set(include_dirs "include")
+set(private_include_dirs)
 
 idf_build_get_property(build_dir BUILD_DIR)
 idf_build_get_property(target IDF_TARGET)
+
 if(${target} STREQUAL "linux")
     list(APPEND srcs "partition_linux.c")
-    set(priv_reqs partition_table)
 
-    # Steal some include directories from bootloader_support hal and spi_flash components:
-    idf_component_get_property(hal_dir hal COMPONENT_DIR)
+    # Steal some include directories from bootloader_support components:
     idf_component_get_property(bootloader_support_dir bootloader_support COMPONENT_DIR)
-    idf_component_get_property(spi_flash_dir spi_flash COMPONENT_DIR)
-    list(APPEND include_dirs include ${hal_dir}/include ${bootloader_support_dir}/include ${spi_flash_dir}/include)
+    set(private_include_dirs ${bootloader_support_dir}/include)
 else()
+    list(APPEND priv_reqs bootloader_support app_update)
     list(APPEND srcs "partition_target.c")
 endif()
 
 idf_component_register(SRCS "${srcs}"
-    INCLUDE_DIRS ${include_dirs}
+    INCLUDE_DIRS "include"
+    PRIV_INCLUDE_DIRS ${private_include_dirs}
     REQUIRES ${reqs}
     PRIV_REQUIRES ${priv_reqs})
 
