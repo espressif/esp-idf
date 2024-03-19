@@ -166,6 +166,11 @@ pipeline_variables:
       if echo "$CI_MERGE_REQUEST_LABELS" | egrep "(^|,)BUILD_AND_TEST_ALL_APPS(,|$)"; then
         echo "BUILD_AND_TEST_ALL_APPS=1" >> pipeline.env
       fi
+    # run full pipeline if testing constraint branch
+    - |
+      if [ -n "$CI_PYTHON_CONSTRAINT_BRANCH" ]; then
+        echo "BUILD_AND_TEST_ALL_APPS=1" >> pipeline.env
+      fi
     - cat pipeline.env
     - python tools/ci/artifacts_handler.py upload --type modified_files_and_components_report
   artifacts:
