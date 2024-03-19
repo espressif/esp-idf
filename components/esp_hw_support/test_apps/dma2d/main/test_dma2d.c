@@ -104,9 +104,9 @@ TEST_CASE("DMA2D_M2M_1D_basic", "[DMA2D]")
             prtx[idx] = (i + idx + 0x45) & 0xFF;
             prrx[idx] = 0;
         }
-        // Writeback and invalidate the TX and RX buffers
-        esp_cache_msync((void *)prtx, data_size, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_INVALIDATE);
-        esp_cache_msync((void *)prrx, data_size, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_INVALIDATE);
+        // Writeback TX and RX buffers
+        esp_cache_msync((void *)prtx, data_size, ESP_CACHE_MSYNC_FLAG_DIR_C2M);
+        esp_cache_msync((void *)prrx, data_size, ESP_CACHE_MSYNC_FLAG_DIR_C2M);
 
         // DMA description preparation
         dma2d_link_dscr_init((uint32_t *)tx_dsc[i], NULL, (void *)prtx,
@@ -146,6 +146,11 @@ TEST_CASE("DMA2D_M2M_1D_basic", "[DMA2D]")
     for (int i = 0; i < M2M_TRANS_TIMES; i++) {
         prtx = tx_buf + i * data_size;
         prrx = rx_buf + i * data_size;
+
+        // Invalidate TX and RX buffers
+        esp_cache_msync((void *)prtx, data_size, ESP_CACHE_MSYNC_FLAG_DIR_M2C);
+        esp_cache_msync((void *)prrx, data_size, ESP_CACHE_MSYNC_FLAG_DIR_M2C);
+
         for (int idx = 0; idx < data_size; idx++) {
             TEST_ASSERT_EQUAL(prtx[idx], prrx[idx]);
             TEST_ASSERT_EQUAL(prtx[idx], (i + idx + 0x45) & 0xFF);
@@ -249,9 +254,9 @@ TEST_CASE("DMA2D_M2M_1D_RGB565_to_RGB888", "[DMA2D]")
             prrx[idx * 3 + 1] = 0;
             prrx[idx * 3 + 2] = 0;
         }
-        // Writeback and invalidate the TX and RX buffers
-        esp_cache_msync((void *)prtx, item_size * 2, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_INVALIDATE);
-        esp_cache_msync((void *)prrx, item_size * 3, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_INVALIDATE);
+        // Writeback TX and RX buffers
+        esp_cache_msync((void *)prtx, item_size * 2, ESP_CACHE_MSYNC_FLAG_DIR_C2M);
+        esp_cache_msync((void *)prrx, item_size * 3, ESP_CACHE_MSYNC_FLAG_DIR_C2M);
 
         // DMA description preparation
         dma2d_link_dscr_init((uint32_t *)tx_dsc[i], NULL, (void *)prtx,
@@ -292,6 +297,11 @@ TEST_CASE("DMA2D_M2M_1D_RGB565_to_RGB888", "[DMA2D]")
     for (int i = 0; i < M2M_TRANS_TIMES; i++) {
         prtx = tx_buf + i * item_size * 2;
         prrx = rx_buf + i * item_size * 3;
+
+        // Invalidate TX and RX buffers
+        esp_cache_msync((void *)prtx, item_size * 2, ESP_CACHE_MSYNC_FLAG_DIR_M2C);
+        esp_cache_msync((void *)prrx, item_size * 3, ESP_CACHE_MSYNC_FLAG_DIR_M2C);
+
         TEST_ASSERT_EQUAL(0, rgb565_to_rgb888_and_cmp(prtx, prrx, item_size));
     }
 
@@ -349,9 +359,9 @@ TEST_CASE("DMA2D_M2M_2D_basic", "[DMA2D]")
             prtx[idx] = (i + idx + 0x45) & 0xFF;
             prrx[idx] = 0;
         }
-        // Writeback and invalidate the TX and RX buffers
-        esp_cache_msync((void *)prtx, stripe_size * stripe_size, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_INVALIDATE);
-        esp_cache_msync((void *)prrx, stripe_size * stripe_size, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_INVALIDATE);
+        // Writeback TX and RX buffers
+        esp_cache_msync((void *)prtx, stripe_size * stripe_size, ESP_CACHE_MSYNC_FLAG_DIR_C2M);
+        esp_cache_msync((void *)prrx, stripe_size * stripe_size, ESP_CACHE_MSYNC_FLAG_DIR_C2M);
 
         // DMA description preparation
         dma2d_link_dscr_init((uint32_t *)tx_dsc[i], NULL, (void *)prtx,
@@ -391,6 +401,11 @@ TEST_CASE("DMA2D_M2M_2D_basic", "[DMA2D]")
     for (int i = 0; i < M2M_TRANS_TIMES; i++) {
         prtx = tx_buf + i * stripe_size * stripe_size;
         prrx = rx_buf + i * stripe_size * stripe_size;
+
+        // Invalidate TX and RX buffers
+        esp_cache_msync((void *)prtx, stripe_size * stripe_size, ESP_CACHE_MSYNC_FLAG_DIR_M2C);
+        esp_cache_msync((void *)prrx, stripe_size * stripe_size, ESP_CACHE_MSYNC_FLAG_DIR_M2C);
+
         for (int idx = 0; idx < stripe_size * stripe_size; idx++) {
             TEST_ASSERT_EQUAL(prtx[idx], prrx[idx]);
             TEST_ASSERT_EQUAL(prtx[idx], (i + idx + 0x45) & 0xFF);
@@ -494,9 +509,9 @@ TEST_CASE("DMA2D_M2M_2D_RGB888_to_RGB565", "[DMA2D]")
             prrx[idx * 2] = 0;
             prrx[idx * 2 + 1] = 0;
         }
-        // Writeback and invalidate the TX and RX buffers
-        esp_cache_msync((void *)prtx, stripe_pixel_size * stripe_pixel_size * 3, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_INVALIDATE);
-        esp_cache_msync((void *)prrx, stripe_pixel_size * stripe_pixel_size * 2, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_INVALIDATE);
+        // Writeback TX and RX buffers
+        esp_cache_msync((void *)prtx, stripe_pixel_size * stripe_pixel_size * 3, ESP_CACHE_MSYNC_FLAG_DIR_C2M);
+        esp_cache_msync((void *)prrx, stripe_pixel_size * stripe_pixel_size * 2, ESP_CACHE_MSYNC_FLAG_DIR_C2M);
 
         // DMA description preparation
         dma2d_link_dscr_init((uint32_t *)tx_dsc[i], NULL, (void *)prtx,
@@ -537,6 +552,11 @@ TEST_CASE("DMA2D_M2M_2D_RGB888_to_RGB565", "[DMA2D]")
     for (int i = 0; i < M2M_TRANS_TIMES; i++) {
         prtx = tx_buf + i * stripe_pixel_size * stripe_pixel_size * 3;
         prrx = rx_buf + i * stripe_pixel_size * stripe_pixel_size * 2;
+
+        // Invalidate TX and RX buffers
+        esp_cache_msync((void *)prtx, stripe_pixel_size * stripe_pixel_size * 3, ESP_CACHE_MSYNC_FLAG_DIR_M2C);
+        esp_cache_msync((void *)prrx, stripe_pixel_size * stripe_pixel_size * 2, ESP_CACHE_MSYNC_FLAG_DIR_M2C);
+
         TEST_ASSERT_EQUAL(0, rgb888_to_rgb565_and_cmp(prtx, prrx, stripe_pixel_size * stripe_pixel_size));
     }
 
@@ -601,9 +621,9 @@ TEST_CASE("DMA2D_M2M_2D_window", "[DMA2D]")
             prrx[idx * 2 + 1] = 0xFF;
         }
 
-        // Writeback and invalidate the TX and RX buffers
-        esp_cache_msync((void *)prtx, 64, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_INVALIDATE);
-        esp_cache_msync((void *)prrx, va * ha * 2, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_INVALIDATE);
+        // Writeback TX and RX buffers
+        esp_cache_msync((void *)prtx, 64, ESP_CACHE_MSYNC_FLAG_DIR_C2M);
+        esp_cache_msync((void *)prrx, va * ha * 2, ESP_CACHE_MSYNC_FLAG_DIR_C2M);
 
         // DMA description preparation
         dma2d_link_dscr_init((uint32_t *)tx_dsc[i], NULL, (void *)prtx,
@@ -643,6 +663,11 @@ TEST_CASE("DMA2D_M2M_2D_window", "[DMA2D]")
     for (int i = 0; i < M2M_TRANS_TIMES; i++) {
         prtx = tx_buf + i * 64;
         prrx = rx_buf + i * va * ha * 2;
+
+        // Invalidate TX and RX buffers
+        esp_cache_msync((void *)prtx, 64, ESP_CACHE_MSYNC_FLAG_DIR_M2C);
+        esp_cache_msync((void *)prrx, va * ha * 2, ESP_CACHE_MSYNC_FLAG_DIR_M2C);
+
         printf("pic:\n");
         for (int idx = 0; idx < va * ha; idx++) {
             printf("%02X%02X ", prrx[idx * 2], prrx[idx * 2 + 1]);

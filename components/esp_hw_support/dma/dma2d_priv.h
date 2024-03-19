@@ -55,7 +55,8 @@ struct dma2d_group_t {
     uint8_t rx_channel_free_mask;                                   // Bit mask indicating the free RX channels at the moment
     uint8_t tx_channel_reserved_mask;                               // Bit mask indicating the being reserved TX channels
     uint8_t rx_channel_reserved_mask;                               // Bit mask indicating the being reserved RX channels
-    uint32_t periph_m2m_free_id_mask;                               // Bit mask indicating the available M2M peripheral selelction IDs at the moment
+    uint32_t tx_periph_m2m_free_id_mask;                            // Bit mask indicating the available TX M2M peripheral selelction IDs at the moment
+    uint32_t rx_periph_m2m_free_id_mask;                            // Bit mask indicating the available RX M2M peripheral selelction IDs at the moment
     dma2d_tx_channel_t *tx_chans[SOC_DMA2D_TX_CHANNELS_PER_GROUP];  // Handles of 2D-DMA TX channels
     dma2d_rx_channel_t *rx_chans[SOC_DMA2D_RX_CHANNELS_PER_GROUP];  // Handles of 2D-DMA RX channels
     int intr_priority;                                              // All channels in the same group should share the same interrupt priority
@@ -70,7 +71,6 @@ struct dma2d_channel_t {
     struct {
         dma2d_trans_t *transaction;             // Pointer to the 2D-DMA transaction context that is currently being processed on the channel
         uint32_t reorder_en : 1;            // This flag indicates the channel will enable reorder functionality
-        uint32_t has_sibling : 1;           // This flag indicates its sibling channel is also in-use
         int periph_sel_id : (DMA2D_LL_CHANNEL_PERIPH_SEL_BIT_WIDTH + 1); // This is used to record the periph_sel_id of each channel
     } status;
 };
