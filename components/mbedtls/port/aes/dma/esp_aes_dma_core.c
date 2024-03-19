@@ -241,6 +241,32 @@ cleanup:
     return ret;
 }
 
+/** Append a descriptor to the chain, set head if chain empty
+ *
+ * @param[out] head Pointer to the first/head node of the DMA descriptor linked list
+ * @param item Pointer to the DMA descriptor node that has to be appended
+ */
+static inline void dma_desc_append(crypto_dma_desc_t **head, crypto_dma_desc_t *item)
+{
+    crypto_dma_desc_t *it;
+    if (*head == NULL) {
+        *head = item;
+        return;
+    }
+
+    it = *head;
+
+    while (it->next != 0) {
+        it = (crypto_dma_desc_t *)it->next;
+    }
+    it->dw0.suc_eof = 0;
+    it->next = item;
+
+#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
+    ESP_ERROR_CHECK(esp_cache_msync(it, sizeof(crypto_dma_desc_t), ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED));
+#endif
+}
+
 #if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
 
 #define ALIGN_UP(num, align)    (((num) + ((align) - 1)) & ~((align) - 1))
@@ -282,7 +308,12 @@ static inline esp_err_t dma_desc_link(crypto_dma_desc_t *dmadesc, size_t crypto_
         dmadesc[i].dw0.suc_eof = ((i == crypto_dma_desc_num - 1) ? 1 : 0);
         dmadesc[i].next = ((i == crypto_dma_desc_num - 1) ? NULL : &dmadesc[i+1]);
 #if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
-        /* Write back both input buffers and output buffers to clear any cache dirty bit if set */
+        /*  Write back both input buffers and output buffers to clear any cache dirty bit if set
+            If we want to remove `ESP_CACHE_MSYNC_FLAG_UNALIGNED` aligned flag then we need to pass
+            cache msync size = ALIGN_UP(dma_desc.size, cache_line_size), instead of dma_desc.size
+            Keeping the `ESP_CACHE_MSYNC_FLAG_UNALIGNED` flag just because it should not look like
+            we are syncing extra bytes due to ALIGN_UP'ed size but just the number of bytes that
+            are needed in the operation. */
         ret = esp_cache_msync(dmadesc[i].buffer, dmadesc[i].dw0.length, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED);
         if (ret != ESP_OK) {
             return ret;
@@ -605,6 +636,218 @@ cleanup:
     return ret;
 }
 
+#if CONFIG_MBEDTLS_HARDWARE_GCM
+
+/* Encrypt/decrypt with AES-GCM the input using DMA
+ * The function esp_aes_process_dma_gcm zeroises the output buffer in the case of following conditions:
+ * 1. If key is not written in the hardware
+ * 2. Memory allocation failures
+ * 3. If AES interrupt is enabled and ISR initialisation fails
+ * 4. Failure in any of the AES operations
+ */
+int esp_aes_process_dma_gcm(esp_aes_context *ctx, const unsigned char *input, unsigned char *output, size_t len, const unsigned char *aad, size_t aad_len)
+{
+    int ret = 0;
+    bool use_intr = false;
+
+    /* If no key is written to hardware yet, either the user hasn't called
+       mbedtls_aes_setkey_enc/mbedtls_aes_setkey_dec - meaning we also don't
+       know which mode to use - or a fault skipped the
+       key write to hardware. Treat this as a fatal error and zero the output block.
+    */
+    if (ctx->key_in_hardware != ctx->key_bytes) {
+        mbedtls_platform_zeroize(output, len);
+        return MBEDTLS_ERR_AES_INVALID_INPUT_LENGTH;
+    }
+
+    unsigned stream_bytes = len % AES_BLOCK_BYTES; // bytes which aren't in a full block
+    unsigned block_bytes = len - stream_bytes;     // bytes which are in a full block
+
+    unsigned blocks = (block_bytes / AES_BLOCK_BYTES) + ((stream_bytes > 0) ? 1 : 0);
+
+    size_t aad_cache_line_size = get_cache_line_size(aad);
+    size_t input_cache_line_size = get_cache_line_size(input);
+    size_t output_cache_line_size = get_cache_line_size(output);
+
+    if (aad_cache_line_size == 0 || input_cache_line_size == 0 || output_cache_line_size == 0) {
+        mbedtls_platform_zeroize(output, len);
+        ESP_LOGE(TAG, "Getting cache line size failed");
+        return -1;
+    }
+
+    crypto_dma_desc_t *in_desc_head = NULL;
+    crypto_dma_desc_t *out_desc_tail = NULL; /* pointer to the final output descriptor */
+    crypto_dma_desc_t *aad_desc = NULL, *len_desc = NULL;
+    crypto_dma_desc_t *input_desc = NULL;
+    crypto_dma_desc_t *output_desc = NULL;
+
+    size_t aad_alignment_buffer_size = MAX(2 * aad_cache_line_size, AES_BLOCK_BYTES);
+
+    uint8_t *aad_start_stream_buffer = NULL;
+    uint8_t *aad_end_stream_buffer = NULL;
+    size_t aad_dma_desc_num = 0;
+
+    if (generate_descriptor_list(aad, aad_len, &aad_start_stream_buffer, &aad_end_stream_buffer, aad_alignment_buffer_size, aad_cache_line_size, NULL, NULL, &aad_desc, &aad_dma_desc_num, false) != ESP_OK) {
+        mbedtls_platform_zeroize(output, len);
+        ESP_LOGE(TAG, "Generating aad DMA descriptors failed");
+        return -1;
+    }
+
+    dma_desc_append(&in_desc_head, aad_desc);
+
+    size_t input_alignment_buffer_size = MAX(2 * input_cache_line_size, AES_BLOCK_BYTES);
+
+    uint8_t *input_start_stream_buffer = NULL;
+    uint8_t *input_end_stream_buffer = NULL;
+    size_t input_dma_desc_num = 0;
+
+    if (generate_descriptor_list(input, len, &input_start_stream_buffer, &input_end_stream_buffer, input_alignment_buffer_size, input_cache_line_size, NULL, NULL, &input_desc, &input_dma_desc_num, false) != ESP_OK) {
+        mbedtls_platform_zeroize(output, len);
+        ESP_LOGE(TAG, "Generating input DMA descriptors failed");
+        return -1;
+    }
+
+    dma_desc_append(&in_desc_head, input_desc);
+
+    size_t output_alignment_buffer_size = MAX(2 * output_cache_line_size, AES_BLOCK_BYTES);
+
+    uint8_t *output_start_stream_buffer = NULL;
+    uint8_t *output_end_stream_buffer = NULL;
+
+    size_t output_start_alignment = 0;
+    size_t output_end_alignment = 0;
+    size_t output_dma_desc_num = 0;
+
+    if (generate_descriptor_list(output, len, &output_start_stream_buffer, &output_end_stream_buffer, output_alignment_buffer_size, output_cache_line_size, &output_start_alignment, &output_end_alignment, &output_desc, &output_dma_desc_num, true) != ESP_OK) {
+        mbedtls_platform_zeroize(output, len);
+        ESP_LOGE(TAG, "Generating output DMA descriptors failed");
+        return -1;
+    }
+
+    out_desc_tail = &output_desc[output_dma_desc_num - 1];
+
+    len_desc = aes_dma_calloc(1, sizeof(crypto_dma_desc_t), MALLOC_CAP_DMA, NULL);
+    if (len_desc == NULL) {
+        mbedtls_platform_zeroize(output, len);
+        ESP_LOGE(TAG, "Failed to allocate memory for len descriptor");
+        return -1;
+    }
+
+    uint32_t *len_buf = aes_dma_calloc(4, sizeof(uint32_t), MALLOC_CAP_DMA, NULL);
+    if (len_buf == NULL) {
+        mbedtls_platform_zeroize(output, len);
+        ESP_LOGE(TAG, "Failed to allocate memory for len buffer");
+        return -1;
+    }
+
+    len_buf[1] = __builtin_bswap32(aad_len * 8);
+    len_buf[3] = __builtin_bswap32(len * 8);
+
+    len_desc->dw0.length = 4 * sizeof(uint32_t);
+    len_desc->dw0.size = 4 * sizeof(uint32_t);
+    len_desc->dw0.owner = 1;
+    len_desc->dw0.suc_eof = 1;
+    len_desc->buffer = (void *) len_buf;
+    len_desc->next = NULL;
+
+#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
+    if (esp_cache_msync(len_desc->buffer, len_desc->dw0.length, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED) != ESP_OK) {
+        ESP_LOGE(TAG, "Length DMA descriptor cache sync C2M failed");
+        ret = -1;
+        goto cleanup;
+    }
+    if (esp_cache_msync(len_desc, sizeof(crypto_dma_desc_t), ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED) != ESP_OK) {
+        ESP_LOGE(TAG, "Length DMA descriptor cache sync C2M failed");
+        ret = -1;
+        goto cleanup;
+    }
+#endif
+
+    dma_desc_append(&in_desc_head, len_desc);
+
+#if defined (CONFIG_MBEDTLS_AES_USE_INTERRUPT)
+    /* Only use interrupt for long AES operations */
+    if (len > AES_DMA_INTR_TRIG_LEN) {
+        use_intr = true;
+        if (esp_aes_isr_initialise() != ESP_OK) {
+            ESP_LOGE(TAG, "ESP-AES ISR initialisation failed");
+            ret = -1;
+            goto cleanup;
+        }
+    } else
+#endif
+    {
+        aes_hal_interrupt_enable(false);
+    }
+
+    /* Start AES operation */
+    if (esp_aes_dma_start(in_desc_head, output_desc) != ESP_OK) {
+        ESP_LOGE(TAG, "esp_aes_dma_start failed, no DMA channel available");
+        ret = -1;
+        goto cleanup;
+    }
+
+    aes_hal_transform_dma_gcm_start(blocks);
+
+    if (esp_aes_dma_wait_complete(use_intr, out_desc_tail) < 0) {
+        ESP_LOGE(TAG, "esp_aes_dma_wait_complete failed");
+        ret = -1;
+        goto cleanup;
+    }
+
+#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
+    if (esp_cache_msync(output_desc, ALIGN_UP(output_dma_desc_num * sizeof(crypto_dma_desc_t), output_cache_line_size), ESP_CACHE_MSYNC_FLAG_DIR_M2C) != ESP_OK) {
+        ESP_LOGE(TAG, "Output DMA descriptor cache sync M2C failed");
+        ret = -1;
+        goto cleanup;
+    }
+    for (int i = 0; i < output_dma_desc_num; i++) {
+        if (esp_cache_msync(output_desc[i].buffer, ALIGN_UP(output_desc[i].dw0.length, output_cache_line_size), ESP_CACHE_MSYNC_FLAG_DIR_M2C) != ESP_OK) {
+            ESP_LOGE(TAG, "Output DMA descriptor buffers cache sync M2C failed");
+            ret = -1;
+            goto cleanup;
+        }
+    }
+#endif
+
+    aes_hal_transform_dma_finish();
+
+    /* Extra bytes that were needed to be processed for supplying the AES peripheral a padded multiple of 16 bytes input */
+    size_t extra_bytes = ALIGN_UP(len, AES_BLOCK_BYTES) - len;
+
+    if (output_start_alignment) {
+        memcpy(output, output_start_stream_buffer, (output_start_alignment > len) ? len : output_start_alignment);
+    }
+
+    if (output_end_alignment) {
+        memcpy(output + len - (output_end_alignment - extra_bytes), output_end_stream_buffer, output_end_alignment - extra_bytes);
+    }
+
+cleanup:
+    if (ret != 0) {
+        mbedtls_platform_zeroize(output, len);
+    }
+
+    free(aad_start_stream_buffer);
+    free(aad_end_stream_buffer);
+    free(aad_desc);
+
+    free(input_start_stream_buffer);
+    free(input_end_stream_buffer);
+    free(input_desc);
+
+    free(output_start_stream_buffer);
+    free(output_end_stream_buffer);
+    free(output_desc);
+
+    free(len_buf);
+    free(len_desc);
+
+    return ret;
+}
+
+#endif //CONFIG_MBEDTLS_HARDWARE_GCM
+
 #else /* SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE */
 
 /* These are static due to:
@@ -615,28 +858,6 @@ static DRAM_ATTR crypto_dma_desc_t s_stream_in_desc;
 static DRAM_ATTR crypto_dma_desc_t s_stream_out_desc;
 static DRAM_ATTR uint8_t s_stream_in[AES_BLOCK_BYTES];
 static DRAM_ATTR uint8_t s_stream_out[AES_BLOCK_BYTES];
-
-/** Append a descriptor to the chain, set head if chain empty
- *
- * @param[out] head Pointer to the first/head node of the DMA descriptor linked list
- * @param item Pointer to the DMA descriptor node that has to be appended
- */
-static inline void dma_desc_append(crypto_dma_desc_t **head, crypto_dma_desc_t *item)
-{
-    crypto_dma_desc_t *it;
-    if (*head == NULL) {
-        *head = item;
-        return;
-    }
-
-    it = *head;
-
-    while (it->next != 0) {
-        it = (crypto_dma_desc_t *)it->next;
-    }
-    it->dw0.suc_eof = 0;
-    it->next = item;
-}
 
 /**
  * Generate a linked list pointing to a (huge) buffer in an descriptor array.
@@ -852,7 +1073,6 @@ cleanup:
     free(block_desc);
     return ret;
 }
-#endif /* SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE */
 
 #if CONFIG_MBEDTLS_HARDWARE_GCM
 
@@ -1022,3 +1242,4 @@ cleanup:
 }
 
 #endif //CONFIG_MBEDTLS_HARDWARE_GCM
+#endif /* SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE */
