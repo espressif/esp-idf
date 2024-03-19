@@ -65,7 +65,6 @@ r_lld_con_tx_prog_new_packet_coex = 0x40001b70;
 r_lld_per_adv_dynamic_pti_get = 0x40001b78;
 r_lld_per_adv_evt_start_chm_upd = 0x40001b7c;
 r_lld_ext_scan_dynamic_pti_get = 0x40001b80;
-r_lld_scan_try_sched = 0x40001b84;
 r_lld_sync_insert = 0x40001b88;
 r_sch_prog_ble_push = 0x40001b8c;
 r_sch_prog_bt_push = 0x40001b90;
