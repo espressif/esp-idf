@@ -24,9 +24,9 @@
 #endif
 
 #if CONFIG_APP_BUILD_TYPE_RAM
-#define _esp_mmu_block_size 0
+#define _esp_mmu_page_size 0
 #else
-#define _esp_mmu_block_size CONFIG_MMU_PAGE_SIZE
+#define _esp_mmu_page_size CONFIG_MMU_PAGE_SIZE
 #endif
 
 #if CONFIG_SOC_RTC_MEM_SUPPORTED
@@ -54,3 +54,7 @@
 #define ASSERT_SECTIONS_GAP(PREV_SECTION, NEXT_SECTION)                   \
 ASSERT((ADDR(NEXT_SECTION) == ADDR(PREV_SECTION) + SIZEOF(PREV_SECTION)), \
         QUOTED_STRING(The gap between PREV_SECTION and NEXT_SECTION must not exist to produce the final bin image.))
+
+#define ALIGNED_SYMBOL(X, SYMBOL)   \
+\n    . = ALIGN(X);                 \
+\n    SYMBOL = ABSOLUTE(.);
