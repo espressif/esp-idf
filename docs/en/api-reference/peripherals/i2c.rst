@@ -297,6 +297,10 @@ I2C Master Probe
 
 I2C driver can use :cpp:func:`i2c_master_probe` to detect whether the specific device has been connected on I2C bus. If this function return ``ESP_OK``, that means the device has been detected.
 
+.. important::
+
+    Pull-ups must be connected to the SCL and SDA pins when this function is called. If you get `ESP_ERR_TIMEOUT` while `xfer_timeout_ms` was parsed correctly, you should check the pull-up resistors. If you do not have proper resistors nearby, setting `flags.enable_internal_pullup` as true is also acceptable.
+
 .. figure:: ../../../_static/diagrams/i2c/i2c_master_probe.png
     :align: center
     :alt: I2C master probe
