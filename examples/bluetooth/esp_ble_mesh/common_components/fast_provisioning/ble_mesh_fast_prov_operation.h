@@ -7,6 +7,10 @@
 #ifndef _BLE_MESH_FAST_PROV_OPERATION_H_
 #define _BLE_MESH_FAST_PROV_OPERATION_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "ble_mesh_fast_prov_common.h"
 
 esp_err_t example_store_node_info(const uint8_t uuid[16], uint16_t node_addr,
@@ -57,5 +61,9 @@ esp_err_t example_send_fast_prov_all_node_addr_get(esp_ble_mesh_model_t *model,
 esp_err_t example_send_fast_prov_status_msg(esp_ble_mesh_model_t *model,
         esp_ble_mesh_msg_ctx_t *ctx,
         uint32_t opcode, struct net_buf_simple *msg);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _BLE_MESH_FAST_PROV_OPERATION_H_ */
