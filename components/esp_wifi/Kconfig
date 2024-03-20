@@ -348,17 +348,30 @@ menu "Wi-Fi"
             int "Minimum active time"
             range 8 60
             default 50
-            depends on ESP_WIFI_SLP_IRAM_OPT
             help
-                The minimum timeout for waiting to receive data, unit: milliseconds.
+                Only for station in WIFI_PS_MIN_MODEM or WIFI_PS_MAX_MODEM. When the station enters the active state,
+                it will work for at least ESP_WIFI_SLP_DEFAULT_MIN_ACTIVE_TIME. If a data packet is received or sent
+                during this period, the time will be refreshed. If the time is up, but the station still has packets
+                to receive or send, the time will also be refreshed. unit: milliseconds.
 
         config ESP_WIFI_SLP_DEFAULT_MAX_ACTIVE_TIME
             int "Maximum keep alive time"
             range 10 60
             default 10
-            depends on ESP_WIFI_SLP_IRAM_OPT
             help
-                The maximum time that wifi keep alive, unit: seconds.
+                Only for station in WIFI_PS_MIN_MODEM or WIFI_PS_MAX_MODEM. If no packet has been
+                sent within ESP_WIFI_SLP_DEFAULT_MAX_ACTIVE_TIME, a null data packet will be sent
+                to maintain the connection with the AP. unit: seconds.
+
+        config ESP_WIFI_SLP_DEFAULT_WAIT_BROADCAST_DATA_TIME
+            int "Minimum wait broadcast data time"
+            range 10 30
+            default 15
+            help
+                Only for station in WIFI_PS_MIN_MODEM or WIFI_PS_MAX_MODEM. When the station knows through the beacon
+                that AP will send broadcast packet, it will wait for ESP_WIFI_SLP_DEFAULT_WAIT_BROADCAST_DATA_TIME
+                before entering the sleep process. If a broadcast packet is received with more data bits, the time
+                will refreshed. unit: milliseconds.
 
         config ESP_WIFI_FTM_ENABLE
             bool "WiFi FTM"

@@ -365,7 +365,7 @@ esp_err_t esp_wifi_get_mode(wifi_mode_t *mode);
   * @return
   *    - ESP_OK: succeed
   *    - ESP_ERR_WIFI_NOT_INIT: WiFi is not initialized by esp_wifi_init
-  *    - ESP_ERR_INVALID_ARG: invalid argument
+  *    - ESP_ERR_INVALID_ARG: It doesn't normally happen, the function called inside the API was passed invalid argument, user should check if the wifi related config is correct
   *    - ESP_ERR_NO_MEM: out of memory
   *    - ESP_ERR_WIFI_CONN: WiFi internal error, station or soft-AP control block wrong
   *    - ESP_FAIL: other WiFi internal errors
@@ -598,7 +598,7 @@ esp_err_t esp_wifi_scan_get_ap_record(wifi_ap_record_t *ap_record);
   *    - ESP_ERR_WIFI_NOT_INIT: WiFi is not initialized by esp_wifi_init
   *    - ESP_ERR_WIFI_NOT_STARTED: WiFi is not started by esp_wifi_start
   *    - ESP_ERR_WIFI_MODE: WiFi mode is wrong
-  *    - ESP_ERR_INVALID_ARG: invalid argument
+  *    - ESP_ERR_INVALID_ARG: It doesn't normally happen, the function called inside the API was passed invalid argument, user should check if the wifi related config is correct
   */
 esp_err_t esp_wifi_clear_ap_list(void);
 

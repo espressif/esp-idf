@@ -328,12 +328,16 @@ esp_err_t esp_wifi_init(const wifi_init_config_t *config)
 
     esp_pm_register_light_sleep_default_params_config_callback(esp_wifi_internal_update_light_sleep_default_params);
 
-    uint32_t sleep_delay_us = CONFIG_ESP_WIFI_SLP_DEFAULT_MIN_ACTIVE_TIME * 1000;
-    esp_wifi_set_sleep_delay_time(sleep_delay_us);
+#endif
+
+    uint32_t min_active_time_us = CONFIG_ESP_WIFI_SLP_DEFAULT_MIN_ACTIVE_TIME * 1000;
+    esp_wifi_set_sleep_min_active_time(min_active_time_us);
 
     uint32_t keep_alive_time_us = CONFIG_ESP_WIFI_SLP_DEFAULT_MAX_ACTIVE_TIME * 1000 * 1000;
     esp_wifi_set_keep_alive_time(keep_alive_time_us);
-#endif
+
+    uint32_t wait_broadcast_data_time_us = CONFIG_ESP_WIFI_SLP_DEFAULT_WAIT_BROADCAST_DATA_TIME * 1000;
+    esp_wifi_set_sleep_wait_broadcast_data_time(wait_broadcast_data_time_us);
 
 #if CONFIG_FREERTOS_USE_TICKLESS_IDLE
 #if SOC_PM_MODEM_RETENTION_BY_REGDMA
