@@ -47,8 +47,6 @@ static inline uint32_t periph_ll_get_clk_en_mask(periph_module_t periph)
         return HP_SYS_CLKRST_REG_CRYPTO_ECDSA_CLK_EN;
     case PERIPH_ISP_MODULE:
         return HP_SYS_CLKRST_REG_ISP_CLK_EN;
-    case PERIPH_REGDMA_MODULE:
-            return HP_SYS_CLKRST_REG_REGDMA_SYS_CLK_EN;
     default:
         return 0;
     }
@@ -105,8 +103,6 @@ static inline uint32_t periph_ll_get_rst_en_mask(periph_module_t periph, bool en
         return HP_SYS_CLKRST_REG_RST_EN_ECDSA;
     case PERIPH_EMAC_MODULE:
         return LP_CLKRST_RST_EN_EMAC;
-    case PERIPH_REGDMA_MODULE:
-        return HP_SYS_CLKRST_REG_RST_EN_REGDMA;
     default:
         return 0;
     }
@@ -132,8 +128,6 @@ static inline uint32_t periph_ll_get_clk_en_reg(periph_module_t periph)
         return HP_SYS_CLKRST_PERI_CLK_CTRL25_REG;
     case PERIPH_EMAC_MODULE:
         return LP_CLKRST_HP_CLK_CTRL_REG;
-    case PERIPH_REGDMA_MODULE:
-        return HP_SYS_CLKRST_SOC_CLK_CTRL0_REG;
     default:
         abort();
         return 0;
@@ -160,8 +154,6 @@ static inline uint32_t periph_ll_get_rst_en_reg(periph_module_t periph)
         return HP_SYS_CLKRST_HP_RST_EN2_REG;
     case PERIPH_EMAC_MODULE:
         return LP_CLKRST_HP_SDMMC_EMAC_RST_CTRL_REG;
-    case PERIPH_REGDMA_MODULE:
-        return HP_SYS_CLKRST_HP_RST_EN0_REG;
     default:
         abort();
         return 0;

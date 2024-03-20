@@ -35,6 +35,7 @@
 #include "hal/mcpwm_ll.h"
 #include "hal/parlio_ll.h"
 #include "hal/gdma_ll.h"
+#include "hal/pau_ll.h"
 #include "hal/spi_ll.h"
 #include "hal/clk_gate_ll.h"
 #include "hal/lp_core_ll.h"
@@ -255,11 +256,11 @@ __attribute__((weak)) void esp_perip_clk_init(void)
 #endif
         spi_ll_enable_bus_clock(SPI2_HOST, false);
         temperature_sensor_ll_bus_clk_enable(false);
+        pau_ll_enable_bus_clock(false);
 
         periph_ll_disable_clk_set_rst(PERIPH_UHCI0_MODULE);
         periph_ll_disable_clk_set_rst(PERIPH_SARADC_MODULE);
         periph_ll_disable_clk_set_rst(PERIPH_SDIO_SLAVE_MODULE);
-        periph_ll_disable_clk_set_rst(PERIPH_REGDMA_MODULE);
 #if !CONFIG_ESP_SYSTEM_HW_PC_RECORD
         /* Disable ASSIST Debug module clock if PC recoreding function is not used,
          * if stack guard function needs it, it will be re-enabled at esp_hw_stack_guard_init */

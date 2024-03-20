@@ -23,6 +23,13 @@ typedef struct {
 } pau_hal_context_t;
 
 /**
+ * @brief Enable the bus clock of REGDMA module
+ * @param hal    regdma hal context
+ * @param enable enable or disable the module clock
+ */
+#define pau_hal_enable_bus_clock(enable) pau_ll_enable_bus_clock(enable)
+
+/**
  * @brief Set regdma entry link address
  *
  * @param hal           regdma hal context

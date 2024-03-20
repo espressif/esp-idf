@@ -31,7 +31,7 @@ pau_context_t * __attribute__((weak)) IRAM_ATTR PAU_instance(void)
 
     if (pau_hal.dev == NULL) {
         pau_hal.dev = &PAU;
-        periph_module_enable(PERIPH_REGDMA_MODULE);
+        pau_hal_enable_bus_clock(true);
 #if SOC_PAU_IN_TOP_DOMAIN
         pau_hal_lp_sys_initialize();
 #endif

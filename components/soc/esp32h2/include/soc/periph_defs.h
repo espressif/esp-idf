@@ -43,7 +43,6 @@ typedef enum {
     PERIPH_SYSTIMER_MODULE,
     PERIPH_SARADC_MODULE,
     PERIPH_TEMPSENSOR_MODULE,
-    PERIPH_REGDMA_MODULE,
     PERIPH_ASSIST_DEBUG_MODULE,
 /* Peripherals clock managed by the modem_clock driver must be listed last in the enumeration */
     PERIPH_BT_MODULE,

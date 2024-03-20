@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,12 +13,24 @@
 #include "soc/soc.h"
 #include "soc/pau_reg.h"
 #include "soc/pau_struct.h"
+#include "soc/pcr_struct.h"
 #include "hal/pau_types.h"
 #include "hal/assert.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+static inline void pau_ll_enable_bus_clock(bool enable)
+{
+    if (enable) {
+        PCR.regdma_conf.regdma_clk_en = 1;
+        PCR.regdma_conf.regdma_rst_en = 0;
+    } else {
+        PCR.regdma_conf.regdma_clk_en = 0;
+        PCR.regdma_conf.regdma_rst_en = 1;
+    }
+}
 
 static inline __attribute__((always_inline)) uint32_t pau_ll_get_regdma_backup_flow_error(pau_dev_t *dev)
 {
