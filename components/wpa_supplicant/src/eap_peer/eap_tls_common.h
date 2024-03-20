@@ -73,6 +73,11 @@ struct eap_ssl_data {
 	 * eap_type - EAP method used in Phase 1 (EAP_TYPE_TLS/PEAP/TTLS/FAST)
 	 */
 	u8 eap_type;
+
+	/**
+	 * client_cert_conf: Whether client certificate has been configured
+	 */
+	bool client_cert_conf;
 };
 
 
