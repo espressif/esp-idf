@@ -178,7 +178,11 @@ esp_err_t esp_lcd_new_panel_dpi(esp_lcd_dsi_bus_handle_t bus, const esp_lcd_dpi_
         dpi_panel->fbs[i] = frame_buffer;
         ESP_LOGD(TAG, "fb[%d] @%p", i, frame_buffer);
         // preset the frame buffer with black color
-        ESP_GOTO_ON_ERROR(esp_cache_msync(frame_buffer, frame_buffer_size, ESP_CACHE_MSYNC_FLAG_DIR_C2M), err, TAG, "cache write back failed");
+        // the frame buffer address alignment is ensured by `heap_caps_aligned_calloc`
+        // while the value of the frame_buffer_size may not be aligned to the cache line size
+        // but that's not a problem because the `heap_caps_aligned_calloc` internally allocated a buffer whose size is aligned up to the cache line size
+        ESP_GOTO_ON_ERROR(esp_cache_msync(frame_buffer, frame_buffer_size, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED),
+                          err, TAG, "cache write back failed");
     }
     dpi_panel->frame_buffer_size = frame_buffer_size;
     dpi_panel->bytes_per_pixel = bytes_per_pixel;
@@ -382,6 +386,7 @@ static esp_err_t dpi_panel_draw_bitmap(esp_lcd_panel_t *panel, int x_start, int 
     uint8_t *frame_buffer = dpi_panel->fbs[cur_fb_index];
     uint8_t *draw_buffer = (uint8_t *)color_data;
     size_t frame_buffer_size = dpi_panel->frame_buffer_size;
+    size_t bytes_per_pixel = dpi_panel->bytes_per_pixel;
 
     bool do_copy = false;
     uint8_t draw_buf_fb_index = 0;
@@ -399,9 +404,11 @@ static esp_err_t dpi_panel_draw_bitmap(esp_lcd_panel_t *panel, int x_start, int 
 
     if (!do_copy) { // no copy, just do cache memory write back
         ESP_LOGD(TAG, "draw buffer is in frame buffer memory range, do cache write back only");
-        size_t draw_buf_write_back_size = (y_end - y_start) * dpi_panel->h_pixels * dpi_panel->bytes_per_pixel;
-        uint8_t *cache_sync_start = dpi_panel->fbs[draw_buf_fb_index] + (y_start * dpi_panel->h_pixels) * dpi_panel->bytes_per_pixel;
-        esp_cache_msync(cache_sync_start, draw_buf_write_back_size, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED);
+        // only write back the LCD lines that updated by the draw buffer
+        uint8_t *cache_sync_start = dpi_panel->fbs[draw_buf_fb_index] + (y_start * dpi_panel->h_pixels) * bytes_per_pixel;
+        size_t cache_sync_size = (y_end - y_start) * dpi_panel->h_pixels * bytes_per_pixel;
+        // the buffer to be flushed is still within the frame buffer, so even an unaligned address is OK
+        esp_cache_msync(cache_sync_start, cache_sync_size, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED);
 
         // update the link connections for all DMA link lists, make draw_buf_fb_index take effect automatically in the next DMA loop
         for (int i = 0; i < dpi_panel->num_fbs; i++) {
@@ -415,29 +422,34 @@ static esp_err_t dpi_panel_draw_bitmap(esp_lcd_panel_t *panel, int x_start, int 
         }
     } else if (!dpi_panel->fbcpy_handle) { // copy by CPU
         ESP_LOGD(TAG, "copy draw buffer by CPU");
-        size_t bytes_per_pixel = dpi_panel->bytes_per_pixel;
         const uint8_t *from = draw_buffer;
         uint8_t *to = frame_buffer + (y_start * dpi_panel->h_pixels + x_start) * bytes_per_pixel;
         uint32_t copy_bytes_per_line = (x_end - x_start) * bytes_per_pixel;
         uint32_t bytes_per_line = bytes_per_pixel * dpi_panel->h_pixels;
+        // please note, we assume the user provided draw_buffer is compact,
+        // but the destination is a sub-window of the frame buffer, so we need to skip the stride
         for (int y = y_start; y < y_end; y++) {
             memcpy(to, from, copy_bytes_per_line);
             to += bytes_per_line;
             from += copy_bytes_per_line;
         }
-        ESP_RETURN_ON_ERROR(esp_cache_msync(frame_buffer, frame_buffer_size, ESP_CACHE_MSYNC_FLAG_DIR_C2M), TAG, "cache write back failed");
+        uint8_t *cache_sync_start = frame_buffer + (y_start * dpi_panel->h_pixels) * bytes_per_pixel;
+        size_t cache_sync_size = (y_end - y_start) * dpi_panel->h_pixels * bytes_per_pixel;
+        // the buffer to be flushed is still within the frame buffer, so even an unaligned address is OK
+        esp_cache_msync(cache_sync_start, cache_sync_size, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED);
         // invoke the trans done callback
         if (dpi_panel->on_color_trans_done) {
             dpi_panel->on_color_trans_done(&dpi_panel->base, NULL, dpi_panel->user_ctx);
         }
     } else { // copy by DMA2D
         ESP_LOGD(TAG, "copy draw buffer by DMA2D");
-        // ensure the previous draw operation has finish
-        ESP_RETURN_ON_FALSE(xSemaphoreTake(dpi_panel->draw_sem, 0) == pdTRUE, ESP_ERR_INVALID_STATE, TAG, "previous draw operation is not finished");
+        // ensure the previous draw operation is finished
+        ESP_RETURN_ON_FALSE(xSemaphoreTake(dpi_panel->draw_sem, 0) == pdTRUE, ESP_ERR_INVALID_STATE,
+                            TAG, "previous draw operation is not finished");
 
         // write back the user's draw buffer, so that the DMA can see the correct data
         // Note, the user draw buffer should be 1D array, and contiguous in memory, no stride
-        size_t color_data_size = (x_end - x_start) * (y_end - y_start) * dpi_panel->bytes_per_pixel;
+        size_t color_data_size = (x_end - x_start) * (y_end - y_start) * bytes_per_pixel;
         esp_cache_msync(draw_buffer, color_data_size, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED);
 
         esp_async_fbcpy_trans_desc_t fbcpy_trans_config = {
