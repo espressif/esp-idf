@@ -22,6 +22,7 @@ from idf_ci.app import dump_apps_to_txt
 from idf_ci_utils import IDF_PATH
 from idf_pytest.constants import CollectMode
 from idf_pytest.constants import DEFAULT_CONFIG_RULES_STR
+from idf_pytest.constants import DEFAULT_FULL_BUILD_TEST_COMPONENTS
 from idf_pytest.constants import DEFAULT_FULL_BUILD_TEST_FILEPATTERNS
 from idf_pytest.script import get_all_apps
 
@@ -185,6 +186,18 @@ if __name__ == '__main__':
         'If set to ";", the value would be considered as an empty list',
     )
     parser.add_argument(
+        '-ic',
+        '--ignore-app-dependencies-components',
+        type=_separate_str_to_list,
+        help='semicolon-separated string which specifies the modified components used for '
+        'ignoring checking the app dependencies. '
+        'The `depends_components` and `depends_filepatterns` set in the manifest files will be ignored '
+        'when any of the specified components matches any of the modified components. '
+        'Must be used together with --modified-components. '
+        'If set to "", the value would be considered as None. '
+        'If set to ";", the value would be considered as an empty list',
+    )
+    parser.add_argument(
         '-if',
         '--ignore-app-dependencies-filepatterns',
         type=_separate_str_to_list,
@@ -216,7 +229,11 @@ if __name__ == '__main__':
             f'- modified files: {args.modified_files}'
         )
 
-        if args.modified_files and not args.ignore_app_dependencies_filepatterns:
+        if args.modified_components is not None and not args.ignore_app_dependencies_components:
+            # setting default values
+            args.ignore_app_dependencies_components = DEFAULT_FULL_BUILD_TEST_COMPONENTS
+
+        if args.modified_files is not None and not args.ignore_app_dependencies_filepatterns:
             # setting default values
             args.ignore_app_dependencies_filepatterns = DEFAULT_FULL_BUILD_TEST_FILEPATTERNS
 
