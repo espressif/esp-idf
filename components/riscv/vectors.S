@@ -124,7 +124,7 @@
     .global gdbstub_handle_debug_int
 #endif
 
-    .section .exception_vectors.text
+    .section .exception_vectors.text, "ax"
 
     /* Exception handler.*/
     .type _panic_handler, @function
