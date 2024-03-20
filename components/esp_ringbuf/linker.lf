@@ -8,7 +8,6 @@ entries:
         ringbuf: prvGetCurMaxSizeByteBuf (default)
         ringbuf: prvInitializeNewRingbuffer (default)
         ringbuf: prvReceiveGeneric (default)
-        ringbuf: prvGetFreeSize (default)
         ringbuf: vRingbufferDelete (default)
         ringbuf: vRingbufferGetInfo (default)
         ringbuf: vRingbufferReturnItem (default)
@@ -31,6 +30,7 @@ entries:
     if RINGBUF_PLACE_ISR_FUNCTIONS_INTO_FLASH = y:
         ringbuf: prvReturnItemByteBuf (default)
         ringbuf: prvReturnItemDefault (default)
+        ringbuf: prvGetFreeSize (default)
         ringbuf: prvGetItemByteBuf (default)
         ringbuf: prvGetItemDefault (default)
         ringbuf: prvCopyItemAllowSplit (default)
