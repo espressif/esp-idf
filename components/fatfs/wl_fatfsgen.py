@@ -1,13 +1,19 @@
 #!/usr/bin/env python
-# SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
+from typing import List
+from typing import Optional
 
-from typing import List, Optional
-
-from construct import Const, Int32ul, Struct
+from construct import Const
+from construct import Int32ul
+from construct import Struct
 from fatfs_utils.exceptions import WLNotInitialized
-from fatfs_utils.utils import (FULL_BYTE, UINT32_MAX, FATDefaults, crc32, generate_4bytes_random,
-                               get_args_for_partition_generator)
+from fatfs_utils.utils import crc32
+from fatfs_utils.utils import FATDefaults
+from fatfs_utils.utils import FULL_BYTE
+from fatfs_utils.utils import generate_4bytes_random
+from fatfs_utils.utils import get_args_for_partition_generator
+from fatfs_utils.utils import UINT32_MAX
 from fatfsgen import FATFS
 
 
@@ -55,6 +61,7 @@ class WLFATFS:
     WL_STATE_HEADER_SIZE = 64
     WL_STATE_COPY_COUNT = 2  # always 2 copies for power failure safety
     WL_SECTOR_SIZE = 0x1000
+    WL_SAFE_MODE_DUMP_SECTORS = 2
 
     WL_STATE_T_DATA = Struct(
         'pos' / Int32ul,
@@ -99,7 +106,8 @@ class WLFATFS:
                  temp_buff_size: int = FATDefaults.TEMP_BUFFER_SIZE,
                  device_id: int = None,
                  root_entry_count: int = FATDefaults.ROOT_ENTRIES_COUNT,
-                 media_type: int = FATDefaults.MEDIA_TYPE) -> None:
+                 media_type: int = FATDefaults.MEDIA_TYPE,
+                 wl_mode: Optional[str] = None) -> None:
         self._initialized = False
         self._version = version
         self._temp_buff_size = temp_buff_size
@@ -107,6 +115,7 @@ class WLFATFS:
         self.partition_size = size
         self.total_sectors = self.partition_size // FATDefaults.WL_SECTOR_SIZE
         self.wl_state_size = WLFATFS.WL_STATE_HEADER_SIZE + WLFATFS.WL_STATE_RECORD_SIZE * self.total_sectors
+        self.wl_mode = wl_mode
 
         # determine the number of required sectors (roundup to sector size)
         self.wl_state_sectors = (self.wl_state_size + FATDefaults.WL_SECTOR_SIZE - 1) // FATDefaults.WL_SECTOR_SIZE
@@ -116,6 +125,9 @@ class WLFATFS:
 
         wl_sectors = (WLFATFS.WL_DUMMY_SECTORS_COUNT + WLFATFS.WL_CFG_SECTORS_COUNT +
                       self.wl_state_sectors * WLFATFS.WL_STATE_COPY_COUNT)
+        if self.wl_mode is not None and self.wl_mode == 'safe':
+            wl_sectors += WLFATFS.WL_SAFE_MODE_DUMP_SECTORS
+
         self.plain_fat_sectors = self.total_sectors - wl_sectors
         self.plain_fatfs = FATFS(
             explicit_fat_type=explicit_fat_type,
@@ -226,7 +238,8 @@ if __name__ == '__main__':
                        root_entry_count=args.root_entry_count,
                        explicit_fat_type=args.fat_type,
                        long_names_enabled=args.long_name_support,
-                       use_default_datetime=args.use_default_datetime)
+                       use_default_datetime=args.use_default_datetime,
+                       wl_mode=args.wl_mode)
 
     wl_fatfs.wl_generate(args.input_directory)
     wl_fatfs.init_wl()
