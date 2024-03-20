@@ -345,7 +345,7 @@ static void wps_reg_eloop_handler(void *eloop_ctx, void *user_ctx)
         ret = wifi_ap_wps_disable_internal();
         break;
     default:
-        wpa_printf(MSG_WARN, "%s(): invalid signal type=%d", __func__, *sig);
+        wpa_printf(MSG_WARNING, "%s(): invalid signal type=%d", __func__, *sig);
         ret = ESP_FAIL;
         break;
     }
