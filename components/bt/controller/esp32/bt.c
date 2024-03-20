@@ -233,16 +233,12 @@ extern uint32_t _data_end_btdm_rom;
 
 extern uint32_t _bt_bss_start;
 extern uint32_t _bt_bss_end;
-extern uint32_t _nimble_bss_start;
-extern uint32_t _nimble_bss_end;
-extern uint32_t _btdm_bss_start;
-extern uint32_t _btdm_bss_end;
+extern uint32_t _bt_controller_bss_start;
+extern uint32_t _bt_controller_bss_end;
 extern uint32_t _bt_data_start;
 extern uint32_t _bt_data_end;
-extern uint32_t _nimble_data_start;
-extern uint32_t _nimble_data_end;
-extern uint32_t _btdm_data_start;
-extern uint32_t _btdm_data_end;
+extern uint32_t _bt_controller_data_start;
+extern uint32_t _bt_controller_data_end;
 
 extern void config_bt_funcs_reset(void);
 extern void config_ble_funcs_reset(void);
@@ -1281,6 +1277,25 @@ static esp_err_t try_heap_caps_add_region(intptr_t start, intptr_t end)
     return ret;
 }
 
+typedef struct {
+    intptr_t start;
+    intptr_t end;
+    const char* name;
+} bt_area_t;
+
+
+static esp_err_t esp_bt_mem_release_area(const bt_area_t *area)
+{
+    esp_err_t ret = ESP_OK;
+    intptr_t mem_start = area->start;
+    intptr_t mem_end = area->end;
+    if (mem_start != mem_end) {
+        ESP_LOGD(BTDM_LOG_TAG, "Release %s [0x%08x] - [0x%08x], len %d", area->name, mem_start, mem_end, mem_end - mem_start);
+        ret = try_heap_caps_add_region(mem_start, mem_end);
+    }
+    return ret;
+}
+
 esp_err_t esp_bt_controller_mem_release(esp_bt_mode_t mode)
 {
     bool update = true;
@@ -1333,19 +1348,20 @@ esp_err_t esp_bt_controller_mem_release(esp_bt_mode_t mode)
     }
 
     if (mode == ESP_BT_MODE_BTDM) {
-        mem_start = (intptr_t)&_btdm_bss_start;
-        mem_end = (intptr_t)&_btdm_bss_end;
-        if (mem_start != mem_end) {
-            ESP_LOGD(BTDM_LOG_TAG, "Release BTDM BSS [0x%08x] - [0x%08x]", mem_start, mem_end);
-            ESP_ERROR_CHECK(try_heap_caps_add_region(mem_start, mem_end));
-        }
-        mem_start = (intptr_t)&_btdm_data_start;
-        mem_end = (intptr_t)&_btdm_data_end;
-        if (mem_start != mem_end) {
-            ESP_LOGD(BTDM_LOG_TAG, "Release BTDM Data [0x%08x] - [0x%08x]", mem_start, mem_end);
-            ESP_ERROR_CHECK(try_heap_caps_add_region(mem_start, mem_end));
-        }
+        bt_area_t cont_bss = {
+            .start = (intptr_t)&_bt_controller_bss_start,
+            .end   = (intptr_t)&_bt_controller_bss_end,
+            .name  = "BT Controller BSS",
+        };
+        bt_area_t cont_data = {
+            .start = (intptr_t)&_bt_controller_data_start,
+            .end   = (intptr_t)&_bt_controller_data_end,
+            .name  = "BT Controller Data"
+        };
+        esp_bt_mem_release_area(&cont_bss);
+        esp_bt_mem_release_area(&cont_data);
     }
+
     return ESP_OK;
 }
 
@@ -1373,16 +1389,16 @@ esp_err_t esp_bt_mem_release(esp_bt_mode_t mode)
             ESP_ERROR_CHECK(try_heap_caps_add_region(mem_start, mem_end));
         }
 
-        mem_start = (intptr_t)&_nimble_bss_start;
-        mem_end = (intptr_t)&_nimble_bss_end;
+        mem_start = (intptr_t)&_bt_controller_bss_start;
+        mem_end = (intptr_t)&_bt_controller_bss_end;
         if (mem_start != mem_end) {
-            ESP_LOGD(BTDM_LOG_TAG, "Release NimBLE BSS [0x%08x] - [0x%08x]", mem_start, mem_end);
+            ESP_LOGD(BTDM_LOG_TAG, "Release Controller BSS [0x%08x] - [0x%08x]", mem_start, mem_end);
             ESP_ERROR_CHECK(try_heap_caps_add_region(mem_start, mem_end));
         }
-        mem_start = (intptr_t)&_nimble_data_start;
-        mem_end = (intptr_t)&_nimble_data_end;
+        mem_start = (intptr_t)&_bt_controller_data_start;
+        mem_end = (intptr_t)&_bt_controller_data_end;
         if (mem_start != mem_end) {
-            ESP_LOGD(BTDM_LOG_TAG, "Release NimBLE Data [0x%08x] - [0x%08x]", mem_start, mem_end);
+            ESP_LOGD(BTDM_LOG_TAG, "Release Controller Data [0x%08x] - [0x%08x]", mem_start, mem_end);
             ESP_ERROR_CHECK(try_heap_caps_add_region(mem_start, mem_end));
         }
     }
