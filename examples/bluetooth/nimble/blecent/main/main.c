@@ -28,6 +28,26 @@
 #include "services/gap/ble_svc_gap.h"
 #include "blecent.h"
 
+#if CONFIG_EXAMPLE_USE_CI_ADDRESS
+#ifdef CONFIG_IDF_TARGET_ESP32
+#define TEST_CI_ADDRESS_CHIP_OFFSET (0)
+#elif CONFIG_IDF_TARGET_ESP32C2
+#define TEST_CI_ADDRESS_CHIP_OFFSET (1)
+#elif CONFIG_IDF_TARGET_ESP32C3
+#define TEST_CI_ADDRESS_CHIP_OFFSET (2)
+#elif CONFIG_IDF_TARGET_ESP32C6
+#define TEST_CI_ADDRESS_CHIP_OFFSET (3)
+#elif CONFIG_IDF_TARGET_ESP32C5
+#define TEST_CI_ADDRESS_CHIP_OFFSET (4)
+#elif CONFIG_IDF_TARGET_ESP32H2
+#define TEST_CI_ADDRESS_CHIP_OFFSET (5)
+#elif CONFIG_IDF_TARGET_ESP32P4
+#define TEST_CI_ADDRESS_CHIP_OFFSET (6)
+#elif CONFIG_IDF_TARGET_ESP32S3
+#define TEST_CI_ADDRESS_CHIP_OFFSET (7)
+#endif
+#endif
+
 /*** The UUID of the service containing the subscribable characterstic ***/
 static const ble_uuid_t * remote_svc_uuid =
     BLE_UUID128_DECLARE(0x2d, 0x71, 0xa2, 0x59, 0xb4, 0x58, 0xc8, 0x12,
@@ -474,6 +494,7 @@ ext_blecent_should_connect(const struct ble_gap_ext_disc_desc *disc)
         addr_offset = (uint32_t *)&peer_addr[1];
         *addr_offset = atoi(CONFIG_EXAMPLE_PEER_ADDR);
         peer_addr[5] = 0xC3;
+        peer_addr[0] = TEST_CI_ADDRESS_CHIP_OFFSET;
 #endif // !CONFIG_EXAMPLE_USE_CI_ADDRESS
         if (memcmp(peer_addr, disc->addr.val, sizeof(disc->addr.val)) != 0) {
             return 0;
@@ -537,6 +558,7 @@ blecent_should_connect(const struct ble_gap_disc_desc *disc)
         addr_offset = (uint32_t *)&peer_addr[1];
         *addr_offset = atoi(CONFIG_EXAMPLE_PEER_ADDR);
         peer_addr[5] = 0xC3;
+        peer_addr[0] = TEST_CI_ADDRESS_CHIP_OFFSET;
 #endif // !CONFIG_EXAMPLE_USE_CI_ADDRESS
         if (memcmp(peer_addr, disc->addr.val, sizeof(disc->addr.val)) != 0) {
             return 0;
