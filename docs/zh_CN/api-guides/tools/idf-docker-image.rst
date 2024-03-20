@@ -98,6 +98,10 @@ Docker 也支持以交互方式进行构建，以调试构建问题或测试自�
 
     若未将串行接口传递到容器中，则 ``idf.py flash`` 和 ``idf.py monitor`` 等与开发板通信的命令在容器中无法正常工作。对于 Linux 系统，可以使用 `设备选项`_ 将串行接口传递到容器中。然而，目前 Windows 系统 (https://github.com/docker/for-win/issues/1018) 和 Mac 系统 (https://github.com/docker/for-mac/issues/900) 中 Docker 不支持此功能。可以使用 `远程串行接口`_ 克服此限制。有关如何执行此操作，请参阅以下 `使用远程串行接口`_ 章节。
 
+.. note::
+
+    对于 Linux 系统，如果使用 ``--device`` 或 ``--privileged`` 等选项将主机的串行接口设备添加到容器，并使用 ``-u $UID`` 以特定用户启动容器时，请确保此用户对设备具有读/写访问权限。使用 ``--group-add`` 选项可以将容器用户添加到分配给主机设备的组 ID 中。例如，如果主机设备被分配到 ``dialout`` 组，你可以使用 ``--group-add $(getent group dialout | cut -d':' -f3)`` 将容器用户添加到主机的 ``dialout`` 组。
+
 
 .. _using remote serial port:
 
