@@ -5,9 +5,36 @@
  */
 #include <stdint.h>
 #include <stddef.h>
+#include <assert.h>
 #include "soc/soc.h"
 #include "riscv/interrupt.h"
+#include "soc/interrupt_reg.h"
+#include "riscv/csr.h"
+#include "esp_attr.h"
 #include "riscv/rv_utils.h"
+
+
+// TODO: [ESP32C61] IDF-9261, added in verify code, pls check
+// #if SOC_INT_CLIC_SUPPORTED
+
+// /**
+//  * If the target is using the CLIC as the interrupt controller, we have 32 external interrupt lines and 16 internal
+//  * lines. Let's consider the internal ones reserved and not mappable to any handler.
+//  */
+// #define RV_EXTERNAL_INT_COUNT   32
+// #define RV_EXTERNAL_INT_OFFSET  (CLIC_EXT_INTR_NUM_OFFSET)
+
+// #else // !SOC_INT_CLIC_SUPPORTED
+
+// /**
+//  * In the case of INTC, all the interrupt lines are dedicated to external peripherals, so the offset is 0.
+//  * In the case of PLIC, the reserved interrupts are not contiguous, moreover, they are already marked as
+//  * unusable by the interrupt allocator, so the offset can also be 0 here.
+//  */
+// #define RV_EXTERNAL_INT_COUNT   32
+// #define RV_EXTERNAL_INT_OFFSET  0
+
+// #endif // SOC_INT_CLIC_SUPPORTED
 
 
 typedef struct {
@@ -63,6 +90,24 @@ void _global_interrupt_handler(intptr_t sp, int mcause)
         (*item->handler)(item->arg);
     }
 }
+
+// TODO: [ESP32C61] IDF-9261, added in verify code, pls check
+// /*************************** ESP-RV Interrupt Controller ***************************/
+
+// #if SOC_INT_CLIC_SUPPORTED
+
+// bool esprv_intc_int_is_vectored(int rv_int_num)
+// {
+//     const uint32_t shv = REG_GET_FIELD(CLIC_INT_CTRL_REG(rv_int_num + RV_EXTERNAL_INT_OFFSET), CLIC_INT_ATTR_SHV);
+//     return shv != 0;
+// }
+
+// void esprv_intc_int_set_vectored(int rv_int_num, bool vectored)
+// {
+//     REG_SET_FIELD(CLIC_INT_CTRL_REG(rv_int_num + RV_EXTERNAL_INT_OFFSET), CLIC_INT_ATTR_SHV, vectored ? 1 : 0);
+// }
+
+// #endif // SOC_INT_CLIC_SUPPORTED
 
 /*************************** Exception names. Used in .gdbinit file. ***************************/
 

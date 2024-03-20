@@ -111,22 +111,22 @@ if(NOT BOOTLOADER_BUILD)
 
     if(CONFIG_SOC_GDMA_SUPPORTED)
         list(APPEND srcs "gdma_hal_top.c")
-    endif()
 
-    if(CONFIG_SOC_GDMA_SUPPORT_CRC)
-        list(APPEND srcs "gdma_hal_crc_gen.c")
-    endif()
+        if(CONFIG_SOC_GDMA_SUPPORT_CRC)
+            list(APPEND srcs "gdma_hal_crc_gen.c")
+        endif()
 
-    if(CONFIG_SOC_AHB_GDMA_VERSION EQUAL 1)
-        list(APPEND srcs "gdma_hal_ahb_v1.c")
-    endif()
+        if(CONFIG_SOC_AHB_GDMA_VERSION EQUAL 1)
+            list(APPEND srcs "gdma_hal_ahb_v1.c")
+        endif()
 
-    if(CONFIG_SOC_AHB_GDMA_VERSION EQUAL 2)
-        list(APPEND srcs "gdma_hal_ahb_v2.c")
-    endif()
+        if(CONFIG_SOC_AHB_GDMA_VERSION EQUAL 2)
+            list(APPEND srcs "gdma_hal_ahb_v2.c")
+        endif()
 
-    if(CONFIG_SOC_AXI_GDMA_SUPPORTED)
-        list(APPEND srcs "gdma_hal_axi.c")
+        if(CONFIG_SOC_AXI_GDMA_SUPPORTED)
+            list(APPEND srcs "gdma_hal_axi.c")
+        endif()
     endif()
 
     if(CONFIG_SOC_DW_GDMA_SUPPORTED)
@@ -163,10 +163,10 @@ if(NOT BOOTLOADER_BUILD)
 
     if(CONFIG_SOC_ADC_SUPPORTED)
         list(APPEND srcs "adc_hal_common.c" "adc_oneshot_hal.c")
-    endif()
 
-    if(CONFIG_SOC_ADC_DMA_SUPPORTED)
-        list(APPEND srcs "adc_hal.c")
+        if(CONFIG_SOC_ADC_DMA_SUPPORTED)
+            list(APPEND srcs "adc_hal.c")
+        endif()
     endif()
 
     if(CONFIG_SOC_LCDCAM_SUPPORTED)
@@ -219,14 +219,15 @@ if(NOT BOOTLOADER_BUILD)
 
     if(CONFIG_SOC_GPSPI_SUPPORTED)
         list(APPEND srcs
-                    "spi_hal.c"
-                    "spi_hal_iram.c"
-                    "spi_slave_hal.c"
-                    "spi_slave_hal_iram.c")
-    endif()
+            "spi_hal.c"
+            "spi_hal_iram.c"
+            "spi_slave_hal.c"
+            "spi_slave_hal_iram.c"
+        )
 
-    if(CONFIG_SOC_SPI_SUPPORT_SLAVE_HD_VER2)
-        list(APPEND srcs "spi_slave_hd_hal.c")
+        if(CONFIG_SOC_SPI_SUPPORT_SLAVE_HD_VER2)
+            list(APPEND srcs "spi_slave_hd_hal.c")
+        endif()
     endif()
 
     if(CONFIG_SOC_GPSPI_SUPPORTED AND NOT CONFIG_IDF_TARGET_ESP32)
