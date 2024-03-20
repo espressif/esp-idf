@@ -46,3 +46,15 @@
  *
  */
 #define OPENTHREAD_CONFIG_PLATFORM_RADIO_SPINEL_RX_FRAME_BUFFER_SIZE CONFIG_OPENTHREAD_SPINEL_RX_FRAME_BUFFER_SIZE
+
+/**
+ * @def OPENTHREAD_CONFIG_MAC_MAX_CSMA_BACKOFFS_DIRECT
+ *
+ * The maximum number of backoffs the CSMA-CA algorithm will attempt before declaring a channel access failure.
+ *
+ * Equivalent to macMaxCSMABackoffs in IEEE 802.15.4-2006, default value is 4.
+ *
+ */
+#ifndef OPENTHREAD_CONFIG_MAC_MAX_CSMA_BACKOFFS_DIRECT
+#define OPENTHREAD_CONFIG_MAC_MAX_CSMA_BACKOFFS_DIRECT CONFIG_OPENTHREAD_MAC_MAX_CSMA_BACKOFFS_DIRECT
+#endif

@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "sdkconfig.h"
 #include "esp_check.h"
 #include "esp_log.h"
 #include "platform/exit_code.h"
@@ -123,7 +124,7 @@ void SwitchoverDone(otInstance *aInstance, bool aSuccess)
     s_esp_radio_spinel_callbacks[idx].switchover_done(aSuccess);
 }
 
-#if OPENTHREAD_CONFIG_DIAG_ENABLE
+#if CONFIG_OPENTHREAD_DIAG
 void DiagReceiveDone(otInstance *aInstance, otRadioFrame *aFrame, otError aError)
 {
     esp_radio_spinel_idx_t idx = get_index_from_instance(aInstance);
@@ -172,7 +173,7 @@ void DiagTransmitDone(otInstance *aInstance, otRadioFrame *aFrame, otError aErro
         }
     }
 }
-#endif // OPENTHREAD_CONFIG_DIAG_ENABLE
+#endif // CONFIG_OPENTHREAD_DIAG
 
 
 void esp_radio_spinel_set_callbacks(const esp_radio_spinel_callbacks_t aCallbacks, esp_radio_spinel_idx_t idx)
@@ -184,10 +185,10 @@ void esp_radio_spinel_set_callbacks(const esp_radio_spinel_callbacks_t aCallback
     Callbacks.mEnergyScanDone = EnergyScanDone;
     Callbacks.mTxStarted = TxStarted;
     Callbacks.mSwitchoverDone = SwitchoverDone;
-#if OPENTHREAD_CONFIG_DIAG_ENABLE
+#if CONFIG_OPENTHREAD_DIAG
     Callbacks.mDiagReceiveDone = DiagReceiveDone;
     Callbacks.mDiagTransmitDone = DiagTransmitDone;
-#endif // OPENTHREAD_CONFIG_DIAG_ENABLE
+#endif // CONFIG_OPENTHREAD_DIAG
 
     s_radio[idx].SetCallbacks(Callbacks);
 }
@@ -268,6 +269,7 @@ esp_err_t esp_radio_spinel_transmit(uint8_t *frame, uint8_t channel, bool cca, e
     s_transmit_frame.mLength = frame[0];
     s_transmit_frame.mPsdu = frame + 1;
     s_transmit_frame.mInfo.mTxInfo.mCsmaCaEnabled = cca;
+    s_transmit_frame.mInfo.mTxInfo.mMaxCsmaBackoffs = CONFIG_OPENTHREAD_MAC_MAX_CSMA_BACKOFFS_DIRECT;
     s_transmit_frame.mChannel = channel;
     s_transmit_frame.mInfo.mTxInfo.mRxChannelAfterTxDone = channel;
     return (s_radio[idx].Transmit(s_transmit_frame) == OT_ERROR_NONE) ? ESP_OK : ESP_FAIL;

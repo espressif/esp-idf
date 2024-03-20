@@ -266,6 +266,14 @@ menu "OpenThread"
         default 1024
         range 512 8192
 
+    config OPENTHREAD_MAC_MAX_CSMA_BACKOFFS_DIRECT
+        int "Maximum backoffs times before declaring a channel access failure."
+        depends on OPENTHREAD_ENABLED || OPENTHREAD_SPINEL_ONLY
+        default 4
+        help
+            The maximum number of backoffs the CSMA-CA algorithm will attempt before declaring a channel access
+            failure.
+
     config OPENTHREAD_MLE_MAX_CHILDREN
         int "The size of max MLE children entries"
         depends on OPENTHREAD_ENABLED
