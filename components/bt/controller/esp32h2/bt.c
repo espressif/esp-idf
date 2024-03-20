@@ -813,33 +813,32 @@ typedef struct {
     const char* name;
 } bt_area_t;
 
-static esp_err_t esp_bt_mem_release_areas(const bt_area_t* area1, const bt_area_t* area2)
+static esp_err_t esp_bt_mem_release_area(const bt_area_t *area)
 {
     esp_err_t ret = ESP_OK;
-    intptr_t mem_start = 0;
-    intptr_t mem_end = 0;
+    intptr_t mem_start = area->start;
+    intptr_t mem_end = area->end;
+    if (mem_start != mem_end) {
+        ESP_LOGD(NIMBLE_PORT_LOG_TAG, "Release %s [0x%08x] - [0x%08x], len %d", area->name, mem_start, mem_end, mem_end - mem_start);
+        ret = try_heap_caps_add_region(mem_start, mem_end);
+    }
+    return ret;
+}
 
-    if(area1->end == area2->start) {
-        mem_start = area1->start;
-        mem_end = area2->end;
-        if (mem_start != mem_end) {
-            ESP_LOGD(NIMBLE_PORT_LOG_TAG, "Release %s [0x%08x] - [0x%08x], len %d", area1->name, mem_start, mem_end, mem_end - mem_start);
-            ret = try_heap_caps_add_region(mem_start, mem_end);
-        }
+static esp_err_t esp_bt_mem_release_areas(const bt_area_t *area1, const bt_area_t *area2)
+{
+    esp_err_t ret = ESP_OK;
+
+    if (area1->end == area2->start) {
+        bt_area_t merged_area = {
+            .start = area1->start,
+            .end = area2->end,
+            .name = area1->name
+        };
+        ret = esp_bt_mem_release_area(&merged_area);
     } else {
-        mem_start = area1->start;
-        mem_end = area1->end;
-        if (mem_start != mem_end) {
-            ESP_LOGD(NIMBLE_PORT_LOG_TAG, "Release %s [0x%08x] - [0x%08x], len %d", area1->name, mem_start, mem_end, mem_end - mem_start);
-            ret = try_heap_caps_add_region(mem_start, mem_end);
-        }
-
-        mem_start = area2->start;
-        mem_end = area2->end;
-        if (ret == ESP_OK && mem_start != mem_end) {
-            ESP_LOGD(NIMBLE_PORT_LOG_TAG, "Release %s [0x%08x] - [0x%08x], len %d", area2->name, mem_start, mem_end, mem_end - mem_start);
-            ret = try_heap_caps_add_region(mem_start, mem_end);
-        }
+        esp_bt_mem_release_area(area1);
+        ret = esp_bt_mem_release_area(area2);
     }
 
     return ret;
@@ -848,6 +847,11 @@ static esp_err_t esp_bt_mem_release_areas(const bt_area_t* area1, const bt_area_
 esp_err_t esp_bt_mem_release(esp_bt_mode_t mode)
 {
     esp_err_t ret = ESP_OK;
+
+    if (ble_controller_status != ESP_BT_CONTROLLER_STATUS_IDLE) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
     bt_area_t bss = {
         .start = (intptr_t)&_bt_bss_start,
         .end   = (intptr_t)&_bt_bss_end,

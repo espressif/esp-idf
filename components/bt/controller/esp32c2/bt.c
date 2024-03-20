@@ -926,6 +926,7 @@ static esp_err_t esp_bt_mem_release_area(const bt_area_t *area)
     return ret;
 }
 
+#ifndef CONFIG_BT_RELEASE_IRAM
 static esp_err_t esp_bt_mem_release_areas(const bt_area_t *area1, const bt_area_t *area2)
 {
     esp_err_t ret = ESP_OK;
@@ -944,6 +945,7 @@ static esp_err_t esp_bt_mem_release_areas(const bt_area_t *area1, const bt_area_
 
     return ret;
 }
+#endif
 
 esp_err_t esp_bt_mem_release(esp_bt_mode_t mode)
 {
@@ -956,9 +958,12 @@ esp_err_t esp_bt_mem_release(esp_bt_mode_t mode)
      * memory into 3 different regions (IRAM, BLE-IRAM, DRAM). So `ESP_SYSTEM_PMP_IDRAM_SPLIT` needs
      * to be disabled.
      */
-    ESP_LOGE(NIMBLE_PORT_LOG_TAG, "`ESP_SYSTEM_PMP_IDRAM_SPLIT` should be disabled!");
-    assert(0);
+    #error "ESP_SYSTEM_PMP_IDRAM_SPLIT should be disabled to allow BT to be released"
 #endif // CONFIG_BT_RELEASE_IRAM && CONFIG_ESP_SYSTEM_PMP_IDRAM_SPLIT
+
+    if (ble_controller_status != ESP_BT_CONTROLLER_STATUS_IDLE) {
+        return ESP_ERR_INVALID_STATE;
+    }
 
     if ((mode & ESP_BT_MODE_BLE) == 0) {
         return ret;
@@ -966,8 +971,8 @@ esp_err_t esp_bt_mem_release(esp_bt_mode_t mode)
 
 #if CONFIG_BT_RELEASE_IRAM
     bt_area_t merged_region = {
-        .start = (intptr_t)MAP_IRAM_TO_DRAM((intptr_t)&_iram_bt_text_start);
-        .end = (intptr_t)&_bss_bt_end;
+        .start = (intptr_t)MAP_IRAM_TO_DRAM((intptr_t)&_iram_bt_text_start),
+        .end = (intptr_t)&_bss_bt_end,
         .name = "BT Text, BSS and Data"
     };
     ret = esp_bt_mem_release_area(&merged_region);
