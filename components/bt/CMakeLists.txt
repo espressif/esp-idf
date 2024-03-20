@@ -70,7 +70,6 @@ if(CONFIG_IDF_DOC_BUILD)
          ${nimble_hci_include_dirs})
 endif()
 
-
 if(CONFIG_BT_ENABLED)
 
     set(srcs "")
@@ -93,8 +92,7 @@ if(CONFIG_BT_ENABLED)
 
         elseif(CONFIG_IDF_TARGET_ESP32C2)
             list(APPEND srcs "controller/esp32c2/bt.c")
-            set(ldscripts "linker_common_esp32c2.lf")
-            list(APPEND ldscripts "linker_esp_ble_controller.lf")
+            set(ldscripts "linker_esp32c2.lf")
 
         elseif(CONFIG_IDF_TARGET_ESP32C6)
             list(APPEND srcs "controller/esp32c6/bt.c")
