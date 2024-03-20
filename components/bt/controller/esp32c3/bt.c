@@ -990,42 +990,45 @@ typedef struct {
     const char* name;
 } bt_area_t;
 
-static esp_err_t esp_bt_mem_release_areas(const bt_area_t* area1, const bt_area_t* area2)
+static esp_err_t esp_bt_mem_release_area(const bt_area_t *area)
 {
     esp_err_t ret = ESP_OK;
-    intptr_t mem_start = 0;
-    intptr_t mem_end = 0;
+    intptr_t mem_start = area->start;
+    intptr_t mem_end = area->end;
+    if (mem_start != mem_end) {
+        ESP_LOGD(BT_LOG_TAG, "Release %s [0x%08x] - [0x%08x], len %d", area->name, mem_start, mem_end, mem_end - mem_start);
+        ret = try_heap_caps_add_region(mem_start, mem_end);
+    }
+    return ret;
+}
 
-    if(area1->end == area2->start) {
-        mem_start = area1->start;
-        mem_end = area2->end;
-        if (mem_start != mem_end) {
-            ESP_LOGD(BT_LOG_TAG, "Release %s [0x%08x] - [0x%08x], len %d", area1->name, mem_start, mem_end, mem_end - mem_start);
-            ret = try_heap_caps_add_region(mem_start, mem_end);
-        }
+static esp_err_t esp_bt_mem_release_areas(const bt_area_t *area1, const bt_area_t *area2)
+{
+    esp_err_t ret = ESP_OK;
+
+    if (area1->end == area2->start) {
+        bt_area_t merged_area = {
+            .start = area1->start,
+            .end = area2->end,
+            .name = area1->name
+        };
+        ret = esp_bt_mem_release_area(&merged_area);
     } else {
-        mem_start = area1->start;
-        mem_end = area1->end;
-        if (mem_start != mem_end) {
-            ESP_LOGD(BT_LOG_TAG, "Release %s [0x%08x] - [0x%08x], len %d", area1->name, mem_start, mem_end, mem_end - mem_start);
-            ret = try_heap_caps_add_region(mem_start, mem_end);
-        }
-
-        mem_start = area2->start;
-        mem_end = area2->end;
-        if (ret == ESP_OK && mem_start != mem_end) {
-            ESP_LOGD(BT_LOG_TAG, "Release %s [0x%08x] - [0x%08x], len %d", area2->name, mem_start, mem_end, mem_end - mem_start);
-            ret = try_heap_caps_add_region(mem_start, mem_end);
-        }
+        esp_bt_mem_release_area(area1);
+        ret = esp_bt_mem_release_area(area2);
     }
 
     return ret;
 }
 
-
-esp_err_t esp_bt_controller_mem_release(esp_bt_mode_t mode)
+esp_err_t esp_bt_controller_rom_mem_release(esp_bt_mode_t mode)
 {
     esp_err_t ret = ESP_OK;
+
+    if (btdm_controller_status != ESP_BT_CONTROLLER_STATUS_IDLE) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
     bt_area_t rom_btdm_data = {
         .start = (intptr_t) ets_rom_layout_p->data_start_btdm,
         .end   = (intptr_t) ets_rom_layout_p->data_end_btdm,
@@ -1047,7 +1050,6 @@ esp_err_t esp_bt_controller_mem_release(esp_bt_mode_t mode)
         .name  = "ROM interface btdm BSS",
     };
 
-
     if (btdm_controller_status != ESP_BT_CONTROLLER_STATUS_IDLE) {
         ret = ESP_ERR_INVALID_STATE;
     }
@@ -1066,9 +1068,48 @@ esp_err_t esp_bt_controller_mem_release(esp_bt_mode_t mode)
     return ret;
 }
 
+esp_err_t esp_bt_controller_mem_release(esp_bt_mode_t mode)
+{
+    esp_err_t ret = ESP_OK;
+
+    if (btdm_controller_status != ESP_BT_CONTROLLER_STATUS_IDLE) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    bt_area_t cont_bss = {
+        .start = (intptr_t)&_bt_controller_bss_start,
+        .end   = (intptr_t)&_bt_controller_bss_end,
+        .name  = "BT Controller BSS",
+    };
+
+    bt_area_t cont_data = {
+        .start = (intptr_t)&_bt_controller_data_start,
+        .end   = (intptr_t)&_bt_controller_data_end,
+        .name  = "BT Controller Data"
+    };
+
+    if (mode & ESP_BT_MODE_BLE) {
+        /* free data and BSS section for libbtdm_app.a */
+        if (ret == ESP_OK) {
+            ret = esp_bt_mem_release_areas(&cont_data, &cont_bss);
+        }
+        /* free data and BSS section for Bluetooth controller ROM code */
+        if (ret == ESP_OK) {
+            ret = esp_bt_controller_rom_mem_release(mode);
+        }
+    }
+
+    return ret;
+}
+
 esp_err_t esp_bt_mem_release(esp_bt_mode_t mode)
 {
     esp_err_t ret = ESP_OK;
+
+    if (btdm_controller_status != ESP_BT_CONTROLLER_STATUS_IDLE) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
     bt_area_t bss = {
         .start = (intptr_t)&_bt_bss_start,
         .end   = (intptr_t)&_bt_bss_end,
@@ -1090,8 +1131,6 @@ esp_err_t esp_bt_mem_release(esp_bt_mode_t mode)
         .name  = "BT Controller Data"
     };
 
-    ret = esp_bt_controller_mem_release(mode);
-
     if (mode & ESP_BT_MODE_BLE) {
         /* Start by freeing Bluetooth BSS section */
         if (ret == ESP_OK) {
@@ -1101,6 +1140,11 @@ esp_err_t esp_bt_mem_release(esp_bt_mode_t mode)
         /* Do the same thing with the Bluetooth data section */
         if (ret == ESP_OK) {
             ret = esp_bt_mem_release_areas(&data, &cont_data);
+        }
+
+        /* free data and BSS section for Bluetooth controller ROM code */
+        if (ret == ESP_OK) {
+            ret = esp_bt_controller_rom_mem_release(mode);
         }
     }
 
