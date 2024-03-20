@@ -1047,42 +1047,32 @@ def dump_tools_json(tools_info):  # type: ignore
 
 
 def get_python_env_path():  # type: () -> Tuple[str, str, str, str]
-    python_ver_major_minor = '{}.{}'.format(sys.version_info.major, sys.version_info.minor)
+    python_ver_major_minor = f'{sys.version_info.major}.{sys.version_info.minor}'
 
-    version_file_path = os.path.join(global_idf_path, 'version.txt')  # type: ignore
+    idf_version = None  # type: Optional[str]
+
+    version_file_path = os.path.join(global_idf_path, 'version.txt')   # type: ignore
     if os.path.exists(version_file_path):
         with open(version_file_path, 'r') as version_file:
             idf_version_str = version_file.read()
-    else:
-        idf_version_str = ''
+
+        match = re.match(r'^v([0-9]+\.[0-9]+).*', idf_version_str)
+        if match:
+            idf_version = match.group(1)
+
+    if idf_version is None:
         try:
-            idf_version_str = subprocess.check_output(['git', 'describe'],
-                                                      cwd=global_idf_path, env=os.environ).decode()
-        except OSError:
-            # OSError should cover FileNotFoundError and WindowsError
-            warn('Git was not found')
-        except subprocess.CalledProcessError as e:
-            warn('Git describe was unsuccessful: {}'.format(e.output))
-    match = re.match(r'^v([0-9]+\.[0-9]+).*', idf_version_str)
-    if match:
-        idf_version = match.group(1)  # type: Optional[str]
-    else:
-        idf_version = None
-        # fallback when IDF is a shallow clone
-        try:
-            with open(os.path.join(global_idf_path, 'components', 'esp_common', 'include', 'esp_idf_version.h')) as f:  # type: ignore
+            with open(os.path.join(global_idf_path, 'components', 'esp_common', 'include', 'esp_idf_version.h')) as f:   # type: ignore
                 m = re.search(r'^#define\s+ESP_IDF_VERSION_MAJOR\s+(\d+).+?^#define\s+ESP_IDF_VERSION_MINOR\s+(\d+)',
                               f.read(), re.DOTALL | re.MULTILINE)
                 if m:
                     idf_version = '.'.join((m.group(1), m.group(2)))
                 else:
-                    warn('Reading IDF version from C header file failed!')
+                    fatal('Reading IDF version from C header file failed!')
+                    raise SystemExit(1)
         except Exception as e:
-            warn('Is it not possible to determine the IDF version: {}'.format(e))
-
-    if idf_version is None:
-        fatal('IDF version cannot be determined')
-        raise SystemExit(1)
+            fatal(f'It is not possible to determine the IDF version: {e}')
+            raise SystemExit(1)
 
     idf_python_env_path = os.path.join(global_idf_tools_path, 'python_env',  # type: ignore
                                        'idf{}_py{}_env'.format(idf_version, python_ver_major_minor))
