@@ -984,70 +984,84 @@ static esp_err_t try_heap_caps_add_region(intptr_t start, intptr_t end)
     return ret;
 }
 
-esp_err_t esp_bt_mem_release(esp_bt_mode_t mode)
+
+typedef struct {
+    intptr_t start;
+    intptr_t end;
+    const char* name;
+} bt_area_t;
+
+
+static esp_err_t esp_bt_mem_release_areas(const bt_area_t* area1, const bt_area_t* area2)
 {
-    intptr_t mem_start, mem_end;
+    esp_err_t ret = ESP_OK;
+    intptr_t mem_start = 0;
+    intptr_t mem_end = 0;
 
-    if (mode & ESP_BT_MODE_BLE) {
-        /* If the addresses of btdm .bss and bt .bss are consecutive,
-         * they are registered in the system heap as a piece of memory
-         */
-        if(_bt_bss_end == _bt_controller_bss_start) {
-            mem_start = (intptr_t)&_bt_bss_start;
-            mem_end = (intptr_t)&_bt_controller_bss_end;
-            if (mem_start != mem_end) {
-                ESP_LOGD(NIMBLE_PORT_LOG_TAG, "Release BSS [0x%08x] - [0x%08x], len %d",
-                         mem_start, mem_end, mem_end - mem_start);
-                ESP_ERROR_CHECK(try_heap_caps_add_region(mem_start, mem_end));
-            }
-        } else {
-            mem_start = (intptr_t)&_bt_bss_start;
-            mem_end = (intptr_t)&_bt_bss_end;
-            if (mem_start != mem_end) {
-                ESP_LOGD(NIMBLE_PORT_LOG_TAG, "Release BT BSS [0x%08x] - [0x%08x], len %d",
-                         mem_start, mem_end, mem_end - mem_start);
-                ESP_ERROR_CHECK(try_heap_caps_add_region(mem_start, mem_end));
-            }
-
-            mem_start = (intptr_t)&_bt_controller_bss_start;
-            mem_end = (intptr_t)&_bt_controller_bss_end;
-            if (mem_start != mem_end) {
-                ESP_LOGD(NIMBLE_PORT_LOG_TAG, "Release Controller BSS [0x%08x] - [0x%08x], len %d",
-                         mem_start, mem_end, mem_end - mem_start);
-                ESP_ERROR_CHECK(try_heap_caps_add_region(mem_start, mem_end));
-            }
+    if(area1->end == area2->start) {
+        mem_start = area1->start;
+        mem_end = area2->end;
+        if (mem_start != mem_end) {
+            ESP_LOGD(NIMBLE_PORT_LOG_TAG, "Release %s [0x%08x] - [0x%08x], len %d", area1->name, mem_start, mem_end, mem_end - mem_start);
+            ret = try_heap_caps_add_region(mem_start, mem_end);
         }
-        /* If the addresses of btdm .data and bt .data are consecutive,
-         * they are registered in the system heap as a piece of memory
-         */
-        if(_bt_data_end == _bt_controller_data_start) {
-            mem_start = (intptr_t)&_bt_data_start;
-            mem_end = (intptr_t)&_bt_controller_data_end;
-            if (mem_start != mem_end) {
-                ESP_LOGD(NIMBLE_PORT_LOG_TAG, "Release data [0x%08x] - [0x%08x], len %d",
-                         mem_start, mem_end, mem_end - mem_start);
-                ESP_ERROR_CHECK(try_heap_caps_add_region(mem_start, mem_end));
-            }
-        } else {
-            mem_start = (intptr_t)&_bt_data_start;
-            mem_end = (intptr_t)&_bt_data_end;
-            if (mem_start != mem_end) {
-                ESP_LOGD(NIMBLE_PORT_LOG_TAG, "Release BT Data [0x%08x] - [0x%08x], len %d",
-                         mem_start, mem_end, mem_end - mem_start);
-                ESP_ERROR_CHECK(try_heap_caps_add_region(mem_start, mem_end));
-            }
+    } else {
+        mem_start = area1->start;
+        mem_end = area1->end;
+        if (mem_start != mem_end) {
+            ESP_LOGD(NIMBLE_PORT_LOG_TAG, "Release %s [0x%08x] - [0x%08x], len %d", area1->name, mem_start, mem_end, mem_end - mem_start);
+            ret = try_heap_caps_add_region(mem_start, mem_end);
+        }
 
-            mem_start = (intptr_t)&_bt_controller_data_start;
-            mem_end = (intptr_t)&_bt_controller_data_end;
-            if (mem_start != mem_end) {
-                ESP_LOGD(NIMBLE_PORT_LOG_TAG, "Release Controller Data [0x%08x] - [0x%08x], len %d",
-                         mem_start, mem_end, mem_end - mem_start);
-                ESP_ERROR_CHECK(try_heap_caps_add_region(mem_start, mem_end));
-            }
+        mem_start = area2->start;
+        mem_end = area2->end;
+        if (ret == ESP_OK && mem_start != mem_end) {
+            ESP_LOGD(NIMBLE_PORT_LOG_TAG, "Release %s [0x%08x] - [0x%08x], len %d", area2->name, mem_start, mem_end, mem_end - mem_start);
+            ret = try_heap_caps_add_region(mem_start, mem_end);
         }
     }
 
-    return ESP_OK;
+    return ret;
+}
+
+
+esp_err_t esp_bt_mem_release(esp_bt_mode_t mode)
+{
+    esp_err_t ret = ESP_OK;
+    bt_area_t bss = {
+        .start = (intptr_t)&_bt_bss_start,
+        .end   = (intptr_t)&_bt_bss_end,
+        .name  = "BT BSS",
+    };
+    bt_area_t cont_bss = {
+        .start = (intptr_t)&_bt_controller_bss_start,
+        .end   = (intptr_t)&_bt_controller_bss_end,
+        .name  = "BT Controller BSS",
+    };
+    bt_area_t data = {
+        .start = (intptr_t)&_bt_data_start,
+        .end   = (intptr_t)&_bt_data_end,
+        .name  = "BT Data",
+    };
+    bt_area_t cont_data = {
+        .start = (intptr_t)&_bt_controller_data_start,
+        .end   = (intptr_t)&_bt_controller_data_end,
+        .name  = "BT Controller Data"
+    };
+
+    if (mode & ESP_BT_MODE_BLE) {
+        /* Start by freeing Bluetooth BSS section */
+        if (ret == ESP_OK) {
+            ret = esp_bt_mem_release_areas(&bss, &cont_bss);
+        }
+
+        /* Do the same thing with the Bluetooth data section */
+        if (ret == ESP_OK) {
+            ret = esp_bt_mem_release_areas(&data, &cont_data);
+        }
+    }
+
+    return ret;
 }
 
 
