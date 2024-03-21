@@ -21,10 +21,10 @@ Functional Overview
     -  `Resource Allocation <#cam-resource-allocation>`__ - covers how to allocate camera controller instances with properly set of configurations. It also covers how to recycle the resources when they are no longer needed.
     -  `Enable and disable a camera controller <#cam-enable-disable>`__ - covers how to enable and disable a camera controller.
     -  `Start and stop a camera controller <#cam-start-stop>`__ - covers how to start and stop a camera controller.
-    -  `Receive from a camera sensor or something else <#cam-receive>`__ - convers how to receive camera signal from a sensor or something else.
+    -  `Receive from a camera sensor or something else <#cam-receive>`__ - covers how to receive camera signal from a sensor or something else.
     -  `Register callback <#cam-callback>`__ - covers how to hook user specific code to camera controller driver event callback function.
-    -  `Thread Safety <#thread-safety>`__ - lists which APIs are guaranteed to be thread safe by the driver.
-    -  `Kconfig Options <#kconfig-options>`__ - lists the supported Kconfig options that can bring different effects to the driver.
+    -  `Thread Safety <#cam-thread-safety>`__ - lists which APIs are guaranteed to be thread safe by the driver.
+    -  `Kconfig Options <#cam-kconfig-options>`__ - lists the supported Kconfig options that can bring different effects to the driver.
     -  `IRAM SAFE <#cam-iram-safe>`__ - describes tips on how to make the CSI interrupt and control functions work better along with a disabled cache.
 
 .. _cam-resource-allocation:
@@ -122,14 +122,14 @@ After the Camera Controller Driver starts receiving, it can generate a specific 
 
 -  :cpp:member:`esp_cam_ctlr_evt_cbs_t::on_trans_finished` sets a callback function when the Camera Controller Driver finishes a transaction. As this function is called within the ISR context, you must ensure that the function does not attempt to block (e.g., by making sure that only FreeRTOS APIs with ``ISR`` suffix are called from within the function).
 
-.. _thread-safety:
+.. _cam-thread-safety:
 
 Thread Safety
 ^^^^^^^^^^^^^
 
 The factory function :cpp:func:`esp_cam_new_csi_ctlr` and :cpp:func:`esp_cam_del_ctlr` are guaranteed to be thread safe by the driver, which means, user can call them from different RTOS tasks without protection by extra locks.
 
-.. _kconfig-options:
+.. _cam-kconfig-options:
 
 Kconfig Options
 ^^^^^^^^^^^^^^^

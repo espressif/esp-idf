@@ -152,6 +152,8 @@ SDM_DOCS = ['api-reference/peripherals/sdm.rst']
 
 I2S_DOCS = ['api-reference/peripherals/i2s.rst']
 
+ISP_DOCS = ['api-reference/peripherals/isp.rst']
+
 RTC_MEM_DOCS = ['api-guides/deep-sleep-stub.rst']
 
 ADC_DOCS = ['api-reference/peripherals/adc_oneshot.rst',
@@ -246,6 +248,7 @@ conditional_include_dict = {'SOC_BT_SUPPORTED':BT_DOCS,
                             'SOC_TEMP_SENSOR_SUPPORTED':TEMP_SENSOR_DOCS,
                             'SOC_TWAI_SUPPORTED':TWAI_DOCS,
                             'SOC_I2S_SUPPORTED':I2S_DOCS,
+                            'SOC_ISP_SUPPORTED':ISP_DOCS,
                             'SOC_RTC_MEM_SUPPORTED': RTC_MEM_DOCS,
                             'SOC_ADC_SUPPORTED':ADC_DOCS,
                             'SOC_ADC_DMA_SUPPORTED':ADC_DMA_DOCS,
