@@ -1138,7 +1138,3 @@ config SOC_WIFI_HE_SUPPORT
 config SOC_PHY_COMBO_MODULE
     bool
     default y
-
-config SOC_CAPS_NO_RESET_BY_ANA_BOD
-    bool
-    default y
