@@ -368,7 +368,6 @@ static void seg_tx_reset(struct seg_tx *tx)
     tx->cb_data = NULL;
     tx->seq_auth = 0U;
     tx->sub = NULL;
-    tx->seg_n = 0;
     tx->last_seg_n = 0;
     tx->lsn_updated = 0;
     tx->dst = BLE_MESH_ADDR_UNASSIGNED;
@@ -385,6 +384,7 @@ static void seg_tx_reset(struct seg_tx *tx)
     }
 
     tx->nack_count = 0U;
+    tx->seg_n = 0;
 
     bt_mesh_seg_tx_unlock();
 
