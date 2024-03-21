@@ -89,7 +89,7 @@ const soc_memory_region_t soc_memory_regions[] = {
 const size_t soc_memory_region_count = sizeof(soc_memory_regions) / sizeof(soc_memory_region_t);
 
 
-extern int _data_start, _bss_start_high, _heap_start_low, _heap_start_high, _iram_start, _iram_end, _rtc_force_slow_end;
+extern int _data_start_low, _data_start_high, _heap_start_low, _heap_start_high, _iram_start, _iram_end, _rtc_force_slow_end;
 extern int _tcm_text_start, _tcm_data_end;
 extern int _rtc_reserved_start, _rtc_reserved_end;
 
@@ -100,8 +100,8 @@ extern int _rtc_reserved_start, _rtc_reserved_end;
  */
 
 // Static data region. DRAM used by data+bss and possibly rodata
-SOC_RESERVE_MEMORY_REGION((intptr_t)&_data_start, (intptr_t)&_heap_start_low, dram_data_low);
-SOC_RESERVE_MEMORY_REGION((intptr_t)&_bss_start_high, (intptr_t)&_heap_start_high, dram_data_high);
+SOC_RESERVE_MEMORY_REGION((intptr_t)&_data_start_low, (intptr_t)&_heap_start_low, dram_data_low);
+SOC_RESERVE_MEMORY_REGION((intptr_t)&_data_start_high, (intptr_t)&_heap_start_high, dram_data_high);
 
 // Target has a shared D/IRAM virtual address, no need to calculate I_D_OFFSET like previous chips
 SOC_RESERVE_MEMORY_REGION((intptr_t)&_iram_start, (intptr_t)&_iram_end, iram_code);

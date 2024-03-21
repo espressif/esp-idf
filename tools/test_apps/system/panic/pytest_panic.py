@@ -17,7 +17,8 @@ TARGETS_TESTED = [
     pytest.mark.esp32s3,
     pytest.mark.esp32c2,
     pytest.mark.esp32c6,
-    pytest.mark.esp32h2
+    pytest.mark.esp32h2,
+    pytest.mark.esp32p4,
 ]
 
 # Most tests run on all targets and with all configs.
@@ -34,7 +35,11 @@ CONFIGS = [
 ]
 
 # Some tests only run on dual-core targets, they use the config below.
-TARGETS_DUAL_CORE = [pytest.mark.esp32, pytest.mark.esp32s3]
+TARGETS_DUAL_CORE = [
+    pytest.mark.esp32,
+    pytest.mark.esp32s3,
+    pytest.mark.esp32p4,
+]
 CONFIGS_DUAL_CORE = [
     pytest.param('coredump_flash_bin_crc', marks=TARGETS_DUAL_CORE),
     pytest.param('coredump_flash_elf_sha', marks=TARGETS_DUAL_CORE),
@@ -58,6 +63,7 @@ TARGETS_HW_STACK_GUARD = [
     pytest.mark.esp32c3,
     pytest.mark.esp32c6,
     pytest.mark.esp32h2,
+    pytest.mark.esp32p4,
 ]
 
 CONFIGS_HW_STACK_GUARD = [
@@ -66,6 +72,14 @@ CONFIGS_HW_STACK_GUARD = [
     pytest.param('coredump_uart_elf_crc', marks=TARGETS_HW_STACK_GUARD),
     pytest.param('gdbstub', marks=TARGETS_HW_STACK_GUARD),
     pytest.param('panic', marks=TARGETS_HW_STACK_GUARD),
+]
+
+CONFIGS_HW_STACK_GUARD_DUAL_CORE = [
+    pytest.param('coredump_flash_bin_crc', marks=[pytest.mark.esp32p4]),
+    pytest.param('coredump_uart_bin_crc', marks=[pytest.mark.esp32p4]),
+    pytest.param('coredump_uart_elf_crc', marks=[pytest.mark.esp32p4]),
+    pytest.param('gdbstub', marks=[pytest.mark.esp32p4]),
+    pytest.param('panic', marks=[pytest.mark.esp32p4]),
 ]
 
 # Panic abort information will start with this string.
@@ -148,15 +162,16 @@ def test_task_wdt_cpu1(dut: PanicTestDut, config: str, test_func_name: str) -> N
         'Task watchdog got triggered. The following tasks/users did not reset the watchdog in time:'
     )
     dut.expect_exact('CPU 1: Infinite loop')
+    expected_backtrace = ['infinite_loop', 'vPortTaskWrapper']
     if dut.is_xtensa:
         # see comment in test_task_wdt_cpu0
         dut.expect_none('register dump:')
         dut.expect_exact('Print CPU 1 backtrace')
         dut.expect_backtrace()
-        # On Xtensa, we get incorrect backtrace from GDB in this test
-        expected_backtrace = ['infinite_loop', 'vPortTaskWrapper']
     else:
-        assert False, 'No dual-core RISC-V chips yet, check this test case later'
+        # on RISC-V, need to dump both registers and stack memory to reconstruct the backtrace
+        dut.expect_reg_dump(core=1)
+        dut.expect_stack_dump()
 
     dut.expect_elf_sha256()
     dut.expect_none('Guru Meditation')
@@ -204,9 +219,9 @@ def test_int_wdt(
         dut.expect_stack_dump()
 
     if target in TARGETS_DUAL_CORE_NAMES:
-        assert dut.is_xtensa, 'No dual-core RISC-V chips yet, check the test case'
         dut.expect_reg_dump(1)
-        dut.expect_backtrace()
+        if dut.is_xtensa:
+            dut.expect_backtrace()
 
     dut.expect_elf_sha256()
     dut.expect_none('Guru Meditation')
@@ -228,9 +243,9 @@ def test_int_wdt_cache_disabled(
         dut.expect_stack_dump()
 
     if target in TARGETS_DUAL_CORE_NAMES:
-        assert dut.is_xtensa, 'No dual-core RISC-V chips yet, check the test case'
         dut.expect_reg_dump(1)
-        dut.expect_backtrace()
+        if dut.is_xtensa:
+            dut.expect_backtrace()
 
     dut.expect_elf_sha256()
     dut.expect_none('Guru Meditation')
@@ -251,6 +266,8 @@ def test_cache_error(dut: PanicTestDut, config: str, test_func_name: str) -> Non
     elif dut.target in ['esp32s2']:
         # Cache error interrupt is not enabled, IDF-1558
         dut.expect_gme('IllegalInstruction')
+    elif dut.target in ['esp32p4']:  # TODO IDF-7515
+        dut.expect_gme('Instruction access fault')
     else:
         dut.expect_gme('Cache disabled but cached memory region accessed')
     dut.expect_reg_dump(0)
@@ -832,15 +849,36 @@ def test_gdbstub_coredump(dut: PanicTestDut) -> None:
     return  # don't expect "Rebooting" output below
 
 
+def test_hw_stack_guard_cpu(dut: PanicTestDut, cpu: int) -> None:
+    dut.expect_exact(f'Guru Meditation Error: Core  {cpu} panic\'ed (Stack protection fault).')
+    dut.expect_none('ASSIST_DEBUG is not triggered BUT interrupt occured!')
+    dut.expect_exact(f'Detected in task "HWSG{cpu}"')
+    addr = dut.expect('at 0x([0-9a-fA-F]{8})')
+    assert addr.group(1) != b'00000000'
+    addr = dut.expect('Stack pointer: 0x([0-9a-fA-F]{8})')
+    assert addr.group(1) != b'00000000'
+    addr = dut.expect(r'Stack bounds: 0x([0-9a-fA-F]{8})')
+    assert addr.group(1) != b'00000000'
+    start_addr = int(addr.group(1), 16)
+    addr = dut.expect(r' - 0x([0-9a-fA-F]{8})')
+    assert addr.group(1) != b'00000000'
+    end_addr = int(addr.group(1), 16)
+    assert end_addr > start_addr
+
+
 @pytest.mark.parametrize('config', CONFIGS_HW_STACK_GUARD, indirect=True)
 @pytest.mark.generic
 def test_hw_stack_guard_cpu0(dut: PanicTestDut, config: str, test_func_name: str) -> None:
     dut.run_test_func(test_func_name)
-    dut.expect_exact('Guru Meditation Error: Core  0 panic\'ed (Stack protection fault).')
-    dut.expect_none('ASSIST_DEBUG is not triggered BUT interrupt occured!')
-    dut.expect(r'Detected in task(.*)at 0x')
-    dut.expect_exact('Stack pointer: 0x')
-    dut.expect(r'Stack bounds: 0x(.*) - 0x')
+    test_hw_stack_guard_cpu(dut, 0)
+    common_test(dut, config)
+
+
+@pytest.mark.parametrize('config', CONFIGS_HW_STACK_GUARD_DUAL_CORE, indirect=True)
+@pytest.mark.generic
+def test_hw_stack_guard_cpu1(dut: PanicTestDut, config: str, test_func_name: str) -> None:
+    dut.run_test_func(test_func_name)
+    test_hw_stack_guard_cpu(dut, 1)
     common_test(dut, config)
 
 

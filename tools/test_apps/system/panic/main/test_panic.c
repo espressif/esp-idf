@@ -63,6 +63,8 @@ void test_task_wdt_cpu0(void)
     }
 }
 
+#if CONFIG_ESP_SYSTEM_HW_STACK_GUARD
+
 __attribute__((optimize("-O0")))
 static void test_hw_stack_guard_cpu(void* arg)
 {
@@ -77,6 +79,18 @@ void test_hw_stack_guard_cpu0(void)
         vTaskDelay(100);
     }
 }
+
+#if !CONFIG_FREERTOS_UNICORE
+void test_hw_stack_guard_cpu1(void)
+{
+    xTaskCreatePinnedToCore(test_hw_stack_guard_cpu, "HWSG1", 512, NULL, 1, NULL, 1);
+    while (true) {
+        vTaskDelay(100);
+    }
+}
+
+#endif // CONFIG_FREERTOS_UNICORE
+#endif // CONFIG_ESP_SYSTEM_HW_STACK_GUARD
 
 #if CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH && CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY
 

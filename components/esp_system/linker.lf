@@ -9,7 +9,7 @@ entries:
         reset_reason:esp_reset_reason_get_hint (noflash)
         if ESP_SYSTEM_HW_STACK_GUARD = y:
             hw_stack_guard:esp_hw_stack_guard_get_bounds (noflash)
-            hw_stack_guard:esp_hw_stack_guard_is_fired (noflash)
+            hw_stack_guard:esp_hw_stack_guard_get_fired_cpu (noflash)
             hw_stack_guard:esp_hw_stack_guard_get_pc (noflash)
 
     esp_err (noflash)

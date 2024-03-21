@@ -1,14 +1,23 @@
-# SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
 import logging
 import os
 import re
 import subprocess
 import sys
-from typing import Any, Dict, List, Optional, TextIO, Union
+from typing import Any
+from typing import Dict
+from typing import List
+from typing import Optional
+from typing import TextIO
+from typing import Union
 
 import pexpect
-from panic_utils import NoGdbProcessError, attach_logger, quote_string, sha256, verify_valid_gdb_subprocess
+from panic_utils import attach_logger
+from panic_utils import NoGdbProcessError
+from panic_utils import quote_string
+from panic_utils import sha256
+from panic_utils import verify_valid_gdb_subprocess
 from pygdbmi.gdbcontroller import GdbController
 from pytest_embedded_idf.app import IdfApp
 from pytest_embedded_idf.dut import IdfDut
@@ -53,7 +62,7 @@ class PanicTestDut(IdfDut):
 
     @property
     def is_multi_core(self) -> bool:
-        return self.target in ['esp32', 'esp32s3']
+        return self.target in ['esp32', 'esp32s3', 'esp32p4']
 
     def run_test_func(self, test_func_name: str) -> None:
         self.expect_exact('Enter test name:')

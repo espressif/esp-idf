@@ -231,6 +231,7 @@
 #define ETS_T1_WDT_INUM                         24
 #define ETS_CACHEERR_INUM                       25
 #define ETS_MEMPROT_ERR_INUM                    26
+#define ETS_ASSIST_DEBUG_INUM                   27  // Note: this interrupt can be combined with others (e.g., CACHEERR), as we can identify its trigger is activated
 #define ETS_IPC_ISR_INUM                        28
 //CPU0 Max valid interrupt number
 #define ETS_MAX_INUM                            31
