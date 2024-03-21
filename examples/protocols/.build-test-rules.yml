@@ -192,9 +192,9 @@ examples/protocols/modbus:
 examples/protocols/mqtt:
   <<: *default_dependencies
   disable:
-    - if: IDF_TARGET in ["esp32p4", "esp32c5"]
+    - if: IDF_TARGET == "esp32c5"
       temporary: true
-      reason: not supported on p4 and c5 # TODO: [ESP32P4] IDF-8077 [ESP32C5] IDF-8697
+      reason: not supported on c5 # TODO: [ESP32C5] IDF-8697
   depends_filepatterns:
     - examples/common_components/protocol_examples_common/**/*
     - components/mqtt/**/*
@@ -202,16 +202,16 @@ examples/protocols/mqtt:
 examples/protocols/mqtt/custom_outbox:
   <<: *default_dependencies
   disable:
-    - if: IDF_TARGET in ["esp32p4", "esp32c5"]
+    - if: IDF_TARGET == "esp32c5"
       temporary: true
-      reason: not supported on p4 and c5 # TODO: [ESP32P4] IDF-8077 [ESP32C5] IDF-8697
+      reason: not supported on c5 # TODO: [ESP32C5] IDF-8697
 
 examples/protocols/mqtt/ssl:
   <<: *default_dependencies
   disable:
-    - if: IDF_TARGET in ["esp32p4", "esp32c5"]
+    - if: IDF_TARGET == "esp32c5"
       temporary: true
-      reason: not supported on p4 and c5 # TODO: [ESP32P4] IDF-8077 [ESP32C5] IDF-8697
+      reason: not supported on c5 # TODO: [ESP32C5] IDF-8697
   disable_test:
     - if: IDF_TARGET != "esp32"
       reason: only test on esp32
@@ -226,9 +226,9 @@ examples/protocols/mqtt/ssl_ds:
 examples/protocols/mqtt/tcp:
   <<: *default_dependencies
   disable:
-    - if: IDF_TARGET in ["esp32p4", "esp32c5"]
+    - if: IDF_TARGET == "esp32c5"
       temporary: true
-      reason: not supported on p4 and c5 # TODO: [ESP32P4] IDF-8077 [ESP32C5] IDF-8697
+      reason: not supported on c5 # TODO: [ESP32C5] IDF-8697
   disable_test:
     - if: IDF_TARGET != "esp32"
       reason: only test on esp32
@@ -236,9 +236,9 @@ examples/protocols/mqtt/tcp:
 examples/protocols/mqtt/ws:
   <<: *default_dependencies
   disable:
-    - if: IDF_TARGET in ["esp32p4", "esp32c5"]
+    - if: IDF_TARGET == "esp32c5"
       temporary: true
-      reason: not supported on p4 and c5 # TODO: [ESP32P4] IDF-8077 [ESP32C5] IDF-8697
+      reason: not supported on c5 # TODO: [ESP32C5] IDF-8697
   disable_test:
     - if: IDF_TARGET != "esp32"
       reason: only test on esp32
@@ -246,9 +246,9 @@ examples/protocols/mqtt/ws:
 examples/protocols/mqtt/wss:
   <<: *default_dependencies
   disable:
-    - if: IDF_TARGET in ["esp32p4", "esp32c5"]
+    - if: IDF_TARGET == "esp32c5"
       temporary: true
-      reason: not supported on p4 and c5 # TODO: [ESP32P4] IDF-8077 [ESP32C5] IDF-8697
+      reason: not supported on c5 # TODO: [ESP32C5] IDF-8697
   disable_test:
     - if: IDF_TARGET != "esp32"
       reason: only test on esp32
@@ -256,9 +256,9 @@ examples/protocols/mqtt/wss:
 examples/protocols/mqtt5:
   <<: *default_dependencies
   disable:
-    - if: IDF_TARGET in ["esp32p4", "esp32c5"]
+    - if: IDF_TARGET == "esp32c5"
       temporary: true
-      reason: not supported on p4 and c5 # TODO: [ESP32P4] IDF-8077 [ESP32C5] IDF-8697
+      reason: not supported on c5 # TODO: [ESP32C5] IDF-8697
   disable_test:
     - if: IDF_TARGET != "esp32"
       reason: only test on esp32
