@@ -78,6 +78,17 @@ esp_err_t hub_root_start(void);
 esp_err_t hub_root_stop(void);
 
 /**
+ * @brief Indicate to the Hub driver that a device has been freed
+ *
+ * Hub driver can now recover the port that the device was connected to
+ *
+ * @param dev_addr Device address
+ * @return
+ *     - ESP_OK: Success
+ */
+esp_err_t hub_dev_is_free(uint8_t dev_addr);
+
+/**
  * @brief Hub driver's processing function
  *
  * Hub driver handling function that must be called repeatdly to process the Hub driver's events. If blocking, the

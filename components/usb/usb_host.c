@@ -296,6 +296,11 @@ static void usbh_event_callback(usbh_event_data_t *event_data, void *arg)
         send_event_msg_to_clients(&event_msg, false, event_data->dev_gone_data.dev_addr);
         break;
     }
+    case USBH_EVENT_DEV_FREE: {
+        // Let the Hub driver know that the device is free
+        ESP_ERROR_CHECK(hub_dev_is_free(event_data->dev_free_data.dev_addr));
+        break;
+    }
     case USBH_EVENT_ALL_FREE: {
         // Notify the lib handler that all devices are free
         HOST_ENTER_CRITICAL();
