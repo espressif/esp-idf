@@ -11,6 +11,7 @@
 #include "sdkconfig.h"
 #include "esp_attr.h"
 #include "esp_log.h"
+#include "esp_sleep.h"
 #include "esp_clk_internal.h"
 #include "esp32p4/rom/ets_sys.h"
 #include "esp32p4/rom/uart.h"
@@ -174,6 +175,21 @@ void rtc_clk_select_rtc_slow_clk(void)
  */
 __attribute__((weak)) void esp_perip_clk_init(void)
 {
+    soc_rtc_slow_clk_src_t rtc_slow_clk_src = rtc_clk_slow_src_get();
+
+    if (rtc_slow_clk_src == SOC_RTC_SLOW_CLK_SRC_RC32K) {
+        esp_sleep_pd_config(ESP_PD_DOMAIN_XTAL32K, ESP_PD_OPTION_AUTO);
+        esp_sleep_pd_config(ESP_PD_DOMAIN_RC32K, ESP_PD_OPTION_ON);
+        // RC slow (150K) always ON
+    } else if (rtc_slow_clk_src == SOC_RTC_SLOW_CLK_SRC_XTAL32K) {
+        esp_sleep_pd_config(ESP_PD_DOMAIN_RC32K, ESP_PD_OPTION_AUTO);
+        esp_sleep_pd_config(ESP_PD_DOMAIN_XTAL32K, ESP_PD_OPTION_ON);
+        // RC slow (150K) always ON
+    } else {
+        esp_sleep_pd_config(ESP_PD_DOMAIN_XTAL32K, ESP_PD_OPTION_AUTO);
+        esp_sleep_pd_config(ESP_PD_DOMAIN_RC32K, ESP_PD_OPTION_AUTO);
+    }
+
     ESP_EARLY_LOGW(TAG, "esp_perip_clk_init() has not been implemented yet");
 #if 0 // TODO: IDF-5658
     uint32_t common_perip_clk, hwcrypto_perip_clk, wifi_bt_sdio_clk = 0;
