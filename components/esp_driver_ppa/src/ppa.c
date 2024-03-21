@@ -916,20 +916,9 @@ static bool ppa_srm_transaction_on_picked(uint32_t num_chans, const dma2d_trans_
     dma2d_channel_handle_t dma2d_tx_chan = dma2d_chans[dma2d_tx_chan_idx].chan;
     dma2d_channel_handle_t dma2d_rx_chan = dma2d_chans[dma2d_rx_chan_idx].chan;
 
-    // Write back and invalidate are performed on the entire picture (the window content is not continuous in the buffer)
-    // Write back in_buffer
     color_space_pixel_format_t in_pixel_format = {
         .color_type_id = srm_trans_desc->in_color.mode,
     };
-    uint32_t in_buffer_len = srm_trans_desc->in_pic_w * srm_trans_desc->in_pic_h * color_hal_pixel_format_get_bit_depth(in_pixel_format) / 8;
-    esp_cache_msync(srm_trans_desc->in_buffer, in_buffer_len, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED);
-    // Invalidate out_buffer
-    color_space_pixel_format_t out_pixel_format = {
-        .color_type_id = srm_trans_desc->out_color.mode,
-    };
-    uint32_t out_buffer_len = srm_trans_desc->out_pic_w * srm_trans_desc->out_pic_h * color_hal_pixel_format_get_bit_depth(out_pixel_format) / 8;
-    out_buffer_len = ALIGN_UP(out_buffer_len, s_platform.buf_alignment_size);
-    esp_cache_msync(srm_trans_desc->out_buffer, out_buffer_len, ESP_CACHE_MSYNC_FLAG_DIR_M2C);
 
     // Fill 2D-DMA descriptors
     srm_engine->dma_tx_desc->vb_size = srm_trans_desc->in_block_h;
@@ -1037,7 +1026,7 @@ static bool ppa_srm_transaction_on_picked(uint32_t num_chans, const dma2d_trans_
     }
     ppa_ll_srm_enable_rx_byte_swap(s_platform.hal.dev, srm_trans_desc->in_color.byte_swap);
     ppa_ll_srm_enable_rx_rgb_swap(s_platform.hal.dev, srm_trans_desc->in_color.rgb_swap);
-    ppa_ll_srm_configure_rx_alpha(s_platform.hal.dev, srm_trans_desc->in_color.alpha_mode, srm_trans_desc->in_color.alpha_value);
+    ppa_ll_srm_configure_rx_alpha(s_platform.hal.dev, srm_trans_desc->in_color.alpha_update_mode, srm_trans_desc->in_color.alpha_value);
 
     ppa_ll_srm_set_tx_color_mode(s_platform.hal.dev, ppa_out_color_mode);
     if (COLOR_SPACE_TYPE(ppa_out_color_mode) == COLOR_SPACE_YUV) {
@@ -1066,9 +1055,15 @@ esp_err_t ppa_do_scale_rotate_mirror(ppa_invoker_handle_t ppa_invoker, const ppa
     ESP_RETURN_ON_FALSE(trans_config->mode <= PPA_TRANS_MODE_NON_BLOCKING, ESP_ERR_INVALID_ARG, TAG, "invalid mode");
     // in_buffer could be anywhere (ram, flash, psram), out_buffer ptr cannot in flash region
     ESP_RETURN_ON_FALSE(esp_ptr_internal(oper_config->out_buffer) || esp_ptr_external_ram(oper_config->out_buffer), ESP_ERR_INVALID_ARG, TAG, "invalid out_buffer addr");
-    ESP_RETURN_ON_FALSE((uintptr_t)oper_config->out_buffer % s_platform.buf_alignment_size == 0, ESP_ERR_INVALID_ARG, TAG, "out_buffer not aligned to cache line size");
-    // Any restrictions on in/out buffer address? alignment? alignment restriction comes from cache, its addr and size need to be aligned to cache line size on 912!
+    ESP_RETURN_ON_FALSE((uintptr_t)oper_config->out_buffer % s_platform.buf_alignment_size == 0 && oper_config->out_buffer_size % s_platform.buf_alignment_size == 0,
+                        ESP_ERR_INVALID_ARG, TAG, "out_buffer addr or size not aligned to cache line size");
+    color_space_pixel_format_t out_pixel_format = {
+        .color_type_id = oper_config->out_color.mode,
+    };
+    uint32_t out_pic_len = oper_config->out_pic_w * oper_config->out_pic_h * color_hal_pixel_format_get_bit_depth(out_pixel_format) / 8;
+    ESP_RETURN_ON_FALSE(out_pic_len <= oper_config->out_buffer_size, ESP_ERR_INVALID_ARG, TAG, "out_pic_w/h mismatch with out_buffer_size");
     // buffer on stack/heap
+    // check scale w/ (out_pic_w/h - out_pic_offset_x/y)?
     // ESP_RETURN_ON_FALSE(config->rotation_angle)
     // ESP_RETURN_ON_FALSE(config->in/out_color_mode)
     // what if in_color is YUV420, out is RGB, what is out RGB range? Full range?
@@ -1079,7 +1074,15 @@ esp_err_t ppa_do_scale_rotate_mirror(ppa_invoker_handle_t ppa_invoker, const ppa
 
     // YUV420: in desc, ha/hb/va/vb/x/y must be even number
 
-    // TODO: Maybe do buffer writeback and invalidation here, instead of in on_picked?
+    // Write back and invalidate are performed on the entire picture (the window content is not continuous in the buffer)
+    // Write back in_buffer
+    color_space_pixel_format_t in_pixel_format = {
+        .color_type_id = oper_config->in_color.mode,
+    };
+    uint32_t in_pic_len = oper_config->in_pic_w * oper_config->in_pic_h * color_hal_pixel_format_get_bit_depth(in_pixel_format) / 8;
+    esp_cache_msync(oper_config->in_buffer, in_pic_len, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED);
+    // Invalidate out_buffer
+    esp_cache_msync(oper_config->out_buffer, oper_config->out_buffer_size, ESP_CACHE_MSYNC_FLAG_DIR_M2C);
 
     ppa_trans_t *trans_elm = NULL;
     esp_err_t ret = ppa_prepare_trans_elm(ppa_invoker, ppa_invoker->srm_engine, PPA_OPERATION_SRM, (void *)oper_config, trans_config->mode, &trans_elm);
@@ -1132,25 +1135,15 @@ static bool ppa_blend_transaction_on_picked(uint32_t num_chans, const dma2d_tran
     }
     assert(dma2d_tx_bg_chan && dma2d_tx_fg_chan && dma2d_rx_chan);
 
-    // Write back and invalidate are performed on the entire picture (the window content is not continuous in the buffer)
-    // Write back in_bg_buffer, in_fg_buffer
     color_space_pixel_format_t in_bg_pixel_format = {
         .color_type_id = blend_trans_desc->in_bg_color.mode,
     };
-    uint32_t in_bg_buffer_len = blend_trans_desc->in_bg_pic_w * blend_trans_desc->in_bg_pic_h * color_hal_pixel_format_get_bit_depth(in_bg_pixel_format) / 8;
-    esp_cache_msync(blend_trans_desc->in_bg_buffer, in_bg_buffer_len, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED);
     color_space_pixel_format_t in_fg_pixel_format = {
         .color_type_id = blend_trans_desc->in_fg_color.mode,
     };
-    uint32_t in_fg_buffer_len = blend_trans_desc->in_fg_pic_w * blend_trans_desc->in_fg_pic_h * color_hal_pixel_format_get_bit_depth(in_fg_pixel_format) / 8;
-    esp_cache_msync(blend_trans_desc->in_fg_buffer, in_fg_buffer_len, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED);
-    // Invalidate out_buffer
     color_space_pixel_format_t out_pixel_format = {
         .color_type_id = blend_trans_desc->out_color.mode,
     };
-    uint32_t out_buffer_len = blend_trans_desc->out_pic_w * blend_trans_desc->out_pic_h * color_hal_pixel_format_get_bit_depth(out_pixel_format) / 8;
-    out_buffer_len = ALIGN_UP(out_buffer_len, s_platform.buf_alignment_size);
-    esp_cache_msync(blend_trans_desc->out_buffer, out_buffer_len, ESP_CACHE_MSYNC_FLAG_DIR_M2C);
 
     // Fill 2D-DMA descriptors
     blend_engine->dma_tx_bg_desc->vb_size = blend_trans_desc->in_bg_fg_block_h;
@@ -1244,7 +1237,7 @@ static bool ppa_blend_transaction_on_picked(uint32_t num_chans, const dma2d_tran
     ppa_ll_blend_set_rx_bg_color_mode(s_platform.hal.dev, blend_trans_desc->in_bg_color.mode);
     ppa_ll_blend_enable_rx_bg_byte_swap(s_platform.hal.dev, blend_trans_desc->in_bg_color.byte_swap);
     ppa_ll_blend_enable_rx_bg_rgb_swap(s_platform.hal.dev, blend_trans_desc->in_bg_color.rgb_swap);
-    ppa_ll_blend_configure_rx_bg_alpha(s_platform.hal.dev, blend_trans_desc->in_bg_color.alpha_mode, blend_trans_desc->in_bg_color.alpha_value);
+    ppa_ll_blend_configure_rx_bg_alpha(s_platform.hal.dev, blend_trans_desc->in_bg_color.alpha_update_mode, blend_trans_desc->in_bg_color.alpha_value);
 
     ppa_ll_blend_set_rx_fg_color_mode(s_platform.hal.dev, blend_trans_desc->in_fg_color.mode);
     if (COLOR_SPACE_TYPE(blend_trans_desc->in_fg_color.mode) == COLOR_SPACE_ALPHA) {
@@ -1252,7 +1245,7 @@ static bool ppa_blend_transaction_on_picked(uint32_t num_chans, const dma2d_tran
     }
     ppa_ll_blend_enable_rx_fg_byte_swap(s_platform.hal.dev, blend_trans_desc->in_fg_color.byte_swap);
     ppa_ll_blend_enable_rx_fg_rgb_swap(s_platform.hal.dev, blend_trans_desc->in_fg_color.rgb_swap);
-    ppa_ll_blend_configure_rx_fg_alpha(s_platform.hal.dev, blend_trans_desc->in_fg_color.alpha_mode, blend_trans_desc->in_fg_color.alpha_value);
+    ppa_ll_blend_configure_rx_fg_alpha(s_platform.hal.dev, blend_trans_desc->in_fg_color.alpha_update_mode, blend_trans_desc->in_fg_color.alpha_value);
 
     ppa_ll_blend_set_tx_color_mode(s_platform.hal.dev, blend_trans_desc->out_color.mode);
 
@@ -1279,12 +1272,30 @@ esp_err_t ppa_do_blend(ppa_invoker_handle_t ppa_invoker, const ppa_blend_operati
     ESP_RETURN_ON_FALSE(trans_config->mode <= PPA_TRANS_MODE_NON_BLOCKING, ESP_ERR_INVALID_ARG, TAG, "invalid mode");
     // in_buffer could be anywhere (ram, flash, psram), out_buffer ptr cannot in flash region
     ESP_RETURN_ON_FALSE(esp_ptr_internal(oper_config->out_buffer) || esp_ptr_external_ram(oper_config->out_buffer), ESP_ERR_INVALID_ARG, TAG, "invalid out_buffer addr");
-    ESP_RETURN_ON_FALSE((uintptr_t)oper_config->out_buffer % s_platform.buf_alignment_size == 0, ESP_ERR_INVALID_ARG, TAG, "out_buffer not aligned to cache line size");
-    // TODO: Check out_buffer size alignment to cacheline? Since invalidate cannot use ESP_CACHE_MSYNC_FLAG_UNALIGNED.
+    ESP_RETURN_ON_FALSE((uintptr_t)oper_config->out_buffer % s_platform.buf_alignment_size == 0 && oper_config->out_buffer_size % s_platform.buf_alignment_size == 0,
+                        ESP_ERR_INVALID_ARG, TAG, "out_buffer addr or size not aligned to cache line size");
+    color_space_pixel_format_t out_pixel_format = {
+        .color_type_id = oper_config->out_color.mode,
+    };
+    uint32_t out_pic_len = oper_config->out_pic_w * oper_config->out_pic_h * color_hal_pixel_format_get_bit_depth(out_pixel_format) / 8;
+    ESP_RETURN_ON_FALSE(out_pic_len <= oper_config->out_buffer_size, ESP_ERR_INVALID_ARG, TAG, "out_pic_w/h mismatch with out_buffer_size");
     // TODO: ARG CHECK
     // 当输入类型为 L4、A4 时，图像块的尺寸 hb 以及在图像中的偏移 x 必须为偶数
 
-    // TODO: Maybe do buffer writeback and invalidation here, instead of in on_picked?
+    // Write back and invalidate are performed on the entire picture (the window content is not continuous in the buffer)
+    // Write back in_bg_buffer, in_fg_buffer
+    color_space_pixel_format_t in_bg_pixel_format = {
+        .color_type_id = oper_config->in_bg_color.mode,
+    };
+    uint32_t in_bg_pic_len = oper_config->in_bg_pic_w * oper_config->in_bg_pic_h * color_hal_pixel_format_get_bit_depth(in_bg_pixel_format) / 8;
+    esp_cache_msync(oper_config->in_bg_buffer, in_bg_pic_len, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED);
+    color_space_pixel_format_t in_fg_pixel_format = {
+        .color_type_id = oper_config->in_fg_color.mode,
+    };
+    uint32_t in_fg_pic_len = oper_config->in_fg_pic_w * oper_config->in_fg_pic_h * color_hal_pixel_format_get_bit_depth(in_fg_pixel_format) / 8;
+    esp_cache_msync(oper_config->in_fg_buffer, in_fg_pic_len, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED);
+    // Invalidate out_buffer
+    esp_cache_msync(oper_config->out_buffer, oper_config->out_buffer_size, ESP_CACHE_MSYNC_FLAG_DIR_M2C);
 
     ppa_trans_t *trans_elm = NULL;
     esp_err_t ret = ppa_prepare_trans_elm(ppa_invoker, ppa_invoker->blending_engine, PPA_OPERATION_BLEND, (void *)oper_config, trans_config->mode, &trans_elm);
@@ -1315,14 +1326,9 @@ static bool ppa_fill_transaction_on_picked(uint32_t num_chans, const dma2d_trans
     assert(dma2d_chans[0].dir == DMA2D_CHANNEL_DIRECTION_RX);
     dma2d_channel_handle_t dma2d_rx_chan = dma2d_chans[0].chan;
 
-    // Invalidate is performed on the entire picture (the window content is not continuous in the buffer)
     color_space_pixel_format_t out_pixel_format = {
         .color_type_id = fill_trans_desc->out_color.mode,
     };
-    uint32_t out_buffer_len = fill_trans_desc->out_pic_w * fill_trans_desc->out_pic_h * color_hal_pixel_format_get_bit_depth(out_pixel_format) / 8;
-    esp_cache_msync(fill_trans_desc->out_buffer, out_buffer_len, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED);
-    out_buffer_len = ALIGN_UP(out_buffer_len, s_platform.buf_alignment_size);
-    esp_cache_msync(fill_trans_desc->out_buffer, out_buffer_len, ESP_CACHE_MSYNC_FLAG_DIR_M2C);
 
     // Fill 2D-DMA descriptors
     blend_engine->dma_rx_desc->vb_size = fill_trans_desc->fill_block_h;
@@ -1383,11 +1389,18 @@ esp_err_t ppa_do_fill(ppa_invoker_handle_t ppa_invoker, const ppa_fill_operation
     ESP_RETURN_ON_FALSE(trans_config->mode <= PPA_TRANS_MODE_NON_BLOCKING, ESP_ERR_INVALID_ARG, TAG, "invalid mode");
     // out_buffer ptr cannot in flash region
     ESP_RETURN_ON_FALSE(esp_ptr_internal(oper_config->out_buffer) || esp_ptr_external_ram(oper_config->out_buffer), ESP_ERR_INVALID_ARG, TAG, "invalid out_buffer addr");
-    ESP_RETURN_ON_FALSE((uintptr_t)oper_config->out_buffer % s_platform.buf_alignment_size == 0, ESP_ERR_INVALID_ARG, TAG, "out_buffer not aligned to cache line size");
+    ESP_RETURN_ON_FALSE((uintptr_t)oper_config->out_buffer % s_platform.buf_alignment_size == 0 && oper_config->out_buffer_size % s_platform.buf_alignment_size == 0,
+                        ESP_ERR_INVALID_ARG, TAG, "out_buffer addr or size not aligned to cache line size");
+    color_space_pixel_format_t out_pixel_format = {
+        .color_type_id = oper_config->out_color.mode,
+    };
+    uint32_t out_pic_len = oper_config->out_pic_w * oper_config->out_pic_h * color_hal_pixel_format_get_bit_depth(out_pixel_format) / 8;
+    ESP_RETURN_ON_FALSE(out_pic_len <= oper_config->out_buffer_size, ESP_ERR_INVALID_ARG, TAG, "out_pic_w/h mismatch with out_buffer_size");
     // TODO: ARG CHECK
     // fill_block_w <= PPA_BLEND_HB_V, fill_block_h <= PPA_BLEND_VB_V
 
-    // TODO: Maybe do buffer writeback and invalidation here, instead of in on_picked?
+    // Write back and invalidate are performed on the entire picture (the window content is not continuous in the buffer)
+    esp_cache_msync(oper_config->out_buffer, oper_config->out_buffer_size, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_INVALIDATE);
 
     ppa_trans_t *trans_elm = NULL;
     esp_err_t ret = ppa_prepare_trans_elm(ppa_invoker, ppa_invoker->blending_engine, PPA_OPERATION_FILL, (void *)oper_config, trans_config->mode, &trans_elm);

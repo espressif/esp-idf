@@ -60,14 +60,14 @@ typedef enum {
 } ppa_blend_color_mode_t;
 
 /**
- * @brief Enumeration of PPA alpha compositing mode
+ * @brief Enumeration of PPA alpha compositing update mode
  */
 typedef enum {
     PPA_ALPHA_NO_CHANGE = 0,  /*!< Do not replace alpha value. If input format does not contain alpha info, alpha value 255 will be used. */
     PPA_ALPHA_FIX_VALUE,      /*!< Replace the alpha value in received pixel with a new, fixed alpha value */
     PPA_ALPHA_SCALE,          /*!< Scale the alpha value in received pixel to be a new alpha value */
     PPA_ALPHA_INVERT,         /*!< Invert the alpha value in received pixel */
-} ppa_alpha_mode_t;
+} ppa_alpha_update_mode_t;
 
 #ifdef __cplusplus
 }

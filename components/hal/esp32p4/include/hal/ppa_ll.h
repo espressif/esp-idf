@@ -332,15 +332,15 @@ static inline void ppa_ll_srm_enable_rx_byte_swap(ppa_dev_t *dev, bool enable)
 }
 
 /**
- * @brief Configure PPA SRM alpha value transformation mode
+ * @brief Configure PPA SRM alpha value update mode
  *
  * @param dev Peripheral instance address
- * @param mode Alpha value transformation mode, one of the values in ppa_alpha_mode_t
+ * @param mode Alpha value update mode, one of the values in ppa_alpha_update_mode_t
  * @param val When PPA_ALPHA_FIX_VALUE mode is selected, val is the alpha value to be replaced with (output_alpha = val)
  *            When PPA_ALPHA_SCALE mode is selected, val/256 is the multiplier to the input alpha value (output_alpha = input_alpha * val / 256)
  *            When other modes are selected, this field is not used
  */
-static inline void ppa_ll_srm_configure_rx_alpha(ppa_dev_t *dev, ppa_alpha_mode_t mode, uint32_t val)
+static inline void ppa_ll_srm_configure_rx_alpha(ppa_dev_t *dev, ppa_alpha_update_mode_t mode, uint32_t val)
 {
     switch (mode) {
     case PPA_ALPHA_NO_CHANGE:
@@ -362,7 +362,7 @@ static inline void ppa_ll_srm_configure_rx_alpha(ppa_dev_t *dev, ppa_alpha_mode_
         dev->sr_fix_alpha.sr_rx_alpha_inv = 1;
         break;
     default:
-        // Unsupported alpha transformation mode
+        // Unsupported alpha update mode
         abort();
     }
 }
@@ -561,15 +561,15 @@ static inline void ppa_ll_blend_enable_rx_fg_byte_swap(ppa_dev_t *dev, bool enab
 }
 
 /**
- * @brief Configure PPA blending input background alpha value transformation mode
+ * @brief Configure PPA blending input background alpha value update mode
  *
  * @param dev Peripheral instance address
- * @param mode Alpha value transformation mode, one of the values in ppa_alpha_mode_t
+ * @param mode Alpha value update mode, one of the values in ppa_alpha_update_mode_t
  * @param val When PPA_ALPHA_FIX_VALUE mode is selected, val is the alpha value to be replaced with (output_alpha = val)
  *            When PPA_ALPHA_SCALE mode is selected, val/256 is the multiplier to the input alpha value (output_alpha = input_alpha * val / 256)
  *            When other modes are selected, this field is not used
  */
-static inline void ppa_ll_blend_configure_rx_bg_alpha(ppa_dev_t *dev, ppa_alpha_mode_t mode, uint32_t val)
+static inline void ppa_ll_blend_configure_rx_bg_alpha(ppa_dev_t *dev, ppa_alpha_update_mode_t mode, uint32_t val)
 {
     switch (mode) {
     case PPA_ALPHA_NO_CHANGE:
@@ -591,21 +591,21 @@ static inline void ppa_ll_blend_configure_rx_bg_alpha(ppa_dev_t *dev, ppa_alpha_
         dev->blend_fix_alpha.blend0_rx_alpha_inv = 1;
         break;
     default:
-        // Unsupported alpha transformation mode
+        // Unsupported alpha update mode
         abort();
     }
 }
 
 /**
- * @brief Configure PPA blending input foreground alpha value transformation mode
+ * @brief Configure PPA blending input foreground alpha value update mode
  *
  * @param dev Peripheral instance address
- * @param mode Alpha value transformation mode, one of the values in ppa_alpha_mode_t
+ * @param mode Alpha value update mode, one of the values in ppa_alpha_update_mode_t
  * @param val When PPA_ALPHA_FIX_VALUE mode is selected, val is the alpha value to be replaced with (output_alpha = val)
  *            When PPA_ALPHA_SCALE mode is selected, val/256 is the multiplier to the input alpha value (output_alpha = input_alpha * val / 256)
  *            When other modes are selected, this field is not used
  */
-static inline void ppa_ll_blend_configure_rx_fg_alpha(ppa_dev_t *dev, ppa_alpha_mode_t mode, uint32_t val)
+static inline void ppa_ll_blend_configure_rx_fg_alpha(ppa_dev_t *dev, ppa_alpha_update_mode_t mode, uint32_t val)
 {
     switch (mode) {
     case PPA_ALPHA_NO_CHANGE:
@@ -627,7 +627,7 @@ static inline void ppa_ll_blend_configure_rx_fg_alpha(ppa_dev_t *dev, ppa_alpha_
         dev->blend_fix_alpha.blend1_rx_alpha_inv = 1;
         break;
     default:
-        // Unsupported alpha transformation mode
+        // Unsupported alpha update mode
         abort();
     }
 }

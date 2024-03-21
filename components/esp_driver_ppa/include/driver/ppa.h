@@ -85,7 +85,8 @@ typedef struct {
     uint32_t in_block_offset_x; \
     uint32_t in_block_offset_y; \
     \
-    void *out_buffer; /*!< TODO: alignment restriction */ \
+    void *out_buffer; \
+    uint32_t out_buffer_size; \
     uint32_t out_pic_w; \
     uint32_t out_pic_h; \
     uint32_t out_block_offset_x; \
@@ -103,7 +104,7 @@ typedef struct {
         color_conv_std_rgb_yuv_t yuv_std; \
         bool rgb_swap; \
         bool byte_swap; \
-        ppa_alpha_mode_t alpha_mode; \
+        ppa_alpha_update_mode_t alpha_update_mode; \
         uint32_t alpha_value;                       /*!< When PPA_ALPHA_FIX_VALUE mode is selected, alpha_value is the alpha value to be replaced with (output_alpha = alpha_value)
                                                      When PPA_ALPHA_SCALE mode is selected, alpha_value/256 is the multiplier to the input alpha value (output_alpha = input_alpha * alpha_value / 256)
                                                      When other alpha modes are selected, this field is not used */ \
@@ -153,6 +154,7 @@ typedef struct {
     uint32_t in_bg_fg_block_h;
 
     void *out_buffer;
+    uint32_t out_buffer_size;
     uint32_t out_pic_w;
     uint32_t out_pic_h;
     uint32_t out_block_offset_x;
@@ -162,7 +164,7 @@ typedef struct {
         ppa_blend_color_mode_t mode;
         bool rgb_swap;
         bool byte_swap;
-        ppa_alpha_mode_t alpha_mode;
+        ppa_alpha_update_mode_t alpha_update_mode;
         uint32_t alpha_value;
         bool ck_en;
         uint32_t ck_rgb_low_thres;              /*!< In RGB888 format (R[23:16], G[15: 8], B[7:0]) */
@@ -173,7 +175,7 @@ typedef struct {
         ppa_blend_color_mode_t mode;
         bool rgb_swap;
         bool byte_swap;
-        ppa_alpha_mode_t alpha_mode;
+        ppa_alpha_update_mode_t alpha_update_mode;
         uint32_t alpha_value;
         uint32_t fix_rgb_val;                   /*!< When in_fg_color.mode is PPA_BLEND_COLOR_MODE_A8/4, this field can be used to set a fixed color for the foreground. In RGB888 format (R[23:16], G[15: 8], B[7:0]). */
         bool ck_en;
@@ -209,6 +211,7 @@ typedef struct {
     uint32_t fill_argb_color;                   /*!< The color to be filled, in ARGB8888 format ((A[31:24], R[23:16], G[15: 8], B[7:0])) */
 
     void *out_buffer;
+    uint32_t out_buffer_size;
     uint32_t out_pic_w;
     uint32_t out_pic_h;
     uint32_t out_block_offset_x;
