@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -77,12 +77,12 @@ typedef dma_descriptor_align8_t     parlio_dma_desc_t;
 extern "C" {
 #endif
 
-enum {
+typedef enum {
     PARLIO_TX_QUEUE_READY,
     PARLIO_TX_QUEUE_PROGRESS,
     PARLIO_TX_QUEUE_COMPLETE,
     PARLIO_TX_QUEUE_MAX,
-};
+} parlio_tx_queue_status_t;
 
 typedef enum {
     PARLIO_TX_FSM_INIT_WAIT,

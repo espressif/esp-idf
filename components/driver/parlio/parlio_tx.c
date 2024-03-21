@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -161,7 +161,9 @@ static esp_err_t parlio_destroy_tx_unit(parlio_tx_unit_t *tx_unit)
         // de-register from group
         parlio_tx_unregister_to_group(tx_unit, tx_unit->group);
     }
-    free(tx_unit->dma_nodes);
+    if (tx_unit->dma_nodes) {
+        free(tx_unit->dma_nodes);
+    }
     free(tx_unit);
     return ESP_OK;
 }
@@ -287,22 +289,22 @@ esp_err_t parlio_new_tx_unit(const parlio_tx_unit_config_t *config, parlio_tx_un
 #endif
     esp_err_t ret = ESP_OK;
     parlio_tx_unit_t *unit = NULL;
-    ESP_GOTO_ON_FALSE(config && ret_unit, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
+    ESP_RETURN_ON_FALSE(config && ret_unit, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
     size_t data_width = config->data_width;
     // data_width must be power of 2 and less than or equal to SOC_PARLIO_TX_UNIT_MAX_DATA_WIDTH
-    ESP_GOTO_ON_FALSE(data_width && (data_width <= SOC_PARLIO_TX_UNIT_MAX_DATA_WIDTH) && ((data_width & (data_width - 1)) == 0),
-                      ESP_ERR_INVALID_ARG, err, TAG, "invalid data width");
+    ESP_RETURN_ON_FALSE(data_width && (data_width <= SOC_PARLIO_TX_UNIT_MAX_DATA_WIDTH) && ((data_width & (data_width - 1)) == 0),
+                        ESP_ERR_INVALID_ARG, TAG, "invalid data width");
     // data_width must not conflict with the valid signal
-    ESP_GOTO_ON_FALSE(!(config->valid_gpio_num >= 0 && data_width > PARLIO_LL_TX_DATA_LINE_AS_VALID_SIG),
-                      ESP_ERR_INVALID_ARG, err, TAG, "valid signal conflicts with data signal");
-    ESP_GOTO_ON_FALSE(config->max_transfer_size && config->max_transfer_size <= PARLIO_LL_TX_MAX_BITS_PER_FRAME / 8,
-                      ESP_ERR_INVALID_ARG, err, TAG, "invalid max transfer size");
+    ESP_RETURN_ON_FALSE(!(config->valid_gpio_num >= 0 && data_width > PARLIO_LL_TX_DATA_LINE_AS_VALID_SIG),
+                        ESP_ERR_INVALID_ARG, TAG, "valid signal conflicts with data signal");
+    ESP_RETURN_ON_FALSE(config->max_transfer_size && config->max_transfer_size <= PARLIO_LL_TX_MAX_BITS_PER_FRAME / 8,
+                        ESP_ERR_INVALID_ARG, TAG, "invalid max transfer size");
 #if SOC_PARLIO_TX_CLK_SUPPORT_GATING
     // clock gating is controlled by either the MSB bit of data bus or the valid signal
-    ESP_GOTO_ON_FALSE(!(config->flags.clk_gate_en && config->valid_gpio_num < 0 && config->data_width <= PARLIO_LL_TX_DATA_LINE_AS_CLK_GATE),
-                      ESP_ERR_INVALID_ARG, err, TAG, "no gpio can control the clock gating");
+    ESP_RETURN_ON_FALSE(!(config->flags.clk_gate_en && config->valid_gpio_num < 0 && config->data_width <= PARLIO_LL_TX_DATA_LINE_AS_CLK_GATE),
+                        ESP_ERR_INVALID_ARG, TAG, "no gpio can control the clock gating");
 #else
-    ESP_GOTO_ON_FALSE(config->flags.clk_gate_en == 0, ESP_ERR_NOT_SUPPORTED, err, TAG, "clock gating is not supported");
+    ESP_RETURN_ON_FALSE(config->flags.clk_gate_en == 0, ESP_ERR_NOT_SUPPORTED, TAG, "clock gating is not supported");
 #endif // SOC_PARLIO_TX_CLK_SUPPORT_GATING
 
     // malloc unit memory
@@ -569,10 +571,14 @@ esp_err_t parlio_tx_unit_transmit(parlio_tx_unit_handle_t tx_unit, const void *p
     ESP_RETURN_ON_FALSE((payload_bits % 8) == 0, ESP_ERR_INVALID_ARG, TAG, "payload bit length must be multiple of 8");
 #endif // !SOC_PARLIO_TRANS_BIT_ALIGN
 
-    // acquire one transaction description from ready queue or complete queue
+    TickType_t queue_wait_ticks = portMAX_DELAY;
+    if (config->flags.queue_nonblocking) {
+        queue_wait_ticks = 0;
+    }
     parlio_tx_trans_desc_t *t = NULL;
+    // acquire one transaction description from ready queue or complete queue
     if (xQueueReceive(tx_unit->trans_queues[PARLIO_TX_QUEUE_READY], &t, 0) != pdTRUE) {
-        if (xQueueReceive(tx_unit->trans_queues[PARLIO_TX_QUEUE_COMPLETE], &t, 0) == pdTRUE) {
+        if (xQueueReceive(tx_unit->trans_queues[PARLIO_TX_QUEUE_COMPLETE], &t, queue_wait_ticks) == pdTRUE) {
             tx_unit->num_trans_inflight--;
         }
     }
