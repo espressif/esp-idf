@@ -12,7 +12,7 @@ menu "Example Configuration"
         config EXAMPLE_UVC_PROTOCOL_MODE_AUTO
             bool "Auto"
             help
-                When protocol mode set to Auto, the example tries to make three attempts to negotiatiate
+                When protocol mode set to Auto, the example tries to make three attempts to negotiate
                 the protocol with following parameters:
                 1 Attempt: 640x480, 15 FPS, MJPEG
                 2 Attempt: 320x240, 30 FPS, MJPEG
@@ -24,8 +24,8 @@ menu "Example Configuration"
             bool "Custom"
             help
                 When protocol mode set to Custom, the example tries to negotiate protocol with
-                configured parameters: Attempts, Width, Heighs, FPS, Frame Coding format.
-                After all attemts result in an error, the example displays the error message and
+                configured parameters: Attempts, Width, Height, FPS, Frame Coding format.
+                After all attempts result in an error, the example displays the error message and
                 suggests to try another USB UVC Device.
 
     endchoice
@@ -45,7 +45,7 @@ menu "Example Configuration"
             help
                 Configure the negotiation width parameter during UVC device stream getting.
         config EXAMPLE_HEIGHT_PARAM
-            int "Heigth resolution in pixels"
+            int "Height resolution in pixels"
             default 240
             help
                 Configure the negotiation height parameter during UVC device stream getting.

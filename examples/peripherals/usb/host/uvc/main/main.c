@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -170,9 +170,9 @@ static uvc_error_t uvc_negotiate_stream_profile(uvc_device_handle_t *devh,
                                                 uvc_stream_ctrl_t *ctrl)
 {
     uvc_error_t res;
-    int attempt = CONFIG_EXAMPLE_NEGOTIATION_ATTEMPTS;
 #if (CONFIG_EXAMPLE_UVC_PROTOCOL_MODE_AUTO)
     for (int idx = 0; idx < EXAMPLE_UVC_PROTOCOL_AUTO_COUNT; idx++) {
+        int attempt = CONFIG_EXAMPLE_NEGOTIATION_ATTEMPTS;
         do {
             /*
             The uvc_get_stream_ctrl_format_size() function will attempt to set the desired format size.
@@ -191,9 +191,9 @@ static uvc_error_t uvc_negotiate_stream_profile(uvc_device_handle_t *devh,
             break;
         }
     }
-#endif // CONFIG_EXAMPLE_UVC_PROTOCOL_MODE_AUTO
 
-#if (CONFIG_EXAMPLE_UVC_PROTOCOL_MODE_CUSTOM)
+#elif (CONFIG_EXAMPLE_UVC_PROTOCOL_MODE_CUSTOM)
+    int attempt = CONFIG_EXAMPLE_NEGOTIATION_ATTEMPTS;
     while (attempt--) {
         ESP_LOGI(TAG, "Negotiate streaming profile %dx%d, %d fps ...", WIDTH, HEIGHT, FPS);
         res = uvc_get_stream_ctrl_format_size(devh, ctrl, FORMAT, WIDTH, HEIGHT, FPS);
@@ -251,8 +251,11 @@ int app_main(int argc, char **argv)
         ESP_LOGI(TAG, "Waiting for USB UVC device connection ...");
         wait_for_event(UVC_DEVICE_CONNECTED);
 
-        UVC_CHECK(uvc_find_device(ctx, &dev, PID, VID, SERIAL_NUMBER));
-        ESP_LOGI(TAG, "Device found");
+        if (uvc_find_device(ctx, &dev, PID, VID, SERIAL_NUMBER) != UVC_SUCCESS) {
+            ESP_LOGW(TAG, "UVC device not found");
+            continue; // Continue waiting for UVC device
+        }
+        ESP_LOGI(TAG, "UVC device found");
 
         // UVC Device open
         UVC_CHECK(uvc_open(dev, &devh));
