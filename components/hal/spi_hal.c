@@ -52,6 +52,26 @@ void spi_hal_deinit(spi_hal_context_t *hal)
     }
 }
 
+#if SOC_SPI_SCT_SUPPORTED
+void spi_hal_sct_init(spi_hal_context_t *hal)
+{
+    spi_ll_conf_state_enable(hal->hw, true);
+    spi_ll_set_magic_number(hal->hw, SPI_LL_SCT_MAGIC_NUMBER);
+    spi_ll_disable_int(hal->hw);    //trans_done intr enabled in `add device` phase, sct mode shoud use sct_trans_done only
+    spi_ll_enable_intr(hal->hw, SPI_LL_INTR_SEG_DONE);
+    spi_ll_set_intr(hal->hw, SPI_LL_INTR_SEG_DONE);
+}
+
+void spi_hal_sct_deinit(spi_hal_context_t *hal)
+{
+    spi_ll_conf_state_enable(hal->hw, false);
+    spi_ll_disable_intr(hal->hw, SPI_LL_INTR_SEG_DONE);
+    spi_ll_clear_intr(hal->hw, SPI_LL_INTR_SEG_DONE);
+    spi_ll_clear_int_stat(hal->hw);
+    spi_ll_enable_int(hal->hw); //recover trans_done intr
+}
+#endif  //#if SOC_SPI_SCT_SUPPORTED
+
 esp_err_t spi_hal_cal_clock_conf(const spi_hal_timing_param_t *timing_param, spi_hal_timing_conf_t *timing_conf)
 {
     spi_hal_timing_conf_t temp_conf = {};

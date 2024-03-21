@@ -11,6 +11,7 @@
 #include "hal/spi_types.h"
 //for spi_bus_initialization functions. to be back-compatible
 #include "driver/spi_common.h"
+#include "soc/soc_caps.h"
 
 /**
  * @brief SPI common used frequency (in Hz)

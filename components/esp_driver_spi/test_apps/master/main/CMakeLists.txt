@@ -6,6 +6,12 @@ set(srcs
     "test_spi_bus_lock.c"
 )
 
+# sct test using slave hd APIs, need slave hd support
+# tmp skip sct test under iram_safe, both sct and slave hd are not cleaned
+if(CONFIG_SOC_SPI_SUPPORT_SLAVE_HD_VER2 AND NOT CONFIG_COMPILER_DUMP_RTL_FILES)
+    list(APPEND srcs "test_spi_master_sct.c")
+endif()
+
 # In order for the cases defined by `TEST_CASE` to be linked into the final elf,
 # the component can be registered as WHOLE_ARCHIVE
 idf_component_register(
