@@ -568,6 +568,9 @@
 
 // TODO: IDF-5351 (Copy from esp32c3, need check)
 /*-------------------------- Power Management CAPS ----------------------------*/
+#define SOC_PM_SUPPORT_EXT1_WAKEUP      (1)
+#define SOC_PM_SUPPORT_EXT1_WAKEUP_MODE_PER_PIN   (1) /*!<Supports one bit per pin to configue the EXT1 trigger level */
+#define SOC_PM_EXT1_WAKEUP_BY_PMU       (1)
 #define SOC_PM_SUPPORT_WIFI_WAKEUP      (1)
 #define SOC_PM_SUPPORT_XTAL32K_PD       (1)
 #define SOC_PM_SUPPORT_RC32K_PD         (1)

@@ -22,7 +22,7 @@ extern "C" {
 #define PMU_LP_GPIO_WAKEUP_EN           BIT(9)
 #define PMU_LP_UART_WAKEUP_EN           BIT(10)
 #define PMU_TOUCH_WAKEUP_EN             BIT(11)
-#define PMU_EXT_IO_WAKEUP_EN            BIT(12)
+#define PMU_EXT1_WAKEUP_EN              BIT(12)
 #define PMU_LP_TIMER_WAKEUP_EN          BIT(13)
 #define PMU_BOD_WAKEUP_EN               BIT(14)
 #define PMU_VDDBAT_UNDERVOLT_WAKEUP_EN  BIT(15)
