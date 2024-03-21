@@ -32,10 +32,8 @@ typedef enum {
     DEV_ACTION_EP0_DEQUEUE          = (1 << 2),     // Dequeue all URBs from EP0
     DEV_ACTION_EP0_CLEAR            = (1 << 3),     // Move EP0 to the the active state
     DEV_ACTION_PROP_GONE_EVT        = (1 << 4),     // Propagate a USBH_EVENT_DEV_GONE event
-    DEV_ACTION_FREE_AND_RECOVER     = (1 << 5),     // Free the device object, but send a USBH_HUB_REQ_PORT_RECOVER request afterwards.
-    DEV_ACTION_FREE                 = (1 << 6),     // Free the device object
-    DEV_ACTION_PORT_DISABLE         = (1 << 7),     // Request the hub driver to disable the port of the device
-    DEV_ACTION_PROP_NEW             = (1 << 8),     // Propagate a USBH_EVENT_NEW_DEV event
+    DEV_ACTION_FREE                 = (1 << 5),     // Free the device object
+    DEV_ACTION_PROP_NEW_DEV         = (1 << 6),     // Propagate a USBH_EVENT_NEW_DEV event
 } dev_action_t;
 
 typedef struct device_s device_t;
@@ -57,11 +55,9 @@ struct device_s {
         union {
             struct {
                 uint32_t in_pending_list: 1;
-                uint32_t is_gone: 1;
-                uint32_t waiting_close: 1;
-                uint32_t waiting_port_disable: 1;
-                uint32_t waiting_free: 1;
-                uint32_t reserved27: 27;
+                uint32_t is_gone: 1;            // Device is gone (disconnected or port error)
+                uint32_t waiting_free: 1;       // Device object is awaiting to be freed
+                uint32_t reserved29: 29;
             };
             uint32_t val;
         } flags;
@@ -106,8 +102,6 @@ typedef struct {
     struct {
         usb_proc_req_cb_t proc_req_cb;
         void *proc_req_cb_arg;
-        usbh_hub_req_cb_t hub_req_cb;
-        void *hub_req_cb_arg;
         usbh_event_cb_t event_cb;
         void *event_cb_arg;
         SemaphoreHandle_t mux_lock;
@@ -515,11 +509,11 @@ static inline void handle_prop_gone_evt(device_t *dev_obj)
     p_usbh_obj->constant.event_cb(&event_data, p_usbh_obj->constant.event_cb_arg);
 }
 
-static void handle_free_and_recover(device_t *dev_obj, bool recover_port)
+static inline void handle_free(device_t *dev_obj)
 {
-    // Cache a copy of the port handle as we are about to free the device object
+    // Cache a copy of the device's address as we are about to free the device object
+    const uint8_t dev_addr = dev_obj->constant.address;
     bool all_free;
-    hcd_port_handle_t port_hdl = dev_obj->constant.port_hdl;
     ESP_LOGD(USBH_TAG, "Freeing device %d", dev_obj->constant.address);
 
     // We need to take the mux_lock to access mux_protected members
@@ -538,28 +532,24 @@ static void handle_free_and_recover(device_t *dev_obj, bool recover_port)
     xSemaphoreGive(p_usbh_obj->constant.mux_lock);
     device_free(dev_obj);
 
+    // Propagate USBH_EVENT_DEV_FREE event
+    usbh_event_data_t event_data = {
+        .event = USBH_EVENT_DEV_FREE,
+        .dev_free_data = {
+            .dev_addr = dev_addr,
+        }
+    };
+    p_usbh_obj->constant.event_cb(&event_data, p_usbh_obj->constant.event_cb_arg);
+
     // If all devices have been freed, propagate a USBH_EVENT_ALL_FREE event
     if (all_free) {
         ESP_LOGD(USBH_TAG, "Device all free");
-        usbh_event_data_t event_data = {
-            .event = USBH_EVENT_ALL_FREE,
-        };
+        event_data.event = USBH_EVENT_ALL_FREE;
         p_usbh_obj->constant.event_cb(&event_data, p_usbh_obj->constant.event_cb_arg);
     }
-    // Check if we need to recover the device's port
-    if (recover_port) {
-        p_usbh_obj->constant.hub_req_cb(port_hdl, USBH_HUB_REQ_PORT_RECOVER, p_usbh_obj->constant.hub_req_cb_arg);
-    }
 }
 
-static inline void handle_port_disable(device_t *dev_obj)
-{
-    // Request that the HUB disables this device's port
-    ESP_LOGD(USBH_TAG, "Disable device port %d", dev_obj->constant.address);
-    p_usbh_obj->constant.hub_req_cb(dev_obj->constant.port_hdl, USBH_HUB_REQ_PORT_DISABLE, p_usbh_obj->constant.hub_req_cb_arg);
-}
-
-static inline void handle_prop_new_evt(device_t *dev_obj)
+static inline void handle_prop_new_dev(device_t *dev_obj)
 {
     ESP_LOGD(USBH_TAG, "New device %d", dev_obj->constant.address);
     usbh_event_data_t event_data = {
@@ -694,16 +684,11 @@ esp_err_t usbh_process(void)
         in the order of precedence
         For example
         - New device event is requested followed immediately by a disconnection
-        - Port disable requested followed immediately by a disconnection
         */
-        if (action_flags & DEV_ACTION_FREE_AND_RECOVER) {
-            handle_free_and_recover(dev_obj, true);
-        } else if (action_flags & DEV_ACTION_FREE) {
-            handle_free_and_recover(dev_obj, false);
-        } else if (action_flags & DEV_ACTION_PORT_DISABLE) {
-            handle_port_disable(dev_obj);
-        } else if (action_flags & DEV_ACTION_PROP_NEW) {
-            handle_prop_new_evt(dev_obj);
+        if (action_flags & DEV_ACTION_FREE) {
+            handle_free(dev_obj);
+        } else if (action_flags & DEV_ACTION_PROP_NEW_DEV) {
+            handle_prop_new_dev(dev_obj);
         }
         USBH_ENTER_CRITICAL();
         /* ---------------------------------------------------------------------
@@ -782,7 +767,7 @@ esp_err_t usbh_dev_open(uint8_t dev_addr, usb_device_handle_t *dev_hdl)
 exit:
     if (found_dev_obj != NULL) {
         // The device is not in a state to be referenced
-        if (dev_obj->dynamic.flags.is_gone || dev_obj->dynamic.flags.waiting_port_disable || dev_obj->dynamic.flags.waiting_free) {
+        if (dev_obj->dynamic.flags.is_gone || dev_obj->dynamic.flags.waiting_free) {
             ret = ESP_ERR_INVALID_STATE;
         } else {
             dev_obj->dynamic.ref_count++;
@@ -809,14 +794,9 @@ esp_err_t usbh_dev_close(usb_device_handle_t dev_hdl)
         // Sanity check.
         assert(dev_obj->dynamic.num_ctrl_xfers_inflight == 0);  // There cannot be any control transfer in-flight
         assert(!dev_obj->dynamic.flags.waiting_free);   // This can only be set when ref count reaches 0
-        if (dev_obj->dynamic.flags.is_gone) {
-            // Device is already gone so it's port is already disabled. Trigger the USBH process to free the device
-            dev_obj->dynamic.flags.waiting_free = 1;
-            call_proc_req_cb = _dev_set_actions(dev_obj, DEV_ACTION_FREE_AND_RECOVER); // Port error occurred so we need to recover it
-        } else if (dev_obj->dynamic.flags.waiting_close) {
-            // Device is still connected but is no longer needed. Trigger the USBH process to request device's port be disabled
-            dev_obj->dynamic.flags.waiting_port_disable = 1;
-            call_proc_req_cb = _dev_set_actions(dev_obj, DEV_ACTION_PORT_DISABLE);
+        if (dev_obj->dynamic.flags.is_gone || dev_obj->dynamic.flags.waiting_free) {
+            // Device is already gone or is awaiting to be freed. Trigger the USBH process to free the device
+            call_proc_req_cb = _dev_set_actions(dev_obj, DEV_ACTION_FREE);
         }
         // Else, there's nothing to do. Leave the device allocated
     }
@@ -848,18 +828,17 @@ esp_err_t usbh_dev_mark_all_free(void)
             dev_obj_cur = TAILQ_FIRST(&p_usbh_obj->dynamic.devs_idle_tailq);
         }
         while (dev_obj_cur != NULL) {
-            assert(!dev_obj_cur->dynamic.flags.waiting_close);  // Sanity check
             // Keep a copy of the next item first in case we remove the current item
             dev_obj_next = TAILQ_NEXT(dev_obj_cur, dynamic.tailq_entry);
-            if (dev_obj_cur->dynamic.ref_count == 0 && !dev_obj_cur->dynamic.flags.is_gone) {
-                // Device is not opened as is not gone, so we can disable it now
-                dev_obj_cur->dynamic.flags.waiting_port_disable = 1;
-                call_proc_req_cb |= _dev_set_actions(dev_obj_cur, DEV_ACTION_PORT_DISABLE);
+            if (dev_obj_cur->dynamic.ref_count == 0) {
+                // Device is not referenced. Can free immediately.
+                call_proc_req_cb |= _dev_set_actions(dev_obj_cur, DEV_ACTION_FREE);
             } else {
-                // Device is still opened. Just mark it as waiting to be closed
-                dev_obj_cur->dynamic.flags.waiting_close = 1;
+                // Device is still referenced. Just mark it as waiting to be freed
+                dev_obj_cur->dynamic.flags.waiting_free = 1;
             }
-            wait_for_free = true;   // As long as there is still a device, we need to wait for an event indicating it is freed
+            // At least one device needs to be freed. User needs to wait for USBH_EVENT_ALL_FREE event
+            wait_for_free = true;
             dev_obj_cur = dev_obj_next;
         }
     }
@@ -1145,22 +1124,6 @@ void *usbh_ep_get_context(usbh_ep_handle_t ep_hdl)
 
 // ------------------- Device Related ----------------------
 
-esp_err_t usbh_hub_is_installed(usbh_hub_req_cb_t hub_req_callback, void *callback_arg)
-{
-    USBH_CHECK(hub_req_callback != NULL, ESP_ERR_INVALID_ARG);
-
-    USBH_ENTER_CRITICAL();
-    // Check that USBH is already installed
-    USBH_CHECK_FROM_CRIT(p_usbh_obj != NULL, ESP_ERR_INVALID_STATE);
-    // Check that Hub has not be installed yet
-    USBH_CHECK_FROM_CRIT(p_usbh_obj->constant.hub_req_cb == NULL, ESP_ERR_INVALID_STATE);
-    p_usbh_obj->constant.hub_req_cb = hub_req_callback;
-    p_usbh_obj->constant.hub_req_cb_arg = callback_arg;
-    USBH_EXIT_CRITICAL();
-
-    return ESP_OK;
-}
-
 esp_err_t usbh_hub_add_dev(hcd_port_handle_t port_hdl, usb_speed_t dev_speed, usb_device_handle_t *new_dev_hdl, hcd_pipe_handle_t *default_pipe_hdl)
 {
     // Note: Parent device handle can be NULL if it's connected to the root hub
@@ -1178,42 +1141,27 @@ esp_err_t usbh_hub_add_dev(hcd_port_handle_t port_hdl, usb_speed_t dev_speed, us
     return ret;
 }
 
-esp_err_t usbh_hub_pass_event(usb_device_handle_t dev_hdl, usbh_hub_event_t hub_event)
+esp_err_t usbh_hub_dev_gone(usb_device_handle_t dev_hdl)
 {
     USBH_CHECK(dev_hdl != NULL, ESP_ERR_INVALID_ARG);
     device_t *dev_obj = (device_t *)dev_hdl;
-
     bool call_proc_req_cb;
-    switch (hub_event) {
-    case USBH_HUB_EVENT_PORT_ERROR: {
-        USBH_ENTER_CRITICAL();
-        dev_obj->dynamic.flags.is_gone = 1;
-        // Check if the device can be freed now
-        if (dev_obj->dynamic.ref_count == 0) {
-            dev_obj->dynamic.flags.waiting_free = 1;
-            // Device is already waiting free so none of it's EP's will be in use. Can free immediately.
-            call_proc_req_cb = _dev_set_actions(dev_obj, DEV_ACTION_FREE_AND_RECOVER); // Port error occurred so we need to recover it
-        } else {
-            call_proc_req_cb = _dev_set_actions(dev_obj,
-                                                DEV_ACTION_EPn_HALT_FLUSH |
-                                                DEV_ACTION_EP0_FLUSH |
-                                                DEV_ACTION_EP0_DEQUEUE |
-                                                DEV_ACTION_PROP_GONE_EVT);
-        }
-        USBH_EXIT_CRITICAL();
-        break;
-    }
-    case USBH_HUB_EVENT_PORT_DISABLED: {
-        USBH_ENTER_CRITICAL();
-        assert(dev_obj->dynamic.ref_count == 0);    // At this stage, the device should have been closed by all users
-        dev_obj->dynamic.flags.waiting_free = 1;
+
+    USBH_ENTER_CRITICAL();
+    dev_obj->dynamic.flags.is_gone = 1;
+    // Check if the device can be freed immediately
+    if (dev_obj->dynamic.ref_count == 0) {
+        // Device is not currently referenced at all. Can free immediately.
         call_proc_req_cb = _dev_set_actions(dev_obj, DEV_ACTION_FREE);
-        USBH_EXIT_CRITICAL();
-        break;
+    } else {
+        // Device is still being referenced. Flush endpoints and propagate device gone event
+        call_proc_req_cb = _dev_set_actions(dev_obj,
+                                            DEV_ACTION_EPn_HALT_FLUSH |
+                                            DEV_ACTION_EP0_FLUSH |
+                                            DEV_ACTION_EP0_DEQUEUE |
+                                            DEV_ACTION_PROP_GONE_EVT);
     }
-    default:
-        return ESP_ERR_INVALID_ARG;
-    }
+    USBH_EXIT_CRITICAL();
 
     if (call_proc_req_cb) {
         p_usbh_obj->constant.proc_req_cb(USB_PROC_REQ_SOURCE_USBH, false, p_usbh_obj->constant.proc_req_cb_arg);
@@ -1303,7 +1251,7 @@ esp_err_t usbh_hub_enum_done(usb_device_handle_t dev_hdl)
     dev_obj->dynamic.state = USB_DEVICE_STATE_CONFIGURED;
     // Add the device to list of devices, then trigger a device event
     TAILQ_INSERT_TAIL(&p_usbh_obj->dynamic.devs_idle_tailq, dev_obj, dynamic.tailq_entry);   // Add it to the idle device list first
-    bool call_proc_req_cb = _dev_set_actions(dev_obj, DEV_ACTION_PROP_NEW);
+    bool call_proc_req_cb = _dev_set_actions(dev_obj, DEV_ACTION_PROP_NEW_DEV);
     USBH_EXIT_CRITICAL();
     p_usbh_obj->mux_protected.num_device++;
     xSemaphoreGive(p_usbh_obj->constant.mux_lock);
