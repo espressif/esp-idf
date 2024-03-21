@@ -10,6 +10,9 @@
 
 **WPA3 Enterprise(192 bit)**: WPA3 Enterprise + AES256 Keys(GCMP256/CCMP256) + BIP256 + RSA3096/EC certs + NSA SuiteB ciphers in EAP authentication.
 
+*Note:* 
+Note that when using bigger certificates on low-power chips without crypto hardware acceleration, it is recommended to adjust the task watchdog timer (TWDT) if it is enabled. For precise information on timing requirements, you can check performance numbers at https://github.com/espressif/mbedtls/wiki/Performance-Numbers.
+
 # WiFi Enterprise Example
 
 This example shows how ESP32 connects to AP with Wi-Fi enterprise encryption. The example does the following steps:

@@ -256,6 +256,8 @@ void eap_peer_tls_ssl_deinit(struct eap_sm *sm, struct eap_ssl_data *data)
  * @sm: Pointer to EAP state machine allocated with eap_peer_sm_init()
  * @data: Data for TLS processing
  * @label: Label string for deriving the keys, e.g., "client EAP encryption"
+ * @context: Optional extra upper-layer context (max len 2^16)
+ * @context_len: The length of the context value
  * @len: Length of the key material to generate (usually 64 for MSK)
  * Returns: Pointer to allocated key on success or %NULL on failure
  *
@@ -264,9 +266,12 @@ void eap_peer_tls_ssl_deinit(struct eap_sm *sm, struct eap_ssl_data *data)
  * different label to bind the key usage into the generated material.
  *
  * The caller is responsible for freeing the returned buffer.
+ *
+ * Note: To provide the RFC 5705 context, the context variable must be non-NULL.
  */
 u8 * eap_peer_tls_derive_key(struct eap_sm *sm, struct eap_ssl_data *data,
-			     const char *label, size_t len)
+			     const char *label, const u8 *context,
+			     size_t context_len, size_t len)
 {
 	u8 *out;
 
@@ -274,8 +279,8 @@ u8 * eap_peer_tls_derive_key(struct eap_sm *sm, struct eap_ssl_data *data,
 	if (out == NULL)
 		return NULL;
 
-	if (tls_connection_export_key(data->ssl_ctx, data->conn, label, 0, 0, out,
-				len)) {
+	if (tls_connection_export_key(data->ssl_ctx, data->conn, label,
+				      context, context_len, out, len)) {
 		os_free(out);
 		return NULL;
 	}
@@ -302,6 +307,30 @@ u8 * eap_peer_tls_derive_session_id(struct eap_sm *sm,
 {
 	struct tls_random keys;
 	u8 *out;
+
+	if (data->tls_v13) {
+		u8 *id, *method_id;
+		const u8 context[] = { eap_type };
+
+		/* Session-Id = <EAP-Type> || Method-Id
+		 * Method-Id = TLS-Exporter("EXPORTER_EAP_TLS_Method-Id",
+		 *                          Type-Code, 64)
+		 */
+		*len = 1 + 64;
+		id = os_malloc(*len);
+		if (!id)
+			return NULL;
+		method_id = eap_peer_tls_derive_key(
+			sm, data, "EXPORTER_EAP_TLS_Method-Id", context, 1, 64);
+		if (!method_id) {
+			os_free(id);
+			return NULL;
+		}
+		id[0] = eap_type;
+		os_memcpy(id + 1, method_id, 64);
+		os_free(method_id);
+		return id;
+	}
 
 	/*
 	 * TLS library did not support session ID generation,
@@ -616,6 +645,8 @@ int eap_peer_tls_process_helper(struct eap_sm *sm, struct eap_ssl_data *data,
 		 */
 		int res = eap_tls_process_input(sm, data, in_data, in_len,
 						out_data);
+		char buf[20];
+
 		if (res) {
 			/*
 			 * Input processing failed (res = -1) or more data is
@@ -628,6 +659,12 @@ int eap_peer_tls_process_helper(struct eap_sm *sm, struct eap_ssl_data *data,
 		 * The incoming message has been reassembled and processed. The
 		 * response was allocated into data->tls_out buffer.
 		 */
+
+		if (tls_get_version(data->ssl_ctx, data->conn,
+				    buf, sizeof(buf)) == 0) {
+			wpa_printf(MSG_DEBUG, "SSL: Using TLS version %s", buf);
+			data->tls_v13 = os_strcmp(buf, "TLSv1.3") == 0;
+		}
 	}
 
 	if (data->tls_out == NULL) {
