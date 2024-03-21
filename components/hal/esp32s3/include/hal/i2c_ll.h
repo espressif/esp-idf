@@ -213,6 +213,50 @@ static inline void i2c_ll_master_set_fractional_divider(i2c_dev_t *hw, uint8_t d
 }
 
 /**
+ * @brief Set fractional divider
+ *
+ * @param hw Beginning address of the peripheral registers
+ * @param div_a The denominator of the frequency divider factor of the i2c function clock
+ * @param div_b The numerator of the frequency divider factor of the i2c function clock.
+ */
+static inline void i2c_ll_master_get_fractional_divider(i2c_dev_t *hw, uint32_t *div_a, uint32_t *div_b)
+{
+    /* Set div_a and div_b to 0, as it's not necessary to use them */
+    *div_a = hw->clk_conf.sclk_div_a;
+    *div_b = hw->clk_conf.sclk_div_b;
+}
+
+/**
+ * @brief Get clock configurations from registers
+ *
+ * @param hw Beginning address of the peripheral registers
+ * @param div_num div_num
+ * @param clk_sel clk_sel
+ * @param clk_active clk_active
+ */
+static inline void i2c_ll_master_save_clock_configurations(i2c_dev_t *hw, uint32_t *div_num, uint8_t *clk_sel, uint8_t *clk_active)
+{
+    *div_num = HAL_FORCE_READ_U32_REG_FIELD(hw->clk_conf, sclk_div_num);
+    *clk_sel = hw->clk_conf.sclk_sel;
+    *clk_active = hw->clk_conf.sclk_active;
+}
+
+/**
+ * @brief Get clock configurations from registers
+ *
+ * @param hw Beginning address of the peripheral registers
+ * @param div_num div_num
+ * @param clk_sel clk_sel
+ * @param clk_active clk_active
+ */
+static inline void i2c_ll_master_restore_clock_configurations(i2c_dev_t *hw, uint32_t div_num, uint8_t clk_sel, uint8_t clk_active)
+{
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->clk_conf, sclk_div_num, div_num);
+    hw->clk_conf.sclk_sel = clk_sel;
+    hw->clk_conf.sclk_active = clk_active;
+}
+
+/**
  * @brief  Reset I2C txFIFO
  *
  * @param  hw Beginning address of the peripheral registers
