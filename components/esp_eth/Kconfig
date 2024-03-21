@@ -156,7 +156,35 @@ menu "Ethernet"
                 The KSZ8851SNL is a single-chip Fast Ethernet controller consisting of
                 a 10/100 physical layer transceiver (PHY), a MAC, and a Serial Peripheral Interface (SPI).
                 Select this to enable KSZ8851SNL driver.
+
+        config ETH_SPI_ETHERNET_CH395
+            bool "Use CH395"
+            help
+                CH395 is an Ethernet protocol stack management IC which provides Ethernet communication
+                ability for MCU system. CH395 has built-in 10 / 100M Ethernet MAC and PHY and fully compatible
+                with IEEE 802.3 protocol, it also has built-in protocol stack firmware such as PPPOE, IP, DHCP,
+                ARP, ICMP, IGMP, UDP, TCP and etc.
+                Select this to enable CH395 driver.
     endif # ETH_USE_SPI_ETHERNET
+
+    menuconfig ETH_USE_UART_ETHERNET
+        bool "Support UART to Ethernet Module"
+        default n
+        select ETH_ENABLED
+        help
+            ESP-IDF can also support some UART-Ethernet modules.
+
+    if ETH_USE_UART_ETHERNET
+        config ETH_UART_ETHERNET_CH395
+            bool "Use CH395"
+            help
+                CH395 is an Ethernet protocol stack management IC which provides Ethernet communication
+                ability for MCU system. CH395 has built-in 10 / 100M Ethernet MAC and PHY and fully compatible
+                with IEEE 802.3 protocol, it also has built-in protocol stack firmware such as PPPOE, IP, DHCP,
+                ARP, ICMP, IGMP, UDP, TCP and etc.
+                Select this to enable CH395 driver.
+
+    endif # ETH_USE_UART_ETHERNET
 
     menuconfig ETH_USE_OPENETH
         bool "Support OpenCores Ethernet MAC (for use with QEMU)"
