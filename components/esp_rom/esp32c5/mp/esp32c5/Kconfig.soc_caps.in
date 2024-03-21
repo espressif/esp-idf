@@ -78,3 +78,7 @@ config ESP_ROM_RAM_APP_NEEDS_MMU_INIT
 config ESP_ROM_HAS_VERSION
     bool
     default y
+
+config ESP_ROM_SUPPORT_DEEP_SLEEP_WAKEUP_STUB
+    bool
+    default y

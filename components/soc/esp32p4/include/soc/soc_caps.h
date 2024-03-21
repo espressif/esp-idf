@@ -89,7 +89,7 @@
 #define SOC_GP_LDO_SUPPORTED            1 // General purpose LDO
 // #define SOC_PPA_SUPPORTED               1  //TODO: IDF-6878
 #define SOC_LIGHT_SLEEP_SUPPORTED       1
-// #define SOC_DEEP_SLEEP_SUPPORTED        1  //TODO: IDF-7529
+#define SOC_DEEP_SLEEP_SUPPORTED        1
 
 /*-------------------------- XTAL CAPS ---------------------------------------*/
 #define SOC_XTAL_SUPPORT_40M            1

@@ -32,3 +32,4 @@
 #define ESP_ROM_HAS_CACHE_WRITEBACK_BUG     (1) // ROM api Cache_WriteBack_Addr address or size misalignment may cause cache hit with wrong value.
 #define ESP_ROM_HAS_SW_FLOAT                (1) // ROM has libgcc software floating point emulation functions
 #define ESP_ROM_HAS_VERSION                 (1) // ROM has version/eco information
+#define ESP_ROM_SUPPORT_DEEP_SLEEP_WAKEUP_STUB  (1) // ROM supports the HP core to jump to the RTC memory to execute stub code after waking up from deepsleep.

@@ -50,3 +50,7 @@ config ESP_ROM_USB_OTG_NUM
 config ESP_ROM_USB_SERIAL_DEVICE_NUM
     int
     default -1
+
+config ESP_ROM_SUPPORT_DEEP_SLEEP_WAKEUP_STUB
+    bool
+    default y
