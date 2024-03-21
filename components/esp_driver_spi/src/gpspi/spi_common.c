@@ -771,8 +771,6 @@ void spicommon_cs_free_io(int cs_gpio_num)
 
 bool spicommon_bus_using_iomux(spi_host_device_t host)
 {
-#define CHECK_IOMUX_PIN(HOST, PIN_NAME) if (GPIO.func_in_sel_cfg[spi_periph_signal[(HOST)].PIN_NAME##_in].sig_in_sel) return false
-
     CHECK_IOMUX_PIN(host, spid);
     CHECK_IOMUX_PIN(host, spiq);
     CHECK_IOMUX_PIN(host, spiwp);

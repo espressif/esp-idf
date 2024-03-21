@@ -52,4 +52,4 @@ void modem_clock_hal_enable_wifipwr_clock(modem_clock_hal_context_t *hal, bool e
 }
 #endif
 
-#endif  // SOC_MODEM_CLOCK_IS_INDEPENDENT
+#endif  // SOC_MODEM_CLOCK_IS_INDEPENDENT && SOC_MODEM_CLOCK_SUPPORTED

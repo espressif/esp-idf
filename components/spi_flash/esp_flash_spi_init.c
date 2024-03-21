@@ -168,8 +168,6 @@ static bool use_bus_lock(int host_id)
 
 static bool bus_using_iomux(spi_host_device_t host)
 {
-#define CHECK_IOMUX_PIN(HOST, PIN_NAME) if (GPIO.func_in_sel_cfg[spi_periph_signal[(HOST)].PIN_NAME##_in].sig_in_sel) return false
-
     CHECK_IOMUX_PIN(host, spid);
     CHECK_IOMUX_PIN(host, spiq);
     CHECK_IOMUX_PIN(host, spiwp);

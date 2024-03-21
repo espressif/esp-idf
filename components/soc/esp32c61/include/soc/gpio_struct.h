@@ -585,7 +585,7 @@ typedef union {
  */
 typedef union {
     struct {
-        /** func0_in_sel : R/W; bitpos: [5:0]; default: 48;
+        /** func_in_sel : R/W; bitpos: [5:0]; default: 48;
          *  Configures to select a pin from the 25 GPIO pins to connect the input signal 0.\\
          *  0: Select GPIO0\\
          *  1: Select GPIO1\\
@@ -596,340 +596,24 @@ typedef union {
          *  0x20: A constantly high input\\
          *  0x30: A constantly low input\\
          */
-        uint32_t func0_in_sel:6;
-        /** func0_in_inv_sel : R/W; bitpos: [6]; default: 0;
+        uint32_t func_in_sel:6;
+        /** func_in_inv_sel : R/W; bitpos: [6]; default: 0;
          *  Configures whether or not to invert the input value.\\
          *  0: Not invert\\
          *  1: Invert\\
          */
-        uint32_t func0_in_inv_sel:1;
-        /** sig0_in_sel : R/W; bitpos: [7]; default: 0;
+        uint32_t func_in_inv_sel:1;
+        /** sig_in_sel : R/W; bitpos: [7]; default: 0;
          *  Configures whether or not to route signals via GPIO matrix.\\
          *  0: Bypass GPIO matrix, i.e., connect signals directly to peripheral configured in
          *  IO MUX.\\
          *  1: Route signals via GPIO matrix.\\
          */
-        uint32_t sig0_in_sel:1;
+        uint32_t sig_in_sel:1;
         uint32_t reserved_8:24;
     };
     uint32_t val;
-} gpio_func0_in_sel_cfg_reg_t;
-
-/** Type of funcb_in_sel_cfg register
- *  Configuration register for input signal b
- */
-typedef union {
-    struct {
-        /** funcb_in_sel : R/W; bitpos: [5:0]; default: 48;
-         *  Configures to select a pin from the 25 GPIO pins to connect the input signal b.\\
-         *  0: Select GPIO0\\
-         *  1: Select GPIO1\\
-         *  ......\\
-         *  23: Select GPIO23\\
-         *  24: Select GPIO24\\
-         *  Or\\
-         *  0x20: A constantly high input\\
-         *  0x30: A constantly low input\\
-         */
-        uint32_t funcb_in_sel:6;
-        /** funcb_in_inv_sel : R/W; bitpos: [6]; default: 0;
-         *  Configures whether or not to invert the input value.\\
-         *  0: Not invert\\
-         *  1: Invert\\
-         */
-        uint32_t funcb_in_inv_sel:1;
-        /** sigb_in_sel : R/W; bitpos: [7]; default: 0;
-         *  Configures whether or not to route signals via GPIO matrix.\\
-         *  0: Bypass GPIO matrix, i.e., connect signals directly to peripheral configured in
-         *  IO MUX.\\
-         *  1: Route signals via GPIO matrix.\\
-         */
-        uint32_t sigb_in_sel:1;
-        uint32_t reserved_8:24;
-    };
-    uint32_t val;
-} gpio_funcb_in_sel_cfg_reg_t;
-
-/** Type of funcc_in_sel_cfg register
- *  Configuration register for input signal c
- */
-typedef union {
-    struct {
-        /** funcc_in_sel : R/W; bitpos: [5:0]; default: 48;
-         *  Configures to select a pin from the 25 GPIO pins to connect the input signal c.\\
-         *  0: Select GPIO0\\
-         *  1: Select GPIO1\\
-         *  ......\\
-         *  23: Select GPIO23\\
-         *  24: Select GPIO24\\
-         *  Or\\
-         *  0x20: A constantly high input\\
-         *  0x30: A constantly low input\\
-         */
-        uint32_t funcc_in_sel:6;
-        /** funcc_in_inv_sel : R/W; bitpos: [6]; default: 0;
-         *  Configures whether or not to invert the input value.\\
-         *  0: Not invert\\
-         *  1: Invert\\
-         */
-        uint32_t funcc_in_inv_sel:1;
-        /** sigc_in_sel : R/W; bitpos: [7]; default: 0;
-         *  Configures whether or not to route signals via GPIO matrix.\\
-         *  0: Bypass GPIO matrix, i.e., connect signals directly to peripheral configured in
-         *  IO MUX.\\
-         *  1: Route signals via GPIO matrix.\\
-         */
-        uint32_t sigc_in_sel:1;
-        uint32_t reserved_8:24;
-    };
-    uint32_t val;
-} gpio_funcc_in_sel_cfg_reg_t;
-
-/** Type of funcd_in_sel_cfg register
- *  Configuration register for input signal d
- */
-typedef union {
-    struct {
-        /** funcd_in_sel : R/W; bitpos: [5:0]; default: 48;
-         *  Configures to select a pin from the 25 GPIO pins to connect the input signal d.\\
-         *  0: Select GPIO0\\
-         *  1: Select GPIO1\\
-         *  ......\\
-         *  23: Select GPIO23\\
-         *  24: Select GPIO24\\
-         *  Or\\
-         *  0x20: A constantly high input\\
-         *  0x30: A constantly low input\\
-         */
-        uint32_t funcd_in_sel:6;
-        /** funcd_in_inv_sel : R/W; bitpos: [6]; default: 0;
-         *  Configures whether or not to invert the input value.\\
-         *  0: Not invert\\
-         *  1: Invert\\
-         */
-        uint32_t funcd_in_inv_sel:1;
-        /** sigd_in_sel : R/W; bitpos: [7]; default: 0;
-         *  Configures whether or not to route signals via GPIO matrix.\\
-         *  0: Bypass GPIO matrix, i.e., connect signals directly to peripheral configured in
-         *  IO MUX.\\
-         *  1: Route signals via GPIO matrix.\\
-         */
-        uint32_t sigd_in_sel:1;
-        uint32_t reserved_8:24;
-    };
-    uint32_t val;
-} gpio_funcd_in_sel_cfg_reg_t;
-
-/** Type of funce_in_sel_cfg register
- *  Configuration register for input signal e
- */
-typedef union {
-    struct {
-        /** funce_in_sel : R/W; bitpos: [5:0]; default: 32;
-         *  Configures to select a pin from the 25 GPIO pins to connect the input signal e.\\
-         *  0: Select GPIO0\\
-         *  1: Select GPIO1\\
-         *  ......\\
-         *  23: Select GPIO23\\
-         *  24: Select GPIO24\\
-         *  Or\\
-         *  0x20: A constantly high input\\
-         *  0x30: A constantly low input\\
-         */
-        uint32_t funce_in_sel:6;
-        /** funce_in_inv_sel : R/W; bitpos: [6]; default: 0;
-         *  Configures whether or not to invert the input value.\\
-         *  0: Not invert\\
-         *  1: Invert\\
-         */
-        uint32_t funce_in_inv_sel:1;
-        /** sige_in_sel : R/W; bitpos: [7]; default: 0;
-         *  Configures whether or not to route signals via GPIO matrix.\\
-         *  0: Bypass GPIO matrix, i.e., connect signals directly to peripheral configured in
-         *  IO MUX.\\
-         *  1: Route signals via GPIO matrix.\\
-         */
-        uint32_t sige_in_sel:1;
-        uint32_t reserved_8:24;
-    };
-    uint32_t val;
-} gpio_funce_in_sel_cfg_reg_t;
-
-/** Type of funcf_in_sel_cfg register
- *  Configuration register for input signal f
- */
-typedef union {
-    struct {
-        /** funcf_in_sel : R/W; bitpos: [5:0]; default: 48;
-         *  Configures to select a pin from the 25 GPIO pins to connect the input signal f.\\
-         *  0: Select GPIO0\\
-         *  1: Select GPIO1\\
-         *  ......\\
-         *  23: Select GPIO23\\
-         *  24: Select GPIO24\\
-         *  Or\\
-         *  0x20: A constantly high input\\
-         *  0x30: A constantly low input\\
-         */
-        uint32_t funcf_in_sel:6;
-        /** funcf_in_inv_sel : R/W; bitpos: [6]; default: 0;
-         *  Configures whether or not to invert the input value.\\
-         *  0: Not invert\\
-         *  1: Invert\\
-         */
-        uint32_t funcf_in_inv_sel:1;
-        /** sigf_in_sel : R/W; bitpos: [7]; default: 0;
-         *  Configures whether or not to route signals via GPIO matrix.\\
-         *  0: Bypass GPIO matrix, i.e., connect signals directly to peripheral configured in
-         *  IO MUX.\\
-         *  1: Route signals via GPIO matrix.\\
-         */
-        uint32_t sigf_in_sel:1;
-        uint32_t reserved_8:24;
-    };
-    uint32_t val;
-} gpio_funcf_in_sel_cfg_reg_t;
-
-/** Type of funcg_in_sel_cfg register
- *  Configuration register for input signal g
- */
-typedef union {
-    struct {
-        /** funcg_in_sel : R/W; bitpos: [5:0]; default: 32;
-         *  Configures to select a pin from the 25 GPIO pins to connect the input signal g.\\
-         *  0: Select GPIO0\\
-         *  1: Select GPIO1\\
-         *  ......\\
-         *  23: Select GPIO23\\
-         *  24: Select GPIO24\\
-         *  Or\\
-         *  0x20: A constantly high input\\
-         *  0x30: A constantly low input\\
-         */
-        uint32_t funcg_in_sel:6;
-        /** funcg_in_inv_sel : R/W; bitpos: [6]; default: 0;
-         *  Configures whether or not to invert the input value.\\
-         *  0: Not invert\\
-         *  1: Invert\\
-         */
-        uint32_t funcg_in_inv_sel:1;
-        /** sigg_in_sel : R/W; bitpos: [7]; default: 0;
-         *  Configures whether or not to route signals via GPIO matrix.\\
-         *  0: Bypass GPIO matrix, i.e., connect signals directly to peripheral configured in
-         *  IO MUX.\\
-         *  1: Route signals via GPIO matrix.\\
-         */
-        uint32_t sigg_in_sel:1;
-        uint32_t reserved_8:24;
-    };
-    uint32_t val;
-} gpio_funcg_in_sel_cfg_reg_t;
-
-/** Type of funch_in_sel_cfg register
- *  Configuration register for input signal h
- */
-typedef union {
-    struct {
-        /** funch_in_sel : R/W; bitpos: [5:0]; default: 48;
-         *  Configures to select a pin from the 25 GPIO pins to connect the input signal h.\\
-         *  0: Select GPIO0\\
-         *  1: Select GPIO1\\
-         *  ......\\
-         *  23: Select GPIO23\\
-         *  24: Select GPIO24\\
-         *  Or\\
-         *  0x20: A constantly high input\\
-         *  0x30: A constantly low input\\
-         */
-        uint32_t funch_in_sel:6;
-        /** funch_in_inv_sel : R/W; bitpos: [6]; default: 0;
-         *  Configures whether or not to invert the input value.\\
-         *  0: Not invert\\
-         *  1: Invert\\
-         */
-        uint32_t funch_in_inv_sel:1;
-        /** sigh_in_sel : R/W; bitpos: [7]; default: 0;
-         *  Configures whether or not to route signals via GPIO matrix.\\
-         *  0: Bypass GPIO matrix, i.e., connect signals directly to peripheral configured in
-         *  IO MUX.\\
-         *  1: Route signals via GPIO matrix.\\
-         */
-        uint32_t sigh_in_sel:1;
-        uint32_t reserved_8:24;
-    };
-    uint32_t val;
-} gpio_funch_in_sel_cfg_reg_t;
-
-/** Type of funci_in_sel_cfg register
- *  Configuration register for input signal i
- */
-typedef union {
-    struct {
-        /** funci_in_sel : R/W; bitpos: [5:0]; default: 48;
-         *  Configures to select a pin from the 25 GPIO pins to connect the input signal i.\\
-         *  0: Select GPIO0\\
-         *  1: Select GPIO1\\
-         *  ......\\
-         *  23: Select GPIO23\\
-         *  24: Select GPIO24\\
-         *  Or\\
-         *  0x20: A constantly high input\\
-         *  0x30: A constantly low input\\
-         */
-        uint32_t funci_in_sel:6;
-        /** funci_in_inv_sel : R/W; bitpos: [6]; default: 0;
-         *  Configures whether or not to invert the input value.\\
-         *  0: Not invert\\
-         *  1: Invert\\
-         */
-        uint32_t funci_in_inv_sel:1;
-        /** sigi_in_sel : R/W; bitpos: [7]; default: 0;
-         *  Configures whether or not to route signals via GPIO matrix.\\
-         *  0: Bypass GPIO matrix, i.e., connect signals directly to peripheral configured in
-         *  IO MUX.\\
-         *  1: Route signals via GPIO matrix.\\
-         */
-        uint32_t sigi_in_sel:1;
-        uint32_t reserved_8:24;
-    };
-    uint32_t val;
-} gpio_funci_in_sel_cfg_reg_t;
-
-/** Type of funcj_in_sel_cfg register
- *  Configuration register for input signal j
- */
-typedef union {
-    struct {
-        /** funcj_in_sel : R/W; bitpos: [5:0]; default: 48;
-         *  Configures to select a pin from the 25 GPIO pins to connect the input signal j.\\
-         *  0: Select GPIO0\\
-         *  1: Select GPIO1\\
-         *  ......\\
-         *  23: Select GPIO23\\
-         *  24: Select GPIO24\\
-         *  Or\\
-         *  0x20: A constantly high input\\
-         *  0x30: A constantly low input\\
-         */
-        uint32_t funcj_in_sel:6;
-        /** funcj_in_inv_sel : R/W; bitpos: [6]; default: 0;
-         *  Configures whether or not to invert the input value.\\
-         *  0: Not invert\\
-         *  1: Invert\\
-         */
-        uint32_t funcj_in_inv_sel:1;
-        /** sigj_in_sel : R/W; bitpos: [7]; default: 0;
-         *  Configures whether or not to route signals via GPIO matrix.\\
-         *  0: Bypass GPIO matrix, i.e., connect signals directly to peripheral configured in
-         *  IO MUX.\\
-         *  1: Route signals via GPIO matrix.\\
-         */
-        uint32_t sigj_in_sel:1;
-        uint32_t reserved_8:24;
-    };
-    uint32_t val;
-} gpio_funcj_in_sel_cfg_reg_t;
-
+} gpio_func_in_sel_cfg_reg_t;
 
 /** Group: Output Configuration Registers */
 /** Type of funcn_out_sel_cfg register
@@ -1218,26 +902,8 @@ typedef struct {
     volatile gpio_pin27_reg_t pin27;
     volatile gpio_pin28_reg_t pin28;
     uint32_t reserved_138[99];
-    volatile gpio_func0_in_sel_cfg_reg_t func0_in_sel_cfg;
-    uint32_t reserved_2c8[5];
-    volatile gpio_funcb_in_sel_cfg_reg_t funcb_in_sel_cfg[12];
-    uint32_t reserved_30c[9];
-    volatile gpio_funcc_in_sel_cfg_reg_t funcc_in_sel_cfg[9];
-    uint32_t reserved_354[5];
-    volatile gpio_funcd_in_sel_cfg_reg_t funcd_in_sel_cfg[3];
-    uint32_t reserved_374[2];
-    volatile gpio_funce_in_sel_cfg_reg_t funce_in_sel_cfg[2];
-    uint32_t reserved_384[16];
-    volatile gpio_funcf_in_sel_cfg_reg_t funcf_in_sel_cfg[6];
-    uint32_t reserved_3dc[2];
-    volatile gpio_funcg_in_sel_cfg_reg_t funcg_in_sel_cfg[3];
-    uint32_t reserved_3f0[7];
-    volatile gpio_funch_in_sel_cfg_reg_t funch_in_sel_cfg[2];
-    uint32_t reserved_414[13];
-    volatile gpio_funci_in_sel_cfg_reg_t funci_in_sel_cfg[4];
-    uint32_t reserved_458[17];
-    volatile gpio_funcj_in_sel_cfg_reg_t funcj_in_sel_cfg[4];
-    uint32_t reserved_4ac[390];
+    volatile gpio_func_in_sel_cfg_reg_t func_in_sel_cfg[256];  //0-255. reserved: 1-5, 18-26, 36-40, 44-45, 48-63, 70-71, 75-81, 84-96, 101-117, 122-255;
+    uint32_t reserved_4ac[256];
     volatile gpio_funcn_out_sel_cfg_reg_t funcn_out_sel_cfg[25];
     volatile gpio_func25_out_sel_cfg_reg_t func25_out_sel_cfg;
     volatile gpio_func26_out_sel_cfg_reg_t func26_out_sel_cfg;

@@ -19,10 +19,10 @@ set(ldfragments "")
 # ADC related source files (dprecated)
 if(CONFIG_SOC_ADC_SUPPORTED)
     list(APPEND srcs "deprecated/adc_legacy.c")
-endif()
 
-if(CONFIG_SOC_ADC_DMA_SUPPORTED)
-    list(APPEND srcs "deprecated/adc_dma_legacy.c")
+    if(CONFIG_SOC_ADC_DMA_SUPPORTED)
+        list(APPEND srcs "deprecated/adc_dma_legacy.c")
+    endif()
 endif()
 
 # DAC related source files

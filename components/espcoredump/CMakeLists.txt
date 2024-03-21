@@ -4,6 +4,10 @@ if(${target} STREQUAL "linux")
     return() # This component is not supported by the POSIX/Linux simulator
 endif()
 
+if(${target} STREQUAL "esp32c61")
+    return() # TODO: [ESP32C61] IDF-9268
+endif()
+
 set(srcs "src/core_dump_init.c"
          "src/core_dump_common.c"
          "src/core_dump_flash.c"

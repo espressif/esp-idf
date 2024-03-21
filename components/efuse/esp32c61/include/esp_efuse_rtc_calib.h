@@ -51,7 +51,7 @@ int esp_efuse_rtc_calib_get_chan_compens(int version, uint32_t adc_unit, uint32_
  * @brief Get the calibration digits stored in the efuse, and the corresponding voltage.
  *
  * @param version Version of the stored efuse
- * @param adc_unit      ADC unit (not used on ESP32C6, for compatibility)
+ * @param adc_unit      ADC unit (not used on ESP32C61, for compatibility)
  * @param atten         Attenuation to use
  * @param out_digi      Output buffer of the digits
  * @param out_vol_mv    Output of the voltage, in mV
