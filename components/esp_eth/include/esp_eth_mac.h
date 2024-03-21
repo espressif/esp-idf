@@ -468,6 +468,7 @@ typedef struct {
     eth_data_interface_t interface;                 /*!< EMAC Data interface to PHY (MII/RMII) */
     eth_mac_clock_config_t clock_config;            /*!< EMAC Interface clock configuration */
     eth_mac_dma_burst_len_t dma_burst_len;          /*!< EMAC DMA burst length for both Tx and Rx */
+    int intr_priority;                              /*!< EMAC interrupt priority, if set to 0 or a negative value, the driver will try to allocate an interrupt with a default priority */
 #if SOC_EMAC_USE_IO_MUX
     eth_mac_dataif_gpio_config_t emac_dataif_gpio;  /*!< EMAC MII/RMII data plane GPIO configuration */
 #endif // SOC_EMAC_USE_IO_MUX
@@ -495,6 +496,7 @@ typedef struct {
             }                                         \
         },                                            \
         .dma_burst_len = ETH_DMA_BURST_LEN_32,        \
+        .intr_priority = 0,                           \
     }
 #elif CONFIG_IDF_TARGET_ESP32P4
 #define ETH_ESP32_EMAC_DEFAULT_CONFIG()               \
@@ -519,6 +521,7 @@ typedef struct {
             }                                         \
         },                                            \
         .dma_burst_len = ETH_DMA_BURST_LEN_32,        \
+        .intr_priority = 0,                           \
         .emac_dataif_gpio =                           \
         {                                             \
             .rmii =                                   \
