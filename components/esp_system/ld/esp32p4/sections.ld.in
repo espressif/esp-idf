@@ -217,7 +217,7 @@ SECTIONS
 
   .dram0.data :
   {
-    _data_start = ABSOLUTE(.);
+    _data_start_low = ABSOLUTE(.);
     *(.gnu.linkonce.d.*)
     *(.data1)
     __global_pointer$ = . + 0x800;
@@ -230,8 +230,17 @@ SECTIONS
     arrays[dram0_data]
     mapping[dram0_data]
 
-    _data_end = ABSOLUTE(.);
+    _data_end_low = ABSOLUTE(.);
   } > sram_low
+
+  .dram1.data :
+  {
+    _data_start_high = ABSOLUTE(.);
+
+    mapping[dram0_data]
+
+    _data_end_high = ABSOLUTE(.);
+  } > sram_high
 
   /**
    * This section holds data that should not be initialized at power up.
