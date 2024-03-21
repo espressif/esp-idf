@@ -31,7 +31,6 @@ static esp_reset_reason_t get_reset_reason(soc_reset_reason_t rtc_reset_reason, 
         return ESP_RST_SW;
 
     case RESET_REASON_CORE_PMU_PWR_DOWN:
-        /* Check when doing sleep bringup TODO  IDF-7529 */
         return ESP_RST_DEEPSLEEP;
 
     case RESET_REASON_CPU_MWDT:
