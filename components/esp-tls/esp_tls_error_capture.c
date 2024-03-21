@@ -1,15 +1,12 @@
 /*
- * SPDX-FileCopyrightText: 2020-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <sys/cdefs.h>
 #include "esp_tls.h"
 #include "esp_tls_error_capture_internal.h"
-
-#if CONFIG_IDF_TARGET_LINUX
-#include "esp_linux_helper.h"
-#endif
 
 typedef struct esp_tls_error_storage {
     struct esp_tls_last_error parent;   /*!< standard esp-tls last error container */

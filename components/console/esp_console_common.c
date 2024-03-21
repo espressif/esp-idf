@@ -1,17 +1,15 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include "sdkconfig.h"
+#include <sys/cdefs.h> // __containerof
 #include "esp_console.h"
 #include "console_private.h"
 #include "esp_log.h"
 #include "linenoise/linenoise.h"
-#if CONFIG_IDF_TARGET_LINUX
-#include "esp_linux_helper.h" // __containerof
-#endif
 
 static const char *TAG = "console.common";
 

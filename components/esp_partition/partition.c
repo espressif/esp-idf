@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,7 +14,7 @@
  * should go back to #include "sys/queue.h" once the tests are switched to CMake
  * see IDF-7000
  */
-#if __has_include(<bsd/string.h>)
+#if __has_include(<bsd/sys/queue.h>)
 #include <bsd/sys/queue.h>
 #else
 #include "sys/queue.h"
@@ -33,9 +33,6 @@
 #include "bootloader_util.h"
 
 #if CONFIG_IDF_TARGET_LINUX
-#if __has_include(<bsd/string.h>)
-#include <bsd/string.h>
-#endif
 #include "esp_private/partition_linux.h"
 #endif
 

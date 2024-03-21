@@ -12,10 +12,10 @@
 #include <termios.h>
 #include <string.h>
 #include <assert.h>
+#include <sys/cdefs.h>
 
 #include "sdkconfig.h"
 #include "esp_log.h"
-#include "esp_linux_helper.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 

@@ -8,10 +8,6 @@
 #include <assert.h>
 #include <string.h>
 #include <inttypes.h>
-#if __has_include(<bsd/string.h>)
-// for strlcpy
-#include <bsd/string.h>
-#endif
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <fcntl.h>

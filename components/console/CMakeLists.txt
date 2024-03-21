@@ -35,13 +35,3 @@ idf_component_register(SRCS ${srcs}
                     PRIV_REQUIRES esp_driver_uart
                                   esp_driver_usb_serial_jtag
                     )
-
-if(${target} STREQUAL "linux")
-    # link bsd library for strlcpy
-    find_library(LIB_BSD bsd)
-    if(LIB_BSD)
-        target_link_libraries(${COMPONENT_LIB} PRIVATE ${LIB_BSD})
-    elseif(NOT CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin")
-        message(WARNING "Missing LIBBSD library. Install libbsd-dev package and/or check linker directories.")
-    endif()
-endif()
