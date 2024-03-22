@@ -36,6 +36,13 @@ menu "ESP NETIF Adapter"
     config ESP_NETIF_USES_TCPIP_WITH_BSD_API
         bool # Set to true if the chosen TCP/IP stack provides BSD socket API
 
+    config ESP_NETIF_REPORT_DATA_TRAFFIC
+        bool "Report data traffic via events"
+        default n
+        help
+            Enable if esp_netif_transmit() and esp_netif_receive() should generate events. This can be useful
+            to blink data traffic indication lights.
+
     config ESP_NETIF_RECEIVE_REPORT_ERRORS
         bool "Use esp_err_t to report errors from esp_netif_receive"
         default n
