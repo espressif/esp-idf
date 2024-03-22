@@ -4,7 +4,7 @@ Camera Controller Driver
 Introduction
 ------------
 
-{IDF_TARGET_NAME} has the following hardware that can receive camera signal:
+{IDF_TARGET_NAME} has the following hardware that is intended for communication with external camera sensor:
 
 .. list::
 
@@ -18,7 +18,7 @@ Functional Overview
 
 .. list::
 
-    -  `Resource Allocation <#cam-resource-allocation>`__ - covers how to allocate camera controller instances with properly set of configurations. It also covers how to recycle the resources when they finished working.
+    -  `Resource Allocation <#cam-resource-allocation>`__ - covers how to allocate camera controller instances with properly set of configurations. It also covers how to recycle the resources when they are no longer needed.
     -  `Enable and disable a camera controller <#cam-enable-disable>`__ - covers how to enable and disable a camera controller.
     -  `Start and stop a camera controller <#cam-start-stop>`__ - covers how to start and stop a camera controller.
     -  `Receive from a camera sensor or something else <#cam-receive>`__ - convers how to receive camera signal from a sensor or something else.
@@ -37,18 +37,18 @@ Resource Allocation
     Install Camera Controller Driver
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    Camera controller driver can be implemented by the CSI peripheral, which requires the configuration that specified by :cpp:type:`esp_cam_ctlr_csi_config_t`:
+    A Camera controller driver can be implemented by the CSI peripheral, which requires the configuration that specified by :cpp:type:`esp_cam_ctlr_csi_config_t`:
 
     - :cpp:member:`esp_cam_ctlr_csi_config_t::ctlr_id`, select the CSI controller ID.
     - :cpp:member:`esp_cam_ctlr_csi_config_t::clk_src`, select the CSI phy clock source.
     - :cpp:member:`esp_cam_ctlr_csi_config_t::h_res`, set input horizontal resolution, i.e. the number of pixels in a line.
     - :cpp:member:`esp_cam_ctlr_csi_config_t::v_res`, set input vertical resolution, i.e. the number of lines in a frame.
-    - :cpp:member:`esp_cam_ctlr_csi_config_t::data_lane_num`, set data lane num.
+    - :cpp:member:`esp_cam_ctlr_csi_config_t::data_lane_num`, set the number of data lanes to be used.
     - :cpp:member:`esp_cam_ctlr_csi_config_t::clk_freq_hz`, set the frequency of clock, in Hz.
     - :cpp:member:`esp_cam_ctlr_csi_config_t::input_data_color_type`, select the input color type.
     - :cpp:member:`esp_cam_ctlr_csi_config_t::output_data_color_type`, select the output color type.
     - :cpp:member:`esp_cam_ctlr_csi_config_t::byte_swap_en`, set to enable byte swap.
-    - :cpp:member:`esp_cam_ctlr_csi_config_t::queue_items`, set queue itmes.
+    - :cpp:member:`esp_cam_ctlr_csi_config_t::queue_items`, set queue itmes, the deeper the queue, the more the driver can handle transactions.
 
     If the configurations in :cpp:type:`esp_cam_ctlr_csi_config_t` is specified, users can call :cpp:func:`esp_cam_new_csi_ctlr` to allocate and initialize a CSI camera controller handle. This function will return an CSI camera controller handle if it runs correctly. You can take following code as reference.
 
@@ -58,7 +58,7 @@ Resource Allocation
             .ctlr_id = 0,
             .h_res = MIPI_CSI_DISP_HSIZE,
             .v_res = MIPI_CSI_DISP_VSIZE_640P,
-            .clk_freq_hz = MIPI_CSI_LINE_RATE,
+            .lane_bit_rate_mbps = MIPI_CSI_LANE_BITRATE_MBPS,
             .input_data_color_type = MIPI_CSI_COLOR_RAW8,
             .output_data_color_type = MIPI_CSI_COLOR_RGB565,
             .data_lane_num = 2,
@@ -66,7 +66,7 @@ Resource Allocation
             .queue_items = 1,
         };
         esp_cam_ctlr_handle_t handle = NULL;
-        ret = esp_cam_new_csi_ctlr(&csi_config, &handle);
+        ESP_ERROR_CHECK(esp_cam_new_csi_ctlr(&csi_config, &handle));
 
 Uninstall Camera Controller Driver
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -129,9 +129,9 @@ Register Event Callbacks
 
 After the camera controller driver starts receiving, it can generate a specific event dynamically. If you have some functions that should be called when the event happens, please hook your function to the interrupt service routine by calling :cpp:func:`esp_cam_ctlr_register_event_callbacks`. All supported event callbacks are listed in :cpp:type:`esp_cam_ctlr_evt_cbs_t`:
 
--  :cpp:member:`esp_cam_ctlr_evt_cbs_t::on_get_new_trans` sets a callback function when CSI get a new transaction. As this function is called within the ISR context, you must ensure that the function does not attempt to block (e.g., by making sure that only FreeRTOS APIs with ``ISR`` suffix are called from within the function).
+-  :cpp:member:`esp_cam_ctlr_evt_cbs_t::on_get_new_trans` sets a callback function when the camera controller driver gets a new transaction which is passed from :cpp:func:`esp_cam_ctlr_receive`. As this function is called within the ISR context, you must ensure that the function does not attempt to block (e.g., by making sure that only FreeRTOS APIs with ``ISR`` suffix are called from within the function).
 
--  :cpp:member:`esp_cam_ctlr_evt_cbs_t::on_trans_finished` sets a callback function when CSI finish a transaction. As this function is called within the ISR context, you must ensure that the function does not attempt to block (e.g., by making sure that only FreeRTOS APIs with ``ISR`` suffix are called from within the function).
+-  :cpp:member:`esp_cam_ctlr_evt_cbs_t::on_trans_finished` sets a callback function when the camera controller driver finishes a transaction. As this function is called within the ISR context, you must ensure that the function does not attempt to block (e.g., by making sure that only FreeRTOS APIs with ``ISR`` suffix are called from within the function).
 
 .. _thread-safety:
 
@@ -163,6 +163,9 @@ There is a Kconfig option :ref:`CONFIG_MIPI_CSI_ISR_IRAM_SAFE` that:
 
 This allows the interrupt to run while the cache is disabled, but comes at the cost of increased IRAM consumption. So user callbacks need to notice that the code and data inside (the callback) should be IRAM-safe or DRAM-safe, when cache is disabled.
 
-.. include-build-file:: inc/components/esp_driver_cam/include/esp_cam_ctlr.inc
-.. include-build-file:: inc/components/esp_driver_cam/include/esp_cam_ctlr_types.inc
-.. include-build-file:: inc/components/esp_driver_cam/csi/include/esp_cam_ctlr_csi.inc
+API Reference
+-------------
+
+.. include-build-file:: inc/esp_cam_ctlr.inc
+.. include-build-file:: inc/esp_cam_ctlr_types.inc
+.. include-build-file:: inc/esp_cam_ctlr_csi.inc

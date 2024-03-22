@@ -12,11 +12,11 @@ INPUT += \
     $(PROJECT_PATH)/components/usb/include/usb/usb_host.h \
     $(PROJECT_PATH)/components/usb/include/usb/usb_types_ch9.h \
     $(PROJECT_PATH)/components/usb/include/usb/usb_types_stack.h \
-    $(PROJECT_PATH)/components/hal/include/hal/jpeg_types.h \
     $(PROJECT_PATH)/components/esp_driver_cam/include/esp_cam_ctlr.h \
-    $(PROJECT_PATH)/components/esp_driver_cam/include/esp_cam_ctlr_types.h
+    $(PROJECT_PATH)/components/esp_driver_cam/include/esp_cam_ctlr_types.h \
     $(PROJECT_PATH)/components/esp_driver_cam/csi/include/esp_cam_ctlr_csi.h \
     $(PROJECT_PATH)/components/esp_driver_jpeg/include/driver/jpeg_decode.h \
+    $(PROJECT_PATH)/components/hal/include/hal/jpeg_types.h \
     $(PROJECT_PATH)/components/esp_driver_jpeg/include/driver/jpeg_types.h \
     $(PROJECT_PATH)/components/esp_lcd/dsi/include/esp_lcd_mipi_dsi.h \
     $(PROJECT_PATH)/components/soc/$(IDF_TARGET)/include/soc/adc_channel.h \
