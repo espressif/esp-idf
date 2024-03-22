@@ -789,7 +789,7 @@ continue_processing:
              * strong random numbers. Reject the first 4-way
              * handshake(s) and collect some entropy based on the
              * information from it. Once enough entropy is
-             * available, the next atempt will trigger GMK/Key
+             * available, the next attempt will trigger GMK/Key
              * Counter update and the station will be allowed to
              * continue.
              */
@@ -2601,7 +2601,7 @@ send_resp:
                 omit_rsnxe = true;
             }
 
-            if (esp_send_assoc_resp(hapd, sta, bssid, resp, omit_rsnxe, subtype) != WLAN_STATUS_SUCCESS) {
+            if (esp_send_assoc_resp(hapd, bssid, resp, omit_rsnxe, subtype) != WLAN_STATUS_SUCCESS) {
                 resp = WLAN_STATUS_AP_UNABLE_TO_HANDLE_NEW_STA;
             }
 
