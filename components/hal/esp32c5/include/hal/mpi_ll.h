@@ -8,17 +8,23 @@
 #include <stdbool.h>
 #include <string.h>
 #include <sys/param.h>
+#include "soc/soc_caps.h"
+// TODO: [ESP32C5] IDF-8620 remove the cap
+#if SOC_MPI_SUPPORTED
 #include "hal/assert.h"
 #include "hal/mpi_types.h"
 #include "soc/pcr_reg.h"
 #include "soc/pcr_struct.h"
 #include "soc/rsa_reg.h"
 #include "soc/mpi_periph.h"
+#endif  // SOC_MPI_SUPPORTED
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+// TODO: [ESP32C5] IDF-8620 remove the cap
+#if SOC_MPI_SUPPORTED
 
 /**
  * @brief Enable the bus clock for MPI peripheral module
@@ -174,6 +180,7 @@ static inline void mpi_ll_set_search_position(size_t pos)
 {
     REG_WRITE(RSA_SEARCH_POS_REG, pos);
 }
+#endif  // SOC_MPI_SUPPORTED
 
 #ifdef __cplusplus
 }
