@@ -17,6 +17,7 @@
 #include "esp_eth.h"
 #endif
 #endif // !CONFIG_IDF_TARGET_LINUX
+#include "lwip/netdb.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -76,6 +77,14 @@ esp_err_t example_disconnect(void);
  * UART driver and configuring VFS layer to use UART driver for console I/O.
  */
 esp_err_t example_configure_stdin_stdout(void);
+
+/**
+ * @brief Resolve best destination address based on available source addresses
+ *
+ * If a global IPv6 address is available, this tries to get an IPv6 address,
+ * otherwise it falls back to IPv4.
+ */
+esp_err_t example_getaddrinfo(const char *nodename, const char *servname, struct addrinfo **res);
 
 /**
  * @brief Returns esp-netif pointer created by example_connect() described by
