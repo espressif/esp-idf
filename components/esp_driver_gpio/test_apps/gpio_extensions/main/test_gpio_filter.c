@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,6 +13,12 @@
 #include "driver/gpio_filter.h"
 #include "driver/dedic_gpio.h"
 #include "soc/soc_caps.h"
+
+#if CONFIG_IDF_TARGET_ESP32P4
+#define TEST_FILTER_GPIO 20
+#else
+#define TEST_FILTER_GPIO 2
+#endif
 
 #if SOC_GPIO_SUPPORT_PIN_GLITCH_FILTER
 
@@ -108,7 +114,7 @@ NOINLINE_ATTR IRAM_ATTR static void test_gpio_simulate_glitch_pulse(void)
 
 TEST_CASE("GPIO flex glitch filter enable/disable", "[gpio_filter]")
 {
-    const gpio_num_t test_gpio = 2;
+    const gpio_num_t test_gpio = TEST_FILTER_GPIO;
 
     printf("initialize GPIO for input and out\r\n");
     gpio_config_t gpio_cfg = {
