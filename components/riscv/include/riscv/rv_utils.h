@@ -232,6 +232,16 @@ FORCE_INLINE_ATTR void __attribute__((always_inline)) rv_utils_restore_intlevel_
      * a single write to the mintthresh register without further manipulations needed.
      * This is done to quicken up exit for critical sections */
     REG_WRITE(CLIC_INT_THRESH_REG, restoreval);
+
+    /**
+     * After writing the threshold register, the new threshold is not directly taken into account by the CPU.
+     * By executing ~8 nop instructions, or by performing a memory load right now, the previous memory write
+     * operations is forced, making the new threshold active.
+     *
+     * Without this we risk executing the next several instrucitons before getting interrupted
+     * This is especially bad if we immediatly enter a new critical section
+     */
+    REG_READ(CLIC_INT_THRESH_REG);
 }
 
 /* Direct register write version of rv_utils_set_intlevel(). Used to speed up critical sections. */
