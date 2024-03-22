@@ -174,9 +174,9 @@ TEST_CASE("esp console help command - sorted registration", "[console][ignore]")
     esp_console_dev_uart_config_t uart_config = ESP_CONSOLE_DEV_UART_CONFIG_DEFAULT();
     TEST_ESP_OK(esp_console_new_repl_uart(&uart_config, &repl_config, &s_repl));
 
-    TEST_ESP_OK(esp_console_cmd_register(&s_quit_cmd));
-    TEST_ESP_OK(esp_console_register_help_command());
     TEST_ESP_OK(esp_console_cmd_register(&cmd_a));
+    TEST_ESP_OK(esp_console_register_help_command());
+    TEST_ESP_OK(esp_console_cmd_register(&s_quit_cmd));
     TEST_ESP_OK(esp_console_cmd_register(&cmd_z));
 
     TEST_ESP_OK(esp_console_start_repl(s_repl));
@@ -194,9 +194,9 @@ TEST_CASE("esp console help command - reverse registration", "[console][ignore]"
     TEST_ESP_OK(esp_console_new_repl_uart(&uart_config, &repl_config, &s_repl));
 
     TEST_ESP_OK(esp_console_cmd_register(&cmd_z));
-    TEST_ESP_OK(esp_console_cmd_register(&cmd_a));
-    TEST_ESP_OK(esp_console_register_help_command());
     TEST_ESP_OK(esp_console_cmd_register(&s_quit_cmd));
+    TEST_ESP_OK(esp_console_register_help_command());
+    TEST_ESP_OK(esp_console_cmd_register(&cmd_a));
 
     TEST_ESP_OK(esp_console_start_repl(s_repl));
     vTaskDelay(pdMS_TO_TICKS(5000));

@@ -144,17 +144,27 @@ esp_err_t esp_console_cmd_register(const esp_console_cmd_t *cmd)
         item->context = cmd->context;
     }
 
-    cmd_item_t *last = NULL;
+    cmd_item_t *last;
     cmd_item_t *it;
+#if CONFIG_CONSOLE_SORTED_HELP
+    last = NULL;
     SLIST_FOREACH(it, &s_cmd_list, next) {
         if (strcmp(it->command, item->command) > 0) {
             break;
         }
         last = it;
     }
+#else
+    last = SLIST_FIRST(&s_cmd_list);
+#endif
     if (last == NULL) {
         SLIST_INSERT_HEAD(&s_cmd_list, item, next);
     } else {
+#if !CONFIG_CONSOLE_SORTED_HELP
+        while ((it = SLIST_NEXT(last, next)) != NULL) {
+            last = it;
+        }
+#endif
         SLIST_INSERT_AFTER(last, item, next);
     }
     return ESP_OK;
