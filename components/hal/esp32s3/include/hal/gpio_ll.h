@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -407,7 +407,12 @@ static inline void gpio_ll_wakeup_disable(gpio_dev_t *hw, uint32_t gpio_num)
   */
 static inline void gpio_ll_set_drive_capability(gpio_dev_t *hw, uint32_t gpio_num, gpio_drive_cap_t strength)
 {
-    SET_PERI_REG_BITS(GPIO_PIN_MUX_REG[gpio_num], FUN_DRV_V, strength, FUN_DRV_S);
+    uint32_t drv_cap = (uint32_t)strength;
+    // DRV = 1 and DRV = 2 register bits are flipped for IO17, IO18 on the target
+    if (gpio_num == 17 || gpio_num == 18) {
+        drv_cap = ((drv_cap & 0x1) << 1) | ((drv_cap & 0x2) >> 1); // swap bit0 and bit1
+    }
+    SET_PERI_REG_BITS(IO_MUX_GPIO0_REG + (gpio_num * 4), FUN_DRV_V, drv_cap, FUN_DRV_S);
 }
 
 /**
@@ -419,7 +424,12 @@ static inline void gpio_ll_set_drive_capability(gpio_dev_t *hw, uint32_t gpio_nu
   */
 static inline void gpio_ll_get_drive_capability(gpio_dev_t *hw, uint32_t gpio_num, gpio_drive_cap_t *strength)
 {
-    *strength = (gpio_drive_cap_t)GET_PERI_REG_BITS2(GPIO_PIN_MUX_REG[gpio_num], FUN_DRV_V, FUN_DRV_S);
+    uint32_t drv_cap = GET_PERI_REG_BITS2(IO_MUX_GPIO0_REG + (gpio_num * 4), FUN_DRV_V, FUN_DRV_S);
+    // DRV = 1 and DRV = 2 register bits are flipped for IO17, IO18 on the target
+    if (gpio_num == 17 || gpio_num == 18) {
+        drv_cap = ((drv_cap & 0x1) << 1) | ((drv_cap & 0x2) >> 1); // swap bit0 and bit1
+    }
+    *strength = (gpio_drive_cap_t)drv_cap;
 }
 
 /**
