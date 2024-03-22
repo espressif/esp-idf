@@ -617,7 +617,7 @@ config SOC_UART_FIFO_LEN
 
 config SOC_UART_BITRATE_MAX
     int
-    default 5000000
+    default 2500000
 
 config SOC_UART_SUPPORT_WAKEUP_INT
     bool
