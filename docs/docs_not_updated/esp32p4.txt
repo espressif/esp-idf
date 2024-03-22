@@ -63,7 +63,6 @@ api-reference/peripherals/usb_host/usb_host_notes_dwc_otg.rst
 api-reference/peripherals/usb_host/usb_host_notes_design.rst
 api-reference/peripherals/usb_device.rst
 api-reference/peripherals/touch_element.rst
-api-reference/peripherals/lcd.rst
 api-reference/peripherals/ana_cmpr.rst
 api-reference/peripherals/temp_sensor.rst
 api-reference/peripherals/spi_flash/xip_from_psram.inc

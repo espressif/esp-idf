@@ -115,6 +115,10 @@ USB_DOCS = ['api-reference/peripherals/usb_device.rst',
             'api-reference/peripherals/usb_host/usb_host_notes_dwc_otg.rst',
             'api-reference/peripherals/usb_host/usb_host_notes_index.rst']
 
+I80_LCD_DOCS = ['api-reference/peripherals/lcd/i80_lcd.rst']
+RGB_LCD_DOCS = ['api-reference/peripherals/lcd/rgb_lcd.rst']
+DSI_LCD_DOCS = ['api-reference/peripherals/lcd/dsi_lcd.rst']
+
 # TODO: Merge this back with `USB_DOCS` IDF-9919 IDF-9920 IDF-9133
 USB_OTG_DFU_DOCS = ['api-guides/dfu.rst']
 
@@ -216,6 +220,9 @@ conditional_include_dict = {'SOC_BT_SUPPORTED':BT_DOCS,
                             'SOC_USB_OTG_SUPPORTED':USB_DOCS,
                             'SOC_USB_SERIAL_JTAG_SUPPORTED':USB_SERIAL_JTAG_DOCS,
                             'SOC_DEDICATED_GPIO_SUPPORTED':DEDIC_GPIO_DOCS,
+                            'SOC_LCD_I80_SUPPORTED':I80_LCD_DOCS,
+                            'SOC_LCD_RGB_SUPPORTED':RGB_LCD_DOCS,
+                            'SOC_MIPI_DSI_SUPPORTED':DSI_LCD_DOCS,
                             'SOC_SPIRAM_SUPPORTED':SPIRAM_DOCS,
                             'SOC_PARLIO_SUPPORTED':PARLIO_DOCS,
                             'SOC_PCNT_SUPPORTED':PCNT_DOCS,

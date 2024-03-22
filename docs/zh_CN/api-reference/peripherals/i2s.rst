@@ -197,7 +197,7 @@ ESP32-P4   I2S 0~2    I2S 0     I2S 0    I2S 0~2    无         无
     LCD/摄像头模式
     ^^^^^^^^^^^^^^^
 
-    LCD/摄像头模式只支持在 I2S0 上通过并行总线运行。在 LCD 模式下，I2S0 应当设置为主机 TX 模式；在摄像头模式下，I2S0 应当设置为从机 RX 模式。这两种模式不是由 I2S 驱动实现的，关于 LCD 模式的实现，请参阅 :doc:`/api-reference/peripherals/lcd`。更多信息请参考 **{IDF_TARGET_NAME} 技术参考手册** > **I2S 控制器 (I2S)** > LCD 模式 [`PDF <{IDF_TARGET_TRM_EN_URL}#camlcdctrl>`__]。
+    LCD/摄像头模式只支持在 I2S0 上通过并行总线运行。在 LCD 模式下，I2S0 应当设置为主机 TX 模式；在摄像头模式下，I2S0 应当设置为从机 RX 模式。这两种模式不是由 I2S 驱动实现的，关于 LCD 模式的实现，请参阅 :doc:`/api-reference/peripherals/lcd/i80_lcd`。更多信息请参考 **{IDF_TARGET_NAME} 技术参考手册** > **I2S 控制器 (I2S)** > LCD 模式 [`PDF <{IDF_TARGET_TRM_EN_URL}#camlcdctrl>`__]。
 
 .. only:: SOC_I2S_SUPPORTS_ADC_DAC
 

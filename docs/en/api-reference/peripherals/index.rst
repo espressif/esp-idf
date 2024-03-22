@@ -21,7 +21,7 @@ Peripherals API
     :SOC_DIG_SIGN_SUPPORTED: ds
     i2c
     :SOC_I2S_SUPPORTED: i2s
-    lcd
+    lcd/index
     ledc
     :SOC_MCPWM_SUPPORTED: mcpwm
     :SOC_PARLIO_SUPPORTED: parlio
