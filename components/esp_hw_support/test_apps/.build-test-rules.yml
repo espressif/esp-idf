@@ -25,10 +25,6 @@ components/esp_hw_support/test_apps/esp_hw_support_unity_tests:
 components/esp_hw_support/test_apps/etm:
   disable:
     - if: SOC_ETM_SUPPORTED != 1
-  disable_test:
-    - if: IDF_TARGET == "esp32p4"
-      temporary: true
-      reason: test not pass, should be re-enable # TODO: IDF-8974
   depends_components:
     - esp_driver_gptimer
     - esp_driver_gpio

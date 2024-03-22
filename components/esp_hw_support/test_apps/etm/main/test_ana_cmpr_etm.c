@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,7 +19,7 @@
 #define TEST_ANA_CMPR_UNIT  0
 #define TEST_TIME_US        5000
 
-static gptimer_handle_t s_test_ana_cmpr_gptimer_init(void)
+static gptimer_handle_t test_ana_cmpr_gptimer_init(void)
 {
     gptimer_handle_t gptimer = NULL;
     gptimer_config_t timer_config = {
@@ -33,13 +33,13 @@ static gptimer_handle_t s_test_ana_cmpr_gptimer_init(void)
     return gptimer;
 }
 
-static void s_test_ana_cmpr_gptimer_deinit(gptimer_handle_t gptimer)
+static void test_ana_cmpr_gptimer_deinit(gptimer_handle_t gptimer)
 {
     TEST_ESP_OK(gptimer_disable(gptimer));
     TEST_ESP_OK(gptimer_del_timer(gptimer));
 }
 
-static ana_cmpr_handle_t s_test_ana_cmpr_init(void)
+static ana_cmpr_handle_t test_ana_cmpr_init(void)
 {
     ana_cmpr_handle_t cmpr = NULL;
 
@@ -65,13 +65,13 @@ static ana_cmpr_handle_t s_test_ana_cmpr_init(void)
     return cmpr;
 }
 
-static void s_test_ana_cmpr_deinit(ana_cmpr_handle_t cmpr)
+static void test_ana_cmpr_deinit(ana_cmpr_handle_t cmpr)
 {
     TEST_ESP_OK(ana_cmpr_disable(cmpr));
     TEST_ESP_OK(ana_cmpr_del_unit(cmpr));
 }
 
-static int s_test_ana_cmpr_src_gpio_init(void)
+static int test_ana_cmpr_src_gpio_init(void)
 {
     int gpio_num = -1;
     TEST_ESP_OK(ana_cmpr_get_gpio(TEST_ANA_CMPR_UNIT, ANA_CMPR_SOURCE_CHAN, &gpio_num));
@@ -96,7 +96,7 @@ typedef struct {
     esp_etm_channel_handle_t etm_neg_handle;
 } test_ana_cmpr_etm_handles_t;
 
-static test_ana_cmpr_etm_handles_t s_test_ana_cmpr_init_etm(ana_cmpr_handle_t cmpr, gptimer_handle_t gptimer)
+static test_ana_cmpr_etm_handles_t test_ana_cmpr_init_etm(ana_cmpr_handle_t cmpr, gptimer_handle_t gptimer)
 {
     test_ana_cmpr_etm_handles_t etm_handles = {};
 
@@ -105,7 +105,7 @@ static test_ana_cmpr_etm_handles_t s_test_ana_cmpr_init_etm(ana_cmpr_handle_t cm
         .event_type = ANA_CMPR_EVENT_POS_CROSS,
     };
     TEST_ESP_OK(ana_cmpr_new_etm_event(cmpr, &evt_cfg, &etm_handles.cmpr_pos_evt));
-    evt_cfg.event_type = GPIO_ETM_EVENT_EDGE_NEG;
+    evt_cfg.event_type = ANA_CMPR_EVENT_NEG_CROSS;
     TEST_ESP_OK(ana_cmpr_new_etm_event(cmpr, &evt_cfg, &etm_handles.cmpr_neg_evt));
 
     /* Allocate the GPTimer tasks */
@@ -121,8 +121,8 @@ static test_ana_cmpr_etm_handles_t s_test_ana_cmpr_init_etm(ana_cmpr_handle_t cm
     TEST_ESP_OK(esp_etm_new_channel(&etm_cfg, &etm_handles.etm_pos_handle));
     TEST_ESP_OK(esp_etm_new_channel(&etm_cfg, &etm_handles.etm_neg_handle));
     /* Bind the events and tasks */
-    TEST_ESP_OK(esp_etm_channel_connect(etm_handles.etm_pos_handle, etm_handles.cmpr_pos_evt, etm_handles.gptimer_start_task));
-    TEST_ESP_OK(esp_etm_channel_connect(etm_handles.etm_neg_handle, etm_handles.cmpr_neg_evt, etm_handles.gptimer_stop_task));
+    TEST_ESP_OK(esp_etm_channel_connect(etm_handles.etm_neg_handle, etm_handles.cmpr_neg_evt, etm_handles.gptimer_start_task));
+    TEST_ESP_OK(esp_etm_channel_connect(etm_handles.etm_pos_handle, etm_handles.cmpr_pos_evt, etm_handles.gptimer_stop_task));
     /* Enable the ETM channels */
     TEST_ESP_OK(esp_etm_channel_enable(etm_handles.etm_pos_handle));
     TEST_ESP_OK(esp_etm_channel_enable(etm_handles.etm_neg_handle));
@@ -130,10 +130,10 @@ static test_ana_cmpr_etm_handles_t s_test_ana_cmpr_init_etm(ana_cmpr_handle_t cm
     return etm_handles;
 }
 
-static void s_test_ana_cmpr_deinit_etm(test_ana_cmpr_etm_handles_t handles)
+static void test_ana_cmpr_deinit_etm(test_ana_cmpr_etm_handles_t handles)
 {
     TEST_ESP_OK(esp_etm_channel_disable(handles.etm_pos_handle));
-    TEST_ESP_OK(esp_etm_channel_disable(handles.etm_pos_handle));
+    TEST_ESP_OK(esp_etm_channel_disable(handles.etm_neg_handle));
 
     TEST_ESP_OK(esp_etm_del_task(handles.gptimer_start_task));
     TEST_ESP_OK(esp_etm_del_task(handles.gptimer_stop_task));
@@ -147,21 +147,27 @@ static void s_test_ana_cmpr_deinit_etm(test_ana_cmpr_etm_handles_t handles)
 
 TEST_CASE("analog_comparator_etm_event", "[etm]")
 {
-    gptimer_handle_t gptimer = s_test_ana_cmpr_gptimer_init();
-    ana_cmpr_handle_t cmpr = s_test_ana_cmpr_init();
-    int src_gpio = s_test_ana_cmpr_src_gpio_init();
-    test_ana_cmpr_etm_handles_t handles = s_test_ana_cmpr_init_etm(cmpr, gptimer);
+    gptimer_handle_t gptimer = test_ana_cmpr_gptimer_init();
+    ana_cmpr_handle_t cmpr = test_ana_cmpr_init();
+    int src_gpio = test_ana_cmpr_src_gpio_init();
+    test_ana_cmpr_etm_handles_t handles = test_ana_cmpr_init_etm(cmpr, gptimer);
 
+    // triggers a negative pulse, whose duration is ~TEST_TIME_US
     gpio_set_level(src_gpio, 0);
     esp_rom_delay_us(TEST_TIME_US);
     gpio_set_level(src_gpio, 1);
 
     uint64_t cnt_us = 0;
     TEST_ESP_OK(gptimer_get_raw_count(gptimer, &cnt_us));
+    printf("Count: %" PRIu64 "\n", cnt_us);
+    // gptimer timer should stopped
+    uint64_t cnt_us_again = 0;
+    TEST_ESP_OK(gptimer_get_raw_count(gptimer, &cnt_us_again));
+    TEST_ASSERT(cnt_us_again == cnt_us);
 
-    s_test_ana_cmpr_deinit_etm(handles);
-    s_test_ana_cmpr_deinit(cmpr);
-    s_test_ana_cmpr_gptimer_deinit(gptimer);
+    test_ana_cmpr_deinit_etm(handles);
+    test_ana_cmpr_deinit(cmpr);
+    test_ana_cmpr_gptimer_deinit(gptimer);
 
-    TEST_ASSERT_UINT64_WITHIN(TEST_TIME_US * 0.1, 5000, cnt_us);
+    TEST_ASSERT_UINT_WITHIN(TEST_TIME_US * 0.1, TEST_TIME_US, cnt_us);
 }
