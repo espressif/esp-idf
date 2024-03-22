@@ -79,6 +79,8 @@ COEXISTENCE_DOCS = ['api-guides/coexist.rst']
 
 MM_SYNC_DOCS = ['api-reference/system/mm_sync.rst']
 
+CAMERA_DOCS = ['api-reference/peripherals/camera_driver.rst']
+
 CLK_TREE_DOCS = ['api-reference/peripherals/clk_tree.rst']
 
 UART_DOCS = ['api-reference/peripherals/uart.rst']
@@ -250,6 +252,7 @@ conditional_include_dict = {'SOC_BT_SUPPORTED':BT_DOCS,
                             'SOC_ANA_CMPR_SUPPORTED': ANA_CMPR_DOCS,
                             'SOC_SDM_SUPPORTED':SDM_DOCS,
                             'SOC_WIFI_MESH_SUPPORT':WIFI_MESH_DOCS,
+                            'SOC_MIPI_CSI_SUPPORTED':CAMERA_DOCS,
                             'SOC_SPI_SUPPORT_SLAVE_HD_VER2':SPI_SLAVE_HD_DOCS,
                             'SOC_WIFI_NAN_SUPPORT':NAN_DOCS,
                             'SOC_JPEG_CODEC_SUPPORTED':JPEG_DOCS,
