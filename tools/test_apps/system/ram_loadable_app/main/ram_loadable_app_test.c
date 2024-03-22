@@ -41,7 +41,7 @@ static void s_test_ext_vaddr(void)
     }
 }
 
-static void s_test_flash_mmap_data_integrity(void)
+static void s_test_flash_mmap_data_integrity_nonblock(void)
 {
     char src_p_1[32] = "Test data pattern 123456789";
     char src_p_2[32] = "Test data pattern 987654321";
@@ -50,16 +50,41 @@ static void s_test_flash_mmap_data_integrity(void)
 
     spi_flash_mmap_handle_t handle1;
     const void *ptr1;
-    TEST_ESP_OK(spi_flash_mmap(addr, SPI_FLASH_SEC_SIZE, SPI_FLASH_MMAP_DATA, &ptr1, &handle1));
+    TEST_ESP_OK(spi_flash_mmap(addr, SPI_FLASH_SEC_SIZE, SPI_FLASH_MMAP_FLAG_DATA, &ptr1, &handle1));
+
     TEST_ESP_OK(esp_flash_erase_region(NULL, addr, SPI_FLASH_SEC_SIZE));
     TEST_ESP_OK(esp_flash_write(NULL, src_p_1, addr, sizeof(src_p_1)));
     memcpy(buf, ptr1, sizeof(buf));
-
     TEST_ASSERT_EQUAL(0, memcmp(buf, src_p_1, sizeof(buf)));
+
     TEST_ESP_OK(esp_flash_erase_region(NULL, addr, SPI_FLASH_SEC_SIZE));
     TEST_ESP_OK(esp_flash_write(NULL, src_p_2, addr, sizeof(src_p_2)));
     memcpy(buf, ptr1, sizeof(buf));
+    TEST_ASSERT_EQUAL(0, memcmp(buf, src_p_2, sizeof(buf)));
+    spi_flash_munmap(handle1);
+}
 
+static void s_test_flash_mmap_data_integrity_block(void)
+{
+    char src_p_1[32] = "Test data pattern 123456789";
+    char src_p_2[32] = "Test data pattern 987654321";
+    char buf[32];
+    const int addr = 0x10000;
+
+    spi_flash_mmap_handle_t handle1;
+    const void *ptr1;
+
+    TEST_ESP_OK(esp_flash_erase_region(NULL, addr, SPI_FLASH_SEC_SIZE));
+    TEST_ESP_OK(esp_flash_write(NULL, src_p_1, addr, sizeof(src_p_1)));
+    TEST_ESP_OK(spi_flash_mmap(addr, SPI_FLASH_SEC_SIZE, SPI_FLASH_MMAP_FLAG_DATA | SPI_FLASH_MMAP_FLAG_BLOCKS_WRITE, &ptr1, &handle1));
+    memcpy(buf, ptr1, sizeof(buf));
+    TEST_ASSERT_EQUAL(0, memcmp(buf, src_p_1, sizeof(buf)));
+    spi_flash_munmap(handle1);
+
+    TEST_ESP_OK(esp_flash_erase_region(NULL, addr, SPI_FLASH_SEC_SIZE));
+    TEST_ESP_OK(esp_flash_write(NULL, src_p_2, addr, sizeof(src_p_2)));
+    TEST_ESP_OK(spi_flash_mmap(addr, SPI_FLASH_SEC_SIZE, SPI_FLASH_MMAP_FLAG_DATA | SPI_FLASH_MMAP_FLAG_BLOCKS_WRITE, &ptr1, &handle1));
+    memcpy(buf, ptr1, sizeof(buf));
     TEST_ASSERT_EQUAL(0, memcmp(buf, src_p_2, sizeof(buf)));
     spi_flash_munmap(handle1);
 }
@@ -85,7 +110,8 @@ void app_main(void)
 
 #if !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
     s_test_ext_vaddr();
-    s_test_flash_mmap_data_integrity();
+    s_test_flash_mmap_data_integrity_block();
+    s_test_flash_mmap_data_integrity_nonblock();
 #endif
 
     uint32_t uptime = 0;

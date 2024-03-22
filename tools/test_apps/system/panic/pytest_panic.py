@@ -12,6 +12,7 @@ from typing import Union
 import pexpect
 import pytest
 from pytest_embedded_idf.utils import idf_parametrize
+from pytest_embedded_idf.utils import soc_filtered_targets
 from test_panic_util import PanicTestDut
 
 TARGETS_XTENSA_SINGLE_CORE = ['esp32s2']
@@ -248,26 +249,17 @@ def test_task_wdt_cpu1(dut: PanicTestDut, config: str, test_func_name: str) -> N
     common_test(dut, config, expected_backtrace=expected_backtrace, expected_coredump=[coredump_pattern])
 
 
-@idf_parametrize(
-    'config,target,markers',
-    [
-        ('coredump_flash_extram_stack_heap_esp32', 'esp32', (pytest.mark.psram,)),
-        ('coredump_flash_extram_stack_heap_esp32s2', 'esp32s2', (pytest.mark.generic,)),
-        ('coredump_flash_extram_stack_heap_esp32s3', 'esp32s3', (pytest.mark.quad_psram,)),
-        ('coredump_flash_extram_stack_bss_esp32', 'esp32', (pytest.mark.psram,)),
-        ('coredump_flash_extram_stack_bss_esp32s2', 'esp32s2', (pytest.mark.generic,)),
-        ('coredump_flash_extram_stack_bss_esp32s3', 'esp32s3', (pytest.mark.quad_psram,)),
-    ],
-    indirect=['config', 'target'],
-)
-def test_panic_extram_stack(dut: PanicTestDut, config: str) -> None:
+def _test_panic_extram_stack_impl(dut: PanicTestDut, config: str) -> None:
     if 'heap' in config:
         dut.run_test_func('test_panic_extram_stack_heap')
     else:
         dut.run_test_func('test_panic_extram_stack_bss')
     dut.expect_none('Allocated stack is not in external RAM')
     dut.expect_none('Guru Meditation')
-    dut.expect_backtrace()
+    if dut.is_xtensa:
+        dut.expect_backtrace()
+    else:
+        dut.expect_stack_dump()
     dut.expect_elf_sha256()
 
     if dut.target == 'esp32':
@@ -278,11 +270,65 @@ def test_panic_extram_stack(dut: PanicTestDut, config: str) -> None:
         coredump_pattern = re.compile(
             '.coredump.tasks.data (0x3[fF][5-9a-fA-F][0-7][0-9a-fA-F]{4}) (0x[a-fA-F0-9]+) RW'
         )
-    else:
+    elif dut.target == 'esp32s3':
         # ESP32-S3 External data memory range [0x3c000000-0x3e000000)
         coredump_pattern = re.compile('.coredump.tasks.data (0x3[c-dC-D][0-9a-fA-F]{6}) (0x[a-fA-F0-9]+) RW')
+    else:
+        # RISC-V targets (esp32c5, esp32c61, etc.) External data memory range [0x42000000-0x44000000)
+        coredump_pattern = re.compile('.coredump.tasks.data (0x4[2-3][0-9a-fA-F]{6}) (0x[a-fA-F0-9]+) RW')
 
     common_test(dut, config, expected_backtrace=None, expected_coredump=[coredump_pattern])
+
+
+def get_psram_marker(target: str) -> pytest.MarkDecorator:
+    if target == 'esp32':
+        return pytest.mark.psram
+    elif target == 'esp32s3':
+        return pytest.mark.quad_psram
+
+    return pytest.mark.generic
+
+
+@idf_parametrize(
+    'config,target,markers',
+    [
+        ('coredump_flash_extram_stack_heap', target, (get_psram_marker(target),))
+        for target in soc_filtered_targets('SOC_SPIRAM_SUPPORTED == 1')
+    ],
+    indirect=['config', 'target'],
+)
+@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration')
+@pytest.mark.temp_skip_ci(targets=['esp32c5', 'esp32c61', 'esp32p4'], reason='TODO: IDF-15623')
+def test_panic_extram_stack_heap_psram(dut: PanicTestDut, config: str) -> None:
+    _test_panic_extram_stack_impl(dut, config)
+
+
+@idf_parametrize(
+    'config,target,markers',
+    [
+        ('coredump_flash_extram_stack_bss', target, (get_psram_marker(target),))
+        for target in soc_filtered_targets('SOC_SPIRAM_SUPPORTED == 1')
+    ],
+    indirect=['config', 'target'],
+)
+@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration')
+@pytest.mark.temp_skip_ci(targets=['esp32c5', 'esp32c61', 'esp32p4'], reason='TODO: IDF-15623')
+def test_panic_extram_stack_heap_bss(dut: PanicTestDut, config: str) -> None:
+    _test_panic_extram_stack_impl(dut, config)
+
+
+@idf_parametrize(
+    'config,target,markers',
+    [
+        ('coredump_flash_extram_stack_bss_xip', target, (get_psram_marker(target),))
+        for target in soc_filtered_targets('SOC_SPIRAM_XIP_SUPPORTED == 1')
+    ],
+    indirect=['config', 'target'],
+)
+@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 rev3 migration')
+@pytest.mark.temp_skip_ci(targets=['esp32c5', 'esp32c61', 'esp32p4'], reason='TODO: IDF-15623')
+def test_panic_extram_stack_heap_bss_xip(dut: PanicTestDut, config: str) -> None:
+    _test_panic_extram_stack_impl(dut, config)
 
 
 @pytest.mark.generic

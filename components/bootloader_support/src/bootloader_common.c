@@ -86,6 +86,7 @@ bool bootloader_common_label_search(const char *list, char *label)
     return false;
 }
 
+//This function erases while mmap is not unmapped yet. Can't be called in the app while XIP on PSRAM.
 bool bootloader_common_erase_part_type_data(const char *list_erase, bool ota_data_erase)
 {
     const esp_partition_info_t *partitions;

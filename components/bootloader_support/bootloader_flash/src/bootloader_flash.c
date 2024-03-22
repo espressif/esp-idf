@@ -66,7 +66,7 @@ const void *bootloader_mmap(uint32_t src_addr, uint32_t size)
     const void *result = NULL;
     uint32_t src_page = src_addr & ~(SPI_FLASH_MMU_PAGE_SIZE - 1);
     size += (src_addr - src_page);
-    esp_err_t err = spi_flash_mmap(src_page, size, SPI_FLASH_MMAP_DATA, &result, &map);
+    esp_err_t err = spi_flash_mmap(src_page, size, SPI_FLASH_MMAP_FLAG_DATA | SPI_FLASH_MMAP_FLAG_BLOCKS_WRITE, &result, &map);
     if (err != ESP_OK) {
         ESP_EARLY_LOGE(TAG, "spi_flash_mmap failed: 0x%x", err);
         return NULL;
