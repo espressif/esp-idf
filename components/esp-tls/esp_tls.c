@@ -126,7 +126,7 @@ static ssize_t tcp_read(esp_tls_t *tls, char *data, size_t datalen)
 
 static ssize_t tcp_write(esp_tls_t *tls, const char *data, size_t datalen)
 {
-    return send(tls->sockfd, data, datalen, 0);
+    return send(tls->sockfd, data, datalen, MSG_MORE);
 }
 
 ssize_t esp_tls_conn_read(esp_tls_t *tls, void  *data, size_t datalen)
