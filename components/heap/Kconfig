@@ -119,15 +119,6 @@ menu "Heap memory debugging"
             features will be added and bugs will be fixed in the IDF source
             but cannot be synced to ROM.
 
-    config HEAP_TLSF_CHECK_PATCH
-        bool "Patch the tlsf_check_pool() for ROM HEAP TLSF implementation"
-        depends on HEAP_TLSF_USE_ROM_IMPL && IDF_TARGET_ESP32C2 && ESP32C2_REV_MIN_FULL < 200
-        default y
-        help
-            ROM does not contain the patch of tlsf_check_pool() allowing perform
-            the integrity checking on used blocks. The patch to allow such check
-            needs to be applied.
-
     config HEAP_PLACE_FUNCTION_INTO_FLASH
         bool "Force the entire heap component to be placed in flash memory"
         depends on !HEAP_TLSF_USE_ROM_IMPL

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,6 +14,10 @@
 #include "esp_log.h"
 #include "heap_private.h"
 #include "esp_system.h"
+
+#if CONFIG_HEAP_TLSF_USE_ROM_IMPL
+#include "esp_rom_multi_heap.h"
+#endif
 
 #ifdef CONFIG_HEAP_USE_HOOKS
 #define CALL_HOOK(hook, ...) {      \
@@ -859,4 +863,47 @@ void *heap_caps_aligned_calloc(size_t alignment, size_t n, size_t size, uint32_t
     }
 
     return ptr;
+}
+
+typedef struct walker_data {
+        void *opaque_ptr;
+        heap_caps_walker_cb_t cb_func;
+        heap_t *heap;
+} walker_data_t;
+
+__attribute__((noinline)) static bool heap_caps_walker(void* block_ptr, size_t block_size, int block_used, void *user_data)
+{
+    walker_data_t *walker_data = (walker_data_t*)user_data;
+
+    walker_heap_into_t heap_info = {
+        (intptr_t)walker_data->heap->start,
+        (intptr_t)walker_data->heap->end
+    };
+    walker_block_info_t block_info = {
+        block_ptr,
+        block_size,
+        (bool)block_used
+    };
+
+    return walker_data->cb_func(heap_info, block_info, walker_data->opaque_ptr);
+}
+
+void heap_caps_walk(uint32_t caps, heap_caps_walker_cb_t walker_func, void *user_data)
+{
+    assert(walker_func != NULL);
+
+    bool all_heaps = caps & MALLOC_CAP_INVALID;
+    heap_t *heap;
+    SLIST_FOREACH(heap, &registered_heaps, next) {
+        if (heap->heap != NULL
+            && (all_heaps || (get_all_caps(heap) & caps) == caps)) {
+            walker_data_t walker_data = {user_data, walker_func, heap};
+            multi_heap_walk(heap->heap, heap_caps_walker, &walker_data);
+        }
+    }
+}
+
+void heap_caps_walk_all(heap_caps_walker_cb_t walker_func, void *user_data)
+{
+    heap_caps_walk(MALLOC_CAP_INVALID, walker_func, user_data);
 }
