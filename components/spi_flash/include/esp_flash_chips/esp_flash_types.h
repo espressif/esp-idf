@@ -31,6 +31,10 @@ typedef struct esp_flash_os_functions_t {
     /** Limit CPU frequency during flash operations (ESP32-C5 only, 240MHz).
      */
     #define ESP_FLASH_START_FLAG_LIMIT_CPU_FREQ  BIT(0)
+    /** Indicates that this operation forbids flash from being read (e.g., write/erase).
+     *  The OS layer implementation needs to take appropriate measures to avoid concurrent read operations.
+     */
+    #define ESP_FLASH_START_FLAG_NO_READ          BIT(1)
     /**
      * Called before commencing any flash operation. Does not need to be
      * recursive (ie is called at most once for each call to 'end').

@@ -79,12 +79,6 @@ uint8_t esp_mspi_get_io(esp_mspi_io_t io);
 void spi_flash_set_rom_required_regs(void);
 
 /**
- * @brief Initialize main flash
- * @param chip Pointer to main SPI flash(SPI1 CS0) chip to use..
- */
-esp_err_t esp_flash_init_main(esp_flash_t *chip);
-
-/**
  * @brief Should be only used by SPI1 Flash driver to know the necessary timing registers
  * @param out_timing_config Pointer to timing_tuning parameters.
  */

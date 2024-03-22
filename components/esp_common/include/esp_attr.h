@@ -179,7 +179,8 @@ extern "C" {
 #endif
 
 // This allows using enum as flags in C++
-// Format: FLAG_ATTR(flag_enum_t)
+// Format: FLAG_ATTR(flag_enum_t).
+// Please use out of the extern "C"{} block of the header, otherwise there will be definition conflicts.
 #ifdef __cplusplus
 
 // Inline is required here to avoid multiple definition error in linker

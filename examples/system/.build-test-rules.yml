@@ -226,6 +226,7 @@ examples/system/ota/simple_ota_example:
       temporary: true
       reason: not supported yet
     - if: CONFIG_NAME == "spiram" and SOC_SPIRAM_SUPPORTED != 1
+    - if: CONFIG_NAME == "xip_psram" and SOC_SPIRAM_XIP_SUPPORTED != 1
     - if: CONFIG_NAME == "on_update_no_sb_ecdsa_p256" and SOC_SECURE_BOOT_V2_ECC != 1
       reason: Secure Boot V2 with ECDSA signatures is not supported.
     - if: CONFIG_NAME == "on_update_no_sb_ecdsa_p384" and SOC_ECDSA_SUPPORT_CURVE_P384 != 1
