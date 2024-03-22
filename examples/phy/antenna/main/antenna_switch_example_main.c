@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -21,6 +21,7 @@
 #include "esp_log.h"
 #include "nvs_flash.h"
 #include "esp_wifi.h"
+#include "esp_phy.h"
 
 #include "lwip/err.h"
 #include "lwip/sys.h"
@@ -128,7 +129,8 @@ void wifi_init_sta(void)
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA) );
     ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &wifi_config) );
     ESP_ERROR_CHECK(esp_wifi_start() );
-
+    /* PHY multiple antenna api should be called when PHY is enabled, disable WI-FI Modem sleep can keep PHY always enabled */
+    ESP_ERROR_CHECK(esp_wifi_set_ps(WIFI_PS_NONE) );
     ESP_LOGI(TAG, "wifi_init_sta finished.");
 
     /* Waiting until either the connection is established (WIFI_CONNECTED_BIT) or connection failed for the maximum
@@ -165,13 +167,13 @@ void app_main(void)
     ESP_LOGI(TAG, "ESP_WIFI_MODE_STA");
     wifi_init_sta();
 
-    wifi_ant_gpio_config_t ant_gpio_config = {
+    esp_phy_ant_gpio_config_t ant_gpio_config = {
         // ESP32-WROOM-DA boards default antenna pins
         .gpio_cfg[0] = {.gpio_select = 1, .gpio_num = 21},
         .gpio_cfg[1] = {.gpio_select = 1, .gpio_num = 22},
     };
-    ESP_ERROR_CHECK(esp_wifi_set_ant_gpio(&ant_gpio_config));
-    ESP_ERROR_CHECK(esp_wifi_get_ant_gpio(&ant_gpio_config));
+    ESP_ERROR_CHECK(esp_phy_set_ant_gpio(&ant_gpio_config));
+    ESP_ERROR_CHECK(esp_phy_get_ant_gpio(&ant_gpio_config));
     ESP_LOGI(TAG, "GPIO: [0].pin = %d, [1].pin = %d",ant_gpio_config.gpio_cfg[0].gpio_num, ant_gpio_config.gpio_cfg[1].gpio_num);
 
     wifi_antenna_auto_switch_config_t wifi_antenna_auto_switch_config;
@@ -183,8 +185,8 @@ void app_main(void)
     ESP_ERROR_CHECK(esp_wifi_set_ant_soft_switch(&wifi_antenna_auto_switch_config));
 
     while(true) {
-        wifi_ant_config_t ant_config;
-        esp_wifi_get_ant(&ant_config);
+        esp_phy_ant_config_t ant_config;
+        esp_phy_get_ant(&ant_config);
         ESP_LOGI(TAG, "rx mode = %d, tx mode = %d, ant0_en = %d, ant1_en = %d",ant_config.rx_ant_mode, ant_config.tx_ant_mode, ant_config.enabled_ant0, ant_config.enabled_ant1);
         vTaskDelay(500 / portTICK_PERIOD_MS);
     }

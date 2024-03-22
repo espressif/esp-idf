@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -16,6 +16,7 @@
 #include "freertos/event_groups.h"
 #include "freertos/queue.h"
 #include "esp_wifi.h"
+#include "esp_phy.h"
 #include "esp_log.h"
 #include "esp_check.h"
 
@@ -46,17 +47,17 @@ static TaskHandle_t antenna_task_handle;
 /**< Select the optimal antenna*/
 static void antenna_switch_function(const wifi_antenna_auto_switch_config_t *config)
 {
-    wifi_ant_config_t wifi_ant_config;
+    esp_phy_ant_config_t wifi_ant_config;
     wifi_ap_record_t  wifi_ap_record;
     int16_t rssi_ant0 = INT16_MIN, rssi_ant1 = INT16_MIN, rssi_ant2 = INT16_MIN, rssi_max, rssi_min;
 
     /**< Monitor antenna zero signal strength*/
-    wifi_ant_config.rx_ant_mode = WIFI_ANT_MODE_ANT0;
-    wifi_ant_config.rx_ant_default = WIFI_ANT_MODE_ANT0;
-    wifi_ant_config.tx_ant_mode = WIFI_ANT_MODE_ANT0;
+    wifi_ant_config.rx_ant_mode = ESP_PHY_ANT_MODE_ANT0;
+    wifi_ant_config.rx_ant_default = ESP_PHY_ANT_MODE_ANT0;
+    wifi_ant_config.tx_ant_mode = ESP_PHY_ANT_MODE_ANT0;
     wifi_ant_config.enabled_ant0 =   config->ant_zero;
     wifi_ant_config.enabled_ant1 =   config->ant_one;
-    ESP_ERROR_CHECK(esp_wifi_set_ant(&wifi_ant_config));
+    ESP_ERROR_CHECK(esp_phy_set_ant(&wifi_ant_config));
     /**< Wait for parameters to take effect*/
     vTaskDelay(100/portTICK_PERIOD_MS);
     while(ESP_OK != esp_wifi_sta_get_ap_info(&wifi_ap_record)) {
@@ -80,9 +81,9 @@ static void antenna_switch_function(const wifi_antenna_auto_switch_config_t *con
     ESP_LOGD(TAG, "The signal strength of the antenna zero :%d", rssi_ant0);
 
     /**< Monitor antenna one signal strength*/
-    wifi_ant_config.rx_ant_mode  =   WIFI_ANT_MODE_ANT1;
-    wifi_ant_config.tx_ant_mode  =   WIFI_ANT_MODE_ANT1;
-    ESP_ERROR_CHECK(esp_wifi_set_ant(&wifi_ant_config));
+    wifi_ant_config.rx_ant_mode  =   ESP_PHY_ANT_MODE_ANT1;
+    wifi_ant_config.tx_ant_mode  =   ESP_PHY_ANT_MODE_ANT1;
+    ESP_ERROR_CHECK(esp_phy_set_ant(&wifi_ant_config));
     /**< Wait for parameters to take effect*/
     vTaskDelay(100/portTICK_PERIOD_MS);
     while(ESP_OK != esp_wifi_sta_get_ap_info(&wifi_ap_record)) {
@@ -107,10 +108,10 @@ static void antenna_switch_function(const wifi_antenna_auto_switch_config_t *con
 
     if(config->ant_num == ANT_TOTAL_THREE) {
         /**< Monitor antenna two signal strength*/
-        wifi_ant_config.rx_ant_mode  =   WIFI_ANT_MODE_ANT1;
-        wifi_ant_config.tx_ant_mode  =   WIFI_ANT_MODE_ANT1;
+        wifi_ant_config.rx_ant_mode  =   ESP_PHY_ANT_MODE_ANT1;
+        wifi_ant_config.tx_ant_mode  =   ESP_PHY_ANT_MODE_ANT1;
         wifi_ant_config.enabled_ant1 =   config->ant_two;
-        ESP_ERROR_CHECK(esp_wifi_set_ant(&wifi_ant_config));
+        ESP_ERROR_CHECK(esp_phy_set_ant(&wifi_ant_config));
         /**< Wait for parameters to take effect*/
         vTaskDelay(100/portTICK_PERIOD_MS);
         while(ESP_OK != esp_wifi_sta_get_ap_info(&wifi_ap_record)) {
@@ -137,31 +138,31 @@ static void antenna_switch_function(const wifi_antenna_auto_switch_config_t *con
     if(rssi_ant0 >= rssi_ant1 && rssi_ant0 >= rssi_ant2) {
         /**< antenna zero signal strength best*/
         ESP_LOGD(TAG, "Antenna soft switching selection ant0");
-        wifi_ant_config.rx_ant_mode  =   WIFI_ANT_MODE_ANT0;
-        wifi_ant_config.tx_ant_mode  =   WIFI_ANT_MODE_ANT0;
+        wifi_ant_config.rx_ant_mode  =   ESP_PHY_ANT_MODE_ANT0;
+        wifi_ant_config.tx_ant_mode  =   ESP_PHY_ANT_MODE_ANT0;
         wifi_ant_config.enabled_ant0 =   config->ant_zero;
         wifi_ant_config.enabled_ant1 =   config->ant_one;
-        ESP_ERROR_CHECK(esp_wifi_set_ant(&wifi_ant_config));
+        ESP_ERROR_CHECK(esp_phy_set_ant(&wifi_ant_config));
     }
 
     if(rssi_ant1 > rssi_ant0 && rssi_ant1 > rssi_ant2) {
         /**< antenna one signal strength best*/
         ESP_LOGD(TAG, "Antenna soft switching selection ant1");
-        wifi_ant_config.rx_ant_mode  =   WIFI_ANT_MODE_ANT1;
-        wifi_ant_config.tx_ant_mode  =   WIFI_ANT_MODE_ANT1;
+        wifi_ant_config.rx_ant_mode  =   ESP_PHY_ANT_MODE_ANT1;
+        wifi_ant_config.tx_ant_mode  =   ESP_PHY_ANT_MODE_ANT1;
         wifi_ant_config.enabled_ant0 =   config->ant_zero;
         wifi_ant_config.enabled_ant1 =   config->ant_one;
-        ESP_ERROR_CHECK(esp_wifi_set_ant(&wifi_ant_config));
+        ESP_ERROR_CHECK(esp_phy_set_ant(&wifi_ant_config));
     }
 
     if(rssi_ant2 > rssi_ant0 && rssi_ant2 > rssi_ant1) {
         /**< antenna two signal strength best*/
         ESP_LOGD(TAG, "Antenna soft switching selection ant2");
-        wifi_ant_config.rx_ant_mode = WIFI_ANT_MODE_ANT1;
-        wifi_ant_config.tx_ant_mode  =   WIFI_ANT_MODE_ANT1;
+        wifi_ant_config.rx_ant_mode  =   ESP_PHY_ANT_MODE_ANT1;
+        wifi_ant_config.tx_ant_mode  =   ESP_PHY_ANT_MODE_ANT1;
         wifi_ant_config.enabled_ant0 =   config->ant_zero;
         wifi_ant_config.enabled_ant1 =   config->ant_two;
-        ESP_ERROR_CHECK(esp_wifi_set_ant(&wifi_ant_config));
+        ESP_ERROR_CHECK(esp_phy_set_ant(&wifi_ant_config));
     }
 }
 
