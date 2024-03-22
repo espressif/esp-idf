@@ -907,7 +907,7 @@ static esp_err_t elf_core_dump_image_mmap(esp_partition_mmap_handle_t* core_data
     }
 
     /* map the full core dump partition, including the checksum. */
-    return esp_partition_mmap(core_part, 0, out_size, ESP_PARTITION_MMAP_DATA,
+    return esp_partition_mmap(core_part, 0, out_size, ESP_PARTITION_MMAP_DATA | ESP_PARTITION_MMAP_BLOCKS_WRITE,
                               map_addr, core_data_handle);
 }
 

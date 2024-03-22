@@ -147,7 +147,7 @@ TEST_CASE("Test esp_partition_get_sha256() that it can handle a big partition", 
 
     esp_err_t err = ESP_FAIL;
     for (; mapped_pages_count<page_reservation_count && flash_offset<size_flash_chip; mapped_pages_count++, flash_offset+=SPI_FLASH_MMU_PAGE_SIZE) {
-        err = spi_flash_mmap(flash_offset, SPI_FLASH_MMU_PAGE_SIZE, SPI_FLASH_MMAP_DATA, &ptr, &handles[mapped_pages_count]);
+        err = spi_flash_mmap(flash_offset, SPI_FLASH_MMU_PAGE_SIZE, SPI_FLASH_MMAP_FLAG_DATA | SPI_FLASH_MMAP_FLAG_BLOCKS_WRITE, &ptr, &handles[mapped_pages_count]);
         if (err != ESP_OK) break;
         TEST_ASSERT_NOT_NULL(ptr);
         ptr = NULL;

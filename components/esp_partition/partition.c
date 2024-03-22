@@ -132,7 +132,7 @@ static esp_err_t load_partitions(void)
     size_t mapped_size = ESP_PARTITION_EMULATED_SECTOR_SIZE;
 #else
     esp_err_t err = spi_flash_mmap(partition_align_pg_size,
-                                   SPI_FLASH_SEC_SIZE, SPI_FLASH_MMAP_DATA, (const void **)&p_start, &handle);
+                                   SPI_FLASH_SEC_SIZE, SPI_FLASH_MMAP_FLAG_DATA | SPI_FLASH_MMAP_FLAG_BLOCKS_WRITE, (const void **)&p_start, &handle);
     size_t mapped_size = SPI_FLASH_SEC_SIZE;
 #endif
 

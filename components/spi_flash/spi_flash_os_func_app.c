@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -23,18 +23,13 @@
 
 #include "esp_private/spi_flash_os.h"
 #include "esp_private/cache_utils.h"
+#include "esp_private/flash_mmap.h"
 #include "esp_private/spi_share_hw_ctrl.h"
 
 // For C5 encrypted write workaround
 // Functions are only available when CONFIG_SPI_FLASH_FREQ_LIMIT_C5_240MHZ is true
 #include "esp_private/spi_flash_freq_limit_cbs.h"
 
-#define SPI_FLASH_CACHE_NO_DISABLE  (CONFIG_SPI_FLASH_AUTO_SUSPEND || (CONFIG_SPIRAM_FETCH_INSTRUCTIONS && CONFIG_SPIRAM_RODATA) || CONFIG_APP_BUILD_TYPE_RAM)
-static const char TAG[] = "spi_flash";
-
-#if SPI_FLASH_CACHE_NO_DISABLE
-static _lock_t s_spi1_flash_mutex;
-#endif  //  #if SPI_FLASH_CACHE_NO_DISABLE
 
 /*
  * OS functions providing delay service and arbitration among chips, and with the cache.
@@ -42,6 +37,14 @@ static _lock_t s_spi1_flash_mutex;
  * The cache needs to be disabled when chips on the SPI1 bus is under operation, hence these functions need to be put
  * into the IRAM,and their data should be put into the DRAM.
  */
+
+typedef enum {
+    OP_TYPE_MUTEX = 0,
+    OP_TYPE_MMAP_LOCK = 1,
+    OP_TYPE_SCHEDULER_DIS = 2,
+    OP_TYPE_CACHE_DIS = 3,
+    OP_TYPE_BUS_LOCK = 4,
+} spi1_op_type_t;
 
 /*
  * Time yield algorithm:
@@ -56,18 +59,22 @@ static _lock_t s_spi1_flash_mutex;
  */
 typedef struct {
     spi_bus_lock_dev_handle_t dev_lock;
-    bool no_protect;    //to decide whether to check protected region (for the main chip) or not.
+    uint32_t no_protect         : 1;    //to decide whether to check protected region (for the main chip) or not.
+    uint32_t current_op_type    : 3;    //Whether the mmap lock is already taken, only for SPI1.
+    uint32_t reserved           : 28;
     uint32_t acquired_since_us;    // Time since last explicit yield()
     uint32_t released_since_us;    // Time since last end() (implicit yield)
     uint32_t start_flags;          // Flags passed to start() function, used to determine if freq_limit was called
 } app_func_arg_t;
+
+static const char TAG[] = "spi_flash";
 
 static inline void on_spi_released(app_func_arg_t* ctx);
 static inline void on_spi_acquired(app_func_arg_t* ctx);
 static inline void on_spi_yielded(app_func_arg_t* ctx);
 static inline bool on_spi_check_yield(app_func_arg_t* ctx);
 
-#if !SPI_FLASH_CACHE_NO_DISABLE
+#if !CONFIG_SPI_FLASH_AUTO_SUSPEND
 IRAM_ATTR static void cache_enable(void* arg)
 {
     spi_flash_enable_interrupts_caches_and_other_cpu();
@@ -77,7 +84,7 @@ IRAM_ATTR static void cache_disable(void* arg)
 {
     spi_flash_disable_interrupts_caches_and_other_cpu();
 }
-#endif  //#if !SPI_FLASH_CACHE_NO_DISABLE
+#endif  //#if !CONFIG_SPI_FLASH_AUTO_SUSPEND
 
 static IRAM_ATTR esp_err_t acquire_spi_bus_lock(void *arg)
 {
@@ -112,10 +119,11 @@ static esp_err_t spi23_end(void *arg)
     return ret;
 }
 
+#if CONFIG_IDF_TARGET_ESP32
 static IRAM_ATTR esp_err_t spi1_start(void *arg, uint32_t flags)
 {
-    esp_err_t ret = ESP_OK;
     app_func_arg_t* ctx = (app_func_arg_t*)arg;
+    esp_err_t ret = ESP_OK;
     ctx->start_flags = flags;
 
     /**
@@ -128,26 +136,133 @@ static IRAM_ATTR esp_err_t spi1_start(void *arg, uint32_t flags)
      */
 #if CONFIG_SPI_FLASH_SHARE_SPI1_BUS
     //use the lock to disable the cache and interrupts before using the SPI bus
-    ret = acquire_spi_bus_lock(arg);
-#elif SPI_FLASH_CACHE_NO_DISABLE
-    _lock_acquire(&s_spi1_flash_mutex);
+    ret = acquire_spi_bus_lock(ctx);
+    ctx->current_op_type = OP_TYPE_BUS_LOCK;
 #else
-    //directly disable the cache and interrupts when lock is not used
+    // For RAM App, it's possible to keep cache enabled when there is no mapping exists, or mutex between erasing and
+    // the mmap. However this will increase the complexity of mmap lock and decrease the performance.
+    // Not doing this for now.
     cache_disable(NULL);
+    ctx->current_op_type = OP_TYPE_CACHE_DIS;
+#endif  //CONFIG_SPI_FLASH_SHARE_SPI1_BUS
+
+    on_spi_acquired(ctx);
+    return ret;
+}
+
+static IRAM_ATTR esp_err_t spi1_end(void *arg)
+{
+    esp_err_t ret = ESP_OK;
+    app_func_arg_t* ctx = (app_func_arg_t*)arg;
+
+    /**
+     * There are three ways for ESP Flash API lock, see `spi1_start`
+     */
+#if CONFIG_SPI_FLASH_SHARE_SPI1_BUS
+    assert(ctx->current_op_type == OP_TYPE_BUS_LOCK);
+    ret = release_spi_bus_lock(ctx);
+#else
+    assert(ctx->current_op_type == OP_TYPE_CACHE_DIS);
+    cache_enable(NULL);
 #endif
 
+    on_spi_released(ctx);
+    return ret;
+}
+
+#else //CONFIG_IDF_TARGET_ESP32
+
 #if CONFIG_SPI_FLASH_DISABLE_SCHEDULER_IN_SUSPEND
-    // Disable scheduler
+static void disable_scheduler(void)
+{
     if (xTaskGetSchedulerState() == taskSCHEDULER_RUNNING) {
-#ifdef CONFIG_FREERTOS_SMP
+#   ifdef CONFIG_FREERTOS_SMP
         //Note: Scheduler suspension behavior changed in FreeRTOS SMP
         vTaskPreemptionDisable(NULL);
-#else
+#   else
         // Disable scheduler on the current CPU
         vTaskSuspendAll();
-#endif // CONFIG_FREERTOS_SMP
+#   endif // CONFIG_FREERTOS_SMP
     }
-#endif // CONFIG_SPI_FLASH_DISABLE_SCHEDULER_IN_SUSPEND
+}
+
+static void restore_scheduler(void)
+{
+    if (xTaskGetSchedulerState() == taskSCHEDULER_RUNNING) {
+#   ifdef CONFIG_FREERTOS_SMP
+        //Note: Scheduler suspension behavior changed in FreeRTOS SMP
+        vTaskPreemptionEnable(NULL);
+#   else
+        xTaskResumeAll();
+#   endif // CONFIG_FREERTOS_SMP
+    }
+}
+#endif   //CONFIG_SPI_FLASH_DISABLE_SCHEDULER_IN_SUSPEND
+
+static _lock_t s_spi1_flash_mutex;  //Lock preventing concurrent access to SPI1 Flash operations.
+
+static IRAM_ATTR esp_err_t spi1_start(void *arg, uint32_t flags)
+{
+    //context members can only be accessed after the lock is acquired
+    app_func_arg_t* ctx = (app_func_arg_t*)arg;
+    esp_err_t ret = ESP_OK;
+    /**
+     * There are different locks used in the SPI Flash API:
+     * 1. Mutex protecting concurrent access to SPI1. (s_spi1_flash_mutex)
+     * 2. Mmap lock (from flash_mmap.c), avoid access from SPI0 due to mmap
+     * 3. Disable scheduler, this is used in auto-suspend mode when we want to disable the scheduler to avoid the suspend caused by tasks
+     * 4. Cache lock (from cache_utils.h), this is used when we need to disable Cache to avoid cache access from CPU via SPI0
+     * From 1 to 4, the lock overhead increases.
+     *
+     * Different modes take different locks:
+     *
+     * Mode             Write/Erase                         Read
+     * !EXEC_FROM_FLASH Mutex + Mmap Lock (+ Disable Cache) Mutex only
+     * Auto suspend     Mutex + Mmap Lock + Dis. Scheduler  Mutex + Dis. Scheduler
+     * EXEC_FROM_FLASH  Mmap Lock + Disable Cache           Disable Cache
+     */
+
+    if (flags & ESP_FLASH_START_FLAG_NO_READ) {
+        /**
+         * Take the mmap lock to minimize remain mmap pages. If there is no mmap page remain, we can keep the cache
+         * enabled. For Auto suspend, though the cache is able to read, we still wait for the mmap to finish to avoid
+         * unnecessary suspend.
+         *
+         * Write/Erase path: take mmap lock before SPI1 mutex, so that when erase/prog is blocked by mmap, read is still
+         * available.
+         */
+        flash_mmap_lock_freeze();
+    }
+
+#if !CONFIG_SPI_FLASH_AUTO_SUSPEND
+#   if !MMAP_EXECUTABLES_FROM_FLASH
+    // XIP from PSRAM/RAM app: cache accesses go to PSRAM/RAM, not flash.
+    // Mutex serializes concurrent SPI1 access.
+    _lock_acquire(&s_spi1_flash_mutex);
+    if (!(flags & ESP_FLASH_START_FLAG_NO_READ) || !flash_mmap_remain()) {
+        // When read, or write while no mmap page remaining, we can keep the cache enabled.
+        ctx->current_op_type = OP_TYPE_MMAP_LOCK;
+    } else {
+        // Otherwise, we still need to disable the cache.
+        cache_disable(NULL);
+        ctx->current_op_type = OP_TYPE_CACHE_DIS;
+    }
+#   else
+    // Code runs from flash: cache_disable already ensures the serialization. No extra mutex needed here.
+    cache_disable(NULL);
+    ctx->current_op_type = OP_TYPE_CACHE_DIS;
+#   endif
+
+#else //CONFIG_SPI_FLASH_AUTO_SUSPEND
+    _lock_acquire(&s_spi1_flash_mutex);
+#   if CONFIG_SPI_FLASH_DISABLE_SCHEDULER_IN_SUSPEND
+    disable_scheduler();
+#   endif // CONFIG_SPI_FLASH_DISABLE_SCHEDULER_IN_SUSPEND
+    ctx->current_op_type = OP_TYPE_SCHEDULER_DIS;
+
+#endif //CONFIG_SPI_FLASH_AUTO_SUSPEND
+
+    ctx->start_flags = flags;
 
 #if CONFIG_SPI_FLASH_FREQ_LIMIT_C5_240MHZ
     if (flags & ESP_FLASH_START_FLAG_LIMIT_CPU_FREQ) {
@@ -163,40 +278,47 @@ static IRAM_ATTR esp_err_t spi1_end(void *arg)
 {
     esp_err_t ret = ESP_OK;
     app_func_arg_t* ctx = (app_func_arg_t*)arg;
-
-    // Call freq_limit_unlock if needed, before releasing the lock
-#if CONFIG_SPI_FLASH_FREQ_LIMIT_C5_240MHZ
     uint32_t flags = ctx->start_flags;
+
+#if CONFIG_SPI_FLASH_FREQ_LIMIT_C5_240MHZ
     if (flags & ESP_FLASH_START_FLAG_LIMIT_CPU_FREQ) {
         esp_flash_freq_unlimit_cb();
     }
 #endif
 
     /**
-     * There are three ways for ESP Flash API lock, see `spi1_start`
+     * There are different lock paths, see `spi1_start`
      */
-#if CONFIG_SPI_FLASH_SHARE_SPI1_BUS
-    ret = release_spi_bus_lock(arg);
-#elif SPI_FLASH_CACHE_NO_DISABLE
-    _lock_release(&s_spi1_flash_mutex);
-#else
-    cache_enable(NULL);
-#endif
-
-#if CONFIG_SPI_FLASH_DISABLE_SCHEDULER_IN_SUSPEND
-    if (xTaskGetSchedulerState() == taskSCHEDULER_RUNNING) {
-#ifdef CONFIG_FREERTOS_SMP
-        //Note: Scheduler suspension behavior changed in FreeRTOS SMP
-        vTaskPreemptionEnable(NULL);
-#else
-        xTaskResumeAll();
-#endif // CONFIG_FREERTOS_SMP
+#if !CONFIG_SPI_FLASH_AUTO_SUSPEND
+#   if !MMAP_EXECUTABLES_FROM_FLASH
+    if (ctx->current_op_type != OP_TYPE_MMAP_LOCK) {
+        assert(ctx->current_op_type == OP_TYPE_CACHE_DIS);
+        cache_enable(NULL);
     }
-#endif // CONFIG_SPI_FLASH_DISABLE_SCHEDULER_IN_SUSPEND
+    _lock_release(&s_spi1_flash_mutex);
+#   else
+    assert(ctx->current_op_type == OP_TYPE_CACHE_DIS);
+    cache_enable(NULL);
+#   endif
+
+#else //!CONFIG_SPI_FLASH_AUTO_SUSPEND
+#   if CONFIG_SPI_FLASH_DISABLE_SCHEDULER_IN_SUSPEND
+    restore_scheduler();
+#   endif // CONFIG_SPI_FLASH_DISABLE_SCHEDULER_IN_SUSPEND
+    assert(ctx->current_op_type == OP_TYPE_SCHEDULER_DIS);
+    _lock_release(&s_spi1_flash_mutex);
+
+#endif //!CONFIG_SPI_FLASH_AUTO_SUSPEND
+
+    if (flags & ESP_FLASH_START_FLAG_NO_READ) {
+        flash_mmap_lock_unfreeze();
+    }
 
     on_spi_released(ctx);
     return ret;
 }
+
+#endif // !CONFIG_IDF_TARGET_ESP32
 
 static esp_err_t spi_flash_os_check_yield(void *arg, uint32_t chip_status, uint32_t* out_request)
 {
@@ -376,8 +498,18 @@ esp_err_t esp_flash_deinit_os_functions(esp_flash_t* chip, spi_bus_lock_dev_hand
     return ESP_OK;
 }
 
-esp_err_t esp_flash_init_main_bus_lock(void)
+esp_err_t esp_flash_app_init_os_functions(void)
 {
+    esp_err_t err = ESP_OK;
+
+#if !CONFIG_IDF_TARGET_ESP32
+    _lock_init(&s_spi1_flash_mutex);
+    err = flash_mmap_lock_init();
+    if (err != ESP_OK) {
+        return err;
+    }
+#endif
+
     /* The following called functions are only defined if CONFIG_SPI_FLASH_SHARE_SPI1_BUS
      * is set. Thus, we must not call them if the macro is not defined, else the linker
      * would trigger errors. */
@@ -385,14 +517,13 @@ esp_err_t esp_flash_init_main_bus_lock(void)
     /* bus_lock is registered by `spi_bus_lock_init_main_bus` constructor in spi_common.c  */
     spi_bus_lock_set_bg_control(g_main_spi_bus_lock, cache_enable, cache_disable, NULL);
 
-    esp_err_t err = spi_bus_lock_init_main_dev();
+    err = spi_bus_lock_init_main_dev();
     if (err != ESP_OK) {
         return err;
     }
-    return ESP_OK;
-#else
-    return ESP_ERR_NOT_SUPPORTED;
 #endif
+    (void)err;
+    return ESP_OK;
 }
 
 esp_err_t esp_flash_app_enable_os_functions(esp_flash_t* chip)

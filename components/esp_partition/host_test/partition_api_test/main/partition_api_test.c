@@ -236,7 +236,6 @@ TEST(partition_api, test_partition_mmap)
     const esp_partition_t *partition_data = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_ANY, "storage");
     TEST_ASSERT_NOT_NULL(partition_data);
 
-    esp_partition_mmap_memory_t memory = ESP_PARTITION_MMAP_DATA;
     void *out_ptr = NULL;
     esp_partition_mmap_handle_t out_handle = 0;
 
@@ -244,7 +243,12 @@ TEST(partition_api, test_partition_mmap)
     size_t offset = 0;
     size_t size = partition_data->size;
 
-    esp_err_t err = esp_partition_mmap(partition_data, offset, size, memory, (const void **) &out_ptr, &out_handle);
+    esp_err_t err = esp_partition_mmap(partition_data, offset, size, ESP_PARTITION_MMAP_DATA, (const void **) &out_ptr, &out_handle);
+    TEST_ESP_OK(err);
+    TEST_ASSERT_NOT_NULL(out_ptr);
+    esp_partition_munmap(out_handle);
+
+    err = esp_partition_mmap(partition_data, offset, size, ESP_PARTITION_MMAP_DATA | ESP_PARTITION_MMAP_BLOCKS_WRITE, (const void **) &out_ptr, &out_handle);
     TEST_ESP_OK(err);
     TEST_ASSERT_NOT_NULL(out_ptr);
     esp_partition_munmap(out_handle);
@@ -253,14 +257,14 @@ TEST(partition_api, test_partition_mmap)
     offset = partition_data->size + 1;
     size = 1;
 
-    err = esp_partition_mmap(partition_data, offset, size, memory, (const void **) &out_ptr, &out_handle);
+    err = esp_partition_mmap(partition_data, offset, size, ESP_PARTITION_MMAP_DATA, (const void **) &out_ptr, &out_handle);
     TEST_ASSERT_EQUAL(err, ESP_ERR_INVALID_ARG);
 
     // mapped length beyond partition size
     offset = 1;
     size = partition_data->size;
 
-    err = esp_partition_mmap(partition_data, offset, size, memory, (const void **) &out_ptr, &out_handle);
+    err = esp_partition_mmap(partition_data, offset, size, ESP_PARTITION_MMAP_DATA, (const void **) &out_ptr, &out_handle);
     TEST_ASSERT_EQUAL(err, ESP_ERR_INVALID_SIZE);
 }
 

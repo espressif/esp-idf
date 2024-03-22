@@ -176,7 +176,7 @@ static IRAM_ATTR NOINLINE_ATTR void cs_initialize(esp_flash_t *chip, const esp_f
 
     //To avoid the panic caused by flash data line conflicts during cs line
     //initialization, disable the cache temporarily
-    chip->os_func->start(chip->os_func_data, 0);
+    chip->os_func->start(chip->os_func_data, ESP_FLASH_START_FLAG_NO_READ);
     gpio_hal_input_enable(&gpio_hal, cs_io_num);
     if (cs_use_iomux) {
         gpio_hal_func_sel(&gpio_hal, cs_io_num, spics_func);
@@ -632,10 +632,8 @@ esp_err_t esp_flash_app_init(void)
 #if CONFIG_SPI_FLASH_ENABLE_COUNTERS
     esp_flash_reset_counters();
 #endif
-#if CONFIG_SPI_FLASH_SHARE_SPI1_BUS
-    err = esp_flash_init_main_bus_lock();
+    err = esp_flash_app_init_os_functions();
     if (err != ESP_OK) return err;
-#endif
     err = esp_flash_app_enable_os_functions(&default_chip);
     return err;
 }

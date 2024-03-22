@@ -138,7 +138,7 @@ TEST_CASE("Test esp_sha() function with long input", "[hw_crypto]")
     const size_t LEN = 1024 * 1024;
 
     /* mmap() 1MB of flash, we don't care what it is really */
-    esp_err_t err = spi_flash_mmap(0x0, LEN, SPI_FLASH_MMAP_DATA, &ptr, &handle);
+    esp_err_t err = spi_flash_mmap(0x0, LEN, SPI_FLASH_MMAP_FLAG_DATA | SPI_FLASH_MMAP_FLAG_BLOCKS_WRITE, &ptr, &handle);
 
     TEST_ASSERT_EQUAL_HEX32(ESP_OK, err);
     TEST_ASSERT_NOT_NULL(ptr);

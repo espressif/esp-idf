@@ -40,7 +40,7 @@ This feature is supported on all Espressif chips except ESP32 and ESP32-S2.
 
     List of flash chips that support this feature:
 
-    1. XM25QxxD series
+    1. XM25xxD series
     2. GD25QxxE series
     3. FM25Q32
 

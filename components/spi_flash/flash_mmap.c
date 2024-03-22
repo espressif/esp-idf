@@ -9,6 +9,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <freertos/FreeRTOS.h>
+#include <freertos/semphr.h>
 #include "sdkconfig.h"
 #include "esp_bit_defs.h"
 #include "esp_attr.h"
@@ -39,6 +40,7 @@
 
 #include "esp_private/cache_utils.h"
 #include "spi_flash_mmap.h"
+#include "esp_private/flash_mmap.h"
 
 #if CONFIG_SPIRAM_FETCH_INSTRUCTIONS
 extern char _instruction_reserved_start;
@@ -50,18 +52,217 @@ extern char _rodata_reserved_start;
 extern char _rodata_reserved_end;
 #endif
 
-#if !ESP_ROM_HAS_SPI_FLASH_MMAP || !CONFIG_SPI_FLASH_ROM_IMPL
 
 /* 0x1000000, 16MB */
 #define FLASH_MMAP_ADDR_24BIT_MAX  (BIT(24))
 
+#if !CONFIG_IDF_TARGET_ESP32
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Mmap lock implementation.
+// This lock allows external caller (flash driver) freezing the mmap flash pages when erasing.
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+typedef struct {
+    _lock_t outer_mux;
+    bool frozen;
+    int freezing_wait_count;
+    int acquired_count; //minus value means number of waiting callers
+    SemaphoreHandle_t semphr_freeze;
+    SemaphoreHandle_t semphr_acq;
+} mmap_lock_t;
+
+static mmap_lock_t s_mmap_lock;
+
+static esp_err_t mmap_lock_init(void)
+{
+    esp_err_t ret = ESP_OK;
+    _lock_init(&s_mmap_lock.outer_mux);
+    s_mmap_lock.frozen = false;
+    s_mmap_lock.freezing_wait_count = 0;
+    s_mmap_lock.acquired_count = 0;
+
+    s_mmap_lock.semphr_freeze = xSemaphoreCreateBinary();
+    if (s_mmap_lock.semphr_freeze == NULL) {
+        ret = ESP_ERR_NO_MEM;
+        goto err;
+    }
+
+    s_mmap_lock.semphr_acq = xSemaphoreCreateBinary();
+    if (s_mmap_lock.semphr_acq == NULL) {
+        ret = ESP_ERR_NO_MEM;
+        goto err;
+    }
+    return ESP_OK;
+err:
+    if (s_mmap_lock.semphr_freeze != NULL) {
+        vSemaphoreDelete(s_mmap_lock.semphr_freeze);
+        s_mmap_lock.semphr_freeze = NULL;
+    }
+    return ret;
+}
+
+static void mmap_lock_acquire(void)
+{
+    mmap_lock_t* const lock = &s_mmap_lock;
+    bool wait = false;
+    _lock_acquire(&lock->outer_mux);
+    if (!lock->frozen) {
+        assert(lock->acquired_count >= 0);
+        lock->acquired_count++;
+    } else {
+        //Register one event
+        assert(lock->acquired_count <= 0);
+        lock->acquired_count--;
+        wait = true;
+    }
+    _lock_release(&lock->outer_mux);
+
+    if (wait) {
+        //Wait for event
+        xSemaphoreTake(lock->semphr_acq, portMAX_DELAY);
+    }
+}
+
+static void mmap_lock_release(void)
+{
+    mmap_lock_t* const lock = &s_mmap_lock;
+    bool wakeup_freeze = false;
+    _lock_acquire(&lock->outer_mux);
+    assert(lock->acquired_count > 0);
+    assert(lock->frozen == false);
+    lock->acquired_count--;
+    if (lock->acquired_count == 0 && lock->freezing_wait_count > 0) {
+        //All acquiring nodes have released, and there are waiting freezing requests
+        //Go to the freezing state and wake up one freeze request
+        lock->freezing_wait_count--;
+        lock->frozen = true;
+        wakeup_freeze = true;
+    }
+    _lock_release(&lock->outer_mux);
+
+    if (wakeup_freeze) {
+        //Wake up one freezing request
+        xSemaphoreGive(lock->semphr_freeze);
+    }
+}
+
+static void mmap_lock_freeze(void)
+{
+    mmap_lock_t* const lock = &s_mmap_lock;
+    bool wait = false;
+    _lock_acquire(&lock->outer_mux);
+    if (lock->acquired_count > 0 || lock->frozen) {
+        //If frozen, or already acquired, register one event and wait for it
+        lock->freezing_wait_count++;
+        wait = true;
+    } else {
+        lock->frozen = true;
+    }
+    _lock_release(&lock->outer_mux);
+
+    if (wait) {
+        //Wait for event trigger
+        xSemaphoreTake(lock->semphr_freeze, portMAX_DELAY);
+    }
+}
+
+static void mmap_lock_unfreeze(void)
+{
+    mmap_lock_t* const lock = &s_mmap_lock;
+    bool wakeup_frozen = false;
+    int wakeup_acq_count = 0;
+    assert(lock->frozen);
+    assert(lock->acquired_count <= 0);
+    _lock_acquire(&lock->outer_mux);
+    if (lock->acquired_count < 0) {
+        //acquiring requests has higher priority than freezing request
+        lock->frozen = false;
+        lock->acquired_count = -lock->acquired_count;
+        wakeup_acq_count = lock->acquired_count;
+    } else if (lock->freezing_wait_count > 0) {
+        lock->freezing_wait_count--;
+        lock->frozen = true;
+        wakeup_frozen = true;
+    } else {
+        //otherwise no one owns the lock
+        lock->frozen = false;
+    }
+    _lock_release(&lock->outer_mux);
+
+    if (wakeup_frozen) {
+        //Wake one freezing request
+        xSemaphoreGive(lock->semphr_freeze);
+    } else {
+        //Wake up all acquiring requests
+        for (int i = 0; i < wakeup_acq_count; i++) {
+            xSemaphoreGive(lock->semphr_acq);
+        }
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Interfaces for mmap API and external caller (flash driver).
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//the count and the mapping table (esp_mmu_map) can only be touched when the mmap lock is acquired
+static int s_mmap_remain_count; //number of mmap regions that are still in use
+
+#define MMAP_CNT_INCREASE()  do { \
+    assert(s_mmap_remain_count >= 0); \
+    s_mmap_remain_count++; \
+} while (0)
+#define MMAP_CNT_DECREASE()  do { \
+    s_mmap_remain_count--; \
+    assert(s_mmap_remain_count >= 0); \
+} while (0)
+
+esp_err_t flash_mmap_lock_init(void)
+{
+    return mmap_lock_init();
+}
+
+bool flash_mmap_remain(void)
+{
+    return s_mmap_remain_count > 0;
+}
+
+void flash_mmap_lock_freeze(void)
+{
+    mmap_lock_freeze();
+}
+
+void flash_mmap_lock_unfreeze(void)
+{
+    mmap_lock_unfreeze();
+}
+
+#else //!CONFIG_IDF_TARGET_ESP32
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Empty interfaces for mmap APIs (ESP32 only).
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+#define mmap_lock_acquire() do {} while (0)
+#define mmap_lock_release() do {} while (0)
+
+#define MMAP_CNT_INCREASE() do {} while (0)
+#define MMAP_CNT_DECREASE() do {} while (0)
+
+#endif //!CONFIG_IDF_TARGET_ESP32
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Mmap operations
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+#if !MMAP_ROM_IMPL_ENABLED
 typedef struct mmap_block_t {
     uint32_t *vaddr_list;
     int list_num;
+    uint32_t permanent; //When this flag is set, the mmap region will last for a very long time. Don't wait for the unmap and release the mmap lock immediately when exit mmap calls.
 } mmap_block_t;
 
-
-esp_err_t spi_flash_mmap(size_t src_addr, size_t size, spi_flash_mmap_memory_t memory,
+/* ROM and patch information
+ * Latest: Add OS function to avoid concurrent access with erase/program when XIP from PSRAM
+ * V1: added to ROM
+ */
+// Called from esp_flash_read_encrypted which is also a ROM function.
+esp_err_t spi_flash_mmap(size_t src_addr, size_t size, spi_flash_mmap_flag_t flags,
                          const void** out_ptr, spi_flash_mmap_handle_t* out_handle)
 {
 #if !CONFIG_BOOTLOADER_CACHE_32BIT_ADDR_QUAD_FLASH && !CONFIG_BOOTLOADER_CACHE_32BIT_ADDR_OCTAL_FLASH
@@ -89,12 +290,15 @@ esp_err_t spi_flash_mmap(size_t src_addr, size_t size, spi_flash_mmap_memory_t m
     }
 
     block->vaddr_list = vaddr_list;
+    block->permanent = !(flags & SPI_FLASH_MMAP_FLAG_BLOCKS_WRITE);
 
-    if (memory == SPI_FLASH_MMAP_INST) {
+    if (flags & SPI_FLASH_MMAP_FLAG_INST) {
         caps = MMU_MEM_CAP_EXEC | MMU_MEM_CAP_32BIT;
     } else {
         caps = MMU_MEM_CAP_READ | MMU_MEM_CAP_8BIT;
     }
+
+    mmap_lock_acquire();
     ret = esp_mmu_map(src_addr, size, MMU_TARGET_FLASH0, caps, ESP_MMU_MMAP_FLAG_PADDR_SHARED, &ptr);
     if (ret == ESP_OK) {
         vaddr_list[0] = (uint32_t)ptr;
@@ -109,12 +313,18 @@ esp_err_t spi_flash_mmap(size_t src_addr, size_t size, spi_flash_mmap_memory_t m
          */
         block->list_num = 0;
     } else {
+        mmap_lock_release();
         goto err;
     }
+    MMAP_CNT_INCREASE();
 
     *out_ptr = ptr;
     *out_handle = (uint32_t)block;
 
+    if (block->permanent) {
+        //If the mmap is permanent, the lock is released without waiting for the unmap.
+        mmap_lock_release();
+    }
     return ESP_OK;
 
 err:
@@ -172,7 +382,12 @@ static void s_pages_to_bytes(int (*blocks)[2], int block_nums)
     }
 }
 
-esp_err_t spi_flash_mmap_pages(const int *pages, size_t page_count, spi_flash_mmap_memory_t memory,
+/* ROM and patch information
+ * Latest: Add OS function to avoid concurrent access with erase/program
+ * V1: added to ROM
+ */
+// Called from esp_flash_read_encrypted which is also a ROM function.
+esp_err_t spi_flash_mmap_pages(const int *pages, size_t page_count, spi_flash_mmap_flag_t flags,
                          const void** out_ptr, spi_flash_mmap_handle_t* out_handle)
 {
 #if !CONFIG_BOOTLOADER_CACHE_32BIT_ADDR_QUAD_FLASH && !CONFIG_BOOTLOADER_CACHE_32BIT_ADDR_OCTAL_FLASH
@@ -189,6 +404,7 @@ esp_err_t spi_flash_mmap_pages(const int *pages, size_t page_count, spi_flash_mm
     mmap_block_t *block = NULL;
     uint32_t *vaddr_list = NULL;
     int successful_cnt = 0;
+    bool mmap_lock_acquired = false;
 
     int block_num = s_find_non_contiguous_block_nums(pages, page_count);
     int paddr_blocks[block_num][2];
@@ -207,11 +423,14 @@ esp_err_t spi_flash_mmap_pages(const int *pages, size_t page_count, spi_flash_mm
         goto err;
     }
 
-    if (memory == SPI_FLASH_MMAP_INST) {
+    if (flags & SPI_FLASH_MMAP_FLAG_INST) {
         caps = MMU_MEM_CAP_EXEC | MMU_MEM_CAP_32BIT;
     } else {
         caps = MMU_MEM_CAP_READ | MMU_MEM_CAP_8BIT;
     }
+
+    mmap_lock_acquire();
+    mmap_lock_acquired = true;
     for (int i = 0; i < block_num; i++) {
         void *ptr = NULL;
         ret = esp_mmu_map(paddr_blocks[i][0], paddr_blocks[i][1], MMU_TARGET_FLASH0, caps, ESP_MMU_MMAP_FLAG_PADDR_SHARED, &ptr);
@@ -229,8 +448,11 @@ esp_err_t spi_flash_mmap_pages(const int *pages, size_t page_count, spi_flash_mm
         vaddr_list[i] = (uint32_t)ptr;
     }
 
+    block->permanent = !(flags & SPI_FLASH_MMAP_FLAG_BLOCKS_WRITE);
     block->vaddr_list = vaddr_list;
     block->list_num = successful_cnt;
+
+    MMAP_CNT_INCREASE();
 
     /**
      * We get a contiguous vaddr block, but may contain multiple esp_mmu handles.
@@ -238,6 +460,11 @@ esp_err_t spi_flash_mmap_pages(const int *pages, size_t page_count, spi_flash_mm
      */
     *out_ptr = (void *)vaddr_list[0];
     *out_handle = (uint32_t)block;
+
+    if (block->permanent) {
+        //If the mmap is permanent, the lock is released without waiting for the unmap.
+        mmap_lock_release();
+    }
 
     return ESP_OK;
 
@@ -248,17 +475,28 @@ err:
     if (vaddr_list) {
         free(vaddr_list);
     }
+    if (mmap_lock_acquired) {
+        mmap_lock_release();
+    }
     if (block) {
         free(block);
     }
     return ret;
 }
 
-
+/* ROM and patch information
+ * Latest: Add OS function to avoid concurrent access with erase/program
+ * V1: added to ROM
+ */
+// Called from esp_flash_read_encrypted which is also a ROM function.
 void spi_flash_munmap(spi_flash_mmap_handle_t handle)
 {
     esp_err_t ret = ESP_FAIL;
     mmap_block_t *block = (void *)handle;
+
+    if (block->permanent) {
+        mmap_lock_acquire();
+    }
 
     for (int i = 0; i < block->list_num; i++) {
         ret = esp_mmu_unmap((void *)block->vaddr_list[i]);
@@ -266,17 +504,95 @@ void spi_flash_munmap(spi_flash_mmap_handle_t handle)
             assert(0 && "invalid handle, or handle already unmapped");
         }
     }
+    MMAP_CNT_DECREASE();
+
+    mmap_lock_release();
 
     free(block->vaddr_list);
     free(block);
 }
 
+#else //!MMAP_ROM_IMPL_ENABLED
+//Using ROM v1, which can't understand other flags like SPI_FLASH_MMAP_FLAG_BLOCKS_WRITE.
+//Handle the BLOCKS_WRITE flag and lock in the wrapper, then call ROM impl.
+//
+//The "permanent" state (i.e. no BLOCKS_WRITE, lock released immediately after mmap) is encoded
+//in BIT(31) of the returned handle, mirroring the mmap_block_t::permanent field in the IDF
+//implementation above.
+extern esp_err_t rom_spi_flash_mmap(size_t src_addr, size_t size, spi_flash_mmap_flag_t flags,
+                         const void** out_ptr, spi_flash_mmap_handle_t* out_handle);
+extern esp_err_t rom_spi_flash_mmap_pages(const int *pages, size_t page_count, spi_flash_mmap_flag_t flags,
+                         const void** out_ptr, spi_flash_mmap_handle_t* out_handle);
+extern void rom_spi_flash_munmap(spi_flash_mmap_handle_t handle);
 
+#define ROM_MMAP_HANDLE_PERMANENT_BIT    BIT(31)
+
+esp_err_t spi_flash_mmap(size_t src_addr, size_t size, spi_flash_mmap_flag_t flags,
+                         const void** out_ptr, spi_flash_mmap_handle_t* out_handle)
+{
+    bool permanent = !(flags & SPI_FLASH_MMAP_FLAG_BLOCKS_WRITE);
+    flags &= ~SPI_FLASH_MMAP_FLAG_BLOCKS_WRITE;
+
+    mmap_lock_acquire();
+    esp_err_t ret = rom_spi_flash_mmap(src_addr, size, flags, out_ptr, out_handle);
+    if (ret != ESP_OK) {
+        mmap_lock_release();
+        return ret;
+    }
+    MMAP_CNT_INCREASE();
+
+    if (permanent) {
+        assert((*out_handle & ROM_MMAP_HANDLE_PERMANENT_BIT) == 0);
+        *out_handle |= ROM_MMAP_HANDLE_PERMANENT_BIT;
+        mmap_lock_release();
+    }
+    return ESP_OK;
+}
+
+esp_err_t spi_flash_mmap_pages(const int *pages, size_t page_count, spi_flash_mmap_flag_t flags,
+                         const void** out_ptr, spi_flash_mmap_handle_t* out_handle)
+{
+    bool permanent = !(flags & SPI_FLASH_MMAP_FLAG_BLOCKS_WRITE);
+    flags &= ~SPI_FLASH_MMAP_FLAG_BLOCKS_WRITE;
+
+    mmap_lock_acquire();
+    esp_err_t ret = rom_spi_flash_mmap_pages(pages, page_count, flags, out_ptr, out_handle);
+    if (ret != ESP_OK) {
+        mmap_lock_release();
+        return ret;
+    }
+    MMAP_CNT_INCREASE();
+
+    if (permanent) {
+        assert((*out_handle & ROM_MMAP_HANDLE_PERMANENT_BIT) == 0);
+        *out_handle |= ROM_MMAP_HANDLE_PERMANENT_BIT;
+        mmap_lock_release();
+    }
+    return ESP_OK;
+}
+
+void spi_flash_munmap(spi_flash_mmap_handle_t handle)
+{
+    bool permanent = handle & ROM_MMAP_HANDLE_PERMANENT_BIT;
+    spi_flash_mmap_handle_t rom_handle = handle & ~ROM_MMAP_HANDLE_PERMANENT_BIT;
+
+    if (permanent) {
+        mmap_lock_acquire();
+    }
+
+    rom_spi_flash_munmap(rom_handle);
+    MMAP_CNT_DECREASE();
+
+    mmap_lock_release();
+}
+
+#endif //!MMAP_ROM_IMPL_ENABLED
+
+#if !MMAP_ROM_IMPL_ENABLED
 void spi_flash_mmap_dump(void)
 {
     esp_mmu_map_dump_mapped_blocks(stdout);
 }
-
 
 uint32_t spi_flash_mmap_get_free_pages(spi_flash_mmap_memory_t memory)
 {
@@ -345,9 +661,9 @@ IRAM_ATTR bool spi_flash_check_and_flush_cache(size_t start_addr, size_t length)
     }
     return ret;
 }
-#endif // !ESP_ROM_HAS_SPI_FLASH_MMAP || !CONFIG_SPI_FLASH_ROM_IMPL
+#endif //!MMAP_ROM_IMPL_ENABLED
 
-#if !ESP_ROM_HAS_SPI_FLASH_MMAP || !CONFIG_SPI_FLASH_ROM_IMPL || CONFIG_SPIRAM_FETCH_INSTRUCTIONS || CONFIG_SPIRAM_RODATA
+#if !MMAP_ROM_IMPL_ENABLED || CONFIG_SPIRAM_FETCH_INSTRUCTIONS || CONFIG_SPIRAM_RODATA
 /* ROM and patch information
  * Latest: Add the mapping from psram physical address to flash when CONFIG_SPIRAM_FETCH_INSTRUCTIONS or CONFIG_SPIRAM_RODATA enabled
  * V1 (Latest): added to ROM
@@ -432,4 +748,6 @@ const void * spi_flash_phys2cache(size_t phys_offs, spi_flash_mmap_memory_t memo
     assert(ret == ESP_OK);
     return (const void *)ptr;
 }
-#endif //!ESP_ROM_HAS_SPI_FLASH_MMAP || !CONFIG_SPI_FLASH_ROM_IMPL || CONFIG_SPIRAM_FETCH_INSTRUCTIONS || CONFIG_SPIRAM_RODATA
+#endif //!MMAP_ROM_IMPL_ENABLED || CONFIG_SPIRAM_FETCH_INSTRUCTIONS || CONFIG_SPIRAM_RODATA
+
+ESP_STATIC_ASSERT(SPI_FLASH_MMAP_FLAG_DATA + SPI_FLASH_MMAP_FLAG_INST < SPI_FLASH_MMAP_FLAG_BLOCKS_WRITE, "spi_flash_mmap_memory_t not compatible with spi_flash_mmap_flag_t");

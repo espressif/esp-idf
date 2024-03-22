@@ -212,6 +212,7 @@ def test_examples_protocol_simple_ota_example(dut: Dut) -> None:
     'config',
     [
         'spiram',
+        'xip_psram',
     ],
     indirect=True,
 )
