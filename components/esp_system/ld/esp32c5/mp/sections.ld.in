@@ -161,13 +161,13 @@ SECTIONS
 
     mapping[iram0_text]
 
-  } > iram0_0_seg
+  } > sram_seg
 
   /* Marks the end of IRAM code segment */
   .iram0.text_end (NOLOAD) :
   {
     ALIGNED_SYMBOL(4, _iram_text_end)
-  } > iram0_0_seg
+  } > sram_seg
 
   .iram0.data :
   {
@@ -176,7 +176,7 @@ SECTIONS
     mapping[iram0_data]
 
     _iram_data_end = ABSOLUTE(.);
-  } > iram0_0_seg
+  } > sram_seg
 
   .iram0.bss (NOLOAD) :
   {
@@ -186,16 +186,16 @@ SECTIONS
 
     _iram_bss_end = ABSOLUTE(.);
     ALIGNED_SYMBOL(16, _iram_end)
-  } > iram0_0_seg
+  } > sram_seg
 
   /**
-   * This section is required to skip .iram0.text area because iram0_0_seg and
-   * dram0_0_seg reflect the same address space on different buses.
+   * This section is required to skip .iram0.text area because sram_seg and
+   * sram_seg reflect the same address space on different buses.
    */
   .dram0.dummy (NOLOAD):
   {
-    . = ORIGIN(dram0_0_seg) + _iram_end - _iram_start;
-  } > dram0_0_seg
+    . = ORIGIN(sram_seg) + _iram_end - _iram_start;
+  } > sram_seg
 
   .dram0.data :
   {
@@ -212,7 +212,7 @@ SECTIONS
     mapping[dram0_data]
 
     _data_end = ABSOLUTE(.);
-  } > dram0_0_seg
+  } > sram_seg
 
   /**
    * This section holds data that should not be initialized at power up.
@@ -227,7 +227,7 @@ SECTIONS
     *(.noinit .noinit.*)
 
     ALIGNED_SYMBOL(4, _noinit_end)
-  } > dram0_0_seg
+  } > sram_seg
 
   /* Shared RAM */
   .dram0.bss (NOLOAD) :
@@ -241,9 +241,9 @@ SECTIONS
     mapping[dram0_bss]
 
     ALIGNED_SYMBOL(8, _bss_end)
-  } > dram0_0_seg
+  } > sram_seg
 
-  ASSERT(((_bss_end - ORIGIN(dram0_0_seg)) <= LENGTH(dram0_0_seg)), "DRAM segment data does not fit.")
+  ASSERT(((_bss_end - ORIGIN(sram_seg)) <= LENGTH(sram_seg)), "DRAM segment data does not fit.")
 
   .flash.text :
   {
@@ -440,7 +440,7 @@ SECTIONS
   .dram0.heap_start (NOLOAD) :
   {
     ALIGNED_SYMBOL(16, _heap_start)
-  } > dram0_0_seg
+  } > sram_seg
 
   /**
    * Discarding .rela.* sections results in the following mapping:
@@ -451,8 +451,8 @@ SECTIONS
   /DISCARD/ : { *(.rela.*) }
 }
 
-ASSERT(((_iram_end - ORIGIN(iram0_0_seg)) <= LENGTH(iram0_0_seg)),
+ASSERT(((_iram_end - ORIGIN(sram_seg)) <= LENGTH(sram_seg)),
           "IRAM0 segment data does not fit.")
 
-ASSERT(((_heap_start - ORIGIN(dram0_0_seg)) <= LENGTH(dram0_0_seg)),
+ASSERT(((_heap_start - ORIGIN(sram_seg)) <= LENGTH(sram_seg)),
           "DRAM segment data does not fit.")

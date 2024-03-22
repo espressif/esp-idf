@@ -1,10 +1,10 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// The HAL layer for MODEM CLOCK (ESP32-C6 specific part)
+// The HAL layer for MODEM CLOCK (ESP32-C5 specific part)
 #include <stdbool.h>
 #include "soc/soc.h"
 #include "esp_attr.h"

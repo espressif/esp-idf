@@ -9,7 +9,7 @@
 #pragma once
 
 #include "soc/soc_caps.h"
-#if SOC_MODEM_CLOCK_IS_INDEPENDENT
+#if SOC_MODEM_CLOCK_IS_INDEPENDENT && SOC_MODEM_CLOCK_SUPPORTED
 #include "hal/modem_syscon_ll.h"
 #include "hal/modem_lpcon_ll.h"
 #include "hal/modem_clock_types.h"

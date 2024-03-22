@@ -123,7 +123,7 @@ mainmenu "Espressif IoT Development Framework Configuration"
     choice IDF_TARGET_ESP32C5_VERSION
         prompt "ESP32-C5 version"
         depends on IDF_TARGET_ESP32C5
-        default IDF_TARGET_ESP32C5_BETA3_VERSION
+        default IDF_TARGET_ESP32C5_MP_VERSION
         help
             ESP32-C5 will support two versions for a period.
             This option is for internal use only.
@@ -138,6 +138,7 @@ mainmenu "Espressif IoT Development Framework Configuration"
             bool
             prompt "ESP32-C5 MP"
             select ESPTOOLPY_NO_STUB
+            select IDF_ENV_FPGA
     endchoice
 
     config IDF_TARGET_ESP32P4
