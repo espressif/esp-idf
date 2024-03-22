@@ -281,8 +281,8 @@ int esp_wifi_build_rsnxe(struct hostapd_data *hapd, u8 *eid, size_t len)
     return pos - eid;
 }
 
-u16 esp_send_assoc_resp(struct hostapd_data *hapd, struct sta_info *sta,
-        const u8 *addr, u16 status_code, bool omit_rsnxe, int subtype)
+u16 esp_send_assoc_resp(struct hostapd_data *hapd, const u8 *addr,
+        u16 status_code, bool omit_rsnxe, int subtype)
 {
 #define ASSOC_RESP_LENGTH 20
     u8 buf[ASSOC_RESP_LENGTH];
