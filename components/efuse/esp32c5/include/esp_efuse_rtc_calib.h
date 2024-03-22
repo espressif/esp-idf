@@ -11,7 +11,7 @@
 extern "C" {
 #endif
 
-// TODO: [ESP32C5] IDF-8674, IDF-8702
+// TODO: [ESP32C5] IDF-8702
 
 //This is the ADC calibration value version burnt in efuse
 #define ESP_EFUSE_ADC_CALIB_VER1     1

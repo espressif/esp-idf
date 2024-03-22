@@ -14,8 +14,6 @@
 #include "hal/assert.h"
 #include "rom/efuse.h"
 
-// TODO: [ESP32C61] IDF-9282, inherit from c6
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -52,92 +50,38 @@ __attribute__((always_inline)) static inline bool efuse_ll_get_secure_boot_v2_en
 // use efuse_hal_get_major_chip_version() to get major chip version
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_chip_wafer_version_major(void)
 {
-    return EFUSE0.rd_mac_sys3.mac_reserved_2;
+    return (uint32_t)0;
 }
 
 // use efuse_hal_get_minor_chip_version() to get minor chip version
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_chip_wafer_version_minor(void)
 {
-    return EFUSE0.rd_mac_sys3.sys_data_part0_0;
+    return (uint32_t)0;
 }
 
 __attribute__((always_inline)) static inline bool efuse_ll_get_disable_wafer_version_major(void)
 {
-    return EFUSE0.rd_repeat_data4.rd_repeat_data4;
-}
-
-__attribute__((always_inline)) static inline uint32_t efuse_ll_get_active_hp_dbias(void)
-{
-    HAL_ASSERT(0);
-    // return EFUSE0.rd_mac_spi_sys_2.active_hp_dbias;
-    return 0;
-}
-
-__attribute__((always_inline)) static inline uint32_t efuse_ll_get_active_lp_dbias(void)
-{
-    HAL_ASSERT(0);
-    // return EFUSE0.rd_mac_spi_sys_2.active_lp_dbias;
-    return 0;
-}
-
-__attribute__((always_inline)) static inline uint32_t efuse_ll_get_lslp_dbg(void)
-{
-    HAL_ASSERT(0);
-    // return EFUSE0.rd_mac_spi_sys_2.lslp_hp_dbg;
-    return 0;
-}
-
-__attribute__((always_inline)) static inline uint32_t efuse_ll_get_lslp_hp_dbias(void)
-{
-    HAL_ASSERT(0);
-    // return EFUSE0.rd_mac_spi_sys_2.lslp_hp_dbias;
-    return 0;
-}
-
-__attribute__((always_inline)) static inline uint32_t efuse_ll_get_dslp_dbg(void)
-{
-    HAL_ASSERT(0);
-    // return EFUSE0.rd_mac_spi_sys_2.dslp_lp_dbg;
-    return 0;
-}
-
-__attribute__((always_inline)) static inline uint32_t efuse_ll_get_dslp_lp_dbias(void)
-{
-    HAL_ASSERT(0);
-    // return EFUSE0.rd_mac_spi_sys_2.dslp_lp_dbias;
-    return 0;
-}
-
-__attribute__((always_inline)) static inline int32_t efuse_ll_get_dbias_vol_gap(void)
-{
-    HAL_ASSERT(0);
-    // return EFUSE0.rd_mac_spi_sys_2.dbias_vol_gap;
-    return 0;
+    return (uint32_t)0;
 }
 
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_blk_version_major(void)
 {
-    return EFUSE0.rd_mac_sys3.sys_data_part0_0;
+    return (uint32_t)0;
 }
 
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_blk_version_minor(void)
 {
-    return EFUSE0.rd_mac_sys3.sys_data_part0_0;
+    return (uint32_t)0;
 }
 
 __attribute__((always_inline)) static inline bool efuse_ll_get_disable_blk_version_major(void)
 {
-    return EFUSE0.rd_repeat_data4.rd_repeat_data4;
+    return false;
 }
 
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_chip_ver_pkg(void)
 {
-    return EFUSE0.rd_mac_sys3.sys_data_part0_0;
-}
-
-__attribute__((always_inline)) static inline uint32_t efuse_ll_get_ocode(void)
-{
-    return EFUSE0.rd_sys_part1_datan[4].sys_data_part1_n;
+    return (uint32_t)0;
 }
 
 /******************* eFuse control functions *************************/

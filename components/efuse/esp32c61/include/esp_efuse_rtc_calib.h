@@ -11,7 +11,7 @@
 extern "C" {
 #endif
 
-// TODO: [ESP32C61] IDF-9282, file inherit from verify code, pls check
+// TODO: [ESP32C61] IDF-9303, file inherit from verify code, pls check
 
 //This is the ADC calibration value version burnt in efuse
 #define ESP_EFUSE_ADC_CALIB_VER1     1

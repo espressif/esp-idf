@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,9 +9,7 @@
 #include <assert.h>
 #include "esp_efuse_table.h"
 
-// TODO: [ESP32C5] IDF-8674
-
-// md5_digest_table fd5a35cea89bfad954e834bc92bed385
+// md5_digest_table eb005412b657c9be0ce4bb699e5813c9
 // This file was generated from the file esp_efuse_table.csv. DO NOT CHANGE THIS FILE MANUALLY.
 // If you want to change some fields, you need to change esp_efuse_table.csv file
 // then run `efuse_common_table` or `efuse_custom_table` command it will generate this file.
@@ -25,14 +23,6 @@ static const esp_efuse_desc_t WR_DIS_RD_DIS[] = {
     {EFUSE_BLK0, 0, 1}, 	 // [] wr_dis of RD_DIS,
 };
 
-static const esp_efuse_desc_t WR_DIS_CRYPT_DPA_ENABLE[] = {
-    {EFUSE_BLK0, 1, 1}, 	 // [] wr_dis of CRYPT_DPA_ENABLE,
-};
-
-static const esp_efuse_desc_t WR_DIS_SWAP_UART_SDIO_EN[] = {
-    {EFUSE_BLK0, 2, 1}, 	 // [] wr_dis of SWAP_UART_SDIO_EN,
-};
-
 static const esp_efuse_desc_t WR_DIS_DIS_ICACHE[] = {
     {EFUSE_BLK0, 2, 1}, 	 // [] wr_dis of DIS_ICACHE,
 };
@@ -41,20 +31,12 @@ static const esp_efuse_desc_t WR_DIS_DIS_USB_JTAG[] = {
     {EFUSE_BLK0, 2, 1}, 	 // [] wr_dis of DIS_USB_JTAG,
 };
 
-static const esp_efuse_desc_t WR_DIS_DIS_DOWNLOAD_ICACHE[] = {
-    {EFUSE_BLK0, 2, 1}, 	 // [] wr_dis of DIS_DOWNLOAD_ICACHE,
-};
-
-static const esp_efuse_desc_t WR_DIS_DIS_USB_SERIAL_JTAG[] = {
-    {EFUSE_BLK0, 2, 1}, 	 // [] wr_dis of DIS_USB_SERIAL_JTAG,
-};
-
 static const esp_efuse_desc_t WR_DIS_DIS_FORCE_DOWNLOAD[] = {
     {EFUSE_BLK0, 2, 1}, 	 // [] wr_dis of DIS_FORCE_DOWNLOAD,
 };
 
 static const esp_efuse_desc_t WR_DIS_DIS_TWAI[] = {
-    {EFUSE_BLK0, 2, 1}, 	 // [WR_DIS.DIS_CAN] wr_dis of DIS_TWAI,
+    {EFUSE_BLK0, 2, 1}, 	 // [] wr_dis of DIS_TWAI,
 };
 
 static const esp_efuse_desc_t WR_DIS_JTAG_SEL_ENABLE[] = {
@@ -114,7 +96,7 @@ static const esp_efuse_desc_t WR_DIS_KEY_PURPOSE_5[] = {
 };
 
 static const esp_efuse_desc_t WR_DIS_SEC_DPA_LEVEL[] = {
-    {EFUSE_BLK0, 14, 1}, 	 // [WR_DIS.DPA_SEC_LEVEL] wr_dis of SEC_DPA_LEVEL,
+    {EFUSE_BLK0, 14, 1}, 	 // [] wr_dis of SEC_DPA_LEVEL,
 };
 
 static const esp_efuse_desc_t WR_DIS_SECURE_BOOT_EN[] = {
@@ -142,7 +124,7 @@ static const esp_efuse_desc_t WR_DIS_DIS_DIRECT_BOOT[] = {
 };
 
 static const esp_efuse_desc_t WR_DIS_DIS_USB_SERIAL_JTAG_ROM_PRINT[] = {
-    {EFUSE_BLK0, 18, 1}, 	 // [WR_DIS.DIS_USB_PRINT] wr_dis of DIS_USB_SERIAL_JTAG_ROM_PRINT,
+    {EFUSE_BLK0, 18, 1}, 	 // [] wr_dis of DIS_USB_SERIAL_JTAG_ROM_PRINT,
 };
 
 static const esp_efuse_desc_t WR_DIS_DIS_USB_SERIAL_JTAG_DOWNLOAD_MODE[] = {
@@ -169,14 +151,6 @@ static const esp_efuse_desc_t WR_DIS_SECURE_BOOT_DISABLE_FAST_WAKE[] = {
     {EFUSE_BLK0, 19, 1}, 	 // [] wr_dis of SECURE_BOOT_DISABLE_FAST_WAKE,
 };
 
-static const esp_efuse_desc_t WR_DIS_DISABLE_WAFER_VERSION_MAJOR[] = {
-    {EFUSE_BLK0, 19, 1}, 	 // [] wr_dis of DISABLE_WAFER_VERSION_MAJOR,
-};
-
-static const esp_efuse_desc_t WR_DIS_DISABLE_BLK_VERSION_MAJOR[] = {
-    {EFUSE_BLK0, 19, 1}, 	 // [] wr_dis of DISABLE_BLK_VERSION_MAJOR,
-};
-
 static const esp_efuse_desc_t WR_DIS_BLK1[] = {
     {EFUSE_BLK0, 20, 1}, 	 // [] wr_dis of BLOCK1,
 };
@@ -189,112 +163,12 @@ static const esp_efuse_desc_t WR_DIS_MAC_EXT[] = {
     {EFUSE_BLK0, 20, 1}, 	 // [] wr_dis of MAC_EXT,
 };
 
-static const esp_efuse_desc_t WR_DIS_WAFER_VERSION_MINOR[] = {
-    {EFUSE_BLK0, 20, 1}, 	 // [] wr_dis of WAFER_VERSION_MINOR,
-};
-
-static const esp_efuse_desc_t WR_DIS_WAFER_VERSION_MAJOR[] = {
-    {EFUSE_BLK0, 20, 1}, 	 // [] wr_dis of WAFER_VERSION_MAJOR,
-};
-
-static const esp_efuse_desc_t WR_DIS_PKG_VERSION[] = {
-    {EFUSE_BLK0, 20, 1}, 	 // [] wr_dis of PKG_VERSION,
-};
-
-static const esp_efuse_desc_t WR_DIS_BLK_VERSION_MINOR[] = {
-    {EFUSE_BLK0, 20, 1}, 	 // [] wr_dis of BLK_VERSION_MINOR,
-};
-
-static const esp_efuse_desc_t WR_DIS_BLK_VERSION_MAJOR[] = {
-    {EFUSE_BLK0, 20, 1}, 	 // [] wr_dis of BLK_VERSION_MAJOR,
-};
-
-static const esp_efuse_desc_t WR_DIS_FLASH_CAP[] = {
-    {EFUSE_BLK0, 20, 1}, 	 // [] wr_dis of FLASH_CAP,
-};
-
-static const esp_efuse_desc_t WR_DIS_FLASH_TEMP[] = {
-    {EFUSE_BLK0, 20, 1}, 	 // [] wr_dis of FLASH_TEMP,
-};
-
-static const esp_efuse_desc_t WR_DIS_FLASH_VENDOR[] = {
-    {EFUSE_BLK0, 20, 1}, 	 // [] wr_dis of FLASH_VENDOR,
-};
-
 static const esp_efuse_desc_t WR_DIS_SYS_DATA_PART1[] = {
     {EFUSE_BLK0, 21, 1}, 	 // [] wr_dis of BLOCK2,
 };
 
-static const esp_efuse_desc_t WR_DIS_OPTIONAL_UNIQUE_ID[] = {
-    {EFUSE_BLK0, 21, 1}, 	 // [] wr_dis of OPTIONAL_UNIQUE_ID,
-};
-
-static const esp_efuse_desc_t WR_DIS_TEMP_CALIB[] = {
-    {EFUSE_BLK0, 21, 1}, 	 // [] wr_dis of TEMP_CALIB,
-};
-
-static const esp_efuse_desc_t WR_DIS_OCODE[] = {
-    {EFUSE_BLK0, 21, 1}, 	 // [] wr_dis of OCODE,
-};
-
-static const esp_efuse_desc_t WR_DIS_ADC1_INIT_CODE_ATTEN0[] = {
-    {EFUSE_BLK0, 21, 1}, 	 // [] wr_dis of ADC1_INIT_CODE_ATTEN0,
-};
-
-static const esp_efuse_desc_t WR_DIS_ADC1_INIT_CODE_ATTEN1[] = {
-    {EFUSE_BLK0, 21, 1}, 	 // [] wr_dis of ADC1_INIT_CODE_ATTEN1,
-};
-
-static const esp_efuse_desc_t WR_DIS_ADC1_INIT_CODE_ATTEN2[] = {
-    {EFUSE_BLK0, 21, 1}, 	 // [] wr_dis of ADC1_INIT_CODE_ATTEN2,
-};
-
-static const esp_efuse_desc_t WR_DIS_ADC1_INIT_CODE_ATTEN3[] = {
-    {EFUSE_BLK0, 21, 1}, 	 // [] wr_dis of ADC1_INIT_CODE_ATTEN3,
-};
-
-static const esp_efuse_desc_t WR_DIS_ADC1_CAL_VOL_ATTEN0[] = {
-    {EFUSE_BLK0, 21, 1}, 	 // [] wr_dis of ADC1_CAL_VOL_ATTEN0,
-};
-
-static const esp_efuse_desc_t WR_DIS_ADC1_CAL_VOL_ATTEN1[] = {
-    {EFUSE_BLK0, 21, 1}, 	 // [] wr_dis of ADC1_CAL_VOL_ATTEN1,
-};
-
-static const esp_efuse_desc_t WR_DIS_ADC1_CAL_VOL_ATTEN2[] = {
-    {EFUSE_BLK0, 21, 1}, 	 // [] wr_dis of ADC1_CAL_VOL_ATTEN2,
-};
-
-static const esp_efuse_desc_t WR_DIS_ADC1_CAL_VOL_ATTEN3[] = {
-    {EFUSE_BLK0, 21, 1}, 	 // [] wr_dis of ADC1_CAL_VOL_ATTEN3,
-};
-
-static const esp_efuse_desc_t WR_DIS_ADC1_INIT_CODE_ATTEN0_CH0[] = {
-    {EFUSE_BLK0, 21, 1}, 	 // [] wr_dis of ADC1_INIT_CODE_ATTEN0_CH0,
-};
-
-static const esp_efuse_desc_t WR_DIS_ADC1_INIT_CODE_ATTEN0_CH1[] = {
-    {EFUSE_BLK0, 21, 1}, 	 // [] wr_dis of ADC1_INIT_CODE_ATTEN0_CH1,
-};
-
-static const esp_efuse_desc_t WR_DIS_ADC1_INIT_CODE_ATTEN0_CH2[] = {
-    {EFUSE_BLK0, 21, 1}, 	 // [] wr_dis of ADC1_INIT_CODE_ATTEN0_CH2,
-};
-
-static const esp_efuse_desc_t WR_DIS_ADC1_INIT_CODE_ATTEN0_CH3[] = {
-    {EFUSE_BLK0, 21, 1}, 	 // [] wr_dis of ADC1_INIT_CODE_ATTEN0_CH3,
-};
-
-static const esp_efuse_desc_t WR_DIS_ADC1_INIT_CODE_ATTEN0_CH4[] = {
-    {EFUSE_BLK0, 21, 1}, 	 // [] wr_dis of ADC1_INIT_CODE_ATTEN0_CH4,
-};
-
-static const esp_efuse_desc_t WR_DIS_ADC1_INIT_CODE_ATTEN0_CH5[] = {
-    {EFUSE_BLK0, 21, 1}, 	 // [] wr_dis of ADC1_INIT_CODE_ATTEN0_CH5,
-};
-
-static const esp_efuse_desc_t WR_DIS_ADC1_INIT_CODE_ATTEN0_CH6[] = {
-    {EFUSE_BLK0, 21, 1}, 	 // [] wr_dis of ADC1_INIT_CODE_ATTEN0_CH6,
+static const esp_efuse_desc_t WR_DIS_BLOCK_SYS_DATA1[] = {
+    {EFUSE_BLK0, 21, 1}, 	 // [] wr_dis of BLOCK_SYS_DATA1,
 };
 
 static const esp_efuse_desc_t WR_DIS_BLOCK_USR_DATA[] = {
@@ -377,64 +251,72 @@ static const esp_efuse_desc_t RD_DIS_BLOCK_SYS_DATA2[] = {
     {EFUSE_BLK0, 38, 1}, 	 // [RD_DIS.SYS_DATA_PART2] rd_dis of BLOCK_SYS_DATA2,
 };
 
-static const esp_efuse_desc_t SWAP_UART_SDIO_EN[] = {
-    {EFUSE_BLK0, 39, 1}, 	 // [] Represents whether pad of uart and sdio is swapped or not. 1: swapped. 0: not swapped,
-};
-
 static const esp_efuse_desc_t DIS_ICACHE[] = {
-    {EFUSE_BLK0, 40, 1}, 	 // [] Represents whether icache is disabled or enabled. 1: disabled. 0: enabled,
+    {EFUSE_BLK0, 40, 1}, 	 // [] Represents whether icache is disabled or enabled.\\ 1: disabled\\ 0: enabled,
 };
 
 static const esp_efuse_desc_t DIS_USB_JTAG[] = {
-    {EFUSE_BLK0, 41, 1}, 	 // [] Represents whether the function of usb switch to jtag is disabled or enabled. 1: disabled. 0: enabled,
-};
-
-static const esp_efuse_desc_t DIS_DOWNLOAD_ICACHE[] = {
-    {EFUSE_BLK0, 42, 1}, 	 // [] Represents whether icache is disabled or enabled in Download mode. 1: disabled. 0: enabled,
-};
-
-static const esp_efuse_desc_t DIS_USB_SERIAL_JTAG[] = {
-    {EFUSE_BLK0, 43, 1}, 	 // [] Represents whether USB-Serial-JTAG is disabled or enabled. 1: disabled. 0: enabled,
+    {EFUSE_BLK0, 41, 1}, 	 // [] Represents whether the function of usb switch to jtag is disabled or enabled.\\ 1: disabled\\ 0: enabled,
 };
 
 static const esp_efuse_desc_t DIS_FORCE_DOWNLOAD[] = {
-    {EFUSE_BLK0, 44, 1}, 	 // [] Represents whether the function that forces chip into download mode is disabled or enabled. 1: disabled. 0: enabled,
+    {EFUSE_BLK0, 44, 1}, 	 // [] Represents whether the function that forces chip into download mode is disabled or enabled.\\ 1: disabled\\ 0: enabled,
 };
 
 static const esp_efuse_desc_t SPI_DOWNLOAD_MSPI_DIS[] = {
-    {EFUSE_BLK0, 45, 1}, 	 // [] Represents whether SPI0 controller during boot_mode_download is disabled or enabled. 1: disabled. 0: enabled,
+    {EFUSE_BLK0, 45, 1}, 	 // [] Represents whether SPI0 controller during boot_mode_download is disabled or enabled.\\ 1: disabled\\ 0: enabled,
 };
 
 static const esp_efuse_desc_t DIS_TWAI[] = {
-    {EFUSE_BLK0, 46, 1}, 	 // [DIS_CAN] Represents whether TWAI function is disabled or enabled. 1: disabled. 0: enabled,
+    {EFUSE_BLK0, 46, 1}, 	 // [] Represents whether TWAI function is disabled or enabled.\\ 1: disabled\\ 0: enabled,
 };
 
 static const esp_efuse_desc_t JTAG_SEL_ENABLE[] = {
-    {EFUSE_BLK0, 47, 1}, 	 // [] Represents whether the selection between usb_to_jtag and pad_to_jtag through strapping gpio15 when both EFUSE_DIS_PAD_JTAG and EFUSE_DIS_USB_JTAG are equal to 0 is enabled or disabled. 1: enabled. 0: disabled,
+    {EFUSE_BLK0, 47, 1}, 	 // [] Represents whether the selection between usb_to_jtag and pad_to_jtag through strapping gpio15 when both EFUSE_DIS_PAD_JTAG and EFUSE_DIS_USB_JTAG are equal to 0 is enabled or disabled.\\ 1: enabled\\ 0: disabled,
 };
 
 static const esp_efuse_desc_t SOFT_DIS_JTAG[] = {
-    {EFUSE_BLK0, 48, 3}, 	 // [] Represents whether JTAG is disabled in soft way. Odd number: disabled. Even number: enabled,
+    {EFUSE_BLK0, 48, 3}, 	 // [] Represents whether JTAG is disabled in soft way.\\ Odd number: disabled\\ Even number: enabled,
 };
 
 static const esp_efuse_desc_t DIS_PAD_JTAG[] = {
-    {EFUSE_BLK0, 51, 1}, 	 // [] Represents whether JTAG is disabled in the hard way(permanently). 1: disabled. 0: enabled,
+    {EFUSE_BLK0, 51, 1}, 	 // [] Represents whether JTAG is disabled in the hard way(permanently).\\ 1: disabled\\ 0: enabled,
 };
 
 static const esp_efuse_desc_t DIS_DOWNLOAD_MANUAL_ENCRYPT[] = {
-    {EFUSE_BLK0, 52, 1}, 	 // [] Represents whether flash encrypt function is disabled or enabled(except in SPI boot mode). 1: disabled. 0: enabled,
+    {EFUSE_BLK0, 52, 1}, 	 // [] Represents whether flash encrypt function is disabled or enabled(except in SPI boot mode).\\ 1: disabled\\ 0: enabled,
 };
 
 static const esp_efuse_desc_t USB_EXCHG_PINS[] = {
-    {EFUSE_BLK0, 57, 1}, 	 // [] Represents whether the D+ and D- pins is exchanged. 1: exchanged. 0: not exchanged,
+    {EFUSE_BLK0, 57, 1}, 	 // [] Represents whether the D+ and D- pins is exchanged.\\ 1: exchanged\\ 0: not exchanged,
 };
 
 static const esp_efuse_desc_t VDD_SPI_AS_GPIO[] = {
-    {EFUSE_BLK0, 58, 1}, 	 // [] Represents whether vdd spi pin is functioned as gpio. 1: functioned. 0: not functioned,
+    {EFUSE_BLK0, 58, 1}, 	 // [] Represents whether vdd spi pin is functioned as gpio.\\ 1: functioned\\ 0: not functioned,
+};
+
+static const esp_efuse_desc_t KM_DISABLE_DEPLOY_MODE[] = {
+    {EFUSE_BLK0, 64, 4}, 	 // [] Represents whether the deploy mode of key manager is disable or not. \\ 1: disabled \\ 0: enabled.,
+};
+
+static const esp_efuse_desc_t KM_RND_SWITCH_CYCLE[] = {
+    {EFUSE_BLK0, 68, 2}, 	 // [] Set the bits to control key manager random number switch cycle. 0: control by register. 1: 8 km clk cycles. 2: 16 km cycles. 3: 32 km cycles,
+};
+
+static const esp_efuse_desc_t KM_DEPLOY_ONLY_ONCE[] = {
+    {EFUSE_BLK0, 70, 4}, 	 // [] Set each bit to control whether corresponding key can only be deployed once. 1 is true; 0 is false. bit 0: ecsda; bit 1: xts; bit2: hmac; bit3: ds,
+};
+
+static const esp_efuse_desc_t FORCE_USE_KEY_MANAGER_KEY[] = {
+    {EFUSE_BLK0, 74, 4}, 	 // [] Set each bit to control whether corresponding key must come from key manager. 1 is true; 0 is false. bit 0: ecsda; bit 1: xts; bit2: hmac; bit3: ds,
+};
+
+static const esp_efuse_desc_t FORCE_DISABLE_SW_INIT_KEY[] = {
+    {EFUSE_BLK0, 78, 1}, 	 // [] Set this bit to disable software written init key; and force use efuse_init_key,
 };
 
 static const esp_efuse_desc_t WDT_DELAY_SEL[] = {
-    {EFUSE_BLK0, 80, 2}, 	 // [] Represents whether RTC watchdog timeout threshold is selected at startup. 1: selected. 0: not selected,
+    {EFUSE_BLK0, 80, 2}, 	 // [] Represents the threshold level of the RTC watchdog STG0 timeout.\\ 0: Original threshold configuration value of STG0 *2 \\1: Original threshold configuration value of STG0 *4 \\2: Original threshold configuration value of STG0 *8 \\3: Original threshold configuration value of STG0 *16,
 };
 
 static const esp_efuse_desc_t SPI_BOOT_CRYPT_CNT[] = {
@@ -478,19 +360,19 @@ static const esp_efuse_desc_t KEY_PURPOSE_5[] = {
 };
 
 static const esp_efuse_desc_t SEC_DPA_LEVEL[] = {
-    {EFUSE_BLK0, 112, 2}, 	 // [DPA_SEC_LEVEL] Represents the spa secure level by configuring the clock random divide mode,
-};
-
-static const esp_efuse_desc_t CRYPT_DPA_ENABLE[] = {
-    {EFUSE_BLK0, 114, 1}, 	 // [] Represents whether anti-dpa attack is enabled. 1:enabled. 0: disabled,
+    {EFUSE_BLK0, 112, 2}, 	 // [] Represents the spa secure level by configuring the clock random divide mode,
 };
 
 static const esp_efuse_desc_t SECURE_BOOT_EN[] = {
-    {EFUSE_BLK0, 116, 1}, 	 // [] Represents whether secure boot is enabled or disabled. 1: enabled. 0: disabled,
+    {EFUSE_BLK0, 116, 1}, 	 // [] Represents whether secure boot is enabled or disabled.\\ 1: enabled\\ 0: disabled,
 };
 
 static const esp_efuse_desc_t SECURE_BOOT_AGGRESSIVE_REVOKE[] = {
-    {EFUSE_BLK0, 117, 1}, 	 // [] Represents whether revoking aggressive secure boot is enabled or disabled. 1: enabled. 0: disabled,
+    {EFUSE_BLK0, 117, 1}, 	 // [] Represents whether revoking aggressive secure boot is enabled or disabled.\\ 1: enabled.\\ 0: disabled,
+};
+
+static const esp_efuse_desc_t KM_XTS_KEY_LENGTH_256[] = {
+    {EFUSE_BLK0, 123, 1}, 	 // [] Set this bitto configure flash encryption use xts-128 key. else use xts-256 key,
 };
 
 static const esp_efuse_desc_t FLASH_TPUW[] = {
@@ -498,23 +380,27 @@ static const esp_efuse_desc_t FLASH_TPUW[] = {
 };
 
 static const esp_efuse_desc_t DIS_DOWNLOAD_MODE[] = {
-    {EFUSE_BLK0, 128, 1}, 	 // [] Represents whether Download mode is disabled or enabled. 1: disabled. 0: enabled,
+    {EFUSE_BLK0, 128, 1}, 	 // [] Represents whether Download mode is disabled or enabled.\\ 1: disabled\\ 0: enabled,
 };
 
 static const esp_efuse_desc_t DIS_DIRECT_BOOT[] = {
-    {EFUSE_BLK0, 129, 1}, 	 // [] Represents whether direct boot mode is disabled or enabled. 1: disabled. 0: enabled,
+    {EFUSE_BLK0, 129, 1}, 	 // [] Represents whether direct boot mode is disabled or enabled.\\ 1: disabled\\ 0: enabled,
 };
 
 static const esp_efuse_desc_t DIS_USB_SERIAL_JTAG_ROM_PRINT[] = {
-    {EFUSE_BLK0, 130, 1}, 	 // [DIS_USB_PRINT] Represents whether print from USB-Serial-JTAG is disabled or enabled. 1: disabled. 0: enabled,
+    {EFUSE_BLK0, 130, 1}, 	 // [] Represents whether print from USB-Serial-JTAG is disabled or enabled.\\ 1: disabled\\ 0: enabled,
+};
+
+static const esp_efuse_desc_t LOCK_KM_KEY[] = {
+    {EFUSE_BLK0, 131, 1}, 	 // [] Represetns whether to lock the efuse xts key.\\ 1. Lock\\ 0: Unlock,
 };
 
 static const esp_efuse_desc_t DIS_USB_SERIAL_JTAG_DOWNLOAD_MODE[] = {
-    {EFUSE_BLK0, 132, 1}, 	 // [] Represents whether the USB-Serial-JTAG download function is disabled or enabled. 1: disabled. 0: enabled,
+    {EFUSE_BLK0, 132, 1}, 	 // [] Represents whether the USB-Serial-JTAG download function is disabled or enabled.\\ 1: Disable\\ 0: Enable,
 };
 
 static const esp_efuse_desc_t ENABLE_SECURITY_DOWNLOAD[] = {
-    {EFUSE_BLK0, 133, 1}, 	 // [] Represents whether security download is enabled or disabled. 1: enabled. 0: disabled,
+    {EFUSE_BLK0, 133, 1}, 	 // [] Represents whether security download is enabled or disabled.\\ 1: enabled\\ 0: disabled,
 };
 
 static const esp_efuse_desc_t UART_PRINT_CONTROL[] = {
@@ -522,23 +408,47 @@ static const esp_efuse_desc_t UART_PRINT_CONTROL[] = {
 };
 
 static const esp_efuse_desc_t FORCE_SEND_RESUME[] = {
-    {EFUSE_BLK0, 141, 1}, 	 // [] Represents whether ROM code is forced to send a resume command during SPI boot. 1: forced. 0:not forced,
+    {EFUSE_BLK0, 136, 1}, 	 // [] Represents whether ROM code is forced to send a resume command during SPI boot.\\ 1: forced\\ 0:not forced,
 };
 
 static const esp_efuse_desc_t SECURE_VERSION[] = {
-    {EFUSE_BLK0, 142, 16}, 	 // [] Represents the version used by ESP-IDF anti-rollback feature,
+    {EFUSE_BLK0, 137, 16}, 	 // [] Represents the version used by ESP-IDF anti-rollback feature,
 };
 
 static const esp_efuse_desc_t SECURE_BOOT_DISABLE_FAST_WAKE[] = {
-    {EFUSE_BLK0, 158, 1}, 	 // [] Represents whether FAST VERIFY ON WAKE is disabled or enabled when Secure Boot is enabled. 1: disabled. 0: enabled,
+    {EFUSE_BLK0, 153, 1}, 	 // [] Represents whether FAST VERIFY ON WAKE is disabled or enabled when Secure Boot is enabled.\\ 1: disabled\\ 0: enabled,
 };
 
-static const esp_efuse_desc_t DISABLE_WAFER_VERSION_MAJOR[] = {
-    {EFUSE_BLK0, 160, 1}, 	 // [] Disables check of wafer version major,
+static const esp_efuse_desc_t HYS_EN_PAD[] = {
+    {EFUSE_BLK0, 154, 1}, 	 // [] Represents whether the hysteresis function of corresponding PAD is enabled.\\ 1: enabled\\ 0:disabled,
 };
 
-static const esp_efuse_desc_t DISABLE_BLK_VERSION_MAJOR[] = {
-    {EFUSE_BLK0, 161, 1}, 	 // [] Disables check of blk version major,
+static const esp_efuse_desc_t XTS_DPA_PSEUDO_LEVEL[] = {
+    {EFUSE_BLK0, 155, 2}, 	 // [] Represents the pseudo round level of xts-aes anti-dpa attack.\\ 3: High.\\ 2: Moderate 1. Low\\ 0: Disabled,
+};
+
+static const esp_efuse_desc_t XTS_DPA_CLK_ENABLE[] = {
+    {EFUSE_BLK0, 157, 1}, 	 // [] Represents whether xts-aes anti-dpa attack clock is enabled.\\ 1. Enable.\\ 0: Disable.,
+};
+
+static const esp_efuse_desc_t HUK_GEN_STATE[] = {
+    {EFUSE_BLK0, 160, 9}, 	 // [] Set the bits to control validation of HUK generate mode.\\ Odd of 1 is invalid.\\ Even of 1 is valid.,
+};
+
+static const esp_efuse_desc_t XTAL_48M_SEL[] = {
+    {EFUSE_BLK0, 169, 3}, 	 // [] Represents whether XTAL frequency is 48MHz or not. If not; 40MHz XTAL will be used. If this field contains Odd number bit 1: Enable 48MHz XTAL\ Even number bit 1: Enable 40MHz XTAL,
+};
+
+static const esp_efuse_desc_t XTAL_48M_SEL_MODE[] = {
+    {EFUSE_BLK0, 172, 1}, 	 // [] Specify the XTAL frequency selection is decided by eFuse or strapping-PAD-state. 1: eFuse\\ 0: strapping-PAD-state,
+};
+
+static const esp_efuse_desc_t ECDSA_DISABLE_P192[] = {
+    {EFUSE_BLK0, 173, 1}, 	 // [] Represents whether to disable P192 curve in ECDSA.\\ 1: Disabled.\\ 0: Not disable,
+};
+
+static const esp_efuse_desc_t ECC_FORCE_CONST_TIME[] = {
+    {EFUSE_BLK0, 174, 1}, 	 // [] Represents whether to force ecc to use const-time calculation mode. \\ 1: Enable. \\ 0: Disable,
 };
 
 static const esp_efuse_desc_t MAC[] = {
@@ -551,112 +461,11 @@ static const esp_efuse_desc_t MAC[] = {
 };
 
 static const esp_efuse_desc_t MAC_EXT[] = {
-    {EFUSE_BLK1, 56, 8}, 	 // [] Stores the extended bits of MAC address,
-    {EFUSE_BLK1, 48, 8}, 	 // [] Stores the extended bits of MAC address,
+    {EFUSE_BLK1, 48, 16}, 	 // [] Represents the extended bits of MAC address,
 };
 
-static const esp_efuse_desc_t WAFER_VERSION_MINOR[] = {
-    {EFUSE_BLK1, 114, 4}, 	 // [],
-};
-
-static const esp_efuse_desc_t WAFER_VERSION_MAJOR[] = {
-    {EFUSE_BLK1, 118, 2}, 	 // [],
-};
-
-static const esp_efuse_desc_t PKG_VERSION[] = {
-    {EFUSE_BLK1, 120, 3}, 	 // [] Package version,
-};
-
-static const esp_efuse_desc_t BLK_VERSION_MINOR[] = {
-    {EFUSE_BLK1, 123, 3}, 	 // [] BLK_VERSION_MINOR of BLOCK2,
-};
-
-static const esp_efuse_desc_t BLK_VERSION_MAJOR[] = {
-    {EFUSE_BLK1, 126, 2}, 	 // [] BLK_VERSION_MAJOR of BLOCK2,
-};
-
-static const esp_efuse_desc_t FLASH_CAP[] = {
-    {EFUSE_BLK1, 128, 3}, 	 // [],
-};
-
-static const esp_efuse_desc_t FLASH_TEMP[] = {
-    {EFUSE_BLK1, 131, 2}, 	 // [],
-};
-
-static const esp_efuse_desc_t FLASH_VENDOR[] = {
-    {EFUSE_BLK1, 133, 3}, 	 // [],
-};
-
-static const esp_efuse_desc_t OPTIONAL_UNIQUE_ID[] = {
-    {EFUSE_BLK2, 0, 128}, 	 // [] Optional unique 128-bit ID,
-};
-
-static const esp_efuse_desc_t TEMP_CALIB[] = {
-    {EFUSE_BLK2, 128, 9}, 	 // [] Temperature calibration data,
-};
-
-static const esp_efuse_desc_t OCODE[] = {
-    {EFUSE_BLK2, 137, 8}, 	 // [] ADC OCode,
-};
-
-static const esp_efuse_desc_t ADC1_INIT_CODE_ATTEN0[] = {
-    {EFUSE_BLK2, 145, 10}, 	 // [] ADC1 init code at atten0,
-};
-
-static const esp_efuse_desc_t ADC1_INIT_CODE_ATTEN1[] = {
-    {EFUSE_BLK2, 155, 10}, 	 // [] ADC1 init code at atten1,
-};
-
-static const esp_efuse_desc_t ADC1_INIT_CODE_ATTEN2[] = {
-    {EFUSE_BLK2, 165, 10}, 	 // [] ADC1 init code at atten2,
-};
-
-static const esp_efuse_desc_t ADC1_INIT_CODE_ATTEN3[] = {
-    {EFUSE_BLK2, 175, 10}, 	 // [] ADC1 init code at atten3,
-};
-
-static const esp_efuse_desc_t ADC1_CAL_VOL_ATTEN0[] = {
-    {EFUSE_BLK2, 185, 10}, 	 // [] ADC1 calibration voltage at atten0,
-};
-
-static const esp_efuse_desc_t ADC1_CAL_VOL_ATTEN1[] = {
-    {EFUSE_BLK2, 195, 10}, 	 // [] ADC1 calibration voltage at atten1,
-};
-
-static const esp_efuse_desc_t ADC1_CAL_VOL_ATTEN2[] = {
-    {EFUSE_BLK2, 205, 10}, 	 // [] ADC1 calibration voltage at atten2,
-};
-
-static const esp_efuse_desc_t ADC1_CAL_VOL_ATTEN3[] = {
-    {EFUSE_BLK2, 215, 10}, 	 // [] ADC1 calibration voltage at atten3,
-};
-
-static const esp_efuse_desc_t ADC1_INIT_CODE_ATTEN0_CH0[] = {
-    {EFUSE_BLK2, 225, 4}, 	 // [] ADC1 init code at atten0 ch0,
-};
-
-static const esp_efuse_desc_t ADC1_INIT_CODE_ATTEN0_CH1[] = {
-    {EFUSE_BLK2, 229, 4}, 	 // [] ADC1 init code at atten0 ch1,
-};
-
-static const esp_efuse_desc_t ADC1_INIT_CODE_ATTEN0_CH2[] = {
-    {EFUSE_BLK2, 233, 4}, 	 // [] ADC1 init code at atten0 ch2,
-};
-
-static const esp_efuse_desc_t ADC1_INIT_CODE_ATTEN0_CH3[] = {
-    {EFUSE_BLK2, 237, 4}, 	 // [] ADC1 init code at atten0 ch3,
-};
-
-static const esp_efuse_desc_t ADC1_INIT_CODE_ATTEN0_CH4[] = {
-    {EFUSE_BLK2, 241, 4}, 	 // [] ADC1 init code at atten0 ch4,
-};
-
-static const esp_efuse_desc_t ADC1_INIT_CODE_ATTEN0_CH5[] = {
-    {EFUSE_BLK2, 245, 4}, 	 // [] ADC1 init code at atten0 ch5,
-};
-
-static const esp_efuse_desc_t ADC1_INIT_CODE_ATTEN0_CH6[] = {
-    {EFUSE_BLK2, 249, 4}, 	 // [] ADC1 init code at atten0 ch6,
+static const esp_efuse_desc_t BLOCK_SYS_DATA1[] = {
+    {EFUSE_BLK2, 0, 256}, 	 // [] System data part 1 (reserved),
 };
 
 static const esp_efuse_desc_t USER_DATA[] = {
@@ -709,16 +518,6 @@ const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_RD_DIS[] = {
     NULL
 };
 
-const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_CRYPT_DPA_ENABLE[] = {
-    &WR_DIS_CRYPT_DPA_ENABLE[0],    		// [] wr_dis of CRYPT_DPA_ENABLE
-    NULL
-};
-
-const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_SWAP_UART_SDIO_EN[] = {
-    &WR_DIS_SWAP_UART_SDIO_EN[0],    		// [] wr_dis of SWAP_UART_SDIO_EN
-    NULL
-};
-
 const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_DIS_ICACHE[] = {
     &WR_DIS_DIS_ICACHE[0],    		// [] wr_dis of DIS_ICACHE
     NULL
@@ -729,23 +528,13 @@ const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_DIS_USB_JTAG[] = {
     NULL
 };
 
-const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_DIS_DOWNLOAD_ICACHE[] = {
-    &WR_DIS_DIS_DOWNLOAD_ICACHE[0],    		// [] wr_dis of DIS_DOWNLOAD_ICACHE
-    NULL
-};
-
-const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_DIS_USB_SERIAL_JTAG[] = {
-    &WR_DIS_DIS_USB_SERIAL_JTAG[0],    		// [] wr_dis of DIS_USB_SERIAL_JTAG
-    NULL
-};
-
 const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_DIS_FORCE_DOWNLOAD[] = {
     &WR_DIS_DIS_FORCE_DOWNLOAD[0],    		// [] wr_dis of DIS_FORCE_DOWNLOAD
     NULL
 };
 
 const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_DIS_TWAI[] = {
-    &WR_DIS_DIS_TWAI[0],    		// [WR_DIS.DIS_CAN] wr_dis of DIS_TWAI
+    &WR_DIS_DIS_TWAI[0],    		// [] wr_dis of DIS_TWAI
     NULL
 };
 
@@ -820,7 +609,7 @@ const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_KEY_PURPOSE_5[] = {
 };
 
 const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_SEC_DPA_LEVEL[] = {
-    &WR_DIS_SEC_DPA_LEVEL[0],    		// [WR_DIS.DPA_SEC_LEVEL] wr_dis of SEC_DPA_LEVEL
+    &WR_DIS_SEC_DPA_LEVEL[0],    		// [] wr_dis of SEC_DPA_LEVEL
     NULL
 };
 
@@ -855,7 +644,7 @@ const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_DIS_DIRECT_BOOT[] = {
 };
 
 const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_DIS_USB_SERIAL_JTAG_ROM_PRINT[] = {
-    &WR_DIS_DIS_USB_SERIAL_JTAG_ROM_PRINT[0],    		// [WR_DIS.DIS_USB_PRINT] wr_dis of DIS_USB_SERIAL_JTAG_ROM_PRINT
+    &WR_DIS_DIS_USB_SERIAL_JTAG_ROM_PRINT[0],    		// [] wr_dis of DIS_USB_SERIAL_JTAG_ROM_PRINT
     NULL
 };
 
@@ -889,16 +678,6 @@ const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_SECURE_BOOT_DISABLE_FAST_WAKE[] = {
     NULL
 };
 
-const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_DISABLE_WAFER_VERSION_MAJOR[] = {
-    &WR_DIS_DISABLE_WAFER_VERSION_MAJOR[0],    		// [] wr_dis of DISABLE_WAFER_VERSION_MAJOR
-    NULL
-};
-
-const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_DISABLE_BLK_VERSION_MAJOR[] = {
-    &WR_DIS_DISABLE_BLK_VERSION_MAJOR[0],    		// [] wr_dis of DISABLE_BLK_VERSION_MAJOR
-    NULL
-};
-
 const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_BLK1[] = {
     &WR_DIS_BLK1[0],    		// [] wr_dis of BLOCK1
     NULL
@@ -914,138 +693,13 @@ const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_MAC_EXT[] = {
     NULL
 };
 
-const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_WAFER_VERSION_MINOR[] = {
-    &WR_DIS_WAFER_VERSION_MINOR[0],    		// [] wr_dis of WAFER_VERSION_MINOR
-    NULL
-};
-
-const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_WAFER_VERSION_MAJOR[] = {
-    &WR_DIS_WAFER_VERSION_MAJOR[0],    		// [] wr_dis of WAFER_VERSION_MAJOR
-    NULL
-};
-
-const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_PKG_VERSION[] = {
-    &WR_DIS_PKG_VERSION[0],    		// [] wr_dis of PKG_VERSION
-    NULL
-};
-
-const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_BLK_VERSION_MINOR[] = {
-    &WR_DIS_BLK_VERSION_MINOR[0],    		// [] wr_dis of BLK_VERSION_MINOR
-    NULL
-};
-
-const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_BLK_VERSION_MAJOR[] = {
-    &WR_DIS_BLK_VERSION_MAJOR[0],    		// [] wr_dis of BLK_VERSION_MAJOR
-    NULL
-};
-
-const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_FLASH_CAP[] = {
-    &WR_DIS_FLASH_CAP[0],    		// [] wr_dis of FLASH_CAP
-    NULL
-};
-
-const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_FLASH_TEMP[] = {
-    &WR_DIS_FLASH_TEMP[0],    		// [] wr_dis of FLASH_TEMP
-    NULL
-};
-
-const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_FLASH_VENDOR[] = {
-    &WR_DIS_FLASH_VENDOR[0],    		// [] wr_dis of FLASH_VENDOR
-    NULL
-};
-
 const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_SYS_DATA_PART1[] = {
     &WR_DIS_SYS_DATA_PART1[0],    		// [] wr_dis of BLOCK2
     NULL
 };
 
-const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_OPTIONAL_UNIQUE_ID[] = {
-    &WR_DIS_OPTIONAL_UNIQUE_ID[0],    		// [] wr_dis of OPTIONAL_UNIQUE_ID
-    NULL
-};
-
-const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_TEMP_CALIB[] = {
-    &WR_DIS_TEMP_CALIB[0],    		// [] wr_dis of TEMP_CALIB
-    NULL
-};
-
-const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_OCODE[] = {
-    &WR_DIS_OCODE[0],    		// [] wr_dis of OCODE
-    NULL
-};
-
-const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC1_INIT_CODE_ATTEN0[] = {
-    &WR_DIS_ADC1_INIT_CODE_ATTEN0[0],    		// [] wr_dis of ADC1_INIT_CODE_ATTEN0
-    NULL
-};
-
-const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC1_INIT_CODE_ATTEN1[] = {
-    &WR_DIS_ADC1_INIT_CODE_ATTEN1[0],    		// [] wr_dis of ADC1_INIT_CODE_ATTEN1
-    NULL
-};
-
-const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC1_INIT_CODE_ATTEN2[] = {
-    &WR_DIS_ADC1_INIT_CODE_ATTEN2[0],    		// [] wr_dis of ADC1_INIT_CODE_ATTEN2
-    NULL
-};
-
-const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC1_INIT_CODE_ATTEN3[] = {
-    &WR_DIS_ADC1_INIT_CODE_ATTEN3[0],    		// [] wr_dis of ADC1_INIT_CODE_ATTEN3
-    NULL
-};
-
-const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC1_CAL_VOL_ATTEN0[] = {
-    &WR_DIS_ADC1_CAL_VOL_ATTEN0[0],    		// [] wr_dis of ADC1_CAL_VOL_ATTEN0
-    NULL
-};
-
-const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC1_CAL_VOL_ATTEN1[] = {
-    &WR_DIS_ADC1_CAL_VOL_ATTEN1[0],    		// [] wr_dis of ADC1_CAL_VOL_ATTEN1
-    NULL
-};
-
-const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC1_CAL_VOL_ATTEN2[] = {
-    &WR_DIS_ADC1_CAL_VOL_ATTEN2[0],    		// [] wr_dis of ADC1_CAL_VOL_ATTEN2
-    NULL
-};
-
-const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC1_CAL_VOL_ATTEN3[] = {
-    &WR_DIS_ADC1_CAL_VOL_ATTEN3[0],    		// [] wr_dis of ADC1_CAL_VOL_ATTEN3
-    NULL
-};
-
-const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC1_INIT_CODE_ATTEN0_CH0[] = {
-    &WR_DIS_ADC1_INIT_CODE_ATTEN0_CH0[0],    		// [] wr_dis of ADC1_INIT_CODE_ATTEN0_CH0
-    NULL
-};
-
-const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC1_INIT_CODE_ATTEN0_CH1[] = {
-    &WR_DIS_ADC1_INIT_CODE_ATTEN0_CH1[0],    		// [] wr_dis of ADC1_INIT_CODE_ATTEN0_CH1
-    NULL
-};
-
-const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC1_INIT_CODE_ATTEN0_CH2[] = {
-    &WR_DIS_ADC1_INIT_CODE_ATTEN0_CH2[0],    		// [] wr_dis of ADC1_INIT_CODE_ATTEN0_CH2
-    NULL
-};
-
-const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC1_INIT_CODE_ATTEN0_CH3[] = {
-    &WR_DIS_ADC1_INIT_CODE_ATTEN0_CH3[0],    		// [] wr_dis of ADC1_INIT_CODE_ATTEN0_CH3
-    NULL
-};
-
-const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC1_INIT_CODE_ATTEN0_CH4[] = {
-    &WR_DIS_ADC1_INIT_CODE_ATTEN0_CH4[0],    		// [] wr_dis of ADC1_INIT_CODE_ATTEN0_CH4
-    NULL
-};
-
-const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC1_INIT_CODE_ATTEN0_CH5[] = {
-    &WR_DIS_ADC1_INIT_CODE_ATTEN0_CH5[0],    		// [] wr_dis of ADC1_INIT_CODE_ATTEN0_CH5
-    NULL
-};
-
-const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC1_INIT_CODE_ATTEN0_CH6[] = {
-    &WR_DIS_ADC1_INIT_CODE_ATTEN0_CH6[0],    		// [] wr_dis of ADC1_INIT_CODE_ATTEN0_CH6
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_BLOCK_SYS_DATA1[] = {
+    &WR_DIS_BLOCK_SYS_DATA1[0],    		// [] wr_dis of BLOCK_SYS_DATA1
     NULL
 };
 
@@ -1149,78 +803,88 @@ const esp_efuse_desc_t* ESP_EFUSE_RD_DIS_BLOCK_SYS_DATA2[] = {
     NULL
 };
 
-const esp_efuse_desc_t* ESP_EFUSE_SWAP_UART_SDIO_EN[] = {
-    &SWAP_UART_SDIO_EN[0],    		// [] Represents whether pad of uart and sdio is swapped or not. 1: swapped. 0: not swapped
-    NULL
-};
-
 const esp_efuse_desc_t* ESP_EFUSE_DIS_ICACHE[] = {
-    &DIS_ICACHE[0],    		// [] Represents whether icache is disabled or enabled. 1: disabled. 0: enabled
+    &DIS_ICACHE[0],    		// [] Represents whether icache is disabled or enabled.\\ 1: disabled\\ 0: enabled
     NULL
 };
 
 const esp_efuse_desc_t* ESP_EFUSE_DIS_USB_JTAG[] = {
-    &DIS_USB_JTAG[0],    		// [] Represents whether the function of usb switch to jtag is disabled or enabled. 1: disabled. 0: enabled
-    NULL
-};
-
-const esp_efuse_desc_t* ESP_EFUSE_DIS_DOWNLOAD_ICACHE[] = {
-    &DIS_DOWNLOAD_ICACHE[0],    		// [] Represents whether icache is disabled or enabled in Download mode. 1: disabled. 0: enabled
-    NULL
-};
-
-const esp_efuse_desc_t* ESP_EFUSE_DIS_USB_SERIAL_JTAG[] = {
-    &DIS_USB_SERIAL_JTAG[0],    		// [] Represents whether USB-Serial-JTAG is disabled or enabled. 1: disabled. 0: enabled
+    &DIS_USB_JTAG[0],    		// [] Represents whether the function of usb switch to jtag is disabled or enabled.\\ 1: disabled\\ 0: enabled
     NULL
 };
 
 const esp_efuse_desc_t* ESP_EFUSE_DIS_FORCE_DOWNLOAD[] = {
-    &DIS_FORCE_DOWNLOAD[0],    		// [] Represents whether the function that forces chip into download mode is disabled or enabled. 1: disabled. 0: enabled
+    &DIS_FORCE_DOWNLOAD[0],    		// [] Represents whether the function that forces chip into download mode is disabled or enabled.\\ 1: disabled\\ 0: enabled
     NULL
 };
 
 const esp_efuse_desc_t* ESP_EFUSE_SPI_DOWNLOAD_MSPI_DIS[] = {
-    &SPI_DOWNLOAD_MSPI_DIS[0],    		// [] Represents whether SPI0 controller during boot_mode_download is disabled or enabled. 1: disabled. 0: enabled
+    &SPI_DOWNLOAD_MSPI_DIS[0],    		// [] Represents whether SPI0 controller during boot_mode_download is disabled or enabled.\\ 1: disabled\\ 0: enabled
     NULL
 };
 
 const esp_efuse_desc_t* ESP_EFUSE_DIS_TWAI[] = {
-    &DIS_TWAI[0],    		// [DIS_CAN] Represents whether TWAI function is disabled or enabled. 1: disabled. 0: enabled
+    &DIS_TWAI[0],    		// [] Represents whether TWAI function is disabled or enabled.\\ 1: disabled\\ 0: enabled
     NULL
 };
 
 const esp_efuse_desc_t* ESP_EFUSE_JTAG_SEL_ENABLE[] = {
-    &JTAG_SEL_ENABLE[0],    		// [] Represents whether the selection between usb_to_jtag and pad_to_jtag through strapping gpio15 when both EFUSE_DIS_PAD_JTAG and EFUSE_DIS_USB_JTAG are equal to 0 is enabled or disabled. 1: enabled. 0: disabled
+    &JTAG_SEL_ENABLE[0],    		// [] Represents whether the selection between usb_to_jtag and pad_to_jtag through strapping gpio15 when both EFUSE_DIS_PAD_JTAG and EFUSE_DIS_USB_JTAG are equal to 0 is enabled or disabled.\\ 1: enabled\\ 0: disabled
     NULL
 };
 
 const esp_efuse_desc_t* ESP_EFUSE_SOFT_DIS_JTAG[] = {
-    &SOFT_DIS_JTAG[0],    		// [] Represents whether JTAG is disabled in soft way. Odd number: disabled. Even number: enabled
+    &SOFT_DIS_JTAG[0],    		// [] Represents whether JTAG is disabled in soft way.\\ Odd number: disabled\\ Even number: enabled
     NULL
 };
 
 const esp_efuse_desc_t* ESP_EFUSE_DIS_PAD_JTAG[] = {
-    &DIS_PAD_JTAG[0],    		// [] Represents whether JTAG is disabled in the hard way(permanently). 1: disabled. 0: enabled
+    &DIS_PAD_JTAG[0],    		// [] Represents whether JTAG is disabled in the hard way(permanently).\\ 1: disabled\\ 0: enabled
     NULL
 };
 
 const esp_efuse_desc_t* ESP_EFUSE_DIS_DOWNLOAD_MANUAL_ENCRYPT[] = {
-    &DIS_DOWNLOAD_MANUAL_ENCRYPT[0],    		// [] Represents whether flash encrypt function is disabled or enabled(except in SPI boot mode). 1: disabled. 0: enabled
+    &DIS_DOWNLOAD_MANUAL_ENCRYPT[0],    		// [] Represents whether flash encrypt function is disabled or enabled(except in SPI boot mode).\\ 1: disabled\\ 0: enabled
     NULL
 };
 
 const esp_efuse_desc_t* ESP_EFUSE_USB_EXCHG_PINS[] = {
-    &USB_EXCHG_PINS[0],    		// [] Represents whether the D+ and D- pins is exchanged. 1: exchanged. 0: not exchanged
+    &USB_EXCHG_PINS[0],    		// [] Represents whether the D+ and D- pins is exchanged.\\ 1: exchanged\\ 0: not exchanged
     NULL
 };
 
 const esp_efuse_desc_t* ESP_EFUSE_VDD_SPI_AS_GPIO[] = {
-    &VDD_SPI_AS_GPIO[0],    		// [] Represents whether vdd spi pin is functioned as gpio. 1: functioned. 0: not functioned
+    &VDD_SPI_AS_GPIO[0],    		// [] Represents whether vdd spi pin is functioned as gpio.\\ 1: functioned\\ 0: not functioned
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_KM_DISABLE_DEPLOY_MODE[] = {
+    &KM_DISABLE_DEPLOY_MODE[0],    		// [] Represents whether the deploy mode of key manager is disable or not. \\ 1: disabled \\ 0: enabled.
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_KM_RND_SWITCH_CYCLE[] = {
+    &KM_RND_SWITCH_CYCLE[0],    		// [] Set the bits to control key manager random number switch cycle. 0: control by register. 1: 8 km clk cycles. 2: 16 km cycles. 3: 32 km cycles
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_KM_DEPLOY_ONLY_ONCE[] = {
+    &KM_DEPLOY_ONLY_ONCE[0],    		// [] Set each bit to control whether corresponding key can only be deployed once. 1 is true; 0 is false. bit 0: ecsda; bit 1: xts; bit2: hmac; bit3: ds
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_FORCE_USE_KEY_MANAGER_KEY[] = {
+    &FORCE_USE_KEY_MANAGER_KEY[0],    		// [] Set each bit to control whether corresponding key must come from key manager. 1 is true; 0 is false. bit 0: ecsda; bit 1: xts; bit2: hmac; bit3: ds
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_FORCE_DISABLE_SW_INIT_KEY[] = {
+    &FORCE_DISABLE_SW_INIT_KEY[0],    		// [] Set this bit to disable software written init key; and force use efuse_init_key
     NULL
 };
 
 const esp_efuse_desc_t* ESP_EFUSE_WDT_DELAY_SEL[] = {
-    &WDT_DELAY_SEL[0],    		// [] Represents whether RTC watchdog timeout threshold is selected at startup. 1: selected. 0: not selected
+    &WDT_DELAY_SEL[0],    		// [] Represents the threshold level of the RTC watchdog STG0 timeout.\\ 0: Original threshold configuration value of STG0 *2 \\1: Original threshold configuration value of STG0 *4 \\2: Original threshold configuration value of STG0 *8 \\3: Original threshold configuration value of STG0 *16
     NULL
 };
 
@@ -1275,22 +939,22 @@ const esp_efuse_desc_t* ESP_EFUSE_KEY_PURPOSE_5[] = {
 };
 
 const esp_efuse_desc_t* ESP_EFUSE_SEC_DPA_LEVEL[] = {
-    &SEC_DPA_LEVEL[0],    		// [DPA_SEC_LEVEL] Represents the spa secure level by configuring the clock random divide mode
-    NULL
-};
-
-const esp_efuse_desc_t* ESP_EFUSE_CRYPT_DPA_ENABLE[] = {
-    &CRYPT_DPA_ENABLE[0],    		// [] Represents whether anti-dpa attack is enabled. 1:enabled. 0: disabled
+    &SEC_DPA_LEVEL[0],    		// [] Represents the spa secure level by configuring the clock random divide mode
     NULL
 };
 
 const esp_efuse_desc_t* ESP_EFUSE_SECURE_BOOT_EN[] = {
-    &SECURE_BOOT_EN[0],    		// [] Represents whether secure boot is enabled or disabled. 1: enabled. 0: disabled
+    &SECURE_BOOT_EN[0],    		// [] Represents whether secure boot is enabled or disabled.\\ 1: enabled\\ 0: disabled
     NULL
 };
 
 const esp_efuse_desc_t* ESP_EFUSE_SECURE_BOOT_AGGRESSIVE_REVOKE[] = {
-    &SECURE_BOOT_AGGRESSIVE_REVOKE[0],    		// [] Represents whether revoking aggressive secure boot is enabled or disabled. 1: enabled. 0: disabled
+    &SECURE_BOOT_AGGRESSIVE_REVOKE[0],    		// [] Represents whether revoking aggressive secure boot is enabled or disabled.\\ 1: enabled.\\ 0: disabled
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_KM_XTS_KEY_LENGTH_256[] = {
+    &KM_XTS_KEY_LENGTH_256[0],    		// [] Set this bitto configure flash encryption use xts-128 key. else use xts-256 key
     NULL
 };
 
@@ -1300,27 +964,32 @@ const esp_efuse_desc_t* ESP_EFUSE_FLASH_TPUW[] = {
 };
 
 const esp_efuse_desc_t* ESP_EFUSE_DIS_DOWNLOAD_MODE[] = {
-    &DIS_DOWNLOAD_MODE[0],    		// [] Represents whether Download mode is disabled or enabled. 1: disabled. 0: enabled
+    &DIS_DOWNLOAD_MODE[0],    		// [] Represents whether Download mode is disabled or enabled.\\ 1: disabled\\ 0: enabled
     NULL
 };
 
 const esp_efuse_desc_t* ESP_EFUSE_DIS_DIRECT_BOOT[] = {
-    &DIS_DIRECT_BOOT[0],    		// [] Represents whether direct boot mode is disabled or enabled. 1: disabled. 0: enabled
+    &DIS_DIRECT_BOOT[0],    		// [] Represents whether direct boot mode is disabled or enabled.\\ 1: disabled\\ 0: enabled
     NULL
 };
 
 const esp_efuse_desc_t* ESP_EFUSE_DIS_USB_SERIAL_JTAG_ROM_PRINT[] = {
-    &DIS_USB_SERIAL_JTAG_ROM_PRINT[0],    		// [DIS_USB_PRINT] Represents whether print from USB-Serial-JTAG is disabled or enabled. 1: disabled. 0: enabled
+    &DIS_USB_SERIAL_JTAG_ROM_PRINT[0],    		// [] Represents whether print from USB-Serial-JTAG is disabled or enabled.\\ 1: disabled\\ 0: enabled
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_LOCK_KM_KEY[] = {
+    &LOCK_KM_KEY[0],    		// [] Represetns whether to lock the efuse xts key.\\ 1. Lock\\ 0: Unlock
     NULL
 };
 
 const esp_efuse_desc_t* ESP_EFUSE_DIS_USB_SERIAL_JTAG_DOWNLOAD_MODE[] = {
-    &DIS_USB_SERIAL_JTAG_DOWNLOAD_MODE[0],    		// [] Represents whether the USB-Serial-JTAG download function is disabled or enabled. 1: disabled. 0: enabled
+    &DIS_USB_SERIAL_JTAG_DOWNLOAD_MODE[0],    		// [] Represents whether the USB-Serial-JTAG download function is disabled or enabled.\\ 1: Disable\\ 0: Enable
     NULL
 };
 
 const esp_efuse_desc_t* ESP_EFUSE_ENABLE_SECURITY_DOWNLOAD[] = {
-    &ENABLE_SECURITY_DOWNLOAD[0],    		// [] Represents whether security download is enabled or disabled. 1: enabled. 0: disabled
+    &ENABLE_SECURITY_DOWNLOAD[0],    		// [] Represents whether security download is enabled or disabled.\\ 1: enabled\\ 0: disabled
     NULL
 };
 
@@ -1330,7 +999,7 @@ const esp_efuse_desc_t* ESP_EFUSE_UART_PRINT_CONTROL[] = {
 };
 
 const esp_efuse_desc_t* ESP_EFUSE_FORCE_SEND_RESUME[] = {
-    &FORCE_SEND_RESUME[0],    		// [] Represents whether ROM code is forced to send a resume command during SPI boot. 1: forced. 0:not forced
+    &FORCE_SEND_RESUME[0],    		// [] Represents whether ROM code is forced to send a resume command during SPI boot.\\ 1: forced\\ 0:not forced
     NULL
 };
 
@@ -1340,17 +1009,47 @@ const esp_efuse_desc_t* ESP_EFUSE_SECURE_VERSION[] = {
 };
 
 const esp_efuse_desc_t* ESP_EFUSE_SECURE_BOOT_DISABLE_FAST_WAKE[] = {
-    &SECURE_BOOT_DISABLE_FAST_WAKE[0],    		// [] Represents whether FAST VERIFY ON WAKE is disabled or enabled when Secure Boot is enabled. 1: disabled. 0: enabled
+    &SECURE_BOOT_DISABLE_FAST_WAKE[0],    		// [] Represents whether FAST VERIFY ON WAKE is disabled or enabled when Secure Boot is enabled.\\ 1: disabled\\ 0: enabled
     NULL
 };
 
-const esp_efuse_desc_t* ESP_EFUSE_DISABLE_WAFER_VERSION_MAJOR[] = {
-    &DISABLE_WAFER_VERSION_MAJOR[0],    		// [] Disables check of wafer version major
+const esp_efuse_desc_t* ESP_EFUSE_HYS_EN_PAD[] = {
+    &HYS_EN_PAD[0],    		// [] Represents whether the hysteresis function of corresponding PAD is enabled.\\ 1: enabled\\ 0:disabled
     NULL
 };
 
-const esp_efuse_desc_t* ESP_EFUSE_DISABLE_BLK_VERSION_MAJOR[] = {
-    &DISABLE_BLK_VERSION_MAJOR[0],    		// [] Disables check of blk version major
+const esp_efuse_desc_t* ESP_EFUSE_XTS_DPA_PSEUDO_LEVEL[] = {
+    &XTS_DPA_PSEUDO_LEVEL[0],    		// [] Represents the pseudo round level of xts-aes anti-dpa attack.\\ 3: High.\\ 2: Moderate 1. Low\\ 0: Disabled
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_XTS_DPA_CLK_ENABLE[] = {
+    &XTS_DPA_CLK_ENABLE[0],    		// [] Represents whether xts-aes anti-dpa attack clock is enabled.\\ 1. Enable.\\ 0: Disable.
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_HUK_GEN_STATE[] = {
+    &HUK_GEN_STATE[0],    		// [] Set the bits to control validation of HUK generate mode.\\ Odd of 1 is invalid.\\ Even of 1 is valid.
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_XTAL_48M_SEL[] = {
+    &XTAL_48M_SEL[0],    		// [] Represents whether XTAL frequency is 48MHz or not. If not; 40MHz XTAL will be used. If this field contains Odd number bit 1: Enable 48MHz XTAL\ Even number bit 1: Enable 40MHz XTAL
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_XTAL_48M_SEL_MODE[] = {
+    &XTAL_48M_SEL_MODE[0],    		// [] Specify the XTAL frequency selection is decided by eFuse or strapping-PAD-state. 1: eFuse\\ 0: strapping-PAD-state
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_ECDSA_DISABLE_P192[] = {
+    &ECDSA_DISABLE_P192[0],    		// [] Represents whether to disable P192 curve in ECDSA.\\ 1: Disabled.\\ 0: Not disable
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_ECC_FORCE_CONST_TIME[] = {
+    &ECC_FORCE_CONST_TIME[0],    		// [] Represents whether to force ecc to use const-time calculation mode. \\ 1: Enable. \\ 0: Disable
     NULL
 };
 
@@ -1365,138 +1064,12 @@ const esp_efuse_desc_t* ESP_EFUSE_MAC[] = {
 };
 
 const esp_efuse_desc_t* ESP_EFUSE_MAC_EXT[] = {
-    &MAC_EXT[0],    		// [] Stores the extended bits of MAC address
-    &MAC_EXT[1],    		// [] Stores the extended bits of MAC address
+    &MAC_EXT[0],    		// [] Represents the extended bits of MAC address
     NULL
 };
 
-const esp_efuse_desc_t* ESP_EFUSE_WAFER_VERSION_MINOR[] = {
-    &WAFER_VERSION_MINOR[0],    		// []
-    NULL
-};
-
-const esp_efuse_desc_t* ESP_EFUSE_WAFER_VERSION_MAJOR[] = {
-    &WAFER_VERSION_MAJOR[0],    		// []
-    NULL
-};
-
-const esp_efuse_desc_t* ESP_EFUSE_PKG_VERSION[] = {
-    &PKG_VERSION[0],    		// [] Package version
-    NULL
-};
-
-const esp_efuse_desc_t* ESP_EFUSE_BLK_VERSION_MINOR[] = {
-    &BLK_VERSION_MINOR[0],    		// [] BLK_VERSION_MINOR of BLOCK2
-    NULL
-};
-
-const esp_efuse_desc_t* ESP_EFUSE_BLK_VERSION_MAJOR[] = {
-    &BLK_VERSION_MAJOR[0],    		// [] BLK_VERSION_MAJOR of BLOCK2
-    NULL
-};
-
-const esp_efuse_desc_t* ESP_EFUSE_FLASH_CAP[] = {
-    &FLASH_CAP[0],    		// []
-    NULL
-};
-
-const esp_efuse_desc_t* ESP_EFUSE_FLASH_TEMP[] = {
-    &FLASH_TEMP[0],    		// []
-    NULL
-};
-
-const esp_efuse_desc_t* ESP_EFUSE_FLASH_VENDOR[] = {
-    &FLASH_VENDOR[0],    		// []
-    NULL
-};
-
-const esp_efuse_desc_t* ESP_EFUSE_OPTIONAL_UNIQUE_ID[] = {
-    &OPTIONAL_UNIQUE_ID[0],    		// [] Optional unique 128-bit ID
-    NULL
-};
-
-const esp_efuse_desc_t* ESP_EFUSE_TEMP_CALIB[] = {
-    &TEMP_CALIB[0],    		// [] Temperature calibration data
-    NULL
-};
-
-const esp_efuse_desc_t* ESP_EFUSE_OCODE[] = {
-    &OCODE[0],    		// [] ADC OCode
-    NULL
-};
-
-const esp_efuse_desc_t* ESP_EFUSE_ADC1_INIT_CODE_ATTEN0[] = {
-    &ADC1_INIT_CODE_ATTEN0[0],    		// [] ADC1 init code at atten0
-    NULL
-};
-
-const esp_efuse_desc_t* ESP_EFUSE_ADC1_INIT_CODE_ATTEN1[] = {
-    &ADC1_INIT_CODE_ATTEN1[0],    		// [] ADC1 init code at atten1
-    NULL
-};
-
-const esp_efuse_desc_t* ESP_EFUSE_ADC1_INIT_CODE_ATTEN2[] = {
-    &ADC1_INIT_CODE_ATTEN2[0],    		// [] ADC1 init code at atten2
-    NULL
-};
-
-const esp_efuse_desc_t* ESP_EFUSE_ADC1_INIT_CODE_ATTEN3[] = {
-    &ADC1_INIT_CODE_ATTEN3[0],    		// [] ADC1 init code at atten3
-    NULL
-};
-
-const esp_efuse_desc_t* ESP_EFUSE_ADC1_CAL_VOL_ATTEN0[] = {
-    &ADC1_CAL_VOL_ATTEN0[0],    		// [] ADC1 calibration voltage at atten0
-    NULL
-};
-
-const esp_efuse_desc_t* ESP_EFUSE_ADC1_CAL_VOL_ATTEN1[] = {
-    &ADC1_CAL_VOL_ATTEN1[0],    		// [] ADC1 calibration voltage at atten1
-    NULL
-};
-
-const esp_efuse_desc_t* ESP_EFUSE_ADC1_CAL_VOL_ATTEN2[] = {
-    &ADC1_CAL_VOL_ATTEN2[0],    		// [] ADC1 calibration voltage at atten2
-    NULL
-};
-
-const esp_efuse_desc_t* ESP_EFUSE_ADC1_CAL_VOL_ATTEN3[] = {
-    &ADC1_CAL_VOL_ATTEN3[0],    		// [] ADC1 calibration voltage at atten3
-    NULL
-};
-
-const esp_efuse_desc_t* ESP_EFUSE_ADC1_INIT_CODE_ATTEN0_CH0[] = {
-    &ADC1_INIT_CODE_ATTEN0_CH0[0],    		// [] ADC1 init code at atten0 ch0
-    NULL
-};
-
-const esp_efuse_desc_t* ESP_EFUSE_ADC1_INIT_CODE_ATTEN0_CH1[] = {
-    &ADC1_INIT_CODE_ATTEN0_CH1[0],    		// [] ADC1 init code at atten0 ch1
-    NULL
-};
-
-const esp_efuse_desc_t* ESP_EFUSE_ADC1_INIT_CODE_ATTEN0_CH2[] = {
-    &ADC1_INIT_CODE_ATTEN0_CH2[0],    		// [] ADC1 init code at atten0 ch2
-    NULL
-};
-
-const esp_efuse_desc_t* ESP_EFUSE_ADC1_INIT_CODE_ATTEN0_CH3[] = {
-    &ADC1_INIT_CODE_ATTEN0_CH3[0],    		// [] ADC1 init code at atten0 ch3
-    NULL
-};
-
-const esp_efuse_desc_t* ESP_EFUSE_ADC1_INIT_CODE_ATTEN0_CH4[] = {
-    &ADC1_INIT_CODE_ATTEN0_CH4[0],    		// [] ADC1 init code at atten0 ch4
-    NULL
-};
-
-const esp_efuse_desc_t* ESP_EFUSE_ADC1_INIT_CODE_ATTEN0_CH5[] = {
-    &ADC1_INIT_CODE_ATTEN0_CH5[0],    		// [] ADC1 init code at atten0 ch5
-    NULL
-};
-
-const esp_efuse_desc_t* ESP_EFUSE_ADC1_INIT_CODE_ATTEN0_CH6[] = {
-    &ADC1_INIT_CODE_ATTEN0_CH6[0],    		// [] ADC1 init code at atten0 ch6
+const esp_efuse_desc_t* ESP_EFUSE_BLOCK_SYS_DATA1[] = {
+    &BLOCK_SYS_DATA1[0],    		// [] System data part 1 (reserved)
     NULL
 };
 

@@ -168,6 +168,13 @@ extern "C" {
 #define EFUSE_RD_DIS_M  (EFUSE_RD_DIS_V << EFUSE_RD_DIS_S)
 #define EFUSE_RD_DIS_V  0x0000007FU
 #define EFUSE_RD_DIS_S  0
+/** EFUSE_RD_RESERVE_0_39 : RW; bitpos: [7]; default: 0;
+ *  Reserved, it was created by set_missed_fields_in_regs func
+ */
+#define EFUSE_RD_RESERVE_0_39    (BIT(7))
+#define EFUSE_RD_RESERVE_0_39_M  (EFUSE_RD_RESERVE_0_39_V << EFUSE_RD_RESERVE_0_39_S)
+#define EFUSE_RD_RESERVE_0_39_V  0x00000001U
+#define EFUSE_RD_RESERVE_0_39_S  7
 /** EFUSE_DIS_ICACHE : RO; bitpos: [8]; default: 0;
  *  Represents whether icache is disabled or enabled.\\ 1: disabled\\ 0: enabled\\
  */
@@ -183,6 +190,13 @@ extern "C" {
 #define EFUSE_DIS_USB_JTAG_M  (EFUSE_DIS_USB_JTAG_V << EFUSE_DIS_USB_JTAG_S)
 #define EFUSE_DIS_USB_JTAG_V  0x00000001U
 #define EFUSE_DIS_USB_JTAG_S  9
+/** EFUSE_RD_RESERVE_0_42 : RW; bitpos: [10]; default: 0;
+ *  Reserved, it was created by set_missed_fields_in_regs func
+ */
+#define EFUSE_RD_RESERVE_0_42    (BIT(10))
+#define EFUSE_RD_RESERVE_0_42_M  (EFUSE_RD_RESERVE_0_42_V << EFUSE_RD_RESERVE_0_42_S)
+#define EFUSE_RD_RESERVE_0_42_V  0x00000001U
+#define EFUSE_RD_RESERVE_0_42_S  10
 /** EFUSE_DIS_USB_SERIAL_JTAG : RO; bitpos: [11]; default: 0;
  *  Represents whether USB-Serial-JTAG is disabled or enabled.\\ 1: disabled\\ 0:
  *  enabled\\
@@ -278,6 +292,13 @@ extern "C" {
 #define EFUSE_VDD_SPI_AS_GPIO_M  (EFUSE_VDD_SPI_AS_GPIO_V << EFUSE_VDD_SPI_AS_GPIO_S)
 #define EFUSE_VDD_SPI_AS_GPIO_V  0x00000001U
 #define EFUSE_VDD_SPI_AS_GPIO_S  26
+/** EFUSE_RD_RESERVE_0_59 : RW; bitpos: [31:27]; default: 0;
+ *  Reserved, it was created by set_missed_fields_in_regs func
+ */
+#define EFUSE_RD_RESERVE_0_59    0x0000001FU
+#define EFUSE_RD_RESERVE_0_59_M  (EFUSE_RD_RESERVE_0_59_V << EFUSE_RD_RESERVE_0_59_S)
+#define EFUSE_RD_RESERVE_0_59_V  0x0000001FU
+#define EFUSE_RD_RESERVE_0_59_S  27
 
 /** EFUSE_RD_REPEAT_DATA1_REG register
  *  Represents rd_repeat_data
@@ -322,6 +343,13 @@ extern "C" {
 #define EFUSE_FORCE_DISABLE_SW_INIT_KEY_M  (EFUSE_FORCE_DISABLE_SW_INIT_KEY_V << EFUSE_FORCE_DISABLE_SW_INIT_KEY_S)
 #define EFUSE_FORCE_DISABLE_SW_INIT_KEY_V  0x00000001U
 #define EFUSE_FORCE_DISABLE_SW_INIT_KEY_S  14
+/** EFUSE_RD_RESERVE_0_79 : RW; bitpos: [15]; default: 0;
+ *  Reserved, it was created by set_missed_fields_in_regs func
+ */
+#define EFUSE_RD_RESERVE_0_79    (BIT(15))
+#define EFUSE_RD_RESERVE_0_79_M  (EFUSE_RD_RESERVE_0_79_V << EFUSE_RD_RESERVE_0_79_S)
+#define EFUSE_RD_RESERVE_0_79_V  0x00000001U
+#define EFUSE_RD_RESERVE_0_79_S  15
 /** EFUSE_WDT_DELAY_SEL : RO; bitpos: [17:16]; default: 0;
  *  Represents the threshold level of the RTC watchdog STG0 timeout.\\ 0: Original
  *  threshold configuration value of STG0 *2 \\1: Original threshold configuration
@@ -418,6 +446,13 @@ extern "C" {
 #define EFUSE_SEC_DPA_LEVEL_M  (EFUSE_SEC_DPA_LEVEL_V << EFUSE_SEC_DPA_LEVEL_S)
 #define EFUSE_SEC_DPA_LEVEL_V  0x00000003U
 #define EFUSE_SEC_DPA_LEVEL_S  16
+/** EFUSE_RD_RESERVE_0_114 : RW; bitpos: [19:18]; default: 0;
+ *  Reserved, it was created by set_missed_fields_in_regs func
+ */
+#define EFUSE_RD_RESERVE_0_114    0x00000003U
+#define EFUSE_RD_RESERVE_0_114_M  (EFUSE_RD_RESERVE_0_114_V << EFUSE_RD_RESERVE_0_114_S)
+#define EFUSE_RD_RESERVE_0_114_V  0x00000003U
+#define EFUSE_RD_RESERVE_0_114_S  18
 /** EFUSE_SECURE_BOOT_EN : RO; bitpos: [20]; default: 0;
  *  Represents whether secure boot is enabled or disabled.\\ 1: enabled\\ 0: disabled\\
  */
@@ -433,6 +468,13 @@ extern "C" {
 #define EFUSE_SECURE_BOOT_AGGRESSIVE_REVOKE_M  (EFUSE_SECURE_BOOT_AGGRESSIVE_REVOKE_V << EFUSE_SECURE_BOOT_AGGRESSIVE_REVOKE_S)
 #define EFUSE_SECURE_BOOT_AGGRESSIVE_REVOKE_V  0x00000001U
 #define EFUSE_SECURE_BOOT_AGGRESSIVE_REVOKE_S  21
+/** EFUSE_RD_RESERVE_0_118 : RW; bitpos: [26:22]; default: 0;
+ *  Reserved, it was created by set_missed_fields_in_regs func
+ */
+#define EFUSE_RD_RESERVE_0_118    0x0000001FU
+#define EFUSE_RD_RESERVE_0_118_M  (EFUSE_RD_RESERVE_0_118_V << EFUSE_RD_RESERVE_0_118_S)
+#define EFUSE_RD_RESERVE_0_118_V  0x0000001FU
+#define EFUSE_RD_RESERVE_0_118_S  22
 /** EFUSE_KM_XTS_KEY_LENGTH_256 : RO; bitpos: [27]; default: 0;
  *  Set this bitto configure flash encryption use xts-128 key. else use xts-256 key.
  */
@@ -557,6 +599,13 @@ extern "C" {
 #define EFUSE_XTS_DPA_CLK_ENABLE_M  (EFUSE_XTS_DPA_CLK_ENABLE_V << EFUSE_XTS_DPA_CLK_ENABLE_S)
 #define EFUSE_XTS_DPA_CLK_ENABLE_V  0x00000001U
 #define EFUSE_XTS_DPA_CLK_ENABLE_S  29
+/** EFUSE_RD_RESERVE_0_158 : RW; bitpos: [31:30]; default: 0;
+ *  Reserved, it was created by set_missed_fields_in_regs func
+ */
+#define EFUSE_RD_RESERVE_0_158    0x00000003U
+#define EFUSE_RD_RESERVE_0_158_M  (EFUSE_RD_RESERVE_0_158_V << EFUSE_RD_RESERVE_0_158_S)
+#define EFUSE_RD_RESERVE_0_158_V  0x00000003U
+#define EFUSE_RD_RESERVE_0_158_S  30
 
 /** EFUSE_RD_REPEAT_DATA4_REG register
  *  Represents rd_repeat_data
@@ -602,6 +651,13 @@ extern "C" {
 #define EFUSE_ECC_FORCE_CONST_TIME_M  (EFUSE_ECC_FORCE_CONST_TIME_V << EFUSE_ECC_FORCE_CONST_TIME_S)
 #define EFUSE_ECC_FORCE_CONST_TIME_V  0x00000001U
 #define EFUSE_ECC_FORCE_CONST_TIME_S  14
+/** EFUSE_RD_RESERVE_0_175 : RW; bitpos: [31:15]; default: 0;
+ *  Reserved, it was created by set_missed_fields_in_regs func
+ */
+#define EFUSE_RD_RESERVE_0_175    0x0001FFFFU
+#define EFUSE_RD_RESERVE_0_175_M  (EFUSE_RD_RESERVE_0_175_V << EFUSE_RD_RESERVE_0_175_S)
+#define EFUSE_RD_RESERVE_0_175_V  0x0001FFFFU
+#define EFUSE_RD_RESERVE_0_175_S  15
 
 /** EFUSE_RD_MAC_SYS0_REG register
  *  Represents rd_mac_sys
@@ -868,25 +924,39 @@ extern "C" {
  *  Represents rd_usr_data6
  */
 #define EFUSE_RD_USR_DATA6_REG (DR_REG_EFUSE_BASE + 0x94)
-/** EFUSE_USR_DATA6 : RO; bitpos: [31:0]; default: 0;
- *  Represents the zeroth 32-bit of block3 (user).
+/** EFUSE_RESERVED_3_192 : R; bitpos: [7:0]; default: 0;
+ *  reserved
  */
-#define EFUSE_USR_DATA6    0xFFFFFFFFU
-#define EFUSE_USR_DATA6_M  (EFUSE_USR_DATA6_V << EFUSE_USR_DATA6_S)
-#define EFUSE_USR_DATA6_V  0xFFFFFFFFU
-#define EFUSE_USR_DATA6_S  0
+#define EFUSE_RESERVED_3_192    0x000000FFU
+#define EFUSE_RESERVED_3_192_M  (EFUSE_RESERVED_3_192_V << EFUSE_RESERVED_3_192_S)
+#define EFUSE_RESERVED_3_192_V  0x000000FFU
+#define EFUSE_RESERVED_3_192_S  0
+/** EFUSE_CUSTOM_MAC : R; bitpos: [31:8]; default: 0;
+ *  Custom MAC
+ */
+#define EFUSE_CUSTOM_MAC    0x00FFFFFFU
+#define EFUSE_CUSTOM_MAC_M  (EFUSE_CUSTOM_MAC_V << EFUSE_CUSTOM_MAC_S)
+#define EFUSE_CUSTOM_MAC_V  0x00FFFFFFU
+#define EFUSE_CUSTOM_MAC_S  8
 
 /** EFUSE_RD_USR_DATA7_REG register
  *  Represents rd_usr_data7
  */
 #define EFUSE_RD_USR_DATA7_REG (DR_REG_EFUSE_BASE + 0x98)
-/** EFUSE_USR_DATA7 : RO; bitpos: [31:0]; default: 0;
- *  Represents the zeroth 32-bit of block3 (user).
+/** EFUSE_CUSTOM_MAC_1 : R; bitpos: [23:0]; default: 0;
+ *  Custom MAC
  */
-#define EFUSE_USR_DATA7    0xFFFFFFFFU
-#define EFUSE_USR_DATA7_M  (EFUSE_USR_DATA7_V << EFUSE_USR_DATA7_S)
-#define EFUSE_USR_DATA7_V  0xFFFFFFFFU
-#define EFUSE_USR_DATA7_S  0
+#define EFUSE_CUSTOM_MAC_1    0x00FFFFFFU
+#define EFUSE_CUSTOM_MAC_1_M  (EFUSE_CUSTOM_MAC_1_V << EFUSE_CUSTOM_MAC_1_S)
+#define EFUSE_CUSTOM_MAC_1_V  0x00FFFFFFU
+#define EFUSE_CUSTOM_MAC_1_S  0
+/** EFUSE_RESERVED_3_248 : R; bitpos: [31:24]; default: 0;
+ *  reserved
+ */
+#define EFUSE_RESERVED_3_248    0x000000FFU
+#define EFUSE_RESERVED_3_248_M  (EFUSE_RESERVED_3_248_V << EFUSE_RESERVED_3_248_S)
+#define EFUSE_RESERVED_3_248_V  0x000000FFU
+#define EFUSE_RESERVED_3_248_S  24
 
 /** EFUSE_RD_KEY0_DATA0_REG register
  *  Represents rd_key0_data0
