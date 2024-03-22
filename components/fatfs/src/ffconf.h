@@ -57,11 +57,36 @@
 #define FF_USE_FORWARD	0
 /* This option switches f_forward() function. (0:Disable or 1:Enable) */
 
+#if defined(CONFIG_FATFS_USE_STRFUNC_NONE)
+#define FF_USE_STRFUNC 0
+#elif defined(CONFIG_FATFS_USE_STRFUNC_WITHOUT_CRLF_CONV)
+#define FF_USE_STRFUNC 1
+#elif defined(CONFIG_FATFS_USE_STRFUNC_WITH_CRLF_CONV)
+#define FF_USE_STRFUNC 2
+#endif
 
-#define FF_USE_STRFUNC	0
+#ifdef CONFIG_FATFS_PRINT_LLI
+#define FF_PRINT_LLI	1
+#else
 #define FF_PRINT_LLI	0
+#endif
+
+#ifdef CONFIG_FATFS_PRINT_FLOAT
+#define FF_PRINT_FLOAT	1
+#else
 #define FF_PRINT_FLOAT	0
+#endif
+
+#if defined(CONFIG_FATFS_STRF_ENCODE_ANSI)
+#define FF_STRF_ENCODE	0
+#elif defined(CONFIG_FATFS_STRF_ENCODE_UTF16LE)
+#define FF_STRF_ENCODE	1
+#elif defined(CONFIG_FATFS_STRF_ENCODE_UTF16BE)
+#define FF_STRF_ENCODE	2
+#elif defined(CONFIG_FATFS_STRF_ENCODE_UTF8)
 #define FF_STRF_ENCODE	3
+#endif
+
 /* FF_USE_STRFUNC switches string functions, f_gets(), f_putc(), f_puts() and
 /  f_printf().
 /
