@@ -84,11 +84,26 @@ Multiple aspects of the Device Stack can be configured using menuconfig. These i
 Descriptor Configuration
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-The :cpp:type:`tinyusb_config_t` structure provides the following USB descriptor related fields that should be initialized:
+The :cpp:type:`tinyusb_config_t` structure provides USB descriptor related fields that should be initialized.
+
+The following descriptors should be initialized for both full-speed and high-speed devices:
 
 - :cpp:member:`device_descriptor`
-- :cpp:member:`configuration_descriptor`
 - :cpp:member:`string_descriptor`
+
+Full-speed devices should initialize the following field to provide their configuration descriptor:
+
+- :cpp:member:`configuration_descriptor`
+
+High-speed devices should initialize the following fields to provide configuration descriptors at each speed:
+
+- :cpp:member:`fs_configuration_descriptor`
+- :cpp:member:`hs_configuration_descriptor`
+- :cpp:member:`qualifier_descriptor`
+
+.. note::
+
+    When Device Stack supports high-speed, both :cpp:member:`fs_configuration_descriptor` and :cpp:member:`hs_configuration_descriptor` should be present to comply with usb2.0 specification.
 
 The Device Stack will instantiate a USB device based on the descriptors provided in the fields described above when :cpp:func:`tinyusb_driver_install` is called.
 
@@ -96,7 +111,15 @@ The Device Stack also provides default descriptors that can be installed by sett
 
 - Default device descriptor: Enabled by setting :cpp:member:`device_descriptor` to ``NULL``. Default device descriptor will use the values set by the corresponding menuconfig options (e.g., PID, VID, bcdDevice etc).
 - Default string descriptor: Enabled by setting :cpp:member:`string_descriptor` to ``NULL``. Default string descriptors will use the value set by corresponding menuconfig options (e.g., manufacturer, product, and serial string descriptor options).
-- Default configuration descriptor. Some classes that rarely require custom configuration (such as CDC and MSC) will provide default configuration descriptors. These can be enabled by setting :cpp:member:`configuration_descriptor` to ``NULL``.
+- Default configuration descriptor. Some classes that rarely require custom configuration (such as CDC and MSC) will provide default configuration descriptors. These can be enabled by setting associated configuration descriptor field to ``NULL``:
+
+    - :cpp:member:`configuration_descriptor` full-speed descriptor for full-speed devices only
+    - :cpp:member:`fs_configuration_descriptor` full-speed descriptor for high-speed devices
+    - :cpp:member:`hs_configuration_descriptor` high-speed descriptor for high-speed devices
+
+.. note::
+
+    Backward compatibility: when Device Stack supports high-speed, field :cpp:member:`configuration_descriptor` could be used instead of :cpp:member:`fs_configuration_descriptor` for full-speed configuration descriptor.
 
 Installation
 ------------
@@ -113,7 +136,14 @@ To install the Device Stack, please call :cpp:func:`tinyusb_driver_install`. The
         .device_descriptor = NULL,  // Use the default device descriptor specified in Menuconfig
         .string_descriptor = NULL,  // Use the default string descriptors specified in Menuconfig
         .external_phy = false,      // Use internal USB PHY
-        .configuration_descriptor = NULL, // Use the default configuration descriptor according to settings in Menuconfig
+    #if (TUD_OPT_HIGH_SPEED)
+        .fs_configuration_descriptor = NULL, // Use the default full-speed configuration descriptor according to settings in Menuconfig
+        .hs_configuration_descriptor = NULL, // Use the default high-ppeed configuration descriptor according to settings in Menuconfig
+        .qualifier_descriptor = NULL,  // Use the default qualifier descriptor, with values from default device descriptor
+    #else
+        .configuration_descriptor = NULL,   // Use the default configuration descriptor according to settings in Menuconfig
+    #endif // TUD_OPT_HIGH_SPEED
+
     };
 
 .. _self-powered-device:
