@@ -131,6 +131,13 @@ menu "Example Ethernet Configuration"
                 select ETH_SPI_ETHERNET_W5500
                 help
                     Select external SPI-Ethernet module (W5500).
+
+            config EXAMPLE_USE_CH395_SPI
+                bool "CH395 Module"
+                select ETH_SPI_ETHERNET_CH395
+                select EXAMPLE_ETH_SPI_USE_CHIP_MAC
+                help
+                    Select external SPI-Ethernet module (CH395).
         endchoice
 
         config EXAMPLE_ETH_SPI_HOST
@@ -289,5 +296,91 @@ menu "Example Ethernet Configuration"
             default 1
             help
                 Set the second SPI Ethernet module PHY address according your board schematic.
+
+        config EXAMPLE_ETH_SPI_USE_CHIP_MAC
+            bool "Use the MAC address built into the chip"
+            default false
     endif # EXAMPLE_USE_SPI_ETHERNET
+
+    config EXAMPLE_USE_UART_ETHERNET
+        bool "UART Ethernet"
+        default n
+        select ETH_USE_UART_ETHERNET
+        help
+            Use external UART-Ethernet module(s).
+
+    if EXAMPLE_USE_UART_ETHERNET
+        choice EXAMPLE_ETHERNET_TYPE_UART
+            prompt "Ethernet UART"
+            default EXAMPLE_USE_CH395_UART
+            help
+                Select which kind of Ethernet will be used in the example.
+
+            config EXAMPLE_USE_CH395_UART
+                bool "CH395 Module"
+                select ETH_UART_ETHERNET_CH395
+                select EXAMPLE_ETH_UART_USE_CHIP_MAC
+                help
+                    Select external UART-Ethernet module (CH395).
+        endchoice
+
+        config EXAMPLE_ETH_UART_PORT
+            int "UART Port Number"
+            range 0 2
+            default 1
+            help
+                Set the UART port used to communicate with the UART Ethernet Controller.
+
+        config EXAMPLE_ETH_UART_BAUDRATE_BPS
+            int "UART Baudrate (bps)"
+            range 9600 3000000
+            default 3000000
+            help
+                Set the baudrate (bps) of UART interface.
+
+        config EXAMPLE_ETH_UART_TX_GPIO
+            int "TX GPIO number UART Ethernet module"
+            range 0 ENV_GPIO_IN_RANGE_MAX
+            default 2
+
+        config EXAMPLE_ETH_UART_RX_GPIO
+            int "RX GPIO number UART Ethernet module"
+            range 0 ENV_GPIO_IN_RANGE_MAX
+            default 3
+
+        config EXAMPLE_ETH_UART_INT_GPIO
+            int "Interrupt GPIO number UART Ethernet module"
+            range -1 ENV_GPIO_IN_RANGE_MAX
+            default 4 if IDF_TARGET_ESP32 || IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3
+            default 4 if IDF_TARGET_ESP32C2 || IDF_TARGET_ESP32C6
+            default 10 if IDF_TARGET_ESP32H2
+            default 48 if IDF_TARGET_ESP32P4
+            help
+                Set the GPIO number used by the first UART Ethernet module interrupt line.
+                Set -1 to use UART Ethernet module in polling mode.
+
+        config EXAMPLE_ETH_UART_POLLING_MS
+            int "Polling period in msec of UART Ethernet Module"
+            default 10
+
+        config EXAMPLE_ETH_UART_PHY_RST_GPIO
+            int "PHY Reset GPIO number of UART Ethernet Module"
+            range -1 ENV_GPIO_OUT_RANGE_MAX
+            default -1
+            help
+                Set the GPIO number used to reset PHY chip on the first UART Ethernet module.
+                Set to -1 to disable PHY chip hardware reset.
+
+        config EXAMPLE_ETH_UART_PHY_ADDR
+            int "PHY Address of UART Ethernet Module"
+            range 0 31
+            default 1
+            help
+                Set the first UART Ethernet module PHY address according your board schematic.
+
+        config EXAMPLE_ETH_UART_USE_CHIP_MAC
+            bool "Use the MAC address built into the chip"
+            default false
+
+    endif # EXAMPLE_USE_UART_ETHERNET
 endmenu

@@ -4,10 +4,12 @@
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
 #include "ethernet_init.h"
+#include "driver/uart.h"
 #include "esp_log.h"
 #include "esp_check.h"
 #include "esp_mac.h"
 #include "driver/gpio.h"
+#include "hal/uart_types.h"
 #include "sdkconfig.h"
 #if CONFIG_ETH_USE_SPI_ETHERNET
 #include "driver/spi_master.h"
@@ -27,6 +29,12 @@ static const char *TAG = "example_eth_init";
 #define INTERNAL_ETHERNETS_NUM      0
 #endif
 
+#if CONFIG_EXAMPLE_USE_UART_ETHERNET
+#define UART_ETHERNETS_NUM          1
+#else
+#define UART_ETHERNETS_NUM          0
+#endif
+
 #define INIT_SPI_ETH_MODULE_CONFIG(eth_module_config, num)                                      \
     do {                                                                                        \
         eth_module_config[num].spi_cs_gpio = CONFIG_EXAMPLE_ETH_SPI_CS ##num## _GPIO;           \
@@ -44,6 +52,25 @@ typedef struct {
     uint8_t phy_addr;
     uint8_t *mac_addr;
 }spi_eth_module_config_t;
+
+
+#define INIT_UART_ETH_MODULE_CONFIG(eth_module_config)                                      \
+    eth_module_config.uart_tx_gpio = CONFIG_EXAMPLE_ETH_UART_TX_GPIO;                       \
+    eth_module_config.uart_rx_gpio = CONFIG_EXAMPLE_ETH_UART_RX_GPIO;                       \
+    eth_module_config.int_gpio = CONFIG_EXAMPLE_ETH_UART_INT_GPIO;                          \
+    eth_module_config.polling_ms = CONFIG_EXAMPLE_ETH_UART_POLLING_MS;                      \
+    eth_module_config.phy_reset_gpio = CONFIG_EXAMPLE_ETH_UART_PHY_RST_GPIO;                \
+    eth_module_config.phy_addr = CONFIG_EXAMPLE_ETH_UART_PHY_ADDR;
+
+typedef struct {
+    uint8_t uart_tx_gpio;
+    uint8_t uart_rx_gpio;
+    int8_t int_gpio;
+    uint32_t polling_ms;
+    int8_t phy_reset_gpio;
+    uint8_t phy_addr;
+    uint8_t *mac_addr;
+}uart_eth_module_config_t;
 
 #if CONFIG_EXAMPLE_USE_INTERNAL_ETHERNET
 /**
@@ -204,17 +231,25 @@ static esp_eth_handle_t eth_init_spi(spi_eth_module_config_t *spi_eth_module_con
     w5500_config.poll_period_ms = spi_eth_module_config->polling_ms;
     esp_eth_mac_t *mac = esp_eth_mac_new_w5500(&w5500_config, &mac_config);
     esp_eth_phy_t *phy = esp_eth_phy_new_w5500(&phy_config);
-#endif //CONFIG_EXAMPLE_USE_W5500
+#elif CONFIG_EXAMPLE_USE_CH395_SPI
+    eth_ch395_config_t ch395_config = ETH_CH395_SPI_DEFAULT_CONFIG(CONFIG_EXAMPLE_ETH_SPI_HOST, &spi_devcfg);
+    ch395_config.int_gpio_num = spi_eth_module_config->int_gpio;
+    ch395_config.poll_period_ms = spi_eth_module_config->polling_ms;
+    esp_eth_mac_t *mac = esp_eth_mac_new_ch395(&ch395_config, &mac_config);
+    esp_eth_phy_t *phy = esp_eth_phy_new_ch395(&phy_config);
+#endif //CONFIG_EXAMPLE_USE_CH395_SPI
     // Init Ethernet driver to default and install it
     esp_eth_handle_t eth_handle = NULL;
     esp_eth_config_t eth_config_spi = ETH_DEFAULT_CONFIG(mac, phy);
     ESP_GOTO_ON_FALSE(esp_eth_driver_install(&eth_config_spi, &eth_handle) == ESP_OK, NULL, err, TAG, "SPI Ethernet driver install failed");
 
+#if !CONFIG_EXAMPLE_ETH_SPI_USE_CHIP_MAC
     // The SPI Ethernet module might not have a burned factory MAC address, we can set it manually.
     if (spi_eth_module_config->mac_addr != NULL) {
         ESP_GOTO_ON_FALSE(esp_eth_ioctl(eth_handle, ETH_CMD_S_MAC_ADDR, spi_eth_module_config->mac_addr) == ESP_OK,
                                         NULL, err, TAG, "SPI Ethernet MAC address config failed");
     }
+#endif
 
     if (mac_out != NULL) {
         *mac_out = mac;
@@ -237,16 +272,119 @@ err:
 }
 #endif // CONFIG_EXAMPLE_USE_SPI_ETHERNET
 
+#if CONFIG_EXAMPLE_USE_UART_ETHERNET
+/**
+ * @brief interrupt initialization (to be used by Ethernet UART modules)
+ *
+ * @return
+ *          - ESP_OK on success
+ */
+static esp_err_t uart_intr_init(void)
+{
+    esp_err_t ret = ESP_OK;
+
+    // Install GPIO ISR handler to be able to service SPI Eth modules interrupts
+    ret = gpio_install_isr_service(0);
+    if (ret != ESP_OK) {
+        if (ret == ESP_ERR_INVALID_STATE) {
+            ESP_LOGW(TAG, "GPIO ISR handler has been already installed");
+            ret = ESP_OK; // ISR handler has been already installed so no issues
+        } else {
+            ESP_LOGE(TAG, "GPIO ISR handler install failed");
+            goto err;
+        }
+    }
+
+err:
+    return ret;
+}
+
+/**
+ * @brief Ethernet UART modules initialization
+ *
+ * @param[in] uart_eth_module_config specific UART Ethernet module configuration
+ * @param[out] mac_out optionally returns Ethernet MAC object
+ * @param[out] phy_out optionally returns Ethernet PHY object
+ * @return
+ *          - esp_eth_handle_t if init succeeded
+ *          - NULL if init failed
+ */
+static esp_eth_handle_t eth_init_uart(uart_eth_module_config_t *uart_eth_module_config, esp_eth_mac_t **mac_out, esp_eth_phy_t **phy_out)
+{
+    esp_eth_handle_t ret = NULL;
+
+    // Init common MAC and PHY configs to default
+    eth_mac_config_t mac_config = ETH_MAC_DEFAULT_CONFIG();
+    eth_phy_config_t phy_config = ETH_PHY_DEFAULT_CONFIG();
+
+    // Update PHY config based on board specific configuration
+    phy_config.phy_addr = uart_eth_module_config->phy_addr;
+    phy_config.reset_gpio_num = uart_eth_module_config->phy_reset_gpio;
+
+    // Configure UART interface for specific UART module
+    uart_config_t uart_devcfg = {
+        .baud_rate = CONFIG_EXAMPLE_ETH_UART_BAUDRATE_BPS,
+        .data_bits = UART_DATA_8_BITS,
+        .stop_bits = UART_STOP_BITS_1,
+        .flow_ctrl = UART_HW_FLOWCTRL_DISABLE,
+        .parity = UART_PARITY_DISABLE
+    };
+
+#if CONFIG_EXAMPLE_USE_CH395_UART
+    eth_ch395_config_t ch395_config = ETH_CH395_UART_DEFAULT_CONFIG(CONFIG_EXAMPLE_ETH_UART_PORT, &uart_devcfg);
+    ch395_config.uart.uart_tx_gpio_num = uart_eth_module_config->uart_tx_gpio;
+    ch395_config.uart.uart_rx_gpio_num = uart_eth_module_config->uart_rx_gpio;
+    ch395_config.int_gpio_num = uart_eth_module_config->int_gpio;
+    ch395_config.poll_period_ms = uart_eth_module_config->polling_ms;
+    esp_eth_mac_t *mac = esp_eth_mac_new_ch395(&ch395_config, &mac_config);
+    esp_eth_phy_t *phy = esp_eth_phy_new_ch395(&phy_config);
+#endif
+
+    // Init Ethernet driver to default and install it
+    esp_eth_handle_t eth_handle = NULL;
+    esp_eth_config_t eth_config_uart = ETH_DEFAULT_CONFIG(mac, phy);
+    ESP_GOTO_ON_FALSE(esp_eth_driver_install(&eth_config_uart, &eth_handle) == ESP_OK, NULL, err, TAG, "UART Ethernet driver install failed");
+
+#if !CONFIG_EXAMPLE_ETH_UART_USE_CHIP_MAC
+    // The SPI Ethernet module might not have a burned factory MAC address, we can set it manually.
+    if (uart_eth_module_config->mac_addr != NULL) {
+        ESP_GOTO_ON_FALSE(esp_eth_ioctl(eth_handle, ETH_CMD_S_MAC_ADDR, uart_eth_module_config->mac_addr) == ESP_OK,
+                                        NULL, err, TAG, "UART Ethernet MAC address config failed");
+    }
+#endif
+
+    if (mac_out != NULL) {
+        *mac_out = mac;
+    }
+    if (phy_out != NULL) {
+        *phy_out = phy;
+    }
+    return eth_handle;
+err:
+    if (eth_handle != NULL) {
+        esp_eth_driver_uninstall(eth_handle);
+    }
+    if (mac != NULL) {
+        mac->del(mac);
+    }
+    if (phy != NULL) {
+        phy->del(phy);
+    }
+    return ret;
+}
+
+#endif // CONFIG_EXAMPLE_USE_UART_ETHERNET
+
 esp_err_t example_eth_init(esp_eth_handle_t *eth_handles_out[], uint8_t *eth_cnt_out)
 {
     esp_err_t ret = ESP_OK;
     esp_eth_handle_t *eth_handles = NULL;
     uint8_t eth_cnt = 0;
 
-#if CONFIG_EXAMPLE_USE_INTERNAL_ETHERNET || CONFIG_EXAMPLE_USE_SPI_ETHERNET
+#if CONFIG_EXAMPLE_USE_INTERNAL_ETHERNET || CONFIG_EXAMPLE_USE_SPI_ETHERNET || CONFIG_EXAMPLE_USE_UART_ETHERNET
     ESP_GOTO_ON_FALSE(eth_handles_out != NULL && eth_cnt_out != NULL, ESP_ERR_INVALID_ARG,
                         err, TAG, "invalid arguments: initialized handles array or number of interfaces");
-    eth_handles = calloc(SPI_ETHERNETS_NUM + INTERNAL_ETHERNETS_NUM, sizeof(esp_eth_handle_t));
+    eth_handles = calloc(SPI_ETHERNETS_NUM + INTERNAL_ETHERNETS_NUM + UART_ETHERNETS_NUM, sizeof(esp_eth_handle_t));
     ESP_GOTO_ON_FALSE(eth_handles != NULL, ESP_ERR_NO_MEM, err, TAG, "no memory");
 
 #if CONFIG_EXAMPLE_USE_INTERNAL_ETHERNET
@@ -255,16 +393,19 @@ esp_err_t example_eth_init(esp_eth_handle_t *eth_handles_out[], uint8_t *eth_cnt
     eth_cnt++;
 #endif //CONFIG_EXAMPLE_USE_INTERNAL_ETHERNET
 
+#if CONFIG_EXAMPLE_USE_SPI_ETHERNET || CONFIG_EXAMPLE_USE_UART_ETHERNET
+    // The Ethernet module(s) might not have a burned factory MAC address, hence use manually configured address(es).
+    // In this example, Locally Administered MAC address derived from ESP32x base MAC address is used.
+    // Note that Locally Administered OUI range should be used only when testing on a LAN under your control!
+    uint8_t base_mac_addr[ETH_ADDR_LEN];
+    ESP_GOTO_ON_ERROR(esp_efuse_mac_get_default(base_mac_addr), err, TAG, "get EFUSE MAC failed");
+#endif
+
 #if CONFIG_EXAMPLE_USE_SPI_ETHERNET
     ESP_GOTO_ON_ERROR(spi_bus_init(), err, TAG, "SPI bus init failed");
     // Init specific SPI Ethernet module configuration from Kconfig (CS GPIO, Interrupt GPIO, etc.)
     spi_eth_module_config_t spi_eth_module_config[CONFIG_EXAMPLE_SPI_ETHERNETS_NUM] = { 0 };
     INIT_SPI_ETH_MODULE_CONFIG(spi_eth_module_config, 0);
-    // The SPI Ethernet module(s) might not have a burned factory MAC address, hence use manually configured address(es).
-    // In this example, Locally Administered MAC address derived from ESP32x base MAC address is used.
-    // Note that Locally Administered OUI range should be used only when testing on a LAN under your control!
-    uint8_t base_mac_addr[ETH_ADDR_LEN];
-    ESP_GOTO_ON_ERROR(esp_efuse_mac_get_default(base_mac_addr), err, TAG, "get EFUSE MAC failed");
     uint8_t local_mac_1[ETH_ADDR_LEN];
     esp_derive_local_mac(local_mac_1, base_mac_addr);
     spi_eth_module_config[0].mac_addr = local_mac_1;
@@ -284,14 +425,29 @@ esp_err_t example_eth_init(esp_eth_handle_t *eth_handles_out[], uint8_t *eth_cnt
         eth_cnt++;
     }
 #endif // CONFIG_ETH_USE_SPI_ETHERNET
+
+#if CONFIG_EXAMPLE_USE_UART_ETHERNET
+    ESP_GOTO_ON_ERROR(uart_intr_init(), err, TAG, "UART intr init failed");
+    // Init specific UART Ethernet module configuration from Kconfig (TX GPIO, Interrupt GPIO, etc.)
+    uart_eth_module_config_t uart_eth_module_config;
+    INIT_UART_ETH_MODULE_CONFIG(uart_eth_module_config);
+    uint8_t local_mac_3[ETH_ADDR_LEN];
+    base_mac_addr[ETH_ADDR_LEN - 1] += 1;
+    esp_derive_local_mac(local_mac_3, base_mac_addr);
+    uart_eth_module_config.mac_addr = local_mac_3;
+    eth_handles[eth_cnt] = eth_init_uart(&uart_eth_module_config, NULL, NULL);
+    ESP_GOTO_ON_FALSE(eth_handles[eth_cnt], ESP_FAIL, err, TAG, "UART Ethernet init failed");
+    eth_cnt++;
+#endif // CONFIG_ETH_USE_UART_ETHERNET
+
 #else
     ESP_LOGD(TAG, "no Ethernet device selected to init");
-#endif // CONFIG_EXAMPLE_USE_INTERNAL_ETHERNET || CONFIG_EXAMPLE_USE_SPI_ETHERNET
+#endif // CONFIG_EXAMPLE_USE_INTERNAL_ETHERNET || CONFIG_EXAMPLE_USE_SPI_ETHERNET || CONFIG_EXAMPLE_USE_UART_ETHERNET
     *eth_handles_out = eth_handles;
     *eth_cnt_out = eth_cnt;
 
     return ret;
-#if CONFIG_EXAMPLE_USE_INTERNAL_ETHERNET || CONFIG_EXAMPLE_USE_SPI_ETHERNET
+#if CONFIG_EXAMPLE_USE_INTERNAL_ETHERNET || CONFIG_EXAMPLE_USE_SPI_ETHERNET || CONFIG_EXAMPLE_USE_UART_ETHERNET
 err:
     free(eth_handles);
     return ret;

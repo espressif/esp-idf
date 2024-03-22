@@ -9,8 +9,9 @@
 #include "soc/soc_caps.h"
 #include "esp_eth_com.h"
 #include "sdkconfig.h"
-#if CONFIG_ETH_USE_SPI_ETHERNET
+#if CONFIG_ETH_USE_SPI_ETHERNET || CONFIG_ETH_USE_UART_ETHERNET
 #include "driver/spi_master.h"
+#include "driver/uart.h"
 #endif
 
 #ifdef __cplusplus
@@ -763,6 +764,73 @@ typedef struct {
 */
 esp_eth_mac_t *esp_eth_mac_new_ksz8851snl(const eth_ksz8851snl_config_t *ksz8851snl_config, const eth_mac_config_t *mac_config);
 #endif // CONFIG_ETH_SPI_ETHERNET_KSZ8851
+
+#if CONFIG_ETH_SPI_ETHERNET_CH395 || CONFIG_ETH_UART_ETHERNET_CH395
+
+#define ETH_CH395_MODE_SPI                              0
+#define ETH_CH395_MODE_UART                             1
+
+/**
+ * @brief CH395 specific configuration
+ *
+ */
+typedef struct {
+    int int_gpio_num;                                   /*!< Interrupt GPIO number */
+    uint32_t poll_period_ms;                            /*!< Period in ms to poll rx status when interrupt mode is not used */
+    uint8_t mode;                                       /*!< Communication mode(SPI or UART)*/
+
+    struct {
+        spi_host_device_t spi_host_id;
+        spi_device_interface_config_t *spi_devcfg;
+    } spi;
+
+    struct{
+        int uart_tx_gpio_num;
+        int uart_rx_gpio_num;
+        uart_port_t uart_port_id;
+        uart_config_t *uart_devcfg;
+    } uart;
+
+} eth_ch395_config_t;
+
+/**
+ * @brief Default CH395 specific configuration
+ *
+ */
+
+#define ETH_CH395_SPI_DEFAULT_CONFIG(spi_host, spi_devcfg_p) \
+    {                                                        \
+        .int_gpio_num = 4,                                   \
+        .mode = ETH_CH395_MODE_SPI,                          \
+        .spi.spi_host_id = spi_host,                         \
+        .spi.spi_devcfg = spi_devcfg_p,                      \
+    }
+
+
+
+#define ETH_CH395_UART_DEFAULT_CONFIG(uart_port, uart_cfg_p) \
+    {                                                       \
+        .int_gpio_num = 4,                                  \
+        .mode = ETH_CH395_MODE_UART,                        \
+        .uart.uart_tx_gpio_num = 0,                         \
+        .uart.uart_rx_gpio_num = 0,                         \
+        .uart.uart_port_id = uart_port,                     \
+        .uart.uart_devcfg = uart_cfg_p,                     \
+    }
+
+
+/**
+* @brief Create CH395 Ethernet MAC instance
+*
+* @param ch395_config: CH395 specific configuration
+* @param mac_config: Ethernet MAC configuration
+*
+* @return
+*      - instance: create MAC instance successfully
+*      - NULL: create MAC instance failed because some error occurred
+*/
+esp_eth_mac_t *esp_eth_mac_new_ch395(const eth_ch395_config_t *ch395_config, const eth_mac_config_t *mac_config);
+#endif // CONFIG_ETH_SPI_ETHERNET_CH395
 
 #if CONFIG_ETH_USE_OPENETH
 /**
