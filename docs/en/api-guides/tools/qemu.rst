@@ -111,3 +111,21 @@ To launch QEMU with a virtual framebuffer device enabled, use the following comm
 When the ``--graphics`` option is used, QEMU opens an additional window where the framebuffer contents are displayed.
 
 To use the virtual framebuffer device in your application, you can add the `espressif/esp_lcd_qemu_rgb <https://components.espressif.com/components/espressif/esp_lcd_qemu_rgb>`_ component to your project. This component provides an esp_lcd compatible driver for the virtual framebuffer device.
+
+Efuse Emulation
+~~~~~~~~~~~~~~~
+
+QEMU supports emulation of eFuses. This can be a convenient way to test security-related features, such as secure boot and flash encryption, without having to perform irreversible operations on real hardware.
+
+You can use :doc:`idf.py<idf-py>` eFuse-related commands to program eFuses. When you run any of these commands together with ``qemu`` command, the eFuses are programmed in QEMU, and the ``qemu_efuse.bin`` file is updated. For example,
+
+.. code-block:: console
+
+    idf.py qemu efuse-burn FLASH_CRYPT_CNT 1
+
+By default, the values of eFuses are read from and written to the ``qemu_efuse.bin`` file in the build directory. You can specify a different file using the ``--efuse-file`` option. For example,
+
+.. code-block:: console
+
+    idf.py qemu --efuse-file my_efuse.bin efuse-burn FLASH_CRYPT_CNT 1
+    idf.py qemu --efuse-file my_efuse.bin monitor
