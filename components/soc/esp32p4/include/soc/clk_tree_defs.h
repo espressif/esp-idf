@@ -249,8 +249,6 @@ typedef enum {
     RMT_BASECLK_DEFAULT = SOC_MOD_CLK_PLL_F80M,  /*!< RMT source clock default choice is PLL_F80M */
 } soc_periph_rmt_clk_src_legacy_t;
 
-//////////////////////////////////////////////////Temp Sensor///////////////////////////////////////////////////////////
-
 ///////////////////////////////////////////////////UART/////////////////////////////////////////////////////////////////
 
 /**
@@ -508,6 +506,21 @@ typedef enum {
 } soc_periph_sdm_clk_src_t;
 
 //////////////////////////////////////////////////GPIO Glitch Filter////////////////////////////////////////////////////
+
+/**
+ * @brief Array initializer for all supported clock sources of Glitch Filter
+ */
+#define SOC_GLITCH_FILTER_CLKS {SOC_MOD_CLK_PLL_F80M, SOC_MOD_CLK_XTAL}
+
+/**
+ * @brief Glitch filter clock source
+ */
+
+typedef enum {
+    GLITCH_FILTER_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,         /*!< Select XTAL clock as the source clock */
+    GLITCH_FILTER_CLK_SRC_PLL_F80M = SOC_MOD_CLK_PLL_F80M, /*!< Select PLL_F80M clock as the source clock */
+    GLITCH_FILTER_CLK_SRC_DEFAULT = SOC_MOD_CLK_PLL_F80M,  /*!< Select PLL_F80M clock as the default clock choice */
+} soc_periph_glitch_filter_clk_src_t;
 
 ///////////////////////////////////////////////////Analog Comparator////////////////////////////////////////////////////
 

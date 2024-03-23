@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -146,7 +146,11 @@ TEST_CASE("Dedicated_GPIO_run_on_multiple_CPU_cores", "[dedic_gpio]")
     TaskHandle_t task_handle[SOC_CPU_CORES_NUM];
 
     for (int i = 0; i < SOC_CPU_CORES_NUM; i++) {
+#if CONFIG_IDF_TARGET_ESP32P4
+        int start_gpio = i * TEST_GPIO_GROUP_SIZE + 20;
+#else
         int start_gpio = i * TEST_GPIO_GROUP_SIZE;
+#endif
         test_dedic_task_context_t isr_ctx = {
             .sem = sem,
             .gpios = {start_gpio, start_gpio + 1, start_gpio + 2, start_gpio + 3}
@@ -181,7 +185,11 @@ TEST_CASE("Dedicated_GPIO_interrupt_and_callback", "[dedic_gpio]")
     SemaphoreHandle_t sem = xSemaphoreCreateBinary();
 
     // configure GPIO
+#if CONFIG_IDF_TARGET_ESP32P4
+    const int bundle_gpios[] = {20, 21};
+#else
     const int bundle_gpios[] = {0, 1};
+#endif
     gpio_config_t io_conf = {
         .mode = GPIO_MODE_INPUT_OUTPUT,
     };
@@ -200,12 +208,12 @@ TEST_CASE("Dedicated_GPIO_interrupt_and_callback", "[dedic_gpio]")
     };
     TEST_ESP_OK(dedic_gpio_new_bundle(&bundle_config, &bundle));
 
-    // enable interrupt on GPIO1
-    TEST_ESP_OK(gpio_set_intr_type(1, GPIO_INTR_POSEDGE));
+    // enable interrupt
+    TEST_ESP_OK(gpio_set_intr_type(bundle_gpios[1], GPIO_INTR_POSEDGE));
     // install gpio isr service
     TEST_ESP_OK(gpio_install_isr_service(0));
     // hook isr handler for specific gpio pin
-    TEST_ESP_OK(gpio_isr_handler_add(1, test_dedic_gpio_isr_callback, sem));
+    TEST_ESP_OK(gpio_isr_handler_add(bundle_gpios[1], test_dedic_gpio_isr_callback, sem));
 
     // trigger a posedge on GPIO1
     dedic_gpio_bundle_write(bundle, BIT(1), 0x00);
@@ -214,7 +222,7 @@ TEST_CASE("Dedicated_GPIO_interrupt_and_callback", "[dedic_gpio]")
     TEST_ASSERT_EQUAL(pdTRUE, xSemaphoreTake(sem, pdMS_TO_TICKS(1000)));
 
     // remove isr handler for gpio number
-    TEST_ESP_OK(gpio_isr_handler_remove(1));
+    TEST_ESP_OK(gpio_isr_handler_remove(bundle_gpios[1]));
     // uninstall GPIO interrupt service
     gpio_uninstall_isr_service();
 

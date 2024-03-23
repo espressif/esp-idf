@@ -7,6 +7,10 @@ config SOC_ANA_CMPR_SUPPORTED
     bool
     default y
 
+config SOC_DEDICATED_GPIO_SUPPORTED
+    bool
+    default y
+
 config SOC_UART_SUPPORTED
     bool
     default y
@@ -462,6 +466,14 @@ config SOC_GPIO_PORT
 config SOC_GPIO_PIN_COUNT
     int
     default 55
+
+config SOC_GPIO_SUPPORT_PIN_GLITCH_FILTER
+    bool
+    default y
+
+config SOC_GPIO_FLEX_GLITCH_FILTER_NUM
+    int
+    default 8
 
 config SOC_GPIO_SUPPORT_PIN_HYS_FILTER
     bool
