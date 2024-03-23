@@ -11,7 +11,6 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_system.h"
-#include "spi_flash_mmap.h"
 #include "esp_timer.h"
 #include <esp_task.h>
 
