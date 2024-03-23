@@ -89,6 +89,14 @@ variables:
 
   IDF_CI_BUILD: 1
 
+  # ccache settings
+  # some settings need to set in .gitlab-ci.yml as it takes effect while start-up the job
+  # https://ccache.dev/manual/latest.html#_configuring_ccache
+
+  # host mapping volume to share ccache between runner concurrent jobs
+  CCACHE_DIR: "/cache/idf_ccache"
+  CCACHE_MAXSIZE: "20G"
+
 ################################################
 # `before_script` and `after_script` Templates #
 ################################################
@@ -187,7 +195,7 @@ variables:
 
 .show_ccache_statistics: &show_ccache_statistics |
   # Show ccache statistics if enabled globally
-  test "$CI_CCACHE_STATS" == 1 && test -n "$(which ccache)" && ccache --show-stats || true
+  test "$CI_CCACHE_STATS" == 1 && test -n "$(which ccache)" && ccache --show-stats -vv || true
 
 .upload_failed_job_log_artifacts: &upload_failed_job_log_artifacts |
   if [ $CI_JOB_STATUS = "failed" ]; then
