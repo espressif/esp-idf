@@ -64,6 +64,7 @@ typedef struct {
     void *decrypt_user_ctx;                        /*!< User context for external decryption layer */
     uint16_t enc_img_header_size;                  /*!< Header size of pre-encrypted ota image header */
 #endif
+    const esp_partition_t *update_partition;       /*!< Pointer to partition that should be updated, if NULL, asuming next APP partition that is updatable*/
 } esp_https_ota_config_t;
 
 #define ESP_ERR_HTTPS_OTA_BASE            (0x9000)
