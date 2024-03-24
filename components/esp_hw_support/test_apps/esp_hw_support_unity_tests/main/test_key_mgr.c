@@ -101,11 +101,6 @@ static esp_err_t test_xts_aes_key(void)
 extern void set_leak_threshold(int threshold);
 TEST_CASE("Key Manager AES mode: XTS-AES key deployment", "[hw_crypto] [key_mgr]")
 {
-    // This threshold accounts for multiple locks obtained for the first time by the following APIs
-    // The larger threshold is only needed for aes mode as additional locks are used in aes mode
-    set_leak_threshold(-900);
-
-    // Setting the leak threshold to not count the memory allocated for locks used by key manager
     static esp_key_mgr_aes_key_config_t key_config;
     memcpy(key_config.k2_info, (uint8_t*) k2_info, KEY_MGR_K2_INFO_SIZE);
     memcpy(key_config.k1_encrypted, (uint8_t*) k1_xts_encrypt, KEY_MGR_K1_ENCRYPTED_SIZE);

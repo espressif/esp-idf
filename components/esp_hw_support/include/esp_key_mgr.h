@@ -29,7 +29,6 @@ extern "C" {
 #define KEY_MGR_K2_INFO_SIZE             64
 #define KEY_MGR_K1_ENCRYPTED_SIZE        32
 #define KEY_MGR_ECDH0_INFO_SIZE          64
-#define KEY_MGR_ECDH0_INFO_SIZE          64
 #define KEY_MGR_PLAINTEXT_KEY_SIZE       32
 
 typedef struct {
@@ -46,7 +45,7 @@ typedef struct {
     esp_key_mgr_key_type_t key_type;
     bool use_pre_generated_huk_info;
     WORD_ALIGNED_ATTR esp_key_mgr_huk_info_t huk_info;
-    WORD_ALIGNED_ATTR uint8_t k1_G[KEY_MGR_ECDH0_INFO_SIZE];
+    WORD_ALIGNED_ATTR uint8_t k1_G[2][KEY_MGR_ECDH0_INFO_SIZE];
 } esp_key_mgr_ecdh0_key_config_t;
 
 typedef struct {
