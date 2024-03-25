@@ -6,14 +6,15 @@
 
 #pragma once
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
+#include "sdkconfig.h"
 #include <sys/select.h>
 #include "esp_ieee802154_types.h"
 #include "driver/uart.h"
 #include "soc/gpio_num.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define ESP_SPINEL_LOG_TAG "ESP_RADIO_SPINEL"
 
@@ -55,11 +56,11 @@ typedef struct
     void (*transmit_started)(const uint8_t *frame);                                                                 /* Callback for Transmit Started.*/
     void (*switchover_done)(bool success);                                                                          /* Callback for Switchover Done.*/
 
-#if OPENTHREAD_CONFIG_DIAG_ENABLE
+#if CONFIG_OPENTHREAD_DIAG
     void (*diag_receive_done)(const uint8_t *frame, esp_ieee802154_frame_info_t *frame_info);                       /* Callback for Receive Done (diag).*/
     void (*diag_transmit_done)(const uint8_t *frame, esp_ieee802154_frame_info_t *frame_info);                      /* Callback for Transmit Done (diag).*/
     void (*diag_transmit_failed)(esp_ieee802154_tx_error_t error);                                                  /* Callback for Transmit Failed (diag).*/
-#endif // OPENTHREAD_CONFIG_DIAG_ENABLE
+#endif // CONFIG_OPENTHREAD_DIAG
 } esp_radio_spinel_callbacks_t;                                                                                     /* ESP Radio Spinel Callbacks.*/
 
 /**
