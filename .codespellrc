@@ -1,0 +1,4 @@
+[codespell]
+skip = build,*.yuv
+ignore-words-list = ser,dout,rsource
+write-changes = true
