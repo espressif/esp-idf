@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -52,7 +52,7 @@ typedef struct {
 esp_ldo_unit_handle_t esp_ldo_init_unit_early(const esp_ldo_unit_init_cfg_t *init_config);
 
 /**
- * @Brief Init a LDO
+ * @brief Init a LDO
  *
  * @param[in]  init_config  LDO initial configurations
  * @param[out] ret_unit     LDO unit handle
@@ -65,7 +65,7 @@ esp_ldo_unit_handle_t esp_ldo_init_unit_early(const esp_ldo_unit_init_cfg_t *ini
 esp_err_t esp_ldo_init_unit(const esp_ldo_unit_init_cfg_t *init_config, esp_ldo_unit_handle_t *ret_unit);
 
 /**
- * @Brief Enable a LDO
+ * @brief Enable a LDO
  *
  * @param[in]  unit  LDO unit handle
  *
@@ -75,6 +75,18 @@ esp_err_t esp_ldo_init_unit(const esp_ldo_unit_init_cfg_t *init_config, esp_ldo_
  *        - ESP_ERR_INVALID_STATE: LDO is enabled already
  */
 esp_err_t esp_ldo_enable_unit(esp_ldo_unit_handle_t unit);
+
+/**
+ * @brief Set LDO output voltage
+ *
+ * @param[in]  unit        LDO unit handle
+ * @param[in]  voltage_mv  Voltage in mV
+ *
+ * @return
+ *        - ESP_OK:                On success
+ *        - ESP_ERR_INVALID_ARG:   Invalid arguments
+ */
+esp_err_t esp_ldo_set_voltage(esp_ldo_unit_handle_t unit, int voltage_mv);
 
 /**
  * @Brief Disable a LDO
@@ -89,7 +101,7 @@ esp_err_t esp_ldo_enable_unit(esp_ldo_unit_handle_t unit);
 esp_err_t esp_ldo_disable_unit(esp_ldo_unit_handle_t unit);
 
 /**
- * @Brief Deinit a LDO
+ * @brief Deinit a LDO
  *
  * @param[in]  unit  LDO unit handle
  *
@@ -101,7 +113,7 @@ esp_err_t esp_ldo_disable_unit(esp_ldo_unit_handle_t unit);
 esp_err_t esp_ldo_deinit_unit(esp_ldo_unit_handle_t unit);
 
 /**
- * Dump LDO usages
+ * @brief Dump LDO usages
  *
  * @note This API shall not be called from an ISR.
  * @note This API does not guarantee thread safety

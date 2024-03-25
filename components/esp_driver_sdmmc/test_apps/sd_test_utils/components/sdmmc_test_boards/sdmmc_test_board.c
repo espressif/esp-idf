@@ -1,12 +1,15 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include "sdmmc_test_board.h"
 #include "sdkconfig.h"
+#include "unity.h"
 #include "soc/soc_caps.h"
+#include "sd_pwr_ctrl_by_on_chip_ldo.h"
+#include "sd_pwr_ctrl.h"
 
 const sdmmc_test_board_slot_info_t* sdmmc_test_board_get_slot_info(int slot_index)
 {
@@ -31,6 +34,18 @@ void sdmmc_test_board_get_config_sdmmc(int slot_index, sdmmc_host_t *out_host_co
     if (slot->max_freq_khz > 0) {
         out_host_config->max_freq_khz = slot->max_freq_khz;
     }
+
+#if SOC_SDMMC_IO_POWER_EXTERNAL
+#define SDMMC_PWR_LDO_CHANNEL   4
+
+    sd_pwr_ctrl_ldo_config_t ldo_config = {
+        .ldo_unit_id = SDMMC_PWR_LDO_CHANNEL,
+    };
+    sd_pwr_ctrl_handle_t pwr_ctrl_handle = NULL;
+
+    TEST_ESP_OK(sd_pwr_ctrl_new_on_chip_ldo(&ldo_config, &pwr_ctrl_handle));
+    out_host_config->pwr_ctrl_handle = pwr_ctrl_handle;
+#endif
 
 #if SOC_SDMMC_USE_GPIO_MATRIX
     out_slot_config->clk = slot->clk;

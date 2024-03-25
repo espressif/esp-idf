@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,6 +9,8 @@
 #include "driver/sdmmc_host.h"
 #include "sdmmc_test_cd_wp_common.h"
 #include "sdmmc_test_board.h"
+#include "sd_pwr_ctrl.h"
+#include "sd_pwr_ctrl_by_on_chip_ldo.h"
 
 //TODO: IDF-8734
 #if !CONFIG_IDF_TARGET_ESP32 && !CONFIG_IDF_TARGET_ESP32S3
@@ -27,6 +29,9 @@ TEST_CASE("CD input works in SD mode", "[sdmmc]")
 
     TEST_ESP_OK(sdmmc_host_deinit());
     sdmmc_test_board_card_power_set(false);
+#if SOC_SDMMC_IO_POWER_EXTERNAL
+    TEST_ESP_OK(sd_pwr_ctrl_del_on_chip_ldo(config.pwr_ctrl_handle));
+#endif
 }
 
 TEST_CASE("WP input works in SD mode", "[sdmmc]")
@@ -44,5 +49,8 @@ TEST_CASE("WP input works in SD mode", "[sdmmc]")
 
     TEST_ESP_OK(sdmmc_host_deinit());
     sdmmc_test_board_card_power_set(false);
+#if SOC_SDMMC_IO_POWER_EXTERNAL
+    TEST_ESP_OK(sd_pwr_ctrl_del_on_chip_ldo(config.pwr_ctrl_handle));
+#endif
 }
 #endif

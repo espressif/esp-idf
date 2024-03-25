@@ -67,7 +67,7 @@ Overview
         Pins used by Slot 0 (``HS1_*``) are also used to connect the SPI flash chip in ESP32-WROOM and ESP32-WROVER modules. These pins cannot be concurrently shared between an SD card and an SPI flash. If you need to use Slot 0, establish an alternative connection for the SPI flash using different pins and configure the necessary eFuses accordingly.
 
 
-.. only:: esp32s3
+.. only:: SOC_SDMMC_USE_GPIO_MATRIX
 
     Both slots :c:macro:`SDMMC_HOST_SLOT_0` and :c:macro:`SDMMC_HOST_SLOT_1` support 1-, 4- and 8-line SD interfaces. The slots are connected to {IDF_TARGET_NAME} GPIOs using the GPIO matrix. This means that any GPIO may be used for each of the SD card signals.
 
@@ -76,7 +76,7 @@ Overview
     - :c:macro:`SDMMC_HOST_SLOT_1` is routed via GPIO Matrix. This means that any GPIO may be used for each of the SD card signals. It is for non UHS-I usage.
     - :c:macro:`SDMMC_HOST_SLOT_0` is dedicated to UHS-I mode, which is not yet supported in the driver.
 
-    Currently SDMMC host driver is using the on-chip LDO 4 as the default power supply. SDMMC power control driver is not supported yet. If you buy the ESP32P4 chip itself and plan to use SDMMC peripheral, make sure the VDDPST_5 pin is connected to the on-chip LDO 4 or correct external power supply.
+    On {IDF_TARGET_NAME}, SDMMC host requires an external power supply for the IO voltage. Please refer to :ref:'pwr-ctrl' for details.
 
 Supported Speed Modes
 ---------------------
@@ -161,6 +161,21 @@ To configure the bus width, set the ``width`` field of :cpp:class:`sdmmc_slot_co
     ``SDMMC_SLOT_CONFIG_DEFAULT`` sets both to ``GPIO_NUM_NC``, meaning that by default the signals are not used.
 
     Once :cpp:class:`sdmmc_slot_config_t` structure is initialized this way, you can use it when calling :cpp:func:`sdmmc_host_init_slot` or one of the higher level functions (such as :cpp:func:`esp_vfs_fat_sdmmc_mount`).
+
+.. only:: SOC_SDMMC_IO_POWER_EXTERNAL
+
+    .. _pwr-ctrl:
+
+    Configuring Voltage Level
+    -------------------------
+
+    {IDF_TARGET_NAME} SDMMC Host requires the IO voltage to be supplied externally via the VDDPST_5 (SD_VREF) pin. If the design doesn't require the higher speed SD modes, this pin can be simply connected to the 3.3V supply.
+
+    If the design does require higher speed SD modes (which only work at 1.8V IO levels), there are two options available:
+
+    - Use the on-chip programmable LDO. In this case, connect the desired LDO output channel to VDDPST_5 (SD_VREF) pin. Call :cpp:func:'sd_pwr_ctrl_new_on_chip_ldo' to initialize the SD power control driver, then set :cpp:class:'sdmmc_host_t::pwr_ctrl_handle' to the resulting handle.
+    - Use an external programmable LDO. Likewise, connect the LDO output to the VDDPST_5 (SD_VREF) pin. Then implement a custom `sd_pwr_ctrl` driver to control your LDO. Finally, assign :cpp:class:'sdmmc_host_t::pwr_ctrl_handle' to the handle of your driver instance.
+
 
 DDR Mode for eMMC Chips
 -----------------------

@@ -43,7 +43,9 @@ extern "C" {
     .command_timeout_ms = 0, \
     .get_real_freq = &sdmmc_host_get_real_freq, \
     .input_delay_phase = SDMMC_DELAY_PHASE_0, \
-    .set_input_delay = &sdmmc_host_set_input_delay \
+    .set_input_delay = &sdmmc_host_set_input_delay, \
+    .dma_aligned_buffer = NULL, \
+    .pwr_ctrl_handle = NULL, \
 }
 
 #define SDMMC_SLOT_NO_CD      GPIO_NUM_NC     ///< indicates that card detect line is not used

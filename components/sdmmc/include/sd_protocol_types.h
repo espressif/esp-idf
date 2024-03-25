@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: ISC
  *
- * SPDX-FileContributor: 2016-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2016-2024 Espressif Systems (Shanghai) CO LTD
  */
 /*
  * Copyright (c) 2006 Uwe Stuehler <uwe@openbsd.org>
@@ -27,6 +27,7 @@
 #include <stddef.h>
 #include "esp_err.h"
 #include "freertos/FreeRTOS.h"
+#include "sd_pwr_ctrl.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -207,6 +208,7 @@ typedef struct {
     sdmmc_delay_phase_t input_delay_phase; /*!< input delay phase, this will only take into effect when the host works in SDMMC_FREQ_HIGHSPEED or SDMMC_FREQ_52M. Driver will print out how long the delay is*/
     esp_err_t (*set_input_delay)(int slot, sdmmc_delay_phase_t delay_phase); /*!< set input delay phase */
     void* dma_aligned_buffer; /*!< Leave it NULL. Reserved for cache aligned buffers for SDIO mode */
+    sd_pwr_ctrl_handle_t pwr_ctrl_handle;  /*!< Power control handle */
 } sdmmc_host_t;
 
 /**

@@ -149,6 +149,15 @@ esp_err_t esp_ldo_enable_unit(esp_ldo_unit_handle_t unit)
     return ESP_OK;
 }
 
+esp_err_t esp_ldo_set_voltage(esp_ldo_unit_handle_t unit, int voltage_mv)
+{
+    ESP_RETURN_ON_FALSE(unit, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
+
+    ldo_ll_set_output_voltage_mv(unit->unit_id, voltage_mv);
+
+    return ESP_OK;
+}
+
 esp_err_t esp_ldo_disable_unit(esp_ldo_unit_handle_t unit)
 {
     ESP_RETURN_ON_FALSE(unit, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");

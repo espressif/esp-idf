@@ -71,6 +71,12 @@ SDMMC 主机驱动
 
     卡槽 :c:macro:`SDMMC_HOST_SLOT_0` 和 :c:macro:`SDMMC_HOST_SLOT_1` 都支持 1、4、8 线的 SD 接口，这些卡槽通过 GPIO 交换矩阵连接到 {IDF_TARGET_NAME} 的 GPIO，即每个 SD 卡信号都可以使用任意 GPIO 连接。
 
+.. only:: esp32p4
+
+    - 卡槽 :c:macro:`SDMMC_HOST_SLOT_1` 通过GPIO矩阵连接。这意味着任何GPIO都可以用于每个SD卡信号。它适用于非UHS-I用途。
+    - 卡槽 :c:macro:`SDMMC_HOST_SLOT_0` 专用于UHS-I模式，驱动程序中尚不支持该模式。
+
+    目前SDMMC主机需要为IO电平提供外部电压参考。如果您自行购买ESP32P4芯片并计划使用SDMMC外设，请参阅 :ref:'wr-ctrl' 。
 
 支持的速率模式
 ---------------------
@@ -155,6 +161,18 @@ SDMMC 主机驱动支持以下速率模式：
     ``SDMMC_SLOT_CONFIG_DEFAULT`` 将 CD 和 WP 管脚都配置为 ``GPIO_NUM_NC``，表明默认情况下不会使用这两个管脚。
 
     通过上述方式初始化 :cpp:class:`sdmmc_slot_config_t` 结构体后，即可在调用 :cpp:func:`sdmmc_host_init_slot` 或其他任意高层函数（如 :cpp:func:`esp_vfs_fat_sdmmc_mount`）时使用该结构体。
+
+.. only:: SOC_SDMMC_IO_POWER_EXTERNAL
+
+    .. _pwr-ctrl:
+
+    配置供电和参考电压
+    ------------------
+
+    {IDF_TARGET_NAME} SDMMC主机需要为IO电平提供外部电压参考 ，以支持高速设备， 驱动器将动态配置电压参考。您可以使用片上可编程LDO作为从机电源和电压参考 ，也可以提供正确的外部电源。
+
+    - 要使用片上LDO ，请确保 VDDPST_5(sd_vref) 引脚连接到所选的片上LD通道 ，并调用 :cpp:func:'sd_pwr_ctrl_new_on_chip_ldo' 分配所选的LDO通道 ，然后将 'pwr_ctr_handle' 传递给 :cpp:class:'sdmmc_host_t::pwr_ctl_handle' 。
+    - 要使用外部电源，请确保 VDDPST_5(sd_vref) 引脚已连接，然后按照 :cpp:class:'sd_pwr_ctrl_drv_t' 构造外部电源控制结构体，并将其传递给 :cpp:class:'sdmmc_host_t::pwr_ctr_handle'。
 
 eMMC 芯片的 DDR 模式
 -----------------------

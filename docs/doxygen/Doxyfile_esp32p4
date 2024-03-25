@@ -21,3 +21,5 @@ INPUT += \
     $(PROJECT_PATH)/components/soc/$(IDF_TARGET)/include/soc/gpio_num.h \
     $(PROJECT_PATH)/components/soc/$(IDF_TARGET)/include/soc/soc_caps.h \
     $(PROJECT_PATH)/components/soc/$(IDF_TARGET)/include/soc/uart_channel.h \
+    $(PROJECT_PATH)/components/sdmmc/include/sd_pwr_ctrl.h \
+    $(PROJECT_PATH)/components/sdmmc/include/sd_pwr_ctrl_by_on_chip_ldo.h \

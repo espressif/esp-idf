@@ -15,6 +15,7 @@
 #include "sdmmc_cmd.h"
 #include "driver/sdmmc_host.h"
 #include "sd_test_io.h"
+#include "sd_pwr_ctrl_by_on_chip_ldo.h"
 
 #define EXAMPLE_MAX_CHAR_SIZE    64
 
@@ -125,6 +126,23 @@ void app_main(void)
     // For setting a specific frequency, use host.max_freq_khz (range 400kHz - 40MHz for SDMMC)
     // Example: for fixed frequency of 10MHz, use host.max_freq_khz = 10000;
     sdmmc_host_t host = SDMMC_HOST_DEFAULT();
+
+    /**
+     * On these chips, the SDMMC IO power is supplied externally
+     */
+#if CONFIG_EXAMPLE_SDMMC_IO_POWER_INTERNAL_LDO
+    sd_pwr_ctrl_ldo_config_t ldo_config = {
+        .ldo_unit_id = 4,
+    };
+    sd_pwr_ctrl_handle_t pwr_ctrl_handle = NULL;
+
+    ret = sd_pwr_ctrl_new_on_chip_ldo(&ldo_config, &pwr_ctrl_handle);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to new an on-chip ldo power control driver");
+        return;
+    }
+    host.pwr_ctrl_handle = pwr_ctrl_handle;
+#endif
 
     // This initializes the slot without card detect (CD) and write protect (WP) signals.
     // Modify slot_config.gpio_cd and slot_config.gpio_wp if your board has these signals.
@@ -239,5 +257,14 @@ void app_main(void)
 
     // All done, unmount partition and disable SDMMC peripheral
     esp_vfs_fat_sdcard_unmount(mount_point, card);
+
+#if SOC_SDMMC_IO_POWER_EXTERNAL
+    ret = sd_pwr_ctrl_del_on_chip_ldo(pwr_ctrl_handle);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to delete on-chip ldo power control driver");
+        return;
+    }
+#endif
+
     ESP_LOGI(TAG, "Card unmounted");
 }

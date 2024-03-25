@@ -665,20 +665,6 @@ esp_err_t sdmmc_host_init_slot(int slot, const sdmmc_slot_config_t *slot_config)
         return ret;
     }
 
-#if SOC_MULTI_USAGE_LDO_SUPPORTED
-    esp_ldo_unit_init_cfg_t init_ldo_cfg = {
-        .unit_id = LDO_UNIT_4,
-        .cfg = {
-            .voltage_mv = 3300,
-        },
-        .flags.shared_ldo = true,
-    };
-    esp_ldo_unit_handle_t ldo_unit = NULL;
-    ESP_RETURN_ON_ERROR(esp_ldo_init_unit(&init_ldo_cfg, &ldo_unit), TAG, "LDO init failed");
-    ESP_RETURN_ON_ERROR(esp_ldo_enable_unit(ldo_unit), TAG, "LDO enable failed");
-    s_host_ctx.slot_ctx[slot].ldo_unit = ldo_unit;
-#endif
-
     return ESP_OK;
 }
 
@@ -699,16 +685,6 @@ esp_err_t sdmmc_host_deinit(void)
     SDMMC_RCC_ATOMIC() {
         sdmmc_ll_enable_bus_clock(s_host_ctx.hal.dev, false);
     }
-
-#if SOC_MULTI_USAGE_LDO_SUPPORTED
-    for (int i = 0; i < SOC_SDMMC_NUM_SLOTS; i++) {
-        if (s_host_ctx.slot_ctx[i].ldo_unit) {
-            ESP_RETURN_ON_ERROR(esp_ldo_disable_unit(s_host_ctx.slot_ctx[i].ldo_unit), TAG, "LDO disable failed");
-            ESP_RETURN_ON_ERROR(esp_ldo_deinit_unit(s_host_ctx.slot_ctx[i].ldo_unit), TAG, "LDO deinit failed");
-            s_host_ctx.slot_ctx[i].ldo_unit = NULL;
-        }
-    }
-#endif
 
     return ESP_OK;
 }
