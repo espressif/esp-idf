@@ -27,6 +27,7 @@
 #define SOC_PCNT_SUPPORTED              1
 #define SOC_MCPWM_SUPPORTED             1
 #define SOC_TWAI_SUPPORTED              1
+#define SOC_PHY_SUPPORTED               1
 #define SOC_BT_SUPPORTED                1
 #define SOC_GPTIMER_SUPPORTED           1
 #define SOC_IEEE802154_SUPPORTED        1

@@ -9,6 +9,8 @@ if(IDF_TARGET STREQUAL "esp32p4" OR IDF_TARGET STREQUAL "esp32c61")
     return()
 endif()
 
+if(CONFIG_ESP_PHY_ENABLED)
+
 set(srcs "src/phy_override.c" "src/lib_printf.c" "src/phy_common.c")
 
 if(CONFIG_APP_NO_BLOBS)
@@ -46,6 +48,7 @@ if(CONFIG_ESP_PHY_MULTIPLE_INIT_DATA_BIN_EMBED)
     set(embed_files "${build_dir}/phy_multiple_init_data.bin")
 endif()
 endif()
+endif()
 
 # [refactor-todo]: requires "driver" component for periph_ctrl header file
 idf_component_register(SRCS "${srcs}"
@@ -55,6 +58,7 @@ idf_component_register(SRCS "${srcs}"
                     EMBED_FILES  ${embed_files}
                     )
 
+if(CONFIG_ESP_PHY_ENABLED)
 set(target_name "${idf_target}")
 target_link_directories(${COMPONENT_LIB} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/lib/${target_name}")
 
@@ -121,4 +125,6 @@ if(CONFIG_ESP_PHY_INIT_DATA_IN_PARTITION)
     esptool_py_flash_target(${phy_name}-flash "${main_args}" "${sub_args}")
     esptool_py_flash_target_image(${phy_name}-flash ${phy_name} "${phy_partition_offset}" "${phy_init_data_bin}")
     esptool_py_flash_target_image(flash ${phy_name} "${phy_partition_offset}" "${phy_init_data_bin}")
+endif()
+
 endif()

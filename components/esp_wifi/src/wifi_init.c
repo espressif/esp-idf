@@ -18,8 +18,10 @@
 #include "esp_wpa.h"
 #include "esp_netif.h"
 #include "private/esp_coexist_internal.h"
+#ifdef CONFIG_ESP_PHY_ENABLED
 #include "esp_phy_init.h"
 #include "esp_private/phy.h"
+#endif
 #if __has_include("esp_psram.h")
 #include "esp_psram.h"
 #endif
@@ -183,7 +185,9 @@ static esp_err_t wifi_deinit_internal(void)
         s_wifi_modem_sleep_lock = NULL;
     }
 #endif
+#ifdef CONFIG_ESP_PHY_ENABLED
     esp_wifi_power_domain_off();
+#endif
 
 #if CONFIG_ESP_WIFI_SLP_BEACON_LOST_OPT
     wifi_beacon_monitor_config_t monitor_config = WIFI_BEACON_MONITOR_CONFIG_DEFAULT(false);
@@ -217,8 +221,9 @@ static esp_err_t wifi_deinit_internal(void)
     esp_wifi_internal_modem_state_configure(false);
     esp_pm_unregister_skip_light_sleep_callback(sleep_modem_wifi_modem_state_skip_light_sleep);
 #endif
+#ifdef CONFIG_ESP_PHY_ENABLED
     esp_phy_modem_deinit();
-
+#endif
     s_wifi_inited = false;
 
     return err;
@@ -379,7 +384,9 @@ esp_err_t esp_wifi_init(const wifi_init_config_t *config)
     coex_init();
 #endif
     esp_wifi_set_log_level();
+#ifdef CONFIG_ESP_PHY_ENABLED
     esp_wifi_power_domain_on();
+#endif
 #ifdef CONFIG_ESP_WIFI_FTM_ENABLE
     esp_chip_info_t info = {0};
     esp_chip_info(&info);
@@ -393,7 +400,9 @@ esp_err_t esp_wifi_init(const wifi_init_config_t *config)
         esp_mac_bb_pd_mem_init();
         esp_wifi_mac_pd_mem_init();
 #endif
+#ifdef CONFIG_ESP_PHY_ENABLED
         esp_phy_modem_init();
+#endif
 #if CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP
         if (sleep_modem_wifi_modem_state_enabled()) {
             esp_pm_register_skip_light_sleep_callback(sleep_modem_wifi_modem_state_skip_light_sleep);
