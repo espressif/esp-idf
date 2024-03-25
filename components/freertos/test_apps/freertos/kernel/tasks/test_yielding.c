@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -75,7 +75,7 @@ static void yield_task2(void *arg)
 
     /* Wait for the other task to run for the test to begin */
     while (!task_sequence_ready) {
-        taskYIELD();
+        vTaskDelay(10);
     };
 
     /* Store task_id in the sequence array */
@@ -272,7 +272,7 @@ static void test_critical_task2(void *arg)
 
     /* Wait for the other task to run for the test to begin */
     while (!task_sequence_ready) {
-        taskYIELD();
+        vTaskDelay(10);
     };
 
     /* Store task_id in the sequence array */
@@ -474,7 +474,7 @@ static void other_core_task2(void *arg)
 
     /* Wait for the other task to run for the test to begin */
     while (!task_sequence_ready) {
-        taskYIELD();
+        vTaskDelay(10);
     };
 
     /* Store task_id in the sequence array */
@@ -594,7 +594,7 @@ static void other_core_critical_task2(void *arg)
 
     /* Wait for the other task to run for the test to begin */
     while (!task_sequence_ready) {
-        taskYIELD();
+        vTaskDelay(10);
     };
 
     /* Store task_id in the sequence array */

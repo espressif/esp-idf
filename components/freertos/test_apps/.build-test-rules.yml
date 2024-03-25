@@ -5,10 +5,6 @@ components/freertos/test_apps/freertos:
     - if: CONFIG_NAME == "smp" and IDF_TARGET == "esp32p4"
       temporary: true
       reason: target(s) not supported yet
-  disable_test:
-    - if: IDF_TARGET == "esp32p4"
-      temporary: true
-      reason: test not pass, should be re-enable # IDF-8981
 
 components/freertos/test_apps/orig_inc_path:
   enable:
