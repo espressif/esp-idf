@@ -185,7 +185,7 @@ In the temperature sensor driver, we do not add any protection to ensure the thr
     ETM Event and Task
     ^^^^^^^^^^^^^^^^^^
 
-    Temperature Sensor is able to generate events that can interact with the :doc:`ETM </api-reference/peripherals/etm>` module. The supported events are listed in the :cpp:type:`temperature_sensor_etm_event_type_t`. You can call :cpp:func:`temperature_sensor_new_etm_event` to get the corresponding ETM event handle. The supported tasks are listed in the :cpp:type:`temperature_sensor_etm_task_type_t`. You can call :cpp:func:`temperature_sensor_new_etm_task` to get the corresponding ETM event handle.
+    Temperature Sensor is able to generate events that can interact with the :doc:`ETM </api-reference/peripherals/etm>` module. The supported events are listed in the :cpp:type:`temperature_sensor_etm_event_type_t`. You can call :cpp:func:`temperature_sensor_new_etm_event` to get the corresponding ETM event handle. The supported tasks are listed in the :cpp:type:`temperature_sensor_etm_task_type_t`. You can call :cpp:func:`temperature_sensor_new_etm_task` to get the corresponding ETM task handle.
 
     .. note::
 
