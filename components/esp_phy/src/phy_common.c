@@ -15,6 +15,7 @@
 #include "esp_phy_init.h"
 #include "esp_private/phy.h"
 #include "esp_phy.h"
+#include "esp_attr.h"
 
 static const char* TAG = "phy_comm";
 
@@ -131,6 +132,18 @@ esp_phy_modem_t phy_get_modem_flag(void)
     return s_phy_modem_flag;
 }
 
+static DRAM_ATTR bool s_phy_ant_need_update_flag = false;
+
+IRAM_ATTR bool phy_ant_need_update(void)
+{
+    return s_phy_ant_need_update_flag;
+}
+
+void phy_ant_clr_update_flag(void)
+{
+    s_phy_ant_need_update_flag = false;
+}
+
 static void phy_ant_set_gpio_output(uint32_t io_num)
 {
     gpio_config_t io_conf = {};
@@ -200,29 +213,14 @@ static bool phy_ant_config_check(esp_phy_ant_config_t *config)
     return ESP_OK;
 }
 
-esp_err_t esp_phy_set_ant(esp_phy_ant_config_t *config)
+void phy_ant_update(void)
 {
-    uint8_t ant0;
-    uint8_t ant1;
-    uint8_t rx_ant0;
-    uint8_t rx_ant1;
-    uint8_t def_ant;
-    uint8_t tx_ant0;
-    bool rx_auto;
-
-    if (!config || (phy_ant_config_check(config) != ESP_OK)) {
-        return ESP_ERR_INVALID_ARG;
-    }
-
-    if ( phy_get_modem_flag() == 0 ) {
-        ESP_LOGE(TAG, "PHY not enabled");
-        return ESP_ERR_INVALID_STATE;
-    }
-
-    ant0 = config->enabled_ant0;
-    ant1 = config->enabled_ant1;
-    rx_auto = false;
-    def_ant = 0;
+    uint8_t rx_ant0 = 0, rx_ant1 = 0, tx_ant0 = 0;
+    esp_phy_ant_config_t *config = &s_phy_ant_config;
+    uint8_t ant0 = config->enabled_ant0;
+    uint8_t ant1 = config->enabled_ant1;
+    bool rx_auto = false;
+    uint8_t def_ant = 0;
     switch (config->rx_ant_mode) {
         case ESP_PHY_ANT_MODE_ANT0:
             rx_ant0 = ant0;
@@ -238,7 +236,8 @@ esp_err_t esp_phy_set_ant(esp_phy_ant_config_t *config)
             rx_auto = true;
             break;
         default:
-            return ESP_ERR_INVALID_ARG;
+            rx_ant0 = ant0;
+            rx_ant1 = ant0;
     }
 
     switch (config->tx_ant_mode) {
@@ -249,7 +248,7 @@ esp_err_t esp_phy_set_ant(esp_phy_ant_config_t *config)
             tx_ant0 = ant1;
             break;
         default:
-            return ESP_ERR_INVALID_ARG;
+            tx_ant0 = ant0;
     }
 
     switch (config->rx_ant_default) {
@@ -260,13 +259,29 @@ esp_err_t esp_phy_set_ant(esp_phy_ant_config_t *config)
             def_ant = 1;
             break;
         default:
-            return ESP_ERR_INVALID_ARG;
+            def_ant = 0;
     }
 
-    memcpy(&s_phy_ant_config, config, sizeof(esp_phy_ant_config_t));
     ant_dft_cfg(def_ant);
     ant_tx_cfg(tx_ant0);
     ant_rx_cfg(rx_auto, rx_ant0, rx_ant1);
+}
+
+esp_err_t esp_phy_set_ant(esp_phy_ant_config_t *config)
+{
+    if (!config || (phy_ant_config_check(config) != ESP_OK)) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    memcpy(&s_phy_ant_config, config, sizeof(esp_phy_ant_config_t));
+    if ( phy_get_modem_flag() == 0 ) {
+        // Set flag and will be updated when PHY enable
+        s_phy_ant_need_update_flag = true;
+    } else {
+        // Update immediately when PHY is enabled
+        phy_ant_update();
+    }
+
     return ESP_OK;
 }
 

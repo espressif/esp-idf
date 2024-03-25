@@ -199,6 +199,25 @@ void ant_tx_cfg(uint8_t ant0);
  */
 void ant_rx_cfg(bool auto_en, uint8_t ant0, uint8_t ant1);
 
+/**
+ * @brief PHY antenna need update
+ *
+ */
+bool phy_ant_need_update(void);
+
+/**
+ * @brief PHY antenna need update
+ *
+ */
+void phy_ant_clr_update_flag(void);
+
+/**
+ * @brief PHY antenna configuration update
+ *
+ */
+void phy_ant_update(void);
+
+
 #ifdef __cplusplus
 }
 #endif
