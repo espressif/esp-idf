@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,6 +15,7 @@
 #include "esp_heap_caps.h"
 #include "hal/spi_types.h"
 #include "esp_private/spi_share_hw_ctrl.h"
+#include "esp_ldo_regulator.h"
 #include "hal/spi_flash_hal.h"
 #include "hal/gpio_hal.h"
 #include "esp_flash_internal.h"
@@ -420,6 +421,19 @@ esp_err_t esp_flash_init_default_chip(void)
 esp_err_t esp_flash_app_init(void)
 {
     esp_err_t err = ESP_OK;
+
+    // Acquire the LDO channel used by the SPI NOR flash
+    // in case the LDO voltage is changed by other users
+#if defined(CONFIG_ESP_LDO_CHAN_SPI_NOR_FLASH_DOMAIN) && CONFIG_ESP_LDO_CHAN_SPI_NOR_FLASH_DOMAIN != -1
+    static esp_ldo_channel_handle_t s_ldo_chan = NULL;
+    esp_ldo_channel_config_t ldo_config = {
+        .chan_id = CONFIG_ESP_LDO_CHAN_SPI_NOR_FLASH_DOMAIN,
+        .voltage_mv = CONFIG_ESP_LDO_VOLTAGE_SPI_NOR_FLASH_DOMAIN,
+    };
+    err = esp_ldo_acquire_channel(&ldo_config, &s_ldo_chan);
+    if (err != ESP_OK) return err;
+#endif
+
     spi_flash_init_lock();
     spi_flash_guard_set(&g_flash_guard_default_ops);
 #if CONFIG_SPI_FLASH_ENABLE_COUNTERS
