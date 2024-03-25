@@ -56,6 +56,9 @@ static esp_reset_reason_t get_reset_reason(soc_reset_reason_t rtc_reset_reason, 
         return ESP_RST_CPU_LOCKUP;
 
     case RESET_REASON_CORE_EFUSE_CRC:
+#if CONFIG_IDF_TARGET_ESP32P4
+        return ESP_RST_DEEPSLEEP; // TODO: IDF-9564
+#endif
         return ESP_RST_EFUSE;
 
     case RESET_REASON_CORE_PWR_GLITCH:

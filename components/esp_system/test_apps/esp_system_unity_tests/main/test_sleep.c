@@ -78,6 +78,7 @@ TEST_CASE_MULTIPLE_STAGES("enter deep sleep on APP CPU and wake up using timer",
 
 #endif
 
+#if !(CONFIG_SPIRAM && CONFIG_IDF_TARGET_ESP32P4) // TODO: IDF-9569
 static void do_deep_sleep_timer(void)
 {
     esp_sleep_enable_timer_wakeup(2000000);
@@ -110,6 +111,7 @@ TEST_CASE("wake up from light sleep using timer", "[deepsleep]")
                (tv_stop.tv_usec - tv_start.tv_usec) * 1e-3f;
     TEST_ASSERT_INT32_WITHIN(500, 2000, (int) dt);
 }
+#endif
 
 //NOTE: Explained in IDF-1445 | MR !14996
 #if !(CONFIG_SPIRAM) || (CONFIG_SPIRAM_MALLOC_ALWAYSINTERNAL >= 16384)
@@ -251,6 +253,7 @@ TEST_CASE("light sleep and frequency switching", "[deepsleep]")
     }
 }
 
+#if !(CONFIG_SPIRAM && CONFIG_IDF_TARGET_ESP32P4) // TODO: IDF-9569
 static void do_deep_sleep(void)
 {
     esp_sleep_enable_timer_wakeup(100000);
@@ -286,8 +289,9 @@ TEST_CASE_MULTIPLE_STAGES("enter deep sleep after abort", "[deepsleep][reset=abo
                           do_abort,
                           check_abort_reset_and_sleep,
                           check_sleep_reset);
+#endif
 
-#if SOC_ROM_SUPPORT_DEEP_SLEEP_WAKEUP_STUB
+#if ESP_ROM_SUPPORT_DEEP_SLEEP_WAKEUP_STUB
 static RTC_DATA_ATTR uint32_t s_wake_stub_var;
 
 static RTC_IRAM_ATTR void wake_stub(void)
@@ -380,7 +384,7 @@ TEST_CASE_MULTIPLE_STAGES("can set sleep wake stub from stack in RTC RAM", "[dee
                           check_wake_stub);
 
 #endif // CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP
-#endif // SOC_ROM_SUPPORT_DEEP_SLEEP_WAKEUP_STUB
+#endif // ESP_ROM_SUPPORT_DEEP_SLEEP_WAKEUP_STUB
 
 #if SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
 
