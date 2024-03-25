@@ -764,8 +764,9 @@ esp_err_t ieee802154_mac_deinit(void)
     if (s_ieee802154_isr_handle) {
         ret = esp_intr_free(s_ieee802154_isr_handle);
         s_ieee802154_isr_handle = NULL;
+        ESP_RETURN_ON_FALSE(ret == ESP_OK, ESP_FAIL, IEEE802154_TAG, "IEEE802154 MAC ISR deinit failed");
     }
-    ret = ieee802154_sleep_deinit();
+    ESP_RETURN_ON_FALSE(ieee802154_sleep_deinit() == ESP_OK, ESP_FAIL, IEEE802154_TAG, "IEEE802154 MAC sleep deinit failed");
     return ret;
 }
 
