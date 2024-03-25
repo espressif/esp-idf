@@ -59,6 +59,10 @@ esp_err_t esp_cache_msync(void *addr, size_t size, int flags)
     if (flags & ESP_CACHE_MSYNC_FLAG_DIR_M2C) {
         ESP_EARLY_LOGV(TAG, "M2C DIR");
 
+        if (flags & ESP_CACHE_MSYNC_FLAG_UNALIGNED) {
+            ESP_RETURN_ON_FALSE_ISR(false, ESP_ERR_INVALID_ARG, TAG, "M2C direction doesn't allow ESP_CACHE_MSYNC_FLAG_UNALIGNED");
+        }
+
         esp_os_enter_critical_safe(&s_spinlock);
         //Add preload feature / flag here, IDF-7800
         valid = cache_hal_invalidate_addr(vaddr, size);

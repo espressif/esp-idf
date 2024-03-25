@@ -364,7 +364,7 @@ static esp_err_t generate_descriptor_list(const uint8_t *buffer, const size_t le
         aligned_block_bytes = 0;
     }
 
-    size_t max_desc_size = (is_output) ? DMA_DESCRIPTOR_BUFFER_MAX_SIZE_16B_ALIGNED : DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED;
+    size_t max_desc_size = (is_output) ? ALIGN_DOWN(DMA_DESCRIPTOR_BUFFER_MAX_SIZE_16B_ALIGNED, cache_line_size) : ALIGN_DOWN(DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED, cache_line_size);
 
     dma_descs_needed = (unaligned_start_bytes ? 1 : 0) + dma_desc_get_required_num(aligned_block_bytes, max_desc_size) + (unaligned_end_bytes ? 1 : 0);
 
@@ -389,7 +389,7 @@ static esp_err_t generate_descriptor_list(const uint8_t *buffer, const size_t le
         memset(start_alignment_stream_buffer + unaligned_start_bytes, 0, alignment_buffer_size - unaligned_start_bytes);
 
         // add start alignment node to the DMA linked list
-        dma_desc_populate(dma_descriptors, start_alignment_stream_buffer, unaligned_start_bytes, DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED, populated_dma_descs);
+        dma_desc_populate(dma_descriptors, start_alignment_stream_buffer, unaligned_start_bytes, max_desc_size, populated_dma_descs);
         populated_dma_descs += (unaligned_start_bytes ? 1 : 0);
     }
 
@@ -411,7 +411,7 @@ static esp_err_t generate_descriptor_list(const uint8_t *buffer, const size_t le
         memset(end_alignment_stream_buffer + unaligned_end_bytes, 0, alignment_buffer_size - unaligned_end_bytes);
 
         // add end alignment node to the DMA linked list
-        dma_desc_populate(dma_descriptors, end_alignment_stream_buffer, unaligned_end_bytes, DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED, populated_dma_descs);
+        dma_desc_populate(dma_descriptors, end_alignment_stream_buffer, unaligned_end_bytes, max_desc_size, populated_dma_descs);
         populated_dma_descs += (unaligned_end_bytes ? 1 : 0);
     }
 
@@ -552,7 +552,7 @@ int esp_aes_process_dma(esp_aes_context *ctx, const unsigned char *input, unsign
         goto cleanup;
     }
     for (int i = 0; i < output_dma_desc_num; i++) {
-        if (esp_cache_msync(output_desc[i].buffer, output_desc[i].dw0.length, ESP_CACHE_MSYNC_FLAG_DIR_M2C | ESP_CACHE_MSYNC_FLAG_UNALIGNED) != ESP_OK) {
+        if (esp_cache_msync(output_desc[i].buffer, ALIGN_UP(output_desc[i].dw0.length, output_cache_line_size), ESP_CACHE_MSYNC_FLAG_DIR_M2C) != ESP_OK) {
             ESP_LOGE(TAG, "Output DMA descriptor buffers cache sync M2C failed");
             ret = -1;
             goto cleanup;
@@ -830,7 +830,7 @@ int esp_aes_process_dma(esp_aes_context *ctx, const unsigned char *input, unsign
 #if (CONFIG_SPIRAM && SOC_PSRAM_DMA_CAPABLE)
     if (block_bytes > 0) {
         if (esp_ptr_external_ram(output)) {
-            if(esp_cache_msync((void*)output, block_bytes, ESP_CACHE_MSYNC_FLAG_DIR_M2C | ESP_CACHE_MSYNC_FLAG_UNALIGNED) != ESP_OK) {
+            if(esp_cache_msync((void*)output, block_bytes, ESP_CACHE_MSYNC_FLAG_DIR_M2C) != ESP_OK) {
                 mbedtls_platform_zeroize(output, len);
                 ESP_LOGE(TAG, "Cache sync failed for the output in external RAM");
                 return -1;
