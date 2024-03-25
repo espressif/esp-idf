@@ -43,6 +43,10 @@ config SOC_RTC_MEM_SUPPORTED
     bool
     default y
 
+config SOC_IEEE802154_SUPPORTED
+    bool
+    default y
+
 config SOC_RMT_SUPPORTED
     bool
     default y

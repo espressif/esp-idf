@@ -82,3 +82,4 @@ PROVIDE ( TRACE               = 0x600C0000 );
 PROVIDE ( ASSIST_DEBUG        = 0x600C2000 );
 PROVIDE ( INTPRI              = 0x600C5000 );
 PROVIDE ( CACHE               = 0x600C8000 );
+PROVIDE ( IEEE802154          = 0x600A3000 );
