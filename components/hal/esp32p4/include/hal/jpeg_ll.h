@@ -43,7 +43,7 @@ typedef enum {
     JPEG_LL_INTR_SOS_UNMATCH_ERR = (1 << 20),
     JPEG_LL_INTR_MARKER_ERR_FST = (1 << 21),
     JPEG_LL_INTR_MARKER_ERR_OTHER = (1 << 22),
-    JPEG_LL_INTR_UNDET = (1 << 23),
+    JPEG_LL_INTR_UNDETECT = (1 << 23),
     JPEG_LL_INTR_DECODE_TIMEOUT = (1 << 24),
 } jpeg_ll_decoder_intr_t;
 
@@ -63,7 +63,7 @@ typedef enum {
                                     JPEG_LL_INTR_SOS_UNMATCH_ERR | \
                                     JPEG_LL_INTR_MARKER_ERR_FST | \
                                     JPEG_LL_INTR_MARKER_ERR_OTHER | \
-                                    JPEG_LL_INTR_UNDET | \
+                                    JPEG_LL_INTR_UNDETECT | \
                                     JPEG_LL_INTR_DECODE_TIMEOUT)
 
 
@@ -530,7 +530,7 @@ static inline void jpeg_ll_pixel_reverse(jpeg_dev_t *hw, bool reverse_en)
  * @brief Configures whether or not to add EOI of “0xffd9” at the end of bitstream
  *
  * @param hw Pointer to JPEG hardware.
- * @param tailer_en 1: Add `0xffd9` at the end ot bitstream.
+ * @param tailer_en 1: Add `0xffd9` at the end of bitstream.
  */
 static inline void jpeg_ll_add_tail(jpeg_dev_t *hw, bool tailer_en)
 {

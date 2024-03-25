@@ -349,7 +349,7 @@ TEST_CASE("I2S_thread_concurrent_safety_test", "[i2s]")
     xTaskCreate(i2s_read_task, "i2s_read_task", 4096, rx_handle, 5, NULL);
     /* writing task to keep writing */
     xTaskCreate(i2s_write_task, "i2s_write_task", 4096, tx_handle, 5, NULL);
-    /* reconfig taks to reconfigurate the settings every 200 ms */
+    /* reconfig task to reconfigure the settings every 200 ms */
     xTaskCreate(i2s_reconfig_task, "i2s_reconfig_task", 4096, tx_handle, 6, NULL);
 
     /* Wait 3 seconds to see if any failures occur */

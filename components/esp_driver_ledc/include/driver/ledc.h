@@ -491,11 +491,11 @@ esp_err_t ledc_fade_start(ledc_mode_t speed_mode, ledc_channel_t channel, ledc_f
 
 #if SOC_LEDC_SUPPORT_FADE_STOP
 /**
- * @brief Stop LEDC fading. The duty of the channel is garanteed to be fixed at most one PWM cycle after the function returns.
+ * @brief Stop LEDC fading. The duty of the channel is guaranteed to be fixed at most one PWM cycle after the function returns.
  *
  * @note  This API can be called if a new fixed duty or a new fade want to be set while the last fade operation is still running in progress.
  * @note  Call this API will abort the fading operation only if it was started by calling ledc_fade_start with LEDC_FADE_NO_WAIT mode.
- * @note  If a fade was started with LEDC_FADE_WAIT_DONE mode, calling this API afterwards has no use in stopping the fade. Fade will continue until it reachs the target duty.
+ * @note  If a fade was started with LEDC_FADE_WAIT_DONE mode, calling this API afterwards has no use in stopping the fade. Fade will continue until it reaches the target duty.
  *
  * @param speed_mode Select the LEDC channel group with specified speed mode. Note that not all targets support high speed mode.
  * @param channel LEDC channel number

@@ -135,7 +135,7 @@ static void usb_serial_jtag_isr_handler_default(void *arg)
     }
 
     if (usbjtag_intr_status & USB_SERIAL_JTAG_INTR_SERIAL_OUT_RECV_PKT) {
-        // read rx buffer(max length is 64), and send avaliable data to ringbuffer.
+        // read rx buffer(max length is 64), and send available data to ringbuffer.
         // Ensure the rx buffer size is larger than RX_MAX_SIZE.
         usb_serial_jtag_ll_clr_intsts_mask(USB_SERIAL_JTAG_INTR_SERIAL_OUT_RECV_PKT);
         uint32_t rx_fifo_len = usb_serial_jtag_ll_read_rxfifo(p_usb_serial_jtag_obj->rx_data_buf, USB_SER_JTAG_RX_MAX_SIZE);
@@ -214,7 +214,7 @@ int usb_serial_jtag_read_bytes(void* buf, uint32_t length, TickType_t ticks_to_w
         return 0;
     }
 
-    // Recieve new data from ISR
+    // Receive new data from ISR
     data = (uint8_t*) xRingbufferReceiveUpTo(p_usb_serial_jtag_obj->rx_ring_buf, &data_read_len, (TickType_t) ticks_to_wait, length);
     if (data == NULL) {
         // If there is no data received from ringbuffer, return 0 directly.

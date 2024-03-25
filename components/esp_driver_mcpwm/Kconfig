@@ -20,6 +20,6 @@ menu "ESP-Driver:MCPWM Configurations"
         bool "Enable debug log"
         default n
         help
-            Wether to enable the debug log message for MCPWM driver.
+            whether to enable the debug log message for MCPWM driver.
             Note that, this option only controls the MCPWM driver log, won't affect other drivers.
 endmenu

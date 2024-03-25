@@ -379,7 +379,7 @@ TEST_CASE("LEDC fade stop test", "[ledc]")
     // Get duty value right before stopping the fade
     uint32_t duty_before_stop = ledc_get_duty(test_speed_mode, LEDC_CHANNEL_0);
     TEST_ESP_OK(ledc_fade_stop(test_speed_mode, LEDC_CHANNEL_0));
-    // PWM signal is 2000 Hz. It may take one cycle (500 us) at maximum to stablize the duty.
+    // PWM signal is 2000 Hz. It may take one cycle (500 us) at maximum to stabilize the duty.
     esp_rom_delay_us(500);
     // Get duty value now, which is at least one cycle after the ledc_fade_stop function returns
     uint32_t duty_after_stop = ledc_get_duty(test_speed_mode, LEDC_CHANNEL_0);
@@ -508,7 +508,7 @@ static void tear_testbench(void)
 // use PCNT to test the waveform of LEDC
 static int wave_count(int last_time)
 {
-    // The input ability of PULSE_IO is disabled after ledc driver install, so we need to reenable it again
+    // The input ability of PULSE_IO is disabled after ledc driver install, so we need to re-enable it again
     PIN_INPUT_ENABLE(GPIO_PIN_MUX_REG[PULSE_IO]);
     int test_counter = 0;
     TEST_ESP_OK(pcnt_unit_clear_count(pcnt_unit));

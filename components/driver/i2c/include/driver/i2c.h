@@ -27,7 +27,7 @@ extern "C" {
 #endif
 
 // I2C clk flags for users to use, can be expanded in the future.
-#define I2C_SCLK_SRC_FLAG_FOR_NOMAL       (0)         /*!< Any one clock source that is available for the specified frequency may be choosen*/
+#define I2C_SCLK_SRC_FLAG_FOR_NOMAL       (0)         /*!< Any one clock source that is available for the specified frequency may be chosen*/
 #define I2C_SCLK_SRC_FLAG_AWARE_DFS       (1 << 0)    /*!< For REF tick clock, it won't change with APB.*/
 #define I2C_SCLK_SRC_FLAG_LIGHT_SLEEP     (1 << 1)    /*!< For light sleep mode.*/
 
@@ -606,7 +606,7 @@ esp_err_t i2c_get_timeout(i2c_port_t i2c_num, int *timeout);
  *
  * @param i2c_num I2C port number
  * @param tx_trans_mode I2C sending data mode
- * @param rx_trans_mode I2C receving data mode
+ * @param rx_trans_mode I2C receiving data mode
  *
  * @return
  *     - ESP_OK Success

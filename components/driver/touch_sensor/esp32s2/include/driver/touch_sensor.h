@@ -62,7 +62,7 @@ esp_err_t touch_pad_get_charge_discharge_times(uint16_t *charge_discharge_times)
 
 /**
  * @brief Set the interval between two measurements
- * @note  The touch sensor will sleep between two mesurements
+ * @note  The touch sensor will sleep between two measurements
  *        This function is to set the interval cycle
  *        And the interval is clocked from SOC_MOD_CLK_RTC_SLOW, its default frequency is SOC_CLK_RC_SLOW_FREQ_APPROX
  *

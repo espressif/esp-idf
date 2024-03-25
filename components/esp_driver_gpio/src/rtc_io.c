@@ -194,10 +194,10 @@ esp_err_t lp_gpio_connect_in_signal(gpio_num_t gpio_num, uint32_t signal_idx, bo
     return ESP_OK;
 }
 
-esp_err_t lp_gpio_connect_out_signal(gpio_num_t gpio_num, uint32_t signal_idx, bool out_inv, bool oen_inv)
+esp_err_t lp_gpio_connect_out_signal(gpio_num_t gpio_num, uint32_t signal_idx, bool out_inv, bool out_en_inv)
 {
     ESP_RETURN_ON_FALSE(rtc_gpio_is_valid_gpio(gpio_num), ESP_ERR_INVALID_ARG, RTCIO_TAG, "LP_IO number error");
-    rtcio_hal_matrix_out(rtc_io_number_get(gpio_num), signal_idx, out_inv, oen_inv);
+    rtcio_hal_matrix_out(rtc_io_number_get(gpio_num), signal_idx, out_inv, out_en_inv);
     return ESP_OK;
 }
 #endif // SOC_LP_GPIO_MATRIX_SUPPORTED

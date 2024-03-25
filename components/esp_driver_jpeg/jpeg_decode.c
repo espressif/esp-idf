@@ -95,7 +95,7 @@ esp_err_t jpeg_new_decoder_engine(const jpeg_decode_engine_cfg_t *dec_eng_cfg, j
     /// init jpeg interrupt.
     jpeg_ll_clear_intr_mask(hal->dev, JPEG_LL_DECODER_EVENT_INTR);
 
-    ESP_GOTO_ON_ERROR(jpeg_check_intr_priority(decoder_engine->codec_base, dec_eng_cfg->intr_priority), err, TAG, "set group intrrupt priority failed");
+    ESP_GOTO_ON_ERROR(jpeg_check_intr_priority(decoder_engine->codec_base, dec_eng_cfg->intr_priority), err, TAG, "set group interrupt priority failed");
     if (dec_eng_cfg->intr_priority) {
         ESP_RETURN_ON_FALSE(1 << (dec_eng_cfg->intr_priority) & JPEG_ALLOW_INTR_PRIORITY_MASK, ESP_ERR_INVALID_ARG, TAG, "invalid interrupt priority:%d", dec_eng_cfg->intr_priority);
     }
@@ -159,7 +159,7 @@ esp_err_t jpeg_decoder_get_info(const uint8_t *in_buf, uint32_t inbuf_len, jpeg_
             width = jpeg_get_bytes(header_info, 2);
             break;
         }
-        // This function only used for get width and hight. So only read SOF marker is enough.
+        // This function only used for get width and height. So only read SOF marker is enough.
         // Can be extended if picture information is extended.
         if (marker == JPEG_M_SOF0) {
             break;
@@ -201,7 +201,7 @@ esp_err_t jpeg_decoder_process(jpeg_decoder_handle_t decoder_engine, const jpeg_
     ESP_GOTO_ON_ERROR(jpeg_dec_config_dma_descriptor(decoder_engine), err, TAG, "config dma descriptor failed");
 
     *out_size = decoder_engine->header_info->process_h * decoder_engine->header_info->process_v * decoder_engine->pixel;
-    ESP_GOTO_ON_FALSE((*out_size <= outbuf_size), ESP_ERR_INVALID_ARG, err, TAG, "Given buffer size % " PRId32 " is smaller than actual jpeg decode output size % " PRId32 "the hight and width of output picture size will be adjusted to 16 bytes aligned automatically", outbuf_size, *out_size);
+    ESP_GOTO_ON_FALSE((*out_size <= outbuf_size), ESP_ERR_INVALID_ARG, err, TAG, "Given buffer size % " PRId32 " is smaller than actual jpeg decode output size % " PRId32 "the height and width of output picture size will be adjusted to 16 bytes aligned automatically", outbuf_size, *out_size);
 
     dma2d_trans_config_t trans_desc = {
         .tx_channel_num = 1,
@@ -682,7 +682,7 @@ static void s_decoder_error_log_print(uint32_t status)
     if (status & JPEG_LL_INTR_MARKER_ERR_OTHER) {
         ESP_LOGE(TAG, "there is an error in the non-first SCAN header information parsed by the decoder.");
     }
-    if (status & JPEG_LL_INTR_UNDET) {
+    if (status & JPEG_LL_INTR_UNDETECT) {
         ESP_LOGE(TAG, "the bitstream of a image is completely read from 2D DMA but the SOS marker is not read");
     }
     if (status & JPEG_LL_INTR_DECODE_TIMEOUT) {

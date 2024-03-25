@@ -183,7 +183,7 @@ esp_err_t temperature_sensor_enable(temperature_sensor_handle_t tsens)
     temperature_sensor_ll_sample_enable(true);
 #endif // SOC_TEMPERATURE_SENSOR_INTR_SUPPORT
 
-    // After enabling/reseting the temperature sensor,
+    // After enabling/resetting the temperature sensor,
     // the output value gradually approaches the true temperature
     // value as the measurement time increases. 300us is recommended.
     esp_rom_delay_us(300);

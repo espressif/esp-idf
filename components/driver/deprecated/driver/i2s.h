@@ -276,7 +276,7 @@ esp_err_t i2s_zero_dma_buffer(i2s_port_t i2s_num);
  *
  * @param i2s_num  I2S port number
  *
- * @param pcm_cfg  including mode selection and a/u-law decompress or compress configuration paramater
+ * @param pcm_cfg  including mode selection and a/u-law decompress or compress configuration parameter
  *
  * @return
  *     - ESP_OK              Success

@@ -39,7 +39,7 @@ typedef struct {
     /* Master TX, Slave RX */
     struct {
         size_t                  sent_buf_num;           // Number of TX buffers that has been sent out by the master.
-        size_t                  slave_rx_buf_num;       // Number of RX buffers laoded by the slave.
+        size_t                  slave_rx_buf_num;       // Number of RX buffers loaded by the slave.
         uint16_t                tx_buffer_size;         /* Buffer size for Master TX / Slave RX direction.
                                                          * Data with length within this size will still be regarded as one buffer.
                                                          * E.g. 10 bytes data costs 2 buffers if the size is 8 bytes per buffer. */

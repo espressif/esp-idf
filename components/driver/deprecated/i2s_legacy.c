@@ -534,7 +534,7 @@ static inline uint32_t i2s_get_buf_size(i2s_port_t i2s_num)
         }
     }
     if (bufsize / bytes_per_frame != p_i2s[i2s_num]->dma_frame_num) {
-        ESP_LOGW(TAG, "dma frame num is adjusted to %"PRIu32" to algin the dma buffer with %"PRIu32
+        ESP_LOGW(TAG, "dma frame num is adjusted to %"PRIu32" to align the dma buffer with %"PRIu32
                  ", bufsize = %"PRIu32, bufsize / bytes_per_frame, alignment, bufsize);
     }
 #else
@@ -626,7 +626,7 @@ static esp_err_t i2s_realloc_dma_buffer(i2s_port_t i2s_num, i2s_dma_t *dma_obj)
 
 static esp_err_t i2s_destroy_dma_object(i2s_port_t i2s_num, i2s_dma_t **dma)
 {
-    /* Check if DMA truely need destroy */
+    /* Check if DMA truly need destroy */
     ESP_RETURN_ON_FALSE(p_i2s[i2s_num], ESP_ERR_INVALID_ARG, TAG, "I2S not initialized yet");
     if (!(*dma)) {
         return ESP_OK;
@@ -662,7 +662,7 @@ static esp_err_t i2s_create_dma_object(i2s_port_t i2s_num, i2s_dma_t **dma)
     /* Allocate new DMA structure */
     *dma = (i2s_dma_t *) calloc(1, sizeof(i2s_dma_t));
     ESP_RETURN_ON_FALSE(*dma, ESP_ERR_NO_MEM, TAG, "DMA object allocate failed");
-    /* Allocate DMA buffer poiter */
+    /* Allocate DMA buffer pointer */
     (*dma)->buf = (char **)heap_caps_calloc(buf_cnt, sizeof(char *), MALLOC_CAP_DMA);
     if (!(*dma)->buf) {
         goto err;
@@ -1536,7 +1536,7 @@ static esp_err_t i2s_init_legacy(i2s_port_t i2s_num, int intr_alloc_flag)
 
     i2s_set_slot_legacy(i2s_num);
     i2s_set_clock_legacy(i2s_num);
-    ESP_RETURN_ON_ERROR(i2s_dma_intr_init(i2s_num, intr_alloc_flag), TAG, "I2S interrupt initailze failed");
+    ESP_RETURN_ON_ERROR(i2s_dma_intr_init(i2s_num, intr_alloc_flag), TAG, "I2S interrupt initialize failed");
     ESP_RETURN_ON_ERROR(i2s_dma_object_init(i2s_num), TAG, "I2S dma object create failed");
     if (p_i2s[i2s_num]->dir & I2S_DIR_TX) {
         ESP_RETURN_ON_ERROR(i2s_realloc_dma_buffer(i2s_num, p_i2s[i2s_num]->tx), TAG, "Allocate I2S dma tx buffer failed");
@@ -1656,7 +1656,7 @@ esp_err_t i2s_driver_install(i2s_port_t i2s_num, const i2s_config_t *i2s_config,
     p_i2s[i2s_num] = i2s_obj;
     i2s_hal_init(&i2s_obj->hal, i2s_num);
 
-    /* Step 3: Store and assign configarations */
+    /* Step 3: Store and assign configurations */
     i2s_mode_identify(i2s_num, i2s_config);
     ESP_GOTO_ON_ERROR(i2s_config_transfer(i2s_num, i2s_config), err, TAG, "I2S install failed");
     i2s_obj->dma_desc_num = i2s_config->dma_desc_num;
@@ -1948,7 +1948,7 @@ esp_err_t i2s_set_pin(i2s_port_t i2s_num, const i2s_pin_config_t *pin)
         }
     }
 
-    /* Set data input/ouput GPIO */
+    /* Set data input/output GPIO */
     gpio_matrix_out_check_and_set(pin->data_out_num, i2s_periph_signal[i2s_num].data_out_sig, 0, 0);
     gpio_matrix_in_check_and_set(pin->data_in_num, i2s_periph_signal[i2s_num].data_in_sig, 0);
     return ESP_OK;

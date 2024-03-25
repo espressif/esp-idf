@@ -161,7 +161,7 @@ typedef struct {
  * @return
  *      - ESP_OK: Set clear signal successfully
  *      - ESP_ERR_INVALID_ARG: Set clear signal failed because of invalid argument
- *      - ESP_ERR_INVALID_STATE: Set clear signal failed because set clear signal repeatly or disable clear signal before set it
+ *      - ESP_ERR_INVALID_STATE: Set clear signal failed because set clear signal repeatedly or disable clear signal before set it
  *      - ESP_FAIL: Set clear signal failed because of other error
  */
 esp_err_t pcnt_unit_set_clear_signal(pcnt_unit_handle_t unit, const pcnt_clear_signal_config_t *config);

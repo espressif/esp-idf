@@ -5,7 +5,7 @@ menu "ESP-Driver:Parallel IO Configurations"
         bool "Enable debug log"
         default n
         help
-            Wether to enable the debug log message for parallel IO driver.
+            whether to enable the debug log message for parallel IO driver.
             Note that, this option only controls the parallel IO driver log, won't affect other drivers.
 
     config PARLIO_ISR_IRAM_SAFE

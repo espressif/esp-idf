@@ -126,7 +126,7 @@ typedef struct adc_digi_context_t {
     RingbufHandle_t                 ringbuf_hdl;                //RX ringbuffer handler
     intptr_t                        rx_eof_desc_addr;           //eof descriptor address of RX channel
     bool                            ringbuf_overflow_flag;      //1: ringbuffer overflow
-    bool                            driver_start_flag;          //1: driver is started; 0: driver is stoped
+    bool                            driver_start_flag;          //1: driver is started; 0: driver is stopped
     bool                            use_adc1;                   //1: ADC unit1 will be used; 0: ADC unit1 won't be used.
     bool                            use_adc2;                   //1: ADC unit2 will be used; 0: ADC unit2 won't be used. This determines whether to acquire sar_adc2_mutex lock or not.
     adc_atten_t                     adc1_atten;                 //Attenuation for ADC1. On this chip each ADC can only support one attenuation.

@@ -273,7 +273,7 @@ esp_err_t rmt_new_rx_channel(const rmt_rx_channel_config_t *config, rmt_channel_
     rmt_ll_rx_enable_wrap(hal->regs, channel_id, true);
 #endif
 #if SOC_RMT_SUPPORT_RX_DEMODULATION
-    // disable carrier demodulation by default, can reenable by `rmt_apply_carrier()`
+    // disable carrier demodulation by default, can re-enable by `rmt_apply_carrier()`
     rmt_ll_rx_enable_carrier_demodulation(hal->regs, channel_id, false);
 #endif
 

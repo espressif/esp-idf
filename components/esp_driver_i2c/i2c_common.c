@@ -41,7 +41,7 @@ typedef struct i2c_platform_t {
 
 static i2c_platform_t s_i2c_platform = {}; // singleton platform
 
-static esp_err_t s_i2c_bus_handle_aquire(i2c_port_num_t port_num, i2c_bus_handle_t *i2c_new_bus, i2c_bus_mode_t mode)
+static esp_err_t s_i2c_bus_handle_acquire(i2c_port_num_t port_num, i2c_bus_handle_t *i2c_new_bus, i2c_bus_mode_t mode)
 {
 #if CONFIG_I2C_ENABLE_DEBUG_LOG
     esp_log_level_set(TAG, ESP_LOG_DEBUG);
@@ -104,7 +104,7 @@ esp_err_t i2c_acquire_bus_handle(i2c_port_num_t port_num, i2c_bus_handle_t *i2c_
         for (int i = 0; i < SOC_I2C_NUM; i++) {
             bus_occupied = i2c_bus_occupied(i);
             if (bus_occupied == false) {
-                ret = s_i2c_bus_handle_aquire(i, i2c_new_bus, mode);
+                ret = s_i2c_bus_handle_acquire(i, i2c_new_bus, mode);
                 if (ret != ESP_OK) {
                     ESP_LOGE(TAG, "acquire bus failed");
                     _lock_release(&s_i2c_platform.mutex);
@@ -117,7 +117,7 @@ esp_err_t i2c_acquire_bus_handle(i2c_port_num_t port_num, i2c_bus_handle_t *i2c_
         }
         ESP_RETURN_ON_FALSE((bus_found == true), ESP_ERR_NOT_FOUND, TAG, "acquire bus failed, no free bus");
     } else {
-        ret = s_i2c_bus_handle_aquire(port_num, i2c_new_bus, mode);
+        ret = s_i2c_bus_handle_acquire(port_num, i2c_new_bus, mode);
         if (ret != ESP_OK) {
             ESP_LOGE(TAG, "acquire bus failed");
         }

@@ -46,7 +46,7 @@ esp_err_t essl_sdio_init_dev(essl_handle_t *out_handle, const essl_sdio_config_t
  */
 esp_err_t essl_sdio_deinit_dev(essl_handle_t handle);
 
-//Please call `essl_` functions witout `sdio` instead of calling these functions directly.
+//Please call `essl_` functions without `sdio` instead of calling these functions directly.
 /** @cond */
 /**
  * SDIO Initialize process of an ESSL SDIO slave device.

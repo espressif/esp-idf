@@ -16,7 +16,7 @@ set(includes "deprecated"
 # Always included linker fragments
 set(ldfragments "")
 
-# ADC related source files (dprecated)
+# ADC related source files (deprecated)
 if(CONFIG_SOC_ADC_SUPPORTED)
     list(APPEND srcs "deprecated/adc_legacy.c")
 endif()

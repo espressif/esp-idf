@@ -217,7 +217,7 @@ static void IRAM_ATTR timer_isr_default(void *arg)
         timer_ll_clear_intr_status(hal->dev, TIMER_LL_EVENT_ALARM(timer_id));
         // call user registered callback
         is_awoken = timer_obj->timer_isr_fun.fn(timer_obj->timer_isr_fun.args);
-        // reenable alarm if required
+        // re-enable alarm if required
         uint64_t new_alarm_value = timer_obj->alarm_value;
         bool reenable_alarm = (new_alarm_value != old_alarm_value) || timer_obj->auto_reload_en;
         timer_ll_enable_alarm(hal->dev, timer_id, reenable_alarm);

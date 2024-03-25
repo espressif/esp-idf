@@ -25,7 +25,7 @@
  * 1. Rename this file to `adc_cali_line_fitting_v2.c`, as the Line Fitting Scheme on ESP32 and ESP32S2 are different to this.
  * 2. Move this file to common directory
  * 3. Still support `ADC_CALI_SCHEME_LINE_FITTING_SUPPORTED`
- * 4. Add a new internal maccro `ADC_CALI_SCHEME_LINE_FITTING_V2_SUPPORTED`
+ * 4. Add a new internal macro `ADC_CALI_SCHEME_LINE_FITTING_V2_SUPPORTED`
  * 5. Only build this file, when `ADC_CALI_SCHEME_LINE_FITTING_V2_SUPPORTED == true`
  */
 

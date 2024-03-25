@@ -98,7 +98,7 @@ esp_err_t gpio_pullup_en(gpio_num_t gpio_num)
 #if SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
         rtc_gpio_pullup_en(gpio_num);
 #else
-        abort(); // This should be eliminated as unreachable, unless a programming error has occured
+        abort(); // This should be eliminated as unreachable, unless a programming error has occurred
 #endif
     }
 
@@ -117,7 +117,7 @@ esp_err_t gpio_pullup_dis(gpio_num_t gpio_num)
 #if SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
         rtc_gpio_pullup_dis(gpio_num);
 #else
-        abort(); // This should be eliminated as unreachable, unless a programming error has occured
+        abort(); // This should be eliminated as unreachable, unless a programming error has occurred
 #endif
     }
 
@@ -136,7 +136,7 @@ esp_err_t gpio_pulldown_en(gpio_num_t gpio_num)
 #if SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
         rtc_gpio_pulldown_en(gpio_num);
 #else
-        abort(); // This should be eliminated as unreachable, unless a programming error has occured
+        abort(); // This should be eliminated as unreachable, unless a programming error has occurred
 #endif
     }
 
@@ -155,7 +155,7 @@ esp_err_t gpio_pulldown_dis(gpio_num_t gpio_num)
 #if SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
         rtc_gpio_pulldown_dis(gpio_num);
 #else
-        abort(); // This should be eliminated as unreachable, unless a programming error has occured
+        abort(); // This should be eliminated as unreachable, unless a programming error has occurred
 #endif
     }
 
@@ -689,7 +689,7 @@ esp_err_t gpio_set_drive_capability(gpio_num_t gpio_num, gpio_drive_cap_t streng
 #if SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
         ret = rtc_gpio_set_drive_capability(gpio_num, strength);
 #else
-        abort(); // This should be eliminated as unreachable, unless a programming error has occured
+        abort(); // This should be eliminated as unreachable, unless a programming error has occurred
 #endif
     }
 
@@ -710,7 +710,7 @@ esp_err_t gpio_get_drive_capability(gpio_num_t gpio_num, gpio_drive_cap_t *stren
 #if SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
         ret = rtc_gpio_get_drive_capability(gpio_num, strength);
 #else
-        abort(); // This should be eliminated as unreachable, unless a programming error has occured
+        abort(); // This should be eliminated as unreachable, unless a programming error has occurred
 #endif
     }
 
@@ -802,9 +802,9 @@ void gpio_iomux_in(uint32_t gpio, uint32_t signal_idx)
     gpio_hal_iomux_in(gpio_context.gpio_hal, gpio, signal_idx);
 }
 
-void gpio_iomux_out(uint8_t gpio_num, int func, bool oen_inv)
+void gpio_iomux_out(uint8_t gpio_num, int func, bool out_en_inv)
 {
-    gpio_hal_iomux_out(gpio_context.gpio_hal, gpio_num, func, (uint32_t)oen_inv);
+    gpio_hal_iomux_out(gpio_context.gpio_hal, gpio_num, func, (uint32_t)out_en_inv);
 }
 
 static esp_err_t gpio_sleep_pullup_en(gpio_num_t gpio_num)

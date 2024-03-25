@@ -179,7 +179,7 @@ static esp_err_t lcd_rgb_panel_alloc_frame_buffers(const esp_lcd_rgb_panel_confi
     return ESP_OK;
 }
 
-static esp_err_t lcd_rgb_panel_destory(esp_rgb_panel_t *rgb_panel)
+static esp_err_t lcd_rgb_panel_destroy(esp_rgb_panel_t *rgb_panel)
 {
     LCD_CLOCK_SRC_ATOMIC() {
         lcd_ll_enable_clock(rgb_panel->hal.dev, false);
@@ -370,7 +370,7 @@ esp_err_t esp_lcd_new_rgb_panel(const esp_lcd_rgb_panel_config_t *rgb_panel_conf
 
 err:
     if (rgb_panel) {
-        lcd_rgb_panel_destory(rgb_panel);
+        lcd_rgb_panel_destroy(rgb_panel);
     }
     return ret;
 }
@@ -507,7 +507,7 @@ static esp_err_t rgb_panel_del(esp_lcd_panel_t *panel)
 {
     esp_rgb_panel_t *rgb_panel = __containerof(panel, esp_rgb_panel_t, base);
     int panel_id = rgb_panel->panel_id;
-    ESP_RETURN_ON_ERROR(lcd_rgb_panel_destory(rgb_panel), TAG, "destroy rgb panel(%d) failed", panel_id);
+    ESP_RETURN_ON_ERROR(lcd_rgb_panel_destroy(rgb_panel), TAG, "destroy rgb panel(%d) failed", panel_id);
     ESP_LOGD(TAG, "del rgb panel(%d)", panel_id);
     return ESP_OK;
 }
@@ -918,7 +918,7 @@ static IRAM_ATTR bool lcd_rgb_panel_fill_bounce_buffer(esp_rgb_panel_t *panel, u
         }
     } else {
         // We do have frame buffer; copy from there.
-        // Note: if the cache is diabled, and accessing the PSRAM by DCACHE will crash.
+        // Note: if the cache is disabled, and accessing the PSRAM by DCACHE will crash.
         memcpy(buffer, &panel->fbs[panel->bb_fb_index][panel->bounce_pos_px * bytes_per_pixel], panel->bb_size);
         if (panel->flags.bb_invalidate_cache) {
             // We don't need the bytes we copied from the psram anymore
@@ -1091,7 +1091,7 @@ static IRAM_ATTR void lcd_rgb_panel_try_restart_transmission(esp_rgb_panel_t *pa
 
 static void lcd_rgb_panel_start_transmission(esp_rgb_panel_t *rgb_panel)
 {
-    // reset FIFO of DMA and LCD, incase there remains old frame data
+    // reset FIFO of DMA and LCD, in case there remains old frame data
     gdma_reset(rgb_panel->dma_chan);
     lcd_ll_stop(rgb_panel->hal.dev);
     lcd_ll_fifo_reset(rgb_panel->hal.dev);

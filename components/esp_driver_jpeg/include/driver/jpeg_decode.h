@@ -32,7 +32,7 @@ typedef struct {
 } jpeg_decode_engine_cfg_t;
 
 /**
- * @brief Stucture for jpeg decode header
+ * @brief Structure for jpeg decode header
  */
 typedef struct {
     uint32_t width;          /*!< Number of pixels in the horizontal direction */

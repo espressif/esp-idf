@@ -12,7 +12,7 @@ menu "ESP-Driver:Sigma Delta Modulator Configurations"
         bool "Suppress legacy driver deprecated warning"
         default n
         help
-            Wether to suppress the deprecation warnings when using legacy sigma delta driver.
+            whether to suppress the deprecation warnings when using legacy sigma delta driver.
             If you want to continue using the legacy driver, and don't want to see related deprecation warnings,
             you can enable this option.
 
@@ -20,6 +20,6 @@ menu "ESP-Driver:Sigma Delta Modulator Configurations"
         bool "Enable debug log"
         default n
         help
-            Wether to enable the debug log message for SDM driver.
+            whether to enable the debug log message for SDM driver.
             Note that, this option only controls the SDM driver log, won't affect other drivers.
 endmenu # Sigma Delta Modulator Configurations

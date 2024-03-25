@@ -693,7 +693,7 @@ static void i2c_scl_freq_cal(void)
     const float i2c_cource_clk_period = 0.0125;
     int expt_cnt = 542;
 #else
-    const int i2c_source_clk_freq = 18000000; // Clock sorce: RTC
+    const int i2c_source_clk_freq = 18000000; // Clock source: RTC
     const float i2c_cource_clk_period = 0.056;
     int expt_cnt = 540;
 #endif

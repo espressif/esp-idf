@@ -329,7 +329,7 @@ esp_err_t rmt_new_tx_channel(const rmt_tx_channel_config_t *config, rmt_channel_
     rmt_ll_tx_set_mem_blocks(hal->regs, channel_id, tx_channel->base.mem_block_num);
     // set limit threshold, after transmit ping_pong_symbols size, an interrupt event would be generated
     rmt_ll_tx_set_limit(hal->regs, channel_id, tx_channel->ping_pong_symbols);
-    // disable carrier modulation by default, can reenable by `rmt_apply_carrier()`
+    // disable carrier modulation by default, can re-enable by `rmt_apply_carrier()`
     rmt_ll_tx_enable_carrier_modulation(hal->regs, channel_id, false);
     // idle level is determined by register value
     rmt_ll_tx_fix_idle_level(hal->regs, channel_id, 0, true);

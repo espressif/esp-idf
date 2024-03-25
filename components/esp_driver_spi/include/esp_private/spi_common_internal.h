@@ -225,7 +225,7 @@ typedef void(*dmaworkaround_cb_t)(void *arg);
  * @brief Request a reset for a certain DMA channel
  *
  * @note In some (well-defined) cases in the ESP32 (at least rev v.0 and v.1), a SPI DMA channel will get confused. This can be remedied
- * by resetting the SPI DMA hardware in case this happens. Unfortunately, the reset knob used for thsi will reset _both_ DMA channels, and
+ * by resetting the SPI DMA hardware in case this happens. Unfortunately, the reset knob used for this will reset _both_ DMA channels, and
  * as such can only done safely when both DMA channels are idle. These functions coordinate this.
  *
  * Essentially, when a reset is needed, a driver can request this using spicommon_dmaworkaround_req_reset. This is supposed to be called

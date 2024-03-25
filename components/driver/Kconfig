@@ -18,7 +18,7 @@ menu "Driver Configurations"
             bool "Suppress legacy driver deprecated warning"
             default n
             help
-                Wether to suppress the deprecation warnings when using legacy adc driver (driver/adc.h).
+                Whether to suppress the deprecation warnings when using legacy adc driver (driver/adc.h).
                 If you want to continue using the legacy driver, and don't want to see related deprecation warnings,
                 you can enable this option.
 
@@ -55,7 +55,7 @@ menu "Driver Configurations"
                 bool "Suppress legacy driver deprecated warning"
                 default n
                 help
-                    Wether to suppress the deprecation warnings when using legacy adc calibration
+                    Whether to suppress the deprecation warnings when using legacy adc calibration
                     driver (esp_adc_cal.h).
                     If you want to continue using the legacy driver, and don't want to see related
                     deprecation warnings, you can enable this option.
@@ -69,7 +69,7 @@ menu "Driver Configurations"
             bool "Suppress legacy driver deprecated warning"
             default n
             help
-                Wether to suppress the deprecation warnings when using legacy MCPWM driver (driver/mcpwm.h).
+                Whether to suppress the deprecation warnings when using legacy MCPWM driver (driver/mcpwm.h).
                 If you want to continue using the legacy driver, and don't want to see related deprecation warnings,
                 you can enable this option.
     endmenu # Legacy MCPWM Driver Configurations
@@ -80,7 +80,7 @@ menu "Driver Configurations"
             bool "Suppress legacy driver deprecated warning"
             default n
             help
-                Wether to suppress the deprecation warnings when using legacy timer group driver (driver/timer.h).
+                Whether to suppress the deprecation warnings when using legacy timer group driver (driver/timer.h).
                 If you want to continue using the legacy driver, and don't want to see related deprecation warnings,
                 you can enable this option.
 
@@ -92,7 +92,7 @@ menu "Driver Configurations"
             bool "Suppress legacy driver deprecated warning"
             default n
             help
-                Wether to suppress the deprecation warnings when using legacy rmt driver (driver/rmt.h).
+                Whether to suppress the deprecation warnings when using legacy rmt driver (driver/rmt.h).
                 If you want to continue using the legacy driver, and don't want to see related deprecation warnings,
                 you can enable this option.
     endmenu # Legacy RMT Driver Configurations

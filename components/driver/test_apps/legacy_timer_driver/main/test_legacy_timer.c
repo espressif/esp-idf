@@ -841,7 +841,7 @@ TEST_CASE("Timer_interrupt_register", "[hw_timer]")
 #endif
         vTaskDelay(1000 / portTICK_PERIOD_MS);
 
-        // ISR hanlde function should be free before next ISR register.
+        // ISR handle function should be free before next ISR register.
         for (uint32_t tg_idx = 0; tg_idx < TIMER_GROUP_MAX; tg_idx++) {
             for (uint32_t timer_idx = 0; timer_idx < TIMER_MAX; timer_idx++) {
                 TEST_ESP_OK(esp_intr_free(timer_isr_handle[tg_idx * SOC_TIMER_GROUP_TIMERS_PER_GROUP + timer_idx]));

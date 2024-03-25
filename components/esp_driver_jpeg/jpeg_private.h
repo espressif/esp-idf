@@ -49,7 +49,7 @@ struct jpeg_codec_t {
     intr_handle_t intr_handle;        // jpeg codec interrupt handler
     int intr_priority;                // jpeg codec interrupt priority
     SLIST_HEAD(jpeg_isr_handler_list_, jpeg_isr_handler_) jpeg_isr_handler_list; // List for jpeg interrupt.
-    esp_pm_lock_handle_t pm_lock; // power manange lock
+    esp_pm_lock_handle_t pm_lock; // power manage lock
 };
 
 typedef enum {

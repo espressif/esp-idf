@@ -879,7 +879,7 @@ static void adc_hal_onetime_start(adc_unit_t adc_n, uint32_t clk_src_freq_hz)
     esp_rom_delay_us(delay);
     adc_oneshot_ll_start(true);
 
-    //No need to delay here. Becuase if the start signal is not seen, there won't be a done intr.
+    //No need to delay here. Because if the start signal is not seen, there won't be a done intr.
 #else
     (void)clk_src_freq_hz;
     adc_oneshot_ll_start(adc_n);

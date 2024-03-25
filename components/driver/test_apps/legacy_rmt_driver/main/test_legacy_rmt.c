@@ -627,7 +627,7 @@ TEST_CASE("RMT Interrupt IRAM Safe", "[rmt]")
     // install interrupt with IRAM safe
     TEST_ESP_OK(rmt_driver_install(tx.channel, 0, ESP_INTR_FLAG_IRAM));
 
-    // send a large buffer, ensure the RMT hardware is still in work when we disable the flash cache afterwords
+    // send a large buffer, ensure the RMT hardware is still in work when we disable the flash cache afterwards
     rmt_item32_t items[256] = {};
     for (int i = 0; i < 256; i++) {
         items[i].level0 = 0;

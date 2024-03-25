@@ -86,7 +86,7 @@ static const char *UART_TAG = "uart";
 // Check actual UART mode set
 #define UART_IS_MODE_SET(uart_number, mode) ((p_uart_obj[uart_number]->uart_mode == mode))
 
-#define UART_CONTEX_INIT_DEF(uart_num) {\
+#define UART_CONTEXT_INIT_DEF(uart_num) {\
     .hal.dev = UART_LL_GET_HW(uart_num),\
     INIT_CRIT_SECTION_LOCK_IN_STRUCT(spinlock)\
     .hw_enabled = false,\
@@ -151,19 +151,19 @@ typedef struct {
 static uart_obj_t *p_uart_obj[UART_NUM_MAX] = {0};
 
 static uart_context_t uart_context[UART_NUM_MAX] = {
-    UART_CONTEX_INIT_DEF(UART_NUM_0),
-    UART_CONTEX_INIT_DEF(UART_NUM_1),
+    UART_CONTEXT_INIT_DEF(UART_NUM_0),
+    UART_CONTEXT_INIT_DEF(UART_NUM_1),
 #if SOC_UART_HP_NUM > 2
-    UART_CONTEX_INIT_DEF(UART_NUM_2),
+    UART_CONTEXT_INIT_DEF(UART_NUM_2),
 #endif
 #if SOC_UART_HP_NUM > 3
-    UART_CONTEX_INIT_DEF(UART_NUM_3),
+    UART_CONTEXT_INIT_DEF(UART_NUM_3),
 #endif
 #if SOC_UART_HP_NUM > 4
-    UART_CONTEX_INIT_DEF(UART_NUM_4),
+    UART_CONTEXT_INIT_DEF(UART_NUM_4),
 #endif
 #if (SOC_UART_LP_NUM >= 1)
-    UART_CONTEX_INIT_DEF(LP_UART_NUM_0),
+    UART_CONTEXT_INIT_DEF(LP_UART_NUM_0),
 #endif
 };
 

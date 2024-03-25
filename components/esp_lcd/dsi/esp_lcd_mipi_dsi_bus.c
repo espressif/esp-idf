@@ -75,7 +75,7 @@ esp_err_t esp_lcd_new_dsi_bus(const esp_lcd_dsi_bus_config_t *bus_config, esp_lc
     while (!mipi_dsi_phy_ll_is_pll_locked(hal->host)) {
         vTaskDelay(pdMS_TO_TICKS(1));
     }
-    while (!mipi_dsi_phy_ll_are_lanes_stoped(hal->host)) {
+    while (!mipi_dsi_phy_ll_are_lanes_stopped(hal->host)) {
         vTaskDelay(pdMS_TO_TICKS(1));
     }
 

@@ -34,7 +34,7 @@ static const int coeff_a_scaling = 1000000;
  * For each item, first element is the Coefficient, second element is the Multiple. (Coefficient / Multiple) is the real coefficient.
  *
  * @note {0,0} stands for unused item
- * @note In case of the overflow, these coeffcients are recorded as Absolute Value
+ * @note In case of the overflow, these coefficients are recorded as Absolute Value
  * @note For atten0 ~ 2, error = (K0 * X^0) + (K1 * X^1) + (K2 * X^2); For atten3, error = (K0 * X^0) + (K1 * X^1)  + (K2 * X^2) + (K3 * X^3) + (K4 * X^4);
  * @note Above formula is rewritten from the original documentation, please note that the coefficients are re-ordered.
  */
@@ -133,7 +133,7 @@ esp_adc_cal_value_t esp_adc_cal_characterize(adc_unit_t adc_num,
 
     // Check parameters
     ESP_RETURN_ON_FALSE(adc_num == ADC_UNIT_1 || adc_num == ADC_UNIT_2, ESP_ADC_CAL_VAL_NOT_SUPPORTED, LOG_TAG, "Invalid unit num");
-    ESP_RETURN_ON_FALSE(chars != NULL, ESP_ADC_CAL_VAL_NOT_SUPPORTED, LOG_TAG, "Ivalid characteristic");
+    ESP_RETURN_ON_FALSE(chars != NULL, ESP_ADC_CAL_VAL_NOT_SUPPORTED, LOG_TAG, "Invalid characteristic");
     ESP_RETURN_ON_FALSE(atten < SOC_ADC_ATTEN_NUM, ESP_ADC_CAL_VAL_NOT_SUPPORTED, LOG_TAG, "Invalid attenuation");
 
     int version_num = esp_efuse_rtc_calib_get_ver();

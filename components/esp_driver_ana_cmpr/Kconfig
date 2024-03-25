@@ -19,6 +19,6 @@ menu "ESP-Driver:Analog Comparator Configurations"
         bool "Enable debug log"
         default n
         help
-            Wether to enable the debug log message for Analog Comparator driver.
+            whether to enable the debug log message for Analog Comparator driver.
             Note that, this option only controls the Analog Comparator driver log, won't affect other drivers.
 endmenu # Analog Comparator Configuration

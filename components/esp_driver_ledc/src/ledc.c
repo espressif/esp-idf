@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -35,7 +35,7 @@ static __attribute__((unused)) const char *LEDC_TAG = "ledc";
 #define LEDC_SLOW_CLK_UNINIT -1
 #define LEDC_TIMER_SPECIFIC_CLK_UNINIT -1
 
-// Precision degree only affects RC_FAST, other clock sources' frequences are fixed values
+// Precision degree only affects RC_FAST, other clock sources' frequencies are fixed values
 // For targets that do not support RC_FAST calibration, can only use its approx. value. Precision degree other than
 // APPROX will trigger LOGW during the call to `esp_clk_tree_src_get_freq_hz`.
 #if SOC_CLK_RC_FAST_SUPPORT_CALIBRATION
@@ -435,7 +435,7 @@ static uint32_t ledc_auto_clk_divisor(ledc_mode_t speed_mode, int freq_hz, uint3
     uint32_t div_param_timer = ledc_auto_timer_specific_clk_divisor(speed_mode, freq_hz, precision, clk_source);
 
     if (div_param_timer != LEDC_CLK_NOT_FOUND) {
-        /* The dividor is valid, no need try any other clock, return directly. */
+        /* The divider is valid, no need try any other clock, return directly. */
         ret = div_param_timer;
     }
 #endif
@@ -748,13 +748,13 @@ esp_err_t ledc_stop(ledc_mode_t speed_mode, ledc_channel_t channel, uint32_t idl
 }
 
 esp_err_t ledc_set_fade(ledc_mode_t speed_mode, ledc_channel_t channel, uint32_t duty, ledc_duty_direction_t fade_direction,
-                        uint32_t step_num, uint32_t duty_cyle_num, uint32_t duty_scale)
+                        uint32_t step_num, uint32_t duty_cycle_num, uint32_t duty_scale)
 {
     LEDC_ARG_CHECK(speed_mode < LEDC_SPEED_MODE_MAX, "speed_mode");
     LEDC_ARG_CHECK(channel < LEDC_CHANNEL_MAX, "channel");
     LEDC_ARG_CHECK(fade_direction < LEDC_DUTY_DIR_MAX, "fade_direction");
     LEDC_ARG_CHECK(step_num <= LEDC_LL_DUTY_NUM_MAX, "step_num");
-    LEDC_ARG_CHECK(duty_cyle_num <= LEDC_LL_DUTY_CYCLE_MAX, "duty_cycle_num");
+    LEDC_ARG_CHECK(duty_cycle_num <= LEDC_LL_DUTY_CYCLE_MAX, "duty_cycle_num");
     LEDC_ARG_CHECK(duty_scale <= LEDC_LL_DUTY_SCALE_MAX, "duty_scale");
     LEDC_CHECK(p_ledc_obj[speed_mode] != NULL, LEDC_NOT_INIT, ESP_ERR_INVALID_STATE);
     _ledc_fade_hw_acquire(speed_mode, channel);
@@ -765,7 +765,7 @@ esp_err_t ledc_set_fade(ledc_mode_t speed_mode, ledc_channel_t channel, uint32_t
                      duty,           //uint32_t duty_val,
                      fade_direction, //uint32_t increase,
                      step_num,       //uint32_t duty_num,
-                     duty_cyle_num,  //uint32_t duty_cycle,
+                     duty_cycle_num,  //uint32_t duty_cycle,
                      duty_scale      //uint32_t duty_scale
                     );
     portEXIT_CRITICAL(&ledc_spinlock);
@@ -1260,7 +1260,7 @@ esp_err_t ledc_fade_stop(ledc_mode_t speed_mode, ledc_channel_t channel)
     }
     portEXIT_CRITICAL(&ledc_spinlock);
     if (wait_for_idle) {
-        // Wait for ISR return, which gives the semaphore and switchs state to IDLE
+        // Wait for ISR return, which gives the semaphore and switches state to IDLE
         _ledc_fade_hw_acquire(speed_mode, channel);
         assert(fade->fsm == LEDC_FSM_IDLE);
     }

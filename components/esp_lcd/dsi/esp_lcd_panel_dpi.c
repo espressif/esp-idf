@@ -493,7 +493,7 @@ esp_err_t esp_lcd_dpi_panel_set_pattern(esp_lcd_panel_handle_t panel, mipi_dsi_p
     mipi_dsi_host_ll_dpi_set_pattern_type(hal->host, pattern);
 
     if (pattern == MIPI_DSI_PATTERN_NONE) {
-        // reenable the DSI bridge to generate the DPI stream
+        // re-enable the DSI bridge to generate the DPI stream
         mipi_dsi_brg_ll_enable_dpi_output(hal->bridge, true);
         mipi_dsi_brg_ll_update_dpi_config(hal->bridge);
     }

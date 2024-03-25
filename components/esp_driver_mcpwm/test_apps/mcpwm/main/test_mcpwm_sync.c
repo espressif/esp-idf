@@ -144,7 +144,7 @@ TEST_CASE("mcpwm_gpio_sync_timer_phase_lock", "[mcpwm]")
     sync_phase_config.sync_src = gpio_sync_src;
     TEST_ESP_OK(mcpwm_timer_set_phase_on_sync(timers[0], &sync_phase_config));
 
-    // simulate an GPIO sync singal
+    // simulate an GPIO sync signal
     gpio_set_level(gpio_num, 1);
     gpio_set_level(gpio_num, 0);
     check_mcpwm_timer_phase(timers, SOC_MCPWM_CAPTURE_TIMERS_PER_GROUP, 100, MCPWM_TIMER_DIRECTION_UP);

@@ -17,6 +17,6 @@ menu "ESP-Driver:I2S Configurations"
         bool "Enable I2S debug log"
         default n
         help
-            Wether to enable the debug log message for I2S driver.
+            whether to enable the debug log message for I2S driver.
             Note that, this option only controls the I2S driver log, will not affect other drivers.
 endmenu # I2S Configuration
