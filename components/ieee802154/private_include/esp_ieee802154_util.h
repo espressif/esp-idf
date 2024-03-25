@@ -8,6 +8,8 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include "sdkconfig.h"
+#include "soc/soc_caps.h"
 #include "esp_ieee802154_dev.h"
 #include "hal/ieee802154_ll.h"
 #include "esp_timer.h"
@@ -172,7 +174,7 @@ extern ieee802154_probe_info_t g_ieee802154_probe;
  */
 void ieee802154_assert_print(void);
 #define IEEE802154_ASSERT(a) do { \
-                                    if(!(a)) { \
+                                    if(unlikely(!(a))) { \
                                         ieee802154_assert_print(); \
                                         assert(a); \
                                     } \
@@ -280,9 +282,9 @@ void ieee802154_set_txrx_pti(ieee802154_txrx_scene_t txrx_scene);
 #endif // !CONFIG_IEEE802154_TEST && CONFIG_ESP_COEX_SW_COEXIST_ENABLE || CONFIG_EXTERNAL_COEX_ENABLE
 
 /**
- * @brief  Convert the frequence to the index of channel.
+ * @brief  Convert the frequency to the index of channel.
  *
- * @param[in]  freq  The frequence where the radio is processing.
+ * @param[in]  freq  The frequency where the radio is processing.
  *
  * @return
  *          The channel index.
@@ -291,12 +293,12 @@ void ieee802154_set_txrx_pti(ieee802154_txrx_scene_t txrx_scene);
 uint8_t ieee802154_freq_to_channel(uint8_t freq);
 
 /**
- * @brief  Convert the index of channel to the frequence.
+ * @brief  Convert the index of channel to the frequency.
  *
  * @param[in]  channel  The index of channel where the radio is processing.
  *
  * @return
- *          The frequence.
+ *          The frequency.
  *
  */
 uint8_t ieee802154_channel_to_freq(uint8_t channel);
