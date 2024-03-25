@@ -39,7 +39,7 @@ void sdmmc_test_board_get_config_sdmmc(int slot_index, sdmmc_host_t *out_host_co
 #define SDMMC_PWR_LDO_CHANNEL   4
 
     sd_pwr_ctrl_ldo_config_t ldo_config = {
-        .ldo_unit_id = SDMMC_PWR_LDO_CHANNEL,
+        .ldo_chan_id = SDMMC_PWR_LDO_CHANNEL,
     };
     sd_pwr_ctrl_handle_t pwr_ctrl_handle = NULL;
 

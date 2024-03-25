@@ -132,7 +132,7 @@ void app_main(void)
      */
 #if CONFIG_EXAMPLE_SDMMC_IO_POWER_INTERNAL_LDO
     sd_pwr_ctrl_ldo_config_t ldo_config = {
-        .ldo_unit_id = 4,
+        .ldo_chan_id = 4, // `LDO_VO4` is used as the SDMMC IO power
     };
     sd_pwr_ctrl_handle_t pwr_ctrl_handle = NULL;
 

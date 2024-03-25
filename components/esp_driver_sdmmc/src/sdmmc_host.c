@@ -19,7 +19,6 @@
 #include "driver/gpio.h"
 #include "driver/sdmmc_host.h"
 #include "esp_private/periph_ctrl.h"
-#include "esp_private/esp_ldo.h"
 #include "sdmmc_private.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
@@ -55,7 +54,6 @@ typedef struct slot_ctx_t {
     size_t slot_width;
     sdmmc_slot_io_info_t slot_gpio_num;
     bool use_gpio_matrix;
-    esp_ldo_unit_handle_t ldo_unit;
 } slot_ctx_t;
 
 /**
