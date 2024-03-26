@@ -15,7 +15,7 @@ TEST_CASE("TEST CSI driver allocation", "[csi]")
         .ctlr_id = 0,
         .h_res = 800,
         .v_res = 640,
-        .clk_freq_hz = 200000000,
+        .lane_bit_rate_mbps = 200,
         .input_data_color_type = MIPI_CSI_COLOR_RAW8,
         .output_data_color_type = MIPI_CSI_COLOR_RGB565,
         .data_lane_num = 2,

@@ -161,7 +161,7 @@ esp_err_t esp_cam_new_csi_ctlr(const esp_cam_ctlr_csi_config_t *config, esp_cam_
     mipi_csi_hal_config_t hal_config;
     hal_config.frame_height = config->h_res;
     hal_config.frame_width = config->v_res;
-    hal_config.clk_freq_hz = config->clk_freq_hz;
+    hal_config.lane_bit_rate_mbps = config->lane_bit_rate_mbps;
     hal_config.lanes_num = config->data_lane_num;
     hal_config.byte_swap_en = config->byte_swap_en;
     mipi_csi_hal_init(&ctlr->hal, &hal_config);

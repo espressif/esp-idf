@@ -43,7 +43,7 @@ typedef struct {
     uint32_t in_bpp;                            ///< In bits per pixel
     uint32_t out_bpp;                           ///< Out bits per pixel
     bool byte_swap_en;                          ///< Enable byte swap
-    int clk_freq_hz;                            ///< Clock frequency in hz
+    int lane_bit_rate_mbps;                     ///< Lane bit rate in Mbps
 } mipi_csi_hal_config_t;
 
 /**
