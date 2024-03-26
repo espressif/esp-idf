@@ -470,7 +470,7 @@ dw_gdma_lli_handle_t dw_gdma_link_list_get_item(dw_gdma_link_list_handle_t list,
     return lli;
 }
 
-esp_err_t dw_gdma_lli_set_next(dw_gdma_lli_handle_t lli, dw_gdma_lli_handle_t next)
+esp_err_t dw_gdma_lli_set_next(dw_gdma_link_list_item_t *lli, dw_gdma_lli_handle_t next)
 {
     ESP_RETURN_ON_FALSE(lli && next, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
 
@@ -534,7 +534,7 @@ esp_err_t dw_gdma_channel_set_block_markers(dw_gdma_channel_handle_t chan, dw_gd
     return ESP_OK;
 }
 
-esp_err_t dw_gdma_lli_config_transfer(dw_gdma_lli_handle_t lli, dw_gdma_block_transfer_config_t *config)
+esp_err_t dw_gdma_lli_config_transfer(dw_gdma_link_list_item_t *lli, dw_gdma_block_transfer_config_t *config)
 {
     ESP_RETURN_ON_FALSE(lli && config, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
 
@@ -567,7 +567,7 @@ esp_err_t dw_gdma_lli_config_transfer(dw_gdma_lli_handle_t lli, dw_gdma_block_tr
     return ESP_OK;
 }
 
-esp_err_t dw_gdma_lli_set_block_markers(dw_gdma_lli_handle_t lli, dw_gdma_block_markers_t markers)
+esp_err_t dw_gdma_lli_set_block_markers(dw_gdma_link_list_item_t *lli, dw_gdma_block_markers_t markers)
 {
     ESP_RETURN_ON_FALSE_ISR(lli, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
 
