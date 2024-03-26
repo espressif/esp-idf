@@ -74,7 +74,7 @@ if(NOT BOOTLOADER_BUILD)
     endif()
 
     if(CONFIG_SOC_GP_LDO_SUPPORTED)
-        list(APPEND srcs "ldo/esp_ldo.c" "ldo/esp_ldo_regulator.c")
+        list(APPEND srcs "ldo/esp_ldo_regulator.c")
     endif()
 
     if(CONFIG_SOC_ASYNC_MEMCPY_SUPPORTED)
