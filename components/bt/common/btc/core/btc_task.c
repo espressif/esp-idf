@@ -286,6 +286,10 @@ static void btc_thread_handler(void *arg)
 static bt_status_t btc_task_post(btc_msg_t *msg, uint32_t timeout)
 {
     if (osi_thread_post(btc_thread, btc_thread_handler, msg, 0, timeout) == false) {
+        if (msg->arg) {
+            osi_free(msg->arg);
+        }
+        free(msg);
         return BT_STATUS_BUSY;
     }
 
