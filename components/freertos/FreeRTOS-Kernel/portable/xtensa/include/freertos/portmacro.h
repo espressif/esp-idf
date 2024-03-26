@@ -464,7 +464,7 @@ FORCE_INLINE_ATTR BaseType_t xPortGetCoreID(void);
 #define portENTER_CRITICAL_ISR(mux)                 vPortEnterCritical(mux)
 #define portEXIT_CRITICAL_ISR(mux)                  vPortExitCritical(mux)
 
-#define portTRY_ENTER_CRITICAL_SAFE(mux, timeout)   xPortEnterCriticalTimeoutSafe(mux)
+#define portTRY_ENTER_CRITICAL_SAFE(mux, timeout)   xPortEnterCriticalTimeoutSafe(mux, timeout)
 #define portENTER_CRITICAL_SAFE(mux)                vPortEnterCriticalSafe(mux)
 #define portEXIT_CRITICAL_SAFE(mux)                 vPortExitCriticalSafe(mux)
 
