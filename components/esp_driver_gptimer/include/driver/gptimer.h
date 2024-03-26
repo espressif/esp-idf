@@ -169,9 +169,11 @@ typedef struct {
 /**
  * @brief Set alarm event actions for GPTimer.
  *
- * @note This function is allowed to run within ISR context, so that user can set new alarm action immediately in the ISR callback.
+ * @note This function is allowed to run within ISR context, so you can update new alarm action immediately in any ISR callback.
  * @note If `CONFIG_GPTIMER_CTRL_FUNC_IN_IRAM` is enabled, this function will be placed in the IRAM by linker,
  *       makes it possible to execute even when the Flash Cache is disabled.
+ *       In this case, please also ensure the `gptimer_alarm_config_t` instance is placed in the static data section
+ *       instead of in the read-only data section. e.g.: `static gptimer_alarm_config_t alarm_config = { ... };`
  *
  * @param[in] timer Timer handle created by `gptimer_new_timer`
  * @param[in] config Alarm configuration, especially, set config to NULL means disabling the alarm function
