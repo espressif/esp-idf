@@ -400,13 +400,6 @@ static inline void modem_syscon_ll_enable_fe_160m_clock(modem_syscon_dev_t *hw, 
 }
 
 __attribute__((always_inline))
-static inline void modem_syscon_ll_enable_fe_cal_160m_clock(modem_syscon_dev_t *hw, bool en)
-{
-    HAL_ASSERT(0 && "not implemented yet");
-    // hw->clk_conf1.clk_fe_cal_160m_en = en;
-}
-
-__attribute__((always_inline))
 static inline void modem_syscon_ll_enable_fe_apb_clock(modem_syscon_dev_t *hw, bool en)
 {
     hw->clk_conf1.clk_fe_apb_en = en;
