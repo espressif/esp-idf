@@ -1957,6 +1957,16 @@ err:
     return ret;
 }
 
+int hcd_pipe_get_mps(hcd_pipe_handle_t pipe_hdl)
+{
+    pipe_t *pipe = (pipe_t *)pipe_hdl;
+    int mps;
+    HCD_ENTER_CRITICAL();
+    mps = pipe->ep_char.mps;
+    HCD_EXIT_CRITICAL();
+    return mps;
+}
+
 esp_err_t hcd_pipe_free(hcd_pipe_handle_t pipe_hdl)
 {
     pipe_t *pipe = (pipe_t *)pipe_hdl;
