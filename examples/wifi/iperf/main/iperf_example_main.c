@@ -14,7 +14,58 @@
 #include "esp_err.h"
 #include "nvs_flash.h"
 #include "esp_console.h"
-#include "cmd_decl.h"
+#include "cmd_system.h"
+
+/* component manager */
+#include "iperf.h"
+#include "wifi_cmd.h"
+#include "iperf_cmd.h"
+#include "ping_cmd.h"
+
+
+#if CONFIG_ESP_WIFI_ENABLE_WIFI_TX_STATS || CONFIG_ESP_WIFI_ENABLE_WIFI_RX_STATS
+#include "esp_wifi_he.h"
+#endif
+#if CONFIG_ESP_WIFI_ENABLE_WIFI_TX_STATS
+extern int wifi_cmd_get_tx_statistics(int argc, char **argv);
+extern int wifi_cmd_clr_tx_statistics(int argc, char **argv);
+#endif
+#if CONFIG_ESP_WIFI_ENABLE_WIFI_RX_STATS
+extern int wifi_cmd_get_rx_statistics(int argc, char **argv);
+extern int wifi_cmd_clr_rx_statistics(int argc, char **argv);
+#endif
+
+
+void iperf_hook_show_wifi_stats(iperf_traffic_type_t type, iperf_status_t status)
+{
+    if (status == IPERF_STARTED) {
+#if CONFIG_ESP_WIFI_ENABLE_WIFI_TX_STATS
+        if (type != IPERF_UDP_SERVER) {
+            wifi_cmd_clr_tx_statistics(0, NULL);
+        }
+#endif
+#if CONFIG_ESP_WIFI_ENABLE_WIFI_RX_STATS
+        if (type != IPERF_UDP_CLIENT) {
+            wifi_cmd_clr_rx_statistics(0, NULL);
+        }
+#endif
+    }
+
+    if (status == IPERF_STOPPED) {
+#if CONFIG_ESP_WIFI_ENABLE_WIFI_TX_STATS
+        if (type != IPERF_UDP_SERVER) {
+            wifi_cmd_get_tx_statistics(0, NULL);
+        }
+#endif
+#if CONFIG_ESP_WIFI_ENABLE_WIFI_RX_STATS
+        if (type != IPERF_UDP_SERVER) {
+            wifi_cmd_get_rx_statistics(0, NULL);
+        }
+#endif
+    }
+
+}
+
 
 void app_main(void)
 {
@@ -25,7 +76,22 @@ void app_main(void)
     }
     ESP_ERROR_CHECK( ret );
 
-    initialise_wifi();
+    /* initialise wifi */
+    app_wifi_initialise_config_t config = APP_WIFI_CONFIG_DEFAULT();
+    config.storage = WIFI_STORAGE_RAM;
+    config.ps_type = WIFI_PS_NONE;
+    app_initialise_wifi(&config);
+#if CONFIG_ESP_WIFI_ENABLE_WIFI_RX_STATS
+#if CONFIG_ESP_WIFI_ENABLE_WIFI_RX_MU_STATS
+    esp_wifi_enable_rx_statistics(true, true);
+#else
+    esp_wifi_enable_rx_statistics(true, false);
+#endif
+#endif
+#if CONFIG_ESP_WIFI_ENABLE_WIFI_TX_STATS
+    esp_wifi_enable_tx_statistics(ESP_WIFI_ACI_BE, true);
+#endif
+
 
     esp_console_repl_t *repl = NULL;
     esp_console_repl_config_t repl_config = ESP_CONSOLE_REPL_CONFIG_DEFAULT();
@@ -45,7 +111,11 @@ void app_main(void)
 
     /* Register commands */
     register_system();
-    register_wifi();
+    app_register_all_wifi_commands();
+    app_register_iperf_commands();
+    app_register_ping_commands();
+    app_register_iperf_hook_func(iperf_hook_show_wifi_stats);
+
 
     printf("\n ==================================================\n");
     printf(" |       Steps to test WiFi throughput            |\n");

@@ -1034,8 +1034,6 @@ examples/build_system/cmake/multi_config/main/func.h
 examples/build_system/cmake/multi_config/main/func_dev.c
 examples/build_system/cmake/multi_config/main/func_prod.c
 examples/build_system/cmake/multi_config/main/multi_config_example_main.c
-examples/common_components/iperf/include/iperf.h
-examples/common_components/iperf/iperf.c
 examples/common_components/protocol_examples_common/addr_from_stdin.c
 examples/common_components/protocol_examples_common/include/addr_from_stdin.h
 examples/common_components/protocol_examples_common/include/protocol_examples_common.h
@@ -1192,9 +1190,6 @@ examples/wifi/fast_scan/main/fast_scan.c
 examples/wifi/ftm/main/ftm_main.c
 examples/wifi/getting_started/softAP/main/softap_example_main.c
 examples/wifi/getting_started/station/main/station_example_main.c
-examples/wifi/iperf/main/cmd_decl.h
-examples/wifi/iperf/main/cmd_wifi.c
-examples/wifi/iperf/main/cmd_wifi.h
 examples/wifi/iperf/main/iperf_example_main.c
 examples/wifi/power_save/main/power_save.c
 examples/wifi/roaming/main/roaming_example.c
