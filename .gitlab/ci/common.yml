@@ -95,7 +95,7 @@ variables:
 
   # host mapping volume to share ccache between runner concurrent jobs
   CCACHE_DIR: "/cache/idf_ccache"
-  CCACHE_MAXSIZE: "20G"
+  CCACHE_MAXSIZE: "50G"
 
 ################################################
 # `before_script` and `after_script` Templates #
