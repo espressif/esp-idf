@@ -81,6 +81,23 @@ static void got_ip_event_handler(void *arg, esp_event_base_t event_base,
     ESP_LOGI(TAG, "ETHMASK:" IPSTR, IP2STR(&ip_info->netmask));
     ESP_LOGI(TAG, "ETHGW:" IPSTR, IP2STR(&ip_info->gw));
     ESP_LOGI(TAG, "~~~~~~~~~~~");
+#ifdef CONFIG_LWIP_IPV6
+    esp_netif_t *netif = event->esp_netif;
+    esp_netif_create_ip6_linklocal(netif);
+#endif
+}
+
+/** Event handler for IP_EVENT_GOT_IP6 */
+static void got_ip6_event_handler(void *arg, esp_event_base_t event_base,
+                                 int32_t event_id, void *event_data)
+{
+    ip_event_got_ip6_t *event = (ip_event_got_ip6_t *) event_data;
+    const esp_netif_ip6_info_t *ip6_info = &event->ip6_info;
+
+    ESP_LOGI(TAG, "Ethernet Got IPv6 Address");
+    ESP_LOGI(TAG, "~~~~~~~~~~~");
+    ESP_LOGI(TAG, "ETHIP:" IPV6STR, IPV62STR(ip6_info->ip));
+    ESP_LOGI(TAG, "~~~~~~~~~~~");
 }
 
 void app_main(void)
@@ -268,6 +285,7 @@ void app_main(void)
     // Register user defined event handers
     ESP_ERROR_CHECK(esp_event_handler_register(ETH_EVENT, ESP_EVENT_ANY_ID, &eth_event_handler, NULL));
     ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_ETH_GOT_IP, &got_ip_event_handler, NULL));
+    ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_GOT_IP6, &got_ip6_event_handler, NULL));
 
     /* start Ethernet driver state machine */
 #if CONFIG_EXAMPLE_USE_INTERNAL_ETHERNET

@@ -234,6 +234,11 @@ static esp_err_t init_set_defaults(emac_ksz8851snl_t *emac)
     ESP_GOTO_ON_ERROR(ksz8851_set_bits(emac, KSZ8851_ISR, ISR_ALL), err, TAG, "ISR write failed");
     ESP_GOTO_ON_ERROR(ksz8851_set_bits(emac, KSZ8851_IER, IER_TXIE | IER_RXIE | IER_LDIE | IER_SPIBEIE | IER_RXOIE), err, TAG, "IER write failed");
     ESP_GOTO_ON_ERROR(ksz8851_set_bits(emac, KSZ8851_TXQCR, TXQCR_AETFE), err, TAG, "TXQCR write failed");
+#ifdef CONFIG_LWIP_IPV6
+    ESP_GOTO_ON_ERROR(ksz8851_clear_bits(emac, KSZ8851_RXCR1, RXCR1_RXINVF), err, TAG, "RXCR1 write failed");
+    ESP_GOTO_ON_ERROR(ksz8851_set_bits(emac, KSZ8851_RXCR1, RXCR1_RXAE | RXCR1_RXPAFMA | RXCR1_RXMAFMA), err, TAG, "RXCR1 write failed");
+    ESP_LOGD(TAG, "enabled multi-cast RX");
+#endif
     return ESP_OK;
 err:
     return ret;
@@ -601,10 +606,16 @@ static esp_err_t emac_ksz8851_set_promiscuous(esp_eth_mac_t *mac, bool enable)
         rxcr1 |= RXCR1_RXINVF | RXCR1_RXAE;
         rxcr1 &= ~(RXCR1_RXPAFMA | RXCR1_RXMAFMA);
     } else {
+#ifdef CONFIG_LWIP_IPV6
+        ESP_LOGD(TAG, "setting perfect with multi-cast address passed mode");
+        rxcr1 |= RXCR1_RXAE | RXCR1_RXPAFMA | RXCR1_RXMAFMA;
+        rxcr1 &= ~(RXCR1_RXINVF);
+#else
         // NOTE(v.chistyakov): set hash perfect (default)
         ESP_LOGD(TAG, "setting hash perfect mode");
         rxcr1 |= RXCR1_RXPAFMA;
         rxcr1 &= ~(RXCR1_RXINVF | RXCR1_RXAE | RXCR1_RXMAFMA);
+#endif
     }
     ESP_GOTO_ON_ERROR(ksz8851_write_reg(emac, KSZ8851_RXCR1, rxcr1), err, TAG, "RXCR1 write failed");
 err:
