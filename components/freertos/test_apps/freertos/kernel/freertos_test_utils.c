@@ -68,6 +68,7 @@ void vTestOnAllCores(TestFunction_t pxTestCode, void * pvTestCodeArg, uint32_t u
         vTaskDelete(xTaskHandles[ xCoreID ]);
     }
     vSemaphoreDelete(xTaskDoneSem);
+    vTaskDelay(10); // Short delay to allow task memory to be freed
 }
 
 #endif /* ( CONFIG_FREERTOS_NUMBER_OF_CORES > 1 ) */
