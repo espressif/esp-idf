@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -27,6 +27,19 @@ enum wps_sig_type {
     SIG_WPS_NUM,                //10
 };
 #endif
+
+enum wps_reg_sig_type {
+    SIG_WPS_REG_ENABLE = 1,         //1
+    SIG_WPS_REG_DISABLE,            //2
+    SIG_WPS_REG_START,              //3
+    SIG_WPS_REG_MAX,                //4
+};
+
+typedef struct {
+    void *arg;
+    int ret; /* return value */
+} wps_ioctl_param_t;
+
 #ifdef ESP_SUPPLICANT
 enum wps_sm_state{
      WAIT_START,
