@@ -362,6 +362,15 @@ esp_err_t hcd_port_set_fifo_bias(hcd_port_handle_t port_hdl, hcd_port_fifo_bias_
 esp_err_t hcd_pipe_alloc(hcd_port_handle_t port_hdl, const hcd_pipe_config_t *pipe_config, hcd_pipe_handle_t *pipe_hdl);
 
 /**
+ * @brief Get maximum packet size (mps) of HCD pipe
+ *
+ * @param[in] port_hdl Pipe handle
+ *
+ * @retval HCD pipe mps
+ */
+int hcd_pipe_get_mps(hcd_pipe_handle_t pipe_hdl);
+
+/**
  * @brief Free a pipe
  *
  * Frees the resources used by an HCD pipe. The pipe's handle should be discarded after calling this function. The pipe
