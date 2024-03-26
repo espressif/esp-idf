@@ -29,12 +29,15 @@
 #include <stdio.h>
 #include <sys/lock.h>
 
+#include "esp_dma_utils.h"
+#include "esp_private/esp_cache_private.h"
 #include "esp_log.h"
 #include "esp_memory_utils.h"
 #include "esp_crypto_lock.h"
 #include "esp_attr.h"
 #include "esp_crypto_dma.h"
 #include "esp_cache.h"
+#include "hal/dma_types.h"
 #include "soc/ext_mem_defs.h"
 #include "soc/periph_defs.h"
 
@@ -155,10 +158,6 @@ static void esp_sha_block_mode(esp_sha_type sha_type, const uint8_t *input, uint
     }
 }
 
-/* These are static due to:
- *  * Must be in DMA capable memory, so stack is not a safe place to put them
- *  * To avoid having to malloc/free them for every DMA operation
- */
 static DRAM_ATTR crypto_dma_desc_t s_dma_descr_input;
 static DRAM_ATTR crypto_dma_desc_t s_dma_descr_buf;
 
@@ -197,6 +196,18 @@ static esp_err_t esp_sha_dma_process(esp_sha_type sha_type, const void *input, u
         s_dma_descr_buf.dw0.suc_eof = 0;
         s_dma_descr_buf.next = (&s_dma_descr_input);
     }
+
+#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
+    if (ilen) {
+        ESP_ERROR_CHECK(esp_cache_msync(&s_dma_descr_input, sizeof(crypto_dma_desc_t), ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED));
+        ESP_ERROR_CHECK(esp_cache_msync(s_dma_descr_input.buffer, s_dma_descr_input.dw0.length, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED));
+    }
+
+    if (buf_len) {
+        ESP_ERROR_CHECK(esp_cache_msync(&s_dma_descr_buf, sizeof(crypto_dma_desc_t), ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED));
+        ESP_ERROR_CHECK(esp_cache_msync(s_dma_descr_buf.buffer, s_dma_descr_buf.dw0.length, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED));
+    }
+#endif /* SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE */
 
     if (esp_sha_dma_start(dma_descr_head) != ESP_OK) {
         ESP_LOGE(TAG, "esp_sha_dma_start failed, no DMA channel available");
