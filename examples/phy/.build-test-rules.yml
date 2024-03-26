@@ -2,7 +2,7 @@
 
 examples/phy/antenna:
   disable:
-    - if: IDF_TARGET == "esp32p4"
+    - if: IDF_TARGET in ["esp32p4", "esp32h2"]
       reason: not supported
 examples/phy/cert_test:
   enable:

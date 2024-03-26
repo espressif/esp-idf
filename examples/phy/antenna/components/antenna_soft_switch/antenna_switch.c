@@ -244,13 +244,13 @@ static void antenna_soft_switching_task(void *arg)
                     if (rssi_flag > WAIT_TIME) {
                         ESP_LOGD(TAG, "End of listening rssi");
                         /**< Ambient noise factor: abs(rssi_last_sum - rssi_sum) * RSSI_KD*/
-                        int16_t ans = abs(rssi_save_sum - rssi_sum) - abs(rssi_last_sum - rssi_sum) * RSSI_KD;
+                        int16_t and = abs(rssi_save_sum - rssi_sum) - abs(rssi_last_sum - rssi_sum) * RSSI_KD;
                         rssi_flag = 0;
-                        if(ans > (config->ant_switch)) {
+                        if(and > (config->ant_switch)) {
                             /**< Determine that the signal has changed*/
                             queue_rssi_sum_size = 0;
                             queue_rssi_single_size = 0;
-                            ESP_LOGD(TAG, "monitor result:%d  >   %d", ans, (config->ant_switch));
+                            ESP_LOGD(TAG, "monitor result:%d  >   %d", and, (config->ant_switch));
                             /**< Select the optimal antenna*/
                             antenna_switch_function(config);
                             /**< Wait for parameters to take effect*/
