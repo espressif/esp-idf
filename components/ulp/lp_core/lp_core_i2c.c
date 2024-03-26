@@ -7,7 +7,6 @@
 #include "lp_core_i2c.h"
 #include "esp_check.h"
 #include "hal/i2c_hal.h"
-#include "soc/lp_io_struct.h"
 #include "driver/rtc_io.h"
 #include "soc/rtc_io_channel.h"
 #include "esp_private/esp_clk_tree_common.h"
@@ -15,13 +14,20 @@
 
 static const char *LPI2C_TAG = "lp_core_i2c";
 
+#if !SOC_LP_GPIO_MATRIX_SUPPORTED
+#include "soc/lp_io_struct.h"
+
+/* Use the register structure to access LP_IO module registers */
+lp_io_dev_t *lp_io_dev = &LP_IO;
+#else
+#include "driver/lp_io.h"
+#include "soc/lp_gpio_sig_map.h"
+#endif /* !SOC_LP_GPIO_MATRIX_SUPPORTED */
+
 #define LP_I2C_FILTER_CYC_NUM_DEF       (7)
 
 /* I2C LL context */
 i2c_hal_context_t i2c_hal;
-
-/* Use the register structure to access LP_IO module registers */
-lp_io_dev_t *lp_io_dev = &LP_IO;
 
 static esp_err_t lp_i2c_gpio_is_cfg_valid(gpio_num_t sda_io_num, gpio_num_t scl_io_num)
 {
@@ -29,6 +35,7 @@ static esp_err_t lp_i2c_gpio_is_cfg_valid(gpio_num_t sda_io_num, gpio_num_t scl_
     ESP_RETURN_ON_ERROR(!rtc_gpio_is_valid_gpio(sda_io_num), LPI2C_TAG, "LP I2C SDA GPIO invalid");
     ESP_RETURN_ON_ERROR(!rtc_gpio_is_valid_gpio(scl_io_num), LPI2C_TAG, "LP I2C SCL GPIO invalid");
 
+#if !SOC_LP_GPIO_MATRIX_SUPPORTED
     /* Verify that the SDA and SCL line belong to the LP IO Mux I2C function group */
     if (sda_io_num != RTCIO_GPIO6_CHANNEL) {
         ESP_LOGE(LPI2C_TAG, "SDA pin can only be configured as GPIO#6");
@@ -39,6 +46,7 @@ static esp_err_t lp_i2c_gpio_is_cfg_valid(gpio_num_t sda_io_num, gpio_num_t scl_
         ESP_LOGE(LPI2C_TAG, "SCL pin can only be configured as GPIO#7");
         return ESP_ERR_INVALID_ARG;
     }
+#endif /* !SOC_LP_GPIO_MATRIX_SUPPORTED */
 
     return ESP_OK;
 }
@@ -64,6 +72,8 @@ static esp_err_t lp_i2c_configure_io(gpio_num_t io_num, bool pullup_en)
 
 static esp_err_t lp_i2c_set_pin(const lp_core_i2c_cfg_t *cfg)
 {
+    esp_err_t ret = ESP_OK;
+
     gpio_num_t sda_io_num = cfg->i2c_pin_cfg.sda_io_num;
     gpio_num_t scl_io_num = cfg->i2c_pin_cfg.scl_io_num;
     bool sda_pullup_en = cfg->i2c_pin_cfg.sda_pullup_en;
@@ -78,13 +88,23 @@ static esp_err_t lp_i2c_set_pin(const lp_core_i2c_cfg_t *cfg)
     /* Initialize SCL Pin */
     ESP_RETURN_ON_ERROR(lp_i2c_configure_io(scl_io_num, scl_pullup_en), LPI2C_TAG, "LP I2C SCL pin config failed");
 
+#if !SOC_LP_GPIO_MATRIX_SUPPORTED
     /* Select LP I2C function for the SDA Pin */
     lp_io_dev->gpio[sda_io_num].mcu_sel = 1;
 
     /* Select LP I2C function for the SCL Pin */
     lp_io_dev->gpio[scl_io_num].mcu_sel = 1;
+#else
+    /* Connect the SDA pin of the LP_I2C peripheral to the LP_IO Matrix */
+    ret = lp_gpio_connect_out_signal(sda_io_num, LP_I2C_SDA_PAD_OUT_IDX, 0, 0);
+    ret = lp_gpio_connect_in_signal(sda_io_num, LP_I2C_SDA_PAD_IN_IDX, 0);
 
-    return ESP_OK;
+    /* Connect the SCL pin of the LP_I2C peripheral to the LP_IO Matrix */
+    ret = lp_gpio_connect_out_signal(scl_io_num, LP_I2C_SCL_PAD_OUT_IDX, 0, 0);
+    ret = lp_gpio_connect_in_signal(scl_io_num, LP_I2C_SCL_PAD_IN_IDX, 0);
+#endif /* !SOC_LP_GPIO_MATRIX_SUPPORTED */
+
+    return ret;
 }
 
 static esp_err_t lp_i2c_config_clk(const lp_core_i2c_cfg_t *cfg)
@@ -112,10 +132,10 @@ static esp_err_t lp_i2c_config_clk(const lp_core_i2c_cfg_t *cfg)
     /* LP I2C clock source is mixed with other peripherals in the same register */
     PERIPH_RCC_ATOMIC() {
         lp_i2c_ll_set_source_clk(i2c_hal.dev, source_clk);
-    }
 
-    /* Configure LP I2C timing paramters. source_clk is ignored for LP_I2C in this call */
-    i2c_hal_set_bus_timing(&i2c_hal, cfg->i2c_timing_cfg.clk_speed_hz, (i2c_clock_source_t)source_clk, source_freq);
+        /* Configure LP I2C timing parameters. source_clk is ignored for LP_I2C in this call */
+        i2c_hal_set_bus_timing(&i2c_hal, cfg->i2c_timing_cfg.clk_speed_hz, (i2c_clock_source_t)source_clk, source_freq);
+    }
 
     return ret;
 }
@@ -134,12 +154,13 @@ esp_err_t lp_core_i2c_master_init(i2c_port_t lp_i2c_num, const lp_core_i2c_cfg_t
     PERIPH_RCC_ATOMIC() {
         /* Enable LP I2C bus clock */
         lp_i2c_ll_enable_bus_clock(lp_i2c_num - LP_I2C_NUM_0, true);
+
         /* Reset LP I2C register */
         lp_i2c_ll_reset_register(lp_i2c_num - LP_I2C_NUM_0);
-    }
 
-    /* Initialize LP I2C HAL */
-    i2c_hal_init(&i2c_hal, lp_i2c_num);
+        /* Initialize LP I2C HAL */
+        i2c_hal_init(&i2c_hal, lp_i2c_num);
+    }
 
     /* Initialize LP I2C Master mode */
     i2c_hal_master_init(&i2c_hal);
@@ -148,7 +169,7 @@ esp_err_t lp_core_i2c_master_init(i2c_port_t lp_i2c_num, const lp_core_i2c_cfg_t
     i2c_hal.dev->ctr.sda_force_out = 0;
     i2c_hal.dev->ctr.scl_force_out = 0;
 
-    /* Configure LP I2C clock and timing paramters */
+    /* Configure LP I2C clock and timing parameters */
     ESP_RETURN_ON_ERROR(lp_i2c_config_clk(cfg), LPI2C_TAG, "Failed to configure LP I2C source clock");
 
     /* Enable SDA and SCL filtering. This configuration matches the HP I2C filter config */

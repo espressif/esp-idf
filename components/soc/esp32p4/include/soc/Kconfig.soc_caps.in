@@ -199,6 +199,10 @@ config SOC_LP_PERIPHERALS_SUPPORTED
     bool
     default y
 
+config SOC_LP_I2C_SUPPORTED
+    bool
+    default y
+
 config SOC_SPIRAM_SUPPORTED
     bool
     default y
@@ -614,6 +618,14 @@ config SOC_I2C_SLAVE_SUPPORT_I2CRAM_ACCESS
 config SOC_I2C_SLAVE_SUPPORT_SLAVE_UNMATCH
     bool
     default y
+
+config SOC_LP_I2C_NUM
+    int
+    default 1
+
+config SOC_LP_I2C_FIFO_LEN
+    int
+    default 16
 
 config SOC_I2S_NUM
     int

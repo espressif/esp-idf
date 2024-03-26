@@ -59,7 +59,6 @@ if(CONFIG_ULP_COPROC_TYPE_LP_CORE)
     endif()
 
     if(CONFIG_SOC_LP_I2C_SUPPORTED)
-        # Add to P4 TODO IDF-7540
         list(APPEND srcs "lp_core/lp_core_i2c.c")
     endif()
 
