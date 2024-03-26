@@ -74,11 +74,6 @@ esp_err_t periph_rtc_apll_freq_set(uint32_t expt_freq, uint32_t *real_freq);
 
 #if SOC_CLK_MPLL_SUPPORTED
 /**
- * @brief Enable MPLL power if it has not enabled (early version)
- */
-void periph_rtc_mpll_early_acquire(void);
-
-/**
  * @brief Enable MPLL power if it has not enabled
  */
 esp_err_t periph_rtc_mpll_acquire(void);

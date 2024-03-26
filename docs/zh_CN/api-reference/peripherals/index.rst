@@ -22,6 +22,7 @@
     i2c
     :SOC_I2S_SUPPORTED: i2s
     lcd/index
+    :SOC_GP_LDO_SUPPORTED: ldo_regulator
     ledc
     :SOC_MCPWM_SUPPORTED: mcpwm
     :SOC_PARLIO_SUPPORTED: parlio

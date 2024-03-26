@@ -19,7 +19,7 @@ extern "C" {
  * @brief LDO configurations
  */
 typedef struct {
-    int ldo_unit_id;     ///< On-chip LDO ID
+    int ldo_chan_id;     ///< On-chip LDO channel ID, e.g. set to `4` is the `LDO_VO4` is connected to power the SDMMC IO
 } sd_pwr_ctrl_ldo_config_t;
 
 /**

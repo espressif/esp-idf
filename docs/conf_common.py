@@ -102,6 +102,8 @@ DAC_DOCS = ['api-reference/peripherals/dac.rst']
 
 ETM_DOCS = ['api-reference/peripherals/etm.rst']
 
+LDO_DOCS = ['api-reference/peripherals/ldo_regulator.rst']
+
 TEMP_SENSOR_DOCS = ['api-reference/peripherals/temp_sensor.rst']
 
 TOUCH_SENSOR_DOCS = ['api-reference/peripherals/touch_pad.rst']
@@ -251,6 +253,7 @@ conditional_include_dict = {'SOC_BT_SUPPORTED':BT_DOCS,
                             'SOC_SPI_SUPPORT_SLAVE_HD_VER2':SPI_SLAVE_HD_DOCS,
                             'SOC_WIFI_NAN_SUPPORT':NAN_DOCS,
                             'SOC_JPEG_CODEC_SUPPORTED':JPEG_DOCS,
+                            'SOC_GP_LDO_SUPPORTED':LDO_DOCS,
                             'esp32':ESP32_DOCS,
                             'esp32s2':ESP32S2_DOCS,
                             'esp32s3':ESP32S3_DOCS,

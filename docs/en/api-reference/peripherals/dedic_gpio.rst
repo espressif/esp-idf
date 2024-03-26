@@ -156,7 +156,7 @@ Application Example
 
 .. list::
 
-    * Emulate UART/I2C/SPI peripherals in assembly with dedicate CPU instructions designed for manipulating the GPIOs: :example:`peripherals/dedicated_gpio`.
+    * Software emulation (bit banging) of the UART/I2C/SPI protocols in assembly using the dedicated GPIOs and their associated CPU instructions: :example:`peripherals/dedicated_gpio`.
     :SOC_DEDIC_GPIO_HAS_INTERRUPT: * Matrix keyboard example based on dedicated GPIO: :example:`peripherals/gpio/matrix_keyboard`.
 
 

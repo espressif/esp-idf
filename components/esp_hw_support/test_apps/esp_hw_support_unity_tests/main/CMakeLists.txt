@@ -9,7 +9,7 @@ set(srcs "test_app_main.c"
           "test_key_mgr.c"
            )
 
-if(CONFIG_SOC_MULTI_USAGE_LDO_SUPPORTED)
+if(CONFIG_SOC_GP_LDO_SUPPORTED)
     list(APPEND srcs "test_ldo.c")
 endif()
 

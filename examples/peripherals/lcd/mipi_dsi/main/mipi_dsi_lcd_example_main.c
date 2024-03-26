@@ -9,11 +9,11 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
-#include "esp_private/esp_ldo.h"
 #include "esp_timer.h"
 #include "esp_lcd_panel_ops.h"
 #include "esp_lcd_mipi_dsi.h"
 #include "esp_lcd_ili9881c.h"
+#include "esp_ldo_regulator.h"
 #include "driver/gpio.h"
 #include "esp_err.h"
 #include "esp_log.h"
@@ -43,8 +43,8 @@ static const char *TAG = "example";
 //////////////////// Please update the following configuration according to your Board Design //////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-// The "VDD_MIPI_DPHY" should be supplied with 2.5V, it can source from the integrated LDO unit or from external LDO chip
-#define EXAMPLE_MIPI_DSI_PHY_PWR_LDO_UNIT       3  // LDO_VO3 is connected to VDD_MIPI_DPHY
+// The "VDD_MIPI_DPHY" should be supplied with 2.5V, it can source from the internal LDO regulator or from external LDO chip
+#define EXAMPLE_MIPI_DSI_PHY_PWR_LDO_CHAN       3  // LDO_VO3 is connected to VDD_MIPI_DPHY
 #define EXAMPLE_MIPI_DSI_PHY_PWR_LDO_VOLTAGE_MV 2500
 #define EXAMPLE_LCD_BK_LIGHT_ON_LEVEL           1
 #define EXAMPLE_LCD_BK_LIGHT_OFF_LEVEL          !EXAMPLE_LCD_BK_LIGHT_ON_LEVEL
@@ -126,17 +126,13 @@ static bool example_notify_lvgl_flush_ready(esp_lcd_panel_handle_t panel, esp_lc
 static void example_bsp_enable_dsi_phy_power(void)
 {
     // Turn on the power for MIPI DSI PHY, so it can go from "No Power" state to "Shutdown" state
-    esp_ldo_unit_handle_t phy_pwr_unit = NULL;
-#if EXAMPLE_MIPI_DSI_PHY_PWR_LDO_UNIT > 0
-    esp_ldo_unit_init_cfg_t ldo_cfg = {
-        .unit_id = EXAMPLE_MIPI_DSI_PHY_PWR_LDO_UNIT,
-        .cfg = {
-            .voltage_mv = EXAMPLE_MIPI_DSI_PHY_PWR_LDO_VOLTAGE_MV,
-        },
+    esp_ldo_channel_handle_t ldo_mipi_phy = NULL;
+#ifdef EXAMPLE_MIPI_DSI_PHY_PWR_LDO_CHAN
+    esp_ldo_channel_config_t ldo_mipi_phy_config = {
+        .chan_id = EXAMPLE_MIPI_DSI_PHY_PWR_LDO_CHAN,
+        .voltage_mv = EXAMPLE_MIPI_DSI_PHY_PWR_LDO_VOLTAGE_MV,
     };
-    ESP_ERROR_CHECK(esp_ldo_init_unit(&ldo_cfg, &phy_pwr_unit));
-    ESP_ERROR_CHECK(esp_ldo_enable_unit(phy_pwr_unit));
-
+    ESP_ERROR_CHECK(esp_ldo_acquire_channel(&ldo_mipi_phy_config, &ldo_mipi_phy));
     ESP_LOGI(TAG, "MIPI DSI PHY Powered on");
 #endif
 }

@@ -73,11 +73,8 @@ if(NOT BOOTLOADER_BUILD)
         endif()
     endif()
 
-    if(CONFIG_SOC_MULTI_USAGE_LDO_SUPPORTED)
-        list(APPEND srcs "ldo/esp_ldo.c")
-        if(CONFIG_SPIRAM OR CONFIG_SOC_CLK_MPLL_SUPPORTED)
-            list(APPEND srcs "ldo/esp_ldo_psram.c")
-        endif()
+    if(CONFIG_SOC_GP_LDO_SUPPORTED)
+        list(APPEND srcs "ldo/esp_ldo.c" "ldo/esp_ldo_regulator.c")
     endif()
 
     if(CONFIG_SOC_ASYNC_MEMCPY_SUPPORTED)
@@ -168,7 +165,7 @@ else()
 endif()
 
 idf_component_register(SRCS ${srcs}
-                       INCLUDE_DIRS include include/soc include/soc/${target} dma/include
+                       INCLUDE_DIRS include include/soc include/soc/${target} dma/include ldo/include
                        PRIV_INCLUDE_DIRS port/include include/esp_private
                        REQUIRES ${requires}
                        PRIV_REQUIRES "${priv_requires}"

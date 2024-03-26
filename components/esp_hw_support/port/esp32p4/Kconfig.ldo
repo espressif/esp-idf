@@ -1,24 +1,53 @@
-config ESP_VDD_PSRAM_LDO_ID
-    int "PSRAM VDD connected LDO ID, set -1 for using external power supply and disable internal LDO"
-    default 2
-    range -1 4
-    help
-        PSRAM VDD pin connected LDO ID.
-        PSRAM VDD needs to be connected to an voltage output. This option selects the on-chip
-        LDO which is connected to the PSRAM VDD.
-        Set to -1 for connecting to external voltage output.
+menu "LDO Regulator Configurations"
+    depends on SOC_GP_LDO_SUPPORTED
 
-choice ESP_VDD_PSRAM_LDO_VOLTAGE_MV
-    prompt "PSRAM VDD connected LDO voltage"
-    depends on ESP_VDD_PSRAM_LDO_ID != -1
-    default ESP_VDD_PSRAM_LDO_VOLTAGE_MV_1900
-    help
-        Select the LDO (ESP_VDD_PSRAM_LDO_ID) voltage output
+    config ESP_LDO_CHAN_SPI_NOR_FLASH_DOMAIN
+        int "LDO regulator channel that used to power SPI NOR Flash (READ HELP)"
+        default 1
+        range -1 4
+        help
+            The internal LDO regulator can be used to power the SPI Flash specific power domain.
+            This option is to select which LDO channel to connect to that domain.
+            Please set this option correctly according to your schematic.
+            Set to -1 if the Flash is using any external power supply.
 
-    config ESP_VDD_PSRAM_LDO_VOLTAGE_MV_1900
-        bool "1.9V"
-endchoice
+    choice ESP_LDO_VOLTAGE_SPI_NOR_FLASH_DOMAIN
+        prompt "SPI NOR Flash power domain voltage"
+        depends on ESP_LDO_CHAN_SPI_NOR_FLASH_DOMAIN != -1
+        default ESP_LDO_VOLTAGE_SPI_NOR_FLASH_3300_MV
+        help
+            Select the voltage used by the Flash power domain.
 
-config ESP_VDD_PSRAM_LDO_VOLTAGE_MV
-    int
-    default 1900 if ESP_VDD_PSRAM_LDO_VOLTAGE_MV_1900
+        config ESP_LDO_VOLTAGE_SPI_NOR_FLASH_3300_MV
+            bool "3.3V"
+    endchoice
+
+    config ESP_LDO_VOLTAGE_SPI_NOR_FLASH_DOMAIN
+        int
+        default 3300 if ESP_LDO_VOLTAGE_SPI_NOR_FLASH_3300_MV
+
+    config ESP_LDO_CHAN_PSRAM_DOMAIN
+        int "LDO regulator channel that used to power PSRAM and MPLL (READ HELP)"
+        default 2
+        range -1 4
+        help
+            The internal LDO regulator can be used to power the PSRAM specific power domain.
+            This option is to select which LDO channel to connect to that domain.
+            Please set this option correctly according to your schematic.
+            Set to -1 if the PSRAM is using any external power supply.
+
+    choice ESP_LDO_VOLTAGE_PSRAM_DOMAIN
+        prompt "PSRAM power domain voltage"
+        depends on ESP_LDO_CHAN_PSRAM_DOMAIN != -1
+        default ESP_LDO_VOLTAGE_PSRAM_1900_MV
+        help
+            Select the voltage used by the PSRAM power domain.
+
+        config ESP_LDO_VOLTAGE_PSRAM_1900_MV
+            bool "1.9V"
+    endchoice
+
+    config ESP_LDO_VOLTAGE_PSRAM_DOMAIN
+        int
+        default 1900 if ESP_LDO_VOLTAGE_PSRAM_1900_MV
+endmenu

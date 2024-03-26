@@ -76,7 +76,6 @@
 #endif
 
 #include "esp_private/rtc_clk.h"
-#include "esp_private/esp_ldo_psram.h"
 
 #if SOC_INT_CLIC_SUPPORTED
 #include "hal/interrupt_clic_ll.h"

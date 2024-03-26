@@ -20,7 +20,7 @@ extern "C" {
 #define MIPI_DSI_LCD_VBP      16
 #define MIPI_DSI_LCD_VFP      16
 
-#define TEST_MIPI_DSI_PHY_PWR_LDO_UNIT 3
+#define TEST_MIPI_DSI_PHY_PWR_LDO_CHAN 3
 #define TEST_MIPI_DSI_PHY_PWR_LDO_VOLTAGE_MV 2500
 
 void test_bsp_enable_dsi_phy_power(void);
