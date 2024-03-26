@@ -1745,7 +1745,13 @@ A config option :ref:`CONFIG_ESP_WIFI_11R_SUPPORT` and configuration parameter :
     - {IDF_TARGET_NAME} as FTM Initiator in station mode.
     - {IDF_TARGET_NAME} as FTM Responder in AP mode.
 
-    Distance measurement using RTT is not accurate, and factors such as RF interference, multi-path travel, antenna orientation, and lack of calibration increase these inaccuracies. For better results, it is suggested to perform FTM between two ESP32 chip series devices (except ESP32-C2) as station and AP.
+.. only:: esp32c6
+
+   {IDF_TARGET_NAME} ECO1 and older versions do not support FTM Initiator mode.
+
+.. attention::
+
+    Distance measurement using RTT is not accurate, and factors such as RF interference, multi-path travel, antenna orientation, and lack of calibration increase these inaccuracies. For better results, it is suggested to perform FTM between two ESP32 chip series devices as station and AP.
 
     Refer to ESP-IDF example :idf_file:`examples/wifi/ftm/README.md` for steps on how to set up and perform FTM.
 

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -24,6 +24,9 @@
 #endif
 #ifdef CONFIG_ESP_WIFI_NAN_ENABLE
 #include "apps_private/wifi_apps_private.h"
+#endif
+#ifdef CONFIG_ESP_WIFI_FTM_ENABLE
+#include "esp_chip_info.h"
 #endif
 
 static bool s_wifi_inited = false;
@@ -318,6 +321,13 @@ esp_err_t esp_wifi_init(const wifi_init_config_t *config)
 #endif
     esp_wifi_set_log_level();
     esp_wifi_power_domain_on();
+#ifdef CONFIG_ESP_WIFI_FTM_ENABLE
+    esp_chip_info_t info = {0};
+    esp_chip_info(&info);
+    if (info.model == CHIP_ESP32C6 && info.revision <= 1) {
+        ((wifi_init_config_t *)config)->feature_caps &= ~(CONFIG_FEATURE_FTM_INITIATOR_BIT);
+    }
+#endif
     result = esp_wifi_init_internal(config);
     if (result == ESP_OK) {
 #if CONFIG_MAC_BB_PD
@@ -395,9 +405,10 @@ void wifi_apb80m_release(void)
 #endif //CONFIG_PM_ENABLE
 
 #ifndef CONFIG_ESP_WIFI_FTM_ENABLE
-void ieee80211_ftm_attach(void)
+esp_err_t ieee80211_ftm_attach(void)
 {
     /* Do not remove, stub to overwrite weak link in Wi-Fi Lib */
+    return ESP_OK;
 }
 #endif
 

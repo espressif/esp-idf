@@ -1295,6 +1295,26 @@ esp_err_t esp_wifi_ftm_end_session(void);
 esp_err_t esp_wifi_ftm_resp_set_offset(int16_t offset_cm);
 
 /**
+  * @brief      Get FTM measurements report copied into a user provided buffer.
+  *
+  * @attention  1. To get the FTM report, user first needs to allocate a buffer of size
+  *                (sizeof(wifi_ftm_report_entry_t) * num_entries) where the API will fill up to num_entries
+  *                valid FTM measurements in the buffer. Total number of entries can be found in the event
+  *                WIFI_EVENT_FTM_REPORT as ftm_report_num_entries
+  * @attention  2. The internal FTM report is freed upon use of this API which means the API can only be used
+  *                once afer every FTM session initiated
+  * @attention  3. Passing the buffer as NULL merely frees the FTM report
+  *
+  * @param      report  Pointer to the buffer for receiving the FTM report
+  * @param      num_entries Number of FTM report entries to be filled in the report
+  *
+  * @return
+  *    - ESP_OK: succeed
+  *    - others: failed
+  */
+esp_err_t esp_wifi_ftm_get_report(wifi_ftm_report_entry_t *report, uint8_t num_entries);
+
+/**
   * @brief      Enable or disable 11b rate of specified interface
   *
   * @attention  1. This API should be called after esp_wifi_init() and before esp_wifi_start().
