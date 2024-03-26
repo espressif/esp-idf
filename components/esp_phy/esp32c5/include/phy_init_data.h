@@ -6,6 +6,7 @@
 
 #ifndef PHY_INIT_DATA_H
 #define PHY_INIT_DATA_H /* don't use #pragma once here, we compile this file sometimes */
+#include <stdint.h>
 #include "esp_phy_init.h"
 #include "sdkconfig.h"
 
@@ -299,10 +300,10 @@ static const char __attribute__((section(".rodata"))) phy_init_magic_post[] = PH
 
 #if CONFIG_ESP_PHY_MULTIPLE_INIT_DATA_BIN
 /**
- * @brief PHY init data control infomation structure
+ * @brief PHY init data control information structure
  */
 typedef struct {
-    uint8_t control_info_checksum[4];     /*!< 4-byte control infomation checksum */
+    uint8_t control_info_checksum[4];     /*!< 4-byte control information checksum */
     uint8_t multiple_bin_checksum[4];     /*!< 4-byte multiple bin checksum */
     uint8_t check_algorithm;              /*!< check algorithm */
     uint8_t version;                      /*!< PHY init data bin version */

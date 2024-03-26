@@ -315,7 +315,7 @@ void esp_phy_disable(esp_phy_modem_t modem)
 #endif
         }
 #if CONFIG_IDF_TARGET_ESP32
-        // Update WiFi MAC time before disalbe WiFi/BT common peripheral clock
+        // Update WiFi MAC time before disable WiFi/BT common peripheral clock
         phy_update_wifi_mac_time(true, esp_timer_get_time());
 #endif
         // Disable WiFi/BT common peripheral clock. Do not disable clock for hardware RNG
@@ -912,7 +912,7 @@ static uint8_t phy_find_bin_type_according_country(const char* country)
 
     if (i == sizeof(s_country_code_map_type_table)/sizeof(phy_country_to_bin_type_t)) {
         phy_init_data_type = ESP_PHY_INIT_DATA_TYPE_DEFAULT;
-        ESP_LOGW(TAG, "Use the default certification code beacuse %c%c doesn't have a certificate", country[0], country[1]);
+        ESP_LOGW(TAG, "Use the default certification code because %c%c doesn't have a certificate", country[0], country[1]);
     }
 
     return phy_init_data_type;
