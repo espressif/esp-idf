@@ -18,7 +18,6 @@
 #include "essl_internal.h"
 #include "soc/soc_caps.h"
 
-#if SOC_SDIO_SLAVE_SUPPORTED
 #include "soc/host_reg.h"
 
 static const char TAG[] = "essl_sdio";
@@ -458,5 +457,3 @@ void essl_sdio_reset_cnt(void *arg)
     ctx->rx_got_bytes = 0;
     ctx->tx_sent_buffers = 0;
 }
-
-#endif // #if SOC_SDIO_SLAVE_SUPPORTED
