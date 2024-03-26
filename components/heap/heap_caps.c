@@ -496,7 +496,7 @@ IRAM_ATTR void *heap_caps_calloc( size_t n, size_t size, uint32_t caps)
     void* ptr = heap_caps_calloc_base(n, size, caps);
 
     if (!ptr && size > 0){
-        heap_caps_alloc_failed(size, caps, __func__);
+        heap_caps_alloc_failed(n * size, caps, __func__);
     }
 
     return ptr;
