@@ -282,6 +282,12 @@ static void bt_hidd_init_app(void)
     s_hidd_param.app_param.subclass = get_subclass_by_appearance(s_hidd_param.dev->appearance);
     s_hidd_param.app_param.desc_list = (uint8_t *)s_hidd_param.dev->devices[0].reports_map.data;
     s_hidd_param.app_param.desc_list_len = s_hidd_param.dev->devices[0].reports_map.len;
+
+    // Information SDP 
+    s_hidd_param.app_param.vendor_id = p_config->vendor_id;
+    s_hidd_param.app_param.product_id = p_config->product_id;
+    s_hidd_param.app_param.version = p_config->version;
+    s_hidd_param.app_param.vendor_id_source = s_hidd_param.app_param.vendor_id_source;
 }
 
 static void bt_hidd_init_qos(void)
@@ -812,7 +818,7 @@ esp_err_t esp_bt_hidd_dev_init(esp_hidd_dev_t *dev_p, const esp_hid_device_confi
         .queue_size = 5,
         .task_name = "bt_hidd_events",
         .task_priority = uxTaskPriorityGet(NULL),
-        .task_stack_size = 2048,
+        .task_stack_size = BT_HID_DEVICE_TASK_SIZE,
         .task_core_id = tskNO_AFFINITY
     };
     ret = esp_event_loop_create(&event_task_args, &s_hidd_param.dev->event_loop_handle);
