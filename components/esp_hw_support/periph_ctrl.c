@@ -92,7 +92,7 @@ void periph_module_reset(periph_module_t periph)
 }
 
 #if !SOC_IEEE802154_BLE_ONLY
-#if SOC_BT_SUPPORTED || SOC_WIFI_SUPPORTED
+#if SOC_BT_SUPPORTED || SOC_WIFI_SUPPORTED || SOC_IEEE802154_SUPPORTED
 IRAM_ATTR void wifi_bt_common_module_enable(void)
 {
 #if SOC_MODEM_CLOCK_IS_INDEPENDENT

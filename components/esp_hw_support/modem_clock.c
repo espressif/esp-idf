@@ -31,7 +31,9 @@ typedef enum {
     MODEM_CLOCK_ETM,
 #if SOC_BT_SUPPORTED
     MODEM_CLOCK_BLE_MAC,
-    MODEM_CLOCK_BLE_BB,
+#endif
+#if SOC_BT_SUPPORTED || SOC_IEEE802154_SUPPORTED
+    MODEM_CLOCK_BT_I154_COMMON_BB,
 #endif
 #if SOC_IEEE802154_SUPPORTED
     MODEM_CLOCK_802154_MAC,
@@ -79,13 +81,16 @@ static void IRAM_ATTR modem_clock_ble_mac_configure(modem_clock_context_t *ctx, 
     modem_syscon_ll_enable_ble_timer_clock(ctx->hal->syscon_dev, enable);
 }
 
-static void IRAM_ATTR modem_clock_ble_bb_configure(modem_clock_context_t *ctx, bool enable)
+#endif // SOC_BT_SUPPORTED
+#if SOC_BT_SUPPORTED || SOC_IEEE802154_SUPPORTED
+
+static void IRAM_ATTR modem_clock_ble_i154_bb_configure(modem_clock_context_t *ctx, bool enable)
 {
     modem_syscon_ll_enable_bt_apb_clock(ctx->hal->syscon_dev, enable);
     modem_syscon_ll_enable_bt_clock(ctx->hal->syscon_dev, enable);
 }
 
-#endif // SOC_BT_SUPPORTED
+#endif // SOC_BT_SUPPORTED || SOC_IEEE802154_SUPPORTED
 
 #if SOC_IEEE802154_SUPPORTED
 static void IRAM_ATTR modem_clock_ieee802154_mac_configure(modem_clock_context_t *ctx, bool enable)
@@ -144,7 +149,9 @@ modem_clock_context_t * __attribute__((weak)) IRAM_ATTR MODEM_CLOCK_instance(voi
             [MODEM_CLOCK_ETM]                   = { .refs = 0, .configure = modem_clock_etm_configure },
 #if SOC_BT_SUPPORTED
             [MODEM_CLOCK_BLE_MAC]               = { .refs = 0, .configure = modem_clock_ble_mac_configure },
-            [MODEM_CLOCK_BLE_BB]                = { .refs = 0, .configure = modem_clock_ble_bb_configure },
+#endif
+#if SOC_IEEE802154_SUPPORTED || SOC_BT_SUPPORTED
+            [MODEM_CLOCK_BT_I154_COMMON_BB]       = { .refs = 0, .configure = modem_clock_ble_i154_bb_configure },
 #endif
 #if SOC_IEEE802154_SUPPORTED
             [MODEM_CLOCK_802154_MAC]            = { .refs = 0, .configure = modem_clock_ieee802154_mac_configure },
@@ -253,8 +260,8 @@ void IRAM_ATTR modem_clock_module_mac_reset(periph_module_t module)
 }
 
 #define WIFI_CLOCK_DEPS         (BIT(MODEM_CLOCK_WIFI_MAC) | BIT(MODEM_CLOCK_WIFI_BB) | BIT(MODEM_CLOCK_COEXIST))
-#define BLE_CLOCK_DEPS          (BIT(MODEM_CLOCK_BLE_MAC) | BIT(MODEM_CLOCK_BLE_BB) | BIT(MODEM_CLOCK_ETM) | BIT(MODEM_CLOCK_COEXIST))
-#define IEEE802154_CLOCK_DEPS   (BIT(MODEM_CLOCK_802154_MAC) | BIT(MODEM_CLOCK_BLE_BB) | BIT(MODEM_CLOCK_ETM) | BIT(MODEM_CLOCK_COEXIST))
+#define BLE_CLOCK_DEPS          (BIT(MODEM_CLOCK_BLE_MAC) | BIT(MODEM_CLOCK_BT_I154_COMMON_BB) | BIT(MODEM_CLOCK_ETM) | BIT(MODEM_CLOCK_COEXIST))
+#define IEEE802154_CLOCK_DEPS   (BIT(MODEM_CLOCK_802154_MAC) | BIT(MODEM_CLOCK_BT_I154_COMMON_BB) | BIT(MODEM_CLOCK_ETM) | BIT(MODEM_CLOCK_COEXIST))
 #define COEXIST_CLOCK_DEPS      (BIT(MODEM_CLOCK_COEXIST))
 #define PHY_CLOCK_DEPS          (BIT(MODEM_CLOCK_I2C_MASTER) | BIT(MODEM_CLOCK_MODEM_ADC_COMMON_FE) | BIT(MODEM_CLOCK_MODEM_PRIVATE_FE))
 #define I2C_ANA_MST_CLOCK_DEPS  (BIT(MODEM_CLOCK_I2C_MASTER))
