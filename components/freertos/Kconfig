@@ -173,8 +173,10 @@ menu "FreeRTOS"
             FreeRTOS has the ability to store per-thread pointers in the task
             control block. This controls the number of pointers available.
 
-            This value must be at least 1. Index 0 is reserved for use by the pthreads API
-            thread-local-storage. Other indexes can be used for any desired purpose.
+            This value must be at least 1. Index 0 is reserved for use by the pthreads API thread-local-storage. 
+            
+            Other indexes can be used for any desired purpose.
+
 
     choice FREERTOS_ASSERT
         prompt "FreeRTOS assertions"
