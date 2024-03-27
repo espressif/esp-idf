@@ -1,6 +1,6 @@
 set(srcs "test_app_main.c")
 
-list(APPEND srcs "test_mmap.c")
+list(APPEND srcs "test_mmap.c" "test_cache_msync_malloc.c")
 
 if(CONFIG_SOC_CACHE_WRITEBACK_SUPPORTED)
     list(APPEND srcs "test_cache_msync.c")

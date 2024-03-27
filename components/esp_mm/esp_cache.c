@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -130,6 +130,28 @@ esp_err_t esp_cache_aligned_malloc(size_t size, uint32_t flags, void **out_ptr, 
     return ESP_OK;
 }
 
+esp_err_t esp_cache_aligned_malloc_prefer(size_t size, void **out_ptr, size_t *actual_size, size_t flag_nums, ...)
+{
+    ESP_RETURN_ON_FALSE_ISR(out_ptr, ESP_ERR_INVALID_ARG, TAG, "null pointer");
+
+    esp_err_t ret = ESP_FAIL;
+    va_list argp;
+    uint32_t flags = 0;
+    va_start(argp, flag_nums);
+    *out_ptr = NULL;
+
+    while (flag_nums--) {
+        flags = va_arg(argp, uint32_t);
+        ret = esp_cache_aligned_malloc(size, flags, out_ptr, actual_size);
+        if (ret == ESP_OK) {
+            break;
+        }
+    }
+
+    va_end(argp);
+    return ret;
+}
+
 esp_err_t esp_cache_aligned_calloc(size_t n, size_t size, uint32_t flags, void **out_ptr, size_t *actual_size)
 {
     ESP_RETURN_ON_FALSE_ISR(out_ptr, ESP_ERR_INVALID_ARG, TAG, "null pointer");
@@ -147,6 +169,39 @@ esp_err_t esp_cache_aligned_calloc(size_t n, size_t size, uint32_t flags, void *
         memset(ptr, 0, size_bytes);
         *out_ptr = ptr;
     }
+
+    return ret;
+}
+
+esp_err_t esp_cache_aligned_calloc_prefer(size_t n, size_t size, void **out_ptr, size_t *actual_size, size_t flag_nums, ...)
+{
+    ESP_RETURN_ON_FALSE_ISR(out_ptr, ESP_ERR_INVALID_ARG, TAG, "null pointer");
+
+    esp_err_t ret = ESP_FAIL;
+    size_t size_bytes = 0;
+    bool ovf = false;
+
+    *out_ptr = NULL;
+    ovf = __builtin_mul_overflow(n, size, &size_bytes);
+    ESP_RETURN_ON_FALSE_ISR(!ovf, ESP_ERR_INVALID_ARG, TAG, "wrong size, total size overflow");
+
+    void *ptr = NULL;
+    va_list argp;
+    va_start(argp, flag_nums);
+    int arg;
+    for (int i = 0; i < flag_nums; i++) {
+        arg = va_arg(argp, int);
+        ret = esp_cache_aligned_malloc_prefer(size_bytes, &ptr, actual_size, flag_nums, arg);
+        if (ret == ESP_OK) {
+            memset(ptr, 0, size_bytes);
+            *out_ptr = ptr;
+
+            arg = va_arg(argp, int);
+            break;
+        }
+
+    }
+    va_end(argp);
 
     return ret;
 }
