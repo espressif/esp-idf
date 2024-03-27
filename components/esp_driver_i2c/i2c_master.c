@@ -92,8 +92,9 @@ static esp_err_t s_i2c_hw_fsm_reset(i2c_master_bus_handle_t i2c_master)
 
     //to reset the I2C hw module, we need re-enable the hw
     s_i2c_master_clear_bus(i2c_master->base);
-    periph_module_disable(i2c_periph_signal[i2c_master->base->port_num].module);
-    periph_module_enable(i2c_periph_signal[i2c_master->base->port_num].module);
+    I2C_RCC_ATOMIC() {
+        i2c_ll_reset_register(i2c_master->base->port_num);
+    }
 
     i2c_hal_master_init(hal);
     i2c_ll_disable_intr_mask(hal->dev, I2C_LL_INTR_MASK);
@@ -529,6 +530,7 @@ static esp_err_t s_i2c_transaction_start(i2c_master_dev_handle_t i2c_dev, int xf
     i2c_master->rx_cnt = 0;
     i2c_master->read_len_static = 0;
 
+    i2c_hal_master_set_scl_timeout_val(hal, i2c_dev->scl_wait_us, i2c_master->base->clk_src_freq_hz);
     I2C_CLOCK_SRC_ATOMIC() {
         i2c_ll_set_source_clk(hal->dev, i2c_master->base->clk_src);
         i2c_hal_set_bus_timing(hal, i2c_dev->scl_speed_hz, i2c_master->base->clk_src, i2c_master->base->clk_src_freq_hz);
@@ -959,6 +961,7 @@ esp_err_t i2c_master_bus_add_device(i2c_master_bus_handle_t bus_handle, const i2
     i2c_dev->addr_10bits = dev_config->dev_addr_length;
     i2c_dev->master_bus = i2c_master;
     i2c_dev->ack_check_disable = dev_config->flags.disable_ack_check;
+    i2c_dev->scl_wait_us = (dev_config->scl_wait_us == 0) ? I2C_LL_SCL_WAIT_US_VAL_DEFAULT : dev_config->scl_wait_us;
 
     i2c_master_device_list_t *device_item = (i2c_master_device_list_t *)calloc(1, sizeof(i2c_master_device_list_t));
     ESP_GOTO_ON_FALSE((device_item != NULL), ESP_ERR_NO_MEM, err, TAG, "no memory for i2c device item`");

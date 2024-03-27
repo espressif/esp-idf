@@ -133,6 +133,15 @@ void i2c_hal_master_handle_tx_event(i2c_hal_context_t *hal, i2c_intr_event_t *ev
 void i2c_hal_master_handle_rx_event(i2c_hal_context_t *hal, i2c_intr_event_t *event);
 
 /**
+ * @brief Set scl timeout reg value according to given timeout us and source clock frequency
+ *
+ * @param hal Context of the HAL layer
+ * @param timeout_us timeout us
+ * @param sclk_clock_hz source clock hz
+ */
+void i2c_hal_master_set_scl_timeout_val(i2c_hal_context_t *hal, uint32_t timeout_us, uint32_t sclk_clock_hz);
+
+/**
  * @brief Init I2C hal layer
  *
  * @param hal Context of the HAL
