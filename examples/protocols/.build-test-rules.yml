@@ -179,7 +179,7 @@ examples/protocols/mqtt/ssl:
 examples/protocols/mqtt/ssl_ds:
   <<: *default_dependencies
   disable:
-    - if: SOC_DIG_SIGN_SUPPORTED != 1 or IDF_TARGET == "esp32p4" # TODO: IDF-8077
+    - if: SOC_DIG_SIGN_SUPPORTED != 1
       temporary: false
       reason: DS not present
 
