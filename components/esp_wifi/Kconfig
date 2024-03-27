@@ -7,7 +7,22 @@ menu "Wi-Fi"
         bool
         default y if SOC_WIFI_SUPPORTED
 
-    if ESP_WIFI_ENABLED
+    config ESP_HOST_WIFI_ENABLED
+        bool "Host WiFi Enable"
+        depends on SOC_WIRELESS_HOST_SUPPORTED
+        default n
+
+    config ESP_WIFI_CONTROLLER_TARGET
+        depends on ESP_HOST_WIFI_ENABLED
+        string
+        default "esp32"
+
+    config ESP_WIFI_TARGET_ESP32
+        depends on ESP_HOST_WIFI_ENABLED
+        bool
+        default y if ESP_WIFI_CONTROLLER_TARGET="esp32"
+
+    if (ESP_WIFI_ENABLED || ESP_HOST_WIFI_ENABLED)
 
         config ESP_WIFI_STATIC_RX_BUFFER_NUM
             int "Max number of WiFi static RX buffers"
@@ -194,7 +209,7 @@ menu "Wi-Fi"
                 Set the size of WiFi Block Ack RX window. Generally a bigger value means higher throughput and better
                 compatibility but more memory. Most of time we should NOT change the default value unless special
                 reason, e.g. test the maximum UDP RX throughput with iperf etc. For iperf test in shieldbox, the
-                recommended value is 9~12. If PSRAM is used and WiFi memory is prefered to allocat in PSRAM first,
+                recommended value is 9~12. If PSRAM is used and WiFi memory is preferred to allocate in PSRAM first,
                 the default and minimum value should be 16 to achieve better throughput and compatibility with both
                 stations and APs.
 
@@ -231,14 +246,14 @@ menu "Wi-Fi"
             help
                 ESP-MESH utilizes beacon frames to detect and resolve root node conflicts (see documentation). However
                 the default length of a beacon frame can simultaneously hold only five root node identifier structures,
-                meaning that a root node conflict of up to five nodes can be detected at one time. In the occurence of
+                meaning that a root node conflict of up to five nodes can be detected at one time. In the occurrence of
                 more root nodes conflict involving more than five root nodes, the conflict resolution process will
                 detect five of the root nodes, resolve the conflict, and re-detect more root nodes. This process will
                 repeat until all root node conflicts are resolved. However this process can generally take a very long
                 time.
 
                 To counter this situation, the beacon frame length can be increased such that more root nodes can be
-                detected simultaneously. Each additional root node will require 36 bytes and should be added ontop of
+                detected simultaneously. Each additional root node will require 36 bytes and should be added on top of
                 the default beacon frame length of
                 752 bytes. For example, if you want to detect 10 root nodes simultaneously, you need to set the beacon
                 frame length as
@@ -490,9 +505,9 @@ menu "Wi-Fi"
                 help
                     Select this option to use MbedTLS TLS client for WPA2 enterprise connection.
                     Please note that from MbedTLS-3.0 onwards, MbedTLS does not support SSL-3.0
-                    TLS-v1.0, TLS-v1.1 versions. Incase your server is using one of these version,
+                    TLS-v1.0, TLS-v1.1 versions. In case your server is using one of these version,
                     it is advisable to update your server.
-                    Please disable this option for compatibilty with older TLS versions.
+                    Please disable this option for compatibility with older TLS versions.
 
             config ESP_WIFI_EAP_TLS1_3
                 bool "Enable EAP-TLS v1.3 Support for WiFi Enterprise connection"
@@ -600,7 +615,7 @@ menu "Wi-Fi"
                 default n
                 help
                     Select this option to enable validate each WPS attribute
-                    rigorously. Disabling this add the workaorunds with various APs.
+                    rigorously. Disabling this add the workarounds with various APs.
                     Enabling this may cause inter operability issues with some APs.
 
             config ESP_WIFI_WPS_PASSPHRASE
@@ -608,9 +623,9 @@ menu "Wi-Fi"
                 default n
                 help
                     Select this option to get passphrase during WPS configuration.
-                    This option fakes the virtual display capabilites to get the
+                    This option fakes the virtual display capabilities to get the
                     configuration in passphrase mode.
-                    Not recommanded to be used since WPS credentials should not
+                    Not recommended to be used since WPS credentials should not
                     be shared to other devices, making it in readable format increases
                     that risk, also passphrase requires pbkdf2 to convert in psk.
 

@@ -75,6 +75,10 @@ config SOC_USB_OTG_SUPPORTED
     bool
     default y
 
+config SOC_WIRELESS_HOST_SUPPORTED
+    bool
+    default y
+
 config SOC_TEMP_SENSOR_SUPPORTED
     bool
     default y

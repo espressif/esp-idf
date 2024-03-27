@@ -42,21 +42,65 @@ static int lib_printf(const char* tag, const char* format, va_list arg)
     return len;
 }
 
-int phy_printf(const char* format, ...)
+int pp_printf(const char* format, ...)
 {
     va_list arg;
     va_start(arg, format);
-    int res = lib_printf("phy", format, arg);
+    int res = lib_printf("pp", format, arg);
     va_end(arg);
     return res;
 }
 
-
-int rtc_printf(const char* format, ...)
+int sc_printf(const char* format, ...)
 {
     va_list arg;
     va_start(arg, format);
-    int res = lib_printf("rtc", format, arg);
+    int res = lib_printf("smartconfig", format, arg);
+    va_end(arg);
+    return res;
+}
+
+int core_printf(const char* format, ...)
+{
+    va_list arg;
+    va_start(arg, format);
+    int res = lib_printf("core", format, arg);
+    va_end(arg);
+    return res;
+}
+
+int net80211_printf(const char* format, ...)
+{
+    va_list arg;
+    va_start(arg, format);
+    int res = lib_printf("net80211", format, arg);
+    va_end(arg);
+    return res;
+}
+
+int target_printf(const char* format, ...)
+{
+    va_list arg;
+    va_start(arg, format);
+    int res = lib_printf("target", format, arg);
+    va_end(arg);
+    return res;
+}
+
+int wapi_printf(const char* format, ...)
+{
+    va_list arg;
+    va_start(arg, format);
+    int res = lib_printf("wapi", format, arg);
+    va_end(arg);
+    return res;
+}
+
+int mesh_printf(const char* format, ...)
+{
+    va_list arg;
+    va_start(arg, format);
+    int res = lib_printf("mesh", format, arg);
     va_end(arg);
     return res;
 }

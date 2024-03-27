@@ -81,7 +81,7 @@ typedef struct wifi_osi_funcs_t {
     void (* _wifi_apb80m_release)(void);
     void (* _phy_disable)(void);
     void (* _phy_enable)(void);
-#if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2
+#if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2 || CONFIG_ESP_WIFI_TARGET_ESP32
     void (* _phy_common_clock_enable)(void);
     void (* _phy_common_clock_disable)(void);
 #endif
@@ -113,7 +113,7 @@ typedef struct wifi_osi_funcs_t {
     int (* _get_random)(uint8_t *buf, size_t len);
     int (* _get_time)(void *t);
     unsigned long (* _random)(void);
-#if !CONFIG_IDF_TARGET_ESP32
+#if !CONFIG_IDF_TARGET_ESP32 && !CONFIG_ESP_WIFI_TARGET_ESP32
     uint32_t (* _slowclk_cal_get)(void);
 #endif
     void (* _log_write)(unsigned int level, const char* tag, const char* format, ...);

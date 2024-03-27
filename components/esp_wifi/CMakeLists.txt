@@ -4,7 +4,7 @@ if(${idf_target} STREQUAL "linux")
     return() # This component is not supported by the POSIX/Linux simulator
 endif()
 
-if(CONFIG_ESP_WIFI_ENABLED)
+if(CONFIG_ESP_WIFI_ENABLED OR CONFIG_ESP_HOST_WIFI_ENABLED)
 
     if(CONFIG_APP_NO_BLOBS)
         set(link_binary_libs 0)
@@ -22,6 +22,7 @@ if(CONFIG_ESP_WIFI_ENABLED)
     endif()
 
     set(srcs
+        "src/lib_printf.c"
         "src/mesh_event.c"
         "src/smartconfig.c"
         "src/wifi_init.c"
@@ -55,17 +56,26 @@ idf_component_register(SRCS "${srcs}"
                                   wpa_supplicant hal lwip esp_coex ${extra_priv_requires}
                     LDFRAGMENTS "${ldfragments}")
 
-if(CONFIG_ESP_WIFI_ENABLED)
+if(CONFIG_ESP_WIFI_ENABLED OR CONFIG_ESP_HOST_WIFI_ENABLED)
     idf_build_get_property(build_dir BUILD_DIR)
 
-    set(target_name "${idf_target}")
+    if(CONFIG_ESP_HOST_WIFI_ENABLED)
+        set(target_name "${CONFIG_ESP_WIFI_CONTROLLER_TARGET}_host")
+    else()
+        set(target_name "${idf_target}")
+    endif()
+
     target_link_directories(${COMPONENT_LIB} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/lib/${target_name}")
 
     if(link_binary_libs)
-        if(CONFIG_IDF_TARGET_ESP32C2)
-            set(blobs core espnow net80211 pp smartconfig)
+        if(CONFIG_ESP_HOST_WIFI_ENABLED)
+            set(blobs core espnow net80211 target smartconfig wapi)
         else()
-            set(blobs core espnow mesh net80211 pp smartconfig wapi)
+            if(CONFIG_IDF_TARGET_ESP32C2)
+                set(blobs core espnow net80211 pp smartconfig)
+            else()
+                set(blobs core espnow mesh net80211 pp smartconfig wapi)
+            endif()
         endif()
 
         foreach(blob ${blobs})

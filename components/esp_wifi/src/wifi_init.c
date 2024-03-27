@@ -17,7 +17,9 @@
 #include "esp_private/esp_clk.h"
 #include "esp_wpa.h"
 #include "esp_netif.h"
+#ifdef CONFIG_ESP_COEX_ENABLED
 #include "private/esp_coexist_internal.h"
+#endif
 #ifdef CONFIG_ESP_PHY_ENABLED
 #include "esp_phy_init.h"
 #include "esp_private/phy.h"

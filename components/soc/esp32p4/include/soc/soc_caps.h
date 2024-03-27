@@ -38,6 +38,7 @@
 #define SOC_ASYNC_MEMCPY_SUPPORTED      1
 #define SOC_EMAC_SUPPORTED              1
 #define SOC_USB_OTG_SUPPORTED           1
+#define SOC_WIRELESS_HOST_SUPPORTED     1
 // disable usb serial jtag for esp32p4, current image does not support
 // #define SOC_USB_SERIAL_JTAG_SUPPORTED   1  //TODO: IDF-7496
 #define SOC_TEMP_SENSOR_SUPPORTED       1
