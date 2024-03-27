@@ -122,6 +122,7 @@ typedef struct {
 typedef struct {
     bool owner_check;      /*!< If set / clear, DMA channel enables / disables checking owner validity */
     bool auto_update_desc; /*!< If set / clear, DMA channel enables / disables hardware to update descriptor automatically (TX channel only) */
+    bool eof_till_data_popped;   /*!< If set / clear, DMA channel out_eof event is triggered on out / in DMA hardware fifo */
 } gdma_strategy_config_t;
 
 /** @cond */
