@@ -24,7 +24,8 @@ extern "C" {
     .role = i2s_role, \
     .dma_desc_num = 6, \
     .dma_frame_num = 240, \
-    .auto_clear = false, \
+    .auto_clear_after_cb = false, \
+    .auto_clear_before_cb = false, \
     .intr_priority = 0, \
 }
 
@@ -63,7 +64,15 @@ typedef struct {
     uint32_t            dma_frame_num;      /*!< I2S frame number in one DMA buffer. One frame means one-time sample data in all slots,
                                              *   it should be the multiple of `3` when the data bit width is 24.
                                              */
-    bool                auto_clear;         /*!< Set to auto clear DMA TX buffer, I2S will always send zero automatically if no data to send */
+    union {
+        bool            auto_clear;         /*!< Alias of `auto_clear_after_cb` to be compatible with previous version */
+        bool            auto_clear_after_cb; /*!< Set to auto clear DMA TX buffer after `on_sent` callback, I2S will always send zero automatically if no data to send.
+                                             *   So that user can assign the data to the DMA buffers directly in the callback, and the data won't be cleared after quitted the callback.
+                                             */
+    };
+    bool                auto_clear_before_cb; /*!< Set to auto clear DMA TX buffer before `on_sent` callback, I2S will always send zero automatically if no data to send
+                                             *   So that user can access data in the callback that just finished to send.
+                                             */
     int                 intr_priority;      /*!< I2S interrupt priority, range [0, 7], if set to 0, the driver will try to allocate an interrupt with a relative low priority (1,2,3) */
 } i2s_chan_config_t;
 

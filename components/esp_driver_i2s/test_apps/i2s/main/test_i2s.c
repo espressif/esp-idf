@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -906,4 +906,81 @@ finish:
     free(data);
     // Test failed if package lost within 96000
     TEST_ASSERT(i == test_num);
+}
+
+#define TEST_I2S_BUF_DATA_OFFSET   100
+
+static IRAM_ATTR bool i2s_tx_on_sent_callback(i2s_chan_handle_t handle, i2s_event_data_t *event, void *user_ctx)
+{
+    uint32_t *data = (uint32_t *)(event->data);
+    size_t len = event->size / sizeof(uint32_t);
+    for (int i = 0; i < len; i++) {
+        data[i] = i + TEST_I2S_BUF_DATA_OFFSET;
+    }
+    return false;
+}
+
+static IRAM_ATTR bool i2s_rx_on_recv_callback(i2s_chan_handle_t handle, i2s_event_data_t *event, void *user_ctx)
+{
+    bool *received = (bool *)user_ctx;
+    uint32_t *data = (uint32_t *)(event->data);
+    size_t len = event->size / sizeof(uint32_t);
+    for (int i = 0; i < len; i++) {
+        if (data[i] == TEST_I2S_BUF_DATA_OFFSET) {
+            for (int j = 0; i < len && data[i] == (j + TEST_I2S_BUF_DATA_OFFSET); i++, j++);
+            if (i == len) {
+                *received = true;
+                break;
+            }
+        }
+    }
+    return false;
+}
+
+TEST_CASE("I2S_asynchronous_read_write", "[i2s]")
+{
+    i2s_chan_handle_t tx_handle;
+    i2s_chan_handle_t rx_handle;
+
+    i2s_chan_config_t chan_cfg = I2S_CHANNEL_DEFAULT_CONFIG(I2S_NUM_0, I2S_ROLE_MASTER);
+    // Only clear the data before callback, so that won't clear the user given data in the callback
+    chan_cfg.auto_clear_before_cb = true;
+    i2s_std_config_t std_cfg = {
+        .clk_cfg = I2S_STD_CLK_DEFAULT_CONFIG(SAMPLE_RATE),
+        .slot_cfg = I2S_STD_PHILIPS_SLOT_DEFAULT_CONFIG(SAMPLE_BITS, I2S_SLOT_MODE_STEREO),
+        .gpio_cfg = I2S_TEST_MASTER_DEFAULT_PIN,
+    };
+    std_cfg.gpio_cfg.din = std_cfg.gpio_cfg.dout;  // GPIO loopback
+
+    TEST_ESP_OK(i2s_new_channel(&chan_cfg, &tx_handle, &rx_handle));
+    TEST_ESP_OK(i2s_channel_init_std_mode(tx_handle, &std_cfg));
+    TEST_ESP_OK(i2s_channel_init_std_mode(rx_handle, &std_cfg));
+
+    i2s_event_callbacks_t cbs = {
+        .on_sent = i2s_tx_on_sent_callback,
+        .on_recv = i2s_rx_on_recv_callback,
+    };
+    bool received = false;
+    TEST_ESP_OK(i2s_channel_register_event_callback(rx_handle, &cbs, &received));
+    TEST_ESP_OK(i2s_channel_register_event_callback(tx_handle, &cbs, NULL));
+
+    TEST_ESP_OK(i2s_channel_enable(rx_handle));
+    TEST_ESP_OK(i2s_channel_enable(tx_handle));
+
+    /* Wait until receive correct data */
+    uint32_t timeout_ms = 3000;
+    while (!received) {
+        vTaskDelay(pdMS_TO_TICKS(10));
+        timeout_ms -= 10;
+        if (timeout_ms <= 0) {
+            break;
+        }
+    }
+
+    TEST_ESP_OK(i2s_channel_disable(tx_handle));
+    TEST_ESP_OK(i2s_channel_disable(rx_handle));
+    TEST_ESP_OK(i2s_del_channel(tx_handle));
+    TEST_ESP_OK(i2s_del_channel(rx_handle));
+
+    TEST_ASSERT(received);
 }
