@@ -8,9 +8,9 @@ Introduction
 
 .. list::
 
-    : SOC_MIPI_CSI_SUPPORTED : - CSI
+    : SOC_MIPI_CSI_SUPPORTED : - MIPI Camera Serial Interface (CSI)
 
-The ``esp_driver_cam`` component is designed to support these camera controller hardwares.
+The Camera Controller Driver is designed for this hardware peripheral.
 
 
 Functional Overview
@@ -37,18 +37,7 @@ Resource Allocation
     Install Camera Controller Driver
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    A Camera controller driver can be implemented by the CSI peripheral, which requires the configuration that specified by :cpp:type:`esp_cam_ctlr_csi_config_t`:
-
-    - :cpp:member:`esp_cam_ctlr_csi_config_t::ctlr_id`, select the CSI controller ID.
-    - :cpp:member:`esp_cam_ctlr_csi_config_t::clk_src`, select the CSI phy clock source.
-    - :cpp:member:`esp_cam_ctlr_csi_config_t::h_res`, set input horizontal resolution, i.e. the number of pixels in a line.
-    - :cpp:member:`esp_cam_ctlr_csi_config_t::v_res`, set input vertical resolution, i.e. the number of lines in a frame.
-    - :cpp:member:`esp_cam_ctlr_csi_config_t::data_lane_num`, set the number of data lanes to be used.
-    - :cpp:member:`esp_cam_ctlr_csi_config_t::clk_freq_hz`, set the frequency of clock, in Hz.
-    - :cpp:member:`esp_cam_ctlr_csi_config_t::input_data_color_type`, select the input color type.
-    - :cpp:member:`esp_cam_ctlr_csi_config_t::output_data_color_type`, select the output color type.
-    - :cpp:member:`esp_cam_ctlr_csi_config_t::byte_swap_en`, set to enable byte swap.
-    - :cpp:member:`esp_cam_ctlr_csi_config_t::queue_items`, set queue itmes, the deeper the queue, the more the driver can handle transactions.
+    A Camera Controller Driver can be implemented by the CSI peripheral, which requires the configuration that specified by :cpp:type:`esp_cam_ctlr_csi_config_t`.
 
     If the configurations in :cpp:type:`esp_cam_ctlr_csi_config_t` is specified, users can call :cpp:func:`esp_cam_new_csi_ctlr` to allocate and initialize a CSI camera controller handle. This function will return an CSI camera controller handle if it runs correctly. You can take following code as reference.
 
@@ -71,7 +60,7 @@ Resource Allocation
 Uninstall Camera Controller Driver
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-If a previously installed camera controller driver is no longer needed, it's recommended to recycle the resource by calling :cpp:func:`esp_cam_del_ctlr`, so that to release the underlying hardware.
+If a previously installed Camera Controller Driver is no longer needed, it's recommended to recycle the resource by calling :cpp:func:`esp_cam_del_ctlr`, so that to release the underlying hardware.
 
 .. _cam-enable-disable:
 
@@ -97,7 +86,7 @@ Calling :cpp:func:`esp_cam_ctlr_disable` does the opposite, that is, put the dri
 Start and Stop Camera Controller Driver
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Before receiving camera signal from camera sensor, you need to start the camera controller driver first, by calling :cpp:func:`esp_cam_ctlr_start`. This function:
+Before receiving camera signal from camera sensor, you need to start the Camera Controller Driver first, by calling :cpp:func:`esp_cam_ctlr_start`. This function:
 
 * Switches the driver stat from **enable** to **start**
 
@@ -127,11 +116,11 @@ Now you can call :cpp:func:`esp_cam_ctlr_receive` to receive from a camera senso
 Register Event Callbacks
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-After the camera controller driver starts receiving, it can generate a specific event dynamically. If you have some functions that should be called when the event happens, please hook your function to the interrupt service routine by calling :cpp:func:`esp_cam_ctlr_register_event_callbacks`. All supported event callbacks are listed in :cpp:type:`esp_cam_ctlr_evt_cbs_t`:
+After the Camera Controller Driver starts receiving, it can generate a specific event dynamically. If you have some functions that should be called when the event happens, please hook your function to the interrupt service routine by calling :cpp:func:`esp_cam_ctlr_register_event_callbacks`. All supported event callbacks are listed in :cpp:type:`esp_cam_ctlr_evt_cbs_t`:
 
--  :cpp:member:`esp_cam_ctlr_evt_cbs_t::on_get_new_trans` sets a callback function when the camera controller driver gets a new transaction which is passed from :cpp:func:`esp_cam_ctlr_receive`. As this function is called within the ISR context, you must ensure that the function does not attempt to block (e.g., by making sure that only FreeRTOS APIs with ``ISR`` suffix are called from within the function).
+-  :cpp:member:`esp_cam_ctlr_evt_cbs_t::on_get_new_trans` sets a callback function when the Camera Controller Driver gets a new transaction which is passed from :cpp:func:`esp_cam_ctlr_receive`. As this function is called within the ISR context, you must ensure that the function does not attempt to block (e.g., by making sure that only FreeRTOS APIs with ``ISR`` suffix are called from within the function).
 
--  :cpp:member:`esp_cam_ctlr_evt_cbs_t::on_trans_finished` sets a callback function when the camera controller driver finishes a transaction. As this function is called within the ISR context, you must ensure that the function does not attempt to block (e.g., by making sure that only FreeRTOS APIs with ``ISR`` suffix are called from within the function).
+-  :cpp:member:`esp_cam_ctlr_evt_cbs_t::on_trans_finished` sets a callback function when the Camera Controller Driver finishes a transaction. As this function is called within the ISR context, you must ensure that the function does not attempt to block (e.g., by making sure that only FreeRTOS APIs with ``ISR`` suffix are called from within the function).
 
 .. _thread-safety:
 
