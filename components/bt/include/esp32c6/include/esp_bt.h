@@ -262,6 +262,8 @@ typedef struct {
     .ble_hci_uart_uart_parity   = DEFAULT_BT_LE_HCI_UART_PARITY,                        \
     .enable_tx_cca              = DEFAULT_BT_LE_TX_CCA_ENABLED,                         \
     .cca_rssi_thresh            = 256 - DEFAULT_BT_LE_CCA_RSSI_THRESH,                  \
+    .cca_drop_mode              = 0,                                                    \
+    .cca_low_tx_pwr             = 0,                                                    \
     .sleep_en                   = NIMBLE_SLEEP_ENABLE,                                  \
     .coex_phy_coded_tx_rx_time_limit = DEFAULT_BT_LE_COEX_PHY_CODED_TX_RX_TLIM_EFF,     \
     .dis_scan_backoff           = NIMBLE_DISABLE_SCAN_BACKOFF,                          \
