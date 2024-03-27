@@ -92,8 +92,9 @@ esp_err_t esp_cam_del_ctlr(esp_cam_ctlr_handle_t handle);
 /**
  * @brief Register ESP CAM controller event callbacks
  *
- * @param[in] handle  ESP CAM controller handle
- *
+ * @param[in] handle     ESP CAM controller handle
+ * @param[in] cbs        ESP CAM controller event callbacks
+ * @param[in] user_data  User data
  * @return
  *        - ESP_OK
  *        - ESP_ERR_INVALID_ARG:   Invalid argument

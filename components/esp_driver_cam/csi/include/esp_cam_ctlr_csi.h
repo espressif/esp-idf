@@ -29,7 +29,7 @@ typedef struct {
     uint32_t h_res;                             ///< Input horizontal resolution, i.e. the number of pixels in a line
     uint32_t v_res;                             ///< Input vertical resolution, i.e. the number of lines in a frame
     uint8_t data_lane_num;                      ///< Data lane num
-    int clk_freq_hz;                            ///< Frequency of CLK, in Hz.
+    int lane_bit_rate_mbps;                     ///< Lane bit rate in Mbps
     mipi_csi_color_t input_data_color_type;     ///< Input color type
     mipi_csi_color_t output_data_color_type;    ///< Output color type
     bool byte_swap_en;                          ///< Enable byte swap
