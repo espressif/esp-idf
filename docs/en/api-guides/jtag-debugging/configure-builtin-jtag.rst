@@ -6,6 +6,8 @@
 Configure {IDF_TARGET_NAME} Built-in JTAG Interface
 ===================================================
 
+:link_to_translation:`zh_CN:[中文]`
+
 {IDF_TARGET_JTAG_PIN_Dneg:default="Not Updated!", esp32c3="GPIO18", esp32c6="GPIO12", esp32s3="GPIO19", esp32h2="GPIO26"}
 {IDF_TARGET_JTAG_PIN_Dpos:default="Not Updated!", esp32c3="GPIO19", esp32c6="GPIO13", esp32s3="GPIO20", esp32h2="GPIO27"}
 
