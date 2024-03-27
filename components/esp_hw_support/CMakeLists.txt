@@ -138,7 +138,7 @@ if(NOT BOOTLOADER_BUILD)
         endif()
     endif()
 
-    if(CONFIG_SOC_RTC_FAST_MEM_SUPPORTED)
+    if(CONFIG_SOC_RTC_FAST_MEM_SUPPORTED AND CONFIG_ESP_ROM_SUPPORT_DEEP_SLEEP_WAKEUP_STUB)
         list(APPEND srcs "sleep_wake_stub.c")
     endif()
 
@@ -146,11 +146,6 @@ if(NOT BOOTLOADER_BUILD)
         list(APPEND srcs "esp_clock_output.c")
     endif()
 
-    if(CONFIG_IDF_TARGET_ESP32P4)
-        list(REMOVE_ITEM srcs
-                "sleep_wake_stub.c"   # TODO: IDF-7529
-            )
-    endif()
     if(CONFIG_IDF_TARGET_ESP32C5)
         list(REMOVE_ITEM srcs
                 "sleep_modes.c"       # TODO: [ESP32C5] IDF-8638, IDF-8640

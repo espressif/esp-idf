@@ -29,7 +29,7 @@ extern "C" {
 typedef enum {
     RESET_REASON_CHIP_POWER_ON     = 0x01, // Power on reset
     RESET_REASON_CORE_SW           = 0x03, // Software resets the digital core
-    RESET_REASON_CORE_DEEP_SLEEP   = 0x05, // Deep sleep reset the digital core, check when doing sleep bringup TODO IDF-7529
+    RESET_REASON_CORE_DEEP_SLEEP   = 0x05, // Deep sleep reset the digital core, check when doing sleep bringup
     RESET_REASON_CORE_PMU_PWR_DOWN = 0x05, // PMU HP power down core reset
     RESET_REASON_CORE_MWDT         = 0x07, // MWDT core reset
     RESET_REASON_CORE_RWDT         = 0x09, // RWDT core reset

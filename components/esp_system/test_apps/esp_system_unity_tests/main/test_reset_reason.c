@@ -23,7 +23,8 @@
 
 #define CHECK_VALUE 0x89abcdef
 
-#if CONFIG_SOC_RTC_FAST_MEM_SUPPORTED || CONFIG_SOC_RTC_SLOW_MEM_SUPPORTED
+// TODO: IDF-9564
+#if (CONFIG_SOC_RTC_FAST_MEM_SUPPORTED || CONFIG_SOC_RTC_SLOW_MEM_SUPPORTED) && !CONFIG_IDF_TARGET_ESP32P4
 #define CHECK_RTC_MEM 1
 #endif //CONFIG_SOC_RTC_FAST_MEM_SUPPORTED || CONFIG_SOC_RTC_SLOW_MEM_SUPPORTED
 
@@ -141,8 +142,7 @@ static void setup_values(void)
 #endif
 }
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32P4) // TODO IDF-7529
-
+#if SOC_DEEP_SLEEP_SUPPORTED
 static void do_deep_sleep(void)
 {
     setup_values();
@@ -169,7 +169,7 @@ TEST_CASE_MULTIPLE_STAGES("reset reason ESP_RST_DEEPSLEEP", "[reset_reason][rese
                           do_deep_sleep,
                           check_reset_reason_deep_sleep);
 
-#endif //!TEMPORARY_DISABLED_FOR_TARGETS(...)
+#endif // SOC_DEEP_SLEEP_SUPPORTED
 
 static void do_exception(void)
 {

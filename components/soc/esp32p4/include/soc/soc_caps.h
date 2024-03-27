@@ -89,7 +89,7 @@
 #define SOC_GP_LDO_SUPPORTED            1 // General purpose LDO
 // #define SOC_PPA_SUPPORTED               1  //TODO: IDF-6878
 #define SOC_LIGHT_SLEEP_SUPPORTED       1
-// #define SOC_DEEP_SLEEP_SUPPORTED        1  //TODO: IDF-7529
+#define SOC_DEEP_SLEEP_SUPPORTED        1
 
 /*-------------------------- XTAL CAPS ---------------------------------------*/
 #define SOC_XTAL_SUPPORT_40M            1
@@ -568,6 +568,9 @@
 
 // TODO: IDF-5351 (Copy from esp32c3, need check)
 /*-------------------------- Power Management CAPS ----------------------------*/
+#define SOC_PM_SUPPORT_EXT1_WAKEUP      (1)
+#define SOC_PM_SUPPORT_EXT1_WAKEUP_MODE_PER_PIN   (1) /*!<Supports one bit per pin to configue the EXT1 trigger level */
+#define SOC_PM_EXT1_WAKEUP_BY_PMU       (1)
 #define SOC_PM_SUPPORT_WIFI_WAKEUP      (1)
 #define SOC_PM_SUPPORT_XTAL32K_PD       (1)
 #define SOC_PM_SUPPORT_RC32K_PD         (1)

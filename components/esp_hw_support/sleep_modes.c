@@ -10,6 +10,7 @@
 #include <sys/param.h>
 
 #include "esp_attr.h"
+#include "esp_rom_caps.h"
 #include "esp_memory_utils.h"
 #include "esp_sleep.h"
 #include "esp_private/esp_sleep_internal.h"
@@ -287,7 +288,7 @@ static void touch_wakeup_prepare(void);
 static void gpio_deep_sleep_wakeup_prepare(void);
 #endif
 
-#if SOC_RTC_FAST_MEM_SUPPORTED && !CONFIG_IDF_TARGET_ESP32P4 // TODO: IDF-7529
+#if ESP_ROM_SUPPORT_DEEP_SLEEP_WAKEUP_STUB && SOC_DEEP_SLEEP_SUPPORTED
 #if SOC_PM_SUPPORT_DEEPSLEEP_CHECK_STUB_ONLY
 static RTC_FAST_ATTR esp_deep_sleep_wake_stub_fn_t wake_stub_fn_handler = NULL;
 
@@ -842,28 +843,26 @@ static esp_err_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t m
             esp_sleep_isolate_digital_gpio();
 #endif
 
+#if ESP_ROM_SUPPORT_DEEP_SLEEP_WAKEUP_STUB
 #if SOC_PM_SUPPORT_DEEPSLEEP_CHECK_STUB_ONLY
-#if !CONFIG_IDF_TARGET_ESP32P4 // TODO: IDF-7529
             esp_set_deep_sleep_wake_stub_default_entry();
+#elif !CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP && SOC_RTC_FAST_MEM_SUPPORTED
+            /* If not possible stack is in RTC FAST memory, use the ROM function to calculate the CRC and save ~140 bytes IRAM */
+            set_rtc_memory_crc();
+#endif // SOC_PM_SUPPORT_DEEPSLEEP_CHECK_STUB_ONLY
 #endif
+
             // Enter Deep Sleep
+#if!ESP_ROM_SUPPORT_DEEP_SLEEP_WAKEUP_STUB || SOC_PM_SUPPORT_DEEPSLEEP_CHECK_STUB_ONLY || !CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP
 #if SOC_PMU_SUPPORTED
             result = call_rtc_sleep_start(reject_triggers, config.power.hp_sys.dig_power.mem_dslp, deep_sleep);
 #else
             result = call_rtc_sleep_start(reject_triggers, config.lslp_mem_inf_fpu, deep_sleep);
 #endif
 #else
-#if !CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP
-            /* If not possible stack is in RTC FAST memory, use the ROM function to calculate the CRC and save ~140 bytes IRAM */
-#if SOC_RTC_FAST_MEM_SUPPORTED
-            set_rtc_memory_crc();
-#endif
-            result = call_rtc_sleep_start(reject_triggers, config.lslp_mem_inf_fpu, deep_sleep);
-#else
             /* Otherwise, need to call the dedicated soc function for this */
             result = rtc_deep_sleep_start(s_config.wakeup_triggers, reject_triggers);
 #endif
-#endif // SOC_PM_SUPPORT_DEEPSLEEP_CHECK_STUB_ONLY
         } else {
             /* Cache Suspend 1: will wait cache idle in cache suspend */
             suspend_cache();
@@ -992,12 +991,12 @@ static esp_err_t IRAM_ATTR deep_sleep_start(bool allow_sleep_rejection)
     // record current RTC time
     s_config.rtc_ticks_at_sleep_start = rtc_time_get();
 
-#if SOC_RTC_FAST_MEM_SUPPORTED
+#if ESP_ROM_SUPPORT_DEEP_SLEEP_WAKEUP_STUB
     // Configure wake stub
     if (esp_get_deep_sleep_wake_stub() == NULL) {
         esp_set_deep_sleep_wake_stub(esp_wake_deep_sleep);
     }
-#endif // SOC_RTC_FAST_MEM_SUPPORTED
+#endif // ESP_ROM_SUPPORT_DEEP_SLEEP_WAKEUP_STUB
 
     // Decide which power domains can be powered down
     uint32_t pd_flags = get_power_down_flags();
@@ -1013,6 +1012,9 @@ static esp_err_t IRAM_ATTR deep_sleep_start(bool allow_sleep_rejection)
                             | PMU_SLEEP_PD_CPU | PMU_SLEEP_PD_MEM | PMU_SLEEP_PD_XTAL;
 #if SOC_PM_SUPPORT_HP_AON_PD
     force_pd_flags |= PMU_SLEEP_PD_HP_AON;
+#endif
+#if SOC_PM_SUPPORT_CNNT_PD
+    force_pd_flags |= PMU_SLEEP_PD_CNNT;
 #endif
 #else
     uint32_t force_pd_flags = RTC_SLEEP_PD_DIG | RTC_SLEEP_PD_VDDSDIO | RTC_SLEEP_PD_INT_8M | RTC_SLEEP_PD_XTAL;

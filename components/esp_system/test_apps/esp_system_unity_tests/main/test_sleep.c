@@ -31,8 +31,7 @@
 #include "nvs_flash.h"
 #include "nvs.h"
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32P4) // TODO IDF-7529
-
+#if SOC_DEEP_SLEEP_SUPPORTED
 #if SOC_PMU_SUPPORTED
 #include "esp_private/esp_pmu.h"
 #else
@@ -79,6 +78,7 @@ TEST_CASE_MULTIPLE_STAGES("enter deep sleep on APP CPU and wake up using timer",
 
 #endif
 
+#if !(CONFIG_SPIRAM && CONFIG_IDF_TARGET_ESP32P4) // TODO: IDF-9569
 static void do_deep_sleep_timer(void)
 {
     esp_sleep_enable_timer_wakeup(2000000);
@@ -111,6 +111,7 @@ TEST_CASE("wake up from light sleep using timer", "[deepsleep]")
                (tv_stop.tv_usec - tv_start.tv_usec) * 1e-3f;
     TEST_ASSERT_INT32_WITHIN(500, 2000, (int) dt);
 }
+#endif
 
 //NOTE: Explained in IDF-1445 | MR !14996
 #if !(CONFIG_SPIRAM) || (CONFIG_SPIRAM_MALLOC_ALWAYSINTERNAL >= 16384)
@@ -252,6 +253,7 @@ TEST_CASE("light sleep and frequency switching", "[deepsleep]")
     }
 }
 
+#if !(CONFIG_SPIRAM && CONFIG_IDF_TARGET_ESP32P4) // TODO: IDF-9569
 static void do_deep_sleep(void)
 {
     esp_sleep_enable_timer_wakeup(100000);
@@ -287,8 +289,9 @@ TEST_CASE_MULTIPLE_STAGES("enter deep sleep after abort", "[deepsleep][reset=abo
                           do_abort,
                           check_abort_reset_and_sleep,
                           check_sleep_reset);
+#endif
 
-#if SOC_RTC_FAST_MEM_SUPPORTED
+#if ESP_ROM_SUPPORT_DEEP_SLEEP_WAKEUP_STUB
 static RTC_DATA_ATTR uint32_t s_wake_stub_var;
 
 static RTC_IRAM_ATTR void wake_stub(void)
@@ -317,7 +320,6 @@ static void check_wake_stub(void)
 TEST_CASE_MULTIPLE_STAGES("can set sleep wake stub", "[deepsleep][reset=DEEPSLEEP_RESET]",
                           prepare_wake_stub,
                           check_wake_stub);
-#endif // SOC_RTC_FAST_MEM_SUPPORTED
 
 #if CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP
 
@@ -382,6 +384,7 @@ TEST_CASE_MULTIPLE_STAGES("can set sleep wake stub from stack in RTC RAM", "[dee
                           check_wake_stub);
 
 #endif // CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP
+#endif // ESP_ROM_SUPPORT_DEEP_SLEEP_WAKEUP_STUB
 
 #if SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
 
@@ -404,7 +407,7 @@ __attribute__((unused)) static uint32_t get_cause(void)
     return wakeup_cause;
 }
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S3, ESP32C6, ESP32H2)
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S3) && SOC_PM_SUPPORT_EXT0_WAKEUP
 // Fails on S2 IDF-2903
 
 // This test case verifies deactivation of trigger for wake up sources
@@ -575,4 +578,4 @@ static void check_time_deepsleep(void)
 
 TEST_CASE_MULTIPLE_STAGES("check a time after wakeup from deep sleep", "[deepsleep][reset=DEEPSLEEP_RESET]", trigger_deepsleep, check_time_deepsleep);
 
-#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32P4)
+#endif // SOC_DEEP_SLEEP_SUPPORTED

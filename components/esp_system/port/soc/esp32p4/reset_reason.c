@@ -31,7 +31,6 @@ static esp_reset_reason_t get_reset_reason(soc_reset_reason_t rtc_reset_reason, 
         return ESP_RST_SW;
 
     case RESET_REASON_CORE_PMU_PWR_DOWN:
-        /* Check when doing sleep bringup TODO  IDF-7529 */
         return ESP_RST_DEEPSLEEP;
 
     case RESET_REASON_CPU_MWDT:
@@ -57,6 +56,9 @@ static esp_reset_reason_t get_reset_reason(soc_reset_reason_t rtc_reset_reason, 
         return ESP_RST_CPU_LOCKUP;
 
     case RESET_REASON_CORE_EFUSE_CRC:
+#if CONFIG_IDF_TARGET_ESP32P4
+        return ESP_RST_DEEPSLEEP; // TODO: IDF-9564
+#endif
         return ESP_RST_EFUSE;
 
     case RESET_REASON_CORE_PWR_GLITCH:

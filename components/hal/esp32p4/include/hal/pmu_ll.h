@@ -649,6 +649,54 @@ FORCE_INLINE_ATTR void pmu_ll_set_dcdc_force_power_down(pmu_dev_t *hw, bool fpd)
     hw->power.dcdc_switch.force_pd = fpd;
 }
 
+/**
+ * @brief Get ext1 wakeup source status
+ * @return  The lower 8 bits of the returned value are the bitmap of
+ *          the wakeup source status, bit 0~7 corresponds to LP_IO 0~7
+ */
+static inline  uint32_t pmu_ll_ext1_get_wakeup_status(void)
+{
+    return REG_GET_FIELD(PMU_EXT_WAKEUP_ST_REG, PMU_EXT_WAKEUP_STATUS);
+}
+
+/**
+ * @brief Clear the ext1 wakeup source status
+ */
+static inline void pmu_ll_ext1_clear_wakeup_status(void)
+{
+    REG_SET_BIT(PMU_EXT_WAKEUP_CNTL_REG, PMU_EXT_WAKEUP_STATUS_CLR);
+}
+
+/**
+ * @brief Set the wake-up LP_IO of the ext1 wake-up source
+ * @param io_mask wakeup LP_IO bitmap, bit 0~7 corresponds to LP_IO 0~7
+ * @param level_mask 0: Wake the chip when all selected GPIOs go low
+ *                   1: Wake the chip when any of the selected GPIOs go high
+ */
+static inline  void pmu_ll_ext1_set_wakeup_pins(uint32_t io_mask, int level_mask)
+{
+    REG_SET_FIELD(PMU_EXT_WAKEUP_SEL_REG, PMU_EXT_WAKEUP_SEL, io_mask);
+    REG_SET_FIELD(PMU_EXT_WAKEUP_LV_REG, PMU_EXT_WAKEUP_LV, level_mask);
+}
+
+/**
+ * @brief Clear all ext1 wakup-source setting
+ */
+static inline  void pmu_ll_ext1_clear_wakeup_pins(void)
+{
+    REG_SET_FIELD(PMU_EXT_WAKEUP_SEL_REG, PMU_EXT_WAKEUP_SEL, 0);
+}
+
+/**
+ * @brief Get ext1 wakeup source setting
+ * @return  The lower 8 bits of the returned value are the bitmap of
+ *          the wakeup source status, bit 0~7 corresponds to LP_IO 0~7
+ */
+static inline  uint32_t pmu_ll_ext1_get_wakeup_pins(void)
+{
+    return REG_GET_FIELD(PMU_EXT_WAKEUP_SEL_REG, PMU_EXT_WAKEUP_SEL);
+}
+
 #ifdef __cplusplus
 }
 #endif
