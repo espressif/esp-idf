@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -22,14 +22,11 @@
 void IRAM_ATTR esp_reent_init(struct _reent* r)
 {
     memset(r, 0, sizeof(*r));
-    r->_stdout = _GLOBAL_REENT->_stdout;
-    r->_stderr = _GLOBAL_REENT->_stderr;
-    r->_stdin  = _GLOBAL_REENT->_stdin;
-    r->__cleanup = &_cleanup_r;
-    r->__sdidinit = 1;
-    r->__sglue._next = NULL;
-    r->__sglue._niobs = 0;
-    r->__sglue._iobs = NULL;
+    _REENT_STDIN(r) = _REENT_STDIN(_GLOBAL_REENT);
+    _REENT_STDOUT(r) = _REENT_STDOUT(_GLOBAL_REENT);
+    _REENT_STDERR(r) = _REENT_STDERR(_GLOBAL_REENT);
+    _REENT_CLEANUP(r) = _REENT_CLEANUP(_GLOBAL_REENT);
+    _REENT_SDIDINIT(r) = _REENT_SDIDINIT(_GLOBAL_REENT);
 }
 
 /* only declared in private stdio header file, local.h */
@@ -39,26 +36,20 @@ extern void __sfp_lock_release(void);
 void esp_reent_cleanup(void)
 {
     struct _reent* r = __getreent();
-    /* Clean up storage used by mprec functions */
-    if (r->_mp) {
-        if (_REENT_MP_FREELIST(r)) {
-            for (unsigned int i = 0; i < _Kmax; ++i) {
-                struct _Bigint *cur, *next;
-                next = _REENT_MP_FREELIST(r)[i];
-                while (next) {
-                    cur = next;
-                    next = next->_next;
-                    free(cur);
-                }
-            }
-        }
-        free(_REENT_MP_FREELIST(r));
-        free(_REENT_MP_RESULT(r));
-    }
+    _reclaim_reent(r);
+
+    r->_emergency = NULL;
+    r->_mp = NULL;
+    r->_r48 = NULL;
+    r->_localtime_buf = NULL;
+    r->_asctime_buf = NULL;
+    r->_signal_buf = NULL;
+    r->_misc = NULL;
+    r->_cvtbuf = NULL;
 
     /* Clean up "glue" (lazily-allocated FILE objects) */
-    struct _glue* prev = &_GLOBAL_REENT->__sglue;
-    for (struct _glue* cur = _GLOBAL_REENT->__sglue._next; cur != NULL;) {
+    struct _glue* prev = &_REENT_SGLUE(_GLOBAL_REENT);
+    for (struct _glue * cur = _REENT_SGLUE(_GLOBAL_REENT)._next; cur != NULL;) {
         if (cur->_niobs == 0) {
             cur = cur->_next;
             continue;
@@ -76,19 +67,9 @@ void esp_reent_cleanup(void)
             cur = cur->_next;
             continue;
         }
-        struct _glue* next = cur->_next;
+        struct _glue * next = cur->_next;
         prev->_next = next;
         free(cur);
         cur = next;
     }
-
-    /* Clean up various other buffers */
-    free(r->_mp);
-    r->_mp = NULL;
-    free(r->_r48);
-    r->_r48 = NULL;
-    free(r->_localtime_buf);
-    r->_localtime_buf = NULL;
-    free(r->_asctime_buf);
-    r->_asctime_buf = NULL;
 }

@@ -15,29 +15,21 @@
 #include "sdkconfig.h"
 #include "ld.common"
 
-/**
- * physical memory is mapped twice to the vritual address (IRAM and DRAM).
- * `I_D_SRAM_OFFSET` is the offset between the two locations of the same physical memory
+#define SRAM_LOW_START     0x4FF00000
+#define SRAM_LOW_END       0x4FF2CBD0  /* 2nd stage bootloader iram_loader_seg start address */
+#define SRAM_LOW_SIZE      SRAM_LOW_END - SRAM_LOW_START
+
+/* If the cache size is less than 512KB, then there is a region of RAM
+ * above the ROM-reserved region and below the start of the cache.
  */
-#define SRAM_IRAM_START     0x4ff00000
-#define SRAM_DRAM_START     0x4ff00000
+#define SRAM_HIGH_START    0x4FF40000
+#define SRAM_HIGH_SIZE     0x80000 - CONFIG_CACHE_L2_CACHE_SIZE
+#define SRAM_HIGH_END      SRAM_HIGH_START + SRAM_HIGH_SIZE
 
-#define I_D_SRAM_OFFSET     (SRAM_IRAM_START - SRAM_DRAM_START)
-#define SRAM_DRAM_END       0x4FF2DBD0 - I_D_SRAM_OFFSET  /* 2nd stage bootloader iram_loader_seg start address */
-
-#define SRAM_IRAM_ORG       (SRAM_IRAM_START)
-#define SRAM_DRAM_ORG       (SRAM_DRAM_START)
-
-#define I_D_SRAM_SIZE       SRAM_DRAM_END - SRAM_DRAM_ORG
 
 #if CONFIG_APP_BUILD_USE_FLASH_SECTIONS
-/**
- * TODO: IDF-7890
- */
 #define IDROM_SEG_SIZE   (CONFIG_MMU_PAGE_SIZE << 10)
 #endif
-
-#define DRAM0_0_SEG_LEN I_D_SRAM_SIZE
 
 MEMORY
 {
@@ -48,9 +40,6 @@ MEMORY
    */
   /* TCM */
   tcm_idram_seg (RX) :               org = 0x30100000, len = 0x2000
-
-  /* IRAM for PRO CPU. */
-  iram0_0_seg (RX) :                 org = SRAM_IRAM_ORG, len = I_D_SRAM_SIZE
 
 #if CONFIG_APP_BUILD_USE_FLASH_SECTIONS
   /* Flash mapped instruction data */
@@ -69,7 +58,9 @@ MEMORY
    * Shared data RAM, excluding memory reserved for ROM bss/data/stack.
    * Enabling Bluetooth & Trace Memory features in menuconfig will decrease the amount of RAM available.
    */
-  dram0_0_seg (RW) :                 org = SRAM_DRAM_ORG, len = DRAM0_0_SEG_LEN
+  sram_low (RWX) :                 org = SRAM_LOW_START, len = SRAM_LOW_SIZE
+
+  sram_high (RW) :                org = SRAM_HIGH_START, len = SRAM_HIGH_SIZE
 
 #if CONFIG_APP_BUILD_USE_FLASH_SECTIONS
   /* Flash mapped constant data */
@@ -95,7 +86,7 @@ MEMORY
        - (higher addr) bootloader rtc data (s_bootloader_retain_mem, when a Kconfig option is on).
      The aim of this is to keep data that will not be moved around and have a fixed address.
   */
-  lp_reserved_seg(RW) :        org = 0x50000000 + 0x8000 - RESERVE_RTC_MEM, len = RESERVE_RTC_MEM
+  lp_reserved_seg(RW) :        org = 0x50108000 + 0x8000 - RESERVE_RTC_MEM, len = RESERVE_RTC_MEM
 }
 
 /* Heap ends at top of dram0_0_seg */
@@ -115,15 +106,17 @@ REGION_ALIAS("rtc_data_location", rtc_iram_seg );
 REGION_ALIAS("rtc_reserved_seg", lp_reserved_seg );
 
 #if CONFIG_APP_BUILD_USE_FLASH_SECTIONS
-  REGION_ALIAS("default_code_seg", irom_seg);
+  REGION_ALIAS("text_seg_low", irom_seg);
 #else
-  REGION_ALIAS("default_code_seg", iram0_0_seg);
+  REGION_ALIAS("text_seg_low", sram_low);
+  REGION_ALIAS("text_seg_high", sram_high);
 #endif // CONFIG_APP_BUILD_USE_FLASH_SECTIONS
 
 #if CONFIG_APP_BUILD_USE_FLASH_SECTIONS
-  REGION_ALIAS("default_rodata_seg", drom_seg);
+  REGION_ALIAS("rodata_seg_low", drom_seg);
 #else
-  REGION_ALIAS("default_rodata_seg", dram0_0_seg);
+  REGION_ALIAS("rodata_seg_low", sram_low);
+  REGION_ALIAS("rodata_seg_high", sram_high);
 #endif // CONFIG_APP_BUILD_USE_FLASH_SECTIONS
 
 /**
@@ -131,7 +124,7 @@ REGION_ALIAS("rtc_reserved_seg", lp_reserved_seg );
  *  also be first in the segment.
  */
 #if CONFIG_APP_BUILD_USE_FLASH_SECTIONS
-  ASSERT(_flash_rodata_dummy_start == ORIGIN(default_rodata_seg),
+  ASSERT(_flash_rodata_dummy_start == ORIGIN(rodata_seg_low),
          ".flash_rodata_dummy section must be placed at the beginning of the rodata segment.")
 #endif
 

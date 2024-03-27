@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
 
 import hashlib
@@ -19,6 +19,12 @@ def test_hello_world(
 ) -> None:
     dut.expect('Hello world!')
     log_minimum_free_heap_size()
+
+
+@pytest.mark.linux
+@pytest.mark.host_test
+def test_hello_world_linux(dut: IdfDut) -> None:
+    dut.expect('Hello world!')
 
 
 def verify_elf_sha256_embedding(app: QemuApp, sha256_reported: str) -> None:

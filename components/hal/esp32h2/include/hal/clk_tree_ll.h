@@ -9,7 +9,6 @@
 #include <stdint.h>
 #include "soc/soc.h"
 #include "soc/clk_tree_defs.h"
-#include "soc/rtc.h"
 #include "soc/pcr_struct.h"
 #include "soc/lp_clkrst_struct.h"
 #include "soc/pmu_reg.h"
@@ -305,7 +304,7 @@ static inline __attribute__((always_inline)) void clk_ll_bbpll_set_freq_mhz(uint
  */
 static inline __attribute__((always_inline)) void clk_ll_bbpll_set_config(uint32_t pll_freq_mhz, uint32_t xtal_freq_mhz)
 {
-    HAL_ASSERT(xtal_freq_mhz == RTC_XTAL_FREQ_32M);
+    HAL_ASSERT(xtal_freq_mhz == SOC_XTAL_FREQ_32M);
     HAL_ASSERT(pll_freq_mhz == CLK_LL_PLL_96M_FREQ_MHZ);
     uint8_t oc_ref_div;
     uint8_t oc_div;
@@ -748,6 +747,16 @@ Set the frequency division factor of ref_tick
 static inline void clk_ll_rc_fast_tick_conf(void)
 {
     PCR.ctrl_tick_conf.fosc_tick_num = REG_FOSC_TICK_NUM;
+}
+
+/*
+ * Enable/Disable the clock gate for clock output signal source
+*/
+static inline void clk_ll_enable_clkout_source(soc_clkout_sig_id_t clk_src, bool en)
+{
+    if (clk_src == CLKOUT_SIG_XTAL) {
+        PCR.ctrl_clk_out_en.clk_xtal_oen = en;
+    }
 }
 
 #ifdef __cplusplus

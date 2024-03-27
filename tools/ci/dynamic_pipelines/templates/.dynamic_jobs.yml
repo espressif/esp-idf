@@ -1,0 +1,87 @@
+# This file is used to generate build jobs for pytest case dynamic pipeline
+# don't add real jobs in this file
+
+########################
+# Build Jobs Templates #
+########################
+.dynamic_build_template:
+  extends:
+    - .before_script:build
+    - .after_script:build:ccache:upload-when-fail
+  image: $ESP_ENV_IMAGE
+  stage: build
+  variables:
+    # Enable ccache for all build jobs. See configure_ci_environment.sh for more ccache related settings.
+    IDF_CCACHE_ENABLE: "1"
+  needs:
+    - pipeline: $PARENT_PIPELINE_ID
+      job: generate_build_child_pipeline
+  artifacts:
+    paths:
+      # The other artifacts patterns are defined under tools/ci/artifacts_handler.py
+      # Now we're uploading/downloading the binary files from our internal storage server
+      #
+      # keep the log file to help debug
+      - "**/build*/build_log.txt"
+      # build spec files
+      - build_summary_*.xml
+      # list of built apps
+      - list_job_*.txt
+    when: always
+    expire_in: 1 week
+  script:
+    # CI specific options start from "--parallel-count xxx". could ignore when running locally
+    - run_cmd python tools/ci/dynamic_pipelines/scripts/child_pipeline_build_apps.py $APP_LIST_FILE
+      --parallel-count ${CI_NODE_TOTAL:-1}
+      --parallel-index ${CI_NODE_INDEX:-1}
+      --collect-app-info "list_job_${CI_JOB_NAME_SLUG}.txt"
+      --modified-components ${MR_MODIFIED_COMPONENTS}
+      --junitxml "build_summary_${CI_JOB_NAME_SLUG}.xml"
+
+.dynamic_target_test_template:
+  extends:
+    - .before_script:fetch:target_test
+  image: $TARGET_TEST_ENV_IMAGE
+  stage: target_test
+  timeout: 1 hour
+  variables:
+    SUBMODULES_TO_FETCH: "none"
+    # set while generating the pipeline
+    PYTEST_NODES: ""
+    TARGET_SELECTOR: ""
+    ENV_MARKERS: ""
+    PYTEST_EXTRA_FLAGS: "--dev-passwd ${ETHERNET_TEST_PASSWORD} --dev-user ${ETHERNET_TEST_USER}"
+  cache:
+    # Usually do not need submodule-cache in target_test
+    - key: pip-cache-${LATEST_GIT_TAG}
+      paths:
+        - .cache/pip
+      policy: pull
+  artifacts:
+    paths:
+      - XUNIT_RESULT*.xml
+      - pytest_embedded_log/
+# Child pipeline reports won't be collected in the main one
+# https://gitlab.com/groups/gitlab-org/-/epics/8205
+#    reports:
+#      junit: XUNIT_RESULT.xml
+    when: always
+    expire_in: 1 week
+  script:
+    # get known failure cases
+    - python tools/ci/get_known_failure_cases_file.py
+    # get runner env config file
+    - retry_failed git clone $TEST_ENV_CONFIG_REPO
+    - python $CHECKOUT_REF_SCRIPT ci-test-runner-configs ci-test-runner-configs
+    # CI specific options start from "--known-failure-cases-file xxx". could ignore when running locally
+    - run_cmd pytest ${PYTEST_NODES}
+      --target ${TARGET_SELECTOR}
+      -m ${ENV_MARKERS}
+      --pipeline-id $PARENT_PIPELINE_ID
+      --junitxml=XUNIT_RESULT_${CI_JOB_NAME_SLUG}.xml
+      --ignore-result-files ${KNOWN_FAILURE_CASES_FILE_NAME}
+      --parallel-count ${CI_NODE_TOTAL:-1}
+      --parallel-index ${CI_NODE_INDEX:-1}
+      ${PYTEST_EXTRA_FLAGS}
+  after_script:
+    - python tools/ci/artifacts_handler.py upload --type logs junit_reports

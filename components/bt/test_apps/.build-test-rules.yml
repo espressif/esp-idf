@@ -1,0 +1,8 @@
+# Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
+
+components/bt/test_apps:
+  disable:
+    - if: IDF_TARGET not in ["esp32", "esp32c3"]
+      reason: Sufficient to run the tests on one chip of each architecture
+  depends_components:
+    - bt

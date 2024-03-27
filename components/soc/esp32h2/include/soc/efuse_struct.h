@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -486,22 +486,34 @@ typedef union {
  */
 typedef union {
     struct {
-        /** rxiq_version : R; bitpos: [2:0]; default: 0;
-         *  RF Calibration data. RXIQ version
+        /** rxiq_version : RO; bitpos: [2:0]; default: 0;
+         *  Stores RF Calibration data. RXIQ version.
          */
         uint32_t rxiq_version:3;
-        /** rxiq_0 : R; bitpos: [9:3]; default: 0;
-         *  RF Calibration data. RXIQ data 0
+        /** rxiq_0 : RO; bitpos: [9:3]; default: 0;
+         *  Stores RF Calibration data. RXIQ data 0.
          */
         uint32_t rxiq_0:7;
-        /** rxiq_1 : R; bitpos: [16:10]; default: 0;
-         *  RF Calibration data. RXIQ data 1
+        /** rxiq_1 : RO; bitpos: [16:10]; default: 0;
+         *  Stores RF Calibration data. RXIQ data 1.
          */
         uint32_t rxiq_1:7;
-        /** reserved_1_81 : R; bitpos: [31:17]; default: 0;
-         *  reserved
+        /** active_hp_dbias : RO; bitpos: [21:17]; default: 0;
+         *  Stores the PMU active hp dbias.
          */
-        uint32_t reserved_1_81:15;
+        uint32_t active_hp_dbias:5;
+        /** active_lp_dbias : RO; bitpos: [26:22]; default: 0;
+         *  Stores the PMU active lp dbias.
+         */
+        uint32_t active_lp_dbias:5;
+        /** dslp_dbias : RO; bitpos: [30:27]; default: 0;
+         *  Stores the PMU sleep dbias.
+         */
+        uint32_t dslp_dbias:4;
+        /** dbias_vol_gap_value1 : RO; bitpos: [31]; default: 0;
+         *  Stores the low 1 bit of dbias_vol_gap.
+         */
+        uint32_t dbias_vol_gap_value1:1;
     };
     uint32_t val;
 } efuse_rd_mac_sys_2_reg_t;
@@ -511,23 +523,41 @@ typedef union {
  */
 typedef union {
     struct {
-        /** mac_reserved_2 : RO; bitpos: [17:0]; default: 0;
+        /** dbias_vol_gap_value2 : RO; bitpos: [2:0]; default: 0;
+         *  Stores the high 3 bits of dbias_vol_gap.
+         */
+        uint32_t dbias_vol_gap_value2:3;
+        /** dbias_vol_gap_sign : RO; bitpos: [3]; default: 0;
+         *  Stores the sign bit of dbias_vol_gap.
+         */
+        uint32_t dbias_vol_gap_sign:1;
+        /** mac_reserved_2 : RO; bitpos: [17:4]; default: 0;
          *  Reserved.
          */
-        uint32_t mac_reserved_2:18;
-        /** wafer_version_minor : R; bitpos: [20:18]; default: 0; */
+        uint32_t mac_reserved_2:14;
+        /** wafer_version_minor : RO; bitpos: [20:18]; default: 0;
+         *  Stores the wafer version minor.
+         */
         uint32_t wafer_version_minor:3;
-        /** wafer_version_major : R; bitpos: [22:21]; default: 0; */
+        /** wafer_version_major : RO; bitpos: [22:21]; default: 0;
+         *  Stores the wafer version major.
+         */
         uint32_t wafer_version_major:2;
-        /** disable_wafer_version_major : R; bitpos: [23]; default: 0;
-         *  Disables check of wafer version major
+        /** disable_wafer_version_major : RO; bitpos: [23]; default: 0;
+         *  Disables check of wafer version major.
          */
         uint32_t disable_wafer_version_major:1;
-        /** flash_cap : R; bitpos: [26:24]; default: 0; */
+        /** flash_cap : RO; bitpos: [26:24]; default: 0;
+         *  Stores the flash cap.
+         */
         uint32_t flash_cap:3;
-        /** flash_temp : R; bitpos: [28:27]; default: 0; */
+        /** flash_temp : RO; bitpos: [28:27]; default: 0;
+         *  Stores the flash temp.
+         */
         uint32_t flash_temp:2;
-        /** flash_vendor : R; bitpos: [31:29]; default: 0; */
+        /** flash_vendor : RO; bitpos: [31:29]; default: 0;
+         *  Stores the flash vendor.
+         */
         uint32_t flash_vendor:3;
     };
     uint32_t val;
@@ -636,10 +666,18 @@ typedef union {
          *  Disables check of blk version major
          */
         uint32_t disable_blk_version_major:1;
-        /** reserved_2_136 : R; bitpos: [31:8]; default: 0;
-         *  reserved
+        /** temp_calib : R; bitpos: [16:8]; default: 0;
+         *  Temperature calibration data
          */
-        uint32_t reserved_2_136:24;
+        uint32_t temp_calib:9;
+        /** adc1_ave_initcode_atten0 : R; bitpos: [26:17]; default: 0;
+         *  ADC1 calibration data
+         */
+        uint32_t adc1_ave_initcode_atten0:10;
+        /** adc1_ave_initcode_atten1 : R; bitpos: [31:27]; default: 0;
+         *  ADC1 calibration data
+         */
+        uint32_t adc1_ave_initcode_atten1:5;
     };
     uint32_t val;
 } efuse_rd_sys_part1_data4_reg_t;
@@ -649,10 +687,22 @@ typedef union {
  */
 typedef union {
     struct {
-        /** sys_data_part1_5 : RO; bitpos: [31:0]; default: 0;
-         *  Stores the fifth 32 bits of the first part of system data.
+        /** adc1_ave_initcode_atten1_1 : R; bitpos: [4:0]; default: 0;
+         *  ADC1 calibration data
          */
-        uint32_t sys_data_part1_5:32;
+        uint32_t adc1_ave_initcode_atten1_1:5;
+        /** adc1_ave_initcode_atten2 : R; bitpos: [14:5]; default: 0;
+         *  ADC1 calibration data
+         */
+        uint32_t adc1_ave_initcode_atten2:10;
+        /** adc1_ave_initcode_atten3 : R; bitpos: [24:15]; default: 0;
+         *  ADC1 calibration data
+         */
+        uint32_t adc1_ave_initcode_atten3:10;
+        /** adc1_hi_dout_atten0 : R; bitpos: [31:25]; default: 0;
+         *  ADC1 calibration data
+         */
+        uint32_t adc1_hi_dout_atten0:7;
     };
     uint32_t val;
 } efuse_rd_sys_part1_data5_reg_t;
@@ -662,10 +712,22 @@ typedef union {
  */
 typedef union {
     struct {
-        /** sys_data_part1_6 : RO; bitpos: [31:0]; default: 0;
-         *  Stores the sixth 32 bits of the first part of system data.
+        /** adc1_hi_dout_atten0_1 : R; bitpos: [2:0]; default: 0;
+         *  ADC1 calibration data
          */
-        uint32_t sys_data_part1_6:32;
+        uint32_t adc1_hi_dout_atten0_1:3;
+        /** adc1_hi_dout_atten1 : R; bitpos: [12:3]; default: 0;
+         *  ADC1 calibration data
+         */
+        uint32_t adc1_hi_dout_atten1:10;
+        /** adc1_hi_dout_atten2 : R; bitpos: [22:13]; default: 0;
+         *  ADC1 calibration data
+         */
+        uint32_t adc1_hi_dout_atten2:10;
+        /** adc1_hi_dout_atten3 : R; bitpos: [31:23]; default: 0;
+         *  ADC1 calibration data
+         */
+        uint32_t adc1_hi_dout_atten3:9;
     };
     uint32_t val;
 } efuse_rd_sys_part1_data6_reg_t;
@@ -675,10 +737,34 @@ typedef union {
  */
 typedef union {
     struct {
-        /** sys_data_part1_7 : RO; bitpos: [31:0]; default: 0;
-         *  Stores the seventh 32 bits of the first part of system data.
+        /** adc1_hi_dout_atten3_1 : R; bitpos: [0]; default: 0;
+         *  ADC1 calibration data
          */
-        uint32_t sys_data_part1_7:32;
+        uint32_t adc1_hi_dout_atten3_1:1;
+        /** adc1_ch0_atten0_initcode_diff : R; bitpos: [4:1]; default: 0;
+         *  ADC1 calibration data
+         */
+        uint32_t adc1_ch0_atten0_initcode_diff:4;
+        /** adc1_ch1_atten0_initcode_diff : R; bitpos: [8:5]; default: 0;
+         *  ADC1 calibration data
+         */
+        uint32_t adc1_ch1_atten0_initcode_diff:4;
+        /** adc1_ch2_atten0_initcode_diff : R; bitpos: [12:9]; default: 0;
+         *  ADC1 calibration data
+         */
+        uint32_t adc1_ch2_atten0_initcode_diff:4;
+        /** adc1_ch3_atten0_initcode_diff : R; bitpos: [16:13]; default: 0;
+         *  ADC1 calibration data
+         */
+        uint32_t adc1_ch3_atten0_initcode_diff:4;
+        /** adc1_ch4_atten0_initcode_diff : R; bitpos: [20:17]; default: 0;
+         *  ADC1 calibration data
+         */
+        uint32_t adc1_ch4_atten0_initcode_diff:4;
+        /** reserved_2_245 : R; bitpos: [31:21]; default: 0;
+         *  reserved
+         */
+        uint32_t reserved_2_245:11;
     };
     uint32_t val;
 } efuse_rd_sys_part1_data7_reg_t;

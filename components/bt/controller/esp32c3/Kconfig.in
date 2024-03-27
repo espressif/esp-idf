@@ -279,20 +279,19 @@ choice BT_CTRL_SCAN_DUPL_TYPE
     config BT_CTRL_SCAN_DUPL_TYPE_DEVICE
         bool "Scan Duplicate By Device Address"
         help
-            This way is to use advertiser address filtering. The adv packet of the same address is only
-            allowed to be reported once
+            Advertising packets with the same address, address type, and advertising type are reported once.
 
     config BT_CTRL_SCAN_DUPL_TYPE_DATA
         bool "Scan Duplicate By Advertising Data"
         help
-            This way is to use advertising data filtering. All same advertising data only allow to be reported
-            once even though they are from different devices.
+            Advertising packets with identical advertising data, address type, and advertising type
+            are reported only once, even if they originate from different devices.
 
     config BT_CTRL_SCAN_DUPL_TYPE_DATA_DEVICE
         bool "Scan Duplicate By Device Address And Advertising Data"
         help
-            This way is to use advertising data and device address filtering. All different adv packets with
-            the same address are allowed to be reported.
+            Advertising packets with the same address, advertising data, address type,
+            and advertising type are reported only once.
 endchoice
 
 config BT_CTRL_SCAN_DUPL_TYPE
@@ -347,7 +346,7 @@ config BT_CTRL_MESH_DUPL_SCAN_CACHE_SIZE
 choice BT_CTRL_COEX_PHY_CODED_TX_RX_TLIM
     prompt "Coexistence: limit on MAX Tx/Rx time for coded-PHY connection"
     default BT_CTRL_COEX_PHY_CODED_TX_RX_TLIM_DIS
-    depends on ESP_WIFI_SW_COEXIST_ENABLE
+    depends on ESP_COEX_SW_COEXIST_ENABLE
     help
         When using PHY-Coded in BLE connection, limitation on max tx/rx time can be applied to
         better avoid dramatic performance deterioration of Wi-Fi.
@@ -365,7 +364,7 @@ endchoice
 
 config BT_CTRL_COEX_PHY_CODED_TX_RX_TLIM_EFF
     int
-    default 0 if (!ESP_WIFI_SW_COEXIST_ENABLE)
+    default 0 if !ESP_COEX_SW_COEXIST_ENABLE
     default 1 if BT_CTRL_COEX_PHY_CODED_TX_RX_TLIM_EN
     default 0 if BT_CTRL_COEX_PHY_CODED_TX_RX_TLIM_DIS
 
@@ -468,3 +467,11 @@ config BT_CTRL_SCAN_BACKOFF_UPPERLIMITMAX
         Disable active scan backoff. The bluetooth spec requires that scanners should run a backoff procedure to
         minimize collision of scan request PDUs from nultiple scanners. If scan backoff is disabled, in active
         scanning, scan request PDU will be sent every time when HW receives scannable ADV PDU.
+
+config BT_BLE_ADV_DATA_LENGTH_ZERO_AUX
+    bool "Enable aux packet when ext adv data length is zero"
+    default n
+    help
+        When this option is enabled, auxiliary packets will be present in the events of
+        'Non-Connectable and Non-Scannable' regardless of whether the advertising length is 0.
+        If this option is not enabled, auxiliary packets will only be present when the advertising length is not 0.

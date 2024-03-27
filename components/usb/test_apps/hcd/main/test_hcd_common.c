@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,7 +19,9 @@
 #include "usb/usb_types_ch9.h"
 #include "test_hcd_common.h"
 #include "test_usb_common.h"
+#include "test_usb_mock_msc.h"
 #include "unity.h"
+#include "esp_dma_utils.h"
 
 #define PORT_NUM                1
 #define EVENT_QUEUE_LEN         5
@@ -201,11 +203,10 @@ usb_speed_t test_hcd_wait_for_conn(hcd_port_handle_t port_hdl)
     //Get speed of connected
     usb_speed_t port_speed;
     TEST_ASSERT_EQUAL(ESP_OK, hcd_port_get_speed(port_hdl, &port_speed));
-    if (port_speed == USB_SPEED_FULL) {
-        printf("Full speed enabled\n");
-    } else {
-        printf("Low speed enabled\n");
-    }
+    TEST_ASSERT_LESS_OR_EQUAL_MESSAGE(USB_SPEED_HIGH, port_speed, "Invalid port speed");
+    printf("%s speed enabled\n", (char *[]) {
+        "Low", "Full", "High"
+    }[port_speed]);
     return port_speed;
 }
 
@@ -235,7 +236,6 @@ hcd_pipe_handle_t test_hcd_pipe_alloc(hcd_port_handle_t port_hdl, const usb_ep_d
     //Create a queue for pipe callback to queue up pipe events
     QueueHandle_t pipe_evt_queue = xQueueCreate(EVENT_QUEUE_LEN, sizeof(pipe_event_msg_t));
     TEST_ASSERT_NOT_NULL(pipe_evt_queue);
-    printf("Creating pipe\n");
     hcd_pipe_config_t pipe_config = {
         .callback = pipe_callback,
         .callback_arg = (void *)pipe_evt_queue,
@@ -263,13 +263,18 @@ void test_hcd_pipe_free(hcd_pipe_handle_t pipe_hdl)
 urb_t *test_hcd_alloc_urb(int num_isoc_packets, size_t data_buffer_size)
 {
     //Allocate a URB and data buffer
-    urb_t *urb = heap_caps_calloc(1, sizeof(urb_t) + (num_isoc_packets * sizeof(usb_isoc_packet_desc_t)), MALLOC_CAP_DEFAULT);
-    uint8_t *data_buffer = heap_caps_malloc(data_buffer_size, MALLOC_CAP_DMA);
-    TEST_ASSERT_NOT_NULL(urb);
-    TEST_ASSERT_NOT_NULL(data_buffer);
+    urb_t *urb = heap_caps_calloc(1, sizeof(urb_t) + (sizeof(usb_isoc_packet_desc_t) * num_isoc_packets), MALLOC_CAP_DEFAULT);
+    void *data_buffer;
+    size_t real_size;
+    esp_dma_malloc(data_buffer_size, 0, &data_buffer, &real_size);
+
+    TEST_ASSERT_NOT_NULL_MESSAGE(urb, "Failed to allocate URB");
+    TEST_ASSERT_NOT_NULL_MESSAGE(data_buffer, "Failed to allocate transfer buffer");
+
     //Initialize URB and underlying transfer structure. Need to cast to dummy due to const fields
     usb_transfer_dummy_t *transfer_dummy = (usb_transfer_dummy_t *)&urb->transfer;
     transfer_dummy->data_buffer = data_buffer;
+    transfer_dummy->data_buffer_size = real_size;
     transfer_dummy->num_isoc_packets = num_isoc_packets;
     return urb;
 }
@@ -322,4 +327,15 @@ uint8_t test_hcd_enum_device(hcd_pipe_handle_t default_pipe)
     //Free URB
     test_hcd_free_urb(urb);
     return ENUM_ADDR;
+}
+
+void test_hcd_set_mock_msc_ep_descriptor(usb_speed_t port_speed)
+{
+    if (port_speed == USB_SPEED_HIGH) {
+        mock_msc_scsi_bulk_out_ep_desc = mock_msc_scsi_bulk_out_ep_desc_hs;     // HS wMaxPacketSize = 512
+        mock_msc_scsi_bulk_in_ep_desc = mock_msc_scsi_bulk_in_ep_desc_hs;
+    } else {
+        mock_msc_scsi_bulk_out_ep_desc = mock_msc_scsi_bulk_out_ep_desc_fs;     // FS wMaxPacketSize = 64
+        mock_msc_scsi_bulk_in_ep_desc = mock_msc_scsi_bulk_in_ep_desc_fs;
+    }
 }

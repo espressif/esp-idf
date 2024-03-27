@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include "catch.hpp"
+#include <catch2/catch_test_macros.hpp>
 #include <algorithm>
 #include <cstring>
 #include "nvs_handle_simple.hpp"

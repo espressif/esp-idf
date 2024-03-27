@@ -1,7 +1,18 @@
+idf_build_get_property(target IDF_TARGET)
+
+if(${target} STREQUAL "linux")
+    return() # This component is not supported by the POSIX/Linux simulator
+endif()
+
 set(srcs
     "app_trace.c"
     "app_trace_util.c"
     "host_file_io.c")
+
+if(CONFIG_ESP_DEBUG_STUBS_ENABLE)
+    list(APPEND srcs
+        "debug_stubs.c")
+endif()
 
 if(CONFIG_APPTRACE_GCOV_ENABLE)
     if("${CMAKE_C_COMPILER_ID}" STREQUAL "GNU")
@@ -57,8 +68,7 @@ endif()
 idf_component_register(SRCS "${srcs}"
                        INCLUDE_DIRS "${include_dirs}"
                        PRIV_INCLUDE_DIRS "${priv_include_dirs}"
-                       # Requires "driver" for GPTimer in "SEGGER_SYSVIEW_Config_FreeRTOS.c"
-                       PRIV_REQUIRES soc driver
+                       PRIV_REQUIRES esp_driver_gptimer esp_driver_gpio esp_driver_uart
                        REQUIRES esp_timer
                        LDFRAGMENTS linker.lf)
 

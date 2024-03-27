@@ -1,9 +1,10 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stdatomic.h>
 #include "esp_openthread_radio.h"
 
 #include "error.h"
@@ -32,9 +33,11 @@
 #include "utils/mac_frame.h"
 
 #define ESP_RECEIVE_SENSITIVITY -120
-#define ESP_OPENTHREAD_XTAL_ACCURACY 130
-#define ESP_OPENTHREAD_CSL_ACCURACY 1
-#define ESP_OPENTHREAD_CSL_UNCERTAIN 1
+#define ESP_OPENTHREAD_XTAL_ACCURACY CONFIG_OPENTHREAD_XTAL_ACCURACY
+#if OPENTHREAD_CONFIG_MAC_CSL_RECEIVER_ENABLE
+#define ESP_OPENTHREAD_CSL_ACCURACY CONFIG_OPENTHREAD_CSL_ACCURACY
+#define ESP_OPENTHREAD_CSL_UNCERTAIN CONFIG_OPENTHREAD_CSL_UNCERTAIN
+#endif
 
 #define EVENT_TX_DONE (1 << 0)
 #define EVENT_TX_FAILED (1 << 1)
@@ -49,7 +52,7 @@ typedef struct {
 typedef struct {
     uint8_t head;
     uint8_t tail;
-    uint8_t used;
+    atomic_uint_fast8_t used;
 } esp_openthread_circular_queue_info_t;
 
 static otRadioFrame s_transmit_frame;
@@ -172,6 +175,7 @@ esp_err_t esp_openthread_radio_process(otInstance *aInstance, const esp_openthre
                 otPlatRadioTxDone(aInstance, &s_transmit_frame, NULL, OT_ERROR_NONE);
             } else {
                 otPlatRadioTxDone(aInstance, &s_transmit_frame, &s_ack_frame, OT_ERROR_NONE);
+                esp_ieee802154_receive_handle_done(s_ack_frame.mPsdu - 1);
                 s_ack_frame.mPsdu = NULL;
             }
         }
@@ -213,7 +217,7 @@ esp_err_t esp_openthread_radio_process(otInstance *aInstance, const esp_openthre
         otPlatRadioEnergyScanDone(aInstance, s_ed_power);
     }
 
-    while (s_recv_queue.used) {
+    while (atomic_load(&s_recv_queue.used)) {
         if (s_receive_frame[s_recv_queue.head].mPsdu != NULL) {
 #if OPENTHREAD_CONFIG_DIAG_ENABLE
             if (otPlatDiagModeGet()) {
@@ -223,9 +227,10 @@ esp_err_t esp_openthread_radio_process(otInstance *aInstance, const esp_openthre
             {
                 otPlatRadioReceiveDone(aInstance, &s_receive_frame[s_recv_queue.head], OT_ERROR_NONE);
             }
+            esp_ieee802154_receive_handle_done(s_receive_frame[s_recv_queue.head].mPsdu - 1);
             s_receive_frame[s_recv_queue.head].mPsdu = NULL;
             s_recv_queue.head = (s_recv_queue.head + 1) % CONFIG_IEEE802154_RX_BUFFER_SIZE;
-            s_recv_queue.used--;
+            atomic_fetch_sub(&s_recv_queue.used, 1);
         }
     }
 
@@ -339,7 +344,11 @@ int8_t otPlatRadioGetRssi(otInstance *aInstance)
 
 otRadioCaps otPlatRadioGetCaps(otInstance *aInstance)
 {
+//  FIXME: Remove `CONFIG_OPENTHREAD_RX_ON_WHEN_IDLE` when JIRA: TZ-609 fixed.
     return (otRadioCaps)(OT_RADIO_CAPS_ENERGY_SCAN |
+#if CONFIG_OPENTHREAD_RX_ON_WHEN_IDLE
+                        OT_RADIO_CAPS_RX_ON_WHEN_IDLE |
+#endif
                         OT_RADIO_CAPS_TRANSMIT_SEC | OT_RADIO_CAPS_RECEIVE_TIMING | OT_RADIO_CAPS_TRANSMIT_TIMING |
                         OT_RADIO_CAPS_ACK_TIMEOUT | OT_RADIO_CAPS_SLEEP_TO_TX);
 }
@@ -673,7 +682,7 @@ void IRAM_ATTR esp_ieee802154_receive_done(uint8_t *data, esp_ieee802154_frame_i
     otRadioFrame ot_frame;
     ot_frame.mPsdu = data + 1;
 
-    if (s_recv_queue.used == CONFIG_IEEE802154_RX_BUFFER_SIZE) {
+    if (atomic_load(&s_recv_queue.used) == CONFIG_IEEE802154_RX_BUFFER_SIZE) {
         ESP_EARLY_LOGE(OT_PLAT_LOG_TAG, "radio receive buffer full!");
         return;
     }
@@ -691,7 +700,7 @@ void IRAM_ATTR esp_ieee802154_receive_done(uint8_t *data, esp_ieee802154_frame_i
     s_with_security_enh_ack = false;
 #endif // OPENTHREAD_CONFIG_THREAD_VERSION >= OT_THREAD_VERSION_1_2
     s_recv_queue.tail = (s_recv_queue.tail + 1) % CONFIG_IEEE802154_RX_BUFFER_SIZE;
-    s_recv_queue.used++;
+    atomic_fetch_add(&s_recv_queue.used, 1);
     set_event(EVENT_RX_DONE);
 }
 
@@ -711,15 +720,33 @@ void IRAM_ATTR esp_ieee802154_receive_sfd_done(void)
 void IRAM_ATTR esp_ieee802154_transmit_sfd_done(uint8_t *frame)
 {
     assert(frame == (uint8_t *)&s_transmit_psdu || frame == s_enhack);
-#if OPENTHREAD_CONFIG_MAC_CSL_RECEIVER_ENABLE
-    otRadioFrame ot_frame;
-    ot_frame.mPsdu = frame + 1;
-    ot_frame.mLength = frame[0];
 
+#if OPENTHREAD_CONFIG_MAC_CSL_RECEIVER_ENABLE
     if (s_csl_period > 0) {
+        otRadioFrame ot_frame;
+        ot_frame.mPsdu = frame + 1;
+        ot_frame.mLength = frame[0];
+
         otMacFrameSetCslIe(&ot_frame, s_csl_period, get_csl_phase());
     }
 #endif
+
+#if OPENTHREAD_CONFIG_TIME_SYNC_ENABLE
+    if (frame == (uint8_t *)&s_transmit_psdu && s_transmit_frame.mInfo.mTxInfo.mIeInfo->mTimeIeOffset != 0)
+    {
+        uint8_t *p_time_ie = s_transmit_frame.mPsdu + s_transmit_frame.mInfo.mTxInfo.mIeInfo->mTimeIeOffset;
+        uint64_t time = (uint64_t)((int64_t)otPlatTimeGet() + s_transmit_frame.mInfo.mTxInfo.mIeInfo->mNetworkTimeOffset);
+
+        *p_time_ie = s_transmit_frame.mInfo.mTxInfo.mIeInfo->mTimeSyncSeq;
+
+        *(++p_time_ie) = (uint8_t)(time & 0xff);
+        for (uint8_t i = 1; i < sizeof(uint64_t); i++)
+        {
+            time           = time >> 8;
+            *(++p_time_ie) = (uint8_t)(time & 0xff);
+        }
+    }
+#endif // OPENTHREAD_CONFIG_TIME_SYNC_ENABLE
 }
 
 void IRAM_ATTR esp_ieee802154_energy_detect_done(int8_t power)
@@ -748,3 +775,11 @@ otError otPlatRadioSetChannelMaxTransmitPower(otInstance *aInstance, uint8_t aCh
 
     return OT_ERROR_NONE;
 }
+
+#if CONFIG_OPENTHREAD_RX_ON_WHEN_IDLE
+void otPlatRadioSetRxOnWhenIdle(otInstance *aInstance, bool aEnable)
+{
+    OT_UNUSED_VARIABLE(aInstance);
+    esp_ieee802154_set_rx_when_idle(aEnable);
+}
+#endif

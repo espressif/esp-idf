@@ -71,7 +71,7 @@ It takes input from user and performs notify GATT operations against the specifi
 
 Note :
 
-* To install the dependency packages needed, please refer to the top level [README file](../../../../README.md#running-test-python-script-ttfw).
+* To install the dependency packages needed, please refer to the top level [README file](../../../../README.md#running-test-python-script-pytest).
 * Currently this Python utility is only supported on Linux (BLE communication is via BLuez + DBus).
 
 ## How to use example

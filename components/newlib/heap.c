@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,13 +11,13 @@
 #include <malloc.h>
 #include "esp_heap_caps.h"
 
-
 /*
  These contain the business logic for the malloc() and realloc() implementation. Because of heap tracing
  wrapping reasons, we do not want these to be a public api, however, so they're not defined publicly.
 */
-extern void *heap_caps_malloc_default( size_t size );
-extern void *heap_caps_realloc_default( void *ptr, size_t size );
+extern void *heap_caps_malloc_default(size_t size);
+extern void *heap_caps_realloc_default(void *ptr, size_t size);
+extern void *heap_caps_aligned_alloc_default(size_t alignment, size_t size);
 
 void* malloc(size_t size)
 {
@@ -51,7 +51,7 @@ void _free_r(struct _reent *r, void* ptr)
 
 void* _realloc_r(struct _reent *r, void* ptr, size_t size)
 {
-    return heap_caps_realloc_default( ptr, size );
+    return heap_caps_realloc_default(ptr, size);
 }
 
 void* _calloc_r(struct _reent *r, size_t nmemb, size_t size)
@@ -71,7 +71,12 @@ void* _calloc_r(struct _reent *r, size_t nmemb, size_t size)
 
 void* memalign(size_t alignment, size_t n)
 {
-    return heap_caps_aligned_alloc(alignment, n, MALLOC_CAP_DEFAULT);
+    return heap_caps_aligned_alloc_default(alignment, n);
+}
+
+void* aligned_alloc(size_t alignment, size_t n)
+{
+    return heap_caps_aligned_alloc_default(alignment, n);
 }
 
 int posix_memalign(void **out_ptr, size_t alignment, size_t size)
@@ -81,7 +86,7 @@ int posix_memalign(void **out_ptr, size_t alignment, size_t size)
         *out_ptr = NULL;
         return 0;
     }
-    void *result = heap_caps_aligned_alloc(alignment, size, MALLOC_CAP_DEFAULT);
+    void *result = heap_caps_aligned_alloc_default(alignment, size);
     if (result != NULL) {
         /* Modify output pointer only on success */
         *out_ptr = result;

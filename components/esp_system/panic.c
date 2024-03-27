@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -62,6 +62,14 @@
 #include "hal/usb_serial_jtag_ll.h"
 #endif
 
+#ifdef __XTENSA__
+#include "xtensa/semihosting.h"
+#elif __riscv
+#include "riscv/semihosting.h"
+#endif
+
+#define ESP_SEMIHOSTING_SYS_PANIC_REASON    0x116
+
 #define MWDT_DEFAULT_TICKS_PER_US       500
 
 bool g_panic_abort = false;
@@ -81,7 +89,6 @@ static void panic_print_char_uart(const char c)
     uart_hal_write_txfifo(&s_panic_uart, (uint8_t *) &c, 1, &sz);
 }
 #endif // CONFIG_ESP_CONSOLE_UART
-
 
 #if CONFIG_ESP_CONSOLE_USB_CDC
 static void panic_print_char_usb_cdc(const char c)
@@ -110,7 +117,6 @@ static void panic_print_char_usb_serial_jtag(const char c)
     }
 }
 #endif //CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG || CONFIG_ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG
-
 
 void panic_print_char(const char c)
 {
@@ -178,7 +184,7 @@ void esp_panic_handler_reconfigure_wdts(uint32_t timeout_ms)
 {
     wdt_hal_context_t wdt0_context = {.inst = WDT_MWDT0, .mwdt_dev = &TIMERG0};
 #if SOC_TIMER_GROUPS >= 2
-	// IDF-3825
+    // IDF-3825
     wdt_hal_context_t wdt1_context = {.inst = WDT_MWDT1, .mwdt_dev = &TIMERG1};
 #endif
 
@@ -288,7 +294,19 @@ void esp_panic_handler(panic_info_t *info)
     // If on-chip-debugger is attached, and system is configured to be aware of this,
     // then only print up to details. Users should be able to probe for the other information
     // in debug mode.
+#if CONFIG_ESP_DEBUG_OCDAWARE
     if (esp_cpu_dbgr_is_attached()) {
+        char *panic_reason_str = NULL;
+        if (info->pseudo_excause) {
+            panic_reason_str = (char *)info->reason;
+        } else if (g_panic_abort && strlen(g_panic_abort_details)) {
+            panic_reason_str = g_panic_abort_details;
+        }
+        if (panic_reason_str) {
+            /* OpenOCD will print the halt cause when target is stopped at the below breakpoint (info->addr) */
+            long args[] = {(long)panic_reason_str, strlen(panic_reason_str)};
+            semihosting_call_noerrno(ESP_SEMIHOSTING_SYS_PANIC_REASON, args);
+        }
         panic_print_str("Setting breakpoint at 0x");
         panic_print_hex((uint32_t)info->addr);
         panic_print_str(" and returning...\r\n");
@@ -305,7 +323,7 @@ void esp_panic_handler(panic_info_t *info)
         esp_cpu_set_breakpoint(0, info->addr); // use breakpoint 0
         return;
     }
-
+#endif //CONFIG_ESP_DEBUG_OCDAWARE
     // start panic WDT to restart system if we hang in this handler
     if (!wdt_hal_is_enabled(&rtc_wdt_ctx)) {
         wdt_hal_init(&rtc_wdt_ctx, WDT_RWDT, 0, false);
@@ -358,14 +376,8 @@ void esp_panic_handler(panic_info_t *info)
     } else {
         disable_all_wdts();
         s_dumping_core = true;
-#if CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH
-        esp_core_dump_to_flash(info);
-#endif
-#if CONFIG_ESP_COREDUMP_ENABLE_TO_UART && !CONFIG_ESP_SYSTEM_PANIC_SILENT_REBOOT
-        esp_core_dump_to_uart(info);
-#endif
+        esp_core_dump_write(info);
         s_dumping_core = false;
-
         esp_panic_handler_reconfigure_wdts(1000);
     }
 #endif /* CONFIG_ESP_COREDUMP_ENABLE */
@@ -382,7 +394,7 @@ void esp_panic_handler(panic_info_t *info)
     // start RTC WDT if it hasn't been started yet and set the timeout to more than the delay time
     wdt_hal_init(&rtc_wdt_ctx, WDT_RWDT, 0, false);
     uint32_t stage_timeout_ticks = (uint32_t)(((CONFIG_ESP_SYSTEM_PANIC_REBOOT_DELAY_SECONDS + 1) * 1000
-            * rtc_clk_slow_freq_get_hz()) / 1000ULL);
+                                               * rtc_clk_slow_freq_get_hz()) / 1000ULL);
     wdt_hal_write_protect_disable(&rtc_wdt_ctx);
     wdt_hal_config_stage(&rtc_wdt_ctx, WDT_STAGE0, stage_timeout_ticks, WDT_STAGE_ACTION_RESET_SYSTEM);
     // 64KB of core dump data (stacks of about 30 tasks) will produce ~85KB base64 data.
@@ -433,7 +445,6 @@ void esp_panic_handler(panic_info_t *info)
 #endif /* CONFIG_ESP_SYSTEM_PANIC_PRINT_REBOOT || CONFIG_ESP_SYSTEM_PANIC_SILENT_REBOOT */
 #endif /* CONFIG_ESP_SYSTEM_PANIC_GDBSTUB */
 }
-
 
 void IRAM_ATTR __attribute__((noreturn, no_sanitize_undefined)) panic_abort(const char *details)
 {

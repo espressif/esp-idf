@@ -1,16 +1,21 @@
-The Himem Allocation API
-========================
+Himem
+=====
+
+:link_to_translation:`zh_CN:[中文]`
 
 Overview
 --------
 
-The ESP32 can access external SPI RAM transparently, so you can use it as normal memory in your program code. However, because the address space for external memory is limited in size, only the first 4 MiB can be used as such. Access to the remaining memory is still possible, however this needs to go through a bankswitching scheme controlled by the himem API.
+For external memories that are <= 4 MiB, the MMU is configured to use a "unity mapping", meaning that each CPU address is mapped 1-to-1 to the external SPI RAM address, thus allowing external memory to be accessed transparently. However, because the address space for external memory is limited to 4 MiB, only SPI RAM chips that are <= 4 MiB in size can be used fully transparently.
 
-Specifically, what is implemented by the himem API is a bankswitching scheme. Hardware-wise, the 4 MiB region for external SPI RAM is mapped into the CPU address space by a MMU, which maps a configurable 32 K bank/page of external SPI RAM into each of the 32 K pages in the 4 MiB region accessed by the CPU. For external memories that are <= 4 MiB, this MMU is configured to unity mapping, effectively mapping each CPU address 1-to-1 to the external SPI RAM address.
+It is still possible for ESP32 to use SPI RAM chips >= 4 MiB in size. However, the memory on these chips needs to be accessed using a bank switching scheme. ESP-IDF provides the **Himem API** to control this bank switching. More specifically, the Himem API allows particular 32 K banks within 4 MiB address switch mappings at run time, thus allowing access to more than 4 MiB of external memory.
 
-In order to use the himem API, you have to enable it in the menuconfig using :ref:`CONFIG_SPIRAM_BANKSWITCH_ENABLE`, as well as set the amount of banks reserved for this in :ref:`CONFIG_SPIRAM_BANKSWITCH_RESERVE`. This decreases the amount of external memory allocated by functions like ``malloc()``, but it allows you to use the himem api to map any of the remaining memory into the reserved banks.
+Usage
+-----
 
-The himem API is more-or-less an abstraction of the bankswitching scheme: it allows you to claim one or more banks of address space (called 'regions' in the API) as well as one or more of banks of memory to map into the ranges.
+In order to use the Himem API, you have to enable it in the menuconfig using :ref:`CONFIG_SPIRAM_BANKSWITCH_ENABLE`, as well as set the amount of banks reserved for this in :ref:`CONFIG_SPIRAM_BANKSWITCH_RESERVE`. This decreases the amount of external memory allocated by functions like ``malloc()``, but it allows you to use the Himem API to map any of the remaining memory into the reserved banks.
+
+The Himem API is more-or-less an abstraction of the bank switching scheme: it allows you to claim one or more banks of address space (called 'regions' in the API) as well as one or more of banks of memory to map into the ranges.
 
 Example
 -------

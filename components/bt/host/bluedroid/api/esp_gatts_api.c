@@ -29,6 +29,11 @@ esp_err_t esp_ble_gatts_register_callback(esp_gatts_cb_t callback)
     return (btc_profile_cb_set(BTC_PID_GATTS, callback) == 0 ? ESP_OK : ESP_FAIL);
 }
 
+esp_gatts_cb_t esp_ble_gatts_get_callback(void)
+{
+    return (esp_gatts_cb_t) btc_profile_cb_get(BTC_PID_GATTS);
+}
+
 esp_err_t esp_ble_gatts_app_register(uint16_t app_id)
 {
     btc_msg_t msg = {0};

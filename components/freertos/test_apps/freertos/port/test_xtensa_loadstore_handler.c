@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,10 +15,7 @@
 #include "esp_random.h"
 #include "unity.h"
 
-#if CONFIG_IDF_TARGET_ARCH_XTENSA
-#include "freertos/xtensa_api.h"
-
-#ifdef CONFIG_ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY
+#if CONFIG_IDF_TARGET_ARCH_XTENSA && CONFIG_ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY
 TEST_CASE("LoadStore Exception handler", "[freertos]")
 {
     int32_t val0 = 0xDEADBEEF;
@@ -58,28 +55,28 @@ TEST_CASE("LoadStore Exception handler", "[freertos]")
         offset32 = offset8 / 4;
 
         arr8[offset8] = val8_0;
-        arr8[offset8+1] = val8_1;
-        arr8[offset8+2] = val8_2;
-        arr8[offset8+3] = val8_3;
+        arr8[offset8 + 1] = val8_1;
+        arr8[offset8 + 2] = val8_2;
+        arr8[offset8 + 3] = val8_3;
 
         // Just to make sure compiler doesn't read stale data
         asm volatile("memw\n");
         TEST_ASSERT_EQUAL(val8_0, arr8[offset8]);
-        TEST_ASSERT_EQUAL(val8_1, arr8[offset8+1]);
-        TEST_ASSERT_EQUAL(val8_2, arr8[offset8+2]);
-        TEST_ASSERT_EQUAL(val8_3, arr8[offset8+3]);
+        TEST_ASSERT_EQUAL(val8_1, arr8[offset8 + 1]);
+        TEST_ASSERT_EQUAL(val8_2, arr8[offset8 + 2]);
+        TEST_ASSERT_EQUAL(val8_3, arr8[offset8 + 3]);
 
         arr16[offset16] = val16_0;
-        arr16[offset16+1] = val16_1;
-        arr16[offset16+2] = val16_2;
-        arr16[offset16+3] = val16_3;
+        arr16[offset16 + 1] = val16_1;
+        arr16[offset16 + 2] = val16_2;
+        arr16[offset16 + 3] = val16_3;
 
         // Just to make sure compiler doesn't read stale data
         asm volatile("memw\n");
         TEST_ASSERT_EQUAL(val16_0, arr16[offset16]);
-        TEST_ASSERT_EQUAL(val16_1, arr16[offset16+1]);
-        TEST_ASSERT_EQUAL(val16_2, arr16[offset16+2]);
-        TEST_ASSERT_EQUAL(val16_3, arr16[offset16+3]);
+        TEST_ASSERT_EQUAL(val16_1, arr16[offset16 + 1]);
+        TEST_ASSERT_EQUAL(val16_2, arr16[offset16 + 2]);
+        TEST_ASSERT_EQUAL(val16_3, arr16[offset16 + 3]);
 
         // LoadStoreAlignement Error
 
@@ -115,7 +112,7 @@ TEST_CASE("LoadStore Exception handler", "[freertos]")
         *ptr32_2 = val2;
 
         // Just to make sure compiler doesn't read stale data
-        asm volatile ("memw");
+        asm volatile("memw");
         TEST_ASSERT_EQUAL(0x73, *ptr8_0);
         TEST_ASSERT_EQUAL(val0, *ptr32_0);
         TEST_ASSERT_EQUAL(0x73, *ptr8_1);
@@ -128,5 +125,4 @@ TEST_CASE("LoadStore Exception handler", "[freertos]")
     TEST_ASSERT_TRUE(heap_caps_check_integrity_all(true));
     heap_caps_free(arr);
 }
-#endif // CONFIG_ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY
-#endif // CONFIG_IDF_TARGET_ARCH_XTENSA
+#endif // CONFIG_IDF_TARGET_ARCH_XTENSA && CONFIG_ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY

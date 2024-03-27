@@ -3,12 +3,6 @@ Two-Wire Automotive Interface (TWAI)
 
 .. -------------------------------- Overview -----------------------------------
 
-.. only:: esp32c6
-
-	.. warning::
-
-		{IDF_TARGET_NAME} has {IDF_TARGET_SOC_TWAI_CONTROLLER_NUM} TWAI controllers, but at the moment, the driver can only support ``TWAI0`` due to the limitation of the driver structure.
-
 Overview
 --------
 
@@ -85,6 +79,13 @@ The TWAI controller's interface consists of 4 signal lines known as **TX, RX, BU
 
 
 .. ------------------------------ Configuration --------------------------------
+
+API Naming Conventions
+----------------------
+
+.. note::
+
+  The TWAI driver provides two sets of API. One is handle-free and is widely used in IDF versions earlier than v5.2, but it can only support one TWAI hardware controller. The other set is with handles, and the function name is usually suffixed with "v2", which can support any number of TWAI controllers. These two sets of API can be used at the same time, but it is recommended to use the "v2" version in your new projects.
 
 Driver Configuration
 --------------------
@@ -163,7 +164,7 @@ The operating bit rate of the TWAI driver is configured using the :cpp:type:`twa
     2. **Timing Segment 1** consists of 1 to 16 time quanta before sample point
     3. **Timing Segment 2** consists of 1 to 8 time quanta after sample point
 
-{IDF_TARGET_MAX_BRP:default="128", esp32="128", esp32s2="32768", esp32s3="16384", esp32c3="16384", esp32c6="32768", esp32h2="32768"}
+{IDF_TARGET_MAX_BRP:default="32768", esp32="128", esp32s3="16384", esp32c3="16384"}
 
 The **Baudrate Prescaler** is used to determine the period of each time quantum by dividing the TWAI controller's source clock. On the {IDF_TARGET_NAME}, the ``brp`` can be **any even number from 2 to {IDF_TARGET_MAX_BRP}**. Alternatively, you can decide the resolution of each quantum, by setting :cpp:member:`twai_timing_config_t::quanta_resolution_hz` to a non-zero value. In this way, the driver can calculate the underlying ``brp`` value for you. It is useful when you set different clock sources but want the bitrate to keep the same.
 
@@ -397,6 +398,64 @@ The following code snippet demonstrates how to configure, install, and start the
 
 The usage of macro initializers is not mandatory and each of the configuration structures can be manually.
 
+Install Multiple TWAI Instances
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The following code snippet demonstrates how to install multiple TWAI instances via the use of the :cpp:func:`twai_driver_install_v2` function.
+
+.. code-block:: c
+
+    #include "driver/gpio.h"
+    #include "driver/twai.h"
+
+    void app_main()
+    {
+        twai_handle_t twai_bus_0;
+        twai_handle_t twai_bus_1;
+        //Initialize configuration structures using macro initializers
+        twai_general_config_t g_config = TWAI_GENERAL_CONFIG_DEFAULT(GPIO_NUM_0, GPIO_NUM_1, TWAI_MODE_NORMAL);
+        twai_timing_config_t t_config = TWAI_TIMING_CONFIG_500KBITS();
+        twai_filter_config_t f_config = TWAI_FILTER_CONFIG_ACCEPT_ALL();
+
+        //Install driver for TWAI bus 0
+        g_config.controller_id = 0;
+        if (twai_driver_install_v2(&g_config, &t_config, &f_config, &twai_bus_0) == ESP_OK) {
+            printf("Driver installed\n");
+        } else {
+            printf("Failed to install driver\n");
+            return;
+        }
+        //Start TWAI driver
+        if (twai_start_v2(twai_bus_0) == ESP_OK) {
+            printf("Driver started\n");
+        } else {
+            printf("Failed to start driver\n");
+            return;
+        }
+
+        //Install driver for TWAI bus 1
+        g_config.controller_id = 1;
+        g_config.tx_io = GPIO_NUM_2;
+        g_config.rx_io = GPIO_NUM_3;
+        if (twai_driver_install_v2(&g_config, &t_config, &f_config, &twai_bus_1) == ESP_OK) {
+            printf("Driver installed\n");
+        } else {
+            printf("Failed to install driver\n");
+            return;
+        }
+        //Start TWAI driver
+        if (twai_start_v2(twai_bus_1) == ESP_OK) {
+            printf("Driver started\n");
+        } else {
+            printf("Failed to start driver\n");
+            return;
+        }
+
+        //Other Driver operations must use version 2 API as well
+        ...
+
+    }
+
 Message Transmission
 ^^^^^^^^^^^^^^^^^^^^
 
@@ -408,14 +467,19 @@ The following code snippet demonstrates how to transmit a message via the usage 
 
     ...
 
-    //Configure message to transmit
-    twai_message_t message;
-    message.identifier = 0xAAAA;
-    message.extd = 1;
-    message.data_length_code = 4;
-    for (int i = 0; i < 4; i++) {
-        message.data[i] = 0;
-    }
+    // Configure message to transmit
+    twai_message_t message = {
+        // Message type and format settings
+        .extd = 1,              // Standard vs extended format
+        .rtr = 0,               // Data vs RTR frame
+        .ss = 0,                // Whether the message is single shot (i.e., does not repeat on error)
+        .self = 0,              // Whether the message is a self reception request (loopback)
+        .dlc_non_comp = 0,      // DLC is less than 8
+        // Message ID and payload
+        .identifier = 0xAAAA,
+        .data_length_code = 4,
+        .data = {0, 1, 2, 3},
+    };
 
     //Queue message for transmission
     if (twai_transmit(&message, pdMS_TO_TICKS(1000)) == ESP_OK) {

@@ -26,9 +26,11 @@ void abort(void)
 #if !CONFIG_ESP_SYSTEM_PANIC_SILENT_REBOOT
     esp_rom_printf("abort() was called at PC 0x%08x\r\n", (intptr_t)__builtin_return_address(0) - 3);
 #endif
+#if CONFIG_ESP_DEBUG_OCDAWARE
     if (esp_cpu_dbgr_is_attached()) {
         esp_cpu_dbgr_break();
     }
+#endif
     while (1) {
     }
 }

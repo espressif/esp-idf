@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2018-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -104,9 +104,9 @@ static inline int rangeblock_idx_valid(int rangeblock_idx)
 static void set_bank(int virt_bank, int phys_bank, int ct)
 {
     int r __attribute__((unused));
-    r = cache_sram_mmu_set( 0, 0, SOC_EXTRAM_DATA_LOW + CACHE_BLOCKSIZE * virt_bank, phys_bank * CACHE_BLOCKSIZE, 32, ct );
+    r = cache_sram_mmu_set(0, 0, SOC_EXTRAM_DATA_LOW + CACHE_BLOCKSIZE * virt_bank, phys_bank * CACHE_BLOCKSIZE, 32, ct);
     assert(r == 0);
-    r = cache_sram_mmu_set( 1, 0, SOC_EXTRAM_DATA_LOW + CACHE_BLOCKSIZE * virt_bank, phys_bank * CACHE_BLOCKSIZE, 32, ct );
+    r = cache_sram_mmu_set(1, 0, SOC_EXTRAM_DATA_LOW + CACHE_BLOCKSIZE * virt_bank, phys_bank * CACHE_BLOCKSIZE, 32, ct);
     assert(r == 0);
 }
 
@@ -120,28 +120,32 @@ size_t esp_himem_get_phys_size(void)
 
 size_t esp_himem_get_free_size(void)
 {
-    size_t ret=0;
+    size_t ret = 0;
     for (int i = 0; i < s_ramblockcnt; i++) {
-        if (!s_ram_descriptor[i].is_alloced) ret+=CACHE_BLOCKSIZE;
+        if (!s_ram_descriptor[i].is_alloced) {
+            ret += CACHE_BLOCKSIZE;
+        }
     }
     return ret;
 }
 
-size_t esp_himem_reserved_area_size(void) {
+size_t esp_himem_reserved_area_size(void)
+{
     return CACHE_BLOCKSIZE * SPIRAM_BANKSWITCH_RESERVE;
 }
 
-
 void __attribute__((constructor)) esp_himem_init(void)
 {
-    if (SPIRAM_BANKSWITCH_RESERVE == 0) return;
+    if (SPIRAM_BANKSWITCH_RESERVE == 0) {
+        return;
+    }
     uint32_t maxram = 0;
     esp_psram_impl_get_available_size(&maxram);
     //catch double init
-    ESP_RETURN_ON_FALSE(s_ram_descriptor == NULL,  , TAG, "already initialized"); //Looks weird; last arg is empty so it expands to 'return ;'
-    ESP_RETURN_ON_FALSE(s_range_descriptor == NULL,  , TAG, "already initialized");
+    ESP_RETURN_ON_FALSE(s_ram_descriptor == NULL,, TAG, "already initialized");   //Looks weird; last arg is empty so it expands to 'return ;'
+    ESP_RETURN_ON_FALSE(s_range_descriptor == NULL,, TAG, "already initialized");
     //need to have some reserved banks
-    ESP_RETURN_ON_FALSE(SPIRAM_BANKSWITCH_RESERVE != 0,  , TAG, "No banks reserved for himem");
+    ESP_RETURN_ON_FALSE(SPIRAM_BANKSWITCH_RESERVE != 0,, TAG, "No banks reserved for himem");
     //Start and end of physical reserved memory. Note it starts slightly under
     //the 4MiB mark as the reserved banks can't have an unity mapping to be used by malloc
     //anymore; we treat them as himem instead.
@@ -158,9 +162,8 @@ void __attribute__((constructor)) esp_himem_init(void)
         return;
     }
     ESP_EARLY_LOGI(TAG, "Initialized. Using last %d 32KB address blocks for bank switching on %d KB of physical memory.",
-                SPIRAM_BANKSWITCH_RESERVE, (paddr_end - paddr_start)/1024);
+                   SPIRAM_BANKSWITCH_RESERVE, (paddr_end - paddr_start) / 1024);
 }
-
 
 //Allocate count not-necessarily consecutive physical RAM blocks, return numbers in blocks[]. Return
 //true if blocks can be allocated, false if not.
@@ -185,7 +188,6 @@ static bool allocate_blocks(int count, uint16_t *blocks_out)
         return false;
     }
 }
-
 
 esp_err_t esp_himem_alloc(size_t size, esp_himem_handle_t *handle_out)
 {
@@ -237,7 +239,6 @@ esp_err_t esp_himem_free(esp_himem_handle_t handle)
     free(handle);
     return ESP_OK;
 }
-
 
 esp_err_t esp_himem_alloc_map_range(size_t size, esp_himem_rangehandle_t *handle_out)
 {
@@ -295,7 +296,6 @@ esp_err_t esp_himem_free_map_range(esp_himem_rangehandle_t handle)
     free(handle);
     return ESP_OK;
 }
-
 
 esp_err_t esp_himem_map(esp_himem_handle_t handle, esp_himem_rangehandle_t range, size_t ram_offset, size_t range_offset, size_t len, int flags, void **out_ptr)
 {

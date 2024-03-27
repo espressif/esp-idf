@@ -928,7 +928,7 @@ tHID_STATUS hidh_conn_snd_data (UINT8 dhandle, UINT8 trans_type, UINT8 param,
         data_size    -= bytes_copied;
 
         /* Send the buffer through L2CAP */
-        if ((p_hcon->conn_flags & HID_CONN_FLAGS_CONGESTED) || (!L2CA_DataWrite (cid, p_buf))) {
+        if (L2CA_DataWrite(cid, p_buf) == L2CAP_DW_FAILED) {
             return (HID_ERR_CONGESTED);
         }
 

@@ -61,13 +61,7 @@ typedef struct {
     uint8_t  tid;
 } esp_ble_mesh_node_info_t;
 
-static esp_ble_mesh_node_info_t nodes[CONFIG_BLE_MESH_MAX_PROV_NODES] = {
-    [0 ... (CONFIG_BLE_MESH_MAX_PROV_NODES - 1)] = {
-        .unicast = ESP_BLE_MESH_ADDR_UNASSIGNED,
-        .elem_num = 0,
-        .onoff = LED_OFF,
-    }
-};
+static esp_ble_mesh_node_info_t nodes[CONFIG_BLE_MESH_MAX_PROV_NODES] = {0};
 
 static uint16_t last_node_idx;
 static uint16_t curr_node_idx;
@@ -86,22 +80,22 @@ static esp_ble_mesh_client_t directed_forwarding_client;
 #endif
 
 static esp_ble_mesh_cfg_srv_t config_server = {
+    /* 3 transmissions with 20ms interval */
+    .net_transmit = ESP_BLE_MESH_TRANSMIT(2, 20),
     .relay = ESP_BLE_MESH_RELAY_DISABLED,
+    .relay_retransmit = ESP_BLE_MESH_TRANSMIT(2, 20),
     .beacon = ESP_BLE_MESH_BEACON_ENABLED,
-#if defined(CONFIG_BLE_MESH_FRIEND)
-    .friend_state = ESP_BLE_MESH_FRIEND_ENABLED,
-#else
-    .friend_state = ESP_BLE_MESH_FRIEND_NOT_SUPPORTED,
-#endif
 #if defined(CONFIG_BLE_MESH_GATT_PROXY_SERVER)
     .gatt_proxy = ESP_BLE_MESH_GATT_PROXY_ENABLED,
 #else
     .gatt_proxy = ESP_BLE_MESH_GATT_PROXY_NOT_SUPPORTED,
 #endif
+#if defined(CONFIG_BLE_MESH_FRIEND)
+    .friend_state = ESP_BLE_MESH_FRIEND_ENABLED,
+#else
+    .friend_state = ESP_BLE_MESH_FRIEND_NOT_SUPPORTED,
+#endif
     .default_ttl = 7,
-    /* 3 transmissions with 20ms interval */
-    .net_transmit = ESP_BLE_MESH_TRANSMIT(2, 20),
-    .relay_retransmit = ESP_BLE_MESH_TRANSMIT(2, 20),
 };
 
 #if CONFIG_BLE_MESH_DF_SRV
@@ -168,8 +162,8 @@ static esp_ble_mesh_elem_t elements[] = {
 
 static esp_ble_mesh_comp_t composition = {
     .cid = CID_ESP,
-    .elements = elements,
     .element_count = ARRAY_SIZE(elements),
+    .elements = elements,
 };
 
 static esp_ble_mesh_prov_t provision = {
@@ -432,10 +426,10 @@ static void recv_unprov_adv_pkt(uint8_t dev_uuid[16], uint8_t addr[BD_ADDR_LEN],
     ESP_LOGI(TAG, "oob info: %d, bearer: %s", oob_info, (bearer & ESP_BLE_MESH_PROV_ADV) ? "PB-ADV" : "PB-GATT");
 
     memcpy(add_dev.addr, addr, BD_ADDR_LEN);
-    add_dev.addr_type = (uint8_t)addr_type;
+    add_dev.addr_type = (esp_ble_mesh_addr_type_t)addr_type;
     memcpy(add_dev.uuid, dev_uuid, 16);
     add_dev.oob_info = oob_info;
-    add_dev.bearer = (uint8_t)bearer;
+    add_dev.bearer = (esp_ble_mesh_prov_bearer_t)bearer;
     /* Note: If unprovisioned device adv packets have not been received, we should not add
              device with ADD_DEV_START_PROV_NOW_FLAG set. */
     err = esp_ble_mesh_provisioner_add_unprov_dev(&add_dev,
@@ -770,7 +764,7 @@ static void example_ble_mesh_directed_forwarding_client_cb(esp_ble_mesh_df_clien
                                                            esp_ble_mesh_df_client_cb_param_t *param)
 {
     switch (event) {
-        case ESP_BLE_MESH_DF_CLIENT_RECV_SET_RSP_EVT:
+        case ESP_BLE_MESH_DF_CLIENT_RECV_SET_RSP_EVT: {
             ESP_LOGW(TAG, "Directed Forwarding Set, opcode 0x%04x, from 0x%04x", param->params->opcode, param->params->ctx.addr);
             switch (param->params->opcode) {
             case ESP_BLE_MESH_MODEL_OP_DIRECTED_CONTROL_SET:
@@ -782,11 +776,13 @@ static void example_ble_mesh_directed_forwarding_client_cb(esp_ble_mesh_df_clien
                 break;
             }
             break;
-        case ESP_BLE_MESH_DF_CLIENT_SEND_TIMEOUT_EVT:
+        }
+        case ESP_BLE_MESH_DF_CLIENT_SEND_TIMEOUT_EVT: {
             ESP_LOGW(TAG, "Directed Forwarding Timeout, opcode 0x%04x, to 0x%04x", param->params->opcode, param->params->ctx.addr);
             esp_ble_mesh_node_info_t node = {.unicast = param->params->ctx.addr};
             example_ble_mesh_send_directed_forwarding_srv_control_set(&node);
             break;
+        }
         default:
             break;
     }
@@ -795,9 +791,10 @@ static void example_ble_mesh_directed_forwarding_client_cb(esp_ble_mesh_df_clien
 static void example_ble_mesh_directed_forwarding_server_cb(esp_ble_mesh_df_server_cb_event_t event,
                                                            esp_ble_mesh_df_server_cb_param_t *param)
 {
-    esp_ble_mesh_df_server_table_change_t change = {0};
+    esp_ble_mesh_df_server_table_change_t change;
     esp_ble_mesh_uar_t path_origin;
     esp_ble_mesh_uar_t path_target;
+    memset(&change, 0, sizeof(esp_ble_mesh_df_server_table_change_t));
 
     if (event == ESP_BLE_MESH_DF_SERVER_TABLE_CHANGE_EVT) {
         memcpy(&change, &param->value.table_change, sizeof(esp_ble_mesh_df_server_table_change_t));
@@ -817,6 +814,7 @@ static void example_ble_mesh_directed_forwarding_server_cb(esp_ble_mesh_df_serve
                 break;
             default:
                 ESP_LOGW(TAG, "Unknown action %d", change.action);
+                break;
         }
     }
 
@@ -857,7 +855,7 @@ static esp_err_t ble_mesh_init(void)
         return err;
     }
 
-    err = esp_ble_mesh_provisioner_prov_enable(ESP_BLE_MESH_PROV_ADV | ESP_BLE_MESH_PROV_GATT);
+    err = esp_ble_mesh_provisioner_prov_enable((esp_ble_mesh_prov_bearer_t)(ESP_BLE_MESH_PROV_ADV | ESP_BLE_MESH_PROV_GATT));
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Failed to enable mesh provisioner (err %d)", err);
         return err;

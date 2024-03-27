@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
 
 import os
@@ -24,7 +24,6 @@ def prepare() -> t.Generator[None, None, None]:
     shutil.rmtree(TEMP_DIR, ignore_errors=True)
 
 
-@pytest.mark.esp32
 @pytest.mark.jtag
 @pytest.mark.parametrize(
     'embedded_services, no_gdb, openocd_cli_args',
@@ -35,6 +34,8 @@ def prepare() -> t.Generator[None, None, None]:
             f'-c \'set ESP_SEMIHOST_BASEDIR "{TEMP_DIR}"\' -f board/esp32-wrover-kit-3.3v.cfg',
             marks=[pytest.mark.esp32],
         ),
+    ], ids=[
+        'esp32',
     ],
     indirect=True,
 )

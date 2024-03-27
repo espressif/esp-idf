@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,7 +12,6 @@ void spi_flash_hal_setup_auto_suspend_mode(spi_flash_host_inst_t *host);
 void spi_flash_hal_disable_auto_resume_mode(spi_flash_host_inst_t *host);
 void spi_flash_hal_disable_auto_suspend_mode(spi_flash_host_inst_t *host);
 void spi_flash_hal_setup_auto_resume_mode(spi_flash_host_inst_t *host);
-#define SPI_FLASH_TSUS_SAFE_VAL_US   (30)
 #define SPI_FLASH_TSHSL2_SAFE_VAL_NS (30)
 #endif //SOC_SPI_MEM_SUPPORT_AUTO_SUSPEND
 
@@ -147,9 +146,12 @@ void spi_flash_hal_setup_auto_suspend_mode(spi_flash_host_inst_t *host)
     spi_mem_dev_t *dev = (spi_mem_dev_t*)spi_flash_ll_get_hw(SPI1_HOST);
     spi_flash_hal_context_t* ctx = (spi_flash_hal_context_t*)host;
     spimem_flash_ll_auto_wait_idle_init(dev, true);
+    if (ctx->freq_mhz == 120) {
+        spimem_flash_ll_set_wait_idle_dummy_phase(dev, ctx->extra_dummy);
+    }
     spimem_flash_ll_auto_suspend_init(dev, true);
-    // tsus = ceil(SPI_FLASH_TSUS_SAFE_VAL_US * ctx->freq_mhz / spimem_flash_ll_get_tsus_unit_in_cycles);
-    uint32_t tsus = (SPI_FLASH_TSUS_SAFE_VAL_US * ctx->freq_mhz / spimem_flash_ll_get_tsus_unit_in_cycles(dev)) + ((SPI_FLASH_TSUS_SAFE_VAL_US * ctx->freq_mhz) % spimem_flash_ll_get_tsus_unit_in_cycles(dev) != 0);
+    // tsus = ceil(ctx->tsus_val * ctx->freq_mhz / spimem_flash_ll_get_tsus_unit_in_cycles);
+    uint32_t tsus = (ctx->tsus_val * ctx->freq_mhz / spimem_flash_ll_get_tsus_unit_in_cycles(dev)) + ((ctx->tsus_val * ctx->freq_mhz) % spimem_flash_ll_get_tsus_unit_in_cycles(dev) != 0);
     spimem_flash_ll_set_sus_delay(dev, tsus);
     // tshsl2 = ceil(SPI_FLASH_TSHSL2_SAFE_VAL_NS * spimem_flash_ll_get_source_freq_mhz() * 0.001);
     uint32_t tshsl2 = (SPI_FLASH_TSHSL2_SAFE_VAL_NS * spimem_flash_ll_get_source_freq_mhz() / 1000) + ((SPI_FLASH_TSHSL2_SAFE_VAL_NS * spimem_flash_ll_get_source_freq_mhz()) % 1000 != 0);

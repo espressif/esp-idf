@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -36,6 +36,10 @@
 
 #include "hal/wdt_types.h"
 #include "hal/wdt_hal.h"
+
+#if CONFIG_ESP_SYSTEM_HW_STACK_GUARD
+#include "esp_private/hw_stack_guard.h"
+#endif
 
 extern int _invalid_pc_placeholder;
 
@@ -104,9 +108,10 @@ static void frame_to_panic_info(void *frame, panic_info_t *info, bool pseudo_exc
     info->exception = PANIC_EXCEPTION_FAULT;
     info->details = NULL;
     info->reason = "Unknown";
-    info->pseudo_excause = pseudo_excause;
 
-    if (pseudo_excause) {
+    info->pseudo_excause = panic_soc_check_pseudo_cause(frame, info) | pseudo_excause;
+
+    if (info->pseudo_excause) {
         panic_soc_fill_info(frame, info);
     } else {
         panic_arch_fill_info(frame, info);
@@ -115,6 +120,14 @@ static void frame_to_panic_info(void *frame, panic_info_t *info, bool pseudo_exc
     info->state = print_state;
     info->frame = frame;
 }
+
+#if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
+FORCE_INLINE_ATTR __attribute__((__noreturn__))
+void busy_wait(void)
+{
+    while (1) {;} // infinite loop
+}
+#endif // !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
 
 static void panic_handler(void *frame, bool pseudo_excause)
 {
@@ -133,19 +146,24 @@ static void panic_handler(void *frame, bool pseudo_excause)
     // These are cases where both CPUs both go into panic handler. The following code ensures
     // only one core proceeds to the system panic handler.
     if (pseudo_excause) {
-#define BUSY_WAIT_IF_TRUE(b)                { if (b) while(1); }
-        // For WDT expiry, pause the non-offending core - offending core handles panic
-        BUSY_WAIT_IF_TRUE(panic_get_cause(frame) == PANIC_RSN_INTWDT_CPU0 && core_id == 1);
-        BUSY_WAIT_IF_TRUE(panic_get_cause(frame) == PANIC_RSN_INTWDT_CPU1 && core_id == 0);
 
-        // For cache error, pause the non-offending core - offending core handles panic
-        if (panic_get_cause(frame) == PANIC_RSN_CACHEERR && core_id != esp_cache_err_get_cpuid()) {
-            // Only print the backtrace for the offending core in case of the cache error
-            g_exc_frames[core_id] = NULL;
-            while (1) {
-                ;
-            }
+        // For WDT expiry, pause the non-offending core - offending core handles panic
+        if (panic_get_cause(frame) == PANIC_RSN_INTWDT_CPU0 && core_id == 1) {
+            busy_wait();
+        } else if (panic_get_cause(frame) == PANIC_RSN_INTWDT_CPU1 && core_id == 0) {
+            busy_wait();
+        } else if (panic_get_cause(frame) == PANIC_RSN_CACHEERR && core_id != esp_cache_err_get_cpuid()) {
+            g_exc_frames[core_id] = NULL; // Only print the backtrace for the offending core
+            busy_wait();
         }
+#if CONFIG_ESP_SYSTEM_HW_STACK_GUARD
+        else if (panic_get_cause(frame) == ETS_ASSIST_DEBUG_INUM &&
+                 esp_hw_stack_guard_get_fired_cpu() != core_id &&
+                 esp_hw_stack_guard_get_fired_cpu() != ESP_HW_STACK_GUARD_NOT_FIRED) {
+            g_exc_frames[core_id] = NULL; // Only print the backtrace for the offending core
+            busy_wait();
+        }
+#endif // CONFIG_ESP_SYSTEM_HW_STACK_GUARD
     }
 
     // Need to reconfigure WDTs before we stall any other CPU

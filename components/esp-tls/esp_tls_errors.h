@@ -10,8 +10,12 @@
 #include "esp_err.h"
 #ifdef CONFIG_ESP_TLS_USING_MBEDTLS
 #include "mbedtls/error.h"
+#include "mbedtls/ssl.h"
+#elif CONFIG_ESP_TLS_USING_WOLFSSL
+#include "wolfssl/wolfcrypt/settings.h"
+#include "wolfssl/ssl.h"
 #endif
-/* For wolfSSL, errors are included through ssl.h which is included by default by esp_tls.h */
+
 
 #ifdef __cplusplus
 extern "C" {

@@ -31,12 +31,6 @@ void systimer_hal_deinit(systimer_hal_context_t *hal)
     hal->dev = NULL;
 }
 
-void systimer_hal_set_clock_source(systimer_hal_context_t *hal, systimer_clock_source_t clk_src)
-{
-    (void)hal;
-    systimer_ll_set_clock_source(clk_src);
-}
-
 systimer_clock_source_t systimer_hal_get_clock_source(systimer_hal_context_t *hal)
 {
     (void)hal;

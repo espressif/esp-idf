@@ -4,7 +4,7 @@ Miscellaneous System APIs
 :link_to_translation:`zh_CN:[中文]`
 
 {IDF_TARGET_BASE_MAC_BLOCK: default="BLK1", esp32="BLK0"}
-{IDF_TARGET_CPU_RESET_DES: default="the CPU is reset", esp32="both CPUs are reset", esp32s3="both CPUs are reset"}
+{IDF_TARGET_CPU_RESET_DES: default="the CPU is reset", esp32="both CPUs are reset", esp32s3="both CPUs are reset", esp32p4="both CPUs are reset"}
 
 Software Reset
 --------------
@@ -90,8 +90,8 @@ In ESP-IDF, the MAC addresses for the various network interfaces are calculated 
 
 .. only:: not SOC_EMAC_SUPPORTED
 
-    .. note:: 
-      
+    .. note::
+
       Although {IDF_TARGET_NAME} has no integrated Ethernet MAC, it is still possible to calculate an Ethernet MAC address. However, this MAC address can only be used with an external ethernet interface such as an SPI-Ethernet device. See :doc:`/api-reference/network/esp_eth`.
 
 Custom Interface MAC

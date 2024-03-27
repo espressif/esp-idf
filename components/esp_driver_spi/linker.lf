@@ -1,0 +1,7 @@
+[mapping:gpspi_driver]
+archive: libesp_driver_spi.a
+entries:
+    # SOC_GDMA_SUPPORTED is undeclared if GDMA not support, so use `SOC_GDMA_SUPPORTED != y` instead
+    if SOC_GDMA_SUPPORTED != y && (SPI_MASTER_ISR_IN_IRAM = y || SPI_SLAVE_ISR_IN_IRAM = y):
+        spi_dma: spi_dma_reset (noflash)
+        spi_dma: spi_dma_start (noflash)

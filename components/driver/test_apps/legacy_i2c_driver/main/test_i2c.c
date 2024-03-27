@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -20,21 +20,21 @@
 #include "hal/gpio_hal.h"
 #include "hal/uart_ll.h"
 #include "hal/i2c_types.h"
+#include "soc/uart_periph.h"
 #include "test_utils.h"
 
 #define DATA_LENGTH          512  /*!<Data buffer length for test buffer*/
 #define RW_TEST_LENGTH       129  /*!<Data length for r/w test, any value from 0-DATA_LENGTH*/
 
-#define I2C_SLAVE_SCL_IO     0     /*!<gpio number for i2c slave clock  */
-#define I2C_SLAVE_SDA_IO     2     /*!<gpio number for i2c slave data */
+#define I2C_SLAVE_SCL_IO     4     /*!<gpio number for i2c slave clock  */
+#define I2C_SLAVE_SDA_IO     5     /*!<gpio number for i2c slave data  */
 
 #define I2C_SLAVE_NUM I2C_NUM_0    /*!<I2C port number for slave dev */
 #define I2C_SLAVE_TX_BUF_LEN  (2*DATA_LENGTH) /*!<I2C slave tx buffer size */
 #define I2C_SLAVE_RX_BUF_LEN  (2*DATA_LENGTH) /*!<I2C slave rx buffer size */
 
-
-#define I2C_MASTER_SCL_IO     0     /*!<gpio number for i2c master clock  */
-#define I2C_MASTER_SDA_IO     2     /*!<gpio number for i2c master data */
+#define I2C_MASTER_SCL_IO     4     /*!<gpio number for i2c master clock  */
+#define I2C_MASTER_SDA_IO     5     /*!<gpio number for i2c master data  */
 
 #define I2C_MASTER_NUM I2C_NUM_0   /*!< I2C port number for master dev */
 #define I2C_MASTER_TX_BUF_DISABLE   0   /*!< I2C master do not need buffer */
@@ -50,17 +50,16 @@ static DRAM_ATTR i2c_dev_t *const I2C[SOC_I2C_NUM] = { &I2C0,
 #if SOC_I2C_NUM > 1
                                                        &I2C1,
 #endif
-};
+                                                     };
 
 #define ACK_VAL 0
 #define NACK_VAL 1
-
 
 static esp_err_t i2c_master_write_slave(i2c_port_t i2c_num, uint8_t *data_wr, size_t size)
 {
     i2c_cmd_handle_t cmd = i2c_cmd_link_create();
     i2c_master_start(cmd);
-    TEST_ESP_OK(i2c_master_write_byte(cmd, ( ESP_SLAVE_ADDR << 1 ) | WRITE_BIT, ACK_CHECK_EN));
+    TEST_ESP_OK(i2c_master_write_byte(cmd, (ESP_SLAVE_ADDR << 1) | WRITE_BIT, ACK_CHECK_EN));
     TEST_ESP_OK(i2c_master_write(cmd, data_wr, size, ACK_CHECK_EN));
     TEST_ESP_OK(i2c_master_stop(cmd));
     esp_err_t ret = i2c_master_cmd_begin(i2c_num, cmd, 5000 / portTICK_PERIOD_MS);
@@ -82,7 +81,6 @@ static i2c_config_t i2c_master_init(void)
     return conf_master;
 }
 
-
 #if SOC_I2C_SUPPORT_SLAVE // i2c test can't work without slave
 
 static i2c_config_t i2c_slave_init(void)
@@ -103,7 +101,7 @@ static i2c_config_t i2c_slave_init(void)
 
 TEST_CASE("I2C i2c_set_pin() fails if sda and scl gpios are same", "[i2c]")
 {
-    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, i2c_set_pin(0, 0, 0, true, true , I2C_MODE_MASTER));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, i2c_set_pin(0, 0, 0, true, true, I2C_MODE_MASTER));
 }
 
 TEST_CASE("I2C config test", "[i2c]")
@@ -137,7 +135,7 @@ TEST_CASE("I2C config test", "[i2c]")
             TEST_ESP_OK(i2c_driver_install(I2C_SLAVE_NUM, I2C_MODE_SLAVE,
                                            I2C_SLAVE_RX_BUF_LEN,
                                            I2C_SLAVE_TX_BUF_LEN, 0));
-            TEST_ESP_OK(i2c_param_config( I2C_SLAVE_NUM, &conf_slave));
+            TEST_ESP_OK(i2c_param_config(I2C_SLAVE_NUM, &conf_slave));
             TEST_ASSERT_EQUAL_INT32(I2C[I2C_SLAVE_NUM] -> ctr.ms_mode, 0);
             TEST_ESP_OK(i2c_driver_delete(I2C_SLAVE_NUM));
         }
@@ -169,16 +167,15 @@ TEST_CASE("I2C set and get period test", "[i2c]")
     TEST_ESP_OK(i2c_driver_delete(I2C_MASTER_NUM));
 }
 
-
 #if SOC_I2C_SUPPORT_SLAVE // i2c test can't work without slave
 
 TEST_CASE("I2C config FIFO test", "[i2c]")
 {
     i2c_config_t conf_slave = i2c_slave_init();
     TEST_ESP_OK(i2c_driver_install(I2C_SLAVE_NUM, I2C_MODE_SLAVE,
-                                           I2C_SLAVE_RX_BUF_LEN,
-                                           I2C_SLAVE_TX_BUF_LEN, 0));
-    TEST_ESP_OK(i2c_param_config( I2C_SLAVE_NUM, &conf_slave));
+                                   I2C_SLAVE_RX_BUF_LEN,
+                                   I2C_SLAVE_TX_BUF_LEN, 0));
+    TEST_ESP_OK(i2c_param_config(I2C_SLAVE_NUM, &conf_slave));
     TEST_ASSERT_BIT_LOW(1, I2C[I2C_SLAVE_NUM]->fifo_conf.tx_fifo_rst);
     TEST_ESP_OK(i2c_reset_tx_fifo(I2C_SLAVE_NUM));
     TEST_ASSERT_BIT_LOW(0, I2C[I2C_SLAVE_NUM]->fifo_conf.tx_fifo_rst);
@@ -245,7 +242,7 @@ static void disp_buf(uint8_t *buf, int len)
     int i;
     for (i = 0; i < len; i++) {
         printf("%02x ", buf[i]);
-        if (( i + 1 ) % 16 == 0) {
+        if ((i + 1) % 16 == 0) {
             printf("\n");
         }
     }
@@ -283,7 +280,7 @@ static void i2c_slave_read_test(void)
     int len = 0;
 
     i2c_config_t conf_slave = i2c_slave_init();
-    TEST_ESP_OK(i2c_param_config( I2C_SLAVE_NUM, &conf_slave));
+    TEST_ESP_OK(i2c_param_config(I2C_SLAVE_NUM, &conf_slave));
     TEST_ESP_OK(i2c_driver_install(I2C_SLAVE_NUM, I2C_MODE_SLAVE,
                                    I2C_SLAVE_RX_BUF_LEN,
                                    I2C_SLAVE_TX_BUF_LEN, 0));
@@ -291,7 +288,7 @@ static void i2c_slave_read_test(void)
 
     unity_wait_for_signal("master write");
     while (1) {
-        len = i2c_slave_read_buffer( I2C_SLAVE_NUM, data_rd + size_rd, DATA_LENGTH, 10000 / portTICK_PERIOD_MS);
+        len = i2c_slave_read_buffer(I2C_SLAVE_NUM, data_rd + size_rd, DATA_LENGTH, 10000 / portTICK_PERIOD_MS);
         if (len == 0) {
             break;
         }
@@ -321,19 +318,19 @@ static void master_read_slave_test(void)
 
     i2c_cmd_handle_t cmd = i2c_cmd_link_create();
     i2c_master_start(cmd);
-    i2c_master_write_byte(cmd, ( ESP_SLAVE_ADDR << 1 ) | READ_BIT, ACK_CHECK_EN);
+    i2c_master_write_byte(cmd, (ESP_SLAVE_ADDR << 1) | READ_BIT, ACK_CHECK_EN);
 
     unity_send_signal("slave write");
     unity_wait_for_signal("master read");
-    i2c_master_read(cmd, data_rd, RW_TEST_LENGTH-1, ACK_VAL);
-    i2c_master_read_byte(cmd, data_rd + RW_TEST_LENGTH-1, NACK_VAL);
+    i2c_master_read(cmd, data_rd, RW_TEST_LENGTH - 1, ACK_VAL);
+    i2c_master_read_byte(cmd, data_rd + RW_TEST_LENGTH - 1, NACK_VAL);
     i2c_master_stop(cmd);
     i2c_master_cmd_begin(I2C_MASTER_NUM, cmd, 5000 / portTICK_PERIOD_MS);
     i2c_cmd_link_delete(cmd);
     vTaskDelay(100 / portTICK_PERIOD_MS);
     for (int i = 0; i < RW_TEST_LENGTH; i++) {
         printf("%d\n", data_rd[i]);
-        TEST_ASSERT(data_rd[i]==i);
+        TEST_ASSERT(data_rd[i] == i);
     }
     free(data_rd);
     unity_send_signal("ready to delete");
@@ -346,7 +343,7 @@ static void slave_write_buffer_test(void)
     int size_rd;
 
     i2c_config_t conf_slave = i2c_slave_init();
-    TEST_ESP_OK(i2c_param_config( I2C_SLAVE_NUM, &conf_slave));
+    TEST_ESP_OK(i2c_param_config(I2C_SLAVE_NUM, &conf_slave));
     TEST_ESP_OK(i2c_driver_install(I2C_SLAVE_NUM, I2C_MODE_SLAVE,
                                    I2C_SLAVE_RX_BUF_LEN,
                                    I2C_SLAVE_TX_BUF_LEN, 0));
@@ -364,9 +361,7 @@ static void slave_write_buffer_test(void)
     i2c_driver_delete(I2C_SLAVE_NUM);
 }
 
-
 TEST_CASE_MULTIPLE_DEVICES("I2C master read slave test", "[i2c][test_env=generic_multi_device][timeout=150]", master_read_slave_test, slave_write_buffer_test);
-
 
 static void i2c_master_write_read_test(void)
 {
@@ -382,7 +377,7 @@ static void i2c_master_write_read_test(void)
     unity_wait_for_signal("i2c slave init finish");
     i2c_cmd_handle_t cmd = i2c_cmd_link_create();
     i2c_master_start(cmd);
-    i2c_master_write_byte(cmd, ( ESP_SLAVE_ADDR << 1 ) | READ_BIT, ACK_CHECK_EN);
+    i2c_master_write_byte(cmd, (ESP_SLAVE_ADDR << 1) | READ_BIT, ACK_CHECK_EN);
 
     unity_send_signal("slave write");
     unity_wait_for_signal("master read and write");
@@ -394,7 +389,7 @@ static void i2c_master_write_read_test(void)
     vTaskDelay(100 / portTICK_PERIOD_MS);
     disp_buf(data_rd, RW_TEST_LENGTH);
     for (int i = 0; i < RW_TEST_LENGTH; i++) {
-        TEST_ASSERT(data_rd[i] == i/2);
+        TEST_ASSERT(data_rd[i] == i / 2);
     }
 
     for (int i = 0; i < DATA_LENGTH; i++) {
@@ -418,7 +413,7 @@ static void i2c_slave_read_write_test(void)
     int size_rd;
 
     i2c_config_t conf_slave = i2c_slave_init();
-    TEST_ESP_OK(i2c_param_config( I2C_SLAVE_NUM, &conf_slave));
+    TEST_ESP_OK(i2c_param_config(I2C_SLAVE_NUM, &conf_slave));
     TEST_ESP_OK(i2c_driver_install(I2C_SLAVE_NUM, I2C_MODE_SLAVE,
                                    I2C_SLAVE_RX_BUF_LEN,
                                    I2C_SLAVE_TX_BUF_LEN, 0));
@@ -426,13 +421,13 @@ static void i2c_slave_read_write_test(void)
     unity_wait_for_signal("slave write");
 
     for (int i = 0; i < DATA_LENGTH / 2; i++) {
-        data_wr[i] = i/2;
+        data_wr[i] = i / 2;
     }
     size_rd = i2c_slave_write_buffer(I2C_SLAVE_NUM, data_wr, RW_TEST_LENGTH, 2000 / portTICK_PERIOD_MS);
     disp_buf(data_wr, size_rd);
     unity_send_signal("master read and write");
     unity_wait_for_signal("slave read");
-    size_rd = i2c_slave_read_buffer( I2C_SLAVE_NUM, data_rd, RW_TEST_LENGTH, 1000 / portTICK_PERIOD_MS);
+    size_rd = i2c_slave_read_buffer(I2C_SLAVE_NUM, data_rd, RW_TEST_LENGTH, 1000 / portTICK_PERIOD_MS);
     printf("slave read data is:\n");
     disp_buf(data_rd, size_rd);
     for (int i = 0; i < RW_TEST_LENGTH; i++) {
@@ -445,7 +440,6 @@ static void i2c_slave_read_write_test(void)
 }
 
 TEST_CASE_MULTIPLE_DEVICES("I2C read and write test", "[i2c][test_env=generic_multi_device][timeout=150]", i2c_master_write_read_test, i2c_slave_read_write_test);
-
 
 static void i2c_master_repeat_write(void)
 {
@@ -480,7 +474,7 @@ static void i2c_slave_repeat_read(void)
     uint8_t *data_rd = (uint8_t *) malloc(DATA_LENGTH * 3);
 
     i2c_config_t conf_slave = i2c_slave_init();
-    TEST_ESP_OK(i2c_param_config( I2C_SLAVE_NUM, &conf_slave));
+    TEST_ESP_OK(i2c_param_config(I2C_SLAVE_NUM, &conf_slave));
     TEST_ESP_OK(i2c_driver_install(I2C_SLAVE_NUM, I2C_MODE_SLAVE,
                                    I2C_SLAVE_RX_BUF_LEN,
                                    I2C_SLAVE_TX_BUF_LEN, 0));
@@ -488,7 +482,7 @@ static void i2c_slave_repeat_read(void)
     unity_wait_for_signal("master write");
 
     while (1) {
-        int len = i2c_slave_read_buffer( I2C_SLAVE_NUM, data_rd + size_rd, RW_TEST_LENGTH * 3, 10000 / portTICK_PERIOD_MS);
+        int len = i2c_slave_read_buffer(I2C_SLAVE_NUM, data_rd + size_rd, RW_TEST_LENGTH * 3, 10000 / portTICK_PERIOD_MS);
         if (len == 0) {
             break;
         }
@@ -508,6 +502,66 @@ static void i2c_slave_repeat_read(void)
 
 TEST_CASE_MULTIPLE_DEVICES("I2C repeat write test", "[i2c][test_env=generic_multi_device][timeout=150]", i2c_master_repeat_write, i2c_slave_repeat_read);
 
+#if SOC_I2C_NUM > 1
+
+static void i2c_master_write_test_more_ports(void)
+{
+    uint8_t *data_wr = (uint8_t *) malloc(DATA_LENGTH);
+    int i;
+
+    i2c_config_t conf_master = i2c_master_init();
+    TEST_ESP_OK(i2c_param_config(I2C_NUM_1, &conf_master));
+
+    TEST_ESP_OK(i2c_driver_install(I2C_NUM_1, I2C_MODE_MASTER,
+                                   I2C_MASTER_RX_BUF_DISABLE,
+                                   I2C_MASTER_TX_BUF_DISABLE, 0));
+    unity_wait_for_signal("i2c slave init finish");
+
+    unity_send_signal("master write");
+    for (i = 0; i < DATA_LENGTH / 2; i++) {
+        data_wr[i] = i;
+    }
+    i2c_master_write_slave(I2C_NUM_1, data_wr, DATA_LENGTH / 2);
+    disp_buf(data_wr, i);
+    free(data_wr);
+    unity_wait_for_signal("ready to delete");
+    TEST_ESP_OK(i2c_driver_delete(I2C_NUM_1));
+}
+
+static void i2c_slave_read_test_more_ports(void)
+{
+    uint8_t *data_rd = (uint8_t *) malloc(DATA_LENGTH);
+    int size_rd = 0;
+    int len = 0;
+
+    i2c_config_t conf_slave = i2c_slave_init();
+    TEST_ESP_OK(i2c_param_config(I2C_NUM_1, &conf_slave));
+    TEST_ESP_OK(i2c_driver_install(I2C_NUM_1, I2C_MODE_SLAVE,
+                                   I2C_SLAVE_RX_BUF_LEN,
+                                   I2C_SLAVE_TX_BUF_LEN, 0));
+    unity_send_signal("i2c slave init finish");
+
+    unity_wait_for_signal("master write");
+    while (1) {
+        len = i2c_slave_read_buffer(I2C_NUM_1, data_rd + size_rd, DATA_LENGTH, 10000 / portTICK_PERIOD_MS);
+        if (len == 0) {
+            break;
+        }
+        size_rd += len;
+    }
+    disp_buf(data_rd, size_rd);
+    for (int i = 0; i < size_rd; i++) {
+        TEST_ASSERT(data_rd[i] == i);
+    }
+    free(data_rd);
+    unity_send_signal("ready to delete");
+    TEST_ESP_OK(i2c_driver_delete(I2C_NUM_1));
+}
+
+TEST_CASE_MULTIPLE_DEVICES("I2C master write slave test, more ports", "[i2c][test_env=generic_multi_device][timeout=150]", i2c_master_write_test_more_ports, i2c_slave_read_test_more_ports);
+
+#endif
+
 static volatile bool exit_flag;
 static bool test_read_func;
 
@@ -520,14 +574,14 @@ static void test_task(void *pvParameters)
     TEST_ESP_OK(i2c_driver_install(I2C_SLAVE_NUM, I2C_MODE_SLAVE,
                                    I2C_SLAVE_RX_BUF_LEN,
                                    I2C_SLAVE_TX_BUF_LEN, 0));
-    TEST_ESP_OK(i2c_param_config( I2C_SLAVE_NUM, &conf_slave));
+    TEST_ESP_OK(i2c_param_config(I2C_SLAVE_NUM, &conf_slave));
     while (exit_flag == false) {
         if (test_read_func) {
             i2c_slave_read_buffer(I2C_SLAVE_NUM, data, DATA_LENGTH, 0);
         } else {
             i2c_slave_write_buffer(I2C_SLAVE_NUM, data, DATA_LENGTH, 0);
         }
-        vTaskDelay(10/portTICK_PERIOD_MS);
+        vTaskDelay(10 / portTICK_PERIOD_MS);
     }
 
     free(data);
@@ -591,9 +645,9 @@ TEST_CASE("I2C general API test", "[i2c]")
         .sda_io_num = I2C_MASTER_SDA_IO,
         .scl_io_num = I2C_MASTER_SCL_IO,
     };
-    TEST_ESP_OK(i2c_param_config( i2c_num, &conf_master));
+    TEST_ESP_OK(i2c_param_config(i2c_num, &conf_master));
     int time_get0, time_get1;
-    for(int i = 10; i < I2C_TEST_TIME; i++) {
+    for (int i = 10; i < I2C_TEST_TIME; i++) {
         //set period test
         TEST_ESP_OK(i2c_set_period(i2c_num, i, i));
         TEST_ESP_OK(i2c_get_period(i2c_num, &time_get0, &time_get1));
@@ -622,8 +676,8 @@ static void uart_aut_baud_det_init(int rxd_io_num)
 {
     gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[rxd_io_num], PIN_FUNC_GPIO);
     gpio_set_direction(rxd_io_num, GPIO_MODE_INPUT_OUTPUT);
-    esp_rom_gpio_connect_out_signal(rxd_io_num, I2CEXT0_SCL_OUT_IDX, 0, 0);
-    esp_rom_gpio_connect_in_signal(rxd_io_num, U1RXD_IN_IDX, 0);
+    esp_rom_gpio_connect_out_signal(rxd_io_num, i2c_periph_signal[0].scl_out_sig, 0, 0);
+    esp_rom_gpio_connect_in_signal(rxd_io_num, UART_PERIPH_SIGNAL(1, SOC_UART_RX_PIN_IDX), 0);
     periph_module_enable(PERIPH_UART1_MODULE);
     /* Reset all the bits */
     uart_ll_disable_intr_mask(&UART1, ~0);
@@ -648,11 +702,11 @@ static void i2c_scl_freq_cal(void)
     int negpulse_cnt = uart_ll_get_neg_pulse_cnt(&UART1);
     int high_period_cnt = uart_ll_get_high_pulse_cnt(&UART1);
     int low_period_cnt = uart_ll_get_low_pulse_cnt(&UART1);
-    if(edg_cnt != expt_cnt) {
+    if (edg_cnt != expt_cnt) {
         printf("\nedg_cnt != %d, test fail\n", expt_cnt);
         return;
     }
-    printf("\nDetected SCL frequency: %d Hz\n", i2c_source_clk_freq / ((pospulse_cnt + negpulse_cnt) / 2) );
+    printf("\nDetected SCL frequency: %d Hz\n", i2c_source_clk_freq / ((pospulse_cnt + negpulse_cnt) / 2));
 
     printf("\nSCL high period %.3f (us), SCL low_period %.3f (us)\n\n", (float)(i2c_cource_clk_period * high_period_cnt), (float)(i2c_cource_clk_period * low_period_cnt));
     uart_ll_set_autobaud_en(&UART1, false);
@@ -673,7 +727,7 @@ TEST_CASE("I2C SCL freq test (local test)", "[i2c][ignore]")
         .scl_io_num = I2C_MASTER_SCL_IO,
     };
     uint8_t *data = (uint8_t *)malloc(30);
-    TEST_ESP_OK(i2c_param_config( i2c_num, &conf_master));
+    TEST_ESP_OK(i2c_param_config(i2c_num, &conf_master));
     TEST_ESP_OK(i2c_driver_install(i2c_num, I2C_MODE_MASTER, 0, 0, 0));
     memset(data, 0, 0);
     uart_aut_baud_det_init(uart1_rxd_io);

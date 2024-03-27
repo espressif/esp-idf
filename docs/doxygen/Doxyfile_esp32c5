@@ -1,0 +1,16 @@
+# TODO: IDF-9197 Use beta3 in doc temprory
+INPUT += \
+        $(PROJECT_PATH)/components/soc/$(IDF_TARGET)/beta3/include/soc/soc_caps.h \
+        $(PROJECT_PATH)/components/soc/$(IDF_TARGET)/beta3/include/soc/adc_channel.h \
+        $(PROJECT_PATH)/components/soc/$(IDF_TARGET)/beta3/include/soc/clk_tree_defs.h \
+        $(PROJECT_PATH)/components/soc/$(IDF_TARGET)/beta3/include/soc/gpio_num.h \
+        $(PROJECT_PATH)/components/soc/$(IDF_TARGET)/beta3/include/soc/uart_channel.h \
+        $(PROJECT_PATH)/components/ulp/lp_core/include/lp_core_i2c.h \
+        $(PROJECT_PATH)/components/ulp/lp_core/include/lp_core_uart.h \
+        $(PROJECT_PATH)/components/ulp/lp_core/include/ulp_lp_core.h \
+        $(PROJECT_PATH)/components/ulp/lp_core/lp_core/include/ulp_lp_core_gpio.h \
+        $(PROJECT_PATH)/components/ulp/lp_core/lp_core/include/ulp_lp_core_i2c.h \
+        $(PROJECT_PATH)/components/ulp/lp_core/lp_core/include/ulp_lp_core_print.h \
+        $(PROJECT_PATH)/components/ulp/lp_core/lp_core/include/ulp_lp_core_uart.h \
+        $(PROJECT_PATH)/components/ulp/lp_core/lp_core/include/ulp_lp_core_utils.h \
+        $(PROJECT_PATH)/components/ulp/ulp_common/include/ulp_common.h \

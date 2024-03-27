@@ -123,7 +123,7 @@ When writing code, please follow the guidelines below:
 
    For practical example see :component_file:`nvs_flash/include/nvs.h`.
 
-4. You may want to go even further and skip some code like repetitive defines or enumerations. In such case, enclose the code within ``/** @cond */`` and ``/** @endcond */`` commands. Example of such implementation is provided in :component_file:`driver/gpio/include/driver/gpio.h`.
+4. You may want to go even further and skip some code like repetitive defines or enumerations. In such case, enclose the code within ``/** @cond */`` and ``/** @endcond */`` commands. Example of such implementation is provided in :component_file:`esp_driver_gpio/include/driver/gpio.h`.
 
 5. Use markdown to make your documentation even more readable. You will add headers, links, tables and more. ::
 

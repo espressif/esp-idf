@@ -205,6 +205,11 @@ menu "HCI UART(H4) Options"
         help
             UART Baudrate for HCI. Please use standard baudrate.
 
+    config BTDM_CTRL_HCI_UART_FLOW_CTRL_EN
+        bool "Enable UART flow control"
+        depends on BTDM_CTRL_HCI_MODE_UART_H4
+        default y
+
 endmenu
 
 menu "MODEM SLEEP Options"
@@ -351,7 +356,7 @@ config BTDM_SCAN_DUPL_CACHE_SIZE
     default 100
     help
         Maximum number of devices which can be recorded in scan duplicate filter.
-        When the maximum amount of device in the filter is reached, the cache will be refreshed.
+        When the maximum amount of device in the filter is reached, the oldest device will be refreshed.
 
 config BTDM_SCAN_DUPL_CACHE_REFRESH_PERIOD
     int "Duplicate scan list refresh period (seconds)"

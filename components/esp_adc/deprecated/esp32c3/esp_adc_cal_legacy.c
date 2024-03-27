@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,7 +19,6 @@
 #include "../esp_adc_cal_internal_legacy.h"
 
 const static char LOG_TAG[] = "ADC_CALI";
-
 
 /* ------------------------ Characterization Constants ---------------------- */
 
@@ -41,21 +40,21 @@ static const int coeff_a_scaling = 65536;
  * @note ADC1 and ADC2 use same coeffients
  */
 const static uint64_t adc_error_coef_atten[4][5][2] = {
-                                                        {{225966470500043, 1e15}, {7265418501948, 1e16}, {109410402681, 1e16}, {0, 0}, {0, 0}},                         //atten0
-                                                        {{4229623392600516, 1e16}, {731527490903, 1e16}, {88166562521, 1e16}, {0, 0}, {0, 0}},                          //atten1
-                                                        {{1017859239236435, 1e15}, {97159265299153, 1e16}, {149794028038, 1e16}, {0, 0}, {0, 0}},                       //atten2
-                                                        {{14912262772850453, 1e16}, {228549975564099, 1e16}, {356391935717, 1e16}, {179964582, 1e16}, {42046, 1e16}}    //atten3
-                                                       };
+    {{225966470500043, 1e15}, {7265418501948, 1e16}, {109410402681, 1e16}, {0, 0}, {0, 0}},                         //atten0
+    {{4229623392600516, 1e16}, {731527490903, 1e16}, {88166562521, 1e16}, {0, 0}, {0, 0}},                          //atten1
+    {{1017859239236435, 1e15}, {97159265299153, 1e16}, {149794028038, 1e16}, {0, 0}, {0, 0}},                       //atten2
+    {{14912262772850453, 1e16}, {228549975564099, 1e16}, {356391935717, 1e16}, {179964582, 1e16}, {42046, 1e16}}    //atten3
+};
 /**
  * Term sign
  * @note ADC1 and ADC2 use same coeffients
  */
 const static int32_t adc_error_sign[4][5] = {
-                                                {-1, -1, 1,  0,  0}, //atten0
-                                                { 1, -1, 1,  0,  0}, //atten1
-                                                {-1, -1, 1,  0,  0}, //atten2
-                                                {-1, -1, 1, -1,  1}  //atten3
-                                             };
+    {-1, -1, 1,  0,  0}, //atten0
+    { 1, -1, 1,  0,  0}, //atten1
+    {-1, -1, 1,  0,  0}, //atten2
+    {-1, -1, 1, -1,  1}  //atten3
+};
 
 /* -------------------- Characterization Helper Data Types ------------------ */
 typedef struct {
@@ -122,10 +121,10 @@ esp_err_t esp_adc_cal_check_efuse(esp_adc_cal_value_t source)
 }
 
 esp_adc_cal_value_t esp_adc_cal_characterize(adc_unit_t adc_num,
-        adc_atten_t atten,
-        adc_bits_width_t bit_width,
-        uint32_t default_vref,
-        esp_adc_cal_characteristics_t *chars)
+                                             adc_atten_t atten,
+                                             adc_bits_width_t bit_width,
+                                             uint32_t default_vref,
+                                             esp_adc_cal_characteristics_t *chars)
 {
     esp_err_t ret;
     adc_calib_parsed_info_t efuse_parsed_data = {0};

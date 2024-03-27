@@ -1,6 +1,12 @@
 /*
- * FreeRTOS SMP Kernel V202110.00
- * Copyright (C) 2020 Amazon.com, Inc. or its affiliates.  All Rights Reserved.
+ * FreeRTOS Kernel V11.0.1
+ * Copyright (C) 2021 Amazon.com, Inc. or its affiliates.  All Rights Reserved.
+ *
+ * SPDX-FileCopyrightText: 2021 Amazon.com, Inc. or its affiliates
+ *
+ * SPDX-License-Identifier: MIT
+ *
+ * SPDX-FileContributor: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
  * this software and associated documentation files (the "Software"), to deal in
@@ -32,10 +38,8 @@
     #error "include FreeRTOS.h must appear in source files before include timers.h"
 #endif
 
-/*lint -save -e537 This headers are only multiply included if the application code
- * happens to also be including task.h. */
 #include "task.h"
-/*lint -restore */
+
 
 /* *INDENT-OFF* */
 #ifdef __cplusplus
@@ -86,13 +90,13 @@ typedef void (* TimerCallbackFunction_t)( TimerHandle_t xTimer );
  * Defines the prototype to which functions used with the
  * xTimerPendFunctionCallFromISR() function must conform.
  */
-typedef void (* PendedFunction_t)( void *,
-                                   uint32_t );
+typedef void (* PendedFunction_t)( void * arg1,
+                                   uint32_t arg2 );
 
 /**
  * TimerHandle_t xTimerCreate(  const char * const pcTimerName,
  *                              TickType_t xTimerPeriodInTicks,
- *                              UBaseType_t uxAutoReload,
+ *                              BaseType_t xAutoReload,
  *                              void * pvTimerID,
  *                              TimerCallbackFunction_t pxCallbackFunction );
  *
@@ -125,9 +129,9 @@ typedef void (* PendedFunction_t)( void *,
  * to ( 500 / portTICK_PERIOD_MS ) provided configTICK_RATE_HZ is less than or
  * equal to 1000.  Time timer period must be greater than 0.
  *
- * @param uxAutoReload If uxAutoReload is set to pdTRUE then the timer will
+ * @param xAutoReload If xAutoReload is set to pdTRUE then the timer will
  * expire repeatedly with a frequency set by the xTimerPeriodInTicks parameter.
- * If uxAutoReload is set to pdFALSE then the timer will be a one-shot timer and
+ * If xAutoReload is set to pdFALSE then the timer will be a one-shot timer and
  * enter the dormant state after it expires.
  *
  * @param pvTimerID An identifier that is assigned to the timer being created.
@@ -190,11 +194,11 @@ typedef void (* PendedFunction_t)( void *,
  *     // the scheduler starts.
  *     for( x = 0; x < NUM_TIMERS; x++ )
  *     {
- *         xTimers[ x ] = xTimerCreate(    "Timer",       // Just a text name, not used by the kernel.
- *                                         ( 100 * x ),   // The timer period in ticks.
- *                                         pdTRUE,        // The timers will auto-reload themselves when they expire.
- *                                         ( void * ) x,  // Assign each timer a unique id equal to its array index.
- *                                         vTimerCallback // Each timer calls the same callback when it expires.
+ *         xTimers[ x ] = xTimerCreate(    "Timer",             // Just a text name, not used by the kernel.
+ *                                         ( 100 * ( x + 1 ) ), // The timer period in ticks.
+ *                                         pdTRUE,              // The timers will auto-reload themselves when they expire.
+ *                                         ( void * ) x,        // Assign each timer a unique id equal to its array index.
+ *                                         vTimerCallback       // Each timer calls the same callback when it expires.
  *                                     );
  *
  *         if( xTimers[ x ] == NULL )
@@ -227,9 +231,9 @@ typedef void (* PendedFunction_t)( void *,
  * @endverbatim
  */
 #if ( configSUPPORT_DYNAMIC_ALLOCATION == 1 )
-    TimerHandle_t xTimerCreate( const char * const pcTimerName, /*lint !e971 Unqualified char types are allowed for strings and single characters only. */
+    TimerHandle_t xTimerCreate( const char * const pcTimerName,
                                 const TickType_t xTimerPeriodInTicks,
-                                const UBaseType_t uxAutoReload,
+                                const BaseType_t xAutoReload,
                                 void * const pvTimerID,
                                 TimerCallbackFunction_t pxCallbackFunction ) PRIVILEGED_FUNCTION;
 #endif
@@ -237,7 +241,7 @@ typedef void (* PendedFunction_t)( void *,
 /**
  * TimerHandle_t xTimerCreateStatic(const char * const pcTimerName,
  *                                  TickType_t xTimerPeriodInTicks,
- *                                  UBaseType_t uxAutoReload,
+ *                                  BaseType_t xAutoReload,
  *                                  void * pvTimerID,
  *                                  TimerCallbackFunction_t pxCallbackFunction,
  *                                  StaticTimer_t *pxTimerBuffer );
@@ -271,9 +275,9 @@ typedef void (* PendedFunction_t)( void *,
  * to ( 500 / portTICK_PERIOD_MS ) provided configTICK_RATE_HZ is less than or
  * equal to 1000.  The timer period must be greater than 0.
  *
- * @param uxAutoReload If uxAutoReload is set to pdTRUE then the timer will
+ * @param xAutoReload If xAutoReload is set to pdTRUE then the timer will
  * expire repeatedly with a frequency set by the xTimerPeriodInTicks parameter.
- * If uxAutoReload is set to pdFALSE then the timer will be a one-shot timer and
+ * If xAutoReload is set to pdFALSE then the timer will be a one-shot timer and
  * enter the dormant state after it expires.
  *
  * @param pvTimerID An identifier that is assigned to the timer being created.
@@ -357,9 +361,9 @@ typedef void (* PendedFunction_t)( void *,
  * @endverbatim
  */
 #if ( configSUPPORT_STATIC_ALLOCATION == 1 )
-    TimerHandle_t xTimerCreateStatic( const char * const pcTimerName, /*lint !e971 Unqualified char types are allowed for strings and single characters only. */
+    TimerHandle_t xTimerCreateStatic( const char * const pcTimerName,
                                       const TickType_t xTimerPeriodInTicks,
-                                      const UBaseType_t uxAutoReload,
+                                      const BaseType_t xAutoReload,
                                       void * const pvTimerID,
                                       TimerCallbackFunction_t pxCallbackFunction,
                                       StaticTimer_t * pxTimerBuffer ) PRIVILEGED_FUNCTION;
@@ -1196,10 +1200,12 @@ TaskHandle_t xTimerGetTimerDaemonTaskHandle( void ) PRIVILEGED_FUNCTION;
  *  }
  * @endverbatim
  */
-BaseType_t xTimerPendFunctionCallFromISR( PendedFunction_t xFunctionToPend,
-                                          void * pvParameter1,
-                                          uint32_t ulParameter2,
-                                          BaseType_t * pxHigherPriorityTaskWoken ) PRIVILEGED_FUNCTION;
+#if ( INCLUDE_xTimerPendFunctionCall == 1 )
+    BaseType_t xTimerPendFunctionCallFromISR( PendedFunction_t xFunctionToPend,
+                                              void * pvParameter1,
+                                              uint32_t ulParameter2,
+                                              BaseType_t * pxHigherPriorityTaskWoken ) PRIVILEGED_FUNCTION;
+#endif
 
 /**
  * BaseType_t xTimerPendFunctionCall( PendedFunction_t xFunctionToPend,
@@ -1233,10 +1239,12 @@ BaseType_t xTimerPendFunctionCallFromISR( PendedFunction_t xFunctionToPend,
  * timer daemon task, otherwise pdFALSE is returned.
  *
  */
-BaseType_t xTimerPendFunctionCall( PendedFunction_t xFunctionToPend,
-                                   void * pvParameter1,
-                                   uint32_t ulParameter2,
-                                   TickType_t xTicksToWait ) PRIVILEGED_FUNCTION;
+#if ( INCLUDE_xTimerPendFunctionCall == 1 )
+    BaseType_t xTimerPendFunctionCall( PendedFunction_t xFunctionToPend,
+                                       void * pvParameter1,
+                                       uint32_t ulParameter2,
+                                       TickType_t xTicksToWait ) PRIVILEGED_FUNCTION;
+#endif
 
 /**
  * const char * const pcTimerGetName( TimerHandle_t xTimer );
@@ -1247,10 +1255,10 @@ BaseType_t xTimerPendFunctionCall( PendedFunction_t xFunctionToPend,
  *
  * @return The name assigned to the timer specified by the xTimer parameter.
  */
-const char * pcTimerGetName( TimerHandle_t xTimer ) PRIVILEGED_FUNCTION; /*lint !e971 Unqualified char types are allowed for strings and single characters only. */
+const char * pcTimerGetName( TimerHandle_t xTimer ) PRIVILEGED_FUNCTION;
 
 /**
- * void vTimerSetReloadMode( TimerHandle_t xTimer, const UBaseType_t uxAutoReload );
+ * void vTimerSetReloadMode( TimerHandle_t xTimer, const BaseType_t xAutoReload );
  *
  * Updates a timer to be either an auto-reload timer, in which case the timer
  * automatically resets itself each time it expires, or a one-shot timer, in
@@ -1258,14 +1266,28 @@ const char * pcTimerGetName( TimerHandle_t xTimer ) PRIVILEGED_FUNCTION; /*lint 
  *
  * @param xTimer The handle of the timer being updated.
  *
- * @param uxAutoReload If uxAutoReload is set to pdTRUE then the timer will
+ * @param xAutoReload If xAutoReload is set to pdTRUE then the timer will
  * expire repeatedly with a frequency set by the timer's period (see the
  * xTimerPeriodInTicks parameter of the xTimerCreate() API function).  If
- * uxAutoReload is set to pdFALSE then the timer will be a one-shot timer and
+ * xAutoReload is set to pdFALSE then the timer will be a one-shot timer and
  * enter the dormant state after it expires.
  */
 void vTimerSetReloadMode( TimerHandle_t xTimer,
-                          const UBaseType_t uxAutoReload ) PRIVILEGED_FUNCTION;
+                          const BaseType_t xAutoReload ) PRIVILEGED_FUNCTION;
+
+/**
+ * BaseType_t xTimerGetReloadMode( TimerHandle_t xTimer );
+ *
+ * Queries a timer to determine if it is an auto-reload timer, in which case the timer
+ * automatically resets itself each time it expires, or a one-shot timer, in
+ * which case the timer will only expire once unless it is manually restarted.
+ *
+ * @param xTimer The handle of the timer being queried.
+ *
+ * @return If the timer is an auto-reload timer then pdTRUE is returned, otherwise
+ * pdFALSE is returned.
+ */
+BaseType_t xTimerGetReloadMode( TimerHandle_t xTimer ) PRIVILEGED_FUNCTION;
 
 /**
  * UBaseType_t uxTimerGetReloadMode( TimerHandle_t xTimer );
@@ -1317,7 +1339,7 @@ TickType_t xTimerGetExpiryTime( TimerHandle_t xTimer ) PRIVILEGED_FUNCTION;
  *
  * @param xTimer The timer for which to retrieve the buffer.
  *
- * @param ppxTimerBuffer Used to return a pointer to the timers's data
+ * @param ppxTaskBuffer Used to return a pointer to the timers's data
  * structure buffer.
  *
  * @return pdTRUE if the buffer was retrieved, pdFALSE otherwise.
@@ -1326,6 +1348,7 @@ TickType_t xTimerGetExpiryTime( TimerHandle_t xTimer ) PRIVILEGED_FUNCTION;
     BaseType_t xTimerGetStaticBuffer( TimerHandle_t xTimer,
                                       StaticTimer_t ** ppxTimerBuffer ) PRIVILEGED_FUNCTION;
 #endif /* configSUPPORT_STATIC_ALLOCATION */
+
 /*
  * Functions beyond this part are not part of the public API and are intended
  * for use by the kernel only.
@@ -1354,7 +1377,6 @@ BaseType_t xTimerGenericCommandFromISR( TimerHandle_t xTimer,
     ( ( xCommandID ) < tmrFIRST_FROM_ISR_COMMAND ?                                                                  \
       xTimerGenericCommandFromTask( xTimer, xCommandID, xOptionalValue, pxHigherPriorityTaskWoken, xTicksToWait ) : \
       xTimerGenericCommandFromISR( xTimer, xCommandID, xOptionalValue, pxHigherPriorityTaskWoken, xTicksToWait ) )
-
 #if ( configUSE_TRACE_FACILITY == 1 )
     void vTimerSetTimerNumber( TimerHandle_t xTimer,
                                UBaseType_t uxTimerNumber ) PRIVILEGED_FUNCTION;
@@ -1363,20 +1385,39 @@ BaseType_t xTimerGenericCommandFromISR( TimerHandle_t xTimer,
 
 #if ( configSUPPORT_STATIC_ALLOCATION == 1 )
 
-    /**
-     * task.h
-     * <pre>void vApplicationGetTimerTaskMemory( StaticTask_t ** ppxTimerTaskTCBBuffer, StackType_t ** ppxTimerTaskStackBuffer, uint32_t *pulTimerTaskStackSize ) </pre>
-     *
-     * This function is used to provide a statically allocated block of memory to FreeRTOS to hold the Timer Task TCB.  This function is required when
-     * configSUPPORT_STATIC_ALLOCATION is set.  For more information see this URI: https://www.FreeRTOS.org/a00110.html#configSUPPORT_STATIC_ALLOCATION
-     *
-     * @param ppxTimerTaskTCBBuffer   A handle to a statically allocated TCB buffer
-     * @param ppxTimerTaskStackBuffer A handle to a statically allocated Stack buffer for thie idle task
-     * @param pulTimerTaskStackSize   A pointer to the number of elements that will fit in the allocated stack buffer
-     */
+/**
+ * task.h
+ * @code{c}
+ * void vApplicationGetTimerTaskMemory( StaticTask_t ** ppxTimerTaskTCBBuffer, StackType_t ** ppxTimerTaskStackBuffer, uint32_t *pulTimerTaskStackSize )
+ * @endcode
+ *
+ * This function is used to provide a statically allocated block of memory to FreeRTOS to hold the Timer Task TCB.  This function is required when
+ * configSUPPORT_STATIC_ALLOCATION is set.  For more information see this URI: https://www.FreeRTOS.org/a00110.html#configSUPPORT_STATIC_ALLOCATION
+ *
+ * @param ppxTimerTaskTCBBuffer   A handle to a statically allocated TCB buffer
+ * @param ppxTimerTaskStackBuffer A handle to a statically allocated Stack buffer for the idle task
+ * @param pulTimerTaskStackSize   A pointer to the number of elements that will fit in the allocated stack buffer
+ */
     void vApplicationGetTimerTaskMemory( StaticTask_t ** ppxTimerTaskTCBBuffer,
-                                          StackType_t ** ppxTimerTaskStackBuffer,
-                                              uint32_t * pulTimerTaskStackSize );
+                                         StackType_t ** ppxTimerTaskStackBuffer,
+                                         uint32_t * pulTimerTaskStackSize );
+
+#endif
+
+#if ( configUSE_DAEMON_TASK_STARTUP_HOOK != 0 )
+
+/**
+ *  timers.h
+ * @code{c}
+ * void vApplicationDaemonTaskStartupHook( void );
+ * @endcode
+ *
+ * This hook function is called form the timer task once when the task starts running.
+ */
+    /* MISRA Ref 8.6.1 [External linkage] */
+    /* More details at: https://github.com/FreeRTOS/FreeRTOS-Kernel/blob/main/MISRA.md#rule-86 */
+    /* coverity[misra_c_2012_rule_8_6_violation] */
+    void vApplicationDaemonTaskStartupHook( void );
 
 #endif
 

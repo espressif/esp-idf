@@ -1,0 +1,22 @@
+menu "ESP-Driver:I2S Configurations"
+    depends on SOC_I2S_SUPPORTED
+    config I2S_ISR_IRAM_SAFE
+        bool "I2S ISR IRAM-Safe"
+        default n
+        help
+            Ensure the I2S interrupt is IRAM-Safe by allowing the interrupt handler to be
+            executable when the cache is disabled (e.g. SPI Flash write).
+
+    config I2S_SUPPRESS_DEPRECATE_WARN
+        bool "Suppress legacy driver deprecated warning"
+        default n
+        help
+            Enable this option will suppress the deprecation warnings of using APIs in legacy I2S driver.
+
+    config I2S_ENABLE_DEBUG_LOG
+        bool "Enable I2S debug log"
+        default n
+        help
+            Wether to enable the debug log message for I2S driver.
+            Note that, this option only controls the I2S driver log, will not affect other drivers.
+endmenu # I2S Configuration

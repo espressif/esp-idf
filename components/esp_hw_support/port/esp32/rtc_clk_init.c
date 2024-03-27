@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -23,7 +23,7 @@
  */
 #define XTAL_FREQ_EST_CYCLES            10
 
-static rtc_xtal_freq_t rtc_clk_xtal_freq_estimate(void);
+static soc_xtal_freq_t rtc_clk_xtal_freq_estimate(void);
 extern void rtc_clk_cpu_freq_to_xtal(int freq, int div);
 
 static const char* TAG = "rtc_clk_init";
@@ -70,34 +70,34 @@ void rtc_clk_init(rtc_clk_config_t cfg)
     regi2c_ctrl_ll_i2c_apll_enable(); // TODO: This should be moved to apll_set_config
 
     /* Estimate XTAL frequency */
-    rtc_xtal_freq_t configured_xtal_freq = cfg.xtal_freq;
-    rtc_xtal_freq_t stored_xtal_freq = rtc_clk_xtal_freq_get(); // read the xtal freq value from RTC storage register
-    rtc_xtal_freq_t xtal_freq = configured_xtal_freq;
-    if (configured_xtal_freq == RTC_XTAL_FREQ_AUTO) {
-        if (stored_xtal_freq != RTC_XTAL_FREQ_AUTO) {
+    soc_xtal_freq_t configured_xtal_freq = cfg.xtal_freq;
+    soc_xtal_freq_t stored_xtal_freq = rtc_clk_xtal_freq_get(); // read the xtal freq value from RTC storage register
+    soc_xtal_freq_t xtal_freq = configured_xtal_freq;
+    if (configured_xtal_freq == SOC_XTAL_FREQ_AUTO) {
+        if (stored_xtal_freq != SOC_XTAL_FREQ_AUTO) {
             /* XTAL frequency has already been set, use existing value */
             xtal_freq = stored_xtal_freq;
         } else {
             /* Not set yet, estimate XTAL frequency based on RTC_FAST_CLK */
             xtal_freq = rtc_clk_xtal_freq_estimate();
-            if (xtal_freq == RTC_XTAL_FREQ_AUTO) {
+            if (xtal_freq == SOC_XTAL_FREQ_AUTO) {
                 ESP_HW_LOGW(TAG, "Can't estimate XTAL frequency, assuming 26MHz");
-                xtal_freq = RTC_XTAL_FREQ_26M;
+                xtal_freq = SOC_XTAL_FREQ_26M;
             }
         }
-    } else if (stored_xtal_freq == RTC_XTAL_FREQ_AUTO) {
+    } else if (stored_xtal_freq == SOC_XTAL_FREQ_AUTO) {
         /* Exact frequency was set in sdkconfig, but still warn if autodetected
          * frequency is different. If autodetection failed, worst case we get a
          * bit of garbage output.
          */
 
-        rtc_xtal_freq_t est_xtal_freq = rtc_clk_xtal_freq_estimate();
+        soc_xtal_freq_t est_xtal_freq = rtc_clk_xtal_freq_estimate();
         if (est_xtal_freq != configured_xtal_freq) {
             ESP_HW_LOGW(TAG, "Possibly invalid CONFIG_XTAL_FREQ setting (%dMHz). Detected %d MHz.",
                     configured_xtal_freq, est_xtal_freq);
         }
     }
-    esp_rom_uart_tx_wait_idle(0);
+    esp_rom_output_tx_wait_idle(0);
     rtc_clk_xtal_freq_update(xtal_freq);
     rtc_clk_apb_freq_update(xtal_freq * MHZ);
 
@@ -137,12 +137,12 @@ void rtc_clk_init(rtc_clk_config_t cfg)
     rtc_clk_slow_src_set(cfg.slow_clk_src);
 }
 
-static rtc_xtal_freq_t rtc_clk_xtal_freq_estimate(void)
+static soc_xtal_freq_t rtc_clk_xtal_freq_estimate(void)
 {
 #if CONFIG_IDF_ENV_FPGA
-    return RTC_XTAL_FREQ_40M;
+    return SOC_XTAL_FREQ_40M;
 #endif // CONFIG_IDF_ENV_FPGA
-    rtc_xtal_freq_t xtal_freq;
+    soc_xtal_freq_t xtal_freq;
     /* Enable 8M/256 clock if needed */
     const bool clk_8m_enabled = rtc_clk_8m_enabled();
     const bool clk_8md256_enabled = rtc_clk_8md256_enabled();
@@ -160,22 +160,22 @@ static rtc_xtal_freq_t rtc_clk_xtal_freq_estimate(void)
      */
     switch (freq_mhz) {
     case 21 ... 31:
-        xtal_freq = RTC_XTAL_FREQ_26M;
+        xtal_freq = SOC_XTAL_FREQ_26M;
         break;
     case 32 ... 33:
         ESP_HW_LOGW(TAG, "Potentially bogus XTAL frequency: %"PRIu32" MHz, guessing 26 MHz", freq_mhz);
-        xtal_freq = RTC_XTAL_FREQ_26M;
+        xtal_freq = SOC_XTAL_FREQ_26M;
         break;
     case 34 ... 35:
         ESP_HW_LOGW(TAG, "Potentially bogus XTAL frequency: %"PRIu32" MHz, guessing 40 MHz", freq_mhz);
-        xtal_freq = RTC_XTAL_FREQ_40M;
+        xtal_freq = SOC_XTAL_FREQ_40M;
         break;
     case 36 ... 45:
-        xtal_freq = RTC_XTAL_FREQ_40M;
+        xtal_freq = SOC_XTAL_FREQ_40M;
         break;
     default:
         ESP_HW_LOGW(TAG, "Bogus XTAL frequency: %"PRIu32" MHz", freq_mhz);
-        xtal_freq = RTC_XTAL_FREQ_AUTO;
+        xtal_freq = SOC_XTAL_FREQ_AUTO;
         break;
     }
     /* Restore 8M and 8md256 clocks to original state */

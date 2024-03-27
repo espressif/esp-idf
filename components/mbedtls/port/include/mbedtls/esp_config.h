@@ -56,8 +56,15 @@
  */
 #ifdef CONFIG_MBEDTLS_HAVE_TIME
 #define MBEDTLS_HAVE_TIME
+/**
+ * \def MBEDTLS_PLATFORM_MS_TIME_ALT
+ *
+ * Define platform specific function to get time since bootup in milliseconds.
+ */
+#define MBEDTLS_PLATFORM_MS_TIME_ALT
 #else
 #undef MBEDTLS_HAVE_TIME
+#undef MBEDTLS_PLATFORM_MS_TIME_ALT
 #endif
 
 /**
@@ -148,6 +155,12 @@
 
 #ifdef CONFIG_MBEDTLS_HARDWARE_AES
 #define MBEDTLS_GCM_ALT
+#ifdef CONFIG_MBEDTLS_GCM_SUPPORT_NON_AES_CIPHER
+    /* Prefer hardware and fallback to software */
+    #define MBEDTLS_GCM_NON_AES_CIPHER_SOFT_FALLBACK
+#else
+    #undef MBEDTLS_GCM_NON_AES_CIPHER_SOFT_FALLBACK
+#endif
 #endif
 
 /* MBEDTLS_SHAxx_ALT to enable hardware SHA support
@@ -225,6 +238,7 @@
 #undef MBEDTLS_ECP_VERIFY_ALT_SOFT_FALLBACK
 #endif
 
+#ifndef CONFIG_IDF_TARGET_LINUX
 /**
  * \def MBEDTLS_ENTROPY_HARDWARE_ALT
  *
@@ -237,6 +251,7 @@
  * Uncomment to use your own hardware entropy collector.
  */
 #define MBEDTLS_ENTROPY_HARDWARE_ALT
+#endif // !CONFIG_IDF_TARGET_LINUX
 
 /**
  * \def MBEDTLS_AES_ROM_TABLES
@@ -859,6 +874,7 @@
  */
 #define MBEDTLS_FS_IO
 
+#ifndef CONFIG_IDF_TARGET_LINUX
 /**
  * \def MBEDTLS_NO_PLATFORM_ENTROPY
  *
@@ -869,6 +885,7 @@
  * Uncomment this macro to disable the built-in platform entropy functions.
  */
 #define MBEDTLS_NO_PLATFORM_ENTROPY
+#endif // !CONFIG_IDF_TARGET_LINUX
 
 /**
  * \def MBEDTLS_PK_RSA_ALT_SUPPORT
@@ -2730,25 +2747,6 @@
  * This module is required for X.509 certificate creation.
  */
 #define MBEDTLS_X509_CRT_WRITE_C
-
-/**
- * \def MBEDTLS_X509_ALLOW_UNSUPPORTED_CRITICAL_EXTENSION
- *
-  * Alow the X509 parser to not break-off when parsing an X509 certificate
- * and encountering an unknown critical extension.
- *
- * Module:  library/x509_crt.c
- *
- * Requires: MBEDTLS_X509_CRT_PARSE_C
- *
- * This module is supports loading of certificates with extensions that
- * may not be supported by mbedtls.
- */
-#ifdef CONFIG_MBEDTLS_ALLOW_UNSUPPORTED_CRITICAL_EXT
-#define MBEDTLS_X509_ALLOW_UNSUPPORTED_CRITICAL_EXTENSION
-#else
-#undef MBEDTLS_X509_ALLOW_UNSUPPORTED_CRITICAL_EXTENSION
-#endif
 
 /**
  * \def MBEDTLS_X509_TRUSTED_CERTIFICATE_CALLBACK

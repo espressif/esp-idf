@@ -8,6 +8,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include "hal/hal_utils.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -43,9 +44,10 @@ void lcd_hal_init(lcd_hal_context_t *hal, int id);
  * @param src_freq_hz LCD source clock frequency in Hz
  * @param expect_pclk_freq_hz Expected LCD PCLK frequency in Hz
  * @param lcd_clk_flags Extra flags to control LCD PCLK clock calculation, supported flags are prefixed with LCD_HAL_PCLK_FLAG_
+ * @param lcd_clk_div Returned LCD clock divider parameter
  * @return Actual LCD PCLK frequency in Hz
  */
-uint32_t lcd_hal_cal_pclk_freq(lcd_hal_context_t *hal, uint32_t src_freq_hz, uint32_t expect_pclk_freq_hz, int lcd_clk_flags);
+uint32_t lcd_hal_cal_pclk_freq(lcd_hal_context_t *hal, uint32_t src_freq_hz, uint32_t expect_pclk_freq_hz, int lcd_clk_flags, hal_utils_clk_div_t* lcd_clk_div);
 
 #ifdef __cplusplus
 }

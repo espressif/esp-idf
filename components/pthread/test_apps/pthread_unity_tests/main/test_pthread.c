@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -12,6 +12,33 @@
 #include <pthread.h>
 
 #include "unity.h"
+
+TEST_CASE("esp_pthread_get_default_config creates correct stack memory capabilities", "[set_cfg]")
+{
+    esp_pthread_cfg_t default_config = esp_pthread_get_default_config();
+
+    // The default must always be internal, 8-bit accessible RAM
+    TEST_ASSERT_EQUAL_HEX(MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL, default_config.stack_alloc_caps);
+}
+
+TEST_CASE("wrong heap caps are rejected", "[set_cfg]")
+{
+    esp_pthread_cfg_t default_config = esp_pthread_get_default_config();
+
+    default_config.stack_alloc_caps = MALLOC_CAP_32BIT;
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_pthread_set_cfg(&default_config));
+
+    default_config.stack_alloc_caps = MALLOC_CAP_32BIT | MALLOC_CAP_INTERNAL;
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_pthread_set_cfg(&default_config));
+}
+
+TEST_CASE("correct memory is accepted", "[set_cfg]")
+{
+    esp_pthread_cfg_t default_config = esp_pthread_get_default_config();
+
+    default_config.stack_alloc_caps = MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL;
+    TEST_ASSERT_EQUAL(ESP_OK, esp_pthread_set_cfg(&default_config));
+}
 
 static void *compute_square(void *arg)
 {
@@ -205,7 +232,7 @@ static void test_mutex_lock_unlock(int mutex_type)
 
         res = pthread_mutex_lock(&mutex);
 
-        if(mutex_type == PTHREAD_MUTEX_ERRORCHECK) {
+        if (mutex_type == PTHREAD_MUTEX_ERRORCHECK) {
             TEST_ASSERT_EQUAL_INT(EDEADLK, res);
         } else {
             TEST_ASSERT_EQUAL_INT(0, res);

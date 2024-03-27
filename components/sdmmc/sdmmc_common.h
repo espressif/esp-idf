@@ -21,11 +21,12 @@
 #include "esp_heap_caps.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "driver/sdmmc_defs.h"
-#include "driver/sdmmc_types.h"
+#include "sd_protocol_defs.h"
+#include "sd_protocol_types.h"
 #include "sdmmc_cmd.h"
 #include "sys/param.h"
 #include "soc/soc_memory_layout.h"
+#include "esp_dma_utils.h"
 
 #define SDMMC_GO_IDLE_DELAY_MS              20
 #define SDMMC_IO_SEND_OP_COND_DELAY_MS      10
@@ -47,7 +48,7 @@
 /* Maximum retry/error count for SEND_OP_COND (CMD1).
  * These are somewhat arbitrary, values originate from OpenBSD driver.
  */
-#define SDMMC_SEND_OP_COND_MAX_RETRIES  100
+#define SDMMC_SEND_OP_COND_MAX_RETRIES  300
 #define SDMMC_SEND_OP_COND_MAX_ERRORS   3
 
 /* supported arguments for erase command 38 */
@@ -81,9 +82,9 @@ esp_err_t sdmmc_send_cmd_crc_on_off(sdmmc_card_t* card, bool crc_enable);
 esp_err_t sdmmc_enable_hs_mode(sdmmc_card_t* card);
 esp_err_t sdmmc_enable_hs_mode_and_check(sdmmc_card_t* card);
 esp_err_t sdmmc_write_sectors_dma(sdmmc_card_t* card, const void* src,
-        size_t start_block, size_t block_count);
+        size_t start_block, size_t block_count, size_t buffer_len);
 esp_err_t sdmmc_read_sectors_dma(sdmmc_card_t* card, void* dst,
-        size_t start_block, size_t block_count);
+        size_t start_block, size_t block_count, size_t buffer_len);
 uint32_t sdmmc_get_erase_timeout_ms(const sdmmc_card_t* card, int arg, size_t erase_size_kb);
 
 /* SD specific */
@@ -98,14 +99,15 @@ uint32_t sdmmc_sd_get_erase_timeout_ms(const sdmmc_card_t* card, int arg, size_t
 esp_err_t sdmmc_io_reset(sdmmc_card_t* card);
 esp_err_t sdmmc_io_enable_hs_mode(sdmmc_card_t* card);
 esp_err_t sdmmc_io_send_op_cond(sdmmc_card_t* card, uint32_t ocr, uint32_t *ocrp);
-esp_err_t sdmmc_io_rw_direct(sdmmc_card_t* card, int function,
-        uint32_t reg, uint32_t arg, uint8_t *byte);
-esp_err_t sdmmc_io_rw_extended(sdmmc_card_t* card, int function,
-        uint32_t reg, int arg, void *data, size_t size);
-
+esp_err_t sdmmc_io_rw_direct(sdmmc_card_t* card, int function, uint32_t reg, uint32_t arg, uint8_t *byte);
+// Requirement to `data` and `size` when using SDMMC host:
+// Buffer pointer (`data`) needs to be aligned to 4 byte boundary, and also cache line size if the buffer is behind the
+// cache, unless `SDMMC_HOST_FLAG_ALLOC_ALIGNED_BUF` flag is set when calling `sdmmc_card_init`. This flag is mandory
+// when the buffer is behind the cache in byte mode.
+esp_err_t sdmmc_io_rw_extended(sdmmc_card_t* card, int function, uint32_t reg, int arg, void *data, size_t size);
 
 /* MMC specific */
-esp_err_t sdmmc_mmc_send_ext_csd_data(sdmmc_card_t* card, void *out_data, size_t datalen);
+esp_err_t sdmmc_mmc_send_ext_csd_data(sdmmc_card_t* card, void *out_data, size_t datalen, size_t buffer_len);
 esp_err_t sdmmc_mmc_switch(sdmmc_card_t* card, uint8_t set, uint8_t index, uint8_t value);
 esp_err_t sdmmc_mmc_decode_cid(int mmc_ver, sdmmc_response_t resp, sdmmc_cid_t* out_cid);
 esp_err_t sdmmc_mmc_decode_csd(sdmmc_response_t response, sdmmc_csd_t* out_csd);
@@ -153,3 +155,7 @@ static inline uint32_t get_host_ocr(float voltage)
 void sdmmc_flip_byte_order(uint32_t* response, size_t size);
 
 esp_err_t sdmmc_fix_host_flags(sdmmc_card_t* card);
+
+//Currently only SDIO support using this buffer. And only 512 block size is supported.
+#define SDMMC_IO_BLOCK_SIZE     512
+esp_err_t sdmmc_allocate_aligned_buf(sdmmc_card_t* card);

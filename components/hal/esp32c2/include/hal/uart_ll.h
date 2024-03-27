@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,10 +11,13 @@
 
 #include <stdlib.h>
 #include "hal/uart_types.h"
+#include "hal/misc.h"
 #include "soc/uart_reg.h"
 #include "soc/uart_struct.h"
 #include "soc/clk_tree_defs.h"
-#include "hal/misc.h"
+#include "soc/system_struct.h"
+#include "soc/system_reg.h"
+#include "soc/dport_access.h"
 #include "esp_attr.h"
 
 #ifdef __cplusplus
@@ -26,7 +29,7 @@ extern "C" {
 // Get UART hardware instance with giving uart num
 #define UART_LL_GET_HW(num) (((num) == UART_NUM_0) ? (&UART0) : (&UART1))
 
-#define UART_LL_MIN_WAKEUP_THRESH (2)
+#define UART_LL_MIN_WAKEUP_THRESH (3)
 #define UART_LL_INTR_MASK         (0x7ffff) //All interrupt mask
 
 #define UART_LL_FSM_IDLE                       (0x0)
@@ -57,17 +60,66 @@ typedef enum {
 } uart_intr_t;
 
 /**
- * @brief  Configure the UART core reset.
+ * @brief Check if UART is enabled or disabled.
  *
- * @param  hw Beginning address of the peripheral registers.
- * @param  core_rst_en True to enable the core reset, otherwise set it false.
+ * @param uart_num UART port number, the max port number is (UART_NUM_MAX -1).
  *
- * @return None.
+ * @return true: enabled; false: disabled
  */
-FORCE_INLINE_ATTR void uart_ll_set_reset_core(uart_dev_t *hw, bool core_rst_en)
+FORCE_INLINE_ATTR bool uart_ll_is_enabled(uint32_t uart_num)
 {
-    hw->clk_conf.rst_core = core_rst_en;
+    uint32_t uart_rst_bit = ((uart_num == 0) ? SYSTEM_UART_RST :
+                            (uart_num == 1) ? SYSTEM_UART1_RST : 0);
+    uint32_t uart_en_bit  = ((uart_num == 0) ? SYSTEM_UART_CLK_EN :
+                            (uart_num == 1) ? SYSTEM_UART1_CLK_EN : 0);
+    return DPORT_REG_GET_BIT(SYSTEM_PERIP_RST_EN0_REG, uart_rst_bit) == 0 &&
+        DPORT_REG_GET_BIT(SYSTEM_PERIP_CLK_EN0_REG, uart_en_bit) != 0;
 }
+
+/**
+ * @brief Enable the bus clock for uart
+ * @param uart_num UART port number, the max port number is (UART_NUM_MAX -1).
+ * @param enable true to enable, false to disable
+ */
+static inline void uart_ll_enable_bus_clock(uart_port_t uart_num, bool enable)
+{
+    switch (uart_num) {
+    case 0:
+        SYSTEM.perip_clk_en0.uart_clk_en = enable;
+        break;
+    case 1:
+        SYSTEM.perip_clk_en0.uart1_clk_en = enable;
+        break;
+    default:
+        abort();
+        break;
+    }
+}
+// SYSTEM.perip_clk_en0 is a shared register, so this function must be used in an atomic way
+#define uart_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; uart_ll_enable_bus_clock(__VA_ARGS__)
+
+/**
+ * @brief Reset UART module
+ * @param uart_num UART port number, the max port number is (UART_NUM_MAX -1).
+ */
+static inline void uart_ll_reset_register(uart_port_t uart_num)
+{
+    switch (uart_num) {
+    case 0:
+        SYSTEM.perip_rst_en0.uart_rst = 1;
+        SYSTEM.perip_rst_en0.uart_rst = 0;
+        break;
+    case 1:
+        SYSTEM.perip_rst_en0.uart1_rst = 1;
+        SYSTEM.perip_rst_en0.uart1_rst = 0;
+        break;
+    default:
+        abort();
+        break;
+    }
+}
+// SYSTEM.perip_rst_en0 is a shared register, so this function must be used in an atomic way
+#define uart_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; uart_ll_reset_register(__VA_ARGS__)
 
 /**
  * @brief  Enable the UART clock.
@@ -96,6 +148,7 @@ FORCE_INLINE_ATTR void uart_ll_sclk_disable(uart_dev_t *hw)
     hw->clk_conf.rx_sclk_en = 0;
     hw->clk_conf.tx_sclk_en = 0;
 }
+
 
 /**
  * @brief  Set the UART source clock.
@@ -292,8 +345,11 @@ FORCE_INLINE_ATTR void uart_ll_read_rxfifo(uart_dev_t *hw, uint8_t *buf, uint32_
  */
 FORCE_INLINE_ATTR void uart_ll_write_txfifo(uart_dev_t *hw, const uint8_t *buf, uint32_t wr_len)
 {
+    // Write to the FIFO should make sure only involve write operation, any read operation would cause data lost.
+    // Non-32-bit access would lead to a read-modify-write operation to the register, which is undesired.
+    // Therefore, use 32-bit access to avoid any potential problem.
     for (int i = 0; i < (int)wr_len; i++) {
-        hw->ahb_fifo.rw_byte = buf[i];
+        hw->ahb_fifo.val = (int)buf[i];
     }
 }
 
@@ -619,6 +675,7 @@ FORCE_INLINE_ATTR void uart_ll_set_dtr_active_level(uart_dev_t *hw, int level)
  */
 FORCE_INLINE_ATTR void uart_ll_set_wakeup_thrd(uart_dev_t *hw, uint32_t wakeup_thrd)
 {
+    // System would wakeup when the number of positive edges of RxD signal is larger than or equal to (UART_ACTIVE_THRESHOLD+3)
     hw->sleep_conf.active_threshold = wakeup_thrd - UART_LL_MIN_WAKEUP_THRESH;
 }
 

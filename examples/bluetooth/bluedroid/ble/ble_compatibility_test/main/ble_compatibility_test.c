@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -22,6 +22,7 @@
 #include "esp_gap_ble_api.h"
 #include "esp_gatts_api.h"
 #include "esp_bt_main.h"
+#include "esp_bt_device.h"
 #include "ble_compatibility_test.h"
 #include "esp_gatt_common_api.h"
 
@@ -246,6 +247,10 @@ static const esp_gatts_attr_db_t gatt_db[HRS_IDX_NB] =
 static void show_bonded_devices(void)
 {
     int dev_num = esp_ble_get_bond_device_num();
+    if (dev_num == 0) {
+        ESP_LOGI(EXAMPLE_TAG, "Bonded devices number zero\n");
+        return;
+    }
 
     esp_ble_bond_dev_t *dev_list = (esp_ble_bond_dev_t *)malloc(sizeof(esp_ble_bond_dev_t) * dev_num);
     if (!dev_list) {
@@ -268,6 +273,10 @@ static void show_bonded_devices(void)
 static void __attribute__((unused)) remove_all_bonded_devices(void)
 {
     int dev_num = esp_ble_get_bond_device_num();
+    if (dev_num == 0) {
+        ESP_LOGI(EXAMPLE_TAG, "Bonded devices number zero\n");
+        return;
+    }
 
     esp_ble_bond_dev_t *dev_list = (esp_ble_bond_dev_t *)malloc(sizeof(esp_ble_bond_dev_t) * dev_num);
     if (!dev_list) {
@@ -393,20 +402,21 @@ void example_prepare_write_event_env(esp_gatt_if_t gatts_if, prepare_type_env_t 
 {
     EXAMPLE_DEBUG(EXAMPLE_TAG, "prepare write, handle = %d, value len = %d", param->write.handle, param->write.len);
     esp_gatt_status_t status = ESP_GATT_OK;
-    if (prepare_write_env->prepare_buf == NULL) {
+    if (param->write.offset > PREPARE_BUF_MAX_SIZE) {
+        status = ESP_GATT_INVALID_OFFSET;
+    } else if ((param->write.offset + param->write.len) > PREPARE_BUF_MAX_SIZE) {
+        status = ESP_GATT_INVALID_ATTR_LEN;
+    }
+
+    if (status == ESP_GATT_OK && prepare_write_env->prepare_buf == NULL) {
         prepare_write_env->prepare_buf = (uint8_t *)malloc(PREPARE_BUF_MAX_SIZE * sizeof(uint8_t));
         prepare_write_env->prepare_len = 0;
         if (prepare_write_env->prepare_buf == NULL) {
             ESP_LOGE(EXAMPLE_TAG, "%s, Gatt_server prep no mem", __func__);
             status = ESP_GATT_NO_RESOURCES;
         }
-    } else {
-        if(param->write.offset > PREPARE_BUF_MAX_SIZE) {
-            status = ESP_GATT_INVALID_OFFSET;
-        } else if ((param->write.offset + param->write.len) > PREPARE_BUF_MAX_SIZE) {
-            status = ESP_GATT_INVALID_ATTR_LEN;
-        }
     }
+
     /*send response when param->write.need_rsp is true */
     if (param->write.need_rsp){
         esp_gatt_rsp_t *gatt_rsp = (esp_gatt_rsp_t *)malloc(sizeof(esp_gatt_rsp_t));
@@ -464,7 +474,7 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_
 {
     switch (event) {
         case ESP_GATTS_REG_EVT:{
-            esp_err_t set_dev_name_ret = esp_ble_gap_set_device_name(SAMPLE_DEVICE_NAME);
+            esp_err_t set_dev_name_ret = esp_bt_dev_set_device_name(SAMPLE_DEVICE_NAME);
             if (set_dev_name_ret){
                 ESP_LOGE(EXAMPLE_TAG, "set device name failed, error code = %x", set_dev_name_ret);
             }

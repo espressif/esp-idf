@@ -539,6 +539,7 @@ typedef struct {
     tGATT_PROFILE_CLCB  profile_clcb[GATT_MAX_APPS];
 #endif  ///GATTS_INCLUDED == TRUE
     UINT16              handle_of_h_r;          /* Handle of the handles reused characteristic value */
+#if GATTS_ROBUST_CACHING_ENABLED
     UINT16              handle_of_database_hash;
     UINT16              handle_of_cl_supported_feat;
     UINT16              handle_of_sr_supported_feat;
@@ -546,6 +547,7 @@ typedef struct {
     UINT8               gatt_sr_supported_feat_mask;
     UINT8               gatt_cl_supported_feat_mask;
 
+#endif
     tGATT_APPL_INFO       cb_info;
 
 
@@ -754,7 +756,7 @@ extern UINT16 gatts_add_char_descr (tGATT_SVC_DB *p_db, tGATT_PERM perm,
 
 extern tGATT_STATUS gatts_set_attribute_value(tGATT_SVC_DB *p_db, UINT16 attr_handle,
                                     UINT16 length, UINT8 *value);
-
+extern tGATT_STATUS gatts_get_attr_value_internal(UINT16 attr_handle, UINT16 *length, UINT8 **value);
 extern tGATT_STATUS gatts_get_attribute_value(tGATT_SVC_DB *p_db, UINT16 attr_handle,
                                     UINT16 *length, UINT8 **value);
 extern BOOLEAN gatts_is_auto_response(UINT16 attr_handle);

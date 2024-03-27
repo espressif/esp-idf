@@ -1,16 +1,25 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "unity.h"
+#include "mbedtls/aes.h"
 #include "memory_checks.h"
+#include "soc/soc_caps.h"
 
 /* setUp runs before every test */
 void setUp(void)
 {
+    // Execute mbedtls_aes_init operation to allocate AES interrupt
+    // allocation memory which is considered as leak otherwise
+#if SOC_AES_SUPPORTED
+    mbedtls_aes_context ctx;
+    mbedtls_aes_init(&ctx);
+#endif // SOC_AES_SUPPORTED
+
     test_utils_record_free_mem();
     test_utils_set_leak_level(CONFIG_UNITY_CRITICAL_LEAK_LEVEL_GENERAL, ESP_LEAK_TYPE_CRITICAL, ESP_COMP_LEAK_GENERAL);
     test_utils_set_leak_level(CONFIG_UNITY_WARN_LEAK_LEVEL_GENERAL, ESP_LEAK_TYPE_WARNING, ESP_COMP_LEAK_GENERAL);

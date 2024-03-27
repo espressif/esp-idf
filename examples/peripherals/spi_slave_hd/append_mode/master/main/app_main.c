@@ -15,18 +15,13 @@
 #include "esp_serial_slave_link/essl.h"
 #include "esp_serial_slave_link/essl_spi.h"
 
-#ifdef CONFIG_IDF_TARGET_ESP32H2
-#define GPIO_MOSI          5
-#define GPIO_MISO          0
-#define GPIO_SCLK          4
-#define GPIO_CS            1
-
-#else
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////// Please update the following configuration according to your Hardware spec /////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
 #define GPIO_MOSI          11
 #define GPIO_MISO          13
 #define GPIO_SCLK          12
 #define GPIO_CS            10
-#endif
 
 #define HOST_ID            SPI2_HOST
 #define TRANSACTION_LEN    16
@@ -53,14 +48,14 @@ static void init_driver(spi_device_handle_t *out_spi, essl_handle_t *out_essl)
     ESP_ERROR_CHECK(spi_bus_initialize(HOST_ID, &bus_cfg, SPI_DMA_CH_AUTO));
 
     spi_device_interface_config_t dev_cfg = {
-      .clock_speed_hz = 1 * 1 * 1000,
-      .flags = SPI_DEVICE_HALFDUPLEX,
-      .spics_io_num = GPIO_CS,
-      .queue_size = 16,
-      .command_bits = 8,
-      .address_bits = 8,
-      .dummy_bits = 8,
-      .mode = 0
+        .clock_speed_hz = 1 * 1 * 1000,
+        .flags = SPI_DEVICE_HALFDUPLEX,
+        .spics_io_num = GPIO_CS,
+        .queue_size = 16,
+        .command_bits = 8,
+        .address_bits = 8,
+        .dummy_bits = 8,
+        .mode = 0
     };
     ESP_ERROR_CHECK(spi_bus_add_device(HOST_ID, &dev_cfg, &spi));
     *out_spi = spi;
@@ -88,7 +83,7 @@ static esp_err_t receiver(essl_handle_t essl)
     while (n--) {
         size_t actual_rx_length = 0;
 
-        ret = essl_get_packet(essl, recv_buf, TRANSACTION_LEN/2, &actual_rx_length, portMAX_DELAY);
+        ret = essl_get_packet(essl, recv_buf, TRANSACTION_LEN / 2, &actual_rx_length, portMAX_DELAY);
         if (ret == ESP_OK || ret == ESP_ERR_NOT_FINISHED) {
             ESP_LOGI("Receiver", "%d bytes are actually received:", actual_rx_length);
             ESP_LOG_BUFFER_HEX("Receiver", recv_buf, actual_rx_length);
@@ -124,7 +119,7 @@ static esp_err_t sender(essl_handle_t essl)
     int n = EXAMPLE_CYCLES;
     while (n--) {
         for (int i = 0; i < TRANSACTION_LEN; i++) {
-            send_buf[i] = data+i;
+            send_buf[i] = data + i;
         }
 
         ret = essl_send_packet(essl, send_buf, TRANSACTION_LEN, portMAX_DELAY);

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -111,12 +111,12 @@ TEST_CASE("Test multiple ipc_calls", "[ipc]")
     const int max_tasks = 5;
     UBaseType_t priority = uxTaskPriorityGet(NULL);
     ESP_LOGI("test", "priority = %d, cpu = %d", priority, xPortGetCoreID());
-    test_semaphore_args_t test_semaphore[max_tasks * portNUM_PROCESSORS];
+    test_semaphore_args_t test_semaphore[max_tasks * CONFIG_FREERTOS_NUMBER_OF_CORES];
 
     for (int task_num = 0; task_num < max_tasks; ++task_num) {
         ++priority;
         ESP_LOGI("test", "task prio = %d", priority);
-        for (int cpu_num = 0; cpu_num < portNUM_PROCESSORS; ++cpu_num) {
+        for (int cpu_num = 0; cpu_num < CONFIG_FREERTOS_NUMBER_OF_CORES; ++cpu_num) {
             unsigned i = task_num * 2 + cpu_num;
             test_semaphore[i].start = xSemaphoreCreateBinary();
             test_semaphore[i].done = xSemaphoreCreateBinary();
@@ -124,11 +124,11 @@ TEST_CASE("Test multiple ipc_calls", "[ipc]")
         }
     }
 
-    for (int i = 0; i < max_tasks * portNUM_PROCESSORS; ++i) {
+    for (int i = 0; i < max_tasks * CONFIG_FREERTOS_NUMBER_OF_CORES; ++i) {
         xSemaphoreGive(test_semaphore[i].start);
     }
 
-    for (int i = 0; i < max_tasks * portNUM_PROCESSORS; ++i) {
+    for (int i = 0; i < max_tasks * CONFIG_FREERTOS_NUMBER_OF_CORES; ++i) {
         xSemaphoreTake(test_semaphore[i].done, portMAX_DELAY);
         vSemaphoreDelete(test_semaphore[i].done);
         vSemaphoreDelete(test_semaphore[i].start);

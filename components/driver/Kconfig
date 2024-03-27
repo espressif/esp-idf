@@ -1,6 +1,8 @@
 menu "Driver Configurations"
 
-    menu "Legacy ADC Configuration"
+    orsource "./twai/Kconfig.twai"
+
+    menu "Legacy ADC Driver Configuration"
 
         config ADC_DISABLE_DAC
             depends on SOC_DAC_SUPPORTED
@@ -58,385 +60,41 @@ menu "Driver Configurations"
                     If you want to continue using the legacy driver, and don't want to see related
                     deprecation warnings, you can enable this option.
 
-        endmenu
+        endmenu # Legacy ADC Calibration Configuration
+    endmenu  # Legacy ADC Driver Configuration
 
-    endmenu  # ADC Configuration
-
-    menu "SPI Configuration"
-
-        config SPI_MASTER_IN_IRAM
-            bool "Place transmitting functions of SPI master into IRAM"
-            default n
-            depends on !FREERTOS_PLACE_FUNCTIONS_INTO_FLASH
-            select SPI_MASTER_ISR_IN_IRAM
-            help
-                Normally only the ISR of SPI master is placed in the IRAM, so that it
-                can work without the flash when interrupt is triggered.
-                For other functions, there's some possibility that the flash cache
-                miss when running inside and out of SPI functions, which may increase
-                the interval of SPI transactions.
-                Enable this to put ``queue_trans``, ``get_trans_result`` and
-                ``transmit`` functions into the IRAM to avoid possible cache miss.
-
-                This configuration won't be available if `CONFIG_FREERTOS_PLACE_FUNCTIONS_INTO_FLASH` is enabled.
-
-                During unit test, this is enabled to measure the ideal case of api.
-
-        config SPI_MASTER_ISR_IN_IRAM
-            bool "Place SPI master ISR function into IRAM"
-            default y
-            depends on !HEAP_PLACE_FUNCTION_INTO_FLASH
-            select PERIPH_CTRL_FUNC_IN_IRAM
-            select HAL_SPI_MASTER_FUNC_IN_IRAM
-            help
-                Place the SPI master ISR in to IRAM to avoid possible cache miss.
-
-                Enabling this configuration is possible only when HEAP_PLACE_FUNCTION_INTO_FLASH
-                is disabled since the spi master uses can allocate transactions buffers into DMA
-                memory section using the heap component API that ipso facto has to be placed in IRAM.
-
-                Also you can forbid the ISR being disabled during flash writing
-                access, by add ESP_INTR_FLAG_IRAM when initializing the driver.
-
-        config SPI_SLAVE_IN_IRAM
-            bool "Place transmitting functions of SPI slave into IRAM"
-            default n
-            select SPI_SLAVE_ISR_IN_IRAM
-            help
-                Normally only the ISR of SPI slave is placed in the IRAM, so that it
-                can work without the flash when interrupt is triggered.
-                For other functions, there's some possibility that the flash cache
-                miss when running inside and out of SPI functions, which may increase
-                the interval of SPI transactions.
-                Enable this to put ``queue_trans``, ``get_trans_result`` and
-                ``transmit`` functions into the IRAM to avoid possible cache miss.
-
-        config SPI_SLAVE_ISR_IN_IRAM
-            bool "Place SPI slave ISR function into IRAM"
-            default y
-            select PERIPH_CTRL_FUNC_IN_IRAM
-            select HAL_SPI_SLAVE_FUNC_IN_IRAM
-            help
-                Place the SPI slave ISR in to IRAM to avoid possible cache miss.
-
-                Also you can forbid the ISR being disabled during flash writing
-                access, by add ESP_INTR_FLAG_IRAM when initializing the driver.
-
-    endmenu # SPI Configuration
-
-    menu "TWAI Configuration"
-        depends on SOC_TWAI_SUPPORTED
-
-        config TWAI_ISR_IN_IRAM
-            bool "Place TWAI ISR function into IRAM"
-            default n
-            help
-                Place the TWAI ISR in to IRAM. This will allow the ISR to avoid
-                cache misses, and also be able to run whilst the cache is disabled
-                (such as when writing to SPI Flash).
-                Note that if this option is enabled:
-                - Users should also set the ESP_INTR_FLAG_IRAM in the driver
-                configuration structure when installing the driver (see docs for
-                specifics).
-                - Alert logging (i.e., setting of the TWAI_ALERT_AND_LOG flag)
-                will have no effect.
-
-        config TWAI_ERRATA_FIX_BUS_OFF_REC
-            bool "Add SW workaround for REC change during bus-off"
-            depends on IDF_TARGET_ESP32
-            default y
-            help
-                When the bus-off condition is reached, the REC should be reset to 0 and frozen (via LOM) by the
-                driver's ISR. However on the ESP32, there is an edge case where the REC will increase before the
-                driver's ISR can respond in time (e.g., due to the rapid occurrence of bus errors), thus causing the
-                REC to be non-zero after bus-off. A non-zero REC can prevent bus-off recovery as the bus-off recovery
-                condition is that both TEC and REC become 0. Enabling this option will add a workaround in the driver
-                to forcibly reset REC to zero on reaching bus-off.
-
-        config TWAI_ERRATA_FIX_TX_INTR_LOST
-            bool "Add SW workaround for TX interrupt lost errata"
-            depends on IDF_TARGET_ESP32
-            default y
-            help
-                On the ESP32, when a transmit interrupt occurs, and interrupt register is read on the same APB clock
-                cycle, the transmit interrupt could be lost. Enabling this option will add a workaround that checks the
-                transmit buffer status bit to recover any lost transmit interrupt.
-
-        config TWAI_ERRATA_FIX_RX_FRAME_INVALID
-            bool "Add SW workaround for invalid RX frame errata"
-            depends on IDF_TARGET_ESP32
-            default y
-            help
-                On the ESP32, when receiving a data or remote frame, if a bus error occurs in the data or CRC field,
-                the data of the next received frame could be invalid. Enabling this option will add a workaround that
-                will reset the peripheral on detection of this errata condition. Note that if a frame is transmitted on
-                the bus whilst the reset is ongoing, the message will not be receive by the peripheral sent on the bus
-                during the reset, the message will be lost.
-
-        config TWAI_ERRATA_FIX_RX_FIFO_CORRUPT
-            bool "Add SW workaround for RX FIFO corruption errata"
-            depends on IDF_TARGET_ESP32
-            default y
-            help
-                On the ESP32, when the RX FIFO overruns and the RX message counter maxes out at 64 messages, the entire
-                RX FIFO is no longer recoverable. Enabling this option will add a workaround that resets the peripheral
-                on detection of this errata condition. Note that if a frame is being sent on the bus during the reset
-                bus during the reset, the message will be lost.
-
-        config TWAI_ERRATA_FIX_LISTEN_ONLY_DOM
-            bool "Add SW workaround for listen only transmits dominant bit errata"
-            depends on IDF_TARGET_ESP32 || IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3 || IDF_TARGET_ESP32C3
-            default y
-            help
-                When in the listen only mode, the TWAI controller must not influence the TWAI bus (i.e., must not send
-                any dominant bits). However, while in listen only mode on the ESP32/ESP32-S2/ESP32-S3/ESP32-C3, the
-                TWAI controller will still transmit dominant bits when it detects an error (i.e., as part of an active
-                error frame). Enabling this option will add a workaround that forces the TWAI controller into an error
-                passive state on initialization, thus preventing any dominant bits from being sent.
-
-    endmenu # TWAI Configuration
-
-    menu "Temperature sensor Configuration"
-        depends on SOC_TEMP_SENSOR_SUPPORTED
-
-        config TEMP_SENSOR_SUPPRESS_DEPRECATE_WARN
+    menu "Legacy MCPWM Driver Configurations"
+        depends on SOC_MCPWM_SUPPORTED
+        config MCPWM_SUPPRESS_DEPRECATE_WARN
             bool "Suppress legacy driver deprecated warning"
             default n
             help
-                Wether to suppress the deprecation warnings when using legacy temperature sensor driver
-                (driver/temp_sensor.h). If you want to continue using the legacy driver,
-                and don't want to see related deprecation warnings, you can enable this option.
+                Wether to suppress the deprecation warnings when using legacy MCPWM driver (driver/mcpwm.h).
+                If you want to continue using the legacy driver, and don't want to see related deprecation warnings,
+                you can enable this option.
+    endmenu # Legacy MCPWM Driver Configurations
 
-        config TEMP_SENSOR_ENABLE_DEBUG_LOG
-            bool "Enable debug log"
-            default n
-            help
-                Wether to enable the debug log message for temperature sensor driver.
-                Note that, this option only controls the temperature sensor driver log, won't affect other drivers.
-
-        config TEMP_SENSOR_ISR_IRAM_SAFE
-            depends on SOC_TEMPERATURE_SENSOR_INTR_SUPPORT
-            bool "Temperature sensor ISR IRAM-Safe"
-            default n
-            help
-                Ensure the Temperature Sensor interrupt is IRAM-Safe by allowing the interrupt handler to be
-                executable when the cache is disabled (e.g. SPI Flash write).
-
-    endmenu # TEMP_SENSOR Configuration
-
-    orsource "./uart/Kconfig.uart"
-
-    menu "GPIO Configuration"
-        config GPIO_ESP32_SUPPORT_SWITCH_SLP_PULL
-            bool "Support light sleep GPIO pullup/pulldown configuration for ESP32"
-            depends on IDF_TARGET_ESP32
-            help
-                This option is intended to fix the bug that ESP32 is not able to switch to configured
-                pullup/pulldown mode in sleep.
-                If this option is selected, chip will automatically emulate the behaviour of switching,
-                and about 450B of source codes would be placed into IRAM.
-
-        config GPIO_CTRL_FUNC_IN_IRAM
-            bool "Place GPIO control functions into IRAM"
-            default n
-            help
-                Place GPIO control functions (like intr_disable/set_level) into IRAM,
-                so that these functions can be IRAM-safe and able to be called in the other IRAM interrupt context.
-    endmenu # GPIO Configuration
-
-    menu "Sigma Delta Modulator Configuration"
-        depends on SOC_SDM_SUPPORTED
-        config SDM_CTRL_FUNC_IN_IRAM
-            bool "Place SDM control functions into IRAM"
-            default n
-            help
-                Place SDM control functions (like set_duty) into IRAM,
-                so that these functions can be IRAM-safe and able to be called in the other IRAM interrupt context.
-                Enabling this option can improve driver performance as well.
-
-        config SDM_SUPPRESS_DEPRECATE_WARN
+    menu "Legacy Timer Group Driver Configurations"
+        depends on SOC_GPTIMER_SUPPORTED
+        config GPTIMER_SUPPRESS_DEPRECATE_WARN
             bool "Suppress legacy driver deprecated warning"
             default n
             help
-                Wether to suppress the deprecation warnings when using legacy sigma delta driver.
+                Wether to suppress the deprecation warnings when using legacy timer group driver (driver/timer.h).
                 If you want to continue using the legacy driver, and don't want to see related deprecation warnings,
                 you can enable this option.
 
-        config SDM_ENABLE_DEBUG_LOG
-            bool "Enable debug log"
-            default n
-            help
-                Wether to enable the debug log message for SDM driver.
-                Note that, this option only controls the SDM driver log, won't affect other drivers.
-    endmenu # Sigma Delta Modulator Configuration
+    endmenu # Legacy Timer Group Driver Configurations
 
-    menu "Analog Comparator Configuration"
-        depends on SOC_ANA_CMPR_SUPPORTED
-        config ANA_CMPR_ISR_IRAM_SAFE
-            bool "Analog comparator ISR IRAM-Safe"
-            default n
-            help
-                Ensure the Analog Comparator interrupt is IRAM-Safe by allowing the interrupt handler to be
-                executable when the cache is disabled (e.g. SPI Flash write).
-
-        config ANA_CMPR_CTRL_FUNC_IN_IRAM
-            bool "Place Analog Comparator control functions into IRAM"
-            default n
-            help
-                Place Analog Comparator control functions (like ana_cmpr_set_internal_reference) into IRAM,
-                so that these functions can be IRAM-safe and able to be called in an IRAM interrupt context.
-                Enabling this option can improve driver performance as well.
-
-        config ANA_CMPR_ENABLE_DEBUG_LOG
-            bool "Enable debug log"
-            default n
-            help
-                Wether to enable the debug log message for Analog Comparator driver.
-                Note that, this option only controls the Analog Comparator driver log, won't affect other drivers.
-    endmenu # Analog Comparator Configuration
-
-    orsource "./gptimer/Kconfig.gptimer"
-
-    orsource "./pcnt/Kconfig.pcnt"
-
-    orsource "./rmt/Kconfig.rmt"
-
-    orsource "./mcpwm/Kconfig.mcpwm"
-
-    menu "I2S Configuration"
-        depends on SOC_I2S_SUPPORTED
-        config I2S_ISR_IRAM_SAFE
-            bool "I2S ISR IRAM-Safe"
-            default n
-            help
-                Ensure the I2S interrupt is IRAM-Safe by allowing the interrupt handler to be
-                executable when the cache is disabled (e.g. SPI Flash write).
-
-        config I2S_SUPPRESS_DEPRECATE_WARN
-            bool "Suppress leagcy driver deprecated warning"
-            default n
-            help
-                Enable this option will suppress the deprecation warnings of using APIs in legacy I2S driver.
-
-        config I2S_ENABLE_DEBUG_LOG
-            bool "Enable I2S debug log"
-            default n
-            help
-                Wether to enable the debug log message for I2S driver.
-                Note that, this option only controls the I2S driver log, will not affect other drivers.
-    endmenu # I2S Configuration
-
-    menu "DAC Configuration"
-        depends on SOC_DAC_SUPPORTED
-        config DAC_CTRL_FUNC_IN_IRAM
-            bool "Place DAC control functions into IRAM"
-            default n
-            help
-                Place DAC control functions (e.g. 'dac_oneshot_output_voltage') into IRAM,
-                so that this function can be IRAM-safe and able to be called in the other IRAM interrupt context.
-                Enabling this option can improve driver performance as well.
-
-        config DAC_ISR_IRAM_SAFE
-            bool "DAC ISR IRAM-Safe"
-            default n
-            help
-                Ensure the DAC interrupt is IRAM-Safe by allowing the interrupt handler to be
-                executable when the cache is disabled (e.g. SPI Flash write).
-
-        config DAC_SUPPRESS_DEPRECATE_WARN
+    menu "Legacy RMT Driver Configurations"
+        depends on SOC_RMT_SUPPORTED
+        config RMT_SUPPRESS_DEPRECATE_WARN
             bool "Suppress legacy driver deprecated warning"
             default n
             help
-                Wether to suppress the deprecation warnings when using legacy DAC driver (driver/dac.h).
+                Wether to suppress the deprecation warnings when using legacy rmt driver (driver/rmt.h).
                 If you want to continue using the legacy driver, and don't want to see related deprecation warnings,
                 you can enable this option.
-
-        config DAC_ENABLE_DEBUG_LOG
-            bool "Enable debug log"
-            default n
-            help
-                Wether to enable the debug log message for DAC driver.
-                Note that, this option only controls the DAC driver log, won't affect other drivers.
-
-        config DAC_DMA_AUTO_16BIT_ALIGN
-            bool "Align the continuous data to 16 bit automatically"
-            depends on SOC_DAC_DMA_16BIT_ALIGN
-            default y
-            help
-                Whether to left shift the continuous data to align every bytes to 16 bits in the driver.
-                On ESP32, although the DAC resolution is only 8 bits,
-                the hardware requires 16 bits data in continuous mode.
-                By enabling this option, the driver will left shift 8 bits for the input data automatically.
-                Only disable this option when you decide to do this step by yourself.
-                Note that the driver will allocate a new piece of memory to save the converted data.
-
-    endmenu # DAC Configuration
-
-    menu "USB Serial/JTAG Configuration"
-        depends on SOC_USB_SERIAL_JTAG_SUPPORTED
-        config USJ_NO_AUTO_LS_ON_CONNECTION
-            bool "Don't enter the automatic light sleep when USB Serial/JTAG port is connected"
-            depends on PM_ENABLE && ESP_CONSOLE_USB_SERIAL_JTAG_ENABLED && !SOC_USB_SERIAL_JTAG_SUPPORT_LIGHT_SLEEP
-            default n
-            help
-                If enabled, the chip will constantly monitor the connection status of the USB Serial/JTAG port. As long
-                as the USB Serial/JTAG is connected, a ESP_PM_NO_LIGHT_SLEEP power management lock will be acquired to
-                prevent the system from entering light sleep.
-                This option can be useful if serial monitoring is needed via USB Serial/JTAG while power management is
-                enabled, as the USB Serial/JTAG cannot work under light sleep and after waking up from light sleep.
-                Note. This option can only control the automatic Light-Sleep behavior. If esp_light_sleep_start() is
-                called manually from the program, enabling this option will not prevent light sleep entry even if the
-                USB Serial/JTAG is in use.
-    endmenu # USB Serial/JTAG Configuration
-
-    menu "Parallel IO Configuration"
-        depends on SOC_PARLIO_SUPPORTED
-
-        config PARLIO_ENABLE_DEBUG_LOG
-            bool "Enable debug log"
-            default n
-            help
-                Wether to enable the debug log message for parallel IO driver.
-                Note that, this option only controls the parallel IO driver log, won't affect other drivers.
-
-        config PARLIO_ISR_IRAM_SAFE
-            bool "Parallel IO ISR IRAM-Safe"
-            default n
-            select GDMA_CTRL_FUNC_IN_IRAM # the driver needs to start the GDMA in the interrupt
-            help
-                Ensure the Parallel IO interrupt is IRAM-Safe by allowing the interrupt handler to be
-                executable when the cache is disabled (e.g. SPI Flash write).
-
-    endmenu # Parallel IO Configuration
-
-    menu "LEDC Configuration"
-        config LEDC_CTRL_FUNC_IN_IRAM
-            bool "Place LEDC control functions into IRAM"
-            default n
-            help
-                Place LEDC control functions (ledc_update_duty and ledc_stop) into IRAM,
-                so that these functions can be IRAM-safe and able to be called in an IRAM context.
-                Enabling this option can improve driver performance as well.
-    endmenu # LEDC Configuration
-
-    menu "I2C Configuration"
-        config I2C_ISR_IRAM_SAFE
-            bool "I2C ISR IRAM-Safe"
-            default n
-            help
-                Ensure the I2C interrupt is IRAM-Safe by allowing the interrupt handler to be
-                executable when the cache is disabled (e.g. SPI Flash write).
-                note: This cannot be used in the I2C legacy driver.
-
-        config I2C_ENABLE_DEBUG_LOG
-            bool "Enable I2C debug log"
-            default n
-            help
-                Wether to enable the debug log message for I2C driver.
-                Note that this option only controls the I2C driver log, will not affect other drivers.
-
-                note: This cannot be used in the I2C legacy driver.
-
-    endmenu # I2C Configurations
+    endmenu # Legacy RMT Driver Configurations
 
 endmenu  # Driver configurations

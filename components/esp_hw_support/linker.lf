@@ -13,16 +13,16 @@ entries:
     cpu: esp_cpu_compare_and_set (noflash)
     esp_memory_utils (noflash)
     rtc_clk (noflash)
-    esp_gpio_reserve: esp_gpio_reserve_pins (noflash)
-    esp_gpio_reserve: esp_gpio_is_pin_reserved (noflash)
     if SOC_CONFIGURABLE_VDDSDIO_SUPPORTED = y:
         rtc_init:rtc_vddsdio_get_config (noflash)
         rtc_init:rtc_vddsdio_set_config (noflash)
-    if IDF_TARGET_ESP32C6 = n && IDF_TARGET_ESP32H2 = n && IDF_TARGET_ESP32P4 = n: # TODO: IDF-5645
+    if IDF_TARGET_ESP32 = y || IDF_TARGET_ESP32S2 = y || IDF_TARGET_ESP32S3 = y || IDF_TARGET_ESP32C2 = y || IDF_TARGET_ESP32C3 = y:
         rtc_sleep (noflash_text)
     rtc_time (noflash_text)
     if SOC_PMU_SUPPORTED = y:
         pmu_sleep (noflash)
+    if SOC_USB_SERIAL_JTAG_SUPPORTED = y:
+        sleep_console (noflash)
     if IDF_TARGET_ESP32 = y || IDF_TARGET_ESP32S2 = y:
         rtc_wdt (noflash_text)
     if PERIPH_CTRL_FUNC_IN_IRAM = y:
@@ -34,9 +34,12 @@ entries:
         systimer (noflash)
     if APP_BUILD_TYPE_PURE_RAM_APP = n:
         mspi_timing_tuning (noflash)
-        mspi_timing_config (noflash)
         if SOC_MEMSPI_TIMING_TUNING_BY_MSPI_DELAY = y:
             mspi_timing_by_mspi_delay (noflash)
+            mspi_timing_config (noflash)
+        if SOC_MEMSPI_TIMING_TUNING_BY_DQS = y:
+            mspi_timing_by_dqs (noflash)
+            mspi_timing_config (noflash)
     if SOC_ADC_SHARED_POWER = y:
         if ADC_ONESHOT_CTRL_FUNC_IN_IRAM = y:
             sar_periph_ctrl (noflash)

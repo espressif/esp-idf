@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -45,20 +45,20 @@ static void float_to_byte(float *target, unsigned char *buf, unsigned char offse
  */
 static void datascope_get_channel_data(float data, unsigned char channel)
 {
-    if ( (channel > 10) || (channel == 0) ) {
+    if ((channel > 10) || (channel == 0)) {
         return;
     } else {
         switch (channel) {
-            case 1:  float_to_byte(&data,datascope_output_buffer, channel*4-3); break;
-            case 2:  float_to_byte(&data,datascope_output_buffer, channel*4-3); break;
-            case 3:  float_to_byte(&data,datascope_output_buffer, channel*4-3); break;
-            case 4:  float_to_byte(&data,datascope_output_buffer, channel*4-3); break;
-            case 5:  float_to_byte(&data,datascope_output_buffer, channel*4-3); break;
-            case 6:  float_to_byte(&data,datascope_output_buffer, channel*4-3); break;
-            case 7:  float_to_byte(&data,datascope_output_buffer, channel*4-3); break;
-            case 8:  float_to_byte(&data,datascope_output_buffer, channel*4-3); break;
-            case 9:  float_to_byte(&data,datascope_output_buffer, channel*4-3); break;
-            case 10: float_to_byte(&data,datascope_output_buffer, channel*4-3); break;
+        case 1:  float_to_byte(&data, datascope_output_buffer, channel * 4 - 3); break;
+        case 2:  float_to_byte(&data, datascope_output_buffer, channel * 4 - 3); break;
+        case 3:  float_to_byte(&data, datascope_output_buffer, channel * 4 - 3); break;
+        case 4:  float_to_byte(&data, datascope_output_buffer, channel * 4 - 3); break;
+        case 5:  float_to_byte(&data, datascope_output_buffer, channel * 4 - 3); break;
+        case 6:  float_to_byte(&data, datascope_output_buffer, channel * 4 - 3); break;
+        case 7:  float_to_byte(&data, datascope_output_buffer, channel * 4 - 3); break;
+        case 8:  float_to_byte(&data, datascope_output_buffer, channel * 4 - 3); break;
+        case 9:  float_to_byte(&data, datascope_output_buffer, channel * 4 - 3); break;
+        case 10: float_to_byte(&data, datascope_output_buffer, channel * 4 - 3); break;
         }
     }
 }
@@ -71,21 +71,21 @@ static void datascope_get_channel_data(float data, unsigned char channel)
  */
 static unsigned char datascope_data_generate(unsigned char channel_num)
 {
-    if ( (channel_num > 10) || (channel_num == 0) ) {
+    if ((channel_num > 10) || (channel_num == 0)) {
         return 0;
     } else {
         datascope_output_buffer[0] = '$';  //frame header
-        switch(channel_num) {
-            case 1:   datascope_output_buffer[channel_num*4+1] = channel_num*4+1; return channel_num*4+2; break;
-            case 2:   datascope_output_buffer[channel_num*4+1] = channel_num*4+1; return channel_num*4+2; break;
-            case 3:   datascope_output_buffer[channel_num*4+1] = channel_num*4+1; return channel_num*4+2; break;
-            case 4:   datascope_output_buffer[channel_num*4+1] = channel_num*4+1; return channel_num*4+2; break;
-            case 5:   datascope_output_buffer[channel_num*4+1] = channel_num*4+1; return channel_num*4+2; break;
-            case 6:   datascope_output_buffer[channel_num*4+1] = channel_num*4+1; return channel_num*4+2; break;
-            case 7:   datascope_output_buffer[channel_num*4+1] = channel_num*4+1; return channel_num*4+2; break;
-            case 8:   datascope_output_buffer[channel_num*4+1] = channel_num*4+1; return channel_num*4+2; break;
-            case 9:   datascope_output_buffer[channel_num*4+1] = channel_num*4+1; return channel_num*4+2; break;
-            case 10:  datascope_output_buffer[channel_num*4+1] = channel_num*4+1; return channel_num*4+2; break;
+        switch (channel_num) {
+        case 1:   datascope_output_buffer[channel_num * 4 + 1] = channel_num * 4 + 1; return channel_num * 4 + 2; break;
+        case 2:   datascope_output_buffer[channel_num * 4 + 1] = channel_num * 4 + 1; return channel_num * 4 + 2; break;
+        case 3:   datascope_output_buffer[channel_num * 4 + 1] = channel_num * 4 + 1; return channel_num * 4 + 2; break;
+        case 4:   datascope_output_buffer[channel_num * 4 + 1] = channel_num * 4 + 1; return channel_num * 4 + 2; break;
+        case 5:   datascope_output_buffer[channel_num * 4 + 1] = channel_num * 4 + 1; return channel_num * 4 + 2; break;
+        case 6:   datascope_output_buffer[channel_num * 4 + 1] = channel_num * 4 + 1; return channel_num * 4 + 2; break;
+        case 7:   datascope_output_buffer[channel_num * 4 + 1] = channel_num * 4 + 1; return channel_num * 4 + 2; break;
+        case 8:   datascope_output_buffer[channel_num * 4 + 1] = channel_num * 4 + 1; return channel_num * 4 + 2; break;
+        case 9:   datascope_output_buffer[channel_num * 4 + 1] = channel_num * 4 + 1; return channel_num * 4 + 2; break;
+        case 10:  datascope_output_buffer[channel_num * 4 + 1] = channel_num * 4 + 1; return channel_num * 4 + 2; break;
         }
     }
     return 0;
@@ -107,22 +107,22 @@ int test_tp_print_to_scope(float *data, unsigned char channel_num)
     if (uart_num >= UART_NUM_MAX) {
         return ESP_FAIL;
     }
-    if ( (channel_num > 10) || (channel_num == 0) || (NULL == data) ) {
+    if ((channel_num > 10) || (channel_num == 0) || (NULL == data)) {
         return ESP_FAIL;
     }
-    for(uint8_t i = 0 ; i < channel_num; i++)  {
-        datascope_get_channel_data(data[i] , i+1); //  write data x into channel 1~10.
+    for (uint8_t i = 0 ; i < channel_num; i++)  {
+        datascope_get_channel_data(data[i], i + 1); //  write data x into channel 1~10.
     }
     unsigned char out_len = datascope_data_generate(channel_num); //  Generate n number data.
     unsigned char *out_data = datascope_output_buffer;
     // Init uart.
-    if(uart_num != uart_used) {
+    if (uart_num != uart_used) {
         return 0;
     } else {
 #if ROM_UART_DRIVER_ENABLE
-        esp_rom_uart_tx_wait_idle(uart_num);   // Default print uart mumber is 0.
-        for(int i=0; i<out_len; i++) {
-            esp_rom_uart_tx_one_char(out_data[i]);
+        esp_rom_output_tx_wait_idle(uart_num);   // Default print uart mumber is 0.
+        for (int i = 0; i < out_len; i++) {
+            esp_rom_output_tx_one_char(out_data[i]);
         }
         return out_len;
 #else
@@ -154,12 +154,12 @@ int test_tp_print_to_scope(float *data, unsigned char channel_num)
 esp_err_t test_tp_scope_debug_init(uint8_t uart_num, int tx_io_num, int rx_io_num, int baud_rate)
 {
 #if ROM_UART_DRIVER_ENABLE
-    esp_rom_uart_tx_wait_idle(0);   // Default print uart mumber is 0.
-    if(uart_num != 0) {
-        esp_rom_uart_set_as_console(uart_num);
+    esp_rom_output_tx_wait_idle(0);   // Default print uart mumber is 0.
+    if (uart_num != 0) {
+        esp_rom_output_set_as_console(uart_num);
     }
 #else
-    if(uart_used == uart_num) {
+    if (uart_used == uart_num) {
         return ESP_FAIL;
     }
     if (uart_num >= UART_NUM_MAX) {
@@ -179,7 +179,7 @@ esp_err_t test_tp_scope_debug_init(uint8_t uart_num, int tx_io_num, int rx_io_nu
     uart_param_config(uart_num, &uart_config);
     // Set UART pins using UART0 default pins i.e. no changes
     uart_set_pin(uart_num, scope_tx_io_num, scope_rx_io_num,
-            UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE);
+                 UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE);
     uart_driver_install(uart_num, 1024, 2048, 0, NULL, 0);
     uart_used = uart_num;
 #endif

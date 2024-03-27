@@ -41,7 +41,7 @@ The services provided by the SDIO Slave peripheral of the {IDF_TARGET_NAME} chip
 ESP SDIO Slave Initialization
 -----------------------------
 
-The host should initialize the {IDF_TARGET_NAME} SDIO slave according to the standard SDIO initialization process (Section 3.1.2 of `SDIO Simplified Specification <https://www.sdcard.org/downloads/pls/>`_). In this specification as well as below, the SDIO slave is called an (SD)IO card. Here is a brief example of an ESP SDIO Slave initialization process:
+The host should initialize the {IDF_TARGET_NAME} SDIO slave according to the standard SDIO initialization process (Section 3.1.2 of `SDIO Simplified Specification <https://www.sdcard.org/downloads/pls/>`_). In this specification as well as below, the SDIO slave is called an SDIO/IO card. Here is a brief example of an ESP SDIO Slave initialization process:
 
 1. SDIO reset
 

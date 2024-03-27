@@ -49,6 +49,9 @@ function(ulp_embed_binary app_name s_sources exp_dep_srcs)
         elseif(CONFIG_ULP_COPROC_TYPE_LP_CORE)
                 set(TOOLCHAIN_FLAG ${idf_path}/components/ulp/cmake/toolchain-lp-core-riscv.cmake)
                 set(ULP_IS_LP_CORE_RISCV ON)
+                if(CONFIG_ESP_ROM_HAS_LP_ROM)
+                    set(CONFIG_ESP_ROM_HAS_LP_ROM ON)
+                endif()
         endif()
 
         externalproject_add(${app_name}
@@ -67,6 +70,7 @@ function(ulp_embed_binary app_name s_sources exp_dep_srcs)
                             -DPYTHON=${python}
                             -DULP_COCPU_IS_RISCV=${ULP_IS_RISCV}
                             -DULP_COCPU_IS_LP_CORE=${ULP_IS_LP_CORE_RISCV}
+                            -DCONFIG_ESP_ROM_HAS_LP_ROM=${CONFIG_ESP_ROM_HAS_LP_ROM}
                             ${extra_cmake_args}
                 BUILD_COMMAND ${CMAKE_COMMAND} --build ${CMAKE_CURRENT_BINARY_DIR}/${app_name} --target build
                 BUILD_BYPRODUCTS ${ulp_artifacts} ${ulp_artifacts_extras} ${ulp_ps_sources}

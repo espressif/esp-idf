@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -90,10 +90,14 @@
 #endif /* configUSE_TICKLESS_IDLE */
 #define configCPU_CLOCK_HZ                           ( CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ * 1000000 )
 #define configTICK_RATE_HZ                           CONFIG_FREERTOS_HZ
+#define configMAX_PRIORITIES                         ( 25 )
 #define configUSE_TIME_SLICING                       1
 #define configUSE_16_BIT_TICKS                       0
 #define configIDLE_SHOULD_YIELD                      0
 #define configKERNEL_INTERRUPT_PRIORITY              1      /*Todo: This currently isn't used anywhere */
+#define configNUMBER_OF_CORES                        CONFIG_FREERTOS_NUMBER_OF_CORES
+/* For compatibility */
+#define configNUM_CORES                              configNUMBER_OF_CORES
 
 /* ------------- Synchronization Primitives ---------------- */
 
@@ -164,6 +168,14 @@
     #define configUSE_STATS_FORMATTING_FUNCTIONS    1       /* Used by vTaskList() */
 #endif /* CONFIG_FREERTOS_USE_STATS_FORMATTING_FUNCTIONS */
 
+#if !CONFIG_FREERTOS_SMP
+    #if CONFIG_FREERTOS_RUN_TIME_COUNTER_TYPE_U32
+        #define configRUN_TIME_COUNTER_TYPE    uint32_t
+    #elif CONFIG_FREERTOS_RUN_TIME_COUNTER_TYPE_U64
+        #define configRUN_TIME_COUNTER_TYPE    uint64_t
+    #endif /* CONFIG_FREERTOS_RUN_TIME_COUNTER_TYPE_U64 */
+#endif /* !CONFIG_FREERTOS_SMP */
+
 /* -------------------- Co-routines  ----------------------- */
 
 #define configUSE_CO_ROUTINES              0              /* CO_ROUTINES are not supported in ESP-IDF */
@@ -171,11 +183,16 @@
 
 /* ------------------- Software Timer ---------------------- */
 
-#define configUSE_TIMERS                1
-#define configTIMER_TASK_PRIORITY       CONFIG_FREERTOS_TIMER_TASK_PRIORITY
-#define configTIMER_QUEUE_LENGTH        CONFIG_FREERTOS_TIMER_QUEUE_LENGTH
-#define configTIMER_TASK_STACK_DEPTH    CONFIG_FREERTOS_TIMER_TASK_STACK_DEPTH
-#define configTIMER_SERVICE_TASK_NAME   CONFIG_FREERTOS_TIMER_SERVICE_TASK_NAME
+#define configUSE_TIMERS                          1
+#define configTIMER_TASK_PRIORITY                 CONFIG_FREERTOS_TIMER_TASK_PRIORITY
+#define configTIMER_QUEUE_LENGTH                  CONFIG_FREERTOS_TIMER_QUEUE_LENGTH
+#define configTIMER_TASK_STACK_DEPTH              CONFIG_FREERTOS_TIMER_TASK_STACK_DEPTH
+#define configTIMER_SERVICE_TASK_NAME             CONFIG_FREERTOS_TIMER_SERVICE_TASK_NAME
+#define configTIMER_SERVICE_TASK_CORE_AFFINITY    CONFIG_FREERTOS_TIMER_SERVICE_TASK_CORE_AFFINITY
+
+/* ------------------------ List --------------------------- */
+
+#define configLIST_VOLATILE    volatile                     /* We define List elements as volatile to prevent the compiler from optimizing out essential code */
 
 /* -------------------- API Includes ----------------------- */
 
@@ -238,32 +255,28 @@
     #endif /* CONFIG_FREERTOS_SMP */
 #endif /* def __ASSEMBLER__ */
 
+#if CONFIG_FREERTOS_USE_APPLICATION_TASK_TAG
+    #define configUSE_APPLICATION_TASK_TAG    1
+#endif // CONFIG_FREERTOS_USE_APPLICATION_TASK_TAG
+
+/* -------------- List Data Integrity Checks --------------- */
+#define configUSE_LIST_DATA_INTEGRITY_CHECK_BYTES    CONFIG_FREERTOS_USE_LIST_DATA_INTEGRITY_CHECK_BYTES
+
 /* ----------------------------------------------- Amazon SMP FreeRTOS -------------------------------------------------
  * - All Amazon SMP FreeRTOS specific configurations
  * ------------------------------------------------------------------------------------------------------------------ */
 
-#if CONFIG_FREERTOS_SMP
-    #ifdef CONFIG_FREERTOS_UNICORE
-        #define configNUM_CORES                  1
-    #else
-        #define configNUM_CORES                  2
-    #endif /* CONFIG_FREERTOS_UNICORE */
+#if CONFIG_FREERTOS_SMP && ( CONFIG_FREERTOS_NUMBER_OF_CORES > 1 )
+    #define configUSE_CORE_AFFINITY              1
     #define configRUN_MULTIPLE_PRIORITIES        1
     #define configUSE_TASK_PREEMPTION_DISABLE    1
-#endif /* CONFIG_FREERTOS_SMP */
+#endif /* CONFIG_FREERTOS_SMP && ( CONFIG_FREERTOS_NUMBER_OF_CORES > 1 ) */
 
 /* -------------------------------------------------- IDF FreeRTOS -----------------------------------------------------
  * - All IDF FreeRTOS specific configurations
  * ------------------------------------------------------------------------------------------------------------------ */
 
 #if !CONFIG_FREERTOS_SMP
-    #ifdef CONFIG_FREERTOS_UNICORE
-        #define configNUMBER_OF_CORES                          1
-    #else
-        #define configNUMBER_OF_CORES                          2
-    #endif /* CONFIG_FREERTOS_UNICORE */
-    /* For compatibility */
-    #define configNUM_CORES                                    configNUMBER_OF_CORES
     #ifdef CONFIG_FREERTOS_VTASKLIST_INCLUDE_COREID
         #define configTASKLIST_INCLUDE_COREID                  1
     #endif /* CONFIG_FREERTOS_VTASKLIST_INCLUDE_COREID */
@@ -279,4 +292,7 @@
  * - Any other macros required by the rest of ESP-IDF
  * ------------------------------------------------------------------------------------------------------------------ */
 
-#define portNUM_PROCESSORS    configNUM_CORES
+/* portNUM_PROCESSORS is deprecated and will be removed in ESP-IDF v6.0 (IDF-8785)
+ * Please use the Kconfig option CONFIG_FREERTOS_NUMBER_OF_CORES instead.
+ */
+#define portNUM_PROCESSORS    configNUMBER_OF_CORES

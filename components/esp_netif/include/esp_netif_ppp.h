@@ -1,16 +1,8 @@
-// Copyright 2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 //
 
 #ifndef _ESP_NETIF_PPP_H_
@@ -29,6 +21,17 @@ ESP_EVENT_DECLARE_BASE(NETIF_PPP_STATUS);
 typedef struct esp_netif_ppp_config {
     bool ppp_phase_event_enabled;  /**< Enables events coming from PPP PHASE change */
     bool ppp_error_event_enabled;  /**< Enables events from main PPP state machine producing errors */
+#ifdef CONFIG_LWIP_ENABLE_LCP_ECHO
+    bool ppp_lcp_echo_disabled;     /**< Allows to temporarily disable LCP keepalive (runtime, if enabled compile time)
+                                     *   When LCP echo is enabled in menuconfig, this option can be used to override the setting,
+                                     *   if we have to relax LCP keepalive criteria during runtime operation, for example before OTA update.
+                                     *   The current session must be closed, settings will be applied upon connecting.
+                                     *   */
+#endif // CONFIG_LWIP_ENABLE_LCP_ECHO
+#ifdef CONFIG_LWIP_PPP_SERVER_SUPPORT
+    esp_ip4_addr_t ppp_our_ip4_addr;   /**< Set our preferred address, typically used when we're the PPP server */
+    esp_ip4_addr_t ppp_their_ip4_addr; /**< Set our preferred address, typically used when we're the PPP server */
+#endif // CONFIG_LWIP_PPP_SERVER_SUPPORT
 } esp_netif_ppp_config_t;
 
 /** @brief event id offset for PHASE related events

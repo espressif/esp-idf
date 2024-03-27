@@ -1,3 +1,9 @@
+idf_build_get_property(target IDF_TARGET)
+
+if(${target} STREQUAL "linux")
+    return() # This component is not supported by the POSIX/Linux simulator
+endif()
+
 idf_build_get_property(components_to_build BUILD_COMPONENTS)
 
 set(srcs)
@@ -22,6 +28,8 @@ if(CONFIG_ETH_ENABLED)
 
     if(CONFIG_ETH_USE_ESP32_EMAC)
         list(APPEND srcs "src/esp_eth_mac_esp.c"
+                         "src/esp_eth_mac_esp_dma.c"
+                         "src/esp_eth_mac_esp_gpio.c"
                          "src/esp_eth_phy_dp83848.c"
                          "src/esp_eth_phy_ip101.c"
                          "src/esp_eth_phy_ksz80xx.c"
@@ -55,13 +63,13 @@ idf_component_register(SRCS "${srcs}"
                        LDFRAGMENTS ${ld_fragments}
                        REQUIRES esp_event # For using "ESP_EVENT_DECLARE_BASE" in header file
                        PRIV_REQUIRES ${priv_requires})
-if(CONFIG_ETH_ENABLED)
-    target_compile_options(${COMPONENT_LIB} PRIVATE "-Wno-format")
-endif()
 
 if(CONFIG_ETH_ENABLED)
     if(CONFIG_ETH_USE_SPI_ETHERNET)
-        idf_component_optional_requires(PUBLIC driver)
+        idf_component_optional_requires(PUBLIC driver esp_driver_gpio)
     endif()
     idf_component_optional_requires(PRIVATE esp_netif esp_pm)
+    if(CONFIG_SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE)
+        idf_component_optional_requires(PRIVATE esp_mm)
+    endif()
 endif()

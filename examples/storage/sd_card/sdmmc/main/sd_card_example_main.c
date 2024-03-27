@@ -14,6 +14,7 @@
 #include "esp_vfs_fat.h"
 #include "sdmmc_cmd.h"
 #include "driver/sdmmc_host.h"
+#include "sd_test_io.h"
 
 #define EXAMPLE_MAX_CHAR_SIZE    64
 
@@ -21,6 +22,40 @@ static const char *TAG = "example";
 
 #define MOUNT_POINT "/sdcard"
 
+#ifdef CONFIG_EXAMPLE_DEBUG_PIN_CONNECTIONS
+const char* names[] = {"CLK", "CMD", "D0", "D1", "D2", "D3"};
+const int pins[] = {CONFIG_EXAMPLE_PIN_CLK,
+                    CONFIG_EXAMPLE_PIN_CMD,
+                    CONFIG_EXAMPLE_PIN_D0
+                    #ifdef CONFIG_EXAMPLE_SDMMC_BUS_WIDTH_4
+                    ,CONFIG_EXAMPLE_PIN_D1,
+                    CONFIG_EXAMPLE_PIN_D2,
+                    CONFIG_EXAMPLE_PIN_D3
+                    #endif
+                    };
+
+const int pin_count = sizeof(pins)/sizeof(pins[0]);
+
+#if CONFIG_EXAMPLE_ENABLE_ADC_FEATURE
+const int adc_channels[] = {CONFIG_EXAMPLE_ADC_PIN_CLK,
+                            CONFIG_EXAMPLE_ADC_PIN_CMD,
+                            CONFIG_EXAMPLE_ADC_PIN_D0
+                            #ifdef CONFIG_EXAMPLE_SDMMC_BUS_WIDTH_4
+                            ,CONFIG_EXAMPLE_ADC_PIN_D1,
+                            CONFIG_EXAMPLE_ADC_PIN_D2,
+                            CONFIG_EXAMPLE_ADC_PIN_D3
+                            #endif
+                            };
+#endif //CONFIG_EXAMPLE_ENABLE_ADC_FEATURE
+
+pin_configuration_t config = {
+    .names = names,
+    .pins = pins,
+#if CONFIG_EXAMPLE_ENABLE_ADC_FEATURE
+    .adc_channels = adc_channels,
+#endif
+};
+#endif //CONFIG_EXAMPLE_DEBUG_PIN_CONNECTIONS
 
 static esp_err_t s_example_write_file(const char *path, char *data)
 {
@@ -130,6 +165,9 @@ void app_main(void)
         } else {
             ESP_LOGE(TAG, "Failed to initialize the card (%s). "
                      "Make sure SD card lines have pull-up resistors in place.", esp_err_to_name(ret));
+#ifdef CONFIG_EXAMPLE_DEBUG_PIN_CONNECTIONS
+            check_sd_card_pins(&config, pin_count);
+#endif
         }
         return;
     }
@@ -170,6 +208,7 @@ void app_main(void)
     }
 
     // Format FATFS
+#ifdef CONFIG_EXAMPLE_FORMAT_SD_CARD
     ret = esp_vfs_fat_sdcard_format(mount_point, card);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to format FATFS (%s)", esp_err_to_name(ret));
@@ -182,6 +221,7 @@ void app_main(void)
     } else {
         ESP_LOGI(TAG, "file doesnt exist, format done");
     }
+#endif // CONFIG_EXAMPLE_FORMAT_SD_CARD
 
     const char *file_nihao = MOUNT_POINT"/nihao.txt";
     memset(data, 0, EXAMPLE_MAX_CHAR_SIZE);

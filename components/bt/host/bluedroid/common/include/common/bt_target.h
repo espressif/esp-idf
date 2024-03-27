@@ -51,6 +51,12 @@
 #define ESP_COEX_VSC_INCLUDED        FALSE
 #endif
 
+#if (UC_BT_CONTROLLER_INCLUDED == TRUE)
+#define BT_CONTROLLER_INCLUDED       TRUE
+#else
+#define BT_CONTROLLER_INCLUDED       FALSE
+#endif
+
 /******************************************************************************
 **
 ** Classic BT features
@@ -96,49 +102,50 @@
 #define VND_BT_JV_BTA_L2CAP         TRUE
 #endif /* UC_BT_L2CAP_ENABLED */
 
+#if (UC_BT_HFP_AG_ENABLED == TRUE) || (UC_BT_HFP_CLIENT_ENABLED == TRUE)
+#ifndef RFCOMM_INCLUDED
+#define RFCOMM_INCLUDED             TRUE
+#endif
+#ifndef BTM_SCO_INCLUDED
+#define BTM_SCO_INCLUDED            TRUE
+#endif
+#ifndef SBC_DEC_INCLUDED
+#define SBC_DEC_INCLUDED            TRUE
+#endif
+#ifndef SBC_ENC_INCLUDED
+#define SBC_ENC_INCLUDED            TRUE
+#endif
+#ifndef PLC_INCLUDED
+#define PLC_INCLUDED                TRUE
+#endif
+
 #if (UC_BT_HFP_AG_ENABLED == TRUE)
+#ifndef BTM_MAX_SCO_LINKS_AG
+#define BTM_MAX_SCO_LINKS_AG        (1)
+#endif
 #define BTC_HF_INCLUDED             TRUE
 #define BTA_AG_INCLUDED             TRUE
-#define PLC_INCLUDED                TRUE
-#define BTA_JV_RFCOMM_INCLUDED      TRUE
-#ifndef RFCOMM_INCLUDED
-#define RFCOMM_INCLUDED             TRUE
+#else
+#ifndef BTM_MAX_SCO_LINKS_AG
+#define BTM_MAX_SCO_LINKS_AG        (0)
 #endif
-#ifndef BTM_SCO_INCLUDED
-#define BTM_SCO_INCLUDED            TRUE
-#endif
-#ifndef BTM_MAX_SCO_LINKS
-#define BTM_MAX_SCO_LINKS           (1)
-#endif
-#ifndef SBC_DEC_INCLUDED
-#define SBC_DEC_INCLUDED            TRUE
-#endif
-#ifndef SBC_ENC_INCLUDED
-#define SBC_ENC_INCLUDED            TRUE
-#endif
-#endif  /* UC_BT_HFP_AG_ENABLED */
-
+#endif /* (UC_BT_HFP_AG_ENABLED == TRUE) */
 #if (UC_BT_HFP_CLIENT_ENABLED == TRUE)
+#ifndef BTM_MAX_SCO_LINKS_CLIENT
+#define BTM_MAX_SCO_LINKS_CLIENT    (1)
+#endif
 #define BTC_HF_CLIENT_INCLUDED      TRUE
 #define BTA_HF_INCLUDED             TRUE
-#define PLC_INCLUDED                TRUE
-#ifndef RFCOMM_INCLUDED
-#define RFCOMM_INCLUDED             TRUE
+#else
+#ifndef BTM_MAX_SCO_LINKS_CLIENT
+#define BTM_MAX_SCO_LINKS_CLIENT    (0)
 #endif
-#ifndef BTM_SCO_INCLUDED
-#define BTM_SCO_INCLUDED            TRUE
-#endif
-#ifndef BTM_MAX_SCO_LINKS
-#define BTM_MAX_SCO_LINKS           (1)
-#endif
+#endif /* (UC_BT_HFP_CLIENT_ENABLED == TRUE) */
 
-#ifndef SBC_DEC_INCLUDED
-#define SBC_DEC_INCLUDED            TRUE
+#ifndef BTM_MAX_SCO_LINKS
+#define BTM_MAX_SCO_LINKS           (BTM_MAX_SCO_LINKS_AG + BTM_MAX_SCO_LINKS_CLIENT)
 #endif
-#ifndef SBC_ENC_INCLUDED
-#define SBC_ENC_INCLUDED            TRUE
-#endif
-#endif  /* UC_BT_HFP_CLIENT_ENABLED */
+#endif /* (UC_BT_HFP_AG_ENABLED == TRUE) || (UC_BT_HFP_CLIENT_ENABLED == TRUE) */
 
 #if UC_BT_HID_ENABLED
 #define BT_HID_INCLUDED             TRUE
@@ -206,6 +213,12 @@
 #define BLE_FEAT_PERIODIC_ADV_ENH   FALSE
 #endif
 
+#if (UC_BT_BLE_FEAT_CREATE_SYNC_ENH == TRUE)
+#define BLE_FEAT_CREATE_SYNC_ENH   TRUE
+#else
+#define BLE_FEAT_CREATE_SYNC_ENH   FALSE
+#endif
+
 #if (UC_BT_BLE_HIGH_DUTY_ADV_INTERVAL == TRUE)
 #define BLE_HIGH_DUTY_ADV_INTERVAL TRUE
 #else
@@ -246,6 +259,12 @@
 #define GATTC_CONNECT_RETRY_EN     TRUE
 #else
 #define GATTC_CONNECT_RETRY_EN     FALSE
+#endif
+
+#ifdef UC_BT_GATTC_NOTIF_REG_MAX
+#define BTA_GATTC_NOTIF_REG_MAX     UC_BT_GATTC_NOTIF_REG_MAX
+#else
+#define BTA_GATTC_NOTIF_REG_MAX     5
 #endif
 
 #if (UC_BT_SMP_ENABLE)
@@ -875,13 +894,9 @@
 #define BTM_DEFAULT_SCO_MODE        2
 #endif
 
-/* The number of security records for peer devices. 100 AS Default*/
+/* The number of security records for peer devices. 15 AS Default*/
 #ifndef BTM_SEC_MAX_DEVICE_RECORDS
-#if SMP_INCLUDED == TRUE
-#define BTM_SEC_MAX_DEVICE_RECORDS  15 // 100
-#else
-#define BTM_SEC_MAX_DEVICE_RECORDS  8
-#endif /* SMP_INCLUDED == TRUE */
+#define BTM_SEC_MAX_DEVICE_RECORDS  UC_BT_SMP_MAX_BONDS
 #endif
 
 /* The number of security records for services. 32 AS Default*/
@@ -999,7 +1014,7 @@
 /* TRUE to include Sniff Subrating */
 #if (BTA_DM_PM_INCLUDED == TRUE)
 #ifndef BTM_SSR_INCLUDED
-#define BTM_SSR_INCLUDED                TRUE
+#define BTM_SSR_INCLUDED                FALSE
 #endif
 #endif /* BTA_DM_PM_INCLUDED */
 
@@ -1980,6 +1995,24 @@
 /* Default Security level for NAP role. */
 #ifndef PAN_NAP_SECURITY_LEVEL
 #define PAN_NAP_SECURITY_LEVEL           0
+#endif
+
+/******************************************************************************
+**
+** HFP
+**
+******************************************************************************/
+
+#if (BTC_HF_INCLUDED == TRUE) && (BT_CLASSIC_BQB_INCLUDED == TRUE)
+#define BT_HF_AG_BQB_INCLUDED           TRUE
+#else
+#define BT_HF_AG_BQB_INCLUDED           FALSE
+#endif
+
+#if (BTC_HF_CLIENT_INCLUDED == TRUE) && (BT_CLASSIC_BQB_INCLUDED == TRUE)
+#define BT_HF_CLIENT_BQB_INCLUDED       TRUE
+#else
+#define BT_HF_CLIENT_BQB_INCLUDED       FALSE
 #endif
 
 /******************************************************************************

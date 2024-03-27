@@ -31,7 +31,7 @@ void wpa_free_eapol(u8 *buffer);
 int wpa_ether_send(void *ctx, const u8 *dest, u16 proto,
                    const u8 *data, size_t data_len);
 
-void wpa_supplicant_transition_disable(void *sm, u8 bitmap);
+void wpa_supplicant_transition_disable(struct wpa_sm *sm, u8 bitmap);
 
 int hostapd_send_eapol(const u8 *source, const u8 *sta_addr,
 		       const u8 *data, size_t data_len);

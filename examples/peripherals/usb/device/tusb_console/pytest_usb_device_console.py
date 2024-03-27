@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
 from time import sleep
 
@@ -9,6 +9,9 @@ from serial.tools.list_ports import comports
 
 
 @pytest.mark.esp32s2
+@pytest.mark.esp32s3
+@pytest.mark.esp32p4
+@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='lack of runners with usb_device tag')
 @pytest.mark.usb_device
 def test_usb_device_console_example(dut: Dut) -> None:
     dut.expect_exact('USB initialization DONE')

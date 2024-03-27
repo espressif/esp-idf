@@ -9,7 +9,7 @@
 
 
 #include "sdkconfig.h"
-#if CONFIG_BT_BLE_ENABLED
+#if CONFIG_BT_CONTROLLER_ENABLED && CONFIG_BT_BLE_ENABLED
 
 #ifdef __cplusplus
 extern "C" {
@@ -20,6 +20,7 @@ extern "C" {
 #include "esp_gatts_api.h"
 #include "esp_bt_defs.h"
 #include "esp_bt_main.h"
+#include "esp_bt_device.h"
 #include "esp_gatt_common_api.h"
 
 #define PROFILE_NUM 1

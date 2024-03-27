@@ -117,3 +117,19 @@ void btm_free(void)
     btm_ble_sem_free();
 #endif
 }
+
+uint8_t btm_acl_active_count(void)
+{
+    list_node_t *p_node = NULL;
+    tACL_CONN *p_acl_conn = NULL;
+    uint8_t count = 0;
+
+    for (p_node = list_begin(btm_cb.p_acl_db_list); p_node; p_node = list_next(p_node)) {
+        p_acl_conn = list_node(p_node);
+        if (p_acl_conn && p_acl_conn->in_use) {
+            count++;
+        }
+    }
+
+    return count;
+}

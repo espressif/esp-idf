@@ -17,7 +17,7 @@ extern "C" {
  * When COCPU accesses the RTC memory, dont need to convert the access address.
  */
 #define WRITE_RTC_MEM(addr, val)    (*((volatile int*)(addr))) = (int) (val)
-#define READ_RTC_MEM(addr)		    (*(volatile int*)(addr))
+#define READ_RTC_MEM(addr)          (*(volatile int*)(addr))
 
 /*
  * When COCPU accesses the RTC register, it needs to convert the access address.

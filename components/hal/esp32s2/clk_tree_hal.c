@@ -57,7 +57,7 @@ uint32_t clk_hal_cpu_get_freq_hz(void)
     }
 }
 
-uint32_t clk_hal_ahb_get_freq_hz(void)
+static uint32_t clk_hal_ahb_get_freq_hz(void)
 {
     // AHB_CLK path is highly dependent on CPU_CLK path
     switch (clk_ll_cpu_get_src()) {
@@ -100,13 +100,14 @@ uint32_t clk_hal_xtal_get_freq_mhz(void)
 
 uint32_t clk_hal_apll_get_freq_hz(void)
 {
-    uint32_t xtal_freq_mhz = clk_hal_xtal_get_freq_mhz();
+    uint64_t xtal_freq_hz = (uint64_t)clk_hal_xtal_get_freq_mhz() * 1000000ULL;
     uint32_t o_div = 0;
     uint32_t sdm0 = 0;
     uint32_t sdm1 = 0;
     uint32_t sdm2 = 0;
     clk_ll_apll_get_config(&o_div, &sdm0, &sdm1, &sdm2);
-    uint32_t apll_freq_hz = (uint32_t)(xtal_freq_mhz * MHZ * (4 + sdm2 + (float)sdm1/256.0 + (float)sdm0/65536.0) /
-                            (((float)o_div + 2) * 2));
+    uint32_t numerator = ((4 + sdm2) << 16) | (sdm1 << 8) | sdm0;
+    uint32_t denominator = (o_div + 2) << 17;
+    uint32_t apll_freq_hz = (uint32_t)((xtal_freq_hz * numerator) / denominator);
     return apll_freq_hz;
 }

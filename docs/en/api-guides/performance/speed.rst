@@ -54,7 +54,7 @@ Executing the target multiple times can help average out factors, e.g., RTOS con
 - It is also possible to use the standard Unix ``gettimeofday()`` and ``utime()`` functions, although the overhead is slightly higher.
 - Otherwise, including ``hal/cpu_hal.h`` and calling the HAL function ``cpu_hal_get_cycle_count()`` returns the number of CPU cycles executed. This function has lower overhead than the others, which is good for measuring very short execution times with high precision.
 
-  .. only:: not CONFIG_FREERTOS_UNICORE
+  .. only:: SOC_HP_CPU_HAS_MULTIPLE_CORES
 
       The CPU cycles are counted per-core, so only use this method from an interrupt handler, or a task that is pinned to a single core.
 
@@ -159,7 +159,7 @@ Common priorities are:
 
 .. Note: the following two lists should be kept the same, but the second list also shows CPU affinities
 
-.. only:: CONFIG_FREERTOS_UNICORE
+.. only:: not SOC_HP_CPU_HAS_MULTIPLE_CORES
 
     .. list::
 
@@ -167,7 +167,7 @@ Common priorities are:
         - :doc:`/api-reference/system/esp_timer` system task to manage timer events and execute callbacks has high priority (22, ``ESP_TASK_TIMER_PRIO``)
         - FreeRTOS Timer Task to handle FreeRTOS timer callbacks is created when the scheduler initializes and has minimum task priority (1, :ref:`configurable <CONFIG_FREERTOS_TIMER_TASK_PRIORITY>`).
         - :doc:`/api-reference/system/esp_event` system task to manage the default system event loop and execute callbacks has high priority (20, ``ESP_TASK_EVENT_PRIO``). This configuration is only used if the application calls :cpp:func:`esp_event_loop_create_default`. It is possible to call :cpp:func:`esp_event_loop_create` with a custom task configuration instead.
-        - :doc:`/api-guides/lwip` TCP/IP task has high priority (18).
+        - :doc:`/api-guides/lwip` TCP/IP task has high priority (18, ``ESP_TASK_TCPIP_PRIO``).
         :SOC_WIFI_SUPPORTED: - :doc:`/api-guides/wifi` task has high priority (23).
         :SOC_WIFI_SUPPORTED: - Wi-Fi wpa_supplicant component may create dedicated tasks while the Wi-Fi Protected Setup (WPS), WPA2 EAP-TLS, Device Provisioning Protocol (DPP) or BSS Transition Management (BTM) features are in use. These tasks all have low priority (2).
         :SOC_BT_SUPPORTED: - :doc:`/api-reference/bluetooth/controller_vhci` task has high priority (23, ``ESP_TASK_BT_CONTROLLER_PRIO``). The Bluetooth Controller needs to respond to requests with low latency, so it should always be among the highest priority task in the system.
@@ -176,7 +176,7 @@ Common priorities are:
         - If using the :doc:`/api-reference/protocols/mqtt` component, it creates a task with default priority 5 (:ref:`configurable<CONFIG_MQTT_TASK_PRIORITY>`), depending on :ref:`CONFIG_MQTT_USE_CUSTOM_CONFIG`, and also configurable at runtime by ``task_prio`` field in the :cpp:class:`esp_mqtt_client_config_t`)
         - To see what is the task priority for ``mDNS`` service, please check `Performance Optimization <https://docs.espressif.com/projects/esp-protocols/mdns/docs/latest/en/index.html#performance-optimization>`__.
 
-.. only :: not CONFIG_FREERTOS_UNICORE
+.. only:: SOC_HP_CPU_HAS_MULTIPLE_CORES
 
     .. list::
 
@@ -184,7 +184,7 @@ Common priorities are:
         - :doc:`/api-reference/system/esp_timer` system task to manage high precision timer events and execute callbacks has high priority (22, ``ESP_TASK_TIMER_PRIO``). This task is pinned to Core 0.
         - FreeRTOS Timer Task to handle FreeRTOS timer callbacks is created when the scheduler initializes and has minimum task priority (1, :ref:`configurable <CONFIG_FREERTOS_TIMER_TASK_PRIORITY>`). This task is pinned to Core 0.
         - :doc:`/api-reference/system/esp_event` system task to manage the default system event loop and execute callbacks has high priority (20, ``ESP_TASK_EVENT_PRIO``) and it is pinned to Core 0. This configuration is only used if the application calls :cpp:func:`esp_event_loop_create_default`, it is possible to call :cpp:func:`esp_event_loop_create` with a custom task configuration instead.
-        - :doc:`/api-guides/lwip` TCP/IP task has high priority (18) and is not pinned to any core (:ref:`configurable<CONFIG_LWIP_TCPIP_TASK_AFFINITY>`).
+        - :doc:`/api-guides/lwip` TCP/IP task has high priority (18, ``ESP_TASK_TCPIP_PRIO``) and is not pinned to any core (:ref:`configurable<CONFIG_LWIP_TCPIP_TASK_AFFINITY>`).
         :SOC_WIFI_SUPPORTED: - :doc:`/api-guides/wifi` task has high priority (23) and is pinned to Core 0 by default (:ref:`configurable<CONFIG_ESP_WIFI_TASK_CORE_ID>`).
         :SOC_WIFI_SUPPORTED: - Wi-Fi wpa_supplicant component may create dedicated tasks while the Wi-Fi Protected Setup (WPS), WPA2 EAP-TLS, Device Provisioning Protocol (DPP) or BSS Transition Management (BTM) features are in use. These tasks all have low priority (2) and are not pinned to any core.
         :SOC_BT_SUPPORTED: - :doc:`/api-reference/bluetooth/controller_vhci` task has high priority (23, ``ESP_TASK_BT_CONTROLLER_PRIO``) and is pinned to Core 0 by default (:ref:`configurable <{IDF_TARGET_CONTROLLER_CORE_CONFIG}>`). The Bluetooth Controller needs to respond to requests with low latency, so it should always be among the highest priority task assigned to a single CPU.
@@ -204,11 +204,11 @@ Common priorities are:
 Choosing Task Priorities of the Application
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. only:: CONFIG_FREERTOS_UNICORE
+.. only:: not SOC_HP_CPU_HAS_MULTIPLE_CORES
 
     In general, it is not recommended to set task priorities higher than the built-in {IDF_TARGET_RF_TYPE} operations as starving them of CPU may make the system unstable. For very short timing-critical operations that do not use the network, use an ISR or a very restricted task (with very short bursts of runtime only) at the highest priority (24). Choosing priority 19 allows lower-layer {IDF_TARGET_RF_TYPE} functionality to run without delays, but still preempts the lwIP TCP/IP stack and other less time-critical internal functionality - this is the best option for time-critical tasks that do not perform network operations. Any task that does TCP/IP network operations should run at a lower priority than the lwIP TCP/IP task (18) to avoid priority-inversion issues.
 
-.. only:: not CONFIG_FREERTOS_UNICORE
+.. only:: SOC_HP_CPU_HAS_MULTIPLE_CORES
 
     With a few exceptions, most importantly the lwIP TCP/IP task, in the default configuration most built-in tasks are pinned to Core 0. This makes it quite easy for the application to place high priority tasks on Core 1. Using priority 19 or higher guarantees that an application task can run on Core 1 without being preempted by any built-in task. To further isolate the tasks running on each CPU, configure the :ref:`lwIP task <CONFIG_LWIP_TCPIP_TASK_AFFINITY>` to only run on Core 0 instead of either core, which may reduce total TCP/IP throughput depending on what other tasks are running.
 
@@ -234,9 +234,11 @@ To obtain the best performance for a particular interrupt handler:
 .. list::
 
     - Assign more important interrupts a higher priority using a flag such as ``ESP_INTR_FLAG_LEVEL2`` or ``ESP_INTR_FLAG_LEVEL3`` when calling :cpp:func:`esp_intr_alloc`.
-    :not CONFIG_FREERTOS_UNICORE: - Assign the interrupt on a CPU where built-in {IDF_TARGET_RF_TYPE} tasks are not configured to run, which means assigning the interrupt on Core 1 by default, see :ref:`built-in-task-priorities`. Interrupts are assigned on the same CPU where the :cpp:func:`esp_intr_alloc` function call is made.
+    :SOC_HP_CPU_HAS_MULTIPLE_CORES: - Assign the interrupt on a CPU where built-in {IDF_TARGET_RF_TYPE} tasks are not configured to run, which means assigning the interrupt on Core 1 by default, see :ref:`built-in-task-priorities`. Interrupts are assigned on the same CPU where the :cpp:func:`esp_intr_alloc` function call is made.
     - If you are sure the entire interrupt handler can run from IRAM (see :ref:`iram-safe-interrupt-handlers`) then set the ``ESP_INTR_FLAG_IRAM`` flag when calling :cpp:func:`esp_intr_alloc` to assign the interrupt. This prevents it being temporarily disabled if the application firmware writes to the internal SPI flash.
     - Even if the interrupt handler is not IRAM-safe, if it is going to be executed frequently then consider moving the handler function to IRAM anyhow. This minimizes the chance of a flash cache miss when the interrupt code is executed (see :ref:`speed-targeted-optimizations`). It is possible to do this without adding the ``ESP_INTR_FLAG_IRAM`` flag to mark the interrupt as IRAM-safe, if only part of the handler is guaranteed to be in IRAM.
+
+.. _improve-network-speed:
 
 Improving Network Speed
 -----------------------
@@ -244,9 +246,9 @@ Improving Network Speed
 .. list::
 
     :SOC_WIFI_SUPPORTED: * For Wi-Fi, see :ref:`How-to-improve-Wi-Fi-performance` and :ref:`wifi-buffer-usage`
-    * For lwIP TCP/IP (Wi-Fi and Ethernet), see :ref:`lwip-performance`
-    :SOC_WIFI_SUPPORTED: * The :example:`wifi/iperf` example contains a configuration that is heavily optimized for Wi-Fi TCP/IP throughput. Append the contents of the files :example_file:`wifi/iperf/sdkconfig.defaults`, :example_file:`wifi/iperf/sdkconfig.defaults.{IDF_TARGET_PATH_NAME}` and :example_file:`wifi/iperf/sdkconfig.ci.99` to the ``sdkconfig`` file in your project in order to add all of these options. Note that some of these options may have trade-offs in terms of reduced debuggability, increased firmware size, increased memory usage, or reduced performance of other features. To get the best result, read the documentation pages linked above and use related information to determine exactly which options are best suited for your app.
-    :SOC_EMAC_SUPPORTED: * The :example:`ethernet/iperf` example contains a configuration that is heavily optimized for Ethernet TCP/IP throughput. Examine :example_file:`ethernet/iperf/sdkconfig.defaults` for more details. Note that some of these options may have trade-offs in terms of reduced debuggability, increased firmware size, increased memory usage, or reduced performance of other features. To get the best result, read the documentation pages linked above and use related information to determine exactly which options are best suited for your app.
+    * For lwIP TCP/IP, see :ref:`lwip-performance`
+    :SOC_WIFI_SUPPORTED: * The :example:`wifi/iperf` example contains a configuration that is heavily optimized for Wi-Fi TCP/IP throughput, usually at the expense of higher RAM usage. Append the contents of the files :example_file:`wifi/iperf/sdkconfig.defaults`, :example_file:`wifi/iperf/sdkconfig.defaults.{IDF_TARGET_PATH_NAME}` and :example_file:`wifi/iperf/sdkconfig.ci.99` to the ``sdkconfig`` file in your project in order to add all of these options. Note that some of these options may have trade-offs in terms of reduced debuggability, increased firmware size, increased memory usage, or reduced performance of other features. To get the best result, read the documentation pages linked above and use related information to determine exactly which options are best suited for your app.
+    :SOC_EMAC_SUPPORTED: * The :example:`ethernet/iperf` example contains a configuration that is heavily optimized for Ethernet TCP/IP throughput, usually at the expense of higher RAM usage. Examine :example_file:`ethernet/iperf/sdkconfig.defaults` for more details. Note that some of these options may have trade-offs in terms of reduced debuggability, increased firmware size, increased memory usage, or reduced performance of other features. To get the best result, read the documentation pages linked above and use related information to determine exactly which options are best suited for your app.
 
 Improving I/O Performance
 -------------------------
@@ -256,7 +258,7 @@ Using standard C library functions like ``fread`` and ``fwrite`` instead of plat
 :doc:`/api-reference/storage/fatfs` specific information and tips:
 
 .. list::
-    
+
     - Maximum size of the R/W request = FatFS cluster size (allocation unit size).
     - Use ``read`` and ``write`` instead of ``fread`` and ``fwrite``.
     - To increase speed of buffered reading functions like ``fread`` and ``fgets``, you can increase a size of the file buffer (Newlib's default is 128 bytes) to a higher number like 4096, 8192 or 16384. This can be done locally via the ``setvbuf`` function used on a certain file pointer or globally applied to all files via modifying :ref:`CONFIG_FATFS_VFS_FSTAT_BLKSIZE`.

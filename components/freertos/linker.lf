@@ -171,8 +171,7 @@ entries:
         tasks:ulTaskGenericNotifyValueClear (default)
         if FREERTOS_GENERATE_RUN_TIME_STATS = y:
             tasks:ulTaskGetIdleRunTimeCounter (default)
-            if FREERTOS_USE_KERNEL_10_5_1 = y:
-                tasks:ulTaskGetIdleRunTimePercent (default)
+            tasks:ulTaskGetIdleRunTimePercent (default)
         tasks:prvAddCurrentTaskToDelayedList (default)
         if FREERTOS_USE_TRACE_FACILITY = y:
             tasks:uxTaskGetSystemState (default)
@@ -195,8 +194,7 @@ entries:
         timers:uxTimerGetReloadMode (default)
         timers:xTimerGetExpiryTime (default)
         timers:pcTimerGetName (default)
-        if FREERTOS_USE_KERNEL_10_5_1 = y:
-            timers:prvReloadTimer (default)
+        timers:prvReloadTimer (default)
         timers:prvProcessExpiredTimer (default)
         timers:prvTimerTask (default)
         timers:prvProcessTimerOrBlockTask (default)

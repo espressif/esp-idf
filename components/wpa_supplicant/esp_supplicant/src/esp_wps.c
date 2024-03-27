@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -26,14 +26,15 @@
 #include "esp_err.h"
 #include "esp_private/wifi.h"
 #include "esp_wps_i.h"
+#include "esp_dpp_i.h"
 #include "esp_wps.h"
 #include "eap_common/eap_wsc_common.h"
 #include "esp_wpas_glue.h"
 
 const char *wps_model_number = CONFIG_IDF_TARGET;
 
-void *s_wps_api_lock = NULL;  /* Used in WPS public API only, never be freed */
-void *s_wps_api_sem = NULL;   /* Sync semaphore used between WPS publi API caller task and WPS task */
+void *s_wps_api_lock = NULL;  /* Used in WPS/WPS-REG public API only, never be freed */
+void *s_wps_api_sem = NULL;   /* Sync semaphore used between WPS/WPS-REG public API caller task and WPS task, never be freed */
 bool s_wps_enabled = false;
 #ifdef USE_WPS_TASK
 struct wps_rx_param {
@@ -43,11 +44,6 @@ struct wps_rx_param {
     STAILQ_ENTRY(wps_rx_param) bqentry;
 };
 static STAILQ_HEAD(,wps_rx_param) s_wps_rxq;
-
-typedef struct {
-    void *arg;
-    int ret; /* return value */
-} wps_ioctl_param_t;
 
 static void *s_wps_task_hdl = NULL;
 static void *s_wps_queue = NULL;
@@ -157,9 +153,11 @@ void wps_task(void *pvParameters )
                 if (e->sig == SIG_WPS_ENABLE) {
                     param->ret = wifi_wps_enable_internal((esp_wps_config_t *)(param->arg));
                 } else if (e->sig == SIG_WPS_DISABLE) {
+                    DATA_MUTEX_TAKE();
                     param->ret = wifi_wps_disable_internal();
                     del_task = true;
                     s_wps_task_hdl = NULL;
+                    DATA_MUTEX_GIVE();
                 } else {
                     param->ret = wifi_station_wps_start();
                 }
@@ -220,6 +218,12 @@ int wps_post(uint32_t sig, uint32_t par)
     wpa_printf(MSG_DEBUG, "wps post: sig=%" PRId32 " cnt=%d", sig, s_wps_sig_cnt[sig]);
 
     DATA_MUTEX_TAKE();
+
+    if (!s_wps_task_hdl) {
+        wpa_printf(MSG_DEBUG, "wps post: sig=%" PRId32 " failed as wps task has been deinited", sig);
+        DATA_MUTEX_GIVE();
+        return ESP_FAIL;
+    }
     if (s_wps_sig_cnt[sig]) {
         wpa_printf(MSG_DEBUG, "wps post: sig=%" PRId32 " processing", sig);
         DATA_MUTEX_GIVE();
@@ -1034,15 +1038,18 @@ int wps_sm_rx_eapol_internal(u8 *src_addr, u8 *buf, u32 len)
 
             tmp = (u8 *)(ehdr + 1) + 1;
             ret = wps_process_wps_mX_req(tmp, plen - sizeof(*ehdr) - 1, &res);
-            if (ret == ESP_OK && res != WPS_FAILURE && res != WPS_FRAGMENT) {
+            if (res == WPS_FRAGMENT) {
+                wpa_printf(MSG_DEBUG, "wps frag, silently exit", res);
+                ret = ESP_OK;
+                break;
+            }
+            if (ret == ESP_OK && res != WPS_FAILURE) {
                 ret = wps_send_wps_mX_rsp(ehdr->identifier);
+
                 if (ret == ESP_OK) {
                     wpa_printf(MSG_DEBUG, "sm->wps->state = %d", sm->wps->state);
                     wps_start_msg_timer();
                 }
-            } else if (ret == ESP_OK && res == WPS_FRAGMENT) {
-                wpa_printf(MSG_DEBUG, "wps frag, continue...");
-                ret = ESP_OK;
             } else {
                 ret = ESP_FAIL;
             }
@@ -1706,12 +1713,6 @@ int wps_task_deinit(void)
         wps_rxq_deinit();
     }
 
-    if (s_wps_data_lock) {
-        os_semphr_delete(s_wps_data_lock);
-        s_wps_data_lock = NULL;
-        wpa_printf(MSG_DEBUG, "wps task deinit: free data lock");
-    }
-
     return ESP_OK;
 }
 
@@ -1723,10 +1724,12 @@ int wps_task_init(void)
      */
     wps_task_deinit();
 
-    s_wps_data_lock = os_recursive_mutex_create();
     if (!s_wps_data_lock) {
-        wpa_printf(MSG_ERROR, "wps task init: failed to alloc data lock");
-        goto _wps_no_mem;
+        s_wps_data_lock = os_recursive_mutex_create();
+        if (!s_wps_data_lock) {
+            wpa_printf(MSG_ERROR, "wps task init: failed to alloc data lock");
+            goto _wps_no_mem;
+        }
     }
 
     s_wps_api_sem = os_semphr_create(1, 0);
@@ -1823,6 +1826,11 @@ int esp_wifi_wps_enable(const esp_wps_config_t *config)
         return ESP_ERR_WIFI_MODE;
     }
 
+    if (is_dpp_enabled()) {
+        wpa_printf(MSG_ERROR, "wps enabled failed since DPP is initialized");
+        return ESP_FAIL;
+    }
+
     API_MUTEX_TAKE();
     if (s_wps_enabled) {
         if (sm && os_memcmp(sm->identity, WSC_ID_REGISTRAR, sm->identity_len) == 0) {
@@ -1860,6 +1868,11 @@ int esp_wifi_wps_enable(const esp_wps_config_t *config)
 #endif
 }
 
+bool is_wps_enabled(void)
+{
+    return s_wps_enabled;
+}
+
 int wifi_wps_enable_internal(const esp_wps_config_t *config)
 {
     int ret = 0;
@@ -1870,7 +1883,6 @@ int wifi_wps_enable_internal(const esp_wps_config_t *config)
         wpa_printf(MSG_ERROR, "wps enable: invalid wps type");
         return ESP_ERR_WIFI_WPS_TYPE;
     }
-
     wpa_printf(MSG_DEBUG, "Set factory information.");
     ret = wps_set_factory_info(config);
     if (ret != 0) {
@@ -1896,6 +1908,11 @@ int wifi_wps_enable_internal(const esp_wps_config_t *config)
 int wifi_wps_disable_internal(void)
 {
     wps_set_status(WPS_STATUS_DISABLE);
+
+    /* Call wps_delete_timer to delete all WPS timer, no timer will call wps_post()
+     * to post message to wps_task once this function returns.
+     */
+    wps_delete_timer();
     wifi_station_wps_deinit();
     return ESP_OK;
 }
@@ -1922,11 +1939,6 @@ int esp_wifi_wps_disable(void)
     wps_status = wps_get_status();
     wpa_printf(MSG_INFO, "wifi_wps_disable");
     wps_set_type(WPS_TYPE_DISABLE); /* Notify WiFi task */
-
-    /* Call wps_delete_timer to delete all WPS timer, no timer will call wps_post()
-     * to post message to wps_task once this function returns.
-     */
-    wps_delete_timer();
 
 #ifdef USE_WPS_TASK
     ret = wps_post_block(SIG_WPS_DISABLE, 0);

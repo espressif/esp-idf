@@ -1,0 +1,11 @@
+# Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
+
+components/esp_driver_parlio/test_apps/parlio:
+  disable:
+    - if: SOC_PARLIO_SUPPORTED != 1
+  disable_test:
+    - if: IDF_TARGET == "esp32p4"
+      temporary: true
+      reason: lack of runner
+  depends_components:
+    - esp_driver_parlio

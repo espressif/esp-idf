@@ -21,4 +21,12 @@ menu "ESP HTTP client"
             This option will enable HTTP Digest Authentication. It is enabled by default, but use of this
             configuration is not recommended as the password can be derived from the exchange, so it introduces
             a vulnerability when not using TLS
+
+    config ESP_HTTP_CLIENT_ENABLE_CUSTOM_TRANSPORT
+        bool "Enable custom transport"
+        default n
+        help
+            This option will enable injection of a custom tcp_transport handle, so the http operation
+            will be performed on top of the user defined transport abstraction (if configured)
+
 endmenu

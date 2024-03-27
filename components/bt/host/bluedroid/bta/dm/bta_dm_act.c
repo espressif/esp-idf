@@ -46,6 +46,9 @@
 #if (GAP_INCLUDED == TRUE)
 #include "stack/gap_api.h"
 #endif
+#if (BT_CONTROLLER_INCLUDED == TRUE)
+#include "esp_bt.h"
+#endif
 
 static void bta_dm_inq_results_cb (tBTM_INQ_RESULTS *p_inq, UINT8 *p_eir);
 static void bta_dm_inq_cmpl_cb (void *p_result);
@@ -74,9 +77,10 @@ static void bta_dm_bl_change_cback (tBTM_BL_EVENT_DATA *p_data);
 static void bta_dm_acl_link_stat_cback(tBTM_ACL_LINK_STAT_EVENT_DATA *p_data);
 static void bta_dm_policy_cback(tBTA_SYS_CONN_STATUS status, UINT8 id, UINT8 app_id, BD_ADDR peer_addr);
 
-/* Extended Inquiry Response */
 #if (CLASSIC_BT_INCLUDED == TRUE)
+static void bta_dm_encryption_change_cback(BD_ADDR bd_addr, UINT8 enc_mode);
 static UINT8 bta_dm_sp_cback (tBTM_SP_EVT event, tBTM_SP_EVT_DATA *p_data);
+/* Extended Inquiry Response */
 static void bta_dm_set_eir (char *local_name);
 #endif
 #if (SDP_INCLUDED == TRUE)
@@ -136,7 +140,6 @@ static void bta_dm_observe_discard_cb (uint32_t num_dis);
 static void bta_dm_delay_role_switch_cback(TIMER_LIST_ENT *p_tle);
 extern void sdpu_uuid16_to_uuid128(UINT16 uuid16, UINT8 *p_uuid128);
 static void bta_dm_disable_timer_cback(TIMER_LIST_ENT *p_tle);
-extern int bredr_txpwr_get(int *min_power_level, int *max_power_level);
 
 const UINT16 bta_service_id_to_uuid_lkup_tbl [BTA_MAX_SERVICE_ID] = {
     UUID_SERVCLASS_PNP_INFORMATION,         /* Reserved */
@@ -229,8 +232,10 @@ const tBTM_APPL_INFO bta_security = {
     &bta_dm_authentication_complete_cback,
     &bta_dm_bond_cancel_complete_cback,
 #if (CLASSIC_BT_INCLUDED == TRUE)
+    &bta_dm_encryption_change_cback,
     &bta_dm_sp_cback,
 #else
+    NULL,
     NULL,
 #endif
 #if BLE_INCLUDED == TRUE
@@ -575,6 +580,14 @@ void bta_dm_disable (tBTA_DM_MSG *p_data)
     bta_dm_disable_search_and_disc();
     bta_dm_cb.disabling = TRUE;
 
+#if BLE_INCLUDED == TRUE
+    /* reset scan activity status*/
+    btm_cb.ble_ctr_cb.scan_activity = 0;
+
+    /* reset advertising activity status*/
+    btm_cb.ble_ctr_cb.inq_var.state = 0;
+#endif
+
 #if BLE_INCLUDED == TRUE && BTA_GATT_INCLUDED == TRUE
     BTM_BleClearBgConnDev();
 #endif
@@ -600,6 +613,11 @@ void bta_dm_disable (tBTA_DM_MSG *p_data)
 
 #if BLE_INCLUDED == TRUE && BLE_PRIVACY_SPT == TRUE
     btm_ble_resolving_list_cleanup ();  //by TH, because cmn_ble_vsc_cb.max_filter has something mistake as btm_ble_adv_filter_cleanup
+#endif
+
+#if BLE_INCLUDED == TRUE
+    // btm_ble_multi_adv_init is called when the host is enabled, so btm_ble_multi_adv_cleanup is called when the host is disabled.
+    btm_ble_multi_adv_cleanup();
 #endif
 
 }
@@ -710,6 +728,14 @@ void bta_dm_cfg_coex_status (tBTA_DM_MSG *p_data)
                          p_data->cfg_coex_status.status);
 }
 #endif
+
+void bta_dm_send_vendor_hci(tBTA_DM_MSG *p_data)
+{
+    BTM_VendorSpecificCommand(p_data->vendor_hci_cmd.opcode,
+                              p_data->vendor_hci_cmd.param_len,
+                              p_data->vendor_hci_cmd.p_param_buf,
+                              p_data->vendor_hci_cmd.vendor_hci_cb);
+}
 
 /*******************************************************************************
 **
@@ -872,6 +898,28 @@ void bta_dm_get_page_timeout (tBTA_DM_MSG *p_data)
 {
     BTM_ReadPageTimeout(p_data->get_page_timeout.get_page_to_cb);
 }
+
+/*******************************************************************************
+**
+** Function         bta_dm_set_acl_pkt_types
+**
+** Description      Sets ACL packet types
+**
+**
+** Returns          void
+**
+*******************************************************************************/
+void bta_dm_set_acl_pkt_types (tBTA_DM_MSG *p_data)
+{
+    if (p_data->set_acl_pkt_types.set_acl_pkt_types_cb != NULL) {
+        BTM_SetAclPktTypes(p_data->set_acl_pkt_types.rmt_addr,
+                           p_data->set_acl_pkt_types.pkt_types,
+                           p_data->set_acl_pkt_types.set_acl_pkt_types_cb);
+    } else {
+        APPL_TRACE_ERROR("%s(), the callback function can't be NULL.", __func__);
+    }
+}
+
 #endif
 /*******************************************************************************
 **
@@ -3061,6 +3109,27 @@ static UINT8 bta_dm_pin_cback (BD_ADDR bd_addr, DEV_CLASS dev_class, BD_NAME bd_
     bta_dm_cb.p_sec_cback(BTA_DM_PIN_REQ_EVT, &sec_event);
     return BTM_CMD_STARTED;
 }
+
+/*******************************************************************************
+**
+** Function         bta_dm_new_link_key_cback
+**
+** Description      Callback from BTM to notify new link key
+**
+** Returns          void
+**
+*******************************************************************************/
+static void bta_dm_encryption_change_cback(BD_ADDR bd_addr, UINT8 enc_mode)
+{
+    if (bta_dm_cb.p_sec_cback) {
+        tBTA_DM_SEC sec_event;
+        memset (&sec_event, 0, sizeof(tBTA_DM_SEC));
+        bdcpy(sec_event.enc_chg.bd_addr, bd_addr);
+        sec_event.enc_chg.enc_mode = enc_mode;
+
+        bta_dm_cb.p_sec_cback(BTA_DM_ENC_CHG_EVT, &sec_event);
+    }
+}
 #endif ///CLASSIC_BT_INCLUDED == TRUE
 
 /*******************************************************************************
@@ -4255,7 +4324,7 @@ static void bta_dm_set_eir (char *local_name)
             for (custom_uuid_idx = 0; custom_uuid_idx < BTA_EIR_SERVER_NUM_CUSTOM_UUID; custom_uuid_idx++) {
                 if (bta_dm_cb.custom_uuid[custom_uuid_idx].len == LEN_UUID_128) {
                     if ( num_uuid < max_num_uuid ) {
-                        ARRAY16_TO_STREAM(p, bta_dm_cb.custom_uuid[custom_uuid_idx].uu.uuid128);
+                        ARRAY_TO_STREAM(p, bta_dm_cb.custom_uuid[custom_uuid_idx].uu.uuid128, LEN_UUID_128);
                         num_uuid++;
                     } else {
                         data_type = BTM_EIR_MORE_128BITS_UUID_TYPE;
@@ -4313,7 +4382,14 @@ static void bta_dm_set_eir (char *local_name)
     if (p_bta_dm_eir_cfg->bta_dm_eir_included_tx_power) {
         if (free_eir_length >= 3) {
             int min_power_level, max_power_level;
-            if (bredr_txpwr_get(&min_power_level, &max_power_level) == 0) {
+#if (BT_CONTROLLER_INCLUDED == TRUE)
+            if (esp_bredr_tx_power_get((esp_power_level_t *)&min_power_level, (esp_power_level_t *)&max_power_level) == ESP_OK) {
+#else
+            {
+                min_power_level = 0;
+                max_power_level = 0;
+                UNUSED(min_power_level);
+#endif
                 INT8 btm_tx_power[BTM_TX_POWER_LEVEL_MAX + 1] = BTM_TX_POWER;
                 p_bta_dm_eir_cfg->bta_dm_eir_inq_tx_power = btm_tx_power[max_power_level];
                 UINT8_TO_STREAM(p, 2);      /* Length field */
@@ -4452,21 +4528,38 @@ static void bta_dm_eir_search_services( tBTM_INQ_RESULTS  *p_result,
 ** Returns          None
 **
 *******************************************************************************/
-void bta_dm_eir_update_uuid(UINT16 uuid16, BOOLEAN adding)
+void bta_dm_eir_update_uuid(tBT_UUID uuid, BOOLEAN adding)
 {
-    /* if this UUID is not advertised in EIR */
-    if ( !BTM_HasEirService( p_bta_dm_eir_cfg->uuid_mask, uuid16 )) {
-        return;
-    }
+    /* 32 and 128-bit UUIDs go to the bta_dm_cb.custom_uuid array */
+    if ((uuid.len == LEN_UUID_32) || (uuid.len == LEN_UUID_128)) {
+        if (adding) {
+            if (BTM_HasCustomEirService(bta_dm_cb.custom_uuid, uuid)) {
+                APPL_TRACE_EVENT("UUID is already added for EIR");
+                return;
+            }
+            APPL_TRACE_EVENT("Adding %d-bit UUID into EIR", uuid.len * 8);
 
-    if ( adding ) {
-        APPL_TRACE_EVENT("Adding UUID=0x%04X into EIR", uuid16);
+            BTM_AddCustomEirService(bta_dm_cb.custom_uuid, uuid);
+        } else {
+            APPL_TRACE_EVENT("Removing %d-bit UUID from EIR", uuid.len * 8);
 
-        BTM_AddEirService( bta_dm_cb.eir_uuid, uuid16 );
+            BTM_RemoveCustomEirService(bta_dm_cb.custom_uuid, uuid);
+        }
     } else {
-        APPL_TRACE_EVENT("Removing UUID=0x%04X from EIR", uuid16);
+        /* if this UUID is not advertised in EIR */
+        if (!BTM_HasEirService(p_bta_dm_eir_cfg->uuid_mask, uuid.uu.uuid16)) {
+            return;
+        }
 
-        BTM_RemoveEirService( bta_dm_cb.eir_uuid, uuid16 );
+        if (adding) {
+            APPL_TRACE_EVENT("Adding UUID=0x%04X into EIR", uuid.uu.uuid16);
+
+            BTM_AddEirService(bta_dm_cb.eir_uuid, uuid.uu.uuid16);
+        } else {
+            APPL_TRACE_EVENT("Removing UUID=0x%04X from EIR", uuid.uu.uuid16);
+
+            BTM_RemoveEirService(bta_dm_cb.eir_uuid, uuid.uu.uuid16);
+        }
     }
 #if CLASSIC_BT_INCLUDED
     bta_dm_set_eir (NULL);
@@ -5686,7 +5779,44 @@ void btm_dm_ble_multi_adv_disable(tBTA_DM_MSG *p_data)
                                     p_data->ble_multi_adv_disable.inst_id, p_ref, BTA_FAILURE);
     }
 }
+
+void bta_dm_ble_gap_dtm_tx_start(tBTA_DM_MSG *p_data)
+{
+    BTM_BleTransmitterTest(p_data->dtm_tx_start.tx_channel, p_data->dtm_tx_start.len_of_data, p_data->dtm_tx_start.pkt_payload, p_data->dtm_tx_start.p_dtm_cmpl_cback);
+}
+
+void bta_dm_ble_gap_dtm_rx_start(tBTA_DM_MSG *p_data)
+{
+    BTM_BleReceiverTest(p_data->dtm_rx_start.rx_channel, p_data->dtm_rx_start.p_dtm_cmpl_cback);
+}
+
+void bta_dm_ble_gap_dtm_stop(tBTA_DM_MSG *p_data)
+{
+    BTM_BleTestEnd(p_data->dtm_stop.p_dtm_cmpl_cback);
+}
+
+void bta_dm_ble_gap_clear_adv(tBTA_DM_MSG *p_data)
+{
+    if (BTM_BleClearAdv(p_data->ble_clear_adv.p_clear_adv_cback) == FALSE) {
+        if (p_data->ble_clear_adv.p_clear_adv_cback) {
+            (*p_data->ble_clear_adv.p_clear_adv_cback)(BTA_FAILURE);
+        }
+    }
+}
+
 #if (BLE_50_FEATURE_SUPPORT == TRUE)
+void bta_dm_ble_gap_dtm_enhance_tx_start(tBTA_DM_MSG *p_data)
+{
+    BTM_BleEnhancedTransmitterTest(p_data->dtm_enh_tx_start.tx_channel, p_data->dtm_enh_tx_start.len_of_data,
+                                    p_data->dtm_enh_tx_start.pkt_payload, p_data->dtm_enh_tx_start.phy, p_data->dtm_enh_tx_start.p_dtm_cmpl_cback);
+}
+
+void bta_dm_ble_gap_dtm_enhance_rx_start(tBTA_DM_MSG *p_data)
+{
+    BTM_BleEnhancedReceiverTest(p_data->dtm_enh_rx_start.rx_channel, p_data->dtm_enh_rx_start.phy,
+                                    p_data->dtm_enh_rx_start.modulation_index, p_data->dtm_enh_rx_start.p_dtm_cmpl_cback);
+}
+
 void bta_dm_ble_gap_read_phy(tBTA_DM_MSG *p_data)
 {
     //tBTM_STATUS btm_status = 0;

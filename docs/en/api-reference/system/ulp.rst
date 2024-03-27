@@ -34,8 +34,8 @@ To compile the ULP FSM code as part of the component, the following steps must b
 
 1. The ULP FSM code, written in assembly, must be added to one or more files with ``.S`` extension. These files must be placed into a separate directory inside the component directory, for instance, ``ulp/``.
 
-.. note:: 
-    
+.. note::
+
     When registering the component (via ``idf_component_register``), this directory should not be added to the ``SRC_DIRS`` argument. The logic behind this is that the ESP-IDF build system will compile files found in ``SRC_DIRS`` based on their extensions. For ``.S`` files, ``{IDF_TARGET_TOOLCHAIN_PREFIX}-as`` assembler is used. This is not desirable for ULP FSM assembly files, so the easiest way to achieve the distinction is by placing ULP FSM assembly files into a separate directory. The ULP FSM assembly source files should also **not** be added to ``SRCS`` for the same reason. See the steps below for how to properly add ULP FSM assembly source files.
 
 2. Call ``ulp_embed_binary`` from the component CMakeLists.txt after registration. For example::
@@ -184,6 +184,5 @@ API Reference
 
 .. include-build-file:: inc/ulp_fsm_common.inc
 .. include-build-file:: inc/ulp_common.inc
-.. include-build-file:: inc/ulp_common_defs.inc
 
 .. _binutils-esp32ulp toolchain: https://github.com/espressif/binutils-gdb

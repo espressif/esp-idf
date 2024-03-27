@@ -14,17 +14,7 @@
 
 ---
 
-.. tool-xtensa-esp32-elf-notes
-
-
----
-
-.. tool-xtensa-esp32s2-elf-notes
-
-
----
-
-.. tool-xtensa-esp32s3-elf-notes
+.. tool-xtensa-esp-elf-notes
 
 
 ---
@@ -46,7 +36,7 @@
 
 .. tool-cmake-notes
 
-On Linux and macOS, it is recommended to install CMake using the OS package manager. However, for convenience it is possible to install CMake using idf_tools.py along with the other tools.
+On Linux and macOS, it is recommended to install CMake using the OS-specific package manager (like apt, yum, brew, etc.). However, for convenience it is possible to install CMake using idf_tools.py along with the other tools.
 
 ---
 
@@ -57,7 +47,7 @@ On Linux and macOS, it is recommended to install CMake using the OS package mana
 
 .. tool-ninja-notes
 
-On Linux and macOS, it is recommended to install ninja using the OS package manager. However, for convenience it is possible to install ninja using idf_tools.py along with the other tools.
+On Linux and macOS, it is recommended to install ninja using the OS-specific package manager (like apt, yum, brew, etc.). However, for convenience it is possible to install ninja using idf_tools.py along with the other tools.
 
 ---
 
@@ -78,6 +68,18 @@ On Linux and macOS, it is recommended to install ninja using the OS package mana
 
 .. tool-esp-rom-elfs-notes
 
+
+---
+
+.. tool-qemu-xtensa-notes
+
+Some ESP-specific instructions for running QEMU for Xtensa chips are here: https://github.com/espressif/esp-toolchain-docs/blob/main/qemu/esp32/README.md
+
+---
+
+.. tool-qemu-riscv32-notes
+
+Some ESP-specific instructions for running QEMU for RISC-V chips are here: https://github.com/espressif/esp-toolchain-docs/blob/main/qemu/esp32c3/README.md
 
 ---
 

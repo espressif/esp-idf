@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -21,7 +21,6 @@ extern void phy_version_print(void);
 static _lock_t s_phy_access_lock;
 
 /* Reference count of enabling PHY */
-static uint8_t s_phy_access_ref = 0;
 static bool s_phy_is_enabled = false;
 
 uint32_t IRAM_ATTR phy_enter_critical(void)
@@ -46,10 +45,10 @@ void IRAM_ATTR phy_exit_critical(uint32_t level)
     }
 }
 
-void esp_phy_enable(void)
+void esp_phy_enable(esp_phy_modem_t modem)
 {
     _lock_acquire(&s_phy_access_lock);
-    if (s_phy_access_ref == 0) {
+    if (phy_get_modem_flag() == 0) {
 #if SOC_MODEM_CLOCK_IS_INDEPENDENT
         modem_clock_module_enable(PERIPH_PHY_MODULE);
 #endif
@@ -62,21 +61,19 @@ void esp_phy_enable(void)
         }
         phy_track_pll_init();
     }
-
-    s_phy_access_ref++;
-
+    phy_set_modem_flag(modem);
+    // Immediately track pll when phy enabled.
+    phy_track_pll();
     _lock_release(&s_phy_access_lock);
 }
 
-void esp_phy_disable(void)
+void esp_phy_disable(esp_phy_modem_t modem)
 {
     _lock_acquire(&s_phy_access_lock);
 
-    if (s_phy_access_ref) {
-        s_phy_access_ref--;
-    }
+    phy_clr_modem_flag(modem);
+    if (phy_get_modem_flag() == 0) {
 
-    if (s_phy_access_ref == 0) {
         phy_track_pll_deinit();
         phy_close_rf();
         phy_xpd_tsens();
@@ -84,6 +81,10 @@ void esp_phy_disable(void)
         modem_clock_module_disable(PERIPH_PHY_MODULE);
 #endif
     }
-
     _lock_release(&s_phy_access_lock);
+}
+
+_lock_t phy_get_lock(void)
+{
+    return s_phy_access_lock;
 }

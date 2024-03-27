@@ -1,12 +1,11 @@
-# SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
-
 import pytest
 from pytest_embedded import Dut
 
 CONFIGS = [
-    pytest.param('general', marks=[pytest.mark.supported_targets, pytest.mark.temp_skip_ci(targets=['esp32h2'], reason='h2 support TBD')]),
-    pytest.param('release', marks=[pytest.mark.supported_targets, pytest.mark.temp_skip_ci(targets=['esp32h2'], reason='h2 support TBD')]),
+    pytest.param('general', marks=[pytest.mark.supported_targets]),
+    pytest.param('release', marks=[pytest.mark.supported_targets]),
     pytest.param('single_core', marks=[pytest.mark.esp32]),
     pytest.param('freertos_compliance', marks=[pytest.mark.esp32]),
     pytest.param('isr_dispatch_esp32', marks=[pytest.mark.esp32]),

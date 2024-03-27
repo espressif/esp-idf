@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -49,10 +49,10 @@ struct esp_lcd_panel_t {
      * @brief Draw bitmap on LCD panel
      *
      * @param[in] panel LCD panel handle, which is created by other factory API like `esp_lcd_new_panel_st7789()`
-     * @param[in] x_start Start index on x-axis (x_start included)
-     * @param[in] y_start Start index on y-axis (y_start included)
-     * @param[in] x_end End index on x-axis (x_end not included)
-     * @param[in] y_end End index on y-axis (y_end not included)
+     * @param[in] x_start Start pixel index in the target frame buffer, on x-axis (x_start is included)
+     * @param[in] y_start Start pixel index in the target frame buffer, on y-axis (y_start is included)
+     * @param[in] x_end End pixel index in the target frame buffer, on x-axis (x_end is not included)
+     * @param[in] y_end End pixel index in the target frame buffer, on y-axis (y_end is not included)
      * @param[in] color_data RGB color data that will be dumped to the specific window range
      * @return
      *          - ESP_OK on success
@@ -119,6 +119,17 @@ struct esp_lcd_panel_t {
      *          - ESP_ERR_NOT_SUPPORTED if this function is not supported by the panel
      */
     esp_err_t (*disp_on_off)(esp_lcd_panel_t *panel, bool on_off);
+
+    /**
+     * @brief Enter or exit sleep mode
+     *
+     * @param[in] panel LCD panel handle, which is created by other factory API like `esp_lcd_new_panel_st7789()`
+     * @param[in] sleep True to enter sleep mode, False to wake up
+     * @return
+     *          - ESP_OK on success
+     *          - ESP_ERR_NOT_SUPPORTED if this function is not supported by the panel
+     */
+    esp_err_t (*disp_sleep)(esp_lcd_panel_t *panel, bool sleep);
 
     void *user_data;    /*!< User data, used to store externally customized data */
 };

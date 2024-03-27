@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -27,7 +27,6 @@ static const char TAG[] = "essl_sdio";
 #define HOST_SLCHOST_CONF_W7_REG        (DR_REG_SLCHOST_BASE + 0x8C)
 #define HOST_SLC0HOST_INT_CLR_REG       (DR_REG_SLCHOST_BASE + 0xD4)
 #define HOST_SLC0HOST_FUNC1_INT_ENA_REG (DR_REG_SLCHOST_BASE + 0xDC)
-
 
 #define HOST_SLCHOST_CONF_W_REG(pos)    (HOST_SLCHOST_CONF_W0_REG+pos+(pos>23?4:0)+(pos>31?12:0))
 
@@ -78,7 +77,6 @@ typedef struct {
     ///< Should be set according to length of data, and larger than ``TRANS_LEN_MAX/511``.
     ///< Block size of the SDIO function 1. After the initialization this will hold the value the slave really do. Valid value is 1-2048.
 } essl_sdio_context_t;
-
 
 esp_err_t essl_sdio_update_tx_buffer_num(void *arg, uint32_t wait_ms);
 esp_err_t essl_sdio_update_rx_data_size(void *arg, uint32_t wait_ms);
@@ -139,7 +137,7 @@ cleanup:
 esp_err_t essl_sdio_deinit_dev(essl_handle_t handle)
 {
     if (handle) {
-        free (handle->args);
+        free(handle->args);
     }
     free(handle);
     return ESP_OK;
@@ -411,7 +409,6 @@ esp_err_t essl_sdio_update_rx_data_size(void *arg, uint32_t wait_ms)
     ctx->rx_got_bytes_latest = len;
     return ESP_OK;
 }
-
 
 esp_err_t essl_sdio_write_reg(void *arg, uint8_t addr, uint8_t value, uint8_t *value_o, uint32_t wait_ms)
 {

@@ -4,7 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-
 #ifndef __ESP_BROWNOUT_H
 #define __ESP_BROWNOUT_H
 

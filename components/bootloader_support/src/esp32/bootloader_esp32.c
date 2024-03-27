@@ -39,20 +39,20 @@
 
 static const char *TAG = "boot.esp32";
 
-#if !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
+#if !CONFIG_APP_BUILD_TYPE_RAM
 static void bootloader_reset_mmu(void)
 {
     /* completely reset MMU in case serial bootloader was running */
     Cache_Read_Disable(0);
-#if !CONFIG_FREERTOS_UNICORE
+#if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
     Cache_Read_Disable(1);
 #endif
     Cache_Flush(0);
-#if !CONFIG_FREERTOS_UNICORE
+#if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
     Cache_Flush(1);
 #endif
     mmu_init(0);
-#if !CONFIG_FREERTOS_UNICORE
+#if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
     /* The lines which manipulate DPORT_APP_CACHE_MMU_IA_CLR bit are
         necessary to work around a hardware bug. */
     DPORT_REG_SET_BIT(DPORT_APP_CACHE_CTRL1_REG, DPORT_APP_CACHE_MMU_IA_CLR);
@@ -63,7 +63,7 @@ static void bootloader_reset_mmu(void)
     /* normal ROM boot exits with DROM0 cache unmasked,
         but serial bootloader exits with it masked. */
     DPORT_REG_CLR_BIT(DPORT_PRO_CACHE_CTRL1_REG, DPORT_PRO_CACHE_MASK_DROM0);
-#if !CONFIG_FREERTOS_UNICORE
+#if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
     DPORT_REG_CLR_BIT(DPORT_APP_CACHE_CTRL1_REG, DPORT_APP_CACHE_MASK_DROM0);
 #endif
 }
@@ -104,7 +104,7 @@ static void wdt_reset_info_dump(int cpu)
         lsaddr = DPORT_REG_READ(DPORT_PRO_CPU_RECORD_PDEBUGLS0ADDR_REG);
         lsdata = DPORT_REG_READ(DPORT_PRO_CPU_RECORD_PDEBUGLS0DATA_REG);
     } else {
-#if !CONFIG_FREERTOS_UNICORE
+#if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
         stat = DPORT_REG_READ(DPORT_APP_CPU_RECORD_STATUS_REG);
         pid = DPORT_REG_READ(DPORT_APP_CPU_RECORD_PID_REG);
         inst = DPORT_REG_READ(DPORT_APP_CPU_RECORD_PDEBUGINST_REG);
@@ -154,7 +154,7 @@ static void bootloader_check_wdt_reset(void)
     if (wdt_rst) {
         // if reset by WDT dump info from trace port
         wdt_reset_info_dump(0);
-#if !CONFIG_FREERTOS_UNICORE
+#if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
         wdt_reset_info_dump(1);
 #endif
     }
@@ -208,7 +208,7 @@ esp_err_t bootloader_init(void)
     /* print 2nd bootloader banner */
     bootloader_print_banner();
 
-#if !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
+#if !CONFIG_APP_BUILD_TYPE_RAM
     // reset MMU
     bootloader_reset_mmu();
     // update flash ID
@@ -218,7 +218,6 @@ esp_err_t bootloader_init(void)
         ESP_LOGE(TAG, "failed when running XMC startup flow, reboot!");
         return ret;
     }
-#if !CONFIG_APP_BUILD_TYPE_RAM
     // read bootloader header
     if ((ret = bootloader_read_bootloader_header()) != ESP_OK) {
         return ret;
@@ -227,12 +226,11 @@ esp_err_t bootloader_init(void)
     if ((ret = bootloader_check_bootloader_validity()) != ESP_OK) {
         return ret;
     }
-#endif // #if !CONFIG_APP_BUILD_TYPE_RAM
     // initialize spi flash
     if ((ret = bootloader_init_spi_flash()) != ESP_OK) {
         return ret;
     }
-#endif  //#if !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
+#endif // #if !CONFIG_APP_BUILD_TYPE_RAM
 
     // check whether a WDT reset happend
     bootloader_check_wdt_reset();

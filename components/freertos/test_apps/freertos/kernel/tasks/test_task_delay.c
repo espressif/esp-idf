@@ -1,9 +1,10 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "sdkconfig.h"
 #include "FreeRTOS.h"
 #include "task.h"
 #include "semphr.h"
@@ -64,11 +65,11 @@ static void test_vTaskDelay(void *arg)
 
         /* Check that elapsed ticks and ref clock is accurate. We allow TEST_VTASKDELAY_DELTA_TICKS of error in case
          * vTaskDelay() or portTEST_REF_CLOCK_GET_TIME() last long enough to cross a tick boundary */
-        #if ( configUSE_16_BIT_TICKS == 1 )
-            TEST_ASSERT_UINT16_WITHIN(TEST_VTASKDELAY_DELTA_TICKS, TEST_VTASKDELAY_TICKS, tick_end - tick_start);
-        #else
-            TEST_ASSERT_UINT32_WITHIN(TEST_VTASKDELAY_DELTA_TICKS, TEST_VTASKDELAY_TICKS, tick_end - tick_start);
-        #endif
+#if ( configUSE_16_BIT_TICKS == 1 )
+        TEST_ASSERT_UINT16_WITHIN(TEST_VTASKDELAY_DELTA_TICKS, TEST_VTASKDELAY_TICKS, tick_end - tick_start);
+#else
+        TEST_ASSERT_UINT32_WITHIN(TEST_VTASKDELAY_DELTA_TICKS, TEST_VTASKDELAY_TICKS, tick_end - tick_start);
+#endif
         TEST_ASSERT_UINT32_WITHIN(portTEST_TICKS_TO_REF_CLOCK(TEST_VTASKDELAY_DELTA_TICKS),
                                   portTEST_TICKS_TO_REF_CLOCK(TEST_VTASKDELAY_TICKS),
                                   ref_clock_end - ref_clock_start);
@@ -79,12 +80,12 @@ TEST_CASE("Tasks: Test vTaskDelay", "[freertos]")
 {
     portTEST_REF_CLOCK_INIT();
 
-    #if ( configNUM_CORES > 1 )
-        vTestOnAllCores(test_vTaskDelay, NULL, configTEST_DEFAULT_STACK_SIZE, configTEST_UNITY_TASK_PRIORITY - 1);
-    #else
-        /* Test vTaskDelay directly on the current core */
-        test_vTaskDelay(NULL);
-    #endif
+#if ( CONFIG_FREERTOS_NUMBER_OF_CORES > 1 )
+    vTestOnAllCores(test_vTaskDelay, NULL, configTEST_DEFAULT_STACK_SIZE, configTEST_UNITY_TASK_PRIORITY - 1);
+#else
+    /* Test vTaskDelay directly on the current core */
+    test_vTaskDelay(NULL);
+#endif
 
     portTEST_REF_CLOCK_DEINIT();
 }
@@ -144,16 +145,15 @@ static void test_vTaskDelayUntil(void *arg)
         tick_end = xTaskGetTickCount();
         ref_clock_end = portTEST_REF_CLOCK_GET_TIME();
 
-
         /* Check that elapsed ticks and ref clock is accurate. We allow TEST_VTASKDELAYUNTIL_DELTA_TICKS of error in
          * case vTaskDelayUntil() or portTEST_REF_CLOCK_GET_TIME() last long enough to cross a tick boundary */
-        #if ( configUSE_16_BIT_TICKS == 1 )
-            TEST_ASSERT_UINT16_WITHIN(TEST_VTASKDELAYUNTIL_DELTA_TICKS, TEST_VTASKDELAYUNTIL_TICKS, tick_end - tick_start);
-            TEST_ASSERT_UINT16_WITHIN(TEST_VTASKDELAYUNTIL_DELTA_TICKS, tick_end, last_wake_tick);
-        #else
-            TEST_ASSERT_UINT32_WITHIN(TEST_VTASKDELAYUNTIL_DELTA_TICKS, TEST_VTASKDELAYUNTIL_TICKS, tick_end - tick_start);
-            TEST_ASSERT_UINT32_WITHIN(TEST_VTASKDELAYUNTIL_DELTA_TICKS, tick_end, last_wake_tick);
-        #endif
+#if ( configUSE_16_BIT_TICKS == 1 )
+        TEST_ASSERT_UINT16_WITHIN(TEST_VTASKDELAYUNTIL_DELTA_TICKS, TEST_VTASKDELAYUNTIL_TICKS, tick_end - tick_start);
+        TEST_ASSERT_UINT16_WITHIN(TEST_VTASKDELAYUNTIL_DELTA_TICKS, tick_end, last_wake_tick);
+#else
+        TEST_ASSERT_UINT32_WITHIN(TEST_VTASKDELAYUNTIL_DELTA_TICKS, TEST_VTASKDELAYUNTIL_TICKS, tick_end - tick_start);
+        TEST_ASSERT_UINT32_WITHIN(TEST_VTASKDELAYUNTIL_DELTA_TICKS, tick_end, last_wake_tick);
+#endif
 
         /* Check that the elapsed ref clock time is accurate. We allow TEST_VTASKDELAYUNTIL_DELTA_TICKS time worth of
          * error to account for the execution time of the ref clock functions. */
@@ -167,12 +167,12 @@ TEST_CASE("Tasks: Test vTaskDelayUntil", "[freertos]")
 {
     portTEST_REF_CLOCK_INIT();
 
-    #if ( configNUM_CORES > 1 )
-        vTestOnAllCores(test_vTaskDelayUntil, NULL, configTEST_DEFAULT_STACK_SIZE, configTEST_UNITY_TASK_PRIORITY - 1);
-    #else
-        /* Test vTaskDelay directly on the current core */
-        test_vTaskDelayUntil(NULL);
-    #endif
+#if ( CONFIG_FREERTOS_NUMBER_OF_CORES > 1 )
+    vTestOnAllCores(test_vTaskDelayUntil, NULL, configTEST_DEFAULT_STACK_SIZE, configTEST_UNITY_TASK_PRIORITY - 1);
+#else
+    /* Test vTaskDelay directly on the current core */
+    test_vTaskDelayUntil(NULL);
+#endif
 
     portTEST_REF_CLOCK_DEINIT();
 }

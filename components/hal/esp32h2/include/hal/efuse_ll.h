@@ -10,7 +10,7 @@
 #include <stdbool.h>
 #include "soc/efuse_periph.h"
 #include "hal/assert.h"
-#include "esp32h2/rom/efuse.h"
+#include "rom/efuse.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -38,6 +38,26 @@ __attribute__((always_inline)) static inline uint32_t efuse_ll_get_mac0(void)
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_mac1(void)
 {
     return EFUSE.rd_mac_sys_1.mac_1;
+}
+
+__attribute__((always_inline)) static inline uint32_t efuse_ll_get_active_hp_dbias(void)
+{
+    return EFUSE.rd_mac_sys_2.active_hp_dbias;
+}
+
+__attribute__((always_inline)) static inline uint32_t efuse_ll_get_active_lp_dbias(void)
+{
+    return EFUSE.rd_mac_sys_2.active_lp_dbias;
+}
+
+__attribute__((always_inline)) static inline uint32_t efuse_ll_get_dslp_dbias(void)
+{
+    return EFUSE.rd_mac_sys_2.dslp_dbias;
+}
+
+__attribute__((always_inline)) static inline int32_t efuse_ll_get_dbias_vol_gap(void)
+{
+    return (EFUSE.rd_mac_sys_3.dbias_vol_gap_sign << 4)|(EFUSE.rd_mac_sys_3.dbias_vol_gap_value2 << 1)|EFUSE.rd_mac_sys_2.dbias_vol_gap_value1;
 }
 
 __attribute__((always_inline)) static inline bool efuse_ll_get_secure_boot_v2_en(void)

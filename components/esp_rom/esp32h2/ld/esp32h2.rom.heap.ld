@@ -37,7 +37,6 @@ tlsf_pool_overhead = 0x40000430;
 tlsf_alloc_overhead = 0x40000434;
 tlsf_walk_pool = 0x40000438;
 tlsf_check = 0x4000043c;
-tlsf_check_pool = 0x40000440;
 tlsf_poison_fill_pfunc_set = 0x40000444;
 tlsf_poison_check_pfunc_set = 0x40000448;
 multi_heap_get_block_address_impl = 0x4000044c;

@@ -42,7 +42,7 @@ _For other small/non-public changes, which are not expected to be in the release
 
 _Don't touch the subsection titles below, they will be parsed by scripts._
 
-## Release notes (Mandatory)
+## Release notes <!-- Mandatory -->
 
 _Changes made in this MR that should go into the **Release Notes** should be listed here. Please use **past tense** and *specify the area (see maintainers page of IDF internal wiki)*. If there is a subscope, include it and separate with slash (`/`). Minor changes can go to the descriptions above without a release notes entry._
 

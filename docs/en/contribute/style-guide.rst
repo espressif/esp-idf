@@ -193,15 +193,19 @@ For updating a single commit, it is possible to run ``dos2unix FILENAME`` and th
 Formatting Your Code
 ^^^^^^^^^^^^^^^^^^^^
 
-You can use ``astyle`` program to format your code according to the above recommendations.
+ESP-IDF uses Astyle to format source code. The configuration is stored in :project_file:`tools/ci/astyle-rules.yml` file.
 
-If you are writing a file from scratch, or doing a complete rewrite, feel free to re-format the entire file. If you are changing a small portion of file, do not re-format the code you did not change. This will help others when they review your changes.
-
-To re-format a file, run:
+Initially, all components are excluded from formatting checks. You can enable formatting checks for the component by removing it from ``components_not_formatted_temporary`` list. Then run:
 
 .. code-block:: bash
 
-    tools/format.sh components/my_component/file.c
+    pre-commit run --files <path_to_files> astyle_py
+
+Alternatively, you can run ``astyle_py`` manually. You can install it with ``pip install astyle_py==VERSION``. Make sure you have the same version installed as the one specified in :project_file:`.pre-commit-config.yaml` file. With ``astyle_py`` installed, run:
+
+.. code-block:: bash
+
+    astyle_py --rules=$IDF_PATH/tools/ci/astyle-rules.yml <path-to-file>
 
 
 Type Definitions
@@ -235,7 +239,7 @@ The standard C ``assert()`` function, defined in ``assert.h`` should be used to 
 
 .. note::
 
-   When asserting a value of type ``esp_err_t``is equal to ``ESP_OK``, use the :ref:`esp-error-check-macro` instead of an ``assert()``.
+   When asserting a value of type ``esp_err_t`` is equal to ``ESP_OK``, use the :ref:`esp-error-check-macro` instead of an ``assert()``.
 
 It is possible to configure ESP-IDF projects with assertions disabled (see :ref:`CONFIG_COMPILER_OPTIMIZATION_ASSERTION_LEVEL`). Therefore, functions called in an ``assert()`` statement should not have side-effects.
 

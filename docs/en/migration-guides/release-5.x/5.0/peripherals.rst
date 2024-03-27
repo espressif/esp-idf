@@ -83,7 +83,7 @@ GPIO
 - The user callback of a GPIO interrupt should no longer read the GPIO interrupt status register to get the GPIO's pin number of triggering the interrupt. You should use the callback argument to determine the GPIO's pin number instead.
 
     - Previously, when a GPIO interrupt occurs, the GPIO's interrupt status register is cleared after calling the user callbacks. Thus, it was possible for users to read the GPIO's interrupt status register inside the callback to determine which GPIO was used to trigger the interrupt.
-    - However, clearing the interrupt status register after calling the user callbacks can potentially cause edge-triggered interrupts to be lost. For example, if an edge-triggered interrupt is (re)triggered while the user callbacks are being called, that interrupt will be cleared without its registered user callback being handled.
+    - However, clearing the interrupt status register after calling the user callbacks can potentially cause edge-triggered interrupts to be lost. For example, if an edge-triggered interrupt is triggered/retriggered while the user callbacks are being called, that interrupt will be cleared without its registered user callback being handled.
     - Now, the GPIO's interrupt status register is cleared **before** invoking the user callbacks. Thus, users can no longer read the GPIO interrupt status register to determine which pin has triggered the interrupt. Instead, users should use the callback argument to pass the pin number.
 
 .. only:: SOC_SDM_SUPPORTED
@@ -459,7 +459,7 @@ LCD
     I2S Driver
     ----------
 
-    The I2S driver has been redesigned (see :doc:`I2S Driver <../../../api-reference/peripherals/i2s>`), which aims to rectify the shortcomings of the driver that were exposed when supporting all the new features of ESP32-C3 & ESP32-S3. The new driver's APIs are available by including corresponding I2S mode's header files :component_file:`driver/i2s/include/driver/i2s_std.h`, :component_file:`driver/i2s/include/driver/i2s_pdm.h`, or :component_file:`driver/i2s/include/driver/i2s_tdm.h`.
+    The I2S driver has been redesigned (see :doc:`I2S Driver <../../../api-reference/peripherals/i2s>`), which aims to rectify the shortcomings of the driver that were exposed when supporting all the new features of ESP32-C3 & ESP32-S3. The new driver's APIs are available by including corresponding I2S mode's header files :component_file:`esp_driver_i2s/include/driver/i2s_std.h`, :component_file:`esp_driver_i2s/include/driver/i2s_pdm.h`, or :component_file:`esp_driver_i2s/include/driver/i2s_tdm.h`.
 
     Meanwhile, the old driver's APIs in :component_file:`driver/deprecated/driver/i2s.h` are still supported for backward compatibility. But there will be warnings if users keep using the old APIs in their projects, these warnings can be suppressed by the Kconfig option :ref:`CONFIG_I2S_SUPPRESS_DEPRECATE_WARN`.
 
@@ -489,9 +489,9 @@ LCD
 
     I2S communication modes are categorized into the following three modes. Note that:
 
-    - **Standard mode**: Standard mode always has two slots, it can support Philips, MSB, and PCM (short frame sync) formats. Please refer to :component_file:`driver/i2s/include/driver/i2s_std.h` for more details.
-    - **PDM mode**: PDM mode only supports two slots with 16-bit data width, but the configurations of PDM TX and PDM RX are slightly different. For PDM TX, the sample rate can be set by :cpp:member:`i2s_pdm_tx_clk_config_t::sample_rate`, and its clock frequency depends on the up-sampling configuration. For PDM RX, the sample rate can be set by :cpp:member:`i2s_pdm_rx_clk_config_t::sample_rate`, and its clock frequency depends on the down-sampling configuration. Please refer to :component_file:`driver/i2s/include/driver/i2s_pdm.h` for details.
-    - **TDM mode**: TDM mode can support up to 16 slots. It can work in Philips, MSB, PCM (short frame sync), and PCM (long frame sync) formats. Please refer to :component_file:`driver/i2s/include/driver/i2s_tdm.h` for details.
+    - **Standard mode**: Standard mode always has two slots, it can support Philips, MSB, and PCM (short frame sync) formats. Please refer to :component_file:`esp_driver_i2s/include/driver/i2s_std.h` for more details.
+    - **PDM mode**: PDM mode only supports two slots with 16-bit data width, but the configurations of PDM TX and PDM RX are slightly different. For PDM TX, the sample rate can be set by :cpp:member:`i2s_pdm_tx_clk_config_t::sample_rate`, and its clock frequency depends on the up-sampling configuration. For PDM RX, the sample rate can be set by :cpp:member:`i2s_pdm_rx_clk_config_t::sample_rate`, and its clock frequency depends on the down-sampling configuration. Please refer to :component_file:`esp_driver_i2s/include/driver/i2s_pdm.h` for details.
+    - **TDM mode**: TDM mode can support up to 16 slots. It can work in Philips, MSB, PCM (short frame sync), and PCM (long frame sync) formats. Please refer to :component_file:`esp_driver_i2s/include/driver/i2s_tdm.h` for details.
 
     When allocating a new channel in a specific mode, users should initialize that channel by its corresponding function. It is strongly recommended to use the helper macros to generate the default configurations in case the default values are changed in the future.
 
@@ -537,7 +537,7 @@ Register Access Macros
 
 Previously, all register access macros could be used as expressions, so the following was allowed::
 
-    uint32_t val = REG_SET_BITS(reg, mask);
+    uint32_t val = REG_SET_BITS(reg, bits, mask);
 
 In ESP-IDF v5.0, register access macros which write or read-modify-write the register can no longer be used as expressions, and can only be used as statements. This applies to the following macros: ``REG_WRITE``, ``REG_SET_BIT``, ``REG_CLR_BIT``, ``REG_SET_BITS``, ``REG_SET_FIELD``, ``WRITE_PERI_REG``, ``CLEAR_PERI_REG_MASK``, ``SET_PERI_REG_MASK``, ``SET_PERI_REG_BITS``.
 
@@ -548,5 +548,5 @@ To store the value which would have been written into the register, split the op
 
 To get the value of the register after modification (which may be different from the value written), add an explicit read::
 
-    REG_SET_BITS(reg, mask);
+    REG_SET_BITS(reg, bits, mask);
     uint32_t new_val = REG_READ(reg);

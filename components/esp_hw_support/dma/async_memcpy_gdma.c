@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,21 +19,24 @@
 #include "esp_memory_utils.h"
 #include "esp_async_memcpy.h"
 #include "esp_async_memcpy_priv.h"
+#include "esp_cache.h"
 #include "hal/dma_types.h"
 #include "hal/cache_hal.h"
-#include "rom/cache.h"
+#include "hal/cache_ll.h"
 
 static const char *TAG = "async_mcp.gdma";
 
-#define MCP_NEEDS_INVALIDATE_DST_CACHE  CONFIG_IDF_TARGET_ESP32P4
-#define MCP_NEEDS_WRITE_BACK_SRC_CACHE  CONFIG_IDF_TARGET_ESP32P4
-#define MCP_NEEDS_WRITE_BACK_DESC_CACHE CONFIG_IDF_TARGET_ESP32P4
+#ifdef CACHE_LL_L2MEM_NON_CACHE_ADDR
+#define MCP_GET_NON_CACHE_ADDR(addr) ((addr) ? CACHE_LL_L2MEM_NON_CACHE_ADDR(addr) : 0)
+#else
+#define MCP_GET_NON_CACHE_ADDR(addr) (addr)
+#endif
 
 #if SOC_AXI_GDMA_SUPPORTED
-#define MCP_DMA_DESC_ALIGN 64
+#define MCP_DMA_DESC_ALIGN 8
 typedef dma_descriptor_align8_t mcp_dma_descriptor_t;
 #elif SOC_AHB_GDMA_SUPPORTED
-#define MCP_DMA_DESC_ALIGN 32
+#define MCP_DMA_DESC_ALIGN 4
 typedef dma_descriptor_align4_t mcp_dma_descriptor_t;
 #else
 #error "Unsupported GDMA type"
@@ -46,10 +49,12 @@ typedef dma_descriptor_align4_t mcp_dma_descriptor_t;
 typedef struct async_memcpy_transaction_t {
     mcp_dma_descriptor_t eof_node;      // this is the DMA node which act as the EOF descriptor (RX path only)
     mcp_dma_descriptor_t *tx_desc_link; // descriptor link list, the length of the link is determined by the copy buffer size
+    mcp_dma_descriptor_t *tx_desc_nc;   // non-cacheable version of tx_desc_link
     mcp_dma_descriptor_t *rx_desc_link; // descriptor link list, the length of the link is determined by the copy buffer size
+    mcp_dma_descriptor_t *rx_desc_nc;   // non-cacheable version of rx_desc_link
     intptr_t tx_start_desc_addr; // TX start descriptor address
     intptr_t rx_start_desc_addr; // RX start descriptor address
-    intptr_t memcpy_dst_addr;    // memcpy destination address
+    void *memcpy_dst_addr;       // memcpy destination address
     size_t memcpy_size;          // memcpy size
     async_memcpy_isr_cb_t cb;    // user callback
     void *cb_args;               // user callback args
@@ -63,8 +68,9 @@ typedef struct async_memcpy_transaction_t {
 /// @note - Number of transaction objects are determined by the backlog parameter
 typedef struct {
     async_memcpy_context_t parent; // Parent IO interface
-    size_t sram_trans_align;       // DMA transfer alignment (both in size and address) for SRAM memory
-    size_t psram_trans_align;      // DMA transfer alignment (both in size and address) for PSRAM memory
+    size_t descriptor_align;       // DMA descriptor alignment
+    size_t sram_trans_align;       // DMA buffer alignment (both in size and address) for SRAM memory
+    size_t psram_trans_align;      // DMA buffer alignment (both in size and address) for PSRAM memory
     size_t max_single_dma_buffer;  // max DMA buffer size by a single descriptor
     int gdma_bus_id;               // GDMA bus id (AHB, AXI, etc.)
     gdma_channel_handle_t tx_channel; // GDMA TX channel handle
@@ -101,7 +107,8 @@ static esp_err_t mcp_gdma_destroy(async_memcpy_gdma_context_t *mcp_gdma)
 }
 
 static esp_err_t esp_async_memcpy_install_gdma_template(const async_memcpy_config_t *config, async_memcpy_handle_t *mcp,
-        esp_err_t (*new_channel)(const gdma_channel_alloc_config_t *, gdma_channel_handle_t *), int gdma_bus_id)
+                                                        esp_err_t (*new_channel)(const gdma_channel_alloc_config_t *, gdma_channel_handle_t *),
+                                                        int gdma_bus_id)
 {
     esp_err_t ret = ESP_OK;
     async_memcpy_gdma_context_t *mcp_gdma = NULL;
@@ -111,9 +118,12 @@ static esp_err_t esp_async_memcpy_install_gdma_template(const async_memcpy_confi
     ESP_GOTO_ON_FALSE(mcp_gdma, ESP_ERR_NO_MEM, err, TAG, "no mem for driver context");
     uint32_t trans_queue_len = config->backlog ? config->backlog : DEFAULT_TRANSACTION_QUEUE_LENGTH;
     // allocate memory for transaction pool
-    mcp_gdma->transaction_pool = heap_caps_aligned_calloc(MCP_DMA_DESC_ALIGN, trans_queue_len, sizeof(async_memcpy_transaction_t),
-                                 MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT | MALLOC_CAP_DMA);
+    uint32_t data_cache_line_size = cache_hal_get_cache_line_size(CACHE_LL_LEVEL_INT_MEM, CACHE_TYPE_DATA);
+    uint32_t alignment = MAX(data_cache_line_size, MCP_DMA_DESC_ALIGN);
+    mcp_gdma->transaction_pool = heap_caps_aligned_calloc(alignment, trans_queue_len, sizeof(async_memcpy_transaction_t),
+                                                          MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT | MALLOC_CAP_DMA);
     ESP_GOTO_ON_FALSE(mcp_gdma->transaction_pool, ESP_ERR_NO_MEM, err, TAG, "no mem for transaction pool");
+    mcp_gdma->descriptor_align = alignment;
 
     // create TX channel and RX channel, they should reside in the same DMA pair
     gdma_channel_alloc_config_t tx_alloc_config = {
@@ -133,8 +143,8 @@ static esp_err_t esp_async_memcpy_install_gdma_template(const async_memcpy_confi
     uint32_t free_m2m_id_mask = 0;
     gdma_get_free_m2m_trig_id_mask(mcp_gdma->tx_channel, &free_m2m_id_mask);
     m2m_trigger.instance_id = __builtin_ctz(free_m2m_id_mask);
-    gdma_connect(mcp_gdma->rx_channel, m2m_trigger);
-    gdma_connect(mcp_gdma->tx_channel, m2m_trigger);
+    ESP_GOTO_ON_ERROR(gdma_connect(mcp_gdma->rx_channel, m2m_trigger), err, TAG, "GDMA rx connect failed");
+    ESP_GOTO_ON_ERROR(gdma_connect(mcp_gdma->tx_channel, m2m_trigger), err, TAG, "GDMA tx connect failed");
 
     gdma_transfer_ability_t transfer_ability = {
         .sram_trans_align = config->sram_trans_align,
@@ -161,13 +171,16 @@ static esp_err_t esp_async_memcpy_install_gdma_template(const async_memcpy_confi
     portMUX_INITIALIZE(&mcp_gdma->spin_lock);
     atomic_init(&mcp_gdma->fsm, MCP_FSM_IDLE);
     mcp_gdma->gdma_bus_id = gdma_bus_id;
+
+    uint32_t psram_cache_line_size = cache_hal_get_cache_line_size(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_DATA);
+    uint32_t sram_cache_line_size = cache_hal_get_cache_line_size(CACHE_LL_LEVEL_INT_MEM, CACHE_TYPE_DATA);
     // if the psram_trans_align is configured to zero, we should fall back to use the data cache line size
-    uint32_t data_cache_line_size = cache_hal_get_cache_line_size(CACHE_TYPE_DATA);
-    size_t psram_trans_align = MAX(data_cache_line_size, config->psram_trans_align);
-    size_t trans_align = MAX(config->sram_trans_align, psram_trans_align);
+    size_t psram_trans_align = MAX(psram_cache_line_size, config->psram_trans_align);
+    size_t sram_trans_align = MAX(sram_cache_line_size, config->sram_trans_align);
+    size_t trans_align = MAX(sram_trans_align, psram_trans_align);
     mcp_gdma->max_single_dma_buffer = ALIGN_DOWN(DMA_DESCRIPTOR_BUFFER_MAX_SIZE, trans_align);
     mcp_gdma->psram_trans_align = psram_trans_align;
-    mcp_gdma->sram_trans_align = config->sram_trans_align;
+    mcp_gdma->sram_trans_align = sram_trans_align;
     mcp_gdma->parent.del = mcp_gdma_del;
     mcp_gdma->parent.memcpy = mcp_gdma_memcpy;
 #if SOC_GDMA_SUPPORT_ETM
@@ -189,10 +202,6 @@ esp_err_t esp_async_memcpy_install_gdma_ahb(const async_memcpy_config_t *config,
 {
     return esp_async_memcpy_install_gdma_template(config, mcp, gdma_new_ahb_channel, SOC_GDMA_BUS_AHB);
 }
-
-/// default installation falls back to use the AHB GDMA
-esp_err_t esp_async_memcpy_install(const async_memcpy_config_t *config, async_memcpy_handle_t *asmcp)
-__attribute__((alias("esp_async_memcpy_install_gdma_ahb")));
 #endif // SOC_AHB_GDMA_SUPPORTED
 
 #if SOC_AXI_GDMA_SUPPORTED
@@ -201,6 +210,16 @@ esp_err_t esp_async_memcpy_install_gdma_axi(const async_memcpy_config_t *config,
     return esp_async_memcpy_install_gdma_template(config, mcp, gdma_new_axi_channel, SOC_GDMA_BUS_AXI);
 }
 #endif // SOC_AXI_GDMA_SUPPORTED
+
+#if SOC_AHB_GDMA_SUPPORTED
+/// default installation falls back to use the AHB GDMA
+esp_err_t esp_async_memcpy_install(const async_memcpy_config_t *config, async_memcpy_handle_t *asmcp)
+__attribute__((alias("esp_async_memcpy_install_gdma_ahb")));
+#elif SOC_AXI_GDMA_SUPPORTED
+/// default installation falls back to use the AXI GDMA
+esp_err_t esp_async_memcpy_install(const async_memcpy_config_t *config, async_memcpy_handle_t *asmcp)
+__attribute__((alias("esp_async_memcpy_install_gdma_axi")));
+#endif
 
 static esp_err_t mcp_gdma_del(async_memcpy_context_t *ctx)
 {
@@ -212,64 +231,59 @@ static esp_err_t mcp_gdma_del(async_memcpy_context_t *ctx)
     return mcp_gdma_destroy(mcp_gdma);
 }
 
-static void mount_tx_buffer_to_dma(mcp_dma_descriptor_t *desc_array, int num_desc,
+static void mount_tx_buffer_to_dma(async_memcpy_transaction_t *trans, int num_desc,
                                    uint8_t *buf, size_t buf_sz, size_t max_single_dma_buffer)
 {
+    mcp_dma_descriptor_t *desc_array = trans->tx_desc_link;
+    mcp_dma_descriptor_t *desc_nc = trans->tx_desc_nc;
     uint32_t prepared_length = 0;
     size_t len = buf_sz;
     for (int i = 0; i < num_desc - 1; i++) {
-        desc_array[i].buffer = &buf[prepared_length];
-        desc_array[i].dw0.owner = DMA_DESCRIPTOR_BUFFER_OWNER_DMA;
-        desc_array[i].dw0.suc_eof = 0;
-        desc_array[i].dw0.size = max_single_dma_buffer;
-        desc_array[i].dw0.length = max_single_dma_buffer;
-        desc_array[i].next = &desc_array[i + 1];
+        desc_nc[i].buffer = &buf[prepared_length];
+        desc_nc[i].dw0.owner = DMA_DESCRIPTOR_BUFFER_OWNER_DMA;
+        desc_nc[i].dw0.suc_eof = 0;
+        desc_nc[i].dw0.size = max_single_dma_buffer;
+        desc_nc[i].dw0.length = max_single_dma_buffer;
+        desc_nc[i].next = &desc_array[i + 1];
         prepared_length += max_single_dma_buffer;
         len -= max_single_dma_buffer;
     }
     // take special care to the EOF descriptor
-    desc_array[num_desc - 1].buffer = &buf[prepared_length];
-    desc_array[num_desc - 1].next = NULL;
-    desc_array[num_desc - 1].dw0.owner = DMA_DESCRIPTOR_BUFFER_OWNER_DMA;
-    desc_array[num_desc - 1].dw0.suc_eof = 1;
-    desc_array[num_desc - 1].dw0.size = len;
-    desc_array[num_desc - 1].dw0.length = len;
-
-#if MCP_NEEDS_WRITE_BACK_DESC_CACHE
-    Cache_WriteBack_Addr(CACHE_MAP_L1_DCACHE, (uint32_t)desc_array, sizeof(mcp_dma_descriptor_t) * num_desc);
-#endif
+    desc_nc[num_desc - 1].buffer = &buf[prepared_length];
+    desc_nc[num_desc - 1].next = NULL;
+    desc_nc[num_desc - 1].dw0.owner = DMA_DESCRIPTOR_BUFFER_OWNER_DMA;
+    desc_nc[num_desc - 1].dw0.suc_eof = 1;
+    desc_nc[num_desc - 1].dw0.size = len;
+    desc_nc[num_desc - 1].dw0.length = len;
 }
 
-static void mount_rx_buffer_to_dma(mcp_dma_descriptor_t *desc_array, int num_desc, mcp_dma_descriptor_t *eof_desc,
+static void mount_rx_buffer_to_dma(async_memcpy_transaction_t *trans, int num_desc,
                                    uint8_t *buf, size_t buf_sz, size_t max_single_dma_buffer)
 {
+    mcp_dma_descriptor_t *desc_array = trans->rx_desc_link;
+    mcp_dma_descriptor_t *desc_nc = trans->rx_desc_nc;
+    mcp_dma_descriptor_t *eof_desc = &trans->eof_node;
+    mcp_dma_descriptor_t *eof_nc = (mcp_dma_descriptor_t *)MCP_GET_NON_CACHE_ADDR(eof_desc);
     uint32_t prepared_length = 0;
     size_t len = buf_sz;
     if (desc_array) {
         assert(num_desc > 0);
         for (int i = 0; i < num_desc; i++) {
-            desc_array[i].buffer = &buf[prepared_length];
-            desc_array[i].dw0.owner = DMA_DESCRIPTOR_BUFFER_OWNER_DMA;
-            desc_array[i].dw0.size = max_single_dma_buffer;
-            desc_array[i].dw0.length = max_single_dma_buffer;
-            desc_array[i].next = &desc_array[i + 1];
+            desc_nc[i].buffer = &buf[prepared_length];
+            desc_nc[i].dw0.owner = DMA_DESCRIPTOR_BUFFER_OWNER_DMA;
+            desc_nc[i].dw0.size = max_single_dma_buffer;
+            desc_nc[i].dw0.length = max_single_dma_buffer;
+            desc_nc[i].next = &desc_array[i + 1];
             prepared_length += max_single_dma_buffer;
             len -= max_single_dma_buffer;
         }
-        desc_array[num_desc - 1].next = eof_desc;
+        desc_nc[num_desc - 1].next = eof_desc;
     }
-    eof_desc->buffer = &buf[prepared_length];
-    eof_desc->next = NULL;
-    eof_desc->dw0.owner = DMA_DESCRIPTOR_BUFFER_OWNER_DMA;
-    eof_desc->dw0.size = len;
-    eof_desc->dw0.length = len;
-
-#if MCP_NEEDS_WRITE_BACK_DESC_CACHE
-    if (desc_array) {
-        Cache_WriteBack_Addr(CACHE_MAP_L1_DCACHE, (uint32_t)desc_array, sizeof(mcp_dma_descriptor_t) * num_desc);
-    }
-    Cache_WriteBack_Addr(CACHE_MAP_L1_DCACHE, (uint32_t)eof_desc, sizeof(mcp_dma_descriptor_t));
-#endif
+    eof_nc->buffer = &buf[prepared_length];
+    eof_nc->next = NULL;
+    eof_nc->dw0.owner = DMA_DESCRIPTOR_BUFFER_OWNER_DMA;
+    eof_nc->dw0.size = len;
+    eof_nc->dw0.length = len;
 }
 
 /// @brief help function to get one transaction from the ready queue
@@ -318,28 +332,34 @@ static async_memcpy_transaction_t *try_pop_trans_from_idle_queue(async_memcpy_gd
     return trans;
 }
 
-static bool check_buffer_aligned(async_memcpy_gdma_context_t *mcp_gdma, void *src, void *dst, size_t n)
+static bool check_buffer_alignment(async_memcpy_gdma_context_t *mcp_gdma, void *src, void *dst, size_t n)
 {
     bool valid = true;
-    uint32_t align_mask = 0;
+    uint32_t psram_align_mask = 0;
+    uint32_t sram_align_mask = 0;
+    if (mcp_gdma->psram_trans_align) {
+        psram_align_mask = mcp_gdma->psram_trans_align - 1;
+    }
+    if (mcp_gdma->sram_trans_align) {
+        sram_align_mask = mcp_gdma->sram_trans_align - 1;
+    }
+
     if (esp_ptr_external_ram(dst)) {
-        if (mcp_gdma->psram_trans_align) {
-            align_mask = mcp_gdma->psram_trans_align - 1;
-        }
+        valid = valid && (((uint32_t)dst & psram_align_mask) == 0);
+        valid = valid && ((n & psram_align_mask) == 0);
     } else {
-        if (mcp_gdma->sram_trans_align) {
-            align_mask = mcp_gdma->sram_trans_align - 1;
-        }
+        valid = valid && (((uint32_t)dst & sram_align_mask) == 0);
+        valid = valid && ((n & sram_align_mask) == 0);
     }
-#if CONFIG_IDF_TARGET_ESP32P4
-    uint32_t data_cache_line_mask = cache_hal_get_cache_line_size(CACHE_TYPE_DATA) - 1;
-    if (data_cache_line_mask > align_mask) {
-        align_mask = data_cache_line_mask;
+
+    if (esp_ptr_external_ram(src)) {
+        valid = valid && (((uint32_t)src & psram_align_mask) == 0);
+        valid = valid && ((n & psram_align_mask) == 0);
+    } else {
+        valid = valid && (((uint32_t)src & sram_align_mask) == 0);
+        valid = valid && ((n & sram_align_mask) == 0);
     }
-#endif
-    // destination address must be cache line aligned
-    valid = valid && (((uint32_t)dst & align_mask) == 0);
-    valid = valid && ((n & align_mask) == 0);
+
     return valid;
 }
 
@@ -355,11 +375,11 @@ static esp_err_t mcp_gdma_memcpy(async_memcpy_context_t *ctx, void *dst, void *s
 #endif // SOC_AHB_GDMA_SUPPORTED && !SOC_AHB_GDMA_SUPPORT_PSRAM
 #if SOC_AXI_GDMA_SUPPORTED && !SOC_AXI_GDMA_SUPPORT_PSRAM
     if (mcp_gdma->gdma_bus_id == SOC_GDMA_BUS_AXI) {
-        ESP_RETURN_ON_FALSE(esp_ptr_internal(src) && esp_ptr_internal(dst), ESP_ERR_INVALID_ARG, TAG, "AXI_DMA can only access SRAM");
+        ESP_RETURN_ON_FALSE(esp_ptr_internal(src) && esp_ptr_internal(dst), ESP_ERR_INVALID_ARG, TAG, "AXI DMA can only access SRAM");
     }
 #endif // SOC_AXI_GDMA_SUPPORTED && !SOC_AXI_GDMA_SUPPORT_PSRAM
     // alignment check
-    ESP_RETURN_ON_FALSE(check_buffer_aligned(mcp_gdma, src, dst, n), ESP_ERR_INVALID_ARG, TAG, "buffer not aligned: %p -> %p, sz=%zu", src, dst, n);
+    ESP_RETURN_ON_FALSE(check_buffer_alignment(mcp_gdma, src, dst, n), ESP_ERR_INVALID_ARG, TAG, "buffer not aligned: %p -> %p, sz=%zu", src, dst, n);
 
     async_memcpy_transaction_t *trans = NULL;
     // pick one transaction node from idle queue
@@ -371,38 +391,45 @@ static esp_err_t mcp_gdma_memcpy(async_memcpy_context_t *ctx, void *dst, void *s
     size_t max_single_dma_buffer = mcp_gdma->max_single_dma_buffer;
     uint32_t num_desc_per_path = (n + max_single_dma_buffer - 1) / max_single_dma_buffer;
     // allocate DMA descriptors, descriptors need a strict alignment
-    trans->tx_desc_link = heap_caps_aligned_calloc(MCP_DMA_DESC_ALIGN, num_desc_per_path, sizeof(mcp_dma_descriptor_t),
-                          MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT | MALLOC_CAP_DMA);
+    trans->tx_desc_link = heap_caps_aligned_calloc(mcp_gdma->descriptor_align, num_desc_per_path, sizeof(mcp_dma_descriptor_t),
+                                                   MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT | MALLOC_CAP_DMA);
     ESP_GOTO_ON_FALSE(trans->tx_desc_link, ESP_ERR_NO_MEM, err, TAG, "no mem for DMA descriptors");
+    trans->tx_desc_nc = (mcp_dma_descriptor_t *)MCP_GET_NON_CACHE_ADDR(trans->tx_desc_link);
     // don't have to allocate the EOF descriptor, we will use trans->eof_node as the RX EOF descriptor
     if (num_desc_per_path > 1) {
-        trans->rx_desc_link = heap_caps_aligned_calloc(MCP_DMA_DESC_ALIGN, num_desc_per_path - 1, sizeof(mcp_dma_descriptor_t),
-                              MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT | MALLOC_CAP_DMA);
+        trans->rx_desc_link = heap_caps_aligned_calloc(mcp_gdma->descriptor_align, num_desc_per_path - 1, sizeof(mcp_dma_descriptor_t),
+                                                       MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT | MALLOC_CAP_DMA);
         ESP_GOTO_ON_FALSE(trans->rx_desc_link, ESP_ERR_NO_MEM, err, TAG, "no mem for DMA descriptors");
+        trans->rx_desc_nc = (mcp_dma_descriptor_t *)MCP_GET_NON_CACHE_ADDR(trans->rx_desc_link);
     } else {
         // small copy buffer, use the trans->eof_node is sufficient
         trans->rx_desc_link = NULL;
+        trans->rx_desc_nc = NULL;
     }
 
     // (preload) mount src data to the TX descriptor
-    mount_tx_buffer_to_dma(trans->tx_desc_link, num_desc_per_path, src, n, max_single_dma_buffer);
+    mount_tx_buffer_to_dma(trans, num_desc_per_path, src, n, max_single_dma_buffer);
     // (preload) mount dst data to the RX descriptor
-    mount_rx_buffer_to_dma(trans->rx_desc_link, num_desc_per_path - 1, &trans->eof_node, dst, n, max_single_dma_buffer);
+    mount_rx_buffer_to_dma(trans, num_desc_per_path - 1, dst, n, max_single_dma_buffer);
 
     // if the data is in the cache, write back, then DMA can see the latest data
-#if MCP_NEEDS_WRITE_BACK_SRC_CACHE
-    int write_back_map = CACHE_MAP_L1_DCACHE;
+    bool need_write_back = false;
     if (esp_ptr_external_ram(src)) {
-        write_back_map |= CACHE_MAP_L2_CACHE;
-    }
-    Cache_WriteBack_Addr(write_back_map, (uint32_t)src, n);
+        need_write_back = true;
+    } else if (esp_ptr_internal(src)) {
+#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
+        need_write_back = true;
 #endif
+    }
+    if (need_write_back) {
+        esp_cache_msync(src, n, ESP_CACHE_MSYNC_FLAG_DIR_C2M);
+    }
 
     // save other transaction context
     trans->cb = cb_isr;
     trans->cb_args = cb_args;
     trans->memcpy_size = n;
-    trans->memcpy_dst_addr = (intptr_t)dst;
+    trans->memcpy_dst_addr = dst; // save the destination buffer address, because we may need to do data cache invalidate later
     trans->tx_start_desc_addr = (intptr_t)trans->tx_desc_link;
     trans->rx_start_desc_addr = trans->rx_desc_link ? (intptr_t)trans->rx_desc_link : (intptr_t)&trans->eof_node;
 
@@ -445,14 +472,19 @@ static bool mcp_gdma_rx_eof_callback(gdma_channel_handle_t dma_chan, gdma_event_
     // switch driver state from RUN to IDLE
     async_memcpy_fsm_t expected_fsm = MCP_FSM_RUN;
     if (atomic_compare_exchange_strong(&mcp_gdma->fsm, &expected_fsm, MCP_FSM_IDLE_WAIT)) {
+        void *dst = trans->memcpy_dst_addr;
         // if the data is in the cache, invalidate, then CPU can see the latest data
-#if MCP_NEEDS_INVALIDATE_DST_CACHE
-        int invalidate_map = CACHE_MAP_L1_DCACHE;
-        if (esp_ptr_external_ram((const void *)trans->memcpy_dst_addr)) {
-            invalidate_map |= CACHE_MAP_L2_CACHE;
-        }
-        Cache_Invalidate_Addr(invalidate_map, (uint32_t)trans->memcpy_dst_addr, trans->memcpy_size);
+        bool need_invalidate = false;
+        if (esp_ptr_external_ram(dst)) {
+            need_invalidate = true;
+        } else if (esp_ptr_internal(dst)) {
+#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
+            need_invalidate = true;
 #endif
+        }
+        if (need_invalidate) {
+            esp_cache_msync(dst, trans->memcpy_size, ESP_CACHE_MSYNC_FLAG_DIR_M2C);
+        }
 
         // invoked callback registered by user
         async_memcpy_isr_cb_t cb = trans->cb;

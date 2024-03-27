@@ -1,6 +1,5 @@
-# SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
-
 import logging
 
 import pytest
@@ -29,7 +28,6 @@ ONE_SHOT_TIMER_PERIOD = 5000000
 
 
 @pytest.mark.supported_targets
-@pytest.mark.temp_skip_ci(targets=['esp32c6', 'esp32h2'], reason='c6/h2 support TBD')
 @pytest.mark.generic
 @pytest.mark.parametrize(
     'config',
@@ -60,7 +58,7 @@ def test_esp_timer(dut: Dut) -> None:
     one_shot_timer_time = int(match.group(1))
     diff = start_time + ONE_SHOT_TIMER_PERIOD - one_shot_timer_time
     logging.info('One-shot timer, time: {} us, diff: {}'.format(one_shot_timer_time, diff))
-    assert abs(diff) < 350
+    assert abs(diff) < 400
 
     match = dut.expect(RESTART_REGEX, timeout=3)
     start_time = int(match.group(1))
@@ -82,7 +80,7 @@ def test_esp_timer(dut: Dut) -> None:
     logging.info('Enter sleep: {}, exit sleep: {}, slept: {}'.format(
         sleep_enter_time, sleep_exit_time, sleep_time))
 
-    assert abs(sleep_time - LIGHT_SLEEP_TIME) < 1000
+    assert abs(sleep_time - LIGHT_SLEEP_TIME) < 1200
 
     for i in range(5, 7):
         match = dut.expect(PERIODIC_TIMER_REGEX, timeout=2)

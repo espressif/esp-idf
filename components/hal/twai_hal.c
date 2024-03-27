@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -23,8 +23,6 @@ bool twai_hal_init(twai_hal_context_t *hal_ctx, const twai_hal_config_t *config)
     hal_ctx->dev = TWAI_LL_GET_HW(config->controller_id);
     hal_ctx->state_flags = 0;
     hal_ctx->clock_source_hz = config->clock_source_hz;
-    //Enable functional clock
-    twai_ll_enable_clock(hal_ctx->dev, true);
     //Initialize TWAI controller, and set default values to registers
     twai_ll_enter_reset_mode(hal_ctx->dev);
     if (!twai_ll_is_in_reset_mode(hal_ctx->dev)) {    //Must enter reset mode to write to config registers
@@ -48,8 +46,6 @@ void twai_hal_deinit(twai_hal_context_t *hal_ctx)
     twai_ll_set_enabled_intrs(hal_ctx->dev, 0);
     twai_ll_clear_arb_lost_cap(hal_ctx->dev);
     twai_ll_clear_err_code_cap(hal_ctx->dev);
-    //Disable functional clock
-    twai_ll_enable_clock(hal_ctx->dev, false);
     hal_ctx->dev = NULL;
 }
 
@@ -61,14 +57,6 @@ void twai_hal_configure(twai_hal_context_t *hal_ctx, const twai_timing_config_t 
     if (t_config->quanta_resolution_hz) {
         brp = hal_ctx->clock_source_hz / t_config->quanta_resolution_hz;
     }
-
-    // set clock source
-    twai_clock_source_t clk_src = t_config->clk_src;
-    //for backward compatible, zero value means default a default clock source
-    if (t_config->clk_src == 0) {
-        clk_src = TWAI_CLK_SRC_DEFAULT;
-    }
-    twai_ll_set_clock_source(hal_ctx->dev, clk_src);
 
     //Configure bus timing, acceptance filter, CLKOUT, and interrupts
     twai_ll_set_bus_timing(hal_ctx->dev, brp, t_config->sjw, t_config->tseg_1, t_config->tseg_2, t_config->triple_sampling);

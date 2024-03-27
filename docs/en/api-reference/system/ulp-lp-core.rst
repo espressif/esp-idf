@@ -8,11 +8,10 @@ The ULP LP-Core (Low-power core) coprocessor is a variant of the ULP present in 
 The ULP LP-Core coprocessor has the following features:
 
 * Utilizes a 32-bit processor based on the RISC-V ISA, encompassing the standard extensions integer (I), multiplication/division (M), atomic (A), and compressed (C).
-* Interrupt controller
+* Interrupt controller.
 * Includes a debug module that supports external debugging via JTAG.
 * Can access all of the High-power (HP) SRAM and peripherals when the entire system is active.
 * Can access the Low-power (LP) SRAM and peripherals when the HP system is in sleep mode.
-
 
 Compiling Code for the ULP LP-Core
 ----------------------------------
@@ -31,29 +30,27 @@ The ULP LP-Core code is compiled together with your ESP-IDF project as a separat
 
     ulp_embed_binary(${ulp_app_name} "${ulp_sources}" "${ulp_exp_dep_srcs}")
 
+The first argument to ``ulp_embed_binary`` specifies the ULP binary name. The name specified here is also used by other generated artifacts such as the ELF file, map file, header file, and linker export file. The second argument specifies the ULP source files. Finally, the third argument specifies the list of component source files which include the header file to be generated. This list is needed to build the dependencies correctly and ensure that the generated header file is created before any of these files are compiled. See the section below for the concept of generated header files for ULP applications.
 
- The first argument to ``ulp_embed_binary`` specifies the ULP binary name. The name specified here is also used by other generated artifacts such as the ELF file, map file, header file, and linker export file. The second argument specifies the ULP source files. Finally, the third argument specifies the list of component source files which include the header file to be generated. This list is needed to build the dependencies correctly and ensure that the generated header file is created before any of these files are compiled. See the section below for the concept of generated header files for ULP applications.
+1. Enable both :ref:`CONFIG_ULP_COPROC_ENABLED` and :ref:`CONFIG_ULP_COPROC_TYPE` in menucofig, and set :ref:`CONFIG_ULP_COPROC_TYPE` to ``CONFIG_ULP_COPROC_TYPE_LP_CORE``. The :ref:`CONFIG_ULP_COPROC_RESERVE_MEM` option reserves RTC memory for the ULP, and must be set to a value big enough to store both the ULP LP-Core code and data. If the application components contain multiple ULP programs, then the size of the RTC memory must be sufficient to hold the largest one.
 
-3. Enable both :ref:`CONFIG_ULP_COPROC_ENABLED` and :ref:`CONFIG_ULP_COPROC_TYPE` to ``CONFIG_ULP_COPROC_TYPE_LP_CORE`` options in menuconfig. The :ref:`CONFIG_ULP_COPROC_RESERVE_MEM` option reserves RTC memory for the ULP and must be set to a value big enough to store both the ULP LP-Core code and data. If the application components contain multiple ULP programs, then the size of the RTC memory must be sufficient to hold the largest one.
+2. Build the application as usual (e.g., ``idf.py app``).
 
+During the build process, the following steps are taken to build ULP program:
 
-4. Build the application as usual (e.g., ``idf.py app``).
+    1. **Run each source file through the C compiler and assembler.** This step generates the object files ``.obj.c`` or ``.obj.S`` in the component build directory depending on the source file processed.
 
-   During the build process, the following steps are taken to build ULP program:
+    2. **Run the linker script template through the C preprocessor.** The template is located in ``components/ulp/ld`` directory.
 
-   1. **Run each source file through the C compiler and assembler.** This step generates the object files (``.obj.c`` or ``.obj.S`` depending of source file processed) in the component build directory.
+    3. **Link the object files into an output ELF file** (``ulp_app_name.elf``). The Map file ``ulp_app_name.map`` generated at this stage may be useful for debugging purposes.
 
-   2. **Run the linker script template through the C preprocessor.** The template is located in ``components/ulp/ld`` directory.
+    4. **Dump the contents of the ELF file into a binary** (``ulp_app_name.bin``) which can then be embedded into the application.
 
-   3. **Link the object files into an output ELF file** (``ulp_app_name.elf``). The Map file (``ulp_app_name.map``) generated at this stage may be useful for debugging purposes.
+    5. **Generate a list of global symbols** (``ulp_app_name.sym``) in the ELF file using ``riscv32-esp-elf-nm``.
 
-   4. **Dump the contents of the ELF file into a binary** (``ulp_app_name.bin``) which can then be embedded into the application.
+    6. **Create an LD export script and a header file** ``ulp_app_name.ld`` and ``ulp_app_name.h`` containing the symbols from ``ulp_app_name.sym``. This is done using the ``esp32ulp_mapgen.py`` utility.
 
-   5. **Generate a list of global symbols** (``ulp_app_name.sym``) in the ELF file using ``riscv32-esp-elf-nm``.
-
-   6. **Create an LD export script and a header file** (``ulp_app_name.ld`` and ``ulp_app_name.h``) containing the symbols from ``ulp_app_name.sym``. This is done using the ``esp32ulp_mapgen.py`` utility.
-
-   7. **Add the generated binary to the list of binary files** to be embedded into the application.
+    7. **Add the generated binary to the list of binary files** to be embedded into the application.
 
 .. _ulp-lp-core-access-variables:
 
@@ -143,36 +140,66 @@ The ULP has the following wake-up sources:
 
 When the ULP is woken up, it will go through the following steps:
 
-1. Initialize system feature, e.g., interrupts
-2. Call user code: ``main()``
-3. Return from ``main()``
-4. If ``lp_timer_sleep_duration_us`` is specified then configure the next wake-up alarm
-5. Call :cpp:func:`ulp_lp_core_halt`
+.. list::
+
+    :CONFIG_ESP_ROM_HAS_LP_ROM: #. Unless :cpp:member:`ulp_lp_core_cfg_t::skip_lp_rom_boot` is specified: run ROM start-up code and jump to the entry point in LP RAM. ROM start-up code will initialize lp-uart as well as print boot messages.
+    #. Initialize system feature, e.g., interrupts
+    #. Call user code ``main()``
+    #. Return from ``main()``
+    #. If ``lp_timer_sleep_duration_us`` is specified, then configure the next wake-up alarm
+    #. Call :cpp:func:`ulp_lp_core_halt`
 
 ULP LP-Core Peripheral Support
 ------------------------------
 
 To enhance the capabilities of the ULP LP-Core coprocessor, it has access to peripherals which operate in the low-power domain. The ULP LP-Core coprocessor can interact with these peripherals when the main CPU is in sleep mode, and can wake up the main CPU once a wakeup condition is reached. The following peripherals are supported:
 
- * LP IO
- * LP I2C
+.. list::
+
+    * LP IO
+    * LP I2C
+    * LP UART
+
+.. only:: CONFIG_ESP_ROM_HAS_LP_ROM
+
+    ULP LP-Core ROM
+    ---------------
+
+    The ULP LP-Core ROM is a small pre-built piece of code located in LP-ROM, which is not modifiable by users. Similar to the bootloader ROM code ran by the main CPU, this code is executed when the ULP LP-Core coprocessor is started. The ROM code initializes the ULP LP-Core coprocessor and then jumps to the user program. The ROM code is responsible for initializing the LP UART and printing boot messages.
+
+    The ROM code is not executed if :cpp:member:`ulp_lp_core_cfg_t::skip_lp_rom_boot` is set to true. This is useful when you need the ULP to wake-up as quickly as possible and the extra overhead of initializing UART and printing is unwanted.
+
+    In addition to the boot-up code mentioned above the ROM code also provides the following functions and interfaces:
+
+    * :component_file:`ROM.ld Interface <esp_rom/esp32p4/ld/esp32p4lp.rom.ld>`
+    * :component_file:`newlib.ld Interface <esp_rom/esp32p4/ld/esp32p4lp.rom.newlib.ld>`
+
+    Since these functions are already present in LP-ROM no matter what, using these in your program allows you to reduce the RAM footprint of your ULP application.
+
 
 Application Examples
 --------------------
 
-* ULP LP-Core Coprocessor polls GPIO while main CPU is in deep sleep: :example:`system/ulp/lp_core/gpio`.
-* ULP LP-Core Coprocessor reads external I2C ambient light sensor (BH1750) while the main CPU is in Deep-sleep and wakes up the main CPU once a threshold is met: :example:`system/ulp/lp_core/lp_i2c`.
+* :example:`system/ulp/lp_core/gpio` polls GPIO while main CPU is in deep sleep.
+* :example:`system/ulp/lp_core/lp_i2c` reads external I2C ambient light sensor (BH1750) while the main CPU is in Deep-sleep and wakes up the main CPU once a threshold is met.
+* :example:`system/ulp/lp_core/lp_uart/lp_uart_echo` reads data written to a serial console and echoes it back. This example demonstrates the usage of the LP UART driver running on the LP core.
+* :example:`system/ulp/lp_core/lp_uart/lp_uart_print` shows how to print various statements from a program running on the LP core.
 
 API Reference
 -------------
 
 Main CPU API Reference
 ~~~~~~~~~~~~~~~~~~~~~~
+
 .. include-build-file:: inc/ulp_lp_core.inc
 .. include-build-file:: inc/lp_core_i2c.inc
+.. include-build-file:: inc/lp_core_uart.inc
 
 LP Core API Reference
 ~~~~~~~~~~~~~~~~~~~~~~
+
 .. include-build-file:: inc/ulp_lp_core_utils.inc
 .. include-build-file:: inc/ulp_lp_core_gpio.inc
 .. include-build-file:: inc/ulp_lp_core_i2c.inc
+.. include-build-file:: inc/ulp_lp_core_uart.inc
+.. include-build-file:: inc/ulp_lp_core_print.inc

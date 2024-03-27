@@ -31,9 +31,9 @@ def test_partition_nearly_full_warning(idf_py: IdfPyFunc, test_app_copy: Path, d
     ret = idf_py('build')
     # Build a first time to get the binary size and to check that no warning is issued.
     assert 'partition is nearly full' not in ret.stdout, 'Warning for nearly full smallest partition was given when the condition is not fulfilled'
-    # Get the size of the binary, in KB. Add 1 to the total.
+    # Get the size of the binary, in KB. Convert it to next multiple of 4.
     # The goal is to create an app partition which is slightly bigger than the binary itself
-    updated_file_size = int(os.stat(test_app_copy / 'build' / 'build_test_app.bin').st_size / 1024) + 1
+    updated_file_size = int((os.stat(test_app_copy / 'build' / 'build_test_app.bin').st_size + 4095) / 4096) * 4
     idf_path = Path(default_idf_env['IDF_PATH'])
     shutil.copy2(idf_path / 'components' / 'partition_table' / 'partitions_singleapp.csv', test_app_copy / 'partitions.csv')
     replace_in_file(test_app_copy / 'partitions.csv',

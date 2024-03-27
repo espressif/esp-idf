@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -78,18 +78,18 @@ static esp_err_t ulp_riscv_config_wakeup_source(ulp_riscv_wakeup_source_t wakeup
     esp_err_t ret = ESP_OK;
 
     switch (wakeup_source) {
-        case ULP_RISCV_WAKEUP_SOURCE_TIMER:
-            /* start ULP_TIMER */
-            CLEAR_PERI_REG_MASK(RTC_CNTL_ULP_CP_CTRL_REG, RTC_CNTL_ULP_CP_FORCE_START_TOP);
-            SET_PERI_REG_MASK(RTC_CNTL_ULP_CP_TIMER_REG, RTC_CNTL_ULP_CP_SLP_TIMER_EN);
-            break;
+    case ULP_RISCV_WAKEUP_SOURCE_TIMER:
+        /* start ULP_TIMER */
+        CLEAR_PERI_REG_MASK(RTC_CNTL_ULP_CP_CTRL_REG, RTC_CNTL_ULP_CP_FORCE_START_TOP);
+        SET_PERI_REG_MASK(RTC_CNTL_ULP_CP_TIMER_REG, RTC_CNTL_ULP_CP_SLP_TIMER_EN);
+        break;
 
-        case ULP_RISCV_WAKEUP_SOURCE_GPIO:
-            SET_PERI_REG_MASK(RTC_CNTL_ULP_CP_TIMER_REG, RTC_CNTL_ULP_CP_GPIO_WAKEUP_ENA);
-            break;
+    case ULP_RISCV_WAKEUP_SOURCE_GPIO:
+        SET_PERI_REG_MASK(RTC_CNTL_ULP_CP_TIMER_REG, RTC_CNTL_ULP_CP_GPIO_WAKEUP_ENA);
+        break;
 
-        default:
-            ret = ESP_ERR_INVALID_ARG;
+    default:
+        ret = ESP_ERR_INVALID_ARG;
     }
 
     return ret;
@@ -99,13 +99,12 @@ esp_err_t ulp_riscv_config_and_run(ulp_riscv_cfg_t* cfg)
 {
     esp_err_t ret = ESP_OK;
 
-
 #if CONFIG_IDF_TARGET_ESP32S2
     /* Reset COCPU when power on. */
     SET_PERI_REG_MASK(RTC_CNTL_COCPU_CTRL_REG, RTC_CNTL_COCPU_SHUT_RESET_EN);
 
-     /* The coprocessor cpu trap signal doesnt have a stable reset value,
-       force ULP-RISC-V clock on to stop RTC_COCPU_TRAP_TRIG_EN from waking the CPU*/
+    /* The coprocessor cpu trap signal doesnt have a stable reset value,
+      force ULP-RISC-V clock on to stop RTC_COCPU_TRAP_TRIG_EN from waking the CPU*/
     SET_PERI_REG_MASK(RTC_CNTL_COCPU_CTRL_REG, RTC_CNTL_COCPU_CLK_FO);
 
     /* Disable ULP timer */
@@ -124,10 +123,9 @@ esp_err_t ulp_riscv_config_and_run(ulp_riscv_cfg_t* cfg)
     /* Reset COCPU when power on. */
     SET_PERI_REG_MASK(RTC_CNTL_COCPU_CTRL_REG, RTC_CNTL_COCPU_SHUT_RESET_EN);
 
-     /* The coprocessor cpu trap signal doesnt have a stable reset value,
-       force ULP-RISC-V clock on to stop RTC_COCPU_TRAP_TRIG_EN from waking the CPU*/
+    /* The coprocessor cpu trap signal doesnt have a stable reset value,
+      force ULP-RISC-V clock on to stop RTC_COCPU_TRAP_TRIG_EN from waking the CPU*/
     SET_PERI_REG_MASK(RTC_CNTL_COCPU_CTRL_REG, RTC_CNTL_COCPU_CLK_FO);
-
 
     /* Disable ULP timer */
     CLEAR_PERI_REG_MASK(RTC_CNTL_ULP_CP_TIMER_REG, RTC_CNTL_ULP_CP_SLP_TIMER_EN);
@@ -158,7 +156,6 @@ esp_err_t ulp_riscv_config_and_run(ulp_riscv_cfg_t* cfg)
     /* Clear any spurious wakeup trigger interrupts upon ULP startup */
     esp_rom_delay_us(20);
     REG_WRITE(RTC_CNTL_INT_CLR_REG, RTC_CNTL_COCPU_INT_CLR | RTC_CNTL_COCPU_TRAP_INT_CLR | RTC_CNTL_ULP_CP_INT_CLR);
-
 
 #endif
 

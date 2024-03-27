@@ -5,8 +5,8 @@ import pytest
 from pytest_embedded import Dut
 
 
-@pytest.mark.supported_targets
-@pytest.mark.generic
+@pytest.mark.esp32
+@pytest.mark.esp32c3
 def test_fatfs_flash_ro(dut: Dut) -> None:
     dut.expect_exact('Press ENTER to see the list of tests')
     dut.write('')

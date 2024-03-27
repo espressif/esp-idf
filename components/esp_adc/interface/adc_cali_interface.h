@@ -11,7 +11,6 @@
 extern "C" {
 #endif
 
-
 typedef struct adc_cali_scheme_t adc_cali_scheme_t;
 
 /**

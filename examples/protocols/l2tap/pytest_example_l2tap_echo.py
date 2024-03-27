@@ -1,6 +1,5 @@
-# SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
-
 import contextlib
 import logging
 import os
@@ -10,7 +9,8 @@ from typing import Iterator
 
 import pytest
 from pytest_embedded import Dut
-from scapy.all import Ether, raw
+from scapy.all import Ether
+from scapy.all import raw
 
 ETH_TYPE_1 = 0x2220
 ETH_TYPE_2 = 0x2221
@@ -22,6 +22,8 @@ def configure_eth_if(eth_type: int, target_if: str='') -> Iterator[socket.socket
     if target_if == '':
         # try to determine which interface to use
         netifs = os.listdir('/sys/class/net/')
+        # order matters - ETH NIC with the highest number is connected to DUT on CI runner
+        netifs.sort(reverse=True)
         logging.info('detected interfaces: %s', str(netifs))
         for netif in netifs:
             if netif.find('eth') == 0 or netif.find('enx') == 0 or netif.find('enp') == 0 or netif.find('eno') == 0:
@@ -100,7 +102,7 @@ def actual_test(dut: Dut) -> None:
 
 
 @pytest.mark.esp32  # internally tested using ESP32 with IP101 but may support all targets with SPI Ethernet
-@pytest.mark.ip101
+@pytest.mark.eth_ip101
 @pytest.mark.flaky(reruns=3, reruns_delay=5)
 def test_esp_netif_l2tap_example(dut: Dut) -> None:
     actual_test(dut)

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -126,13 +126,14 @@ uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cycles)
 
 uint32_t rtc_clk_cal_ratio(rtc_cal_sel_t cal_clk, uint32_t slowclk_cycles)
 {
+    assert(slowclk_cycles);
     uint64_t xtal_cycles = rtc_clk_cal_internal(cal_clk, slowclk_cycles);
     uint64_t ratio_64 = ((xtal_cycles << RTC_CLK_CAL_FRACT)) / slowclk_cycles;
     uint32_t ratio = (uint32_t)(ratio_64 & UINT32_MAX);
     return ratio;
 }
 
-static inline bool rtc_clk_cal_32k_valid(rtc_xtal_freq_t xtal_freq, uint32_t slowclk_cycles, uint64_t actual_xtal_cycles)
+static inline bool rtc_clk_cal_32k_valid(uint32_t xtal_freq, uint32_t slowclk_cycles, uint64_t actual_xtal_cycles)
 {
     uint64_t expected_xtal_cycles = (xtal_freq * 1000000ULL * slowclk_cycles) >> 15; // xtal_freq(hz) * slowclk_cycles / 32768
     uint64_t delta = expected_xtal_cycles / 2000;                                    // 5/10000
@@ -141,10 +142,11 @@ static inline bool rtc_clk_cal_32k_valid(rtc_xtal_freq_t xtal_freq, uint32_t slo
 
 uint32_t rtc_clk_cal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cycles)
 {
-    rtc_xtal_freq_t xtal_freq = rtc_clk_xtal_freq_get();
+    assert(slowclk_cycles);
+    soc_xtal_freq_t xtal_freq = rtc_clk_xtal_freq_get();
     uint64_t xtal_cycles = rtc_clk_cal_internal(cal_clk, slowclk_cycles);
 
-    if ((cal_clk == RTC_CAL_32K_OSC_SLOW) && !rtc_clk_cal_32k_valid(xtal_freq, slowclk_cycles, xtal_cycles)) {
+    if ((cal_clk == RTC_CAL_32K_OSC_SLOW) && !rtc_clk_cal_32k_valid((uint32_t)xtal_freq, slowclk_cycles, xtal_cycles)) {
         return 0;
     }
 
@@ -156,6 +158,7 @@ uint32_t rtc_clk_cal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cycles)
 
 uint64_t rtc_time_us_to_slowclk(uint64_t time_in_us, uint32_t period)
 {
+    assert(period);
     /* Overflow will happen in this function if time_in_us >= 2^45, which is about 400 days.
      * TODO: fix overflow.
      */
@@ -192,10 +195,17 @@ uint32_t rtc_clk_freq_cal(uint32_t cal_val)
 __attribute__((constructor))
 static void enable_timer_group0_for_calibration(void)
 {
+#ifndef BOOTLOADER_BUILD
     PERIPH_RCC_ACQUIRE_ATOMIC(PERIPH_TIMG0_MODULE, ref_count) {
         if (ref_count == 0) {
             timer_ll_enable_bus_clock(0, true);
             timer_ll_reset_register(0);
         }
     }
+#else
+    // no critical section is needed for bootloader
+    int __DECLARE_RCC_RC_ATOMIC_ENV;
+    timer_ll_enable_bus_clock(0, true);
+    timer_ll_reset_register(0);
+#endif
 }

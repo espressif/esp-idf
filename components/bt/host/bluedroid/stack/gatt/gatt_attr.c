@@ -40,7 +40,13 @@
 #define BLE_GATT_CL_SUPP_FEAT_BITMASK 0x07
 
 #define GATTP_MAX_NUM_INC_SVR       0
-#define GATTP_MAX_CHAR_NUM          4
+
+#if GATTS_ROBUST_CACHING_ENABLED
+#define GATTP_MAX_CHAR_NUM          5
+#else
+#define GATTP_MAX_CHAR_NUM          2
+#endif /* GATTS_ROBUST_CACHING_ENABLED */
+
 #define GATTP_MAX_ATTR_NUM          (GATTP_MAX_CHAR_NUM * 2 + GATTP_MAX_NUM_INC_SVR + 1)
 #define GATTP_MAX_CHAR_VALUE_SIZE   50
 
@@ -196,26 +202,15 @@ tGATT_STATUS gatt_proc_read (UINT16 conn_id, tGATTS_REQ_TYPE type, tGATT_READ_RE
 
     GATT_TRACE_DEBUG("%s handle %x", __func__, p_data->handle);
 
-    UINT8 tcb_idx = GATT_GET_TCB_IDX(conn_id);
-    tGATT_TCB *tcb = gatt_get_tcb_by_idx(tcb_idx);
-
     if (p_data->is_long) {
         p_rsp->attr_value.offset = p_data->offset;
     }
 
     p_rsp->attr_value.handle = p_data->handle;
+#if GATTS_ROBUST_CACHING_ENABLED
 
-    /* handle request for reading service changed */
-    if (p_data->handle == gatt_cb.handle_of_h_r) {
-        status = GATTS_GetAttributeValue(p_data->handle, &len, &value);
-        if(status == GATT_SUCCESS && len > 0 && value) {
-            if(len > GATT_MAX_ATTR_LEN) {
-                len = GATT_MAX_ATTR_LEN;
-            }
-            p_rsp->attr_value.len = len;
-            memcpy(p_rsp->attr_value.value, value, len);
-        }
-    }
+    UINT8 tcb_idx = GATT_GET_TCB_IDX(conn_id);
+    tGATT_TCB *tcb = gatt_get_tcb_by_idx(tcb_idx);
 
     /* handle request for reading client supported features */
     if (p_data->handle == gatt_cb.handle_of_cl_supported_feat) {
@@ -224,7 +219,7 @@ tGATT_STATUS gatt_proc_read (UINT16 conn_id, tGATTS_REQ_TYPE type, tGATT_READ_RE
         }
         p_rsp->attr_value.len = 1;
         memcpy(p_rsp->attr_value.value, &tcb->cl_supp_feat, 1);
-        status = GATT_SUCCESS;
+        return GATT_SUCCESS;
     }
 
     /* handle request for reading database hash */
@@ -232,19 +227,28 @@ tGATT_STATUS gatt_proc_read (UINT16 conn_id, tGATTS_REQ_TYPE type, tGATT_READ_RE
         p_rsp->attr_value.len = BT_OCTET16_LEN;
         memcpy(p_rsp->attr_value.value, gatt_cb.database_hash, BT_OCTET16_LEN);
         gatt_sr_update_cl_status(tcb, true);
-        status = GATT_SUCCESS;
+        return GATT_SUCCESS;
     }
 
     /* handle request for reading server supported features */
     if (p_data->handle == gatt_cb.handle_of_sr_supported_feat) {
         p_rsp->attr_value.len = 1;
         memcpy(p_rsp->attr_value.value, &gatt_cb.gatt_sr_supported_feat_mask, 1);
-        status = GATT_SUCCESS;
+        return GATT_SUCCESS;
     }
-
+#endif /* GATTS_ROBUST_CACHING_ENABLED */
+    /* handle request for reading service changed des and the others */
+    status = GATTS_GetAttributeValue(p_data->handle, &len, &value);
+    if(status == GATT_SUCCESS && len > 0 && value) {
+        if(len > GATT_MAX_ATTR_LEN) {
+            len = GATT_MAX_ATTR_LEN;
+        }
+        p_rsp->attr_value.len = len;
+        memcpy(p_rsp->attr_value.value, value, len);
+    }
     return status;
 }
-
+#if GATTS_ROBUST_CACHING_ENABLED
 static tGATT_STATUS gatt_sr_write_cl_supp_feat(UINT16 conn_id, tGATT_WRITE_REQ *p_data)
 {
     UINT8 val_new;
@@ -289,7 +293,7 @@ static tGATT_STATUS gatt_sr_write_cl_supp_feat(UINT16 conn_id, tGATT_WRITE_REQ *
 #endif
     return GATT_SUCCESS;
 }
-
+#endif /* GATTS_ROBUST_CACHING_ENABLED */
 /******************************************************************************
 **
 ** Function         gatt_proc_write_req
@@ -304,7 +308,7 @@ tGATT_STATUS gatt_proc_write_req(UINT16 conn_id, tGATTS_REQ_TYPE type, tGATT_WRI
     if(p_data->len > GATT_MAX_ATTR_LEN) {
         p_data->len = GATT_MAX_ATTR_LEN;
     }
-
+#if GATTS_ROBUST_CACHING_ENABLED
     if (p_data->handle == gatt_cb.handle_of_h_r) {
         return GATT_WRITE_NOT_PERMIT;
     }
@@ -320,7 +324,7 @@ tGATT_STATUS gatt_proc_write_req(UINT16 conn_id, tGATTS_REQ_TYPE type, tGATT_WRI
     if (p_data->handle == gatt_cb.handle_of_sr_supported_feat) {
         return GATT_WRITE_NOT_PERMIT;
     }
-
+#endif /* GATTS_ROBUST_CACHING_ENABLED */
     return GATTS_SetAttributeValue(p_data->handle,
                            p_data->len,
                            p_data->value);
@@ -473,7 +477,7 @@ void gatt_profile_db_init (void)
     };
 
     GATTS_AddCharDescriptor (service_handle, GATT_PERM_READ | GATT_PERM_WRITE , &descr_uuid, &attr_val, NULL);
-
+#if GATTS_ROBUST_CACHING_ENABLED
     /* add Client Supported Features characteristic */
     uuid.uu.uuid16 = GATT_UUID_CLIENT_SUP_FEAT;
     gatt_cb.handle_of_cl_supported_feat = GATTS_AddCharacteristic(service_handle, &uuid, GATT_PERM_READ | GATT_PERM_WRITE,
@@ -486,7 +490,7 @@ void gatt_profile_db_init (void)
     /* add Server Supported Features characteristic */
     uuid.uu.uuid16 = GATT_UUID_SERVER_SUP_FEAT;
     gatt_cb.handle_of_sr_supported_feat = GATTS_AddCharacteristic(service_handle, &uuid, GATT_PERM_READ, GATT_CHAR_PROP_BIT_READ, NULL, NULL);
-
+#endif /* GATTS_ROBUST_CACHING_ENABLED */
     /* start service */
     status = GATTS_StartService (gatt_cb.gatt_if, service_handle, GATTP_TRANSPORT_SUPPORTED );
 
@@ -692,6 +696,7 @@ void GATT_ConfigServiceChangeCCC (BD_ADDR remote_bda, BOOLEAN enable, tBT_TRANSP
     gatt_cl_start_config_ccc(p_clcb);
 }
 
+#if GATTS_ROBUST_CACHING_ENABLED
 /*******************************************************************************
 **
 ** Function         gatt_sr_is_cl_robust_caching_supported
@@ -703,14 +708,8 @@ void GATT_ConfigServiceChangeCCC (BD_ADDR remote_bda, BOOLEAN enable, tBT_TRANSP
 *******************************************************************************/
 static BOOLEAN gatt_sr_is_cl_robust_caching_supported(tGATT_TCB *p_tcb)
 {
-    // Server robust caching not enabled
-    if (!GATTS_ROBUST_CACHING_ENABLED) {
-        return FALSE;
-    }
-
     return (p_tcb->cl_supp_feat & BLE_GATT_CL_SUPP_FEAT_ROBUST_CACHING_BITMASK);
 }
-
 /*******************************************************************************
 **
 ** Function         gatt_sr_is_cl_change_aware
@@ -794,4 +793,5 @@ void gatt_sr_update_cl_status(tGATT_TCB *p_tcb, BOOLEAN chg_aware)
 
     GATT_TRACE_DEBUG("%s status %d", __func__, chg_aware);
 }
+#endif /* GATTS_ROBUST_CACHING_ENABLED */
 #endif  /* BLE_INCLUDED == TRUE && GATTS_INCLUDED == TRUE */

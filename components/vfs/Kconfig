@@ -63,6 +63,13 @@ menu "Virtual file system"
             It is possible to suppress these debug outputs by enabling this
             option.
 
+    config VFS_SELECT_IN_RAM
+        bool "Make VFS driver select() callbacks IRAM-safe"
+        default n
+        depends on VFS_SUPPORT_SELECT
+        help
+            If enabled, VFS driver select() callback function will be placed in IRAM.
+
     config VFS_SUPPORT_TERMIOS
         bool "Provide termios.h functions"
         default y

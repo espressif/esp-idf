@@ -11,7 +11,6 @@
 #include "unity_test_runner.h"
 #include "esp_heap_caps.h"
 
-
 // Some resources are lazy allocated (e.g. newlib locks), the threshold is left for that case
 #define TEST_MEMORY_LEAK_THRESHOLD (-200)
 

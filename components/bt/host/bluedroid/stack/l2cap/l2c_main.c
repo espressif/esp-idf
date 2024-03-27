@@ -52,6 +52,10 @@ tL2C_CB l2cb;
 tL2C_CB *l2c_cb_ptr;
 #endif
 
+#if BT_CLASSIC_BQB_INCLUDED
+static BOOLEAN s_l2cap_bqb_bad_cmd_len_rej_flag = FALSE;
+#endif /* BT_CLASSIC_BQB_INCLUDED */
+
 #if 0 //Unused
 /*******************************************************************************
 **
@@ -106,6 +110,24 @@ void l2c_bcst_msg( BT_HDR *p_buf, UINT16 psm )
     }
 }
 #endif
+
+/*******************************************************************************
+**
+** Function     l2cap_bqb_bad_cmd_len_rej_ctrl
+**
+** Description  Control rejecting L2CAP signaling PDUs with incorrect length
+**              for BQB test.
+**
+** Returns      void
+**
+*******************************************************************************/
+#if BT_CLASSIC_BQB_INCLUDED
+void l2cap_bqb_bad_cmd_len_rej_ctrl(BOOLEAN enable)
+{
+    s_l2cap_bqb_bad_cmd_len_rej_flag = enable;
+}
+#endif /* BT_CLASSIC_BQB_INCLUDED */
+
 
 /*******************************************************************************
 **
@@ -461,6 +483,12 @@ static void process_l2cap_cmd (tL2C_LCB *p_lcb, UINT8 *p, UINT16 pkt_len)
             p_ccb->remote_cid = rcid;
 
             l2c_csm_execute(p_ccb, L2CEVT_L2CAP_CONNECT_REQ, &con_info);
+#if BT_CLASSIC_BQB_INCLUDED
+            // L2CAP/COS/CED/BI-02-C
+            if (s_l2cap_bqb_bad_cmd_len_rej_flag) {
+                l2cu_send_peer_cmd_reject (p_lcb, L2CAP_CMD_REJ_NOT_UNDERSTOOD, id, 0, 0);
+            }
+#endif /* BT_CLASSIC_BQB_INCLUDED */
             break;
 
         case L2CAP_CMD_CONN_RSP:

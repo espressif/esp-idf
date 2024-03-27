@@ -70,8 +70,8 @@ void esp_cache_err_int_init(void)
 int esp_cache_err_get_cpuid(void)
 {
     if (REG_READ(EXTMEM_CACHE_DBG_STATUS0_REG) != 0 ||
-        REG_READ(EXTMEM_CACHE_DBG_STATUS1_REG) != 0) {
-            return PRO_CPU_NUM;
+            REG_READ(EXTMEM_CACHE_DBG_STATUS1_REG) != 0) {
+        return PRO_CPU_NUM;
     }
     return -1;
 }

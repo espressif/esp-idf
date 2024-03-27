@@ -104,7 +104,7 @@ If you want to use :cpp:func:`select` with a file descriptor belonging to a non-
 
     :cpp:func:`end_select` might be called without a previous :cpp:func:`start_select` call in some rare circumstances. :cpp:func:`end_select` should fail gracefully if this is the case (i.e., should not crash but return an error instead).
 
-Please refer to the reference implementation for the UART peripheral in :component_file:`vfs/vfs_uart.c` and most particularly to the functions :cpp:func:`esp_vfs_dev_uart_register`, :cpp:func:`uart_start_select`, and :cpp:func:`uart_end_select` for more information.
+Please refer to the reference implementation for the UART peripheral in :component_file:`esp_driver_uart/src/uart_vfs.c` and most particularly to the functions :cpp:func:`uart_vfs_dev_register`, :cpp:func:`uart_start_select`, and :cpp:func:`uart_end_select` for more information.
 
 Please check the following examples that demonstrate the use of :cpp:func:`select` with VFS file descriptors:
 
@@ -177,7 +177,7 @@ VFS does not impose any limit on total file path length, but it does limit the F
 File Descriptors
 ----------------
 
-File descriptors are small positive integers from ``0`` to ``FD_SETSIZE - 1``, where ``FD_SETSIZE`` is defined in newlib's ``sys/types.h``. The largest file descriptors (configured by ``CONFIG_LWIP_MAX_SOCKETS``) are reserved for sockets. The VFS component contains a lookup-table called ``s_fd_table`` for mapping global file descriptors to VFS driver indexes registered in the ``s_vfs`` array.
+File descriptors are small positive integers from ``0`` to ``FD_SETSIZE - 1``, where ``FD_SETSIZE`` is defined in ``sys/select.h``. The largest file descriptors (configured by ``CONFIG_LWIP_MAX_SOCKETS``) are reserved for sockets. The VFS component contains a lookup-table called ``s_fd_table`` for mapping global file descriptors to VFS driver indexes registered in the ``s_vfs`` array.
 
 
 Standard IO Streams (``stdin``, ``stdout``, ``stderr``)
@@ -189,9 +189,9 @@ Writing to ``stdout`` or ``stderr`` sends characters to the UART transmit FIFO. 
 
 By default, VFS uses simple functions for reading from and writing to UART. Writes busy-wait until all data is put into UART FIFO, and reads are non-blocking, returning only the data present in the FIFO. Due to this non-blocking read behavior, higher level C library calls, such as ``fscanf("%d\n", &var);``, might not have desired results.
 
-Applications which use the UART driver can instruct VFS to use the driver's interrupt driven, blocking read and write functions instead. This can be done using a call to the ``esp_vfs_dev_uart_use_driver`` function. It is also possible to revert to the basic non-blocking functions using a call to ``esp_vfs_dev_uart_use_nonblocking``.
+Applications which use the UART driver can instruct VFS to use the driver's interrupt driven, blocking read and write functions instead. This can be done using a call to the :cpp:func:`uart_vfs_dev_use_driver` function. It is also possible to revert to the basic non-blocking functions using a call to :cpp:func:`uart_vfs_dev_use_nonblocking`.
 
-VFS also provides an optional newline conversion feature for input and output. Internally, most applications send and receive lines terminated by the LF (''\n'') character. Different terminal programs may require different line termination, such as CR or CRLF. Applications can configure this separately for input and output either via menuconfig, or by calls to the functions ``esp_vfs_dev_uart_port_set_rx_line_endings`` and ``esp_vfs_dev_uart_port_set_tx_line_endings``.
+VFS also provides an optional newline conversion feature for input and output. Internally, most applications send and receive lines terminated by the LF (''\n'') character. Different terminal programs may require different line termination, such as CR or CRLF. Applications can configure this separately for input and output either via menuconfig, or by calls to the functions :cpp:func:`uart_vfs_dev_port_set_rx_line_endings` and :cpp:func:`uart_vfs_dev_port_set_tx_line_endings`.
 
 
 Standard Streams and FreeRTOS Tasks
@@ -234,5 +234,7 @@ API Reference
 .. include-build-file:: inc/esp_vfs.inc
 
 .. include-build-file:: inc/esp_vfs_dev.inc
+
+.. include-build-file:: inc/uart_vfs.inc
 
 .. include-build-file:: inc/esp_vfs_eventfd.inc

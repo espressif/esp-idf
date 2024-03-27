@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -32,6 +32,8 @@ extern "C" {
 #define TOUCH_LL_BIT_SWAP(data, n, m)   (((data >> n) &  0x1)  == ((data >> m) & 0x1) ? (data) : ((data) ^ ((0x1 <<n) | (0x1 << m))))
 #define TOUCH_LL_BITS_SWAP(v)  TOUCH_LL_BIT_SWAP(v, TOUCH_PAD_NUM8, TOUCH_PAD_NUM9)
 
+#define TOUCH_LL_PAD_MEASURE_WAIT_MAX      (0xFF)  /*!<The timer frequency is 8Mhz, the max value is 0xff */
+
 /**
  * Swap the number of touch8 and touch9.
  *
@@ -58,7 +60,7 @@ static inline void touch_ll_set_meas_time(uint16_t meas_time)
     //touch sensor measure time= meas_cycle / 8Mhz
     HAL_FORCE_MODIFY_U32_REG_FIELD(SENS.sar_touch_ctrl1, touch_meas_delay, meas_time);
     //the waiting cycles (in 8MHz) between TOUCH_START and TOUCH_XPD
-    HAL_FORCE_MODIFY_U32_REG_FIELD(SENS.sar_touch_ctrl1, touch_xpd_wait, SOC_TOUCH_PAD_MEASURE_WAIT_MAX);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(SENS.sar_touch_ctrl1, touch_xpd_wait, TOUCH_LL_PAD_MEASURE_WAIT_MAX);
 }
 
 /**

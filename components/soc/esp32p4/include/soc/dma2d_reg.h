@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -63,7 +63,7 @@ extern "C" {
 #define DMA2D_OUT_LOOP_TEST_CH0_V  0x00000001U
 #define DMA2D_OUT_LOOP_TEST_CH0_S  5
 /** DMA2D_OUT_MEM_BURST_LENGTH_CH0 : R/W; bitpos: [8:6]; default: 0;
- *  Block size of Tx channel 0. 0: single      1: 16 bytes      2: 32 bytes    3: 64
+ *  Block size of Tx channel 0. 0: 8 bytes      1: 16 bytes      2: 32 bytes    3: 64
  *  bytes    4: 128 bytes
  */
 #define DMA2D_OUT_MEM_BURST_LENGTH_CH0    0x00000007U
@@ -1098,7 +1098,7 @@ extern "C" {
 #define DMA2D_OUT_LOOP_TEST_CH1_V  0x00000001U
 #define DMA2D_OUT_LOOP_TEST_CH1_S  5
 /** DMA2D_OUT_MEM_BURST_LENGTH_CH1 : R/W; bitpos: [8:6]; default: 0;
- *  Block size of Tx channel 0. 0: single      1: 16 bytes      2: 32 bytes    3: 64
+ *  Block size of Tx channel 0. 0: 8 bytes      1: 16 bytes      2: 32 bytes    3: 64
  *  bytes    4: 128 bytes
  */
 #define DMA2D_OUT_MEM_BURST_LENGTH_CH1    0x00000007U
@@ -2106,7 +2106,7 @@ extern "C" {
 #define DMA2D_OUT_LOOP_TEST_CH2_V  0x00000001U
 #define DMA2D_OUT_LOOP_TEST_CH2_S  5
 /** DMA2D_OUT_MEM_BURST_LENGTH_CH2 : R/W; bitpos: [8:6]; default: 0;
- *  Block size of Tx channel 0. 0: single      1: 16 bytes      2: 32 bytes    3: 64
+ *  Block size of Tx channel 0. 0: 8 bytes      1: 16 bytes      2: 32 bytes    3: 64
  *  bytes    4: 128 bytes
  */
 #define DMA2D_OUT_MEM_BURST_LENGTH_CH2    0x00000007U
@@ -3105,7 +3105,7 @@ extern "C" {
 #define DMA2D_IN_LOOP_TEST_CH0_V  0x00000001U
 #define DMA2D_IN_LOOP_TEST_CH0_S  5
 /** DMA2D_IN_MEM_BURST_LENGTH_CH0 : R/W; bitpos: [8:6]; default: 0;
- *  Block size of Rx channel 0. 0: single      1: 16 bytes      2: 32 bytes    3: 64
+ *  Block size of Rx channel 0. 0: 8 bytes      1: 16 bytes      2: 32 bytes    3: 64
  *  bytes    4: 128 bytes
  */
 #define DMA2D_IN_MEM_BURST_LENGTH_CH0    0x00000007U
@@ -3732,8 +3732,8 @@ extern "C" {
  */
 #define DMA2D_IN_LINK_CONF_CH0_REG (DR_REG_DMA2D_BASE + 0x51c)
 /** DMA2D_INLINK_AUTO_RET_CH0 : R/W; bitpos: [20]; default: 1;
- *  Set this bit to return to current inlink descriptor's address, when there are some
- *  errors in current receiving data.
+ *  Configure the value of the owner field written back to the inlink descriptor.
+ *  1: Write back 1. 0: Write back 0.
  */
 #define DMA2D_INLINK_AUTO_RET_CH0    (BIT(20))
 #define DMA2D_INLINK_AUTO_RET_CH0_M  (DMA2D_INLINK_AUTO_RET_CH0_V << DMA2D_INLINK_AUTO_RET_CH0_S)
@@ -4168,7 +4168,7 @@ extern "C" {
 #define DMA2D_IN_LOOP_TEST_CH1_V  0x00000001U
 #define DMA2D_IN_LOOP_TEST_CH1_S  5
 /** DMA2D_IN_MEM_BURST_LENGTH_CH1 : R/W; bitpos: [8:6]; default: 0;
- *  Block size of Rx channel 0. 0: single      1: 16 bytes      2: 32 bytes    3: 64
+ *  Block size of Rx channel 0. 0: 8 bytes      1: 16 bytes      2: 32 bytes    3: 64
  *  bytes    4: 128 bytes
  */
 #define DMA2D_IN_MEM_BURST_LENGTH_CH1    0x00000007U
@@ -4795,8 +4795,8 @@ extern "C" {
  */
 #define DMA2D_IN_LINK_CONF_CH1_REG (DR_REG_DMA2D_BASE + 0x61c)
 /** DMA2D_INLINK_AUTO_RET_CH1 : R/W; bitpos: [20]; default: 1;
- *  Set this bit to return to current inlink descriptor's address, when there are some
- *  errors in current receiving data.
+ *  Configure the value of the owner field written back to the inlink descriptor.
+ *  1: Write back 1. 0: Write back 0.
  */
 #define DMA2D_INLINK_AUTO_RET_CH1    (BIT(20))
 #define DMA2D_INLINK_AUTO_RET_CH1_M  (DMA2D_INLINK_AUTO_RET_CH1_V << DMA2D_INLINK_AUTO_RET_CH1_S)

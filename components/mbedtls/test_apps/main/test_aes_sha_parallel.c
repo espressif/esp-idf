@@ -112,8 +112,6 @@ static void tskRunAES256Test(void *pvParameters)
 
 }
 
-#include "esp_crypto_shared_gdma.h"
-
 #define TASK_STACK_SIZE (20*1024)
 
 TEST_CASE("mbedtls AES/SHA multithreading", "[mbedtls]")

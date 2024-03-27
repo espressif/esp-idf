@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,6 +15,11 @@
 #include "esp_efuse_table.h"
 #include "esp_log.h"
 #include "hal/wdt_hal.h"
+
+#if SOC_KEY_MANAGER_SUPPORTED
+#include "hal/key_mgr_hal.h"
+#endif
+
 #ifdef CONFIG_SOC_EFUSE_CONSISTS_OF_ONE_KEY_BLOCK
 #include "soc/sensitive_reg.h"
 #endif
@@ -393,14 +398,21 @@ static esp_err_t encrypt_partition(int index, const esp_partition_info_t *partit
 {
     esp_err_t err;
     bool should_encrypt = (partition->flags & PART_FLAG_ENCRYPTED);
+    uint32_t size = partition->pos.size;
 
     if (partition->type == PART_TYPE_APP) {
         /* check if the partition holds a valid unencrypted app */
-        esp_image_metadata_t data_ignored;
+        esp_image_metadata_t image_data = {};
         err = esp_image_verify(ESP_IMAGE_VERIFY,
                                &partition->pos,
-                               &data_ignored);
+                               &image_data);
         should_encrypt = (err == ESP_OK);
+#ifdef SECURE_FLASH_ENCRYPT_ONLY_IMAGE_LEN_IN_APP_PART
+        if (should_encrypt) {
+            // Encrypt only the app image instead of encrypting the whole partition
+            size = image_data.image_len;
+        }
+#endif
     } else if ((partition->type == PART_TYPE_DATA && partition->subtype == PART_SUBTYPE_DATA_OTA)
                 || (partition->type == PART_TYPE_DATA && partition->subtype == PART_SUBTYPE_DATA_NVS_KEYS)) {
         /* check if we have ota data partition and the partition should be encrypted unconditionally */
@@ -411,9 +423,9 @@ static esp_err_t encrypt_partition(int index, const esp_partition_info_t *partit
         return ESP_OK;
     } else {
         /* should_encrypt */
-        ESP_LOGI(TAG, "Encrypting partition %d at offset 0x%x (length 0x%x)...", index, partition->pos.offset, partition->pos.size);
+        ESP_LOGI(TAG, "Encrypting partition %d at offset 0x%" PRIx32 " (length 0x%" PRIx32 ")...", index, partition->pos.offset, size);
 
-        err = esp_flash_encrypt_region(partition->pos.offset, partition->pos.size);
+        err = esp_flash_encrypt_region(partition->pos.offset, size);
         ESP_LOGI(TAG, "Done encrypting");
         if (err != ESP_OK) {
             ESP_LOGE(TAG, "Failed to encrypt partition %d", index);
@@ -429,7 +441,7 @@ esp_err_t esp_flash_encrypt_region(uint32_t src_addr, size_t data_length)
     uint32_t buf[FLASH_SECTOR_SIZE / sizeof(uint32_t)];
 
     if (src_addr % FLASH_SECTOR_SIZE != 0) {
-        ESP_LOGE(TAG, "esp_flash_encrypt_region bad src_addr 0x%x", src_addr);
+        ESP_LOGE(TAG, "esp_flash_encrypt_region bad src_addr 0x%" PRIx32, src_addr);
         return ESP_FAIL;
     }
 

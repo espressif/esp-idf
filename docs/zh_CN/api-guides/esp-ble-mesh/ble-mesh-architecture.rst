@@ -204,7 +204,7 @@ ESP-BLE-MESH 架构主要由以下 5 大部分组成：
 
 ``API /事件`` 与 ESP-BLE-MESH 协议栈的交互
 
-- 用户使用的 API 主要调用``Mesh Networking``、``Mesh Provisioning`` 和 ``Mesh Models`` 提供的函数。
+- 用户使用的 API 主要调用 ``Mesh Networking``、 ``Mesh Provisioning`` 和 ``Mesh Models`` 提供的函数。
 
 -  ``API /事件`` 和协议栈的交互不会跨越协议栈的层级进行操作。比如 API 不会调用 ``Network Layer`` 相关的函数。
 

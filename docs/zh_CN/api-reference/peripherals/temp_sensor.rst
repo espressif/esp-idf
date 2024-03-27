@@ -74,11 +74,8 @@
 .. code:: c
 
     temperature_sensor_handle_t temp_handle = NULL;
-    temperature_sensor_config_t temp_sensor = {
-        .range_min = 20,
-        .range_max = 50,
-    };
-    ESP_ERROR_CHECK(temperature_sensor_install(&temp_sensor, &temp_handle));
+    temperature_sensor_config_t temp_sensor_config = TEMPERATURE_SENSOR_CONFIG_DEFAULT(20, 50);
+    ESP_ERROR_CHECK(temperature_sensor_install(&temp_sensor_config, &temp_handle));
 
 .. _temp-enable-and-disable-temperature-sensor:
 

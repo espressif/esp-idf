@@ -3,3 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+/* Spinlock performance on esp32p4 is slower. May need to adjust these values once IDF-7898 is fixed */
+#define IDF_PERFORMANCE_MAX_FREERTOS_SPINLOCK_CYCLES_PER_OP                     380
+#define IDF_PERFORMANCE_MAX_FREERTOS_SPINLOCK_CYCLES_PER_OP_UNICORE             135

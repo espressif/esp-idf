@@ -1,22 +1,27 @@
 #!/usr/bin/env python
 #
-# SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 #
-
 # Check placements in this test app for main
 # specified in main/linker.lf
-
 import argparse
 import subprocess
 
-from pyparsing import LineEnd, LineStart, Literal, Optional, Word, alphanums, hexnums
+from pyparsing import alphanums
+from pyparsing import hexnums
+from pyparsing import LineEnd
+from pyparsing import LineStart
+from pyparsing import Literal
+from pyparsing import Optional
+from pyparsing import Word
 
 argparser = argparse.ArgumentParser()
 
 argparser.add_argument('objdump')
 argparser.add_argument('elf')
 argparser.add_argument('--no-rtc', action='store_true')
+argparser.add_argument('--non-contiguous-sram', action='store_true')
 
 args = argparser.parse_args()
 
@@ -56,6 +61,15 @@ assert func1 < sym1_end, 'check placement fail: func1 comes after __sym1_end'
 assert sym1_start % 9 == 0, '_sym1_start is not aligned as specified in linker fragment'
 assert sym1_end % 12 == 0, '_sym1_end is not aligned as specified in linker fragment'
 print('check placement pass: _sym1_start < func1 < __sym1_end and alignments checked')
+
+func0 = check_location('func0', '.iram0.text')
+
+if args.non_contiguous_sram:
+    assert func1 < func0, 'check placement fail: func1 comes after func0'
+    print('check placement pass: func1 < func0 checked')
+else:
+    assert func1 > func0, 'check placement fail: func0 comes after func1'
+    print('check placement pass: func1 > func0 checked')
 
 # src1:func2 (rtc) - explicit mapping for func2 using 'rtc' scheme
 if not args.no_rtc:

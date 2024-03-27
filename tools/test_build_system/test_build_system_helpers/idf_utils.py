@@ -7,7 +7,7 @@ import shutil
 import subprocess
 import sys
 import typing
-from pathlib import Path
+from pathlib import Path, WindowsPath
 from typing import Pattern, Union
 
 try:
@@ -137,7 +137,7 @@ def run_cmake_and_build(*cmake_args: str, env: typing.Optional[EnvDict] = None) 
     run_cmake('--build', '.')
 
 
-def file_contains(filename: Union[str, Path], what: Union[str, Pattern]) -> bool:
+def file_contains(filename: Union[str, Path], what: Union[Union[str, Path], Pattern]) -> bool:
     """
     Returns true if file contains required object
     :param filename: path to file where lookup is executed
@@ -145,10 +145,16 @@ def file_contains(filename: Union[str, Path], what: Union[str, Pattern]) -> bool
     """
     with open(filename, 'r', encoding='utf-8') as f:
         data = f.read()
-        if isinstance(what, str):
-            return what in data
-        else:
+        if isinstance(what, Pattern):
             return re.search(what, data) is not None
+        else:
+            what_str = str(what)
+            # In case of windows path, try both single-slash `\` and double-slash '\\' paths
+            if isinstance(what, WindowsPath):
+                what_double_slash = what_str.replace('\\', '\\\\')
+                return what_str in data or what_double_slash in data
+
+            return what_str in data
 
 
 def bin_file_contains(filename: Union[str, Path], what: bytearray) -> bool:

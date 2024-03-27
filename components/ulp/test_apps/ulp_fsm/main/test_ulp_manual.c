@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2010-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2010-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -43,29 +43,29 @@ void ulp_fsm_controls_rtc_io(void)
         I_MOVI(R0, 0),                                  // r0 is LED state
         I_MOVI(R2, 16),                                 // loop r2 from 16 down to 0
         M_LABEL(4),                                     // define label 4
-            I_SUBI(R2, R2, 1),                          // r2 = r2 - 1
-            M_BXZ(6),                                   // branch to label 6 if r2 = 0
-            I_ADDI(R0, R0, 1),                          // r0 = (r0 + 1) % 2
-            I_ANDI(R0, R0, 0x1),
-            M_BL(0, 1),                                 // if r0 < 1 goto 0
-            M_LABEL(1),                                 // define label 1
-                I_WR_REG(RTC_GPIO_OUT_REG, 26, 27, 1),  // RTC_GPIO12 = 1
-                M_BX(2),                                // goto 2
-            M_LABEL(0),                                 // define label 0
-                I_WR_REG(RTC_GPIO_OUT_REG, 26, 27, 0),  // RTC_GPIO12 = 0
-            M_LABEL(2),                                 // define label 2
-                I_MOVI(R1, 100),                        // loop R1 from 100 down to 0
-            M_LABEL(3),                                 // define label 3
-                I_SUBI(R1, R1, 1),                      // r1 = r1 - 1
-                M_BXZ(5),                               // branch to label 5 if r1 = 0
-                I_DELAY(32000),                         // delay for a while
-                M_BX(3),                                // goto 3
-            M_LABEL(5),                                 // define label 5
-                M_BX(4),                                // loop back to label 4
+        I_SUBI(R2, R2, 1),                          // r2 = r2 - 1
+        M_BXZ(6),                                   // branch to label 6 if r2 = 0
+        I_ADDI(R0, R0, 1),                          // r0 = (r0 + 1) % 2
+        I_ANDI(R0, R0, 0x1),
+        M_BL(0, 1),                                 // if r0 < 1 goto 0
+        M_LABEL(1),                                 // define label 1
+        I_WR_REG(RTC_GPIO_OUT_REG, 26, 27, 1),  // RTC_GPIO12 = 1
+        M_BX(2),                                // goto 2
+        M_LABEL(0),                                 // define label 0
+        I_WR_REG(RTC_GPIO_OUT_REG, 26, 27, 0),  // RTC_GPIO12 = 0
+        M_LABEL(2),                                 // define label 2
+        I_MOVI(R1, 100),                        // loop R1 from 100 down to 0
+        M_LABEL(3),                                 // define label 3
+        I_SUBI(R1, R1, 1),                      // r1 = r1 - 1
+        M_BXZ(5),                               // branch to label 5 if r1 = 0
+        I_DELAY(32000),                         // delay for a while
+        M_BX(3),                                // goto 3
+        M_LABEL(5),                                 // define label 5
+        M_BX(4),                                // loop back to label 4
         M_LABEL(6),                                     // define label 6
-            I_WAKE(),                                   // wake up the SoC
-            I_END(),                                    // stop ULP program timer
-            I_HALT()
+        I_WAKE(),                                   // wake up the SoC
+        I_END(),                                    // stop ULP program timer
+        I_HALT()
     };
 
     /* Configure LED GPIOs */
@@ -74,14 +74,14 @@ void ulp_fsm_controls_rtc_io(void)
         GPIO_NUM_0,
         GPIO_NUM_4
     };
-    for (size_t i = 0; i < sizeof(led_gpios)/sizeof(led_gpios[0]); ++i) {
+    for (size_t i = 0; i < sizeof(led_gpios) / sizeof(led_gpios[0]); ++i) {
         rtc_gpio_init(led_gpios[i]);
         rtc_gpio_set_direction(led_gpios[i], RTC_GPIO_MODE_OUTPUT_ONLY);
         rtc_gpio_set_level(led_gpios[i], 0);
     }
 
     /* Calculate the size of the ULP co-processor binary, load it and run the ULP coprocessor */
-    size_t size = sizeof(program)/sizeof(ulp_insn_t);
+    size_t size = sizeof(program) / sizeof(ulp_insn_t);
     TEST_ESP_OK(ulp_process_macros_and_load(0, program, &size));
     TEST_ESP_OK(ulp_run(0));
 
@@ -155,18 +155,18 @@ void ulp_fsm_temp_sens(void)
         I_SUBI(R3, R3, 1),              // end = length - 1
         I_SUBR(R3, R3, R2),             // r3 = length - counter
         M_BXF(1),                       // if overflow goto 1:
-            I_TSENS(R0, 16383),         // r0 <- tsens
-            I_ST(R0, R2, offset + 4),   // mem[r2 + offset +4] <- r0
-            I_ADDI(R2, R2, 1),          // counter += 1
-            I_ST(R2, R1, 1),            // save counter
-            I_HALT(),                   // enter sleep
+        I_TSENS(R0, 16383),         // r0 <- tsens
+        I_ST(R0, R2, offset + 4),   // mem[r2 + offset +4] <- r0
+        I_ADDI(R2, R2, 1),          // counter += 1
+        I_ST(R2, R1, 1),            // save counter
+        I_HALT(),                   // enter sleep
         M_LABEL(1),                     // done with measurements
-            I_END(),                    // stop ULP timer
-            I_WAKE(),                   // initiate wakeup
-            I_HALT()
+        I_END(),                    // stop ULP timer
+        I_WAKE(),                   // initiate wakeup
+        I_HALT()
     };
 
-    size_t size = sizeof(program)/sizeof(ulp_insn_t);
+    size_t size = sizeof(program) / sizeof(ulp_insn_t);
     TEST_ESP_OK(ulp_process_macros_and_load(0, program, &size));
     assert(offset >= size);
 
@@ -182,8 +182,6 @@ void ulp_fsm_temp_sens(void)
     UNITY_TEST_FAIL(__LINE__, "Should not get here!");
 }
 #endif //#if !DISABLED_FOR_TARGETS(ESP32)
-
-
 
 void ulp_fsm_adc(void)
 {
@@ -258,17 +256,17 @@ void ulp_fsm_adc(void)
         I_SUBI(R3, R3, 1),              // end = length - 1
         I_SUBR(R3, R3, R2),             // r3 = length - counter
         M_BXF(1),                       // if overflow goto 1:
-            I_ADC(R0, adc, channel),    // r0 <- ADC
-            I_ST(R0, R2, offset + 4),   // mem[r2 + offset +4] = r0
-            I_ADDI(R2, R2, 1),          // counter += 1
-            I_ST(R2, R1, 1),            // save counter
-            I_HALT(),                   // enter sleep
+        I_ADC(R0, adc, channel),    // r0 <- ADC
+        I_ST(R0, R2, offset + 4),   // mem[r2 + offset +4] = r0
+        I_ADDI(R2, R2, 1),          // counter += 1
+        I_ST(R2, R1, 1),            // save counter
+        I_HALT(),                   // enter sleep
         M_LABEL(1),                     // done with measurements
-            I_END(),                    // stop ULP program timer
-            I_HALT()
+        I_END(),                    // stop ULP program timer
+        I_HALT()
     };
 
-    size_t size = sizeof(program)/sizeof(ulp_insn_t);
+    size_t size = sizeof(program) / sizeof(ulp_insn_t);
     TEST_ESP_OK(ulp_process_macros_and_load(0, program, &size));
     assert(offset >= size);
 

@@ -13,7 +13,7 @@ In ``esp_lcd``, an LCD panel is represented by :cpp:type:`esp_lcd_panel_handle_t
 
 .. list::
 
-    - Controller based LCD driver involves multiple steps to get a panel handle, like bus allocation, IO device registration and controller driver install. The frame buffer is located in the controller's internal GRAM (Graphical RAM). ESP-IDF provides only a limited number of LCD controller drivers out of the box (e.g., ST7789, SSD1306), :ref:`more_controller_based_lcd_drivers` are maintained in the `Espressif Component Registry <https://components.espressif.com/>_`.
+    - Controller based LCD driver involves multiple steps to get a panel handle, like bus allocation, IO device registration and controller driver install. The frame buffer is located in the controller's internal GRAM (Graphical RAM). ESP-IDF provides only a limited number of LCD controller drivers out of the box (e.g., ST7789, SSD1306), :ref:`more_controller_based_lcd_drivers` are maintained in the `Espressif Component Registry <https://components.espressif.com/>`__.
     - :ref:`spi_lcd_panel` describes the steps to install the SPI LCD IO driver and then get the panel handle.
     - :ref:`i2c_lcd_panel` describes the steps to install the I2C LCD IO driver and then get the panel handle.
     :SOC_LCD_I80_SUPPORTED: - :ref:`i80_lcd_panel` describes the steps to install the I80 LCD IO driver and then get the panel handle.
@@ -90,20 +90,21 @@ I2C Interfaced LCD
 
     .. code-block:: c
 
-        i2c_config_t i2c_conf = {
-            .mode = I2C_MODE_MASTER, // I2C LCD is a master node
+        i2c_master_bus_handle_t i2c_bus = NULL;
+        i2c_master_bus_config_t bus_config = {
+            .clk_source = I2C_CLK_SRC_DEFAULT,
+            .glitch_ignore_cnt = 7,
+            .i2c_port = I2C_BUS_PORT,
             .sda_io_num = EXAMPLE_PIN_NUM_SDA,
             .scl_io_num = EXAMPLE_PIN_NUM_SCL,
-            .sda_pullup_en = GPIO_PULLUP_ENABLE,
-            .scl_pullup_en = GPIO_PULLUP_ENABLE,
-            .master.clk_speed = EXAMPLE_LCD_PIXEL_CLOCK_HZ,
+            .flags.enable_internal_pullup = true,
         };
-        ESP_ERROR_CHECK(i2c_param_config(I2C_HOST, &i2c_conf));
-        ESP_ERROR_CHECK(i2c_driver_install(I2C_HOST, I2C_MODE_MASTER, 0, 0, 0));
+        ESP_ERROR_CHECK(i2c_new_master_bus(&bus_config, &i2c_bus));
 
 #. Allocate an LCD IO device handle from the I2C bus. In this step, you need to provide the following information:
 
     - :cpp:member:`esp_lcd_panel_io_i2c_config_t::dev_addr` sets the I2C device address of the LCD controller chip. The LCD driver uses this address to communicate with the LCD controller chip.
+    - :cpp:member:`esp_lcd_panel_io_i2c_config_t::scl_speed_hz` sets the I2C clock frequency in Hz. The value should not exceed the range recommended in the LCD spec.
     - :cpp:member:`esp_lcd_panel_io_i2c_config_t::lcd_cmd_bits` and :cpp:member:`esp_lcd_panel_io_i2c_config_t::lcd_param_bits` set the bit width of the command and parameter that recognized by the LCD controller chip. This is chip specific, you should refer to your LCD spec in advance.
 
     .. code-block:: c
@@ -111,12 +112,13 @@ I2C Interfaced LCD
         esp_lcd_panel_io_handle_t io_handle = NULL;
         esp_lcd_panel_io_i2c_config_t io_config = {
             .dev_addr = EXAMPLE_I2C_HW_ADDR,
+            .scl_speed_hz = EXAMPLE_LCD_PIXEL_CLOCK_HZ,
             .control_phase_bytes = 1, // refer to LCD spec
             .dc_bit_offset = 6,       // refer to LCD spec
             .lcd_cmd_bits = EXAMPLE_LCD_CMD_BITS,
             .lcd_param_bits = EXAMPLE_LCD_CMD_BITS,
         };
-        ESP_ERROR_CHECK(esp_lcd_new_panel_io_i2c((esp_lcd_i2c_bus_handle_t)I2C_HOST, &io_config, &io_handle));
+        ESP_ERROR_CHECK(esp_lcd_new_panel_io_i2c(i2c_bus, &io_config, &io_handle));
 
 #. Install the LCD controller driver. The LCD controller driver is responsible for sending the commands and parameters to the LCD controller chip. In this step, you need to specify the I2C IO device handle that allocated in the last step, and some panel specific configurations:
 
@@ -448,13 +450,14 @@ More LCD panel drivers and touch drivers are available in `ESP-IDF Component Reg
 
     .. _lcd_panel_operations:
 
-LCD Panel IO Operations
------------------------
+LCD Panel Basic Operations
+--------------------------
 
 * :cpp:func:`esp_lcd_panel_reset` can reset the LCD panel.
 * :cpp:func:`esp_lcd_panel_init` performs a basic initialization of the panel. To perform more manufacture specific initialization, please go to :ref:`steps_add_manufacture_init`.
 * Through combined use of :cpp:func:`esp_lcd_panel_swap_xy` and :cpp:func:`esp_lcd_panel_mirror`, you can rotate the LCD screen.
-* :cpp:func:`esp_lcd_panel_disp_on_off` can turn on or off the LCD screen (different from LCD backlight).
+* :cpp:func:`esp_lcd_panel_disp_on_off` can turn on or off the LCD screen by cutting down the output path from the frame buffer to the LCD screen.
+* :cpp:func:`esp_lcd_panel_disp_sleep` can reduce the power consumption of the LCD screen by entering the sleep mode. The internal frame buffer is still retained.
 * :cpp:func:`esp_lcd_panel_draw_bitmap` is the most significant function, which does the magic to draw the user provided color buffer to the LCD screen, where the draw window is also configurable.
 
 .. _steps_add_manufacture_init:
@@ -462,7 +465,7 @@ LCD Panel IO Operations
 Steps to Add Manufacture Specific Initialization
 -------------------------------------------------
 
-The LCD controller drivers (e.g., st7789) in esp-idf only provide basic initialization in the :cpp:func:`esp_lcd_panel_init`, leaving the vast majority of settings to the default values. Some LCD modules needs to set a bunch of manufacture specific configurations before it can display normally. These configurations usually include gamma, power voltage and so on. If you want to add manufacture specific initialization, please follow the steps below:
+The LCD controller drivers (e.g., st7789) in ESP-IDF only provide basic initialization in the :cpp:func:`esp_lcd_panel_init`, leaving the vast majority of settings to the default values. Some LCD modules needs to set a bunch of manufacture specific configurations before it can display normally. These configurations usually include gamma, power voltage and so on. If you want to add manufacture specific initialization, please follow the steps below:
 
 .. code:: c
 
@@ -497,5 +500,8 @@ API Reference
 .. include-build-file:: inc/esp_lcd_types.inc
 .. include-build-file:: inc/esp_lcd_panel_io.inc
 .. include-build-file:: inc/esp_lcd_panel_ops.inc
-.. include-build-file:: inc/esp_lcd_panel_rgb.inc
 .. include-build-file:: inc/esp_lcd_panel_vendor.inc
+
+.. only:: SOC_LCD_RGB_SUPPORTED
+
+    .. include-build-file:: inc/esp_lcd_panel_rgb.inc

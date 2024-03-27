@@ -2907,5 +2907,55 @@ BOOLEAN btm_get_current_conn_params(BD_ADDR bda, UINT16 *interval, UINT16 *laten
     return FALSE;
 }
 
+uint8_t btm_ble_adv_active_count(void)
+{
+    uint8_t count = 0;
+    tBTM_BLE_INQ_CB *p_cb = &btm_cb.ble_ctr_cb.inq_var;
+
+    if (p_cb->state & BTM_BLE_ADVERTISING) {
+        count++;
+    }
+
+    return count;
+}
+
+uint8_t btm_ble_scan_active_count(void)
+{
+    uint8_t count = 0;
+    tBTM_BLE_INQ_CB *p_cb = &btm_cb.ble_ctr_cb.inq_var;
+
+    if (p_cb->state & BTM_BLE_SCANNING) {
+        count++;
+    }
+
+    return count;
+}
+
+#if (SMP_INCLUDED == TRUE)
+uint8_t btm_ble_sec_dev_active_count(void)
+{
+    tBTM_SEC_DEV_REC *p_dev_rec = NULL;
+    list_node_t *p_node = NULL;
+    uint8_t count = 0;
+
+    /* First look for the non-paired devices for the oldest entry */
+    for (p_node = list_begin(btm_cb.p_sec_dev_rec_list); p_node; p_node = list_next(p_node)) {
+        p_dev_rec = list_node(p_node);
+        if (p_dev_rec && (p_dev_rec->sec_flags & BTM_SEC_IN_USE) && (p_dev_rec->ble.key_type != BTM_LE_KEY_NONE)) {
+            count++;
+        }
+    }
+
+    return count;
+}
+#endif
+
+#if (BLE_PRIVACY_SPT == TRUE)
+uint8_t btm_ble_privacy_is_enabled(void)
+{
+    tBTM_BLE_CB *p_cb = &btm_cb.ble_ctr_cb;
+    return (p_cb->privacy_mode != BTM_PRIVACY_NONE);
+}
+#endif
 
 #endif /* BLE_INCLUDED */

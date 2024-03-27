@@ -17,6 +17,30 @@ The ULP Program scans all touch pad sensors periodically. When the ULP program f
 
 * A development board with ESP32-S2 or ESP32-S3
 
+The following capacitive touch pads are supported on ESP32-S2/S3:
+
+```
+  ----------------------------------------------------------
+  | Touch Pad  |                  GPIO Pin                 |
+  |------------|-------------------------------------------|
+  |    T0      | Internal channel, not connected to a GPIO |
+  |    T1      |                  GPIO1                    |
+  |    T2      |                  GPIO2                    |
+  |    T3      |                  GPIO3                    |
+  |    T4      |                  GPIO4                    |
+  |    T5      |                  GPIO5                    |
+  |    T6      |                  GPIO6                    |
+  |    T7      |                  GPIO7                    |
+  |    T8      |                  GPIO8                    |
+  |    T9      |                  GPIO9                    |
+  |    T10     |                  GPIO10                   |
+  |    T11     |                  GPIO11                   |
+  |    T12     |                  GPIO12                   |
+  |    T13     |                  GPIO13                   |
+  |    T14     |                  GPIO14                   |
+  ----------------------------------------------------------
+```
+
 ### Build and Flash
 
 Build the project and flash it to the board, then run monitor tool to view serial output:

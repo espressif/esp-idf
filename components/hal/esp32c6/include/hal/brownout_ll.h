@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -55,7 +55,6 @@ static inline void brownout_ll_reset_config(bool reset_ena, uint32_t reset_wait,
     LP_ANA_PERI.bod_mode0_cntl.bod_mode0_reset_ena = reset_ena;
     LP_ANA_PERI.bod_mode0_cntl.bod_mode0_reset_sel = select;
 }
-
 /**
  * @brief Set brown out threshold
  *
@@ -113,6 +112,15 @@ __attribute__((always_inline))
 static inline void brownout_ll_intr_clear(void)
 {
     LP_ANA_PERI.int_clr.bod_mode0 = 1;
+}
+
+/**
+ * @brief Clear BOD internal count.
+ */
+static inline void brownout_ll_clear_count(void)
+{
+    LP_ANA_PERI.bod_mode0_cntl.bod_mode0_cnt_clr = 1;
+    LP_ANA_PERI.bod_mode0_cntl.bod_mode0_cnt_clr = 0;
 }
 
 #ifdef __cplusplus

@@ -189,6 +189,8 @@ typedef void (tBTM_UPDATE_CONN_PARAM_CBACK) (UINT8 status, BD_ADDR bd_addr, tBTM
 
 typedef void (tBTM_SET_PKT_DATA_LENGTH_CBACK) (UINT8 status, tBTM_LE_SET_PKT_DATA_LENGTH_PARAMS *data_length_params);
 
+typedef void (tBTM_DTM_CMD_CMPL_CBACK) (void *p1);
+
 typedef void (tBTM_SET_RAND_ADDR_CBACK) (UINT8 status);
 
 typedef void (tBTM_UPDATE_WHITELIST_CBACK) (UINT8 status, tBTM_WL_OPERATION wl_opration);
@@ -849,6 +851,15 @@ typedef struct {
     UINT16      page_to;
 } tBTM_GET_PAGE_TIMEOUT_RESULTS;
 
+/* Structure returned with set ACL packet types event (in tBTM_CMPL_CB callback function)
+** in response to BTM_SetAclPktTypes call.
+*/
+typedef struct {
+    tBTM_STATUS status;
+    BD_ADDR     rem_bda;
+    UINT16      pkt_types;
+} tBTM_SET_ACL_PKT_TYPES_RESULTS;
+
 /* Structure returned with set BLE channels event (in tBTM_CMPL_CB callback function)
 ** in response to BTM_BleSetChannels call.
 */
@@ -1481,6 +1492,12 @@ typedef void (tBTM_RMT_NAME_CALLBACK) (BD_ADDR bd_addr, DEV_CLASS dc,
 typedef UINT8 (tBTM_AUTH_COMPLETE_CALLBACK) (BD_ADDR bd_addr, DEV_CLASS dev_class,
         tBTM_BD_NAME bd_name, int result);
 
+/* Encryption changed for the connection.  Parameters are
+**              BD Address of remote
+**              Encryption mode
+*/
+typedef void (tBTM_ENC_CHANGE_CALLBACK) (BD_ADDR bd_addr, UINT8 enc_mode);
+
 enum {
     BTM_SP_IO_REQ_EVT,      /* received IO_CAPABILITY_REQUEST event */
     BTM_SP_IO_RSP_EVT,      /* received IO_CAPABILITY_RESPONSE event */
@@ -1858,6 +1875,7 @@ typedef struct {
     tBTM_LINK_KEY_CALLBACK      *p_link_key_callback;
     tBTM_AUTH_COMPLETE_CALLBACK *p_auth_complete_callback;
     tBTM_BOND_CANCEL_CMPL_CALLBACK *p_bond_cancel_cmpl_callback;
+    tBTM_ENC_CHANGE_CALLBACK    *p_enc_change_callback;
     tBTM_SP_CALLBACK            *p_sp_callback;
 #if BLE_INCLUDED == TRUE
 #if SMP_INCLUDED == TRUE
@@ -2272,6 +2290,20 @@ tBTM_STATUS BTM_WritePageTimeout(UINT16 timeout, tBTM_CMPL_CB *p_cb);
 *******************************************************************************/
 //extern
 tBTM_STATUS BTM_ReadPageTimeout(tBTM_CMPL_CB *p_cb);
+
+/*******************************************************************************
+**
+** Function         BTM_SetAclPktTypes
+**
+** Description      Send HCI Change Connection Packet Type
+**
+** Returns
+**      BTM_SUCCESS         Command sent.
+**      BTM_NO_RESOURCES    If out of resources to send the command.
+**
+*******************************************************************************/
+//extern
+tBTM_STATUS BTM_SetAclPktTypes(BD_ADDR remote_bda, UINT16 pkt_types, tBTM_CMPL_CB *p_cb);
 
 /*******************************************************************************
 **
@@ -4080,6 +4112,22 @@ tBTM_EIR_SEARCH_RESULT BTM_HasInquiryEirService( tBTM_INQ_RESULTS *p_results,
 
 /*******************************************************************************
 **
+** Function         BTM_HasCustomEirService
+**
+** Description      This function is called to know if UUID is already in custom
+**                  UUID list.
+**
+** Parameters       custom_uuid - pointer to custom_uuid array in tBTA_DM_CB
+**                  uuid - UUID struct
+**
+** Returns          TRUE - if found
+**                  FALSE - if not found
+**
+*******************************************************************************/
+BOOLEAN BTM_HasCustomEirService( tBT_UUID *custom_uuid, tBT_UUID uuid );
+
+/*******************************************************************************
+**
 ** Function         BTM_AddEirService
 **
 ** Description      This function is called to add a service in bit map of UUID list.
@@ -4095,6 +4143,20 @@ void BTM_AddEirService( UINT32 *p_eir_uuid, UINT16 uuid16 );
 
 /*******************************************************************************
 **
+** Function         BTM_AddCustomEirService
+**
+** Description      This function is called to add a custom UUID.
+**
+** Parameters       custom_uuid - pointer to custom_uuid array in tBTA_DM_CB
+**                  uuid - UUID struct
+**
+** Returns          None
+**
+*******************************************************************************/
+void BTM_AddCustomEirService(tBT_UUID *custom_uuid, tBT_UUID uuid);
+
+/*******************************************************************************
+**
 ** Function         BTM_RemoveEirService
 **
 ** Description      This function is called to remove a service in bit map of UUID list.
@@ -4107,6 +4169,20 @@ void BTM_AddEirService( UINT32 *p_eir_uuid, UINT16 uuid16 );
 *******************************************************************************/
 //extern
 void BTM_RemoveEirService( UINT32 *p_eir_uuid, UINT16 uuid16 );
+
+/*******************************************************************************
+**
+** Function         BTM_RemoveCustomEirService
+**
+** Description      This function is called to remove a a custom UUID.
+**
+** Parameters       custom_uuid - pointer to custom_uuid array in tBTA_DM_CB
+                    uuid - UUID struct
+**
+** Returns          None
+**
+*******************************************************************************/
+void BTM_RemoveCustomEirService(tBT_UUID *custom_uuid, tBT_UUID uuid);
 
 /*******************************************************************************
 **

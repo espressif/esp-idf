@@ -19,7 +19,3 @@ entries:
             adc_hal_common: adc_hal_calibration_init (noflash)
     if ADC_CONTINUOUS_ISR_IRAM_SAFE = y || GDMA_ISR_IRAM_SAFE = y:
         adc_hal: adc_hal_get_reading_result (noflash)
-        if IDF_TARGET_ESP32 = y || IDF_TARGET_ESP32S2 = y:
-            adc_hal: adc_hal_check_event (noflash)
-            adc_hal: adc_hal_digi_clr_intr (noflash)
-            adc_hal: adc_hal_get_desc_addr (noflash)

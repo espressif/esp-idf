@@ -260,18 +260,53 @@ config BT_LE_CONTROLLER_TASK_STACK_SIZE
     help
         This configures stack size of NimBLE controller task
 
-config BT_LE_CONTROLLER_LOG_ENABLED
+menuconfig BT_LE_CONTROLLER_LOG_ENABLED
     bool "Controller log enable"
     default n
     help
-        Enable controller log module
+        Enable controller log
+
+config BT_LE_CONTROLLER_LOG_CTRL_ENABLED
+    bool "enable controller log module"
+    depends on BT_LE_CONTROLLER_LOG_ENABLED
+    default y
+    help
+            Enable controller log module
+
+config BT_LE_CONTROLLER_LOG_HCI_ENABLED
+    bool "enable HCI log module"
+    depends on BT_LE_CONTROLLER_LOG_ENABLED
+    default y
+    help
+            Enable hci log module
 
 config BT_LE_CONTROLLER_LOG_DUMP_ONLY
     bool "Controller log dump mode only"
     depends on BT_LE_CONTROLLER_LOG_ENABLED
     default y
     help
-        Only operate in dump mode
+            Only operate in dump mode
+
+config BT_LE_LOG_CTRL_BUF1_SIZE
+    int "size of the first BLE controller LOG buffer"
+    depends on BT_LE_CONTROLLER_LOG_ENABLED
+    default 4096
+    help
+            Configure the size of the first BLE controller LOG buffer.
+
+config BT_LE_LOG_CTRL_BUF2_SIZE
+    int "size of the second BLE controller LOG buffer"
+    depends on BT_LE_CONTROLLER_LOG_ENABLED
+    default 1024
+    help
+            Configure the size of the second BLE controller LOG buffer.
+
+config BT_LE_LOG_HCI_BUF_SIZE
+    int "size of the BLE HCI LOG buffer"
+    depends on BT_LE_CONTROLLER_LOG_ENABLED
+    default 4096
+    help
+            Configure the size of the BLE HCI LOG buffer.
 
 config BT_LE_LL_RESOLV_LIST_SIZE
     int "BLE LL Resolving list size"
@@ -338,7 +373,7 @@ config BT_LE_WHITELIST_SIZE
 
 config BT_LE_LL_DUP_SCAN_LIST_COUNT
     int "BLE duplicate scan list count"
-    range 1 100
+    range 5 100
     default 20
     help
         config the max count of duplicate scan list
@@ -365,7 +400,7 @@ config BT_LE_MAX_CONNECTIONS
 choice BT_LE_COEX_PHY_CODED_TX_RX_TLIM
     prompt "Coexistence: limit on MAX Tx/Rx time for coded-PHY connection"
     default BT_LE_COEX_PHY_CODED_TX_RX_TLIM_DIS
-    depends on !BT_NIMBLE_ENABLED
+    depends on ESP_COEX_SW_COEXIST_ENABLE
     help
         When using PHY-Coded in BLE connection, limitation on max tx/rx time can be applied to
         better avoid dramatic performance deterioration of Wi-Fi.
@@ -383,7 +418,7 @@ endchoice
 
 config BT_LE_COEX_PHY_CODED_TX_RX_TLIM_EFF
     int
-    depends on !BT_NIMBLE_ENABLED
+    default 0 if !ESP_COEX_SW_COEXIST_ENABLE
     default 1 if BT_LE_COEX_PHY_CODED_TX_RX_TLIM_EN
     default 0 if BT_LE_COEX_PHY_CODED_TX_RX_TLIM_DIS
 
@@ -499,16 +534,6 @@ config BT_LE_SCAN_DUPL_TYPE
     default 1 if BT_LE_SCAN_DUPL_TYPE_DATA
     default 2 if BT_LE_SCAN_DUPL_TYPE_DATA_DEVICE
     default 0
-
-
-config BT_LE_SCAN_DUPL_CACHE_SIZE
-    int "Maximum number of devices in scan duplicate filter"
-    depends on BT_LE_SCAN_DUPL
-    range 10 1000
-    default 100
-    help
-        Maximum number of devices which can be recorded in scan duplicate filter.
-        When the maximum amount of device in the filter is reached, the cache will be refreshed.
 
 config BT_LE_SCAN_DUPL_CACHE_REFRESH_PERIOD
     int "Duplicate scan list refresh period (seconds)"

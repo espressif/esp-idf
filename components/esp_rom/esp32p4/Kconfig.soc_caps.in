@@ -17,7 +17,11 @@ config ESP_ROM_UART_CLK_IS_XTAL
 
 config ESP_ROM_USB_SERIAL_DEVICE_NUM
     int
-    default 3
+    default 6
+
+config ESP_ROM_USB_OTG_NUM
+    int
+    default 5
 
 config ESP_ROM_HAS_RETARGETABLE_LOCKING
     bool
@@ -44,5 +48,25 @@ config ESP_ROM_HAS_LAYOUT_TABLE
     default y
 
 config ESP_ROM_WDT_INIT_PATCH
+    bool
+    default y
+
+config ESP_ROM_HAS_LP_ROM
+    bool
+    default y
+
+config ESP_ROM_WITHOUT_REGI2C
+    bool
+    default y
+
+config ESP_ROM_HAS_NEWLIB
+    bool
+    default y
+
+config ESP_ROM_HAS_NEWLIB_NANO_FORMAT
+    bool
+    default y
+
+config ESP_ROM_HAS_VERSION
     bool
     default y

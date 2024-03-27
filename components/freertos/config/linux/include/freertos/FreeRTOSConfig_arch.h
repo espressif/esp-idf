@@ -18,7 +18,6 @@
 
 /* ------------------ Scheduler Related -------------------- */
 
-#define configMAX_PRIORITIES                       ( 7 )
 #define configUSE_PORT_OPTIMISED_TASK_SELECTION    0
 
 /* The stack allocated by FreeRTOS will be passed to a pthread.
@@ -32,7 +31,7 @@
 /* ---------------- Amazon SMP FreeRTOS -------------------- */
 
 #if CONFIG_FREERTOS_SMP
-    #define configUSE_MINIMAL_IDLE_HOOK              0   // Not implemented yet, TODO IDF-6654
+    #define configUSE_PASSIVE_IDLE_HOOK    0             /* Not implemented yet, TODO IDF-6654 */
 #endif
 
 /* ----------------------- System -------------------------- */
@@ -53,8 +52,8 @@
 /* -------------------- API Includes ----------------------- */
 
 /* Todo: Reconcile INCLUDE_option differences (IDF-8186) */
-#define INCLUDE_vTaskDelayUntil              1
-#define INCLUDE_uxTaskGetStackHighWaterMark2 0
+#define INCLUDE_vTaskDelayUntil                 1
+#define INCLUDE_uxTaskGetStackHighWaterMark2    0
 
 /* ------------------------------------------------ ESP-IDF Additions --------------------------------------------------
  *

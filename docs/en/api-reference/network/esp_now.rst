@@ -22,7 +22,7 @@ ESP-NOW uses a vendor-specific action frame to transmit ESP-NOW data. The defaul
     ------------------------------------------------------------------------------------------------------------
     | MAC Header | Category Code | Organization Identifier | Random Values | Vendor Specific Content |   FCS   |
     ------------------------------------------------------------------------------------------------------------
-      24 bytes         1 byte              3 bytes               4 bytes             7~257 bytes        4 bytes 
+      24 bytes         1 byte              3 bytes               4 bytes             7-257 bytes        4 bytes
 
 - Category Code: The Category Code field is set to the value (127) indicating the vendor-specific category.
 - Organization Identifier: The Organization Identifier contains a unique identifier (0x18fe34), which is the first three bytes of MAC address applied by Espressif.
@@ -36,7 +36,7 @@ ESP-NOW uses a vendor-specific action frame to transmit ESP-NOW data. The defaul
     -------------------------------------------------------------------------------
     | Element ID | Length | Organization Identifier | Type | Version |    Body    |
     -------------------------------------------------------------------------------
-        1 byte     1 byte            3 bytes         1 byte   1 byte   0~250 bytes 
+        1 byte     1 byte            3 bytes         1 byte   1 byte   0-250 bytes
 
 - Element ID: The Element ID field is set to the value (221), indicating the vendor-specific element.
 - Length: The length is the total length of Organization Identifier, Type, Version and Body.
@@ -50,10 +50,10 @@ As ESP-NOW is connectionless, the MAC header is a little different from that of 
 Security
 --------
 
-ESP-NOW uses the CCMP method, which is described in IEEE Std. 802.11-2012, to protect the vendor-specific action frame. The Wi-Fi device maintains a Primary Master Key (PMK) and several Local Master Keys (LMK). The lengths of both PMK and LMk are 16 bytes.
+ESP-NOW uses the CCMP method, which is described in IEEE Std. 802.11-2012, to protect the vendor-specific action frame. The Wi-Fi device maintains a Primary Master Key (PMK) and several Local Master Keys (LMKs, each paired device has one LMK). The lengths of both PMK and LMK are 16 bytes.
 
     * PMK is used to encrypt LMK with the AES-128 algorithm. Call :cpp:func:`esp_now_set_pmk()` to set PMK. If PMK is not set, a default PMK will be used.
-    * LMK of the paired device is used to encrypt the vendor-specific action frame with the CCMP method. The maximum number of different LMKs is six. If the LMK of the paired device is not set, the vendor-specific action frame will not be encrypted.
+    * LMK of the paired device is used to encrypt the vendor-specific action frame with the CCMP method. If the LMK of the paired device is not set, the vendor-specific action frame will not be encrypted.
 
 Encrypting multicast vendor-specific action frame is not supported.
 
@@ -89,7 +89,7 @@ If there is a lot of ESP-NOW data to send, call :cpp:func:`esp_now_send()` to se
 Receiving ESP-NOW Data
 ----------------------
 
-Call :cpp:func:`esp_now_register_recv_cb()` to register receiving callback function.  Call the receiving callback function when receiving ESP-NOW. The receiving callback function also runs from the Wi-Fi task. So, do not do lengthy operations in the callback function. 
+Call :cpp:func:`esp_now_register_recv_cb()` to register receiving callback function.  Call the receiving callback function when receiving ESP-NOW. The receiving callback function also runs from the Wi-Fi task. So, do not do lengthy operations in the callback function.
 Instead, post the necessary data to a queue and handle it from a lower priority task.
 
 Config ESP-NOW Rate

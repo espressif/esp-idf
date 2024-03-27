@@ -22,7 +22,7 @@
    idf_component_register(...
                           REQUIRES spi_flash esp_partition)
 
-.. note:: 
+.. note::
 
    请根据项目的实际情况，更新相应的 ``REQUIRES`` 或是 ``PRIV_REQUIRES`` 部分。上述代码片段仅为范例。
 
@@ -121,7 +121,7 @@ SPI flash 驱动
 ``esp_flash_speed_t`` ``enum`` 类型现已弃用。现在，可以直接将实际时钟频率值传递给 flash 配置结构。下为配置 80 MHz flash 频率的示例：
 
 .. code-block:: c
-  
+
     esp_flash_spi_device_config_t dev_cfg = {
         // Other members
         .freq_mhz = 80,

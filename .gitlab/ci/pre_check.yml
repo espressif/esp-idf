@@ -3,56 +3,7 @@
   image: $ESP_ENV_IMAGE
   tags:
     - host_test
-  dependencies: []
-
-.check_pre_commit_template:
-  extends:
-    - .pre_check_template
-    - .before_script_minimal
-  image: $PRE_COMMIT_IMAGE
-
-check_pre_commit_master_release:
-  extends:
-    - .check_pre_commit_template
-    - .rules:protected
-  script:
-    - fetch_submodules
-    - git diff-tree --no-commit-id --name-only -r $PIPELINE_COMMIT_SHA | xargs pre-commit run --files
-
-check_pre_commit_MR:
-  extends:
-    - .check_pre_commit_template
-    - .rules:dev
-  script:
-    - fetch_submodules
-    - python ${CI_PROJECT_DIR}/tools/ci/ci_get_mr_info.py files ${CI_MERGE_REQUEST_SOURCE_BRANCH_NAME} | xargs pre-commit run --files
-
-check_MR_style_dangerjs:
-  extends:
-    - .pre_check_template
-  image: node:18.15.0-alpine3.16
-  variables:
-    DANGER_GITLAB_API_TOKEN: ${ESPCI_TOKEN}
-    DANGER_GITLAB_HOST: ${GITLAB_HTTP_SERVER}
-    DANGER_GITLAB_API_BASE_URL: ${GITLAB_HTTP_SERVER}/api/v4
-    DANGER_JIRA_USER: ${DANGER_JIRA_USER}
-    DANGER_JIRA_PASSWORD: ${DANGER_JIRA_PASSWORD}
-  cache:
-    # pull only for most of the use cases since it's cache dir.
-    # Only set "push" policy for "upload_cache" stage jobs
-    key:
-      files:
-        - .gitlab/dangerjs/package-lock.json
-    paths:
-      - .gitlab/dangerjs/node_modules/
-    policy: pull
-  before_script:
-    - cd .gitlab/dangerjs
-    - npm install --no-progress --no-update-notifier  # Install danger dependencies
-  script:
-    - npx danger ci --failOnErrors -v
-  rules:
-    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+  dependencies: # set dependencies to null to avoid missing artifacts issue
 
 check_version:
   # Don't run this for feature/bugfix branches, so that it is possible to modify
@@ -60,6 +11,13 @@ check_version:
   extends:
     - .pre_check_template
     - .rules:protected
+  tags: [ brew, github_sync ]
+  variables:
+    # need a full clone to get the latest tag
+    # the --shallow-since=$(git log -1 --format=%as $LATEST_GIT_TAG) option is not accurate
+    GIT_STRATEGY: fetch
+    SUBMODULES_TO_FETCH: "none"
+    GIT_DEPTH: 0
   script:
     - export IDF_PATH=$PWD
     - tools/ci/check_idf_version.sh
@@ -70,21 +28,6 @@ check_api_usage:
     - tools/ci/check_examples_rom_header.sh
     - tools/ci/check_api_violation.sh
     - tools/ci/check_examples_extra_component_dirs.sh
-
-test_check_kconfigs:
-  extends: .pre_check_template
-  artifacts:
-    when: on_failure
-    paths:
-      - components/*/Kconfig*.new
-      - examples/*/*/*/Kconfig*.new
-      - examples/*/*/*/*/Kconfig*.new
-      - tools/*/Kconfig*.new
-      - tools/*/*/Kconfig*.new
-      - tools/*/*/*/Kconfig*.new
-    expire_in: 1 week
-  script:
-    - python ${IDF_PATH}/tools/ci/test_check_kconfigs.py
 
 check_blobs:
   extends:
@@ -122,6 +65,7 @@ check_public_headers:
     - IDF_TARGET=esp32c3 python tools/ci/check_public_headers.py --jobs 4 --prefix riscv32-esp-elf-
     - IDF_TARGET=esp32c2 python tools/ci/check_public_headers.py --jobs 4 --prefix riscv32-esp-elf-
     - IDF_TARGET=esp32c6 python tools/ci/check_public_headers.py --jobs 4 --prefix riscv32-esp-elf-
+    - IDF_TARGET=esp32c5 python tools/ci/check_public_headers.py --jobs 4 --prefix riscv32-esp-elf-
     - IDF_TARGET=esp32h2 python tools/ci/check_public_headers.py --jobs 4 --prefix riscv32-esp-elf-
     - IDF_TARGET=esp32p4 python tools/ci/check_public_headers.py --jobs 4 --prefix riscv32-esp-elf-
 
@@ -137,7 +81,7 @@ check_chip_support_components:
     expire_in: 1 week
   script:
     - python tools/ci/check_soc_headers_leak.py
-    - find ${IDF_PATH}/components/soc/*/include/soc/ -name "*_struct.h" -print0 | xargs -0 -n1 ./tools/ci/check_soc_struct_headers.py
+    - find ${IDF_PATH}/components/soc/**/include/soc/ -name "*_struct.h" -print0 | xargs -0 -n1 ./tools/ci/check_soc_struct_headers.py
     - tools/ci/check_esp_memory_utils_headers.sh
 
 check_esp_err_to_name:
@@ -163,23 +107,25 @@ check_esp_system:
 
 # For release tag pipelines only, make sure the tag was created with 'git tag -a' so it will update
 # the version returned by 'git describe'
+# Don't forget to update the env var `LATEST_GIT_TAG` in .gitlab/ci/common.yml
 check_version_tag:
   extends:
     - .pre_check_template
     - .rules:tag:release
+  tags: [ brew, github_sync ]
+  variables:
+    # need a full clone to get the latest tag
+    # the --shallow-since=$(git log -1 --format=%as $LATEST_GIT_TAG) option is not accurate
+    GIT_STRATEGY: fetch
+    SUBMODULES_TO_FETCH: "none"
+    GIT_DEPTH: 0
   script:
     - (git cat-file -t $CI_COMMIT_REF_NAME | grep tag) || (echo "ESP-IDF versions must be annotated tags." && exit 1)
-
-check_artifacts_expire_time:
-  extends: .pre_check_template
-  script:
-    # check if we have set expire time for all artifacts
-    - python tools/ci/check_artifacts_expire_time.py
 
 check_test_scripts_build_test_rules:
   extends:
     - .pre_check_template
-    - .before_script_build_jobs
+    - .before_script:build
   script:
     # required pytest related packages
     - run_cmd bash install.sh --enable-pytest
@@ -188,28 +134,56 @@ check_test_scripts_build_test_rules:
 check_configure_ci_environment_parsing:
   extends:
     - .pre_check_template
-    - .before_script_build_jobs
+    - .before_script:build
     - .rules:build
   script:
     - cd tools/ci
     - python -m unittest ci_build_apps.py
 
-mr_variables:
+pipeline_variables:
   extends:
     - .pre_check_template
-    - .rules:mr
-    - .before_script_minimal
-  tags:
-    - build
+    - .before_script:fetch:git_diff
+  tags: [fast_run, shiny]
   script:
-    - echo "MR_MODIFIED_FILES=$(python tools/ci/ci_get_mr_info.py files ${CI_MERGE_REQUEST_SOURCE_BRANCH_NAME} | xargs)" >> mr.env
-    - echo "MR_MODIFIED_COMPONENTS=$(python tools/ci/ci_get_mr_info.py components ${CI_MERGE_REQUEST_SOURCE_BRANCH_NAME} | xargs)" >> mr.env
-    - >
-      if echo "$CI_MERGE_REQUEST_LABELS" | egrep "(^|,)BUILD_AND_TEST_ALL_APPS(,|$)"; then
-        echo "BUILD_AND_TEST_ALL_APPS=1" >> mr.env
+    # MODIFIED_FILES is a list of files that changed, could be used everywhere
+    - MODIFIED_FILES=$(echo "$GIT_DIFF_OUTPUT" | xargs)
+    - echo "MODIFIED_FILES=$MODIFIED_FILES" >> pipeline.env
+    # MR_MODIFIED_FILES and MR_MODIFIED_COMPONENTS are semicolon separated lists that is used in MR only
+    # for non MR pipeline, these are empty lists
+    - |
+      if [ $IS_MR_PIPELINE == "0" ]; then
+        echo "MR_MODIFIED_FILES=\"\"" >> pipeline.env
+        echo "MR_MODIFIED_COMPONENTS=\"\"" >> pipeline.env
+      else
+        MR_MODIFIED_FILES=$(echo "$GIT_DIFF_OUTPUT" | tr '\n' ';')
+        echo "MR_MODIFIED_FILES=\"$MR_MODIFIED_FILES\"" >> pipeline.env
+
+        MR_MODIFIED_COMPONENTS=$(run_cmd python tools/ci/ci_get_mr_info.py components --modified-files $MODIFIED_FILES | tr '\n' ';')
+        echo "MR_MODIFIED_COMPONENTS=\"$MR_MODIFIED_COMPONENTS\"" >> pipeline.env
       fi
-    - cat mr.env
+    - |
+      if echo "$CI_MERGE_REQUEST_LABELS" | egrep "(^|,)BUILD_AND_TEST_ALL_APPS(,|$)"; then
+        echo "BUILD_AND_TEST_ALL_APPS=1" >> pipeline.env
+      fi
+    # run full pipeline if testing constraint branch
+    - |
+      if [ -n "$CI_PYTHON_CONSTRAINT_BRANCH" ]; then
+        echo "BUILD_AND_TEST_ALL_APPS=1" >> pipeline.env
+      fi
+    - cat pipeline.env
+    - python tools/ci/artifacts_handler.py upload --type modified_files_and_components_report
   artifacts:
     reports:
-      dotenv: mr.env
-    expire_in: 4 days
+      dotenv: pipeline.env
+    paths:
+      - pipeline.env
+    expire_in: 1 week
+    when: always
+
+check_test_cases_env_markers_and_required_runners:
+  extends:
+    - .pre_check_template
+  tags: [fast_run, shiny]
+  script:
+    - python tools/ci/dynamic_pipelines/scripts/generate_target_test_child_pipeline.py --check

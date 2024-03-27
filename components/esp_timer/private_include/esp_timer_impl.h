@@ -112,7 +112,6 @@ uint64_t esp_timer_impl_get_min_period_us(void);
  */
 void esp_timer_impl_lock(void);
 
-
 /**
  * @brief counterpart of esp_timer_impl_lock
  */

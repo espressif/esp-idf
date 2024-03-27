@@ -7,35 +7,100 @@
 #
 # Entries are ordered by the order of execution (i.e. from low priority values to high ones).
 # Each line has the following format:
-#   prio: function_name in path/to/source_file on affinity_expression
+#   stage: prio: function_name in path/to/source_file on affinity_expression
 # Where:
+#   stage: which startup stage the function is executed in (CORE or SECONDARY)
 #   prio: priority value (higher value means function is executed later)
 #   affinity_expression: bit map of cores the function is executed on
 
 
+########### CORE startup stage ###########
+# [refactor-todo]: move init calls into respective components
+
+CORE:   1: init_efuse_check in components/efuse/src/esp_efuse_startup.c on BIT(0)
+
+# Log some information about the system
+CORE:  10: init_show_cpu_freq in components/esp_system/startup_funcs.c on BIT(0)
+CORE:  20: init_show_app_info in components/esp_app_format/esp_app_desc.c on BIT(0)
+CORE:  21: init_efuse_show_app_info in components/efuse/src/esp_efuse_startup.c on BIT(0)
+
+# Initialize heap allocator. WARNING: This *needs* to happen *after* the app cpu has booted.
+# If the heap allocator is initialized first, it will put free memory linked list items into
+# memory also used by the ROM. Starting the app cpu will let its ROM initialize that memory,
+# corrupting those linked lists. Initializing the allocator *after* the app cpu has booted
+# works around this problem.
+# With SPI RAM enabled, there's a second reason: half of the SPI RAM will be managed by the
+# app CPU, and when that is not up yet, the memory will be inaccessible and heap_caps_init may
+# fail initializing it properly.
+CORE: 100: init_heap in components/heap/heap_caps_init.c on BIT(0)
+
+# When apptrace module is enabled, there will be SEGGER_SYSVIEW calls in the newlib init.
+# SEGGER_SYSVIEW relies on apptrace module
+# apptrace module uses esp_timer_get_time to determine timeout conditions.
+# esp_timer early initialization is required for esp_timer_get_time to work.
+CORE: 101: esp_timer_init_nonos in components/esp_timer/src/esp_timer_init.c on BIT(0)
+
+CORE: 102: init_newlib in components/newlib/newlib_init.c on BIT(0)
+CORE: 103: init_psram in components/esp_psram/esp_psram.c on BIT(0)
+CORE: 104: init_brownout in components/esp_system/startup_funcs.c on BIT(0)
+CORE: 105: init_newlib_time in components/esp_system/startup_funcs.c on BIT(0)
+
+# Peripheral-specific implementation operators should be filled first
+# Then register vfs console, and follow by newlib stdio initialization
+CORE: 110: init_vfs_uart in components/esp_driver_uart/src/uart_vfs.c on BIT(0)
+CORE: 111: init_vfs_usj in components/esp_driver_usb_serial_jtag/src/usb_serial_jtag_vfs.c on BIT(0)
+CORE: 112: init_vfs_usj_sec in components/esp_driver_usb_serial_jtag/src/usb_serial_jtag_vfs.c on BIT(0)
+CORE: 114: init_vfs_console in components/esp_vfs_console/vfs_console.c on BIT(0)
+CORE: 115: init_newlib_stdio in components/newlib/newlib_init.c on BIT(0)
+
+CORE: 120: init_pthread in components/pthread/pthread.c on BIT(0)
+CORE: 130: init_flash in components/esp_system/startup_funcs.c on BIT(0)
+CORE: 140: init_efuse in components/efuse/src/esp_efuse_startup.c on BIT(0)
+CORE: 170: init_xt_wdt in components/esp_system/startup_funcs.c on BIT(0)
+
+
+########### SECONDARY startup stage ###########
+
 # esp_timer has to be initialized early, since it is used by several other components
-100: esp_timer_startup_init in components/esp_timer/src/esp_timer.c on CONFIG_ESP_TIMER_ISR_AFFINITY
+SECONDARY: 100: esp_timer_init_os in components/esp_timer/src/esp_timer.c on ESP_TIMER_INIT_MASK
 
 # HW stack guard via assist-debug module.
-101: esp_hw_stack_guard_init in components/esp_system/hw_stack_guard.c on ESP_SYSTEM_INIT_ALL_CORES
+SECONDARY: 101: esp_hw_stack_guard_init in components/esp_system/hw_stack_guard.c on ESP_SYSTEM_INIT_ALL_CORES
+
+# RNG module clock was disabled in `esp_perip_clk_init`, if hw_random is used, need to re-ebnabled it in startup
+SECONDARY: 102: init_rng_clock in components/esp_hw_support/hw_random.c on BIT(0)
 
 # esp_sleep doesn't have init dependencies
-105: esp_sleep_startup_init in components/esp_hw_support/sleep_gpio.c on BIT(0)
-106: sleep_clock_startup_init in components/esp_hw_support/sleep_clock.c on BIT(0)
-107: sleep_sys_periph_startup_init in components/esp_hw_support/sleep_system_peripheral.c on BIT(0)
+SECONDARY: 105: esp_sleep_startup_init in components/esp_hw_support/sleep_gpio.c on BIT(0)
+SECONDARY: 106: sleep_clock_startup_init in components/esp_hw_support/sleep_clock.c on BIT(0)
+SECONDARY: 107: sleep_sys_periph_startup_init in components/esp_hw_support/sleep_system_peripheral.c on BIT(0)
 
 # app_trace has to be initialized before systemview
-115: esp_apptrace_init in components/app_trace/app_trace.c on ESP_SYSTEM_INIT_ALL_CORES
-120: sysview_init in components/app_trace/sys_view/esp/SEGGER_RTT_esp.c on BIT(0)
+SECONDARY: 115: esp_apptrace_init in components/app_trace/app_trace.c on ESP_SYSTEM_INIT_ALL_CORES
+SECONDARY: 120: sysview_init in components/app_trace/sys_view/esp/SEGGER_RTT_esp.c on BIT(0)
 
-# the rest of the components which are initialized from startup.c
+# coredump doesn't have init dependencies
+SECONDARY: 130: init_coredump in components/espcoredump/src/core_dump_init.c on BIT(0)
+
+# esp_debug_stubs doesn't have init dependencies
+SECONDARY: 140: init_dbg_stubs in components/app_trace/debug_stubs.c on BIT(0)
+
+# the rest of the components which are initialized from startup_funcs.c
 # [refactor-todo]: move init calls into respective components
-200: init_components0 in components/esp_system/startup.c on BIT(0)
+SECONDARY: 201: init_pm in components/esp_system/startup_funcs.c on BIT(0)
+SECONDARY: 203: init_apb_dma in components/esp_system/startup_funcs.c on BIT(0)
+SECONDARY: 204: init_coexist in components/esp_system/startup_funcs.c on BIT(0)
 
 # usb_console needs to create an esp_timer at startup.
-# This can be done only after esp_timer initialization, which is now in init_components0.
-220: esp_usb_console_init_restart_timer in components/esp_system/port/usb_console.c on BIT(0)
+# This can be done only after esp_timer initialization (esp_timer_init_os).
+SECONDARY: 220: esp_usb_console_init_restart_timer in components/esp_system/port/usb_console.c on BIT(0)
 
-# usb_serial_jtag needs to create and acquire a PM clock at startup.
-# This makes more sense to be done after esp_pm_impl_init, which is initialized in init_components0.
-230: usb_serial_jtag_conn_status_init in components/driver/usb_serial_jtag/usb_serial_jtag_connection_monitor.c on BIT(0)
+# usb_serial_jtag needs to create and acquire a PM lock at startup.
+# This makes more sense to be done after esp_pm_impl_init (called from init_pm).
+SECONDARY: 230: usb_serial_jtag_conn_status_init in components/esp_driver_usb_serial_jtag/src/usb_serial_jtag_connection_monitor.c on BIT(0)
+
+# Has to be the last step!
+# Now that the application is about to start, disable boot watchdog
+SECONDARY: 999: init_disable_rtc_wdt in components/esp_system/startup_funcs.c on BIT(0)
+
+# DO NOT add new init functions here. Add them to the correct stage above.

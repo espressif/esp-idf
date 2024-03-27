@@ -20,6 +20,7 @@ typedef enum {
     BTC_GAP_BT_SEARCH_SERVICES_EVT,
     BTC_GAP_BT_SEARCH_SERVICE_RECORD_EVT,
     BTC_GAP_BT_AUTH_CMPL_EVT,
+    BTC_GAP_BT_ENC_CHG_EVT,
     BTC_GAP_BT_PIN_REQ_EVT,
     BTC_GAP_BT_CFM_REQ_EVT,
     BTC_GAP_BT_KEY_NOTIF_EVT,
@@ -33,6 +34,7 @@ typedef enum {
     BTC_GAP_BT_QOS_EVT,
     BTC_GAP_BT_SET_PAGE_TO_EVT,
     BTC_GAP_BT_GET_PAGE_TO_EVT,
+    BTC_GAP_BT_SET_ACL_PKT_TYPES_EVT,
 }btc_gap_bt_evt_t;
 
 typedef enum {
@@ -55,6 +57,7 @@ typedef enum {
     BTC_GAP_BT_ACT_SET_QOS,
     BTC_GAP_BT_ACT_SET_PAGE_TIMEOUT,
     BTC_GAP_BT_ACT_GET_PAGE_TIMEOUT,
+    BTC_GAP_BT_ACT_SET_ACL_PKT_TYPES,
 } btc_gap_bt_act_t;
 
 /* btc_bt_gap_args_t */
@@ -155,6 +158,12 @@ typedef union {
     struct set_page_to_args {
         uint16_t page_to;
     } set_page_to;
+
+    // BTC_GAP_BT_ACT_SET_ACL_PKT_TYPES
+    struct set_acl_pkt_types_args {
+        bt_bdaddr_t bda;
+        uint16_t pkt_types;
+    } set_acl_pkt_types;
 
 } btc_gap_bt_args_t;
 

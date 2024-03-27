@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -114,7 +114,7 @@ TEST_CASE("pthread local storage destructor in FreeRTOS task", "[thread-specific
     TEST_ASSERT_EQUAL(0, pthread_key_create(&key, test_pthread_destructor));
 
     xTaskCreate(task_test_pthread_destructor,
-                "ptdest", 8192, (void *)key, UNITY_FREERTOS_PRIORITY+1,
+                "ptdest", 8192, (void *)key, UNITY_FREERTOS_PRIORITY + 1,
                 NULL);
 
     // Above task has higher priority to us, so should run immediately
@@ -146,13 +146,12 @@ static void *thread_stress_test(void *v_key)
 
     pthread_setspecific(key, tls_value);
 
-    for(int i = 0; i < STRESS_NUMITER; i++) {
+    for (int i = 0; i < STRESS_NUMITER; i++) {
         TEST_ASSERT_EQUAL_HEX32(pthread_getspecific(key), tls_value);
     }
 
     return NULL;
 }
-
 
 // This test case added to reproduce issues with unpinned tasks and TLS
 TEST_CASE("pthread local storage stress test", "[thread-specific]")
@@ -169,7 +168,6 @@ TEST_CASE("pthread local storage stress test", "[thread-specific]")
     }
 }
 
-
 #define NUM_KEYS 4 // number of keys used in repeat destructor test
 #define NUM_REPEATS 17 // number of times we re-set a key to a non-NULL value to re-trigger destructor
 
@@ -178,7 +176,6 @@ typedef struct {
     unsigned count; // number of times the destructor has been called
     int last_idx; // index of last key where destructor was called
 } destr_test_state_t;
-
 
 static void s_test_repeat_destructor(void *vp_state);
 static void *s_test_repeat_destructor_thread(void *vp_state);
@@ -202,7 +199,7 @@ TEST_CASE("pthread local storage 'repeat' destructor test", "[thread-specific]")
     TEST_ASSERT_EQUAL(0, r);
 
     r = pthread_join(thread, NULL);
-    TEST_ASSERT_EQUAL(0 ,r);
+    TEST_ASSERT_EQUAL(0, r);
 
     // Cheating here to make sure compiler reads the value of 'count' from memory not from a register
     //

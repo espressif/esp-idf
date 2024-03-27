@@ -1,14 +1,12 @@
 /*
- * SPDX-FileCopyrightText: 2020 Amazon.com, Inc. or its affiliates
+ * FreeRTOS Kernel V10.5.1 (ESP-IDF SMP modified)
+ * Copyright (C) 2021 Amazon.com, Inc. or its affiliates.  All Rights Reserved.
+ *
+ * SPDX-FileCopyrightText: 2021 Amazon.com, Inc. or its affiliates
  *
  * SPDX-License-Identifier: MIT
  *
- * SPDX-FileContributor: 2016-2022 Espressif Systems (Shanghai) CO LTD
- */
-
-/*
- * FreeRTOS Kernel V10.4.3
- * Copyright (C) 2020 Amazon.com, Inc. or its affiliates.  All Rights Reserved.
+ * SPDX-FileContributor: 2023 Espressif Systems (Shanghai) CO LTD
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
  * this software and associated documentation files (the "Software"), to deal in
@@ -44,7 +42,7 @@
 #ifndef MPU_PROTOTYPES_H
 #define MPU_PROTOTYPES_H
 
-/* MPU versions of tasks.h API functions. */
+/* MPU versions of task.h API functions. */
 BaseType_t MPU_xTaskCreate( TaskFunction_t pxTaskCode,
                             const char * const pcName,
                             const uint16_t usStackDepth,
@@ -61,7 +59,7 @@ TaskHandle_t MPU_xTaskCreateStatic( TaskFunction_t pxTaskCode,
 void MPU_vTaskDelete( TaskHandle_t xTaskToDelete ) FREERTOS_SYSTEM_CALL;
 void MPU_vTaskDelay( const TickType_t xTicksToDelay ) FREERTOS_SYSTEM_CALL;
 BaseType_t MPU_xTaskDelayUntil( TickType_t * const pxPreviousWakeTime,
-                          const TickType_t xTimeIncrement ) FREERTOS_SYSTEM_CALL;
+                                const TickType_t xTimeIncrement ) FREERTOS_SYSTEM_CALL;
 BaseType_t MPU_xTaskAbortDelay( TaskHandle_t xTask ) FREERTOS_SYSTEM_CALL;
 UBaseType_t MPU_uxTaskPriorityGet( const TaskHandle_t xTask ) FREERTOS_SYSTEM_CALL;
 eTaskState MPU_eTaskGetState( TaskHandle_t xTask ) FREERTOS_SYSTEM_CALL;
@@ -95,8 +93,9 @@ BaseType_t MPU_xTaskCallApplicationTaskHook( TaskHandle_t xTask,
 TaskHandle_t MPU_xTaskGetIdleTaskHandle( void ) FREERTOS_SYSTEM_CALL;
 UBaseType_t MPU_uxTaskGetSystemState( TaskStatus_t * const pxTaskStatusArray,
                                       const UBaseType_t uxArraySize,
-                                      uint32_t * const pulTotalRunTime ) FREERTOS_SYSTEM_CALL;
-uint32_t MPU_ulTaskGetIdleRunTimeCounter( void ) FREERTOS_SYSTEM_CALL;
+                                      configRUN_TIME_COUNTER_TYPE * const pulTotalRunTime ) FREERTOS_SYSTEM_CALL;
+configRUN_TIME_COUNTER_TYPE MPU_ulTaskGetIdleRunTimeCounter( void ) FREERTOS_SYSTEM_CALL;
+configRUN_TIME_COUNTER_TYPE MPU_ulTaskGetIdleRunTimePercent( void ) FREERTOS_SYSTEM_CALL;
 void MPU_vTaskList( char * pcWriteBuffer ) FREERTOS_SYSTEM_CALL;
 void MPU_vTaskGetRunTimeStats( char * pcWriteBuffer ) FREERTOS_SYSTEM_CALL;
 BaseType_t MPU_xTaskGenericNotify( TaskHandle_t xTaskToNotify,
@@ -253,12 +252,16 @@ BaseType_t MPU_xStreamBufferSetTriggerLevel( StreamBufferHandle_t xStreamBuffer,
                                              size_t xTriggerLevel ) FREERTOS_SYSTEM_CALL;
 StreamBufferHandle_t MPU_xStreamBufferGenericCreate( size_t xBufferSizeBytes,
                                                      size_t xTriggerLevelBytes,
-                                                     BaseType_t xIsMessageBuffer ) FREERTOS_SYSTEM_CALL;
+                                                     BaseType_t xIsMessageBuffer,
+                                                     StreamBufferCallbackFunction_t pxSendCompletedCallback,
+                                                     StreamBufferCallbackFunction_t pxReceiveCompletedCallback ) FREERTOS_SYSTEM_CALL;
 StreamBufferHandle_t MPU_xStreamBufferGenericCreateStatic( size_t xBufferSizeBytes,
                                                            size_t xTriggerLevelBytes,
                                                            BaseType_t xIsMessageBuffer,
                                                            uint8_t * const pucStreamBufferStorageArea,
-                                                           StaticStreamBuffer_t * const pxStaticStreamBuffer ) FREERTOS_SYSTEM_CALL;
+                                                           StaticStreamBuffer_t * const pxStaticStreamBuffer,
+                                                           StreamBufferCallbackFunction_t pxSendCompletedCallback,
+                                                           StreamBufferCallbackFunction_t pxReceiveCompletedCallback ) FREERTOS_SYSTEM_CALL;
 
 
 

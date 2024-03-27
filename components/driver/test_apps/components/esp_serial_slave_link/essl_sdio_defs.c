@@ -6,7 +6,6 @@
 
 // Definitions of Espressif SDIO Slave hardware
 
-
 #include "essl_sdio.h"
 
 essl_sdio_def_t ESSL_SDIO_DEF_ESP32 = {

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,7 +7,6 @@
 #pragma once
 
 #include "soc/soc.h"
-#include "soc/rtc.h"
 #include "soc/rtc_cntl_reg.h"
 #include "esp_attr.h"
 #include "hal/assert.h"
@@ -92,12 +91,6 @@ FORCE_INLINE_ATTR uint64_t rtc_cntl_ll_get_rtc_time(void)
     uint64_t t = READ_PERI_REG(RTC_CNTL_TIME0_REG);
     t |= ((uint64_t) READ_PERI_REG(RTC_CNTL_TIME1_REG)) << 32;
     return t;
-}
-
-FORCE_INLINE_ATTR uint64_t rtc_cntl_ll_time_to_count(uint64_t time_in_us)
-{
-    uint32_t slow_clk_value = REG_READ(RTC_CNTL_STORE1_REG);
-    return ((time_in_us * (1 << RTC_CLK_CAL_FRACT)) / slow_clk_value);
 }
 
 FORCE_INLINE_ATTR uint32_t rtc_cntl_ll_get_wakeup_cause(void)

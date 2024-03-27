@@ -37,4 +37,20 @@ menu "FreeRTOS"
         hex
         default 0x7FFFFFFF if !FREERTOS_SMP
         default 0xFFFFFFFF if FREERTOS_SMP
+
+    config FREERTOS_UNICORE
+        # This invisible config ensures that ESP-IDF components are always built as single-core
+        # when building for CMock. CMock is currently only supported on the Linux target, and the
+        # Linux FreeRTOS port supports single-core only.
+        bool
+        default y
+
+    config FREERTOS_NUMBER_OF_CORES
+        # Invisible option to configure the number of cores on which FreeRTOS runs
+        # Todo: Unhide this option and deprecate CONFIG_FREERTOS_UNICORE (IDF-9156)
+        int
+        range 1 2
+        default 1 if FREERTOS_UNICORE
+        default 2 if !FREERTOS_UNICORE
+
 endmenu

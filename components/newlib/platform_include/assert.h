@@ -4,7 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-
 /* This header file wraps newlib's own unmodified assert.h and adds
    support for silent assertion failure.
 */

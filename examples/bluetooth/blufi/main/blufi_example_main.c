@@ -24,7 +24,9 @@
 #include "esp_event.h"
 #include "esp_log.h"
 #include "nvs_flash.h"
+#if CONFIG_BT_CONTROLLER_ENABLED || !CONFIG_BT_NIMBLE_ENABLED
 #include "esp_bt.h"
+#endif
 
 #include "esp_blufi_api.h"
 #include "blufi_example.h"
@@ -208,6 +210,7 @@ static void wifi_event_handler(void* arg, esp_event_base_t event_base,
         wifi_ap_record_t *ap_list = (wifi_ap_record_t *)malloc(sizeof(wifi_ap_record_t) * apCount);
         if (!ap_list) {
             BLUFI_ERROR("malloc error, ap_list is NULL");
+            esp_wifi_clear_ap_list();
             break;
         }
         ESP_ERROR_CHECK(esp_wifi_scan_get_ap_records(&apCount, ap_list));
@@ -463,11 +466,13 @@ void app_main(void)
 
     initialise_wifi();
 
+#if CONFIG_BT_CONTROLLER_ENABLED || !CONFIG_BT_NIMBLE_ENABLED
     ret = esp_blufi_controller_init();
     if (ret) {
         BLUFI_ERROR("%s BLUFI controller init failed: %s\n", __func__, esp_err_to_name(ret));
         return;
     }
+#endif
 
     ret = esp_blufi_host_and_cb_init(&example_callbacks);
     if (ret) {

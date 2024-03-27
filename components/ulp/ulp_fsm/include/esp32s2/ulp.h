@@ -22,7 +22,6 @@ extern "C" {
  * @{
  */
 
-
 #define R0 0    /*!< general purpose register 0 */
 #define R1 1    /*!< general purpose register 1 */
 #define R2 2    /*!< general purpose register 2 */
@@ -906,7 +905,6 @@ static inline uint32_t SOC_REG_TO_ULP_PERIPH_SEL(uint32_t reg)
     .sub_opcode = SUB_OPCODE_ALU_REG, \
     .opcode = OPCODE_ALU } }
 
-
 /**
  * Logical shift right: dest = src >> shift
  */
@@ -932,7 +930,6 @@ static inline uint32_t SOC_REG_TO_ULP_PERIPH_SEL(uint32_t reg)
     .unused2 = 0, \
     .sub_opcode = SUB_OPCODE_ALU_IMM, \
     .opcode = OPCODE_ALU } }
-
 
 /**
  *  Subtract register and an immediate value: dest = src - imm
@@ -998,7 +995,6 @@ static inline uint32_t SOC_REG_TO_ULP_PERIPH_SEL(uint32_t reg)
     .unused2 = 0, \
     .sub_opcode = SUB_OPCODE_ALU_IMM, \
     .opcode = OPCODE_ALU } }
-
 
 /**
  * Logical shift right register value by an immediate: dest = val >> imm

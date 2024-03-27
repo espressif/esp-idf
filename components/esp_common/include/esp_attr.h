@@ -28,6 +28,9 @@ extern "C" {
 // Forces code into TCM instead of flash
 #define TCM_IRAM_ATTR _SECTION_ATTR_IMPL(".tcm.text", __COUNTER__)
 
+// Forces data into TCM instead of L2MEM
+#define TCM_DRAM_ATTR _SECTION_ATTR_IMPL(".tcm.data", __COUNTER__)
+
 // IRAM can only be accessed as an 8-bit memory on ESP32, when CONFIG_ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY is set
 #define IRAM_8BIT_ACCESSIBLE (CONFIG_IDF_TARGET_ESP32 && CONFIG_ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY)
 
@@ -56,6 +59,16 @@ extern "C" {
 
 // Forces data to be placed to DMA-capable places
 #define DMA_ATTR WORD_ALIGNED_ATTR DRAM_ATTR
+
+//Force data to be placed in DRAM and aligned according to DMA and cache's requirement
+#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
+#define DRAM_DMA_ALIGNED_ATTR __attribute__((aligned(CONFIG_CACHE_L1_CACHE_LINE_SIZE))) DRAM_ATTR
+#else
+#define DRAM_DMA_ALIGNED_ATTR WORD_ALIGNED_ATTR DRAM_ATTR
+#endif
+
+// Forces the data to be tightly packed with minimum required padding and no extra bytes are added for alignment
+#define PACKED_ATTR __attribute__((packed))
 
 // Forces a function to be inlined
 #define FORCE_INLINE_ATTR static inline __attribute__((always_inline))

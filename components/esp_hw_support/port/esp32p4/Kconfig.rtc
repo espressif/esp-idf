@@ -1,5 +1,3 @@
-# TODO: IDF-7526
-
 choice RTC_CLK_SRC
     prompt "RTC clock source"
     default RTC_CLK_SRC_INT_RC
@@ -7,22 +5,19 @@ choice RTC_CLK_SRC
         Choose which clock is used as RTC clock source.
 
     config RTC_CLK_SRC_INT_RC
-        bool "Internal 136kHz RC oscillator"
+        bool "Internal 150 kHz RC oscillator"
     config RTC_CLK_SRC_EXT_CRYS
         bool "External 32kHz crystal"
         select ESP_SYSTEM_RTC_EXT_XTAL
-    config RTC_CLK_SRC_EXT_OSC
-        bool "External 32kHz oscillator at 32K_XP pin"
-        select ESP_SYSTEM_RTC_EXT_OSC
     config RTC_CLK_SRC_INT_RC32K
         bool "Internal 32kHz RC oscillator"
 endchoice
 
 config RTC_CLK_CAL_CYCLES
     int "Number of cycles for RTC_SLOW_CLK calibration"
-    default 3000 if RTC_CLK_SRC_EXT_CRYS || RTC_CLK_SRC_EXT_OSC || RTC_CLK_SRC_INT_8MD256
+    default 3000 if RTC_CLK_SRC_EXT_CRYS || RTC_CLK_SRC_INT_RC32K
     default 1024 if RTC_CLK_SRC_INT_RC
-    range 0 27000 if RTC_CLK_SRC_EXT_CRYS || RTC_CLK_SRC_EXT_OSC || RTC_CLK_SRC_INT_8MD256
+    range 0 8190 if RTC_CLK_SRC_EXT_CRYS || RTC_CLK_SRC_INT_RC32K
     range 0 32766 if RTC_CLK_SRC_INT_RC
     help
         When the startup code initializes RTC_SLOW_CLK, it can perform

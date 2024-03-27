@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -30,22 +30,6 @@
 #include "esp_attr.h"
 #include "esp_bootloader_desc.h"
 #include "esp_flash.h"
-
-#if CONFIG_IDF_TARGET_ESP32
-#include "esp32/rom/secure_boot.h"
-#elif CONFIG_IDF_TARGET_ESP32S2
-#include "esp32s2/rom/secure_boot.h"
-#elif CONFIG_IDF_TARGET_ESP32C3
-#include "esp32c3/rom/secure_boot.h"
-#elif CONFIG_IDF_TARGET_ESP32S3
-#include "esp32s3/rom/secure_boot.h"
-#elif CONFIG_IDF_TARGET_ESP32C2
-#include "esp32c2/rom/secure_boot.h"
-#elif CONFIG_IDF_TARGET_ESP32C6
-#include "esp32c6/rom/secure_boot.h"
-#elif CONFIG_IDF_TARGET_ESP32H2
-#include "esp32h2/rom/secure_boot.h"
-#endif
 
 #define SUB_TYPE_ID(i) (i & 0x0F)
 
@@ -197,13 +181,18 @@ esp_err_t esp_ota_write(esp_ota_handle_t handle, const void *data, size_t size)
         return ESP_ERR_INVALID_ARG;
     }
 
+    if (size == 0) {
+        ESP_LOGD(TAG, "write data size is 0");
+        return ESP_OK;
+    }
+
     // find ota handle in linked list
     for (it = LIST_FIRST(&s_ota_ops_entries_head); it != NULL; it = LIST_NEXT(it, entries)) {
         if (it->handle == handle) {
             if (it->need_erase) {
                 // must erase the partition before writing to it
-                uint32_t first_sector = it->wrote_size / SPI_FLASH_SEC_SIZE;
-                uint32_t last_sector = (it->wrote_size + size) / SPI_FLASH_SEC_SIZE;
+                uint32_t first_sector = it->wrote_size / SPI_FLASH_SEC_SIZE; // first affected sector
+                uint32_t last_sector = (it->wrote_size + size - 1) / SPI_FLASH_SEC_SIZE; // last affected sector
 
                 ret = ESP_OK;
                 if ((it->wrote_size % SPI_FLASH_SEC_SIZE) == 0) {
@@ -924,9 +913,27 @@ esp_err_t esp_ota_erase_last_boot_app_partition(void)
     return ESP_OK;
 }
 
-#if SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS > 1 && CONFIG_SECURE_BOOT_V2_ENABLED
-esp_err_t esp_ota_revoke_secure_boot_public_key(esp_ota_secure_boot_public_key_index_t index) {
+#if SOC_SUPPORT_SECURE_BOOT_REVOKE_KEY && CONFIG_SECURE_BOOT_V2_ENABLED
 
+// Validates the image at "app_pos" with the secure boot digests other than "revoked_key_index"
+static bool validate_img(esp_ota_secure_boot_public_key_index_t revoked_key_index, esp_partition_pos_t *app_pos)
+{
+    bool verified = false;
+    for (int i = 0; i < SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS; i++) {
+        if (i == revoked_key_index) {
+            continue;
+        }
+        if (esp_secure_boot_verify_with_efuse_digest_index(i, app_pos) == ESP_OK) {
+            verified = true;
+            ESP_LOGI(TAG, "Application successfully verified with public key digest %d", i);
+            break;
+        }
+    }
+    return verified;
+}
+
+esp_err_t esp_ota_revoke_secure_boot_public_key(esp_ota_secure_boot_public_key_index_t index)
+{
     if (!esp_secure_boot_enabled()) {
         ESP_LOGE(TAG, "Secure boot v2 has not been enabled.");
         return ESP_FAIL;
@@ -939,14 +946,21 @@ esp_err_t esp_ota_revoke_secure_boot_public_key(esp_ota_secure_boot_public_key_i
         return ESP_ERR_INVALID_ARG;
     }
 
-    esp_image_sig_public_key_digests_t app_digests = { 0 };
-    esp_err_t err = esp_secure_boot_get_signature_blocks_for_running_app(true, &app_digests);
-    if (err != ESP_OK || app_digests.num_digests == 0) {
-        ESP_LOGE(TAG, "This app is not signed, but check signature on update is enabled in config. It won't be possible to verify any update.");
+    const esp_partition_t *running_app_part = esp_ota_get_running_partition();
+    esp_err_t ret = ESP_FAIL;
+#ifdef CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE
+    esp_ota_img_states_t running_app_state;
+    ret = esp_ota_get_state_partition(running_app_part, &running_app_state);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "esp_ota_get_state_partition returned: %s", esp_err_to_name(ret));
         return ESP_FAIL;
     }
+    if (running_app_state != ESP_OTA_IMG_VALID) {
+        ESP_LOGE(TAG, "The current running application is not marked as a valid image. Aborting..");
+        return ESP_FAIL;
+    }
+#endif
 
-    esp_err_t ret;
     esp_secure_boot_key_digests_t trusted_keys;
     ret = esp_secure_boot_read_key_digests(&trusted_keys);
     if (ret != ESP_OK) {
@@ -955,55 +969,38 @@ esp_err_t esp_ota_revoke_secure_boot_public_key(esp_ota_secure_boot_public_key_i
     }
 
     if (trusted_keys.key_digests[index] == NULL) {
-        ESP_LOGI(TAG, "Trusted Key block(%d) already revoked.", index);
+        ESP_LOGI(TAG, "Given public key digest(%d) is already revoked.", index);
         return ESP_OK;
     }
 
-    esp_image_sig_public_key_digests_t trusted_digests = { 0 };
-    for (unsigned i = 0; i < SECURE_BOOT_NUM_BLOCKS; i++) {
-        if (i == index) {
-            continue; // omitting - to find if there is a valid key after revoking this digest
-        }
+    /* Check if the application can be verified with a key other than the one being revoked */
+    esp_partition_pos_t running_app_pos = {
+        .offset = running_app_part->address,
+        .size   = running_app_part->size,
+    };
 
-        if (trusted_keys.key_digests[i] != NULL) {
-            bool all_zeroes = true;
-            for (unsigned j = 0; j < ESP_SECURE_BOOT_DIGEST_LEN; j++) {
-                all_zeroes = all_zeroes && (*(uint8_t *)(trusted_keys.key_digests[i] + j) == 0);
-            }
-            if (!all_zeroes) {
-                memcpy(trusted_digests.key_digests[trusted_digests.num_digests++], (uint8_t *)trusted_keys.key_digests[i], ESP_SECURE_BOOT_DIGEST_LEN);
-            } else {
-                ESP_LOGD(TAG, "Empty trusted key block (%d).", i);
-            }
-        }
-    }
-
-    bool match = false;
-    for (unsigned i = 0; i < trusted_digests.num_digests; i++) {
-        if (match == true) {
-            break;
-        }
-
-        for (unsigned j = 0; j < app_digests.num_digests; j++) {
-            if (memcmp(trusted_digests.key_digests[i], app_digests.key_digests[j], ESP_SECURE_BOOT_DIGEST_LEN) == 0) {
-                ESP_LOGI(TAG, "App key block(%d) matches Trusted key block(%d)[%d -> Next active trusted key block].", j, i, i);
-                esp_err_t err = esp_efuse_set_digest_revoke(index);
-                if (err != ESP_OK) {
-                    ESP_LOGE(TAG, "Failed to revoke digest (0x%x).", err);
-                    return ESP_FAIL;
-                }
-                ESP_LOGI(TAG, "Revoked signature block %d.", index);
-                match = true;
-                break;
-            }
-        }
-    }
-
-    if (match == false) {
-        ESP_LOGE(TAG, "Running app doesn't have another valid secure boot key. Cannot revoke current key(%d).", index);
+    if (!validate_img(index, &running_app_pos)) {
+        ESP_LOGE(TAG, "Application cannot be verified with any key other than the one being revoked");
         return ESP_FAIL;
     }
 
+    /* Check if bootloder can be verified with any key other than the one being revoked */
+    esp_partition_pos_t bootloader_pos = {
+        .offset = ESP_BOOTLOADER_OFFSET,
+        .size   = (ESP_PARTITION_TABLE_OFFSET - ESP_BOOTLOADER_OFFSET),
+    };
+
+    if (!validate_img(index, &bootloader_pos)) {
+        ESP_LOGE(TAG, "Bootloader cannot be verified with any key other than the one being revoked");
+        return ESP_FAIL;
+    }
+
+    esp_err_t err = esp_efuse_set_digest_revoke(index);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to revoke digest (0x%x).", err);
+        return ESP_FAIL;
+    }
+    ESP_LOGI(TAG, "Revoked signature block %d.", index);
     return ESP_OK;
 }
 #endif

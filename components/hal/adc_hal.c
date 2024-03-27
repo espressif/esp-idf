@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,70 +16,6 @@
 #include "hal/i2s_hal.h"
 #include "hal/i2s_types.h"
 #include "soc/i2s_struct.h"
-#endif
-
-#if CONFIG_IDF_TARGET_ESP32S2
-//ADC utilises SPI3 DMA on ESP32S2
-#include "hal/spi_ll.h"
-#include "soc/spi_struct.h"
-#endif
-
-/*---------------------------------------------------------------
-            Define all ADC DMA required operations here
----------------------------------------------------------------*/
-#if SOC_AHB_GDMA_VERSION == 1
-#define adc_dma_ll_rx_clear_intr(dev, chan, mask)       gdma_ll_rx_clear_interrupt_status(dev, chan, mask)
-#define adc_dma_ll_rx_enable_intr(dev, chan, mask)      gdma_ll_rx_enable_interrupt(dev, chan, mask, true)
-#define adc_dma_ll_rx_disable_intr(dev, chan, mask)     gdma_ll_rx_enable_interrupt(dev, chan, mask, false)
-#define adc_dma_ll_rx_reset_channel(dev, chan)          gdma_ll_rx_reset_channel(dev, chan)
-#define adc_dma_ll_rx_stop(dev, chan)                   gdma_ll_rx_stop(dev, chan)
-#define adc_dma_ll_rx_start(dev, chan, addr) do { \
-            gdma_ll_rx_set_desc_addr(dev, chan, (uint32_t)addr); \
-            gdma_ll_rx_start(dev, chan); \
-        } while (0)
-#define adc_ll_digi_dma_set_eof_num(dev, num)           adc_ll_digi_dma_set_eof_num(num)
-#define adc_ll_digi_reset(dev)                          adc_ll_digi_reset()
-#define adc_ll_digi_trigger_enable(dev)                 adc_ll_digi_trigger_enable()
-#define adc_ll_digi_trigger_disable(dev)                adc_ll_digi_trigger_disable()
-
-//ADC utilises SPI3 DMA on ESP32S2
-#elif CONFIG_IDF_TARGET_ESP32S2
-#define adc_dma_ll_rx_get_intr(dev, mask)               spi_ll_get_intr(dev, mask)
-#define adc_dma_ll_rx_clear_intr(dev, chan, mask)       spi_ll_clear_intr(dev, mask)
-#define adc_dma_ll_rx_enable_intr(dev, chan, mask)      spi_ll_enable_intr(dev, mask)
-#define adc_dma_ll_rx_disable_intr(dev, chan, mask)     spi_ll_disable_intr(dev, mask)
-#define adc_dma_ll_rx_reset_channel(dev, chan)          spi_dma_ll_rx_reset(dev, chan)
-#define adc_dma_ll_rx_stop(dev, chan)                   spi_dma_ll_rx_stop(dev, chan)
-#define adc_dma_ll_rx_start(dev, chan, addr)            spi_dma_ll_rx_start(dev, chan, addr)
-#define adc_dma_ll_get_in_suc_eof_desc_addr(dev, chan)  spi_dma_ll_get_in_suc_eof_desc_addr(dev, chan)
-#define adc_ll_digi_dma_set_eof_num(dev, num)           adc_ll_digi_dma_set_eof_num(num)
-#define adc_ll_digi_reset(dev)                          adc_ll_digi_reset()
-#define adc_ll_digi_trigger_enable(dev)                 adc_ll_digi_trigger_enable()
-#define adc_ll_digi_trigger_disable(dev)                adc_ll_digi_trigger_disable()
-
-//ADC utilises I2S0 DMA on ESP32
-#else //CONFIG_IDF_TARGET_ESP32
-#define adc_dma_ll_rx_get_intr(dev, mask)               ({i2s_ll_get_intr_status(dev) & mask;})
-#define adc_dma_ll_rx_clear_intr(dev, chan, mask)       i2s_ll_clear_intr_status(dev, mask)
-#define adc_dma_ll_rx_enable_intr(dev, chan, mask)      do {((i2s_dev_t *)(dev))->int_ena.val |= mask;} while (0)
-#define adc_dma_ll_rx_disable_intr(dev, chan, mask)     do {((i2s_dev_t *)(dev))->int_ena.val &= ~mask;} while (0)
-#define adc_dma_ll_rx_reset_channel(dev, chan)          i2s_ll_rx_reset_dma(dev)
-#define adc_dma_ll_rx_stop(dev, chan)                   i2s_ll_rx_stop_link(dev)
-#define adc_dma_ll_rx_start(dev, chan, address) do { \
-            ((i2s_dev_t *)(dev))->in_link.addr = (uint32_t)(address); \
-            i2s_ll_enable_dma(dev, 1); \
-            ((i2s_dev_t *)(dev))->in_link.start = 1; \
-        } while (0)
-#define adc_dma_ll_get_in_suc_eof_desc_addr(dev, chan)  ({uint32_t addr; i2s_ll_rx_get_eof_des_addr(dev, &addr); addr;})
-#define adc_ll_digi_dma_set_eof_num(dev, num)            do {((i2s_dev_t *)(dev))->rx_eof_num = num;} while (0)
-#define adc_ll_digi_reset(dev) do { \
-            i2s_ll_rx_reset(dev); \
-            i2s_ll_rx_reset_fifo(dev); \
-        } while (0)
-#define adc_ll_digi_trigger_enable(dev)                 i2s_ll_rx_start(dev)
-#define adc_ll_digi_trigger_disable(dev)                i2s_ll_rx_stop(dev)
-#define adc_ll_digi_dma_enable()                        adc_ll_digi_set_data_source(1)  //Will this influence I2S0
-#define adc_ll_digi_dma_disable()                       adc_ll_digi_set_data_source(0)
 
 //ESP32 ADC uses the DMA through I2S. The I2S needs to be configured.
 #define I2S_BASE_CLK                                    (160 * 1000 * 1000)
@@ -88,17 +24,25 @@
 #define ADC_LL_CLKM_DIV_B_DEFAULT                       0
 #define ADC_LL_CLKM_DIV_A_DEFAULT                       1
 
+i2s_dev_t *adc_hal_i2s_dev = I2S_LL_GET_HW(ADC_HAL_DMA_I2S_HOST);
+
+#define adc_ll_digi_dma_set_eof_num(num)                i2s_ll_rx_set_eof_num(adc_hal_i2s_dev, (num) * 4)
+#define adc_ll_digi_reset() do { \
+            i2s_ll_rx_reset(adc_hal_i2s_dev); \
+            i2s_ll_rx_reset_fifo(adc_hal_i2s_dev); \
+        } while (0)
+#define adc_ll_digi_trigger_enable()                    i2s_ll_rx_start(adc_hal_i2s_dev)
+#define adc_ll_digi_trigger_disable()                   i2s_ll_rx_stop(adc_hal_i2s_dev)
+#define adc_ll_digi_dma_enable()                        adc_ll_digi_set_data_source(1)  //Will this influence I2S0
+#define adc_ll_digi_dma_disable()                       adc_ll_digi_set_data_source(0)
+
 #endif
-
-
 
 void adc_hal_dma_ctx_config(adc_hal_dma_ctx_t *hal, const adc_hal_dma_config_t *config)
 {
     hal->desc_dummy_head.next = hal->rx_desc;
-    hal->dev = config->dev;
     hal->eof_desc_num = config->eof_desc_num;
     hal->eof_step = config->eof_step;
-    hal->dma_chan = config->dma_chan;
     hal->eof_num = config->eof_num;
 }
 
@@ -113,26 +57,28 @@ void adc_hal_digi_init(adc_hal_dma_ctx_t *hal)
     adc_ll_digi_output_invert(ADC_UNIT_2, ADC_LL_DIGI_DATA_INVERT_DEFAULT(ADC_UNIT_2));
     adc_ll_digi_set_clk_div(ADC_LL_DIGI_SAR_CLK_DIV_DEFAULT);
 
-    adc_dma_ll_rx_clear_intr(hal->dev, hal->dma_chan, ADC_HAL_DMA_INTR_MASK);
-    adc_dma_ll_rx_enable_intr(hal->dev, hal->dma_chan, ADC_HAL_DMA_INTR_MASK);
-    adc_ll_digi_dma_set_eof_num(hal->dev, hal->eof_num);
+    adc_ll_digi_dma_set_eof_num(hal->eof_num);
 #if CONFIG_IDF_TARGET_ESP32
-    i2s_ll_rx_set_sample_bit(hal->dev, SAMPLE_BITS, SAMPLE_BITS);
-    i2s_ll_rx_enable_mono_mode(hal->dev, 1);
-    i2s_ll_rx_force_enable_fifo_mod(hal->dev, 1);
-    i2s_ll_enable_builtin_adc(hal->dev, 1);
+    i2s_ll_rx_set_sample_bit(adc_hal_i2s_dev, SAMPLE_BITS, SAMPLE_BITS);
+    i2s_ll_rx_enable_mono_mode(adc_hal_i2s_dev, 1);
+    i2s_ll_rx_force_enable_fifo_mod(adc_hal_i2s_dev, 1);
+    i2s_ll_rx_enable_right_first(adc_hal_i2s_dev, false);
+    i2s_ll_rx_enable_msb_shift(adc_hal_i2s_dev, false);
+    i2s_ll_rx_set_ws_width(adc_hal_i2s_dev, 16);
+    i2s_ll_rx_select_std_slot(adc_hal_i2s_dev, I2S_STD_SLOT_LEFT, false);
+    i2s_ll_enable_builtin_adc_dac(adc_hal_i2s_dev, 1);
 #endif
 
     adc_oneshot_ll_disable_all_unit();
 }
 
-void adc_hal_digi_deinit(adc_hal_dma_ctx_t *hal)
+void adc_hal_digi_deinit()
 {
-    adc_ll_digi_trigger_disable(hal->dev);
+    adc_ll_digi_trigger_disable();
     adc_ll_digi_dma_disable();
     adc_ll_digi_clear_pattern_table(ADC_UNIT_1);
     adc_ll_digi_clear_pattern_table(ADC_UNIT_2);
-    adc_ll_digi_reset(hal->dev);
+    adc_ll_digi_reset();
     adc_ll_digi_controller_clk_disable();
 }
 
@@ -176,14 +122,14 @@ static void adc_hal_digi_sample_freq_config(adc_hal_dma_ctx_t *hal, adc_continuo
     adc_ll_digi_controller_clk_div(ADC_LL_CLKM_DIV_NUM_DEFAULT, ADC_LL_CLKM_DIV_B_DEFAULT, ADC_LL_CLKM_DIV_A_DEFAULT);
     adc_ll_digi_clk_sel(clk_src);
 #else
-    i2s_ll_rx_clk_set_src(hal->dev, I2S_CLK_SRC_DEFAULT);    /*!< Clock from PLL_D2_CLK(160M)*/
+    i2s_ll_rx_clk_set_src(adc_hal_i2s_dev, I2S_CLK_SRC_DEFAULT);    /*!< Clock from PLL_D2_CLK(160M)*/
     uint32_t bclk_div = 16;
     uint32_t bclk = sample_freq_hz * 2;
     uint32_t mclk = bclk * bclk_div;
     hal_utils_clk_div_t mclk_div = {};
     i2s_hal_calc_mclk_precise_division(I2S_BASE_CLK, mclk, &mclk_div);
-    i2s_ll_rx_set_mclk(hal->dev, &mclk_div);
-    i2s_ll_rx_set_bck_div_num(hal->dev, bclk_div);
+    i2s_ll_rx_set_mclk(adc_hal_i2s_dev, &mclk_div);
+    i2s_ll_rx_set_bck_div_num(adc_hal_i2s_dev, bclk_div);
 #endif
 }
 
@@ -230,13 +176,20 @@ void adc_hal_digi_controller_config(adc_hal_dma_ctx_t *hal, const adc_hal_digi_c
     adc_hal_digi_sample_freq_config(hal, cfg->clk_src, cfg->clk_src_freq_hz, cfg->sample_freq_hz);
 }
 
-static void adc_hal_digi_dma_link_descriptors(dma_descriptor_t *desc, uint8_t *data_buf, uint32_t per_eof_size, uint32_t eof_step, uint32_t eof_num)
+
+void adc_hal_digi_dma_link(adc_hal_dma_ctx_t *hal, uint8_t *data_buf)
 {
+    dma_descriptor_t *desc = hal->rx_desc;
+    uint32_t per_eof_size = hal->eof_num * SOC_ADC_DIGI_DATA_BYTES_PER_CONV;
+    uint32_t eof_step = hal->eof_step;
+    uint32_t eof_num = hal->eof_desc_num;
+
     HAL_ASSERT(((uint32_t)data_buf % 4) == 0);
     HAL_ASSERT((per_eof_size % 4) == 0);
     uint32_t n = 0;
     dma_descriptor_t *desc_head = desc;
 
+    hal->cur_desc_ptr = &hal->desc_dummy_head;
     while (eof_num--) {
         uint32_t eof_size = per_eof_size;
 
@@ -261,40 +214,6 @@ static void adc_hal_digi_dma_link_descriptors(dma_descriptor_t *desc, uint8_t *d
     }
     desc[n-1].next = desc_head;
 }
-
-void adc_hal_digi_start(adc_hal_dma_ctx_t *hal, uint8_t *data_buf)
-{
-    //stop peripheral and DMA
-    adc_hal_digi_stop(hal);
-
-    //reset DMA
-    adc_dma_ll_rx_reset_channel(hal->dev, hal->dma_chan);
-    //reset peripheral
-    adc_ll_digi_reset(hal->dev);
-
-    //reset the current descriptor address
-    hal->cur_desc_ptr = &hal->desc_dummy_head;
-    adc_hal_digi_dma_link_descriptors(hal->rx_desc, data_buf, hal->eof_num * SOC_ADC_DIGI_DATA_BYTES_PER_CONV, hal->eof_step, hal->eof_desc_num);
-
-    //start DMA
-    adc_dma_ll_rx_start(hal->dev, hal->dma_chan, (lldesc_t *)hal->rx_desc);
-    //connect DMA and peripheral
-    adc_ll_digi_dma_enable();
-    //start ADC
-    adc_ll_digi_trigger_enable(hal->dev);
-}
-
-#if !SOC_GDMA_SUPPORTED
-intptr_t adc_hal_get_desc_addr(adc_hal_dma_ctx_t *hal)
-{
-    return adc_dma_ll_get_in_suc_eof_desc_addr(hal->dev, hal->dma_chan);
-}
-
-bool adc_hal_check_event(adc_hal_dma_ctx_t *hal, uint32_t mask)
-{
-    return adc_dma_ll_rx_get_intr(hal->dev, mask);
-}
-#endif  //#if !SOC_GDMA_SUPPORTED
 
 adc_hal_dma_desc_status_t adc_hal_get_reading_result(adc_hal_dma_ctx_t *hal, const intptr_t eof_desc_addr, uint8_t **buffer, uint32_t *len)
 {
@@ -339,22 +258,32 @@ valid:
     return ADC_HAL_DMA_DESC_VALID;
 }
 
-void adc_hal_digi_clr_intr(adc_hal_dma_ctx_t *hal, uint32_t mask)
+void adc_hal_digi_enable(bool enable)
 {
-    adc_dma_ll_rx_clear_intr(hal->dev, hal->dma_chan, mask);
+    if (enable) {
+        adc_ll_digi_trigger_enable();
+    } else {
+        adc_ll_digi_trigger_disable();
+    }
 }
 
-void adc_hal_digi_dis_intr(adc_hal_dma_ctx_t *hal, uint32_t mask)
+void adc_hal_digi_connect(bool enable)
 {
-    adc_dma_ll_rx_disable_intr(hal->dev, hal->dma_chan, mask);
+    if (enable) {
+        adc_ll_digi_dma_enable();
+    } else {
+        adc_ll_digi_dma_disable();
+    }
 }
 
-void adc_hal_digi_stop(adc_hal_dma_ctx_t *hal)
+void adc_hal_digi_reset(void)
 {
-    //stop ADC
-    adc_ll_digi_trigger_disable(hal->dev);
-    //stop DMA
-    adc_dma_ll_rx_stop(hal->dev, hal->dma_chan);
-    //disconnect DMA and peripheral
-    adc_ll_digi_dma_disable();
+    adc_ll_digi_reset();
 }
+
+#if ADC_LL_WORKAROUND_CLEAR_EOF_COUNTER
+void adc_hal_digi_clr_eof(void)
+{
+    adc_ll_digi_dma_clr_eof();
+}
+#endif

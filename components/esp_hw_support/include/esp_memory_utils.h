@@ -39,7 +39,7 @@ inline static bool esp_dram_match_iram(void) {
  */
 __attribute__((always_inline))
 inline static bool esp_ptr_in_iram(const void *p) {
-#if CONFIG_IDF_TARGET_ESP32 && CONFIG_FREERTOS_UNICORE
+#if CONFIG_IDF_TARGET_ESP32 && CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
     return ((intptr_t)p >= SOC_CACHE_APP_LOW && (intptr_t)p < SOC_IRAM_HIGH);
 #else
     return ((intptr_t)p >= SOC_IRAM_LOW && (intptr_t)p < SOC_IRAM_HIGH);
@@ -230,7 +230,7 @@ inline static bool esp_ptr_executable(const void *p)
     return (ip >= SOC_IROM_LOW && ip < SOC_IROM_HIGH)
         || (ip >= SOC_IRAM_LOW && ip < SOC_IRAM_HIGH)
         || (ip >= SOC_IROM_MASK_LOW && ip < SOC_IROM_MASK_HIGH)
-#if defined(SOC_CACHE_APP_LOW) && defined(CONFIG_FREERTOS_UNICORE)
+#if defined(SOC_CACHE_APP_LOW) && defined(CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE)
         || (ip >= SOC_CACHE_APP_LOW && ip < SOC_CACHE_APP_HIGH)
 #endif
 #if SOC_RTC_FAST_MEM_SUPPORTED

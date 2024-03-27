@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -104,10 +104,10 @@ typedef union {
  */
 typedef union {
     struct {
-        /** rnd_data : RO; bitpos: [31:0]; default: 0;
+        /** rng_data : RO; bitpos: [31:0]; default: 0;
          *  need_des
          */
-        uint32_t rnd_data:32;
+        uint32_t rng_data:32;
     };
     uint32_t val;
 } lpperi_rng_data_reg_t;

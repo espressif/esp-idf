@@ -93,7 +93,7 @@ static inline uint32_t periph_ll_get_rst_en_mask(periph_module_t periph, bool en
 
     switch (periph) {
         case PERIPH_SARADC_MODULE:
-            return PCR_SARADC_RST_EN;
+            return PCR_SARADC_REG_RST_EN;
         case PERIPH_RMT_MODULE:
             return PCR_RMT_RST_EN;
         case PERIPH_PCNT_MODULE:
@@ -328,19 +328,6 @@ static inline bool IRAM_ATTR periph_ll_periph_enabled(periph_module_t periph)
 {
     return REG_GET_BIT(periph_ll_get_rst_en_reg(periph), periph_ll_get_rst_en_mask(periph, false)) == 0 &&
            REG_GET_BIT(periph_ll_get_clk_en_reg(periph), periph_ll_get_clk_en_mask(periph)) != 0;
-}
-
-FORCE_INLINE_ATTR bool periph_ll_uart_enabled(uint32_t uart_num)
-{
-    HAL_ASSERT(uart_num < SOC_UART_HP_NUM);
-    uint32_t uart_clk_config_reg = ((uart_num == 0) ? PCR_UART0_CONF_REG :
-                                    (uart_num == 1) ? PCR_UART1_CONF_REG : 0);
-    uint32_t uart_rst_bit = ((uart_num == 0) ? PCR_UART0_RST_EN :
-                            (uart_num == 1) ? PCR_UART1_RST_EN : 0);
-    uint32_t uart_en_bit  = ((uart_num == 0) ? PCR_UART0_CLK_EN :
-                            (uart_num == 1) ? PCR_UART1_CLK_EN : 0);
-    return REG_GET_BIT(uart_clk_config_reg, uart_rst_bit) == 0 &&
-        REG_GET_BIT(uart_clk_config_reg, uart_en_bit) != 0;
 }
 
 #ifdef __cplusplus

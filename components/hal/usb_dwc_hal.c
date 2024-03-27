@@ -1,31 +1,37 @@
 /*
- * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <stddef.h>
 #include <stdint.h>
-#include <string.h>
+#include <string.h> // For memset()
+#include <stdlib.h> // For abort()
 #include "sdkconfig.h"
 #include "soc/chip_revision.h"
-#include "hal/efuse_hal.h"
+#include "soc/usb_dwc_cfg.h"
 #include "hal/usb_dwc_hal.h"
 #include "hal/usb_dwc_ll.h"
+#include "hal/efuse_hal.h"
 #include "hal/assert.h"
 
 // ------------------------------------------------ Macros and Types ---------------------------------------------------
+
+// TODO: Remove target specific section after support for multiple USB peripherals is implemented
+#include "sdkconfig.h"
+#if (CONFIG_IDF_TARGET_ESP32P4)
+#define USB_BASE USB_DWC_HS
+#else
+#define USB_BASE USB_DWC
+#endif
 
 // ---------------------- Constants ------------------------
 
 #define BENDPOINTADDRESS_NUM_MSK     0x0F   //Endpoint number mask of the bEndpointAddress field of an endpoint descriptor
 #define BENDPOINTADDRESS_DIR_MSK     0x80   //Endpoint direction mask of the bEndpointAddress field of an endpoint descriptor
 
-#define CORE_REG_GSNPSID    0x4F54400A
-#define CORE_REG_GHWCFG1    0x00000000
-#define CORE_REG_GHWCFG2    0x224DD930
-#define CORE_REG_GHWCFG3    0x00C804B5
-#define CORE_REG_GHWCFG4    0xD3F0A030
+#define CORE_REG_GSNPSID    0x4F54400A      //Release number of USB_DWC used in Espressif's SoCs
 
 // -------------------- Configurable -----------------------
 
@@ -112,6 +118,10 @@ static void set_defaults(usb_dwc_hal_context_t *hal)
     //GUSBCFG register
     usb_dwc_ll_gusbcfg_dis_hnp_cap(hal->dev);       //Disable HNP
     usb_dwc_ll_gusbcfg_dis_srp_cap(hal->dev);       //Disable SRP
+#if (OTG_HSPHY_INTERFACE != 0)
+    usb_dwc_ll_gusbcfg_set_timeout_cal(hal->dev, 5); // 5 PHY clocks for our HS PHY
+    usb_dwc_ll_gusbcfg_set_utmi_phy(hal->dev);
+#endif // (OTG_HSPHY_INTERFACE != 0)
     //Enable interruts
     usb_dwc_ll_gintmsk_dis_intrs(hal->dev, 0xFFFFFFFF);     //Mask all interrupts first
     usb_dwc_ll_gintmsk_en_intrs(hal->dev, CORE_INTRS_EN_MSK);   //Unmask global interrupts
@@ -124,7 +134,7 @@ static void set_defaults(usb_dwc_hal_context_t *hal)
 void usb_dwc_hal_init(usb_dwc_hal_context_t *hal)
 {
     //Check if a peripheral is alive by reading the core ID registers
-    usb_dwc_dev_t *dev = &USB_DWC;
+    usb_dwc_dev_t *dev = &USB_BASE;
     uint32_t core_id = usb_dwc_ll_gsnpsid_get_id(dev);
     HAL_ASSERT(core_id == CORE_REG_GSNPSID);
     (void) core_id;     //Suppress unused variable warning if asserts are disabled
@@ -159,27 +169,81 @@ void usb_dwc_hal_core_soft_reset(usb_dwc_hal_context_t *hal)
     hal->flags.val = 0;
     hal->channels.num_allocd = 0;
     hal->channels.chan_pend_intrs_msk = 0;
-    memset(hal->channels.hdls, 0, sizeof(usb_dwc_hal_chan_t *) * USB_DWC_HAL_NUM_CHAN);
+    memset(hal->channels.hdls, 0, sizeof(usb_dwc_hal_chan_t *) * OTG_NUM_HOST_CHAN);
 }
 
-void usb_dwc_hal_set_fifo_size(usb_dwc_hal_context_t *hal, const usb_dwc_hal_fifo_config_t *fifo_config)
+void usb_dwc_hal_set_fifo_bias(usb_dwc_hal_context_t *hal, const usb_hal_fifo_bias_t fifo_bias)
 {
-    HAL_ASSERT((fifo_config->rx_fifo_lines + fifo_config->nptx_fifo_lines + fifo_config->ptx_fifo_lines) <= USB_DWC_HAL_FIFO_TOTAL_USABLE_LINES);
+    /*
+    * EPINFO_CTL is located at the end of FIFO, its size is fixed in HW.
+    * The reserved size is always the worst-case, which is device mode that requires 4 locations per EP direction (including EP0).
+    * Here we just read the FIFO size from HW register, to avoid any ambivalence
+    */
+    uint32_t ghwcfg1, ghwcfg2, ghwcfg3, ghwcfg4;
+    usb_dwc_ll_ghwcfg_get_hw_config(hal->dev, &ghwcfg1, &ghwcfg2, &ghwcfg3, &ghwcfg4);
+    const uint16_t fifo_size_lines = ((usb_dwc_ghwcfg3_reg_t)ghwcfg3).dfifodepth;
+
+    /*
+    * Recommended FIFO sizes (see 2.1.2.4 for programming guide)
+    *
+    * RXFIFO:   ((LPS/4) * 2) + 2
+    * NPTXFIFO: (LPS/4) * 2
+    * PTXFIFO:  (LPS/4) * 2
+    *
+    * Recommended sizes fit 2 packets of each type. For S2 and S3 we can't fit even one MPS ISOC packet (1023 FS and 1024 HS).
+    * So the calculations below are compromises between the available FIFO size and optimal performance.
+    */
+    usb_dwc_hal_fifo_config_t fifo_config;
+    switch (fifo_bias) {
+        // Define minimum viable (fits at least 1 MPS) FIFO sizes for non-biased FIFO types
+        // Allocate the remaining size to the biased FIFO type
+        case USB_HAL_FIFO_BIAS_DEFAULT:
+            fifo_config.nptx_fifo_lines = OTG_DFIFO_DEPTH / 4;
+            fifo_config.ptx_fifo_lines  = OTG_DFIFO_DEPTH / 8;
+            fifo_config.rx_fifo_lines   = fifo_size_lines - fifo_config.ptx_fifo_lines - fifo_config.nptx_fifo_lines;
+            break;
+        case USB_HAL_FIFO_BIAS_RX:
+            fifo_config.nptx_fifo_lines = OTG_DFIFO_DEPTH / 16;
+            fifo_config.ptx_fifo_lines  = OTG_DFIFO_DEPTH / 8;
+            fifo_config.rx_fifo_lines   = fifo_size_lines - fifo_config.ptx_fifo_lines - fifo_config.nptx_fifo_lines;
+            break;
+        case USB_HAL_FIFO_BIAS_PTX:
+            fifo_config.rx_fifo_lines   = OTG_DFIFO_DEPTH / 8 + 2; // 2 extra lines are allocated for status information. See USB-OTG Programming Guide, chapter 2.1.2.1
+            fifo_config.nptx_fifo_lines = OTG_DFIFO_DEPTH / 16;
+            fifo_config.ptx_fifo_lines  = fifo_size_lines - fifo_config.nptx_fifo_lines - fifo_config.rx_fifo_lines;
+            break;
+        default:
+            abort();
+    }
+
+    HAL_ASSERT((fifo_config.rx_fifo_lines + fifo_config.nptx_fifo_lines + fifo_config.ptx_fifo_lines) <= fifo_size_lines);
     //Check that none of the channels are active
-    for (int i = 0; i < USB_DWC_HAL_NUM_CHAN; i++) {
+    for (int i = 0; i < OTG_NUM_HOST_CHAN; i++) {
         if (hal->channels.hdls[i] != NULL) {
             HAL_ASSERT(!hal->channels.hdls[i]->flags.active);
         }
     }
     //Set the new FIFO lengths
-    usb_dwc_ll_grxfsiz_set_fifo_size(hal->dev, fifo_config->rx_fifo_lines);
-    usb_dwc_ll_gnptxfsiz_set_fifo_size(hal->dev, fifo_config->rx_fifo_lines, fifo_config->nptx_fifo_lines);
-    usb_dwc_ll_hptxfsiz_set_ptx_fifo_size(hal->dev, fifo_config->rx_fifo_lines + fifo_config->nptx_fifo_lines, fifo_config->ptx_fifo_lines);
+    usb_dwc_ll_grxfsiz_set_fifo_size(hal->dev, fifo_config.rx_fifo_lines);
+    usb_dwc_ll_gnptxfsiz_set_fifo_size(hal->dev, fifo_config.rx_fifo_lines, fifo_config.nptx_fifo_lines);
+    usb_dwc_ll_hptxfsiz_set_ptx_fifo_size(hal->dev, fifo_config.rx_fifo_lines + fifo_config.nptx_fifo_lines, fifo_config.ptx_fifo_lines);
     //Flush the FIFOs
     usb_dwc_ll_grstctl_flush_nptx_fifo(hal->dev);
     usb_dwc_ll_grstctl_flush_ptx_fifo(hal->dev);
     usb_dwc_ll_grstctl_flush_rx_fifo(hal->dev);
+    hal->fifo_config = fifo_config; // Implicit struct copy
     hal->flags.fifo_sizes_set = 1;
+}
+
+void usb_dwc_hal_get_mps_limits(usb_dwc_hal_context_t *hal, usb_hal_fifo_mps_limits_t *mps_limits)
+{
+    HAL_ASSERT(hal && mps_limits);
+    HAL_ASSERT(hal->flags.fifo_sizes_set);
+
+    const usb_dwc_hal_fifo_config_t *fifo_config = &(hal->fifo_config);
+    mps_limits->in_mps = (fifo_config->rx_fifo_lines - 2) * 4; // Two lines are reserved for status quadlets internally by USB_DWC
+    mps_limits->non_periodic_out_mps = fifo_config->nptx_fifo_lines * 4;
+    mps_limits->periodic_out_mps = fifo_config->ptx_fifo_lines * 4;
 }
 
 // ---------------------------------------------------- Host Port ------------------------------------------------------
@@ -193,7 +257,7 @@ static inline void debounce_lock_enable(usb_dwc_hal_context_t *hal)
 
 void usb_dwc_hal_port_enable(usb_dwc_hal_context_t *hal)
 {
-    usb_priv_speed_t speed = usb_dwc_ll_hprt_get_speed(hal->dev);
+    usb_dwc_speed_t speed = usb_dwc_ll_hprt_get_speed(hal->dev);
     //Host Configuration
     usb_dwc_ll_hcfg_set_defaults(hal->dev, speed);
     //Configure HFIR
@@ -208,11 +272,11 @@ bool usb_dwc_hal_chan_alloc(usb_dwc_hal_context_t *hal, usb_dwc_hal_chan_t *chan
 {
     HAL_ASSERT(hal->flags.fifo_sizes_set);  //FIFO sizes should be set befor attempting to allocate a channel
     //Attempt to allocate channel
-    if (hal->channels.num_allocd == USB_DWC_HAL_NUM_CHAN) {
+    if (hal->channels.num_allocd == OTG_NUM_HOST_CHAN) {
         return false;    //Out of free channels
     }
     int chan_idx = -1;
-    for (int i = 0; i < USB_DWC_HAL_NUM_CHAN; i++) {
+    for (int i = 0; i < OTG_NUM_HOST_CHAN; i++) {
         if (hal->channels.hdls[i] == NULL) {
             hal->channels.hdls[i] = chan_obj;
             chan_idx = i;
@@ -238,7 +302,7 @@ bool usb_dwc_hal_chan_alloc(usb_dwc_hal_context_t *hal, usb_dwc_hal_chan_t *chan
 
 void usb_dwc_hal_chan_free(usb_dwc_hal_context_t *hal, usb_dwc_hal_chan_t *chan_obj)
 {
-    if (chan_obj->type == USB_PRIV_XFER_TYPE_INTR || chan_obj->type == USB_PRIV_XFER_TYPE_ISOCHRONOUS) {
+    if (chan_obj->type == USB_DWC_XFER_TYPE_INTR || chan_obj->type == USB_DWC_XFER_TYPE_ISOCHRONOUS) {
         //Unschedule this channel
         for (int i = 0; i < hal->frame_list_len; i++) {
             hal->periodic_frame_list[i] &= ~(1 << chan_obj->flags.chan_idx);
@@ -271,13 +335,49 @@ void usb_dwc_hal_chan_set_ep_char(usb_dwc_hal_context_t *hal, usb_dwc_hal_chan_t
     //Save channel type
     chan_obj->type = ep_char->type;
     //If this is a periodic endpoint/channel, set its schedule in the frame list
-    if (ep_char->type == USB_PRIV_XFER_TYPE_ISOCHRONOUS || ep_char->type == USB_PRIV_XFER_TYPE_INTR) {
-        HAL_ASSERT((int)ep_char->periodic.interval <= (int)hal->frame_list_len);    //Interval cannot exceed the length of the frame list
-        //Find the effective offset in the frame list (in case the phase_offset_frames > interval)
-        int offset = ep_char->periodic.phase_offset_frames % ep_char->periodic.interval;
-        //Schedule the channel in the frame list
-        for (int i = offset; i < hal->frame_list_len; i+= ep_char->periodic.interval) {
-            hal->periodic_frame_list[i] |= 1 << chan_obj->flags.chan_idx;
+    if (ep_char->type == USB_DWC_XFER_TYPE_ISOCHRONOUS || ep_char->type == USB_DWC_XFER_TYPE_INTR) {
+        unsigned int interval_frame_list = ep_char->periodic.interval;
+        unsigned int offset_frame_list = ep_char->periodic.offset;
+        // Periodic Frame List works with USB frames. For HS endpoints we must divide interval[microframes] by 8 to get interval[frames]
+        if (ep_char->periodic.is_hs) {
+            interval_frame_list /= 8;
+            offset_frame_list /= 8;
+        }
+        // Interval in Periodic Frame List must be power of 2.
+        // This is not a HW restriction. It is just a lot easier to schedule channels like this.
+        if (interval_frame_list >= (int)hal->frame_list_len) { // Upper limits is Periodic Frame List length
+            interval_frame_list = (int)hal->frame_list_len;
+        } else if (interval_frame_list >= 32) {
+            interval_frame_list = 32;
+        } else if (interval_frame_list >= 16) {
+            interval_frame_list = 16;
+        } else if (interval_frame_list >= 8) {
+            interval_frame_list = 8;
+        } else if (interval_frame_list >= 4) {
+            interval_frame_list = 4;
+        } else if (interval_frame_list >= 2) {
+            interval_frame_list = 2;
+        } else {                                           // Lower limit is 1
+            interval_frame_list = 1;
+        }
+        // Schedule the channel in the frame list
+        for (int i = 0; i < hal->frame_list_len; i+= interval_frame_list) {
+            int index = (offset_frame_list + i) % hal->frame_list_len;
+            hal->periodic_frame_list[index] |= 1 << chan_obj->flags.chan_idx;
+        }
+        // For HS endpoints we must write to sched_info field of HCTSIZ register to schedule microframes
+        if (ep_char->periodic.is_hs) {
+            unsigned int tokens_per_frame;
+            if (ep_char->periodic.interval >= 8) {
+                tokens_per_frame = 1; // 1 token every 8 microframes
+            } else if (ep_char->periodic.interval >= 4) {
+                tokens_per_frame = 2; // 1 token every 4 microframes
+            } else if (ep_char->periodic.interval >= 2) {
+                tokens_per_frame = 4; // 1 token every 2 microframes
+            } else {
+                tokens_per_frame = 8; // 1 token every microframe
+            }
+            usb_dwc_ll_hctsiz_set_sched_info(chan_obj->regs, tokens_per_frame, ep_char->periodic.offset);
         }
     }
 }
@@ -427,7 +527,7 @@ usb_dwc_hal_chan_event_t usb_dwc_hal_chan_decode_intr(usb_dwc_hal_chan_t *chan_o
         */
         chan_event = USB_DWC_HAL_CHAN_EVENT_NONE;
     } else {
-        abort();    //Should never reach this point
+        abort();
     }
     return chan_event;
 }

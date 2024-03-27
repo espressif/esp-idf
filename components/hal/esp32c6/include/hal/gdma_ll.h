@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,10 +13,13 @@
 #include "soc/gdma_reg.h"
 #include "soc/soc_etm_source.h"
 #include "soc/pcr_struct.h"
+#include "soc/retention_periph_defs.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#define GDMA_CH_RETENTION_GET_MODULE_ID(group_id, pair_id) (SLEEP_RETENTION_MODULE_GDMA_CH0 << (SOC_GDMA_PAIRS_PER_GROUP_MAX * group_id) << pair_id)
 
 #define GDMA_LL_GET_HW(id) (((id) == 0) ? (&GDMA) : NULL)
 
@@ -125,9 +128,13 @@ static inline void gdma_ll_force_enable_reg_clock(gdma_dev_t *dev, bool enable)
  * @brief Get DMA RX channel interrupt status word
  */
 __attribute__((always_inline))
-static inline uint32_t gdma_ll_rx_get_interrupt_status(gdma_dev_t *dev, uint32_t channel)
+static inline uint32_t gdma_ll_rx_get_interrupt_status(gdma_dev_t *dev, uint32_t channel, bool raw)
 {
-    return dev->in_intr[channel].st.val;
+    if (raw) {
+        return dev->in_intr[channel].raw.val;
+    } else {
+        return dev->in_intr[channel].st.val;
+    }
 }
 
 /**
@@ -274,9 +281,9 @@ static inline void gdma_ll_rx_enable_auto_return(gdma_dev_t *dev, uint32_t chann
 }
 
 /**
- * @brief Check if DMA RX FSM is in IDLE state
+ * @brief Check if DMA RX descriptor FSM is in IDLE state
  */
-static inline bool gdma_ll_rx_is_fsm_idle(gdma_dev_t *dev, uint32_t channel)
+static inline bool gdma_ll_rx_is_desc_fsm_idle(gdma_dev_t *dev, uint32_t channel)
 {
     return dev->channel[channel].in.in_link.inlink_park;
 }
@@ -349,9 +356,13 @@ static inline void gdma_ll_rx_enable_etm_task(gdma_dev_t *dev, uint32_t channel,
  * @brief Get DMA TX channel interrupt status word
  */
 __attribute__((always_inline))
-static inline uint32_t gdma_ll_tx_get_interrupt_status(gdma_dev_t *dev, uint32_t channel)
+static inline uint32_t gdma_ll_tx_get_interrupt_status(gdma_dev_t *dev, uint32_t channel, bool raw)
 {
-    return dev->out_intr[channel].st.val;
+    if (raw) {
+        return dev->out_intr[channel].raw.val;
+    } else {
+        return dev->out_intr[channel].st.val;
+    }
 }
 
 /**
@@ -506,9 +517,9 @@ static inline void gdma_ll_tx_restart(gdma_dev_t *dev, uint32_t channel)
 }
 
 /**
- * @brief Check if DMA TX FSM is in IDLE state
+ * @brief Check if DMA TX descriptor FSM is in IDLE state
  */
-static inline bool gdma_ll_tx_is_fsm_idle(gdma_dev_t *dev, uint32_t channel)
+static inline bool gdma_ll_tx_is_desc_fsm_idle(gdma_dev_t *dev, uint32_t channel)
 {
     return dev->channel[channel].out.out_link.outlink_park;
 }

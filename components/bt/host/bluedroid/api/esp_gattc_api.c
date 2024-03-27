@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -27,6 +27,11 @@ esp_err_t esp_ble_gattc_register_callback(esp_gattc_cb_t callback)
 
     btc_profile_cb_set(BTC_PID_GATTC, callback);
     return ESP_OK;
+}
+
+esp_gattc_cb_t esp_ble_gattc_get_callback(void)
+{
+    return (esp_gattc_cb_t) btc_profile_cb_get(BTC_PID_GATTC);
 }
 
 esp_err_t esp_ble_gattc_app_register(uint16_t app_id)

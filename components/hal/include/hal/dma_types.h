@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,6 +7,7 @@
 #pragma once
 
 #include <stdint.h>
+#include <stddef.h>
 #include "esp_assert.h"
 
 #ifdef __cplusplus
@@ -56,6 +57,19 @@ ESP_STATIC_ASSERT(sizeof(dma_descriptor_align8_t) == 16, "dma_descriptor_align8_
 #define DMA_DESCRIPTOR_BUFFER_OWNER_DMA (1)   /*!< DMA buffer is allowed to be accessed by DMA engine */
 #define DMA_DESCRIPTOR_BUFFER_MAX_SIZE (4095) /*!< Maximum size of the buffer that can be attached to descriptor */
 #define DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED  (4095-3)  /*!< Maximum size of the buffer that can be attached to descriptor, and aligned to 4B */
+#define DMA_DESCRIPTOR_BUFFER_MAX_SIZE_16B_ALIGNED  (4095-15)  /*!< Maximum size of the buffer that can be attached to descriptor, and aligned to 16B */
+
+/**
+ * Get the number of DMA descriptors required for a given buffer size.
+ *
+ * @param data_size Size to check DMA descriptor number.
+ * @param max_desc_size Maximum length of each descriptor
+ * @return Number of DMA descriptors required.
+ */
+static inline size_t dma_desc_get_required_num(size_t data_size, size_t max_desc_size)
+{
+    return (data_size + max_desc_size - 1) / max_desc_size;
+}
 
 #ifdef __cplusplus
 }

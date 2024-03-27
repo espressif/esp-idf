@@ -1,3 +1,9 @@
+idf_build_get_property(target IDF_TARGET)
+
+if(${target} STREQUAL "linux")
+    return() # This component is not supported by the POSIX/Linux simulator
+endif()
+
 idf_component_register(PRIV_REQUIRES partition_table esptool_py)
 
 # Do not generate flash file when building bootloader or is in early expansion of the build

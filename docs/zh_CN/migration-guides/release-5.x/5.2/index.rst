@@ -6,6 +6,11 @@
 .. toctree::
     :maxdepth: 1
 
+    bluetooth-classic
+    gcc
+    :SOC_IEEE802154_SUPPORTED: ieee802154
     peripherals
     protocols
-    wifi
+    storage
+    system
+    :SOC_WIFI_SUPPORTED: wifi

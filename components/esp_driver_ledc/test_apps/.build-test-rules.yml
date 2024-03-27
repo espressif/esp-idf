@@ -1,0 +1,11 @@
+# Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
+
+components/esp_driver_ledc/test_apps/ledc:
+  disable:
+    - if: SOC_LEDC_SUPPORTED != 1
+  disable_test:
+    - if: IDF_TARGET == "esp32p4"
+      temporary: true
+      reason: test not pass, should be re-enable # TODO: IDF-8969
+  depends_components:
+    - esp_driver_ledc

@@ -7,7 +7,7 @@ Linux 环境下从源码编译 OpenOCD
 除了从 `Espressif 官方 <https://github.com/espressif/openocd-esp32/releases>`_ 直接下载 OpenOCD 可执行文件，你还可以选择从源码编译得到 OpenOCD。如果想要快速设置 OpenOCD 而不是自行编译，请备份好当前文件，前往 :ref:`jtag-debugging-setup-openocd` 章节查阅。
 
 
-.. code-block:: bash
+.. highlight:: bash
 
 下载 OpenOCD 源码
 =================

@@ -1,17 +1,16 @@
 /*
- * SPDX-FileCopyrightText: 2017-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 #include "bt_hidd.h"
 
 #if CONFIG_BT_HID_DEVICE_ENABLED
-#include "esp_bt.h"
 #include "esp_bt_defs.h"
 #include "esp_bt_main.h"
 #include "esp_hidd.h"
 #include "esp_hidd_api.h"
-#include "esp_hidd_private.h"
+#include "esp_private/esp_hidd_private.h"
 #include "esp_log.h"
 #include "osi/mutex.h"
 #include "string.h"
@@ -44,8 +43,7 @@ typedef struct {
     uint8_t                     devices_len;
 } esp_bt_hidd_dev_t;
 
-typedef struct
-{
+typedef struct {
     osi_mutex_t mutex;
     esp_bt_hidd_dev_t *dev;
     esp_hidd_app_param_t app_param;
@@ -314,7 +312,7 @@ static bool esp_bt_hidd_dev_connected(void *devp)
             ret = false;
             break;
         }
-    } while(0);
+    } while (0);
     if (ret) {
         ret = dev->connected;
     }
@@ -338,7 +336,7 @@ static esp_err_t esp_bt_hidd_dev_deinit(void *devp)
             ESP_LOGE(TAG, "Wrong HID device provided");
             ret = ESP_FAIL;
         }
-    } while(0);
+    } while (0);
     osi_mutex_unlock(&s_hidd_param.mutex);
 
     if (ret == ESP_OK) {
@@ -370,7 +368,7 @@ static esp_err_t esp_bt_hidd_dev_disconnect(void *devp)
             ESP_LOGW(TAG, "already disconnected");
             return ESP_OK;
         }
-    } while(0);
+    } while (0);
     osi_mutex_unlock(&s_hidd_param.mutex);
 
     if (ret == ESP_OK) {
@@ -424,7 +422,7 @@ static esp_err_t esp_bt_hidd_dev_input_set(void *devp, size_t index, size_t id, 
             ret = ESP_FAIL;
             break;
         }
-    } while(0);
+    } while (0);
     osi_mutex_unlock(&s_hidd_param.mutex);
 
     if (ret == ESP_OK) {
@@ -470,7 +468,7 @@ static esp_err_t esp_bt_hidd_dev_feature_set(void *devp, size_t index, size_t id
             ret = ESP_FAIL;
             break;
         }
-    } while(0);
+    } while (0);
     osi_mutex_unlock(&s_hidd_param.mutex);
 
     if (ret == ESP_OK) {

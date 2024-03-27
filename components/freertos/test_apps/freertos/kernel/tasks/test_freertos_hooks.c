@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,11 +18,11 @@ a definition for vApplicationTickHook(). Thus this test cannot be run.
 #include "unity.h"
 #include "test_utils.h"
 
-#ifndef CONFIG_FREERTOS_SMP
+#if !CONFIG_FREERTOS_SMP
 /*
 Test FreeRTOS idle hook. Only compiled in if FreeRTOS idle hooks are enabled.
 */
-#if ( configUSE_IDLE_HOOK == 1 )
+#if CONFIG_FREERTOS_USE_IDLE_HOOK
 
 static volatile unsigned idle_count;
 
@@ -38,12 +38,12 @@ TEST_CASE("FreeRTOS idle hook", "[freertos]")
     TEST_ASSERT_NOT_EQUAL(0, idle_count); // The legacy idle hook should be called at least once
 }
 
-#endif // configUSE_IDLE_HOOK
+#endif // CONFIG_FREERTOS_USE_IDLE_HOOK
 
 /*
 Test the FreeRTOS tick hook. Only compiled in if FreeRTOS tick hooks are enabled.
 */
-#if ( configUSE_TICK_HOOK == 1 )
+#if CONFIG_FREERTOS_USE_TICK_HOOK
 
 static volatile unsigned tick_count;
 
@@ -58,12 +58,12 @@ TEST_CASE("FreeRTOS tick hook", "[freertos]")
     const unsigned SLEEP_FOR = 20;
     tick_count = before;
     vTaskDelay(SLEEP_FOR);
-    TEST_ASSERT_UINT32_WITHIN_MESSAGE(3 * portNUM_PROCESSORS, before + SLEEP_FOR * portNUM_PROCESSORS, tick_count,
+    TEST_ASSERT_UINT32_WITHIN_MESSAGE(3 * CONFIG_FREERTOS_NUMBER_OF_CORES, before + SLEEP_FOR * CONFIG_FREERTOS_NUMBER_OF_CORES, tick_count,
                                       "The FreeRTOS tick hook should have been called approx 1 time per tick per CPU");
 }
 
-#endif // configUSE_TICK_HOOK
-#endif // CONFIG_FREERTOS_SMP
+#endif // CONFIG_FREERTOS_USE_TICK_HOOK
+#endif // !CONFIG_FREERTOS_SMP
 
 #if CONFIG_FREERTOS_TASK_PRE_DELETION_HOOK
 
@@ -81,7 +81,7 @@ void vTaskPreDeletionHook(void *pxTCB)
 
 TEST_CASE("static task cleanup hook is called based on config", "[freertos]")
 {
-    for(int i = 0; i < portNUM_PROCESSORS; i++) {
+    for (int i = 0; i < CONFIG_FREERTOS_NUMBER_OF_CORES; i++) {
         printf("Creating task CPU %d\n", i);
         TaskHandle_t new_task = NULL;
         deleted_tcb = NULL;

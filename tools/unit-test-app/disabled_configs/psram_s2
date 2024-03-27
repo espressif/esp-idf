@@ -1,4 +1,0 @@
-TEST_EXCLUDE_COMPONENTS=libsodium bt app_update driver spi_flash
-CONFIG_SPIRAM=y
-CONFIG_IDF_TARGET="esp32s2"
-CONFIG_SPIRAM_OCCUPY_NO_HOST=y

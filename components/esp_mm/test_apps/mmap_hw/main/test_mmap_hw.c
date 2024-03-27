@@ -56,7 +56,6 @@ typedef struct test_block_info_ {
 
 static LIST_HEAD(test_block_list_head_, test_block_info_) test_block_head;
 
-
 static void s_fill_random_data(uint8_t *buffer, size_t size, int random_seed)
 {
     srand(random_seed);
@@ -72,7 +71,7 @@ static bool s_test_mmap_data_by_random(uint8_t *mblock_ptr, size_t size, int ran
 
     for (int i = 0; i < size; i++) {
         uint8_t test_data = rand() % 0xff;
-        if(test_data != test_ptr[i]) {
+        if (test_data != test_ptr[i]) {
             printf("i: %d\n", i);
             printf("test_data: %d\n", test_data);
             printf("test_ptr[%d]: %d\n", i, test_ptr[i]);
@@ -102,12 +101,11 @@ TEST_CASE("test all readable vaddr can map to flash", "[mmu]")
     ESP_LOGV(TAG, "rand seed: %d, write flash addr: %p...", test_seed, (void *)part->address);
     TEST_ESP_OK(esp_flash_write(part->flash_chip, sector_buf, part->address, sizeof(sector_buf)));
 
-
     esp_err_t ret = ESP_FAIL;
     int count = 0;
     LIST_INIT(&test_block_head);
     while (1) {
-        test_block_info_t *block_info = heap_caps_calloc(1, sizeof(test_block_info_t), MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT);
+        test_block_info_t *block_info = heap_caps_calloc(1, sizeof(test_block_info_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
         TEST_ASSERT(block_info && "no mem");
 
         void *ptr = NULL;
@@ -144,7 +142,6 @@ TEST_CASE("test all readable vaddr can map to flash", "[mmu]")
     free(sector_buf);
 }
 
-
 TEST_CASE("test all executable vaddr can map to flash", "[mmu]")
 {
     //Get the partition used for SPI1 erase operation
@@ -157,7 +154,7 @@ TEST_CASE("test all executable vaddr can map to flash", "[mmu]")
     int count = 0;
     LIST_INIT(&test_block_head);
     while (1) {
-        test_block_info_t *block_info = heap_caps_calloc(1, sizeof(test_block_info_t), MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT);
+        test_block_info_t *block_info = heap_caps_calloc(1, sizeof(test_block_info_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
         TEST_ASSERT(block_info && "no mem");
 
         void *ptr = NULL;
@@ -173,8 +170,7 @@ TEST_CASE("test all executable vaddr can map to flash", "[mmu]")
                 TEST_ASSERT(paddr == part->address + i);
                 ESP_LOGV(TAG, "paddr: %p, on %s", (void *)paddr, (mem_target) == MMU_TARGET_FLASH0 ? "Flash" : "PSRAM");
             }
-        }
-         else if (ret == ESP_ERR_NOT_FOUND) {
+        } else if (ret == ESP_ERR_NOT_FOUND) {
             free(block_info);
             break;
         } else {

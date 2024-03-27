@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -119,7 +119,13 @@ typedef enum {
 #define TOUCH_PAD_LOW_VOLTAGE_THRESHOLD     (TOUCH_LVOLT_0V5)
 #define TOUCH_PAD_ATTEN_VOLTAGE_THRESHOLD   (TOUCH_HVOLT_ATTEN_0V5)
 #define TOUCH_PAD_IDLE_CH_CONNECT_DEFAULT   (TOUCH_PAD_CONN_GND)
-#define TOUCH_PAD_THRESHOLD_MAX             (SOC_TOUCH_PAD_THRESHOLD_MAX) /*!<If set touch threshold max value, The touch sensor can't be in touched status */
+#if SOC_TOUCH_SENSOR_VERSION == 1
+#define TOUCH_PAD_THRESHOLD_MAX             (0)         /*!< If set touch threshold max value, The touch sensor can't be in touched status */
+#elif SOC_TOUCH_SENSOR_VERSION == 2
+#define TOUCH_PAD_THRESHOLD_MAX             (0x1FFFFF)  /*!< If set touch threshold max value, The touch sensor can't be in touched status */
+#elif SOC_TOUCH_SENSOR_VERSION == 3
+#define TOUCH_PAD_THRESHOLD_MAX             (0xFFFF)    /*!< If set touch threshold max value, The touch sensor can't be in touched status */
+#endif
 
 #ifdef CONFIG_IDF_TARGET_ESP32
 
@@ -146,6 +152,7 @@ typedef enum {
                                                     Recommended typical value: Modify this value to make the measurement time around 1ms.
                                                     Range: 0 ~ 0xffff */
 
+// TODO: replace by ll macro
 typedef enum {
     TOUCH_PAD_INTR_MASK_DONE = BIT(0),      /*!<Measurement done for one of the enabled channels. */
     TOUCH_PAD_INTR_MASK_ACTIVE = BIT(1),    /*!<Active for one of the enabled channels. */
@@ -267,6 +274,21 @@ typedef enum {
     TOUCH_PAD_SMOOTH_IIR_8 = 3, /*!<Filter the raw data. The coefficient is 8. */
     TOUCH_PAD_SMOOTH_MAX,
 } touch_smooth_mode_t;
+
+#if CONFIG_IDF_TARGET_ESP32P4
+/**
+ * @brief Touch channel counting mode of the binarized touch output
+ *
+ */
+typedef enum {
+    TOUCH_PAD_OUT_AS_DATA,      /*!< Counting the output of touch channel as data.
+                                 *   The value will be smaller than actual value but more sensitive when the frequency of touch_out is close to the source clock
+                                 */
+    TOUCH_PAD_OUT_AS_CLOCK,     /*!< Counting the output of touch channel as clock.
+                                 *   The value is accurate but less sensitive when the frequency of touch_out is close to the source clock
+                                 */
+} touch_out_mode_t;
+#endif
 
 /** Touch sensor filter configuration */
 typedef struct touch_filter_config {

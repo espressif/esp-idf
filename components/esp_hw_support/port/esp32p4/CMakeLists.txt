@@ -1,3 +1,5 @@
+target_include_directories(${COMPONENT_LIB} PUBLIC .)
+
 set(srcs "rtc_clk_init.c"
          "rtc_clk.c"
          "pmu_param.c"
@@ -10,20 +12,13 @@ set(srcs "rtc_clk_init.c"
 if(NOT BOOTLOADER_BUILD)
     list(APPEND srcs "esp_crypto_lock.c")
 
-    if(CONFIG_ESP_SYSTEM_MEMPROT_FEATURE)
-        list(APPEND srcs "esp_memprot.c" "../esp_memprot_conv.c")
+    if(NOT CONFIG_APP_BUILD_TYPE_PURE_RAM_APP)
+        list(APPEND srcs "mspi_timing_config.c")
     endif()
 
 endif()
 
-list(REMOVE_ITEM srcs
-        "pmu_param.c" # TODO: IDF-7531
-        "pmu_sleep.c" # TODO: IDF-7531
-        "pmu_init.c"  # TODO: IDF-7531
-    )
-
 add_prefix(srcs "${CMAKE_CURRENT_LIST_DIR}/" "${srcs}")
 
 target_sources(${COMPONENT_LIB} PRIVATE "${srcs}")
-target_include_directories(${COMPONENT_LIB} PUBLIC . private_include)
-target_include_directories(${COMPONENT_LIB} PRIVATE ../hal)
+target_include_directories(${COMPONENT_LIB} PUBLIC . include private_include)

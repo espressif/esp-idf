@@ -1,12 +1,5 @@
+set(requires lightbulb_driver)
 
-set(COMPONENT_SRCS
-                    "light_driver.c"
-                    "iot_led.c"
-                    "led_strip_encoder.c")
-
-set(COMPONENT_ADD_INCLUDEDIRS ". include")
-
-# requirements can't depend on config
-set(COMPONENT_REQUIRES example_nvs driver)
-
-register_component()
+idf_component_register(SRC_DIRS
+                    INCLUDE_DIRS
+                    REQUIRES ${requires})

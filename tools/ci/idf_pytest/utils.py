@@ -6,10 +6,10 @@ import os
 import typing as t
 from xml.etree import ElementTree as ET
 
-from .constants import TARGET_MARKERS
 
-
-def format_case_id(target: t.Optional[str], config: t.Optional[str], case: str, is_qemu: bool = False) -> str:
+def format_case_id(
+    target: t.Optional[str], config: t.Optional[str], case: str, is_qemu: bool = False, params: t.Optional[dict] = None
+) -> str:
     parts = []
     if target:
         parts.append((str(target) + '_qemu') if is_qemu else str(target))
@@ -17,24 +17,10 @@ def format_case_id(target: t.Optional[str], config: t.Optional[str], case: str, 
         parts.append(str(config))
     parts.append(case)
 
+    if params:
+        parts.append(str(params))
+
     return '.'.join(parts)
-
-
-def get_target_marker_from_expr(markexpr: str) -> str:
-    candidates = set()
-    # we use `-m "esp32 and generic"` in our CI to filter the test cases
-    # this doesn't cover all use cases, but fit what we do in CI.
-    for marker in markexpr.split('and'):
-        marker = marker.strip()
-        if marker in TARGET_MARKERS:
-            candidates.add(marker)
-
-    if len(candidates) > 1:
-        raise ValueError(f'Specified more than one target markers: {candidates}. Please specify no more than one.')
-    elif len(candidates) == 1:
-        return candidates.pop()
-    else:
-        raise ValueError('Please specify one target marker via "--target [TARGET]" or via "-m [TARGET]"')
 
 
 def merge_junit_files(junit_files: t.List[str], target_path: str) -> None:
@@ -75,3 +61,7 @@ def merge_junit_files(junit_files: t.List[str], target_path: str) -> None:
 
     with open(target_path, 'wb') as fw:
         fw.write(ET.tostring(merged_testsuite))
+
+
+def comma_sep_str_to_list(s: str) -> t.List[str]:
+    return [s.strip() for s in s.split(',') if s.strip()]

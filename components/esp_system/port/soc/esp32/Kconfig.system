@@ -66,4 +66,4 @@ config ESP32_DISABLE_BASIC_ROM_CONSOLE
 config ESP32_ECO3_CACHE_LOCK_FIX
     bool
     default y
-    depends on !FREERTOS_UNICORE && SPIRAM
+    depends on !ESP_SYSTEM_SINGLE_CORE_MODE && SPIRAM

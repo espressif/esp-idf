@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -402,8 +402,24 @@ esp_err_t esp_spiffs_gc(const char* partition_label, size_t size_to_gc)
 esp_err_t esp_vfs_spiffs_register(const esp_vfs_spiffs_conf_t * conf)
 {
     assert(conf->base_path);
+
+    esp_err_t err = esp_spiffs_init(conf);
+    if (err != ESP_OK) {
+        return err;
+    }
+
+    int index;
+    if (esp_spiffs_by_label(conf->partition_label, &index) != ESP_OK) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    int vfs_flags = ESP_VFS_FLAG_CONTEXT_PTR;
+    if (_efs[index]->partition->readonly) {
+        vfs_flags |= ESP_VFS_FLAG_READONLY_FS;
+    }
+
     const esp_vfs_t vfs = {
-        .flags = ESP_VFS_FLAG_CONTEXT_PTR,
+        .flags = vfs_flags,
         .write_p = &vfs_spiffs_write,
         .lseek_p = &vfs_spiffs_lseek,
         .read_p = &vfs_spiffs_read,
@@ -432,16 +448,6 @@ esp_err_t esp_vfs_spiffs_register(const esp_vfs_spiffs_conf_t * conf)
 #endif // CONFIG_SPIFFS_USE_MTIME
 #endif // CONFIG_VFS_SUPPORT_DIR
     };
-
-    esp_err_t err = esp_spiffs_init(conf);
-    if (err != ESP_OK) {
-        return err;
-    }
-
-    int index;
-    if (esp_spiffs_by_label(conf->partition_label, &index) != ESP_OK) {
-        return ESP_ERR_INVALID_STATE;
-    }
 
     strlcat(_efs[index]->base_path, conf->base_path, ESP_VFS_PATH_MAX + 1);
     err = esp_vfs_register(conf->base_path, &vfs, _efs[index]);

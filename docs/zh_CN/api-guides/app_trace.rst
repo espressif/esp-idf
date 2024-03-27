@@ -221,41 +221,41 @@ Start 子命令的语法：
 
 .. highlight:: none
 
-1. 	将 2048 个字节的跟踪数据收集到 ``trace.log`` 文件中，该文件将保存在 ``openocd-esp32`` 目录中。
+1.  将 2048 个字节的跟踪数据收集到 ``trace.log`` 文件中，该文件将保存在 ``openocd-esp32`` 目录中。
 
-	::
+    ::
 
-		esp apptrace start file://trace.log 1 2048 5 0 0
+        esp apptrace start file://trace.log 1 2048 5 0 0
 
-    	跟踪数据会被检索并以非阻塞的模式保存到文件中，如果收集满 2048 字节的数据或者在 5 秒内都没有新的数据，那么该过程就会停止。
+        跟踪数据会被检索并以非阻塞的模式保存到文件中，如果收集满 2048 字节的数据或者在 5 秒内都没有新的数据，那么该过程就会停止。
 
-    	.. note::
+        .. note::
 
-        	在将数据提供给 OpenOCD 之前，会对其进行缓冲。如果看到 “Data timeout!” 的消息，则表示目标可能在超时之前没有向 OpenOCD 发送足够的数据以清空缓冲区。要解决这个问题，可以增加超时时间或者使用函数 ``esp_apptrace_flush()`` 以特定间隔刷新数据。
+            在将数据提供给 OpenOCD 之前，会对其进行缓冲。如果看到 “Data timeout!” 的消息，则表示目标可能在超时之前没有向 OpenOCD 发送足够的数据以清空缓冲区。要解决这个问题，可以增加超时时间或者使用函数 ``esp_apptrace_flush()`` 以特定间隔刷新数据。
 
-2. 	在非阻塞模式下无限地检索跟踪数据。
+2.  在非阻塞模式下无限地检索跟踪数据。
 
-	::
+    ::
 
-		esp apptrace start file://trace.log 1 -1 -1 0 0
+        esp apptrace start file://trace.log 1 -1 -1 0 0
 
-    	对收集数据的大小没有限制，也不设置超时时间。要停止此过程，可以在 OpenOCD 的 telnet 会话窗口中发送 ``esp apptrace stop`` 命令，或者在 OpenOCD 窗口中使用快捷键 Ctrl+C。
+        对收集数据的大小没有限制，也不设置超时时间。要停止此过程，可以在 OpenOCD 的 telnet 会话窗口中发送 ``esp apptrace stop`` 命令，或者在 OpenOCD 窗口中使用快捷键 Ctrl+C。
 
-3. 	检索跟踪数据并无限期保存。
+3.  检索跟踪数据并无限期保存。
 
-	::
+    ::
 
-		esp apptrace start file://trace.log 0 -1 -1 0 0
+        esp apptrace start file://trace.log 0 -1 -1 0 0
 
-    	在跟踪停止之前，OpenOCD 的 telnet 会话窗口将不可用。要停止跟踪，请在 OpenOCD 的窗口中使用快捷键 Ctrl+C。
+        在跟踪停止之前，OpenOCD 的 telnet 会话窗口将不可用。要停止跟踪，请在 OpenOCD 的窗口中使用快捷键 Ctrl+C。
 
-4. 	等待目标停止，然后恢复目标的操作并开始检索数据。当收集满 2048 字节的数据后就停止：
+4.  等待目标停止，然后恢复目标的操作并开始检索数据。当收集满 2048 字节的数据后就停止：
 
-	::
+    ::
 
-		esp apptrace start file://trace.log 0 2048 -1 1 0
+        esp apptrace start file://trace.log 0 2048 -1 1 0
 
-    	想要复位后立即开始跟踪，请使用 OpenOCD 的 ``reset halt`` 命令。
+        想要复位后立即开始跟踪，请使用 OpenOCD 的 ``reset halt`` 命令。
 
 
 .. _app_trace-logging-to-host:
@@ -398,21 +398,21 @@ Start 子命令语法：
 
 .. highlight:: none
 
-1.	将 SystemView 跟踪数据收集到文件 ``pro-cpu.SVDat`` 和 ``pro-cpu.SVDat`` 中。这些文件会被保存在 ``openocd-esp32`` 目录中。
+1. 将 SystemView 跟踪数据收集到文件 ``pro-cpu.SVDat`` 和 ``pro-cpu.SVDat`` 中。这些文件会被保存在 ``openocd-esp32`` 目录中。
 
-	::
+    ::
 
-		esp sysview start file://pro-cpu.SVDat file://app-cpu.SVDat
+        esp sysview start file://pro-cpu.SVDat file://app-cpu.SVDat
 
-	跟踪数据被检索并以非阻塞的方式保存。要停止此过程，需要在 OpenOCD 的 telnet 会话窗口输入 ``esp sysview stop`` 命令，也可以在 OpenOCD 窗口中按下快捷键 Ctrl+C。
+    跟踪数据被检索并以非阻塞的方式保存。要停止此过程，需要在 OpenOCD 的 telnet 会话窗口输入 ``esp sysview stop`` 命令，也可以在 OpenOCD 窗口中按下快捷键 Ctrl+C。
 
-2.	检索跟踪数据并无限保存。
+2. 检索跟踪数据并无限保存。
 
-	::
+    ::
 
-		esp32 sysview start file://pro-cpu.SVDat file://app-cpu.SVDat 0 -1 -1
+        esp32 sysview start file://pro-cpu.SVDat file://app-cpu.SVDat 0 -1 -1
 
-	OpenOCD 的 telnet 命令行在跟踪停止前会无法使用，要停止跟踪，请在 OpenOCD 窗口使用 Ctrl+C 快捷键。
+    OpenOCD 的 telnet 命令行在跟踪停止前会无法使用，要停止跟踪，请在 OpenOCD 窗口使用 Ctrl+C 快捷键。
 
 
 数据可视化
@@ -420,7 +420,7 @@ Start 子命令语法：
 
 收集到跟踪数据后，用户可以使用特殊的工具对结果进行可视化并分析程序行为。
 
-.. only:: not CONFIG_FREERTOS_UNICORE
+.. only:: SOC_HP_CPU_HAS_MULTIPLE_CORES
 
     遗憾的是，SystemView 不支持从多个核心进行跟踪。所以当使用 JTAG 追踪双核模式下的 {IDF_TARGET_NAME} 时会生成两个文件：一个用于 PRO CPU，另一个用于 APP CPU。用户可以将每个文件加载到工具中单独分析。使用 UART 进行追踪时，用户可以在 menuconfig Pro 或 App 中点击 ``Component config`` > ``Application Level Tracing`` > ``FreeRTOS SystemView Tracing`` 并选择要追踪的 CPU。
 
@@ -432,7 +432,7 @@ Start 子命令语法：
 
     ESP-IDF 使用自己的 SystemView FreeRTOS 事件 ID 映射，因此用户需要将 ``$SYSVIEW_INSTALL_DIR/Description/SYSVIEW_FreeRTOS.txt`` 替换成 ``$IDF_PATH/tools/esp_app_trace/SYSVIEW_FreeRTOS.txt``。在使用上述链接配置 SystemView 序列化程序时，也应该使用该特定文件的内容。
 
-.. only:: not CONFIG_FREERTOS_UNICORE
+.. only:: SOC_HP_CPU_HAS_MULTIPLE_CORES
 
     配置 Impulse 实现双核跟踪
     ~~~~~~~~~~~~~~~~~~~~~~~~~

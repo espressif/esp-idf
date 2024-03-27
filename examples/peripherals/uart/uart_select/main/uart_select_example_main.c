@@ -14,15 +14,14 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_log.h"
-#include "esp_vfs.h"
-#include "esp_vfs_dev.h"
+#include "driver/uart_vfs.h"
 #include "driver/uart.h"
 
 static const char* TAG = "uart_select_example";
 
 static void uart_select_task(void *arg)
 {
-    if (uart_driver_install(UART_NUM_0, 2*1024, 0, 0, NULL, 0) != ESP_OK) {
+    if (uart_driver_install(UART_NUM_0, 2 * 1024, 0, 0, NULL, 0) != ESP_OK) {
         ESP_LOGE(TAG, "Driver installation failed");
         vTaskDelete(NULL);
     }
@@ -48,7 +47,7 @@ static void uart_select_task(void *arg)
         }
 
         // We have a driver now installed so set up the read/write functions to use driver also.
-        esp_vfs_dev_uart_use_driver(0);
+        uart_vfs_dev_use_driver(0);
 
         while (1) {
             int s;
@@ -95,5 +94,5 @@ static void uart_select_task(void *arg)
 
 void app_main(void)
 {
-    xTaskCreate(uart_select_task, "uart_select_task", 4*1024, NULL, 5, NULL);
+    xTaskCreate(uart_select_task, "uart_select_task", 4 * 1024, NULL, 5, NULL);
 }

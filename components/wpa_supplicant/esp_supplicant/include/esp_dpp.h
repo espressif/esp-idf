@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,15 +10,18 @@
 #include <stdbool.h>
 
 #include "esp_err.h"
+#include "esp_wifi_types.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+#define ESP_DPP_AUTH_TIMEOUT_SECS 1
+
 #define ESP_ERR_DPP_FAILURE         (ESP_ERR_WIFI_BASE + 151)   /*!< Generic failure during DPP Operation */
 #define ESP_ERR_DPP_TX_FAILURE      (ESP_ERR_WIFI_BASE + 152)   /*!< DPP Frame Tx failed OR not Acked */
 #define ESP_ERR_DPP_INVALID_ATTR    (ESP_ERR_WIFI_BASE + 153)   /*!< Encountered invalid DPP Attribute */
-
+#define ESP_ERR_DPP_AUTH_TIMEOUT    (ESP_ERR_WIFI_BASE + 154)   /*!< DPP Auth response was not recieved in time */
 /** @brief Types of Bootstrap Methods for DPP. */
 typedef enum dpp_bootstrap_type {
     DPP_BOOTSTRAP_QR_CODE,  /**< QR Code Method */
@@ -30,6 +33,7 @@ typedef enum dpp_bootstrap_type {
 typedef enum {
     ESP_SUPP_DPP_URI_READY,     /**< URI is ready through Bootstrapping */
     ESP_SUPP_DPP_CFG_RECVD,     /**< Config received via DPP Authentication */
+    ESP_SUPP_DPP_PDR_RECVD,     /**< Peer Discovery Response is received */
     ESP_SUPP_DPP_FAIL,          /**< DPP Authentication failure */
 } esp_supp_dpp_event_t;
 
@@ -60,8 +64,11 @@ esp_err_t esp_supp_dpp_init(esp_supp_dpp_event_cb_t evt_cb);
   * @brief De-initalize DPP Supplicant
   *
   *        Frees memory from DPP Supplicant Data Structures.
+  *
+  * @return
+  *    - ESP_OK: Success
   */
-void esp_supp_dpp_deinit(void);
+esp_err_t esp_supp_dpp_deinit(void);
 
 /**
   * @brief Generates Bootstrap Information as an Enrollee.
@@ -99,8 +106,12 @@ esp_err_t esp_supp_dpp_start_listen(void);
   * @brief Stop listening on Channels.
   *
   *        Stops listening on Channels and cancels ongoing listen operation.
+  *
+  * @return
+  *    - ESP_OK: Success
+  *    - ESP_FAIL: Failure
   */
-void esp_supp_dpp_stop_listen(void);
+esp_err_t esp_supp_dpp_stop_listen(void);
 
 #ifdef __cplusplus
 }

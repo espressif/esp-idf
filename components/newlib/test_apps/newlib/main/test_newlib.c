@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -18,12 +18,12 @@
 
 TEST_CASE("test ctype functions", "[newlib]")
 {
-    TEST_ASSERT_TRUE( isalnum('a') && isalnum('A') && isalnum('z') && isalnum('Z') && isalnum('0') && isalnum('9') );
-    TEST_ASSERT_FALSE( isalnum('(') || isalnum('-') || isalnum(' ') || isalnum('\x81') || isalnum('.') || isalnum('\\') );
-    TEST_ASSERT_TRUE( isalpha('a') && isalpha('A') && isalpha('z') && isalpha('Z') );
-    TEST_ASSERT_FALSE( isalpha('0') || isalpha('9') || isalpha(')') || isalpha('\t') || isalpha(' ') || isalpha('\x81') );
-    TEST_ASSERT_TRUE( isspace(' ') && isspace('\t') && isspace('\n') && isspace('\r') );
-    TEST_ASSERT_FALSE( isspace('0') || isspace('9') || isspace(')') || isspace('A') || isspace('*') || isspace('\x81') || isspace('a'));
+    TEST_ASSERT_TRUE(isalnum('a') && isalnum('A') && isalnum('z') && isalnum('Z') && isalnum('0') && isalnum('9'));
+    TEST_ASSERT_FALSE(isalnum('(') || isalnum('-') || isalnum(' ') || isalnum('\x81') || isalnum('.') || isalnum('\\'));
+    TEST_ASSERT_TRUE(isalpha('a') && isalpha('A') && isalpha('z') && isalpha('Z'));
+    TEST_ASSERT_FALSE(isalpha('0') || isalpha('9') || isalpha(')') || isalpha('\t') || isalpha(' ') || isalpha('\x81'));
+    TEST_ASSERT_TRUE(isspace(' ') && isspace('\t') && isspace('\n') && isspace('\r'));
+    TEST_ASSERT_FALSE(isspace('0') || isspace('9') || isspace(')') || isspace('A') || isspace('*') || isspace('\x81') || isspace('a'));
 }
 
 TEST_CASE("test atoX functions", "[newlib]")
@@ -32,10 +32,10 @@ TEST_CASE("test atoX functions", "[newlib]")
     TEST_ASSERT_EQUAL_INT(2147483647, atoi("2147483647"));
     TEST_ASSERT_EQUAL_INT(42, atoi("000000042"));
     TEST_ASSERT_EQUAL_INT(0, strtol("foo", NULL, 10));
-    TEST_ASSERT_EQUAL(0.123443, atof("0.123443"));
-    TEST_ASSERT_EQUAL(0.123443f, atoff("0.123443"));
-    TEST_ASSERT_EQUAL(31.41238, strtod("0.3141238e2", NULL));
-    TEST_ASSERT_EQUAL(0.025f, strtof("0.025", NULL));
+    TEST_ASSERT_EQUAL_DOUBLE(0.123443, atof("0.123443"));
+    TEST_ASSERT_EQUAL_FLOAT(0.123443f, atoff("0.123443"));
+    TEST_ASSERT_EQUAL_DOUBLE(31.41238, strtod("0.3141238e2", NULL));
+    TEST_ASSERT_EQUAL_FLOAT(0.025f, strtof("0.025", NULL));
 }
 
 TEST_CASE("test sprintf function", "[newlib]")
@@ -74,27 +74,26 @@ TEST_CASE("test time functions", "[newlib]")
     setenv("TZ", "UTC-8", 1);
     tzset();
     struct tm *tm_utc = gmtime(&now);
-    TEST_ASSERT_EQUAL( 28, tm_utc->tm_sec);
-    TEST_ASSERT_EQUAL( 41, tm_utc->tm_min);
-    TEST_ASSERT_EQUAL(  7, tm_utc->tm_hour);
-    TEST_ASSERT_EQUAL( 26, tm_utc->tm_mday);
-    TEST_ASSERT_EQUAL(  4, tm_utc->tm_mon);
+    TEST_ASSERT_EQUAL(28, tm_utc->tm_sec);
+    TEST_ASSERT_EQUAL(41, tm_utc->tm_min);
+    TEST_ASSERT_EQUAL(7, tm_utc->tm_hour);
+    TEST_ASSERT_EQUAL(26, tm_utc->tm_mday);
+    TEST_ASSERT_EQUAL(4, tm_utc->tm_mon);
     TEST_ASSERT_EQUAL(116, tm_utc->tm_year);
-    TEST_ASSERT_EQUAL(  4, tm_utc->tm_wday);
+    TEST_ASSERT_EQUAL(4, tm_utc->tm_wday);
     TEST_ASSERT_EQUAL(146, tm_utc->tm_yday);
 
     struct tm *tm_local = localtime(&now);
-    TEST_ASSERT_EQUAL( 28, tm_local->tm_sec);
-    TEST_ASSERT_EQUAL( 41, tm_local->tm_min);
-    TEST_ASSERT_EQUAL( 15, tm_local->tm_hour);
-    TEST_ASSERT_EQUAL( 26, tm_local->tm_mday);
-    TEST_ASSERT_EQUAL(  4, tm_local->tm_mon);
+    TEST_ASSERT_EQUAL(28, tm_local->tm_sec);
+    TEST_ASSERT_EQUAL(41, tm_local->tm_min);
+    TEST_ASSERT_EQUAL(15, tm_local->tm_hour);
+    TEST_ASSERT_EQUAL(26, tm_local->tm_mday);
+    TEST_ASSERT_EQUAL(4, tm_local->tm_mon);
     TEST_ASSERT_EQUAL(116, tm_local->tm_year);
-    TEST_ASSERT_EQUAL(  4, tm_local->tm_wday);
+    TEST_ASSERT_EQUAL(4, tm_local->tm_wday);
     TEST_ASSERT_EQUAL(146, tm_local->tm_yday);
 
 }
-
 
 TEST_CASE("test asctime", "[newlib]")
 {
@@ -132,7 +131,7 @@ static bool fn_in_rom(void *fn)
 /* Older chips have newlib nano in rom as well, but this is not linked in due to us now using 64 bit time_t
    and the ROM code was compiled for 32 bit.
  */
-#define PRINTF_NANO_IN_ROM (CONFIG_NEWLIB_NANO_FORMAT && (CONFIG_IDF_TARGET_ESP32C2 || CONFIG_IDF_TARGET_ESP32H2))
+#define PRINTF_NANO_IN_ROM (CONFIG_NEWLIB_NANO_FORMAT && (CONFIG_IDF_TARGET_ESP32C2 || CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP32P4))
 #define SSCANF_NANO_IN_ROM (CONFIG_NEWLIB_NANO_FORMAT && CONFIG_IDF_TARGET_ESP32C2)
 
 TEST_CASE("check if ROM or Flash is used for functions", "[newlib]")
@@ -204,7 +203,6 @@ TEST_CASE("test 64bit int formats", "[newlib]")
 }
 #endif // CONFIG_NEWLIB_NANO_FORMAT
 
-
 TEST_CASE("fmod and fmodf work as expected", "[newlib]")
 {
     TEST_ASSERT_EQUAL(0.1, fmod(10.1, 2.0));
@@ -215,7 +213,6 @@ TEST_CASE("newlib: can link 'system', 'raise'", "[newlib]")
 {
     printf("system: %p, raise: %p\n", &system, &raise);
 }
-
 
 TEST_CASE("newlib: rom and toolchain localtime func gives the same result", "[newlib]")
 {

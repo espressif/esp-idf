@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -32,11 +32,15 @@ implement the bare minimum to control the root HCD port.
 #define HUB_ROOT_HCD_PORT_FIFO_BIAS                 HCD_PORT_FIFO_BIAS_BALANCED
 #endif
 
+#ifdef CONFIG_USB_HOST_ENABLE_ENUM_FILTER_CALLBACK
+#define ENABLE_ENUM_FILTER_CALLBACK
+#endif // CONFIG_USB_HOST_ENABLE_ENUM_FILTER_CALLBACK
+
 #define SET_ADDR_RECOVERY_INTERVAL_MS               CONFIG_USB_HOST_SET_ADDR_RECOVERY_MS
 
 #define ENUM_CTRL_TRANSFER_MAX_DATA_LEN             CONFIG_USB_HOST_CONTROL_TRANSFER_MAX_SIZE
 #define ENUM_DEV_ADDR                               1       // Device address used in enumeration
-#define ENUM_CONFIG_INDEX                           0       // Index used to get the first configuration descriptor of the device
+#define ENUM_CONFIG_INDEX_DEFAULT                   0       // Index used to get the first configuration descriptor of the device
 #define ENUM_SHORT_DESC_REQ_LEN                     8       // Number of bytes to request when getting a short descriptor (just enough to get bMaxPacketSize0 or wTotalLength)
 #define ENUM_WORST_CASE_MPS_LS                      8       // The worst case MPS of EP0 for a LS device
 #define ENUM_WORST_CASE_MPS_FS                      64      // The worst case MPS of EP0 for a FS device
@@ -165,6 +169,11 @@ typedef struct {
     uint8_t iSerialNumber;          /**< Index of the Serial Number string descriptor */
     uint8_t str_desc_bLength;       /**< Saved bLength from getting a short string descriptor */
     uint8_t bConfigurationValue;    /**< Device's current configuration number */
+    uint8_t enum_config_index;      /**< Configuration index used during enumeration */
+#ifdef ENABLE_ENUM_FILTER_CALLBACK
+    usb_host_enum_filter_cb_t enum_filter_cb;   /**< Set device configuration callback */
+    bool graceful_exit;                         /**< Exit enumeration by user's request from the callback function */
+#endif // ENABLE_ENUM_FILTER_CALLBACK
 } enum_ctrl_t;
 
 typedef struct {
@@ -280,6 +289,11 @@ static bool enum_stage_start(enum_ctrl_t *enum_ctrl)
     ESP_ERROR_CHECK(hcd_pipe_update_callback(enum_dflt_pipe_hdl, enum_dflt_pipe_callback, NULL));
     enum_ctrl->dev_hdl = enum_dev_hdl;
     enum_ctrl->pipe = enum_dflt_pipe_hdl;
+
+    // Flag to gracefully exit the enumeration process if requested by the user in the enumeration filter cb
+#ifdef ENABLE_ENUM_FILTER_CALLBACK
+    enum_ctrl->graceful_exit = false;
+#endif // ENABLE_ENUM_FILTER_CALLBACK
     return true;
 }
 
@@ -323,6 +337,39 @@ static void get_string_desc_index_and_langid(enum_ctrl_t *enum_ctrl, uint8_t *in
     }
 }
 
+static bool set_config_index(enum_ctrl_t *enum_ctrl, const usb_device_desc_t *device_desc)
+{
+#ifdef ENABLE_ENUM_FILTER_CALLBACK
+    // Callback enabled in the menuncofig, but the callback function was not defined
+    if (enum_ctrl->enum_filter_cb == NULL) {
+        enum_ctrl->enum_config_index = ENUM_CONFIG_INDEX_DEFAULT;
+        return true;
+    }
+
+    uint8_t enum_config_index;
+    const bool enum_continue = enum_ctrl->enum_filter_cb(device_desc, &enum_config_index);
+
+    // User's request NOT to enumerate the USB device
+    if (!enum_continue) {
+        ESP_LOGW(HUB_DRIVER_TAG, "USB device (PID = 0x%x, VID = 0x%x) will not be enumerated", device_desc->idProduct, device_desc->idVendor);
+        enum_ctrl->graceful_exit = true;
+        return false;
+    }
+
+    // Set configuration descriptor
+    if ((enum_config_index == 0) || (enum_config_index > device_desc->bNumConfigurations)) {
+        ESP_LOGW(HUB_DRIVER_TAG, "bConfigurationValue %d provided by user, device will be configured with configuration descriptor 1", enum_config_index);
+        enum_ctrl->enum_config_index = ENUM_CONFIG_INDEX_DEFAULT;
+    } else {
+        enum_ctrl->enum_config_index = enum_config_index - 1;
+    }
+#else // ENABLE_ENUM_FILTER_CALLBACK
+    enum_ctrl->enum_config_index = ENUM_CONFIG_INDEX_DEFAULT;
+#endif // ENABLE_ENUM_FILTER_CALLBACK
+
+    return true;
+}
+
 static bool enum_stage_transfer(enum_ctrl_t *enum_ctrl)
 {
     usb_transfer_t *transfer = &enum_ctrl->urb->transfer;
@@ -351,7 +398,7 @@ static bool enum_stage_transfer(enum_ctrl_t *enum_ctrl)
     }
     case ENUM_STAGE_GET_SHORT_CONFIG_DESC: {
         // Get a short config descriptor at index 0
-        USB_SETUP_PACKET_INIT_GET_CONFIG_DESC((usb_setup_packet_t *)transfer->data_buffer, ENUM_CONFIG_INDEX, ENUM_SHORT_DESC_REQ_LEN);
+        USB_SETUP_PACKET_INIT_GET_CONFIG_DESC((usb_setup_packet_t *)transfer->data_buffer, enum_ctrl->enum_config_index, ENUM_SHORT_DESC_REQ_LEN);
         transfer->num_bytes = sizeof(usb_setup_packet_t) + usb_round_up_to_mps(ENUM_SHORT_DESC_REQ_LEN, enum_ctrl->bMaxPacketSize0);
         // IN data stage should return exactly ENUM_SHORT_DESC_REQ_LEN bytes
         enum_ctrl->expect_num_bytes = sizeof(usb_setup_packet_t) + ENUM_SHORT_DESC_REQ_LEN;
@@ -359,7 +406,7 @@ static bool enum_stage_transfer(enum_ctrl_t *enum_ctrl)
     }
     case ENUM_STAGE_GET_FULL_CONFIG_DESC: {
         // Get the full configuration descriptor at index 0, requesting its exact length.
-        USB_SETUP_PACKET_INIT_GET_CONFIG_DESC((usb_setup_packet_t *)transfer->data_buffer, ENUM_CONFIG_INDEX, enum_ctrl->wTotalLength);
+        USB_SETUP_PACKET_INIT_GET_CONFIG_DESC((usb_setup_packet_t *)transfer->data_buffer, enum_ctrl->enum_config_index, enum_ctrl->wTotalLength);
         transfer->num_bytes = sizeof(usb_setup_packet_t) + usb_round_up_to_mps(enum_ctrl->wTotalLength, enum_ctrl->bMaxPacketSize0);
         // IN data stage should return exactly wTotalLength bytes
         enum_ctrl->expect_num_bytes = sizeof(usb_setup_packet_t) + enum_ctrl->wTotalLength;
@@ -449,9 +496,16 @@ static bool enum_stage_transfer_check(enum_ctrl_t *enum_ctrl)
         return false;
     }
     // Check IN transfer returned the expected correct number of bytes
-    if (enum_ctrl->expect_num_bytes != 0 && enum_ctrl->expect_num_bytes != transfer->actual_num_bytes) {
-        ESP_LOGE(HUB_DRIVER_TAG, "Incorrect number of bytes returned %d: %s", transfer->actual_num_bytes, enum_stage_strings[enum_ctrl->stage]);
-        return false;
+    if (enum_ctrl->expect_num_bytes != 0 && transfer->actual_num_bytes != enum_ctrl->expect_num_bytes) {
+        if (transfer->actual_num_bytes > enum_ctrl->expect_num_bytes) {
+            // The device returned more bytes than requested.
+            // This violates the USB specs chapter 9.3.5, but we can continue
+            ESP_LOGW(HUB_DRIVER_TAG, "Incorrect number of bytes returned %d: %s", transfer->actual_num_bytes, enum_stage_strings[enum_ctrl->stage]);
+        } else {
+            // The device returned less bytes than requested. We cannot continue.
+            ESP_LOGE(HUB_DRIVER_TAG, "Incorrect number of bytes returned %d: %s", transfer->actual_num_bytes, enum_stage_strings[enum_ctrl->stage]);
+            return false;
+        }
     }
 
     // Stage specific checks and updates
@@ -490,7 +544,7 @@ static bool enum_stage_transfer_check(enum_ctrl_t *enum_ctrl)
         enum_ctrl->iManufacturer = device_desc->iManufacturer;
         enum_ctrl->iProduct = device_desc->iProduct;
         enum_ctrl->iSerialNumber = device_desc->iSerialNumber;
-        ret = true;
+        ret = set_config_index(enum_ctrl, device_desc);
         break;
     }
     case ENUM_STAGE_CHECK_SHORT_CONFIG_DESC: {
@@ -917,7 +971,15 @@ static void enum_handle_events(void)
     if (stage_pass) {
         ESP_LOGD(HUB_DRIVER_TAG, "Stage done: %s", enum_stage_strings[enum_ctrl->stage]);
     } else {
+#ifdef ENABLE_ENUM_FILTER_CALLBACK
+        if (!enum_ctrl->graceful_exit) {
+            ESP_LOGE(HUB_DRIVER_TAG, "Stage failed: %s", enum_stage_strings[enum_ctrl->stage]);
+        } else {
+            ESP_LOGD(HUB_DRIVER_TAG, "Stage done: %s", enum_stage_strings[enum_ctrl->stage]);
+        }
+#else // ENABLE_ENUM_FILTER_CALLBACK
         ESP_LOGE(HUB_DRIVER_TAG, "Stage failed: %s", enum_stage_strings[enum_ctrl->stage]);
+#endif // ENABLE_ENUM_FILTER_CALLBACK
     }
     enum_set_next_stage(enum_ctrl, stage_pass);
 }
@@ -931,7 +993,7 @@ esp_err_t hub_install(hub_config_t *hub_config)
     HUB_DRIVER_EXIT_CRITICAL();
     // Allocate Hub driver object
     hub_driver_t *hub_driver_obj = heap_caps_calloc(1, sizeof(hub_driver_t), MALLOC_CAP_DEFAULT);
-    urb_t *enum_urb = urb_alloc(sizeof(usb_setup_packet_t) + ENUM_CTRL_TRANSFER_MAX_DATA_LEN, 0, 0);
+    urb_t *enum_urb = urb_alloc(sizeof(usb_setup_packet_t) + ENUM_CTRL_TRANSFER_MAX_DATA_LEN, 0);
     if (hub_driver_obj == NULL || enum_urb == NULL) {
         return ESP_ERR_NO_MEM;
     }
@@ -952,9 +1014,13 @@ esp_err_t hub_install(hub_config_t *hub_config)
     hub_driver_obj->dynamic.driver_state = HUB_DRIVER_STATE_INSTALLED;
     hub_driver_obj->single_thread.enum_ctrl.stage = ENUM_STAGE_NONE;
     hub_driver_obj->single_thread.enum_ctrl.urb = enum_urb;
+#ifdef ENABLE_ENUM_FILTER_CALLBACK
+    hub_driver_obj->single_thread.enum_ctrl.enum_filter_cb = hub_config->enum_filter_cb;
+#endif // ENABLE_ENUM_FILTER_CALLBACK
     hub_driver_obj->constant.root_port_hdl = port_hdl;
     hub_driver_obj->constant.proc_req_cb = hub_config->proc_req_cb;
     hub_driver_obj->constant.proc_req_cb_arg = hub_config->proc_req_cb_arg;
+
     HUB_DRIVER_ENTER_CRITICAL();
     if (p_hub_driver_obj != NULL) {
         HUB_DRIVER_EXIT_CRITICAL();

@@ -39,7 +39,7 @@ uint32_t clk_hal_cpu_get_freq_hz(void)
     }
 }
 
-uint32_t clk_hal_ahb_get_freq_hz(void)
+static uint32_t clk_hal_ahb_get_freq_hz(void)
 {
     // AHB_CLK path is highly dependent on CPU_CLK path
     switch (clk_ll_cpu_get_src()) {

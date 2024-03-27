@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: CC0-1.0
  */
@@ -8,26 +8,48 @@
 #include <stdbool.h>
 #include <string.h>
 
-#include "esp_private/periph_ctrl.h"
+#include "esp_crypto_lock.h"
+#include "esp_efuse_chip.h"
+#include "esp_private/esp_crypto_lock_internal.h"
 #include "esp_random.h"
 #include "hal/clk_gate_ll.h"
+#include "hal/ecc_ll.h"
 #include "hal/ecdsa_hal.h"
+#include "hal/ecdsa_ll.h"
 #include "hal/ecdsa_types.h"
 
 #include "memory_checks.h"
 #include "unity_fixture.h"
 
 #include "ecdsa_params.h"
-
+#include "hal_crypto_common.h"
 
 static void ecdsa_enable_and_reset(void)
 {
-    periph_ll_enable_clk_clear_rst(PERIPH_ECDSA_MODULE);
+    esp_crypto_ecdsa_lock_acquire();
+
+    ECC_RCC_ATOMIC() {
+        ecc_ll_enable_bus_clock(true);
+        ecc_ll_reset_register();
+    }
+
+    ECDSA_RCC_ATOMIC() {
+        ecdsa_ll_enable_bus_clock(true);
+        ecdsa_ll_reset_register();
+    }
 }
 
-static void ecdsa_disable_and_reset(void)
+static void ecdsa_disable(void)
 {
-    periph_ll_disable_clk_set_rst(PERIPH_ECDSA_MODULE);
+    ECC_RCC_ATOMIC() {
+        ecc_ll_enable_bus_clock(false);
+    }
+
+    ECDSA_RCC_ATOMIC() {
+        ecdsa_ll_enable_bus_clock(false);
+    }
+
+    esp_crypto_ecdsa_lock_release();
 }
 
 static void ecc_be_to_le(const uint8_t* be_point, uint8_t *le_point, uint8_t len)
@@ -45,7 +67,6 @@ static int test_ecdsa_verify(bool is_p256, uint8_t* sha, uint8_t* r_le, uint8_t*
 
     ecdsa_hal_config_t conf = {
         .mode = ECDSA_MODE_SIGN_VERIFY,
-        .k_mode = ECDSA_K_USE_TRNG,
         .sha_mode = ECDSA_Z_USER_PROVIDED,
     };
 
@@ -62,7 +83,7 @@ static int test_ecdsa_verify(bool is_p256, uint8_t* sha, uint8_t* r_le, uint8_t*
 
     ecdsa_enable_and_reset();
     int ret = ecdsa_hal_verify_signature(&conf, sha_le, r_le, s_le, pub_x, pub_y, len);
-    ecdsa_disable_and_reset();
+    ecdsa_disable();
     return ret;
 }
 
@@ -114,7 +135,6 @@ static void test_ecdsa_sign(bool is_p256, uint8_t* sha, uint8_t* r_le, uint8_t* 
 
     ecdsa_hal_config_t conf = {
         .mode = ECDSA_MODE_SIGN_GEN,
-        .k_mode = ECDSA_K_USE_TRNG,
         .sha_mode = ECDSA_Z_USER_PROVIDED,
         .use_km_key = use_km_key,
     };
@@ -122,13 +142,13 @@ static void test_ecdsa_sign(bool is_p256, uint8_t* sha, uint8_t* r_le, uint8_t* 
     if (is_p256) {
         conf.curve = ECDSA_CURVE_SECP256R1;
         if (use_km_key == 0) {
-            conf.efuse_key_blk = 6;
+            conf.efuse_key_blk = EFUSE_BLK_KEY0 + ECDSA_KEY_BLOCK_2;
         }
         len = 32;
     } else {
         conf.curve = ECDSA_CURVE_SECP192R1;
         if (use_km_key == 0) {
-            conf.efuse_key_blk = 5;
+            conf.efuse_key_blk = EFUSE_BLK_KEY0 + ECDSA_KEY_BLOCK_1;
         }
         len = 24;
     }
@@ -139,10 +159,10 @@ static void test_ecdsa_sign(bool is_p256, uint8_t* sha, uint8_t* r_le, uint8_t* 
     ecdsa_enable_and_reset();
 
     do {
-        ecdsa_hal_gen_signature(&conf, NULL, sha_le, r_le, s_le, len);
+        ecdsa_hal_gen_signature(&conf, sha_le, r_le, s_le, len);
     } while(!memcmp(r_le, zeroes, len) || !memcmp(s_le, zeroes, len));
 
-    ecdsa_disable_and_reset();
+    ecdsa_disable();
 }
 
 static void test_ecdsa_sign_and_verify(bool is_p256, uint8_t* sha, uint8_t* pub_x, uint8_t* pub_y, bool use_km_key)
@@ -169,13 +189,13 @@ static void test_ecdsa_export_pubkey(bool is_p256, bool use_km_key)
     if (is_p256) {
         conf.curve = ECDSA_CURVE_SECP256R1;
         if (use_km_key == 0) {
-            conf.efuse_key_blk = 6;
+            conf.efuse_key_blk = EFUSE_BLK_KEY0 + ECDSA_KEY_BLOCK_2;
         }
         len = 32;
     } else {
         conf.curve = ECDSA_CURVE_SECP192R1;
         if (use_km_key == 0) {
-            conf.efuse_key_blk = 5;
+            conf.efuse_key_blk = EFUSE_BLK_KEY0 + ECDSA_KEY_BLOCK_1;
         }
         len = 24;
     }
@@ -191,7 +211,7 @@ static void test_ecdsa_export_pubkey(bool is_p256, bool use_km_key)
         TEST_ASSERT_EQUAL_HEX8_ARRAY(ecdsa192_pub_y, pub_y, len);
     }
 
-    ecdsa_disable_and_reset();
+    ecdsa_disable();
 }
 #endif /* SOC_ECDSA_SUPPORT_EXPORT_PUBKEY */
 

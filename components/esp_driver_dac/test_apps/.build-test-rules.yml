@@ -1,0 +1,9 @@
+# Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
+
+components/esp_driver_dac/test_apps/dac:
+  disable:
+    - if: SOC_DAC_SUPPORTED != 1
+  depends_components:
+    - esp_driver_i2s
+    - esp_driver_spi
+    - esp_adc

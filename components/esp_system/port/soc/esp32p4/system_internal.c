@@ -31,8 +31,11 @@
 void IRAM_ATTR esp_system_reset_modules_on_exit(void)
 {
     // Flush any data left in UART FIFOs
-    esp_rom_uart_tx_wait_idle(0);
-    esp_rom_uart_tx_wait_idle(1);
+    for (int i = 0; i < SOC_UART_HP_NUM; ++i) {
+        if (uart_ll_is_enabled(i)) {
+            esp_rom_output_tx_wait_idle(i);
+        }
+    }
 
     // Set Peripheral clk rst
     SET_PERI_REG_MASK(HP_SYS_CLKRST_HP_RST_EN1_REG, HP_SYS_CLKRST_REG_RST_EN_TIMERGRP0);
@@ -81,7 +84,7 @@ void IRAM_ATTR esp_restart_noos(void)
     wdt_hal_write_protect_enable(&rtc_wdt_ctx);
 
     const uint32_t core_id = esp_cpu_get_core_id();
-#if !CONFIG_FREERTOS_UNICORE
+#if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
     const uint32_t other_core_id = (core_id == 0) ? 1 : 0;
     esp_cpu_reset(other_core_id);
     esp_cpu_stall(other_core_id);
@@ -103,12 +106,12 @@ void IRAM_ATTR esp_restart_noos(void)
 
     esp_system_reset_modules_on_exit();
 
-    // Set CPU back to XTAL source, no PLL, same as hard reset
+    // Set CPU back to XTAL source (and MEM_CLK, APB_CLK back to power-on reset frequencies), same as hard reset, keep CPLL on.
 #if !CONFIG_IDF_ENV_FPGA
-    rtc_clk_cpu_freq_set_xtal();
+    rtc_clk_cpu_set_to_default_config();
 #endif
 
-#if !CONFIG_FREERTOS_UNICORE
+#if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
     // clear entry point for APP CPU
     ets_set_appcpu_boot_addr(0);
 #endif
@@ -122,12 +125,12 @@ void IRAM_ATTR esp_restart_noos(void)
     // Reset CPUs
     if (core_id == 0) {
         // Running on PRO CPU: APP CPU is stalled. Can reset both CPUs.
-#if !CONFIG_FREERTOS_UNICORE
+#if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
         esp_cpu_reset(1);
 #endif
         esp_cpu_reset(0);
     }
-#if !CONFIG_FREERTOS_UNICORE
+#if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
     else {
         // Running on APP CPU: need to reset PRO CPU and unstall it,
         // then reset APP CPU

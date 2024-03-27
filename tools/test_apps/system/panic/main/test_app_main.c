@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -31,9 +31,7 @@
 static const char* get_test_name(void)
 {
     static char test_name_str[BOOT_CMD_MAX_LEN] = {0};
-
-    printf("Enter test name: ");
-    fflush(stdout);
+    bool print_prompt = true;
 
     /* Not using blocking fgets(stdin) here, as QEMU doesn't yet implement RX timeout interrupt,
      * which is required for the UART driver and blocking stdio to work.
@@ -42,16 +40,24 @@ static const char* get_test_name(void)
     char *p = test_name_str;
     const char *end = test_name_str + sizeof(test_name_str) - 1;
     while (p < end) {
+        if (print_prompt) {
+            printf("Enter test name: ");
+            fflush(stdout);
+            print_prompt = false;
+        }
         c = getchar();
         if (c == EOF) {
             vTaskDelay(pdMS_TO_TICKS(10));
-        } else if ((c == '\r' || c == '\n') && p != test_name_str) {
+        } else if (c == '\r' || c == '\n') {
             /* terminate the line */
             puts("\n\r");
             fflush(stdout);
-            *p = '\0';
-            break;
-        } else {
+            print_prompt = true;
+            if (p != test_name_str) {
+                *p = '\0';
+                break;
+            }
+        } else if (c >= '0' && c <= 'z') {
             /* echo the received character */
             putchar(c);
             fflush(stdout);
@@ -83,13 +89,17 @@ void app_main(void)
     HANDLE_TEST(test_name, test_abort_cache_disabled);
     HANDLE_TEST(test_name, test_int_wdt);
     HANDLE_TEST(test_name, test_task_wdt_cpu0);
+#if CONFIG_ESP_SYSTEM_HW_STACK_GUARD
     HANDLE_TEST(test_name, test_hw_stack_guard_cpu0);
+#if !CONFIG_FREERTOS_UNICORE
+    HANDLE_TEST(test_name, test_hw_stack_guard_cpu1);
+#endif // CONFIG_FREERTOS_UNICORE
+#endif // CONFIG_ESP_SYSTEM_HW_STACK_GUARD
 #if CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH && CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY
     HANDLE_TEST(test_name, test_panic_extram_stack);
 #endif
 #if !CONFIG_FREERTOS_UNICORE
     HANDLE_TEST(test_name, test_task_wdt_cpu1);
-    HANDLE_TEST(test_name, test_task_wdt_both_cpus);
 #endif
     HANDLE_TEST(test_name, test_storeprohibited);
     HANDLE_TEST(test_name, test_cache_error);
@@ -100,6 +110,9 @@ void app_main(void)
     HANDLE_TEST(test_name, test_ub);
     HANDLE_TEST(test_name, test_assert);
     HANDLE_TEST(test_name, test_assert_cache_disabled);
+#if CONFIG_IDF_TARGET_ESP32
+    HANDLE_TEST(test_name, test_illegal_access);
+#endif
 
 #if CONFIG_TEST_MEMPROT
 
@@ -133,6 +146,12 @@ void app_main(void)
 #if CONFIG_SOC_RTC_SLOW_MEM_SUPPORTED
     HANDLE_TEST(test_name, test_rtc_slow_reg1_execute_violation);
     HANDLE_TEST(test_name, test_rtc_slow_reg2_execute_violation);
+#endif
+
+#if CONFIG_ESP_SYSTEM_PMP_IDRAM_SPLIT
+    HANDLE_TEST(test_name, test_irom_reg_write_violation);
+    HANDLE_TEST(test_name, test_drom_reg_write_violation);
+    HANDLE_TEST(test_name, test_drom_reg_execute_violation);
 #endif
 
 #endif

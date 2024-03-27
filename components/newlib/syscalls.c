@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -32,7 +32,7 @@ ssize_t _write_r_console(struct _reent *r, int fd, const void * data, size_t siz
     const char* cdata = (const char*) data;
     if (fd == STDOUT_FILENO || fd == STDERR_FILENO) {
         for (size_t i = 0; i < size; ++i) {
-            esp_rom_uart_tx_one_char(cdata[i]);
+            esp_rom_output_tx_one_char(cdata[i]);
         }
         return size;
     }
@@ -46,7 +46,7 @@ ssize_t _read_r_console(struct _reent *r, int fd, void * data, size_t size)
     if (fd == STDIN_FILENO) {
         size_t received;
         for (received = 0; received < size; ++received) {
-            int status = esp_rom_uart_rx_one_char((uint8_t*) &cdata[received]);
+            int status = esp_rom_output_rx_one_char((uint8_t*) &cdata[received]);
             if (status != 0) {
                 break;
             }
@@ -76,33 +76,25 @@ static ssize_t _fstat_r_console(struct _reent *r, int fd, struct stat * st)
 static int _fsync_console(int fd)
 {
     if (fd == STDOUT_FILENO || fd == STDERR_FILENO) {
-#ifdef CONFIG_ESP_CONSOLE_UART
-        esp_rom_uart_flush_tx(CONFIG_ESP_CONSOLE_UART_NUM);
-#elif defined(CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG)
-        esp_rom_uart_flush_tx(CONFIG_ESP_ROM_USB_SERIAL_DEVICE_NUM);
-#elif defined(CONFIG_ESP_CONSOLE_USB_CDC)
-        esp_rom_uart_flush_tx(CONFIG_ESP_ROM_USB_OTG_NUM);
-#endif
+        esp_rom_output_flush_tx(CONFIG_ESP_CONSOLE_ROM_SERIAL_PORT_NUM);
         return 0;
     }
     errno = EBADF;
     return -1;
 }
 
-
 /* The following weak definitions of syscalls will be used unless
  * another definition is provided. That definition may come from
  * VFS, LWIP, or the application.
  */
 ssize_t _read_r(struct _reent *r, int fd, void * dst, size_t size)
-    __attribute__((weak,alias("_read_r_console")));
+__attribute__((weak, alias("_read_r_console")));
 ssize_t _write_r(struct _reent *r, int fd, const void * data, size_t size)
-    __attribute__((weak,alias("_write_r_console")));
-int _fstat_r (struct _reent *r, int fd, struct stat *st)
-    __attribute__((weak,alias("_fstat_r_console")));
+__attribute__((weak, alias("_write_r_console")));
+int _fstat_r(struct _reent *r, int fd, struct stat *st)
+__attribute__((weak, alias("_fstat_r_console")));
 int fsync(int fd)
-    __attribute__((weak,alias("_fsync_console")));
-
+__attribute__((weak, alias("_fsync_console")));
 
 /* The aliases below are to "syscall_not_implemented", which
  * doesn't have the same signature as the original function.
@@ -114,40 +106,39 @@ int fsync(int fd)
 #endif
 
 int _open_r(struct _reent *r, const char * path, int flags, int mode)
-    __attribute__((weak,alias("syscall_not_implemented")));
+__attribute__((weak, alias("syscall_not_implemented")));
 int _close_r(struct _reent *r, int fd)
-    __attribute__((weak,alias("syscall_not_implemented")));
+__attribute__((weak, alias("syscall_not_implemented")));
 off_t _lseek_r(struct _reent *r, int fd, off_t size, int mode)
-    __attribute__((weak,alias("syscall_not_implemented")));
+__attribute__((weak, alias("syscall_not_implemented")));
 int _fcntl_r(struct _reent *r, int fd, int cmd, int arg)
-    __attribute__((weak,alias("syscall_not_implemented")));
+__attribute__((weak, alias("syscall_not_implemented")));
 int _stat_r(struct _reent *r, const char * path, struct stat * st)
-    __attribute__((weak,alias("syscall_not_implemented")));
+__attribute__((weak, alias("syscall_not_implemented")));
 int _link_r(struct _reent *r, const char* n1, const char* n2)
-    __attribute__((weak,alias("syscall_not_implemented")));
+__attribute__((weak, alias("syscall_not_implemented")));
 int _unlink_r(struct _reent *r, const char *path)
-    __attribute__((weak,alias("syscall_not_implemented")));
+__attribute__((weak, alias("syscall_not_implemented")));
 int _rename_r(struct _reent *r, const char *src, const char *dst)
-    __attribute__((weak,alias("syscall_not_implemented")));
+__attribute__((weak, alias("syscall_not_implemented")));
 int _isatty_r(struct _reent *r, int fd)
-    __attribute__((weak,alias("syscall_not_implemented")));
-
+__attribute__((weak, alias("syscall_not_implemented")));
 
 /* These functions are not expected to be overridden */
 int _system_r(struct _reent *r, const char *str)
-    __attribute__((alias("syscall_not_implemented")));
+__attribute__((alias("syscall_not_implemented")));
 int raise(int sig)
-    __attribute__((alias("syscall_not_implemented_aborts")));
+__attribute__((alias("syscall_not_implemented_aborts")));
 int _raise_r(struct _reent *r, int sig)
-    __attribute__((alias("syscall_not_implemented_aborts")));
+__attribute__((alias("syscall_not_implemented_aborts")));
 void* _sbrk_r(struct _reent *r, ptrdiff_t sz)
-    __attribute__((alias("syscall_not_implemented_aborts")));
+__attribute__((alias("syscall_not_implemented_aborts")));
 int _getpid_r(struct _reent *r)
-    __attribute__((alias("syscall_not_implemented")));
+__attribute__((alias("syscall_not_implemented")));
 int _kill_r(struct _reent *r, int pid, int sig)
-    __attribute__((alias("syscall_not_implemented")));
+__attribute__((alias("syscall_not_implemented")));
 void _exit(int __status)
-    __attribute__((alias("syscall_not_implemented_aborts")));
+__attribute__((alias("syscall_not_implemented_aborts")));
 
 #if defined(__GNUC__) && !defined(__clang__)
 #pragma GCC diagnostic pop

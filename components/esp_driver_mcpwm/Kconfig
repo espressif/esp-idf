@@ -1,0 +1,25 @@
+menu "ESP-Driver:MCPWM Configurations"
+    depends on SOC_MCPWM_SUPPORTED
+    config MCPWM_ISR_IRAM_SAFE
+        bool "Place MCPWM ISR function into IRAM"
+        default n
+        help
+            This will ensure the MCPWM interrupt handle is IRAM-Safe, allow to avoid flash
+            cache misses, and also be able to run whilst the cache is disabled.
+            (e.g. SPI Flash write)
+
+    config MCPWM_CTRL_FUNC_IN_IRAM
+        bool "Place MCPWM control functions into IRAM"
+        default n
+        help
+            Place MCPWM control functions (like set_compare_value) into IRAM,
+            so that these functions can be IRAM-safe and able to be called in the other IRAM interrupt context.
+            Enabling this option can improve driver performance as well.
+
+    config MCPWM_ENABLE_DEBUG_LOG
+        bool "Enable debug log"
+        default n
+        help
+            Wether to enable the debug log message for MCPWM driver.
+            Note that, this option only controls the MCPWM driver log, won't affect other drivers.
+endmenu

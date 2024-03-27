@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -206,10 +206,10 @@ static void test_multicore_taskB(void *arg)
 
 TEST_CASE("Test vTaskSuspendAll() and xTaskResumeAll() multicore", "[freertos]")
 {
-    SemaphoreHandle_t done_sem = xSemaphoreCreateCounting(portNUM_PROCESSORS, 0);
+    SemaphoreHandle_t done_sem = xSemaphoreCreateCounting(CONFIG_FREERTOS_NUMBER_OF_CORES, 0);
     TEST_ASSERT_NOT_EQUAL(NULL, done_sem);
 
-    for (int i = 0; i < portNUM_PROCESSORS; i++) {
+    for (int i = 0; i < CONFIG_FREERTOS_NUMBER_OF_CORES; i++) {
         // Create tasks on core A and core B
         TaskHandle_t taskA_hdl;
         TaskHandle_t taskB_hdl;
@@ -369,10 +369,10 @@ static void test_unblk_b1_task(void *arg)
 
 TEST_CASE("Test vTaskSuspendAll allows scheduling on other cores", "[freertos]")
 {
-    test_unblk_done_sem = xSemaphoreCreateCounting(portNUM_PROCESSORS, 0);
+    test_unblk_done_sem = xSemaphoreCreateCounting(CONFIG_FREERTOS_NUMBER_OF_CORES, 0);
     TEST_ASSERT_NOT_EQUAL(NULL, test_unblk_done_sem);
 
-    for (int i = 0; i < portNUM_PROCESSORS; i++) {
+    for (int i = 0; i < CONFIG_FREERTOS_NUMBER_OF_CORES; i++) {
         test_unblk_sync = 0;
         // Create a tasks
         TaskHandle_t a1_task_hdl;
@@ -571,7 +571,7 @@ static void test_pended_running_task(void *arg)
     // Created blocked tasks pinned to each core
     for (int i = 0; i < TEST_PENDED_NUM_BLOCKED_TASKS; i++) {
         has_run[i] = false;
-        TEST_ASSERT_EQUAL(pdTRUE, xTaskCreatePinnedToCore(test_pended_blkd_task, "blkd", 4096, (void *)&has_run[i], UNITY_FREERTOS_PRIORITY + 2, &blkd_tsks[i], i % portNUM_PROCESSORS));
+        TEST_ASSERT_EQUAL(pdTRUE, xTaskCreatePinnedToCore(test_pended_blkd_task, "blkd", 4096, (void *)&has_run[i], UNITY_FREERTOS_PRIORITY + 2, &blkd_tsks[i], i % CONFIG_FREERTOS_NUMBER_OF_CORES));
     }
     vTaskDelay(10);
 
@@ -595,7 +595,7 @@ static void test_pended_running_task(void *arg)
     // While tasks which do not have affinity to the current core are unblocked.
     for (int i = 0; i < TEST_PENDED_NUM_BLOCKED_TASKS; i++) {
         // Note: We use eBlocked instead of eReady due to a bug in eTaskGetState(). See (IDF-5543)
-        if (xTaskGetAffinity(blkd_tsks[i]) == xPortGetCoreID()) {
+        if (xTaskGetCoreID(blkd_tsks[i]) == xPortGetCoreID()) {
             TEST_ASSERT_EQUAL(eBlocked, eTaskGetState(blkd_tsks[i]));
             TEST_ASSERT_EQUAL(false, has_run[i]);
         } else {
@@ -626,7 +626,7 @@ static void test_pended_running_task(void *arg)
 TEST_CASE("Test xTaskResumeAll resumes pended tasks", "[freertos]")
 {
     // Run the test on each core
-    for (int i = 0; i < portNUM_PROCESSORS; i++) {
+    for (int i = 0; i < CONFIG_FREERTOS_NUMBER_OF_CORES; i++) {
         TaskHandle_t susp_tsk_hdl;
         TEST_ASSERT_EQUAL(pdTRUE, xTaskCreatePinnedToCore(test_pended_running_task, "susp", 2048, (void *)xTaskGetCurrentTaskHandle(), UNITY_FREERTOS_PRIORITY + 1, &susp_tsk_hdl, i));
         // Wait for to be notified to test completion
@@ -636,7 +636,6 @@ TEST_CASE("Test xTaskResumeAll resumes pended tasks", "[freertos]")
     // Add a short delay to allow the idle task to free any remaining task memory
     vTaskDelay(10);
 }
-
 
 /* ---------------------------------------------------------------------------------------------------------------------
 Test xTaskSuspendAll on both cores pends all tasks and xTaskResumeAll on both cores resumes all tasks
@@ -674,7 +673,7 @@ static void test_susp_task(void *arg)
     vTaskSuspendAll();
 
     for (int i = 0; i < TEST_PENDED_NUM_BLOCKED_TASKS; i++) {
-        if ((i % portNUM_PROCESSORS) == xPortGetCoreID()) {
+        if ((i % CONFIG_FREERTOS_NUMBER_OF_CORES) == xPortGetCoreID()) {
             // Unblock the blocked tasks pinned to this core.
             // We use the FromISR() call to create an ISR scenario and to force the unblocked task to be placed
             // on the pending ready list
@@ -705,7 +704,7 @@ TEST_CASE("Test xTaskSuspendAll on all cores pends all tasks and xTaskResumeAll 
     // Creat blocked tasks pinned to each core
     for (int i = 0; i < TEST_PENDED_NUM_BLOCKED_TASKS; i++) {
         has_run[i] = false;
-        TEST_ASSERT_EQUAL(pdTRUE, xTaskCreatePinnedToCore(test_pended_blkd_task, "blkd", 4096, (void *)&has_run[i], UNITY_FREERTOS_PRIORITY + 2, &blkd_tasks[i], i % portNUM_PROCESSORS));
+        TEST_ASSERT_EQUAL(pdTRUE, xTaskCreatePinnedToCore(test_pended_blkd_task, "blkd", 4096, (void *)&has_run[i], UNITY_FREERTOS_PRIORITY + 2, &blkd_tasks[i], i % CONFIG_FREERTOS_NUMBER_OF_CORES));
     }
     vTaskDelay(10);
 
@@ -717,7 +716,7 @@ TEST_CASE("Test xTaskSuspendAll on all cores pends all tasks and xTaskResumeAll 
     vTaskSuspendAll();
 
     for (int i = 0; i < TEST_PENDED_NUM_BLOCKED_TASKS; i++) {
-        if ((i % portNUM_PROCESSORS) == xPortGetCoreID()) {
+        if ((i % CONFIG_FREERTOS_NUMBER_OF_CORES) == xPortGetCoreID()) {
             // Unblock the blocked tasks pinned to this core.
             // We use the FromISR() call to create an ISR scenario and to force the unblocked task to be placed
             // on the pending ready list
@@ -750,5 +749,123 @@ TEST_CASE("Test xTaskSuspendAll on all cores pends all tasks and xTaskResumeAll 
     vSemaphoreDelete(done_sem);
 }
 #endif  // !CONFIG_FREERTOS_UNICORE
+
+/* ---------------------------------------------------------------------------------------------------------------------
+Test vTaskSuspendAll pinned task scheduling
+
+Purpose:
+    - Test that when we disable the scheduler on core X, core X does not schedule any unblocked tasks pinned to it until
+      scheduling is resumed.
+    - While the scheduler on a core X is suspended, test that...
+        - A task pinned to core X is not scheduled even if its unblock time has been met
+        - The task is scheduled as soon as the scheduler on the core is resumed
+
+Procedure:
+    Each core gets tested in the role of core X
+        - Create task A1 pinned to core X that will suspend scheduling on core X
+        - Create task A2 pinned to core X that will test unblocking on core X
+        - Put task A2 in blocked state with a finite delay
+        - Suspend the scheduler on core X from task A1
+        - Make sure that the delay time on task A2 expires
+        - Resume scheduler on core X from task A1
+        - Cleanup the tasks
+
+Expected:
+        - When A1 disables scheduling, A2 should not be scheduled even after expiry of its delay time
+        - When A1 resumes scheduling, A2 should be scheduled
+--------------------------------------------------------------------------------------------------------------------- */
+
+#define TEST_BLOCKED_TASK_DELAY_MS   100
+
+volatile static bool has_run = false;
+SemaphoreHandle_t done_sem1;
+
+void test_blocked_task(void *arg)
+{
+    // Wait to be started
+    ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+
+    // Mark has_run as false to begin the test
+    has_run = false;
+
+    // Got to blocked state
+    vTaskDelay(TEST_BLOCKED_TASK_DELAY_MS / portTICK_PERIOD_MS);
+
+    // Mark when this task runs
+    has_run = true;
+
+    // Cleanup
+    vTaskDelete(NULL);
+}
+
+void test_suspend_task(void *arg)
+{
+    TaskHandle_t blkd_task = (TaskHandle_t)arg;
+
+    // Wait to be started
+    ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+
+    // Start the task which would block
+    xTaskNotifyGive(blkd_task);
+
+    // Verify the state of the blocked task is eBlocked
+    TEST_ASSERT_EQUAL(eBlocked, eTaskGetState(blkd_task));
+
+    // Suspend the scheduler on this core
+    vTaskSuspendAll();
+
+    // Busy spin for a time which ensures that the blocked task's delay expires
+    esp_rom_delay_us(TEST_BLOCKED_TASK_DELAY_MS * 1000 * 2);
+
+    // Verify that the blocked task has not been scheduled
+    TEST_ASSERT_EQUAL(false, has_run);
+
+    // Resume the scheduler
+    xTaskResumeAll();
+
+    // Let the blocked task to be scheduled
+    vTaskDelay(10);
+
+    // Verify that state of the blocked task is not eBlocked
+    TEST_ASSERT_NOT_EQUAL(eBlocked, eTaskGetState(blkd_task));
+
+    // Verify that the blocked task has run after scheduler is resumed
+    TEST_ASSERT_EQUAL(true, has_run);
+
+    // Signal test completion
+    xSemaphoreGive(done_sem1);
+
+    // Cleanup
+    vTaskDelete(NULL);
+}
+
+TEST_CASE("Test vTaskSuspendAll pinned task scheduling", "[freertos]")
+{
+    for (int x = 0; x < portNUM_PROCESSORS; x++) {
+        TaskHandle_t susp_task;
+        TaskHandle_t blkd_task;
+        done_sem1 = xSemaphoreCreateBinary();
+        TEST_ASSERT_NOT_EQUAL(NULL, done_sem1);
+
+        // Create pinned task on core x which will block
+        // Ensure that this has a higher priority than the suspension task so that it immediately runs when the scheduler resumes
+        TEST_ASSERT_EQUAL(pdTRUE, xTaskCreatePinnedToCore(test_blocked_task, "blkd", 4096, NULL, UNITY_FREERTOS_PRIORITY + 1, &blkd_task, x));
+
+        // Create pinned task on core x which will suspend its scheduler
+        TEST_ASSERT_EQUAL(pdTRUE, xTaskCreatePinnedToCore(test_suspend_task, "susp", 4096, (void *)blkd_task, UNITY_FREERTOS_PRIORITY, &susp_task, x));
+
+        // Start the scheduler suspension task
+        xTaskNotifyGive(susp_task);
+
+        // Wait for test completion
+        xSemaphoreTake(done_sem1, portMAX_DELAY);
+
+        // Cleanup
+        vSemaphoreDelete(done_sem1);
+
+        // Add a short delay to allow the idle task to free any remaining task memory
+        vTaskDelay(10);
+    }
+}
 
 #endif // !CONFIG_FREERTOS_SMP

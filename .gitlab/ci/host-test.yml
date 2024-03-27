@@ -13,8 +13,10 @@
     - job: upload-submodules-cache
       optional: true
       artifacts: false
-    - job: mr_variables
-      optional: true  # only MR pipelines would have this
+    - pipeline_variables
+  artifacts:
+    expire_in: 1 week
+    when: always
 
 test_nvs_on_host:
   extends: .host_test_template
@@ -29,7 +31,6 @@ test_nvs_coverage:
   artifacts:
     paths:
       - components/nvs_flash/test_nvs_host/coverage_report
-    expire_in: 1 week
   script:
     - cd components/nvs_flash/test_nvs_host
     - make coverage_report
@@ -66,7 +67,6 @@ test_reproducible_build:
       - "**/build*/*.bin"
       - "**/build*/bootloader/*.bin"
       - "**/build*/partition_table/*.bin"
-    expire_in: 1 week
 
 test_spiffs_on_host:
   extends: .host_test_template
@@ -100,36 +100,26 @@ test_gdbstub_on_host:
     - cd components/esp_gdbstub/test_gdbstub_host
     - make test
 
-test_idf_py:
-  extends: .host_test_template
-  variables:
-    LC_ALL: C.UTF-8
-  script:
-    - cd ${IDF_PATH}/tools/test_idf_py
-    - ./test_idf_py.py
-    - ./test_hints.py
-
 # Test for create virtualenv. It must be invoked from Python, not from virtualenv.
 # Use docker image system python without any extra dependencies
-test_idf_tools:
+test_cli_installer:
   extends:
     - .host_test_template
-    - .before_script_minimal
+    - .before_script:minimal
   artifacts:
     when: on_failure
     paths:
       - tools/tools.new.json
       - tools/test_idf_tools/test_python_env_logs.txt
-    expire_in: 1 week
   image:
     name: $ESP_ENV_IMAGE
     entrypoint: [""]  # use system python3. no extra pip package installed
   script:
     # Tools must be downloaded for testing
-    - python3 ${IDF_PATH}/tools/idf_tools.py download
+    - python3 ${IDF_PATH}/tools/idf_tools.py download required qemu-riscv32 qemu-xtensa
     - cd ${IDF_PATH}/tools/test_idf_tools
     - python3 -m pip install jsonschema
-    - python3 ./test_idf_tools.py
+    - python3 ./test_idf_tools.py -v
     - python3 ./test_idf_tools_python_env.py
 
 .test_efuse_table_on_host_template:
@@ -140,7 +130,6 @@ test_idf_tools:
     when: on_failure
     paths:
       - components/efuse/${IDF_TARGET}/esp_efuse_table.c
-    expire_in: 1 week
   script:
     - cd ${IDF_PATH}/components/efuse/
     - ./efuse_table_gen.py -t "${IDF_TARGET}" ${IDF_PATH}/components/efuse/${IDF_TARGET}/esp_efuse_table.csv
@@ -183,7 +172,6 @@ test_logtrace_proc:
     paths:
       - tools/esp_app_trace/test/logtrace/output
       - tools/esp_app_trace/test/logtrace/.coverage
-    expire_in: 1 week
   script:
     - cd ${IDF_PATH}/tools/esp_app_trace/test/logtrace
     - ./test.sh
@@ -195,56 +183,41 @@ test_sysviewtrace_proc:
     paths:
       - tools/esp_app_trace/test/sysview/output
       - tools/esp_app_trace/test/sysview/.coverage
-    expire_in: 1 week
   script:
     - cd ${IDF_PATH}/tools/esp_app_trace/test/sysview
     - ./test.sh
 
-test_mkdfu:
-  extends: .host_test_template
-  variables:
-    LC_ALL: C.UTF-8
-  script:
-    - cd ${IDF_PATH}/tools/test_mkdfu
-    - ./test_mkdfu.py
-
-test_mkuf2:
-  extends: .host_test_template
-  script:
-    - cd ${IDF_PATH}/tools/test_mkuf2
-    - ./test_mkuf2.py
-
-test_sbom:
-  extends:
-    - .host_test_template
-    - .rules:patterns:sbom
-  script:
-    - cd ${IDF_PATH}/tools/test_sbom
-    - pytest
-
-test_autocomplete:
+test_tools:
   extends:
     - .host_test_template
   artifacts:
-    when: on_failure
     paths:
       - ${IDF_PATH}/*.out
-    expire_in: 1 week
+      - ${IDF_PATH}/XUNIT_*.xml
+    reports:
+      junit: ${IDF_PATH}/XUNIT_*.xml
+  variables:
+    LC_ALL: C.UTF-8
+    INSTALL_QEMU: 1  # for test_idf_qemu.py
   script:
-    - ${IDF_PATH}/tools/ci/test_autocomplete.py
-
-test_detect_python:
-  extends:
-    - .host_test_template
-  script:
+    - stat=0
+    - cd ${IDF_PATH}/tools/ci/test_autocomplete
+    - pytest --noconftest test_autocomplete.py --junitxml=${IDF_PATH}/XUNIT_AUTOCOMP.xml                  || stat=1
+    - cd ${IDF_PATH}/tools/test_idf_py
+    - pytest --noconftest test_idf_py.py       --junitxml=${IDF_PATH}/XUNIT_IDF_PY.xml                    || stat=1
+    - pytest --noconftest test_hints.py        --junitxml=${IDF_PATH}/XUNIT_HINTS.xml                     || stat=1
+    - pytest --noconftest test_idf_qemu.py     --junitxml=${IDF_PATH}/XUNIT_IDF_PY_QEMU.xml               || stat=1
+    - cd ${IDF_PATH}/tools/test_mkdfu
+    - pytest --noconftest test_mkdfu.py        --junitxml=${IDF_PATH}/XUNIT_MKDFU.xml                     || stat=1
     - cd ${IDF_PATH}
-    - shellcheck -s sh tools/detect_python.sh
-    - shellcheck -s bash tools/detect_python.sh
-    - shellcheck -s dash tools/detect_python.sh
+    - shellcheck -s sh tools/detect_python.sh                                                             || stat=1
+    - shellcheck -s bash tools/detect_python.sh                                                           || stat=1
+    - shellcheck -s dash tools/detect_python.sh                                                           || stat=1
     - "bash -c '. tools/detect_python.sh && echo Our Python: ${ESP_PYTHON?Python is not set}'"
     - "dash -c '. tools/detect_python.sh && echo Our Python: ${ESP_PYTHON?Python is not set}'"
     - "zsh -c '. tools/detect_python.sh && echo Our Python: ${ESP_PYTHON?Python is not set}'"
     - "fish -c 'source tools/detect_python.fish && echo Our Python: $ESP_PYTHON'"
+    - exit "$stat"
 
 test_split_path_by_spaces:
   extends: .host_test_template
@@ -300,20 +273,19 @@ test_gen_soc_caps_kconfig:
 test_pytest_qemu:
   extends:
     - .host_test_template
-    - .before_script_build_jobs
-  image: $QEMU_IMAGE
+    - .before_script:build
   artifacts:
-    when: always
     paths:
       - XUNIT_RESULT.xml
       - pytest_embedded_log/
     reports:
       junit: XUNIT_RESULT.xml
-    expire_in: 1 week
   allow_failure: true # IDFCI-1752
   parallel:
     matrix:
       - IDF_TARGET: [esp32, esp32c3]
+  variables:
+    INSTALL_QEMU: 1
   script:
     - run_cmd python tools/ci/ci_build_apps.py . -vv
       --target $IDF_TARGET
@@ -322,27 +294,27 @@ test_pytest_qemu:
       --collect-app-info "list_job_${CI_JOB_NAME_SLUG}.txt"
       --modified-components ${MR_MODIFIED_COMPONENTS}
       --modified-files ${MR_MODIFIED_FILES}
-    - retry_failed git clone $KNOWN_FAILURE_CASES_REPO known_failure_cases
+    - python tools/ci/get_known_failure_cases_file.py
     - run_cmd pytest
       --target $IDF_TARGET
       -m qemu
       --embedded-services idf,qemu
       --junitxml=XUNIT_RESULT.xml
-      --ignore-result-files known_failure_cases/known_failure_cases.txt
+      --ignore-result-files ${KNOWN_FAILURE_CASES_FILE_NAME}
       --app-info-filepattern \"list_job_*.txt\"
+      --qemu-extra-args \"-global driver=timer.$IDF_TARGET.timg,property=wdt_disable,value=true\"
 
 test_pytest_linux:
   extends:
     - .host_test_template
-    - .before_script_build_jobs
+    - .before_script:build
   artifacts:
-    when: always
     paths:
       - XUNIT_RESULT.xml
       - pytest_embedded_log/
+      - "**/build*/build_log.txt"
     reports:
       junit: XUNIT_RESULT.xml
-    expire_in: 1 week
   script:
     - run_cmd python tools/ci/ci_build_apps.py components examples tools/test_apps -vv
       --target linux
@@ -351,10 +323,23 @@ test_pytest_linux:
       --collect-app-info "list_job_${CI_JOB_NAME_SLUG}.txt"
       --modified-components ${MR_MODIFIED_COMPONENTS}
       --modified-files ${MR_MODIFIED_FILES}
-    - retry_failed git clone $KNOWN_FAILURE_CASES_REPO known_failure_cases
+    - python tools/ci/get_known_failure_cases_file.py
     - run_cmd pytest
       --target linux
       -m host_test
       --junitxml=XUNIT_RESULT.xml
-      --ignore-result-files known_failure_cases/known_failure_cases.txt
+      --ignore-result-files ${KNOWN_FAILURE_CASES_FILE_NAME}
       --app-info-filepattern \"list_job_*.txt\"
+
+test_idf_pytest_plugin:
+  extends:
+    - .host_test_template
+    - .rules:patterns:idf-pytest-plugin
+  variables:
+    SUBMODULES_TO_FETCH: "none"
+  artifacts:
+    reports:
+      junit: XUNIT_RESULT.xml
+  script:
+    - cd tools/ci/idf_pytest
+    - pytest --junitxml=${CI_PROJECT_DIR}/XUNIT_RESULT.xml

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -57,7 +57,7 @@ void test_pxp_deinit_io(void)
 }
 #endif
 
-#define TOUCH_READ_INVALID_VAL          (SOC_TOUCH_PAD_THRESHOLD_MAX)
+#define TOUCH_READ_INVALID_VAL          (TOUCH_PAD_THRESHOLD_MAX)
 #define TOUCH_READ_ERROR_THRESH         (0.1) // 10% error
 #define TOUCH_INTR_THRESHOLD            (0.1)
 #define TOUCH_EXCEED_TIME_MS            (1000)
@@ -123,7 +123,7 @@ static void printf_touch_benchmark_read(const char *str)
     uint32_t touch_value;
     printf("[%s] ", str);
     for (int i = 0; i < TEST_TOUCH_CHANNEL; i++) {
-        TEST_ESP_OK( touch_pad_read_benchmark(touch_list[i], &touch_value) );
+        TEST_ESP_OK(touch_pad_read_benchmark(touch_list[i], &touch_value));
         printf("[%d]%"PRIu32" ", touch_list[i], touch_value);
     }
     printf("\r\n");
@@ -139,7 +139,6 @@ static void printf_touch_smooth_read(const char *str)
     }
     printf("\r\n");
 }
-
 
 static void test_timeout_trigger_fake(touch_pad_t pad_num)
 {
@@ -189,12 +188,12 @@ static void test_touch_benchmark(void)
     uint32_t touch_temp[TEST_TOUCH_CHANNEL] = {0};
 
     for (int i = 0; i < TEST_TOUCH_CHANNEL; i++) {
-        TEST_ESP_OK( touch_pad_read_benchmark(touch_list[i], &touch_val[i]) );
+        TEST_ESP_OK(touch_pad_read_benchmark(touch_list[i], &touch_val[i]));
     }
     for (int i = 0; i < 10; i++) {
         vTaskDelay(20 / portTICK_PERIOD_MS);
         for (int i = 0; i < TEST_TOUCH_CHANNEL; i++) {
-            TEST_ESP_OK( touch_pad_read_benchmark(touch_list[i], &touch_temp[i]) );
+            TEST_ESP_OK(touch_pad_read_benchmark(touch_list[i], &touch_temp[i]));
             TEST_ASSERT_EQUAL(touch_temp[i], touch_val[i]);
         }
     }
@@ -211,21 +210,21 @@ esp_err_t test_touch_sw_read(void)
     int test_cnt = TEST_TOUCH_COUNT_NUM;
 
     ESP_LOGI(TAG, "  >> %s <<", __func__);
-    TEST_ESP_OK( touch_pad_init() );
+    TEST_ESP_OK(touch_pad_init());
     for (int i = 0; i < TEST_TOUCH_CHANNEL; i++) {
-        TEST_ESP_OK( touch_pad_config(touch_list[i]) );
+        TEST_ESP_OK(touch_pad_config(touch_list[i]));
     }
-    TEST_ESP_OK( touch_pad_set_fsm_mode(TOUCH_FSM_MODE_SW) );
-    TEST_ESP_OK( touch_pad_fsm_start() );
+    TEST_ESP_OK(touch_pad_set_fsm_mode(TOUCH_FSM_MODE_SW));
+    TEST_ESP_OK(touch_pad_fsm_start());
 
     while (test_cnt--) {
         test_touch_release_all();
 
         /* Read the touch sensor raw data in SW mode. */
         for (int i = 0; i < TEST_TOUCH_CHANNEL; i++) {
-            TEST_ESP_OK( touch_pad_sw_start() );
+            TEST_ESP_OK(touch_pad_sw_start());
             while (!touch_pad_meas_is_done()) ;
-            TEST_ESP_OK( touch_pad_read_raw_data(touch_list[i], &touch_value[i]) );
+            TEST_ESP_OK(touch_pad_read_raw_data(touch_list[i], &touch_value[i]));
             printf("T%d:[%4"PRIu32"] ", touch_list[i], touch_value[i]);
             TEST_ASSERT_NOT_EQUAL(TOUCH_READ_INVALID_VAL, touch_value[i]);
         }
@@ -242,9 +241,9 @@ esp_err_t test_touch_sw_read(void)
 
         /* Read the touch sensor raw data in SW mode. */
         for (int i = 0; i < TEST_TOUCH_CHANNEL; i++) {
-            TEST_ESP_OK( touch_pad_sw_start() );
+            TEST_ESP_OK(touch_pad_sw_start());
             while (!touch_pad_meas_is_done()) ;
-            TEST_ESP_OK( touch_pad_read_raw_data(touch_list[i], &touch_push[i]) );
+            TEST_ESP_OK(touch_pad_read_raw_data(touch_list[i], &touch_push[i]));
             printf("T%d:[%4"PRIu32"] ", touch_list[i], touch_push[i]);
             TEST_ASSERT_NOT_EQUAL(TOUCH_READ_INVALID_VAL, touch_push[i]);
         }
@@ -254,7 +253,7 @@ esp_err_t test_touch_sw_read(void)
             TEST_ASSERT_GREATER_THAN(touch_value[i], touch_push[i]);
         }
     }
-    TEST_ESP_OK( touch_pad_deinit() );
+    TEST_ESP_OK(touch_pad_deinit());
 
     return ESP_OK;
 }
@@ -274,17 +273,17 @@ esp_err_t test_touch_timer_read(void)
     int test_cnt = TEST_TOUCH_COUNT_NUM;
 
     ESP_LOGI(TAG, "  >> %s <<", __func__);
-    TEST_ESP_OK( touch_pad_init() );
+    TEST_ESP_OK(touch_pad_init());
     /* Set different slope for channels to test slope function. */
     printf("Set slope for channel: ");
     for (int i = 0; i < TEST_TOUCH_CHANNEL; i++) {
-        TEST_ESP_OK( touch_pad_config(touch_list[i]) );
-        TEST_ESP_OK( touch_pad_set_cnt_mode(touch_list[i], i % 7 ? i % 7 : 1, TOUCH_PAD_TIE_OPT_DEFAULT) );
+        TEST_ESP_OK(touch_pad_config(touch_list[i]));
+        TEST_ESP_OK(touch_pad_set_cnt_mode(touch_list[i], i % 7 ? i % 7 : 1, TOUCH_PAD_TIE_OPT_DEFAULT));
         printf("[ch%d-%d] ", touch_list[i], i % 7 ? i % 7 : 1);
     }
     printf("\n");
-    TEST_ESP_OK( touch_pad_set_fsm_mode(TOUCH_FSM_MODE_TIMER) );
-    TEST_ESP_OK( touch_pad_fsm_start() );
+    TEST_ESP_OK(touch_pad_set_fsm_mode(TOUCH_FSM_MODE_TIMER));
+    TEST_ESP_OK(touch_pad_fsm_start());
 
     /* Wait touch sensor stable */
     vTaskDelay(50 * SYS_DELAY_TIME_MOM / portTICK_PERIOD_MS);
@@ -295,7 +294,7 @@ esp_err_t test_touch_timer_read(void)
 
         // Start task to read values sensed by pads
         for (int i = 0; i < TEST_TOUCH_CHANNEL; i++) {
-            TEST_ESP_OK( touch_pad_read_raw_data(touch_list[i], &touch_value[i]) );
+            TEST_ESP_OK(touch_pad_read_raw_data(touch_list[i], &touch_value[i]));
             TEST_ASSERT_NOT_EQUAL(TOUCH_READ_INVALID_VAL, touch_value[i]);
             printf("T%d:[%4"PRIu32"] ", touch_list[i], touch_value[i]);
         }
@@ -312,7 +311,7 @@ esp_err_t test_touch_timer_read(void)
 
         /* Read the touch sensor raw data in FSM mode. */
         for (int i = 0; i < TEST_TOUCH_CHANNEL; i++) {
-            TEST_ESP_OK( touch_pad_read_raw_data(touch_list[i], &touch_push[i]) );
+            TEST_ESP_OK(touch_pad_read_raw_data(touch_list[i], &touch_push[i]));
             printf("T%d:[%4"PRIu32"] ", touch_list[i], touch_push[i]);
             TEST_ASSERT_NOT_EQUAL(TOUCH_READ_INVALID_VAL, touch_push[i]);
         }
@@ -322,7 +321,7 @@ esp_err_t test_touch_timer_read(void)
             TEST_ASSERT_GREATER_THAN(touch_value[i], touch_push[i]);
         }
     }
-    TEST_ESP_OK( touch_pad_deinit() );
+    TEST_ESP_OK(touch_pad_deinit());
 
     return ESP_OK;
 }
@@ -341,9 +340,9 @@ esp_err_t test_touch_filtered_read(void)
     uint32_t touch_temp[TEST_TOUCH_CHANNEL] = {0};
 
     ESP_LOGI(TAG, "  >> %s <<", __func__);
-    TEST_ESP_OK( touch_pad_init() );
+    TEST_ESP_OK(touch_pad_init());
     for (int i = 0; i < TEST_TOUCH_CHANNEL; i++) {
-        TEST_ESP_OK( touch_pad_config(touch_list[i]) );
+        TEST_ESP_OK(touch_pad_config(touch_list[i]));
     }
     touch_filter_config_t filter_info = {
         .mode = TOUCH_PAD_FILTER_IIR_32,           // Test jitter and filter 1/4.
@@ -352,10 +351,10 @@ esp_err_t test_touch_filtered_read(void)
         .jitter_step = 4,       // use for jitter mode.
         .smh_lvl = TOUCH_PAD_SMOOTH_IIR_2,
     };
-    TEST_ESP_OK( touch_pad_filter_set_config(&filter_info) );
-    TEST_ESP_OK( touch_pad_filter_enable() );
-    TEST_ESP_OK( touch_pad_set_fsm_mode(TOUCH_FSM_MODE_TIMER) );
-    TEST_ESP_OK( touch_pad_fsm_start() );
+    TEST_ESP_OK(touch_pad_filter_set_config(&filter_info));
+    TEST_ESP_OK(touch_pad_filter_enable());
+    TEST_ESP_OK(touch_pad_set_fsm_mode(TOUCH_FSM_MODE_TIMER));
+    TEST_ESP_OK(touch_pad_fsm_start());
 
     /* Wait touch pad init done. */
     vTaskDelay(50 * SYS_DELAY_TIME_MOM / portTICK_PERIOD_MS);
@@ -363,12 +362,12 @@ esp_err_t test_touch_filtered_read(void)
      * Ideal: benchmark == raw data == smooth data.
      */
     for (int i = 0; i < TEST_TOUCH_CHANNEL; i++) {
-        TEST_ESP_OK( touch_pad_read_benchmark(touch_list[i], &touch_value[i]) );
+        TEST_ESP_OK(touch_pad_read_benchmark(touch_list[i], &touch_value[i]));
         TEST_ASSERT_NOT_EQUAL(TOUCH_READ_INVALID_VAL, touch_value[i]);
-        TEST_ESP_OK( touch_pad_read_raw_data(touch_list[i], &touch_temp[i]) );
+        TEST_ESP_OK(touch_pad_read_raw_data(touch_list[i], &touch_temp[i]));
         TEST_ASSERT_NOT_EQUAL(TOUCH_READ_INVALID_VAL, touch_temp[i]);
         TEST_ASSERT_UINT32_WITHIN((uint32_t)((float)touch_temp[i]*TOUCH_READ_ERROR_THRESH), touch_temp[i], touch_value[i]);
-        TEST_ESP_OK( touch_pad_filter_read_smooth(touch_list[i], &touch_temp[i]) );
+        TEST_ESP_OK(touch_pad_filter_read_smooth(touch_list[i], &touch_temp[i]));
         TEST_ASSERT_NOT_EQUAL(TOUCH_READ_INVALID_VAL, touch_temp[i]);
         TEST_ASSERT_UINT32_WITHIN((uint32_t)((float)touch_temp[i]*TOUCH_READ_ERROR_THRESH), touch_temp[i], touch_value[i]);
     }
@@ -382,10 +381,10 @@ esp_err_t test_touch_filtered_read(void)
     while (test_cnt--) {
         /* Touch reading filtered value equal to raw data. */
         for (int i = 0; i < TEST_TOUCH_CHANNEL; i++) {
-            TEST_ESP_OK( touch_pad_read_raw_data(touch_list[i], &touch_value[i]) );
-            TEST_ESP_OK( touch_pad_read_benchmark(touch_list[i], &touch_temp[i]) );
+            TEST_ESP_OK(touch_pad_read_raw_data(touch_list[i], &touch_value[i]));
+            TEST_ESP_OK(touch_pad_read_benchmark(touch_list[i], &touch_temp[i]));
             TEST_ASSERT_UINT32_WITHIN((uint32_t)((float)touch_temp[i]*TOUCH_READ_ERROR_THRESH), touch_temp[i], touch_value[i]);
-            TEST_ESP_OK( touch_pad_filter_read_smooth(touch_list[i], &touch_temp[i]) );
+            TEST_ESP_OK(touch_pad_filter_read_smooth(touch_list[i], &touch_temp[i]));
             TEST_ASSERT_UINT32_WITHIN((uint32_t)((float)touch_temp[i]*TOUCH_READ_ERROR_THRESH), touch_temp[i], touch_value[i]);
         }
         for (int i = 0; i < TEST_TOUCH_CHANNEL; i++) {
@@ -396,7 +395,7 @@ esp_err_t test_touch_filtered_read(void)
         }
         vTaskDelay(20 / portTICK_PERIOD_MS);
     }
-    TEST_ESP_OK( touch_pad_deinit() );
+    TEST_ESP_OK(touch_pad_deinit());
 
     return ESP_OK;
 }
@@ -404,9 +403,9 @@ esp_err_t test_touch_filtered_read(void)
 TEST_CASE("Touch Sensor reading test (SW, Timer, filter)", "[touch]")
 {
     TOUCH_REG_BASE_TEST();
-    TEST_ESP_OK( test_touch_sw_read() );
-    TEST_ESP_OK( test_touch_timer_read() );
-    TEST_ESP_OK( test_touch_filtered_read() );
+    TEST_ESP_OK(test_touch_sw_read());
+    TEST_ESP_OK(test_touch_timer_read());
+    TEST_ESP_OK(test_touch_filtered_read());
 }
 
 /*
@@ -426,17 +425,17 @@ int test_touch_base_parameter(touch_pad_t pad_num, int meas_time, int slp_time,
     int test_cnt = TEST_TOUCH_COUNT_NUM;
 
     ESP_LOGI(TAG, "  >> %s <<", __func__);
-    TEST_ESP_OK( touch_pad_init() );
+    TEST_ESP_OK(touch_pad_init());
     /* Note: init all channel, but test one channel. */
     for (int i = 0; i < TEST_TOUCH_CHANNEL; i++) {
-        TEST_ESP_OK( touch_pad_config(touch_list[i]) );
+        TEST_ESP_OK(touch_pad_config(touch_list[i]));
     }
 
-    TEST_ESP_OK( touch_pad_set_cnt_mode(pad_num, slope, TOUCH_PAD_TIE_OPT_DEFAULT) );
-    TEST_ESP_OK( touch_pad_set_measurement_interval(slp_time) );
-    TEST_ESP_OK( touch_pad_set_charge_discharge_times(meas_time) );
-    TEST_ESP_OK( touch_pad_set_voltage(vol_h, vol_l, vol_a) );
-    TEST_ESP_OK( touch_pad_set_idle_channel_connect(is_conn_gnd) );
+    TEST_ESP_OK(touch_pad_set_cnt_mode(pad_num, slope, TOUCH_PAD_TIE_OPT_DEFAULT));
+    TEST_ESP_OK(touch_pad_set_measurement_interval(slp_time));
+    TEST_ESP_OK(touch_pad_set_charge_discharge_times(meas_time));
+    TEST_ESP_OK(touch_pad_set_voltage(vol_h, vol_l, vol_a));
+    TEST_ESP_OK(touch_pad_set_idle_channel_connect(is_conn_gnd));
     ESP_LOGI(TAG, "meas_time[%d]_slp_time[%d]_vol_h[%d]_vol_l[%d]_vol_a[%d]_slope[%d]_is_conn_gnd[%d]",
              meas_time, slp_time, vol_h, vol_l, vol_a, slope, is_conn_gnd);
 
@@ -447,27 +446,27 @@ int test_touch_base_parameter(touch_pad_t pad_num, int meas_time, int slp_time,
         .jitter_step = 4,       // use for jitter mode.
         .smh_lvl = TOUCH_PAD_SMOOTH_IIR_2,
     };
-    TEST_ESP_OK( touch_pad_filter_set_config(&filter_info) );
-    TEST_ESP_OK( touch_pad_filter_enable() );
-    TEST_ESP_OK( touch_pad_set_fsm_mode(TOUCH_FSM_MODE_TIMER) );
-    TEST_ESP_OK( touch_pad_fsm_start() );
+    TEST_ESP_OK(touch_pad_filter_set_config(&filter_info));
+    TEST_ESP_OK(touch_pad_filter_enable());
+    TEST_ESP_OK(touch_pad_set_fsm_mode(TOUCH_FSM_MODE_TIMER));
+    TEST_ESP_OK(touch_pad_fsm_start());
 
     /* Some parameters will delay the init time. so wait longger time */
     vTaskDelay(100 / portTICK_PERIOD_MS);
 
     while (test_cnt--) {
         /* Correctness of reading. Ideal: benchmark == raw data == smooth data. */
-        TEST_ESP_OK( touch_pad_read_raw_data(pad_num, &touch_value) );
-        TEST_ESP_OK( touch_pad_read_benchmark(pad_num, &touch_filter) );
-        TEST_ASSERT_UINT32_WITHIN((uint32_t)((float)touch_filter*TOUCH_READ_ERROR_THRESH), touch_filter, touch_value);
-        TEST_ESP_OK( touch_pad_filter_read_smooth(pad_num, &touch_filter) );
-        TEST_ASSERT_UINT32_WITHIN((uint32_t)((float)touch_filter*TOUCH_READ_ERROR_THRESH), touch_filter, touch_value);
+        TEST_ESP_OK(touch_pad_read_raw_data(pad_num, &touch_value));
+        TEST_ESP_OK(touch_pad_read_benchmark(pad_num, &touch_filter));
+        TEST_ASSERT_UINT32_WITHIN((uint32_t)((float)touch_filter * TOUCH_READ_ERROR_THRESH), touch_filter, touch_value);
+        TEST_ESP_OK(touch_pad_filter_read_smooth(pad_num, &touch_filter));
+        TEST_ASSERT_UINT32_WITHIN((uint32_t)((float)touch_filter * TOUCH_READ_ERROR_THRESH), touch_filter, touch_value);
 
         /* Stable of reading */
-        TEST_ESP_OK( touch_pad_read_raw_data(pad_num, &touch_value) );
+        TEST_ESP_OK(touch_pad_read_raw_data(pad_num, &touch_value));
         TEST_ASSERT_NOT_EQUAL(TOUCH_READ_INVALID_VAL, touch_value);
         if (touch_temp) {
-            TEST_ASSERT_UINT32_WITHIN((uint32_t)((float)touch_temp*TOUCH_READ_ERROR_THRESH), touch_temp, touch_value);
+            TEST_ASSERT_UINT32_WITHIN((uint32_t)((float)touch_temp * TOUCH_READ_ERROR_THRESH), touch_temp, touch_value);
         }
         touch_temp = touch_value;
 
@@ -477,7 +476,7 @@ int test_touch_base_parameter(touch_pad_t pad_num, int meas_time, int slp_time,
     }
     printf("\n");
 
-    TEST_ESP_OK( touch_pad_deinit() );
+    TEST_ESP_OK(touch_pad_deinit());
     return (uint32_t)(val_sum / TEST_TOUCH_COUNT_NUM);
 }
 
@@ -487,36 +486,36 @@ TEST_CASE("Touch Sensor base parameters test (meas_time, voltage, slope, inv_con
 
     ESP_LOGI(TAG, "Charge / incharge voltage level test");
     touch_val[0] = test_touch_base_parameter(touch_list[2], TOUCH_PAD_MEASURE_CYCLE_DEFAULT, TOUCH_PAD_SLEEP_CYCLE_DEFAULT,
-                   TOUCH_HVOLT_2V4, TOUCH_LVOLT_0V8, TOUCH_HVOLT_ATTEN_1V5,
-                   TOUCH_PAD_SLOPE_DEFAULT, true);
+                                             TOUCH_HVOLT_2V4, TOUCH_LVOLT_0V8, TOUCH_HVOLT_ATTEN_1V5,
+                                             TOUCH_PAD_SLOPE_DEFAULT, true);
     touch_val[1] = test_touch_base_parameter(touch_list[2], TOUCH_PAD_MEASURE_CYCLE_DEFAULT, TOUCH_PAD_SLEEP_CYCLE_DEFAULT,
-                   TOUCH_HVOLT_2V5, TOUCH_LVOLT_0V6, TOUCH_HVOLT_ATTEN_1V,
-                   TOUCH_PAD_SLOPE_DEFAULT, true);
+                                             TOUCH_HVOLT_2V5, TOUCH_LVOLT_0V6, TOUCH_HVOLT_ATTEN_1V,
+                                             TOUCH_PAD_SLOPE_DEFAULT, true);
     touch_val[2] = test_touch_base_parameter(touch_list[2], TOUCH_PAD_MEASURE_CYCLE_DEFAULT, TOUCH_PAD_SLEEP_CYCLE_DEFAULT,
-                   TOUCH_HVOLT_2V7, TOUCH_LVOLT_0V5, TOUCH_HVOLT_ATTEN_0V,
-                   TOUCH_PAD_SLOPE_DEFAULT, true);
+                                             TOUCH_HVOLT_2V7, TOUCH_LVOLT_0V5, TOUCH_HVOLT_ATTEN_0V,
+                                             TOUCH_PAD_SLOPE_DEFAULT, true);
 
     TEST_ASSERT_GREATER_THAN(touch_val[0], touch_val[1]);
     TEST_ASSERT_GREATER_THAN(touch_val[1], touch_val[2]);
 
     ESP_LOGI(TAG, "Measure time / sleep time test");
     touch_val[0] = test_touch_base_parameter(touch_list[1], 0xff, 0x1ff,
-                   TOUCH_PAD_HIGH_VOLTAGE_THRESHOLD, TOUCH_PAD_LOW_VOLTAGE_THRESHOLD, TOUCH_PAD_ATTEN_VOLTAGE_THRESHOLD, TOUCH_PAD_SLOPE_DEFAULT, true);
+                                             TOUCH_PAD_HIGH_VOLTAGE_THRESHOLD, TOUCH_PAD_LOW_VOLTAGE_THRESHOLD, TOUCH_PAD_ATTEN_VOLTAGE_THRESHOLD, TOUCH_PAD_SLOPE_DEFAULT, true);
     touch_val[1] = test_touch_base_parameter(touch_list[1], 0xfff, 0xff,
-                   TOUCH_PAD_HIGH_VOLTAGE_THRESHOLD, TOUCH_PAD_LOW_VOLTAGE_THRESHOLD, TOUCH_PAD_ATTEN_VOLTAGE_THRESHOLD, TOUCH_PAD_SLOPE_DEFAULT, true);
+                                             TOUCH_PAD_HIGH_VOLTAGE_THRESHOLD, TOUCH_PAD_LOW_VOLTAGE_THRESHOLD, TOUCH_PAD_ATTEN_VOLTAGE_THRESHOLD, TOUCH_PAD_SLOPE_DEFAULT, true);
     touch_val[2] = test_touch_base_parameter(touch_list[1], 0x1fff, 0xf,
-                   TOUCH_PAD_HIGH_VOLTAGE_THRESHOLD, TOUCH_PAD_LOW_VOLTAGE_THRESHOLD, TOUCH_PAD_ATTEN_VOLTAGE_THRESHOLD, TOUCH_PAD_SLOPE_DEFAULT, true);
+                                             TOUCH_PAD_HIGH_VOLTAGE_THRESHOLD, TOUCH_PAD_LOW_VOLTAGE_THRESHOLD, TOUCH_PAD_ATTEN_VOLTAGE_THRESHOLD, TOUCH_PAD_SLOPE_DEFAULT, true);
 
     TEST_ASSERT_GREATER_THAN(touch_val[0], touch_val[1]);
     TEST_ASSERT_GREATER_THAN(touch_val[1], touch_val[2]);
 
     ESP_LOGI(TAG, "Charge / incharge slope level test");
     touch_val[0] = test_touch_base_parameter(touch_list[0], TOUCH_PAD_MEASURE_CYCLE_DEFAULT, TOUCH_PAD_SLEEP_CYCLE_DEFAULT,
-                   TOUCH_PAD_HIGH_VOLTAGE_THRESHOLD, TOUCH_PAD_LOW_VOLTAGE_THRESHOLD, TOUCH_PAD_ATTEN_VOLTAGE_THRESHOLD, 7, true);
+                                             TOUCH_PAD_HIGH_VOLTAGE_THRESHOLD, TOUCH_PAD_LOW_VOLTAGE_THRESHOLD, TOUCH_PAD_ATTEN_VOLTAGE_THRESHOLD, 7, true);
     touch_val[1] = test_touch_base_parameter(touch_list[0], TOUCH_PAD_MEASURE_CYCLE_DEFAULT, TOUCH_PAD_SLEEP_CYCLE_DEFAULT,
-                   TOUCH_PAD_HIGH_VOLTAGE_THRESHOLD, TOUCH_PAD_LOW_VOLTAGE_THRESHOLD, TOUCH_PAD_ATTEN_VOLTAGE_THRESHOLD, 5, true);
+                                             TOUCH_PAD_HIGH_VOLTAGE_THRESHOLD, TOUCH_PAD_LOW_VOLTAGE_THRESHOLD, TOUCH_PAD_ATTEN_VOLTAGE_THRESHOLD, 5, true);
     touch_val[2] = test_touch_base_parameter(touch_list[0], TOUCH_PAD_MEASURE_CYCLE_DEFAULT, TOUCH_PAD_SLEEP_CYCLE_DEFAULT,
-                   TOUCH_PAD_HIGH_VOLTAGE_THRESHOLD, TOUCH_PAD_LOW_VOLTAGE_THRESHOLD, TOUCH_PAD_ATTEN_VOLTAGE_THRESHOLD, 3, true);
+                                             TOUCH_PAD_HIGH_VOLTAGE_THRESHOLD, TOUCH_PAD_LOW_VOLTAGE_THRESHOLD, TOUCH_PAD_ATTEN_VOLTAGE_THRESHOLD, 3, true);
 
     TEST_ASSERT_GREATER_THAN(touch_val[0], touch_val[1]);
     TEST_ASSERT_GREATER_THAN(touch_val[1], touch_val[2]);
@@ -524,11 +523,11 @@ TEST_CASE("Touch Sensor base parameters test (meas_time, voltage, slope, inv_con
     /* The GND option causes larger parasitic capacitance and larger reading */
     ESP_LOGI(TAG, "Inactive connect test");
     touch_val[0] = test_touch_base_parameter(touch_list[3], TOUCH_PAD_MEASURE_CYCLE_DEFAULT, TOUCH_PAD_SLEEP_CYCLE_DEFAULT,
-                   TOUCH_PAD_HIGH_VOLTAGE_THRESHOLD, TOUCH_PAD_LOW_VOLTAGE_THRESHOLD, TOUCH_PAD_ATTEN_VOLTAGE_THRESHOLD, TOUCH_PAD_SLOPE_DEFAULT,
-                   false);
+                                             TOUCH_PAD_HIGH_VOLTAGE_THRESHOLD, TOUCH_PAD_LOW_VOLTAGE_THRESHOLD, TOUCH_PAD_ATTEN_VOLTAGE_THRESHOLD, TOUCH_PAD_SLOPE_DEFAULT,
+                                             false);
     touch_val[1] = test_touch_base_parameter(touch_list[3], TOUCH_PAD_MEASURE_CYCLE_DEFAULT, TOUCH_PAD_SLEEP_CYCLE_DEFAULT,
-                   TOUCH_PAD_HIGH_VOLTAGE_THRESHOLD, TOUCH_PAD_LOW_VOLTAGE_THRESHOLD, TOUCH_PAD_ATTEN_VOLTAGE_THRESHOLD, TOUCH_PAD_SLOPE_DEFAULT,
-                   true);
+                                             TOUCH_PAD_HIGH_VOLTAGE_THRESHOLD, TOUCH_PAD_LOW_VOLTAGE_THRESHOLD, TOUCH_PAD_ATTEN_VOLTAGE_THRESHOLD, TOUCH_PAD_SLOPE_DEFAULT,
+                                             true);
     TEST_ASSERT_GREATER_THAN(touch_val[0], touch_val[1]);
 }
 
@@ -601,7 +600,7 @@ static esp_err_t test_touch_check_ch_touched_with_proximity(uint32_t test_ch_num
     touch_event_t evt = {0};
     esp_err_t ret = ESP_FAIL;
 
-    TEST_ESP_OK( touch_pad_proximity_get_count(TOUCH_PAD_MAX, &count) );
+    TEST_ESP_OK(touch_pad_proximity_get_count(TOUCH_PAD_MAX, &count));
     printf("Active: ");
     while (1) {
         if (pdTRUE == xQueueReceive(que_touch, &evt, exceed_time_ms / portTICK_PERIOD_MS)) {
@@ -643,7 +642,7 @@ static esp_err_t test_touch_check_ch_released_with_proximity(uint32_t test_ch_nu
     touch_event_t evt = {0};
     esp_err_t ret = ESP_FAIL;
 
-    TEST_ESP_OK( touch_pad_proximity_get_count(TOUCH_PAD_MAX, &count) );
+    TEST_ESP_OK(touch_pad_proximity_get_count(TOUCH_PAD_MAX, &count));
     printf("Inactive: ");
     while (1) {
         if (pdTRUE == xQueueReceive(que_touch, &evt, exceed_time_ms / portTICK_PERIOD_MS)) {
@@ -736,8 +735,8 @@ static esp_err_t test_touch_check_ch_intr_timeout(touch_pad_t pad_num)
                     touch_pad_timeout_resume();
                     break;
                 } else {
-                    esp_rom_printf("-timeout %x T[%"PRIu32"] status %"PRIx32", evt_msk %x -\n",
-                               s_touch_timeout_mask, evt.pad_num, evt.pad_status, evt.intr_mask);
+                    esp_rom_printf("-timeout %" PRIx32 " T[%"PRIu32"] status %"PRIx32", evt_msk %x -\n",
+                                   s_touch_timeout_mask, evt.pad_num, evt.pad_status, evt.intr_mask);
                     touch_pad_timeout_resume();
                 }
             } else {
@@ -803,9 +802,9 @@ esp_err_t test_touch_interrupt(void)
     } else {
         xQueueReset(que_touch);
     }
-    TEST_ESP_OK( touch_pad_init() );
+    TEST_ESP_OK(touch_pad_init());
     for (int i = 0; i < TEST_TOUCH_CHANNEL; i++) {
-        TEST_ESP_OK( touch_pad_config(touch_list[i]) );
+        TEST_ESP_OK(touch_pad_config(touch_list[i]));
     }
     touch_filter_config_t filter_info = {
         .mode = TOUCH_PAD_FILTER_IIR_16,           // Test jitter and filter 1/4.
@@ -814,38 +813,38 @@ esp_err_t test_touch_interrupt(void)
         .jitter_step = 4,       // use for jitter mode.
         .smh_lvl = TOUCH_PAD_SMOOTH_IIR_2,
     };
-    TEST_ESP_OK( touch_pad_filter_set_config(&filter_info) );
-    TEST_ESP_OK( touch_pad_filter_enable() );
+    TEST_ESP_OK(touch_pad_filter_set_config(&filter_info));
+    TEST_ESP_OK(touch_pad_filter_enable());
     /* Register touch interrupt ISR, enable intr type. */
-    TEST_ESP_OK( touch_pad_intr_enable(TOUCH_PAD_INTR_MASK_ACTIVE | TOUCH_PAD_INTR_MASK_INACTIVE) );
-    TEST_ESP_OK( touch_pad_set_fsm_mode(TOUCH_FSM_MODE_TIMER) );
-    TEST_ESP_OK( touch_pad_fsm_start() );
+    TEST_ESP_OK(touch_pad_intr_enable(TOUCH_PAD_INTR_MASK_ACTIVE | TOUCH_PAD_INTR_MASK_INACTIVE));
+    TEST_ESP_OK(touch_pad_set_fsm_mode(TOUCH_FSM_MODE_TIMER));
+    TEST_ESP_OK(touch_pad_fsm_start());
 
     // Initialize and start a software filter to detect slight change of capacitance.
     vTaskDelay(50 / portTICK_PERIOD_MS);
 
     /* Set threshold of touch sensor */
     for (int i = 0; i < TEST_TOUCH_CHANNEL; i++) {
-        TEST_ESP_OK( touch_pad_read_benchmark(touch_list[i], &touch_value) );
-        TEST_ESP_OK( touch_pad_filter_read_smooth(touch_list[i], &smooth) );
-        TEST_ESP_OK( touch_pad_set_thresh(touch_list[i], touch_value * TOUCH_INTR_THRESHOLD) );
+        TEST_ESP_OK(touch_pad_read_benchmark(touch_list[i], &touch_value));
+        TEST_ESP_OK(touch_pad_filter_read_smooth(touch_list[i], &smooth));
+        TEST_ESP_OK(touch_pad_set_thresh(touch_list[i], touch_value * TOUCH_INTR_THRESHOLD));
         ESP_LOGI(TAG, "test init: touch pad [%d] base %"PRIu32", smooth %"PRIu32", thresh %"PRIu32"",
                  touch_list[i], touch_value, smooth, (uint32_t)(touch_value * TOUCH_INTR_THRESHOLD));
     }
 
     while (test_cnt--) {
         test_touch_push_all();
-        TEST_ESP_OK( test_touch_check_ch_touched(TEST_TOUCH_CHANNEL, TOUCH_EXCEED_TIME_MS) );
+        TEST_ESP_OK(test_touch_check_ch_touched(TEST_TOUCH_CHANNEL, TOUCH_EXCEED_TIME_MS));
         printf_touch_hw_read("push");
 
         test_touch_benchmark();
 
         test_touch_release_all();
-        TEST_ESP_OK( test_touch_check_ch_released(TEST_TOUCH_CHANNEL, TOUCH_EXCEED_TIME_MS) );
+        TEST_ESP_OK(test_touch_check_ch_released(TEST_TOUCH_CHANNEL, TOUCH_EXCEED_TIME_MS));
         printf_touch_hw_read("release");
     }
 
-    TEST_ESP_OK( touch_pad_deinit() );
+    TEST_ESP_OK(touch_pad_deinit());
 
     return ESP_OK;
 }
@@ -866,13 +865,13 @@ esp_err_t test_touch_scan_done_interrupt(void)
     if (que_touch == NULL) {
         que_touch = xQueueCreate(TEST_TOUCH_CHANNEL, sizeof(touch_event_t));
         /* Should register once. */
-        TEST_ESP_OK( touch_pad_isr_register(test_touch_intr_cb, NULL, TOUCH_PAD_INTR_MASK_ALL) );
+        TEST_ESP_OK(touch_pad_isr_register(test_touch_intr_cb, NULL, TOUCH_PAD_INTR_MASK_ALL));
     } else {
         xQueueReset(que_touch);
     }
-    TEST_ESP_OK( touch_pad_init() );
+    TEST_ESP_OK(touch_pad_init());
     for (int i = 0; i < TEST_TOUCH_CHANNEL; i++) {
-        TEST_ESP_OK( touch_pad_config(touch_list[i]) );
+        TEST_ESP_OK(touch_pad_config(touch_list[i]));
     }
     touch_filter_config_t filter_info = {
         .mode = TOUCH_PAD_FILTER_IIR_16,           // Test jitter and filter 1/4.
@@ -881,39 +880,39 @@ esp_err_t test_touch_scan_done_interrupt(void)
         .jitter_step = 4,       // use for jitter mode.
         .smh_lvl = TOUCH_PAD_SMOOTH_IIR_2,
     };
-    TEST_ESP_OK( touch_pad_filter_set_config(&filter_info) );
-    TEST_ESP_OK( touch_pad_filter_enable() );
+    TEST_ESP_OK(touch_pad_filter_set_config(&filter_info));
+    TEST_ESP_OK(touch_pad_filter_enable());
     /* Register touch interrupt ISR, enable intr type. */
-    TEST_ESP_OK( touch_pad_intr_enable(TOUCH_PAD_INTR_MASK_SCAN_DONE | TOUCH_PAD_INTR_MASK_ACTIVE | TOUCH_PAD_INTR_MASK_INACTIVE) );
-    TEST_ESP_OK( touch_pad_set_fsm_mode(TOUCH_FSM_MODE_TIMER) );
-    TEST_ESP_OK( touch_pad_fsm_start() );
+    TEST_ESP_OK(touch_pad_intr_enable(TOUCH_PAD_INTR_MASK_SCAN_DONE | TOUCH_PAD_INTR_MASK_ACTIVE | TOUCH_PAD_INTR_MASK_INACTIVE));
+    TEST_ESP_OK(touch_pad_set_fsm_mode(TOUCH_FSM_MODE_TIMER));
+    TEST_ESP_OK(touch_pad_fsm_start());
 
     /* Check the scan done interrupt */
-    TEST_ESP_OK( test_touch_check_ch_intr_scan_done() );
+    TEST_ESP_OK(test_touch_check_ch_intr_scan_done());
 
     vTaskDelay(50 / portTICK_PERIOD_MS);
 
     for (int i = 0; i < TEST_TOUCH_CHANNEL; i++) {
-        TEST_ESP_OK( touch_pad_read_benchmark(touch_list[i], &touch_value) );
-        TEST_ESP_OK( touch_pad_filter_read_smooth(touch_list[i], &smooth) );
-        TEST_ESP_OK( touch_pad_set_thresh(touch_list[i], touch_value * TOUCH_INTR_THRESHOLD) );
+        TEST_ESP_OK(touch_pad_read_benchmark(touch_list[i], &touch_value));
+        TEST_ESP_OK(touch_pad_filter_read_smooth(touch_list[i], &smooth));
+        TEST_ESP_OK(touch_pad_set_thresh(touch_list[i], touch_value * TOUCH_INTR_THRESHOLD));
         ESP_LOGI(TAG, "test init: touch pad [%d] base %"PRIu32", smooth %"PRIu32", thresh %"PRIu32"", \
                  touch_list[i], touch_value, smooth, (uint32_t)(touch_value * TOUCH_INTR_THRESHOLD));
     }
 
     while (test_cnt--) {
         test_touch_push_all();
-        TEST_ESP_OK( test_touch_check_ch_touched(TEST_TOUCH_CHANNEL, TOUCH_EXCEED_TIME_MS) );
+        TEST_ESP_OK(test_touch_check_ch_touched(TEST_TOUCH_CHANNEL, TOUCH_EXCEED_TIME_MS));
         printf_touch_hw_read("push");
 
         test_touch_benchmark();
 
         test_touch_release_all();
-        TEST_ESP_OK( test_touch_check_ch_released(TEST_TOUCH_CHANNEL, TOUCH_EXCEED_TIME_MS) );
+        TEST_ESP_OK(test_touch_check_ch_released(TEST_TOUCH_CHANNEL, TOUCH_EXCEED_TIME_MS));
         printf_touch_hw_read("release");
     }
 
-    TEST_ESP_OK( touch_pad_deinit() );
+    TEST_ESP_OK(touch_pad_deinit());
 
     return ESP_OK;
 }
@@ -933,13 +932,13 @@ esp_err_t test_touch_timeout_interrupt(void)
     if (que_touch == NULL) {
         que_touch = xQueueCreate(TEST_TOUCH_CHANNEL, sizeof(touch_event_t));
         /* Should register once. */
-        TEST_ESP_OK( touch_pad_isr_register(test_touch_intr_cb, NULL, TOUCH_PAD_INTR_MASK_ALL) );
+        TEST_ESP_OK(touch_pad_isr_register(test_touch_intr_cb, NULL, TOUCH_PAD_INTR_MASK_ALL));
     } else {
         xQueueReset(que_touch);
     }
-    TEST_ESP_OK( touch_pad_init() );
+    TEST_ESP_OK(touch_pad_init());
     for (int i = 0; i < TEST_TOUCH_CHANNEL; i++) {
-        TEST_ESP_OK( touch_pad_config(touch_list[i]) );
+        TEST_ESP_OK(touch_pad_config(touch_list[i]));
     }
     touch_filter_config_t filter_info = {
         .mode = TOUCH_PAD_FILTER_IIR_16,           // Test jitter and filter 1/4.
@@ -948,31 +947,31 @@ esp_err_t test_touch_timeout_interrupt(void)
         .jitter_step = 4,       // use for jitter mode.
         .smh_lvl = TOUCH_PAD_SMOOTH_IIR_2,
     };
-    TEST_ESP_OK( touch_pad_filter_set_config(&filter_info) );
-    TEST_ESP_OK( touch_pad_filter_enable() );
+    TEST_ESP_OK(touch_pad_filter_set_config(&filter_info));
+    TEST_ESP_OK(touch_pad_filter_enable());
     /* Register touch interrupt ISR, enable intr type. */
-    TEST_ESP_OK( touch_pad_intr_enable(TOUCH_PAD_INTR_MASK_TIMEOUT | TOUCH_PAD_INTR_MASK_ACTIVE | TOUCH_PAD_INTR_MASK_INACTIVE) );
-    TEST_ESP_OK( touch_pad_set_fsm_mode(TOUCH_FSM_MODE_TIMER) );
-    TEST_ESP_OK( touch_pad_fsm_start() );
+    TEST_ESP_OK(touch_pad_intr_enable(TOUCH_PAD_INTR_MASK_TIMEOUT | TOUCH_PAD_INTR_MASK_ACTIVE | TOUCH_PAD_INTR_MASK_INACTIVE));
+    TEST_ESP_OK(touch_pad_set_fsm_mode(TOUCH_FSM_MODE_TIMER));
+    TEST_ESP_OK(touch_pad_fsm_start());
 
     // Initialize and start a software filter to detect slight change of capacitance.
     vTaskDelay(50 * SYS_DELAY_TIME_MOM / portTICK_PERIOD_MS);
 
     for (int i = 0; i < TEST_TOUCH_CHANNEL; i++) {
-        TEST_ESP_OK( touch_pad_read_benchmark(touch_list[i], &touch_value) );
-        TEST_ESP_OK( touch_pad_filter_read_smooth(touch_list[i], &smooth) );
-        TEST_ESP_OK( touch_pad_set_thresh(touch_list[i], touch_value * TOUCH_INTR_THRESHOLD) );
+        TEST_ESP_OK(touch_pad_read_benchmark(touch_list[i], &touch_value));
+        TEST_ESP_OK(touch_pad_filter_read_smooth(touch_list[i], &smooth));
+        TEST_ESP_OK(touch_pad_set_thresh(touch_list[i], touch_value * TOUCH_INTR_THRESHOLD));
         ESP_LOGI(TAG, "test init: touch pad [%d] base %"PRIu32", smooth %"PRIu32", thresh %"PRIu32"",
                  touch_list[i], touch_value, smooth, (uint32_t)(touch_value * TOUCH_INTR_THRESHOLD));
     }
     /* Set timeout parameter */
-    TEST_ESP_OK( touch_pad_read_benchmark(touch_list[0], &touch_value) );
-    TEST_ESP_OK( touch_pad_timeout_set(true , touch_value * 10) );
+    TEST_ESP_OK(touch_pad_read_benchmark(touch_list[0], &touch_value));
+    TEST_ESP_OK(touch_pad_timeout_set(true, touch_value * 10));
 
     // Only fake push one touch pad.
     vTaskDelay(50 * SYS_DELAY_TIME_MOM / portTICK_PERIOD_MS);
     test_timeout_trigger_fake(touch_list[0]);
-    TEST_ESP_OK( test_touch_check_ch_intr_timeout(touch_list[0]) );
+    TEST_ESP_OK(test_touch_check_ch_intr_timeout(touch_list[0]));
     test_timeout_normal(touch_list[0]);
 
     vTaskDelay(50 * SYS_DELAY_TIME_MOM / portTICK_PERIOD_MS);
@@ -983,26 +982,26 @@ esp_err_t test_touch_timeout_interrupt(void)
     int test_cnt = TEST_TOUCH_COUNT_NUM;
     while (test_cnt--) {
         test_touch_push_all();
-        TEST_ESP_OK( test_touch_check_ch_touched(TEST_TOUCH_CHANNEL, TOUCH_EXCEED_TIME_MS) );
+        TEST_ESP_OK(test_touch_check_ch_touched(TEST_TOUCH_CHANNEL, TOUCH_EXCEED_TIME_MS));
         printf_touch_hw_read("push");
 
         test_touch_benchmark();
 
         test_touch_release_all();
-        TEST_ESP_OK( test_touch_check_ch_released(TEST_TOUCH_CHANNEL, TOUCH_EXCEED_TIME_MS) );
+        TEST_ESP_OK(test_touch_check_ch_released(TEST_TOUCH_CHANNEL, TOUCH_EXCEED_TIME_MS));
         printf_touch_hw_read("release");
     }
 
-    TEST_ESP_OK( touch_pad_deinit() );
+    TEST_ESP_OK(touch_pad_deinit());
 
     return ESP_OK;
 }
 
 TEST_CASE("Touch Sensor interrupt test (active, inactive, scan_done, timeout)", "[touch]")
 {
-    TEST_ESP_OK( test_touch_interrupt() );
-    TEST_ESP_OK( test_touch_scan_done_interrupt() );
-    TEST_ESP_OK( test_touch_timeout_interrupt() );
+    TEST_ESP_OK(test_touch_interrupt());
+    TEST_ESP_OK(test_touch_scan_done_interrupt());
+    TEST_ESP_OK(test_touch_timeout_interrupt());
 }
 
 static void test_touch_measure_step(uint32_t step)
@@ -1011,7 +1010,7 @@ static void test_touch_measure_step(uint32_t step)
     // printf("measure cnt %"PRIu32": [ ", step);
     for (int i = 0; i < step; i++) {
         for (int j = 0; j < TEST_TOUCH_CHANNEL; j++) {
-            TEST_ESP_OK( touch_pad_sw_start() );
+            TEST_ESP_OK(touch_pad_sw_start());
             while (!touch_pad_meas_is_done()) ;
         }
         // printf(".");
@@ -1035,35 +1034,35 @@ esp_err_t test_touch_filter_parameter_debounce(int deb_cnt)
     if (que_touch == NULL) {
         que_touch = xQueueCreate(TEST_TOUCH_CHANNEL, sizeof(touch_event_t));
         /* Should register once. */
-        TEST_ESP_OK( touch_pad_isr_register(test_touch_intr_cb, NULL, TOUCH_PAD_INTR_MASK_ALL) );
+        TEST_ESP_OK(touch_pad_isr_register(test_touch_intr_cb, NULL, TOUCH_PAD_INTR_MASK_ALL));
     } else {
         xQueueReset(que_touch);
     }
-    TEST_ESP_OK( touch_pad_init() );
+    TEST_ESP_OK(touch_pad_init());
     for (int i = 0; i < TEST_TOUCH_CHANNEL; i++) {
-        TEST_ESP_OK( touch_pad_config(touch_list[i]) );
+        TEST_ESP_OK(touch_pad_config(touch_list[i]));
     }
     touch_filter_config_t filter_info = {
         .mode = TOUCH_PAD_FILTER_IIR_128,           // Test jitter and filter 1/4.
-        .debounce_cnt = ((deb_cnt < 0) ? 1 : deb_cnt) ,      // 1 time count.
+        .debounce_cnt = ((deb_cnt < 0) ? 1 : deb_cnt),       // 1 time count.
         .noise_thr = 0,         // 50%
         .jitter_step = 4,       // use for jitter mode.
         .smh_lvl = TOUCH_PAD_SMOOTH_OFF,
     };
-    TEST_ESP_OK( touch_pad_filter_set_config(&filter_info) );
-    TEST_ESP_OK( touch_pad_filter_enable() );
+    TEST_ESP_OK(touch_pad_filter_set_config(&filter_info));
+    TEST_ESP_OK(touch_pad_filter_enable());
     /* Register touch interrupt ISR, enable intr type. */
-    TEST_ESP_OK( touch_pad_intr_enable(TOUCH_PAD_INTR_MASK_ACTIVE | TOUCH_PAD_INTR_MASK_INACTIVE) );
-    TEST_ESP_OK( touch_pad_set_fsm_mode(TOUCH_FSM_MODE_SW) );
-    TEST_ESP_OK( touch_pad_fsm_start() );
+    TEST_ESP_OK(touch_pad_intr_enable(TOUCH_PAD_INTR_MASK_ACTIVE | TOUCH_PAD_INTR_MASK_INACTIVE));
+    TEST_ESP_OK(touch_pad_set_fsm_mode(TOUCH_FSM_MODE_SW));
+    TEST_ESP_OK(touch_pad_fsm_start());
 
     /* Run to wait the data become stable. */
     test_touch_measure_step(20); // 2 scan loop
 
     /* Set the threshold. */
     for (int i = 0; i < TEST_TOUCH_CHANNEL; i++) {
-        TEST_ESP_OK( touch_pad_read_benchmark(touch_list[i], &touch_value) );
-        TEST_ESP_OK( touch_pad_set_thresh(touch_list[i], touch_value * TOUCH_INTR_THRESHOLD) );
+        TEST_ESP_OK(touch_pad_read_benchmark(touch_list[i], &touch_value));
+        TEST_ESP_OK(touch_pad_set_thresh(touch_list[i], touch_value * TOUCH_INTR_THRESHOLD));
         ESP_LOGI(TAG, "test init: touch pad [%d] base %"PRIu32", thresh %"PRIu32"", \
                  touch_list[i], touch_value, (uint32_t)(touch_value * TOUCH_INTR_THRESHOLD));
     }
@@ -1072,21 +1071,21 @@ esp_err_t test_touch_filter_parameter_debounce(int deb_cnt)
         test_touch_push_all();
         /* Fake the process of push debounce. */
         test_touch_measure_step(deb_cnt);       // measure n times. touch state not changed.
-        TEST_ESP_ERR( ESP_FAIL, test_touch_check_ch_touched(TEST_TOUCH_CHANNEL, TOUCH_EXCEED_TIME_MS) );
+        TEST_ESP_ERR(ESP_FAIL, test_touch_check_ch_touched(TEST_TOUCH_CHANNEL, TOUCH_EXCEED_TIME_MS));
         test_touch_measure_step(1);   // measure n+1 times. touch state changed.
-        TEST_ESP_OK( test_touch_check_ch_touched(TEST_TOUCH_CHANNEL, TOUCH_EXCEED_TIME_MS) );
+        TEST_ESP_OK(test_touch_check_ch_touched(TEST_TOUCH_CHANNEL, TOUCH_EXCEED_TIME_MS));
         printf_touch_hw_read("push");
 
         test_touch_release_all();
         /* Fake the process of release debounce. */
         test_touch_measure_step(deb_cnt);       // measure n times. touch state not changed.
-        TEST_ESP_ERR( ESP_FAIL, test_touch_check_ch_released(TEST_TOUCH_CHANNEL, TOUCH_EXCEED_TIME_MS) );
+        TEST_ESP_ERR(ESP_FAIL, test_touch_check_ch_released(TEST_TOUCH_CHANNEL, TOUCH_EXCEED_TIME_MS));
         test_touch_measure_step(1);   // measure n+1 times. touch state changed.
-        TEST_ESP_OK( test_touch_check_ch_released(TEST_TOUCH_CHANNEL, TOUCH_EXCEED_TIME_MS) );
+        TEST_ESP_OK(test_touch_check_ch_released(TEST_TOUCH_CHANNEL, TOUCH_EXCEED_TIME_MS));
         printf_touch_hw_read("release");
     }
 
-    TEST_ESP_OK( touch_pad_deinit() );
+    TEST_ESP_OK(touch_pad_deinit());
 
     return ESP_OK;
 }
@@ -1099,13 +1098,13 @@ esp_err_t test_touch_filter_parameter_reset(int reset_cnt)
     if (que_touch == NULL) {
         que_touch = xQueueCreate(TEST_TOUCH_CHANNEL, sizeof(touch_event_t));
         /* Should register once. */
-        TEST_ESP_OK( touch_pad_isr_register(test_touch_intr_cb, NULL, TOUCH_PAD_INTR_MASK_ALL) );
+        TEST_ESP_OK(touch_pad_isr_register(test_touch_intr_cb, NULL, TOUCH_PAD_INTR_MASK_ALL));
     } else {
         xQueueReset(que_touch);
     }
-    TEST_ESP_OK( touch_pad_init() );
+    TEST_ESP_OK(touch_pad_init());
     for (int i = 0; i < TEST_TOUCH_CHANNEL; i++) {
-        TEST_ESP_OK( touch_pad_config(touch_list[i]) );
+        TEST_ESP_OK(touch_pad_config(touch_list[i]));
     }
     reset_cnt = ((reset_cnt < 0) ? 10 : reset_cnt);
     touch_filter_config_t filter_info = {
@@ -1115,27 +1114,27 @@ esp_err_t test_touch_filter_parameter_reset(int reset_cnt)
         .jitter_step = 4,       // use for jitter mode.
         .smh_lvl = TOUCH_PAD_SMOOTH_OFF,
     };
-    TEST_ESP_OK( touch_pad_filter_set_config(&filter_info) );
-    TEST_ESP_OK( touch_pad_filter_enable() );
+    TEST_ESP_OK(touch_pad_filter_set_config(&filter_info));
+    TEST_ESP_OK(touch_pad_filter_enable());
     /* Register touch interrupt ISR, enable intr type. */
-    TEST_ESP_OK( touch_pad_intr_enable(TOUCH_PAD_INTR_MASK_ACTIVE | TOUCH_PAD_INTR_MASK_INACTIVE) );
-    TEST_ESP_OK( touch_pad_set_fsm_mode(TOUCH_FSM_MODE_SW) );
-    TEST_ESP_OK( touch_pad_fsm_start() );
+    TEST_ESP_OK(touch_pad_intr_enable(TOUCH_PAD_INTR_MASK_ACTIVE | TOUCH_PAD_INTR_MASK_INACTIVE));
+    TEST_ESP_OK(touch_pad_set_fsm_mode(TOUCH_FSM_MODE_SW));
+    TEST_ESP_OK(touch_pad_fsm_start());
 
     /* Run to wait the data become stable. */
     test_touch_measure_step(20); // 2 scan loop
 
     /* Set the threshold. */
     for (int i = 0; i < TEST_TOUCH_CHANNEL; i++) {
-        TEST_ESP_OK( touch_pad_read_benchmark(touch_list[i], &touch_value) );
-        TEST_ESP_OK( touch_pad_set_thresh(touch_list[i], touch_value * TOUCH_INTR_THRESHOLD) );
+        TEST_ESP_OK(touch_pad_read_benchmark(touch_list[i], &touch_value));
+        TEST_ESP_OK(touch_pad_set_thresh(touch_list[i], touch_value * TOUCH_INTR_THRESHOLD));
         ESP_LOGI(TAG, "test init: touch pad [%d] base %"PRIu32", thresh %"PRIu32"", \
                  touch_list[i], touch_value, (uint32_t)(touch_value * TOUCH_INTR_THRESHOLD));
     }
 
     /* 1. Fake init status is touched. */
     test_touch_push_all();
-    TEST_ESP_OK( touch_pad_reset_benchmark(TOUCH_PAD_MAX) );
+    TEST_ESP_OK(touch_pad_reset_benchmark(TOUCH_PAD_MAX));
     /* Run to wait the data become stable. */
     test_touch_measure_step(20); // 2 scan loop
     printf_touch_hw_read("[raw ] reset:");
@@ -1146,8 +1145,8 @@ esp_err_t test_touch_filter_parameter_reset(int reset_cnt)
     /* 3. Fake measure `reset_cnt + 1` times to reset the benchmark. */
     test_touch_measure_step(reset_cnt);
     for (int i = 0; i < TEST_TOUCH_CHANNEL; i++) {
-        TEST_ESP_OK( touch_pad_read_raw_data(touch_list[i], &touch_value) );
-        TEST_ESP_OK( touch_pad_read_benchmark(touch_list[i], &base_value) );
+        TEST_ESP_OK(touch_pad_read_raw_data(touch_list[i], &touch_value));
+        TEST_ESP_OK(touch_pad_read_benchmark(touch_list[i], &base_value));
         if ((base_value - touch_value) < (base_value * TOUCH_INTR_THRESHOLD)) {
             ESP_LOGE(TAG, "reset cnt err");
             TEST_FAIL();
@@ -1163,7 +1162,7 @@ esp_err_t test_touch_filter_parameter_reset(int reset_cnt)
 #if CONFIG_IDF_TARGET_ESP32S3
     uint32_t smooth_data[TEST_TOUCH_CHANNEL] = {0};
     for (int i = 0; i < TEST_TOUCH_CHANNEL; i++) {
-        TEST_ESP_OK( touch_pad_filter_read_smooth(touch_list[i], &(smooth_data[i])) );
+        TEST_ESP_OK(touch_pad_filter_read_smooth(touch_list[i], &(smooth_data[i])));
     }
 #endif
     /* Run 1 time measurement, the benchmark will update after finishing the channel scan*/
@@ -1172,10 +1171,10 @@ esp_err_t test_touch_filter_parameter_reset(int reset_cnt)
     printf_touch_smooth_read("[smooth]cnt+1:");
     printf_touch_benchmark_read("[base] cnt+1:");
     for (int i = 0; i < TEST_TOUCH_CHANNEL; i++) {
-        TEST_ESP_OK( touch_pad_read_benchmark(touch_list[i], &base_value) );
+        TEST_ESP_OK(touch_pad_read_benchmark(touch_list[i], &base_value));
 #if CONFIG_IDF_TARGET_ESP32S2
         /* In ESP32S3, benchmark will update to the raw data. */
-        TEST_ESP_OK( touch_pad_read_raw_data(touch_list[i], &touch_value) );
+        TEST_ESP_OK(touch_pad_read_raw_data(touch_list[i], &touch_value));
         /* Here we compare the benchmark with raw data directly */
         TEST_ASSERT_EQUAL_UINT32(base_value, touch_value);
 #elif CONFIG_IDF_TARGET_ESP32S3
@@ -1190,17 +1189,17 @@ esp_err_t test_touch_filter_parameter_reset(int reset_cnt)
         test_touch_push_all();
         /* Fake the process of push debounce. */
         test_touch_measure_step(filter_info.debounce_cnt + 1);
-        TEST_ESP_OK( test_touch_check_ch_touched(TEST_TOUCH_CHANNEL, TOUCH_EXCEED_TIME_MS) );
+        TEST_ESP_OK(test_touch_check_ch_touched(TEST_TOUCH_CHANNEL, TOUCH_EXCEED_TIME_MS));
         printf_touch_hw_read("push");
 
         test_touch_release_all();
         /* Fake the process of release debounce. */
         test_touch_measure_step(filter_info.debounce_cnt + 1);
-        TEST_ESP_OK( test_touch_check_ch_released(TEST_TOUCH_CHANNEL, TOUCH_EXCEED_TIME_MS) );
+        TEST_ESP_OK(test_touch_check_ch_released(TEST_TOUCH_CHANNEL, TOUCH_EXCEED_TIME_MS));
         printf_touch_hw_read("release");
     }
 
-    TEST_ESP_OK( touch_pad_deinit() );
+    TEST_ESP_OK(touch_pad_deinit());
 
     return ESP_OK;
 }
@@ -1213,13 +1212,13 @@ esp_err_t test_touch_filter_parameter_jitter(int jitter_step)
     if (que_touch == NULL) {
         que_touch = xQueueCreate(TEST_TOUCH_CHANNEL, sizeof(touch_event_t));
         /* Should register once. */
-        TEST_ESP_OK( touch_pad_isr_register(test_touch_intr_cb, NULL, TOUCH_PAD_INTR_MASK_ALL) );
+        TEST_ESP_OK(touch_pad_isr_register(test_touch_intr_cb, NULL, TOUCH_PAD_INTR_MASK_ALL));
     } else {
         xQueueReset(que_touch);
     }
-    TEST_ESP_OK( touch_pad_init() );
+    TEST_ESP_OK(touch_pad_init());
     for (int i = 0; i < TEST_TOUCH_CHANNEL; i++) {
-        TEST_ESP_OK( touch_pad_config(touch_list[i]) );
+        TEST_ESP_OK(touch_pad_config(touch_list[i]));
     }
     jitter_step = ((jitter_step < 0) ? 4 : jitter_step);
     touch_filter_config_t filter_info = {
@@ -1228,12 +1227,12 @@ esp_err_t test_touch_filter_parameter_jitter(int jitter_step)
         .noise_thr = 0,         // 50%
         .jitter_step = jitter_step,       // use for jitter mode.
     };
-    TEST_ESP_OK( touch_pad_filter_set_config(&filter_info) );
-    TEST_ESP_OK( touch_pad_filter_enable() );
+    TEST_ESP_OK(touch_pad_filter_set_config(&filter_info));
+    TEST_ESP_OK(touch_pad_filter_enable());
     /* Register touch interrupt ISR, enable intr type. */
-    TEST_ESP_OK( touch_pad_intr_enable(TOUCH_PAD_INTR_MASK_ACTIVE | TOUCH_PAD_INTR_MASK_INACTIVE) );
-    TEST_ESP_OK( touch_pad_set_fsm_mode(TOUCH_FSM_MODE_SW) );
-    TEST_ESP_OK( touch_pad_fsm_start() );
+    TEST_ESP_OK(touch_pad_intr_enable(TOUCH_PAD_INTR_MASK_ACTIVE | TOUCH_PAD_INTR_MASK_INACTIVE));
+    TEST_ESP_OK(touch_pad_set_fsm_mode(TOUCH_FSM_MODE_SW));
+    TEST_ESP_OK(touch_pad_fsm_start());
     /* Run to wait the data become stable. */
     test_touch_measure_step(20); // 2 scan loop
 
@@ -1241,19 +1240,19 @@ esp_err_t test_touch_filter_parameter_jitter(int jitter_step)
     printf_touch_benchmark_read("[smooth] t1:");
     for (int i = 0; i < TEST_TOUCH_CHANNEL; i++) {
         test_touch_measure_step(1);
-        TEST_ESP_OK( touch_pad_read_benchmark(touch_list[i], &touch_value) );
+        TEST_ESP_OK(touch_pad_read_benchmark(touch_list[i], &touch_value));
         test_press_fake(touch_list[i]);
         test_touch_measure_step(1);
-        TEST_ESP_OK( touch_pad_read_benchmark(touch_list[i], &base_value) );
+        TEST_ESP_OK(touch_pad_read_benchmark(touch_list[i], &base_value));
         TEST_ASSERT_EQUAL_UINT32(jitter_step, (base_value - touch_value));
     }
     printf_touch_benchmark_read("[smooth] t2:");
     for (int i = 0; i < TEST_TOUCH_CHANNEL; i++) {
         test_touch_measure_step(1);
-        TEST_ESP_OK( touch_pad_read_benchmark(touch_list[i], &touch_value) );
+        TEST_ESP_OK(touch_pad_read_benchmark(touch_list[i], &touch_value));
         test_release_fake(touch_list[i]);
         test_touch_measure_step(1);
-        TEST_ESP_OK( touch_pad_read_benchmark(touch_list[i], &base_value) );
+        TEST_ESP_OK(touch_pad_read_benchmark(touch_list[i], &base_value));
         TEST_ASSERT_EQUAL_UINT32(jitter_step, (touch_value - base_value));
     }
     printf_touch_benchmark_read("[smooth] t3:");
@@ -1261,9 +1260,9 @@ esp_err_t test_touch_filter_parameter_jitter(int jitter_step)
     /* Set the threshold. */
     for (int i = 0; i < TEST_TOUCH_CHANNEL; i++) {
         //read benchmark value
-        TEST_ESP_OK( touch_pad_read_benchmark(touch_list[i], &touch_value) );
+        TEST_ESP_OK(touch_pad_read_benchmark(touch_list[i], &touch_value));
         //set interrupt threshold.
-        TEST_ESP_OK( touch_pad_set_thresh(touch_list[i], touch_value * TOUCH_INTR_THRESHOLD) );
+        TEST_ESP_OK(touch_pad_set_thresh(touch_list[i], touch_value * TOUCH_INTR_THRESHOLD));
         ESP_LOGI(TAG, "test init: touch pad [%d] base %"PRIu32", thresh %"PRIu32"", \
                  touch_list[i], touch_value, (uint32_t)(touch_value * TOUCH_INTR_THRESHOLD));
     }
@@ -1273,17 +1272,17 @@ esp_err_t test_touch_filter_parameter_jitter(int jitter_step)
         test_touch_push_all();
         /* Fake the process of push debounce. */
         test_touch_measure_step(filter_info.debounce_cnt + 1);
-        TEST_ESP_OK( test_touch_check_ch_touched(TEST_TOUCH_CHANNEL, TOUCH_EXCEED_TIME_MS) );
+        TEST_ESP_OK(test_touch_check_ch_touched(TEST_TOUCH_CHANNEL, TOUCH_EXCEED_TIME_MS));
         printf_touch_smooth_read("push");
 
         test_touch_release_all();
         /* Fake the process of release debounce. */
         test_touch_measure_step(filter_info.debounce_cnt + 1);
-        TEST_ESP_OK( test_touch_check_ch_released(TEST_TOUCH_CHANNEL, TOUCH_EXCEED_TIME_MS) );
+        TEST_ESP_OK(test_touch_check_ch_released(TEST_TOUCH_CHANNEL, TOUCH_EXCEED_TIME_MS));
         printf_touch_smooth_read("release");
     }
 
-    TEST_ESP_OK( touch_pad_deinit() );
+    TEST_ESP_OK(touch_pad_deinit());
 
     return ESP_OK;
 }
@@ -1291,17 +1290,17 @@ esp_err_t test_touch_filter_parameter_jitter(int jitter_step)
 TEST_CASE("Touch Sensor filter paramter test (debounce, reset, jitter)", "[touch]")
 {
     ESP_LOGI(TAG, "*********** touch filter debounce test ********************");
-    TEST_ESP_OK( test_touch_filter_parameter_debounce(0) );
-    TEST_ESP_OK( test_touch_filter_parameter_debounce(3) );
-    TEST_ESP_OK( test_touch_filter_parameter_debounce(7) );
+    TEST_ESP_OK(test_touch_filter_parameter_debounce(0));
+    TEST_ESP_OK(test_touch_filter_parameter_debounce(3));
+    TEST_ESP_OK(test_touch_filter_parameter_debounce(7));
 
     ESP_LOGI(TAG, "*********** touch filter benchmark reset ********************");
-    TEST_ESP_OK( test_touch_filter_parameter_reset(0xF) );
+    TEST_ESP_OK(test_touch_filter_parameter_reset(0xF));
 
     ESP_LOGI(TAG, "*********** touch filter jitter test ********************");
-    TEST_ESP_OK( test_touch_filter_parameter_jitter(1) );
-    TEST_ESP_OK( test_touch_filter_parameter_jitter(5) );
-    TEST_ESP_OK( test_touch_filter_parameter_jitter(15) );
+    TEST_ESP_OK(test_touch_filter_parameter_jitter(1));
+    TEST_ESP_OK(test_touch_filter_parameter_jitter(5));
+    TEST_ESP_OK(test_touch_filter_parameter_jitter(15));
 }
 
 esp_err_t test_touch_denoise(uint32_t out_val[], uint32_t *denoise_val, touch_pad_denoise_grade_t grade, touch_pad_denoise_cap_t cap)
@@ -1313,13 +1312,13 @@ esp_err_t test_touch_denoise(uint32_t out_val[], uint32_t *denoise_val, touch_pa
     if (que_touch == NULL) {
         que_touch = xQueueCreate(TEST_TOUCH_CHANNEL, sizeof(touch_event_t));
         /* Should register once. */
-        TEST_ESP_OK( touch_pad_isr_register(test_touch_intr_cb, NULL, TOUCH_PAD_INTR_MASK_ALL) );
+        TEST_ESP_OK(touch_pad_isr_register(test_touch_intr_cb, NULL, TOUCH_PAD_INTR_MASK_ALL));
     } else {
         xQueueReset(que_touch);
     }
-    TEST_ESP_OK( touch_pad_init() );
+    TEST_ESP_OK(touch_pad_init());
     for (int i = 0; i < TEST_TOUCH_CHANNEL; i++) {
-        TEST_ESP_OK( touch_pad_config(touch_list[i]) );
+        TEST_ESP_OK(touch_pad_config(touch_list[i]));
     }
     /* Denoise setting at TouchSensor 0. */
     touch_pad_denoise_t denoise = {
@@ -1327,8 +1326,8 @@ esp_err_t test_touch_denoise(uint32_t out_val[], uint32_t *denoise_val, touch_pa
         .grade = (grade < 0) ? TOUCH_PAD_DENOISE_BIT4 : grade,
         .cap_level = (cap < 0) ? TOUCH_PAD_DENOISE_CAP_L4 : cap,
     };
-    TEST_ESP_OK( touch_pad_denoise_set_config(&denoise) );
-    TEST_ESP_OK( touch_pad_denoise_enable() );
+    TEST_ESP_OK(touch_pad_denoise_set_config(&denoise));
+    TEST_ESP_OK(touch_pad_denoise_enable());
     ESP_LOGI(TAG, "Denoise function init");
     touch_filter_config_t filter_info = {
         .mode = TOUCH_PAD_FILTER_IIR_16,           // Test jitter and filter 1/4.
@@ -1336,19 +1335,19 @@ esp_err_t test_touch_denoise(uint32_t out_val[], uint32_t *denoise_val, touch_pa
         .noise_thr = 0,         // 50%
         .jitter_step = 4,       // use for jitter mode.
     };
-    TEST_ESP_OK( touch_pad_filter_set_config(&filter_info) );
-    TEST_ESP_OK( touch_pad_filter_enable() );
+    TEST_ESP_OK(touch_pad_filter_set_config(&filter_info));
+    TEST_ESP_OK(touch_pad_filter_enable());
     /* Register touch interrupt ISR, enable intr type. */
-    TEST_ESP_OK( touch_pad_intr_enable(TOUCH_PAD_INTR_MASK_ACTIVE | TOUCH_PAD_INTR_MASK_INACTIVE) );
-    TEST_ESP_OK( touch_pad_set_fsm_mode(TOUCH_FSM_MODE_SW) );
-    TEST_ESP_OK( touch_pad_fsm_start() );
+    TEST_ESP_OK(touch_pad_intr_enable(TOUCH_PAD_INTR_MASK_ACTIVE | TOUCH_PAD_INTR_MASK_INACTIVE));
+    TEST_ESP_OK(touch_pad_set_fsm_mode(TOUCH_FSM_MODE_SW));
+    TEST_ESP_OK(touch_pad_fsm_start());
     /* Run to wait the data become stable. */
     test_touch_measure_step(20); // 2 scan loop
 
     /* Set the threshold. */
     for (int i = 0; i < TEST_TOUCH_CHANNEL; i++) {
-        TEST_ESP_OK( touch_pad_read_benchmark(touch_list[i], &touch_value) );
-        TEST_ESP_OK( touch_pad_set_thresh(touch_list[i], touch_value * TOUCH_INTR_THRESHOLD) );
+        TEST_ESP_OK(touch_pad_read_benchmark(touch_list[i], &touch_value));
+        TEST_ESP_OK(touch_pad_set_thresh(touch_list[i], touch_value * TOUCH_INTR_THRESHOLD));
         if (out_val) {
             /* Output value for check. */
             out_val[i] = touch_value;
@@ -1364,15 +1363,15 @@ esp_err_t test_touch_denoise(uint32_t out_val[], uint32_t *denoise_val, touch_pa
         test_touch_push_all();
         /* Fake the process of push debounce. */
         test_touch_measure_step(filter_info.debounce_cnt + 1);
-        TEST_ESP_OK( test_touch_check_ch_touched(TEST_TOUCH_CHANNEL, TOUCH_EXCEED_TIME_MS) );
+        TEST_ESP_OK(test_touch_check_ch_touched(TEST_TOUCH_CHANNEL, TOUCH_EXCEED_TIME_MS));
 
         test_touch_release_all();
         /* Fake the process of release debounce. */
         test_touch_measure_step(filter_info.debounce_cnt + 1);
-        TEST_ESP_OK( test_touch_check_ch_released(TEST_TOUCH_CHANNEL, TOUCH_EXCEED_TIME_MS) );
+        TEST_ESP_OK(test_touch_check_ch_released(TEST_TOUCH_CHANNEL, TOUCH_EXCEED_TIME_MS));
     }
 
-    TEST_ESP_OK( touch_pad_deinit() );
+    TEST_ESP_OK(touch_pad_deinit());
 
     return ESP_OK;
 }
@@ -1385,9 +1384,9 @@ TEST_CASE("Touch Sensor denoise test (cap, level)", "[touch]")
     uint32_t denoise_val[TOUCH_PAD_DENOISE_CAP_MAX];
 
     ESP_LOGI(TAG, "*********** touch filter denoise level test ********************");
-    TEST_ESP_OK( test_touch_denoise(val_1, &denoise_val[0], TOUCH_PAD_DENOISE_BIT4, TOUCH_PAD_DENOISE_CAP_L0) );
-    TEST_ESP_OK( test_touch_denoise(val_2, NULL, TOUCH_PAD_DENOISE_BIT8, TOUCH_PAD_DENOISE_CAP_L0) );
-    TEST_ESP_OK( test_touch_denoise(val_3, NULL, TOUCH_PAD_DENOISE_BIT12, TOUCH_PAD_DENOISE_CAP_L0) );
+    TEST_ESP_OK(test_touch_denoise(val_1, &denoise_val[0], TOUCH_PAD_DENOISE_BIT4, TOUCH_PAD_DENOISE_CAP_L0));
+    TEST_ESP_OK(test_touch_denoise(val_2, NULL, TOUCH_PAD_DENOISE_BIT8, TOUCH_PAD_DENOISE_CAP_L0));
+    TEST_ESP_OK(test_touch_denoise(val_3, NULL, TOUCH_PAD_DENOISE_BIT12, TOUCH_PAD_DENOISE_CAP_L0));
 
     /*`TOUCH_PAD_DENOISE_BIT4` has a small denoise value, which may be smaller than the noise amplitude of the touch reading, so no verification for it.*/
     if ((((denoise_val[0] >> 4) & 0xF) != 0) && (((denoise_val[0] >> 8) & 0xF) != 0)) {
@@ -1401,14 +1400,14 @@ TEST_CASE("Touch Sensor denoise test (cap, level)", "[touch]")
     }
 
     ESP_LOGI(TAG, "*********** touch filter denoise cap level test ********************");
-    TEST_ESP_OK( test_touch_denoise(NULL, &denoise_val[0], TOUCH_PAD_DENOISE_BIT8, TOUCH_PAD_DENOISE_CAP_L0) );
-    TEST_ESP_OK( test_touch_denoise(NULL, &denoise_val[1], TOUCH_PAD_DENOISE_BIT8, TOUCH_PAD_DENOISE_CAP_L1) );
-    TEST_ESP_OK( test_touch_denoise(NULL, &denoise_val[2], TOUCH_PAD_DENOISE_BIT8, TOUCH_PAD_DENOISE_CAP_L2) );
-    TEST_ESP_OK( test_touch_denoise(NULL, &denoise_val[3], TOUCH_PAD_DENOISE_BIT8, TOUCH_PAD_DENOISE_CAP_L3) );
-    TEST_ESP_OK( test_touch_denoise(NULL, &denoise_val[4], TOUCH_PAD_DENOISE_BIT8, TOUCH_PAD_DENOISE_CAP_L4) );
-    TEST_ESP_OK( test_touch_denoise(NULL, &denoise_val[5], TOUCH_PAD_DENOISE_BIT8, TOUCH_PAD_DENOISE_CAP_L5) );
-    TEST_ESP_OK( test_touch_denoise(NULL, &denoise_val[6], TOUCH_PAD_DENOISE_BIT8, TOUCH_PAD_DENOISE_CAP_L6) );
-    TEST_ESP_OK( test_touch_denoise(NULL, &denoise_val[7], TOUCH_PAD_DENOISE_BIT8, TOUCH_PAD_DENOISE_CAP_L7) );
+    TEST_ESP_OK(test_touch_denoise(NULL, &denoise_val[0], TOUCH_PAD_DENOISE_BIT8, TOUCH_PAD_DENOISE_CAP_L0));
+    TEST_ESP_OK(test_touch_denoise(NULL, &denoise_val[1], TOUCH_PAD_DENOISE_BIT8, TOUCH_PAD_DENOISE_CAP_L1));
+    TEST_ESP_OK(test_touch_denoise(NULL, &denoise_val[2], TOUCH_PAD_DENOISE_BIT8, TOUCH_PAD_DENOISE_CAP_L2));
+    TEST_ESP_OK(test_touch_denoise(NULL, &denoise_val[3], TOUCH_PAD_DENOISE_BIT8, TOUCH_PAD_DENOISE_CAP_L3));
+    TEST_ESP_OK(test_touch_denoise(NULL, &denoise_val[4], TOUCH_PAD_DENOISE_BIT8, TOUCH_PAD_DENOISE_CAP_L4));
+    TEST_ESP_OK(test_touch_denoise(NULL, &denoise_val[5], TOUCH_PAD_DENOISE_BIT8, TOUCH_PAD_DENOISE_CAP_L5));
+    TEST_ESP_OK(test_touch_denoise(NULL, &denoise_val[6], TOUCH_PAD_DENOISE_BIT8, TOUCH_PAD_DENOISE_CAP_L6));
+    TEST_ESP_OK(test_touch_denoise(NULL, &denoise_val[7], TOUCH_PAD_DENOISE_BIT8, TOUCH_PAD_DENOISE_CAP_L7));
 
     printf("denoise read: ");
     for (int i = 0; i < TOUCH_PAD_DENOISE_CAP_MAX - 1; i++) {
@@ -1431,9 +1430,9 @@ esp_err_t test_touch_waterproof(void)
     } else {
         xQueueReset(que_touch);
     }
-    TEST_ESP_OK( touch_pad_init() );
+    TEST_ESP_OK(touch_pad_init());
     for (int i = 0; i < TEST_TOUCH_CHANNEL; i++) {
-        TEST_ESP_OK( touch_pad_config(touch_list[i]) );
+        TEST_ESP_OK(touch_pad_config(touch_list[i]));
     }
     /* Denoise setting at TouchSensor 0. */
     touch_pad_denoise_t denoise = {
@@ -1441,8 +1440,8 @@ esp_err_t test_touch_waterproof(void)
         .grade = TOUCH_PAD_DENOISE_BIT4,
         .cap_level = TOUCH_PAD_DENOISE_CAP_L4,
     };
-    TEST_ESP_OK( touch_pad_denoise_set_config(&denoise) );
-    TEST_ESP_OK( touch_pad_denoise_enable() );
+    TEST_ESP_OK(touch_pad_denoise_set_config(&denoise));
+    TEST_ESP_OK(touch_pad_denoise_enable());
     ESP_LOGI(TAG, "Denoise function init");
     touch_filter_config_t filter_info = {
         .mode = TOUCH_PAD_FILTER_IIR_16,           // Test jitter and filter 1/4.
@@ -1450,42 +1449,42 @@ esp_err_t test_touch_waterproof(void)
         .noise_thr = 0,         // 50%
         .jitter_step = 4,       // use for jitter mode.
     };
-    TEST_ESP_OK( touch_pad_filter_set_config(&filter_info) );
-    TEST_ESP_OK( touch_pad_filter_enable() );
+    TEST_ESP_OK(touch_pad_filter_set_config(&filter_info));
+    TEST_ESP_OK(touch_pad_filter_enable());
     /* Register touch interrupt ISR, enable intr type. */
-    TEST_ESP_OK( touch_pad_intr_enable(TOUCH_PAD_INTR_MASK_ACTIVE | TOUCH_PAD_INTR_MASK_INACTIVE) );
+    TEST_ESP_OK(touch_pad_intr_enable(TOUCH_PAD_INTR_MASK_ACTIVE | TOUCH_PAD_INTR_MASK_INACTIVE));
     /* Waterproof function */
     touch_pad_waterproof_t waterproof = {
         .guard_ring_pad = TOUCH_WATERPROOF_RING_PAD,   // If no ring pad, set 0;
         /* It depends on the number of the parasitic capacitance of the shield pad. */
         .shield_driver = TOUCH_PAD_SHIELD_DRV_L0,   //40pf
     };
-    TEST_ESP_OK( touch_pad_waterproof_set_config(&waterproof) );
-    TEST_ESP_OK( touch_pad_waterproof_enable() );
+    TEST_ESP_OK(touch_pad_waterproof_set_config(&waterproof));
+    TEST_ESP_OK(touch_pad_waterproof_enable());
     ESP_LOGI(TAG, "touch pad waterproof init");
-    TEST_ESP_OK( touch_pad_set_fsm_mode(TOUCH_FSM_MODE_TIMER) );
-    TEST_ESP_OK( touch_pad_fsm_start() );
+    TEST_ESP_OK(touch_pad_set_fsm_mode(TOUCH_FSM_MODE_TIMER));
+    TEST_ESP_OK(touch_pad_fsm_start());
 
     vTaskDelay(50 / portTICK_PERIOD_MS);
 
     /* Set the threshold. */
     for (int i = 0; i < TEST_TOUCH_CHANNEL; i++) {
-        TEST_ESP_OK( touch_pad_read_benchmark(touch_list[i], &touch_value) );
-        TEST_ESP_OK( touch_pad_set_thresh(touch_list[i], touch_value * TOUCH_INTR_THRESHOLD) );
+        TEST_ESP_OK(touch_pad_read_benchmark(touch_list[i], &touch_value));
+        TEST_ESP_OK(touch_pad_set_thresh(touch_list[i], touch_value * TOUCH_INTR_THRESHOLD));
     }
 
     while (test_cnt--) {
         test_touch_push_all();
         vTaskDelay(20 / portTICK_PERIOD_MS);
-        TEST_ESP_OK( test_touch_check_ch_touched(TEST_TOUCH_CHANNEL - 1, TOUCH_EXCEED_TIME_MS) ); // take off shield pad
+        TEST_ESP_OK(test_touch_check_ch_touched(TEST_TOUCH_CHANNEL - 1, TOUCH_EXCEED_TIME_MS));   // take off shield pad
         printf_touch_hw_read("push");
 
         test_touch_release_all();
         vTaskDelay(20 / portTICK_PERIOD_MS);
-        TEST_ESP_OK( test_touch_check_ch_released(TEST_TOUCH_CHANNEL, TOUCH_EXCEED_TIME_MS) );
+        TEST_ESP_OK(test_touch_check_ch_released(TEST_TOUCH_CHANNEL, TOUCH_EXCEED_TIME_MS));
         printf_touch_hw_read("release");
     }
-    TEST_ESP_OK( touch_pad_deinit() );
+    TEST_ESP_OK(touch_pad_deinit());
 
     return ESP_OK;
 }
@@ -1493,7 +1492,7 @@ esp_err_t test_touch_waterproof(void)
 TEST_CASE("Touch Sensor waterproof guard test", "[touch]")
 {
     ESP_LOGI(TAG, "*********** touch filter waterproof guard test ********************");
-    TEST_ESP_OK( test_touch_waterproof() );
+    TEST_ESP_OK(test_touch_waterproof());
 }
 
 esp_err_t test_touch_proximity(int meas_num)
@@ -1504,13 +1503,13 @@ esp_err_t test_touch_proximity(int meas_num)
     if (que_touch == NULL) {
         que_touch = xQueueCreate(TEST_TOUCH_CHANNEL, sizeof(touch_event_t));
         /* Should register once. */
-        TEST_ESP_OK( touch_pad_isr_register(test_touch_intr_cb, NULL, TOUCH_PAD_INTR_MASK_ALL) );
+        TEST_ESP_OK(touch_pad_isr_register(test_touch_intr_cb, NULL, TOUCH_PAD_INTR_MASK_ALL));
     } else {
         xQueueReset(que_touch);
     }
-    TEST_ESP_OK( touch_pad_init() );
+    TEST_ESP_OK(touch_pad_init());
     for (int i = 0; i < TEST_TOUCH_CHANNEL; i++) {
-        TEST_ESP_OK( touch_pad_config(touch_list[i]) );
+        TEST_ESP_OK(touch_pad_config(touch_list[i]));
     }
     /* Denoise setting at TouchSensor 0. */
     touch_pad_denoise_t denoise = {
@@ -1518,8 +1517,8 @@ esp_err_t test_touch_proximity(int meas_num)
         .grade = TOUCH_PAD_DENOISE_BIT4,
         .cap_level = TOUCH_PAD_DENOISE_CAP_L4,
     };
-    TEST_ESP_OK( touch_pad_denoise_set_config(&denoise) );
-    TEST_ESP_OK( touch_pad_denoise_enable() );
+    TEST_ESP_OK(touch_pad_denoise_set_config(&denoise));
+    TEST_ESP_OK(touch_pad_denoise_enable());
     ESP_LOGI(TAG, "Denoise function init");
     touch_filter_config_t filter_info = {
         .mode = TOUCH_PAD_FILTER_IIR_16,           // Test jitter and filter 1/4.
@@ -1527,67 +1526,67 @@ esp_err_t test_touch_proximity(int meas_num)
         .noise_thr = 0,         // 50%
         .jitter_step = 4,       // use for jitter mode.
     };
-    TEST_ESP_OK( touch_pad_filter_set_config(&filter_info) );
-    TEST_ESP_OK( touch_pad_filter_enable() );
+    TEST_ESP_OK(touch_pad_filter_set_config(&filter_info));
+    TEST_ESP_OK(touch_pad_filter_enable());
     /* Register touch interrupt ISR, enable intr type. */
-    TEST_ESP_OK( touch_pad_intr_enable(TOUCH_PAD_INTR_MASK_ACTIVE | TOUCH_PAD_INTR_MASK_INACTIVE) );
+    TEST_ESP_OK(touch_pad_intr_enable(TOUCH_PAD_INTR_MASK_ACTIVE | TOUCH_PAD_INTR_MASK_INACTIVE));
     /* Waterproof function */
     touch_pad_waterproof_t waterproof = {
         .guard_ring_pad = TOUCH_WATERPROOF_RING_PAD,// If no ring pad, set 0;
         /* It depends on the number of the parasitic capacitance of the shield pad. */
         .shield_driver = TOUCH_PAD_SHIELD_DRV_L0,   //40pf
     };
-    TEST_ESP_OK( touch_pad_waterproof_set_config(&waterproof) );
-    TEST_ESP_OK( touch_pad_waterproof_enable() );
+    TEST_ESP_OK(touch_pad_waterproof_set_config(&waterproof));
+    TEST_ESP_OK(touch_pad_waterproof_enable());
     ESP_LOGI(TAG, "touch pad waterproof init");
-    TEST_ESP_OK( touch_pad_set_fsm_mode(TOUCH_FSM_MODE_TIMER) );
-    TEST_ESP_OK( touch_pad_fsm_start() );
+    TEST_ESP_OK(touch_pad_set_fsm_mode(TOUCH_FSM_MODE_TIMER));
+    TEST_ESP_OK(touch_pad_fsm_start());
 
     vTaskDelay(50 / portTICK_PERIOD_MS);
 
     /* Set the threshold. */
     for (int i = 0; i < TEST_TOUCH_CHANNEL; i++) {
-        TEST_ESP_OK( touch_pad_read_benchmark(touch_list[i], &touch_value) );
+        TEST_ESP_OK(touch_pad_read_benchmark(touch_list[i], &touch_value));
         if (touch_list[i] == proximity_pad[0] ||
                 touch_list[i] == proximity_pad[1] ||
                 touch_list[i] == proximity_pad[2]) {
             /* The threshold of proximity pad is the sum of touch reading `meas_num` times */
-            TEST_ESP_OK( touch_pad_set_thresh(touch_list[i],
-                                              meas_num * touch_value * (1 + TOUCH_INTR_THRESHOLD)) );
+            TEST_ESP_OK(touch_pad_set_thresh(touch_list[i],
+                                             meas_num * touch_value * (1 + TOUCH_INTR_THRESHOLD)));
             ESP_LOGI(TAG, "proximity pad [%d] base %"PRIu32", thresh %"PRIu32"", touch_list[i], touch_value,
                      (uint32_t)(meas_num * touch_value * (1 + TOUCH_INTR_THRESHOLD)));
         } else {
-            TEST_ESP_OK( touch_pad_set_thresh(touch_list[i], touch_value * TOUCH_INTR_THRESHOLD) );
+            TEST_ESP_OK(touch_pad_set_thresh(touch_list[i], touch_value * TOUCH_INTR_THRESHOLD));
             ESP_LOGI(TAG, "touch pad [%d] base %"PRIu32", thresh %"PRIu32"", \
                      touch_list[i], touch_value, (uint32_t)(touch_value * TOUCH_INTR_THRESHOLD));
         }
     }
     /* Should stop the measure, then change the config. */
     while (!touch_pad_meas_is_done());
-    TEST_ESP_OK( touch_pad_fsm_stop() );
+    TEST_ESP_OK(touch_pad_fsm_stop());
     /* Proximity function */
-    TEST_ESP_OK( touch_pad_proximity_enable(proximity_pad[0], true) );
-    TEST_ESP_OK( touch_pad_proximity_enable(proximity_pad[1], true) );
-    TEST_ESP_OK( touch_pad_proximity_enable(proximity_pad[2], true) );
-    TEST_ESP_OK( touch_pad_proximity_set_count(TOUCH_PAD_MAX, meas_num < 0 ? 16 : meas_num) );
+    TEST_ESP_OK(touch_pad_proximity_enable(proximity_pad[0], true));
+    TEST_ESP_OK(touch_pad_proximity_enable(proximity_pad[1], true));
+    TEST_ESP_OK(touch_pad_proximity_enable(proximity_pad[2], true));
+    TEST_ESP_OK(touch_pad_proximity_set_count(TOUCH_PAD_MAX, meas_num < 0 ? 16 : meas_num));
     ESP_LOGI(TAG, "touch pad proximity init");
-    TEST_ESP_OK( touch_pad_fsm_start() );
+    TEST_ESP_OK(touch_pad_fsm_start());
 
     vTaskDelay(20 / portTICK_PERIOD_MS);
     int test_cnt = TEST_TOUCH_COUNT_NUM;
     while (test_cnt--) {
         test_touch_push_all();
         vTaskDelay(20 / portTICK_PERIOD_MS);
-        TEST_ESP_OK( test_touch_check_ch_touched(TEST_TOUCH_CHANNEL - 1, TOUCH_EXCEED_TIME_MS) ); // take off shield pad
+        TEST_ESP_OK(test_touch_check_ch_touched(TEST_TOUCH_CHANNEL - 1, TOUCH_EXCEED_TIME_MS));   // take off shield pad
         printf_touch_hw_read("push");
 
         test_touch_release_all();
         vTaskDelay(20 / portTICK_PERIOD_MS);
-        TEST_ESP_OK( test_touch_check_ch_released(TEST_TOUCH_CHANNEL, TOUCH_EXCEED_TIME_MS) );
+        TEST_ESP_OK(test_touch_check_ch_released(TEST_TOUCH_CHANNEL, TOUCH_EXCEED_TIME_MS));
         printf_touch_hw_read("release");
     }
 
-    TEST_ESP_OK( touch_pad_deinit() );
+    TEST_ESP_OK(touch_pad_deinit());
 
     return ESP_OK;
 }
@@ -1596,8 +1595,8 @@ TEST_CASE("Touch Sensor proximity test", "[touch]")
 {
     ESP_LOGI(TAG, "*********** touch proximity test ********************");
 
-    TEST_ESP_OK( test_touch_proximity(5) );
-    TEST_ESP_OK( test_touch_proximity(1) );
+    TEST_ESP_OK(test_touch_proximity(5));
+    TEST_ESP_OK(test_touch_proximity(1));
 }
 
 esp_err_t test_touch_sleep_reading_stable(touch_pad_t sleep_pad)
@@ -1610,13 +1609,13 @@ esp_err_t test_touch_sleep_reading_stable(touch_pad_t sleep_pad)
     if (que_touch == NULL) {
         que_touch = xQueueCreate(TEST_TOUCH_CHANNEL, sizeof(touch_event_t));
         /* Should register once. */
-        TEST_ESP_OK( touch_pad_isr_register(test_touch_intr_cb, NULL, TOUCH_PAD_INTR_MASK_ALL) );
+        TEST_ESP_OK(touch_pad_isr_register(test_touch_intr_cb, NULL, TOUCH_PAD_INTR_MASK_ALL));
     } else {
         xQueueReset(que_touch);
     }
-    TEST_ESP_OK( touch_pad_init() );
+    TEST_ESP_OK(touch_pad_init());
     for (int i = 0; i < TEST_TOUCH_CHANNEL; i++) {
-        TEST_ESP_OK( touch_pad_config(touch_list[i]) );
+        TEST_ESP_OK(touch_pad_config(touch_list[i]));
     }
     // /* Denoise setting at TouchSensor 0. */
     touch_pad_denoise_t denoise = {
@@ -1624,8 +1623,8 @@ esp_err_t test_touch_sleep_reading_stable(touch_pad_t sleep_pad)
         .grade = TOUCH_PAD_DENOISE_BIT4,
         .cap_level = TOUCH_PAD_DENOISE_CAP_L4,
     };
-    TEST_ESP_OK( touch_pad_denoise_set_config(&denoise) );
-    TEST_ESP_OK( touch_pad_denoise_enable() );
+    TEST_ESP_OK(touch_pad_denoise_set_config(&denoise));
+    TEST_ESP_OK(touch_pad_denoise_enable());
     touch_filter_config_t filter_info = {
         .mode = TOUCH_PAD_FILTER_IIR_16,           // Test jitter and filter 1/4.
         .debounce_cnt = 1,      // 1 time count.
@@ -1633,56 +1632,55 @@ esp_err_t test_touch_sleep_reading_stable(touch_pad_t sleep_pad)
         .jitter_step = 4,       // use for jitter mode.
         .smh_lvl = TOUCH_PAD_SMOOTH_OFF,
     };
-    TEST_ESP_OK( touch_pad_filter_set_config(&filter_info) );
-    TEST_ESP_OK( touch_pad_filter_enable() );
-    TEST_ESP_OK( touch_pad_sleep_channel_enable(sleep_pad, true) );
-    TEST_ESP_OK( touch_pad_sleep_channel_enable_proximity(sleep_pad, false) );
+    TEST_ESP_OK(touch_pad_filter_set_config(&filter_info));
+    TEST_ESP_OK(touch_pad_filter_enable());
+    TEST_ESP_OK(touch_pad_sleep_channel_enable(sleep_pad, true));
+    TEST_ESP_OK(touch_pad_sleep_channel_enable_proximity(sleep_pad, false));
     /* Register touch interrupt ISR, enable intr type. */
-    TEST_ESP_OK( touch_pad_intr_enable(TOUCH_PAD_INTR_MASK_ACTIVE | TOUCH_PAD_INTR_MASK_INACTIVE) );
-    TEST_ESP_OK( touch_pad_set_fsm_mode(TOUCH_FSM_MODE_TIMER) );
-    TEST_ESP_OK( touch_pad_fsm_start() );
+    TEST_ESP_OK(touch_pad_intr_enable(TOUCH_PAD_INTR_MASK_ACTIVE | TOUCH_PAD_INTR_MASK_INACTIVE));
+    TEST_ESP_OK(touch_pad_set_fsm_mode(TOUCH_FSM_MODE_TIMER));
+    TEST_ESP_OK(touch_pad_fsm_start());
 
     // Initialize and start a software filter to detect slight change of capacitance.
     vTaskDelay(50 * SYS_DELAY_TIME_MOM / portTICK_PERIOD_MS);
 
     /* Set threshold of touch sensor */
     for (int i = 0; i < TEST_TOUCH_CHANNEL; i++) {
-        TEST_ESP_OK( touch_pad_read_benchmark(touch_list[i], &touch_value) );
-        TEST_ESP_OK( touch_pad_filter_read_smooth(touch_list[i], &smooth) );
-        TEST_ESP_OK( touch_pad_set_thresh(touch_list[i], touch_value * TOUCH_INTR_THRESHOLD) );
+        TEST_ESP_OK(touch_pad_read_benchmark(touch_list[i], &touch_value));
+        TEST_ESP_OK(touch_pad_filter_read_smooth(touch_list[i], &smooth));
+        TEST_ESP_OK(touch_pad_set_thresh(touch_list[i], touch_value * TOUCH_INTR_THRESHOLD));
         ESP_LOGI(TAG, "test init: touch pad [%d] base %"PRIu32", smooth %"PRIu32", thresh %"PRIu32"",
                  touch_list[i], touch_value, smooth, (uint32_t)(touch_value * TOUCH_INTR_THRESHOLD));
     }
 
     /* Sleep channel setting */
-    TEST_ESP_OK( touch_pad_sleep_channel_read_benchmark(sleep_pad, &touch_value) );
-    TEST_ESP_OK( touch_pad_sleep_set_threshold(sleep_pad, touch_value * TOUCH_INTR_THRESHOLD) );
+    TEST_ESP_OK(touch_pad_sleep_channel_read_benchmark(sleep_pad, &touch_value));
+    TEST_ESP_OK(touch_pad_sleep_set_threshold(sleep_pad, touch_value * TOUCH_INTR_THRESHOLD));
     vTaskDelay(50 * SYS_DELAY_TIME_MOM / portTICK_PERIOD_MS);
 
     while (test_cnt--) {
         /* Touch reading filtered value equal to raw data. */
         for (int i = 0; i < TEST_TOUCH_CHANNEL; i++) {
-            TEST_ESP_OK( touch_pad_sleep_channel_read_data(sleep_pad, &touch_value) );
-            TEST_ESP_OK( touch_pad_sleep_channel_read_benchmark(sleep_pad, &touch_temp) );
-            TEST_ASSERT_UINT32_WITHIN((uint32_t)((float)touch_temp*TOUCH_READ_ERROR_THRESH), touch_temp, touch_value);
-            TEST_ESP_OK( touch_pad_sleep_channel_read_smooth(sleep_pad, &touch_temp) );
-            TEST_ASSERT_UINT32_WITHIN((uint32_t)((float)touch_temp*TOUCH_READ_ERROR_THRESH), touch_temp, touch_value);
+            TEST_ESP_OK(touch_pad_sleep_channel_read_data(sleep_pad, &touch_value));
+            TEST_ESP_OK(touch_pad_sleep_channel_read_benchmark(sleep_pad, &touch_temp));
+            TEST_ASSERT_UINT32_WITHIN((uint32_t)((float)touch_temp * TOUCH_READ_ERROR_THRESH), touch_temp, touch_value);
+            TEST_ESP_OK(touch_pad_sleep_channel_read_smooth(sleep_pad, &touch_temp));
+            TEST_ASSERT_UINT32_WITHIN((uint32_t)((float)touch_temp * TOUCH_READ_ERROR_THRESH), touch_temp, touch_value);
         }
         for (int i = 0; i < TEST_TOUCH_CHANNEL; i++) {
             if (touch_temp) {
-                TEST_ASSERT_UINT32_WITHIN((uint32_t)((float)touch_temp*TOUCH_READ_ERROR_THRESH), touch_temp, touch_value);
+                TEST_ASSERT_UINT32_WITHIN((uint32_t)((float)touch_temp * TOUCH_READ_ERROR_THRESH), touch_temp, touch_value);
             }
             touch_temp = touch_value;
         }
         vTaskDelay(20 / portTICK_PERIOD_MS);
     }
-    TEST_ESP_OK( touch_pad_sleep_channel_read_benchmark(sleep_pad, &ret_val) );
+    TEST_ESP_OK(touch_pad_sleep_channel_read_benchmark(sleep_pad, &ret_val));
 
-    TEST_ESP_OK( touch_pad_deinit() );
+    TEST_ESP_OK(touch_pad_deinit());
 
     return ret_val;
 }
-
 
 TEST_CASE("Touch Sensor sleep pad reading stable test", "[touch]")
 {
@@ -1709,13 +1707,13 @@ uint32_t test_touch_sleep_pad_proximity(touch_pad_t sleep_pad, bool is_proximity
     if (que_touch == NULL) {
         que_touch = xQueueCreate(TEST_TOUCH_CHANNEL, sizeof(touch_event_t));
         /* Should register once. */
-        TEST_ESP_OK( touch_pad_isr_register(test_touch_intr_cb, NULL, TOUCH_PAD_INTR_MASK_ALL) );
+        TEST_ESP_OK(touch_pad_isr_register(test_touch_intr_cb, NULL, TOUCH_PAD_INTR_MASK_ALL));
     } else {
         xQueueReset(que_touch);
     }
-    TEST_ESP_OK( touch_pad_init() );
+    TEST_ESP_OK(touch_pad_init());
     for (int i = 0; i < TEST_TOUCH_CHANNEL; i++) {
-        TEST_ESP_OK( touch_pad_config(touch_list[i]) );
+        TEST_ESP_OK(touch_pad_config(touch_list[i]));
     }
     /* Denoise setting at TouchSensor 0. */
     touch_pad_denoise_t denoise = {
@@ -1723,8 +1721,8 @@ uint32_t test_touch_sleep_pad_proximity(touch_pad_t sleep_pad, bool is_proximity
         .grade = TOUCH_PAD_DENOISE_BIT4,
         .cap_level = TOUCH_PAD_DENOISE_CAP_L4,
     };
-    TEST_ESP_OK( touch_pad_denoise_set_config(&denoise) );
-    TEST_ESP_OK( touch_pad_denoise_enable() );
+    TEST_ESP_OK(touch_pad_denoise_set_config(&denoise));
+    TEST_ESP_OK(touch_pad_denoise_enable());
     touch_filter_config_t filter_info = {
         .mode = TOUCH_PAD_FILTER_IIR_16,           // Test jitter and filter 1/4.
         .debounce_cnt = 1,      // 1 time count.
@@ -1732,15 +1730,15 @@ uint32_t test_touch_sleep_pad_proximity(touch_pad_t sleep_pad, bool is_proximity
         .jitter_step = 4,       // use for jitter mode.
         .smh_lvl = TOUCH_PAD_SMOOTH_OFF,
     };
-    TEST_ESP_OK( touch_pad_filter_set_config(&filter_info) );
-    TEST_ESP_OK( touch_pad_filter_enable() );
+    TEST_ESP_OK(touch_pad_filter_set_config(&filter_info));
+    TEST_ESP_OK(touch_pad_filter_enable());
     /* Sleep channel setting */
-    TEST_ESP_OK( touch_pad_sleep_channel_enable(sleep_pad, true) );
-    TEST_ESP_OK( touch_pad_sleep_channel_enable_proximity(sleep_pad, is_proximity) );
+    TEST_ESP_OK(touch_pad_sleep_channel_enable(sleep_pad, true));
+    TEST_ESP_OK(touch_pad_sleep_channel_enable_proximity(sleep_pad, is_proximity));
     /* Register touch interrupt ISR, enable intr type. */
-    TEST_ESP_OK( touch_pad_intr_enable(TOUCH_PAD_INTR_MASK_SCAN_DONE | TOUCH_PAD_INTR_MASK_ACTIVE | TOUCH_PAD_INTR_MASK_INACTIVE) );
-    TEST_ESP_OK( touch_pad_set_fsm_mode(TOUCH_FSM_MODE_TIMER) );
-    TEST_ESP_OK( touch_pad_fsm_start() );
+    TEST_ESP_OK(touch_pad_intr_enable(TOUCH_PAD_INTR_MASK_SCAN_DONE | TOUCH_PAD_INTR_MASK_ACTIVE | TOUCH_PAD_INTR_MASK_INACTIVE));
+    TEST_ESP_OK(touch_pad_set_fsm_mode(TOUCH_FSM_MODE_TIMER));
+    TEST_ESP_OK(touch_pad_fsm_start());
 
     // Initialize and start a software filter to detect slight change of capacitance.
     vTaskDelay(100 * SYS_DELAY_TIME_MOM / portTICK_PERIOD_MS);
@@ -1760,69 +1758,69 @@ uint32_t test_touch_sleep_pad_proximity(touch_pad_t sleep_pad, bool is_proximity
                 ESP_LOGI(TAG, "proximity pad [%d] base %"PRIu32", thresh %"PRIu32"", touch_list[i], touch_value,
                          (uint32_t)(meas_num * touch_value * (1 + TOUCH_INTR_THRESHOLD)));
             } else {
-                TEST_ESP_OK( touch_pad_read_benchmark(touch_list[i], &touch_value) );
-                TEST_ESP_OK( touch_pad_set_thresh(touch_list[i], touch_value * TOUCH_INTR_THRESHOLD) );
+                TEST_ESP_OK(touch_pad_read_benchmark(touch_list[i], &touch_value));
+                TEST_ESP_OK(touch_pad_set_thresh(touch_list[i], touch_value * TOUCH_INTR_THRESHOLD));
                 ESP_LOGI(TAG, "touch pad [%d] base %"PRIu32", thresh %"PRIu32"", \
                          touch_list[i], touch_value, (uint32_t)(touch_value * TOUCH_INTR_THRESHOLD));
             }
         }
         /* Should stop the measure, then change the config. */
         while (!touch_pad_meas_is_done());
-        TEST_ESP_OK( touch_pad_fsm_stop() );
+        TEST_ESP_OK(touch_pad_fsm_stop());
         /* Proximity function */
-        TEST_ESP_OK( touch_pad_proximity_enable(proximity_pad[0], false) );
-        TEST_ESP_OK( touch_pad_proximity_enable(proximity_pad[1], false) );
-        TEST_ESP_OK( touch_pad_proximity_enable(proximity_pad[2], false) );
-        TEST_ESP_OK( touch_pad_proximity_enable(sleep_pad, true) );
-        TEST_ESP_OK( touch_pad_proximity_set_count(TOUCH_PAD_MAX, meas_num) );
+        TEST_ESP_OK(touch_pad_proximity_enable(proximity_pad[0], false));
+        TEST_ESP_OK(touch_pad_proximity_enable(proximity_pad[1], false));
+        TEST_ESP_OK(touch_pad_proximity_enable(proximity_pad[2], false));
+        TEST_ESP_OK(touch_pad_proximity_enable(sleep_pad, true));
+        TEST_ESP_OK(touch_pad_proximity_set_count(TOUCH_PAD_MAX, meas_num));
         ESP_LOGI(TAG, "touch pad proximity init");
-        TEST_ESP_OK( touch_pad_fsm_start() );
+        TEST_ESP_OK(touch_pad_fsm_start());
         vTaskDelay(100 * SYS_DELAY_TIME_MOM / portTICK_PERIOD_MS);
     } else {
         /* Set threshold of touch sensor */
         for (int i = 0; i < TEST_TOUCH_CHANNEL; i++) {
-            TEST_ESP_OK( touch_pad_read_benchmark(touch_list[i], &touch_value) );
-            TEST_ESP_OK( touch_pad_filter_read_smooth(touch_list[i], &smooth) );
-            TEST_ESP_OK( touch_pad_set_thresh(touch_list[i], touch_value * TOUCH_INTR_THRESHOLD) );
+            TEST_ESP_OK(touch_pad_read_benchmark(touch_list[i], &touch_value));
+            TEST_ESP_OK(touch_pad_filter_read_smooth(touch_list[i], &smooth));
+            TEST_ESP_OK(touch_pad_set_thresh(touch_list[i], touch_value * TOUCH_INTR_THRESHOLD));
             ESP_LOGI(TAG, "test init: touch pad [%d] base %"PRIu32", smooth %"PRIu32", thresh %"PRIu32"",
                      touch_list[i], touch_value, smooth, (uint32_t)(touch_value * TOUCH_INTR_THRESHOLD));
         }
         /* Sleep channel setting */
-        TEST_ESP_OK( touch_pad_sleep_channel_read_smooth(sleep_pad, &touch_value) );
-        TEST_ESP_OK( touch_pad_sleep_set_threshold(sleep_pad, touch_value * TOUCH_INTR_THRESHOLD) );
+        TEST_ESP_OK(touch_pad_sleep_channel_read_smooth(sleep_pad, &touch_value));
+        TEST_ESP_OK(touch_pad_sleep_set_threshold(sleep_pad, touch_value * TOUCH_INTR_THRESHOLD));
         vTaskDelay(50 * SYS_DELAY_TIME_MOM / portTICK_PERIOD_MS);
     }
 
-    TEST_ESP_OK( touch_pad_sleep_channel_read_smooth(sleep_pad, &ret_val) );
+    TEST_ESP_OK(touch_pad_sleep_channel_read_smooth(sleep_pad, &ret_val));
 
     while (test_cnt--) {
         test_touch_push_all();
-        TEST_ESP_OK( test_touch_check_ch_touched_with_proximity(TEST_TOUCH_CHANNEL, 5000) );
+        TEST_ESP_OK(test_touch_check_ch_touched_with_proximity(TEST_TOUCH_CHANNEL, 5000));
         printf_touch_hw_read("push");
         if (is_proximity) {
-            TEST_ESP_OK( touch_pad_sleep_channel_read_smooth(sleep_pad, &smooth) );
-            TEST_ESP_OK( touch_pad_sleep_channel_read_benchmark(sleep_pad, &touch_value) );
-            TEST_ESP_OK( touch_pad_proximity_get_data(sleep_pad, &measure_out) );
-            TEST_ESP_OK( touch_pad_sleep_channel_read_proximity_cnt(sleep_pad, &proximity_cnt) );
-            TEST_ESP_OK( touch_pad_sleep_get_threshold(sleep_pad, &touch_thres) );
+            TEST_ESP_OK(touch_pad_sleep_channel_read_smooth(sleep_pad, &smooth));
+            TEST_ESP_OK(touch_pad_sleep_channel_read_benchmark(sleep_pad, &touch_value));
+            TEST_ESP_OK(touch_pad_proximity_get_data(sleep_pad, &measure_out));
+            TEST_ESP_OK(touch_pad_sleep_channel_read_proximity_cnt(sleep_pad, &proximity_cnt));
+            TEST_ESP_OK(touch_pad_sleep_get_threshold(sleep_pad, &touch_thres));
             printf("touch slp smooth %"PRIu32", base %"PRIu32", proxi %"PRIu32" cnt %"PRIu32" thres%"PRIu32" status 0x%"PRIx32"\n",
                    smooth, touch_value, measure_out, proximity_cnt,
                    touch_thres, touch_pad_get_status());
         }
         test_touch_release_all();
-        TEST_ESP_OK( test_touch_check_ch_released_with_proximity(TEST_TOUCH_CHANNEL, 5000) );
+        TEST_ESP_OK(test_touch_check_ch_released_with_proximity(TEST_TOUCH_CHANNEL, 5000));
         printf_touch_hw_read("release");
         if (is_proximity) {
-            TEST_ESP_OK( touch_pad_sleep_channel_read_smooth(sleep_pad, &smooth) );
-            TEST_ESP_OK( touch_pad_sleep_channel_read_benchmark(sleep_pad, &touch_value) );
-            TEST_ESP_OK( touch_pad_proximity_get_data(sleep_pad, &measure_out) );
-            TEST_ESP_OK( touch_pad_sleep_channel_read_proximity_cnt(sleep_pad, &proximity_cnt) );
+            TEST_ESP_OK(touch_pad_sleep_channel_read_smooth(sleep_pad, &smooth));
+            TEST_ESP_OK(touch_pad_sleep_channel_read_benchmark(sleep_pad, &touch_value));
+            TEST_ESP_OK(touch_pad_proximity_get_data(sleep_pad, &measure_out));
+            TEST_ESP_OK(touch_pad_sleep_channel_read_proximity_cnt(sleep_pad, &proximity_cnt));
             printf("touch slp smooth %"PRIu32", base %"PRIu32", proxi %"PRIu32" cnt %"PRIu32" status 0x%"PRIx32"\n",
                    smooth, touch_value, measure_out, proximity_cnt, touch_pad_get_status());
         }
     }
 
-    TEST_ESP_OK( touch_pad_deinit() );
+    TEST_ESP_OK(touch_pad_deinit());
 
     return ret_val;
 }
@@ -1855,13 +1853,13 @@ esp_err_t test_touch_sleep_pad_interrupt_wakeup_deep_sleep(touch_pad_t sleep_pad
     if (que_touch == NULL) {
         que_touch = xQueueCreate(TEST_TOUCH_CHANNEL, sizeof(touch_event_t));
         /* Should register once. */
-        TEST_ESP_OK( touch_pad_isr_register(test_touch_intr_cb, NULL, TOUCH_PAD_INTR_MASK_ALL) );
+        TEST_ESP_OK(touch_pad_isr_register(test_touch_intr_cb, NULL, TOUCH_PAD_INTR_MASK_ALL));
     } else {
         xQueueReset(que_touch);
     }
-    TEST_ESP_OK( touch_pad_init() );
+    TEST_ESP_OK(touch_pad_init());
     for (int i = 0; i < TEST_TOUCH_CHANNEL; i++) {
-        TEST_ESP_OK( touch_pad_config(touch_list[i]) );
+        TEST_ESP_OK(touch_pad_config(touch_list[i]));
     }
     // /* Denoise setting at TouchSensor 0. */
     touch_pad_denoise_t denoise = {
@@ -1869,8 +1867,8 @@ esp_err_t test_touch_sleep_pad_interrupt_wakeup_deep_sleep(touch_pad_t sleep_pad
         .grade = TOUCH_PAD_DENOISE_BIT4,
         .cap_level = TOUCH_PAD_DENOISE_CAP_L4,
     };
-    TEST_ESP_OK( touch_pad_denoise_set_config(&denoise) );
-    TEST_ESP_OK( touch_pad_denoise_disable() );
+    TEST_ESP_OK(touch_pad_denoise_set_config(&denoise));
+    TEST_ESP_OK(touch_pad_denoise_disable());
     touch_filter_config_t filter_info = {
         .mode = TOUCH_PAD_FILTER_IIR_16,           // Test jitter and filter 1/4.
         .debounce_cnt = 1,      // 1 time count.
@@ -1878,48 +1876,48 @@ esp_err_t test_touch_sleep_pad_interrupt_wakeup_deep_sleep(touch_pad_t sleep_pad
         .jitter_step = 4,       // use for jitter mode.
         .smh_lvl = TOUCH_PAD_SMOOTH_OFF,
     };
-    TEST_ESP_OK( touch_pad_filter_set_config(&filter_info) );
-    TEST_ESP_OK( touch_pad_filter_enable() );
+    TEST_ESP_OK(touch_pad_filter_set_config(&filter_info));
+    TEST_ESP_OK(touch_pad_filter_enable());
     /* Sleep channel setting */
-    TEST_ESP_OK( touch_pad_sleep_channel_enable(sleep_pad, true) );
-    TEST_ESP_OK( touch_pad_sleep_channel_enable_proximity(sleep_pad, false) );
+    TEST_ESP_OK(touch_pad_sleep_channel_enable(sleep_pad, true));
+    TEST_ESP_OK(touch_pad_sleep_channel_enable_proximity(sleep_pad, false));
     /* Register touch interrupt ISR, enable intr type. */
-    TEST_ESP_OK( touch_pad_intr_enable(TOUCH_PAD_INTR_MASK_ACTIVE | TOUCH_PAD_INTR_MASK_INACTIVE) );
-    TEST_ESP_OK( touch_pad_set_fsm_mode(TOUCH_FSM_MODE_TIMER) );
-    TEST_ESP_OK( touch_pad_fsm_start() );
+    TEST_ESP_OK(touch_pad_intr_enable(TOUCH_PAD_INTR_MASK_ACTIVE | TOUCH_PAD_INTR_MASK_INACTIVE));
+    TEST_ESP_OK(touch_pad_set_fsm_mode(TOUCH_FSM_MODE_TIMER));
+    TEST_ESP_OK(touch_pad_fsm_start());
 
     // Initialize and start a software filter to detect slight change of capacitance.
     vTaskDelay(50 * SYS_DELAY_TIME_MOM / portTICK_PERIOD_MS);
 
     /* Set threshold of touch sensor */
     for (int i = 0; i < TEST_TOUCH_CHANNEL; i++) {
-        TEST_ESP_OK( touch_pad_read_benchmark(touch_list[i], &touch_value) );
-        TEST_ESP_OK( touch_pad_filter_read_smooth(touch_list[i], &smooth) );
-        TEST_ESP_OK( touch_pad_set_thresh(touch_list[i], touch_value * TOUCH_INTR_THRESHOLD) );
+        TEST_ESP_OK(touch_pad_read_benchmark(touch_list[i], &touch_value));
+        TEST_ESP_OK(touch_pad_filter_read_smooth(touch_list[i], &smooth));
+        TEST_ESP_OK(touch_pad_set_thresh(touch_list[i], touch_value * TOUCH_INTR_THRESHOLD));
         ESP_LOGI(TAG, "test init: touch pad [%d] base %"PRIu32", smooth %"PRIu32", thresh %"PRIu32"",
                  touch_list[i], touch_value, smooth, (uint32_t)(touch_value * TOUCH_INTR_THRESHOLD));
     }
 
     /* Sleep channel setting */
-    TEST_ESP_OK( touch_pad_sleep_channel_read_benchmark(sleep_pad, &touch_value) );
-    TEST_ESP_OK( touch_pad_sleep_set_threshold(sleep_pad, touch_value * TOUCH_INTR_THRESHOLD) );
+    TEST_ESP_OK(touch_pad_sleep_channel_read_benchmark(sleep_pad, &touch_value));
+    TEST_ESP_OK(touch_pad_sleep_set_threshold(sleep_pad, touch_value * TOUCH_INTR_THRESHOLD));
 
     vTaskDelay(50 * SYS_DELAY_TIME_MOM / portTICK_PERIOD_MS);
 
     test_touch_push_all();
-    TEST_ESP_OK( test_touch_check_ch_touched(TEST_TOUCH_CHANNEL, TOUCH_EXCEED_TIME_MS) );
+    TEST_ESP_OK(test_touch_check_ch_touched(TEST_TOUCH_CHANNEL, TOUCH_EXCEED_TIME_MS));
     printf_touch_hw_read("push");
-    TEST_ESP_OK( touch_pad_sleep_channel_read_smooth(sleep_pad, &smooth) );
-    TEST_ESP_OK( touch_pad_sleep_channel_read_data(sleep_pad, &raw) );
-    TEST_ESP_OK( touch_pad_sleep_channel_read_benchmark(sleep_pad, &touch_value) );
+    TEST_ESP_OK(touch_pad_sleep_channel_read_smooth(sleep_pad, &smooth));
+    TEST_ESP_OK(touch_pad_sleep_channel_read_data(sleep_pad, &raw));
+    TEST_ESP_OK(touch_pad_sleep_channel_read_benchmark(sleep_pad, &touch_value));
     printf("touch slp raw %"PRIu32", smooth %"PRIu32", base %"PRIu32", status 0x%"PRIx32"\n", raw, smooth, touch_value, touch_pad_get_status());
 
     test_touch_release_all();
-    TEST_ESP_OK( test_touch_check_ch_released(TEST_TOUCH_CHANNEL, TOUCH_EXCEED_TIME_MS) );
+    TEST_ESP_OK(test_touch_check_ch_released(TEST_TOUCH_CHANNEL, TOUCH_EXCEED_TIME_MS));
     printf_touch_hw_read("release");
-    TEST_ESP_OK( touch_pad_sleep_channel_read_smooth(sleep_pad, &smooth) );
-    TEST_ESP_OK( touch_pad_sleep_channel_read_data(sleep_pad, &raw) );
-    TEST_ESP_OK( touch_pad_sleep_channel_read_benchmark(sleep_pad, &touch_value) );
+    TEST_ESP_OK(touch_pad_sleep_channel_read_smooth(sleep_pad, &smooth));
+    TEST_ESP_OK(touch_pad_sleep_channel_read_data(sleep_pad, &raw));
+    TEST_ESP_OK(touch_pad_sleep_channel_read_benchmark(sleep_pad, &touch_value));
     printf("touch slp raw %"PRIu32", smooth %"PRIu32", base %"PRIu32", status 0x%"PRIx32"\n", raw, smooth, touch_value, touch_pad_get_status());
 
     return ESP_OK;
@@ -2020,9 +2018,9 @@ void test_touch_slope_debug(int pad_num)
     } else {
         xQueueReset(que_touch);
     }
-    TEST_ESP_OK( touch_pad_init() );
+    TEST_ESP_OK(touch_pad_init());
     for (int i = 0; i < TEST_TOUCH_CHANNEL; i++) {
-        TEST_ESP_OK( touch_pad_config(touch_list[i]) );
+        TEST_ESP_OK(touch_pad_config(touch_list[i]));
     }
     touch_filter_config_t filter_info = {
         .mode = TOUCH_PAD_FILTER_IIR_32,           // Test jitter and filter 1/4.
@@ -2031,20 +2029,20 @@ void test_touch_slope_debug(int pad_num)
         .jitter_step = 4,       // use for jitter mode.
         .smh_lvl = TOUCH_PAD_SMOOTH_IIR_2,
     };
-    TEST_ESP_OK( touch_pad_filter_set_config(&filter_info) );
-    TEST_ESP_OK( touch_pad_filter_enable() );
+    TEST_ESP_OK(touch_pad_filter_set_config(&filter_info));
+    TEST_ESP_OK(touch_pad_filter_enable());
     /* Register touch interrupt ISR, enable intr type. */
-    TEST_ESP_OK( touch_pad_intr_enable(TOUCH_PAD_INTR_MASK_ACTIVE | TOUCH_PAD_INTR_MASK_INACTIVE) );
-    TEST_ESP_OK( touch_pad_set_fsm_mode(TOUCH_FSM_MODE_TIMER) );
-    TEST_ESP_OK( touch_pad_fsm_start() );
+    TEST_ESP_OK(touch_pad_intr_enable(TOUCH_PAD_INTR_MASK_ACTIVE | TOUCH_PAD_INTR_MASK_INACTIVE));
+    TEST_ESP_OK(touch_pad_set_fsm_mode(TOUCH_FSM_MODE_TIMER));
+    TEST_ESP_OK(touch_pad_fsm_start());
     /* Waterproof function */
     touch_pad_waterproof_t waterproof = {
         .guard_ring_pad = 0,   // If no ring pad, set 0;
         /* It depends on the number of the parasitic capacitance of the shield pad. */
         .shield_driver = TOUCH_PAD_SHIELD_DRV_L2,   //40pf
     };
-    TEST_ESP_OK( touch_pad_waterproof_set_config(&waterproof) );
-    TEST_ESP_OK( touch_pad_waterproof_enable() );
+    TEST_ESP_OK(touch_pad_waterproof_set_config(&waterproof));
+    TEST_ESP_OK(touch_pad_waterproof_enable());
     ESP_LOGI(TAG, "touch pad waterproof init");
 
     // Initialize and start a software filter to detect slight change of capacitance.
@@ -2052,9 +2050,9 @@ void test_touch_slope_debug(int pad_num)
 
     /* Set threshold of touch sensor */
     for (int i = 0; i < TEST_TOUCH_CHANNEL; i++) {
-        TEST_ESP_OK( touch_pad_read_benchmark(touch_list[i], &touch_value) );
-        TEST_ESP_OK( touch_pad_filter_read_smooth(touch_list[i], &smooth) );
-        TEST_ESP_OK( touch_pad_set_thresh(touch_list[i], touch_value * TOUCH_THRESHOLD) );
+        TEST_ESP_OK(touch_pad_read_benchmark(touch_list[i], &touch_value));
+        TEST_ESP_OK(touch_pad_filter_read_smooth(touch_list[i], &smooth));
+        TEST_ESP_OK(touch_pad_set_thresh(touch_list[i], touch_value * TOUCH_THRESHOLD));
         ESP_LOGI(TAG, "test init: touch pad [%d] base %"PRIu32", smooth %"PRIu32", thresh %"PRIu32"", \
                  touch_list[i], touch_value, smooth, (uint32_t)(touch_value * TOUCH_THRESHOLD));
     }
@@ -2123,15 +2121,15 @@ void test_touch_slope_debug(int pad_num)
 #elif SCOPE_DEBUG_TYPE == 3
     while (1) {
         test_touch_push_all();
-        TEST_ESP_OK( test_touch_check_ch_touched(TEST_TOUCH_CHANNEL, TOUCH_EXCEED_TIME_MS) );
+        TEST_ESP_OK(test_touch_check_ch_touched(TEST_TOUCH_CHANNEL, TOUCH_EXCEED_TIME_MS));
         printf_touch_hw_read("push");
 
         test_touch_benchmark();
 
         test_touch_release_all();
-        TEST_ESP_OK( test_touch_check_ch_released(TEST_TOUCH_CHANNEL, TOUCH_EXCEED_TIME_MS) );
+        TEST_ESP_OK(test_touch_check_ch_released(TEST_TOUCH_CHANNEL, TOUCH_EXCEED_TIME_MS));
         printf_touch_hw_read("release");
     }
 #endif
-    TEST_ESP_OK( touch_pad_deinit() );
+    TEST_ESP_OK(touch_pad_deinit());
 }

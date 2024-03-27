@@ -2,9 +2,20 @@
 
 examples/security/flash_encryption:
   disable_test:
-    - if: IDF_TARGET in ["esp32s2", "esp32s3", "esp32c6", "esp32h2", "esp32c2"]
+    - if: IDF_TARGET in ["esp32s2", "esp32s3", "esp32c6", "esp32h2", "esp32c2", "esp32p4"]
       temporary: true
       reason: lack of runners
+
+examples/security/hmac_soft_jtag:
+  disable:
+    - if: SOC_HMAC_SUPPORTED != 1
+  disable_test:
+    - if: IDF_TARGET not in ["esp32c6"]
+      reason: sufficient to test on one HMAC-capable chip
+  depends_components:
+    - esp_hw_support
+  depends_filepatterns:
+    - examples/security/hmac_soft_jtag/**/*
 
 examples/security/nvs_encryption_hmac:
   disable:
@@ -13,3 +24,8 @@ examples/security/nvs_encryption_hmac:
     - if: IDF_TARGET not in ["esp32c3"]
       temporary: true
       reason: lack of runners
+  depends_components:
+    - nvs_flash
+    - nvs_sec_provider
+  depends_filepatterns:
+    - examples/security/nvs_encryption_hmac/**/*

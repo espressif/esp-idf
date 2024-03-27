@@ -7,7 +7,7 @@ Building OpenOCD from Sources for Linux
 The following instructions are alternative to downloading binary OpenOCD from `Espressif GitHub <https://github.com/espressif/openocd-esp32/releases>`_. To quickly setup the binary OpenOCD, instead of compiling it yourself, backup and proceed to section :ref:`jtag-debugging-setup-openocd`.
 
 
-.. code-block:: bash
+.. highlight:: bash
 
 Download Sources of OpenOCD
 ===========================

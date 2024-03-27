@@ -1,14 +1,21 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "sdkconfig.h"
 #include "esp_vfs.h"
 #include "esp_vfs_common.h"
 
 #ifdef __cplusplus
 extern "C" {
+#endif
+
+#if CONFIG_VFS_SELECT_IN_RAM
+#define VFS_MALLOC_FLAGS (MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT)
+#else
+#define VFS_MALLOC_FLAGS MALLOC_CAP_DEFAULT
 #endif
 
 typedef struct vfs_entry_ {
@@ -18,37 +25,6 @@ typedef struct vfs_entry_ {
     void* ctx;              // optional pointer which can be passed to VFS
     int offset;             // index of this structure in s_vfs array
 } vfs_entry_t;
-
-
-/**
- * @brief get pointer of uart vfs.
- *
- * This function is called in vfs_console in order to get the vfs implementation
- * of uart.
- *
- * @return pointer to structure esp_vfs_t
- */
-const esp_vfs_t *esp_vfs_uart_get_vfs(void);
-
-/**
- * @brief get pointer of cdcacm vfs.
- *
- * This function is called in vfs_console in order to get the vfs implementation
- * of cdcacm.
- *
- * @return pointer to structure esp_vfs_t
- */
-const esp_vfs_t *esp_vfs_cdcacm_get_vfs(void);
-
-/**
- * @brief get pointer of usb_serial_jtag vfs.
- *
- * This function is called in vfs_console in order to get the vfs implementation
- * of usb_serial_jtag.
- *
- * @return pointer to structure esp_vfs_nonblocking_console_t
- */
-const esp_vfs_t *esp_vfs_usb_serial_jtag_get_vfs(void);
 
 /**
  * Register a virtual filesystem.

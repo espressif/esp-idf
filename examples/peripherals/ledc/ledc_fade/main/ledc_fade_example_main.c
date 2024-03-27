@@ -89,7 +89,7 @@ void app_main(void)
      */
     ledc_timer_config_t ledc_timer = {
         .duty_resolution = LEDC_TIMER_13_BIT, // resolution of PWM duty
-        .freq_hz = 5000,                      // frequency of PWM signal
+        .freq_hz = 4000,                      // frequency of PWM signal
         .speed_mode = LEDC_LS_MODE,           // timer mode
         .timer_num = LEDC_LS_TIMER,            // timer index
         .clk_cfg = LEDC_AUTO_CLK,              // Auto select the source clock
@@ -195,9 +195,9 @@ void app_main(void)
         printf("1. LEDC fade up to duty = %d\n", LEDC_TEST_DUTY);
         for (ch = 0; ch < LEDC_TEST_CH_NUM; ch++) {
             ledc_set_fade_with_time(ledc_channel[ch].speed_mode,
-                    ledc_channel[ch].channel, LEDC_TEST_DUTY, LEDC_TEST_FADE_TIME);
+                                    ledc_channel[ch].channel, LEDC_TEST_DUTY, LEDC_TEST_FADE_TIME);
             ledc_fade_start(ledc_channel[ch].speed_mode,
-                    ledc_channel[ch].channel, LEDC_FADE_NO_WAIT);
+                            ledc_channel[ch].channel, LEDC_FADE_NO_WAIT);
         }
 
         for (int i = 0; i < LEDC_TEST_CH_NUM; i++) {
@@ -207,9 +207,9 @@ void app_main(void)
         printf("2. LEDC fade down to duty = 0\n");
         for (ch = 0; ch < LEDC_TEST_CH_NUM; ch++) {
             ledc_set_fade_with_time(ledc_channel[ch].speed_mode,
-                    ledc_channel[ch].channel, 0, LEDC_TEST_FADE_TIME);
+                                    ledc_channel[ch].channel, 0, LEDC_TEST_FADE_TIME);
             ledc_fade_start(ledc_channel[ch].speed_mode,
-                    ledc_channel[ch].channel, LEDC_FADE_NO_WAIT);
+                            ledc_channel[ch].channel, LEDC_FADE_NO_WAIT);
         }
 
         for (int i = 0; i < LEDC_TEST_CH_NUM; i++) {

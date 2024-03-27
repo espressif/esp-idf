@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
 """
 Test case for iperf example.
@@ -7,24 +7,28 @@ This test case might have problem running on windows:
 
 - use `sudo killall iperf` to force kill iperf, didn't implement windows version
 
-The test env Example_ShieldBox_Basic do need the following config::
+The test env wifi_iperf do need the following config::
 
-  Example_ShieldBox_Basic:
+  wifi_iperf:
     ap_ssid: "myssid"
     ap_password: "mypassword"
     pc_nic: "eth1"
 
 """
-
 import os
 import time
-from typing import Any, Callable, Tuple
+from typing import Any
+from typing import Callable
+from typing import Tuple
 
 import pexpect
 import pytest
-from common_test_methods import get_env_config_variable, get_host_ip_by_interface
+from common_test_methods import get_env_config_variable
+from common_test_methods import get_host_ip_by_interface
 from idf_iperf_test_util import IperfUtility
-from idf_iperf_test_util.IperfUtility import SCAN_RETRY_COUNT, SCAN_TIMEOUT, TEST_TIME
+from idf_iperf_test_util.IperfUtility import SCAN_RETRY_COUNT
+from idf_iperf_test_util.IperfUtility import SCAN_TIMEOUT
+from idf_iperf_test_util.IperfUtility import TEST_TIME
 from pytest_embedded import Dut
 
 # configurations
@@ -135,12 +139,9 @@ class IperfTestUtilitySoftap(IperfUtility.IperfTestUtility):
 
 
 @pytest.mark.esp32
-@pytest.mark.esp32s2
-@pytest.mark.esp32c3
-@pytest.mark.esp32s3
 @pytest.mark.temp_skip_ci(targets=['esp32s2', 'esp32c3', 'esp32s3'], reason='lack of runners (run only for ESP32)')
 @pytest.mark.timeout(1200)
-@pytest.mark.Example_ShieldBox_Basic
+@pytest.mark.wifi_iperf
 @pytest.mark.parametrize('config', [
     BEST_PERFORMANCE_CONFIG
 ], indirect=True)
@@ -158,7 +159,7 @@ def test_wifi_throughput_basic(
     dut.expect('iperf>')
 
     # 2. preparing
-    env_name = 'Example_ShieldBox_Basic'
+    env_name = 'wifi_iperf'
     pc_nic = get_env_config_variable(env_name, 'pc_nic')
     pc_nic_ip = get_host_ip_by_interface(pc_nic)
     pc_iperf_log_file = os.path.join(dut.logdir, 'pc_iperf_log.md')

@@ -75,7 +75,7 @@ void app_main(void)
     // If the TWDT was not initialized automatically on startup, manually intialize it now
     esp_task_wdt_config_t twdt_config = {
         .timeout_ms = TWDT_TIMEOUT_MS,
-        .idle_core_mask = (1 << portNUM_PROCESSORS) - 1,    // Bitmask of all cores
+        .idle_core_mask = (1 << CONFIG_FREERTOS_NUMBER_OF_CORES) - 1,    // Bitmask of all cores
         .trigger_panic = false,
     };
     ESP_ERROR_CHECK(esp_task_wdt_init(&twdt_config));

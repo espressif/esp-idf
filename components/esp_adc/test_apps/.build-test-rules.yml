@@ -4,3 +4,10 @@ components/esp_adc/test_apps/adc:
   disable:
     - if: SOC_ADC_SUPPORTED != 1
     - if: CONFIG_NAME == "gdma_iram_safe" and IDF_TARGET in ["esp32", "esp32s2", "esp32c2"]
+  depends_components:
+    - esp_adc
+    - esp_driver_gpio
+    - esp_driver_i2s  # ADC continuous driver relies on I2S on ESP32
+    - efuse
+    - esp_driver_spi  # ADC continuous driver relies on SPI on ESP32S2
+    - esp_driver_tsens

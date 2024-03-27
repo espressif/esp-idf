@@ -1,3 +1,9 @@
+idf_build_get_property(target IDF_TARGET)
+
+if(${target} STREQUAL "linux")
+    return() # This component is not supported by the POSIX/Linux simulator
+endif()
+
 set(TOUCH_ELEMENT_COMPATIBLE_TARGETS "esp32s2" "esp32s3")
 
 if(IDF_TARGET IN_LIST TOUCH_ELEMENT_COMPATIBLE_TARGETS)

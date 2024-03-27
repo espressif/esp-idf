@@ -1,6 +1,8 @@
 {IDF_TARGET_NAME} ULP Coprocessor Instruction Set
 =================================================
 
+:link_to_translation:`zh_CN:[中文]`
+
 This document provides details about the instructions used by {IDF_TARGET_NAME} ULP FSM coprocessor assembler.
 
 ULP FSM coprocessor has 4 16-bit general purpose registers, labeled R0, R1, R2, R3. It also has an 8-bit counter register (``stage_cnt``) which can be used to implement loops. Stage count register is accessed using special instructions.
@@ -51,7 +53,7 @@ Note About Addressing
 
             ST R1, R2, 4        // offset = 4 bytes; Mem[R2 + 4 / 4] = R1
 
-  In this case, the value in R1 is stored at the memory location pointed by [R2 + offset / 4]
+  In this case, the value in R1 is stored at the memory location pointed by [R2 + offset / 4].
 
   Consider the following code::
 
@@ -66,7 +68,7 @@ Note About Addressing
             ST R2, R1, 0      // write value of R2 into the first array element,
                               // i.e., array[0]
 
-            ST R2, R1, 4      // write value of R2 into the second array element
+            ST R2, R1, 4      // write value of R2 into the second array element,
                               // (4 byte offset), i.e., array[1]
 
             ADD R1, R1, 2     // this increments address by 2 words (8 bytes)
@@ -76,7 +78,7 @@ Note About Addressing
 Note About Instruction Execution Time
 -------------------------------------
 
-ULP coprocessor is clocked from ``RTC_FAST_CLK``, which is normally derived from the internal 8MHz oscillator. Applications which need to know exact ULP clock frequency can calibrate it against the main XTAL clock::
+ULP coprocessor is clocked from ``RTC_FAST_CLK``, which is normally derived from the internal 8 MHz oscillator. Applications which need to know exact ULP clock frequency can calibrate it against the main XTAL clock::
 
     #include "soc/rtc.h"
 
@@ -88,18 +90,18 @@ ULP coprocessor needs certain number of clock cycles to fetch each instruction, 
 
 Instruction fetch time is:
 
-- 2 clock cycles — for instructions following ALU and branch instructions.
-- 4 clock cycles — in other cases.
+- 2 clock cycles — for instructions following ALU and branch instructions
+- 4 clock cycles — in other cases
 
 Note that when accessing RTC memories and RTC registers, ULP coprocessor has lower priority than the main CPUs. This means that ULP coprocessor execution may be suspended while the main CPUs access same memory region as the ULP.
 
 .. only:: esp32s2 or esp32s3
 
     Difference Between ESP32 ULP and {IDF_TARGET_NAME} ULP Instruction Sets
-    -----------------------------------------------------------------------
+    -------------------------------------------------------------------------
 
-    Compared to the ESP32 ULP FSM coprocessor, the {IDF_TARGET_NAME} ULP FSM coprocessor has an extended instruction set. The {IDF_TARGET_NAME} ULP FSM is not binary compatible with ESP32 ULP FSM,
-    but a ESP32 ULP FSM  assembled program is expected to work on the {IDF_TARGET_NAME} ULP FSM after rebuilding.
+    Compared to the ESP32 ULP FSM coprocessor, the {IDF_TARGET_NAME} ULP FSM coprocessor has an extended instruction set. The {IDF_TARGET_NAME} ULP FSM is not binary compatible with ESP32 ULP FSM, but a ESP32 ULP FSM assembled program is expected to work on the {IDF_TARGET_NAME} ULP FSM after rebuilding.
+
     The list of the new instructions that was added to the {IDF_TARGET_NAME} ULP FSM is: ``LDL``, ``LDH``, ``STL``, ``STH``, ``ST32``, ``STO``, ``STI``, ``STI32``.
 
 
@@ -307,11 +309,11 @@ The detailed description of all instructions is presented below:
 
 **Description**
 
-   The instruction does a logical shift to left of the source register by the number of bits from another source register or a 16-bit signed value and stores the result to the destination register.
+  The instruction does a logical shift to left of the source register by the number of bits from another source register or a 16-bit signed value and stores the result to the destination register.
 
 .. note::
 
-   Shift operations which are greater than 15 bits have undefined results.
+  Shift operations which are greater than 15 bits have undefined results.
 
 **Examples**::
 
@@ -339,10 +341,10 @@ The detailed description of all instructions is presented below:
 
 **Operands**
 
-  **Rdst** - Register R[0..3]
-  **Rsrc1** - Register R[0..3]
-  **Rsrc2** - Register R[0..3]
-  **Imm** - 16-bit signed value
+  - **Rdst** - Register R[0..3]
+  - **Rsrc1** - Register R[0..3]
+  - **Rsrc2** - Register R[0..3]
+  - **Imm** - 16-bit signed value
 
 **Cycles**
 
@@ -395,7 +397,7 @@ The detailed description of all instructions is presented below:
 
 .. note::
 
-    Note that when a label is used as an immediate, the address of the label will be converted from bytes to words. This is because LD, ST, and JUMP instructions expect the address register value to be expressed in words rather than bytes. See the section :ref:`ulp-fsm-addressing` for more details.
+    Note that when a label is used as an immediate, the address of the label will be converted from bytes to words. This is because ``LD``, ``ST``, and ``JUMP`` instructions expect the address register value to be expressed in words rather than bytes. See the section :ref:`ulp-fsm-addressing` for more details.
 
 
 **Examples**::
@@ -432,7 +434,7 @@ The detailed description of all instructions is presented below:
 
 **Description**
 
-  The instruction stores the 16-bit value of Rsrc to the lower half-word of memory with address Rdst+offset. The upper half-word is written with the current program counter (PC) (expressed in words, shifted left by 5 bits) OR'd with Rdst (0..3)::
+  The instruction stores the 16-bit value of Rsrc to the lower half-word of memory with address Rdst + offset. The upper half-word is written with the current program counter (PC) (expressed in words, shifted left by 5 bits) OR'd with Rdst (0..3)::
 
     Mem[Rdst + offset / 4]{31:0} = {PC[10:0], 3'b0, Rdst, Rsrc[15:0]}
 
@@ -458,7 +460,7 @@ The detailed description of all instructions is presented below:
 .. only:: esp32s2 or esp32s3
 
     **STL** – Store Data to the Lower 16 Bits of 32-bit Memory
-    ----------------------------------------------------------------
+    ----------------------------------------------------------
 
     **Syntax**
 
@@ -506,7 +508,7 @@ The detailed description of all instructions is presented below:
 
 
     **STH** – Store data to the higher 16 bits of 32-bit memory
-    ------------------------------------------------------------
+    -----------------------------------------------------------
 
     **Syntax**
 
@@ -597,7 +599,7 @@ The detailed description of all instructions is presented below:
     -------------------------------------------------------
 
     **Syntax**
-    
+
       **STO**     **offset**
 
     **Operands**
@@ -630,7 +632,7 @@ The detailed description of all instructions is presented below:
 
 
     **STI** – Store data to the 32-bits memory with auto increment of predefined offset address
-    -------------------------------------------------------------------------------------------
+    -----------------------------------------------------------------------------------------------
 
     **Syntax**
 
@@ -650,8 +652,7 @@ The detailed description of all instructions is presented below:
 
       The instruction stores the 16-bit value of Rsrc to the lower and upper half-word of memory with address [Rdst + offset / 4].
 
-      The offset value is auto incremented when the STI instruction is called twice. Make sure to execute the ``STO`` instruction
-      to set the offset value before executing the STI instruction::
+      The offset value is auto incremented when the STI instruction is called twice. Make sure to execute the ``STO`` instruction to set the offset value before executing the STI instruction::
 
         Mem[Rdst + offset / 4]{15:0/31:16} = {Rsrc[15:0]}
         Mem[Rdst + offset / 4]{15:0/31:16} = {Label[1:0],Rsrc[13:0]}
@@ -666,8 +667,8 @@ The detailed description of all instructions is presented below:
                 STI  R1, R2             // MEM[R2 + 8 / 4][31:16] = R1
 
 
-    **STI32** – Store 32-bits data to the 32-bits memory with auto increment of adress offset
-    -----------------------------------------------------------------------------------------
+    **STI32** – Store 32-bits data to the 32-bits memory with auto increment of address offset
+    ----------------------------------------------------------------------------------------------
 
     **Syntax**
 
@@ -687,8 +688,7 @@ The detailed description of all instructions is presented below:
 
       The instruction stores 11 bits of the PC value, label value and the 16-bit value of Rsrc to the 32-bit memory with address [Rdst + offset / 4].
 
-      The offset value is auto incremented each time the STI32 instruction is called. Make sure to execute the ``STO`` instruction
-      to set the offset value before executing the STI32 instruction::
+      The offset value is auto incremented each time the STI32 instruction is called. Make sure to execute the ``STO`` instruction to set the offset value before executing the STI32 instruction::
 
         Mem[Rdst + offset / 4]{31:0} = {PC[10:0],0[2:0],Label[1:0],Rsrc[15:0]}
 
@@ -845,12 +845,12 @@ The detailed description of all instructions is presented below:
   - **Rdst** – Register R[0..3] containing address to jump to (expressed in 32-bit words)
   - **ImmAddr** – 13 bits address (expressed in bytes), aligned to 4 bytes
   - **Condition**:
-     - EQ – jump if last ALU operation result was zero
-     - OV – jump if last ALU has set overflow flag
+    - EQ – jump if the last ALU operation result was zero
+    - OV – jump if the last ALU has set overflow flag
 
 **Cycles**
 
-  2 cycles to execute, 2 cycles to fetch next instruction
+  2 cycles to execute, 2 cycles to fetch next instruction.
 
 **Description**
 
@@ -896,7 +896,7 @@ The detailed description of all instructions is presented below:
 
 .. only:: esp32
 
-    Conditions **LT**, **GE**, **LE** and **GT**: 2 cycles to execute, 2 cycles to fetch next instruction
+    Conditions **LT**, **GE**, **LE** and **GT**: 2 cycles to execute, 2 cycles to fetch next instruction.
 
     Conditions **LE** and **GT** are implemented in the assembler using one **JUMPR** instruction::
 
@@ -919,7 +919,7 @@ The detailed description of all instructions is presented below:
 
 .. only:: esp32s2 or esp32s3
 
-    Conditions **EQ**, **GT** and **LT**: 2 cycles to execute, 2 cycles to fetch next instruction
+    Conditions **EQ**, **GT** and **LT**: 2 cycles to execute, 2 cycles to fetch next instruction.
 
     Conditions **LE** and **GE** are implemented in the assembler using two **JUMPR** instructions::
 
@@ -960,7 +960,7 @@ The detailed description of all instructions is presented below:
 
 **Operands**
 
-   - **Step**       – relative shift from current position, in bytes
+   - **Step** – relative shift from current position, in bytes
    - **Threshold**  – threshold value for branch condition
    - **Condition**:
        - **EQ** (equal) – jump if value in stage_cnt == threshold
@@ -973,7 +973,7 @@ The detailed description of all instructions is presented below:
 
 .. only:: esp32
 
-    Conditions **LE**, **LT**, **GE**: 2 cycles to execute, 2 cycles to fetch next instruction
+    Conditions **LE**, **LT**, **GE**: 2 cycles to execute, 2 cycles to fetch next instruction.
 
     Conditions **EQ**, **GT** are implemented in the assembler using two **JUMPS** instructions::
 
@@ -994,7 +994,7 @@ The detailed description of all instructions is presented below:
 
 .. only:: esp32s2 or esp32s3
 
-    2 cycles to execute, 2 cycles to fetch next instruction
+    2 cycles to execute, 2 cycles to fetch next instruction.
 
 
 **Description**
@@ -1014,6 +1014,7 @@ The detailed description of all instructions is presented below:
 
 **STAGE_RST** – Reset Stage Count Register
 ------------------------------------------
+
 **Syntax**
 
      **STAGE_RST**
@@ -1052,7 +1053,7 @@ The detailed description of all instructions is presented below:
 
 **Description**
 
-   The instruction increments the stage count register by the given value.
+   The instruction increments the stage count register by the given value
 
 **Examples**::
 
@@ -1069,6 +1070,7 @@ The detailed description of all instructions is presented below:
 ----------------------------------------------
 
 **Syntax**
+
   **STAGE_DEC**      **Value**
 
 **Operands**
@@ -1081,7 +1083,7 @@ The detailed description of all instructions is presented below:
 
 **Description**
 
-   The instruction decrements the stage count register by the given value.
+  The instruction decrements the stage count register by the given value
 
 **Examples**::
 
@@ -1112,11 +1114,11 @@ The detailed description of all instructions is presented below:
 
 **Description**
 
-   The instruction halts the ULP coprocessor and restarts the ULP wakeup timer, if it is enabled.
+    The instruction halts the ULP coprocessor and restarts the ULP wakeup timer, if it is enabled
 
 **Examples**::
 
-  1:       HALT      // Halt the coprocessor
+    1:       HALT      // Halt the coprocessor
 
 
 **WAKE** – Wake up the Chip
@@ -1179,7 +1181,7 @@ The detailed description of all instructions is presented below:
 
     **Operands**
 
-       - **sleep_reg** – 0..4, selects one of ``SENS_ULP_CP_SLEEP_CYCx_REG`` registers.
+       - **sleep_reg** – 0..4, selects one of ``SENS_ULP_CP_SLEEP_CYCx_REG`` registers
 
     **Cycles**
 
@@ -1187,7 +1189,7 @@ The detailed description of all instructions is presented below:
 
     **Description**
 
-       The instruction selects which of the ``SENS_ULP_CP_SLEEP_CYCx_REG`` (x = 0..4) register values is to be used by the ULP wakeup timer as wakeup period. By default, the value from ``SENS_ULP_CP_SLEEP_CYC0_REG`` is used.
+       The instruction selects which of the ``SENS_ULP_CP_SLEEP_CYCx_REG`` (x = 0..4) register values is to be used by the ULP wakeup timer as wakeup period. By default, the value from ``SENS_ULP_CP_SLEEP_CYC0_REG`` is used
 
     **Examples**::
 
@@ -1202,19 +1204,19 @@ The detailed description of all instructions is presented below:
 
 **Syntax**
 
-   **WAIT**   **Cycles**
+  **WAIT**   **Cycles**
 
 **Operands**
 
-   - **Cycles** – number of cycles for wait
+  - **Cycles** – number of cycles for wait
 
 **Cycles**
 
-  2 + **Cycles** cycles to execute, 4 cycles to fetch next instruction
+  (2 + **Cycles**) cycles to execute, 4 cycles to fetch next instruction
 
 **Description**
 
-   The instruction delays for given number of cycles.
+  The instruction delays for a given number of cycles.
 
 **Examples**::
 
@@ -1239,11 +1241,11 @@ The detailed description of all instructions is presented below:
 
     **Cycles**
 
-      2 + **Wait_Delay** + 3 * TSENS_CLK to execute, 4 cycles to fetch next instruction
+      (2 + **Wait_Delay** + 3 * TSENS_CLK) to execute, 4 cycles to fetch next instruction
 
     **Description**
 
-      The instruction performs measurement using TSENS and stores the result into a general purpose register.
+      The instruction performs measurement using TSENS and stores the result into a general purpose register
 
     **Examples**::
 
@@ -1279,17 +1281,19 @@ The detailed description of all instructions is presented below:
 
 **Description**
 
-  The instruction makes measurements from ADC.
-
-**Examples**::
+  The instruction makes measurements from ADC
 
 .. only:: esp32
 
-   1:        ADC      R1, 0, 1      // Measure value using ADC1 channel 0 and store result into R1
+    **Examples**::
+
+        1:        ADC      R1, 0, 1      // Measure value using ADC1 channel 0 and store result into R1
 
 .. only:: esp32s2 or esp32s3
 
-   1:        ADC      R1, 0, 1      // Measure value using ADC1 pad 2 and store result into R1
+    **Examples**::
+
+        1:        ADC      R1, 0, 1      // Measure value using ADC1 pad 2 and store result into R1
 
 .. only:: esp32
 
@@ -1302,13 +1306,13 @@ The detailed description of all instructions is presented below:
 
     **Operands**
 
-      - **Sub_addr** – Address within the I2C slave to read.
-      - **High*, *Low** — Define range of bits to read. Bits outside of [High, Low] range are masked.
-      - **Slave_sel**  -  Index of I2C slave address to use.
+      - **Sub_addr** – Address within the I2C slave to read
+      - **High*, *Low** — Define range of bits to read. Bits outside of [High, Low] range are masked
+      - **Slave_sel**  -  Index of I2C slave address to use
 
     **Cycles**
 
-      Execution time mostly depends on I2C communication time. 4 cycles to fetch next instruction.
+      Execution time mostly depends on I2C communication time. 4 cycles to fetch next instruction
 
     **Description**
 
@@ -1328,22 +1332,22 @@ The detailed description of all instructions is presented below:
 
     **Operands**
 
-      - **Sub_addr** – Address within the I2C slave to write.
-      - **Value** – 8-bit value to be written.
-      - **High**, **Low** — Define range of bits to write. Bits outside of [High, Low] range are masked.
-      - **Slave_sel**  -  Index of I2C slave address to use.
+      - **Sub_addr** – Address within the I2C slave to write
+      - **Value** – 8-bit value to be written
+      - **High**, **Low** — Define range of bits to write. Bits outside of [High, Low] range are masked
+      - **Slave_sel** - Index of I2C slave address to use
 
     **Cycles**
 
-      Execution time mostly depends on I2C communication time. 4 cycles to fetch next instruction.
+      Execution time mostly depends on I2C communication time. 4 cycles to fetch next instruction
 
     **Description**
 
-      ``I2C_WR`` instruction writes one byte to I2C slave with index ``Slave_sel``. Slave address (in 7-bit format) has to be set in advance into ``SENS_I2C_SLAVE_ADDRx`` register field, where ``x == Slave_sel``.
+      ``I2C_WR`` instruction writes one byte to I2C slave address with index ``Slave_sel``. Slave address (in 7-bit format) has to be set in advance into the ``SENS_I2C_SLAVE_ADDRx`` register field, where ``x == Slave_sel``.
 
     **Examples**::
 
-       1:        I2C_WR      0x20, 0x33, 7, 0, 1      // Write byte 0x33 to sub-address 0x20 of slave with address set in SENS_I2C_SLAVE_ADDR1.
+        1:        I2C_WR      0x20, 0x33, 7, 0, 1      // Write byte 0x33 to sub-address 0x20 of slave with address set in SENS_I2C_SLAVE_ADDR1.
 
 
 **REG_RD** – Read from Peripheral Register
@@ -1393,7 +1397,7 @@ The detailed description of all instructions is presented below:
 
 **Operands**
 
-  - **Addr** – Register address, in 32-bit words.
+  - **Addr** – Register address, in 32-bit words
   - **High** – Register end bit number
   - **Low** – Register start bit number
   - **Data** – Value to write, 8 bits
@@ -1406,21 +1410,21 @@ The detailed description of all instructions is presented below:
 
   The instruction writes up to 8 bits from an immediate data value into a peripheral register: ``REG[Addr][High:Low] = data``.
 
-.. only:: esp32
+  .. only:: esp32
 
-  This instruction can access registers in RTC_CNTL, RTC_IO, SENS, and RTC_I2C peripherals. Address of the register, as seen from the ULP, can be calculated from the address of the same register on the DPORT bus as follows::
+    This instruction can access registers in RTC_CNTL, RTC_IO, SENS, and RTC_I2C peripherals. Address of the register, as seen from the ULP, can be calculated from the address of the same register on the DPORT bus as follows::
 
-    addr_ulp = (addr_dport - DR_REG_RTCCNTL_BASE) / 4
+      addr_ulp = (addr_dport - DR_REG_RTCCNTL_BASE) / 4
 
-.. only:: esp32s2 or esp32s3
+  .. only:: esp32s2 or esp32s3
 
-  This instruction can access registers in RTC_CNTL, RTC_IO, SENS, and RTC_I2C peripherals. Address of the register, as seen from the ULP, can be calculated from the address of the same register on the PeriBUS1 as follows::
+    This instruction can access registers in RTC_CNTL, RTC_IO, SENS, and RTC_I2C peripherals. Address of the register, as seen from the ULP, can be calculated from the address of the same register on the PeriBUS1 as follows::
 
-    addr_ulp = (addr_peribus1 - DR_REG_RTCCNTL_BASE) / 4
+      addr_ulp = (addr_peribus1 - DR_REG_RTCCNTL_BASE) / 4
 
 **Examples**::
 
-   1:        REG_WR      0x120, 7, 0, 0x10   // set 8 bits: REG[0x120][7:0] = 0x10
+    1:        REG_WR      0x120, 7, 0, 0x10   // set 8 bits: REG[0x120][7:0] = 0x10
 
 
 Convenience Macros for Peripheral Registers Access
@@ -1428,8 +1432,7 @@ Convenience Macros for Peripheral Registers Access
 
 ULP source files are passed through C preprocessor before the assembler. This allows certain macros to be used to facilitate access to peripheral registers.
 
-Some existing macros are defined in ``soc/soc_ulp.h`` header file. These macros allow access to the fields of peripheral registers by their names.
-Peripheral registers names which can be used with these macros are the ones defined in ``soc/rtc_cntl_reg.h``, ``soc/rtc_io_reg.h``, ``soc/sens_reg.h``, and ``soc/rtc_i2c_reg.h``.
+Some existing macros are defined in ``soc/soc_ulp.h`` header file. These macros allow access to the fields of peripheral registers by their names. Peripheral registers' names which can be used with these macros are the ones defined in ``soc/rtc_cntl_reg.h``, ``soc/rtc_io_reg.h``, ``soc/sens_reg.h``, and ``soc/rtc_i2c_reg.h``.
 
 READ_RTC_REG(rtc_reg, low_bit, bit_width)
   Read up to 16 bits from rtc_reg[low_bit + bit_width - 1 : low_bit] into R0. For example::

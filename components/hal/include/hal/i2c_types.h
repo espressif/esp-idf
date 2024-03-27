@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,6 +14,7 @@ extern "C" {
 #include <stdbool.h>
 #include "soc/soc_caps.h"
 #include "soc/clk_tree_defs.h"
+#include "hal/hal_utils.h"
 
 /**
  * @brief I2C port number, can be I2C_NUM_0 ~ (I2C_NUM_MAX-1).
@@ -86,6 +87,16 @@ typedef enum {
     I2C_MASTER_LAST_NACK = 0x2,   /*!< I2C nack for the last byte*/
     I2C_MASTER_ACK_MAX,
 } i2c_ack_type_t;
+
+/**
+ * @brief Enum for I2C slave stretch causes
+ */
+typedef enum {
+    I2C_SLAVE_STRETCH_CAUSE_ADDRESS_MATCH = 0,   /*!< Stretching SCL low when the slave is read by the master and the address just matched */
+    I2C_SLAVE_STRETCH_CAUSE_TX_EMPTY = 1,        /*!< Stretching SCL low when TX FIFO is empty in slave mode */
+    I2C_SLAVE_STRETCH_CAUSE_RX_FULL = 2,         /*!< Stretching SCL low when RX FIFO is full in slave mode */
+    I2C_SLAVE_STRETCH_CAUSE_SENDING_ACK = 3,     /*!< Stretching SCL low when slave sending ACK */
+} i2c_slave_stretch_cause_t;
 
 #if SOC_I2C_SUPPORTED
 /**

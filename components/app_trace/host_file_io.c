@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -29,6 +29,7 @@ const static char *TAG = "esp_host_file_io";
 #define ESP_APPTRACE_FILE_CMD_FSEEK     0x4
 #define ESP_APPTRACE_FILE_CMD_FTELL     0x5
 #define ESP_APPTRACE_FILE_CMD_STOP      0x6 // indicates that there is no files to transfer
+#define ESP_APPTRACE_FILE_CMD_FEOF      0x7
 
 /** File operation header */
 typedef struct {
@@ -67,6 +68,11 @@ typedef struct {
     int     whence;
     void *  file;
 } esp_apptrace_fseek_args_t;
+
+/** Helper structure for feof */
+typedef struct {
+    void *file;
+} esp_apptrace_feof_args_t;
 
 /** Helper structure for ftell */
 typedef struct {
@@ -116,7 +122,7 @@ static esp_err_t esp_apptrace_file_rsp_recv(esp_apptrace_dest_t dest, uint8_t *b
             ESP_EARLY_LOGE(TAG, "Failed to read (%d)!", ret);
             return ret;
         }
-        ESP_EARLY_LOGV(TAG, "%s read %d bytes", __FUNCTION__, rd_size);
+        ESP_EARLY_LOGV(TAG, "%s read %" PRIu32 " bytes", __FUNCTION__, rd_size);
         tot_rd += rd_size;
     }
 
@@ -228,8 +234,11 @@ size_t esp_apptrace_fwrite(esp_apptrace_dest_t dest, const void *ptr, size_t siz
         ESP_EARLY_LOGE(TAG, "Failed to read response (%d)!", ret);
         return 0;
     }
-
-    return resp/size; // return the number of items written
+    /* OpenOCD writes it like that:
+     *      fwrite(buf, size, 1, file);
+     * So, if 1 was returned that means fwrite succeed
+     */
+    return resp == 1 ? nmemb : 0;
 }
 
 static void esp_apptrace_fread_args_prepare(uint8_t *buf, void *priv)
@@ -275,6 +284,10 @@ size_t esp_apptrace_fread(esp_apptrace_dest_t dest, void *ptr, size_t size, size
         ESP_EARLY_LOGE(TAG, "Failed to read file data (%d)!", ret);
         return 0;
     }
+    /* OpenOCD reads it like that:
+     *      fread(buf, 1 ,size, file);
+     * So, total read bytes count returns
+     */
     return resp/size; // return the number of items read
 }
 
@@ -352,6 +365,36 @@ int esp_apptrace_fstop(esp_apptrace_dest_t dest)
         ESP_EARLY_LOGE(TAG, "Failed to send files transfer stop cmd (%d)!", ret);
     }
     return ret;
+}
+
+static void esp_apptrace_feof_args_prepare(uint8_t *buf, void *priv)
+{
+    esp_apptrace_feof_args_t *args = priv;
+
+    memcpy(buf, &args->file, sizeof(args->file));
+}
+
+int esp_apptrace_feof(esp_apptrace_dest_t dest, void *stream)
+{
+    esp_apptrace_feof_args_t cmd_args;
+
+    cmd_args.file = stream;
+    esp_err_t ret = esp_apptrace_file_cmd_send(dest, ESP_APPTRACE_FILE_CMD_FEOF, esp_apptrace_feof_args_prepare,
+                        &cmd_args, sizeof(cmd_args));
+    if (ret != ESP_OK) {
+        ESP_EARLY_LOGE(TAG, "Failed to send file cmd (%d)!", ret);
+        return EOF;
+    }
+
+    // now read the answer
+    int resp;
+    ret = esp_apptrace_file_rsp_recv(dest, (uint8_t *)&resp, sizeof(resp));
+    if (ret != ESP_OK) {
+        ESP_EARLY_LOGE(TAG, "Failed to read response (%d)!", ret);
+        return EOF;
+    }
+
+    return resp;
 }
 
 #endif

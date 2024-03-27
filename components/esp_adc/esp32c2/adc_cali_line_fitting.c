@@ -17,7 +17,6 @@
 #include "esp_adc/adc_cali_scheme.h"
 #include "adc_cali_interface.h"
 
-
 /**
  * This file contains Line Fitting Calibration Scheme for ESP32C2.
  *
@@ -30,7 +29,6 @@
  * 5. Only build this file, when `ADC_CALI_SCHEME_LINE_FITTING_V2_SUPPORTED == true`
  */
 
-
 // coeff_a is actually a float number
 // it is scaled to put them into uint32_t so that the headers do not have to be changed
 static const int coeff_a_scaling = 65536;
@@ -42,7 +40,6 @@ typedef struct {
     uint32_t coeff_a;    ///< Gradient of ADC-Voltage characteristics
     uint32_t coeff_b;    ///< Offset of ADC-Voltage characteristics
 } cali_chars_line_fitting_t;
-
 
 /* ------------------------ Interface Functions --------------------------- */
 static esp_err_t cali_raw_to_voltage(void *arg, int raw, int *voltage);
@@ -107,7 +104,6 @@ esp_err_t adc_cali_delete_scheme_line_fitting(adc_cali_handle_t handle)
     return ESP_OK;
 }
 
-
 /* ------------------------ Interface Functions --------------------------- */
 static esp_err_t cali_raw_to_voltage(void *arg, int raw, int *voltage)
 {
@@ -122,7 +118,7 @@ static esp_err_t cali_raw_to_voltage(void *arg, int raw, int *voltage)
 static esp_err_t check_valid(const adc_cali_line_fitting_config_t *config)
 {
     ESP_RETURN_ON_FALSE(config->unit_id < SOC_ADC_PERIPH_NUM, ESP_ERR_INVALID_ARG, TAG, "invalid ADC unit");
-    ESP_RETURN_ON_FALSE((config->atten == ADC_ATTEN_DB_0 || config->atten == ADC_ATTEN_DB_11), ESP_ERR_NOT_SUPPORTED, TAG, "only ADC_ATTEN_DB_0 and ADC_ATTEN_DB_11 are supported");
+    ESP_RETURN_ON_FALSE((config->atten == ADC_ATTEN_DB_0 || config->atten == ADC_ATTEN_DB_12), ESP_ERR_NOT_SUPPORTED, TAG, "only ADC_ATTEN_DB_0 and ADC_ATTEN_DB_12 are supported");
     if (config->atten == ADC_ATTEN_DB_0) {
         ESP_LOGW(TAG, "Experimental: ADC Atten 0 calibration can now only used for inputs lower than 950mV. Calibration Scheme may get updated, DON'T USE FOR MASS PRODUCTION!");
     }

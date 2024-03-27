@@ -1,5 +1,7 @@
 .build_template:
   stage: build
+  extends:
+    - .after_script:build:ccache:upload-when-fail
   image: $ESP_ENV_IMAGE
   tags:
     - build
@@ -8,65 +10,30 @@
   variables:
     # Enable ccache for all build jobs. See configure_ci_environment.sh for more ccache related settings.
     IDF_CCACHE_ENABLE: "1"
-  after_script:
-    # Show ccache statistics if enabled globally
-    - test "$CI_CCACHE_STATS" == 1 && test -n "$(which ccache)" && ccache --show-stats || true
   dependencies: []
 
 .build_cmake_template:
   extends:
     - .build_template
-    - .before_script_build_jobs
+    - .before_script:build
+    - .after_script:build:ccache
   dependencies: # set dependencies to null to avoid missing artifacts issue
   needs:
     - job: fast_template_app
       artifacts: false
-    - job: mr_variables
-      optional: true  # only MR pipelines would have this
+    - pipeline_variables
   artifacts:
     paths:
-      - "**/build*/size.json"
+      # The other artifacts patterns are defined under tools/ci/artifacts_handler.py
+      # Now we're uploading/downloading the binary files from our internal storage server
+      #
+      # keep the log file to help debug
       - "**/build*/build_log.txt"
-      - "**/build*/*.bin"
-      # upload to s3 server to save the artifacts size
-      # - "**/build*/*.map"
-      # ttfw tests require elf files
-      - "**/build*/*.elf"
-      - "**/build*/flasher_args.json"
-      - "**/build*/flash_project_args"
-      - "**/build*/config/sdkconfig.json"
-      # ttfw tests require sdkconfig file
-      - "**/build*/sdkconfig"
-      - "**/build*/bootloader/*.bin"
-      - "**/build*/partition_table/*.bin"
-      - list_job_*.txt
+      # keep the size info to help track the binary size
       - size_info.txt
-      # unit test specific
-      - components/idf_test/unit_test/*.yml
+      - "**/build*/size.json"
+    expire_in: 1 week
     when: always
-    expire_in: 4 days
-  after_script:
-    # Show ccache statistics if enabled globally
-    - test "$CI_CCACHE_STATS" == 1 && test -n "$(which ccache)" && ccache --show-stats || true
-    # upload the binary files to s3 server
-    - echo -e "\e[0Ksection_start:`date +%s`:upload_binaries_to_s3_server[collapsed=true]\r\e[0KUploading binaries to s3 Server"
-    - shopt -s globstar
-    # use || true to bypass the no-file error
-    - zip ${CI_JOB_ID}.zip **/build*/*.bin || true
-    - zip ${CI_JOB_ID}.zip **/build*/*.elf || true
-    - zip ${CI_JOB_ID}.zip **/build*/*.map || true
-    - zip ${CI_JOB_ID}.zip **/build*/flasher_args.json || true
-    - zip ${CI_JOB_ID}.zip **/build*/flash_project_args || true
-    - zip ${CI_JOB_ID}.zip **/build*/config/sdkconfig.json || true
-    - zip ${CI_JOB_ID}.zip **/build*/sdkconfig || true
-    - zip ${CI_JOB_ID}.zip **/build*/bootloader/*.bin || true
-    - zip ${CI_JOB_ID}.zip **/build*/partition_table/*.bin || true
-    - mc alias set shiny-s3 ${SHINY_S3_SERVER} ${SHINY_S3_ACCESS_KEY} ${SHINY_S3_SECRET_KEY}
-    - mc cp ${CI_JOB_ID}.zip shiny-s3/idf-artifacts/${CI_PIPELINE_ID}/${CI_JOB_ID}.zip
-    - echo -e "\e[0Ksection_end:`date +%s`:upload_binaries_to_s3_server\r\e[0K"
-    - echo "Please download the full binary files (including *.elf and *.map files) from the following share link"
-    # would be clean up after 4 days
-    - mc share download shiny-s3/idf-artifacts/${CI_PIPELINE_ID}/${CI_JOB_ID}.zip --expire=96h
   script:
     # CI specific options start from "--parallel-count xxx". could ignore when running locally
     - run_cmd python tools/ci/ci_build_apps.py $TEST_DIR -v
@@ -80,6 +47,8 @@
         examples/wifi/iperf
       --modified-components ${MR_MODIFIED_COMPONENTS}
       --modified-files ${MR_MODIFIED_FILES}
+    # for detailed documents, please refer to .gitlab/ci/README.md#uploaddownload-artifacts-to-internal-minio-server
+    - python tools/ci/artifacts_handler.py upload
 
 .build_cmake_clang_template:
   extends:
@@ -98,333 +67,15 @@
       --modified-components ${MR_MODIFIED_COMPONENTS}
       --modified-files ${MR_MODIFIED_FILES}
       $TEST_BUILD_OPTS_EXTRA
+    - python tools/ci/artifacts_handler.py upload
 
-.build_pytest_template:
-  extends:
-    - .build_cmake_template
-    - .before_script_build_jobs
-  artifacts:
-    paths:
-      - "**/build*/size.json"
-      - "**/build*/build_log.txt"
-      - "**/build*/*.bin"
-      # upload to s3 server to save the artifacts size
-      # - "**/build*/*.map"
-      # - "**/build*/*.elf"
-      - "**/build*/flasher_args.json"
-      - "**/build*/flash_project_args"
-      - "**/build*/config/sdkconfig.json"
-      - "**/build*/bootloader/*.bin"
-      - "**/build*/partition_table/*.bin"
-      - list_job_*.txt
-      - size_info.txt
-    when: always
-    expire_in: 4 days
-  script:
-    # CI specific options start from "--parallel-count xxx". could ignore when running locally
-    - run_cmd python tools/ci/ci_build_apps.py $TEST_DIR -v
-      -t $IDF_TARGET
-      --pytest-apps
-      --parallel-count ${CI_NODE_TOTAL:-1}
-      --parallel-index ${CI_NODE_INDEX:-1}
-      --collect-app-info "list_job_${CI_JOB_NAME_SLUG}.txt"
-      --modified-components ${MR_MODIFIED_COMPONENTS}
-      --modified-files ${MR_MODIFIED_FILES}
-
-.build_pytest_no_jtag_template:
-  extends: .build_pytest_template
-  script:
-    # CI specific options start from "--parallel-count xxx". could ignore when running locally
-    - run_cmd python tools/ci/ci_build_apps.py $TEST_DIR -v
-      -t $IDF_TARGET
-      -m \"not host_test and not jtag\"
-      --pytest-apps
-      --parallel-count ${CI_NODE_TOTAL:-1}
-      --parallel-index ${CI_NODE_INDEX:-1}
-      --collect-app-info "list_job_${CI_JOB_NAME_SLUG}.txt"
-      --modified-components ${MR_MODIFIED_COMPONENTS}
-      --modified-files ${MR_MODIFIED_FILES}
-
-.build_pytest_jtag_template:
-  extends:
-    - .build_cmake_template
-    - .before_script_build_jobs
-  artifacts:
-    paths:
-      - "**/build*/size.json"
-      - "**/build*/build_log.txt"
-      - "**/build*/*.bin"
-      # upload to s3 server to save the artifacts size
-      # - "**/build*/*.map"
-      - "**/build*/*.elf"  # need elf for gdb
-      - "**/build*/flasher_args.json"
-      - "**/build*/flash_project_args"
-      - "**/build*/config/sdkconfig.json"
-      - "**/build*/bootloader/*.bin"
-      - "**/build*/partition_table/*.bin"
-      - list_job_*.txt
-      - size_info.txt
-    when: always
-    expire_in: 4 days
-  script:
-    # CI specific options start from "--parallel-count xxx". could ignore when running locally
-    - run_cmd python tools/ci/ci_build_apps.py $TEST_DIR -v
-      -t $IDF_TARGET
-      -m \"not host_test and jtag\"
-      --pytest-apps
-      --parallel-count ${CI_NODE_TOTAL:-1}
-      --parallel-index ${CI_NODE_INDEX:-1}
-      --collect-app-info "list_job_${CI_JOB_NAME_SLUG}.txt"
-      --modified-components ${MR_MODIFIED_COMPONENTS}
-      --modified-files ${MR_MODIFIED_FILES}
-
-build_pytest_examples_esp32:
-  extends:
-    - .build_pytest_no_jtag_template
-    - .rules:build:example_test-esp32
-  parallel: 6
-  variables:
-    IDF_TARGET: esp32
-    TEST_DIR: examples
-
-build_pytest_examples_esp32s2:
-  extends:
-    - .build_pytest_no_jtag_template
-    - .rules:build:example_test-esp32s2
-  parallel: 3
-  variables:
-    IDF_TARGET: esp32s2
-    TEST_DIR: examples
-
-build_pytest_examples_esp32s3:
-  extends:
-    - .build_pytest_no_jtag_template
-    - .rules:build:example_test-esp32s3
-  parallel: 4
-  variables:
-    IDF_TARGET: esp32s3
-    TEST_DIR: examples
-
-build_pytest_examples_esp32c3:
-  extends:
-    - .build_pytest_no_jtag_template
-    - .rules:build:example_test-esp32c3
-  parallel: 4
-  variables:
-    IDF_TARGET: esp32c3
-    TEST_DIR: examples
-
-build_pytest_examples_esp32c2:
-  extends:
-    - .build_pytest_no_jtag_template
-    - .rules:build:example_test-esp32c2
-  parallel: 2
-  variables:
-    IDF_TARGET: esp32c2
-    TEST_DIR: examples
-
-build_pytest_examples_jtag:  # for all targets
-  extends:
-    - .build_pytest_jtag_template
-    - .rules:build:example_test-esp32
-  variables:
-    IDF_TARGET: all
-    TEST_DIR: examples
-
-build_pytest_examples_esp32c6:
-  extends:
-    - .build_pytest_template
-    - .rules:build:example_test-esp32c6
-  parallel: 2
-  variables:
-    IDF_TARGET: esp32c6
-    TEST_DIR: examples
-
-build_pytest_examples_esp32h2:
-  extends:
-    - .build_pytest_template
-    - .rules:build:example_test-esp32h2
-  parallel: 2
-  variables:
-    IDF_TARGET: esp32h2
-    TEST_DIR: examples
-
-build_pytest_components_esp32:
-  extends:
-    - .build_pytest_template
-    - .rules:build:component_ut-esp32
-  parallel: 5
-  variables:
-    IDF_TARGET: esp32
-    TEST_DIR: components
-
-build_pytest_components_esp32s2:
-  extends:
-    - .build_pytest_template
-    - .rules:build:component_ut-esp32s2
-  parallel: 4
-  variables:
-    IDF_TARGET: esp32s2
-    TEST_DIR: components
-
-build_pytest_components_esp32s3:
-  extends:
-    - .build_pytest_template
-    - .rules:build:component_ut-esp32s3
-  parallel: 4
-  variables:
-    IDF_TARGET: esp32s3
-    TEST_DIR: components
-
-build_pytest_components_esp32c3:
-  extends:
-    - .build_pytest_template
-    - .rules:build:component_ut-esp32c3
-  parallel: 4
-  variables:
-    IDF_TARGET: esp32c3
-    TEST_DIR: components
-
-build_pytest_components_esp32c2:
-  extends:
-    - .build_pytest_template
-    - .rules:build:component_ut-esp32c2
-  parallel: 3
-  variables:
-    IDF_TARGET: esp32c2
-    TEST_DIR: components
-
-build_pytest_components_esp32c6:
-  extends:
-    - .build_pytest_template
-    - .rules:build:component_ut-esp32c6
-  parallel: 3
-  variables:
-    IDF_TARGET: esp32c6
-    TEST_DIR: components
-
-build_pytest_components_esp32h2:
-  extends:
-    - .build_pytest_template
-    - .rules:build:component_ut-esp32h2
-  parallel: 4
-  variables:
-    IDF_TARGET: esp32h2
-    TEST_DIR: components
-
-build_only_components_apps:
-  extends:
-    - .build_cmake_template
-    - .rules:build:component_ut
-  parallel: 5
-  script:
-    - set_component_ut_vars
-    # CI specific options start from "--parallel-count xxx". could ignore when running locally
-    - run_cmd python tools/ci/ci_build_apps.py $COMPONENT_UT_DIRS -v
-      -t all
-      --parallel-count ${CI_NODE_TOTAL:-1}
-      --parallel-index ${CI_NODE_INDEX:-1}
-      --modified-components ${MR_MODIFIED_COMPONENTS}
-      --modified-files ${MR_MODIFIED_FILES}
-
-.build_pytest_test_apps_template:
-  extends: .build_pytest_template
-  artifacts:
-    paths:
-      - "**/build*/size.json"
-      - "**/build*/build_log.txt"
-      - "**/build*/*.bin"
-      # upload to s3 server to save the artifacts size
-      # - "**/build*/*.map"
-      # pytest test apps requires elf files for coredump tests
-      - "**/build*/*.elf"
-      - "**/build*/flasher_args.json"
-      - "**/build*/flash_project_args"
-      - "**/build*/config/sdkconfig.json"
-      - "**/build*/bootloader/*.elf"
-      - "**/build*/bootloader/*.bin"
-      - "**/build*/partition_table/*.bin"
-      - "**/build*/project_description.json"
-      - list_job_*.txt
-      - size_info.txt
-    when: always
-    expire_in: 4 days
-
-build_pytest_test_apps_esp32:
-  extends:
-    - .build_pytest_test_apps_template
-    - .rules:build:custom_test-esp32
-  variables:
-    IDF_TARGET: esp32
-    TEST_DIR: tools/test_apps
-
-build_pytest_test_apps_esp32s2:
-  extends:
-    - .build_pytest_test_apps_template
-    - .rules:build:custom_test-esp32s2
-  variables:
-    IDF_TARGET: esp32s2
-    TEST_DIR: tools/test_apps
-
-build_pytest_test_apps_esp32s3:
-  extends:
-    - .build_pytest_test_apps_template
-    - .rules:build:custom_test-esp32s3
-  parallel: 2
-  variables:
-    IDF_TARGET: esp32s3
-    TEST_DIR: tools/test_apps
-
-build_pytest_test_apps_esp32c3:
-  extends:
-    - .build_pytest_test_apps_template
-    - .rules:build:custom_test-esp32c3
-  variables:
-    IDF_TARGET: esp32c3
-    TEST_DIR: tools/test_apps
-
-build_pytest_test_apps_esp32c2:
-  extends:
-    - .build_pytest_test_apps_template
-    - .rules:build:custom_test-esp32c2
-  variables:
-    IDF_TARGET: esp32c2
-    TEST_DIR: tools/test_apps
-
-build_pytest_test_apps_esp32c6:
-  extends:
-    - .build_pytest_test_apps_template
-    - .rules:build:custom_test-esp32c6
-  variables:
-    IDF_TARGET: esp32c6
-    TEST_DIR: tools/test_apps
-
-build_pytest_test_apps_esp32h2:
-  extends:
-    - .build_pytest_test_apps_template
-    - .rules:build:custom_test-esp32h2
-  variables:
-    IDF_TARGET: esp32h2
-    TEST_DIR: tools/test_apps
-
-build_only_tools_test_apps:
-  extends:
-    - .build_cmake_template
-    - .rules:build:custom_test
-  parallel: 9
-  script:
-    # CI specific options start from "--parallel-count xxx". could ignore when running locally
-    - run_cmd python tools/ci/ci_build_apps.py tools/test_apps -v
-      -t all
-      --parallel-count ${CI_NODE_TOTAL:-1}
-      --parallel-index ${CI_NODE_INDEX:-1}
-      --modified-components ${MR_MODIFIED_COMPONENTS}
-      --modified-files ${MR_MODIFIED_FILES}
-
+######################
+# build_template_app #
+######################
 .build_template_app_template:
   extends:
     - .build_template
-    - .before_script_build_jobs
+    - .before_script:build
   variables:
     LOG_PATH: "${CI_PROJECT_DIR}/log_template_app"
     BUILD_PATH: "${CI_PROJECT_DIR}/build_template_app"
@@ -432,12 +83,12 @@ build_only_tools_test_apps:
     BUILD_LOG_CMAKE: "${LOG_PATH}/cmake_@t_@w.txt"
     BUILD_COMMAND_ARGS: ""
   artifacts:
-    when: always
     paths:
       - log_template_app/*
       - size_info.txt
       - build_template_app/**/size.json
     expire_in: 1 week
+    when: always
   script:
     # Set the variable for 'esp-idf-template' testing
     - ESP_IDF_TEMPLATE_GIT=${ESP_IDF_TEMPLATE_GIT:-"https://github.com/espressif/esp-idf-template.git"}
@@ -456,254 +107,32 @@ fast_template_app:
     - .build_template_app_template
     - .rules:build:target_test
   stage: pre_check
+  tags: [fast_run, shiny]
   variables:
     BUILD_COMMAND_ARGS: "-p"
 #------------------------------------------------------------------------------
 
-.build_ssc_template:
-  extends:
-    - .build_template
-    - .rules:build:integration_test
-  needs:
-    - job: fast_template_app
-      artifacts: false
-  artifacts:
-    paths:
-      - SSC/build/log/*
-      - SSC/build/**/*.log
-      - SSC/build/*log.txt
-      - SSC/ssc_bin
-    when: always
-    expire_in: 1 week
-  script:
-    - retry_failed git clone $SSC_REPOSITORY
-    - python $CHECKOUT_REF_SCRIPT SSC SSC
-    - cd SSC
-    - MAKEFLAGS= ./ci_build_ssc.sh $TARGET_NAME
-
-build_ssc_esp32:
-  extends: .build_ssc_template
-  parallel: 3
-  variables:
-    TARGET_NAME: "ESP32"
-
-build_ssc_esp32s2:
-  extends: .build_ssc_template
-  parallel: 2
-  variables:
-    TARGET_NAME: "ESP32S2"
-
-build_ssc_esp32c2:
-  extends: .build_ssc_template
-  parallel: 2
-  variables:
-    TARGET_NAME: "ESP32C2"
-
-build_ssc_esp32c3:
-  extends: .build_ssc_template
-  parallel: 3
-  variables:
-    TARGET_NAME: "ESP32C3"
-
-build_ssc_esp32s3:
-  extends: .build_ssc_template
-  parallel: 3
-  variables:
-    TARGET_NAME: "ESP32S3"
-
-build_ssc_esp32c6:
-  extends: .build_ssc_template
-  parallel: 3
-  variables:
-    TARGET_NAME: "ESP32C6"
-
-build_ssc_esp32h2:
-  extends: .build_ssc_template
-  parallel: 2
-  variables:
-    TARGET_NAME: "ESP32H2"
-
-.build_esp_idf_tests_cmake_template:
-  extends:
-    - .build_cmake_template
-    - .before_script_build_jobs
-  artifacts:
-    paths:
-      - "**/build*/size.json"
-      - "**/build*/build_log.txt"
-      - "**/build*/*.bin"
-      # upload to s3 server to save the artifacts size
-      # - "**/build*/*.map"
-      # ttfw tests require elf files
-      - "**/build*/*.elf"
-      - "**/build*/flasher_args.json"
-      - "**/build*/flash_project_args"
-      - "**/build*/config/sdkconfig.json"
-      - "**/build*/sdkconfig"
-      - "**/build*/bootloader/*.bin"
-      - "**/build*/partition_table/*.bin"
-      - list_job_*.txt
-      - size_info.txt
-      - components/idf_test/unit_test/*.yml
-    when: always
-    expire_in: 4 days
-  script:
-    # CI specific options start from "--parallel-count xxx". could ignore when running locally
-    - run_cmd python tools/ci/ci_build_apps.py tools/unit-test-app -v
-      -t $IDF_TARGET
-      --config "configs/*="
-      --copy-sdkconfig
-      --preserve-all
-      --parallel-count ${CI_NODE_TOTAL:-1}
-      --parallel-index ${CI_NODE_INDEX:-1}
-    - run_cmd python tools/unit-test-app/tools/UnitTestParser.py tools/unit-test-app ${CI_NODE_INDEX:-1}
-
-build_esp_idf_tests_cmake_esp32:
-  extends:
-    - .build_esp_idf_tests_cmake_template
-    - .rules:build:unit_test-esp32
-  variables:
-    IDF_TARGET: esp32
-
-build_esp_idf_tests_cmake_esp32s2:
-  extends:
-    - .build_esp_idf_tests_cmake_template
-    - .rules:build:unit_test-esp32s2
-  variables:
-    IDF_TARGET: esp32s2
-
-build_esp_idf_tests_cmake_esp32s3:
-  extends:
-    - .build_esp_idf_tests_cmake_template
-    - .rules:build:unit_test-esp32s3
-  variables:
-    IDF_TARGET: esp32s3
-
-build_esp_idf_tests_cmake_esp32c2:
-  extends:
-    - .build_esp_idf_tests_cmake_template
-    - .rules:build:unit_test-esp32c2
-  variables:
-    IDF_TARGET: esp32c2
-
-build_esp_idf_tests_cmake_esp32c3:
-  extends:
-    - .build_esp_idf_tests_cmake_template
-    - .rules:build:unit_test-esp32c3
-  variables:
-    IDF_TARGET: esp32c3
-
-build_esp_idf_tests_cmake_esp32c6:
-  extends:
-    - .build_esp_idf_tests_cmake_template
-    - .rules:build:unit_test-esp32c6
-  variables:
-    IDF_TARGET: esp32c6
-
-build_esp_idf_tests_cmake_esp32h2:
-  extends:
-    - .build_esp_idf_tests_cmake_template
-    - .rules:build:unit_test-esp32h2
-  variables:
-    IDF_TARGET: esp32h2
-
-build_esp_idf_tests_cmake_esp32p4:
-  extends:
-    - .build_esp_idf_tests_cmake_template
-    - .rules:build:unit_test-esp32p4
-  variables:
-    IDF_TARGET: esp32p4
-
-build_examples_cmake_esp32:
-  extends:
-    - .build_cmake_template
-    - .rules:build:example_test-esp32
-  parallel: 8
-  variables:
-    IDF_TARGET: esp32
-    TEST_DIR: examples
-
-build_examples_cmake_esp32s2:
-  extends:
-    - .build_cmake_template
-    - .rules:build:example_test-esp32s2
-  parallel: 7
-  variables:
-    IDF_TARGET: esp32s2
-    TEST_DIR: examples
-
-build_examples_cmake_esp32s3:
-  extends:
-    - .build_cmake_template
-    - .rules:build:example_test-esp32s3
-  parallel: 7
-  variables:
-    IDF_TARGET: esp32s3
-    TEST_DIR: examples
-
-build_examples_cmake_esp32c2:
-  extends:
-    - .build_cmake_template
-    - .rules:build:example_test-esp32c2
-  parallel: 6
-  variables:
-    IDF_TARGET: esp32c2
-    TEST_DIR: examples
-
-build_examples_cmake_esp32c3:
-  extends:
-    - .build_cmake_template
-    - .rules:build:example_test-esp32c3
-  parallel: 6
-  variables:
-    IDF_TARGET: esp32c3
-    TEST_DIR: examples
-
-build_examples_cmake_esp32c6:
-  extends:
-    - .build_cmake_template
-    - .rules:build:example_test-esp32c6
-  parallel: 6
-  variables:
-    IDF_TARGET: esp32c6
-    TEST_DIR: examples
-
-build_examples_cmake_esp32h2:
-  extends:
-    - .build_cmake_template
-    - .rules:build:example_test-esp32h2
-  parallel: 4
-  variables:
-    IDF_TARGET: esp32h2
-    TEST_DIR: examples
-
-build_examples_cmake_esp32p4:
-  extends:
-    - .build_cmake_template
-    - .rules:build:example_test-esp32p4
-  parallel: 2
-  variables:
-    IDF_TARGET: esp32p4
-    TEST_DIR: examples
-
+########################################
+# Clang Build Apps Without Tests Cases #
+########################################
 build_clang_test_apps_esp32:
   extends:
     - .build_cmake_clang_template
-    - .rules:build:custom_test-esp32
+    - .rules:build
   variables:
     IDF_TARGET: esp32
 
 build_clang_test_apps_esp32s2:
   extends:
     - .build_cmake_clang_template
-    - .rules:build:custom_test-esp32s2
+    - .rules:build
   variables:
     IDF_TARGET: esp32s2
 
 build_clang_test_apps_esp32s3:
   extends:
     - .build_cmake_clang_template
-    - .rules:build:custom_test-esp32s3
+    - .rules:build
   variables:
     IDF_TARGET: esp32s3
 
@@ -720,73 +149,71 @@ build_clang_test_apps_esp32s3:
 build_clang_test_apps_esp32c3:
   extends:
     - .build_clang_test_apps_riscv
-    - .rules:build:custom_test-esp32c3
+    - .rules:build
   variables:
     IDF_TARGET: esp32c3
 
 build_clang_test_apps_esp32c2:
   extends:
     - .build_clang_test_apps_riscv
-    - .rules:build:custom_test-esp32c2
+    - .rules:build
   variables:
     IDF_TARGET: esp32c2
 
 build_clang_test_apps_esp32c6:
   extends:
     - .build_clang_test_apps_riscv
-    - .rules:build:custom_test-esp32c6
+    - .rules:build
   # TODO: c6 builds fail in master due to missing headers
   allow_failure: true
   variables:
     IDF_TARGET: esp32c6
 
+######################
+# Build System Tests #
+######################
 .test_build_system_template:
   stage: host_test
   extends:
     - .build_template
     - .rules:build:check
+  dependencies: # set dependencies to null to avoid missing artifacts issue
   needs:
     - job: fast_template_app
       artifacts: false
       optional: true
+  artifacts:
+    reports:
+      junit: XUNIT_RESULT.xml
+    paths:
+      - XUNIT_RESULT.xml
+      - test_build_system
+    expire_in: 1 week
+    when: always
   script:
     - ${IDF_PATH}/tools/ci/test_configure_ci_environment.sh
     - cd ${IDF_PATH}/tools/test_build_system
+    - python ${IDF_PATH}/tools/ci/get_known_failure_cases_file.py
     - pytest --parallel-count ${CI_NODE_TOTAL:-1} --parallel-index ${CI_NODE_INDEX:-1}
       --work-dir ${CI_PROJECT_DIR}/test_build_system --junitxml=${CI_PROJECT_DIR}/XUNIT_RESULT.xml
+      --ignore-result-files ${KNOWN_FAILURE_CASES_FILE_NAME}
 
 pytest_build_system:
   extends: .test_build_system_template
   parallel: 3
-  artifacts:
-    paths:
-      - XUNIT_RESULT.xml
-      - test_build_system
-    when: always
-    expire_in: 2 days
-    reports:
-      junit: XUNIT_RESULT.xml
 
 pytest_build_system_macos:
   extends:
     - .test_build_system_template
-    - .before_script_macos
+    - .before_script:build:macos
     - .rules:build:macos
   tags:
     - macos_shell
   parallel: 3
-  artifacts:
-    paths:
-      - XUNIT_RESULT.xml
-      - test_build_system
-    when: always
-    expire_in: 2 days
-    reports:
-      junit: XUNIT_RESULT.xml
 
 build_docker:
   extends:
-    - .before_script_minimal
+    - .before_script:minimal
     - .rules:build:docker
   stage: host_test
   needs: []
@@ -814,6 +241,51 @@ build_template_app:
     - .build_template_app_template
     - .rules:build
   stage: host_test
+  dependencies: # set dependencies to null to avoid missing artifacts issue
   needs:
     - job: fast_template_app
       artifacts: false
+
+####################
+# Dynamic Pipeline #
+####################
+generate_build_child_pipeline:
+  extends:
+    - .build_template
+  tags: [fast_run, shiny]
+  dependencies: # set dependencies to null to avoid missing artifacts issue
+  needs:
+    - pipeline_variables
+    - check_test_cases_env_markers_and_required_runners
+  artifacts:
+    paths:
+      - build_child_pipeline.yml
+      - test_related_apps.txt
+      - non_test_related_apps.txt
+    expire_in: 1 week
+    when: always
+  script:
+    - run_cmd python tools/ci/dynamic_pipelines/scripts/generate_build_child_pipeline.py
+
+build_child_pipeline:
+  stage: build
+  needs:
+    - job: fast_template_app
+      optional: true
+      artifacts: false
+    - pipeline_variables
+    - generate_build_child_pipeline
+  variables:
+    IS_MR_PIPELINE: $IS_MR_PIPELINE
+    MR_MODIFIED_COMPONENTS: $MR_MODIFIED_COMPONENTS
+    MR_MODIFIED_FILES: $MR_MODIFIED_FILES
+    PARENT_PIPELINE_ID: $CI_PIPELINE_ID
+    BUILD_AND_TEST_ALL_APPS: $BUILD_AND_TEST_ALL_APPS
+  # https://gitlab.com/gitlab-org/gitlab/-/issues/214340
+  inherit:
+    variables: false
+  trigger:
+    include:
+      - artifact: build_child_pipeline.yml
+        job: generate_build_child_pipeline
+    strategy: depend

@@ -89,28 +89,32 @@ For data transmitted from {IDF_TARGET_NAME} to PC Terminal (e.g., stdout, logs),
 
 For data transmitted from the PC Terminal to {IDF_TARGET_NAME} (e.g., console commands), many PC Terminals wait for the {IDF_TARGET_NAME} to ingest the bytes before allowing you to send more data. This is in contrast to using a USB-to-Serial (UART) bridge chip, which always ingests the bytes and sends them to a (possibly not listening) {IDF_TARGET_NAME}.
 
+.. note::
+
+    In rare cases, it is possible that data sent from {IDF_TARGET_NAME} to the host gets 'stuck' in host memory. Sending more data will get it 'unstuck', but if the application does not send more data, depending on the driver, this data needs to be flushed to the host manually. The non-blocking (default) driver and the VFS implementation will flush automatically after a newline. The blocking (interrupt-based) driver will automatically flush when its transmit buffer becomes empty.
+
 Sleep Mode Considerations
 -------------------------
 
 The USB Serial/JTAG controller and its associated USB PHY are driven by particular clocks (e.g., APB and USB PHY clock) and belong to a particular power domain (e.g., digital power domain). Thus, any change to the clock and power domains associated with the USB Serial/JTAG controller, such as entering different sleep modes, can affect the controller's operation.
 
-Deep Sleep
+Deep-sleep
 ^^^^^^^^^^
 
-When entering deep sleep, both the USB Serial/JTAG controller and the USB PHY are powered off, leading to the USB PHY's D+ line no longer being pulled up. As a result:
+When entering Deep-sleep, both the USB Serial/JTAG controller and the USB PHY are powered off, leading to the USB PHY's D+ line no longer being pulled up. As a result:
 
-- When entering deep sleep, the USB Serial/JTAG device appears disconnected from the host/PC (even if the USB cable is still physically connected).
-- When exiting deep sleep, the USB Serial/JTAG device reconnects to the host/PC.
+- When entering Deep-sleep, the USB Serial/JTAG device appears disconnected from the host/PC (even if the USB cable is still physically connected).
+- When exiting Deep-sleep, the USB Serial/JTAG device reconnects to the host/PC.
 
-Light Sleep
+Light-sleep
 ^^^^^^^^^^^
 
 .. only:: not SOC_USB_SERIAL_JTAG_SUPPORT_LIGHT_SLEEP
 
-When entering light sleep, the APB and USB PHY clock are gated. Thus, the USB Serial/JTAG controller is no longer able to receive or respond to any USB transactions from the connected host (including periodic CDC Data IN transactions). As a result:
+When entering Light-sleep, the APB and USB PHY clock are gated. Thus, the USB Serial/JTAG controller is no longer able to receive or respond to any USB transactions from the connected host (including periodic CDC Data IN transactions). As a result:
 
-- when entering light sleep, the USB Serial/JTAG device is unresponsive to the host/PC's USB CDC driver. The host/PC may then report the USB Serial/JTAG device as disconnected or erroneous (even if the USB cable is still physically connected).
-- when exiting light sleep, it is possible that the host/PC does not re-enumerate (i.e., reconnect) the USB Serial/JTAG device given that the USB PHY's D+ line remains pulled up state during light sleep. Users may need to physically disconnect and then reconnect the USB cable.
+- when entering Light-sleep, the USB Serial/JTAG device is unresponsive to the host/PC's USB CDC driver. The host/PC may then report the USB Serial/JTAG device as disconnected or erroneous (even if the USB cable is still physically connected).
+- when exiting Light-sleep, it is possible that the host/PC does not re-enumerate (i.e., reconnect) the USB Serial/JTAG device given that the USB PHY's D+ line remains pulled up state during Light-sleep. Users may need to physically disconnect and then reconnect the USB cable.
 
 Automatic and Manual Sleep Entry
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

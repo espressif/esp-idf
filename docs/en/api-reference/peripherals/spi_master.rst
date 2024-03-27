@@ -8,7 +8,7 @@ SPI Master driver is a program that controls {IDF_TARGET_NAME}'s General Purpose
 .. only:: esp32
 
     .. note::
-    
+
         SPI1 is not a GP-SPI. SPI Master driver also supports SPI1 but with quite a few limitations, see :ref:`spi_master_on_spi1_bus`.
 
 For more hardware information about the GP-SPI peripheral(s), see **{IDF_TARGET_NAME} Technical Reference Manual** > **SPI Controller** [`PDF <{IDF_TARGET_TRM_EN_URL}#spi>`__].
@@ -182,28 +182,28 @@ Supported line modes for {IDF_TARGET_NAME} are listed as follows, to make use of
          - 1
          - 1
          - 2
-         - {SPI_TRANS_MODE_DIO}
-         - {SPICOMMON_BUSFLAG_DUAL}
+         - SPI_TRANS_MODE_DIO
+         - SPICOMMON_BUSFLAG_DUAL
        * - Dual I/O
          - 1
          - 2
          - 2
-         - * {SPI_TRANS_MODE_DIO}
-           * {SPI_TRANS_MULTILINE_ADDR}
-         -
+         - SPI_TRANS_MODE_DIO
+           SPI_TRANS_MULTILINE_ADDR
+         - SPICOMMON_BUSFLAG_DUAL
        * - Quad Output
          - 1
          - 1
          - 4
-         - {SPI_TRANS_MODE_QIO}
-         - {SPICOMMON_BUSFLAG_QUAD}
+         - SPI_TRANS_MODE_QIO
+         - SPICOMMON_BUSFLAG_QUAD
        * - Quad I/O
          - 1
          - 4
          - 4
-         - * {SPI_TRANS_MODE_QIO}
-           * {SPI_TRANS_MULTILINE_ADDR}
-         - {SPICOMMON_BUSFLAG_QUAD}
+         - SPI_TRANS_MODE_QIO
+           SPI_TRANS_MULTILINE_ADDR
+         - SPICOMMON_BUSFLAG_QUAD
 
 .. only:: SOC_SPI_SUPPORT_OCT
 
@@ -227,42 +227,42 @@ Supported line modes for {IDF_TARGET_NAME} are listed as follows, to make use of
          - 1
          - 1
          - 2
-         - {SPI_TRANS_MODE_DIO}
-         - {SPICOMMON_BUSFLAG_DUAL}
+         - SPI_TRANS_MODE_DIO
+         - SPICOMMON_BUSFLAG_DUAL
        * - Dual I/O
          - 1
          - 2
          - 2
-         - * {SPI_TRANS_MODE_DIO}
-           * {SPI_TRANS_MULTILINE_ADDR}
-         -
+         - SPI_TRANS_MODE_DIO
+           SPI_TRANS_MULTILINE_ADDR
+         - SPICOMMON_BUSFLAG_DUAL
        * - Quad Output
          - 1
          - 1
          - 4
-         - {SPI_TRANS_MODE_QIO}
-         - {SPICOMMON_BUSFLAG_QUAD}
+         - SPI_TRANS_MODE_QIO
+         - SPICOMMON_BUSFLAG_QUAD
        * - Quad I/O
          - 1
          - 4
          - 4
-         - * {SPI_TRANS_MODE_QIO}
-           * {SPI_TRANS_MULTILINE_ADDR}
-         - {SPICOMMON_BUSFLAG_QUAD}
+         - SPI_TRANS_MODE_QIO
+           SPI_TRANS_MULTILINE_ADDR
+         - SPICOMMON_BUSFLAG_QUAD
        * - Octal Output
          - 1
          - 1
          - 8
-         - {SPI_TRANS_MODE_OCT}
-         - {SPICOMMON_BUSFLAG_OCTAL}
+         - SPI_TRANS_MODE_OCT
+         - SPICOMMON_BUSFLAG_OCTAL
        * - OPI
          - 8
          - 8
          - 8
-         - * {SPI_TRANS_MODE_OCT}
-           * {SPI_TRANS_MULTILINE_ADDR}
-           * {SPI_TRANS_MULTILINE_CMD}
-         - {SPICOMMON_BUSFLAG_OCTAL} 
+         - SPI_TRANS_MODE_OCT
+           SPI_TRANS_MULTILINE_ADDR
+           SPI_TRANS_MULTILINE_CMD
+         - SPICOMMON_BUSFLAG_OCTAL
 
 Command and Address Phases
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -292,7 +292,7 @@ If using more than one data line to transmit, please set ``SPI_DEVICE_HALFDUPLEX
 
         Half-duplex transactions with both Read and Write phases are not supported when using DMA. For details and workarounds, see :ref:`spi_known_issues`.
 
-.. only:: esp32s3 or esp32c3 or esp32c2 or esp32c6 or esp32h2
+.. only:: not SOC_SPI_HD_BOTH_INOUT_SUPPORTED
 
     .. note::
 
@@ -455,7 +455,7 @@ GPIO Matrix and IO_MUX
        * - CS0 [1]_
          - 15
          - 5
-       * - SCLK 
+       * - SCLK
          - 14
          - 18
        * - MISO
@@ -469,16 +469,16 @@ GPIO Matrix and IO_MUX
          - 22
        * - QUADHD
          - 4
-         - 21  
+         - 21
 
 .. only:: not esp32
 
-    {IDF_TARGET_SPI2_IOMUX_PIN_CS:default="N/A",   esp32s2="10", esp32s3="10", esp32c2="10", esp32c3="10", esp32c6="16", esp32h2="1"}
-    {IDF_TARGET_SPI2_IOMUX_PIN_CLK:default="N/A",  esp32s2="12", esp32s3="12", esp32c2="6",  esp32c3="6",  esp32c6="6",  esp32h2="4"}
-    {IDF_TARGET_SPI2_IOMUX_PIN_MOSI:default="N/A", esp32s2="11"  esp32s3="11", esp32c2="7"   esp32c3="7",  esp32c6="7",  esp32h2="5"}
-    {IDF_TARGET_SPI2_IOMUX_PIN_MISO:default="N/A", esp32s2="13"  esp32s3="13", esp32c2="2"   esp32c3="2",  esp32c6="2",  esp32h2="0"}
-    {IDF_TARGET_SPI2_IOMUX_PIN_HD:default="N/A",   esp32s2="9"   esp32s3="9",  esp32c2="4"   esp32c3="4",  esp32c6="4",  esp32h2="3"}
-    {IDF_TARGET_SPI2_IOMUX_PIN_WP:default="N/A",   esp32s2="14"  esp32s3="14", esp32c2="5"   esp32c3="5",  esp32c6="5",  esp32h2="2"}
+    {IDF_TARGET_SPI2_IOMUX_PIN_CS:default="N/A",   esp32s2="10", esp32s3="10", esp32c2="10", esp32c3="10", esp32c6="16", esp32h2="1", esp32p4="7",  esp32c5="12"}
+    {IDF_TARGET_SPI2_IOMUX_PIN_CLK:default="N/A",  esp32s2="12", esp32s3="12", esp32c2="6",  esp32c3="6",  esp32c6="6",  esp32h2="4", esp32p4="9",  esp32c5="6"}
+    {IDF_TARGET_SPI2_IOMUX_PIN_MOSI:default="N/A", esp32s2="11"  esp32s3="11", esp32c2="7"   esp32c3="7",  esp32c6="7",  esp32h2="5", esp32p4="8",  esp32c5="7"}
+    {IDF_TARGET_SPI2_IOMUX_PIN_MISO:default="N/A", esp32s2="13"  esp32s3="13", esp32c2="2"   esp32c3="2",  esp32c6="2",  esp32h2="0", esp32p4="10", esp32c5="2"}
+    {IDF_TARGET_SPI2_IOMUX_PIN_HD:default="N/A",   esp32s2="9"   esp32s3="9",  esp32c2="4"   esp32c3="4",  esp32c6="4",  esp32h2="3", esp32p4="6",  esp32c5="4"}
+    {IDF_TARGET_SPI2_IOMUX_PIN_WP:default="N/A",   esp32s2="14"  esp32s3="14", esp32c2="5"   esp32c3="5",  esp32c6="5",  esp32h2="2", esp32p4="11", esp32c5="5"}
 
     Most of the chip's peripheral signals have a direct connection to their dedicated IO_MUX pins. However, the signals can also be routed to any other available pins using the less direct GPIO matrix. If at least one signal is routed through the GPIO matrix, then all signals will be routed through it.
 
@@ -524,10 +524,10 @@ The main parameter that determines the transfer speed for large transactions is 
 Transaction Duration
 ^^^^^^^^^^^^^^^^^^^^
 
-{IDF_TARGET_TRANS_TIME_INTR_DMA:default="N/A", esp32="28", esp32s2="23", esp32c3="28", esp32s3="26", esp32c2="42", esp32c6="34", esp32h2="58"}
-{IDF_TARGET_TRANS_TIME_POLL_DMA:default="N/A", esp32="10", esp32s2="9",  esp32c3="10", esp32s3="11", esp32c2="17", esp32c6="17", esp32h2="28"}
-{IDF_TARGET_TRANS_TIME_INTR_CPU:default="N/A", esp32="25", esp32s2="22", esp32c3="27", esp32s3="24", esp32c2="40", esp32c6="32", esp32h2="54"}
-{IDF_TARGET_TRANS_TIME_POLL_CPU:default="N/A", esp32="8",  esp32s2="8",  esp32c3="9",  esp32s3="9",  esp32c2="15", esp32c6="15", esp32h2="24"}
+{IDF_TARGET_TRANS_TIME_INTR_DMA:default="N/A", esp32="28", esp32s2="23", esp32c3="28", esp32s3="26", esp32c2="42", esp32c6="34", esp32h2="58", esp32c5="27"}
+{IDF_TARGET_TRANS_TIME_POLL_DMA:default="N/A", esp32="10", esp32s2="9",  esp32c3="10", esp32s3="11", esp32c2="17", esp32c6="17", esp32h2="28", esp32c5="16"}
+{IDF_TARGET_TRANS_TIME_INTR_CPU:default="N/A", esp32="25", esp32s2="22", esp32c3="27", esp32s3="24", esp32c2="40", esp32c6="32", esp32h2="54", esp32c5="24"}
+{IDF_TARGET_TRANS_TIME_POLL_CPU:default="N/A", esp32="8",  esp32s2="8",  esp32c3="9",  esp32s3="9",  esp32c2="15", esp32c6="15", esp32h2="24", esp32c5="13"}
 
 Transaction duration includes setting up SPI peripheral registers, copying data to FIFOs or setting up DMA links, and the time for SPI transactions.
 
@@ -639,7 +639,7 @@ For an interrupt transaction, the overall cost is **20+8n/Fspi[MHz]** [µs] for 
      - 25
      - 128
      - 153
-     - 836.6  
+     - 836.6
 
 When a transaction length is short, the cost of the transaction interval is high. If possible, try to squash several short transactions into one transaction to achieve a higher transfer speed.
 
@@ -769,10 +769,8 @@ Please note that the ISR is disabled during flash operation by default. To keep 
          - 11.43
        * - 75
          - 100
-         - 8.89   
+         - 8.89
 
-
-.. only:: esp32
 
     .. _spi_known_issues:
 
@@ -802,6 +800,7 @@ Application Example
 
 The code example for using the SPI master half duplex mode to read/write an AT93C46D EEPROM (8-bit mode) can be found in the :example:`peripherals/spi_master/hd_eeprom` directory of ESP-IDF examples.
 
+The code example for using the SPI master full duplex mode to drive a SPI_LCD (e.g. ST7789V or ILI9341) can be found in the :example:`peripherals/spi_master/lcd` directory of ESP-IDF examples.
 
 API Reference - SPI Common
 --------------------------

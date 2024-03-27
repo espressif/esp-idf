@@ -1,0 +1,17 @@
+components/nvs_flash/host_test:
+  depends_components:
+    - spi_flash
+    - nvs_flash
+    - nvs_sec_provider
+    - esp_partition
+  enable:
+    - if: IDF_TARGET == "linux"
+
+components/nvs_flash/test_apps:
+  depends_components:
+    - spi_flash
+    - nvs_flash
+    - nvs_sec_provider
+    - esp_partition
+  disable_test:
+    - if: IDF_TARGET not in ["esp32", "esp32c3"]

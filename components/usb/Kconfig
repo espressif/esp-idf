@@ -1,13 +1,7 @@
 menu "USB-OTG"
-    visible if IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3
-
-    # Invisible item, enabled when USB_OTG peripheral does exist
-    config USB_OTG_SUPPORTED
-        bool
-        default y if IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3
+    depends on SOC_USB_OTG_SUPPORTED
 
     config USB_HOST_CONTROL_TRANSFER_MAX_SIZE
-        depends on USB_OTG_SUPPORTED
         int "Largest size (in bytes) of transfers to/from default endpoints"
         default 256
         help
@@ -18,7 +12,6 @@ menu "USB-OTG"
             - Device's with configuration descriptors larger than this limit cannot be supported
 
     choice USB_HOST_HW_BUFFER_BIAS
-        depends on USB_OTG_SUPPORTED
         prompt "Hardware FIFO size biasing"
         default USB_HOST_HW_BUFFER_BIAS_BALANCED
         help
@@ -56,7 +49,6 @@ menu "USB-OTG"
     menu "Root Hub configuration"
 
         config USB_HOST_DEBOUNCE_DELAY_MS
-            depends on USB_OTG_SUPPORTED
             int "Debounce delay in ms"
             default 250
             help
@@ -67,7 +59,6 @@ menu "USB-OTG"
                 The default value is set to 250 ms to be safe.
 
         config USB_HOST_RESET_HOLD_MS
-            depends on USB_OTG_SUPPORTED
             int "Reset hold in ms"
             default 30
             help
@@ -79,7 +70,6 @@ menu "USB-OTG"
                 The default value is set to 30 ms to be safe.
 
         config USB_HOST_RESET_RECOVERY_MS
-            depends on USB_OTG_SUPPORTED
             int "Reset recovery delay in ms"
             default 30
             help
@@ -92,7 +82,6 @@ menu "USB-OTG"
 
 
         config USB_HOST_SET_ADDR_RECOVERY_MS
-            depends on USB_OTG_SUPPORTED
             int "SetAddress() recovery time in ms"
             default 10
             help
@@ -104,7 +93,31 @@ menu "USB-OTG"
 
                 The default value is set to 10 ms to be safe.
 
-
     endmenu #Root Hub configuration
+
+    config USB_HOST_ENABLE_ENUM_FILTER_CALLBACK
+        bool "Enable enumeration filter callback"
+        default n
+        help
+            The enumeration filter callback is called before enumeration of each newly attached device. This callback
+            allows users to control whether a device should be enumerated, and what configuration number to use when
+            enumerating a device.
+
+            If enabled, the enumeration filter callback can be set via 'usb_host_config_t' when calling
+            'usb_host_install()'.
+
+    config USB_HOST_EXT_HUB_SUPPORT
+        depends on IDF_EXPERIMENTAL_FEATURES
+        bool "Support USB HUB (Experimental)"
+        default n
+        help
+            Feature is under development.
+
+    # Hidden or compatibility options
+    config USB_OTG_SUPPORTED
+        # Invisible config kept for compatibility
+        # Todo: Remove in v6.0 (IDF-8936)
+        bool
+        default y
 
 endmenu #USB-OTG

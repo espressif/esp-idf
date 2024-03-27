@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -21,6 +21,7 @@
 #include "soc/rtc_cntl_reg.h"
 #include "soc/sens_struct.h"
 #include "hal/temperature_sensor_types.h"
+#include "hal/misc.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -47,10 +48,27 @@ static inline void temperature_sensor_ll_enable(bool enable)
 /**
  * @brief Enable the clock
  */
-static inline void temperature_sensor_ll_clk_enable(bool enable)
+static inline void temperature_sensor_ll_bus_clk_enable(bool enable)
 {
     SENS.sar_tctrl2.tsens_clkgate_en = enable;
 }
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define temperature_sensor_ll_bus_clk_enable(...) do {(void)__DECLARE_RCC_ATOMIC_ENV; temperature_sensor_ll_bus_clk_enable(__VA_ARGS__);} while(0)
+
+/**
+ * @brief Enable the clock
+ */
+static inline void temperature_sensor_ll_reset_module(void)
+{
+    SENS.sar_tctrl2.tsens_reset = 1;
+    SENS.sar_tctrl2.tsens_reset = 0;
+}
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define temperature_sensor_ll_reset_module(...) do {(void)__DECLARE_RCC_ATOMIC_ENV; temperature_sensor_ll_reset_module(__VA_ARGS__);} while(0)
 
 /**
  * @brief Choose the clock. No need to choose the clock source on ESP32-S2. ESP32-S2
@@ -82,7 +100,7 @@ static inline uint32_t temperature_sensor_ll_get_raw_value(void)
     while (!SENS.sar_tctrl.tsens_ready) {
     }
     SENS.sar_tctrl.tsens_dump_out = 0;
-    return SENS.sar_tctrl.tsens_out;
+    return HAL_FORCE_READ_U32_REG_FIELD(SENS.sar_tctrl, tsens_out);
 }
 
 /**
@@ -106,7 +124,7 @@ static inline uint32_t temperature_sensor_ll_get_offset(void)
  */
 static inline uint32_t temperature_sensor_ll_get_clk_div(void)
 {
-    return SENS.sar_tctrl.tsens_clk_div;
+    return HAL_FORCE_READ_U32_REG_FIELD(SENS.sar_tctrl, tsens_clk_div);
 }
 
 /**
@@ -119,7 +137,7 @@ static inline uint32_t temperature_sensor_ll_get_clk_div(void)
  */
 static inline void temperature_sensor_ll_set_clk_div(uint8_t clk_div)
 {
-    SENS.sar_tctrl.tsens_clk_div = clk_div;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(SENS.sar_tctrl, tsens_clk_div, clk_div);
 }
 
 #ifdef __cplusplus

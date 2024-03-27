@@ -677,44 +677,22 @@ typedef union {
  */
 typedef union {
     struct {
-        /** dref_comp0 : R/W; bitpos: [2:0]; default: 0;
+        /** dref_comp : R/W; bitpos: [2:0]; default: 0;
          *  pad comp dref
          */
-        uint32_t dref_comp0:3;
-        /** mode_comp0 : R/W; bitpos: [3]; default: 0;
+        uint32_t dref_comp:3;
+        /** mode_comp : R/W; bitpos: [3]; default: 0;
          *  pad comp mode
          */
-        uint32_t mode_comp0:1;
-        /** xpd_comp0 : R/W; bitpos: [4]; default: 0;
+        uint32_t mode_comp:1;
+        /** xpd_comp : R/W; bitpos: [4]; default: 0;
          *  pad comp xpd
          */
-        uint32_t xpd_comp0:1;
+        uint32_t xpd_comp:1;
         uint32_t reserved_5:27;
     };
     uint32_t val;
-} lp_system_reg_pad_comp0_reg_t;
-
-/** Type of pad_comp1 register
- *  need_des
- */
-typedef union {
-    struct {
-        /** dref_comp1 : R/W; bitpos: [2:0]; default: 0;
-         *  pad comp dref
-         */
-        uint32_t dref_comp1:3;
-        /** mode_comp1 : R/W; bitpos: [3]; default: 0;
-         *  pad comp mode
-         */
-        uint32_t mode_comp1:1;
-        /** xpd_comp1 : R/W; bitpos: [4]; default: 0;
-         *  pad comp xpd
-         */
-        uint32_t xpd_comp1:1;
-        uint32_t reserved_5:27;
-    };
-    uint32_t val;
-} lp_system_reg_pad_comp1_reg_t;
+} lp_system_reg_pad_comp_reg_t;
 
 /** Type of backup_dma_cfg0 register
  *  need_des
@@ -1291,8 +1269,7 @@ typedef struct {
     volatile lp_system_reg_lp_pmu_rdn_eco_low_reg_t lp_pmu_rdn_eco_low;
     volatile lp_system_reg_lp_pmu_rdn_eco_high_reg_t lp_pmu_rdn_eco_high;
     uint32_t reserved_140[2];
-    volatile lp_system_reg_pad_comp0_reg_t pad_comp0;
-    volatile lp_system_reg_pad_comp1_reg_t pad_comp1;
+    volatile lp_system_reg_pad_comp_reg_t pad_comp[2];
     uint32_t reserved_150;
     volatile lp_system_reg_backup_dma_cfg0_reg_t backup_dma_cfg0;
     volatile lp_system_reg_backup_dma_cfg1_reg_t backup_dma_cfg1;
@@ -1323,6 +1300,7 @@ typedef struct {
     volatile lp_system_reg_rng_cfg_reg_t rng_cfg;
 } lp_system_reg_dev_t;
 
+extern lp_system_reg_dev_t LP_SYS;
 
 #ifndef __cplusplus
 _Static_assert(sizeof(lp_system_reg_dev_t) == 0x1c4, "Invalid size of lp_system_reg_dev_t structure");

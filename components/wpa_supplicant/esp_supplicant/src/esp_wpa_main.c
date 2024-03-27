@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -39,6 +39,11 @@
 #include "ap/sta_info.h"
 #include "wps/wps_defs.h"
 #include "wps/wps.h"
+
+#ifdef CONFIG_DPP
+#include "common/dpp.h"
+#include "esp_dpp_i.h"
+#endif
 
 const wifi_osi_funcs_t *wifi_funcs;
 struct wpa_funcs *wpa_cb;
@@ -198,6 +203,26 @@ bool wpa_deattach(void)
     return true;
 }
 
+#ifdef CONFIG_DPP
+int dpp_connect(uint8_t *bssid, bool pdr_done)
+{
+    int res = 0;
+    if (!pdr_done) {
+        if (esp_wifi_sta_get_prof_authmode_internal() == WPA3_AUTH_DPP) {
+            esp_dpp_post_evt(SIG_DPP_START_NET_INTRO, (u32)bssid);
+        }
+    } else {
+        res = wpa_config_bss(bssid);
+        if (res) {
+            wpa_printf(MSG_DEBUG, "Rejecting bss, validation failed");
+            return res;
+        }
+        res = esp_wifi_sta_connect_internal(bssid);
+    }
+    return res;
+}
+#endif
+
 int wpa_sta_connect(uint8_t *bssid)
 {
     /* use this API to set AP specific IEs during connection */
@@ -213,7 +238,16 @@ int wpa_sta_connect(uint8_t *bssid)
         esp_set_assoc_ie((uint8_t *)bssid, NULL, 0, false);
     }
 
-    return 0;
+#ifdef CONFIG_DPP
+    struct wpa_sm *sm = &gWpaSm;
+    if (sm->key_mgmt == WPA_KEY_MGMT_DPP) {
+        ret = dpp_connect(bssid, false);
+    } else
+#endif
+    {
+        ret = esp_wifi_sta_connect_internal(bssid);
+    }
+    return ret;
 }
 
 void wpa_config_done(void)
@@ -314,53 +348,67 @@ static bool hostap_sta_join(void **sta, u8 *bssid, u8 *wpa_ie, u8 wpa_ie_len,u8 
         goto fail;
     }
 
-    if (*sta && !esp_wifi_ap_is_sta_sae_reauth_node(bssid)) {
-        ap_free_sta(hapd, *sta);
-    }
-
-    sta_info = ap_sta_add(hapd, bssid);
-    if (!sta_info) {
-        wpa_printf(MSG_ERROR, "failed to add station " MACSTR, MAC2STR(bssid));
-        return false;
-    }
-
+    if (*sta) {
+        struct sta_info *old_sta = *sta;
 #ifdef CONFIG_SAE
-    if (sta_info->lock && os_semphr_take(sta_info->lock, 0) != TRUE) {
-        wpa_printf(MSG_INFO, "Ignore assoc request as softap is busy with sae calculation for station "MACSTR, MAC2STR(bssid));
-        return false;
-    }
+        if (old_sta->lock && os_semphr_take(old_sta->lock, 0) != TRUE) {
+            wpa_printf(MSG_INFO, "Ignore assoc request as softap is busy with sae calculation for station "MACSTR, MAC2STR(bssid));
+            if (esp_send_assoc_resp(hapd, old_sta, bssid, WLAN_STATUS_ASSOC_REJECTED_TEMPORARILY, rsnxe ? false : true, subtype) != WLAN_STATUS_SUCCESS) {
+                goto fail;
+            }
+            return false;
+        }
 #endif /* CONFIG_SAE */
+        if (!esp_wifi_ap_is_sta_sae_reauth_node(bssid)) {
+            ap_free_sta(hapd, old_sta);
+        }
+    }
+
+    sta_info = ap_get_sta(hapd, bssid);
+    if (!sta_info) {
+        sta_info = ap_sta_add(hapd,bssid);
+        if (!sta_info) {
+            wpa_printf(MSG_ERROR, "failed to add station " MACSTR, MAC2STR(bssid));
+            goto fail;
+        }
+#ifdef CONFIG_SAE
+        if (sta_info->lock) {
+            os_semphr_take(sta_info->lock, 0);
+        }
+#endif /* CONFIG_SAE */
+    }
 
 #ifdef CONFIG_WPS_REGISTRAR
     if (check_n_add_wps_sta(hapd, sta_info, wpa_ie, wpa_ie_len, pmf_enable, subtype) == 0) {
         if (sta_info->eapol_sm) {
-            *sta = sta_info;
-#ifdef CONFIG_SAE
-            if (sta_info->lock) {
-                os_semphr_give(sta_info->lock);
-            }
-#endif /* CONFIG_SAE */
-            return true;
+            goto done;
         }
     } else {
         goto fail;
     }
 #endif
     if (wpa_ap_join(sta_info, bssid, wpa_ie, wpa_ie_len, rsnxe, rsnxe_len, pmf_enable, subtype)) {
-        *sta = sta_info;
-#ifdef CONFIG_SAE
-        if (sta_info->lock) {
-            os_semphr_give(sta_info->lock);
-        }
-#endif /* CONFIG_SAE */
-        return true;
+        goto done;
+    } else {
+        goto fail;
     }
+done:
+    *sta = sta_info;
+#ifdef CONFIG_SAE
+    if (sta_info->lock) {
+        os_semphr_give(sta_info->lock);
+    }
+#endif /* CONFIG_SAE */
+    return true;
 
 fail:
-    if (sta_info) {
-        ap_free_sta(hapd, sta_info);
-    }
 
+#ifdef CONFIG_SAE
+    if (sta_info && sta_info->lock) {
+        os_semphr_give(sta_info->lock);
+    }
+#endif /* CONFIG_SAE */
+    esp_wifi_ap_deauth_internal(bssid, WLAN_REASON_PREV_AUTH_NOT_VALID);
     return false;
 }
 #endif

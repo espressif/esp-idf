@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -91,6 +91,7 @@ void esp_netif_sntp_renew_servers(void *handler_args, esp_event_base_t base, int
 esp_err_t esp_netif_sntp_init(const esp_sntp_config_t * config)
 {
     esp_err_t ret = ESP_OK;
+    ESP_RETURN_ON_FALSE(s_storage == NULL, ESP_ERR_INVALID_STATE, TAG, "esp_netif_sntp already initialized");
     s_storage = calloc(1, sizeof(sntp_storage_t) + // allocate space for servers only if we are supposed to refresh the settings
                           (config->renew_servers_after_new_IP ? config->num_of_servers * sizeof(char*) : 0));
     ESP_GOTO_ON_FALSE(s_storage != NULL, ESP_ERR_NO_MEM, err, TAG, "Failed to allocate SNTP storage");
@@ -176,4 +177,16 @@ static esp_err_t sntp_start_api(void* ctx)
 esp_err_t esp_netif_sntp_start(void)
 {
     return esp_netif_tcpip_exec(sntp_start_api, NULL);
+}
+
+esp_err_t esp_netif_sntp_reachability(unsigned int index, unsigned int *reachability)
+{
+    if (index >= SNTP_MAX_SERVERS || reachability == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (s_storage == NULL || sntp_enabled() == 0) {
+        return ESP_ERR_INVALID_STATE;
+    }
+    *reachability = sntp_getreachability(index);
+    return ESP_OK;
 }

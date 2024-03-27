@@ -1,0 +1,11 @@
+# Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
+
+components/mbedtls/test_apps:
+  disable:
+    - if: CONFIG_NAME == "psram" and SOC_SPIRAM_SUPPORTED != 1
+    - if: CONFIG_NAME == "psram_all_ext" and SOC_SPIRAM_SUPPORTED != 1
+    - if: CONFIG_NAME == "ecdsa_sign" and SOC_ECDSA_SUPPORTED != 1
+  depends_components:
+    - efuse
+  depends_filepatterns:
+    - components/mbedtls/port/ecdsa/*

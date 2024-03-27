@@ -10,6 +10,7 @@
 
 #pragma once
 
+#include "sdkconfig.h"
 #include <stdint.h>
 #include <stdbool.h>
 #include "soc/soc.h"
@@ -77,11 +78,11 @@ typedef struct {
     void *split_addr;                   /*!< Main I/D splitting address */
     uint32_t mem_type_mask;             /*!< Memory types required to protect. See esp_mprot_mem_t enum */
     size_t target_cpu_count;            /*!< Real CPU/core count (max 2) */
-    int target_cpu[portNUM_PROCESSORS];  /*!< Array of CPU/core IDs required to receive given PMS protection */
+    int target_cpu[CONFIG_FREERTOS_NUMBER_OF_CORES];  /*!< Array of CPU/core IDs required to receive given PMS protection */
 } esp_memp_config_t;
 
 //2-CPU configuration
-#if portNUM_PROCESSORS > 1
+#if CONFIG_FREERTOS_NUMBER_OF_CORES > 1
 
 //default IDF configuration (basic memory regions, split line detection, locked, panic mode on)
 #define ESP_MEMPROT_DEFAULT_CONFIG() { \

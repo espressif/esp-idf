@@ -17,6 +17,7 @@
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 #include "esp_private/sar_periph_ctrl.h"
+#include "esp_private/esp_modem_clock.h"
 #include "hal/sar_ctrl_ll.h"
 
 static const char *TAG = "sar_periph_ctrl";
@@ -54,6 +55,7 @@ static int s_pwdet_power_on_cnt;
 
 static void s_sar_power_acquire(void)
 {
+    modem_clock_module_enable(PERIPH_MODEM_ADC_COMMON_FE_MODULE);
     portENTER_CRITICAL_SAFE(&rtc_spinlock);
     s_pwdet_power_on_cnt++;
     if (s_pwdet_power_on_cnt == 1) {
@@ -74,6 +76,7 @@ static void s_sar_power_release(void)
         sar_ctrl_ll_set_power_mode_from_pwdet(SAR_CTRL_LL_POWER_FSM);
     }
     portEXIT_CRITICAL_SAFE(&rtc_spinlock);
+    modem_clock_module_disable(PERIPH_MODEM_ADC_COMMON_FE_MODULE);
 }
 
 

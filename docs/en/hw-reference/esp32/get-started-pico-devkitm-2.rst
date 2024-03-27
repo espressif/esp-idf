@@ -8,9 +8,9 @@ Overview
 
 ESP32-PICO-DevKitM-2 is an ESP32-based development board produced by `Espressif <https://espressif.com>`_.
 
-The core of this board is `ESP32-PICO-MINI-02(02U) <https://www.espressif.com/en/products/modules>`_ module with complete Wi-Fi and Bluetooth® functionalities. The development board features a USB-to-UART Bridge circuit which allows developers to connect the board to a computer's USB port for flashing and debugging.
+The core of this board is `ESP32-PICO-MINI-02/02U <https://www.espressif.com/en/products/modules>`_ module with complete Wi-Fi and Bluetooth® functionalities. The development board features a USB-to-UART Bridge circuit which allows developers to connect the board to a computer's USB port for flashing and debugging.
 
-All the IO signals and system power on ESP32-PICO-MINI-02(02U) are led out to two rows of 18 x 0.1" header pads on both sides of the development board for easy access. For compatibility with Dupont wires, all header pads are populated with two rows of male pin headers.
+All the IO signals and system power on ESP32-PICO-MINI-02/02U are led out to two rows of 18 x 0.1" header pads on both sides of the development board for easy access. For compatibility with Dupont wires, all header pads are populated with two rows of male pin headers.
 
 .. note::
 

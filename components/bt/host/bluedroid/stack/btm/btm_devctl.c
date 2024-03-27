@@ -731,9 +731,18 @@ void btm_vsc_complete (UINT8 *p, UINT16 opcode, UINT16 evt_len,
             }
             break;
         }
+        case HCI_VENDOR_BLE_CLEAR_ADV: {
+            uint8_t status;
+            STREAM_TO_UINT8(status, p);
+            if (ble_cb && ble_cb->inq_var.p_clear_adv_cb) {
+                ble_cb->inq_var.p_clear_adv_cb(status);
+            }
+            break;
+        }
         default:
-        break;
+            break;
     }
+#endif // (BLE_INCLUDED == TRUE)
     tBTM_VSC_CMPL   vcs_cplt_params;
 
     /* If there was a callback address for vcs complete, call it */
@@ -744,7 +753,7 @@ void btm_vsc_complete (UINT8 *p, UINT16 opcode, UINT16 evt_len,
         vcs_cplt_params.p_param_buf = p;
         (*p_vsc_cplt_cback)(&vcs_cplt_params);  /* Call the VSC complete callback function */
     }
-#endif
+
 }
 
 /*******************************************************************************

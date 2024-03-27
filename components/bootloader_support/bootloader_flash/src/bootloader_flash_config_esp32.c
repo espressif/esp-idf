@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2018-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,6 +16,7 @@
 #include "soc/gpio_periph.h"
 #include "soc/efuse_reg.h"
 #include "soc/spi_reg.h"
+#include "soc/dport_reg.h"
 #include "soc/soc_caps.h"
 #include "soc/soc_pins.h"
 #include "soc/chip_revision.h"
@@ -269,13 +270,10 @@ static void update_flash_config(const esp_image_header_t *bootloader_hdr)
     default:
         size = 2;
     }
-    Cache_Read_Disable(0);
     // Set flash chip size
     esp_rom_spiflash_config_param(g_rom_flashchip.device_id, size * 0x100000, 0x10000, 0x1000, 0x100, 0xffff);
     // TODO: set mode
     // TODO: set frequency
-    Cache_Flush(0);
-    Cache_Read_Enable(0);
 }
 
 static void print_flash_info(const esp_image_header_t *bootloader_hdr)
@@ -354,6 +352,7 @@ static void print_flash_info(const esp_image_header_t *bootloader_hdr)
     ESP_EARLY_LOGI(TAG, "SPI Flash Size : %s", str);
 }
 
+
 static void IRAM_ATTR bootloader_init_flash_configure(void)
 {
     bootloader_flash_gpio_config(&bootloader_image_hdr);
@@ -379,8 +378,102 @@ esp_err_t bootloader_init_spi_flash(void)
 #endif
 
     print_flash_info(&bootloader_image_hdr);
+
+    Cache_Read_Disable(0);
     update_flash_config(&bootloader_image_hdr);
+    Cache_Flush(0);
+    Cache_Read_Enable(0);
+
     //ensure the flash is write-protected
     bootloader_enable_wp();
     return ESP_OK;
 }
+
+
+#if CONFIG_APP_BUILD_TYPE_RAM && !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
+static void bootloader_flash_set_spi_mode(const esp_image_header_t* pfhdr)
+{
+    esp_rom_spiflash_read_mode_t mode;
+    switch(pfhdr->spi_mode) {
+    case ESP_IMAGE_SPI_MODE_QIO:
+        mode = ESP_ROM_SPIFLASH_QIO_MODE;
+        break;
+    case ESP_IMAGE_SPI_MODE_QOUT:
+        mode = ESP_ROM_SPIFLASH_QOUT_MODE;
+        break;
+    case ESP_IMAGE_SPI_MODE_DIO:
+        mode = ESP_ROM_SPIFLASH_DIO_MODE;
+        break;
+    case ESP_IMAGE_SPI_MODE_FAST_READ:
+        mode = ESP_ROM_SPIFLASH_FASTRD_MODE;
+        break;
+    case ESP_IMAGE_SPI_MODE_SLOW_READ:
+        mode = ESP_ROM_SPIFLASH_SLOWRD_MODE;
+        break;
+    default:
+        mode = ESP_ROM_SPIFLASH_DIO_MODE;
+    }
+    esp_rom_spiflash_config_readmode(mode);
+}
+
+void bootloader_flash_hardware_init(void)
+{
+    esp_rom_spiflash_attach(esp_rom_efuse_get_flash_gpio_info(), false);
+
+    // reset MMU
+    /* completely reset MMU in case serial bootloader was running */
+    Cache_Read_Disable(0);
+#if !CONFIG_FREERTOS_UNICORE
+    Cache_Read_Disable(1);
+#endif
+    Cache_Flush(0);
+#if !CONFIG_FREERTOS_UNICORE
+    Cache_Flush(1);
+#endif
+    mmu_init(0);
+#if !CONFIG_FREERTOS_UNICORE
+    /* The lines which manipulate DPORT_APP_CACHE_MMU_IA_CLR bit are
+        necessary to work around a hardware bug. */
+    DPORT_REG_SET_BIT(DPORT_APP_CACHE_CTRL1_REG, DPORT_APP_CACHE_MMU_IA_CLR);
+    mmu_init(1);
+    DPORT_REG_CLR_BIT(DPORT_APP_CACHE_CTRL1_REG, DPORT_APP_CACHE_MMU_IA_CLR);
+#endif
+
+    /* normal ROM boot exits with DROM0 cache unmasked,
+        but serial bootloader exits with it masked. */
+    DPORT_REG_CLR_BIT(DPORT_PRO_CACHE_CTRL1_REG, DPORT_PRO_CACHE_MASK_DROM0);
+#if !CONFIG_FREERTOS_UNICORE
+    DPORT_REG_CLR_BIT(DPORT_APP_CACHE_CTRL1_REG, DPORT_APP_CACHE_MASK_DROM0);
+#endif
+
+    // update flash ID
+    bootloader_flash_update_id();
+    // Check and run XMC startup flow
+    esp_err_t ret = bootloader_flash_xmc_startup();
+    assert(ret == ESP_OK);
+
+    /* Alternative of bootloader_init_spi_flash */
+    // RAM app doesn't have headers in the flash. Make a default one for it.
+    esp_image_header_t WORD_ALIGNED_ATTR hdr = {
+        .spi_mode = ESP_IMAGE_SPI_MODE_DIO,
+        .spi_speed = ESP_IMAGE_SPI_SPEED_DIV_2,
+        .spi_size = ESP_IMAGE_FLASH_SIZE_2MB,
+    };
+    bootloader_flash_set_spi_mode(&hdr);
+    bootloader_flash_clock_config(&hdr);
+    bootloader_flash_gpio_config(&hdr);
+    bootloader_flash_dummy_config(&hdr);
+    bootloader_flash_cs_timing_config();
+
+    /* Remaining parts in bootloader_init_spi_flash */
+    bootloader_flash_unlock();
+
+    Cache_Read_Disable(0);
+    update_flash_config(&hdr);
+    Cache_Flush(0);
+    Cache_Read_Enable(0);
+
+    //ensure the flash is write-protected
+    bootloader_enable_wp();
+}
+#endif //CONFIG_APP_BUILD_TYPE_RAM && !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP

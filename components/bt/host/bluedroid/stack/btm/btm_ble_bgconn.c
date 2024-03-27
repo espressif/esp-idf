@@ -298,7 +298,7 @@ BOOLEAN btm_update_dev_to_white_list(BOOLEAN to_add, BD_ADDR bd_addr, tBLE_ADDR_
         addr_type = p_dev_rec->ble.static_addr_type;
     }
 
-    // white list must be public address or static random address
+    // The device to be added to white list must be public address or random address
     if(addr_type == BLE_ADDR_RANDOM) {
         /*
         A static address is a 48-bit randomly generated address and shall meet the following requirements:
@@ -307,8 +307,7 @@ BOOLEAN btm_update_dev_to_white_list(BOOLEAN to_add, BD_ADDR bd_addr, tBLE_ADDR_
         • All bits of the random part of the address shall not be equal to 0
         */
         invalid_rand_addr_b[0] = invalid_rand_addr_b[0] | BT_STATIC_RAND_ADDR_MASK;
-        if((bd_addr[0] & BT_STATIC_RAND_ADDR_MASK) == BT_STATIC_RAND_ADDR_MASK
-            && memcmp(invalid_rand_addr_a, bd_addr, BD_ADDR_LEN) != 0
+        if(memcmp(invalid_rand_addr_a, bd_addr, BD_ADDR_LEN) != 0
             && memcmp(invalid_rand_addr_b, bd_addr, BD_ADDR_LEN) != 0){
             // do nothing
         } else {

@@ -167,6 +167,7 @@ bool check_client_alive_cb(wss_keep_alive_t h, int fd)
 {
     ESP_LOGD(TAG, "Checking if client (fd=%d) is alive", fd);
     struct async_resp_arg *resp_arg = malloc(sizeof(struct async_resp_arg));
+    assert(resp_arg != NULL);
     resp_arg->hd = wss_keep_alive_get_user_ctx(h);
     resp_arg->fd = fd;
 
@@ -269,6 +270,7 @@ static void wss_server_send_messages(httpd_handle_t* server)
                 if (httpd_ws_get_fd_info(*server, sock) == HTTPD_WS_CLIENT_WEBSOCKET) {
                     ESP_LOGI(TAG, "Active client (fd=%d) -> sending async message", sock);
                     struct async_resp_arg *resp_arg = malloc(sizeof(struct async_resp_arg));
+                    assert(resp_arg != NULL);
                     resp_arg->hd = *server;
                     resp_arg->fd = sock;
                     if (httpd_queue_work(resp_arg->hd, send_hello, resp_arg) != ESP_OK) {

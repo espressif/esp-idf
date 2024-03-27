@@ -34,13 +34,13 @@
 void bta_dm_set_qos(tBTA_DM_MSG *p_data)
 {
     FLOW_SPEC p_flow = {
-        .qos_flags = 0,          /* TBD */
-        .service_type = GUARANTEED,      /* see below */
-        .token_rate = 0,         /* bytes/second */
-        .token_bucket_size = 0,  /* bytes */
-        .peak_bandwidth = 0,      /* bytes/second */
-        .latency = 625 * p_data->qos_set.t_poll,           /* microseconds */
-        .delay_variation = 0xFFFFFFFF    /* microseconds */
+        .qos_flags = 0,                             /* TBD */
+        .service_type = NO_TRAFFIC,                 /* service_type */
+        .token_rate = 0,                            /* bytes/second */
+        .token_bucket_size = 0,                     /* bytes */
+        .peak_bandwidth = 0,                        /* bytes/second */
+        .latency = 625 * p_data->qos_set.t_poll,    /* microseconds */
+        .delay_variation = 0xFFFFFFFF               /* microseconds */
     };
 
     tBTM_STATUS status = BTM_SetQoS (p_data->qos_set.bd_addr, &p_flow, p_data->qos_set.p_cb);

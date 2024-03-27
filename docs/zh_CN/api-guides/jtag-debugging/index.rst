@@ -3,7 +3,15 @@ JTAG 调试
 
 :link_to_translation:`en:[English]`
 
-本文将介绍如何安装 {IDF_TARGET_NAME} 的 OpenOCD 调试环境，以及如何使用 GDB 来调试 {IDF_TARGET_NAME} 的应用程序。本文结构如下：
+本文将介绍如何安装 {IDF_TARGET_NAME} 的 OpenOCD 调试环境，以及如何使用 GDB 来调试 {IDF_TARGET_NAME} 的应用程序。
+
+.. note::
+
+    也可以使用 ``idf.py monitor`` 来调试 {IDF_TARGET_NAME}，免于设置 JTAG 或 OpenOCD。请参阅 :doc:`../../api-guides/tools/idf-monitor` 和 :ref:`CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME`。
+
+.. highlight:: none
+
+本文档结构如下：
 
 :ref:`jtag-debugging-introduction`
     介绍本指南主旨。
@@ -124,7 +132,7 @@ JTAG 调试
 
 你还可以检查 ``OPENOCD_SCRIPTS`` 环境变量的值，以确认 OpenOCD 配置文件的路径，Linux 和 macOS 用户可以在终端输入 ``echo $OPENOCD_SCRIPTS``，Windows 用户需要输入 ``echo %OPENOCD_SCRIPTS%``。如果终端输出了有效路径，则表明已经正确安装 OpenOCD。
 
-如果无法执行上述步骤，请再次阅读快速入门手册，参考 :ref:`设置安装工具 <get-started-set-up-tools>` 章节。
+如果无法执行上述步骤，请再次阅读快速入门手册，Linux 和 macOS 用户请参考 :ref:`设置安装工具 <get-started-set-up-tools>` 章节，Windows 用户请参考 :ref:`ESP-IDF 工具安装器 <get-started-windows-tools-installer>`。
 
 .. note::
 

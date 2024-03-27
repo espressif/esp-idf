@@ -54,7 +54,7 @@
 - 也可以使用标准 Unix 函数 ``gettimeofday()`` 和 ``utime()`` 来进行计时测量，尽管其开销略高一些。
 - 此外，代码中包含 ``hal/cpu_hal.h`` 头文件，并调用 HAL 函数 ``cpu_hal_get_cycle_count()`` 可以返回已执行的 CPU 循环数。该函数开销较低，适用于高精度测量执行时间极短的代码。
 
-  .. only:: not CONFIG_FREERTOS_UNICORE
+  .. only:: SOC_HP_CPU_HAS_MULTIPLE_CORES
 
       CPU 周期是各核心独立计数的，因此本方法仅适用于测量中断处理程序或固定在单个核心上的任务。
 
@@ -70,7 +70,7 @@
 
 如果启用了选项 :ref:`CONFIG_FREERTOS_GENERATE_RUN_TIME_STATS` ，则可以使用 FreeRTOS API :cpp:func:`vTaskGetRunTimeStats` 来获取各个 FreeRTOS 任务运行时占用处理器的时间。
 
-:ref:`SEGGER SystemView <app_trace-system-behaviour-analysis-with-segger-systemview>` 是一款出色的工具，可将任务执行情况可视化，也可用于排查系统整体的性能问题或改进方向。 
+:ref:`SEGGER SystemView <app_trace-system-behaviour-analysis-with-segger-systemview>` 是一款出色的工具，可将任务执行情况可视化，也可用于排查系统整体的性能问题或改进方向。
 
 提高整体速度
 -----------------------------
@@ -82,7 +82,7 @@
     :esp32: - 设置 :ref:`CONFIG_ESPTOOLPY_FLASHFREQ` 为 80 MHz。该值为默认值 40 MHz 的两倍，这意味着从 flash 加载或执行代码的速度也将翻倍。在更改此设置之前，应事先确认连接 {IDF_TARGET_NAME} 和 flash 的板或模块在温度限制范围内支持 80 MHz 的操作。相关信息参见硬件数据手册。
     - 设置 :ref:`CONFIG_ESPTOOLPY_FLASHMODE` 为 QIO 或 QOUT 模式（四线 I/O 模式）。相较于默认的 DIO 模式，在这两种模式下，从 flash 加载或执行代码的速度几乎翻倍。如果两种模式都支持，QIO 会稍微快于 QOUT。请注意，flash 芯片以及 {IDF_TARGET_NAME} 与 flash 芯片之间的电气连接都必须支持四线 I/O 模式，否则 SoC 将无法正常工作。
     - 设置 :ref:`CONFIG_COMPILER_OPTIMIZATION` 为 ``Optimize for performance (-O2)`` 。相较于默认设置，这可能会略微增加二进制文件大小，但几乎必然会提高某些代码的性能。请注意，如果代码包含 C 或 C++ 的未定义行为，提高编译器优化级别可能会暴露出原本未发现的错误。
-    :SOC_ASSIST_DEBUG_SUPPORTED: - 将 :ref:`CONFIG_ESP_SYSTEM_HW_STACK_GUARD` 设置为禁用。这可能会小幅提升某些代码的性能，且在设备中断多次的情况下尤为明显。
+    :SOC_ASSIST_DEBUG_SUPPORTED: - 禁用 :ref:`CONFIG_ESP_SYSTEM_HW_STACK_GUARD` 可能会小幅提高代码性能，尤其是在设备上出现大量中断的情况下。
     :esp32: - 如果应用程序是基于 ESP32 rev. 3 (ECO3) 的项目并且使用 PSRAM，设置 :ref:`CONFIG_ESP32_REV_MIN` 为 ``3`` 将禁用 PSRAM 的错误修复工作，可以减小代码大小并提高整体性能。
     :SOC_CPU_HAS_FPU: - 避免使用浮点运算 ``float``。尽管 {IDF_TARGET_NAME} 具备单精度浮点运算器，但是浮点运算总是慢于整数运算。因此可以考虑使用不同的整数表示方法进行运算，如定点表示法，或者将部分计算用整数运算后再切换为浮点运算。
     :not SOC_CPU_HAS_FPU: - 避免使用浮点运算 ``float``。{IDF_TARGET_NAME} 通过软件模拟进行浮点运算，因此速度非常慢。可以考虑使用不同的整数表示方法进行运算，如定点表示法，或者将部分计算用整数运算后再切换为浮点运算。
@@ -142,7 +142,7 @@
 
 ESP-IDF FreeRTOS 是实时操作系统，因此需确保高吞吐量或低延迟的任务获得更高优先级，以便立即运行。调用 :cpp:func:`xTaskCreate` 或 :cpp:func:`xTaskCreatePinnedToCore` 会设定优先级，并且可以在运行时调用 :cpp:func:`vTaskPrioritySet` 进行更改。
 
-此外，还需确保任务适时释放 CPU（通过调用 :cpp:func:`vTaskDelay` 或 ``sleep()`` ，或在信号量、队列、任务通知等方面进行阻塞），以避免低优先级任务饥饿并造成系统性问题。 :ref:`task-watchdog-timer` 提供任务饥饿自动检测机制，但请注意，正确的固件操作有时需要长时间运算，因此任务看门狗定时器超时并不总意味着存在问题。在这些情况下，可能需要微调超时时限，甚至禁用任务看门狗定时器。 
+此外，还需确保任务适时释放 CPU（通过调用 :cpp:func:`vTaskDelay` 或 ``sleep()`` ，或在信号量、队列、任务通知等方面进行阻塞），以避免低优先级任务饥饿并造成系统性问题。 :ref:`task-watchdog-timer` 提供任务饥饿自动检测机制，但请注意，正确的固件操作有时需要长时间运算，因此任务看门狗定时器超时并不总意味着存在问题。在这些情况下，可能需要微调超时时限，甚至禁用任务看门狗定时器。
 
 .. _built-in-task-priorities:
 
@@ -159,7 +159,7 @@ ESP-IDF 启动的系统任务预设了固定优先级。启动时，一些任务
 
 .. Note: 以下两个列表应保持一致，但第二个列表还展示了 CPU 亲和性。
 
-.. only:: CONFIG_FREERTOS_UNICORE
+.. only:: not SOC_HP_CPU_HAS_MULTIPLE_CORES
 
     .. list::
 
@@ -167,7 +167,7 @@ ESP-IDF 启动的系统任务预设了固定优先级。启动时，一些任务
         - 系统任务 :doc:`/api-reference/system/esp_timer` 用于管理定时器事件并执行回调函数，优先级较高 (22, ``ESP_TASK_TIMER_PRIO``)。
         - FreeRTOS 初始化调度器时会创建定时器任务，用于处理 FreeRTOS 定时器的回调函数，优先级最低（1, :ref:`可配置 <CONFIG_FREERTOS_TIMER_TASK_PRIORITY>` ）。
         - 系统任务 :doc:`/api-reference/system/esp_event` 用于管理默认的系统事件循环并执行回调函数，优先级较高 (20, ``ESP_TASK_EVENT_PRIO``)。仅在应用程序调用 :cpp:func:`esp_event_loop_create_default` 时使用此配置。可以调用 :cpp:func:`esp_event_loop_create` 添加自定义任务配置。
-        - :doc:`/api-guides/lwip` TCP/IP 任务优先级较高 (18)。
+        - :doc:`/api-guides/lwip` TCP/IP 任务优先级较高 (18, ``ESP_TASK_TCPIP_PRIO``)。
         :SOC_WIFI_SUPPORTED: - :doc:`/api-guides/wifi` 任务优先级较高 (23).
         :SOC_WIFI_SUPPORTED: - 使用 Wi-Fi Protected Setup (WPS)、WPA2 EAP-TLS、Device Provisioning Protocol (DPP) 或 BSS Transition Management (BTM) 等功能时，Wi-Fi wpa_supplicant 组件可能会创建优先级较低的专用任务 (2)。
         :SOC_BT_SUPPORTED: - :doc:`/api-reference/bluetooth/controller_vhci` 任务优先级较高 (23, ``ESP_TASK_BT_CONTROLLER_PRIO``)。蓝牙控制器需要以低延迟响应请求，因此其任务应始终为系统最高优先级的任务之一。
@@ -176,7 +176,7 @@ ESP-IDF 启动的系统任务预设了固定优先级。启动时，一些任务
         - 如果使用 :doc:`/api-reference/protocols/mqtt` 组件，它会创建优先级默认为 5 的任务（ :ref:`可配置 <CONFIG_MQTT_TASK_PRIORITY>` ），可通过 :ref:`CONFIG_MQTT_USE_CUSTOM_CONFIG` 调整，也可以在运行时通过 :cpp:class:`esp_mqtt_client_config_t` 结构体中的 ``task_prio`` 字段调整。
         - 关于 ``mDNS`` 服务的任务优先级，参见 `性能优化 <https://docs.espressif.com/projects/esp-protocols/mdns/docs/latest/en/index.html#performance-optimization>`__ 。
 
-.. only :: not CONFIG_FREERTOS_UNICORE
+.. only:: SOC_HP_CPU_HAS_MULTIPLE_CORES
 
     .. list::
 
@@ -184,7 +184,7 @@ ESP-IDF 启动的系统任务预设了固定优先级。启动时，一些任务
         - 系统任务 :doc:`/api-reference/system/esp_timer` 用于管理定时器事件并执行回调函数，优先级较高 (22, ``ESP_TASK_TIMER_PRIO``) 且固定在核心 0 上执行。
         - FreeRTOS 初始化调度器时会创建定时器任务，用于处理 FreeRTOS 定时器的回调函数，优先级最低（1， :ref:`可配置 <CONFIG_FREERTOS_TIMER_TASK_PRIORITY>` ）且固定在核心 0 上执行。
         - 系统任务 :doc:`/api-reference/system/esp_event` 用于管理默认的系统事件循环并执行回调函数，优先级较高 (20, ``ESP_TASK_EVENT_PRIO``) 且固定在核心 0 上执行。此配置仅在应用程序调用 :cpp:func:`esp_event_loop_create_default` 时使用。可以调用 :cpp:func:`esp_event_loop_create` 添加自定义任务配置。
-        - :doc:`/api-guides/lwip` TCP/IP 任务优先级较高 (18) 且并未固定在特定核心上执行（ :ref:`可配置 <CONFIG_LWIP_TCPIP_TASK_AFFINITY>` ）。
+        - :doc:`/api-guides/lwip` TCP/IP 任务优先级较高 (18, ``ESP_TASK_TCPIP_PRIO``) 且并未固定在特定核心上执行（ :ref:`可配置 <CONFIG_LWIP_TCPIP_TASK_AFFINITY>` ）。
         :SOC_WIFI_SUPPORTED: - :doc:`/api-guides/wifi` 任务优先级较高 (23) 且默认固定在核心 0 上执行（ :ref:`可配置 <CONFIG_ESP_WIFI_TASK_CORE_ID>` ）。
         :SOC_WIFI_SUPPORTED: - 使用 Wi-Fi Protected Setup (WPS)、WPA2 EAP-TLS、Device Provisioning Protocol (DPP) 或 BSS Transition Management (BTM) 等功能时，Wi-Fi wpa_supplicant 组件可能会创建优先级较低的专用任务 (2)，这些任务并未固定在特定核心上执行。
         :SOC_BT_SUPPORTED: - :doc:`/api-reference/bluetooth/controller_vhci` 任务优先级较高 (23, ``ESP_TASK_BT_CONTROLLER_PRIO``) 且默认固定在核心 0 上执行（ :ref:`可配置 <{IDF_TARGET_CONTROLLER_CORE_CONFIG}>` ）。蓝牙控制器需要以低延迟响应请求，因此其任务应始终为最高优先级的任务之一并分配给单个 CPU 执行。
@@ -204,11 +204,11 @@ ESP-IDF 启动的系统任务预设了固定优先级。启动时，一些任务
 设定应用程序任务优先级
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. only:: CONFIG_FREERTOS_UNICORE
+.. only:: not SOC_HP_CPU_HAS_MULTIPLE_CORES
 
     由于 {IDF_TARGET_RF_TYPE} 操作饥饿可能导致系统不稳定，通常不建议让特定任务的优先级高于 {IDF_TARGET_RF_TYPE} 操作的内置优先级。对于非常短且无需网络的实时操作，可以使用中断服务程序或极受限的任务（仅运行极短时间）并设置为最高优先级 (24)。将特定任务优先级设为 19 不会妨碍较低层级的 {IDF_TARGET_RF_TYPE} 功能无延迟运行，但仍然会抢占 lwIP TCP/IP 堆栈以及其他非实时内部功能，这对于不执行网络操作的实时任务而言是最佳选项。lwIP TCP/IP 任务优先级 (18) 应高于所有执行 TCP/IP 网络操作的任务，以保证任务正常执行。
 
-.. only:: not CONFIG_FREERTOS_UNICORE
+.. only:: SOC_HP_CPU_HAS_MULTIPLE_CORES
 
     默认配置下，除了个别例外，尤其是 lwIP TCP/IP 任务，大多数内置任务都固定在核心 0 上执行。因此，应用程序可以方便地将高优先级任务放置在核心 1 上执行。优先级大于等于 19 的应用程序任务在核心 1 上运行时可以确保不会被任何内置任务抢占。为了进一步隔离各个 CPU 上运行的任务，配置 :ref:`lwIP 任务 <CONFIG_LWIP_TCPIP_TASK_AFFINITY>` ，可以使 lwIP 任务仅在核心 0 上运行，而非上述任一核心，这可能会根据其他任务的运行情况减少总 TCP/IP 吞吐量。
 
@@ -234,9 +234,11 @@ ESP-IDF 支持动态 :doc:`/api-reference/system/intr_alloc` 和中断抢占。�
 .. list::
 
     - 调用 :cpp:func:`esp_intr_alloc` 时使用 ``ESP_INTR_FLAG_LEVEL2`` 或 ``ESP_INTR_FLAG_LEVEL3`` 等标志，可以为更重要的中断设定更高优先级。
-    :not CONFIG_FREERTOS_UNICORE: - 将中断分配到不运行内置 {IDF_TARGET_RF_TYPE} 任务的 CPU 上执行，即默认情况下，将中断分配到核心 1 上执行，参见 :ref:`built-in-task-priorities` 。调用 :cpp:func:`esp_intr_alloc`  函数即可将中断分配到函数所在 CPU。
+    :SOC_HP_CPU_HAS_MULTIPLE_CORES: - 将中断分配到不运行内置 {IDF_TARGET_RF_TYPE} 任务的 CPU 上执行，即默认情况下，将中断分配到核心 1 上执行，参见 :ref:`built-in-task-priorities` 。调用 :cpp:func:`esp_intr_alloc`  函数即可将中断分配到函数所在 CPU。
     - 如果确定整个中断处理程序可以在 IRAM 中运行（参见 :ref:`iram-safe-interrupt-handlers` ），那么在调用 :cpp:func:`esp_intr_alloc` 分配中断时，请设置 ``ESP_INTR_FLAG_IRAM`` 标志，这样可以防止在应用程序固件写入内置 SPI flash 时临时禁用中断。
     - 即使是非 IRAM 安全的中断处理程序，如果需要频繁执行，可以考虑将处理程序的函数移到 IRAM 中，从而尽可能规避执行中断代码时发生 flash 缓存缺失的可能性（参见 :ref:`speed-targeted-optimizations` ）。如果可以确保只有部分处理程序位于 IRAM 中，则无需添加 ``ESP_INTR_FLAG_IRAM`` 标志将程序标记为 IRAM 安全。
+
+.. _improve-network-speed:
 
 提高网络速度
 -----------------------------
@@ -244,8 +246,9 @@ ESP-IDF 支持动态 :doc:`/api-reference/system/intr_alloc` 和中断抢占。�
 .. list::
 
     :SOC_WIFI_SUPPORTED: * 关于提高 Wi-Fi 网速，参见 :ref:`How-to-improve-Wi-Fi-performance` 和 :ref:`wifi-buffer-usage` 。
-    * 关于提高 lwIP TCP/IP（Wi-Fi 和以太网）网速，参见 :ref:`lwip-performance` 。
-    :SOC_WIFI_SUPPORTED: * 示例 :example:`wifi/iperf` 包含了一种针对 Wi-Fi TCP/IP 吞吐量进行了大量优化的配置。将文件 :example_file:`wifi/iperf/sdkconfig.defaults` 、 :example_file:`wifi/iperf/sdkconfig.defaults.{IDF_TARGET_PATH_NAME}` 和 :example_file:`wifi/iperf/sdkconfig.ci.99` 的内容追加到项目的 ``sdkconfig`` 文件中，即可添加所有相关选项。请注意，部分选项可能会导致可调试性降低、固件大小增加、内存使用增加或其他功能的性能降低等影响。为了获得最佳结果，请阅读上述链接文档，并据此确定哪些选项最适合当前应用程序。
+    * 关于提高 lwIP TCP/IP 网速，参见 :ref:`lwip-performance` 。
+    :SOC_WIFI_SUPPORTED: * 示例 :example:`wifi/iperf` 中的配置针对 Wi-Fi TCP/IP 吞吐量进行了大量优化，但该配置会占用更多 RAM。将文件 :example_file:`wifi/iperf/sdkconfig.defaults` 、 :example_file:`wifi/iperf/sdkconfig.defaults.{IDF_TARGET_PATH_NAME}` 和 :example_file:`wifi/iperf/sdkconfig.ci.99` 的内容追加到项目的 ``sdkconfig`` 文件中，即可添加所有相关选项。请注意，部分选项可能会导致可调试性降低、固件大小增加、内存使用增加或其他功能的性能降低等影响。为了获得最佳结果，请阅读上述链接文档，并据此确定哪些选项最适合当前应用程序。
+    :SOC_EMAC_SUPPORTED: * 示例 :example:`ethernet/iperf` 中的配置针对以太网 TCP/IP 吞吐量进行了大量优化，但该配置会占用更多 RAM。如需了解详情，请查看 :example_file:`ethernet/iperf/sdkconfig.defaults`。请注意，部分选项可能会导致可调试性降低、固件大小增加、内存使用增加或其他功能的性能降低等影响。为了获得最佳结果，请阅读上述链接文档，并据此确定哪些选项最适合当前应用程序。
 
 提高 I/O 性能
 ----------------------------------
@@ -255,7 +258,7 @@ ESP-IDF 支持动态 :doc:`/api-reference/system/intr_alloc` 和中断抢占。�
 :doc:`/api-reference/storage/fatfs` 具体信息和提示如下:
 
 .. list::
-    
+
     - 读取/写入请求的最大大小等于 FatFS 簇大小（分配单元大小）。
     - 使用 ``read`` 和 ``write`` 而非 ``fread`` 和 ``fwrite`` 可以提高性能。
     - 要提高诸如 ``fread`` 和 ``fgets`` 等缓冲读取函数的执行速度，可以增加文件缓冲区的大小（Newlib 的默认值为 128 字节），例如 4096、8192 或 16384 字节。为此，可以在特定文件的指针上使用 ``setvbuf`` 函数进行局部更改，或者修改 :ref:`CONFIG_FATFS_VFS_FSTAT_BLKSIZE` 实现全局应用。

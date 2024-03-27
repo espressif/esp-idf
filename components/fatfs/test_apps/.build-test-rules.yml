@@ -1,11 +1,39 @@
 # Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
 
-components/fatfs/test_apps/sdcard:
+components/fatfs/test_apps/flash_ro:
   disable_test:
-    - if: IDF_TARGET in ["esp32s3", "esp32c2", "esp32c6", "esp32h2"]
-      temporary: true
-      reason: No sdspi runners for these targets
+    - if: IDF_TARGET not in ["esp32", "esp32c3"]
+      reason: only one target per arch needed
+
+  depends_components:
+    - esp_partition
+    - spi_flash
+    - fatfs
+    - vfs
+
+components/fatfs/test_apps/flash_wl:
+  disable_test:
+    - if: IDF_TARGET not in ["esp32", "esp32c3"]
+      reason: only one target per arch needed
+  depends_components:
+    - esp_partition
+    - spi_flash
+    - fatfs
+    - vfs
+    - wear_leveling
+
+components/fatfs/test_apps/sdcard:
   disable:
     - if: IDF_TARGET == "esp32p4"
       temporary: true
       reason: target esp32p4 is not supported yet # TODO: IDF-7501
+  disable_test:
+    - if: IDF_TARGET not in ["esp32", "esp32c3"]
+      temporary: true
+      reason: lack of runners
+  depends_components:
+    - esp_driver_sdmmc
+    - esp_driver_spi
+    - sdmmc
+    - fatfs
+    - vfs

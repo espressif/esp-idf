@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -63,6 +63,7 @@ typedef struct {
     int fd;
     uint8_t *write_data;
     osi_alarm_t *close_alarm;
+    void *alarm_arg;
     esp_spp_role_t role;
     esp_spp_sec_t security;
     esp_bd_addr_t addr;
@@ -149,6 +150,7 @@ static spp_slot_t *spp_malloc_slot(void)
             (*slot)->write_data_len = 0;
             (*slot)->is_writing = false;
             (*slot)->close_alarm = NULL;
+            (*slot)->alarm_arg = NULL;
             /* clear the old event bits */
             if (spp_local_param.tx_event_group) {
                 xEventGroupClearBits(spp_local_param.tx_event_group, SLOT_WRITE_BIT(i) | SLOT_CLOSE_BIT(i));
@@ -252,15 +254,17 @@ static void close_timeout_handler(void *arg)
 {
     btc_msg_t msg;
     bt_status_t status;
+    spp_slot_t *slot = (spp_slot_t *)arg;
 
     msg.sig = BTC_SIG_API_CB;
     msg.pid = BTC_PID_SPP;
     msg.act = BTA_JV_RFCOMM_CLOSE_EVT;
 
-    status = btc_transfer_context(&msg, arg, sizeof(tBTA_JV), NULL, NULL);
+    status = btc_transfer_context(&msg, slot->alarm_arg, sizeof(tBTA_JV), NULL, NULL);
 
-    if (arg) {
-        osi_free(arg);
+    if (slot->alarm_arg) {
+        osi_free(slot->alarm_arg);
+        slot->alarm_arg = NULL;
     }
 
     if (status != BT_STATUS_SUCCESS) {
@@ -284,8 +288,24 @@ static void spp_free_slot(spp_slot_t *slot)
     free_slot_data(&slot->rx);
     if (slot->close_alarm) {
         osi_alarm_free(slot->close_alarm);
+        if (slot->alarm_arg) {
+            osi_free(slot->alarm_arg);
+            slot->alarm_arg = NULL;
+        }
     }
     osi_free(slot);
+}
+
+static void spp_free_pending_slots(void)
+{
+    spp_slot_t *slot = NULL;
+    for (size_t i = 1; i <= MAX_RFC_PORTS; i++) {
+        slot = spp_local_param.spp_slots[i];
+        if (slot) {
+            BTC_TRACE_WARNING("%s found slot(rfc_handle=0x%x) pending to close, close it now!", __func__, slot->rfc_handle);
+            spp_free_slot(slot);
+        }
+    }
 }
 
 static inline void btc_spp_cb_to_app(esp_spp_cb_event_t event, esp_spp_cb_param_t *param)
@@ -403,19 +423,6 @@ static void *btc_spp_rfcomm_inter_cb(tBTA_JV_EVT event, tBTA_JV *p_data, void *u
         slot->mtu = p_data->rfc_open.peer_mtu;
         slot->rfc_port_handle = BTA_JvRfcommGetPortHdl(p_data->rfc_open.handle);
         BTA_JvSetPmProfile(p_data->rfc_open.handle, BTA_JV_PM_ID_1, BTA_JV_CONN_OPEN);
-        break;
-    case BTA_JV_RFCOMM_CLOSE_EVT:
-        slot = spp_find_slot_by_id(id);
-        if (!slot) {
-            BTC_TRACE_ERROR("%s unable to find RFCOMM slot, event:%d!", __func__, event);
-            p_data->rfc_close.status = ESP_SPP_NO_CONNECTION;
-            break;
-        }
-        if (slot->rfc_handle && p_data->rfc_close.port_status != PORT_LOCAL_CLOSED) {
-            BTA_JvRfcommClose(slot->rfc_handle, NULL, (void *)slot->id);
-        }
-        p_data->rfc_close.status = BTA_JV_SUCCESS;
-        p_data->rfc_close.user_data = (void *)(uintptr_t)slot->id;
         break;
     case BTA_JV_RFCOMM_DATA_IND_EVT:
         break;
@@ -588,8 +595,7 @@ static void btc_spp_uninit(void)
         // first, remove all connection
         for (size_t i = 1; i <= MAX_RFC_PORTS; i++) {
             if (spp_local_param.spp_slots[i] != NULL && !spp_local_param.spp_slots[i]->is_server) {
-                BTA_JvRfcommClose(spp_local_param.spp_slots[i]->rfc_handle, (tBTA_JV_RFCOMM_CBACK *)btc_spp_rfcomm_inter_cb,
-                                  (void *)spp_local_param.spp_slots[i]->id);
+                BTA_JvRfcommClose(spp_local_param.spp_slots[i]->rfc_handle, (void *)spp_local_param.spp_slots[i]->id);
             }
         }
         // second, remove all server
@@ -707,7 +713,7 @@ static void btc_spp_disconnect(btc_spp_args_t *arg)
             ret = ESP_SPP_NO_CONNECTION;
             break;
         }
-        BTA_JvRfcommClose(arg->disconnect.handle, (tBTA_JV_RFCOMM_CBACK *)btc_spp_rfcomm_inter_cb, (void *)slot->id);
+        BTA_JvRfcommClose(arg->disconnect.handle, (void *)slot->id);
         osi_mutex_unlock(&spp_local_param.spp_slot_mutex);
     } while(0);
 
@@ -815,9 +821,7 @@ static void btc_spp_stop_srv(btc_spp_args_t *arg)
                 if (spp_local_param.spp_slots[i] != NULL && !spp_local_param.spp_slots[i]->is_server &&
                     spp_local_param.spp_slots[i]->sdp_handle > 0 &&
                     spp_local_param.spp_slots[i]->scn == srv_scn_arr[j]) {
-                    BTA_JvRfcommClose(spp_local_param.spp_slots[i]->rfc_handle,
-                                      (tBTA_JV_RFCOMM_CBACK *)btc_spp_rfcomm_inter_cb,
-                                      (void *)spp_local_param.spp_slots[i]->id);
+                    BTA_JvRfcommClose(spp_local_param.spp_slots[i]->rfc_handle, (void *)spp_local_param.spp_slots[i]->id);
                 }
             }
         }
@@ -1155,28 +1159,27 @@ void btc_spp_cb_handler(btc_msg_t *msg)
         osi_mutex_unlock(&spp_local_param.spp_slot_mutex);
         break;
     case BTA_JV_RFCOMM_CLOSE_EVT:
-        param.close.status = p_data->rfc_close.status;
+        param.close.status = BTA_JV_SUCCESS;
         param.close.port_status = p_data->rfc_close.port_status;
         param.close.handle = p_data->rfc_close.handle;
         param.close.async = p_data->rfc_close.async;
         if (spp_local_param.spp_mode == ESP_SPP_MODE_CB) {
-            btc_spp_cb_to_app(ESP_SPP_CLOSE_EVT, &param);
             osi_mutex_lock(&spp_local_param.spp_slot_mutex, OSI_MUTEX_MAX_TIMEOUT);
-            uint32_t id = (uintptr_t)p_data->rfc_close.user_data;
-            slot = spp_find_slot_by_id(id);
+            slot = spp_find_slot_by_handle(p_data->rfc_close.handle);
             if (!slot) {
+                param.close.status = ESP_SPP_NO_CONNECTION;
                 osi_mutex_unlock(&spp_local_param.spp_slot_mutex);
                 BTC_TRACE_ERROR("%s unable to find RFCOMM slot, event:%d!", __func__, event);
                 break;
             }
             spp_free_slot(slot);
             osi_mutex_unlock(&spp_local_param.spp_slot_mutex);
+            btc_spp_cb_to_app(ESP_SPP_CLOSE_EVT, &param);
         } else {
             bool need_call = true;
             do {
                 osi_mutex_lock(&spp_local_param.spp_slot_mutex, OSI_MUTEX_MAX_TIMEOUT);
-                uint32_t id = (uintptr_t)p_data->rfc_close.user_data;
-                slot = spp_find_slot_by_id(id);
+                slot = spp_find_slot_by_handle(p_data->rfc_close.handle);
                 if (!slot) {
                     param.close.status = ESP_SPP_NO_CONNECTION;
                     osi_mutex_unlock(&spp_local_param.spp_slot_mutex);
@@ -1193,9 +1196,11 @@ void btc_spp_cb_handler(btc_msg_t *msg)
                         break;
                     }
                     memcpy(p_arg, p_data, sizeof(tBTA_JV));
+                    slot->alarm_arg = (void *)p_arg;
                     if ((slot->close_alarm =
-                             osi_alarm_new("slot", close_timeout_handler, (void *)p_arg, VFS_CLOSE_TIMEOUT)) == NULL) {
+                             osi_alarm_new("slot", close_timeout_handler, (void *)slot, VFS_CLOSE_TIMEOUT)) == NULL) {
                         free(p_arg);
+                        slot->alarm_arg = NULL;
                         param.close.status = ESP_SPP_NO_RESOURCE;
                         osi_mutex_unlock(&spp_local_param.spp_slot_mutex);
                         BTC_TRACE_ERROR("%s unable to malloc slot close_alarm!", __func__);
@@ -1203,6 +1208,7 @@ void btc_spp_cb_handler(btc_msg_t *msg)
                     }
                     if (osi_alarm_set(slot->close_alarm, VFS_CLOSE_TIMEOUT) != OSI_ALARM_ERR_PASS) {
                         free(p_arg);
+                        slot->alarm_arg = NULL;
                         osi_alarm_free(slot->close_alarm);
                         param.close.status = ESP_SPP_BUSY;
                         osi_mutex_unlock(&spp_local_param.spp_slot_mutex);
@@ -1314,6 +1320,7 @@ void btc_spp_cb_handler(btc_msg_t *msg)
         break;
     case BTA_JV_DISABLE_EVT:
         param.uninit.status = ESP_SPP_SUCCESS;
+        spp_free_pending_slots();
         BTA_JvFree();
         osi_mutex_free(&spp_local_param.spp_slot_mutex);
         if (spp_local_param.tx_event_group) {

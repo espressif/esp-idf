@@ -13,6 +13,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "soc/hp_sys_clkrst_struct.h"
+#include "soc/soc_etm_source.h"
 
 #define GDMA_LL_CHANNEL_MAX_PRIORITY 5 // supported priority levels: [0,5]
 
@@ -43,6 +44,46 @@
 #define GDMA_LL_PARALLEL_CRC_DATA_WIDTH 8  // Parallel CRC data width is fixed to 8bits
 #define GDMA_LL_AHB_MAX_CRC_BIT_WIDTH   32 // Max CRC bit width supported by AHB GDMA
 #define GDMA_LL_AXI_MAX_CRC_BIT_WIDTH   16 // Max CRC bit width supported by AXI GDMA
+
+#define GDMA_LL_TX_ETM_EVENT_TABLE(group, chan, event)                \
+    (uint32_t[2][GDMA_ETM_EVENT_MAX]){                                \
+        {                                                             \
+            [GDMA_ETM_EVENT_EOF] = PDMA_AHB_EVT_OUT_EOF_CH0 + (chan), \
+        },                                                            \
+        {                                                             \
+            [GDMA_ETM_EVENT_EOF] = PDMA_AXI_EVT_OUT_EOF_CH0 + (chan), \
+        },                                                            \
+    }[group][event]
+
+#define GDMA_LL_RX_ETM_EVENT_TABLE(group, chan, event)                   \
+    (uint32_t[2][GDMA_ETM_EVENT_MAX]){                                   \
+        {                                                                \
+            [GDMA_ETM_EVENT_EOF] = PDMA_AHB_EVT_IN_SUC_EOF_CH0 + (chan), \
+        },                                                               \
+        {                                                                \
+            [GDMA_ETM_EVENT_EOF] = PDMA_AXI_EVT_IN_SUC_EOF_CH0 + (chan), \
+        },                                                               \
+    }[group][event]
+
+#define GDMA_LL_TX_ETM_TASK_TABLE(group, chan, task)                      \
+    (uint32_t[2][GDMA_ETM_TASK_MAX]){                                     \
+        {                                                                 \
+            [GDMA_ETM_TASK_START] = PDMA_AHB_TASK_OUT_START_CH0 + (chan), \
+        },                                                                \
+        {                                                                 \
+            [GDMA_ETM_TASK_START] = PDMA_AXI_TASK_OUT_START_CH0 + (chan), \
+        },                                                                \
+    }[group][task]
+
+#define GDMA_LL_RX_ETM_TASK_TABLE(group, chan, task)                     \
+    (uint32_t[2][GDMA_ETM_TASK_MAX]){                                    \
+        {                                                                \
+            [GDMA_ETM_TASK_START] = PDMA_AHB_TASK_IN_START_CH0 + (chan), \
+        },                                                               \
+        {                                                                \
+            [GDMA_ETM_TASK_START] = PDMA_AXI_TASK_IN_START_CH0 + (chan), \
+        },                                                               \
+    }[group][task]
 
 #ifdef __cplusplus
 extern "C" {
@@ -81,15 +122,6 @@ static inline void gdma_ll_reset_register(int group_id)
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
 #define gdma_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; gdma_ll_reset_register(__VA_ARGS__)
-
-__attribute__((always_inline))
-static inline uint8_t _bitwise_reverse(uint8_t n)
-{
-    n = ((n & 0xf0) >> 4) | ((n & 0x0f) << 4);
-    n = ((n & 0xcc) >> 2) | ((n & 0x33) << 2);
-    n = ((n & 0xaa) >> 1) | ((n & 0x55) << 1);
-    return n;
-}
 
 #ifdef __cplusplus
 }

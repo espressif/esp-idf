@@ -13,6 +13,8 @@
 #include "lwip/mem.h"
 #include "lwip/ip_addr.h"
 #include "lwip/timeouts.h"
+#include "lwip/etharp.h"
+#include "lwip/prot/ethernet.h"
 
 #include "dhcpserver/dhcpserver.h"
 #include "dhcpserver/dhcpserver_options.h"
@@ -28,6 +30,7 @@
 #endif
 
 #define BOOTP_BROADCAST 0x8000
+#define BROADCAST_BIT_IS_SET(flag) (flag & BOOTP_BROADCAST)
 
 #define DHCP_REQUEST        1
 #define DHCP_REPLY          2
@@ -508,34 +511,66 @@ static void create_msg(dhcps_t *dhcps, struct dhcps_msg *m)
     client.addr = *((uint32_t *) &dhcps->client_address);
 
     m->op = DHCP_REPLY;
-
     m->htype = DHCP_HTYPE_ETHERNET;
-
     m->hlen = 6;
 
-    m->hops = 0;
-//        os_memcpy((char *) xid, (char *) m->xid, sizeof(m->xid));
-    m->secs = 0;
+#if !ETHARP_SUPPORT_STATIC_ENTRIES
+    /* If the DHCP server does not support sending unicast message to the client,
+     * need to set the 'flags' field to broadcast */
     m->flags = htons(BOOTP_BROADCAST);
+#endif
 
     memcpy((char *) m->yiaddr, (char *) &client.addr, sizeof(m->yiaddr));
-
-    memset((char *) m->ciaddr, 0, sizeof(m->ciaddr));
-
-    memset((char *) m->siaddr, 0, sizeof(m->siaddr));
-
-    memset((char *) m->giaddr, 0, sizeof(m->giaddr));
-
-    memset((char *) m->sname, 0, sizeof(m->sname));
-
-    memset((char *) m->file, 0, sizeof(m->file));
-
-    memset((char *) m->options, 0, sizeof(m->options));
-
-    u32_t magic_cookie_temp = magic_cookie;
-
-    memcpy((char *) m->options, &magic_cookie_temp, sizeof(magic_cookie_temp));
+    memcpy((char *) m->options, &magic_cookie, sizeof(magic_cookie));
 }
+
+/******************************************************************************
+ * FunctionName : dhcps_response_ip_set
+ * Description  : set the ip address for sending to the DHCP client
+ * Parameters   : m -- DHCP message info
+ *                ip4_out -- ip address for sending
+ * Returns      : none
+*******************************************************************************/
+static void dhcps_response_ip_set(dhcps_t *dhcps, struct dhcps_msg *m, ip4_addr_t *ip4_out)
+{
+#if ETHARP_SUPPORT_STATIC_ENTRIES
+    ip4_addr_t ip4_giaddr;
+    ip4_addr_t ip4_ciaddr;
+    ip4_addr_t ip4_yiaddr;
+
+    struct eth_addr chaddr;
+    memcpy(chaddr.addr, m->chaddr, sizeof(chaddr.addr));
+    memcpy((char *)&ip4_giaddr.addr, (char *)m->giaddr, sizeof(m->giaddr));
+    memcpy((char *)&ip4_ciaddr.addr, (char *)m->ciaddr, sizeof(m->ciaddr));
+    memcpy((char *)&ip4_yiaddr.addr, (char *)m->yiaddr, sizeof(m->yiaddr));
+
+    if (!ip4_addr_isany_val(ip4_giaddr)) {
+        /* If the 'giaddr' field is non-zero, send return message to the address in 'giaddr'. (RFC 2131)*/
+        ip4_addr_set(ip4_out, &ip4_giaddr);
+        /* add the IP<->MAC as static entry into the arp table. */
+        etharp_add_static_entry(&ip4_giaddr, &chaddr);
+    } else {
+        if (!ip4_addr_isany_val(ip4_ciaddr)) {
+            /* If the 'giaddr' field is zero and the 'ciaddr' is nonzero,
+             * the server unicasts DHCPOFFER and DHCPACK message to the address in 'ciaddr'*/
+            ip4_addr_set(ip4_out, &ip4_ciaddr);
+            etharp_add_static_entry(&ip4_ciaddr, &chaddr);
+        } else if (!BROADCAST_BIT_IS_SET(htons(m->flags))) {
+            /* If the 'giaddr' is zero and 'ciaddr' is zero, and the broadcast bit is not set,
+             * the server unicasts DHCPOFFER and DHCPACK message to the client's hardware address and
+             * 'yiaddr' address. */
+            ip4_addr_set(ip4_out, &ip4_yiaddr);
+            etharp_add_static_entry(&ip4_yiaddr, &chaddr);
+        } else {
+            /* The server broadcast DHCPOFFER and DHCPACK message to 0xffffffff*/
+            ip4_addr_set(ip4_out, &dhcps->broadcast_dhcps);
+        }
+    }
+#else
+    ip4_addr_set(ip4_out, &dhcps->broadcast_dhcps);
+#endif
+}
+
 
 struct pbuf * dhcps_pbuf_alloc(u16_t len)
 {
@@ -614,12 +649,17 @@ static void send_offer(dhcps_t *dhcps, struct dhcps_msg *m, u16_t len)
     }
 
     ip_addr_t ip_temp = IPADDR4_INIT(0x0);
-    ip4_addr_set(ip_2_ip4(&ip_temp), &dhcps->broadcast_dhcps);
+    dhcps_response_ip_set(dhcps, m, ip_2_ip4(&ip_temp));
 #if DHCPS_DEBUG
     SendOffer_err_t = udp_sendto(dhcps->dhcps_pcb, p, &ip_temp, DHCPS_CLIENT_PORT);
     DHCPS_LOG("dhcps: send_offer>>udp_sendto result %x\n", SendOffer_err_t);
 #else
     udp_sendto(dhcps->dhcps_pcb, p, &ip_temp, DHCPS_CLIENT_PORT);
+#endif
+
+#if ETHARP_SUPPORT_STATIC_ENTRIES
+    /* remove the IP<->MAC from the arp table. */
+    etharp_remove_static_entry(ip_2_ip4(&ip_temp));
 #endif
 
     if (p->ref != 0) {
@@ -692,12 +732,35 @@ static void send_nak(dhcps_t *dhcps, struct dhcps_msg *m, u16_t len)
     }
 
     ip_addr_t ip_temp = IPADDR4_INIT(0x0);
+
+#if ETHARP_SUPPORT_STATIC_ENTRIES
+    ip4_addr_t ip4_giaddr;
+    struct eth_addr chaddr;
+    memcpy(chaddr.addr, m->chaddr, sizeof(chaddr.addr));
+    memcpy((char *)&ip4_giaddr.addr, (char *)m->giaddr, sizeof(m->giaddr));
+
+    if (!ip4_addr_isany_val(ip4_giaddr)) {
+        ip4_addr_set(ip_2_ip4(&ip_temp), &ip4_giaddr);
+        /* add the IP<->MAC as static entry into the arp table. */
+        etharp_add_static_entry(&ip4_giaddr, &chaddr);
+    } else {
+        /* when 'giaddr' is zero, the server broadcasts any DHCPNAK message to 0xffffffff. (RFC 2131)*/
+        ip4_addr_set(ip_2_ip4(&ip_temp), &dhcps->broadcast_dhcps);
+    }
+#else
     ip4_addr_set(ip_2_ip4(&ip_temp), &dhcps->broadcast_dhcps);
+#endif
+
 #if DHCPS_DEBUG
     SendNak_err_t = udp_sendto(dhcps->dhcps_pcb, p, &ip_temp, DHCPS_CLIENT_PORT);
     DHCPS_LOG("dhcps: send_nak>>udp_sendto result %x\n", SendNak_err_t);
 #else
     udp_sendto(dhcps->dhcps_pcb, p, &ip_temp, DHCPS_CLIENT_PORT);
+#endif
+
+#if ETHARP_SUPPORT_STATIC_ENTRIES
+    /* remove the IP<->MAC from the arp table. */
+    etharp_remove_static_entry(ip_2_ip4(&ip_temp));
 #endif
 
     if (p->ref != 0) {
@@ -769,10 +832,15 @@ static void send_ack(dhcps_t *dhcps, struct dhcps_msg *m, u16_t len)
     }
 
     ip_addr_t ip_temp = IPADDR4_INIT(0x0);
-    ip4_addr_set(ip_2_ip4(&ip_temp), &dhcps->broadcast_dhcps);
+    dhcps_response_ip_set(dhcps, m, ip_2_ip4(&ip_temp));
     SendAck_err_t = udp_sendto(dhcps->dhcps_pcb, p, &ip_temp, DHCPS_CLIENT_PORT);
 #if DHCPS_DEBUG
     DHCPS_LOG("dhcps: send_ack>>udp_sendto result %x\n", SendAck_err_t);
+#endif
+
+#if ETHARP_SUPPORT_STATIC_ENTRIES
+    /* remove the IP<->MAC from the arp table. */
+    etharp_remove_static_entry(ip_2_ip4(&ip_temp));
 #endif
 
     if (SendAck_err_t == ERR_OK) {

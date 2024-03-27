@@ -24,18 +24,6 @@ GPATH
 # cache dir
 .cache/
 
-# Components Unit Test Apps files
-components/**/build/
-components/**/build_*_*/
-components/**/sdkconfig
-components/**/sdkconfig.old
-
-# Example project files
-examples/**/build/
-examples/**/build_esp*_*/
-examples/**/sdkconfig
-examples/**/sdkconfig.old
-
 # Doc build artifacts
 docs/_build/
 docs/doxygen_sqlite3.db
@@ -44,16 +32,23 @@ docs/doxygen_sqlite3.db
 docs/_static/DejaVuSans.ttf
 docs/_static/NotoSansSC-Regular.otf
 
+# Components Unit Test Apps files
+components/**/build/
+components/**/build_*_*/
+components/**/sdkconfig
+components/**/sdkconfig.old
+
+# Example project files
+examples/**/build/
+examples/**/build_*_*/
+examples/**/sdkconfig
+examples/**/sdkconfig.old
+
 # Unit test app files
-tools/unit-test-app/sdkconfig
-tools/unit-test-app/sdkconfig.old
 tools/unit-test-app/build
 tools/unit-test-app/build_*_*/
-tools/unit-test-app/output
-tools/unit-test-app/test_configs
-
-# Unit Test CMake compile log folder
-log_ut_cmake
+tools/unit-test-app/sdkconfig
+tools/unit-test-app/sdkconfig.old
 
 # test application build files
 tools/test_apps/**/build/
@@ -61,7 +56,8 @@ tools/test_apps/**/build_*_*/
 tools/test_apps/**/sdkconfig
 tools/test_apps/**/sdkconfig.old
 
-TEST_LOGS
+TEST_LOGS/
+build_summary_*.xml
 
 # gcov coverage reports
 *.gcda
@@ -101,8 +97,12 @@ managed_components
 
 # pytest log
 pytest_embedded_log/
-list_job_*.txt
-size_info.txt
+list_job*.txt
+size_info*.txt
+XUNIT_RESULT*.xml
 
 # clang config (for LSP)
 .clangd
+
+# Vale
+.vale/styles/*

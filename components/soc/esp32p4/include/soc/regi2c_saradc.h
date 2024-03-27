@@ -14,3 +14,10 @@
  * bus. These definitions are used via macros defined in regi2c_ctrl.h, by
  * function in adc_ll.h.
  */
+
+#define I2C_SAR_ADC            0X69
+#define I2C_SAR_ADC_HOSTID     0
+
+#define I2C_SARADC_TSENS_DAC 0x6
+#define I2C_SARADC_TSENS_DAC_MSB 3
+#define I2C_SARADC_TSENS_DAC_LSB 0

@@ -1,29 +1,34 @@
-=================
-pytest in ESP-IDF
-=================
+===============================
+ESP-IDF Tests with Pytest Guide
+===============================
 
 :link_to_translation:`zh_CN:[中文]`
 
-ESP-IDF has numerous types of tests that are meant to be executed on an ESP chip (known as **on target testing**). Target tests are usually compiled as part of an IDF project used for testing (known as a **test app**), where test apps follows the same build, flash, and monitor process of any other standard IDF project.
+ESP-IDF provides a variety of testing mechanisms that runs directly on target ESP chips (referred to as **target test**). These target tests are typically integrated into an ESP-IDF project specifically designed for testing purposes (known as a **test app**). Similar to standard ESP-IDF projects, test apps follow the same build, flash, and monitoring procedures.
 
-Typically, on target testing will require a connected host (e.g., a PC) that is responsible for triggering a particular test case, providing test data, and inspecting test results.
+In target testing, a connected host (for instance, a PC) is typically required to trigger specific test cases, provide test data, and evaluate test results.
 
-ESP-IDF uses the pytest framework (and some pytest plugins) on the host side to automate on target testing. This guide introduces pytest in ESP-IDF and covers the following concepts:
+On the host side, ESP-IDF employs the pytest framework (alongside certain pytest plugins) to automate target testing. This guide delves into pytest in ESP-IDF, covering the following aspects:
 
-1. The different types of test apps in ESP-IDF.
-2. Using the pytest framework in Python scripts to automate target testing.
-3. ESP-IDF Continuous Integration (CI) target testing process.
-4. How to run target tests locally with pytest.
+1. Common concepts in ESP-IDF target testing.
+2. Using the pytest framework in Python scripts for target testing automation.
+3. ESP-IDF Continuous Integration (CI) target testing workflow.
+4. Running target tests locally using pytest.
 5. pytest tips and tricks.
 
 .. note::
 
   In ESP-IDF, we use the following pytest plugins by default:
 
-  -  `pytest-embedded <https://github.com/espressif/pytest-embedded>`__ with default services ``esp,idf``
-  -  `pytest-rerunfailures <https://github.com/pytest-dev/pytest-rerunfailures>`__
+  - `pytest-embedded <https://github.com/espressif/pytest-embedded>`__ with default services ``esp,idf``
+  - `pytest-rerunfailures <https://github.com/pytest-dev/pytest-rerunfailures>`__
+  - `pytest-ignore-test-results <https://github.com/espressif/pytest-ignore-test-results>`__
 
   All the concepts and usages introduced in this guide are based on the default behavior of these plugins, thus may not be available in vanilla pytest.
+
+.. important::
+
+  This guide specifically targets ESP-IDF contributors. Some of the concepts, like the custom markers, may not be directly applicable to personal projects using the ESP-IDF SDK. For running pytest-embedded in personal projects, please refer to `pytest-embedded documentation <https://docs.espressif.com/projects/pytest-embedded>`__, and explore the `provided examples <https://github.com/espressif/pytest-embedded/tree/main/examples/esp-idf>`__.
 
 Installation
 ============
@@ -34,253 +39,179 @@ All dependencies could be installed by running the install script with the ``--e
 
   $ install.sh --enable-pytest
 
+We have implemented several mechanisms to ensure the successful execution of all installation processes. If you encounter any issues during the installation, please submit an issue report to our `GitHub issue tracker <https://github.com/espressif/esp-idf/issues>`__.
 
-Common Issues During Installation
----------------------------------
+Common Concepts
+===============
 
-No Package 'dbus-1' Found
-^^^^^^^^^^^^^^^^^^^^^^^^^
+A **test app** is a set of binaries which is being built from an IDF project that is used to test a particular feature of your project. Test apps are usually located under ``${IDF_PATH}/examples``, ``${IDF_PATH}/tools/test_apps``, and ``${IDF_PATH}/components/<COMPONENT_NAME>/test_apps``.
 
-.. code:: text
+A **Device under test (DUT)** is a set of ESP chip(s) which connect to a host (e.g., a PC). The host is responsible for flashing the apps to the DUT, triggering the test cases, and inspecting the test results.
 
-  configure: error: Package requirements (dbus-1 >= 1.8) were not met:
+A typical ESP-IDF project that contains a pytest script will have the following structure:
 
-  No package 'dbus-1' found
+.. code-block:: text
 
-  Consider adjusting the PKG_CONFIG_PATH environment variable if you
-  installed software in a non-standard prefix.
+  .
+  └── my_app/
+      ├── main/
+      │   └── ...
+      ├── CMakeLists.txt
+      └── pytest_foo.py
 
-If you encounter the error message above, you may need to install some missing packages.
+Sometimes, for some multi-dut tests, one test case requires multiple test apps. In this case, the test app folder structure would be like this:
 
-If you are using Ubuntu, you may need to run:
+.. code-block:: text
 
-.. code:: shell
-
-  sudo apt-get install libdbus-glib-1-dev
-
-or
-
-.. code:: shell
-
-  sudo apt-get install libdbus-1-dev
-
-For other Linux distributions, please Google the error message above and find which missing packages need to be installed for your particular distribution.
-
-Invalid Command 'bdist_wheel'
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-.. code:: text
-
-  error: invalid command 'bdist_wheel'
-
-If you encounter the error message above, you may need to install some missing Python packages such as:
-
-.. code:: shell
-
-  python -m pip install -U pip
-
-or
-
-.. code:: shell
-
-  python -m pip install wheel
-
-.. note::
-
-  Before running the pip commands, please make sure you are using the IDF Python virtual environment.
-
-
-Test Apps
-=========
-
-ESP-IDF contains different types of test apps that can be automated using pytest.
-
-Component Tests
----------------
-
-ESP-IDF components typically contain component specific test apps that execute component specific unit tests. Component test apps are the recommended way to test components. All the test apps should be located under ``${IDF_PATH}/components/<COMPONENT_NAME>/test_apps``, for example:
-
-.. code:: text
-
-  components/
-  └── my_component/
-        ├── include/
-        │   └── ...
-        ├── test_apps/
-        │   ├── test_app_1
-        │   │   ├── main/
-        │   │   │   └── ...
-        │   │   ├── CMakeLists.txt
-        │   │   └── pytest_my_component_app_1.py
-        │   ├── test_app_2
-        │   │   ├── ...
-        │   │   └── pytest_my_component_app_2.py
-        │   └── parent_folder
-        │       ├── test_app_3
-        │       │   ├── ...
-        │       │   └── pytest_my_component_app_3.py
-        │       └── ...
-        ├── my_component.c
-        └── CMakeLists.txt
-
-Example Tests
--------------
-
-The purpose of ESP-IDF examples is to demonstrate parts of ESP-IDF functionality to users (refer to :idf_file:`Examples Readme <examples/README.md>` for more information).
-
-However, to ensure that these examples operate correctly, examples can be treated as test apps and executed automatically by using pytest. All examples should be located under ``${IDF_PATH}/examples``, with tested example including a Python test script, for example:
-
-.. code:: text
-
-  examples/
-  └── parent_folder/
-      └── example_1/
-          ├── main/
-          │   └── ...
-          ├── CMakeLists.txt
-          └── pytest_example_1.py
-
-Custom Tests
-------------
-
-Custom Tests are tests that aim to test some arbitrary functionality of ESP-IDF, thus are not intended to demonstrate IDF functionality to users in any way.
-
-All custom test apps are located under ``${IDF_PATH}/tools/test_apps``. For more information please refer to the :idf_file:`Custom Test Readme <tools/test_apps/README.md>`.
+  .
+  ├── my_app_foo/
+  │   ├── main/
+  │   │   └── ...
+  │   └── CMakeLists.txt
+  ├── my_app_bar/
+  │   ├── main/
+  │   │   └── ...
+  │   └── CMakeLists.txt
+  └── pytest_foo_bar.py
 
 pytest in ESP-IDF
 =================
 
-.. _pytest-execution-process:
+Single DUT Test Cases
+---------------------
 
-pytest Execution Process
-------------------------
+Getting Started
+^^^^^^^^^^^^^^^
 
-1. Bootstrapping Phase
-
-  Create session-scoped caches:
-
-  -  port-target cache
-  -  port-app cache
-
-2. Collection Phase
-
-  A. Gather all Python files with the prefix ``pytest_``.
-  B. Gather all test functions with the prefix ``test_``.
-  C. Apply the `params <https://docs.pytest.org/en/latest/how-to/parametrize.html>`__, and duplicate the test functions.
-  D. Filter the test cases with CLI options. For the detailed usages, see :ref:`filter-the-test-cases`.
-
-3. Execution Phase
-
-  A. Construct the `fixtures <https://docs.pytest.org/en/latest/how-to/fixtures.html>`__. In ESP-IDF, the common fixtures are initialized in this order:
-
-    a. ``pexpect_proc``: `pexpect <https://github.com/pexpect/pexpect>`__ instance
-
-    b. ``app``: `IdfApp <https://docs.espressif.com/projects/pytest-embedded/en/latest/api.html#pytest_embedded_idf.app.IdfApp>`__ instance
-
-      The test app's information (e.g., sdkconfig, flash_files, partition_table, etc) would be parsed at this phase.
-
-    c. ``serial``: `IdfSerial <https://docs.espressif.com/projects/pytest-embedded/en/latest/api.html#pytest_embedded_idf.serial.IdfSerial>`__ instance
-
-      The port of the host to which the target is connected is auto-detected. In the case of multiple targets connected to the host, the test target's type is parsed from the app. The test app binary files are flashed to the test target automatically.
-
-    d. ``dut``: `IdfDut <https://docs.espressif.com/projects/pytest-embedded/en/latest/api.html#pytest_embedded_idf.dut.IdfDut>`__ instance
-
-  B. Run the real test function.
-
-  C. Deconstruct the fixtures in this order:
-
-    a. ``dut``
-
-      i. close the ``serial`` port.
-      ii. (Only for apps with `Unity test framework <https://github.com/ThrowTheSwitch/Unity>`__) generate JUnit report of the Unity test cases.
-
-    b. ``serial``
-    c. ``app``
-    d. ``pexpect_proc``: Close the file descriptor
-
-  D. (Only for apps with `Unity test framework <https://github.com/ThrowTheSwitch/Unity>`__)
-
-    If ``dut.expect_from_unity_output()`` is called, an ``AssertionError`` is raised upon detection of a Unity test failure.
-
-4. Reporting Phase
-
-  A. Generate JUnit report of the test functions.
-  B. Modify the JUnit report test case name into ESP-IDF test case ID format: ``<target>.<config>.<test function name>``.
-
-5. Finalizatoin Phase (Only for apps with `Unity test framework <https://github.com/ThrowTheSwitch/Unity>`__)
-
-  Combine the JUnit reports if the JUnit reports of the Unity test cases are generated.
-
-Basic Example
--------------
-
-This following Python test script example is taken from :idf_file:`pytest_console_basic.py <examples/system/console/basic/pytest_console_basic.py>`.
-
-.. code:: python
+.. code-block:: python
 
   @pytest.mark.esp32
-  @pytest.mark.esp32c3
+  @pytest.mark.esp32s2
   @pytest.mark.generic
-  @pytest.mark.parametrize('config', [
-      'history',
-      'nohistory',
-  ], indirect=True)
-  def test_console_advanced(config: str, dut: IdfDut) -> None:
-      if config == 'history':
-          dut.expect('Command history enabled')
-      elif config == 'nohistory':
-          dut.expect('Command history disabled')
+  def test_hello_world(dut) -> None:
+      dut.expect('Hello world!')
 
-To demonstrate how pytest is typically used in an ESP-IDF test script, let us go through this simple test script line by line in the following subsections.
+This is a simple test script that could run with our getting-started example :example:`get-started/hello_world`.
 
-Target Markers
-^^^^^^^^^^^^^^
+First two lines are the target markers:
 
-Pytest markers can be used to indicate which targets (i.e., which ESP chip) a particular test case should should run on. For example:
-
-.. code:: python
-
-  @pytest.mark.esp32     # <-- support esp32
-  @pytest.mark.esp32c3   # <-- support esp32c3
-  @pytest.mark.generic   # <-- test env "generic"
-
-The example above indicates that a particular test case is supported on the ESP32 and ESP32-C3. Furthermore, the target's board type should be ``generic``. For more details regarding the ``generic`` type, you may run ``pytest --markers`` to get detailed information regarding all markers.
+* The ``@pytest.mark.esp32`` is a marker that indicates that this test case should be run on the ESP32.
+* The ``@pytest.mark.esp32s2`` is a marker that indicates that this test case should be run on the ESP32-S2.
 
 .. note::
 
   If the test case can be run on all targets officially supported by ESP-IDF (call ``idf.py --list-targets`` for more details), you can use a special marker ``supported_targets`` to apply all of them in one line.
 
-Parameterized Markers
-^^^^^^^^^^^^^^^^^^^^^
+  We also supports ``preview_targets`` and ``all_targets`` as special target markers (call ``idf.py --list-targets --preview`` for a full targets list including preview targets).
 
-You can use ``pytest.mark.parametrize`` with ``config`` to apply the same test to different apps with different sdkconfig files. For more information about ``sdkconfig.ci.xxx`` files, please refer to the Configuration Files section under :idf_file:`this readme <tools/test_apps/README.md>`.
+Next, we have the environment marker:
 
-.. code:: python
+* The ``@pytest.mark.generic`` is a marker that indicates that this test case should be run on the ``generic`` board type.
+
+.. note::
+
+  For the detailed explanation of the environment markers, please refer to :idf_file:`ENV_MARKERS definition <tools/ci/idf_pytest/constants.py>`
+
+Finally, we have the test function. With a ``dut`` fixture. In single-dut test cases, the ``dut`` fixture is an instance of ``IdfDut`` class, for multi-dut test cases, it is a tuple of ``IdfDut`` instances. For more details regarding the ``IdfDut`` class, please refer to `pytest-embedded IdfDut API reference <https://docs.espressif.com/projects/pytest-embedded/en/latest/api.html#pytest_embedded_idf.dut.IdfDut>`__.
+
+Same App with Different sdkconfig Files
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+For some test cases, you may need to run the same app with different sdkconfig files. For detailed documentation regarding sdkconfig related concepts, please refer to `idf-build-apps Documentation <https://docs.espressif.com/projects/idf-build-apps/en/latest/find_build.html>`__.
+
+Here's a simple example that demonstrates how to run the same app with different sdkconfig files. Assume we have the following folder structure:
+
+.. code-block:: text
+
+  .
+  └── my_app/
+      ├── main/
+      │   └── ...
+      ├── CMakeLists.txt
+      ├── sdkconfig.ci.foo
+      ├── sdkconfig.ci.bar
+      └── pytest_foo.py
+
+If the test case needs to run all supported targets with these two sdkconfig files, you can use the following code:
+
+.. code-block:: python
+
+  @pytest.mark.esp32
+  @pytest.mark.esp32s2
+  @pytest.mark.parametrize('config', [    # <-- parameterize the sdkconfig file
+      'foo',                              # <-- run with sdkconfig.ci.foo
+      'bar',                              # <-- run with sdkconfig.ci.bar
+  ], indirect=True)                       # <-- `indirect=True` is required, indicates this param is pre-calculated before other fixtures
+  def test_foo_bar(dut, config) -> None:
+      if config == 'foo':
+        dut.expect('This is from sdkconfig.ci.foo')
+      elif config == 'bar':
+        dut.expect('This is from sdkconfig.ci.bar')
+
+All markers will impact the test case simultaneously. Overall, this test function would be replicated to 4 test cases:
+
+- ``test_foo_bar``, with esp32 target, and sdkconfig.ci.foo as the sdkconfig file
+- ``test_foo_bar``, with esp32 target, and sdkconfig.ci.bar as the sdkconfig file
+- ``test_foo_bar``, with esp32s2 target, and sdkconfig.ci.foo as the sdkconfig file
+- ``test_foo_bar``, with esp32s2 target, and sdkconfig.ci.bar as the sdkconfig file
+
+Sometimes in the test script or the log file, you may see the following format:
+
+- ``esp32.foo.test_foo_bar``
+- ``esp32.bar.test_foo_bar``
+- ``esp32s2.foo.test_foo_bar``
+- ``esp32s2.bar.test_foo_bar``
+
+We call this format the **test case ID**. The test case ID should be considered as the unique identifier of a test case. It is composed of the following parts:
+
+- ``esp32``: the target name
+- ``foo``: the config name
+- ``test_foo_bar``: the test function name
+
+The test case ID is used to identify the test case in the JUnit report.
+
+.. note::
+
+  Nearly all the CLI options of pytest-embedded supports parameterization. To see all supported CLI options, you may run ``pytest --help`` and check the ``embedded-...`` sections for vanilla pytest-embedded ones, and the ``idf`` sections for ESP-IDF specific ones.
+
+.. note::
+
+  The target markers, like ``@pytest.mark.esp32`` and ``@pytest.mark.esp32s2``, are actually syntactic sugar for parameterization. In fact they are defined as:
+
+  .. code-block:: python
+
+    @pytest.mark.parametrize('target', [
+        'esp32',
+        'esp32s2',
+    ], indirect=True)
+
+Same App with Different sdkconfig Files, Different Targets
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+For some test cases, you may need to run the same app with different sdkconfig files. These sdkconfig files supports different targets. We may use ``pytest.param`` to achieve this. Let's use the same folder structure as above.
+
+.. code-block:: python
 
   @pytest.mark.parametrize('config', [
-      'history',     # <-- run with app built by sdkconfig.ci.history
-      'nohistory',   # <-- run with app built by sdkconfig.ci.nohistory
-  ], indirect=True)  # <-- `indirect=True` is required
+      pytest.param('foo', marks=[pytest.mark.esp32]),
+      pytest.param('bar', marks=[pytest.mark.esp32s2]),
+  ], indirect=True)
 
-Overall, this test function would be replicated to 4 test cases:
+Now this test function would be replicated to 2 test cases (represented as test case IDs):
 
--  ``esp32.history.test_console_advanced``
--  ``esp32.nohistory.test_console_advanced``
--  ``esp32c3.history.test_console_advanced``
--  ``esp32c3.nohistory.test_console_advanced``
+* ``esp32.foo.test_foo_bar``
+* ``esp32s2.bar.test_foo_bar``
 
-Testing Serial Output
-^^^^^^^^^^^^^^^^^^^^^
+Testing Serial Output (Expecting)
+---------------------------------
 
 To ensure that test has executed successfully on target, the test script can test that serial output of the target using the ``dut.expect()`` function, for example:
 
-.. code:: python
+.. code-block:: python
 
-  def test_console_advanced(config: str, dut: IdfDut) -> None:  # The value of argument ``config`` is assigned by the parameterization.
-      if config == 'history':
-          dut.expect('Command history enabled')
-      elif config == 'nohistory':
-          dut.expect('Command history disabled')
+  def test_hello_world(dut) -> None:
+      dut.expect('\d+')  # <-- `expect`ing from a regex
+      dut.expect_exact('Hello world!')  # <-- `expect_exact`ly the string
 
 The ``dut.expect(...)`` will first compile the expected string into regex, which in turn is then used to seek through the serial output until the compiled regex is matched, or until a timeout occurs.
 
@@ -288,115 +219,381 @@ Please pay extra attention to the expected string when it contains regex keyword
 
 For more information regarding the different types of ``expect`` functions, please refer to the `pytest-embedded Expecting documentation <https://docs.espressif.com/projects/pytest-embedded/en/latest/expecting.html>`__.
 
-Advanced Examples
------------------
+Multi-DUT Test Cases
+--------------------
 
 Multi-Target Tests with the Same App
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-In some cases a test may involve multiple targets running the same test app. In this case, multiple DUTs can be instantiated using ``parameterize``, for example:
+In some cases a test may involve multiple targets running the same test app. Parametrize ``count`` to the number of DUTs you want to test with.
 
-.. code:: python
+.. code-block:: python
 
+  @pytest.mark.parametrize('count', [
+      2,
+  ], indirect=True)
+  @pytest.mark.parametrize('target', [
+    'esp32|esp32s2',
+    'esp32s3',
+  ], indirect=True)
+  def test_hello_world(dut) -> None:
+      dut[0].expect('Hello world!')
+      dut[1].expect('Hello world!')
+
+The ``|`` symbol in all parametrized items is used for separating the settings for each DUT. In this example, the test case would be tested with:
+
+* esp32, esp32s2
+* esp32s3, esp32s3
+
+After setting the param ``count`` to 2, all the fixtures are changed into tuples.
+
+.. important::
+
+  ``count`` is mandatory for multi-DUT tests.
+
+.. note::
+
+  For detailed multi-dut parametrization documentation, please refer to `pytest-embedded Multi-DUT documentation <https://docs.espressif.com/projects/pytest-embedded/en/latest/key_concepts.html#multi-duts>`__.
+
+.. warning::
+
+  In some test scripts, you may see target markers like ``@pytest.mark.esp32`` and ``@pytest.mark.esp32s2`` used together with multi-DUT test cases. This is deprecated and should be replaced with the ``target`` parametrization.
+
+  For example,
+
+  .. code-block:: python
+
+    @pytest.mark.esp32
     @pytest.mark.esp32s2
-    @pytest.mark.esp32s3
-    @pytest.mark.usb_host
     @pytest.mark.parametrize('count', [
         2,
     ], indirect=True)
-    def test_usb_host(dut: Tuple[IdfDut, IdfDut]) -> None:
-        device = dut[0]  # <-- assume the first dut is the device
-        host = dut[1]    # <-- and the second dut is the host
-        ...
+    def test_hello_world(dut) -> None:
+        dut[0].expect('Hello world!')
+        dut[1].expect('Hello world!')
 
-After setting the param ``count`` to 2, all these fixtures are changed into tuples.
+  should be replaced with:
+
+  .. code-block:: python
+
+    @pytest.mark.parametrize('count', [
+        2,
+    ], indirect=True)
+    @pytest.mark.parametrize('target', [
+        'esp32',
+        'esp32s2',
+    ], indirect=True)
+    def test_hello_world(dut) -> None:
+        dut[0].expect('Hello world!')
+        dut[1].expect('Hello world!')
+
+  This could help avoid the ambiguity of the target markers when multi-DUT test cases are using different type of targets.
 
 Multi-Target Tests with Different Apps
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-In some cases (in particular protocol tests), a test may involve multiple targets running different test apps (e.g., separate targets to act as master and slave). In this case, multiple DUTs with different test apps can be instantiated using ``parameterize``.
+In some cases, a test may involve multiple targets running different test apps (e.g., separate targets to act as master and slave). Usually in ESP-IDF, the folder structure would be like this:
 
-This code example is taken from :idf_file:`pytest_wifi_getting_started.py <examples/wifi/getting_started/pytest_wifi_getting_started.py>`.
+.. code-block:: text
 
-.. code:: python
+  .
+  ├── master/
+  │   ├── main/
+  │   │   └── ...
+  │   └── CMakeLists.txt
+  ├── slave/
+  │   ├── main/
+  │   │   └── ...
+  │   └── CMakeLists.txt
+  └── pytest_master_slave.py
 
-    @pytest.mark.esp32
+In this case, we can parametrize the ``app_path`` to the path of the test apps you want to test with.
+
+.. code-block:: python
+
     @pytest.mark.multi_dut_generic
-    @pytest.mark.parametrize(
-        'count, app_path', [
-            (2,
-             f'{os.path.join(os.path.dirname(__file__), "softAP")}|{os.path.join(os.path.dirname(__file__), "station")}'),
-        ], indirect=True
-    )
-    def test_wifi_getting_started(dut: Tuple[IdfDut, IdfDut]) -> None:
-        softap = dut[0]
-        station = dut[1]
-        ...
+    @pytest.mark.parametrize('count', [
+        2,
+    ], indirect=True)
+    @pytest.mark.parametrize('app_path, target', [
+        (f'{os.path.join(os.path.dirname(__file__), "master")}|{os.path.join(os.path.dirname(__file__), "slave")}', 'esp32|esp32s2'),
+        (f'{os.path.join(os.path.dirname(__file__), "master")}|{os.path.join(os.path.dirname(__file__), "slave")}', 'esp32s2|esp32'),
+    ], indirect=True)
+    def test_master_slave(dut) -> None:
+        master = dut[0]
+        slave = dut[1]
 
-Here the first DUT was flashed with the app :idf_file:`softAP <examples/wifi/getting_started/softAP/main/softap_example_main.c>`, and the second DUT was flashed with the app :idf_file:`station <examples/wifi/getting_started/station/main/station_example_main.c>`.
+        master.write('Hello world!')
+        slave.expect_exact('Hello world!')
 
 .. note::
 
-   Here the ``app_path`` should be set with absolute path. The ``__file__`` macro in Python would return the absolute path of the test script itself.
+  When parametrizing two items, like ``app_path, target`` here, make sure you're passing a list of tuples to the ``parametrize`` decorator. Each tuple should contain the values for each item.
 
-Multi-Target Tests with Different Apps and Targets
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The test case here will be replicated to 2 test cases:
 
-This code example is taken from :idf_file:`pytest_wifi_getting_started.py <examples/wifi/getting_started/pytest_wifi_getting_started.py>`. As the comment says, for now it is not running in the ESP-IDF CI.
+* dut-0, an ESP32, running app ``master``, and dut-1, an ESP32-S2, running app ``slave``
+* dut-0, an ESP32-S2, running app ``master``, and dut-1, an ESP32, running app ``slave``
 
-.. code:: python
+Test Cases with Unity Test Framework
+------------------------------------
+
+We use `Unity test framework <https://github.com/ThrowTheSwitch/Unity>`__ in our unit tests. Overall, we have three types of test cases (`Unity test framework <https://github.com/ThrowTheSwitch/Unity>`__):
+
+* Normal test cases (single DUT)
+* Multi-stage test cases (single DUT)
+* Multi-device test cases (multi-DUT)
+
+All single-DUT test cases (including normal test cases and multi-stage test cases) can be run using the following command:
+
+.. code-block:: python
+
+  def test_unity_single_dut(dut: IdfDut):
+      dut.run_all_single_board_cases()
+
+Using this command will skip all the test cases containing the ``[ignore]`` tag.
+
+If you need to run a group of test cases, you may run:
+
+.. code-block:: python
+
+  def test_unity_single_dut(dut: IdfDut):
+      dut.run_all_single_board_cases(group='psram')
+
+It would trigger all test cases with the ``[psram]`` tag.
+
+.. warning::
+
+  You may also see that there are some test scripts with the following statements, which are deprecated. Please use the suggested one as above.
+
+  .. code-block:: python
+
+    def test_unity_single_dut(dut: IdfDut):
+        dut.expect_exact('Press ENTER to see the list of tests')
+        dut.write('*')
+        dut.expect_unity_test_output()
+
+We also provide a fixture ``case_tester`` to trigger all kinds of test cases easier. For example:
+
+.. code-block:: python
+
+  def test_unity_single_dut(case_tester):
+      case_tester.run_all_normal_cases()       # to run all normal test cases
+      case_tester.run_all_multi_dev_cases()    # to run all multi-device test cases
+      case_tester.run_all_multi_stage_cases()  # to run all multi-stage test cases
+
+For a full list of the available functions, please refer to `pytest-embedded case_tester API reference <https://docs.espressif.com/projects/pytest-embedded/en/latest/api.html#pytest_embedded_idf.unity_tester.CaseTester>`__.
+
+Running Target Tests in CI
+==========================
+
+The workflow in CI is as follows:
+
+.. blockdiag::
+    :caption: Target Test Child Pipeline Workflow
+    :align: center
+
+    blockdiag child-pipeline-workflow {
+        default_group_color = lightgray;
+
+        group {
+            label = "build"
+
+            build_test_related_apps; build_non_test_related_apps;
+        }
+
+        group {
+            label = "assign_test"
+
+            build_job_report; generate_pytest_child_pipeline;
+        }
+
+        group {
+            label = "target_test"
+
+            "Specific Target Test Jobs";
+        }
+
+        group {
+            label = ".post"
+
+            target_test_report;
+        }
+
+        build_test_related_apps, build_non_test_related_apps -> generate_pytest_child_pipeline, build_job_report -> "Specific Target Test Jobs" -> target_test_report;
+    }
+
+All build jobs and target test jobs are generated automatically by our CI script :project:`tools/ci/dynamic_pipelines`.
+
+Build Jobs
+----------
+
+In CI, all ESP-IDF projects under ``components``, ``examples``, and ``tools/test_apps``, are built with all supported targets and sdkconfig files. The binaries are built under ``build_<target>_<config>``. For example
+
+.. code-block:: text
+
+  .
+  ├── build_esp32_history/
+  │   └── ...
+  ├── build_esp32_nohistory/
+  │   └── ...
+  ├── build_esp32s2_history/
+  │   └── ...
+  ├── ...
+  ├── main/
+  ├── CMakeLists.txt
+  ├── sdkconfig.ci.history
+  ├── sdkconfig.ci.nohistory
+  └── ...
+
+There are two types of build jobs, ``build_test_related_apps`` and ``build_non_test_related_apps``.
+
+For ``build_test_related_apps``, all the built binaries will be uploaded to our internal MinIO server. You may find the download link in the build report posted in the internal MR.
+
+For ``build_non_test_related_apps``, all the built binaries will be removed after the build job is finished. Only the build log files will be uploaded to our internal MinIO server. You may also find the download link in the build report posted in the internal MR.
+
+Target Test Jobs
+----------------
+
+In CI, all generated target test jobs are named according to the pattern "<targets> - <env_markers>". For example, single-dut test job ``esp32 - generic``, or multi-dut test job ``esp32,esp32 - multi_dut_generic``.
+
+The binaries in the target test jobs are downloaded from our internal MinIO servers. For most of the test cases, only the files that are required by flash (like .bin files, flash_args files, etc) would be downloaded. For some test cases, like jtag test cases, .elf files are also downloaded.
+
+Running Tests Locally
+=====================
+
+Installation
+------------
+
+First you need to install ESP-IDF with additional Python requirements:
+
+.. code-block:: shell
+
+  $ cd $IDF_PATH
+  $ bash install.sh --enable-ci --enable-pytest
+  $ . ./export.sh
+
+Build Directories
+-----------------
+
+By default, each test case looks for the required binary files in the following directories (in order):
+
+- ``build_<target>_<sdkconfig>``
+- ``build_<target>``
+- ``build_<sdkconfig>``
+- ``build``
+
+As long as one of the above directories exists, the test case uses that directory to flash the binaries. If non of the above directories exists, the test case fails with an error.
+
+Test Your Test Script
+---------------------
+
+Single-DUT Test Cases with ``sdkconfig.defaults``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+This is the simplest use case. Let's take :project:`examples/get-started/hello_world` as an example. Assume we're testing with a ESP32 board.
+
+.. code-block:: shell
+
+  $ cd $IDF_PATH/examples/get-started/hello_world
+  $ idf.py set-target esp32 build
+  $ pytest --target esp32
+
+Single-DUT Test Cases with ``sdkconfig.ci.xxx``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Some test cases may need to run with different sdkconfig files. Let's take :project:`examples/system/console/basic` as an example. Assume we're testing with a ESP32 board, and test with ``sdkconfig.ci.history``.
+
+.. code-block:: shell
+
+  $ cd $IDF_PATH/examples/system/console/basic
+  $ idf.py -DSDKCONFIG_DEFAULTS='sdkconfig.defaults;sdkconfig.ci.history' -B build_esp32_history set-target esp32 build
+  $ pytest --target esp32 -k "not nohistory"
+
+.. note::
+
+    Here if we use ``pytest --target esp32 -k history``, both test cases will be selected, since ``pytest -k`` will use string matching to filter the test cases.
+
+If you want to build and test with all sdkconfig files at the same time, you should use our CI script as an helper script:
+
+.. code-block:: shell
+
+  $ cd $IDF_PATH/examples/system/console/basic
+  $ python $IDF_PATH/tools/ci/ci_build_apps.py . --target esp32 -v --pytest-apps
+  $ pytest --target esp32
+
+The app with ``sdkconfig.ci.history`` will be built in ``build_esp32_history``, and the app with ``sdkconfig.ci.nohistory`` will be built in ``build_esp32_nohistory``. ``pytest --target esp32`` will run tests on both apps.
+
+Multi-DUT Test Cases
+^^^^^^^^^^^^^^^^^^^^
+
+Some test cases may need to run with multiple DUTs. Let's take :project:`examples/openthread` as an example. The test case function looks like this:
+
+.. code-block:: python
 
     @pytest.mark.parametrize(
-        'count, app_path, target', [
-            (2,
-             f'{os.path.join(os.path.dirname(__file__), "softAP")}|{os.path.join(os.path.dirname(__file__), "station")}',
-             'esp32|esp32s2'),
-            (2,
-             f'{os.path.join(os.path.dirname(__file__), "softAP")}|{os.path.join(os.path.dirname(__file__), "station")}',
-             'esp32s2|esp32'),
+        'config, count, app_path, target', [
+            ('rcp|cli_h2|br', 3,
+             f'{os.path.join(os.path.dirname(__file__), "ot_rcp")}'
+             f'|{os.path.join(os.path.dirname(__file__), "ot_cli")}'
+             f'|{os.path.join(os.path.dirname(__file__), "ot_br")}',
+             'esp32c6|esp32h2|esp32s3'),
         ],
         indirect=True,
     )
-    def test_wifi_getting_started(dut: Tuple[IdfDut, IdfDut]) -> None:
-        softap = dut[0]
-        station = dut[1]
+    def test_thread_connect(dut:Tuple[IdfDut, IdfDut, IdfDut]) -> None:
         ...
 
-Overall, this test function would be replicated to 2 test cases:
+The test cases will run with
 
-- softAP with ESP32 target, and station with ESP32-S2 target
-- softAP with ESP32-S2 target, and station with ESP32 target
+- ESP32-C6, flashed with ``ot_rcp``
+- ESP32-H2, flashed with ``ot_cli``
+- ESP32-S3, flashed with ``ot_br``
 
-Support Different Targets with Different sdkconfig Files
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Of course we can build the required binaries manually, but we can also use our CI script as an helper script:
 
-This code example is taken from :idf_file:`pytest_panic.py <tools/test_apps/system/panic/pytest_panic.py>` as an advanced example.
+.. code-block:: shell
 
-.. code:: python
+  $ cd $IDF_PATH/examples/openthread
+  $ python $IDF_PATH/tools/ci/ci_build_apps.py . --target all -v --pytest-apps -k test_thread_connect
+  $ pytest --target esp32c6,esp32h2,esp32s3 -k test_thread_connect
 
-   CONFIGS = [
-       pytest.param('coredump_flash_bin_crc', marks=[pytest.mark.esp32, pytest.mark.esp32s2]),
-       pytest.param('coredump_flash_elf_sha', marks=[pytest.mark.esp32]),  # sha256 only supported on esp32
-       pytest.param('coredump_uart_bin_crc', marks=[pytest.mark.esp32, pytest.mark.esp32s2]),
-       pytest.param('coredump_uart_elf_crc', marks=[pytest.mark.esp32, pytest.mark.esp32s2]),
-       pytest.param('gdbstub', marks=[pytest.mark.esp32, pytest.mark.esp32s2]),
-       pytest.param('panic', marks=[pytest.mark.esp32, pytest.mark.esp32s2]),
-   ]
+.. important::
 
-   @pytest.mark.parametrize('config', CONFIGS, indirect=True)
-   ...
+    It is mandatory to list all the targets for multi-DUT test cases. Otherwise, the test case would fail with an error.
+
+Debug CI Test Cases
+-------------------
+
+Sometimes you can't reprocude the CI test case failure locally. In this case, you may need to debug the test case with the binaries built in CI.
+
+Run pytest with ``--pipeline-id <pipeline_id>`` to force pytest to download the binaries from CI. For example:
+
+.. code-block:: shell
+
+  $ cd $IDF_PATH/examples/get-started/hello_world
+  $ pytest --target esp32 --pipeline-id 123456
+
+Even if you have ``build_esp32_default``, or ``build`` directory locally, pytest would still download the binaries from pipeline 123456 and place the binaries in ``build_esp32_default``. Then run the test case with this binary.
+
+.. note::
+
+    <pipeline_id> should be the parent pipeline id. You can copy it in your MR page.
+
+Pytest Tips and Tricks
+======================
 
 Custom Classes
-^^^^^^^^^^^^^^
+--------------
 
 Usually, you may want to write a custom class under these conditions:
 
 1. Add more reusable functions for a certain number of DUTs.
-2. Add custom setup and teardown functions in different phases described in Section :ref:`pytest-execution-process`.
+2. Add custom setup and teardown functions
 
 This code example is taken from :idf_file:`panic/conftest.py <tools/test_apps/system/panic/conftest.py>`.
 
-.. code:: python
+.. code-block:: python
 
   class PanicTestDut(IdfDut):
       ...
@@ -417,13 +614,13 @@ This code example is taken from :idf_file:`panic/conftest.py <tools/test_apps/sy
 ``replace_dut_class`` is a `module-scoped <https://docs.pytest.org/en/latest/how-to/fixtures.html#scope-sharing-fixtures-across-classes-modules-packages-or-session>`__ `autouse <https://docs.pytest.org/en/latest/how-to/fixtures.html#autouse-fixtures-fixtures-you-don-t-have-to-request>`__ fixture. This function replaces the ``IdfDut`` class with your custom class.
 
 Mark Flaky Tests
-^^^^^^^^^^^^^^^^
+----------------
 
 Certain test cases are based on Ethernet or Wi-Fi. However, the test may be flaky due to networking issues. Thus, it is possible to mark a particular test case as flaky.
 
 This code example is taken from :idf_file:`pytest_esp_eth.py <components/esp_eth/test_apps/pytest_esp_eth.py>`.
 
-.. code:: python
+.. code-block:: python
 
   @pytest.mark.flaky(reruns=3, reruns_delay=5)
   def test_esp_eth_ip101(dut: IdfDut) -> None:
@@ -432,7 +629,7 @@ This code example is taken from :idf_file:`pytest_esp_eth.py <components/esp_eth
 This flaky marker means that if the test function failed, the test case would rerun for a maximum of 3 times with 5 seconds delay.
 
 Mark Known Failures
-^^^^^^^^^^^^^^^^^^^
+-------------------
 
 Sometimes, a test can consistently fail for the following reasons:
 
@@ -443,7 +640,7 @@ Now you may mark this test case with marker `xfail <https://docs.pytest.org/en/l
 
 This code example is taken from :idf_file:`pytest_panic.py <tools/test_apps/system/panic/pytest_panic.py>`
 
-.. code:: python
+.. code-block:: python
 
   @pytest.mark.xfail('config.getvalue("target") == "esp32s2"', reason='raised IllegalInstruction instead')
   def test_cache_error(dut: PanicTestDut, config: str, test_func_name: str) -> None:
@@ -451,193 +648,33 @@ This code example is taken from :idf_file:`pytest_panic.py <tools/test_apps/syst
 This marker means that test is a known failure on the ESP32-S2.
 
 Mark Nightly Run Test Cases
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
+---------------------------
 
 Some test cases are only triggered in nightly run pipelines due to a lack of runners.
 
-.. code:: python
+.. code-block:: python
 
-    @pytest.mark.nightly_run
+  @pytest.mark.nightly_run
 
 This marker means that the test case would only be run with env var ``NIGHTLY_RUN`` or ``INCLUDE_NIGHTLY_RUN``.
 
 Mark Temporarily Disabled in CI
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+-------------------------------
 
 Some test cases which can pass locally may need to be temporarily disabled in CI due to a lack of runners.
 
-.. code:: python
+.. code-block:: python
 
-   @pytest.mark.temp_skip_ci(targets=['esp32', 'esp32s2'], reason='lack of runners')
+  @pytest.mark.temp_skip_ci(targets=['esp32', 'esp32s2'], reason='lack of runners')
 
 This marker means that the test case could still be run locally with ``pytest --target esp32``, but will not run in CI.
-
-Run Unity Test Cases
-^^^^^^^^^^^^^^^^^^^^
-
-For component-based unit test apps, all single-board test cases (including normal test cases and multi-stage test cases) can be run using the following command:
-
-.. code:: python
-
-  def test_component_ut(dut: IdfDut):
-      dut.run_all_single_board_cases()
-
-Using this command will skip all the test cases containing the ``[ignore]`` tag.
-
-If you need to run a group of test cases, you may run:
-
-.. code:: python
-
-  def test_component_ut(dut: IdfDut):
-      dut.run_all_single_board_cases(group='psram')
-
-It would trigger all test cases with the ``[psram]`` tag.
-
-You may also see that there are some test scripts with the following statements, which are deprecated. Please use the suggested one as above.
-
-.. code:: python
-
-  def test_component_ut(dut: IdfDut):
-      dut.expect_exact('Press ENTER to see the list of tests')
-      dut.write('*')
-      dut.expect_unity_test_output()
-
-For further reading about our unit testing in ESP-IDF, please refer to :doc:`our unit testing guide <../api-guides/unit-tests>`.
-
-Running Tests in CI
-===================
-
-The workflow in CI is simple, build jobs > target test jobs.
-
-Build Jobs
-----------
-
-Build Job Names
-^^^^^^^^^^^^^^^
-
--  Component-based Unit Tests: ``build_pytest_components_<target>``
--  Example Tests: ``build_pytest_examples_<target>``
--  Custom Tests: ``build_pytest_test_apps_<target>``
-
-Build Job Commands
-^^^^^^^^^^^^^^^^^^
-
-The command used by CI to build all the relevant tests is: ``python $IDF_PATH/tools/ci/ci_build_apps.py <parent_dir> --target <target> -vv --pytest-apps``
-
-All apps which supported the specified target would be built with all supported sdkconfig files under ``build_<target>_<config>``.
-
-For example, If you run ``python $IDF_PATH/tools/ci/ci_build_apps.py $IDF_PATH/examples/system/console/basic --target esp32 --pytest-apps``, the folder structure would be like this:
-
-.. code:: text
-
-  basic
-  ├── build_esp32_history/
-  │   └── ...
-  ├── build_esp32_nohistory/
-  │   └── ...
-  ├── main/
-  ├── CMakeLists.txt
-  ├── pytest_console_basic.py
-  └── ...
-
-All the build folders would be uploaded as artifacts under the same directories.
-
-Target Test Jobs
-----------------
-
-Target Test Job Names
-^^^^^^^^^^^^^^^^^^^^^
-
--  Component-based Unit Tests: ``component_ut_pytest_<target>_<test_env>``
--  Example Tests: ``example_test_pytest_<target>_<test_env>``
--  Custom Tests: ``test_app_test_pytest_<target>_<test_env>``
-
-Target Test Job Commands
-^^^^^^^^^^^^^^^^^^^^^^^^
-
-The command used by CI to run all the relevant tests is: ``pytest <parent_dir> --target <target> -m <test_env_marker>``
-
-All test cases with the specified target marker and the test env marker under the parent folder would be executed.
-
-The binaries in the target test jobs are downloaded from build jobs. the artifacts would be placed under the same directories.
-
-Running Tests Locally
-=====================
-
-First you need to install ESP-IDF with additional Python requirements:
-
-.. code-block:: shell
-
-  $ cd $IDF_PATH
-  $ bash install.sh --enable-pytest
-  $ . ./export.sh
-
-By default, the pytest script will look for the build directory in this order:
-
-- ``build_<target>_<sdkconfig>``
-- ``build_<target>``
-- ``build_<sdkconfig>``
-- ``build``
-
-Which means, the simplest way to run pytest is calling ``idf.py build``.
-
-For example, if you want to run all the esp32 tests under the ``$IDF_PATH/examples/get-started/hello_world`` folder, you should run:
-
-.. code-block:: shell
-
-  $ cd examples/get-started/hello_world
-  $ idf.py build
-  $ pytest --target esp32
-
-If you have multiple sdkconfig files in your test app, like those ``sdkconfig.ci.*`` files, the simple ``idf.py build`` won't apply the extra sdkconfig files. Let us take ``$IDF_PATH/examples/system/console/basic`` as an example.
-
-If you want to test this app with config ``history``, and build with ``idf.py build``, you should run
-
-.. code-block:: shell
-
-  $ cd examples/system/console/basic
-  $ idf.py -DSDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.ci.history" build
-  $ pytest --target esp32 --sdkconfig history
-
-If you want to build and test with all sdkconfig files at the same time, you should use our CI script as an helper script:
-
-.. code-block:: shell
-
-  $ cd examples/system/console/basic
-  $ python $IDF_PATH/tools/ci/ci_build_apps.py . --target esp32 -vv --pytest-apps
-  $ pytest --target esp32
-
-The app with ``sdkconfig.ci.history`` will be built in ``build_esp32_history``, and the app with ``sdkconfig.ci.nohistory`` will be built in ``build_esp32_nohistory``. ``pytest --target esp32`` will run tests on both apps.
-
-Tips and Tricks
-===============
-
-.. _filter-the-test-cases:
-
-Filter the Test Cases
----------------------
-
--  Filter by target with ``pytest --target <target>``
-
-   pytest would run all the test cases that support specified target.
-
--  Filter by sdkconfig file with ``pytest --sdkconfig <sdkconfig>``
-
-   If ``<sdkconfig>`` is ``default``, pytest would run all the test cases with the sdkconfig file ``sdkconfig.defaults``.
-
-   In other cases, pytest would run all the test cases with sdkconfig file ``sdkconfig.ci.<sdkconfig>``.
 
 Add New Markers
 ---------------
 
 We are using two types of custom markers, target markers which indicate that the test cases should support this target, and env markers which indicate that the test cases should be assigned to runners with these tags in CI.
 
-You can add new markers by adding one line under the ``${IDF_PATH}/conftest.py``. If it is a target marker, it should be added into ``TARGET_MARKERS``. If it is a marker that specifies a type of test environment, it should be added into ``ENV_MARKERS``. The syntax should be: ``<marker_name>: <marker_description>``.
-
-Generate JUnit Report
----------------------
-
-You can call pytest with ``--junitxml <filepath>`` to generate the JUnit report. In ESP-IDF, the test case name would be unified as ``<target>.<config>.<function_name``.
+You can add new markers by adding one line under the :idf_file:`conftest.py`. If it is a target marker, it should be added into ``TARGET_MARKERS``. If it is a marker that specifies a type of test environment, it should be added into ``ENV_MARKERS``. The syntax should be: ``<marker_name>: <marker_description>``.
 
 Skip Auto Flash Binary
 ----------------------
@@ -660,13 +697,12 @@ Sometimes you may need to add some extra logging lines while running the test ca
 
 You can use `Python logging module <https://docs.python.org/3/library/logging.html>`__ to achieve this.
 
-Useful Logging Functions (as Fixture)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Here are some logging functions provided as fixtures,
 
 ``log_performance``
-"""""""""""""""""""
+^^^^^^^^^^^^^^^^^^^
 
-.. code:: python
+.. code-block:: python
 
     def test_hello_world(
         dut: IdfDut,
@@ -674,9 +710,10 @@ Useful Logging Functions (as Fixture)
     ) -> None:
         log_performance('test', 1)
 
+
 The above example would log the performance item with pre-defined format: ``[performance][test]: 1`` and record it under the ``properties`` tag in the JUnit report if ``--junitxml <filepath>`` is specified. The JUnit test case node would look like:
 
-.. code:: html
+.. code-block:: html
 
     <testcase classname="examples.get-started.hello_world.pytest_hello_world" file="examples/get-started/hello_world/pytest_hello_world.py" line="13" name="esp32.default.test_hello_world" time="8.389">
         <properties>
@@ -685,11 +722,11 @@ The above example would log the performance item with pre-defined format: ``[per
     </testcase>
 
 ``check_performance``
-"""""""""""""""""""""
+^^^^^^^^^^^^^^^^^^^^^
 
 We provide C macros ``TEST_PERFORMANCE_LESS_THAN`` and ``TEST_PERFORMANCE_GREATER_THAN`` to log the performance item and check if the value is in the valid range. Sometimes the performance item value could not be measured in C code, so we also provide a Python function for the same purpose. Please note that using C macros is the preferred approach, since the Python function could not recognize the threshold values of the same performance item under different ifdef blocks well.
 
-.. code:: python
+.. code-block:: python
 
     def test_hello_world(
         dut: IdfDut,

@@ -21,10 +21,11 @@ System API
     freertos_additions
     mem_alloc
     mm
+    :SOC_PSRAM_DMA_CAPABLE or SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE: mm_sync
     heap_debug
     esp_timer
     internal-unstable
-    :not CONFIG_FREERTOS_UNICORE: ipc
+    :SOC_HP_CPU_HAS_MULTIPLE_CORES: ipc
     intr_alloc
     log
     misc_system_api

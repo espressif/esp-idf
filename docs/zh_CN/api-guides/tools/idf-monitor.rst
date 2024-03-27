@@ -11,7 +11,7 @@ IDF 监视器是一个串行终端程序，使用了 esp-idf-monitor_ 包，用�
 操作快捷键
 ==================
 
-为了方便与 IDF 监视器进行交互，请使用表中给出的快捷键。
+为了方便与 IDF 监视器进行交互，请使用表中给出的快捷键。这些快捷键可以自定义，请查看 `配置文件`_ 章节了解详情。
 
 .. list-table::
    :header-rows: 1
@@ -33,8 +33,8 @@ IDF 监视器是一个串行终端程序，使用了 esp-idf-monitor_ 包，用�
      - 将 exit 字符发送至远程
      -
    * - * Ctrl + P
-     - 重置目标设备，进入引导加载程序，通过 RTS 线暂停应用程序
-     - 重置目标设备，通过 RTS 线（如已连接）进入引导加载程序，此时开发板不运行任何程序。等待其他设备启动时可以使用此操作。
+     - 重置目标设备，进入引导加载程序，通过 RTS 和 DTR 线暂停应用程序
+     - 重置目标设备，通过 RTS 和 DTR 线（如已连接）进入引导加载程序。这会阻止开发板运行任何程序，在等待其他设备启动时可以使用此操作。更多详细信息，请参考 :ref:`target-reset-into-bootloader`。
    * - * Ctrl + R
      - 通过 RTS 线重置目标设备
      - 重置设备，并通过 RTS 线（如已连接）重新启动应用程序。
@@ -61,7 +61,7 @@ IDF 监视器是一个串行终端程序，使用了 esp-idf-monitor_ 包，用�
      -
    * - Ctrl + C
      - 中断正在运行的应用程序
-     - 暂停 IDF 监视器并运行 GDB_ 项目调试器，从而在运行时调试应用程序。这需要启用 :ref:CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME 选项。
+     - 暂停 IDF 监视器并运行 GDB_ 项目调试器，从而在运行时调试应用程序。这需要启用 :ref: `CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME` 选项。
 
 除了 ``Ctrl-]`` 和 ``Ctrl-T``，其他快捷键信号会通过串口发送到目标设备。
 
@@ -228,11 +228,86 @@ ROM ELF 文件会根据 ``IDF_PATH`` 和 ``ESP_ROM_ELF_DIR`` 环境变量的路�
 连接时复位目标芯片
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-默认情况下，IDF 监视器会在目标芯片连接时通过 DTR 和 RTS 串行线自动复位芯片。要防止 IDF 监视器在连接时自动复位，请在调用 IDF 监视器时加上选项 ``--no-reset``，如 ``idf.py monitor --no-reset``。
+默认情况下，IDF 监视器会在目标芯片连接时通过 DTR 和 RTS 串行线自动复位芯片。要防止 IDF 监视器在连接时自动复位，请在调用 IDF 监视器时加上选项 ``--no-reset``，如 ``idf.py monitor --no-reset``，或者将环境变量 ``ESP_IDF_MONITOR_NO_RESET`` 设置成 1。
 
 .. note::
 
     ``--no-reset`` 选项在 IDF 监视器连接到特定端口时可以实现同样的效果，如 ``idf.py monitor --no-reset -p [PORT]``。
+
+
+.. _target-reset-into-bootloader:
+
+复位目标到引导加载程序
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+IDF 监视器可以通过预定义的复位序列将芯片复位到引导加载程序，该序列已经经过调整，可以在大多数环境中正常工作。此外，用户可以设置自定义复位序列。通过对复位序列进行微调，使其适应各种情况。
+
+使用预定义的复位序列
+--------------------------------
+
+IDF 监视器的默认复位序列可在大多数环境中使用。使用默认序列复位芯片到引导加载程序中，无需进行额外配置。
+
+自定义复位序列
+---------------------
+
+对于高级用户或特定用例，IDF 监视器支持使用 :ref:`configuration-file` 配置自定义复位序列。这在默认序列可能不足的极端情况下特别有用。
+
+复位序列可通过以下格式的字符串定义：
+
+- 各个命令由 ``|`` 分隔（例如 ``R0|D1|W0.5``）。
+- 命令（例如 ``R0``）由代码（``R``）和参数（``0``）定义。
+
+.. list-table::
+    :header-rows: 1
+    :widths: 15 50 35
+    :align: center
+
+    * - 代码
+      - 操作
+      - 参数
+    * - D
+      - 设置 DTR 控制线
+      - ``1``/``0``
+    * - R
+      - 设置 RTS 控制线
+      - ``1``/``0``
+    * - U
+      - 同时设置 DTR 和 RTS 控制线（仅适用于类 Unix 系统）
+      - ``0,0``/``0,1``/``1,0``/``1,1``
+    * - W
+      - 等待 ``N`` 秒（其中 ``N`` 为浮点数）
+      - N
+
+示例：
+
+.. code-block:: ini
+
+    [esp-idf-monitor]
+    custom_reset_sequence = U0,1|W0.1|D1|R0|W0.5|D0
+
+有关更多详细信息，请参阅 Esptool 文档中 `custom reset sequence`_ 章节。请注意，IDF 监视器只使用了 Esptool 配置中的 ``custom_reset_sequence`` 值，其他值会被 IDF 监视器忽略。
+
+IDF 监视器和 Esptool 之间共享配置
+----------------------------------------------
+
+自定义复位序列的配置可以在 IDF 监视器和 Esptool 之间的共享配置文件中指定。在这种情况下，为了使两个工具都能识别配置文件，其名称应为 ``setup.cfg`` 或 ``tox.ini``。
+
+共享配置文件的示例：
+
+.. code-block:: ini
+
+    [esp-idf-monitor]
+    menu_key = T
+    skip_menu_key = True
+
+    [esptool]
+    custom_reset_sequence = U0,1|W0.1|D1|R0|W0.5|D0
+
+.. note::
+
+    当在 ``[esp-idf-monitor]`` 部分和 ``[esptool]`` 部分都使用 ``custom_reset_sequence`` 参数时，IDF 监视器会优先使用 ``[esp-idf-monitor]`` 部分的配置。``[esptool]`` 部分中任何与之冲突的配置都将被忽略。
+
+    当配置分散在多个文件中时，此优先规则也适用。全局 esp-idf-monitor 配置将优先于本地 esptool 配置。
 
 
 配置 GDBStub 以启用 GDB
@@ -256,11 +331,15 @@ GDBStub 支持在运行时进行调试。GDBStub 在目标上运行，并通过�
 输出筛选
 ~~~~~~~~~~~~~~~~
 
-可以调用 ``idf.py monitor --print-filter="xyz"`` 启动 IDF 监视器，其中，``--print-filter`` 是输出筛选的参数。参数默认值为空字符串，可打印任何内容。
+可以调用 ``idf.py monitor --print-filter="xyz"`` 启动 IDF 监视器，其中，``--print-filter`` 是输出筛选的参数。参数默认值为空字符串，即打印所有内容。支持使用环境变量 ``ESP_IDF_MONITOR_PRINT_FILTER`` 调整筛选设置。
+
+.. note::
+
+   同时使用环境变量 ``ESP_IDF_MONITOR_PRINT_FILTER`` 和参数 ``--print-filter`` 时，通过命令行输入的 CLI 参数 ``--print-filter`` 优先级更高。
 
 若需对打印内容设置限制，可指定 ``<tag>:<log_level>`` 等选项，其中 ``<tag>`` 是标签字符串，``<log_level>`` 是 ``{N, E, W, I, D, V, *}`` 集合中的一个字母，指的是 :doc:`日志 <../../api-reference/system/log>` 级别。
 
-例如，``PRINT_FILTER="tag1:W"`` 只匹配并打印 ``ESP_LOGW("tag1", ...)`` 所写的输出，或者写在较低日志详细度级别的输出，即 ``ESP_LOGE("tag1", ...)``。请勿指定 ``<log_level>`` 或使用详细级别默认值 ``*``。
+例如，``--print_filter="tag1:W"`` 只匹配并打印 ``ESP_LOGW("tag1", ...)`` 所写的输出，或者写在较低日志详细度级别的输出，即 ``ESP_LOGE("tag1", ...)``。请勿指定 ``<log_level>`` 或使用详细级别默认值 ``*``。
 
 .. note::
 
@@ -273,7 +352,7 @@ GDBStub 支持在运行时进行调试。GDBStub 在目标上运行，并通过�
 筛选规则示例
 ~~~~~~~~~~~~~~~~
 
-- ``*`` 可用于匹配任何类型标签。但 ``PRINT_FILTER="*:I tag1:E"`` 打印关于 ``tag1`` 的输出时会报错，这是因为 ``tag1`` 规则比 ``*`` 规则的优先级高。
+- ``*`` 可用于匹配任何类型标签。但 ``--print_filter="*:I tag1:E"`` 打印关于 ``tag1`` 的输出时会报错，这是因为 ``tag1`` 规则比 ``*`` 规则的优先级高。
 - 默认规则（空）等价于 ``*:V``，因为在详细级别或更低级别匹配任意标签即意味匹配所有内容。
 - ``"*:N"`` 不仅抑制了日志功能的输出，也抑制了 ``printf`` 的打印输出。为了避免这一问题，请使用 ``*:E`` 或更高的冗余级别。
 - 规则 ``"tag1:V"``、``"tag1:v"``、``"tag1:"``、``"tag1:*"`` 和 ``"tag1"`` 等同。
@@ -300,12 +379,12 @@ GDBStub 支持在运行时进行调试。GDBStub 在目标上运行，并通过�
     D (318) vfs: esp_vfs_register_fd_range is successful for range <54; 64) and VFS ID 1
     I (328) wifi: wifi driver task: 3ffdbf84, prio:23, stack:4096, core=0
 
-``PRINT_FILTER="wifi esp_image:E light_driver:I"`` 筛选选项捕获的输出如下所示::
+``--print_filter="wifi esp_image:E light_driver:I"`` 筛选选项捕获的输出如下所示::
 
     E (31) esp_image: image at 0x30000 has invalid magic byte
     I (328) wifi: wifi driver task: 3ffdbf84, prio:23, stack:4096, core=0
 
-``PRINT_FILTER="light_driver:D esp_image:N boot:N cpu_start:N vfs:N wifi:N *:V"`` 选项的输出如下::
+``--print_filter="light_driver:D esp_image:N boot:N cpu_start:N vfs:N wifi:N *:V"`` 选项的输出如下::
 
     load:0x40078000,len:13564
     entry 0x40078d4c
@@ -313,18 +392,123 @@ GDBStub 支持在运行时进行调试。GDBStub 在目标上运行，并通过�
     D (309) light_driver: [light_init, 74]:status: 1, mode: 2
 
 
+.. _configuration-file:
+
+配置文件
+========
+
+``esp-idf-monitor`` 使用 `C0 控制字符`_ 与控制台进行交互。配置文件中的字符会被转换为对应的 C0 控制代码。可用字符包括英文字母 (A-Z) 和特殊符号：``[``、``]``、``\``、``^``、和 ``_``.
+
+.. warning::
+
+    注意，一些字符可能无法在所有平台通用，或被保留作为其他用途的快捷键。请谨慎使用此功能。
+
+
+文件位置
+~~~~~~~~~~
+
+配置文件的默认名称为 ``esp-idf-monitor.cfg``。首先，在 ``esp-idf-monitor`` 路径中检测配置文件并运行。
+
+如果此目录中没有检测到配置文件，则检查当前用户操作系统的配置目录：
+
+  - Linux: ``/home/<user>/.config/esp-idf-monitor/``
+  - MacOS ``/Users/<user>/.config/esp-idf-monitor/``
+  - Windows: ``c:\Users\<user>\AppData\Local\esp-idf-monitor\``
+
+如仍未检测到配置文件，会最后再检查主目录：
+
+  - Linux: ``/home/<user>/``
+  - MacOS ``/Users/<user>/``
+  - Windows: ``c:\Users\<user>\``
+
+在 Windows 中，可以使用 ``HOME`` 或 ``USERPROFILE`` 环境变量设置主目录，因此，Windows 配置目录的位置也取决于这些变量。
+
+还可以使用 ``ESP_IDF_MONITOR_CFGFILE`` 环境变量为配置文件指定一个不同的位置，例如 ``ESP_IDF_MONITOR_CFGFILE = ~/custom_config.cfg``。这一设置的检测优先级高于上述所有位置检测的优先级。
+
+如果没有使用其他配置文件，``esp-idf-monitor`` 会从其他常用的配置文件中读取设置。如果存在 ``setup.cfg`` 或 ``tox.ini`` 文件，``esp-idf-monitor`` 会自动从这些文件中读取设置。
+
+配置选项
+~~~~~~~~~~
+
+下表列出了可用的配置选项：
+
+.. list-table::
+    :header-rows: 1
+    :widths: 30 50 20
+    :align: center
+
+    * - 选项名称
+      - 描述
+      - 默认值
+    * - menu_key
+      - 访问主菜单
+      - ``T``
+    * - exit_key
+      - 退出监视器
+      - ``]``
+    * - chip_reset_key
+      - 初始化芯片重置
+      - ``R``
+    * - recompile_upload_key
+      - 重新编译并上传
+      - ``F``
+    * - recompile_upload_app_key
+      - 仅重新编译并上传应用程序
+      - ``A``
+    * - toggle_output_key
+      - 切换输出显示
+      - ``Y``
+    * - toggle_log_key
+      - 切换日志功能
+      - ``L``
+    * - toggle_timestamp_key
+      - 切换时间戳显示
+      - ``I``
+    * - chip_reset_bootloader_key
+      - 将芯片重置为引导加载模式
+      - ``P``
+    * - exit_menu_key
+      - 从菜单中退出监视器
+      - ``X``
+    * - skip_menu_key
+      - 设置使用菜单命令时无需按下主菜单键
+      - ``False``
+    * - custom_reset_sequence
+      - 复位目标到引导加载程序的自定义复位序列
+      - 无默认值
+
+
+语法
+~~~~
+
+配置文件为 .ini 文件格式，必须以 ``[esp-idf-monitor]`` 标头引入才能被识别为有效文件。以下语法以“配置名称 = 配置值”形式列出。以 ``#`` 或 ``;`` 开头的行是注释，将被忽略。
+
+.. code-block:: ini
+
+    # esp-idf-monitor.cfg file to configure internal settings of esp-idf-monitor
+    [esp-idf-monitor]
+    menu_key = T
+    exit_key = ]
+    chip_reset_key = R
+    recompile_upload_key = F
+    recompile_upload_app_key = A
+    toggle_output_key = Y
+    toggle_log_key = L
+    toggle_timestamp_key = I
+    chip_reset_bootloader_key = P
+    exit_menu_key = X
+    skip_menu_key = False
+
+
 IDF 监视器已知问题
 =================================
 
-Windows 环境下已知问题
-~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-- 由于 Windows 控制台限制，有些箭头键及其他一些特殊键无法在 GDB 中使用。
-- 偶然情况下，``idf.py`` 退出时，可能会在 IDF 监视器恢复之前暂停 30 秒。
-- GDB 运行时，可能会暂停一段时间，然后才开始与 GDBStub 进行通信。
+如果在使用 IDF 监视器过程中遇到任何问题，请查看我们的 `GitHub 仓库 <https://github.com/espressif/esp-idf-monitor/issues>`_ 以获取已知问题列表及其当前状态。如果遇到的问题没有相关记录，请创建一个新的问题报告。
 
 .. _addr2line: https://sourceware.org/binutils/docs/binutils/addr2line.html
 .. _esp-idf-monitor: https://github.com/espressif/esp-idf-monitor
 .. _gdb: https://sourceware.org/gdb/download/onlinedocs/
 .. _pySerial: https://github.com/pyserial/pyserial
 .. _miniterm: https://pyserial.readthedocs.org/en/latest/tools.html#module-serial.tools.miniterm
+.. _C0 控制字符: https://zh.wikipedia.org/wiki/C0%E4%B8%8EC1%E6%8E%A7%E5%88%B6%E5%AD%97%E7%AC%A6#C0_(ASCII%E5%8F%8A%E5%85%B6%E6%B4%BE%E7%94%9F)
+.. _custom reset sequence: https://docs.espressif.com/projects/esptool/en/latest/{IDF_TARGET_PATH_NAME}/esptool/configuration-file.html#custom-reset-sequence

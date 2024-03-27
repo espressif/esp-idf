@@ -15,7 +15,7 @@ extern "C" {
 typedef struct {
     uint8_t  term_num;                                        ///< Term number of the algorithm formula
     const uint64_t (*coeff)[2];    ///< Coeff of each term. See `adc_error_coef_atten` for details (and the magic number 2)
-    const int32_t  (*sign);        ///< Sign of each term
+    const int32_t (*sign);         ///< Sign of each term
 } cali_chars_second_step_t;
 
 /**

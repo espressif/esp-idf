@@ -1,5 +1,10 @@
 menu "Example Configuration"
 
+    config EXAMPLE_USING_ESP_TLS_MBEDTLS
+        bool
+        depends on ESP_TLS_USING_MBEDTLS
+        default y
+
     config EXAMPLE_CLIENT_SESSION_TICKETS
         bool "Enable Client session ticket support"
         default n

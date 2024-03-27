@@ -6,6 +6,7 @@ import os
 import sys
 import traceback
 
+import nvs_check
 import nvs_logger
 import nvs_parser
 from nvs_logger import nvs_log
@@ -109,7 +110,7 @@ def main() -> None:
 
         if args.integrity_check:
             nvs_log.info()
-            nvs_logger.integrity_check(nvs)
+            nvs_check.integrity_check(nvs, nvs_log)
 
 
 if __name__ == '__main__':

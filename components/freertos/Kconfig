@@ -3,17 +3,10 @@ menu "FreeRTOS"
     menu "Kernel"
         # Upstream FreeRTOS configurations go here
 
-        config FREERTOS_USE_KERNEL_10_5_1
-            bool "Use v10.5.1 Kernel (BETA)"
-            default n
-            help
-                This option enables building for FreeRTOS v10.5.1 kernel.
-
-                Note: The v10.5.1 kernel is still in BETA, thus is not production ready.
 
         config FREERTOS_SMP
             bool "Run the Amazon SMP FreeRTOS kernel instead (FEATURE UNDER DEVELOPMENT)"
-            depends on !FREERTOS_USE_KERNEL_10_5_1 && !IDF_TARGET_ESP32P4 #TODO: IDF-8113: Enable P4 support on AMZ SMP
+            depends on !IDF_TARGET_ESP32P4 #TODO: IDF-8113: Enable P4 support on AMZ SMP
             default  "n"
             help
                 Amazon has released an SMP version of the FreeRTOS Kernel which can be found via the following link:
@@ -28,7 +21,7 @@ menu "FreeRTOS"
                 their implementation and features.
 
         config FREERTOS_UNICORE
-            # Todo: Replace with CONFIG_NUM_CORES (IDF-4986)
+            # Todo: Replace with CONFIG_NUMBER_OF_CORES (IDF-9156)
             bool "Run FreeRTOS only on first core"
             default "y" if IDF_TARGET_ESP32S2 || IDF_TARGET_LINUX
             select ESP_SYSTEM_SINGLE_CORE_MODE
@@ -124,7 +117,7 @@ menu "FreeRTOS"
                 - The FreeRTOS idle hook is NOT the same as the ESP-IDF Idle Hook, but both can be enabled
                   simultaneously.
 
-        config FREERTOS_USE_MINIMAL_IDLE_HOOK
+        config FREERTOS_USE_PASSIVE_IDLE_HOOK
             bool "Use FreeRTOS minimal idle hook"
             depends on FREERTOS_SMP
             default n
@@ -134,8 +127,8 @@ menu "FreeRTOS"
 
                 Note:
 
-                - The application must provide the hook function ``void vApplicationMinimalIdleHook( void );``
-                - ``vApplicationMinimalIdleHook()`` is called from FreeRTOS minimal idle task(s)
+                - The application must provide the hook function ``void vApplicationPassiveIdleHook( void );``
+                - ``vApplicationPassiveIdleHook()`` is called from FreeRTOS minimal idle task(s)
 
         config FREERTOS_USE_TICK_HOOK
             bool "configUSE_TICK_HOOK"
@@ -173,6 +166,28 @@ menu "FreeRTOS"
             default "Tmr Svc"
             help
                 Sets the timer task's name (see configTIMER_SERVICE_TASK_NAME documentation for more details).
+
+        choice FREERTOS_TIMER_SERVICE_TASK_CORE_AFFINITY
+            prompt "configTIMER_SERVICE_TASK_CORE_AFFINITY"
+            default FREERTOS_TIMER_TASK_NO_AFFINITY
+            help
+                Sets the timer task's core affinity
+                (see configTIMER_SERVICE_TASK_CORE_AFFINITY documentation for more details).
+
+            config FREERTOS_TIMER_TASK_AFFINITY_CPU0
+                bool "CPU0"
+            config FREERTOS_TIMER_TASK_AFFINITY_CPU1
+                bool "CPU1"
+                depends on !FREERTOS_UNICORE
+            config FREERTOS_TIMER_TASK_NO_AFFINITY
+                bool "No affinity"
+        endchoice
+
+        config FREERTOS_TIMER_SERVICE_TASK_CORE_AFFINITY
+            hex
+            default 0x0 if FREERTOS_TIMER_TASK_AFFINITY_CPU0
+            default 0x1 if FREERTOS_TIMER_TASK_AFFINITY_CPU1
+            default FREERTOS_NO_AFFINITY if FREERTOS_TIMER_TASK_NO_AFFINITY
 
         config FREERTOS_TIMER_TASK_PRIORITY
             int "configTIMER_TASK_PRIORITY"
@@ -232,6 +247,14 @@ menu "FreeRTOS"
                 ``vTaskList()`` and ``vTaskGetRunTimeStats()`` functions in the build (see
                 configUSE_STATS_FORMATTING_FUNCTIONS documentation for more details).
 
+        config FREERTOS_USE_LIST_DATA_INTEGRITY_CHECK_BYTES
+            bool "configUSE_LIST_DATA_INTEGRITY_CHECK_BYTES"
+            #TODO: Enable by default for debug builds (IDF-8517)
+            default n
+            help
+                Enable list integrity checker
+                (see configUSE_LIST_DATA_INTEGRITY_CHECK_BYTES documentation for more details).
+
         config FREERTOS_VTASKLIST_INCLUDE_COREID
             # Core affinity is supported in stats for Amazon FreeRTOS SMP by default
             bool "Enable display of xCoreID in vTaskList"
@@ -251,6 +274,25 @@ menu "FreeRTOS"
                 documentation for more details).
 
                 Note: The clock used for run time statistics can be configured in FREERTOS_RUN_TIME_STATS_CLK.
+
+        choice FREERTOS_RUN_TIME_COUNTER_TYPE
+            prompt "configRUN_TIME_COUNTER_TYPE"
+            depends on FREERTOS_GENERATE_RUN_TIME_STATS && !FREERTOS_SMP
+            default FREERTOS_RUN_TIME_COUNTER_TYPE_U32
+            help
+                Sets the data type used for the FreeRTOS run time stats. A larger data type can be used to reduce the
+                frequency of the counter overflowing.
+
+            config FREERTOS_RUN_TIME_COUNTER_TYPE_U32
+                bool "uint32_t"
+                help
+                    configRUN_TIME_COUNTER_TYPE is set to uint32_t
+
+            config FREERTOS_RUN_TIME_COUNTER_TYPE_U64
+                bool "uint64_t"
+                help
+                    configRUN_TIME_COUNTER_TYPE is set to uint64_t
+        endchoice # FREERTOS_RUN_TIME_COUNTER_TYPE
 
         config FREERTOS_USE_TICKLESS_IDLE
             # Todo: Currently not supported in SMP FreeRTOS yet (IDF-4986)
@@ -282,6 +324,13 @@ menu "FreeRTOS"
                 esp_pm_dump_locks, if the proportion of rejected sleeps is too high, please increase
                 this value to improve scheduling efficiency
 
+        config FREERTOS_USE_APPLICATION_TASK_TAG
+            bool "configUSE_APPLICATION_TASK_TAG"
+            default n
+            help
+                Enables task tagging functionality and its associated API (see configUSE_APPLICATION_TASK_TAG
+                documentation for more details).
+
     endmenu # Kernel
 
     menu "Port"
@@ -289,7 +338,9 @@ menu "FreeRTOS"
 
         config FREERTOS_TASK_FUNCTION_WRAPPER
             bool "Wrap task functions"
-            depends on COMPILER_OPTIMIZATION_DEBUG || ESP_COREDUMP_ENABLE || ESP_GDBSTUB_ENABLED
+            #TODO: Check if FreeRTOS Task Wrapper must depend on GDBStub (IDF-9505)
+            depends on COMPILER_OPTIMIZATION_DEBUG || ESP_COREDUMP_ENABLE \
+                || ESP_SYSTEM_PANIC_GDBSTUB || ESP_SYSTEM_GDBSTUB_RUNTIME
             default y
             help
                 If enabled, all FreeRTOS task functions will be enclosed in a wrapper function. If a task function
@@ -490,14 +541,6 @@ menu "FreeRTOS"
                 When enabled the selected Non-ISR FreeRTOS functions will be placed into Flash memory instead of IRAM.
                 This saves up to 8KB of IRAM depending on which functions are used.
 
-        config FREERTOS_PLACE_SNAPSHOT_FUNS_INTO_FLASH
-            bool "Place task snapshot functions into flash"
-            default n
-            depends on !ESP_PANIC_HANDLER_IRAM
-            help
-                When enabled, the functions related to snapshots, such as vTaskGetSnapshot or uxTaskGetSnapshotAll,
-                will be placed in flash. Note that if enabled, these functions cannot be called when cache is disabled.
-
         config FREERTOS_CHECK_PORT_CRITICAL_COMPLIANCE
             # Todo: Check if we still need this (IDF-4986)
             bool "Tests compliance with Vanilla FreeRTOS port*_CRITICAL calls"
@@ -536,10 +579,26 @@ menu "FreeRTOS"
             Hidden option, gets selected by CONFIG_ESP_DEBUG_OCDAWARE
 
     config FREERTOS_ENABLE_TASK_SNAPSHOT
-        # Invisible option that is always enabled. Task Snapshot APIs are now always enabled. This
+        # Invisible option that is always enabled. Task Snapshot APIs are now private thus are always enabled. This
         # option is kept here in case any user code conditionally depends on this option.
         # Todo: Remove in v6.0 (IDF-8143)
         bool
         default y
+
+    config FREERTOS_PLACE_SNAPSHOT_FUNS_INTO_FLASH
+        # Invisible option that is always enabled. Task Snapshot APIs are now private API thus are always placed into
+        # flash by default. This option is kept here in case any user code conditionally depends on this option.
+        # Todo: Remove in v6.0 (IDF-8143)
+        bool
+        default y
+        depends on !ESP_PANIC_HANDLER_IRAM
+
+    config FREERTOS_NUMBER_OF_CORES
+        # Invisible option to configure the number of cores on which FreeRTOS runs
+        # Todo: Unhide this option and deprecate CONFIG_FREERTOS_UNICORE (IDF-9156)
+        int
+        range 1 2
+        default 1 if FREERTOS_UNICORE
+        default 2 if !FREERTOS_UNICORE
 
 endmenu # FreeRTOS

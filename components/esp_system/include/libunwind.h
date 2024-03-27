@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,16 +11,16 @@
 #include <stdint.h>
 
 #if CONFIG_IDF_TARGET_ARCH_RISCV
-    #include "libunwind-riscv.h"
+#include "libunwind-riscv.h"
 #elif CONFIG_IDF_TARGET_X86
-    #include "libunwind-x86.h"
+#include "libunwind-x86.h"
 #else
-    /* This header must be a standalone one, so, it shall not trigger an error when
-     * pre-processed without including any of the architecture header above.
-     * The implementation can trigger a compile error if UNW_UNKNOWN_TARGET
-     * macro is defined. */
-    #define UNW_UNKNOWN_TARGET 1
-    typedef void* ExecutionFrame;
+/* This header must be a standalone one, so, it shall not trigger an error when
+ * pre-processed without including any of the architecture header above.
+ * The implementation can trigger a compile error if UNW_UNKNOWN_TARGET
+ * macro is defined. */
+#define UNW_UNKNOWN_TARGET 1
+typedef void* ExecutionFrame;
 #endif
 
 #ifdef __cplusplus

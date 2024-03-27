@@ -67,10 +67,16 @@ Overview
         Pins used by Slot 0 (``HS1_*``) are also used to connect the SPI flash chip in ESP32-WROOM and ESP32-WROVER modules. These pins cannot be concurrently shared between an SD card and an SPI flash. If you need to use Slot 0, establish an alternative connection for the SPI flash using different pins and configure the necessary eFuses accordingly.
 
 
-.. only:: SOC_SDMMC_USE_GPIO_MATRIX
+.. only:: esp32s3
 
     Both slots :c:macro:`SDMMC_HOST_SLOT_0` and :c:macro:`SDMMC_HOST_SLOT_1` support 1-, 4- and 8-line SD interfaces. The slots are connected to {IDF_TARGET_NAME} GPIOs using the GPIO matrix. This means that any GPIO may be used for each of the SD card signals.
 
+.. only:: esp32p4
+
+    - :c:macro:`SDMMC_HOST_SLOT_1` is routed via GPIO Matrix. This means that any GPIO may be used for each of the SD card signals. It is for non UHS-I usage.
+    - :c:macro:`SDMMC_HOST_SLOT_0` is dedicated to UHS-I mode, which is not yet supported in the driver.
+
+    Currently SDMMC host driver is using the on-chip LDO 4 as the default power supply. SDMMC power control driver is not supported yet. If you buy the ESP32P4 chip itself and plan to use SDMMC peripheral, make sure the VDDPST_5 pin is connected to the on-chip LDO 4 or correct external power supply.
 
 Supported Speed Modes
 ---------------------

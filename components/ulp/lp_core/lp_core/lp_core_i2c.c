@@ -1,14 +1,18 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "sdkconfig.h"
+#include "soc/soc_caps.h"
 #include "ulp_lp_core_i2c.h"
 #include "ulp_lp_core_utils.h"
 #include "soc/lp_i2c_reg.h"
 #include "soc/i2c_struct.h"
 #include "hal/i2c_ll.h"
+
+#if SOC_LP_I2C_SUPPORTED
 
 #define LP_I2C_FIFO_LEN     SOC_LP_I2C_FIFO_LEN
 #define LP_I2C_READ_MODE    I2C_MASTER_READ
@@ -19,6 +23,7 @@
 #define MIN(x, y) (((x) < (y)) ? (x) : (y))
 
 /* I2C LL context */
+
 i2c_dev_t *dev = I2C_LL_GET_HW(LP_I2C_NUM_0);
 
 /* ACK check enable control variable. Enabled by default */
@@ -34,7 +39,7 @@ static bool s_ack_check_en = true;
  * |----------|----------|---------|---------|----------|------------|---------|
  */
 static void lp_core_i2c_format_cmd(uint32_t cmd_idx, uint8_t op_code, uint8_t ack_val,
-                                uint8_t ack_expected, uint8_t ack_check_en, uint8_t byte_num)
+                                   uint8_t ack_expected, uint8_t ack_check_en, uint8_t byte_num)
 {
     if (cmd_idx >= sizeof(dev->command)) {
         /* We only have limited HW command registers.
@@ -48,12 +53,12 @@ static void lp_core_i2c_format_cmd(uint32_t cmd_idx, uint8_t op_code, uint8_t ac
         .done = 0,                // CMD Done
         .op_code = op_code,       // Opcode
         .ack_val = ack_val,       // ACK bit sent by I2C controller during READ.
-                                  // Ignored during RSTART, STOP, END and WRITE cmds.
+        // Ignored during RSTART, STOP, END and WRITE cmds.
         .ack_exp = ack_expected,  // ACK bit expected by I2C controller during WRITE.
-                                  // Ignored during RSTART, STOP, END and READ cmds.
+        // Ignored during RSTART, STOP, END and READ cmds.
         .ack_en = ack_check_en,   // I2C controller verifies that the ACK bit sent by the
-                                  // slave device matches the ACK expected bit during WRITE.
-                                  // Ignored during RSTART, STOP, END and READ cmds.
+        // slave device matches the ACK expected bit during WRITE.
+        // Ignored during RSTART, STOP, END and READ cmds.
         .byte_num = byte_num,     // Byte Num
     };
 
@@ -139,8 +144,8 @@ void lp_core_i2c_master_set_ack_check_en(i2c_port_t lp_i2c_num, bool ack_check_e
 }
 
 esp_err_t lp_core_i2c_master_read_from_device(i2c_port_t lp_i2c_num, uint16_t device_addr,
-                                            uint8_t *data_rd, size_t size,
-                                            int32_t ticks_to_wait)
+                                              uint8_t *data_rd, size_t size,
+                                              int32_t ticks_to_wait)
 {
     (void)lp_i2c_num;
 
@@ -230,8 +235,8 @@ esp_err_t lp_core_i2c_master_read_from_device(i2c_port_t lp_i2c_num, uint16_t de
 }
 
 esp_err_t lp_core_i2c_master_write_to_device(i2c_port_t lp_i2c_num, uint16_t device_addr,
-                                            const uint8_t *data_wr, size_t size,
-                                            int32_t ticks_to_wait)
+                                             const uint8_t *data_wr, size_t size,
+                                             int32_t ticks_to_wait)
 {
     (void)lp_i2c_num;
 
@@ -321,9 +326,9 @@ esp_err_t lp_core_i2c_master_write_to_device(i2c_port_t lp_i2c_num, uint16_t dev
 }
 
 esp_err_t lp_core_i2c_master_write_read_device(i2c_port_t lp_i2c_num, uint16_t device_addr,
-                                            const uint8_t *data_wr, size_t write_size,
-                                            uint8_t *data_rd, size_t read_size,
-                                            int32_t ticks_to_wait)
+                                               const uint8_t *data_wr, size_t write_size,
+                                               uint8_t *data_rd, size_t read_size,
+                                               int32_t ticks_to_wait)
 {
     (void)lp_i2c_num;
 
@@ -475,3 +480,5 @@ esp_err_t lp_core_i2c_master_write_read_device(i2c_port_t lp_i2c_num, uint16_t d
 
     return ret;
 }
+
+#endif //!SOC_LP_I2C_SUPPORTED

@@ -122,6 +122,7 @@ struct npl_funcs_t {
     void (*p_ble_npl_hw_exit_critical)(uint32_t);
     uint32_t (*p_ble_npl_get_time_forever)(void);
     uint8_t (*p_ble_npl_hw_is_in_critical)(void);
+    void (*p_ble_npl_eventq_put_to_front)(struct ble_npl_eventq *, struct ble_npl_event *);
 };
 
 extern struct npl_funcs_t *npl_funcs;

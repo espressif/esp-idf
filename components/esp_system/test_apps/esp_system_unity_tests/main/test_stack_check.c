@@ -11,7 +11,7 @@ static void recur_and_smash(void)
 {
     static int cnt;
     volatile uint8_t buf[50];
-    volatile int num = sizeof(buf)+10;
+    volatile int num = sizeof(buf) + 10;
 
     if (cnt++ < 1) {
         recur_and_smash();

@@ -1,6 +1,3 @@
 ## IDF Component Manager Manifest File
 dependencies:
-  joltwallet/littlefs: "==1.5.5"
-  ## Required IDF version
-  idf:
-    version: ">=5.2.0"
+  joltwallet/littlefs: "~=1.14.2"

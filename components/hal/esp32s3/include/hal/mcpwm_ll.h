@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -108,6 +108,20 @@ static inline void mcpwm_ll_reset_register(int group_id)
 #define mcpwm_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; mcpwm_ll_reset_register(__VA_ARGS__)
 
 /**
+ * @brief Enable MCPWM module clock
+ *
+ * @note Not support to enable/disable the peripheral clock
+ *
+ * @param group_id Group ID
+ * @param en true to enable, false to disable
+ */
+static inline void mcpwm_ll_group_enable_clock(int group_id, bool en)
+{
+    (void)group_id;
+    (void)en;
+}
+
+/**
  * @brief Set the clock source for MCPWM
  *
  * @param mcpwm Peripheral instance address
@@ -117,20 +131,6 @@ static inline void mcpwm_ll_group_set_clock_source(mcpwm_dev_t *mcpwm, mcpwm_tim
 {
     (void)mcpwm;
     (void)clk_src;
-}
-
-/**
- * @brief Enable MCPWM module clock
- *
- * @note Not support to enable/disable the peripheral clock
- *
- * @param mcpwm Peripheral instance address
- * @param en true to enable, false to disable
- */
-static inline void mcpwm_ll_group_enable_clock(mcpwm_dev_t *mcpwm, bool en)
-{
-    (void)mcpwm; // only one MCPWM instance
-    (void)en;
 }
 
 /**
@@ -247,13 +247,12 @@ static inline void mcpwm_ll_timer_set_clock_prescale(mcpwm_dev_t *mcpwm, int tim
  * @param peak Peak value
  * @param symmetric True to set symmetric peak value, False to set asymmetric peak value
  */
+__attribute__((always_inline))
 static inline void mcpwm_ll_timer_set_peak(mcpwm_dev_t *mcpwm, int timer_id, uint32_t peak, bool symmetric)
 {
     if (!symmetric) { // in asymmetric mode, period = [0,peak-1]
-        HAL_ASSERT(peak > 0 && peak <= MCPWM_LL_MAX_COUNT_VALUE);
         HAL_FORCE_MODIFY_U32_REG_FIELD(mcpwm->timer[timer_id].timer_cfg0, timer_period, peak - 1);
     } else { // in symmetric mode, period = [0,peak-1] + [peak,1]
-        HAL_ASSERT(peak < MCPWM_LL_MAX_COUNT_VALUE);
         HAL_FORCE_MODIFY_U32_REG_FIELD(mcpwm->timer[timer_id].timer_cfg0, timer_period, peak);
     }
 }
@@ -794,7 +793,7 @@ static inline void mcpwm_ll_generator_reset_actions(mcpwm_dev_t *mcpwm, int oper
  * @param action Action to set
  */
 static inline void mcpwm_ll_generator_set_action_on_timer_event(mcpwm_dev_t *mcpwm, int operator_id, int generator_id,
-        mcpwm_timer_direction_t direction, mcpwm_timer_event_t event, mcpwm_generator_action_t action)
+                                                                mcpwm_timer_direction_t direction, mcpwm_timer_event_t event, mcpwm_generator_action_t action)
 {
     // empty: 0, full: 1
     if (direction == MCPWM_TIMER_DIRECTION_UP) { // utez, utep
@@ -817,7 +816,7 @@ static inline void mcpwm_ll_generator_set_action_on_timer_event(mcpwm_dev_t *mcp
  * @param action Action to set
  */
 static inline void mcpwm_ll_generator_set_action_on_compare_event(mcpwm_dev_t *mcpwm, int operator_id, int generator_id,
-        mcpwm_timer_direction_t direction, int cmp_id, int action)
+                                                                  mcpwm_timer_direction_t direction, int cmp_id, int action)
 {
     if (direction == MCPWM_TIMER_DIRECTION_UP) { // utea, uteb
         mcpwm->operators[operator_id].generator[generator_id].val &= ~(0x03 << (cmp_id * 2 + 4));
@@ -839,7 +838,7 @@ static inline void mcpwm_ll_generator_set_action_on_compare_event(mcpwm_dev_t *m
  * @param action Action to set
  */
 static inline void mcpwm_ll_generator_set_action_on_trigger_event(mcpwm_dev_t *mcpwm, int operator_id, int generator_id,
-        mcpwm_timer_direction_t direction, int trig_id, int action)
+                                                                  mcpwm_timer_direction_t direction, int trig_id, int action)
 {
     if (direction == MCPWM_TIMER_DIRECTION_UP) { // ut0, ut1
         mcpwm->operators[operator_id].generator[generator_id].val &= ~(0x03 << (trig_id * 2 + 8));
@@ -861,7 +860,7 @@ static inline void mcpwm_ll_generator_set_action_on_trigger_event(mcpwm_dev_t *m
  * @param action Action to set
  */
 static inline void mcpwm_ll_generator_set_action_on_brake_event(mcpwm_dev_t *mcpwm, int operator_id, int generator_id,
-        mcpwm_timer_direction_t direction, mcpwm_operator_brake_mode_t brake_mode, int action)
+                                                                mcpwm_timer_direction_t direction, mcpwm_operator_brake_mode_t brake_mode, int action)
 {
     // the following bit operation is highly depend on the register bit layout.
     // the priority comes: generator ID > brake mode > direction

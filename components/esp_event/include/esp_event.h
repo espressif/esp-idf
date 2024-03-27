@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2018-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -199,6 +199,8 @@ esp_err_t esp_event_handler_register_with(esp_event_loop_handle_t event_loop,
  * @note the event loop library does not maintain a copy of event_handler_arg, therefore the user should
  * ensure that event_handler_arg still points to a valid location by the time the handler gets called
  *
+ * @note Calling this function with instance set to NULL is equivalent to calling esp_event_handler_register_with.
+ *
  * @return
  *  - ESP_OK: Success
  *  - ESP_ERR_NO_MEM: Cannot allocate memory for the handler
@@ -206,11 +208,11 @@ esp_err_t esp_event_handler_register_with(esp_event_loop_handle_t event_loop,
  *  - Others: Fail
  */
 esp_err_t esp_event_handler_instance_register_with(esp_event_loop_handle_t event_loop,
-                                                  esp_event_base_t event_base,
-                                                  int32_t event_id,
-                                                  esp_event_handler_t event_handler,
-                                                  void *event_handler_arg,
-                                                  esp_event_handler_instance_t *instance);
+                                                   esp_event_base_t event_base,
+                                                   int32_t event_id,
+                                                   esp_event_handler_t event_handler,
+                                                   void *event_handler_arg,
+                                                   esp_event_handler_instance_t *instance);
 
 /**
  * @brief Register an instance of event handler to the default loop.
@@ -232,6 +234,8 @@ esp_err_t esp_event_handler_instance_register_with(esp_event_loop_handle_t event
  * @note the event loop library does not maintain a copy of event_handler_arg, therefore the user should
  * ensure that event_handler_arg still points to a valid location by the time the handler gets called
  *
+ * @note Calling this function with instance set to NULL is equivalent to calling esp_event_handler_register.
+ *
  * @return
  *  - ESP_OK: Success
  *  - ESP_ERR_NO_MEM: Cannot allocate memory for the handler
@@ -239,10 +243,10 @@ esp_err_t esp_event_handler_instance_register_with(esp_event_loop_handle_t event
  *  - Others: Fail
  */
 esp_err_t esp_event_handler_instance_register(esp_event_base_t event_base,
-                                             int32_t event_id,
-                                             esp_event_handler_t event_handler,
-                                             void *event_handler_arg,
-                                             esp_event_handler_instance_t *instance);
+                                              int32_t event_id,
+                                              esp_event_handler_t event_handler,
+                                              void *event_handler_arg,
+                                              esp_event_handler_instance_t *instance);
 
 /**
  * @brief Unregister a handler with the system event loop (legacy).
@@ -367,7 +371,7 @@ esp_err_t esp_event_post(esp_event_base_t event_base,
  * the copy's lifetime automatically (allocation + deletion); this ensures that the data the
  * handler receives is always valid.
  *
- * This function behaves in the same manner as esp_event_post_to, except the additional specification of the event loop
+ * This function behaves in the same manner as esp_event_post, except the additional specification of the event loop
  * to post the event to.
  *
  * @param[in] event_loop the event loop to post to, must not be NULL

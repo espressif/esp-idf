@@ -69,6 +69,8 @@
 RSN_SELECTOR(0x00, 0x0f, 0xac, 13)
 #define RSN_AUTH_KEY_MGMT_FT_SAE RSN_SELECTOR(0x00, 0x0f, 0xac, 9)
 #define RSN_AUTH_KEY_MGMT_OWE RSN_SELECTOR(0x00, 0x0f, 0xac, 18)
+#define RSN_AUTH_KEY_MGMT_SAE_EXT_KEY RSN_SELECTOR(0x00, 0x0f, 0xac, 24)
+#define RSN_AUTH_KEY_MGMT_DPP RSN_SELECTOR(0x50, 0x6f, 0x9a, 0x02)
 
 #define RSN_CIPHER_SUITE_NONE RSN_SELECTOR(0x00, 0x0f, 0xac, 0)
 #define RSN_CIPHER_SUITE_WEP40 RSN_SELECTOR(0x00, 0x0f, 0xac, 1)
@@ -325,6 +327,9 @@ struct rsn_rdie {
 /* WFA Transition Disable KDE (using OUI_WFA) */
 /* Transition Disable Bitmap bits */
 #define TRANSITION_DISABLE_WPA3_PERSONAL BIT(0)
+#define TRANSITION_DISABLE_SAE_PK BIT(1)
+#define TRANSITION_DISABLE_WPA3_ENTERPRISE BIT(2)
+#define TRANSITION_DISABLE_ENHANCED_OPEN BIT(3)
 
 #ifdef CONFIG_IEEE80211R
 int wpa_ft_mic(const u8 *kck, size_t kck_len, const u8 *sta_addr,
@@ -395,7 +400,7 @@ int wpa_parse_wpa_ie(const u8 *wpa_ie, size_t wpa_ie_len,
 		     struct wpa_ie_data *data);
 int wpa_parse_wpa_ie_rsnxe(const u8 *rsnxe_ie, size_t rsnxe_ie_len,
 			    struct wpa_ie_data *data);
-
+u32 wpa_akm_to_suite(int akm);
 int wpa_compare_rsn_ie(int ft_initial_assoc,
 		       const u8 *ie1, size_t ie1len,
 		       const u8 *ie2, size_t ie2len);
@@ -447,7 +452,7 @@ int wpa_parse_wpa_ie_wpa(const u8 *wpa_ie, size_t wpa_ie_len,
            struct wpa_ie_data *data);
 
 int rsn_cipher_put_suites(u8 *pos, int ciphers);
-unsigned int wpa_mic_len(int akmp);
+unsigned int wpa_mic_len(int akmp, size_t pmk_len);
 int wpa_use_akm_defined(int akmp);
 int wpa_use_aes_key_wrap(int akmp);
 

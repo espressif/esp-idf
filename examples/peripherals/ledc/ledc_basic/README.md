@@ -1,5 +1,5 @@
-| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C6 | ESP32-H2 | ESP32-S2 | ESP32-S3 |
-| ----------------- | ----- | -------- | -------- | -------- | -------- | -------- | -------- |
+| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C6 | ESP32-H2 | ESP32-P4 | ESP32-S2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- | -------- | -------- | -------- |
 
 # _LEDC Basic Example_
 
@@ -23,11 +23,11 @@ Connect the GPIO to an oscilloscope to see the generated signal:
 
 ### Configure the project
 
-The example uses fixed PWM frequency of 5 kHz, duty cycle in 50%, and output GPIO pin. To change them, adjust `LEDC_FREQUENCY`, `LEDC_DUTY`, `LEDC_OUTPUT_IO` macros at the top of ledc_basic_example_main.c.
+The example uses fixed PWM frequency of 4 kHz, duty cycle in 50%, and output GPIO pin. To change them, adjust `LEDC_FREQUENCY`, `LEDC_DUTY`, `LEDC_OUTPUT_IO` macros at the top of ledc_basic_example_main.c.
 
 Depending on the selected `LEDC_FREQUENCY`, you will need to change the `LEDC_DUTY_RES`.
 
-To dinamicaly set the duty and frequency, you can use the following functions:
+To dynamically set the duty and frequency, you can use the following functions:
 
 To set the frequency to 2.5 kHZ i.e:
 
@@ -35,10 +35,10 @@ To set the frequency to 2.5 kHZ i.e:
 ledc_set_freq(LEDC_MODE, LEDC_TIMER, 2500);
 ```
 
-Now the duty to 100% i.e:
+Now set the duty to 100% i.e:
 
 ```c
-ledc_set_duty(LEDC_MODE, LEDC_CHANNEL, 8191);
+ledc_set_duty(LEDC_MODE, LEDC_CHANNEL, 8192);
 ledc_update_duty(LEDC_MODE, LEDC_CHANNEL);
 ```
 
@@ -46,7 +46,7 @@ To change the duty cycle you need to calculate the duty range according to the d
 
 If duty resolution is 13 bits:
 
-Duty range: `0 to (2 ** 13) - 1 = 8191` where 0 is 0% and 8191 is 100%.
+Duty range: `0 to (2 ** 13) = 8191` where 0 is 0% and 8192 is 100%.
 
 ### Build and Flash
 

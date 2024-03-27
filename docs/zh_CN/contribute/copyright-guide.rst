@@ -3,7 +3,7 @@
 
 :link_to_translation:`en:[English]`
 
-ESP-IDF 基于 :project_file:`the Apache License 2.0 <LICENSE>`，并包含一些不同许可证下的第三方版权代码。要了解更多信息，请参考 :doc:`the list of copyrights and licenses <../../../COPYRIGHT>`。
+ESP-IDF 基于 :project_file:`the Apache License 2.0 <LICENSE>`，并包含一些不同许可证下的第三方版权代码。要了解更多信息，请参考 :doc:`../../../COPYRIGHT`。
 
 本页面介绍了如何在源代码中正确标注版权标头。ESP-IDF 使用 `Software Package Data Exchange (SPDX) <https://spdx.dev>`_ 格式，简短易读，能够方便自动化工具处理及进行版权检查。
 
@@ -46,7 +46,7 @@ ESP-IDF 的某些部分特意采用了限制性较小的许可证，方便在商
 第三方许可证
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-受到不同许可证许可，经 Espressif Systems 修改，并包含在 ESP-IDF 中的代码不能使用 Apache License 2.0 进行许可，即便检查器可能提出此类建议。建议保留原有版权标头，并在前面添加 SPDX 标识。
+受到不同许可证许可，经乐鑫修改，并包含在 ESP-IDF 中的代码不能使用 Apache License 2.0 进行许可，即便检查器可能提出此类建议。建议保留原有版权标头，并在前面添加 SPDX 标识。
 
 例如，对于一个由 "GNU General Public License v2.0 及以上" 许可证许可、John Doe 持有、且由 Espressif Systems 做出额外修改的代码文件，请按照如下示例提供标头::
 

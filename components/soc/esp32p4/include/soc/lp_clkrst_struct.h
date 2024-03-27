@@ -785,6 +785,8 @@ typedef struct {
     volatile lp_clkrst_date_reg_t date;
 } lp_clkrst_dev_t;
 
+extern lp_clkrst_dev_t LP_AON_CLKRST;
+
 
 #ifndef __cplusplus
 _Static_assert(sizeof(lp_clkrst_dev_t) == 0x400, "Invalid size of lp_clkrst_dev_t structure");

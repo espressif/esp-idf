@@ -10,10 +10,9 @@
 #include <sys/param.h>
 #include "unity.h"
 #include "freertos/FreeRTOS.h"
-#include "soc/uart_struct.h"
 #include "driver/uart.h"
 #include "esp_vfs.h"
-#include "esp_vfs_dev.h"
+#include "driver/uart_vfs.h"
 #include "esp_vfs_fat.h"
 #include "lwip/sockets.h"
 #include "lwip/netdb.h"
@@ -144,21 +143,20 @@ static void init(int *uart_fd, int *socket_fd)
     *uart_fd = open("/dev/uart/1", O_RDWR);
     TEST_ASSERT_NOT_EQUAL_MESSAGE(*uart_fd, -1, "Cannot open UART");
 
-    esp_vfs_dev_uart_use_driver(1);
+    uart_vfs_dev_use_driver(1);
 
     *socket_fd = socket_init();
 }
 
 static void deinit(int uart_fd, int socket_fd)
 {
-    esp_vfs_dev_uart_use_nonblocking(1);
+    uart_vfs_dev_use_nonblocking(1);
     close(uart_fd);
     uart_driver_delete(UART_NUM_1);
 
     close(socket_fd);
 }
 
-#if !CONFIG_IDF_TARGET_ESP32H2 // IDF-6782
 TEST_CASE("UART can do select()", "[vfs]")
 {
     int uart_fd;
@@ -214,6 +212,256 @@ TEST_CASE("UART can do select()", "[vfs]")
     vSemaphoreDelete(test_task_param.sem);
 
     deinit(uart_fd, socket_fd);
+}
+
+static void select_task(void *task_param)
+{
+    const test_select_task_param_t *param = task_param;
+
+    int s = select(param->maxfds, param->rdfds, param->wrfds, param->errfds, param->tv);
+    TEST_ASSERT_EQUAL(param->select_ret, s);
+
+    if (param->sem) {
+        xSemaphoreGive(param->sem);
+    }
+    vTaskDelete(NULL);
+}
+
+static void inline start_select_task(test_select_task_param_t *param)
+{
+    xTaskCreate(select_task, "select_task", 4*1024, (void *) param, 5, NULL);
+}
+
+TEST_CASE("concurrent selects work for UART", "[vfs]")
+{
+    // This test case initiates two select tasks on the same UART FD,
+    // One task will wait for a write operation, while the other will wait for a read operation to occur.
+    // The first task will complete its operation before the second task proceeds with its operation on the same FD
+    // In this scenario, the write operation will be performed initially,
+    // followed by the subsequent continuation of the read operation.
+
+    int uart_fd, socket_fd;
+    init(&uart_fd, &socket_fd);
+
+    const test_task_param_t send_param = {
+        .fd = uart_fd,
+        .delay_ms = 0,
+        .sem = NULL,
+    };
+
+    fd_set wrfds1;
+    FD_ZERO(&wrfds1);
+    FD_SET(uart_fd, &wrfds1);
+
+    test_select_task_param_t param_write = {
+        .rdfds = NULL,
+        .wrfds = &wrfds1,
+        .errfds = NULL,
+        .maxfds = uart_fd + 1,
+        .tv = NULL,
+        .select_ret = 1,
+        .sem = xSemaphoreCreateBinary(),
+    };
+    TEST_ASSERT_NOT_NULL(param_write.sem);
+    //Start first task which will wait on select call for write operation on the UART FD
+    start_select_task(&param_write);
+
+    fd_set rdfds2;
+    FD_ZERO(&rdfds2);
+    FD_SET(uart_fd, &rdfds2);
+
+    test_select_task_param_t param_read = {
+        .rdfds = &rdfds2,
+        .wrfds = NULL,
+        .errfds = NULL,
+        .maxfds = uart_fd + 1,
+        .tv = NULL,
+        .select_ret = 1,
+        .sem = xSemaphoreCreateBinary(),
+    };
+    TEST_ASSERT_NOT_NULL(param_read.sem);
+    //Start second task which will wait on another select call for read operation on the same UART FD
+    start_select_task(&param_read);
+
+    //Start writing operation on the UART port
+    start_write_task(&send_param);
+    //Confirm the completion of the write operation
+    TEST_ASSERT_EQUAL(pdTRUE, xSemaphoreTake(param_write.sem, 1000 / portTICK_PERIOD_MS));
+    vSemaphoreDelete(param_write.sem);
+    TEST_ASSERT(FD_ISSET(uart_fd, &wrfds1));
+
+    //Start reading operation on the same UART port
+    start_read_task(&send_param);
+    //Confirm the completion of the read operation
+    TEST_ASSERT_EQUAL(pdTRUE, xSemaphoreTake(param_read.sem, 1000 / portTICK_PERIOD_MS));
+    vSemaphoreDelete(param_read.sem);
+    TEST_ASSERT(FD_ISSET(uart_fd, &rdfds2));
+
+    deinit(uart_fd, socket_fd);
+}
+
+TEST_CASE("concurrent selects work", "[vfs]")
+{
+    int uart_fd, socket_fd;
+    init(&uart_fd, &socket_fd);
+    const int dummy_socket_fd = open_dummy_socket();
+
+    {
+        // Two tasks will wait for the same UART FD for reading and they will time-out
+
+        struct timeval tv = {
+            .tv_sec = 0,
+            .tv_usec = 100000,
+        };
+
+        fd_set rdfds1;
+        FD_ZERO(&rdfds1);
+        FD_SET(uart_fd, &rdfds1);
+
+        test_select_task_param_t param = {
+            .rdfds = &rdfds1,
+            .wrfds = NULL,
+            .errfds = NULL,
+            .maxfds = uart_fd + 1,
+            .tv = &tv,
+            .select_ret = 0, // expected timeout
+            .sem = xSemaphoreCreateBinary(),
+        };
+        TEST_ASSERT_NOT_NULL(param.sem);
+
+        fd_set rdfds2;
+        FD_ZERO(&rdfds2);
+        FD_SET(uart_fd, &rdfds2);
+        FD_SET(socket_fd, &rdfds2);
+        FD_SET(dummy_socket_fd, &rdfds2);
+
+        start_select_task(&param);
+        vTaskDelay(10 / portTICK_PERIOD_MS); //make sure the task has started and waits in select()
+
+        int s = select(MAX(MAX(uart_fd, dummy_socket_fd), socket_fd) + 1, &rdfds2, NULL, NULL, &tv);
+        TEST_ASSERT_EQUAL(0, s); // timeout here as well
+
+        TEST_ASSERT_EQUAL(pdTRUE, xSemaphoreTake(param.sem, 1000 / portTICK_PERIOD_MS));
+        vSemaphoreDelete(param.sem);
+    }
+
+    {
+        // One tasks waits for UART reading and one for writing. The former will be successful and latter will
+        // time-out.
+
+        struct timeval tv = {
+            .tv_sec = 0,
+            .tv_usec = 100000,
+        };
+
+        fd_set wrfds1;
+        FD_ZERO(&wrfds1);
+        FD_SET(uart_fd, &wrfds1);
+
+        test_select_task_param_t param = {
+            .rdfds = NULL,
+            .wrfds = &wrfds1,
+            .errfds = NULL,
+            .maxfds = uart_fd + 1,
+            .tv = &tv,
+            .select_ret = 1,
+            .sem = xSemaphoreCreateBinary(),
+        };
+        TEST_ASSERT_NOT_NULL(param.sem);
+
+        const test_task_param_t send_param = {
+            .fd = uart_fd,
+            .delay_ms = 50,
+            .sem = xSemaphoreCreateBinary(),
+        };
+        TEST_ASSERT_NOT_NULL(send_param.sem);
+        start_write_task(&send_param);        // This task will write to UART which will be detected by select()
+        start_select_task(&param);
+        vTaskDelay(100 / portTICK_PERIOD_MS); //make sure the task has started and waits in select()
+
+        fd_set rdfds2;
+        FD_ZERO(&rdfds2);
+        FD_SET(uart_fd, &rdfds2);
+        FD_SET(socket_fd, &rdfds2);
+        FD_SET(dummy_socket_fd, &rdfds2);
+
+        int s = select(MAX(MAX(uart_fd, dummy_socket_fd), socket_fd) + 1, &rdfds2, NULL, NULL, &tv);
+        TEST_ASSERT_EQUAL(1, s);
+        TEST_ASSERT(FD_ISSET(uart_fd, &rdfds2));
+        TEST_ASSERT_UNLESS(FD_ISSET(socket_fd, &rdfds2));
+        TEST_ASSERT_UNLESS(FD_ISSET(dummy_socket_fd, &rdfds2));
+
+        TEST_ASSERT_EQUAL(pdTRUE, xSemaphoreTake(param.sem, 1000 / portTICK_PERIOD_MS));
+        vSemaphoreDelete(param.sem);
+
+        TEST_ASSERT_EQUAL(pdTRUE, xSemaphoreTake(send_param.sem, 1000 / portTICK_PERIOD_MS));
+        vSemaphoreDelete(send_param.sem);
+    }
+
+    deinit(uart_fd, socket_fd);
+    close(dummy_socket_fd);
+}
+
+TEST_CASE("select() works with concurrent mount", "[vfs][fatfs]")
+{
+    wl_handle_t test_wl_handle;
+    int uart_fd, socket_fd;
+
+    init(&uart_fd, &socket_fd);
+    const int dummy_socket_fd = open_dummy_socket();
+
+    esp_vfs_fat_sdmmc_mount_config_t mount_config = {
+        .format_if_mount_failed = true,
+        .max_files = 2
+    };
+
+    // select() will be waiting for a socket & UART and FATFS mount will occur in parallel
+
+    struct timeval tv = {
+        .tv_sec = 1,
+        .tv_usec = 0,
+    };
+
+    fd_set rdfds;
+    FD_ZERO(&rdfds);
+    FD_SET(uart_fd, &rdfds);
+    FD_SET(dummy_socket_fd, &rdfds);
+
+    test_select_task_param_t param = {
+        .rdfds = &rdfds,
+        .wrfds = NULL,
+        .errfds = NULL,
+        .maxfds = MAX(uart_fd, dummy_socket_fd) + 1,
+        .tv = &tv,
+        .select_ret = 0, // expected timeout
+        .sem = xSemaphoreCreateBinary(),
+    };
+    TEST_ASSERT_NOT_NULL(param.sem);
+
+    start_select_task(&param);
+    vTaskDelay(10 / portTICK_PERIOD_MS); //make sure the task has started and waits in select()
+
+    TEST_ESP_OK(esp_vfs_fat_spiflash_mount_rw_wl("/spiflash", NULL, &mount_config, &test_wl_handle));
+
+    TEST_ASSERT_EQUAL(pdTRUE, xSemaphoreTake(param.sem, 1500 / portTICK_PERIOD_MS));
+
+    // select() will be waiting for a socket & UART and FATFS unmount will occur in parallel
+
+    FD_ZERO(&rdfds);
+    FD_SET(uart_fd, &rdfds);
+    FD_SET(dummy_socket_fd, &rdfds);
+
+    start_select_task(&param);
+    vTaskDelay(10 / portTICK_PERIOD_MS); //make sure the task has started and waits in select()
+
+    TEST_ESP_OK(esp_vfs_fat_spiflash_unmount_rw_wl("/spiflash", test_wl_handle));
+
+    TEST_ASSERT_EQUAL(pdTRUE, xSemaphoreTake(param.sem, 1500 / portTICK_PERIOD_MS));
+
+    vSemaphoreDelete(param.sem);
+
+    deinit(uart_fd, socket_fd);
+    close(dummy_socket_fd);
 }
 
 TEST_CASE("UART can do poll() with POLLIN event", "[vfs]")
@@ -319,8 +567,6 @@ TEST_CASE("UART can do poll() with POLLOUT event", "[vfs]")
 
     deinit(uart_fd, socket_fd);
 }
-
-#endif
 
 TEST_CASE("socket can do select()", "[vfs]")
 {
@@ -485,255 +731,4 @@ TEST_CASE("poll() timeout", "[vfs]")
     TEST_ASSERT_EQUAL(0, poll_fds[1].revents);
 
     deinit(uart_fd, socket_fd);
-}
-
-static void select_task(void *task_param)
-{
-    const test_select_task_param_t *param = task_param;
-
-    select(param->maxfds, param->rdfds, param->wrfds, param->errfds, param->tv);
-
-    if (param->sem) {
-        xSemaphoreGive(param->sem);
-    }
-    vTaskDelete(NULL);
-}
-
-static void inline start_select_task(test_select_task_param_t *param)
-{
-    xTaskCreate(select_task, "select_task", 4*1024, (void *) param, 5, NULL);
-}
-
-#if !CONFIG_IDF_TARGET_ESP32H2 // IDF-6782
-TEST_CASE("concurrent selects work for UART", "[vfs]")
-{
-    // This test case initiates two select tasks on the same UART FD,
-    // One task will wait for a write operation, while the other will wait for a read operation to occur.
-    // The first task will complete its operation before the second task proceeds with its operation on the same FD
-    // In this scenario, the write operation will be performed initially,
-    // followed by the subsequent continuation of the read operation.
-
-    int uart_fd, socket_fd;
-    init(&uart_fd, &socket_fd);
-
-    const test_task_param_t send_param = {
-        .fd = uart_fd,
-        .delay_ms = 0,
-        .sem = NULL,
-    };
-
-    fd_set wrfds1;
-    FD_ZERO(&wrfds1);
-    FD_SET(uart_fd, &wrfds1);
-
-    test_select_task_param_t param_write = {
-        .rdfds = NULL,
-        .wrfds = &wrfds1,
-        .errfds = NULL,
-        .maxfds = uart_fd + 1,
-        .tv = NULL,
-        .select_ret = 1,
-        .sem = xSemaphoreCreateBinary(),
-    };
-    TEST_ASSERT_NOT_NULL(param_write.sem);
-    //Start first task which will wait on select call for write operation on the UART FD
-    start_select_task(&param_write);
-
-    fd_set rdfds2;
-    FD_ZERO(&rdfds2);
-    FD_SET(uart_fd, &rdfds2);
-
-    test_select_task_param_t param_read = {
-        .rdfds = &rdfds2,
-        .wrfds = NULL,
-        .errfds = NULL,
-        .maxfds = uart_fd + 1,
-        .tv = NULL,
-        .select_ret = 2,
-        .sem = xSemaphoreCreateBinary(),
-    };
-    TEST_ASSERT_NOT_NULL(param_read.sem);
-    //Start second task which will wait on another select call for read operation on the same UART FD
-    start_select_task(&param_read);
-
-    //Start writing operation on the UART port
-    start_write_task(&send_param);
-    //Confirm the completion of the write operation
-    TEST_ASSERT_EQUAL(pdTRUE, xSemaphoreTake(param_write.sem, 1000 / portTICK_PERIOD_MS));
-    vSemaphoreDelete(param_write.sem);
-    TEST_ASSERT(FD_ISSET(uart_fd, &wrfds1));
-
-    //Start reading operation on the same UART port
-    start_read_task(&send_param);
-    //Confirm the completion of the read operation
-    TEST_ASSERT_EQUAL(pdTRUE, xSemaphoreTake(param_read.sem, 1000 / portTICK_PERIOD_MS));
-    vSemaphoreDelete(param_read.sem);
-    TEST_ASSERT(FD_ISSET(uart_fd, &rdfds2));
-
-    deinit(uart_fd, socket_fd);
-}
-
-TEST_CASE("concurrent selects work", "[vfs]")
-{
-    int uart_fd, socket_fd;
-    init(&uart_fd, &socket_fd);
-    const int dummy_socket_fd = open_dummy_socket();
-
-    {
-        // Two tasks will wait for the same UART FD for reading and they will time-out
-
-        struct timeval tv = {
-            .tv_sec = 0,
-            .tv_usec = 100000,
-        };
-
-        fd_set rdfds1;
-        FD_ZERO(&rdfds1);
-        FD_SET(uart_fd, &rdfds1);
-
-        test_select_task_param_t param = {
-            .rdfds = &rdfds1,
-            .wrfds = NULL,
-            .errfds = NULL,
-            .maxfds = uart_fd + 1,
-            .tv = &tv,
-            .select_ret = 0, // expected timeout
-            .sem = xSemaphoreCreateBinary(),
-        };
-        TEST_ASSERT_NOT_NULL(param.sem);
-
-        fd_set rdfds2;
-        FD_ZERO(&rdfds2);
-        FD_SET(uart_fd, &rdfds2);
-        FD_SET(socket_fd, &rdfds2);
-        FD_SET(dummy_socket_fd, &rdfds2);
-
-        start_select_task(&param);
-        vTaskDelay(10 / portTICK_PERIOD_MS); //make sure the task has started and waits in select()
-
-        int s = select(MAX(MAX(uart_fd, dummy_socket_fd), socket_fd) + 1, &rdfds2, NULL, NULL, &tv);
-        TEST_ASSERT_EQUAL(0, s); // timeout here as well
-
-        TEST_ASSERT_EQUAL(pdTRUE, xSemaphoreTake(param.sem, 1000 / portTICK_PERIOD_MS));
-        vSemaphoreDelete(param.sem);
-    }
-
-    {
-        // One tasks waits for UART reading and one for writing. The former will be successful and latter will
-        // time-out.
-
-        struct timeval tv = {
-            .tv_sec = 0,
-            .tv_usec = 100000,
-        };
-
-        fd_set wrfds1;
-        FD_ZERO(&wrfds1);
-        FD_SET(uart_fd, &wrfds1);
-
-        test_select_task_param_t param = {
-            .rdfds = NULL,
-            .wrfds = &wrfds1,
-            .errfds = NULL,
-            .maxfds = uart_fd + 1,
-            .tv = &tv,
-            .select_ret = 1,
-            .sem = xSemaphoreCreateBinary(),
-        };
-        TEST_ASSERT_NOT_NULL(param.sem);
-
-        const test_task_param_t send_param = {
-            .fd = uart_fd,
-            .delay_ms = 50,
-            .sem = xSemaphoreCreateBinary(),
-        };
-        TEST_ASSERT_NOT_NULL(send_param.sem);
-        start_write_task(&send_param);        // This task will write to UART which will be detected by select()
-        start_select_task(&param);
-        vTaskDelay(100 / portTICK_PERIOD_MS); //make sure the task has started and waits in select()
-
-        fd_set rdfds2;
-        FD_ZERO(&rdfds2);
-        FD_SET(uart_fd, &rdfds2);
-        FD_SET(socket_fd, &rdfds2);
-        FD_SET(dummy_socket_fd, &rdfds2);
-
-        int s = select(MAX(MAX(uart_fd, dummy_socket_fd), socket_fd) + 1, &rdfds2, NULL, NULL, &tv);
-        TEST_ASSERT_EQUAL(1, s);
-        TEST_ASSERT(FD_ISSET(uart_fd, &rdfds2));
-        TEST_ASSERT_UNLESS(FD_ISSET(socket_fd, &rdfds2));
-        TEST_ASSERT_UNLESS(FD_ISSET(dummy_socket_fd, &rdfds2));
-
-        TEST_ASSERT_EQUAL(pdTRUE, xSemaphoreTake(param.sem, 1000 / portTICK_PERIOD_MS));
-        vSemaphoreDelete(param.sem);
-
-        TEST_ASSERT_EQUAL(pdTRUE, xSemaphoreTake(send_param.sem, 1000 / portTICK_PERIOD_MS));
-        vSemaphoreDelete(send_param.sem);
-    }
-
-    deinit(uart_fd, socket_fd);
-    close(dummy_socket_fd);
-}
-#endif
-
-TEST_CASE("select() works with concurrent mount", "[vfs][fatfs]")
-{
-    wl_handle_t test_wl_handle;
-    int uart_fd, socket_fd;
-
-    init(&uart_fd, &socket_fd);
-    const int dummy_socket_fd = open_dummy_socket();
-
-    esp_vfs_fat_sdmmc_mount_config_t mount_config = {
-        .format_if_mount_failed = true,
-        .max_files = 2
-    };
-
-    // select() will be waiting for a socket & UART and FATFS mount will occur in parallel
-
-    struct timeval tv = {
-        .tv_sec = 1,
-        .tv_usec = 0,
-    };
-
-    fd_set rdfds;
-    FD_ZERO(&rdfds);
-    FD_SET(uart_fd, &rdfds);
-    FD_SET(dummy_socket_fd, &rdfds);
-
-    test_select_task_param_t param = {
-        .rdfds = &rdfds,
-        .wrfds = NULL,
-        .errfds = NULL,
-        .maxfds = MAX(uart_fd, dummy_socket_fd) + 1,
-        .tv = &tv,
-        .select_ret = 0, // expected timeout
-        .sem = xSemaphoreCreateBinary(),
-    };
-    TEST_ASSERT_NOT_NULL(param.sem);
-
-    start_select_task(&param);
-    vTaskDelay(10 / portTICK_PERIOD_MS); //make sure the task has started and waits in select()
-
-    TEST_ESP_OK(esp_vfs_fat_spiflash_mount_rw_wl("/spiflash", NULL, &mount_config, &test_wl_handle));
-
-    TEST_ASSERT_EQUAL(pdTRUE, xSemaphoreTake(param.sem, 1500 / portTICK_PERIOD_MS));
-
-    // select() will be waiting for a socket & UART and FATFS unmount will occur in parallel
-
-    FD_ZERO(&rdfds);
-    FD_SET(uart_fd, &rdfds);
-    FD_SET(dummy_socket_fd, &rdfds);
-
-    start_select_task(&param);
-    vTaskDelay(10 / portTICK_PERIOD_MS); //make sure the task has started and waits in select()
-
-    TEST_ESP_OK(esp_vfs_fat_spiflash_unmount_rw_wl("/spiflash", test_wl_handle));
-
-    TEST_ASSERT_EQUAL(pdTRUE, xSemaphoreTake(param.sem, 1500 / portTICK_PERIOD_MS));
-
-    vSemaphoreDelete(param.sem);
-
-    deinit(uart_fd, socket_fd);
-    close(dummy_socket_fd);
 }

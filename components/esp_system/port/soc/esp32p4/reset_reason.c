@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -23,24 +23,23 @@ static esp_reset_reason_t get_reset_reason(soc_reset_reason_t rtc_reset_reason, 
     case RESET_REASON_CPU0_SW:
     case RESET_REASON_CORE_SW:
         if (reset_reason_hint == ESP_RST_PANIC ||
-            reset_reason_hint == ESP_RST_BROWNOUT ||
-            reset_reason_hint == ESP_RST_TASK_WDT ||
-            reset_reason_hint == ESP_RST_INT_WDT) {
+                reset_reason_hint == ESP_RST_BROWNOUT ||
+                reset_reason_hint == ESP_RST_TASK_WDT ||
+                reset_reason_hint == ESP_RST_INT_WDT) {
             return reset_reason_hint;
         }
         return ESP_RST_SW;
 
-    case RESET_REASON_SYS_PMU_PWR_DOWN:
-    case RESET_REASON_CPU_PMU_PWR_DOWN:
-        /* Check when doing sleep bringup TODO 	IDF-7529 */
+    case RESET_REASON_CORE_PMU_PWR_DOWN:
+        /* Check when doing sleep bringup TODO  IDF-7529 */
         return ESP_RST_DEEPSLEEP;
 
-    case RESET_REASON_SYS_HP_WDT:
-    case RESET_REASON_SYS_LP_WDT:
+    case RESET_REASON_CPU_MWDT:
+    case RESET_REASON_CPU_RWDT:
     case RESET_REASON_SYS_SUPER_WDT:
-    case RESET_REASON_CHIP_LP_WDT:
-    case RESET_REASON_CORE_HP_WDT:
-    case RESET_REASON_CORE_LP_WDT:
+    case RESET_REASON_SYS_RWDT:
+    case RESET_REASON_CORE_MWDT:
+    case RESET_REASON_CORE_RWDT:
         /* Code is the same for INT vs Task WDT */
         return ESP_RST_WDT;
 
@@ -53,6 +52,15 @@ static esp_reset_reason_t get_reset_reason(soc_reset_reason_t rtc_reset_reason, 
 
     case RESET_REASON_CPU_JTAG:
         return ESP_RST_JTAG;
+
+    case RESET_REASON_CPU_LOCKUP:
+        return ESP_RST_CPU_LOCKUP;
+
+    case RESET_REASON_CORE_EFUSE_CRC:
+        return ESP_RST_EFUSE;
+
+    case RESET_REASON_CORE_PWR_GLITCH:
+        return ESP_RST_PWR_GLITCH;
 
     default:
         return ESP_RST_UNKNOWN;
@@ -97,8 +105,7 @@ void IRAM_ATTR esp_reset_reason_set_hint(esp_reset_reason_t hint)
     REG_WRITE(RTC_RESET_CAUSE_REG, val);
 }
 
-/* in IRAM, can be called from panic handler */
-esp_reset_reason_t IRAM_ATTR esp_reset_reason_get_hint(void)
+esp_reset_reason_t esp_reset_reason_get_hint(void)
 {
     uint32_t reset_reason_hint = REG_READ(RTC_RESET_CAUSE_REG);
     uint32_t high = (reset_reason_hint >> RST_REASON_SHIFT) & RST_REASON_MASK;

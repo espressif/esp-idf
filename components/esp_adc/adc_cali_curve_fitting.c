@@ -178,7 +178,6 @@ static void calc_first_step_coefficients(const adc_calib_info_t *parsed_data, ca
     ESP_LOGV(TAG, "Calib V1, Cal Voltage = %" PRId32 ", Digi out = %" PRId32 ", Coef_a = %" PRId32, parsed_data->ref_data.ver1.voltage, parsed_data->ref_data.ver1.digi, ctx->chars_first_step.coeff_a);
 }
 
-
 static int32_t get_reading_error(uint64_t v_cali_1, const cali_chars_second_step_t *param)
 {
     if (v_cali_1 == 0 || param->term_num == 0) {

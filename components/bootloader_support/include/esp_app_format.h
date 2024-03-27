@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,6 +7,9 @@
 
 #include <inttypes.h>
 #include "esp_assert.h"
+
+// TODO: IDF-9197
+#include "sdkconfig.h"
 
 /**
  * @brief ESP chip ID
@@ -21,6 +24,11 @@ typedef enum {
     ESP_CHIP_ID_ESP32C6 = 0x000D, /*!< chip ID: ESP32-C6 */
     ESP_CHIP_ID_ESP32H2 = 0x0010, /*!< chip ID: ESP32-H2 */
     ESP_CHIP_ID_ESP32P4 = 0x0012, /*!< chip ID: ESP32-P4 */
+#if CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION  // TODO: IDF-9197
+    ESP_CHIP_ID_ESP32C5 = 0x0011, /*!< chip ID: ESP32-C5 beta3 (MPW)*/
+#elif CONFIG_IDF_TARGET_ESP32C5_MP_VERSION
+    ESP_CHIP_ID_ESP32C5 = 0x0017, /*!< chip ID: ESP32-C5 MP */
+#endif
     ESP_CHIP_ID_INVALID = 0xFFFF /*!< Invalid chip ID (we defined it to make sure the esp_chip_id_t is 2 bytes size) */
 } __attribute__((packed)) esp_chip_id_t;
 

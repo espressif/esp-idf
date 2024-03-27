@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -45,7 +45,7 @@ static _lock_t s_time_lock;
 // This function gradually changes boot_time to the correction value and immediately updates it.
 static uint64_t adjust_boot_time(void)
 {
-    #define ADJTIME_CORRECTION_FACTOR 6
+#define ADJTIME_CORRECTION_FACTOR 6
 
     uint64_t boot_time = esp_time_impl_get_boot_time();
     if ((boot_time == 0) || (esp_time_impl_get_time_since_boot() < s_adjtime_start_us)) {
@@ -83,7 +83,6 @@ static uint64_t adjust_boot_time(void)
     return boot_time;
 }
 
-
 // Get the adjusted boot time.
 static uint64_t get_adjusted_boot_time(void)
 {
@@ -94,10 +93,10 @@ static uint64_t get_adjusted_boot_time(void)
 }
 
 // Applying the accumulated correction to base_time and stopping the smooth time adjustment.
-static void adjtime_corr_stop (void)
+static void adjtime_corr_stop(void)
 {
     _lock_acquire(&s_time_lock);
-    if (s_adjtime_start_us != 0){
+    if (s_adjtime_start_us != 0) {
         adjust_boot_time();
         s_adjtime_start_us = 0;
     }
@@ -108,7 +107,7 @@ static void adjtime_corr_stop (void)
 int adjtime(const struct timeval *delta, struct timeval *outdelta)
 {
 #if IMPL_NEWLIB_TIME_FUNCS
-    if(outdelta != NULL){
+    if (outdelta != NULL) {
         _lock_acquire(&s_time_lock);
         adjust_boot_time();
         if (s_adjtime_start_us != 0) {
@@ -120,10 +119,10 @@ int adjtime(const struct timeval *delta, struct timeval *outdelta)
         }
         _lock_release(&s_time_lock);
     }
-    if(delta != NULL){
+    if (delta != NULL) {
         int64_t sec  = delta->tv_sec;
         int64_t usec = delta->tv_usec;
-        if(llabs(sec) > ((INT_MAX / 1000000L) - 1L)) {
+        if (llabs(sec) > ((INT_MAX / 1000000L) - 1L)) {
             errno = EINVAL;
             return -1;
         }
@@ -208,7 +207,7 @@ int usleep(useconds_t us)
 
 unsigned int sleep(unsigned int seconds)
 {
-    usleep(seconds*1000000UL);
+    usleep(seconds * 1000000UL);
     return 0;
 }
 
@@ -221,14 +220,14 @@ int clock_settime(clockid_t clock_id, const struct timespec *tp)
     }
     struct timeval tv;
     switch (clock_id) {
-        case CLOCK_REALTIME:
-            tv.tv_sec = tp->tv_sec;
-            tv.tv_usec = tp->tv_nsec / 1000L;
-            settimeofday(&tv, NULL);
-            break;
-        default:
-            errno = EINVAL;
-            return -1;
+    case CLOCK_REALTIME:
+        tv.tv_sec = tp->tv_sec;
+        tv.tv_usec = tp->tv_nsec / 1000L;
+        settimeofday(&tv, NULL);
+        break;
+    default:
+        errno = EINVAL;
+        return -1;
     }
     return 0;
 #else
@@ -237,7 +236,7 @@ int clock_settime(clockid_t clock_id, const struct timespec *tp)
 #endif
 }
 
-int clock_gettime (clockid_t clock_id, struct timespec *tp)
+int clock_gettime(clockid_t clock_id, struct timespec *tp)
 {
 #if IMPL_NEWLIB_TIME_FUNCS
     if (tp == NULL) {
@@ -247,19 +246,19 @@ int clock_gettime (clockid_t clock_id, struct timespec *tp)
     struct timeval tv;
     uint64_t monotonic_time_us = 0;
     switch (clock_id) {
-        case CLOCK_REALTIME:
-            _gettimeofday_r(NULL, &tv, NULL);
-            tp->tv_sec = tv.tv_sec;
-            tp->tv_nsec = tv.tv_usec * 1000L;
-            break;
-        case CLOCK_MONOTONIC:
-            monotonic_time_us = esp_time_impl_get_time();
-            tp->tv_sec = monotonic_time_us / 1000000LL;
-            tp->tv_nsec = (monotonic_time_us % 1000000LL) * 1000L;
-            break;
-        default:
-            errno = EINVAL;
-            return -1;
+    case CLOCK_REALTIME:
+        _gettimeofday_r(NULL, &tv, NULL);
+        tp->tv_sec = tv.tv_sec;
+        tp->tv_nsec = tv.tv_usec * 1000L;
+        break;
+    case CLOCK_MONOTONIC:
+        monotonic_time_us = esp_time_impl_get_time();
+        tp->tv_sec = monotonic_time_us / 1000000LL;
+        tp->tv_nsec = (monotonic_time_us % 1000000LL) * 1000L;
+        break;
+    default:
+        errno = EINVAL;
+        return -1;
     }
     return 0;
 #else
@@ -268,7 +267,7 @@ int clock_gettime (clockid_t clock_id, struct timespec *tp)
 #endif
 }
 
-int clock_getres (clockid_t clock_id, struct timespec *res)
+int clock_getres(clockid_t clock_id, struct timespec *res)
 {
 #if IMPL_NEWLIB_TIME_FUNCS
     if (res == NULL) {

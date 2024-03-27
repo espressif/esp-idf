@@ -1,13 +1,12 @@
 /*
- * SPDX-FileCopyrightText: 2020 Amazon.com, Inc. or its affiliates
+ * FreeRTOS Kernel V10.5.1 (ESP-IDF SMP modified)
+ * Copyright (C) 2021 Amazon.com, Inc. or its affiliates.  All Rights Reserved.
+ *
+ * SPDX-FileCopyrightText: 2021 Amazon.com, Inc. or its affiliates
  *
  * SPDX-License-Identifier: MIT
  *
- * SPDX-FileContributor: 2016-2023 Espressif Systems (Shanghai) CO LTD
- */
-/*
- * FreeRTOS Kernel V10.4.3
- * Copyright (C) 2020 Amazon.com, Inc. or its affiliates.  All Rights Reserved.
+ * SPDX-FileContributor: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
  * this software and associated documentation files (the "Software"), to deal in
@@ -29,7 +28,6 @@
  * https://www.FreeRTOS.org
  * https://github.com/FreeRTOS
  *
- * 1 tab == 4 spaces!
  */
 
 /*-----------------------------------------------------------------------
@@ -48,6 +46,7 @@
 #include "riscv/rv_utils.h"
 #include "riscv/interrupt.h"
 #include "esp_private/crosscore_int.h"
+#include "hal/crosscore_int_ll.h"
 #include "esp_attr.h"
 #include "esp_system.h"
 #include "esp_intr_alloc.h"
@@ -60,6 +59,18 @@
 #if CONFIG_IDF_TARGET_ESP32P4
 #include "soc/hp_system_reg.h"
 #endif
+
+#if ( SOC_CPU_COPROC_NUM > 0 )
+
+#include "esp_private/panic_internal.h"
+
+/* Since `portFORCE_INLINE` is not defined in `portmacro.h`, we must define it here since it is
+ * used by `atomic.h`. */
+#define portFORCE_INLINE    inline
+#include "freertos/atomic.h"
+
+#endif // ( SOC_CPU_COPROC_NUM > 0 )
+
 
 _Static_assert(portBYTE_ALIGNMENT == 16, "portBYTE_ALIGNMENT must be set to 16");
 #if CONFIG_ESP_SYSTEM_HW_STACK_GUARD
@@ -84,6 +95,13 @@ volatile UBaseType_t port_uxCriticalNesting[portNUM_PROCESSORS] = {0};
 volatile UBaseType_t port_uxOldInterruptState[portNUM_PROCESSORS] = {0};
 volatile UBaseType_t xPortSwitchFlag[portNUM_PROCESSORS] = {0};
 
+#if ( SOC_CPU_COPROC_NUM > 0 )
+
+/* Current owner of the coprocessors for each core */
+StaticTask_t* port_uxCoprocOwner[portNUM_PROCESSORS][SOC_CPU_COPROC_NUM];
+
+#endif /* SOC_CPU_COPROC_NUM > 0 */
+
 /*
 *******************************************************************************
 * Interrupt stack. The size of the interrupt stack is determined by the config
@@ -106,6 +124,10 @@ StackType_t *xIsrStackBottom[portNUM_PROCESSORS] = {0};
 
 BaseType_t xPortStartScheduler(void)
 {
+#if ( SOC_CPU_COPROC_NUM > 0 )
+    /* Disable FPU so that the first task to use it will trigger an exception */
+    rv_utils_disable_fpu();
+#endif
     /* Initialize all kernel state tracking variables */
     BaseType_t coreID = xPortGetCoreID();
     port_uxInterruptNesting[coreID] = 0;
@@ -123,11 +145,7 @@ BaseType_t xPortStartScheduler(void)
     /* Setup the hardware to generate the tick. */
     vPortSetupTimer();
 
-#if !SOC_INT_CLIC_SUPPORTED
-    esprv_intc_int_set_threshold(1); /* set global INTC masking level */
-#else
-    esprv_intc_int_set_threshold(0); /* set global CLIC masking level. When CLIC is supported, all interrupt priority levels less than or equal to the threshold level are masked. */
-#endif /* !SOC_INT_CLIC_SUPPORTED */
+    esprv_int_set_threshold(RVHAL_INTR_ENABLE_THRESH); /* set global interrupt masking level */
     rv_utils_intr_global_enable();
 
     vPortYield();
@@ -171,57 +189,41 @@ void vPortEndScheduler(void)
 FORCE_INLINE_ATTR UBaseType_t uxInitialiseStackTLS(UBaseType_t uxStackPointer, uint32_t *ret_threadptr_reg_init)
 {
     /*
-    TLS layout at link-time, where 0xNNN is the offset that the linker calculates to a particular TLS variable.
-
     LOW ADDRESS
             |---------------------------|   Linker Symbols
             | Section                   |   --------------
-            | .flash.rodata             |
-         0x0|---------------------------| <- _flash_rodata_start
-          ^ | Other Data                |
-          | |---------------------------| <- _thread_local_start
-          | | .tbss                     | ^
-          V |                           | |
-      0xNNN | int example;              | | tls_area_size
-            |                           | |
-            | .tdata                    | V
-            |---------------------------| <- _thread_local_end
+            | .flash.tdata              |
+         0x0|---------------------------| <- _thread_local_data_start  ^
+            | .flash.tdata              |                              |
+            | int var_1 = 1;            |                              |
+            |                           | <- _thread_local_data_end    |
+            |                           | <- _thread_local_bss_start   | tls_area_size
+            |                           |                              |
+            | .flash.tbss (NOLOAD)      |                              |
+            | int var_2;                |                              |
+            |---------------------------| <- _thread_local_bss_end     V
             | Other data                |
             | ...                       |
             |---------------------------|
     HIGH ADDRESS
     */
     // Calculate TLS area size and round up to multiple of 16 bytes.
-    extern char _thread_local_start, _thread_local_end, _flash_rodata_start;
-    const uint32_t tls_area_size = ALIGNUP(16, (uint32_t)&_thread_local_end - (uint32_t)&_thread_local_start);
+    extern char _thread_local_data_start, _thread_local_data_end;
+    extern char _thread_local_bss_start, _thread_local_bss_end;
+    const uint32_t tls_data_size = (uint32_t)&_thread_local_data_end - (uint32_t)&_thread_local_data_start;
+    const uint32_t tls_bss_size = (uint32_t)&_thread_local_bss_end - (uint32_t)&_thread_local_bss_start;
+    const uint32_t tls_area_size = ALIGNUP(16, tls_data_size + tls_bss_size);
     // TODO: check that TLS area fits the stack
 
     // Allocate space for the TLS area on the stack. The area must be aligned to 16-bytes
     uxStackPointer = STACKPTR_ALIGN_DOWN(16, uxStackPointer - (UBaseType_t)tls_area_size);
-    // Initialize the TLS area with the initialization values of each TLS variable
-    memcpy((void *)uxStackPointer, &_thread_local_start, tls_area_size);
+    // Initialize the TLS data with the initialization values of each TLS variable
+    memcpy((void *)uxStackPointer, &_thread_local_data_start, tls_data_size);
+    // Initialize the TLS bss with zeroes
+    memset((void *)(uxStackPointer + tls_data_size), 0, tls_bss_size);
 
-    /*
-    Calculate the THREADPTR register's initialization value based on the link-time offset and the TLS area allocated on
-    the stack.
-
-    HIGH ADDRESS
-            |---------------------------|
-            | .tdata (*)                |
-          ^ | int example;              |
-          | |                           |
-          | | .tbss (*)                 |
-          | |---------------------------| <- uxStackPointer (start of TLS area)
-    0xNNN | |                           | ^
-          | |                           | |
-          |             ...               | _thread_local_start - _rodata_start
-          | |                           | |
-          | |                           | V
-          V |                           | <- threadptr register's value
-
-    LOW ADDRESS
-    */
-    *ret_threadptr_reg_init = (uint32_t)uxStackPointer - ((uint32_t)&_thread_local_start - (uint32_t)&_flash_rodata_start);
+    // Save tls start address
+    *ret_threadptr_reg_init = (uint32_t)uxStackPointer;
     return uxStackPointer;
 }
 
@@ -239,6 +241,65 @@ static void vPortTaskWrapper(TaskFunction_t pxCode, void *pvParameters)
     panic_abort(msg);
 }
 #endif // CONFIG_FREERTOS_TASK_FUNCTION_WRAPPER
+
+
+#if ( SOC_CPU_COPROC_NUM > 0 )
+
+/**
+ * @brief Retrieve or allocate coprocessors save area from the given pxTopOfStack address.
+ *
+ * @param pxTopOfStack End of the stack address. This represents the highest address of a Task's stack.
+ */
+FORCE_INLINE_ATTR RvCoprocSaveArea* pxRetrieveCoprocSaveAreaFromStackPointer(UBaseType_t pxTopOfStack)
+{
+    return (RvCoprocSaveArea*) STACKPTR_ALIGN_DOWN(16, pxTopOfStack - sizeof(RvCoprocSaveArea));
+}
+
+/**
+ * @brief Allocate and initialize the coprocessors save area on the stack
+ *
+ * @param[in] uxStackPointer Current stack pointer address
+ *
+ * @return Stack pointer that points to allocated and initialized the coprocessor save area
+ */
+FORCE_INLINE_ATTR UBaseType_t uxInitialiseCoprocSaveArea(UBaseType_t uxStackPointer)
+{
+    RvCoprocSaveArea* sa = pxRetrieveCoprocSaveAreaFromStackPointer(uxStackPointer);
+    memset(sa, 0, sizeof(RvCoprocSaveArea));
+    return (UBaseType_t) sa;
+}
+
+
+static void vPortCleanUpCoprocArea(void *pvTCB)
+{
+    StaticTask_t* task = (StaticTask_t*) pvTCB;
+
+    /* Get a pointer to the task's coprocessor save area */
+    const UBaseType_t bottomstack = (UBaseType_t) task->pxDummy8;
+    RvCoprocSaveArea* sa = pxRetrieveCoprocSaveAreaFromStackPointer(bottomstack);
+
+    /* If the Task used any coprocessor, check if it is the actual owner of any.
+     * If yes, reset the owner. */
+    if (sa->sa_enable != 0) {
+        /* Restore the original lowest address of the stack in the TCB */
+        task->pxDummy6 = sa->sa_tcbstack;
+
+        /* Get the core the task is pinned on */
+        #if ( configNUM_CORES > 1 )
+            const BaseType_t coreID = task->xDummyCoreID;
+        #else /* configNUM_CORES > 1 */
+            const BaseType_t coreID = 0;
+        #endif /* configNUM_CORES > 1 */
+
+        for (int i = 0; i < SOC_CPU_COPROC_NUM; i++) {
+            StaticTask_t** owner = &port_uxCoprocOwner[coreID][i];
+            /* If the owner is `task`, replace it with NULL atomically */
+            Atomic_CompareAndSwapPointers_p32((void**) owner, NULL, task);
+        }
+    }
+}
+#endif /* SOC_CPU_COPROC_NUM > 0 */
+
 
 /**
  * @brief Initialize the task's starting interrupt stack frame
@@ -306,12 +367,38 @@ StackType_t *pxPortInitialiseStack(StackType_t *pxTopOfStack, TaskFunction_t pxC
 
     - All stack areas are aligned to 16 byte boundary
     - We use UBaseType_t for all of stack area initialization functions for more convenient pointer arithmetic
+
+    In the case of targets that have coprocessors, the stack is presented as follows:
+    HIGH ADDRESS
+    |---------------------------| <- pxTopOfStack on entry
+    | Coproc. Save Area         | <- RvCoprocSaveArea
+    | ------------------------- |
+    | TLS Variables             |
+    | ------------------------- | <- Start of useable stack
+    | Starting stack frame      |
+    | ------------------------- | <- pxTopOfStack on return (which is the tasks current SP)
+    |             |             |
+    |             |             |
+    |             V             |
+    |---------------------------|
+    | Coproc. m Saved Context   | <- Coprocessor context save area after allocation
+    |---------------------------|
+    | Coproc. n Saved Context   | <- Another coprocessor context save area after allocation
+    ----------------------------- <- Bottom of stack
+    LOW ADDRESS
+
+    Where m != n, n < SOC_CPU_COPROC_NUM, m < SOC_CPU_COPROC_NUM
+
     */
 
     UBaseType_t uxStackPointer = (UBaseType_t)pxTopOfStack;
     configASSERT((uxStackPointer & portBYTE_ALIGNMENT_MASK) == 0);
 
-    // IDF-7770: Support FPU context save area for P4
+#if ( SOC_CPU_COPROC_NUM > 0 )
+    // Initialize the coprocessors save area
+    uxStackPointer = uxInitialiseCoprocSaveArea(uxStackPointer);
+    configASSERT((uxStackPointer & portBYTE_ALIGNMENT_MASK) == 0);
+#endif // SOC_CPU_COPROC_NUM > 0
 
     // Initialize GCC TLS area
     uint32_t threadptr_reg_init;
@@ -373,7 +460,7 @@ UBaseType_t xPortSetInterruptMaskFromISR(void)
     RV_SET_CSR(mstatus, old_mstatus & MSTATUS_MIE);
 #else
     /* When CLIC is supported, all interrupt priority levels less than or equal to the threshold level are masked. */
-    prev_int_level = rv_utils_mask_int_level_lower_than(RVHAL_EXCM_LEVEL);
+    prev_int_level = rv_utils_set_intlevel_regval(RVHAL_EXCM_LEVEL_CLIC);
 #endif /* !SOC_INIT_CLIC_SUPPORTED */
     /**
      * In theory, this function should not return immediately as there is a
@@ -394,7 +481,7 @@ void vPortClearInterruptMaskFromISR(UBaseType_t prev_int_level)
 #if !SOC_INT_CLIC_SUPPORTED
     REG_WRITE(INTERRUPT_CURRENT_CORE_INT_THRESH_REG, prev_int_level);
 #else
-    rv_utils_restore_intlevel(prev_int_level);
+    rv_utils_restore_intlevel_regval(prev_int_level);
 #endif /* SOC_INIT_CLIC_SUPPORTED */
     /**
      * The delay between the moment we unmask the interrupt threshold register
@@ -524,13 +611,6 @@ void vPortExitCritical(void)
 void vPortYield(void)
 {
     BaseType_t coreID = xPortGetCoreID();
-    int system_cpu_int_reg;
-
-#if !CONFIG_IDF_TARGET_ESP32P4
-    system_cpu_int_reg = SYSTEM_CPU_INTR_FROM_CPU_0_REG;
-#else
-    system_cpu_int_reg = HP_SYSTEM_CPU_INT_FROM_CPU_0_REG;
-#endif /* !CONFIG_IDF_TARGET_ESP32P4 */
 
     if (port_uxInterruptNesting[coreID]) {
         vPortYieldFromISR();
@@ -546,7 +626,7 @@ void vPortYield(void)
            for an instant yield, and if that happens then the WFI would be
            waiting for the next interrupt to occur...)
         */
-        while (port_xSchedulerRunning[coreID] && port_uxCriticalNesting[coreID] == 0 && REG_READ(system_cpu_int_reg + 4 * coreID) != 0) {}
+        while (port_xSchedulerRunning[coreID] && port_uxCriticalNesting[coreID] == 0 && crosscore_int_ll_get_state(coreID) != 0) {}
     }
 }
 
@@ -649,7 +729,130 @@ void vPortTCBPreDeleteHook( void *pxTCB )
         /* Call TLS pointers deletion callbacks */
         vPortTLSPointersDelCb( pxTCB );
     #endif /* CONFIG_FREERTOS_TLSP_DELETION_CALLBACKS */
+
+    #if ( SOC_CPU_COPROC_NUM > 0 )
+        /* Cleanup coproc save area */
+        vPortCleanUpCoprocArea( pxTCB );
+    #endif /* SOC_CPU_COPROC_NUM > 0 */
 }
+
+
+#if ( SOC_CPU_COPROC_NUM > 0 )
+
+// ----------------------- Coprocessors --------------------------
+
+/**
+ * @brief Pin the given task to the given core
+ *
+ * This function is called when a task uses a coprocessor. Since the coprocessors registers
+ * are saved lazily, as soon as a task starts using one, it must always be scheduled on the core
+ * it is currently executing on.
+ */
+#if ( configNUM_CORES > 1 )
+void vPortTaskPinToCore(StaticTask_t* task, int coreid)
+{
+    task->xDummyCoreID = coreid;
+}
+#endif /* configNUM_CORES > 1 */
+
+
+/**
+ * @brief Function to call to simulate an `abort()` occurring in a different context than the one it's called from.
+ */
+extern void xt_unhandled_exception(void *frame);
+
+/**
+ * @brief Get coprocessor save area out of the given task. If the coprocessor area is not created,
+ *        it shall be allocated.
+ *
+ * @param task Task to get the coprocessor save area of
+ * @param allocate When true, memory will be allocated for the coprocessor if it hasn't been allocated yet.
+ *                 When false, the coprocessor memory will be left as NULL if not allocated.
+ * @param coproc Coprocessor number to allocate memory for
+ */
+RvCoprocSaveArea* pxPortGetCoprocArea(StaticTask_t* task, bool allocate, int coproc)
+{
+    assert(coproc < SOC_CPU_COPROC_NUM);
+
+    const UBaseType_t bottomstack = (UBaseType_t) task->pxDummy8;
+    RvCoprocSaveArea* sa = pxRetrieveCoprocSaveAreaFromStackPointer(bottomstack);
+    /* Check if the allocator is NULL. Since we don't have a way to get the end of the stack
+     * during its initialization, we have to do this here */
+    if (sa->sa_allocator == 0) {
+        /* Since the lowest stack address shall not be used as `sp` anymore, we will modify it */
+        sa->sa_tcbstack = task->pxDummy6;
+        sa->sa_allocator = (UBaseType_t) task->pxDummy6;
+    }
+
+    /* Check if coprocessor area is allocated */
+    if (allocate && sa->sa_coprocs[coproc] == NULL) {
+        const uint32_t coproc_sa_sizes[] = {
+            RV_COPROC0_SIZE, RV_COPROC1_SIZE
+        };
+        /* The allocator points to a usable part of the stack, use it for the coprocessor */
+        sa->sa_coprocs[coproc] = (void*) (sa->sa_allocator);
+        sa->sa_allocator += coproc_sa_sizes[coproc];
+        /* Update the lowest address of the stack to prevent FreeRTOS performing overflow/watermark checks on the coprocessors contexts */
+        task->pxDummy6 = (void*) (sa->sa_allocator);
+        /* Make sure the Task stack pointer is not pointing to the coprocessor context area, in other words, make
+         * sure we don't have a stack overflow */
+        void* task_sp = task->pxDummy1;
+        if (task_sp <= task->pxDummy6) {
+            /* In theory we need to call vApplicationStackOverflowHook to trigger the stack overflow callback,
+             * but in practice, since we are already in an exception handler, this won't work, so let's manually
+             * trigger an exception with the previous FPU owner's TCB */
+            g_panic_abort = true;
+            g_panic_abort_details = (char *) "ERROR: Stack overflow while saving FPU context!\n";
+            xt_unhandled_exception(task_sp);
+        }
+    }
+    return sa;
+}
+
+
+/**
+ * @brief Update given coprocessor owner and get the address of former owner's save area.
+ *
+ * This function is called when the current running task has poked a coprocessor's register which
+ * was used by a previous task. We have to save the coprocessor context (registers) inside the
+ * current owner's save area and change the ownership. The coprocessor will be marked as used in
+ * the new owner's coprocessor save area.
+ *
+ * @param coreid    Current core
+ * @param coproc    Coprocessor to save context of
+ *
+ * @returns Coprocessor former owner's save area
+ */
+RvCoprocSaveArea* pxPortUpdateCoprocOwner(int coreid, int coproc, StaticTask_t* owner)
+{
+    RvCoprocSaveArea* sa = NULL;
+    /* Address of coprocessor owner */
+    StaticTask_t** owner_addr = &port_uxCoprocOwner[ coreid ][ coproc ];
+    /* Atomically exchange former owner with the new one */
+    StaticTask_t* former = Atomic_SwapPointers_p32((void**) owner_addr, owner);
+    /* Get the save area of former owner */
+    if (former != NULL) {
+        /* Allocate coprocessor memory if not available yet */
+        sa = pxPortGetCoprocArea(former, true, coproc);
+    }
+    return sa;
+}
+
+
+/**
+ * @brief Aborts execution when a coprocessor was used in an ISR context
+ */
+void vPortCoprocUsedInISR(void* frame)
+{
+    /* Since this function is called from an exception handler, the interrupts are disabled,
+     * as such, it is not possible to trigger another exception as would `abort` do.
+     * Simulate an abort without actually triggering an exception. */
+    g_panic_abort = true;
+    g_panic_abort_details = (char *) "ERROR: Coprocessors must not be used in ISRs!\n";
+    xt_unhandled_exception(frame);
+}
+
+#endif /* SOC_CPU_COPROC_NUM > 0 */
 
 /* ---------------------------------------------- Misc Implementations -------------------------------------------------
  *

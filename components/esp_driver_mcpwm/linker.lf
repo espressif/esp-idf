@@ -1,0 +1,6 @@
+[mapping:mcpwm_driver]
+archive: libesp_driver_mcpwm.a
+entries:
+    if MCPWM_CTRL_FUNC_IN_IRAM = y:
+        mcpwm_cmpr: mcpwm_comparator_set_compare_value (noflash)
+        mcpwm_timer: mcpwm_timer_set_period (noflash)

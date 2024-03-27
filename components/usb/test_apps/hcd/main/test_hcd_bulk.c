@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -61,6 +61,7 @@ TEST_CASE("Test HCD bulk pipe URBs", "[bulk][full_speed]")
     hcd_pipe_handle_t default_pipe = test_hcd_pipe_alloc(port_hdl, NULL, 0, port_speed); //Create a default pipe (using a NULL EP descriptor)
     uint8_t dev_addr = test_hcd_enum_device(default_pipe);
     mock_msc_reset_req(default_pipe);
+    test_hcd_set_mock_msc_ep_descriptor(port_speed);
 
     //Create BULK IN and BULK OUT pipes for SCSI
     hcd_pipe_handle_t bulk_out_pipe = test_hcd_pipe_alloc(port_hdl, &mock_msc_scsi_bulk_out_ep_desc, dev_addr, port_speed);
@@ -68,10 +69,11 @@ TEST_CASE("Test HCD bulk pipe URBs", "[bulk][full_speed]")
     //Create URBs for CBW, Data, and CSW transport. IN Buffer sizes are rounded up to nearest MPS
     urb_t *urb_cbw = test_hcd_alloc_urb(0, sizeof(mock_msc_bulk_cbw_t));
     urb_t *urb_data = test_hcd_alloc_urb(0, TEST_NUM_SECTORS_PER_XFER * MOCK_MSC_SCSI_SECTOR_SIZE);
-    urb_t *urb_csw = test_hcd_alloc_urb(0, sizeof(mock_msc_bulk_csw_t) + (mock_msc_scsi_bulk_in_ep_desc.wMaxPacketSize - (sizeof(mock_msc_bulk_csw_t) % mock_msc_scsi_bulk_in_ep_desc.wMaxPacketSize)));
+    const uint16_t mps = USB_EP_DESC_GET_MPS(&mock_msc_scsi_bulk_in_ep_desc) ;
+    urb_t *urb_csw = test_hcd_alloc_urb(0, sizeof(mock_msc_bulk_csw_t) + (mps - (sizeof(mock_msc_bulk_csw_t) % mps)));
     urb_cbw->transfer.num_bytes = sizeof(mock_msc_bulk_cbw_t);
     urb_data->transfer.num_bytes = TEST_NUM_SECTORS_PER_XFER * MOCK_MSC_SCSI_SECTOR_SIZE;
-    urb_csw->transfer.num_bytes = sizeof(mock_msc_bulk_csw_t) + (mock_msc_scsi_bulk_in_ep_desc.wMaxPacketSize - (sizeof(mock_msc_bulk_csw_t) % mock_msc_scsi_bulk_in_ep_desc.wMaxPacketSize));
+    urb_csw->transfer.num_bytes = sizeof(mock_msc_bulk_csw_t) + (mps - (sizeof(mock_msc_bulk_csw_t) % mps));
 
     for (int block_num = 0; block_num < TEST_NUM_SECTORS_TOTAL; block_num += TEST_NUM_SECTORS_PER_XFER) {
         //Initialize CBW URB, then send it on the BULK OUT pipe

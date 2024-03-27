@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -35,7 +35,7 @@ typedef enum {
     DEV_ACTION_FREE_AND_RECOVER     = (1 << 5),     // Free the device object, but send a USBH_HUB_REQ_PORT_RECOVER request afterwards.
     DEV_ACTION_FREE                 = (1 << 6),     // Free the device object
     DEV_ACTION_PORT_DISABLE         = (1 << 7),     // Request the hub driver to disable the port of the device
-    DEV_ACTION_PROP_NEW             = (1 << 8),     // Propagate a USBH_EVENT_DEV_NEW event
+    DEV_ACTION_PROP_NEW             = (1 << 8),     // Propagate a USBH_EVENT_NEW_DEV event
 } dev_action_t;
 
 typedef struct device_s device_t;
@@ -110,8 +110,6 @@ typedef struct {
         void *hub_req_cb_arg;
         usbh_event_cb_t event_cb;
         void *event_cb_arg;
-        usbh_ctrl_xfer_cb_t ctrl_xfer_cb;
-        void *ctrl_xfer_cb_arg;
         SemaphoreHandle_t mux_lock;
     } constant;
 } usbh_t;
@@ -447,6 +445,8 @@ static bool _dev_set_actions(device_t *dev_obj, uint32_t action_flags)
         dev_obj->dynamic.flags.in_pending_list = 1;
         call_proc_req_cb = true;
     } else {
+        // The device is already on the callback list, thus a processing request is already pending.
+        dev_obj->dynamic.action_flags |= action_flags;
         call_proc_req_cb = false;
     }
     return call_proc_req_cb;
@@ -480,7 +480,14 @@ static inline void handle_ep0_dequeue(device_t *dev_obj)
     urb_t *urb = hcd_urb_dequeue(dev_obj->constant.default_pipe);
     while (urb != NULL) {
         num_urbs++;
-        p_usbh_obj->constant.ctrl_xfer_cb((usb_device_handle_t)dev_obj, urb, p_usbh_obj->constant.ctrl_xfer_cb_arg);
+        usbh_event_data_t event_data = {
+            .event = USBH_EVENT_CTRL_XFER,
+            .ctrl_xfer_data = {
+                .dev_hdl = (usb_device_handle_t)dev_obj,
+                .urb = urb,
+            },
+        };
+        p_usbh_obj->constant.event_cb(&event_data, p_usbh_obj->constant.event_cb_arg);
         urb = hcd_urb_dequeue(dev_obj->constant.default_pipe);
     }
     USBH_ENTER_CRITICAL();
@@ -498,7 +505,14 @@ static inline void handle_prop_gone_evt(device_t *dev_obj)
 {
     // Flush EP0's pipe. Then propagate a USBH_EVENT_DEV_GONE event
     ESP_LOGE(USBH_TAG, "Device %d gone", dev_obj->constant.address);
-    p_usbh_obj->constant.event_cb((usb_device_handle_t)dev_obj, USBH_EVENT_DEV_GONE, p_usbh_obj->constant.event_cb_arg);
+    usbh_event_data_t event_data = {
+        .event = USBH_EVENT_DEV_GONE,
+        .dev_gone_data = {
+            .dev_addr = dev_obj->constant.address,
+            .dev_hdl = (usb_device_handle_t)dev_obj,
+        },
+    };
+    p_usbh_obj->constant.event_cb(&event_data, p_usbh_obj->constant.event_cb_arg);
 }
 
 static void handle_free_and_recover(device_t *dev_obj, bool recover_port)
@@ -524,10 +538,13 @@ static void handle_free_and_recover(device_t *dev_obj, bool recover_port)
     xSemaphoreGive(p_usbh_obj->constant.mux_lock);
     device_free(dev_obj);
 
-    // If all devices have been freed, propagate a USBH_EVENT_DEV_ALL_FREE event
+    // If all devices have been freed, propagate a USBH_EVENT_ALL_FREE event
     if (all_free) {
         ESP_LOGD(USBH_TAG, "Device all free");
-        p_usbh_obj->constant.event_cb((usb_device_handle_t)NULL, USBH_EVENT_DEV_ALL_FREE, p_usbh_obj->constant.event_cb_arg);
+        usbh_event_data_t event_data = {
+            .event = USBH_EVENT_ALL_FREE,
+        };
+        p_usbh_obj->constant.event_cb(&event_data, p_usbh_obj->constant.event_cb_arg);
     }
     // Check if we need to recover the device's port
     if (recover_port) {
@@ -545,7 +562,13 @@ static inline void handle_port_disable(device_t *dev_obj)
 static inline void handle_prop_new_evt(device_t *dev_obj)
 {
     ESP_LOGD(USBH_TAG, "New device %d", dev_obj->constant.address);
-    p_usbh_obj->constant.event_cb((usb_device_handle_t)dev_obj, USBH_EVENT_DEV_NEW, p_usbh_obj->constant.event_cb_arg);
+    usbh_event_data_t event_data = {
+        .event = USBH_EVENT_NEW_DEV,
+        .new_dev_data = {
+            .dev_addr = dev_obj->constant.address,
+        },
+    };
+    p_usbh_obj->constant.event_cb(&event_data, p_usbh_obj->constant.event_cb_arg);
 }
 
 // ------------------------------------------------- USBH Functions ----------------------------------------------------
@@ -571,8 +594,6 @@ esp_err_t usbh_install(const usbh_config_t *usbh_config)
     usbh_obj->constant.proc_req_cb_arg = usbh_config->proc_req_cb_arg;
     usbh_obj->constant.event_cb = usbh_config->event_cb;
     usbh_obj->constant.event_cb_arg = usbh_config->event_cb_arg;
-    usbh_obj->constant.ctrl_xfer_cb = usbh_config->ctrl_xfer_cb;
-    usbh_obj->constant.ctrl_xfer_cb_arg = usbh_config->ctrl_xfer_cb_arg;
     usbh_obj->constant.mux_lock = mux_lock;
 
     // Assign USBH object pointer
@@ -1081,11 +1102,11 @@ esp_err_t usbh_ep_enqueue_urb(usbh_ep_handle_t ep_hdl, urb_t *urb)
 
     endpoint_t *ep_obj = (endpoint_t *)ep_hdl;
 
-    USBH_CHECK( transfer_check_usb_compliance(&(urb->transfer),
-                USB_EP_DESC_GET_XFERTYPE(ep_obj->constant.ep_desc),
-                USB_EP_DESC_GET_MPS(ep_obj->constant.ep_desc),
-                USB_EP_DESC_GET_EP_DIR(ep_obj->constant.ep_desc)),
-                ESP_ERR_INVALID_ARG);
+    USBH_CHECK(transfer_check_usb_compliance(&(urb->transfer),
+                                             USB_EP_DESC_GET_XFERTYPE(ep_obj->constant.ep_desc),
+                                             USB_EP_DESC_GET_MPS(ep_obj->constant.ep_desc),
+                                             USB_EP_DESC_GET_EP_DIR(ep_obj->constant.ep_desc)),
+               ESP_ERR_INVALID_ARG);
     // Check that the EP's underlying pipe is in the active state before submitting the URB
     if (hcd_pipe_get_state(ep_obj->constant.pipe_hdl) != HCD_PIPE_STATE_ACTIVE) {
         return ESP_ERR_INVALID_STATE;

@@ -116,6 +116,7 @@ ESP32-C3    I2S 0     I2S 0     无        I2S 0     无         无
 ESP32-C6    I2S 0     I2S 0     无        I2S 0     无         无
 ESP32-S3   I2S 0/1    I2S 0     I2S 0    I2S 0/1    无         无
 ESP32-H2    I2S 0     I2S 0     无        I2S 0     无         无
+ESP32-P4   I2S 0~2    I2S 0     I2S 0    I2S 0~2    无         无
 =========  ========  ========  ========  ========  ========  ==========
 
 标准模式
@@ -296,7 +297,7 @@ I2S 驱动例程请参考 :example:`peripherals/i2s` 目录。以下为每种模
 
 - :c:macro:`I2S_STD_CLK_DEFAULT_CONFIG`。
 
-请参考 :ref:`i2s-api-reference-i2s_std` 了解 STD API 的相关信息。更多细节请参考 :component_file:`driver/i2s/include/driver/i2s_std.h`。
+请参考 :ref:`i2s-api-reference-i2s_std` 了解 STD API 的相关信息。更多细节请参考 :component_file:`esp_driver_i2s/include/driver/i2s_std.h`。
 
 STD TX 模式
 ~~~~~~~~~~~~~
@@ -550,7 +551,7 @@ STD RX 模式
 
     - :c:macro:`I2S_PDM_TX_CLK_DEFAULT_CONFIG`
 
-    PDM TX API 的相关信息，可参考 :ref:`i2s-api-reference-i2s_pdm`。更多细节请参阅 :component_file:`driver/i2s/include/driver/i2s_pdm.h`。
+    PDM TX API 的相关信息，可参考 :ref:`i2s-api-reference-i2s_pdm`。更多细节请参阅 :component_file:`esp_driver_i2s/include/driver/i2s_pdm.h`。
 
     PDM 数据位宽固定为 16 位。如果 ``int16_t`` 写缓冲区中的数据如下：
 
@@ -646,7 +647,7 @@ STD RX 模式
 
     - :c:macro:`I2S_PDM_RX_CLK_DEFAULT_CONFIG`
 
-    PDM RX API 的相关信息，可参考 :ref:`i2s-api-reference-i2s_pdm`。更多细节请参阅 :component_file:`driver/i2s/include/driver/i2s_pdm.h`。
+    PDM RX API 的相关信息，可参考 :ref:`i2s-api-reference-i2s_pdm`。更多细节请参阅 :component_file:`esp_driver_i2s/include/driver/i2s_pdm.h`。
 
     PDM 数据位宽固定为 16 位。如果线路上的数据如下所示。为方便理解，已将线路上的数据格式由 PDM 转为 PCM。
 
@@ -732,7 +733,7 @@ STD RX 模式
 
     - :c:macro:`I2S_TDM_CLK_DEFAULT_CONFIG`
 
-    有关 TDM API 的信息，请参阅 :ref:`i2s-api-reference-i2s_tdm`。更多细节请参阅 :component_file:`driver/i2s/include/driver/i2s_tdm.h`。
+    有关 TDM API 的信息，请参阅 :ref:`i2s-api-reference-i2s_tdm`。更多细节请参阅 :component_file:`esp_driver_i2s/include/driver/i2s_tdm.h`。
 
     .. note::
 
@@ -1069,5 +1070,5 @@ I2S 驱动
 I2S 类型
 ^^^^^^^^
 
-.. include-build-file:: inc/components/driver/i2s/include/driver/i2s_types.inc
+.. include-build-file:: inc/components/esp_driver_i2s/include/driver/i2s_types.inc
 .. include-build-file:: inc/components/hal/include/hal/i2s_types.inc

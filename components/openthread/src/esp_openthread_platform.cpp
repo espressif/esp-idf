@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,7 +20,7 @@
 #include "esp_partition.h"
 #include "common/code_utils.hpp"
 #include "common/logging.hpp"
-#include "core/common/instance.hpp"
+#include "core/instance/instance.hpp"
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
 #include "openthread/cli.h"
@@ -84,16 +84,49 @@ void esp_openthread_platform_workflow_unregister(const char *name)
     }
 }
 
+static inline esp_openthread_host_connection_mode_t get_host_connection_mode(void)
+{
+    return s_platform_config.host_config.host_connection_mode;
+}
+
+static esp_err_t esp_openthread_host_interface_init(const esp_openthread_platform_config_t *config)
+{
+    esp_openthread_host_connection_mode_t host_mode = get_host_connection_mode();
+    switch (host_mode) {
+    case HOST_CONNECTION_MODE_RCP_SPI:
+        ESP_RETURN_ON_ERROR(esp_openthread_host_rcp_spi_init(config), OT_PLAT_LOG_TAG,
+                          "esp_openthread_host_rcp_spi_init failed");
+        break;
+    case HOST_CONNECTION_MODE_RCP_UART:
+        ESP_RETURN_ON_ERROR(esp_openthread_host_rcp_uart_init(config), OT_PLAT_LOG_TAG,
+                          "esp_openthread_host_rcp_uart_init failed");
+        break;
+#if CONFIG_OPENTHREAD_CONSOLE_TYPE_UART
+    case HOST_CONNECTION_MODE_CLI_UART:
+        ESP_RETURN_ON_ERROR(esp_openthread_host_cli_uart_init(config), OT_PLAT_LOG_TAG,
+                          "esp_openthread_host_cli_uart_init failed");
+        break;
+#endif
+#if CONFIG_OPENTHREAD_CONSOLE_TYPE_USB_SERIAL_JTAG
+    case HOST_CONNECTION_MODE_CLI_USB:
+        ESP_RETURN_ON_ERROR(esp_openthread_host_cli_usb_init(config), OT_PLAT_LOG_TAG,
+                          "esp_openthread_host_cli_usb_init failed");
+        break;
+#endif
+    case HOST_CONNECTION_MODE_NONE:
+        ESP_LOGI(OT_PLAT_LOG_TAG, "Host connection mode none");
+        break;
+    default:
+        return ESP_FAIL;
+    }
+    return ESP_OK;
+}
+
 esp_err_t esp_openthread_platform_init(const esp_openthread_platform_config_t *config)
 {
-    ESP_RETURN_ON_FALSE(config->radio_config.radio_mode == RADIO_MODE_NATIVE ||
-                            config->radio_config.radio_mode == RADIO_MODE_UART_RCP ||
-                            config->radio_config.radio_mode == RADIO_MODE_SPI_RCP,
+    ESP_RETURN_ON_FALSE(config->radio_config.radio_mode < RADIO_MODE_MAX,
                         ESP_ERR_INVALID_ARG, OT_PLAT_LOG_TAG, "Radio mode not supported");
-    ESP_RETURN_ON_FALSE(config->host_config.host_connection_mode == HOST_CONNECTION_MODE_NONE ||
-                            config->host_config.host_connection_mode == HOST_CONNECTION_MODE_CLI_UART ||
-                            config->host_config.host_connection_mode == HOST_CONNECTION_MODE_RCP_UART ||
-                            config->host_config.host_connection_mode == HOST_CONNECTION_MODE_RCP_SPI,
+    ESP_RETURN_ON_FALSE(config->host_config.host_connection_mode < HOST_CONNECTION_MODE_MAX,
                         ESP_ERR_INVALID_ARG, OT_PLAT_LOG_TAG, "Host connection mode not supported");
     ESP_RETURN_ON_FALSE(!s_openthread_platform_initialized, ESP_ERR_INVALID_STATE, OT_PLAT_LOG_TAG,
                         "OpenThread platform already initialized");
@@ -107,13 +140,8 @@ esp_err_t esp_openthread_platform_init(const esp_openthread_platform_config_t *c
 
     esp_openthread_set_storage_name(config->port_config.storage_partition_name);
 
-    if (config->host_config.host_connection_mode == HOST_CONNECTION_MODE_RCP_SPI) {
-        ESP_GOTO_ON_ERROR(esp_openthread_spi_slave_init(config), exit, OT_PLAT_LOG_TAG,
-                          "esp_openthread_spi_slave_init failed");
-    }else if (config->host_config.host_connection_mode == HOST_CONNECTION_MODE_CLI_UART ||
-        config->host_config.host_connection_mode == HOST_CONNECTION_MODE_RCP_UART) {
-        ESP_GOTO_ON_ERROR(esp_openthread_uart_init(config), exit, OT_PLAT_LOG_TAG, "esp_openthread_uart_init failed");
-    }
+    ESP_GOTO_ON_ERROR(esp_openthread_host_interface_init(config), exit, OT_PLAT_LOG_TAG,
+                      "esp_openthread_host_interface_init failed");
 
     ESP_GOTO_ON_ERROR(esp_openthread_task_queue_init(config), exit, OT_PLAT_LOG_TAG,
                       "esp_openthread_task_queue_init failed");
@@ -140,10 +168,10 @@ esp_err_t esp_openthread_platform_deinit(void)
     esp_openthread_task_queue_deinit();
     esp_openthread_radio_deinit();
 
-    if (s_platform_config.host_config.host_connection_mode == HOST_CONNECTION_MODE_RCP_SPI){
+    if (get_host_connection_mode() == HOST_CONNECTION_MODE_RCP_SPI){
         esp_openthread_spi_slave_deinit();
-    }else if (s_platform_config.host_config.host_connection_mode == HOST_CONNECTION_MODE_CLI_UART ||
-        s_platform_config.host_config.host_connection_mode == HOST_CONNECTION_MODE_RCP_UART) {
+    } else if (get_host_connection_mode() == HOST_CONNECTION_MODE_CLI_UART ||
+        get_host_connection_mode() == HOST_CONNECTION_MODE_RCP_UART) {
         esp_openthread_uart_deinit();
     }
 

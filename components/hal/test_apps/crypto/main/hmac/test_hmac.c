@@ -5,6 +5,7 @@
  */
 
 #include <string.h>
+#include "esp_private/esp_crypto_lock_internal.h"
 #include "esp_log.h"
 #include "memory_checks.h"
 #include "unity_fixture.h"
@@ -15,18 +16,9 @@
 #include "soc/hwcrypto_reg.h"
 #include "soc/system_reg.h"
 #include "hmac_params.h"
+#include "hal_crypto_common.h"
 
-typedef enum {
-	HMAC_KEY0 = 0,
-	HMAC_KEY1,
-	HMAC_KEY2,
-	HMAC_KEY3,
-	HMAC_KEY4,
-	HMAC_KEY5,
-	HMAC_KEY_MAX
-} hmac_key_id_t;
-
-static ets_efuse_block_t convert_key_type(hmac_key_id_t key_id) {
+static ets_efuse_block_t convert_key_type(uint32_t key_id) {
     return ETS_EFUSE_BLOCK_KEY0 + (ets_efuse_block_t) key_id;
 }
 
@@ -39,13 +31,15 @@ static esp_err_t hmac_jtag_disable(void)
 #if !CONFIG_IDF_TARGET_ESP32S2
 
 #include "hal/hmac_hal.h"
+#include "hal/hmac_ll.h"
+#include "hal/ds_ll.h"
 #include "esp_private/periph_ctrl.h"
 
 #define SHA256_BLOCK_SZ 64
 #define SHA256_PAD_SZ 8
 
 
-static esp_err_t hmac_jtag_enable(hmac_key_id_t key_id, const uint8_t *token)
+static esp_err_t hmac_jtag_enable(uint32_t key_id, const uint8_t *token)
 {
     int ets_status;
     esp_err_t err = ESP_OK;
@@ -66,13 +60,21 @@ static void write_and_padd(uint8_t *block, const uint8_t *data, uint16_t data_le
     bzero(block + data_len + 1, SHA256_BLOCK_SZ - data_len - 1);
 }
 
-static esp_err_t hmac_calculate(hmac_key_id_t key_id, const void *message, size_t message_len, uint8_t *hmac)
+static esp_err_t hmac_calculate(uint32_t key_id, const void *message, size_t message_len, uint8_t *hmac)
 {
     const uint8_t *message_bytes = (const uint8_t *)message;
 
-    periph_module_enable(PERIPH_HMAC_MODULE);
+    HMAC_RCC_ATOMIC() {
+        hmac_ll_enable_bus_clock(true);
+        hmac_ll_reset_register();
+    }
+
     periph_module_enable(PERIPH_SHA_MODULE);
-    periph_module_enable(PERIPH_DS_MODULE);
+
+    DS_RCC_ATOMIC() {
+        ds_ll_enable_bus_clock(true);
+        ds_ll_reset_register();
+    }
 
     hmac_hal_start();
 
@@ -124,9 +126,15 @@ static esp_err_t hmac_calculate(hmac_key_id_t key_id, const void *message, size_
 
     hmac_hal_read_result_256(hmac);
 
-    periph_module_disable(PERIPH_DS_MODULE);
+    DS_RCC_ATOMIC() {
+        ds_ll_enable_bus_clock(false);
+    }
+
     periph_module_disable(PERIPH_SHA_MODULE);
-    periph_module_disable(PERIPH_HMAC_MODULE);
+
+    HMAC_RCC_ATOMIC() {
+        hmac_ll_enable_bus_clock(false);
+    }
 
     return ESP_OK;
 }
@@ -134,7 +142,7 @@ static esp_err_t hmac_calculate(hmac_key_id_t key_id, const void *message, size_
 #else /* !CONFIG_IDF_TARGET_ESP32S2 */
 
 
-static esp_err_t hmac_calculate(hmac_key_id_t key_id,
+static esp_err_t hmac_calculate(uint32_t key_id,
         const void *message,
         size_t message_len,
         uint8_t *hmac)
@@ -151,7 +159,7 @@ static esp_err_t hmac_calculate(hmac_key_id_t key_id,
     }
 }
 
-static esp_err_t hmac_jtag_enable(hmac_key_id_t key_id, const uint8_t *token)
+static esp_err_t hmac_jtag_enable(uint32_t key_id, const uint8_t *token)
 {
     int ets_status;
     esp_err_t err = ESP_OK;
@@ -193,7 +201,7 @@ TEST_TEAR_DOWN(hmac)
 
 TEST(hmac, hmac_downstream_jtag_enable_mode)
 {
-	TEST_ASSERT_EQUAL_HEX32_MESSAGE(ESP_OK, hmac_jtag_enable(HMAC_KEY3, jtag_enable_token_data),
+	TEST_ASSERT_EQUAL_HEX32_MESSAGE(ESP_OK, hmac_jtag_enable(HMAC_KEY_BLOCK_1, jtag_enable_token_data),
 	"JTAG should be re-enabled now, please manually verify");
 }
 
@@ -210,7 +218,7 @@ TEST(hmac, hmac_upstream_mac_generation_with_zeroes)
     const size_t num_zero_results = sizeof(zero_results) / sizeof(hmac_result);
 
     for (int i = 0; i < num_zero_results; i++) {
-        TEST_ESP_OK(hmac_calculate(HMAC_KEY4, zeroes, zero_results[i].msglen, hmac));
+        TEST_ESP_OK(hmac_calculate(HMAC_KEY_BLOCK_2, zeroes, zero_results[i].msglen, hmac));
         TEST_ASSERT_EQUAL_HEX8_ARRAY(zero_results[i].result, hmac, sizeof(hmac));
     }
 }
@@ -221,7 +229,7 @@ TEST(hmac, hmac_upstream_MAC_generation_from_data)
     uint8_t hmac[32];
 
     for (int i = 0; i < sizeof(results)/sizeof(hmac_result); i++) {
-        TEST_ESP_OK(hmac_calculate(HMAC_KEY4, message, results[i].msglen, hmac));
+        TEST_ESP_OK(hmac_calculate(HMAC_KEY_BLOCK_2, message, results[i].msglen, hmac));
         TEST_ASSERT_EQUAL_HEX8_ARRAY(results[i].result, hmac, sizeof(hmac));
     }
 }

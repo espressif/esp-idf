@@ -33,7 +33,7 @@ Kconfig 文件的格式规定如下：
 - 在所有菜单中，选项名称的前缀需保持一致。目前，前缀长度应为至少 3 个字符。
 - 每级采用 4 个空格的缩进方式，子项需比父项多缩进一级。例如， ``menu`` 缩进 0 个空格，``menu`` 中的 ``config`` 则缩进 4 个空格， ``config`` 中的 ``help`` 缩进 8 个空格， ``help`` 下的文本缩进 12 个空格。
 - 行末不得出现尾随空格。
-- 选项最长为 40 个字符。
+- 选项最长为 50 个字符。
 - 每行最长为 120 个字符。
 
 .. note::
@@ -43,7 +43,11 @@ Kconfig 文件的格式规定如下：
 格式检查器
 --------------
 
-``tools/ci/check_kconfigs.py`` 可以检查 Kconfig 文件是否符合上述格式规定。检查器会检查 ESP-IDF 目录下的所有 Kconfig 和 ``Kconfig.projbuild`` 文件，如有格式错误，会生成后缀为 ``.new`` 的新文件以提供修改建议。请注意，检查器不能解决所有格式问题，开发人员仍需终审和修改文件使其通过测试。例如，在没有其他误导性格式的情况下，检查器能够更正缩进，但无法提供菜单内选项的常用前缀。
+esp-idf-kconfig_ 软件包中的 ``kconfcheck`` 工具可以检查 Kconfig 文件是否符合上述格式规定。检查器会检查作为参数给出的所有 Kconfig 和 ``Kconfig.projbuild`` 文件，并生成一个后缀为 ``.new`` 的新文件，如有格式错误，便会在此文件中提供修改建议。注意，检查器不能解决所有格式问题，开发人员仍需终审并修改文件，使其通过测试。例如，在没有其他误导性格式的情况下，检查器能够更正缩进，但无法为菜单内选项提供常用的前缀。
+
+``esp-idf-kconfig`` 软件包可以在 ESP-IDF 环境中使用。运行命令 ``python -m kconfcheck <path_to_kconfig_file>`` 即可调用检查工具。
+
+如需了解更多内容，请参考 `esp-idf-kconfig 相关文档 <https://github.com/espressif/esp-idf-kconfig/blob/master/docs/DOCUMENTATION.md>`__。
 
 .. _configuration-options-compatibility:
 

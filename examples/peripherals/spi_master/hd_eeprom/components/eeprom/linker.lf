@@ -5,20 +5,15 @@
 [mapping:eeprom]
 archive: libeeprom.a
 entries:
-    * (noflash)
-
-[mapping:ext_driver]
-archive: libdriver.a
-entries:
-    # gpio_set_level, gpio_get_level, gpio_context, _gpio_hal, etc...
-    gpio (noflash)
-
-[mapping:ext_soc]
-archive: libhal.a
-entries:
-    gpio_hal (noflash)
+    if EXAMPLE_USE_SPI1_PINS = y:
+        * (noflash)
+        # Following code are not used during SPI1 bus or bus option
+        spi_eeprom: eeprom_wait_done_by_intr (default)
+        spi_eeprom: spi_eeprom_deinit (default)
+        spi_eeprom: spi_eeprom_init (default)
 
 [mapping:ext_newlib]
 archive: libnewlib.a
 entries:
-    time:usleep (noflash)
+    if EXAMPLE_USE_SPI1_PINS = y:
+        time:usleep (noflash)

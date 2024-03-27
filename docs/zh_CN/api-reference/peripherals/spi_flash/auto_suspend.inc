@@ -47,4 +47,6 @@ flash 自动暂停功能
 
     2. ISR 间隔时间 (ISR interval)：由于不能频繁触发 ISR，需格外注意 **ISR 间隔时间减去 ISR 时间后的剩余时间** （图中 b 点至 c 点的距离）。在此期间，SPI1 会发送恢复命令重新启动操作，所需准备时间 ``tsus`` 的典型值约为 **40 us**。如果在 SPI1 完成恢复操作前接收到了新的暂停命令，可能导致 CPU 饥饿，触发 ``TWDT``。
 
+    对于第 2 点中所提到的 ``tsus`` 时间可以通过翻阅 flash datasheets 查找，通常在 AC CHARACTERISTICS 章节中。用户需要保证从 datasheets 获得的 ``tsus`` 值不大于  :ref:`CONFIG_SPI_FLASH_SUSPEND_TSUS_VAL_US` 值。
+
     此外，flash 暂停可能延迟。CPU 和缓存通过 SPI0 频繁访问 flash，且 SPI1 频繁发送暂停命令时，会导致 MSPI 数据传输效率下降。可以通过在内部使用 **锁** 来避免此种情况。当 SPI1 发送暂停命令时，SPI0 将接管内存 SPI 总线并启用锁。SPI0 完成数据传输后，在锁延迟时间结束前，都将保有对内存 SPI 总线的控制权。在此锁延迟期间，如果接收到其他 SPI0 事务，则该 SPI0 事务将正常进行，并开启新一轮锁延迟周期。如无其他 SPI0 事务，则 SPI0 释放内存总线并启动 SPI0/1 仲裁。

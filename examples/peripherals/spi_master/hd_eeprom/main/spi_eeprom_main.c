@@ -18,58 +18,34 @@
 #include "esp_log.h"
 #include "spi_eeprom.h"
 
-
 /*
  This code demonstrates how to use the SPI master half duplex mode to read/write a AT932C46D EEPROM (8-bit mode).
 */
 
-#ifdef CONFIG_IDF_TARGET_ESP32
-#  ifdef CONFIG_EXAMPLE_USE_SPI1_PINS
-#    define EEPROM_HOST    SPI1_HOST
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////// Please update the following configuration according to your HardWare spec /////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+#if CONFIG_IDF_TARGET_ESP32
+#  if CONFIG_EXAMPLE_USE_SPI1_PINS
+#   define EEPROM_HOST      SPI1_HOST
 // Use default pins, same as the flash chip.
-#    define PIN_NUM_MISO 7
-#    define PIN_NUM_MOSI 8
-#    define PIN_NUM_CLK  6
+#   define PIN_NUM_MISO     7
+#   define PIN_NUM_MOSI     8
+#   define PIN_NUM_CLK      6
 #  else
-#    define EEPROM_HOST    HSPI_HOST
-#    define PIN_NUM_MISO 18
-#    define PIN_NUM_MOSI 23
-#    define PIN_NUM_CLK  19
+#   define EEPROM_HOST      HSPI_HOST
+#   define PIN_NUM_MISO     18
+#   define PIN_NUM_MOSI     23
+#   define PIN_NUM_CLK      19
 #  endif
-
-#  define PIN_NUM_CS   13
-#elif defined CONFIG_IDF_TARGET_ESP32S2
-#  define EEPROM_HOST    SPI2_HOST
-
-#  define PIN_NUM_MISO 37
-#  define PIN_NUM_MOSI 35
-#  define PIN_NUM_CLK  36
-#  define PIN_NUM_CS   34
-#elif defined CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32C2 || CONFIG_IDF_TARGET_ESP32C6
-#  define EEPROM_HOST    SPI2_HOST
-
-#  define PIN_NUM_MISO 2
-#  define PIN_NUM_MOSI 7
-#  define PIN_NUM_CLK  6
-#  define PIN_NUM_CS   10
-
-#elif CONFIG_IDF_TARGET_ESP32S3
-#  define EEPROM_HOST    SPI2_HOST
-
-#  define PIN_NUM_MISO 13
-#  define PIN_NUM_MOSI 11
-#  define PIN_NUM_CLK  12
-#  define PIN_NUM_CS   10
-
-#elif CONFIG_IDF_TARGET_ESP32H2
-#  define EEPROM_HOST    SPI2_HOST
-
-#  define PIN_NUM_MISO 0
-#  define PIN_NUM_MOSI 5
-#  define PIN_NUM_CLK  4
-#  define PIN_NUM_CS   1
+#  define PIN_NUM_CS        13
+#else
+#  define EEPROM_HOST       SPI2_HOST
+#  define PIN_NUM_MISO      13
+#  define PIN_NUM_MOSI      12
+#  define PIN_NUM_CLK       11
+#  define PIN_NUM_CS        10
 #endif
-
 
 static const char TAG[] = "main";
 
@@ -77,8 +53,8 @@ void app_main(void)
 {
     esp_err_t ret;
 #ifndef CONFIG_EXAMPLE_USE_SPI1_PINS
-    ESP_LOGI(TAG, "Initializing bus SPI%d...", EEPROM_HOST+1);
-    spi_bus_config_t buscfg={
+    ESP_LOGI(TAG, "Initializing bus SPI%d...", EEPROM_HOST + 1);
+    spi_bus_config_t buscfg = {
         .miso_io_num = PIN_NUM_MISO,
         .mosi_io_num = PIN_NUM_MOSI,
         .sclk_io_num = PIN_NUM_CLK,
@@ -126,11 +102,10 @@ void app_main(void)
         ESP_ERROR_CHECK(ret);
     }
     ESP_LOGI(TAG, "Read: %s", test_buf);
-
     ESP_LOGI(TAG, "Example finished.");
 
     while (1) {
         // Add your main loop handling code here.
-        vTaskDelay(1);
+        vTaskDelay(100);
     }
 }

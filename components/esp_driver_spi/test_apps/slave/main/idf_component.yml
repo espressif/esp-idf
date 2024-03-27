@@ -1,0 +1,5 @@
+dependencies:
+  test_utils:
+    path: ${IDF_PATH}/tools/unit-test-app/components/test_utils
+  test_driver_utils:
+    path: ${IDF_PATH}/components/driver/test_apps/components/test_driver_utils

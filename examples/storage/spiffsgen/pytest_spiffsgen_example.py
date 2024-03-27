@@ -9,7 +9,6 @@ from pytest_embedded import Dut
 
 
 @pytest.mark.esp32
-@pytest.mark.esp32c3
 def test_spiffsgen_example(dut: Dut) -> None:
     # Test with default build configurations
     base_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'spiffs_image')

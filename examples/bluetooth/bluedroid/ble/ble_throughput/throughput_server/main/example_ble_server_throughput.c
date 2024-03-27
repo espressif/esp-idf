@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -27,6 +27,7 @@
 #include "esp_gatts_api.h"
 #include "esp_bt_defs.h"
 #include "esp_bt_main.h"
+#include "esp_bt_device.h"
 #include "esp_gatt_common_api.h"
 #include "esp_timer.h"
 
@@ -36,7 +37,7 @@
  * Thread/Task reference
  **********************************************************/
 #ifdef CONFIG_BLUEDROID_PINNED_TO_CORE
-#define BLUETOOTH_TASK_PINNED_TO_CORE              (CONFIG_BLUEDROID_PINNED_TO_CORE < portNUM_PROCESSORS ? CONFIG_BLUEDROID_PINNED_TO_CORE : tskNO_AFFINITY)
+#define BLUETOOTH_TASK_PINNED_TO_CORE              (CONFIG_BLUEDROID_PINNED_TO_CORE < CONFIG_FREERTOS_NUMBER_OF_CORES ? CONFIG_BLUEDROID_PINNED_TO_CORE : tskNO_AFFINITY)
 #else
 #define BLUETOOTH_TASK_PINNED_TO_CORE              (0)
 #endif
@@ -280,19 +281,18 @@ void example_write_event_env(esp_gatt_if_t gatts_if, prepare_type_env_t *prepare
     esp_gatt_status_t status = ESP_GATT_OK;
     if (param->write.need_rsp) {
         if (param->write.is_prep) {
-            if (prepare_write_env->prepare_buf == NULL) {
+            if (param->write.offset > PREPARE_BUF_MAX_SIZE) {
+                status = ESP_GATT_INVALID_OFFSET;
+            } else if ((param->write.offset + param->write.len) > PREPARE_BUF_MAX_SIZE) {
+                status = ESP_GATT_INVALID_ATTR_LEN;
+            }
+
+            if (status == ESP_GATT_OK && prepare_write_env->prepare_buf == NULL) {
                 prepare_write_env->prepare_buf = (uint8_t *)malloc(PREPARE_BUF_MAX_SIZE * sizeof(uint8_t));
                 prepare_write_env->prepare_len = 0;
                 if (prepare_write_env->prepare_buf == NULL) {
                     ESP_LOGE(GATTS_TAG, "Gatt_server prep no mem");
                     status = ESP_GATT_NO_RESOURCES;
-                }
-            } else {
-                if(param->write.offset > PREPARE_BUF_MAX_SIZE ||
-                    prepare_write_env->prepare_len > param->write.offset) {
-                    status = ESP_GATT_INVALID_OFFSET;
-                } else if ((param->write.offset + param->write.len) > PREPARE_BUF_MAX_SIZE) {
-                    status = ESP_GATT_INVALID_ATTR_LEN;
                 }
             }
 
@@ -348,7 +348,7 @@ static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_i
         gl_profile_tab[PROFILE_A_APP_ID].service_id.id.uuid.len = ESP_UUID_LEN_16;
         gl_profile_tab[PROFILE_A_APP_ID].service_id.id.uuid.uuid.uuid16 = GATTS_SERVICE_UUID_TEST_A;
         gl_profile_tab[PROFILE_A_APP_ID].gatts_if = gatts_if;
-        esp_err_t set_dev_name_ret = esp_ble_gap_set_device_name(TEST_DEVICE_NAME);
+        esp_err_t set_dev_name_ret = esp_bt_dev_set_device_name(TEST_DEVICE_NAME);
         if (set_dev_name_ret){
             ESP_LOGE(GATTS_TAG, "set device name failed, error code = %x", set_dev_name_ret);
         }

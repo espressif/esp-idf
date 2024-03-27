@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -40,8 +40,10 @@ uint16_t esp_core_dump_get_arch_id(void);
  *
  * @param info Pointer to the panic information. It contains the execution
  *             frame.
+ * @param isr_context A flag indicating whether the crash happened within an ISR context.
+ *                    Set to 1 if the crash occurred in an ISR, and 0 otherwise.
  */
-void esp_core_dump_port_init(panic_info_t *info);
+void esp_core_dump_port_init(panic_info_t *info, bool isr_context);
 
 /**
  * @brief Reset fake stacks allocator, if any.
@@ -58,14 +60,12 @@ void esp_core_dump_reset_fake_stacks(void);
  */
 uint32_t esp_core_dump_get_isr_stack_end(void);
 
-
 /**
  * @brief Get the top of the ISR stack.
  *
  * @return Pointer to the top of the ISR stack.
  */
 uint8_t* esp_core_dump_get_isr_stack_top(void);
-
 
 /**
  * @brief Check the stack defined by address given.
@@ -76,7 +76,6 @@ uint8_t* esp_core_dump_get_isr_stack_top(void);
  */
 bool esp_core_dump_check_stack(core_dump_task_header_t *task);
 
-
 /**
  * @brief Check if the memory segment is sane.
  *
@@ -86,7 +85,6 @@ bool esp_core_dump_check_stack(core_dump_task_header_t *task);
  * @return true if the memory segment is sane, false else.
  */
 bool esp_core_dump_mem_seg_is_sane(uint32_t addr, uint32_t sz);
-
 
 /**
  * @brief Get the stack of a task.
@@ -102,7 +100,6 @@ bool esp_core_dump_mem_seg_is_sane(uint32_t addr, uint32_t sz);
 uint32_t esp_core_dump_get_stack(core_dump_task_header_t* task_snapshot,
                                  uint32_t* stk_vaddr, uint32_t* stk_paddr);
 
-
 /**
  * @brief Check the task passed as a parameter.
  *
@@ -117,7 +114,6 @@ uint32_t esp_core_dump_get_stack(core_dump_task_header_t* task_snapshot,
  * @return True if the TCB is sane, false else.
  */
 bool esp_core_dump_check_task(core_dump_task_header_t *task);
-
 
 /**
  * @brief Get a dump of the task's registers.

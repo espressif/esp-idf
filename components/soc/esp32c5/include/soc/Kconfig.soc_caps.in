@@ -1,0 +1,12 @@
+#####################################################
+# This file is auto-generated from SoC caps
+# using gen_soc_caps_kconfig.py, do not edit manually
+#####################################################
+
+if IDF_TARGET_ESP32C5_BETA3_VERSION
+    source "$IDF_PATH/components/soc/esp32c5/include/soc/../../beta3/include/soc/Kconfig.soc_caps.in"
+endif
+
+if IDF_TARGET_ESP32C5_MP_VERSION
+    source "$IDF_PATH/components/soc/esp32c5/include/soc/../../mp/include/soc/Kconfig.soc_caps.in"
+endif

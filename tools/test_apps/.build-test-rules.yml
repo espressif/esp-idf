@@ -1,5 +1,10 @@
 # Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
 
+tools/test_apps/build_system/bootloader:
+  disable:
+    - if: IDF_TARGET == "linux"
+      reason: the test should run on all targets except linux
+
 tools/test_apps/build_system/custom_partition_subtypes:
   enable:
     - if: IDF_TARGET in ["esp32", "linux"]
@@ -11,16 +16,28 @@ tools/test_apps/build_system/embed_test:
       temporary: false
       reason: Hardware independent feature, no need to test on all targets
 
+tools/test_apps/build_system/ld_non_contiguous_memory:
+  disable:
+    - if: SOC_MEM_NON_CONTIGUOUS_SRAM != 1
+
 tools/test_apps/linux_compatible/driver_mock:
   enable:
     - if: IDF_TARGET == "linux"
 
-tools/test_apps/linux_compatible/hello_world_linux_compatible:
+tools/test_apps/linux_compatible/generic_build_test:
   enable:
-    - if: INCLUDE_DEFAULT == 1 or IDF_TARGET == "linux"
+    - if: IDF_TARGET in ["esp32", "esp32c3", "linux"]
+  depends_components:
+    - log
 
 tools/test_apps/linux_compatible/linux_freertos:
   enable:
+    - if: IDF_TARGET == "linux"
+
+tools/test_apps/linux_compatible/wifi_build_test:
+  enable:
+    - if: IDF_TARGET == "linux"
+  disable_test:
     - if: IDF_TARGET == "linux"
 
 tools/test_apps/peripherals/i2c_wifi:
@@ -56,6 +73,16 @@ tools/test_apps/protocols/mqtt/publish_connect_test:
     - if: IDF_TARGET == "esp32s2" or IDF_TARGET == "esp32c3"
       temporary: true
       reason: lack of runners
+  depends_components:
+    - esp_eth
+  depends_filepatterns:
+    - tools/ci/python_packages/common_test_methods.py
+    - examples/common_components/**/*
+    - examples/protocols/**/*
+    - examples/system/ota/**/*
+    - examples/ethernet/iperf/**/*
+    - examples/network/vlan_support/**/*
+    - components/esp_netif/esp_netif_handlers.c
 
 tools/test_apps/protocols/netif_components:
   enable:
@@ -68,6 +95,43 @@ tools/test_apps/security/secure_boot:
     - if: IDF_ENV_FPGA != 1
       reason: the test can only run on an FPGA as efuses need to be reset during the test.
 
+tools/test_apps/security/signed_app_no_secure_boot:
+  enable:
+    - if: IDF_TARGET in ["esp32c2", "esp32c3"]
+      temporary: true
+      reason: No need to test on all targets
+
+tools/test_apps/storage/partition_table_readonly:
+  disable_test:
+    - if: IDF_TARGET not in ["esp32", "esp32c3"]
+      reason: these chips should be sufficient for test coverage (Xtensa and RISC-V, single and dual core)
+  disable:
+    - if: CONFIG_NAME == "encrypted"
+      temporary: true
+      reason: there are potential bugs with pytest when using flash encryption and NVS partition with nvs_create_partition_image #TODO: IDF-8300
+  depends_components:
+    - partition_table
+    - spi_flash
+    - esp_partition
+    - nvs_flash
+    - vfs
+    - fatfs
+    - spiffs
+
+tools/test_apps/storage/sdmmc_console:
+  disable:
+    - if: IDF_TARGET in ["esp32h2"]
+      temporary: true
+      reason: Console component not supported on H2 yet
+  disable_test:
+    - if: IDF_TARGET not in ["esp32", "esp32s2", "esp32c3"]
+      temporary: true
+      reason: No runners for other targets yet
+  depends_components:
+    - sdmmc
+    - esp_driver_sdmmc
+    - esp_driver_sdspi
+
 tools/test_apps/system/bootloader_sections:
   disable:
     - if: IDF_TARGET == "esp32c2"
@@ -76,9 +140,10 @@ tools/test_apps/system/bootloader_sections:
 
 tools/test_apps/system/build_test:
   disable:
-    - if: IDF_TARGET in ["esp32p4"]
-      temporary: true
-      reason: target(s) not supported yet #TODO: IDF-8119
+    - if: CONFIG_NAME == "no_rvfplib" and ESP_ROM_HAS_RVFPLIB != 1
+    - if: CONFIG_NAME == "usb_serial_jtag" AND SOC_USB_SERIAL_JTAG_SUPPORTED != 1
+    - if: CONFIG_NAME == "usb_console_ets_printf" AND SOC_USB_OTG_SUPPORTED != 1
+    - if: CONFIG_NAME == "phy_multiple_init_data" AND IDF_TARGET == "esp32p4" # Update with caps here when IDF-7460 is resolved
 
 tools/test_apps/system/cxx_no_except:
   enable:
@@ -100,7 +165,7 @@ tools/test_apps/system/eh_frame:
 
 tools/test_apps/system/g0_components:
   enable:
-    - if: INCLUDE_DEFAULT == 1 or IDF_TARGET in ["esp32p4"] # preview targets
+    - if: INCLUDE_DEFAULT == 1 or IDF_TARGET in ["esp32p4", "esp32c5"] # preview targets
 
 tools/test_apps/system/g1_components:
 
@@ -143,17 +208,14 @@ tools/test_apps/system/no_embedded_paths:
       reason: the other targets are not tested yet
 
 tools/test_apps/system/panic:
-  disable:
-    - if: IDF_TARGET in ["esp32p4"]
-      temporary: true
-      reason: target(s) not supported yet # TODO: IDF-7511
+  enable:
+    - if: INCLUDE_DEFAULT == 1 or IDF_TARGET in ["esp32p4"] # preview targets
 
 tools/test_apps/system/ram_loadable_app:
-  disable:
-    - if: IDF_TARGET == "esp32h2"
+  disable_test:
+    - if: IDF_TARGET in ["esp32p4"]
       temporary: true
-      reason: lack of runners
-
+      reason: TBD # TODO: IDF-8994
 tools/test_apps/system/startup:
   disable:
     - if: CONFIG_NAME == "main_task_cpu1" and IDF_TARGET not in ["esp32", "esp32s3"]
@@ -166,7 +228,3 @@ tools/test_apps/system/unicore_bootloader:
   enable:
     - if: SOC_CPU_CORES_NUM > 1
       reason: the test should be run on multicore chips
-  disable:
-    - if: IDF_TARGET in ["esp32p4"] # TODO: IDF-7692
-      temporary: true
-      reason: not supported on esp32p4 yet

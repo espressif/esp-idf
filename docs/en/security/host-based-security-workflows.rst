@@ -1,4 +1,4 @@
-Host Based Security Workflows
+Host-Based Security Workflows
 =============================
 
 {IDF_TARGET_CRYPT_CNT:default="SPI_BOOT_CRYPT_CNT",esp32="FLASH_CRYPT_CNT"}
@@ -8,17 +8,17 @@ Host Based Security Workflows
 Introduction
 ------------
 
-It is recommended to have an uninterrupted power supply while enabling security features on ESP32 SoCs. Power failures during secure manufacturing process could cause issues that are hard to debug and, in some cases, may cause permanent boot-up failures.
+It is recommended to have an uninterrupted power supply while enabling security features on ESP32 SoCs. Power failures during the secure manufacturing process could cause issues that are hard to debug and, in some cases, may cause permanent boot-up failures.
 
-This guide highlights an approach where security features are enabled with the assistance of an external host machine. Security workflows are broken down into various stages and key material is generated on the host machine; thus, allowing greater recovery chances in case of power or other failures. It also offers better timings for secure manufacturing, e.g., case of encryption of firmware on host machine vs on the device.
+This guide highlights an approach where security features are enabled with the assistance of an external host machine. Security workflows are broken down into various stages and key material is generated on the host machine; thus, allowing greater recovery chances in case of power or other failures. It also offers better timings for secure manufacturing, e.g., in the case of encryption of firmware on the host machine vs. on the device.
 
 
 Goals
 -----
 
 #. Simplify the traditional workflow with stepwise instructions.
-#. Design a more flexible workflow as compared to the traditional firmware based workflow.
-#. Improve reliability by dividing the workflow in small operations.
+#. Design a more flexible workflow as compared to the traditional firmware-based workflow.
+#. Improve reliability by dividing the workflow into small operations.
 #. Eliminate dependency on :ref:`second-stage-bootloader` (firmware bootloader).
 
 Pre-requisite
@@ -49,27 +49,27 @@ Enable Flash Encryption and Secure Boot V2 Externally
 
     It is recommended to enable both Flash Encryption and Secure Boot V2 for a production use case.
 
-When enabling the Flash Encryption and Secure Boot V2 externally we need to enable them in following order:
+When enabling the Flash Encryption and Secure Boot V2 externally we need to enable them in the following order:
 
-#. Enable Flash Encryption feature by following the steps listed in :ref:`enable-flash-encryption-externally`.
-#. Enable Secure Boot V2 feature by following the steps listed in :ref:`enable-secure-boot-v2-externally`.
+#. Enable the Flash Encryption feature by following the steps listed in :ref:`enable-flash-encryption-externally`.
+#. Enable the Secure Boot V2 feature by following the steps listed in :ref:`enable-secure-boot-v2-externally`.
 
 The reason for this order is as follows:
 
-To enable the Secure Boot (SB) V2, it is necessary to keep the SB V2 key readable. To protect the key's readability, the write-protection for RD_DIS (ESP_EFUSE_WR_DIS_RD_DIS) is applied. However, this action poses a challenge when attempting to enable Flash Encryption, as the Flash Encryption (FE) key needs to remain unreadable. This conflict arises because the RD_DIS is already write-protected, making it impossible to read protect the FE key.
+To enable the Secure Boot (SB) V2, it is necessary to keep the SB V2 key readable. To protect the key's readability, the write protection for ``RD_DIS`` (``ESP_EFUSE_WR_DIS_RD_DIS``) is applied. However, this action poses a challenge when attempting to enable Flash Encryption, as the Flash Encryption (FE) key needs to remain unreadable. This conflict arises because the ``RD_DIS`` is already write-protected, making it impossible to read protect the FE key.
 
 .. _enable-flash-encryption-externally:
 
 Enable Flash Encryption Externally
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-In this case all the eFuses related to flash encryption are written with help of the espefuse tool. More details about flash encryption can process can be found in the :doc:`Flash Encryption Guide </security/flash-encryption>`
+In this case, all the eFuses related to flash encryption are written with help of the espefuse tool. More details about flash encryption can be found in the :doc:`Flash Encryption Guide </security/flash-encryption>`
 
 1. Ensure that you have an {IDF_TARGET_NAME} device with default flash encryption eFuse settings as shown in :ref:`flash-encryption-efuse`.
 
     See how to check :ref:`flash-encryption-status`.
 
-  In this case the flash on the chip must be erased and flash encryption must not be enabled. The chip can be erased by running:
+  In this case, the flash on the chip must be erased and flash encryption must not be enabled. The chip can be erased by running:
 
   .. code:: bash
 
@@ -144,13 +144,13 @@ In this case all the eFuses related to flash encryption are written with help of
 
         espefuse.py --port PORT burn_key BLOCK my_flash_encryption_key.bin XTS_AES_128_KEY
 
-    For AES-256 (512-bit key) - ``XTS_AES_256_KEY_1`` and ``XTS_AES_256_KEY_2``. ``espefuse.py`` supports burning both these two key purposes together with a 512 bit key to two separate key blocks via the virtual key purpose ``XTS_AES_256_KEY``. When this is used ``espefuse.py`` will burn the first 256 bit of the key to the specified ``BLOCK`` and burn the corresponding block key purpose to ``XTS_AES_256_KEY_1``. The last 256 bit of the key will be burned to the first free key block after ``BLOCK`` and the corresponding block key purpose to ``XTS_AES_256_KEY_2``
+    For AES-256 (512-bit key) - ``XTS_AES_256_KEY_1`` and ``XTS_AES_256_KEY_2``. ``espefuse.py`` supports burning both these two key purposes together with a 512-bit key to two separate key blocks via the virtual key purpose ``XTS_AES_256_KEY``. When this is used ``espefuse.py`` will burn the first 256 bits of the key to the specified ``BLOCK`` and burn the corresponding block key purpose to ``XTS_AES_256_KEY_1``. The last 256 bits of the key will be burned to the first free key block after ``BLOCK`` and the corresponding block key purpose to ``XTS_AES_256_KEY_2``
 
     .. code-block:: bash
 
         espefuse.py --port PORT burn_key BLOCK my_flash_encryption_key.bin XTS_AES_256_KEY
 
-    If you wish to specify exactly which two blocks are used then it is possible to divide key into two 256 bit keys, and manually burn each half with ``XTS_AES_256_KEY_1`` and ``XTS_AES_256_KEY_2`` as key purposes:
+    If you wish to specify exactly which two blocks are used then it is possible to divide the key into two 256-bit keys, and manually burn each half with ``XTS_AES_256_KEY_1`` and ``XTS_AES_256_KEY_2`` as key purposes:
 
     .. code-block:: bash
 
@@ -198,7 +198,7 @@ In this case all the eFuses related to flash encryption are written with help of
 
 4. Burn the ``{IDF_TARGET_CRYPT_CNT}`` eFuse.
 
-  If you only want to enable flash encryption in **Development** mode and want to keep the ability to disable it in future, Update the {IDF_TARGET_CRYPT_CNT} value in the below command from {IDF_TARGET_CRYPT_CNT_MAX_VAL} to 0x1. (not recommended for production)
+  If you only want to enable flash encryption in **Development** mode and want to keep the ability to disable it in the future, Update the {IDF_TARGET_CRYPT_CNT} value in the below command from {IDF_TARGET_CRYPT_CNT_MAX_VAL} to 0x1 (not recommended for production).
 
   .. code-block:: bash
 
@@ -206,7 +206,7 @@ In this case all the eFuses related to flash encryption are written with help of
 
   .. only:: esp32
 
-      In case of {IDF_TARGET_NAME}, you also need to burn the ``FLASH_CRYPT_CONFIG``. It can be done by running:
+      In the case of {IDF_TARGET_NAME}, you also need to burn the ``FLASH_CRYPT_CONFIG``. It can be done by running:
 
       .. code-block:: bash
 
@@ -214,7 +214,7 @@ In this case all the eFuses related to flash encryption are written with help of
 
   .. note::
 
-     At this point the flash encryption on the device has been enabled. You may test the flash encryption process as given in step 5. Please note that the security related eFuses have not been burned at this point. It is recommended that they should be burned in production use-cases as explained in step 6.
+     At this point, the flash encryption on the device has been enabled. You may test the flash encryption process as given in step 5. Please note that the security-related eFuses have not been burned at this point. It is recommended that they should be burned in production use cases as explained in step 6.
 
 5. Encrypt and flash the binaries.
 
@@ -228,7 +228,7 @@ In this case all the eFuses related to flash encryption are written with help of
       :esp32: - :ref:`Select Release mode <CONFIG_SECURE_FLASH_ENCRYPTION_MODE>` (Note that once Release mode is selected, the ``DISABLE_DL_ENCRYPT`` and ``DISABLE_DL_DECRYPT`` eFuse bits will be burned to disable flash encryption hardware in ROM Download Mode.)
       :esp32: - :ref:`Select UART ROM download mode (Permanently disabled (recommended)) <CONFIG_SECURE_UART_ROM_DL_MODE>` (Note that this option is only available when :ref:`CONFIG_ESP32_REV_MIN` is set to 3 (ESP32 V3).) The default choice is to keep UART ROM download mode enabled, however it is recommended to permanently disable this mode to reduce the options available to an attacker.
       :not esp32: - :ref:`Select Release mode <CONFIG_SECURE_FLASH_ENCRYPTION_MODE>` (Note that once Release mode is selected, the ``EFUSE_DIS_DOWNLOAD_MANUAL_ENCRYPT`` eFuse bit will be burned to disable flash encryption hardware in ROM Download Mode.)
-      :not esp32: - :ref:`Select UART ROM download mode (Permanently switch to Secure mode (recommended)) <CONFIG_SECURE_UART_ROM_DL_MODE>`. This is the default option, and is recommended. It is also possible to change this configuration setting to permanently disable UART ROM download mode, if this mode is not needed.
+      :not esp32: - :ref:`Select UART ROM download mode (Permanently switch to Secure mode (recommended)) <CONFIG_SECURE_UART_ROM_DL_MODE>`. This is the default option and is recommended. It is also possible to change this configuration setting to permanently disable UART ROM download mode, if this mode is not needed.
       - :ref:`Select the appropriate bootloader log verbosity <CONFIG_BOOTLOADER_LOG_LEVEL>`
       - Save the configuration and exit.
 
@@ -255,7 +255,7 @@ In this case all the eFuses related to flash encryption are written with help of
 
          espsecure.py encrypt_flash_data --aes_xts --keyfile my_flash_encryption_key.bin --address 0x10000 --output my-app-enc.bin build/my-app.bin
 
-  The above files can then be flashed to their respective offset using ``esptool.py``. To see all of the command line options recommended for ``esptool.py``, see the output printed when ``idf.py build`` succeeds. In the above command the offsets are used for a sample firmware, the actual offset for your firmware can be obtained by checking the partition table entry or by running `idf.py partition-table`. When the application contains following partition: ``otadata``, ``nvs_encryption_keys`` they need to be encrypted as well. Please refer to :ref:`encrypted-partitions` for more details about encrypted partitions.
+  The above files can then be flashed to their respective offset using ``esptool.py``. To see all of the command line options recommended for ``esptool.py``, see the output printed when ``idf.py build`` succeeds. In the above command the offsets are used for a sample firmware, the actual offset for your firmware can be obtained by checking the partition table entry or by running `idf.py partition-table`. When the application contains the following partition: ``otadata``, ``nvs_encryption_keys`` they need to be encrypted as well. Please refer to :ref:`encrypted-partitions` for more details about encrypted partitions.
 
   .. note::
 
@@ -263,20 +263,20 @@ In this case all the eFuses related to flash encryption are written with help of
 
      .. only:: esp32
 
-         If your ESP32 uses non-default :ref:`FLASH_CRYPT_CONFIG value in eFuse <setting-flash-crypt-config>` then you will need to pass the ``--flash_crypt_conf`` argument to ``espsecure.py`` to set the matching value. This will not happen if the device configured flash encryption by itself, but may happen if burning eFuses manually to enable flash encryption.
+         If your ESP32 uses non-default :ref:`FLASH_CRYPT_CONFIG value in eFuse <setting-flash-crypt-config>` then you will need to pass the ``--flash_crypt_conf`` argument to ``espsecure.py`` to set the matching value. This will not happen if the device configured flash encryption by itself but may happen when burning eFuses manually to enable flash encryption.
 
   The command ``espsecure.py decrypt_flash_data`` can be used with the same options (and different input/output files), to decrypt ciphertext flash contents or a previously encrypted file.
 
-6. Burn flash encryption related security eFuses as listed below:
+6. Burn flash encryption-related security eFuses as listed below:
 
   A) Burn security eFuses:
-  
+
     .. important::
-  
+
       For production use cases, it is highly recommended to burn all the eFuses listed below.
-  
+
     .. list::
-  
+
         :esp32: - ``DISABLE_DL_ENCRYPT``: Disable the UART bootloader encryption access.
         :esp32: - ``DISABLE_DL_DECRYPT``: Disable the UART bootloader decryption access.
         :esp32: - ``DISABLE_DL_CACHE``: Disable the UART bootloader flash cache access.
@@ -290,68 +290,73 @@ In this case all the eFuses related to flash encryption are written with help of
         :SOC_EFUSE_DIS_USB_JTAG: - ``DIS_USB_JTAG``: Disable USB switch to JTAG
         :SOC_EFUSE_DIS_PAD_JTAG: - ``DIS_PAD_JTAG``: Disable JTAG permanently
         :not esp32: - ``DIS_DOWNLOAD_MANUAL_ENCRYPT``: Disable UART bootloader encryption access
-  
+        :SOC_EFUSE_DIS_DOWNLOAD_MSPI: - ``DIS_DOWNLOAD_MSPI``: Disable the MSPI access in download mode
+
     The respective eFuses can be burned by running:
-  
+
     .. code:: bash
-  
+
         espefuse.py burn_efuse --port PORT EFUSE_NAME 0x1
-  
+
     .. note::
 
-        Please update the EFUSE_NAME with the eFuse that you need to burn. Multiple eFuses can be burned at the same time by appending them to the above command (e.g., EFUSE_NAME VAL EFUSE_NAME2 VAL2). More documentation about `espefuse.py` can be found `here <https://docs.espressif.com/projects/esptool/en/latest/esp32/espefuse/index.html>`_
-  
+        Please update the EFUSE_NAME with the eFuse that you need to burn. Multiple eFuses can be burned at the same time by appending them to the above command (e.g., EFUSE_NAME VAL EFUSE_NAME2 VAL2). More documentation about `espefuse.py` can be found `here <https://docs.espressif.com/projects/esptool/en/latest/esp32/espefuse/index.html>`_.
+
   B) Write protect security eFuses:
-  
+
     After burning the respective eFuses we need to write_protect the security configurations
-  
+
   .. only:: esp32
-  
+
       .. code:: bash
-  
+
           espefuse.py --port PORT write_protect_efuse MAC
-  
+
       .. note::
-  
+
           The write disable bit for MAC also write disables DIS_CACHE which is required to prevent accidental burning of this bit.
-  
+
     C) Disable UART ROM DL mode:
-  
-  .. only:: not esp32
-  
-      .. code:: bash
-  
-          espefuse.py --port PORT write_protect_efuse DIS_ICACHE
-  
-      .. note::
-  
-          The write protection of above eFuse also write protects multiple other eFuses, Please refer to the {IDF_TARGET_NAME} eFuse table for more details.
-  
-    C) Enable Security Download mode:
-  
+
       .. warning::
-  
+
           Please burn the following bit at the very end. After this bit is burned, the espefuse tool can no longer be used to burn additional eFuses.
-  
+
       .. list::
-  
-          :esp32: - ``UART_DOWNLOAD_DIS`` : Disable the UART ROM Download mode.
-          :not esp32: - ``ENABLE_SECURITY_DOWNLOAD``: Enable Secure ROM download mode
-  
-      .. only:: esp32
-  
+
+          - ``UART_DOWNLOAD_DIS`` : Disable the UART ROM Download mode.
+
           The eFuse can be burned by running:
-  
+
           .. code:: bash
-  
+
               espefuse.py --port PORT burn_efuse UART_DOWNLOAD_DIS
-  
-      .. only:: not esp32
-  
+
+
+  .. only:: not esp32
+
+      .. code:: bash
+
+          espefuse.py --port PORT write_protect_efuse DIS_ICACHE
+
+      .. note::
+
+          The write protection of above eFuse also write protects multiple other eFuses, Please refer to the {IDF_TARGET_NAME} eFuse table for more details.
+
+    C) Enable Security Download mode:
+
+      .. warning::
+
+          Please burn the following bit at the very end. After this bit is burned, the espefuse tool can no longer be used to burn additional eFuses.
+
+      .. list::
+
+          - ``ENABLE_SECURITY_DOWNLOAD``: Enable Secure ROM download mode
+
           The eFuse can be burned by running:
-  
+
           .. code:: bash
-  
+
               espefuse.py --port PORT burn_efuse ENABLE_SECURITY_DOWNLOAD
 
 .. important::
@@ -372,17 +377,17 @@ Flash Encryption Guidelines
 Enable Secure Boot V2 Externally
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-In this workflow we shall use ``espsecure`` tool to generate signing keys and use the ``espefuse`` tool to burn the relevant eFuses. The details about the Secure Boot V2 process can be found at :doc:`Secure Boot V2 Guide </security/secure-boot-v2>`
+In this workflow, we shall use ``espsecure`` tool to generate signing keys and use the ``espefuse`` tool to burn the relevant eFuses. The details about the Secure Boot V2 process can be found at :doc:`Secure Boot V2 Guide </security/secure-boot-v2>`
 
 1. Generate Secure Boot V2 Signing Private Key.
 
   .. only:: esp32 or SOC_SECURE_BOOT_V2_RSA
 
-     The Secure Boot V2 signing key for RSA3072 scheme can be generated by running:
+     The Secure Boot V2 signing key for the RSA3072 scheme can be generated by running:
 
      .. code:: bash
 
-         espsecure.py generate_signing_key --version 2 --scheme rsa3072 secure_boot_signinig_key.pem
+         espsecure.py generate_signing_key --version 2 --scheme rsa3072 secure_boot_signing_key.pem
 
   .. only:: SOC_SECURE_BOOT_V2_ECC
 
@@ -396,7 +401,7 @@ In this workflow we shall use ``espsecure`` tool to generate signing keys and us
 
   .. only:: SOC_EFUSE_REVOKE_BOOT_KEY_DIGESTS
 
-     A total of 3 keys can be used for Secure Boot V2 at once. These should be computed independently and stored separately. The same command with different keyfile names can be used to generated multiple Secure Boot V2 signing keys. It is recommended to use multiple keys in order to reduce dependency on a single key.
+     A total of 3 keys can be used for Secure Boot V2 at once. These should be computed independently and stored separately. The same command with different key file names can be used to generate multiple Secure Boot V2 signing keys. It is recommended to use multiple keys in order to reduce dependency on a single key.
 
 2. Generate Public Key Digest.
 
@@ -455,21 +460,21 @@ In this workflow we shall use ``espsecure`` tool to generate signing keys and us
 
   .. note::
 
-     At this stage the secure boot V2 has been enabled for the {IDF_TARGET_NAME}. The ROM bootloader shall now verify the authenticity of the :ref:`second-stage-bootloader` on every bootup. You may test the secure boot process by executing Step 5 & 6. Please note that security related eFuses have not been burned at this point. For production use cases, all security related eFuses must be burned as given in step 7.
+     At this stage the secure boot V2 has been enabled for the {IDF_TARGET_NAME}. The ROM bootloader shall now verify the authenticity of the :ref:`second-stage-bootloader` on every bootup. You may test the secure boot process by executing Steps 5 & 6. Please note that security-related eFuses have not been burned at this point. For production use cases, all security-related eFuses must be burned as given in step 7.
 
 5. Build the binaries.
 
-  By default the ROM bootloader would only verify the :ref:`second-stage-bootloader` (firmware bootloader). The firmware bootloader would verify the app partition only when the :ref:`CONFIG_SECURE_BOOT` option is enabled (and :ref:`CONFIG_SECURE_BOOT_VERSION` is set to ``SECURE_BOOT_V2_ENABLED``) while building the bootloader.
+  By default, the ROM bootloader would only verify the :ref:`second-stage-bootloader` (firmware bootloader). The firmware bootloader would verify the app partition only when the :ref:`CONFIG_SECURE_BOOT` option is enabled (and :ref:`CONFIG_SECURE_BOOT_VERSION` is set to ``SECURE_BOOT_V2_ENABLED``) while building the bootloader.
 
   a) Open the :ref:`project-configuration-menu`, in "Security features" set "Enable hardware Secure Boot in bootloader" to enable Secure Boot.
 
   .. only:: esp32
 
-      For ESP32, Secure Boot V2 is available only ESP32 ECO3 onwards. To view the "Secure Boot V2" option the chip revision should be changed to revision v3.0 (ECO3). To change the chip revision, set "Minimum Supported ESP32 Revision" to "Rev 3.0 (ECO3)" in "Component Config" -> "Hardware Settings" -> "Chip Revision".
+      For ESP32, Secure Boot V2 is available only for ESP32 ECO3 onwards. To view the "Secure Boot V2" option the chip revision should be changed to revision v3.0 (ECO3). To change the chip revision, set "Minimum Supported ESP32 Revision" to "Rev 3.0 (ECO3)" in "Component Config" -> "Hardware Settings" -> "Chip Revision".
 
   .. only:: SOC_SECURE_BOOT_V2_RSA or SOC_SECURE_BOOT_V2_ECC
 
-      The "Secure Boot V2" option will be selected and the "App Signing Scheme" would be set to {IDF_TARGET_SBV2_DEFAULT_SCHEME} by default.
+      The "Secure Boot V2" option will be selected and the "App Signing Scheme" will be set to {IDF_TARGET_SBV2_DEFAULT_SCHEME} by default.
 
   b) Disable the option :ref:`CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES` for the project in the :ref:`project-configuration-menu`. This shall make sure that all the generated binaries are secure padded and unsigned. This step is done to avoid generating signed binaries as we are going to manually sign the binaries using ``espsecure`` tool.
 
@@ -489,15 +494,15 @@ In this workflow we shall use ``espsecure`` tool to generate signing keys and us
 
   .. only:: SOC_EFUSE_REVOKE_BOOT_KEY_DIGESTS
 
-      If multiple keys secure boot keys are to be used then the same signed binary can be appended with signature block signed with the new key as follows:
+      If multiple keys secure boot keys are to be used then the same signed binary can be appended with a signature block signed with the new key as follows:
 
       .. code:: bash
 
-          espsecure.py sign_data --keyfile secure_boot_signing_key2.pem --version 2 --amend_signatures -o bootloader-signed.bin bootloader-signed.bin
+          espsecure.py sign_data --keyfile secure_boot_signing_key2.pem --version 2 --append_signatures -o bootloader-signed2.bin bootloader-signed.bin
 
-          espsecure.py sign_data --keyfile secure_boot_signing_key2.pem --version 2 --apend_signatures -o my-app-signed.bin my-app-signed.bin
+          espsecure.py sign_data --keyfile secure_boot_signing_key2.pem --version 2 --append_signatures -o my-app-signed2.bin my-app-signed.bin
 
-      The same process can be repeated for the third key.
+      The same process can be repeated for the third key. Note that the names of the input and output files must not be the same.
 
   The signatures attached to a binary can be checked by running:
 
@@ -510,13 +515,13 @@ In this workflow we shall use ``espsecure`` tool to generate signing keys and us
 7. Burn relevant eFuses.
 
   A) Burn security eFuses:
-  
+
     .. important::
-  
+
         For production use cases, it is highly recommended to burn all the eFuses listed below.
-  
+
     .. list::
-  
+
         :esp32: - ``JTAG_DISABLE``: Disable the JTAG
         :SOC_EFUSE_DIS_BOOT_REMAP: - ``DIS_BOOT_REMAP``: Disable capability to Remap ROM to RAM address space
         :SOC_EFUSE_HARD_DIS_JTAG: - ``HARD_DIS_JTAG``: Hard disable JTAG peripheral
@@ -526,85 +531,86 @@ In this workflow we shall use ``espsecure`` tool to generate signing keys and us
         :SOC_EFUSE_DIS_USB_JTAG: - ``DIS_USB_JTAG``: Disable USB switch to JTAG
         :SOC_EFUSE_DIS_PAD_JTAG: - ``DIS_PAD_JTAG``: Disable JTAG permanently
         :SOC_EFUSE_REVOKE_BOOT_KEY_DIGESTS: - ``SECURE_BOOT_AGGRESSIVE_REVOKE``: Aggressive revocation of key digests, see :ref:`secure-boot-v2-aggressive-key-revocation` for more details.
-  
+
     The respective eFuses can be burned by running:
-  
+
     .. code:: bash
-  
+
         espefuse.py burn_efuse --port PORT EFUSE_NAME 0x1
-  
+
     .. note::
 
         Please update the EFUSE_NAME with the eFuse that you need to burn. Multiple eFuses can be burned at the same time by appending them to the above command (e.g., EFUSE_NAME VAL EFUSE_NAME2 VAL2). More documentation about `espefuse.py` can be found `here <https://docs.espressif.com/projects/esptool/en/latest/esp32/espefuse/index.html>`_
-  
-  B) Secure Boot V2 related eFuses:
-  
-    i) Disable ability for read protection:
-  
-    The secure boot digest burned in the eFuse must be kept readable otherwise secure boot operation would result in a failure. To prevent the accidental enabling of read protection for this key block we need to burn following eFuse:
-  
+
+  B) Secure Boot V2-related eFuses:
+
+    i) Disable the ability for read protection:
+
+    The secure boot digest burned in the eFuse must be kept readable otherwise secure boot operation would result in a failure. To prevent the accidental enabling of read protection for this key block we need to burn the following eFuse:
+
     .. code:: bash
-  
+
         espefuse.py -p $ESPPORT write_protect_efuse RD_DIS
-  
+
     .. important::
-  
-        After this eFuse has been burned, read protection cannot be enabled for any key. E.g., if Flash Encryption which requires read protection for its key is not enabled at this point then it cannot be enabled afterwards. Please ensure that no efuse keys are going to need read protection after this.
-  
-  
+
+        After this eFuse has been burned, read protection cannot be enabled for any key. E.g., if flash encryption which requires read protection for its key is not enabled at this point then it cannot be enabled afterwards. Please ensure that no eFuse keys are going to need read protection after this.
+
+
     .. only:: SOC_EFUSE_REVOKE_BOOT_KEY_DIGESTS
-  
+
         ii) Revoke key digests:
-  
+
         The unused digest slots need to be revoked when we are burning the secure boot key. The respective slots can be revoked by running
-  
+
         .. code:: bash
-  
+
             espefuse.py --port PORT --chip {IDF_TARGET_PATH_NAME} burn_efuse EFUSE_REVOKE_BIT
-  
-        The ``EFUSE_REVOKE_BIT`` in the above command can be ``SECURE_BOOT_KEY_REVOKE0`` or ``SECURE_BOOT_KEY_REVOKE1`` or ``SECURE_BOOT_KEY_REVOKE2``. Please note that only the unused key digests must be revoked. Once reovked, the respective digest cannot be used again.
-  
+
+        The ``EFUSE_REVOKE_BIT`` in the above command can be ``SECURE_BOOT_KEY_REVOKE0`` or ``SECURE_BOOT_KEY_REVOKE1`` or ``SECURE_BOOT_KEY_REVOKE2``. Please note that only the unused key digests must be revoked. Once revoked, the respective digest cannot be used again.
+
   .. only:: esp32
-  
+
     C) Disable UART ROM DL mode:
-  
-  .. only:: not esp32
-  
-    C) Enable Security Download mode:
-  
-  
+
       .. warning::
-  
+
           Please burn the following bit at the very end. After this bit is burned, the espefuse tool can no longer be used to burn additional eFuses.
-  
+
       .. list::
-  
-          :esp32: - ``UART_DOWNLOAD_DIS`` : Disable the UART ROM Download mode.
-          :not esp32: - ``ENABLE_SECURITY_DOWNLOAD``: Enable Secure ROM download mode
-  
-      .. only:: esp32
-  
+
+          - ``UART_DOWNLOAD_DIS`` : Disable the UART ROM Download mode.
+
           The eFuse can be burned by running:
-  
+
           .. code:: bash
-  
+
             espefuse.py --port PORT burn_efuse UART_DOWNLOAD_DIS
-  
-      .. only:: not esp32
-  
-        The eFuse can be burned by running:
-  
-        .. code:: bash
-  
+
+
+  .. only:: not esp32
+
+    C) Enable Security Download mode:
+
+      .. warning::
+
+          Please burn the following bit at the very end. After this bit is burned, the espefuse tool can no longer be used to burn additional eFuses.
+
+      .. list::
+
+          - ``ENABLE_SECURITY_DOWNLOAD``: Enable Secure ROM download mode
+
+          The eFuse can be burned by running:
+
+          .. code:: bash
+
             espefuse.py --port PORT burn_efuse ENABLE_SECURITY_DOWNLOAD
 
 Secure Boot V2 Guidelines
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-* It is recommended to store the Secure boot key at a highly secure place. A physical or a cloud HSM may be used for secure storage of the Secure Boot Private key. Please take a look at :ref:`remote-sign-v2-image` for more details.
+* It is recommended to store the secure boot key in a highly secure place. A physical or a cloud HSM may be used for secure storage of the secure boot private key. Please take a look at :ref:`remote-sign-v2-image` for more details.
 
 .. only:: SOC_EFUSE_REVOKE_BOOT_KEY_DIGESTS
 
     * It is recommended to use all the available digest slots to reduce dependency on a single private key.
-
-

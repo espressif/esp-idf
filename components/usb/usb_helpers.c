@@ -198,7 +198,7 @@ static void print_ep_desc(const usb_ep_desc_t *ep_desc)
            USB_EP_DESC_GET_EP_NUM(ep_desc),
            USB_EP_DESC_GET_EP_DIR(ep_desc) ? "IN" : "OUT");
     printf("\t\tbmAttributes 0x%x\t%s\n", ep_desc->bmAttributes, ep_type_str);
-    printf("\t\twMaxPacketSize %d\n", ep_desc->wMaxPacketSize);
+    printf("\t\twMaxPacketSize %d\n", USB_EP_DESC_GET_MPS(ep_desc));
     printf("\t\tbInterval %d\n", ep_desc->bInterval);
 }
 

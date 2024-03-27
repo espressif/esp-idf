@@ -8,7 +8,6 @@
 #include "unity_test_runner.h"
 #include "esp_heap_caps.h"
 
-
 // Some resources are lazy allocated (newlib locks) in the esp_common code, the threshold is left for that case
 #define TEST_MEMORY_LEAK_THRESHOLD (-100)
 
@@ -27,8 +26,6 @@ void setUp(void)
     before_free_8bit = heap_caps_get_free_size(MALLOC_CAP_8BIT);
     before_free_32bit = heap_caps_get_free_size(MALLOC_CAP_32BIT);
 }
-
-
 
 void tearDown(void)
 {

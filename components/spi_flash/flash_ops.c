@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -153,7 +153,7 @@ void IRAM_ATTR esp_mspi_pin_init(void)
     for (esp_mspi_io_t i = 0; i < ESP_MSPI_IO_MAX; i++) {
         reserve_pin_mask |= BIT64(esp_mspi_get_io(i));
     }
-    esp_gpio_reserve_pins(reserve_pin_mask);
+    esp_gpio_reserve(reserve_pin_mask);
 }
 
 esp_err_t IRAM_ATTR spi_flash_init_chip_state(void)
@@ -161,16 +161,12 @@ esp_err_t IRAM_ATTR spi_flash_init_chip_state(void)
 #if SOC_SPI_MEM_SUPPORT_OPI_MODE
     if (bootloader_flash_is_octal_mode_enabled()) {
         return esp_opiflash_init(rom_spiflash_legacy_data->chip.device_id);
-    } else
-#endif
-    {
-    #if CONFIG_IDF_TARGET_ESP32S3
-        // Currently, only esp32s3 allows high performance mode.
-        return spi_flash_enable_high_performance_mode();
-    #else
-        return ESP_OK;
-    #endif // CONFIG_IDF_TARGET_ESP32S3
     }
+#endif
+#if CONFIG_SPI_FLASH_HPM_ON
+        return spi_flash_enable_high_performance_mode();
+#endif // CONFIG_SPI_FLASH_HPM_ON
+    return ESP_OK;
 }
 
 void IRAM_ATTR spi_flash_set_rom_required_regs(void)

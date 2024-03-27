@@ -182,7 +182,7 @@ TEST_CASE("Can wake up from automatic light sleep by GPIO", "[pm][ignore]")
     rtc_gpio_set_level(ext1_wakeup_gpio, 0);
 
     /* Enable wakeup */
-    TEST_ESP_OK(esp_sleep_enable_ext1_wakeup(1ULL << ext1_wakeup_gpio, ESP_EXT1_WAKEUP_ANY_HIGH));
+    TEST_ESP_OK(esp_sleep_enable_ext1_wakeup_io(1ULL << ext1_wakeup_gpio, ESP_EXT1_WAKEUP_ANY_HIGH));
 
     /* To simplify test environment, we'll use a ULP program to set GPIO high */
     ulp_insn_t ulp_code[] = {
@@ -281,7 +281,7 @@ TEST_CASE("vTaskDelay duration is correct with light sleep enabled", "[pm]")
         printf("CPU0: %d %d\n", args.delay_us, args.result);
         TEST_ASSERT_INT32_WITHIN(1000 * portTICK_PERIOD_MS * 2, args.delay_us, args.result);
 
-#if portNUM_PROCESSORS == 2
+#if CONFIG_FREERTOS_NUMBER_OF_CORES == 2
         xTaskCreatePinnedToCore(test_delay_task, "", 2048, (void *) &args, 3, NULL, 1);
         TEST_ASSERT( xSemaphoreTake(done_sem, delay_ms * 10 / portTICK_PERIOD_MS) );
         printf("CPU1: %d %d\n", args.delay_us, args.result);

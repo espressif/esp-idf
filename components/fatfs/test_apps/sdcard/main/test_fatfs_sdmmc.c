@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -22,6 +22,7 @@
 #include "ff.h"
 #include "test_fatfs_common.h"
 #include "soc/soc_caps.h"
+#include "vfs_fat_internal.h"
 
 #if CONFIG_IDF_TARGET_ESP32
 #define SDSPI_MISO_PIN 2
@@ -102,6 +103,35 @@ TEST_CASE("(SD) can format partition", "[fatfs][sdmmc][timeout=180]")
     test_teardown_sdmmc(card);
 }
 
+TEST_CASE("(SD) can format partition with config", "[fatfs][sdmmc][timeout=180]")
+{
+    sdmmc_card_t *card = NULL;
+    test_setup_sdmmc(&card);
+    vfs_fat_sd_ctx_t* ctx = get_vfs_fat_get_sd_ctx(card);
+    TEST_ASSERT_NOT_NULL(ctx);
+
+    esp_vfs_fat_mount_config_t format_config = {
+        .format_if_mount_failed = true,
+        .max_files = 5,
+        .allocation_unit_size = 16 * 1024,
+        .use_one_fat = true,
+    };
+    TEST_ESP_OK(esp_vfs_fat_sdcard_format_cfg("/sdcard", card, &format_config));
+    TEST_ASSERT_TRUE(ctx->fs->n_fats == 1);
+
+    test_fatfs_create_file_with_text(test_filename, fatfs_test_hello_str);
+    test_fatfs_read_file(test_filename);
+
+    format_config.use_one_fat = false;
+    TEST_ESP_OK(esp_vfs_fat_sdcard_format_cfg("/sdcard", card, &format_config));
+    TEST_ASSERT_TRUE(ctx->fs->n_fats == 2);
+
+    test_fatfs_create_file_with_text(test_filename, fatfs_test_hello_str);
+    test_fatfs_read_file(test_filename);
+
+    test_teardown_sdmmc(card);
+}
+
 TEST_CASE("(SD) can create and write file", "[fatfs][sdmmc]")
 {
     sdmmc_card_t *card = NULL;
@@ -156,7 +186,7 @@ TEST_CASE("(SD) can truncate", "[fatfs][sdmmc]")
 {
     sdmmc_card_t *card = NULL;
     test_setup_sdmmc(&card);
-    test_fatfs_truncate_file("/sdcard/truncate.txt");
+    test_fatfs_truncate_file("/sdcard/truncate.txt", true);
     test_teardown_sdmmc(card);
 }
 
@@ -164,9 +194,19 @@ TEST_CASE("(SD) can ftruncate", "[fatfs][sdmmc]")
 {
     sdmmc_card_t *card = NULL;
     test_setup_sdmmc(&card);
-    test_fatfs_ftruncate_file("/sdcard/ftrunc.txt");
+    test_fatfs_ftruncate_file("/sdcard/ftrunc.txt", true);
     test_teardown_sdmmc(card);
 }
+
+#if FF_USE_EXPAND
+TEST_CASE("(SD) can esp_vfs_fat_create_contiguous_file", "[fatfs][sdmmc]")
+{
+    sdmmc_card_t *card = NULL;
+    test_setup_sdmmc(&card);
+    test_fatfs_create_contiguous_file("/sdcard", "/sdcard/expand.txt");
+    test_teardown_sdmmc(card);
+}
+#endif
 
 TEST_CASE("(SD) stat returns correct values", "[fatfs][sdmmc]")
 {

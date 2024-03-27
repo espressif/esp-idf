@@ -141,12 +141,12 @@ GPIO Matrix and IO_MUX
 
 .. only:: not esp32
 
-    {IDF_TARGET_SPI2_IOMUX_PIN_CS:default="N/A",   esp32s2="10", esp32s3="10", esp32c2="10", esp32c3="10", esp32c6="16", esp32h2="1"}
-    {IDF_TARGET_SPI2_IOMUX_PIN_CLK:default="N/A",  esp32s2="12", esp32s3="12", esp32c2="6",  esp32c3="6",  esp32c6="6",  esp32h2="4"}
-    {IDF_TARGET_SPI2_IOMUX_PIN_MOSI:default="N/A", esp32s2="11"  esp32s3="11", esp32c2="7"   esp32c3="7",  esp32c6="7",  esp32h2="5"}
-    {IDF_TARGET_SPI2_IOMUX_PIN_MISO:default="N/A", esp32s2="13"  esp32s3="13", esp32c2="2"   esp32c3="2",  esp32c6="2",  esp32h2="0"}
-    {IDF_TARGET_SPI2_IOMUX_PIN_HD:default="N/A",   esp32s2="9"   esp32s3="9",  esp32c2="4"   esp32c3="4",  esp32c6="4",  esp32h2="3"}
-    {IDF_TARGET_SPI2_IOMUX_PIN_WP:default="N/A",   esp32s2="14"  esp32s3="14", esp32c2="5"   esp32c3="5",  esp32c6="5",  esp32h2="2"}
+    {IDF_TARGET_SPI2_IOMUX_PIN_CS:default="N/A",   esp32s2="10", esp32s3="10", esp32c2="10", esp32c3="10", esp32c6="16", esp32h2="1", esp32p4="7"}
+    {IDF_TARGET_SPI2_IOMUX_PIN_CLK:default="N/A",  esp32s2="12", esp32s3="12", esp32c2="6",  esp32c3="6",  esp32c6="6",  esp32h2="4", esp32p4="9"}
+    {IDF_TARGET_SPI2_IOMUX_PIN_MOSI:default="N/A", esp32s2="11"  esp32s3="11", esp32c2="7"   esp32c3="7",  esp32c6="7",  esp32h2="5", esp32p4="8"}
+    {IDF_TARGET_SPI2_IOMUX_PIN_MISO:default="N/A", esp32s2="13"  esp32s3="13", esp32c2="2"   esp32c3="2",  esp32c6="2",  esp32h2="0", esp32p4="10"}
+    {IDF_TARGET_SPI2_IOMUX_PIN_HD:default="N/A",   esp32s2="9"   esp32s3="9",  esp32c2="4"   esp32c3="4",  esp32c6="4",  esp32h2="3", esp32p4="6"}
+    {IDF_TARGET_SPI2_IOMUX_PIN_WP:default="N/A",   esp32s2="14"  esp32s3="14", esp32c2="5"   esp32c3="5",  esp32c6="5",  esp32h2="2", esp32p4="11"}
 
     Most of chip's peripheral signals have direct connection to their dedicated IO_MUX pins. However, the signals can also be routed to any other available pins using the less direct GPIO matrix. If at least one signal is routed through the GPIO matrix, then all signals will be routed through it.
 

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -87,6 +87,3 @@ bool multi_heap_is_free(const multi_heap_block_handle_t block);
 
 /* Get the data address of a heap block */
 void *multi_heap_get_block_address(multi_heap_block_handle_t block);
-
-/* Get the owner identification for a heap block */
-void *multi_heap_get_block_owner(multi_heap_block_handle_t block);

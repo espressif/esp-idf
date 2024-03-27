@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,7 +9,6 @@
 #include <stdint.h>
 #include "soc/soc.h"
 #include "soc/clk_tree_defs.h"
-#include "soc/rtc.h"
 #include "soc/rtc_cntl_reg.h"
 #include "soc/dport_reg.h"
 #include "soc/syscon_reg.h"
@@ -35,7 +34,11 @@ extern "C" {
 #define CLK_LL_AHB_MAX_FREQ_MHZ    CLK_LL_PLL_80M_FREQ_MHZ
 
 // ESP32S2 only supports 40MHz crystal
-#define CLK_LL_XTAL_FREQ_MHZ       (40)
+#define CLK_LL_XTAL_FREQ_MHZ       (SOC_XTAL_FREQ_40M)
+
+/* RC_FAST clock enable/disable wait time */
+#define CLK_LL_RC_FAST_WAIT_DEFAULT            20
+#define CLK_LL_RC_FAST_ENABLE_WAIT_DEFAULT     5
 
 /* APLL configuration parameters */
 #define CLK_LL_APLL_SDM_STOP_VAL_1         0x09
@@ -46,6 +49,15 @@ extern "C" {
 #define CLK_LL_APLL_CAL_DELAY_1            0x0f
 #define CLK_LL_APLL_CAL_DELAY_2            0x3f
 #define CLK_LL_APLL_CAL_DELAY_3            0x1f
+
+/* APLL multiplier output frequency range */
+// apll_multiplier_out = xtal_freq * (4 + sdm2 + sdm1/256 + sdm0/65536)
+#define CLK_LL_APLL_MULTIPLIER_MIN_HZ (350000000) // 350 MHz
+#define CLK_LL_APLL_MULTIPLIER_MAX_HZ (500000000) // 500 MHz
+
+/* APLL output frequency range */
+#define CLK_LL_APLL_MIN_HZ    (5303031)   // 5.303031 MHz, refer to 'periph_rtc_apll_freq_set' for the calculation
+#define CLK_LL_APLL_MAX_HZ    (125000000) // 125MHz, refer to 'periph_rtc_apll_freq_set' for the calculation
 
 #define CLK_LL_XTAL32K_CONFIG_DEFAULT() { \
     .dac = 3, \
@@ -207,7 +219,7 @@ static inline __attribute__((always_inline)) bool clk_ll_xtal32k_is_enabled(void
     bool xtal_xpd_sw = (xtal_conf & RTC_CNTL_XTAL32K_XPD_FORCE) >> RTC_CNTL_XTAL32K_XPD_FORCE_S;
     /* If xtal xpd software control is on */
     bool xtal_xpd_st = (xtal_conf & RTC_CNTL_XPD_XTAL_32K) >> RTC_CNTL_XPD_XTAL_32K_S;
-    // disabled = xtal_xpd_sw && !xtal_xpd_st; enabled = !disbaled
+    // disabled = xtal_xpd_sw && !xtal_xpd_st; enabled = !disabled
     bool enabled = !xtal_xpd_sw || xtal_xpd_st;
     return enabled;
 }
@@ -218,7 +230,7 @@ static inline __attribute__((always_inline)) bool clk_ll_xtal32k_is_enabled(void
 static inline __attribute__((always_inline)) void clk_ll_rc_fast_enable(void)
 {
     CLEAR_PERI_REG_MASK(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_ENB_CK8M);
-    REG_SET_FIELD(RTC_CNTL_TIMER1_REG, RTC_CNTL_CK8M_WAIT, RTC_CK8M_ENABLE_WAIT_DEFAULT);
+    REG_SET_FIELD(RTC_CNTL_TIMER1_REG, RTC_CNTL_CK8M_WAIT, CLK_LL_RC_FAST_ENABLE_WAIT_DEFAULT);
 }
 
 /**
@@ -227,7 +239,7 @@ static inline __attribute__((always_inline)) void clk_ll_rc_fast_enable(void)
 static inline __attribute__((always_inline)) void clk_ll_rc_fast_disable(void)
 {
     SET_PERI_REG_MASK(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_ENB_CK8M);
-    REG_SET_FIELD(RTC_CNTL_TIMER1_REG, RTC_CNTL_CK8M_WAIT, RTC_CNTL_CK8M_WAIT_DEFAULT);
+    REG_SET_FIELD(RTC_CNTL_TIMER1_REG, RTC_CNTL_CK8M_WAIT, CLK_LL_RC_FAST_WAIT_DEFAULT);
 }
 
 /**

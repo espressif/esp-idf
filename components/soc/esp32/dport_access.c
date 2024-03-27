@@ -12,7 +12,7 @@
 
 IRAM_ATTR uint32_t esp_dport_access_reg_read(uint32_t reg)
 {
-#if defined(BOOTLOADER_BUILD) || defined(CONFIG_FREERTOS_UNICORE) || !SOC_DPORT_WORKAROUND
+#if defined(BOOTLOADER_BUILD) || defined(CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE) || !SOC_DPORT_WORKAROUND
     return _DPORT_REG_READ(reg);
 #else
     uint32_t apb;
@@ -34,7 +34,7 @@ IRAM_ATTR uint32_t esp_dport_access_reg_read(uint32_t reg)
 
 IRAM_ATTR uint32_t esp_dport_access_sequence_reg_read(uint32_t reg)
 {
-#if defined(BOOTLOADER_BUILD) || defined(CONFIG_FREERTOS_UNICORE) || !SOC_DPORT_WORKAROUND
+#if defined(BOOTLOADER_BUILD) || defined(CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE) || !SOC_DPORT_WORKAROUND
     return _DPORT_REG_READ(reg);
 #else
     uint32_t apb;

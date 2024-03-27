@@ -72,8 +72,7 @@ static void thread_main()
     }
 }
 
-// IDF-6423 - assert and crash when running this testcase on QEMU
-TEST_CASE("pthread C++", "[pthread][qemu-ignore]")
+TEST_CASE("pthread C++", "[pthread]")
 {
     global_sp_mtx.reset(new int(1));
     global_sp_recur_mtx.reset(new int(-1000));

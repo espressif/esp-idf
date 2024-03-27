@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -136,3 +136,12 @@ void test_hcd_free_urb(urb_t *urb);
  * @return uint8_t The address of the device after enumeration
  */
 uint8_t test_hcd_enum_device(hcd_pipe_handle_t default_pipe);
+
+/**
+ * @brief Set endpoint descriptor
+ *
+ * Set endpoint descriptor of the mock device with different wMaxPacketSize according to the connected device's speed
+ *
+ * @param port_speed Port speed after the device is connected
+ */
+void test_hcd_set_mock_msc_ep_descriptor(usb_speed_t port_speed);

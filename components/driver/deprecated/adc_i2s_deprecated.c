@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2016-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2016-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -50,13 +50,12 @@ extern portMUX_TYPE rtc_spinlock; //TODO: Will be placed in the appropriate posi
 esp_pm_lock_handle_t adc_digi_arbiter_lock = NULL;
 #endif  //CONFIG_PM_ENABLE
 
-
 #if CONFIG_IDF_TARGET_ESP32
 /*---------------------------------------------------------------
         ESP32 Depricated ADC APIs and functions
 ---------------------------------------------------------------*/
 #define DIG_ADC_OUTPUT_FORMAT_DEFUALT (ADC_DIGI_FORMAT_12BIT)
-#define DIG_ADC_ATTEN_DEFUALT         (ADC_ATTEN_DB_11)
+#define DIG_ADC_ATTEN_DEFUALT         (ADC_ATTEN_DB_12)
 #define DIG_ADC_BIT_WIDTH_DEFUALT     (3)   //3 for ADC_WIDTH_BIT_12
 
 /**
@@ -149,20 +148,20 @@ static void adc_digi_controller_reg_set(const adc_digi_config_t *cfg)
 {
     /* On ESP32, only support ADC1 */
     switch (cfg->conv_mode) {
-        case ADC_CONV_SINGLE_UNIT_1:
-            adc_ll_digi_set_convert_mode(ADC_LL_DIGI_CONV_ONLY_ADC1);
-            break;
-        case ADC_CONV_SINGLE_UNIT_2:
-            adc_ll_digi_set_convert_mode(ADC_LL_DIGI_CONV_ONLY_ADC2);
-            break;
-        case ADC_CONV_BOTH_UNIT:
-            adc_ll_digi_set_convert_mode(ADC_LL_DIGI_CONV_BOTH_UNIT);
-            break;
-        case ADC_CONV_ALTER_UNIT:
-            adc_ll_digi_set_convert_mode(ADC_LL_DIGI_CONV_ALTER_UNIT);
-            break;
-        default:
-            abort();
+    case ADC_CONV_SINGLE_UNIT_1:
+        adc_ll_digi_set_convert_mode(ADC_LL_DIGI_CONV_ONLY_ADC1);
+        break;
+    case ADC_CONV_SINGLE_UNIT_2:
+        adc_ll_digi_set_convert_mode(ADC_LL_DIGI_CONV_ONLY_ADC2);
+        break;
+    case ADC_CONV_BOTH_UNIT:
+        adc_ll_digi_set_convert_mode(ADC_LL_DIGI_CONV_BOTH_UNIT);
+        break;
+    case ADC_CONV_ALTER_UNIT:
+        adc_ll_digi_set_convert_mode(ADC_LL_DIGI_CONV_ALTER_UNIT);
+        break;
+    default:
+        abort();
     }
 
     if (cfg->conv_mode & ADC_CONV_SINGLE_UNIT_1) {

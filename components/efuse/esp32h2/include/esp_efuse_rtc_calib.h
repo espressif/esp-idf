@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,9 +12,10 @@ extern "C" {
 #endif
 
 //This is the ADC calibration value version burnt in efuse
-#define ESP_EFUSE_ADC_CALIB_VER      1
-#define ESP_EFUSE_ADC_CALIB_VER_MIN  ESP_EFUSE_ADC_CALIB_VER
-#define ESP_EFUSE_ADC_CALIB_VER_MAX  ESP_EFUSE_ADC_CALIB_VER
+#define ESP_EFUSE_ADC_CALIB_VER1     1
+#define ESP_EFUSE_ADC_CALIB_VER_MIN  ESP_EFUSE_ADC_CALIB_VER1
+#define ESP_EFUSE_ADC_CALIB_VER_MAX  ESP_EFUSE_ADC_CALIB_VER1
+#define VER2IDX(ver)    ((ver) - 1)    // Version number to index number of the array
 
 /**
  * @brief Get the RTC calibration efuse version
@@ -34,9 +35,20 @@ int esp_efuse_rtc_calib_get_ver(void);
 uint32_t esp_efuse_rtc_calib_get_init_code(int version, uint32_t adc_unit, int atten);
 
 /**
+ * @brief Get the channel specific calibration compensation
+ *
+ * @param version   Version of the stored efuse
+ * @param adc_unit  ADC unit. Not used, for compatibility. ESP32H2 only supports one ADC unit
+ * @param atten     Attenuation of the init code
+ * @return          The channel calibration compensation value
+ */
+int esp_efuse_rtc_calib_get_chan_compens(int version, uint32_t adc_unit, uint32_t adc_channel, int atten);
+
+/**
  * @brief Get the calibration digits stored in the efuse, and the corresponding voltage.
  *
  * @param version Version of the stored efuse
+ * @param adc_unit      ADC unit (not used on ESP32H2, for compatibility)
  * @param atten         Attenuation to use
  * @param out_digi      Output buffer of the digits
  * @param out_vol_mv    Output of the voltage, in mV
@@ -44,7 +56,7 @@ uint32_t esp_efuse_rtc_calib_get_init_code(int version, uint32_t adc_unit, int a
  *      - ESP_ERR_INVALID_ARG: If efuse version or attenuation is invalid
  *      - ESP_OK: if success
  */
-esp_err_t esp_efuse_rtc_calib_get_cal_voltage(int version, int atten, uint32_t* out_digi, uint32_t* out_vol_mv);
+esp_err_t esp_efuse_rtc_calib_get_cal_voltage(int version, uint32_t adc_unit, int atten, uint32_t* out_digi, uint32_t* out_vol_mv);
 
 /**
  * @brief Get the temperature sensor calibration number delta_T stored in the efuse.

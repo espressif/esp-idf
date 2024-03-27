@@ -20,7 +20,7 @@ API 说明
   * :cpp:func:`httpd_sess_set_send_override`
   * :cpp:func:`httpd_sess_set_recv_override`
   * :cpp:func:`httpd_sess_set_pending_override`
-  
+
 * "transport context"——传输层上下文
 
   * :cpp:func:`httpd_sess_get_transport_ctx`：返回会话使用的 SSL

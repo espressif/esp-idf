@@ -5,7 +5,7 @@ message(STATUS "building ESP WIFI MOCKS")
 idf_component_get_property(original_esp_wifi_dir esp_wifi COMPONENT_OVERRIDEN_DIR)
 
 set(include_dirs
-    "${original_esp_wifi_dir}/include")
+    "${original_esp_wifi_dir}/include" "${original_esp_wifi_dir}/include/local")
 
 idf_component_mock(INCLUDE_DIRS ${include_dirs}
     REQUIRES esp_event esp_netif lwip

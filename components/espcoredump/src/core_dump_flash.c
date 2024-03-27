@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,24 +15,24 @@
 
 #define BLANK_COREDUMP_SIZE 0xFFFFFFFF
 
-const static DRAM_ATTR char TAG[] __attribute__((unused)) = "esp_core_dump_flash";
+const static char TAG[] __attribute__((unused)) = "esp_core_dump_flash";
 
 #if CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH
 
-typedef struct _core_dump_partition_t
-{
+typedef struct _core_dump_partition_t {
     /* Core dump partition start. */
     uint32_t start;
     /* Core dump partition size. */
     uint32_t size;
     /* Flag set to true if the partition is encrypted. */
     bool encrypted;
+#if CONFIG_ESP_COREDUMP_FLASH_NO_OVERWRITE
+    /* Flag set to true if the partition is empty. */
+    bool empty;
+#endif
 } core_dump_partition_t;
 
-typedef uint32_t core_dump_crc_t;
-
-typedef struct _core_dump_flash_config_t
-{
+typedef struct _core_dump_flash_config_t {
     /* Core dump partition config. */
     core_dump_partition_t partition;
     /* CRC of core dump partition config. */
@@ -42,12 +42,30 @@ typedef struct _core_dump_flash_config_t
 /* Core dump flash data. */
 static core_dump_flash_config_t s_core_flash_config;
 
+void esp_core_dump_print_write_start(void) __attribute__((alias("esp_core_dump_flash_print_write_start")));
+void esp_core_dump_print_write_end(void) __attribute__((alias("esp_core_dump_flash_print_write_end")));
+esp_err_t esp_core_dump_write_init(void) __attribute__((alias("esp_core_dump_flash_hw_init")));
+esp_err_t esp_core_dump_write_prepare(core_dump_write_data_t *wr_data, uint32_t *data_len) __attribute__((alias("esp_core_dump_flash_write_prepare")));
+esp_err_t esp_core_dump_write_start(core_dump_write_data_t *wr_data) __attribute__((alias("esp_core_dump_flash_write_start")));
+esp_err_t esp_core_dump_write_end(core_dump_write_data_t *wr_data) __attribute__((alias("esp_core_dump_flash_write_end")));
+esp_err_t esp_core_dump_write_data(core_dump_write_data_t *wr_data, void *data, uint32_t data_len) __attribute__((alias("esp_core_dump_flash_write_data")));
+
 #define ESP_COREDUMP_FLASH_WRITE(_off_, _data_, _len_)           esp_flash_write(esp_flash_default_chip, _data_, _off_, _len_)
 #define ESP_COREDUMP_FLASH_WRITE_ENCRYPTED(_off_, _data_, _len_) esp_flash_write_encrypted(esp_flash_default_chip, _off_, _data_, _len_)
 #define ESP_COREDUMP_FLASH_ERASE(_off_, _len_)                   esp_flash_erase_region(esp_flash_default_chip, _off_, _len_)
 
 esp_err_t esp_core_dump_image_check(void);
 static esp_err_t esp_core_dump_partition_and_size_get(const esp_partition_t **partition, uint32_t* size);
+
+static void esp_core_dump_flash_print_write_start(void)
+{
+    ESP_COREDUMP_LOGI("Save core dump to flash...");
+}
+
+static void esp_core_dump_flash_print_write_end(void)
+{
+    ESP_COREDUMP_LOGI("Core dump has been saved to flash.");
+}
 
 static esp_err_t esp_core_dump_flash_custom_write(uint32_t address, const void *buffer, uint32_t length)
 {
@@ -67,7 +85,35 @@ static inline core_dump_crc_t esp_core_dump_calc_flash_config_crc(void)
     return esp_rom_crc32_le(0, (uint8_t const *)&s_core_flash_config.partition, sizeof(s_core_flash_config.partition));
 }
 
-void esp_core_dump_flash_init(void)
+static esp_err_t esp_core_dump_flash_hw_init(void)
+{
+    /* Check core dump partition configuration. */
+    core_dump_crc_t crc = esp_core_dump_calc_flash_config_crc();
+    if (s_core_flash_config.partition_config_crc != crc) {
+        ESP_COREDUMP_LOGE("Core dump flash config is corrupted! CRC=0x%x instead of 0x%x", crc, s_core_flash_config.partition_config_crc);
+        return ESP_FAIL;
+    }
+
+    /* Make sure that the partition can at least hold the data length. */
+    if (s_core_flash_config.partition.start == 0 || s_core_flash_config.partition.size < sizeof(uint32_t)) {
+        ESP_COREDUMP_LOGE("Invalid flash partition config!");
+        return ESP_FAIL;
+    }
+
+#if CONFIG_ESP_COREDUMP_FLASH_NO_OVERWRITE
+    if (!s_core_flash_config.partition.empty) {
+        ESP_COREDUMP_LOGW("Core dump already exists in flash, will not overwrite it with a new core dump");
+        return ESP_FAIL;
+    }
+#endif
+
+    /* Initialize non-OS flash access critical section. */
+    spi_flash_guard_set(&g_flash_guard_no_os_ops);
+    esp_flash_app_disable_protect(true);
+    return ESP_OK;
+}
+
+static void esp_core_dump_partition_init(void)
 {
     const esp_partition_t *core_part = NULL;
 
@@ -82,6 +128,18 @@ void esp_core_dump_flash_init(void)
     s_core_flash_config.partition.start      = core_part->address;
     s_core_flash_config.partition.size       = core_part->size;
     s_core_flash_config.partition.encrypted  = core_part->encrypted;
+
+#if CONFIG_ESP_COREDUMP_FLASH_NO_OVERWRITE
+    uint32_t core_size = 0;
+    esp_err_t err = esp_partition_read(core_part, 0, &core_size, sizeof(core_size));
+    if (err == ESP_OK) {
+        s_core_flash_config.partition.empty = (core_size == BLANK_COREDUMP_SIZE);
+    } else {
+        ESP_COREDUMP_LOGE("Failed to read core dump data size (%d)!", err);
+        s_core_flash_config.partition.empty = false;
+    }
+#endif
+
     s_core_flash_config.partition_config_crc = esp_core_dump_calc_flash_config_crc();
 
     if (esp_flash_encryption_enabled() && !core_part->encrypted) {
@@ -89,9 +147,8 @@ void esp_core_dump_flash_init(void)
     }
 }
 
-static esp_err_t esp_core_dump_flash_write_data(core_dump_write_data_t* priv, uint8_t* data, uint32_t data_size)
+static esp_err_t esp_core_dump_flash_write_data(core_dump_write_data_t* wr_data, uint8_t* data, uint32_t data_size)
 {
-    core_dump_write_data_t *wr_data = (core_dump_write_data_t *)priv;
     esp_err_t err = ESP_OK;
     uint32_t written = 0;
     uint32_t wr_sz = 0;
@@ -103,10 +160,11 @@ static esp_err_t esp_core_dump_flash_write_data(core_dump_write_data_t* priv, ui
         /* Some bytes are in the cache, let's continue filling the cache
          * with the data received as parameter. Let's calculate the maximum
          * amount of bytes we can still fill the cache with. */
-        if ((COREDUMP_CACHE_SIZE - wr_data->cached_bytes) > data_size)
+        if ((COREDUMP_CACHE_SIZE - wr_data->cached_bytes) > data_size) {
             wr_sz = data_size;
-        else
+        } else {
             wr_sz = COREDUMP_CACHE_SIZE - wr_data->cached_bytes;
+        }
 
         /* Append wr_sz bytes from data parameter to the cache. */
         memcpy(&wr_data->cached_data[wr_data->cached_bytes], data, wr_sz);
@@ -126,7 +184,7 @@ static esp_err_t esp_core_dump_flash_write_data(core_dump_write_data_t* priv, ui
             wr_data->off += COREDUMP_CACHE_SIZE;
 
             /* Update checksum with the newly written data on the flash. */
-            esp_core_dump_checksum_update(wr_data->checksum_ctx, &wr_data->cached_data, COREDUMP_CACHE_SIZE);
+            esp_core_dump_checksum_update(&wr_data->checksum_ctx, &wr_data->cached_data, COREDUMP_CACHE_SIZE);
 
             /* Reset cache from the next use. */
             wr_data->cached_bytes = 0;
@@ -164,7 +222,7 @@ static esp_err_t esp_core_dump_flash_write_data(core_dump_write_data_t* priv, ui
         }
 
         /* Update the checksum with the newly written bytes */
-        esp_core_dump_checksum_update(wr_data->checksum_ctx, data + written, wr_sz);
+        esp_core_dump_checksum_update(&wr_data->checksum_ctx, data + written, wr_sz);
         wr_data->off += wr_sz;
         written += wr_sz;
         data_size -= wr_sz;
@@ -181,9 +239,8 @@ static esp_err_t esp_core_dump_flash_write_data(core_dump_write_data_t* priv, ui
     return ESP_OK;
 }
 
-static esp_err_t esp_core_dump_flash_write_prepare(core_dump_write_data_t *priv, uint32_t *data_len)
+static esp_err_t esp_core_dump_flash_write_prepare(core_dump_write_data_t *wr_data, uint32_t *data_len)
 {
-    core_dump_write_data_t *wr_data = (core_dump_write_data_t *)priv;
     esp_err_t err = ESP_OK;
     uint32_t sec_num = 0;
     uint32_t cs_len = 0;
@@ -233,19 +290,17 @@ static esp_err_t esp_core_dump_flash_write_prepare(core_dump_write_data_t *priv,
     return err;
 }
 
-static esp_err_t esp_core_dump_flash_write_start(core_dump_write_data_t* priv)
+static esp_err_t esp_core_dump_flash_write_start(core_dump_write_data_t *wr_data)
 {
-    core_dump_write_data_t *wr_data = (core_dump_write_data_t *)priv;
     esp_core_dump_checksum_init(&wr_data->checksum_ctx);
     return ESP_OK;
 }
 
-static esp_err_t esp_core_dump_flash_write_end(core_dump_write_data_t* priv)
+static esp_err_t esp_core_dump_flash_write_end(core_dump_write_data_t *wr_data)
 {
     esp_err_t err = ESP_OK;
     core_dump_checksum_bytes checksum = NULL;
     uint32_t cs_len = 0;
-    core_dump_write_data_t *wr_data = (core_dump_write_data_t *)priv;
 
     /* Get the size, in bytes of the checksum. */
     cs_len  = esp_core_dump_checksum_size();
@@ -262,14 +317,14 @@ static esp_err_t esp_core_dump_flash_write_end(core_dump_write_data_t* priv)
         }
 
         /* Update the checksum with the data written, including the padding. */
-        esp_core_dump_checksum_update(wr_data->checksum_ctx, wr_data->cached_data, COREDUMP_CACHE_SIZE);
+        esp_core_dump_checksum_update(&wr_data->checksum_ctx, wr_data->cached_data, COREDUMP_CACHE_SIZE);
         wr_data->off += COREDUMP_CACHE_SIZE;
         wr_data->cached_bytes = 0;
     }
 
     /* All data have been written to the flash, the cache is now empty, we can
      * terminate the checksum calculation. */
-    esp_core_dump_checksum_finish(wr_data->checksum_ctx, &checksum);
+    esp_core_dump_checksum_finish(&wr_data->checksum_ctx, &checksum);
 
     /* Use the cache to write the checksum if its size doesn't match the requirements.
      * (e.g. its size is not a multiple of 32) */
@@ -300,50 +355,16 @@ static esp_err_t esp_core_dump_flash_write_end(core_dump_write_data_t* priv)
     return err;
 }
 
-void esp_core_dump_to_flash(panic_info_t *info)
-{
-    static core_dump_write_config_t wr_cfg = { 0 };
-    static core_dump_write_data_t wr_data = { 0 };
-
-    /* Check core dump partition configuration. */
-    core_dump_crc_t crc = esp_core_dump_calc_flash_config_crc();
-    if (s_core_flash_config.partition_config_crc != crc) {
-        ESP_COREDUMP_LOGE("Core dump flash config is corrupted! CRC=0x%x instead of 0x%x", crc, s_core_flash_config.partition_config_crc);
-        return;
-    }
-
-    /* Make sure that the partition can at least hold the data length. */
-    if (s_core_flash_config.partition.start == 0 || s_core_flash_config.partition.size < sizeof(uint32_t)) {
-        ESP_COREDUMP_LOGE("Invalid flash partition config!");
-        return;
-    }
-
-    /* Initialize non-OS flash access critical section. */
-    spi_flash_guard_set(&g_flash_guard_no_os_ops);
-    esp_flash_app_disable_protect(true);
-
-    /* Register the callbacks that will be called later by the generic part. */
-    wr_cfg.prepare = esp_core_dump_flash_write_prepare;
-    wr_cfg.start = esp_core_dump_flash_write_start;
-    wr_cfg.end = esp_core_dump_flash_write_end;
-    wr_cfg.write = (esp_core_dump_flash_write_data_t) esp_core_dump_flash_write_data;
-    wr_cfg.priv = &wr_data;
-
-    ESP_COREDUMP_LOGI("Save core dump to flash...");
-    esp_core_dump_write(info, &wr_cfg);
-    ESP_COREDUMP_LOGI("Core dump has been saved to flash.");
-}
-
 void esp_core_dump_init(void)
 {
-    esp_core_dump_flash_init();
+    esp_core_dump_partition_init();
 
 #if CONFIG_ESP_COREDUMP_CHECK_BOOT
     const esp_partition_t *partition = 0;
     uint32_t size = 0;
 
     if (esp_core_dump_image_check() == ESP_OK
-        && esp_core_dump_partition_and_size_get(&partition, &size) == ESP_OK) {
+            && esp_core_dump_partition_and_size_get(&partition, &size) == ESP_OK) {
         ESP_COREDUMP_LOGI("Found core dump %d bytes in flash @ 0x%x", size, partition->address);
     }
 #endif
@@ -392,7 +413,7 @@ esp_err_t esp_core_dump_image_check(void)
         }
 
         /* Update the checksum according to what was just read. */
-        esp_core_dump_checksum_update(wr_data.checksum_ctx, wr_data.cached_data, toread);
+        esp_core_dump_checksum_update(&wr_data.checksum_ctx, wr_data.cached_data, toread);
 
         /* Move the offset forward and decrease the remaining size. */
         offset += toread;
@@ -400,7 +421,7 @@ esp_err_t esp_core_dump_image_check(void)
     }
 
     /* The coredump has been totally read, finish the checksum calculation. */
-    esp_core_dump_checksum_finish(wr_data.checksum_ctx, &checksum_calc);
+    esp_core_dump_checksum_finish(&wr_data.checksum_ctx, &checksum_calc);
 
     /* Read the checksum from the flash and compare to the one just
      * calculated. */
@@ -456,6 +477,13 @@ esp_err_t esp_core_dump_image_erase(void)
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Failed to write core dump partition size (%d)!", err);
     }
+
+#if CONFIG_ESP_COREDUMP_FLASH_NO_OVERWRITE
+    if (!s_core_flash_config.partition.empty) {
+        s_core_flash_config.partition.empty = true;
+        s_core_flash_config.partition_config_crc = esp_core_dump_calc_flash_config_crc();
+    }
+#endif
 
     return err;
 }

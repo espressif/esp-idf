@@ -10,6 +10,7 @@
 #include "hal/assert.h"
 #include "hal/ecc_types.h"
 #include "soc/ecc_mult_reg.h"
+#include "soc/pcr_struct.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -23,6 +24,28 @@ typedef enum {
     ECC_PARAM_QY,
     ECC_PARAM_QZ,
 } ecc_ll_param_t;
+
+/**
+ * @brief Enable the bus clock for ECC peripheral module
+ *
+ * @param true to enable the module, false to disable the module
+ */
+static inline void ecc_ll_enable_bus_clock(bool enable)
+{
+    PCR.ecc_conf.ecc_clk_en = enable;
+}
+
+/**
+ * @brief Reset the ECC peripheral module
+ */
+static inline void ecc_ll_reset_register(void)
+{
+    PCR.ecc_conf.ecc_rst_en = 1;
+    PCR.ecc_conf.ecc_rst_en = 0;
+
+    // Clear reset on ECDSA, otherwise ECC is held in reset
+    PCR.ecdsa_conf.ecdsa_rst_en = 0;
+}
 
 static inline void ecc_ll_enable_interrupt(void)
 {

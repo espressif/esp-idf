@@ -54,6 +54,7 @@ initializer that should be kept in sync
         .task_priority      = tskIDLE_PRIORITY+5,       \
         .stack_size         = 4096,                     \
         .core_id            = tskNO_AFFINITY,           \
+        .task_caps          = (MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT),       \
         .server_port        = 80,                       \
         .ctrl_port          = ESP_HTTPD_DEF_CTRL_PORT,  \
         .max_open_sockets   = 7,                        \
@@ -110,6 +111,8 @@ typedef void* httpd_handle_t;
  *          available in "http_parser" library
  */
 typedef enum http_method httpd_method_t;
+
+#define HTTP_ANY INT_MAX
 
 /**
  * @brief  Prototype for freeing context data (if any)
@@ -168,6 +171,7 @@ typedef struct httpd_config {
     unsigned    task_priority;      /*!< Priority of FreeRTOS task which runs the server */
     size_t      stack_size;         /*!< The maximum stack size allowed for the server task */
     BaseType_t  core_id;            /*!< The core the HTTP server task will run on */
+    uint32_t    task_caps;          /*!< The memory capabilities to use when allocating the HTTP server task's stack */
 
     /**
      * TCP Port number for receiving and transmitting HTTP traffic
@@ -365,7 +369,7 @@ esp_err_t httpd_stop(httpd_handle_t handle);
  */
 typedef struct httpd_req {
     httpd_handle_t  handle;                     /*!< Handle to server instance */
-    int             method;                     /*!< The type of HTTP request, -1 if unsupported method */
+    int             method;                     /*!< The type of HTTP request, -1 if unsupported method, HTTP_ANY for wildcard method to support every method */
     const char      uri[HTTPD_MAX_URI_LEN + 1]; /*!< The URI of this request (1 byte extra for null termination) */
     size_t          content_len;                /*!< Length of the request body */
     void           *aux;                        /*!< Internally used members */
@@ -421,7 +425,7 @@ typedef struct httpd_req {
  */
 typedef struct httpd_uri {
     const char       *uri;    /*!< The URI to handle */
-    httpd_method_t    method; /*!< Method supported by the URI */
+    httpd_method_t    method; /*!< Method supported by the URI, HTTP_ANY for wildcard method to support all methods*/
 
     /**
      * Handler to call for supported request method. This must
@@ -1290,6 +1294,30 @@ esp_err_t httpd_resp_set_hdr(httpd_req_t *r, const char *field, const char *valu
  *  - ESP_ERR_HTTPD_INVALID_REQ : Invalid request pointer
  */
 esp_err_t httpd_resp_send_err(httpd_req_t *req, httpd_err_code_t error, const char *msg);
+
+/**
+ * @brief   For sending out custom error code in response to HTTP request.
+ *
+ * @note
+ *  - This API is supposed to be called only from the context of
+ *    a URI handler where httpd_req_t* request pointer is valid.
+ *  - Once this API is called, all request headers are purged, so
+ *    request headers need be copied into separate buffers if
+ *    they are required later.
+ *  - If you wish to send additional data in the body of the
+ *    response, please use the lower-level functions directly.
+ *
+ * @param[in] req     Pointer to the HTTP request for which the response needs to be sent
+ * @param[in] status  Error status to send
+ * @param[in] msg     Error message string
+ *
+ * @return
+ *  - ESP_OK : On successfully sending the response packet
+ *  - ESP_ERR_INVALID_ARG : Null arguments
+ *  - ESP_ERR_HTTPD_RESP_SEND   : Error in raw send
+ *  - ESP_ERR_HTTPD_INVALID_REQ : Invalid request pointer
+ */
+esp_err_t httpd_resp_send_custom_err(httpd_req_t *req, const char *status, const char *msg);
 
 /**
  * @brief   Helper function for HTTP 404

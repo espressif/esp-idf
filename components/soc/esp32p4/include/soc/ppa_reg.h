@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -43,10 +43,9 @@ extern "C" {
 #define PPA_CLUT_CONF_REG (DR_REG_PPA_BASE + 0xc)
 /** PPA_APB_FIFO_MASK : R/W; bitpos: [0]; default: 0;
  *  1'b0: fifo mode to wr/rd clut0/clut1 RAM through register
- *  PPA_SR_CLUT_DATA_REG/PPA_BLEND0_CLUT_DATA_REG/PPA_BLEND1_CLUT_DATA_REG. 1'b1:
- *  memory mode to wr/rd sr/blend0/blend1 clut RAM. The bit 11 and 10 of the waddr
- *  should be 01 to access sr clut and should be 10 to access blend0 clut and should be
- *  11 to access blend 1 clut in memory mode.
+ *  PPA_BLEND0_CLUT_DATA_REG/PPA_BLEND1_CLUT_DATA_REG. 1'b1:
+ *  memory mode to wr/rd blend0/blend1 clut RAM. The bit 11 and 10 of the waddr
+ *  should be 01 to access blend0 clut and should be 10 to access blend1 clut in memory mode.
  */
 #define PPA_APB_FIFO_MASK    (BIT(0))
 #define PPA_APB_FIFO_MASK_M  (PPA_APB_FIFO_MASK_V << PPA_APB_FIFO_MASK_S)
@@ -244,20 +243,20 @@ extern "C" {
 #define PPA_YUV_TX_RANGE_M  (PPA_YUV_TX_RANGE_V << PPA_YUV_TX_RANGE_S)
 #define PPA_YUV_TX_RANGE_V  0x00000001U
 #define PPA_YUV_TX_RANGE_S  9
-/** PPA_YUV2RGB_PROTOCAL : R/W; bitpos: [10]; default: 0;
- *  YUV to RGB protocal when reg_sr_rx_cm is 4'd8. 0: BT601. 1: BT709
+/** PPA_YUV2RGB_PROTOCOL : R/W; bitpos: [10]; default: 0;
+ *  YUV to RGB protocol when reg_sr_rx_cm is 4'd8. 0: BT601. 1: BT709
  */
-#define PPA_YUV2RGB_PROTOCAL    (BIT(10))
-#define PPA_YUV2RGB_PROTOCAL_M  (PPA_YUV2RGB_PROTOCAL_V << PPA_YUV2RGB_PROTOCAL_S)
-#define PPA_YUV2RGB_PROTOCAL_V  0x00000001U
-#define PPA_YUV2RGB_PROTOCAL_S  10
-/** PPA_RGB2YUV_PROTOCAL : R/W; bitpos: [11]; default: 0;
- *  RGB to YUV protocal when reg_sr_tx_cm is 4'd8. 0: BT601. 1: BT709
+#define PPA_YUV2RGB_PROTOCOL    (BIT(10))
+#define PPA_YUV2RGB_PROTOCOL_M  (PPA_YUV2RGB_PROTOCOL_V << PPA_YUV2RGB_PROTOCOL_S)
+#define PPA_YUV2RGB_PROTOCOL_V  0x00000001U
+#define PPA_YUV2RGB_PROTOCOL_S  10
+/** PPA_RGB2YUV_PROTOCOL : R/W; bitpos: [11]; default: 0;
+ *  RGB to YUV protocol when reg_sr_tx_cm is 4'd8. 0: BT601. 1: BT709
  */
-#define PPA_RGB2YUV_PROTOCAL    (BIT(11))
-#define PPA_RGB2YUV_PROTOCAL_M  (PPA_RGB2YUV_PROTOCAL_V << PPA_RGB2YUV_PROTOCAL_S)
-#define PPA_RGB2YUV_PROTOCAL_V  0x00000001U
-#define PPA_RGB2YUV_PROTOCAL_S  11
+#define PPA_RGB2YUV_PROTOCOL    (BIT(11))
+#define PPA_RGB2YUV_PROTOCOL_M  (PPA_RGB2YUV_PROTOCOL_V << PPA_RGB2YUV_PROTOCOL_S)
+#define PPA_RGB2YUV_PROTOCOL_V  0x00000001U
+#define PPA_RGB2YUV_PROTOCOL_S  11
 
 /** PPA_BLEND_COLOR_MODE_REG register
  *  blending engine color mode register

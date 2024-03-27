@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -46,7 +46,7 @@ typedef union {
          */
         uint32_t out_loop_test_chn:1;
         /** out_mem_burst_length_chn : R/W; bitpos: [8:6]; default: 0;
-         *  Block size of Tx channel 0. 0: single      1: 16 bytes      2: 32 bytes    3: 64
+         *  Block size of Tx channel 0. 0: 8 bytes      1: 16 bytes      2: 32 bytes    3: 64
          *  bytes    4: 128 bytes
          */
         uint32_t out_mem_burst_length_chn:3;
@@ -690,90 +690,6 @@ typedef union {
     uint32_t val;
 } dma2d_out_scramble_chn_reg_t;
 
-/** Type of out_color_param0_chn register
- *  Configures the tx color convert parameter of channel 0
- */
-typedef union {
-    struct {
-        /** out_color_param_h0_chn : R/W; bitpos: [20:0]; default: 298;
-         *  Set first 2 parameter of most significant byte of pending 3 bytes
-         */
-        uint32_t out_color_param_h0_chn:21;
-        uint32_t reserved_21:11;
-    };
-    uint32_t val;
-} dma2d_out_color_param0_chn_reg_t;
-
-/** Type of out_color_param1_chn register
- *  Configures the tx color convert parameter of channel 0
- */
-typedef union {
-    struct {
-        /** out_color_param_h1_chn : R/W; bitpos: [27:0]; default: 210164121;
-         *  Set last 2 parameter of most significant byte of pending 3 bytes
-         */
-        uint32_t out_color_param_h1_chn:28;
-        uint32_t reserved_28:4;
-    };
-    uint32_t val;
-} dma2d_out_color_param1_chn_reg_t;
-
-/** Type of out_color_param2_chn register
- *  Configures the tx color convert parameter of channel 0
- */
-typedef union {
-    struct {
-        /** out_color_param_m0_chn : R/W; bitpos: [20:0]; default: 1995050;
-         *  Set first 2 parameter of midium significant byte of pending 3 bytes
-         */
-        uint32_t out_color_param_m0_chn:21;
-        uint32_t reserved_21:11;
-    };
-    uint32_t val;
-} dma2d_out_color_param2_chn_reg_t;
-
-/** Type of out_color_param3_chn register
- *  Configures the tx color convert parameter of channel 0
- */
-typedef union {
-    struct {
-        /** out_color_param_m1_chn : R/W; bitpos: [27:0]; default: 35540784;
-         *  Set last 2 parameter of midium significant byte of pending 3 bytes
-         */
-        uint32_t out_color_param_m1_chn:28;
-        uint32_t reserved_28:4;
-    };
-    uint32_t val;
-} dma2d_out_color_param3_chn_reg_t;
-
-/** Type of out_color_param4_chn register
- *  Configures the tx color convert parameter of channel 0
- */
-typedef union {
-    struct {
-        /** out_color_param_l0_chn : R/W; bitpos: [20:0]; default: 528682;
-         *  Set first 2 parameter of least significant byte of pending 3 bytes
-         */
-        uint32_t out_color_param_l0_chn:21;
-        uint32_t reserved_21:11;
-    };
-    uint32_t val;
-} dma2d_out_color_param4_chn_reg_t;
-
-/** Type of out_color_param5_chn register
- *  Configures the tx color convert parameter of channel 0
- */
-typedef union {
-    struct {
-        /** out_color_param_l1_chn : R/W; bitpos: [27:0]; default: 195899392;
-         *  Set last 2 parameter of least significant byte of pending 3 bytes
-         */
-        uint32_t out_color_param_l1_chn:28;
-        uint32_t reserved_28:4;
-    };
-    uint32_t val;
-} dma2d_out_color_param5_chn_reg_t;
-
 /** Type of out_etm_conf_chn register
  *  Configures the tx etm of channel 0
  */
@@ -846,7 +762,7 @@ typedef union {
          */
         uint32_t in_loop_test_chn:1;
         /** in_mem_burst_length_chn : R/W; bitpos: [8:6]; default: 0;
-         *  Block size of Rx channel 0. 0: single      1: 16 bytes      2: 32 bytes    3: 64
+         *  Block size of Rx channel 0. 0: 8 bytes      1: 16 bytes      2: 32 bytes    3: 64
          *  bytes    4: 128 bytes
          */
         uint32_t in_mem_burst_length_chn:3;
@@ -1263,8 +1179,8 @@ typedef union {
     struct {
         uint32_t reserved_0:20;
         /** inlink_auto_ret_chn : R/W; bitpos: [20]; default: 1;
-         *  Set this bit to return to current inlink descriptor's address, when there are some
-         *  errors in current receiving data.
+         *  Configure the value of the owner field written back to the inlink descriptor.
+         *  1: Write back 1. 0: Write back 0.
          */
         uint32_t inlink_auto_ret_chn:1;
         /** inlink_stop_chn : R/W/SC; bitpos: [21]; default: 0;
@@ -1529,90 +1445,6 @@ typedef union {
     uint32_t val;
 } dma2d_in_scramble_chn_reg_t;
 
-/** Type of in_color_param0_chn register
- *  Configures the rx color convert parameter of channel 0
- */
-typedef union {
-    struct {
-        /** in_color_param_h0_chn : R/W; bitpos: [20:0]; default: 298;
-         *  Set first 2 parameter of most significant byte of pending 3 bytes
-         */
-        uint32_t in_color_param_h0_chn:21;
-        uint32_t reserved_21:11;
-    };
-    uint32_t val;
-} dma2d_in_color_param0_chn_reg_t;
-
-/** Type of in_color_param1_chn register
- *  Configures the rx color convert parameter of channel 0
- */
-typedef union {
-    struct {
-        /** in_color_param_h1_chn : R/W; bitpos: [27:0]; default: 210164121;
-         *  Set last 2 parameter of most significant byte of pending 3 bytes
-         */
-        uint32_t in_color_param_h1_chn:28;
-        uint32_t reserved_28:4;
-    };
-    uint32_t val;
-} dma2d_in_color_param1_chn_reg_t;
-
-/** Type of in_color_param2_chn register
- *  Configures the rx color convert parameter of channel 0
- */
-typedef union {
-    struct {
-        /** in_color_param_m0_chn : R/W; bitpos: [20:0]; default: 1995050;
-         *  Set first 2 parameter of midium significant byte of pending 3 bytes
-         */
-        uint32_t in_color_param_m0_chn:21;
-        uint32_t reserved_21:11;
-    };
-    uint32_t val;
-} dma2d_in_color_param2_chn_reg_t;
-
-/** Type of in_color_param3_chn register
- *  Configures the rx color convert parameter of channel 0
- */
-typedef union {
-    struct {
-        /** in_color_param_m1_chn : R/W; bitpos: [27:0]; default: 35540784;
-         *  Set last 2 parameter of midium significant byte of pending 3 bytes
-         */
-        uint32_t in_color_param_m1_chn:28;
-        uint32_t reserved_28:4;
-    };
-    uint32_t val;
-} dma2d_in_color_param3_chn_reg_t;
-
-/** Type of in_color_param4_chn register
- *  Configures the rx color convert parameter of channel 0
- */
-typedef union {
-    struct {
-        /** in_color_param_l0_chn : R/W; bitpos: [20:0]; default: 528682;
-         *  Set first 2 parameter of least significant byte of pending 3 bytes
-         */
-        uint32_t in_color_param_l0_chn:21;
-        uint32_t reserved_21:11;
-    };
-    uint32_t val;
-} dma2d_in_color_param4_chn_reg_t;
-
-/** Type of in_color_param5_chn register
- *  Configures the rx color convert parameter of channel 0
- */
-typedef union {
-    struct {
-        /** in_color_param_l1_chn : R/W; bitpos: [27:0]; default: 195899392;
-         *  Set last 2 parameter of least significant byte of pending 3 bytes
-         */
-        uint32_t in_color_param_l1_chn:28;
-        uint32_t reserved_28:4;
-    };
-    uint32_t val;
-} dma2d_in_color_param5_chn_reg_t;
-
 /** Type of in_etm_conf_chn register
  *  Configures the rx etm of channel 0
  */
@@ -1718,7 +1550,7 @@ typedef union {
  */
 typedef union {
     struct {
-        /** access_intr_mem_start_addr : R/W; bitpos: [31:0]; default: 806354944;
+        /** access_intr_mem_start_addr : R/W; bitpos: [31:0]; default: 806354944 (0x30100000);
          *  The start address of accessible address space.
          */
         uint32_t access_intr_mem_start_addr:32;
@@ -1731,7 +1563,7 @@ typedef union {
  */
 typedef union {
     struct {
-        /** access_intr_mem_end_addr : R/W; bitpos: [31:0]; default: 2415919103;
+        /** access_intr_mem_end_addr : R/W; bitpos: [31:0]; default: 2415919103 (0x8FFFFFFF);
          *  The end address of accessible address space. The access address beyond this range
          *  would lead to descriptor error.
          */
@@ -1745,7 +1577,7 @@ typedef union {
  */
 typedef union {
     struct {
-        /** access_extr_mem_start_addr : R/W; bitpos: [31:0]; default: 806354944;
+        /** access_extr_mem_start_addr : R/W; bitpos: [31:0]; default: 806354944 (0x30100000);
          *  The start address of accessible address space.
          */
         uint32_t access_extr_mem_start_addr:32;
@@ -1758,7 +1590,7 @@ typedef union {
  */
 typedef union {
     struct {
-        /** access_extr_mem_end_addr : R/W; bitpos: [31:0]; default: 2415919103;
+        /** access_extr_mem_end_addr : R/W; bitpos: [31:0]; default: 2415919103 (0x8FFFFFFF);
          *  The end address of accessible address space. The access address beyond this range
          *  would lead to descriptor error.
          */
@@ -1847,36 +1679,69 @@ typedef union {
     uint32_t val;
 } dma2d_rdn_eco_low_reg_t;
 
+
+/** Type of in/out_color_param_h/m/l_chn register
+ *  Configures the rx/tx color convert parameter of channel n
+ */
+typedef union {
+    struct {
+        struct {
+            /** a: R/W; bitpos: [9:0]; default: h:298, m:298, l:298
+             * Set the first parameter of the most/medium/least significant byte of pending 3 bytes
+             */
+            uint32_t a                             :    10;
+            /** b: R/W; bitpos: [20:10]; default: h:0, in_m:1948, l:516
+             * Set the second parameter of the most/medium/least significant byte of pending 3 bytes
+             */
+            uint32_t b                             :    11;
+            uint32_t reserved21                    :    11;
+        };
+        struct {
+            /** c: R/W; bitpos: [41:32]; default: h:409, m:816, l:0
+             * Set the third parameter of the most/medium/least significant byte of pending 3 bytes
+             */
+            uint32_t c                             :    10;
+            /** d: R/W; bitpos: [59:42]; default: h:205238, m:34707, l:191308
+             * Set the fourth parameter of the most/medium/least significant byte of pending 3 bytes
+             */
+            uint32_t d                             :    18;
+            uint32_t reserved60                    :    4;
+        };
+    };
+    uint32_t val[2];
+} dma2d_color_param_reg_t;
+
 typedef struct {
-    volatile dma2d_out_conf0_chn_reg_t out_conf0_ch0;
-    volatile dma2d_out_int_raw_chn_reg_t out_int_raw_ch0;
-    volatile dma2d_out_int_ena_chn_reg_t out_int_ena_ch0;
-    volatile dma2d_out_int_st_chn_reg_t out_int_st_ch0;
-    volatile dma2d_out_int_clr_chn_reg_t out_int_clr_ch0;
-    volatile dma2d_outfifo_status_chn_reg_t outfifo_status_ch0;
-    volatile dma2d_out_push_chn_reg_t out_push_ch0;
-    volatile dma2d_out_link_conf_chn_reg_t out_link_conf_ch0;
-    volatile dma2d_out_link_addr_chn_reg_t out_link_addr_ch0;
-    volatile dma2d_out_state_chn_reg_t out_state_ch0;
-    volatile dma2d_out_eof_des_addr_chn_reg_t out_eof_des_addr_ch0;
-    volatile dma2d_out_dscr_chn_reg_t out_dscr_ch0;
-    volatile dma2d_out_dscr_bf0_chn_reg_t out_dscr_bf0_ch0;
-    volatile dma2d_out_dscr_bf1_chn_reg_t out_dscr_bf1_ch0;
-    volatile dma2d_out_peri_sel_chn_reg_t out_peri_sel_ch0;
-    volatile dma2d_out_arb_chn_reg_t out_arb_ch0;
-    volatile dma2d_out_ro_status_chn_reg_t out_ro_status_ch0;
-    volatile dma2d_out_ro_pd_conf_chn_reg_t out_ro_pd_conf_ch0;  //only chn0
-    volatile dma2d_out_color_convert_chn_reg_t out_color_convert_ch0;
-    volatile dma2d_out_scramble_chn_reg_t out_scramble_ch0;
-    volatile dma2d_out_color_param0_chn_reg_t out_color_param0_ch0;
-    volatile dma2d_out_color_param1_chn_reg_t out_color_param1_ch0;
-    volatile dma2d_out_color_param2_chn_reg_t out_color_param2_ch0;
-    volatile dma2d_out_color_param3_chn_reg_t out_color_param3_ch0;
-    volatile dma2d_out_color_param4_chn_reg_t out_color_param4_ch0;
-    volatile dma2d_out_color_param5_chn_reg_t out_color_param5_ch0;
-    volatile dma2d_out_etm_conf_chn_reg_t out_etm_conf_ch0;
-    volatile dma2d_out_dscr_port_blk_chn_reg_t out_dscr_port_blk_ch0;
-    uint32_t reserved[36];
+    volatile dma2d_color_param_reg_t param_h;
+    volatile dma2d_color_param_reg_t param_m;
+    volatile dma2d_color_param_reg_t param_l;
+} dma2d_color_param_group_chn_reg_t;
+
+typedef struct {
+    volatile dma2d_out_conf0_chn_reg_t out_conf0;
+    volatile dma2d_out_int_raw_chn_reg_t out_int_raw;
+    volatile dma2d_out_int_ena_chn_reg_t out_int_ena;
+    volatile dma2d_out_int_st_chn_reg_t out_int_st;
+    volatile dma2d_out_int_clr_chn_reg_t out_int_clr;
+    volatile dma2d_outfifo_status_chn_reg_t outfifo_status;
+    volatile dma2d_out_push_chn_reg_t out_push;
+    volatile dma2d_out_link_conf_chn_reg_t out_link_conf;
+    volatile dma2d_out_link_addr_chn_reg_t out_link_addr;
+    volatile dma2d_out_state_chn_reg_t out_state;
+    volatile dma2d_out_eof_des_addr_chn_reg_t out_eof_des_addr;
+    volatile dma2d_out_dscr_chn_reg_t out_dscr;
+    volatile dma2d_out_dscr_bf0_chn_reg_t out_dscr_bf0;
+    volatile dma2d_out_dscr_bf1_chn_reg_t out_dscr_bf1;
+    volatile dma2d_out_peri_sel_chn_reg_t out_peri_sel;
+    volatile dma2d_out_arb_chn_reg_t out_arb;
+    volatile dma2d_out_ro_status_chn_reg_t out_ro_status;
+    volatile dma2d_out_ro_pd_conf_chn_reg_t out_ro_pd_conf;  /* only exist on channel0 */
+    volatile dma2d_out_color_convert_chn_reg_t out_color_convert;
+    volatile dma2d_out_scramble_chn_reg_t out_scramble;
+    volatile dma2d_color_param_group_chn_reg_t out_color_param_group;
+    volatile dma2d_out_etm_conf_chn_reg_t out_etm_conf;
+    volatile dma2d_out_dscr_port_blk_chn_reg_t out_dscr_port_blk;
+    uint32_t reserved_out[36];
 } dma2d_out_chn_reg_t;
 
 typedef struct {
@@ -1898,15 +1763,10 @@ typedef struct {
     volatile dma2d_in_peri_sel_chn_reg_t in_peri_sel;
     volatile dma2d_in_arb_chn_reg_t in_arb;
     volatile dma2d_in_ro_status_chn_reg_t in_ro_status;
-    volatile dma2d_in_ro_pd_conf_chn_reg_t in_ro_pd_conf;  //only ch0
-    volatile dma2d_in_color_convert_chn_reg_t in_color_convert;  //only ch0
-    volatile dma2d_in_scramble_chn_reg_t in_scramble;  //only ch0
-    volatile dma2d_in_color_param0_chn_reg_t in_color_param0;  //only ch0
-    volatile dma2d_in_color_param1_chn_reg_t in_color_param1;  //only ch0
-    volatile dma2d_in_color_param2_chn_reg_t in_color_param2;  //only ch0
-    volatile dma2d_in_color_param3_chn_reg_t in_color_param3;  //only ch0
-    volatile dma2d_in_color_param4_chn_reg_t in_color_param4;  //only ch0
-    volatile dma2d_in_color_param5_chn_reg_t in_color_param5;  //only ch0
+    volatile dma2d_in_ro_pd_conf_chn_reg_t in_ro_pd_conf;
+    volatile dma2d_in_color_convert_chn_reg_t in_color_convert;
+    volatile dma2d_in_scramble_chn_reg_t in_scramble;
+    volatile dma2d_color_param_group_chn_reg_t in_color_param_group;
     volatile dma2d_in_etm_conf_chn_reg_t in_etm_conf;
     uint32_t reserved_570[36];
 } dma2d_in_ch0_reg_t;
@@ -1931,14 +1791,15 @@ typedef struct {
     volatile dma2d_in_arb_chn_reg_t in_arb;
     volatile dma2d_in_ro_status_chn_reg_t in_ro_status;
     volatile dma2d_in_etm_conf_chn_reg_t in_etm_conf;
+    uint32_t reserved_64c[45];
 } dma2d_in_ch1_reg_t;
 
-typedef struct {
+typedef struct dma2d_dev_t {
     volatile dma2d_out_chn_reg_t out_channel[3];
     uint32_t reserved_300[128];
     volatile dma2d_in_ch0_reg_t in_channel0;
     volatile dma2d_in_ch1_reg_t in_channel1;
-    uint32_t reserved_6dc[237];
+    uint32_t reserved_700[192];
     volatile dma2d_axi_err_reg_t axi_err;
     volatile dma2d_rst_conf_reg_t rst_conf;
     volatile dma2d_intr_mem_start_addr_reg_t intr_mem_start_addr;

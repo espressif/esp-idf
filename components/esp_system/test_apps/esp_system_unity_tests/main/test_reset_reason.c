@@ -1,8 +1,9 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
+#include "sdkconfig.h"
 #include <inttypes.h>
 #include "unity.h"
 #include "esp_system.h"
@@ -13,6 +14,9 @@
 #include "hal/wdt_hal.h"
 #if CONFIG_IDF_TARGET_ARCH_RISCV
 #include "riscv/rv_utils.h"
+#endif
+#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
+#include "hal/cache_ll.h"
 #endif
 
 #define RTC_BSS_ATTR __attribute__((section(".rtc.bss")))
@@ -94,7 +98,6 @@
 
 #endif // CONFIG_IDF_TARGET_ESP32
 
-
 /* This test needs special test runners: rev1 silicon, and SPI flash with
  * fast start-up time. Otherwise reset reason will be RTCWDT_RESET.
  */
@@ -102,7 +105,6 @@ TEST_CASE("reset reason ESP_RST_POWERON", "[reset][ignore]")
 {
     TEST_ASSERT_EQUAL(ESP_RST_POWERON, esp_reset_reason());
 }
-
 
 static __NOINIT_ATTR uint32_t s_noinit_val;
 
@@ -127,10 +129,16 @@ static void setup_values(void)
     s_rtc_data_val = CHECK_VALUE;
     s_rtc_bss_val = CHECK_VALUE;
     TEST_ASSERT_EQUAL_HEX32_MESSAGE(CHECK_VALUE, s_rtc_rodata_val,
-            "s_rtc_rodata_val should already be set up");
+                                    "s_rtc_rodata_val should already be set up");
     s_rtc_force_fast_val = CHECK_VALUE;
     s_rtc_force_slow_val = CHECK_VALUE;
 #endif //CHECK_RTC_MEM
+
+#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
+    /* If internal data is behind a cache it might not be written to the physical memory when we crash
+       force a full writeback here to ensure this */
+    cache_ll_writeback_all(CACHE_LL_LEVEL_INT_MEM, CACHE_TYPE_DATA, CACHE_LL_ID_ALL);
+#endif
 }
 
 #if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32P4) // TODO IDF-7529
@@ -158,15 +166,15 @@ static void check_reset_reason_deep_sleep(void)
 }
 
 TEST_CASE_MULTIPLE_STAGES("reset reason ESP_RST_DEEPSLEEP", "[reset_reason][reset="DEEPSLEEP"]",
-        do_deep_sleep,
-        check_reset_reason_deep_sleep);
+                          do_deep_sleep,
+                          check_reset_reason_deep_sleep);
 
 #endif //!TEMPORARY_DISABLED_FOR_TARGETS(...)
 
 static void do_exception(void)
 {
     setup_values();
-    *(int*) (0x40000001) = 0;
+    *(int*)(0x0) = 0;
 }
 
 static void do_abort(void)
@@ -191,12 +199,12 @@ static void check_reset_reason_panic(void)
 }
 
 TEST_CASE_MULTIPLE_STAGES("reset reason ESP_RST_PANIC after exception", "[reset_reason][reset="LOAD_STORE_ERROR","RESET"]",
-        do_exception,
-        check_reset_reason_panic);
+                          do_exception,
+                          check_reset_reason_panic);
 
 TEST_CASE_MULTIPLE_STAGES("reset reason ESP_RST_PANIC after abort", "[reset_reason][reset=abort,"RESET"]",
-        do_abort,
-        check_reset_reason_panic);
+                          do_abort,
+                          check_reset_reason_panic);
 
 static void do_restart(void)
 {
@@ -204,7 +212,7 @@ static void do_restart(void)
     esp_restart();
 }
 
-#if portNUM_PROCESSORS > 1
+#if CONFIG_FREERTOS_NUMBER_OF_CORES > 1
 static void do_restart_from_app_cpu(void)
 {
     setup_values();
@@ -229,15 +237,14 @@ static void check_reset_reason_sw(void)
 }
 
 TEST_CASE_MULTIPLE_STAGES("reset reason ESP_RST_SW after restart", "[reset_reason][reset="RESET"]",
-        do_restart,
-        check_reset_reason_sw);
+                          do_restart,
+                          check_reset_reason_sw);
 
-#if portNUM_PROCESSORS > 1
+#if CONFIG_FREERTOS_NUMBER_OF_CORES > 1
 TEST_CASE_MULTIPLE_STAGES("reset reason ESP_RST_SW after restart from APP CPU", "[reset_reason][reset="RESET"]",
-        do_restart_from_app_cpu,
-        check_reset_reason_sw);
+                          do_restart_from_app_cpu,
+                          check_reset_reason_sw);
 #endif
-
 
 static void do_int_wdt(void)
 {
@@ -248,9 +255,8 @@ static void do_int_wdt(void)
     BaseType_t prev_level = portSET_INTERRUPT_MASK_FROM_ISR();
 #endif
     (void) prev_level;
-    while(1);
+    while (1);
 }
-
 
 static void do_int_wdt_hw(void)
 {
@@ -260,7 +266,7 @@ static void do_int_wdt_hw(void)
 #else
     XTOS_SET_INTLEVEL(XCHAL_NMILEVEL);
 #endif
-    while(1) { }
+    while (1) { }
 }
 
 static void check_reset_reason_int_wdt_sw(void)
@@ -280,14 +286,14 @@ static void check_reset_reason_int_wdt_hw(void)
 }
 
 TEST_CASE_MULTIPLE_STAGES("reset reason ESP_RST_INT_WDT after interrupt watchdog (panic)",
-        "[reset_reason][reset="INT_WDT_PANIC","RESET"]",
-        do_int_wdt,
-        check_reset_reason_int_wdt_sw);
+                          "[reset_reason][reset="INT_WDT_PANIC","RESET"]",
+                          do_int_wdt,
+                          check_reset_reason_int_wdt_sw);
 
 TEST_CASE_MULTIPLE_STAGES("reset reason ESP_RST_INT_WDT after interrupt watchdog (hw)",
-        "[reset_reason][reset="INT_WDT"]",
-        do_int_wdt_hw,
-        check_reset_reason_int_wdt_hw);
+                          "[reset_reason][reset="INT_WDT"]",
+                          do_int_wdt_hw,
+                          check_reset_reason_int_wdt_hw);
 
 #if CONFIG_ESP_TASK_WDT_EN
 static void do_task_wdt(void)
@@ -299,7 +305,7 @@ static void do_task_wdt(void)
         .trigger_panic = true,
     };
     TEST_ASSERT_EQUAL(ESP_OK, esp_task_wdt_init(&twdt_config));
-    while(1);
+    while (1);
 }
 
 static void check_reset_reason_task_wdt(void)
@@ -318,9 +324,9 @@ static void check_reset_reason_task_wdt(void)
 }
 
 TEST_CASE_MULTIPLE_STAGES("reset reason ESP_RST_TASK_WDT after task watchdog",
-        "[reset_reason][reset="RESET"]",
-        do_task_wdt,
-        check_reset_reason_task_wdt);
+                          "[reset_reason][reset="RESET"]",
+                          do_task_wdt,
+                          check_reset_reason_task_wdt);
 #endif // CONFIG_ESP_TASK_WDT_EN
 
 static void do_rtc_wdt(void)
@@ -334,7 +340,7 @@ static void do_rtc_wdt(void)
     wdt_hal_config_stage(&rtc_wdt_ctx, WDT_STAGE0, stage_timeout_ticks, WDT_STAGE_ACTION_RESET_SYSTEM);
     wdt_hal_set_flashboot_en(&rtc_wdt_ctx, true);
     wdt_hal_write_protect_enable(&rtc_wdt_ctx);
-    while(1);
+    while (1);
 }
 
 static void check_reset_reason_any_wdt(void)
@@ -346,10 +352,9 @@ static void check_reset_reason_any_wdt(void)
 }
 
 TEST_CASE_MULTIPLE_STAGES("reset reason ESP_RST_WDT after RTC watchdog",
-        "[reset_reason][reset="RTC_WDT"]",
-        do_rtc_wdt,
-        check_reset_reason_any_wdt);
-
+                          "[reset_reason][reset="RTC_WDT"]",
+                          do_rtc_wdt,
+                          check_reset_reason_any_wdt);
 
 static void do_brownout(void)
 {
@@ -374,10 +379,9 @@ static void check_reset_reason_brownout(void)
 }
 
 TEST_CASE_MULTIPLE_STAGES("reset reason ESP_RST_BROWNOUT after brownout event",
-        "[reset_reason][ignore][reset="BROWNOUT"]",
-        do_brownout,
-        check_reset_reason_brownout);
-
+                          "[reset_reason][ignore][reset="BROWNOUT"]",
+                          do_brownout,
+                          check_reset_reason_brownout);
 
 #ifdef CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY
 #ifndef CONFIG_FREERTOS_UNICORE
@@ -385,7 +389,7 @@ TEST_CASE_MULTIPLE_STAGES("reset reason ESP_RST_BROWNOUT after brownout event",
 #include "xt_instr_macros.h"
 #include "xtensa/config/specreg.h"
 
-static int size_stack = 1024 * 3;
+static int size_stack = 1024 * 4;
 static StackType_t *start_addr_stack;
 
 static int fibonacci(int n, void* func(void))
@@ -397,7 +401,7 @@ static int fibonacci(int n, void* func(void))
     printf("WINDOWBASE = %-2"PRIi32"   WINDOWSTART = 0x%"PRIx32"\n", base, start);
     if (n <= 1) {
         StackType_t *last_addr_stack = esp_cpu_get_sp();
-        StackType_t *used_stack = (StackType_t *) (start_addr_stack - last_addr_stack);
+        StackType_t *used_stack = (StackType_t *)(start_addr_stack - last_addr_stack);
         printf("addr_stack = %p, used[%p]/all[0x%x] space in stack\n", last_addr_stack, used_stack, size_stack);
         func();
         return n;
@@ -454,16 +458,15 @@ static void test2_finish(void)
 }
 
 TEST_CASE_MULTIPLE_STAGES("reset reason ESP_RST_SW after restart in a task with spiram stack", "[spiram_stack][reset="RESET"]",
-        init_restart_task,
-        test1_finish);
+                          init_restart_task,
+                          test1_finish);
 
 TEST_CASE_MULTIPLE_STAGES("reset reason ESP_RST_PANIC after an exception in a task with spiram stack", "[spiram_stack][reset="STORE_ERROR","RESET"]",
-        init_task_do_exception,
-        test2_finish);
+                          init_task_do_exception,
+                          test2_finish);
 
 #endif //CONFIG_IDF_TARGET_ARCH_XTENSA
 #endif // CONFIG_FREERTOS_UNICORE
 #endif // CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY
-
 
 /* Not tested here: ESP_RST_SDIO */

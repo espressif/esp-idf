@@ -49,12 +49,12 @@
 [submodule "components/json/cJSON"]
 	path = components/json/cJSON
 	url = ../../DaveGamble/cJSON.git
-	sbom-version = 1.7.16
+	sbom-version = 1.7.17
 	sbom-cpe = cpe:2.3:a:cjson_project:cjson:{}:*:*:*:*:*:*:*
 	sbom-supplier = Person: Dave Gamble
 	sbom-url = https://github.com/DaveGamble/cJSON
 	sbom-description = Ultralightweight JSON parser in ANSI C
-	sbom-hash = cb8693b058ba302f4829ec6d03f609ac6f848546
+	sbom-hash = 87d8f0961a01bf09bef98ff89bae9fdec42181ee
 
 [submodule "components/mbedtls/mbedtls"]
 	path = components/mbedtls/mbedtls
@@ -81,11 +81,11 @@
 [submodule "components/unity/unity"]
 	path = components/unity/unity
 	url = ../../ThrowTheSwitch/Unity.git
-	sbom-version = v2.4.3-51-g7d2bf62b7e6a
+	sbom-version = v2.6.0-RC1
 	sbom-supplier = Organization: ThrowTheSwitch community <http://www.throwtheswitch.org>
 	sbom-url = https://github.com/ThrowTheSwitch/Unity
 	sbom-description = Simple Unit Testing for C
-	sbom-hash = 7d2bf62b7e6afaf38153041a9d53c21aeeca9a25
+	sbom-hash = bf560290f6020737eafaa8b5cbd2177c3956c03f
 
 [submodule "components/bt/host/nimble/nimble"]
 	path = components/bt/host/nimble/nimble
@@ -120,10 +120,6 @@
 	path = components/openthread/lib
 	url = ../../espressif/esp-thread-lib.git
 
-[submodule "components/ieee802154/lib"]
-	path = components/ieee802154/lib
-	url = ../../espressif/esp-ieee802154-lib.git
-
 [submodule "components/bt/controller/lib_esp32h2/esp32h2-bt-lib"]
 	path = components/bt/controller/lib_esp32h2/esp32h2-bt-lib
 	url = ../../espressif/esp32h2-bt-lib.git
@@ -143,3 +139,7 @@
 [submodule "components/esp_coex/lib"]
 	path = components/esp_coex/lib
 	url = ../../espressif/esp-coex-lib.git
+
+[submodule "components/bt/esp_ble_mesh/lib/lib"]
+	path = components/bt/esp_ble_mesh/lib/lib
+	url = ../../espressif/esp-ble-mesh-lib.git

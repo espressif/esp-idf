@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -69,8 +69,22 @@ void esp_openthread_register_rcp_failure_handler(esp_openthread_rcp_failure_hand
 /**
  * @brief   Deinitializes the conneciton to RCP.
  *
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_INVALID_STATE if fail to deinitialize RCP
+ *
  */
-void esp_openthread_rcp_deinit(void);
+esp_err_t esp_openthread_rcp_deinit(void);
+
+/**
+ * @brief   Initializes the conneciton to RCP.
+ *
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_FAIL if fail to initialize RCP
+ *
+ */
+esp_err_t esp_openthread_rcp_init(void);
 
 #ifdef __cplusplus
 }

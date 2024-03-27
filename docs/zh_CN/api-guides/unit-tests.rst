@@ -185,6 +185,11 @@ DUT2 (slave) 终端::
 运行单元测试
 --------------
 
+.. note::
+
+    我们还提供基于 pytest 的框架 `pytest-embedded <https://github.com/espressif/pytest-embedded>`_，以便更方便、高效地运行单元测试。如需在 CI 中运行测试或连续运行多个测试，不妨尝试这一框架。了解更多信息，请查看 `pytest-embedded 文档 <https://docs.espressif.com/projects/pytest-embedded/en/latest/>`_ 和 :doc:`/contribute/esp-idf-tests-with-pytest`。
+
+
 烧写完成后重启 {IDF_TARGET_NAME}， 它将启动单元测试程序。
 
 当单元测试应用程序空闲时，输入回车键，它会打印出测试菜单，其中包含所有的测试项目::
@@ -224,7 +229,7 @@ DUT2 (slave) 终端::
 -  方括号中的模块名字，运行指定模块所有的测试用例。
 -  星号，运行所有测试用例。
 
-``[multi_device]`` 和 ``[multi_stage]``标签告诉测试运行者该用例是多设备测试还是多阶段测试。这些标签由 ``TEST_CASE_MULTIPLE_STAGES`` 和 ``TEST_CASE_MULTIPLE_DEVICES`` 宏自动生成。
+``[multi_device]`` 和 ``[multi_stage]`` 标签告诉测试运行者该用例是多设备测试还是多阶段测试。这些标签由 ``TEST_CASE_MULTIPLE_STAGES`` 和 ``TEST_CASE_MULTIPLE_DEVICES`` 宏自动生成。
 
 一旦选择了多设备测试用例，它会打印一个子菜单::
 

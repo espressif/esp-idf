@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -118,7 +118,7 @@ void spi_flash_op_unlock(void)
 void IRAM_ATTR spi_flash_op_block_func(void *arg)
 {
     // Disable scheduler on this CPU
-#ifdef CONFIG_FREERTOS_SMP
+#if ( ( CONFIG_FREERTOS_SMP ) && ( !CONFIG_FREERTOS_UNICORE ) )
     /*
     Note: FreeRTOS SMP has changed the behavior of scheduler suspension. But the vTaskPreemptionDisable() function should
     achieve the same affect as before (i.e., prevent the current task from being preempted).
@@ -126,7 +126,7 @@ void IRAM_ATTR spi_flash_op_block_func(void *arg)
     vTaskPreemptionDisable(NULL);
 #else
     vTaskSuspendAll();
-#endif // CONFIG_FREERTOS_SMP
+#endif // #if ( ( CONFIG_FREERTOS_SMP ) && ( !CONFIG_FREERTOS_UNICORE ) )
     // Restore interrupts that aren't located in IRAM
     esp_intr_noniram_disable();
     uint32_t cpuid = (uint32_t) arg;
@@ -142,13 +142,13 @@ void IRAM_ATTR spi_flash_op_block_func(void *arg)
     spi_flash_restore_cache(cpuid, s_flash_op_cache_state[cpuid]);
     // Restore interrupts that aren't located in IRAM
     esp_intr_noniram_enable();
-#ifdef CONFIG_FREERTOS_SMP
+#if ( ( CONFIG_FREERTOS_SMP ) && ( !CONFIG_FREERTOS_UNICORE ) )
     //Note: Scheduler suspension behavior changed in FreeRTOS SMP
     vTaskPreemptionEnable(NULL);
 #else
     // Re-enable scheduler
     xTaskResumeAll();
-#endif // CONFIG_FREERTOS_SMP
+#endif // #if ( ( CONFIG_FREERTOS_SMP ) && ( !CONFIG_FREERTOS_UNICORE ) )
 }
 
 void IRAM_ATTR spi_flash_disable_interrupts_caches_and_other_cpu(void)
@@ -187,13 +187,13 @@ void IRAM_ATTR spi_flash_disable_interrupts_caches_and_other_cpu(void)
             // Busy loop and wait for spi_flash_op_block_func to disable cache
             // on the other CPU
         }
-#ifdef CONFIG_FREERTOS_SMP
+#if ( ( CONFIG_FREERTOS_SMP ) && ( !CONFIG_FREERTOS_UNICORE ) )
         //Note: Scheduler suspension behavior changed in FreeRTOS SMP
         vTaskPreemptionDisable(NULL);
 #else
         // Disable scheduler on the current CPU
         vTaskSuspendAll();
-#endif // CONFIG_FREERTOS_SMP
+#endif // #if ( ( CONFIG_FREERTOS_SMP ) && ( !CONFIG_FREERTOS_UNICORE ) )
         // Can now set the priority back to the normal one
         prvTaskPriorityRestore(&SavedPriority);
         // This is guaranteed to run on CPU <cpuid> because the other CPU is now
@@ -248,12 +248,12 @@ void IRAM_ATTR spi_flash_enable_interrupts_caches_and_other_cpu(void)
     // But esp_intr_noniram_enable has to be called on the same CPU which
     // called esp_intr_noniram_disable
     if (xTaskGetSchedulerState() != taskSCHEDULER_NOT_STARTED) {
-#ifdef CONFIG_FREERTOS_SMP
+#if ( ( CONFIG_FREERTOS_SMP ) && ( !CONFIG_FREERTOS_UNICORE ) )
         //Note: Scheduler suspension behavior changed in FreeRTOS SMP
         vTaskPreemptionEnable(NULL);
 #else
         xTaskResumeAll();
-#endif // CONFIG_FREERTOS_SMP
+#endif // #if ( ( CONFIG_FREERTOS_SMP ) && ( !CONFIG_FREERTOS_UNICORE ) )
     }
     // Release API lock
     spi_flash_op_unlock();
@@ -290,26 +290,26 @@ void spi_flash_init_lock(void)
 
 void spi_flash_op_lock(void)
 {
-#ifdef CONFIG_FREERTOS_SMP
+#if ( ( CONFIG_FREERTOS_SMP ) && ( !CONFIG_FREERTOS_UNICORE ) )
     if (xTaskGetSchedulerState() == taskSCHEDULER_RUNNING) {
         //Note: Scheduler suspension behavior changed in FreeRTOS SMP
         vTaskPreemptionDisable(NULL);
     }
 #else
     vTaskSuspendAll();
-#endif // CONFIG_FREERTOS_SMP
+#endif // #if ( ( CONFIG_FREERTOS_SMP ) && ( !CONFIG_FREERTOS_UNICORE ) )
 }
 
 void spi_flash_op_unlock(void)
 {
-#ifdef CONFIG_FREERTOS_SMP
+#if ( ( CONFIG_FREERTOS_SMP ) && ( !CONFIG_FREERTOS_UNICORE ) )
     if (xTaskGetSchedulerState() == taskSCHEDULER_RUNNING) {
         //Note: Scheduler suspension behavior changed in FreeRTOS SMP
         vTaskPreemptionEnable(NULL);
     }
 #else
     xTaskResumeAll();
-#endif // CONFIG_FREERTOS_SMP
+#endif // #if ( ( CONFIG_FREERTOS_SMP ) && ( !CONFIG_FREERTOS_UNICORE ) )
 }
 
 
@@ -360,17 +360,17 @@ void IRAM_ATTR spi_flash_enable_cache(uint32_t cpuid)
 
 void IRAM_ATTR spi_flash_disable_cache(uint32_t cpuid, uint32_t *saved_state)
 {
-    cache_hal_suspend(CACHE_TYPE_ALL);
+    cache_hal_suspend(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_ALL);
 }
 
 void IRAM_ATTR spi_flash_restore_cache(uint32_t cpuid, uint32_t saved_state)
 {
-    cache_hal_resume(CACHE_TYPE_ALL);
+    cache_hal_resume(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_ALL);
 }
 
 bool IRAM_ATTR spi_flash_cache_enabled(void)
 {
-    return cache_hal_is_cache_enabled(CACHE_TYPE_ALL);
+    return cache_hal_is_cache_enabled(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_ALL);
 }
 
 #if CONFIG_IDF_TARGET_ESP32S2
@@ -402,12 +402,17 @@ IRAM_ATTR void esp_config_instruction_cache_mode(void)
 
 IRAM_ATTR void esp_config_data_cache_mode(void)
 {
+#define CACHE_SIZE_0KB  99  //If Cache set to 0 KB, cache is bypassed, the cache size doesn't take into effect. Set this macro to a unique value for log
+
     cache_size_t cache_size;
     cache_ways_t cache_ways;
     cache_line_size_t cache_line_size;
 
 #if CONFIG_ESP32S2_INSTRUCTION_CACHE_8KB
-#if CONFIG_ESP32S2_DATA_CACHE_8KB
+#if CONFIG_ESP32S2_DATA_CACHE_0KB
+    Cache_Allocate_SRAM(CACHE_MEMORY_ICACHE_LOW, CACHE_MEMORY_INVALID, CACHE_MEMORY_INVALID, CACHE_MEMORY_INVALID);
+    cache_size = CACHE_SIZE_0KB;
+#elif CONFIG_ESP32S2_DATA_CACHE_8KB
     Cache_Allocate_SRAM(CACHE_MEMORY_ICACHE_LOW, CACHE_MEMORY_DCACHE_LOW, CACHE_MEMORY_INVALID, CACHE_MEMORY_INVALID);
     cache_size = CACHE_SIZE_8KB;
 #else
@@ -415,7 +420,10 @@ IRAM_ATTR void esp_config_data_cache_mode(void)
     cache_size = CACHE_SIZE_16KB;
 #endif
 #else
-#if CONFIG_ESP32S2_DATA_CACHE_8KB
+#if CONFIG_ESP32S2_DATA_CACHE_0KB
+    Cache_Allocate_SRAM(CACHE_MEMORY_ICACHE_LOW, CACHE_MEMORY_ICACHE_HIGH, CACHE_MEMORY_INVALID, CACHE_MEMORY_INVALID);
+    cache_size = CACHE_SIZE_0KB;
+#elif CONFIG_ESP32S2_DATA_CACHE_8KB
     Cache_Allocate_SRAM(CACHE_MEMORY_ICACHE_LOW, CACHE_MEMORY_ICACHE_HIGH, CACHE_MEMORY_DCACHE_LOW, CACHE_MEMORY_INVALID);
     cache_size = CACHE_SIZE_8KB;
 #else
@@ -430,7 +438,7 @@ IRAM_ATTR void esp_config_data_cache_mode(void)
 #else
     cache_line_size = CACHE_LINE_SIZE_32B;
 #endif
-    ESP_EARLY_LOGI(TAG, "Data cache \t\t: size %dKB, %dWays, cache line size %dByte", cache_size == CACHE_SIZE_8KB ? 8 : 16, 4, cache_line_size == CACHE_LINE_SIZE_16B ? 16 : 32);
+    ESP_EARLY_LOGI(TAG, "Data cache \t\t: size %dKB, %dWays, cache line size %dByte", (cache_size == CACHE_SIZE_0KB) ? 0 : ((cache_size == CACHE_SIZE_8KB) ? 8 : 16), 4, cache_line_size == CACHE_LINE_SIZE_16B ? 16 : 32);
     Cache_Set_DCache_Mode(cache_size, cache_ways, cache_line_size);
     Cache_Invalidate_DCache_All();
 }
@@ -918,15 +926,15 @@ void esp_config_l2_cache_mode(void)
 {
     cache_size_t cache_size;
     cache_line_size_t cache_line_size;
-#if CONFIG_ESP32P4_L2_CACHE_128KB
+#if CONFIG_CACHE_L2_CACHE_128KB
     cache_size = CACHE_SIZE_128K;
-#elif CONFIG_ESP32P4_L2_CACHE_256KB
+#elif CONFIG_CACHE_L2_CACHE_256KB
     cache_size = CACHE_SIZE_256K;
 #else
     cache_size = CACHE_SIZE_512K;
 #endif
 
-#if CONFIG_ESP32P4_L2_CACHE_LINE_64B
+#if CONFIG_CACHE_L2_CACHE_LINE_64B
     cache_line_size = CACHE_LINE_SIZE_64B;
 #else
     cache_line_size = CACHE_LINE_SIZE_128B;

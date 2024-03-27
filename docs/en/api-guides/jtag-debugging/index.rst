@@ -3,7 +3,15 @@ JTAG Debugging
 
 :link_to_translation:`zh_CN:[中文]`
 
-This document provides a guide to installing OpenOCD for {IDF_TARGET_NAME} and debugging using GDB. The document is structured as follows:
+This document provides a guide to installing OpenOCD for {IDF_TARGET_NAME} and debugging using GDB.
+
+.. note::
+
+    You can also debug your {IDF_TARGET_NAME} without needing to setup JTAG or OpenOCD by using ``idf.py monitor``. See: :doc:`../../api-guides/tools/idf-monitor` and :ref:`CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME`.
+
+.. highlight:: none
+
+The document is structured as follows:
 
 :ref:`jtag-debugging-introduction`
     Introduction to the purpose of this guide.
@@ -124,7 +132,7 @@ The output should be as follows (although the version may be more recent than li
 
 You may also verify that OpenOCD knows where its configuration scripts are located by printing the value of ``OPENOCD_SCRIPTS`` environment variable, by typing ``echo $OPENOCD_SCRIPTS`` (for Linux and macOS) or ``echo %OPENOCD_SCRIPTS%`` (for Windows). If a valid path is printed, then OpenOCD is set up correctly.
 
-If any of these steps do not work, please go back to the :ref:`setting up the tools <get-started-set-up-tools>` section of the Getting Started Guide.
+If any of these steps do not work, please go back to the :ref:`setting up the tools <get-started-set-up-tools>` section (for Linux and macOS) or :ref:`ESP-IDF Tools Installer <get-started-windows-tools-installer>` (for Windows) section of the Getting Started Guide.
 
 .. note::
 

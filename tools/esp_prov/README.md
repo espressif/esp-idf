@@ -111,7 +111,7 @@ This requires the following python libraries to run:
 To install the dependency packages needed, please run the following command:
 
 ```shell
-bash install.sh --enable-ttfw
+bash install.sh --enable-pytest
 ```
 
 **Note:** For troubleshooting errors with BLE transport, please refer this [link](https://bleak.readthedocs.io/en/latest/troubleshooting.html).

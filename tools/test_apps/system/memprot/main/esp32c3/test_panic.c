@@ -6,8 +6,8 @@
 
 #include "riscv/rvruntime-frames.h"
 #include "esp_private/panic_internal.h"
+#include "esp_private/panic_reason.h"
 
-#define MCAUSE_ILLEGAL_INSTRUCTION  2
 
 extern void esp_panic_handler(panic_info_t *info);
 volatile bool g_override_illegal_instruction = false;

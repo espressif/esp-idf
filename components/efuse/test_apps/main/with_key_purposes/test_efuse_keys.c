@@ -96,6 +96,9 @@ static esp_err_t s_check_key(esp_efuse_block_t num_key, void* wr_key)
             purpose == ESP_EFUSE_KEY_PURPOSE_HMAC_DOWN_ALL ||
             purpose == ESP_EFUSE_KEY_PURPOSE_HMAC_DOWN_JTAG ||
             purpose == ESP_EFUSE_KEY_PURPOSE_HMAC_DOWN_DIGITAL_SIGNATURE ||
+#if SOC_KEY_MANAGER_SUPPORTED
+            purpose == ESP_EFUSE_KEY_PURPOSE_KM_INIT_KEY ||
+#endif
             purpose == ESP_EFUSE_KEY_PURPOSE_HMAC_UP) {
         TEST_ASSERT_TRUE(esp_efuse_get_key_dis_read(num_key));
 #if CONFIG_EFUSE_FPGA_TEST && !CONFIG_EFUSE_VIRTUAL

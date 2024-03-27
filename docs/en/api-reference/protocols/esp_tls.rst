@@ -65,7 +65,7 @@ The ESP-TLS component provides an option to set the server certification selecti
 The certificate selection callback can be configured in the :cpp:type:`esp_tls_cfg_t` structure as follows:
 
 .. code-block:: c
-    
+
     int cert_selection_callback(mbedtls_ssl_context *ssl)
     {
         /* Code that the callback should execute */
@@ -120,7 +120,7 @@ The following table shows a typical comparison between WolfSSL and MbedTLS when 
     :header-rows: 1
     :widths: 40 30 30
     :align: center
-    
+
     * - Property
       - WolfSSL
       - MbedTLS
@@ -143,11 +143,11 @@ The following table shows a typical comparison between WolfSSL and MbedTLS when 
     ATECC608A (Secure Element) with ESP-TLS
     --------------------------------------------------
 
-    ESP-TLS provides support for using ATECC608A cryptoauth chip with ESP32-WROOM-32SE. The use of ATECC608A is supported only when ESP-TLS is used with MbedTLS as its underlying SSL/TLS stack. ESP-TLS uses MbedTLS as its underlying TLS/SSL stack by default unless changed manually.
+    ESP-TLS provides support for using ATECC608A cryptoauth chip with ESP32 series of SoCs. The use of ATECC608A is supported only when ESP-TLS is used with MbedTLS as its underlying SSL/TLS stack. ESP-TLS uses MbedTLS as its underlying TLS/SSL stack by default unless changed manually.
 
     .. note::
 
-        ATECC608A chip on ESP32-WROOM-32SE must be already configured, for details refer `esp_cryptoauth_utility <https://github.com/espressif/esp-cryptoauthlib/blob/master/esp_cryptoauth_utility/README.md#esp_cryptoauth_utility>`_.
+        ATECC608A chip interfaced to ESP32 must be already configured. For details, please refer to `esp_cryptoauth_utility <https://github.com/espressif/esp-cryptoauthlib/blob/master/esp_cryptoauth_utility/README.md#esp_cryptoauth_utility>`_.
 
     To enable the secure element support, and use it in your project for TLS connection, you have to follow the below steps:
 
@@ -163,7 +163,7 @@ The following table shows a typical comparison between WolfSSL and MbedTLS when 
 
     To know more about different types of ATECC608A chips and how to obtain the type of ATECC608A connected to your ESP module, please visit `ATECC608A chip type <https://github.com/espressif/esp-cryptoauthlib/blob/master/esp_cryptoauth_utility/README.md#find-type-of-atecc608a-chip-connected-to-esp32-wroom32-se>`_.
 
-    1) Enable the use of ATECC608A in ESP-TLS by providing the following config option in :cpp:type:`esp_tls_cfg_t`.
+    4) Enable the use of ATECC608A in ESP-TLS by providing the following config option in :cpp:type:`esp_tls_cfg_t`.
 
     .. code-block:: c
 
@@ -201,6 +201,30 @@ The following table shows a typical comparison between WolfSSL and MbedTLS when 
 
     * An example of mutual authentication with the DS peripheral can be found at :example:`ssl mutual auth<protocols/mqtt/ssl_mutual_auth>` which internally uses (ESP-TLS) for the TLS connection.
 
+.. only:: SOC_ECDSA_SUPPORTED
+
+    .. _ecdsa-peri-with-esp-tls:
+
+    ECDSA Peripheral with ESP-TLS
+    -----------------------------
+
+    ESP-TLS provides support for using the ECDSA peripheral with {IDF_TARGET_NAME}. The use of ECDSA peripheral is supported only when ESP-TLS is used with MbedTLS as its underlying SSL/TLS stack. The ECDSA private key should be present in the eFuse for using the ECDSA peripheral. Please refer to `espefuse.py <https://docs.espressif.com/projects/esptool/en/latest/esp32/espefuse/index.html>`__ documentation for programming the ECDSA key in the efuse.
+    To use ECDSA peripheral with ESP-TLS, set :cpp:member:`esp_tls_cfg_t::use_ecdsa_peripheral` to `true`, and set :cpp:member:`esp_tls_cfg_t::ecdsa_key_efuse_blk` to the eFuse block ID in which ECDSA private key is stored.
+    This will enable the use of ECDSA peripheral for private key operations. As the client private key is already present in the eFuse, it needs not be supplied to the :cpp:type:`esp_tls_cfg_t` structure.
+
+    .. code-block:: c
+
+        #include "esp_tls.h"
+        esp_tls_cfg_t cfg = {
+            .use_ecdsa_peripheral = true,
+            .ecdsa_key_efuse_blk = /* efuse block with ecdsa private key */,
+        };
+
+    .. note::
+
+        When using ECDSA peripheral with TLS, only ``MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256`` ciphersuite is supported. If using TLS v1.3, ``MBEDTLS_TLS1_3_AES_128_GCM_SHA256`` ciphersuite is supported.
+
+
 TLS Ciphersuites
 ------------------------------------
 
@@ -221,6 +245,26 @@ ESP-TLS will not check the validity of ``ciphersuites_list`` that was set, you s
 .. note::
 
    This feature is supported only in the MbedTLS stack.
+
+TLS Protocol Version
+--------------------
+
+ESP-TLS provides the ability to set the TLS protocol version for the respective TLS connection. Once the version is specified, it should be exclusively used to establish the TLS connection. This provides an ability to route different TLS connections to different protocol versions like TLS 1.2 and TLS 1.3 at runtime.
+
+.. note::
+
+   At the moment, the feature is supported only when ESP-TLS is used with MbedTLS as its underlying SSL/TLS stack.
+
+To set TLS protocol version with ESP-TLS, set :cpp:member:`esp_tls_cfg_t::tls_version` to the required protocol version from :cpp:type:`esp_tls_proto_ver_t`. If the protocol version field is not set, then the default policy is to allow TLS connection based on the server requirement.
+
+The ESP-TLS connection can be configured to use the specified protocol version as follows:
+
+    .. code-block:: c
+
+        #include "esp_tls.h"
+        esp_tls_cfg_t cfg = {
+            .tls_version = ESP_TLS_VER_TLS_1_2,
+        };
 
 API Reference
 -------------

@@ -104,7 +104,6 @@ esp_err_t simple_ble_stop(void);
  */
 const uint8_t *simple_ble_get_uuid128(uint16_t handle);
 
-#ifdef CONFIG_WIFI_PROV_DISCONNECT_AFTER_PROV
 /** Terminates connection
  *
  * This API is called to initiate disconnection
@@ -112,5 +111,4 @@ const uint8_t *simple_ble_get_uuid128(uint16_t handle);
  * @return ESP_OK on success, and appropriate error code for failure
  */
 esp_err_t simple_ble_disconnect(void);
-#endif
 #endif /* _SIMPLE_BLE_ */

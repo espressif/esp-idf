@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -79,15 +79,14 @@ extern "C" {
 #define ADC_TEST_HIGH_VAL_DMA    4081
 #define ADC_TEST_HIGH_THRESH     200
 
-#elif CONFIG_IDF_TARGET_ESP32H2  // TODO: IDF-6216
-#define ADC_TEST_LOW_VAL         2144
-#define ADC_TEST_LOW_THRESH      200
+#elif CONFIG_IDF_TARGET_ESP32H2
+#define ADC_TEST_LOW_VAL         0
+#define ADC_TEST_LOW_THRESH      17
 
-#define ADC_TEST_HIGH_VAL        4081
+#define ADC_TEST_HIGH_VAL        3390
 #define ADC_TEST_HIGH_VAL_DMA    4081
 #define ADC_TEST_HIGH_THRESH     200
 #endif
-
 
 /*---------------------------------------------------------------
         ADC Attenuation
@@ -132,7 +131,6 @@ bool test_adc_calibration_init(adc_unit_t unit, adc_channel_t channel, adc_atten
  * @param[in] handle    ADC calibration handle
  */
 void test_adc_calibration_deinit(adc_cali_handle_t handle);
-
 
 /*---------------------------------------------------------------
         ADC GPIO

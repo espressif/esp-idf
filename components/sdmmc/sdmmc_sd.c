@@ -15,7 +15,9 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+#include <inttypes.h>
 #include "esp_timer.h"
+#include "esp_cache.h"
 #include "sdmmc_common.h"
 
 static const char* TAG = "sdmmc_sd";
@@ -87,15 +89,18 @@ esp_err_t sdmmc_init_sd_ssr(sdmmc_card_t* card)
     /* Get the contents of SSR register: SD additional information
      * ACMD13 to read 512byte SD status information
      */
-    uint32_t* sd_ssr = heap_caps_calloc(1, SD_SSR_SIZE, MALLOC_CAP_DMA);
-    if (!sd_ssr) {
+    uint32_t* sd_ssr = NULL;
+    size_t actual_size = 0;
+    err = esp_dma_calloc(1, SD_SSR_SIZE, 0, (void *)&sd_ssr, &actual_size);
+    if (err != ESP_OK) {
         ESP_LOGE(TAG, "%s: could not allocate sd_ssr", __func__);
-        return ESP_ERR_NO_MEM;
+        return err;
     }
 
     sdmmc_command_t cmd = {
         .data = sd_ssr,
         .datalen = SD_SSR_SIZE,
+        .buflen = actual_size,
         .blklen = SD_SSR_SIZE,
         .opcode = SD_APP_SD_STATUS,
         .arg = 0,
@@ -157,7 +162,7 @@ esp_err_t sdmmc_init_sd_wait_data_ready(sdmmc_card_t* card)
             return err;
         }
         if (++count % 16 == 0) {
-            ESP_LOGV(TAG, "waiting for card to become ready (%d)", count);
+            ESP_LOGV(TAG, "waiting for card to become ready (%" PRIu32 ")", count);
         }
     }
     return ESP_OK;
@@ -187,12 +192,14 @@ esp_err_t sdmmc_send_cmd_switch_func(sdmmc_card_t* card,
     uint32_t other_func_mask = (0x00ffffff & ~(0xf << group_shift));
     uint32_t func_val = (function << group_shift) | other_func_mask;
 
+    size_t datalen = sizeof(sdmmc_switch_func_rsp_t);
     sdmmc_command_t cmd = {
             .opcode = MMC_SWITCH,
             .flags = SCF_CMD_ADTC | SCF_CMD_READ | SCF_RSP_R1,
             .blklen = sizeof(sdmmc_switch_func_rsp_t),
             .data = resp->data,
-            .datalen = sizeof(sdmmc_switch_func_rsp_t),
+            .datalen = datalen,
+            .buflen = datalen,
             .arg = (!!mode << 31) | func_val
     };
 
@@ -207,12 +214,12 @@ esp_err_t sdmmc_send_cmd_switch_func(sdmmc_card_t* card,
         /* busy response is never sent */
     } else if (resp_ver == 1) {
         if (SD_SFUNC_BUSY(resp->data, group) & (1 << function)) {
-            ESP_LOGD(TAG, "%s: response indicates function %d:%d is busy",
+            ESP_LOGD(TAG, "%s: response indicates function %" PRIu32 ":%" PRIu32 " is busy",
                     __func__, group, function);
             return ESP_ERR_INVALID_STATE;
         }
     } else {
-        ESP_LOGD(TAG, "%s: got an invalid version of SWITCH_FUNC response: 0x%02x",
+        ESP_LOGD(TAG, "%s: got an invalid version of SWITCH_FUNC response: 0x%02" PRIx32,
                 __func__, resp_ver);
         return ESP_ERR_INVALID_RESPONSE;
     }
@@ -229,13 +236,16 @@ esp_err_t sdmmc_enable_hs_mode(sdmmc_card_t* card)
         ((card->csd.card_command_class & SD_CSD_CCC_SWITCH) == 0)) {
             return ESP_ERR_NOT_SUPPORTED;
     }
-    sdmmc_switch_func_rsp_t* response = (sdmmc_switch_func_rsp_t*)
-            heap_caps_malloc(sizeof(*response), MALLOC_CAP_DMA);
-    if (response == NULL) {
-        return ESP_ERR_NO_MEM;
+
+    size_t actual_size = 0;
+    sdmmc_switch_func_rsp_t *response = NULL;
+    esp_err_t err = esp_dma_malloc(sizeof(*response), 0, (void *)&response, &actual_size);
+    assert(actual_size == sizeof(*response));
+    if (err != ESP_OK) {
+        return err;
     }
 
-    esp_err_t err = sdmmc_send_cmd_switch_func(card, 0, SD_ACCESS_MODE, 0, response);
+    err = sdmmc_send_cmd_switch_func(card, 0, SD_ACCESS_MODE, 0, response);
     if (err != ESP_OK) {
         ESP_LOGD(TAG, "%s: sdmmc_send_cmd_switch_func (1) returned 0x%x", __func__, err);
         goto out;
@@ -443,15 +453,15 @@ uint32_t sdmmc_sd_get_erase_timeout_ms(const sdmmc_card_t* card, int arg, size_t
             uint32_t timeout_sec = card->ssr.erase_offset +
                 card->ssr.erase_timeout * (erase_size_kb + card->ssr.alloc_unit_kb - 1) /
                     (card->ssr.erase_size_au * card->ssr.alloc_unit_kb);
-            ESP_LOGD(TAG, "%s: erase timeout %u s (erasing %u kB, ES=%u, ET=%u, EO=%u, AU=%u kB)",
-                     __func__, timeout_sec, erase_size_kb, card->ssr.erase_size_au,
-                     card->ssr.erase_timeout, card->ssr.erase_offset, card->ssr.alloc_unit_kb);
+            ESP_LOGD(TAG, "%s: erase timeout %" PRIu32 " s (erasing %" PRIu32 " kB, ES=%" PRIu32 ", ET=%" PRIu32 ", EO=%" PRIu32 ", AU=%" PRIu32 " kB)",
+                     __func__, timeout_sec, (uint32_t) erase_size_kb, (uint32_t) card->ssr.erase_size_au,
+                     (uint32_t) card->ssr.erase_timeout, (uint32_t) card->ssr.erase_offset, (uint32_t) card->ssr.alloc_unit_kb);
             return timeout_sec * 1000;
         } else {
             uint32_t timeout_ms = SDMMC_SD_DISCARD_TIMEOUT * erase_size_kb / card->csd.sector_size;
             timeout_ms = MAX(1000, timeout_ms);
-            ESP_LOGD(TAG, "%s: erase timeout %u s (erasing %u kB, %ums per sector)",
-                     __func__, timeout_ms / 1000, erase_size_kb, SDMMC_SD_DISCARD_TIMEOUT);
+            ESP_LOGD(TAG, "%s: erase timeout %" PRIu32 " s (erasing %" PRIu32 " kB, %" PRIu32 " ms per sector)",
+                     __func__, (uint32_t) (timeout_ms / 1000), (uint32_t) erase_size_kb, (uint32_t) SDMMC_SD_DISCARD_TIMEOUT);
             return timeout_ms;
         }
     } else {

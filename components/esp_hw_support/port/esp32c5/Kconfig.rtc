@@ -1,0 +1,42 @@
+choice RTC_CLK_SRC
+    prompt "RTC clock source"
+    # TODO: IDF-9197
+    default RTC_CLK_SRC_INT_RC if IDF_TARGET_ESP32C5_MP_VERSION
+    default RTC_CLK_SRC_INT_RC32K if IDF_TARGET_ESP32C5_BETA3_VERSION
+    help
+        Choose which clock is used as RTC clock source.
+
+    config RTC_CLK_SRC_INT_RC
+        depends on IDF_TARGET_ESP32C5_MP_VERSION
+        bool "Internal 136kHz RC oscillator"
+    config RTC_CLK_SRC_EXT_CRYS
+        bool "External 32kHz crystal"
+        select ESP_SYSTEM_RTC_EXT_XTAL
+    config RTC_CLK_SRC_EXT_OSC
+        bool "External 32kHz oscillator at 32K_XP pin"
+        select ESP_SYSTEM_RTC_EXT_OSC
+    config RTC_CLK_SRC_INT_RC32K
+        bool "Internal 32kHz RC oscillator"
+endchoice
+
+config RTC_CLK_CAL_CYCLES
+    int "Number of cycles for RTC_SLOW_CLK calibration"
+    default 3000 if RTC_CLK_SRC_EXT_CRYS || RTC_CLK_SRC_EXT_OSC || RTC_CLK_SRC_INT_RC32K
+    default 1024 if RTC_CLK_SRC_INT_RC
+    range 0 8190 if RTC_CLK_SRC_EXT_CRYS || RTC_CLK_SRC_EXT_OSC || RTC_CLK_SRC_INT_RC32K
+    range 0 32766 if RTC_CLK_SRC_INT_RC
+    help
+        When the startup code initializes RTC_SLOW_CLK, it can perform
+        calibration by comparing the RTC_SLOW_CLK frequency with main XTAL
+        frequency. This option sets the number of RTC_SLOW_CLK cycles measured
+        by the calibration routine. Higher numbers increase calibration
+        precision, which may be important for applications which spend a lot of
+        time in deep sleep. Lower numbers reduce startup time.
+
+        When this option is set to 0, clock calibration will not be performed at
+        startup, and approximate clock frequencies will be assumed:
+
+        - 136000 Hz if internal RC oscillator is used as clock source. For this use value 1024.
+        - 32768 Hz if the 32k crystal oscillator is used. For this use value 3000 or more.
+            In case more value will help improve the definition of the launch of the crystal.
+            If the crystal could not start, it will be switched to internal RC.

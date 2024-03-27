@@ -1,31 +1,36 @@
 # Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
 
 components/spi_flash/test_apps/esp_flash:
-  disable:
-    - if: IDF_TARGET == "esp32p4"
-      temporary: true
-      reason: target esp32p4 is not supported yet # TODO: IDF-7499
+  depends_filepatterns:
+    - components/bootloader_support/bootloader_flash/**/*
+  depends_components:
+    - esp_mm
+    - esp_psram
+    - spi_flash
+    - esp_driver_gpio
+    - esp_driver_spi
+    - esptool_py # Some flash related kconfigs are listed here.
 
 components/spi_flash/test_apps/flash_encryption:
   disable_test:
-    - if: IDF_TARGET in ["esp32c2", "esp32s2", "esp32c6", "esp32h2"]
+    - if: IDF_TARGET in ["esp32c2", "esp32s2", "esp32c6", "esp32h2", "esp32p4"]
       temporary: true
       reason: No runners # IDF-5634
-  disable:
-    - if: IDF_TARGET == "esp32p4"
-      temporary: true
-      reason: target esp32p4 is not supported yet # TODO: IDF-7545
+
+  depends_components:
+    - esp_mm
+    - spi_flash
 
 components/spi_flash/test_apps/flash_suspend:
   disable:
     - if: SOC_SPI_MEM_SUPPORT_AUTO_SUSPEND != 1
-    - if: IDF_TARGET == "esp32p4"
-      temporary: true
-      reason: target esp32p4 is not supported yet # TODO: IDF-7499
   disable_test:
     - if: IDF_TARGET != "esp32c3"
       temporary: true
       reason: lack of runners
+  depends_components:
+    - spi_flash
+    - esp_driver_gptimer
 
 components/spi_flash/test_apps/mspi_test:
   disable:
@@ -37,3 +42,16 @@ components/spi_flash/test_apps/mspi_test:
     - if: CONFIG_NAME == "xip_psram" and IDF_TARGET in ["esp32p4"]
       temporary: true
       reason: not supported yet #TODO: IDF-7556 for p4
+  disable_test:
+    - if: IDF_TARGET == "esp32p4"
+      temporary: true
+      reason: test not pass, should be re-enable # TODO: IDF-8985
+  depends_filepatterns:
+    - components/bootloader_support/bootloader_flash/**/*
+  depends_components:
+    - esp_mm
+    - esp_psram
+    - spi_flash
+    - esp_driver_gpio
+    - esp_driver_spi
+    - esptool_py # Some flash related kconfigs are listed here.

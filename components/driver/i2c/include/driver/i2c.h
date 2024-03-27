@@ -60,7 +60,7 @@ extern "C" {
 /**
  * @brief I2C initialization parameters
  */
-typedef struct{
+typedef struct {
     i2c_mode_t mode;     /*!< I2C mode */
     int sda_io_num;      /*!< GPIO number for I2C sda signal */
     int scl_io_num;      /*!< GPIO number for I2C scl signal */
@@ -81,7 +81,6 @@ typedef struct{
     };
     uint32_t clk_flags;              /*!< Bitwise of ``I2C_SCLK_SRC_FLAG_**FOR_DFS**`` for clk source choice*/
 } i2c_config_t;
-
 
 typedef void *i2c_cmd_handle_t;    /*!< I2C command handle  */
 
@@ -242,7 +241,6 @@ esp_err_t i2c_master_write_read_device(i2c_port_t i2c_num, uint8_t device_addres
                                        const uint8_t* write_buffer, size_t write_size,
                                        uint8_t* read_buffer, size_t read_size,
                                        TickType_t ticks_to_wait);
-
 
 /**
  * @brief Create and initialize an I2C commands list with a given buffer.

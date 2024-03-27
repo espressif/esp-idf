@@ -15,7 +15,7 @@
 .. only:: SOC_BT_SUPPORTED
 
     .. note::
-    
+
         蓝牙栈各模块通过调用专用回调函数向应用程序传递事件，而非通过事件循环库传递。
 
 调用 ``esp_event`` API
@@ -91,13 +91,13 @@
 
 .. code-block:: c
 
-    ESP_EVENT_DECLARE_BASE(EVENT_BASE)
+    ESP_EVENT_DECLARE_BASE(EVENT_BASE);
 
 定义事件根基：
 
 .. code-block:: c
 
-    ESP_EVENT_DEFINE_BASE(EVENT_BASE)
+    ESP_EVENT_DEFINE_BASE(EVENT_BASE);
 
 .. note::
 
@@ -134,7 +134,7 @@
       - :cpp:func:`esp_event_loop_create_default`
     * - :cpp:func:`esp_event_loop_delete`
       - :cpp:func:`esp_event_loop_delete_default`
-    * - :cpp:func:`esp_event_handler_register_with` 
+    * - :cpp:func:`esp_event_handler_register_with`
       - :cpp:func:`esp_event_handler_register`
     * - :cpp:func:`esp_event_handler_unregister_with`
       - :cpp:func:`esp_event_handler_unregister`

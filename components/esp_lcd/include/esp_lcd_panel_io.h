@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,6 +12,8 @@
 #include "hal/lcd_types.h"
 #include "hal/i2c_types.h"
 #include "driver/i2c_types.h"
+
+#define ESP_LCD_I80_BUS_WIDTH_MAX 16 /*!< Maximum width of I80 bus */
 
 #ifdef __cplusplus
 extern "C" {
@@ -43,7 +45,6 @@ typedef bool (*esp_lcd_panel_io_color_trans_done_cb_t)(esp_lcd_panel_io_handle_t
 typedef struct {
     esp_lcd_panel_io_color_trans_done_cb_t on_color_trans_done; /*!< Callback invoked when color data transfer has finished */
 } esp_lcd_panel_io_callbacks_t;
-
 
 /**
  * @brief Transmit LCD command and receive corresponding parameters
@@ -136,10 +137,12 @@ typedef struct {
     int lcd_cmd_bits;   /*!< Bit-width of LCD command */
     int lcd_param_bits; /*!< Bit-width of LCD parameter */
     struct {
-        unsigned int dc_low_on_data: 1;  /*!< If this flag is enabled, DC line = 0 means transfer data, DC line = 1 means transfer command; vice versa */
+        unsigned int dc_high_on_cmd: 1;  /*!< If enabled, DC level = 1 indicates command transfer */
+        unsigned int dc_low_on_data: 1;  /*!< If enabled, DC level = 0 indicates color data transfer */
+        unsigned int dc_low_on_param: 1; /*!< If enabled, DC level = 0 indicates parameter transfer */
         unsigned int octal_mode: 1;      /*!< transmit with octal mode (8 data lines), this mode is used to simulate Intel 8080 timing */
         unsigned int quad_mode: 1;       /*!< transmit with quad mode (4 data lines), this mode is useful when transmitting LCD parameters (Only use one line for command) */
-        unsigned int sio_mode: 1; /*!< Read and write through a single data line (MOSI) */
+        unsigned int sio_mode: 1;        /*!< Read and write through a single data line (MOSI) */
         unsigned int lsb_first: 1;       /*!< transmit LSB bit first */
         unsigned int cs_high_active: 1;  /*!< CS line is high active */
     } flags; /*!< Extra flags to fine-tune the SPI device */
@@ -232,7 +235,7 @@ typedef struct {
     int dc_gpio_num; /*!< GPIO used for D/C line */
     int wr_gpio_num; /*!< GPIO used for WR line */
     lcd_clock_source_t clk_src; /*!< Clock source for the I80 LCD peripheral */
-    int data_gpio_nums[SOC_LCD_I80_BUS_WIDTH]; /*!< GPIOs used for data lines */
+    int data_gpio_nums[ESP_LCD_I80_BUS_WIDTH_MAX]; /*!< GPIOs used for data lines */
     size_t bus_width;          /*!< Number of data lines, 8 or 16 */
     size_t max_transfer_bytes; /*!< Maximum transfer size, this determines the length of internal DMA link */
     size_t psram_trans_align;  /*!< DMA transfer alignment for data allocated from PSRAM */

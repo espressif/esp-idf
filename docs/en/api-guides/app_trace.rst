@@ -219,7 +219,7 @@ Start command syntax:
 
 Command usage examples:
 
-.. code-block:: none
+.. highlight:: none
 
 1. Collect 2048 bytes of tracing data to the file ``trace.log``. The file will be saved in the ``openocd-esp32`` directory.
 
@@ -336,7 +336,7 @@ Support for this feature is enabled by ``Component config`` > ``Application Leve
 
 1. SytemView destination. Select the destination interface: JTAG or UART. In case of UART, it will be possible to connect SystemView application to the {IDF_TARGET_NAME} directly and receive data in real-time.
 
-2. {IDF_TARGET_NAME} timer to use as SystemView timestamp source: (:ref:`CONFIG_APPTRACE_SV_TS_SOURCE`) selects the source of timestamps for SystemView events. In the single core mode, timestamps are generated using {IDF_TARGET_NAME} internal cycle counter running at maximum 240 Mhz (~4 ns granularity). In the dual-core mode, external timer working at 40 Mhz is used, so the timestamp granularity is 25 ns.
+2. {IDF_TARGET_NAME} timer to use as SystemView timestamp source: (:ref:`CONFIG_APPTRACE_SV_TS_SOURCE`) selects the source of timestamps for SystemView events. In the single core mode, timestamps are generated using {IDF_TARGET_NAME} internal cycle counter running at maximum 240 Mhz (about 4 ns granularity). In the dual-core mode, external timer working at 40 Mhz is used, so the timestamp granularity is 25 ns.
 
 3. Individually enabled or disabled collection of SystemView events (``CONFIG_APPTRACE_SV_EVT_XXX``):
 
@@ -396,7 +396,7 @@ Start command syntax:
 
 Command usage examples:
 
-.. code-block:: none
+.. highlight:: none
 
 1.  Collect SystemView tracing data to files ``pro-cpu.SVDat`` and ``app-cpu.SVDat``. The files will be saved in ``openocd-esp32`` directory.
 
@@ -420,7 +420,7 @@ Data Visualization
 
 After trace data are collected, users can use a special tool to visualize the results and inspect behavior of the program.
 
-.. only:: not CONFIG_FREERTOS_UNICORE
+.. only:: SOC_HP_CPU_HAS_MULTIPLE_CORES
 
     Unfortunately, SystemView does not support tracing from multiple cores. So when tracing from {IDF_TARGET_NAME} with JTAG interfaces in the dual-core mode, two files are generated: one for PRO CPU and another for APP CPU. Users can load each file into separate instances of the tool. For tracing over UART, users can select ``Component config`` > ``Application Level Tracing`` > ``FreeRTOS SystemView Tracing`` in menuconfig Pro or App to choose which CPU has to be traced.
 
@@ -432,7 +432,7 @@ Good instructions on how to install, configure, and visualize data in Impulse fr
 
     ESP-IDF uses its own mapping for SystemView FreeRTOS events IDs, so users need to replace the original file mapping ``$SYSVIEW_INSTALL_DIR/Description/SYSVIEW_FreeRTOS.txt`` with ``$IDF_PATH/tools/esp_app_trace/SYSVIEW_FreeRTOS.txt``. Also, contents of that ESP-IDF-specific file should be used when configuring SystemView serializer using the above link.
 
-.. only:: not CONFIG_FREERTOS_UNICORE
+.. only:: SOC_HP_CPU_HAS_MULTIPLE_CORES
 
     Configure Impulse for Dual Core Traces
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,7 +19,7 @@ extern "C" {
 #endif
 
 #define ESP_BT_CTRL_CONFIG_MAGIC_VAL    0x5A5AA5A5
-#define ESP_BT_CTRL_CONFIG_VERSION      0x02307120
+#define ESP_BT_CTRL_CONFIG_VERSION      0x02401120
 
 #define ESP_BT_HCI_TL_MAGIC_VALUE   0xfadebead
 #define ESP_BT_HCI_TL_VERSION       0x00010000
@@ -144,8 +144,21 @@ typedef void (* esp_bt_hci_tl_callback_t) (void *arg, uint8_t status);
 
 #ifdef CONFIG_BT_CTRL_AGC_RECORRECT_EN
 #define BT_CTRL_AGC_RECORRECT_EN  CONFIG_BT_CTRL_AGC_RECORRECT_EN
+// ESP32-S3
+#if CONFIG_IDF_TARGET_ESP32S3
+#define BT_CTRL_AGC_RECORRECT_NEW       1
+#else
+//Check if chip target is ESP32-C3 101
+#if CONFIG_ESP32C3_REV_MIN_101
+#define BT_CTRL_AGC_RECORRECT_NEW       1
+#else
+#define BT_CTRL_AGC_RECORRECT_NEW       0
+#endif // CONFIG_ESP32C3_REV_MIN_101
+#endif // CONFIG_IDF_TARGET_ESP32S3
+
 #else
 #define BT_CTRL_AGC_RECORRECT_EN        0
+#define BT_CTRL_AGC_RECORRECT_NEW       0
 #endif
 
 #ifdef CONFIG_BT_CTRL_CODED_AGC_RECORRECT_EN
@@ -175,7 +188,13 @@ typedef void (* esp_bt_hci_tl_callback_t) (void *arg, uint8_t status);
 #define BT_BLE_CCA_MODE (0)
 #endif
 
-#define AGC_RECORRECT_EN       ((BT_CTRL_AGC_RECORRECT_EN << 0) | (BT_CTRL_CODED_AGC_RECORRECT <<1))
+#if defined(CONFIG_BT_BLE_ADV_DATA_LENGTH_ZERO_AUX)
+#define BT_BLE_ADV_DATA_LENGTH_ZERO_AUX (CONFIG_BT_BLE_ADV_DATA_LENGTH_ZERO_AUX)
+#else
+#define BT_BLE_ADV_DATA_LENGTH_ZERO_AUX (0)
+#endif
+
+#define AGC_RECORRECT_EN       ((BT_CTRL_AGC_RECORRECT_EN << 0) | (BT_CTRL_CODED_AGC_RECORRECT <<1) | (BT_CTRL_AGC_RECORRECT_NEW << 2))
 
 #define CFG_MASK_BIT_SCAN_DUPLICATE_OPTION    (1<<0)
 
@@ -221,6 +240,7 @@ typedef void (* esp_bt_hci_tl_callback_t) (void *arg, uint8_t status);
     .dup_list_refresh_period = DUPL_SCAN_CACHE_REFRESH_PERIOD,             \
     .ble_50_feat_supp  = BT_CTRL_50_FEATURE_SUPPORT,                       \
     .ble_cca_mode = BT_BLE_CCA_MODE,                                       \
+    .ble_data_lenth_zero_aux = BT_BLE_ADV_DATA_LENGTH_ZERO_AUX,            \
 }
 
 #else
@@ -292,6 +312,7 @@ typedef struct {
     uint16_t dup_list_refresh_period;       /*!< duplicate scan list refresh time */
     bool ble_50_feat_supp;                  /*!< BLE 5.0 feature support */
     uint8_t ble_cca_mode;                   /*!< BLE CCA mode */
+    uint8_t ble_data_lenth_zero_aux;        /*!< Config ext adv aux option*/
 } esp_bt_controller_config_t;
 
 /**

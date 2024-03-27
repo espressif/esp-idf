@@ -404,6 +404,7 @@ static inline void rmt_ll_rx_set_mem_blocks(rmt_dev_t *dev, uint32_t channel, ui
  * @param channel RMT RX channel number
  * @param thres Time length threshold
  */
+__attribute__((always_inline))
 static inline void rmt_ll_rx_set_idle_thres(rmt_dev_t *dev, uint32_t channel, uint32_t thres)
 {
     HAL_FORCE_MODIFY_U32_REG_FIELD(dev->conf_ch[channel].conf0, idle_thres, thres);
@@ -429,6 +430,7 @@ static inline void rmt_ll_rx_set_mem_owner(rmt_dev_t *dev, uint32_t channel, rmt
  * @param channel RMT RX chanenl number
  * @param enable True to enable, False to disable
  */
+__attribute__((always_inline))
 static inline void rmt_ll_rx_enable_filter(rmt_dev_t *dev, uint32_t channel, bool enable)
 {
     dev->conf_ch[channel].conf1.rx_filter_en = enable;
@@ -441,6 +443,7 @@ static inline void rmt_ll_rx_enable_filter(rmt_dev_t *dev, uint32_t channel, boo
  * @param channel RMT RX channel number
  * @param thres Filter threshold
  */
+__attribute__((always_inline))
 static inline void rmt_ll_rx_set_filter_thres(rmt_dev_t *dev, uint32_t channel, uint32_t thres)
 {
     HAL_FORCE_MODIFY_U32_REG_FIELD(dev->conf_ch[channel].conf1, rx_filter_thres, thres);

@@ -83,6 +83,7 @@ ESP HTTP client supports both **Basic** and **Digest** Authentication.
     * Users can provide the username and password in the ``url`` or the ``username`` and ``password`` members of the ``esp_http_client_config_t`` configuration. For ``auth_type = HTTP_AUTH_TYPE_BASIC``, the HTTP client takes only one perform operation to pass the authentication process.
     * If ``auth_type = HTTP_AUTH_TYPE_NONE``, but the ``username`` and ``password`` fields are present in the configuration, the HTTP client takes two perform operations. The client will receive the ``401 Unauthorized`` header in its first attempt to connect to the server. Based on this information, it decides which authentication method to choose and performs it in the second operation.
     * Check out the example functions ``http_auth_basic``, ``http_auth_basic_redirect`` (for Basic authentication) and ``http_auth_digest`` (for Digest authentication) in the application example for implementation details.
+    * Currently, Digest authentication supports only MD5 and SHA-256 algorithms.
 
 
 Examples of Authentication Configuration
@@ -137,6 +138,20 @@ Expected data types for different HTTP Client events in the event loop are as fo
     - HTTP_EVENT_REDIRECT         :   ``esp_http_client_redirect_event_data_t``
 
 The :cpp:type:`esp_http_client_handle_t` received along with the event data will be valid until :cpp:enumerator:`HTTP_EVENT_DISCONNECTED <esp_http_client_event_id_t::HTTP_EVENT_DISCONNECTED>` is not received. This handle has been sent primarily to differentiate between different client connections and must not be used for any other purpose, as it may change based on client connection state.
+
+TLS Protocol Version
+--------------------
+
+TLS protocol version to be used for the underlying TLS connection can be set in :cpp:type:`esp_http_client_config_t`. Please refer to the **TLS Protocol Version** section in the :doc:`/api-reference/protocols/esp_tls` for more details.
+
+The TLS protocol version for the HTTP client can be configured as follows:
+
+    .. code-block:: c
+
+        #include "esp_http_client.h"
+        esp_http_client_config_t config = {
+            .tls_version = ESP_HTTP_CLIENT_TLS_VER_TLS_1_2,
+        };
 
 API Reference
 -------------

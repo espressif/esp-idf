@@ -1,13 +1,17 @@
 Bootloader Image Format
 =======================
 
-The bootloader image consists of the same structures as the application image, see :ref:`Application Image Structures <app-image-structures>`. The only difference is in the :ref:`Bootloader Description <image-format-bootloader-description>` structure.
+:link_to_translation:`zh_CN:[中文]`
+
+The bootloader image consists of the same structures as the application image, see :ref:`Application Image Structures <app-image-structures>`. The only difference is in the :ref:`image-format-bootloader-description` structure.
 
 To get information about the bootloader image, please run the following command:
 
 .. code-block::
 
-   esptool.py --chip {IDF_TARGET_PATH_NAME} image_info build/bootloader/bootloader.bin --version 2
+    esptool.py --chip {IDF_TARGET_PATH_NAME} image_info build/bootloader/bootloader.bin --version 2
+
+The resultant output will resemble the following:
 
 .. code-block::
 
@@ -50,6 +54,7 @@ To get information about the bootloader image, please run the following command:
     ESP-IDF: v5.1-dev-4304-gcb51a3b-dirty
     Compile time: Mar 30 2023 19:14:17
 
+
 .. _image-format-bootloader-description:
 
 Bootloader Description
@@ -57,14 +62,14 @@ Bootloader Description
 
 The ``DRAM0`` segment of the bootloader binary starts with the :cpp:type:`esp_bootloader_desc_t` structure which carries specific fields describing the bootloader. This structure is located at a fixed offset = sizeof(:cpp:type:`esp_image_header_t`) + sizeof(:cpp:type:`esp_image_segment_header_t`).
 
- * ``magic_byte`` - the magic byte for the esp_bootloader_desc structure.
- * ``reserved`` - reserved for the future IDF use.
- * ``version`` - bootloader version, see :ref:`CONFIG_BOOTLOADER_PROJECT_VER`
- * ``idf_ver`` - ESP-IDF version. ``*``
- *  ``date`` and ``time`` - compile date and time.
- * ``reserved2`` - reserved for the future IDF use.
+ * ``magic_byte``: the magic byte for the esp_bootloader_desc structure
+ * ``reserved``: reserved for the future IDF use
+ * ``version``: bootloader version, see :ref:`CONFIG_BOOTLOADER_PROJECT_VER`
+ * ``idf_ver``: ESP-IDF version. [#f1]_
+ * ``date`` and ``time``: compile date and time
+ * ``reserved2``: reserved for the future IDF use
 
-``*`` - The maximum length is 32 characters, including null-termination character.
+.. [#f1] The maximum length is 32 characters, including null-termination character.
 
 To get the :cpp:type:`esp_bootloader_desc_t` structure from the running bootloader, use :cpp:func:`esp_bootloader_get_description`.
 

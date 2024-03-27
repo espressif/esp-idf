@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -24,7 +24,6 @@ void app_main(void)
     temperature_sensor_handle_t temp_sensor = NULL;
     temperature_sensor_config_t temp_sensor_config = TEMPERATURE_SENSOR_CONFIG_DEFAULT(10, 50);
     ESP_ERROR_CHECK(temperature_sensor_install(&temp_sensor_config, &temp_sensor));
-
 
     temperature_sensor_event_callbacks_t cbs = {
         .on_threshold = temp_sensor_monitor_cbs,

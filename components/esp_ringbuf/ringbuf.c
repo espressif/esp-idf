@@ -1,9 +1,10 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <inttypes.h>
 #include <stdlib.h>
 #include <string.h>
 #include "freertos/FreeRTOS.h"
@@ -43,7 +44,7 @@ typedef struct {
 typedef struct RingbufferDefinition Ringbuffer_t;
 typedef BaseType_t (*CheckItemFitsFunction_t)(Ringbuffer_t *pxRingbuffer, size_t xItemSize);
 typedef void (*CopyItemFunction_t)(Ringbuffer_t *pxRingbuffer, const uint8_t *pcItem, size_t xItemSize);
-typedef BaseType_t (*CheckItemAvailFunction_t) (Ringbuffer_t *pxRingbuffer);
+typedef BaseType_t (*CheckItemAvailFunction_t)(Ringbuffer_t *pxRingbuffer);
 typedef void *(*GetItemFunction_t)(Ringbuffer_t *pxRingbuffer, BaseType_t *pxIsSplit, size_t xMaxSize, size_t *pxItemSize);
 typedef void (*ReturnItemFunction_t)(Ringbuffer_t *pxRingbuffer, uint8_t *pvItem);
 typedef size_t (*GetCurMaxSizeFunction_t)(Ringbuffer_t *pxRingbuffer);
@@ -97,10 +98,10 @@ static size_t prvGetFreeSize(Ringbuffer_t *pxRingbuffer);
 static BaseType_t prvCheckItemAvail(Ringbuffer_t *pxRingbuffer);
 
 //Checks if an item will currently fit in a no-split/allow-split ring buffer
-static BaseType_t prvCheckItemFitsDefault( Ringbuffer_t *pxRingbuffer, size_t xItemSize);
+static BaseType_t prvCheckItemFitsDefault(Ringbuffer_t *pxRingbuffer, size_t xItemSize);
 
 //Checks if an item will currently fit in a byte buffer
-static BaseType_t prvCheckItemFitsByteBuffer( Ringbuffer_t *pxRingbuffer, size_t xItemSize);
+static BaseType_t prvCheckItemFitsByteBuffer(Ringbuffer_t *pxRingbuffer, size_t xItemSize);
 
 /*
 Copies an item to a no-split ring buffer
@@ -275,7 +276,7 @@ static size_t prvGetFreeSize(Ringbuffer_t *pxRingbuffer)
     return xReturn;
 }
 
-static BaseType_t prvCheckItemFitsDefault( Ringbuffer_t *pxRingbuffer, size_t xItemSize)
+static BaseType_t prvCheckItemFitsDefault(Ringbuffer_t *pxRingbuffer, size_t xItemSize)
 {
     //Check arguments and buffer state
     configASSERT(rbCHECK_ALIGNED(pxRingbuffer->pucAcquire));              //pucAcquire is always aligned in no-split/allow-split ring buffers
@@ -303,7 +304,7 @@ static BaseType_t prvCheckItemFitsDefault( Ringbuffer_t *pxRingbuffer, size_t xI
     }
 }
 
-static BaseType_t prvCheckItemFitsByteBuffer( Ringbuffer_t *pxRingbuffer, size_t xItemSize)
+static BaseType_t prvCheckItemFitsByteBuffer(Ringbuffer_t *pxRingbuffer, size_t xItemSize)
 {
     //Check arguments and buffer state
     configASSERT(pxRingbuffer->pucAcquire >= pxRingbuffer->pucHead && pxRingbuffer->pucAcquire < pxRingbuffer->pucTail);    //Check acquire pointer is within bounds
@@ -1245,7 +1246,7 @@ void vRingbufferDelete(RingbufHandle_t xRingbuffer)
     configASSERT(pxRingbuffer);
 
     //Ring buffer was not statically allocated. Free its memory.
-    if ( !( pxRingbuffer->uxRingbufferFlags & rbBUFFER_STATIC_FLAG ) ) {
+    if (!(pxRingbuffer->uxRingbufferFlags & rbBUFFER_STATIC_FLAG)) {
         free(pxRingbuffer->pucHead);
         free(pxRingbuffer);
     }
@@ -1351,12 +1352,12 @@ void xRingbufferPrintInfo(RingbufHandle_t xRingbuffer)
 {
     Ringbuffer_t *pxRingbuffer = (Ringbuffer_t *)xRingbuffer;
     configASSERT(pxRingbuffer);
-    printf("Rb size:%d\tfree: %d\trptr: %d\tfreeptr: %d\twptr: %d, aptr: %d\n",
-           pxRingbuffer->xSize, prvGetFreeSize(pxRingbuffer),
-           pxRingbuffer->pucRead - pxRingbuffer->pucHead,
-           pxRingbuffer->pucFree - pxRingbuffer->pucHead,
-           pxRingbuffer->pucWrite - pxRingbuffer->pucHead,
-           pxRingbuffer->pucAcquire - pxRingbuffer->pucHead);
+    printf("Rb size:%" PRId32 "\tfree: %" PRId32 "\trptr: %" PRId32 "\tfreeptr: %" PRId32 "\twptr: %" PRId32 ", aptr: %" PRId32 "\n",
+           (int32_t)pxRingbuffer->xSize, (int32_t)prvGetFreeSize(pxRingbuffer),
+           (int32_t)(pxRingbuffer->pucRead - pxRingbuffer->pucHead),
+           (int32_t)(pxRingbuffer->pucFree - pxRingbuffer->pucHead),
+           (int32_t)(pxRingbuffer->pucWrite - pxRingbuffer->pucHead),
+           (int32_t)(pxRingbuffer->pucAcquire - pxRingbuffer->pucHead));
 }
 
 BaseType_t xRingbufferGetStaticBuffer(RingbufHandle_t xRingbuffer, uint8_t **ppucRingbufferStorage, StaticRingbuffer_t **ppxStaticRingbuffer)

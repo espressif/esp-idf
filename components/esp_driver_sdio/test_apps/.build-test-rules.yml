@@ -1,0 +1,17 @@
+components/esp_driver_sdio/test_apps/sdio/sdio_common_tests/host_sdmmc:
+  enable:
+    - if: IDF_TARGET == "esp32"
+      temporary: false
+      reason: always use ESP32 SDMMC as host
+  depends_components:
+    - sdmmc
+    - esp_driver_sdmmc
+    - esp_driver_sdio
+
+components/esp_driver_sdio/test_apps/sdio/sdio_common_tests/sdio:
+  disable:
+    - if: SOC_SDIO_SLAVE_SUPPORTED != 1
+  depends_components:
+    - sdmmc
+    - esp_driver_sdmmc
+    - esp_driver_sdio

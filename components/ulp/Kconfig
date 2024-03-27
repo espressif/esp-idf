@@ -34,6 +34,7 @@ menu "Ultra Low Power (ULP) Co-processor"
         default 4096 if !IDF_TARGET_ESP32
         range 32 8176 if !IDF_TARGET_ESP32C6
         range 32 16352 if IDF_TARGET_ESP32C6
+        range 32 32768 if IDF_TARGET_ESP32P4
         help
             Bytes of memory to reserve for ULP Co-processor firmware & data.
             Data is reserved at the beginning of RTC slow memory.
@@ -41,6 +42,13 @@ menu "Ultra Low Power (ULP) Co-processor"
 
     menu "ULP RISC-V Settings"
         depends on ULP_COPROC_TYPE_RISCV
+
+        config ULP_RISCV_INTERRUPT_ENABLE
+            bool
+            prompt "Enable ULP RISC-V interrupts"
+            default "n"
+            help
+                Turn on this setting to enabled interrupts on the ULP RISC-V core.
 
         config ULP_RISCV_UART_BAUDRATE
             int
@@ -71,5 +79,17 @@ menu "Ultra Low Power (ULP) Co-processor"
         help
             Size of the shared memory defined in ulp_lp_core_memory_shared.c.
             Size should be kept in-sync with the size of the struct defined there.
+
+    config ULP_ROM_PRINT_ENABLE
+        depends on ULP_COPROC_TYPE_LP_CORE && ESP_ROM_HAS_LP_ROM
+        bool
+        prompt "Enable print utilities from LP ROM"
+        default "y"
+        help
+            Set this option to enable printf functionality from LP ROM. This option
+            can help reduce the LP core binary size by not linking printf functionality
+            from RAM code.
+            Note: For LP ROM prints to work properly, make sure that the LP core boots
+            from the LP ROM.
 
 endmenu  # Ultra Low Power (ULP) Co-processor

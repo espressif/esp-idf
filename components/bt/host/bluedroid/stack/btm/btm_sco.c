@@ -1033,7 +1033,7 @@ void btm_sco_connected (UINT8 hci_status, BD_ADDR bda, UINT16 hci_handle,
 #endif
 
     btm_cb.sco_cb.sco_disc_reason = hci_status;
-    BTM_TRACE_ERROR("%s, handle %x", __FUNCTION__, hci_handle);
+    BTM_TRACE_API("%s, handle %x", __FUNCTION__, hci_handle);
 #if (BTM_MAX_SCO_LINKS>0)
     for (xx = 0; xx < BTM_MAX_SCO_LINKS; xx++, p++) {
         if (((p->state == SCO_ST_CONNECTING) ||

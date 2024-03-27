@@ -301,6 +301,15 @@ static inline int esp_intr_flags_to_level(int flags)
 }
 
 /**
+ * @brief Get the interrupt flags from the supplied level (priority)
+ * @param level The interrupt priority level
+ */
+static inline int esp_intr_level_to_flags(int level)
+{
+    return (level > 0) ? (1 << level) & ESP_INTR_FLAG_LEVELMASK : 0;
+}
+
+/**
  * @brief Dump the status of allocated interrupts
  * @param stream  The stream to dump to, if NULL then stdout is used
  * @return ESP_OK on success

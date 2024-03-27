@@ -106,13 +106,20 @@ menu "PHY"
             When brownout reset occurs, reduce PHY TX power to keep the code running.
 
     config ESP_PHY_ENABLE_USB
-        bool "Enable USB when phy init"
-        depends on USB_OTG_SUPPORTED || ESP_CONSOLE_USB_SERIAL_JTAG || ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG
-        default y if IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3
+        bool "Keep the USB PHY enabled when initializing WiFi"
+        depends on SOC_WIFI_PHY_NEEDS_USB_WORKAROUND
+        default y if IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3 \
+            || ESP_CONSOLE_USB_SERIAL_JTAG || ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG
         default n
         help
-            When using USB Serial/JTAG/OTG/CDC, PHY should enable USB, otherwise USB module
-            can not work properly. Notice: Enabling this configuration option will slightly impact wifi performance.
+            On some ESP targets, the USB PHY can interfere with WiFi thus lowering WiFi performance. As a result, on
+            those affected ESP targets, the ESP PHY library's initialization will automatically disable the USB PHY to
+            get best WiFi performance. This option controls whether or not the ESP PHY library will keep the USB PHY
+            enabled on initialization.
+
+            Note: This option can be disabled to increase WiFi performance. However, disabling this option will also
+            mean that the USB PHY cannot be used while WiFi is enabled.
+
 
     config ESP_PHY_ENABLE_CERT_TEST
         bool "Enable RF certification test functions"
@@ -153,5 +160,11 @@ menu "PHY"
             This is a workaround to improve Wi-Fi receive 11b pkts for some modules using AC-DC power supply with
             high interference, enable this option will sacrifice Wi-Fi OFDM receive performance.
             But to guarantee 11b receive performance serves as a bottom line in this case.
+
+    config ESP_PHY_PLL_TRACK_DEBUG
+        bool "Enable pll track logging"
+        default n
+        help
+            If enabled, there will be some logs while pll tracking
 
 endmenu  # PHY

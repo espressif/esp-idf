@@ -197,8 +197,8 @@ static int32_t bt_mesh_client_calc_timeout(struct bt_mesh_msg_ctx *ctx,
         /* Based on the message length, calculate how many segments are needed.
          * All the messages sent from here are access messages.
          */
-        seg_rtx_num = bt_mesh_get_seg_retrans_num();
-        seg_rtx_to = bt_mesh_get_seg_retrans_timeout(ctx->send_ttl);
+        seg_rtx_num = bt_mesh_get_seg_rtx_num();
+        seg_rtx_to = bt_mesh_get_seg_rtx_timeout(ctx->addr, ctx->send_ttl);
         seg_count = (msg->len + mic_size - 1) / 12U + 1U;
 
         duration = bt_mesh_get_adv_duration(ctx);

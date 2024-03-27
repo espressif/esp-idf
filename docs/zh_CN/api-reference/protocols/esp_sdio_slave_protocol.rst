@@ -5,7 +5,7 @@ ESP SDIO 主从机通信
 
 本文档介绍了 ESP 数字输入输出 (Secure Digital Input and Output，SDIO) 从机设备的初始化过程，并提供 ESP SDIO 从机协议的详细信息。该协议为非标准协议，允许 SDIO 主机与 ESP SDIO 从机进行通信。
 
-创建 ESP SDIO 从机协议是为了实现 SDIO 主机和从机之间的通信。 这是因为 SDIO 规范只说明了如何访问卡的自定义区（向功能 1-7 发送 CMD52 和 CMD53），却没有说明底层的硬件实现过程。
+创建 ESP SDIO 从机协议是为了实现 SDIO 主机和从机之间的通信。这是因为 SDIO 规范只说明了如何访问卡的自定义区（向功能 1-7 发送 CMD52 和 CMD53），却没有说明底层的硬件实现过程。
 
 .. _esp_sdio_slave_caps:
 
@@ -41,7 +41,7 @@ ESP SDIO 主从机通信
 初始化 ESP SDIO 从机
 -------------------------
 
-主机需按照标准的 SDIO 初始化流程，对 {IDF_TARGET_NAME} SDIO 从机进行初始化（参考 `SDIO Simplified Specification <https://www.sdcard.org/downloads/pls/>`_ 3.1.2 章节）。下文将 SDIO 从机简称为 (SD)IO 卡。以下是 ESP SDIO 从机初始化流程的一个简单示例：
+主机需按照标准的 SDIO 初始化流程，对 {IDF_TARGET_NAME} SDIO 从机进行初始化（参考 `SDIO Simplified Specification <https://www.sdcard.org/downloads/pls/>`_ 3.1.2 章节）。下文将 SDIO 从机简称为 SD/SDIO 卡。以下是 ESP SDIO 从机初始化流程的一个简单示例：
 
 1. SDIO 复位
 

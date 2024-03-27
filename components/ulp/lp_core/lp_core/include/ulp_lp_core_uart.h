@@ -50,7 +50,7 @@ esp_err_t lp_core_uart_write_bytes(uart_port_t lp_uart_num, const void *src, siz
  * This function will read data from the Rx FIFO. If a timeout value is configured, then this function will timeout once the number of CPU cycles expire.
  *
  * @param lp_uart_num   LP UART port number
- * @param src           data buffer address
+ * @param buf           data buffer address
  * @param size          data length to send
  * @param timeout       Operation timeout in CPU cycles. Set to -1 to wait forever.
  *

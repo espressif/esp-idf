@@ -28,5 +28,6 @@ esp_err_t io_mux_set_clock_source(soc_module_clk_t clk_src)
     }
 
     gpio_ll_iomux_set_clk_src(clk_src);
+
     return ESP_OK;
 }

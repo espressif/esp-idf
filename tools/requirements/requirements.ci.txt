@@ -10,3 +10,4 @@ python-gitlab
 pyyaml
 SimpleWebSocketServer
 pylint-gitlab
+minio

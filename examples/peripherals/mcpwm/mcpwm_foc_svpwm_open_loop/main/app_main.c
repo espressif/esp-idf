@@ -14,17 +14,9 @@
 
 static const char *TAG = "example_foc";
 
-#if CONFIG_IDF_TARGET_ESP32
-#define EXAMPLE_FOC_DRV_EN_GPIO          4
-#define EXAMPLE_FOC_DRV_FAULT_GPIO       5
-#define EXAMPLE_FOC_PWM_UH_GPIO          12
-#define EXAMPLE_FOC_PWM_UL_GPIO          13
-#define EXAMPLE_FOC_PWM_VH_GPIO          14
-#define EXAMPLE_FOC_PWM_VL_GPIO          15
-#define EXAMPLE_FOC_PWM_WH_GPIO          16
-#define EXAMPLE_FOC_PWM_WL_GPIO          17
-
-#elif CONFIG_IDF_TARGET_ESP32S3
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////// Please update the following configuration according to your HardWare spec /////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
 #define EXAMPLE_FOC_DRV_EN_GPIO          46
 #define EXAMPLE_FOC_DRV_FAULT_GPIO       10
 #define EXAMPLE_FOC_PWM_UH_GPIO          47
@@ -34,29 +26,17 @@ static const char *TAG = "example_foc";
 #define EXAMPLE_FOC_PWM_WH_GPIO          12
 #define EXAMPLE_FOC_PWM_WL_GPIO          11
 
-#elif CONFIG_IDF_TARGET_ESP32C6 || CONFIG_IDF_TARGET_ESP32H2
-#define EXAMPLE_FOC_DRV_EN_GPIO          1
-#define EXAMPLE_FOC_DRV_FAULT_GPIO       2
-#define EXAMPLE_FOC_PWM_UH_GPIO          3
-#define EXAMPLE_FOC_PWM_UL_GPIO          4
-#define EXAMPLE_FOC_PWM_VH_GPIO          5
-#define EXAMPLE_FOC_PWM_VL_GPIO          10
-#define EXAMPLE_FOC_PWM_WH_GPIO          11
-#define EXAMPLE_FOC_PWM_WL_GPIO          13
-#endif
-
 #define EXAMPLE_FOC_MCPWM_TIMER_RESOLUTION_HZ 10000000 // 10MHz, 1 tick = 0.1us
 #define EXAMPLE_FOC_MCPWM_PERIOD              1000     // 1000 * 0.1us = 100us, 10KHz
 
 #define EXAMPLE_FOC_WAVE_FREQ    10         // 50Hz 3 phase AC wave
 #define EXAMPLE_FOC_WAVE_AMPL    100        // Wave amplitude, Use up-down timer mode, max value should be (EXAMPLE_FOC_MCPWM_PERIOD/2)
 
-
 void bsp_bridge_driver_init(void)
 {
     gpio_config_t drv_en_config = {
-        .pin_bit_mask = 1ULL << EXAMPLE_FOC_DRV_EN_GPIO,
         .mode = GPIO_MODE_OUTPUT,
+        .pin_bit_mask = 1ULL << EXAMPLE_FOC_DRV_EN_GPIO,
     };
     ESP_ERROR_CHECK(gpio_config(&drv_en_config));
 }

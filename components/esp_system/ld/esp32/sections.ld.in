@@ -3,60 +3,67 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-/*  Default entry point:  */
+
+#include "ld.common"
+
+/* Default entry point */
 ENTRY(call_start_cpu0);
 
 SECTIONS
 {
-  /* RTC fast memory holds RTC wake stub code,
-     including from any source file named rtc_wake_stub*.c
-  */
+  /**
+   * RTC fast memory holds RTC wake stub code,
+   * including from any source file named rtc_wake_stub*.c
+   */
   .rtc.text :
   {
-    . = ALIGN(4);
+    ALIGNED_SYMBOL(4, _rtc_text_start)
 
     mapping[rtc_text]
 
     *rtc_wake_stub*.*(.literal .text .literal.* .text.*)
+
     _rtc_text_end = ABSOLUTE(.);
   } > rtc_iram_seg
 
-  /*
-    This section is required to skip rtc.text area because rtc_iram_seg and
-    rtc_data_seg are reflect the same address space on different buses.
-  */
+  /**
+   * This section is required to skip rtc.text area because rtc_iram_seg and
+   * rtc_data_seg are reflect the same address space on different buses.
+   */
   .rtc.dummy :
   {
     _rtc_dummy_start = ABSOLUTE(.);
     _rtc_fast_start = ABSOLUTE(.);
+
     . = SIZEOF(.rtc.text);
+
     _rtc_dummy_end = ABSOLUTE(.);
   } > rtc_data_seg
 
-  /* This section located in RTC FAST Memory area.
-     It holds data marked with RTC_FAST_ATTR attribute.
-     See the file "esp_attr.h" for more information.
-  */
+  /**
+   * This section located in RTC FAST Memory area.
+   * It holds data marked with RTC_FAST_ATTR attribute.
+   * See the file "esp_attr.h" for more information.
+   */
   .rtc.force_fast :
   {
-    . = ALIGN(4);
-    _rtc_force_fast_start = ABSOLUTE(.);
+    ALIGNED_SYMBOL(4, _rtc_force_fast_start)
 
     mapping[rtc_force_fast]
 
     *(.rtc.force_fast .rtc.force_fast.*)
-    . = ALIGN(4) ;
 
-    _rtc_force_fast_end = ABSOLUTE(.);
+    ALIGNED_SYMBOL(4, _rtc_force_fast_end)
   } > rtc_data_seg
 
-  /* RTC data section holds RTC wake stub
-     data/rodata, including from any source file
-     named rtc_wake_stub*.c and the data marked with
-     RTC_DATA_ATTR, RTC_RODATA_ATTR attributes.
-     The memory location of the data is dependent on
-     CONFIG_ESP32_RTCDATA_IN_FAST_MEM option.
-  */
+  /**
+   * RTC data section holds RTC wake stub
+   * data/rodata, including from any source file
+   * named rtc_wake_stub*.c and the data marked with
+   * RTC_DATA_ATTR, RTC_RODATA_ATTR attributes.
+   * The memory location of the data is dependent on
+   * CONFIG_ESP32_RTCDATA_IN_FAST_MEM option.
+   */
   .rtc.data :
   {
     _rtc_data_start = ABSOLUTE(.);
@@ -64,14 +71,15 @@ SECTIONS
     mapping[rtc_data]
 
     *rtc_wake_stub*.*(.data .rodata .data.* .rodata.*)
-    _rtc_data_end = ABSOLUTE(.);
 
+    _rtc_data_end = ABSOLUTE(.);
   } > rtc_data_location
 
   /* RTC bss, from any source file named rtc_wake_stub*.c */
   .rtc.bss (NOLOAD) :
   {
     _rtc_bss_start = ABSOLUTE(.);
+
     *rtc_wake_stub*.*(.bss .bss.*)
     *rtc_wake_stub*.*(COMMON)
 
@@ -80,47 +88,55 @@ SECTIONS
     _rtc_bss_end = ABSOLUTE(.);
   } > rtc_data_location
 
-  /* This section holds data that should not be initialized at power up
-     and will be retained during deep sleep.
-     User data marked with RTC_NOINIT_ATTR will be placed
-     into this section. See the file "esp_attr.h" for more information.
-	 The memory location of the data is dependent on
-     CONFIG_ESP32_RTCDATA_IN_FAST_MEM option.
-  */
+  /**
+   * This section holds data that should not be initialized at power up
+   * and will be retained during deep sleep.
+   * User data marked with RTC_NOINIT_ATTR will be placed
+   * into this section. See the file "esp_attr.h" for more information.
+   * The memory location of the data is dependent on
+   * CONFIG_ESP32_RTCDATA_IN_FAST_MEM option.
+   */
   .rtc_noinit (NOLOAD):
   {
-    . = ALIGN(4);
-    _rtc_noinit_start = ABSOLUTE(.);
+    ALIGNED_SYMBOL(4, _rtc_noinit_start)
+
     *(.rtc_noinit .rtc_noinit.*)
-    . = ALIGN(4) ;
-    _rtc_noinit_end = ABSOLUTE(.);
+
+    ALIGNED_SYMBOL(4, _rtc_noinit_end)
   } > rtc_data_location
 
-  /* This section located in RTC SLOW Memory area.
-     It holds data marked with RTC_SLOW_ATTR attribute.
-     See the file "esp_attr.h" for more information.
-  */
+  /**
+   * This section located in RTC SLOW Memory area.
+   * It holds data marked with RTC_SLOW_ATTR attribute.
+   * See the file "esp_attr.h" for more information.
+   */
   .rtc.force_slow :
   {
-    . = ALIGN(4);
-    _rtc_force_slow_start = ABSOLUTE(.);
+    ALIGNED_SYMBOL(4, _rtc_force_slow_start)
+
     *(.rtc.force_slow .rtc.force_slow.*)
-    . = ALIGN(4) ;
-    _rtc_force_slow_end = ABSOLUTE(.);
+
+    ALIGNED_SYMBOL(4, _rtc_force_slow_end)
   } > rtc_slow_seg
 
   /**
    * This section holds RTC FAST data that should have fixed addresses.
-   * The data are not initialized at power-up and are retained during deep sleep.
+   * The data are not initialized at power-up and are retained during deep
+   * sleep.
    */
   .rtc_fast_reserved (NOLOAD):
   {
-    . = ALIGN(4);
-    _rtc_fast_reserved_start = ABSOLUTE(.);
-    /* New data can only be added here to ensure existing data are not moved.
-       Because data have adhered to the end of the segment and code is relied on it.
-       >> put new data here << */
+    ALIGNED_SYMBOL(4, _rtc_fast_reserved_start)
+
+    /**
+     * New data can only be added here to ensure existing data are not moved.
+     * Because data have adhered to the end of the segment and code is relied
+     * on it.
+     * >> put new data here <<
+     */
+
     KEEP(*(.bootloader_data_rtc_mem .bootloader_data_rtc_mem.*))
+
     _rtc_fast_reserved_end = ABSOLUTE(.);
   } > rtc_fast_reserved_seg
 
@@ -130,17 +146,22 @@ SECTIONS
 
   /**
    * This section holds RTC SLOW data that should have fixed addresses.
-   * The data are not initialized at power-up and are retained during deep sleep.
+   * The data are not initialized at power-up and are retained during deep
+   * sleep.
    */
   .rtc_slow_reserved (NOLOAD):
   {
-    . = ALIGN(4);
-    _rtc_slow_reserved_start = ABSOLUTE(.);
-    /* New data can only be added here to ensure existing data are not moved.
-       Because data have adhered to the end of the segment and code is relied on it.
-       >> put new data here << */
+    ALIGNED_SYMBOL(4, _rtc_slow_reserved_start)
+
+    /**
+     * New data can only be added here to ensure existing data are not moved.
+     * Because data have adhered to the end of the segment and code is relied
+     * on it.
+     * >> put new data here <<
+     */
 
     *(.rtc_timer_data_in_rtc_mem .rtc_timer_data_in_rtc_mem.*)
+
     _rtc_slow_reserved_end = ABSOLUTE(.);
   } > rtc_slow_reserved_seg
 
@@ -170,7 +191,6 @@ SECTIONS
     _iram_start = ABSOLUTE(.);
     /* Vectors go to IRAM */
     _vector_table = ABSOLUTE(.);
-    /* Vectors according to builds/RF-2015.2-win32/esp108_v1_2_s5_512int_2/config.html */
     . = 0x0;
     KEEP(*(.WindowVectors.text));
     . = 0x180;
@@ -207,7 +227,7 @@ SECTIONS
 
   .iram0.text :
   {
-    /* Code marked as runnning out of IRAM */
+    /* Code marked as running out of IRAM */
     _iram_text_start = ABSOLUTE(.);
 
     mapping[iram0_text]
@@ -228,7 +248,6 @@ SECTIONS
     mapping[dram0_data]
 
     _data_end = ABSOLUTE(.);
-    . = ALIGN(4);
   } > dram0_0_seg
 
   /**
@@ -238,46 +257,49 @@ SECTIONS
   .ext_ram_noinit (NOLOAD) :
   {
     _ext_ram_noinit_start = ABSOLUTE(.);
+
     *(.ext_ram_noinit*)
-    . = ALIGN(4);
-    _ext_ram_noinit_end = ABSOLUTE(.);
+
+    ALIGNED_SYMBOL(4, _ext_ram_noinit_end)
   } > extern_ram_seg
 
-  /*This section holds data that should not be initialized at power up.
-    The section located in Internal SRAM memory region. The macro _NOINIT
-    can be used as attribute to place data into this section.
-    See the esp_attr.h file for more information.
-  */
+  /**
+   * This section holds data that should not be initialized at power up.
+   * The section located in Internal SRAM memory region. The macro _NOINIT
+   * can be used as attribute to place data into this section.
+   * See the "esp_attr.h" file for more information.
+   */
   .noinit (NOLOAD):
   {
-    . = ALIGN(4);
-    _noinit_start = ABSOLUTE(.);
+    ALIGNED_SYMBOL(4, _noinit_start)
+
     *(.noinit .noinit.*)
-    . = ALIGN(4) ;
-    _noinit_end = ABSOLUTE(.);
+
+    ALIGNED_SYMBOL(4, _noinit_end)
   } > dram0_0_seg
 
-   /* external memory bss, from any global variable with EXT_RAM_BSS_ATTR attribute*/
+  /* External Memory BSS. (Variables with EXT_RAM_BSS_ATTR attribute). */
   .ext_ram.bss (NOLOAD) :
   {
-    _ext_ram_bss_start = ABSOLUTE(.);
+    ALIGNED_SYMBOL(4, _ext_ram_bss_start)
 
     mapping[extern_ram]
 
-    . = ALIGN(4);
-    _ext_ram_bss_end = ABSOLUTE(.);
+    ALIGNED_SYMBOL(4, _ext_ram_bss_end)
   } > extern_ram_seg
 
   /* Shared RAM */
   .dram0.bss (NOLOAD) :
   {
-    . = ALIGN (8);
-    _bss_start = ABSOLUTE(.);
+    ALIGNED_SYMBOL(8, _bss_start)
 
+    /**
+     * ldgen places all bss-related data to mapping[dram0_bss]
+     * (See components/esp_system/app.lf).
+     */
     mapping[dram0_bss]
 
-    . = ALIGN (8);
-    _bss_end = ABSOLUTE(.);
+    ALIGNED_SYMBOL(8, _bss_end)
   } > dram0_0_seg
 
   ASSERT(((_bss_end - ORIGIN(dram0_0_seg)) <= LENGTH(dram0_0_seg)),
@@ -285,17 +307,28 @@ SECTIONS
 
   .flash.appdesc : ALIGN(0x10)
   {
-    _rodata_reserved_start = ABSOLUTE(.);  /* This is a symbol marking the flash.rodata start, this can be used for mmu driver to maintain virtual address */
+    /**
+     * Mark flash.rodata start.
+     * This can be used for mmu driver to maintain virtual address
+     */
+    _rodata_reserved_start = ABSOLUTE(.);
     _rodata_start = ABSOLUTE(.);
 
-    *(.rodata_desc .rodata_desc.*)               /* Should be the first.  App version info.        DO NOT PUT ANYTHING BEFORE IT! */
-    *(.rodata_custom_desc .rodata_custom_desc.*) /* Should be the second. Custom app version info. DO NOT PUT ANYTHING BEFORE IT! */
+    /* !DO NOT PUT ANYTHING BEFORE THIS! */
 
-    /* Create an empty gap within this section. Thanks to this, the end of this
+    /* Should be the first.  App version info. */
+    *(.rodata_desc .rodata_desc.*)
+    /* Should be the second. Custom app version info. */
+    *(.rodata_custom_desc .rodata_custom_desc.*)
+
+    /**
+     * Create an empty gap within this section. Thanks to this, the end of this
      * section will match .flah.rodata's begin address. Thus, both sections
-     * will be merged when creating the final bin image. */
+     * will be merged when creating the final bin image.
+     */
     . = ALIGN(ALIGNOF(.flash.rodata));
-  } >default_rodata_seg
+  } > default_rodata_seg
+  ASSERT_SECTIONS_GAP(.flash.appdesc, .flash.rodata)
 
   .flash.rodata : ALIGN(0x10)
   {
@@ -303,125 +336,135 @@ SECTIONS
 
     mapping[flash_rodata]
 
-
     *(.irom1.text) /* catch stray ICACHE_RODATA_ATTR */
     *(.gnu.linkonce.r.*)
     *(.rodata1)
-    __XT_EXCEPTION_TABLE_ = ABSOLUTE(.);
+
+    /* C++ exception handlers table.  */
+    ALIGNED_SYMBOL(4, __XT_EXCEPTION_TABLE_)
     *(.xt_except_table)
     *(.gcc_except_table .gcc_except_table.*)
     *(.gnu.linkonce.e.*)
-    *(.gnu.version_r)
-    . = (. + 3) & ~ 3;
-    __eh_frame = ABSOLUTE(.);
-    KEEP(*(.eh_frame))
-    . = (. + 7) & ~ 3;
-    /*  C++ constructor and destructor tables
 
-        Make a point of not including anything from crtbegin.o or crtend.o, as IDF doesn't use toolchain crt
-      */
-    __init_array_start = ABSOLUTE(.);
-    KEEP (*(EXCLUDE_FILE (*crtend.* *crtbegin.*) .ctors SORT(.ctors.*)))
-    __init_array_end = ABSOLUTE(.);
-
-    KEEP (*crtbegin.*(.dtors))
-    KEEP (*(EXCLUDE_FILE (*crtend.*) .dtors))
-    KEEP (*(SORT(.dtors.*)))
-    KEEP (*(.dtors))
-    /*  C++ exception handlers table:  */
-    __XT_EXCEPTION_DESCS_ = ABSOLUTE(.);
+    ALIGNED_SYMBOL(4, __XT_EXCEPTION_DESCS_)
     *(.xt_except_desc)
     *(.gnu.linkonce.h.*)
     __XT_EXCEPTION_DESCS_END__ = ABSOLUTE(.);
     *(.xt_except_desc_end)
-    *(.dynamic)
-    *(.gnu.version_d)
-    /* Addresses of memory regions reserved via
-       SOC_RESERVE_MEMORY_REGION() */
-    soc_reserved_memory_region_start = ABSOLUTE(.);
+
+    ALIGNED_SYMBOL(4, __eh_frame)
+    KEEP(*(.eh_frame))
+    /**
+     * As we are not linking with crtend.o, which includes the CIE terminator
+     * (see __FRAME_END__ in libgcc sources), it is manually provided here.
+     */
+    LONG(0);
+
+    /**
+     * C++ constructor tables.
+     *
+     * Excluding crtbegin.o/crtend.o since IDF doesn't use the toolchain crt.
+     */
+    ALIGNED_SYMBOL(4, __init_array_start)
+    KEEP (*(EXCLUDE_FILE (*crtend.* *crtbegin.*) .ctors SORT(.ctors.*)))
+    __init_array_end = ABSOLUTE(.);
+
+    /* Addresses of memory regions reserved via SOC_RESERVE_MEMORY_REGION() */
+    ALIGNED_SYMBOL(4, soc_reserved_memory_region_start)
     KEEP (*(.reserved_memory_address))
     soc_reserved_memory_region_end = ABSOLUTE(.);
+
     /* System init functions registered via ESP_SYSTEM_INIT_FN */
-    _esp_system_init_fn_array_start = ABSOLUTE(.);
+    ALIGNED_SYMBOL(4, _esp_system_init_fn_array_start)
     KEEP (*(SORT_BY_INIT_PRIORITY(.esp_system_init_fn.*)))
     _esp_system_init_fn_array_end = ABSOLUTE(.);
+
     _rodata_end = ABSOLUTE(.);
+
     /* Literals are also RO data. */
     _lit4_start = ABSOLUTE(.);
     *(*.lit4)
     *(.lit4.*)
     *(.gnu.linkonce.lit4.*)
     _lit4_end = ABSOLUTE(.);
-    . = ALIGN(4);
-    _thread_local_start = ABSOLUTE(.);
+
+    /* TLS data. */
+    ALIGNED_SYMBOL(4, _thread_local_start)
     *(.tdata)
     *(.tdata.*)
     *(.tbss)
     *(.tbss.*)
     _thread_local_end = ABSOLUTE(.);
-    . = ALIGN(4);
-  } >default_rodata_seg
+  } > default_rodata_seg
 
   _flash_rodata_align = ALIGNOF(.flash.rodata);
 
-  /*
-    This section is a place where we dump all the rodata which aren't used at runtime,
-    so as to avoid binary size increase
-  */
+  /**
+   * This section contains all the rodata that is not used
+   * at runtime, helping to avoid an increase in binary size.
+   */
   .flash.rodata_noload (NOLOAD) :
   {
-    /*
-      This is a symbol marking the flash.rodata end, this can be used for mmu driver to maintain virtual address
-      We don't need to include the noload rodata in this section
-    */
+    /**
+     * This symbol marks the end of flash.rodata. It can be utilized by the MMU
+     * driver to maintain the virtual address.
+     * NOLOAD rodata may not be included in this section.
+     */
     _rodata_reserved_end = ABSOLUTE(.);
-    . = ALIGN (4);
+
     mapping[rodata_noload]
   } > default_rodata_seg
 
   .flash.text :
   {
     _stext = .;
-    _instruction_reserved_start = ABSOLUTE(.);  /* This is a symbol marking the flash.text start, this can be used for mmu driver to maintain virtual address */
+    /**
+     * Mark the start of flash.text.
+     * This can be used by the MMU driver to maintain the virtual address.
+     */
+    _instruction_reserved_start = ABSOLUTE(.);
     _text_start = ABSOLUTE(.);
 
     mapping[flash_text]
 
-    *(.stub .gnu.warning .gnu.linkonce.literal.* .gnu.linkonce.t.*.literal .gnu.linkonce.t.*)
+    *(.stub)
+    *(.gnu.warning)
+    *(.gnu.linkonce.literal.* .gnu.linkonce.t.*.literal .gnu.linkonce.t.*)
     *(.irom0.text) /* catch stray ICACHE_RODATA_ATTR */
-    *(.fini.literal)
-    *(.fini)
-    *(.gnu.version)
 
-    /** CPU will try to prefetch up to 16 bytes of
-      * of instructions. This means that any configuration (e.g. MMU, PMS) must allow
-      * safe access to up to 16 bytes after the last real instruction, add
-      * dummy bytes to ensure this
-      */
+    /**
+     * CPU will try to prefetch up to 16 bytes of of instructions.
+     * This means that any configuration (e.g. MMU, PMS) must allow
+     * safe access to up to 16 bytes after the last real instruction,
+     * add dummy bytes to ensure this.
+     */
     . += _esp_flash_mmap_prefetch_pad_size;
 
     _text_end = ABSOLUTE(.);
-    _instruction_reserved_end = ABSOLUTE(.);  /* This is a symbol marking the flash.text end, this can be used for mmu driver to maintain virtual address */
+    /**
+     * Mark the flash.text end.
+     * This can be used for MMU driver to maintain virtual address.
+     */
+    _instruction_reserved_end = ABSOLUTE(.);
     _etext = .;
 
-    /* Similar to _iram_start, this symbol goes here so it is
-       resolved by addr2line in preference to the first symbol in
-       the flash.text segment.
-    */
+    /**
+     * Similar to _iram_start, this symbol goes here so it is
+     * resolved by addr2line in preference to the first symbol in
+     * the flash.text segment.
+     */
     _flash_cache_start = ABSOLUTE(0);
-  } >default_code_seg
+  } > default_code_seg
 
   /* Marks the end of IRAM code segment */
   .iram0.text_end (NOLOAD) :
   {
-    . = ALIGN (4);
-    _iram_text_end = ABSOLUTE(.);
+    ALIGNED_SYMBOL(4, _iram_text_end)
   } > iram0_0_seg
 
   .iram0.data :
   {
-    . = ALIGN(4);
-    _iram_data_start = ABSOLUTE(.);
+    ALIGNED_SYMBOL(4, _iram_data_start)
 
     mapping[iram0_data]
 
@@ -430,33 +473,31 @@ SECTIONS
 
   .iram0.bss (NOLOAD) :
   {
-    . = ALIGN(4);
-    _iram_bss_start = ABSOLUTE(.);
+    ALIGNED_SYMBOL(4, _iram_bss_start)
 
     mapping[iram0_bss]
 
     _iram_bss_end = ABSOLUTE(.);
-    . = ALIGN(4);
-    _iram_end = ABSOLUTE(.);
-   } > iram0_0_seg
+    ALIGNED_SYMBOL(4, _iram_end)
+  } > iram0_0_seg
 
   /* Marks the end of data, bss and possibly rodata  */
   .dram0.heap_start (NOLOAD) :
   {
-    . = ALIGN (8);
     /* Lowest possible start address for the heap */
-    _heap_low_start = ABSOLUTE(.);
+    ALIGNED_SYMBOL(8, _heap_low_start)
   } > dram0_0_seg
 
-  /** This section will be used by the debugger and disassembler to get more information
-    * about raw data present in the code.
-    * Indeed, it may be required to add some padding at some points in the code
-    * in order to align a branch/jump destination on a particular bound.
-    * Padding these instructions will generate null bytes that shall be
-    * interpreted as data, and not code by the debugger or disassembler.
-    * This section will only be present in the ELF file, not in the final binary
-    * For more details, check GCC-212
-    */
+  /**
+   * This section will be used by the debugger and disassembler to get more
+   * information about raw data present in the code.
+   * Indeed, it may be required to add some padding at some points in the code
+   * in order to align a branch/jump destination on a particular bound.
+   * Padding these instructions will generate null bytes that shall be
+   * interpreted as data, and not code by the debugger or disassembler.
+   * This section will only be present in the ELF file, not in the final binary
+   * For more details, check GCC-212
+   */
   .xt.prop 0 :
   {
     KEEP (*(.xt.prop .gnu.linkonce.prop.*))

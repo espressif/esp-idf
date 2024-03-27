@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -59,12 +59,6 @@ void ledc_hal_get_clk_cfg(ledc_hal_context_t *hal, ledc_timer_t timer_sel, ledc_
 #if SOC_LEDC_GAMMA_CURVE_FADE_SUPPORTED
 void ledc_hal_get_fade_param(ledc_hal_context_t *hal, ledc_channel_t channel_num, uint32_t range, uint32_t *dir, uint32_t *cycle, uint32_t *scale, uint32_t *step)
 {
-    ledc_ll_set_duty_range_rd_addr(hal->dev, hal->speed_mode, channel_num, range);
-#if CONFIG_IDF_TARGET_ESP32C6 || CONFIG_IDF_TARGET_ESP32H2
-    // On ESP32C6/H2, gamma ram read/write has the APB and LEDC clock domain sync issue
-    // To make sure the parameter read is from the correct gamma ram addr, add a delay in between to ensure syncronization
-    esp_rom_delay_us(5);
-#endif
-    ledc_ll_get_fade_param(hal->dev, hal->speed_mode, channel_num, dir, cycle, scale, step);
+    ledc_ll_get_fade_param_range(hal->dev, hal->speed_mode, channel_num, range, dir, cycle, scale, step);
 }
 #endif

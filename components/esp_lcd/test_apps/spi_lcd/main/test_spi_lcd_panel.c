@@ -15,7 +15,6 @@
 #include "esp_lcd_panel_vendor.h"
 #include "esp_lcd_panel_ops.h"
 #include "esp_lcd_panel_commands.h"
-#include "esp_random.h"
 #include "soc/soc_caps.h"
 #include "test_spi_board.h"
 
@@ -91,14 +90,29 @@ static void lcd_panel_test(esp_lcd_panel_io_handle_t io_handle, esp_lcd_panel_ha
     // turn on backlight
     gpio_set_level(TEST_LCD_BK_LIGHT_GPIO, 1);
 
-    for (int i = 0; i < 200; i++) {
-        uint8_t color_byte = esp_random() & 0xFF;
-        int x_start = esp_random() % (TEST_LCD_H_RES - 200);
-        int y_start = esp_random() % (TEST_LCD_V_RES - 200);
+    for (int i = 0; i < 100; i++) {
+        uint8_t color_byte = rand() & 0xFF;
+        int x_start = rand() % (TEST_LCD_H_RES - 200);
+        int y_start = rand() % (TEST_LCD_V_RES - 200);
         memset(img, color_byte, TEST_IMG_SIZE);
         esp_lcd_panel_draw_bitmap(panel_handle, x_start, y_start, x_start + 200, y_start + 200, img);
     }
-    // turn off screen
+
+    printf("go into sleep mode\r\n");
+    esp_lcd_panel_disp_sleep(panel_handle, true);
+    vTaskDelay(pdMS_TO_TICKS(500));
+    printf("exit sleep mode\r\n");
+    esp_lcd_panel_disp_sleep(panel_handle, false);
+
+    for (int i = 0; i < 100; i++) {
+        uint8_t color_byte = rand() & 0xFF;
+        int x_start = rand() % (TEST_LCD_H_RES - 200);
+        int y_start = rand() % (TEST_LCD_V_RES - 200);
+        memset(img, color_byte, TEST_IMG_SIZE);
+        esp_lcd_panel_draw_bitmap(panel_handle, x_start, y_start, x_start + 200, y_start + 200, img);
+    }
+
+    printf("turn off the panel\r\n");
     esp_lcd_panel_disp_on_off(panel_handle, false);
     TEST_ESP_OK(esp_lcd_panel_del(panel_handle));
     TEST_ESP_OK(esp_lcd_panel_io_del(io_handle));
@@ -202,7 +216,7 @@ TEST_CASE("spi_lcd_send_colors_to_fixed_region", "[lcd]")
     size_t color_size = (x_end - x_start) * (y_end - y_start) * 2;
     void *color_data = malloc(color_size);
     TEST_ASSERT_NOT_NULL(color_data);
-    uint8_t color_byte = esp_random() & 0xFF;
+    uint8_t color_byte = rand() & 0xFF;
     memset(color_data, color_byte, color_size);
 
     esp_lcd_panel_io_handle_t io_handle = NULL;
@@ -248,12 +262,14 @@ TEST_CASE("spi_lcd_send_colors_to_fixed_region", "[lcd]")
         TEST_ESP_OK(esp_lcd_panel_io_tx_color(io_handle, -1, color_data + i * color_size_per_step, color_size_per_step));
     }
     vTaskDelay(pdMS_TO_TICKS(1000));
-    // change to another color
-    color_byte = esp_random() & 0xFF;
+
+    printf("change to another color\r\n");
+    color_byte = rand() & 0xFF;
     memset(color_data, color_byte, color_size);
     for (int i = 0; i < steps; i++) {
         TEST_ESP_OK(esp_lcd_panel_io_tx_color(io_handle, -1, color_data + i * color_size_per_step, color_size_per_step));
     }
+    vTaskDelay(pdMS_TO_TICKS(1000));
 
     TEST_ESP_OK(esp_lcd_panel_del(panel_handle));
     TEST_ESP_OK(esp_lcd_panel_io_del(io_handle));

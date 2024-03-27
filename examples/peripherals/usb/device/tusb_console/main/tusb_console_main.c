@@ -13,7 +13,6 @@
 #include <stdlib.h>
 #include <sys/reent.h>
 #include "esp_log.h"
-#include "esp_vfs.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "tinyusb.h"

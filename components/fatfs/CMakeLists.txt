@@ -22,9 +22,9 @@ else()
 
     list(APPEND include_dirs "vfs")
 
-    list(APPEND requires "sdmmc")
+    list(APPEND requires "sdmmc" "esp_driver_sdmmc" "esp_driver_sdspi")
 
-    list(APPEND priv_requires "vfs")
+    list(APPEND priv_requires "vfs" "esp_driver_gpio")
 endif()
 
 idf_component_register(SRCS ${srcs}

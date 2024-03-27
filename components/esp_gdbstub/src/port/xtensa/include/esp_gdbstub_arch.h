@@ -6,7 +6,7 @@
 
 #pragma once
 #include <stdint.h>
-#include "freertos/xtensa_context.h"
+#include "xtensa_context.h"
 #include "sdkconfig.h"
 
 #if CONFIG_IDF_TARGET_ESP32

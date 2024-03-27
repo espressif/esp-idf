@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -54,7 +54,8 @@ typedef struct {
                                                  1- acquire the complete HE-LTF2
                                                  2- sample evenly among the HE-LTF1 and HE-LTF2 */
     uint32_t val_scale_cfg : 2;             /**< value 0-3 */
-    uint32_t reserved : 20;                 /**< reserved */
+    uint32_t dump_ack_en : 1;               /**< enable to dump 802.11 ACK frame, default disabled */
+    uint32_t reserved : 19;                 /**< reserved */
 } wifi_csi_acquire_config_t;
 
 /**
@@ -157,7 +158,7 @@ typedef struct {
     unsigned : 15;                                /**< reserved */
     unsigned : 15;                                /**< reserved */
     unsigned : 2;                                 /**< reserved */
-    unsigned noise_floor : 8;                     /**< the noise floor of the reception frame */
+    signed noise_floor : 8;                       /**< the noise floor of the reception frame */
     unsigned channel : 4;                         /**< the primary channel */
     unsigned second : 4;                          /**< the second channel if in HT40 */
     unsigned : 8;                                 /**< reserved */

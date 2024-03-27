@@ -16,6 +16,7 @@
 #include "stack/bt_types.h"
 #include "common/bt_target.h"
 #include "esp_gap_ble_api.h"
+#include "bta/bta_api.h"
 
 #if (SMP_INCLUDED == TRUE)
 #define BTC_LE_LOCAL_KEY_IR       (1<<0)
@@ -61,6 +62,8 @@ bt_status_t btc_storage_remove_ble_bonding_keys(bt_bdaddr_t *remote_bd_addr);
 
 bool btc_storage_compare_address_key_value(bt_bdaddr_t *remote_bd_addr, uint8_t key_type, void *key_value, int key_length);
 
+bt_status_t _btc_storage_in_fetch_bonded_ble_device(const char *remote_bd_addr, int add);
+
 bt_status_t btc_storage_add_ble_local_key(char *key, uint8_t key_type, uint8_t key_length);
 
 bt_status_t btc_storage_remove_ble_local_keys(void);
@@ -83,11 +86,14 @@ bt_status_t btc_storage_set_ble_dev_type(bt_bdaddr_t *bd_addr, bool flush);
 
 bt_status_t btc_storage_remove_ble_dev_type(bt_bdaddr_t *remote_bd_addr, bool flush);
 
-bt_status_t btc_storage_load_bonded_ble_devices(void);
-
 bt_status_t btc_storage_get_bonded_ble_devices_list(esp_ble_bond_dev_t *bond_dev, int dev_num);
 
 int btc_storage_get_num_ble_bond_devices(void);
+
+void btc_storage_delete_duplicate_ble_devices(void);
+
+void btc_storage_remove_unused_sections(uint8_t *cur_addr, tBTM_LE_PID_KEYS *del_pid_key);
+
 #endif  ///SMP_INCLUDED == TRUE
 
 #define BTC_BLE_STORAGE_GATT_CL_SUPP_FEAT_STR       "GATT_CL_SUPP_FEAT"

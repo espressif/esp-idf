@@ -1,3 +1,9 @@
+idf_build_get_property(target IDF_TARGET)
+
+if(${target} STREQUAL "linux")
+    return() # This component is not supported by the POSIX/Linux simulator
+endif()
+
 set(srcs "src/wifi_config.c"
         "src/wifi_scan.c"
         "src/wifi_ctrl.c"
@@ -22,6 +28,6 @@ endif()
 
 idf_component_register(SRCS "${srcs}"
                     INCLUDE_DIRS include
-                    PRIV_INCLUDE_DIRS src proto-c ../protocomm/proto-c
+                    PRIV_INCLUDE_DIRS src proto-c
                     REQUIRES lwip protocomm
                     PRIV_REQUIRES protobuf-c bt json esp_timer esp_wifi)

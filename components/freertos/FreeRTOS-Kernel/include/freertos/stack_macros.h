@@ -1,14 +1,12 @@
 /*
- * SPDX-FileCopyrightText: 2020 Amazon.com, Inc. or its affiliates
+ * FreeRTOS Kernel V10.5.1 (ESP-IDF SMP modified)
+ * Copyright (C) 2021 Amazon.com, Inc. or its affiliates.  All Rights Reserved.
+ *
+ * SPDX-FileCopyrightText: 2021 Amazon.com, Inc. or its affiliates
  *
  * SPDX-License-Identifier: MIT
  *
- * SPDX-FileContributor: 2016-2022 Espressif Systems (Shanghai) CO LTD
- */
-
-/*
- * FreeRTOS Kernel V10.4.3
- * Copyright (C) 2020 Amazon.com, Inc. or its affiliates.  All Rights Reserved.
+ * SPDX-FileContributor: 2023 Espressif Systems (Shanghai) CO LTD
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
  * this software and associated documentation files (the "Software"), to deal in
@@ -51,50 +49,40 @@
 
 /*-----------------------------------------------------------*/
 
-#if ( configCHECK_FOR_STACK_OVERFLOW == 0 )
-
-/* FreeRTOSConfig.h is not set to check for stack overflows. */
-    #define taskFIRST_CHECK_FOR_STACK_OVERFLOW()
-    #define taskSECOND_CHECK_FOR_STACK_OVERFLOW()
-
-#endif /* configCHECK_FOR_STACK_OVERFLOW == 0 */
-/*-----------------------------------------------------------*/
-
-#if ( configCHECK_FOR_STACK_OVERFLOW == 1 )
-
-/* FreeRTOSConfig.h is only set to use the first method of
- * overflow checking. */
-    #define taskSECOND_CHECK_FOR_STACK_OVERFLOW()
-
+/*
+ * portSTACK_LIMIT_PADDING is a number of extra words to consider to be in
+ * use on the stack.
+ */
+#ifndef portSTACK_LIMIT_PADDING
+    #define portSTACK_LIMIT_PADDING    0
 #endif
-/*-----------------------------------------------------------*/
 
-#if ( ( configCHECK_FOR_STACK_OVERFLOW > 0 ) && ( portSTACK_GROWTH < 0 ) )
+#if ( ( configCHECK_FOR_STACK_OVERFLOW == 1 ) && ( portSTACK_GROWTH < 0 ) )
 
 /* Only the current stack state is to be checked. */
-    #define taskFIRST_CHECK_FOR_STACK_OVERFLOW()                                                                                              \
-    {                                                                                                                                         \
-        /* Is the currently saved stack pointer within the stack limit? */                                                                    \
-        if( pxCurrentTCB[ xPortGetCoreID() ]->pxTopOfStack <= pxCurrentTCB[ xPortGetCoreID() ]->pxStack )                                     \
-        {                                                                                                                                     \
-            vApplicationStackOverflowHook( ( TaskHandle_t ) pxCurrentTCB[ xPortGetCoreID() ], pxCurrentTCB[ xPortGetCoreID() ]->pcTaskName ); \
-        }                                                                                                                                     \
+    #define taskCHECK_FOR_STACK_OVERFLOW( xCurCoreID )                                                                              \
+    {                                                                                                                               \
+        /* Is the currently saved stack pointer within the stack limit? */                                                          \
+        if( pxCurrentTCBs[ xCurCoreID ]->pxTopOfStack <= pxCurrentTCBs[ xCurCoreID ]->pxStack + portSTACK_LIMIT_PADDING )           \
+        {                                                                                                                           \
+            vApplicationStackOverflowHook( ( TaskHandle_t ) pxCurrentTCBs[ xCurCoreID ], pxCurrentTCBs[ xCurCoreID ]->pcTaskName ); \
+        }                                                                                                                           \
     }
 
-#endif /* configCHECK_FOR_STACK_OVERFLOW > 0 */
+#endif /* configCHECK_FOR_STACK_OVERFLOW == 1 */
 /*-----------------------------------------------------------*/
 
-#if ( ( configCHECK_FOR_STACK_OVERFLOW > 0 ) && ( portSTACK_GROWTH > 0 ) )
+#if ( ( configCHECK_FOR_STACK_OVERFLOW == 1 ) && ( portSTACK_GROWTH > 0 ) )
 
 /* Only the current stack state is to be checked. */
-    #define taskFIRST_CHECK_FOR_STACK_OVERFLOW()                                                                                              \
-    {                                                                                                                                         \
-                                                                                                                                              \
-        /* Is the currently saved stack pointer within the stack limit? */                                                                    \
-        if( pxCurrentTCB[ xPortGetCoreID() ]->pxTopOfStack >= pxCurrentTCB[ xPortGetCoreID() ]->pxEndOfStack )                                \
-        {                                                                                                                                     \
-            vApplicationStackOverflowHook( ( TaskHandle_t ) pxCurrentTCB[ xPortGetCoreID() ], pxCurrentTCB[ xPortGetCoreID() ]->pcTaskName ); \
-        }                                                                                                                                     \
+    #define taskCHECK_FOR_STACK_OVERFLOW( xCurCoreID )                                                                              \
+    {                                                                                                                               \
+                                                                                                                                    \
+        /* Is the currently saved stack pointer within the stack limit? */                                                          \
+        if( pxCurrentTCBs[ xCurCoreID ]->pxTopOfStack >= pxCurrentTCBs[ xCurCoreID ]->pxEndOfStack - portSTACK_LIMIT_PADDING )      \
+        {                                                                                                                           \
+            vApplicationStackOverflowHook( ( TaskHandle_t ) pxCurrentTCBs[ xCurCoreID ], pxCurrentTCBs[ xCurCoreID ]->pcTaskName ); \
+        }                                                                                                                           \
     }
 
 #endif /* configCHECK_FOR_STACK_OVERFLOW == 1 */
@@ -102,20 +90,18 @@
 
 #if ( ( configCHECK_FOR_STACK_OVERFLOW > 1 ) && ( portSTACK_GROWTH < 0 ) )
 
-    #define taskSECOND_CHECK_FOR_STACK_OVERFLOW()                                                                                                  \
-    {                                                                                                                                              \
-        static const uint8_t ucExpectedStackBytes[] = { tskSTACK_FILL_BYTE, tskSTACK_FILL_BYTE, tskSTACK_FILL_BYTE, tskSTACK_FILL_BYTE,            \
-                                                        tskSTACK_FILL_BYTE, tskSTACK_FILL_BYTE, tskSTACK_FILL_BYTE, tskSTACK_FILL_BYTE,            \
-                                                        tskSTACK_FILL_BYTE, tskSTACK_FILL_BYTE, tskSTACK_FILL_BYTE, tskSTACK_FILL_BYTE,            \
-                                                        tskSTACK_FILL_BYTE, tskSTACK_FILL_BYTE, tskSTACK_FILL_BYTE, tskSTACK_FILL_BYTE,            \
-                                                        tskSTACK_FILL_BYTE, tskSTACK_FILL_BYTE, tskSTACK_FILL_BYTE, tskSTACK_FILL_BYTE };          \
-                                                                                                                                                   \
-                                                                                                                                                   \
-        /* Has the extremity of the task stack ever been written over? */                                                                          \
-        if( memcmp( ( void * ) pxCurrentTCB[ xPortGetCoreID() ]->pxStack, ( void * ) ucExpectedStackBytes, sizeof( ucExpectedStackBytes ) ) != 0 ) \
-        {                                                                                                                                          \
-            vApplicationStackOverflowHook( ( TaskHandle_t ) pxCurrentTCB[ xPortGetCoreID() ], pxCurrentTCB[ xPortGetCoreID() ]->pcTaskName );      \
-        }                                                                                                                                          \
+    #define taskCHECK_FOR_STACK_OVERFLOW( xCurCoreID )                                                                              \
+    {                                                                                                                               \
+        const uint32_t * const pulStack = ( uint32_t * ) pxCurrentTCBs[ xCurCoreID ]->pxStack;                                      \
+        const uint32_t ulCheckValue = ( uint32_t ) 0xa5a5a5a5;                                                                      \
+                                                                                                                                    \
+        if( ( pulStack[ 0 ] != ulCheckValue ) ||                                                                                    \
+            ( pulStack[ 1 ] != ulCheckValue ) ||                                                                                    \
+            ( pulStack[ 2 ] != ulCheckValue ) ||                                                                                    \
+            ( pulStack[ 3 ] != ulCheckValue ) )                                                                                     \
+        {                                                                                                                           \
+            vApplicationStackOverflowHook( ( TaskHandle_t ) pxCurrentTCBs[ xCurCoreID ], pxCurrentTCBs[ xCurCoreID ]->pcTaskName ); \
+        }                                                                                                                           \
     }
 
 #endif /* #if( configCHECK_FOR_STACK_OVERFLOW > 1 ) */
@@ -123,25 +109,33 @@
 
 #if ( ( configCHECK_FOR_STACK_OVERFLOW > 1 ) && ( portSTACK_GROWTH > 0 ) )
 
-    #define taskSECOND_CHECK_FOR_STACK_OVERFLOW()                                                                                             \
-    {                                                                                                                                         \
-        int8_t * pcEndOfStack = ( int8_t * ) pxCurrentTCB[ xPortGetCoreID() ]->pxEndOfStack;                                                  \
-        static const uint8_t ucExpectedStackBytes[] = { tskSTACK_FILL_BYTE, tskSTACK_FILL_BYTE, tskSTACK_FILL_BYTE, tskSTACK_FILL_BYTE,       \
-                                                        tskSTACK_FILL_BYTE, tskSTACK_FILL_BYTE, tskSTACK_FILL_BYTE, tskSTACK_FILL_BYTE,       \
-                                                        tskSTACK_FILL_BYTE, tskSTACK_FILL_BYTE, tskSTACK_FILL_BYTE, tskSTACK_FILL_BYTE,       \
-                                                        tskSTACK_FILL_BYTE, tskSTACK_FILL_BYTE, tskSTACK_FILL_BYTE, tskSTACK_FILL_BYTE,       \
-                                                        tskSTACK_FILL_BYTE, tskSTACK_FILL_BYTE, tskSTACK_FILL_BYTE, tskSTACK_FILL_BYTE };     \
-                                                                                                                                              \
-                                                                                                                                              \
-        pcEndOfStack -= sizeof( ucExpectedStackBytes );                                                                                       \
-                                                                                                                                              \
-        /* Has the extremity of the task stack ever been written over? */                                                                     \
-        if( memcmp( ( void * ) pcEndOfStack, ( void * ) ucExpectedStackBytes, sizeof( ucExpectedStackBytes ) ) != 0 )                         \
-        {                                                                                                                                     \
-            vApplicationStackOverflowHook( ( TaskHandle_t ) pxCurrentTCB[ xPortGetCoreID() ], pxCurrentTCB[ xPortGetCoreID() ]->pcTaskName ); \
-        }                                                                                                                                     \
+    #define taskCHECK_FOR_STACK_OVERFLOW( xCurCoreID )                                                                                    \
+    {                                                                                                                                     \
+        int8_t * pcEndOfStack = ( int8_t * ) pxCurrentTCBs[ xCurCoreID ]->pxEndOfStack;                                                   \
+        static const uint8_t ucExpectedStackBytes[] = { tskSTACK_FILL_BYTE, tskSTACK_FILL_BYTE, tskSTACK_FILL_BYTE, tskSTACK_FILL_BYTE,   \
+                                                        tskSTACK_FILL_BYTE, tskSTACK_FILL_BYTE, tskSTACK_FILL_BYTE, tskSTACK_FILL_BYTE,   \
+                                                        tskSTACK_FILL_BYTE, tskSTACK_FILL_BYTE, tskSTACK_FILL_BYTE, tskSTACK_FILL_BYTE,   \
+                                                        tskSTACK_FILL_BYTE, tskSTACK_FILL_BYTE, tskSTACK_FILL_BYTE, tskSTACK_FILL_BYTE,   \
+                                                        tskSTACK_FILL_BYTE, tskSTACK_FILL_BYTE, tskSTACK_FILL_BYTE, tskSTACK_FILL_BYTE }; \
+                                                                                                                                          \
+                                                                                                                                          \
+        pcEndOfStack -= sizeof( ucExpectedStackBytes );                                                                                   \
+                                                                                                                                          \
+        /* Has the extremity of the task stack ever been written over? */                                                                 \
+        if( memcmp( ( void * ) pcEndOfStack, ( void * ) ucExpectedStackBytes, sizeof( ucExpectedStackBytes ) ) != 0 )                     \
+        {                                                                                                                                 \
+            vApplicationStackOverflowHook( ( TaskHandle_t ) pxCurrentTCBs[ xCurCoreID ], pxCurrentTCBs[ xCurCoreID ]->pcTaskName );       \
+        }                                                                                                                                 \
     }
 
 #endif /* #if( configCHECK_FOR_STACK_OVERFLOW > 1 ) */
+/*-----------------------------------------------------------*/
+
+/* Remove stack overflow macro if not being used. */
+#ifndef taskCHECK_FOR_STACK_OVERFLOW
+    #define taskCHECK_FOR_STACK_OVERFLOW( xCurCoreID )
+#endif
+
+
 
 #endif /* STACK_MACROS_H */

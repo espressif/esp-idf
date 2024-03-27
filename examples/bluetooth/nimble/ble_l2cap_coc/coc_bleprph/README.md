@@ -21,7 +21,7 @@ Maximum data of 512 bytes can be transferred over L2CAP when MTU is set to 512 a
 
 Note :
 
-* To install the dependency packages needed, please refer to the top level [README file](../../../../README.md#running-test-python-script-ttfw).
+* To install the dependency packages needed, please refer to the top level [README file](../../../../README.md#running-test-python-script-pytest).
 * * Currently this Python utility is only supported on Linux (BLE communication is via BLuez + DBus).
 
 ## How to Use Example

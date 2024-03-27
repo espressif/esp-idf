@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -29,11 +29,35 @@ typedef struct usbh_ep_handle_s *usbh_ep_handle_t;
 
 // ----------------------- Events --------------------------
 
+/**
+ * @brief Enumerator for various USBH events
+ */
 typedef enum {
-    USBH_EVENT_DEV_NEW,             /**< A new device has been enumerated and added to the device pool */
+    USBH_EVENT_CTRL_XFER,           /**< A control transfer has completed */
+    USBH_EVENT_NEW_DEV,             /**< A new device has been enumerated and added to the device pool */
     USBH_EVENT_DEV_GONE,            /**< A device is gone. Clients should close the device */
-    USBH_EVENT_DEV_ALL_FREE,        /**< All devices have been freed */
+    USBH_EVENT_ALL_FREE,            /**< All devices have been freed */
 } usbh_event_t;
+
+/**
+ * @brief Event data object for USBH events
+ */
+typedef struct {
+    usbh_event_t event;
+    union {
+        struct {
+            usb_device_handle_t dev_hdl;
+            urb_t *urb;
+        } ctrl_xfer_data;
+        struct {
+            uint8_t dev_addr;
+        } new_dev_data;
+        struct {
+            uint8_t dev_addr;
+            usb_device_handle_t dev_hdl;
+        } dev_gone_data;
+    };
+} usbh_event_data_t;
 
 /**
  * @brief Endpoint events
@@ -100,18 +124,11 @@ typedef enum {
 // ---------------------- Callbacks ------------------------
 
 /**
- * @brief Callback used to indicate completion of control transfers submitted usbh_dev_submit_ctrl_urb()
- * @note This callback is called from within usbh_process()
- */
-typedef void (*usbh_ctrl_xfer_cb_t)(usb_device_handle_t dev_hdl, urb_t *urb, void *arg);
-
-/**
  * @brief Callback used to indicate that the USBH has an event
  *
  * @note This callback is called from within usbh_process()
- * @note On a USBH_EVENT_DEV_ALL_FREE event, the dev_hdl argument is set to NULL
  */
-typedef void (*usbh_event_cb_t)(usb_device_handle_t dev_hdl, usbh_event_t usbh_event, void *arg);
+typedef void (*usbh_event_cb_t)(usbh_event_data_t *event_data, void *arg);
 
 /**
  * @brief Callback used by the USBH to request actions from the Hub driver
@@ -148,8 +165,6 @@ typedef struct {
 typedef struct {
     usb_proc_req_cb_t proc_req_cb;          /**< Processing request callback */
     void *proc_req_cb_arg;                  /**< Processing request callback argument */
-    usbh_ctrl_xfer_cb_t ctrl_xfer_cb;       /**< Control transfer callback */
-    void *ctrl_xfer_cb_arg;                 /**< Control transfer callback argument */
     usbh_event_cb_t event_cb;               /**< USBH event callback */
     void *event_cb_arg;                     /**< USBH event callback argument */
 } usbh_config_t;
@@ -497,7 +512,7 @@ esp_err_t usbh_hub_enum_fill_str_desc(usb_device_handle_t dev_hdl, const usb_str
 /**
  * @brief Indicate the device enumeration is completed
  *
- * This will all the device to be opened by clients, and also trigger a USBH_EVENT_DEV_NEW event.
+ * This will allow the device to be opened by clients, and also trigger a USBH_EVENT_NEW_DEV event.
  *
  * @note Hub Driver only
  * @note Must call in sequence

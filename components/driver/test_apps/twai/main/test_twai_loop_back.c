@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -86,14 +86,11 @@ TEST_CASE("twai_mode_std_no_ack_25kbps", "[twai-loop-back]")
 
 TEST_CASE("twai_mode_ext_no_ack_250kbps", "[twai-loop-back]")
 {
+    twai_handle_t twai_buses[SOC_TWAI_CONTROLLER_NUM] = {0};
     twai_timing_config_t t_config = TWAI_TIMING_CONFIG_250KBITS();
     twai_filter_config_t f_config = TWAI_FILTER_CONFIG_ACCEPT_ALL();
     // bind the TX and RX to the same GPIO to act like a loopback
     twai_general_config_t g_config = TWAI_GENERAL_CONFIG_DEFAULT(0, 0, TWAI_MODE_NO_ACK);
-    printf("install twai driver\r\n");
-    TEST_ESP_OK(twai_driver_install(&g_config, &t_config, &f_config));
-    TEST_ESP_OK(twai_start());
-
     twai_message_t tx_msg = {
         .identifier = 0x12345,
         .data_length_code = 6,
@@ -101,17 +98,33 @@ TEST_CASE("twai_mode_ext_no_ack_250kbps", "[twai-loop-back]")
         .self = true, // Transmitted message will also received by the same node
         .extd = true, // Extended Frame Format (29bit ID)
     };
+
+    printf("install twai driver\r\n");
+    for (int i = 0; i < SOC_TWAI_CONTROLLER_NUM; i++) {
+        g_config.controller_id = i;
+        g_config.tx_io = i;
+        g_config.rx_io = i;
+        TEST_ESP_OK(twai_driver_install_v2(&g_config, &t_config, &f_config, &twai_buses[i]));
+        TEST_ESP_OK(twai_start_v2(twai_buses[i]));
+    }
+
     printf("transmit message\r\n");
-    TEST_ESP_OK(twai_transmit(&tx_msg, pdMS_TO_TICKS(1000)));
+    for (int i = 0; i < SOC_TWAI_CONTROLLER_NUM; i++) {
+        TEST_ESP_OK(twai_transmit_v2(twai_buses[i], &tx_msg, pdMS_TO_TICKS(1000)));
+    }
 
     printf("receive message\r\n");
     twai_message_t rx_msg;
-    TEST_ESP_OK(twai_receive(&rx_msg, pdMS_TO_TICKS(1000)));
-    TEST_ASSERT_TRUE(rx_msg.data_length_code == 6);
-    for (int i = 0; i < 6; i++) {
-        TEST_ASSERT_EQUAL(tx_msg.data[i], rx_msg.data[i]);
+    for (int i = 0; i < SOC_TWAI_CONTROLLER_NUM; i++) {
+        TEST_ESP_OK(twai_receive_v2(twai_buses[i], &rx_msg, pdMS_TO_TICKS(1000)));
+        TEST_ASSERT_TRUE(rx_msg.data_length_code == 6);
+        for (int i = 0; i < 6; i++) {
+            TEST_ASSERT_EQUAL(tx_msg.data[i], rx_msg.data[i]);
+        }
     }
 
-    TEST_ESP_OK(twai_stop());
-    TEST_ESP_OK(twai_driver_uninstall());
+    for (int i = 0; i < SOC_TWAI_CONTROLLER_NUM; i++) {
+        TEST_ESP_OK(twai_stop_v2(twai_buses[i]));
+        TEST_ESP_OK(twai_driver_uninstall_v2(twai_buses[i]));
+    }
 }

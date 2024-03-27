@@ -532,26 +532,53 @@ The linker script template is the skeleton in which the generated placement rule
 
 To reference the placement rules collected under a ``target`` token, the following syntax is used:
 
-.. code-block:: none
+.. only:: SOC_MEM_NON_CONTIGUOUS_SRAM
 
-    mapping[target]
+    .. code-block:: none
+
+        arrays[target]      /* refers to objects under the SURROUND keyword */
+        mapping[target]     /* refers to all other data */
+
+.. only:: not SOC_MEM_NON_CONTIGUOUS_SRAM
+
+    .. code-block:: none
+
+        mapping[target]
 
 Example:
 
 The example below is an excerpt from a possible linker script template. It defines an output section ``.iram0.text``, and inside is a marker referencing the target ``iram0_text``.
 
-.. code-block:: none
+.. only:: SOC_MEM_NON_CONTIGUOUS_SRAM
 
-    .iram0.text :
-    {
-        /* Code marked as runnning out of IRAM */
-        _iram_text_start = ABSOLUTE(.);
+    .. code-block:: none
 
-        /* Marker referencing iram0_text */
-        mapping[iram0_text]
+        .iram0.text :
+        {
+            /* Code marked as runnning out of IRAM */
+            _iram_text_start = ABSOLUTE(.);
 
-        _iram_text_end = ABSOLUTE(.);
-    } > iram0_0_seg
+            /* Markers referencing iram0_text */
+            arrays[iram0_text]
+            mapping[iram0_text]
+
+            _iram_text_end = ABSOLUTE(.);
+        } > iram0_0_seg
+
+.. only:: not SOC_MEM_NON_CONTIGUOUS_SRAM
+
+    .. code-block:: none
+
+        .iram0.text :
+        {
+            /* Code marked as runnning out of IRAM */
+            _iram_text_start = ABSOLUTE(.);
+
+            /* Marker referencing iram0_text */
+            mapping[iram0_text]
+
+            _iram_text_end = ABSOLUTE(.);
+        } > iram0_0_seg
 
 Suppose the generator collected the fragment definitions below:
 
@@ -600,17 +627,12 @@ Then the corresponding excerpt from the generated linker script will be as follo
 
 ``*(.iram1 .iram1.*)``
 
-    Rule generated from the default scheme entry 	``iram -> iram0_text``. Since the default scheme specifies an ``iram -> iram0_text`` entry, it too is placed wherever ``iram0_text`` is referenced by a marker. Since it is a rule generated from the default scheme, it comes first among all other rules collected under the same target name.
+    Rule generated from the default scheme entry ``iram -> iram0_text``. Since the default scheme specifies an ``iram -> iram0_text`` entry, it too is placed wherever ``iram0_text`` is referenced by a marker. Since it is a rule generated from the default scheme, it comes first among all other rules collected under the same target name.
+
+.. only:: not esp32c5
 
     The linker script template currently used is :component_file:`esp_system/ld/{IDF_TARGET_PATH_NAME}/sections.ld.in`; the generated output script ``sections.ld`` is put under its build directory.
 
-.. _ldgen-migrate-lf-grammar :
+.. only:: esp32c5
 
-Migrate to ESP-IDF v5.0 Linker Script Fragment Files Grammar
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-The old grammar supported in ESP-IDF v3.x would be dropped in ESP-IDF v5.0. Here are a few notes on how to migrate properly:
-
-1. Now indentation is enforced and improperly indented fragment files would generate a runtime parse exception. This was not enforced in the old version but previous documentation and examples demonstrate properly indented grammar.
-2. Migrate the old condition entry to the ``if...elif...else`` structure for conditionals. You can refer to the :ref:`earlier chapter <ldgen-conditional-placements>` for detailed grammar.
-3. mapping fragments now requires a name like other fragment types.
+    The linker script template currently used is :component_file:`esp_system/ld/esp32c5/beta3/sections.ld.in`; the generated output script ``sections.ld`` is put under its build directory.

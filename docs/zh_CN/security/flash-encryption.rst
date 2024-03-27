@@ -31,21 +31,21 @@ flash 加密功能用于加密与 {IDF_TARGET_NAME} 搭载使用的片外 flash 
 
 .. _encrypted-partitions:
 
-Encrypted Partitions
+加密分区
 --------------------
 
-启用 flash 加密后，系统将默认加密下列类型的 flash 数据：
+启用 flash 加密后，会默认加密以下类型的数据：
 
-- 固件引导加载程序
+- :ref:`second-stage-bootloader` （固件引导加载程序）
 - 分区表
 - :ref:`nvs_encr_key_partition`
 - Otadata
-- 所有 “app” 类型的分区
+- 所有 ``app`` 类型的分区
 
 其他类型的数据将视情况进行加密：
 
-- 任何在分区表中标有“加密”标志的分区。详情请见 :ref:`encrypted-partition-flag`。
-- 如果启用了安全启动，则可以加密安全启动引导程序摘要（见下文）。
+- 分区表中标有 ``encrypted`` 标志的分区。如需了解详情，请参考 :ref:`encrypted-partition-flag`。
+- 如果启用了安全启动，则会对安全启动引导程序摘要进行加密（见下文）。
 
 .. _flash-encryption-efuse:
 
@@ -180,9 +180,9 @@ flash 的加密过程
 
   2. 固件的引导加载程序将读取 ``{IDF_TARGET_CRYPT_CNT}`` eFuse 值 (``0b0000000``)。因为该值为 0（偶数位），固件的引导加载程序将配置并启用 flash 加密块，同时将 ``FLASH_CRYPT_CONFIG`` eFuse 的值编程为 0xF。关于 flash 加密块的更多信息，请参考 *{IDF_TARGET_NAME} 技术参考手册* > *eFuse 控制器 (eFuse)* > *flash 加密块* [`PDF <{IDF_TARGET_TRM_CN_URL}#efuse>`__]。
 
-  3. 固件的引导加载程序使用 RNG（随机数生成）模块生成 AES-256 位密钥，然后将其写入 ``flash_encryption`` eFuse 中。由于 ``flash_encryption`` eFuse 已设置编写和读取保护位，将无法通过软件访问密钥。flash 加密操作完全在硬件中完成，无法通过软件访问密钥。
+  3. 固件引导加载程序首先检查 eFuse 中是否已经存在有效密钥（例如用 espefuse 工具烧写的密钥），如果存在，则会跳过密钥生成，并将该密钥用于 flash 加密过程。否则，固件引导加载程序会使用 RNG（随机数发生器）模块生成一个 AES-256 位密钥，并将其写入 ``flash_encryption`` eFuse 中。由于已设置了 ``flash_encryption`` eFuse 的读保护位和写保护位，因此无法通过软件访问密钥。flash 加密操作完全在硬件中完成，无法通过软件访问密钥。
 
-  4. flash 加密块将加密 flash 的内容（固件的引导加载程序、应用程序、以及标有“加密”标志的分区）。就地加密可能会耗些时间（对于大分区最多需要一分钟）。
+  4. flash 加密块将加密 flash 的内容（固件的引导加载程序、应用程序、以及标有 ``加密`` 标志的分区）。就地加密可能会耗些时间（对于大分区最多需要一分钟）。
 
   5. 固件引导加载程序将在 ``{IDF_TARGET_CRYPT_CNT}`` (0b0000001) 中设置第一个可用位来对已加密的 flash 内容进行标记。设置奇数个比特位。
 
@@ -198,7 +198,7 @@ flash 的加密过程
 
   2. 固件的引导加载程序将读取 ``{IDF_TARGET_CRYPT_CNT}`` eFuse 值 (``0b000``)。因为该值为 0（偶数位），固件引导加载程序将配置并启用 flash 加密块。关于 flash 加密块的更多信息，请参考 *{IDF_TARGET_NAME} 技术参考手册* > *eFuse 控制器 (eFuse)* > *自动加密块* [`PDF <{IDF_TARGET_TRM_CN_URL}#efuse>`__]。
 
-  3. 固件的引导加载程序使用 RNG（随机数生成）模块生成 256 位或 512 位密钥，具体取决于 :ref:`生成的 XTS-AES 密钥的大小 <CONFIG_SECURE_FLASH_ENCRYPTION_KEYSIZE>`，然后分别将其写入一个或两个 `BLOCK_KEYN` eFuses。软件也为存储密钥的块更新了 ``KEY_PURPOSE_N``。由于一或两个 ``BLOCK_KEYN`` eFuse 已设置编写和读取保护位，将无法通过软件访问密钥。``KEY_PURPOSE_N`` 字段也受写保护。flash 加密操作完全在硬件中完成，无法通过软件访问密钥。
+  3. 固件引导加载程序首先检查 eFuse 中是否已经存在有效密钥（例如用 espefuse 工具烧写的密钥），如果存在，则会跳过密钥生成，并将该密钥用于 flash 加密过程。否则，固件引导加载程序使用 RNG（随机数发生器）模块生成一个 256 位或 512 位的密钥，具体位数取决于 :ref:`生成的 XTS-AES 密钥的大小 <CONFIG_SECURE_FLASH_ENCRYPTION_KEYSIZE>`，然后将其分别写入一个或两个 `BLOCK_KEYN` eFuse 中。软件也为存储密钥的块更新了 ``KEY_PURPOSE_N``。由于上述一个或两个 ``BLOCK_KEYN`` eFuse 已设置了读保护和写保护位，因此无法通过软件访问密钥。``KEY_PURPOSE_N`` 字段也受写保护。flash 加密操作完全在硬件中完成，无法通过软件访问密钥。
 
   4. flash 加密块将加密 flash 的内容（固件的引导加载程序、应用程序、以及标有“加密”标志的分区）。就地加密可能会耗些时间（对于大分区最多需要一分钟）。
 
@@ -224,7 +224,7 @@ flash 的加密过程
 
   2. 固件的引导加载程序将读取 ``{IDF_TARGET_CRYPT_CNT}`` eFuse 值 (``0b000``)。因为该值为 0（偶数位），固件引导加载程序将配置并启用 flash 加密块。关于 flash 加密块的更多信息，请参考 `{IDF_TARGET_NAME} 技术参考手册 <{IDF_TARGET_TRM_CN_URL}>`_。
 
-  3. 固件的引导加载程序使用 RNG（随机数生成）模块生成 256 位密钥，然后将其写入 `BLOCK_KEYN` eFuse。软件也为存储密钥的块更新了 ``KEY_PURPOSE_N``。由于 ``BLOCK_KEYN`` eFuse 已设置编写和读取保护位，故无法通过软件访问密钥。``KEY_PURPOSE_N`` 字段也受写保护。flash 加密操作完全在硬件中完成，无法通过软件访问密钥。
+  3. 固件的引导加载程序使用 RNG（随机数发生器）模块生成 256 位密钥，然后将其写入 `BLOCK_KEYN` eFuse。软件也为存储密钥的块更新了 ``KEY_PURPOSE_N``。由于 ``BLOCK_KEYN`` eFuse 已设置了读保护和写保护位，因此无法通过软件访问密钥。``KEY_PURPOSE_N`` 字段也受写保护。flash 加密操作完全在硬件中完成，无法通过软件访问密钥。如果 eFuse 中已经存在有效密钥（例如用 espefuse 工具烧写的密钥），则会跳过密钥生成，并将该密钥用于 flash 加密过程。
 
   4. flash 加密块将加密 flash 的内容（固件的引导加载程序、应用程序、以及标有“加密”标志的分区）。就地加密可能会耗些时间（对于大分区最多需要一分钟）。
 
@@ -242,7 +242,7 @@ flash 的加密过程
 
   2. 固件的引导加载程序将读取 ``{IDF_TARGET_CRYPT_CNT}`` eFuse 值 (``0b000``)。因为该值为 0（偶数位），固件引导加载程序将配置并启用 flash 加密块。关于 flash 加密块的更多信息，请参考 `{IDF_TARGET_NAME} 技术参考手册 <{IDF_TARGET_TRM_CN_URL}>`_。
 
-  3. 固件的引导加载程序使用 RNG（随机数生成）模块生成 256 位或 128 位密钥（具体位数取决于 :ref:`Size of generated XTS-AES key <CONFIG_SECURE_FLASH_ENCRYPTION_KEYSIZE>`），然后将其写入 `BLOCK_KEY0` eFuse。同时，根据所选选项，软件对 ``XTS_KEY_LENGTH_256`` 进行更新。由于 ``BLOCK_KEY0`` eFuse 已设置编写和读取保护位，故无法通过软件访问密钥。flash 加密操作完全在硬件中完成，无法通过软件访问密钥。若使用 128 位 flash 加密密钥，则整个 eFuse 密钥块都受写保护，但只有低 128 位受读保护，高 128 位是可读的，以满足安全启动的需要。如果 flash 加密的密钥是 256 位，那么 ``XTS_KEY_LENGTH_256`` 为 1，否则为 0。为防止意外将 eFuse 从 0 改为 1，RELEASE 模式中设置了一个写保护位。
+  3. 固件的引导加载程序使用 RNG（随机数发生器）模块生成 256 位或 128 位密钥（具体位数取决于 :ref:`生成的 XTS-AES 密钥大小 <CONFIG_SECURE_FLASH_ENCRYPTION_KEYSIZE>`），然后将其写入 `BLOCK_KEY0` eFuse。同时，根据所选选项，软件对 ``XTS_KEY_LENGTH_256`` 进行更新。由于 ``BLOCK_KEY0`` eFuse 已设置写保护和读保护位，故无法通过软件访问密钥。flash 加密操作完全在硬件中完成，无法通过软件访问密钥。若使用 128 位 flash 加密密钥，则整个 eFuse 密钥块都受写保护，但只有低 128 位受读保护，高 128 位是可读的，以满足安全启动的需要。如果 flash 加密密钥是 256 位，那么 ``XTS_KEY_LENGTH_256`` 为 1，否则为 0。为防止意外将 eFuse 从 0 改为 1，为 RELEASE 模式设置了一个写保护位。如果 eFuse 中已经存在有效密钥（例如用 espefuse 工具烧写的密钥），则跳过密钥生成，并将该密钥用于 flash 加密过程。
 
   4. flash 加密块将加密 flash 的内容（固件的引导加载程序、应用程序、以及标有“加密”标志的分区）。就地加密可能会耗些时间（对于大分区最多需要一分钟）。
 
@@ -570,10 +570,10 @@ flash 加密设置
    :not esp32: - 如果不需要 UART ROM 下载模式，则应完全禁用该模式，或者永久设置为“安全下载模式”。安全下载模式永久性地将可用的命令限制在更新 SPI 配置、更改波特率、基本的 flash 写入和使用 `get_security_info` 命令返回当前启用的安全功能摘要。默认在发布模式下第一次启动时设置为安全下载模式。要完全禁用下载模式，请选择 :ref:`CONFIG_SECURE_UART_ROM_DL_MODE` 为“永久禁用 ROM 下载模式（推荐）”或在运行时调用 :cpp:func:`esp_efuse_disable_rom_download_mode`。
    - 启用 :doc:`安全启动<secure-boot-v2>` 作为额外的保护层，防止攻击者在启动前有选择地破坏 flash 中某部分。
 
-Enable Flash Encryption Externally
+外部启用 flash 加密
 ----------------------------------
 
-In the process mentioned above, flash encryption related eFuses which ultimately enable flash encryption are programmed through the firmware bootloader. Alternatively, all the eFuses can be programmed with the help of ``espefuse`` tool. Please refer :ref:`enable-flash-encryption-externally` for more details.
+在上述过程中，对与 flash 加密相关的 eFuse 是通过固件引导加载程序烧写的，或者，也可以借助 ``espefuse`` 工具烧写 eFuse。如需了解详情，请参考 :ref:`enable-flash-encryption-externally`。
 
 可能出现的错误
 -----------------
@@ -829,7 +829,7 @@ flash 加密的要点
 
   - 通过 {IDF_TARGET_NAME} 的 flash 缓存映射功能，flash 可支持透明访问——任何映射到地址空间的 flash 区域在读取时都将被透明地解密。
 
- 	  为便于访问，某些数据分区最好保持未加密状态，或者也可使用对已加密数据无效的 flash 友好型更新算法。由于 NVS 库无法与 flash 加密直接兼容，因此无法加密非易失性存储器的 NVS 分区。详情可参见 :ref:`NVS 加密 <nvs_encryption>`。
+    为便于访问，某些数据分区最好保持未加密状态，或者也可使用对已加密数据无效的 flash 友好型更新算法。由于 NVS 库无法与 flash 加密直接兼容，因此无法加密非易失性存储器的 NVS 分区。详情可参见 :ref:`NVS 加密 <nvs_encryption>`。
 
   - 如果以后可能需要启用 flash 加密，则编程人员在编写 :ref:`使用加密 flash <reading-writing-content>` 代码时需小心谨慎。
 

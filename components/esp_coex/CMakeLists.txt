@@ -1,5 +1,9 @@
 idf_build_get_property(idf_target IDF_TARGET)
 
+if(${idf_target} STREQUAL "linux")
+    return() # This component is not supported by the POSIX/Linux simulator
+endif()
+
 if(CONFIG_ESP_COEX_SW_COEXIST_ENABLE OR CONFIG_ESP_COEX_EXTERNAL_COEXIST_ENABLE)
     if(CONFIG_APP_NO_BLOBS)
         set(link_binary_libs 0)
@@ -32,6 +36,9 @@ if(CONFIG_ESP_COEX_SW_COEXIST_ENABLE OR CONFIG_ESP_COEX_EXTERNAL_COEXIST_ENABLE)
         add_prebuilt_library(${blob} "${CMAKE_CURRENT_SOURCE_DIR}/lib/${target_name}/lib${blob}.a"
                                 REQUIRES ${COMPONENT_NAME})
         target_link_libraries(${COMPONENT_LIB} PUBLIC ${blob})
+        if(CONFIG_IDF_TARGET_ESP32)
+            target_link_libraries(${COMPONENT_LIB} PRIVATE btdm_app)
+        endif()
     endif()
 
     target_compile_options(${COMPONENT_LIB} PRIVATE "-Wno-format")

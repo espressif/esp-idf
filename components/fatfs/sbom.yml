@@ -1,0 +1,5 @@
+name: 'FatFs'
+version: 'R0.15'
+supplier: 'Organization: Espressif Systems (Shanghai) CO LTD'
+originator: 'Person: ChaN'
+description: 'Generic FAT Filesystem Module for embedded systems.'

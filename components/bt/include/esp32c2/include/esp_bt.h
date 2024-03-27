@@ -15,6 +15,7 @@
 
 #include "nimble/nimble_npl.h"
 #include "../../../../controller/esp32c2/esp_bt_cfg.h"
+#include "hal/efuse_hal.h"
 
 #ifdef CONFIG_BT_LE_HCI_INTERFACE_USE_UART
 #include "driver/uart.h"
@@ -89,7 +90,8 @@ typedef enum {
     ESP_PWR_LVL_P12 = 12,             /*!< Corresponding to  +12dbm */
     ESP_PWR_LVL_P15 = 13,             /*!< Corresponding to  +15dbm */
     ESP_PWR_LVL_P18 = 14,             /*!< Corresponding to  +18dbm */
-    ESP_PWR_LVL_P21 = 15,              /*!< Corresponding to  +21dbm */
+    ESP_PWR_LVL_P20 = 15,              /*!< Corresponding to  +20dbm */
+    ESP_PWR_LVL_P21 = 15,              /*!< Corresponding to  +20dbm, this enum variable has been deprecated */
     ESP_PWR_LVL_INVALID = 0xFF,         /*!< Indicates an invalid value */
 } esp_power_level_t;
 
@@ -104,6 +106,14 @@ typedef enum {
     ESP_BLE_ENHANCED_PWR_TYPE_CONN,
     ESP_BLE_ENHANCED_PWR_TYPE_MAX,
 } esp_ble_enhanced_power_type_t;
+
+/**
+ * @brief Select buffers
+*/
+typedef enum {
+    ESP_BLE_LOG_BUF_HCI         = 0x02,
+    ESP_BLE_LOG_BUF_CONTROLLER  = 0x05,
+} esp_ble_log_buf_t;
 
 /**
  * @brief Address type and address value.
@@ -156,7 +166,7 @@ esp_power_level_t esp_ble_tx_power_get_enhanced(esp_ble_enhanced_power_type_t po
  */
 uint8_t esp_ble_get_chip_rev_version(void);
 
-#define CONFIG_VERSION  0x20230629
+#define CONFIG_VERSION  0x20231124
 #define CONFIG_MAGIC    0x5A5AA5A5
 
 /**
@@ -213,9 +223,10 @@ typedef struct {
     uint8_t cca_drop_mode;                       /*!< CCA drop mode */
     int8_t cca_low_tx_pwr;                       /*!< Low TX power setting for CCA */
     uint8_t main_xtal_freq;                      /*!< Main crystal frequency */
-    uint8_t version_num;                         /*!< Version number */
-    uint8_t ignore_wl_for_direct_adv;            /*!< Ignore the white list for directed advertising */
-    uint32_t config_magic;                       /*!< Configuration magic value */
+    uint8_t version_num;                        /*!< Version number */
+    uint8_t ignore_wl_for_direct_adv;           /*!< Ignore the white list for directed advertising */
+    uint8_t csa2_select;                        /*!< Select CSA#2 */
+    uint32_t config_magic;                      /*!< Configuration magic value */
 } esp_bt_controller_config_t;
 
 #define BT_CONTROLLER_INIT_CONFIG_DEFAULT() {                                           \
@@ -267,6 +278,7 @@ typedef struct {
     .main_xtal_freq             = CONFIG_XTAL_FREQ,                                     \
     .version_num                = esp_ble_get_chip_rev_version(),                       \
     .ignore_wl_for_direct_adv   = 0,                                                    \
+    .csa2_select                = DEFAULT_BT_LE_50_FEATURE_SUPPORT,                     \
     .config_magic = CONFIG_MAGIC,                                                       \
 }
 

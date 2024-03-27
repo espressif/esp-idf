@@ -148,7 +148,6 @@ IRAM 优化
 .. list::
 
     - 启用 :ref:`CONFIG_FREERTOS_PLACE_FUNCTIONS_INTO_FLASH`。只要没有从 ISR 中错误地调用这些函数，就可以在所有配置中安全启用此选项。
-    - 启用 :ref:`CONFIG_FREERTOS_PLACE_SNAPSHOT_FUNS_INTO_FLASH`。启用此选项，将在 flash 中放置与快照相关的函数，如 ``vTaskGetSnapshot`` 或 ``uxTaskGetSnapshotAll``。
     - 启用 :ref:`CONFIG_RINGBUF_PLACE_FUNCTIONS_INTO_FLASH`。只要没有从 ISR 中错误地调用这些函数，就可以在所有配置中安全启用此选项。
     - 启用 :ref:`CONFIG_RINGBUF_PLACE_ISR_FUNCTIONS_INTO_FLASH`。如果从 IRAM 中的中断上下文中使用 ISR ringbuf 函数，例如启用了 :ref:`CONFIG_UART_ISR_IN_IRAM`，则无法安全使用此选项。在此情况下，安装 ESP-IDF 相关驱动程序时，将在运行时报错。
     :SOC_WIFI_SUPPORTED: - 禁用 Wi-Fi 选项 :ref:`CONFIG_ESP_WIFI_IRAM_OPT` 和/或 :ref:`CONFIG_ESP_WIFI_RX_IRAM_OPT` 会释放可用 IRAM，但会牺牲部分 Wi-Fi 性能。
@@ -161,6 +160,7 @@ IRAM 优化
     - 设置 :ref:`CONFIG_HAL_DEFAULT_ASSERTION_LEVEL` 为禁用 HAL 组件的断言，可以节省 IRAM 空间，对于经常调用 ``HAL_ASSERT`` 且位于 IRAM 中的 HAL 代码尤为如此。
     - 要禁用不需要的 flash 驱动程序，节省 IRAM 空间，请参阅 sdkconfig 菜单中的 ``Auto-detect Flash chips`` 选项。
     - 启用 :ref:`CONFIG_HEAP_PLACE_FUNCTION_INTO_FLASH`。只要未启用 :ref:`CONFIG_SPI_MASTER_ISR_IN_IRAM` 选项，且没有从 ISR 中错误地调用堆函数，就可以在所有配置中安全启用此选项。
+    :esp32c2: - 启用 :ref:`CONFIG_BT_RELEASE_IRAM`。 蓝牙所使用的 data，bss 和 text 段已经被分配在连续的RAM区间。当调用 ``esp_bt_mem_release`` 时，这些段都会被添加到 Heap 中。 这将节省约 22 KB 的 RAM。但要再次使用蓝牙功能，需要重启程序。
 
 .. only:: esp32
 

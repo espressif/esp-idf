@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -64,33 +64,33 @@ static void pinned_task(void *arg)
 
 TEST_CASE("FPU: Usage in task", "[freertos]")
 {
-    SemaphoreHandle_t done_sem = xSemaphoreCreateCounting(configNUM_CORES * TEST_PINNED_NUM_TASKS, 0);
+    SemaphoreHandle_t done_sem = xSemaphoreCreateCounting(CONFIG_FREERTOS_NUMBER_OF_CORES * TEST_PINNED_NUM_TASKS, 0);
     TEST_ASSERT_NOT_EQUAL(NULL, done_sem);
 
     for (int iter = 0; iter < TEST_PINNED_NUM_ITERS; iter++) {
-        TaskHandle_t task_handles[configNUM_CORES][TEST_PINNED_NUM_TASKS];
+        TaskHandle_t task_handles[CONFIG_FREERTOS_NUMBER_OF_CORES][TEST_PINNED_NUM_TASKS];
 
         // Create test tasks for each core
-        for (int i = 0; i < configNUM_CORES; i++) {
+        for (int i = 0; i < CONFIG_FREERTOS_NUMBER_OF_CORES; i++) {
             for (int j = 0; j < TEST_PINNED_NUM_TASKS; j++) {
                 TEST_ASSERT_EQUAL(pdTRUE, xTaskCreatePinnedToCore(pinned_task, "task", 4096, (void *)done_sem, UNITY_FREERTOS_PRIORITY + 1, &task_handles[i][j], i));
             }
         }
 
         // Start the created tasks simultaneously
-        for (int i = 0; i < configNUM_CORES; i++) {
+        for (int i = 0; i < CONFIG_FREERTOS_NUMBER_OF_CORES; i++) {
             for (int j = 0; j < TEST_PINNED_NUM_TASKS; j++) {
                 xTaskNotifyGive(task_handles[i][j]);
             }
         }
 
         // Wait for the tasks to complete
-        for (int i = 0; i < configNUM_CORES * TEST_PINNED_NUM_TASKS; i++) {
+        for (int i = 0; i < CONFIG_FREERTOS_NUMBER_OF_CORES * TEST_PINNED_NUM_TASKS; i++) {
             xSemaphoreTake(done_sem, portMAX_DELAY);
         }
 
         // Delete the tasks
-        for (int i = 0; i < configNUM_CORES; i++) {
+        for (int i = 0; i < CONFIG_FREERTOS_NUMBER_OF_CORES; i++) {
             for (int j = 0; j < TEST_PINNED_NUM_TASKS; j++) {
                 vTaskDelete(task_handles[i][j]);
             }
@@ -123,14 +123,14 @@ Expected:
     - Each task cleans up its FPU context on deletion
 */
 
-#if configNUM_CORES > 1
+#if CONFIG_FREERTOS_NUMBER_OF_CORES > 1
 
 #define TEST_UNPINNED_NUM_ITERS     5
 
 static void unpinned_task(void *arg)
 {
     // Disable scheduling/preemption to make sure current core ID doesn't change
-#if CONFIG_FREERTOS_SMP
+#if ( ( CONFIG_FREERTOS_SMP ) && ( !CONFIG_FREERTOS_UNICORE ) )
     vTaskPreemptionDisable(NULL);
 #else
     vTaskSuspendAll();
@@ -141,7 +141,7 @@ static void unpinned_task(void *arg)
 #if CONFIG_FREERTOS_SMP
     TEST_ASSERT_EQUAL(tskNO_AFFINITY, vTaskCoreAffinityGet(NULL));
 #else
-    TEST_ASSERT_EQUAL(tskNO_AFFINITY, xTaskGetAffinity(NULL));
+    TEST_ASSERT_EQUAL(tskNO_AFFINITY, xTaskGetCoreID(NULL));
 #endif
 #endif // !CONFIG_FREERTOS_UNICORE
 
@@ -162,11 +162,11 @@ static void unpinned_task(void *arg)
 #if CONFIG_FREERTOS_SMP
     TEST_ASSERT_EQUAL(1 << cur_core_num, vTaskCoreAffinityGet(NULL));
 #else
-    TEST_ASSERT_EQUAL(cur_core_num, xTaskGetAffinity(NULL));
+    TEST_ASSERT_EQUAL(cur_core_num, xTaskGetCoreID(NULL));
 #endif
 #endif // !CONFIG_FREERTOS_UNICORE
     // Reenable scheduling/preemption
-#if CONFIG_FREERTOS_SMP
+#if ( ( CONFIG_FREERTOS_SMP ) && ( !CONFIG_FREERTOS_UNICORE ) )
     vTaskPreemptionEnable(NULL);
 #else
     xTaskResumeAll();
@@ -194,7 +194,6 @@ typedef struct {
     TaskHandle_t main;
 } ParamsFPU;
 
-
 /**
  * @brief Function performing some simple calculation using several FPU registers.
  *        The goal is to be preempted by a task that also uses the FPU on the same core.
@@ -206,8 +205,7 @@ void fpu_calculation(void* arg)
     const float init = negative ? -1.f : 1.f;
     float f = init;
 
-    for(int i = 0; i < 10; i++)
-    {
+    for (int i = 0; i < 10; i++) {
         /* The following calculation doesn't really have any meaning, we try to use several FPU registers and operations */
         float delta = negative ? -1.1f : 1.1f;
         for (int i = 0; i < 1000; i++) {
@@ -222,7 +220,7 @@ void fpu_calculation(void* arg)
          * It'll have the sign of the other tasks' `f` value.
          * Use assert to make sure the sign is correct. Using TEST_ASSERT_TRUE triggers a stack overflow.
          */
-        assert( (negative && f < 0.0f) || (!negative && f > 0.0f) );
+        assert((negative && f < 0.0f) || (!negative && f > 0.0f));
         f = init;
 
         /* Give the hand back to FreeRTOS to avoid any watchdog */
@@ -232,8 +230,6 @@ void fpu_calculation(void* arg)
     xTaskNotifyGive(p->main);
     vTaskDelete(NULL);
 }
-
-
 
 TEST_CASE("FPU: Unsolicited context switch between tasks using FPU", "[freertos]")
 {
@@ -252,5 +248,5 @@ TEST_CASE("FPU: Unsolicited context switch between tasks using FPU", "[freertos]
     ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
 }
 
-#endif // configNUM_CORES > 1
+#endif // CONFIG_FREERTOS_NUMBER_OF_CORES > 1
 #endif // SOC_CPU_HAS_FPU

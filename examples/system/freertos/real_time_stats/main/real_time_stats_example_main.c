@@ -7,6 +7,7 @@
    CONDITIONS OF ANY KIND, either express or implied.
 */
 
+#include "sdkconfig.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <inttypes.h>
@@ -53,7 +54,7 @@ static esp_err_t print_real_time_stats(TickType_t xTicksToWait)
 {
     TaskStatus_t *start_array = NULL, *end_array = NULL;
     UBaseType_t start_array_size, end_array_size;
-    uint32_t start_run_time, end_run_time;
+    configRUN_TIME_COUNTER_TYPE start_run_time, end_run_time;
     esp_err_t ret;
 
     //Allocate array to store current task states
@@ -109,7 +110,7 @@ static esp_err_t print_real_time_stats(TickType_t xTicksToWait)
         //Check if matching task found
         if (k >= 0) {
             uint32_t task_elapsed_time = end_array[k].ulRunTimeCounter - start_array[i].ulRunTimeCounter;
-            uint32_t percentage_time = (task_elapsed_time * 100UL) / (total_elapsed_time * portNUM_PROCESSORS);
+            uint32_t percentage_time = (task_elapsed_time * 100UL) / (total_elapsed_time * CONFIG_FREERTOS_NUMBER_OF_CORES);
             printf("| %s | %"PRIu32" | %"PRIu32"%%\n", start_array[i].pcTaskName, task_elapsed_time, percentage_time);
         }
     }

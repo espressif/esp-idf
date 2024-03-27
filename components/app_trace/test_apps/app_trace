@@ -1,0 +1,1 @@
+-DSDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.ci.app_trace" -B build/app_trace -DSDKCONFIG=build/app_trace/sdkconfig

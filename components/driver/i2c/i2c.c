@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -28,6 +28,10 @@
 #include "esp_rom_sys.h"
 #include <sys/param.h>
 #include "soc/clk_tree_defs.h"
+#include "esp_private/gpio.h"
+#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
+#include "esp_private/sleep_retention.h"
+#endif
 
 #if SOC_I2C_SUPPORT_APB || SOC_I2C_SUPPORT_XTAL
 #include "esp_private/esp_clk.h"
@@ -53,8 +57,8 @@ static const char *I2C_TAG = "i2c";
 #define I2C_ADDR_ERROR_STR             "i2c null address error"
 #define I2C_DRIVER_NOT_INSTALL_ERR_STR "i2c driver not installed"
 #if SOC_I2C_SUPPORT_SLAVE
-    #define I2C_SLAVE_BUFFER_LEN_ERR_STR   "i2c buffer size too small for slave mode"
-    #define I2C_MODE_SLAVE_ERR_STR         "Only allowed in slave mode"
+#define I2C_SLAVE_BUFFER_LEN_ERR_STR   "i2c buffer size too small for slave mode"
+#define I2C_MODE_SLAVE_ERR_STR         "Only allowed in slave mode"
 #endif
 #define I2C_EVT_QUEUE_ERR_STR          "i2c evt queue error"
 #define I2C_SEM_ERR_STR                "i2c semaphore error"
@@ -82,9 +86,9 @@ static const char *I2C_TAG = "i2c";
 #define I2C_CMD_EVT_DONE               (1)
 #define I2C_EVT_QUEUE_LEN              (1)
 #if SOC_I2C_SUPPORT_SLAVE
-    #define I2C_SLAVE_TIMEOUT_DEFAULT      (32000)     /* I2C slave timeout value, APB clock cycle number */
-    #define I2C_SLAVE_SDA_SAMPLE_DEFAULT   (10)        /* I2C slave sample time after scl positive edge default value */
-    #define I2C_SLAVE_SDA_HOLD_DEFAULT     (10)        /* I2C slave hold time after scl negative edge default value */
+#define I2C_SLAVE_TIMEOUT_DEFAULT      (32000)     /* I2C slave timeout value, APB clock cycle number */
+#define I2C_SLAVE_SDA_SAMPLE_DEFAULT   (10)        /* I2C slave sample time after scl positive edge default value */
+#define I2C_SLAVE_SDA_HOLD_DEFAULT     (10)        /* I2C slave hold time after scl negative edge default value */
 #endif
 #define I2C_MASTER_TOUT_CNUM_DEFAULT   (8)         /* I2C master timeout cycle number of I2C clock, after which the timeout interrupt will be triggered */
 #define I2C_ACKERR_CNT_MAX             (10)
@@ -109,6 +113,18 @@ static const char *I2C_TAG = "i2c";
 #define I2C_MEM_ALLOC_CAPS_INTERNAL     (MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT)
 #endif
 #define I2C_MEM_ALLOC_CAPS_DEFAULT      MALLOC_CAP_DEFAULT
+
+#if SOC_PERIPH_CLK_CTRL_SHARED
+#define I2C_CLOCK_SRC_ATOMIC() PERIPH_RCC_ATOMIC()
+#else
+#define I2C_CLOCK_SRC_ATOMIC()
+#endif
+
+#if !SOC_RCC_IS_INDEPENDENT
+#define I2C_RCC_ATOMIC() PERIPH_RCC_ATOMIC()
+#else
+#define I2C_RCC_ATOMIC()
+#endif
 
 /**
  * I2C bus are defined in the header files, let's check that the values are correct
@@ -148,7 +164,7 @@ typedef struct {
 
 /* INTERNAL_STRUCT_SIZE must be at least sizeof(i2c_cmd_link_t) */
 _Static_assert(I2C_INTERNAL_STRUCT_SIZE >= sizeof(i2c_cmd_link_t),
-                "I2C_INTERNAL_STRUCT_SIZE must be at least sizeof(i2c_cmd_link_t), please adjust this value.");
+               "I2C_INTERNAL_STRUCT_SIZE must be at least sizeof(i2c_cmd_link_t), please adjust this value.");
 
 typedef enum {
     I2C_STATUS_READ,      /*!< read status for current master command */
@@ -201,15 +217,14 @@ typedef struct {
 #endif
 } i2c_context_t;
 
-typedef struct
-{
+typedef struct {
     uint8_t character;          /*!< I2C source clock characteristic */
 } i2c_clk_alloc_t;
 
 static i2c_context_t i2c_context[I2C_NUM_MAX] = {
     I2C_CONTEX_INIT_DEF(I2C_NUM_0),
-/* Now that I2C_NUM_MAX is part of an enum (i2c_port_t), we cannot use
- * it anomore in the preprocessor! */
+    /* Now that I2C_NUM_MAX is part of an enum (i2c_port_t), we cannot use
+     * it anomore in the preprocessor! */
 #if SOC_I2C_NUM > 1
     I2C_CONTEX_INIT_DEF(I2C_NUM_1),
 #endif
@@ -240,7 +255,9 @@ static void i2c_hw_disable(i2c_port_t i2c_num)
 {
     I2C_ENTER_CRITICAL(&(i2c_context[i2c_num].spinlock));
     if (i2c_context[i2c_num].hw_enabled != false) {
-        periph_module_disable(i2c_periph_signal[i2c_num].module);
+        I2C_RCC_ATOMIC() {
+            i2c_ll_enable_bus_clock(i2c_num, false);
+        }
         i2c_context[i2c_num].hw_enabled = false;
     }
     I2C_EXIT_CRITICAL(&(i2c_context[i2c_num].spinlock));
@@ -250,7 +267,10 @@ static void i2c_hw_enable(i2c_port_t i2c_num)
 {
     I2C_ENTER_CRITICAL(&(i2c_context[i2c_num].spinlock));
     if (i2c_context[i2c_num].hw_enabled != true) {
-        periph_module_enable(i2c_periph_signal[i2c_num].module);
+        I2C_RCC_ATOMIC() {
+            i2c_ll_enable_bus_clock(i2c_num, true);
+            i2c_ll_reset_register(i2c_num);
+        }
         i2c_context[i2c_num].hw_enabled = true;
     }
     I2C_EXIT_CRITICAL(&(i2c_context[i2c_num].spinlock));
@@ -272,8 +292,8 @@ esp_err_t i2c_driver_install(i2c_port_t i2c_num, i2c_mode_t mode, size_t slv_rx_
     ESP_RETURN_ON_FALSE(i2c_num != LP_I2C_NUM_0, ESP_ERR_INVALID_ARG, I2C_TAG, "LP_I2C is not supported via i2c_driver_intall()");
 #endif // SOC_LP_I2C_SUPPORTED
 #if SOC_I2C_SUPPORT_SLAVE
-    ESP_RETURN_ON_FALSE(mode == I2C_MODE_MASTER || ( slv_rx_buf_len > 100 || slv_tx_buf_len > 100 ),
-              ESP_ERR_INVALID_ARG, I2C_TAG, I2C_SLAVE_BUFFER_LEN_ERR_STR);
+    ESP_RETURN_ON_FALSE(mode == I2C_MODE_MASTER || (slv_rx_buf_len > 100 || slv_tx_buf_len > 100),
+                        ESP_ERR_INVALID_ARG, I2C_TAG, I2C_SLAVE_BUFFER_LEN_ERR_STR);
 #endif // SOC_I2C_SUPPORT_SLAVE
     esp_err_t ret = ESP_OK;
 
@@ -299,11 +319,12 @@ esp_err_t i2c_driver_install(i2c_port_t i2c_num, i2c_mode_t mode, size_t slv_rx_
 #if CONFIG_SPIRAM_USE_MALLOC
         p_i2c->intr_alloc_flags = intr_alloc_flags;
 #endif
+
 #if SOC_I2C_SUPPORT_SLAVE
         if (mode == I2C_MODE_SLAVE) {
 
 #if CONFIG_RINGBUF_PLACE_ISR_FUNCTIONS_INTO_FLASH
-            if (intr_alloc_flags & ESP_INTR_FLAG_IRAM ) {
+            if (intr_alloc_flags & ESP_INTR_FLAG_IRAM) {
                 ESP_LOGE(I2C_TAG, "ringbuf ISR functions in flash, but used in IRAM interrupt");
                 goto err;
             }
@@ -375,14 +396,16 @@ esp_err_t i2c_driver_install(i2c_port_t i2c_num, i2c_mode_t mode, size_t slv_rx_
         return ESP_FAIL;
     }
     i2c_hw_enable(i2c_num);
-    i2c_hal_init(&i2c_context[i2c_num].hal, i2c_num);
+    I2C_CLOCK_SRC_ATOMIC() {
+        i2c_hal_init(&i2c_context[i2c_num].hal, i2c_num);
+    }
     //Disable I2C interrupt.
     i2c_ll_disable_intr_mask(i2c_context[i2c_num].hal.dev, I2C_LL_INTR_MASK);
     i2c_ll_clear_intr_mask(i2c_context[i2c_num].hal.dev, I2C_LL_INTR_MASK);
     //hook isr handler
     ret = esp_intr_alloc(i2c_periph_signal[i2c_num].irq, intr_alloc_flags,
-                           i2c_isr_handler_default, p_i2c_obj[i2c_num],
-                           &p_i2c_obj[i2c_num]->intr_handle);
+                         i2c_isr_handler_default, p_i2c_obj[i2c_num],
+                         &p_i2c_obj[i2c_num]->intr_handle);
     ESP_GOTO_ON_ERROR(ret, err, I2C_TAG, I2C_INTR_ALLOC_ERR_STR);
 #if SOC_I2C_SUPPORT_SLAVE
     //Enable I2C slave rx interrupt
@@ -390,6 +413,11 @@ esp_err_t i2c_driver_install(i2c_port_t i2c_num, i2c_mode_t mode, size_t slv_rx_
         i2c_ll_slave_enable_rx_it(i2c_context[i2c_num].hal.dev);
     }
 #endif // SOC_I2C_SUPPORT_SLAVE
+
+#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
+    ret = sleep_retention_entries_create(i2c_regs_retention[i2c_num].link_list, i2c_regs_retention[i2c_num].link_num, REGDMA_LINK_PRI_7, I2C_SLEEP_RETENTION_MODULE(i2c_num));
+    ESP_GOTO_ON_ERROR(ret, err, I2C_TAG, "failed to allocate mem for sleep retention");
+#endif
     return ESP_OK;
 
 err:
@@ -442,6 +470,10 @@ esp_err_t i2c_driver_delete(i2c_port_t i2c_num)
     esp_intr_free(p_i2c->intr_handle);
     p_i2c->intr_handle = NULL;
 
+#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
+    sleep_retention_entries_destroy(I2C_SLEEP_RETENTION_MODULE(i2c_num));
+#endif
+
     if (p_i2c->cmd_mux) {
         // Let any command in progress finish.
         xSemaphoreTake(p_i2c->cmd_mux, portMAX_DELAY);
@@ -478,7 +510,9 @@ esp_err_t i2c_driver_delete(i2c_port_t i2c_num)
     }
 #endif
 
-    i2c_hal_deinit(&i2c_context[i2c_num].hal);
+    I2C_CLOCK_SRC_ATOMIC() {
+        i2c_hal_deinit(&i2c_context[i2c_num].hal);
+    }
     free(p_i2c_obj[i2c_num]);
     p_i2c_obj[i2c_num] = NULL;
 
@@ -706,9 +740,9 @@ static uint32_t s_get_src_clk_freq(i2c_clock_source_t clk_src)
 static i2c_clock_source_t s_get_clk_src(const uint32_t clk_flags, const uint32_t clk_speed)
 {
     i2c_clock_source_t clk_srcs[] = SOC_I2C_CLKS;
-    for (size_t i = 0; i < sizeof(clk_srcs)/ sizeof(clk_srcs[0]); i++) {
-        if ( ((clk_flags & i2c_clk_alloc[i].character) == clk_flags) &&
-             (clk_speed <= (s_get_src_clk_freq(clk_srcs[i]) / 20))) { // I2C SCL clock frequency should not larger than clock source frequency/20
+    for (size_t i = 0; i < sizeof(clk_srcs) / sizeof(clk_srcs[0]); i++) {
+        if (((clk_flags & i2c_clk_alloc[i].character) == clk_flags) &&
+                (clk_speed <= (s_get_src_clk_freq(clk_srcs[i]) / 20))) { // I2C SCL clock frequency should not larger than clock source frequency/20
             return clk_srcs[i];
         }
     }
@@ -728,14 +762,14 @@ esp_err_t i2c_param_config(i2c_port_t i2c_num, const i2c_config_t *i2c_conf)
     }
 #if SOC_I2C_SUPPORT_SLAVE
     else {
-    #if SOC_I2C_SUPPORT_REF_TICK
+#if SOC_I2C_SUPPORT_REF_TICK
         /* On ESP32-S2, APB clock shall always be used in slave mode as the
          * other one, I2C_CLK_SRC_REF_TICK, is too slow, even for sampling a
          * 100KHz SCL. */
         src_clk = I2C_CLK_SRC_APB;
-    #else
+#else
         src_clk = s_get_clk_src(i2c_conf->clk_flags, i2c_conf->slave.maximum_speed);
-    #endif // CONFIG_IDF_TARGET_ESP32S2
+#endif // CONFIG_IDF_TARGET_ESP32S2
     }
 #endif // SOC_I2C_SUPPORT_SLAVE
     ESP_RETURN_ON_FALSE(src_clk != I2C_CLOCK_INVALID, ESP_ERR_INVALID_ARG, I2C_TAG, I2C_CLK_FLAG_ERR_STR);
@@ -746,7 +780,9 @@ esp_err_t i2c_param_config(i2c_port_t i2c_num, const i2c_config_t *i2c_conf)
         return ret;
     }
     i2c_hw_enable(i2c_num);
-    i2c_hal_init(&i2c_context[i2c_num].hal, i2c_num);
+    I2C_CLOCK_SRC_ATOMIC() {
+        i2c_hal_init(&i2c_context[i2c_num].hal, i2c_num);
+    }
     I2C_ENTER_CRITICAL(&(i2c_context[i2c_num].spinlock));
     i2c_ll_disable_intr_mask(i2c_context[i2c_num].hal.dev, I2C_LL_INTR_MASK);
     i2c_ll_clear_intr_mask(i2c_context[i2c_num].hal.dev, I2C_LL_INTR_MASK);
@@ -754,7 +790,9 @@ esp_err_t i2c_param_config(i2c_port_t i2c_num, const i2c_config_t *i2c_conf)
     if (i2c_conf->mode == I2C_MODE_SLAVE) {  //slave mode
         i2c_hal_slave_init(&(i2c_context[i2c_num].hal));
         i2c_ll_slave_tx_auto_start_en(i2c_context[i2c_num].hal.dev, true);
-        i2c_ll_set_source_clk(i2c_context[i2c_num].hal.dev, src_clk);
+        I2C_CLOCK_SRC_ATOMIC() {
+            i2c_ll_set_source_clk(i2c_context[i2c_num].hal.dev, src_clk);
+        }
         i2c_ll_set_slave_addr(i2c_context[i2c_num].hal.dev, i2c_conf->slave.slave_addr, i2c_conf->slave.addr_10bit_en);
         i2c_ll_set_rxfifo_full_thr(i2c_context[i2c_num].hal.dev, I2C_FIFO_FULL_THRESH_VAL);
         i2c_ll_set_txfifo_empty_thr(i2c_context[i2c_num].hal.dev, I2C_FIFO_EMPTY_THRESH_VAL);
@@ -768,7 +806,9 @@ esp_err_t i2c_param_config(i2c_port_t i2c_num, const i2c_config_t *i2c_conf)
         i2c_hal_master_init(&(i2c_context[i2c_num].hal));
         //Default, we enable hardware filter
         i2c_ll_master_set_filter(i2c_context[i2c_num].hal.dev, I2C_FILTER_CYC_NUM_DEF);
-        i2c_hal_set_bus_timing(&(i2c_context[i2c_num].hal), i2c_conf->master.clk_speed, src_clk, s_get_src_clk_freq(src_clk));
+        I2C_CLOCK_SRC_ATOMIC() {
+            i2c_hal_set_bus_timing(&(i2c_context[i2c_num].hal), i2c_conf->master.clk_speed, src_clk, s_get_src_clk_freq(src_clk));
+        }
     }
     i2c_ll_update(i2c_context[i2c_num].hal.dev);
     I2C_EXIT_CRITICAL(&(i2c_context[i2c_num].spinlock));
@@ -904,21 +944,21 @@ esp_err_t i2c_get_timeout(i2c_port_t i2c_num, int *timeout)
 
 esp_err_t i2c_set_pin(i2c_port_t i2c_num, int sda_io_num, int scl_io_num, bool sda_pullup_en, bool scl_pullup_en, i2c_mode_t mode)
 {
-    ESP_RETURN_ON_FALSE(( i2c_num < I2C_NUM_MAX ), ESP_ERR_INVALID_ARG, I2C_TAG, I2C_NUM_ERROR_STR);
+    ESP_RETURN_ON_FALSE((i2c_num < I2C_NUM_MAX), ESP_ERR_INVALID_ARG, I2C_TAG, I2C_NUM_ERROR_STR);
     ESP_RETURN_ON_FALSE(((sda_io_num < 0) || ((GPIO_IS_VALID_OUTPUT_GPIO(sda_io_num)))), ESP_ERR_INVALID_ARG, I2C_TAG, I2C_SDA_IO_ERR_STR);
     ESP_RETURN_ON_FALSE(scl_io_num < 0 ||
 #if SOC_I2C_SUPPORT_SLAVE
-              (GPIO_IS_VALID_GPIO(scl_io_num) && mode == I2C_MODE_SLAVE) ||
+                        (GPIO_IS_VALID_GPIO(scl_io_num) && mode == I2C_MODE_SLAVE) ||
 #endif // SOC_I2C_SUPPORT_SLAVE
-              (GPIO_IS_VALID_OUTPUT_GPIO(scl_io_num)),
-              ESP_ERR_INVALID_ARG, I2C_TAG,
-              I2C_SCL_IO_ERR_STR);
+                        (GPIO_IS_VALID_OUTPUT_GPIO(scl_io_num)),
+                        ESP_ERR_INVALID_ARG, I2C_TAG,
+                        I2C_SCL_IO_ERR_STR);
     ESP_RETURN_ON_FALSE(sda_io_num < 0 ||
-              (sda_pullup_en == GPIO_PULLUP_ENABLE && GPIO_IS_VALID_OUTPUT_GPIO(sda_io_num)) ||
-              sda_pullup_en == GPIO_PULLUP_DISABLE, ESP_ERR_INVALID_ARG, I2C_TAG, I2C_GPIO_PULLUP_ERR_STR);
+                        (sda_pullup_en == GPIO_PULLUP_ENABLE && GPIO_IS_VALID_OUTPUT_GPIO(sda_io_num)) ||
+                        sda_pullup_en == GPIO_PULLUP_DISABLE, ESP_ERR_INVALID_ARG, I2C_TAG, I2C_GPIO_PULLUP_ERR_STR);
     ESP_RETURN_ON_FALSE(scl_io_num < 0 ||
-              (scl_pullup_en == GPIO_PULLUP_ENABLE && GPIO_IS_VALID_OUTPUT_GPIO(scl_io_num)) ||
-              scl_pullup_en == GPIO_PULLUP_DISABLE, ESP_ERR_INVALID_ARG, I2C_TAG, I2C_GPIO_PULLUP_ERR_STR);
+                        (scl_pullup_en == GPIO_PULLUP_ENABLE && GPIO_IS_VALID_OUTPUT_GPIO(scl_io_num)) ||
+                        scl_pullup_en == GPIO_PULLUP_DISABLE, ESP_ERR_INVALID_ARG, I2C_TAG, I2C_GPIO_PULLUP_ERR_STR);
     ESP_RETURN_ON_FALSE((sda_io_num != scl_io_num), ESP_ERR_INVALID_ARG, I2C_TAG, I2C_SCL_SDA_EQUAL_ERR_STR);
 
     int sda_in_sig, sda_out_sig, scl_in_sig, scl_out_sig;
@@ -928,7 +968,7 @@ esp_err_t i2c_set_pin(i2c_port_t i2c_num, int sda_io_num, int scl_io_num, bool s
     scl_in_sig = i2c_periph_signal[i2c_num].scl_in_sig;
     if (sda_io_num >= 0) {
         gpio_set_level(sda_io_num, I2C_IO_INIT_LEVEL);
-        gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[sda_io_num], PIN_FUNC_GPIO);
+        gpio_func_sel(sda_io_num, PIN_FUNC_GPIO);
         gpio_set_direction(sda_io_num, GPIO_MODE_INPUT_OUTPUT_OD);
 
         if (sda_pullup_en == GPIO_PULLUP_ENABLE) {
@@ -942,11 +982,11 @@ esp_err_t i2c_set_pin(i2c_port_t i2c_num, int sda_io_num, int scl_io_num, bool s
     if (scl_io_num >= 0) {
         if (mode == I2C_MODE_MASTER) {
             gpio_set_level(scl_io_num, I2C_IO_INIT_LEVEL);
-            gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[scl_io_num], PIN_FUNC_GPIO);
+            gpio_func_sel(scl_io_num, PIN_FUNC_GPIO);
             gpio_set_direction(scl_io_num, GPIO_MODE_INPUT_OUTPUT_OD);
             esp_rom_gpio_connect_out_signal(scl_io_num, scl_out_sig, 0, 0);
         } else {
-            gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[scl_io_num], PIN_FUNC_GPIO);
+            gpio_func_sel(scl_io_num, PIN_FUNC_GPIO);
             gpio_set_direction(scl_io_num, GPIO_MODE_INPUT);
         }
         esp_rom_gpio_connect_in_signal(scl_io_num, scl_in_sig, 0);
@@ -971,7 +1011,7 @@ esp_err_t i2c_master_write_to_device(i2c_port_t i2c_num, uint8_t device_address,
     uint8_t buffer[I2C_TRANS_BUF_MINIMUM_SIZE] = { 0 };
 
     i2c_cmd_handle_t handle = i2c_cmd_link_create_static(buffer, sizeof(buffer));
-    assert (handle != NULL);
+    assert(handle != NULL);
 
     err = i2c_master_start(handle);
     if (err != ESP_OK) {
@@ -996,7 +1036,6 @@ end:
     return err;
 }
 
-
 esp_err_t i2c_master_read_from_device(i2c_port_t i2c_num, uint8_t device_address,
                                       uint8_t* read_buffer, size_t read_size,
                                       TickType_t ticks_to_wait)
@@ -1005,7 +1044,7 @@ esp_err_t i2c_master_read_from_device(i2c_port_t i2c_num, uint8_t device_address
     uint8_t buffer[I2C_TRANS_BUF_MINIMUM_SIZE] = { 0 };
 
     i2c_cmd_handle_t handle = i2c_cmd_link_create_static(buffer, sizeof(buffer));
-    assert (handle != NULL);
+    assert(handle != NULL);
 
     err = i2c_master_start(handle);
     if (err != ESP_OK) {
@@ -1030,7 +1069,6 @@ end:
     return err;
 }
 
-
 esp_err_t i2c_master_write_read_device(i2c_port_t i2c_num, uint8_t device_address,
                                        const uint8_t* write_buffer, size_t write_size,
                                        uint8_t* read_buffer, size_t read_size,
@@ -1040,7 +1078,7 @@ esp_err_t i2c_master_write_read_device(i2c_port_t i2c_num, uint8_t device_addres
     uint8_t buffer[I2C_TRANS_BUF_MINIMUM_SIZE] = { 0 };
 
     i2c_cmd_handle_t handle = i2c_cmd_link_create_static(buffer, sizeof(buffer));
-    assert (handle != NULL);
+    assert(handle != NULL);
 
     err = i2c_master_start(handle);
     if (err != ESP_OK) {
@@ -1338,7 +1376,8 @@ esp_err_t i2c_master_read(i2c_cmd_handle_t cmd_handle, uint8_t *data, size_t dat
 }
 
 __attribute__((always_inline))
-static inline bool i2c_cmd_is_single_byte(const i2c_cmd_t *cmd) {
+static inline bool i2c_cmd_is_single_byte(const i2c_cmd_t *cmd)
+{
     return cmd->total_bytes == 1;
 }
 
@@ -1417,7 +1456,7 @@ static void IRAM_ATTR i2c_master_cmd_begin_static(i2c_port_t i2c_num, BaseType_t
             p_i2c->cmd_idx = 0;
             if (i2c_cmd_is_single_byte(cmd) || cmd->total_bytes == cmd->bytes_used) {
                 p_i2c->cmd_link.head = p_i2c->cmd_link.head->next;
-                if(p_i2c->cmd_link.head) {
+                if (p_i2c->cmd_link.head) {
                     p_i2c->cmd_link.head->cmd.bytes_used = 0;
                 }
             }
@@ -1438,7 +1477,7 @@ static void IRAM_ATTR i2c_master_cmd_begin_static(i2c_port_t i2c_num, BaseType_t
         }
         p_i2c->cmd_idx++;
         p_i2c->cmd_link.head = p_i2c->cmd_link.head->next;
-        if (p_i2c->cmd_link.head == NULL || p_i2c->cmd_idx >= (SOC_I2C_CMD_REG_NUM-1)) {
+        if (p_i2c->cmd_link.head == NULL || p_i2c->cmd_idx >= (SOC_I2C_CMD_REG_NUM - 1)) {
             p_i2c->cmd_idx = 0;
             break;
         }
@@ -1454,12 +1493,11 @@ static bool is_cmd_link_buffer_internal(const i2c_cmd_link_t *link)
 {
     bool is_internal = true;
     for (const i2c_cmd_link_t *cmd_link = link;
-         cmd_link != NULL && is_internal;
-         cmd_link = cmd_link->next)
-    {
+            cmd_link != NULL && is_internal;
+            cmd_link = cmd_link->next) {
         /* A command node has a valid pointer if it is a read command or a write command with more than one byte. */
         const bool data_pointer = (cmd_link->cmd.hw_cmd.op_code == I2C_LL_CMD_WRITE && !i2c_cmd_is_single_byte(&cmd_link->cmd))
-                                || cmd_link->cmd.hw_cmd.op_code == I2C_LL_CMD_READ;
+                                  || cmd_link->cmd.hw_cmd.op_code == I2C_LL_CMD_READ;
         /* Check if the (non-NULL) pointer points to internal memory. */
         is_internal &= !data_pointer || cmd_link->cmd.data == NULL || esp_ptr_internal(cmd_link->cmd.data);
     }
@@ -1471,7 +1509,7 @@ static uint8_t clear_bus_cnt[I2C_NUM_MAX] = { 0 };
 
 esp_err_t i2c_master_cmd_begin(i2c_port_t i2c_num, i2c_cmd_handle_t cmd_handle, TickType_t ticks_to_wait)
 {
-    ESP_RETURN_ON_FALSE(( i2c_num < I2C_NUM_MAX ), ESP_ERR_INVALID_ARG, I2C_TAG, I2C_NUM_ERROR_STR);
+    ESP_RETURN_ON_FALSE((i2c_num < I2C_NUM_MAX), ESP_ERR_INVALID_ARG, I2C_TAG, I2C_NUM_ERROR_STR);
     ESP_RETURN_ON_FALSE(p_i2c_obj[i2c_num] != NULL, ESP_ERR_INVALID_STATE, I2C_TAG, I2C_DRIVER_NOT_INSTALL_ERR_STR);
     ESP_RETURN_ON_FALSE(p_i2c_obj[i2c_num]->mode == I2C_MODE_MASTER, ESP_ERR_INVALID_STATE, I2C_TAG, I2C_MASTER_MODE_ERR_STR);
     ESP_RETURN_ON_FALSE(cmd_handle != NULL, ESP_ERR_INVALID_ARG, I2C_TAG, I2C_CMD_LINK_INIT_ERR_STR);
@@ -1479,8 +1517,8 @@ esp_err_t i2c_master_cmd_begin(i2c_port_t i2c_num, i2c_cmd_handle_t cmd_handle, 
 #if CONFIG_SPIRAM_USE_MALLOC
     //If the i2c read or write buffer is not in internal RAM, we will return ESP_FAIL
     //to avoid the ISR handler function crashing when the cache is disabled.
-    if ( (p_i2c_obj[i2c_num]->intr_alloc_flags & ESP_INTR_FLAG_IRAM) &&
-         !is_cmd_link_buffer_internal(((const i2c_cmd_desc_t *)cmd_handle)->head) ) {
+    if ((p_i2c_obj[i2c_num]->intr_alloc_flags & ESP_INTR_FLAG_IRAM) &&
+            !is_cmd_link_buffer_internal(((const i2c_cmd_desc_t *)cmd_handle)->head)) {
         ESP_LOGE(I2C_TAG, I2C_PSRAM_BUFFER_WARN_STR);
         return ESP_ERR_INVALID_ARG;
     }
@@ -1488,7 +1526,7 @@ esp_err_t i2c_master_cmd_begin(i2c_port_t i2c_num, i2c_cmd_handle_t cmd_handle, 
     // Sometimes when the FSM get stuck, the ACK_ERR interrupt will occur endlessly until we reset the FSM and clear bus.
     esp_err_t ret = ESP_FAIL;
     i2c_obj_t *p_i2c = p_i2c_obj[i2c_num];
-    TickType_t ticks_start = xTaskGetTickCount();
+    const TickType_t ticks_start = xTaskGetTickCount();
     BaseType_t res = xSemaphoreTake(p_i2c->cmd_mux, ticks_to_wait);
     if (res == pdFALSE) {
         return ESP_ERR_TIMEOUT;
@@ -1528,13 +1566,15 @@ esp_err_t i2c_master_cmd_begin(i2c_port_t i2c_num, i2c_cmd_handle_t cmd_handle, 
     i2c_cmd_evt_t evt;
     while (1) {
         TickType_t wait_time = xTaskGetTickCount();
-        if (wait_time - ticks_start > ticks_to_wait) { // out of time
-            wait_time = I2C_CMD_ALIVE_INTERVAL_TICK;
+        const TickType_t elapsed = wait_time - ticks_start;
+        if (elapsed >= ticks_to_wait) { // out of time
+            /* Before triggering a timeout, empty the queue by giving a wait_time of 0:
+             * - if the queue is empty, `pdFALSE` will be returned and the loop will be exited
+             * - if the queue is not empty, we will pop an element and come back here again
+             */
+            wait_time = 0;
         } else {
-            wait_time = ticks_to_wait - (wait_time - ticks_start);
-            if (wait_time < I2C_CMD_ALIVE_INTERVAL_TICK) {
-                wait_time = I2C_CMD_ALIVE_INTERVAL_TICK;
-            }
+            wait_time = MIN(ticks_to_wait - elapsed, I2C_CMD_ALIVE_INTERVAL_TICK);
         }
         // In master mode, since we don't have an interrupt to detective bus error or FSM state, what we do here is to make
         // sure the interrupt mechanism for master mode is still working.
@@ -1581,7 +1621,7 @@ esp_err_t i2c_master_cmd_begin(i2c_port_t i2c_num, i2c_cmd_handle_t cmd_handle, 
 #if SOC_I2C_SUPPORT_SLAVE
 int i2c_slave_write_buffer(i2c_port_t i2c_num, const uint8_t *data, int size, TickType_t ticks_to_wait)
 {
-    ESP_RETURN_ON_FALSE(( i2c_num < I2C_NUM_MAX ), ESP_FAIL, I2C_TAG, I2C_NUM_ERROR_STR);
+    ESP_RETURN_ON_FALSE((i2c_num < I2C_NUM_MAX), ESP_FAIL, I2C_TAG, I2C_NUM_ERROR_STR);
     ESP_RETURN_ON_FALSE(p_i2c_obj[i2c_num] != NULL, ESP_FAIL, I2C_TAG, I2C_DRIVER_ERR_STR);
     ESP_RETURN_ON_FALSE((data != NULL), ESP_FAIL, I2C_TAG, I2C_ADDR_ERROR_STR);
     ESP_RETURN_ON_FALSE(p_i2c_obj[i2c_num]->mode == I2C_MODE_SLAVE, ESP_FAIL, I2C_TAG, I2C_MODE_SLAVE_ERR_STR);
@@ -1611,7 +1651,7 @@ int i2c_slave_write_buffer(i2c_port_t i2c_num, const uint8_t *data, int size, Ti
 
 int i2c_slave_read_buffer(i2c_port_t i2c_num, uint8_t *data, size_t max_size, TickType_t ticks_to_wait)
 {
-    ESP_RETURN_ON_FALSE(( i2c_num < I2C_NUM_MAX ), ESP_FAIL, I2C_TAG, I2C_NUM_ERROR_STR);
+    ESP_RETURN_ON_FALSE((i2c_num < I2C_NUM_MAX), ESP_FAIL, I2C_TAG, I2C_NUM_ERROR_STR);
     ESP_RETURN_ON_FALSE(p_i2c_obj[i2c_num] != NULL, ESP_FAIL, I2C_TAG, I2C_DRIVER_ERR_STR);
     ESP_RETURN_ON_FALSE((data != NULL), ESP_FAIL, I2C_TAG, I2C_ADDR_ERROR_STR);
     ESP_RETURN_ON_FALSE(p_i2c_obj[i2c_num]->mode == I2C_MODE_SLAVE, ESP_FAIL, I2C_TAG, I2C_MODE_SLAVE_ERR_STR);

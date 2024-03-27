@@ -32,11 +32,13 @@ void unity_utils_check_leak(unsigned int before_free,
 
     unsigned int leaked = (size_t)(free_delta * -1);
 
-    printf("MALLOC_CAP_%s %s leak: Before %u bytes free, After %u bytes free (delta %u)\n",
-           type,
-           leaked <= threshold ? "potential" : "critical",
-           before_free, after_free, leaked);
-    fflush(stdout);
+    if (leaked > 0) {
+        printf("MALLOC_CAP_%s %s leak: Before %u bytes free, After %u bytes free (delta %u)\n",
+               type,
+               leaked <= threshold ? "potential" : "critical",
+               before_free, after_free, leaked);
+        fflush(stdout);
+    }
     TEST_ASSERT_MESSAGE(leaked <= threshold, "The test leaked too much memory");
 }
 

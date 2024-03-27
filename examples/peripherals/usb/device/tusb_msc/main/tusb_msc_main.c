@@ -15,10 +15,11 @@
 #include <dirent.h>
 #include "esp_console.h"
 #include "esp_check.h"
+#include "esp_partition.h"
 #include "driver/gpio.h"
 #include "tinyusb.h"
 #include "tusb_msc_storage.h"
-#ifdef CONFIG_EXAMPLE_STORAGE_MEDIA_SDMMCCARD
+#ifdef CONFIG_EXAMPLE_STORAGE_MEDIA_SDMMC
 #include "diskio_impl.h"
 #include "diskio_sdmmc.h"
 #endif
@@ -130,7 +131,6 @@ static void _mount(void)
 {
     ESP_LOGI(TAG, "Mount storage...");
     ESP_ERROR_CHECK(tinyusb_msc_storage_mount(BASE_PATH));
-
 
     // List all the files in this directory
     ESP_LOGI(TAG, "\nls command output:");
@@ -347,7 +347,8 @@ void app_main(void)
 
     const tinyusb_msc_spiflash_config_t config_spi = {
         .wl_handle = wl_handle,
-        .callback_mount_changed = storage_mount_changed_cb  /* First way to register the callback. This is while initializing the storage. */
+        .callback_mount_changed = storage_mount_changed_cb,  /* First way to register the callback. This is while initializing the storage. */
+        .mount_config.max_files = 5,
     };
     ESP_ERROR_CHECK(tinyusb_msc_storage_init_spiflash(&config_spi));
     ESP_ERROR_CHECK(tinyusb_msc_register_callback(TINYUSB_MSC_EVENT_MOUNT_CHANGED, storage_mount_changed_cb)); /* Other way to register the callback i.e. registering using separate API. If the callback had been already registered, it will be overwritten. */
@@ -357,7 +358,8 @@ void app_main(void)
 
     const tinyusb_msc_sdmmc_config_t config_sdmmc = {
         .card = card,
-        .callback_mount_changed = storage_mount_changed_cb  /* First way to register the callback. This is while initializing the storage. */
+        .callback_mount_changed = storage_mount_changed_cb,  /* First way to register the callback. This is while initializing the storage. */
+        .mount_config.max_files = 5,
     };
     ESP_ERROR_CHECK(tinyusb_msc_storage_init_sdmmc(&config_sdmmc));
     ESP_ERROR_CHECK(tinyusb_msc_register_callback(TINYUSB_MSC_EVENT_MOUNT_CHANGED, storage_mount_changed_cb)); /* Other way to register the callback i.e. registering using separate API. If the callback had been already registered, it will be overwritten. */
@@ -388,7 +390,7 @@ void app_main(void)
     esp_console_dev_uart_config_t hw_config = ESP_CONSOLE_DEV_UART_CONFIG_DEFAULT();
     ESP_ERROR_CHECK(esp_console_new_repl_uart(&hw_config, &repl_config, &repl));
     for (int count = 0; count < sizeof(cmds) / sizeof(esp_console_cmd_t); count++) {
-        ESP_ERROR_CHECK( esp_console_cmd_register(&cmds[count]) );
+        ESP_ERROR_CHECK(esp_console_cmd_register(&cmds[count]));
     }
     ESP_ERROR_CHECK(esp_console_start_repl(repl));
 }

@@ -5,13 +5,13 @@
   - esp32c3
   - esp32c2
   - esp32c6
+  - esp32c5
   - esp32h2
   - esp32p4
 
 .target_test: &target_test
   - example_test
   - custom_test
-  - unit_test
   - component_ut
 
 ##############
@@ -66,147 +66,6 @@
   included_in:
     - build:check
 
-# ---------------
-# Build Test Jobs
-# ---------------
-"build:{0}-{1}":
-  matrix:
-    - *target_test
-    - *all_targets
-  labels:
-    - build
-  patterns:
-    - build_components
-    - build_system
-    - build_target_test
-    - downloadable-tools
-  included_in:
-    - "build:{0}"
-    - build:target_test
-
-build:integration_test:
-  labels:
-    - build
-  patterns:
-    - build_components
-    - build_system
-  included_in:
-    - build:target_test
-
-
-####################
-# Target Test Jobs #
-####################
-"test:{0}-{1}":
-  matrix:
-    - *target_test
-    - *all_targets
-  labels: # For each rule, use labels <test_type> and <test_type>-<target>
-    - "{0}"
-    - "{0}_{1}"
-    - target_test
-  patterns: # For each rule, use patterns <test_type> and build-<test_type>
-    - "{0}"
-    - "build-{0}"
-  included_in: # Parent rules
-    - "build:{0}"
-    - "build:{0}-{1}"
-    - build:target_test
-
-# -------------
-# Special Cases
-# -------------
-"test:component_ut-{0}": # component_ut will trigger by unit_test as well, since now we have 2 kinds of UT
-  matrix:
-    - *all_targets
-  labels:
-    - component_ut
-    - "component_ut_{0}"
-    - unit_test
-    - "unit_test_{0}"
-    - target_test
-  patterns:
-    - component_ut
-    - "build-component_ut-{0}"
-  included_in:
-    - build:component_ut
-    - "build:component_ut-{0}"
-    - build:target_test
-
-# To reduce the specific runners' usage.
-# Do not create these jobs by default patterns on development branches
-# Can be triggered by labels or related changes
-"test:{0}-{1}-{2}":
-  matrix:
-    - *target_test
-    - *all_targets
-    - - wifi      # pytest*wifi*
-      - ethernet  # pytest*ethernet*
-      - sdio      # pytest*sdio*
-      - usb       # USB Device & Host tests
-      - adc       # pytest*adc*
-      - i154
-      - flash_multi
-      - ecdsa
-      - nvs_encr_hmac
-  patterns:
-    - "{0}-{1}-{2}"
-    - "{0}-{2}"
-    - "target_test-{2}"
-  labels:
-    - "{0}_{1}"
-    - "{0}"
-    - target_test
-  included_in:
-    - "build:{0}-{1}"
-    - "build:{0}"
-    - build:target_test
-
-# For example_test*flash_encryption_wifi_high_traffic jobs
-# set `INCLUDE_NIGHTLY_RUN` variable when triggered on development branches
-"test:example_test-{0}-include_nightly_run-rule":
-  matrix:
-    - - esp32
-      - esp32c3
-  specific_rules:
-    - "if-example_test-ota-include_nightly_run-rule"
-  included_in:
-    - "build:example_test-{0}"
-    - "build:example_test"
-    - build:target_test
-
-# For i154 runners
-"test:example_test-i154":
-  patterns:
-    - "example_test-i154"
-    - "target_test-i154"
-  labels:
-    - target_test
-    - example_test
-  included_in:
-    - "build:example_test-esp32s3"
-    - "build:example_test-esp32c6"
-    - "build:example_test-esp32h2"
-    - "build:example_test"
-    - build:target_test
-
-"test:integration_test_{0}":
-  matrix:
-    - - wifi
-      - ble
-  labels:
-    - integration_test_{0}
-    - integration_test
-    - target_test
-  patterns:
-    - integration_test-{0}
-    - target_test-{0}
-    # - maybe others
-  included_in:
-    - test:integration_test
-    - build:integration_test
-    - build:target_test
-
 "test:host_test":
   labels:
     - host_test
@@ -226,12 +85,8 @@ build:integration_test:
   labels:
     - nvs_coverage
 
-"labels-protected:lan8720":  # UT # FIXME: IDFCI-1176 temporary run this on master/release or with label
+"labels:windows_pytest_build_system":
   labels:
-    - lan8720
-  included_in:
-    - build:unit_test
-    - build:unit_test-esp32
-    - build:target_test
-    - build:component_ut
-    - build:component_ut-esp32
+    - windows
+  specific_rules:
+    - if-schedule-test-build-system-windows

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,6 +12,7 @@
 SHA: peripheral independent, but DMA is shared with AES
 AES: peripheral independent, but DMA is shared with SHA
 MPI/RSA: independent
+ECC: independent
 HMAC: needs SHA
 DS: needs HMAC (which needs SHA), AES and MPI
 */
@@ -27,6 +28,9 @@ static _lock_t s_crypto_mpi_lock;
 
 /* Single lock for SHA and AES, sharing a reserved GDMA channel */
 static _lock_t s_crypto_sha_aes_lock;
+
+/* Lock for ECC peripheral */
+static _lock_t s_crypto_ecc_lock;
 
 void esp_crypto_hmac_lock_acquire(void)
 {
@@ -72,4 +76,14 @@ void esp_crypto_mpi_lock_acquire(void)
 void esp_crypto_mpi_lock_release(void)
 {
     _lock_release(&s_crypto_mpi_lock);
+}
+
+void esp_crypto_ecc_lock_acquire(void)
+{
+    _lock_acquire(&s_crypto_ecc_lock);
+}
+
+void esp_crypto_ecc_lock_release(void)
+{
+    _lock_release(&s_crypto_ecc_lock);
 }

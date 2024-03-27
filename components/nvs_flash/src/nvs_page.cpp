@@ -1,9 +1,10 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 #include "nvs_page.hpp"
+#include <inttypes.h>
 #include <esp_rom_crc.h>
 #include <cstdio>
 #include <cstring>
@@ -878,7 +879,10 @@ esp_err_t Page::findItem(uint8_t nsIndex, ItemType datatype, const char* key, si
         end = ENTRY_COUNT;
     }
 
-    if (nsIndex != NS_ANY && datatype != ItemType::ANY && key != NULL) {
+    // For BLOB_DATA, we may need to search for all chunk indexes, so the hash list won't help
+    // mHashIndex caluclates hash from nsIndex, key, chunkIdx
+    // We may not use mHashList if datatype is BLOB_DATA and chunkIdx is CHUNK_ANY as CHUNK_ANY is used by BLOB_INDEX
+    if (nsIndex != NS_ANY && key != NULL && (datatype != ItemType::BLOB_DATA || chunkIdx != CHUNK_ANY)) {
         size_t cachedIndex = mHashList.find(start, Item(nsIndex, datatype, 0, key, chunkIdx));
         if (cachedIndex < ENTRY_COUNT) {
             start = cachedIndex;
@@ -933,6 +937,31 @@ esp_err_t Page::findItem(uint8_t nsIndex, ItemType datatype, const char* key, si
                 && item.chunkIndex != chunkIdx) {
             continue;
         }
+
+        // We may search for any chunk of BLOB_DATA but find BLOB_INDEX or BLOB instead as it
+        // uses default value of chunkIdx == CHUNK_ANY, then continue searching
+        if (chunkIdx == CHUNK_ANY
+                && datatype == ItemType::BLOB_DATA
+                && item.datatype != ItemType::BLOB_DATA) {
+            continue;
+        }
+
+        // We may search for BLOB but find BLOB_INDEX instead
+        // In this case it is expected to return ESP_ERR_NVS_TYPE_MISMATCH
+        if (chunkIdx == CHUNK_ANY
+                && datatype == ItemType::BLOB
+                && item.datatype == ItemType::BLOB_IDX) {
+            return ESP_ERR_NVS_TYPE_MISMATCH;
+        }
+
+        // We may search for BLOB but find BLOB_DATA instead
+        // Then continue
+        if (chunkIdx == CHUNK_ANY
+                && datatype == ItemType::BLOB
+                && item.datatype == ItemType::BLOB_DATA) {
+            continue;
+        }
+
         /* Blob-index will match the <ns,key> with blob data.
          * Skip data chunks when searching for blob index*/
         if (datatype == ItemType::BLOB_IDX
@@ -1063,7 +1092,8 @@ const char* Page::pageStateToName(PageState ps)
 
 void Page::debugDump() const
 {
-    printf("state=%x (%s) addr=%x seq=%d\nfirstUsed=%d nextFree=%d used=%d erased=%d\n", (uint32_t) mState, pageStateToName(mState), mBaseAddress, mSeqNumber, static_cast<int>(mFirstUsedEntry), static_cast<int>(mNextFreeEntry), mUsedEntryCount, mErasedEntryCount);
+    printf("state=%" PRIx32 " (%s) addr=%" PRIx32 " seq=%" PRIu32 "\nfirstUsed=%" PRIu32 " nextFree=%" PRIu32 " used=%" PRIu16 " erased=%" PRIu16 "\n",
+        static_cast<uint32_t>(mState), pageStateToName(mState), mBaseAddress, mSeqNumber, static_cast<uint32_t>(mFirstUsedEntry), static_cast<uint32_t>(mNextFreeEntry), mUsedEntryCount, mErasedEntryCount);
     size_t skip = 0;
     for (size_t i = 0; i < ENTRY_COUNT; ++i) {
         printf("%3d: ", static_cast<int>(i));
@@ -1080,7 +1110,8 @@ void Page::debugDump() const
             Item item;
             readEntry(i, item);
             if (skip == 0) {
-                printf("W ns=%2u type=%2u span=%3u key=\"%s\" chunkIdx=%d len=%d\n", item.nsIndex, static_cast<unsigned>(item.datatype), item.span, item.key, item.chunkIndex, (item.span != 1)?((int)item.varLength.dataSize):-1);
+                printf("W ns=%2" PRIu8 " type=%2" PRIu8 " span=%3" PRIu8 " key=\"%s\" chunkIdx=%" PRIu8 " len=%" PRIi32 "\n",
+                    item.nsIndex, static_cast<uint8_t>(item.datatype), item.span, item.key, item.chunkIndex, (item.span != 1)?(static_cast<int32_t>(item.varLength.dataSize)):(-1));
                 if (item.span > 0 && item.span <= ENTRY_COUNT - i) {
                     skip = item.span - 1;
                 } else {

@@ -31,56 +31,20 @@ ready to receive/send data. This code connects this line to a GPIO interrupt whi
 task waits for this semaphore to be given before queueing a transmission.
 */
 
-
-/*
-Pins in use. The SPI Master can use the GPIO mux, so feel free to change these if needed.
-*/
-#if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2
-#define GPIO_HANDSHAKE 2
-#define GPIO_MOSI 12
-#define GPIO_MISO 13
-#define GPIO_SCLK 15
-#define GPIO_CS 14
-
-#elif CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32C2
-#define GPIO_HANDSHAKE 3
-#define GPIO_MOSI 7
-#define GPIO_MISO 2
-#define GPIO_SCLK 6
-#define GPIO_CS 10
-
-#elif CONFIG_IDF_TARGET_ESP32C6
-#define GPIO_HANDSHAKE 15
-#define GPIO_MOSI 19
-#define GPIO_MISO 20
-#define GPIO_SCLK 18
-#define GPIO_CS 9
-
-#elif CONFIG_IDF_TARGET_ESP32H2
-#define GPIO_HANDSHAKE 2
-#define GPIO_MOSI 5
-#define GPIO_MISO 0
-#define GPIO_SCLK 4
-#define GPIO_CS 1
-
-#elif CONFIG_IDF_TARGET_ESP32S3
-#define GPIO_HANDSHAKE 2
-#define GPIO_MOSI 11
-#define GPIO_MISO 13
-#define GPIO_SCLK 12
-#define GPIO_CS 10
-
-#endif //CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2
-
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////// Please update the following configuration according to your HardWare spec /////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+#define GPIO_HANDSHAKE      2
+#define GPIO_MOSI           12
+#define GPIO_MISO           13
+#define GPIO_SCLK           15
+#define GPIO_CS             14
 
 #ifdef CONFIG_IDF_TARGET_ESP32
 #define SENDER_HOST HSPI_HOST
-
 #else
 #define SENDER_HOST SPI2_HOST
-
 #endif
-
 
 //The semaphore indicating the slave is ready to receive stuff.
 static QueueHandle_t rdySem;
@@ -115,43 +79,43 @@ void app_main(void)
     spi_device_handle_t handle;
 
     //Configuration for the SPI bus
-    spi_bus_config_t buscfg={
-        .mosi_io_num=GPIO_MOSI,
-        .miso_io_num=GPIO_MISO,
-        .sclk_io_num=GPIO_SCLK,
-        .quadwp_io_num=-1,
-        .quadhd_io_num=-1
+    spi_bus_config_t buscfg = {
+        .mosi_io_num = GPIO_MOSI,
+        .miso_io_num = GPIO_MISO,
+        .sclk_io_num = GPIO_SCLK,
+        .quadwp_io_num = -1,
+        .quadhd_io_num = -1
     };
 
     //Configuration for the SPI device on the other side of the bus
-    spi_device_interface_config_t devcfg={
-        .command_bits=0,
-        .address_bits=0,
-        .dummy_bits=0,
-        .clock_speed_hz=5000000,
-        .duty_cycle_pos=128,        //50% duty cycle
-        .mode=0,
-        .spics_io_num=GPIO_CS,
-        .cs_ena_posttrans=3,        //Keep the CS low 3 cycles after transaction, to stop slave from missing the last bit when CS has less propagation delay than CLK
-        .queue_size=3
+    spi_device_interface_config_t devcfg = {
+        .command_bits = 0,
+        .address_bits = 0,
+        .dummy_bits = 0,
+        .clock_speed_hz = 5000000,
+        .duty_cycle_pos = 128,      //50% duty cycle
+        .mode = 0,
+        .spics_io_num = GPIO_CS,
+        .cs_ena_posttrans = 3,      //Keep the CS low 3 cycles after transaction, to stop slave from missing the last bit when CS has less propagation delay than CLK
+        .queue_size = 3
     };
 
     //GPIO config for the handshake line.
-    gpio_config_t io_conf={
-        .intr_type=GPIO_INTR_POSEDGE,
-        .mode=GPIO_MODE_INPUT,
-        .pull_up_en=1,
-        .pin_bit_mask=(1<<GPIO_HANDSHAKE)
+    gpio_config_t io_conf = {
+        .intr_type = GPIO_INTR_POSEDGE,
+        .mode = GPIO_MODE_INPUT,
+        .pull_up_en = 1,
+        .pin_bit_mask = BIT64(GPIO_HANDSHAKE),
     };
 
-    int n=0;
+    int n = 0;
     char sendbuf[128] = {0};
     char recvbuf[128] = {0};
     spi_transaction_t t;
     memset(&t, 0, sizeof(t));
 
     //Create the semaphore.
-    rdySem=xSemaphoreCreateBinary();
+    rdySem = xSemaphoreCreateBinary();
 
     //Set up handshake line interrupt.
     gpio_config(&io_conf);
@@ -160,32 +124,32 @@ void app_main(void)
     gpio_isr_handler_add(GPIO_HANDSHAKE, gpio_handshake_isr_handler, NULL);
 
     //Initialize the SPI bus and add the device we want to send stuff to.
-    ret=spi_bus_initialize(SENDER_HOST, &buscfg, SPI_DMA_CH_AUTO);
-    assert(ret==ESP_OK);
-    ret=spi_bus_add_device(SENDER_HOST, &devcfg, &handle);
-    assert(ret==ESP_OK);
+    ret = spi_bus_initialize(SENDER_HOST, &buscfg, SPI_DMA_CH_AUTO);
+    assert(ret == ESP_OK);
+    ret = spi_bus_add_device(SENDER_HOST, &devcfg, &handle);
+    assert(ret == ESP_OK);
 
     //Assume the slave is ready for the first transmission: if the slave started up before us, we will not detect
     //positive edge on the handshake line.
     xSemaphoreGive(rdySem);
 
-    while(1) {
+    while (1) {
         int res = snprintf(sendbuf, sizeof(sendbuf),
-                "Sender, transmission no. %04i. Last time, I received: \"%s\"", n, recvbuf);
+                           "Sender, transmission no. %04i. Last time, I received: \"%s\"", n, recvbuf);
         if (res >= sizeof(sendbuf)) {
             printf("Data truncated\n");
         }
-        t.length=sizeof(sendbuf)*8;
-        t.tx_buffer=sendbuf;
-        t.rx_buffer=recvbuf;
+        t.length = sizeof(sendbuf) * 8;
+        t.tx_buffer = sendbuf;
+        t.rx_buffer = recvbuf;
         //Wait for slave to be ready for next byte before sending
         xSemaphoreTake(rdySem, portMAX_DELAY); //Wait until slave is ready
-        ret=spi_device_transmit(handle, &t);
+        ret = spi_device_transmit(handle, &t);
         printf("Received: %s\n", recvbuf);
         n++;
     }
 
     //Never reached.
-    ret=spi_bus_remove_device(handle);
-    assert(ret==ESP_OK);
+    ret = spi_bus_remove_device(handle);
+    assert(ret == ESP_OK);
 }

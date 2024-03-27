@@ -89,7 +89,7 @@ Type 字段可以指定为 app (0x00) 或者 data (0x01)，也可以直接使用
 
 SubType 字段
 ~~~~~~~~~~~~
-{IDF_TARGET_ESP_PHY_REF:default = ":ref:`CONFIG_ESP_PHY_INIT_DATA_IN_PARTITION`", esp32p4 = "NOT UPDATED YET"}
+{IDF_TARGET_ESP_PHY_REF:default = ":ref:`CONFIG_ESP_PHY_INIT_DATA_IN_PARTITION`", esp32p4, esp32c5 = "NOT UPDATED YET"}
 
 SubType 字段长度为 8 bit，内容与具体分区 Type 有关。目前，esp-idf 仅仅规定了 “app” 和 “data” 两种分区类型的子类型含义。
 
@@ -150,27 +150,40 @@ SubType 字段长度为 8 bit，内容与具体分区 Type 有关。目前，esp
 
 组件可以通过设置 ``EXTRA_PARTITION_SUBTYPES`` 属性来定义额外的分区子类型。 ``EXTRA_PARTITION_SUBTYPES`` 是一个 CMake 列表，其中的每个条目由字符串组成，以逗号为分隔，格式为 ``<type>, <subtype>, <value>``。构建系统通过该属性会自动添加额外的子类型，并在 :cpp:type:`esp_partition_subtype_t` 中插入名为 ``ESP_PARTITION_SUBTYPE_<type>_<subtype>`` 的字段。项目可以使用这个子类型来定义分区表 CSV 文件中的分区，并使用 :cpp:type:`esp_partition_subtype_t` 中的新字段。
 
-偏移地址 (Offset) 和 Size 字段
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. _partition-offset-and-size:
 
-偏移地址表示 SPI flash 中的分区地址，扇区大小为 0x1000 (4 KB)。 因此，偏移地址必须是 4 KB 的倍数。
+偏移地址 (Offset) 和 大小 (Size) 字段
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-分区若偏移地址为空，则会紧跟着前一个分区之后开始；若为首个分区，则将紧跟着分区表开始。
+.. list::
 
-app 分区的偏移地址必须要与 0x10000 (64 K) 对齐，如果将偏移字段留空，``gen_esp32part.py`` 工具会自动计算得到一个满足对齐要求的偏移地址。如果 app 分区的偏移地址没有与 0x10000 (64 K) 对齐，则该工具会报错。
-
-app 分区的大小和偏移地址可以采用十进制数、以 0x 为前缀的十六进制数，且支持 K 或 M 的倍数单位（分别代表 1024 和 1024*1024 字节）。
+   - 偏移地址表示 SPI flash 中的分区地址，扇区大小为 0x1000 (4 KB)。因此，偏移地址必须是 4 KB 的倍数。
+   - 若 CSV 文件中的分区偏移地址为空，则该分区会接在前一个分区之后；若为首个分区，则将接在分区表之后。
+   - ``app`` 分区的偏移地址必须与 0x10000 (64 KB) 对齐。如果偏移字段留空，则 ``gen_esp32part.py`` 工具会自动计算得到一个满足对齐要求的偏移地址。如果 ``app`` 分区的偏移地址没有与 0x10000 (64 KB) 对齐，则该工具会报错。
+   - ``app`` 分区的大小必须与 flash 扇区大小对齐。为 ``app`` 分区指定未对齐的大小将返回错误。
+   :SOC_SECURE_BOOT_V1: - 若启用了安全启动 V1，则 ``app`` 分区的大小需与 0x10000 (64 KB) 对齐。
+   - ``app`` 分区的大小和偏移地址可以采用十进制数或是以 0x 为前缀的十六进制数，且支持 K 或 M 的倍数单位（K 和 M 分别代表 1024 和 1024*1024 字节）。
 
 如果你希望允许分区表中的分区采用任意起始偏移量 (:ref:`CONFIG_PARTITION_TABLE_OFFSET`)，请将分区表（CSV 文件）中所有分区的偏移字段都留空。注意，此时，如果你更改了分区表中任意分区的偏移地址，则其他分区的偏移地址也会跟着改变。这种情况下，如果你之前还曾设定某个分区采用固定偏移地址，则可能造成分区表冲突，从而导致报错。
 
 Flags 字段
 ~~~~~~~~~~
 
-当前仅支持 ``encrypted`` 标记。如果 Flags 字段设置为 ``encrypted``，且已启用 :doc:`/security/flash-encryption` 功能，则该分区将会被加密。
+目前支持 ``encrypted`` 和 ``readonly`` 标记：
 
-.. note::
+  - 如果 Flags 字段设置为 ``encrypted``，且已启用 :doc:`/security/flash-encryption` 功能，则该分区将会被加密。
 
-   ``app`` 分区始终会被加密，不管 Flags 字段是否设置。
+  .. note::
+
+      无论是否设置 Flags 字段，``app`` 分区都将保持加密。
+
+  - 如果 Flags 字段设置为 ``readonly``，则该分区为只读分区。``readonly`` 标记仅支持除 ``ota`` 和 ``coredump`` 子类型外的 ``data`` 分区。使用该标记，防止意外写入如出厂数据分区等包含关键设备特定配置数据的分区。
+
+  .. note::
+
+      在任何写入模式下 (``w``、``w+``、``a``、``a+``、``r+``)，尝试通过 C 文件 I/O API 打开文件 (``fopen```) 的操作都将失败并返回 ``NULL``。除 ``O_RDONLY`` 外，``open`` 与任何标志一同使用都将失败并返回 ``-1``，全局变量 ``errno`` 也将设置为 ``EROFS``。上述情况同样适用于通过其他 POSIX 系统调用函数执行写入或擦除的操作。在只读分区上，以读写模式打开 NVS 的句柄将失败并返回 :c:macro:`ESP_ERR_NOT_ALLOWED` 错误代码，使用 ``esp_partition`` 或 ``spi_flash`` 等较低级别的 API 进行写入操作也将返回 :c:macro:`ESP_ERR_NOT_ALLOWED` 错误代码。
+
+可以使用冒号连接不同的标记，来同时指定多个标记，如 ``encrypted:readonly``。
 
 生成二进制分区表
 ----------------
@@ -264,7 +277,7 @@ Python API
 
 .. code-block:: python
 
-  # 创建 partool.py 的目标设备，并将目标设备连接到串行端口 /dev/ttyUSB1
+  # 创建 parttool.py 的目标设备，并将目标设备连接到串行端口 /dev/ttyUSB1
   target = ParttoolTarget("/dev/ttyUSB1")
 
 现在，可使用创建的 `ParttoolTarget` 在目标设备上完成操作：

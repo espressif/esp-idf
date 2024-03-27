@@ -65,7 +65,7 @@ ESP-TLS 服务器证书选择回调
 证书选择回调可在结构体 :cpp:type:`esp_tls_cfg_t` 中配置，具体如下：
 
 .. code-block:: c
-    
+
     int cert_selection_callback(mbedtls_ssl_context *ssl)
     {
         /* 回调应执行的代码 */
@@ -120,7 +120,7 @@ MbedTLS 与 WolfSSL 对比
     :header-rows: 1
     :widths: 40 30 30
     :align: center
-    
+
     * - 属性
       - WolfSSL
       - MbedTLS
@@ -143,11 +143,11 @@ MbedTLS 与 WolfSSL 对比
     ESP-TLS 中的 ATECC608A（安全元件）
     --------------------------------------------------
 
-    ESP-TLS 支持在 ESP32-WROOM-32SE 上使用 ATECC608A 加密芯片，但必须将 MbedTLS 作为 ESP-TLS 的底层 SSL/TLS 协议栈。未经手动更改，ESP-TLS 默认以 MbedTLS 为其底层 TLS/SSL 协议栈。
+    ESP-TLS 支持在 ESP32 系列芯片上使用 ATECC608A 加密芯片，但必须将 MbedTLS 作为 ESP-TLS 的底层 SSL/TLS 协议栈。未经手动更改，ESP-TLS 默认以 MbedTLS 为其底层 TLS/SSL 协议栈。
 
     .. note::
 
-        在 ESP32-WROOM-32SE 上的 ATECC608A 芯片必须预先配置，详情请参阅 `esp_cryptoauth_utility <https://github.com/espressif/esp-cryptoauthlib/blob/master/esp_cryptoauth_utility/README.md#esp_cryptoauth_utility>`_。
+        在 ESP32 上的 ATECC608A 芯片必须预先配置，详情请参阅 `esp_cryptoauth_utility <https://github.com/espressif/esp-cryptoauthlib/blob/master/esp_cryptoauth_utility/README.md#esp_cryptoauth_utility>`_。
 
     要启用安全元件支持，并将其应用于工程 TLS 连接，请遵循以下步骤：
 
@@ -163,7 +163,7 @@ MbedTLS 与 WolfSSL 对比
 
     如需了解更多 ATECC608A 芯片类型，或需了解如何获取连接到特定 ESP 模块的 ATECC608A 芯片类型，请参阅 `ATECC608A 芯片类型 <https://github.com/espressif/esp-cryptoauthlib/blob/master/esp_cryptoauth_utility/README.md#find-type-of-atecc608a-chip-connected-to-esp32-wroom32-se>`_。
 
-    1) 在 :cpp:type:`esp_tls_cfg_t` 中提供以下配置，在 ESP-TLS 中启用 ATECC608A。
+    4) 在 :cpp:type:`esp_tls_cfg_t` 中提供以下配置，在 ESP-TLS 中启用 ATECC608A。
 
     .. code-block:: c
 
@@ -201,6 +201,30 @@ MbedTLS 与 WolfSSL 对比
 
     * 使用数字签名外设进行双向认证的示例请参阅 :example:`SSL 双向认证 <protocols/mqtt/ssl_mutual_auth>`，该示例使用 ESP-TLS 实现 TLS 连接。
 
+.. only:: SOC_ECDSA_SUPPORTED
+
+    .. _ecdsa-peri-with-esp-tls:
+
+    在 ESP-TLS 中使用 ECDSA 外设
+    -----------------------------
+
+    ESP-TLS 支持在 {IDF_TARGET_NAME} 中使用 ECDSA 外设。使用 ECDSA 外设时，ESP-TLS 必须与 MbedTLS 一起作为底层 SSL/TLS 协议栈，并且 ECDSA 的私钥应存储在 eFuse 中。请参考 `espefuse.py <https://docs.espressif.com/projects/esptool/en/latest/esp32/espefuse/index.html>`__ 文档，了解如何在 eFuse 中烧写 ECDSA 密钥。
+    在 ESP-TLS 中启用 ECDSA 外设前，请将 :cpp:member:`esp_tls_cfg_t::use_ecdsa_peripheral` 设置为 `true`，并将 :cpp:member:`esp_tls_cfg_t::ecdsa_key_efuse_blk` 设置为存储了 ECDSA 密钥的 eFuse 块 ID。
+    这样就可以使用 ECDSA 外设进行私钥操作。由于客户私钥已经存储在 eFuse 中，因此无需将其传递给 :cpp:type:`esp_tls_cfg_t`。
+
+    .. code-block:: c
+
+        #include "esp_tls.h"
+        esp_tls_cfg_t cfg = {
+            .use_ecdsa_peripheral = true,
+            .ecdsa_key_efuse_blk = /* 存储 ECDSA 私钥的 eFuse 块 */,
+        };
+
+    .. note::
+
+        在 TLS 中使用 ECDSA 外设时，只支持 ``MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256`` 密码套件。如果使用 TLS v1.3，则支持 ``MBEDTLS_TLS1_3_AES_128_GCM_SHA256`` 密码套件。
+
+
 TLS 加密套件
 ------------------------------------
 
@@ -219,8 +243,28 @@ ESP-TLS 支持在客户端模式下设置加密套件列表，TLS 密码套件�
 ESP-TLS 不会检查 ``ciphersuites_list`` 的有效性，因此需调用 :cpp:func:`esp_tls_get_ciphersuites_list` 获取 TLS 协议栈中支持的加密套件列表，并检查设置的加密套件是否在支持的加密套件列表中。
 
 .. note::
-    
+
    此功能仅在 MbedTLS 协议栈中有效。
+
+TLS 协议版本
+--------------------
+
+ESP-TLS 能够为 TLS 连接设置相应的 TLS 协议版本，指定版本将用于建立专用 TLS 连接。也就是说，在运行时不同的 TLS 连接可以配置到 TLS 1.2、TLS 1.3 等不同协议版本。
+
+.. note::
+
+   目前，仅在 MbedTLS 作为 ESP-TLS 的底层 SSL/TLS 协议栈时支持此功能。
+
+要在 ESP-TLS 中设置 TLS 协议版本，请设置 :cpp:member:`esp_tls_cfg_t::tls_version`，从 :cpp:type:`esp_tls_proto_ver_t` 中选择所需版本。如未指定协议版本字段，将默认根据服务器要求建立 TLS 连接。
+
+ESP-TLS 连接的协议版本可按如下方式配置：
+
+    .. code-block:: c
+
+        #include "esp_tls.h"
+        esp_tls_cfg_t cfg = {
+            .tls_version = ESP_TLS_VER_TLS_1_2,
+        };
 
 API 参考
 -------------

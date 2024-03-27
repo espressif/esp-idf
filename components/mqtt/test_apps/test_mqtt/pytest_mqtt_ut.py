@@ -5,7 +5,6 @@ from pytest_embedded import Dut
 
 
 @pytest.mark.esp32
-@pytest.mark.esp32c2
 @pytest.mark.ethernet
 def test_mqtt_client(dut: Dut) -> None:
     dut.expect_unity_test_output()

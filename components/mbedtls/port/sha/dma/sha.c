@@ -251,7 +251,7 @@ static esp_err_t esp_sha_dma_process(esp_sha_type sha_type, const void *input, u
                                      const void *buf, uint32_t buf_len, bool is_first_block)
 {
     int ret = 0;
-    lldesc_t *dma_descr_head;
+    lldesc_t *dma_descr_head = NULL;
     size_t num_blks = (ilen + buf_len) / block_length(sha_type);
 
     memset(&s_dma_descr_input, 0, sizeof(lldesc_t));

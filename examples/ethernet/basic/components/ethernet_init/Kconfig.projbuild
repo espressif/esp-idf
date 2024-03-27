@@ -61,31 +61,35 @@ menu "Example Ethernet Configuration"
         config EXAMPLE_ETH_MDC_GPIO
             int "SMI MDC GPIO number"
             range ENV_GPIO_RANGE_MIN ENV_GPIO_OUT_RANGE_MAX
-            default 23
+            default 23 if IDF_TARGET_ESP32
+            default 31 if IDF_TARGET_ESP32P4
             help
                 Set the GPIO number used by SMI MDC.
 
         config EXAMPLE_ETH_MDIO_GPIO
             int "SMI MDIO GPIO number"
             range ENV_GPIO_RANGE_MIN ENV_GPIO_OUT_RANGE_MAX
-            default 18
+            default 18 if IDF_TARGET_ESP32
+            default 27 if IDF_TARGET_ESP32P4
             help
                 Set the GPIO number used by SMI MDIO.
 
         config EXAMPLE_ETH_PHY_RST_GPIO
             int "PHY Reset GPIO number"
             range -1 ENV_GPIO_OUT_RANGE_MAX
-            default 5
+            default 5 if IDF_TARGET_ESP32
+            default 26 if IDF_TARGET_ESP32P4
             help
                 Set the GPIO number used to reset PHY chip.
                 Set to -1 to disable PHY chip hardware reset.
 
         config EXAMPLE_ETH_PHY_ADDR
             int "PHY Address"
-            range 0 31
+            range -1 31
             default 1
             help
                 Set PHY address according your board schematic.
+                Set to -1 to driver find the PHY address automatically.
     endif # EXAMPLE_USE_INTERNAL_ETHERNET
 
     config EXAMPLE_USE_SPI_ETHERNET
@@ -143,6 +147,7 @@ menu "Example Ethernet Configuration"
             default 12 if IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3
             default 6 if IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32C2 || IDF_TARGET_ESP32C6
             default 4 if IDF_TARGET_ESP32H2
+            default 33 if IDF_TARGET_ESP32P4
             help
                 Set the GPIO number used by SPI SCLK.
 
@@ -153,6 +158,7 @@ menu "Example Ethernet Configuration"
             default 11 if IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3
             default 7 if IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32C2 || IDF_TARGET_ESP32C6
             default 5 if IDF_TARGET_ESP32H2
+            default 32 if IDF_TARGET_ESP32P4
             help
                 Set the GPIO number used by SPI MOSI.
 
@@ -163,6 +169,7 @@ menu "Example Ethernet Configuration"
             default 13 if IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3
             default 2 if IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32C2 || IDF_TARGET_ESP32C6
             default 0 if IDF_TARGET_ESP32H2
+            default 52 if IDF_TARGET_ESP32P4
             help
                 Set the GPIO number used by SPI MISO.
 
@@ -180,6 +187,7 @@ menu "Example Ethernet Configuration"
             default 10 if IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3 || IDF_TARGET_ESP32C2
             default 3 if IDF_TARGET_ESP32C6
             default 1 if IDF_TARGET_ESP32H2
+            default 53 if IDF_TARGET_ESP32P4
             help
                 Set the GPIO number used by SPI CS0, i.e. Chip Select associated with the first SPI Eth module).
 
@@ -193,28 +201,62 @@ menu "Example Ethernet Configuration"
             default 21 if IDF_TARGET_ESP32C6
             default 3 if IDF_TARGET_ESP32C2
             default 11 if IDF_TARGET_ESP32H2
+            default 23 if IDF_TARGET_ESP32P4
             help
                 Set the GPIO number used by SPI CS1, i.e. Chip Select associated with the second SPI Eth module.
 
         config EXAMPLE_ETH_SPI_INT0_GPIO
             int "Interrupt GPIO number SPI Ethernet module #1"
-            range ENV_GPIO_RANGE_MIN ENV_GPIO_IN_RANGE_MAX
+            range -1 ENV_GPIO_IN_RANGE_MAX
             default 4 if IDF_TARGET_ESP32 || IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3
             default 4 if IDF_TARGET_ESP32C2 || IDF_TARGET_ESP32C6
             default 10 if IDF_TARGET_ESP32H2
+            default 48 if IDF_TARGET_ESP32P4
             help
                 Set the GPIO number used by the first SPI Ethernet module interrupt line.
+                Set -1 to use SPI Ethernet module in polling mode.
 
         config EXAMPLE_ETH_SPI_INT1_GPIO
             depends on EXAMPLE_SPI_ETHERNETS_NUM > 1
             int "Interrupt GPIO number SPI Ethernet module #2"
-            range ENV_GPIO_RANGE_MIN ENV_GPIO_IN_RANGE_MAX
+            range -1 ENV_GPIO_IN_RANGE_MAX
             default 33 if IDF_TARGET_ESP32
             default 5 if IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3 || IDF_TARGET_ESP32C2
             default 5 if IDF_TARGET_ESP32C6
             default 9 if IDF_TARGET_ESP32H2
+            default 47 if IDF_TARGET_ESP32P4
             help
                 Set the GPIO number used by the second SPI Ethernet module interrupt line.
+                Set -1 to use SPI Ethernet module in polling mode.
+
+        config EXAMPLE_ETH_SPI_POLLING0_MS_VAL
+            depends on EXAMPLE_ETH_SPI_INT0_GPIO < 0
+            int "Polling period in msec of SPI Ethernet Module #1"
+            default 10
+            help
+                Set SPI Ethernet module polling period.
+
+        config EXAMPLE_ETH_SPI_POLLING1_MS_VAL
+            depends on EXAMPLE_SPI_ETHERNETS_NUM > 1 && EXAMPLE_ETH_SPI_INT1_GPIO < 0
+            int "Polling period in msec of SPI Ethernet Module #2"
+            default 10
+            help
+                Set SPI Ethernet module polling period.
+
+        # Hidden variable to ensure that polling period option is visible only when interrupt is set disabled and
+        # it is set to known value (0) when interrupt is enabled at the same time.
+        config EXAMPLE_ETH_SPI_POLLING0_MS
+            int
+            default EXAMPLE_ETH_SPI_POLLING0_MS_VAL if EXAMPLE_ETH_SPI_POLLING0_MS_VAL > 0
+            default 0
+
+        # Hidden variable to ensure that polling period option is visible only when interrupt is set disabled and
+        # it is set to known value (0) when interrupt is enabled at the same time.
+        config EXAMPLE_ETH_SPI_POLLING1_MS
+            depends on EXAMPLE_SPI_ETHERNETS_NUM > 1
+            int
+            default EXAMPLE_ETH_SPI_POLLING1_MS_VAL if EXAMPLE_ETH_SPI_POLLING1_MS_VAL > 0
+            default 0
 
         config EXAMPLE_ETH_SPI_PHY_RST0_GPIO
             int "PHY Reset GPIO number of SPI Ethernet Module #1"

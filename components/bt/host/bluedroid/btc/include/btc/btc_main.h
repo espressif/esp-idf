@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -27,6 +27,20 @@ typedef enum {
     BTC_MAIN_DISABLE_FUTURE,
     BTC_MAIN_FUTURE_NUM,
 } btc_main_future_type_t;
+
+#define BTC_BLE_STATUS_IDLE 0
+typedef enum {
+    BTC_BLE_STATUS_ADV = 0,     // Advertising exist
+    BTC_BLE_STATUS_EXT_ADV,     // Extended advertising exist
+    BTC_BLE_STATUS_SCAN,        // Scanning exist
+    BTC_BLE_STATUS_CONN,        // Connection exist
+    BTC_BLE_STATUS_KEYS,        // Device keys record exist
+    BTC_BLE_STATUS_BOND,        // Bond info exist
+    BTC_BLE_STATUS_GATTC_CACHE, // GATTC cache exist
+    BTC_BLE_STATUS_GATTC_APP,   // GATTC application exist
+    BTC_BLE_STATUS_GATTS_SRVC,  // GATTS service exist
+    BTC_BLE_STATUS_PRIVACY,     // Privacy enabled
+} tBTC_BLE_STATUS;
 
 future_t **btc_main_get_future_p(btc_main_future_type_t type);
 

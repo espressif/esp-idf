@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import json
 import logging
@@ -12,8 +12,14 @@ from pathlib import Path
 from typing import List
 
 import pytest
-from test_build_system_helpers import (EnvDict, IdfPyFunc, append_to_file, file_contains, find_python, get_snapshot,
-                                       replace_in_file, run_idf_py)
+from test_build_system_helpers import append_to_file
+from test_build_system_helpers import EnvDict
+from test_build_system_helpers import file_contains
+from test_build_system_helpers import find_python
+from test_build_system_helpers import get_snapshot
+from test_build_system_helpers import IdfPyFunc
+from test_build_system_helpers import replace_in_file
+from test_build_system_helpers import run_idf_py
 
 
 def get_subdirs_absolute_paths(path: Path) -> List[str]:
@@ -207,7 +213,7 @@ def test_fallback_to_build_system_target(idf_py: IdfPyFunc, test_app_copy: Path)
     assert msg in ret.stdout, 'Custom target did not produce expected output'
 
 
-def test_create_component_and_project_plus_build(idf_copy: Path) -> None:
+def test_create_component_project(idf_copy: Path) -> None:
     logging.info('Create project and component using idf.py and build it')
     run_idf_py('-C', 'projects', 'create-project', 'temp_test_project', workdir=idf_copy)
     run_idf_py('-C', 'components', 'create-component', 'temp_test_component', workdir=idf_copy)

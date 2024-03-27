@@ -20,6 +20,7 @@
 #include <esp_log.h>
 #include <esp_timer.h>
 #include <esp_local_ctrl.h>
+#include <protocomm_ble.h>
 
 static const char *TAG = "control";
 
@@ -224,6 +225,7 @@ static void free_str(void *arg)
 /* Function used by app_main to start the esp_local_ctrl service */
 void start_esp_local_ctrl_service(void)
 {
+#ifdef CONFIG_EXAMPLE_LOCAL_CTRL_TRANSPORT_HTTP
 #ifdef CONFIG_ESP_HTTPS_SERVER_ENABLE
     /* Set the configuration */
     httpd_ssl_config_t https_conf = HTTPD_SSL_CONFIG_DEFAULT();
@@ -242,6 +244,26 @@ void start_esp_local_ctrl_service(void)
 #else
     httpd_config_t http_conf = HTTPD_DEFAULT_CONFIG();
 #endif
+#else /* CONFIG_EXAMPLE_LOCAL_CTRL_TRANSPORT_BLE */
+    protocomm_ble_config_t *ble_conf = & (protocomm_ble_config_t) {
+        .device_name  = SERVICE_NAME,
+        /* Set a random 128 bit UUID which will be included in the BLE advertisement
+         * and will correspond to the primary GATT service that provides provisioning
+         * endpoints as GATT characteristics. Each GATT characteristic will be
+         * formed using the primary service UUID as base, with different auto assigned
+         * 12th and 13th bytes (assume counting starts from 0th byte). The client side
+         * applications must identify the endpoints by reading the User Characteristic
+         * Description descriptor (0x2901) for each characteristic, which contains the
+         * endpoint name of the characteristic */
+        .service_uuid = {
+            /* LSB <---------------------------------------
+            * ---------------------------------------> MSB */
+            0x21, 0xd5, 0x3b, 0x8d, 0xbd, 0x75, 0x68, 0x8a,
+            0xb4, 0x42, 0xeb, 0x31, 0x4a, 0x1e, 0x98, 0x3d,
+        }
+    };
+#endif /* CONFIG_EXAMPLE_LOCAL_CTRL_TRANSPORT_HTTP */
+
 #ifdef CONFIG_EXAMPLE_PROTOCOMM_SECURITY_VERSION_1
     /* What is the security level that we want (0, 1, 2):
      *      - PROTOCOMM_SECURITY_0 is simply plain text communication.
@@ -284,6 +306,7 @@ void start_esp_local_ctrl_service(void)
 
 #endif
     esp_local_ctrl_config_t config = {
+#ifdef CONFIG_EXAMPLE_LOCAL_CTRL_TRANSPORT_HTTP
         .transport = ESP_LOCAL_CTRL_TRANSPORT_HTTPD,
         .transport_config = {
 #ifdef CONFIG_ESP_HTTPS_SERVER_ENABLE
@@ -292,6 +315,12 @@ void start_esp_local_ctrl_service(void)
             .httpd = &http_conf,
 #endif
         },
+#else   /* CONFIG_EXAMPLE_LOCAL_CTRL_TRANSPORT_BLE */
+        .transport = ESP_LOCAL_CTRL_TRANSPORT_BLE,
+        .transport_config = {
+            .ble = ble_conf,
+        },
+#endif /* CONFIG_EXAMPLE_LOCAL_CTRL_TRANSPORT_HTTP */
         .proto_sec = {
             .version = security,
             .custom_handle = NULL,
@@ -308,8 +337,10 @@ void start_esp_local_ctrl_service(void)
         .max_properties = 10
     };
 
+#ifdef CONFIG_EXAMPLE_LOCAL_CTRL_TRANSPORT_HTTP
     mdns_init();
     mdns_hostname_set(SERVICE_NAME);
+#endif
 
     /* Start esp_local_ctrl service */
     ESP_ERROR_CHECK(esp_local_ctrl_start(&config));

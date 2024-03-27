@@ -1,0 +1,41 @@
+generate_pytest_build_report:
+  stage: assign_test
+  image: $ESP_ENV_IMAGE
+  tags:
+    - build
+    - shiny
+  when: always
+  artifacts:
+    paths:
+      - build_report.html
+      - test_related_apps_download_urls.yml
+  script:
+    - python tools/ci/dynamic_pipelines/scripts/generate_build_report.py
+
+generate_pytest_child_pipeline:
+  # finally, we can get some use out of the default behavior that downloads all artifacts from the previous stage
+  stage: assign_test
+  image: $ESP_ENV_IMAGE
+  tags:
+    - build
+    - shiny
+  artifacts:
+    paths:
+      - target_test_child_pipeline.yml
+  script:
+    - python tools/ci/dynamic_pipelines/scripts/generate_target_test_child_pipeline.py
+
+Pytest Target Test Jobs:
+  stage: target_test
+  needs:
+    - generate_pytest_child_pipeline
+  variables:
+    PARENT_PIPELINE_ID: $PARENT_PIPELINE_ID
+  # https://gitlab.com/gitlab-org/gitlab/-/issues/214340
+  inherit:
+    variables: false
+  trigger:
+    include:
+      - artifact: target_test_child_pipeline.yml
+        job: generate_pytest_child_pipeline
+    strategy: depend

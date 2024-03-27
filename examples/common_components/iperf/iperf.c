@@ -7,6 +7,7 @@
    CONDITIONS OF ANY KIND, either express or implied.
 */
 
+#include "sdkconfig.h"
 #include <stdio.h>
 #include <string.h>
 #include <sys/param.h>
@@ -108,7 +109,7 @@ static esp_err_t iperf_start_report(void)
 {
     int ret;
 
-    ret = xTaskCreatePinnedToCore(iperf_report_task, IPERF_REPORT_TASK_NAME, IPERF_REPORT_TASK_STACK, NULL, IPERF_REPORT_TASK_PRIORITY, NULL, portNUM_PROCESSORS - 1);
+    ret = xTaskCreatePinnedToCore(iperf_report_task, IPERF_REPORT_TASK_NAME, IPERF_REPORT_TASK_STACK, NULL, IPERF_REPORT_TASK_PRIORITY, NULL, CONFIG_FREERTOS_NUMBER_OF_CORES - 1);
 
     if (ret != pdPASS) {
         ESP_LOGE(TAG, "create task %s failed", IPERF_REPORT_TASK_NAME);
@@ -152,8 +153,8 @@ static void IRAM_ATTR socket_recv(int recv_socket, struct sockaddr_storage liste
 static void IRAM_ATTR socket_send(int send_socket, struct sockaddr_storage dest_addr, uint8_t type, int bw_lim)
 {
     uint8_t *buffer;
-    int32_t *pkt_id_p;
-    int32_t pkt_cnt = 0;
+    uint32_t *pkt_id_p;
+    uint32_t pkt_cnt = 0;
     int actual_send = 0;
     int want_send = 0;
     int period_us = -1;
@@ -169,7 +170,7 @@ static void IRAM_ATTR socket_send(int send_socket, struct sockaddr_storage dest_
     const char *error_log = (type == IPERF_TRANS_TYPE_TCP) ? "tcp client send" : "udp client send";
 
     buffer = s_iperf_ctrl.buffer;
-    pkt_id_p = (int32_t *)s_iperf_ctrl.buffer;
+    pkt_id_p = (uint32_t *)s_iperf_ctrl.buffer;
     want_send = s_iperf_ctrl.buffer_len;
     iperf_start_report();
 
@@ -193,13 +194,7 @@ static void IRAM_ATTR socket_send(int send_socket, struct sockaddr_storage dest_
             }
             prev_time = send_time;
         }
-        *pkt_id_p = htonl(pkt_cnt); // datagrams need to be sequentially numbered
-        if (pkt_cnt >= INT32_MAX) {
-            pkt_cnt = 0;
-        }
-        else {
-            pkt_cnt++;
-        }
+        *pkt_id_p = htonl(pkt_cnt++); // datagrams need to be sequentially numbered
         actual_send = sendto(send_socket, buffer, want_send, 0, (struct sockaddr *)&dest_addr, socklen);
         if (actual_send != want_send) {
             if (type == IPERF_TRANS_TYPE_UDP) {
@@ -545,13 +540,23 @@ static void iperf_task_traffic(void *arg)
 static uint32_t iperf_get_buffer_len(void)
 {
     if (iperf_is_udp_client()) {
-        return (s_iperf_ctrl.cfg.len_send_buf == 0 ? IPERF_UDP_TX_LEN : s_iperf_ctrl.cfg.len_send_buf);
+#ifdef CONFIG_LWIP_IPV6
+        if (s_iperf_ctrl.cfg.len_send_buf) {
+            return s_iperf_ctrl.cfg.len_send_buf;
+        } else if (s_iperf_ctrl.cfg.type == IPERF_IP_TYPE_IPV6) {
+            return IPERF_DEFAULT_IPV6_UDP_TX_LEN;
+        } else {
+            return IPERF_DEFAULT_IPV4_UDP_TX_LEN;
+        }
+#else
+        return (s_iperf_ctrl.cfg.len_send_buf == 0 ? IPERF_DEFAULT_IPV4_UDP_TX_LEN : s_iperf_ctrl.cfg.len_send_buf);
+#endif
     } else if (iperf_is_udp_server()) {
-        return IPERF_UDP_RX_LEN;
+        return IPERF_DEFAULT_UDP_RX_LEN;
     } else if (iperf_is_tcp_client()) {
-        return (s_iperf_ctrl.cfg.len_send_buf == 0 ? IPERF_TCP_TX_LEN : s_iperf_ctrl.cfg.len_send_buf);
+        return (s_iperf_ctrl.cfg.len_send_buf == 0 ? IPERF_DEFAULT_TCP_TX_LEN : s_iperf_ctrl.cfg.len_send_buf);
     } else {
-        return IPERF_TCP_RX_LEN;
+        return IPERF_DEFAULT_TCP_RX_LEN;
     }
     return 0;
 }
@@ -580,7 +585,7 @@ esp_err_t iperf_start(iperf_cfg_t *cfg)
         return ESP_FAIL;
     }
     memset(s_iperf_ctrl.buffer, 0, s_iperf_ctrl.buffer_len);
-    ret = xTaskCreatePinnedToCore(iperf_task_traffic, IPERF_TRAFFIC_TASK_NAME, IPERF_TRAFFIC_TASK_STACK, NULL, IPERF_TRAFFIC_TASK_PRIORITY, NULL, portNUM_PROCESSORS - 1);
+    ret = xTaskCreatePinnedToCore(iperf_task_traffic, IPERF_TRAFFIC_TASK_NAME, IPERF_TRAFFIC_TASK_STACK, NULL, IPERF_TRAFFIC_TASK_PRIORITY, NULL, CONFIG_FREERTOS_NUMBER_OF_CORES - 1);
     if (ret != pdPASS) {
         ESP_LOGE(TAG, "create task %s failed", IPERF_TRAFFIC_TASK_NAME);
         free(s_iperf_ctrl.buffer);

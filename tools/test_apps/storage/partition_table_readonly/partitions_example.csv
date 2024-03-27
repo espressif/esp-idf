@@ -1,0 +1,9 @@
+# ESP-IDF Partition Table
+# Name,       Type, SubType,  Offset, Size,    Flags
+nvs_ro,       data, nvs,      ,       0x4000,  readonly
+nvs_key,      data, nvs_keys, ,       0x1000,  encrypted
+phy_init,     data, phy,      ,       0x1000,
+factory,      app,  factory,  ,       0x60000,
+fatfs_ro,     data, fat,      ,       528K,    readonly
+fatfs_raw_ro, data, fat,      ,       528K,    encrypted:readonly
+spiffs_ro,    data, spiffs,   ,       256K,    readonly

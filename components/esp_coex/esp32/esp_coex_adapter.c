@@ -18,7 +18,7 @@
 #include "freertos/portmacro.h"
 #include "esp_heap_caps.h"
 #include "esp_timer.h"
-#include "esp_coexist_adapter.h"
+#include "private/esp_coexist_adapter.h"
 #include "esp32/rom/ets_sys.h"
 
 #define TAG "esp_coex_adapter"

@@ -348,7 +348,7 @@ typedef union {
 } lpperi_date_reg_t;
 
 
-typedef struct {
+typedef struct lpperi_dev_t {
     volatile lpperi_clk_en_reg_t clk_en;
     volatile lpperi_core_clk_sel_reg_t core_clk_sel;
     volatile lpperi_reset_en_reg_t reset_en;
@@ -364,6 +364,7 @@ typedef struct {
     volatile lpperi_date_reg_t date;
 } lpperi_dev_t;
 
+extern lpperi_dev_t LPPERI;
 
 #ifndef __cplusplus
 _Static_assert(sizeof(lpperi_dev_t) == 0x400, "Invalid size of lpperi_dev_t structure");

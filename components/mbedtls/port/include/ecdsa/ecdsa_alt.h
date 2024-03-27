@@ -24,14 +24,14 @@ extern "C" {
  *        by the peripheral, a flag load_pubkey that is used specify if the public key has to be populated
  */
 typedef struct {
-    mbedtls_ecp_group_id grp_id;
-    uint8_t efuse_block;
+    mbedtls_ecp_group_id grp_id;            /*!< MbedTLS ECP group identifier */
+    uint8_t efuse_block;                    /*!< EFuse block id for ECDSA private key */
 #ifdef SOC_ECDSA_SUPPORT_EXPORT_PUBKEY
-    bool load_pubkey;
+    bool load_pubkey;                       /*!< Export ECDSA public key from the hardware */
 #endif
-} esp_ecdsa_pk_conf_t;  //TODO: IDF-7925 (Add a config to select the ecdsa key from the key manager peripheral)
+} esp_ecdsa_pk_conf_t;  //TODO: IDF-9008 (Add a config to select the ecdsa key from the key manager peripheral)
 
-#ifdef SOC_ECDSA_SUPPORT_EXPORT_PUBKEY
+#if SOC_ECDSA_SUPPORT_EXPORT_PUBKEY || __DOXYGEN__
 
 /**
  * @brief Populate the public key buffer of the mbedtls_ecp_keypair context.
@@ -45,9 +45,10 @@ typedef struct {
  *         - -1 if invalid efuse block is specified
  */
 int esp_ecdsa_load_pubkey(mbedtls_ecp_keypair *keypair, int efuse_blk);
-#endif
 
-#ifdef CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN
+#endif // SOC_ECDSA_SUPPORT_EXPORT_PUBKEY || __DOXYGEN__
+
+#if CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN || __DOXYGEN__
 
 /**
  * @brief Initialize MPI to notify mbedtls_ecdsa_sign to use the private key in efuse
@@ -97,7 +98,8 @@ int esp_ecdsa_privkey_load_pk_context(mbedtls_pk_context *key_ctx, int efuse_blk
  *         - -1 otherwise
  */
 int esp_ecdsa_set_pk_context(mbedtls_pk_context *key_ctx, esp_ecdsa_pk_conf_t *conf);
-#endif
+
+#endif // CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN || __DOXYGEN__
 
 #ifdef __cplusplus
 }

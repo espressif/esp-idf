@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,6 +19,7 @@
 #include "hal/regi2c_ctrl_ll.h"
 #include "soc/io_mux_reg.h"
 #include "soc/lp_aon_reg.h"
+#include "esp_private/sleep_event.h"
 
 #ifdef BOOTLOADER_BUILD
 #include "hal/modem_lpcon_ll.h"
@@ -156,7 +157,7 @@ static void rtc_clk_enable_i2c_ana_master_clock(bool enable)
 #endif
 }
 
-static void rtc_clk_bbpll_configure(rtc_xtal_freq_t xtal_freq, int pll_freq)
+static void rtc_clk_bbpll_configure(soc_xtal_freq_t xtal_freq, int pll_freq)
 {
     /* Digital part */
     clk_ll_bbpll_set_freq_mhz(pll_freq);
@@ -167,6 +168,7 @@ static void rtc_clk_bbpll_configure(rtc_xtal_freq_t xtal_freq, int pll_freq)
     clk_ll_bbpll_set_config(pll_freq, xtal_freq);
     /* WAIT CALIBRATION DONE */
     while(!regi2c_ctrl_ll_bbpll_calibration_is_done());
+    esp_rom_delay_us(10);
     /* BBPLL CALIBRATION STOP */
     regi2c_ctrl_ll_bbpll_calibration_stop();
     rtc_clk_enable_i2c_ana_master_clock(false);
@@ -252,6 +254,10 @@ bool rtc_clk_cpu_freq_mhz_to_config(uint32_t freq_mhz, rtc_cpu_freq_config_t *ou
     return true;
 }
 
+__attribute__((weak)) void rtc_clk_set_cpu_switch_to_pll(int event_id)
+{
+}
+
 void rtc_clk_cpu_freq_set_config(const rtc_cpu_freq_config_t *config)
 {
     soc_cpu_clk_src_t old_cpu_clk_src = clk_ll_cpu_get_src();
@@ -263,10 +269,12 @@ void rtc_clk_cpu_freq_set_config(const rtc_cpu_freq_config_t *config)
         }
     } else if (config->source == SOC_CPU_CLK_SRC_PLL) {
         if (old_cpu_clk_src != SOC_CPU_CLK_SRC_PLL) {
+            rtc_clk_set_cpu_switch_to_pll(SLEEP_EVENT_HW_PLL_EN_START);
             rtc_clk_bbpll_enable();
             rtc_clk_bbpll_configure(rtc_clk_xtal_freq_get(), config->source_freq_mhz);
         }
         rtc_clk_cpu_freq_to_pll_mhz(config->freq_mhz);
+        rtc_clk_set_cpu_switch_to_pll(SLEEP_EVENT_HW_PLL_EN_STOP);
     } else if (config->source == SOC_CPU_CLK_SRC_RC_FAST) {
         rtc_clk_cpu_freq_to_8m();
         if ((old_cpu_clk_src == SOC_CPU_CLK_SRC_PLL) && !s_bbpll_digi_consumers_ref_count) {
@@ -349,17 +357,17 @@ void rtc_clk_cpu_freq_to_pll_and_pll_lock_release(int cpu_freq_mhz)
     clk_ll_cpu_clk_src_lock_release();
 }
 
-rtc_xtal_freq_t rtc_clk_xtal_freq_get(void)
+soc_xtal_freq_t rtc_clk_xtal_freq_get(void)
 {
     uint32_t xtal_freq_mhz = clk_ll_xtal_load_freq_mhz();
     if (xtal_freq_mhz == 0) {
         ESP_HW_LOGW(TAG, "invalid RTC_XTAL_FREQ_REG value, assume 40MHz");
-        return RTC_XTAL_FREQ_40M;
+        return SOC_XTAL_FREQ_40M;
     }
-    return (rtc_xtal_freq_t)xtal_freq_mhz;
+    return (soc_xtal_freq_t)xtal_freq_mhz;
 }
 
-void rtc_clk_xtal_freq_update(rtc_xtal_freq_t xtal_freq)
+void rtc_clk_xtal_freq_update(soc_xtal_freq_t xtal_freq)
 {
     clk_ll_xtal_store_freq_mhz(xtal_freq);
 }
@@ -413,6 +421,25 @@ bool rtc_dig_8m_enabled(void)
 {
     return clk_ll_rc_fast_digi_is_enabled();
 }
+
+// Workaround for bootloader not calibrated well issue.
+// Placed in IRAM because disabling BBPLL may influence the cache
+void rtc_clk_recalib_bbpll(void)
+{
+    rtc_cpu_freq_config_t old_config;
+    rtc_clk_cpu_freq_get_config(&old_config);
+
+    // There are two paths we arrive here: 1. CPU reset. 2. Other reset reasons.
+    // - For other reasons, the bootloader will set CPU source to BBPLL and enable it. But there are calibration issues.
+    //   Turn off the BBPLL and do calibration again to fix the issue.
+    // - For CPU reset, the CPU source will be set to XTAL, while the BBPLL is kept to meet USB Serial JTAG's
+    //   requirements. In this case, we don't touch BBPLL to avoid USJ disconnection.
+    if (old_config.source == SOC_CPU_CLK_SRC_PLL) {
+        rtc_clk_cpu_freq_set_xtal();
+        rtc_clk_cpu_freq_set_config(&old_config);
+    }
+}
+
 
 /* Name used in libphy.a:phy_chip_v7.o
  * TODO: update the library to use rtc_clk_xtal_freq_get

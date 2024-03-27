@@ -70,7 +70,7 @@ void app_main(void)
     int64_t t2 = esp_timer_get_time();
     ESP_LOGI(TAG, "Woke up from light sleep, time since boot: %lld us", t2);
 
-    assert(llabs((t2 - t1) - 500000) < 1000);
+    assert(llabs((t2 - t1) - 500000) < 1200);
 
     /* Let the timer run for a little bit more */
     usleep(2000000);

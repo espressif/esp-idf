@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2010-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2010-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -93,7 +93,7 @@ esp_err_t ulp_run(uint32_t entry_point)
     REG_SET_FIELD(RTC_CNTL_ULP_CP_TIMER_REG, RTC_CNTL_ULP_CP_PC_INIT, entry_point);
     SET_PERI_REG_MASK(RTC_CNTL_COCPU_CTRL_REG, RTC_CNTL_COCPU_SEL);         // Select ULP_TIMER trigger target for ULP.
     // start ULP clock gate.
-    SET_PERI_REG_MASK(RTC_CNTL_ULP_CP_CTRL_REG ,RTC_CNTL_ULP_CP_CLK_FO);
+    SET_PERI_REG_MASK(RTC_CNTL_ULP_CP_CTRL_REG, RTC_CNTL_ULP_CP_CLK_FO);
     // ULP FSM sends the DONE signal.
     CLEAR_PERI_REG_MASK(RTC_CNTL_COCPU_CTRL_REG, RTC_CNTL_COCPU_DONE_FORCE);
 #if CONFIG_IDF_TARGET_ESP32S3
@@ -133,11 +133,11 @@ esp_err_t ulp_load_binary(uint32_t load_addr, const uint8_t* program_binary, siz
     }
 
     size_t total_size = (size_t) header.text_offset + (size_t) header.text_size +
-            (size_t) header.data_size;
+                        (size_t) header.data_size;
 
     ESP_LOGD(TAG, "program_size_bytes: %d total_size: %d offset: %d .text: %d, .data: %d, .bss: %d",
-            program_size_bytes, total_size, header.text_offset,
-            header.text_size, header.data_size, header.bss_size);
+             program_size_bytes, total_size, header.text_offset,
+             header.text_size, header.data_size, header.bss_size);
 
     if (total_size != program_size_bytes) {
         return ESP_ERR_INVALID_SIZE;

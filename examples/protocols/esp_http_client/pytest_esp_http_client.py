@@ -34,7 +34,8 @@ def test_examples_protocol_esp_http_client(dut: Dut) -> None:
     dut.expect(r'HTTP HEAD Status = 200, content_length = (\d)')
     dut.expect(r'HTTP Basic Auth Status = 200, content_length = (\d)')
     dut.expect(r'HTTP Basic Auth redirect Status = 200, content_length = (\d)')
-    dut.expect(r'HTTP Digest Auth Status = 200, content_length = (\d)')
+    dut.expect(r'HTTP MD5 Digest Auth Status = 200, content_length = (\d)')
+    dut.expect(r'HTTP SHA256 Digest Auth Status = 200, content_length = (\d)')
     dut.expect(r'HTTP Relative path redirect Status = 200, content_length = (\d)')
     dut.expect(r'HTTP Absolute path redirect Status = 200, content_length = (\d)')
     dut.expect(r'HTTP Absolute path redirect \(manual\) Status = 200, content_length = (\d)')
@@ -44,6 +45,7 @@ def test_examples_protocol_esp_http_client(dut: Dut) -> None:
     dut.expect(r'HTTP chunk encoding Status = 200, content_length = (-?\d)')
     # content-len for chunked encoding is typically -1, could be a positive length in some cases
     dut.expect(r'HTTP Stream reader Status = 200, content_length = (\d)')
+    dut.expect(r'HTTPS Status = 200, content_length = (\d)')
     dut.expect(r'HTTPS Status = 200, content_length = (\d)')
     dut.expect(r'Last esp error code: 0x8001')
     dut.expect(r'HTTP GET Status = 200, content_length = (\d)')
@@ -90,6 +92,7 @@ def test_examples_protocol_esp_http_client_dynamic_buffer(dut: Dut) -> None:
     dut.expect(r'HTTP chunk encoding Status = 200, content_length = (-?\d)')
     # content-len for chunked encoding is typically -1, could be a positive length in some cases
     dut.expect(r'HTTP Stream reader Status = 200, content_length = (\d)')
+    dut.expect(r'HTTPS Status = 200, content_length = (\d)')
     dut.expect(r'HTTPS Status = 200, content_length = (\d)')
     dut.expect(r'Last esp error code: 0x8001')
     dut.expect(r'HTTP GET Status = 200, content_length = (\d)')

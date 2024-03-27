@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,27 +16,54 @@
 #include "soc/pmu_struct.h"
 #include "hal/lp_aon_hal.h"
 #include "esp_private/esp_pmu.h"
+#include "pmu_param.h"
+#include "hal/efuse_ll.h"
+#include "hal/efuse_hal.h"
+#include "esp_hw_log.h"
+
+static __attribute__((unused)) const char *TAG = "pmu_sleep";
 
 #define HP(state)   (PMU_MODE_HP_ ## state)
 #define LP(state)   (PMU_MODE_LP_ ## state)
 
+uint32_t get_slp_lp_dbias(void)
+{
+    /* pmu_lp_dbias_sleep_0v7 is read from efuse to ensure that the HP_LDO_voltage is close to 0.68V,
+    ** and the LP_LDO_voltage is close to 0.73V
+    */
+    uint32_t pmu_lp_dbias_sleep_0v7 = PMU_LP_DBIAS_SLEEP_0V7_DEFAULT;
+    unsigned blk_version = efuse_hal_blk_version();
+    if (blk_version >= 3) {
+        pmu_lp_dbias_sleep_0v7 = efuse_ll_get_dslp_dbias();
+        if (pmu_lp_dbias_sleep_0v7 == 0) {
+            pmu_lp_dbias_sleep_0v7 = PMU_LP_DBIAS_SLEEP_0V7_DEFAULT;
+            ESP_HW_LOGD(TAG, "slp dbias not burnt in efuse or wrong value was burnt in blk version: %d\n", blk_version);
+        }
+    } else {
+        ESP_HW_LOGD(TAG, "blk_version is less than 3, slp dbias not burnt in efuse\n");
+    }
+
+    return pmu_lp_dbias_sleep_0v7;
+}
 
 void pmu_sleep_enable_regdma_backup(void)
 {
-    /* ESP32H2 does not have PMU HP_AON power domain. because the registers
-     * of PAU REGDMA is included to PMU TOP power domain, cause the contents
-     * of PAU REGDMA registers will be lost when the TOP domain is powered down
-     * during light sleep, so we does not need to enable REGDMA backup here.
-     * We will use the software to trigger REGDMA to backup or restore. */
+    assert(PMU_instance()->hal);
+    /* entry 0, 1, 2 is used by pmu HP_SLEEP and HP_ACTIVE, HP_SLEEP
+        * and HP_MODEM or HP_MODEM and HP_ACTIVE states switching,
+        * respectively. entry 3 is reserved, not used yet! */
+    pmu_hal_hp_set_sleep_active_backup_enable(PMU_instance()->hal);
 }
 
 void pmu_sleep_disable_regdma_backup(void)
 {
+    assert(PMU_instance()->hal);
+    pmu_hal_hp_set_sleep_active_backup_disable(PMU_instance()->hal);
 }
 
 uint32_t pmu_sleep_calculate_hw_wait_time(uint32_t pd_flags, uint32_t slowclk_period, uint32_t fastclk_period)
 {
-    const pmu_sleep_machine_constant_t *mc = (pmu_sleep_machine_constant_t *)PMU_instance()->mc;
+    pmu_sleep_machine_constant_t *mc = (pmu_sleep_machine_constant_t *)PMU_instance()->mc;
 
     /* LP core hardware wait time, microsecond */
     const int lp_clk_switch_time_us         = rtc_time_slowclk_to_us(mc->lp.clk_switch_cycle, slowclk_period);
@@ -48,6 +75,11 @@ uint32_t pmu_sleep_calculate_hw_wait_time(uint32_t pd_flags, uint32_t slowclk_pe
 
     /* HP core hardware wait time, microsecond */
     const int hp_digital_power_up_wait_time_us = mc->hp.power_supply_wait_time_us + mc->hp.power_up_wait_time_us;
+    if (pd_flags & PMU_SLEEP_PD_TOP) {
+        mc->hp.regdma_s2a_work_time_us = PMU_REGDMA_S2A_WORK_TIME_PD_TOP_US;
+    } else {
+        mc->hp.regdma_s2a_work_time_us = PMU_REGDMA_S2A_WORK_TIME_PU_TOP_US;
+    }
     const int hp_regdma_wait_time_us = mc->hp.regdma_s2a_work_time_us;
     const int hp_clock_wait_time_us = mc->hp.xtal_wait_stable_time_us + mc->hp.pll_wait_stable_time_us;
 
@@ -114,27 +146,24 @@ const pmu_sleep_config_t* pmu_sleep_config_default(
 
     if (dslp) {
         pmu_sleep_analog_config_t analog_default = PMU_SLEEP_ANALOG_DSLP_CONFIG_DEFAULT(pd_flags);
+        analog_default.lp_sys[LP(SLEEP)].analog.dbias = get_slp_lp_dbias();
         config->analog = analog_default;
     } else {
         pmu_sleep_digital_config_t digital_default = PMU_SLEEP_DIGITAL_LSLP_CONFIG_DEFAULT(pd_flags);
         config->digital = digital_default;
 
         pmu_sleep_analog_config_t analog_default = PMU_SLEEP_ANALOG_LSLP_CONFIG_DEFAULT(pd_flags);
-        if (!(pd_flags & PMU_SLEEP_PD_TOP) || !(pd_flags & PMU_SLEEP_PD_MODEM)){
-            analog_default.hp_sys.analog.xpd = 1;
-            analog_default.hp_sys.analog.dbias = 2;
-        }
+        analog_default.hp_sys.analog.dbias = PMU_HP_DBIAS_LIGHTSLEEP_0V6_DEFAULT;
+        analog_default.lp_sys[LP(SLEEP)].analog.dbias = get_slp_lp_dbias();
         if (!(pd_flags & PMU_SLEEP_PD_XTAL)){
-            analog_default.hp_sys.analog.xpd_trx = 1;
-            analog_default.hp_sys.analog.xpd = 1;
-            analog_default.hp_sys.analog.dbias = 25;
-            analog_default.hp_sys.analog.pd_cur = 0;
-            analog_default.hp_sys.analog.bias_sleep = 0;
+            analog_default.hp_sys.analog.xpd_trx = PMU_XPD_TRX_SLEEP_ON;
+            analog_default.hp_sys.analog.dbias = get_act_hp_dbias();
+            analog_default.hp_sys.analog.pd_cur = PMU_PD_CUR_SLEEP_ON;
+            analog_default.hp_sys.analog.bias_sleep = PMU_BIASSLP_SLEEP_ON;
 
-            analog_default.lp_sys[LP(SLEEP)].analog.xpd = 1;
-            analog_default.lp_sys[LP(SLEEP)].analog.pd_cur = 0;
-            analog_default.lp_sys[LP(SLEEP)].analog.bias_sleep = 0;
-            analog_default.lp_sys[LP(SLEEP)].analog.dbias = 26;
+            analog_default.lp_sys[LP(SLEEP)].analog.pd_cur = PMU_PD_CUR_SLEEP_ON;
+            analog_default.lp_sys[LP(SLEEP)].analog.bias_sleep = PMU_BIASSLP_SLEEP_ON;
+            analog_default.lp_sys[LP(SLEEP)].analog.dbias = get_act_lp_dbias();
         }
         config->analog = analog_default;
     }
@@ -165,23 +194,13 @@ static void pmu_sleep_analog_init(pmu_context_t *ctx, const pmu_sleep_analog_con
     assert(ctx->hal);
     pmu_ll_hp_set_current_power_off           (ctx->hal->dev, HP(SLEEP), analog->hp_sys.analog.pd_cur);
     pmu_ll_hp_set_bias_sleep_enable           (ctx->hal->dev, HP(SLEEP), analog->hp_sys.analog.bias_sleep);
-    pmu_ll_hp_set_regulator_sleep_memory_xpd  (ctx->hal->dev, HP(SLEEP), analog->hp_sys.analog.slp_mem_xpd);
-    pmu_ll_hp_set_regulator_sleep_logic_xpd   (ctx->hal->dev, HP(SLEEP), analog->hp_sys.analog.slp_logic_xpd);
     pmu_ll_hp_set_regulator_xpd               (ctx->hal->dev, HP(SLEEP), analog->hp_sys.analog.xpd);
-    pmu_ll_hp_set_regulator_sleep_memory_dbias(ctx->hal->dev, HP(SLEEP), analog->hp_sys.analog.slp_mem_dbias);
-    pmu_ll_hp_set_regulator_sleep_logic_dbias (ctx->hal->dev, HP(SLEEP), analog->hp_sys.analog.slp_logic_dbias);
     pmu_ll_hp_set_regulator_dbias             (ctx->hal->dev, HP(SLEEP), analog->hp_sys.analog.dbias);
     pmu_ll_hp_set_regulator_driver_bar        (ctx->hal->dev, HP(SLEEP), analog->hp_sys.analog.drv_b);
     pmu_ll_hp_set_trx_xpd                     (ctx->hal->dev, HP(SLEEP), analog->hp_sys.analog.xpd_trx);
-
-    pmu_ll_lp_set_regulator_slp_xpd    (ctx->hal->dev, LP(ACTIVE), analog->lp_sys[LP(ACTIVE)].analog.slp_xpd);
-    pmu_ll_lp_set_regulator_sleep_dbias(ctx->hal->dev, LP(ACTIVE), analog->lp_sys[LP(ACTIVE)].analog.slp_dbias);
-    pmu_ll_lp_set_regulator_xpd        (ctx->hal->dev, LP(ACTIVE), analog->lp_sys[LP(ACTIVE)].analog.xpd);
-    pmu_ll_lp_set_regulator_dbias      (ctx->hal->dev, LP(ACTIVE), analog->lp_sys[LP(ACTIVE)].analog.dbias);
-    pmu_ll_lp_set_regulator_driver_bar (ctx->hal->dev, LP(ACTIVE), analog->lp_sys[LP(ACTIVE)].analog.drv_b);
-
     pmu_ll_lp_set_current_power_off    (ctx->hal->dev, LP(SLEEP), analog->lp_sys[LP(SLEEP)].analog.pd_cur);
     pmu_ll_lp_set_bias_sleep_enable    (ctx->hal->dev, LP(SLEEP), analog->lp_sys[LP(SLEEP)].analog.bias_sleep);
+    pmu_ll_lp_set_regulator_slp_xpd    (ctx->hal->dev, LP(SLEEP), analog->lp_sys[LP(SLEEP)].analog.slp_xpd);
     pmu_ll_lp_set_regulator_xpd        (ctx->hal->dev, LP(SLEEP), analog->lp_sys[LP(SLEEP)].analog.xpd);
     pmu_ll_lp_set_regulator_sleep_dbias(ctx->hal->dev, LP(SLEEP), analog->lp_sys[LP(SLEEP)].analog.slp_dbias);
     pmu_ll_lp_set_regulator_dbias      (ctx->hal->dev, LP(SLEEP), analog->lp_sys[LP(SLEEP)].analog.dbias);
@@ -242,4 +261,10 @@ uint32_t pmu_sleep_start(uint32_t wakeup_opt, uint32_t reject_opt, uint32_t lslp
 bool pmu_sleep_finish(void)
 {
     return pmu_ll_hp_is_sleep_reject(PMU_instance()->hal->dev);
+}
+
+uint32_t pmu_sleep_get_wakup_retention_cost(void)
+{
+    const pmu_sleep_machine_constant_t *mc = (pmu_sleep_machine_constant_t *)PMU_instance()->mc;
+    return mc->hp.regdma_s2a_work_time_us;
 }

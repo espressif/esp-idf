@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -89,11 +89,11 @@ static esp_err_t test_touch_sw_read_test_runner(void)
     ESP_LOGI(TAG, "%s", __func__);
     uint16_t touch_value;
 
-    TEST_ESP_OK( touch_pad_init() );
-    TEST_ESP_OK( touch_pad_set_fsm_mode(TOUCH_FSM_MODE_SW) );
+    TEST_ESP_OK(touch_pad_init());
+    TEST_ESP_OK(touch_pad_set_fsm_mode(TOUCH_FSM_MODE_SW));
 
     for (int i = 0; i < TEST_TOUCH_CHANNEL; i++) {
-        TEST_ESP_OK( touch_pad_config(touch_list[i], TOUCH_READ_INVALID_VAL) );
+        TEST_ESP_OK(touch_pad_config(touch_list[i], TOUCH_READ_INVALID_VAL));
     }
 
     // Start task to read values sensed by pads
@@ -104,7 +104,7 @@ static esp_err_t test_touch_sw_read_test_runner(void)
     }
     printf("\n");
 
-    TEST_ESP_OK( touch_pad_deinit() );
+    TEST_ESP_OK(touch_pad_deinit());
 
     return ESP_OK;
 }
@@ -114,23 +114,23 @@ static esp_err_t test_touch_sw_read(void)
     ESP_LOGI(TAG, "%s", __func__);
     uint16_t touch_value;
 
-    TEST_ESP_OK( touch_pad_init() );
-    TEST_ESP_OK( touch_pad_set_fsm_mode(TOUCH_FSM_MODE_SW) );
+    TEST_ESP_OK(touch_pad_init());
+    TEST_ESP_OK(touch_pad_set_fsm_mode(TOUCH_FSM_MODE_SW));
 
     for (int i = 0; i < TEST_TOUCH_CHANNEL; i++) {
-        TEST_ESP_OK( touch_pad_config(touch_list[i], TOUCH_READ_INVALID_VAL) );
+        TEST_ESP_OK(touch_pad_config(touch_list[i], TOUCH_READ_INVALID_VAL));
     }
 
     // Start task to read values sensed by pads
     for (int i = 0; i < TEST_TOUCH_CHANNEL; i++) {
         printf("test T%d\n", touch_list[i]);
-        TEST_ESP_OK( touch_pad_read(touch_list[i], &touch_value) );
+        TEST_ESP_OK(touch_pad_read(touch_list[i], &touch_value));
         printf("T%d:[%4d] ", touch_list[i], touch_value);
         TEST_ASSERT_NOT_EQUAL(TOUCH_READ_INVALID_VAL, touch_value);
     }
     printf("\n");
 
-    TEST_ESP_OK( touch_pad_deinit() );
+    TEST_ESP_OK(touch_pad_deinit());
 
     return ESP_OK;
 }
@@ -141,29 +141,29 @@ static esp_err_t test_touch_timer_read(void)
     uint16_t touch_value[TEST_TOUCH_CHANNEL], touch_temp[TEST_TOUCH_CHANNEL];
     int t_cnt = TEST_TOUCH_COUNT_NUM;
 
-    TEST_ESP_OK( touch_pad_init() );
-    TEST_ESP_OK( touch_pad_set_fsm_mode(TOUCH_FSM_MODE_TIMER) );
+    TEST_ESP_OK(touch_pad_init());
+    TEST_ESP_OK(touch_pad_set_fsm_mode(TOUCH_FSM_MODE_TIMER));
 
     for (int i = 0; i < TEST_TOUCH_CHANNEL; i++) {
-        TEST_ESP_OK( touch_pad_config(touch_list[i], TOUCH_READ_INVALID_VAL) );
+        TEST_ESP_OK(touch_pad_config(touch_list[i], TOUCH_READ_INVALID_VAL));
     }
     // Start task to read values sensed by pads
     for (int i = 0; i < TEST_TOUCH_CHANNEL; i++) {
-        TEST_ESP_OK( touch_pad_read(touch_list[i], &touch_value[i]) );
+        TEST_ESP_OK(touch_pad_read(touch_list[i], &touch_value[i]));
         printf("T%d:[%4d] ", touch_list[i], touch_value[i]);
         TEST_ASSERT_NOT_EQUAL(TOUCH_READ_INVALID_VAL, touch_value[i]);
     }
     while (t_cnt--) {
         // Start task to read values sensed by pads
         for (int i = 0; i < TEST_TOUCH_CHANNEL; i++) {
-            TEST_ESP_OK( touch_pad_read(touch_list[i], &touch_temp[i]) );
+            TEST_ESP_OK(touch_pad_read(touch_list[i], &touch_temp[i]));
             TEST_ASSERT_NOT_EQUAL(TOUCH_READ_INVALID_VAL, touch_temp[i]);
             TEST_ASSERT_UINT32_WITHIN((uint32_t)((float)touch_temp[i]*TOUCH_READ_ERROR_THRESH), touch_temp[i], touch_value[i]);
         }
         vTaskDelay(50 / portTICK_PERIOD_MS);
     }
 
-    TEST_ESP_OK( touch_pad_deinit() );
+    TEST_ESP_OK(touch_pad_deinit());
 
     return ESP_OK;
 }
@@ -174,11 +174,11 @@ static esp_err_t test_touch_filtered_read(void)
     uint16_t touch_value, touch_temp;
     int t_cnt = TEST_TOUCH_COUNT_NUM;
 
-    TEST_ESP_OK( touch_pad_init() );
-    TEST_ESP_OK( touch_pad_set_fsm_mode(TOUCH_FSM_MODE_TIMER) );
+    TEST_ESP_OK(touch_pad_init());
+    TEST_ESP_OK(touch_pad_set_fsm_mode(TOUCH_FSM_MODE_TIMER));
 
     for (int i = 0; i < TEST_TOUCH_CHANNEL; i++) {
-        TEST_ESP_OK( touch_pad_config(touch_list[i], TOUCH_READ_INVALID_VAL) );
+        TEST_ESP_OK(touch_pad_config(touch_list[i], TOUCH_READ_INVALID_VAL));
     }
     // Initialize and start a software filter to detect slight change of capacitance.
     touch_pad_filter_start(TOUCHPAD_FILTER_TOUCH_PERIOD);
@@ -186,20 +186,20 @@ static esp_err_t test_touch_filtered_read(void)
 
     while (t_cnt--) {
         for (int i = 0; i < TEST_TOUCH_CHANNEL; i++) {
-            TEST_ESP_OK( touch_pad_read(touch_list[i], &touch_value) );
+            TEST_ESP_OK(touch_pad_read(touch_list[i], &touch_value));
             TEST_ASSERT_NOT_EQUAL(TOUCH_READ_INVALID_VAL, touch_value);
-            TEST_ESP_OK( touch_pad_read_raw_data(touch_list[i], &touch_value) );
+            TEST_ESP_OK(touch_pad_read_raw_data(touch_list[i], &touch_value));
             TEST_ASSERT_NOT_EQUAL(TOUCH_READ_INVALID_VAL, touch_value);
-            TEST_ESP_OK( touch_pad_read_filtered(touch_list[i], &touch_temp) );
+            TEST_ESP_OK(touch_pad_read_filtered(touch_list[i], &touch_temp));
             TEST_ASSERT_NOT_EQUAL(TOUCH_READ_INVALID_VAL, touch_temp);
-            TEST_ASSERT_UINT32_WITHIN((uint32_t)((float)touch_temp*TOUCH_READ_ERROR_THRESH), touch_temp, touch_value);
+            TEST_ASSERT_UINT32_WITHIN((uint32_t)((float)touch_temp * TOUCH_READ_ERROR_THRESH), touch_temp, touch_value);
             printf("T%d:[%4d] ", touch_list[i], touch_value);
         }
         vTaskDelay(50 / portTICK_PERIOD_MS);
     }
     printf("\n");
 
-    TEST_ESP_OK( touch_pad_deinit() );
+    TEST_ESP_OK(touch_pad_deinit());
 
     return ESP_OK;
 }
@@ -214,9 +214,9 @@ TEST_CASE("Touch Sensor all channel read test", "[touch]")
 #endif
     TOUCH_REG_BASE_TEST();
     test_touch_sw_read_test_runner();
-    TEST_ESP_OK( test_touch_sw_read() );
-    TEST_ESP_OK( test_touch_timer_read() );
-    TEST_ESP_OK( test_touch_filtered_read() );
+    TEST_ESP_OK(test_touch_sw_read());
+    TEST_ESP_OK(test_touch_timer_read());
+    TEST_ESP_OK(test_touch_filtered_read());
 #if CONFIG_PM_ENABLE
     TEST_ESP_OK(esp_pm_lock_release(pm_lock));
     TEST_ESP_OK(esp_pm_lock_delete(pm_lock));
@@ -227,9 +227,9 @@ static int test_touch_parameter(touch_pad_t pad_num, int meas_time, int slp_time
 {
     ESP_LOGI(TAG, "%s", __func__);
     uint16_t touch_value;
-    TEST_ESP_OK( touch_pad_init() );
-    TEST_ESP_OK( touch_pad_set_fsm_mode(TOUCH_FSM_MODE_TIMER) );
-    TEST_ESP_OK( touch_pad_config(pad_num, TOUCH_READ_INVALID_VAL) );
+    TEST_ESP_OK(touch_pad_init());
+    TEST_ESP_OK(touch_pad_set_fsm_mode(TOUCH_FSM_MODE_TIMER));
+    TEST_ESP_OK(touch_pad_config(pad_num, TOUCH_READ_INVALID_VAL));
 
     touch_pad_set_measurement_interval(slp_time);
     touch_pad_set_measurement_clock_cycles(meas_time);
@@ -241,17 +241,17 @@ static int test_touch_parameter(touch_pad_t pad_num, int meas_time, int slp_time
     vTaskDelay(500 / portTICK_PERIOD_MS);
 
     // Start task to read values sensed by pads
-    TEST_ESP_OK( touch_pad_read(pad_num, &touch_value) );
+    TEST_ESP_OK(touch_pad_read(pad_num, &touch_value));
     TEST_ASSERT_NOT_EQUAL(TOUCH_READ_INVALID_VAL, touch_value);
     printf("T%d:[%4d] ", pad_num, touch_value);
-    TEST_ESP_OK( touch_pad_read_raw_data(pad_num, &touch_value) );
+    TEST_ESP_OK(touch_pad_read_raw_data(pad_num, &touch_value));
     TEST_ASSERT_NOT_EQUAL(TOUCH_READ_INVALID_VAL, touch_value);
     printf("T%d:[%4d] ", pad_num, touch_value);
-    TEST_ESP_OK( touch_pad_read_filtered(pad_num, &touch_value) );
+    TEST_ESP_OK(touch_pad_read_filtered(pad_num, &touch_value));
     TEST_ASSERT_NOT_EQUAL(TOUCH_READ_INVALID_VAL, touch_value);
     printf("T%d:[%4d] \n", pad_num, touch_value);
 
-    TEST_ESP_OK( touch_pad_deinit() );
+    TEST_ESP_OK(touch_pad_deinit());
 
     return touch_value;
 }
@@ -316,12 +316,12 @@ static esp_err_t test_touch_interrupt(void)
     ESP_LOGI(TAG, "%s", __func__);
     uint16_t touch_value;
 
-    TEST_ESP_OK( touch_pad_init() );
-    TEST_ESP_OK( touch_pad_set_fsm_mode(TOUCH_FSM_MODE_TIMER) );
+    TEST_ESP_OK(touch_pad_init());
+    TEST_ESP_OK(touch_pad_set_fsm_mode(TOUCH_FSM_MODE_TIMER));
     touch_pad_set_voltage(TOUCH_HVOLT_2V7, TOUCH_LVOLT_0V5, TOUCH_HVOLT_ATTEN_1V);
 
     for (int i = 0; i < TEST_TOUCH_CHANNEL; i++) {
-        TEST_ESP_OK( touch_pad_config(touch_list[i], TOUCH_READ_INVALID_VAL) );
+        TEST_ESP_OK(touch_pad_config(touch_list[i], TOUCH_READ_INVALID_VAL));
     }
     // Initialize and start a software filter to detect slight change of capacitance.
     touch_pad_filter_start(TOUCHPAD_FILTER_TOUCH_PERIOD);
@@ -329,16 +329,16 @@ static esp_err_t test_touch_interrupt(void)
 
     for (int i = 0; i < TEST_TOUCH_CHANNEL; i++) {
         //read filtered value
-        TEST_ESP_OK( touch_pad_read_filtered(touch_list[i], &touch_value) );
+        TEST_ESP_OK(touch_pad_read_filtered(touch_list[i], &touch_value));
         ESP_LOGI(TAG, "test init: touch pad [%d] val is %d", touch_list[i], touch_value);
         //set interrupt threshold.
-        TEST_ESP_OK( touch_pad_set_thresh(touch_list[i], touch_value * 2 / 3) );
+        TEST_ESP_OK(touch_pad_set_thresh(touch_list[i], touch_value * 2 / 3));
     }
 
     // Register touch interrupt ISR
-    TEST_ESP_OK( touch_pad_isr_register(test_touch_intr_cb, NULL) );
-    TEST_ESP_OK( touch_pad_clear_status() );
-    TEST_ESP_OK( touch_pad_intr_enable() );
+    TEST_ESP_OK(touch_pad_isr_register(test_touch_intr_cb, NULL));
+    TEST_ESP_OK(touch_pad_clear_status());
+    TEST_ESP_OK(touch_pad_intr_enable());
 
     int test_cnt = TEST_TOUCH_COUNT_NUM;
     while (test_cnt--) {
@@ -366,12 +366,12 @@ static esp_err_t test_touch_interrupt(void)
         printf_touch_hw_read("release");
     }
 
-    TEST_ESP_OK( touch_pad_deinit() );
+    TEST_ESP_OK(touch_pad_deinit());
 
     return ESP_OK;
 }
 
 TEST_CASE("Touch Sensor interrupt test", "[touch]")
 {
-    TEST_ESP_OK( test_touch_interrupt() );
+    TEST_ESP_OK(test_touch_interrupt());
 }

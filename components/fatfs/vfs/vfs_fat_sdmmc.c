@@ -1,11 +1,12 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <stdlib.h>
 #include <string.h>
+#include "esp_check.h"
 #include "esp_log.h"
 #include "esp_vfs.h"
 #include "esp_vfs_fat.h"
@@ -15,7 +16,7 @@
 #include "diskio_impl.h"
 #include "diskio_sdmmc.h"
 #include "soc/soc_caps.h"
-#include "driver/sdmmc_defs.h"
+#include "sd_protocol_defs.h"
 
 #if SOC_SDMMC_HOST_SUPPORTED
 #include "driver/sdmmc_host.h"
@@ -29,14 +30,6 @@ static const char* TAG = "vfs_fat_sdmmc";
         goto cleanup; \
     } \
     } while(0)
-
-typedef struct vfs_fat_sd_ctx_t {
-    BYTE pdrv;                                  //Drive number that is mounted
-    esp_vfs_fat_mount_config_t mount_config;    //Mount configuration
-    FATFS *fs;                                  //FAT structure pointer that is registered
-    sdmmc_card_t *card;                         //Card info
-    char *base_path;                            //Path where partition is registered
-} vfs_fat_sd_ctx_t;
 
 static vfs_fat_sd_ctx_t *s_ctx[FF_VOLUMES] = {};
 /**
@@ -72,6 +65,15 @@ static uint32_t s_get_unused_context_id(void)
         }
     }
     return FF_VOLUMES;
+}
+
+vfs_fat_sd_ctx_t* get_vfs_fat_get_sd_ctx(const sdmmc_card_t *card)
+{
+    uint32_t id = FF_VOLUMES;
+    if (s_get_context_id_by_card(card, &id)) {
+        return s_ctx[id];
+    }
+    return NULL;
 }
 
 static esp_err_t mount_prepare_mem(const char *base_path,
@@ -115,7 +117,7 @@ cleanup:
     return err;
 }
 
-static esp_err_t s_f_mount(sdmmc_card_t *card, FATFS *fs, const char *drv, uint8_t pdrv, const esp_vfs_fat_mount_config_t *mount_config)
+static esp_err_t s_f_mount(sdmmc_card_t *card, FATFS *fs, const char *drv, uint8_t pdrv, const esp_vfs_fat_mount_config_t *mount_config, vfs_fat_x_ctx_flags_t *out_flags)
 {
     esp_err_t err = ESP_OK;
     FRESULT res = f_mount(fs, drv, 1);
@@ -133,6 +135,10 @@ static esp_err_t s_f_mount(sdmmc_card_t *card, FATFS *fs, const char *drv, uint8
             return err;
         }
 
+        if (out_flags) {
+            *out_flags |= FORMATTED_DURING_LAST_MOUNT; // set flag
+        }
+
         ESP_LOGW(TAG, "mounting again");
         res = f_mount(fs, drv, 0);
         if (res != FR_OK) {
@@ -140,13 +146,17 @@ static esp_err_t s_f_mount(sdmmc_card_t *card, FATFS *fs, const char *drv, uint8
             ESP_LOGD(TAG, "f_mount failed after formatting (%d)", res);
             return err;
         }
+    } else {
+        if (out_flags) {
+            *out_flags  &= ~FORMATTED_DURING_LAST_MOUNT; // reset flag
+        }
     }
 
     return ESP_OK;
 }
 
 static esp_err_t mount_to_vfs_fat(const esp_vfs_fat_mount_config_t *mount_config, sdmmc_card_t *card, uint8_t pdrv,
-                                  const char *base_path, FATFS **out_fs)
+                                  const char *base_path, FATFS **out_fs, vfs_fat_x_ctx_flags_t *out_flags)
 {
     FATFS *fs = NULL;
     esp_err_t err;
@@ -156,17 +166,22 @@ static esp_err_t mount_to_vfs_fat(const esp_vfs_fat_mount_config_t *mount_config
     char drv[3] = {(char)('0' + pdrv), ':', 0};
 
     // connect FATFS to VFS
-    err = esp_vfs_fat_register(base_path, drv, mount_config->max_files, &fs);
+    esp_vfs_fat_conf_t conf = {
+        .base_path = base_path,
+        .fat_drive = drv,
+        .max_files = mount_config->max_files,
+    };
+    err = esp_vfs_fat_register_cfg(&conf, &fs);
     *out_fs = fs;
     if (err == ESP_ERR_INVALID_STATE) {
         // it's okay, already registered with VFS
     } else if (err != ESP_OK) {
-        ESP_LOGD(TAG, "esp_vfs_fat_register failed 0x(%x)", err);
+        ESP_LOGD(TAG, "esp_vfs_fat_register_cfg failed 0x(%x)", err);
         goto fail;
     }
 
     // Try to mount partition
-    err = s_f_mount(card, fs, drv, pdrv, mount_config);
+    err = s_f_mount(card, fs, drv, pdrv, mount_config, out_flags);
     if (err != ESP_OK) {
         goto fail;
     }
@@ -206,7 +221,7 @@ static esp_err_t partition_card(const esp_vfs_fat_mount_config_t *mount_config,
                 card->csd.sector_size,
                 mount_config->allocation_unit_size);
     ESP_LOGW(TAG, "formatting card, allocation unit size=%d", alloc_unit_size);
-    const MKFS_PARM opt = {(BYTE)FM_ANY, 0, 0, 0, alloc_unit_size};
+    const MKFS_PARM opt = {(BYTE)FM_ANY, (mount_config->use_one_fat ? 1 : 2), 0, 0, alloc_unit_size};
     res = f_mkfs(drv, &opt, workbuf, workbuf_size);
     if (res != FR_OK) {
         err = ESP_FAIL;
@@ -264,7 +279,9 @@ esp_err_t esp_vfs_fat_sdmmc_mount(const char* base_path,
     err = sdmmc_card_init(host_config, card);
     CHECK_EXECUTE_RESULT(err, "sdmmc_card_init failed");
 
-    err = mount_to_vfs_fat(mount_config, card, pdrv, dup_path, &fs);
+    vfs_fat_x_ctx_flags_t flags = 0;
+
+    err = mount_to_vfs_fat(mount_config, card, pdrv, dup_path, &fs, &flags);
     CHECK_EXECUTE_RESULT(err, "mount_to_vfs failed");
 
     if (out_card != NULL) {
@@ -284,6 +301,7 @@ esp_err_t esp_vfs_fat_sdmmc_mount(const char* base_path,
     ctx->card = card;
     ctx->base_path = dup_path;
     ctx->fs = fs;
+    ctx->flags = flags;
     ctx_id = s_get_unused_context_id();
     assert(ctx_id != FF_VOLUMES);
     s_ctx[ctx_id] = ctx;
@@ -359,7 +377,9 @@ esp_err_t esp_vfs_fat_sdspi_mount(const char* base_path,
     err = sdmmc_card_init(host_config, card);
     CHECK_EXECUTE_RESULT(err, "sdmmc_card_init failed");
 
-    err = mount_to_vfs_fat(mount_config, card, pdrv, dup_path, &fs);
+    vfs_fat_x_ctx_flags_t flags = 0;
+
+    err = mount_to_vfs_fat(mount_config, card, pdrv, dup_path, &fs, &flags);
     CHECK_EXECUTE_RESULT(err, "mount_to_vfs failed");
 
     if (out_card != NULL) {
@@ -379,6 +399,7 @@ esp_err_t esp_vfs_fat_sdspi_mount(const char* base_path,
     ctx->card = card;
     ctx->base_path = dup_path;
     ctx->fs = fs;
+    ctx->flags = flags;
     ctx_id = s_get_unused_context_id();
     assert(ctx_id != FF_VOLUMES);
     s_ctx[ctx_id] = ctx;
@@ -439,6 +460,8 @@ esp_err_t esp_vfs_fat_sdcard_unmount(const char *base_path, sdmmc_card_t *card)
     if (!found) {
         return ESP_ERR_INVALID_ARG;
     }
+    free(s_ctx[id]->base_path);
+    s_ctx[id]->base_path = NULL;
     free(s_ctx[id]);
     s_ctx[id] = NULL;
 
@@ -447,7 +470,7 @@ esp_err_t esp_vfs_fat_sdcard_unmount(const char *base_path, sdmmc_card_t *card)
     return err;
 }
 
-esp_err_t esp_vfs_fat_sdcard_format(const char *base_path, sdmmc_card_t *card)
+esp_err_t esp_vfs_fat_sdcard_format_cfg(const char *base_path, sdmmc_card_t *card, esp_vfs_fat_mount_config_t *cfg)
 {
     esp_err_t ret = ESP_OK;
     if (!card) {
@@ -461,26 +484,35 @@ esp_err_t esp_vfs_fat_sdcard_format(const char *base_path, sdmmc_card_t *card)
         return ESP_ERR_INVALID_STATE;
     }
 
+    //unmount
+    char drv[3] = {(char)('0' + pdrv), ':', 0};
+    FRESULT res = f_mount(0, drv, 0);
+    if (res != FR_OK) {
+        ESP_LOGE(TAG, "f_mount unmount failed (%d)", res);
+        return ESP_FAIL;
+    }
+
     const size_t workbuf_size = 4096;
     void *workbuf = ff_memalloc(workbuf_size);
     if (workbuf == NULL) {
         return ESP_ERR_NO_MEM;
     }
 
-    //unmount
-    char drv[3] = {(char)('0' + pdrv), ':', 0};
-    f_mount(0, drv, 0);
-
     //format
     uint32_t id = FF_VOLUMES;
     bool found = s_get_context_id_by_card(card, &id);
     assert(found);
+
+    if (cfg) {
+        s_ctx[id]->mount_config = *cfg;
+    }
+
     size_t alloc_unit_size = esp_vfs_fat_get_allocation_unit_size(
                 card->csd.sector_size,
                 s_ctx[id]->mount_config.allocation_unit_size);
     ESP_LOGI(TAG, "Formatting card, allocation unit size=%d", alloc_unit_size);
-    const MKFS_PARM opt = {(BYTE)FM_ANY, 0, 0, 0, alloc_unit_size};
-    FRESULT res = f_mkfs(drv, &opt, workbuf, workbuf_size);
+    const MKFS_PARM opt = {(BYTE)FM_ANY, (s_ctx[id]->mount_config.use_one_fat ? 1 : 2), 0, 0, alloc_unit_size};
+    res = f_mkfs(drv, &opt, workbuf, workbuf_size);
     free(workbuf);
     if (res != FR_OK) {
         ret = ESP_FAIL;
@@ -488,11 +520,15 @@ esp_err_t esp_vfs_fat_sdcard_format(const char *base_path, sdmmc_card_t *card)
     }
 
     //mount back
-    esp_err_t err = s_f_mount(card, s_ctx[id]->fs, drv, pdrv, &s_ctx[id]->mount_config);
+    esp_err_t err = s_f_mount(card, s_ctx[id]->fs, drv, pdrv, &s_ctx[id]->mount_config, NULL);
     if (err != ESP_OK) {
         unmount_card_core(base_path, card);
         ESP_LOGE(TAG, "failed to format, resources recycled, please mount again");
     }
 
     return ret;
+}
+
+esp_err_t esp_vfs_fat_sdcard_format(const char *base_path, sdmmc_card_t *card) {
+    return esp_vfs_fat_sdcard_format_cfg(base_path, card, NULL);
 }

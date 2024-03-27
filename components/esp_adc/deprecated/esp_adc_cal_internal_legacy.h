@@ -31,7 +31,7 @@ typedef struct {
     uint64_t v_cali_input;                                      //Input to calculate the error
     uint8_t  term_num;                                          //Term number of the algorithm formula
     const uint64_t (*coeff)[COEFF_GROUP_NUM][TERM_MAX][2];      //Coeff of each term. See `adc_error_coef_atten` for details (and the magic number 2)
-    const int32_t  (*sign)[COEFF_GROUP_NUM][TERM_MAX];          //Sign of each term
+    const int32_t (*sign)[COEFF_GROUP_NUM][TERM_MAX];           //Sign of each term
 } esp_adc_error_calc_param_t;
 
 /**
@@ -43,7 +43,6 @@ typedef struct {
 int32_t esp_adc_cal_get_reading_error(const esp_adc_error_calc_param_t *param, uint8_t atten);
 
 #endif  //#if ESP_ADC_CAL_CURVE_FITTING_SUPPORTED
-
 
 #ifdef __cplusplus
 }

@@ -155,6 +155,26 @@ config SOC_ASSIST_DEBUG_SUPPORTED
     bool
     default y
 
+config SOC_WDT_SUPPORTED
+    bool
+    default y
+
+config SOC_SPI_FLASH_SUPPORTED
+    bool
+    default y
+
+config SOC_RNG_SUPPORTED
+    bool
+    default y
+
+config SOC_LIGHT_SLEEP_SUPPORTED
+    bool
+    default y
+
+config SOC_DEEP_SLEEP_SUPPORTED
+    bool
+    default y
+
 config SOC_XTAL_SUPPORT_40M
     bool
     default y
@@ -303,7 +323,7 @@ config SOC_CPU_WATCHPOINTS_NUM
     int
     default 8
 
-config SOC_CPU_WATCHPOINT_SIZE
+config SOC_CPU_WATCHPOINT_MAX_REGION_SIZE
     hex
     default 0x80000000
 
@@ -355,6 +375,14 @@ config SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
     bool
     default y
 
+config SOC_GPIO_IN_RANGE_MAX
+    int
+    default 21
+
+config SOC_GPIO_OUT_RANGE_MAX
+    int
+    default 21
+
 config SOC_GPIO_DEEP_SLEEP_WAKE_VALID_GPIO_MASK
     int
     default 0
@@ -362,6 +390,10 @@ config SOC_GPIO_DEEP_SLEEP_WAKE_VALID_GPIO_MASK
 config SOC_GPIO_VALID_DIGITAL_IO_PAD_MASK
     hex
     default 0x00000000003FFFC0
+
+config SOC_GPIO_CLOCKOUT_BY_GPIO_MATRIX
+    bool
+    default y
 
 config SOC_DEDIC_GPIO_OUT_CHANNELS_NUM
     int
@@ -404,6 +436,18 @@ config SOC_I2C_SUPPORT_RTC
     default y
 
 config SOC_I2C_SUPPORT_10BIT_ADDR
+    bool
+    default y
+
+config SOC_I2C_SLAVE_SUPPORT_BROADCAST
+    bool
+    default y
+
+config SOC_I2C_SLAVE_CAN_GET_STRETCH_CAUSE
+    bool
+    default y
+
+config SOC_I2C_SLAVE_SUPPORT_I2CRAM_ACCESS
     bool
     default y
 
@@ -655,6 +699,22 @@ config SOC_SPI_PERIPH_SUPPORT_CONTROL_DUMMY_OUT
     bool
     default y
 
+config SOC_SPI_SCT_SUPPORTED
+    bool
+    default y
+
+config SOC_SPI_SCT_REG_NUM
+    int
+    default 14
+
+config SOC_SPI_SCT_BUFFER_NUM_MAX
+    bool
+    default y
+
+config SOC_SPI_SCT_CONF_BITLEN_MAX
+    hex
+    default 0x3FFFA
+
 config SOC_MEMSPI_IS_INDEPENDENT
     bool
     default y
@@ -883,10 +943,6 @@ config SOC_UART_SUPPORT_WAKEUP_INT
     bool
     default y
 
-config SOC_UART_REQUIRE_CORE_RESET
-    bool
-    default y
-
 config SOC_UART_SUPPORT_FSM_TX_WAIT_SEND
     bool
     default y
@@ -1007,6 +1063,10 @@ config SOC_WIFI_SUPPORT_VARIABLE_BEACON_WINDOW
     bool
     default y
 
+config SOC_WIFI_PHY_NEEDS_USB_WORKAROUND
+    bool
+    default y
+
 config SOC_BLE_SUPPORTED
     bool
     default y
@@ -1024,5 +1084,9 @@ config SOC_BLE_DEVICE_PRIVACY_SUPPORTED
     default y
 
 config SOC_BLUFI_SUPPORTED
+    bool
+    default y
+
+config SOC_PHY_COMBO_MODULE
     bool
     default y

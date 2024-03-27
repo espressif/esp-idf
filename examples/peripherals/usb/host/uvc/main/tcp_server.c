@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -53,7 +53,7 @@ static void sender_task(void *arg)
     while (1) {
         size_t bytes_received = 0;
         char *payload = (char *)xRingbufferReceiveUpTo(
-            server->buffer, &bytes_received, pdMS_TO_TICKS(2500), 20000);
+                            server->buffer, &bytes_received, pdMS_TO_TICKS(2500), 20000);
 
         if (payload != NULL && server->is_active) {
             int sent = send(server->sock, payload, bytes_received, 0);
@@ -82,7 +82,7 @@ esp_err_t tcp_server_send(uint8_t *payload, size_t size)
         return ESP_OK;
     }
 
-    if ( xRingbufferSend(s_server->buffer, payload, size, pdMS_TO_TICKS(1)) != pdTRUE ) {
+    if (xRingbufferSend(s_server->buffer, payload, size, pdMS_TO_TICKS(1)) != pdTRUE) {
         ESP_LOGW(TAG, "Failed to send frame to ring buffer.");
         return ESP_FAIL;
     }
@@ -179,17 +179,16 @@ esp_err_t tcp_server_wait_for_connection(void)
     }
 
     server->buffer = xRingbufferCreate(100000, RINGBUF_TYPE_BYTEBUF);
-    if ( server->buffer == NULL) {
+    if (server->buffer == NULL) {
         free(server);
         return ESP_ERR_NO_MEM;;
     }
 
-    if ( create_server(server) != ESP_OK) {
+    if (create_server(server) != ESP_OK) {
         vRingbufferDelete(server->buffer);
         free(server);
         return ESP_FAIL;
     }
-
 
     BaseType_t task_created = xTaskCreate(sender_task, "sender_task", 4096, server, 10, &task_handle);
     if (!task_created) {

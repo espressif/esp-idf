@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -127,7 +127,11 @@ void static test_isr(void*arg)
 TEST_CASE("Allocate previously freed interrupt, with different flags", "[intr_alloc]")
 {
     intr_handle_t intr;
+#if CONFIG_IDF_TARGET_ESP32P4
+    int test_intr_source = ETS_GPIO_INTR0_SOURCE;
+#else
     int test_intr_source = ETS_GPIO_INTR_SOURCE;
+#endif
     int isr_flags = ESP_INTR_FLAG_LEVEL2;
 
     TEST_ESP_OK(esp_intr_alloc(test_intr_source, isr_flags, test_isr, NULL, &intr));
@@ -173,13 +177,21 @@ void IRAM_ATTR int_handler2(void *arg)
     }
 }
 
+#if !SOC_RCC_IS_INDEPENDENT
+#define TEST_BUS_RCC_CLOCK_ATOMIC() PERIPH_RCC_ATOMIC()
+#else
+#define TEST_BUS_RCC_CLOCK_ATOMIC()
+#endif
 TEST_CASE("allocate 2 handlers for a same source and remove the later one", "[intr_alloc]")
 {
     intr_alloc_test_ctx_t ctx = {false, false, false, false };
     intr_handle_t handle1, handle2;
 
     // enable SPI2
-    periph_module_enable(spi_periph_signal[1].module);
+    TEST_BUS_RCC_CLOCK_ATOMIC() {
+        spi_ll_enable_bus_clock(1, true);
+        spi_ll_reset_register(1);
+    }
 
     esp_err_t r;
     r = esp_intr_alloc(spi_periph_signal[1].irq, ESP_INTR_FLAG_SHARED, int_handler1, &ctx, &handle1);
@@ -275,7 +287,7 @@ void isr_free_task(void *param)
     vTaskDelete(NULL);
 }
 
-void isr_alloc_free_test(void)
+void isr_alloc_free_test(bool isr_free_task_no_affinity)
 {
     intr_handle_t test_handle = NULL;
     esp_err_t ret = esp_intr_alloc(spi_periph_signal[1].irq, 0, int_handler1, NULL, &test_handle);
@@ -284,16 +296,27 @@ void isr_alloc_free_test(void)
     } else {
         printf("alloc isr handle on core %d\n", esp_intr_get_cpu(test_handle));
     }
-    TEST_ASSERT(ret == ESP_OK);
-    xTaskCreatePinnedToCore(isr_free_task, "isr_free_task", 1024 * 2, (void *)&test_handle, 10, NULL, !xPortGetCoreID());
-    vTaskDelay(1000 / portTICK_PERIOD_MS);
-    TEST_ASSERT(test_handle == NULL);
+    TEST_ESP_OK(ret);
+    if (isr_free_task_no_affinity) {
+        xTaskCreate(isr_free_task, "isr_free_task", 1024 * 2, (void *)&test_handle, 3, NULL);
+        esp_rom_delay_us(500);
+        vTaskDelay(500 / portTICK_PERIOD_MS);
+    } else {
+        xTaskCreatePinnedToCore(isr_free_task, "isr_free_task", 1024 * 2, (void *)&test_handle, 10, NULL, !xPortGetCoreID());
+        vTaskDelay(1000 / portTICK_PERIOD_MS);
+    }
+    TEST_ASSERT_NULL(test_handle);
     printf("test passed\n");
 }
 
 TEST_CASE("alloc and free isr handle on different core", "[intr_alloc]")
 {
-    isr_alloc_free_test();
+    isr_alloc_free_test(false);
+}
+
+TEST_CASE("alloc and free isr handle on different core when isr_free_task is NO_AFFINITY", "[intr_alloc]")
+{
+    isr_alloc_free_test(true);
 }
 #endif
 

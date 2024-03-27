@@ -64,7 +64,7 @@ static uint32_t clk_tree_rtc_slow_calibration(uint32_t slowclk_cycles)
         cal_val = (uint32_t)(cal_dividend / source_approx_freq);
     }
     if (cal_val) {
-        ESP_EARLY_LOGD(TAG, "RTC_SLOW_CLK calibration value: %"PRIu32"", cal_val);
+        ESP_EARLY_LOGD(TAG, "RTC_SLOW_CLK calibration value: %" PRIu32, cal_val);
         // Update the calibration value of RTC_SLOW_CLK
         esp_clk_slowclk_cal_set(cal_val);
     }
@@ -177,6 +177,8 @@ uint32_t esp_clk_tree_lp_fast_get_freq_hz(esp_clk_tree_src_freq_precision_t prec
     case SOC_RTC_FAST_CLK_SRC_XTAL_DIV:
 #if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2 //SOC_RTC_FAST_CLK_SRC_XTAL_D4
         return clk_hal_xtal_get_freq_mhz() * MHZ >> 2;
+#elif CONFIG_IDF_TARGET_ESP32P4 //SOC_RTC_FAST_CLK_SRC_XTAL
+        return clk_hal_xtal_get_freq_mhz() * MHZ;
 #else //SOC_RTC_FAST_CLK_SRC_XTAL_D2
         return clk_hal_xtal_get_freq_mhz() * MHZ >> 1;
 #endif

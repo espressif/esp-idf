@@ -42,6 +42,7 @@ extern "C" {
 ---------------------------------------------------------------*/
 #define ADC_LL_DATA_INVERT_DEFAULT(PERIPH_NUM)         (0)
 #define ADC_LL_SAR_CLK_DIV_DEFAULT(PERIPH_NUM)         (1)
+#define ADC_LL_DELAY_CYCLE_AFTER_DONE_SIGNAL           (0)
 
 /*---------------------------------------------------------------
                     DMA
@@ -1108,7 +1109,7 @@ static inline void adc_ll_rtc_set_arbiter_stable_cycle(uint32_t cycle)
  * - 0dB attenuation (ADC_ATTEN_DB_0) gives full-scale voltage 1.1V
  * - 2.5dB attenuation (ADC_ATTEN_DB_2_5) gives full-scale voltage 1.5V
  * - 6dB attenuation (ADC_ATTEN_DB_6) gives full-scale voltage 2.2V
- * - 11dB attenuation (ADC_ATTEN_DB_11) gives full-scale voltage 3.9V (see note below)
+ * - 11dB attenuation (ADC_ATTEN_DB_12) gives full-scale voltage 3.9V (see note below)
  *
  * @note The full-scale voltage is the voltage corresponding to a maximum reading (depending on ADC1 configured
  * bit width, this value is: 4095 for 12-bits, 2047 for 11-bits, 1023 for 10-bits, 511 for 9 bits.)
@@ -1120,7 +1121,7 @@ static inline void adc_ll_rtc_set_arbiter_stable_cycle(uint32_t cycle)
  * - 0dB attenuation (ADC_ATTEN_DB_0) between 100 and 950mV
  * - 2.5dB attenuation (ADC_ATTEN_DB_2_5) between 100 and 1250mV
  * - 6dB attenuation (ADC_ATTEN_DB_6) between 150 to 1750mV
- * - 11dB attenuation (ADC_ATTEN_DB_11) between 150 to 2450mV
+ * - 11dB attenuation (ADC_ATTEN_DB_12) between 150 to 2450mV
  *
  * For maximum accuracy, use the ADC calibration APIs and measure voltages within these recommended ranges.
  *

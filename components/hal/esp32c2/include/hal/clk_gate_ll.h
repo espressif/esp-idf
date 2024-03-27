@@ -180,16 +180,14 @@ static inline void periph_ll_disable_clk_set_rst(periph_module_t periph)
     DPORT_SET_PERI_REG_MASK(periph_ll_get_rst_en_reg(periph), periph_ll_get_rst_en_mask(periph, false));
 }
 
-static inline void IRAM_ATTR periph_ll_wifi_bt_module_enable_clk_clear_rst(void)
+static inline void IRAM_ATTR periph_ll_wifi_bt_module_enable_clk(void)
 {
     DPORT_SET_PERI_REG_MASK(SYSTEM_WIFI_CLK_EN_REG, SYSTEM_WIFI_CLK_WIFI_BT_COMMON_M);
-    DPORT_CLEAR_PERI_REG_MASK(SYSTEM_CORE_RST_EN_REG, 0);
 }
 
-static inline void IRAM_ATTR periph_ll_wifi_bt_module_disable_clk_set_rst(void)
+static inline void IRAM_ATTR periph_ll_wifi_bt_module_disable_clk(void)
 {
     DPORT_CLEAR_PERI_REG_MASK(SYSTEM_WIFI_CLK_EN_REG, SYSTEM_WIFI_CLK_WIFI_BT_COMMON_M);
-    DPORT_SET_PERI_REG_MASK(SYSTEM_CORE_RST_EN_REG, 0);
 }
 
 static inline void periph_ll_reset(periph_module_t periph)
@@ -214,17 +212,6 @@ static inline void periph_ll_wifi_module_disable_clk_set_rst(void)
 {
     DPORT_CLEAR_PERI_REG_MASK(SYSTEM_WIFI_CLK_EN_REG, SYSTEM_WIFI_CLK_WIFI_EN_M);
     DPORT_SET_PERI_REG_MASK(SYSTEM_CORE_RST_EN_REG, 0);
-}
-
-FORCE_INLINE_ATTR bool periph_ll_uart_enabled(uint32_t uart_num)
-{
-    HAL_ASSERT(uart_num < SOC_UART_HP_NUM);
-    uint32_t uart_rst_bit = ((uart_num == 0) ? SYSTEM_UART_RST :
-                            (uart_num == 1) ? SYSTEM_UART1_RST : 0);
-    uint32_t uart_en_bit  = ((uart_num == 0) ? SYSTEM_UART_CLK_EN :
-                            (uart_num == 1) ? SYSTEM_UART1_CLK_EN : 0);
-    return DPORT_REG_GET_BIT(SYSTEM_PERIP_RST_EN0_REG, uart_rst_bit) == 0 &&
-        DPORT_REG_GET_BIT(SYSTEM_PERIP_CLK_EN0_REG, uart_en_bit) != 0;
 }
 
 #ifdef __cplusplus

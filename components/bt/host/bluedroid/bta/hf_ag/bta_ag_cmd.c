@@ -36,6 +36,9 @@
 #include "stack/port_api.h"
 #include "bta/utl.h"
 
+#if BT_HF_AG_BQB_INCLUDED
+static BOOLEAN s_bta_hf_ag_bqb_brsf_flag = false;
+#endif /* BT_HF_AG_BQB_INCLUDED */
 
 #if (BTA_AG_INCLUDED == TRUE)
 /*****************************************************************************
@@ -337,6 +340,22 @@ const UINT8 bta_ag_callsetup_ind_tbl[] =
 #if defined(BTA_HSP_RESULT_REPLACE_COLON) && (BTA_HSP_RESULT_REPLACE_COLON == TRUE)
 #define COLON_IDX_4_VGSVGM    4
 #endif
+
+/*******************************************************************************
+**
+** Function     bta_hf_ag_bqb_brsf_ctrl
+**
+** Description  Control the usage of BTA_AG_BQB_BRSF_FEAT_SPEC for BQB test
+**
+** Returns      void
+**
+*******************************************************************************/
+#if BT_HF_AG_BQB_INCLUDED
+void bta_hf_ag_bqb_brsf_ctrl(BOOLEAN enable)
+{
+    s_bta_hf_ag_bqb_brsf_flag = enable;
+}
+#endif /* BT_HF_AG_BQB_INCLUDED */
 
 /*******************************************
 *              Funcitons Result
@@ -1025,7 +1044,15 @@ void bta_ag_at_hfp_cback(tBTA_AG_SCB *p_scb, UINT16 cmd, UINT8 arg_type,
             /* store peer features */
             p_scb->peer_features = (UINT16) int_arg;
             /* send BRSF, send OK */
-            bta_ag_send_result(p_scb, BTA_AG_RES_BRSF, NULL, (INT16) (p_scb->features & BTA_AG_BSRF_FEAT_SPEC));
+#if BT_HF_AG_BQB_INCLUDED
+            if (s_bta_hf_ag_bqb_brsf_flag == true) {
+                bta_ag_send_result(p_scb, BTA_AG_RES_BRSF, NULL, (INT16) (p_scb->features & BTA_AG_BQB_BRSF_FEAT_SPEC));
+            } else {
+                bta_ag_send_result(p_scb, BTA_AG_RES_BRSF, NULL, (INT16) (p_scb->features & BTA_AG_BRSF_FEAT_SPEC));
+            }
+#else
+            bta_ag_send_result(p_scb, BTA_AG_RES_BRSF, NULL, (INT16) (p_scb->features & BTA_AG_BRSF_FEAT_SPEC));
+#endif /* BT_HF_AG_BQB_INCLUDED */
             bta_ag_send_ok(p_scb);
             break;
         }
@@ -1522,7 +1549,6 @@ void bta_ag_hfp_result(tBTA_AG_SCB *p_scb, tBTA_AG_API_RESULT *p_result)
             if (p_result->data.ok_flag != BTA_AG_OK_ERROR) {
                 if (p_result->data.str[0] != 0) {
                    bta_ag_send_result(p_scb, code, p_result->data.str, 0);
-                   bta_ag_send_ok(p_scb);
                 }
                 if (p_result->data.ok_flag == BTA_AG_OK_DONE) {
                     bta_ag_send_ok(p_scb);

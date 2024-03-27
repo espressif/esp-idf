@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import json
 import os
@@ -9,7 +9,6 @@ import subprocess
 import sys
 import threading
 import time
-from base64 import b64decode
 from textwrap import indent
 from threading import Thread
 from typing import Any, Dict, List, Optional, Union
@@ -159,7 +158,6 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
         coredump_to_flash = coredump_to_flash_config.rstrip().endswith('y') if coredump_to_flash_config else False
 
         prog = os.path.join(project_desc['build_dir'], project_desc['app_elf'])
-        args.port = args.port or get_default_serial_port()
 
         espcoredump_kwargs = dict()
 
@@ -173,12 +171,10 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
         if extra_gdbinit_file:
             espcoredump_kwargs['extra_gdbinit_file'] = extra_gdbinit_file
 
-        core_format = None
-
         if core:
             espcoredump_kwargs['core'] = core
+            espcoredump_kwargs['core_format'] = 'auto'
             espcoredump_kwargs['chip'] = get_sdkconfig_value(project_desc['config_file'], 'CONFIG_IDF_TARGET')
-            core_format = get_core_file_format(core)
         elif coredump_to_flash:
             #  If the core dump is read from flash, we don't need to specify the --core-format argument at all.
             #  The format will be determined automatically
@@ -191,9 +187,6 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
         espcoredump_kwargs['port'] = args.port
         espcoredump_kwargs['parttable_off'] = get_sdkconfig_value(project_desc['config_file'],
                                                                   'CONFIG_PARTITION_TABLE_OFFSET')
-
-        if core_format:
-            espcoredump_kwargs['core_format'] = core_format
 
         if save_core:
             espcoredump_kwargs['save_core'] = save_core
@@ -212,34 +205,6 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
             else:
                 raise
         return coredump
-
-    def get_core_file_format(core_file: str) -> str:
-        bin_v1 = 1
-        bin_v2 = 2
-        elf_crc32 = 256
-        elf_sha256 = 257
-
-        with open(core_file, 'rb') as f:
-            coredump_bytes = f.read(16)
-
-            if coredump_bytes.startswith(b'\x7fELF'):
-                return 'elf'
-
-            core_version = int.from_bytes(coredump_bytes[4:7], 'little')
-            if core_version in [bin_v1, bin_v2, elf_crc32, elf_sha256]:
-                #  esp-coredump will determine automatically the core format (ELF or BIN)
-                return 'raw'
-        with open(core_file) as c:
-            coredump_str = c.read()
-            try:
-                b64decode(coredump_str)
-            except Exception:
-                print('The format of the provided core-file is not recognized. '
-                      'Please ensure that the core-format matches one of the following: ELF (“elf”), '
-                      'raw (raw) or base64-encoded (b64) binary')
-                sys.exit(1)
-            else:
-                return 'b64'
 
     def is_gdb_with_python(gdb: str) -> bool:
         # execute simple python command to check is it supported
@@ -308,7 +273,7 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
             raise FatalError('ELF file not found. You need to build & flash the project before running debug targets')
 
         # Recreate empty 'gdbinit' directory
-        gdbinit_dir = os.path.join(project_desc['build_dir'], 'gdbinit')
+        gdbinit_dir = '/'.join([project_desc['build_dir'], 'gdbinit'])
         if os.path.isfile(gdbinit_dir):
             os.remove(gdbinit_dir)
         elif os.path.isdir(gdbinit_dir):
@@ -316,7 +281,7 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
         os.mkdir(gdbinit_dir)
 
         # Prepare gdbinit for Python GDB extensions import
-        py_extensions = os.path.join(gdbinit_dir, 'py_extensions')
+        py_extensions = '/'.join([gdbinit_dir, 'py_extensions'])
         with open(py_extensions, 'w') as f:
             if is_gdb_with_python(gdb):
                 f.write(GDBINIT_PYTHON_TEMPLATE.format(sys_path=sys.path))
@@ -324,7 +289,7 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
                 f.write(GDBINIT_PYTHON_NOT_SUPPORTED)
 
         # Prepare gdbinit for related ELFs symbols load
-        symbols = os.path.join(gdbinit_dir, 'symbols')
+        symbols = '/'.join([gdbinit_dir, 'symbols'])
         with open(symbols, 'w') as f:
             boot_elf = get_normalized_path(project_desc['bootloader_elf']) if 'bootloader_elf' in project_desc else None
             if boot_elf and os.path.exists(boot_elf):
@@ -336,7 +301,7 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
 
         # Generate the gdbinit for target connect if no custom gdbinit is present
         if not gdbinit:
-            gdbinit = os.path.join(gdbinit_dir, 'connect')
+            gdbinit = '/'.join([gdbinit_dir, 'connect'])
             with open(gdbinit, 'w') as f:
                 f.write(GDBINIT_CONNECT)
 
@@ -440,15 +405,21 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
         gdb = project_desc['monitor_toolprefix'] + 'gdb'
         generate_gdbinit_files(gdb, gdbinit, project_desc)
 
-        # this is a workaround for gdbgui
-        # gdbgui is using shlex.split for the --gdb-args option. When the input is:
-        # - '"-x=foo -x=bar"', would return ['foo bar']
-        # - '-x=foo', would return ['-x', 'foo'] and mess up the former option '--gdb-args'
-        # so for one item, use extra double quotes. for more items, use no extra double quotes.
         gdb_args_list = get_gdb_args(project_desc)
-        gdb_args = '"{}"'.format(' '.join(gdb_args_list)) if len(gdb_args_list) == 1 else ' '.join(gdb_args_list)
-        args = ['gdbgui', '-g', gdb, '--gdb-args', gdb_args]
-        print(args)
+        if sys.version_info[:2] >= (3, 11):
+            # If we use Python 3.11+ then the only compatible gdbgui doesn't support the --gdb-args argument. This
+            # check is easier than checking gdbgui version or re-running the process in case of gdb-args-related
+            # failure.
+            gdb_args = ' '.join(gdb_args_list)
+            args = ['gdbgui', '-g', ' '.join((gdb, gdb_args))]
+        else:
+            # this is a workaround for gdbgui
+            # gdbgui is using shlex.split for the --gdb-args option. When the input is:
+            # - '"-x=foo -x=bar"', would return ['foo bar']
+            # - '-x=foo', would return ['-x', 'foo'] and mess up the former option '--gdb-args'
+            # so for one item, use extra double quotes. for more items, use no extra double quotes.
+            gdb_args = '"{}"'.format(' '.join(gdb_args_list)) if len(gdb_args_list) == 1 else ' '.join(gdb_args_list)
+            args = ['gdbgui', '-g', gdb, '--gdb-args', gdb_args]
 
         if gdbgui_port is not None:
             args += ['--port', gdbgui_port]
@@ -460,10 +431,11 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
         # pygdbmi).
         env['PURE_PYTHON'] = '1'
         try:
+            print('Running: ', args)
             process = subprocess.Popen(args, stdout=gdbgui_out, stderr=subprocess.STDOUT, bufsize=1, env=env)
         except (OSError, subprocess.CalledProcessError) as e:
             print(e)
-            if sys.version_info[:2] >= (3, 11):
+            if sys.version_info[:2] >= (3, 11) and sys.platform == 'win32':
                 raise SystemExit('Unfortunately, gdbgui is supported only with Python 3.10 or older. '
                                  'See: https://github.com/espressif/esp-idf/issues/10116. '
                                  'Please use "idf.py gdb" or debug in Eclipse/Vscode instead.')
@@ -584,7 +556,7 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
     gdb_timeout_sec_opt = {
         'names': ['--gdb-timeout-sec'],
         'type': INT,
-        'default': 1,
+        'default': 3,
         'help': 'Overwrite the default internal delay for gdb responses',
     }
     fail_if_openocd_failed = {

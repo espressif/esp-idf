@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -27,6 +27,17 @@ typedef struct {
     eth_link_t link_status;         /*!< Current Link status */
     int reset_gpio_num;             /*!< Reset GPIO number, -1 means no hardware reset */
 } phy_802_3_t;
+
+/**
+ * @brief IEEE 802.3 MMD modes enumeration
+ *
+ */
+typedef enum {
+    MMD_FUNC_ADDRESS = 0,
+    MMD_FUNC_DATA_NOINCR = 1,
+    MMD_FUNC_DATA_RWINCR = 2,
+    MMD_FUNC_DATA_WINCR = 3
+} esp_eth_phy_802_3_mmd_func_t;
 
 /**
  * @brief Set Ethernet mediator
@@ -140,6 +151,16 @@ esp_err_t esp_eth_phy_802_3_set_speed(phy_802_3_t *phy_802_3, eth_speed_t speed)
 esp_err_t esp_eth_phy_802_3_set_duplex(phy_802_3_t *phy_802_3, eth_duplex_t duplex);
 
 /**
+ * @brief Set Ethernet PHY link status
+ *
+ * @param phy_802_3 IEEE 802.3 PHY object infostructure
+ * @param link new link status
+ * @return
+ *      - ESP_OK: Ethernet PHY link set successfuly
+ */
+esp_err_t esp_eth_phy_802_3_set_link(phy_802_3_t *phy_802_3, eth_link_t link);
+
+/**
  * @brief Initialize Ethernet PHY
  *
  * @param phy_802_3 IEEE 802.3 PHY object infostructure
@@ -246,6 +267,88 @@ esp_err_t esp_eth_phy_802_3_read_oui(phy_802_3_t *phy_802_3, uint32_t *oui);
  *      - ESP_ERR_INVALID_STATE: PHY is in invalid state to perform requested operation
  */
 esp_err_t esp_eth_phy_802_3_read_manufac_info(phy_802_3_t *phy_802_3, uint8_t *model, uint8_t *rev);
+
+/**
+ * @brief Reads MDIO device's internal address register
+ *
+ * @param phy_802_3 IEEE 802.3 PHY object infostructure
+ * @param devaddr Address of MDIO device
+ * @param[out] mmd_addr Current address stored in device's register
+ * @return
+ *      - ESP_OK: Address register read successfuly
+ *      - ESP_FAIL: Address register read failed because of some error occured
+ *      - ESP_ERR_INVALID_ARG: Device address provided is out of range (hardware limits device address to 5 bits)
+ */
+esp_err_t esp_eth_phy_802_3_get_mmd_addr(phy_802_3_t *phy_802_3, uint8_t devaddr, uint16_t *mmd_addr);
+
+/**
+ * @brief Write to DIO device's internal address register
+ *
+ * @param phy_802_3 IEEE 802.3 PHY object infostructure
+ * @param devaddr Address of MDIO device
+ * @param[out] mmd_addr New value of MDIO device's address register value
+ * @return
+ *      - ESP_OK: Address register written to successfuly
+ *      - ESP_FAIL: Address register write failed because of some error occured
+ *      - ESP_ERR_INVALID_ARG: Device address provided is out of range (hardware limits device address to 5 bits)
+ */
+esp_err_t esp_eth_phy_802_3_set_mmd_addr(phy_802_3_t *phy_802_3, uint8_t devaddr, uint16_t mmd_addr);
+
+/**
+ * @brief Read data of MDIO device's memory at address register
+ *
+ * @param phy_802_3 IEEE 802.3 PHY object infostructure
+ * @param devaddr Address of MDIO device
+ * @param function MMD function
+ * @param[out] data Data read from the device's memory
+ * @return
+ *      - ESP_OK: Memory read successfuly
+ *      - ESP_FAIL: Memory read failed because of some error occured
+ *      - ESP_ERR_INVALID_ARG: Device address provided is out of range (hardware limits device address to 5 bits) or MMD access function is invalid
+ */
+esp_err_t esp_eth_phy_802_3_read_mmd_data(phy_802_3_t *phy_802_3, uint8_t devaddr, esp_eth_phy_802_3_mmd_func_t function, uint32_t *data);
+
+/**
+ * @brief Write data to MDIO device's memory at address register
+ *
+ * @param phy_802_3 IEEE 802.3 PHY object infostructure
+ * @param devaddr Address of MDIO device
+ * @param function MMD function
+ * @param[out] data Data to write to the device's memory
+ * @return
+ *      - ESP_OK: Memory written successfuly
+ *      - ESP_FAIL: Memory write failed because of some error occured
+ *      - ESP_ERR_INVALID_ARG: Device address provided is out of range (hardware limits device address to 5 bits) or MMD access function is invalid
+ */
+esp_err_t esp_eth_phy_802_3_write_mmd_data(phy_802_3_t *phy_802_3, uint8_t devaddr, esp_eth_phy_802_3_mmd_func_t function, uint32_t data);
+
+/**
+ * @brief Set MMD address to mmd_addr with function MMD_FUNC_NOINCR and read contents to *data
+ *
+ * @param phy_802_3 IEEE 802.3 PHY object infostructure
+ * @param devaddr Address of MDIO device
+ * @param mmd_addr Address of MDIO device register
+ * @param[out] data Data read from the device's memory
+ * @return
+ *      - ESP_OK: Memory read successfuly
+ *      - ESP_FAIL: Memory read failed because of some error occured
+ *      - ESP_ERR_INVALID_ARG: Device address provided is out of range (hardware limits device address to 5 bits)
+ */
+esp_err_t esp_eth_phy_802_3_read_mmd_register(phy_802_3_t *phy_802_3, uint8_t devaddr, uint16_t mmd_addr, uint32_t *data);
+
+/**
+ * @brief Set MMD address to mmd_addr with function MMD_FUNC_NOINCR and write data
+ *
+ * @param phy_802_3 IEEE 802.3 PHY object infostructure
+ * @param devaddr Address of MDIO device
+ * @param mmd_addr Address of MDIO device register
+ * @param[out] data Data to write to the device's memory
+ * @return
+ *      - ESP_OK: Memory written to successfuly
+ *      - ESP_FAIL: Memory write failed because of some error occured
+ *      - ESP_ERR_INVALID_ARG: Device address provided is out of range (hardware limits device address to 5 bits)
+ */
+esp_err_t esp_eth_phy_802_3_write_mmd_register(phy_802_3_t *phy_802_3, uint8_t devaddr, uint16_t mmd_addr, uint32_t data);
 
 /**
  * @brief Returns address to parent IEEE 802.3 PHY object infostructure

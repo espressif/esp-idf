@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -57,6 +57,7 @@ typedef struct {
     TaskHandle_t source_task;
     struct udp_pcb *pcb;
     uint8_t netif_index;
+    esp_err_t err;
 } udp_bind_netif_task_t;
 
 typedef struct {
@@ -255,7 +256,6 @@ otError otPlatUdpBind(otUdpSocket *udp_socket)
 static void udp_bind_netif_task(void *ctx)
 {
     udp_bind_netif_task_t *task = (udp_bind_netif_task_t *)ctx;
-
     udp_bind_netif(task->pcb, netif_get_by_index(task->netif_index));
     xTaskNotifyGive(task->source_task);
 }
@@ -276,16 +276,20 @@ static uint8_t get_netif_index(otNetifIdentifier netif_identifier)
 
 otError otPlatUdpBindToNetif(otUdpSocket *udp_socket, otNetifIdentifier netif_identifier)
 {
+    otError err = OT_ERROR_NONE;
     udp_bind_netif_task_t task = {
         .source_task = xTaskGetCurrentTaskHandle(),
         .pcb = (struct udp_pcb *)udp_socket->mHandle,
         .netif_index = get_netif_index(netif_identifier),
+        .err = ESP_OK,
     };
 
     tcpip_callback(udp_bind_netif_task, &task);
     wait_for_task_notification();
-
-    return OT_ERROR_NONE;
+    if (task.err != ESP_OK) {
+        err = OT_ERROR_FAILED;
+    }
+    return err;
 }
 
 static void udp_connect_task(void *ctx)
@@ -424,14 +428,20 @@ exit:
 static void udp_multicast_join_leave_task(void *ctx)
 {
     udp_multicast_join_leave_task_t *task = (udp_multicast_join_leave_task_t *)ctx;
+    struct netif *target = netif_get_by_index(task->netif_index);
 
-    if (task->is_join) {
-        if (mld6_joingroup_netif(netif_get_by_index(task->netif_index), &task->addr) != ERR_OK) {
-            ESP_LOGE(OT_PLAT_LOG_TAG, "Failed to join multicast group");
-        }
+    if (target == NULL) {
+        ESP_LOGE(OT_PLAT_LOG_TAG, "Failed to %s multicast group, index%d netif is not ready",
+                task->is_join ? "join" : "leave", task->netif_index);
     } else {
-        if (mld6_leavegroup_netif(netif_get_by_index(task->netif_index), &task->addr) != ERR_OK) {
-            ESP_LOGE(OT_PLAT_LOG_TAG, "Failed to leave multicast group");
+        if (task->is_join) {
+            if (mld6_joingroup_netif(target, &task->addr) != ERR_OK) {
+                ESP_LOGE(OT_PLAT_LOG_TAG, "Failed to join multicast group");
+            }
+        } else {
+            if (mld6_leavegroup_netif(target, &task->addr) != ERR_OK) {
+                ESP_LOGE(OT_PLAT_LOG_TAG, "Failed to leave multicast group");
+            }
         }
     }
     free(task);

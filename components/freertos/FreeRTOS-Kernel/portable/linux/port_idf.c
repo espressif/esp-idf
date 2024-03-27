@@ -50,9 +50,9 @@ static void main_task(void* args)
 
 int main(int argc, const char **argv)
 {
-    // This makes sure that stdio is flushed after each '\n' so that idf.py monitor
-    // reads the program output on time.
-    setvbuf(stdout, NULL, _IOLBF, 0);
+    // This makes sure that stdio is always syncronized so that idf.py monitor
+    // and other tools read text output on time.
+    setvbuf(stdout, NULL, _IONBF, 0);
 
     usleep(1000);
     BaseType_t res = xTaskCreatePinnedToCore(&main_task, "main",

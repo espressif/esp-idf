@@ -54,9 +54,11 @@ target_link_options(${ULP_APP_NAME} PRIVATE SHELL:-T ${CMAKE_CURRENT_BINARY_DIR}
 
 # To avoid warning "Manually-specified variables were not used by the project"
 set(bypassWarning "${IDF_TARGET}")
+set(bypassWarning "${CONFIG_ESP_ROM_HAS_LP_ROM}")
 if(ULP_COCPU_IS_RISCV)
     #risc-v ulp uses extra files for building:
     list(APPEND ULP_S_SOURCES
+        "${IDF_PATH}/components/ulp/ulp_riscv/ulp_core/ulp_riscv_vectors.S"
         "${IDF_PATH}/components/ulp/ulp_riscv/ulp_core/start.S"
         "${IDF_PATH}/components/ulp/ulp_riscv/ulp_core/ulp_riscv_adc.c"
         "${IDF_PATH}/components/ulp/ulp_riscv/ulp_core/ulp_riscv_lock.c"
@@ -64,7 +66,9 @@ if(ULP_COCPU_IS_RISCV)
         "${IDF_PATH}/components/ulp/ulp_riscv/ulp_core/ulp_riscv_print.c"
         "${IDF_PATH}/components/ulp/ulp_riscv/ulp_core/ulp_riscv_i2c.c"
         "${IDF_PATH}/components/ulp/ulp_riscv/ulp_core/ulp_riscv_utils.c"
-        "${IDF_PATH}/components/ulp/ulp_riscv/ulp_core/ulp_riscv_touch.c")
+        "${IDF_PATH}/components/ulp/ulp_riscv/ulp_core/ulp_riscv_touch.c"
+        "${IDF_PATH}/components/ulp/ulp_riscv/ulp_core/ulp_riscv_gpio.c"
+        "${IDF_PATH}/components/ulp/ulp_riscv/ulp_core/ulp_riscv_interrupt.c")
 
     target_link_options(${ULP_APP_NAME} PRIVATE "-nostartfiles")
     target_link_options(${ULP_APP_NAME} PRIVATE -Wl,--gc-sections)
@@ -72,7 +76,8 @@ if(ULP_COCPU_IS_RISCV)
     target_sources(${ULP_APP_NAME} PRIVATE ${ULP_S_SOURCES})
     #Makes the csr utillies for riscv visible:
     target_include_directories(${ULP_APP_NAME} PRIVATE "${IDF_PATH}/components/ulp/ulp_riscv/ulp_core/include"
-                                                       "${IDF_PATH}/components/ulp/ulp_riscv/shared/include")
+                                                       "${IDF_PATH}/components/ulp/ulp_riscv/shared/include"
+                                                       "${IDF_PATH}/components/riscv/include")
     target_link_options(${ULP_APP_NAME} PRIVATE SHELL:-T ${IDF_PATH}/components/ulp/ld/${IDF_TARGET}.peripherals.ld)
     target_link_options(${ULP_APP_NAME} PRIVATE "-Wl,--no-warn-rwx-segments")
     target_compile_definitions(${ULP_APP_NAME} PRIVATE IS_ULP_COCPU)
@@ -86,18 +91,36 @@ elseif(ULP_COCPU_IS_LP_CORE)
     "${IDF_PATH}/components/ulp/lp_core/shared/ulp_lp_core_lp_timer_shared.c"
     "${IDF_PATH}/components/ulp/lp_core/lp_core/lp_core_startup.c"
     "${IDF_PATH}/components/ulp/lp_core/lp_core/lp_core_utils.c"
-    "${IDF_PATH}/components/ulp/lp_core/lp_core/lp_core_i2c.c"
+
     "${IDF_PATH}/components/hal/uart_hal_iram.c"
     "${IDF_PATH}/components/hal/uart_hal.c"
     "${IDF_PATH}/components/ulp/lp_core/lp_core/lp_core_uart.c"
-    "${IDF_PATH}/components/ulp/lp_core/lp_core/lp_core_print.c")
+    "${IDF_PATH}/components/ulp/lp_core/lp_core/lp_core_print.c"
+    "${IDF_PATH}/components/ulp/lp_core/lp_core/lp_core_i2c.c")
 
     target_link_options(${ULP_APP_NAME} PRIVATE "-nostartfiles")
     target_link_options(${ULP_APP_NAME} PRIVATE "-Wl,--no-warn-rwx-segments")
     target_link_options(${ULP_APP_NAME} PRIVATE -Wl,--gc-sections)
     target_link_options(${ULP_APP_NAME} PRIVATE -Wl,-Map=${CMAKE_CURRENT_BINARY_DIR}/${ULP_APP_NAME}.map)
+
+    if(${IDF_TARGET} STREQUAL "esp32c5")
+        set(target_folder "esp32c5/mp")
+    else()
+        set(target_folder ${IDF_TARGET})
+    endif()
+
     target_link_options(${ULP_APP_NAME}
-        PRIVATE SHELL:-T ${IDF_PATH}/components/soc/${IDF_TARGET}/ld/${IDF_TARGET}.peripherals.ld)
+        PRIVATE SHELL:-T ${IDF_PATH}/components/soc/${target_folder}/ld/${IDF_TARGET}.peripherals.ld)
+
+    if(CONFIG_ESP_ROM_HAS_LP_ROM)
+        target_link_options(${ULP_APP_NAME}
+            PRIVATE SHELL:-T ${IDF_PATH}/components/esp_rom/${IDF_TARGET}/ld/${IDF_TARGET}lp.rom.ld)
+        target_link_options(${ULP_APP_NAME}
+            PRIVATE SHELL:-T ${IDF_PATH}/components/esp_rom/${IDF_TARGET}/ld/${IDF_TARGET}lp.rom.newlib.ld)
+        target_link_options(${ULP_APP_NAME}
+            PRIVATE SHELL:-T ${IDF_PATH}/components/esp_rom/${IDF_TARGET}/ld/${IDF_TARGET}lp.rom.version.ld)
+    endif()
+
     target_sources(${ULP_APP_NAME} PRIVATE ${ULP_S_SOURCES})
     target_include_directories(${ULP_APP_NAME} PRIVATE "${IDF_PATH}/components/ulp/lp_core/lp_core/include"
                                                        "${IDF_PATH}/components/ulp/lp_core/shared/include")

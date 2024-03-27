@@ -1,0 +1,23 @@
+menu "Example Configuration"
+
+    menu "I2C Master"
+        config I2C_MASTER_SCL
+            int "SCL GPIO Num"
+            default 4
+            help
+                GPIO number for I2C Master clock line.
+
+        config I2C_MASTER_SDA
+            int "SDA GPIO Num"
+            default 5
+            help
+                GPIO number for I2C Master data line.
+
+        config I2C_MASTER_FREQUENCY
+            int "Master Frequency"
+            default 400000
+            help
+                I2C Speed of Master device.
+    endmenu
+
+endmenu

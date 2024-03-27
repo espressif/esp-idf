@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -85,6 +85,12 @@ static esp_err_t set_duplex(esp_eth_phy_t *phy, eth_duplex_t duplex)
 {
     phy_802_3_t *phy_802_3 = esp_eth_phy_into_phy_802_3(phy);
     return esp_eth_phy_802_3_set_duplex(phy_802_3, duplex);
+}
+
+static esp_err_t set_link(esp_eth_phy_t *phy, eth_link_t link)
+{
+    phy_802_3_t *phy_802_3 = esp_eth_phy_into_phy_802_3(phy);
+    return esp_eth_phy_802_3_set_link(phy_802_3, link);
 }
 
 static esp_err_t init(esp_eth_phy_t *phy)
@@ -344,6 +350,20 @@ err:
     return ret;
 }
 
+esp_err_t esp_eth_phy_802_3_set_link(phy_802_3_t *phy_802_3, eth_link_t link)
+{
+    esp_err_t ret = ESP_OK;
+    esp_eth_mediator_t *eth = phy_802_3->eth;
+
+    if (phy_802_3->link_status != link) {
+        phy_802_3->link_status = link;
+        // link status changed, inmiedately report to upper layers
+        ESP_GOTO_ON_ERROR(eth->on_state_changed(eth, ETH_STATE_LINK, (void *)phy_802_3->link_status), err, TAG, "change link failed");
+    }
+err:
+    return ret;
+}
+
 esp_err_t esp_eth_phy_802_3_init(phy_802_3_t *phy_802_3)
 {
     return esp_eth_phy_802_3_basic_phy_init(phy_802_3);
@@ -366,7 +386,11 @@ esp_err_t esp_eth_phy_802_3_reset_hw(phy_802_3_t *phy_802_3, uint32_t reset_asse
         esp_rom_gpio_pad_select_gpio(phy_802_3->reset_gpio_num);
         gpio_set_direction(phy_802_3->reset_gpio_num, GPIO_MODE_OUTPUT);
         gpio_set_level(phy_802_3->reset_gpio_num, 0);
-        esp_rom_delay_us(reset_assert_us);
+        if (reset_assert_us < 10000) {
+            esp_rom_delay_us(reset_assert_us);
+        } else {
+            vTaskDelay(pdMS_TO_TICKS(reset_assert_us/1000));
+        }
         gpio_set_level(phy_802_3->reset_gpio_num, 1);
     }
     return ESP_OK;
@@ -380,16 +404,18 @@ esp_err_t esp_eth_phy_802_3_detect_phy_addr(esp_eth_mediator_t *eth, int *detect
     }
     int addr_try = 0;
     uint32_t reg_value = 0;
-    for (; addr_try < 16; addr_try++) {
-        eth->phy_reg_read(eth, addr_try, ETH_PHY_IDR1_REG_ADDR, &reg_value);
-        if (reg_value != 0xFFFF && reg_value != 0x00) {
-            *detected_addr = addr_try;
-            break;
+    for (int i = 0; i < 3; i++){
+        for (addr_try = 0; addr_try < 32; addr_try++) {
+            eth->phy_reg_read(eth, addr_try, ETH_PHY_IDR1_REG_ADDR, &reg_value);
+            if (reg_value != 0xFFFF && reg_value != 0x00) {
+                *detected_addr = addr_try;
+                break;
+            }
         }
-    }
-    if (addr_try < 16) {
-        ESP_LOGD(TAG, "Found PHY address: %d", addr_try);
-        return ESP_OK;
+        if (addr_try < 32) {
+            ESP_LOGD(TAG, "Found PHY address: %d", addr_try);
+            return ESP_OK;
+        }
     }
     ESP_LOGE(TAG, "No PHY device detected");
     return ESP_ERR_NOT_FOUND;
@@ -463,6 +489,107 @@ err:
     return ret;
 }
 
+esp_err_t esp_eth_phy_802_3_get_mmd_addr(phy_802_3_t *phy_802_3, uint8_t devaddr, uint16_t *mmd_addr)
+{
+    esp_err_t ret = ESP_OK;
+    esp_eth_mediator_t *eth = phy_802_3->eth;
+
+    ESP_GOTO_ON_FALSE(devaddr <= 31, ESP_ERR_INVALID_ARG, err, TAG, "MMD device address can not be greater then 31 (0x1F)");
+
+    mmdctrl_reg_t mmdctrl;
+    mmdad_reg_t mmdad;
+    mmdctrl.function = MMD_FUNC_ADDRESS;
+    mmdctrl.devaddr = devaddr;
+    ESP_GOTO_ON_ERROR(eth->phy_reg_write(eth, phy_802_3->addr, ETH_PHY_MMDCTRL_REG_ADDR, mmdctrl.val), err, TAG, "write MMDCTRL failed");
+    ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, phy_802_3->addr, ETH_PHY_MMDAD_REG_ADDR, &mmdad.val), err, TAG, "read MMDAD failed");
+    *mmd_addr = mmdad.adrdata;
+    return ESP_OK;
+err:
+    return ret;
+}
+
+esp_err_t esp_eth_phy_802_3_set_mmd_addr(phy_802_3_t *phy_802_3, uint8_t devaddr, uint16_t mmd_addr)
+{
+    esp_err_t ret = ESP_OK;
+    esp_eth_mediator_t *eth = phy_802_3->eth;
+
+    ESP_GOTO_ON_FALSE(devaddr <= 31, ESP_ERR_INVALID_ARG, err, TAG, "MMD device address can not be greater then 31 (0x1F)");
+
+    mmdctrl_reg_t mmdctrl;
+    mmdad_reg_t mmdad;
+    mmdctrl.function = MMD_FUNC_ADDRESS;
+    mmdctrl.devaddr = devaddr;
+    ESP_GOTO_ON_ERROR(eth->phy_reg_write(eth, phy_802_3->addr, ETH_PHY_MMDCTRL_REG_ADDR, mmdctrl.val), err, TAG, "write MMDCTRL failed");
+    mmdad.adrdata = mmd_addr;
+    ESP_GOTO_ON_ERROR(eth->phy_reg_write(eth, phy_802_3->addr, ETH_PHY_MMDAD_REG_ADDR, mmdad.val), err, TAG, "write MMDAD failed");
+    return ESP_OK;
+err:
+    return ret;
+}
+
+esp_err_t esp_eth_phy_802_3_read_mmd_data(phy_802_3_t *phy_802_3, uint8_t devaddr, esp_eth_phy_802_3_mmd_func_t function, uint32_t *data)
+{
+    esp_err_t ret = ESP_OK;
+    esp_eth_mediator_t *eth = phy_802_3->eth;
+
+    ESP_GOTO_ON_FALSE(devaddr <= 31, ESP_ERR_INVALID_ARG, err, TAG, "MMD device address can not be greater then 31 (0x1F)");
+    ESP_GOTO_ON_FALSE(function != MMD_FUNC_ADDRESS, ESP_ERR_INVALID_ARG, err, TAG, "Invalid MMD mode for accessing data");
+
+    mmdctrl_reg_t mmdctrl;
+    mmdad_reg_t mmdad;
+    mmdctrl.devaddr = devaddr;
+    mmdctrl.function = function;
+    ESP_GOTO_ON_ERROR(eth->phy_reg_write(eth, phy_802_3->addr, ETH_PHY_MMDCTRL_REG_ADDR, mmdctrl.val), err, TAG, "write MMDCTRL failed");
+    ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, phy_802_3->addr, ETH_PHY_MMDAD_REG_ADDR, &mmdad.val), err, TAG, "read MMDAD failed");
+    *data = mmdad.adrdata;
+
+    return ESP_OK;
+err:
+    return ret;
+}
+
+esp_err_t esp_eth_phy_802_3_write_mmd_data(phy_802_3_t *phy_802_3, uint8_t devaddr, esp_eth_phy_802_3_mmd_func_t function, uint32_t data)
+{
+    esp_err_t ret = ESP_OK;
+    esp_eth_mediator_t *eth = phy_802_3->eth;
+
+    ESP_GOTO_ON_FALSE(devaddr <= 31, ESP_ERR_INVALID_ARG, err, TAG, "MMD device address can not be greater then 31 (0x1F)");
+    ESP_GOTO_ON_FALSE(function != MMD_FUNC_ADDRESS, ESP_ERR_INVALID_ARG, err, TAG, "Invalid MMD function for accessing data");
+
+    mmdctrl_reg_t mmdctrl;
+    mmdad_reg_t mmdad;
+    mmdctrl.devaddr = devaddr;
+    mmdctrl.function = function;
+    ESP_GOTO_ON_ERROR(eth->phy_reg_write(eth, phy_802_3->addr, ETH_PHY_MMDCTRL_REG_ADDR, mmdctrl.val), err, TAG, "write MMDCTRL failed");
+    mmdad.adrdata = data;
+    ESP_GOTO_ON_ERROR(eth->phy_reg_write(eth, phy_802_3->addr, ETH_PHY_MMDAD_REG_ADDR, mmdad.val), err, TAG, "read MMDAD failed");
+
+    return ESP_OK;
+err:
+    return ret;
+}
+
+esp_err_t esp_eth_phy_802_3_read_mmd_register(phy_802_3_t *phy_802_3, uint8_t devaddr, uint16_t mmd_addr, uint32_t *data){
+    esp_err_t ret = ESP_OK;
+
+    ESP_GOTO_ON_ERROR(esp_eth_phy_802_3_set_mmd_addr(phy_802_3, devaddr, mmd_addr), err, TAG, "Set MMD address failed");
+    ESP_GOTO_ON_ERROR(esp_eth_phy_802_3_read_mmd_data(phy_802_3, devaddr, MMD_FUNC_DATA_NOINCR, data), err, TAG, "Read MMD data failed");
+
+    return ESP_OK;
+err:
+    return ret;
+}
+esp_err_t esp_eth_phy_802_3_write_mmd_register(phy_802_3_t *phy_802_3, uint8_t devaddr, uint16_t mmd_addr, uint32_t data){
+    esp_err_t ret = ESP_OK;
+
+    ESP_GOTO_ON_ERROR(esp_eth_phy_802_3_set_mmd_addr(phy_802_3, devaddr, mmd_addr), err, TAG, "Set MMD address failed");
+    ESP_GOTO_ON_ERROR(esp_eth_phy_802_3_write_mmd_data(phy_802_3, devaddr, MMD_FUNC_DATA_NOINCR, data), err, TAG, "Write MMD data failed");
+
+    return ESP_OK;
+err:
+    return ret;
+}
+
 esp_err_t esp_eth_phy_802_3_obj_config_init(phy_802_3_t *phy_802_3, const eth_phy_config_t *config)
 {
     esp_err_t ret = ESP_OK;
@@ -489,6 +616,7 @@ esp_err_t esp_eth_phy_802_3_obj_config_init(phy_802_3_t *phy_802_3, const eth_ph
     phy_802_3->parent.set_speed = set_speed;
     phy_802_3->parent.set_duplex = set_duplex;
     phy_802_3->parent.del = del;
+    phy_802_3->parent.set_link = set_link;
     phy_802_3->parent.get_link = NULL;
     phy_802_3->parent.custom_ioctl = NULL;
 

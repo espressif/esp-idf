@@ -8,8 +8,8 @@
 
 #include "esp_heap_caps.h"
 
-//This test only makes sense with poisoning enabled (light or comprehensive)
-#if defined(CONFIG_HEAP_POISONING_COMPREHENSIVE) || defined(CONFIG_HEAP_POISONING_LIGHT)
+// these tests only make sense with poisoning enabled (light or comprehensive)
+#if defined(CONFIG_HEAP_POISONING_LIGHT) || defined(CONFIG_HEAP_POISONING_COMPREHENSIVE)
 
 /* executing multi_heap_internal_check_block_poisoning()
  * takes longer on external RAM and therefore the timeout
@@ -70,4 +70,49 @@ TEST_CASE("multi_heap poisoning detection", "[heap]")
     }
 }
 
-#endif
+#ifdef CONFIG_HEAP_TASK_TRACKING
+#define HEAD_CANARY_OFFSET  3 // head canary | task tracking | allocated size
+#else
+#define HEAD_CANARY_OFFSET  2 // head canary | allocated size
+#endif // CONFIG_HEAP_TASK_TRACKING
+
+#define TAIL_CANARY_OFFSET 1
+
+/* This test will corrupt the canary of a allocated memory block and call the
+ * heap_caps_check_integrity() function to check that the corruption is detected.
+ */
+TEST_CASE("canary corruption in light or comprehensive poisoning mode", "[heap]")
+{
+    const uint8_t allocation_size = 1 * sizeof(uint32_t);
+    /* malloc some memory to get a pointer */
+    uint32_t *ptr = heap_caps_malloc(allocation_size, MALLOC_CAP_DEFAULT);
+    TEST_ASSERT_NOT_NULL(ptr);
+
+    /* corrupt the head canary */
+    uint32_t canary = ptr[-HEAD_CANARY_OFFSET];
+    ptr[-HEAD_CANARY_OFFSET] = 0xdeadbeef;
+
+    /* call the integrity check function and verify that it returns 0 (corruption detected) */
+    bool is_corrupted = !heap_caps_check_integrity(MALLOC_CAP_DEFAULT, false);
+    TEST_ASSERT_TRUE(is_corrupted);
+
+    /* fix the head canary */
+    ptr[-HEAD_CANARY_OFFSET] = canary;
+
+    /* re run the corruption check to make sure the function returns no corruption */
+    is_corrupted = !heap_caps_check_integrity(MALLOC_CAP_DEFAULT, false);
+    TEST_ASSERT_FALSE(is_corrupted);
+
+    /* corrupt tail canary */
+    canary = ptr[TAIL_CANARY_OFFSET];
+    ptr[TAIL_CANARY_OFFSET] = 0xdeadbeef;
+
+    /* call the integrity check function and verify that it returns 0 (corruption detected) */
+    is_corrupted = !heap_caps_check_integrity(MALLOC_CAP_DEFAULT, false);
+    TEST_ASSERT_TRUE(is_corrupted);
+
+    /* clear the corruption and free the pointer before returning */
+    ptr[TAIL_CANARY_OFFSET] = canary;
+    heap_caps_free(ptr);
+}
+#endif // CONFIG_HEAP_POISONING_LIGHT && CONFIG_HEAP_LIGHT_POISONING

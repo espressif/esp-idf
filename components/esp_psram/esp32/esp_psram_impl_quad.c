@@ -1,13 +1,12 @@
 /*
- Driver bits for PSRAM chips (at the moment only the ESP-PSRAM32 chip).
-*/
-
-/*
- * SPDX-FileCopyrightText: 2013-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2013-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/*
+ Driver bits for PSRAM chips (at the moment only the ESP-PSRAM32 chip).
+*/
 
 #include "sdkconfig.h"
 #include "string.h"
@@ -19,7 +18,7 @@
 #include "../esp_psram_impl.h"
 #include "esp32/rom/spi_flash.h"
 #include "esp32/rom/cache.h"
-#include "esp32/rom/efuse.h"
+#include "rom/efuse.h"
 #include "esp_rom_efuse.h"
 #include "soc/dport_reg.h"
 #include "soc/efuse_periph.h"
@@ -202,7 +201,7 @@ typedef enum {
     PSRAM_VADDR_MODE_EVENODD,    ///< App and pro CPU share external RAM caches: pro CPU does even 32yte ranges, app does odd ones.
 } psram_vaddr_mode_t;
 
-#if CONFIG_FREERTOS_UNICORE
+#if CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
 #define PSRAM_MODE PSRAM_VADDR_MODE_NORMAL
 #else
 #define PSRAM_MODE PSRAM_VADDR_MODE_LOWHIGH
@@ -291,10 +290,9 @@ static void psram_set_basic_read_mode(psram_spi_num_t spi_num)
     CLEAR_PERI_REG_MASK(SPI_CTRL_REG(spi_num), SPI_FREAD_DIO);
 }
 
-
 //start sending cmd/addr and optionally, receiving data
 static void IRAM_ATTR psram_cmd_recv_start(psram_spi_num_t spi_num, uint32_t *pRxData, uint16_t rxByteLen,
-        psram_cmd_mode_t cmd_mode)
+                                           psram_cmd_mode_t cmd_mode)
 {
     //get cs1
     CLEAR_PERI_REG_MASK(SPI_PIN_REG(PSRAM_SPI_1), SPI_CS1_DIS_M);
@@ -311,7 +309,7 @@ static void IRAM_ATTR psram_cmd_recv_start(psram_spi_num_t spi_num, uint32_t *pR
     }
 
     //Wait for SPI0 to idle
-    while ( READ_PERI_REG(SPI_EXT2_REG(0)) != 0);
+    while (READ_PERI_REG(SPI_EXT2_REG(0)) != 0);
     DPORT_SET_PERI_REG_MASK(DPORT_HOST_INF_SEL_REG, 1 << 14);
 
     // Start send data
@@ -831,14 +829,14 @@ static void IRAM_ATTR psram_gpio_config(psram_io_t *psram_io, psram_cache_speed_
     }
 
     // Reserve psram pins
-    esp_gpio_reserve_pins(BIT64(psram_io->flash_clk_io)        |
-                          BIT64(psram_io->flash_cs_io)         |
-                          BIT64(psram_io->psram_clk_io)        |
-                          BIT64(psram_io->psram_cs_io)         |
-                          BIT64(psram_io->psram_spiq_sd0_io)   |
-                          BIT64(psram_io->psram_spid_sd1_io)   |
-                          BIT64(psram_io->psram_spihd_sd2_io)  |
-                          BIT64(psram_io->psram_spiwp_sd3_io)  );
+    esp_gpio_reserve(BIT64(psram_io->flash_clk_io)        |
+                     BIT64(psram_io->flash_cs_io)         |
+                     BIT64(psram_io->psram_clk_io)        |
+                     BIT64(psram_io->psram_cs_io)         |
+                     BIT64(psram_io->psram_spiq_sd0_io)   |
+                     BIT64(psram_io->psram_spid_sd1_io)   |
+                     BIT64(psram_io->psram_spihd_sd2_io)  |
+                     BIT64(psram_io->psram_spiwp_sd3_io));
 }
 
 //used in UT only
@@ -871,7 +869,7 @@ esp_err_t IRAM_ATTR esp_psram_impl_enable(void)   //psram init
         abort();
     } else if ((pkg_ver == EFUSE_RD_CHIP_VER_PKG_ESP32PICOD4) || (pkg_ver == EFUSE_RD_CHIP_VER_PKG_ESP32U4WDH)) {
         ESP_EARLY_LOGI(TAG, "This chip is %s",
-                        (pkg_ver == EFUSE_RD_CHIP_VER_PKG_ESP32PICOD4)? "ESP32-PICO": "ESP32-U4WDH");
+                       (pkg_ver == EFUSE_RD_CHIP_VER_PKG_ESP32PICOD4) ? "ESP32-PICO" : "ESP32-U4WDH");
         // We have better alternatives, though it's possible to use U4WDH together with PSRAM.
         // U4WDH shares the same pin config with PICO for historical reasons.
         rtc_vddsdio_config_t cfg = rtc_vddsdio_get_config();
@@ -904,7 +902,7 @@ esp_err_t IRAM_ATTR esp_psram_impl_enable(void)   //psram init
         psram_io.psram_clk_io = D0WDR2_V3_PSRAM_CLK_IO;
         psram_io.psram_cs_io  = D0WDR2_V3_PSRAM_CS_IO;
     } else {
-        ESP_EARLY_LOGE(TAG, "Not a valid or known package id: %d", pkg_ver);
+        ESP_EARLY_LOGE(TAG, "Not a valid or known package id: %" PRIu32, pkg_ver);
         abort();
     }
     s_psram_cs_io = psram_io.psram_cs_io;
@@ -987,7 +985,7 @@ esp_err_t IRAM_ATTR esp_psram_impl_enable(void)   //psram init
          */
         psram_read_id(spi_num, &s_psram_id);
         if (!PSRAM_IS_VALID(s_psram_id)) {
-            ESP_EARLY_LOGE(TAG, "PSRAM ID read error: 0x%08x, PSRAM chip not found or not supported", (uint32_t)s_psram_id);
+            ESP_EARLY_LOGE(TAG, "PSRAM ID read error: 0x%08" PRIx32 ", PSRAM chip not found or not supported", (uint32_t)s_psram_id);
             return ESP_ERR_NOT_SUPPORTED;
         }
     }
@@ -1147,7 +1145,6 @@ static void IRAM_ATTR psram_cache_init(psram_cache_speed_t psram_cache_mode, psr
 
     CLEAR_PERI_REG_MASK(SPI_PIN_REG(0), SPI_CS1_DIS_M); //ENABLE SPI0 CS1 TO PSRAM(CS0--FLASH; CS1--SRAM)
 }
-
 
 esp_err_t esp_psram_impl_get_physical_size(uint32_t *out_size_bytes)
 {

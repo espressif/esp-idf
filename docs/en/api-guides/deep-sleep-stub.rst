@@ -78,7 +78,7 @@ The first way is to use the ``RTC_DATA_ATTR`` and ``RTC_RODATA_ATTR`` to specify
 
 .. only:: SOC_RTC_SLOW_MEM_SUPPORTED
 
-    The RTC memory area where this data will be placed can be configured via menuconfig option named ``CONFIG_{IDF_TARGET_CFG_PREFIX}_RTCDATA_IN_FAST_MEM``. This option allows to keep slow memory area for ULP programs and once it is enabled the data marked with ``RTC_DATA_ATTR`` and ``RTC_RODATA_ATTR`` are placed in the RTC fast memory segment otherwise it goes to RTC slow memory (default option). This option depends on the ``CONFIG_FREERTOS_UNICORE`` because RTC fast memory can be accessed only by PRO_CPU.
+    The RTC memory area where this data will be placed can be configured via menuconfig option named ``CONFIG_{IDF_TARGET_CFG_PREFIX}_RTCDATA_IN_FAST_MEM``. This option allows to keep slow memory area for ULP programs and once it is enabled the data marked with ``RTC_DATA_ATTR`` and ``RTC_RODATA_ATTR`` are placed in the RTC fast memory segment otherwise it goes to RTC slow memory (default option). This option depends on the :ref:`CONFIG_FREERTOS_UNICORE` option because RTC fast memory can be accessed only by PRO_CPU.
 
     The attributes ``RTC_FAST_ATTR`` and ``RTC_SLOW_ATTR`` can be used to specify data that will be force placed into RTC_FAST and RTC_SLOW memory respectively. Any access to data marked with ``RTC_FAST_ATTR`` is allowed by PRO_CPU only and it is responsibility of user to make sure about it.
 

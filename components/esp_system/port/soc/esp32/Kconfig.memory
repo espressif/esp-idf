@@ -3,11 +3,11 @@ menu "Memory"
     config ESP32_RTCDATA_IN_FAST_MEM
         bool "Place RTC_DATA_ATTR and RTC_RODATA_ATTR variables into RTC fast memory segment"
         default n
-        depends on FREERTOS_UNICORE
+        depends on ESP_SYSTEM_SINGLE_CORE_MODE
         help
             This option allows to place .rtc_data and .rtc_rodata sections into
             RTC fast memory segment to free the slow memory region for ULP programs.
-            This option depends on the CONFIG_FREERTOS_UNICORE option because RTC fast memory
+            This option depends on the CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE option because RTC fast memory
             can be accessed only by PRO_CPU core.
 
     config ESP32_USE_FIXED_STATIC_RAM_SIZE
@@ -33,7 +33,7 @@ menu "Memory"
 
     config ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY
         bool "Enable IRAM as 8 bit accessible memory"
-        depends on FREERTOS_UNICORE
+        depends on ESP_SYSTEM_SINGLE_CORE_MODE
         help
             If enabled, application can use IRAM as byte accessible region for storing data
             (Note: IRAM region cannot be used as task stack)

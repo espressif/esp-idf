@@ -227,6 +227,21 @@ void BTA_DmCfgCoexStatus(UINT8 op, UINT8 type, UINT8 status)
 }
 #endif
 
+void BTA_DmsendVendorHciCmd(UINT16 opcode, UINT8 param_len, UINT8 *p_param_buf, tBTA_SEND_VENDOR_HCI_CMPL_CBACK p_vendor_cmd_complete_cback)
+{
+    tBTA_DM_API_SEND_VENDOR_HCI_CMD *p_msg;
+    if ((p_msg = (tBTA_DM_API_SEND_VENDOR_HCI_CMD *)osi_malloc(sizeof(tBTA_DM_API_SEND_VENDOR_HCI_CMD) + param_len)) != NULL) {
+        p_msg->hdr.event = BTA_DM_API_SEND_VENDOR_HCI_CMD_EVT;
+        p_msg->opcode = opcode;
+        p_msg->param_len = param_len;
+        p_msg->p_param_buf = (UINT8 *)(p_msg + 1);
+        memcpy(p_msg->p_param_buf, p_param_buf, param_len);
+        p_msg->vendor_hci_cb = p_vendor_cmd_complete_cback;
+
+        bta_sys_sendmsg(p_msg);
+    }
+}
+
 #if (CLASSIC_BT_INCLUDED == TRUE)
 
 void BTA_DmConfigEir(tBTA_DM_EIR_CONF *eir_config)
@@ -337,6 +352,30 @@ void BTA_DmGetPageTimeout(tBTM_CMPL_CB *p_cb)
     if ((p_msg = (tBTA_DM_API_PAGE_TO_GET *) osi_malloc(sizeof(tBTA_DM_API_PAGE_TO_GET))) != NULL) {
         p_msg->hdr.event = BTA_DM_API_PAGE_TO_GET_EVT;
         p_msg->get_page_to_cb = p_cb;
+
+        bta_sys_sendmsg(p_msg);
+    }
+}
+
+/*******************************************************************************
+**
+** Function         BTA_DmSetAclPktTypes
+**
+** Description      This function sets the packet types used for ACL traffic.
+**
+**
+** Returns          void
+**
+*******************************************************************************/
+void BTA_DmSetAclPktTypes(BD_ADDR remote_addr, UINT16 pkt_types, tBTM_CMPL_CB *p_cb)
+{
+    tBTA_DM_API_SET_ACL_PKT_TYPES *p_msg;
+
+    if ((p_msg = (tBTA_DM_API_SET_ACL_PKT_TYPES *) osi_malloc(sizeof(tBTA_DM_API_SET_ACL_PKT_TYPES))) != NULL) {
+        p_msg->hdr.event = BTA_DM_API_SET_ACL_PKT_TYPES_EVT;
+        bdcpy(p_msg->rmt_addr, remote_addr);
+        p_msg->pkt_types = pkt_types;
+        p_msg->set_acl_pkt_types_cb = p_cb;
 
         bta_sys_sendmsg(p_msg);
     }
@@ -1813,6 +1852,29 @@ extern void BTA_DmBleBroadcast (BOOLEAN start, tBTA_START_STOP_ADV_CMPL_CBACK *p
     }
 }
 
+/*******************************************************************************
+**
+** Function         BTA_DmBleClearAdv
+**
+** Description      This function is called to clear Advertising
+**
+** Parameters       p_adv_data_cback : clear adv complete callback.
+**
+** Returns          None
+**
+*******************************************************************************/
+void BTA_DmBleClearAdv (tBTA_CLEAR_ADV_CMPL_CBACK *p_clear_adv_cback)
+{
+    tBTA_DM_API_CLEAR_ADV  *p_msg;
+
+    if ((p_msg = (tBTA_DM_API_CLEAR_ADV *)
+                 osi_malloc(sizeof(tBTA_DM_API_CLEAR_ADV))) != NULL) {
+        p_msg->hdr.event = BTA_DM_API_BLE_CLEAR_ADV_EVT;
+        p_msg->p_clear_adv_cback = p_clear_adv_cback;
+
+        bta_sys_sendmsg(p_msg);
+    }
+}
 #endif
 /*******************************************************************************
 **
@@ -2547,6 +2609,49 @@ void BTA_DmBleSetDataLength(BD_ADDR remote_device, UINT16 tx_data_length, tBTA_S
     }
 }
 
+void BTA_DmBleDtmTxStart(uint8_t tx_channel, uint8_t len_of_data, uint8_t pkt_payload, tBTA_DTM_CMD_CMPL_CBACK *p_dtm_cmpl_cback)
+{
+    tBTA_DM_API_BLE_DTM_TX_START *p_msg;
+
+    if ((p_msg = (tBTA_DM_API_BLE_DTM_TX_START *)osi_malloc(sizeof(tBTA_DM_API_BLE_DTM_TX_START)))
+            != NULL) {
+        p_msg->hdr.event = BTA_DM_API_DTM_TX_START_EVT;
+        p_msg->tx_channel = tx_channel;
+        p_msg->len_of_data = len_of_data;
+        p_msg->pkt_payload = pkt_payload;
+        p_msg->p_dtm_cmpl_cback = p_dtm_cmpl_cback;
+
+        bta_sys_sendmsg(p_msg);
+    }
+}
+
+void BTA_DmBleDtmRxStart(uint8_t rx_channel, tBTA_DTM_CMD_CMPL_CBACK *p_dtm_cmpl_cback)
+{
+    tBTA_DM_API_BLE_DTM_RX_START *p_msg;
+
+    if ((p_msg = (tBTA_DM_API_BLE_DTM_RX_START *)osi_malloc(sizeof(tBTA_DM_API_BLE_DTM_RX_START)))
+            != NULL) {
+        p_msg->hdr.event = BTA_DM_API_DTM_RX_START_EVT;
+        p_msg->rx_channel= rx_channel;
+        p_msg->p_dtm_cmpl_cback = p_dtm_cmpl_cback;
+
+        bta_sys_sendmsg(p_msg);
+    }
+}
+
+void BTA_DmBleDtmStop(tBTA_DTM_CMD_CMPL_CBACK *p_dtm_cmpl_cback)
+{
+    tBTA_DM_API_BLE_DTM_STOP *p_msg;
+
+    if ((p_msg = (tBTA_DM_API_BLE_DTM_STOP *)osi_malloc(sizeof(tBTA_DM_API_BLE_DTM_STOP)))
+            != NULL) {
+        p_msg->hdr.event = BTA_DM_API_DTM_STOP_EVT;
+        p_msg->p_dtm_cmpl_cback = p_dtm_cmpl_cback;
+
+        bta_sys_sendmsg(p_msg);
+    }
+}
+
 #endif
 
 /*******************************************************************************
@@ -2816,7 +2921,6 @@ void BTA_VendorCleanup (void)
     }
 #endif
 
-    btm_ble_multi_adv_cleanup();
 }
 #if (BLE_50_FEATURE_SUPPORT == TRUE)
 void BTA_DmBleGapReadPHY(BD_ADDR addr)
@@ -3226,6 +3330,39 @@ void BTA_DmBleGapExtConnect(tBLE_ADDR_TYPE own_addr_type, const BD_ADDR peer_add
         APPL_TRACE_ERROR("%s malloc failed", __func__);
     }
 
+}
+
+void BTA_DmBleDtmEnhTxStart(uint8_t tx_channel, uint8_t len_of_data, uint8_t pkt_payload, uint8_t phy, tBTA_DTM_CMD_CMPL_CBACK *p_dtm_cmpl_cback)
+{
+    tBTA_DM_API_BLE_DTM_ENH_TX_START *p_msg;
+
+    if ((p_msg = (tBTA_DM_API_BLE_DTM_ENH_TX_START *)osi_malloc(sizeof(tBTA_DM_API_BLE_DTM_ENH_TX_START)))
+            != NULL) {
+        p_msg->hdr.event = BTA_DM_API_DTM_ENH_TX_START_EVT;
+        p_msg->tx_channel = tx_channel;
+        p_msg->len_of_data = len_of_data;
+        p_msg->pkt_payload = pkt_payload;
+        p_msg->phy = phy;
+        p_msg->p_dtm_cmpl_cback = p_dtm_cmpl_cback;
+
+        bta_sys_sendmsg(p_msg);
+    }
+}
+
+void BTA_DmBleDtmEnhRxStart(uint8_t rx_channel, uint8_t phy, uint8_t modulation_index, tBTA_DTM_CMD_CMPL_CBACK *p_dtm_cmpl_cback)
+{
+    tBTA_DM_API_BLE_DTM_ENH_RX_START *p_msg;
+
+    if ((p_msg = (tBTA_DM_API_BLE_DTM_ENH_RX_START *)osi_malloc(sizeof(tBTA_DM_API_BLE_DTM_ENH_RX_START)))
+            != NULL) {
+        p_msg->hdr.event = BTA_DM_API_DTM_ENH_RX_START_EVT;
+        p_msg->rx_channel= rx_channel;
+        p_msg->phy = phy;
+        p_msg->modulation_index = modulation_index;
+        p_msg->p_dtm_cmpl_cback = p_dtm_cmpl_cback;
+
+        bta_sys_sendmsg(p_msg);
+    }
 }
 
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)

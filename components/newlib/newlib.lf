@@ -5,5 +5,5 @@ entries:
   abort (noflash)
   assert (noflash)
   stdatomic (noflash)
-  if IDF_TARGET_ARCH_RISCV:
-    port_stdatomic (noflash)
+  if STDATOMIC_S32C1I_SPIRAM_WORKAROUND = y:
+    stdatomic_s32c1i (noflash)

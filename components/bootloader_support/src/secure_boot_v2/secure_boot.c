@@ -70,7 +70,7 @@ static esp_err_t s_calculate_image_public_key_digests(uint32_t flash_offset, uin
     uint8_t __attribute__((aligned(4))) key_digest[ESP_SECURE_BOOT_DIGEST_LEN] = {0};
     size_t sig_block_addr = flash_offset + ALIGN_UP(flash_size, FLASH_SECTOR_SIZE);
 
-    ESP_LOGD(TAG, "calculating public key digests for sig blocks of image offset 0x%x (sig block offset 0x%x)", flash_offset, sig_block_addr);
+    ESP_LOGD(TAG, "calculating public key digests for sig blocks of image offset 0x%" PRIx32 " (sig block offset 0x%x)", flash_offset, sig_block_addr);
 
     bzero(public_key_digests, sizeof(esp_image_sig_public_key_digests_t));
 
@@ -130,7 +130,7 @@ static esp_err_t s_calculate_image_public_key_digests(uint32_t flash_offset, uin
     }
 
     if (ret == ESP_OK && public_key_digests->num_digests > 0) {
-        ESP_LOGI(TAG, "Digests successfully calculated, %d valid signatures (image offset 0x%x)",
+        ESP_LOGI(TAG, "Digests successfully calculated, %d valid signatures (image offset 0x%" PRIx32 ")",
                  public_key_digests->num_digests, flash_offset);
     }
 

@@ -10,6 +10,8 @@ IDF clang-tidy 是使用 `clang-tidy <https://clang.llvm.org/extra/clang-tidy/>`
 
    IDF clang-tidy 的功能及其依赖的工具链尚在开发中，最终版本发布前可能有重大变更。
 
+   目前仅支持基于 clang 的工具链。在配置项目前，必须在环境变量或 CMake 缓存中设置 ``IDF_TOOLCHAIN=clang`` 进行激活。
+
 .. only:: CONFIG_IDF_TARGET_ARCH_RISCV
 
    .. warning::
@@ -21,19 +23,11 @@ IDF clang-tidy 是使用 `clang-tidy <https://clang.llvm.org/extra/clang-tidy/>`
 
 初次运行此工具时，请按照以下步骤准备该工具：
 
-#. 运行导出脚本（如 ``export.sh``、``export.bat`` 等），设置环境变量。
-#. 运行 ``pip install --upgrade pyclang`` 安装插件，其他命令将在 ``idf.py`` 中自动激活。
 #. 运行 ``idf_tools.py install esp-clang`` 安装 clang-tidy 所需的二进制文件。
 
    .. note::
 
       该工具链尚在开发中，最终版本发布后，将无需手动安装工具链。
-
-#. 从 `llvm 仓库 <https://github.com/llvm/llvm-project/blob/main/clang-tools-extra/clang-tidy/tool/run-clang-tidy.py>`__ 获取文件，并将该脚本所在的文件夹添加到 ``$PATH`` 中，或在调用 ``idf.py clang-check`` 时传递可选参数 ``--run-clang-tidy-py``。请将脚本设置为可执行。
-
-   .. note::
-
-      在未来工具链版本中，该文件将一并捆绑。目前为临时解决方案。
 
 #. 再次运行导出脚本（如 ``export.sh``、``export.bat`` 等），刷新环境变量。
 

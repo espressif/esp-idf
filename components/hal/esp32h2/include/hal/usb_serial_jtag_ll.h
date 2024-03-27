@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,6 +7,9 @@
 // The LL layer of the USB-serial-jtag controller
 
 #pragma once
+#include <stdbool.h>
+#include "esp_attr.h"
+#include "soc/pcr_struct.h"
 #include "soc/usb_serial_jtag_reg.h"
 #include "soc/usb_serial_jtag_struct.h"
 
@@ -30,6 +33,8 @@ typedef enum {
     USB_SERIAL_JTAG_INTR_BUS_RESET              = (1 << 9),
     USB_SERIAL_JTAG_INTR_EP1_ZERO_PAYLOAD       = (1 << 10),
 } usb_serial_jtag_ll_intr_t;
+
+/* ----------------------------- USJ Peripheral ----------------------------- */
 
 /**
  * @brief  Enable the USB_SERIAL_JTAG interrupt based on the given mask.
@@ -158,8 +163,14 @@ static inline int usb_serial_jtag_ll_txfifo_writable(void)
  * @brief  Flushes the TX buffer, that is, make it available for the
  *         host to pick up.
  *
- * @note  When fifo is full (with 64 byte), HW will flush the buffer automatically.
- *        It won't be executed if there is nothing in the fifo.
+ * @note  When fifo is full (with 64 byte), HW will flush the buffer automatically,
+ *        if this function is called directly after, this effectively turns into a
+ *        no-op. Because a 64-byte packet will be interpreted as a not-complete USB
+ *        transaction, you need to transfer either more data or a zero-length packet
+ *        for the data to actually end up at the program listening to the CDC-ACM
+ *        serial port. To send a zero-length packet, call
+ *        usb_serial_jtag_ll_txfifo_flush() again when
+ *        usb_serial_jtag_ll_txfifo_writable() returns true.
  *
  * @return na
  */
@@ -168,6 +179,152 @@ static inline void usb_serial_jtag_ll_txfifo_flush(void)
     USB_SERIAL_JTAG.ep1_conf.wr_done=1;
 }
 
+/**
+ * @brief Enable USJ JTAG bridge
+ *
+ * If enabled, USJ is disconnected from internal JTAG interface. JTAG interface
+ * is routed through GPIO matrix instead.
+ *
+ * @param enable Enable USJ JTAG bridge
+ */
+FORCE_INLINE_ATTR void usb_serial_jtag_ll_phy_set_jtag_bridge(bool enable)
+{
+    USB_SERIAL_JTAG.conf0.usb_jtag_bridge_en = enable;
+}
+
+/* ---------------------------- USB PHY Control  ---------------------------- */
+
+/**
+ * @brief Sets whether the USJ's FSLS PHY interface routes to an internal or external PHY
+ *
+ * @param enable Enables external PHY, internal otherwise
+ */
+FORCE_INLINE_ATTR void usb_serial_jtag_ll_phy_enable_external(bool enable)
+{
+    USB_SERIAL_JTAG.conf0.phy_sel = enable;
+}
+
+/**
+ * @brief Enables/disables exchanging of the D+/D- pins USB PHY
+ *
+ * @param enable Enables pin exchange, disabled otherwise
+ */
+FORCE_INLINE_ATTR void usb_serial_jtag_ll_phy_enable_pin_exchg(bool enable)
+{
+    if (enable) {
+        USB_SERIAL_JTAG.conf0.exchg_pins = 1;
+        USB_SERIAL_JTAG.conf0.exchg_pins_override = 1;
+    } else {
+        USB_SERIAL_JTAG.conf0.exchg_pins_override = 0;
+        USB_SERIAL_JTAG.conf0.exchg_pins = 0;
+    }
+}
+
+/**
+ * @brief Enables and sets voltage threshold overrides for USB FSLS PHY single-ended inputs
+ *
+ * @param vrefh_step High voltage threshold. 0 to 3 indicating 80mV steps from 1.76V to 2V.
+ * @param vrefl_step Low voltage threshold. 0 to 3 indicating 80mV steps from 0.8V to 1.04V.
+ */
+FORCE_INLINE_ATTR void usb_serial_jtag_ll_phy_enable_vref_override(unsigned int vrefh_step, unsigned int vrefl_step)
+{
+    USB_SERIAL_JTAG.conf0.vrefh = vrefh_step;
+    USB_SERIAL_JTAG.conf0.vrefl = vrefl_step;
+    USB_SERIAL_JTAG.conf0.vref_override = 1;
+}
+
+/**
+ * @brief Disables voltage threshold overrides for USB FSLS PHY single-ended inputs
+ */
+FORCE_INLINE_ATTR void usb_serial_jtag_ll_phy_disable_vref_override(void)
+{
+    USB_SERIAL_JTAG.conf0.vref_override = 0;
+}
+
+/**
+ * @brief Enable override of USB FSLS PHY's pull up/down resistors
+ *
+ * @param dp_pu Enable D+ pullup
+ * @param dm_pu Enable D- pullup
+ * @param dp_pd Enable D+ pulldown
+ * @param dm_pd Enable D- pulldown
+ */
+FORCE_INLINE_ATTR void usb_serial_jtag_ll_phy_enable_pull_override(bool dp_pu, bool dm_pu, bool dp_pd, bool dm_pd)
+{
+    USB_SERIAL_JTAG.conf0.dp_pullup = dp_pu;
+    USB_SERIAL_JTAG.conf0.dp_pulldown = dp_pd;
+    USB_SERIAL_JTAG.conf0.dm_pullup = dm_pu;
+    USB_SERIAL_JTAG.conf0.dm_pulldown = dm_pd;
+    USB_SERIAL_JTAG.conf0.pad_pull_override = 1;
+}
+
+/**
+ * @brief Disable override of USB FSLS PHY pull up/down resistors
+ */
+FORCE_INLINE_ATTR void usb_serial_jtag_ll_phy_disable_pull_override(void)
+{
+    USB_SERIAL_JTAG.conf0.pad_pull_override = 0;
+}
+
+/**
+ * @brief Sets the strength of the pullup resistor
+ *
+ * @param strong True is a ~1.4K pullup, false is a ~2.4K pullup
+ */
+FORCE_INLINE_ATTR void usb_serial_jtag_ll_phy_set_pullup_strength(bool strong)
+{
+    USB_SERIAL_JTAG.conf0.pullup_value = strong;
+}
+
+/**
+ * @brief Check if USB FSLS PHY pads are enabled
+ *
+ * @return True if enabled, false otherwise
+ */
+FORCE_INLINE_ATTR bool usb_serial_jtag_ll_phy_is_pad_enabled(void)
+{
+    return USB_SERIAL_JTAG.conf0.usb_pad_enable;
+}
+
+/**
+ * @brief Enable the USB FSLS PHY pads
+ *
+ * @param enable Whether to enable the USB FSLS PHY pads
+ */
+FORCE_INLINE_ATTR void usb_serial_jtag_ll_phy_enable_pad(bool enable)
+{
+    USB_SERIAL_JTAG.conf0.usb_pad_enable = enable;
+}
+
+/* ----------------------------- RCC Functions  ----------------------------- */
+
+/**
+ * @brief Enable the bus clock for  USB Serial_JTAG module
+ * @param clk_en True if enable the clock of USB Serial_JTAG module
+ */
+FORCE_INLINE_ATTR void usb_serial_jtag_ll_enable_bus_clock(bool clk_en)
+{
+    PCR.usb_device_conf.usb_device_clk_en = clk_en;
+}
+
+/**
+ * @brief Reset the usb serial jtag module
+ */
+FORCE_INLINE_ATTR void usb_serial_jtag_ll_reset_register(void)
+{
+    PCR.usb_device_conf.usb_device_rst_en = 1;
+    PCR.usb_device_conf.usb_device_rst_en = 0;
+}
+
+/**
+ * Get the enable status USB Serial_JTAG module
+ *
+ * @return Return true if USB Serial_JTAG module is enabled
+ */
+FORCE_INLINE_ATTR bool usb_serial_jtag_ll_module_is_enabled(void)
+{
+    return (PCR.usb_device_conf.usb_device_clk_en && !PCR.usb_device_conf.usb_device_rst_en);
+}
 
 #ifdef __cplusplus
 }

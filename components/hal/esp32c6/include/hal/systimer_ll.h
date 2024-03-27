@@ -37,6 +37,35 @@ static inline soc_periph_systimer_clk_src_t systimer_ll_get_clock_source(void)
     return (PCR.systimer_func_clk_conf.systimer_func_clk_sel == 1) ? SYSTIMER_CLK_SRC_RC_FAST : SYSTIMER_CLK_SRC_XTAL;
 }
 
+/**
+ * @brief Enable the bus clock for systimer module
+ *
+ * @param enable true to enable, false to disable
+ */
+static inline void systimer_ll_enable_bus_clock(bool enable)
+{
+    PCR.systimer_conf.systimer_clk_en = enable;
+}
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_RC_ATOMIC_ENV variable in advance
+#define systimer_ll_enable_bus_clock(...) (void)__DECLARE_RCC_RC_ATOMIC_ENV; systimer_ll_enable_bus_clock(__VA_ARGS__)
+
+/**
+ * @brief Reset the systimer module
+ *
+ * @param group_id Group ID
+ */
+static inline void systimer_ll_reset_register(void)
+{
+    PCR.systimer_conf.systimer_rst_en = 1;
+    PCR.systimer_conf.systimer_rst_en = 0;
+}
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_RC_ATOMIC_ENV variable in advance
+#define systimer_ll_reset_register(...) (void)__DECLARE_RCC_RC_ATOMIC_ENV; systimer_ll_reset_register(__VA_ARGS__)
+
 /********************** ETM *****************************/
 
 __attribute__((always_inline)) static inline void systimer_ll_enable_etm(systimer_dev_t *dev, bool en)

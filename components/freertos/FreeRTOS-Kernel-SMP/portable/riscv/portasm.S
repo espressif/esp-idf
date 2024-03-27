@@ -9,6 +9,10 @@
 #include "esp_private/hw_stack_guard.h"
 #endif
 
+#if CONFIG_FREERTOS_UNICORE
+#define pxCurrentTCBs   pxCurrentTCB
+#endif
+
     .global uxInterruptNesting
     .global uxSchedulerRunning
     .global xIsrStackTop
@@ -71,11 +75,19 @@ rtos_enter_end:
     ret
 
 /**
- * Restores the context of the next task.
+ * @brief Restore the stack pointer of the next task to run.
+ *
+ * @param a0 Former mstatus
+ *
+ * @returns New mstatus
  */
     .global rtos_int_exit
     .type rtos_int_exit, @function
 rtos_int_exit:
+    /* To speed up this routine and because this current routine is only meant to be called from the interrupt
+     * handler, let's use callee-saved registers instead of stack space. Registers `s3-s11` are not used by
+     * the caller */
+    mv s11, a0
     /* may skip RTOS aware interrupt since scheduler was not started */
     lw t0, uxSchedulerRunning
     beq t0,zero, rtos_exit_end
@@ -137,4 +149,5 @@ no_switch:
 #endif /* CONFIG_ESP_SYSTEM_HW_STACK_GUARD */
 
 rtos_exit_end:
+    mv a0, s11                         /* a0 = new mstatus */
     ret

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -122,6 +122,15 @@ typedef struct {
 } esp_eth_config_t;
 
 /**
+ * @brief Data structure to Read/Write PHY register via ioctl API
+ *
+ */
+typedef struct {
+    uint32_t reg_addr;              /*!< PHY register address */
+    uint32_t *reg_value_p;          /*!< Pointer to a memory where the register value is read/written */
+} esp_eth_phy_reg_rw_data_t;
+
+/**
 * @brief Command list for ioctl API
 *
 */
@@ -139,6 +148,8 @@ typedef enum {
     ETH_CMD_G_DUPLEX_MODE,            /*!< Get Duplex mode */
     ETH_CMD_S_DUPLEX_MODE,            /*!< Set Duplex mode */
     ETH_CMD_S_PHY_LOOPBACK,           /*!< Set PHY loopback */
+    ETH_CMD_READ_PHY_REG,             /*!< Read PHY register */
+    ETH_CMD_WRITE_PHY_REG,            /*!< Write PHY register */
 
     ETH_CMD_CUSTOM_MAC_CMDS = 0x0FFF, // Offset for start of MAC custom commands
     ETH_CMD_CUSTOM_PHY_CMDS = 0x1FFF, // Offset for start of PHY custom commands

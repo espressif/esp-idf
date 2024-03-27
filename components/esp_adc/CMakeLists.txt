@@ -1,5 +1,9 @@
 idf_build_get_property(target IDF_TARGET)
 
+if(${target} STREQUAL "linux")
+    return() # This component is not supported by the POSIX/Linux simulator
+endif()
+
 set(includes "include" "interface" "${target}/include" "deprecated/include")
 
 set(srcs "adc_cali.c"
@@ -14,6 +18,13 @@ if(CONFIG_SOC_ADC_DMA_SUPPORTED)
     list(APPEND srcs "adc_continuous.c")
     if(CONFIG_SOC_ADC_MONITOR_SUPPORTED)
         list(APPEND srcs "adc_monitor.c")
+    endif()
+    if(CONFIG_SOC_GDMA_SUPPORTED)
+        list(APPEND srcs "gdma/adc_dma.c")
+    elseif(${target} STREQUAL "esp32")
+        list(APPEND srcs "esp32/adc_dma.c")
+    elseif(${target} STREQUAL "esp32s2")
+        list(APPEND srcs "esp32s2/adc_dma.c")
     endif()
 endif()
 
@@ -38,5 +49,5 @@ endif()
 
 idf_component_register(SRCS ${srcs}
                        INCLUDE_DIRS ${includes}
-                       PRIV_REQUIRES driver efuse
+                       PRIV_REQUIRES driver esp_driver_gpio efuse esp_pm esp_ringbuf
                        LDFRAGMENTS linker.lf)

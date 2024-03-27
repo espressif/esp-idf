@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: CC0-1.0
  */
@@ -18,7 +18,6 @@
 #define EXAMPLE_MIC_GAIN        CONFIG_EXAMPLE_MIC_GAIN
 #endif
 
-
 #if !defined(CONFIG_EXAMPLE_BSP)
 
 /* I2C port and GPIOs */
@@ -29,6 +28,9 @@
 #elif CONFIG_IDF_TARGET_ESP32H2
 #define I2C_SCL_IO      (GPIO_NUM_8)
 #define I2C_SDA_IO      (GPIO_NUM_9)
+#elif CONFIG_IDF_TARGET_ESP32P4
+#define I2C_SCL_IO      (GPIO_NUM_8)
+#define I2C_SDA_IO      (GPIO_NUM_7)
 #else
 #define I2C_SCL_IO      (GPIO_NUM_6)
 #define I2C_SDA_IO      (GPIO_NUM_7)
@@ -36,6 +38,13 @@
 
 /* I2S port and GPIOs */
 #define I2S_NUM         (0)
+#if CONFIG_IDF_TARGET_ESP32P4
+#define I2S_MCK_IO      (GPIO_NUM_13)
+#define I2S_BCK_IO      (GPIO_NUM_12)
+#define I2S_WS_IO       (GPIO_NUM_10)
+#define I2S_DO_IO       (GPIO_NUM_11)
+#define I2S_DI_IO       (GPIO_NUM_9)
+#else
 #define I2S_MCK_IO      (GPIO_NUM_0)
 #define I2S_BCK_IO      (GPIO_NUM_4)
 #define I2S_WS_IO       (GPIO_NUM_5)
@@ -46,7 +55,7 @@
 #define I2S_DO_IO       (GPIO_NUM_2)
 #define I2S_DI_IO       (GPIO_NUM_3)
 #endif
-
+#endif
 
 #else // CONFIG_EXAMPLE_BSP
 #include "bsp/esp-bsp.h"

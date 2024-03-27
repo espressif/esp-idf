@@ -10,18 +10,35 @@
 #include "soc/soc.h"
 #include "hal/i2s_hal.h"
 
-#if SOC_I2S_HW_VERSION_2 && SOC_I2S_SUPPORTS_PDM_TX
+#if SOC_I2S_HW_VERSION_2 && (SOC_I2S_SUPPORTS_PDM_TX || SOC_I2S_SUPPORTS_PDM_RX_HP_FILTER)
 /* PDM tx high pass filter cut-off frequency and coefficients list
- * [0]: cut-off frequency; [1]: param0; [2]: param5 */
-static const float cut_off_coef[21][3] = {
-    {185, 0, 0}, {172,  0, 1}, {160,  1, 1},
-    {150, 1, 2}, {137,  2, 2}, {126,  2, 3},
-    {120, 0, 3}, {115,  3, 3}, {106,  1, 7},
-    {104, 2, 4}, {92,   4, 4}, {91.5, 2, 7},
-    {81,  4, 5}, {77.2, 3, 7}, {69,   5, 5},
-    {63,  4, 7}, {58,   5, 6}, {49,   5, 7},
-    {46,  6, 6}, {35.5, 6, 7}, {23.3, 7, 7}
+ * [0]: cut-off frequency * 10; [1]: param0; [2]: param5
+ * NOTE: the cut-off frequency was timed 10 to use integer type */
+static const uint32_t cut_off_coef[21][3] = {
+    {1850, 0, 0}, {1720,  0, 1}, {1600,  1, 1},
+    {1500, 1, 2}, {1370,  2, 2}, {1260,  2, 3},
+    {1200, 0, 3}, {1150,  3, 3}, {1060,  1, 7},
+    {1040, 2, 4}, {920,   4, 4}, {915, 2, 7},
+    {810,  4, 5}, {772, 3, 7}, {690,   5, 5},
+    {630,  4, 7}, {580,   5, 6}, {490,   5, 7},
+    {460,  6, 6}, {355, 6, 7}, {233, 7, 7}
 };
+
+static void s_i2s_hal_get_cut_off_coef(uint32_t freq, uint32_t *param0, uint32_t *param5)
+{
+    uint8_t cnt = 0;
+    uint32_t min = 10000;
+    /* Find the closest cut-off frequency and its coefficients */
+    for (int i = 0; i < 21; i++) {
+        uint32_t tmp = cut_off_coef[i][0] < freq ? freq - cut_off_coef[i][0] : cut_off_coef[i][0] - freq;
+        if (tmp < min) {
+            min = tmp;
+            cnt = i;
+        }
+    }
+    *param0 = (uint32_t)cut_off_coef[cnt][1];
+    *param5 = (uint32_t)cut_off_coef[cnt][2];
+}
 #endif
 
 /**
@@ -49,31 +66,75 @@ void i2s_hal_init(i2s_hal_context_t *hal, int port_id)
     hal->dev = I2S_LL_GET_HW(port_id);
 }
 
+#if SOC_PERIPH_CLK_CTRL_SHARED
+void _i2s_hal_set_tx_clock(i2s_hal_context_t *hal, const i2s_hal_clock_info_t *clk_info, i2s_clock_src_t clk_src)
+{
+    if (clk_info) {
+        hal_utils_clk_div_t mclk_div = {};
+#if SOC_I2S_HW_VERSION_2
+        _i2s_ll_tx_enable_clock(hal->dev);
+        _i2s_ll_mclk_bind_to_tx_clk(hal->dev);
+#endif
+        _i2s_ll_tx_clk_set_src(hal->dev, clk_src);
+        i2s_hal_calc_mclk_precise_division(clk_info->sclk, clk_info->mclk, &mclk_div);
+        _i2s_ll_tx_set_mclk(hal->dev, &mclk_div);
+        i2s_ll_tx_set_bck_div_num(hal->dev, clk_info->bclk_div);
+    } else {
+        _i2s_ll_tx_clk_set_src(hal->dev, clk_src);
+    }
+}
+
+void _i2s_hal_set_rx_clock(i2s_hal_context_t *hal, const i2s_hal_clock_info_t *clk_info, i2s_clock_src_t clk_src)
+{
+    if (clk_info) {
+        hal_utils_clk_div_t mclk_div = {};
+#if SOC_I2S_HW_VERSION_2
+        _i2s_ll_rx_enable_clock(hal->dev);
+        _i2s_ll_mclk_bind_to_rx_clk(hal->dev);
+#endif
+        _i2s_ll_rx_clk_set_src(hal->dev, clk_src);
+        i2s_hal_calc_mclk_precise_division(clk_info->sclk, clk_info->mclk, &mclk_div);
+        _i2s_ll_rx_set_mclk(hal->dev, &mclk_div);
+        i2s_ll_rx_set_bck_div_num(hal->dev, clk_info->bclk_div);
+    } else {
+        _i2s_ll_rx_clk_set_src(hal->dev, clk_src);
+    }
+}
+#else
 void i2s_hal_set_tx_clock(i2s_hal_context_t *hal, const i2s_hal_clock_info_t *clk_info, i2s_clock_src_t clk_src)
 {
-    hal_utils_clk_div_t mclk_div = {};
+    if (clk_info) {
+        hal_utils_clk_div_t mclk_div = {};
 #if SOC_I2S_HW_VERSION_2
-    i2s_ll_tx_enable_clock(hal->dev);
-    i2s_ll_mclk_bind_to_tx_clk(hal->dev);
+        i2s_ll_tx_enable_clock(hal->dev);
+        i2s_ll_mclk_bind_to_tx_clk(hal->dev);
 #endif
-    i2s_ll_tx_clk_set_src(hal->dev, clk_src);
-    i2s_hal_calc_mclk_precise_division(clk_info->sclk, clk_info->mclk, &mclk_div);
-    i2s_ll_tx_set_mclk(hal->dev, &mclk_div);
-    i2s_ll_tx_set_bck_div_num(hal->dev, clk_info->bclk_div);
+        i2s_ll_tx_clk_set_src(hal->dev, clk_src);
+        i2s_hal_calc_mclk_precise_division(clk_info->sclk, clk_info->mclk, &mclk_div);
+        i2s_ll_tx_set_mclk(hal->dev, &mclk_div);
+        i2s_ll_tx_set_bck_div_num(hal->dev, clk_info->bclk_div);
+    } else {
+        i2s_ll_tx_clk_set_src(hal->dev, clk_src);
+    }
 }
 
 void i2s_hal_set_rx_clock(i2s_hal_context_t *hal, const i2s_hal_clock_info_t *clk_info, i2s_clock_src_t clk_src)
 {
-    hal_utils_clk_div_t mclk_div = {};
+    if (clk_info) {
+        hal_utils_clk_div_t mclk_div = {};
 #if SOC_I2S_HW_VERSION_2
-    i2s_ll_rx_enable_clock(hal->dev);
-    i2s_ll_mclk_bind_to_rx_clk(hal->dev);
+        i2s_ll_rx_enable_clock(hal->dev);
+        i2s_ll_mclk_bind_to_rx_clk(hal->dev);
 #endif
-    i2s_ll_rx_clk_set_src(hal->dev, clk_src);
-    i2s_hal_calc_mclk_precise_division(clk_info->sclk, clk_info->mclk, &mclk_div);
-    i2s_ll_rx_set_mclk(hal->dev, &mclk_div);
-    i2s_ll_rx_set_bck_div_num(hal->dev, clk_info->bclk_div);
+        i2s_ll_rx_clk_set_src(hal->dev, clk_src);
+        i2s_hal_calc_mclk_precise_division(clk_info->sclk, clk_info->mclk, &mclk_div);
+        i2s_ll_rx_set_mclk(hal->dev, &mclk_div);
+        i2s_ll_rx_set_bck_div_num(hal->dev, clk_info->bclk_div);
+    } else {
+        i2s_ll_rx_clk_set_src(hal->dev, clk_src);
+    }
 }
+#endif  // SOC_PERIPH_CLK_CTRL_SHARED
 
 /*-------------------------------------------------------------------------
  |                    STD Specific Slot Configurations                    |
@@ -183,20 +244,12 @@ void i2s_hal_pdm_set_tx_slot(i2s_hal_context_t *hal, bool is_slave, const i2s_ha
     i2s_ll_tx_set_ws_idle_pol(hal->dev, false);
     /* Slot mode seems not take effect according to the test, leave it default here */
     i2s_ll_tx_pdm_slot_mode(hal->dev, is_mono, false, I2S_PDM_SLOT_BOTH);
-    uint8_t cnt = 0;
-    float min = 1000;
-    float expt_cut_off = slot_cfg->pdm_tx.hp_cut_off_freq_hz;
-    /* Find the closest cut-off frequency and its coefficients */
-    for (int i = 0; i < 21; i++) {
-        float tmp = cut_off_coef[i][0] < expt_cut_off ? expt_cut_off - cut_off_coef[i][0] : cut_off_coef[i][0] - expt_cut_off;
-        if (tmp < min) {
-            min = tmp;
-            cnt = i;
-        }
-    }
+    uint32_t param0;
+    uint32_t param5;
+    s_i2s_hal_get_cut_off_coef(slot_cfg->pdm_tx.hp_cut_off_freq_hzx10, &param0, &param5);
     i2s_ll_tx_enable_pdm_hp_filter(hal->dev, slot_cfg->pdm_tx.hp_en);
-    i2s_ll_tx_set_pdm_hp_filter_param0(hal->dev, cut_off_coef[cnt][1]);
-    i2s_ll_tx_set_pdm_hp_filter_param5(hal->dev, cut_off_coef[cnt][2]);
+    i2s_ll_tx_set_pdm_hp_filter_param0(hal->dev, param0);
+    i2s_ll_tx_set_pdm_hp_filter_param5(hal->dev, param5);
     i2s_ll_tx_set_pdm_sd_dither(hal->dev, slot_cfg->pdm_tx.sd_dither);
     i2s_ll_tx_set_pdm_sd_dither2(hal->dev, slot_cfg->pdm_tx.sd_dither2);
 #endif
@@ -233,7 +286,18 @@ void i2s_hal_pdm_set_rx_slot(i2s_hal_context_t *hal, bool is_slave, const i2s_ha
     uint32_t slot_mask = slot_cfg->slot_mode == I2S_SLOT_MODE_STEREO ? I2S_PDM_SLOT_BOTH : slot_cfg->pdm_rx.slot_mask;
 #endif  // SOC_I2S_SUPPORTS_PDM_RX > 1
     i2s_ll_rx_set_active_chan_mask(hal->dev, slot_mask);
-#endif  // SOC_I2S_SUPPORTS_PDM_RX
+#endif  // SOC_I2S_HW_VERSION_1
+
+#if SOC_I2S_SUPPORTS_PDM_RX_HP_FILTER
+    uint32_t param0;
+    uint32_t param5;
+    s_i2s_hal_get_cut_off_coef(slot_cfg->pdm_rx.hp_cut_off_freq_hzx10, &param0, &param5);
+    i2s_ll_rx_enable_pdm_hp_filter(hal->dev, slot_cfg->pdm_rx.hp_en);
+    i2s_ll_rx_set_pdm_hp_filter_param0(hal->dev, param0);
+    i2s_ll_rx_set_pdm_hp_filter_param5(hal->dev, param5);
+    /* Set the amplification number, the default and the minimum value is 1. 0 will mute the channel */
+    i2s_ll_rx_set_pdm_amplify_num(hal->dev, slot_cfg->pdm_rx.amplify_num ? slot_cfg->pdm_rx.amplify_num : 1);
+#endif  // SOC_I2S_SUPPORTS_PDM_RX_HP_FILTER
 }
 
 void i2s_hal_pdm_enable_rx_channel(i2s_hal_context_t *hal)

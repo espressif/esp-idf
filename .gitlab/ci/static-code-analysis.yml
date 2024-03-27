@@ -5,39 +5,36 @@ clang_tidy_check:
     - .rules:patterns:clang_tidy
   artifacts:
     paths:
-      - $OUTPUT_DIR
+      - clang_tidy_reports/
+    expire_in: 1 week
     when: always
-    expire_in: 1 day
   variables:
-    CLANG_TIDY_DIRS_TXT: ${CI_PROJECT_DIR}/tools/ci/clang_tidy_dirs.txt
-    RULES_FILE: ${CI_PROJECT_DIR}/tools/ci/static-analysis-rules.yml
-    OUTPUT_DIR: ${CI_PROJECT_DIR}/clang_tidy_reports
     IDF_TOOLCHAIN: clang
   script:
-    - internal_pip_install $CLANG_TIDY_RUNNER_PROJ pyclang
-    - export PATH=$PATH:$(python -c "import sys; print(sys.executable.rsplit('/', 1)[0])")
-    - dirs=$(cat ${CLANG_TIDY_DIRS_TXT} | while read line; do echo ${CI_PROJECT_DIR}/${line}; done | xargs)
-    - run_cmd idf_clang ${dirs}
-      --output-path ${OUTPUT_DIR}
-      --limit-file ${RULES_FILE}
+    - run_cmd idf_clang_tidy $(cat tools/ci/clang_tidy_dirs.txt | xargs)
+      --output-path clang_tidy_reports
+      --limit-file tools/ci/static-analysis-rules.yml
       --xtensa-include-dir
-      --run-clang-tidy-py run-clang-tidy
 
 check_pylint:
   extends:
     - .pre_check_template
     - .rules:patterns:python-files
+  needs:
+    - pipeline_variables
   artifacts:
-    when: always
     reports:
       codequality: pylint.json
+    paths:
+      - pylint.json
     expire_in: 1 week
+    when: always
   script:
     - |
       if [ -n "$CI_MERGE_REQUEST_IID" ]; then
-        export files=$(python ${CI_PROJECT_DIR}/tools/ci/ci_get_mr_info.py files ${CI_MERGE_REQUEST_SOURCE_BRANCH_NAME} | grep ".py$");
+        export files=$(echo "$GIT_DIFF_OUTPUT" | grep ".py$" | xargs);
       else
-        export files=$(find . -iname "*.py" -print);
+        export files=$(git ls-files "*.py" | xargs);
       fi
     - if [ -z "$files" ]; then echo "No python files found"; exit 0; fi
     - run_cmd pylint --exit-zero --load-plugins=pylint_gitlab --output-format=gitlab-codeclimate:pylint.json $files
@@ -58,8 +55,10 @@ check_pylint:
 .sonar_scan_template:
   stage: build
   extends: .pre_check_template
-  image:
-    name: $SONARQUBE_SCANNER_IMAGE
+  # full clone since this image does not support fetch --shallow-since-cutoff
+  # shiny runners are used for full clone
+  tags: [build, shiny]
+  image: $SONARQUBE_SCANNER_IMAGE
   before_script:
     - source tools/ci/utils.sh
     - export PYTHONPATH="$CI_PROJECT_DIR/tools:$CI_PROJECT_DIR/tools/ci/python_packages:$PYTHONPATH"
@@ -73,12 +72,12 @@ check_pylint:
     - export SONAR_SCANNER_OPTS="-Xmx2048m"
   variables:
     GIT_DEPTH: 0
-    REPORT_PATTERN: clang_tidy_reports/*.txt
+    REPORT_PATTERN: clang_tidy_reports/**/*.txt
   artifacts:
-    when: always
     paths:
       - $REPORT_PATTERN
     expire_in: 1 week
+    when: always
   dependencies:  # Here is not a hard dependency relationship, could be skipped when only python files changed. so we do not use "needs" here.
     - clang_tidy_check
 
@@ -86,10 +85,10 @@ code_quality_check:
   extends:
     - .sonar_scan_template
     - .rules:patterns:static-code-analysis-preview
-  allow_failure: true  # since now it's using exit code to indicate the code analysis result,
+  allow_failure: true  # it's using exit code to indicate the code analysis result,
                        # we don't want to block ci when critical issues founded
   script:
-    - export CI_MERGE_REQUEST_COMMITS=$(python ${CI_PROJECT_DIR}/tools/ci/ci_get_mr_info.py commits ${CI_COMMIT_REF_NAME} | tr '\n' ',')
+    - export CI_MERGE_REQUEST_COMMITS=$(python ${CI_PROJECT_DIR}/tools/ci/ci_get_mr_info.py commits --src-branch ${CI_COMMIT_REF_NAME} | tr '\n' ',')
     # test if this branch have merge request, if not, exit 0
     - test -n "$CI_MERGE_REQUEST_IID" || exit 0
     - test -n "$CI_MERGE_REQUEST_COMMITS" || exit 0
@@ -109,7 +108,7 @@ code_quality_report:
   extends:
     - .sonar_scan_template
     - .rules:protected
-  allow_failure: true  # since now it's using exit code to indicate the code analysis result,
+  allow_failure: true  # it's using exit code to indicate the code analysis result,
                        # we don't want to block ci when critical issues founded
   script:
     - sonar-scanner

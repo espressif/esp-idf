@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,9 +13,10 @@
 #include "soc/i2c_periph.h"
 #include "soc/i2c_struct.h"
 #include "soc/clk_tree_defs.h"
+#include "soc/dport_reg.h"
 #include "hal/i2c_types.h"
 #include "esp_attr.h"
-#include "hal/misc.h"
+#include "hal/assert.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -45,24 +46,29 @@ typedef union {
 #define I2C_LL_CMD_END        4    /*!<I2C end command */
 
 typedef enum {
-    I2C_LL_INTR_TXFIFO_WM = (1 << 1),
-    I2C_LL_INTR_RXFIFO_WM = (1 << 0),
+    I2C_INTR_MST_TXFIFO_WM = (1 << 1),
+    I2C_INTR_MST_RXFIFO_WM = (1 << 11),
     I2C_LL_INTR_NACK = (1 << 10),
     I2C_LL_INTR_TIMEOUT = (1 << 8),
     I2C_LL_INTR_MST_COMPLETE = (1 << 7),
     I2C_LL_INTR_ARBITRATION = (1 << 5),
     I2C_LL_INTR_END_DETECT = (1 << 3),
     I2C_LL_INTR_ST_TO = (1 << 13),
-    I2C_LL_INTR_START = (1 << 15),
-    I2C_LL_INTR_STRETCH = (1 << 16),
-    I2C_LL_INTR_UNMATCH = (1 << 18),
-} i2c_ll_intr_t;
+} i2c_ll_master_intr_t;
+
+typedef enum {
+    I2C_INTR_SLV_TXFIFO_WM = (1 << 1),
+    I2C_INTR_SLV_RXFIFO_WM = (1 << 11),
+    I2C_INTR_SLV_COMPLETE = (1 << 7),
+    I2C_INTR_START = (1 << 15),
+    I2C_INTR_STRETCH = (1 << 16),
+} i2c_ll_slave_intr_t;
 
 // Get the I2C hardware instance
 #define I2C_LL_GET_HW(i2c_num)        (((i2c_num) == 0) ? &I2C0 : &I2C1)
 #define I2C_LL_MASTER_EVENT_INTR    (I2C_ACK_ERR_INT_ENA_M|I2C_TIME_OUT_INT_ENA_M|I2C_TRANS_COMPLETE_INT_ENA_M|I2C_ARBITRATION_LOST_INT_ENA_M|I2C_END_DETECT_INT_ENA_M)
-#define I2C_LL_SLAVE_EVENT_INTR     (I2C_TRANS_COMPLETE_INT_ENA_M|I2C_TXFIFO_EMPTY_INT_ENA_M)
-#define I2C_LL_SLAVE_RX_EVENT_INTR  (I2C_TRANS_COMPLETE_INT_ENA_M|I2C_RXFIFO_FULL_INT_ENA_M)
+#define I2C_LL_SLAVE_EVENT_INTR     (I2C_TRANS_COMPLETE_INT_ENA_M|I2C_TXFIFO_EMPTY_INT_ENA_M|I2C_RX_REC_FULL_INT_ST_M)
+#define I2C_LL_SLAVE_RX_EVENT_INTR  (I2C_TRANS_COMPLETE_INT_ENA_M|I2C_RX_REC_FULL_INT_ST_M)
 #define I2C_LL_SLAVE_TX_EVENT_INTR  (I2C_TXFIFO_EMPTY_INT_ENA_M)
 
 /**
@@ -97,7 +103,7 @@ static inline void i2c_ll_master_cal_bus_clk(uint32_t source_clk, uint32_t bus_f
 static inline void i2c_ll_master_set_bus_timing(i2c_dev_t *hw, i2c_hal_clk_config_t *bus_cfg)
 {
     /* SCL period. According to the TRM, we should always subtract 1 to SCL low period */
-    assert(bus_cfg->scl_low > 0);
+    HAL_ASSERT(bus_cfg->scl_low > 0);
     hw->scl_low_period.period = bus_cfg->scl_low - 1;
     /* Still according to the TRM, if filter is not enbled, we have to subtract 7,
      * if SCL filter is enabled, we have to subtract:
@@ -106,12 +112,12 @@ static inline void i2c_ll_master_set_bus_timing(i2c_dev_t *hw, i2c_hal_clk_confi
      * to SCL high period */
     uint16_t scl_high = bus_cfg->scl_high;
     /* In the "worst" case, we will subtract 13, make sure the result will still be correct */
-    assert(scl_high > 13);
+    HAL_ASSERT(scl_high > 13);
     if (hw->scl_filter_cfg.en) {
         if (hw->scl_filter_cfg.thres <= 2) {
             scl_high -= 8;
         } else {
-            assert(hw->scl_filter_cfg.thres <= 7);
+            HAL_ASSERT(hw->scl_filter_cfg.thres <= 7);
             scl_high -= hw->scl_filter_cfg.thres + 6;
         }
     } else {
@@ -138,6 +144,44 @@ static inline void i2c_ll_master_set_bus_timing(i2c_dev_t *hw, i2c_hal_clk_confi
  * @param div_b The numerator of the frequency divider factor of the i2c function clock.
  */
 static inline void i2c_ll_master_set_fractional_divider(i2c_dev_t *hw, uint8_t div_a, uint8_t div_b)
+{
+    // Not supported on ESP32
+}
+
+/**
+ * @brief Set fractional divider
+ *
+ * @param hw Beginning address of the peripheral registers
+ * @param div_a The denominator of the frequency divider factor of the i2c function clock
+ * @param div_b The numerator of the frequency divider factor of the i2c function clock.
+ */
+static inline void i2c_ll_master_get_fractional_divider(i2c_dev_t *hw, uint32_t *div_a, uint32_t *div_b)
+{
+    // Not supported on ESP32
+}
+
+/**
+ * @brief Get clock configurations from registers
+ *
+ * @param hw Beginning address of the peripheral registers
+ * @param div_num div_num
+ * @param clk_sel clk_sel
+ * @param clk_active clk_active
+ */
+static inline void i2c_ll_master_save_clock_configurations(i2c_dev_t *hw, uint32_t *div_num, uint8_t *clk_sel, uint8_t *clk_active)
+{
+    // Not supported on ESP32
+}
+
+/**
+ * @brief Get clock configurations from registers
+ *
+ * @param hw Beginning address of the peripheral registers
+ * @param div_num div_num
+ * @param clk_sel clk_sel
+ * @param clk_active clk_active
+ */
+static inline void i2c_ll_master_restore_clock_configurations(i2c_dev_t *hw, uint32_t div_num, uint8_t clk_sel, uint8_t clk_active)
 {
     // Not supported on ESP32
 }
@@ -277,7 +321,7 @@ static inline void i2c_ll_set_slave_addr(i2c_dev_t *hw, uint16_t slave_addr, boo
 {
     hw->slave_addr.en_10bit = addr_10bit_en;
     if (addr_10bit_en) {
-        uint8_t addr_14_7 = (slave_addr & 0xff) << 7;
+        uint16_t addr_14_7 = (slave_addr & 0xff) << 7;
         uint8_t addr_6_0 = ((slave_addr & 0x300) >> 8) || 0x78;
         hw->slave_addr.addr = addr_14_7 || addr_6_0;
     } else {
@@ -368,6 +412,7 @@ static inline void i2c_ll_set_txfifo_empty_thr(i2c_dev_t *hw, uint8_t empty_thr)
  */
 static inline void i2c_ll_set_rxfifo_full_thr(i2c_dev_t *hw, uint8_t full_thr)
 {
+    hw->fifo_conf.nonfifo_rx_thres = full_thr;
     hw->fifo_conf.rx_fifo_full_thrhd = full_thr;
 }
 
@@ -665,6 +710,51 @@ static inline void i2c_ll_update(i2c_dev_t *hw)
 }
 
 /**
+ * @brief Enable the bus clock for I2C module
+ *
+ * @param i2c_port I2C port id
+ * @param enable true to enable, false to disable
+ */
+static inline void i2c_ll_enable_bus_clock(int i2c_port, bool enable)
+{
+    if (i2c_port == 0) {
+        uint32_t reg_val = DPORT_READ_PERI_REG(DPORT_PERIP_CLK_EN_REG);
+        reg_val &= ~DPORT_I2C_EXT0_CLK_EN;
+        reg_val |= enable << 7;
+        DPORT_WRITE_PERI_REG(DPORT_PERIP_CLK_EN_REG, reg_val);
+    } else if (i2c_port == 1) {
+        uint32_t reg_val = DPORT_READ_PERI_REG(DPORT_PERIP_CLK_EN_REG);
+        reg_val &= ~DPORT_I2C_EXT1_CLK_EN;
+        reg_val |= enable << 18;
+        DPORT_WRITE_PERI_REG(DPORT_PERIP_CLK_EN_REG, reg_val);
+    }
+}
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define i2c_ll_enable_bus_clock(...) do {(void)__DECLARE_RCC_ATOMIC_ENV; i2c_ll_enable_bus_clock(__VA_ARGS__);} while(0)
+
+/**
+ * @brief Reset the I2C module
+ *
+ * @param i2c_port Group ID
+ */
+static inline void i2c_ll_reset_register(int i2c_port)
+{
+    if (i2c_port == 0) {
+        DPORT_WRITE_PERI_REG(DPORT_PERIP_RST_EN_REG, DPORT_I2C_EXT0_RST);
+        DPORT_WRITE_PERI_REG(DPORT_PERIP_RST_EN_REG, 0);
+    } else if (i2c_port == 1) {
+        DPORT_WRITE_PERI_REG(DPORT_PERIP_RST_EN_REG, DPORT_I2C_EXT1_RST);
+        DPORT_WRITE_PERI_REG(DPORT_PERIP_RST_EN_REG, 0);
+    }
+}
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define i2c_ll_reset_register(...) do {(void)__DECLARE_RCC_ATOMIC_ENV; i2c_ll_reset_register(__VA_ARGS__);} while(0)
+
+/**
  * @brief Set whether slave should auto start, or only start with start signal from master
  *
  * @param hw Beginning address of the peripheral registers
@@ -703,6 +793,20 @@ __attribute__((always_inline))
 static inline void i2c_ll_slave_clear_stretch(i2c_dev_t *dev)
 {
     // Not supported on esp32
+}
+
+/**
+ * @brief Check if i2c command is done.
+ *
+ * @param  hw Beginning address of the peripheral registers
+ * @param  cmd_idx The index of the command register, must be less than 16
+ *
+ * @return True if the `cmd_idx` command is done. Otherwise false.
+ */
+__attribute__((always_inline))
+static inline bool i2c_ll_master_is_cmd_done(i2c_dev_t *hw, int cmd_idx)
+{
+    return hw->command[cmd_idx].done;
 }
 
 //////////////////////////////////////////Deprecated Functions//////////////////////////////////////////////////////////

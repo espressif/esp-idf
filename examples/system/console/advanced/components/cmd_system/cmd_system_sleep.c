@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -28,16 +28,6 @@
 #include "sdkconfig.h"
 
 static const char *TAG = "cmd_system_sleep";
-
-static void register_deep_sleep(void);
-static void register_light_sleep(void);
-
-void register_system_sleep(void)
-{
-    register_deep_sleep();
-    register_light_sleep();
-}
-
 
 /** 'deep_sleep' command puts the chip into deep sleep mode */
 
@@ -82,7 +72,7 @@ static int deep_sleep(int argc, char **argv)
         ESP_LOGI(TAG, "Enabling wakeup on GPIO%d, wakeup on %s level",
                  io_num, level ? "HIGH" : "LOW");
 
-        ESP_ERROR_CHECK( esp_sleep_enable_ext1_wakeup(1ULL << io_num, level) );
+        ESP_ERROR_CHECK( esp_sleep_enable_ext1_wakeup_io(1ULL << io_num, level) );
         ESP_LOGE(TAG, "GPIO wakeup from deep sleep currently unsupported on ESP32-C3");
     }
 #endif // SOC_PM_SUPPORT_EXT1_WAKEUP
@@ -95,7 +85,7 @@ static int deep_sleep(int argc, char **argv)
     return 1;
 }
 
-static void register_deep_sleep(void)
+void register_system_deep_sleep(void)
 {
     int num_args = 1;
     deep_sleep_args.wakeup_time =
@@ -196,7 +186,7 @@ static int light_sleep(int argc, char **argv)
     return 0;
 }
 
-static void register_light_sleep(void)
+void register_system_light_sleep(void)
 {
     light_sleep_args.wakeup_time =
         arg_int0("t", "time", "<t>", "Wake up time, ms");

@@ -82,7 +82,7 @@ static bta_ag_co_cb_t *bta_ag_co_cb_ptr;
 #define bta_ag_co_cb (*bta_ag_co_cb_ptr)
 #endif /* HFP_DYNAMIC_MEMORY == FALSE */
 
-static UINT8 hf_air_mode = BTM_SCO_AIR_MODE_TRANSPNT;
+static UINT8 hf_air_mode = BTM_SCO_AIR_MODE_UNKNOWN;
 static UINT8 hf_inout_pkt_size = 0;
 
 /* =========================================================================

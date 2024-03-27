@@ -26,18 +26,26 @@ extern "C" {
 #define CACHE_LL_L1_ACCESS_EVENT_MASK               (1<<4)
 #define CACHE_LL_L1_ACCESS_EVENT_CACHE_FAIL         (1<<4)
 
+#define CACHE_LL_ID_ALL                             1   //All of the caches in a type and level, make this value greater than any ID
+#define CACHE_LL_LEVEL_INT_MEM                      0   //Cache level for accessing internal mem
+#define CACHE_LL_LEVEL_EXT_MEM                      1   //Cache level for accessing external mem
+#define CACHE_LL_LEVEL_ALL                          2   //All of the cache levels, make this value greater than any level
+#define CACHE_LL_LEVEL_NUMS                         1   //Number of cache levels
 #define CACHE_LL_L1_ICACHE_AUTOLOAD                 (1<<0)
 
 /**
- * @brief Check if Cache auto preload is enabled or not. On ESP32h2, instructions and data share Cache
+ * @brief Check if Cache auto preload is enabled or not.
  *
- * @param type  see `cache_type_t`
+ * @param cache_level  level of the cache
+ * @param type         see `cache_type_t`
+ * @param cache_id     id of the cache in this type and level
  *
  * @return true: enabled; false: disabled
  */
 __attribute__((always_inline))
-static inline bool cache_ll_is_cache_autoload_enabled(cache_type_t type)
+static inline bool cache_ll_is_cache_autoload_enabled(uint32_t cache_level, cache_type_t type, uint32_t cache_id)
 {
+    HAL_ASSERT(cache_id <= CACHE_LL_ID_ALL);
     bool enabled = false;
     if (REG_GET_BIT(CACHE_L1_CACHE_AUTOLOAD_CTRL_REG, CACHE_L1_CACHE_AUTOLOAD_ENA)) {
         enabled = true;
@@ -46,54 +54,58 @@ static inline bool cache_ll_is_cache_autoload_enabled(cache_type_t type)
 }
 
 /**
- * @brief Disable Cache. On ESP32H2, instructions and data share Cache
+ * @brief Disable Cache
  *
- * @param type  see `cache_type_t`
+ * @param cache_level  level of the cache
+ * @param type         see `cache_type_t`
+ * @param cache_id     id of the cache in this type and level
  */
 __attribute__((always_inline))
-static inline void cache_ll_disable_cache(cache_type_t type)
+static inline void cache_ll_disable_cache(uint32_t cache_level, cache_type_t type, uint32_t cache_id)
 {
     (void) type;
     Cache_Disable_ICache();
 }
 
 /**
- * @brief Enable Cache. On ESP32H2, instructions and data share Cache
+ * @brief Enable Cache
  *
- * @param type  see `cache_type_t`
- *
- * @param data_autoload_en Dcache auto preload enabled
- *
- * @param inst_autoload_en Icache auto preload enabled
+ * @param cache_level       level of the cache
+ * @param type              see `cache_type_t`
+ * @param cache_id          id of the cache in this type and level
+ * @param data_autoload_en  data autoload enabled or not
+ * @param inst_autoload_en  inst autoload enabled or not
  */
 __attribute__((always_inline))
-static inline void cache_ll_enable_cache(cache_type_t type, bool inst_autoload_en, bool data_autoload_en)
+static inline void cache_ll_enable_cache(uint32_t cache_level, cache_type_t type, uint32_t cache_id, bool inst_autoload_en, bool data_autoload_en)
 {
     Cache_Enable_ICache(inst_autoload_en ? CACHE_LL_L1_ICACHE_AUTOLOAD : 0);
 }
 
 /**
- * @brief Suspend Cache. On ESP32H2, instructions and data share Cache
+ * @brief Suspend Cache
  *
- * @param type  see `cache_type_t`
+ * @param cache_level  level of the cache
+ * @param type         see `cache_type_t`
+ * @param cache_id     id of the cache in this type and level
  */
 __attribute__((always_inline))
-static inline void cache_ll_suspend_cache(cache_type_t type)
+static inline void cache_ll_suspend_cache(uint32_t cache_level, cache_type_t type, uint32_t cache_id)
 {
     Cache_Suspend_ICache();
 }
 
 /**
- * @brief Resume Cache. On ESP326, instructions and data share Cache
+ * @brief Resume Cache
  *
- * @param type  see `cache_type_t`
- *
- * @param data_autoload_en Dcache auto preload enabled
- *
- * @param inst_autoload_en Icache auto preload enabled
+ * @param cache_level       level of the cache
+ * @param type              see `cache_type_t`
+ * @param cache_id          id of the cache in this type and level
+ * @param data_autoload_en  data autoload enabled or not
+ * @param inst_autoload_en  inst autoload enabled or not
  */
 __attribute__((always_inline))
-static inline void cache_ll_resume_cache(cache_type_t type, bool inst_autoload_en, bool data_autoload_en)
+static inline void cache_ll_resume_cache(uint32_t cache_level, cache_type_t type, uint32_t cache_id, bool inst_autoload_en, bool data_autoload_en)
 {
     Cache_Resume_ICache(inst_autoload_en ? CACHE_LL_L1_ICACHE_AUTOLOAD : 0);
 }
@@ -101,48 +113,57 @@ static inline void cache_ll_resume_cache(cache_type_t type, bool inst_autoload_e
 /**
  * @brief Invalidate cache supported addr
  *
- * Invalidate a Cache item
+ * Invalidate a cache item
  *
- * @param vaddr  Start address of the region to be invalidated
- * @param size   Size of the region to be invalidated
+ * @param cache_level       level of the cache
+ * @param type              see `cache_type_t`
+ * @param cache_id          id of the cache in this type and level
+ * @param vaddr             start address of the region to be invalidated
+ * @param size              size of the region to be invalidated
  */
 __attribute__((always_inline))
-static inline void cache_ll_invalidate_addr(uint32_t vaddr, uint32_t size)
+static inline void cache_ll_invalidate_addr(uint32_t cache_level, cache_type_t type, uint32_t cache_id, uint32_t vaddr, uint32_t size)
 {
     Cache_Invalidate_Addr(vaddr, size);
 }
 
 /**
- * @brief Freeze Cache. On ESP32H2, instructions and data share Cache
+ * @brief Freeze Cache
  *
- * @param type  see `cache_type_t`
+ * @param cache_level  level of the cache
+ * @param type         see `cache_type_t`
+ * @param cache_id     id of the cache in this type and level
  */
 __attribute__((always_inline))
-static inline void cache_ll_freeze_cache(cache_type_t type)
+static inline void cache_ll_freeze_cache(uint32_t cache_level, cache_type_t type, uint32_t cache_id)
 {
     Cache_Freeze_ICache_Enable(CACHE_FREEZE_ACK_BUSY);
 }
 
 /**
- * @brief Unfreeze Cache. On ESP32H2, instructions and data share Cache
+ * @brief Unfreeze Cache
  *
- * @param type  see `cache_type_t`
+ * @param cache_level  level of the cache
+ * @param type         see `cache_type_t`
+ * @param cache_id     id of the cache in this type and level
  */
 __attribute__((always_inline))
-static inline void cache_ll_unfreeze_cache(cache_type_t type)
+static inline void cache_ll_unfreeze_cache(uint32_t cache_level, cache_type_t type, uint32_t cache_id)
 {
     Cache_Freeze_ICache_Disable();
 }
 
 /**
- * @brief Get cache line size, in bytes
+ * @brief Get Cache line size, in bytes
  *
- * @param type  see `cache_type_t`
+ * @param cache_level  level of the cache
+ * @param type         see `cache_type_t`
+ * @param cache_id     id of the cache in this type and level
  *
- * @return cache line size, in bytes
+ * @return Cache line size, in bytes
  */
 __attribute__((always_inline))
-static inline uint32_t cache_ll_get_line_size(cache_type_t type)
+static inline uint32_t cache_ll_get_line_size(uint32_t cache_level, cache_type_t type, uint32_t cache_id)
 {
     uint32_t size = 0;
     size = Cache_Get_ICache_Line_Size();
@@ -164,7 +185,7 @@ __attribute__((always_inline))
 #endif
 static inline cache_bus_mask_t cache_ll_l1_get_bus(uint32_t cache_id, uint32_t vaddr_start, uint32_t len)
 {
-    HAL_ASSERT(cache_id == 0);
+    HAL_ASSERT(cache_id <= CACHE_LL_ID_ALL);
     cache_bus_mask_t mask = (cache_bus_mask_t)0;
 
     uint32_t vaddr_end = vaddr_start + len - 1;
@@ -189,7 +210,7 @@ __attribute__((always_inline))
 #endif
 static inline void cache_ll_l1_enable_bus(uint32_t cache_id, cache_bus_mask_t mask)
 {
-    HAL_ASSERT(cache_id == 0);
+    HAL_ASSERT(cache_id <= CACHE_LL_ID_ALL);
     //On esp32h2, only `CACHE_BUS_IBUS0` and `CACHE_BUS_DBUS0` are supported. Use `cache_ll_l1_get_bus()` to get your bus first
     HAL_ASSERT((mask & (CACHE_BUS_IBUS1 | CACHE_BUS_IBUS2 | CACHE_BUS_DBUS1 | CACHE_BUS_DBUS2)) == 0);
 
@@ -211,7 +232,7 @@ static inline void cache_ll_l1_enable_bus(uint32_t cache_id, cache_bus_mask_t ma
 __attribute__((always_inline))
 static inline void cache_ll_l1_disable_bus(uint32_t cache_id, cache_bus_mask_t mask)
 {
-    HAL_ASSERT(cache_id == 0);
+    HAL_ASSERT(cache_id <= CACHE_LL_ID_ALL);
     //On esp32h2, only `CACHE_BUS_IBUS0` and `CACHE_BUS_DBUS0` are supported. Use `cache_ll_l1_get_bus()` to get your bus first
     HAL_ASSERT((mask & (CACHE_BUS_IBUS1 | CACHE_BUS_IBUS2 | CACHE_BUS_DBUS1 | CACHE_BUS_DBUS2)) == 0);
 
@@ -222,6 +243,33 @@ static inline void cache_ll_l1_disable_bus(uint32_t cache_id, cache_bus_mask_t m
     uint32_t dbus_mask = 0;
     dbus_mask = dbus_mask | ((mask & CACHE_BUS_DBUS0) ? CACHE_L1_CACHE_SHUT_BUS1 : 0);
     REG_SET_BIT(CACHE_L1_CACHE_CTRL_REG, dbus_mask);
+}
+
+/**
+ * @brief Get Cache level and the ID of the vaddr
+ *
+ * @param vaddr_start       virtual address start
+ * @param len               vaddr length
+ * @param out_level         cache level
+ * @param out_id            cache id
+ *
+ * @return true for valid
+ */
+__attribute__((always_inline))
+static inline bool cache_ll_vaddr_to_cache_level_id(uint32_t vaddr_start, uint32_t len, uint32_t *out_level, uint32_t *out_id)
+{
+    bool valid = false;
+    uint32_t vaddr_end = vaddr_start + len - 1;
+
+    valid |= (SOC_ADDRESS_IN_IRAM0_CACHE(vaddr_start) && SOC_ADDRESS_IN_IRAM0_CACHE(vaddr_end));
+    valid |= (SOC_ADDRESS_IN_DRAM0_CACHE(vaddr_start) && SOC_ADDRESS_IN_DRAM0_CACHE(vaddr_end));
+
+    if (valid) {
+        *out_level = 1;
+        *out_id = 0;
+    }
+
+    return valid;
 }
 
 /*------------------------------------------------------------------------------

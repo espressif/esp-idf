@@ -8,7 +8,7 @@
 #include <xtensa/coreasm.h>
 #include <xtensa/corebits.h>
 #include <xtensa/config/system.h>
-#include "freertos/xtensa_context.h"
+#include "xtensa_context.h"
 #include "freertos/xtensa_rtos.h"
 #include "esp_private/panic_reason.h"
 #include "sdkconfig.h"
@@ -139,7 +139,7 @@ Interrupt , a high-priority interrupt, is used for several things:
 
     .data
 _lx_intr_stack:
-    .space      LX_INTR_STACK_SIZE*portNUM_PROCESSORS /* This allocates stacks for each individual CPU. */
+    .space      LX_INTR_STACK_SIZE*CONFIG_FREERTOS_NUMBER_OF_CORES /* This allocates stacks for each individual CPU. */
 
 #if CONFIG_ESP32_ECO3_CACHE_LOCK_FIX && CONFIG_ESP_INT_WDT
     .global _lx_intr_livelock_counter
@@ -163,7 +163,7 @@ _lx_intr_livelock_pro:
     .align      4
 xt_highintx:
 
-#ifndef CONFIG_FREERTOS_UNICORE
+#ifndef CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
     /* See if we're here for the IPC_ISR interrupt */
     rsr     a0, INTERRUPT
     extui   a0, a0, ETS_IPC_ISR_INUM, 1
@@ -176,7 +176,7 @@ xt_highintx:
     movi    a0, esp_ipc_isr_handler
     jx      a0
 1:
-#endif /* not CONFIG_FREERTOS_UNICORE */
+#endif /* not CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE */
 
 #if CONFIG_ESP32_ECO3_CACHE_LOCK_FIX && CONFIG_ESP_INT_WDT
 

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,8 +14,11 @@
 #include "soc/rtc.h"
 #include "esp_cpu.h"
 #include "regi2c_ctrl.h"
-#include "soc/lp_clkrst_reg.h"
 #include "soc/regi2c_dig_reg.h"
+#include "soc/regi2c_bias.h"
+#include "soc/lp_clkrst_reg.h"
+#include "soc/lp_system_reg.h"
+#include "soc/pmu_reg.h"
 #include "esp_hw_log.h"
 #include "sdkconfig.h"
 #include "esp_rom_uart.h"
@@ -24,42 +27,12 @@
 
 static const char *TAG = "rtc_clk_init";
 
-#if SOC_PMU_SUPPORTED
-/**
- * Initialize the ICG map of some modem clock domains in the PMU_ACTIVE state
- *
- * A pre-initialization interface is used to initialize the ICG map of the
- * MODEM_APB, I2C_MST and LP_APB clock domains in the PMU_ACTIVE state, and
- * disable the clock gating of these clock domains in the PMU_ACTIVE state,
- * because the system clock source (PLL) in the system boot up process needs
- * to use the i2c master peripheral.
- *
- * ICG map of all modem clock domains under different power states (PMU_ACTIVE,
- * PMU_MODEM and PMU_SLEEP) will be initialized in esp_perip_clk_init().
- */
-static void rtc_clk_modem_clock_domain_active_state_icg_map_preinit(void)
-{
-    /* Configure modem ICG code in PMU_ACTIVE state */
-    pmu_ll_hp_set_icg_modem(&PMU, PMU_MODE_HP_ACTIVE, PMU_HP_ICG_MODEM_CODE_ACTIVE);
-
-    /* Disable clock gating for MODEM_APB, I2C_MST and LP_APB clock domains in PMU_ACTIVE state */
-    modem_syscon_ll_set_modem_apb_icg_bitmap(&MODEM_SYSCON, BIT(PMU_HP_ICG_MODEM_CODE_ACTIVE));
-    modem_lpcon_ll_set_i2c_master_icg_bitmap(&MODEM_LPCON, BIT(PMU_HP_ICG_MODEM_CODE_ACTIVE));
-    modem_lpcon_ll_set_lp_apb_icg_bitmap(&MODEM_LPCON, BIT(PMU_HP_ICG_MODEM_CODE_ACTIVE));
-
-    /* Software trigger force update modem ICG code and ICG switch */
-    pmu_ll_imm_update_dig_icg_modem_code(&PMU, true);
-    pmu_ll_imm_update_dig_icg_switch(&PMU, true);
-}
-#endif  //#if SOC_PMU_SUPPORTED
+static uint32_t HP_CALI_DBIAS = 27; //about 1.25v
+static uint32_t LP_CALI_DBIAS = 29; //about 1.25v
 
 void rtc_clk_init(rtc_clk_config_t cfg)
 {
     rtc_cpu_freq_config_t old_config, new_config;
-
-#if SOC_PMU_SUPPORTED
-    rtc_clk_modem_clock_domain_active_state_icg_map_preinit();
-#endif  //#if SOC_PMU_SUPPORTED
 
     /* Set tuning parameters for RC_FAST, RC_SLOW, and RC32K clocks.
      * Note: this doesn't attempt to set the clocks to precise frequencies.
@@ -74,8 +47,27 @@ void rtc_clk_init(rtc_clk_config_t cfg)
     REGI2C_WRITE_MASK(I2C_DIG_REG, I2C_DIG_REG_SCK_DCAP, cfg.slow_clk_dcap);
     REG_SET_FIELD(LP_CLKRST_RC32K_CNTL_REG, LP_CLKRST_RC32K_DFREQ, cfg.rc32k_dfreq);
 
-    rtc_xtal_freq_t xtal_freq = cfg.xtal_freq;
-    esp_rom_uart_tx_wait_idle(0);
+    REGI2C_WRITE_MASK(I2C_DIG_REG, I2C_DIG_REG_FORCE_RTC_DREG, 1);
+    REGI2C_WRITE_MASK(I2C_DIG_REG, I2C_DIG_REG_FORCE_DIG_DREG, 1);
+    REGI2C_WRITE_MASK(I2C_DIG_REG, I2C_DIG_REG_XPD_RTC_REG, 0);
+    REGI2C_WRITE_MASK(I2C_DIG_REG, I2C_DIG_REG_XPD_DIG_REG, 0);
+
+    REGI2C_WRITE_MASK(I2C_BIAS, I2C_BIAS_OR_FORCE_XPD_CK, 0);
+    REGI2C_WRITE_MASK(I2C_BIAS, I2C_BIAS_OR_FORCE_XPD_REF_OUT_BUF, 0);
+    REGI2C_WRITE_MASK(I2C_BIAS, I2C_BIAS_OR_FORCE_XPD_IPH, 0);
+    REGI2C_WRITE_MASK(I2C_BIAS, I2C_BIAS_OR_FORCE_XPD_VGATE_BUF, 0);
+
+    REG_SET_FIELD(PMU_HP_SLEEP_LP_REGULATOR0_REG, PMU_HP_SLEEP_LP_REGULATOR_DBIAS, LP_CALI_DBIAS);
+
+    // Switch to DCDC
+    SET_PERI_REG_MASK(PMU_DCM_CTRL_REG, PMU_DCDC_ON_REQ);
+    CLEAR_PERI_REG_MASK(LP_SYSTEM_REG_SYS_CTRL_REG, LP_SYSTEM_REG_LP_FIB_DCDC_SWITCH); //0: enable, 1: disable
+    REG_SET_FIELD(PMU_HP_ACTIVE_BIAS_REG, PMU_HP_ACTIVE_DCM_VSET, HP_CALI_DBIAS);
+    esp_rom_delay_us(1000);
+    CLEAR_PERI_REG_MASK(PMU_HP_ACTIVE_HP_REGULATOR0_REG, PMU_HP_ACTIVE_HP_REGULATOR_XPD);
+
+    soc_xtal_freq_t xtal_freq = cfg.xtal_freq;
+    esp_rom_output_tx_wait_idle(0);
     rtc_clk_xtal_freq_update(xtal_freq);
 
     /* Set CPU frequency */
@@ -97,8 +89,6 @@ void rtc_clk_init(rtc_clk_config_t cfg)
     bool need_rc_fast_en = true;
     if (cfg.slow_clk_src == SOC_RTC_SLOW_CLK_SRC_XTAL32K) {
         rtc_clk_32k_enable(true);
-    } else if (cfg.slow_clk_src == SOC_RTC_SLOW_CLK_SRC_OSC_SLOW) {
-        rtc_clk_32k_enable_external();
     } else if (cfg.slow_clk_src == SOC_RTC_SLOW_CLK_SRC_RC32K) {
        rtc_clk_rc32k_enable(true);
     }

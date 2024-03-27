@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -235,7 +235,7 @@ esp_err_t esp_efuse_write_reg(esp_efuse_block_t blk, unsigned int num_reg, uint3
 /**
  * @brief   Return efuse coding scheme for blocks.
  *
- * Note: The coding scheme is applicable only to 1, 2 and 3 blocks. For 0 block, the coding scheme is always ``NONE``.
+ * @note The coding scheme is applicable only to 1, 2 and 3 blocks. For 0 block, the coding scheme is always ``NONE``.
  *
  * @param[in]  blk     Block number of eFuse.
  * @return Return efuse coding scheme for blocks
@@ -708,6 +708,12 @@ esp_err_t esp_efuse_set_write_protect_of_digest_revoke(unsigned num_digest);
  *
  * The burn of a key, protection bits, and a purpose happens in batch mode.
  *
+ * @note This API also enables the read protection efuse bit for certain key blocks like XTS-AES, HMAC, ECDSA etc.
+ * This ensures that the key is only accessible to hardware peripheral.
+ *
+ * @note For SoC's with capability `SOC_EFUSE_ECDSA_USE_HARDWARE_K` (e.g., ESP32-H2), this API writes an additional
+ * efuse bit for ECDSA key purpose to enforce hardware TRNG generated k mode in the peripheral.
+ *
  * @param[in] block Block to read purpose for. Must be in range EFUSE_BLK_KEY0 to EFUSE_BLK_KEY_MAX. Key block must be unused (esp_efuse_key_block_unused).
  * @param[in] purpose Purpose to set for this key. Purpose must be already unset.
  * @param[in] key Pointer to data to write.
@@ -726,6 +732,12 @@ esp_err_t esp_efuse_write_key(esp_efuse_block_t block, esp_efuse_purpose_t purpo
  * @brief Program keys to unused efuse blocks
  *
  * The burn of keys, protection bits, and purposes happens in batch mode.
+ *
+ * @note This API also enables the read protection efuse bit for certain key blocks like XTS-AES, HMAC, ECDSA etc.
+ * This ensures that the key is only accessible to hardware peripheral.
+ *
+ * @note For SoC's with capability `SOC_EFUSE_ECDSA_USE_HARDWARE_K` (e.g., ESP32-H2), this API writes an additional
+ * efuse bit for ECDSA key purpose to enforce hardware TRNG generated k mode in the peripheral.
  *
  * @param[in] purposes Array of purposes (purpose[number_of_keys]).
  * @param[in] keys Array of keys (uint8_t keys[number_of_keys][32]). Each key is 32 bytes long.
@@ -770,6 +782,29 @@ esp_err_t esp_secure_boot_read_key_digests(esp_secure_boot_key_digests_t *truste
  *         - ESP_FAIL: Error in BLOCK0 requiring reboot.
  */
 esp_err_t esp_efuse_check_errors(void);
+
+/**
+ * @brief   Destroys the data in the given efuse block, if possible.
+ *
+ * Data destruction occurs through the following steps:
+ * 1) Destroy data in the block:
+ *    - If write protection is inactive for the block, then unset bits are burned.
+ *    - If write protection is active, the block remains unaltered.
+ * 2) Set read protection for the block if possible (check write-protection for RD_DIS).
+ *    In this case, data becomes inaccessible, and the software reads it as all zeros.
+ * If write protection is enabled and read protection can not be set,
+ * data in the block remains readable (returns an error).
+ *
+ * Do not use the batch mode with this function as it does the burning itself!
+ *
+ * @param[in] block A key block in the range EFUSE_BLK_KEY0..EFUSE_BLK_KEY_MAX
+ *
+ * @return
+ *    - ESP_OK: Successful.
+ *    - ESP_FAIL: Data remained readable because the block is write-protected
+ *                and read protection can not be set.
+ */
+esp_err_t esp_efuse_destroy_block(esp_efuse_block_t block);
 
 #ifdef __cplusplus
 }

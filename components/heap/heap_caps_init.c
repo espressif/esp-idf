@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,10 +14,18 @@
 #include "esp_heap_caps_init.h"
 #include "heap_memory_layout.h"
 
+#include "esp_private/startup_internal.h"
+
 static const char *TAG = "heap_init";
 
 /* Linked-list of registered heaps */
 struct registered_heap_ll registered_heaps;
+
+ESP_SYSTEM_INIT_FN(init_heap, CORE, BIT(0), 100)
+{
+    heap_caps_init();
+    return ESP_OK;
+}
 
 static void register_heap(heap_t *region)
 {
@@ -69,7 +77,7 @@ void heap_caps_init(void)
     for (size_t i = 1; i < num_regions; i++) {
         soc_memory_region_t *a = &regions[i - 1];
         soc_memory_region_t *b = &regions[i];
-        if (b->start == (intptr_t)(a->start + a->size) && b->type == a->type ) {
+        if (b->start == (intptr_t)(a->start + a->size) && b->type == a->type && b->startup_stack == a->startup_stack ) {
             a->type = -1;
             b->start = a->start;
             b->size += a->size;
@@ -102,7 +110,7 @@ void heap_caps_init(void)
         heap->start = region->start;
         heap->end = region->start + region->size;
         MULTI_HEAP_LOCK_INIT(&heap->heap_mux);
-        if (type->startup_stack) {
+        if (region->startup_stack) {
             /* Will be registered when OS scheduler starts */
             heap->heap = NULL;
         } else {

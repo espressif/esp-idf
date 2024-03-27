@@ -53,7 +53,6 @@ esp_err_t adc_cali_check_scheme(adc_cali_scheme_ver_t *scheme_mask);
  */
 esp_err_t adc_cali_raw_to_voltage(adc_cali_handle_t handle, int raw, int *voltage);
 
-
 #ifdef __cplusplus
 }
 #endif

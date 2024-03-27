@@ -26,14 +26,6 @@ idf_component_register(SRCS "${srcs}"
 if(${target} STREQUAL "linux")
     # set BUILD_DIR because partition_linux.c uses a file created in the build directory
     target_compile_definitions(${COMPONENT_LIB} PRIVATE "BUILD_DIR=\"${build_dir}\"")
-
-    # link bsd library for strlcpy
-    find_library(LIB_BSD bsd)
-    if(LIB_BSD)
-        target_link_libraries(${COMPONENT_LIB} PRIVATE ${LIB_BSD})
-    elseif(NOT CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin")
-        message(WARNING "Missing LIBBSD library. Install libbsd-dev package and/or check linker directories.")
-    endif()
 endif()
 
 if(CMAKE_C_COMPILER_ID MATCHES "GNU")
@@ -41,5 +33,3 @@ if(CMAKE_C_COMPILER_ID MATCHES "GNU")
     set_property(SOURCE ${cache_srcs} APPEND_STRING PROPERTY COMPILE_FLAGS
         " -fno-inline-small-functions -fno-inline-functions-called-once")
 endif()
-
-target_compile_options(${COMPONENT_LIB} PRIVATE "-Wno-format")

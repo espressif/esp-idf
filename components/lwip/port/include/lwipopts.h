@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: BSD-3-Clause
  *
- * SPDX-FileContributor: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2015-2024 Espressif Systems (Shanghai) CO LTD
  */
 #ifndef LWIP_HDR_ESP_LWIPOPTS_H
 #define LWIP_HDR_ESP_LWIPOPTS_H
@@ -162,6 +162,12 @@ extern "C" {
  */
 #define ARP_QUEUEING                    1
 
+#ifdef CONFIG_LWIP_DHCPS_STATIC_ENTRIES
+#define ETHARP_SUPPORT_STATIC_ENTRIES   1
+#else
+#define ETHARP_SUPPORT_STATIC_ENTRIES   0
+#endif
+
 /*
    --------------------------------
    ---------- IP options ----------
@@ -211,8 +217,8 @@ extern "C" {
 
 /**
  * IP_NAPT==1: Enables IPv4 Network Address and Port Translation.
- * Note that both CONFIG_LWIP_IP_FORWARD and CONFIG_LWIP_L2_TO_L3_COPY options
- * need to be enabled in system configuration for the NAPT to work on ESP platform
+ * Note that CONFIG_LWIP_IP_FORWARD option need to be enabled in
+ * system configuration for the NAPT to work on ESP platform
  */
 #ifdef CONFIG_LWIP_IPV4_NAPT
 #define IP_NAPT                         1
@@ -241,6 +247,11 @@ extern "C" {
  * packets even if the maximum amount of fragments is enqueued for reassembly!
  */
 #define IP_REASS_MAX_PBUFS              CONFIG_LWIP_IP_REASS_MAX_PBUFS
+
+/**
+ * IP_DEFAULT_TTL: Default value for Time-To-Live used by transport layers.
+ */
+#define IP_DEFAULT_TTL                   CONFIG_LWIP_IP_DEFAULT_TTL
 
 /*
    ----------------------------------
@@ -461,7 +472,7 @@ static inline uint32_t timeout_from_offered(uint32_t lease, uint32_t min)
 
 /** The maximum of DNS servers
  */
-#define DNS_MAX_SERVERS                 3
+#define DNS_MAX_SERVERS                 CONFIG_LWIP_DNS_MAX_SERVERS
 
 /** ESP specific option only applicable if ESP_DNS=1
  *
@@ -469,6 +480,14 @@ static inline uint32_t timeout_from_offered(uint32_t lease, uint32_t min)
  * FALLBACK_DNS_SERVER_ADDRESS(ipaddr), where 'ipaddr' is an 'ip_addr_t*'
  */
 #define DNS_FALLBACK_SERVER_INDEX       (DNS_MAX_SERVERS - 1)
+
+#ifdef CONFIG_LWIP_FALLBACK_DNS_SERVER_SUPPORT
+#define FALLBACK_DNS_SERVER_ADDRESS(address)                           \
+        do {    ip_addr_t *server_dns = address;                            \
+                char server_ip[] = CONFIG_LWIP_FALLBACK_DNS_SERVER_ADDRESS; \
+                ipaddr_aton(server_ip, server_dns);                         \
+        } while (0)
+#endif /* CONFIG_LWIP_FALLBACK_DNS_SERVER_SUPPORT */
 
 /**
  * LWIP_DNS_SUPPORT_MDNS_QUERIES==1: Enable mDNS queries in hostname resolution.
@@ -537,6 +556,21 @@ static inline uint32_t timeout_from_offered(uint32_t lease, uint32_t min)
 #define TCP_QUEUE_OOSEQ                 1
 #else
 #define TCP_QUEUE_OOSEQ                 0
+#endif
+
+/**
+ * TCP_OOSEQ_MAX_PBUFS: The maximum number of pbufs
+ * queued on ooseq per pcb
+ */
+#if TCP_QUEUE_OOSEQ
+#define TCP_OOSEQ_MAX_PBUFS             CONFIG_LWIP_TCP_OOSEQ_MAX_PBUFS
+#endif
+
+/**
+ * TCP_OOSEQ_TIMEOUT: Timeout for each pbuf queued in TCP OOSEQ, in RTOs.
+ */
+#if TCP_QUEUE_OOSEQ
+#define TCP_OOSEQ_TIMEOUT               CONFIG_LWIP_TCP_OOSEQ_TIMEOUT
 #endif
 
 /**
@@ -800,7 +834,7 @@ static inline uint32_t timeout_from_offered(uint32_t lease, uint32_t min)
  * The priority value itself is platform-dependent, but is passed to
  * sys_thread_new() when the thread is created.
  */
-#define TCPIP_THREAD_PRIO               CONFIG_LWIP_TCPIP_TASK_PRIO
+#define TCPIP_THREAD_PRIO               ESP_TASK_TCPIP_PRIO
 
 /**
  * TCPIP_MBOX_SIZE: The mailbox size for the tcpip thread messages
@@ -828,7 +862,7 @@ static inline uint32_t timeout_from_offered(uint32_t lease, uint32_t min)
  * The queue size value itself is platform-dependent, but is passed to
  * sys_mbox_new() when the acceptmbox is created.
  */
-#define DEFAULT_ACCEPTMBOX_SIZE         6
+#define DEFAULT_ACCEPTMBOX_SIZE         CONFIG_LWIP_TCP_ACCEPTMBOX_SIZE
 
 /**
  * DEFAULT_THREAD_STACKSIZE: The stack size used by any other lwIP thread.
@@ -1057,6 +1091,16 @@ static inline uint32_t timeout_from_offered(uint32_t lease, uint32_t min)
 #define MPPE_SUPPORT                    CONFIG_LWIP_PPP_MPPE_SUPPORT
 
 /**
+ * PPP_SERVER==1: Enable PPP server support (waiting for incoming PPP session).
+ */
+#define PPP_SERVER                      CONFIG_LWIP_PPP_SERVER_SUPPORT
+
+/**
+ * VJ_SUPPORT==1: Support VJ header compression.
+ */
+#define VJ_SUPPORT                      CONFIG_LWIP_PPP_VJ_HEADER_COMPRESSION
+
+/**
  * PPP_MAXIDLEFLAG: Max Xmit idle time (in ms) before resend flag char.
  * TODO: If PPP_MAXIDLEFLAG > 0 and next package is send during PPP_MAXIDLEFLAG time,
  *       then 0x7E is not added at the begining of PPP package but 0x7E termination
@@ -1146,6 +1190,16 @@ static inline uint32_t timeout_from_offered(uint32_t lease, uint32_t min)
 #define LWIP_ND6                        1
 #else
 #define LWIP_ND6                        0
+#endif
+
+/**
+ * LWIP_FORCE_ROUTER_FORWARDING==1: the router flag in NA packet will always set to 1,
+ * otherwise, never set router flag for NA packets.
+ */
+#ifdef CONFIG_LWIP_FORCE_ROUTER_FORWARDING
+#define LWIP_FORCE_ROUTER_FORWARDING    1
+#else
+#define LWIP_FORCE_ROUTER_FORWARDING    0
 #endif
 
 /**
@@ -1540,6 +1594,7 @@ static inline uint32_t timeout_from_offered(uint32_t lease, uint32_t min)
 #define ESP_LWIP_LOCK                   1
 #define ESP_THREAD_PROTECTION           1
 #define LWIP_SUPPORT_CUSTOM_PBUF        1
+#define ESP_LWIP_FALLBACK_DNS_PREFER_IPV4 0
 
 /*
    -----------------------------------------

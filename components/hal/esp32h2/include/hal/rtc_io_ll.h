@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,7 +12,10 @@
 
 #pragma once
 
+#include <stdbool.h>
+#include "soc/soc_caps.h"
 #include "soc/lp_aon_struct.h"
+#include "soc/lpperi_struct.h"
 #include "soc/pmu_struct.h"
 #include "hal/misc.h"
 
@@ -27,6 +30,19 @@ typedef enum {
     RTCIO_LL_FUNC_DIGITAL = 0x1,     /*!< The pin controlled by DIGITAL module. */
 } rtcio_ll_func_t;
 
+
+/**
+ * @brief Enable/Disable LP_IO peripheral clock.
+ *
+ * @param enable true to enable the clock / false to enable the clock
+ */
+static inline void _rtcio_ll_enable_io_clock(bool enable)
+{
+    LPPERI.clk_en.lp_io_ck_en = enable;
+}
+
+#define rtcio_ll_enable_io_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; _rtcio_ll_enable_io_clock(__VA_ARGS__)
+
 /**
  * @brief Select the rtcio function.
  *
@@ -40,6 +56,9 @@ static inline void rtcio_ll_function_select(int rtcio_num, rtcio_ll_func_t func)
     if (func == RTCIO_LL_FUNC_RTC) {
         // 0: GPIO connected to digital GPIO module. 1: GPIO connected to analog RTC module.
         uint32_t sel_mask = HAL_FORCE_READ_U32_REG_FIELD(LP_AON.gpio_mux, gpio_mux_sel);
+        if ((sel_mask & SOC_RTCIO_VALID_RTCIO_MASK) == 0) {
+            _rtcio_ll_enable_io_clock(true);
+        }
         sel_mask |= BIT(rtcio_num);
         HAL_FORCE_MODIFY_U32_REG_FIELD(LP_AON.gpio_mux, gpio_mux_sel, sel_mask);
     } else if (func == RTCIO_LL_FUNC_DIGITAL) {
@@ -47,6 +66,9 @@ static inline void rtcio_ll_function_select(int rtcio_num, rtcio_ll_func_t func)
         uint32_t sel_mask = HAL_FORCE_READ_U32_REG_FIELD(LP_AON.gpio_mux, gpio_mux_sel);
         sel_mask &= ~BIT(rtcio_num);
         HAL_FORCE_MODIFY_U32_REG_FIELD(LP_AON.gpio_mux, gpio_mux_sel, sel_mask);
+        if((sel_mask & SOC_RTCIO_VALID_RTCIO_MASK) == 0) {
+            _rtcio_ll_enable_io_clock(false);
+        }
     }
 }
 

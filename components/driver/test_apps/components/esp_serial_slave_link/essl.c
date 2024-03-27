@@ -25,7 +25,6 @@
 
 #define TIME_REMAIN(start, end, timeout)    TIME_REMAIN_CORE(start, end, timeout, UINT32_MAX)
 
-
 #define ESSL_MIN(a, b)   ((a) < (b) ? (a) : (b))
 
 __attribute__((unused)) static const char TAG[] = "esp_serial_slave_link";
@@ -42,7 +41,6 @@ __attribute__((unused)) static const char TAG[] = "esp_serial_slave_link";
     } } while(0)
 
 #define CHECK_EXECUTE_CMD(DEV, CMD, ...) _CHECK_EXECUTE_CMD(DEV, CMD, #CMD" not supported for the current device.",##__VA_ARGS__)
-
 
 esp_err_t essl_init(essl_handle_t handle, uint32_t wait_ms)
 {

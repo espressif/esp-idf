@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,9 +15,17 @@
 extern "C" {
 #endif
 
+#if SOC_PM_MODEM_RETENTION_BY_REGDMA && CONFIG_FREERTOS_USE_TICKLESS_IDLE
+#define IEEE802154_RF_ENABLE() ieee802154_rf_enable()
+#define IEEE802154_RF_DISABLE() ieee802154_rf_disable()
+#else
+#define IEEE802154_RF_ENABLE()
+#define IEEE802154_RF_DISABLE()
+#endif // SOC_PM_MODEM_RETENTION_BY_REGDMA && CONFIG_FREERTOS_USE_TICKLESS_IDLE
 #define IEEE802154_PROBE(a) do { \
             IEEE802154_RECORD_EVENT(a); \
             ieee802154_record_abort(a); \
+            IEEE802154_TXRX_STATISTIC(a); \
             } while(0)
 
 #if CONFIG_IEEE802154_RECORD_EVENT
@@ -173,6 +181,69 @@ void ieee802154_assert_print(void);
 #define IEEE802154_ASSERT(a) assert(a)
 #endif // CONFIG_IEEE802154_ASSERT
 
+#if CONFIG_IEEE802154_TXRX_STATISTIC
+typedef struct ieee802154_txrx_statistic{
+    struct {
+        uint64_t nums;
+        uint64_t deferred_nums;
+        uint64_t done_nums;
+        struct {
+            uint64_t rx_ack_coex_break_nums;        // IEEE802154_RX_ACK_ABORT_COEX_CNT_REG
+            uint64_t rx_ack_timeout_nums;           // IEEE802154_RX_ACK_TIMEOUT_CNT_REG
+            uint64_t tx_coex_break_nums;            // IEEE802154_TX_BREAK_COEX_CNT_REG
+            uint64_t tx_security_error_nums;        // IEEE802154_TX_SECURITY_ERROR_CNT_REG
+            uint64_t cca_failed_nums;               // IEEE802154_CCA_FAIL_CNT_REG
+            uint64_t cca_busy_nums;                 // IEEE802154_CCA_BUSY_CNT_REG
+        } abort;
+    } tx;
+    struct {
+        uint64_t done_nums;
+        struct {
+            uint64_t sfd_timeout_nums;              // IEEE802154_SFD_TIMEOUT_CNT_REG
+            uint64_t crc_error_nums;                // IEEE802154_CRC_ERROR_CNT_REG
+            uint64_t filter_fail_nums;              // IEEE802154_RX_FILTER_FAIL_CNT_REG
+            uint64_t no_rss_nums;                   // IEEE802154_NO_RSS_DETECT_CNT_REG
+            uint64_t rx_coex_break_nums;            // IEEE802154_RX_ABORT_COEX_CNT_REG
+            uint64_t rx_restart_nums;               // IEEE802154_RX_RESTART_CNT_REG
+            uint64_t tx_ack_coex_break_nums;        // IEEE802154_TX_ACK_ABORT_COEX_CNT_REG
+            uint64_t ed_abort_nums;                 // IEEE802154_ED_ABORT_CNT_REG
+        } abort;
+    } rx;
+} ieee802154_txrx_statistic_t;
+
+#define IEEE802154_TXRX_STATISTIC_CLEAR() do { \
+            ieee802154_txrx_statistic_clear();\
+            } while(0)
+
+#define IEEE802154_TXRX_STATISTIC(a) do { \
+            ieee802154_txrx_statistic(a);\
+            } while(0)
+
+#define IEEE802154_TX_DEFERRED_NUMS_UPDATE() do { \
+            ieee802154_tx_deferred_nums_update();\
+            } while(0)
+
+#define IEEE802154_TX_NUMS_UPDATE() do { \
+            ieee802154_tx_nums_update();\
+            } while(0)
+
+#define IEEE802154_TX_BREAK_COEX_NUMS_UPDATE() do { \
+            ieee802154_tx_break_coex_nums_update();\
+            } while(0)
+
+void ieee802154_txrx_statistic_clear(void);
+void ieee802154_txrx_statistic_print(void);
+void ieee802154_txrx_statistic(ieee802154_ll_events events);
+void ieee802154_tx_nums_update(void);
+void ieee802154_tx_deferred_nums_update(void);
+void ieee802154_tx_break_coex_nums_update(void);
+#else
+#define IEEE802154_TXRX_STATISTIC(a)
+#define IEEE802154_TX_NUMS_UPDATE()
+#define IEEE802154_TX_DEFERRED_NUMS_UPDATE()
+#define IEEE802154_TXRX_STATISTIC_CLEAR()
+#define IEEE802154_TX_BREAK_COEX_NUMS_UPDATE()
+#endif // CONFIG_IEEE802154_TXRX_STATISTIC
 
 // TODO: replace etm code using common interface
 

@@ -1,5 +1,0 @@
-# This config is split between targets since different component needs to be included
-CONFIG_IDF_TARGET="esp32s2"
-# spi_flash is tested in other configs
-TEST_EXCLUDE_COMPONENTS=spi_flash
-CONFIG_ESP32S2_RTCDATA_IN_FAST_MEM=y

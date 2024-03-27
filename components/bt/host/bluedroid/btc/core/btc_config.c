@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,13 +20,25 @@
 #include "osi/mutex.h"
 
 #include "stack/bt_types.h"
+#include "nvs.h"
 
-static const char *CONFIG_FILE_PATH = "bt_config.conf";
+static char CONFIG_FILE_PATH[NVS_NS_NAME_MAX_SIZE] = "bt_config.conf";
 static const period_ms_t CONFIG_SETTLE_PERIOD_MS = 3000;
 
 static void btc_key_value_to_string(uint8_t *key_value, char *value_str, int key_length);
 static osi_mutex_t lock;  // protects operations on |config|.
 static config_t *config;
+
+int btc_config_file_path_update(const char *file_path)
+{
+    if (file_path != NULL && strlen(file_path) < NVS_NS_NAME_MAX_SIZE) {
+        memcpy(CONFIG_FILE_PATH, file_path, strlen(file_path));
+        CONFIG_FILE_PATH[strlen(file_path)] = '\0';
+        return 0;
+    }
+    BTC_TRACE_ERROR("Update failed, file_path is NULL or length should be less than %d\n", NVS_NS_NAME_MAX_SIZE);
+    return -1;
+}
 
 bool btc_compare_address_key_value(const char *section, const char *key_type, void *key_value, int key_length)
 {
@@ -297,6 +309,14 @@ bool btc_config_remove_section(const char *section)
     assert(section != NULL);
 
     return config_remove_section(config, section);
+}
+
+bool btc_config_update_newest_section(const char *section)
+{
+    assert(config != NULL);
+    assert(section != NULL);
+
+    return config_update_newest_section(config, section);
 }
 
 void btc_config_flush(void)

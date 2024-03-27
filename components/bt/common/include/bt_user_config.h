@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -29,11 +29,17 @@
 #define UC_BT_STACK_NO_LOG               FALSE
 #endif
 
+#ifdef CONFIG_BT_CONTROLLER_ENABLED
+#define UC_BT_CONTROLLER_INCLUDED        TRUE
+#else
+#define UC_BT_CONTROLLER_INCLUDED        FALSE
+#endif
+
 /**********************************************************
  * Thread/Task reference
  **********************************************************/
 #ifdef CONFIG_BT_BLUEDROID_PINNED_TO_CORE
-#define UC_TASK_PINNED_TO_CORE              (CONFIG_BT_BLUEDROID_PINNED_TO_CORE < portNUM_PROCESSORS ? CONFIG_BT_BLUEDROID_PINNED_TO_CORE : tskNO_AFFINITY)
+#define UC_TASK_PINNED_TO_CORE              (CONFIG_BT_BLUEDROID_PINNED_TO_CORE < CONFIG_FREERTOS_NUMBER_OF_CORES ? CONFIG_BT_BLUEDROID_PINNED_TO_CORE : tskNO_AFFINITY)
 #else
 #define UC_TASK_PINNED_TO_CORE              (0)
 #endif

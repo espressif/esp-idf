@@ -63,7 +63,7 @@ typedef struct {
 /* btc_hidd_args_t */
 typedef union {
     // BTC_HD_CONNECT_EVT
-    struct connect_arg {
+    struct hd_connect_arg {
         BD_ADDR bd_addr;
     } connect;
 

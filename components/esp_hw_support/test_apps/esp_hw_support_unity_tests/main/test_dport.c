@@ -17,7 +17,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
-#include "freertos/xtensa_timer.h"
+#include "xtensa_timer.h"
 #include "driver/uart.h"
 #include "unity.h"
 #include "test_utils.h"
@@ -140,7 +140,7 @@ void run_tasks_with_change_freq_cpu(int cpu_freq_mhz)
         bool res = rtc_clk_cpu_freq_mhz_to_config(cpu_freq_mhz, &new_config);
         assert(res && "invalid frequency value");
 
-        esp_rom_uart_tx_wait_idle(uart_num);
+        esp_rom_output_tx_wait_idle(CONFIG_ESP_CONSOLE_ROM_SERIAL_PORT_NUM);
         rtc_clk_cpu_freq_set_config(&new_config);
         uart_ll_set_sclk(UART_LL_GET_HW(uart_num), UART_SCLK_DEFAULT);
 
@@ -156,7 +156,7 @@ void run_tasks_with_change_freq_cpu(int cpu_freq_mhz)
     run_tasks("accessDPORT", accessDPORT, "accessAPB", accessAPB, 10000);
 
     // return old freq.
-    esp_rom_uart_tx_wait_idle(uart_num);
+    esp_rom_output_tx_wait_idle(CONFIG_ESP_CONSOLE_ROM_SERIAL_PORT_NUM);
     rtc_clk_cpu_freq_set_config(&old_config);
     uart_ll_set_sclk(UART_LL_GET_HW(uart_num), UART_SCLK_DEFAULT);
 

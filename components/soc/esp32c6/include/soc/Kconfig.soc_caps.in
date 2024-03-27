@@ -199,11 +199,39 @@ config SOC_LP_I2C_SUPPORTED
     bool
     default y
 
+config SOC_ULP_LP_UART_SUPPORTED
+    bool
+    default y
+
 config SOC_CLK_TREE_SUPPORTED
     bool
     default y
 
 config SOC_ASSIST_DEBUG_SUPPORTED
+    bool
+    default y
+
+config SOC_WDT_SUPPORTED
+    bool
+    default y
+
+config SOC_SPI_FLASH_SUPPORTED
+    bool
+    default y
+
+config SOC_RNG_SUPPORTED
+    bool
+    default y
+
+config SOC_LIGHT_SLEEP_SUPPORTED
+    bool
+    default y
+
+config SOC_DEEP_SLEEP_SUPPORTED
+    bool
+    default y
+
+config SOC_MODEM_CLOCK_SUPPORTED
     bool
     default y
 
@@ -363,7 +391,7 @@ config SOC_CPU_WATCHPOINTS_NUM
     int
     default 4
 
-config SOC_CPU_WATCHPOINT_SIZE
+config SOC_CPU_WATCHPOINT_MAX_REGION_SIZE
     hex
     default 0x80000000
 
@@ -400,6 +428,10 @@ config SOC_GDMA_PAIRS_PER_GROUP_MAX
     default 3
 
 config SOC_GDMA_SUPPORT_ETM
+    bool
+    default y
+
+config SOC_GDMA_SUPPORT_SLEEP_RETENTION
     bool
     default y
 
@@ -447,6 +479,18 @@ config SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
     bool
     default y
 
+config SOC_LP_IO_CLOCK_IS_INDEPENDENT
+    bool
+    default y
+
+config SOC_GPIO_IN_RANGE_MAX
+    int
+    default 30
+
+config SOC_GPIO_OUT_RANGE_MAX
+    int
+    default 30
+
 config SOC_GPIO_DEEP_SLEEP_WAKE_VALID_GPIO_MASK
     int
     default 0
@@ -460,6 +504,14 @@ config SOC_GPIO_SUPPORT_FORCE_HOLD
     default y
 
 config SOC_GPIO_SUPPORT_HOLD_SINGLE_IO_IN_DSLP
+    bool
+    default y
+
+config SOC_GPIO_CLOCKOUT_BY_GPIO_MATRIX
+    bool
+    default y
+
+config SOC_CLOCKOUT_HAS_SOURCE_GATE
     bool
     default y
 
@@ -478,6 +530,10 @@ config SOC_RTCIO_HOLD_SUPPORTED
 config SOC_RTCIO_WAKE_SUPPORTED
     bool
     default y
+
+config SOC_RTCIO_VALID_RTCIO_MASK
+    hex
+    default 0xFF
 
 config SOC_DEDIC_GPIO_OUT_CHANNELS_NUM
     int
@@ -507,6 +563,10 @@ config SOC_I2C_SUPPORT_SLAVE
     bool
     default y
 
+config SOC_I2C_SUPPORT_HW_FSM_RST
+    bool
+    default y
+
 config SOC_I2C_SUPPORT_HW_CLR_BUS
     bool
     default y
@@ -520,6 +580,22 @@ config SOC_I2C_SUPPORT_RTC
     default y
 
 config SOC_I2C_SUPPORT_10BIT_ADDR
+    bool
+    default y
+
+config SOC_I2C_SLAVE_SUPPORT_BROADCAST
+    bool
+    default y
+
+config SOC_I2C_SLAVE_CAN_GET_STRETCH_CAUSE
+    bool
+    default y
+
+config SOC_I2C_SLAVE_SUPPORT_I2CRAM_ACCESS
+    bool
+    default y
+
+config SOC_I2C_SLAVE_SUPPORT_SLAVE_UNMATCH
     bool
     default y
 
@@ -887,6 +963,22 @@ config SOC_SPI_SUPPORT_CLK_RC_FAST
     bool
     default y
 
+config SOC_SPI_SCT_SUPPORTED
+    bool
+    default y
+
+config SOC_SPI_SCT_REG_NUM
+    int
+    default 14
+
+config SOC_SPI_SCT_BUFFER_NUM_MAX
+    bool
+    default y
+
+config SOC_SPI_SCT_CONF_BITLEN_MAX
+    hex
+    default 0x3FFFA
+
 config SOC_MEMSPI_IS_INDEPENDENT
     bool
     default y
@@ -1081,7 +1173,7 @@ config SOC_SUPPORT_SECURE_BOOT_REVOKE_KEY
 
 config SOC_FLASH_ENCRYPTED_XTS_AES_BLOCK_MAX
     int
-    default 32
+    default 64
 
 config SOC_FLASH_ENCRYPTION_XTS_AES
     bool
@@ -1132,6 +1224,10 @@ config SOC_UART_SUPPORT_XTAL_CLK
     default y
 
 config SOC_UART_SUPPORT_WAKEUP_INT
+    bool
+    default y
+
+config SOC_UART_HAS_LP_UART
     bool
     default y
 
@@ -1279,13 +1375,21 @@ config SOC_TEMPERATURE_SENSOR_INTR_SUPPORT
     bool
     default y
 
+config SOC_TEMPERATURE_SENSOR_SUPPORT_ETM
+    bool
+    default y
+
+config SOC_RNG_CLOCK_IS_INDEPENDENT
+    bool
+    default y
+
 config SOC_WIFI_HW_TSF
     bool
     default y
 
 config SOC_WIFI_FTM_SUPPORT
     bool
-    default n
+    default y
 
 config SOC_WIFI_GCMP_SUPPORT
     bool
@@ -1344,5 +1448,13 @@ config SOC_BLE_MULTI_CONN_OPTIMIZATION
     default y
 
 config SOC_BLE_USE_WIFI_PWR_CLK_WORKAROUND
+    bool
+    default y
+
+config SOC_PHY_COMBO_MODULE
+    bool
+    default y
+
+config SOC_CAPS_NO_RESET_BY_ANA_BOD
     bool
     default y

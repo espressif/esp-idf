@@ -9,6 +9,7 @@
 #include <string.h>
 #include "hal/assert.h"
 #include "soc/ecdsa_reg.h"
+#include "soc/hp_sys_clkrst_struct.h"
 #include "hal/ecdsa_types.h"
 
 #ifdef __cplusplus
@@ -22,7 +23,6 @@ typedef enum {
     ECDSA_PARAM_R,
     ECDSA_PARAM_S,
     ECDSA_PARAM_Z,
-    ECDSA_PARAM_K,
     ECDSA_PARAM_QAX,
     ECDSA_PARAM_QAY
 } ecdsa_ll_param_t;
@@ -69,6 +69,29 @@ typedef enum {
     ECDSA_MODE_SHA_START,
     ECDSA_MODE_SHA_CONTINUE
 } ecdsa_ll_sha_mode_t;
+
+/**
+ * @brief Enable the bus clock for ECDSA peripheral module
+ *
+ * @param true to enable the module, false to disable the module
+ */
+static inline void ecdsa_ll_enable_bus_clock(bool enable)
+{
+    HP_SYS_CLKRST.peri_clk_ctrl25.reg_crypto_ecdsa_clk_en = enable;
+}
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define ecdsa_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; ecdsa_ll_enable_bus_clock(__VA_ARGS__)
+
+/**
+ * @brief Reset the ECDSA peripheral module
+ */
+static inline void ecdsa_ll_reset_register(void)
+{
+    HP_SYS_CLKRST.hp_rst_en2.reg_rst_en_ecdsa = 1;
+    HP_SYS_CLKRST.hp_rst_en2.reg_rst_en_ecdsa = 0;
+}
 
 /**
  * @brief Enable interrupt of a given type
@@ -170,26 +193,6 @@ static inline void ecdsa_ll_set_curve(ecdsa_curve_t curve)
         default:
             HAL_ASSERT(false && "Unsupported curve");
             return;
-    }
-}
-
-/**
- * @brief Set the source of `K`
- *
- * @param mode Mode of K generation
- */
-static inline void ecdsa_ll_set_k_mode(ecdsa_k_mode_t mode)
-{
-    switch (mode) {
-        case ECDSA_K_USE_TRNG:
-            REG_CLR_BIT(ECDSA_CONF_REG, ECDSA_SOFTWARE_SET_K);
-            break;
-        case ECDSA_K_USER_PROVIDED:
-            REG_SET_BIT(ECDSA_CONF_REG, ECDSA_SOFTWARE_SET_K);
-            break;
-        default:
-            HAL_ASSERT(false && "Unsupported curve");
-            break;
     }
 }
 
@@ -318,7 +321,6 @@ static inline void ecdsa_ll_write_param(ecdsa_ll_param_t param, const uint8_t *b
         case ECDSA_PARAM_Z:
             reg = ECDSA_Z_MEM;
             break;
-        case ECDSA_PARAM_K:
         case ECDSA_PARAM_QAX:
             reg = ECDSA_QAX_MEM;
             break;
@@ -356,7 +358,6 @@ static inline void ecdsa_ll_read_param(ecdsa_ll_param_t param, uint8_t *buf, uin
         case ECDSA_PARAM_Z:
             reg = ECDSA_Z_MEM;
             break;
-        case ECDSA_PARAM_K:
         case ECDSA_PARAM_QAX:
             reg = ECDSA_QAX_MEM;
             break;

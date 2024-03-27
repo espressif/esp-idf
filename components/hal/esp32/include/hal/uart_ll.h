@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,6 +15,7 @@
 #include "esp_attr.h"
 #include "soc/uart_reg.h"
 #include "soc/uart_struct.h"
+#include "soc/dport_reg.h"
 #include "hal/uart_types.h"
 
 #ifdef __cplusplus
@@ -29,7 +30,7 @@ extern "C" {
 // The timeout calibration factor when using ref_tick
 #define UART_LL_TOUT_REF_FACTOR_DEFAULT (8)
 
-#define UART_LL_MIN_WAKEUP_THRESH (2)
+#define UART_LL_MIN_WAKEUP_THRESH (3)
 #define UART_LL_INTR_MASK         (0x7ffff) //All interrupt mask
 
 // Define UART interrupts
@@ -54,6 +55,81 @@ typedef enum {
     UART_INTR_RS485_CLASH      = (0x1<<17),
     UART_INTR_CMD_CHAR_DET     = (0x1<<18),
 } uart_intr_t;
+
+/**
+ * @brief Check if UART is enabled or disabled.
+ *
+ * @param uart_num UART port number, the max port number is (UART_NUM_MAX -1).
+ *
+ * @return true: enabled; false: disabled
+ */
+FORCE_INLINE_ATTR bool uart_ll_is_enabled(uint32_t uart_num)
+{
+    uint32_t uart_rst_bit = ((uart_num == 0) ? DPORT_UART_RST :
+                            (uart_num == 1) ? DPORT_UART1_RST :
+                            (uart_num == 2) ? DPORT_UART2_RST : 0);
+    uint32_t uart_en_bit  = ((uart_num == 0) ? DPORT_UART_CLK_EN :
+                            (uart_num == 1) ? DPORT_UART1_CLK_EN :
+                            (uart_num == 2) ? DPORT_UART2_CLK_EN : 0);
+    return DPORT_REG_GET_BIT(DPORT_PERIP_RST_EN_REG, uart_rst_bit) == 0 &&
+        DPORT_REG_GET_BIT(DPORT_PERIP_CLK_EN_REG, uart_en_bit) != 0;
+}
+
+/**
+ * @brief Enable the bus clock for uart
+ * @param uart_num UART port number, the max port number is (UART_NUM_MAX -1).
+ * @param enable true to enable, false to disable
+ */
+static inline void uart_ll_enable_bus_clock(uart_port_t uart_num, bool enable)
+{
+    uint32_t reg_val = DPORT_READ_PERI_REG(DPORT_PERIP_CLK_EN_REG);
+    switch (uart_num) {
+    case 0:
+        reg_val = reg_val & (~DPORT_UART_CLK_EN);
+        reg_val = reg_val | (enable << 2);
+        break;
+    case 1:
+        reg_val = reg_val & (~DPORT_UART1_CLK_EN);
+        reg_val = reg_val | (enable << 5);
+        break;
+    case 2:
+        reg_val = reg_val & (~DPORT_UART2_CLK_EN);
+        reg_val = reg_val | (enable << 23);
+        break;
+    default:
+        abort();
+        break;
+    }
+    DPORT_WRITE_PERI_REG(DPORT_PERIP_CLK_EN_REG, reg_val);
+}
+#define uart_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; uart_ll_enable_bus_clock(__VA_ARGS__)
+
+/**
+ * @brief Reset UART module
+ * @param uart_num UART port number, the max port number is (UART_NUM_MAX -1).
+ */
+static inline void uart_ll_reset_register(uart_port_t uart_num)
+{
+    switch (uart_num) {
+    case 0:
+        DPORT_SET_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG, DPORT_UART_RST);
+        DPORT_CLEAR_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG, DPORT_UART_RST);
+        break;
+    case 1:
+        DPORT_SET_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG, DPORT_UART1_RST);
+        DPORT_CLEAR_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG, DPORT_UART1_RST);
+        break;
+    case 2:
+        DPORT_SET_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG, DPORT_UART2_RST);
+        DPORT_CLEAR_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG, DPORT_UART2_RST);
+        break;
+    default:
+        abort();
+        break;
+    }
+}
+// SYSTEM.perip_rst_enx are shared registers, so this function must be used in an atomic way
+#define uart_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; uart_ll_reset_register(__VA_ARGS__)
 
 /**
  * @brief  Set the UART source clock.
@@ -616,7 +692,9 @@ FORCE_INLINE_ATTR void uart_ll_set_dtr_active_level(uart_dev_t *hw, int level)
  */
 FORCE_INLINE_ATTR void uart_ll_set_wakeup_thrd(uart_dev_t *hw, uint32_t wakeup_thrd)
 {
-    hw->sleep_conf.active_threshold = wakeup_thrd  - UART_LL_MIN_WAKEUP_THRESH;
+    // System would wakeup when the number of positive edges of RxD signal is larger than or equal to (UART_ACTIVE_THRESHOLD+2)
+    // Note: On ESP32, the minimum UART wakeup threshold is 2 + 1 = 3 (UART_ACTIVE_THRESHOLD set to 0 leads to consecutive triggering wakeup)
+    hw->sleep_conf.active_threshold = wakeup_thrd  - (UART_LL_MIN_WAKEUP_THRESH - 1);
 }
 
 /**
@@ -758,7 +836,7 @@ FORCE_INLINE_ATTR void uart_ll_get_at_cmd_char(uart_dev_t *hw, uint8_t *cmd_char
  */
 FORCE_INLINE_ATTR uint32_t uart_ll_get_wakeup_thrd(uart_dev_t *hw)
 {
-    return hw->sleep_conf.active_threshold + UART_LL_MIN_WAKEUP_THRESH;
+    return hw->sleep_conf.active_threshold + (UART_LL_MIN_WAKEUP_THRESH - 1);
 }
 
 /**

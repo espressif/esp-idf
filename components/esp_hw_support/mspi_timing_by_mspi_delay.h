@@ -40,7 +40,7 @@ typedef struct {
  * MSPI timing tuning configurations
  */
 typedef struct {
-    mspi_timing_tuning_param_t tuning_config_table[MSPI_TIMING_CONFIG_NUM_DEFAULT];   // Available timing tuning configs
+    mspi_timing_tuning_param_t tuning_config_table[MSPI_TIMING_CONFIG_NUM_MAX];       // Available timing tuning configs
     uint32_t available_config_num;                                                    // Available timing tuning config numbers
     uint32_t default_config_id;                                                       // If tuning fails, we use this one as default
 } mspi_timing_config_t;
@@ -67,9 +67,10 @@ void mspi_timing_flash_init(uint32_t flash_freq_mhz);
 /**
  * @brief Tune Flash timing registers for SPI1 accessing Flash
  *
- * @param[in] params Timing parameters
+ * @param[in] configs Timing configs
+ * @param[in] id      Config ID
  */
-void mspi_timing_config_flash_set_tuning_regs(const void *timing_params);
+void mspi_timing_config_flash_set_tuning_regs(const void *configs, uint8_t id);
 
 /**
  * @brief Configure Flash to read data via SPI1
@@ -97,9 +98,15 @@ void mspi_timing_psram_init(uint32_t psram_freq_mhz);
 /**
  * @brief Tune PSRAM timing registers for SPI1 accessing PSRAM
  *
- * @param[in] params Timing parameters
+ * @param[in] configs Timing configs
+ * @param[in] id      Config ID
  */
-void mspi_timing_config_psram_set_tuning_regs(const void *timing_params);
+void mspi_timing_config_psram_set_tuning_regs(const void *configs, uint8_t id);
+
+/**
+ * @brief Prepare reference data buffer
+ */
+void mspi_timing_config_psram_prepare_reference_data(uint8_t *buf, uint32_t len);
 
 /**
  * @brief Configure PSRAM to write data via SPI1
@@ -140,9 +147,10 @@ uint32_t mspi_timing_flash_select_best_tuning_config(const void *configs, uint32
  * @brief Set best Flash tuning configs.
  *        After this, calling `mspi_timing_enter_high_speed_mode` will set these configs correctly
  *
- * @param[in] timing_params  Timing tuning parameters
+ * @param[in] configs  Timing tuning configs
+ * @param[in] best_id  Best config ID
  */
-void mspi_timing_flash_set_best_tuning_config(const void *timing_params);
+void mspi_timing_flash_set_best_tuning_config(const void *configs, uint8_t best_id);
 
 /**
  * @brief Select PSRAM best tuning configuration
@@ -161,9 +169,10 @@ uint32_t mspi_timing_psram_select_best_tuning_config(const void *configs, uint32
  * @brief Set best PSRAM tuning configs.
  *        After this, calling `mspi_timing_enter_high_speed_mode` will set these configs correctly
  *
- * @param[in] timing_params  Timing tuning parameters
+ * @param[in] configs  Timing tuning configs
+ * @param[in] best_id  Best config ID
  */
-void mspi_timing_psram_set_best_tuning_config(const void *timing_params);
+void mspi_timing_psram_set_best_tuning_config(const void *configs, uint8_t best_id);
 
 
 /*-------------------------------------------------------------------------------------------------

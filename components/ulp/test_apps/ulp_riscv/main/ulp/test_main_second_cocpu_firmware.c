@@ -8,7 +8,7 @@
 
 volatile uint32_t riscv_counter2 = 0;
 
-int main (void)
+int main(void)
 {
     riscv_counter2++;
 

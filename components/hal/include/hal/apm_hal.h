@@ -9,6 +9,7 @@
 extern "C" {
 #endif
 
+#include "esp_err.h"
 #include "soc/soc_caps.h"
 #if SOC_APM_SUPPORTED
 #include "hal/apm_ll.h"
@@ -17,29 +18,36 @@ extern "C" {
  * @brief Region configuration data.
  */
 typedef struct {
-    apm_ll_secure_mode_t sec_mode;
-    uint32_t regn_num;
-    uint32_t regn_start_addr;
-    uint32_t regn_end_addr;
-    uint32_t regn_pms;
-} apm_hp_hal_region_config_data_t;
+    uint32_t regn_num;             /* Address Region number cover by this configuration data. */
+    uint32_t regn_start_addr;      /* Address Region start address. */
+    uint32_t regn_end_addr;        /* Address Region end address. */
+    uint32_t regn_pms;             /* Access Permission for Master in different secure mode. */
+    bool     filter_enable;        /* Address Region Filter enable/disable. */
+    apm_ll_apm_ctrl_t apm_ctrl;    /* APM Ctrl: LP APM0/HP APM/LP APM. */
+    apm_ll_secure_mode_t sec_mode; /* Master secure mode: TEE/REE[0-2].*/
+} apm_ctrl_region_config_data_t;
 
 /**
  * @brief Secure mode(TEE/REE[0:2] configuration data.
  */
 typedef struct {
-    apm_ll_secure_mode_t sec_mode;             /* Secure mode to be configured TEE/REE[0:2]. */
-    uint32_t master_ids;                       /* Bit mask for masters to be part of this secure mode. */
-    apm_hp_hal_region_config_data_t *pms_data; /* Region configuration data. */
-} apm_hp_secure_mode_config_t;
+    apm_ll_apm_ctrl_t apm_ctrl;              /* APM Ctrl: LP APM0/HP APM/LP APM. */
+    apm_ll_secure_mode_t sec_mode;           /* Secure mode to be configured TEE/REE[0:2]. */
+    uint8_t  apm_m_cnt;                      /* Access path M count. */
+    uint32_t regn_count;                     /* Access Ctrl region count. */
+    uint32_t master_ids;                     /* Bit mask for masters to be part of this secure mode. */
+    apm_ctrl_region_config_data_t *pms_data; /* Region configuration data. */
+} apm_ctrl_secure_mode_config_t;
 
 /**
  * @brief Set secure mode
  *
+ * @param apm_ctrl APM Ctrl to be configured
  * @param master_id APM master ID
  * @param sec_mode Secure mode
  */
-void apm_tee_hal_set_master_secure_mode(apm_ll_master_id_t master_id, apm_ll_secure_mode_t sec_mode);
+void apm_tee_hal_set_master_secure_mode(apm_ll_apm_ctrl_t apm_ctrl, apm_ll_master_id_t master_id,
+                                        apm_ll_secure_mode_t sec_mode);
 
 /**
  * @brief TEE controller clock auto gating enable
@@ -49,64 +57,73 @@ void apm_tee_hal_set_master_secure_mode(apm_ll_master_id_t master_id, apm_ll_sec
 void apm_tee_hal_clk_gating_enable(bool enable);
 
 /**
- * @brief enable/disable HP Region access permission filter
+ * @brief enable/disable APM Ctrl Region access permission filter
  *
+ * @param apm_ctrl APM Ctrl to be configured
  * @param regn_num Memory Region number
  * @param enable Flag for Region access filter enable/disable
  */
-void apm_hp_hal_region_filter_enable(uint32_t regn_num, bool enable);
+void apm_hal_apm_ctrl_region_filter_enable(apm_ll_apm_ctrl_t apm_ctrl, uint32_t regn_num, bool enable);
 
 /**
- * @brief enable/disable HP access path(M[0:3])
+ * @brief enable/disable APM Ctrl access path(M[0:n])
  *
- * @param hp_m_path HP access path
- * @param enable    Flag for HP M path filter enable/disable
+ * @param apm_path   APM controller and access path to be configured
+ * @param enable     Flag for M path filter enable/disable
  */
-void apm_hp_hal_m_filter_enable(apm_ll_hp_access_path_t hp_m_path, bool enable);
+void apm_hal_apm_ctrl_filter_enable(apm_ctrl_path_t *apm_path, bool enable);
+
+/**
+ * @brief enable/disable all available APM Ctrl access path(M[0:n])
+ *
+ * @param enable Flag for M path filter enable/disable
+ */
+void apm_hal_apm_ctrl_filter_enable_all(bool enable);
 
 /**
  * @brief Region configuration
  *
  * @param pms_data Region configuration data
  */
-void apm_hp_hal_region_config(const apm_hp_hal_region_config_data_t *pms_data);
+void apm_hal_apm_ctrl_region_config(const apm_ctrl_region_config_data_t *pms_data);
 
 /**
- * @brief Get HP access path(M[0:3]) exception status
+ * @brief Get APM Ctrl access path(M[0:n]) exception status
  *
- * @param hp_m_path HP access path
+ * @param apm_path   APM controller and access path to be configured
  */
-uint8_t apm_hp_hal_m_exception_status(apm_ll_hp_access_path_t hp_m_path);
+uint8_t apm_hal_apm_ctrl_exception_status(apm_ctrl_path_t *apm_path);
 
 /**
- * @brief Clear HP access path(M[0:3]) exception
+ * @brief Clear APM Ctrl access path(M[0:n]) exception
  *
- * @param hp_m_path HP access path
+ * @param apm_path   APM controller and access path to be configured
  */
-void apm_hp_hal_m_exception_clear(apm_ll_hp_access_path_t hp_m_path);
+void apm_hal_apm_ctrl_exception_clear(apm_ctrl_path_t *apm_path);
 
 /**
- * @brief Get HP access path(M[0:3]) exception information
+ * @brief Get APM Ctrl access path exception information
  *
  * @param excp_info Exception related information like addr,
- * region, sec_mode and master id
+ * region, amp_ctrl, apm_m_path, sec_mode and master id
  */
-void apm_hp_hal_get_m_exception_info(apm_hp_m_exception_info_t *excp_info);
+void apm_hal_apm_ctrl_get_exception_info(apm_ctrl_exception_info_t *excp_info);
 
 /**
- * @brief Interrupt enable for access path(M[0:3])
+ * @brief APM Ctrl interrupt enable for access path(M[0:n])
  *
- * @param hp_m_path HP access path
- * @param enable    Flag for access path interrupt enable/disable
+ * @param apm_path   APM controller and access path to be configured
+ * @param enable     Flag for access path interrupt enable/disable
  */
-void apm_hp_hal_m_interrupt_enable(apm_ll_hp_access_path_t hp_m_path, bool enable);
+void apm_hal_apm_ctrl_interrupt_enable(apm_ctrl_path_t *apm_path, bool enable);
 
 /**
- * @brief HP clock auto gating enable
+ * @brief APM Ctrl clock auto gating enable
  *
- * @param enable   Flag for HP clock auto gating enable/disable
+ * @apm_ctrl     APM Ctrl
+ * @param enable Flag for HP clock auto gating enable/disable
  */
-void apm_hp_hal_clk_gating_enable(bool enable);
+void apm_hal_apm_ctrl_clk_gating_enable(apm_ll_apm_ctrl_t apm_ctrl, bool enable);
 
 /**
  * @brief TEE/REE execution environment configuration.
@@ -116,8 +133,10 @@ void apm_hp_hal_clk_gating_enable(bool enable);
  * It includes, allocation of all bus masters, memory ranges and other
  * peripherals to the given secure mode.
  * All this information should be passed by the TEE mode initialization code.
+ *
+ * @sec_mode_data APM Ctl configuration data.
  */
-void apm_hp_hal_master_sec_mode_config(apm_hp_secure_mode_config_t *sec_mode_data);
+void apm_hal_apm_ctrl_master_sec_mode_config(apm_ctrl_secure_mode_config_t *sec_mode_data);
 
 /**
  * @brief APM/TEE/HP System Reg reset event bypass enable
@@ -129,7 +148,14 @@ void apm_hp_hal_master_sec_mode_config(apm_hp_secure_mode_config_t *sec_mode_dat
  *
  * @param enable   Flag for event bypass enable/disable
  */
-void apm_hp_hal_reset_event_enable(bool enable);
+void apm_hal_apm_ctrl_reset_event_enable(bool enable);
+
+/**
+ * @brief Returns APM Ctrl access path interrupt source number.
+ *
+ * @param apm_path   APM controller and access path to be configured
+ */
+esp_err_t apm_hal_apm_ctrl_get_int_src_num(apm_ctrl_path_t *apm_path);
 
 #endif
 

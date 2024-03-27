@@ -9,7 +9,12 @@
 #include <sys/cdefs.h>
 #include "esp_log.h"
 #include "esp_check.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 #include "esp_eth_phy_802_3.h"
+
+#define RTL8201_PHY_RESET_ASSERTION_TIME_US 10000
+#define RTL8201_PHY_POST_RESET_INIT_TIME_MS 150
 
 static const char *TAG = "rtl8201";
 
@@ -144,6 +149,15 @@ err:
     return ret;
 }
 
+static esp_err_t rtl8201_reset_hw(esp_eth_phy_t *phy)
+{
+    phy_802_3_t *phy_802_3 = esp_eth_phy_into_phy_802_3(phy);
+    esp_err_t ret = esp_eth_phy_802_3_reset_hw(phy_802_3, RTL8201_PHY_RESET_ASSERTION_TIME_US);
+    vTaskDelay(pdMS_TO_TICKS(RTL8201_PHY_POST_RESET_INIT_TIME_MS));
+    return ret;
+}
+
+
 static esp_err_t rtl8201_init(esp_eth_phy_t *phy)
 {
     esp_err_t ret = ESP_OK;
@@ -177,6 +191,7 @@ esp_eth_phy_t *esp_eth_phy_new_rtl8201(const eth_phy_config_t *config)
     rtl8201->phy_802_3.parent.get_link = rtl8201_get_link;
     rtl8201->phy_802_3.parent.autonego_ctrl = rtl8201_autonego_ctrl;
     rtl8201->phy_802_3.parent.loopback = rtl8201_loopback;
+    rtl8201->phy_802_3.parent.reset_hw = rtl8201_reset_hw;
 
     return &rtl8201->phy_802_3.parent;
 err:

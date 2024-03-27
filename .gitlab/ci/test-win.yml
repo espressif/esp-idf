@@ -1,0 +1,96 @@
+# Host tests
+.host_test_win_template:
+  extends: .rules:test:host_test
+  stage: host_test
+  image: $ESP_ENV_IMAGE
+  tags:
+    - windows-build
+  dependencies: # set dependencies to null to avoid missing artifacts issue
+  # run host_test jobs immediately, only after upload cache
+  needs:
+    - job: upload-pip-cache
+      optional: true
+      artifacts: false
+    - job: upload-submodules-cache
+      optional: true
+      artifacts: false
+  before_script: []
+  after_script: []
+
+test_cli_installer_win:
+  extends:
+    - .host_test_win_template
+    - .rules:labels:windows_pytest_build_system
+  artifacts:
+    when: on_failure
+    paths:
+      - tools/tools.new.json
+      - tools/test_idf_tools/test_python_env_logs.txt
+    expire_in: 1 week
+  variables:
+    IDF_PATH: "$CI_PROJECT_DIR"
+  script:
+    # Tools must be downloaded for testing
+    - python ${IDF_PATH}\tools\idf_tools.py download required qemu-riscv32 qemu-xtensa
+    - cd ${IDF_PATH}\tools\test_idf_tools
+    - python -m pip install jsonschema
+    - python .\test_idf_tools.py
+    - python .\test_idf_tools_python_env.py
+
+test_tools_win:
+  extends:
+    - .host_test_win_template
+    - .rules:labels:windows_pytest_build_system
+  artifacts:
+    paths:
+      - ${IDF_PATH}/*.out
+      - ${IDF_PATH}/XUNIT_*.xml
+    reports:
+      junit: ${IDF_PATH}/XUNIT_*.xml
+    expire_in: 1 week
+    when: always
+  variables:
+    LC_ALL: C.UTF-8
+    PYTHONPATH: "$PYTHONPATH;$IDF_PATH\\tools;$IDF_PATH\\tools\\esp_app_trace;$IDF_PATH\\components\\partition_table;$IDF_PATH\\tools\\ci\\python_packages"
+  script:
+    - python -m pip install jsonschema
+    - .\install.ps1 --enable-ci --enable-pytest
+    - .\export.ps1
+    - python "${SUBMODULE_FETCH_TOOL}" -s "all"
+    - cd ${IDF_PATH}/tools/test_idf_py
+    - pytest --noconftest test_idf_py.py       --junitxml=${IDF_PATH}/XUNIT_IDF_PY.xml
+    - pytest --noconftest test_hints.py        --junitxml=${IDF_PATH}/XUNIT_HINTS.xml
+
+# Build tests
+.test_build_system_template_win:
+  stage: host_test
+  variables:
+  # Enable ccache for all build jobs. See configure_ci_environment.sh for more ccache related settings.
+    IDF_CCACHE_ENABLE: "1"
+    PYTHONPATH: "$PYTHONPATH;$IDF_PATH\\tools;$IDF_PATH\\tools\\esp_app_trace;$IDF_PATH\\components\\partition_table;$IDF_PATH\\tools\\ci\\python_packages"
+  before_script: []
+  after_script: []
+  timeout: 4 hours
+  script:
+    - .\install.ps1 --enable-ci --enable-pytest
+    - . .\export.ps1
+    - python "${SUBMODULE_FETCH_TOOL}" -s "all"
+    - cd ${IDF_PATH}\tools\test_build_system
+    - pytest --parallel-count ${CI_NODE_TOTAL} --parallel-index ${CI_NODE_INDEX} --junitxml=${CI_PROJECT_DIR}\XUNIT_RESULT.xml
+
+pytest_build_system_win:
+  extends:
+    - .test_build_system_template_win
+    - .rules:labels:windows_pytest_build_system
+  parallel: 2
+  needs: []
+  tags:
+    - windows-build
+  artifacts:
+    paths:
+      - XUNIT_RESULT.xml
+      - test_build_system
+    expire_in: 2 days
+    reports:
+      junit: XUNIT_RESULT.xml
+    when: always

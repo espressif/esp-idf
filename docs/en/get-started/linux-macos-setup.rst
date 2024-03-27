@@ -216,9 +216,19 @@ To prefer the Espressif download server when installing tools, use the following
 Customizing the Tools Installation Path
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The scripts introduced in this step install compilation tools required by ESP-IDF inside the user home directory: ``$HOME/.espressif`` on Linux. If you wish to install the tools into a different directory, set the environment variable ``IDF_TOOLS_PATH`` before running the installation scripts. Make sure that your user account has sufficient permissions to read and write this path.
+The scripts introduced in this step install compilation tools required by ESP-IDF inside the user home directory: ``$HOME/.espressif`` on Linux. If you wish to install the tools into a different directory, **export the environment variable IDF_TOOLS_PATH before running the installation scripts**. Make sure that your user account has sufficient permissions to read and write this path.
 
-If changing the ``IDF_TOOLS_PATH``, make sure it is set to the same value every time the Install script (``install.bat``, ``install.ps1`` or ``install.sh``) and an Export script (``export.bat``, ``export.ps1`` or ``export.sh``) are executed.
+.. code-block:: bash
+
+    export IDF_TOOLS_PATH="$HOME/required_idf_tools_path"
+    ./install.sh
+
+    . ./export.sh
+
+If changing the ``IDF_TOOLS_PATH``, make sure it is exported in the environment before running any ESP-IDF tools or scripts.
+
+.. note::
+    Using ``IDF_TOOLS_PATH`` in variable assignement, e.g., ``IDF_TOOLS_PATH="$HOME/required_idf_tools_path" ./install.sh``, without prior exporting, will not work in most shells because the variable assignment will not affect the current execution environment, even if it's exported/changed in the sourced script.
 
 .. _get-started-set-up-env:
 
@@ -294,7 +304,6 @@ Related Documents
 
     establish-serial-connection
     flashing-troubleshooting
-    ../api-guides/tools/idf-monitor
 
 .. _AUR: https://wiki.archlinux.org/index.php/Arch_User_Repository
 .. _First Steps on ESP-IDF: ../get-started/first-steps.html

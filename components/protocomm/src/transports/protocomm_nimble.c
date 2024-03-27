@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -556,13 +556,12 @@ static void transport_simple_ble_disconnect(struct ble_gap_event *event, void *a
     ESP_LOGD(TAG, "Inside disconnect w/ session - %d",
              event->disconnect.conn.conn_handle);
 
-#ifdef CONFIG_WIFI_PROV_KEEP_BLE_ON_AFTER_PROV
     /* Ignore BLE events received after protocomm layer is stopped */
     if (protoble_internal == NULL) {
         ESP_LOGI(TAG,"Protocomm layer has already stopped");
         return;
     }
-#endif
+
     if (protoble_internal->pc_ble->sec &&
             protoble_internal->pc_ble->sec->close_transport_session) {
         ret =
@@ -570,7 +569,14 @@ static void transport_simple_ble_disconnect(struct ble_gap_event *event, void *a
         if (ret != ESP_OK) {
             ESP_LOGE(TAG, "error closing the session after disconnect");
         } else {
-            if (esp_event_post(PROTOCOMM_TRANSPORT_BLE_EVENT, PROTOCOMM_TRANSPORT_BLE_DISCONNECTED, NULL, 0, portMAX_DELAY) != ESP_OK) {
+            protocomm_ble_event_t ble_event = {};
+            /* Assign the event type */
+            ble_event.evt_type = PROTOCOMM_TRANSPORT_BLE_DISCONNECTED;
+            /* Set the Disconnection handle */
+            ble_event.conn_handle = event->disconnect.conn.conn_handle;
+            ble_event.disconnect_reason = event->disconnect.reason;
+
+            if (esp_event_post(PROTOCOMM_TRANSPORT_BLE_EVENT, PROTOCOMM_TRANSPORT_BLE_DISCONNECTED, &ble_event, sizeof(protocomm_ble_event_t), portMAX_DELAY) != ESP_OK) {
                 ESP_LOGE(TAG, "Failed to post transport disconnection event");
             }
         }
@@ -583,13 +589,11 @@ static void transport_simple_ble_connect(struct ble_gap_event *event, void *arg)
     esp_err_t ret;
     ESP_LOGD(TAG, "Inside BLE connect w/ conn_id - %d", event->connect.conn_handle);
 
-#ifdef CONFIG_WIFI_PROV_KEEP_BLE_ON_AFTER_PROV
     /* Ignore BLE events received after protocomm layer is stopped */
     if (protoble_internal == NULL) {
         ESP_LOGI(TAG,"Protocomm layer has already stopped");
         return;
     }
-#endif
 
     if (protoble_internal->pc_ble->sec &&
             protoble_internal->pc_ble->sec->new_transport_session) {
@@ -598,7 +602,14 @@ static void transport_simple_ble_connect(struct ble_gap_event *event, void *arg)
         if (ret != ESP_OK) {
             ESP_LOGE(TAG, "error creating the session");
         } else {
-            if (esp_event_post(PROTOCOMM_TRANSPORT_BLE_EVENT, PROTOCOMM_TRANSPORT_BLE_CONNECTED, NULL, 0, portMAX_DELAY) != ESP_OK) {
+            protocomm_ble_event_t ble_event = {};
+            /* Assign the event type */
+            ble_event.evt_type = PROTOCOMM_TRANSPORT_BLE_CONNECTED;
+            /* Set the Connection handle */
+            ble_event.conn_handle = event->connect.conn_handle;
+            ble_event.conn_status = event->connect.status;
+
+            if (esp_event_post(PROTOCOMM_TRANSPORT_BLE_EVENT, PROTOCOMM_TRANSPORT_BLE_CONNECTED, &ble_event, sizeof(protocomm_ble_event_t), portMAX_DELAY) != ESP_OK) {
                 ESP_LOGE(TAG, "Failed to post transport pairing event");
             }
         }
@@ -993,23 +1004,23 @@ esp_err_t protocomm_ble_stop(protocomm_t *pc)
                      rc);
         }
 
-#ifndef CONFIG_WIFI_PROV_KEEP_BLE_ON_AFTER_PROV
-	/* If flag is enabled, don't stop the stack. User application can start a new advertising to perform its BT activities */
-        ret = nimble_port_stop();
-        if (ret == 0) {
-            nimble_port_deinit();
-        }
-        free_gatt_ble_misc_memory(ble_cfg_p);
-#else
-#ifdef CONFIG_WIFI_PROV_DISCONNECT_AFTER_PROV
+#ifdef CONFIG_ESP_PROTOCOMM_KEEP_BLE_ON_AFTER_BLE_STOP
+#ifdef CONFIG_ESP_PROTOCOMM_DISCONNECT_AFTER_BLE_STOP
 	/* Keep BT stack on, but terminate the connection after provisioning */
 	rc = ble_gap_terminate(s_cached_conn_handle, BLE_ERR_REM_USER_CONN_TERM);
 	if (rc) {
 	    ESP_LOGI(TAG, "Error in terminating connection rc = %d",rc);
 	}
 	free_gatt_ble_misc_memory(ble_cfg_p);
-#endif // CONFIG_WIFI_PROV_DISCONNECT_AFTER_PROV
-#endif // CONFIG_WIFI_PROV_KEEP_BLE_ON_AFTER_PROV
+#endif // CONFIG_ESP_PROTOCOMM_DISCONNECT_AFTER_BLE_STOP
+#else
+	/* If flag is enabled, don't stop the stack. User application can start a new advertising to perform its BT activities */
+        ret = nimble_port_stop();
+        if (ret == 0) {
+            nimble_port_deinit();
+        }
+        free_gatt_ble_misc_memory(ble_cfg_p);
+#endif // CONFIG_ESP_PROTOCOMM_KEEP_BLE_ON_AFTER_BLE_STOP
 
         protocomm_ble_cleanup();
         return ret;

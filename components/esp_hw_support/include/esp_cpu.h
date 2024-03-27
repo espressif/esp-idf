@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,7 +12,7 @@
 #include <assert.h>
 #include "soc/soc_caps.h"
 #ifdef __XTENSA__
-#include "xtensa/xtensa_api.h"
+#include "xtensa_api.h"
 #include "xt_utils.h"
 #elif __riscv
 #include "riscv/rv_utils.h"
@@ -261,7 +261,7 @@ FORCE_INLINE_ATTR void esp_cpu_intr_set_type(int intr_num, esp_cpu_intr_type_t i
 {
     assert(intr_num >= 0 && intr_num < SOC_CPU_INTR_NUM);
     enum intr_type type = (intr_type == ESP_CPU_INTR_TYPE_LEVEL) ? INTR_TYPE_LEVEL : INTR_TYPE_EDGE;
-    esprv_intc_int_set_type(intr_num, type);
+    esprv_int_set_type(intr_num, type);
 }
 
 /**
@@ -276,7 +276,7 @@ FORCE_INLINE_ATTR void esp_cpu_intr_set_type(int intr_num, esp_cpu_intr_type_t i
 FORCE_INLINE_ATTR esp_cpu_intr_type_t esp_cpu_intr_get_type(int intr_num)
 {
     assert(intr_num >= 0 && intr_num < SOC_CPU_INTR_NUM);
-    enum intr_type type = esprv_intc_int_get_type(intr_num);
+    enum intr_type type = esprv_int_get_type(intr_num);
     return (type == INTR_TYPE_LEVEL) ? ESP_CPU_INTR_TYPE_LEVEL : ESP_CPU_INTR_TYPE_EDGE;
 }
 
@@ -291,7 +291,7 @@ FORCE_INLINE_ATTR esp_cpu_intr_type_t esp_cpu_intr_get_type(int intr_num)
 FORCE_INLINE_ATTR void esp_cpu_intr_set_priority(int intr_num, int intr_priority)
 {
     assert(intr_num >= 0 && intr_num < SOC_CPU_INTR_NUM);
-    esprv_intc_int_set_priority(intr_num, intr_priority);
+    esprv_int_set_priority(intr_num, intr_priority);
 }
 
 /**
@@ -306,7 +306,7 @@ FORCE_INLINE_ATTR void esp_cpu_intr_set_priority(int intr_num, int intr_priority
 FORCE_INLINE_ATTR int esp_cpu_intr_get_priority(int intr_num)
 {
     assert(intr_num >= 0 && intr_num < SOC_CPU_INTR_NUM);
-    return esprv_intc_int_get_priority(intr_num);
+    return esprv_int_get_priority(intr_num);
 }
 #endif // SOC_CPU_HAS_FLEXIBLE_INTC
 
@@ -482,9 +482,15 @@ esp_err_t esp_cpu_clear_breakpoint(int bp_num);
  * the CPU accesses (according to the trigger type) on a certain memory range.
  *
  * @note Overwrites previously set watchpoint with same watchpoint number.
+ *       On RISC-V chips, this API uses method0(Exact matching) and method1(NAPOT matching) according to the
+ *       riscv-debug-spec-0.13 specification for address matching.
+ *       If the watch region size is 1byte, it uses exact matching (method 0).
+ *       If the watch region size is larger than 1byte, it uses NAPOT matching (method 1). This mode requires
+ *       the watching region start address to be aligned to the watching region size.
+ *
  * @param wp_num Hardware watchpoint number [0..SOC_CPU_WATCHPOINTS_NUM - 1]
- * @param wp_addr Watchpoint's base address
- * @param size Size of the region to watch. Must be one of 2^n, with n in [0..6].
+ * @param wp_addr Watchpoint's base address, must be naturally aligned to the size of the region
+ * @param size Size of the region to watch. Must be one of 2^n and in the range of [1 ... SOC_CPU_WATCHPOINT_MAX_REGION_SIZE]
  * @param trigger Trigger type
  * @return ESP_ERR_INVALID_ARG on invalid arg, ESP_OK otherwise
  */

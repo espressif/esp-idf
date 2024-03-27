@@ -74,7 +74,7 @@ There are some features that are not supported by all flash chips, or not suppor
 
 -  Flash unique ID - means that flash supports its unique 64-bit ID.
 
-.. only:: esp32c3
+.. only:: SOC_SPI_MEM_SUPPORT_AUTO_SUSPEND
 
     -  Suspend & Resume - means that flash can accept suspend/resume command during its writing/erasing. The {IDF_TARGET_NAME} may keep the cache on when the flash is being written/erased and suspend it to read its contents randomly.
 
@@ -118,7 +118,7 @@ SPI Flash Size
 
 The SPI flash size is configured by writing a field in the software bootloader image header, flashed at offset 0x1000.
 
-By default, the SPI flash size is detected by ``esptool.py`` when this bootloader is written to flash, and the header is updated with the correct size. Alternatively, it is possible to generate a fixed flash size by setting :envvar:`CONFIG_ESPTOOLPY_FLASHSIZE` in the project configuration.
+By default, the SPI flash size is detected by ``esptool.py`` when this bootloader is written to flash, and the header is updated with the correct size. Alternatively, it is possible to generate a fixed flash size by setting :ref:`CONFIG_ESPTOOLPY_FLASHSIZE` in the project configuration.
 
 If it is necessary to override the configured flash size at runtime, it is possible to set the ``chip_size`` member of the ``g_rom_flashchip`` structure. This size is used by ``esp_flash_*`` functions (in both software & ROM) to check the bounds.
 
@@ -169,7 +169,7 @@ Differences between :cpp:func:`spi_flash_mmap` and :cpp:func:`esp_partition_mmap
 Note that since memory mapping happens in pages, it may be possible to read data outside of the partition provided to ``esp_partition_mmap``, regardless of the partition boundary.
 
 .. note::
-    
+
     mmap is supported by cache, so it can only be used on main flash.
 
 SPI Flash Implementation

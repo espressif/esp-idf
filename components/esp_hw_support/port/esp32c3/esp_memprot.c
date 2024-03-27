@@ -630,8 +630,8 @@ static esp_err_t esp_mprot_set_intr_matrix(const esp_mprot_mem_t mem_type)
     }
 
     /* Set the type and priority to cache error interrupts. */
-    esprv_intc_int_set_type(ETS_MEMPROT_ERR_INUM, INTR_TYPE_LEVEL);
-    esprv_intc_int_set_priority(ETS_MEMPROT_ERR_INUM, SOC_INTERRUPT_LEVEL_MEDIUM);
+    esprv_int_set_type(ETS_MEMPROT_ERR_INUM, INTR_TYPE_LEVEL);
+    esprv_int_set_priority(ETS_MEMPROT_ERR_INUM, SOC_INTERRUPT_LEVEL_MEDIUM);
 
     ESP_INTR_ENABLE(ETS_MEMPROT_ERR_INUM);
 

@@ -326,7 +326,7 @@ ESP32-S2-Kaluga-1 的主要组件和连接方式如下图所示。
      - 配置 ESP-LyraP-LCD32 扩展板的 BK 管脚为 `-1` （相当于不使用 BK）。
      - ESP32-S2-Kaluga-1 的 BLCT 管脚将从 IO6 断开。
    * - TouchA v1.1 + 8311A v1.3
-     - ESP-LyraT-8311A 的 BT_ADC 管脚 
+     - ESP-LyraT-8311A 的 BT_ADC 管脚
      - ESP-LyraT-8311A 在初始化 6 个按钮时需要使用 BT_ADC 管脚，而 ESP-LyraP-TouchA 在完成触摸动作时也需要使用 BT_ADC 管脚。
      - 如需使用 ESP-LyraT-8311A 的 6 个按钮，则不要初始化 ESP-LyraP-TouchA 的 IO6 (PHOTO) 管脚。
    * - TouchA v1.1 + CAM v1.1
@@ -393,4 +393,3 @@ ESP32-S2-Kaluga-1 Kit v1.2
 有关本开发板的更多设计文档，请联系我们的商务部门 sales@espressif.com。
 
 
-    

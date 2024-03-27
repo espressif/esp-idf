@@ -81,12 +81,14 @@ static struct bt_mesh_conn_cb *bt_mesh_gatts_conn_cb;
 static uint8_t bt_mesh_gatts_addr[6];
 #endif /* CONFIG_BLE_MESH_NODE */
 
+static bool g_host_init = false;
+
 int bt_mesh_host_init(void)
 {
-    static bool init = false;
     int rc;
 
-    if (init == true) {
+    if (g_host_init  == true) {
+        BT_WARN("Already initialized host for mesh!");
         return -EALREADY;
     }
 
@@ -101,7 +103,30 @@ int bt_mesh_host_init(void)
     }
 
     osi_alarm_init();
-    init = true;
+    g_host_init  = true;
+
+    return 0;
+}
+
+int bt_mesh_host_deinit(void)
+{
+    int rc;
+
+    if (g_host_init == false) {
+        return -EALREADY;
+    }
+
+    osi_alarm_deinit();
+
+    rc = osi_alarm_delete_mux();
+    if (rc != 0) {
+        return -1;
+    }
+
+    btc_deinit();
+
+    g_host_init = false;
+
     return 0;
 }
 
@@ -757,15 +782,17 @@ int bt_le_adv_start(const struct bt_mesh_adv_param *param,
                     const struct bt_mesh_adv_data *ad, size_t ad_len,
                     const struct bt_mesh_adv_data *sd, size_t sd_len)
 {
+    struct ble_gap_adv_params adv_params;
+    uint8_t buf[BLE_HS_ADV_MAX_SZ];
+    uint16_t interval = 0;
+    uint8_t buf_len = 0;
+    int err;
+
 #if BLE_MESH_DEV
     if (bt_mesh_atomic_test_bit(bt_mesh_dev.flags, BLE_MESH_DEV_ADVERTISING)) {
         return -EALREADY;
     }
 #endif
-    uint8_t buf[BLE_HS_ADV_MAX_SZ];
-    uint8_t buf_len = 0;
-    int err;
-    struct ble_gap_adv_params adv_params;
 
     err = set_ad(ad, ad_len, buf, &buf_len);
     if (err) {
@@ -796,8 +823,6 @@ int bt_le_adv_start(const struct bt_mesh_adv_param *param,
     }
 
     memset(&adv_params, 0, sizeof adv_params);
-    adv_params.itvl_min = param->interval_min;
-    adv_params.itvl_max = param->interval_max;
 
     if (param->options & BLE_MESH_ADV_OPT_CONNECTABLE) {
         adv_params.conn_mode = BLE_GAP_CONN_MODE_UND;
@@ -809,6 +834,25 @@ int bt_le_adv_start(const struct bt_mesh_adv_param *param,
         adv_params.conn_mode = BLE_GAP_CONN_MODE_NON;
         adv_params.disc_mode = BLE_GAP_DISC_MODE_NON;
     }
+
+    interval = param->interval_min;
+
+#if CONFIG_BLE_MESH_RANDOM_ADV_INTERVAL
+    /* If non-connectable mesh packets are transmitted with an adv interval
+     * not smaller than 10ms, then we will use a random adv interval between
+     * [interval / 2, interval] for them.
+     */
+    if (adv_params.conn_mode == BLE_GAP_CONN_MODE_NON &&
+        adv_params.disc_mode == BLE_GAP_DISC_MODE_NON && interval >= 16) {
+        interval >>= 1;
+        interval += (bt_mesh_get_rand() % (interval + 1));
+
+        BT_INFO("%u->%u", param->interval_min, interval);
+    }
+#endif
+
+    adv_params.itvl_min = interval;
+    adv_params.itvl_max = interval;
 
 again:
     err = ble_gap_adv_start(BLE_OWN_ADDR_PUBLIC, NULL, BLE_HS_FOREVER, &adv_params,
@@ -875,7 +919,7 @@ int bt_mesh_ble_adv_start(const struct bt_mesh_ble_adv_param *param,
         break;
     case BLE_MESH_ADV_NONCONN_IND:
         adv_params.conn_mode = BLE_GAP_CONN_MODE_NON;
-        adv_params.disc_mode = BLE_GAP_DISC_MODE_GEN;
+        adv_params.disc_mode = BLE_GAP_DISC_MODE_NON;
         break;
     case BLE_MESH_ADV_DIRECT_IND_LOW_DUTY:
         adv_params.conn_mode = BLE_GAP_CONN_MODE_DIR;
@@ -1939,10 +1983,6 @@ int bt_mesh_update_exceptional_list(uint8_t sub_code, uint32_t type, void *info)
     uint8_t value[6] =  {0};
     int rc = 0;
 
-#if MYNEWT_VAL(BLE_HCI_VS)
-    struct ble_hci_vs_duplicate_exception_list_cp cmd;
-#endif
-
     if ((sub_code > BLE_MESH_EXCEP_LIST_SUB_CODE_CLEAN) ||
         (sub_code < BLE_MESH_EXCEP_LIST_SUB_CODE_CLEAN &&
          type > BLE_MESH_EXCEP_LIST_TYPE_MESH_PROXY_ADV) ||
@@ -1957,18 +1997,23 @@ int bt_mesh_update_exceptional_list(uint8_t sub_code, uint32_t type, void *info)
             BT_ERR("Invalid Provisioning Link ID");
             return -EINVAL;
         }
+
+        /* When removing an unused link (i.e., Link ID is 0), and since
+         * Controller has never added this Link ID, it will cause error
+         * log been wrongly reported.
+         * Therefore, add this check here to avoid such occurrences.
+         */
+        if (*(uint32_t *)info == 0) {
+            return 0;
+        }
+
         sys_memcpy_swap(value, info, sizeof(uint32_t));
     }
 
     BT_DBG("%s exceptional list, type 0x%08x", sub_code ? "Remove" : "Add", type);
 
 #if MYNEWT_VAL(BLE_HCI_VS)
-    cmd.operation = sub_code;
-    cmd.type = htole32(type);
-    memcpy(&cmd.device_info, value, 6);
-
-    rc = ble_hs_hci_send_vs_cmd(BLE_HCI_OCF_VS_DUPLICATE_EXCEPTION_LIST,
-                                &cmd, sizeof(cmd), NULL, 0);
+    rc = ble_gap_duplicate_exception_list(sub_code, type, value, NULL);
 #endif
 
     return rc;

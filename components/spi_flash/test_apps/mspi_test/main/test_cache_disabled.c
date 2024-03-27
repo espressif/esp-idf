@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "sdkconfig.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -43,7 +44,7 @@ TEST_CASE("spi_flash_cache_enabled() works on both CPUs", "[spi_flash][esp_flash
 {
     result_queue = xQueueCreate(1, sizeof(bool));
 
-    for(int cpu = 0; cpu < portNUM_PROCESSORS; cpu++) {
+    for(int cpu = 0; cpu < CONFIG_FREERTOS_NUMBER_OF_CORES; cpu++) {
         for(int disable = 0; disable <= 1; disable++) {
             bool do_disable = disable;
             bool result;

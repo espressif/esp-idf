@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,6 +17,7 @@
 #include <stdlib.h>
 #include <sys/cdefs.h>
 #include <sys/param.h>
+#include <inttypes.h>
 #include "esp_log.h"
 #include "esp_check.h"
 #include "esp_cpu.h"
@@ -63,7 +64,7 @@ static IRAM_ATTR void emac_opencores_isr_handler(void *args)
     }
 
     if (status & OPENETH_INT_BUSY) {
-        ESP_EARLY_LOGW(TAG, "%s: RX frame dropped (0x%x)", __func__, status);
+        ESP_EARLY_LOGW(TAG, "%s: RX frame dropped (0x%" PRIx32 ")", __func__, status);
     }
 
     // Clear interrupt
@@ -115,7 +116,7 @@ err:
 
 static esp_err_t emac_opencores_write_phy_reg(esp_eth_mac_t *mac, uint32_t phy_addr, uint32_t phy_reg, uint32_t reg_value)
 {
-    ESP_LOGV(TAG, "%s: addr=%d reg=0x%x val=0x%04x", __func__, phy_addr, phy_reg, reg_value);
+    ESP_LOGV(TAG, "%s: addr=%" PRIu32 " reg=0x%" PRIx32 " val=0x%04" PRIx32, __func__, phy_addr, phy_reg, reg_value);
     REG_SET_FIELD(OPENETH_MIIADDRESS_REG, OPENETH_FIAD, phy_addr);
     REG_SET_FIELD(OPENETH_MIIADDRESS_REG, OPENETH_RGAD, phy_reg);
     REG_WRITE(OPENETH_MIITX_DATA_REG, reg_value & OPENETH_MII_DATA_MASK);
@@ -131,7 +132,7 @@ static esp_err_t emac_opencores_read_phy_reg(esp_eth_mac_t *mac, uint32_t phy_ad
     REG_SET_FIELD(OPENETH_MIIADDRESS_REG, OPENETH_RGAD, phy_reg);
     REG_SET_BIT(OPENETH_MIICOMMAND_REG, OPENETH_RSTAT);
     *reg_value = (REG_READ(OPENETH_MIIRX_DATA_REG) & OPENETH_MII_DATA_MASK);
-    ESP_LOGV(TAG, "%s: addr=%d reg=0x%x val=0x%04x", __func__, phy_addr, phy_reg, *reg_value);
+    ESP_LOGV(TAG, "%s: addr=%" PRIu32 " reg=0x%" PRIx32 " val=0x%04" PRIx32, __func__, phy_addr, phy_reg, *reg_value);
     return ESP_OK;
 err:
     return ret;
@@ -234,7 +235,7 @@ static esp_err_t emac_opencores_transmit(esp_eth_mac_t *mac, uint8_t *buf, uint3
     uint32_t bytes_remaining = length;
     // In QEMU, there never is a TX operation in progress, so start with descriptor 0.
 
-    ESP_LOGV(TAG, "%s: len=%d", __func__, length);
+    ESP_LOGV(TAG, "%s: len=%" PRIu32, __func__, length);
     while (bytes_remaining > 0) {
         uint32_t will_write = MIN(bytes_remaining, DMA_BUF_SIZE);
         memcpy(emac->tx_buf[emac->cur_tx_desc], buf, will_write);
@@ -244,7 +245,7 @@ static esp_err_t emac_opencores_transmit(esp_eth_mac_t *mac, uint8_t *buf, uint3
         desc_val.len = will_write;
         desc_val.rd = 1;
         // TXEN is already set, and this triggers a TX operation for the descriptor
-        ESP_LOGV(TAG, "%s: desc %d (%p) len=%d wr=%d", __func__, emac->cur_tx_desc, desc_ptr, will_write, desc_val.wr);
+        ESP_LOGV(TAG, "%s: desc %d (%p) len=%" PRIu32 " wr=%" PRIu16, __func__, emac->cur_tx_desc, desc_ptr, will_write, desc_val.wr);
         *desc_ptr = desc_val;
         bytes_remaining -= will_write;
         buf += will_write;
@@ -263,7 +264,7 @@ static esp_err_t emac_opencores_receive(esp_eth_mac_t *mac, uint8_t *buf, uint32
 
     openeth_rx_desc_t *desc_ptr = openeth_rx_desc(emac->cur_rx_desc);
     openeth_rx_desc_t desc_val = *desc_ptr;
-    ESP_LOGV(TAG, "%s: desc %d (%p) e=%d len=%d wr=%d", __func__, emac->cur_rx_desc, desc_ptr, desc_val.e, desc_val.len, desc_val.wr);
+    ESP_LOGV(TAG, "%s: desc %d (%p) e=%" PRIu16 " len=%" PRIu16" wr=%" PRIu16, __func__, emac->cur_rx_desc, desc_ptr, desc_val.e, desc_val.len, desc_val.wr);
     if (desc_val.e) {
         ret = ESP_ERR_INVALID_STATE;
         goto err;

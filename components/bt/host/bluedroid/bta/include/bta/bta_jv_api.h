@@ -847,7 +847,7 @@ extern tBTA_JV_STATUS BTA_JvRfcommConnect(tBTA_SEC sec_mask,
 **                  BTA_JV_FAILURE, otherwise.
 **
 *******************************************************************************/
-extern tBTA_JV_STATUS BTA_JvRfcommClose(UINT32 handle, tBTA_JV_RFCOMM_CBACK *p_cback, void *user_data);
+extern tBTA_JV_STATUS BTA_JvRfcommClose(UINT32 handle, void *user_data);
 
 /*******************************************************************************
 **

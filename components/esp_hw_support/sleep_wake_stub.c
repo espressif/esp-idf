@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,6 +17,7 @@
 #include "soc/rtc.h"
 #include "soc/soc_caps.h"
 #include "hal/uart_ll.h"
+#include "hal/clk_tree_ll.h"
 
 #if SOC_LP_TIMER_SUPPORTED
 #include "hal/lp_timer_ll.h"
@@ -91,9 +92,8 @@ void RTC_IRAM_ATTR esp_wake_stub_uart_tx_wait_idle(uint8_t uart_no)
 
 void RTC_IRAM_ATTR esp_wake_stub_set_wakeup_time(uint64_t time_in_us)
 {
+    uint64_t rtc_count_delta = time_in_us * (1 << RTC_CLK_CAL_FRACT) / clk_ll_rtc_slow_load_cal();
 #if SOC_LP_TIMER_SUPPORTED
-    uint64_t rtc_count_delta = lp_timer_ll_time_to_count(time_in_us);
-
     lp_timer_ll_counter_snapshot(&LP_TIMER);
     uint32_t lo = lp_timer_ll_get_counter_value_low(&LP_TIMER, 0);
     uint32_t hi = lp_timer_ll_get_counter_value_high(&LP_TIMER, 0);
@@ -103,7 +103,6 @@ void RTC_IRAM_ATTR esp_wake_stub_set_wakeup_time(uint64_t time_in_us)
     lp_timer_ll_set_alarm_target(&LP_TIMER, 0, rtc_curr_count + rtc_count_delta);
     lp_timer_ll_set_target_enable(&LP_TIMER, 0, true);
 #else
-    uint64_t rtc_count_delta = rtc_cntl_ll_time_to_count(time_in_us);
     uint64_t rtc_curr_count = rtc_cntl_ll_get_rtc_time();
     rtc_cntl_ll_set_wakeup_timer(rtc_curr_count + rtc_count_delta);
 #endif

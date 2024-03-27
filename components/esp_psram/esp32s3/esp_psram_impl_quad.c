@@ -1,9 +1,8 @@
 /*
- * SPDX-FileCopyrightText: 2013-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2013-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-
 
 #include "sdkconfig.h"
 #include "string.h"
@@ -96,7 +95,7 @@ static uint32_t s_psram_size = 0;   //this stands for physical psram size in byt
 static void config_psram_spi_phases(void);
 extern void esp_rom_spi_set_op_mode(int spi_num, esp_rom_spiflash_read_mode_t mode);
 
-static uint8_t s_psram_cs_io = (uint8_t)-1;
+static uint8_t s_psram_cs_io = (uint8_t) -1;
 
 uint8_t esp_psram_impl_get_cs_io(void)
 {
@@ -113,11 +112,11 @@ static void psram_set_op_mode(int spi_num, psram_cmd_mode_t mode)
     }
 }
 static void _psram_exec_cmd(int spi_num,
-    uint32_t cmd, int cmd_bit_len,
-    uint32_t addr, int addr_bit_len,
-    int dummy_bits,
-    uint8_t* mosi_data, int mosi_bit_len,
-    uint8_t* miso_data, int miso_bit_len)
+                            uint32_t cmd, int cmd_bit_len,
+                            uint32_t addr, int addr_bit_len,
+                            int dummy_bits,
+                            uint8_t* mosi_data, int mosi_bit_len,
+                            uint8_t* miso_data, int miso_bit_len)
 {
     esp_rom_spi_cmd_t conf;
     uint32_t _addr = addr;
@@ -134,13 +133,13 @@ static void _psram_exec_cmd(int spi_num,
 }
 
 void psram_exec_cmd(int spi_num, psram_cmd_mode_t mode,
-    uint32_t cmd, int cmd_bit_len,
-    uint32_t addr, int addr_bit_len,
-    int dummy_bits,
-    uint8_t* mosi_data, int mosi_bit_len,
-    uint8_t* miso_data, int miso_bit_len,
-    uint32_t cs_mask,
-    bool is_write_erase_operation)
+                    uint32_t cmd, int cmd_bit_len,
+                    uint32_t addr, int addr_bit_len,
+                    int dummy_bits,
+                    uint8_t* mosi_data, int mosi_bit_len,
+                    uint8_t* miso_data, int miso_bit_len,
+                    uint32_t cs_mask,
+                    bool is_write_erase_operation)
 {
     uint32_t backup_usr = READ_PERI_REG(SPI_MEM_USER_REG(spi_num));
     uint32_t backup_usr1 = READ_PERI_REG(SPI_MEM_USER1_REG(spi_num));
@@ -148,7 +147,7 @@ void psram_exec_cmd(int spi_num, psram_cmd_mode_t mode,
     uint32_t backup_ctrl = READ_PERI_REG(SPI_MEM_CTRL_REG(spi_num));
     psram_set_op_mode(spi_num, mode);
     _psram_exec_cmd(spi_num, cmd, cmd_bit_len, addr, addr_bit_len,
-        dummy_bits, mosi_data, mosi_bit_len, miso_data, miso_bit_len);
+                    dummy_bits, mosi_data, mosi_bit_len, miso_data, miso_bit_len);
     esp_rom_spi_cmd_start(spi_num, miso_data, miso_bit_len / 8, cs_mask, is_write_erase_operation);
 
     WRITE_PERI_REG(SPI_MEM_USER_REG(spi_num), backup_usr);
@@ -161,13 +160,13 @@ void psram_exec_cmd(int spi_num, psram_cmd_mode_t mode,
 static void psram_disable_qio_mode(int spi_num)
 {
     psram_exec_cmd(spi_num, PSRAM_CMD_QPI,
-    PSRAM_EXIT_QMODE, 8,              /* command and command bit len*/
-    0, 0,  /* address and address bit len*/
-    0,                                /* dummy bit len */
-    NULL, 0,                          /* tx data and tx bit len*/
-    NULL, 0,                          /* rx data and rx bit len*/
-    CS_PSRAM_SEL,                     /* cs bit mask*/
-    false);                           /* whether is program/erase operation */
+                   PSRAM_EXIT_QMODE, 8,              /* command and command bit len*/
+                   0, 0,  /* address and address bit len*/
+                   0,                                /* dummy bit len */
+                   NULL, 0,                          /* tx data and tx bit len*/
+                   NULL, 0,                          /* rx data and rx bit len*/
+                   CS_PSRAM_SEL,                     /* cs bit mask*/
+                   false);                           /* whether is program/erase operation */
 }
 
 //TODO IDF-4307
@@ -176,35 +175,35 @@ static void psram_disable_qio_mode(int spi_num)
 static void psram_set_wrap_burst_length(int spi_num, psram_cmd_mode_t mode)
 {
     psram_exec_cmd(spi_num, mode,
-    PSRAM_SET_BURST_LEN, 8,           /* command and command bit len*/
-    0, 0,  /* address and address bit len*/
-    0,                                /* dummy bit len */
-    NULL, 0,                          /* tx data and tx bit len*/
-    NULL, 0,                          /* rx data and rx bit len*/
-    CS_PSRAM_SEL,                     /* cs bit mask*/
-    false);                           /* whether is program/erase operation */
+                   PSRAM_SET_BURST_LEN, 8,           /* command and command bit len*/
+                   0, 0,  /* address and address bit len*/
+                   0,                                /* dummy bit len */
+                   NULL, 0,                          /* tx data and tx bit len*/
+                   NULL, 0,                          /* rx data and rx bit len*/
+                   CS_PSRAM_SEL,                     /* cs bit mask*/
+                   false);                           /* whether is program/erase operation */
 }
 
 //send reset command to psram, in spi mode
 static void psram_reset_mode(int spi_num)
 {
     psram_exec_cmd(spi_num, PSRAM_CMD_SPI,
-    PSRAM_RESET_EN, 8,                /* command and command bit len*/
-    0, 0,  /* address and address bit len*/
-    0,                                /* dummy bit len */
-    NULL, 0,                          /* tx data and tx bit len*/
-    NULL, 0,                          /* rx data and rx bit len*/
-    CS_PSRAM_SEL,                     /* cs bit mask*/
-    false);                           /* whether is program/erase operation */
+                   PSRAM_RESET_EN, 8,                /* command and command bit len*/
+                   0, 0,  /* address and address bit len*/
+                   0,                                /* dummy bit len */
+                   NULL, 0,                          /* tx data and tx bit len*/
+                   NULL, 0,                          /* rx data and rx bit len*/
+                   CS_PSRAM_SEL,                     /* cs bit mask*/
+                   false);                           /* whether is program/erase operation */
 
     psram_exec_cmd(spi_num, PSRAM_CMD_SPI,
-    PSRAM_RESET, 8,                   /* command and command bit len*/
-    0, 0,  /* address and address bit len*/
-    0,                                /* dummy bit len */
-    NULL, 0,                          /* tx data and tx bit len*/
-    NULL, 0,                          /* rx data and rx bit len*/
-    CS_PSRAM_SEL,                     /* cs bit mask*/
-    false);                           /* whether is program/erase operation */
+                   PSRAM_RESET, 8,                   /* command and command bit len*/
+                   0, 0,  /* address and address bit len*/
+                   0,                                /* dummy bit len */
+                   NULL, 0,                          /* tx data and tx bit len*/
+                   NULL, 0,                          /* rx data and rx bit len*/
+                   CS_PSRAM_SEL,                     /* cs bit mask*/
+                   false);                           /* whether is program/erase operation */
 }
 
 esp_err_t psram_enable_wrap(uint32_t wrap_size)
@@ -215,28 +214,28 @@ esp_err_t psram_enable_wrap(uint32_t wrap_size)
         return ESP_OK;
     }
     switch (wrap_size) {
-        case 32:
-        case 0:
-            psram_set_wrap_burst_length(1, PSRAM_CMD_QPI);
-            current_wrap_size = wrap_size;
-            return ESP_OK;
-        case 16:
-        case 64:
-        default:
-            return ESP_FAIL;
+    case 32:
+    case 0:
+        psram_set_wrap_burst_length(1, PSRAM_CMD_QPI);
+        current_wrap_size = wrap_size;
+        return ESP_OK;
+    case 16:
+    case 64:
+    default:
+        return ESP_FAIL;
     }
 }
 
 bool psram_support_wrap_size(uint32_t wrap_size)
 {
     switch (wrap_size) {
-        case 0:
-        case 32:
-            return true;
-        case 16:
-        case 64:
-        default:
-            return false;
+    case 0:
+    case 32:
+        return true;
+    case 16:
+    case 64:
+    default:
+        return false;
     }
 
 }
@@ -245,26 +244,26 @@ bool psram_support_wrap_size(uint32_t wrap_size)
 static void psram_read_id(int spi_num, uint32_t* dev_id)
 {
     psram_exec_cmd(spi_num, PSRAM_CMD_SPI,
-    PSRAM_DEVICE_ID, 8,               /* command and command bit len*/
-    0, 24,                            /* address and address bit len*/
-    0,                                /* dummy bit len */
-    NULL, 0,                          /* tx data and tx bit len*/
-    (uint8_t*) dev_id, 24,            /* rx data and rx bit len*/
-    CS_PSRAM_SEL,                     /* cs bit mask*/
-    false);                           /* whether is program/erase operation */
+                   PSRAM_DEVICE_ID, 8,               /* command and command bit len*/
+                   0, 24,                            /* address and address bit len*/
+                   0,                                /* dummy bit len */
+                   NULL, 0,                          /* tx data and tx bit len*/
+                   (uint8_t*) dev_id, 24,            /* rx data and rx bit len*/
+                   CS_PSRAM_SEL,                     /* cs bit mask*/
+                   false);                           /* whether is program/erase operation */
 }
 
 //enter QPI mode
 static void psram_enable_qio_mode(int spi_num)
 {
     psram_exec_cmd(spi_num, PSRAM_CMD_SPI,
-    PSRAM_ENTER_QMODE, 8,             /* command and command bit len*/
-    0, 0,  /* address and address bit len*/
-    0,                                /* dummy bit len */
-    NULL, 0,                          /* tx data and tx bit len*/
-    NULL, 0,                          /* rx data and rx bit len*/
-    CS_PSRAM_SEL,                     /* cs bit mask*/
-    false);                           /* whether is program/erase operation */
+                   PSRAM_ENTER_QMODE, 8,             /* command and command bit len*/
+                   0, 0,  /* address and address bit len*/
+                   0,                                /* dummy bit len */
+                   NULL, 0,                          /* tx data and tx bit len*/
+                   NULL, 0,                          /* rx data and rx bit len*/
+                   CS_PSRAM_SEL,                     /* cs bit mask*/
+                   false);                           /* whether is program/erase operation */
 }
 
 static void psram_set_cs_timing(void)
@@ -300,7 +299,7 @@ static void psram_gpio_config(void)
     esp_rom_spiflash_select_qio_pins(wp_io, spiconfig);
 
     // Reserve psram pins
-    esp_gpio_reserve_pins(BIT64(cs1_io) | BIT64(wp_io));
+    esp_gpio_reserve(BIT64(cs1_io) | BIT64(wp_io));
 }
 
 esp_err_t esp_psram_impl_enable(void)   //psram init
@@ -321,7 +320,7 @@ esp_err_t esp_psram_impl_enable(void)   //psram init
          */
         psram_read_id(SPI1_NUM, &s_psram_id);
         if (!PSRAM_IS_VALID(s_psram_id)) {
-            ESP_EARLY_LOGE(TAG, "PSRAM ID read error: 0x%08x, PSRAM chip not found or not supported, or wrong PSRAM line mode", (uint32_t)s_psram_id);
+            ESP_EARLY_LOGE(TAG, "PSRAM ID read error: 0x%08" PRIx32 ", PSRAM chip not found or not supported, or wrong PSRAM line mode", (uint32_t)s_psram_id);
             return ESP_ERR_NOT_SUPPORTED;
         }
     }
@@ -377,7 +376,6 @@ static void config_psram_spi_phases(void)
 
     CLEAR_PERI_REG_MASK(SPI_MEM_MISC_REG(0), SPI_MEM_CS1_DIS_M); //ENABLE SPI0 CS1 TO PSRAM(CS0--FLASH; CS1--SRAM)
 }
-
 
 /*---------------------------------------------------------------------------------
  * Following APIs are not required to be IRAM-Safe

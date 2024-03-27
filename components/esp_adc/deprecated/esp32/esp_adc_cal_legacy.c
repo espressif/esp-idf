@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -85,13 +85,17 @@ static const uint32_t adc2_vref_atten_offset[4] = {63, 66, 89, 128};
 
 //20 Point lookup tables, covering ADC readings from 2880 to 4096, step size of 64
 static const uint32_t lut_adc1_low[LUT_POINTS] = {2240, 2297, 2352, 2405, 2457, 2512, 2564, 2616, 2664, 2709,
-                                                  2754, 2795, 2832, 2868, 2903, 2937, 2969, 3000, 3030, 3060};
+                                                  2754, 2795, 2832, 2868, 2903, 2937, 2969, 3000, 3030, 3060
+                                                 };
 static const uint32_t lut_adc1_high[LUT_POINTS] = {2667, 2706, 2745, 2780, 2813, 2844, 2873, 2901, 2928, 2956,
-                                                   2982, 3006, 3032, 3059, 3084, 3110, 3135, 3160, 3184, 3209};
+                                                   2982, 3006, 3032, 3059, 3084, 3110, 3135, 3160, 3184, 3209
+                                                  };
 static const uint32_t lut_adc2_low[LUT_POINTS] = {2238, 2293, 2347, 2399, 2451, 2507, 2561, 2613, 2662, 2710,
-                                                  2754, 2792, 2831, 2869, 2904, 2937, 2968, 2999, 3029, 3059};
+                                                  2754, 2792, 2831, 2869, 2904, 2937, 2968, 2999, 3029, 3059
+                                                 };
 static const uint32_t lut_adc2_high[LUT_POINTS] = {2657, 2698, 2738, 2774, 2807, 2838, 2867, 2894, 2921, 2946,
-                                                   2971, 2996, 3020, 3043, 3067, 3092, 3116, 3139, 3162, 3185};
+                                                   2971, 2996, 3020, 3043, 3067, 3092, 3116, 3139, 3162, 3185
+                                                  };
 
 /* ----------------------- EFuse Access Functions --------------------------- */
 static bool check_efuse_vref(void)
@@ -312,7 +316,7 @@ esp_adc_cal_value_t esp_adc_cal_characterize(adc_unit_t adc_num,
     chars->bit_width = bit_width;
     chars->vref = (EFUSE_VREF_ENABLED && efuse_vref_present) ? read_efuse_vref() : default_vref;
     //Initialize fields for lookup table if necessary
-    if (LUT_ENABLED && atten == ADC_ATTEN_DB_11) {
+    if (LUT_ENABLED && atten == ADC_ATTEN_DB_12) {
         chars->low_curve = (adc_num == ADC_UNIT_1) ? lut_adc1_low : lut_adc2_low;
         chars->high_curve = (adc_num == ADC_UNIT_1) ? lut_adc1_high : lut_adc2_high;
     } else {
@@ -332,8 +336,8 @@ uint32_t esp_adc_cal_raw_to_voltage(uint32_t adc_reading, const esp_adc_cal_char
         adc_reading = ADC_12_BIT_RES - 1;    //Set to 12bit res max
     }
 
-    if (LUT_ENABLED && (chars->atten == ADC_ATTEN_DB_11) && (adc_reading >= LUT_LOW_THRESH)) {  //Check if in non-linear region
-        //Use lookup table to get voltage in non linear portion of ADC_ATTEN_DB_11
+    if (LUT_ENABLED && (chars->atten == ADC_ATTEN_DB_12) && (adc_reading >= LUT_LOW_THRESH)) {  //Check if in non-linear region
+        //Use lookup table to get voltage in non linear portion of ADC_ATTEN_DB_12
         uint32_t lut_voltage = calculate_voltage_lut(adc_reading, chars->vref, chars->low_curve, chars->high_curve);
         if (adc_reading <= LUT_HIGH_THRESH) {   //If ADC is transitioning from linear region to non-linear region
             //Linearly interpolate between linear voltage and lut voltage

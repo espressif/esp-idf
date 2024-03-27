@@ -839,198 +839,8 @@ typedef union {
     uint32_t val;
 } spi_dout_mode_reg_t;
 
-
-/** Group: Interrupt registers */
-/** Type of dma_int_ena register
- *  SPI interrupt enable register
- */
-typedef union {
-    struct {
-        /** dma_infifo_full_err_int_ena : R/W; bitpos: [0]; default: 0;
-         *  The enable bit for SPI_DMA_INFIFO_FULL_ERR_INT interrupt.
-         */
-        uint32_t dma_infifo_full_err_int_ena:1;
-        /** dma_outfifo_empty_err_int_ena : R/W; bitpos: [1]; default: 0;
-         *  The enable bit for SPI_DMA_OUTFIFO_EMPTY_ERR_INT interrupt.
-         */
-        uint32_t dma_outfifo_empty_err_int_ena:1;
-        /** slv_ex_qpi_int_ena : R/W; bitpos: [2]; default: 0;
-         *  The enable bit for SPI slave Ex_QPI interrupt.
-         */
-        uint32_t slv_ex_qpi_int_ena:1;
-        /** slv_en_qpi_int_ena : R/W; bitpos: [3]; default: 0;
-         *  The enable bit for SPI slave En_QPI interrupt.
-         */
-        uint32_t slv_en_qpi_int_ena:1;
-        /** slv_cmd7_int_ena : R/W; bitpos: [4]; default: 0;
-         *  The enable bit for SPI slave CMD7 interrupt.
-         */
-        uint32_t slv_cmd7_int_ena:1;
-        /** slv_cmd8_int_ena : R/W; bitpos: [5]; default: 0;
-         *  The enable bit for SPI slave CMD8 interrupt.
-         */
-        uint32_t slv_cmd8_int_ena:1;
-        /** slv_cmd9_int_ena : R/W; bitpos: [6]; default: 0;
-         *  The enable bit for SPI slave CMD9 interrupt.
-         */
-        uint32_t slv_cmd9_int_ena:1;
-        /** slv_cmda_int_ena : R/W; bitpos: [7]; default: 0;
-         *  The enable bit for SPI slave CMDA interrupt.
-         */
-        uint32_t slv_cmda_int_ena:1;
-        /** slv_rd_dma_done_int_ena : R/W; bitpos: [8]; default: 0;
-         *  The enable bit for SPI_SLV_RD_DMA_DONE_INT interrupt.
-         */
-        uint32_t slv_rd_dma_done_int_ena:1;
-        /** slv_wr_dma_done_int_ena : R/W; bitpos: [9]; default: 0;
-         *  The enable bit for SPI_SLV_WR_DMA_DONE_INT interrupt.
-         */
-        uint32_t slv_wr_dma_done_int_ena:1;
-        /** slv_rd_buf_done_int_ena : R/W; bitpos: [10]; default: 0;
-         *  The enable bit for SPI_SLV_RD_BUF_DONE_INT interrupt.
-         */
-        uint32_t slv_rd_buf_done_int_ena:1;
-        /** slv_wr_buf_done_int_ena : R/W; bitpos: [11]; default: 0;
-         *  The enable bit for SPI_SLV_WR_BUF_DONE_INT interrupt.
-         */
-        uint32_t slv_wr_buf_done_int_ena:1;
-        /** trans_done_int_ena : R/W; bitpos: [12]; default: 0;
-         *  The enable bit for SPI_TRANS_DONE_INT interrupt.
-         */
-        uint32_t trans_done_int_ena:1;
-        /** dma_seg_trans_done_int_ena : R/W; bitpos: [13]; default: 0;
-         *  The enable bit for SPI_DMA_SEG_TRANS_DONE_INT interrupt.
-         */
-        uint32_t dma_seg_trans_done_int_ena:1;
-        /** seg_magic_err_int_ena : R/W; bitpos: [14]; default: 0;
-         *  The enable bit for SPI_SEG_MAGIC_ERR_INT interrupt.
-         */
-        uint32_t seg_magic_err_int_ena:1;  //this field is only for GPSPI2
-        /** slv_buf_addr_err_int_ena : R/W; bitpos: [15]; default: 0;
-         *  The enable bit for SPI_SLV_BUF_ADDR_ERR_INT interrupt.
-         */
-        uint32_t slv_buf_addr_err_int_ena:1;
-        /** slv_cmd_err_int_ena : R/W; bitpos: [16]; default: 0;
-         *  The enable bit for SPI_SLV_CMD_ERR_INT interrupt.
-         */
-        uint32_t slv_cmd_err_int_ena:1;
-        /** mst_rx_afifo_wfull_err_int_ena : R/W; bitpos: [17]; default: 0;
-         *  The enable bit for SPI_MST_RX_AFIFO_WFULL_ERR_INT interrupt.
-         */
-        uint32_t mst_rx_afifo_wfull_err_int_ena:1;
-        /** mst_tx_afifo_rempty_err_int_ena : R/W; bitpos: [18]; default: 0;
-         *  The enable bit for SPI_MST_TX_AFIFO_REMPTY_ERR_INT interrupt.
-         */
-        uint32_t mst_tx_afifo_rempty_err_int_ena:1;
-        /** app2_int_ena : R/W; bitpos: [19]; default: 0;
-         *  The enable bit for SPI_APP2_INT interrupt.
-         */
-        uint32_t app2_int_ena:1;
-        /** app1_int_ena : R/W; bitpos: [20]; default: 0;
-         *  The enable bit for SPI_APP1_INT interrupt.
-         */
-        uint32_t app1_int_ena:1;
-        uint32_t reserved_21:11;
-    };
-    uint32_t val;
-} spi_dma_int_ena_reg_t;
-
-/** Type of dma_int_clr register
- *  SPI interrupt clear register
- */
-typedef union {
-    struct {
-        /** dma_infifo_full_err_int_clr : WT; bitpos: [0]; default: 0;
-         *  The clear bit for SPI_DMA_INFIFO_FULL_ERR_INT interrupt.
-         */
-        uint32_t dma_infifo_full_err_int_clr:1;
-        /** dma_outfifo_empty_err_int_clr : WT; bitpos: [1]; default: 0;
-         *  The clear bit for SPI_DMA_OUTFIFO_EMPTY_ERR_INT interrupt.
-         */
-        uint32_t dma_outfifo_empty_err_int_clr:1;
-        /** slv_ex_qpi_int_clr : WT; bitpos: [2]; default: 0;
-         *  The clear bit for SPI slave Ex_QPI interrupt.
-         */
-        uint32_t slv_ex_qpi_int_clr:1;
-        /** slv_en_qpi_int_clr : WT; bitpos: [3]; default: 0;
-         *  The clear bit for SPI slave En_QPI interrupt.
-         */
-        uint32_t slv_en_qpi_int_clr:1;
-        /** slv_cmd7_int_clr : WT; bitpos: [4]; default: 0;
-         *  The clear bit for SPI slave CMD7 interrupt.
-         */
-        uint32_t slv_cmd7_int_clr:1;
-        /** slv_cmd8_int_clr : WT; bitpos: [5]; default: 0;
-         *  The clear bit for SPI slave CMD8 interrupt.
-         */
-        uint32_t slv_cmd8_int_clr:1;
-        /** slv_cmd9_int_clr : WT; bitpos: [6]; default: 0;
-         *  The clear bit for SPI slave CMD9 interrupt.
-         */
-        uint32_t slv_cmd9_int_clr:1;
-        /** slv_cmda_int_clr : WT; bitpos: [7]; default: 0;
-         *  The clear bit for SPI slave CMDA interrupt.
-         */
-        uint32_t slv_cmda_int_clr:1;
-        /** slv_rd_dma_done_int_clr : WT; bitpos: [8]; default: 0;
-         *  The clear bit for SPI_SLV_RD_DMA_DONE_INT interrupt.
-         */
-        uint32_t slv_rd_dma_done_int_clr:1;
-        /** slv_wr_dma_done_int_clr : WT; bitpos: [9]; default: 0;
-         *  The clear bit for SPI_SLV_WR_DMA_DONE_INT interrupt.
-         */
-        uint32_t slv_wr_dma_done_int_clr:1;
-        /** slv_rd_buf_done_int_clr : WT; bitpos: [10]; default: 0;
-         *  The clear bit for SPI_SLV_RD_BUF_DONE_INT interrupt.
-         */
-        uint32_t slv_rd_buf_done_int_clr:1;
-        /** slv_wr_buf_done_int_clr : WT; bitpos: [11]; default: 0;
-         *  The clear bit for SPI_SLV_WR_BUF_DONE_INT interrupt.
-         */
-        uint32_t slv_wr_buf_done_int_clr:1;
-        /** trans_done_int_clr : WT; bitpos: [12]; default: 0;
-         *  The clear bit for SPI_TRANS_DONE_INT interrupt.
-         */
-        uint32_t trans_done_int_clr:1;
-        /** dma_seg_trans_done_int_clr : WT; bitpos: [13]; default: 0;
-         *  The clear bit for SPI_DMA_SEG_TRANS_DONE_INT interrupt.
-         */
-        uint32_t dma_seg_trans_done_int_clr:1;
-        /** seg_magic_err_int_clr : WT; bitpos: [14]; default: 0;
-         *  The clear bit for SPI_SEG_MAGIC_ERR_INT interrupt.
-         */
-        uint32_t seg_magic_err_int_clr:1;  //this field is only for GPSPI2
-        /** slv_buf_addr_err_int_clr : WT; bitpos: [15]; default: 0;
-         *  The clear bit for SPI_SLV_BUF_ADDR_ERR_INT interrupt.
-         */
-        uint32_t slv_buf_addr_err_int_clr:1;
-        /** slv_cmd_err_int_clr : WT; bitpos: [16]; default: 0;
-         *  The clear bit for SPI_SLV_CMD_ERR_INT interrupt.
-         */
-        uint32_t slv_cmd_err_int_clr:1;
-        /** mst_rx_afifo_wfull_err_int_clr : WT; bitpos: [17]; default: 0;
-         *  The clear bit for SPI_MST_RX_AFIFO_WFULL_ERR_INT interrupt.
-         */
-        uint32_t mst_rx_afifo_wfull_err_int_clr:1;
-        /** mst_tx_afifo_rempty_err_int_clr : WT; bitpos: [18]; default: 0;
-         *  The clear bit for SPI_MST_TX_AFIFO_REMPTY_ERR_INT interrupt.
-         */
-        uint32_t mst_tx_afifo_rempty_err_int_clr:1;
-        /** app2_int_clr : WT; bitpos: [19]; default: 0;
-         *  The clear bit for SPI_APP2_INT interrupt.
-         */
-        uint32_t app2_int_clr:1;
-        /** app1_int_clr : WT; bitpos: [20]; default: 0;
-         *  The clear bit for SPI_APP1_INT interrupt.
-         */
-        uint32_t app1_int_clr:1;
-        uint32_t reserved_21:11;
-    };
-    uint32_t val;
-} spi_dma_int_clr_reg_t;
-
-/** Type of dma_int_raw register
- *  SPI interrupt raw register
+/** Type of dma_int register
+ *  SPI interrupt raw/ena/clr/sta/set register
  */
 typedef union {
     struct {
@@ -1038,301 +848,112 @@ typedef union {
          *  1: The current data rate of DMA Rx is smaller than that of SPI, which will lose the
          *  receive data.  0: Others.
          */
-        uint32_t dma_infifo_full_err_int_raw:1;
+        uint32_t dma_infifo_full_err_int:1;
         /** dma_outfifo_empty_err_int_raw : R/WTC/SS; bitpos: [1]; default: 0;
          *  1: The current data rate of DMA TX is smaller than that of SPI. SPI will stop in
          *  master mode and send out all 0 in slave mode.  0: Others.
          */
-        uint32_t dma_outfifo_empty_err_int_raw:1;
+        uint32_t dma_outfifo_empty_err_int:1;
         /** slv_ex_qpi_int_raw : R/WTC/SS; bitpos: [2]; default: 0;
          *  The raw bit for SPI slave Ex_QPI interrupt. 1: SPI slave mode Ex_QPI transmission
          *  is ended. 0: Others.
          */
-        uint32_t slv_ex_qpi_int_raw:1;
+        uint32_t slv_ex_qpi_int:1;
         /** slv_en_qpi_int_raw : R/WTC/SS; bitpos: [3]; default: 0;
          *  The raw bit for SPI slave En_QPI interrupt. 1: SPI slave mode En_QPI transmission
          *  is ended. 0: Others.
          */
-        uint32_t slv_en_qpi_int_raw:1;
+        uint32_t slv_en_qpi_int:1;
         /** slv_cmd7_int_raw : R/WTC/SS; bitpos: [4]; default: 0;
          *  The raw bit for SPI slave CMD7 interrupt. 1: SPI slave mode CMD7 transmission is
          *  ended. 0: Others.
          */
-        uint32_t slv_cmd7_int_raw:1;
+        uint32_t slv_cmd7_int:1;
         /** slv_cmd8_int_raw : R/WTC/SS; bitpos: [5]; default: 0;
          *  The raw bit for SPI slave CMD8 interrupt. 1: SPI slave mode CMD8 transmission is
          *  ended. 0: Others.
          */
-        uint32_t slv_cmd8_int_raw:1;
+        uint32_t slv_cmd8_int:1;
         /** slv_cmd9_int_raw : R/WTC/SS; bitpos: [6]; default: 0;
          *  The raw bit for SPI slave CMD9 interrupt. 1: SPI slave mode CMD9 transmission is
          *  ended. 0: Others.
          */
-        uint32_t slv_cmd9_int_raw:1;
+        uint32_t slv_cmd9_int:1;
         /** slv_cmda_int_raw : R/WTC/SS; bitpos: [7]; default: 0;
          *  The raw bit for SPI slave CMDA interrupt. 1: SPI slave mode CMDA transmission is
          *  ended. 0: Others.
          */
-        uint32_t slv_cmda_int_raw:1;
+        uint32_t slv_cmda_int:1;
         /** slv_rd_dma_done_int_raw : R/WTC/SS; bitpos: [8]; default: 0;
          *  The raw bit for SPI_SLV_RD_DMA_DONE_INT interrupt. 1: SPI slave mode Rd_DMA
          *  transmission is ended. 0: Others.
          */
-        uint32_t slv_rd_dma_done_int_raw:1;
+        uint32_t slv_rd_dma_done_int:1;
         /** slv_wr_dma_done_int_raw : R/WTC/SS; bitpos: [9]; default: 0;
          *  The raw bit for SPI_SLV_WR_DMA_DONE_INT interrupt. 1: SPI slave mode Wr_DMA
          *  transmission is ended. 0: Others.
          */
-        uint32_t slv_wr_dma_done_int_raw:1;
+        uint32_t slv_wr_dma_done_int:1;
         /** slv_rd_buf_done_int_raw : R/WTC/SS; bitpos: [10]; default: 0;
          *  The raw bit for SPI_SLV_RD_BUF_DONE_INT interrupt. 1: SPI slave mode Rd_BUF
          *  transmission is ended. 0: Others.
          */
-        uint32_t slv_rd_buf_done_int_raw:1;
+        uint32_t slv_rd_buf_done_int:1;
         /** slv_wr_buf_done_int_raw : R/WTC/SS; bitpos: [11]; default: 0;
          *  The raw bit for SPI_SLV_WR_BUF_DONE_INT interrupt. 1: SPI slave mode Wr_BUF
          *  transmission is ended. 0: Others.
          */
-        uint32_t slv_wr_buf_done_int_raw:1;
+        uint32_t slv_wr_buf_done_int:1;
         /** trans_done_int_raw : R/WTC/SS; bitpos: [12]; default: 0;
          *  The raw bit for SPI_TRANS_DONE_INT interrupt. 1: SPI master mode transmission is
          *  ended. 0: others.
          */
-        uint32_t trans_done_int_raw:1;
+        uint32_t trans_done_int:1;
         /** dma_seg_trans_done_int_raw : R/WTC/SS; bitpos: [13]; default: 0;
          *  The raw bit for SPI_DMA_SEG_TRANS_DONE_INT interrupt. 1:  spi master DMA
          *  full-duplex/half-duplex seg-conf-trans ends or slave half-duplex seg-trans ends.
          *  And data has been pushed to corresponding memory.  0:  seg-conf-trans or seg-trans
          *  is not ended or not occurred.
          */
-        uint32_t dma_seg_trans_done_int_raw:1;
+        uint32_t dma_seg_trans_done_int:1;
         /** seg_magic_err_int_raw : R/WTC/SS; bitpos: [14]; default: 0;
          *  The raw bit for SPI_SEG_MAGIC_ERR_INT interrupt. 1: The magic value in CONF buffer
          *  is error in the DMA seg-conf-trans. 0: others.
          */
-        uint32_t seg_magic_err_int_raw:1;  //this field is only for GPSPI2
+        uint32_t seg_magic_err_int_raw:1;  //this field is only forPI2
         /** slv_buf_addr_err_int_raw : R/WTC/SS; bitpos: [15]; default: 0;
          *  The raw bit for SPI_SLV_BUF_ADDR_ERR_INT interrupt. 1: The accessing data address
          *  of the current SPI slave mode CPU controlled FD, Wr_BUF or Rd_BUF transmission is
          *  bigger than 63. 0: Others.
          */
-        uint32_t slv_buf_addr_err_int_raw:1;
+        uint32_t slv_buf_addr_err_int:1;
         /** slv_cmd_err_int_raw : R/WTC/SS; bitpos: [16]; default: 0;
          *  The raw bit for SPI_SLV_CMD_ERR_INT interrupt. 1: The slave command value in the
          *  current SPI slave HD mode transmission is not supported. 0: Others.
          */
-        uint32_t slv_cmd_err_int_raw:1;
+        uint32_t slv_cmd_err_int:1;
         /** mst_rx_afifo_wfull_err_int_raw : R/WTC/SS; bitpos: [17]; default: 0;
          *  The raw bit for SPI_MST_RX_AFIFO_WFULL_ERR_INT interrupt. 1: There is a RX AFIFO
          *  write-full error when SPI inputs data in master mode. 0: Others.
          */
-        uint32_t mst_rx_afifo_wfull_err_int_raw:1;
+        uint32_t mst_rx_afifo_wfull_err_int:1;
         /** mst_tx_afifo_rempty_err_int_raw : R/WTC/SS; bitpos: [18]; default: 0;
          *  The raw bit for SPI_MST_TX_AFIFO_REMPTY_ERR_INT interrupt. 1: There is a TX BUF
          *  AFIFO read-empty error when SPI outputs data in master mode. 0: Others.
          */
-        uint32_t mst_tx_afifo_rempty_err_int_raw:1;
+        uint32_t mst_tx_afifo_rempty_err_int:1;
         /** app2_int_raw : R/WTC/SS; bitpos: [19]; default: 0;
          *  The raw bit for SPI_APP2_INT interrupt. The value is only controlled by software.
          */
-        uint32_t app2_int_raw:1;
+        uint32_t app2_int:1;
         /** app1_int_raw : R/WTC/SS; bitpos: [20]; default: 0;
          *  The raw bit for SPI_APP1_INT interrupt. The value is only controlled by software.
          */
-        uint32_t app1_int_raw:1;
+        uint32_t app1_int:1;
         uint32_t reserved_21:11;
     };
     uint32_t val;
-} spi_dma_int_raw_reg_t;
-
-/** Type of dma_int_st register
- *  SPI interrupt status register
- */
-typedef union {
-    struct {
-        /** dma_infifo_full_err_int_st : RO; bitpos: [0]; default: 0;
-         *  The status bit for SPI_DMA_INFIFO_FULL_ERR_INT interrupt.
-         */
-        uint32_t dma_infifo_full_err_int_st:1;
-        /** dma_outfifo_empty_err_int_st : RO; bitpos: [1]; default: 0;
-         *  The status bit for SPI_DMA_OUTFIFO_EMPTY_ERR_INT interrupt.
-         */
-        uint32_t dma_outfifo_empty_err_int_st:1;
-        /** slv_ex_qpi_int_st : RO; bitpos: [2]; default: 0;
-         *  The status bit for SPI slave Ex_QPI interrupt.
-         */
-        uint32_t slv_ex_qpi_int_st:1;
-        /** slv_en_qpi_int_st : RO; bitpos: [3]; default: 0;
-         *  The status bit for SPI slave En_QPI interrupt.
-         */
-        uint32_t slv_en_qpi_int_st:1;
-        /** slv_cmd7_int_st : RO; bitpos: [4]; default: 0;
-         *  The status bit for SPI slave CMD7 interrupt.
-         */
-        uint32_t slv_cmd7_int_st:1;
-        /** slv_cmd8_int_st : RO; bitpos: [5]; default: 0;
-         *  The status bit for SPI slave CMD8 interrupt.
-         */
-        uint32_t slv_cmd8_int_st:1;
-        /** slv_cmd9_int_st : RO; bitpos: [6]; default: 0;
-         *  The status bit for SPI slave CMD9 interrupt.
-         */
-        uint32_t slv_cmd9_int_st:1;
-        /** slv_cmda_int_st : RO; bitpos: [7]; default: 0;
-         *  The status bit for SPI slave CMDA interrupt.
-         */
-        uint32_t slv_cmda_int_st:1;
-        /** slv_rd_dma_done_int_st : RO; bitpos: [8]; default: 0;
-         *  The status bit for SPI_SLV_RD_DMA_DONE_INT interrupt.
-         */
-        uint32_t slv_rd_dma_done_int_st:1;
-        /** slv_wr_dma_done_int_st : RO; bitpos: [9]; default: 0;
-         *  The status bit for SPI_SLV_WR_DMA_DONE_INT interrupt.
-         */
-        uint32_t slv_wr_dma_done_int_st:1;
-        /** slv_rd_buf_done_int_st : RO; bitpos: [10]; default: 0;
-         *  The status bit for SPI_SLV_RD_BUF_DONE_INT interrupt.
-         */
-        uint32_t slv_rd_buf_done_int_st:1;
-        /** slv_wr_buf_done_int_st : RO; bitpos: [11]; default: 0;
-         *  The status bit for SPI_SLV_WR_BUF_DONE_INT interrupt.
-         */
-        uint32_t slv_wr_buf_done_int_st:1;
-        /** trans_done_int_st : RO; bitpos: [12]; default: 0;
-         *  The status bit for SPI_TRANS_DONE_INT interrupt.
-         */
-        uint32_t trans_done_int_st:1;
-        /** dma_seg_trans_done_int_st : RO; bitpos: [13]; default: 0;
-         *  The status bit for SPI_DMA_SEG_TRANS_DONE_INT interrupt.
-         */
-        uint32_t dma_seg_trans_done_int_st:1;
-        /** seg_magic_err_int_st : RO; bitpos: [14]; default: 0;
-         *  The status bit for SPI_SEG_MAGIC_ERR_INT interrupt.
-         */
-        uint32_t seg_magic_err_int_st:1;  //this field is only for GPSPI2
-        /** slv_buf_addr_err_int_st : RO; bitpos: [15]; default: 0;
-         *  The status bit for SPI_SLV_BUF_ADDR_ERR_INT interrupt.
-         */
-        uint32_t slv_buf_addr_err_int_st:1;
-        /** slv_cmd_err_int_st : RO; bitpos: [16]; default: 0;
-         *  The status bit for SPI_SLV_CMD_ERR_INT interrupt.
-         */
-        uint32_t slv_cmd_err_int_st:1;
-        /** mst_rx_afifo_wfull_err_int_st : RO; bitpos: [17]; default: 0;
-         *  The status bit for SPI_MST_RX_AFIFO_WFULL_ERR_INT interrupt.
-         */
-        uint32_t mst_rx_afifo_wfull_err_int_st:1;
-        /** mst_tx_afifo_rempty_err_int_st : RO; bitpos: [18]; default: 0;
-         *  The status bit for SPI_MST_TX_AFIFO_REMPTY_ERR_INT interrupt.
-         */
-        uint32_t mst_tx_afifo_rempty_err_int_st:1;
-        /** app2_int_st : RO; bitpos: [19]; default: 0;
-         *  The status bit for SPI_APP2_INT interrupt.
-         */
-        uint32_t app2_int_st:1;
-        /** app1_int_st : RO; bitpos: [20]; default: 0;
-         *  The status bit for SPI_APP1_INT interrupt.
-         */
-        uint32_t app1_int_st:1;
-        uint32_t reserved_21:11;
-    };
-    uint32_t val;
-} spi_dma_int_st_reg_t;
-
-/** Type of dma_int_set register
- *  SPI interrupt software set register
- */
-typedef union {
-    struct {
-        /** dma_infifo_full_err_int_set : WT; bitpos: [0]; default: 0;
-         *  The software set bit for SPI_DMA_INFIFO_FULL_ERR_INT interrupt.
-         */
-        uint32_t dma_infifo_full_err_int_set:1;
-        /** dma_outfifo_empty_err_int_set : WT; bitpos: [1]; default: 0;
-         *  The software set bit for SPI_DMA_OUTFIFO_EMPTY_ERR_INT interrupt.
-         */
-        uint32_t dma_outfifo_empty_err_int_set:1;
-        /** slv_ex_qpi_int_set : WT; bitpos: [2]; default: 0;
-         *  The software set bit for SPI slave Ex_QPI interrupt.
-         */
-        uint32_t slv_ex_qpi_int_set:1;
-        /** slv_en_qpi_int_set : WT; bitpos: [3]; default: 0;
-         *  The software set bit for SPI slave En_QPI interrupt.
-         */
-        uint32_t slv_en_qpi_int_set:1;
-        /** slv_cmd7_int_set : WT; bitpos: [4]; default: 0;
-         *  The software set bit for SPI slave CMD7 interrupt.
-         */
-        uint32_t slv_cmd7_int_set:1;
-        /** slv_cmd8_int_set : WT; bitpos: [5]; default: 0;
-         *  The software set bit for SPI slave CMD8 interrupt.
-         */
-        uint32_t slv_cmd8_int_set:1;
-        /** slv_cmd9_int_set : WT; bitpos: [6]; default: 0;
-         *  The software set bit for SPI slave CMD9 interrupt.
-         */
-        uint32_t slv_cmd9_int_set:1;
-        /** slv_cmda_int_set : WT; bitpos: [7]; default: 0;
-         *  The software set bit for SPI slave CMDA interrupt.
-         */
-        uint32_t slv_cmda_int_set:1;
-        /** slv_rd_dma_done_int_set : WT; bitpos: [8]; default: 0;
-         *  The software set bit for SPI_SLV_RD_DMA_DONE_INT interrupt.
-         */
-        uint32_t slv_rd_dma_done_int_set:1;
-        /** slv_wr_dma_done_int_set : WT; bitpos: [9]; default: 0;
-         *  The software set bit for SPI_SLV_WR_DMA_DONE_INT interrupt.
-         */
-        uint32_t slv_wr_dma_done_int_set:1;
-        /** slv_rd_buf_done_int_set : WT; bitpos: [10]; default: 0;
-         *  The software set bit for SPI_SLV_RD_BUF_DONE_INT interrupt.
-         */
-        uint32_t slv_rd_buf_done_int_set:1;
-        /** slv_wr_buf_done_int_set : WT; bitpos: [11]; default: 0;
-         *  The software set bit for SPI_SLV_WR_BUF_DONE_INT interrupt.
-         */
-        uint32_t slv_wr_buf_done_int_set:1;
-        /** trans_done_int_set : WT; bitpos: [12]; default: 0;
-         *  The software set bit for SPI_TRANS_DONE_INT interrupt.
-         */
-        uint32_t trans_done_int_set:1;
-        /** dma_seg_trans_done_int_set : WT; bitpos: [13]; default: 0;
-         *  The software set bit for SPI_DMA_SEG_TRANS_DONE_INT interrupt.
-         */
-        uint32_t dma_seg_trans_done_int_set:1;
-        /** seg_magic_err_int_set : WT; bitpos: [14]; default: 0;
-         *  The software set bit for SPI_SEG_MAGIC_ERR_INT interrupt.
-         */
-        uint32_t seg_magic_err_int_set:1;  //this field is only for GPSPI2
-        /** slv_buf_addr_err_int_set : WT; bitpos: [15]; default: 0;
-         *  The software set bit for SPI_SLV_BUF_ADDR_ERR_INT interrupt.
-         */
-        uint32_t slv_buf_addr_err_int_set:1;
-        /** slv_cmd_err_int_set : WT; bitpos: [16]; default: 0;
-         *  The software set bit for SPI_SLV_CMD_ERR_INT interrupt.
-         */
-        uint32_t slv_cmd_err_int_set:1;
-        /** mst_rx_afifo_wfull_err_int_set : WT; bitpos: [17]; default: 0;
-         *  The software set bit for SPI_MST_RX_AFIFO_WFULL_ERR_INT interrupt.
-         */
-        uint32_t mst_rx_afifo_wfull_err_int_set:1;
-        /** mst_tx_afifo_rempty_err_int_set : WT; bitpos: [18]; default: 0;
-         *  The software set bit for SPI_MST_TX_AFIFO_REMPTY_ERR_INT interrupt.
-         */
-        uint32_t mst_tx_afifo_rempty_err_int_set:1;
-        /** app2_int_set : WT; bitpos: [19]; default: 0;
-         *  The software set bit for SPI_APP2_INT interrupt.
-         */
-        uint32_t app2_int_set:1;
-        /** app1_int_set : WT; bitpos: [20]; default: 0;
-         *  The software set bit for SPI_APP1_INT interrupt.
-         */
-        uint32_t app1_int_set:1;
-        uint32_t reserved_21:11;
-    };
-    uint32_t val;
-} spi_dma_int_set_reg_t;
-
+} spi_dma_int_reg_t;
 
 /** Type of wn register
  *  SPI CPU-controlled buffer
@@ -1378,11 +999,11 @@ typedef struct {
     volatile spi_din_num_reg_t din_num;
     volatile spi_dout_mode_reg_t dout_mode;
     volatile spi_dma_conf_reg_t dma_conf;
-    volatile spi_dma_int_ena_reg_t dma_int_ena;
-    volatile spi_dma_int_clr_reg_t dma_int_clr;
-    volatile spi_dma_int_raw_reg_t dma_int_raw;
-    volatile spi_dma_int_st_reg_t dma_int_st;
-    volatile spi_dma_int_set_reg_t dma_int_set;
+    volatile spi_dma_int_reg_t dma_int_ena;
+    volatile spi_dma_int_reg_t dma_int_clr;
+    volatile spi_dma_int_reg_t dma_int_raw;
+    volatile spi_dma_int_reg_t dma_int_sta;
+    volatile spi_dma_int_reg_t dma_int_set;
     uint32_t reserved_048[20];
     volatile spi_wn_reg_t data_buf[16];
     uint32_t reserved_0d8[2];

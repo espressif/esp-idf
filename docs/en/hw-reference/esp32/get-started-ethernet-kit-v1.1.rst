@@ -140,9 +140,9 @@ To take advantage of the PoE functionality the **RJ45 Port** of the Ethernet boa
   :widths: 40 150
   :header-rows: 1
 
-  * - Key Component 
+  * - Key Component
     - Description
-  * - Board A Connector  
+  * - Board A Connector
     - Four female (left) and four male (right) header pins for connecting the PoE board (B) to :ref:`Ethernet board (A) <get-started-esp32-ethernet-kit-a-v1.1-layout>`. The pins on the left accept power coming from a PoE switch. The pins on the right deliver 5 V power supply to the  Ethernet board (A).
   * - External Power Terminals
     - Optional power supply (26.6 ~ 54 V) to the PoE board (B).

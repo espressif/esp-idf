@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -203,7 +203,11 @@ void uhci_uart_install(void)
         .data_bits = UART_DATA_8_BITS,
         .parity = UART_PARITY_DISABLE,
         .stop_bits = UART_STOP_BITS_1,
+#ifdef CONFIG_EXAMPLE_HCI_UART_FLOW_CTRL_ENABLE
         .flow_ctrl = UART_HW_FLOWCTRL_CTS_RTS,
+#else
+        .flow_ctrl = UART_HW_FLOWCTRL_DISABLE,
+#endif
         .rx_flow_ctrl_thresh = UART_RX_THRS,
         .source_clk = UART_SCLK_DEFAULT,
     };
@@ -284,4 +288,5 @@ void app_main(void)
              "--Baudrate: %d", UART_HCI_NUM,
              GPIO_UART_TXD_OUT, GPIO_UART_RXD_IN, GPIO_UART_RTS_OUT, GPIO_UART_CTS_IN,
              CONFIG_EXAMPLE_HCI_UART_BAUDRATE);
+
 }

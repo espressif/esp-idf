@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,12 +19,14 @@
 #include "esp_private/gdma.h"
 #elif CONFIG_IDF_TARGET_ESP32S2
 #include "hal/spi_types.h"
+#include "esp_private/spi_common_internal.h"
 #elif CONFIG_IDF_TARGET_ESP32
 #include "driver/i2s_types.h"
 #endif
 
 #include "esp_adc/adc_filter.h"
 #include "esp_adc/adc_monitor.h"
+#include "adc_dma_internal.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -46,6 +48,7 @@ typedef enum {
 typedef struct adc_iir_filter_t adc_iir_filter_t;
 typedef struct adc_monitor_t adc_monitor_t;
 typedef struct adc_continuous_ctx_t adc_continuous_ctx_t;
+typedef bool (*adc_dma_intr_func_t)(adc_continuous_ctx_t *adc_digi_ctx);
 
 /**
  * @brief ADC iir filter context
@@ -73,14 +76,6 @@ struct adc_monitor_t {
 struct adc_continuous_ctx_t {
     uint8_t                         *rx_dma_buf;                //dma buffer
     adc_hal_dma_ctx_t               hal;                        //hal context
-#if SOC_GDMA_SUPPORTED
-    gdma_channel_handle_t           rx_dma_channel;             //dma rx channel handle
-#elif CONFIG_IDF_TARGET_ESP32S2
-    spi_host_device_t               spi_host;                   //ADC uses this SPI DMA
-#elif CONFIG_IDF_TARGET_ESP32
-    i2s_port_t                      i2s_host;                   //ADC uses this I2S DMA
-#endif
-    intr_handle_t                   dma_intr_hdl;               //DMA Interrupt handler
     RingbufHandle_t                 ringbuf_hdl;                //RX ringbuffer handler
     void*                           ringbuf_storage;            //Ringbuffer storage buffer
     void*                           ringbuf_struct;             //Ringbuffer structure buffer
@@ -104,8 +99,9 @@ struct adc_continuous_ctx_t {
 #if SOC_ADC_MONITOR_SUPPORTED
     adc_monitor_t                   *adc_monitor[SOC_ADC_DIGI_MONITOR_NUM];    // adc monitor context
 #endif
+    adc_dma_t                       adc_dma;
+    adc_dma_intr_func_t             adc_intr_func;
 };
-
 
 #ifdef __cplusplus
 }

@@ -1,16 +1,8 @@
-// Copyright 2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #ifndef _SOC_SYSTEM_REG_H_
 #define _SOC_SYSTEM_REG_H_
 
@@ -282,12 +274,6 @@ extern "C" {
 #define SYSTEM_TSENS_CLK_EN_M  (BIT(10))
 #define SYSTEM_TSENS_CLK_EN_V  0x1
 #define SYSTEM_TSENS_CLK_EN_S  10
-/* SYSTEM_UART2_CLK_EN : R/W ;bitpos:[9] ;default: 1'b1 ; */
-/*description: */
-#define SYSTEM_UART2_CLK_EN  (BIT(9))
-#define SYSTEM_UART2_CLK_EN_M  (BIT(9))
-#define SYSTEM_UART2_CLK_EN_V  0x1
-#define SYSTEM_UART2_CLK_EN_S  9
 /* SYSTEM_LCD_CAM_CLK_EN : R/W ;bitpos:[8] ;default: 1'b0 ; */
 /*description: */
 #define SYSTEM_LCD_CAM_CLK_EN  (BIT(8))
@@ -538,12 +524,6 @@ extern "C" {
 #define SYSTEM_TSENS_RST_M  (BIT(10))
 #define SYSTEM_TSENS_RST_V  0x1
 #define SYSTEM_TSENS_RST_S  10
-/* SYSTEM_UART2_RST : R/W ;bitpos:[9] ;default: 1'b0 ; */
-/*description: */
-#define SYSTEM_UART2_RST  (BIT(9))
-#define SYSTEM_UART2_RST_M  (BIT(9))
-#define SYSTEM_UART2_RST_V  0x1
-#define SYSTEM_UART2_RST_S  9
 /* SYSTEM_LCD_CAM_RST : R/W ;bitpos:[8] ;default: 1'b1 ; */
 /*description: */
 #define SYSTEM_LCD_CAM_RST  (BIT(8))

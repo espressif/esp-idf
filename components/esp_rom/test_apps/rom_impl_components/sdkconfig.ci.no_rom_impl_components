@@ -1,0 +1,6 @@
+CONFIG_HAL_WDT_USE_ROM_IMPL=n
+CONFIG_HAL_SYSTIMER_USE_ROM_IMPL=n
+CONFIG_HEAP_TLSF_USE_ROM_IMPL=n
+CONFIG_SPI_FLASH_ROM_IMPL=n
+
+# update tools/test_apps/.build-test-rules.yml if adding more ROM options above!

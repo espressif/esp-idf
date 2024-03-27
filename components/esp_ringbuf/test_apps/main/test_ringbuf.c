@@ -1,9 +1,10 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "sdkconfig.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include "freertos/FreeRTOS.h"
@@ -650,7 +651,7 @@ static void queue_set_receiving_task(void *queue_set_handle)
             receive_check_and_return_item_byte_buffer(buffer_handles[2], small_item, SMALL_ITEM_SIZE, 0, false);
             items_rec_count[2] ++;
         } else {
-            TEST_ASSERT_MESSAGE( false, "Error with queue set member");
+            TEST_ASSERT_MESSAGE(false, "Error with queue set member");
         }
 
         //Check for completion
@@ -954,8 +955,8 @@ TEST_CASE("Test ring buffer SMP", "[esp_ringbuf]")
 
         for (int prior_mod = -1; prior_mod < 2; prior_mod++) {  //Test different relative priorities
             //Test every permutation of core affinity
-            for (int send_core = 0; send_core < portNUM_PROCESSORS; send_core++) {
-                for (int rec_core = 0; rec_core < portNUM_PROCESSORS; rec_core ++) {
+            for (int send_core = 0; send_core < CONFIG_FREERTOS_NUMBER_OF_CORES; send_core++) {
+                for (int rec_core = 0; rec_core < CONFIG_FREERTOS_NUMBER_OF_CORES; rec_core ++) {
                     esp_rom_printf("Type: %d, PM: %d, SC: %d, RC: %d\n", buf_type, prior_mod, send_core, rec_core);
                     xTaskCreatePinnedToCore(send_task, "send tsk", 2048, (void *)&task_args, 10 + prior_mod, NULL, send_core);
                     xTaskCreatePinnedToCore(rec_task, "rec tsk", 2048, (void *)&task_args, 10, NULL, rec_core);
@@ -998,8 +999,8 @@ TEST_CASE("Test static ring buffer SMP", "[esp_ringbuf]")
 
         for (int prior_mod = -1; prior_mod < 2; prior_mod++) {  //Test different relative priorities
             //Test every permutation of core affinity
-            for (int send_core = 0; send_core < portNUM_PROCESSORS; send_core++) {
-                for (int rec_core = 0; rec_core < portNUM_PROCESSORS; rec_core ++) {
+            for (int send_core = 0; send_core < CONFIG_FREERTOS_NUMBER_OF_CORES; send_core++) {
+                for (int rec_core = 0; rec_core < CONFIG_FREERTOS_NUMBER_OF_CORES; rec_core ++) {
                     esp_rom_printf("Type: %d, PM: %d, SC: %d, RC: %d\n", buf_type, prior_mod, send_core, rec_core);
                     xTaskCreatePinnedToCore(send_task, "send tsk", 2048, (void *)&task_args, 10 + prior_mod, NULL, send_core);
                     xTaskCreatePinnedToCore(rec_task, "rec tsk", 2048, (void *)&task_args, 10, NULL, rec_core);
@@ -1045,7 +1046,7 @@ static IRAM_ATTR __attribute__((noinline)) bool iram_ringbuf_test(void)
 
 TEST_CASE("Test ringbuffer functions work with flash cache disabled", "[esp_ringbuf]")
 {
-    TEST_ASSERT( iram_ringbuf_test() );
+    TEST_ASSERT(iram_ringbuf_test());
 }
 #endif /* !CONFIG_RINGBUF_PLACE_FUNCTIONS_INTO_FLASH && !CONFIG_RINGBUF_PLACE_ISR_FUNCTIONS_INTO_FLASH */
 
@@ -1111,7 +1112,7 @@ TEST_CASE("Test ringbuffer with caps", "[esp_ringbuf]")
     StaticRingbuffer_t *rb_obj;
 
     // Create ring buffer with caps
-    rb_handle = xRingbufferCreateWithCaps(BUFFER_SIZE, RINGBUF_TYPE_NOSPLIT, (MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT));
+    rb_handle = xRingbufferCreateWithCaps(BUFFER_SIZE, RINGBUF_TYPE_NOSPLIT, (MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT));
     TEST_ASSERT_NOT_EQUAL(NULL, rb_handle);
 
     // Get the ring buffer's memory

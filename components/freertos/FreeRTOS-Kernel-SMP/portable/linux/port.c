@@ -298,7 +298,7 @@ void vPortYieldFromISR( void )
 
     xThreadToSuspend = prvGetThreadFromTask( xTaskGetCurrentTaskHandle() );
 
-    vTaskSwitchContext(xPortGetCoreID());
+    vTaskSwitchContext();
 
     xThreadToResume = prvGetThreadFromTask( xTaskGetCurrentTaskHandle() );
 
@@ -419,7 +419,7 @@ static void vPortSystemTickHandler( int sig )
 #if ( configUSE_PREEMPTION == 1 )
     if (xSwitchRequired == pdTRUE) {
         /* Select Next Task. */
-        vTaskSwitchContext(xPortGetCoreID());
+        vTaskSwitchContext();
 
         pxThreadToResume = prvGetThreadFromTask( xTaskGetCurrentTaskHandle() );
 
@@ -600,6 +600,10 @@ unsigned long ulPortGetRunTime( void )
     return ( unsigned long ) xTimes.tms_utime;
 }
 /*-----------------------------------------------------------*/
+bool portVALID_LIST_MEM(const void *ptr)
+{
+    return true;
+}
 
 bool portVALID_TCB_MEM(const void *ptr)
 {

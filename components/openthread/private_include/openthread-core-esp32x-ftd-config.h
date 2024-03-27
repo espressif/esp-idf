@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -361,7 +361,7 @@
  * `RadioSpinel` platform is used.
  *
  */
-#define OPENTHREAD_CONFIG_PLATFORM_RADIO_SPINEL_RX_FRAME_BUFFER_SIZE 1024
+#define OPENTHREAD_CONFIG_PLATFORM_RADIO_SPINEL_RX_FRAME_BUFFER_SIZE CONFIG_OPENTHREAD_SPINEL_RX_FRAME_BUFFER_SIZE
 
 /**
  * @def OPENTHREAD_CONFIG_PLATFORM_USEC_TIMER_ENABLE
@@ -380,6 +380,22 @@
  *
  */
 #define OPENTHREAD_CONFIG_PING_SENDER_ENABLE 1
+
+/**
+ * @def OPENTHREAD_CONFIG_MLE_MAX_CHILDREN
+ *
+ * The maximum number of children.
+ *
+ */
+#define OPENTHREAD_CONFIG_MLE_MAX_CHILDREN CONFIG_OPENTHREAD_MLE_MAX_CHILDREN
+
+/**
+ * @def OPENTHREAD_CONFIG_TMF_ADDRESS_CACHE_ENTRIES
+ *
+ * The number of EID-to-RLOC cache entries.
+ *
+ */
+#define OPENTHREAD_CONFIG_TMF_ADDRESS_CACHE_ENTRIES CONFIG_OPENTHREAD_TMF_ADDR_CACHE_ENTRIES
 
 #if CONFIG_OPENTHREAD_DUA_ENABLE
 /**
@@ -418,6 +434,14 @@
  */
 #if CONFIG_OPENTHREAD_COMMISSIONER
 #define OPENTHREAD_CONFIG_COMMISSIONER_ENABLE 1
+
+/**
+ * @def OPENTHREAD_CONFIG_COMMISSIONER_MAX_JOINER_ENTRIES
+ *
+ * The maximum number of Joiner entries maintained by the Commissioner
+ *
+ */
+#define OPENTHREAD_CONFIG_COMMISSIONER_MAX_JOINER_ENTRIES CONFIG_OPENTHREAD_COMM_MAX_JOINER_ENTRIES
 #endif
 
 #if CONFIG_OPENTHREAD_MACFILTER_ENABLE
@@ -440,6 +464,16 @@
 #ifndef OPENTHREAD_CONFIG_SRP_CLIENT_ENABLE
 #define OPENTHREAD_CONFIG_SRP_CLIENT_ENABLE 1
 #endif
+
+/**
+ * @def OPENTHREAD_CONFIG_SRP_CLIENT_BUFFERS_MAX_SERVICES
+ *
+ * Specifies number of service entries in the SRP client service pool.
+ *
+ * This config is applicable only when `OPENTHREAD_CONFIG_SRP_CLIENT_BUFFERS_ENABLE` is enabled.
+ *
+ */
+#define OPENTHREAD_CONFIG_SRP_CLIENT_BUFFERS_MAX_SERVICES CONFIG_OPENTHREAD_SRP_CLIENT_MAX_SERVICES
 #endif
 
 /**
@@ -517,7 +551,6 @@
 #define OPENTHREAD_CONFIG_OPERATIONAL_DATASET_AUTO_INIT 1
 #endif
 
-
 /**
  *
  * Define as 1 to enable support for allocating message pool buffer in PSRAM
@@ -534,6 +567,57 @@
  *
  */
 #define OPENTHREAD_CONFIG_PLATFORM_MESSAGE_MANAGEMENT 1
+#endif
+
+/**
+ * @def OPENTHREAD_CONFIG_TIME_SYNC_ENABLE
+ *
+ * Define as 1 to enable the time synchronization service feature.
+ *
+ */
+#if CONFIG_OPENTHREAD_TIME_SYNC
+#define OPENTHREAD_CONFIG_TIME_SYNC_ENABLE 1
+#endif
+
+/**
+ * @def OPENTHREAD_CONFIG_RADIO_STATS_ENABLE
+ *
+ * Set to 1 to enable support for Radio Statistics. Note that this option only works for OPENTHREAD_FTD and
+ * OPENTHREAD_MTD.
+ *
+ */
+#if CONFIG_OPENTHREAD_RADIO_STATS_ENABLE
+#define OPENTHREAD_CONFIG_RADIO_STATS_ENABLE 1
+#endif
+
+/**
+ * @def OPENTHREAD_CONFIG_TMF_ADDRESS_QUERY_TIMEOUT
+ *
+ * The timeout value (in seconds) waiting for a address notification response after sending an address query.
+ *
+ */
+#ifndef OPENTHREAD_CONFIG_TMF_ADDRESS_QUERY_TIMEOUT
+#define OPENTHREAD_CONFIG_TMF_ADDRESS_QUERY_TIMEOUT CONFIG_OPENTHREAD_ADDRESS_QUERY_TIMEOUT
+#endif
+
+/**
+ * @def OPENTHREAD_CONFIG_TMF_ADDRESS_QUERY_INITIAL_RETRY_DELAY
+ *
+ * Initial retry delay for address query (in seconds).
+ *
+ */
+#ifndef OPENTHREAD_CONFIG_TMF_ADDRESS_QUERY_INITIAL_RETRY_DELAY
+#define OPENTHREAD_CONFIG_TMF_ADDRESS_QUERY_INITIAL_RETRY_DELAY CONFIG_OPENTHREAD_ADDRESS_QUERY_RETRY_DELAY
+#endif
+
+/**
+ * @def OPENTHREAD_CONFIG_TMF_ADDRESS_QUERY_MAX_RETRY_DELAY
+ *
+ * Maximum retry delay for address query (in seconds).
+ *
+ */
+#ifndef OPENTHREAD_CONFIG_TMF_ADDRESS_QUERY_MAX_RETRY_DELAY
+#define OPENTHREAD_CONFIG_TMF_ADDRESS_QUERY_MAX_RETRY_DELAY CONFIG_OPENTHREAD_ADDRESS_QUERY_MAX_RETRY_DELAY
 #endif
 
 #define OPENTHREAD_FTD 1

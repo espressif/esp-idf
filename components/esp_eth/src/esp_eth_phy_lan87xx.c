@@ -6,6 +6,8 @@
 #include <string.h>
 #include <stdlib.h>
 #include <sys/cdefs.h>
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 #include "esp_log.h"
 #include "esp_check.h"
 #include "esp_eth_phy_802_3.h"
@@ -290,6 +292,7 @@ static esp_err_t lan87xx_reset_hw(esp_eth_phy_t *phy)
     /* It was observed that assert nRST signal on LAN87xx needs to be a little longer than the minimum specified in datasheet */
     return esp_eth_phy_802_3_reset_hw(esp_eth_phy_into_phy_802_3(phy), 150);
 }
+
 static esp_err_t lan87xx_autonego_ctrl(esp_eth_phy_t *phy, eth_phy_autoneg_cmd_t cmd, bool *autonego_en_stat)
 {
     esp_err_t ret = ESP_OK;
@@ -313,6 +316,19 @@ static esp_err_t lan87xx_loopback(esp_eth_phy_t *phy, bool enable)
     ESP_GOTO_ON_ERROR(lan87xx_autonego_ctrl(phy, ESP_ETH_PHY_AUTONEGO_G_STAT, &auto_nego_en), err, TAG, "get status of autonegotiation failed");
     ESP_GOTO_ON_FALSE(!(auto_nego_en && enable), ESP_ERR_INVALID_STATE, err, TAG, "Unable to set loopback while autonegotiation is enabled. Disable it to use loopback");
     return esp_eth_phy_802_3_loopback(phy_802_3, enable);
+err:
+    return ret;
+}
+
+static esp_err_t lan87xx_set_speed(esp_eth_phy_t *phy, eth_speed_t speed)
+{
+    esp_err_t ret = ESP_OK;
+    phy_802_3_t *phy_802_3 = esp_eth_phy_into_phy_802_3(phy);
+
+    /* It was observed that a delay needs to be introduced after setting speed and prior driver's start.
+    Otherwise, the very first read of PHY registers is not valid data (0xFFFF's). */
+    ESP_GOTO_ON_ERROR(esp_eth_phy_802_3_set_speed(phy_802_3, speed), err, TAG, "set speed failed");
+    vTaskDelay(pdMS_TO_TICKS(10));
 err:
     return ret;
 }
@@ -359,6 +375,7 @@ esp_eth_phy_t *esp_eth_phy_new_lan87xx(const eth_phy_config_t *config)
     lan87xx->phy_802_3.parent.get_link = lan87xx_get_link;
     lan87xx->phy_802_3.parent.autonego_ctrl = lan87xx_autonego_ctrl;
     lan87xx->phy_802_3.parent.loopback = lan87xx_loopback;
+    lan87xx->phy_802_3.parent.set_speed = lan87xx_set_speed;
 
     return &lan87xx->phy_802_3.parent;
 err:

@@ -280,7 +280,7 @@ static inline void rtcio_ll_force_unhold_all(void)
  */
 static inline void rtcio_ll_wakeup_enable(int rtcio_num, rtcio_ll_wake_type_t type)
 {
-    RTCIO.pin[rtcio_num].wakeup_enable = 0x1;
+    RTCIO.pin[rtcio_num].wakeup_enable = 1;
     RTCIO.pin[rtcio_num].int_type = type;
 }
 
@@ -360,7 +360,7 @@ static inline void rtcio_ll_disable_sleep_setting(int rtcio_num)
 }
 
 /**
- * Set specific logic level on an RTC IO pin as a wakeup trigger.
+ * Set specific logic level on an RTC IO pin as a ext0 wakeup trigger.
  *
  * @param rtcio_num The index of rtcio. 0 ~ MAX(rtcio).
  * @param level Logic level (0)

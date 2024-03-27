@@ -1,0 +1,16 @@
+# Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
+
+components/esp_driver_i2c/test_apps/i2c_test_apps:
+  disable:
+    - if: SOC_I2C_SUPPORTED != 1
+  disable_test:
+    - if: IDF_TARGET == "esp32p4"
+      temporary: true
+      reason: lack of runners
+  depends_components:
+    - esp_driver_i2c
+    # Following dependency is needed because they might increase lazy installed memory
+    # that can cause sleep retention memory leak check failed.
+    - components/ieee802154/**
+    - components/esp_coex/**
+    - components/esp_phy/**

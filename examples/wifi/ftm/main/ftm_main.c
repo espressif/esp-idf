@@ -70,6 +70,8 @@ wifi_config_t g_ap_config = {
 
 #define ETH_ALEN 6
 #define MAX_CONNECT_RETRY_ATTEMPTS  5
+#define DEFAULT_WAIT_TIME_MS        (10 * 1000)
+#define MAX_FTM_BURSTS          8
 #define DEFAULT_AP_CHANNEL      1
 #define DEFAULT_AP_BANDWIDTH    20
 
@@ -85,7 +87,6 @@ static const int DISCONNECTED_BIT = BIT1;
 static EventGroupHandle_t s_ftm_event_group;
 static const int FTM_REPORT_BIT = BIT0;
 static const int FTM_FAILURE_BIT = BIT1;
-static wifi_ftm_report_entry_t *s_ftm_report;
 static uint8_t s_ftm_report_num_entries;
 static uint32_t s_rtt_est, s_dist_est;
 static bool s_ap_started;
@@ -137,10 +138,12 @@ static void event_handler(void *arg, esp_event_base_t event_base,
 
         s_rtt_est = event->rtt_est;
         s_dist_est = event->dist_est;
-        s_ftm_report = event->ftm_report_data;
         s_ftm_report_num_entries = event->ftm_report_num_entries;
         if (event->status == FTM_STATUS_SUCCESS) {
             xEventGroupSetBits(s_ftm_event_group, FTM_REPORT_BIT);
+        } else if (event->status == FTM_STATUS_USER_TERM) {
+            /* Do Nothing */
+            ESP_LOGI(TAG_STA, "User terminated FTM procedure");
         } else {
             ESP_LOGI(TAG_STA, "FTM procedure with Peer("MACSTR") failed! (Status - %d)",
                      MAC2STR(event->peer_mac), event->status);
@@ -153,21 +156,38 @@ static void event_handler(void *arg, esp_event_base_t event_base,
     }
 }
 
-static void ftm_process_report(void)
+static void ftm_print_report(void)
 {
     int i;
     char *log = NULL;
+    wifi_ftm_report_entry_t *ftm_report = NULL;
 
-    if (s_ftm_report_num_entries == 0)
+    if (s_ftm_report_num_entries == 0) {
+        /* FTM Failure case */
         return;
+    }
 
-    if (!g_report_lvl)
-        return;
+    if (!g_report_lvl) {
+        /* No need to print, just free the internal FTM report */
+        esp_wifi_ftm_get_report(NULL, 0);
+        goto exit;
+    }
+
+    ftm_report = malloc(sizeof(wifi_ftm_report_entry_t) * s_ftm_report_num_entries);
+    if (!ftm_report) {
+        ESP_LOGE(TAG_STA, "Failed to alloc buffer for FTM report");
+        goto exit;
+    }
+    bzero(ftm_report, sizeof(wifi_ftm_report_entry_t) * s_ftm_report_num_entries);
+    if (ESP_OK != esp_wifi_ftm_get_report(ftm_report, s_ftm_report_num_entries)) {
+        ESP_LOGE(TAG_STA, "Could not get FTM report");
+        goto exit;
+    }
 
     log = malloc(200);
     if (!log) {
         ESP_LOGE(TAG_STA, "Failed to alloc buffer for FTM report");
-        return;
+        goto exit;
     }
 
     bzero(log, 200);
@@ -181,24 +201,32 @@ static void ftm_process_report(void)
 
         bzero(log, 200);
         if (g_report_lvl & BIT0) {
-            log_ptr += sprintf(log_ptr, "%6d|", s_ftm_report[i].dlog_token);
+            log_ptr += sprintf(log_ptr, "%6d|", ftm_report[i].dlog_token);
         }
         if (g_report_lvl & BIT1) {
-            if (s_ftm_report[i].rtt != UINT32_MAX)
-                log_ptr += sprintf(log_ptr, "%7" PRIi32 "  |", s_ftm_report[i].rtt);
+            if (ftm_report[i].rtt != UINT32_MAX)
+                log_ptr += sprintf(log_ptr, "%7" PRIi32 "  |", ftm_report[i].rtt);
             else
                 log_ptr += sprintf(log_ptr, " INVALID |");
         }
         if (g_report_lvl & BIT2) {
-            log_ptr += sprintf(log_ptr, "%14llu  |%14llu  |%14llu  |%14llu  |", s_ftm_report[i].t1,
-                                        s_ftm_report[i].t2, s_ftm_report[i].t3, s_ftm_report[i].t4);
+            log_ptr += sprintf(log_ptr, "%14llu  |%14llu  |%14llu  |%14llu  |", ftm_report[i].t1,
+                                        ftm_report[i].t2, ftm_report[i].t3, ftm_report[i].t4);
         }
         if (g_report_lvl & BIT3) {
-            log_ptr += sprintf(log_ptr, "%6d  |", s_ftm_report[i].rssi);
+            log_ptr += sprintf(log_ptr, "%6d  |", ftm_report[i].rssi);
         }
         ESP_LOGI(TAG_STA, "|%s", log);
     }
-    free(log);
+
+exit:
+    if (log) {
+        free(log);
+    }
+    if (ftm_report) {
+        free(ftm_report);
+    }
+    s_ftm_report_num_entries = 0;
 }
 
 void initialise_wifi(void)
@@ -245,7 +273,7 @@ static bool wifi_cmd_sta_join(const char *ssid, const char *pass)
         s_reconnect = false;
         xEventGroupClearBits(s_wifi_event_group, CONNECTED_BIT);
         ESP_ERROR_CHECK( esp_wifi_disconnect() );
-        xEventGroupWaitBits(s_wifi_event_group, DISCONNECTED_BIT, 0, 1, portTICK_PERIOD_MS);
+        xEventGroupWaitBits(s_wifi_event_group, DISCONNECTED_BIT, 0, 1, portMAX_DELAY);
     }
 
     s_reconnect = true;
@@ -271,7 +299,7 @@ static int wifi_cmd_sta(int argc, char **argv)
         s_reconnect = false;
         xEventGroupClearBits(s_wifi_event_group, CONNECTED_BIT);
         esp_wifi_disconnect();
-        xEventGroupWaitBits(s_wifi_event_group, DISCONNECTED_BIT, 0, 1, portTICK_PERIOD_MS);
+        xEventGroupWaitBits(s_wifi_event_group, DISCONNECTED_BIT, 0, 1, portMAX_DELAY);
         return 0;
     }
 
@@ -304,6 +332,7 @@ static bool wifi_perform_scan(const char *ssid, bool internal)
     g_ap_list_buffer = malloc(g_scan_ap_num * sizeof(wifi_ap_record_t));
     if (g_ap_list_buffer == NULL) {
         ESP_LOGE(TAG_STA, "Failed to malloc buffer to print scan results");
+        esp_wifi_clear_ap_list();
         return false;
     }
 
@@ -460,11 +489,13 @@ static int wifi_cmd_ftm(int argc, char **argv)
 {
     int nerrors = arg_parse(argc, argv, (void **) &ftm_args);
     wifi_ap_record_t *ap_record;
+    uint32_t wait_time_ms = DEFAULT_WAIT_TIME_MS;
     EventBits_t bits;
 
     wifi_ftm_initiator_cfg_t ftmi_cfg = {
         .frm_count = 32,
         .burst_period = 2,
+        .use_get_report_api = true,
     };
 
     if (nerrors != 0) {
@@ -508,11 +539,11 @@ static int wifi_cmd_ftm(int argc, char **argv)
     }
 
     if (ftm_args.burst_period->count != 0) {
-        if (ftm_args.burst_period->ival[0] >= 2 &&
-                ftm_args.burst_period->ival[0] < 256) {
+        if (ftm_args.burst_period->ival[0] >= 0 &&
+                ftm_args.burst_period->ival[0] <= 100) {
             ftmi_cfg.burst_period = ftm_args.burst_period->ival[0];
         } else {
-            ESP_LOGE(TAG_STA, "Invalid Burst Period! Valid range is 2-255");
+            ESP_LOGE(TAG_STA, "Invalid Burst Period! Valid range is 0-100");
             return 0;
         }
     }
@@ -525,18 +556,24 @@ static int wifi_cmd_ftm(int argc, char **argv)
         return 0;
     }
 
+    if (ftmi_cfg.burst_period) {
+        /* Wait at least double the duration of maximum FTM bursts */
+        wait_time_ms = (ftmi_cfg.burst_period * 100) * (MAX_FTM_BURSTS * 2);
+    }
     bits = xEventGroupWaitBits(s_ftm_event_group, FTM_REPORT_BIT | FTM_FAILURE_BIT,
-                                           pdTRUE, pdFALSE, portMAX_DELAY);
-    /* Processing data from FTM session */
-    ftm_process_report();
-    free(s_ftm_report);
-    s_ftm_report = NULL;
-    s_ftm_report_num_entries = 0;
+                                           pdTRUE, pdFALSE, wait_time_ms / portTICK_PERIOD_MS);
     if (bits & FTM_REPORT_BIT) {
+        /* Print detailed data from FTM session */
+        ftm_print_report();
         ESP_LOGI(TAG_STA, "Estimated RTT - %" PRId32 " nSec, Estimated Distance - %" PRId32 ".%02" PRId32 " meters",
                           s_rtt_est, s_dist_est / 100, s_dist_est % 100);
+    } else if (bits & FTM_FAILURE_BIT) {
+        /* FTM Failure case */
+        ESP_LOGE(TAG_STA, "FTM procedure failed!");
     } else {
-        /* Failure case */
+        /* Timeout, end session gracefully */
+        ESP_LOGE(TAG_STA, "FTM procedure timed out!");
+        esp_wifi_ftm_end_session();
     }
 
     return 0;
@@ -631,7 +668,7 @@ void register_wifi(void)
     ftm_args.initiator = arg_lit0("I", "ftm_initiator", "FTM Initiator mode");
     ftm_args.ssid = arg_str0("s", "ssid", "SSID", "SSID of AP");
     ftm_args.frm_count = arg_int0("c", "frm_count", "<0/8/16/24/32/64>", "FTM frames to be exchanged (0: No preference)");
-    ftm_args.burst_period = arg_int0("p", "burst_period", "<2-255 (x 100 mSec)>", "Periodicity of FTM bursts in 100's of miliseconds (0: No preference)");
+    ftm_args.burst_period = arg_int0("p", "burst_period", "<0-100 (x 100 mSec)>", "Periodicity of FTM bursts in 100's of miliseconds (0: No preference)");
     /* FTM Responder commands */
     ftm_args.responder = arg_lit0("R", "ftm_responder", "FTM Responder mode");
     ftm_args.enable = arg_lit0("e", "enable", "Restart SoftAP with FTM enabled");

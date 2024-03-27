@@ -82,6 +82,9 @@ ESP-IDF 已支持使用 `FreeRTOS POSIX/Linux 模拟器 <https://www.freertos.or
    * - 组件
      - 模拟
      - 仿真
+   * - cmock
+     - 否
+     - 是
    * - driver
      - 是
      - 否
@@ -91,8 +94,23 @@ ESP-IDF 已支持使用 `FreeRTOS POSIX/Linux 模拟器 <https://www.freertos.or
    * - esp_event
      - 是
      - 是
+   * - esp_http_client
+     - 否
+     - 是
+   * - esp_http_server
+     - 否
+     - 是
+   * - esp_https_server
+     - 否
+     - 是
    * - esp_hw_support
      - 是
+     - 是
+   * - esp_netif
+     - 是
+     - 是
+   * - esp_netif_stack
+     - 否
      - 是
    * - esp_partition
      - 是
@@ -109,6 +127,9 @@ ESP-IDF 已支持使用 `FreeRTOS POSIX/Linux 模拟器 <https://www.freertos.or
    * - esp_tls
      - 是
      - 否
+   * - fatfs
+     - 否
+     - 是
    * - freertos
      - 是
      - 是
@@ -120,14 +141,41 @@ ESP-IDF 已支持使用 `FreeRTOS POSIX/Linux 模拟器 <https://www.freertos.or
      - 是
    * - http_parser
      - 是
+     - 是
+   * - json
      - 否
+     - 是
+   * - linux
+     - 否
+     - 是
    * - log
      - 否
      - 是
    * - lwip
      - 是
+     - 是
+   * - mbedtls
      - 否
-   * - SoC
+     - 是
+   * - mqtt
+     - 否
+     - 是
+   * - nvs_flash
+     - 否
+     - 是
+   * - partition_table
+     - 否
+     - 是
+   * - protobuf-c
+     - 否
+     - 是
+   * - pthread
+     - 否
+     - 是
+   * - soc
+     - 否
+     - 是
+   * - spiffs
      - 否
      - 是
    * - spi_flash
@@ -136,3 +184,6 @@ ESP-IDF 已支持使用 `FreeRTOS POSIX/Linux 模拟器 <https://www.freertos.or
    * - tcp_transport
      - 是
      - 否
+   * - unity
+     - 否
+     - 是

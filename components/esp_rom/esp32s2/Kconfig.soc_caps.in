@@ -23,7 +23,15 @@ config ESP_ROM_HAS_REGI2C_BUG
     bool
     default y
 
+config ESP_ROM_HAS_NEWLIB
+    bool
+    default y
+
 config ESP_ROM_HAS_NEWLIB_NANO_FORMAT
+    bool
+    default y
+
+config ESP_ROM_HAS_NEWLIB_32BIT_TIME
     bool
     default y
 
@@ -34,3 +42,11 @@ config ESP_ROM_USB_OTG_NUM
 config ESP_ROM_HAS_FLASH_COUNT_PAGES_BUG
     bool
     default y
+
+config ESP_ROM_HAS_SW_FLOAT
+    bool
+    default y
+
+config ESP_ROM_USB_SERIAL_DEVICE_NUM
+    int
+    default -1

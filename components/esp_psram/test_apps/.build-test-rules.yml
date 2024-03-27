@@ -1,6 +1,11 @@
 # Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
 
 components/esp_psram/test_apps:
-  enable:
-    - if: IDF_TARGET in ["esp32", "esp32s2", "esp32s3"]
-      reason: only test on esp32, esp32s2, and esp32s3
+  disable:
+    - if: SOC_SPIRAM_SUPPORTED != 1
+  depends_components:
+    - esp_psram
+    - esp_mm
+    - esp_driver_gpio
+    - esp_driver_spi
+    - spi_flash

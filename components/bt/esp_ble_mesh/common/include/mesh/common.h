@@ -53,6 +53,8 @@ void bt_mesh_free_buf(struct net_buf_simple *buf);
 
 int bt_mesh_rand(void *buf, size_t len);
 
+uint32_t bt_mesh_get_rand(void);
+
 #ifdef __cplusplus
 }
 #endif

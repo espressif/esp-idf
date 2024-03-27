@@ -43,7 +43,7 @@ struct dpp_global {
 static const struct dpp_curve_params dpp_curves[] = {
 	/* The mandatory to support and the default NIST P-256 curve needs to
 	 * be the first entry on this list. */
-	{ "sec256r1", 32, 32, 16, 32, "P-256", 19, "ES256" },
+	{ "secp256r1", 32, 32, 16, 32, "P-256", 19, "ES256" },
 	{ "secp384r1", 48, 48, 24, 48, "P-384", 20, "ES384" },
 	{ "secp521r1", 64, 64, 32, 66, "P-521", 21, "ES512" },
 	{ "brainpoolP256r1", 32, 32, 16, 32, "BP-256", 28, "BS256" },
@@ -51,6 +51,9 @@ static const struct dpp_curve_params dpp_curves[] = {
 	{ "brainpoolP512r1", 64, 64, 32, 64, "BP-512", 30, "BS512" },
 	{ NULL, 0, 0, 0, 0, NULL, 0, NULL }
 };
+
+#define TRANSACTION_ID_ATTR_SET_LEN 5
+#define CONNECTOR_ATTR_SET_LEN 4
 
 static struct wpabuf *
 gas_build_req(u8 action, u8 dialog_token, size_t size)
@@ -1302,6 +1305,87 @@ skip_wrapped_data:
 
 	wpa_hexdump_buf(MSG_DEBUG,
 			"DPP: Authentication Response frame attributes", msg);
+	return msg;
+}
+
+struct wpabuf * dpp_build_peer_disc_req(struct dpp_authentication *auth, struct dpp_config_obj *conf)
+{
+	struct wpabuf *msg;
+	size_t len;
+	struct os_time now;
+
+	if (!conf || !conf->connector || !auth || !auth->net_access_key || !conf->c_sign_key) {
+		wpa_printf(MSG_ERROR, "missing %s", !conf->connector ? "Connector" : !auth->net_access_key ? "netAccessKey" : "C-sign-key");
+		return NULL;
+	}
+
+	os_get_time(&now);
+
+	if (auth->net_access_key_expiry &&
+	    (os_time_t) auth->net_access_key_expiry < now.sec) {
+		wpa_printf(MSG_ERROR, "netAccessKey expired");
+		return NULL;
+	}
+
+	wpa_printf(MSG_DEBUG,
+		   "DPP: Starting network introduction protocol to derive PMKSA for "
+		   MACSTR, MAC2STR(auth->peer_mac_addr));
+
+	len = TRANSACTION_ID_ATTR_SET_LEN + CONNECTOR_ATTR_SET_LEN + os_strlen(conf->connector);
+	msg = dpp_alloc_msg(DPP_PA_PEER_DISCOVERY_REQ, len);
+	if (!msg) {
+		return NULL;
+	}
+
+#ifdef CONFIG_TESTING_OPTIONS
+	if (dpp_test == DPP_TEST_NO_TRANSACTION_ID_PEER_DISC_REQ) {
+		wpa_printf(MSG_INFO, "DPP: TESTING - no Transaction ID");
+		goto skip_trans_id;
+	}
+	if (dpp_test == DPP_TEST_INVALID_TRANSACTION_ID_PEER_DISC_REQ) {
+		wpa_printf(MSG_INFO, "DPP: TESTING - invalid Transaction ID");
+		wpabuf_put_le16(msg, DPP_ATTR_TRANSACTION_ID);
+		wpabuf_put_le16(msg, 0);
+		goto skip_trans_id;
+	}
+#endif /* CONFIG_TESTING_OPTIONS */
+
+	/* Transaction ID */
+	wpabuf_put_le16(msg, DPP_ATTR_TRANSACTION_ID);
+	wpabuf_put_le16(msg, 1);
+	wpabuf_put_u8(msg, TRANSACTION_ID);
+
+#ifdef CONFIG_TESTING_OPTIONS
+skip_trans_id:
+	if (dpp_test == DPP_TEST_NO_CONNECTOR_PEER_DISC_REQ) {
+		wpa_printf(MSG_INFO, "DPP: TESTING - no Connector");
+		goto skip_connector;
+	}
+	if (dpp_test == DPP_TEST_INVALID_CONNECTOR_PEER_DISC_REQ) {
+		char *connector;
+
+		wpa_printf(MSG_INFO, "DPP: TESTING - invalid Connector");
+		connector = dpp_corrupt_connector_signature( conf->connector);
+		if (!connector) {
+			wpabuf_free(msg);
+			return NULL;
+		}
+		wpabuf_put_le16(msg, DPP_ATTR_CONNECTOR);
+		wpabuf_put_le16(msg, os_strlen(connector));
+		wpabuf_put_str(msg, connector);
+		os_free(connector);
+		goto skip_connector;
+	}
+#endif /* CONFIG_TESTING_OPTIONS */
+
+	/* DPP Connector */
+	wpabuf_put_le16(msg, DPP_ATTR_CONNECTOR);
+	wpabuf_put_le16(msg, os_strlen(conf->connector));
+	wpabuf_put_str(msg, conf->connector);
+
+#ifdef CONFIG_TESTING_OPTIONS
+skip_connector:
+#endif /* CONFIG_TESTING_OPTIONS */
 	return msg;
 }
 
@@ -4557,7 +4641,7 @@ fail:
 
 static struct wpabuf *
 dpp_parse_jws_prot_hdr(const struct dpp_curve_params *curve,
-		       const u8 *prot_hdr, u16 prot_hdr_len)
+		       const u8 *prot_hdr, u16 prot_hdr_len, int *hash_func)
 {
 	struct json_token *root, *token;
 	struct wpabuf *kid = NULL;
@@ -4602,6 +4686,14 @@ dpp_parse_jws_prot_hdr(const struct dpp_curve_params *curve,
 			   token->string, curve->jws_alg);
 		goto fail;
 	}
+
+        if (os_strcmp(token->string, "ES256") == 0 ||
+            os_strcmp(token->string, "BS256") == 0) {
+            *hash_func = CRYPTO_HASH_ALG_SHA256;
+        } else {
+            *hash_func = -1;
+	    wpa_printf(MSG_ERROR, "Unsupported JWS Protected Header alg=%s", token->string);
+        }
 
 	kid = json_get_member_base64url(root, "kid");
 	if (!kid) {
@@ -4669,7 +4761,8 @@ static struct crypto_key * dpp_parse_jwk(struct json_token *jwk,
 {
 	struct json_token *token;
 	const struct dpp_curve_params *curve;
-	struct wpabuf *x = NULL, *y = NULL, *a = NULL;
+	struct wpabuf *x = NULL, *y = NULL;
+	unsigned char *a = NULL;
 	struct crypto_ec_group *group;
 	struct crypto_key *pkey = NULL;
 	size_t len;
@@ -4731,17 +4824,19 @@ static struct crypto_key * dpp_parse_jwk(struct json_token *jwk,
 		goto fail;
 	}
 
-	len = wpabuf_len(x);
-	a = wpabuf_concat(x, y);
-	pkey = crypto_ec_set_pubkey_point(group, wpabuf_head(a),
-					  len);
+	len = wpabuf_len(x) + wpabuf_len(y);
+	a = os_zalloc(len);
+	os_memcpy(a, wpabuf_head(x), wpabuf_len(x));
+	os_memcpy(a + wpabuf_len(x), wpabuf_head(y), wpabuf_len(y));
+	pkey = crypto_ec_set_pubkey_point(group, a, len);
+
 	crypto_ec_deinit((struct crypto_ec *)group);
 	*key_curve = curve;
 
 fail:
-	wpabuf_free(a);
 	wpabuf_free(x);
 	wpabuf_free(y);
+	os_free(a);
 
 	return pkey;
 }
@@ -4977,6 +5072,7 @@ static void dpp_copy_netaccesskey(struct dpp_authentication *auth,
 		return;
 	wpabuf_free(auth->net_access_key);
 	auth->net_access_key = wpabuf_alloc_copy(der, der_len);
+
 	crypto_free_buffer(der);
 }
 
@@ -4993,11 +5089,12 @@ dpp_process_signed_connector(struct dpp_signed_connector_info *info,
 	const char *pos, *end, *signed_start, *signed_end;
 	struct wpabuf *kid = NULL;
 	unsigned char *prot_hdr = NULL, *signature = NULL;
-	size_t prot_hdr_len = 0, signature_len = 0;
+	size_t prot_hdr_len = 0, signature_len = 0, signed_len;
 	struct crypto_bignum *r = NULL, *s = NULL;
 	const struct dpp_curve_params *curve;
 	const struct crypto_ec_group *group;
-	int id;
+	int id, hash_func = -1;
+	u8 *hash = NULL;
 
 	group = crypto_ec_get_group_from_key(csign_pub);
 	if (!group)
@@ -5026,7 +5123,7 @@ dpp_process_signed_connector(struct dpp_signed_connector_info *info,
 	wpa_hexdump_ascii(MSG_DEBUG,
 			  "DPP: signedConnector - JWS Protected Header",
 			  (u8 *)prot_hdr, prot_hdr_len);
-	kid = dpp_parse_jws_prot_hdr(curve, prot_hdr, prot_hdr_len);
+	kid = dpp_parse_jws_prot_hdr(curve, prot_hdr, prot_hdr_len, &hash_func);
 	if (!kid) {
 		ret = DPP_STATUS_INVALID_CONNECTOR;
 		goto fail;
@@ -5087,13 +5184,31 @@ dpp_process_signed_connector(struct dpp_signed_connector_info *info,
 	r = crypto_bignum_init_set(signature, signature_len / 2);
 	s = crypto_bignum_init_set(signature + signature_len / 2, signature_len / 2);
 
-	if (!crypto_edcsa_sign_verify((unsigned char *)signed_start, r, s,
-				csign_pub, signed_end - signed_start + 1)) {
+	signed_len = signed_end - signed_start + 1;
+	hash = os_malloc(curve->hash_len);
+	if (!hash) {
+		wpa_printf(MSG_ERROR, "malloc failed");
+		goto fail;
+	}
+
+	if (hash_func == CRYPTO_HASH_ALG_SHA256) {
+		if ((sha256_vector(1, (const u8 **) &signed_start, &signed_len, hash)) != 0) {
+			goto fail;
+		}
+	} else {
+		goto fail;
+	}
+
+	if ((crypto_edcsa_sign_verify((unsigned char *)hash, r, s,
+				csign_pub, curve->hash_len)) != 0) {
 		goto fail;
 	}
 
 	ret = DPP_STATUS_OK;
 fail:
+	if (hash != NULL) {
+		os_free(hash);
+	}
 	os_free(prot_hdr);
 	wpabuf_free(kid);
 	os_free(signature);

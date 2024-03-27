@@ -1,10 +1,11 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// Note that most of the register operations in this layer are non-atomic operations.
+// Attention: Timer Group has 3 independent functions: General Purpose Timer, Watchdog Timer and Clock calibration.
+//            This Low Level driver only serve the General Purpose Timer function.
 
 #pragma once
 
@@ -56,7 +57,7 @@ extern "C" {
  * @param group_id Group ID
  * @param enable true to enable, false to disable
  */
-static inline void timer_ll_enable_bus_clock(int group_id, bool enable)
+static inline void _timer_ll_enable_bus_clock(int group_id, bool enable)
 {
     if (group_id == 0) {
         PCR.timergroup0_conf.tg0_clk_en = enable;
@@ -67,7 +68,7 @@ static inline void timer_ll_enable_bus_clock(int group_id, bool enable)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_RC_ATOMIC_ENV variable in advance
-#define timer_ll_enable_bus_clock(...) (void)__DECLARE_RCC_RC_ATOMIC_ENV; timer_ll_enable_bus_clock(__VA_ARGS__)
+#define timer_ll_enable_bus_clock(...) (void)__DECLARE_RCC_RC_ATOMIC_ENV; _timer_ll_enable_bus_clock(__VA_ARGS__)
 
 /**
  * @brief Reset the timer group module

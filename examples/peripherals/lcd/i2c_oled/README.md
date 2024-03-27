@@ -19,7 +19,7 @@ This example shows how to make use of the SSD1306 panel driver from `esp_lcd` co
 
 The connection between ESP Board and the LCD is as follows:
 
-```
+```text
       ESP Board                       OLED LCD (I2C)
 +------------------+              +-------------------+
 |               GND+--------------+GND                |
@@ -48,17 +48,20 @@ See the [Getting Started Guide](https://docs.espressif.com/projects/esp-idf/en/l
 
 ```bash
 ...
-I (0) cpu_start: Starting scheduler on APP CPU.
-I (345) example: Initialize I2C bus
-I (345) example: Install panel IO
-I (345) example: Install SSD1306 panel driver
-I (455) example: Initialize LVGL library
-I (455) example: Register display driver to LVGL
-I (455) example: Install LVGL tick timer
-I (455) example: Display LVGL Scroll Text
+I (308) main_task: Started on CPU0
+I (318) main_task: Calling app_main()
+I (318) example: Initialize I2C bus
+I (318) gpio: GPIO[3]| InputEn: 1| OutputEn: 1| OpenDrain: 1| Pullup: 1| Pulldown: 0| Intr:0
+I (328) gpio: GPIO[4]| InputEn: 1| OutputEn: 1| OpenDrain: 1| Pullup: 1| Pulldown: 0| Intr:0
+I (338) example: Install panel IO
+I (338) example: Install SSD1306 panel driver
+I (448) example: Initialize LVGL
+I (448) LVGL: Starting LVGL task
+I (448) example: Display LVGL Scroll Text
+I (448) main_task: Returned from app_main()
 ...
 ```
 
 ## Troubleshooting
 
-For any technical queries, please open an [issue] (https://github.com/espressif/esp-idf/issues) on GitHub. We will get back to you soon.
+For any technical queries, please open an [issue](https://github.com/espressif/esp-idf/issues) on GitHub. We will get back to you soon.

@@ -14,6 +14,8 @@ Because {IDF_TARGET_NAME} uses multiple types of RAM, it also contains multiple 
 
 For most purposes, the C Standard Library's ``malloc()`` and ``free()`` functions can be used for heap allocation without any special consideration. However, in order to fully make use of all of the memory types and their characteristics, ESP-IDF also has a capabilities-based heap memory allocator. If you want to have a memory with certain properties (e.g., :ref:`dma-capable-memory` or executable-memory), you can create an OR-mask of the required capabilities and pass that to :cpp:func:`heap_caps_malloc`.
 
+.. _memory_capabilities:
+
 Memory Capabilities
 -------------------
 
@@ -31,7 +33,10 @@ For more details on these internal memory types, see :ref:`memory-layout`.
 
 All DRAM memory is single-byte accessible, thus all DRAM heaps possess the ``MALLOC_CAP_8BIT`` capability. Users can call ``heap_caps_get_free_size(MALLOC_CAP_8BIT)`` to get the free size of all DRAM heaps.
 
-If ran out of ``MALLOC_CAP_8BIT``, the users can use ``MALLOC_CAP_IRAM_8BIT`` instead. In that case, IRAM can still be used as a "reserve" pool of internal memory if the users only access it in a 32-bit aligned manner, or if they enable ``CONFIG_ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY)``.
+.. only:: esp32
+
+    If ran out of ``MALLOC_CAP_8BIT``, the users can use ``MALLOC_CAP_IRAM_8BIT`` instead. In that case, IRAM can still be used as a "reserve" pool of internal memory if the users only access it in a 32-bit aligned manner, or if they enable ``CONFIG_ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY)``.
+
 
 When calling ``malloc()``, the ESP-IDF ``malloc()`` internally calls ``heap_caps_malloc_default(size)``. This will allocate memory with the capability ``MALLOC_CAP_DEFAULT``, which is byte-addressable.
 
@@ -122,11 +127,11 @@ Memory allocated with ``MALLOC_CAP_32BIT`` can **only** be accessed via 32-bit r
     External SPI Memory
     ^^^^^^^^^^^^^^^^^^^
 
-    When :doc:`external RAM </api-guides/external-ram>` is enabled, external SPI RAM under 4 MiB in size can be allocated using standard ``malloc`` calls, or via ``heap_caps_malloc(MALLOC_CAP_SPIRAM)``, depending on the configuration. See :ref:`external_ram_config` for more details.
+    When :doc:`external RAM </api-guides/external-ram>` is enabled, external SPI RAM can be allocated using standard ``malloc`` calls, or via ``heap_caps_malloc(MALLOC_CAP_SPIRAM)``, depending on the configuration. See :ref:`external_ram_config` for more details.
 
     .. only:: esp32
 
-        To use the region above the 4 MiB limit, you can use the :doc:`himem API </api-reference/system/himem>`.
+        On ESP32 only external SPI RAM under 4 MiB in size can be allocated this way. To use the region above the 4 MiB limit, you can use the :doc:`himem API </api-reference/system/himem>`.
 
 Thread Safety
 -------------

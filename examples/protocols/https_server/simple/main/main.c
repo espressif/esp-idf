@@ -27,6 +27,18 @@
 
 static const char *TAG = "example";
 
+/* Event handler for catching system events */
+static void event_handler(void* arg, esp_event_base_t event_base,
+                          int32_t event_id, void* event_data)
+{
+    if (event_base == ESP_HTTPS_SERVER_EVENT) {
+        if (event_id == HTTPS_SERVER_EVENT_ERROR) {
+            esp_https_server_last_error_t *last_error = (esp_tls_last_error_t *) event_data;
+            ESP_LOGE(TAG, "Error event triggered: last_error = %s, last_tls_err = %d, tls_flag = %d", esp_err_to_name(last_error->last_error), last_error->esp_tls_error_code, last_error->esp_tls_flags);
+        }
+    }
+}
+
 /* An HTTP GET handler */
 static esp_err_t root_get_handler(httpd_req_t *req)
 {
@@ -210,6 +222,7 @@ void app_main(void)
     ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_ETH_GOT_IP, &connect_handler, &server));
     ESP_ERROR_CHECK(esp_event_handler_register(ETH_EVENT, ETHERNET_EVENT_DISCONNECTED, &disconnect_handler, &server));
 #endif // CONFIG_EXAMPLE_CONNECT_ETHERNET
+    ESP_ERROR_CHECK(esp_event_handler_register(ESP_HTTPS_SERVER_EVENT, ESP_EVENT_ANY_ID, &event_handler, NULL));
 
     /* This helper function configures Wi-Fi or Ethernet, as selected in menuconfig.
      * Read "Establishing Wi-Fi or Ethernet Connection" section in

@@ -30,10 +30,10 @@ menu "esp_eth TEST_APPS Configuration"
 
             config TARGET_ETH_PHY_DEVICE_IP101
                 bool "IP101"
-            config TARGET_ETH_PHY_DEVICE_LAN87XX
+            config TARGET_ETH_PHY_DEVICE_LAN8720
                 bool "LAN8720"
-            config TARGET_ETH_PHY_DEVICE_KSZ80XX
-                bool "KSZ80xx"
+            config TARGET_ETH_PHY_DEVICE_KSZ8041
+                bool "KSZ8041"
             config TARGET_ETH_PHY_DEVICE_RTL8201
                 bool "RTL8201"
             config TARGET_ETH_PHY_DEVICE_DP83848
@@ -76,9 +76,15 @@ menu "esp_eth TEST_APPS Configuration"
         config TARGET_SPI_CLOCK_MHZ
             int "SPI clock speed (MHz)"
             range 5 80
-            default 12
+            default 20
             help
                 Set the clock speed (MHz) of SPI interface.
+
+        config TARGET_ETH_SPI_POLL_MS
+            int "SPI Ethernet Polling period in msec"
+            default 0
+            help
+                SPI Ethernet module polling period.
 
     endif # TARGET_USE_SPI_ETHERNET
 

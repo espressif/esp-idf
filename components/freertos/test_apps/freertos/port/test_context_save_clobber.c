@@ -21,7 +21,6 @@
  * when the recursive function returns.
  */
 
-
 /* See test_context_save_clober_func.S */
 extern void test_context_save_clober_func(void);
 

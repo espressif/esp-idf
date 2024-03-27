@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -44,6 +44,7 @@ typedef enum
     BTC_HF_UNAT_RESPONSE_EVT,
     BTC_HF_CME_ERR_EVT,
     BTC_HF_IND_NOTIFICATION_EVT,
+    BTC_HF_CIEV_REPORT_EVT,
     BTC_HF_CIND_RESPONSE_EVT,
     BTC_HF_COPS_RESPONSE_EVT,
     BTC_HF_CLCC_RESPONSE_EVT,
@@ -109,6 +110,12 @@ typedef union
         int                        signal;
     } ind_change;
 
+    //BTC_HF_CIEV_REPORT_EVT
+    struct ciev_args {
+        bt_bdaddr_t                remote_addr;
+        tBTA_AG_IND                ind;
+    } ciev_rep;
+
     //BTC_HF_CIND_RESPONSE_EVT
     struct cind_args {
         bt_bdaddr_t                              remote_addr;
@@ -143,7 +150,8 @@ typedef union
     struct cnum_args {
         bt_bdaddr_t                      remote_addr;
         char                             *number;
-        esp_hf_subscriber_service_type_t type;
+        int                              number_type;
+        esp_hf_subscriber_service_type_t service_type;
     } cnum_rep;
 
     //BTC_HF_NREC_RESPONSE_EVT
@@ -176,13 +184,13 @@ typedef union
     } phone;
 
     // BTC_HF_REGISTER_DATA_CALLBACK_EVT
-    struct reg_data_callback {
+    struct ag_reg_data_callback {
         esp_hf_incoming_data_cb_t recv;
         esp_hf_outgoing_data_cb_t send;
     } reg_data_cb;
 
     // BTC_HF_REQUEST_PKT_STAT_EVT
-    struct req_pkt_stat_sync_handle {
+    struct ag_req_pkt_stat_sync_handle {
         UINT16            sync_conn_handle;
     } pkt_sync_hd;
 
@@ -224,6 +232,11 @@ typedef struct
     esp_hf_incoming_data_cb_t          btc_hf_incoming_data_cb;
     esp_hf_outgoing_data_cb_t          btc_hf_outgoing_data_cb;
 } hf_local_param_t;
+
+#if HFP_DYNAMIC_MEMORY == TRUE
+extern hf_local_param_t *hf_local_param_ptr;
+#define hf_local_param (hf_local_param_ptr)
+#endif
 
 /*******************************************************************************
 **  BTC HF AG Handle Hub

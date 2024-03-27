@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,6 +16,7 @@
 #include "esp_wifi_driver.h"
 
 #define DPP_TASK_STACK_SIZE  (6144 + TASK_STACK_SIZE_ADD)
+#define ESP_DPP_PMK_CACHE_DEFAULT_TIMEOUT  86400 * 7   /*!< 7 days */
 
 enum SIG_DPP {
     SIG_DPP_RESET = 0,
@@ -23,6 +24,8 @@ enum SIG_DPP {
     SIG_DPP_RX_ACTION,
     SIG_DPP_LISTEN_NEXT_CHANNEL,
     SIG_DPP_DEL_TASK,
+    SIG_DPP_START_NET_INTRO,
+    SIG_DPP_DEINIT_AUTH,
     SIG_DPP_MAX,
 };
 
@@ -54,5 +57,14 @@ struct esp_dpp_context_t {
 };
 
 int esp_supp_rx_action(uint8_t *hdr, uint8_t *payload, size_t len, uint8_t channel);
+esp_err_t esp_dpp_post_evt(uint32_t evt_id, uint32_t data);
 
+#ifdef CONFIG_ESP_WIFI_DPP_SUPPORT
+bool is_dpp_enabled(void);
+#else
+static inline bool is_dpp_enabled(void)
+{
+    return false;
+}
+#endif
 #endif /* ESP_DPP_I_H */

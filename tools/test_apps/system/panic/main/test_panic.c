@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -18,6 +18,8 @@
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+
+#include "hal/mpu_hal.h"
 
 /* Test utility function */
 
@@ -61,12 +63,34 @@ void test_task_wdt_cpu0(void)
     }
 }
 
+#if CONFIG_ESP_SYSTEM_HW_STACK_GUARD
+
 __attribute__((optimize("-O0")))
+static void test_hw_stack_guard_cpu(void* arg)
+{
+    uint32_t buf[256];
+    test_hw_stack_guard_cpu(arg);
+}
+
 void test_hw_stack_guard_cpu0(void)
 {
-    uint32_t buf[128];
-    test_hw_stack_guard_cpu0();
+    xTaskCreatePinnedToCore(test_hw_stack_guard_cpu, "HWSG0", 512, NULL, 1, NULL, 0);
+    while (true) {
+        vTaskDelay(100);
+    }
 }
+
+#if !CONFIG_FREERTOS_UNICORE
+void test_hw_stack_guard_cpu1(void)
+{
+    xTaskCreatePinnedToCore(test_hw_stack_guard_cpu, "HWSG1", 512, NULL, 1, NULL, 1);
+    while (true) {
+        vTaskDelay(100);
+    }
+}
+
+#endif // CONFIG_FREERTOS_UNICORE
+#endif // CONFIG_ESP_SYSTEM_HW_STACK_GUARD
 
 #if CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH && CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY
 
@@ -112,16 +136,6 @@ void test_task_wdt_cpu1(void)
     }
 }
 
-void test_task_wdt_both_cpus(void)
-{
-    xTaskCreatePinnedToCore(infinite_loop, "Infinite loop", 1024, NULL, 4, NULL, 1);
-    /* Give some time to the task on CPU 1 to be scheduled */
-    vTaskDelay(1);
-    xTaskCreatePinnedToCore(infinite_loop, "Infinite loop", 1024, NULL, 4, NULL, 0);
-    while (true) {
-        ;
-    }
-}
 #endif
 
 void __attribute__((no_sanitize_undefined)) test_storeprohibited(void)
@@ -202,3 +216,31 @@ void test_ub(void)
     uint8_t stuff[1] = {rand()};
     printf("%d\n", stuff[rand()]);
 }
+
+/* NOTE: The following test verifies the behaviour for the
+ * Xtensa-specific MPU instructions (Refer WDTLB, DSYNC, WDTIB, ISYNC)
+ * used for memory protection.
+ *
+ * However, this test is not valid for S2 and S3, because they have PMS
+ * enabled on top of this, giving unpredicatable results.
+ */
+#if CONFIG_IDF_TARGET_ESP32
+void test_illegal_access(void)
+{
+    intptr_t addr = 0x80000000; // MPU region 4
+    volatile int __attribute__((unused)) val = INT16_MAX;
+
+    // Marked as an illegal access region at startup in ESP32, ESP32S2.
+    // Make accessible temporarily.
+    mpu_hal_set_region_access(4, MPU_REGION_RW);
+
+    val = *((int*) addr);
+    printf("[1] val: %d at %p\n", val, (void *)addr);
+
+    // Make access to region illegal again.
+    mpu_hal_set_region_access(4, MPU_REGION_ILLEGAL);
+    val = *((int*) addr);
+    // Does not reach here as device resets due to illegal access
+    printf("[2] val: %d at %p\n", val, (void *)addr);
+}
+#endif

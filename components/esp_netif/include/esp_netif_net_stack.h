@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -29,10 +29,7 @@ extern "C" {
 esp_netif_t* esp_netif_get_handle_from_netif_impl(void *dev);
 
 /**
- * @brief Returns network stack specific implementation handle (if supported)
- *
- * Note that it is not supported to acquire PPP netif impl pointer and
- * this function will return NULL for esp_netif instances configured to PPP mode
+ * @brief Returns network stack specific implementation handle
  *
  * @param[in]  esp_netif Handle to esp-netif instance
  *

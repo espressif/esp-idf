@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -54,7 +54,7 @@ void periph_rtc_apll_release(void);
  * @brief Calculate and set APLL coefficients by given frequency
  * @note  Have to call 'periph_rtc_apll_acquire' to enable APLL power before setting frequency
  * @note  This calculation is based on the inequality:
- *        xtal_freq * (4 + sdm2 + sdm1/256 + sdm0/65536) >= SOC_APLL_MULTIPLIER_OUT_MIN_HZ(350 MHz)
+ *        xtal_freq * (4 + sdm2 + sdm1/256 + sdm0/65536) >= CLK_LL_APLL_MULTIPLIER_MIN_HZ(350 MHz)
  *        It will always calculate the minimum coefficients that can satisfy the inequality above, instead of loop them one by one.
  *        which means more appropriate coefficients are likely to exist.
  *        But this algorithm can meet almost all the cases and the accuracy can be guaranteed as well.
@@ -71,6 +71,38 @@ void periph_rtc_apll_release(void);
  */
 esp_err_t periph_rtc_apll_freq_set(uint32_t expt_freq, uint32_t *real_freq);
 #endif // SOC_CLK_APLL_SUPPORTED
+
+#if SOC_CLK_MPLL_SUPPORTED
+/**
+ * @brief Enable MPLL power if it has not enabled (early version)
+ */
+void periph_rtc_mpll_early_acquire(void);
+
+/**
+ * @brief Enable MPLL power if it has not enabled
+ */
+esp_err_t periph_rtc_mpll_acquire(void);
+
+/**
+ * @brief Shut down MPLL power if no peripherals using APLL
+ */
+void periph_rtc_mpll_release(void);
+
+/**
+ * @brief Configure MPLL frequency
+ * @note  Have to call 'periph_rtc_mpll_acquire' to enable MPLL power before setting frequency
+ * @note  The MPLL frequency is only allowed to set when there is only one peripheral refer to it.
+ *        If MPLL is already set by another peripheral, this function will return `ESP_ERR_INVALID_STATE`
+ *        and output the current frequency by parameter `real_freq`.
+ *
+ * @param expt_freq Expected MPLL frequency (unit: Hz)
+ * @param real_freq MPLL current working frequency [output] (unit: Hz)
+ * @return
+ *      - ESP_OK: MPLL frequency set success
+ *      - ESP_ERR_INVALID_STATE: MPLL is referred by more than one peripherals, not allowed to change its frequency now
+ */
+esp_err_t periph_rtc_mpll_freq_set(uint32_t expt_freq, uint32_t *real_freq);
+#endif // SOC_CLK_MPLL_SUPPORTED
 
 #ifdef __cplusplus
 }

@@ -43,7 +43,7 @@ void pau_regdma_trigger_modem_link_backup(void);
 void pau_regdma_trigger_modem_link_restore(void);
 #endif
 
-#if SOC_PM_RETENTION_HAS_REGDMA_POWER_BUG
+#if SOC_PM_RETENTION_SW_TRIGGER_REGDMA
 /**
  * @brief Set the address of system REGDMA Link in active state
  * @param link_addr linked lists address

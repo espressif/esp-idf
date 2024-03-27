@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -232,6 +232,17 @@
 #ifndef OPENTHREAD_CONFIG_SRP_CLIENT_ENABLE
 #define OPENTHREAD_CONFIG_SRP_CLIENT_ENABLE 1
 #endif
+
+/**
+ * @def OPENTHREAD_CONFIG_SRP_CLIENT_BUFFERS_MAX_SERVICES
+ *
+ * Specifies number of service entries in the SRP client service pool.
+ *
+ * This config is applicable only when `OPENTHREAD_CONFIG_SRP_CLIENT_BUFFERS_ENABLE` is enabled.
+ *
+ */
+#define OPENTHREAD_CONFIG_SRP_CLIENT_BUFFERS_MAX_SERVICES CONFIG_OPENTHREAD_SRP_CLIENT_MAX_SERVICES
+
 #endif
 
 /**
@@ -241,5 +252,56 @@
  *
  */
 #define OPENTHREAD_CONFIG_DNS_CLIENT_ENABLE CONFIG_OPENTHREAD_DNS_CLIENT
+
+/**
+ * @def OPENTHREAD_CONFIG_TIME_SYNC_ENABLE
+ *
+ * Define as 1 to enable the time synchronization service feature.
+ *
+ */
+#if CONFIG_OPENTHREAD_TIME_SYNC
+#define OPENTHREAD_CONFIG_TIME_SYNC_ENABLE 1
+#endif
+
+/**
+ * @def OPENTHREAD_CONFIG_RADIO_STATS_ENABLE
+ *
+ * Set to 1 to enable support for Radio Statistics. Note that this option only works for OPENTHREAD_FTD and
+ * OPENTHREAD_MTD.
+ *
+ */
+#if CONFIG_OPENTHREAD_RADIO_STATS_ENABLE
+#define OPENTHREAD_CONFIG_RADIO_STATS_ENABLE 1
+#endif
+
+/**
+ * @def OPENTHREAD_CONFIG_TMF_ADDRESS_QUERY_TIMEOUT
+ *
+ * The timeout value (in seconds) waiting for a address notification response after sending an address query.
+ *
+ */
+#ifndef OPENTHREAD_CONFIG_TMF_ADDRESS_QUERY_TIMEOUT
+#define OPENTHREAD_CONFIG_TMF_ADDRESS_QUERY_TIMEOUT CONFIG_OPENTHREAD_ADDRESS_QUERY_TIMEOUT
+#endif
+
+/**
+ * @def OPENTHREAD_CONFIG_TMF_ADDRESS_QUERY_INITIAL_RETRY_DELAY
+ *
+ * Initial retry delay for address query (in seconds).
+ *
+ */
+#ifndef OPENTHREAD_CONFIG_TMF_ADDRESS_QUERY_INITIAL_RETRY_DELAY
+#define OPENTHREAD_CONFIG_TMF_ADDRESS_QUERY_INITIAL_RETRY_DELAY CONFIG_OPENTHREAD_ADDRESS_QUERY_RETRY_DELAY
+#endif
+
+/**
+ * @def OPENTHREAD_CONFIG_TMF_ADDRESS_QUERY_MAX_RETRY_DELAY
+ *
+ * Maximum retry delay for address query (in seconds).
+ *
+ */
+#ifndef OPENTHREAD_CONFIG_TMF_ADDRESS_QUERY_MAX_RETRY_DELAY
+#define OPENTHREAD_CONFIG_TMF_ADDRESS_QUERY_MAX_RETRY_DELAY CONFIG_OPENTHREAD_ADDRESS_QUERY_MAX_RETRY_DELAY
+#endif
 
 #define OPENTHREAD_MTD 1

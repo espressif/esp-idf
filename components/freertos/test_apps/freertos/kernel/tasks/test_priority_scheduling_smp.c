@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -31,13 +31,13 @@ Expected:
     - None of the task_Bs should have run
 */
 
-#if    ( defined( CONFIG_FREERTOS_SMP ) && ( configNUM_CORES > 1 ) && ( configRUN_MULTIPLE_PRIORITIES == 1 ) ) \
-    || ( !defined( CONFIG_FREERTOS_SMP ) && ( configNUM_CORES > 1 ) )
+#if    ( defined( CONFIG_FREERTOS_SMP ) && ( CONFIG_FREERTOS_NUMBER_OF_CORES > 1 ) && ( configRUN_MULTIPLE_PRIORITIES == 1 ) ) \
+    || ( !defined( CONFIG_FREERTOS_SMP ) && ( CONFIG_FREERTOS_NUMBER_OF_CORES > 1 ) )
 
 #define UNITY_TASK_DELAY_TICKS      10
 
-static BaseType_t task_A_ran[configNUM_CORES];
-static BaseType_t task_B_ran[configNUM_CORES];
+static BaseType_t task_A_ran[CONFIG_FREERTOS_NUMBER_OF_CORES];
+static BaseType_t task_B_ran[CONFIG_FREERTOS_NUMBER_OF_CORES];
 
 static void task_A(void *arg)
 {
@@ -61,8 +61,8 @@ static void task_B(void *arg)
 
 TEST_CASE("Tasks: Test priority scheduling (SMP)", "[freertos]")
 {
-    TaskHandle_t task_A_handles[configNUM_CORES];
-    TaskHandle_t task_B_handles[configNUM_CORES];
+    TaskHandle_t task_A_handles[CONFIG_FREERTOS_NUMBER_OF_CORES];
+    TaskHandle_t task_B_handles[CONFIG_FREERTOS_NUMBER_OF_CORES];
     memset(task_A_ran, pdFALSE, sizeof(task_A_ran));
     memset(task_B_ran, pdFALSE, sizeof(task_B_ran));
 
@@ -70,12 +70,12 @@ TEST_CASE("Tasks: Test priority scheduling (SMP)", "[freertos]")
     vTaskPrioritySet(NULL, configMAX_PRIORITIES - 1);
 
     /* Create task_A for each core */
-    for (UBaseType_t x = 0; x < configNUM_CORES; x++) {
+    for (UBaseType_t x = 0; x < CONFIG_FREERTOS_NUMBER_OF_CORES; x++) {
         xTaskCreate(task_A, "task_A", configTEST_DEFAULT_STACK_SIZE, (void *)x, configMAX_PRIORITIES - 2, &task_A_handles[x]);
     }
 
     /* Create task_B for each core */
-    for (UBaseType_t x = 0; x < configNUM_CORES; x++) {
+    for (UBaseType_t x = 0; x < CONFIG_FREERTOS_NUMBER_OF_CORES; x++) {
         xTaskCreate(task_B, "task_B", configTEST_DEFAULT_STACK_SIZE, (void *)x, configMAX_PRIORITIES - 3, &task_B_handles[x]);
     }
 
@@ -83,13 +83,13 @@ TEST_CASE("Tasks: Test priority scheduling (SMP)", "[freertos]")
     vTaskDelay(UNITY_TASK_DELAY_TICKS);
 
     /* Check that all the task_As have run, and none of the task_Bs have run */
-    for (UBaseType_t x = 0; x < configNUM_CORES; x++) {
+    for (UBaseType_t x = 0; x < CONFIG_FREERTOS_NUMBER_OF_CORES; x++) {
         TEST_ASSERT_EQUAL(pdTRUE, task_A_ran[x]);
         TEST_ASSERT_EQUAL(pdFALSE, task_B_ran[x]);
     }
 
     /* Cleanup */
-    for (UBaseType_t x = 0; x < configNUM_CORES; x++) {
+    for (UBaseType_t x = 0; x < CONFIG_FREERTOS_NUMBER_OF_CORES; x++) {
         vTaskDelete(task_A_handles[x]);
         vTaskDelete(task_B_handles[x]);
     }
@@ -98,5 +98,5 @@ TEST_CASE("Tasks: Test priority scheduling (SMP)", "[freertos]")
     vTaskPrioritySet(NULL, configTEST_UNITY_TASK_PRIORITY);
 }
 
-#endif /*    ( defined( CONFIG_FREERTOS_SMP ) && ( configNUM_CORES > 1 ) && ( configRUN_MULTIPLE_PRIORITIES == 1 ) )
-          || ( !defined( CONFIG_FREERTOS_SMP ) && ( configNUM_CORES > 1 ) ) */
+#endif /*    ( defined( CONFIG_FREERTOS_SMP ) && ( CONFIG_FREERTOS_NUMBER_OF_CORES > 1 ) && ( configRUN_MULTIPLE_PRIORITIES == 1 ) )
+          || ( !defined( CONFIG_FREERTOS_SMP ) && ( CONFIG_FREERTOS_NUMBER_OF_CORES > 1 ) ) */

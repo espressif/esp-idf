@@ -15,7 +15,7 @@ Create/Destroy GPIO Bundle
 A GPIO bundle is a group of GPIOs, which can be manipulated at the same time in one CPU cycle. The maximal number of GPIOs that a bundle can contain is limited by each CPU. What's more, the GPIO bundle has a strong relevance to the CPU which it derives from. **Any operations on the GPIO bundle should be put inside a task which is running on the same CPU core to the GPIO bundle belongs to.** Likewise, only those ISRs who are installed on the same CPU core are allowed to do operations on that GPIO bundle.
 
 .. note::
-    
+
     Dedicated GPIO is more of a CPU peripheral, so it has a strong relationship with CPU core. It's highly recommended to install and operate GPIO bundle in a pin-to-core task. For example, if GPIOA is connected to CPU0, and the dedicated GPIO instruction is issued from CPU1, then it's impossible to control GPIOA.
 
 To install a GPIO bundle, one needs to call :cpp:func:`dedic_gpio_new_bundle` to allocate the software resources and connect the dedicated channels to user selected GPIOs. Configurations for a GPIO bundle are covered in :cpp:type:`dedic_gpio_bundle_config_t` structure:
@@ -90,7 +90,7 @@ For advanced users, they can always manipulate the GPIOs by writing assembly cod
 1. Allocate a GPIO bundle: :cpp:func:`dedic_gpio_new_bundle`
 2. Query the mask occupied by that bundle: :cpp:func:`dedic_gpio_get_out_mask` or/and :cpp:func:`dedic_gpio_get_in_mask`
 3. Call CPU LL apis (e.g., `dedic_gpio_cpu_ll_write_mask`) or write assembly code with that mask
-4. The fasted way of toggling IO is to use the dedicated "set/clear" instructions:
+4. The fastest way of toggling IO is to use the dedicated "set/clear" instructions:
 
     .. only:: esp32s2 or esp32s3
 
@@ -98,7 +98,7 @@ For advanced users, they can always manipulate the GPIOs by writing assembly cod
         - Clear bits of GPIO: ``clr_bit_gpio_out imm[7:0]``
         - Note: Immediate value width depends on the number of dedicated GPIO channels
 
-    .. only:: esp32c2 or esp32c3 or esp32c6
+    .. only:: esp32c2 or esp32c3 or esp32c6 or esp32h2
 
         - Set bits of GPIO: ``csrrsi rd, csr, imm[4:0]``
         - Clear bits of GPIO: ``csrrci rd, csr, imm[4:0]``
@@ -112,7 +112,7 @@ For advanced users, they can always manipulate the GPIOs by writing assembly cod
 
     For details of supported dedicated GPIO instructions, please refer to **{IDF_TARGET_NAME} Technical Reference Manual** > **Processor Instruction Extensions (PIE) (to be added later)** [`PDF <{IDF_TARGET_TRM_EN_URL}#pie>`__].
 
-.. only:: esp32c2 or esp32c3 or esp32c6
+.. only:: esp32c2 or esp32c3 or esp32c6 or esp32h2
 
     Code examples for manipulating dedicated GPIOs from assembly are provided in the :example:`peripherals/dedicated_gpio` directory of ESP-IDF examples. These examples show how to emulate a UART, an I2C and an SPI bus in assembly thanks to dedicated GPIOs.
 

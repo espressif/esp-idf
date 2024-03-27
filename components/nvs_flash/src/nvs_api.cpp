@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -50,10 +50,6 @@ private:
 uint32_t NVSHandleEntry::s_nvs_next_handle;
 
 extern "C" void nvs_dump(const char *partName);
-
-#ifndef LINUX_TARGET
-SemaphoreHandle_t nvs::Lock::mSemaphore = nullptr;
-#endif // ! LINUX_TARGET
 
 using namespace std;
 using namespace nvs;
@@ -268,6 +264,10 @@ static esp_err_t nvs_find_ns_handle(nvs_handle_t c_handle, NVSHandleSimple** han
 
 extern "C" esp_err_t nvs_open_from_partition(const char *part_name, const char* namespace_name, nvs_open_mode_t open_mode, nvs_handle_t *out_handle)
 {
+    esp_err_t lock_result = Lock::init();
+    if (lock_result != ESP_OK) {
+        return lock_result;
+    }
     Lock lock;
     ESP_LOGD(TAG, "%s %s %d", __func__, namespace_name, open_mode);
 
@@ -304,6 +304,25 @@ extern "C" void nvs_close(nvs_handle_t handle)
     }
     s_nvs_handles.erase(it);
     delete static_cast<NVSHandleEntry*>(it);
+}
+
+extern "C" esp_err_t nvs_find_key(nvs_handle_t c_handle, const char* key, nvs_type_t* out_type)
+{
+    Lock lock;
+    ESP_LOGD(TAG, "%s %s", __func__, key);
+    NVSHandleSimple *handle;
+    auto err = nvs_find_ns_handle(c_handle, &handle);
+    if (err != ESP_OK) {
+        return err;
+    }
+
+    nvs_type_t nvstype;
+    err = handle->find_key(key, nvstype);
+
+    if(err == ESP_OK && out_type != nullptr)
+        *out_type = nvstype;
+
+    return err;
 }
 
 extern "C" esp_err_t nvs_erase_key(nvs_handle_t c_handle, const char* key)

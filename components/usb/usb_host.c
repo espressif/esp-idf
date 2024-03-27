@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,6 +10,7 @@ Warning: The USB Host Library API is still a beta version and may be subject to 
 
 #include <stdlib.h>
 #include <stdint.h>
+#include "sdkconfig.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/queue.h"
@@ -46,6 +47,10 @@ static portMUX_TYPE host_lock = portMUX_INITIALIZER_UNLOCKED;
 
 #define PROCESS_REQUEST_PENDING_FLAG_USBH       0x01
 #define PROCESS_REQUEST_PENDING_FLAG_HUB        0x02
+
+#ifdef CONFIG_USB_HOST_ENABLE_ENUM_FILTER_CALLBACK
+#define ENABLE_ENUM_FILTER_CALLBACK
+#endif // CONFIG_USB_HOST_ENABLE_ENUM_FILTER_CALLBACK
 
 typedef struct ep_wrapper_s ep_wrapper_t;
 typedef struct interface_s interface_t;
@@ -94,11 +99,9 @@ struct client_s {
         TAILQ_HEAD(tailhead_done_ctrl_xfers, urb_s) done_ctrl_xfer_tailq;
         union {
             struct {
-                uint32_t events_pending: 1;
                 uint32_t handling_events: 1;
-                uint32_t blocked: 1;
                 uint32_t taking_mux: 1;
-                uint32_t reserved4: 4;
+                uint32_t reserved6: 6;
                 uint32_t num_intf_claimed: 8;
                 uint32_t reserved16: 16;
             };
@@ -128,10 +131,8 @@ typedef struct {
         uint32_t lib_event_flags;
         union {
             struct {
-                uint32_t process_pending: 1;
                 uint32_t handling_events: 1;
-                uint32_t blocked: 1;
-                uint32_t reserved5: 5;
+                uint32_t reserved7: 7;
                 uint32_t num_clients: 8;
                 uint32_t reserved16: 16;
             };
@@ -176,24 +177,16 @@ static inline bool _check_client_opened_device(client_t *client_obj, uint8_t dev
 
 static bool _unblock_client(client_t *client_obj, bool in_isr)
 {
-    bool send_sem;
-    if (!client_obj->dynamic.flags.events_pending && !client_obj->dynamic.flags.handling_events) {
-        client_obj->dynamic.flags.events_pending = 1;
-        send_sem = true;
-    } else {
-        send_sem = false;
-    }
+    bool yield;
 
     HOST_EXIT_CRITICAL_SAFE();
-    bool yield = false;
-    if (send_sem) {
-        if (in_isr) {
-            BaseType_t xTaskWoken = pdFALSE;
-            xSemaphoreGiveFromISR(client_obj->constant.event_sem, &xTaskWoken);
-            yield = (xTaskWoken == pdTRUE);
-        } else {
-            xSemaphoreGive(client_obj->constant.event_sem);
-        }
+    if (in_isr) {
+        BaseType_t xTaskWoken = pdFALSE;
+        xSemaphoreGiveFromISR(client_obj->constant.event_sem, &xTaskWoken);
+        yield = (xTaskWoken == pdTRUE);
+    } else {
+        xSemaphoreGive(client_obj->constant.event_sem);
+        yield = false;
     }
     HOST_ENTER_CRITICAL_SAFE();
 
@@ -202,24 +195,16 @@ static bool _unblock_client(client_t *client_obj, bool in_isr)
 
 static bool _unblock_lib(bool in_isr)
 {
-    bool send_sem;
-    if (!p_host_lib_obj->dynamic.flags.process_pending && !p_host_lib_obj->dynamic.flags.handling_events) {
-        p_host_lib_obj->dynamic.flags.process_pending = 1;
-        send_sem = true;
-    } else {
-        send_sem = false;
-    }
+    bool yield;
 
     HOST_EXIT_CRITICAL_SAFE();
-    bool yield = false;
-    if (send_sem) {
-        if (in_isr) {
-            BaseType_t xTaskWoken = pdFALSE;
-            xSemaphoreGiveFromISR(p_host_lib_obj->constant.event_sem, &xTaskWoken);
-            yield = (xTaskWoken == pdTRUE);
-        } else {
-            xSemaphoreGive(p_host_lib_obj->constant.event_sem);
-        }
+    if (in_isr) {
+        BaseType_t xTaskWoken = pdFALSE;
+        xSemaphoreGiveFromISR(p_host_lib_obj->constant.event_sem, &xTaskWoken);
+        yield = (xTaskWoken == pdTRUE);
+    } else {
+        xSemaphoreGive(p_host_lib_obj->constant.event_sem);
+        yield = false;
     }
     HOST_ENTER_CRITICAL_SAFE();
 
@@ -277,46 +262,41 @@ static bool proc_req_callback(usb_proc_req_source_t source, bool in_isr, void *a
     return yield;
 }
 
-static void ctrl_xfer_callback(usb_device_handle_t dev_hdl, urb_t *urb, void *arg)
+static void usbh_event_callback(usbh_event_data_t *event_data, void *arg)
 {
-    assert(urb->usb_host_client != NULL);
-    // Redistribute done control transfer to the clients that submitted them
-    client_t *client_obj = (client_t *)urb->usb_host_client;
+    switch (event_data->event) {
+    case USBH_EVENT_CTRL_XFER: {
+        assert(event_data->ctrl_xfer_data.urb != NULL);
+        assert(event_data->ctrl_xfer_data.urb->usb_host_client != NULL);
+        // Redistribute done control transfer to the clients that submitted them
+        client_t *client_obj = (client_t *)event_data->ctrl_xfer_data.urb->usb_host_client;
 
-    HOST_ENTER_CRITICAL();
-    TAILQ_INSERT_TAIL(&client_obj->dynamic.done_ctrl_xfer_tailq, urb, tailq_entry);
-    client_obj->dynamic.num_done_ctrl_xfer++;
-    _unblock_client(client_obj, false);
-    HOST_EXIT_CRITICAL();
-}
-
-static void dev_event_callback(usb_device_handle_t dev_hdl, usbh_event_t usbh_event, void *arg)
-{
-    // Check usbh_event. The data type of event_arg depends on the type of event
-    switch (usbh_event) {
-    case USBH_EVENT_DEV_NEW: {
+        HOST_ENTER_CRITICAL();
+        TAILQ_INSERT_TAIL(&client_obj->dynamic.done_ctrl_xfer_tailq, event_data->ctrl_xfer_data.urb, tailq_entry);
+        client_obj->dynamic.num_done_ctrl_xfer++;
+        _unblock_client(client_obj, false);
+        HOST_EXIT_CRITICAL();
+        break;
+    }
+    case USBH_EVENT_NEW_DEV: {
         // Prepare a NEW_DEV client event message, the send it to all clients
-        uint8_t dev_addr;
-        ESP_ERROR_CHECK(usbh_dev_get_addr(dev_hdl, &dev_addr));
         usb_host_client_event_msg_t event_msg = {
             .event = USB_HOST_CLIENT_EVENT_NEW_DEV,
-            .new_dev.address = dev_addr,
+            .new_dev.address = event_data->new_dev_data.dev_addr,
         };
         send_event_msg_to_clients(&event_msg, true, 0);
         break;
     }
     case USBH_EVENT_DEV_GONE: {
         // Prepare event msg, send only to clients that have opened the device
-        uint8_t dev_addr;
-        ESP_ERROR_CHECK(usbh_dev_get_addr(dev_hdl, &dev_addr));
         usb_host_client_event_msg_t event_msg = {
             .event = USB_HOST_CLIENT_EVENT_DEV_GONE,
-            .dev_gone.dev_hdl = dev_hdl,
+            .dev_gone.dev_hdl = event_data->dev_gone_data.dev_hdl,
         };
-        send_event_msg_to_clients(&event_msg, false, dev_addr);
+        send_event_msg_to_clients(&event_msg, false, event_data->dev_gone_data.dev_addr);
         break;
     }
-    case USBH_EVENT_DEV_ALL_FREE: {
+    case USBH_EVENT_ALL_FREE: {
         // Notify the lib handler that all devices are free
         HOST_ENTER_CRITICAL();
         p_host_lib_obj->dynamic.lib_event_flags |= USB_HOST_LIB_EVENT_FLAGS_ALL_FREE;
@@ -414,9 +394,7 @@ esp_err_t usb_host_install(const usb_host_config_t *config)
     usbh_config_t usbh_config = {
         .proc_req_cb = proc_req_callback,
         .proc_req_cb_arg = NULL,
-        .ctrl_xfer_cb = ctrl_xfer_callback,
-        .ctrl_xfer_cb_arg = NULL,
-        .event_cb = dev_event_callback,
+        .event_cb = usbh_event_callback,
         .event_cb_arg = NULL,
     };
     ret = usbh_install(&usbh_config);
@@ -424,10 +402,18 @@ esp_err_t usb_host_install(const usb_host_config_t *config)
         goto usbh_err;
     }
 
+#ifdef ENABLE_ENUM_FILTER_CALLBACK
+    if (config->enum_filter_cb == NULL) {
+        ESP_LOGW(USB_HOST_TAG, "User callback to set USB device configuration is enabled, but not used");
+    }
+#endif // ENABLE_ENUM_FILTER_CALLBACK
     // Install Hub
     hub_config_t hub_config = {
         .proc_req_cb = proc_req_callback,
         .proc_req_cb_arg = NULL,
+#ifdef ENABLE_ENUM_FILTER_CALLBACK
+        .enum_filter_cb = config->enum_filter_cb,
+#endif // ENABLE_ENUM_FILTER_CALLBACK
     };
     ret = hub_install(&hub_config);
     if (ret != ESP_OK) {
@@ -515,45 +501,49 @@ esp_err_t usb_host_uninstall(void)
 
 esp_err_t usb_host_lib_handle_events(TickType_t timeout_ticks, uint32_t *event_flags_ret)
 {
-    esp_err_t ret;
-    uint32_t event_flags = 0;
+    // Check arguments and state
+    HOST_CHECK(p_host_lib_obj != NULL, ESP_ERR_INVALID_STATE);
+
+    esp_err_t ret = (timeout_ticks == 0) ? ESP_OK : ESP_ERR_TIMEOUT;    // We don't want to return ESP_ERR_TIMEOUT if we aren't blocking
+    uint32_t event_flags;
 
     HOST_ENTER_CRITICAL();
-    if (!p_host_lib_obj->dynamic.flags.process_pending) {
-        // There is currently processing that needs to be done. Wait for some processing
-        HOST_EXIT_CRITICAL();
-        BaseType_t sem_ret = xSemaphoreTake(p_host_lib_obj->constant.event_sem, timeout_ticks);
-        if (sem_ret == pdFALSE) {
-            ret = ESP_ERR_TIMEOUT;
-            goto exit;
-        }
-        HOST_ENTER_CRITICAL();
-    }
-    // Read and clear process pending flags
-    uint32_t process_pending_flags = p_host_lib_obj->dynamic.process_pending_flags;
-    p_host_lib_obj->dynamic.process_pending_flags = 0;
+    // Set handling_events flag. This prevents the host library from being uninstalled
     p_host_lib_obj->dynamic.flags.handling_events = 1;
-    while (process_pending_flags) {
+    HOST_EXIT_CRITICAL();
+
+    while (1) {
+        // Loop until there are no more events
+        if (xSemaphoreTake(p_host_lib_obj->constant.event_sem, timeout_ticks) == pdFALSE) {
+            // Timed out waiting for semaphore or currently no events
+            break;
+        }
+
+        // Read and clear process pending flags
+        HOST_ENTER_CRITICAL();
+        uint32_t process_pending_flags = p_host_lib_obj->dynamic.process_pending_flags;
+        p_host_lib_obj->dynamic.process_pending_flags = 0;
         HOST_EXIT_CRITICAL();
+
         if (process_pending_flags & PROCESS_REQUEST_PENDING_FLAG_USBH) {
             ESP_ERROR_CHECK(usbh_process());
         }
         if (process_pending_flags & PROCESS_REQUEST_PENDING_FLAG_HUB) {
             ESP_ERROR_CHECK(hub_process());
         }
-        HOST_ENTER_CRITICAL();
-        // Read and clear process pending flags again, and loop back if there is more to process
-        process_pending_flags = p_host_lib_obj->dynamic.process_pending_flags;
-        p_host_lib_obj->dynamic.process_pending_flags = 0;
+
+        ret = ESP_OK;
+        // Set timeout_ticks to 0 so that we can check for events again without blocking
+        timeout_ticks = 0;
     }
-    p_host_lib_obj->dynamic.flags.process_pending = 0;
+
+    HOST_ENTER_CRITICAL();
     p_host_lib_obj->dynamic.flags.handling_events = 0;
+    // Read and clear any event flags
     event_flags = p_host_lib_obj->dynamic.lib_event_flags;
     p_host_lib_obj->dynamic.lib_event_flags = 0;
     HOST_EXIT_CRITICAL();
 
-    ret = ESP_OK;
-exit:
     if (event_flags_ret != NULL) {
         *event_flags_ret = event_flags;
     }
@@ -709,7 +699,6 @@ esp_err_t usb_host_client_deregister(usb_host_client_handle_t client_hdl)
             !TAILQ_EMPTY(&client_obj->dynamic.idle_ep_tailq) ||
             !TAILQ_EMPTY(&client_obj->dynamic.done_ctrl_xfer_tailq) ||
             client_obj->dynamic.flags.handling_events ||
-            client_obj->dynamic.flags.blocked ||
             client_obj->dynamic.flags.taking_mux ||
             client_obj->dynamic.flags.num_intf_claimed != 0 ||
             client_obj->dynamic.num_done_ctrl_xfer != 0 ||
@@ -746,28 +735,26 @@ exit:
 
 esp_err_t usb_host_client_handle_events(usb_host_client_handle_t client_hdl, TickType_t timeout_ticks)
 {
+    // Check arguments and state
     HOST_CHECK(client_hdl != NULL, ESP_ERR_INVALID_ARG);
-    esp_err_t ret;
+    HOST_CHECK(p_host_lib_obj != NULL, ESP_ERR_INVALID_STATE);
+
+    esp_err_t ret = (timeout_ticks == 0) ? ESP_OK : ESP_ERR_TIMEOUT;    // We don't want to return ESP_ERR_TIMEOUT if we aren't blocking
     client_t *client_obj = (client_t *)client_hdl;
 
     HOST_ENTER_CRITICAL();
-    if (!client_obj->dynamic.flags.events_pending) {
-        // There are currently no events, wait for one to occur
-        client_obj->dynamic.flags.blocked = 1;
-        HOST_EXIT_CRITICAL();
-        BaseType_t sem_ret = xSemaphoreTake(client_obj->constant.event_sem, timeout_ticks);
-        HOST_ENTER_CRITICAL();
-        client_obj->dynamic.flags.blocked = 0;
-        if (sem_ret == pdFALSE) {
-            HOST_EXIT_CRITICAL();
-            // Timed out waiting for semaphore
-            ret = ESP_ERR_TIMEOUT;
-            goto exit;
-        }
-    }
-    // Mark that we're processing events
+    // Set handling_events flag. This prevents the client from being deregistered
     client_obj->dynamic.flags.handling_events = 1;
-    while (client_obj->dynamic.flags.handling_events) {
+    HOST_EXIT_CRITICAL();
+
+    while (1) {
+        // Loop until there are no more events
+        if (xSemaphoreTake(client_obj->constant.event_sem, timeout_ticks) == pdFALSE) {
+            // Timed out waiting for semaphore or currently no events
+            break;
+        }
+
+        HOST_ENTER_CRITICAL();
         // Handle pending endpoints
         if (!TAILQ_EMPTY(&client_obj->dynamic.pending_ep_tailq)) {
             _handle_pending_ep(client_obj);
@@ -784,29 +771,26 @@ esp_err_t usb_host_client_handle_events(usb_host_client_handle_t client_hdl, Tic
             urb->transfer.callback(&urb->transfer);
             HOST_ENTER_CRITICAL();
         }
+        HOST_EXIT_CRITICAL();
+
         // Handle event messages
         while (uxQueueMessagesWaiting(client_obj->constant.event_msg_queue) > 0) {
-            HOST_EXIT_CRITICAL();
             // Dequeue the event message and call the client event callback
             usb_host_client_event_msg_t event_msg;
             BaseType_t queue_ret = xQueueReceive(client_obj->constant.event_msg_queue, &event_msg, 0);
             assert(queue_ret == pdTRUE);
             client_obj->constant.event_callback(&event_msg, client_obj->constant.callback_arg);
-            HOST_ENTER_CRITICAL();
         }
-        // Check each event again to see any new events occurred
-        if (TAILQ_EMPTY(&client_obj->dynamic.pending_ep_tailq) &&
-                client_obj->dynamic.num_done_ctrl_xfer == 0 &&
-                uxQueueMessagesWaiting(client_obj->constant.event_msg_queue) == 0) {
-            // All pending endpoints and event messages handled
-            client_obj->dynamic.flags.events_pending = 0;
-            client_obj->dynamic.flags.handling_events = 0;
-        }
+
+        ret = ESP_OK;
+        // Set timeout_ticks to 0 so that we can check for events again without blocking
+        timeout_ticks = 0;
     }
+
+    HOST_ENTER_CRITICAL();
+    client_obj->dynamic.flags.handling_events = 0;
     HOST_EXIT_CRITICAL();
 
-    ret = ESP_OK;
-exit:
     return ret;
 }
 
@@ -1245,7 +1229,7 @@ exit:
 
 esp_err_t usb_host_transfer_alloc(size_t data_buffer_size, int num_isoc_packets, usb_transfer_t **transfer)
 {
-    urb_t *urb = urb_alloc(data_buffer_size, 0, num_isoc_packets);
+    urb_t *urb = urb_alloc(data_buffer_size, num_isoc_packets);
     if (urb == NULL) {
         return ESP_ERR_NO_MEM;
     }

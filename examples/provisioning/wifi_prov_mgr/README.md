@@ -45,7 +45,7 @@ For iOS, a provisioning application along with source code is available on GitHu
 
 #### Platform : Linux / Windows / macOS
 
-To install the dependency packages needed, please refer to the top level [README file](../../README.md#running-test-python-script-ttfw).
+To install the dependency packages needed, please refer to the top level [README file](../../README.md#running-test-python-script-pytest).
 
 `esp_prov` supports BLE and SoftAP transport for Linux, MacOS and Windows platforms. For BLE, however, if dependencies are not met, the script falls back to console mode and requires another application through which the communication can take place. The `esp_prov` console will guide you through the provisioning process of locating the correct BLE GATT services and characteristics, the values to write, and input read values.
 

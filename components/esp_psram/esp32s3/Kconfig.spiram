@@ -83,7 +83,7 @@ menu "SPI RAM config"
 
         config SPIRAM_SPEED_120M
             depends on SPIRAM_MODE_QUAD || IDF_EXPERIMENTAL_FEATURES
-            bool "120MHz clock speed"
+            bool "120MHz clock speed (READ DOCS FIRST)"
 
             help
                 - Quad PSRAM 120 MHz is stable.

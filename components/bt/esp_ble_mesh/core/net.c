@@ -606,6 +606,13 @@ bool bt_mesh_kr_update(struct bt_mesh_subnet *sub, uint8_t new_kr, bool new_key)
         case BLE_MESH_KR_PHASE_2:
             BT_INFO("KR Phase 0x%02x -> Normal", sub->kr_phase);
 
+#if CONFIG_BLE_MESH_PRB_SRV
+            /* In this case, consider that kr_flag has changed, so
+             * need to modify the content of the random field.
+             */
+            bt_mesh_private_beacon_update_random(sub);
+#endif
+
             sub->kr_phase = BLE_MESH_KR_NORMAL;
             bt_mesh_net_revoke_keys(sub);
 
@@ -669,13 +676,26 @@ bool bt_mesh_net_iv_update(uint32_t iv_index, bool iv_update)
 {
     int i;
 
+    /* If a node in Normal Operation receives a Secure Network beacon or
+     * a Mesh Private beacon with an IV index less than the last known
+     * IV Index or greater than the last known IV Index + 42, the Secure
+     * Network beacon or the Mesh Private beacon shall be ignored.
+     */
+    if (iv_index < bt_mesh.iv_index ||
+        iv_index > bt_mesh.iv_index + 42) {
+        BT_ERR("IV Index out of sync: 0x%08x != 0x%08x",
+                iv_index, bt_mesh.iv_index);
+        return false;
+    }
+
     if (bt_mesh_atomic_test_bit(bt_mesh.flags, BLE_MESH_IVU_IN_PROGRESS)) {
         /* We're currently in IV Update mode */
-
-        if (iv_index != bt_mesh.iv_index) {
-            BT_WARN("IV Index mismatch: 0x%08x != 0x%08x",
-                    iv_index, bt_mesh.iv_index);
-            return false;
+        if (iv_index >= bt_mesh.iv_index + 1) {
+            BT_WARN("Performing IV Index Recovery");
+            (void)memset(bt_mesh.rpl, 0, sizeof(bt_mesh.rpl));
+            bt_mesh.iv_index = iv_index;
+            bt_mesh.seq = 0U;
+            goto do_update;
         }
 
         if (iv_update) {
@@ -688,18 +708,6 @@ bool bt_mesh_net_iv_update(uint32_t iv_index, bool iv_update)
 
         if (iv_index == bt_mesh.iv_index) {
             BT_DBG("Same IV Index in normal mode");
-            return false;
-        }
-
-        /* If a node in Normal Operation receives a Secure Network beacon or
-         * a Mesh Private beacon with an IV index less than the last known
-         * IV Index or greater than the last known IV Index + 42, the Secure
-         * Network beacon or the Mesh Private beacon shall be ignored.
-         */
-        if (iv_index < bt_mesh.iv_index ||
-            iv_index > bt_mesh.iv_index + 42) {
-            BT_ERR("IV Index out of sync: 0x%08x != 0x%08x",
-                   iv_index, bt_mesh.iv_index);
             return false;
         }
 
@@ -1027,6 +1035,7 @@ int bt_mesh_net_send(struct bt_mesh_net_tx *tx, struct net_buf *buf,
         tx->ctx->send_ttl = bt_mesh_default_ttl_get();
     }
 
+#if 0
     /* The output filter of the interface connected to advertising
      * or GATT bearers shall drop all messages with the TTL value
      * set to 1 unless they contain a network PDU that is tagged
@@ -1038,6 +1047,7 @@ int bt_mesh_net_send(struct bt_mesh_net_tx *tx, struct net_buf *buf,
         err = -EIO;
         goto done;
     }
+#endif
 
     /* Spec:
      * If the message security material is not set by the network
@@ -1246,7 +1256,7 @@ int net_decrypt(struct bt_mesh_subnet *sub, const uint8_t *enc,
 
     rx->ctx.addr = BLE_MESH_NET_HDR_SRC(buf->data);
     if (!BLE_MESH_ADDR_IS_UNICAST(rx->ctx.addr)) {
-        BT_INFO("Ignoring non-unicast src addr 0x%04x", rx->ctx.addr);
+        BT_DBG("Ignoring non-unicast src addr 0x%04x", rx->ctx.addr);
         return -EINVAL;
     }
 
@@ -1397,7 +1407,8 @@ static bool relay_to_adv(enum bt_mesh_net_if net_if)
     case BLE_MESH_NET_IF_ADV:
         return (bt_mesh_relay_get() == BLE_MESH_RELAY_ENABLED);
     case BLE_MESH_NET_IF_PROXY:
-        return (bt_mesh_gatt_proxy_get() == BLE_MESH_GATT_PROXY_ENABLED);
+        return (bt_mesh_gatt_proxy_get() == BLE_MESH_GATT_PROXY_ENABLED ||
+                bt_mesh_private_gatt_proxy_state_get() == BLE_MESH_PRIVATE_GATT_PROXY_ENABLED);
     default:
         return false;
     }
@@ -1465,6 +1476,13 @@ static void bt_mesh_net_relay(struct net_buf_simple *sbuf,
         return;
     }
 
+#if CONFIG_BLE_MESH_BRC_SRV
+    if (rx->sbr_rpl) {
+        BT_ERR("Bridge RPL attack");
+        goto done;
+    }
+#endif
+
     if (cred != BLE_MESH_FLOODING_CRED
 #if CONFIG_BLE_MESH_DF_SRV
          && cred != BLE_MESH_DIRECTED_CRED
@@ -1474,8 +1492,13 @@ static void bt_mesh_net_relay(struct net_buf_simple *sbuf,
         return;
     }
 
-    if (rx->ctx.recv_ttl == 0x01 && bt_mesh_tag_relay(tag) == false) {
-        BT_DBG("Ignore PDU with TTL=1 but not tagged as relay");
+    if (rx->ctx.recv_ttl == 0x01) {
+        BT_DBG("Ignore PDU with TTL = 1");
+        return;
+    }
+
+    if (rx->ctx.recv_ttl == 0x02 && bt_mesh_tag_relay(tag) == false) {
+        BT_DBG("Ignore PDU with TTL = 2 but not tagged as relay");
         return;
     }
 
@@ -1519,7 +1542,7 @@ static void bt_mesh_net_relay(struct net_buf_simple *sbuf,
 #endif
 
     if (!buf) {
-        BT_ERR("Out of relay buffers");
+        BT_INFO("Out of relay buffers");
         return;
     }
 
@@ -1553,10 +1576,11 @@ static void bt_mesh_net_relay(struct net_buf_simple *sbuf,
 
     BT_DBG("Relaying packet. TTL is now %u", BLE_MESH_NET_HDR_TTL(buf->data));
 
-    /* 1. Update NID if RX or RX was with friend credentials.
+    /* 1. Update NID if RX or RX was with friend credentials(included by case 3).
      * 2. Update NID if the net_key has changed.
+     * 3. Update NID if credential has changed.
      */
-    if (rx->ctx.recv_cred == BLE_MESH_FRIENDSHIP_CRED || netkey_changed) {
+    if (netkey_changed || cred != rx->ctx.recv_cred) {
         buf->data[0] &= 0x80; /* Clear everything except IVI */
         buf->data[0] |= nid;
     }
@@ -1600,19 +1624,6 @@ static void bt_mesh_net_relay(struct net_buf_simple *sbuf,
     if (((bearer & BLE_MESH_ADV_BEARER) && relay_to_adv(rx->net_if)) ||
         netkey_changed ||
         rx->ctx.recv_cred == BLE_MESH_FRIENDSHIP_CRED) {
-        /* NOTE: temporary add for case MESH/NODE/SBR/NET/BV-01-C */
-#if CONFIG_BLE_MESH_BRC_SRV
-        if (bt_mesh_bridge_rpl_check(rx, NULL) && netkey_changed) {
-            BT_ERR("It is RPL attack, not bridge");
-            /**
-             * @todo:/NODE/DF/INIT/BV-TBD-C,
-             * The message from LT2 was double-checked,
-             * so the message was mistaken for an RPL attack.
-            */
-            goto done;
-        }
-#endif
-
 #if !CONFIG_BLE_MESH_RELAY_ADV_BUF
         bt_mesh_adv_send(buf, xmit, NULL, NULL);
 #else
@@ -1740,9 +1751,7 @@ static bool ignore_net_msg(uint16_t src, uint16_t dst)
     }
 
     if (IS_ENABLED(CONFIG_BLE_MESH_PROVISIONER) &&
-        bt_mesh_is_provisioner_en() &&
-        BLE_MESH_ADDR_IS_UNICAST(dst) &&
-        bt_mesh_elem_find(dst)) {
+        bt_mesh_is_provisioner_en()) {
         /* If the destination address of the message is the element
          * address of Provisioner, but Provisioner fails to find the
          * node in its provisioning database, then this message will
@@ -1844,7 +1853,11 @@ void bt_mesh_net_recv(struct net_buf_simple *data, int8_t rssi,
      * was neither a local element nor an LPN we're Friends for.
      */
     if (!BLE_MESH_ADDR_IS_UNICAST(rx.ctx.recv_dst) ||
-        (!rx.local_match && !rx.friend_match)) {
+        (!rx.local_match && !rx.friend_match
+#if CONFIG_BLE_MESH_NOT_RELAY_REPLAY_MSG
+        && !rx.replay_msg
+#endif
+        )) {
         net_buf_simple_restore(&buf, &state);
         bt_mesh_net_relay(&buf, &rx);
     }

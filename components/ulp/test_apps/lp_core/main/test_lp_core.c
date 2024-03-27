@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,9 +7,15 @@
 #include <stdio.h>
 #include <inttypes.h>
 #include <sys/time.h>
+#include "soc/soc_caps.h"
+#include "esp_rom_caps.h"
 #include "lp_core_test_app.h"
 #include "lp_core_test_app_counter.h"
+
+#if SOC_LP_TIMER_SUPPORTED
 #include "lp_core_test_app_set_timer_wakeup.h"
+#endif
+
 #include "lp_core_test_app_gpio.h"
 #include "ulp_lp_core.h"
 #include "ulp_lp_core_lp_timer_shared.h"
@@ -35,7 +41,7 @@ extern const uint8_t lp_core_main_gpio_bin_end[]   asm("_binary_lp_core_test_app
 static void load_and_start_lp_core_firmware(ulp_lp_core_cfg_t* cfg, const uint8_t* firmware_start, const uint8_t* firmware_end)
 {
     TEST_ASSERT(ulp_lp_core_load_binary(firmware_start,
-                        (firmware_end - firmware_start)) == ESP_OK);
+                                        (firmware_end - firmware_start)) == ESP_OK);
 
     TEST_ASSERT(ulp_lp_core_run(cfg) == ESP_OK);
 
@@ -112,6 +118,10 @@ TEST_CASE("Test LP core delay", "[lp_core]")
     ulp_command_resp = LP_CORE_NO_COMMAND;
 }
 
+#define LP_TIMER_TEST_DURATION_S        (5)
+#define LP_TIMER_TEST_SLEEP_DURATION_US (20000)
+
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32P4, ESP32C5)
 
 static void do_ulp_wakeup_deepsleep(lp_core_test_commands_t ulp_cmd)
 {
@@ -133,7 +143,6 @@ static void do_ulp_wakeup_deepsleep(lp_core_test_commands_t ulp_cmd)
     UNITY_TEST_FAIL(__LINE__, "Should not get here!");
 }
 
-
 static void check_reset_reason_ulp_wakeup(void)
 {
     TEST_ASSERT_EQUAL(ESP_SLEEP_WAKEUP_ULP, esp_sleep_get_wakeup_cause());
@@ -150,38 +159,13 @@ static void do_ulp_wakeup_after_long_delay_deepsleep(void)
 }
 
 TEST_CASE_MULTIPLE_STAGES("LP-core is able to wakeup main CPU from deep sleep after a short delay", "[ulp]",
-        do_ulp_wakeup_after_short_delay_deepsleep,
-        check_reset_reason_ulp_wakeup);
+                          do_ulp_wakeup_after_short_delay_deepsleep,
+                          check_reset_reason_ulp_wakeup);
 
 /* Certain erroneous wake-up triggers happen only after sleeping for a few seconds  */
 TEST_CASE_MULTIPLE_STAGES("LP-core is able to wakeup main CPU from deep sleep after a long delay", "[ulp]",
-        do_ulp_wakeup_after_long_delay_deepsleep,
-        check_reset_reason_ulp_wakeup);
-
-
-#define LP_TIMER_TEST_DURATION_S        (5)
-#define LP_TIMER_TEST_SLEEP_DURATION_US (20000)
-
-TEST_CASE("LP Timer can wakeup lp core periodically", "[lp_core]")
-{
-    int64_t start, test_duration;
-    /* Load ULP firmware and start the coprocessor */
-    ulp_lp_core_cfg_t cfg = {
-        .wakeup_source = ULP_LP_CORE_WAKEUP_SOURCE_LP_TIMER,
-        .lp_timer_sleep_duration_us = LP_TIMER_TEST_SLEEP_DURATION_US,
-    };
-
-    load_and_start_lp_core_firmware(&cfg, lp_core_main_counter_bin_start, lp_core_main_counter_bin_end);
-
-    start = esp_timer_get_time();
-    vTaskDelay(pdMS_TO_TICKS(LP_TIMER_TEST_DURATION_S*1000));
-
-    test_duration = esp_timer_get_time() - start;
-    uint32_t expected_run_count = test_duration / LP_TIMER_TEST_SLEEP_DURATION_US;
-    printf("LP core ran %"PRIu32" times in %"PRIi64" ms, expected it to run approx %"PRIu32" times\n", ulp_counter, test_duration/1000, expected_run_count);
-
-    TEST_ASSERT_INT_WITHIN_MESSAGE(5, expected_run_count, ulp_counter, "LP Core did not wake up the expected number of times");
-}
+                          do_ulp_wakeup_after_long_delay_deepsleep,
+                          check_reset_reason_ulp_wakeup);
 
 RTC_FAST_ATTR static struct timeval tv_start;
 
@@ -216,9 +200,8 @@ static void check_reset_reason_and_sleep_duration(void)
 
     TEST_ASSERT_EQUAL(ESP_SLEEP_WAKEUP_ULP, esp_sleep_get_wakeup_cause());
 
-
-    int64_t sleep_duration = (tv_stop.tv_sec - tv_start.tv_sec)*1000 + (tv_stop.tv_usec - tv_start.tv_usec)/1000;
-    int64_t expected_sleep_duration_ms = ulp_counter_wakeup_limit * LP_TIMER_TEST_SLEEP_DURATION_US/1000;
+    int64_t sleep_duration = (tv_stop.tv_sec - tv_start.tv_sec) * 1000 + (tv_stop.tv_usec - tv_start.tv_usec) / 1000;
+    int64_t expected_sleep_duration_ms = ulp_counter_wakeup_limit * LP_TIMER_TEST_SLEEP_DURATION_US / 1000;
 
     printf("CPU slept for %"PRIi64" ms, expected it to sleep approx %"PRIi64" ms\n", sleep_duration, expected_sleep_duration_ms);
     /* Rough estimate, as CPU spends quite some time waking up, but will test if lp core is waking up way too often etc */
@@ -226,8 +209,35 @@ static void check_reset_reason_and_sleep_duration(void)
 }
 
 TEST_CASE_MULTIPLE_STAGES("LP Timer can wakeup lp core periodically during deep sleep", "[ulp]",
-        do_ulp_wakeup_with_lp_timer_deepsleep,
-        check_reset_reason_and_sleep_duration);
+                          do_ulp_wakeup_with_lp_timer_deepsleep,
+                          check_reset_reason_and_sleep_duration);
+
+#endif //#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32P4, ESP32C5)
+
+TEST_CASE("LP Timer can wakeup lp core periodically", "[lp_core]")
+{
+    int64_t start, test_duration;
+    /* Load ULP firmware and start the coprocessor */
+    ulp_lp_core_cfg_t cfg = {
+        .wakeup_source = ULP_LP_CORE_WAKEUP_SOURCE_LP_TIMER,
+        .lp_timer_sleep_duration_us = LP_TIMER_TEST_SLEEP_DURATION_US,
+#if ESP_ROM_HAS_LP_ROM
+        /* ROM Boot takes quite a bit longer, which skews the numbers of wake-ups. skip rom boot to keep the calculation simple */
+        .skip_lp_rom_boot = true,
+#endif
+    };
+
+    load_and_start_lp_core_firmware(&cfg, lp_core_main_counter_bin_start, lp_core_main_counter_bin_end);
+
+    start = esp_timer_get_time();
+    vTaskDelay(pdMS_TO_TICKS(LP_TIMER_TEST_DURATION_S * 1000));
+
+    test_duration = esp_timer_get_time() - start;
+    uint32_t expected_run_count = test_duration / LP_TIMER_TEST_SLEEP_DURATION_US;
+    printf("LP core ran %"PRIu32" times in %"PRIi64" ms, expected it to run approx %"PRIu32" times\n", ulp_counter, test_duration / 1000, expected_run_count);
+
+    TEST_ASSERT_INT_WITHIN_MESSAGE(5, expected_run_count, ulp_counter, "LP Core did not wake up the expected number of times");
+}
 
 static bool ulp_is_running(uint32_t *counter_variable)
 {
@@ -266,6 +276,7 @@ TEST_CASE("LP core can be stopped and and started again from main CPU", "[ulp]")
     }
 }
 
+#if SOC_LP_TIMER_SUPPORTED
 TEST_CASE("LP core can schedule next wake-up time by itself", "[ulp]")
 {
     int64_t start, test_duration;
@@ -273,18 +284,22 @@ TEST_CASE("LP core can schedule next wake-up time by itself", "[ulp]")
     /* Load ULP firmware and start the coprocessor */
     ulp_lp_core_cfg_t cfg = {
         .wakeup_source = ULP_LP_CORE_WAKEUP_SOURCE_LP_TIMER,
+#if ESP_ROM_HAS_LP_ROM
+        /* ROM Boot takes quite a bit longer, which skews the numbers of wake-ups. skip rom boot to keep the calculation simple */
+        .skip_lp_rom_boot = true,
+#endif
     };
 
     load_and_start_lp_core_firmware(&cfg, lp_core_main_set_timer_wakeup_bin_start, lp_core_main_set_timer_wakeup_bin_end);
 
     start = esp_timer_get_time();
-    vTaskDelay(pdMS_TO_TICKS(LP_TIMER_TEST_DURATION_S*1000));
+    vTaskDelay(pdMS_TO_TICKS(LP_TIMER_TEST_DURATION_S * 1000));
 
     test_duration = esp_timer_get_time() - start;
     /* ULP will alternative between setting WAKEUP_PERIOD_BASE_US and 2*WAKEUP_PERIOD_BASE_US
        as a wakeup period which should give an average wakeup time of 1.5*WAKEUP_PERIOD_BASE_US */
-    uint32_t expected_run_count = test_duration / (1.5*ulp_WAKEUP_PERIOD_BASE_US);
-    printf("LP core ran %"PRIu32" times in %"PRIi64" ms, expected it to run approx %"PRIu32" times\n", ulp_set_timer_wakeup_counter, test_duration/1000, expected_run_count);
+    uint32_t expected_run_count = test_duration / (1.5 * ulp_WAKEUP_PERIOD_BASE_US);
+    printf("LP core ran %"PRIu32" times in %"PRIi64" ms, expected it to run approx %"PRIu32" times\n", ulp_set_timer_wakeup_counter, test_duration / 1000, expected_run_count);
 
     TEST_ASSERT_INT_WITHIN_MESSAGE(5, expected_run_count, ulp_set_timer_wakeup_counter, "LP Core did not wake up the expected number of times");
 }
@@ -299,8 +314,10 @@ TEST_CASE("LP core gpio tests", "[ulp]")
 
     load_and_start_lp_core_firmware(&cfg, lp_core_main_gpio_bin_start, lp_core_main_gpio_bin_end);
 
-    while(!ulp_gpio_test_finished) {
+    while (!ulp_gpio_test_finished) {
     }
 
     TEST_ASSERT_TRUE(ulp_gpio_test_succeeded);
 }
+
+#endif //SOC_LP_TIMER_SUPPORTED

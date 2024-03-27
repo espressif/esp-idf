@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,24 +9,8 @@
 
 #include "hal/spi_hal.h"
 #include "hal/assert.h"
+#include "soc/ext_mem_defs.h"
 #include "soc/soc_caps.h"
-
-//This GDMA related part will be introduced by GDMA dedicated APIs in the future. Here we temporarily use macros.
-#if SOC_AHB_GDMA_VERSION == 1
-#include "soc/gdma_struct.h"
-#include "hal/gdma_ll.h"
-
-#define spi_dma_ll_rx_reset(dev, chan)                             gdma_ll_rx_reset_channel(&GDMA, chan)
-#define spi_dma_ll_tx_reset(dev, chan)                             gdma_ll_tx_reset_channel(&GDMA, chan);
-#define spi_dma_ll_rx_start(dev, chan, addr) do {\
-            gdma_ll_rx_set_desc_addr(&GDMA, chan, (uint32_t)addr);\
-            gdma_ll_rx_start(&GDMA, chan);\
-        } while (0)
-#define spi_dma_ll_tx_start(dev, chan, addr) do {\
-            gdma_ll_tx_set_desc_addr(&GDMA, chan, (uint32_t)addr);\
-            gdma_ll_tx_start(&GDMA, chan);\
-        } while (0)
-#endif
 
 void spi_hal_setup_device(spi_hal_context_t *hal, const spi_hal_dev_config_t *dev)
 {
@@ -37,7 +21,6 @@ void spi_hal_setup_device(spi_hal_context_t *hal, const spi_hal_dev_config_t *de
 #endif
     spi_ll_master_set_pos_cs(hw, dev->cs_pin_id, dev->positive_cs);
     spi_ll_master_set_clock_by_reg(hw, &dev->timing_conf.clock_reg);
-    spi_ll_set_clk_source(hw, dev->timing_conf.clock_source);
     //Configure bit order
     spi_ll_set_rx_lsbfirst(hw, dev->rx_lsbfirst);
     spi_ll_set_tx_lsbfirst(hw, dev->tx_lsbfirst);
@@ -131,57 +114,24 @@ void spi_hal_setup_trans(spi_hal_context_t *hal, const spi_hal_dev_config_t *dev
     memcpy(&hal->trans_config, trans, sizeof(spi_hal_trans_config_t));
 }
 
-void spi_hal_prepare_data(spi_hal_context_t *hal, const spi_hal_dev_config_t *dev, const spi_hal_trans_config_t *trans)
+void spi_hal_enable_data_line(spi_dev_t *hw, bool mosi_ena, bool miso_ena)
 {
-    spi_dev_t *hw = hal->hw;
+    spi_ll_enable_mosi(hw, mosi_ena);
+    spi_ll_enable_miso(hw, miso_ena);
+}
 
-    //Fill DMA descriptors
-    if (trans->rcv_buffer) {
-        if (!hal->dma_enabled) {
-            //No need to setup anything; we'll copy the result out of the work registers directly later.
-        } else {
-            lldesc_setup_link(hal->dmadesc_rx, trans->rcv_buffer, ((trans->rx_bitlen + 7) / 8), true);
+void spi_hal_hw_prepare_rx(spi_dev_t *hw)
+{
+    spi_ll_dma_rx_fifo_reset(hw);
+    spi_ll_infifo_full_clr(hw);
+    spi_ll_dma_rx_enable(hw, 1);
+}
 
-            spi_dma_ll_rx_reset(hal->dma_in, hal->rx_dma_chan);
-            spi_ll_dma_rx_fifo_reset(hal->hw);
-            spi_ll_infifo_full_clr(hal->hw);
-            spi_ll_dma_rx_enable(hal->hw, 1);
-            spi_dma_ll_rx_start(hal->dma_in, hal->rx_dma_chan, hal->dmadesc_rx);
-        }
-
-    }
-#if CONFIG_IDF_TARGET_ESP32
-    else {
-        //DMA temporary workaround: let RX DMA work somehow to avoid the issue in ESP32 v0/v1 silicon
-        if (hal->dma_enabled && !dev->half_duplex) {
-            spi_ll_dma_rx_enable(hal->hw, 1);
-            spi_dma_ll_rx_start(hal->dma_in, hal->rx_dma_chan, 0);
-        }
-    }
-#endif
-
-    if (trans->send_buffer) {
-        if (!hal->dma_enabled) {
-            //Need to copy data to registers manually
-            spi_ll_write_buffer(hw, trans->send_buffer, trans->tx_bitlen);
-        } else {
-            lldesc_setup_link(hal->dmadesc_tx, trans->send_buffer, (trans->tx_bitlen + 7) / 8, false);
-
-            spi_dma_ll_tx_reset(hal->dma_out, hal->tx_dma_chan);
-            spi_ll_dma_tx_fifo_reset(hal->hw);
-            spi_ll_outfifo_empty_clr(hal->hw);
-            spi_ll_dma_tx_enable(hal->hw, 1);
-            spi_dma_ll_tx_start(hal->dma_out, hal->tx_dma_chan, hal->dmadesc_tx);
-        }
-    }
-
-    //in ESP32 these registers should be configured after the DMA is set
-    if ((!dev->half_duplex && trans->rcv_buffer) || trans->send_buffer) {
-        spi_ll_enable_mosi(hw, 1);
-    } else {
-        spi_ll_enable_mosi(hw, 0);
-    }
-    spi_ll_enable_miso(hw, (trans->rcv_buffer) ? 1 : 0);
+void spi_hal_hw_prepare_tx(spi_dev_t *hw)
+{
+    spi_ll_dma_tx_fifo_reset(hw);
+    spi_ll_outfifo_empty_clr(hw);
+    spi_ll_dma_tx_enable(hw, 1);
 }
 
 void spi_hal_user_start(const spi_hal_context_t *hal)
@@ -195,12 +145,60 @@ bool spi_hal_usr_is_done(const spi_hal_context_t *hal)
     return spi_ll_usr_is_done(hal->hw);
 }
 
+void spi_hal_push_tx_buffer(const spi_hal_context_t *hal, const spi_hal_trans_config_t *hal_trans)
+{
+    if (hal_trans->send_buffer) {
+        spi_ll_write_buffer(hal->hw, hal_trans->send_buffer, hal_trans->tx_bitlen);
+    }
+    //No need to setup anything for RX, we'll copy the result out of the work registers directly later.
+}
+
 void spi_hal_fetch_result(const spi_hal_context_t *hal)
 {
     const spi_hal_trans_config_t *trans = &hal->trans_config;
 
-    if (trans->rcv_buffer && !hal->dma_enabled) {
+    if (trans->rcv_buffer) {
         //Need to copy from SPI regs to result buffer.
         spi_ll_read_buffer(hal->hw, trans->rcv_buffer, trans->rx_bitlen);
     }
 }
+
+#if SOC_SPI_SCT_SUPPORTED
+/*------------------------------------------------------------------------------
+ * Segmented-Configure-Transfer
+ *----------------------------------------------------------------------------*/
+void spi_hal_clear_intr_mask(spi_hal_context_t *hal, uint32_t mask) {
+    spi_ll_clear_intr(hal->hw, mask);
+}
+
+bool spi_hal_get_intr_mask(spi_hal_context_t *hal, uint32_t mask) {
+    return spi_ll_get_intr(hal->hw, mask);
+}
+
+void spi_hal_sct_set_conf_bits_len(spi_hal_context_t *hal, uint32_t conf_len) {
+    spi_ll_set_conf_phase_bits_len(hal->hw, conf_len);
+}
+
+void spi_hal_sct_init_conf_buffer(spi_hal_context_t *hal, uint32_t conf_buffer[SOC_SPI_SCT_BUFFER_NUM_MAX])
+{
+    spi_ll_init_conf_buffer(hal->hw, conf_buffer);
+}
+
+void spi_hal_sct_format_conf_buffer(spi_hal_context_t *hal, const spi_hal_seg_config_t *config, const spi_hal_dev_config_t *dev, uint32_t conf_buffer[SOC_SPI_SCT_BUFFER_NUM_MAX])
+{
+    spi_ll_format_line_mode_conf_buff(hal->hw, hal->trans_config.line_mode, conf_buffer);
+    spi_ll_format_prep_phase_conf_buffer(hal->hw, config->cs_setup, conf_buffer);
+    spi_ll_format_cmd_phase_conf_buffer(hal->hw, config->cmd, config->cmd_bits, dev->tx_lsbfirst, conf_buffer);
+    spi_ll_format_addr_phase_conf_buffer(hal->hw, config->addr, config->addr_bits, dev->rx_lsbfirst, conf_buffer);
+    spi_ll_format_dummy_phase_conf_buffer(hal->hw, config->dummy_bits, conf_buffer);
+    spi_ll_format_dout_phase_conf_buffer(hal->hw, config->tx_bitlen, conf_buffer);
+    spi_ll_format_din_phase_conf_buffer(hal->hw, config->rx_bitlen, conf_buffer);
+    spi_ll_format_done_phase_conf_buffer(hal->hw, config->cs_hold, conf_buffer);
+    spi_ll_format_conf_phase_conf_buffer(hal->hw, config->seg_end, conf_buffer);
+#if CONFIG_IDF_TARGET_ESP32S2
+    // only s2 support update seg_gap_len by conf_buffer
+    spi_ll_format_conf_bitslen_buffer(hal->hw, config->seg_gap_len, conf_buffer);
+#endif
+}
+
+#endif  //#if SOC_SPI_SCT_SUPPORTED

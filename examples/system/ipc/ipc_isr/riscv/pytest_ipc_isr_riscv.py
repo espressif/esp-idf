@@ -7,6 +7,7 @@ from pytest_embedded import Dut
 
 @pytest.mark.esp32p4
 @pytest.mark.generic
+@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='lack of runner')
 def test_ipc_isr(dut: Dut) -> None:
     dut.expect_exact('example: Start')
     dut.expect_exact('example: MSTATUS = 0x3880')

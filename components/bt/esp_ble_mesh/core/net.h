@@ -58,7 +58,6 @@ struct bt_mesh_subnet {
     uint8_t  mpb_flags_last;            /* Flags of last sent private beacon */
     uint8_t  mpb_ivi_last: 1;           /* IV Index of last sent private beacon */
     uint8_t  mpb_random[13];            /* Random of current private beacon */
-    uint8_t  mpb_random_last[13];       /* Random of last sent private beacon */
 
     uint8_t  private_node_id;           /* Private Node Identity State */
 #endif /* CONFIG_BLE_MESH_PRIVATE_BEACON */
@@ -274,6 +273,10 @@ struct bt_mesh_lpn {
     /* Previous Friend of this LPN */
     uint16_t old_friend;
 
+#if CONFIG_BLE_MESH_DF_SRV
+    uint8_t  old_directed_forwarding;
+#endif
+
     /* Duration reported for last advertising packet */
     uint16_t adv_duration;
 
@@ -381,13 +384,17 @@ struct bt_mesh_net_rx {
     struct bt_mesh_subnet *sub;
     struct bt_mesh_msg_ctx ctx;
     uint32_t seq;            /* Sequence Number */
-    uint8_t  old_iv:1,       /* iv_index - 1 was used */
+    uint16_t old_iv:1,       /* iv_index - 1 was used */
              new_key:1,      /* Data was encrypted with updated key */
              friend_cred:1 __attribute__((deprecated)), /* Data was encrypted with friend cred */
              ctl:1,          /* Network Control */
              net_if:2,       /* Network interface */
              local_match:1,  /* Matched a local element */
-             friend_match:1; /* Matched an LPN we're friends for */
+             friend_match:1, /* Matched an LPN we're friends for */
+#if CONFIG_BLE_MESH_NOT_RELAY_REPLAY_MSG
+             replay_msg:1,   /* Replayed messages */
+#endif
+             sbr_rpl:1;      /* Bridge RPL attacker */
     uint16_t msg_cache_idx;  /* Index of entry in message cache */
 };
 
@@ -406,7 +413,7 @@ extern struct bt_mesh_net bt_mesh;
 
 #define BLE_MESH_NET_IVI_TX         (bt_mesh.iv_index - \
                                      bt_mesh_atomic_test_bit(bt_mesh.flags, \
-                                     BLE_MESH_IVU_IN_PROGRESS))
+                                                             BLE_MESH_IVU_IN_PROGRESS))
 #define BLE_MESH_NET_IVI_RX(rx)     (bt_mesh.iv_index - (rx)->old_iv)
 
 #define BLE_MESH_NET_HDR_LEN        9

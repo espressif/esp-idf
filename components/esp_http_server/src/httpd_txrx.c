@@ -483,6 +483,45 @@ esp_err_t httpd_resp_send_err(httpd_req_t *req, httpd_err_code_t error, const ch
     return ret;
 }
 
+esp_err_t httpd_resp_send_custom_err(httpd_req_t *req, const char *status, const char *msg)
+{
+    ESP_LOGW(TAG, LOG_FMT("%s - %s"), status, msg);
+
+    /* Set error code in HTTP response */
+    httpd_resp_set_status(req, status);
+    httpd_resp_set_type(req, HTTPD_TYPE_TEXT);
+
+#ifdef CONFIG_HTTPD_ERR_RESP_NO_DELAY
+    /* Use TCP_NODELAY option to force socket to send data in buffer
+     * This ensures that the error message is sent before the socket
+     * is closed */
+    struct httpd_req_aux *ra = req->aux;
+    int nodelay = 1;
+    if (setsockopt(ra->sd->fd, IPPROTO_TCP, TCP_NODELAY, &nodelay, sizeof(nodelay)) < 0) {
+        /* If failed to turn on TCP_NODELAY, throw warning and continue */
+        ESP_LOGW(TAG, LOG_FMT("error calling setsockopt : %d"), errno);
+        nodelay = 0;
+    }
+#endif
+
+    /* Send HTTP error message */
+    esp_err_t ret = httpd_resp_send(req, msg, HTTPD_RESP_USE_STRLEN);
+
+#ifdef CONFIG_HTTPD_ERR_RESP_NO_DELAY
+    /* If TCP_NODELAY was set successfully above, time to disable it */
+    if (nodelay == 1) {
+        nodelay = 0;
+        if (setsockopt(ra->sd->fd, IPPROTO_TCP, TCP_NODELAY, &nodelay, sizeof(nodelay)) < 0) {
+            /* If failed to turn off TCP_NODELAY, throw error and
+             * return failure to signal for socket closure */
+            ESP_LOGE(TAG, LOG_FMT("error calling setsockopt : %d"), errno);
+            return ESP_ERR_INVALID_STATE;
+        }
+    }
+#endif
+    return ret;
+}
+
 esp_err_t httpd_register_err_handler(httpd_handle_t handle,
                                      httpd_err_code_t error,
                                      httpd_err_handler_func_t err_handler_fn)

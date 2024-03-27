@@ -112,6 +112,15 @@ static inline void brownout_ll_intr_clear(void)
     RTCCNTL.int_clr.rtc_brown_out = 1;
 }
 
+/**
+ * @brief Clear BOD internal count.
+ */
+static inline void brownout_ll_clear_count(void)
+{
+    // Not supported on esp32
+}
+
+
 #ifdef __cplusplus
 }
 #endif

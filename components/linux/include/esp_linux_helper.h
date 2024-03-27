@@ -1,9 +1,15 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 #pragma once
+
+/*
+ * NOTE: This file is deprecated and will be removed in the future.
+ *       Use include sys/cdefs.h instead, it will also include
+ *       the corresponding libbsd header. TODO: IDF-9391
+ */
 
 #ifdef __cplusplus
 extern "C" {

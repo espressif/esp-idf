@@ -36,6 +36,7 @@
 #include "esp_owe_i.h"
 #include "common/sae.h"
 #include "esp_eap_client_i.h"
+#include "esp_wpa3_i.h"
 
 /**
  * eapol_sm_notify_eap_success - Notification of external EAP success trigger
@@ -260,7 +261,7 @@ void wpa_eapol_key_send(struct wpa_sm *sm, const u8 *kck, size_t kck_len,
         goto out;
     }
     wpa_hexdump_key(MSG_DEBUG, "WPA: KCK", kck, kck_len);
-    wpa_hexdump(MSG_DEBUG, "WPA: Derived Key MIC", key_mic, wpa_mic_len(sm->key_mgmt));
+    wpa_hexdump(MSG_DEBUG, "WPA: Derived Key MIC", key_mic, wpa_mic_len(sm->key_mgmt, sm->pmk_len));
     wpa_hexdump(MSG_MSGDUMP, "WPA: TX EAPOL-Key", msg, msg_len);
     wpa_sm_ether_send(sm, dest, proto, msg, msg_len);
 out:
@@ -285,14 +286,12 @@ static void wpa_sm_key_request(struct wpa_sm *sm, int error, int pairwise)
     int key_info, ver;
     u8 bssid[ETH_ALEN], *rbuf, *key_mic;
 
-    if (sm->key_mgmt == WPA_KEY_MGMT_OSEN || wpa_key_mgmt_suite_b(sm->key_mgmt))
+    if (wpa_use_akm_defined(sm->key_mgmt))
         ver = WPA_KEY_INFO_TYPE_AKM_DEFINED;
     else if (wpa_key_mgmt_ft(sm->key_mgmt) || wpa_key_mgmt_sha256(sm->key_mgmt))
         ver = WPA_KEY_INFO_TYPE_AES_128_CMAC;
     else if (sm->pairwise_cipher != WPA_CIPHER_TKIP)
         ver = WPA_KEY_INFO_TYPE_HMAC_SHA1_AES;
-    else if (sm->key_mgmt == WPA_KEY_MGMT_SAE || sm->key_mgmt == WPA_KEY_MGMT_OWE)
-        ver = 0;
     else
         ver = WPA_KEY_INFO_TYPE_HMAC_MD5_RC4;
 
@@ -302,7 +301,7 @@ static void wpa_sm_key_request(struct wpa_sm *sm, int error, int pairwise)
         return;
     }
 
-    mic_len = wpa_mic_len(sm->key_mgmt);
+    mic_len = wpa_mic_len(sm->key_mgmt, sm->pmk_len);
     hdrlen = mic_len == 24 ? sizeof(*reply192) : sizeof(*reply);
     rbuf = wpa_sm_alloc_eapol(sm, IEEE802_1X_TYPE_EAPOL_KEY, NULL,
                   hdrlen, &rlen, (void *) &reply);
@@ -428,7 +427,7 @@ static int wpa_supplicant_get_pmk(struct wpa_sm *sm,
     } else if (wpa_key_mgmt_wpa_ieee8021x(sm->key_mgmt)) {
         int res = 0, pmk_len;
         /* For ESP_SUPPLICANT this is already set using wpa_set_pmk*/
-        //res = eapol_sm_get_key(sm->eapol, sm->pmk, PMK_LEN);
+        //res = eapol_sm_get_key(sm->eapol, 0, sm->pmk, PMK_LEN);
         if (wpa_key_mgmt_sha384(sm->key_mgmt))
             pmk_len = PMK_LEN_SUITE_B_192;
         else
@@ -586,7 +585,7 @@ int   wpa_supplicant_send_2_of_4(struct wpa_sm *sm, const unsigned char *dst,
 #endif /* CONFIG_IEEE80211R */
     wpa_hexdump(MSG_MSGDUMP, "WPA: WPA IE for msg 2/4\n", wpa_ie, wpa_ie_len);
 
-    mic_len = wpa_mic_len(sm->key_mgmt);
+    mic_len = wpa_mic_len(sm->key_mgmt, sm->pmk_len);
     hdrlen = mic_len == 24 ? sizeof(*reply192) : sizeof(*reply);
     rbuf = wpa_sm_alloc_eapol(sm, IEEE802_1X_TYPE_EAPOL_KEY,
                   NULL, hdrlen + wpa_ie_len,
@@ -655,6 +654,7 @@ void wpa_supplicant_process_1_of_4(struct wpa_sm *sm,
     u8 *kde, *kde_buf = NULL;
     size_t kde_len;
 
+#ifdef CONFIG_ESP_WIFI_ENTERPRISE_SUPPORT
     if (is_wpa2_enterprise_connection()) {
         wpa2_ent_eap_state_t state = eap_client_get_eap_state();
         if (state == WPA2_ENT_EAP_STATE_IN_PROGRESS) {
@@ -663,6 +663,8 @@ void wpa_supplicant_process_1_of_4(struct wpa_sm *sm,
             return;
         }
     }
+#endif
+
     wpa_sm_set_state(WPA_FIRST_HALF_4WAY_HANDSHAKE);
 
     wpa_printf(MSG_DEBUG, "WPA 1/4-Way Handshake");
@@ -845,7 +847,7 @@ void   wpa_supplicant_key_neg_complete(struct wpa_sm *sm,
             sm, addr, MLME_SETPROTECTION_PROTECT_TYPE_RX_TX,
             MLME_SETPROTECTION_KEY_TYPE_PAIRWISE);
 
-        if (wpa_key_mgmt_wpa_psk(sm->key_mgmt) || sm->key_mgmt == WPA_KEY_MGMT_OWE)
+        if (wpa_key_mgmt_wpa_psk(sm->key_mgmt) || sm->key_mgmt == WPA_KEY_MGMT_OWE || sm->key_mgmt == WPA_KEY_MGMT_DPP)
             eapol_sm_notify_eap_success(TRUE);
         /*
          * Start preauthentication after a short wait to avoid a
@@ -1008,37 +1010,37 @@ int wpa_supplicant_pairwise_gtk(struct wpa_sm *sm,
 static int wpa_supplicant_install_igtk(struct wpa_sm *sm,
                       const wifi_wpa_igtk_t *igtk)
 {
-   size_t len = wpa_cipher_key_len(sm->mgmt_group_cipher);
-   u16 keyidx = WPA_GET_LE16(igtk->keyid);
+    size_t len = wpa_cipher_key_len(sm->mgmt_group_cipher);
+    u16 keyidx = WPA_GET_LE16(igtk->keyid);
 
-   /* Detect possible key reinstallation */
-   if (sm->igtk.igtk_len == len &&
-       os_memcmp(sm->igtk.igtk, igtk->igtk, sm->igtk.igtk_len) == 0) {
-       wpa_printf(MSG_DEBUG,
-           "WPA: Not reinstalling already in-use IGTK to the driver (keyidx=%d)",
-           keyidx);
-       return  0;
-   }
+    /* Detect possible key reinstallation */
+    if (sm->igtk.igtk_len == len &&
+        os_memcmp(sm->igtk.igtk, igtk->igtk, sm->igtk.igtk_len) == 0) {
+        wpa_printf(MSG_DEBUG,
+            "WPA: Not reinstalling already in-use IGTK to the driver (keyidx=%d)",
+            keyidx);
+        return  0;
+    }
 
-   wpa_printf(MSG_DEBUG,
-       "WPA: IGTK keyid %d pn %02x%02x%02x%02x%02x%02x",
-       keyidx, MAC2STR(igtk->pn));
-   wpa_hexdump_key(MSG_DEBUG, "WPA: IGTK", igtk->igtk, len);
-   if (keyidx > 4095) {
-       wpa_printf(MSG_WARNING,
-           "WPA: Invalid IGTK KeyID %d", keyidx);
-       return -1;
-   }
-   if (esp_wifi_set_igtk_internal(WIFI_IF_STA, igtk) < 0) {
-       wpa_printf(MSG_WARNING,
-           "WPA: Failed to configure IGTK to the driver");
-           return -1;
-   }
+    wpa_printf(MSG_DEBUG,
+        "WPA: IGTK keyid %d pn %02x%02x%02x%02x%02x%02x",
+        keyidx, MAC2STR(igtk->pn));
+    wpa_hexdump_key(MSG_DEBUG, "WPA: IGTK", igtk->igtk, len);
 
-   sm->igtk.igtk_len = len;
-   os_memcpy(sm->igtk.igtk, igtk->igtk, sm->igtk.igtk_len);
+    if (esp_wifi_set_igtk_internal(WIFI_IF_STA, igtk) < 0) {
+        if (keyidx > 4095) {
+            wpa_printf(MSG_WARNING,
+                "WPA: Invalid IGTK KeyID %d", keyidx);
+        }
+        wpa_printf(MSG_WARNING,
+            "WPA: Failed to configure IGTK to the driver");
+        return -1;
+    }
 
-   return 0;
+    sm->igtk.igtk_len = len;
+    os_memcpy(sm->igtk.igtk, igtk->igtk, sm->igtk.igtk_len);
+
+    return 0;
 }
 #endif /* CONFIG_IEEE80211W */
 
@@ -1205,7 +1207,7 @@ static int wpa_supplicant_send_4_of_4(struct wpa_sm *sm, const unsigned char *ds
     struct wpa_eapol_key_192 *reply192;
     u8 *rbuf, *key_mic;
 
-    mic_len = wpa_mic_len(sm->key_mgmt);
+    mic_len = wpa_mic_len(sm->key_mgmt, sm->pmk_len);
     hdrlen = mic_len == 24 ? sizeof(*reply192) : sizeof(*reply);
 
     rbuf = wpa_sm_alloc_eapol(sm, IEEE802_1X_TYPE_EAPOL_KEY, NULL,
@@ -1574,7 +1576,7 @@ static int wpa_supplicant_send_2_of_2(struct wpa_sm *sm,
     struct wpa_eapol_key_192 *reply192;
     u8 *rbuf, *key_mic;
 
-    mic_len = wpa_mic_len(sm->key_mgmt);
+    mic_len = wpa_mic_len(sm->key_mgmt, sm->pmk_len);
     hdrlen = mic_len == 24 ? sizeof(*reply192) : sizeof(*reply);
 
     rbuf = wpa_sm_alloc_eapol(sm, IEEE802_1X_TYPE_EAPOL_KEY, NULL,
@@ -1683,7 +1685,7 @@ static int wpa_supplicant_verify_eapol_key_mic(struct wpa_sm *sm,
 {
     u8 mic[WPA_EAPOL_KEY_MIC_MAX_LEN];
     int ok = 0;
-    size_t mic_len = wpa_mic_len(sm->key_mgmt);
+    size_t mic_len = wpa_mic_len(sm->key_mgmt, sm->pmk_len);
 
     os_memcpy(mic, key->key_mic, mic_len);
     if (sm->tptk_set) {
@@ -1754,10 +1756,7 @@ static int wpa_supplicant_decrypt_key_data(struct wpa_sm *sm,
         }
     } else if (ver == WPA_KEY_INFO_TYPE_HMAC_SHA1_AES ||
                ver == WPA_KEY_INFO_TYPE_AES_128_CMAC ||
-               sm->key_mgmt == WPA_KEY_MGMT_OSEN ||
-               wpa_key_mgmt_suite_b(sm->key_mgmt) ||
-               sm->key_mgmt == WPA_KEY_MGMT_SAE ||
-               sm->key_mgmt == WPA_KEY_MGMT_OWE) {
+               wpa_use_aes_key_wrap(sm->key_mgmt)) {
         u8 *buf;
         if (*key_data_len < 8 || *key_data_len % 8) {
             wpa_printf(MSG_DEBUG, "WPA: Unsupported "
@@ -1860,7 +1859,7 @@ int wpa_sm_rx_eapol(u8 *src_addr, u8 *buf, u32 len)
     size_t mic_len, keyhdrlen;
     u8 *key_data;
 
-    mic_len = wpa_mic_len(sm->key_mgmt);
+    mic_len = wpa_mic_len(sm->key_mgmt, sm->pmk_len);
     keyhdrlen = mic_len == 24 ? sizeof(*key192) : sizeof(*key);
 
     if (len < sizeof(*hdr) + keyhdrlen) {
@@ -1924,20 +1923,14 @@ int wpa_sm_rx_eapol(u8 *src_addr, u8 *buf, u32 len)
     if (ver != WPA_KEY_INFO_TYPE_HMAC_MD5_RC4 &&
 #ifdef CONFIG_IEEE80211W
         ver != WPA_KEY_INFO_TYPE_AES_128_CMAC &&
-#ifdef CONFIG_WPA3_SAE
-        sm->key_mgmt != WPA_KEY_MGMT_SAE &&
 #endif
-        !wpa_key_mgmt_suite_b(sm->key_mgmt) &&
-#ifdef CONFIG_OWE_STA
-        sm->key_mgmt != WPA_KEY_MGMT_OWE &&
-#endif /* CONFIG_OWE_STA */
-#endif
-        ver != WPA_KEY_INFO_TYPE_HMAC_SHA1_AES) {
+        ver != WPA_KEY_INFO_TYPE_HMAC_SHA1_AES &&
+        !wpa_use_akm_defined(sm->key_mgmt)) {
         wpa_printf(MSG_DEBUG, "WPA: Unsupported EAPOL-Key descriptor "
                "version %d.", ver);
         goto out;
     }
-    if (wpa_key_mgmt_suite_b(sm->key_mgmt) &&
+    if (wpa_use_akm_defined(sm->key_mgmt) &&
         ver != WPA_KEY_INFO_TYPE_AKM_DEFINED) {
         wpa_msg(NULL, MSG_INFO,
                 "RSN: Unsupported EAPOL-Key descriptor version %d (expected AKM defined = 0)",
@@ -1948,20 +1941,15 @@ int wpa_sm_rx_eapol(u8 *src_addr, u8 *buf, u32 len)
 #ifdef CONFIG_IEEE80211W
     if (wpa_key_mgmt_sha256(sm->key_mgmt)) {
         if (ver != WPA_KEY_INFO_TYPE_AES_128_CMAC &&
-            sm->key_mgmt != WPA_KEY_MGMT_OSEN &&
-            !wpa_key_mgmt_suite_b(sm->key_mgmt) &&
-            sm->key_mgmt != WPA_KEY_MGMT_SAE &&
-            sm->key_mgmt != WPA_KEY_MGMT_OWE) {
+            !wpa_use_akm_defined(sm->key_mgmt)) {
             goto out;
         }
     } else
 #endif
 
     if (sm->pairwise_cipher == WPA_CIPHER_CCMP &&
-        !wpa_key_mgmt_suite_b(sm->key_mgmt) &&
-        ver != WPA_KEY_INFO_TYPE_HMAC_SHA1_AES &&
-        sm->key_mgmt != WPA_KEY_MGMT_SAE &&
-        sm->key_mgmt != WPA_KEY_MGMT_OWE) {
+        !wpa_use_akm_defined(sm->key_mgmt) &&
+        ver != WPA_KEY_INFO_TYPE_HMAC_SHA1_AES ) {
         wpa_printf(MSG_DEBUG, "WPA: CCMP is used, but EAPOL-Key "
                "descriptor version (%d) is not 2.", ver);
         if (sm->group_cipher != WPA_CIPHER_CCMP &&
@@ -1982,7 +1970,7 @@ int wpa_sm_rx_eapol(u8 *src_addr, u8 *buf, u32 len)
 
 #ifdef CONFIG_GCMP
     if (sm->pairwise_cipher == WPA_CIPHER_GCMP &&
-        !wpa_key_mgmt_suite_b(sm->key_mgmt) &&
+        !wpa_use_akm_defined(sm->key_mgmt) &&
         ver != WPA_KEY_INFO_TYPE_HMAC_SHA1_AES) {
         wpa_msg(NULL, MSG_INFO,
                 "WPA: GCMP is used, but EAPOL-Key "
@@ -2291,27 +2279,33 @@ void wpa_set_profile(u32 wpa_proto, u8 auth_mode)
     } else if (auth_mode == WPA2_AUTH_PSK_SHA256) {
         sm->key_mgmt = WPA_KEY_MGMT_PSK_SHA256;
     } else if (auth_mode == WPA3_AUTH_PSK) {
-         sm->key_mgmt = WPA_KEY_MGMT_SAE; /* for WPA3 PSK */
+        sm->key_mgmt = WPA_KEY_MGMT_SAE; /* for WPA3 PSK */
     } else if (auth_mode == WAPI_AUTH_PSK) {
-         sm->key_mgmt = WPA_KEY_MGMT_WAPI_PSK; /* for WAPI PSK */
+        sm->key_mgmt = WPA_KEY_MGMT_WAPI_PSK; /* for WAPI PSK */
     } else if (auth_mode == WPA2_AUTH_ENT_SHA384_SUITE_B) {
-         sm->key_mgmt = WPA_KEY_MGMT_IEEE8021X_SUITE_B_192;
+        sm->key_mgmt = WPA_KEY_MGMT_IEEE8021X_SUITE_B_192;
     } else if (auth_mode == WPA2_AUTH_FT_PSK) {
-         sm->key_mgmt = WPA_KEY_MGMT_FT_PSK;
+        sm->key_mgmt = WPA_KEY_MGMT_FT_PSK;
     } else if (auth_mode == WPA3_AUTH_OWE) {
-         sm->key_mgmt = WPA_KEY_MGMT_OWE;
+        sm->key_mgmt = WPA_KEY_MGMT_OWE;
+    } else if (auth_mode == WPA3_AUTH_PSK_EXT_KEY) {
+        sm->key_mgmt = WPA_KEY_MGMT_SAE_EXT_KEY; /* for WPA3 PSK */
+    } else if (auth_mode == WPA3_AUTH_DPP) {
+        sm->key_mgmt = WPA_KEY_MGMT_DPP;
     } else {
         sm->key_mgmt = WPA_KEY_MGMT_PSK;  /* fixed to PSK for now */
     }
 }
 
-void wpa_set_pmk(uint8_t *pmk, const u8 *pmkid, bool cache_pmksa)
+void wpa_set_pmk(uint8_t *pmk, size_t pmk_length, const u8 *pmkid, bool cache_pmksa)
 {
     struct wpa_sm *sm = &gWpaSm;
     int pmk_len;
 
     if (wpa_key_mgmt_sha384(sm->key_mgmt))
         pmk_len = PMK_LEN_SUITE_B_192;
+    else if (wpa_key_mgmt_sae(sm->key_mgmt))
+        pmk_len = pmk_length;
     else
         pmk_len = PMK_LEN;
 
@@ -2337,7 +2331,8 @@ int wpa_set_bss(char *macddr, char * bssid, u8 pairwise_cipher, u8 group_cipher,
     /* Ideally we should use network_ctx for this purpose however currently network profile block
      * is part of libraries,
      * TODO Correct this in future during NVS restructuring */
-    if ((sm->key_mgmt == WPA_KEY_MGMT_SAE) &&
+    if ((sm->key_mgmt == WPA_KEY_MGMT_SAE ||
+         sm->key_mgmt == WPA_KEY_MGMT_SAE_EXT_KEY) &&
         (os_memcmp(sm->bssid, bssid, ETH_ALEN) == 0) &&
         (os_memcmp(sm->ssid, ssid, ssid_len) != 0)) {
         use_pmk_cache = false;
@@ -2476,7 +2471,10 @@ wpa_set_passphrase(char * passphrase, u8 *ssid, size_t ssid_len)
      *  Here only handle passphrase string.  Need extra step to handle 32B, 64Hex raw
      *    PMK.
      */
-    if (sm->key_mgmt == WPA_KEY_MGMT_SAE || sm->key_mgmt == WPA_KEY_MGMT_OWE)
+    if (sm->key_mgmt == WPA_KEY_MGMT_SAE ||
+        sm->key_mgmt == WPA_KEY_MGMT_OWE ||
+        sm->key_mgmt == WPA_KEY_MGMT_SAE_EXT_KEY ||
+        sm->key_mgmt == WPA_KEY_MGMT_DPP)
         return;
 
     /* This is really SLOW, so just re cacl while reset param */
@@ -2744,14 +2742,16 @@ int wpa_sm_set_ap_rsnxe(const u8 *ie, size_t len)
         sm->ap_rsnxe_len = len;
     }
 
-    sm->sae_pwe = esp_wifi_get_config_sae_pwe_h2e_internal(WIFI_IF_STA);
+    if (sm->ap_rsnxe != NULL) {
+        sm->sae_pwe = esp_wifi_get_config_sae_pwe_h2e_internal(WIFI_IF_STA);
 #ifdef CONFIG_SAE_PK
-    const u8 *pw = (const u8 *)esp_wifi_sta_get_prof_password_internal();
-    if (esp_wifi_sta_get_config_sae_pk_internal() != WPA3_SAE_PK_MODE_DISABLED &&
-            sae_pk_valid_password((const char*)pw)) {
-        sm->sae_pk = true;
-    }
+        const u8 *pw = (const u8 *)esp_wifi_sta_get_prof_password_internal();
+        if (esp_wifi_sta_get_config_sae_pk_internal() != WPA3_SAE_PK_MODE_DISABLED &&
+                sae_pk_valid_password((const char*)pw)) {
+            sm->sae_pk = true;
+        }
 #endif /* CONFIG_SAE_PK */
+    }
     return 0;
 }
 

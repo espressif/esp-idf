@@ -14,7 +14,6 @@
 
 #include "sdkconfig.h"
 
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -74,6 +73,8 @@ void __attribute__((__noreturn__)) panic_abort(const char *details);
 void panic_arch_fill_info(void *frame, panic_info_t *info);
 
 void panic_soc_fill_info(void *frame, panic_info_t *info);
+
+bool panic_soc_check_pseudo_cause(void *f, panic_info_t *info);
 
 void panic_print_registers(const void *frame, int core);
 

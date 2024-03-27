@@ -100,7 +100,9 @@ ESP-IDF 提供一系列功能强大且兼具一致性的 API，为内部以太�
 
 以太网驱动器由两部分组成：MAC 和 PHY。
 
-.. only:: SOC_EMAC_SUPPORTED
+.. TODO remove esp32p4 (IDF-9057)
+
+.. only:: SOC_EMAC_SUPPORTED and not esp32p4
 
     MAC 和 PHY 之间的通信可以通过多种方式进行，如： **MII** （媒体独立接口）、 **RMII** （简化媒体独立接口）等。
 

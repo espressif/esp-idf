@@ -3,6 +3,7 @@ menu "LCD and Touch Panel"
 
     menu "LCD Peripheral Configuration"
         config LCD_PANEL_IO_FORMAT_BUF_SIZE
+            depends on SOC_LCD_I80_SUPPORTED
             int "LCD panel io format buffer size"
             default 32
             help

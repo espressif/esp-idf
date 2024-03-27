@@ -56,21 +56,21 @@ static bool handle_rx(const uint8_t *data, size_t data_len, void *arg)
 static void handle_event(const cdc_acm_host_dev_event_data_t *event, void *user_ctx)
 {
     switch (event->type) {
-        case CDC_ACM_HOST_ERROR:
-            ESP_LOGE(TAG, "CDC-ACM error has occurred, err_no = %i", event->data.error);
-            break;
-        case CDC_ACM_HOST_DEVICE_DISCONNECTED:
-            ESP_LOGI(TAG, "Device suddenly disconnected");
-            ESP_ERROR_CHECK(cdc_acm_host_close(event->data.cdc_hdl));
-            xSemaphoreGive(device_disconnected_sem);
-            break;
-        case CDC_ACM_HOST_SERIAL_STATE:
-            ESP_LOGI(TAG, "Serial state notif 0x%04X", event->data.serial_state.val);
-            break;
-        case CDC_ACM_HOST_NETWORK_CONNECTION:
-        default:
-            ESP_LOGW(TAG, "Unsupported CDC event: %i", event->type);
-            break;
+    case CDC_ACM_HOST_ERROR:
+        ESP_LOGE(TAG, "CDC-ACM error has occurred, err_no = %i", event->data.error);
+        break;
+    case CDC_ACM_HOST_DEVICE_DISCONNECTED:
+        ESP_LOGI(TAG, "Device suddenly disconnected");
+        ESP_ERROR_CHECK(cdc_acm_host_close(event->data.cdc_hdl));
+        xSemaphoreGive(device_disconnected_sem);
+        break;
+    case CDC_ACM_HOST_SERIAL_STATE:
+        ESP_LOGI(TAG, "Serial state notif 0x%04X", event->data.serial_state.val);
+        break;
+    case CDC_ACM_HOST_NETWORK_CONNECTION:
+    default:
+        ESP_LOGW(TAG, "Unsupported CDC event: %i", event->type);
+        break;
     }
 }
 

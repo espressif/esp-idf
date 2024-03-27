@@ -98,7 +98,7 @@ static void echo_task(void *arg)
     ESP_LOGI(TAG, "UART start recieve loop.\r");
     echo_send(uart_num, "Start RS485 UART test.\r\n", 24);
 
-    while(1) {
+    while (1) {
         //Read data from UART
         int len = uart_read_bytes(uart_num, data, BUF_SIZE, PACKET_READ_TICS);
 

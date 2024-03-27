@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: CC0-1.0
  */
@@ -60,18 +60,18 @@ static bool handle_rx(const uint8_t *data, size_t data_len, void *arg)
 static void handle_event(const cdc_acm_host_dev_event_data_t *event, void *user_ctx)
 {
     switch (event->type) {
-        case CDC_ACM_HOST_ERROR:
-            ESP_LOGE(TAG, "CDC-ACM error has occurred, err_no = %d", event->data.error);
-            break;
-        case CDC_ACM_HOST_DEVICE_DISCONNECTED:
-            ESP_LOGI(TAG, "Device suddenly disconnected");
-            xSemaphoreGive(device_disconnected_sem);
-            break;
-        case CDC_ACM_HOST_SERIAL_STATE:
-            ESP_LOGI(TAG, "Serial state notif 0x%04X", event->data.serial_state.val);
-            break;
-        case CDC_ACM_HOST_NETWORK_CONNECTION:
-        default: break;
+    case CDC_ACM_HOST_ERROR:
+        ESP_LOGE(TAG, "CDC-ACM error has occurred, err_no = %d", event->data.error);
+        break;
+    case CDC_ACM_HOST_DEVICE_DISCONNECTED:
+        ESP_LOGI(TAG, "Device suddenly disconnected");
+        xSemaphoreGive(device_disconnected_sem);
+        break;
+    case CDC_ACM_HOST_SERIAL_STATE:
+        ESP_LOGI(TAG, "Serial state notif 0x%04X", event->data.serial_state.val);
+        break;
+    case CDC_ACM_HOST_NETWORK_CONNECTION:
+    default: break;
     }
 }
 
@@ -109,10 +109,9 @@ extern "C" void app_main(void)
 
     // Install USB Host driver. Should only be called once in entire application
     ESP_LOGI(TAG, "Installing USB Host");
-    const usb_host_config_t host_config = {
-        .skip_phy_setup = false,
-        .intr_flags = ESP_INTR_FLAG_LEVEL1,
-    };
+    usb_host_config_t host_config = {};
+    host_config.skip_phy_setup = false;
+    host_config.intr_flags = ESP_INTR_FLAG_LEVEL1;
     ESP_ERROR_CHECK(usb_host_install(&host_config));
 
     // Create a task that will handle USB library events

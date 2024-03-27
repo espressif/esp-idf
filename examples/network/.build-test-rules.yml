@@ -4,8 +4,8 @@ examples/network/bridge:
   disable_test:
     - if: IDF_TARGET != "esp32"
       reason: Generic functionality, no need to be run on specific targets
-  depends_filepatterns:
-    - components/driver/spi/**/*
+  depends_components:
+    - esp_driver_spi
 
 examples/network/eth2ap:
   disable:
@@ -18,11 +18,33 @@ examples/network/simple_sniffer:
     - if: IDF_TARGET not in ["esp32", "esp32c3", "esp32s3"]
       temporary: true
       reason: lack of runners
+  depends_filepatterns:
+    - tools/ci/python_packages/common_test_methods.py
+    - examples/common_components/protocol_examples_common/**/*
+    - examples/protocols/**/*
+    - examples/wifi/**/*
+    - examples/network/simple_sniffer/**/*
+    - components/mbedtls/port/dynamic/*
+    - examples/system/ota/**/*
+  depends_components:
+    - app_update
+    - esp_https_ota
 
 examples/network/sta2eth:
   disable:
     - if: SOC_WIFI_SUPPORTED != 1
+
 examples/network/vlan_support:
   disable_test:
     - if: IDF_TARGET not in ["esp32"]
       reason: Runner uses esp32 ethernet kit
+  depends_components:
+    - esp_eth
+  depends_filepatterns:
+    - tools/ci/python_packages/common_test_methods.py
+    - examples/common_components/**/*
+    - examples/protocols/**/*
+    - examples/system/ota/**/*
+    - examples/ethernet/iperf/**/*
+    - examples/network/vlan_support/**/*
+    - components/esp_netif/esp_netif_handlers.c

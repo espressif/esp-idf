@@ -22,6 +22,13 @@
   - [Manifest File to Control the Build/Test apps](#manifest-file-to-control-the-buildtest-apps)
     - [Grammar](#grammar)
     - [Special Rules](#special-rules)
+  - [Upload/Download Artifacts to Internal Minio Server](#uploaddownload-artifacts-to-internal-minio-server)
+    - [Users Without Access to Minio](#users-without-access-to-minio)
+    - [Users With Access to Minio](#users-with-access-to-minio)
+      - [Env Vars for Minio](#env-vars-for-minio)
+      - [Artifacts Types and File Patterns](#artifacts-types-and-file-patterns)
+      - [Upload](#upload)
+      - [Download](#download)
 
 ## General Workflow
 
@@ -52,19 +59,17 @@
 - `example_test[_esp32/esp32s2/...]`
 - `fuzzer_test`
 - `host_test`
-- `integration_test[_wifi/ble]`
+- `integration_test`
 - `iperf_stress_test`
 - `macos`
 - `macos_test`
 - `nvs_coverage`
 - `submodule`
-- `unit_test[_esp32/esp32s2/...]`
-- `weekend_test`
 - `windows`
 
 There are two general labels (not recommended since these two labels will trigger a lot of jobs)
 
-- `target_test`: includes all target for `example_test`, `custom_test`, `component_ut`, `unit_test`, `integration_test`
+- `target_test`: includes all target for `example_test`, `custom_test`, `component_ut`, `integration_test`
 - `all_test`: includes all test labels
 
 ### How to trigger a `detached` pipeline without pushing new commits?
@@ -140,10 +145,11 @@ check if there's a suitable `.if-<if-anchor-you-need>` anchor
 1. if there is, create a rule following [`rules` Template Naming Rules](#rules-template-naming-rules).For detail information, please refer to [GitLab Documentation `rules-if`](https://docs.gitlab.com/ee/ci/yaml/README.html#rulesif). Here's an example.
 
     ```yaml
-    .rules:dev:
+    .rules:patterns:python-files:
       rules:
-        - <<: *if-trigger
+        - <<: *if-protected
         - <<: *if-dev-push
+          changes: *patterns-python-files
     ```
 
 2. if there isn't
@@ -192,7 +198,7 @@ if a name has multi phrases, use `-` to concatenate them.
 
     - `target_test`
 
-      a combination of `example_test`, `custom_test`, `unit_test`, `component_ut`, `integration_test` and all targets
+      a combination of `example_test`, `custom_test`, `component_ut`, `integration_test` and all targets
 
 #### `rules` Template Naming Rules
 
@@ -245,3 +251,75 @@ In ESP-IDF CI, there's a few more special rules are additionally supported to di
 
 - Add MR labels `BUILD_AND_TEST_ALL_APPS`
 - Run in protected branches
+
+## Upload/Download Artifacts to Internal Minio Server
+
+### Users Without Access to Minio
+
+If you don't have access to the internal Minio server, you can still download the artifacts from the shared link in the job log.
+
+The log will look like this:
+
+```shell
+Pipeline ID    : 587355
+Job name       : build_clang_test_apps_esp32
+Job ID         : 40272275
+Created archive file: 40272275.zip, uploading as 587355/build_dir_without_map_and_elf_files/build_clang_test_apps_esp32/40272275.zip
+Please download the archive file includes build_dir_without_map_and_elf_files from [INTERNAL_URL]
+```
+
+### Users With Access to Minio
+
+#### Env Vars for Minio
+
+Minio takes these env vars to connect to the server:
+
+- `IDF_S3_SERVER`
+- `IDF_S3_ACCESS_KEY`
+- `IDF_S3_SECRET_KEY`
+- `IDF_S3_BUCKET`
+
+#### Artifacts Types and File Patterns
+
+The artifacts types and corresponding file patterns are defined in tools/ci/artifacts_handler.py, inside `ArtifactType` and `TYPE_PATTERNS_DICT`.
+
+#### Upload
+
+```shell
+python tools/ci/artifacts_handler.py upload
+```
+
+ will upload the files that match the file patterns to minio object storage with name:
+
+`<pipeline_id>/<artifact_type>/<job_name>/<job_id>.zip`
+
+For example, job 39043328 will upload these four files:
+
+- `575500/map_and_elf_files/build_pytest_examples_esp32/39043328.zip`
+- `575500/build_dir_without_map_and_elf_files/build_pytest_examples_esp32/39043328.zip`
+- `575500/logs/build_pytest_examples_esp32/39043328.zip`
+- `575500/size_reports/build_pytest_examples_esp32/39043328.zip`
+
+#### Download
+
+You may run
+
+```shell
+python tools/ci/artifacts_handler.py download --pipeline_id <pipeline_id>
+```
+
+to download all files of the pipeline, or
+
+```shell
+python tools/ci/artifacts_handler.py download --pipeline_id <pipeline_id> --job_name <job_name_or_pattern>
+```
+
+to download all files with the specified job name or pattern, or
+
+```shell
+python tools/ci/artifacts_handler.py download --pipeline_id <pipeline_id> --job_name <job_name_or_pattern> --type <artifact_type> <artifact_type> ...
+```
+
+to download all files with the specified job name or pattern and artifact type(s).
+
+You may check all detailed documentation with `python tools/ci/artifacts_handler.py download -h`

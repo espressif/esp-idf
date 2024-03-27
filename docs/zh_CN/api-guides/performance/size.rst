@@ -279,7 +279,7 @@ ESP-IDF 构建系统会编译项目和 ESP-IDF 中所有源文件，但只有程
 还可以使用 ``diff`` 模式来输出表格，显示组件级（静态库）的差异：
 
 .. note::
-    
+
     运行 ``esp_idf_size`` 时可以使用 ``--format`` 选项输出 JSON 或 CSV 格式的结果。
 
 .. code-block:: bash
@@ -292,7 +292,7 @@ ESP-IDF 构建系统会编译项目和 ESP-IDF 中所有源文件，但只有程
 
     python -m esp_idf_size --files --diff build_Og/https_request.map build_Oshttps_request.map
 
-了解将输出写入文件等其他选项，可以输入 ``--help`` 查看完整列表。 
+了解将输出写入文件等其他选项，可以输入 ``--help`` 查看完整列表。
 
 .. _idf-size-linker-failed:
 
@@ -331,39 +331,39 @@ ESP-IDF 构建系统会编译项目和 ESP-IDF 中所有源文件，但只有程
 
 映射文件分为多个部分，每个部分各有标题，包括：
 
-- ``Archive member included to satisfy reference by file (symbol)`` 
+- ``Archive member included to satisfy reference by file (symbol)``
 
     - 该列表显示了链接器链接各个目标文件时所搜寻的特定符号（函数或变量）。
     - 要了解二进制文件包含特定目标文件的原因，可以查看该列表以及文件末尾的 ``Cross Reference Table``。
-    
+
     .. note::
 
         请注意，并非每个显示在该列表中的目标文件最后都会出现在最终二进制文件中，有些目标文件可能会列在 ``Discarded input sections`` 中。
 
-- ``Allocating common symbols`` 
+- ``Allocating common symbols``
 
     - 该列表显示了部分全局变量及其大小。常见符号在 ELF 二进制文件中具有特定含义，但 ESP-IDF 并未广泛使用这些符号。
 
-- ``Discarded input sections`` 
+- ``Discarded input sections``
 
     - 在链接器读取目标文件时，会将一些输入段作为文件的一部分读取并准备链接到最终的二进制文件中，但由于没有其他部分引用这些输入段，这些段最终会被丢弃。
     - 对于 ESP-IDF 项目来说，这个列表可能会非常长，因为我们将每个函数和静态变量都编译到一个独立的段中，以最小化最终二进制文件的大小。具体而言，ESP-IDF 将使用编译器选项 ``-ffunction-sections -fdata-sections`` 和链接器选项 ``--gc-sections``。
     - 在这个列表中出现的条目 **不会** 对最终的二进制文件大小产生影响。
 
-- ``Memory Configuration`` 和 ``Linker script and memory map`` 
-    
+- ``Memory Configuration`` 和 ``Linker script and memory map``
+
     - 这两部分相互关联。输出结果的一部分来自由 :doc:`/api-guides/build-system` 提供的链接器命令行和链接脚本，部分链接脚本由 ESP-IDF 项目通过 :doc:`/api-guides/linker-script-generation` 功能生成。
 
     - 在 map 文件的 ``Linker script and memory map`` 输出中，会显示链接到最终二进制文件中的每个符号（函数或静态变量）及其地址（以 16 位十六进制数字表示）和长度（也以十六进制表示），还有链接的库和目标文件（可以用于确定组件和源文件）。
 
     - 在所有占用最终 ``.bin`` 文件的输出段之后， ``memory map`` 还会显示一些 ELF 文件中用于调试的段，如 ``.debug_*`` 等。这些段不会对最终的二进制文件大小产生影响，且这些符号的地址数值很小，从 ``0x0000000000000000`` 开始递增。
 
-- ``Cross Reference Table`` 
-    
+- ``Cross Reference Table``
+
     - 该表格显示了引用了各个符号（函数或静态变量）的目标文件。了解二进制文件包含某个特定符号的原因，可参考该表格以确定引用特定符号的目标文件。
 
-    .. note:: 
-    
+    .. note::
+
         ``Cross Reference Table`` 不仅包含最终二进制文件中的符号，还包含已丢弃的段内符号。因此，某个符号出现在该表中并不意味着最终二进制文件包含这一符号，需要单独检查。
 
 
@@ -411,6 +411,7 @@ ESP-IDF 构建系统会编译项目和 ESP-IDF 中所有源文件，但只有程
 
     - 如果不需要启用 WPA3 支持，禁用 :ref:`CONFIG_ESP_WIFI_ENABLE_WPA3_SAE` 可以减小 Wi-Fi 二进制文件的大小。请注意，WPA3 支持是目前认证新 Wi-Fi 设备的必要标准。
     - 如果不需要启用 soft-AP 支持，禁用 :ref:`CONFIG_ESP_WIFI_SOFTAP_SUPPORT` 可以减小 Wi-Fi 二进制文件的大小。
+    - 如不需要启用企业支持，禁用 :ref:`CONFIG_ESP_WIFI_ENTERPRISE_SUPPORT` 可以减小 Wi-Fi 二进制文件的大小。
 
 .. only:: esp32
 
@@ -440,7 +441,7 @@ lwIP IPv6
 
   .. note::
 
-      如果禁用 IPv6， ``coap`` 和 :doc:`/api-reference/protocols/asio` 等组件将无法使用。
+      如果禁用 IPv6，:doc:`/api-reference/protocols/asio` 等组件将无法使用。
 
 lwIP IPv4
 @@@@@@@@@
@@ -518,6 +519,11 @@ MbedTLS 功能
 
    如果依赖于第三方客户端或服务器，请密切关注其有关支持的 TLS 功能的公告和变更。否则，当所支持功能变更时，{IDF_TARGET_NAME} 设备可能无法访问。
 
+.. only:: CONFIG_ESP_ROM_HAS_MBEDTLS_CRYPTO_LIB
+
+   启用配置选项 :ref:`CONFIG_MBEDTLS_USE_CRYPTO_ROM_IMPL` 时 mbedtls 使用由 ROM 提供的加密算法。
+   禁用配置选项 :ref:`CONFIG_MBEDTLS_USE_CRYPTO_ROM_IMPL` 时mbedtls 完全使用由 ESP-IDF 中提供的加密算法。这会导致二进制文件大小增加。
+
 .. note::
 
    ESP-IDF 并未测试所有 mbedTLS 编译配置组合。如果发现某个组合无法编译或无法按预期执行，请在 `GitHub <https://github.com/espressif/esp-idf>`_ 上报告详细信息。
@@ -560,6 +566,3 @@ IRAM 二进制文件大小
 ------------------------------------
 
 如果二进制文件的 IRAM 部分过大，可以通过减少 IRAM 使用来解决这个问题，参阅 :ref:`optimize-iram-usage`。
-
-
-

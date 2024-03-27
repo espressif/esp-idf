@@ -1,0 +1,19 @@
+# Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
+
+components/esp_driver_i2s/test_apps/i2s:
+  disable:
+    - if: SOC_I2S_SUPPORTED != 1
+  depends_components:
+    - esp_driver_i2s
+    - esp_driver_pcnt
+
+components/esp_driver_i2s/test_apps/i2s_multi_dev:
+  disable:
+    - if: SOC_I2S_SUPPORTED != 1
+    - if: SOC_I2S_HW_VERSION_2 != 1
+  disable_test:
+    - if: IDF_TARGET == "esp32p4"
+      temporary: true
+      reason: lack of runners
+  depends_components:
+    - esp_driver_i2s

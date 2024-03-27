@@ -84,6 +84,8 @@ typedef enum {
     BTC_GAP_BLE_START_EXT_SCAN,
     BTC_GAP_BLE_STOP_EXT_SCAN,
     BTC_GAP_BLE_SET_EXT_PEFER_CONNET_PARAMS,
+    BTC_GAP_BLE_DTM_ENH_TX_START,
+    BTC_GAP_BLE_DTM_ENH_RX_START,
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
     BTC_GAP_BLE_ACT_GET_DEV_NAME,
 #if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
@@ -92,6 +94,14 @@ typedef enum {
     BTC_GAP_BLE_PERIODIC_ADV_SET_INFO_TRANS,
     BTC_GAP_BLE_SET_PERIODIC_ADV_SYNC_TRANS_PARAMS,
 #endif //#if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
+#if (BLE_42_FEATURE_SUPPORT == TRUE)
+    BTC_GAP_BLE_DTM_TX_START,
+    BTC_GAP_BLE_DTM_RX_START,
+#endif // #if (BLE_42_FEATURE_SUPPORT == TRUE)
+    BTC_GAP_BLE_DTM_STOP,
+#if (BLE_42_FEATURE_SUPPORT == TRUE)
+    BTC_GAP_BLE_ACT_CLEAR_ADV,
+#endif // #if (BLE_42_FEATURE_SUPPORT == TRUE)
 } btc_gap_ble_act_t;
 
 /* btc_ble_gap_args_t */
@@ -230,6 +240,14 @@ typedef union {
     struct set_channels_args {
        esp_gap_ble_channels channels;
     } set_channels;
+    struct dtm_tx_start_args {
+        uint8_t tx_channel;
+        uint8_t len_of_data;
+        uint8_t pkt_payload;
+    } dtm_tx_start;
+    struct dtm_rx_start_args {
+        uint8_t rx_channel;
+    } dtm_rx_start;
 } btc_ble_gap_args_t;
 #if (BLE_50_FEATURE_SUPPORT == TRUE)
 
@@ -373,7 +391,17 @@ typedef union {
         esp_ble_gap_past_params_t params;
     } set_periodic_adv_sync_trans_params;
 #endif
-
+     struct dtm_enh_tx_start_args {
+        uint8_t tx_channel;
+        uint8_t len_of_data;
+        uint8_t pkt_payload;
+        uint8_t phy;
+    } dtm_enh_tx_start;
+    struct dtm_enh_rx_start_args {
+        uint8_t rx_channel;
+        uint8_t phy;
+        uint8_t modulation_index;
+    } dtm_enh_rx_start;
 } btc_ble_5_gap_args_t;
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
 

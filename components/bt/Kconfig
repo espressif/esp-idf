@@ -1,9 +1,8 @@
 menu "Bluetooth"
-    visible if SOC_BT_SUPPORTED
 
     config BT_ENABLED
         bool "Bluetooth"
-        depends on SOC_BT_SUPPORTED && !APP_NO_BLOBS
+        depends on !APP_NO_BLOBS
         help
             Select this option to enable Bluetooth and show the submenu with Bluetooth configuration choices.
 
@@ -26,6 +25,7 @@ menu "Bluetooth"
                 This option is recommended for BLE only usecases to save on memory
 
         config BT_CONTROLLER_ONLY
+            depends on SOC_BT_SUPPORTED
             bool "Disabled"
             help
                 This option is recommended when you want to communicate directly with the
@@ -42,6 +42,7 @@ menu "Bluetooth"
             This helps to choose Bluetooth controller stack
 
         config BT_CONTROLLER_ENABLED
+            depends on SOC_BT_SUPPORTED
             bool "Enabled"
             help
                 This option is recommended for Bluetooth controller usecases
@@ -67,6 +68,17 @@ menu "Bluetooth"
         depends on BT_CONTROLLER_ENABLED
         source "$IDF_PATH/components/bt/controller/$IDF_TARGET/Kconfig.in"
     endmenu
+
+    config BT_RELEASE_IRAM
+        depends on BT_ENABLED && BT_LE_RELEASE_IRAM_SUPPORTED
+        bool "Release Bluetooth text (READ DOCS FIRST)"
+        default n
+        help
+            This option release Bluetooth text section and merge Bluetooth data, bss & text into
+            a large free heap region when esp_bt_mem_release is called, total saving ~21kB or more of IRAM.
+            ESP32-C2 only 3 configurable PMP entries available, rest of them are hard-coded.
+            We cannot split the memory into 3 different regions (IRAM, BLE-IRAM, DRAM).
+            So this option will disable the PMP (ESP_SYSTEM_PMP_IDRAM_SPLIT)
 
 endmenu
 

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,14 +14,14 @@
 #include "soc/soc_memory_layout.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "freertos/xtensa_context.h"
+#include "xtensa_context.h"
 #include "esp_rom_sys.h"
 #include "esp_core_dump_common.h"
 #include "esp_core_dump_port.h"
 #include "esp_debug_helpers.h"
 #include "esp_cpu_utils.h"
 
-const static DRAM_ATTR char TAG[] __attribute__((unused)) = "esp_core_dump_port";
+const static char TAG[] __attribute__((unused)) = "esp_core_dump_port";
 
 #define min(a,b) ((a) < (b) ? (a) : (b))
 #define max(a,b) ((a) < (b) ? (b) : (a))
@@ -44,8 +44,7 @@ const static DRAM_ATTR char TAG[] __attribute__((unused)) = "esp_core_dump_port"
 
 // Enumeration of registers of exception stack frame
 // and solicited stack frame
-typedef enum
-{
+typedef enum {
     // XT_SOL_EXIT = 0,
     XT_SOL_PC = 1,
     XT_SOL_PS = 2,
@@ -69,8 +68,7 @@ typedef enum
 
 // Xtensa ELF core file register set representation ('.reg' section).
 // Copied from target-side ELF header <xtensa/elf.h>.
-typedef struct
-{
+typedef struct {
     uint32_t pc;
     uint32_t ps;
     uint32_t lbeg;
@@ -79,27 +77,25 @@ typedef struct
     uint32_t sar;
     uint32_t windowstart;
     uint32_t windowbase;
-    uint32_t reserved[8+48];
+    uint32_t reserved[8 + 48];
     uint32_t ar[XCHAL_NUM_AREGS];
 } __attribute__((packed)) xtensa_gregset_t;
 
-typedef struct
-{
+typedef struct {
     uint32_t reg_index;
     uint32_t reg_val;
 } __attribute__((packed)) core_dump_reg_pair_t;
 
-typedef struct
-{
+typedef struct {
     uint32_t crashed_task_tcb;
     core_dump_reg_pair_t exccause;
     core_dump_reg_pair_t excvaddr;
     core_dump_reg_pair_t extra_regs[COREDUMP_EXTRA_REG_NUM];
+    uint32_t isr_context;
 } __attribute__((packed)) xtensa_extra_info_t;
 
 // Xtensa Program Status for GDB
-typedef struct
-{
+typedef struct {
     uint32_t si_signo;
     uint32_t si_code;
     uint32_t si_errno;
@@ -117,8 +113,7 @@ typedef struct
     uint64_t pr_cstime;
 } __attribute__((packed)) xtensa_pr_status_t;
 
-typedef struct
-{
+typedef struct {
     xtensa_pr_status_t pr_status;
     xtensa_gregset_t regs;
     // Todo: acc to xtensa_gregset_t number of regs must be 128,
@@ -131,7 +126,7 @@ typedef struct
 static XtExcFrame s_fake_stack_frame = {
     .pc   = (UBaseType_t) COREDUMP_FAKE_STACK_START,                        // task entrypoint fake_ptr
     .a0   = (UBaseType_t) 0,                                                // to terminate GDB backtrace
-    .a1   = (UBaseType_t) (COREDUMP_FAKE_STACK_START + sizeof(XtExcFrame)), // physical top of stack frame
+    .a1   = (UBaseType_t)(COREDUMP_FAKE_STACK_START + sizeof(XtExcFrame)),  // physical top of stack frame
     .exit = (UBaseType_t) 0,                                                // user exception exit dispatcher
     .ps = (PS_UM | PS_EXCM),
     .exccause = (UBaseType_t) COREDUMP_INVALID_CAUSE_VALUE,
@@ -151,9 +146,8 @@ static xtensa_extra_info_t s_extra_info;
 static void *esp_core_dump_get_fake_stack(uint32_t *stk_len)
 {
     *stk_len = sizeof(s_fake_stack_frame);
-    return (uint8_t*)COREDUMP_FAKE_STACK_START + sizeof(s_fake_stack_frame)*s_fake_stacks_num++;
+    return (uint8_t*)COREDUMP_FAKE_STACK_START + sizeof(s_fake_stack_frame) * s_fake_stacks_num++;
 }
-
 
 static core_dump_reg_pair_t *esp_core_dump_get_epc_regs(core_dump_reg_pair_t* src)
 {
@@ -194,8 +188,8 @@ static core_dump_reg_pair_t *esp_core_dump_get_eps_regs(core_dump_reg_pair_t* sr
 
 // Returns list of registers (in GDB format) from xtensa stack frame
 static esp_err_t esp_core_dump_get_regs_from_stack(void* stack_addr,
-                                               size_t size,
-                                               xtensa_gregset_t* regs)
+                                                   size_t size,
+                                                   xtensa_gregset_t* regs)
 {
     XtExcFrame* exc_frame = (XtExcFrame*)stack_addr;
     uint32_t* stack_arr = (uint32_t*)stack_addr;
@@ -209,8 +203,7 @@ static esp_err_t esp_core_dump_get_regs_from_stack(void* stack_addr,
     uint32_t rc = exc_frame->exit;
 
     // is this current crashed task?
-    if (rc == COREDUMP_CURR_TASK_MARKER)
-    {
+    if (rc == COREDUMP_CURR_TASK_MARKER) {
         s_extra_info.exccause.reg_val = exc_frame->exccause;
         s_extra_info.exccause.reg_index = EXCCAUSE;
         s_extra_info.excvaddr.reg_val = exc_frame->excvaddr;
@@ -259,7 +252,7 @@ static esp_err_t esp_core_dump_get_regs_from_stack(void* stack_addr,
     return ESP_OK;
 }
 
-inline void esp_core_dump_port_init(panic_info_t *info)
+inline void esp_core_dump_port_init(panic_info_t *info, bool isr_context)
 {
     s_extra_info.crashed_task_tcb = COREDUMP_CURR_TASK_MARKER;
     // Initialize exccause register to default value (required if current task corrupted)
@@ -271,6 +264,7 @@ inline void esp_core_dump_port_init(panic_info_t *info)
     if (info->pseudo_excause) {
         s_exc_frame->exccause += XCHAL_EXCCAUSE_NUM;
     }
+    s_extra_info.isr_context = isr_context;
 }
 
 /**
@@ -290,38 +284,37 @@ void esp_core_dump_reset_fake_stacks(void)
 /* Get the top of the ISR stack.
  * Check core dump port interface for more information about this function.
  */
-uint8_t* esp_core_dump_get_isr_stack_top(void) {
-    extern uint8_t port_IntStack;
-    return &port_IntStack;
+uint8_t* esp_core_dump_get_isr_stack_top(void)
+{
+    extern uint8_t port_IntStack[];
+    return port_IntStack;
 }
 
- uint32_t esp_core_dump_get_isr_stack_end(void)
- {
+uint32_t esp_core_dump_get_isr_stack_end(void)
+{
     uint8_t* isr_top_stack = esp_core_dump_get_isr_stack_top();
-    return (uint32_t)(isr_top_stack + (xPortGetCoreID()+1)*configISR_STACK_SIZE);
- }
-
+    return (uint32_t)(isr_top_stack + (xPortGetCoreID() + 1) * configISR_STACK_SIZE);
+}
 
 static inline bool esp_core_dump_task_stack_end_is_sane(uint32_t sp)
 {
     return esp_ptr_in_dram((void *)sp)
 #if CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY
-        || esp_stack_ptr_in_extram(sp)
+           || esp_stack_ptr_in_extram(sp)
 #endif
 #if CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP
-        || esp_ptr_in_rtc_dram_fast((void*) sp)
+           || esp_ptr_in_rtc_dram_fast((void*) sp)
 #endif
-    ;
+           ;
 }
-
 
 bool esp_core_dump_check_stack(core_dump_task_header_t *task)
 {
     // Check task's stack
     if (!esp_stack_ptr_is_sane(task->stack_start) ||
-        !esp_core_dump_task_stack_end_is_sane(task->stack_end) ||
-        (task->stack_start >= task->stack_end) ||
-        ((task->stack_end-task->stack_start) > COREDUMP_MAX_TASK_STACK_SIZE)) {
+            !esp_core_dump_task_stack_end_is_sane(task->stack_end) ||
+            (task->stack_start >= task->stack_end) ||
+            ((task->stack_end - task->stack_start) > COREDUMP_MAX_TASK_STACK_SIZE)) {
         // Check if current task stack is corrupted
         ESP_COREDUMP_LOG_PROCESS("Invalid stack (%x...%x)!", task->stack_start, task->stack_end);
         return false;
@@ -336,11 +329,11 @@ bool esp_core_dump_check_stack(core_dump_task_header_t *task)
  */
 bool esp_core_dump_mem_seg_is_sane(uint32_t addr, uint32_t sz)
 {
-    return (esp_ptr_in_dram((void *)addr) && esp_ptr_in_dram((void *)(addr+sz-1)))
-        || (esp_ptr_in_rtc_slow((void *)addr) && esp_ptr_in_rtc_slow((void *)(addr+sz-1)))
-        || (esp_ptr_in_rtc_dram_fast((void *)addr) && esp_ptr_in_rtc_dram_fast((void *)(addr+sz-1)))
-        || (esp_ptr_external_ram((void *)addr) && esp_ptr_external_ram((void *)(addr+sz-1)))
-        || (esp_ptr_in_iram((void *)addr) && esp_ptr_in_iram((void *)(addr+sz-1)));
+    return (esp_ptr_in_dram((void *)addr) && esp_ptr_in_dram((void *)(addr + sz - 1)))
+           || (esp_ptr_in_rtc_slow((void *)addr) && esp_ptr_in_rtc_slow((void *)(addr + sz - 1)))
+           || (esp_ptr_in_rtc_dram_fast((void *)addr) && esp_ptr_in_rtc_dram_fast((void *)(addr + sz - 1)))
+           || (esp_ptr_external_ram((void *)addr) && esp_ptr_external_ram((void *)(addr + sz - 1)))
+           || (esp_ptr_in_iram((void *)addr) && esp_ptr_in_iram((void *)(addr + sz - 1)));
 }
 
 /**
@@ -360,7 +353,7 @@ uint32_t esp_core_dump_get_stack(core_dump_task_header_t *task,
     *stk_vaddr = stack_addr;
 
     if (stack_addr >= COREDUMP_FAKE_STACK_START &&
-        stack_addr < COREDUMP_FAKE_STACK_LIMIT) {
+            stack_addr < COREDUMP_FAKE_STACK_LIMIT) {
         /* In this case, the stack address pointed by the task is a fake stack
          * generated previously. So it doesn't really point to actual data.
          * Thus, we must provide the address of the fake stack data. */
@@ -390,44 +383,43 @@ bool esp_core_dump_check_task(core_dump_task_header_t *task)
     if (!stack_is_valid) {
         // Skip saving of invalid task if stack corrupted
         ESP_COREDUMP_LOG_PROCESS("Task (TCB:%x), stack is corrupted (%x, %x)",
-                                    task->tcb_addr,
-                                    task->stack_start,
-                                    task->stack_end);
+                                 task->tcb_addr,
+                                 task->stack_start,
+                                 task->stack_end);
         task->stack_start = (uint32_t)esp_core_dump_get_fake_stack(&stk_size);
         task->stack_end = (uint32_t)(task->stack_start + stk_size);
         ESP_COREDUMP_LOG_PROCESS("Task (TCB:%x), use start, end (%x, %x)",
-                                            task->tcb_addr,
-                                            task->stack_start,
-                                            task->stack_end);
+                                 task->tcb_addr,
+                                 task->stack_start,
+                                 task->stack_end);
     } else {
         /* This shall be done only if the stack was correct, else, stack_start
          * would point to a fake address. */
         XtSolFrame *sol_frame = (XtSolFrame *)task->stack_start;
         if (sol_frame->exit == 0) {
             ESP_COREDUMP_LOG_PROCESS("Task (TCB:%x), EXIT/PC/PS/A0/SP %x %x %x %x %x",
-                                        task->tcb_addr,
-                                        sol_frame->exit,
-                                        sol_frame->pc,
-                                        sol_frame->ps,
-                                        sol_frame->a0,
-                                        sol_frame->a1);
+                                     task->tcb_addr,
+                                     sol_frame->exit,
+                                     sol_frame->pc,
+                                     sol_frame->ps,
+                                     sol_frame->a0,
+                                     sol_frame->a1);
         } else {
-    // to avoid warning that 'exc_frame' is unused when ESP_COREDUMP_LOG_PROCESS does nothing
-    #if CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH && CONFIG_ESP_COREDUMP_LOGS
+            // to avoid warning that 'exc_frame' is unused when ESP_COREDUMP_LOG_PROCESS does nothing
+#if CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH && CONFIG_ESP_COREDUMP_LOGS
             XtExcFrame *exc_frame = (XtExcFrame *)task->stack_start;
             ESP_COREDUMP_LOG_PROCESS("Task (TCB:%x) EXIT/PC/PS/A0/SP %x %x %x %x %x",
-                                        task->tcb_addr,
-                                        exc_frame->exit,
-                                        exc_frame->pc,
-                                        exc_frame->ps,
-                                        exc_frame->a0,
-                                        exc_frame->a1);
-    #endif
+                                     task->tcb_addr,
+                                     exc_frame->exit,
+                                     exc_frame->pc,
+                                     exc_frame->ps,
+                                     exc_frame->a0,
+                                     exc_frame->a1);
+#endif
         }
     }
     return true;
 }
-
 
 /**
  * Get a dump of the task's registers.
@@ -452,8 +444,8 @@ uint32_t esp_core_dump_get_task_regs_dump(core_dump_task_header_t *task, void **
 
     // fill the gdb registers structure from stack
     esp_err_t err = esp_core_dump_get_regs_from_stack((void*)stack_paddr,
-                                                        stack_len,
-                                                        &s_reg_dump.regs);
+                                                      stack_len,
+                                                      &s_reg_dump.regs);
     if (err != ESP_OK) {
         ESP_COREDUMP_LOGE("Error while registers processing.");
     }
@@ -461,8 +453,8 @@ uint32_t esp_core_dump_get_task_regs_dump(core_dump_task_header_t *task, void **
     return sizeof(s_reg_dump);
 }
 
-
-void esp_core_dump_port_set_crashed_tcb(uint32_t handle) {
+void esp_core_dump_port_set_crashed_tcb(uint32_t handle)
+{
     s_extra_info.crashed_task_tcb = handle;
 }
 
@@ -493,9 +485,9 @@ void esp_core_dump_summary_parse_extra_info(esp_core_dump_summary_t *summary, vo
 
     memset(summary->ex_info.epcx, 0, sizeof(summary->ex_info.epcx));
     summary->ex_info.epcx_reg_bits = 0;
-    for (i = 0; i < COREDUMP_EXTRA_REG_NUM; i++ ) {
+    for (i = 0; i < COREDUMP_EXTRA_REG_NUM; i++) {
         if (ei->extra_regs[i].reg_index >= EPC_1
-            && ei->extra_regs[i].reg_index < (EPC_1 + XCHAL_NUM_INTLEVELS)) {
+                && ei->extra_regs[i].reg_index < (EPC_1 + XCHAL_NUM_INTLEVELS)) {
             summary->ex_info.epcx[ei->extra_regs[i].reg_index - EPC_1] = ei->extra_regs[i].reg_val;
             summary->ex_info.epcx_reg_bits |= (1 << (ei->extra_regs[i].reg_index - EPC_1));
         }
@@ -528,7 +520,7 @@ void esp_core_dump_summary_parse_backtrace_info(esp_core_dump_bt_info_t *bt_info
     bool corrupted;
     esp_backtrace_frame_t frame;
     XtExcFrame *stack = (XtExcFrame *) paddr;
-    int max_depth = (int) (sizeof(bt_info->bt) / sizeof(bt_info->bt[0]));
+    int max_depth = (int)(sizeof(bt_info->bt) / sizeof(bt_info->bt[0]));
     int index = 0;
 
     frame.pc = stack->pc;
@@ -536,8 +528,8 @@ void esp_core_dump_summary_parse_backtrace_info(esp_core_dump_bt_info_t *bt_info
     frame.next_pc = stack->a0;
 
     corrupted = !(esp_stack_ptr_is_sane(frame.sp) &&
-                (esp_ptr_executable((void *)esp_cpu_process_stack_pc(frame.pc)) ||
-                stack->exccause == EXCCAUSE_INSTR_PROHIBITED)); /* Ignore the first corrupted PC in case of InstrFetchProhibited */
+                  (esp_ptr_executable((void *)esp_cpu_process_stack_pc(frame.pc)) ||
+                   stack->exccause == EXCCAUSE_INSTR_PROHIBITED)); /* Ignore the first corrupted PC in case of InstrFetchProhibited */
 
     /* vaddr is actual stack address when crash occurred. However that stack is now saved
      * in the flash at a different location. Hence for each SP, we need to adjust the offset
@@ -552,7 +544,7 @@ void esp_core_dump_summary_parse_backtrace_info(esp_core_dump_bt_info_t *bt_info
     while (max_depth-- > 0 && frame.next_pc && !corrupted) {
         /* Check if the Stack Pointer is in valid address range */
         if (!((uint32_t)frame.sp >= (uint32_t)vaddr &&
-            ((uint32_t)frame.sp <= (uint32_t)vaddr + stack_size))) {
+                ((uint32_t)frame.sp <= (uint32_t)vaddr + stack_size))) {
             corrupted = true;
             break;
         }

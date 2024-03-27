@@ -47,6 +47,10 @@ config ESP_ROM_HAS_HEAP_TLSF
     bool
     default y
 
+config ESP_ROM_TLSF_CHECK_PATCH
+    bool
+    default y
+
 config ESP_ROM_HAS_LAYOUT_TABLE
     bool
     default y
@@ -56,6 +60,10 @@ config ESP_ROM_HAS_SPI_FLASH
     default y
 
 config ESP_ROM_HAS_REGI2C_BUG
+    bool
+    default y
+
+config ESP_ROM_HAS_NEWLIB
     bool
     default y
 
@@ -76,5 +84,17 @@ config ESP_ROM_NEEDS_SET_CACHE_MMU_SIZE
     default y
 
 config ESP_ROM_RAM_APP_NEEDS_MMU_INIT
+    bool
+    default y
+
+config ESP_ROM_HAS_SW_FLOAT
+    bool
+    default y
+
+config ESP_ROM_USB_OTG_NUM
+    int
+    default -1
+
+config ESP_ROM_HAS_VERSION
     bool
     default y

@@ -9,7 +9,8 @@
 #include "esp_assert.h"
 #include "esp_flash_partitions.h"
 
-#define MSPI_TIMING_CONFIG_NUM_DEFAULT               20  //This should be larger than the max available timing config num
+#define MSPI_TIMING_MSPI1_IS_INVOLVED                1   //This means esp flash driver needs to be notified
+#define MSPI_TIMING_CONFIG_NUM_MAX                   20  //This should be larger than the max available timing config num
 #define MSPI_TIMING_TEST_DATA_LEN                    64
 #define MSPI_TIMING_PSRAM_TEST_DATA_ADDR             0
 #define MSPI_TIMING_FLASH_TEST_DATA_ADDR             ESP_BOOTLOADER_OFFSET

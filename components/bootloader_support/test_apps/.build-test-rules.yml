@@ -5,6 +5,6 @@ components/bootloader_support/test_apps/rtc_custom_section:
     - if: SOC_RTC_MEM_SUPPORTED == 1
       reason: this feature is supported on chips that have RTC memory
   disable:
-    - if: IDF_TARGET == "esp32p4"
+    - if: IDF_TARGET == "esp32c61"
       temporary: true
-      reason: this feature on esp32p4 isn't supported yet # TODO: IDF-8069
+      reason: IDF-9260

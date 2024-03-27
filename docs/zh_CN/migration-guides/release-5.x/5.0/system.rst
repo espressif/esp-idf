@@ -43,7 +43,7 @@ Trax API（即以 ``trax_`` 为前缀的函数、类型或宏）已更新为私�
 ROM
 ---
 
-``components/esp32/rom/``  路径下存放的已弃用的 ROM 相关头文件已移除（原包含路径为 ``rom/*.h``）。请使用新的特定目标的路径 ``components/esp_rom/include/{IDF_TARGET_NAME}/``（新的包含路径为 ``{IDF_TARGET_NAME}/rom/*.h``）。
+``components/esp32/rom/``  路径下存放的已弃用的 ROM 相关头文件已移除（原包含路径为 ``rom/*.h``）。请使用新的特定目标的路径 ``components/esp_rom/include/{IDF_TARGET_NAME}/`` （新的包含路径为 ``{IDF_TARGET_NAME}/rom/*.h``）。
 
 ``esp_hw_support``
 ---------------------

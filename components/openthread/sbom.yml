@@ -1,0 +1,7 @@
+name: 'openthread component'
+version: '2023-07-06'
+supplier: 'Organization: Espressif Systems (Shanghai) CO LTD'
+description: Espressif fork of OpenThread project, used to maintain ESP-specific patches and release branches
+manifests:
+   - path: sbom_openthread.yml
+     dest: openthread

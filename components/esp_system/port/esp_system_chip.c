@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -30,9 +30,8 @@ void IRAM_ATTR esp_restart_noos_dig(void)
     xt_ints_off(0xFFFFFFFF);
 #endif
 
-    // make sure all the panic handler output is sent from UART FIFO
-    if (CONFIG_ESP_CONSOLE_UART_NUM >= 0) {
-        esp_rom_uart_tx_wait_idle(CONFIG_ESP_CONSOLE_UART_NUM);
+    if (CONFIG_ESP_CONSOLE_ROM_SERIAL_PORT_NUM != -1) {
+        esp_rom_output_tx_wait_idle(CONFIG_ESP_CONSOLE_ROM_SERIAL_PORT_NUM);
     }
 
 #if !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
@@ -51,7 +50,7 @@ void IRAM_ATTR esp_restart_noos_dig(void)
     // esp_restart_noos_dig() will generates a core reset, which does not reset the
     // registers of the RTC domain, so the CPU's stall state remains after the reset,
     // we need to release them here
-#if !CONFIG_FREERTOS_UNICORE
+#if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
     // unstall all other cores
     int core_id = esp_cpu_get_core_id();
     for (uint32_t i = 0; i < SOC_CPU_CORES_NUM; i++) {
@@ -68,19 +67,19 @@ void IRAM_ATTR esp_restart_noos_dig(void)
 }
 #endif
 
-uint32_t esp_get_free_heap_size( void )
+uint32_t esp_get_free_heap_size(void)
 {
-    return heap_caps_get_free_size( MALLOC_CAP_DEFAULT );
+    return heap_caps_get_free_size(MALLOC_CAP_DEFAULT);
 }
 
-uint32_t esp_get_free_internal_heap_size( void )
+uint32_t esp_get_free_internal_heap_size(void)
 {
-    return heap_caps_get_free_size( MALLOC_CAP_8BIT | MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL );
+    return heap_caps_get_free_size(MALLOC_CAP_8BIT | MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
 }
 
-uint32_t esp_get_minimum_free_heap_size( void )
+uint32_t esp_get_minimum_free_heap_size(void)
 {
-    return heap_caps_get_minimum_free_size( MALLOC_CAP_DEFAULT );
+    return heap_caps_get_minimum_free_size(MALLOC_CAP_DEFAULT);
 }
 
 const char *esp_get_idf_version(void)

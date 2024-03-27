@@ -6,8 +6,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "esp_private/esp_crypto_lock_internal.h"
 #include "esp_log.h"
-#include "esp_private/periph_ctrl.h"
 #include "esp_heap_caps.h"
 #include "memory_checks.h"
 #include "unity_fixture.h"
@@ -17,15 +17,18 @@
 #endif
 
 #include "hal/mpi_hal.h"
+#include "hal/mpi_ll.h"
 #include "mpi_params.h"
 
 #define _DEBUG_ 0
 
-
 static void esp_mpi_enable_hardware_hw_op( void )
 {
     /* Enable RSA hardware */
-    periph_module_enable(PERIPH_RSA_MODULE);
+    MPI_RCC_ATOMIC() {
+        mpi_ll_enable_bus_clock(true);
+        mpi_ll_reset_register();
+    }
 
     mpi_hal_enable_hardware_hw_op();
 }
@@ -36,7 +39,9 @@ static void esp_mpi_disable_hardware_hw_op( void )
     mpi_hal_disable_hardware_hw_op();
 
     /* Disable RSA hardware */
-    periph_module_disable(PERIPH_RSA_MODULE);
+    MPI_RCC_ATOMIC() {
+        mpi_ll_enable_bus_clock(false);
+    }
 }
 
 
