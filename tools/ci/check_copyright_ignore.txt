@@ -519,7 +519,6 @@ components/mbedtls/port/include/sha/sha_parallel_engine.h
 components/mbedtls/port/include/sha1_alt.h
 components/mbedtls/port/include/sha256_alt.h
 components/mbedtls/port/include/sha512_alt.h
-components/mbedtls/port/sha/dma/include/esp_sha_dma_priv.h
 components/mbedtls/port/sha/dma/sha.c
 components/mbedtls/port/sha/parallel_engine/sha.c
 components/nvs_flash/include/nvs_handle.hpp

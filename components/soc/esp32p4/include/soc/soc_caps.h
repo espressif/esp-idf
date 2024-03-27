@@ -57,7 +57,7 @@
 #define SOC_SYSTIMER_SUPPORTED          1
 #define SOC_AES_SUPPORTED               1
 #define SOC_MPI_SUPPORTED               1
-// #define SOC_SHA_SUPPORTED               1  //TODO: IDF-7541
+#define SOC_SHA_SUPPORTED               1
 #define SOC_HMAC_SUPPORTED              1
 #define SOC_DIG_SIGN_SUPPORTED          1
 #define SOC_ECC_SUPPORTED               1
@@ -426,6 +426,11 @@
 #define SOC_SHA_SUPPORT_SHA1            (1)
 #define SOC_SHA_SUPPORT_SHA224          (1)
 #define SOC_SHA_SUPPORT_SHA256          (1)
+#define SOC_SHA_SUPPORT_SHA384          (1)
+#define SOC_SHA_SUPPORT_SHA512          (1)
+#define SOC_SHA_SUPPORT_SHA512_224      (1)
+#define SOC_SHA_SUPPORT_SHA512_256      (1)
+#define SOC_SHA_SUPPORT_SHA512_T        (1)
 
 /*--------------------------- ECDSA CAPS ---------------------------------------*/
 #define SOC_ECDSA_SUPPORT_EXPORT_PUBKEY     (1)

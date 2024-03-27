@@ -6,9 +6,9 @@
 #pragma once
 
 #include <stdbool.h>
-#include "soc/hwcrypto_reg.h"
-#include "soc/pcr_struct.h"
 #include "hal/sha_types.h"
+#include "soc/hp_sys_clkrst_struct.h"
+#include "soc/hwcrypto_reg.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -21,22 +21,30 @@ extern "C" {
  */
 static inline void sha_ll_enable_bus_clock(bool enable)
 {
-    PCR.sha_conf.sha_clk_en = enable;
+    HP_SYS_CLKRST.peri_clk_ctrl25.reg_crypto_sha_clk_en = enable;
 }
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define sha_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; sha_ll_enable_bus_clock(__VA_ARGS__)
 
 /**
  * @brief Reset the SHA peripheral module
  */
 static inline void sha_ll_reset_register(void)
 {
-    PCR.sha_conf.sha_rst_en = 1;
-    PCR.sha_conf.sha_rst_en = 0;
+    HP_SYS_CLKRST.hp_rst_en2.reg_rst_en_sha = 1;
+    HP_SYS_CLKRST.hp_rst_en2.reg_rst_en_sha = 0;
 
-    // Clear reset on digital signature, hmac and ecdsa also, otherwise SHA is held in reset
-    PCR.ds_conf.ds_rst_en = 0;
-    PCR.hmac_conf.hmac_rst_en = 0;
-    PCR.ecdsa_conf.ecdsa_rst_en = 0;
+    // Clear reset on digital signature, hmac and ecdsa, otherwise SHA is held in reset
+    HP_SYS_CLKRST.hp_rst_en2.reg_rst_en_ds = 0;
+    HP_SYS_CLKRST.hp_rst_en2.reg_rst_en_hmac = 0;
+    HP_SYS_CLKRST.hp_rst_en2.reg_rst_en_ecdsa = 0;
 }
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define sha_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; sha_ll_reset_register(__VA_ARGS__)
 
 /**
  * @brief Start a new SHA block conversions (no initial hash in HW)
@@ -85,7 +93,7 @@ static inline void sha_ll_continue_dma(esp_sha_type sha_type)
 /**
  * @brief Load the current hash digest to digest register
  *
- * @note Happens automatically on ESP32H2
+ * @note Happens automatically on ESP32P4
  *
  * @param sha_type The SHA algorithm type
  */
@@ -125,7 +133,7 @@ static inline bool sha_ll_busy(void)
 static inline void sha_ll_fill_text_block(const void *input_text, size_t block_word_len)
 {
     uint32_t *data_words = (uint32_t *)input_text;
-    uint32_t *reg_addr_buf = (uint32_t *)(SHA_M_MEM_REG);
+    uint32_t *reg_addr_buf = (uint32_t *)(SHA_M_MEM);
 
     for (int i = 0; i < block_word_len; i++) {
         REG_WRITE(&reg_addr_buf[i], data_words[i]);
@@ -145,7 +153,7 @@ static inline void sha_ll_read_digest(esp_sha_type sha_type, void *digest_state,
     const size_t REG_WIDTH = sizeof(uint32_t);
 
     for (size_t i = 0; i < digest_word_len; i++) {
-        digest_state_words[i] = REG_READ(SHA_H_MEM_REG + (i * REG_WIDTH));
+        digest_state_words[i] = REG_READ(SHA_H_MEM + (i * REG_WIDTH));
     }
 
 }
@@ -160,13 +168,32 @@ static inline void sha_ll_read_digest(esp_sha_type sha_type, void *digest_state,
 static inline void sha_ll_write_digest(esp_sha_type sha_type, void *digest_state, size_t digest_word_len)
 {
     uint32_t *digest_state_words = (uint32_t *)digest_state;
-    uint32_t *reg_addr_buf = (uint32_t *)(SHA_H_MEM_REG);
+    uint32_t *reg_addr_buf = (uint32_t *)(SHA_H_MEM);
 
     for (int i = 0; i < digest_word_len; i++) {
         REG_WRITE(&reg_addr_buf[i], digest_state_words[i]);
     }
 }
 
+/**
+ * @brief Sets SHA512_t T_string parameter
+ *
+ * @param t_string T_string parameter
+ */
+static inline void sha_ll_t_string_set(uint32_t t_string)
+{
+    REG_WRITE(SHA_T_STRING_REG, t_string);
+}
+
+/**
+ * @brief Sets SHA512_t T_string parameter's length
+ *
+ * @param t_len T_string parameter length
+ */
+static inline void sha_ll_t_len_set(uint8_t t_len)
+{
+    REG_WRITE(SHA_T_LENGTH_REG, t_len);
+}
 
 #ifdef __cplusplus
 }

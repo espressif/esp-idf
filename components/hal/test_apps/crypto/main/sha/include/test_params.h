@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -31,30 +31,6 @@
 }
 
 #define BUFFER_SZ 1030 // NB: not an exact multiple of SHA block size
-
-static inline size_t block_length(esp_sha_type type)
-{
-    switch (type) {
-    case SHA1:
-    case SHA2_224:
-    case SHA2_256:
-        return 64;
-#if SOC_SHA_SUPPORT_SHA384
-    case SHA2_384:
-#endif
-#if SOC_SHA_SUPPORT_SHA512
-    case SHA2_512:
-#endif
-#if SOC_SHA_SUPPORT_SHA512_T
-    case SHA2_512224:
-    case SHA2_512256:
-    case SHA2_512T:
-#endif
-        return 128;
-    default:
-        return 0;
-    }
-}
 
 #if defined(SOC_SHA_SUPPORT_SHA1)
 

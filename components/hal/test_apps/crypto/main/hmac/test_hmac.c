@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -33,6 +33,7 @@ static esp_err_t hmac_jtag_disable(void)
 #include "hal/hmac_hal.h"
 #include "hal/hmac_ll.h"
 #include "hal/ds_ll.h"
+#include "hal/sha_ll.h"
 #include "esp_private/periph_ctrl.h"
 
 #define SHA256_BLOCK_SZ 64
@@ -69,7 +70,10 @@ static esp_err_t hmac_calculate(uint32_t key_id, const void *message, size_t mes
         hmac_ll_reset_register();
     }
 
-    periph_module_enable(PERIPH_SHA_MODULE);
+    SHA_RCC_ATOMIC() {
+        sha_ll_enable_bus_clock(true);
+        sha_ll_reset_register();
+    }
 
     DS_RCC_ATOMIC() {
         ds_ll_enable_bus_clock(true);
@@ -130,7 +134,9 @@ static esp_err_t hmac_calculate(uint32_t key_id, const void *message, size_t mes
         ds_ll_enable_bus_clock(false);
     }
 
-    periph_module_disable(PERIPH_SHA_MODULE);
+    SHA_RCC_ATOMIC() {
+        sha_ll_enable_bus_clock(false);
+    }
 
     HMAC_RCC_ATOMIC() {
         hmac_ll_enable_bus_clock(false);
