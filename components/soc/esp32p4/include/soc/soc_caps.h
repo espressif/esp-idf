@@ -96,6 +96,7 @@
 
 /*-------------------------- AES CAPS -----------------------------------------*/
 #define SOC_AES_SUPPORT_DMA     (1)
+#define SOC_AES_SUPPORT_GCM     (1)
 
 /* Has a centralized DMA, which is shared with all peripherals */
 #define SOC_AES_GDMA            (1)

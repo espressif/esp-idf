@@ -586,7 +586,7 @@ int esp_aes_gcm_finish( esp_gcm_context *ctx,
 /* Due to restrictions in the hardware (e.g. need to do the whole conversion in one go),
    some combinations of inputs are not supported */
 static bool esp_aes_gcm_input_support_hw_accel(size_t length, const unsigned char *aad, size_t aad_len,
-                                               const unsigned char *input, unsigned char *output, uint8_t *stream_in)
+                                               const unsigned char *input, unsigned char *output)
 {
     bool support_hw_accel = true;
 
@@ -600,10 +600,6 @@ static bool esp_aes_gcm_input_support_hw_accel(size_t length, const unsigned cha
         support_hw_accel = false;
     } else if (!esp_ptr_dma_capable(output) && length > 0) {
         /* output in non internal DMA memory */
-        support_hw_accel = false;
-    } else if (!esp_ptr_dma_capable(stream_in)) {
-        /* Stream in (and therefor other descriptors and buffers that come from the stack)
-           in non internal DMA memory */
         support_hw_accel = false;
     } else if (length == 0) {
         support_hw_accel = false;
@@ -672,15 +668,10 @@ int esp_aes_gcm_crypt_and_tag( esp_gcm_context *ctx,
 #endif
 #if CONFIG_MBEDTLS_HARDWARE_GCM
     int ret;
-    crypto_dma_desc_t aad_desc[2] = {};
-    crypto_dma_desc_t *aad_head_desc = NULL;
     size_t remainder_bit;
-    uint8_t stream_in[AES_BLOCK_BYTES] = {};
-    unsigned stream_bytes = aad_len % AES_BLOCK_BYTES; // bytes which aren't in a full block
-    unsigned block_bytes = aad_len - stream_bytes;     // bytes which are in a full block
 
     /* Due to hardware limition only certain cases are fully supported in HW */
-    if (!esp_aes_gcm_input_support_hw_accel(length, aad, aad_len, input, output, stream_in)) {
+    if (!esp_aes_gcm_input_support_hw_accel(length, aad, aad_len, input, output)) {
         return esp_aes_gcm_crypt_and_tag_partial_hw(ctx, mode, length, iv, iv_len, aad, aad_len, input, output, tag_len, tag);
     }
 
@@ -725,29 +716,6 @@ int esp_aes_gcm_crypt_and_tag( esp_gcm_context *ctx,
     ctx->aes_ctx.key_in_hardware = 0;
     ctx->aes_ctx.key_in_hardware = aes_hal_setkey(ctx->aes_ctx.key, ctx->aes_ctx.key_bytes, mode);
 
-    if (block_bytes > 0) {
-        aad_desc[0].dw0.length = block_bytes;
-        aad_desc[0].dw0.size = block_bytes;
-        aad_desc[0].dw0.owner = 1;
-        aad_desc[0].buffer = (void*)aad;
-    }
-
-    if (stream_bytes > 0) {
-        memcpy(stream_in, aad + block_bytes, stream_bytes);
-
-        aad_desc[0].next = &aad_desc[1];
-        aad_desc[1].dw0.length = AES_BLOCK_BYTES;
-        aad_desc[1].dw0.size = AES_BLOCK_BYTES;
-        aad_desc[1].dw0.owner = 1;
-        aad_desc[1].buffer = (void*)stream_in;
-    }
-
-    if (block_bytes > 0) {
-        aad_head_desc = &aad_desc[0];
-    } else if (stream_bytes > 0) {
-        aad_head_desc = &aad_desc[1];
-    }
-
     aes_hal_mode_init(ESP_AES_BLOCK_MODE_GCM);
 
     /* See TRM GCM chapter for description of this calculation */
@@ -760,7 +728,7 @@ int esp_aes_gcm_crypt_and_tag( esp_gcm_context *ctx,
 
     aes_hal_gcm_set_j0(ctx->J0);
 
-    ret = esp_aes_process_dma_gcm(&ctx->aes_ctx, input, output, length, aad_head_desc, aad_len);
+    ret = esp_aes_process_dma_gcm(&ctx->aes_ctx, input, output, length, aad, aad_len);
     if (ret != 0) {
         esp_aes_release_hardware();
         return ret;
