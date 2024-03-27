@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -75,6 +75,7 @@ static void IRAM_ATTR modem_clock_wifi_bb_configure(modem_clock_context_t *ctx, 
 #if SOC_BT_SUPPORTED
 static void IRAM_ATTR modem_clock_ble_mac_configure(modem_clock_context_t *ctx, bool enable)
 {
+    modem_syscon_ll_enable_bt_mac_clock(ctx->hal->syscon_dev, enable);
     modem_syscon_ll_enable_modem_sec_clock(ctx->hal->syscon_dev, enable);
     modem_syscon_ll_enable_ble_timer_clock(ctx->hal->syscon_dev, enable);
 }
@@ -156,7 +157,7 @@ modem_clock_context_t * __attribute__((weak)) IRAM_ATTR MODEM_CLOCK_instance(voi
     return &modem_clock_context;
 }
 
-#if SOC_PM_SUPPORT_PMU_MODEM_STATE
+#if SOC_BLE_USE_WIFI_PWR_CLK_WORKAROUND
 esp_err_t modem_clock_domain_clk_gate_enable(modem_clock_domain_t domain, pmu_hp_icg_modem_mode_t mode)
 {
     if (domain >= MODEM_CLOCK_DOMAIN_MAX || domain < MODEM_CLOCK_DOMAIN_MODEM_APB) {
@@ -188,7 +189,7 @@ esp_err_t modem_clock_domain_clk_gate_disable(modem_clock_domain_t domain, pmu_h
     portEXIT_CRITICAL_SAFE(&MODEM_CLOCK_instance()->lock);
     return ESP_OK;
 }
-#endif // #if SOC_PM_SUPPORT_PMU_MODEM_STATE
+#endif // #if SOC_BLE_USE_WIFI_PWR_CLK_WORKAROUND
 
 static void IRAM_ATTR modem_clock_device_enable(modem_clock_context_t *ctx, uint32_t dev_map)
 {
@@ -289,13 +290,13 @@ static IRAM_ATTR uint32_t modem_clock_get_module_deps(periph_module_t module)
     return deps;
 }
 
-#if SOC_PM_SUPPORT_PMU_MODEM_STATE
 /* the ICG code's bit 0, 1 and 2 indicates the ICG state
  * of pmu SLEEP, MODEM and ACTIVE mode respectively */
+#define ICG_NOGATING_ACTIVE (BIT(PMU_HP_ICG_MODEM_CODE_ACTIVE))
 #define ICG_NOGATING_SLEEP  (BIT(PMU_HP_ICG_MODEM_CODE_SLEEP))
 #define ICG_NOGATING_MODEM  (BIT(PMU_HP_ICG_MODEM_CODE_MODEM))
-#define ICG_NOGATING_ACTIVE (BIT(PMU_HP_ICG_MODEM_CODE_ACTIVE))
 
+#if !CONFIG_IDF_TARGET_ESP32H2
 static const DRAM_ATTR uint32_t initial_gating_mode[MODEM_CLOCK_DOMAIN_MAX] = {
     [MODEM_CLOCK_DOMAIN_MODEM_APB]      = ICG_NOGATING_ACTIVE | ICG_NOGATING_MODEM,
     [MODEM_CLOCK_DOMAIN_MODEM_PERIPH]   = ICG_NOGATING_ACTIVE,
@@ -308,7 +309,9 @@ static const DRAM_ATTR uint32_t initial_gating_mode[MODEM_CLOCK_DOMAIN_MAX] = {
     [MODEM_CLOCK_DOMAIN_COEX]           = ICG_NOGATING_ACTIVE | ICG_NOGATING_MODEM,
     [MODEM_CLOCK_DOMAIN_WIFIPWR]        = ICG_NOGATING_ACTIVE | ICG_NOGATING_MODEM,
 };
+#endif
 
+#if !CONFIG_IDF_TARGET_ESP32H2  //TODO: PM-92
 static IRAM_ATTR void modem_clock_module_icg_map_init_all(void)
 {
     portENTER_CRITICAL_SAFE(&MODEM_CLOCK_instance()->lock);
@@ -318,12 +321,12 @@ static IRAM_ATTR void modem_clock_module_icg_map_init_all(void)
     }
     portEXIT_CRITICAL_SAFE(&MODEM_CLOCK_instance()->lock);
 }
-#endif // SOC_PM_SUPPORT_PMU_MODEM_STATE
+#endif
 
 void IRAM_ATTR modem_clock_module_enable(periph_module_t module)
 {
     assert(IS_MODEM_MODULE(module));
-#if SOC_PM_SUPPORT_PMU_MODEM_STATE
+#if !CONFIG_IDF_TARGET_ESP32H2
     modem_clock_module_icg_map_init_all();
 #endif
     uint32_t deps = modem_clock_get_module_deps(module);

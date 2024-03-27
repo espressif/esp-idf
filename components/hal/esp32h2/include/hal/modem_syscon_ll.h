@@ -234,6 +234,11 @@ static inline void modem_syscon_ll_enable_bt_apb_clock(modem_syscon_dev_t *hw, b
 }
 
 __attribute__((always_inline))
+static inline void modem_syscon_ll_enable_bt_mac_clock(modem_syscon_dev_t *hw, bool en)
+{
+}
+
+__attribute__((always_inline))
 static inline void modem_syscon_ll_enable_bt_clock(modem_syscon_dev_t *hw, bool en)
 {
     hw->clk_conf1.clk_bt_en = en;

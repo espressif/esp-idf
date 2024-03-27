@@ -400,16 +400,30 @@ static inline void modem_syscon_ll_enable_fe_160m_clock(modem_syscon_dev_t *hw, 
 }
 
 __attribute__((always_inline))
-static inline void modem_syscon_ll_enable_fe_cal_160m_clock(modem_syscon_dev_t *hw, bool en)
-{
-    HAL_ASSERT(0 && "not implemented yet");
-    // hw->clk_conf1.clk_fe_cal_160m_en = en;
-}
-
-__attribute__((always_inline))
 static inline void modem_syscon_ll_enable_fe_apb_clock(modem_syscon_dev_t *hw, bool en)
 {
     hw->clk_conf1.clk_fe_apb_en = en;
+}
+
+// The modem_syscon of esp32c5beta3 adds the enablement of the adc clock on the analog front end compared to esp32h2 and esp32c6.
+__attribute__((always_inline))
+static inline void modem_syscon_ll_enable_fe_adc_clock(modem_syscon_dev_t *hw, bool en)
+{
+    hw->clk_conf1.clk_fe_adc_en = en;
+}
+
+// The modem_syscon of esp32c5beta3 adds the enablement of the dac clock on the analog front end compared to esp32h2 and esp32c6.
+__attribute__((always_inline))
+static inline void modem_syscon_ll_enable_fe_dac_clock(modem_syscon_dev_t *hw, bool en)
+{
+    hw->clk_conf1.clk_fe_dac_en = en;
+}
+
+// The modem_syscon of esp32c5beta3 adds the enablement of the analog power detect clock on the analog front end compared to esp32h2 and esp32c6.
+__attribute__((always_inline))
+static inline void modem_syscon_ll_enable_fe_pwdet_clock(modem_syscon_dev_t *hw, bool en)
+{
+    hw->clk_conf1.clk_fe_pwdet_adc_en = en;
 }
 
 __attribute__((always_inline))
