@@ -319,8 +319,7 @@ static inline void cache_sync_data_buffer(pipe_t *pipe, urb_t *urb, bool done)
     const bool is_in = pipe->ep_char.bEndpointAddress & USB_B_ENDPOINT_ADDRESS_EP_DIR_MASK;
     const bool is_ctrl = (pipe->ep_char.type == USB_DWC_XFER_TYPE_CTRL);
     if ((is_in == done) || is_ctrl) {
-        uint32_t flags = (done) ? ESP_CACHE_MSYNC_FLAG_DIR_M2C : 0;
-        flags |= ESP_CACHE_MSYNC_FLAG_UNALIGNED;
+        uint32_t flags = (done) ? ESP_CACHE_MSYNC_FLAG_DIR_M2C : ESP_CACHE_MSYNC_FLAG_UNALIGNED;
         esp_err_t ret = esp_cache_msync(urb->transfer.data_buffer, urb->transfer.data_buffer_size, flags);
         assert(ret == ESP_OK);
     }
