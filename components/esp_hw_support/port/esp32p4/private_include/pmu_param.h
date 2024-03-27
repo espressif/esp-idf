@@ -349,7 +349,7 @@ typedef struct {
     },                                                      \
     .lp_sys[PMU_MODE_LP_SLEEP] = {                          \
         .analog = {                                         \
-            .drv_b         = PMU_LP_DRVB_DEEPSLEEP,                 \
+            .drv_b         = PMU_LP_DRVB_LIGHTSLEEP,                \
             .pd_cur        = PMU_PD_CUR_SLEEP_DEFAULT,              \
             .bias_sleep    = PMU_BIASSLP_SLEEP_DEFAULT,             \
             .slp_xpd       = PMU_LP_SLP_XPD_SLEEP_DEFAULT,          \
@@ -428,7 +428,7 @@ typedef struct {
 
 typedef struct pmu_sleep_machine_constant {
     struct {
-        uint16_t    min_slp_time_us;            /* Mininum sleep protection time (unit: microsecond) */
+        uint16_t    min_slp_time_us;            /* Minimum sleep protection time (unit: microsecond) */
         uint8_t     wakeup_wait_cycle;          /* Modem wakeup signal (WiFi MAC and BEACON wakeup) waits for the slow & fast clock domain synchronization and the wakeup signal triggers the PMU FSM switching wait cycle (unit: slow clock cycle) */
         uint8_t     reserved0;
         uint16_t    reserved1;
@@ -440,7 +440,7 @@ typedef struct pmu_sleep_machine_constant {
         uint16_t    power_up_wait_time_us;      /* (unit: microsecond) */
     } lp;
     struct {
-        uint16_t    min_slp_time_us;            /* Mininum sleep protection time (unit: microsecond) */
+        uint16_t    min_slp_time_us;            /* Minimum sleep protection time (unit: microsecond) */
         uint16_t    clock_domain_sync_time_us;  /* The Slow OSC clock domain synchronizes time with the Fast OSC domain, at least 4 slow clock cycles (unit: microsecond) */
         uint16_t    system_dfs_up_work_time_us; /* System DFS up scaling work time (unit: microsecond) */
         uint16_t    analog_wait_time_us;        /* HP LDO power up wait time (unit: microsecond) */
@@ -461,7 +461,7 @@ typedef struct pmu_sleep_machine_constant {
 // If TOP is power down, the time the regdma runs will cover some of the time
 // spent waiting for the DCDC to startup.
 #define PMU_HP_ANA_WAIT_TIME_PD_TOP_US      260
-// If TOP doamin is not powered down, we need to stay in HP_SWITCH longer to wait for the
+// If TOP domain is not powered down, we need to stay in HP_SWITCH longer to wait for the
 // DCDC startup, which saves more power compared to waiting in the Active state.
 #define PMU_HP_ANA_WAIT_TIME_PU_TOP_US      (PMU_HP_ANA_WAIT_TIME_PD_TOP_US + PMU_REGDMA_S2A_WORK_TIME_US) // 945
 
