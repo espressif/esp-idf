@@ -7,6 +7,7 @@
 #include "hal/ecc_ll.h"
 #include "hal/ecdsa_ll.h"
 #include "hal/ecdsa_hal.h"
+#include "hal/mpi_ll.h"
 #include "esp_crypto_lock.h"
 #include "esp_efuse.h"
 #include "esp_private/esp_crypto_lock_internal.h"
@@ -15,6 +16,7 @@
 #include "mbedtls/asn1write.h"
 #include "mbedtls/platform_util.h"
 #include "ecdsa/ecdsa_alt.h"
+#include "soc/soc_caps.h"
 
 #define ECDSA_KEY_MAGIC             (short) 0xECD5A
 #define ECDSA_SHA_LEN               32
@@ -26,26 +28,42 @@ static void esp_ecdsa_acquire_hardware(void)
 {
     esp_crypto_ecdsa_lock_acquire();
 
+    ECDSA_RCC_ATOMIC() {
+        ecdsa_ll_enable_bus_clock(true);
+        ecdsa_ll_reset_register();
+    }
+
     ECC_RCC_ATOMIC() {
         ecc_ll_enable_bus_clock(true);
         ecc_ll_reset_register();
     }
 
-    ECDSA_RCC_ATOMIC() {
-        ecdsa_ll_enable_bus_clock(true);
-        ecdsa_ll_reset_register();
+#ifdef SOC_ECDSA_USES_MPI
+    /* We need to reset the MPI peripheral because ECDSA peripheral
+     * of some targets use the MPI peripheral as well.
+     */
+    MPI_RCC_ATOMIC() {
+        mpi_ll_enable_bus_clock(true);
+        mpi_ll_reset_register();
     }
+#endif /* SOC_ECDSA_USES_MPI */
 }
 
 static void esp_ecdsa_release_hardware(void)
 {
+    ECDSA_RCC_ATOMIC() {
+        ecdsa_ll_enable_bus_clock(false);
+    }
+
     ECC_RCC_ATOMIC() {
         ecc_ll_enable_bus_clock(false);
     }
 
-    ECDSA_RCC_ATOMIC() {
-        ecdsa_ll_enable_bus_clock(false);
+#ifdef SOC_ECDSA_USES_MPI
+    MPI_RCC_ATOMIC() {
+        mpi_ll_enable_bus_clock(false);
     }
+#endif /* SOC_ECDSA_USES_MPI */
 
     esp_crypto_ecdsa_lock_release();
 }

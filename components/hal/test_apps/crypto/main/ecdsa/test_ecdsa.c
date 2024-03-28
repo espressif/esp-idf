@@ -17,6 +17,8 @@
 #include "hal/ecdsa_hal.h"
 #include "hal/ecdsa_ll.h"
 #include "hal/ecdsa_types.h"
+#include "hal/mpi_ll.h"
+#include "soc/soc_caps.h"
 
 #include "memory_checks.h"
 #include "unity_fixture.h"
@@ -26,21 +28,32 @@
 
 static void ecdsa_enable_and_reset(void)
 {
-    esp_crypto_ecdsa_lock_acquire();
+    ECDSA_RCC_ATOMIC() {
+        ecdsa_ll_enable_bus_clock(true);
+        ecdsa_ll_reset_register();
+    }
 
     ECC_RCC_ATOMIC() {
         ecc_ll_enable_bus_clock(true);
         ecc_ll_reset_register();
     }
 
-    ECDSA_RCC_ATOMIC() {
-        ecdsa_ll_enable_bus_clock(true);
-        ecdsa_ll_reset_register();
+#ifdef SOC_ECDSA_USES_MPI
+    MPI_RCC_ATOMIC() {
+        mpi_ll_enable_bus_clock(true);
+        mpi_ll_reset_register();
     }
+#endif
 }
 
 static void ecdsa_disable(void)
 {
+#ifdef SOC_ECDSA_USES_MPI
+    MPI_RCC_ATOMIC() {
+        mpi_ll_enable_bus_clock(false);
+    }
+#endif
+
     ECC_RCC_ATOMIC() {
         ecc_ll_enable_bus_clock(false);
     }
@@ -48,8 +61,6 @@ static void ecdsa_disable(void)
     ECDSA_RCC_ATOMIC() {
         ecdsa_ll_enable_bus_clock(false);
     }
-
-    esp_crypto_ecdsa_lock_release();
 }
 
 static void ecc_be_to_le(const uint8_t* be_point, uint8_t *le_point, uint8_t len)
