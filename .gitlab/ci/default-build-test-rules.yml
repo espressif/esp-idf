@@ -8,6 +8,7 @@
 # This file should ONLY be used during bringup. Should be reset to empty after the bringup process
 extra_default_build_targets:
   - esp32p4
+  - esp32c5
 
 bypass_check_test_targets:
   - esp32c5
