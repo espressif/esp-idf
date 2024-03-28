@@ -606,15 +606,15 @@ static bool enum_stage_transfer_check(enum_ctrl_t *enum_ctrl)
             break;
         } else {
             // Fill the string descriptor into the device object
-            int select;
+            int str_index;
             if (enum_ctrl->stage == ENUM_STAGE_CHECK_FULL_MANU_STR_DESC) {
-                select = 0;
+                str_index = 0;
             } else if (enum_ctrl->stage == ENUM_STAGE_CHECK_FULL_PROD_STR_DESC) {
-                select = 1;
+                str_index = 1;
             } else {    // ENUM_STAGE_CHECK_FULL_PROD_STR_DESC
-                select = 2;
+                str_index = 2;
             }
-            ESP_ERROR_CHECK(usbh_dev_set_str_desc(enum_ctrl->dev_hdl, str_desc, select));
+            ESP_ERROR_CHECK(usbh_dev_set_str_desc(enum_ctrl->dev_hdl, str_desc, str_index));
             ret = true;
             break;
         }
@@ -634,7 +634,7 @@ static void enum_stage_cleanup(enum_ctrl_t *enum_ctrl)
     // Propagate a new device event
     ESP_ERROR_CHECK(usbh_devs_new_dev_event(enum_ctrl->dev_hdl));
     // We are done with using the device. Close it.
-    ESP_ERROR_CHECK(usbh_devs_close(enum_ctrl->dev_hdl));
+    ESP_ERROR_CHECK(usbh_dev_close(enum_ctrl->dev_hdl));
     // Clear values in enum_ctrl
     enum_ctrl->dev_hdl = NULL;
 }
@@ -644,7 +644,7 @@ static void enum_stage_cleanup_failed(enum_ctrl_t *enum_ctrl)
     if (enum_ctrl->dev_hdl) {
         // Close the device and unlock it as we done with enumeration
         ESP_ERROR_CHECK(usbh_dev_enum_unlock(enum_ctrl->dev_hdl));
-        ESP_ERROR_CHECK(usbh_devs_close(enum_ctrl->dev_hdl));
+        ESP_ERROR_CHECK(usbh_dev_close(enum_ctrl->dev_hdl));
         // We allow this to fail in case the device object was already freed
         usbh_devs_remove(ENUM_DEV_UID);
     }
@@ -791,8 +791,15 @@ static void root_port_handle_events(hcd_port_handle_t root_port_hdl)
         if (hcd_port_get_speed(p_hub_driver_obj->constant.root_port_hdl, &speed) != ESP_OK) {
             goto new_dev_err;
         }
+
         // Allocate a new device. We use a fixed ENUM_DEV_UID for now since we only support a single device
-        if (usbh_devs_add(ENUM_DEV_UID, speed, p_hub_driver_obj->constant.root_port_hdl) != ESP_OK) {
+        usbh_dev_params_t params = {
+            .uid = ENUM_DEV_UID,
+            .speed = speed,
+            .root_port_hdl = p_hub_driver_obj->constant.root_port_hdl,
+        };
+
+        if (usbh_devs_add(&params) != ESP_OK) {
             ESP_LOGE(HUB_DRIVER_TAG, "Failed to add device");
             goto new_dev_err;
         }
