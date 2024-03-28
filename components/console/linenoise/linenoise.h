@@ -74,6 +74,8 @@ bool linenoiseIsDumbMode(void);
 void linenoisePrintKeyCodes(void);
 void linenoiseAllowEmpty(bool);
 int linenoiseSetMaxLineLen(size_t len);
+void linenoiseMaskModeEnable(void);
+void linenoiseMaskModeDisable(void);
 
 #ifdef __cplusplus
 }
