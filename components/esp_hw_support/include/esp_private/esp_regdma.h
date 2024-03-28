@@ -625,7 +625,7 @@ void *regdma_find_module_link_tail(void *link, void *tail, int entry, uint32_t m
 
 /**
  * @brief Find the tail node of the previous module of the specified module in the REGDMA linked list
- * indicated by the entry argument starting from the link argment to the end of the tail argument
+ * indicated by the entry argument starting from the link argument to the end of the tail argument
  * @param  link   The REGDMA linkded list head pointer
  * @param  tail   The REGDMA linkded list tail pointer
  * @param  entry  For nodes that support branching, use the branch specified by entry argument recursively
@@ -636,7 +636,7 @@ void *regdma_find_prev_module_link_tail(void *link, void *tail, int entry, uint3
 
 /**
  * @brief Find the head node of the next module of the specified module in the REGDMA linked list
- * indicated by the entry argument starting from the link argment to the end of the tail argument
+ * indicated by the entry argument starting from the link argument to the end of the tail argument
  * @param  link   The REGDMA linkded list head pointer
  * @param  tail   The REGDMA linkded list tail pointer
  * @param  entry  For nodes that support branching, use the branch specified by entry argument recursively
