@@ -101,9 +101,16 @@ int esp_ecdsa_load_pubkey(mbedtls_ecp_keypair *keypair, int efuse_blk)
 
     esp_ecdsa_acquire_hardware();
 
+    bool process_again = false;
+
     do {
         ecdsa_hal_export_pubkey(&conf, qx_le, qy_le, len);
-    } while (!memcmp(qx_le, zeroes, len) || !memcmp(qy_le, zeroes, len));
+
+        process_again = !ecdsa_hal_get_operation_result()
+                        || !memcmp(qx_le, zeroes, len)
+                        || !memcmp(qy_le, zeroes, len);
+
+    } while (process_again);
 
     esp_ecdsa_release_hardware();
 
@@ -250,6 +257,8 @@ static int esp_ecdsa_sign(mbedtls_ecp_group *grp, mbedtls_mpi* r, mbedtls_mpi* s
 
     esp_ecdsa_acquire_hardware();
 
+    bool process_again = false;
+
     do {
         ecdsa_hal_config_t conf = {
             .mode = ECDSA_MODE_SIGN_GEN,
@@ -260,7 +269,12 @@ static int esp_ecdsa_sign(mbedtls_ecp_group *grp, mbedtls_mpi* r, mbedtls_mpi* s
         };
 
         ecdsa_hal_gen_signature(&conf, sha_le, r_le, s_le, len);
-    } while (!memcmp(r_le, zeroes, len) || !memcmp(s_le, zeroes, len));
+
+        process_again = !ecdsa_hal_get_operation_result()
+                        || !memcmp(r_le, zeroes, len)
+                        || !memcmp(s_le, zeroes, len);
+
+    } while (process_again);
 
     esp_ecdsa_release_hardware();
 

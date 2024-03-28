@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -72,6 +72,14 @@ int ecdsa_hal_verify_signature(ecdsa_hal_config_t *conf, const uint8_t *hash, co
  */
 void ecdsa_hal_export_pubkey(ecdsa_hal_config_t *conf, uint8_t *pub_x, uint8_t *pub_y, uint16_t len);
 #endif /* SOC_ECDSA_SUPPORT_EXPORT_PUBKEY */
+
+/**
+ * @brief Check if the ECDSA operation is successful
+ *
+ * @return - true, if the ECDSA operation is successful
+ *         - false, if the ECDSA operation fails
+ */
+bool ecdsa_hal_get_operation_result(void);
 
 #ifdef __cplusplus
 }
