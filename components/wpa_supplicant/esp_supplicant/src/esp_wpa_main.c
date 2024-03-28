@@ -213,7 +213,8 @@ int wpa_sta_connect(uint8_t *bssid)
         esp_set_assoc_ie((uint8_t *)bssid, NULL, 0, false);
     }
 
-    return 0;
+    ret = esp_wifi_sta_connect_internal(bssid);
+    return ret;
 }
 
 void wpa_config_done(void)
