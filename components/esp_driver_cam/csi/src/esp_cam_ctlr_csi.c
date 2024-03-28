@@ -186,7 +186,7 @@ esp_err_t esp_cam_new_csi_ctlr(const esp_cam_ctlr_csi_config_t *config, esp_cam_
         .flow_controller = DW_GDMA_FLOW_CTRL_SRC,
         .chan_priority = 1,
     };
-    ESP_GOTO_ON_ERROR(dw_gdma_new_channel(&csi_dma_alloc_config, &csi_dma_chan), err, TAG, "failed to new dwgdma channle");
+    ESP_GOTO_ON_ERROR(dw_gdma_new_channel(&csi_dma_alloc_config, &csi_dma_chan), err, TAG, "failed to new dwgdma channel");
     ctlr->dma_chan = csi_dma_chan;
 
     size_t csi_transfer_size = ctlr->h_res * ctlr->v_res * ctlr->in_bpp / 64;

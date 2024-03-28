@@ -5,7 +5,7 @@
  */
 
 /*----------------------------------------------------------------------------------
-        This file contains ESP32 and ESP32S2 Depricated ADC APIs and functions
+        This file contains ESP32 and ESP32S2 Deprecated ADC APIs and functions
 -----------------------------------------------------------------------------------*/
 
 #include "sdkconfig.h"
@@ -52,7 +52,7 @@ esp_pm_lock_handle_t adc_digi_arbiter_lock = NULL;
 
 #if CONFIG_IDF_TARGET_ESP32
 /*---------------------------------------------------------------
-        ESP32 Depricated ADC APIs and functions
+        ESP32 Deprecated ADC APIs and functions
 ---------------------------------------------------------------*/
 #define DIG_ADC_OUTPUT_FORMAT_DEFUALT (ADC_DIGI_FORMAT_12BIT)
 #define DIG_ADC_ATTEN_DEFUALT         (ADC_ATTEN_DB_12)

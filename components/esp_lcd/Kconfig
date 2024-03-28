@@ -14,7 +14,7 @@ menu "LCD and Touch Panel"
             bool "Enable debug log"
             default n
             help
-                Wether to enable the debug log message for LCD driver.
+                whether to enable the debug log message for LCD driver.
                 Note that, this option only controls the LCD driver log, won't affect other drivers.
 
         if SOC_LCD_RGB_SUPPORTED

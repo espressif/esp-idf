@@ -52,7 +52,7 @@ static size_t IRAM_ATTR rmt_encode_bytes(rmt_encoder_t *encoder, rmt_channel_han
 {
     rmt_bytes_encoder_t *bytes_encoder = __containerof(encoder, rmt_bytes_encoder_t, base);
     rmt_tx_channel_t *tx_chan = __containerof(channel, rmt_tx_channel_t, base);
-    const uint8_t *nd = (const uint8_t *)primary_data;
+    const uint8_t *raw_data = (const uint8_t *)primary_data;
     rmt_encode_state_t state = RMT_ENCODING_RESET;
     rmt_dma_descriptor_t *desc0 = NULL;
     rmt_dma_descriptor_t *desc1 = NULL;
@@ -87,7 +87,7 @@ static size_t IRAM_ATTR rmt_encode_bytes(rmt_encoder_t *encoder, rmt_channel_han
     size_t len = encode_len;
     while (len > 0) {
         // start from last time truncated encoding
-        uint8_t cur_byte = nd[byte_index];
+        uint8_t cur_byte = raw_data[byte_index];
         // bit-wise reverse
         if (bytes_encoder->flags.msb_first) {
             cur_byte = hal_utils_bitwise_reverse8(cur_byte);
@@ -313,7 +313,7 @@ esp_err_t rmt_encoder_reset(rmt_encoder_handle_t encoder)
     return encoder->reset(encoder);
 }
 
-void* rmt_alloc_encoder_mem(size_t size)
+void *rmt_alloc_encoder_mem(size_t size)
 {
     return heap_caps_calloc(1, size, RMT_MEM_ALLOC_CAPS);
 }

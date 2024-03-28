@@ -181,7 +181,7 @@ static IRAM_ATTR bool test_master_tx_done_callback(i2c_master_dev_handle_t i2c_d
  *
  * 1. See the depth of queue is 37, but the number of transaction is 42, that means some
  *    queue must be reused.
- * 2. There are some delay randomly set there, for testing the concurency or any I2C state
+ * 2. There are some delay randomly set there, for testing the concurrency or any I2C state
  *    might be met.
  *******************************************************************************
 */

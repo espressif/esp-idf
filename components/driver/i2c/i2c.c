@@ -1198,7 +1198,7 @@ static esp_err_t i2c_cmd_allocate(i2c_cmd_desc_t *cmd_desc, size_t n, size_t siz
             /* Allocate the pointer. */
             *outptr = cmd_desc->free_buffer;
 
-            /* Decrement the free size from the user's bufffer. */
+            /* Decrement the free size from the user's buffer. */
             cmd_desc->free_buffer += required;
             cmd_desc->free_size -= required;
         }

@@ -51,7 +51,7 @@ typedef enum {
 #if SOC_I2S_SUPPORTS_TDM
     // Bit map of activated chan.
     // There are 16 channels in TDM mode.
-    // For TX module, only the activated channel send the audio data, the unactivated channel send a constant(configurable) or will be skiped if 'skip_msk' is set.
+    // For TX module, only the activated channel send the audio data, the unactivated channel send a constant(configurable) or will be skipped if 'skip_msk' is set.
     // For RX module, only receive the audio data in activated channels, the data in unactivated channels will be ignored.
     // the bit map of activated channel can not exceed the maximum enabled channel number (i.e. 0x10000 << total_chan_num).
     // e.g: active_chan_mask = (I2S_TDM_ACTIVE_CH0 | I2S_TDM_ACTIVE_CH3), here the active_chan_number is 2 and total_chan_num is not supposed to be smaller than 4.

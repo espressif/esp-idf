@@ -86,7 +86,7 @@ static IRAM_ATTR bool adc_dma_intr(adc_continuous_ctx_t *adc_digi_ctx)
                 uint8_t *old_data = xRingbufferReceiveUpToFromISR(adc_digi_ctx->ringbuf_hdl, &actual_size, adc_digi_ctx->ringbuf_size);
                 /**
                  * Replace by ringbuffer reset API when this API is ready.
-                 * Now we do mannual reset.
+                 * Now we do manual reset.
                  * For old_data == NULL condition (equals to the future ringbuffer reset fail condition), we don't care this time data,
                  * as this only happens when the ringbuffer size is small, new data will be filled in soon.
                  */

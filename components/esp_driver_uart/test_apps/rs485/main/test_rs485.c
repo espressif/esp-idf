@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -27,7 +27,7 @@
 
 // Wait timeout for uart driver
 #define PACKET_READ_TICS        (2000 / portTICK_PERIOD_MS)
-// This is for workarond to avoid master-slave syncronization issues
+// This is for workarond to avoid master-slave synchronization issues
 // when slave gets the "Master_started" signal with delay ~2-3 seconds
 #define TEST_ALLOW_PROC_FAIL    (10)
 #define TEST_CHECK_PROC_FAIL(fails, threshold) TEST_ASSERT((fails * 100 / PACKETS_NUMBER) <= threshold)
@@ -202,7 +202,7 @@ static void rs485_slave(void)
     uint16_t err_count = 0, good_count = 0;
     unity_send_signal("Slave_ready");
     unity_wait_for_signal("Master_started");
-    ESP_LOGI(TAG, "Start recieve loop.");
+    ESP_LOGI(TAG, "Start receive loop.");
     for (int pack_count = 0; pack_count < PACKETS_NUMBER; pack_count++) {
         //Read slave_data from UART
         int len = uart_read_bytes(UART_NUM1, slave_data, BUF_SIZE, PACKET_READ_TICS);
@@ -234,7 +234,7 @@ static void rs485_slave(void)
 
 // Master test of multi device test case.
 // It forms packet with random data, apply generated CRC16 and sends to slave.
-// If response recieved correctly from slave means RS485 channel works.
+// If response received correctly from slave means RS485 channel works.
 static void rs485_master(void)
 {
     uint16_t err_count = 0, good_count = 0;
@@ -244,7 +244,7 @@ static void rs485_master(void)
     // The master test case should be synchronized with slave
     unity_wait_for_signal("Slave_ready");
     unity_send_signal("Master_started");
-    ESP_LOGI(TAG, "Start recieve loop.");
+    ESP_LOGI(TAG, "Start receive loop.");
     for (int i = 0; i < PACKETS_NUMBER; i++) {
         // Form random buffer with CRC16
         buffer_fill_random(master_buffer, BUF_SIZE);

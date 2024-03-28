@@ -120,7 +120,7 @@ int test_tp_print_to_scope(float *data, unsigned char channel_num)
         return 0;
     } else {
 #if ROM_UART_DRIVER_ENABLE
-        esp_rom_output_tx_wait_idle(uart_num);   // Default print uart mumber is 0.
+        esp_rom_output_tx_wait_idle(uart_num);   // Default print uart number is 0.
         for (int i = 0; i < out_len; i++) {
             esp_rom_output_tx_one_char(out_data[i]);
         }
@@ -154,7 +154,7 @@ int test_tp_print_to_scope(float *data, unsigned char channel_num)
 esp_err_t test_tp_scope_debug_init(uint8_t uart_num, int tx_io_num, int rx_io_num, int baud_rate)
 {
 #if ROM_UART_DRIVER_ENABLE
-    esp_rom_output_tx_wait_idle(0);   // Default print uart mumber is 0.
+    esp_rom_output_tx_wait_idle(0);   // Default print uart number is 0.
     if (uart_num != 0) {
         esp_rom_output_set_as_console(uart_num);
     }

@@ -47,7 +47,7 @@ static bool IRAM_ATTR s_alarm_callback(gptimer_handle_t timer, const gptimer_ala
 
     /**
      * This test won't disable the cache, so having some code on Flash is OK.
-     * If you copy this test callback with cache disabled, do remeber to put all code in internal RAM.
+     * If you copy this test callback with cache disabled, do remember to put all code in internal RAM.
      */
 
     esp_rom_printf("alarm isr count=%llu\r\n", edata->count_value);
@@ -213,7 +213,7 @@ TEST_CASE("ADC continuous big conv_frame_size test", "[adc_continuous]")
 
 #define ADC_FLUSH_TEST_SIZE    64
 
-TEST_CASE("ADC continuous flush internal pool", "[adc_continuous][mannual][ignore]")
+TEST_CASE("ADC continuous flush internal pool", "[adc_continuous][manual][ignore]")
 {
     adc_continuous_handle_t handle = NULL;
     adc_continuous_handle_cfg_t adc_config = {

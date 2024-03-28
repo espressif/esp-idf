@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -659,7 +659,7 @@ TEST_CASE("SPI Master no response when switch from host1 (SPI2) to host2 (SPI3)"
     TEST_ESP_OK(spi_bus_add_device(host, &device_config, &spi));
 
     printf("before second xmit\n");
-    // the original version (bit mis-written) stucks here.
+    // the original version (bit miswritten) stucks here.
     TEST_ESP_OK(spi_device_transmit(spi, &transaction));
     // test case success when see this.
     printf("after second xmit\n");
@@ -874,7 +874,7 @@ void test_cmd_addr(spi_slave_task_context_t *slave_context, bool lsb_first)
 #ifdef CONFIG_IDF_TARGET_ESP32
         addr_bits = 56 - 8 * i;
 #elif CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
-        //ESP32S2 only supportes up to 32 bits address
+        //ESP32S2 only supports up to 32 bits address
         addr_bits = 28 - 4 * i;
 #endif
         int round_up = (cmd_bits + addr_bits + 7) / 8 * 8;
@@ -1529,7 +1529,7 @@ void test_add_device_master(void)
         //1. add max dummy devices
         //2. replace devs[i] as a real device, than start a transaction
         //3. free devs[i] after transaction to release the real CS pin for using again by another dev,
-        //So it will loop to check every gpio_sigal one by one use one physical pin
+        //So it will loop to check every gpio_signal one by one use one physical pin
         spi_bus_remove_device(devs[i]);
         dev_cfg.spics_io_num = CS_REAL_DEV;
         TEST_ESP_OK(spi_bus_add_device(TEST_SPI_HOST, &dev_cfg, &devs[i]));
@@ -1608,7 +1608,7 @@ TEST_CASE("test_master_isr_pin_to_core", "[spi]")
 {
     spi_device_handle_t dev0;
     uint32_t master_send;
-    uint32_t master_recive;
+    uint32_t master_receive;
     uint32_t master_expect;
 
     spi_bus_config_t buscfg = SPI_BUS_TEST_DEFAULT_CONFIG();
@@ -1617,7 +1617,7 @@ TEST_CASE("test_master_isr_pin_to_core", "[spi]")
 
     spi_transaction_t trans_cfg = {
         .tx_buffer = &master_send,
-        .rx_buffer = &master_recive,
+        .rx_buffer = &master_receive,
         .user = & master_expect,
         .length = sizeof(uint32_t) * 8,
     };
@@ -1684,7 +1684,7 @@ static IRAM_ATTR void test_master_iram(void)
         .length = TEST_MASTER_IRAM_TRANS_LEN * 8,
     }, *ret_trans;
 
-    // Test intrrupt trans api once -----------------------------
+    // Test interrupt trans api once -----------------------------
     unity_send_signal("Master ready");
     unity_wait_for_signal("Slave ready");
 
@@ -1692,7 +1692,7 @@ static IRAM_ATTR void test_master_iram(void)
     flag_trans_done = false;
     spi_device_queue_trans(dev_handle, &trans_cfg, portMAX_DELAY);
     while (!flag_trans_done) {
-        // waitting for transaction done and return from ISR
+        // waiting for transaction done and return from ISR
     }
     spi_device_get_trans_result(dev_handle, &ret_trans, portMAX_DELAY);
     spi_flash_enable_interrupts_caches_and_other_cpu();

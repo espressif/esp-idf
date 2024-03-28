@@ -38,7 +38,7 @@ typedef enum {
 } dac_continuous_channel_mode_t;
 
 /**
- * @brief DAC DMA (digitial controller) clock source
+ * @brief DAC DMA (digital controller) clock source
  *
  */
 typedef soc_periph_dac_digi_clk_src_t       dac_continuous_digi_clk_src_t;

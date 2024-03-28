@@ -33,7 +33,7 @@ typedef struct {
 } temperature_sensor_config_t;
 
 /**
- * @brief temperature_sensor_config_t default constructure
+ * @brief temperature_sensor_config_t default constructor
  */
 #define TEMPERATURE_SENSOR_CONFIG_DEFAULT(min, max)    \
     {                                                  \

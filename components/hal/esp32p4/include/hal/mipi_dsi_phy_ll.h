@@ -83,7 +83,7 @@ static inline bool mipi_dsi_phy_ll_is_pll_locked(dsi_host_dev_t *dev)
  * @param dev Pointer to the DSI Host controller register base address
  * @return True if the lanes are all in stop state, False otherwise
  */
-static inline bool mipi_dsi_phy_ll_are_lanes_stoped(dsi_host_dev_t *dev)
+static inline bool mipi_dsi_phy_ll_are_lanes_stopped(dsi_host_dev_t *dev)
 {
     uint32_t status = dev->phy_status.val;
     const uint32_t mask = 1 << 2 | 1 << 4 | 1 << 7;

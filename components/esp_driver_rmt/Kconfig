@@ -22,6 +22,6 @@ menu "ESP-Driver:RMT Configurations"
         bool "Enable debug log"
         default n
         help
-            Wether to enable the debug log message for RMT driver.
+            whether to enable the debug log message for RMT driver.
             Note that, this option only controls the RMT driver log, won't affect other drivers.
 endmenu

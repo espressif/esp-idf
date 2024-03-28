@@ -96,7 +96,7 @@ esp_err_t mcpwm_operator_set_brake_on_fault(mcpwm_oper_handle_t oper, const mcpw
 /**
  * @brief Try to make the operator recover from fault
  *
- * @note To recover from fault or escape from trip, you make sure the fault signal has dissappeared already.
+ * @note To recover from fault or escape from trip, you make sure the fault signal has disappeared already.
  *       Otherwise the recovery can't succeed.
  *
  * @param[in] oper MCPWM operator, allocated by `mcpwm_new_operator()`

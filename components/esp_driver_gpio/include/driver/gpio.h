@@ -399,7 +399,7 @@ esp_err_t gpio_hold_en(gpio_num_t gpio_num);
   *  e.g.
   *     If you hold gpio18 high during Deep-sleep, after the chip is woken up and `gpio_hold_dis` is called,
   *     gpio18 will output low level(because gpio18 is input mode by default). If you don't want this behavior,
-  *     you should configure gpio18 as output mode and set it to hight level before calling `gpio_hold_dis`.
+  *     you should configure gpio18 as output mode and set it to high level before calling `gpio_hold_dis`.
   *
   * @param gpio_num GPIO number, only support output-capable GPIOs
   *
@@ -442,9 +442,9 @@ void gpio_iomux_in(uint32_t gpio_num, uint32_t signal_idx);
   * @param gpio_num gpio_num GPIO number of the pad.
   * @param func The function number of the peripheral pin to output pin.
   *        One of the ``FUNC_X_*`` of specified pin (X) in ``soc/io_mux_reg.h``.
-  * @param oen_inv True if the output enable needs to be inverted, otherwise False.
+  * @param out_en_inv True if the output enable needs to be inverted, otherwise False.
   */
-void gpio_iomux_out(uint8_t gpio_num, int func, bool oen_inv);
+void gpio_iomux_out(uint8_t gpio_num, int func, bool out_en_inv);
 
 #if SOC_GPIO_SUPPORT_FORCE_HOLD
 /**

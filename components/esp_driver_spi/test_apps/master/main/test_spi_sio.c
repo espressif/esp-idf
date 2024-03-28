@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -143,8 +143,8 @@ TEST_CASE("SPI Single Board Test SIO", "[spi]")
 #if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32P4)    //IDF-7503 slave support
 /********************************************************************************
  *                             Test SIO Master
- * SIO Slave is not suported, and one unit test is limited to one feature, so,,,
- * sio master test can be splited to singal-input and single-output
+ * SIO Slave is not supported, and one unit test is limited to one feature, so,,,
+ * sio master test can be split to signal-input and single-output
  *
  * for single-output:      master               slave
  *                       cs-----cs  ------------- cs
@@ -178,7 +178,7 @@ void test_sio_master_trans(bool sio_master_in)
     uint8_t *master_tx_max = heap_caps_calloc(TRANS_LEN * 2, 1, MALLOC_CAP_DMA);
     TEST_ASSERT_NOT_NULL_MESSAGE(master_tx_max, "malloc failed, exit.\n");
 
-    // write somethin to a long buffer for test long transmition
+    // write somethin to a long buffer for test long transmission
     for (uint16_t i = 0; i < TRANS_LEN; i++) {
         master_tx_max[i] = i;
         master_tx_max[TRANS_LEN * 2 - i - 1] = i;
@@ -208,7 +208,7 @@ void test_sio_master_trans(bool sio_master_in)
         if (sio_master_in) {
             // master input only section
             trans.rxlength = (i + 1) * 8 * 8;
-            // test a huge data for last transmition
+            // test a huge data for last transmission
             if (i >= TEST_NUM - 1) {
                 trans.rxlength = TRANS_LEN * 8;
             }
@@ -219,14 +219,14 @@ void test_sio_master_trans(bool sio_master_in)
         } else {
             // master output only section
             trans.length = MAX_TRANS_BUFF / (i + 1) * 8;
-            // test a huge data for last transmition
+            // test a huge data for last transmission
             if (i >= TEST_NUM - 1) {
                 trans.length = TRANS_LEN * 8;
             }
             trans.tx_buffer = master_tx_max;
             trans.rxlength = 0;
             trans.rx_buffer = NULL;
-            // use some differnt data
+            // use some different data
             trans.tx_buffer += (i % 2) ? TRANS_LEN : 0;
         }
 
@@ -252,7 +252,7 @@ void test_sio_slave_emulate(bool sio_master_in)
     uint8_t *slave_tx_max = heap_caps_calloc(TRANS_LEN * 2, 1, MALLOC_CAP_DMA);
     TEST_ASSERT_NOT_NULL_MESSAGE(slave_tx_max, "malloc failed, exit.\n");
 
-    // write somethin to a long buffer for test long transmition
+    // write somethin to a long buffer for test long transmission
     for (uint16_t i = 0; i < TRANS_LEN; i++) {
         slave_tx_max[i] = i;
         slave_tx_max[TRANS_LEN * 2 - i - 1] = i;
@@ -275,7 +275,7 @@ void test_sio_slave_emulate(bool sio_master_in)
         if (sio_master_in) {
             // slave output only section
             trans.length = (i + 1) * 8 * 8;
-            // test a huge data for last transmition
+            // test a huge data for last transmission
             if (i >= TEST_NUM - 1) {
                 trans.length = TRANS_LEN * 8;
             }
@@ -284,7 +284,7 @@ void test_sio_slave_emulate(bool sio_master_in)
         } else {
             // slave input only section
             trans.length = MAX_TRANS_BUFF / (i + 1) * 8;
-            // test a huge data for last transmition
+            // test a huge data for last transmission
             if (i >= TEST_NUM - 1) {
                 trans.length = TRANS_LEN * 8;
             }

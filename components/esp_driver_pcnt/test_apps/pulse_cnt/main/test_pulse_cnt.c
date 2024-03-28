@@ -32,7 +32,7 @@ TEST_CASE("pcnt_unit_install_uninstall", "[pcnt]")
         TEST_ASSERT_EQUAL(0, count_value);
     }
 
-    // unit with a different intrrupt priority
+    // unit with a different interrupt priority
     unit_config.intr_priority = 3;
     TEST_ESP_ERR(ESP_ERR_INVALID_STATE, pcnt_new_unit(&unit_config, &units[SOC_PCNT_UNITS_PER_GROUP - 1]));
     unit_config.intr_priority = 0;

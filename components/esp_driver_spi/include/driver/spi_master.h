@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2010-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2010-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -223,9 +223,9 @@ esp_err_t spi_device_queue_trans(spi_device_handle_t handle, spi_transaction_t *
  * @brief Get the result of a SPI transaction queued earlier by ``spi_device_queue_trans``.
  *
  * This routine will wait until a transaction to the given device
- * succesfully completed. It will then return the description of the
+ * successfully completed. It will then return the description of the
  * completed transaction so software can inspect the result and e.g. free the memory or
- * re-use the buffers.
+ * reuse the buffers.
  *
  * @param handle Device handle obtained using spi_host_add_dev
  * @param trans_desc Pointer to variable able to contain a pointer to the description of the transaction
@@ -286,7 +286,7 @@ esp_err_t spi_device_polling_start(spi_device_handle_t handle, spi_transaction_t
  * @brief Poll until the polling transaction ends.
  *
  * This routine will not return until the transaction to the given device has
- * succesfully completed. The task is not blocked, but actively busy-spins for
+ * successfully completed. The task is not blocked, but actively busy-spins for
  * the transaction to be completed.
  *
  * @param handle Device handle obtained using spi_host_add_dev
@@ -385,7 +385,7 @@ void spi_get_timing(bool gpio_is_used, int input_delay_ns, int eff_clk, int *dum
 /**
   * @brief Get the frequency limit of current configurations.
   *         SPI master working at this limit is OK, while above the limit, full duplex mode and DMA will not work,
-  *         and dummy bits will be aplied in the half duplex mode.
+  *         and dummy bits will be applied in the half duplex mode.
   *
   * @param gpio_is_used True if using GPIO matrix, or False if native pins are used.
   * @param input_delay_ns Input delay from SCLK launch edge to MISO data valid.

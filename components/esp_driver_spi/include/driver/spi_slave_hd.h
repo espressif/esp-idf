@@ -31,7 +31,7 @@ typedef struct {
     size_t   len;                               ///< Len of data to send/receive. For receiving the buffer length should be multiples of 4 bytes, otherwise the extra part will be truncated.
     size_t   trans_len;                         ///< For RX direction, it indicates the data actually received. For TX direction, it is meaningless.
     uint32_t flags;                             ///< Bitwise OR of SPI_SLAVE_HD_TRANS_* flags
-    void*    arg;                               ///< Extra argument indiciating this data
+    void*    arg;                               ///< Extra argument indicating this data
 } spi_slave_hd_data_t;
 
 /// Information of SPI Slave HD event

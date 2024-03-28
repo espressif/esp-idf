@@ -558,7 +558,7 @@ nomem:
 esp_err_t spi_bus_remove_device(spi_device_handle_t handle)
 {
     SPI_CHECK(handle != NULL, "invalid handle", ESP_ERR_INVALID_ARG);
-    //These checks aren't exhaustive; another thread could sneak in a transaction inbetween. These are only here to
+    //These checks aren't exhaustive; another thread could sneak in a transaction in between. These are only here to
     //catch design errors and aren't meant to be triggered during normal operation.
     SPI_CHECK(uxQueueMessagesWaiting(handle->trans_queue) == 0, "Have unfinished transactions", ESP_ERR_INVALID_STATE);
     SPI_CHECK(handle->host->cur_cs == DEV_NUM_MAX || handle->host->device[handle->host->cur_cs] != handle, "Have unfinished transactions", ESP_ERR_INVALID_STATE);
@@ -1192,7 +1192,7 @@ esp_err_t SPI_MASTER_ATTR spi_device_queue_trans(spi_device_handle_t handle, spi
     }
 
 #ifdef CONFIG_PM_ENABLE
-    // though clock source is selectable, read/write reg and mem of spi peripherial still use APB
+    // though clock source is selectable, read/write reg and mem of spi peripheral still use APB
     // and dma still use APB, so pm_lock is still needed
     esp_pm_lock_acquire(host->bus_attr->pm_lock);
 #endif
@@ -1767,7 +1767,7 @@ esp_err_t SPI_MASTER_ATTR spi_device_queue_multi_trans(spi_device_handle_t handl
     SPI_CHECK(dma_desc_status == ESP_OK, "No available dma descriptors, increase the `max_transfer_sz`, or wait queued transactions are done", ESP_ERR_INVALID_STATE);
 
     //RX
-    //This is modified to the same lenght as tx length, when in fd mode, else it's `rxlength`
+    //This is modified to the same length as tx length, when in fd mode, else it's `rxlength`
     rx_buf_len = (seg_trans_desc[0].base.rxlength + 8 - 1) / 8;
     if (seg_trans_desc[0].base.rx_buffer) {
         portENTER_CRITICAL(&handle->host->spinlock);
@@ -1789,7 +1789,7 @@ esp_err_t SPI_MASTER_ATTR spi_device_queue_multi_trans(spi_device_handle_t handl
 
         //RX
         if (seg_trans_desc[i].base.rx_buffer) {
-            //This is modified to the same lenght as tx length, when in fd mode, else it's `rxlength`
+            //This is modified to the same length as tx length, when in fd mode, else it's `rxlength`
             rx_buf_len = (seg_trans_desc[i].base.rxlength + 8 - 1) / 8;
             portENTER_CRITICAL(&handle->host->spinlock);
             dma_desc_status = spi_hal_sct_link_rx_seg_dma_desc(&handle->host->sct_desc_pool, seg_trans_desc[i].base.rx_buffer, rx_buf_len, &rx_used_dma_desc_num);

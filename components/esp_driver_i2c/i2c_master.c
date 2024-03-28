@@ -119,7 +119,7 @@ static esp_err_t s_i2c_hw_fsm_reset(i2c_master_bus_handle_t i2c_master)
  *
  * @param[in] i2c_master I2C master handle
  * @param[in] i2c_operation Pointer to I2C trans operation structure.
- * @param[in] fifo_fill will be populated with the number of bytes written to the harware FIFO by this function
+ * @param[in] fifo_fill will be populated with the number of bytes written to the hardware FIFO by this function
  * @param[in] address_fill I2C device address with read or write information.
  */
 static bool s_i2c_write_command(i2c_master_bus_handle_t i2c_master, i2c_operation_t *i2c_operation, uint8_t *fifo_fill, uint8_t *address_fill, BaseType_t *do_yield)

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -1284,7 +1284,7 @@ static void test_master_fd_dma(void)
 {
     spi_device_handle_t dev0;
     uint8_t *master_send   = heap_caps_malloc(TEST_STEP_LEN, MALLOC_CAP_DMA);
-    uint8_t *master_recive = heap_caps_malloc(TEST_STEP_LEN, MALLOC_CAP_DMA);
+    uint8_t *master_receive = heap_caps_malloc(TEST_STEP_LEN, MALLOC_CAP_DMA);
     uint8_t *master_expect = heap_caps_malloc(TEST_STEP_LEN, MALLOC_CAP_DEFAULT);
 
     for (uint8_t is_gpio = 0; is_gpio < 2; is_gpio++) {
@@ -1314,22 +1314,22 @@ static void test_master_fd_dma(void)
 
                 unity_send_signal("Master ready");
                 for (int i = 0; i < TEST_STEP; i++) {
-                    memset(master_recive, 0x00, TEST_STEP_LEN);
+                    memset(master_receive, 0x00, TEST_STEP_LEN);
                     test_fill_random_to_buffers_dualboard(119 + mode + speed_level + i, master_send, master_expect, TEST_STEP_LEN);
 
                     uint32_t test_trans_len = TEST_STEP_LEN;
                     spi_transaction_t trans_cfg = {
                         .tx_buffer = master_send,
-                        .rx_buffer = master_recive,
+                        .rx_buffer = master_receive,
                         .length = test_trans_len * 8,
                     };
                     unity_wait_for_signal("Slave ready");
                     TEST_ESP_OK(spi_device_transmit(dev0, &trans_cfg));
 
                     ESP_LOG_BUFFER_HEX("master tx", master_send, test_trans_len);
-                    ESP_LOG_BUFFER_HEX_LEVEL("master rx", master_recive, test_trans_len, ESP_LOG_DEBUG);
+                    ESP_LOG_BUFFER_HEX_LEVEL("master rx", master_receive, test_trans_len, ESP_LOG_DEBUG);
                     ESP_LOG_BUFFER_HEX_LEVEL("master exp", master_expect, test_trans_len, ESP_LOG_DEBUG);
-                    spitest_cmp_or_dump(master_expect, master_recive, test_trans_len);
+                    spitest_cmp_or_dump(master_expect, master_receive, test_trans_len);
                 }
                 TEST_ESP_OK(spi_bus_remove_device(dev0));
             }
@@ -1337,14 +1337,14 @@ static void test_master_fd_dma(void)
         }
     }
     free(master_send);
-    free(master_recive);
+    free(master_receive);
     free(master_expect);
 }
 
 static void test_slave_fd_dma(void)
 {
     uint8_t *slave_send   = heap_caps_malloc(TEST_STEP_LEN, MALLOC_CAP_DMA);
-    uint8_t *slave_recive = heap_caps_malloc(TEST_STEP_LEN, MALLOC_CAP_DMA);
+    uint8_t *slave_receive = heap_caps_malloc(TEST_STEP_LEN, MALLOC_CAP_DMA);
     uint8_t *slave_expect = heap_caps_malloc(TEST_STEP_LEN, MALLOC_CAP_DEFAULT);
 
     for (uint8_t is_gpio = 0; is_gpio < 2; is_gpio++) {
@@ -1365,13 +1365,13 @@ static void test_slave_fd_dma(void)
                 printf("Next trans: %s\tmode:%d\t@%.2f MHz\n", (is_gpio) ? "GPIO_Matrix" : "IOMUX", mode, s_spi_bus_freq[speed_level] / 1000000.f);
                 unity_wait_for_signal("Master ready");
                 for (int i = 0; i < TEST_STEP; i++) {
-                    memset(slave_recive, 0x00, TEST_STEP_LEN);
+                    memset(slave_receive, 0x00, TEST_STEP_LEN);
                     test_fill_random_to_buffers_dualboard(119 + mode + speed_level + i, slave_expect, slave_send, TEST_STEP_LEN);
 
                     uint32_t test_trans_len = TEST_STEP_LEN;
                     spi_slave_transaction_t trans_cfg = {
                         .tx_buffer = slave_send,
-                        .rx_buffer = slave_recive,
+                        .rx_buffer = slave_receive,
                         .length = test_trans_len * 8,
                         .flags = SPI_SLAVE_TRANS_DMA_BUFFER_ALIGN_AUTO,
                     };
@@ -1379,16 +1379,16 @@ static void test_slave_fd_dma(void)
                     TEST_ESP_OK(spi_slave_transmit(TEST_SPI_HOST, &trans_cfg, portMAX_DELAY));
 
                     ESP_LOG_BUFFER_HEX("slave tx", slave_send, test_trans_len);
-                    ESP_LOG_BUFFER_HEX_LEVEL("slave rx", slave_recive, test_trans_len, ESP_LOG_DEBUG);
+                    ESP_LOG_BUFFER_HEX_LEVEL("slave rx", slave_receive, test_trans_len, ESP_LOG_DEBUG);
                     ESP_LOG_BUFFER_HEX_LEVEL("slave exp", slave_expect, test_trans_len, ESP_LOG_DEBUG);
-                    spitest_cmp_or_dump(slave_expect, slave_recive, test_trans_len);
+                    spitest_cmp_or_dump(slave_expect, slave_receive, test_trans_len);
                 }
             }
             TEST_ESP_OK(spi_slave_free(TEST_SPI_HOST));
         }
     }
     free(slave_send);
-    free(slave_recive);
+    free(slave_receive);
     free(slave_expect);
 }
 
@@ -1399,7 +1399,7 @@ static void test_master_fd_no_dma(void)
 {
     spi_device_handle_t dev0;
     uint8_t *master_send   = heap_caps_malloc(SOC_SPI_MAXIMUM_BUFFER_SIZE, MALLOC_CAP_DMA);
-    uint8_t *master_recive = heap_caps_malloc(SOC_SPI_MAXIMUM_BUFFER_SIZE, MALLOC_CAP_DMA);
+    uint8_t *master_receive = heap_caps_malloc(SOC_SPI_MAXIMUM_BUFFER_SIZE, MALLOC_CAP_DMA);
     uint8_t *master_expect = heap_caps_malloc(SOC_SPI_MAXIMUM_BUFFER_SIZE, MALLOC_CAP_DEFAULT);
 
     for (uint8_t is_gpio = 0; is_gpio < 2; is_gpio++) {
@@ -1429,22 +1429,22 @@ static void test_master_fd_no_dma(void)
 
                 unity_send_signal("Master ready");
                 for (int i = 0; i < TEST_STEP; i++) {
-                    memset(master_recive, 0x00, SOC_SPI_MAXIMUM_BUFFER_SIZE);
+                    memset(master_receive, 0x00, SOC_SPI_MAXIMUM_BUFFER_SIZE);
                     test_fill_random_to_buffers_dualboard(211 + mode + speed_level + i, master_send, master_expect, SOC_SPI_MAXIMUM_BUFFER_SIZE);
 
                     uint32_t test_trans_len = SOC_SPI_MAXIMUM_BUFFER_SIZE;
                     spi_transaction_t trans_cfg = {
                         .tx_buffer = master_send,
-                        .rx_buffer = master_recive,
+                        .rx_buffer = master_receive,
                         .length = test_trans_len * 8,
                     };
                     unity_wait_for_signal("Slave ready");
                     TEST_ESP_OK(spi_device_transmit(dev0, &trans_cfg));
 
                     ESP_LOG_BUFFER_HEX("master tx", master_send, test_trans_len);
-                    ESP_LOG_BUFFER_HEX_LEVEL("master rx", master_recive, test_trans_len, ESP_LOG_DEBUG);
+                    ESP_LOG_BUFFER_HEX_LEVEL("master rx", master_receive, test_trans_len, ESP_LOG_DEBUG);
                     ESP_LOG_BUFFER_HEX_LEVEL("master exp", master_expect, test_trans_len, ESP_LOG_DEBUG);
-                    spitest_cmp_or_dump(master_expect, master_recive, test_trans_len);
+                    spitest_cmp_or_dump(master_expect, master_receive, test_trans_len);
                 }
                 TEST_ESP_OK(spi_bus_remove_device(dev0));
             }
@@ -1452,14 +1452,14 @@ static void test_master_fd_no_dma(void)
         }
     }
     free(master_send);
-    free(master_recive);
+    free(master_receive);
     free(master_expect);
 }
 
 static void test_slave_fd_no_dma(void)
 {
     uint8_t *slave_send   = heap_caps_malloc(SOC_SPI_MAXIMUM_BUFFER_SIZE, MALLOC_CAP_DMA);
-    uint8_t *slave_recive = heap_caps_malloc(SOC_SPI_MAXIMUM_BUFFER_SIZE, MALLOC_CAP_DMA);
+    uint8_t *slave_receive = heap_caps_malloc(SOC_SPI_MAXIMUM_BUFFER_SIZE, MALLOC_CAP_DMA);
     uint8_t *slave_expect = heap_caps_malloc(SOC_SPI_MAXIMUM_BUFFER_SIZE, MALLOC_CAP_DEFAULT);
 
     for (uint8_t is_gpio = 0; is_gpio < 2; is_gpio++) {
@@ -1481,29 +1481,29 @@ static void test_slave_fd_no_dma(void)
                 printf("Next trans: %s\tmode:%d\t@%.2f MHz\n", (is_gpio) ? "GPIO_Matrix" : "IOMUX", mode, s_spi_bus_freq[speed_level] / 1000000.f);
                 unity_wait_for_signal("Master ready");
                 for (int i = 0; i < TEST_STEP; i++) {
-                    memset(slave_recive, 0x00, SOC_SPI_MAXIMUM_BUFFER_SIZE);
+                    memset(slave_receive, 0x00, SOC_SPI_MAXIMUM_BUFFER_SIZE);
                     test_fill_random_to_buffers_dualboard(211 + mode + speed_level + i, slave_expect, slave_send, SOC_SPI_MAXIMUM_BUFFER_SIZE);
 
                     uint32_t test_trans_len = SOC_SPI_MAXIMUM_BUFFER_SIZE;
                     spi_slave_transaction_t trans_cfg = {
                         .tx_buffer = slave_send,
-                        .rx_buffer = slave_recive,
+                        .rx_buffer = slave_receive,
                         .length = test_trans_len * 8,
                     };
                     unity_send_signal("Slave ready");
                     TEST_ESP_OK(spi_slave_transmit(TEST_SPI_HOST, &trans_cfg, portMAX_DELAY));
 
                     ESP_LOG_BUFFER_HEX("slave tx", slave_send, test_trans_len);
-                    ESP_LOG_BUFFER_HEX_LEVEL("slave rx", slave_recive, test_trans_len, ESP_LOG_DEBUG);
+                    ESP_LOG_BUFFER_HEX_LEVEL("slave rx", slave_receive, test_trans_len, ESP_LOG_DEBUG);
                     ESP_LOG_BUFFER_HEX_LEVEL("slave exp", slave_expect, test_trans_len, ESP_LOG_DEBUG);
-                    spitest_cmp_or_dump(slave_expect, slave_recive, test_trans_len);
+                    spitest_cmp_or_dump(slave_expect, slave_receive, test_trans_len);
                 }
             }
             TEST_ESP_OK(spi_slave_free(TEST_SPI_HOST));
         }
     }
     free(slave_send);
-    free(slave_recive);
+    free(slave_receive);
     free(slave_expect);
 }
 
@@ -1515,7 +1515,7 @@ static void test_master_hd_dma(void)
 {
     spi_device_handle_t dev0;
     uint8_t *master_send   = heap_caps_malloc(TEST_STEP_LEN, MALLOC_CAP_DMA);
-    uint8_t *master_recive = heap_caps_malloc(TEST_STEP_LEN, MALLOC_CAP_DMA);
+    uint8_t *master_receive = heap_caps_malloc(TEST_STEP_LEN, MALLOC_CAP_DMA);
     uint8_t *master_expect = heap_caps_malloc(TEST_STEP_LEN, MALLOC_CAP_DEFAULT);
 
     for (uint8_t is_gpio = 0; is_gpio < 2; is_gpio++) {
@@ -1536,18 +1536,18 @@ static void test_master_hd_dma(void)
 
                 unity_send_signal("Master ready");
                 for (int i = 0; i < TEST_STEP; i++) {
-                    memset(master_recive, 0x00, TEST_STEP_LEN);
+                    memset(master_receive, 0x00, TEST_STEP_LEN);
                     test_fill_random_to_buffers_dualboard(985 + mode + speed_level + i, master_send, master_expect, TEST_STEP_LEN);
 
                     uint32_t test_trans_len = TEST_STEP_LEN;
                     unity_wait_for_signal("Slave ready");
-                    TEST_ESP_OK(essl_spi_rddma(dev0, master_recive, test_trans_len, -1, 0));
+                    TEST_ESP_OK(essl_spi_rddma(dev0, master_receive, test_trans_len, -1, 0));
                     TEST_ESP_OK(essl_spi_wrdma(dev0, master_send, test_trans_len, -1, 0));
 
                     ESP_LOG_BUFFER_HEX("master tx", master_send, test_trans_len);
-                    ESP_LOG_BUFFER_HEX_LEVEL("master rx", master_recive, test_trans_len, ESP_LOG_DEBUG);
+                    ESP_LOG_BUFFER_HEX_LEVEL("master rx", master_receive, test_trans_len, ESP_LOG_DEBUG);
                     ESP_LOG_BUFFER_HEX_LEVEL("master exp", master_expect, test_trans_len, ESP_LOG_DEBUG);
-                    spitest_cmp_or_dump(master_expect, master_recive, test_trans_len);
+                    spitest_cmp_or_dump(master_expect, master_receive, test_trans_len);
                 }
                 TEST_ESP_OK(spi_bus_remove_device(dev0));
             }
@@ -1555,14 +1555,14 @@ static void test_master_hd_dma(void)
         }
     }
     free(master_send);
-    free(master_recive);
+    free(master_receive);
     free(master_expect);
 }
 
 static void test_slave_hd_dma(void)
 {
     uint8_t *slave_send   = heap_caps_malloc(TEST_STEP_LEN, MALLOC_CAP_DMA);
-    uint8_t *slave_recive = heap_caps_malloc(TEST_STEP_LEN, MALLOC_CAP_DMA);
+    uint8_t *slave_receive = heap_caps_malloc(TEST_STEP_LEN, MALLOC_CAP_DMA);
     uint8_t *slave_expect = heap_caps_malloc(TEST_STEP_LEN, MALLOC_CAP_DEFAULT);
 
     for (uint8_t is_gpio = 0; is_gpio < 2; is_gpio++) {
@@ -1580,7 +1580,7 @@ static void test_slave_hd_dma(void)
                 printf("Next trans: %s\tmode:%d\t@%.2f MHz\n", (is_gpio) ? "GPIO_Matrix" : "IOMUX", mode, s_spi_bus_freq[speed_level] / 1000000.f);
                 unity_wait_for_signal("Master ready");
                 for (int i = 0; i < TEST_STEP; i++) {
-                    memset(slave_recive, 0x00, TEST_STEP_LEN);
+                    memset(slave_receive, 0x00, TEST_STEP_LEN);
                     test_fill_random_to_buffers_dualboard(985 + mode + speed_level + i, slave_expect, slave_send, TEST_STEP_LEN);
                     uint32_t test_trans_len = TEST_STEP_LEN;
 
@@ -1591,21 +1591,21 @@ static void test_slave_hd_dma(void)
                     };
                     unity_send_signal("Slave ready");
                     TEST_ESP_OK(spi_slave_hd_queue_trans(TEST_SPI_HOST, SPI_SLAVE_CHAN_TX, &slave_trans, portMAX_DELAY));
-                    slave_trans.data = slave_recive;
+                    slave_trans.data = slave_receive;
                     TEST_ESP_OK(spi_slave_hd_queue_trans(TEST_SPI_HOST, SPI_SLAVE_CHAN_RX, &slave_trans, portMAX_DELAY));
                     TEST_ESP_OK(spi_slave_hd_get_trans_res(TEST_SPI_HOST, SPI_SLAVE_CHAN_RX, &ret_trans, portMAX_DELAY));
 
                     ESP_LOG_BUFFER_HEX("slave tx", slave_send, test_trans_len);
-                    ESP_LOG_BUFFER_HEX_LEVEL("slave rx", slave_recive, test_trans_len, ESP_LOG_DEBUG);
+                    ESP_LOG_BUFFER_HEX_LEVEL("slave rx", slave_receive, test_trans_len, ESP_LOG_DEBUG);
                     ESP_LOG_BUFFER_HEX_LEVEL("slave exp", slave_expect, test_trans_len, ESP_LOG_DEBUG);
-                    spitest_cmp_or_dump(slave_expect, slave_recive, test_trans_len);
+                    spitest_cmp_or_dump(slave_expect, slave_receive, test_trans_len);
                 }
             }
             TEST_ESP_OK(spi_slave_hd_deinit(TEST_SPI_HOST));
         }
     }
     free(slave_send);
-    free(slave_recive);
+    free(slave_receive);
     free(slave_expect);
 }
 
@@ -1616,7 +1616,7 @@ static void test_master_hd_no_dma(void)
 {
     spi_device_handle_t dev0;
     uint8_t *master_send   = heap_caps_malloc(SOC_SPI_MAXIMUM_BUFFER_SIZE, MALLOC_CAP_DMA);
-    uint8_t *master_recive = heap_caps_malloc(SOC_SPI_MAXIMUM_BUFFER_SIZE, MALLOC_CAP_DMA);
+    uint8_t *master_receive = heap_caps_malloc(SOC_SPI_MAXIMUM_BUFFER_SIZE, MALLOC_CAP_DMA);
     uint8_t *master_expect = heap_caps_malloc(SOC_SPI_MAXIMUM_BUFFER_SIZE, MALLOC_CAP_DEFAULT);
 
     for (uint8_t is_gpio = 0; is_gpio < 2; is_gpio++) {
@@ -1637,18 +1637,18 @@ static void test_master_hd_no_dma(void)
 
                 unity_send_signal("Master ready");
                 for (int i = 0; i < TEST_STEP; i++) {
-                    memset(master_recive, 0x00, SOC_SPI_MAXIMUM_BUFFER_SIZE);
+                    memset(master_receive, 0x00, SOC_SPI_MAXIMUM_BUFFER_SIZE);
                     test_fill_random_to_buffers_dualboard(911 + mode + speed_level + i, master_send, master_expect, SOC_SPI_MAXIMUM_BUFFER_SIZE);
 
                     uint32_t test_trans_len = SOC_SPI_MAXIMUM_BUFFER_SIZE;
                     unity_wait_for_signal("Slave ready");
-                    TEST_ESP_OK(essl_spi_rddma(dev0, master_recive, test_trans_len, -1, 0));
+                    TEST_ESP_OK(essl_spi_rddma(dev0, master_receive, test_trans_len, -1, 0));
                     TEST_ESP_OK(essl_spi_wrdma(dev0, master_send, test_trans_len, -1, 0));
 
                     ESP_LOG_BUFFER_HEX("master tx", master_send, test_trans_len);
-                    ESP_LOG_BUFFER_HEX_LEVEL("master rx", master_recive, test_trans_len, ESP_LOG_DEBUG);
+                    ESP_LOG_BUFFER_HEX_LEVEL("master rx", master_receive, test_trans_len, ESP_LOG_DEBUG);
                     ESP_LOG_BUFFER_HEX_LEVEL("master exp", master_expect, test_trans_len, ESP_LOG_DEBUG);
-                    spitest_cmp_or_dump(master_expect, master_recive, test_trans_len);
+                    spitest_cmp_or_dump(master_expect, master_receive, test_trans_len);
                 }
                 TEST_ESP_OK(spi_bus_remove_device(dev0));
             }
@@ -1656,14 +1656,14 @@ static void test_master_hd_no_dma(void)
         }
     }
     free(master_send);
-    free(master_recive);
+    free(master_receive);
     free(master_expect);
 }
 
 static void test_slave_hd_no_dma(void)
 {
     uint8_t *slave_send   = heap_caps_malloc(SOC_SPI_MAXIMUM_BUFFER_SIZE, MALLOC_CAP_DMA);
-    uint8_t *slave_recive = heap_caps_malloc(SOC_SPI_MAXIMUM_BUFFER_SIZE, MALLOC_CAP_DMA);
+    uint8_t *slave_receive = heap_caps_malloc(SOC_SPI_MAXIMUM_BUFFER_SIZE, MALLOC_CAP_DMA);
     uint8_t *slave_expect = heap_caps_malloc(SOC_SPI_MAXIMUM_BUFFER_SIZE, MALLOC_CAP_DEFAULT);
 
     for (uint8_t is_gpio = 0; is_gpio < 2; is_gpio++) {
@@ -1681,7 +1681,7 @@ static void test_slave_hd_no_dma(void)
                 printf("Next trans: %s\tmode:%d\t@%.2f MHz\n", (is_gpio) ? "GPIO_Matrix" : "IOMUX", mode, s_spi_bus_freq[speed_level] / 1000000.f);
                 unity_wait_for_signal("Master ready");
                 for (int i = 0; i < TEST_STEP; i++) {
-                    memset(slave_recive, 0x00, SOC_SPI_MAXIMUM_BUFFER_SIZE);
+                    memset(slave_receive, 0x00, SOC_SPI_MAXIMUM_BUFFER_SIZE);
                     test_fill_random_to_buffers_dualboard(911 + mode + speed_level + i, slave_expect, slave_send, SOC_SPI_MAXIMUM_BUFFER_SIZE);
                     uint32_t test_trans_len = SOC_SPI_MAXIMUM_BUFFER_SIZE;
 
@@ -1692,21 +1692,21 @@ static void test_slave_hd_no_dma(void)
                     };
                     unity_send_signal("Slave ready");
                     TEST_ESP_OK(spi_slave_hd_queue_trans(TEST_SPI_HOST, SPI_SLAVE_CHAN_TX, &slave_trans, portMAX_DELAY));
-                    slave_trans.data = slave_recive;
+                    slave_trans.data = slave_receive;
                     TEST_ESP_OK(spi_slave_hd_queue_trans(TEST_SPI_HOST, SPI_SLAVE_CHAN_RX, &slave_trans, portMAX_DELAY));
                     TEST_ESP_OK(spi_slave_hd_get_trans_res(TEST_SPI_HOST, SPI_SLAVE_CHAN_RX, &ret_trans, portMAX_DELAY));
 
                     ESP_LOG_BUFFER_HEX("slave tx", slave_send, test_trans_len);
-                    ESP_LOG_BUFFER_HEX_LEVEL("slave rx", slave_recive, test_trans_len, ESP_LOG_DEBUG);
+                    ESP_LOG_BUFFER_HEX_LEVEL("slave rx", slave_receive, test_trans_len, ESP_LOG_DEBUG);
                     ESP_LOG_BUFFER_HEX_LEVEL("slave exp", slave_expect, test_trans_len, ESP_LOG_DEBUG);
-                    spitest_cmp_or_dump(slave_expect, slave_recive, test_trans_len);
+                    spitest_cmp_or_dump(slave_expect, slave_receive, test_trans_len);
                 }
             }
             TEST_ESP_OK(spi_slave_hd_deinit(TEST_SPI_HOST));
         }
     }
     free(slave_send);
-    free(slave_recive);
+    free(slave_receive);
     free(slave_expect);
 }
 
@@ -1722,7 +1722,7 @@ static void test_master_sio_dma(void)
 {
     spi_device_handle_t dev0;
     uint8_t *master_send   = heap_caps_malloc(TEST_STEP_LEN, MALLOC_CAP_DMA);
-    uint8_t *master_recive = heap_caps_malloc(TEST_STEP_LEN, MALLOC_CAP_DMA);
+    uint8_t *master_receive = heap_caps_malloc(TEST_STEP_LEN, MALLOC_CAP_DMA);
     uint8_t *master_expect = heap_caps_malloc(TEST_STEP_LEN, MALLOC_CAP_DEFAULT);
 
     for (uint8_t sio_master_in = 0; sio_master_in < 2; sio_master_in++) {
@@ -1752,17 +1752,17 @@ static void test_master_sio_dma(void)
                 devcfg.input_delay_ns = s_master_input_delay[speed_level];
 #endif
                 TEST_ESP_OK(spi_bus_add_device(TEST_SPI_HOST, &devcfg, &dev0));
-                printf("Next trans: %s\tmode:%d\t@%.2f MHz\n", (sio_master_in) ? "SingleIn" : "SongleOut", mode, s_spi_bus_freq[speed_level] / 1000000.f);
+                printf("Next trans: %s\tmode:%d\t@%.2f MHz\n", (sio_master_in) ? "SingleIn" : "SingleOut", mode, s_spi_bus_freq[speed_level] / 1000000.f);
 
                 unity_send_signal("Master ready");
                 for (int i = 0; i < TEST_STEP; i++) {
-                    memset(master_recive, 0x00, TEST_STEP_LEN);
+                    memset(master_receive, 0x00, TEST_STEP_LEN);
                     test_fill_random_to_buffers_dualboard(110 + mode + speed_level + i, master_send, master_expect, TEST_STEP_LEN);
                     spi_transaction_t trans = {};
                     if (sio_master_in) {
                         // master input only
                         trans.rxlength = TEST_STEP_LEN * 8;
-                        trans.rx_buffer = master_recive;
+                        trans.rx_buffer = master_receive;
                         trans.length = 0;
                         trans.tx_buffer = NULL;
                     } else {
@@ -1778,7 +1778,7 @@ static void test_master_sio_dma(void)
                     if (sio_master_in) {
                         ESP_LOG_BUFFER_HEX_LEVEL("master rx", trans.rx_buffer, TEST_STEP_LEN, ESP_LOG_DEBUG);
                         ESP_LOG_BUFFER_HEX_LEVEL("master exp", master_expect, TEST_STEP_LEN, ESP_LOG_DEBUG);
-                        spitest_cmp_or_dump(master_expect, master_recive, TEST_STEP_LEN);
+                        spitest_cmp_or_dump(master_expect, master_receive, TEST_STEP_LEN);
                     } else {
                         ESP_LOG_BUFFER_HEX("master tx", trans.tx_buffer, TEST_STEP_LEN);
                     }
@@ -1789,14 +1789,14 @@ static void test_master_sio_dma(void)
         }
     }
     free(master_send);
-    free(master_recive);
+    free(master_receive);
     free(master_expect);
 }
 
 static void test_slave_sio_dma(void)
 {
     uint8_t *slave_send   = heap_caps_malloc(TEST_STEP_LEN, MALLOC_CAP_DMA);
-    uint8_t *slave_recive = heap_caps_malloc(TEST_STEP_LEN, MALLOC_CAP_DMA);
+    uint8_t *slave_receive = heap_caps_malloc(TEST_STEP_LEN, MALLOC_CAP_DMA);
     uint8_t *slave_expect = heap_caps_malloc(TEST_STEP_LEN, MALLOC_CAP_DEFAULT);
 
     for (uint8_t sio_master_in = 0; sio_master_in < 2; sio_master_in++) {
@@ -1814,16 +1814,16 @@ static void test_slave_sio_dma(void)
             slv_cfg.mode = mode;
             TEST_ESP_OK(spi_slave_initialize(TEST_SPI_HOST, &bus_cfg, &slv_cfg, SPI_DMA_CH_AUTO));
             for (uint8_t speed_level = 0; speed_level < sizeof(s_spi_bus_freq) / sizeof(int); speed_level++) {
-                printf("Next trans: %s\tmode:%d\t@%.2f MHz\n", (sio_master_in) ? "SingleIn" : "SongleOut", mode, s_spi_bus_freq[speed_level] / 1000000.f);
+                printf("Next trans: %s\tmode:%d\t@%.2f MHz\n", (sio_master_in) ? "SingleIn" : "SingleOut", mode, s_spi_bus_freq[speed_level] / 1000000.f);
 
                 unity_wait_for_signal("Master ready");
                 for (int i = 0; i < TEST_STEP; i++) {
-                    memset(slave_recive, 0x00, TEST_STEP_LEN);
+                    memset(slave_receive, 0x00, TEST_STEP_LEN);
                     test_fill_random_to_buffers_dualboard(110 + mode + speed_level + i, slave_expect, slave_send, TEST_STEP_LEN);
                     spi_slave_transaction_t trans = {
                         .length = TEST_STEP_LEN * 8,
                         .tx_buffer = slave_send,
-                        .rx_buffer = slave_recive,
+                        .rx_buffer = slave_receive,
                         .flags = SPI_SLAVE_TRANS_DMA_BUFFER_ALIGN_AUTO,
                     };
                     unity_send_signal("Slave ready");
@@ -1834,7 +1834,7 @@ static void test_slave_sio_dma(void)
                     } else {
                         ESP_LOG_BUFFER_HEX_LEVEL("Slave rx", trans.rx_buffer, TEST_STEP_LEN, ESP_LOG_DEBUG);
                         ESP_LOG_BUFFER_HEX_LEVEL("Slave exp", slave_expect, TEST_STEP_LEN, ESP_LOG_DEBUG);
-                        spitest_cmp_or_dump(slave_expect, slave_recive, TEST_STEP_LEN);
+                        spitest_cmp_or_dump(slave_expect, slave_receive, TEST_STEP_LEN);
                     }
                 }
             }
@@ -1842,7 +1842,7 @@ static void test_slave_sio_dma(void)
         }
     }
     free(slave_send);
-    free(slave_recive);
+    free(slave_receive);
     free(slave_expect);
 }
 
@@ -1853,7 +1853,7 @@ static void test_master_sio_no_dma(void)
 {
     spi_device_handle_t dev0;
     uint8_t *master_send   = heap_caps_malloc(SOC_SPI_MAXIMUM_BUFFER_SIZE, MALLOC_CAP_DMA);
-    uint8_t *master_recive = heap_caps_malloc(SOC_SPI_MAXIMUM_BUFFER_SIZE, MALLOC_CAP_DMA);
+    uint8_t *master_receive = heap_caps_malloc(SOC_SPI_MAXIMUM_BUFFER_SIZE, MALLOC_CAP_DMA);
     uint8_t *master_expect = heap_caps_malloc(SOC_SPI_MAXIMUM_BUFFER_SIZE, MALLOC_CAP_DEFAULT);
 
     for (uint8_t sio_master_in = 0; sio_master_in < 2; sio_master_in++) {
@@ -1884,17 +1884,17 @@ static void test_master_sio_no_dma(void)
                 devcfg.input_delay_ns = s_master_input_delay[speed_level];
 #endif
                 TEST_ESP_OK(spi_bus_add_device(TEST_SPI_HOST, &devcfg, &dev0));
-                printf("Next trans: %s\tmode:%d\t@%.2f MHz\n", (sio_master_in) ? "SingleIn" : "SongleOut", mode, s_spi_bus_freq[speed_level] / 1000000.f);
+                printf("Next trans: %s\tmode:%d\t@%.2f MHz\n", (sio_master_in) ? "SingleIn" : "SingleOut", mode, s_spi_bus_freq[speed_level] / 1000000.f);
 
                 unity_send_signal("Master ready");
                 for (int i = 0; i < TEST_STEP; i++) {
-                    memset(master_recive, 0x00, SOC_SPI_MAXIMUM_BUFFER_SIZE);
+                    memset(master_receive, 0x00, SOC_SPI_MAXIMUM_BUFFER_SIZE);
                     test_fill_random_to_buffers_dualboard(122 + mode + speed_level + i, master_send, master_expect, SOC_SPI_MAXIMUM_BUFFER_SIZE);
                     spi_transaction_t trans = {};
                     if (sio_master_in) {
                         // master input only
                         trans.rxlength = SOC_SPI_MAXIMUM_BUFFER_SIZE * 8;
-                        trans.rx_buffer = master_recive;
+                        trans.rx_buffer = master_receive;
                         trans.length = 0;
                         trans.tx_buffer = NULL;
                     } else {
@@ -1910,7 +1910,7 @@ static void test_master_sio_no_dma(void)
                     if (sio_master_in) {
                         ESP_LOG_BUFFER_HEX_LEVEL("master rx", trans.rx_buffer, SOC_SPI_MAXIMUM_BUFFER_SIZE, ESP_LOG_DEBUG);
                         ESP_LOG_BUFFER_HEX_LEVEL("master exp", master_expect, SOC_SPI_MAXIMUM_BUFFER_SIZE, ESP_LOG_DEBUG);
-                        spitest_cmp_or_dump(master_expect, master_recive, SOC_SPI_MAXIMUM_BUFFER_SIZE);
+                        spitest_cmp_or_dump(master_expect, master_receive, SOC_SPI_MAXIMUM_BUFFER_SIZE);
                     } else {
                         ESP_LOG_BUFFER_HEX("master tx", trans.tx_buffer, SOC_SPI_MAXIMUM_BUFFER_SIZE);
                     }
@@ -1921,14 +1921,14 @@ static void test_master_sio_no_dma(void)
         }
     }
     free(master_send);
-    free(master_recive);
+    free(master_receive);
     free(master_expect);
 }
 
 static void test_slave_sio_no_dma(void)
 {
     uint8_t *slave_send   = heap_caps_malloc(SOC_SPI_MAXIMUM_BUFFER_SIZE, MALLOC_CAP_DMA);
-    uint8_t *slave_recive = heap_caps_malloc(SOC_SPI_MAXIMUM_BUFFER_SIZE, MALLOC_CAP_DMA);
+    uint8_t *slave_receive = heap_caps_malloc(SOC_SPI_MAXIMUM_BUFFER_SIZE, MALLOC_CAP_DMA);
     uint8_t *slave_expect = heap_caps_malloc(SOC_SPI_MAXIMUM_BUFFER_SIZE, MALLOC_CAP_DEFAULT);
 
     for (uint8_t sio_master_in = 0; sio_master_in < 2; sio_master_in++) {
@@ -1947,16 +1947,16 @@ static void test_slave_sio_no_dma(void)
             TEST_ESP_OK(spi_slave_initialize(TEST_SPI_HOST, &bus_cfg, &slv_cfg, SPI_DMA_DISABLED));
 
             for (uint8_t speed_level = 0; speed_level < sizeof(s_spi_bus_freq) / sizeof(int); speed_level++) {
-                printf("Next trans: %s\tmode:%d\t@%.2f MHz\n", (sio_master_in) ? "SingleIn" : "SongleOut", mode, s_spi_bus_freq[speed_level] / 1000000.f);
+                printf("Next trans: %s\tmode:%d\t@%.2f MHz\n", (sio_master_in) ? "SingleIn" : "SingleOut", mode, s_spi_bus_freq[speed_level] / 1000000.f);
 
                 unity_wait_for_signal("Master ready");
                 for (int i = 0; i < TEST_STEP; i++) {
-                    memset(slave_recive, 0x00, SOC_SPI_MAXIMUM_BUFFER_SIZE);
+                    memset(slave_receive, 0x00, SOC_SPI_MAXIMUM_BUFFER_SIZE);
                     test_fill_random_to_buffers_dualboard(122 + mode + speed_level + i, slave_expect, slave_send, SOC_SPI_MAXIMUM_BUFFER_SIZE);
                     spi_slave_transaction_t trans = {
                         .length = SOC_SPI_MAXIMUM_BUFFER_SIZE * 8,
                         .tx_buffer = slave_send,
-                        .rx_buffer = slave_recive,
+                        .rx_buffer = slave_receive,
                     };
                     unity_send_signal("Slave ready");
                     TEST_ESP_OK(spi_slave_transmit(TEST_SPI_HOST, &trans, portMAX_DELAY));
@@ -1966,7 +1966,7 @@ static void test_slave_sio_no_dma(void)
                     } else {
                         ESP_LOG_BUFFER_HEX_LEVEL("Slave rx", trans.rx_buffer, SOC_SPI_MAXIMUM_BUFFER_SIZE, ESP_LOG_DEBUG);
                         ESP_LOG_BUFFER_HEX_LEVEL("Slave exp", slave_expect, SOC_SPI_MAXIMUM_BUFFER_SIZE, ESP_LOG_DEBUG);
-                        spitest_cmp_or_dump(slave_expect, slave_recive, SOC_SPI_MAXIMUM_BUFFER_SIZE);
+                        spitest_cmp_or_dump(slave_expect, slave_receive, SOC_SPI_MAXIMUM_BUFFER_SIZE);
                     }
                 }
             }
@@ -1974,7 +1974,7 @@ static void test_slave_sio_no_dma(void)
         }
     }
     free(slave_send);
-    free(slave_recive);
+    free(slave_receive);
     free(slave_expect);
 }
 

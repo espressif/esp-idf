@@ -33,7 +33,7 @@ typedef struct {
     mipi_csi_color_t input_data_color_type;     ///< Input color type
     mipi_csi_color_t output_data_color_type;    ///< Output color type
     bool byte_swap_en;                          ///< Enable byte swap
-    int queue_items;                            ///< Queue itmes
+    int queue_items;                            ///< Queue items
 } esp_cam_ctlr_csi_config_t;
 
 /**

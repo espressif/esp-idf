@@ -86,7 +86,7 @@ esp_err_t usb_serial_jtag_driver_uninstall(void);
  * @brief Check if the USB Serial/JTAG port is connected to the host
  *
  * This function checks whether the USB Serial/JTAG (USJ) port is currently connected. USJ is considered "connected"
- * so long as it is receiving SOF packets from the host, even if there is no serial commuincation occuring (i.e., the
+ * so long as it is receiving SOF packets from the host, even if there is no serial communications occurring (i.e., the
  * USJ is connected to the PC, but the serial port is not opened). Having the USB port connected to a power bank will
  * never be considered as connected (due to the lack of SOF packets).
  *

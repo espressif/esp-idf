@@ -295,7 +295,7 @@ esp_err_t essl_sdio_send_packet(void *arg, const void *start, size_t length, uin
         const int block_size = 512;
         /* Though the driver supports to split packet of unaligned size into
          * length of 4x and 1~3, we still send aligned size of data to get
-         * higher effeciency. The length is determined by the SDIO address, and
+         * higher efficiency. The length is determined by the SDIO address, and
          * the remainning will be discard by the slave hardware.
          */
         int block_n = len_remain / block_size;
@@ -348,7 +348,7 @@ esp_err_t essl_sdio_get_packet(void *arg, void *out_data, size_t size, uint32_t 
             len_to_send = len_remain;
             /* though the driver supports to split packet of unaligned size into length
              * of 4x and 1~3, we still get aligned size of data to get higher
-             * effeciency. The length is determined by the SDIO address, and the
+             * efficiency. The length is determined by the SDIO address, and the
              * remainning will be ignored by the slave hardware.
              */
             err = sdmmc_io_read_bytes(ctx->card, 1, ESSL_CMD53_END_ADDR - len_remain, start, (len_to_send + 3) & (~3));
@@ -413,7 +413,7 @@ esp_err_t essl_sdio_update_rx_data_size(void *arg, uint32_t wait_ms)
 esp_err_t essl_sdio_write_reg(void *arg, uint8_t addr, uint8_t value, uint8_t *value_o, uint32_t wait_ms)
 {
     ESP_LOGV(TAG, "write_reg: 0x%02"PRIX8, value);
-    // addrress over range
+    // address over range
     if (addr >= 60) {
         return ESP_ERR_INVALID_ARG;
     }

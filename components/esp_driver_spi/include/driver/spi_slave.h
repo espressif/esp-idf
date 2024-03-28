@@ -149,9 +149,9 @@ esp_err_t spi_slave_queue_trans(spi_host_device_t host, const spi_slave_transact
  * @brief Get the result of a SPI transaction queued earlier
  *
  * This routine will wait until a transaction to the given device (queued earlier with
- * spi_slave_queue_trans) has succesfully completed. It will then return the description of the
+ * spi_slave_queue_trans) has successfully completed. It will then return the description of the
  * completed transaction so software can inspect the result and e.g. free the memory or
- * re-use the buffers.
+ * reuse the buffers.
  *
  * It is mandatory to eventually use this function for any transaction queued by ``spi_slave_queue_trans``.
  *

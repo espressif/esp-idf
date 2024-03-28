@@ -129,7 +129,7 @@ typedef struct {
         uint32_t            start_bit_included: 1;  /*!< Whether data bit is included in the start pulse */
         uint32_t            end_bit_included: 1;    /*!< Whether data bit is included in the end pulse, only valid when `has_end_pulse` is true */
         uint32_t            has_end_pulse: 1;       /*!< Whether there's an end pulse to terminate the transaction,
-                                                         if no, the transaction will be terminated by user configured transcation length */
+                                                         if no, the transaction will be terminated by user configured transaction length */
         uint32_t            pulse_invert: 1;        /*!< Whether to invert the pulse */
     } flags;                                        /*!< Extra flags */
 } parlio_rx_pulse_delimiter_config_t;

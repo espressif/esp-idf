@@ -679,7 +679,7 @@ static esp_err_t rmt_internal_config(rmt_dev_t *dev, const rmt_config_t *rmt_par
 #endif
         RMT_EXIT_CRITICAL();
 
-        ESP_LOGD(TAG, "Rmt Rx Channel %u|Gpio %u|Sclk_Hz %"PRIu32"|Div %u|Thresold %u|Filter %u",
+        ESP_LOGD(TAG, "Rmt Rx Channel %u|Gpio %u|Sclk_Hz %"PRIu32"|Div %u|Threshold %u|Filter %u",
                  channel, gpio_num, rmt_source_clk_hz, clk_div, threshold, filter_cnt);
     }
 

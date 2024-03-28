@@ -162,7 +162,7 @@ static void test_rmt_ping_pong_trans(size_t mem_block_symbols, bool with_dma)
     printf("enable tx channel\r\n");
     TEST_ESP_OK(rmt_enable(tx_channel_multi_leds));
 
-    // Mutiple LEDs (ping-pong in the background)
+    // Multiple LEDs (ping-pong in the background)
     printf("ping pong transmission: light up %d RGB LEDs\r\n", test_led_num);
     rmt_transmit_config_t transmit_config = {
         .loop_count = 0, // no loop

@@ -11,7 +11,7 @@
 
 /**
  * NOTE: To run this special feature test case, a slope analog signal is needed.
- *       A simple RC circuit used here to formate pin switches to continuos slop signal.
+ *       A simple RC circuit used here to generate continuous slope signal.
  *
  *       +---------+
  *       |         |

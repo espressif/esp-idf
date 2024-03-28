@@ -409,7 +409,7 @@ TEST_CASE("PCNT_basic_function_test", "[pcnt]")
     produce_pulse();
     pcnt_test_io_config(PCNT_CTRL_HIGH_LEVEL);
 
-    // initialize first, the initail value should be 0
+    // initialize first, the initial value should be 0
     TEST_ESP_OK(pcnt_counter_pause(PCNT_UNIT_0));
     TEST_ESP_OK(pcnt_counter_clear(PCNT_UNIT_0));
     TEST_ESP_OK(pcnt_get_counter_value(PCNT_UNIT_0, &test_counter));
@@ -511,7 +511,7 @@ TEST_CASE("PCNT_interrupt_method_test_control_IO_high", "[pcnt][timeout=120]")
     TEST_ESP_OK(pcnt_event_enable(PCNT_UNIT_0, PCNT_EVT_H_LIM));  // when arrive to max limit trigger
     TEST_ESP_OK(pcnt_event_enable(PCNT_UNIT_0, PCNT_EVT_L_LIM));  // when arrive to minimum limit trigger
 
-    // initialize first, the initail value should be 0
+    // initialize first, the initial value should be 0
     TEST_ESP_OK(pcnt_counter_pause(PCNT_UNIT_0));
     TEST_ESP_OK(pcnt_counter_clear(PCNT_UNIT_0));
 

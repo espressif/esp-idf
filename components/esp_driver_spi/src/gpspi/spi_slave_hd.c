@@ -360,7 +360,7 @@ static IRAM_ATTR void spi_slave_hd_intr_segment(void *arg)
         }
         if (ret_queue) {
             ret = xQueueSendFromISR(host->tx_ret_queue, &host->tx_curr_trans, &awoken);
-            // The return queue is full. All the data remian in send_queue + ret_queue should not be more than the queue length.
+            // The return queue is full. All the data remain in send_queue + ret_queue should not be more than the queue length.
             assert(ret == pdTRUE);
         }
         host->tx_curr_trans.trans = NULL;
@@ -385,7 +385,7 @@ static IRAM_ATTR void spi_slave_hd_intr_segment(void *arg)
         }
         if (ret_queue) {
             ret = xQueueSendFromISR(host->rx_ret_queue, &host->rx_curr_trans, &awoken);
-            // The return queue is full. All the data remian in send_queue + ret_queue should not be more than the queue length.
+            // The return queue is full. All the data remain in send_queue + ret_queue should not be more than the queue length.
             assert(ret == pdTRUE);
         }
         host->rx_curr_trans.trans = NULL;

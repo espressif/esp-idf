@@ -516,7 +516,7 @@ static esp_err_t panel_io_i80_tx_param(esp_lcd_panel_io_t *io, int lcd_cmd, cons
     i2s_ll_tx_stop(bus->hal.dev);
     i2s_ll_tx_reset(bus->hal.dev); // reset TX engine first
     i2s_ll_start_out_link(bus->hal.dev);
-    // delay a while, wait for DMA data beeing feed to I2S FIFO
+    // delay a while, wait for DMA data being feed to I2S FIFO
     // in fact, this is only needed when LCD pixel clock is set too high
     esp_rom_delay_us(1);
     // increase the pm lock reference count before starting a new transaction

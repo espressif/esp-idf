@@ -34,7 +34,7 @@ void uart_vfs_dev_register(void);
  * @param uart_num the UART number
  * @param mode line endings to send to UART
  *
- * @return  0 if successed, or -1
+ * @return  0 if succeeded, or -1
  *              when an error (specified by errno) have occurred.
  */
 int uart_vfs_dev_port_set_rx_line_endings(int uart_num, esp_line_endings_t mode);
@@ -54,7 +54,7 @@ int uart_vfs_dev_port_set_rx_line_endings(int uart_num, esp_line_endings_t mode)
  * @param uart_num the UART number
  * @param mode line endings to send to UART
  *
- * @return  0 if successed, or -1
+ * @return  0 if succeeded, or -1
  *              when an error (specified by errno) have occurred.
  */
 int uart_vfs_dev_port_set_tx_line_endings(int uart_num, esp_line_endings_t mode);

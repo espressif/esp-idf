@@ -37,7 +37,7 @@ struct esp_lcd_panel_t {
     esp_err_t (*init)(esp_lcd_panel_t *panel);
 
     /**
-     * @brief Destory LCD panel
+     * @brief Destroy LCD panel
      *
      * @param[in] panel LCD panel handle, which is created by other factory API like `esp_lcd_new_panel_st7789()`
      * @return

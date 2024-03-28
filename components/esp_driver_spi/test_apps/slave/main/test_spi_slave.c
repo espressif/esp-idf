@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -53,7 +53,7 @@ static void master_init(spi_device_handle_t *spi)
         .quadhd_io_num = -1
     };
     spi_device_interface_config_t devcfg = {
-        .clock_speed_hz = 4 * 1000 * 1000,      //currently only up to 4MHz for internel connect
+        .clock_speed_hz = 4 * 1000 * 1000,      //currently only up to 4MHz for internal connect
         .mode = 0,                              //SPI mode 0
         .spics_io_num = PIN_NUM_CS,             //CS pin
         .queue_size = 7,                        //We want to be able to queue 7 transactions at a time
@@ -703,7 +703,7 @@ static void test_slave_isr_core_setup_cbk(spi_slave_transaction_t *curr_trans)
 TEST_CASE("test_slave_isr_pin_to_core", "[spi]")
 {
     uint32_t slave_send;
-    uint32_t slave_recive;
+    uint32_t slave_receive;
     uint32_t slave_expect;
 
     spi_bus_config_t buscfg = SPI_BUS_TEST_DEFAULT_CONFIG();
@@ -712,7 +712,7 @@ TEST_CASE("test_slave_isr_pin_to_core", "[spi]")
 
     spi_slave_transaction_t trans_cfg = {
         .tx_buffer = &slave_send,
-        .rx_buffer = &slave_recive,
+        .rx_buffer = &slave_receive,
         .user = &slave_expect,
         .length = sizeof(uint32_t) * 8,
     };

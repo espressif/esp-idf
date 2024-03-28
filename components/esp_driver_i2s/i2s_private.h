@@ -134,7 +134,7 @@ struct i2s_channel_obj_t {
     int                     intr_prio_flags;/*!< i2s interrupt priority flags */
     void                    *mode_info;     /*!< Slot, clock and gpio information of each mode */
 #if SOC_I2S_SUPPORTS_APLL
-    bool                    apll_en;        /*!< Flag of wether APLL enabled */
+    bool                    apll_en;        /*!< Flag of whether APLL enabled */
 #endif
     uint32_t                active_slot;    /*!< Active slot number */
     uint32_t                total_slot;     /*!< Total slot number */

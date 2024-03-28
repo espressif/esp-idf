@@ -101,7 +101,7 @@ TEST_CASE("CRs are removed from the stdin correctly", "[vfs_uart]")
     fwrite_str_loopback(send_str + 11, 1);  // send the '\r'
     vTaskDelay(10 / portTICK_PERIOD_MS);
 
-    rb = fread(dst, 1, 2, stdin);           // try to get somthing
+    rb = fread(dst, 1, 2, stdin);           // try to get something
     TEST_ASSERT_EQUAL(0, rb);               // still nothing (\r is buffered)
 
     fwrite_str_loopback(send_str + 12, 1);  // Now send the '1'

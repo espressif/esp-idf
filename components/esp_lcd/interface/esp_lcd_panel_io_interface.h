@@ -66,7 +66,7 @@ struct esp_lcd_panel_io_t {
     esp_err_t (*tx_color)(esp_lcd_panel_io_t *io, int lcd_cmd, const void *color, size_t color_size);
 
     /**
-     * @brief Destory LCD panel IO handle (deinitialize all and free resource)
+     * @brief Destroy LCD panel IO handle (deinitialize all and free resource)
      *
      * @param[in] io LCD panel IO handle, which is created by other factory API like `esp_lcd_new_panel_io_spi()`
      * @return

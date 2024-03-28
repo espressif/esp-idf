@@ -231,7 +231,7 @@ TEST_CASE("DAC_dma_write_test", "[dac]")
  * The frequency test is currently only supported on ESP32
  * because there is no such signal to monitor on ESP32-S2 */
 #if CONFIG_IDF_TARGET_ESP32
-TEST_CASE("DAC_dma_conver_frequency_test", "[dac]")
+TEST_CASE("DAC_dma_convert_frequency_test", "[dac]")
 {
     /* Prepare configuration for the PCNT unit */
     pcnt_unit_handle_t pcnt_unit = NULL;

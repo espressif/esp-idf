@@ -239,7 +239,7 @@ menu "Hardware Settings"
             bool "Enable debug log"
             default n
             help
-                Wether to enable the debug log message for ETM core driver.
+                whether to enable the debug log message for ETM core driver.
                 Note that, this option only controls the ETM related driver log, won't affect other drivers.
     endmenu # ETM Configuration
 

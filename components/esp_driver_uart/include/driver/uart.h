@@ -828,7 +828,7 @@ esp_err_t uart_wait_tx_idle_polling(uart_port_t uart_num);
   * @brief Configure TX signal loop back to RX module, just for the test usage.
   *
   * @param uart_num UART number
-  * @param loop_back_en Set ture to enable the loop back function, else set it false.
+  * @param loop_back_en Set true to enable the loop back function, else set it false.
   *
   * * @return
   *      - ESP_OK on success

@@ -5,7 +5,7 @@ menu "ESP-Driver:Temperature Sensor Configurations"
         bool "Suppress legacy driver deprecated warning"
         default n
         help
-            Wether to suppress the deprecation warnings when using legacy temperature sensor driver
+            whether to suppress the deprecation warnings when using legacy temperature sensor driver
             (driver/temp_sensor.h). If you want to continue using the legacy driver,
             and don't want to see related deprecation warnings, you can enable this option.
 
@@ -13,7 +13,7 @@ menu "ESP-Driver:Temperature Sensor Configurations"
         bool "Enable debug log"
         default n
         help
-            Wether to enable the debug log message for temperature sensor driver.
+            whether to enable the debug log message for temperature sensor driver.
             Note that, this option only controls the temperature sensor driver log, won't affect other drivers.
 
     config TEMP_SENSOR_ISR_IRAM_SAFE

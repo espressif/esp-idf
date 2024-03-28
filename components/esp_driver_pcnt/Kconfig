@@ -19,7 +19,7 @@ menu "ESP-Driver:PCNT Configurations"
         bool "Suppress legacy driver deprecated warning"
         default n
         help
-            Wether to suppress the deprecation warnings when using legacy PCNT driver (driver/pcnt.h).
+            whether to suppress the deprecation warnings when using legacy PCNT driver (driver/pcnt.h).
             If you want to continue using the legacy driver, and don't want to see related deprecation warnings,
             you can enable this option.
 
@@ -27,6 +27,6 @@ menu "ESP-Driver:PCNT Configurations"
         bool "Enable debug log"
         default n
         help
-            Wether to enable the debug log message for PCNT driver.
+            whether to enable the debug log message for PCNT driver.
             Note that, this option only controls the PCNT driver log, won't affect other drivers.
 endmenu

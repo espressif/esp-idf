@@ -19,7 +19,7 @@ menu "ESP-Driver:DAC Configurations"
         bool "Suppress legacy driver deprecated warning"
         default n
         help
-            Wether to suppress the deprecation warnings when using legacy DAC driver (driver/dac.h).
+            whether to suppress the deprecation warnings when using legacy DAC driver (driver/dac.h).
             If you want to continue using the legacy driver, and don't want to see related deprecation warnings,
             you can enable this option.
 
@@ -27,7 +27,7 @@ menu "ESP-Driver:DAC Configurations"
         bool "Enable debug log"
         default n
         help
-            Wether to enable the debug log message for DAC driver.
+            whether to enable the debug log message for DAC driver.
             Note that, this option only controls the DAC driver log, won't affect other drivers.
 
     config DAC_DMA_AUTO_16BIT_ALIGN

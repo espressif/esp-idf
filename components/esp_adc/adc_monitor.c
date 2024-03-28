@@ -191,7 +191,7 @@ esp_err_t adc_continuous_monitor_register_event_callbacks(adc_monitor_handle_t m
 {
     ESP_RETURN_ON_FALSE(monitor_handle && cbs, ESP_ERR_INVALID_ARG, MNTOR_TAG, "invalid argument: null pointer");
     ESP_RETURN_ON_FALSE(monitor_handle->fsm == ADC_MONITOR_FSM_INIT, ESP_ERR_INVALID_STATE, MNTOR_TAG, "monitor should be in init state");
-    ESP_RETURN_ON_FALSE(!(monitor_handle->cbs.on_over_high_thresh || monitor_handle->cbs.on_below_low_thresh), ESP_ERR_INVALID_STATE, MNTOR_TAG, "callbacks had beed registered");
+    ESP_RETURN_ON_FALSE(!(monitor_handle->cbs.on_over_high_thresh || monitor_handle->cbs.on_below_low_thresh), ESP_ERR_INVALID_STATE, MNTOR_TAG, "callbacks had been registered");
 #if CONFIG_IDF_TARGET_ESP32S2
     ESP_RETURN_ON_FALSE(!(cbs->on_below_low_thresh && cbs->on_over_high_thresh), ESP_ERR_NOT_SUPPORTED, MNTOR_TAG, "ESP32S2 support only one threshold");
 #endif

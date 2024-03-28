@@ -75,7 +75,7 @@ static esp_err_t dedic_gpio_build_platform(int core_id)
         if (!s_platform[core_id]) {
             s_platform[core_id] = calloc(1, sizeof(dedic_gpio_platform_t));
             if (s_platform[core_id]) {
-                // initialize platfrom members
+                // initialize platform members
                 s_platform[core_id]->spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
                 // initial occupy_mask: 1111...100...0
                 s_platform[core_id]->out_occupied_mask = UINT32_MAX & ~((1 << SOC_DEDIC_GPIO_OUT_CHANNELS_NUM) - 1);

@@ -76,7 +76,7 @@ static void hd_master(void)
                 .tx_buffer = (uint8_t *) &master_tx_val,
             },
         },
-        //TEST_HD_DATA_LEN of TX data, splitted into 2 segments. `TEST_HD_DATA_LEN_PER_SEG` per segment
+        //TEST_HD_DATA_LEN of TX data, split into 2 segments. `TEST_HD_DATA_LEN_PER_SEG` per segment
         {
             .base = {
                 .cmd = 0x3,
@@ -120,7 +120,7 @@ static void hd_master(void)
                 .rx_buffer = (uint8_t *) &master_rx_val,
             },
         },
-        // TEST_HD_DATA_LEN of TX data, splitted into 2 segments. `TEST_HD_DATA_LEN_PER_SEG` per segment
+        // TEST_HD_DATA_LEN of TX data, split into 2 segments. `TEST_HD_DATA_LEN_PER_SEG` per segment
         {
             .base = {
                 .cmd = 0x4,

@@ -26,6 +26,6 @@ menu "ESP-Driver:GPTimer Configurations"
         bool "Enable debug log"
         default n
         help
-            Wether to enable the debug log message for GPTimer driver.
+            whether to enable the debug log message for GPTimer driver.
             Note that, this option only controls the GPTimer driver log, won't affect other drivers.
 endmenu

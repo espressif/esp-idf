@@ -850,7 +850,7 @@ esp_err_t mcpwm_capture_enable_channel(mcpwm_unit_t mcpwm_num, mcpwm_capture_cha
                         MCPWM_CAP_EXIST_ERROR);
     mcpwm_hal_context_t *hal = &context[mcpwm_num].hal;
 
-    // enable MCPWM module incase user don't use `mcpwm_init` at all. always increase reference count
+    // enable MCPWM module in case user don't use `mcpwm_init` at all. always increase reference count
     mcpwm_module_enable(mcpwm_num);
 
     mcpwm_hal_init_config_t init_config = {

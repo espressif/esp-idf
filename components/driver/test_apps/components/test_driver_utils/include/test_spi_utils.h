@@ -261,7 +261,7 @@ esp_err_t spitest_check_data(int len, spi_transaction_t *master_t, slave_rxdata_
     int r = memcmp(expected, actual, len);\
     if (r != 0) {\
         ESP_LOG_BUFFER_HEXDUMP("actual ", actual, len, ESP_LOG_WARN);\
-        ESP_LOG_BUFFER_HEXDUMP("expecte", expected, len, ESP_LOG_INFO);\
+        ESP_LOG_BUFFER_HEXDUMP("expected", expected, len, ESP_LOG_INFO);\
         TEST_ASSERT_EQUAL_HEX8_ARRAY(expected, actual, len);\
     }\
     r;\
@@ -278,10 +278,10 @@ static inline int get_trans_len(spi_dup_t dup, spi_transaction_t *master_t)
 //remove device from bus and free the bus
 void master_free_device_bus(spi_device_handle_t spi);
 
-//use this function to fix the output source when assign multiple funcitons to a same pin
+//use this function to fix the output source when assign multiple functions to a same pin
 void spitest_gpio_output_sel(uint32_t gpio_num, int func, uint32_t signal_idx);
 
-//use this function to fix the input source when assign multiple funcitons to a same pin
+//use this function to fix the input source when assign multiple functions to a same pin
 void spitest_gpio_input_sel(uint32_t gpio_num, int func, uint32_t signal_idx);
 
 //Note this cs_num is the ID of the connected devices' ID, e.g. if 2 devices are connected to the bus,

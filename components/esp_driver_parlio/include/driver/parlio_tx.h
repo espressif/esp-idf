@@ -158,7 +158,7 @@ typedef struct {
 /**
  * @brief Transmit data on by Parallel IO TX unit
  *
- * @note After the function returns, it doesn't mean the transaction is finished. This function only constructs a transcation structure and push into a queue.
+ * @note After the function returns, it doesn't mean the transaction is finished. This function only constructs a transaction structure and push into a queue.
  *
  * @param[in] tx_unit Parallel IO TX unit that created by `parlio_new_tx_unit`
  * @param[in] payload Pointer to the data to be transmitted
