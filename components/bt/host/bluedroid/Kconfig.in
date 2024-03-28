@@ -54,6 +54,25 @@ config BT_CLASSIC_ENABLED
     help
         For now this option needs "SMP_ENABLE" to be set to yes
 
+choice BT_ENC_KEY_SIZE_CTRL_ENABLED
+    prompt "configure encryption key size"
+    depends on BT_CLASSIC_ENABLED
+    default BT_ENC_KEY_SIZE_CTRL_VSC
+    help
+        This chooses the support status of configuring encryption key size
+
+    config BT_ENC_KEY_SIZE_CTRL_STD
+        depends on (BT_CONTROLLER_DISABLED || (BT_CONTROLLER_ENABLED && SOC_BT_H2C_ENC_KEY_CTRL_ENH_STD_SUPPORTED))
+        bool "Supported by standard HCI command"
+
+    config BT_ENC_KEY_SIZE_CTRL_VSC
+        depends on (BT_CONTROLLER_DISABLED || (BT_CONTROLLER_ENABLED && SOC_BT_H2C_ENC_KEY_CTRL_ENH_VSC_SUPPORTED))
+        bool "Supported by Vendor-specific HCI command"
+
+    config BT_ENC_KEY_SIZE_CTRL_NONE
+        bool "Not supported"
+endchoice
+
 config BT_CLASSIC_BQB_ENABLED
     bool "Host Qualitifcation support for Classic Bluetooth"
     depends on BT_CLASSIC_ENABLED

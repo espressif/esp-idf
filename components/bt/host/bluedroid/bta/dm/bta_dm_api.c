@@ -380,6 +380,31 @@ void BTA_DmSetAclPktTypes(BD_ADDR remote_addr, UINT16 pkt_types, tBTM_CMPL_CB *p
         bta_sys_sendmsg(p_msg);
     }
 }
+
+/*******************************************************************************
+**
+** Function         BTA_DmSetMinEncKeySize
+**
+** Description      This function sets the minimal size of encryption key.
+**
+**
+** Returns          void
+**
+*******************************************************************************/
+#if (ENC_KEY_SIZE_CTRL_MODE != ENC_KEY_SIZE_CTRL_MODE_NONE)
+void BTA_DmSetMinEncKeySize(UINT8 key_size, tBTM_CMPL_CB *p_cb)
+{
+    tBTA_DM_API_SET_MIN_ENC_KEY_SIZE *p_msg;
+
+    if ((p_msg = (tBTA_DM_API_SET_MIN_ENC_KEY_SIZE *) osi_malloc(sizeof(tBTA_DM_API_SET_MIN_ENC_KEY_SIZE))) != NULL) {
+        p_msg->hdr.event = BTA_DM_API_SET_MIN_ENC_KEY_SIZE_EVT;
+        p_msg->key_size = key_size;
+        p_msg->set_min_enc_key_size_cb = p_cb;
+
+        bta_sys_sendmsg(p_msg);
+    }
+}
+#endif
 #endif /// CLASSIC_BT_INCLUDED == TRUE
 
 #if (SDP_INCLUDED == TRUE)

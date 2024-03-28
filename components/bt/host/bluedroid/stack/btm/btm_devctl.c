@@ -877,6 +877,42 @@ tBTM_STATUS BTM_WritePageTimeout(UINT16 timeout, tBTM_CMPL_CB *p_cb)
     return (BTM_CMD_STARTED);
 }
 
+#if (ENC_KEY_SIZE_CTRL_MODE != ENC_KEY_SIZE_CTRL_MODE_NONE)
+void btm_set_min_enc_key_size_complete(const UINT8 *p)
+{
+    tBTM_SET_MIN_ENC_KEY_SIZE_RESULTS results;
+    tBTM_CMPL_CB *p_cb = btm_cb.devcb.p_set_min_enc_key_size_cmpl_cb;
+
+    STREAM_TO_UINT8(results.hci_status, p);
+
+    if (p_cb) {
+        btm_cb.devcb.p_set_min_enc_key_size_cmpl_cb = NULL;
+        (*p_cb)(&results);
+    }
+}
+
+tBTM_STATUS BTM_SetMinEncKeySize(UINT8 key_size, tBTM_CMPL_CB *p_cb)
+{
+    BTM_TRACE_EVENT ("BTM: BTM_SetMinEncKeySize: key_size: %d.", key_size);
+
+    btm_cb.devcb.p_set_min_enc_key_size_cmpl_cb = p_cb;
+    tBTM_STATUS status = BTM_NO_RESOURCES;
+
+#if (ENC_KEY_SIZE_CTRL_MODE == ENC_KEY_SIZE_CTRL_MODE_VSC)
+    /* Send the HCI command */
+    UINT8 param[1];
+    UINT8 *p = (UINT8 *)param;
+    UINT8_TO_STREAM(p, key_size);
+    status = BTM_VendorSpecificCommand(HCI_VENDOR_BT_SET_MIN_ENC_KEY_SIZE, 1, param, NULL);
+#else
+    if (btsnd_hcic_set_min_enc_key_size(key_size)) {
+        status = BTM_SUCCESS;
+    }
+#endif
+    return status;
+}
+#endif
+
 /*******************************************************************************
 **
 ** Function         btm_set_page_timeout_complete

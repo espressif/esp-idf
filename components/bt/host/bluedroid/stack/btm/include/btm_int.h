@@ -221,6 +221,8 @@ tBTM_CMPL_CB         *p_page_to_set_cmpl_cb; /* Callback function to be called w
 TIMER_LIST_ENT       set_acl_pkt_types_timer;
 tBTM_CMPL_CB         *p_set_acl_pkt_types_cmpl_cb; /* Callback function to be called when */
 /* set ACL packet types is completed */
+tBTM_CMPL_CB         *p_set_min_enc_key_size_cmpl_cb; /* Callback function to be called when */
+/* set min encryption key size is completed */
 #endif
 
 DEV_CLASS            dev_class;         /* Local device class                   */
@@ -1148,6 +1150,9 @@ void btm_delete_stored_link_key_complete (UINT8 *p);
 void btm_report_device_status (tBTM_DEV_STATUS status);
 void btm_set_afh_channels_complete (UINT8 *p);
 void btm_ble_set_channels_complete (UINT8 *p);
+#if (ENC_KEY_SIZE_CTRL_MODE != ENC_KEY_SIZE_CTRL_MODE_NONE)
+void btm_set_min_enc_key_size_complete(const UINT8 *p);
+#endif
 void btm_set_page_timeout_complete (const UINT8 *p);
 void btm_page_to_setup_timeout (void *p_tle);
 

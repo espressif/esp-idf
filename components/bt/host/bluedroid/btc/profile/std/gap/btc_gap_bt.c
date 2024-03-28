@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -797,6 +797,31 @@ static void btc_gap_set_acl_pkt_types(btc_gap_bt_args_t *arg)
                          btc_gap_bt_set_acl_pkt_types_cmpl_callback);
 }
 
+#if (ENC_KEY_SIZE_CTRL_MODE != ENC_KEY_SIZE_CTRL_MODE_NONE)
+static void btc_gap_bt_set_min_enc_key_size_cmpl_callback(void *p_data)
+{
+    tBTA_SET_MIN_ENC_KEY_SIZE_RESULTS *result = (tBTA_SET_MIN_ENC_KEY_SIZE_RESULTS *)p_data;
+    esp_bt_gap_cb_param_t param;
+    bt_status_t ret;
+    btc_msg_t msg;
+    msg.sig = BTC_SIG_API_CB;
+    msg.pid = BTC_PID_GAP_BT;
+    msg.act = BTC_GAP_BT_SET_MIN_ENC_KEY_SIZE_EVT;
+
+    param.set_min_enc_key_size.status = btc_hci_to_esp_status(result->hci_status);
+
+    ret = btc_transfer_context(&msg, &param, sizeof(esp_bt_gap_cb_param_t), NULL, NULL);
+    if (ret != BT_STATUS_SUCCESS) {
+        BTC_TRACE_ERROR("%s btc_transfer_context failed\n", __func__);
+    }
+}
+
+static void btc_gap_set_min_enc_key_size(btc_gap_bt_args_t *arg)
+{
+    BTA_DmSetMinEncKeySize(arg->set_min_enc_key_size.key_size, btc_gap_bt_set_min_enc_key_size_cmpl_callback);
+}
+#endif
+
 static void btc_gap_bt_read_remote_name_cmpl_callback(void *p_data)
 {
     tBTA_REMOTE_DEV_NAME *result = (tBTA_REMOTE_DEV_NAME *)p_data;
@@ -872,6 +897,9 @@ void btc_gap_bt_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
     case BTC_GAP_BT_ACT_SET_PAGE_TIMEOUT:
     case BTC_GAP_BT_ACT_GET_PAGE_TIMEOUT:
     case BTC_GAP_BT_ACT_SET_ACL_PKT_TYPES:
+#if (ENC_KEY_SIZE_CTRL_MODE != ENC_KEY_SIZE_CTRL_MODE_NONE)
+    case BTC_GAP_BT_ACT_SET_MIN_ENC_KEY_SIZE:
+#endif
         break;
     case BTC_GAP_BT_ACT_PASSKEY_REPLY:
     case BTC_GAP_BT_ACT_CONFIRM_REPLY:
@@ -939,6 +967,9 @@ void btc_gap_bt_arg_deep_free(btc_msg_t *msg)
     case BTC_GAP_BT_ACT_SET_PAGE_TIMEOUT:
     case BTC_GAP_BT_ACT_GET_PAGE_TIMEOUT:
     case BTC_GAP_BT_ACT_SET_ACL_PKT_TYPES:
+#if (ENC_KEY_SIZE_CTRL_MODE != ENC_KEY_SIZE_CTRL_MODE_NONE)
+    case BTC_GAP_BT_ACT_SET_MIN_ENC_KEY_SIZE:
+#endif
         break;
     case BTC_GAP_BT_ACT_PASSKEY_REPLY:
     case BTC_GAP_BT_ACT_CONFIRM_REPLY:
@@ -1049,6 +1080,12 @@ void btc_gap_bt_call_handler(btc_msg_t *msg)
         btc_gap_set_acl_pkt_types(arg);
         break;
     }
+#if (ENC_KEY_SIZE_CTRL_MODE != ENC_KEY_SIZE_CTRL_MODE_NONE)
+    case BTC_GAP_BT_ACT_SET_MIN_ENC_KEY_SIZE: {
+        btc_gap_set_min_enc_key_size(arg);
+        break;
+    }
+#endif
     default:
         break;
     }
@@ -1101,6 +1138,9 @@ void btc_gap_bt_cb_deep_free(btc_msg_t *msg)
 #if (BTC_DM_PM_INCLUDED == TRUE)
     case BTC_GAP_BT_MODE_CHG_EVT:
 #endif /// BTC_DM_PM_INCLUDED == TRUE
+#if (ENC_KEY_SIZE_CTRL_MODE != ENC_KEY_SIZE_CTRL_MODE_NONE)
+    case BTC_GAP_BT_SET_MIN_ENC_KEY_SIZE_EVT:
+#endif /// ENC_KEY_SIZE_CTRL_MODE != ENC_KEY_SIZE_CTRL_MODE_NONE
         break;
     default:
         BTC_TRACE_ERROR("%s: Unhandled event (%d)!\n", __FUNCTION__, msg->act);
@@ -1192,6 +1232,12 @@ void btc_gap_bt_cb_handler(btc_msg_t *msg)
         btc_gap_bt_cb_to_app(ESP_BT_GAP_ACL_PKT_TYPE_CHANGED_EVT, (esp_bt_gap_cb_param_t *)msg->arg);
         break;
     }
+#if (ENC_KEY_SIZE_CTRL_MODE != ENC_KEY_SIZE_CTRL_MODE_NONE)
+    case BTC_GAP_BT_SET_MIN_ENC_KEY_SIZE_EVT: {
+        btc_gap_bt_cb_to_app(ESP_BT_GAP_SET_MIN_ENC_KEY_SIZE_EVT, (esp_bt_gap_cb_param_t *)msg->arg);
+        break;
+    }
+#endif
     default:
         BTC_TRACE_ERROR("%s: Unhandled event (%d)!\n", __FUNCTION__, msg->act);
         break;
