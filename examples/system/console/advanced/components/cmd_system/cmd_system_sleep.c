@@ -51,7 +51,9 @@ static int deep_sleep(int argc, char **argv)
     if (deep_sleep_args.wakeup_time->count) {
         uint64_t timeout = 1000ULL * deep_sleep_args.wakeup_time->ival[0];
         ESP_LOGI(TAG, "Enabling timer wakeup, timeout=%lluus", timeout);
+#if !CONFIG_IDF_TARGET_ESP32C5 // TODO: [ESP32C5] IDF-8638
         ESP_ERROR_CHECK( esp_sleep_enable_timer_wakeup(timeout) );
+#endif
     }
 
 #if SOC_PM_SUPPORT_EXT1_WAKEUP
@@ -80,8 +82,9 @@ static int deep_sleep(int argc, char **argv)
 #if CONFIG_IDF_TARGET_ESP32
     rtc_gpio_isolate(GPIO_NUM_12);
 #endif //CONFIG_IDF_TARGET_ESP32
-
+#if !CONFIG_IDF_TARGET_ESP32C5 // TODO: [ESP32C5] IDF-8638
     esp_deep_sleep_start();
+#endif
     return 1;
 }
 
@@ -132,11 +135,15 @@ static int light_sleep(int argc, char **argv)
         arg_print_errors(stderr, light_sleep_args.end, argv[0]);
         return 1;
     }
+#if !CONFIG_IDF_TARGET_ESP32C5 // TODO: [ESP32C5] IDF-8638
     esp_sleep_disable_wakeup_source(ESP_SLEEP_WAKEUP_ALL);
+#endif
     if (light_sleep_args.wakeup_time->count) {
         uint64_t timeout = 1000ULL * light_sleep_args.wakeup_time->ival[0];
         ESP_LOGI(TAG, "Enabling timer wakeup, timeout=%lluus", timeout);
+#if !CONFIG_IDF_TARGET_ESP32C5 // TODO: [ESP32C5] IDF-8638
         ESP_ERROR_CHECK( esp_sleep_enable_timer_wakeup(timeout) );
+#endif
     }
     int io_count = light_sleep_args.wakeup_gpio_num->count;
     if (io_count != light_sleep_args.wakeup_gpio_level->count) {
@@ -156,17 +163,26 @@ static int light_sleep(int argc, char **argv)
         ESP_ERROR_CHECK( gpio_wakeup_enable(io_num, level ? GPIO_INTR_HIGH_LEVEL : GPIO_INTR_LOW_LEVEL) );
     }
     if (io_count > 0) {
+#if !CONFIG_IDF_TARGET_ESP32C5 // TODO: [ESP32C5] IDF-8638
         ESP_ERROR_CHECK( esp_sleep_enable_gpio_wakeup() );
+#endif
     }
     if (CONFIG_ESP_CONSOLE_UART_NUM >= 0 && CONFIG_ESP_CONSOLE_UART_NUM <= UART_NUM_1) {
         ESP_LOGI(TAG, "Enabling UART wakeup (press ENTER to exit light sleep)");
         ESP_ERROR_CHECK( uart_set_wakeup_threshold(CONFIG_ESP_CONSOLE_UART_NUM, 3) );
+#if !CONFIG_IDF_TARGET_ESP32C5 // TODO: [ESP32C5] IDF-8638
         ESP_ERROR_CHECK( esp_sleep_enable_uart_wakeup(CONFIG_ESP_CONSOLE_UART_NUM) );
+#endif
     }
     fflush(stdout);
     fsync(fileno(stdout));
+#if !CONFIG_IDF_TARGET_ESP32C5 // TODO: [ESP32C5] IDF-8638
     esp_light_sleep_start();
     esp_sleep_wakeup_cause_t cause = esp_sleep_get_wakeup_cause();
+#else
+    esp_sleep_wakeup_cause_t cause = ESP_SLEEP_WAKEUP_TIMER;
+#endif
+
     const char *cause_str;
     switch (cause) {
     case ESP_SLEEP_WAKEUP_GPIO:
