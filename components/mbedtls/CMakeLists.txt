@@ -153,7 +153,7 @@ endif()
 # Add port files to mbedtls targets
 target_sources(mbedtls PRIVATE ${mbedtls_target_sources})
 
-# Choose perihperal type
+# Choose peripheral type
 
 if(CONFIG_SOC_SHA_SUPPORTED)
     if(CONFIG_SOC_SHA_SUPPORT_DMA)
@@ -266,6 +266,12 @@ if(CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN OR CONFIG_MBEDTLS_HARDWARE_ECDSA_VERIFY)
         target_link_libraries(${COMPONENT_LIB} INTERFACE "-Wl,--wrap=mbedtls_ecdsa_sign_restartable")
         target_link_libraries(${COMPONENT_LIB} INTERFACE "-Wl,--wrap=mbedtls_ecdsa_write_signature")
         target_link_libraries(${COMPONENT_LIB} INTERFACE "-Wl,--wrap=mbedtls_ecdsa_write_signature_restartable")
+
+        if(CONFIG_SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE)
+            target_link_libraries(${COMPONENT_LIB} INTERFACE "-Wl,--wrap=mbedtls_ecdsa_sign_det_ext")
+            target_link_libraries(${COMPONENT_LIB} INTERFACE "-Wl,--wrap=mbedtls_ecdsa_sign_det_restartable")
+        endif()
+
     endif()
 
     if(CONFIG_MBEDTLS_HARDWARE_ECDSA_VERIFY)

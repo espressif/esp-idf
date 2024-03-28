@@ -59,11 +59,21 @@ Following code snippet uses :cpp:func:`esp_efuse_write_key` to set physical key 
         // writing key failed, maybe written already
     }
 
+.. only:: SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE
+
+    Determinisitic Signature Generation
+    -----------------------------------
+
+    The ECDSA peripheral of {IDF_TARGET_NAME} also supports generation of deterministic signatures using deterministic derivation of the parameter K as specified in the `RFC 6979 <https://tools.ietf.org/html/rfc6979>`_ section 3.2.
+
+
+Non-Determinisitic Signature Generation
+---------------------------------------
 
 Dependency on TRNG
-------------------
+^^^^^^^^^^^^^^^^^^
 
-ECDSA peripheral relies on the hardware True Random Number Generator (TRNG) for its internal entropy requirement. During ECDSA signature creation, the algorithm requires a random integer to be generated as specified in the `RFC 6090 <https://tools.ietf.org/html/rfc6090>`_ section 5.3.2.
+ECDSA peripheral relies on the hardware True Random Number Generator (TRNG) for its internal entropy requirement for generating non-deterministic signatures. During ECDSA signature creation, the algorithm requires a random integer to be generated as specified in the `RFC 6090 <https://tools.ietf.org/html/rfc6090>`_ section 5.3.2.
 
 Please ensure that hardware :doc:`RNG <../system/random>` is enabled before starting ECDSA computations (primarily signing) in the application.
 

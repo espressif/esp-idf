@@ -32,8 +32,8 @@ typedef struct {
     bool use_km_key;                /* Use an ECDSA key from the Key Manager peripheral */
     ecdsa_sign_type_t sign_type;    /* Type of signature generation */
     uint16_t loop_number;           /* Determines the loop number value in deterministic derivation algorithm to derive K.
-                                     * This member of the config does not need any explicit initialisation as it is
-                                     * used and handled internally by the HAL layer.
+                                     * When using mbedtls APIs, this member of the config does not need any explicit
+                                     * initialisation as it is used and handled internally by the port layer (ECDSA_SIGN_ALT).
                                      */
 } ecdsa_hal_config_t;
 
