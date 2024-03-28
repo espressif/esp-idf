@@ -127,16 +127,21 @@ static void test_ecdsa_corrupt_data(bool is_p256, uint8_t* sha, uint8_t* r_le, u
 
 }
 
-static void test_ecdsa_sign(bool is_p256, uint8_t* sha, uint8_t* r_le, uint8_t* s_le, bool use_km_key)
+static void test_ecdsa_sign(bool is_p256, uint8_t* sha, uint8_t* r_le, uint8_t* s_le, bool use_km_key, ecdsa_sign_type_t k_type)
 {
     uint8_t sha_le[32] = {0};
     uint8_t zeroes[32] = {0};
     uint16_t len;
 
+#ifdef SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE
+    uint16_t det_loop_number = 1;
+#endif /* SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE */
+
     ecdsa_hal_config_t conf = {
         .mode = ECDSA_MODE_SIGN_GEN,
         .sha_mode = ECDSA_Z_USER_PROVIDED,
         .use_km_key = use_km_key,
+        .sign_type = k_type,
     };
 
     if (is_p256) {
@@ -161,23 +166,35 @@ static void test_ecdsa_sign(bool is_p256, uint8_t* sha, uint8_t* r_le, uint8_t* 
     bool process_again = false;
 
     do {
+#ifdef SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE
+        if (k_type == ECDSA_K_TYPE_DETERMINISITIC) {
+            conf.loop_number = det_loop_number++;
+        }
+#endif /* SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE */
+
         ecdsa_hal_gen_signature(&conf, sha_le, r_le, s_le, len);
 
         process_again = !ecdsa_hal_get_operation_result()
                         || !memcmp(r_le, zeroes, len)
                         || !memcmp(s_le, zeroes, len);
 
+#ifdef SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE
+        if (k_type == ECDSA_K_TYPE_DETERMINISITIC) {
+            process_again |= !ecdsa_hal_det_signature_k_check();
+        }
+#endif /* SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE */
+
     } while(process_again);
 
     ecdsa_disable();
 }
 
-static void test_ecdsa_sign_and_verify(bool is_p256, uint8_t* sha, uint8_t* pub_x, uint8_t* pub_y, bool use_km_key)
+static void test_ecdsa_sign_and_verify(bool is_p256, uint8_t* sha, uint8_t* pub_x, uint8_t* pub_y, bool use_km_key, ecdsa_sign_type_t k_type)
 {
     uint8_t r_le[32] = {0};
     uint8_t s_le[32] = {0};
 
-    test_ecdsa_sign(is_p256, sha, r_le, s_le, use_km_key);
+    test_ecdsa_sign(is_p256, sha, r_le, s_le, use_km_key, k_type);
     TEST_ASSERT_EQUAL(0, test_ecdsa_verify(is_p256, sha, r_le, s_le, pub_x, pub_y));
 }
 
@@ -253,35 +270,42 @@ TEST(ecdsa, ecdsa_SECP192R1_signature_verification)
     TEST_ASSERT_EQUAL(0, test_ecdsa_verify(0, sha, ecdsa192_r, ecdsa192_s, ecdsa192_pub_x, ecdsa192_pub_y));
 }
 
-
 TEST(ecdsa, ecdsa_SECP192R1_sign_and_verify)
 {
-    test_ecdsa_sign_and_verify(0, sha, ecdsa192_pub_x, ecdsa192_pub_y, 0);
+    test_ecdsa_sign_and_verify(0, sha, ecdsa192_pub_x, ecdsa192_pub_y, false, ECDSA_K_TYPE_TRNG);
 }
-
 
 TEST(ecdsa, ecdsa_SECP192R1_corrupt_signature)
 {
     test_ecdsa_corrupt_data(0, sha, ecdsa192_r, ecdsa192_s, ecdsa192_pub_x, ecdsa192_pub_y);
 }
 
-
 TEST(ecdsa, ecdsa_SECP256R1_signature_verification)
 {
     TEST_ASSERT_EQUAL(0, test_ecdsa_verify(1, sha, ecdsa256_r, ecdsa256_s, ecdsa256_pub_x, ecdsa256_pub_y));
 }
 
-
 TEST(ecdsa, ecdsa_SECP256R1_sign_and_verify)
 {
-    test_ecdsa_sign_and_verify(1, sha, ecdsa256_pub_x, ecdsa256_pub_y, 0);
+    test_ecdsa_sign_and_verify(1, sha, ecdsa256_pub_x, ecdsa256_pub_y, false, ECDSA_K_TYPE_TRNG);
 }
-
 
 TEST(ecdsa, ecdsa_SECP256R1_corrupt_signature)
 {
     test_ecdsa_corrupt_data(1, sha, ecdsa256_r, ecdsa256_s, ecdsa256_pub_x, ecdsa256_pub_y);
 }
+
+#ifdef SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE
+TEST(ecdsa, ecdsa_SECP192R1_det_sign_and_verify)
+{
+    test_ecdsa_sign_and_verify(0, sha, ecdsa192_pub_x, ecdsa192_pub_y, false, ECDSA_K_TYPE_DETERMINISITIC);
+}
+
+TEST(ecdsa, ecdsa_SECP256R1_det_sign_and_verify)
+{
+    test_ecdsa_sign_and_verify(1, sha, ecdsa256_pub_x, ecdsa256_pub_y, false, ECDSA_K_TYPE_DETERMINISITIC);
+}
+#endif /* SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE */
 
 #ifdef SOC_ECDSA_SUPPORT_EXPORT_PUBKEY
 TEST(ecdsa, ecdsa_SECP192R1_export_pubkey)
@@ -303,6 +327,10 @@ TEST_GROUP_RUNNER(ecdsa)
     RUN_TEST_CASE(ecdsa, ecdsa_SECP256R1_signature_verification)
     RUN_TEST_CASE(ecdsa, ecdsa_SECP256R1_sign_and_verify)
     RUN_TEST_CASE(ecdsa, ecdsa_SECP256R1_corrupt_signature)
+#ifdef SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE
+    RUN_TEST_CASE(ecdsa, ecdsa_SECP192R1_det_sign_and_verify)
+    RUN_TEST_CASE(ecdsa, ecdsa_SECP256R1_det_sign_and_verify)
+#endif /* SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE */
 #ifdef SOC_ECDSA_SUPPORT_EXPORT_PUBKEY
     RUN_TEST_CASE(ecdsa, ecdsa_SECP192R1_export_pubkey)
     RUN_TEST_CASE(ecdsa, ecdsa_SECP256R1_export_pubkey)

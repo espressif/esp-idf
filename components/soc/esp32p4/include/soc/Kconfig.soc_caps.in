@@ -1051,6 +1051,10 @@ config SOC_ECDSA_SUPPORT_EXPORT_PUBKEY
     bool
     default y
 
+config SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE
+    bool
+    default y
+
 config SOC_SDM_GROUPS
     int
     default 1

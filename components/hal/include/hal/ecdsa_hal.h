@@ -30,6 +30,11 @@ typedef struct {
     ecdsa_sha_mode_t sha_mode;      /* Source of SHA that needs to be signed */
     int efuse_key_blk;              /* Efuse block to use as ECDSA key (The purpose of the efuse block must be ECDSA_KEY) */
     bool use_km_key;                /* Use an ECDSA key from the Key Manager peripheral */
+    ecdsa_sign_type_t sign_type;    /* Type of signature generation */
+    uint16_t loop_number;           /* Determines the loop number value in deterministic derivation algorithm to derive K.
+                                     * This member of the config does not need any explicit initialisation as it is
+                                     * used and handled internally by the HAL layer.
+                                     */
 } ecdsa_hal_config_t;
 
 /**
@@ -80,6 +85,17 @@ void ecdsa_hal_export_pubkey(ecdsa_hal_config_t *conf, uint8_t *pub_x, uint8_t *
  *         - false, if the ECDSA operation fails
  */
 bool ecdsa_hal_get_operation_result(void);
+
+#ifdef SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE
+/**
+ * @brief Check if the K value derived by the peripheral during deterministic signature generation is valid
+ *
+ * @return true, if the derived K value is valid
+ * @return false, if the derived K value is invalid
+ */
+bool ecdsa_hal_det_signature_k_check(void);
+
+#endif /* SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE */
 
 #ifdef __cplusplus
 }
