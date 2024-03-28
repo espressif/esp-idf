@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -72,7 +72,7 @@ typedef enum {
 #define WIFI_LOG_SUBMODULE_INIT  (1)    /*logs related to initialization*/
 #define WIFI_LOG_SUBMODULE_IOCTL (1<<1) /*logs related to API calling*/
 #define WIFI_LOG_SUBMODULE_CONN  (1<<2) /*logs related to connecting*/
-#define WIFI_LOG_SUBMODULE_SCAN  (1<<3) /*logs related to scaning*/
+#define WIFI_LOG_SUBMODULE_SCAN  (1<<3) /*logs related to scanning*/
 
 
 /**
@@ -164,9 +164,9 @@ typedef void (*wifi_netstack_buf_free_cb_t)(void *netstack_buf);
   * supports reference counter.
   *
   * @param  wifi_if : wifi interface id
-  * @param  buffer : the buffer to be tansmit
+  * @param  buffer : the buffer to be transmit
   * @param  len : the length of buffer
-  * @param  netstack_buf : the netstack buffer related to bufffer
+  * @param  netstack_buf : the netstack buffer related to buffer
   *
   * @return
   *    - ESP_OK  : Successfully transmit the buffer to wifi driver
@@ -574,12 +574,12 @@ void pm_mac_wakeup(void);
 #endif
 
 /**
-  * @breif    TxDone callback function type. Should be registered using esp_wifi_set_tx_done_cb()
+  * @brief    TxDone callback function type. Should be registered using esp_wifi_set_tx_done_cb()
   *
   * @param    ifidx The interface id that the tx callback has been triggered from
   * @param    data Pointer to the data transmitted
   * @param    data_len Length of the data transmitted
-  * @param    txStatus True:if the data was transmitted sucessfully False: if data transmission failed
+  * @param    txStatus True:if the data was transmitted successfully False: if data transmission failed
   */
 typedef void (* wifi_tx_done_cb_t)(uint8_t ifidx, uint8_t *data, uint16_t *data_len, bool txStatus);
 

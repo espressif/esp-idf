@@ -124,7 +124,7 @@ typedef struct {
      * information according to the configuration information of the linked list
      * nodes.
      * The PMU module triggers REGDMA to use the corresponding linked list when
-     * swtiching between different power states. For example:
+     * switching between different power states. For example:
      *
      * +---------------+---------------+-------------------+-----------+
      * |    Current    |   The next    | The entry will be | Retention |
