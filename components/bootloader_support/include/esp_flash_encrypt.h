@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -82,7 +82,7 @@ bool esp_flash_encryption_enabled(void);
  * @note RTC_WDT will reset while encryption operations will be performed (if RTC_WDT is configured).
  *
  * @return ESP_OK if all operations succeeded, ESP_ERR_INVALID_STATE
- * if a fatal error occured during encryption of all partitions.
+ * if a fatal error occurred during encryption of all partitions.
  */
 esp_err_t esp_flash_encrypt_check_and_update(void);
 
@@ -178,12 +178,15 @@ esp_flash_enc_mode_t esp_get_flash_encryption_mode(void);
  */
 void esp_flash_encryption_init_checks(void);
 
+
+#if BOOTLOADER_BUILD && CONFIG_SECURE_FLASH_ENC_ENABLED
 /** @brief Set all secure eFuse features related to flash encryption
  *
  * @return
  *  - ESP_OK - Successfully
  */
 esp_err_t esp_flash_encryption_enable_secure_features(void);
+#endif /* BOOTLOADER_BUILD && CONFIG_SECURE_FLASH_ENC_ENABLED */
 
 /** @brief Returns the verification status for all physical security features of flash encryption in release mode
  *
