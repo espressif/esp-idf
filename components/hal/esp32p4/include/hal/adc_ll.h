@@ -200,6 +200,28 @@ static inline uint32_t adc_ll_pwdet_get_cct(void)
 ---------------------------------------------------------------*/
 
 /**
+ * @brief Enable the ADC clock
+ * @param enable true to enable, false to disable
+ */
+static inline void adc_ll_enable_bus_clock(bool enable)
+{
+    HP_SYS_CLKRST.soc_clk_ctrl2.reg_adc_apb_clk_en = enable;
+}
+// HP_SYS_CLKRST.soc_clk_ctrl2 are shared registers, so this function must be used in an atomic way
+#define adc_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; adc_ll_enable_bus_clock(__VA_ARGS__)
+
+/**
+ * @brief Reset ADC module
+ */
+static inline void adc_ll_reset_register(void)
+{
+    HP_SYS_CLKRST.hp_rst_en2.reg_rst_en_adc = 1;
+    HP_SYS_CLKRST.hp_rst_en2.reg_rst_en_adc = 0;
+}
+//  HP_SYS_CLKRST.hp_rst_en2 is a shared register, so this function must be used in an atomic way
+#define adc_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; adc_ll_reset_register(__VA_ARGS__)
+
+/**
  * Set ADC module controller.
  * There are five SAR ADC controllers:
  * Two digital controller: Continuous conversion mode (DMA). High performance with multiple channel scan modes;
@@ -254,31 +276,6 @@ static inline void adc_ll_set_controller(adc_unit_t adc_n, adc_ll_controller_t c
         }
     }
 }
-
-// /**
-//  * Set ADC2 module arbiter work mode.
-//  * The arbiter is to improve the use efficiency of ADC2. After the control right is robbed by the high priority,
-//  * the low priority controller will read the invalid ADC data, and the validity of the data can be judged by the flag bit in the data.
-//  *
-//  * @note Only ADC2 support arbiter.
-//  * @note The arbiter's working clock is APB_CLK. When the APB_CLK clock drops below 8 MHz, the arbiter must be in shield mode.
-//  *
-//  * @param mode Refer to ``adc_arbiter_mode_t``.
-//  */
-// __attribute__((always_inline))
-// static inline void adc_ll_set_arbiter_work_mode(adc_arbiter_mode_t mode)
-// {
-//     LP_ADC.meas2_mux.sar2_rtc_force = 0;  // Enable arbiter in wakeup mode
-//     if (mode == ADC_ARB_MODE_FIX) {
-//         ADC.arb_ctrl.arb_grant_force = 0;
-//         ADC.arb_ctrl.arb_fix_priority = 1;
-//     } else if (mode == ADC_ARB_MODE_LOOP) {
-//         ADC.arb_ctrl.arb_grant_force = 0;
-//         ADC.arb_ctrl.arb_fix_priority = 0;
-//     } else {
-//         ADC.arb_ctrl.arb_grant_force = 1;    // Shield arbiter.
-//     }
-// }
 
 /**
  * Set ADC2 module controller priority in arbiter.

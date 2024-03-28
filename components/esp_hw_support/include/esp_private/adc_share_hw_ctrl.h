@@ -12,7 +12,7 @@
  *
  * However, usages of above components are different.
  * Therefore, we put the common used parts into `esp_hw_support`, including:
- * - adc power maintainance
+ * - adc power maintenance
  * - adc hw calibration settings
  * - adc locks, to prevent concurrently using adc hw
  */
@@ -24,6 +24,12 @@
 
 #ifdef __cplusplus
 extern "C" {
+#endif
+
+#if SOC_RCC_IS_INDEPENDENT || CONFIG_IDF_TARGET_ESP32
+#define ADC_BUS_CLK_ATOMIC()
+#else
+#define ADC_BUS_CLK_ATOMIC()       PERIPH_RCC_ATOMIC()
 #endif
 
 #if SOC_ADC_CALIBRATION_V1_SUPPORTED

@@ -434,7 +434,10 @@ esp_err_t adc_digi_start(void)
         return ESP_ERR_INVALID_STATE;
     }
     //reset ADC digital part to reset ADC sampling EOF counter
-    periph_module_reset(PERIPH_SARADC_MODULE);
+    ADC_BUS_CLK_ATOMIC() {
+        adc_ll_reset_register();
+    }
+
     sar_periph_ctrl_adc_continuous_power_acquire();
     //reset flags
     s_adc_digi_ctx->ringbuf_overflow_flag = 0;

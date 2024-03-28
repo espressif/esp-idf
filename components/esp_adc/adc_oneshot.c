@@ -115,7 +115,6 @@ esp_err_t adc_oneshot_new_unit(const adc_oneshot_unit_init_cfg_t *init_config, a
     };
     adc_oneshot_hal_init(&(unit->hal), &config);
 
-#if SOC_ADC_DIG_CTRL_SUPPORTED && !SOC_ADC_RTC_CTRL_SUPPORTED
     //To enable the APB_SARADC periph if needed
     _lock_acquire(&s_ctx.mutex);
     s_ctx.apb_periph_ref_cnts++;
@@ -123,12 +122,6 @@ esp_err_t adc_oneshot_new_unit(const adc_oneshot_unit_init_cfg_t *init_config, a
         adc_apb_periph_claim();
     }
     _lock_release(&s_ctx.mutex);
-#endif
-
-//TODO: refactor clock enable/reset functions, add adc_digi_clk_enable/reset and adc_rtc_clk_enable/reset
-#if CONFIG_IDF_TARGET_ESP32P4
-    adc_ll_rtc_reset();
-#endif
 
     if (init_config->ulp_mode == ADC_ULP_MODE_DISABLE) {
         sar_periph_ctrl_adc_oneshot_power_acquire();
