@@ -61,9 +61,8 @@ esp_err_t esp_event_loop_delete(esp_event_loop_handle_t event_loop);
  * @brief Create default event loop
  *
  * @return
- *  - ESP_OK: Success
+ *  - ESP_OK: Success, or default event loop has already been created
  *  - ESP_ERR_NO_MEM: Cannot allocate memory for event loops list
- *  - ESP_ERR_INVALID_STATE: Default event loop has already been created
  *  - ESP_FAIL: Failed to create task loop
  *  - Others: Fail
  */

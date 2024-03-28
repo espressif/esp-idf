@@ -92,7 +92,7 @@ esp_err_t esp_event_isr_post(esp_event_base_t event_base, int32_t event_id,
 esp_err_t esp_event_loop_create_default(void)
 {
     if (s_default_loop) {
-        return ESP_ERR_INVALID_STATE;
+        return ESP_OK;
     }
 
     esp_event_loop_args_t loop_args = {
