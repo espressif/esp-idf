@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -135,6 +135,8 @@ static int esp_ecdsa_sign(mbedtls_ecp_group *grp, mbedtls_mpi* r, mbedtls_mpi* s
 
     esp_ecdsa_acquire_hardware();
 
+    bool process_again = false;
+
     do {
         ecdsa_hal_config_t conf = {
             .mode = ECDSA_MODE_SIGN_GEN,
@@ -144,7 +146,12 @@ static int esp_ecdsa_sign(mbedtls_ecp_group *grp, mbedtls_mpi* r, mbedtls_mpi* s
         };
 
         ecdsa_hal_gen_signature(&conf, sha_le, r_le, s_le, len);
-    } while (!memcmp(r_le, zeroes, len) || !memcmp(s_le, zeroes, len));
+
+        process_again = !ecdsa_hal_get_operation_result()
+                        || !memcmp(r_le, zeroes, len)
+                        || !memcmp(s_le, zeroes, len);
+
+    } while (process_again);
 
     esp_ecdsa_release_hardware();
 

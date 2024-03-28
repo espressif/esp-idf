@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,6 +12,7 @@
 
 #pragma once
 
+#include <stdbool.h>
 #include <stdint.h>
 #include "hal/ecdsa_types.h"
 
@@ -57,6 +58,15 @@ void ecdsa_hal_gen_signature(ecdsa_hal_config_t *conf, const uint8_t *hash,
  */
 int ecdsa_hal_verify_signature(ecdsa_hal_config_t *conf, const uint8_t *hash, const uint8_t *r, const uint8_t *s,
                                const uint8_t *pub_x, const uint8_t *pub_y, uint16_t len);
+
+/**
+ * @brief Check if the ECDSA operation is successful
+ *
+ * @return - true, if the ECDSA operation is successful
+ *         - false, if the ECDSA operation fails
+ */
+bool ecdsa_hal_get_operation_result(void);
+
 #ifdef __cplusplus
 }
 #endif
