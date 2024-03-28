@@ -5,11 +5,11 @@ CPU 0 interrupt status:
   2     1    Level  Used: RTC_CORE
   3     1    Level  Used: SYSTIMER_TARGET2_EDGE
   4     1    Level  Used: ETS_FROM_CPU_INTR0
-  5     *      *    Reserved
+  5     1    Level  Used: SYSTIMER_TARGET0_EDGE
   6     *      *    Reserved
-  7     1    Level  Used: SYSTIMER_TARGET0_EDGE
-  8     *      *    Reserved
-  9     1    Level  Used: UART
+  7     1    Level  Used: UART
+  8     *      *    Free
+  9     *      *    Free
  10     *      *    Free
  11     *      *    Free
  12     *      *    Free
@@ -32,5 +32,5 @@ CPU 0 interrupt status:
  29     *      *    Free
  30     *      *    Free
  31     *      *    Free
-Interrupts available for general use: 19
+Interrupts available for general use: 21
 Shared interrupts: 0
