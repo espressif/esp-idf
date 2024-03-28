@@ -28,7 +28,7 @@ Check out the example functions ``http_rest_with_url`` and ``http_rest_with_host
 Persistent Connections
 ----------------------
 
-Persistent connection means that the HTTP client can re-use the same connection for several exchanges. If the server does not request to close the connection with the ``Connection: close`` header, the connection is not dropped but is instead kept open and used for further requests.
+Persistent connection means that the HTTP client can reuse the same connection for several exchanges. If the server does not request to close the connection with the ``Connection: close`` header, the connection is not dropped but is instead kept open and used for further requests.
 
 To allow ESP HTTP client to take full advantage of persistent connections, one should make as many requests as possible using the same handle instance. Check out the example functions ``http_rest_with_url`` and ``http_rest_with_hostname_path`` in the application example. Here, once the connection is created, multiple requests (``GET``, ``POST``, ``PUT``, etc.) are made before the connection is closed.
 

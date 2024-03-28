@@ -16,7 +16,7 @@ The ULP LP-Core coprocessor has the following features:
 Compiling Code for the ULP LP-Core
 ----------------------------------
 
-The ULP LP-Core code is compiled together with your ESP-IDF project as a separate binary and automatically embedded into the main project binary. To acheive this do the following:
+The ULP LP-Core code is compiled together with your ESP-IDF project as a separate binary and automatically embedded into the main project binary. To achieve this do the following:
 
 1. Place the ULP LP-Core code, written in C or assembly (with the ``.S`` extension), in a dedicated directory within the component directory, such as ``ulp/``.
 

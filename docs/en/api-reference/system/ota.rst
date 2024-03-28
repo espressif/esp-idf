@@ -239,7 +239,7 @@ The created object can now be used to perform operations on the target device:
 
 .. code-block:: python
 
-  # Erase otadata, reseting the device to factory app
+  # Erase otadata, resetting the device to factory app
   target.erase_otadata()
 
   # Erase contents of OTA app slot 0

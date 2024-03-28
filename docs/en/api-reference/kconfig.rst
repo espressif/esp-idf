@@ -7,7 +7,7 @@ Introduction
 
 The esp-idf-kconfig_ package that ESP-IDF uses is based on kconfiglib_, which is a Python extension to the Kconfig_ system. Kconfig provides a compile-time project configuration mechanism and offers configuration options of several types (e.g., integers, strings, and Booleans). Kconfig files specify dependencies between options, default values of options, the way options are grouped together, etc.
 
-For the full list of available features, please see Kconfig_ and `kconfiglib extentions`_.
+For the full list of available features, please see Kconfig_ and `kconfiglib extensions`_.
 
 .. _project-configuration-menu:
 
@@ -76,4 +76,4 @@ By convention, all option names are upper-case letters with underscores. When Kc
 .. _Kconfig: https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
 .. _esp-idf-kconfig: https://pypi.org/project/esp-idf-kconfig/
 .. _kconfiglib: https://github.com/ulfalizer/Kconfiglib
-.. _kconfiglib extentions: https://pypi.org/project/kconfiglib/#kconfig-extensions
+.. _kconfiglib extensions: https://pypi.org/project/kconfiglib/#kconfig-extensions

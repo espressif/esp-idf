@@ -66,7 +66,7 @@ Broker address can be set by usage of :cpp:class:`address <esp_mqtt_client_confi
 
 The :cpp:member:`uri <esp_mqtt_client_config_t::broker_t::address_t::uri>` field is used in the format ``scheme://hostname:port/path``.
 
--  Curently support ``mqtt``, ``mqtts``, ``ws``, ``wss`` schemes
+-  Currently support ``mqtt``, ``mqtts``, ``ws``, ``wss`` schemes
 -  MQTT over TCP samples:
 
    -  ``mqtt://mqtt.eclipseprojects.io``: MQTT over TCP, default port 1883

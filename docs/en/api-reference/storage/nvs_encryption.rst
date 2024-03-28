@@ -198,7 +198,7 @@ Alternatively, :cpp:func:`nvs_flash_secure_init` API function can also be used t
 NVS Security Provider
 ---------------------
 
-The component :component:`nvs_sec_provider` stores all the implementation-specific code for the NVS encryption schemes and would also accomodate any future schemes. This component acts as an interface to the :component:`nvs_flash` component for the handling of encryption keys. :component:`nvs_sec_provider` has a configuration menu of its own, based on which the selected security scheme and the corresponding settings are registered for the :component:`nvs_flash` component.
+The component :component:`nvs_sec_provider` stores all the implementation-specific code for the NVS encryption schemes and would also accommodate any future schemes. This component acts as an interface to the :component:`nvs_flash` component for the handling of encryption keys. :component:`nvs_sec_provider` has a configuration menu of its own, based on which the selected security scheme and the corresponding settings are registered for the :component:`nvs_flash` component.
 
 .. only:: SOC_HMAC_SUPPORTED
 

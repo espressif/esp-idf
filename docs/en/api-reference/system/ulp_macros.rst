@@ -29,7 +29,7 @@ The ``program`` array is an array of ``ulp_insn_t``, i.e., ULP coprocessor instr
 
 To generate branch instructions, special ``M_`` preprocessor defines are used. ``M_LABEL`` define can be used to define a branch target. Label identifier is a 16-bit integer. ``M_Bxxx`` defines can be used to generate branch instructions with target set to a particular label.
 
-Implementation note: these ``M_`` preprocessor defines will be translated into two ulp_insn_t values: one is a token value which contains label number, and the other is the actual instruction. ``ulp_process_macros_and_load`` function resolves the label number to the address, modifies the branch instruction to use the correct address, and removes the extra ``ulp_insn_t`` token which contains the label numer.
+Implementation note: these ``M_`` preprocessor defines will be translated into two ulp_insn_t values: one is a token value which contains label number, and the other is the actual instruction. ``ulp_process_macros_and_load`` function resolves the label number to the address, modifies the branch instruction to use the correct address, and removes the extra ``ulp_insn_t`` token which contains the label number.
 
 Here is an example of using labels and branches::
 

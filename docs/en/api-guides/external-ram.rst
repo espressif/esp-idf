@@ -68,7 +68,7 @@ Select this option by choosing ``Integrate RAM into memory map`` from :ref:`CONF
 
 This is the most basic option for external RAM integration. Most likely, you will need another, more advanced option.
 
-During the ESP-IDF startup, external RAM is mapped into the data virtual address space. The address space is dynamically allocated. The length will be the mininum length between the PSRAM size and the available data virtual address space size.
+During the ESP-IDF startup, external RAM is mapped into the data virtual address space. The address space is dynamically allocated. The length will be the minimum length between the PSRAM size and the available data virtual address space size.
 
 Applications can manually place data in external memory by creating pointers to this region. So if an application uses external memory, it is responsible for all management of the external RAM: coordinating buffer usage, preventing corruption, etc.
 

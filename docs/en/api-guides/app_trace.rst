@@ -53,7 +53,7 @@ There are two additional menuconfig options not mentioned above:
 
 2. *Timeout for flushing last trace data to host on panic* (:ref:`CONFIG_APPTRACE_ONPANIC_HOST_FLUSH_TMO`). The option is only meaningful in streaming mode and it controls the maximum time that the tracing module will wait for the host to read the last data in case of panic.
 
-3. *UART RX/TX ring buffer size* (:ref:`CONFIG_APPTRACE_UART_TX_BUFF_SIZE`). The size of the buffer depends on the amount of data transfered through the UART.
+3. *UART RX/TX ring buffer size* (:ref:`CONFIG_APPTRACE_UART_TX_BUFF_SIZE`). The size of the buffer depends on the amount of data transferred through the UART.
 
 4. *UART TX message size* (:ref:`CONFIG_APPTRACE_UART_TX_MSG_SIZE`). The maximum size of the single message to transfer.
 

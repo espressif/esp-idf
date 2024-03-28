@@ -76,7 +76,7 @@
                                                        e_download is disabled or enabled. 1: disabled. 0:
                                                         enabled
     DIS_DOWNLOAD_MANUAL_ENCRYPT (BLOCK0)               Represents whether flash encrypt function is disab = False R/W (0b0)
-                                                       led or enabled(except in SPI boot mode). 1: disabl
+                                                       led or enabled(except in SPI boot mode). 1: disable
                                                        ed. 0: enabled
     SPI_BOOT_CRYPT_CNT (BLOCK0)                        Enables flash encryption when 1 or 3 bits are set  = Disable R/W (0b000)
                                                        and disables otherwise
@@ -107,7 +107,7 @@
     SECURE_VERSION (BLOCK0)                            Represents the version used by ESP-IDF anti-rollba = 0 R/W (0x0000)
                                                        ck feature
     SECURE_BOOT_DISABLE_FAST_WAKE (BLOCK0)             Represents whether FAST VERIFY ON WAKE is disabled = False R/W (0b0)
-                                                        or enabled when Secure Boot is enabled. 1: disabl
+                                                        or enabled when Secure Boot is enabled. 1: disable
                                                        ed. 0: enabled
     BLOCK_KEY0 (BLOCK4)
       Purpose: USER

@@ -238,7 +238,7 @@ To list all available root level options, run ``idf.py --help``. To list options
 
 .. important::
 
-    Note that some older versions of CCache_ may exhibit bugs on some platforms, so if files are not rebuilt as expected, try disabling CCache_ and rebuiling the project. To enable CCache_ by default, set the ``IDF_CCACHE_ENABLE`` environment variable to a non-zero value.
+    Note that some older versions of CCache_ may exhibit bugs on some platforms, so if files are not rebuilt as expected, try disabling CCache_ and rebuilding the project. To enable CCache_ by default, set the ``IDF_CCACHE_ENABLE`` environment variable to a non-zero value.
 
 - ``-v`` flag causes both ``idf.py`` and the build system to produce verbose build output. This can be useful for debugging build problems.
 - ``--cmake-warn-uninitialized`` (or ``-w``)  causes CMake to print uninitialized variable warnings found in the project directory only. This only controls CMake variable warnings inside CMake itself, not other types of build warnings. This option can also be set permanently by setting the ``IDF_CMAKE_WARN_UNINITIALIZED`` environment variable to a non-zero value.

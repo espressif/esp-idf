@@ -122,7 +122,7 @@ ESP32-P4   I2S 0~2    I2S 0     I2S 0    I2S 0~2    none       none
 Standard Mode
 ^^^^^^^^^^^^^
 
-In standard mode, there are always two sound channels, i.e., the left and right channels, which are called "slots". These slots support 8/16/24/32-bit width sample data. The communication format for the slots mainly includes the followings:
+In standard mode, there are always two sound channels, i.e., the left and right channels, which are called "slots". These slots support 8/16/24/32-bit width sample data. The communication format for the slots mainly includes the following:
 
 - **Philips Format**: Data signal has one-bit shift comparing to the WS signal, and the duty of WS signal is 50%.
 

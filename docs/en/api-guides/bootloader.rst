@@ -50,7 +50,7 @@ SPI Flash Configuration
 
 Each ESP-IDF application or bootloader .bin file contains a header with :ref:`CONFIG_ESPTOOLPY_FLASHMODE`, :ref:`CONFIG_ESPTOOLPY_FLASHFREQ`, :ref:`CONFIG_ESPTOOLPY_FLASHSIZE` embedded in it. These are used to configure the SPI flash during boot.
 
-The :ref:`first-stage-bootloader` in ROM reads the :ref:`second-stage-bootloader` header information from flash and uses this infomation to load the rest of the :ref:`second-stage-bootloader` from flash. However, at this time the system clock speed is lower than configured and not all flash modes are supported. When the :ref:`second-stage-bootloader` then runs, it will reconfigure the flash using values read from the currently selected app binary's header (and NOT from the :ref:`second-stage-bootloader` header). This allows an OTA update to change the SPI flash settings in use.
+The :ref:`first-stage-bootloader` in ROM reads the :ref:`second-stage-bootloader` header information from flash and uses this information to load the rest of the :ref:`second-stage-bootloader` from flash. However, at this time the system clock speed is lower than configured and not all flash modes are supported. When the :ref:`second-stage-bootloader` then runs, it will reconfigure the flash using values read from the currently selected app binary's header (and NOT from the :ref:`second-stage-bootloader` header). This allows an OTA update to change the SPI flash settings in use.
 
 .. only:: esp32
 

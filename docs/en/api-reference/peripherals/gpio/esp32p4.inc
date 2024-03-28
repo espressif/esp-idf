@@ -299,7 +299,7 @@ The table below provides more information on pin usage, and please note the comm
 
 .. note::
 
-    - Strapping pin: GPIO34, GPIO35, GPIO36, GPIO37, and GPIO38 are strapping pins. For more infomation, please refer to `datasheet <{IDF_TARGET_DATASHEET_EN_URL}>`__.
+    - Strapping pin: GPIO34, GPIO35, GPIO36, GPIO37, and GPIO38 are strapping pins. For more information, please refer to `datasheet <{IDF_TARGET_DATASHEET_EN_URL}>`__.
 	  - USB-JTAG: GPIO 24 and 25 are used by USB-JTAG by default. In order to use them as GPIOs, USB-JTAG will be disabled by the drivers.
 
 ---

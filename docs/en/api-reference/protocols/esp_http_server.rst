@@ -112,7 +112,7 @@ Check HTTP server example under :example:`protocols/http_server/simple` where ha
 Persistent Connections
 ----------------------
 
-HTTP server features persistent connections, allowing for the re-use of the same connection (session) for several transfers, all the while maintaining context specific data for the session. Context data may be allocated dynamically by the handler in which case a custom function may need to be specified for freeing this data when the connection/session is closed.
+HTTP server features persistent connections, allowing for the reuse of the same connection (session) for several transfers, all the while maintaining context specific data for the session. Context data may be allocated dynamically by the handler in which case a custom function may need to be specified for freeing this data when the connection/session is closed.
 
 Persistent Connections Example
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

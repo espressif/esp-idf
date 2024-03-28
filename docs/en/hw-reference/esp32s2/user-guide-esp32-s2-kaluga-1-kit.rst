@@ -68,7 +68,7 @@ The ESP32-S2-Kaluga-1 board has connectors for boards with:
 
 - Extension header (ESP-LyraT-8311A, ESP-LyraP-LCD32)
 - Camera header (ESP-LyraP-CAM)
-- Touch FPC coneector (ESP-LyraP-TouchA)
+- Touch FPC connector (ESP-LyraP-TouchA)
 - LCD FPC connector (no official extension boards yet)
 - I2C FPC connector (no official extension boards yet)
 
@@ -82,7 +82,7 @@ The ESP32-S2-Kaluga-1 board has connectors for boards with:
 
     ESP32-S2-Kaluga-1 (click to enlarge)
 
-All the four extension boards are specially desgined to support the following features:
+All the four extension boards are specially designed to support the following features:
 
 * Touch panel control
     * Six touch buttons

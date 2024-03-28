@@ -98,7 +98,7 @@ Dynamic Frequency Scaling and Peripheral Drivers
 
 When DFS is enabled, the APB frequency can be changed multiple times within a single RTOS tick. The APB frequency change does not affect the operation of some peripherals, while other peripherals may have issues. For example, Timer Group peripheral timers keeps counting, however, the speed at which they count changes proportionally to the APB frequency.
 
-Peripheral clock sources such as ``REF_TICK``, ``XTAL``, ``RC_FAST`` (i.e., ``RTC_8M``), their frequencies will not be inflenced by APB frequency. And therefore, to ensure the peripheral behaves consistently during DFS, it is recommanded to select one of these clocks as the peripheral clock source. For more specific guidelines, please refer to the "Power Management" section of each peripheral's "API Reference > Peripherals API" page.
+Peripheral clock sources such as ``REF_TICK``, ``XTAL``, ``RC_FAST`` (i.e., ``RTC_8M``), their frequencies will not be inflenced by APB frequency. And therefore, to ensure the peripheral behaves consistently during DFS, it is recommended to select one of these clocks as the peripheral clock source. For more specific guidelines, please refer to the "Power Management" section of each peripheral's "API Reference > Peripherals API" page.
 
 Currently, the following peripheral drivers are aware of DFS and use the ``ESP_PM_APB_FREQ_MAX`` lock for the duration of the transaction:
 

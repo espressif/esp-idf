@@ -237,7 +237,7 @@ The application can call ``sdio_slave_transmit`` to send packets. In this case, 
 There are several ways to use the ``arg`` in the queue parameter:
 
     1. Directly point ``arg`` to a dynamic-allocated buffer, and use the ``arg`` to free it when transfer finished.
-    2. Wrap transfer informations in a transfer structure, and point ``arg`` to the structure. You can use the structure to do more things like::
+    2. Wrap transfer information in a transfer structure, and point ``arg`` to the structure. You can use the structure to do more things like::
 
           typedef struct {
               uint8_t* buffer;

@@ -81,7 +81,7 @@ The ESP32-S2-Kaluga-1 board has connectors for boards with:
 
     ESP32-S2-Kaluga-1 (click to enlarge)
 
-All the four extension boards are specially desgined to support the following features:
+All the four extension boards are specially designed to support the following features:
 
 * Touch panel control
     * Six touch buttons

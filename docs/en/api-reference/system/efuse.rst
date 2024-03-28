@@ -45,7 +45,7 @@ For more details, see **{IDF_TARGET_NAME} Technical Reference Manual** > **eFuse
     :SOC_EFUSE_BLOCK9_KEY_PURPOSE_QUIRK and SOC_ECDSA_SUPPORTED: * EFUSE_BLK9 (also named EFUSE_BLK_KEY5) can be used for any purpose except for flash encryption or ECDSA (due to a HW bug);
     :SOC_EFUSE_BLOCK9_KEY_PURPOSE_QUIRK and not SOC_ECDSA_SUPPORTED: * EFUSE_BLK9 (also named EFUSE_BLK_KEY5) can be used for any purpose except for flash encryption (due to a HW bug);
     :not SOC_EFUSE_BLOCK9_KEY_PURPOSE_QUIRK: * EFUSE_BLK9 (also named EFUSE_BLK_KEY5) can be used as key (for secure_boot or flash_encryption) or for user purposes;
-    * EFUSE_BLK10 (also named EFUSE_BLK_SYS_DATA_PART2) is reseved for system purposes.
+    * EFUSE_BLK10 (also named EFUSE_BLK_SYS_DATA_PART2) is reserved for system purposes.
 
 .. only:: esp32c2
 
@@ -163,9 +163,9 @@ Solution: Describe ``SERIAL_NUMBER`` to be included in ``USER_DATA``. (``USER_DA
 
 .. code-block:: none
 
-    Field at FEILD, EFUSE_BLK3, 0, 50  out of range  FEILD.MAJOR_NUMBER, EFUSE_BLK3, 60, 32
+    Field at FIELD, EFUSE_BLK3, 0, 50  out of range  FIELD.MAJOR_NUMBER, EFUSE_BLK3, 60, 32
 
-Solution: Change ``bit_start`` for ``FIELD.MAJOR_NUMBER`` from 60 to 0, so ``MAJOR_NUMBER`` is in the ``FEILD`` range.
+Solution: Change ``bit_start`` for ``FIELD.MAJOR_NUMBER`` from 60 to 0, so ``MAJOR_NUMBER`` is in the ``FIELD`` range.
 
 ``efuse_table_gen.py`` Tool
 ---------------------------
@@ -216,7 +216,7 @@ Supported Coding Scheme
     * ``Repeat`` (value 2).
 
     The coding scheme affects only EFUSE_BLK1, EFUSE_BLK2 and EFUSE_BLK3 blocks. EUSE_BLK0 block always has a coding scheme ``None``.
-    Coding changes the number of bits that can be written into a block, the block length is constant 256, some of these bits are used for encoding and not avaliable for the user.
+    Coding changes the number of bits that can be written into a block, the block length is constant 256, some of these bits are used for encoding and not available for the user.
 
     When using a coding scheme, the length of the payload that can be written is limited (for more details ``20.3.1.3 System Parameter coding_scheme``):
 

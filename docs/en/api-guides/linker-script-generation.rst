@@ -555,7 +555,7 @@ The example below is an excerpt from a possible linker script template. It defin
 
         .iram0.text :
         {
-            /* Code marked as runnning out of IRAM */
+            /* Code marked as running out of IRAM */
             _iram_text_start = ABSOLUTE(.);
 
             /* Markers referencing iram0_text */
@@ -571,7 +571,7 @@ The example below is an excerpt from a possible linker script template. It defin
 
         .iram0.text :
         {
-            /* Code marked as runnning out of IRAM */
+            /* Code marked as running out of IRAM */
             _iram_text_start = ABSOLUTE(.);
 
             /* Marker referencing iram0_text */
@@ -611,7 +611,7 @@ Then the corresponding excerpt from the generated linker script will be as follo
 
     .iram0.text :
     {
-        /* Code marked as runnning out of IRAM */
+        /* Code marked as running out of IRAM */
         _iram_text_start = ABSOLUTE(.);
 
         /* Placement rules generated from the processed fragments, placed where the marker was in the template */
