@@ -85,9 +85,6 @@ if(CONFIG_BT_ENABLED)
             list(APPEND srcs "controller/esp32c3/bt.c")
 
         elseif(CONFIG_IDF_TARGET_ESP32C2)
-            list(APPEND srcs "controller/esp32c2/bt.c")
-
-        elseif(CONFIG_IDF_TARGET_ESP32C2)
             set(ldfragments "linker.lf.esp32c2")
             list(APPEND srcs "controller/esp32c2/bt.c")
 
