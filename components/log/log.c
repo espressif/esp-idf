@@ -21,11 +21,6 @@
  * After that, bubble-down operation is performed to fix ordering in the
  * min-heap.
  *
- * The potential problem with wrap-around of cache generation counter is
- * ignored for now. This will happen if someone happens to output more
- * than 4 billion log entries, at which point wrap-around will not be
- * the biggest problem.
- *
  */
 
 #include <stdbool.h>
@@ -49,11 +44,12 @@
 
 // Number of tags to be cached. Must be 2**n - 1, n >= 2.
 #define TAG_CACHE_SIZE 31
+#define MAX_GENERATION ((1 << 29) - 1)
 
 typedef struct {
     const char *tag;
     uint32_t level : 3;
-    uint32_t generation : 29;
+    uint32_t generation : 29; // this size should be the same in MAX_GENERATION
 } cached_tag_entry_t;
 
 typedef struct uncached_tag_entry_ {
@@ -84,6 +80,7 @@ static void heap_bubble_down(int index);
 static inline void heap_swap(int i, int j);
 static inline bool should_output(esp_log_level_t level_for_message, esp_log_level_t level_for_tag);
 static inline void clear_log_level_list(void);
+static void fix_cache_generation_overflow(void);
 
 vprintf_like_t esp_log_set_vprintf(vprintf_like_t func)
 {
@@ -253,6 +250,10 @@ static inline bool get_cached_log_level(const char *tag, esp_log_level_t *level)
         s_log_cache[i].generation = s_log_cache_max_generation++;
         // Restore heap ordering
         heap_bubble_down(i);
+        // Check for generation count wrap and fix if necessary
+        if (s_log_cache_max_generation == MAX_GENERATION) {
+            fix_cache_generation_overflow();
+        }
     }
     return true;
 }
@@ -270,18 +271,30 @@ static inline void add_to_cache(const char *tag, esp_log_level_t level)
             .tag = tag
         };
         ++s_log_cache_entry_count;
-        return;
+    } else {
+        // Cache is full, so we replace the oldest entry (which is at index 0
+        // because this is a min-heap) with the new one, and do bubble-down
+        // operation to restore min-heap ordering.
+        s_log_cache[0] = (cached_tag_entry_t) {
+            .tag = tag,
+            .level = level,
+            .generation = generation
+        };
+        heap_bubble_down(0);
     }
+    // Check for generation count wrap and fix if necessary
+    if (s_log_cache_max_generation == MAX_GENERATION) {
+        fix_cache_generation_overflow();
+    }
+}
 
-    // Cache is full, so we replace the oldest entry (which is at index 0
-    // because this is a min-heap) with the new one, and do bubble-down
-    // operation to restore min-heap ordering.
-    s_log_cache[0] = (cached_tag_entry_t) {
-        .tag = tag,
-        .level = level,
-        .generation = generation
-    };
-    heap_bubble_down(0);
+static void fix_cache_generation_overflow(void)
+{
+    // Fix generation count wrap
+    for (uint32_t i = 0; i < s_log_cache_entry_count; ++i) {
+        s_log_cache[i].generation = i;
+    }
+    s_log_cache_max_generation = s_log_cache_entry_count;
 }
 
 static inline bool get_uncached_log_level(const char *tag, esp_log_level_t *level)
