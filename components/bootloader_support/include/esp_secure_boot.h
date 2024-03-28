@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -292,7 +292,7 @@ void esp_secure_boot_init_checks(void);
  * @return
  *  - ESP_OK - At least one signature was found
  *  - ESP_ERR_NOT_FOUND - No signatures were found, num_digests value will be zero
- *  - ESP_FAIL - An error occured trying to read the signature blocks from flash
+ *  - ESP_FAIL - An error occurred trying to read the signature blocks from flash
  */
 esp_err_t esp_secure_boot_get_signature_blocks_for_running_app(bool digest_public_keys, esp_image_sig_public_key_digests_t *public_key_digests);
 
@@ -300,6 +300,11 @@ esp_err_t esp_secure_boot_get_signature_blocks_for_running_app(bool digest_publi
 
 /** @brief Set all secure eFuse features related to secure_boot
  *
+ *  @note
+ *      This API needs to be called in the eFuse batch mode.
+ *      i.e. A call to esp_efuse_batch_write_begin() should be made prior to calling this API to start the batch mode
+ *      After the API has been executed a call to esp_efuse_batch_write_commit()/esp_efuse_batch_write_cancel()
+ *      should be made accordingly.
  * @return
  *  - ESP_OK - Successfully
  */
