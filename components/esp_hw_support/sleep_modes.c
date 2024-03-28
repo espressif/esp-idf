@@ -542,7 +542,9 @@ FORCE_INLINE_ATTR bool light_sleep_uart_prepare(uint32_t pd_flags, int64_t sleep
         } else {
             /* Only flush the uart_num configured to console, the transmission integrity of
                other uarts is guaranteed by the UART driver */
-            esp_rom_output_tx_wait_idle(CONFIG_ESP_CONSOLE_ROM_SERIAL_PORT_NUM);
+            if (CONFIG_ESP_CONSOLE_ROM_SERIAL_PORT_NUM != -1) {
+                esp_rom_output_tx_wait_idle(CONFIG_ESP_CONSOLE_ROM_SERIAL_PORT_NUM);
+            }
         }
     } else {
         suspend_uarts();

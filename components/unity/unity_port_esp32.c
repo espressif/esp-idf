@@ -26,7 +26,9 @@ void unity_putc(int c)
 
 void unity_flush(void)
 {
-    esp_rom_output_tx_wait_idle(CONFIG_ESP_CONSOLE_ROM_SERIAL_PORT_NUM);
+    if(CONFIG_ESP_CONSOLE_ROM_SERIAL_PORT_NUM != -1) {
+        esp_rom_output_tx_wait_idle(CONFIG_ESP_CONSOLE_ROM_SERIAL_PORT_NUM);
+    }
 }
 
 #define iscontrol(c) ((c) <= '\x1f' || (c) == '\x7f')
