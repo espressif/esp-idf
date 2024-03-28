@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -23,7 +23,11 @@ extern "C" {
  * @brief Structure holding PHY init parameters
  */
 typedef struct {
-	uint8_t params[128];                    /*!< opaque PHY initialization parameters */
+#if CONFIG_IDF_TARGET_ESP32C5
+    uint8_t params[256];                    /*!< opaque PHY initialization parameters */
+#else
+    uint8_t params[128];                    /*!< opaque PHY initialization parameters */
+#endif
 } esp_phy_init_data_t;
 
 /**
@@ -181,7 +185,7 @@ void esp_btbb_enable(void);
 /**
  * @brief Disable BTBB module
  *
- * Dsiable BTBB module, used by IEEE802154 or Bluetooth.
+ * Disable BTBB module, used by IEEE802154 or Bluetooth.
  * Users should not call this API in their application.
  *
  */
