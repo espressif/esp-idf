@@ -9,7 +9,7 @@
 #include "soc/pmu_reg.h"
 #include "soc/regi2c_saradc.h"
 #include "soc/hp_sys_clkrst_reg.h"
-#include "soc/rtcadc_reg.h"
+#include "soc/lp_adc_reg.h"
 #include "esp_private/regi2c_ctrl.h"
 #include "esp_rom_regi2c.h"
 
