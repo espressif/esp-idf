@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -125,10 +125,17 @@ esp_err_t adc_oneshot_new_unit(const adc_oneshot_unit_init_cfg_t *init_config, a
     _lock_release(&s_ctx.mutex);
 #endif
 
+//TODO: refactor clock enable/reset functions, add adc_digi_clk_enable/reset and adc_rtc_clk_enable/reset
+#if CONFIG_IDF_TARGET_ESP32P4
+    adc_ll_rtc_reset();
+#endif
+
     if (init_config->ulp_mode == ADC_ULP_MODE_DISABLE) {
         sar_periph_ctrl_adc_oneshot_power_acquire();
     } else {
+#if !CONFIG_IDF_TARGET_ESP32P4 // # TODO: IDF-7528, IDF-7529
         esp_sleep_enable_adc_tsens_monitor(true);
+#endif
     }
 
     ESP_LOGD(TAG, "new adc unit%"PRId32" is created", unit->unit_id);
@@ -229,7 +236,9 @@ esp_err_t adc_oneshot_del_unit(adc_oneshot_unit_handle_t handle)
     if (ulp_mode == ADC_ULP_MODE_DISABLE) {
         sar_periph_ctrl_adc_oneshot_power_release();
     } else {
+#if !CONFIG_IDF_TARGET_ESP32P4 // # TODO: IDF-7528, IDF-7529
         esp_sleep_enable_adc_tsens_monitor(false);
+#endif
     }
 
 #if SOC_ADC_DIG_CTRL_SUPPORTED && !SOC_ADC_RTC_CTRL_SUPPORTED
@@ -262,7 +271,7 @@ static esp_err_t s_adc_io_init(adc_unit_t unit, adc_channel_t channel)
 {
     ESP_RETURN_ON_FALSE(channel < SOC_ADC_CHANNEL_NUM(unit), ESP_ERR_INVALID_ARG, TAG, "invalid channel");
 
-#if SOC_ADC_DIG_CTRL_SUPPORTED && !SOC_ADC_RTC_CTRL_SUPPORTED
+#if !ADC_LL_RTC_GPIO_SUPPORTED
 
     uint32_t io_num = ADC_GET_IO_NUM(unit, channel);
     gpio_config_t cfg = {

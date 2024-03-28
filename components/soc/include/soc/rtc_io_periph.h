@@ -9,12 +9,13 @@
 #include <stdint.h>
 //include soc related (generated) definitions
 #include "soc/soc_caps.h"
+#include "sdkconfig.h"
 
 #if SOC_RTCIO_PIN_COUNT > 0
 #include "soc/rtc_io_channel.h"
 #endif
 
-#if SOC_ADC_RTC_CTRL_SUPPORTED
+#if SOC_ADC_RTC_CTRL_SUPPORTED && !CONFIG_IDF_TARGET_ESP32P4
 #include "soc/sens_struct.h"
 #endif
 

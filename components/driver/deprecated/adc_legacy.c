@@ -70,7 +70,7 @@ extern portMUX_TYPE rtc_spinlock; //TODO: Will be placed in the appropriate posi
 #define FSM_ENTER()             RTC_ENTER_CRITICAL()
 #define FSM_EXIT()              RTC_EXIT_CRITICAL()
 
-#if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
+#if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32P4
 //prevent ADC1 being used by I2S dma and other tasks at the same time.
 static _lock_t adc1_dma_lock;
 #define SARADC1_ACQUIRE() _lock_acquire( &adc1_dma_lock )
@@ -172,7 +172,7 @@ static void adc_rtc_chan_init(adc_unit_t adc_unit)
 esp_err_t adc_common_gpio_init(adc_unit_t adc_unit, adc_channel_t channel)
 {
     ESP_RETURN_ON_FALSE(channel < SOC_ADC_CHANNEL_NUM(adc_unit), ESP_ERR_INVALID_ARG, ADC_TAG, "invalid channel");
-
+#if ADC_LL_RTC_GPIO_SUPPORTED
     gpio_num_t gpio_num = 0;
     //If called with `ADC_UNIT_BOTH (ADC_UNIT_1 | ADC_UNIT_2)`, both if blocks will be run
     if (adc_unit == ADC_UNIT_1) {
@@ -188,7 +188,7 @@ esp_err_t adc_common_gpio_init(adc_unit_t adc_unit, adc_channel_t channel)
     ESP_RETURN_ON_ERROR(rtc_gpio_set_direction(gpio_num, RTC_GPIO_MODE_DISABLED), ADC_TAG, "rtc_gpio_set_direction fail");
     ESP_RETURN_ON_ERROR(rtc_gpio_pulldown_dis(gpio_num), ADC_TAG, "rtc_gpio_pulldown_dis fail");
     ESP_RETURN_ON_ERROR(rtc_gpio_pullup_dis(gpio_num), ADC_TAG, "rtc_gpio_pullup_dis fail");
-
+#endif
     return ESP_OK;
 }
 

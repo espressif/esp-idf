@@ -31,6 +31,7 @@ extern "C" {
 #define ADC_LL_DATA_INVERT_DEFAULT(PERIPH_NUM)         (1)
 #define ADC_LL_SAR_CLK_DIV_DEFAULT(PERIPH_NUM)         (1)
 #define ADC_LL_DELAY_CYCLE_AFTER_DONE_SIGNAL           (0)
+#define ADC_LL_RTC_GPIO_SUPPORTED                      (1)
 
 /*---------------------------------------------------------------
                     DMA
@@ -229,7 +230,7 @@ static inline void adc_ll_digi_set_pattern_table_len(adc_unit_t adc_n, uint32_t 
 }
 
 /**
- * Set pattern table lenth for digital controller.
+ * Set pattern table length for digital controller.
  * The pattern table that defines the conversion rules for each SAR ADC. Each table has 16 items, in which channel selection,
  * resolution and attenuation are stored. When the conversion is started, the controller reads conversion rules from the
  * pattern table one by one. For each controller the scan sequence has at most 16 different rules before repeating itself.
