@@ -61,8 +61,23 @@ static const uint8_t s_midi_cfg_desc[] = {
     TUD_CONFIG_DESCRIPTOR(1, ITF_COUNT, 0, TUSB_DESCRIPTOR_TOTAL_LEN, 0, 100),
 
     // Interface number, string index, EP Out & EP In address, EP size
-    TUD_MIDI_DESCRIPTOR(ITF_NUM_MIDI, 4, EPNUM_MIDI, (0x80 | EPNUM_MIDI), TUD_OPT_HIGH_SPEED ? 512 : 64),
+    TUD_MIDI_DESCRIPTOR(ITF_NUM_MIDI, 4, EPNUM_MIDI, (0x80 | EPNUM_MIDI), 64),
 };
+
+#if (TUD_OPT_HIGH_SPEED)
+/**
+ * @brief High Speed configuration descriptor
+ *
+ * This is a simple configuration descriptor that defines 1 configuration and a MIDI interface
+ */
+static const uint8_t s_midi_hs_cfg_desc[] = {
+    // Configuration number, interface count, string index, total length, attribute, power in mA
+    TUD_CONFIG_DESCRIPTOR(1, ITF_COUNT, 0, TUSB_DESCRIPTOR_TOTAL_LEN, 0, 100),
+
+    // Interface number, string index, EP Out & EP In address, EP size
+    TUD_MIDI_DESCRIPTOR(ITF_NUM_MIDI, 4, EPNUM_MIDI, (0x80 | EPNUM_MIDI), 512),
+};
+#endif // TUD_OPT_HIGH_SPEED
 
 static void midi_task_read_example(void *arg)
 {
@@ -139,7 +154,13 @@ void app_main(void)
         .string_descriptor = s_str_desc,
         .string_descriptor_count = sizeof(s_str_desc) / sizeof(s_str_desc[0]),
         .external_phy = false,
+#if (TUD_OPT_HIGH_SPEED)
+        .fs_configuration_descriptor = s_midi_cfg_desc, // HID configuration descriptor for full-speed and high-speed are the same
+        .hs_configuration_descriptor = s_midi_hs_cfg_desc,
+        .qualifier_descriptor = NULL,
+#else
         .configuration_descriptor = s_midi_cfg_desc,
+#endif // TUD_OPT_HIGH_SPEED
     };
     ESP_ERROR_CHECK(tinyusb_driver_install(&tusb_cfg));
 
@@ -158,7 +179,7 @@ void app_main(void)
     ESP_ERROR_CHECK(esp_timer_create(&periodic_midi_args, &periodic_midi_timer));
     ESP_ERROR_CHECK(esp_timer_start_periodic(periodic_midi_timer, tempo * 1000));
 
-    // Read recieved MIDI packets
+    // Read received MIDI packets
     ESP_LOGI(TAG, "MIDI read task init");
     xTaskCreate(midi_task_read_example, "midi_task_read_example", 2 * 1024, NULL, 5, NULL);
 }
