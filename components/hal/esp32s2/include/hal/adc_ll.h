@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -22,6 +22,8 @@
 #include "soc/clk_tree_defs.h"
 #include "hal/regi2c_ctrl.h"
 #include "soc/regi2c_saradc.h"
+#include "soc/system_reg.h"
+#include "soc/dport_reg.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -918,6 +920,32 @@ static inline void adc_oneshot_ll_disable_all_unit(void)
 /*---------------------------------------------------------------
                     Common setting
 ---------------------------------------------------------------*/
+
+/**
+ * @brief Enable the ADC clock
+ * @param enable true to enable, false to disable
+ */
+static inline void adc_ll_enable_bus_clock(bool enable)
+{
+    uint32_t reg_val = READ_PERI_REG(DPORT_PERIP_CLK_EN0_REG);
+    reg_val = reg_val & (~DPORT_APB_SARADC_CLK_EN);
+    reg_val = reg_val | (enable << DPORT_APB_SARADC_CLK_EN_S);
+    WRITE_PERI_REG(DPORT_PERIP_CLK_EN0_REG, reg_val);
+}
+// SYSTEM.perip_clk_en0 is a shared register, so this function must be used in an atomic way
+#define adc_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; adc_ll_enable_bus_clock(__VA_ARGS__)
+
+/**
+ * @brief Reset ADC module
+ */
+static inline void adc_ll_reset_register(void)
+{
+    DPORT_SET_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG, DPORT_APB_SARADC_RST);
+    DPORT_CLEAR_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG, DPORT_APB_SARADC_RST);
+}
+//  SYSTEM.perip_rst_en0 is a shared register, so this function must be used in an atomic way
+#define adc_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; adc_ll_reset_register(__VA_ARGS__)
+
 /**
  * Set ADC module power management.
  *
