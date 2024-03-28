@@ -65,9 +65,9 @@ typedef struct {
                                              *   it should be the multiple of `3` when the data bit width is 24.
                                              */
     union {
-        bool            auto_clear;         /*!< Alias of `auto_clear_after_cb` to be compatible with previous version */
+        bool            auto_clear;         /*!< Alias of `auto_clear_after_cb` */
         bool            auto_clear_after_cb; /*!< Set to auto clear DMA TX buffer after `on_sent` callback, I2S will always send zero automatically if no data to send.
-                                             *   So that user can assign the data to the DMA buffers directly in the callback, and the data won't be cleared after quitted the callback.
+                                             *   So that user can assign the data to the DMA buffers directly in the callback, and the data won't be cleared after quit the callback.
                                              */
     };
     bool                auto_clear_before_cb; /*!< Set to auto clear DMA TX buffer before `on_sent` callback, I2S will always send zero automatically if no data to send

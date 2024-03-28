@@ -55,3 +55,8 @@
 ATECC608A 安全元素接口示例现已移至 GitHub 上的 `esp-cryptoauthlib 仓库 <https://github.com/espressif/esp-cryptoauthlib/tree/master/examples/atecc608_ecdsa>`_ 中。
 
 该示例也是组件管理器注册表中 `esp-cryptoauthlib <https://components.espressif.com/component/espressif/esp-cryptoauthlib>`_ 的一部分。
+
+I2S
+-------
+
+回调事件 :cpp:type:`i2s_event_data_t` 中指向 DMA 数组的二级指针 ``data`` 因使用过于繁琐已被弃用，请使用新增的指向 DMA 数组的一级指针 ``dma_buf`` 字段代替。
