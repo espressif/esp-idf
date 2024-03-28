@@ -26,7 +26,6 @@
 #include "esp_private/esp_clk.h"
 #include "bootloader_clock.h"
 #include "soc/syscon_reg.h"
-#include "hal/clk_gate_ll.h"
 
 static const char *TAG = "clk";
 

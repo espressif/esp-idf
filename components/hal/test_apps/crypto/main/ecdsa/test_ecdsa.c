@@ -12,7 +12,6 @@
 #include "esp_efuse_chip.h"
 #include "esp_private/esp_crypto_lock_internal.h"
 #include "esp_random.h"
-#include "hal/clk_gate_ll.h"
 #include "hal/ecc_ll.h"
 #include "hal/ecdsa_hal.h"
 #include "hal/ecdsa_ll.h"
@@ -97,7 +96,7 @@ static void test_ecdsa_corrupt_data(bool is_p256, uint8_t* sha, uint8_t* r_le, u
         len = 24;
     }
 
-    // Randomly select a bit and corrupt its correpsonding value
+    // Randomly select a bit and corrupt its corresponding value
     uint16_t r_bit = esp_random() % len * 8;
 
     printf("Corrupting SHA bit %d...\n", r_bit);
