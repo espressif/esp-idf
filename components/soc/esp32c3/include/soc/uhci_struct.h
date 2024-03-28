@@ -215,7 +215,6 @@ typedef volatile struct uhci_dev_s {
     uint32_t date;                                     /*a*/
 } uhci_dev_t;
 extern uhci_dev_t UHCI0;
-extern uhci_dev_t UHCI1;
 #ifdef __cplusplus
 }
 #endif
