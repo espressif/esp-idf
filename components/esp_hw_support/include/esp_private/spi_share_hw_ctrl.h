@@ -9,6 +9,8 @@
 
 #include "soc/soc_caps.h"
 #include "hal/spi_types.h"
+#include "soc/spi_periph.h"
+#include "soc/gpio_struct.h"
 #include "esp_private/periph_ctrl.h"
 #include "freertos/FreeRTOS.h"
 
@@ -30,6 +32,7 @@ extern "C" {
 #define BUS_LOCK_DEBUG_EXECUTE_CHECK(x)
 #endif
 
+#define CHECK_IOMUX_PIN(HOST, PIN_NAME) if (GPIO.func_in_sel_cfg[spi_periph_signal[(HOST)].PIN_NAME##_in].sig_in_sel) return false
 
 struct spi_bus_lock_t;
 struct spi_bus_lock_dev_t;

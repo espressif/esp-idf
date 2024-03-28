@@ -51,7 +51,7 @@ esp_err_t esp_efuse_rtc_calib_get_tsens_val(float* tsens_cal)
 {
     // TODO: [ESP32C61] IDF-9303
     abort();
-    // Currently calibration is not supported on ESP32-C5, IDF-5236
+    // Currently calibration is not supported on ESP32-C61
     *tsens_cal = 0;
     return ESP_OK;
 }

@@ -9,14 +9,16 @@ set(srcs "")
 set(public_include "include")
 
 if(CONFIG_SOC_GPSPI_SUPPORTED)
-    list(APPEND srcs "src/gpspi/spi_common.c"
-                     "src/gpspi/spi_master.c"
-                     "src/gpspi/spi_slave.c"
-                     "src/gpspi/spi_dma.c")
-endif()
+    list(APPEND srcs
+        "src/gpspi/spi_common.c"
+        "src/gpspi/spi_master.c"
+        "src/gpspi/spi_slave.c"
+        "src/gpspi/spi_dma.c"
+    )
 
-if(CONFIG_SOC_SPI_SUPPORT_SLAVE_HD_VER2)
-    list(APPEND srcs "src/gpspi/spi_slave_hd.c")
+    if(CONFIG_SOC_SPI_SUPPORT_SLAVE_HD_VER2)
+        list(APPEND srcs "src/gpspi/spi_slave_hd.c")
+    endif()
 endif()
 
 idf_component_register(SRCS ${srcs}
