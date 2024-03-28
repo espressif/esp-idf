@@ -34,6 +34,11 @@ static void configure_ecdsa_periph(ecdsa_hal_config_t *conf)
     }
 }
 
+bool ecdsa_hal_get_operation_result(void)
+{
+    return ecdsa_ll_get_operation_result();
+}
+
 void ecdsa_hal_gen_signature(ecdsa_hal_config_t *conf, const uint8_t *hash,
                             uint8_t *r_out, uint8_t *s_out, uint16_t len)
 {
@@ -106,7 +111,7 @@ int ecdsa_hal_verify_signature(ecdsa_hal_config_t *conf, const uint8_t *hash, co
         ;
     }
 
-    int res = ecdsa_ll_get_verification_result();
+    bool res = ecdsa_hal_get_operation_result();
 
     return (res ? 0 : -1);
 }

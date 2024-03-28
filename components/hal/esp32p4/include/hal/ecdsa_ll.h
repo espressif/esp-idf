@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -375,14 +375,12 @@ static inline void ecdsa_ll_read_param(ecdsa_ll_param_t param, uint8_t *buf, uin
 }
 
 /**
- * @brief Get result of ECDSA verification operation
+ * @brief Check if the ECDSA operation is successful
  *
- *        This is only valid for ECDSA verify mode
- *
- * @return - 1, if signature verification succeeds
+ * @return - 1, if ECDSA operation succeeds
  *         - 0, otherwise
  */
-static inline int ecdsa_ll_get_verification_result(void)
+static inline int ecdsa_ll_get_operation_result(void)
 {
     return REG_GET_BIT(ECDSA_RESULT_REG, ECDSA_OPERATION_RESULT);
 }
