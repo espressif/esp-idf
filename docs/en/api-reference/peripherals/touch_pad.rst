@@ -157,7 +157,7 @@ Method of Measurements
 
     .. note::
 
-        If the specified clock cycles for measurement is too samll, the result may be inaccurate, but increasing clock cycles will increase the power consumption as well. Additionally, the response of the touch sensor will slow down if the total time of the inverval and measurement is too long.
+        If the specified clock cycles for measurement is too small, the result may be inaccurate, but increasing clock cycles will increase the power consumption as well. Additionally, the response of the touch sensor will slow down if the total time of the interval and measurement is too long.
 
 .. only:: esp32s2 or esp32s3
 
@@ -165,7 +165,7 @@ Method of Measurements
 
     .. note::
 
-        If the specified charge and discharge cycles for measurement is too samll, the result may be inaccurate, but increasing charge and discharge cycles will increase the power consumption as well. Additionally, the response of the touch sensor will slow down if the total time of the inverval and measurement is too long.
+        If the specified charge and discharge cycles for measurement is too small, the result may be inaccurate, but increasing charge and discharge cycles will increase the power consumption as well. Additionally, the response of the touch sensor will slow down if the total time of the interval and measurement is too long.
 
 Optimization of Measurements
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -239,7 +239,7 @@ Filtering of Measurements
 
     There is an internal touch channel that is not connected to any external GPIO. The measurements from this denoise pad can be used to filters out interference introduced on all channels, such as noise introduced by the power supply and external EMI.
 
-    The denoise paramaters are set with the function :cpp:func:`touch_pad_denoise_set_config` and started by with :cpp:func:`touch_pad_denoise_enable`
+    The denoise parameters are set with the function :cpp:func:`touch_pad_denoise_set_config` and started by with :cpp:func:`touch_pad_denoise_enable`
 
     There is also a configurable hardware implemented IIR-filter (infinite impulse response). This IIR-filter is configured with the function :cpp:func:`touch_pad_filter_set_config` and enabled by calling :cpp:func:`touch_pad_filter_enable`
 

@@ -159,7 +159,7 @@ The flash encryption operation is controlled by various eFuses available on {IDF
 .. note::
 
   * R/W access control is available for all the eFuse bits listed in the table above.
-  * The default value of these bits is 0 afer manufacturing.
+  * The default value of these bits is 0 after manufacturing.
 
 Read and write access to eFuse bits is controlled by appropriate fields in the registers ``WR_DIS`` and ``RD_DIS``. For more information on {IDF_TARGET_NAME} eFuses, see :doc:`eFuse manager <../api-reference/system/efuse>`. To change protection bits of eFuse field using espefuse.py, use these two commands: read_protect_efuse and write_protect_efuse. Example ``espefuse.py write_protect_efuse DISABLE_DL_ENCRYPT``.
 
@@ -180,7 +180,7 @@ Assuming that the eFuse values are in their default states and the firmware boot
 
   2. Firmware bootloader reads the ``{IDF_TARGET_CRYPT_CNT}`` eFuse value (``0b0000000``). Since the value is ``0`` (even number of bits set), it configures and enables the flash encryption block. It also sets the ``FLASH_CRYPT_CONFIG`` eFuse to 0xF. For more information on the flash encryption block, see *{IDF_TARGET_NAME} Technical Reference Manual* > *eFuse Controller (eFuse)* > *Flash Encryption Block* [`PDF <{IDF_TARGET_TRM_EN_URL}#efuse>`__].
 
-  3. Fimware bootloader first checks if a valid key is already present in the eFuse (e.g., burned using espefuse tool), then the process of key generation is skipped and the same key is used for flash encryption process. Otherwise, Firmware bootloader uses RNG (random) module to generate an AES-256 bit key and then writes it into the ``flash_encryption`` eFuse. The key cannot be accessed via software as the write and read protection bits for the ``flash_encryption`` eFuse are set. The flash encryption operations happen entirely by hardware, and the key cannot be accessed via software.
+  3. Firmware bootloader first checks if a valid key is already present in the eFuse (e.g., burned using espefuse tool), then the process of key generation is skipped and the same key is used for flash encryption process. Otherwise, Firmware bootloader uses RNG (random) module to generate an AES-256 bit key and then writes it into the ``flash_encryption`` eFuse. The key cannot be accessed via software as the write and read protection bits for the ``flash_encryption`` eFuse are set. The flash encryption operations happen entirely by hardware, and the key cannot be accessed via software.
 
   4. Flash encryption block encrypts the flash contents - the firmware bootloader, applications and partitions marked as ``encrypted``. Encrypting in-place can take time, up to a minute for large partitions.
 
@@ -1052,7 +1052,7 @@ The following sections provide some reference information about the operation of
     - If the ``CODING_SCHEME`` eFuse is set to ``0`` (default, "None" Coding Scheme) then the eFuse key block is 256 bits and the key is stored as-is (in reversed byte order).
     - If the ``CODING_SCHEME`` eFuse is set to ``1`` (3/4 Encoding) then the eFuse key block is 192 bits (in reversed byte order), so overall entropy is reduced. The hardware flash encryption still operates on a 256-bit key, after being read (and un-reversed), the key is extended as ``key = key[0:255] + key[64:127]``.
 
-  - AES algorithm is used inverted in flash encryption, so the flash encryption "encrypt" operation is AES decrypt and the "decrypt" operation is AES encrypt. This is for performance reasons and does not alter the effeciency of the algorithm.
+  - AES algorithm is used inverted in flash encryption, so the flash encryption "encrypt" operation is AES decrypt and the "decrypt" operation is AES encrypt. This is for performance reasons and does not alter the efficiency of the algorithm.
 
   - Each 32-byte block (two adjacent 16-byte AES blocks) is encrypted with a unique key. The key is derived from the main flash encryption key in ``flash_encryption``, XORed with the offset of this block in the flash (a "key tweak").
 
@@ -1094,9 +1094,9 @@ The following sections provide some reference information about the operation of
   Flash Encryption Algorithm
   ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-  - {IDF_TARGET_NAME} use the XTS-AES block chiper mode with 256 bit size for flash encryption.
+  - {IDF_TARGET_NAME} use the XTS-AES block cipher mode with 256 bit size for flash encryption.
 
-  - XTS-AES is a block chiper mode specifically designed for disc encryption and addresses the weaknesses other potential modes (e.g., AES-CTR) have for this use case. A detailed description of the XTS-AES algorithm can be found in `IEEE Std 1619-2007 <https://ieeexplore.ieee.org/document/4493450>`_.
+  - XTS-AES is a block cipher mode specifically designed for disc encryption and addresses the weaknesses other potential modes (e.g., AES-CTR) have for this use case. A detailed description of the XTS-AES algorithm can be found in `IEEE Std 1619-2007 <https://ieeexplore.ieee.org/document/4493450>`_.
 
   - The flash encryption key is stored in one ``BLOCK_KEYN`` eFuse and, by default, is protected from further writes or software readout.
 
@@ -1109,9 +1109,9 @@ The following sections provide some reference information about the operation of
   Flash Encryption Algorithm
   ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-  - {IDF_TARGET_NAME} use the XTS-AES block chiper mode with 256 bit size for flash encryption. In case the 128-bit key is stored in the eFuse key block, the final 256-bit AES key is obtained as SHA256(EFUSE_KEY0_FE_128BIT).
+  - {IDF_TARGET_NAME} use the XTS-AES block cipher mode with 256 bit size for flash encryption. In case the 128-bit key is stored in the eFuse key block, the final 256-bit AES key is obtained as SHA256(EFUSE_KEY0_FE_128BIT).
 
-  - XTS-AES is a block chiper mode specifically designed for disc encryption and addresses the weaknesses other potential modes (e.g., AES-CTR) have for this use case. A detailed description of the XTS-AES algorithm can be found in `IEEE Std 1619-2007 <https://ieeexplore.ieee.org/document/4493450>`_.
+  - XTS-AES is a block cipher mode specifically designed for disc encryption and addresses the weaknesses other potential modes (e.g., AES-CTR) have for this use case. A detailed description of the XTS-AES algorithm can be found in `IEEE Std 1619-2007 <https://ieeexplore.ieee.org/document/4493450>`_.
 
   - The flash encryption key is stored in ``BLOCK_KEY0`` eFuse and, by default, is protected from further writes or software readout.
 

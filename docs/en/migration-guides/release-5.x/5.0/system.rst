@@ -28,7 +28,7 @@ The Cache Error Interrupt API (functions/types/macros prefixed with ``esp_cache_
 ----------------------
 
 * The function ``bootloader_common_get_reset_reason()`` has been removed. Please use the function ``esp_rom_get_reset_reason()`` in the ROM component.
-* The functions ``esp_secure_boot_verify_sbv2_signature_block()`` and ``esp_secure_boot_verify_rsa_signature_block()`` have been removed without replacement. We do not expect users to use these directly. If they are indeed still neccessary, please open a feature request on `GitHub <https://github.com/espressif/esp-idf/issues/new/choose>`_ explaining why these functions are necessary to you.
+* The functions ``esp_secure_boot_verify_sbv2_signature_block()`` and ``esp_secure_boot_verify_rsa_signature_block()`` have been removed without replacement. We do not expect users to use these directly. If they are indeed still necessary, please open a feature request on `GitHub <https://github.com/espressif/esp-idf/issues/new/choose>`_ explaining why these functions are necessary to you.
 
 Brownout
 --------
@@ -125,7 +125,7 @@ FreeRTOS
 Legacy API and Data Types
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Previously, the ``configENABLE_BACKWARD_COMPATIBILITY`` option was set by default, thus allowing pre FreeRTOS v8.0.0 function names and data types to be used. The ``configENABLE_BACKWARD_COMPATIBILITY`` is now disabled by default, thus legacy FreeRTOS names/types are no longer supportd by default. Users should do one of the followings:
+Previously, the ``configENABLE_BACKWARD_COMPATIBILITY`` option was set by default, thus allowing pre FreeRTOS v8.0.0 function names and data types to be used. The ``configENABLE_BACKWARD_COMPATIBILITY`` is now disabled by default, thus legacy FreeRTOS names/types are no longer supported by default. Users should do one of the following:
 
 - Update their code to remove usage of legacy FreeRTOS names/types.
 - Enable the :ref:`CONFIG_FREERTOS_ENABLE_BACKWARD_COMPATIBILITY` to explicitly allow the usage of legacy names/types.

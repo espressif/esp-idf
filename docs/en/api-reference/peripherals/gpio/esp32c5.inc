@@ -162,7 +162,7 @@ The table below provides more information on pin usage, and please note the comm
 
 .. note::
 
-    - Strapping pin: GPIO2, GPIO3, GPIO6, and GPIO7 are strapping pins. For more infomation, please refer to `datasheet <{IDF_TARGET_DATASHEET_EN_URL}>`__.
+    - Strapping pin: GPIO2, GPIO3, GPIO6, and GPIO7 are strapping pins. For more information, please refer to `datasheet <{IDF_TARGET_DATASHEET_EN_URL}>`__.
 	  - SPI0/1: GPIO18-24 are usually used for SPI flash and not recommended for other uses.
 	  - USB-JTAG: GPIO 25 and 26 are used by USB-JTAG by default. In order to use them as GPIOs, USB-JTAG will be disabled by the drivers.
 

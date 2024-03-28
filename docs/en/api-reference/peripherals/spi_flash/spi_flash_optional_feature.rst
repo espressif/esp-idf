@@ -15,7 +15,7 @@ Some features are not supported on all ESP chips and Flash chips. You can check 
 
 .. note::
 
-    When Flash optional features listed in this page are used, aside from the capability of ESP chips, and ESP-IDF verison you are using, you will also need to make sure these features are supported by flash chips used.
+    When Flash optional features listed in this page are used, aside from the capability of ESP chips, and ESP-IDF version you are using, you will also need to make sure these features are supported by flash chips used.
 
     - If you are using an official Espressif modules/SiP. Some of the modules/SiPs always support the feature, in this case you can see these features listed in the datasheet. Otherwise please contact `Espressif's business team <https://www.espressif.com/en/contact-us/sales-questions>`_ to know if we can supply such products for you.
 
@@ -169,7 +169,7 @@ Restrictions
 
     By default, space over 16 MBytes on flash mentioned above can be used for ``data saving``, like file system.
 
-    Furhtermore, to map data/instructions to 32-bit physical address space (so as to be accessed by the CPU), please enable the config ``IDF_EXPERIMENTAL_FEATURES`` and ``BOOTLOADER_CACHE_32BIT_ADDR_QUAD_FLASH``.
+    Furthermore, to map data/instructions to 32-bit physical address space (so as to be accessed by the CPU), please enable the config ``IDF_EXPERIMENTAL_FEATURES`` and ``BOOTLOADER_CACHE_32BIT_ADDR_QUAD_FLASH``.
 
     Please note that, this option is experimental, which means it can not be used on all flash chips stably. For more information, please contact Espressif Business Support.
 

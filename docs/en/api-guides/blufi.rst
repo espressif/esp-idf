@@ -97,7 +97,7 @@ The frame format with no fragment:
      - 1
    * - Data
      - ${Data Length}
-   * - CheckSum (Most Siginificant Bit)
+   * - CheckSum (Most Significant Bit)
      - 2
 
 If the frag frame bit in the **Frame Control** field is enabled, there would be a 2-byte **Total Content Length** field in the **Data** field. This **Total Content Length** field indicates the length of the remaining part of the frame and also tells the remote how much memory needs to be allocated.
@@ -121,7 +121,7 @@ The frame format with fragments:
    * - Data
      - * Total Content Length: 2
        * Content: ${Data Length} - 2
-   * - CheckSum (Most Siginificant Bit)
+   * - CheckSum (Most Significant Bit)
      - 2
 
 Normally, the control frame does not contain data bits, except for ACK Frame.
@@ -144,7 +144,7 @@ The format of ACK Frame:
      - 1
    * - Data
      - Acked Sequence Number: 2
-   * - CheckSum (Most Siginificant Bit)
+   * - CheckSum (Most Significant Bit)
      - 2
 
 

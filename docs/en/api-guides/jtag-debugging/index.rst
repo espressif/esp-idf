@@ -222,7 +222,7 @@ OpenOCD flashing command ``program_esp`` has the following format:
  - ``image_file`` - Path to program image file.
  - ``offset`` - Offset in flash bank to write image.
  - ``verify`` - Optional. Verify flash contents after writing.
- - ``reset`` - Optional. Reset target after programing.
+ - ``reset`` - Optional. Reset target after programming.
  - ``exit`` - Optional. Finally exit OpenOCD.
  - ``compress`` - Optional. Compress image file before programming.
  - ``encrypt`` - Optional. Encrypt binary before writing to flash. Same functionality with ``idf.py encrypted-flash``

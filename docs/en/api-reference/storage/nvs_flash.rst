@@ -58,7 +58,7 @@ There are the following functions available:
 
 In general, all iterators obtained via :cpp:func:`nvs_entry_find` have to be released using :cpp:func:`nvs_release_iterator`, which also tolerates ``NULL`` iterators.
 
-:cpp:func:`nvs_entry_find` and :cpp:func:`nvs_entry_next` set the given iterator to ``NULL`` or a valid iterator in all cases except a parameter error occured (i.e., return ``ESP_ERR_NVS_NOT_FOUND``). In case of a parameter error, the given iterator will not be modified. Hence, it is best practice to initialize the iterator to ``NULL`` before calling :cpp:func:`nvs_entry_find` to avoid complicated error checking before releasing the iterator.
+:cpp:func:`nvs_entry_find` and :cpp:func:`nvs_entry_next` set the given iterator to ``NULL`` or a valid iterator in all cases except a parameter error occurred (i.e., return ``ESP_ERR_NVS_NOT_FOUND``). In case of a parameter error, the given iterator will not be modified. Hence, it is best practice to initialize the iterator to ``NULL`` before calling :cpp:func:`nvs_entry_find` to avoid complicated error checking before releasing the iterator.
 
 
 Security, Tampering, and Robustness
@@ -101,7 +101,7 @@ Instead of calling the ``nvs_partition_gen.py`` tool manually, the creation of t
     * - Parameter
       - Description
     * - ``partition``
-      - Name of the NVS parition
+      - Name of the NVS partition
     * - ``csv``
       - Path to CSV file to parse
 
@@ -114,12 +114,12 @@ Instead of calling the ``nvs_partition_gen.py`` tool manually, the creation of t
    * - Parameter
      - Description
    * - ``FLASH_IN_PROJECT``
-     - Name of the NVS parition
+     - Name of the NVS partition
    * - ``DEPENDS``
      - Specify files on which the command depends
 
 
-If ``FLASH_IN_PROJECT`` is not specified, the image will still be generated, but you will have to flash it manually using ``idf.py <partition>-flash`` (e.g., if your parition name is ``nvs``, then use ``idf.py nvs-flash``).
+If ``FLASH_IN_PROJECT`` is not specified, the image will still be generated, but you will have to flash it manually using ``idf.py <partition>-flash`` (e.g., if your partition name is ``nvs``, then use ``idf.py nvs-flash``).
 
 ``nvs_create_partition_image`` must be called from one of the component ``CMakeLists.txt`` files. Currently, only non-encrypted partitions are supported.
 

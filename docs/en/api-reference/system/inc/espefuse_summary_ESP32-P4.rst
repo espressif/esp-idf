@@ -31,7 +31,7 @@
                                                        eset at low level. 10: enable printing when GPIO8
                                                        is reset at high level. 11: force disable printing
     HYS_EN_PAD (BLOCK0)                                Represents whether the hysteresis function of corr = False R/W (0b0)
-                                                       esponding PAD is enabled. 1: enabled. 0:disabled
+                                                       corresponding PAD is enabled. 1: enabled. 0:disabled
     DCDC_VSET (BLOCK0)                                 Set the dcdc voltage default                       = 0 R/W (0b00000)
     PXA0_TIEH_SEL_0 (BLOCK0)                           TBD                                                = 0 R/W (0b00)
     PXA0_TIEH_SEL_1 (BLOCK0)                           TBD                                                = 0 R/W (0b00)
@@ -100,7 +100,7 @@
     SPI_DOWNLOAD_MSPI_DIS (BLOCK0)                     Set this bit to disable accessing MSPI flash/MSPI  = False R/W (0b0)
                                                        ram by SYS AXI matrix during boot_mode_download
     DIS_DOWNLOAD_MANUAL_ENCRYPT (BLOCK0)               Represents whether flash encrypt function is disab = False R/W (0b0)
-                                                       led or enabled(except in SPI boot mode). 1: disabl
+                                                       led or enabled(except in SPI boot mode). 1: disable
                                                        ed. 0: enabled
     FORCE_USE_KEY_MANAGER_KEY (BLOCK0)                 Set each bit to control whether corresponding key  = 0 R/W (0x0)
                                                        must come from key manager.. 1 is true; 0 is false
@@ -139,7 +139,7 @@
     SECURE_VERSION (BLOCK0)                            Represents the version used by ESP-IDF anti-rollba = 0 R/W (0x0000)
                                                        ck feature
     SECURE_BOOT_DISABLE_FAST_WAKE (BLOCK0)             Represents whether FAST VERIFY ON WAKE is disabled = False R/W (0b0)
-                                                        or enabled when Secure Boot is enabled. 1: disabl
+                                                        or enabled when Secure Boot is enabled. 1: disable
                                                        ed. 0: enabled
     BLOCK_KEY0 (BLOCK4)
       Purpose: USER

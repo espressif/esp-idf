@@ -78,7 +78,7 @@ When transmitting packets, the assigned source MAC address must be written into 
 Type/Length
 ^^^^^^^^^^^^^
 
-The type/length field is a 2-byte field. If the value in this field is <= 1500 (decimal), it is considered a length field and it specifies the amount of non-padding data which follows in the data field. If the value is >= 1536, it represents the protocol the following packet data belongs to. The followings are the most common type values:
+The type/length field is a 2-byte field. If the value in this field is <= 1500 (decimal), it is considered a length field and it specifies the amount of non-padding data which follows in the data field. If the value is >= 1536, it represents the protocol the following packet data belongs to. The following are the most common type values:
 
   * IPv4 = 0800H
   * IPv6 = 86DDH

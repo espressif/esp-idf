@@ -420,7 +420,7 @@ A bytes encoder is created by calling :cpp:func:`rmt_new_bytes_encoder`. The byt
 A configuration structure :cpp:type:`rmt_bytes_encoder_config_t` should be provided in advance before calling :cpp:func:`rmt_new_bytes_encoder`:
 
 - :cpp:member:`rmt_bytes_encoder_config_t::bit0` and :cpp:member:`rmt_bytes_encoder_config_t::bit1` are necessary to specify the encoder how to represent bit zero and bit one in the format of :cpp:type:`rmt_symbol_word_t`.
-- :cpp:member:`rmt_bytes_encoder_config_t::msb_first` sets the bit endianess of each byte. If it is set to true, the encoder encodes the **Most Significant Bit** first. Otherwise, it encodes the **Least Significant Bit** first.
+- :cpp:member:`rmt_bytes_encoder_config_t::msb_first` sets the bit endianness of each byte. If it is set to true, the encoder encodes the **Most Significant Bit** first. Otherwise, it encodes the **Least Significant Bit** first.
 
 Besides the primitive encoders provided by the driver, the user can implement his own encoder by chaining the existing encoders together. A common encoder chain is shown as follows:
 

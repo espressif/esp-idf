@@ -65,7 +65,7 @@ Error message will typically look like this::
 
 .. note:: If :doc:`ESP-IDF monitor <tools/idf-monitor>` is used, addresses in the backtrace will be converted to file names and line numbers.
 
-- The first line mentions the error code as a hexadecimal value, and the identifier used for this error in source code. The latter depends on :ref:`CONFIG_ESP_ERR_TO_NAME_LOOKUP` option being set. Address in the program where error has occured is printed as well.
+- The first line mentions the error code as a hexadecimal value, and the identifier used for this error in source code. The latter depends on :ref:`CONFIG_ESP_ERR_TO_NAME_LOOKUP` option being set. Address in the program where error has occurred is printed as well.
 
 - Subsequent lines show the location in the program where :c:macro:`ESP_ERROR_CHECK` macro was called, and the expression which was passed to the macro as an argument.
 

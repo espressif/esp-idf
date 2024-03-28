@@ -24,7 +24,7 @@ The document consists of the following major sections:
 
 - `Getting started`_: Provides an overview of the ESP32-DevKitM-1 and hardware/software setup instructions to get started.
 - `Hardware reference`_: Provides more detailed information about the ESP32-DevKitM-1's hardware.
-- `Related Documents`_: Gives links to related documentaiton.
+- `Related Documents`_: Gives links to related documentation.
 
 
 Getting Started

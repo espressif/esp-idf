@@ -228,7 +228,7 @@ The scripts introduced in this step install compilation tools required by ESP-ID
 If changing the ``IDF_TOOLS_PATH``, make sure it is exported in the environment before running any ESP-IDF tools or scripts.
 
 .. note::
-    Using ``IDF_TOOLS_PATH`` in variable assignement, e.g., ``IDF_TOOLS_PATH="$HOME/required_idf_tools_path" ./install.sh``, without prior exporting, will not work in most shells because the variable assignment will not affect the current execution environment, even if it's exported/changed in the sourced script.
+    Using ``IDF_TOOLS_PATH`` in variable assignment, e.g., ``IDF_TOOLS_PATH="$HOME/required_idf_tools_path" ./install.sh``, without prior exporting, will not work in most shells because the variable assignment will not affect the current execution environment, even if it's exported/changed in the sourced script.
 
 .. _get-started-set-up-env:
 
