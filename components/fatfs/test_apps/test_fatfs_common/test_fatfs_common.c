@@ -642,7 +642,7 @@ void test_fatfs_utime(const char* filename, const char* root_dir)
     TEST_ASSERT_EQUAL(0, stat(filename, &achieved_stat));
     TEST_ASSERT_EQUAL_UINT32(desired_time.modtime, achieved_stat.st_mtime);
 
-    //WARNING: it has the Unix Millenium bug (Y2K38)
+    //WARNING: it has the Unix Millennium bug (Y2K38)
 
     // 00:00:00. January 1st, 1970 - FATFS cannot handle years before 1980
     desired_tm.tm_mon = 1 - 1;

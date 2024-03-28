@@ -145,11 +145,11 @@ esp_err_t esp_partition_erase_range(const esp_partition_t *partition,
 
 /*
  * Note: current implementation ignores the possibility of multiple regions in the same partition being
- * mapped. Reference counting and address space re-use is delegated to spi_flash_mmap.
+ * mapped. Reference counting and address space reuse is delegated to spi_flash_mmap.
  *
  * If this becomes a performance issue (i.e. if we need to map multiple regions within the partition),
  * we can add esp_partition_mmapv which will accept an array of offsets and sizes, and return array of
- * mmaped pointers, and a single handle for all these regions.
+ * mapped pointers, and a single handle for all these regions.
  */
 esp_err_t esp_partition_mmap(const esp_partition_t *partition, size_t offset, size_t size,
                              esp_partition_mmap_memory_t memory,

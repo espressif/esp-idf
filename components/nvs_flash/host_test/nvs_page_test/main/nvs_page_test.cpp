@@ -374,7 +374,7 @@ void test_Page_readItem__read_corrupted_erase_fail()
     // prepare corrupt entry for reading
     fix.write_raw( 96, fix.value_entry, sizeof(fix.value_entry));
 
-    // emulate write failure as nvs will try to invalidate the corupt entry
+    // emulate write failure as nvs will try to invalidate the corrupt entry
     // by setting bit in entry table (0xfa -> 0xf2)
     fix.fail_write_at(1);
 
@@ -450,7 +450,7 @@ void test_Page_readItem__corrupt_data_erase_failure()
     uint8_t chunk_start = 0;
     uint8_t read_data [32];
 
-    // corupt the data
+    // corrupt the data
     fix.blob_data[16] = 0xdf;
     fix.write_raw(128, fix.blob_data, sizeof(fix.blob_data));
 

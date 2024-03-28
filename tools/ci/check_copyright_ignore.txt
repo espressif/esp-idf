@@ -736,7 +736,6 @@ components/spi_flash/spi_flash_chip_boya.c
 components/spi_flash/spi_flash_chip_issi.c
 components/tcp_transport/include/esp_transport_ws.h
 components/vfs/include/esp_vfs_common.h
-components/vfs/include/esp_vfs_eventfd.h
 components/wifi_provisioning/include/wifi_provisioning/scheme_ble.h
 components/wifi_provisioning/include/wifi_provisioning/scheme_console.h
 components/wifi_provisioning/include/wifi_provisioning/scheme_softap.h

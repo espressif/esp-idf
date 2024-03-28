@@ -1277,7 +1277,7 @@ static int vfs_fat_utime(void *ctx, const char *path, const struct utimbuf *time
         fat_date_t fdate;
         fat_time_t ftime;
 
-        // this time transformation is esentially the reverse of the one in vfs_fat_stat()
+        // this time transformation is essentially the reverse of the one in vfs_fat_stat()
         fdate.mday = tm_time.tm_mday;
         fdate.mon = tm_time.tm_mon + 1;     // January in fdate.mon is 1, and 0 in tm_time.tm_mon
         fdate.year = tm_time.tm_year - 80;  // tm_time.tm_year=0 is 1900, tm_time.tm_year=0 is 1980

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -52,7 +52,7 @@ public:
             }
             size = lseek(file_fd, 0L, SEEK_END);
             if (size < 0) {
-                fail_msg = "falied to seek in file with partition content";
+                fail_msg = "failed to seek in file with partition content";
                 break;
             }
 
@@ -72,7 +72,7 @@ public:
             // laoad file into local buffer
             int res = lseek(file_fd, 0L, SEEK_SET);
             if (res < 0) {
-                fail_msg = "falied to seek in file with partition content";
+                fail_msg = "failed to seek in file with partition content";
                 break;
             }
             size = read(file_fd, p_buff, size);
@@ -132,7 +132,7 @@ public:
             return false;
         }
 
-        // esp_partition_erase_range uses offset relative to the begining of partition
+        // esp_partition_erase_range uses offset relative to the beginning of partition
         return (esp_partition_erase_range(&esp_partition,
                                           offset - esp_partition.address,
                                           SPI_FLASH_SEC_SIZE) == ESP_OK);
@@ -142,7 +142,7 @@ public:
     {
         delete p_part;
 
-        // ensure underlying mmaped file gets deleted after unmap.
+        // ensure underlying mapped file gets deleted after unmap.
         esp_partition_file_mmap_ctrl_t *p_ctrl = esp_partition_get_file_mmap_ctrl_input();
         p_ctrl->remove_dump = true;
         esp_partition_file_munmap();

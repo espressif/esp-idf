@@ -142,32 +142,32 @@ menu "SPIFFS Configuration"
             bool "Enable general SPIFFS debug"
             default "n"
             help
-                Enabling this option will print general debug mesages to the console.
+                Enabling this option will print general debug messages to the console.
 
         config SPIFFS_API_DBG
             bool "Enable SPIFFS API debug"
             default "n"
             help
-                Enabling this option will print API debug mesages to the console.
+                Enabling this option will print API debug messages to the console.
 
         config SPIFFS_GC_DBG
             bool "Enable SPIFFS Garbage Cleaner debug"
             default "n"
             help
-                Enabling this option will print GC debug mesages to the console.
+                Enabling this option will print GC debug messages to the console.
 
         config SPIFFS_CACHE_DBG
             bool "Enable SPIFFS Cache debug"
             default "n"
             depends on SPIFFS_CACHE
             help
-                Enabling this option will print cache debug mesages to the console.
+                Enabling this option will print cache debug messages to the console.
 
         config SPIFFS_CHECK_DBG
             bool "Enable SPIFFS Filesystem Check debug"
             default "n"
             help
-                Enabling this option will print Filesystem Check debug mesages
+                Enabling this option will print Filesystem Check debug messages
                 to the console.
 
         config SPIFFS_TEST_VISUALISATION

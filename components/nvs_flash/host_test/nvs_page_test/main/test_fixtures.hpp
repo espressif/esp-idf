@@ -47,7 +47,7 @@ public:
 
     ~PartitionEmulationFixture()
     {
-        // ensure underlying mmaped file gets deleted after unmap.
+        // ensure underlying mapped file gets deleted after unmap.
         esp_partition_file_mmap_ctrl_t *p_ctrl = esp_partition_get_file_mmap_ctrl_input();
         p_ctrl->remove_dump = true;
         esp_partition_file_munmap();

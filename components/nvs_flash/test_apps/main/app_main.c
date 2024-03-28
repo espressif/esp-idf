@@ -22,7 +22,7 @@ void setUp(void)
     mbedtls_aes_init(&ctx);
 #endif
 
-    // Calling esp_partition_find_first ensures that the paritions have been loaded
+    // Calling esp_partition_find_first ensures that the partitions have been loaded
     // and subsequent calls to esp_partition_find_first from the tests would not
     // load partitions which otherwise gets considered as a memory leak.
     esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_NVS, NULL);

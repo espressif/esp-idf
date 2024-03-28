@@ -58,7 +58,7 @@ menu "Virtual file system"
         depends on VFS_SUPPORT_SELECT
         default y
         help
-            Select() related functions might produce an unconveniently lot of
+            Select() related functions might produce an inconveniently lot of
             debug outputs when one sets the default log level to DEBUG or higher.
             It is possible to suppress these debug outputs by enabling this
             option.

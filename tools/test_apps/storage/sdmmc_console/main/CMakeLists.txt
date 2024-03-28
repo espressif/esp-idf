@@ -5,7 +5,7 @@ set(requires
         vfs fatfs
         # sdmmc tests, themselves
         sdmmc_test_boards sdmmc_tests sdspi_tests
-        # various console comamnds
+        # various console commands
         cmd_unity cmd_system cmd_sdmmc
 )
 

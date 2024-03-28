@@ -143,7 +143,7 @@ esp_err_t PageManager::requestNewPage()
         return activatePage();
     }
 
-    // find the page with the higest number of erased items
+    // find the page with the highest number of erased items
     TPageListIterator maxUnusedItemsPageIt;
     size_t maxUnusedItems = 0;
     for (auto it = begin(); it != end(); ++it) {

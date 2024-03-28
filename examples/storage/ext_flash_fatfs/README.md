@@ -11,7 +11,7 @@ The flow of the example is as follows:
 
 1. Initialize the SPI bus and configure the pins. In this example, VSPI peripheral is used. The pins chosen in this example correspond to IOMUX pins for the VSPI peripheral. If the pin assignment is changed, SPI driver will instead connect the peripheral to the pins using the GPIO Matrix.
 
-2. Initialize the SPI flash chip. This involves creating a run-time object which describes the flash chip (`esp_flash_t`), probing the flash chip, and configuring it for the selected read mode. By default this example uses DIO mode, which only requires 4 pins (MOSI, MISO, SCLK, CS) but we strongly recommand to connect (or pull-up) the WP and HD pins. For modes such as QIO and QOUT, additional pins (WP/DQ2, HD/DQ3) must be connected.
+2. Initialize the SPI flash chip. This involves creating a run-time object which describes the flash chip (`esp_flash_t`), probing the flash chip, and configuring it for the selected read mode. By default this example uses DIO mode, which only requires 4 pins (MOSI, MISO, SCLK, CS) but we strongly recommend to connect (or pull-up) the WP and HD pins. For modes such as QIO and QOUT, additional pins (WP/DQ2, HD/DQ3) must be connected.
 
 3. Register the entire area of the Flash chip as a *partition* (`esp_partition_t`). This allows other components (FATFS, SPIFFS, NVS, etc) to use the storage provided by the external flash chip.
 
@@ -25,7 +25,7 @@ This example needs an SPI NOR Flash chip connected to the ESP32. The SPI Flash c
 
 Use the following pin assignments:
 
-#### Pin assigments
+#### Pin assignments
 
 The GPIO pin numbers used to connect an external SPI flash chip can be customized.
 

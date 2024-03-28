@@ -58,7 +58,7 @@ TEST_CASE("flash erase deinitializes initialized partition", "[nvs]")
     nvs_close(handle);
     TEST_ESP_OK(nvs_flash_erase());
 
-    // exptected: no partition is initialized since nvs_flash_erase() deinitialized the partition again
+    // expected: no partition is initialized since nvs_flash_erase() deinitialized the partition again
     TEST_ESP_ERR(ESP_ERR_NVS_NOT_INITIALIZED, nvs_open("uninit_ns", NVS_READWRITE, &handle));
 
     // just to be sure it's deinitialized in case of error and not affecting other tests

@@ -71,7 +71,7 @@ See [the document about pullup requirements](https://docs.espressif.com/projects
 
 1. Set the target chip: `idf.py set-target TARGET` (replace TARGET with ESP32 chip series name)
 
-1. Configure the example (`idf.py menuconfig` -> "Performance Benchmark Example Configuration") wheter you want to:
+1. Configure the example (`idf.py menuconfig` -> "Performance Benchmark Example Configuration") whether you want to:
 
 - Test internal SPI flash
   - Raw access
