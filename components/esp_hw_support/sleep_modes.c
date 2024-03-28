@@ -673,7 +673,7 @@ FORCE_INLINE_ATTR void misc_modules_sleep_prepare(bool deep_sleep)
 #endif
     }
 
-#if !CONFIG_IDF_TARGET_ESP32P4 // TODO: IDF-6496
+#if !CONFIG_IDF_TARGET_ESP32P4
     // TODO: IDF-7370
     if (!(deep_sleep && s_adc_tsen_enabled)){
         sar_periph_ctrl_power_disable();
@@ -689,11 +689,7 @@ FORCE_INLINE_ATTR void misc_modules_wake_prepare(void)
 #if SOC_USB_SERIAL_JTAG_SUPPORTED && !SOC_USB_SERIAL_JTAG_SUPPORT_LIGHT_SLEEP
     sleep_console_usj_pad_restore();
 #endif
-
-#if !CONFIG_IDF_TARGET_ESP32P4 // TODO: IDF-6496
     sar_periph_ctrl_power_enable();
-#endif
-
 #if CONFIG_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP && SOC_PM_CPU_RETENTION_BY_RTCCNTL
     sleep_disable_cpu_retention();
 #endif

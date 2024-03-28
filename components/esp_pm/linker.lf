@@ -36,8 +36,6 @@ entries:
             sleep_system_peripheral:peripheral_domain_pd_allowed (noflash)
         sleep_modem:modem_domain_pd_allowed (noflash)
         sleep_modem:periph_inform_out_light_sleep_overhead (noflash)
-        if IDF_TARGET_ESP32P4 = n: # TODO: IDF-6496
-            sar_periph_ctrl:sar_periph_ctrl_power_disable (noflash)
 
 [mapping:esp_system_pm]
 archive: libesp_system.a

@@ -684,6 +684,7 @@ typedef struct {
     volatile adc_ctrl_date_reg_t ctrl_date;
 } adc_dev_t;
 
+extern adc_dev_t ADC;
 
 #ifndef __cplusplus
 _Static_assert(sizeof(adc_dev_t) == 0x400, "Invalid size of adc_dev_t structure");

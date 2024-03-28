@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -81,6 +81,18 @@ typedef enum {
     ADC1_CHANNEL_6,     /*!< ADC1 channel 6 is GPIO6 */
     ADC1_CHANNEL_MAX,
 } adc1_channel_t;
+#elif CONFIG_IDF_TARGET_ESP32P4
+typedef enum {
+    ADC1_CHANNEL_0 = 0, /*!< ADC1 channel 0 is GPIO16 */
+    ADC1_CHANNEL_1,     /*!< ADC1 channel 1 is GPIO17 */
+    ADC1_CHANNEL_2,     /*!< ADC1 channel 2 is GPIO18 */
+    ADC1_CHANNEL_3,     /*!< ADC1 channel 3 is GPIO19 */
+    ADC1_CHANNEL_4,     /*!< ADC1 channel 4 is GPIO20 */
+    ADC1_CHANNEL_5,     /*!< ADC1 channel 5 is GPIO21 */
+    ADC1_CHANNEL_6,     /*!< ADC1 channel 6 is GPIO22 */
+    ADC1_CHANNEL_7,     /*!< ADC1 channel 7 is GPIO23 */
+    ADC1_CHANNEL_MAX,
+} adc1_channel_t;
 #endif // CONFIG_IDF_TARGET_*
 
 #if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
@@ -101,6 +113,17 @@ typedef enum {
 // ESP32C6 has no ADC2
 typedef enum {
     ADC2_CHANNEL_0 = 0, /*!< ADC2 channel 0 is GPIO5 */
+    ADC2_CHANNEL_MAX,
+} adc2_channel_t;
+
+#elif CONFIG_IDF_TARGET_ESP32P4
+typedef enum {
+    ADC2_CHANNEL_0 = 0, /*!< ADC2 channel 0 is GPIO49 */
+    ADC2_CHANNEL_1,     /*!< ADC2 channel 1 is GPIO50 */
+    ADC2_CHANNEL_2,     /*!< ADC2 channel 2 is GPIO51 */
+    ADC2_CHANNEL_3,     /*!< ADC2 channel 3 is GPIO52 */
+    ADC2_CHANNEL_4,     /*!< ADC2 channel 4 is GPIO53 */
+    ADC2_CHANNEL_5,     /*!< ADC2 channel 5 is GPIO54 */
     ADC2_CHANNEL_MAX,
 } adc2_channel_t;
 #endif

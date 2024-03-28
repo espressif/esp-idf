@@ -17,7 +17,7 @@
 #pragma once
 
 /*-------------------------- COMMON CAPS ---------------------------------------*/
-// #define SOC_ADC_SUPPORTED               1  //TODO: IDF-6496
+#define SOC_ADC_SUPPORTED               1
 #define SOC_ANA_CMPR_SUPPORTED          1
 #define SOC_DEDICATED_GPIO_SUPPORTED    1
 #define SOC_UART_SUPPORTED              1
@@ -108,18 +108,20 @@
 
 /*-------------------------- ADC CAPS -------------------------------*/
 /*!< SAR ADC Module*/
-// #define SOC_ADC_DIG_CTRL_SUPPORTED              1  //TODO: IDF-6496, TODO: IDF-6497
+#define SOC_ADC_RTC_CTRL_SUPPORTED              1
+#define SOC_ADC_DIG_CTRL_SUPPORTED              1
+// #define SOC_ADC_ARBITER_SUPPORTED               1
 // #define SOC_ADC_DIG_IIR_FILTER_SUPPORTED        1
 // #define SOC_ADC_MONITOR_SUPPORTED               1
 #define SOC_ADC_DIG_SUPPORTED_UNIT(UNIT)        1    //Digital controller supported ADC unit
 // #define SOC_ADC_DMA_SUPPORTED                   1
-#define SOC_ADC_PERIPH_NUM                      (1U)
-#define SOC_ADC_CHANNEL_NUM(PERIPH_NUM)         (7)
-#define SOC_ADC_MAX_CHANNEL_NUM                 (7)
+#define SOC_ADC_PERIPH_NUM                      (2)
+#define SOC_ADC_CHANNEL_NUM(PERIPH_NUM)         (14)
+#define SOC_ADC_MAX_CHANNEL_NUM                 (8)
 #define SOC_ADC_ATTEN_NUM                       (4)
 
 /*!< Digital */
-#define SOC_ADC_DIGI_CONTROLLER_NUM             (1U)
+#define SOC_ADC_DIGI_CONTROLLER_NUM             (2)
 #define SOC_ADC_PATT_LEN_MAX                    (8) /*!< Two pattern tables, each contains 4 items. Each item takes 1 byte */
 #define SOC_ADC_DIGI_MAX_BITWIDTH               (12)
 #define SOC_ADC_DIGI_MIN_BITWIDTH               (12)

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,6 +20,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include "soc/soc.h"
+#include "soc/lp_adc_struct.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -39,6 +40,30 @@ typedef enum {
 /*---------------------------------------------------------------
                     SAR power control
 ---------------------------------------------------------------*/
+
+/**
+ * Set SAR power mode
+ *
+ * @param mode  See `sar_ctrl_ll_power_t`
+ */
+__attribute__((always_inline))
+static inline void sar_ctrl_ll_set_power_mode(sar_ctrl_ll_power_t mode)
+{
+    if (mode == SAR_CTRL_LL_POWER_FSM) {
+        // LP_ADC.sar_peri_clk_gate_conf.saradc_clk_en = 1;
+        LP_ADC.force_wpd_sar.force_xpd_sar1 = 0x0;
+        LP_ADC.force_wpd_sar.force_xpd_sar2 = 0x0;
+    } else if (mode == SAR_CTRL_LL_POWER_ON) {
+        // LP_ADC.sar_peri_clk_gate_conf.saradc_clk_en = 1;
+        LP_ADC.force_wpd_sar.force_xpd_sar1 = 0x3;
+        LP_ADC.force_wpd_sar.force_xpd_sar2 = 0x3;
+    } else {
+        // LP_ADC.sar_peri_clk_gate_conf.saradc_clk_en = 0;
+        LP_ADC.force_wpd_sar.force_xpd_sar1 = 0x2;
+        LP_ADC.force_wpd_sar.force_xpd_sar2 = 0x2;
+    }
+}
+
 /**
  * @brief Set SAR power mode when controlled by PWDET
  *
