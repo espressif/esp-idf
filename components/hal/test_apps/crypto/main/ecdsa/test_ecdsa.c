@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: CC0-1.0
  */
@@ -14,6 +14,9 @@
 #include "hal/ecdsa_hal.h"
 #include "hal/ecdsa_ll.h"
 #include "hal/ecdsa_types.h"
+#include "hal/ecc_ll.h"
+#include "hal/mpi_ll.h"
+#include "soc/soc_caps.h"
 
 #include "memory_checks.h"
 #include "unity_fixture.h"
@@ -26,10 +29,32 @@ static void ecdsa_enable_and_reset(void)
         ecdsa_ll_enable_bus_clock(true);
         ecdsa_ll_reset_register();
     }
+
+    ECC_RCC_ATOMIC() {
+        ecc_ll_enable_bus_clock(true);
+        ecc_ll_reset_register();
+    }
+
+#ifdef SOC_ECDSA_USES_MPI
+    MPI_RCC_ATOMIC() {
+        mpi_ll_enable_bus_clock(true);
+        mpi_ll_reset_register();
+    }
+#endif
 }
 
 static void ecdsa_disable(void)
 {
+#ifdef SOC_ECDSA_USES_MPI
+    MPI_RCC_ATOMIC() {
+        mpi_ll_enable_bus_clock(false);
+    }
+#endif
+
+    ECC_RCC_ATOMIC() {
+        ecc_ll_enable_bus_clock(false);
+    }
+
     ECDSA_RCC_ATOMIC() {
         ecdsa_ll_enable_bus_clock(false);
     }
