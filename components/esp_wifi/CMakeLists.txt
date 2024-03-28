@@ -77,13 +77,6 @@ if(CONFIG_ESP_WIFI_ENABLED)
             target_link_libraries(${COMPONENT_LIB} PUBLIC ${blob})
         endforeach()
     endif()
-else()
-    # No local wifi: use esp_wifi_remote if it's available within our components
-    idf_build_get_property(build_components BUILD_COMPONENTS)
-    if(esp_wifi_remote IN_LIST build_components)
-        idf_component_get_property(esp_wifi_remote esp_wifi_remote COMPONENT_LIB)
-        target_link_libraries(${COMPONENT_LIB} PUBLIC ${esp_wifi_remote})
-    endif()
 endif()
 
 if(CONFIG_SPIRAM)
