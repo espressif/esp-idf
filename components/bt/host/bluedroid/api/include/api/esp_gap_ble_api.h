@@ -157,7 +157,7 @@ typedef enum {
     ESP_GAP_BLE_PASSKEY_REQ_EVT,                            /*!< passkey request event */
     ESP_GAP_BLE_OOB_REQ_EVT,                                /*!< OOB request event */
     ESP_GAP_BLE_LOCAL_IR_EVT,                               /*!< BLE local IR (identity Root 128-bit random static value used to generate Long Term Key) event */
-    ESP_GAP_BLE_LOCAL_ER_EVT,                               /*!< BLE local ER (Encryption Root vakue used to genrate identity resolving key) event */
+    ESP_GAP_BLE_LOCAL_ER_EVT,                               /*!< BLE local ER (Encryption Root value used to generate identity resolving key) event */
     ESP_GAP_BLE_NC_REQ_EVT,                                 /*!< Numeric Comparison request event */
     //BLE_42_FEATURE_SUPPORT
     ESP_GAP_BLE_ADV_STOP_COMPLETE_EVT,                      /*!< When stop adv complete, the event comes */
@@ -225,7 +225,8 @@ typedef enum {
     ESP_GAP_BLE_DTM_TEST_UPDATE_EVT,                             /*!< when direct test mode state changes, the event comes */
     // BLE_INCLUDED
     ESP_GAP_BLE_ADV_CLEAR_COMPLETE_EVT,                          /*!< When clear advertising complete, the event comes */
-    ESP_GAP_BLE_VENDOR_CMD_COMPLETE_EVT,                          /*!< When vendor hci command complete, the event comes */
+    ESP_GAP_BLE_VENDOR_CMD_COMPLETE_EVT,                         /*!< When vendor hci command complete, the event comes */
+    ESP_GAP_BLE_SET_RPA_TIMEOUT_COMPLETE_EVT,                    /*!< When set the Resolvable Private Address (RPA) timeout completes, the event comes */
     ESP_GAP_BLE_EVT_MAX,                                         /*!< when maximum advertising event complete, the event comes */
 } esp_gap_ble_cb_event_t;
 
@@ -799,9 +800,9 @@ typedef uint8_t esp_ble_gap_all_phys_t;
 #define ESP_BLE_GAP_PRI_PHY_CODED  ESP_BLE_GAP_PHY_CODED  /*!< Primary Phy is LE CODED */
 typedef uint8_t esp_ble_gap_pri_phy_t; // primary phy
 
-#define ESP_BLE_GAP_PHY_1M_PREF_MASK                   (1 << 0) /*!< The Host prefers use the LE1M transmitter or reciever PHY */
-#define ESP_BLE_GAP_PHY_2M_PREF_MASK                   (1 << 1) /*!< The Host prefers use the LE2M transmitter or reciever PHY */
-#define ESP_BLE_GAP_PHY_CODED_PREF_MASK                (1 << 2) /*!< The Host prefers use the LE CODED transmitter or reciever PHY */
+#define ESP_BLE_GAP_PHY_1M_PREF_MASK                   (1 << 0) /*!< The Host prefers use the LE1M transmitter or receiver PHY */
+#define ESP_BLE_GAP_PHY_2M_PREF_MASK                   (1 << 1) /*!< The Host prefers use the LE2M transmitter or receiver PHY */
+#define ESP_BLE_GAP_PHY_CODED_PREF_MASK                (1 << 2) /*!< The Host prefers use the LE CODED transmitter or receiver PHY */
 typedef uint8_t esp_ble_gap_phy_mask_t;
 
 #define ESP_BLE_GAP_PHY_OPTIONS_NO_PREF                  0 /*!< The Host has no preferred coding when transmitting on the LE Coded PHY */
@@ -1153,6 +1154,12 @@ typedef union {
     struct ble_local_privacy_cmpl_evt_param {
         esp_bt_status_t status;                     /*!< Indicate the set local privacy operation success status */
     } local_privacy_cmpl;                           /*!< Event parameter of ESP_GAP_BLE_SET_LOCAL_PRIVACY_COMPLETE_EVT */
+    /**
+     * @brief ESP_GAP_BLE_SET_RPA_TIMEOUT_COMPLETE_EVT
+     */
+    struct ble_rpa_timeout_cmpl_evt_param {
+        esp_bt_status_t status;                     /*!< Indicate the set RPA timeout operation success status */
+    } set_rpa_timeout_cmpl;                         /*!< Event parameter of ESP_GAP_BLE_SET_RPA_TIMEOUT_COMPLETE_EVT */
     /**
      * @brief ESP_GAP_BLE_REMOVE_BOND_DEV_COMPLETE_EVT
      */
@@ -1643,6 +1650,23 @@ esp_err_t esp_ble_gap_set_pkt_data_len(esp_bd_addr_t remote_device, uint16_t tx_
  *
  */
 esp_err_t esp_ble_gap_set_rand_addr(esp_bd_addr_t rand_addr);
+
+/**
+ * @brief           This function sets the length of time the Controller uses a Resolvable Private Address
+ *                  before generating and starting to use a new resolvable private address.
+ *
+ * @note            Note: This function is currently not supported on the ESP32 but will be enabled in a future update.
+ *
+ * @param[in]       rpa_timeout: The timeout duration in seconds for how long a Resolvable Private Address
+ *                  is used before a new one is generated. The value must be within the range specified by
+ *                  the Bluetooth specification (0x0001 to 0x0E10), which corresponds to a time range of
+ *                  1 second to 1 hour. The default value is 0x0384 (900 seconds or 15 minutes).
+ * @return
+ *                  - ESP_OK : success
+ *                  - other  : failed
+ *
+ */
+esp_err_t esp_ble_gap_set_resolvable_private_address_timeout(uint16_t rpa_timeout);
 
 /**
  * @brief           This function clears the random address for the application

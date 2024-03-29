@@ -651,7 +651,7 @@ static void bta_dm_disable_timer_cback (TIMER_LIST_ENT *p_tle)
         }
 
         /* Retrigger disable timer in case ACL disconnect failed, DISABLE_EVT still need
-            to be sent out to avoid jave layer disable timeout */
+            to be sent out to avoid the layer disable timeout */
         if (trigger_disc) {
             bta_dm_cb.disable_timer.p_cback = (TIMER_CBACK *)&bta_dm_disable_timer_cback;
             bta_dm_cb.disable_timer.param = 1;
@@ -763,7 +763,7 @@ static BOOLEAN bta_dm_read_remote_device_name (BD_ADDR bd_addr, tBT_TRANSPORT tr
         APPL_TRACE_DEBUG("bta_dm_read_remote_device_name: BTM_ReadRemoteDeviceName is busy");
 
         /* Remote name discovery is on going now so BTM cannot notify through "bta_dm_remname_cback" */
-        /* adding callback to get notified that current reading remore name done */
+        /* adding callback to get notified that current reading remote name done */
         BTM_SecAddRmtNameNotifyCallback(&bta_dm_service_search_remname_cback);
 
         return (TRUE);
@@ -1117,7 +1117,7 @@ void bta_dm_add_device (tBTA_DM_MSG *p_data)
     }
 
     if (p_dev->is_trusted) {
-        /* covert BTA service mask to BTM mask */
+        /* convert BTA service mask to BTM mask */
         while (p_dev->tm && (index < BTA_MAX_SERVICE_ID)) {
             if (p_dev->tm & (UINT32)(1 << index)) {
 
@@ -1145,7 +1145,7 @@ void bta_dm_add_device (tBTA_DM_MSG *p_data)
 ** Function         bta_dm_close_acl
 **
 ** Description      This function forces to close the connection to a remote device
-**                  and optionaly remove the device from security database if
+**                  and optionally remove the device from security database if
 **                  required.
 ****
 *******************************************************************************/
@@ -2670,7 +2670,7 @@ static void bta_dm_discover_device(BD_ADDR remote_bd_addr)
                                         &bta_dm_search_cb.services_found );
         }
 
-        /* if seaching with EIR is not completed */
+        /* if searching with EIR is not completed */
         if (bta_dm_search_cb.services_to_search) {
             /* check whether connection already exists to the device
                if connection exists, we don't have to wait for ACL
@@ -3744,7 +3744,7 @@ static void bta_dm_disable_conn_down_timer_cback (TIMER_LIST_ENT *p_tle)
     tBTA_SYS_HW_MSG *sys_enable_event;
 
 #if (BTA_DM_PM_INCLUDED == TRUE)
-    /* disable the power managment module */
+    /* disable the power management module */
     bta_dm_disable_pm();
 #endif /* #if (BTA_DM_PM_INCLUDED == TRUE) */
 
@@ -4131,7 +4131,7 @@ static void bta_dm_set_eir (char *local_name)
         p = (UINT8 *)p_buf + BTM_HCI_EIR_OFFSET; /* reset p */
 #endif  // BTA_EIR_CANNED_UUID_LIST
 
-        /* if UUID doesn't fit remaing space, shorten local name */
+        /* if UUID doesn't fit remaining space, shorten local name */
         if ( local_name_len > (free_eir_length - 4 - num_uuid * LEN_UUID_16)) {
             APPL_TRACE_WARNING("BTA EIR: local name is shortened");
             local_name_len = p_bta_dm_eir_cfg->bta_dm_eir_min_name_len;
@@ -5179,14 +5179,14 @@ void bta_dm_ble_disconnect (tBTA_DM_MSG *p_data)
 **
 ** Description      This function set the LE random address for the device.
 **
-** Parameters:      rand_addr:the random address whitch should be setting
+** Parameters:      rand_addr:the random address which should be setting
 ** Explanation:     This function added by Yulong at 2016/9/9
 *******************************************************************************/
 void bta_dm_ble_set_rand_address(tBTA_DM_MSG *p_data)
 {
     tBTM_STATUS status = BTM_SET_STATIC_RAND_ADDR_FAIL;
     if (p_data->set_addr.addr_type != BLE_ADDR_RANDOM) {
-        APPL_TRACE_ERROR("Invalid random adress type = %d\n", p_data->set_addr.addr_type);
+        APPL_TRACE_ERROR("Invalid random address type = %d\n", p_data->set_addr.addr_type);
         if(p_data->set_addr.p_set_rand_addr_cback) {
             (*p_data->set_addr.p_set_rand_addr_cback)(status);
         }
@@ -5541,7 +5541,7 @@ void bta_dm_ble_set_data_length(tBTA_DM_MSG *p_data)
     }
 
     p_acl_cb->p_set_pkt_data_cback = p_data->ble_set_data_length.p_set_pkt_data_cback;
-    // if the value of the data length is same, triger callback directly
+    // if the value of the data length is same, trigger callback directly
     if(p_data->ble_set_data_length.tx_data_length == p_acl_cb->data_length_params.tx_len) {
         if(p_data->ble_set_data_length.p_set_pkt_data_cback) {
             (*p_data->ble_set_data_length.p_set_pkt_data_cback)(status, &p_acl_cb->data_length_params);
@@ -5550,7 +5550,7 @@ void bta_dm_ble_set_data_length(tBTA_DM_MSG *p_data)
     }
 
     if(p_acl_cb->data_len_updating) {
-        // aleady have one cmd
+        // already have one cmd
         if(p_acl_cb->data_len_waiting) {
             status = BTM_ILLEGAL_ACTION;
         } else {
@@ -5734,6 +5734,12 @@ void bta_dm_ble_gap_clear_adv(tBTA_DM_MSG *p_data)
             (*p_data->ble_clear_adv.p_clear_adv_cback)(BTA_FAILURE);
         }
     }
+}
+
+void bta_dm_ble_gap_set_rpa_timeout(tBTA_DM_MSG *p_data)
+{
+    APPL_TRACE_API("%s, rpa_timeout = %d", __func__, p_data->set_rpa_timeout.rpa_timeout);
+    BTM_BleSetRpaTimeout(p_data->set_rpa_timeout.rpa_timeout,p_data->set_rpa_timeout.p_set_rpa_timeout_cback);
 }
 
 #if (BLE_50_FEATURE_SUPPORT == TRUE)
@@ -6417,7 +6423,7 @@ static void bta_dm_gatt_disc_result(tBTA_GATT_ID service_id)
         }
 
     } else {
-        APPL_TRACE_ERROR("%s out of room to accomodate more service ids ble_raw_size = %d ble_raw_used = %d", __FUNCTION__, bta_dm_search_cb.ble_raw_size, bta_dm_search_cb.ble_raw_used );
+        APPL_TRACE_ERROR("%s out of room to accommodate more service ids ble_raw_size = %d ble_raw_used = %d", __FUNCTION__, bta_dm_search_cb.ble_raw_size, bta_dm_search_cb.ble_raw_used );
     }
 
     APPL_TRACE_API("%s service_id_uuid_len=%d ", __func__, service_id.uuid.len);
