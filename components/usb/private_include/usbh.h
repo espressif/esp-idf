@@ -130,7 +130,7 @@ typedef struct {
     void *event_cb_arg;                     /**< USBH event callback argument */
 } usbh_config_t;
 
-// ------------------------------------------------- USBH Functions ----------------------------------------------------
+// -------------------------------------------- USBH Processing Functions ----------------------------------------------
 
 /**
  * @brief Installs the USBH driver
@@ -169,6 +169,8 @@ esp_err_t usbh_uninstall(void);
  */
 esp_err_t usbh_process(void);
 
+// ---------------------------------------------- Device Pool Functions ------------------------------------------------
+
 /**
  * @brief Get the current number of devices
  *
@@ -177,10 +179,6 @@ esp_err_t usbh_process(void);
  * @return esp_err_t
  */
 esp_err_t usbh_num_devs(int *num_devs_ret);
-
-// ------------------------------------------------ Device Functions ---------------------------------------------------
-
-// --------------------- Device Pool -----------------------
 
 /**
  * @brief Fill list with address of currently connected devices
@@ -196,6 +194,17 @@ esp_err_t usbh_num_devs(int *num_devs_ret);
  * @return esp_err_t
  */
 esp_err_t usbh_dev_addr_list_fill(int list_len, uint8_t *dev_addr_list, int *num_dev_ret);
+
+/**
+ * @brief Mark that all devices should be freed at the next possible opportunity
+ *
+ * A device marked as free will not be freed until the last client using the device has called usbh_dev_close()
+ *
+ * @return
+ *  - ESP_OK: There were no devices to free to begin with. Current state is all free
+ *  - ESP_ERR_NOT_FINISHED: One or more devices still need to be freed (but have been marked "to be freed")
+ */
+esp_err_t usbh_dev_mark_all_free(void);
 
 /**
  * @brief Open a device by address
@@ -218,18 +227,9 @@ esp_err_t usbh_dev_open(uint8_t dev_addr, usb_device_handle_t *dev_hdl);
  */
 esp_err_t usbh_dev_close(usb_device_handle_t dev_hdl);
 
-/**
- * @brief Mark that all devices should be freed at the next possible opportunity
- *
- * A device marked as free will not be freed until the last client using the device has called usbh_dev_close()
- *
- * @return
- *  - ESP_OK: There were no devices to free to begin with. Current state is all free
- *  - ESP_ERR_NOT_FINISHED: One or more devices still need to be freed (but have been marked "to be freed")
- */
-esp_err_t usbh_dev_mark_all_free(void);
+// ------------------------------------------------ Device Functions ---------------------------------------------------
 
-// ------------------- Single Device  ----------------------
+// ----------------------- Getters -------------------------
 
 /**
  * @brief Get a device's address
@@ -274,15 +274,6 @@ esp_err_t usbh_dev_get_desc(usb_device_handle_t dev_hdl, const usb_device_desc_t
  * @return esp_err_t
  */
 esp_err_t usbh_dev_get_config_desc(usb_device_handle_t dev_hdl, const usb_config_desc_t **config_desc_ret);
-
-/**
- * @brief Submit a control transfer (URB) to a device
- *
- * @param[in] dev_hdl Device handle
- * @param[in] urb URB
- * @return esp_err_t
- */
-esp_err_t usbh_dev_submit_ctrl_urb(usb_device_handle_t dev_hdl, urb_t *urb);
 
 // ----------------------------------------------- Endpoint Functions -------------------------------------------------
 
@@ -335,6 +326,39 @@ esp_err_t usbh_ep_free(usbh_ep_handle_t ep_hdl);
 esp_err_t usbh_ep_get_handle(usb_device_handle_t dev_hdl, uint8_t bEndpointAddress, usbh_ep_handle_t *ep_hdl_ret);
 
 /**
+ * @brief Execute a command on a particular endpoint
+ *
+ * Endpoint commands allows executing a certain action on an endpoint (e.g., halting, flushing, clearing etc)
+ *
+ * @param[in] ep_hdl Endpoint handle
+ * @param[in] command Endpoint command
+ * @return esp_err_t
+ */
+esp_err_t usbh_ep_command(usbh_ep_handle_t ep_hdl, usbh_ep_cmd_t command);
+
+/**
+ * @brief Get the context of an endpoint
+ *
+ * Get the context variable assigned to and endpoint on allocation.
+ *
+ * @note This function can block
+ * @param[in] ep_hdl Endpoint handle
+ * @return Endpoint context
+ */
+void *usbh_ep_get_context(usbh_ep_handle_t ep_hdl);
+
+// ----------------------------------------------- Transfer Functions --------------------------------------------------
+
+/**
+ * @brief Submit a control transfer (URB) to a device
+ *
+ * @param[in] dev_hdl Device handle
+ * @param[in] urb URB
+ * @return esp_err_t
+ */
+esp_err_t usbh_dev_submit_ctrl_urb(usb_device_handle_t dev_hdl, urb_t *urb);
+
+/**
  * @brief Enqueue a URB to an endpoint
  *
  * The URB will remain enqueued until it completes (successfully or errors out). Use usbh_ep_dequeue_urb() to dequeue
@@ -356,28 +380,6 @@ esp_err_t usbh_ep_enqueue_urb(usbh_ep_handle_t ep_hdl, urb_t *urb);
  * @return esp_err_t
  */
 esp_err_t usbh_ep_dequeue_urb(usbh_ep_handle_t ep_hdl, urb_t **urb_ret);
-
-/**
- * @brief Execute a command on a particular endpoint
- *
- * Endpoint commands allows executing a certain action on an endpoint (e.g., halting, flushing, clearing etc)
- *
- * @param[in] ep_hdl Endpoint handle
- * @param[in] command Endpoint command
- * @return esp_err_t
- */
-esp_err_t usbh_ep_command(usbh_ep_handle_t ep_hdl, usbh_ep_cmd_t command);
-
-/**
- * @brief Get the context of an endpoint
- *
- * Get the context variable assigned to and endpoint on allocation.
- *
- * @note This function can block
- * @param[in] ep_hdl Endpoint handle
- * @return Endpoint context
- */
-void *usbh_ep_get_context(usbh_ep_handle_t ep_hdl);
 
 // -------------------------------------------------- Hub Functions ----------------------------------------------------
 
