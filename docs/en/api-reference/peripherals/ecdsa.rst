@@ -1,6 +1,8 @@
 Elliptic Curve Digital Signature Algorithm (ECDSA)
 ==================================================
 
+:link_to_translation:`zh_CN:[中文]`
+
 The Elliptic Curve Digital Signature Algorithm (ECDSA) offers a variant of the Digital Signature Algorithm (DSA) which uses elliptic-curve cryptography.
 
 {IDF_TARGET_NAME}'s ECDSA peripheral provides a secure and efficient environment for computing ECDSA signatures. It offers fast computations while ensuring the confidentiality of the signing process to prevent information leakage. ECDSA private key used in the signing process is accessible only to the hardware peripheral, and it is not readable by software.
@@ -82,7 +84,7 @@ Application Outline
 
 Please refer to the :ref:`ecdsa-peri-with-esp-tls` guide for details on how-to use ECDSA peripheral for establishing a mutually authenticated TLS connection.
 
-The ECDSA peripheral in mbedTLS stack is integrated by overriding the ECDSA sign and verify APIs. Please note that, the ECDSA peripheral does not support all curves or hash algorithms and hence for cases where the requirements do not meet the hardware, implementation falls back to the software.
+The ECDSA peripheral in Mbed TLS stack is integrated by overriding the ECDSA signing and verifying APIs. Please note that, the ECDSA peripheral does not support all curves or hash algorithms, and hence for cases where the hardware requirements are not met, the implementation falls back to the software.
 
 For a particular TLS context, additional APIs have been supplied to populate certain fields (e.g., private key ctx) to differentiate routing to hardware. ESP-TLS layer integrates these APIs internally and hence no additional work is required at the application layer. However, for custom use-cases please refer to API details below.
 

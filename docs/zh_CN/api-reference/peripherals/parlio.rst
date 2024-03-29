@@ -1,6 +1,8 @@
 并行 IO
 =======
 
+:link_to_translation:`en:[English]`
+
 简介
 ----
 

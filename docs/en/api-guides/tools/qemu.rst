@@ -1,14 +1,16 @@
 QEMU Emulator
 =============
 
-Espressif maintains a `fork <https://github.com/espressif/qemu>`_ of the QEMU emulator with support for {IDF_TARGET_NAME}. This fork implements emulation of the CPU, memory, and several peripherals of {IDF_TARGET_NAME}. For more information about QEMU for {IDF_TARGET_NAME}, see the `documentation <https://github.com/espressif/esp-toolchain-docs/blob/main/qemu/README.md>`_.
+:link_to_translation:`zh_CN:[中文]`
 
-:doc:`idf.py<idf-py>` allows for running and debugging applications in QEMU. This is a convenient way to test applications without having to flash them to real hardware.
+Espressif maintains a `fork <https://github.com/espressif/qemu>`_ of the QEMU emulator with support for {IDF_TARGET_NAME}. This fork implements emulation of the CPU, memory, and several peripherals of {IDF_TARGET_NAME}. For more information about QEMU for {IDF_TARGET_NAME}, see the `QEMU README documentation <https://github.com/espressif/esp-toolchain-docs/blob/main/qemu/README.md>`_.
+
+:doc:`idf.py <idf-py>` allows for running and debugging applications in QEMU. This is a convenient way to test applications without having to flash them to real hardware.
 
 Prerequisites
 -------------
 
-To use QEMU with ``idf.py`` you first need to install the above-mentioned fork of QEMU. ESP-IDF provides pre-built binaries for x86_64 and arm64 Linux and macOS, as well as x86_64 Windows. Before you use the pre-built binaries on Linux and macOS platroms please install system dependencies:
+To use QEMU with ``idf.py``, you first need to install the above-mentioned fork of QEMU. ESP-IDF provides pre-built binaries for x86_64 and arm64 Linux and macOS, as well as x86_64 Windows. Before you use the pre-built binaries on Linux and macOS platroms please install system dependencies:
 
 - Ubuntu and Debian:
 
@@ -56,7 +58,7 @@ To run an IDF application in QEMU, use the following command:
 
     idf.py qemu monitor
 
-This command builds the application, starts QEMU and opens :doc:`IDF monitor <idf-monitor>`, connecting it to the emulated UART port. You can see the console output of the application and interact with it. IDF Monitor also provides automatic decoding of panic backtraces and UART core dumps.
+This command builds the application, starts QEMU and opens :doc:`IDF monitor <idf-monitor>`, and connects IDF Monitor to the emulated UART port. You can see the console output of the application and interact with it. IDF Monitor also provides automatic decoding of panic backtraces and UART core dumps.
 
 Debugging
 ~~~~~~~~~
