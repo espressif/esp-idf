@@ -37,7 +37,6 @@
 
 #if CONFIG_PM_CHECK_SLEEP_RETENTION_FRAME
 #include "esp_private/system_internal.h"
-#include "hal/clk_gate_ll.h"
 #include "hal/uart_hal.h"
 #endif
 

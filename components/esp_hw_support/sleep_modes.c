@@ -48,7 +48,6 @@
 #if SOC_TOUCH_SENSOR_SUPPORTED
 #include "hal/touch_sensor_hal.h"
 #endif
-#include "hal/clk_gate_ll.h"
 
 #include "sdkconfig.h"
 #include "esp_rom_uart.h"

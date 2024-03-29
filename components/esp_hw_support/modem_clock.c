@@ -12,7 +12,6 @@
 #include "soc/soc.h"
 #include "soc/soc_caps.h"
 #include "freertos/FreeRTOS.h"
-#include "hal/clk_gate_ll.h"
 #include "esp_private/esp_modem_clock.h"
 #include "esp_private/esp_pmu.h"
 #include "esp_sleep.h"

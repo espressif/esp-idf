@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,11 +7,11 @@
 // The LL layer for UHCI register operations.
 // Note that most of the register operations in this layer are non-atomic operations.
 
-
 #pragma once
 #include <stdio.h>
 #include "hal/uhci_types.h"
 #include "soc/uhci_struct.h"
+#include "soc/system_struct.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -26,6 +26,38 @@ typedef enum {
     UHCI_RX_EOF_MAX       = 0x7,
 } uhci_rxeof_cfg_t;
 
+/**
+ * @brief Enable the bus clock for UHCI module
+ *
+ * @param group_id Group ID
+ * @param enable true to enable, false to disable
+ */
+static inline void _uhci_ll_enable_bus_clock(int group_id, bool enable)
+{
+    (void)group_id;
+    SYSTEM.perip_clk_en0.reg_uhci0_clk_en = enable;
+}
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define uhci_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; _uhci_ll_enable_bus_clock(__VA_ARGS__)
+
+/**
+ * @brief Reset the UHCI module
+ *
+ * @param group_id Group ID
+ */
+static inline void _uhci_ll_reset_register(int group_id)
+{
+    (void)group_id;
+    SYSTEM.perip_rst_en0.reg_uhci0_rst = 1;
+    SYSTEM.perip_rst_en0.reg_uhci0_rst = 0;
+}
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define uhci_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; _uhci_ll_reset_register(__VA_ARGS__)
+
 static inline void uhci_ll_init(uhci_dev_t *hw)
 {
     typeof(hw->conf0) conf0_reg;
@@ -38,8 +70,8 @@ static inline void uhci_ll_init(uhci_dev_t *hw)
 
 static inline void uhci_ll_attach_uart_port(uhci_dev_t *hw, int uart_num)
 {
-    hw->conf0.uart0_ce = (uart_num == 0)? 1: 0;
-    hw->conf0.uart1_ce = (uart_num == 1)? 1: 0;
+    hw->conf0.uart0_ce = (uart_num == 0) ? 1 : 0;
+    hw->conf0.uart1_ce = (uart_num == 1) ? 1 : 0;
 }
 
 static inline void uhci_ll_set_seper_chr(uhci_dev_t *hw, uhci_seper_chr_t *seper_char)
@@ -117,7 +149,6 @@ static inline uint32_t uhci_ll_get_intr(uhci_dev_t *hw)
 {
     return hw->int_st.val;
 }
-
 
 static inline void uhci_ll_set_eof_mode(uhci_dev_t *hw, uint32_t eof_mode)
 {

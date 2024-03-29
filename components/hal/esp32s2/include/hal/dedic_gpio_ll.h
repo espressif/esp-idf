@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,6 +13,29 @@ extern "C" {
 #include <stdbool.h>
 #include "hal/misc.h"
 #include "soc/dedic_gpio_struct.h"
+#include "soc/system_reg.h"
+
+static inline void _dedic_gpio_ll_enable_bus_clock(bool enable)
+{
+    uint32_t reg_val = READ_PERI_REG(DPORT_CPU_PERI_CLK_EN_REG);
+    reg_val &= ~DPORT_CLK_EN_DEDICATED_GPIO_M;
+    reg_val |= enable << DPORT_CLK_EN_DEDICATED_GPIO_S;
+    WRITE_PERI_REG(DPORT_CPU_PERI_CLK_EN_REG, reg_val);
+}
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define dedic_gpio_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; _dedic_gpio_ll_enable_bus_clock(__VA_ARGS__)
+
+static inline void _dedic_gpio_ll_reset_register(void)
+{
+    WRITE_PERI_REG(DPORT_CPU_PERI_RST_EN_REG, DPORT_RST_EN_DEDICATED_GPIO_M);
+    WRITE_PERI_REG(DPORT_CPU_PERI_RST_EN_REG, 0);
+}
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define dedic_gpio_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; _dedic_gpio_ll_reset_register(__VA_ARGS__)
 
 static inline void dedic_gpio_ll_enable_instruction_access_out(dedic_dev_t *dev, uint32_t channel_mask, bool enable)
 {

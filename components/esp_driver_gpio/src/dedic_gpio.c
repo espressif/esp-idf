@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -28,6 +28,8 @@
 #include "soc/dedic_gpio_periph.h"
 #if SOC_DEDIC_GPIO_ALLOW_REG_ACCESS
 #include "soc/dedic_gpio_struct.h"
+#endif
+#if !SOC_DEDIC_PERIPH_ALWAYS_ENABLE
 #include "hal/dedic_gpio_ll.h"
 #endif
 
@@ -84,7 +86,11 @@ static esp_err_t dedic_gpio_build_platform(int core_id)
                 s_platform[core_id]->dev = &DEDIC_GPIO;
 #endif // SOC_DEDIC_GPIO_ALLOW_REG_ACCESS
 #if !SOC_DEDIC_PERIPH_ALWAYS_ENABLE
-                periph_module_enable(dedic_gpio_periph_signals.module); // enable APB clock to peripheral
+                // enable dedicated GPIO register clock
+                PERIPH_RCC_ATOMIC() {
+                    dedic_gpio_ll_enable_bus_clock(true);
+                    dedic_gpio_ll_reset_register();
+                }
 #endif // !SOC_DEDIC_PERIPH_ALWAYS_ENABLE
             }
         }
@@ -107,7 +113,10 @@ static void dedic_gpio_break_platform(uint32_t core_id)
             free(s_platform[core_id]);
             s_platform[core_id] = NULL;
 #if !SOC_DEDIC_PERIPH_ALWAYS_ENABLE
-            periph_module_disable(dedic_gpio_periph_signals.module); // disable module if no GPIO channel is being used
+            // disable the register clock if no GPIO channel is in use
+            PERIPH_RCC_ATOMIC() {
+                dedic_gpio_ll_enable_bus_clock(false);
+            }
 #endif // !SOC_DEDIC_PERIPH_ALWAYS_ENABLE
         }
         _lock_release(&s_platform_mutexlock[core_id]);

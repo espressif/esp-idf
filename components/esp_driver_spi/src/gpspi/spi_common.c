@@ -970,7 +970,9 @@ bool IRAM_ATTR spicommon_dmaworkaround_req_reset(int dmachan, dmaworkaround_cb_t
         ret = false;
     } else {
         //Reset DMA
-        periph_module_reset(PERIPH_SPI_DMA_MODULE);
+        SPI_COMMON_RCC_CLOCK_ATOMIC() {
+            spi_dma_ll_reset_register(dmachan);
+        }
         ret = true;
     }
     portEXIT_CRITICAL_ISR(&dmaworkaround_mux);
@@ -988,7 +990,9 @@ void IRAM_ATTR spicommon_dmaworkaround_idle(int dmachan)
     dmaworkaround_channels_busy[dmachan - 1] = 0;
     if (dmaworkaround_waiting_for_chan == dmachan) {
         //Reset DMA
-        periph_module_reset(PERIPH_SPI_DMA_MODULE);
+        SPI_COMMON_RCC_CLOCK_ATOMIC() {
+            spi_dma_ll_reset_register(dmachan);
+        }
         dmaworkaround_waiting_for_chan = 0;
         //Call callback
         dmaworkaround_cb(dmaworkaround_cb_arg);

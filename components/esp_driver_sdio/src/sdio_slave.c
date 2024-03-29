@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -83,6 +83,7 @@ The driver of FIFOs works as below:
 #include "freertos/FreeRTOS.h"
 #include "soc/soc_memory_layout.h"
 #include "soc/gpio_periph.h"
+#include "soc/soc_caps.h"
 #include "esp_cpu.h"
 #include "freertos/semphr.h"
 #include "esp_private/periph_ctrl.h"
@@ -99,6 +100,12 @@ static const char TAG[] = "sdio_slave";
 
 #define SDIO_SLAVE_LOGE(s, ...) ESP_LOGE(TAG, "%s(%d): "s, __FUNCTION__,__LINE__,##__VA_ARGS__)
 #define SDIO_SLAVE_LOGW(s, ...) ESP_LOGW(TAG, "%s: "s, __FUNCTION__,##__VA_ARGS__)
+
+#if !SOC_RCC_IS_INDEPENDENT
+#define SDIO_SLAVE_RCC_ATOMIC() PERIPH_RCC_ATOMIC()
+#else
+#define SDIO_SLAVE_RCC_ATOMIC()
+#endif
 
 // sdio_slave_buf_handle_t is of type recv_desc_t*;
 typedef struct recv_desc_s {
@@ -304,9 +311,11 @@ static inline esp_err_t sdio_slave_hw_init(sdio_slave_config_t *config)
     }
     configure_pin(slot->d3_gpio, slot->func, pullup);
 
-    //enable module and config
-    periph_module_reset(PERIPH_SDIO_SLAVE_MODULE);
-    periph_module_enable(PERIPH_SDIO_SLAVE_MODULE);
+    //enable register clock
+    SDIO_SLAVE_RCC_ATOMIC() {
+        sdio_slave_ll_enable_bus_clock(true);
+        sdio_slave_ll_reset_register();
+    }
 
     sdio_slave_hal_hw_init(context.hal);
     return ESP_OK;
@@ -333,6 +342,11 @@ static void sdio_slave_hw_deinit(void)
     recover_pin(slot->d1_gpio, slot->func);
     recover_pin(slot->d2_gpio, slot->func);
     recover_pin(slot->d3_gpio, slot->func);
+
+    //disable register clock
+    SDIO_SLAVE_RCC_ATOMIC() {
+        sdio_slave_ll_enable_bus_clock(false);
+    }
 }
 
 esp_err_t sdio_slave_initialize(sdio_slave_config_t *config)

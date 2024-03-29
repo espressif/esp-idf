@@ -16,6 +16,7 @@
 #include "esp_system.h"
 #include "soc/uart_struct.h"
 #include "esp_private/periph_ctrl.h"
+#include "esp_private/uart_share_hw_ctrl.h"
 #include "esp_rom_gpio.h"
 #include "hal/gpio_hal.h"
 #include "hal/uart_ll.h"
@@ -678,7 +679,10 @@ static void uart_aut_baud_det_init(int rxd_io_num)
     gpio_set_direction(rxd_io_num, GPIO_MODE_INPUT_OUTPUT);
     esp_rom_gpio_connect_out_signal(rxd_io_num, i2c_periph_signal[0].scl_out_sig, 0, 0);
     esp_rom_gpio_connect_in_signal(rxd_io_num, UART_PERIPH_SIGNAL(1, SOC_UART_RX_PIN_IDX), 0);
-    periph_module_enable(PERIPH_UART1_MODULE);
+    HP_UART_BUS_CLK_ATOMIC() {
+        uart_ll_enable_bus_clock(1, true);
+        uart_ll_reset_register(1);
+    }
     /* Reset all the bits */
     uart_ll_disable_intr_mask(&UART1, ~0);
     uart_ll_clr_intsts_mask(&UART1, ~0);
@@ -710,7 +714,9 @@ static void i2c_scl_freq_cal(void)
 
     printf("\nSCL high period %.3f (us), SCL low_period %.3f (us)\n\n", (float)(i2c_cource_clk_period * high_period_cnt), (float)(i2c_cource_clk_period * low_period_cnt));
     uart_ll_set_autobaud_en(&UART1, false);
-    periph_module_disable(PERIPH_UART1_MODULE);
+    HP_UART_BUS_CLK_ATOMIC() {
+        uart_ll_enable_bus_clock(1, false);
+    }
 }
 
 TEST_CASE("I2C SCL freq test (local test)", "[i2c][ignore]")

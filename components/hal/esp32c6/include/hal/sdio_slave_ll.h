@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -23,6 +23,7 @@
 #include "soc/host_reg.h"
 #include "soc/hinf_struct.h"
 #include "soc/lldesc.h"
+#include "soc/pcr_struct.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -34,7 +35,6 @@ extern "C" {
 #define sdio_slave_ll_get_host(ID)  (&HOST)
 /// Get address of the only HINF registers
 #define sdio_slave_ll_get_hinf(ID)  (&HINF)
-
 
 /*
  *  SLC2 DMA Desc struct, aka sdio_slave_ll_desc_t
@@ -76,6 +76,25 @@ typedef enum {
 } sdio_slave_ll_slvint_t;
 
 /**
+ * @brief Enable the bus clock for the SDIO slave module
+ *
+ * @param enable true to enable, false to disable
+ */
+static inline void sdio_slave_ll_enable_bus_clock(bool enable)
+{
+    PCR.sdio_slave_conf.sdio_slave_clk_en = enable;
+}
+
+/**
+ * @brief Reset the SDIO slave module
+ */
+static inline void sdio_slave_ll_reset_register(void)
+{
+    PCR.sdio_slave_conf.sdio_slave_rst_en = 1;
+    PCR.sdio_slave_conf.sdio_slave_rst_en = 0;
+}
+
+/**
  * Initialize the hardware.
  *
  * @param slc Address of the SLC registers
@@ -104,31 +123,31 @@ static inline void sdio_slave_ll_init(slc_dev_t *slc)
  */
 static inline void sdio_slave_ll_set_timing(host_dev_t *host, sdio_slave_timing_t timing)
 {
-    switch(timing) {
-        case SDIO_SLAVE_TIMING_PSEND_PSAMPLE:
-            host->conf.frc_sdio20 = 0x1f;
-            host->conf.frc_sdio11 = 0;
-            host->conf.frc_pos_samp = 0x1f;
-            host->conf.frc_neg_samp = 0;
-            break;
-        case SDIO_SLAVE_TIMING_PSEND_NSAMPLE:
-            host->conf.frc_sdio20 = 0x1f;
-            host->conf.frc_sdio11 = 0;
-            host->conf.frc_pos_samp = 0;
-            host->conf.frc_neg_samp = 0x1f;
-            break;
-        case SDIO_SLAVE_TIMING_NSEND_PSAMPLE:
-            host->conf.frc_sdio20 = 0;
-            host->conf.frc_sdio11 = 0x1f;
-            host->conf.frc_pos_samp = 0x1f;
-            host->conf.frc_neg_samp = 0;
-            break;
-        case SDIO_SLAVE_TIMING_NSEND_NSAMPLE:
-            host->conf.frc_sdio20 = 0;
-            host->conf.frc_sdio11 = 0x1f;
-            host->conf.frc_pos_samp = 0;
-            host->conf.frc_neg_samp = 0x1f;
-            break;
+    switch (timing) {
+    case SDIO_SLAVE_TIMING_PSEND_PSAMPLE:
+        host->conf.frc_sdio20 = 0x1f;
+        host->conf.frc_sdio11 = 0;
+        host->conf.frc_pos_samp = 0x1f;
+        host->conf.frc_neg_samp = 0;
+        break;
+    case SDIO_SLAVE_TIMING_PSEND_NSAMPLE:
+        host->conf.frc_sdio20 = 0x1f;
+        host->conf.frc_sdio11 = 0;
+        host->conf.frc_pos_samp = 0;
+        host->conf.frc_neg_samp = 0x1f;
+        break;
+    case SDIO_SLAVE_TIMING_NSEND_PSAMPLE:
+        host->conf.frc_sdio20 = 0;
+        host->conf.frc_sdio11 = 0x1f;
+        host->conf.frc_pos_samp = 0x1f;
+        host->conf.frc_neg_samp = 0;
+        break;
+    case SDIO_SLAVE_TIMING_NSEND_NSAMPLE:
+        host->conf.frc_sdio20 = 0;
+        host->conf.frc_sdio11 = 0x1f;
+        host->conf.frc_pos_samp = 0;
+        host->conf.frc_neg_samp = 0x1f;
+        break;
     }
 }
 
@@ -267,7 +286,7 @@ static inline void sdio_slave_ll_send_stop(slc_dev_t *slc)
  */
 static inline void sdio_slave_ll_send_intr_ena(slc_dev_t *slc, bool ena)
 {
-    slc->slc0int_ena.slc0_rx_eof_int_ena = (ena? 1: 0);
+    slc->slc0int_ena.slc0_rx_eof_int_ena = (ena ? 1 : 0);
 }
 
 /**
@@ -411,9 +430,9 @@ static inline void sdio_slave_ll_recv_stop(slc_dev_t *slc)
  * @param pos Position of the register, 0-63 except 24-27.
  * @return address of the register.
  */
-static inline intptr_t sdio_slave_ll_host_get_w_reg(host_dev_t* host, int pos)
+static inline intptr_t sdio_slave_ll_host_get_w_reg(host_dev_t *host, int pos)
 {
-    return (intptr_t )&(host->conf_w0) + pos + (pos>23?4:0) + (pos>31?12:0);
+    return (intptr_t) & (host->conf_w0) + pos + (pos > 23 ? 4 : 0) + (pos > 31 ? 12 : 0);
 }
 
 /**
@@ -425,7 +444,7 @@ static inline intptr_t sdio_slave_ll_host_get_w_reg(host_dev_t* host, int pos)
  */
 static inline uint8_t sdio_slave_ll_host_get_reg(host_dev_t *host, int pos)
 {
-    return *(uint8_t*)sdio_slave_ll_host_get_w_reg(host, pos);
+    return *(uint8_t *)sdio_slave_ll_host_get_w_reg(host, pos);
 }
 
 /**
@@ -435,9 +454,9 @@ static inline uint8_t sdio_slave_ll_host_get_reg(host_dev_t *host, int pos)
  * @param pos Position of the register, 0-63, except 24-27.
  * @param reg Value to set.
  */
-static inline void sdio_slave_ll_host_set_reg(host_dev_t* host, int pos, uint8_t reg)
+static inline void sdio_slave_ll_host_set_reg(host_dev_t *host, int pos, uint8_t reg)
 {
-    uint32_t* addr = (uint32_t*)(sdio_slave_ll_host_get_w_reg(host, pos) & (~3));
+    uint32_t *addr = (uint32_t *)(sdio_slave_ll_host_get_w_reg(host, pos) & (~3));
     uint32_t shift = (pos % 4) * 8;
     *addr &= ~(0xff << shift);
     *addr |= ((uint32_t)reg << shift);
@@ -449,7 +468,7 @@ static inline void sdio_slave_ll_host_set_reg(host_dev_t* host, int pos, uint8_t
  * @param host Address of the host registers
  * @return Enabled interrupts
  */
-static inline sdio_slave_hostint_t sdio_slave_ll_host_get_intena(host_dev_t* host)
+static inline sdio_slave_hostint_t sdio_slave_ll_host_get_intena(host_dev_t *host)
 {
     return (sdio_slave_hostint_t)host->slc0host_func1_int_ena.val;
 }
@@ -470,7 +489,7 @@ static inline void sdio_slave_ll_host_set_intena(host_dev_t *host, const sdio_sl
  * @param host Address of the host registers
  * @param mask Mask of interrupts to clear.
  */
-static inline void sdio_slave_ll_host_intr_clear(host_dev_t* host, const sdio_slave_hostint_t *mask)
+static inline void sdio_slave_ll_host_intr_clear(host_dev_t *host, const sdio_slave_hostint_t *mask)
 {
     host->slc0host_int_clr.val = (*mask);
 }
@@ -488,7 +507,7 @@ static inline void sdio_slave_ll_host_send_int(slc_dev_t *slc, const sdio_slave_
 }
 
 /**
- * Enable some of the slave interrups (send from host)
+ * Enable some of the slave interrupts (send from host)
  *
  * @param slc Address of the SLC registers
  * @param mask Mask of interrupts to enable, all those set to 0 will be disabled.
