@@ -561,7 +561,7 @@ static inline void handle_prop_new_dev(device_t *dev_obj)
     p_usbh_obj->constant.event_cb(&event_data, p_usbh_obj->constant.event_cb_arg);
 }
 
-// ------------------------------------------------- USBH Functions ----------------------------------------------------
+// -------------------------------------------- USBH Processing Functions ----------------------------------------------
 
 esp_err_t usbh_install(const usbh_config_t *usbh_config)
 {
@@ -700,6 +700,8 @@ esp_err_t usbh_process(void)
     return ESP_OK;
 }
 
+// ---------------------------------------------- Device Pool Functions ------------------------------------------------
+
 esp_err_t usbh_num_devs(int *num_devs_ret)
 {
     USBH_CHECK(num_devs_ret != NULL, ESP_ERR_INVALID_ARG);
@@ -708,10 +710,6 @@ esp_err_t usbh_num_devs(int *num_devs_ret)
     xSemaphoreGive(p_usbh_obj->constant.mux_lock);
     return ESP_OK;
 }
-
-// ------------------------------------------------ Device Functions ---------------------------------------------------
-
-// --------------------- Device Pool -----------------------
 
 esp_err_t usbh_dev_addr_list_fill(int list_len, uint8_t *dev_addr_list, int *num_dev_ret)
 {
@@ -741,6 +739,48 @@ esp_err_t usbh_dev_addr_list_fill(int list_len, uint8_t *dev_addr_list, int *num
     // Write back number of devices filled
     *num_dev_ret = num_filled;
     return ESP_OK;
+}
+
+esp_err_t usbh_dev_mark_all_free(void)
+{
+    USBH_ENTER_CRITICAL();
+    /*
+    Go through the device list and mark each device as waiting to be closed. If the device is not opened at all, we can
+    disable it immediately.
+    Note: We manually traverse the list because we need to add/remove items while traversing
+    */
+    bool call_proc_req_cb = false;
+    bool wait_for_free = false;
+    for (int i = 0; i < 2; i++) {
+        device_t *dev_obj_cur;
+        device_t *dev_obj_next;
+        // Go through pending list first as it's more efficient
+        if (i == 0) {
+            dev_obj_cur = TAILQ_FIRST(&p_usbh_obj->dynamic.devs_pending_tailq);
+        } else {
+            dev_obj_cur = TAILQ_FIRST(&p_usbh_obj->dynamic.devs_idle_tailq);
+        }
+        while (dev_obj_cur != NULL) {
+            // Keep a copy of the next item first in case we remove the current item
+            dev_obj_next = TAILQ_NEXT(dev_obj_cur, dynamic.tailq_entry);
+            if (dev_obj_cur->dynamic.ref_count == 0) {
+                // Device is not referenced. Can free immediately.
+                call_proc_req_cb |= _dev_set_actions(dev_obj_cur, DEV_ACTION_FREE);
+            } else {
+                // Device is still referenced. Just mark it as waiting to be freed
+                dev_obj_cur->dynamic.flags.waiting_free = 1;
+            }
+            // At least one device needs to be freed. User needs to wait for USBH_EVENT_ALL_FREE event
+            wait_for_free = true;
+            dev_obj_cur = dev_obj_next;
+        }
+    }
+    USBH_EXIT_CRITICAL();
+
+    if (call_proc_req_cb) {
+        p_usbh_obj->constant.proc_req_cb(USB_PROC_REQ_SOURCE_USBH, false, p_usbh_obj->constant.proc_req_cb_arg);
+    }
+    return (wait_for_free) ? ESP_ERR_NOT_FINISHED : ESP_OK;
 }
 
 esp_err_t usbh_dev_open(uint8_t dev_addr, usb_device_handle_t *dev_hdl)
@@ -808,49 +848,9 @@ esp_err_t usbh_dev_close(usb_device_handle_t dev_hdl)
     return ESP_OK;
 }
 
-esp_err_t usbh_dev_mark_all_free(void)
-{
-    USBH_ENTER_CRITICAL();
-    /*
-    Go through the device list and mark each device as waiting to be closed. If the device is not opened at all, we can
-    disable it immediately.
-    Note: We manually traverse the list because we need to add/remove items while traversing
-    */
-    bool call_proc_req_cb = false;
-    bool wait_for_free = false;
-    for (int i = 0; i < 2; i++) {
-        device_t *dev_obj_cur;
-        device_t *dev_obj_next;
-        // Go through pending list first as it's more efficient
-        if (i == 0) {
-            dev_obj_cur = TAILQ_FIRST(&p_usbh_obj->dynamic.devs_pending_tailq);
-        } else {
-            dev_obj_cur = TAILQ_FIRST(&p_usbh_obj->dynamic.devs_idle_tailq);
-        }
-        while (dev_obj_cur != NULL) {
-            // Keep a copy of the next item first in case we remove the current item
-            dev_obj_next = TAILQ_NEXT(dev_obj_cur, dynamic.tailq_entry);
-            if (dev_obj_cur->dynamic.ref_count == 0) {
-                // Device is not referenced. Can free immediately.
-                call_proc_req_cb |= _dev_set_actions(dev_obj_cur, DEV_ACTION_FREE);
-            } else {
-                // Device is still referenced. Just mark it as waiting to be freed
-                dev_obj_cur->dynamic.flags.waiting_free = 1;
-            }
-            // At least one device needs to be freed. User needs to wait for USBH_EVENT_ALL_FREE event
-            wait_for_free = true;
-            dev_obj_cur = dev_obj_next;
-        }
-    }
-    USBH_EXIT_CRITICAL();
+// ------------------------------------------------ Device Functions ---------------------------------------------------
 
-    if (call_proc_req_cb) {
-        p_usbh_obj->constant.proc_req_cb(USB_PROC_REQ_SOURCE_USBH, false, p_usbh_obj->constant.proc_req_cb_arg);
-    }
-    return (wait_for_free) ? ESP_ERR_NOT_FINISHED : ESP_OK;
-}
-
-// ------------------- Single Device  ----------------------
+// ----------------------- Getters -------------------------
 
 esp_err_t usbh_dev_get_addr(usb_device_handle_t dev_hdl, uint8_t *dev_addr)
 {
@@ -928,40 +928,7 @@ exit:
     return ret;
 }
 
-esp_err_t usbh_dev_submit_ctrl_urb(usb_device_handle_t dev_hdl, urb_t *urb)
-{
-    USBH_CHECK(dev_hdl != NULL && urb != NULL, ESP_ERR_INVALID_ARG);
-    device_t *dev_obj = (device_t *)dev_hdl;
-    USBH_CHECK(urb_check_args(urb), ESP_ERR_INVALID_ARG);
-    bool xfer_is_in = ((usb_setup_packet_t *)urb->transfer.data_buffer)->bmRequestType & USB_BM_REQUEST_TYPE_DIR_IN;
-    USBH_CHECK(transfer_check_usb_compliance(&(urb->transfer), USB_TRANSFER_TYPE_CTRL, dev_obj->constant.desc->bMaxPacketSize0, xfer_is_in), ESP_ERR_INVALID_ARG);
-
-    USBH_ENTER_CRITICAL();
-    USBH_CHECK_FROM_CRIT(dev_obj->dynamic.state == USB_DEVICE_STATE_CONFIGURED, ESP_ERR_INVALID_STATE);
-    // Increment the control transfer count first
-    dev_obj->dynamic.num_ctrl_xfers_inflight++;
-    USBH_EXIT_CRITICAL();
-
-    esp_err_t ret;
-    if (hcd_pipe_get_state(dev_obj->constant.default_pipe) != HCD_PIPE_STATE_ACTIVE) {
-        ret = ESP_ERR_INVALID_STATE;
-        goto hcd_err;
-    }
-    ret = hcd_urb_enqueue(dev_obj->constant.default_pipe, urb);
-    if (ret != ESP_OK) {
-        goto hcd_err;
-    }
-    ret = ESP_OK;
-    return ret;
-
-hcd_err:
-    USBH_ENTER_CRITICAL();
-    dev_obj->dynamic.num_ctrl_xfers_inflight--;
-    USBH_EXIT_CRITICAL();
-    return ret;
-}
-
-// ----------------------------------------------- Interface Functions -------------------------------------------------
+// ----------------------------------------------- Endpoint Functions -------------------------------------------------
 
 esp_err_t usbh_ep_alloc(usb_device_handle_t dev_hdl, usbh_ep_config_t *ep_config, usbh_ep_handle_t *ep_hdl_ret)
 {
@@ -1074,6 +1041,57 @@ esp_err_t usbh_ep_get_handle(usb_device_handle_t dev_hdl, uint8_t bEndpointAddre
     return ret;
 }
 
+esp_err_t usbh_ep_command(usbh_ep_handle_t ep_hdl, usbh_ep_cmd_t command)
+{
+    USBH_CHECK(ep_hdl != NULL, ESP_ERR_INVALID_ARG);
+
+    endpoint_t *ep_obj = (endpoint_t *)ep_hdl;
+    // Send the command to the EP's underlying pipe
+    return hcd_pipe_command(ep_obj->constant.pipe_hdl, (hcd_pipe_cmd_t)command);
+}
+
+void *usbh_ep_get_context(usbh_ep_handle_t ep_hdl)
+{
+    assert(ep_hdl);
+    endpoint_t *ep_obj = (endpoint_t *)ep_hdl;
+    return hcd_pipe_get_context(ep_obj->constant.pipe_hdl);
+}
+
+// ----------------------------------------------- Transfer Functions --------------------------------------------------
+
+esp_err_t usbh_dev_submit_ctrl_urb(usb_device_handle_t dev_hdl, urb_t *urb)
+{
+    USBH_CHECK(dev_hdl != NULL && urb != NULL, ESP_ERR_INVALID_ARG);
+    device_t *dev_obj = (device_t *)dev_hdl;
+    USBH_CHECK(urb_check_args(urb), ESP_ERR_INVALID_ARG);
+    bool xfer_is_in = ((usb_setup_packet_t *)urb->transfer.data_buffer)->bmRequestType & USB_BM_REQUEST_TYPE_DIR_IN;
+    USBH_CHECK(transfer_check_usb_compliance(&(urb->transfer), USB_TRANSFER_TYPE_CTRL, dev_obj->constant.desc->bMaxPacketSize0, xfer_is_in), ESP_ERR_INVALID_ARG);
+
+    USBH_ENTER_CRITICAL();
+    USBH_CHECK_FROM_CRIT(dev_obj->dynamic.state == USB_DEVICE_STATE_CONFIGURED, ESP_ERR_INVALID_STATE);
+    // Increment the control transfer count first
+    dev_obj->dynamic.num_ctrl_xfers_inflight++;
+    USBH_EXIT_CRITICAL();
+
+    esp_err_t ret;
+    if (hcd_pipe_get_state(dev_obj->constant.default_pipe) != HCD_PIPE_STATE_ACTIVE) {
+        ret = ESP_ERR_INVALID_STATE;
+        goto hcd_err;
+    }
+    ret = hcd_urb_enqueue(dev_obj->constant.default_pipe, urb);
+    if (ret != ESP_OK) {
+        goto hcd_err;
+    }
+    ret = ESP_OK;
+    return ret;
+
+hcd_err:
+    USBH_ENTER_CRITICAL();
+    dev_obj->dynamic.num_ctrl_xfers_inflight--;
+    USBH_EXIT_CRITICAL();
+    return ret;
+}
+
 esp_err_t usbh_ep_enqueue_urb(usbh_ep_handle_t ep_hdl, urb_t *urb)
 {
     USBH_CHECK(ep_hdl != NULL && urb != NULL, ESP_ERR_INVALID_ARG);
@@ -1102,22 +1120,6 @@ esp_err_t usbh_ep_dequeue_urb(usbh_ep_handle_t ep_hdl, urb_t **urb_ret)
     // Enqueue the URB to the EP's underlying pipe
     *urb_ret = hcd_urb_dequeue(ep_obj->constant.pipe_hdl);
     return ESP_OK;
-}
-
-esp_err_t usbh_ep_command(usbh_ep_handle_t ep_hdl, usbh_ep_cmd_t command)
-{
-    USBH_CHECK(ep_hdl != NULL, ESP_ERR_INVALID_ARG);
-
-    endpoint_t *ep_obj = (endpoint_t *)ep_hdl;
-    // Send the command to the EP's underlying pipe
-    return hcd_pipe_command(ep_obj->constant.pipe_hdl, (hcd_pipe_cmd_t)command);
-}
-
-void *usbh_ep_get_context(usbh_ep_handle_t ep_hdl)
-{
-    assert(ep_hdl);
-    endpoint_t *ep_obj = (endpoint_t *)ep_hdl;
-    return hcd_pipe_get_context(ep_obj->constant.pipe_hdl);
 }
 
 // -------------------------------------------------- Hub Functions ----------------------------------------------------
