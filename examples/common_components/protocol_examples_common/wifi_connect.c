@@ -23,7 +23,10 @@ static const char *TAG = "example_connect";
 static esp_netif_t *s_example_sta_netif = NULL;
 static SemaphoreHandle_t s_semph_get_ip_addrs = NULL;
 #if CONFIG_EXAMPLE_CONNECT_IPV6
+#if CONFIG_EXAMPLE_CONNECT_PREF_ANY
+#else
 static SemaphoreHandle_t s_semph_get_ip6_addrs = NULL;
+#endif
 #endif
 
 #if CONFIG_EXAMPLE_WIFI_SCAN_METHOD_FAST
@@ -71,9 +74,12 @@ static void example_handler_on_wifi_disconnect(void *arg, esp_event_base_t event
             xSemaphoreGive(s_semph_get_ip_addrs);
         }
 #if CONFIG_EXAMPLE_CONNECT_IPV6
+#if CONFIG_EXAMPLE_CONNECT_PREF_ANY
+#else
         if (s_semph_get_ip6_addrs) {
             xSemaphoreGive(s_semph_get_ip6_addrs);
         }
+#endif
 #endif
         return;
     }
@@ -102,6 +108,7 @@ static void example_handler_on_sta_got_ip(void *arg, esp_event_base_t event_base
         return;
     }
     ESP_LOGI(TAG, "Got IPv4 event: Interface \"%s\" address: " IPSTR, esp_netif_get_desc(event->esp_netif), IP2STR(&event->ip_info.ip));
+
     if (s_semph_get_ip_addrs) {
         xSemaphoreGive(s_semph_get_ip_addrs);
     } else {
@@ -122,10 +129,15 @@ static void example_handler_on_sta_got_ipv6(void *arg, esp_event_base_t event_ba
              IPV62STR(event->ip6_info.ip), example_ipv6_addr_types_to_str[ipv6_type]);
 
     if (ipv6_type == EXAMPLE_CONNECT_PREFERRED_IPV6_TYPE) {
+#if CONFIG_EXAMPLE_CONNECT_PREF_ANY
+        if (s_semph_get_ip_addrs) {
+            xSemaphoreGive(s_semph_get_ip_addrs);
+#else
         if (s_semph_get_ip6_addrs) {
             xSemaphoreGive(s_semph_get_ip6_addrs);
+#endif
         } else {
-            ESP_LOGI(TAG, "- IPv6 address: " IPV6STR ", type: %s", IPV62STR(event->ip6_info.ip), example_ipv6_addr_types_to_str[ipv6_type]);
+           ESP_LOGI(TAG, "- IPv6 address: " IPV6STR ", type: %s", IPV62STR(event->ip6_info.ip), example_ipv6_addr_types_to_str[ipv6_type]);
         }
     }
 }
@@ -172,11 +184,14 @@ esp_err_t example_wifi_sta_do_connect(wifi_config_t wifi_config, bool wait)
             return ESP_ERR_NO_MEM;
         }
 #if CONFIG_EXAMPLE_CONNECT_IPV6
+#if CONFIG_EXAMPLE_CONNECT_PREF_ANY
+#else
         s_semph_get_ip6_addrs = xSemaphoreCreateBinary();
         if (s_semph_get_ip6_addrs == NULL) {
             vSemaphoreDelete(s_semph_get_ip_addrs);
             return ESP_ERR_NO_MEM;
         }
+#endif
 #endif
     }
     s_retry_num = 0;
@@ -196,11 +211,15 @@ esp_err_t example_wifi_sta_do_connect(wifi_config_t wifi_config, bool wait)
     }
     if (wait) {
         ESP_LOGI(TAG, "Waiting for IP(s)");
+#if CONFIG_EXAMPLE_CONNECT_PREF_ANY
+        xSemaphoreTake(s_semph_get_ip_addrs, portMAX_DELAY);
+#else
 #if CONFIG_EXAMPLE_CONNECT_IPV4
         xSemaphoreTake(s_semph_get_ip_addrs, portMAX_DELAY);
 #endif
 #if CONFIG_EXAMPLE_CONNECT_IPV6
         xSemaphoreTake(s_semph_get_ip6_addrs, portMAX_DELAY);
+#endif
 #endif
         if (s_retry_num > CONFIG_EXAMPLE_WIFI_CONN_MAX_RETRY) {
             return ESP_FAIL;
@@ -221,9 +240,12 @@ esp_err_t example_wifi_sta_do_disconnect(void)
         vSemaphoreDelete(s_semph_get_ip_addrs);
     }
 #if CONFIG_EXAMPLE_CONNECT_IPV6
+#if CONFIG_EXAMPLE_CONNECT_PREF_ANY
+#else
     if (s_semph_get_ip6_addrs) {
         vSemaphoreDelete(s_semph_get_ip6_addrs);
     }
+#endif
 #endif
     return esp_wifi_disconnect();
 }
