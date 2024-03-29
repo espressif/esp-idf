@@ -59,10 +59,12 @@ static _lock_t s_phy_access_lock;
 
 #if SOC_PM_SUPPORT_MODEM_PD || SOC_PM_SUPPORT_WIFI_PD
 #if !SOC_PMU_SUPPORTED
+#if !CONFIG_IDF_TARGET_ESP32C5 // TODO: [ESP32C5] IDF-8667
 static DRAM_ATTR struct {
     int     count;  /* power on count of wifi and bt power domain */
     _lock_t lock;
 } s_wifi_bt_pd_controller = { .count = 0 };
+#endif
 #endif // !SOC_PMU_SUPPORTED
 #endif // SOC_PM_SUPPORT_MODEM_PD || SOC_PM_SUPPORT_WIFI_PD
 
@@ -313,7 +315,7 @@ void esp_phy_disable(esp_phy_modem_t modem)
 #endif
         }
 #if CONFIG_IDF_TARGET_ESP32
-        // Update WiFi MAC time before disalbe WiFi/BT common peripheral clock
+        // Update WiFi MAC time before disable WiFi/BT common peripheral clock
         phy_update_wifi_mac_time(true, esp_timer_get_time());
 #endif
         // Disable WiFi/BT common peripheral clock. Do not disable clock for hardware RNG
@@ -326,6 +328,7 @@ void IRAM_ATTR esp_wifi_bt_power_domain_on(void)
 {
 #if SOC_PM_SUPPORT_MODEM_PD || SOC_PM_SUPPORT_WIFI_PD
 #if !SOC_PMU_SUPPORTED
+#if !CONFIG_IDF_TARGET_ESP32C5 // TODO: [ESP32C5] IDF-8667
     _lock_acquire(&s_wifi_bt_pd_controller.lock);
     if (s_wifi_bt_pd_controller.count++ == 0) {
         CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_PWC_REG, RTC_CNTL_WIFI_FORCE_PD);
@@ -343,6 +346,7 @@ void IRAM_ATTR esp_wifi_bt_power_domain_on(void)
         wifi_bt_common_module_disable();
     }
     _lock_release(&s_wifi_bt_pd_controller.lock);
+#endif
 #endif // !SOC_PMU_SUPPORTED
 #endif // SOC_PM_SUPPORT_MODEM_PD || SOC_PM_SUPPORT_WIFI_PD
 }
@@ -351,12 +355,14 @@ void esp_wifi_bt_power_domain_off(void)
 {
 #if SOC_PM_SUPPORT_MODEM_PD || SOC_PM_SUPPORT_WIFI_PD
 #if !SOC_PMU_SUPPORTED
+#if !CONFIG_IDF_TARGET_ESP32C5 // TODO: [ESP32C5] IDF-8667
     _lock_acquire(&s_wifi_bt_pd_controller.lock);
     if (--s_wifi_bt_pd_controller.count == 0) {
         SET_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_WIFI_FORCE_ISO);
         SET_PERI_REG_MASK(RTC_CNTL_DIG_PWC_REG, RTC_CNTL_WIFI_FORCE_PD);
     }
     _lock_release(&s_wifi_bt_pd_controller.lock);
+#endif
 #endif // !SOC_PMU_SUPPORTED
 #endif // SOC_PM_SUPPORT_MODEM_PD || SOC_PM_SUPPORT_WIFI_PD
 }
@@ -864,10 +870,13 @@ void esp_phy_load_cal_and_init(void)
 #else
     esp_phy_release_init_data(init_data);
 #endif
-
+#if !CONFIG_IDF_TARGET_ESP32C5 // TODO: [ESP32C5] IDF-8638
     ESP_ERROR_CHECK(esp_deep_sleep_register_hook(&phy_close_rf));
+#endif
 #if !CONFIG_IDF_TARGET_ESP32
+#if !CONFIG_IDF_TARGET_ESP32C5 // TODO: [ESP32C5] IDF-8638
     ESP_ERROR_CHECK(esp_deep_sleep_register_hook(&phy_xpd_tsens));
+#endif
 #endif
 
     free(cal_data); // PHY maintains a copy of calibration data, so we can free this
@@ -903,7 +912,7 @@ static uint8_t phy_find_bin_type_according_country(const char* country)
 
     if (i == sizeof(s_country_code_map_type_table)/sizeof(phy_country_to_bin_type_t)) {
         phy_init_data_type = ESP_PHY_INIT_DATA_TYPE_DEFAULT;
-        ESP_LOGW(TAG, "Use the default certification code beacuse %c%c doesn't have a certificate", country[0], country[1]);
+        ESP_LOGW(TAG, "Use the default certification code because %c%c doesn't have a certificate", country[0], country[1]);
     }
 
     return phy_init_data_type;

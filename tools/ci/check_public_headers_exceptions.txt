@@ -31,6 +31,7 @@ components/esp_phy/esp32s2/include/phy_init_data.h
 components/esp_phy/esp32s3/include/phy_init_data.h
 components/esp_phy/esp32c3/include/phy_init_data.h
 components/esp_phy/esp32c2/include/phy_init_data.h
+components/esp_phy/esp32c5/include/phy_init_data.h
 components/esp_phy/esp32c6/include/phy_init_data.h
 
 components/spi_flash/include/spi_flash_chip_issi.h

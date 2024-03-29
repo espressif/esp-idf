@@ -19,10 +19,12 @@
 extern "C" {
 #endif
 
+#if !CONFIG_IDF_TARGET_ESP32C5_MP_VERSION
 typedef struct {
     modem_syscon_dev_t *syscon_dev;
     modem_lpcon_dev_t  *lpcon_dev;
 } modem_clock_hal_context_t;
+#endif
 
 #if !CONFIG_IDF_TARGET_ESP32H2 //TODO: PM-92
 void modem_clock_hal_set_clock_domain_icg_bitmap(modem_clock_hal_context_t *hal, modem_clock_domain_t domain, uint32_t bitmap);
