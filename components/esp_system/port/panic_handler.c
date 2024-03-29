@@ -6,7 +6,6 @@
 
 #include <stdlib.h>
 
-#include "spi_flash_mmap.h"
 #include "esp_ipc_isr.h"
 #include "esp_private/system_internal.h"
 #include "esp_private/cache_utils.h"

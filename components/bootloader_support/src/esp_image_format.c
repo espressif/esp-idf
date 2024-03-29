@@ -11,7 +11,6 @@
 #include <esp_fault.h>
 #include <esp_log.h>
 #include <esp_attr.h>
-#include <spi_flash_mmap.h>
 #include <bootloader_flash_priv.h>
 #include <bootloader_random.h>
 #include <bootloader_sha.h>

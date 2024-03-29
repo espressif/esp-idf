@@ -8,7 +8,6 @@
 #include <string.h>
 
 #include "esp_err.h"
-#include "spi_flash_mmap.h"
 #include "esp_private/cache_utils.h"
 
 #include "esp_rom_sys.h"

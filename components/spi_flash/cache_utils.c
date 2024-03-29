@@ -53,7 +53,6 @@
 #include "esp_attr.h"
 #include "esp_memory_utils.h"
 #include "esp_intr_alloc.h"
-#include "spi_flash_mmap.h"
 #include "spi_flash_override.h"
 #include "esp_private/spi_flash_os.h"
 #include "esp_private/freertos_idf_additions_priv.h"

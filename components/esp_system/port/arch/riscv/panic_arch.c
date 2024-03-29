@@ -6,8 +6,6 @@
 
 #include <stdio.h>
 
-#include "spi_flash_mmap.h"
-
 #include "soc/soc_caps.h"
 #include "esp_private/panic_internal.h"
 #include "esp_private/panic_reason.h"

@@ -7,7 +7,6 @@
 #include <string.h>
 #include <sys/param.h>
 #include "esp_system.h"
-#include "spi_flash_mmap.h"
 #include "soc/soc_memory_layout.h"
 #include "esp_private/cache_utils.h"
 
