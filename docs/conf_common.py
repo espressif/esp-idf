@@ -284,7 +284,7 @@ extensions += ['sphinx_copybutton',
                'esp_docs.esp_extensions.run_doxygen',
                ]
 
-# Use wavedrompy as backend, insted of wavedrom-cli
+# Use wavedrompy as backend, instead of wavedrom-cli
 render_using_wavedrompy = True
 
 smartquotes = False
