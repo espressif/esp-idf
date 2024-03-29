@@ -278,9 +278,8 @@ static inline void *aes_dma_calloc(size_t num, size_t size, uint32_t caps, size_
     void *ptr = NULL;
     esp_dma_mem_info_t dma_mem_info = {
         .extra_heap_caps = caps,
-        .dma_alignment_bytes = 4,
+        .dma_alignment_bytes = DMA_DESC_MEM_ALIGN_SIZE,
     };
-    //TODO: IDF-9638
     esp_dma_capable_calloc(num, size, &dma_mem_info, &ptr, actual_size);
     return ptr;
 }
