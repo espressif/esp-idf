@@ -17,8 +17,15 @@
 #include "esp_log.h"
 #include "esp_event.h"
 #include "nvs_flash.h"
+#include "regex.h"
 
 #define DEFAULT_SCAN_LIST_SIZE CONFIG_EXAMPLE_SCAN_LIST_SIZE
+
+#ifdef CONFIG_EXAMPLE_USE_SCAN_CHANNEL_BITMAP
+#define USE_CHANNEL_BTIMAP 1
+#define CHANNEL_LIST_SIZE 3
+static uint8_t channel_list[CHANNEL_LIST_SIZE] = {1, 6, 11};
+#endif /*CONFIG_EXAMPLE_USE_SCAN_CHANNEL_BITMAP*/
 
 static const char *TAG = "scan";
 
@@ -133,6 +140,17 @@ static void print_cipher_type(int pairwise_cipher, int group_cipher)
     }
 }
 
+#ifdef USE_CHANNEL_BTIMAP
+static void array_2_channel_bitmap(const uint8_t channel_list[], const uint8_t channel_list_size, wifi_scan_config_t *scan_config) {
+
+    for(uint8_t i = 0; i < channel_list_size; i++) {
+        uint8_t channel = channel_list[i];
+        scan_config->channel_bitmap.ghz_2_channels |= (1 << channel);
+    }
+}
+#endif /*USE_CHANNEL_BTIMAP*/
+
+
 /* Initialize Wi-Fi as sta and set scan method */
 static void wifi_scan(void)
 {
@@ -149,9 +167,23 @@ static void wifi_scan(void)
     uint16_t ap_count = 0;
     memset(ap_info, 0, sizeof(ap_info));
 
+
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
     ESP_ERROR_CHECK(esp_wifi_start());
+
+#ifdef USE_CHANNEL_BTIMAP
+    wifi_scan_config_t *scan_config = (wifi_scan_config_t *)calloc(1,sizeof(wifi_scan_config_t));
+    if (!scan_config) {
+        ESP_LOGE(TAG, "Memory Allocation for scan config failed!");
+        return;
+    }
+    array_2_channel_bitmap(channel_list, CHANNEL_LIST_SIZE, scan_config);
+    esp_wifi_scan_start(scan_config, true);
+
+#else
     esp_wifi_scan_start(NULL, true);
+#endif /*USE_CHANNEL_BTIMAP*/
+
     ESP_LOGI(TAG, "Max AP number ap_info can hold = %u", number);
     ESP_ERROR_CHECK(esp_wifi_scan_get_ap_records(&number, ap_info));
     ESP_ERROR_CHECK(esp_wifi_scan_get_ap_num(&ap_count));
@@ -165,7 +197,6 @@ static void wifi_scan(void)
         }
         ESP_LOGI(TAG, "Channel \t\t%d", ap_info[i].primary);
     }
-
 }
 
 void app_main(void)

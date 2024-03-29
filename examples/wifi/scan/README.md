@@ -23,7 +23,8 @@ Open the project configuration menu (`idf.py menuconfig`).
 In the `Example Configuration` menu:
 
 * Set the Example configuration.
-    * Use `Max size of scan list` to set the maximum nunber of access points in the list.
+    * Use `Max size of scan list` to set the maximum number of access points in the list.
+    * Use 'Scan Channel list' to list specific channels you wish to scan. For eg. 1,6,9,11. By Default all channels will be scanned.
 
 ### Build and Flash
 
@@ -47,7 +48,7 @@ As you run the example, you will see the following log:
 I (443) wifi:wifi firmware version: 6bff005
 I (443) wifi:wifi certification version: v7.0
 I (443) wifi:config NVS flash: enabled
-I (443) wifi:config nano formating: disabled
+I (443) wifi:config nano formatting: disabled
 I (453) wifi:Init data frame dynamic rx buffer num: 32
 I (453) wifi:Init management frame dynamic rx buffer num: 32
 I (463) wifi:Init management short buffer num: 32
