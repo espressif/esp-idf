@@ -823,10 +823,7 @@ def test_rtc_slow_reg2_execute_violation(dut: PanicTestDut, test_func_name: str)
 @pytest.mark.generic
 def test_irom_reg_write_violation(dut: PanicTestDut, test_func_name: str) -> None:
     dut.run_test_func(test_func_name)
-    if dut.target == 'esp32c6':
-        dut.expect_gme('Store access fault')
-    elif dut.target == 'esp32h2':
-        dut.expect_gme('Cache error')
+    dut.expect_gme('Store access fault')
     dut.expect_reg_dump(0)
     dut.expect_cpu_reset()
 
@@ -870,7 +867,7 @@ def test_gdbstub_coredump(dut: PanicTestDut) -> None:
 def test_hw_stack_guard_cpu0(dut: PanicTestDut, config: str, test_func_name: str) -> None:
     dut.run_test_func(test_func_name)
     dut.expect_exact('Guru Meditation Error: Core  0 panic\'ed (Stack protection fault).')
-    dut.expect_none('ASSIST_DEBUG is not triggered BUT interrupt occured!')
+    dut.expect_none('ASSIST_DEBUG is not triggered BUT interrupt occurred!')
     dut.expect(r'Detected in task(.*)at 0x')
     dut.expect_exact('Stack pointer: 0x')
     dut.expect(r'Stack bounds: 0x(.*) - 0x')
