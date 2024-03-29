@@ -620,6 +620,7 @@ if(CONFIG_BT_ENABLED)
                     "host/nimble/nimble/nimble/host/store/config/src/ble_store_nvs.c"
                     "host/nimble/nimble/nimble/host/src/ble_gattc_cache.c"
                     "host/nimble/nimble/nimble/host/src/ble_gattc_cache_conn.c"
+                    "host/nimble/nimble/nimble/host/src/ble_eatt.c"
                 )
 
             list(APPEND srcs
