@@ -351,20 +351,23 @@ TEST_CASE("eventfd multiple selects", "[vfs][eventfd]")
 }
 
 typedef struct {
-    int *value;
+    QueueHandle_t queue;
     int fd;
 } select_block_task_args_t;
 
 static void select_block_task(void *arg)
 {
-    int fd = ((select_block_task_args_t *)arg)->fd;
+    select_block_task_args_t *select_arg = (select_block_task_args_t *)arg;
+    int fd = select_arg->fd;
     fd_set read_fds;
 
     FD_ZERO(&read_fds);
     FD_SET(fd, &read_fds);
 
-    select(fd + 1, &read_fds, NULL, NULL, NULL);
-    *(((select_block_task_args_t *)arg)->value) = 1;
+    int val = select(fd + 1, &read_fds, NULL, NULL, NULL);
+    assert(val == 1);
+    bool is_selected = true;
+    xQueueSend(select_arg->queue, &is_selected, 0);
     vTaskDelete(NULL);
 }
 
@@ -376,20 +379,20 @@ TEST_CASE("eventfd select block", "[vfs][eventfd]")
     select_block_task_args_t args;
     args.fd = eventfd(0, 0);
     TEST_ASSERT_GREATER_OR_EQUAL(0, args.fd);
-    int a = 0;
-    args.value = &a;
+    args.queue = xQueueCreate(1, sizeof(bool));
 
     int fd_write = eventfd(0, 0);
     TEST_ASSERT_GREATER_OR_EQUAL(0, fd_write);
 
     xTaskCreate(select_block_task, "select_block_task", 2048, &args, 5, NULL);
-    vTaskDelay(pdMS_TO_TICKS(2000));
 
+    bool is_selected = false;
     uint64_t val = 1;
     TEST_ASSERT_EQUAL(sizeof(val), write(fd_write, &val, sizeof(val)));
-    vTaskDelay(pdMS_TO_TICKS(2000));
-
-    TEST_ASSERT_EQUAL(0, *(args.value));
+    TEST_ASSERT(!xQueueReceive(args.queue, &is_selected, pdMS_TO_TICKS(2000)));
+    TEST_ASSERT_EQUAL(sizeof(val), write(args.fd, &val, sizeof(val)));
+    TEST_ASSERT(xQueueReceive(args.queue, &is_selected, pdMS_TO_TICKS(1000)));
+    TEST_ASSERT_EQUAL(true, is_selected);
     TEST_ASSERT_EQUAL(0, close(args.fd));
     TEST_ASSERT_EQUAL(0, close(fd_write));
     TEST_ESP_OK(esp_vfs_eventfd_unregister());
