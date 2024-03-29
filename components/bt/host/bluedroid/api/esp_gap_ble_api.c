@@ -204,6 +204,25 @@ esp_err_t esp_ble_gap_set_rand_addr(esp_bd_addr_t rand_addr)
     return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gap_args_t), NULL, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
+esp_err_t esp_ble_gap_set_resolvable_private_address_timeout(uint16_t rpa_timeout)
+{
+    ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
+
+    if (rpa_timeout < 0x0001 || rpa_timeout > 0x0E10) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    btc_msg_t msg = {0};
+    btc_ble_gap_args_t arg;
+
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_GAP_BLE;
+    msg.act = BTC_GAP_BLE_ACT_SET_RESOLVABLE_PRIVATE_ADDRESS_TIMEOUT;
+    arg.set_rpa_timeout.rpa_timeout = rpa_timeout;
+
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gap_args_t), NULL, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+}
+
 esp_err_t esp_ble_gap_clear_rand_addr(void)
 {
     btc_msg_t msg;

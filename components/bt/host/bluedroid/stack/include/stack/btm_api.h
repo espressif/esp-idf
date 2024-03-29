@@ -197,7 +197,7 @@ typedef void (tBTM_UPDATE_WHITELIST_CBACK) (UINT8 status, tBTM_WL_OPERATION wl_o
 
 typedef void (tBTM_SET_LOCAL_PRIVACY_CBACK) (UINT8 status);
 
-
+typedef void (tBTM_SET_RPA_TIMEOUT_CMPL_CBACK) (UINT8 status);
 /*****************************************************************************
 **  DEVICE DISCOVERY - Inquiry, Remote Name, Discovery, Class of Device
 *****************************************************************************/
@@ -308,7 +308,7 @@ typedef void (tBTM_SET_LOCAL_PRIVACY_CBACK) (UINT8 status);
 #define BTM_COD_MINOR_CELLULAR              0x04
 #define BTM_COD_MINOR_CORDLESS              0x08
 #define BTM_COD_MINOR_SMART_PHONE           0x0C
-#define BTM_COD_MINOR_WIRED_MDM_V_GTWY      0x10 /* wired modem or voice gatway */
+#define BTM_COD_MINOR_WIRED_MDM_V_GTWY      0x10 /* wired modem or voice gateway */
 #define BTM_COD_MINOR_ISDN_ACCESS           0x14
 
 /* minor device class field for LAN Access Point Major Class */
@@ -1549,7 +1549,7 @@ typedef struct {
     tBTM_AUTH_REQ   loc_auth_req;   /* Authentication required for local device */
     tBTM_AUTH_REQ   rmt_auth_req;   /* Authentication required for peer device */
     tBTM_IO_CAP     loc_io_caps;    /* IO Capabilities of the local device */
-    tBTM_IO_CAP     rmt_io_caps;    /* IO Capabilities of the remot device */
+    tBTM_IO_CAP     rmt_io_caps;    /* IO Capabilities of the remote device */
 } tBTM_SP_CFM_REQ;
 
 /* data type for BTM_SP_KEY_REQ_EVT */
@@ -2206,7 +2206,7 @@ UINT8 BTM_SetTraceLevel (UINT8 new_level);
 **
 ** Function         BTM_WritePageTimeout
 **
-** Description      Send HCI Wite Page Timeout.
+** Description      Send HCI Write Page Timeout.
 **
 ** Returns
 **      BTM_SUCCESS         Command sent.
@@ -2384,7 +2384,7 @@ tBTM_STATUS  BTM_StartInquiry (tBTM_INQ_PARMS *p_inqparms,
 ** Description      This function returns a bit mask of the current inquiry state
 **
 ** Returns          BTM_INQUIRY_INACTIVE if inactive (0)
-**                  BTM_LIMITED_INQUIRY_ACTIVE if a limted inquiry is active
+**                  BTM_LIMITED_INQUIRY_ACTIVE if a limited inquiry is active
 **                  BTM_GENERAL_INQUIRY_ACTIVE if a general inquiry is active
 **                  BTM_PERIODIC_INQUIRY_ACTIVE if a periodic inquiry is active
 **
@@ -3524,7 +3524,7 @@ BOOLEAN BTM_SecAddDevice (BD_ADDR bd_addr, DEV_CLASS dev_class,
 **
 ** Description      Free resources associated with the device.
 **
-** Returns          TRUE if rmoved OK, FALSE if not found
+** Returns          TRUE if removed OK, FALSE if not found
 **
 *******************************************************************************/
 //extern
@@ -4170,7 +4170,7 @@ UINT8 BTM_GetEirUuidList( UINT8 *p_eir, UINT8 uuid_size, UINT8 *p_num_uuid,
 **                               pointer is used, PCM parameter maintained in
 **                               the control block will be used; otherwise update
 **                               control block value.
-**                  err_data_rpt: Lisbon feature to enable the erronous data report
+**                  err_data_rpt: Lisbon feature to enable the erroneous data report
 **                                or not.
 **
 ** Returns          BTM_SUCCESS if the successful.
