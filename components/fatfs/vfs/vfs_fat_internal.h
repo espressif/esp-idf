@@ -19,7 +19,7 @@ typedef enum {
 
 typedef struct vfs_fat_spiflash_ctx_t {
     const esp_partition_t *partition;           //The partition where the FAT is located
-    bool by_label;                              //If the partition is mounted by lable or not
+    bool by_label;                              //If the partition is mounted by label or not
     BYTE pdrv;                                  //Drive number that is mounted
     FATFS *fs;                                  //FAT structure pointer that is registered
     wl_handle_t wlhandle;                       //WL handle

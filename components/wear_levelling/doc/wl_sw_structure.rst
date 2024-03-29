@@ -31,7 +31,7 @@ Virtual interface Flash_Access defines the following basic functions:
  - read - reads from the flash memory to a data buffer.
  - write - writes to the flash memory from a data buffer.
  - erase - erases a sector of the flash memory.
- - erase_range - erases a range of sectors of the flash memory. The range length must be rounded to a multile of the sector size.
+ - erase_range - erases a range of sectors of the flash memory. The range length must be rounded to a multiple of the sector size.
  - flash_size - returns the available flash memory (in bytes).
  - sector_size - returns the flash sector size.
  - flush - stores current state to the flash, if needed.

@@ -224,7 +224,7 @@ protected:
 /**
  * @brief Opens non-volatile storage and returns a handle object.
  *
- * The handle is automatically closed on desctruction. The scope of the handle is the namespace ns_name
+ * The handle is automatically closed on destruction. The scope of the handle is the namespace ns_name
  * in a particular partition partition_name.
  * The parameters partition_name, ns_name and open_mode have the same meaning and restrictions as the parameters
  * part_name, name and open_mode in \ref nvs_open_from_partition, respectively.

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -92,7 +92,7 @@ TEST_CASE("Page reading with different type causes type mismatch error", "[nvs]"
     CHECK(page.readItem(1, nvs::ItemType::U32, "intval1", &val, sizeof(val)) == ESP_ERR_NVS_TYPE_MISMATCH);
 }
 
-TEST_CASE("Page when erased, it's state becomes UNITIALIZED", "[nvs]")
+TEST_CASE("Page when erased, it's state becomes UNINITIALIZED", "[nvs]")
 {
     PartitionEmulationFixture f;
     nvs::Page page;
@@ -753,7 +753,7 @@ TEST_CASE("nvs iterators tests", "[nvs]")
         CHECK(res == ESP_ERR_NVS_NOT_FOUND); // after finishing the loop or if no entry was found to begin with,
         // res has to be ESP_ERR_NVS_NOT_FOUND or some internal error
         // or programming error occurred
-        nvs_release_iterator(it); // unneccessary call but emphasizes the programming pattern
+        nvs_release_iterator(it); // unnecessary call but emphasizes the programming pattern
         return count;
     };
 
@@ -768,7 +768,7 @@ TEST_CASE("nvs iterators tests", "[nvs]")
         CHECK(res == ESP_ERR_NVS_NOT_FOUND); // after finishing the loop or if no entry was found to begin with,
         // res has to be ESP_ERR_NVS_NOT_FOUND or some internal error
         // or programming error occurred
-        nvs_release_iterator(it); // unneccessary call but emphasizes the programming pattern
+        nvs_release_iterator(it); // unnecessary call but emphasizes the programming pattern
         return count;
     };
 
@@ -855,7 +855,7 @@ TEST_CASE("nvs iterators tests", "[nvs]")
         CHECK(res == ESP_ERR_NVS_NOT_FOUND); // after finishing the loop, res has to be ESP_ERR_NVS_NOT_FOUND
         // or some internal error or programming error occurred
         CHECK(key == "value8");
-        nvs_release_iterator(it); // unneccessary call but emphasizes the programming pattern
+        nvs_release_iterator(it); // unnecessary call but emphasizes the programming pattern
     }
 
     SECTION("Entry info is not affected by subsequent erase") {
@@ -902,7 +902,7 @@ TEST_CASE("nvs iterators tests", "[nvs]")
         // or some internal error or programming error occurred
         CHECK(entries_created == entries_found);
 
-        nvs_release_iterator(it); // unneccessary call but emphasizes the programming pattern
+        nvs_release_iterator(it); // unnecessary call but emphasizes the programming pattern
         nvs_close(handle_3);
     }
 
@@ -1603,7 +1603,7 @@ TEST_CASE("calculate used and free space", "[nvs]")
     nvs_handle_t handle_1;
     size_t ns1_expected_entries = 0;
 
-    // create namepace
+    // create namespace
     consumed_entries = 1;   // should consume one entry
     TEST_ESP_OK(nvs_open("test_k1", NVS_READWRITE, &handle_1));
     TEST_ESP_OK(nvs_get_stats(NULL, &stat2));
@@ -3275,7 +3275,7 @@ TEST_CASE("nvs multiple write with same key but different types", "[nvs][xxx]")
 
 #ifdef CONFIG_NVS_LEGACY_DUP_KEYS_COMPATIBILITY
     // Legacy behavior
-    // First use of key hooks data type until removed by nvs_erase_key. Alternative re-use of same key with different
+    // First use of key hooks data type until removed by nvs_erase_key. Alternative reuse of same key with different
     // data type is written to the storage as hidden active value. It is returned by nvs_get function after nvs_erase_key is called.
     // Mixing more than 2 data types brings undefined behavior. It is not tested here.
 

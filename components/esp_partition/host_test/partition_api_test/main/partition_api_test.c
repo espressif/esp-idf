@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -228,7 +228,7 @@ TEST(partition_api, test_partition_mmap_reopen)
     memset(p_file_mmap_ctrl_input, 0, sizeof(*p_file_mmap_ctrl_input));
     strlcpy(p_file_mmap_ctrl_input->flash_file_name, generated_file_name, sizeof(p_file_mmap_ctrl_input->flash_file_name));
 
-    // get partiton
+    // get partition
     partition_data = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_ANY, "storage");
     TEST_ASSERT_NOT_NULL(partition_data);
 
@@ -295,7 +295,7 @@ TEST(partition_api, test_partition_mmap_remove)
     memset(p_file_mmap_ctrl_input, 0, sizeof(*p_file_mmap_ctrl_input));
     strlcpy(p_file_mmap_ctrl_input->flash_file_name, generated_file_name, sizeof(p_file_mmap_ctrl_input->flash_file_name));
 
-    // get partiton, should fail with NULL returned
+    // get partition, should fail with NULL returned
     partition_data = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_ANY, "storage");
     TEST_ASSERT_EQUAL(NULL, partition_data);
 
@@ -546,7 +546,7 @@ void read_stats(t_stats *p_stats)
 }
 
 // evaluates if final stats differ from initial stats by expected difference stats.
-// if there is no need to evaluate some stats, set respective expeted difference stats members to SIZE_MAX
+// if there is no need to evaluate some stats, set respective expected difference stats members to SIZE_MAX
 bool evaluate_stats(const t_stats *p_initial_stats, const t_stats *p_final_stats, const t_stats *p_expected_difference_stats)
 {
     if (p_expected_difference_stats->read_ops != SIZE_MAX) {

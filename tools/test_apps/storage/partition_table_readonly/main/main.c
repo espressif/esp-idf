@@ -49,7 +49,7 @@ const char *spiffs_partition_name = "spiffs_ro";
 static wl_handle_t s_wl_handle = WL_INVALID_HANDLE;
 
 // Data in each filesystem partition
-const char* cmp_string = "This is a file cointained in the generated filesystem image on the host and flashed to the ESP device";
+const char* cmp_string = "This is a file contained in the generated filesystem image on the host and flashed to the ESP device";
 #define CMP_STRING_LEN 102 // 101 + '\0'
 
 static void fill_array_of_readonly_data_partitions(void)
@@ -162,7 +162,7 @@ TEST_CASE("Read-only partition - NVS API", "[nvs]")
     TEST_ASSERT_EQUAL(-2147483648, i32_val);
     nvs_close(handle);
 
-    // NVS partition flagged as read-only shouln't be possible to open in read-write mode
+    // NVS partition flagged as read-only shouldn't be possible to open in read-write mode
     err = nvs_open_from_partition(nvs_partition_name, "storage", NVS_READWRITE, &handle);
     TEST_ASSERT_EQUAL(ESP_ERR_NOT_ALLOWED, err);
     nvs_close(handle);

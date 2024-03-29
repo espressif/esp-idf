@@ -95,7 +95,7 @@ esp_err_t esp_partition_write_raw(const esp_partition_t* partition,
     return ESP_OK;
 }
 
-// timing data for ESP8266, 160MHz CPU frequency, 80MHz flash requency
+// timing data for ESP8266, 160MHz CPU frequency, 80MHz flash frequency
 // all values in microseconds
 // values are for block sizes starting at 4 bytes and going up to 4096 bytes
 static size_t readTimes[] = {7, 5, 6, 7, 11, 18, 32, 60, 118, 231, 459};

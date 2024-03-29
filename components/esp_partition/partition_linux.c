@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -279,7 +279,7 @@ esp_err_t esp_partition_file_mmap(const uint8_t **part_desc_addr_start)
     uint8_t *part_ptr = s_spiflash_mem_file_buf + ESP_PARTITION_TABLE_OFFSET;
 
     ESP_LOGV(TAG, "");
-    ESP_LOGV(TAG, "Partition table sucessfully imported, partitions found:");
+    ESP_LOGV(TAG, "Partition table successfully imported, partitions found:");
 
     while (true) {
         esp_partition_info_t *p_part_item = (esp_partition_info_t *)part_ptr;
@@ -389,7 +389,7 @@ esp_err_t esp_partition_write(const esp_partition_t *partition, size_t dst_offse
 
     // hook gathers statistics and can emulate power-off
     // in case of power - off it decreases new_size to the number of bytes written
-    // before power event occured
+    // before power event occurred
     if (!ESP_PARTITION_HOOK_WRITE(dst_addr, &new_size)) {
         ret =  ESP_ERR_FLASH_OP_FAIL;
     }
@@ -543,7 +543,7 @@ esp_partition_file_mmap_ctrl_t *esp_partition_get_file_mmap_ctrl_act(void)
 }
 
 #ifdef CONFIG_ESP_PARTITION_ENABLE_STATS
-// timing data for ESP8266, 160MHz CPU frequency, 80MHz flash requency
+// timing data for ESP8266, 160MHz CPU frequency, 80MHz flash frequency
 // all values in microseconds
 // values are for block sizes starting at 4 bytes and going up to 4096 bytes
 static size_t s_esp_partition_stat_read_times[] = {7, 5, 6, 7, 11, 18, 32, 60, 118, 231, 459};

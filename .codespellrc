@@ -1,4 +1,4 @@
 [codespell]
-skip = build,*.yuv
-ignore-words-list = ser,dout,rsource,fram
+skip = build,*.yuv,components/fatfs/src/*,alice.txt
+ignore-words-list = ser,dout,rsource,fram,inout
 write-changes = true

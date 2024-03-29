@@ -880,7 +880,7 @@ esp_err_t Page::findItem(uint8_t nsIndex, ItemType datatype, const char* key, si
     }
 
     // For BLOB_DATA, we may need to search for all chunk indexes, so the hash list won't help
-    // mHashIndex caluclates hash from nsIndex, key, chunkIdx
+    // mHashIndex calculates hash from nsIndex, key, chunkIdx
     // We may not use mHashList if datatype is BLOB_DATA and chunkIdx is CHUNK_ANY as CHUNK_ANY is used by BLOB_INDEX
     if (nsIndex != NS_ANY && key != NULL && (datatype != ItemType::BLOB_DATA || chunkIdx != CHUNK_ANY)) {
         size_t cachedIndex = mHashList.find(start, Item(nsIndex, datatype, 0, key, chunkIdx));
@@ -1059,7 +1059,7 @@ size_t Page::getVarDataTailroom() const
     } else if (mState == PageState::FULL) {
         return 0;
     }
-    /* Skip one entry for blob data item precessing the data */
+    /* Skip one entry for blob data item processing the data */
     return ((mNextFreeEntry < (ENTRY_COUNT-1)) ? ((ENTRY_COUNT - mNextFreeEntry - 1) * ENTRY_SIZE): 0);
 }
 

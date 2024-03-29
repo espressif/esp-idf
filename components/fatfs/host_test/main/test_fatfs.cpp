@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -141,7 +141,7 @@ static void prepare_fatfs(const char* partition_label, const esp_partition_t** p
  * at the time of writing this - therefore there also is a device test_apps test in
  * `components/fatfs/test_apps/flash_wl/main/test_fatfs_flash_wl.c` which tests our VFS FATFS SPIFLASH API.
  */
-TEST_CASE("Test mounting 2 volumes, writing data and formating the 2nd one, reading data", "[fatfs]")
+TEST_CASE("Test mounting 2 volumes, writing data and formatting the 2nd one, reading data", "[fatfs]")
 {
     FRESULT fr_result;
     esp_err_t esp_result;
@@ -240,7 +240,7 @@ TEST_CASE("Test mounting 2 volumes, writing data and formating the 2nd one, read
     fr_result = f_read(&file1, read1, data_size, &bw1);
     REQUIRE(fr_result == FR_OK);
     REQUIRE(bw1 != data_size);
-    // Comapre data
+    // Compare data
     printf("data1=%s, read1=%s\n", data1, read1);
     REQUIRE(strncmp(data1, read1, data_size-1) != 0); // 987654321 should be ersead due to formatting
     // Close file from file1
@@ -258,7 +258,7 @@ TEST_CASE("Test mounting 2 volumes, writing data and formating the 2nd one, read
     fr_result = f_read(&file0, read0, data_size, &bw0);
     REQUIRE(fr_result == FR_OK);
     REQUIRE(bw0 == data_size);
-    // Comapre data
+    // Compare data
     printf("data0=%s, read0=%s\n", data0, read0);
     REQUIRE(strncmp(data0, read0, data_size-1) == 0); // should match since the partition was not formatted
     // Close file from file0

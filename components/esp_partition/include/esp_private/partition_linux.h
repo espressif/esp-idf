@@ -167,7 +167,7 @@ size_t esp_partition_get_write_bytes(void);
  * esp_partition_write and esp_partition_erase_range operations.
  *
  * @return
- *      - estimated total time spent in read/write/erase operations in miliseconds
+ *      - estimated total time spent in read/write/erase operations in milliseconds
  */
 size_t esp_partition_get_total_time(void);
 
@@ -231,7 +231,7 @@ esp_partition_file_mmap_ctrl_t* esp_partition_get_file_mmap_ctrl_input(void);
  * file name holding binary used to initialize partition table (if it was used)
  *
  * @return
- *      - pointer to flash file mapping actuall values in control structure
+ *      - pointer to flash file mapping actual values in control structure
  *
 */
 esp_partition_file_mmap_ctrl_t* esp_partition_get_file_mmap_ctrl_act(void);
