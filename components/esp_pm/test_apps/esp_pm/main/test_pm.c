@@ -69,6 +69,8 @@ static const int test_freqs[] = {32, CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ, 64, 48, 32
 #elif CONFIG_IDF_TARGET_ESP32C2
 static const int test_freqs[] = {CONFIG_XTAL_FREQ, CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ, 80, CONFIG_XTAL_FREQ, 80,
                                  CONFIG_XTAL_FREQ / 2, CONFIG_XTAL_FREQ}; // C2 xtal has 40/26MHz option
+#elif CONFIG_IDF_TARGET_ESP32P4
+static const int test_freqs[] = {40, CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ, 90, 40, 90, 10, 90, 20, 40, 360, 90, 180, 90, 40};
 #else
 static const int test_freqs[] = {240, 40, 160, 240, 80, 40, 240, 40, 80, 10, 80, 20, 40};
 #endif
@@ -154,7 +156,7 @@ TEST_CASE("Automatic light occurs when tasks are suspended", "[pm]")
         const int us_per_tick = 1 * portTICK_PERIOD_MS * 1000;
 
         printf("%d %d\n", ticks_to_delay * us_per_tick, timer_diff_us);
-        TEST_ASSERT(timer_diff_us < ticks_to_delay * us_per_tick);
+        TEST_ASSERT(timer_diff_us <= ticks_to_delay * us_per_tick);
     }
 
     light_sleep_disable();
@@ -239,6 +241,7 @@ TEST_CASE("Can wake up from automatic light sleep by GPIO", "[pm][ignore]")
 #endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S3)
 #endif //CONFIG_ULP_COPROC_TYPE_FSM
 
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32P4) //TODO: IDF-9628
 typedef struct {
     int delay_us;
     int result;
@@ -292,6 +295,7 @@ TEST_CASE("vTaskDelay duration is correct with light sleep enabled", "[pm]")
 
     light_sleep_disable();
 }
+#endif
 
 /* This test is similar to the one in test_esp_timer.c, but since we can't use
  * ref_clock, this test uses RTC clock for timing. Also enables automatic

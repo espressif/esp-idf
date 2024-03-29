@@ -36,6 +36,7 @@ esp_err_t sleep_sys_periph_hp_system_retention_init(void)
     return ESP_OK;
 }
 
+#if SOC_APM_SUPPORTED
 esp_err_t sleep_sys_periph_tee_apm_retention_init(void)
 {
     esp_err_t err = sleep_retention_entries_create(tee_apm_regs_retention, ARRAY_SIZE(tee_apm_regs_retention), REGDMA_LINK_PRI_NON_CRITICAL_TEE_APM, SLEEP_RETENTION_MODULE_TEE_APM);
@@ -46,6 +47,7 @@ esp_err_t sleep_sys_periph_tee_apm_retention_init(void)
     ESP_LOGI(TAG, "TEE/APM sleep retention initialization");
     return ESP_OK;
 }
+#endif
 
 esp_err_t sleep_sys_periph_uart0_retention_init(void)
 {
@@ -87,6 +89,27 @@ esp_err_t sleep_sys_periph_systimer_retention_init(void)
     return ESP_OK;
 }
 
+
+#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
+esp_err_t sleep_sys_periph_l2_cache_retention_init(void)
+{
+    esp_err_t err = sleep_retention_entries_create(l2_cache_regs_retention, ARRAY_SIZE(l2_cache_regs_retention), REGDMA_LINK_PRI_5, SLEEP_RETENTION_MODULE_L2_CACHE);
+    ESP_RETURN_ON_ERROR(err, TAG, "failed to allocate memory for digital peripherals (L2 Cache) retention");
+    ESP_LOGI(TAG, "L2 Cache sleep retention initialization");
+    return ESP_OK;
+}
+#endif
+
+#if SOC_PAU_IN_TOP_DOMAIN
+esp_err_t sleep_pau_retention_init(void)
+{
+    esp_err_t err = sleep_retention_entries_create(pau_regs_retention, ARRAY_SIZE(pau_regs_retention), REGDMA_LINK_PRI_7, SLEEP_RETENTION_MODULE_REGDMA_SYSTEM);
+    ESP_RETURN_ON_ERROR(err, TAG, "failed to allocate memory for system (PAU) retention");
+    ESP_LOGI(TAG, "PAU sleep retention initialization");
+    return ESP_OK;
+}
+#endif
+
 esp_err_t sleep_sys_periph_retention_init(void)
 {
     esp_err_t err;
@@ -94,8 +117,14 @@ esp_err_t sleep_sys_periph_retention_init(void)
     if(err) goto error;
     err = sleep_sys_periph_hp_system_retention_init();
     if(err) goto error;
+#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
+    err = sleep_sys_periph_l2_cache_retention_init();
+    if(err) goto error;
+#endif
+#if SOC_APM_SUPPORTED
     err = sleep_sys_periph_tee_apm_retention_init();
     if(err) goto error;
+#endif
     err = sleep_sys_periph_uart0_retention_init();
     if(err) goto error;
     err = sleep_sys_periph_tg0_retention_init();
@@ -105,6 +134,10 @@ esp_err_t sleep_sys_periph_retention_init(void)
     err = sleep_sys_periph_spimem_retention_init();
     if(err) goto error;
     err = sleep_sys_periph_systimer_retention_init();
+#if SOC_PAU_IN_TOP_DOMAIN
+    if(err) goto error;
+    err = sleep_pau_retention_init();
+#endif
 
 error:
     return err;
@@ -113,15 +146,25 @@ error:
 bool peripheral_domain_pd_allowed(void)
 {
     const uint32_t modules = sleep_retention_get_modules();
-    const uint32_t mask = (const uint32_t) (
-            SLEEP_RETENTION_MODULE_INTR_MATRIX | \
-            SLEEP_RETENTION_MODULE_HP_SYSTEM   | \
-            SLEEP_RETENTION_MODULE_TEE_APM     | \
-            SLEEP_RETENTION_MODULE_UART0       | \
-            SLEEP_RETENTION_MODULE_TG0         | \
-            SLEEP_RETENTION_MODULE_IOMUX       | \
-            SLEEP_RETENTION_MODULE_SPIMEM      | \
-            SLEEP_RETENTION_MODULE_SYSTIMER);
+    uint32_t mask = 0;
+
+    mask |= SLEEP_RETENTION_MODULE_INTR_MATRIX;
+    mask |= SLEEP_RETENTION_MODULE_HP_SYSTEM;
+#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
+    mask |= SLEEP_RETENTION_MODULE_L2_CACHE;
+#endif
+#if SOC_APM_SUPPORTED
+    mask |= SLEEP_RETENTION_MODULE_TEE_APM;
+#endif
+    mask |= SLEEP_RETENTION_MODULE_UART0;
+    mask |= SLEEP_RETENTION_MODULE_TG0;
+    mask |= SLEEP_RETENTION_MODULE_IOMUX;
+    mask |= SLEEP_RETENTION_MODULE_SPIMEM;
+    mask |= SLEEP_RETENTION_MODULE_SYSTIMER;
+#if SOC_PAU_IN_TOP_DOMAIN
+    mask |= SLEEP_RETENTION_MODULE_REGDMA_SYSTEM;
+#endif
+
     return ((modules & mask) == mask);
 }
 

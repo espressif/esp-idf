@@ -59,7 +59,7 @@ static esp_err_t s_i2c_bus_handle_acquire(i2c_port_num_t port_num, i2c_bus_handl
             bus->spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
             bus->bus_mode = mode;
 
-#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
+#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && !CONFIG_IDF_TARGET_ESP32P4 // TODO: IDF-9353
             ret = sleep_retention_entries_create(i2c_regs_retention[port_num].link_list, i2c_regs_retention[port_num].link_num, REGDMA_LINK_PRI_7, I2C_SLEEP_RETENTION_MODULE(port_num));
             ESP_RETURN_ON_ERROR(ret, TAG, "failed to allocate mem for sleep retention");
 #endif
@@ -137,7 +137,7 @@ esp_err_t i2c_release_bus_handle(i2c_bus_handle_t i2c_bus)
         if (s_i2c_platform.count[port_num] == 0) {
             do_deinitialize = true;
             s_i2c_platform.buses[port_num] = NULL;
-#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
+#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && !CONFIG_IDF_TARGET_ESP32P4 // TODO: IDF-9353
             sleep_retention_entries_destroy(I2C_SLEEP_RETENTION_MODULE(port_num));
 #endif
             if (i2c_bus->intr_handle) {

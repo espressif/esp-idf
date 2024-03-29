@@ -54,8 +54,6 @@ static inline uint32_t periph_ll_get_clk_en_mask(periph_module_t periph)
             return PCR_ECC_CLK_EN;
         case PERIPH_TEMPSENSOR_MODULE:
             return PCR_TSENS_CLK_EN;
-        case PERIPH_REGDMA_MODULE:
-            return PCR_REGDMA_CLK_EN;
         case PERIPH_ASSIST_DEBUG_MODULE:
             return PCR_ASSIST_CLK_EN;
         default:
@@ -103,8 +101,6 @@ static inline uint32_t periph_ll_get_rst_en_mask(periph_module_t periph, bool en
                 CLEAR_PERI_REG_MASK(PCR_HMAC_CONF_REG, PCR_HMAC_RST_EN);
             }
             return PCR_SHA_RST_EN;
-        case PERIPH_REGDMA_MODULE:
-            return PCR_REGDMA_RST_EN;
         case PERIPH_ASSIST_DEBUG_MODULE:
             return PCR_ASSIST_RST_EN;
         default:
@@ -145,8 +141,6 @@ static inline uint32_t periph_ll_get_clk_en_reg(periph_module_t periph)
             return PCR_ECC_CONF_REG;
         case PERIPH_TEMPSENSOR_MODULE:
             return PCR_TSENS_CLK_CONF_REG;
-        case PERIPH_REGDMA_MODULE:
-            return PCR_REGDMA_CONF_REG;
         case PERIPH_ASSIST_DEBUG_MODULE:
             return PCR_ASSIST_CONF_REG;
     default:
@@ -187,8 +181,6 @@ static inline uint32_t periph_ll_get_rst_en_reg(periph_module_t periph)
             return PCR_ECC_CONF_REG;
         case PERIPH_TEMPSENSOR_MODULE:
             return PCR_TSENS_CLK_CONF_REG;
-        case PERIPH_REGDMA_MODULE:
-            return PCR_REGDMA_CONF_REG;
         case PERIPH_ASSIST_DEBUG_MODULE:
             return PCR_ASSIST_CONF_REG;
     default:

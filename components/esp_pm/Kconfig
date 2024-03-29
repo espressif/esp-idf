@@ -2,7 +2,7 @@ menu "Power Management"
     config PM_ENABLE
         bool "Support for power management"
         # SMP FreeRTOS currently does not support power management IDF-4997
-        depends on (!FREERTOS_SMP && !IDF_TARGET_ESP32P4) || __DOXYGEN__ # TODO: IDF-7527
+        depends on !FREERTOS_SMP || __DOXYGEN__
         default n
         help
             If enabled, application is compiled with support for power management.
@@ -75,7 +75,7 @@ menu "Power Management"
             you can call 'gpio_sleep_sel_dis' to disable this feature on those pins.
             You can also keep this feature on and call 'gpio_sleep_set_direction' and 'gpio_sleep_set_pull_mode'
             to have a different GPIO configuration at sleep.
-            Waring: If you want to enable this option on ESP32, you should enable `GPIO_ESP32_SUPPORT_SWITCH_SLP_PULL`
+            Warning: If you want to enable this option on ESP32, you should enable `GPIO_ESP32_SUPPORT_SWITCH_SLP_PULL`
             at first, otherwise you will not be able to switch pullup/pulldown mode.
 
     config PM_SLP_DEFAULT_PARAMS_OPT

@@ -11,10 +11,11 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include "soc/soc.h"
+#include "soc/hp_sys_clkrst_struct.h"
 #include "soc/pau_reg.h"
 #include "soc/pau_struct.h"
-#include "soc/pcr_struct.h"
 #include "hal/pau_types.h"
+#include "hal/pau_hal.h"
 #include "hal/assert.h"
 
 #ifdef __cplusplus
@@ -24,11 +25,11 @@ extern "C" {
 static inline void pau_ll_enable_bus_clock(bool enable)
 {
     if (enable) {
-        PCR.regdma_conf.regdma_clk_en = 1;
-        PCR.regdma_conf.regdma_rst_en = 0;
+        HP_SYS_CLKRST.soc_clk_ctrl1.reg_regdma_sys_clk_en = 1;
+        HP_SYS_CLKRST.hp_rst_en0.reg_rst_en_regdma = 0;
     } else {
-        PCR.regdma_conf.regdma_clk_en = 0;
-        PCR.regdma_conf.regdma_rst_en = 1;
+        HP_SYS_CLKRST.soc_clk_ctrl1.reg_regdma_sys_clk_en = 0;
+        HP_SYS_CLKRST.hp_rst_en0.reg_rst_en_regdma = 1;
     }
 }
 

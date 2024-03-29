@@ -301,8 +301,8 @@ static void RTC_IRAM_ATTR __attribute__((used, noinline)) esp_wake_stub_start(vo
 
 /* We must have a default deep sleep wake stub entry function, which must be
  * located at the start address of the RTC fast memory, and its implementation
- * must be simple enough to ensure that there is no litteral data before the
- * wake stub entry, otherwise, the litteral data before the wake stub entry
+ * must be simple enough to ensure that there is no literal data before the
+ * wake stub entry, otherwise, the literal data before the wake stub entry
  * will not be CRC checked. */
 static void __attribute__((section(".rtc.entry.text"))) esp_wake_stub_entry(void)
 {
@@ -769,7 +769,7 @@ static esp_err_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t m
 
     if (!deep_sleep) {
         /* Enable sleep reject for faster return from this function,
-         * in case the wakeup is already triggerred.
+         * in case the wakeup is already triggered.
          */
         reject_triggers |= sleep_modem_reject_triggers();
     }
@@ -1216,8 +1216,8 @@ esp_err_t esp_light_sleep_start(void)
 
     /*
      * Adjustment time consists of parts below:
-     * 1. Hardware time waiting for internal 8M oscilate clock and XTAL;
-     * 2. Hardware state swithing time of the rtc main state machine;
+     * 1. Hardware time waiting for internal 8M oscillate clock and XTAL;
+     * 2. Hardware state switching time of the rtc main state machine;
      * 3. Code execution time when clock is not stable;
      * 4. Code execution time which can be measured;
      */
@@ -1990,11 +1990,20 @@ esp_err_t esp_sleep_pd_config(esp_sleep_pd_domain_t domain, esp_sleep_pd_option_
  */
 #if SOC_PM_SUPPORT_TOP_PD
 FORCE_INLINE_ATTR bool top_domain_pd_allowed(void) {
-    return (cpu_domain_pd_allowed() && \
-            clock_domain_pd_allowed() && \
-            peripheral_domain_pd_allowed() && \
-            modem_domain_pd_allowed() && \
-            s_config.domain[ESP_PD_DOMAIN_XTAL].pd_option != ESP_PD_OPTION_ON);
+    bool top_pd_allowed = true;
+#if CONFIG_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP
+    top_pd_allowed &= cpu_domain_pd_allowed();
+#else
+    top_pd_allowed = false;
+#endif
+    top_pd_allowed &= clock_domain_pd_allowed();
+    top_pd_allowed &= peripheral_domain_pd_allowed();
+#if SOC_PM_SUPPORT_MODEM_PD
+    top_pd_allowed &= modem_domain_pd_allowed();
+#endif
+    top_pd_allowed &= (s_config.domain[ESP_PD_DOMAIN_XTAL].pd_option != ESP_PD_OPTION_ON);
+
+    return top_pd_allowed;
 }
 #endif
 

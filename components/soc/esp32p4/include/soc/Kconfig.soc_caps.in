@@ -187,6 +187,10 @@ config SOC_DCDC_SUPPORTED
     bool
     default y
 
+config SOC_PAU_SUPPORTED
+    bool
+    default y
+
 config SOC_LP_TIMER_SUPPORTED
     bool
     default y
@@ -1427,6 +1431,10 @@ config SOC_PM_SUPPORT_VDDSDIO_PD
     bool
     default y
 
+config SOC_PM_SUPPORT_TOP_PD
+    bool
+    default y
+
 config SOC_PM_SUPPORT_CNNT_PD
     bool
     default y
@@ -1442,6 +1450,10 @@ config SOC_PM_CPU_RETENTION_BY_SW
 config SOC_PM_PAU_LINK_NUM
     int
     default 4
+
+config SOC_PAU_IN_TOP_DOMAIN
+    bool
+    default y
 
 config SOC_PSRAM_VDD_POWER_MPLL
     bool

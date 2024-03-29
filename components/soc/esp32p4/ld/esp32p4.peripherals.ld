@@ -96,6 +96,7 @@ PROVIDE ( MIPI_CSI_MEM       = 0x50104000 );
 PROVIDE ( MIPI_DSI_MEM       = 0x50105000 );
 PROVIDE ( ISP                = 0x500A1000 );
 PROVIDE ( DW_GDMA            = 0x50081000 );
+PROVIDE ( PAU                = 0x50082000 );
 PROVIDE ( I3C_MST            = 0x500DA000 );
 PROVIDE ( I3C_MST_MEM        = 0x500DA000 );
 PROVIDE ( I3C_SLV            = 0x500DB000 );

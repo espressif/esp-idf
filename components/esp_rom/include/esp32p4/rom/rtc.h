@@ -72,8 +72,8 @@ extern "C" {
  *     0 -- light sleep
  *     1 -- deep  sleep
  */
-#define LIGHT_SLEEP_WAKE_STUB_ADDR_REG LP_SYSTEM_REG_LP_STORE8_REG
-#define SLEEP_MODE_REG LP_SYSTEM_REG_LP_STORE8_REG
+#define RTC_SLEEP_WAKE_STUB_ADDR_REG  LP_SYSTEM_REG_LP_STORE8_REG
+#define RTC_SLEEP_MODE_REG            LP_SYSTEM_REG_LP_STORE8_REG
 
 typedef enum {
     AWAKE = 0,             //<CPU ON

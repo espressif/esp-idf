@@ -49,7 +49,11 @@ if(NOT BOOTLOADER_BUILD)
         list(APPEND srcs "mipi_csi_share_hw_ctrl.c")
     endif()
     if(CONFIG_SOC_PAU_SUPPORTED)
-        list(APPEND srcs "sleep_retention.c"  "sleep_system_peripheral.c" "sleep_clock.c")
+        list(APPEND srcs "sleep_retention.c"
+                         "sleep_system_peripheral.c"
+                         "sleep_clock.c"
+                         "port/${target}/clock_retention_init.c"
+                         )
     endif()
 
     # [refactor-todo]
