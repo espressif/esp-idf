@@ -1089,3 +1089,10 @@ menu "Host-controller Transport"
         help
             UART HCI CTS pin
 endmenu
+
+config BT_NIMBLE_EATT_CHAN_NUM
+    int "Maximum number of EATT channels"
+    default 0
+    depends on BT_NIMBLE_ENABLED
+    help
+        Defines the number of channels EATT bearers can use
