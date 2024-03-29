@@ -22,7 +22,10 @@
 static const char *TAG = "ethernet_connect";
 static SemaphoreHandle_t s_semph_get_ip_addrs = NULL;
 #if CONFIG_EXAMPLE_CONNECT_IPV6
+#if CONFIG_EXAMPLE_CONNECT_PREF_ANY
+#else
 static SemaphoreHandle_t s_semph_get_ip6_addrs = NULL;
+#endif
 #endif
 
 static esp_netif_t *eth_start(void);
@@ -55,7 +58,11 @@ static void eth_on_got_ipv6(void *arg, esp_event_base_t event_base,
     ESP_LOGI(TAG, "Got IPv6 event: Interface \"%s\" address: " IPV6STR ", type: %s", esp_netif_get_desc(event->esp_netif),
              IPV62STR(event->ip6_info.ip), example_ipv6_addr_types_to_str[ipv6_type]);
     if (ipv6_type == EXAMPLE_CONNECT_PREFERRED_IPV6_TYPE) {
+#if CONFIG_EXAMPLE_CONNECT_PREF_ANY
+        xSemaphoreGive(s_semph_get_ip_addrs);
+#else
         xSemaphoreGive(s_semph_get_ip6_addrs);
+#endif
     }
 }
 
@@ -206,14 +213,23 @@ void example_ethernet_shutdown(void)
     vSemaphoreDelete(s_semph_get_ip_addrs);
     s_semph_get_ip_addrs = NULL;
 #if CONFIG_EXAMPLE_CONNECT_IPV6
+#if CONFIG_EXAMPLE_CONNECT_PREF_ANY
+#else
     vSemaphoreDelete(s_semph_get_ip6_addrs);
     s_semph_get_ip6_addrs = NULL;
+#endif
 #endif
     eth_stop();
 }
 
 esp_err_t example_ethernet_connect(void)
 {
+#if CONFIG_EXAMPLE_CONNECT_PREF_ANY
+    s_semph_get_ip_addrs = xSemaphoreCreateBinary();
+    if (s_semph_get_ip_addrs == NULL) {
+        return ESP_ERR_NO_MEM;
+    }
+#else
 #if CONFIG_EXAMPLE_CONNECT_IPV4
     s_semph_get_ip_addrs = xSemaphoreCreateBinary();
     if (s_semph_get_ip_addrs == NULL) {
@@ -227,13 +243,18 @@ esp_err_t example_ethernet_connect(void)
         return ESP_ERR_NO_MEM;
     }
 #endif
+#endif
     eth_start();
     ESP_LOGI(TAG, "Waiting for IP(s).");
+#if CONFIG_EXAMPLE_CONNECT_PREF_ANY
+    xSemaphoreTake(s_semph_get_ip_addrs, portMAX_DELAY);
+#else
 #if CONFIG_EXAMPLE_CONNECT_IPV4
     xSemaphoreTake(s_semph_get_ip_addrs, portMAX_DELAY);
 #endif
 #if CONFIG_EXAMPLE_CONNECT_IPV6
     xSemaphoreTake(s_semph_get_ip6_addrs, portMAX_DELAY);
+#endif
 #endif
     return ESP_OK;
 }

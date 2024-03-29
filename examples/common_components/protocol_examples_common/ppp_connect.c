@@ -230,6 +230,7 @@ esp_err_t example_ppp_connect(void)
 #endif // CONNECT_PPP_DEVICE
 
     ESP_LOGI(TAG, "Waiting for IP address");
+    // Note: CONFIG_EXAMPLE_CONNECT_PREF_ANY is ignored; PPP always waits for ANY (does not wait for all)
     EventBits_t bits = xEventGroupWaitBits(s_event_group, CONNECT_BITS, pdFALSE, pdFALSE, portMAX_DELAY);
     if (bits & CONNECTION_FAILED) {
         ESP_LOGE(TAG, "Connection failed!");
