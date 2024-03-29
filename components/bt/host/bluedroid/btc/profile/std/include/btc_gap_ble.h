@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -102,6 +102,7 @@ typedef enum {
 #if (BLE_42_FEATURE_SUPPORT == TRUE)
     BTC_GAP_BLE_ACT_CLEAR_ADV,
 #endif // #if (BLE_42_FEATURE_SUPPORT == TRUE)
+    BTC_GAP_BLE_ACT_SET_RESOLVABLE_PRIVATE_ADDRESS_TIMEOUT,
 } btc_gap_ble_act_t;
 
 /* btc_ble_gap_args_t */
@@ -139,6 +140,10 @@ typedef union {
     struct set_rand_addr_args {
         esp_bd_addr_t rand_addr;
     } set_rand_addr;
+    // BTC_GAP_BLE_ACT_SET_RESOLVABLE_PRIVATE_ADDRESS_TIMEOUT
+    struct set_rpa_timeout_args {
+        uint16_t rpa_timeout;
+    } set_rpa_timeout;
     //BTC_GAP_BLE_ACT_CONFIG_LOCAL_PRIVACY,
     struct cfg_local_privacy_args {
         bool privacy_enable;
