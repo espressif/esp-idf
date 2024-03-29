@@ -1189,7 +1189,6 @@ examples/wifi/getting_started/softAP/main/softap_example_main.c
 examples/wifi/getting_started/station/main/station_example_main.c
 examples/wifi/iperf/main/iperf_example_main.c
 examples/wifi/power_save/main/power_save.c
-examples/wifi/roaming/main/roaming_example.c
 examples/wifi/scan/main/scan.c
 examples/wifi/smart_config/main/smartconfig_main.c
 examples/wifi/wifi_easy_connect/dpp-enrollee/main/dpp_enrollee_main.c

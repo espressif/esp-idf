@@ -1,3 +1,8 @@
+/*
+ * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Unlicense OR CC0-1.0
+ */
 #include <string.h>
 #include <inttypes.h>
 #include <stdlib.h>
@@ -189,7 +194,7 @@ static char * get_btm_neighbor_list(uint8_t *report, size_t report_len)
 			pos += s_len;
 		}
 
-		ESP_LOGI(TAG, "RMM neigbor report bssid=" MACSTR
+		ESP_LOGI(TAG, "RMM neighbor report bssid=" MACSTR
 				" info=0x%" PRIx32 " op_class=%u chan=%u phy_type=%u%s%s%s%s",
 				MAC2STR(nr), WPA_GET_LE32(nr + ETH_ALEN),
 				nr[ETH_ALEN + 4], nr[ETH_ALEN + 5],
@@ -310,11 +315,11 @@ char * get_tmp_neighbor_list(uint8_t *report, size_t report_len)
 static void esp_neighbor_report_recv_handler(void* arg, esp_event_base_t event_base,int32_t event_id, void* event_data)
 {
 	if (!g_neighbor_report_active) {
-		ESP_LOGV(TAG,"Neighbor report recieved but not triggerred by us");
+		ESP_LOGV(TAG,"Neighbor report received but not triggered by us");
 	    return;
     }
     if (!event_data) {
-        ESP_LOGE(TAG, "No event data recieved for neighbor report");
+        ESP_LOGE(TAG, "No event data received for neighbor report");
         return;
     }
     g_neighbor_report_active = false;
