@@ -957,7 +957,7 @@ void BTA_DmAddDevice(BD_ADDR bd_addr, DEV_CLASS dev_class, LINK_KEY link_key,
 **
 ** Function         BTA_DmRemoveDevice
 **
-** Description      This function removes a device fromthe security database list of
+** Description      This function removes a device from the security database list of
 **                  peer device. It manages unpairing even while connected.
 **
 **
@@ -1175,7 +1175,7 @@ void BTA_DmAddBleDevice(BD_ADDR bd_addr, tBLE_ADDR_TYPE addr_type, int auth_mode
 ** Description      Send BLE SMP passkey reply.
 **
 ** Parameters:      bd_addr          - BD address of the peer
-**                  accept           - passkey entry sucessful or declined.
+**                  accept           - passkey entry successful or declined.
 **                  passkey          - passkey value, must be a 6 digit number,
 **                                     can be lead by 0.
 **
@@ -2014,7 +2014,7 @@ void BTA_DmDiscoverExt(BD_ADDR bd_addr, tBTA_SERVICE_MASK_EXT *p_services,
 **                  p_services: if service is not empty, service discovery will be done.
 **                            for all GATT based service condition, put num_uuid, and
 **                            p_uuid is the pointer to the list of UUID values.
-**                  p_cback: callback functino when search is completed.
+**                  p_cback: callback function when search is completed.
 **
 **
 **
@@ -2102,7 +2102,7 @@ void BTA_DmBleUpdateConnectionParam(BD_ADDR bd_addr, UINT16 min_int,
 **
 ** Description      Enable/disable privacy on the local device
 **
-** Parameters:      privacy_enable   - enable/disabe privacy on remote device.
+** Parameters:      privacy_enable   - enable/disable privacy on remote device.
 **
 ** Returns          void
 **
@@ -2154,7 +2154,7 @@ void BTA_DmBleConfigLocalIcon(uint16_t icon)
 **
 ** Function         BTA_BleEnableAdvInstance
 **
-** Description      This function enable a Multi-ADV instance with the specififed
+** Description      This function enable a Multi-ADV instance with the specified
 **                  adv parameters
 **
 ** Parameters       p_params: pointer to the adv parameter structure.
@@ -2193,7 +2193,7 @@ void BTA_BleEnableAdvInstance (tBTA_BLE_ADV_PARAMS *p_params,
 **
 ** Function         BTA_BleUpdateAdvInstParam
 **
-** Description      This function update a Multi-ADV instance with the specififed
+** Description      This function update a Multi-ADV instance with the specified
 **                  adv parameters.
 **
 ** Parameters       inst_id: Adv instance to update the parameter.
@@ -2224,7 +2224,7 @@ void BTA_BleUpdateAdvInstParam (UINT8 inst_id, tBTA_BLE_ADV_PARAMS *p_params)
 **
 ** Function         BTA_BleCfgAdvInstData
 **
-** Description      This function configure a Multi-ADV instance with the specififed
+** Description      This function configure a Multi-ADV instance with the specified
 **                  adv data or scan response data.
 **
 ** Parameter        inst_id: Adv instance to configure the adv data or scan response.
@@ -2667,7 +2667,7 @@ void BTA_DmBleDtmStop(tBTA_DTM_CMD_CMPL_CBACK *p_dtm_cmpl_cback)
 **
 ** Parameters:      bd_addr       - Address of the peer device
 **                  transport     - transport of the link to be encruypted
-**                  p_callback    - Pointer to callback function to indicat the
+**                  p_callback    - Pointer to callback function to indicate the
 **                                  link encryption status
 **                  sec_act       - This is the security action to indicate
 **                                  what kind of BLE security level is required for
@@ -2847,7 +2847,7 @@ extern void BTA_DmBleStopAdvertising(void)
 **
 ** Description      This function set the random address for the APP
 **
-** Parameters       rand_addr: the random address whith should be setting
+** Parameters       rand_addr: the random address with should be setting
 **                  p_set_rand_addr_cback: complete callback
 ** Returns          void
 **
@@ -2863,7 +2863,34 @@ extern void BTA_DmSetRandAddress(BD_ADDR rand_addr, tBTA_SET_RAND_ADDR_CBACK *p_
         p_msg->hdr.event = BTA_DM_API_SET_RAND_ADDR_EVT;
         p_msg->addr_type = BLE_ADDR_RANDOM;
         p_msg->p_set_rand_addr_cback = p_set_rand_addr_cback;
-        //start sent the msg to the bta system control moudle
+        //start sent the msg to the bta system control module
+        bta_sys_sendmsg(p_msg);
+    }
+}
+/*******************************************************************************
+**
+** Function         BTA_DmBleSetRpaTimeout
+**
+** Description      This function sets the Resolvable Private Address (RPA) timeout
+**                  for the Bluetooth device. The RPA timeout defines how long an RPA
+**                  remains in use before a new one is generated.
+**
+** Parameters       rpa_timeout: The timeout in seconds within the range of 1s to 1 hour
+**                               as defined by the Bluetooth specification. This duration
+**                               specifies how long the controller uses an RPA before
+**                               generating a new one.
+** Returns          void
+**
+**
+*******************************************************************************/
+void BTA_DmBleSetRpaTimeout(uint16_t rpa_timeout,tBTA_SET_RPA_TIMEOUT_CMPL_CBACK *p_set_rpa_timeout_cback)
+{
+    tBTA_DM_API_SET_RPA_TIMEOUT *p_msg;
+    if ((p_msg = (tBTA_DM_API_SET_RPA_TIMEOUT *) osi_malloc(sizeof(tBTA_DM_API_SET_RPA_TIMEOUT))) != NULL) {
+        memset(p_msg, 0, sizeof(tBTA_DM_API_SET_RPA_TIMEOUT));
+        p_msg->hdr.event = BTA_DM_API_SET_RPA_TIMEOUT_EVT;
+        p_msg->rpa_timeout = rpa_timeout; // Assign the RPA timeout value to the message
+        p_msg->p_set_rpa_timeout_cback = p_set_rpa_timeout_cback;
         bta_sys_sendmsg(p_msg);
     }
 }
@@ -2933,7 +2960,7 @@ void BTA_DmBleGapReadPHY(BD_ADDR addr)
         memset(p_msg, 0, sizeof(tBTA_DM_API_READ_PHY));
         p_msg->hdr.event = BTA_DM_API_READ_PHY_EVT;
         memcpy(p_msg->bd_addr, addr, BD_ADDR_LEN);
-        //start sent the msg to the bta system control moudle
+        //start sent the msg to the bta system control module
         bta_sys_sendmsg(p_msg);
     } else {
         APPL_TRACE_ERROR("%s malloc failed", __func__);
@@ -2945,13 +2972,13 @@ void BTA_DmBleGapSetPreferedDefaultPHY(tBTA_DM_BLE_GAP_PHY_MASK tx_phy_mask,
                                                           tBTA_DM_BLE_GAP_PHY_MASK rx_phy_mask)
 {
     tBTA_DM_API_SET_PER_DEF_PHY *p_msg;
-    APPL_TRACE_API("%s, Set prefered default phy.", __func__);
+    APPL_TRACE_API("%s, Set preferred default phy.", __func__);
     if ((p_msg = (tBTA_DM_API_SET_PER_DEF_PHY *) osi_malloc(sizeof(tBTA_DM_API_SET_PER_DEF_PHY))) != NULL) {
         memset(p_msg, 0, sizeof(tBTA_DM_API_SET_PER_DEF_PHY));
         p_msg->hdr.event = BTA_DM_API_SET_PER_DEF_PHY_EVT;
         p_msg->tx_phy_mask = tx_phy_mask;
         p_msg->rx_phy_mask = rx_phy_mask;
-        //start sent the msg to the bta system control moudle
+        //start sent the msg to the bta system control module
         bta_sys_sendmsg(p_msg);
     } else {
         APPL_TRACE_ERROR("%s malloc failed", __func__);
@@ -2966,7 +2993,7 @@ void BTA_DmBleGapSetPreferedPHY(BD_ADDR addr,
                                                UINT16 phy_options)
 {
     tBTA_DM_API_SET_PER_PHY *p_msg;
-    APPL_TRACE_API("%s, Set prefered phy.", __func__);
+    APPL_TRACE_API("%s, Set preferred phy.", __func__);
     if ((p_msg = (tBTA_DM_API_SET_PER_PHY *) osi_malloc(sizeof(tBTA_DM_API_SET_PER_PHY))) != NULL) {
         memset(p_msg, 0, sizeof(tBTA_DM_API_SET_PER_PHY));
         p_msg->hdr.event = BTA_DM_API_SET_PER_PHY_EVT;
@@ -2975,7 +3002,7 @@ void BTA_DmBleGapSetPreferedPHY(BD_ADDR addr,
         p_msg->tx_phy_mask = tx_phy_mask;
         p_msg->rx_phy_mask = rx_phy_mask;
         p_msg->phy_options = phy_options;
-        //start sent the msg to the bta system control moudle
+        //start sent the msg to the bta system control module
         bta_sys_sendmsg(p_msg);
     } else {
         APPL_TRACE_ERROR("%s malloc failed", __func__);
@@ -2991,7 +3018,7 @@ void BTA_DmBleGapExtAdvSetRandaddr(UINT16 instance, BD_ADDR addr)
         p_msg->hdr.event = BTA_DM_API_SET_EXT_ADV_RAND_ADDR_EVT;
         p_msg->instance = instance;
         memcpy(&p_msg->rand_addr, addr, BD_ADDR_LEN);
-        //start sent the msg to the bta system control moudle
+        //start sent the msg to the bta system control module
         bta_sys_sendmsg(p_msg);
     } else {
         APPL_TRACE_ERROR("%s malloc failed", __func__);
@@ -3009,7 +3036,7 @@ void BTA_DmBleGapExtAdvSetParams(UINT16 instance,
         p_msg->hdr.event = BTA_DM_API_SET_EXT_ADV_PARAMS_EVT;
         p_msg->instance = instance;
         memcpy(&p_msg->params, params, sizeof(tBTA_DM_BLE_GAP_EXT_ADV_PARAMS));
-        //start sent the msg to the bta system control moudle
+        //start sent the msg to the bta system control module
         bta_sys_sendmsg(p_msg);
     } else {
         APPL_TRACE_ERROR("%s malloc failed", __func__);
@@ -3032,7 +3059,7 @@ void BTA_DmBleGapConfigExtAdvDataRaw(BOOLEAN is_scan_rsp, UINT8 instance, UINT16
         if (data) {
             memcpy(p_msg->data, data, length);
         }
-        //start sent the msg to the bta system control moudle
+        //start sent the msg to the bta system control module
         bta_sys_sendmsg(p_msg);
     } else {
         APPL_TRACE_ERROR("%s malloc failed", __func__);
@@ -3052,7 +3079,7 @@ void BTA_DmBleGapExtAdvEnable(BOOLEAN enable, UINT8 num, tBTA_DM_BLE_EXT_ADV *ex
         if (ext_adv) {
             memcpy(p_msg->ext_adv, ext_adv, sizeof(tBTA_DM_BLE_EXT_ADV)*num);
         }
-        //start sent the msg to the bta system control moudle
+        //start sent the msg to the bta system control module
         bta_sys_sendmsg(p_msg);
     } else {
         APPL_TRACE_ERROR("%s malloc failed", __func__);
@@ -3067,7 +3094,7 @@ void BTA_DmBleGapExtAdvSetRemove(UINT8 instance)
         memset(p_msg, 0, sizeof(tBTA_DM_API_BLE_EXT_ADV_SET_REMOVE));
         p_msg->hdr.event = BTA_DM_API_EXT_ADV_SET_REMOVE_EVT;
         p_msg->instance = instance;
-        //start sent the msg to the bta system control moudle
+        //start sent the msg to the bta system control module
         bta_sys_sendmsg(p_msg);
     } else {
         APPL_TRACE_ERROR("%s malloc failed", __func__);
@@ -3081,7 +3108,7 @@ void BTA_DmBleGapExtAdvSetClear(void)
     if ((p_msg = (tBTA_DM_API_BLE_EXT_ADV_SET_CLEAR *) osi_malloc(sizeof(tBTA_DM_API_BLE_EXT_ADV_SET_CLEAR))) != NULL) {
         memset(p_msg, 0, sizeof(tBTA_DM_API_BLE_EXT_ADV_SET_CLEAR));
         p_msg->hdr.event = BTA_DM_API_EXT_ADV_SET_CLEAR_EVT;
-        //start sent the msg to the bta system control moudle
+        //start sent the msg to the bta system control module
         bta_sys_sendmsg(p_msg);
     } else {
         APPL_TRACE_ERROR("%s malloc failed", __func__);
@@ -3098,7 +3125,7 @@ void BTA_DmBleGapPeriodicAdvSetParams(UINT8 instance,
         p_msg->hdr.event = BTA_DM_API_PERIODIC_ADV_SET_PARAMS_EVT;
         p_msg->instance = instance;
         memcpy(&p_msg->params, params, sizeof(tBTA_DM_BLE_Periodic_Adv_Params));
-        //start sent the msg to the bta system control moudle
+        //start sent the msg to the bta system control module
         bta_sys_sendmsg(p_msg);
     } else {
         APPL_TRACE_ERROR("%s malloc failed", __func__);
@@ -3120,7 +3147,7 @@ void BTA_DmBleGapPeriodicAdvCfgDataRaw(UINT8 instance, UINT16 length,
         memcpy(p_msg->data, data, length);
         p_msg->data = length != 0 ? (UINT8 *)(p_msg + 1) : NULL;
         p_msg->only_update_did = only_update_did;
-        //start sent the msg to the bta system control moudle
+        //start sent the msg to the bta system control module
         bta_sys_sendmsg(p_msg);
     } else {
         APPL_TRACE_ERROR("%s malloc failed", __func__);
@@ -3137,7 +3164,7 @@ void BTA_DmBleGapPeriodicAdvEnable(UINT8 enable, UINT8 instance)
         p_msg->hdr.event = BTA_DM_API_PERIODIC_ADV_ENABLE_EVT;
         p_msg->instance = instance;
         p_msg->enable = enable;
-        //start sent the msg to the bta system control moudle
+        //start sent the msg to the bta system control module
         bta_sys_sendmsg(p_msg);
     } else {
         APPL_TRACE_ERROR("%s malloc failed", __func__);
@@ -3153,7 +3180,7 @@ void BTA_DmBleGapPeriodicAdvCreateSync(tBTA_DM_BLE_Periodic_Sync_Params *params)
         memset(p_msg, 0, sizeof(tBTA_DM_API_PERIODIC_ADV_SYNC));
         p_msg->hdr.event = BTA_DM_API_PERIODIC_ADV_SYNC_EVT;
         memcpy(&p_msg->params, params, sizeof(tBTA_DM_BLE_Periodic_Sync_Params));
-        //start sent the msg to the bta system control moudle
+        //start sent the msg to the bta system control module
         bta_sys_sendmsg(p_msg);
     } else {
         APPL_TRACE_ERROR("%s malloc failed", __func__);
@@ -3168,7 +3195,7 @@ void BTA_DmBleGapPeriodicAdvSyncCancel(void)
     if ((p_msg = (tBTA_DM_API_PERIODIC_ADV_SYNC_CANCEL *) osi_malloc(sizeof(tBTA_DM_API_PERIODIC_ADV_SYNC_CANCEL))) != NULL) {
         memset(p_msg, 0, sizeof(tBTA_DM_API_PERIODIC_ADV_SYNC_CANCEL));
         p_msg->hdr.event = BTA_DM_API_PERIODIC_ADV_SYNC_CANCEL_EVT;
-        //start sent the msg to the bta system control moudle
+        //start sent the msg to the bta system control module
         bta_sys_sendmsg(p_msg);
     } else {
         APPL_TRACE_ERROR("%s malloc failed", __func__);
@@ -3184,7 +3211,7 @@ void BTA_DmBleGapPeriodicAdvSyncTerm(UINT16 sync_handle)
         memset(p_msg, 0, sizeof(tBTA_DM_API_PERIODIC_ADV_SYNC_TERM));
         p_msg->hdr.event = BTA_DM_API_PERIODIC_ADV_SYNC_TERMINATE_EVT;
         p_msg->sync_handle = sync_handle;
-        //start sent the msg to the bta system control moudle
+        //start sent the msg to the bta system control module
         bta_sys_sendmsg(p_msg);
     } else {
         APPL_TRACE_ERROR("%s malloc failed", __func__);
@@ -3204,7 +3231,7 @@ void BTA_DmBleGapPeriodicAdvAddDevToList(tBLE_ADDR_TYPE addr_type,
         p_msg->addr_type = addr_type;
         p_msg->sid = sid;
         memcpy(p_msg->addr, addr, sizeof(BD_ADDR));
-        //start sent the msg to the bta system control moudle
+        //start sent the msg to the bta system control module
         bta_sys_sendmsg(p_msg);
     } else {
         APPL_TRACE_ERROR("%s malloc failed", __func__);
@@ -3224,7 +3251,7 @@ void BTA_DmBleGapPeriodicAdvRemoveDevFromList(tBLE_ADDR_TYPE addr_type,
         p_msg->addr_type = addr_type;
         p_msg->sid = sid;
         memcpy(p_msg->addr, addr, sizeof(BD_ADDR));
-        //start sent the msg to the bta system control moudle
+        //start sent the msg to the bta system control module
         bta_sys_sendmsg(p_msg);
     } else {
         APPL_TRACE_ERROR("%s malloc failed", __func__);
@@ -3239,7 +3266,7 @@ void BTA_DmBleGapPeriodicAdvClearDev(void)
     if ((p_msg = (tBTA_DM_API_PERIODIC_ADV_DEV_CLEAR *) osi_malloc(sizeof(tBTA_DM_API_PERIODIC_ADV_DEV_CLEAR))) != NULL) {
         memset(p_msg, 0, sizeof(tBTA_DM_API_PERIODIC_ADV_DEV_CLEAR));
         p_msg->hdr.event = BTA_DM_API_PERIODIC_ADV_CLEAR_DEV_EVT;
-        //start sent the msg to the bta system control moudle
+        //start sent the msg to the bta system control module
         bta_sys_sendmsg(p_msg);
     } else {
         APPL_TRACE_ERROR("%s malloc failed", __func__);
@@ -3255,7 +3282,7 @@ void BTA_DmBleGapSetExtScanParams(tBTA_DM_BLE_EXT_SCAN_PARAMS *params)
         memset(p_msg, 0, sizeof(tBTA_DM_API_SET_EXT_SCAN_PARAMS));
         p_msg->hdr.event = BTA_DM_API_SET_EXT_SCAN_PARAMS_EVT;
         memcpy(&p_msg->params, params, sizeof(tBTA_DM_BLE_EXT_SCAN_PARAMS));
-        //start sent the msg to the bta system control moudle
+        //start sent the msg to the bta system control module
         bta_sys_sendmsg(p_msg);
     } else {
         APPL_TRACE_ERROR("%s malloc failed", __func__);
@@ -3273,7 +3300,7 @@ void BTA_DmBleGapExtScan(BOOLEAN start, UINT32 duration, UINT16 period)
         p_msg->start = start;
         p_msg->duration = duration;
         p_msg->period = period;
-        //start sent the msg to the bta system control moudle
+        //start sent the msg to the bta system control module
         bta_sys_sendmsg(p_msg);
     } else {
         APPL_TRACE_ERROR("%s malloc failed", __func__);
@@ -3307,7 +3334,7 @@ void BTA_DmBleGapPreferExtConnectParamsSet(BD_ADDR bd_addr,
         if (phy_coded_conn_params) {
             memcpy(&p_msg->phy_coded_conn_params, phy_coded_conn_params, sizeof(tBTA_DM_BLE_CONN_PARAMS));
         }
-        //start sent the msg to the bta system control moudle
+        //start sent the msg to the bta system control module
         bta_sys_sendmsg(p_msg);
     } else {
         APPL_TRACE_ERROR("%s malloc failed", __func__);
@@ -3326,7 +3353,7 @@ void BTA_DmBleGapExtConnect(tBLE_ADDR_TYPE own_addr_type, const BD_ADDR peer_add
         p_msg->hdr.event = BTA_DM_API_EXT_CONN_EVT;
         p_msg->own_addr_type = own_addr_type;
         memcpy(p_msg->peer_addr, peer_addr, sizeof(BD_ADDR));
-        //start sent the msg to the bta system control moudle
+        //start sent the msg to the bta system control module
         bta_sys_sendmsg(p_msg);
     } else {
         APPL_TRACE_ERROR("%s malloc failed", __func__);
@@ -3379,7 +3406,7 @@ void BTA_DmBleGapPeriodicAdvRecvEnable(UINT16 sync_handle, UINT8 enable)
         p_msg->hdr.event = BTA_DM_API_PERIODIC_ADV_RECV_ENABLE_EVT;
         p_msg->sync_handle = sync_handle;
         p_msg->enable = enable;
-        //start sent the msg to the bta system control moudle
+        //start sent the msg to the bta system control module
         bta_sys_sendmsg(p_msg);
     } else {
         APPL_TRACE_ERROR("%s malloc failed", __func__);
@@ -3396,7 +3423,7 @@ void BTA_DmBleGapPeriodicAdvSyncTrans(BD_ADDR peer_addr, UINT16 service_data, UI
         memcpy(p_msg->addr, peer_addr, sizeof(BD_ADDR));
         p_msg->service_data = service_data;
         p_msg->sync_handle = sync_handle;
-        //start sent the msg to the bta system control moudle
+        //start sent the msg to the bta system control module
         bta_sys_sendmsg(p_msg);
     } else {
         APPL_TRACE_ERROR("%s malloc failed", __func__);
@@ -3413,7 +3440,7 @@ void BTA_DmBleGapPeriodicAdvSetInfoTrans(BD_ADDR peer_addr, UINT16 service_data,
         memcpy(p_msg->addr, peer_addr, sizeof(BD_ADDR));
         p_msg->service_data = service_data;
         p_msg->adv_hanlde = adv_handle;
-        //start sent the msg to the bta system control moudle
+        //start sent the msg to the bta system control module
         bta_sys_sendmsg(p_msg);
     } else {
         APPL_TRACE_ERROR("%s malloc failed", __func__);
@@ -3429,7 +3456,7 @@ void BTA_DmBleGapSetPeriodicAdvSyncTransParams(BD_ADDR peer_addr, tBTA_DM_BLE_PA
         p_msg->hdr.event = BTA_DM_API_SET_PERIODIC_ADV_SYNC_TRANS_PARAMS_EVT;
         memcpy(p_msg->addr, peer_addr, sizeof(BD_ADDR));
         memcpy(&p_msg->params, params, sizeof(tBTA_DM_BLE_PAST_PARAMS));
-        //start sent the msg to the bta system control moudle
+        //start sent the msg to the bta system control module
         bta_sys_sendmsg(p_msg);
     } else {
         APPL_TRACE_ERROR("%s malloc failed", __func__);

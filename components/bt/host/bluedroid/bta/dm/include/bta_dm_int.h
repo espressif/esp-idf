@@ -81,7 +81,7 @@ enum {
     BTA_DM_API_PIN_REPLY_EVT,
 #endif  ///SMP_INCLUDED == TRUE
 #if (BTA_DM_PM_INCLUDED == TRUE)
-    /* power manger events */
+    /* power manager events */
     BTA_DM_PM_BTM_STATUS_EVT,
     BTA_DM_PM_TIMER_EVT,
 #endif /* #if (BTA_DM_PM_INCLUDED == TRUE) */
@@ -220,6 +220,7 @@ enum {
     BTA_DM_API_DTM_RX_START_EVT,
     BTA_DM_API_DTM_STOP_EVT,
     BTA_DM_API_BLE_CLEAR_ADV_EVT,
+    BTA_DM_API_SET_RPA_TIMEOUT_EVT,
 #endif
     BTA_DM_MAX_EVT
 };
@@ -671,7 +672,7 @@ typedef struct {
     tBTA_DM_BLE_SEL_CBACK   *p_select_cback;
 } tBTA_DM_API_BLE_SET_BG_CONN_TYPE;
 
-/* set prefered BLE connection parameters for a device */
+/* set preferred BLE connection parameters for a device */
 typedef struct {
     BT_HDR                  hdr;
     BD_ADDR                 peer_bda;
@@ -771,6 +772,12 @@ typedef struct {
 typedef struct {
     BT_HDR      hdr;
 } tBTA_DM_APT_CLEAR_ADDR;
+
+typedef struct {
+    BT_HDR      hdr;
+    UINT16      rpa_timeout;
+    tBTA_SET_RPA_TIMEOUT_CMPL_CBACK  *p_set_rpa_timeout_cback;
+} tBTA_DM_API_SET_RPA_TIMEOUT;
 
 /* set adv parameter for BLE advertising */
 typedef struct {
@@ -1273,6 +1280,7 @@ typedef union {
     tBTA_DM_API_BLE_SET_DATA_LENGTH     ble_set_data_length;
     tBTA_DM_APT_SET_DEV_ADDR            set_addr;
     tBTA_DM_APT_CLEAR_ADDR              clear_addr;
+    tBTA_DM_API_SET_RPA_TIMEOUT         set_rpa_timeout;
     tBTA_DM_API_BLE_MULTI_ADV_ENB       ble_multi_adv_enb;
     tBTA_DM_API_BLE_MULTI_ADV_PARAM     ble_multi_adv_param;
     tBTA_DM_API_BLE_MULTI_ADV_DATA      ble_multi_adv_data;
@@ -1456,7 +1464,7 @@ typedef struct {
     UINT32                      role_policy_mask;   /* the bits set indicates the modules that wants to remove role switch from the default link policy */
     UINT16                      cur_policy;         /* current default link policy */
     UINT16                      rs_event;           /* the event waiting for role switch */
-    UINT8                       cur_av_count;       /* current AV connecions */
+    UINT8                       cur_av_count;       /* current AV connections */
     BOOLEAN                     disable_pair_mode;          /* disable pair mode or not */
     BOOLEAN                     conn_paired_only;   /* allow connectable to paired device only or not */
     tBTA_DM_API_SEARCH          search_msg;
@@ -1764,7 +1772,7 @@ extern void bta_dm_ble_gap_dtm_tx_start(tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_gap_dtm_rx_start(tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_gap_dtm_stop(tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_gap_clear_adv(tBTA_DM_MSG *p_data);
-
+extern void bta_dm_ble_gap_set_rpa_timeout(tBTA_DM_MSG *p_data);
 #if (BLE_50_FEATURE_SUPPORT == TRUE)
 extern void bta_dm_ble_gap_dtm_enhance_tx_start(tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_gap_dtm_enhance_rx_start(tBTA_DM_MSG *p_data);
