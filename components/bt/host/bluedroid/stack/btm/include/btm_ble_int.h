@@ -313,7 +313,7 @@ typedef struct {
 #define BTM_PRIVACY_NONE    0              /* BLE no privacy */
 #define BTM_PRIVACY_1_1     1              /* BLE privacy 1.1, do not support privacy 1.0 */
 #define BTM_PRIVACY_1_2     2              /* BLE privacy 1.2 */
-#define BTM_PRIVACY_MIXED   3              /* BLE privacy mixed mode, broadcom propietary mode */
+#define BTM_PRIVACY_MIXED   3              /* BLE privacy mixed mode, broadcom proprietary mode */
 typedef UINT8 tBTM_PRIVACY_MODE;
 
 /* data length change event callback */
@@ -486,6 +486,7 @@ void btm_ble_refresh_peer_resolvable_private_addr(BD_ADDR pseudo_bda, BD_ADDR rr
 void btm_ble_refresh_local_resolvable_private_addr(BD_ADDR pseudo_addr, BD_ADDR local_rpa);
 void btm_ble_read_resolving_list_entry_complete(UINT8 *p, UINT16 evt_len) ;
 void btm_ble_set_addr_resolution_enable_complete(UINT8 *p, UINT16 evt_len) ;
+void btm_ble_set_rpa_timeout_complete(UINT8 *p, UINT16 evt_len) ;
 void btm_ble_remove_resolving_list_entry_complete(UINT8 *p, UINT16 evt_len);
 void btm_ble_add_resolving_list_entry_complete(UINT8 *p, UINT16 evt_len);
 void btm_ble_clear_resolving_list_complete(UINT8 *p, UINT16 evt_len);
