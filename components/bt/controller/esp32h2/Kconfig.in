@@ -147,7 +147,7 @@ if BT_LE_EXT_ADV
             Enable this option to start periodic advertisement.
 
     config BT_LE_PERIODIC_ADV_SYNC_TRANSFER
-        bool "Enable Transer Sync Events"
+        bool "Enable Transfer Sync Events"
         depends on BT_LE_ENABLE_PERIODIC_ADV
         default y
         help
