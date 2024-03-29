@@ -332,7 +332,7 @@ void ble_server_uart_task(void *pvParameters)
                         /* Check if client has subscribed to notifications */
                         if (conn_handle_subs[i]) {
                             struct os_mbuf *txom;
-                            txom = ble_hs_mbuf_from_flat(ntf, sizeof(ntf));
+                            txom = ble_hs_mbuf_from_flat(ntf, event.size);
                             rc = ble_gattc_notify_custom(i, ble_spp_svc_gatt_read_val_handle,
                                                          txom);
                             if (rc == 0) {
@@ -342,6 +342,8 @@ void ble_server_uart_task(void *pvParameters)
                             }
                         }
                     }
+
+		    free(ntf);
                 }
                 break;
             default:
