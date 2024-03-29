@@ -230,7 +230,11 @@ netif_related_data_t * esp_netif_new_ppp(esp_netif_t *esp_netif, const esp_netif
 #if PPP_NOTIFY_PHASE
     ppp_set_notify_phase_callback(ppp_obj->ppp, on_ppp_notify_phase);
 #endif
+#if PPP_IPV4_SUPPORT
+#if LWIP_DNS
     ppp_set_usepeerdns(ppp_obj->ppp, 1);
+#endif /* LWIP_DNS */
+#endif /* PPP_IPV4_SUPPORT */
 
     return (netif_related_data_t *)ppp_obj;
 }
