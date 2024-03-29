@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -996,5 +996,13 @@ esp_err_t sdspi_host_io_int_wait(sdspi_dev_handle_t handle, TickType_t timeout_t
         gpio_intr_disable(slot->gpio_int);
         return ESP_ERR_TIMEOUT;
     }
+    return ESP_OK;
+}
+
+esp_err_t sdspi_host_get_dma_info(int slot, esp_dma_mem_info_t *dma_mem_info)
+{
+    (void)slot;
+    dma_mem_info->extra_heap_caps = MALLOC_CAP_DMA;
+    dma_mem_info->dma_alignment_bytes = 4;
     return ESP_OK;
 }

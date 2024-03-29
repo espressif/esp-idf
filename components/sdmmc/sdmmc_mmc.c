@@ -28,10 +28,8 @@ esp_err_t sdmmc_init_mmc_read_ext_csd(sdmmc_card_t* card)
     esp_err_t err = ESP_OK;
     uint8_t* ext_csd = NULL;
     size_t actual_size = 0;
-    esp_dma_mem_info_t dma_mem_info = {
-        .heap_caps = MALLOC_CAP_DMA,
-        .custom_alignment = 4,
-    };
+    esp_dma_mem_info_t dma_mem_info;
+    card->host.get_dma_info(card->host.slot, &dma_mem_info);
     err = esp_dma_capable_malloc(EXT_CSD_MMC_SIZE, &dma_mem_info, (void *)&ext_csd, &actual_size);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "%s: could not allocate ext_csd", __func__);
@@ -259,10 +257,8 @@ esp_err_t sdmmc_init_mmc_check_ext_csd(sdmmc_card_t* card)
     /* ensure EXT_CSD buffer is available before starting any SD-card operation */
     uint8_t* ext_csd = NULL;
     size_t actual_size = 0;
-    esp_dma_mem_info_t dma_mem_info = {
-        .heap_caps = MALLOC_CAP_DMA,
-        .custom_alignment = 4,
-    };
+    esp_dma_mem_info_t dma_mem_info;
+    card->host.get_dma_info(card->host.slot, &dma_mem_info);
     esp_err_t err = esp_dma_capable_malloc(EXT_CSD_MMC_SIZE, &dma_mem_info, (void *)&ext_csd, &actual_size);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "%s: could not allocate ext_csd", __func__);

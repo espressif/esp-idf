@@ -28,6 +28,7 @@
 #include "esp_err.h"
 #include "freertos/FreeRTOS.h"
 #include "sd_pwr_ctrl.h"
+#include "esp_dma_utils.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -79,7 +80,7 @@ typedef struct {
     uint32_t erase_size_au: 16;     /*!< Erase size for the purpose of timeout calculation, in multiples of allocation unit */
     uint32_t cur_bus_width: 2;      /*!< SD current bus width */
     uint32_t discard_support: 1;    /*!< SD discard feature support */
-    uint32_t fule_support: 1;       /*!< SD FULE (Full User Area Logical Erase) feature support */
+    uint32_t fule_support: 1;       /*!< SD FILE (Full User Area Logical Erase) feature support */
     uint32_t erase_timeout: 6;      /*!< Timeout (in seconds) for erase of a single allocation unit */
     uint32_t erase_offset: 2;       /*!< Constant timeout offset (in seconds) for any erase operation */
     uint32_t reserved: 20;          /*!< reserved for future expansion */
@@ -209,6 +210,7 @@ typedef struct {
     esp_err_t (*set_input_delay)(int slot, sdmmc_delay_phase_t delay_phase); /*!< set input delay phase */
     void* dma_aligned_buffer; /*!< Leave it NULL. Reserved for cache aligned buffers for SDIO mode */
     sd_pwr_ctrl_handle_t pwr_ctrl_handle;  /*!< Power control handle */
+    esp_err_t (*get_dma_info)(int slot, esp_dma_mem_info_t *dma_mem_info); /*!< host function to dma memory information*/
 } sdmmc_host_t;
 
 /**

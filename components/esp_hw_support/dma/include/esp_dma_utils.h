@@ -16,16 +16,19 @@ extern "C" {
 #endif
 
 /**
- * @breif DMA Mem info
+ * @brief DMA Mem info
  */
 typedef struct {
-    int heap_caps;                     ///< See heap caps
-    size_t dma_alignment;              ///< DMA alignment
-    size_t custom_alignment;           ///< Set this if you have custom alignment. E.g. if `psram_trans_align` is set when using GDMA driver, or you're using IP self DMA (e.g. SDMMC)
+    int extra_heap_caps;               ///< extra heap caps based on MALLOC_CAP_DMA
+    size_t dma_alignment_bytes;        ///< DMA alignment
 } esp_dma_mem_info_t;
 
 /**
  * @brief Helper function for malloc a DMA capable memory buffer
+ *
+ * @note This API will take care of the cache alignment internally,
+ *       you will need to set `esp_dma_mem_info_t: dma_alignment_bytes`
+ *       with either the custom alignment or DMA alignment of used peripheral driver.
  *
  * @param[in]  size          Size in bytes, the amount of memory to allocate
  * @param[in]  dma_mem_info  DMA and memory info, see `esp_dma_mem_info_t`
@@ -42,6 +45,7 @@ esp_err_t esp_dma_capable_malloc(size_t size, const esp_dma_mem_info_t *dma_mem_
 /**
  * @brief Helper function for calloc a DMA capable memory buffer
  *
+ * @param[in]  calloc_num    Number of elements to allocate
  * @param[in]  size          Size in bytes, the amount of memory to allocate
  * @param[in]  dma_mem_info  DMA and memory info, see `esp_dma_mem_info_t`
  * @param[out] out_ptr       A pointer to the memory allocated successfully
@@ -52,10 +56,10 @@ esp_err_t esp_dma_capable_malloc(size_t size, const esp_dma_mem_info_t *dma_mem_
  *        - ESP_ERR_INVALID_ARG: Invalid argument
  *        - ESP_ERR_NO_MEM:      No enough memory for allocation
  */
-esp_err_t esp_dma_capable_calloc(size_t n, size_t size, const esp_dma_mem_info_t *dma_mem_info, void **out_ptr, size_t *actual_size);
+esp_err_t esp_dma_capable_calloc(size_t calloc_num, size_t size, const esp_dma_mem_info_t *dma_mem_info, void **out_ptr, size_t *actual_size);
 
 /**
- * @brief Helper function to check if a DMA buffer meets alignment requirements
+ * @brief Helper function to check if a DMA buffer pointer and size meet both hardware alignment requirements and custom alignment requirements
  *
  * @param[in]  ptr           Pointer to the buffer
  * @param[in]  size          Size of the buffer
@@ -65,28 +69,15 @@ esp_err_t esp_dma_capable_calloc(size_t n, size_t size, const esp_dma_mem_info_t
  *        - True:  Buffer is aligned
  *        - False: Buffer is not aligned, or buffer is not DMA capable
  */
-bool esp_dma_is_buffer_alignment_satisfied(const void *ptr, size_t size, esp_dma_mem_info_t *dma_mem_info);
+bool esp_dma_is_buffer_alignment_satisfied(const void *ptr, size_t size, esp_dma_mem_info_t dma_mem_info);
 
 /**
  * @brief Needed info to get GDMA alignment
  */
 typedef struct {
-    bool is_desc;
-    bool on_psram;
+    bool is_desc;               ///< allocate DMA descriptor
+    bool on_psram;              ///< allocate DMA from the PSRAM
 } dma_alignment_info_t;
-
-/**
- * @brief Helper to get DMA alignment
- *
- * @param[in]  gdma_chan_handle  GDMA channel handle, if no GDMA supported, set it to NULL
- * @param[in]  info              DMA alignment info
- * @param[out] alignment         Alignment
- *
- * @return
- *        - ESP_OK
- *        - ESP_ERR_INVALID_ARG  Invalid argument
- */
-esp_err_t esp_dma_get_alignment(void *gdma_chan_handle, const dma_alignment_info_t *info, size_t *alignment);
 
 //-----------------------Deprecated APIs-----------------------//
 /**

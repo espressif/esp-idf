@@ -15,12 +15,9 @@ urb_t *urb_alloc(size_t data_buffer_size, int num_isoc_packets)
     void *data_buffer;
     size_t real_size;
     esp_dma_mem_info_t dma_mem_info = {
-        .dma_type = ESP_DMA_OTHERS,
-        .mem_flags = {
-            .dir = ESP_DMA_MEM_DIR_DONT_CARE,
-        },
-        .custom_alignment = 4,
+        .dma_alignment_bytes = 4,
     };
+    //TODO: IDF-9639
     esp_dma_capable_malloc(data_buffer_size, &dma_mem_info, &data_buffer, &real_size);
     if (urb == NULL || data_buffer == NULL)     {
         goto err;

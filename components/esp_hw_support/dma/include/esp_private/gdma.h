@@ -457,26 +457,6 @@ esp_err_t gdma_config_crc_calculator(gdma_channel_handle_t dma_chan, const gdma_
 esp_err_t gdma_crc_get_result(gdma_channel_handle_t dma_chan, uint32_t *result);
 #endif // SOC_GDMA_SUPPORT_CRC
 
-/**
- * @brief Needed info to get GDMA alignment
- */
-typedef struct {
-    bool is_desc;
-    bool on_psram;
-} gdma_alignment_info_t;
-
-/**
- * @brief Get GDMA alignment from the channel handle
- *
- * @param[in] dma_chan    GDMA channel handle
- * @param[in] info        GDMA alignment info
- * @param[out] alignment  Alignment
- *
- * @return
- *        - ESP_OK
- *        - ESP_ERR_INVALID_ARG  Invalid argument
- */
-esp_err_t gdma_get_alignment(gdma_channel_handle_t dma_chan, const gdma_alignment_info_t *info, size_t *alignment);
 #ifdef __cplusplus
 }
 #endif

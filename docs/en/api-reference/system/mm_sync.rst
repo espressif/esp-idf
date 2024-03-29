@@ -109,7 +109,7 @@ cache memory synchronization is usually considered when DMA is involved. ESP-IDF
 - :cpp:func:`esp_dma_capable_malloc`, this API allocates a chunk of memory that meets the alignment requirement from both the cache and the DMA.
 - :cpp:func:`esp_dma_capable_calloc`, this API allocates a chunk of memory that meets the alignment requirement from both the cache and the DMA. The initialized value in the memory is set to zero.
 
-You can also use :cpp:member:`esp_dma_mem_info_t::on_psram` to allocate from the PSRAM.
+You can also use :c:macro:`ESP_DMA_MALLOC_FLAG_PSRAM` to allocate from the PSRAM.
 
 
 Warning for Address Alignment Requirement

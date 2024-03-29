@@ -448,11 +448,11 @@ void app_main(void)
     lv_color_t *buf1 = NULL;
     lv_color_t *buf2 = NULL;
     esp_dma_mem_info_t dma_mem_info = {
-        .dma_alignment = 4,
+        .dma_alignment_bytes = 4,
 #if CONFIG_EXAMPLE_LCD_I80_COLOR_IN_PSRAM
-        .heap_caps = MALLOC_CAP_SPIRAM,
+        .extra_heap_caps = MALLOC_CAP_SPIRAM,
 #else
-        .heap_caps = MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL,
+        .extra_heap_caps = MALLOC_CAP_INTERNAL,
 #endif // CONFIG_EXAMPLE_LCD_I80_COLOR_IN_PSRAM
     };
     ESP_ERROR_CHECK(esp_dma_capable_malloc(EXAMPLE_LCD_H_RES * 100 * sizeof(lv_color_t), &dma_mem_info, (void *)&buf1, NULL));

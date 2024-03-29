@@ -14,7 +14,6 @@
 #include "esp_memory_utils.h"
 #include "esp_dma_utils.h"
 #include "esp_private/esp_cache_private.h"
-#include "esp_private/gdma.h"
 #include "soc/soc_caps.h"
 #include "hal/hal_utils.h"
 
@@ -28,33 +27,31 @@ esp_err_t esp_dma_capable_malloc(size_t size, const esp_dma_mem_info_t *dma_mem_
 {
     ESP_RETURN_ON_FALSE_ISR(dma_mem_info && out_ptr, ESP_ERR_INVALID_ARG, TAG, "null pointer");
 
-    size_t alignment = 1;
+    size_t alignment_bytes = 0;
 
     //dma align
-    size_t dma_alignment = dma_mem_info->dma_alignment;
-
-    //custom align
-    size_t custom_alignment = dma_mem_info->custom_alignment;
+    size_t dma_alignment_bytes = dma_mem_info->dma_alignment_bytes;
 
     //cache align
     int cache_flags = 0;
-    size_t cache_alignment = 1;
-    if (dma_mem_info->heap_caps & MALLOC_CAP_SPIRAM) {
+    size_t cache_alignment_bytes = 0;
+
+    int heap_caps = dma_mem_info->extra_heap_caps | MALLOC_CAP_DMA;
+    if (dma_mem_info->extra_heap_caps & MALLOC_CAP_SPIRAM) {
         cache_flags |= ESP_DMA_MALLOC_FLAG_PSRAM;
+        heap_caps = dma_mem_info->extra_heap_caps | MALLOC_CAP_SPIRAM;
     }
-    esp_err_t ret = esp_cache_get_alignment(cache_flags, &cache_alignment);
+
+    esp_err_t ret = esp_cache_get_alignment(cache_flags, &cache_alignment_bytes);
     assert(ret == ESP_OK);
 
-    //lcm3
-    alignment = _lcm_3(dma_alignment, cache_alignment, custom_alignment);
-    ESP_LOGD(TAG, "alignment: 0x%x", alignment);
+    //Get the least common multiple of two alignment
+    alignment_bytes = hal_utils_calc_lcm(dma_alignment_bytes, cache_alignment_bytes);
 
     //malloc
-    size = ALIGN_UP_BY(size, alignment);
-    int heap_caps = dma_mem_info->heap_caps;
-
-    void *ptr = heap_caps_aligned_alloc(alignment, size, heap_caps);
-    ESP_RETURN_ON_FALSE_ISR(ptr, ESP_ERR_NO_MEM, TAG, "no enough heap memory");
+    size = ALIGN_UP_BY(size, alignment_bytes);
+    void *ptr = heap_caps_aligned_alloc(alignment_bytes, size, heap_caps);
+    ESP_RETURN_ON_FALSE_ISR(ptr, ESP_ERR_NO_MEM, TAG, "Not enough heap memory");
 
     *out_ptr = ptr;
     if (actual_size) {
@@ -64,13 +61,13 @@ esp_err_t esp_dma_capable_malloc(size_t size, const esp_dma_mem_info_t *dma_mem_
     return ESP_OK;
 }
 
-esp_err_t esp_dma_capable_calloc(size_t n, size_t size, const esp_dma_mem_info_t *dma_mem_info, void **out_ptr, size_t *actual_size)
+esp_err_t esp_dma_capable_calloc(size_t calloc_num, size_t size, const esp_dma_mem_info_t *dma_mem_info, void **out_ptr, size_t *actual_size)
 {
     esp_err_t ret = ESP_FAIL;
     size_t size_bytes = 0;
     bool ovf = false;
 
-    ovf = __builtin_mul_overflow(n, size, &size_bytes);
+    ovf = __builtin_mul_overflow(calloc_num, size, &size_bytes);
     ESP_RETURN_ON_FALSE_ISR(!ovf, ESP_ERR_INVALID_ARG, TAG, "wrong size, total size overflow");
 
     void *ptr = NULL;
@@ -105,7 +102,7 @@ static inline bool s_is_buf_aligned(intptr_t ptr, size_t alignment)
     return (ptr % alignment == 0);
 }
 
-bool esp_dma_is_buffer_alignment_satisfied(const void *ptr, size_t size, esp_dma_mem_info_t *dma_mem_info)
+bool esp_dma_is_buffer_alignment_satisfied(const void *ptr, size_t size, esp_dma_mem_info_t dma_mem_info)
 {
     assert(ptr);
 
@@ -120,27 +117,24 @@ bool esp_dma_is_buffer_alignment_satisfied(const void *ptr, size_t size, esp_dma
         return false;
     }
 
-    size_t alignment = 1;
+    size_t alignment_bytes = 0;
 
     //dma align
-    size_t dma_alignment = dma_mem_info->dma_alignment;
-
-    //custom align
-    size_t custom_alignment = dma_mem_info->custom_alignment;
+    size_t dma_alignment_bytes = dma_mem_info.dma_alignment_bytes;
 
     //cache align
     int cache_flags = 0;
-    size_t cache_alignment = 1;
-    if (dma_mem_info->heap_caps & MALLOC_CAP_SPIRAM) {
+    size_t cache_alignment_bytes = 0;
+    if (esp_ptr_external_ram(ptr)) {
         cache_flags |= ESP_DMA_MALLOC_FLAG_PSRAM;
     }
-    esp_err_t ret = esp_cache_get_alignment(cache_flags, &cache_alignment);
+    esp_err_t ret = esp_cache_get_alignment(cache_flags, &cache_alignment_bytes);
     assert(ret == ESP_OK);
 
-    //lcm3
-    alignment = _lcm_3(dma_alignment, cache_alignment, custom_alignment);
+    //Get the least common multiple of two alignment
+    alignment_bytes = hal_utils_calc_lcm(dma_alignment_bytes, cache_alignment_bytes);
 
-    bool is_aligned = s_is_buf_aligned((intptr_t)ptr, alignment) && s_is_buf_aligned((intptr_t)size, alignment);
+    bool is_aligned = s_is_buf_aligned((intptr_t)ptr, alignment_bytes) && s_is_buf_aligned((intptr_t)size, alignment_bytes);
     return is_aligned;
 }
 
@@ -158,8 +152,8 @@ esp_err_t s_legacy_malloc(size_t size, uint32_t flags, void **out_ptr, size_t *a
     }
 
     esp_dma_mem_info_t dma_mem_info = {
-        .heap_caps = heap_caps,
-        .dma_alignment = 4, //legacy API behaviour is only check max dma buffer alignment
+        .extra_heap_caps = heap_caps,
+        .dma_alignment_bytes = 4, //legacy API behaviour is only check max dma buffer alignment
     };
 
     ESP_RETURN_ON_ERROR_ISR(esp_dma_capable_malloc(size, &dma_mem_info, out_ptr, actual_size), TAG, "failed to do malloc");
@@ -235,28 +229,8 @@ bool esp_dma_is_buffer_aligned(const void *ptr, size_t size, esp_dma_buf_locatio
     }
 
     esp_dma_mem_info_t dma_mem_info = {
-        .heap_caps = heap_caps,
-        .dma_alignment = 4,  //legacy API behaviour is only check max dma buffer alignment
+        .extra_heap_caps = heap_caps,
+        .dma_alignment_bytes = 4,  //legacy API behaviour is only check max dma buffer alignment
     };
-    return esp_dma_is_buffer_alignment_satisfied(ptr, size, &dma_mem_info);
-}
-
-esp_err_t esp_dma_get_alignment(void *gdma_chan_handle, const dma_alignment_info_t *info, size_t *alignment)
-{
-    ESP_RETURN_ON_FALSE(info && alignment, ESP_ERR_INVALID_ARG, TAG, "null pointer");
-
-#if SOC_GDMA_SUPPORTED
-    if (gdma_chan_handle) {
-        gdma_channel_handle_t dma_chan = (gdma_channel_handle_t)gdma_chan_handle;
-        gdma_alignment_info_t gdma_info = {};
-        memcpy(&gdma_info, info, sizeof(gdma_alignment_info_t));
-        ESP_RETURN_ON_ERROR(gdma_get_alignment(dma_chan, &gdma_info, alignment), TAG, "failed to get gdma alignment");
-    } else
-#endif
-    {
-        //for esp32 and esp32s2
-        *alignment = 4;
-    }
-
-    return ESP_OK;
+    return esp_dma_is_buffer_alignment_satisfied(ptr, size, dma_mem_info);
 }

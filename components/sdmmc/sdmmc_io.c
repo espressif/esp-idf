@@ -277,11 +277,9 @@ esp_err_t sdmmc_io_rw_extended(sdmmc_card_t* card, int func,
         .blklen = SDMMC_IO_BLOCK_SIZE /* TODO: read max block size from CIS */
     };
 
-    esp_dma_mem_info_t dma_mem_info = {
-        .heap_caps = MALLOC_CAP_DMA,
-        .custom_alignment = 4,
-    };
-    if (unlikely(datalen > 0 && !esp_dma_is_buffer_alignment_satisfied(datap, buflen, &dma_mem_info))) {
+    esp_dma_mem_info_t dma_mem_info;
+    card->host.get_dma_info(card->host.slot, &dma_mem_info);
+    if (unlikely(datalen > 0 && !esp_dma_is_buffer_alignment_satisfied(datap, buflen, dma_mem_info))) {
         if (datalen > SDMMC_IO_BLOCK_SIZE || card->host.dma_aligned_buffer == NULL) {
             // User gives unaligned buffer while `SDMMC_HOST_FLAG_ALLOC_ALIGNED_BUF` not set.
             return ESP_ERR_INVALID_ARG;
@@ -304,7 +302,7 @@ esp_err_t sdmmc_io_rw_extended(sdmmc_card_t* card, int func,
             return ESP_ERR_INVALID_SIZE;
         }
         if (datalen == SDMMC_IO_BLOCK_SIZE) {
-            count = 0;  // See 5.3.1 SDIO simplifed spec
+            count = 0;  // See 5.3.1 SDIO simplified spec
         } else {
             count = datalen;
         }
@@ -390,11 +388,9 @@ esp_err_t sdmmc_io_write_bytes(sdmmc_card_t* card, uint32_t function,
 esp_err_t sdmmc_io_read_blocks(sdmmc_card_t* card, uint32_t function,
         uint32_t addr, void* dst, size_t size)
 {
-    esp_dma_mem_info_t dma_mem_info = {
-        .heap_caps = MALLOC_CAP_DMA,
-        .custom_alignment = 4,
-    };
-    if (unlikely(!esp_dma_is_buffer_alignment_satisfied(dst, size, &dma_mem_info))) {
+    esp_dma_mem_info_t dma_mem_info;
+    card->host.get_dma_info(card->host.slot, &dma_mem_info);
+    if (unlikely(!esp_dma_is_buffer_alignment_satisfied(dst, size, dma_mem_info))) {
         return ESP_ERR_INVALID_ARG;
     }
     return sdmmc_io_rw_extended(card, function, addr,
@@ -405,11 +401,9 @@ esp_err_t sdmmc_io_read_blocks(sdmmc_card_t* card, uint32_t function,
 esp_err_t sdmmc_io_write_blocks(sdmmc_card_t* card, uint32_t function,
         uint32_t addr, const void* src, size_t size)
 {
-    esp_dma_mem_info_t dma_mem_info = {
-        .heap_caps = MALLOC_CAP_DMA,
-        .custom_alignment = 4,
-    };
-    if (unlikely(!esp_dma_is_buffer_alignment_satisfied(src, size, &dma_mem_info))) {
+    esp_dma_mem_info_t dma_mem_info;
+    card->host.get_dma_info(card->host.slot, &dma_mem_info);
+    if (unlikely(!esp_dma_is_buffer_alignment_satisfied(src, size, dma_mem_info))) {
         return ESP_ERR_INVALID_ARG;
     }
     return sdmmc_io_rw_extended(card, function, addr,

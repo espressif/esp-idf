@@ -26,7 +26,7 @@ uint32_t hal_utils_calc_clk_div_frac_fast(const hal_utils_clk_info_t *clk_info, 
         // Carry bit if the decimal is greater than 1.0 - 1.0 / ((max_fract - 1) * 2)
         if (freq_error < clk_info->exp_freq_hz - clk_info->exp_freq_hz / (clk_info->max_fract - 1) * 2) {
             // Calculate the Greatest Common Divisor, time complexity O(log n)
-            uint32_t gcd = _gcd(clk_info->exp_freq_hz, freq_error);
+            uint32_t gcd = hal_utils_gcd(clk_info->exp_freq_hz, freq_error);
             // divide by the Greatest Common Divisor to get the accurate fraction before normalization
             div_denom = clk_info->exp_freq_hz / gcd;
             div_numer = freq_error / gcd;

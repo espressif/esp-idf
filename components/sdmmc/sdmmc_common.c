@@ -340,11 +340,8 @@ esp_err_t sdmmc_allocate_aligned_buf(sdmmc_card_t* card)
     if (card->host.flags & SDMMC_HOST_FLAG_ALLOC_ALIGNED_BUF) {
         void* buf = NULL;
         size_t actual_size = 0;
-        // esp_err_t ret = esp_dma_malloc(SDMMC_IO_BLOCK_SIZE, 0, &buf, &actual_size);
-        esp_dma_mem_info_t dma_mem_info = {
-            .heap_caps = MALLOC_CAP_DMA,
-            .custom_alignment = 4,
-        };
+        esp_dma_mem_info_t dma_mem_info;
+        card->host.get_dma_info(card->host.slot, &dma_mem_info);
         esp_err_t ret = esp_dma_capable_malloc(SDMMC_IO_BLOCK_SIZE, &dma_mem_info, &buf, &actual_size);
 
         if (ret != ESP_OK) {

@@ -267,11 +267,7 @@ urb_t *test_hcd_alloc_urb(int num_isoc_packets, size_t data_buffer_size)
     void *data_buffer;
     size_t real_size;
     esp_dma_mem_info_t dma_mem_info = {
-        .dma_type = ESP_DMA_OTHERS,
-        .mem_flags = {
-            .dir = ESP_DMA_MEM_DIR_DONT_CARE,
-        },
-        .custom_alignment = 4,
+        .dma_alignment_bytes = 4,
     };
     esp_dma_capable_malloc(data_buffer_size, &dma_mem_info, &data_buffer, &real_size);
     TEST_ASSERT_NOT_NULL_MESSAGE(urb, "Failed to allocate URB");
