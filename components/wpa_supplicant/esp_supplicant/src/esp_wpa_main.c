@@ -39,6 +39,9 @@
 #include "ap/sta_info.h"
 #include "wps/wps_defs.h"
 #include "wps/wps.h"
+#if CONFIG_ESP_WIFI_ENABLE_ROAMING_APP
+#include "esp_roaming.h"
+#endif
 
 #ifdef CONFIG_DPP
 #include "common/dpp.h"
@@ -467,6 +470,10 @@ int esp_supplicant_init(void)
 
 #if CONFIG_ESP_WIFI_WAPI_PSK
     ret =  esp_wifi_internal_wapi_init();
+#endif
+
+#if CONFIG_ESP_WIFI_ENABLE_ROAMING_APP
+    init_roaming_app();
 #endif
 
     return ret;

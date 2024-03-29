@@ -533,7 +533,7 @@ static void nan_app_action_ndp_confirm(void *arg, esp_event_base_t event_base, i
     }
 
     if (nan_find_ndl(evt->ndp_id, NULL) == NULL) {
-        /* As ndl isn't found, timeout has occured for NDP response and datapath request is rejected */
+        /* As ndl isn't found, timeout has occurred for NDP response and datapath request is rejected */
         goto done;
     }
     if (evt->status == NDP_STATUS_REJECTED) {

@@ -23,6 +23,9 @@
 #include "rsn_supp/wpa_i.h"
 #include "rsn_supp/wpa.h"
 #include "esp_private/wifi.h"
+#if CONFIG_ESP_WIFI_ENABLE_ROAMING_APP
+#include "esp_roaming.h"
+#endif
 
 /* Utility Functions */
 esp_err_t esp_supplicant_str_to_mac(const char *str, uint8_t dest[6])
@@ -300,7 +303,7 @@ static int ieee80211_handle_rx_frm(u8 type, u8 *frame, size_t len, u8 *sender,
 #ifdef CONFIG_MBO
 bool mbo_bss_profile_match(u8 *bssid)
 {
-	/* Incase supplicant wants drivers to skip this BSS, return false */
+	/* In case supplicant wants drivers to skip this BSS, return false */
 	struct wpa_bss *bss = wpa_bss_get_bssid(&g_wpa_supp, bssid);
 	if (!bss) {
 		return true;
@@ -419,6 +422,9 @@ void esp_supplicant_common_deinit(void)
 	}
 	s_supplicant_task_init_done = false;
 #endif /* CONFIG_SUPPLICANT_TASK */
+#if CONFIG_ESP_WIFI_ENABLE_ROAMING_APP
+    deinit_roaming_app();
+#endif
 #endif /* defined(CONFIG_IEEE80211KV) || defined(CONFIG_IEEE80211R) */
 }
 
@@ -732,6 +738,16 @@ static uint8_t get_extended_caps_ie(uint8_t *ie, size_t len)
 	return ext_caps_ie_len + 2;
 }
 
+#else /* CONFIG_IEEE80211KV */
+bool esp_rrm_is_rrm_supported_connection(void)
+{
+	return false;
+}
+
+bool esp_wnm_is_btm_supported_connection(void)
+{
+	return false;
+}
 #endif /* CONFIG_IEEE80211KV */
 
 void esp_set_scan_ie(void)

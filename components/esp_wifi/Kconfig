@@ -574,6 +574,26 @@ menu "Wi-Fi"
             help
                 Select this option to enable WiFi Multiband operation certification support.
 
+        config ESP_WIFI_ENABLE_ROAMING_APP
+            bool "Advanced support for Wi-Fi Roaming (Experimental)"
+            depends on IDF_EXPERIMENTAL_FEATURES
+            default n
+            select ESP_WIFI_SCAN_CACHE
+            help
+                Enable Espressif's roaming app to allow for efficient Wi-Fi roaming.
+                This includes configurable periodic environment scans, maintaining a cache of the
+                best APs, handling low rssi events etc.
+
+                Risk Warning
+                - Please note that this feature is still experimental and enabling this potentially can
+                  lead to unpredictable scanning, connection and roaming attempts.
+                  We are still working on tuning and optimising this feature to ensure reliable and stable use.
+
+        menu "Configure roaming App"
+            depends on ESP_WIFI_ENABLE_ROAMING_APP
+            rsource "wifi_apps/roaming_app/src/Kconfig.roaming"
+        endmenu
+
         config ESP_WIFI_DPP_SUPPORT
             bool "Enable DPP support"
             default n
