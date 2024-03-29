@@ -59,6 +59,7 @@ typedef struct {
     bool bulk_flash_erase;                         /*!< Erase entire flash partition during initialization. By default flash partition is erased during write operation and in chunk of 4K sector size */
     bool partial_http_download;                    /*!< Enable Firmware image to be downloaded over multiple HTTP requests */
     int max_http_request_size;                     /*!< Maximum request size for partial HTTP download */
+    uint32_t buffer_caps;                          /*!< The memory capability to use when allocating the buffer for OTA update. Default capability is MALLOC_CAP_DEFAULT */
 #if CONFIG_ESP_HTTPS_OTA_DECRYPT_CB
     decrypt_cb_t decrypt_cb;                       /*!< Callback for external decryption layer */
     void *decrypt_user_ctx;                        /*!< User context for external decryption layer */
@@ -223,7 +224,7 @@ esp_err_t esp_https_ota_get_img_desc(esp_https_ota_handle_t https_ota_handle, es
 /**
 * @brief  This function returns OTA image data read so far.
 *
-* @note   This API should be called only if `esp_https_ota_perform()` has been called atleast once or
+* @note   This API should be called only if `esp_https_ota_perform()` has been called at least once or
 *         if `esp_https_ota_get_img_desc` has been called before.
 *
 * @param[in]   https_ota_handle   pointer to esp_https_ota_handle_t structure

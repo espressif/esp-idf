@@ -374,7 +374,11 @@ esp_err_t esp_https_ota_begin(const esp_https_ota_config_t *ota_config, esp_http
         https_ota_handle->update_partition->subtype, https_ota_handle->update_partition->address);
 
     const int alloc_size = MAX(ota_config->http_config->buffer_size, DEFAULT_OTA_BUF_SIZE);
-    https_ota_handle->ota_upgrade_buf = (char *)malloc(alloc_size);
+    if (ota_config->buffer_caps != 0) {
+        https_ota_handle->ota_upgrade_buf = (char *)heap_caps_malloc(alloc_size, ota_config->buffer_caps);
+    } else {
+        https_ota_handle->ota_upgrade_buf = (char *)malloc(alloc_size);
+    }
     if (!https_ota_handle->ota_upgrade_buf) {
         ESP_LOGE(TAG, "Couldn't allocate memory to upgrade data buffer");
         err = ESP_ERR_NO_MEM;
@@ -499,7 +503,7 @@ esp_err_t esp_https_ota_perform(esp_https_ota_handle_t https_ota_handle)
 
     esp_err_t err;
     int data_read;
-    const int erase_size = handle->bulk_flash_erase ? OTA_SIZE_UNKNOWN : OTA_WITH_SEQUENTIAL_WRITES;
+    const int erase_size = handle->bulk_flash_erase ? (handle->image_length > 0 ? handle->image_length : OTA_SIZE_UNKNOWN) : OTA_WITH_SEQUENTIAL_WRITES;
     switch (handle->state) {
         case ESP_HTTPS_OTA_BEGIN:
             err = esp_ota_begin(handle->update_partition, erase_size, &handle->update_handle);
