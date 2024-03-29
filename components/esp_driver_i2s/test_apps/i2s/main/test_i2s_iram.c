@@ -27,7 +27,7 @@
 static bool IRAM_ATTR test_i2s_tx_done_callback(i2s_chan_handle_t handle, i2s_event_data_t *event, void *user_ctx)
 {
     int *is_triggered = (int *)user_ctx;
-    if (*(uint8_t *)(event->data) != 0) {
+    if (event->dma_buf != 0) {
         *is_triggered = 1;
     }
     return false;

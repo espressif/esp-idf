@@ -912,10 +912,10 @@ finish:
 
 static IRAM_ATTR bool i2s_tx_on_sent_callback(i2s_chan_handle_t handle, i2s_event_data_t *event, void *user_ctx)
 {
-    uint32_t *data = (uint32_t *)(event->data);
+    uint32_t *dma_buf = (uint32_t *)(event->dma_buf);
     size_t len = event->size / sizeof(uint32_t);
     for (int i = 0; i < len; i++) {
-        data[i] = i + TEST_I2S_BUF_DATA_OFFSET;
+        dma_buf[i] = i + TEST_I2S_BUF_DATA_OFFSET;
     }
     return false;
 }
@@ -923,11 +923,11 @@ static IRAM_ATTR bool i2s_tx_on_sent_callback(i2s_chan_handle_t handle, i2s_even
 static IRAM_ATTR bool i2s_rx_on_recv_callback(i2s_chan_handle_t handle, i2s_event_data_t *event, void *user_ctx)
 {
     bool *received = (bool *)user_ctx;
-    uint32_t *data = (uint32_t *)(event->data);
+    uint32_t *dma_buf = (uint32_t *)(event->dma_buf);
     size_t len = event->size / sizeof(uint32_t);
     for (int i = 0; i < len; i++) {
-        if (data[i] == TEST_I2S_BUF_DATA_OFFSET) {
-            for (int j = 0; i < len && data[i] == (j + TEST_I2S_BUF_DATA_OFFSET); i++, j++);
+        if (dma_buf[i] == TEST_I2S_BUF_DATA_OFFSET) {
+            for (int j = 0; i < len && dma_buf[i] == (j + TEST_I2S_BUF_DATA_OFFSET); i++, j++);
             if (i == len) {
                 *received = true;
                 break;

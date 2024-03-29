@@ -55,3 +55,8 @@ Secure Element
 The ATECC608A secure element interfacing example has been moved to `ESP Cryptoauthlib Repository <https://github.com/espressif/esp-cryptoauthlib/tree/master/examples/atecc608_ecdsa>`_ on GitHub.
 
 This example is also part of the `esp-cryptoauthlib <https://components.espressif.com/component/espressif/esp-cryptoauthlib>`_ in the component manager registry.
+
+I2S
+-------
+
+Due to the cumbersome usage of the secondary pointer of DMA buffer, the ``data`` field in the callback event :cpp:type:`i2s_event_data_t` is deprecated, please use the newly added first-level pointer ``dma_buf`` instead.

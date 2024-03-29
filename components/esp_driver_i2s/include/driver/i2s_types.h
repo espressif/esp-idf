@@ -63,7 +63,10 @@ typedef enum {
  * @brief Event structure used in I2S event queue
  */
 typedef struct {
-    void                *data;  /**< The pointer of DMA buffer that just finished sending or receiving for `on_recv` and `on_sent` callback
+    void                *data __attribute__((deprecated));  /**< (Deprecated) The secondary pointer of DMA buffer that just finished sending or receiving for `on_recv` and `on_sent` callback
+                                  *  NULL for `on_recv_q_ovf` and `on_send_q_ovf` callback
+                                  */
+    void                *dma_buf;/**< The first level pointer of DMA buffer that just finished sending or receiving for `on_recv` and `on_sent` callback
                                   *  NULL for `on_recv_q_ovf` and `on_send_q_ovf` callback
                                   */
     size_t              size;   /**< The buffer size of DMA buffer when success to send or receive,
