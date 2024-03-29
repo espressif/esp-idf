@@ -9,6 +9,7 @@
 #pragma once
 
 #include <stdlib.h>
+#include "esp_attr.h"
 #include "soc/soc.h"
 #include "soc/lp_system_struct.h"
 #include "hal/misc.h"
@@ -24,7 +25,7 @@ extern "C" {
  *         Set the flag to inform
  * @param true: deepsleep      false: lightsleep
  */
-static inline  void lp_sys_ll_inform_wakeup_type(bool dslp)
+FORCE_INLINE_ATTR void lp_sys_ll_inform_wakeup_type(bool dslp)
 {
     if (dslp) {
         REG_SET_BIT(RTC_SLEEP_MODE_REG, BIT(0));    /* Tell rom to run deep sleep wake stub */
@@ -34,27 +35,27 @@ static inline  void lp_sys_ll_inform_wakeup_type(bool dslp)
     }
 }
 
-static inline void lp_sys_ll_set_pau_aon_bypass(bool bypass)
+FORCE_INLINE_ATTR void lp_sys_ll_set_pau_aon_bypass(bool bypass)
 {
     LP_SYS.backup_dma_cfg1.aon_bypass = bypass ? 1 : 0;
 }
 
-static inline void lp_sys_ll_set_pau_link_tout_thres(uint32_t tout)
+FORCE_INLINE_ATTR void lp_sys_ll_set_pau_link_tout_thres(uint32_t tout)
 {
     LP_SYS.backup_dma_cfg0.link_tout_thres_aon = tout;
 }
 
-static inline void lp_sys_ll_set_pau_link_backup_tout_thres(uint32_t tout)
+FORCE_INLINE_ATTR void lp_sys_ll_set_pau_link_backup_tout_thres(uint32_t tout)
 {
     LP_SYS.backup_dma_cfg0.link_backup_tout_thres_aon = tout;
 }
 
-static inline void lp_sys_ll_set_pau_reg_read_interval(uint32_t val)
+FORCE_INLINE_ATTR void lp_sys_ll_set_pau_reg_read_interval(uint32_t val)
 {
     LP_SYS.backup_dma_cfg0.read_interval_aon = val;
 }
 
-static inline void lp_sys_ll_set_pau_link_addr(uint32_t addr)
+FORCE_INLINE_ATTR void lp_sys_ll_set_pau_link_addr(uint32_t addr)
 {
     LP_SYS.backup_dma_cfg2.link_addr_aon = addr;
 }
