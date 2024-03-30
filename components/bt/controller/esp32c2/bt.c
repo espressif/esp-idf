@@ -650,6 +650,15 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
         return ret;
     }
 
+#if DEFAULT_BT_LE_50_FEATURE_SUPPORT || DEFAULT_BT_LE_ROLE_CENTROL || DEFAULT_BT_LE_ROLE_OBSERVER
+    extern int esp_ble_rom_func_ptr_init_all(void);
+    esp_ble_rom_func_ptr_init_all();
+#else
+    ESP_LOGI(NIMBLE_PORT_LOG_TAG, "Init only legacy adv and slave function");
+    extern int esp_ble_rom_func_ptr_init_legacy_adv_and_slave(void);
+    esp_ble_rom_func_ptr_init_legacy_adv_and_slave();
+#endif
+
     /* Initialize the function pointers for OS porting */
     npl_freertos_funcs_init();
     struct npl_funcs_t *p_npl_funcs = npl_freertos_funcs_get();

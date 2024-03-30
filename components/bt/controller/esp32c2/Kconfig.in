@@ -450,6 +450,7 @@ config BT_LE_USE_ESP_TIMER
 
 config BT_CTRL_BLE_ADV_REPORT_FLOW_CTRL_SUPP
     bool "BLE adv report flow control supported"
+    depends on BT_LE_ROLE_OBSERVER_ENABLE
     default y
     help
         The function is mainly used to enable flow control for advertising reports. When it is enabled,
@@ -497,3 +498,31 @@ config BT_LE_CCA_RSSI_THRESH
     default 20
     help
         Power threshold of CCA in unit of -1 dBm.
+
+config BT_LE_ROLE_CENTROL_ENABLE
+    bool "Enable BLE Centrol role function"
+    depends on !BT_NIMBLE_ENABLED
+    default y
+    help
+        Enable centrol role function.
+
+config BT_LE_ROLE_PERIPHERAL_ENABLE
+    bool "Enable BLE Peripheral role function"
+    depends on !BT_NIMBLE_ENABLED
+    default y
+    help
+        Enable Peripheral role function.
+
+config BT_LE_ROLE_BROADCASTER_ENABLE
+    bool "Enable BLE Broadcaster role function"
+    depends on !BT_NIMBLE_ENABLED
+    default y
+    help
+        Enable broadcaster role function.
+
+config BT_LE_ROLE_OBSERVER_ENABLE
+    bool "Enable BLE Observer role function"
+    depends on !BT_NIMBLE_ENABLED
+    default y
+    help
+        Enable observer role function.
