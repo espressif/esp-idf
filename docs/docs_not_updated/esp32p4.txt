@@ -97,11 +97,6 @@ api-reference/index.rst
 api-reference/protocols/icmp_echo.rst
 api-reference/protocols/esp_serial_slave_link.rst
 api-reference/protocols/index.rst
-security/host-based-security-workflows.rst
-security/flash-encryption.rst
-security/security.rst
-security/esp32p4_log.inc
-security/index.rst
 get-started/establish-serial-connection.rst
 get-started/linux-macos-setup.rst
 get-started/linux-macos-start-project.rst

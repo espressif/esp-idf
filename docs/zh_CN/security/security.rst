@@ -268,7 +268,7 @@ ESP-IDF 提供了 **NVS（非易失性存储）** 管理组件，允许加密数
 安全设备控制
 ~~~~~~~~~~~~~~~~~~~~~
 
-ESP-IDF 提供了 ESP 本地控制组件，可以通过 ``Wi-Fi + HTTP`` 或 ``BLE`` 安全地控制 ESP 设备。
+ESP-IDF 提供了 ESP 本地控制组件，可以通过 ``Wi-Fi/Ethernet + HTTP`` 或 ``BLE`` 安全地控制 ESP 设备。
 
 关于该功能的更多详情，请参阅 :doc:`../api-reference/protocols/esp_local_ctrl`。
 

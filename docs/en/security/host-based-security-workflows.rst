@@ -245,6 +245,16 @@ In this case, all the eFuses related to flash encryption are written with help o
 
          espsecure.py encrypt_flash_data --keyfile my_flash_encryption_key.bin --address 0x10000 --output my-app-enc.bin build/my-app.bin
 
+  .. only:: SOC_KEY_MANAGER_SUPPORTED
+
+      .. code-block:: bash
+
+         espsecure.py encrypt_flash_data --keyfile my_flash_encryption_key.bin --address 0x2000 --output bootloader-enc.bin build/bootloader/bootloader.bin
+
+         espsecure.py encrypt_flash_data --keyfile my_flash_encryption_key.bin --address 0x8000 --output partition-table-enc.bin build/partition_table/partition-table.bin
+
+         espsecure.py encrypt_flash_data --keyfile my_flash_encryption_key.bin --address 0x10000 --output my-app-enc.bin build/my-app.bin
+
   .. only:: not esp32
 
       .. code-block:: bash

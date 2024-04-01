@@ -297,7 +297,7 @@ flash 加密设置
     - :ref:`选择加密模式 <CONFIG_SECURE_FLASH_ENCRYPTION_MODE>` （默认是 **开发模式**）。
     :esp32: - :ref:`选择 UART ROM 下载模式 <CONFIG_SECURE_UART_ROM_DL_MODE>` （默认是 **启用**）。请注意，对于 ESP32 芯片，该选项仅在 :ref:`CONFIG_ESP32_REV_MIN` 级别设置为 3 时 (ESP32 V3) 可用。
     :not esp32: - :ref:`选择 UART ROM 下载模式 <CONFIG_SECURE_UART_ROM_DL_MODE>` （默认是 **启用**）。
-    :esp32s2 or esp32s3 or esp32c2: - 设置 :ref:`生成的 XTS-AES 密钥大小 <CONFIG_SECURE_FLASH_ENCRYPTION_KEYSIZE>`。
+    :SOC_FLASH_ENCRYPTION_XTS_AES_OPTIONS: - 设置 :ref:`生成的 XTS-AES 密钥大小 <CONFIG_SECURE_FLASH_ENCRYPTION_KEYSIZE>`。
     - :ref:`选择适当详细程度的引导加载程序日志 <CONFIG_BOOTLOADER_LOG_LEVEL>`。
     - 保存配置并退出。
 

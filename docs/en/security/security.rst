@@ -268,7 +268,7 @@ Please refer to the :ref:`nvs_encryption` for detailed documentation on the work
 Secure Device Control
 ~~~~~~~~~~~~~~~~~~~~~
 
-ESP-IDF provides capability to control an ESP device over ``Wi-Fi + HTTP`` or ``BLE`` in a secure manner using ESP Local Control component.
+ESP-IDF provides capability to control an ESP device over ``Wi-Fi/Ethernet + HTTP`` or ``BLE`` in a secure manner using ESP Local Control component.
 
 Please refer to the :doc:`../api-reference/protocols/esp_local_ctrl` for detailed documentation about this feature.
 
