@@ -49,8 +49,8 @@ const char *spiffs_partition_name = "spiffs_ro";
 static wl_handle_t s_wl_handle = WL_INVALID_HANDLE;
 
 // Data in each filesystem partition
-const char* cmp_string = "This is a file contained in the generated filesystem image on the host and flashed to the ESP device";
-#define CMP_STRING_LEN 102 // 101 + '\0'
+const char cmp_string[] = "This is a file contained in the generated filesystem image on the host and flashed to the ESP device";
+#define CMP_STRING_LEN sizeof(cmp_string)
 
 static void fill_array_of_readonly_data_partitions(void)
 {
