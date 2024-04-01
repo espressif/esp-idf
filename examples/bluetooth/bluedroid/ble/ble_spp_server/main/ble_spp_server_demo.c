@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -20,6 +20,7 @@
 #include "esp_bt_defs.h"
 #include "esp_bt_main.h"
 #include "ble_spp_server_demo.h"
+#include "esp_gatt_common_api.h"
 
 #define GATTS_TABLE_TAG  "GATTS_SPP_DEMO"
 
@@ -326,7 +327,7 @@ void uart_task(void *pvParameters)
         //Waiting for UART event.
         if (xQueueReceive(spp_uart_queue, (void * )&event, (TickType_t)portMAX_DELAY)) {
             switch (event.type) {
-            //Event of UART receving data
+            //Event of UART receiving data
             case UART_DATA:
                 if ((event.size)&&(is_connected)) {
                     uint8_t * temp = NULL;
@@ -472,7 +473,7 @@ static void spp_task_init(void)
 static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param)
 {
     esp_err_t err;
-    ESP_LOGE(GATTS_TABLE_TAG, "GAP_EVT, event %d", event);
+    ESP_LOGI(GATTS_TABLE_TAG, "GAP_EVT, event %d", event);
 
     switch (event) {
     case ESP_GAP_BLE_ADV_DATA_RAW_SET_COMPLETE_EVT:
@@ -593,6 +594,7 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_
 #endif
         	break;
     	case ESP_GATTS_DISCONNECT_EVT:
+            spp_mtu_size = 23;
     	    is_connected = false;
     	    enable_data_ntf = false;
 #ifdef SUPPORT_HEARTBEAT
@@ -703,6 +705,11 @@ void app_main(void)
     esp_ble_gatts_app_register(ESP_SPP_APP_ID);
 
     spp_task_init();
+
+    esp_err_t local_mtu_ret = esp_ble_gatt_set_local_mtu(500);
+    if (local_mtu_ret){
+        ESP_LOGE(GATTS_TABLE_TAG, "set local  MTU failed, error code = %x", local_mtu_ret);
+    }
 
     return;
 }
