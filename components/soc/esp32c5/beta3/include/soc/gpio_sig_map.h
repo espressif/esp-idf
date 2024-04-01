@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -40,7 +40,18 @@
 #define I2SO_SD1_OUT_IDX                        18
 #define USB_JTAG_TDO_BRIDGE_IDX                 19
 #define USB_JTAG_TRST_IDX                       19
+#define CPU_TESTBUS0_IDX                        20
 #define USB_OTG_32K_IN_IDX                      21
+#define CPU_TESTBUS1_IDX                        21
+#define USB_OTG_25M_IN_IDX                      22
+#define CPU_TESTBUS2_IDX                        22
+#define USB_OTG_PRB_IN_IDX                      23
+#define CPU_TESTBUS3_IDX                        23
+#define USB_OTG_SNS_IN_IDX                      24
+#define CPU_TESTBUS4_IDX                        24
+#define CPU_TESTBUS5_IDX                        25
+#define CPU_TESTBUS6_IDX                        26
+#define CPU_TESTBUS7_IDX                        27
 #define CPU_GPIO_IN0_IDX                        28
 #define CPU_GPIO_OUT0_IDX                       28
 #define CPU_GPIO_IN1_IDX                        29
@@ -57,6 +68,18 @@
 #define CPU_GPIO_OUT6_IDX                       34
 #define CPU_GPIO_IN7_IDX                        35
 #define CPU_GPIO_OUT7_IDX                       35
+#define USB_JTAG_TCK_IDX                        36
+#define USB_JTAG_TMS_IDX                        37
+#define USB_JTAG_TDI_IDX                        38
+#define USB_JTAG_TDO_IDX                        39
+#define USB_EXTPHY_VP_IDX                       40
+#define USB_EXTPHY_OEN_IDX                      40
+#define USB_EXTPHY_VM_IDX                       41
+#define USB_EXTPHY_SPEED_IDX                    41
+#define USB_EXTPHY_RCV_IDX                      42
+#define USB_EXTPHY_VPO_IDX                      42
+#define USB_EXTPHY_VMO_IDX                      43
+#define USB_EXTPHY_SUSPND_IDX                   44
 #define I2CEXT0_SCL_IN_IDX                      45
 #define I2CEXT0_SCL_OUT_IDX                     45
 #define I2CEXT0_SDA_IN_IDX                      46
@@ -77,6 +100,13 @@
 #define PARL_TX_DATA6_IDX                       53
 #define PARL_RX_DATA7_IDX                       54
 #define PARL_TX_DATA7_IDX                       54
+#define ANT_SEL4_IDX                            55
+#define ANT_SEL5_IDX                            56
+#define ANT_SEL6_IDX                            57
+#define ANT_SEL7_IDX                            58
+#define ANT_SEL8_IDX                            59
+#define ANT_SEL9_IDX                            60
+#define ANT_SEL10_IDX                           61
 #define SDIO_TOHOST_INT_OUT_IDX                 62
 #define FSPICLK_IN_IDX                          63
 #define FSPICLK_OUT_MUX_IDX                     63
@@ -108,6 +138,10 @@
 #define TWAI1_BUS_OFF_ON_IDX                    78
 #define TWAI1_CLKOUT_IDX                        79
 #define TWAI1_STANDBY_IDX                       80
+#define EXTERN_PRIORITY_I_IDX                   81
+#define EXTERN_PRIORITY_O_IDX                   81
+#define EXTERN_ACTIVE_I_IDX                     82
+#define EXTERN_ACTIVE_O_IDX                     82
 #define PCNT_RST_IN0_IDX                        83
 #define GPIO_SD0_OUT_IDX                        83
 #define PCNT_RST_IN1_IDX                        84
@@ -129,8 +163,12 @@
 #define PWM0_F2_IN_IDX                          92
 #define PWM0_OUT2B_IDX                          92
 #define PWM0_CAP0_IN_IDX                        93
+#define ANT_SEL0_IDX                            93
 #define PWM0_CAP1_IN_IDX                        94
+#define ANT_SEL1_IDX                            94
 #define PWM0_CAP2_IN_IDX                        95
+#define ANT_SEL2_IDX                            95
+#define ANT_SEL3_IDX                            96
 #define SIG_IN_FUNC_97_IDX                      97
 #define SIG_IN_FUNC97_IDX                       97
 #define SIG_IN_FUNC_98_IDX                      98
@@ -150,19 +188,35 @@
 #define PCNT_SIG_CH0_IN1_IDX                    105
 #define FSPICS5_OUT_IDX                         105
 #define PCNT_SIG_CH1_IN1_IDX                    106
+#define USB_OTG_CHRG_OUT_IDX                    106
 #define PCNT_CTRL_CH0_IN1_IDX                   107
+#define USB_OTG_DISCHRG_OUT_IDX                 107
 #define PCNT_CTRL_CH1_IN1_IDX                   108
+#define USB_OTG_PRB_EN_OUT_IDX                  108
 #define PCNT_SIG_CH0_IN2_IDX                    109
+#define USB_OTG_SNS_EN_OUT_IDX                  109
 #define PCNT_SIG_CH1_IN2_IDX                    110
+#define ANT_SEL11_IDX                           110
 #define PCNT_CTRL_CH0_IN2_IDX                   111
+#define ANT_SEL12_IDX                           111
 #define PCNT_CTRL_CH1_IN2_IDX                   112
+#define ANT_SEL13_IDX                           112
 #define PCNT_SIG_CH0_IN3_IDX                    113
+#define ANT_SEL14_IDX                           113
 #define PCNT_SIG_CH1_IN3_IDX                    114
 #define SPICLK_OUT_MUX_IDX                      114
 #define PCNT_CTRL_CH0_IN3_IDX                   115
 #define SPICS0_OUT_IDX                          115
 #define PCNT_CTRL_CH1_IN3_IDX                   116
 #define SPICS1_OUT_IDX                          116
+#define GPIO_EVENT_MATRIX_IN0_IDX               117
+#define GPIO_TASK_MATRIX_OUT0_IDX               117
+#define GPIO_EVENT_MATRIX_IN1_IDX               118
+#define GPIO_TASK_MATRIX_OUT1_IDX               118
+#define GPIO_EVENT_MATRIX_IN2_IDX               119
+#define GPIO_TASK_MATRIX_OUT2_IDX               119
+#define GPIO_EVENT_MATRIX_IN3_IDX               120
+#define GPIO_TASK_MATRIX_OUT3_IDX               120
 #define SPIQ_IN_IDX                             121
 #define SPIQ_OUT_IDX                            121
 #define SPID_IN_IDX                             122
@@ -174,5 +228,5 @@
 #define CLK_OUT_OUT1_IDX                        125
 #define CLK_OUT_OUT2_IDX                        126
 #define CLK_OUT_OUT3_IDX                        127
+// version date 2301100
 #define SIG_GPIO_OUT_IDX                        128
-#define GPIO_MAP_DATE_IDX                       0x2301100
