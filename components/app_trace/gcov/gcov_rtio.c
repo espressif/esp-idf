@@ -16,6 +16,7 @@
 #include "esp_freertos_hooks.h"
 #include "dbg_stubs.h"
 #include "esp_private/esp_ipc.h"
+#include "esp_attr.h"
 #include "hal/wdt_hal.h"
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/rom/libc_stubs.h"
@@ -80,6 +81,7 @@ void gcov_create_task(void *arg)
 		(void *)&s_gcov_task_running, configMAX_PRIORITIES - 1, NULL, 0);
 }
 
+static IRAM_ATTR
 void gcov_create_task_tick_hook(void)
 {
     if (s_create_gcov_task) {
