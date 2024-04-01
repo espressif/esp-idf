@@ -15,6 +15,7 @@
 #include "esp_random.h"
 #include "esp_heap_caps.h"
 #include "esp_rom_crc.h"
+#include "esp_efuse.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 #include "hal/key_mgr_types.h"
@@ -53,6 +54,7 @@ static void esp_key_mgr_acquire_key_lock(esp_key_mgr_key_type_t key_type)
         _lock_acquire(&s_key_mgr_xts_aes_key_lock);
         break;
     }
+    ESP_LOGV(TAG, "Key lock acquired for key type %d", key_type);
 }
 
 static void esp_key_mgr_release_key_lock(esp_key_mgr_key_type_t key_type)
@@ -66,6 +68,7 @@ static void esp_key_mgr_release_key_lock(esp_key_mgr_key_type_t key_type)
         _lock_release(&s_key_mgr_xts_aes_key_lock);
         break;
     }
+    ESP_LOGV(TAG, "Key lock released for key type %d", key_type);
 }
 
 static void esp_key_mgr_acquire_hardware(bool deployment_mode)
@@ -112,6 +115,7 @@ typedef struct aes_deploy {
     const uint8_t *k1_encrypted;
     const esp_key_mgr_aes_key_config_t *key_config;
     esp_key_mgr_key_recovery_info_t *key_info;
+    bool huk_deployed;
 } aes_deploy_config_t;
 
 static void check_huk_risk_level(void)
@@ -120,14 +124,14 @@ static void check_huk_risk_level(void)
     if (huk_risk_level > KEY_MGR_HUK_RISK_ALERT_LEVEL) {
         ESP_LOGE(TAG, "HUK Risk level too high (level %d)\n"
                  "It is recommended to immediately regenerate HUK in order"
-                 "to avoid permenantly losing the deployed keys", huk_risk_level);
+                 "to avoid permanently losing the deployed keys", huk_risk_level);
     } else {
         ESP_LOGI(TAG, "HUK Risk level - %d within acceptable limit (%d)", huk_risk_level, KEY_MGR_HUK_RISK_ALERT_LEVEL);
     }
 
 }
 
-static bool check_huk_validity(const esp_key_mgr_huk_info_t *huk_info)
+static bool check_huk_info_validity(const esp_key_mgr_huk_info_t *huk_info)
 {
     uint32_t calc_crc = esp_rom_crc32_le(0, huk_info->info, KEY_MGR_HUK_INFO_SIZE);
     if (calc_crc != huk_info->crc) {
@@ -160,17 +164,16 @@ static esp_err_t deploy_huk(huk_deploy_config_t *config)
     if (!huk_recovery_info) {
         return ESP_ERR_NO_MEM;
     }
-
     if (config->use_pre_generated_huk_info) {
         // If HUK info is provided then recover the HUK from given info
         check_huk_risk_level();
-        if (!check_huk_validity(config->pre_generated_huk_info)) {
+        if (!check_huk_info_validity(config->pre_generated_huk_info)) {
             ESP_LOGE(TAG, "HUK info is not valid");
             heap_caps_free(huk_recovery_info);
             return ESP_ERR_INVALID_ARG;
         }
         memcpy(huk_recovery_info, config->pre_generated_huk_info->info, KEY_MGR_HUK_INFO_SIZE);
-        ESP_LOGI(TAG, "Recovering key from given HUK recovery info");
+        ESP_LOGI(TAG, "Recovering HUK from given HUK recovery info");
         esp_ret = huk_hal_configure(ESP_HUK_MODE_RECOVERY, huk_recovery_info);
         if (esp_ret != ESP_OK) {
             ESP_LOGE(TAG, "Failed to recover HUK");
@@ -199,7 +202,6 @@ static esp_err_t deploy_huk(huk_deploy_config_t *config)
         return ESP_FAIL;
     }
 
-    ESP_LOGI(TAG, "HUK recovery/generation successfull");
     ESP_LOG_BUFFER_HEX_LEVEL("HUK INFO", huk_recovery_info, KEY_MGR_HUK_INFO_SIZE, ESP_LOG_DEBUG);
     // Free the local buffer for huk recovery info
     heap_caps_free(huk_recovery_info);
@@ -210,9 +212,9 @@ static esp_err_t key_mgr_deploy_key_aes_mode(aes_deploy_config_t *config)
 {
     esp_err_t esp_ret = ESP_FAIL;
     key_mgr_wait_for_state(ESP_KEY_MGR_STATE_IDLE);
-    if (!key_mgr_hal_is_huk_valid()) {
+    if ((!key_mgr_hal_is_huk_valid()) || (!config->huk_deployed)) {
         // For purpose ESP_KEY_MGR_KEY_PURPOSE_XTS_AES_256_2 this part shall be already executed
-        huk_deploy_config_t huk_deploy_config;
+        huk_deploy_config_t huk_deploy_config = {};
         huk_deploy_config.use_pre_generated_huk_info = config->key_config->use_pre_generated_huk_info;
         huk_deploy_config.pre_generated_huk_info = &config->key_config->huk_info;
         huk_deploy_config.huk_recovery_info = &config->key_info->huk_info;
@@ -220,8 +222,8 @@ static esp_err_t key_mgr_deploy_key_aes_mode(aes_deploy_config_t *config)
         if (esp_ret != ESP_OK) {
             return esp_ret;
         }
+        ESP_LOGI(TAG, "HUK deployed successfully");
     }
-    ESP_LOGI(TAG, "HUK deployed is Valid");
 
     // STEP 1: Init Step
     // Set mode
@@ -232,7 +234,7 @@ static esp_err_t key_mgr_deploy_key_aes_mode(aes_deploy_config_t *config)
         return ESP_ERR_NO_MEM;
     }
     // Set key purpose (XTS/ECDSA)
-    ESP_LOGI(TAG, "purpose = %d", config->key_purpose);
+    ESP_LOGD(TAG, "Key purpose = %d", config->key_purpose);
     key_mgr_hal_set_key_purpose(config->key_purpose);
 
     // Set key length for XTS-AES key
@@ -246,6 +248,12 @@ static esp_err_t key_mgr_deploy_key_aes_mode(aes_deploy_config_t *config)
 
     if (config->key_config->use_pre_generated_sw_init_key) {
         key_mgr_hal_use_sw_init_key();
+    } else {
+        if (!esp_efuse_find_purpose(ESP_EFUSE_KEY_PURPOSE_KM_INIT_KEY, NULL)) {
+            ESP_LOGE(TAG, "Could not find key with purpose KM_INIT_KEY");
+            heap_caps_free(key_recovery_info);
+            return ESP_FAIL;
+        }
     }
 
     key_mgr_hal_start();
@@ -257,11 +265,11 @@ static esp_err_t key_mgr_deploy_key_aes_mode(aes_deploy_config_t *config)
     }
     ESP_LOG_BUFFER_HEX_LEVEL("SW_INIT_KEY", config->key_config->sw_init_key, KEY_MGR_SW_INIT_KEY_SIZE, ESP_LOG_DEBUG);
 
-    ESP_LOGI(TAG, "Writing Information into Key Manager Registers");
+    ESP_LOGD(TAG, "Writing Information into Key Manager Registers");
     key_mgr_hal_write_assist_info(config->key_config->k2_info, KEY_MGR_K2_INFO_SIZE);
     ESP_LOG_BUFFER_HEX_LEVEL("K2_INFO", config->key_config->k2_info, KEY_MGR_K2_INFO_SIZE, ESP_LOG_DEBUG);
     key_mgr_hal_write_public_info(config->k1_encrypted, KEY_MGR_K1_ENCRYPTED_SIZE);
-    ESP_LOG_BUFFER_HEX_LEVEL("K1_ENCRYPTED", config->k1_encrypted, KEY_MGR_K1_ENCRYPTED_SIZE, ESP_LOG_INFO);
+    ESP_LOG_BUFFER_HEX_LEVEL("K1_ENCRYPTED", config->k1_encrypted, KEY_MGR_K1_ENCRYPTED_SIZE, ESP_LOG_DEBUG);
     key_mgr_hal_continue();
     // Step 3: Gain phase
     key_mgr_wait_for_state(ESP_KEY_MGR_STATE_GAIN);
@@ -288,15 +296,21 @@ static esp_err_t key_mgr_deploy_key_aes_mode(aes_deploy_config_t *config)
         config->key_info->key_info[0].crc = esp_rom_crc32_le(0, key_recovery_info, KEY_MGR_KEY_RECOVERY_INFO_SIZE);
     }
     heap_caps_free(key_recovery_info);
+    config->key_info->key_type = config->key_config->key_type;
+    config->key_info->magic = KEY_HUK_SECTOR_MAGIC;
 
     return ESP_OK;
 }
 
 esp_err_t esp_key_mgr_deploy_key_in_aes_mode(const esp_key_mgr_aes_key_config_t *key_config, esp_key_mgr_key_recovery_info_t *key_recovery_info)
 {
+    if (key_config == NULL || key_recovery_info == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
     ESP_LOGI(TAG, "Key deployment in AES mode");
 
-    aes_deploy_config_t aes_deploy_config;
+    aes_deploy_config_t aes_deploy_config = {};
     aes_deploy_config.key_config = key_config;
     aes_deploy_config.key_info = key_recovery_info;
     aes_deploy_config.k1_encrypted = key_config->k1_encrypted[0];
@@ -319,6 +333,7 @@ esp_err_t esp_key_mgr_deploy_key_in_aes_mode(const esp_key_mgr_aes_key_config_t 
     if (esp_ret != ESP_OK) {
         ESP_LOGE(TAG, "Key deployment in AES mode failed");
     }
+    aes_deploy_config.huk_deployed = true;
 
     if (key_type == ESP_KEY_MGR_XTS_AES_256_KEY) {
         aes_deploy_config.key_purpose = ESP_KEY_MGR_KEY_PURPOSE_XTS_AES_256_2;
@@ -339,18 +354,20 @@ esp_err_t esp_key_mgr_deploy_key_in_aes_mode(const esp_key_mgr_aes_key_config_t 
 typedef struct key_recovery_config {
     esp_key_mgr_key_purpose_t key_purpose;
     esp_key_mgr_key_recovery_info_t *key_recovery_info;
+    bool huk_recovered;
 } key_recovery_config_t;
 
 static esp_err_t key_mgr_recover_key(key_recovery_config_t *config)
 {
     key_mgr_wait_for_state(ESP_KEY_MGR_STATE_IDLE);
-    if (!check_huk_validity(&config->key_recovery_info->huk_info)) {
+    if (!check_huk_info_validity(&config->key_recovery_info->huk_info)) {
         ESP_LOGE(TAG, "HUK info is not valid");
         return ESP_ERR_INVALID_ARG;
     }
     ESP_LOGD(TAG, "HUK info valid");
 
-    if (!key_mgr_hal_is_huk_valid()) {
+    if ((!key_mgr_hal_is_huk_valid()) || (!config->huk_recovered))
+    {
         check_huk_risk_level();
         esp_err_t esp_ret = huk_hal_configure(ESP_HUK_MODE_RECOVERY, config->key_recovery_info->huk_info.info);
         if (esp_ret != ESP_OK) {
@@ -362,8 +379,9 @@ static esp_err_t key_mgr_recover_key(key_recovery_config_t *config)
             // TODO - define error code
             return ESP_FAIL;
         }
-        ESP_LOGI(TAG, "HUK deployed is Valid");
+        ESP_LOGI(TAG, "HUK recovered successfully");
         ESP_LOG_BUFFER_HEX_LEVEL("HUK INFO", config->key_recovery_info->huk_info.info, KEY_MGR_HUK_INFO_SIZE, ESP_LOG_DEBUG);
+        config->huk_recovered = true;
     }
 
     key_mgr_hal_set_key_generator_mode(ESP_KEY_MGR_KEYGEN_MODE_RECOVER);
@@ -386,13 +404,14 @@ static esp_err_t key_mgr_recover_key(key_recovery_config_t *config)
             return ESP_FAIL;
         }
         key_mgr_hal_write_assist_info(config->key_recovery_info->key_info[1].info, KEY_MGR_KEY_RECOVERY_INFO_SIZE);
+        ESP_LOG_BUFFER_HEX_LEVEL("RECOVERY_INFO[1]", config->key_recovery_info->key_info[0].info, KEY_MGR_KEY_RECOVERY_INFO_SIZE, ESP_LOG_DEBUG);
     } else {
         if (!check_key_info_validity(&config->key_recovery_info->key_info[0])) {
             ESP_LOGE(TAG, "Key info not valid");
             return ESP_FAIL;
         }
         key_mgr_hal_write_assist_info(config->key_recovery_info->key_info[0].info, KEY_MGR_KEY_RECOVERY_INFO_SIZE);
-        ESP_LOG_BUFFER_HEX_LEVEL("RECOVERY_INFO", config->key_recovery_info->key_info[0].info, KEY_MGR_KEY_RECOVERY_INFO_SIZE, ESP_LOG_INFO);
+        ESP_LOG_BUFFER_HEX_LEVEL("RECOVERY_INFO[0]", config->key_recovery_info->key_info[0].info, KEY_MGR_KEY_RECOVERY_INFO_SIZE, ESP_LOG_DEBUG);
     }
 
     key_mgr_hal_continue();
@@ -402,7 +421,7 @@ static esp_err_t key_mgr_recover_key(key_recovery_config_t *config)
             ESP_LOGD(TAG, "Key deployment is not valid");
             return ESP_FAIL;
         }
-        ESP_LOGI(TAG, "Key Recovery valid");
+        ESP_LOGD(TAG, "Key Recovery valid");
     }
     key_mgr_hal_continue();
     key_mgr_wait_for_state(ESP_KEY_MGR_STATE_IDLE);
@@ -411,7 +430,12 @@ static esp_err_t key_mgr_recover_key(key_recovery_config_t *config)
 
 esp_err_t esp_key_mgr_activate_key(esp_key_mgr_key_recovery_info_t *key_recovery_info)
 {
+    if (key_recovery_info == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
     esp_key_mgr_key_purpose_t key_purpose;
+    ESP_LOGD(TAG, "Activating key of type %d", key_recovery_info->key_type);
     esp_key_mgr_key_type_t key_type = (esp_key_mgr_key_type_t) key_recovery_info->key_type;
     if (key_type == ESP_KEY_MGR_ECDSA_KEY) {
         key_purpose = ESP_KEY_MGR_KEY_PURPOSE_ECDSA;
@@ -423,9 +447,10 @@ esp_err_t esp_key_mgr_activate_key(esp_key_mgr_key_recovery_info_t *key_recovery
         ESP_LOGE(TAG, "Invalid key type");
         return ESP_ERR_INVALID_ARG;
     }
+
     esp_err_t esp_ret = ESP_FAIL;
     esp_key_mgr_acquire_key_lock(key_type);
-    key_recovery_config_t key_recovery_config;
+    key_recovery_config_t key_recovery_config = {};
     key_recovery_config.key_recovery_info = key_recovery_info;
     key_recovery_config.key_purpose = key_purpose;
 
@@ -448,25 +473,31 @@ esp_err_t esp_key_mgr_activate_key(esp_key_mgr_key_recovery_info_t *key_recovery
 
     // Set the Key Manager Static Register to use own key for the respective key type
     key_mgr_hal_set_key_usage(key_recovery_info->key_type, ESP_KEY_MGR_USE_OWN_KEY);
+    ESP_LOGI(TAG, "Key activation for type %d successful", key_recovery_info->key_type);
     return ESP_OK;
 
 cleanup:
+    ESP_LOGI(TAG, "Key activation failed");
     esp_key_mgr_release_hardware(false);
     return esp_ret;
 }
 
 esp_err_t esp_key_mgr_deactivate_key(esp_key_mgr_key_type_t key_type)
 {
+    ESP_LOGD(TAG, "Deactivating key of type %d", key_type);
     esp_key_mgr_release_key_lock(key_type);
     esp_key_mgr_release_hardware(false);
+    ESP_LOGI(TAG, "Key deactivation successful");
     return ESP_OK;
 }
 
 typedef struct ecdh0_config {
     esp_key_mgr_key_purpose_t key_purpose;
+    const uint8_t *k1_G;
     const esp_key_mgr_ecdh0_key_config_t *key_config;
     esp_key_mgr_key_recovery_info_t *key_info;
     uint8_t *ecdh0_key_info;
+    bool huk_deployed;
 } ecdh0_deploy_config_t;
 
 static esp_err_t key_mgr_deploy_key_ecdh0_mode(ecdh0_deploy_config_t *config)
@@ -474,7 +505,7 @@ static esp_err_t key_mgr_deploy_key_ecdh0_mode(ecdh0_deploy_config_t *config)
     esp_err_t esp_ret = ESP_FAIL;
     key_mgr_wait_for_state(ESP_KEY_MGR_STATE_IDLE);
 
-    if (!key_mgr_hal_is_huk_valid()) {
+    if ((!key_mgr_hal_is_huk_valid()) || (!config->huk_deployed)) {
         // For purpose ESP_KEY_MGR_KEY_PURPOSE_XTS_AES_256_2 this part shall be already executed
         huk_deploy_config_t huk_deploy_config;
         huk_deploy_config.use_pre_generated_huk_info = config->key_config->use_pre_generated_huk_info;
@@ -484,8 +515,8 @@ static esp_err_t key_mgr_deploy_key_ecdh0_mode(ecdh0_deploy_config_t *config)
         if (esp_ret != ESP_OK) {
             return esp_ret;
         }
+        ESP_LOGI(TAG, "HUK deployed successfully");
     }
-    ESP_LOGI(TAG, "HUK deployed is Valid");
 
     uint8_t *key_recovery_info = (uint8_t *) heap_caps_calloc(1, KEY_MGR_KEY_RECOVERY_INFO_SIZE, MALLOC_CAP_INTERNAL);
     if (!key_recovery_info) {
@@ -512,7 +543,7 @@ static esp_err_t key_mgr_deploy_key_ecdh0_mode(ecdh0_deploy_config_t *config)
     // Step 2: Load phase
     key_mgr_wait_for_state(ESP_KEY_MGR_STATE_LOAD);
     ESP_LOGD(TAG, "Writing Information into Key Manager Registers");
-    key_mgr_hal_write_public_info(config->key_config->k1_G, KEY_MGR_ECDH0_INFO_SIZE);
+    key_mgr_hal_write_public_info(config->k1_G, KEY_MGR_ECDH0_INFO_SIZE);
     key_mgr_hal_continue();
 
     // Step 3: Gain phase
@@ -526,6 +557,7 @@ static esp_err_t key_mgr_deploy_key_ecdh0_mode(ecdh0_deploy_config_t *config)
     if (config->key_purpose != ESP_KEY_MGR_KEY_PURPOSE_XTS_AES_256_1) {
         if (!key_mgr_hal_is_key_deployment_valid(config->key_config->key_type)) {
             ESP_LOGE(TAG, "Key deployment is not valid");
+            heap_caps_free(key_recovery_info);
             return ESP_FAIL;
         }
         ESP_LOGI(TAG, "Key deployment valid");
@@ -543,6 +575,8 @@ static esp_err_t key_mgr_deploy_key_ecdh0_mode(ecdh0_deploy_config_t *config)
     }
 
     config->key_info->key_type = config->key_config->key_type;
+    config->key_info->magic = KEY_HUK_SECTOR_MAGIC;
+
     heap_caps_free(key_recovery_info);
     return ESP_OK;
 }
@@ -550,13 +584,17 @@ static esp_err_t key_mgr_deploy_key_ecdh0_mode(ecdh0_deploy_config_t *config)
 esp_err_t esp_key_mgr_deploy_key_in_ecdh0_mode(const esp_key_mgr_ecdh0_key_config_t *key_config,
                                                esp_key_mgr_key_recovery_info_t *key_info, esp_key_mgr_ecdh0_info_t *ecdh0_key_info)
 {
+    if (key_config == NULL || key_info == NULL || ecdh0_key_info == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
     ESP_LOGI(TAG, "Key Deployment in ECDH0 mode");
     esp_key_mgr_key_purpose_t key_purpose;
     esp_key_mgr_key_type_t key_type = (esp_key_mgr_key_type_t) key_config->key_type;
 
-    ecdh0_deploy_config_t ecdh0_deploy_config;
+    ecdh0_deploy_config_t ecdh0_deploy_config = {};
     ecdh0_deploy_config.key_config = key_config;
     ecdh0_deploy_config.key_info = key_info;
+    ecdh0_deploy_config.k1_G = key_config->k1_G[0];
 
     if (key_type == ESP_KEY_MGR_ECDSA_KEY) {
         ecdh0_deploy_config.key_purpose = ESP_KEY_MGR_KEY_PURPOSE_ECDSA;
@@ -578,10 +616,13 @@ esp_err_t esp_key_mgr_deploy_key_in_ecdh0_mode(const esp_key_mgr_ecdh0_key_confi
     if (esp_ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to deploy key in ECDH0 mode");
     }
+    ecdh0_deploy_config.huk_deployed = true;
 
     if (key_config->key_type == ESP_KEY_MGR_XTS_AES_256_KEY) {
         key_purpose = ESP_KEY_MGR_KEY_PURPOSE_XTS_AES_256_2;
         ecdh0_deploy_config.key_purpose = key_purpose;
+        ecdh0_deploy_config.k1_G = key_config->k1_G[1];
+
         ecdh0_deploy_config.ecdh0_key_info = ecdh0_key_info->k2_G[1];
         esp_ret = key_mgr_deploy_key_ecdh0_mode(&ecdh0_deploy_config);
         if (esp_ret != ESP_OK) {
@@ -600,15 +641,16 @@ typedef struct random_deploy {
     esp_key_mgr_key_purpose_t key_purpose;
     const esp_key_mgr_random_key_config_t *key_config;
     esp_key_mgr_key_recovery_info_t *key_info;
+    bool huk_deployed;
 } random_deploy_config_t;
 
 static esp_err_t key_mgr_deploy_key_random_mode(random_deploy_config_t *config)
 {
     esp_err_t esp_ret = ESP_FAIL;
     key_mgr_wait_for_state(ESP_KEY_MGR_STATE_IDLE);
-    if (!key_mgr_hal_is_huk_valid()) {
+    if ((!key_mgr_hal_is_huk_valid()) || (!config->huk_deployed)) {
         // For purpose ESP_KEY_MGR_KEY_PURPOSE_XTS_AES_256_2 this part shall be already executed
-        huk_deploy_config_t huk_deploy_config;
+        huk_deploy_config_t huk_deploy_config = {};
         huk_deploy_config.use_pre_generated_huk_info = config->key_config->use_pre_generated_huk_info;
         huk_deploy_config.pre_generated_huk_info = &config->key_config->huk_info;
         huk_deploy_config.huk_recovery_info = &config->key_info->huk_info;
@@ -616,8 +658,8 @@ static esp_err_t key_mgr_deploy_key_random_mode(random_deploy_config_t *config)
         if (esp_ret != ESP_OK) {
             return esp_ret;
         }
+        ESP_LOGI(TAG, "HUK deployed successfully");
     }
-    ESP_LOGI(TAG, "HUK deployed is Valid");
 
     // Configure deployment mode to RANDOM
     key_mgr_hal_set_key_generator_mode(ESP_KEY_MGR_KEYGEN_MODE_RANDOM);
@@ -668,14 +710,21 @@ static esp_err_t key_mgr_deploy_key_random_mode(random_deploy_config_t *config)
         config->key_info->key_info[0].crc = esp_rom_crc32_le(0, key_recovery_info, KEY_MGR_KEY_RECOVERY_INFO_SIZE);
     }
     heap_caps_free(key_recovery_info);
+    config->key_info->key_type = config->key_config->key_type;
+    config->key_info->magic = KEY_HUK_SECTOR_MAGIC;
+
     return ESP_OK;
 }
 
 esp_err_t esp_key_mgr_deploy_key_in_random_mode(const esp_key_mgr_random_key_config_t *key_config, esp_key_mgr_key_recovery_info_t *key_recovery_info)
 {
+    if (key_config == NULL || key_recovery_info == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
     ESP_LOGI(TAG, "Key deployment in Random mode");
 
-    random_deploy_config_t random_deploy_config;
+    random_deploy_config_t random_deploy_config = {};
     random_deploy_config.key_config = key_config;
     random_deploy_config.key_info = key_recovery_info;
     esp_key_mgr_key_type_t key_type = (esp_key_mgr_key_type_t) key_config->key_type;
@@ -698,6 +747,7 @@ esp_err_t esp_key_mgr_deploy_key_in_random_mode(const esp_key_mgr_random_key_con
         ESP_LOGE(TAG, "Key deployment in Random mode failed");
         return ESP_FAIL;
     }
+    random_deploy_config.huk_deployed = true;
 
     if (key_type == ESP_KEY_MGR_XTS_AES_256_KEY) {
         random_deploy_config.key_purpose = ESP_KEY_MGR_KEY_PURPOSE_XTS_AES_256_2;
