@@ -21,6 +21,7 @@ Peripherals API
     :SOC_DIG_SIGN_SUPPORTED: ds
     i2c
     :SOC_I2S_SUPPORTED: i2s
+    :SOC_ISP_SUPPORTED: isp
     lcd/index
     :SOC_GP_LDO_SUPPORTED: ldo_regulator
     ledc

@@ -73,6 +73,7 @@ esp_err_t mipi_csi_brg_declaim(int id)
 
     s_ctx.ref_cnt[id]--;
     if (s_ctx.ref_cnt[id] < 0) {
+        s_ctx.ref_cnt[id] = 0;
         portEXIT_CRITICAL(&s_ctx.spinlock);
         ESP_LOGE(TAG, "%s called, but s_ctx.ref_cnt[%d] == 0", __func__, id);
         return ESP_ERR_INVALID_STATE;

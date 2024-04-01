@@ -53,6 +53,7 @@
 #define SOC_SDM_SUPPORTED               1
 #define SOC_GPSPI_SUPPORTED             1
 #define SOC_LEDC_SUPPORTED              1
+#define SOC_ISP_SUPPORTED               1
 #define SOC_I2C_SUPPORTED               1
 #define SOC_SYSTIMER_SUPPORTED          1
 #define SOC_AES_SUPPORTED               1

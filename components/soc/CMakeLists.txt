@@ -67,6 +67,10 @@ if(CONFIG_SOC_SDM_SUPPORTED)
     list(APPEND srcs "${target_folder}/sdm_periph.c")
 endif()
 
+if(CONFIG_SOC_ISP_SUPPORTED)
+    list(APPEND srcs "${target}/isp_periph.c")
+endif()
+
 if(CONFIG_SOC_I2S_SUPPORTED)
     list(APPEND srcs "${target_folder}/i2s_periph.c")
 endif()
