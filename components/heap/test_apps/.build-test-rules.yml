@@ -3,6 +3,9 @@
 components/heap/test_apps/heap_tests:
   disable:
     - if: IDF_TARGET == "linux"
+    - if: IDF_TARGET == "esp32c5"
+      temporary: true
+      reason: not support yet  # TODO: [ESP32C5] IDF-9641
     - if: CONFIG_NAME == "psram" and SOC_SPIRAM_SUPPORTED != 1
     - if: CONFIG_NAME == "psram_all_ext" and SOC_SPIRAM_SUPPORTED != 1
     # These 3 configs are build only for non-nightly, buildig for a single target is sufficient

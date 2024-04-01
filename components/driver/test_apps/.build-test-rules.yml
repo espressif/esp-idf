@@ -25,6 +25,10 @@ components/driver/test_apps/legacy_adc_driver:
     - components/driver/deprecated/**/*adc*
 
 components/driver/test_apps/legacy_i2c_driver:
+  disable:
+    - if: IDF_TARGET == "esp32c5"
+      temporary: true
+      reason: not support yet # TODO: [ESP32C5] IDF-8694
   disable_test:
     - if: IDF_TARGET == "esp32p4"
       temporary: true

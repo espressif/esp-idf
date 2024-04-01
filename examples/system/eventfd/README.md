@@ -1,5 +1,5 @@
-| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C6 | ESP32-H2 | ESP32-P4 | ESP32-S2 | ESP32-S3 |
-| ----------------- | ----- | -------- | -------- | -------- | -------- | -------- | -------- | -------- |
+| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C5 | ESP32-C6 | ESP32-H2 | ESP32-P4 | ESP32-S2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- | -------- | -------- | -------- | -------- |
 
 # eventfd example
 
@@ -52,8 +52,8 @@ I (7330) eventfd_example: Elapsed since test start: 4999 ms
 I (7330) eventfd_example: TimerEvent fd event triggered
 I (7330) eventfd_example: =================================
 I (7340) eventfd_example: Select timeouted for 1 times
-I (7340) eventfd_example: Timer triggerred for 2 times
-I (7350) eventfd_example: Progress triggerred for 1 times
+I (7340) eventfd_example: Timer triggered for 2 times
+I (7350) eventfd_example: Progress triggered for 1 times
 I (7360) eventfd_example: =================================
 I (9330) eventfd_example: Elapsed since test start: 6993 ms
 I (9330) eventfd_example: Progress fd event triggered
@@ -65,8 +65,8 @@ I (12330) eventfd_example: Elapsed since test start: 9999 ms
 I (12330) eventfd_example: TimerEvent fd event triggered
 I (12330) eventfd_example: =================================
 I (12340) eventfd_example: Select timeouted for 2 times
-I (12340) eventfd_example: Timer triggerred for 4 times
-I (12350) eventfd_example: Progress triggerred for 2 times
+I (12340) eventfd_example: Timer triggered for 4 times
+I (12350) eventfd_example: Progress triggered for 2 times
 I (12360) eventfd_example: =================================
 ```
 

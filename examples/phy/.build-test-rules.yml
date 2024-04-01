@@ -2,6 +2,9 @@
 
 examples/phy/antenna:
   disable:
+    - if: IDF_TARGET == "esp32c5"
+      temporary: true
+      reason: not supported yet  # TODO: [ESP32C5] IDF-8851
     - if: IDF_TARGET in ["esp32p4", "esp32h2"]
       reason: not supported
 examples/phy/cert_test:

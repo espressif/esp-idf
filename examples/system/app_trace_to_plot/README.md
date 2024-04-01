@@ -1,5 +1,5 @@
-| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C6 | ESP32-H2 | ESP32-P4 | ESP32-S2 | ESP32-S3 |
-| ----------------- | ----- | -------- | -------- | -------- | -------- | -------- | -------- | -------- |
+| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C5 | ESP32-C6 | ESP32-H2 | ESP32-P4 | ESP32-S2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- | -------- | -------- | -------- | -------- |
 
 # Application Level Tracing Example (Plotting)
 
@@ -52,7 +52,7 @@ idf.py -p PORT flash monitor
 python read_trace.py --plot-config data.json --source tcp://localhost:53535 --output-file data.log
 ```
 
-**Start App Trace:** Start OpenOCD and App Trace on the target by entering the command below. This command will start OpenOCD and collect all of the bytes from JTAG log data and send them to the tcp socket `tcp://localhost:53535` (note `tcp://` depends on which IP address and port number openned). Assuming that OpenOCD was started in this example's directory, `data.log` will be saved here as well.
+**Start App Trace:** Start OpenOCD and App Trace on the target by entering the command below. This command will start OpenOCD and collect all of the bytes from JTAG log data and send them to the tcp socket `tcp://localhost:53535` (note `tcp://` depends on which IP address and port number opened). Assuming that OpenOCD was started in this example's directory, `data.log` will be saved here as well.
 
 After running the plotting tool and starting apptrace with OpenOCD separately, you need access plotting on related socket address. Default address is `http://127.0.0.1:8055/` and also address can be seen from `read_trace.py` output. You can see the plotting result by accessing the address from browser.
 
@@ -69,7 +69,7 @@ idf.py openocd --openocd-commands 'reset;esp apptrace start tcp://localhost:5353
 
 See the Getting Started Guide for full steps to configure and use ESP-IDF to build projects.
 
-### Configration file and data format
+### Configuration file and data format
 
 #### General format of json file is:
 
@@ -108,7 +108,7 @@ See the Getting Started Guide for full steps to configure and use ESP-IDF to bui
 | xaxis_title      | Title of x axis in the plot (e.g "time")                                                                                                                                          |
 | yaxis_title      | Title of y axis in the plot (e.g "values", "sensor data")                                                                                                                         |
 
-**Note:** Plotting works with plotly subplot feature. `id`, `timestamp_flag`, `data_size` and `data_type` are the mandatory elements. In addition to these elements, you can config your plot with [properties are passed to the constructor of the specified trace type](https://plotly.com/python/reference/scatter/). Data transfering is in {'x': ..., 'y': ..., ...} format. Graph types like Pie or Scatter3D won't work. Scatter, histogram, box, line and similar graph types are working.
+**Note:** Plotting works with plotly subplot feature. `id`, `timestamp_flag`, `data_size` and `data_type` are the mandatory elements. In addition to these elements, you can config your plot with [properties are passed to the constructor of the specified trace type](https://plotly.com/python/reference/scatter/). Data transferring is in {'x': ..., 'y': ..., ...} format. Graph types like Pie or Scatter3D won't work. Scatter, histogram, box, line and similar graph types are working.
 
 #### Data format in microcontroller side is:
 

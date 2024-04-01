@@ -1,5 +1,5 @@
-| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C6 | ESP32-H2 | ESP32-P4 | ESP32-S2 | ESP32-S3 |
-| ----------------- | ----- | -------- | -------- | -------- | -------- | -------- | -------- | -------- |
+| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C5 | ESP32-C6 | ESP32-H2 | ESP32-P4 | ESP32-S2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- | -------- | -------- | -------- | -------- |
 
 # Default Event Loop Example
 
@@ -23,7 +23,7 @@ Simply put, posting an event to a loop is the act of queueing its handlers for e
 
 ### Handler Registration/Unregistration
 
-This example demonstrates handler registration to the default event loop using `esp_event_handler_register` for (1) specific events, (2) **any** event under a certain base, and (3) **any** event. This also shows the possbility of registering multiple handlers to the same event as well as registering one handler to the same event multiple times.
+This example demonstrates handler registration to the default event loop using `esp_event_handler_register` for (1) specific events, (2) **any** event under a certain base, and (3) **any** event. This also shows the possibility of registering multiple handlers to the same event as well as registering one handler to the same event multiple times.
 
 Unregistering a handler is done using `esp_event_handler_unregister()`. Unregistering a handler means that it no longer executes even when the event it was previously registered to gets posted to the loop.
 

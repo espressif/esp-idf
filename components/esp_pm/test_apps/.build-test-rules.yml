@@ -3,5 +3,9 @@
 components/esp_pm/test_apps:
   enable:
     - if: INCLUDE_DEFAULT == 1
+  disable:
+    - if: IDF_TARGET == "esp32c5"
+      temporary: true
+      reason: not support yet # TODO: [ESP32C5] IDF-8643
   depends_components:
     - esp_pm
