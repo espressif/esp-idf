@@ -70,7 +70,7 @@ Successive roaming attempts by multiple roaming triggers simultaneously could le
 
 **Periodic Neighbor Report Requests:**
 
-Neighbor Report requests are a part of the IEEE 802.11k specification, and hence the intended network would need to support and be setup in a way to support its mechanisms. Periodic neighbor report requests provide vital information about the network and other APs in the vicinity that are candidate APs of the same network. This can be enabled using “Send Periodic Neighbor Report requests for updating the internal list”. he frequency of these requests is controlled by “Time interval between Periodic Neighbor report Requests”. There can also be a RSSI threshold (“Threshold for sending periodic neighbor report requests”) after which you wish to consider sending these requests however this is set by default to 0.
+Neighbor Report requests are a part of the IEEE 802.11k specification, and hence the intended network would need to support and be setup in a way to support its mechanisms. Periodic neighbor report requests provide vital information about the network and other APs in the vicinity that are candidate APs of the same network. This can be enabled using “Send Periodic Neighbor Report requests for updating the internal list”. The frequency of these requests is controlled by “Time interval between Periodic Neighbor report Requests”. There can also be a RSSI threshold (“Threshold for sending periodic neighbor report requests”) after which you wish to consider sending these requests however this is set by default to -20.
 
 
 **Notes :**

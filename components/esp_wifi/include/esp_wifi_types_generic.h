@@ -166,10 +166,7 @@ typedef struct {
 
 typedef struct {
     uint16_t ghz_2_channels;     /**< Represents 2.4 GHz channels */
-    uint8_t unii1_channels;      /**< UNII-1 channels */
-    uint8_t unii2_channels;      /**< UNII-2 channels */
-    uint16_t unii2e_channels;    /**< UNII-2 Extended channels */
-    uint8_t unii3_channels;      /**< UNII-3 channels */
+    uint32_t ghz_5_channels;     /**< Represents 5 GHz channels */
 } wifi_scan_channel_bitmap_t;
 
 /** @brief Parameters for an SSID scan. */

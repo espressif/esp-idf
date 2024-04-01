@@ -585,9 +585,9 @@ menu "Wi-Fi"
                 best APs, handling low rssi events etc.
 
                 Risk Warning
-                - Please note that this feature is still experimental and enabling this potentially can
-                  lead to unpredictable scanning, connection and roaming attempts.
-                  We are still working on tuning and optimising this feature to ensure reliable and stable use.
+                Please note that this feature is still experimental and enabling this potentially can
+                lead to unpredictable scanning, connection and roaming attempts.
+                We are still working on tuning and optimising this feature to ensure reliable and stable use.
 
         menu "Configure roaming App"
             depends on ESP_WIFI_ENABLE_ROAMING_APP

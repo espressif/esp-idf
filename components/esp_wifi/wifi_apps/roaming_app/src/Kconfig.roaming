@@ -26,6 +26,8 @@ menu "Roaming triggers"
             after each failed attempt to roam. This allows for the station to keep scanning for better AP's after
             the Low RSSI threshold is reached in a stepped manner, rather than only attempting to roam the first time
             the current AP's RSSI breaches the set RSSI threshold.
+            Setting 0 here may cause station to be flooded with low rssi events,
+            therefore that's not recommended to be kept.
 
     config ESP_WIFI_ROAMING_PERIODIC_SCAN_MONITOR
         bool "Conduct periodic scans to check if a better AP is available"
