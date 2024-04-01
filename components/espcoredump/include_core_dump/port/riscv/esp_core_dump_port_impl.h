@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,6 +11,7 @@
  * @brief Core dump port interface implementation for RISC-V.
  */
 
+#include "sdkconfig.h"
 #include "esp_core_dump_types.h"
 #include "esp_app_format.h"
 
@@ -24,6 +25,10 @@ extern "C" {
  */
 typedef struct {
     uint32_t sp;
+#if CONFIG_ESP_SYSTEM_HW_STACK_GUARD
+    uint32_t sp_min;
+    uint32_t sp_max;
+#endif // CONFIG_ESP_SYSTEM_HW_STACK_GUARD
 } core_dump_stack_context_t;
 
 /**
