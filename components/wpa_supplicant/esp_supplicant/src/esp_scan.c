@@ -162,11 +162,26 @@ int esp_handle_beacon_probe(u8 type, u8 *frame, size_t len, u8 *sender,
 	/* update rest of the frame */
 	os_memcpy(ptr, frame, len);
 	wpa_bss_update_scan_res(wpa_s, res, &now);
+	os_get_reltime(&wpa_s->last_scan);
 	os_free(res);
 
 	return 0;
 }
+#ifdef CONFIG_WNM
+void get_scan_channel_bitmap(struct wpa_supplicant *wpa_s, wifi_scan_config_t *params) {
+    if (!wpa_s->wnm_num_neighbor_report) {
+        wpa_printf(MSG_DEBUG, "No Neighbor Report to gather scan channel list");
+        return;
+    }
+    params->channel_bitmap.ghz_2_channels = 0;
 
+    for (int i = 0; i < wpa_s->wnm_num_neighbor_report; i++) {
+        struct neighbor_report *nei;
+        nei = &wpa_s->wnm_neighbor_report_elements[i];
+        params->channel_bitmap.ghz_2_channels |= (1 << nei->channel_number);
+    }
+}
+#endif /*CONFIG_WNM*/
 static int issue_scan(struct wpa_supplicant *wpa_s,
 		      struct wpa_driver_scan_params *scan_params)
 {
@@ -217,11 +232,18 @@ static int issue_scan(struct wpa_supplicant *wpa_s,
 		if (scan_params->channel) {
 			params->channel = scan_params->channel;
 		}
-
+#ifdef CONFIG_WNM
+		else {
+			get_scan_channel_bitmap(wpa_s, params);
+		}
+#endif /*CONFIG_WNM*/
 		if (scan_params->duration) {
 			params->scan_time.passive = scan_params->duration;
 			params->scan_time.active.min = scan_params->duration;
 			params->scan_time.active.max = scan_params->duration;
+		} else {
+			params->scan_time.active.min = SUPPLICANT_SCAN_ACTIVE_SCAN_MIN_DURATION;
+			params->scan_time.active.max = SUPPLICANT_SCAN_ACTIVE_SCAN_MAX_DURATION;
 		}
 	}
 

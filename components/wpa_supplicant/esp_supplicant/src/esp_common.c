@@ -23,6 +23,9 @@
 #include "rsn_supp/wpa_i.h"
 #include "rsn_supp/wpa.h"
 #include "esp_private/wifi.h"
+#if CONFIG_ESP_WIFI_ENABLE_ROAMING_APP
+#include "esp_roaming.h"
+#endif
 
 /* Utility Functions */
 esp_err_t esp_supplicant_str_to_mac(const char *str, uint8_t dest[6])
@@ -162,7 +165,7 @@ static void btm_rrm_task(void *pvParameters)
 }
 #endif /* CONFIG_SUPPLICANT_TASK */
 
-static void clear_bssid_flag(struct wpa_supplicant *wpa_s)
+static void clear_bssid_flag_and_channel(struct wpa_supplicant *wpa_s)
 {
 	wifi_config_t *config;
 
@@ -178,7 +181,8 @@ static void clear_bssid_flag(struct wpa_supplicant *wpa_s)
 	}
 
 	esp_wifi_get_config(WIFI_IF_STA, config);
-	if (config->sta.bssid_set) {
+	if (config->sta.bssid_set || config->sta.channel) {
+		config->sta.channel = 0;
 		config->sta.bssid_set = 0;
 		esp_wifi_set_config(WIFI_IF_STA, config);
 	}
@@ -299,7 +303,7 @@ static int ieee80211_handle_rx_frm(u8 type, u8 *frame, size_t len, u8 *sender,
 #ifdef CONFIG_MBO
 bool mbo_bss_profile_match(u8 *bssid)
 {
-	/* Incase supplicant wants drivers to skip this BSS, return false */
+	/* In case supplicant wants drivers to skip this BSS, return false */
 	struct wpa_bss *bss = wpa_bss_get_bssid(&g_wpa_supp, bssid);
 	if (!bss) {
 		return true;
@@ -418,6 +422,9 @@ void esp_supplicant_common_deinit(void)
 	}
 	s_supplicant_task_init_done = false;
 #endif /* CONFIG_SUPPLICANT_TASK */
+#if CONFIG_ESP_WIFI_ENABLE_ROAMING_APP
+    deinit_roaming_app();
+#endif
 #endif /* defined(CONFIG_IEEE80211KV) || defined(CONFIG_IEEE80211R) */
 }
 
@@ -439,11 +446,11 @@ void supplicant_sta_conn_handler(uint8_t *bssid)
 	/* Register for mgmt frames */
 	register_mgmt_frames(wpa_s);
 	/* clear set bssid flag */
-	clear_bssid_flag(wpa_s);
+	clear_bssid_flag_and_channel(wpa_s);
 #endif /* defined(CONFIG_IEEE80211KV) || defined(CONFIG_IEEE80211R) */
 }
 
-void supplicant_sta_disconn_handler(void)
+void supplicant_sta_disconn_handler(uint8_t reason_code)
 {
 #if defined(CONFIG_IEEE80211KV) || defined(CONFIG_IEEE80211R)
 	struct wpa_supplicant *wpa_s = &g_wpa_supp;
@@ -451,6 +458,12 @@ void supplicant_sta_disconn_handler(void)
 #ifdef CONFIG_IEEE80211KV
 	wpas_rrm_reset(wpa_s);
 	wpas_clear_beacon_rep_data(wpa_s);
+	/* Not clearing in case of roaming disconnect as BTM induced connection
+	 * itself sets a specific bssid and channel to connect to before disconnection.
+	 * Subsequent connections or disconnections will clear this flag */
+	if (reason_code != WIFI_REASON_ROAMING) {
+		clear_bssid_flag_and_channel(wpa_s);
+	}
 #endif /* CONFIG_IEEE80211KV */
 	if (wpa_s->current_bss) {
 		wpa_s->current_bss = NULL;
@@ -477,6 +490,7 @@ bool esp_rrm_is_rrm_supported_connection(void)
 
 	return true;
 }
+/*This function has been deprecated in favour of esp_rrm_send_neighbor_report_request*/
 int esp_rrm_send_neighbor_rep_request(neighbor_rep_request_cb cb,
 				      void *cb_ctx)
 {
@@ -501,6 +515,49 @@ int esp_rrm_send_neighbor_rep_request(neighbor_rep_request_cb cb,
 	wpa_ssid.ssid_len = ssid->len;
 
 	return wpas_rrm_send_neighbor_rep_request(wpa_s, &wpa_ssid, 0, 0, cb, cb_ctx);
+}
+
+
+void neighbor_report_recvd_cb(void *ctx, const uint8_t *report, size_t report_len) {
+	if (report == NULL) {
+		wpa_printf(MSG_DEBUG, "RRM: Notifying neighbor report - NONE");
+		esp_event_post(WIFI_EVENT, WIFI_EVENT_STA_NEIGHBOR_REP, NULL, 0, 0);
+		return;
+	}
+    if (report_len > ESP_WIFI_MAX_NEIGHBOR_REP_LEN) {
+        wpa_printf(MSG_ERROR, "RRM: Neighbor report too large (>%d bytes), hence not reporting", ESP_WIFI_MAX_NEIGHBOR_REP_LEN);
+        return;
+    }
+    wpa_printf(MSG_DEBUG, "RRM: Notifying neighbor report (token = %d)", report[0]);
+    wifi_event_neighbor_report_t neighbor_report_event = {0};
+    os_memcpy(neighbor_report_event.report, report, report_len);
+    neighbor_report_event.report_len = report_len;
+    esp_event_post(WIFI_EVENT, WIFI_EVENT_STA_NEIGHBOR_REP, &neighbor_report_event, sizeof(wifi_event_neighbor_report_t), 0);
+}
+
+int esp_rrm_send_neighbor_report_request(void)
+{
+	struct wpa_supplicant *wpa_s = &g_wpa_supp;
+	struct wpa_ssid_value wpa_ssid = {0};
+	struct wifi_ssid *ssid;
+
+	if (!wpa_s->current_bss) {
+		wpa_printf(MSG_ERROR, "STA not associated, return");
+		return -2;
+	}
+
+	if (!(wpa_s->rrm_ie[0] & WLAN_RRM_CAPS_NEIGHBOR_REPORT)) {
+		wpa_printf(MSG_ERROR,
+			"RRM: No network support for Neighbor Report.");
+		return -1;
+	}
+
+	ssid = esp_wifi_sta_get_prof_ssid_internal();
+
+	os_memcpy(wpa_ssid.ssid, ssid->ssid, ssid->len);
+	wpa_ssid.ssid_len = ssid->len;
+
+	return wpas_rrm_send_neighbor_rep_request(wpa_s, &wpa_ssid, 0, 0, neighbor_report_recvd_cb, NULL);
 }
 
 bool esp_wnm_is_btm_supported_connection(void)
@@ -561,6 +618,7 @@ void wpa_supplicant_connect(struct wpa_supplicant *wpa_s,
 	/* We only support roaming in same ESS, therefore only bssid setting is needed */
 	os_memcpy(config->sta.bssid, bss->bssid, ETH_ALEN);
 	config->sta.bssid_set = 1;
+	config->sta.channel = bss->channel;
 	/* supplicant connect will only be called in case of bss transition(roaming) */
 	esp_wifi_internal_issue_disconnect(WIFI_REASON_BSS_TRANSITION_DISASSOC);
 	esp_wifi_set_config(WIFI_IF_STA, config);
@@ -680,6 +738,16 @@ static uint8_t get_extended_caps_ie(uint8_t *ie, size_t len)
 	return ext_caps_ie_len + 2;
 }
 
+#else /* CONFIG_IEEE80211KV */
+bool esp_rrm_is_rrm_supported_connection(void)
+{
+	return false;
+}
+
+bool esp_wnm_is_btm_supported_connection(void)
+{
+	return false;
+}
 #endif /* CONFIG_IEEE80211KV */
 
 void esp_set_scan_ie(void)
@@ -847,12 +915,16 @@ int esp_supplicant_post_evt(uint32_t evt_id, uint32_t data)
 }
 #endif /* CONFIG_SUPPLICANT_TASK */
 #else /* defined(CONFIG_IEEE80211KV) || defined(CONFIG_IEEE80211R) */
+int esp_rrm_send_neighbor_report_request(void)
+{
+	return -1;
+}
+
 int esp_rrm_send_neighbor_rep_request(neighbor_rep_request_cb cb,
 				      void *cb_ctx)
 {
 	return -1;
 }
-
 int esp_wnm_send_bss_transition_mgmt_query(enum btm_query_reason query_reason,
 					   const char *btm_candidates,
 					   int cand_list)

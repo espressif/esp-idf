@@ -37,7 +37,10 @@ if(CONFIG_ESP_WIFI_ENABLED OR CONFIG_ESP_HOST_WIFI_ENABLED)
     endif()
 
     if(CONFIG_ESP_WIFI_NAN_ENABLE)
-        list(APPEND srcs "wifi_apps/src/nan_app.c")
+        list(APPEND srcs "wifi_apps/nan_app/src/nan_app.c")
+    endif()
+    if(CONFIG_ESP_WIFI_ENABLE_ROAMING_APP)
+        list(APPEND srcs "wifi_apps/roaming_app/src/roaming_app.c")
     endif()
     set(local_include_dirs include/local)
 else()
@@ -50,10 +53,13 @@ else()
 endif()
 
 idf_component_register(SRCS "${srcs}"
-                    INCLUDE_DIRS "include" "wifi_apps/include" ${local_include_dirs}
+                    INCLUDE_DIRS "include" "wifi_apps/include" "wifi_apps/nan_app/include" ${local_include_dirs}
+
                     REQUIRES esp_event esp_phy esp_netif
                     PRIV_REQUIRES driver esptool_py esp_pm esp_timer nvs_flash
                                   wpa_supplicant hal lwip esp_coex ${extra_priv_requires}
+                    PRIV_INCLUDE_DIRS ../wpa_supplicant/src/ ../wpa_supplicant/esp_supplicant/src/
+                                  wifi_apps/roaming_app/include
                     LDFRAGMENTS "${ldfragments}")
 
 if(CONFIG_ESP_WIFI_ENABLED OR CONFIG_ESP_HOST_WIFI_ENABLED)

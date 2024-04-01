@@ -805,6 +805,9 @@ static void wnm_set_scan_freqs(struct wpa_supplicant *wpa_s)
 				   MAC2STR(nei->bssid));
 			return;
 		}
+		if (wpa_s->current_bss && (os_memcmp(nei->bssid, wpa_s->current_bss->bssid, ETH_ALEN) == 0)) {
+		    continue;
+		}
 		if (nei->channel_number != chan) {
 			chan = nei->channel_number;
 			num_chan++;

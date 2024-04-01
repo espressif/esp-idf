@@ -1,0 +1,176 @@
+# Visible if ESP_WIFI_ENABLE_ROAMING_APP enabled in components/esp_wifi/Kconfig
+menu "Roaming triggers"
+    config ESP_WIFI_ROAMING_LOW_RSSI_ROAMING
+        bool "Use Low RSSI to trigger roaming."
+        default y
+        help
+            Enable to use a RSSI threshold to trigger roaming.
+
+    config ESP_WIFI_ROAMING_LOW_RSSI_THRESHOLD
+        depends on ESP_WIFI_ROAMING_LOW_RSSI_ROAMING
+        int "WiFi RSSI threshold to trigger roaming"
+        range -99 -30
+        default -60
+        help
+            WiFi RSSI threshold to trigger roaming value in dBm (-99 to -1). Values under -30 dbm
+            might lead to a flood of low rssi events. This interferes with normal functioning and
+            TX/Rx performance.
+
+    config ESP_WIFI_ROAMING_LOW_RSSI_OFFSET
+        depends on ESP_WIFI_ROAMING_LOW_RSSI_ROAMING
+        int "Offset by which to reset the RSSI Threshold after attempt to roam."
+        range 0 99
+        default 5
+        help
+            Decide the offset by which to decrease the Low RSSI threshold set by ESP_WIFI_ROAMING_LOW_RSSI_THRESHOLD
+            after each failed attempt to roam. This allows for the station to keep scanning for better AP's after
+            the Low RSSI threshold is reached in a stepped manner, rather than only attempting to roam the first time
+            the current AP's RSSI breaches the set RSSI threshold.
+            Setting 0 here may cause station to be flooded with low rssi events,
+            therefore that's not recommended to be kept.
+
+    config ESP_WIFI_ROAMING_PERIODIC_SCAN_MONITOR
+        bool "Conduct periodic scans to check if a better AP is available"
+        default y
+        help
+            Conduct periodic scans periodically to check if a better AP is available.
+
+    config ESP_WIFI_ROAMING_PERIODIC_SCAN_THRESHOLD
+        int "Threshold at which to begin periodic scanning for a better AP."
+        depends on ESP_WIFI_ROAMING_PERIODIC_SCAN_MONITOR
+        range -99 -1
+        default -50
+        help
+            Threshold at which the station will begin scanning to find an AP with better RSSI.
+
+    config ESP_WIFI_ROAMING_SCAN_MONITOR_INTERVAL
+        int "Time intervals (in seconds) at which station will initiate a scan"
+        depends on ESP_WIFI_ROAMING_PERIODIC_SCAN_MONITOR
+        range 1 1500
+        default 30
+        help
+            Intervals at which station will periodically scan to check if better AP is available
+
+    config ESP_WIFI_ROAMING_SCAN_ROAM_RSSI_DIFF
+        int "RSSI difference b/w current AP and candidate AP to initiate connection"
+        depends on ESP_WIFI_ROAMING_PERIODIC_SCAN_MONITOR
+        default 15
+        range 0 99
+        help
+            Minimum RSSI difference b/w current AP and a potential roaming candidate AP
+            to trigger a roaming attempt.
+endmenu #"Roaming triggers"
+
+menu "Roaming Methods"
+    config ESP_WIFI_ROAMING_LEGACY_ROAMING
+        bool "Support Legacy roaming approach"
+        default y
+        help
+            Roaming between APs that do not support 802.11kv.
+            This will allow station to roam even when connection is not BTM supported,
+            by forcefully disconnecting from current AP and connecting to better AP.
+
+    config ESP_WIFI_ROAMING_NETWORK_ASSISTED_ROAM
+        bool "Support Network Assisted roaming using 802.11kv"
+        depends on ESP_WIFI_11KV_SUPPORT
+        default y
+        help
+            Roaming between APs using network assisted Roaming.
+            This involves  BSS Transition Management mechanisms outlined in 802.11v.
+            Note that this moves the responsibility to the AP's network, and hence isn't
+            guaranteed to cause the station to attempt to roam each time.
+
+    config ESP_WIFI_NETWORK_ASSISTED_ROAMING_RETRY_COUNT
+        int "Retry count after which to switch to legacy roaming"
+        depends on ESP_WIFI_ROAMING_NETWORK_ASSISTED_ROAM
+        depends on ESP_WIFI_ROAMING_LEGACY_ROAMING
+        range 1 5
+        default 2
+        help
+            Retry threshold after which the station should stop using Network Assisted
+            roaming methods and start using legacy roaming instead.
+
+endmenu #"Roaming Methods"
+
+menu "Scan Configuration"
+
+    config ESP_WIFI_ROAMING_SCAN_MIN_SCAN_TIME
+        int "Minimum duration (in milliseconds) of station's per channel active scan"
+        default 10
+        range 0 120
+        help
+            Minimum duration of active scanning per channel in milliseconds.
+
+    config ESP_WIFI_ROAMING_SCAN_MAX_SCAN_TIME
+        int "Maximum duration (in milliseconds) of station's per channel active scan time"
+        default 70
+        range 30 120
+        help
+            Maximum duration of active scanning per channel in milliseconds.
+
+    config ESP_WIFI_ROAMING_HOME_CHANNEL_DWELL_TIME
+        int "Home channel dwell time scanning between consecutive channels"
+        default 30
+        range 30 150
+        help
+            If connected, duration for which the station will return to it's home channel for Tx/Rx of
+            frames stored in buffers between scanning on consecutive channels.
+
+    config ESP_WIFI_ROAMING_SCAN_CHAN_LIST
+        string "Preferred channel list for scanning"
+        default "None"
+        help
+            Channels your wireless network operates on to allow for faster scanning.
+            Specify the channels(between 1-14) in a comma separated manner.
+
+    config ESP_WIFI_ROAMING_SCAN_EXPIRY_WINDOW
+        int "Scan results expiry window (in seconds)"
+        default 10
+        range 5 20
+        help
+            Duration for which the results from the most recent scans can be used
+            by the roaming app for determining the roaming candidates.
+
+    config ESP_WIFI_ROAMING_MAX_CANDIDATES
+        int "Max Candidates in the network"
+        default 3
+        range 3 20
+        help
+            Max candidates that can be considered while scanning as a part of the
+            network at one time.
+
+endmenu #"Scan Configuration"
+
+config ESP_WIFI_ROAMING_BACKOFF_TIME
+    int "Default time to wait between subsequent roaming attempts."
+    default 15
+    range 0 120
+    help
+        Time to wait (in seconds) by station before registering for the RSSI event again
+        or start continuous montoring to find better AP.
+
+config ESP_WIFI_ROAMING_PERIODIC_RRM_MONITORING
+    bool "Send periodic neighbor report request to AP for internal list updation"
+    depends on ESP_WIFI_11KV_SUPPORT
+    default y
+    help
+        This option will enable station to keep sending RRM neighbor list request to AP and
+        update its internal list.
+
+config ESP_WIFI_ROAMING_RRM_MONITOR_TIME
+    int "Time interval (in seconds) between neighbor report requests to an AP"
+    depends on ESP_WIFI_ROAMING_PERIODIC_RRM_MONITORING
+    default 60
+    range 0 1500
+    help
+        Enable this to send periodic neighbor report requests to the AP.
+        These neighbor report requests provide information about other APs in the same managed
+        network. This information is used for more intelligent roaming.
+
+config ESP_WIFI_ROAMING_RRM_MONITOR_THRESHOLD
+    int "Threshold for sending periodic neighbor report requests"
+    depends on ESP_WIFI_ROAMING_PERIODIC_RRM_MONITORING
+    default -20
+    range -99 0
+    help
+        The RSSI threshold beyond which we start sending periodic neighbor report requests.
