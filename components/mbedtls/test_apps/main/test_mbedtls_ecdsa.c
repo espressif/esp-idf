@@ -20,9 +20,12 @@
 #include "test_utils.h"
 #include "ccomp_timer.h"
 #include "unity.h"
+#include "esp_heap_caps.h"
 
 #include "ecdsa/ecdsa_alt.h"
-
+#if SOC_KEY_MANAGER_SUPPORTED
+#include "esp_key_mgr.h"
+#endif
 #define TEST_ASSERT_MBEDTLS_OK(X) TEST_ASSERT_EQUAL_HEX32(0, -(X))
 
 #if CONFIG_NEWLIB_NANO_FORMAT
@@ -190,7 +193,25 @@ const uint8_t ecdsa192_sign_pub_y[] = {
     0x23, 0xae, 0x7e, 0x0f, 0x1f, 0x4d, 0x69, 0xd5
 };
 
-void test_ecdsa_sign(mbedtls_ecp_group_id id, const uint8_t *hash, const uint8_t *pub_x, const uint8_t *pub_y, bool is_deterministic)
+/* Big endian */
+const uint8_t init_key[] = {
+    0x4d, 0x21, 0x64, 0x21, 0x8f, 0xa2, 0xe3, 0xa0, 0xab, 0x74, 0xb5, 0xab, 0x17, 0x9a, 0x5d, 0x08, 0x58, 0xf4, 0x22, 0x03, 0xbd, 0x52, 0xe7, 0x88, 0x3c, 0x22, 0x0f, 0x95, 0x89, 0x70, 0xe1, 0x93
+};
+
+/* Big endian */
+const uint8_t k2_info[] = {
+    0xd8, 0xcd, 0x04, 0x45, 0xb4, 0x45, 0xc4, 0x15, 0xf6, 0x40, 0x1c, 0x7d, 0x90, 0x1b, 0x99, 0xa4, 0x79, 0x6b, 0xfb, 0x5b, 0x2a, 0x40, 0x60, 0xe1, 0xc1, 0xe1, 0x48, 0xcd, 0x46, 0x6b, 0x9b, 0x48, 0xda, 0x7a, 0x70, 0x0a, 0x78, 0x0b, 0x9d, 0xf9, 0x0e, 0xed, 0x91, 0xfc, 0xa5, 0xc2, 0x96, 0x05, 0x91, 0x76, 0xdb, 0x68, 0x84, 0x5d, 0x5e, 0x5b, 0xa6, 0xe9, 0x6b, 0x3b, 0x12, 0x50, 0x05, 0xc3
+};
+
+const uint8_t k1_ecdsa256_xts_encrypt[] = {
+    0x9f, 0x64, 0x80, 0x16, 0xa3, 0xab, 0x26, 0x64, 0x9b, 0xe6, 0x86, 0xcd, 0xf5, 0x14, 0x11, 0xb9, 0xb0, 0xe9, 0x87, 0xf6, 0xfe, 0x1b, 0x98, 0x0f, 0x9c, 0x3e, 0x21, 0xa7, 0xfa, 0x53, 0x47, 0x60
+};
+
+const uint8_t k1_ecdsa192_xts_encrypt[] = {
+   0x54, 0xf5, 0x97, 0xb8, 0xff, 0x1d, 0x34, 0x85, 0x8d, 0xf1, 0x43, 0xaa, 0xc0, 0x0f, 0xe2, 0x4d, 0x0b, 0xee, 0xdd, 0x89, 0x31, 0x39, 0x1b, 0xbe, 0x9b, 0x55, 0x53, 0xe0, 0xc7, 0xd9, 0x79, 0xaf
+};
+
+void test_ecdsa_sign(mbedtls_ecp_group_id id, const uint8_t *hash, const uint8_t *pub_x, const uint8_t *pub_y, bool is_deterministic, int efuse_key_block)
 {
     uint8_t r_be[MAX_ECDSA_COMPONENT_LEN] = {0};
     uint8_t s_be[MAX_ECDSA_COMPONENT_LEN] = {0};
@@ -206,11 +227,10 @@ void test_ecdsa_sign(mbedtls_ecp_group_id id, const uint8_t *hash, const uint8_t
 
     if (id == MBEDTLS_ECP_DP_SECP192R1) {
         mbedtls_ecp_group_load(&ecdsa_context.MBEDTLS_PRIVATE(grp), MBEDTLS_ECP_DP_SECP192R1);
-        esp_ecdsa_privkey_load_mpi(&key_mpi, SECP192R1_EFUSE_BLOCK);
     } else if (id == MBEDTLS_ECP_DP_SECP256R1) {
         mbedtls_ecp_group_load(&ecdsa_context.MBEDTLS_PRIVATE(grp), MBEDTLS_ECP_DP_SECP256R1);
-        esp_ecdsa_privkey_load_mpi(&key_mpi, SECP256R1_EFUSE_BLOCK);
     }
+    esp_ecdsa_privkey_load_mpi(&key_mpi, efuse_key_block);
 
     if (is_deterministic) {
         mbedtls_ecdsa_sign_det_ext(&ecdsa_context.MBEDTLS_PRIVATE(grp), &r, &s, &key_mpi, sha, HASH_LEN, 0, NULL, NULL);
@@ -235,31 +255,69 @@ void test_ecdsa_sign(mbedtls_ecp_group_id id, const uint8_t *hash, const uint8_t
 
 TEST_CASE("mbedtls ECDSA signature generation on SECP192R1", "[mbedtls][efuse_key]")
 {
-    test_ecdsa_sign(MBEDTLS_ECP_DP_SECP192R1, sha, ecdsa192_sign_pub_x, ecdsa192_sign_pub_y, false);
+    test_ecdsa_sign(MBEDTLS_ECP_DP_SECP192R1, sha, ecdsa192_sign_pub_x, ecdsa192_sign_pub_y, false, SECP192R1_EFUSE_BLOCK);
 }
 
 TEST_CASE("mbedtls ECDSA signature generation on SECP256R1", "[mbedtls][efuse_key]")
 {
-    test_ecdsa_sign(MBEDTLS_ECP_DP_SECP256R1, sha, ecdsa256_sign_pub_x, ecdsa256_sign_pub_y, false);
+    test_ecdsa_sign(MBEDTLS_ECP_DP_SECP256R1, sha, ecdsa256_sign_pub_x, ecdsa256_sign_pub_y, false, SECP256R1_EFUSE_BLOCK);
 }
 
 #ifdef SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE
 
 TEST_CASE("mbedtls ECDSA deterministic signature generation on SECP192R1", "[mbedtls][efuse_key]")
 {
-    test_ecdsa_sign(MBEDTLS_ECP_DP_SECP192R1, sha, ecdsa192_sign_pub_x, ecdsa192_sign_pub_y, true);
+    test_ecdsa_sign(MBEDTLS_ECP_DP_SECP192R1, sha, ecdsa192_sign_pub_x, ecdsa192_sign_pub_y, true, SECP192R1_EFUSE_BLOCK);
 }
 
 TEST_CASE("mbedtls ECDSA deterministic signature generation on SECP256R1", "[mbedtls][efuse_key]")
 {
-    test_ecdsa_sign(MBEDTLS_ECP_DP_SECP256R1, sha, ecdsa256_sign_pub_x, ecdsa256_sign_pub_y, true);
+    test_ecdsa_sign(MBEDTLS_ECP_DP_SECP256R1, sha, ecdsa256_sign_pub_x, ecdsa256_sign_pub_y, true, SECP256R1_EFUSE_BLOCK);
 }
 
+#endif /* SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE */
+
+#if SOC_KEY_MANAGER_SUPPORTED
+void deploy_key_in_key_manager(const uint8_t *k1_encrypted) {
+    esp_key_mgr_aes_key_config_t *key_config;
+
+    key_config = heap_caps_calloc(1, sizeof(esp_key_mgr_aes_key_config_t), MALLOC_CAP_INTERNAL);
+    TEST_ASSERT_NOT_NULL(key_config);
+    memcpy(key_config->k2_info, (uint8_t*) k2_info, KEY_MGR_K2_INFO_SIZE);
+    memcpy(key_config->k1_encrypted[0], (uint8_t*) k1_encrypted, KEY_MGR_K1_ENCRYPTED_SIZE);
+    memcpy(key_config->sw_init_key, (uint8_t*) init_key, KEY_MGR_SW_INIT_KEY_SIZE);
+    key_config->use_pre_generated_sw_init_key = 1;
+    key_config->key_type = ESP_KEY_MGR_ECDSA_KEY;
+
+    esp_key_mgr_key_recovery_info_t *key_info;
+    key_info = heap_caps_calloc(1, sizeof(esp_key_mgr_key_recovery_info_t), MALLOC_CAP_INTERNAL);
+    TEST_ASSERT_NOT_NULL(key_config);
+
+    esp_key_mgr_deploy_key_in_aes_mode(key_config, key_info);
+    printf("\nkey deployed successfully\n");
+    esp_key_mgr_activate_key(key_info);
+    free(key_info);
+    free(key_config);
+}
+
+TEST_CASE("mbedtls ECDSA signature generation on SECP192R1", "[mbedtls][key_manager_key]")
+{
+    deploy_key_in_key_manager(k1_ecdsa192_xts_encrypt);
+    test_ecdsa_sign(MBEDTLS_ECP_DP_SECP192R1, sha, ecdsa192_sign_pub_x, ecdsa192_sign_pub_y, false, USE_ECDSA_KEY_FROM_KEY_MANAGER);
+    esp_key_mgr_deactivate_key(ESP_KEY_MGR_ECDSA_KEY);
+}
+
+TEST_CASE("mbedtls ECDSA signature generation on SECP256R1", "[mbedtls][key_manager_key]")
+{
+    deploy_key_in_key_manager(k1_ecdsa256_xts_encrypt);
+    test_ecdsa_sign(MBEDTLS_ECP_DP_SECP256R1, sha, ecdsa256_sign_pub_x, ecdsa256_sign_pub_y, false, USE_ECDSA_KEY_FROM_KEY_MANAGER);
+    esp_key_mgr_deactivate_key(ESP_KEY_MGR_ECDSA_KEY);
+}
 #endif
 
 #ifdef SOC_ECDSA_SUPPORT_EXPORT_PUBKEY
 
-void test_ecdsa_export_pubkey(mbedtls_ecp_group_id id, const uint8_t *pub_x, const uint8_t *pub_y)
+void test_ecdsa_export_pubkey(mbedtls_ecp_group_id id, const uint8_t *pub_x, const uint8_t *pub_y, int efuse_key_block)
 {
     uint8_t export_pub_x[32] = {0};
     uint8_t export_pub_y[32] = {0};
@@ -268,13 +326,12 @@ void test_ecdsa_export_pubkey(mbedtls_ecp_group_id id, const uint8_t *pub_x, con
     esp_ecdsa_pk_conf_t pk_conf = {
         .grp_id = id,
         .load_pubkey = true,
+        .efuse_block = efuse_key_block,
     };
 
     if (id == MBEDTLS_ECP_DP_SECP192R1) {
-        pk_conf.efuse_block = SECP192R1_EFUSE_BLOCK;
         len = 24;
     } else if (id == MBEDTLS_ECP_DP_SECP256R1) {
-        pk_conf.efuse_block = SECP256R1_EFUSE_BLOCK;
         len = 32;
     }
 
@@ -296,15 +353,29 @@ void test_ecdsa_export_pubkey(mbedtls_ecp_group_id id, const uint8_t *pub_x, con
 
 TEST_CASE("mbedtls ECDSA export public key on SECP192R1", "[mbedtls][efuse_key]")
 {
-    test_ecdsa_export_pubkey(MBEDTLS_ECP_DP_SECP192R1, ecdsa192_sign_pub_x, ecdsa192_sign_pub_y);
+    test_ecdsa_export_pubkey(MBEDTLS_ECP_DP_SECP192R1, ecdsa192_sign_pub_x, ecdsa192_sign_pub_y, SECP192R1_EFUSE_BLOCK);
 }
 
 TEST_CASE("mbedtls ECDSA export public key on SECP256R1", "[mbedtls][efuse_key]")
 {
-    test_ecdsa_export_pubkey(MBEDTLS_ECP_DP_SECP256R1, ecdsa256_sign_pub_x, ecdsa256_sign_pub_y);
+    test_ecdsa_export_pubkey(MBEDTLS_ECP_DP_SECP256R1, ecdsa256_sign_pub_x, ecdsa256_sign_pub_y,  SECP256R1_EFUSE_BLOCK);
 }
 
+#if SOC_KEY_MANAGER_SUPPORTED
+TEST_CASE("mbedtls ECDSA export public key on SECP192R1", "[mbedtls][key_manager_key]")
+{
+    deploy_key_in_key_manager(k1_ecdsa192_xts_encrypt);
+    test_ecdsa_export_pubkey(MBEDTLS_ECP_DP_SECP192R1, ecdsa192_sign_pub_x, ecdsa192_sign_pub_y, USE_ECDSA_KEY_FROM_KEY_MANAGER);
+    esp_key_mgr_deactivate_key(ESP_KEY_MGR_ECDSA_KEY);
+}
 
+TEST_CASE("mbedtls ECDSA export public key on SECP256R1", "[mbedtls][key_manager_key]")
+{
+    deploy_key_in_key_manager(k1_ecdsa256_xts_encrypt);
+    test_ecdsa_export_pubkey(MBEDTLS_ECP_DP_SECP256R1, ecdsa256_sign_pub_x, ecdsa256_sign_pub_y,  USE_ECDSA_KEY_FROM_KEY_MANAGER);
+    esp_key_mgr_deactivate_key(ESP_KEY_MGR_ECDSA_KEY);
+}
+#endif
 #endif /* SOC_ECDSA_SUPPORT_EXPORT_PUBKEY */
 
 #endif /* CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN */
