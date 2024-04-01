@@ -151,6 +151,7 @@ public class BLETransport implements Transport {
 
         if (this.bluetoothGatt != null) {
             this.bluetoothGatt.disconnect();
+            this.bluetoothGatt.close();
             bluetoothGatt = null;
         }
     }
