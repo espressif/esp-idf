@@ -22,11 +22,6 @@ typedef struct isp_processor_t *isp_proc_handle_t;
  */
 typedef struct isp_af_controller_t *isp_af_ctrlr_t;
 
-/**
- * @brief Type of ISP AF Env detector handle
- */
-typedef struct isp_af_env_detector_t *isp_af_env_detr_t;
-
 #ifdef __cplusplus
 }
 #endif

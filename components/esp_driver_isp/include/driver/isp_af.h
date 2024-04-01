@@ -103,6 +103,33 @@ typedef struct {
 } esp_isp_af_env_config_t;
 
 /**
+ * @brief Set ISP AF environment detector
+ *
+ * @param[in] af_ctrlr    AF controller handle
+ * @param[in] env_config  AF Env detector configuration
+ *
+ * @return
+ *         - ESP_OK                On success
+ *         - ESP_ERR_INVALID_ARG   If the combination of arguments is invalid.
+ *         - ESP_ERR_INVALID_STATE Driver state is invalid.
+ */
+esp_err_t esp_isp_af_controller_set_env_detector(isp_af_ctrlr_t af_ctrlr, const esp_isp_af_env_config_t *env_config);
+
+/**
+ * @brief Set ISP AF environment detector detecting threshold
+ *
+ * @param[in] af_ctrlr           AF controller handle
+ * @param[in] definition_thresh  Threshold for definition
+ * @param[in] luminance_thresh   Threshold for luminance
+ *
+ * @return
+ *         - ESP_OK                On success
+ *         - ESP_ERR_INVALID_ARG   If the combination of arguments is invalid.
+ *         - ESP_ERR_INVALID_STATE Driver state is invalid.
+ */
+esp_err_t esp_isp_af_controller_set_env_detector_threshold(isp_af_ctrlr_t af_ctrlr, int definition_thresh, int luminance_thresh);
+
+/**
  * @brief Event data structure
  */
 typedef struct {
@@ -112,13 +139,13 @@ typedef struct {
 /**
  * @brief Prototype of ISP AF Env detector event callback
  *
- * @param[in] handle    ISP Env detector handle
+ * @param[in] handle    ISP AF controller handle
  * @param[in] edata     ISP AF Env detector event data
  * @param[in] user_data User registered context, registered when in `esp_isp_af_env_detector_register_event_callbacks()`
  *
  * @return Whether a high priority task is woken up by this function
  */
-typedef bool (*esp_isp_af_env_detector_callback_t)(isp_af_env_detr_t detector, const esp_isp_af_env_detector_evt_data_t *edata, void *user_data);
+typedef bool (*esp_isp_af_env_detector_callback_t)(isp_af_ctrlr_t af_ctrlr, const esp_isp_af_env_detector_evt_data_t *edata, void *user_data);
 
 /**
  * @brief Group of ISP AF Env detector callbacks
@@ -132,71 +159,6 @@ typedef struct {
 } esp_isp_af_env_detector_evt_cbs_t;
 
 /**
- * @brief New an ISP AF environment detector
- *
- * @param[in]  af_ctrlr   AF controller handle
- * @param[in]  config     Pointer to AF env detector config. Refer to ``esp_isp_af_env_config_t``.
- * @param[out] ret_hdl    AF env detector handle
- *
- * @return
- *         - ESP_OK                On success
- *         - ESP_ERR_INVALID_ARG   If the combination of arguments is invalid
- *         - ESP_ERR_INVALID_STATE Invalid state
- *         - ESP_ERR_NO_MEM        If out of memory
- */
-esp_err_t esp_isp_new_af_env_detector(isp_af_ctrlr_t af_ctrlr, const esp_isp_af_env_config_t *config, isp_af_env_detr_t *ret_hdl);
-
-/**
- * @brief Delete an ISP AF environment detector
- *
- * @param[in] af_env_detector  AF env detector handle
- *
- * @return
- *         - ESP_OK                On success
- *         - ESP_ERR_INVALID_ARG   If the combination of arguments is invalid.
- *         - ESP_ERR_INVALID_STATE Driver state is invalid.
- */
-esp_err_t esp_isp_del_af_env_detector(isp_af_env_detr_t af_env_detector);
-
-/**
- * @brief Enable an ISP AF environment detector
- *
- * @param[in] af_env_detector  AF env detector handle
- *
- * @return
- *         - ESP_OK                On success
- *         - ESP_ERR_INVALID_ARG   If the combination of arguments is invalid.
- *         - ESP_ERR_INVALID_STATE Driver state is invalid.
- */
-esp_err_t esp_isp_af_env_detector_enable(isp_af_env_detr_t af_env_detector);
-
-/**
- * @brief Disable an ISP AF environment detector
- *
- * @param[in] af_env_detector  AF env detector handle
- *
- * @return
- *         - ESP_OK                On success
- *         - ESP_ERR_INVALID_ARG   If the combination of arguments is invalid.
- *         - ESP_ERR_INVALID_STATE Driver state is invalid.
- */
-esp_err_t esp_isp_af_env_detector_disable(isp_af_env_detr_t af_env_detector);
-
-/**
- * @brief Set ISP AF environment detector detecting threshold
- *
- * @param[in] af_env_detector    AF env detector handle
- * @param[in] definition_thresh  Threshold for definition
- * @param[in] luminance_thresh   Threshold for luminance
- *
- * @return
- *         - ESP_OK                On success
- *         - ESP_ERR_INVALID_ARG   If the combination of arguments is invalid.
- *         - ESP_ERR_INVALID_STATE Driver state is invalid.
- */
-esp_err_t esp_isp_af_env_detector_set_threshold(isp_af_env_detr_t af_env_detector, int definition_thresh, int luminance_thresh);
-
-/**
  * @brief Register AF environment detector event callbacks
  *
  * @note User can deregister a previously registered callback by calling this function and setting the to-be-deregistered callback member in
@@ -204,7 +166,7 @@ esp_err_t esp_isp_af_env_detector_set_threshold(isp_af_env_detr_t af_env_detecto
  * @note When CONFIG_ISP_ISR_IRAM_SAFE is enabled, the callback itself and functions called by it should be placed in IRAM.
  *       Involved variables (including `user_data`) should be in internal RAM as well.
  *
- * @param[in] af_env_detector  AF env detector handle
+ * @param[in] af_ctrlr         AF controller handle
  * @param[in] cbs              Group of callback functions
  * @param[in] user_data        User data, which will be delivered to the callback functions directly
  *
@@ -213,7 +175,7 @@ esp_err_t esp_isp_af_env_detector_set_threshold(isp_af_env_detr_t af_env_detecto
  *        - ESP_ERR_INVALID_ARG:   Invalid arguments
  *        - ESP_ERR_INVALID_STATE: Driver state is invalid, you shouldn't call this API at this moment
  */
-esp_err_t esp_isp_af_env_detector_register_event_callbacks(isp_af_env_detr_t af_env_detector, const esp_isp_af_env_detector_evt_cbs_t *cbs, void *user_data);
+esp_err_t esp_isp_af_env_detector_register_event_callbacks(isp_af_ctrlr_t af_ctrlr, const esp_isp_af_env_detector_evt_cbs_t *cbs, void *user_data);
 
 #ifdef __cplusplus
 }

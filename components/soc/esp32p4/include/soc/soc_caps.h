@@ -296,7 +296,6 @@
 /*-------------------------- ISP CAPS ----------------------------------------*/
 #define SOC_ISP_NUMS                    1U
 #define SOC_ISP_AF_CTLR_NUMS            1U
-#define SOC_ISP_AF_ENV_DETECTOR_NUMS    1U
 #define SOC_ISP_AF_WINDOW_NUMS          3
 #define SOC_ISP_SHARE_CSI_BRG           1
 

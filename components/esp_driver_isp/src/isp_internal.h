@@ -37,26 +37,17 @@ typedef enum {
     ISP_SUBMODULE_AF,
 } isp_submodule_t;
 
-typedef struct isp_af_env_detector_t isp_af_env_detector_t;
 typedef struct isp_af_controller_t isp_af_controller_t;
 typedef struct isp_processor_t isp_processor_t;
 
-struct isp_af_env_detector_t {
+struct isp_af_controller_t {
     int                                id;
     isp_fsm_t                          fsm;
-    esp_isp_af_env_config_t            config;
     portMUX_TYPE                       spinlock;
+    isp_processor_t                    *isp_proc;
+    esp_isp_af_env_config_t            config;
     esp_isp_af_env_detector_evt_cbs_t  cbs;
     void                               *user_data;
-    isp_af_controller_t                *af_ctlr;
-};
-
-struct isp_af_controller_t {
-    int                    id;
-    isp_fsm_t              fsm;
-    portMUX_TYPE           spinlock;
-    isp_processor_t        *isp_proc;
-    isp_af_env_detector_t  *af_env_detector[SOC_ISP_AF_ENV_DETECTOR_NUMS];
 };
 
 struct isp_processor_t {
