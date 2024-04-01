@@ -164,109 +164,23 @@ esp_err_t esp_isp_af_controller_get_oneshot_result(isp_af_ctrlr_t af_ctlr, isp_a
 /*---------------------------------------------
                 AF Env Monitor
 ----------------------------------------------*/
-static esp_err_t s_isp_claim_af_env_detector(isp_af_ctrlr_t af_ctlr, isp_af_env_detector_t *af_env_detector)
+esp_err_t esp_isp_af_controller_set_env_detector(isp_af_ctrlr_t af_ctrlr, const esp_isp_af_env_config_t *env_config)
 {
-    assert(af_ctlr && af_env_detector);
+    ESP_RETURN_ON_FALSE(af_ctrlr && env_config, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
+    ESP_RETURN_ON_FALSE(af_ctrlr->fsm == ISP_FSM_INIT, ESP_ERR_INVALID_STATE, TAG, "invalid fsm, should be called when in init state");
 
-    bool found = false;
-    portENTER_CRITICAL(&af_ctlr->spinlock);
-    for (int i = 0; i < SOC_ISP_AF_ENV_DETECTOR_NUMS; i++) {
-        found = !af_ctlr->af_env_detector[i];
-        if (found) {
-            af_ctlr->af_env_detector[i] = af_env_detector;
-            af_env_detector->id = i;
+    af_ctrlr->config.interval = env_config->interval;
 
-            break;
-        }
-    }
-    portEXIT_CRITICAL(&af_ctlr->spinlock);
-
-    if (!found) {
-        return ESP_ERR_NOT_FOUND;
-    }
-    return ESP_OK;
-}
-
-static esp_err_t s_isp_declaim_af_env_detector(isp_af_env_detector_t *af_env_detector)
-{
-    assert(af_env_detector && af_env_detector->af_ctlr);
-
-    portENTER_CRITICAL(&af_env_detector->af_ctlr->spinlock);
-    af_env_detector->af_ctlr->af_env_detector[af_env_detector->id] = NULL;
-    portEXIT_CRITICAL(&af_env_detector->af_ctlr->spinlock);
+    isp_ll_af_env_monitor_set_period(af_ctrlr->isp_proc->hal.hw, 0);
+    isp_ll_clear_intr(af_ctrlr->isp_proc->hal.hw, ISP_LL_EVENT_AF_ENV);
 
     return ESP_OK;
 }
 
-esp_err_t esp_isp_new_af_env_detector(isp_af_ctrlr_t af_ctlr, const esp_isp_af_env_config_t *config, isp_af_env_detr_t *ret_hdl)
+esp_err_t esp_isp_af_env_detector_register_event_callbacks(isp_af_ctrlr_t af_ctrlr, const esp_isp_af_env_detector_evt_cbs_t *cbs, void *user_data)
 {
-    esp_err_t ret = ESP_FAIL;
-    ESP_RETURN_ON_FALSE(af_ctlr && config && ret_hdl, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
-
-    isp_af_env_detector_t *af_env_detector = heap_caps_calloc(1, sizeof(isp_af_env_detector_t), ISP_AF_MEM_ALLOC_CAPS);
-    ESP_RETURN_ON_FALSE(af_env_detector, ESP_ERR_NO_MEM, TAG, "no mem");
-
-    //claim an AF Env detector
-    ESP_GOTO_ON_ERROR(s_isp_claim_af_env_detector(af_ctlr, af_env_detector), err, TAG, "no available env detector");
-
-    af_env_detector->fsm = ISP_FSM_INIT;
-    af_env_detector->config.interval = config->interval;
-    af_env_detector->spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
-    af_env_detector->af_ctlr = af_ctlr;
-
-    isp_ll_af_env_monitor_set_period(af_ctlr->isp_proc->hal.hw, 0);
-    isp_ll_clear_intr(af_ctlr->isp_proc->hal.hw, ISP_LL_EVENT_AF_ENV);
-
-    *ret_hdl = af_env_detector;
-
-    return ESP_OK;
-
-err:
-    free(af_env_detector);
-
-    return ret;
-}
-
-esp_err_t esp_isp_del_af_env_detector(isp_af_env_detr_t af_env_detector)
-{
-    ESP_RETURN_ON_FALSE(af_env_detector && af_env_detector->af_ctlr, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
-    ESP_RETURN_ON_ERROR(s_isp_declaim_af_env_detector(af_env_detector), TAG, "detector isn't in use");
-    ESP_RETURN_ON_FALSE(af_env_detector->fsm == ISP_FSM_INIT, ESP_ERR_INVALID_STATE, TAG, "detector isn't in init state");
-
-    free(af_env_detector);
-
-    return ESP_OK;
-}
-
-esp_err_t esp_isp_af_env_detector_enable(isp_af_env_detr_t af_env_detector)
-{
-    ESP_RETURN_ON_FALSE(af_env_detector && af_env_detector->af_ctlr, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
-    ESP_RETURN_ON_FALSE(af_env_detector->fsm == ISP_FSM_INIT, ESP_ERR_INVALID_STATE, TAG, "detector isn't in init state");
-
-    //try use ratio mode
-    isp_ll_af_env_monitor_set_mode(af_env_detector->af_ctlr->isp_proc->hal.hw, ISP_LL_AF_ENV_MONITOR_MODE_ABS);
-    isp_ll_af_env_monitor_set_period(af_env_detector->af_ctlr->isp_proc->hal.hw, af_env_detector->config.interval);
-    isp_ll_enable_intr(af_env_detector->af_ctlr->isp_proc->hal.hw, ISP_LL_EVENT_AF_ENV, true);
-    af_env_detector->fsm = ISP_FSM_ENABLE;
-
-    return ESP_OK;
-}
-
-esp_err_t esp_isp_af_env_detector_disable(isp_af_env_detr_t af_env_detector)
-{
-    ESP_RETURN_ON_FALSE(af_env_detector && af_env_detector->af_ctlr, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
-    ESP_RETURN_ON_FALSE(af_env_detector->fsm == ISP_FSM_ENABLE, ESP_ERR_INVALID_STATE, TAG, "detector isn't in enable state");
-
-    isp_ll_af_env_monitor_set_period(af_env_detector->af_ctlr->isp_proc->hal.hw, 0);
-    af_env_detector->fsm = ISP_FSM_INIT;
-
-    return ESP_OK;
-}
-
-esp_err_t esp_isp_af_env_detector_register_event_callbacks(isp_af_env_detr_t af_env_detector, const esp_isp_af_env_detector_evt_cbs_t *cbs, void *user_data)
-{
-    ESP_RETURN_ON_FALSE(af_env_detector && cbs, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
-    ESP_RETURN_ON_FALSE(af_env_detector->fsm == ISP_FSM_INIT, ESP_ERR_INVALID_STATE, TAG, "detector isn't in the init state");
+    ESP_RETURN_ON_FALSE(af_ctrlr && cbs, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    ESP_RETURN_ON_FALSE(af_ctrlr->fsm == ISP_FSM_INIT, ESP_ERR_INVALID_STATE, TAG, "detector isn't in the init state");
 
 #if CONFIG_ISP_ISR_IRAM_SAFE
     if (cbs->on_env_change) {
@@ -274,20 +188,20 @@ esp_err_t esp_isp_af_env_detector_register_event_callbacks(isp_af_env_detr_t af_
     }
 #endif
 
-    ESP_RETURN_ON_ERROR(esp_isp_register_isr(af_env_detector->af_ctlr->isp_proc, ISP_SUBMODULE_AF), TAG, "fail to register ISR");
+    ESP_RETURN_ON_ERROR(esp_isp_register_isr(af_ctrlr->isp_proc, ISP_SUBMODULE_AF), TAG, "fail to register ISR");
 
-    af_env_detector->cbs.on_env_change = cbs->on_env_change;
-    af_env_detector->user_data = user_data;
+    af_ctrlr->cbs.on_env_change = cbs->on_env_change;
+    af_ctrlr->user_data = user_data;
 
     return ESP_OK;
 }
 
-esp_err_t esp_isp_af_env_detector_set_threshold(isp_af_env_detr_t af_env_detector, int definition_thresh, int luminance_thresh)
+esp_err_t esp_isp_af_env_detector_set_threshold(isp_af_ctrlr_t af_ctrlr, int definition_thresh, int luminance_thresh)
 {
-    ESP_RETURN_ON_FALSE_ISR(af_env_detector, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
-    ESP_RETURN_ON_FALSE_ISR(af_env_detector->fsm == ISP_FSM_ENABLE, ESP_ERR_INVALID_STATE, TAG, "detector isn't in enable state");
+    ESP_RETURN_ON_FALSE_ISR(af_ctrlr, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    ESP_RETURN_ON_FALSE_ISR(af_ctrlr->fsm == ISP_FSM_ENABLE, ESP_ERR_INVALID_STATE, TAG, "detector isn't in enable state");
 
-    isp_ll_af_env_monitor_set_thresh(af_env_detector->af_ctlr->isp_proc->hal.hw, definition_thresh, luminance_thresh);
+    isp_ll_af_env_monitor_set_thresh(af_ctrlr->isp_proc->hal.hw, definition_thresh, luminance_thresh);
 
     return ESP_OK;
 }
@@ -295,12 +209,12 @@ esp_err_t esp_isp_af_env_detector_set_threshold(isp_af_env_detr_t af_env_detecto
 /*---------------------------------------------------------------
                       INTR
 ---------------------------------------------------------------*/
-static bool IRAM_ATTR s_af_env_isr(isp_af_env_detector_t *detector)
+static bool IRAM_ATTR s_af_env_isr(isp_af_ctrlr_t af_ctrlr)
 {
     bool need_yield = false;
 
     esp_isp_af_env_detector_evt_data_t edata = {};
-    if (detector->cbs.on_env_change(detector, &edata, detector->user_data)) {
+    if (af_ctrlr->cbs.on_env_change(af_ctrlr, &edata, af_ctrlr->user_data)) {
         need_yield |= true;
     }
 
@@ -321,9 +235,9 @@ bool IRAM_ATTR esp_isp_af_isr(isp_proc_handle_t proc, uint32_t af_events)
          * Now only one detector.
          * Should decide a detector instance according to the hw event.
          */
-        isp_af_env_detector_t *detector = proc->af_ctlr[0]->af_env_detector[0];
+        isp_af_ctrlr_t af_ctrlr = proc->af_ctlr[0];
 
-        need_yield |= s_af_env_isr(detector);
+        need_yield |= s_af_env_isr(af_ctrlr);
     }
 
     return need_yield;

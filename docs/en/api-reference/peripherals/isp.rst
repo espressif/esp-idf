@@ -75,22 +75,6 @@ If the configurations in :cpp:type:`esp_isp_af_config_t` is specified, users can
 
 You can use the created handle to do driver enable / disable the ISP AF driver and ISP AF Env module installation.
 
-
-Install Image Signal Processor (ISP) Auto-Focus (AF) Environment Detector Driver
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-ISP auto-focus (AF) driver requires the configuration that specified by :cpp:type:`esp_isp_af_env_config_t`.
-
-If the configurations in :cpp:type:`esp_isp_af_env_config_t` is specified, users can call :cpp:func:`esp_isp_new_af_env_detector` to allocate and initialize an ISP AF processor. This function will return an ISP AF environment detector handle if it runs correctly. You can take following code as reference.
-
-.. code:: c
-
-    esp_isp_af_env_config_t env_config = {
-        .interval = 10,
-    };
-    isp_af_env_detr_t env_detector = NULL;
-    ESP_ERROR_CHECK(esp_isp_new_af_env_detector(af_ctrlr, &env_config, &env_detector[i]));
-
 Uninstall Image Signal Processor (ISP) Driver
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -100,11 +84,6 @@ UnInstall Image Signal Processor (ISP) Auto-Focus (AF) Driver
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 If a previously installed ISP AF processor is no longer needed, it's recommended to recycle the resource by calling :cpp:func:`esp_isp_del_af_controller`, so that to release the underlying hardware.
-
-Uninstall Image Signal Processor (ISP) Environment Decetor Driver
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-If a previously installed ISP AF processor is no longer needed, it's recommended to recycle the resource by calling :cpp:func:`esp_isp_del_af_env_detector`, so that to release the underlying hardware.
 
 
 .. _isp-enable-disable:
@@ -130,15 +109,6 @@ Before doing ISP AF, you need to enable the ISP AF processor first, by calling :
 
 Calling :cpp:func:`esp_isp_af_controller_disable` does the opposite, that is, put the driver back to the **init** state.
 
-Image Signal Processor (ISP) Auto-Focus (AF) Environment Detector
------------------------------------------------------------------
-
-Before starting ISP environment detector, you need to enable the ISP AF environment detector first, by calling :cpp:func:`esp_isp_af_env_detector_enable`. This function:
-
-* Switches the driver state from **init** to **enable**.
-
-Calling :cpp:func:`esp_isp_af_env_detector_disable` does the opposite, that is, put the driver back to the **init** state.
-
 .. _isp-af-get-oneshot-result:
 
 Get Auto-Focus (AF) Oneshot Result
@@ -155,6 +125,20 @@ Calling :cpp:func:`esp_isp_af_controller_get_oneshot_result` to get oneshot AF r
     ESP_ERROR_CHECK(esp_isp_new_af_controller(isp_proc, &af_config, &af_ctrlr));
     isp_af_result_t result = {};
     ESP_ERROR_CHECK(esp_isp_af_controller_get_oneshot_result(ctx->af_ctlr, &result));
+
+Set Auto-Focus (AF) Environment Detector
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Calling :cpp:func:`esp_isp_af_controller_set_env_detector` to set an ISP AF environment detector. You can take following code as reference.
+
+.. code:: c
+
+    esp_isp_af_env_config_t env_config = {
+        .interval = 10,
+    };
+    isp_af_ctrlr_t af_ctrlr = NULL;
+    ESP_ERROR_CHECK(esp_isp_new_af_controller(isp_proc, &af_config, &af_ctrlr));
+    ESP_ERROR_CHECK(esp_isp_af_controller_set_env_detector(af_ctrlr, &env_config));
 
 Set Auto-Focus (AF) Environment Detector Threshold
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

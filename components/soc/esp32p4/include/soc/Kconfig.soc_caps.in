@@ -711,10 +711,6 @@ config SOC_ISP_AF_CTLR_NUMS
     int
     default 1
 
-config SOC_ISP_AF_ENV_DETECTOR_NUMS
-    int
-    default 1
-
 config SOC_ISP_AF_WINDOW_NUMS
     int
     default 3
