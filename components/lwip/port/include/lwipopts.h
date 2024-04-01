@@ -499,6 +499,16 @@ static inline uint32_t timeout_from_offered(uint32_t lease, uint32_t min)
 #define LWIP_DNS_SUPPORT_MDNS_QUERIES   0
 #endif
 
+/**
+ * LWIP_DNS_DYNAMIC_SORT==1: Dynamically sorts DNS results by available source addresses.
+ * This option is set via menuconfig.
+ */
+#ifdef CONFIG_LWIP_DNS_DYNAMIC_SORT
+#define LWIP_DNS_DYNAMIC_SORT   1
+#else
+#define LWIP_DNS_DYNAMIC_SORT   0
+#endif
+
 /*
    ---------------------------------
    ---------- UDP options ----------
