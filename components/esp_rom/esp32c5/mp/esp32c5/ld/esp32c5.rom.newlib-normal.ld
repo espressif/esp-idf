@@ -6,7 +6,7 @@
 /* ROM function interface esp32c5.rom.newlib-normal.ld for esp32c5
  *
  *
- * Generated from ./target/esp32c5/interface-esp32c5.yml md5sum 2f8bd1d8c95e398fe4f1ea496130ceb5
+ * Generated from ./target/esp32c5/interface-esp32c5.yml md5sum f5c146321f24f88ad1f27234da5aed11
  *
  * Compatible with ROM where ECO version equal or greater to 0.
  *
