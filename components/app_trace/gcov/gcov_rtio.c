@@ -17,6 +17,7 @@
 #include "esp_freertos_hooks.h"
 #include "esp_private/dbg_stubs.h"
 #include "esp_ipc.h"
+#include "esp_attr.h"
 #include "hal/wdt_hal.h"
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/rom/libc_stubs.h"
@@ -80,6 +81,7 @@ void gcov_create_task(void *arg)
     xTaskCreatePinnedToCore(&gcov_dump_task, "gcov_dump_task", 2048, (void *)&s_gcov_task_running, configMAX_PRIORITIES - 1, NULL, 0);
 }
 
+static IRAM_ATTR
 void gcov_create_task_tick_hook(void)
 {
     extern esp_err_t esp_ipc_start_gcov_from_isr(uint32_t cpu_id, esp_ipc_func_t func, void* arg);
