@@ -7,6 +7,7 @@
 #include "hal/ecc_ll.h"
 #include "hal/ecdsa_ll.h"
 #include "hal/ecdsa_hal.h"
+#include "hal/mpi_ll.h"
 #include "esp_crypto_lock.h"
 #include "esp_efuse.h"
 #include "esp_private/esp_crypto_lock_internal.h"
@@ -15,6 +16,7 @@
 #include "mbedtls/asn1write.h"
 #include "mbedtls/platform_util.h"
 #include "ecdsa/ecdsa_alt.h"
+#include "soc/soc_caps.h"
 
 #define ECDSA_KEY_MAGIC             (short) 0xECD5A
 #define ECDSA_SHA_LEN               32
@@ -26,26 +28,42 @@ static void esp_ecdsa_acquire_hardware(void)
 {
     esp_crypto_ecdsa_lock_acquire();
 
+    ECDSA_RCC_ATOMIC() {
+        ecdsa_ll_enable_bus_clock(true);
+        ecdsa_ll_reset_register();
+    }
+
     ECC_RCC_ATOMIC() {
         ecc_ll_enable_bus_clock(true);
         ecc_ll_reset_register();
     }
 
-    ECDSA_RCC_ATOMIC() {
-        ecdsa_ll_enable_bus_clock(true);
-        ecdsa_ll_reset_register();
+#ifdef SOC_ECDSA_USES_MPI
+    /* We need to reset the MPI peripheral because ECDSA peripheral
+     * of some targets use the MPI peripheral as well.
+     */
+    MPI_RCC_ATOMIC() {
+        mpi_ll_enable_bus_clock(true);
+        mpi_ll_reset_register();
     }
+#endif /* SOC_ECDSA_USES_MPI */
 }
 
 static void esp_ecdsa_release_hardware(void)
 {
+    ECDSA_RCC_ATOMIC() {
+        ecdsa_ll_enable_bus_clock(false);
+    }
+
     ECC_RCC_ATOMIC() {
         ecc_ll_enable_bus_clock(false);
     }
 
-    ECDSA_RCC_ATOMIC() {
-        ecdsa_ll_enable_bus_clock(false);
+#ifdef SOC_ECDSA_USES_MPI
+    MPI_RCC_ATOMIC() {
+        mpi_ll_enable_bus_clock(false);
     }
+#endif /* SOC_ECDSA_USES_MPI */
 
     esp_crypto_ecdsa_lock_release();
 }
@@ -101,9 +119,16 @@ int esp_ecdsa_load_pubkey(mbedtls_ecp_keypair *keypair, int efuse_blk)
 
     esp_ecdsa_acquire_hardware();
 
+    bool process_again = false;
+
     do {
         ecdsa_hal_export_pubkey(&conf, qx_le, qy_le, len);
-    } while (!memcmp(qx_le, zeroes, len) || !memcmp(qy_le, zeroes, len));
+
+        process_again = !ecdsa_hal_get_operation_result()
+                        || !memcmp(qx_le, zeroes, len)
+                        || !memcmp(qy_le, zeroes, len);
+
+    } while (process_again);
 
     esp_ecdsa_release_hardware();
 
@@ -213,7 +238,8 @@ int esp_ecdsa_set_pk_context(mbedtls_pk_context *key_ctx, esp_ecdsa_pk_conf_t *c
 
 
 static int esp_ecdsa_sign(mbedtls_ecp_group *grp, mbedtls_mpi* r, mbedtls_mpi* s,
-                          const mbedtls_mpi *d, const unsigned char* msg, size_t msg_len)
+                          const mbedtls_mpi *d, const unsigned char* msg, size_t msg_len,
+                          ecdsa_sign_type_t k_type)
 {
     ecdsa_curve_t curve;
     esp_efuse_block_t blk;
@@ -250,6 +276,12 @@ static int esp_ecdsa_sign(mbedtls_ecp_group *grp, mbedtls_mpi* r, mbedtls_mpi* s
 
     esp_ecdsa_acquire_hardware();
 
+    bool process_again = false;
+
+#ifdef SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE
+    uint16_t deterministic_loop_number = 1;
+#endif /* SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE */
+
     do {
         ecdsa_hal_config_t conf = {
             .mode = ECDSA_MODE_SIGN_GEN,
@@ -257,10 +289,25 @@ static int esp_ecdsa_sign(mbedtls_ecp_group *grp, mbedtls_mpi* r, mbedtls_mpi* s
             .sha_mode = ECDSA_Z_USER_PROVIDED,
             .efuse_key_blk = d->MBEDTLS_PRIVATE(n),
             .use_km_key = 0, //TODO: IDF-7992
+            .sign_type = k_type,
+#ifdef SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE
+            .loop_number = deterministic_loop_number++,
+#endif /* SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE */
         };
 
         ecdsa_hal_gen_signature(&conf, sha_le, r_le, s_le, len);
-    } while (!memcmp(r_le, zeroes, len) || !memcmp(s_le, zeroes, len));
+
+        process_again = !ecdsa_hal_get_operation_result()
+                        || !memcmp(r_le, zeroes, len)
+                        || !memcmp(s_le, zeroes, len);
+
+#ifdef SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE
+        if (k_type == ECDSA_K_TYPE_DETERMINISITIC) {
+            process_again |= !ecdsa_hal_det_signature_k_check();
+        }
+#endif /* SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE */
+
+    } while (process_again);
 
     esp_ecdsa_release_hardware();
 
@@ -290,7 +337,7 @@ int __wrap_mbedtls_ecdsa_sign(mbedtls_ecp_group *grp, mbedtls_mpi *r, mbedtls_mp
      */
     if (d->MBEDTLS_PRIVATE(s) == ECDSA_KEY_MAGIC) {
         // Use hardware ECDSA peripheral
-        return esp_ecdsa_sign(grp, r, s, d, buf, blen);
+        return esp_ecdsa_sign(grp, r, s, d, buf, blen, ECDSA_K_TYPE_TRNG);
     } else {
         return __real_mbedtls_ecdsa_sign(grp, r, s, d, buf, blen, f_rng, p_rng);
     }
@@ -319,11 +366,82 @@ int __wrap_mbedtls_ecdsa_sign_restartable(mbedtls_ecp_group *grp, mbedtls_mpi *r
      */
     if (d->MBEDTLS_PRIVATE(s) == ECDSA_KEY_MAGIC) {
         // Use hardware ECDSA peripheral
-        return esp_ecdsa_sign(grp, r, s, d, buf, blen);
+        return esp_ecdsa_sign(grp, r, s, d, buf, blen, ECDSA_K_TYPE_TRNG);
     } else {
         return __real_mbedtls_ecdsa_sign_restartable(grp, r, s, d, buf, blen, f_rng, p_rng, f_rng_blind, p_rng_blind, rs_ctx);
     }
 }
+
+#ifdef SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE
+
+extern int __real_mbedtls_ecdsa_sign_det_ext(mbedtls_ecp_group *grp, mbedtls_mpi *r,
+                                            mbedtls_mpi *s, const mbedtls_mpi *d,
+                                            const unsigned char *buf, size_t blen,
+                                            mbedtls_md_type_t md_alg,
+                                            int (*f_rng_blind)(void *, unsigned char *, size_t),
+                                            void *p_rng_blind);
+
+int __wrap_mbedtls_ecdsa_sign_det_ext(mbedtls_ecp_group *grp, mbedtls_mpi *r,
+                                    mbedtls_mpi *s, const mbedtls_mpi *d,
+                                    const unsigned char *buf, size_t blen,
+                                    mbedtls_md_type_t md_alg,
+                                    int (*f_rng_blind)(void *, unsigned char *, size_t),
+                                    void *p_rng_blind);
+
+int __wrap_mbedtls_ecdsa_sign_det_ext(mbedtls_ecp_group *grp, mbedtls_mpi *r,
+                                    mbedtls_mpi *s, const mbedtls_mpi *d,
+                                    const unsigned char *buf, size_t blen,
+                                    mbedtls_md_type_t md_alg,
+                                    int (*f_rng_blind)(void *, unsigned char *, size_t),
+                                    void *p_rng_blind)
+{
+    /*
+     * Check `d` whether it contains the hardware key
+     */
+    if (d->MBEDTLS_PRIVATE(s) == ECDSA_KEY_MAGIC) {
+        // Use hardware ECDSA peripheral
+        return esp_ecdsa_sign(grp, r, s, d, buf, blen, ECDSA_K_TYPE_DETERMINISITIC);
+    } else  {
+        return __real_mbedtls_ecdsa_sign_det_ext(grp, r, s, d, buf, blen, md_alg, f_rng_blind, p_rng_blind);
+    }
+}
+
+extern int __real_mbedtls_ecdsa_sign_det_restartable(mbedtls_ecp_group *grp,
+                                                    mbedtls_mpi *r, mbedtls_mpi *s,
+                                                    const mbedtls_mpi *d, const unsigned char *buf, size_t blen,
+                                                    mbedtls_md_type_t md_alg,
+                                                    int (*f_rng_blind)(void *, unsigned char *, size_t),
+                                                    void *p_rng_blind,
+                                                    mbedtls_ecdsa_restart_ctx *rs_ctx);
+
+int __wrap_mbedtls_ecdsa_sign_det_restartable(mbedtls_ecp_group *grp,
+                                            mbedtls_mpi *r, mbedtls_mpi *s,
+                                            const mbedtls_mpi *d, const unsigned char *buf, size_t blen,
+                                            mbedtls_md_type_t md_alg,
+                                            int (*f_rng_blind)(void *, unsigned char *, size_t),
+                                            void *p_rng_blind,
+                                            mbedtls_ecdsa_restart_ctx *rs_ctx);
+
+int __wrap_mbedtls_ecdsa_sign_det_restartable(mbedtls_ecp_group *grp,
+                                            mbedtls_mpi *r, mbedtls_mpi *s,
+                                            const mbedtls_mpi *d, const unsigned char *buf, size_t blen,
+                                            mbedtls_md_type_t md_alg,
+                                            int (*f_rng_blind)(void *, unsigned char *, size_t),
+                                            void *p_rng_blind,
+                                            mbedtls_ecdsa_restart_ctx *rs_ctx)
+{
+    /*
+     * Check `d` whether it contains the hardware key
+     */
+    if (d->MBEDTLS_PRIVATE(s) == ECDSA_KEY_MAGIC) {
+        // Use hardware ECDSA peripheral
+        return esp_ecdsa_sign(grp, r, s, d, buf, blen, ECDSA_K_TYPE_DETERMINISITIC);
+    } else  {
+        return __real_mbedtls_ecdsa_sign_det_restartable(grp, r, s, d, buf, blen, md_alg, f_rng_blind, p_rng_blind, NULL);
+    }
+}
+
+#endif  /* SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE */
 
 int __real_mbedtls_ecdsa_write_signature_restartable(mbedtls_ecdsa_context *ctx,
                                               mbedtls_md_type_t md_alg,
@@ -395,8 +513,11 @@ int __wrap_mbedtls_ecdsa_write_signature_restartable(mbedtls_ecdsa_context *ctx,
      */
     if (ctx->MBEDTLS_PRIVATE(d).MBEDTLS_PRIVATE(s) == ECDSA_KEY_MAGIC) {
         // Use hardware ECDSA peripheral
-
-        MBEDTLS_MPI_CHK(esp_ecdsa_sign(&ctx->MBEDTLS_PRIVATE(grp), &r, &s, &ctx->MBEDTLS_PRIVATE(d), hash, hlen));
+#if defined(SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE) && defined(CONFIG_MBEDTLS_ECDSA_DETERMINISTIC)
+        MBEDTLS_MPI_CHK(esp_ecdsa_sign(&ctx->MBEDTLS_PRIVATE(grp), &r, &s, &ctx->MBEDTLS_PRIVATE(d), hash, hlen, ECDSA_K_TYPE_DETERMINISITIC));
+#else
+        MBEDTLS_MPI_CHK(esp_ecdsa_sign(&ctx->MBEDTLS_PRIVATE(grp), &r, &s, &ctx->MBEDTLS_PRIVATE(d), hash, hlen, ECDSA_K_TYPE_TRNG));
+#endif /* SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE */
     }
 
     MBEDTLS_MPI_CHK(ecdsa_signature_to_asn1(&r, &s, sig, sig_size, slen));

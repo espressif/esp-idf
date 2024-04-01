@@ -46,6 +46,10 @@ This contains tests for the following features of the crypto peripherals:
     - ECDSA P256 signature generation
     - ECDSA P192 signature verification
     - ECDSA P256 signature verification
+    - ECDSA P192 export public key
+    - ECDSA P256 export public key
+    - ECDSA P192 deterministic signature generation
+    - ECDSA P256 deterministic signature generation
 
 - AES peripheral
     - Block Mode

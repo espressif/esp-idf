@@ -468,6 +468,9 @@
 /*------------------------ Anti DPA (Security) CAPS --------------------------*/
 #define SOC_CRYPTO_DPA_PROTECTION_SUPPORTED     1
 
+/*------------------------- ECDSA CAPS -------------------------*/
+#define SOC_ECDSA_USES_MPI                  (1)
+
 /*-------------------------- UART CAPS ---------------------------------------*/
 // ESP32-H2 has 2 UARTs
 #define SOC_UART_NUM                (2)

@@ -1,6 +1,6 @@
 /* mbedTLS Elliptic Curve Digital Signature performance tests
  *
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -190,7 +190,7 @@ const uint8_t ecdsa192_sign_pub_y[] = {
     0x23, 0xae, 0x7e, 0x0f, 0x1f, 0x4d, 0x69, 0xd5
 };
 
-void test_ecdsa_sign(mbedtls_ecp_group_id id, const uint8_t *hash, const uint8_t *pub_x, const uint8_t *pub_y)
+void test_ecdsa_sign(mbedtls_ecp_group_id id, const uint8_t *hash, const uint8_t *pub_x, const uint8_t *pub_y, bool is_deterministic)
 {
     uint8_t r_be[MAX_ECDSA_COMPONENT_LEN] = {0};
     uint8_t s_be[MAX_ECDSA_COMPONENT_LEN] = {0};
@@ -212,7 +212,11 @@ void test_ecdsa_sign(mbedtls_ecp_group_id id, const uint8_t *hash, const uint8_t
         esp_ecdsa_privkey_load_mpi(&key_mpi, SECP256R1_EFUSE_BLOCK);
     }
 
-    mbedtls_ecdsa_sign(&ecdsa_context.MBEDTLS_PRIVATE(grp), &r, &s, &key_mpi, sha, HASH_LEN, NULL, NULL);
+    if (is_deterministic) {
+        mbedtls_ecdsa_sign_det_ext(&ecdsa_context.MBEDTLS_PRIVATE(grp), &r, &s, &key_mpi, sha, HASH_LEN, 0, NULL, NULL);
+    } else {
+        mbedtls_ecdsa_sign(&ecdsa_context.MBEDTLS_PRIVATE(grp), &r, &s, &key_mpi, sha, HASH_LEN, NULL, NULL);
+    }
 
     mbedtls_mpi_write_binary(&r, r_be, MAX_ECDSA_COMPONENT_LEN);
     mbedtls_mpi_write_binary(&s, s_be, MAX_ECDSA_COMPONENT_LEN);
@@ -223,17 +227,35 @@ void test_ecdsa_sign(mbedtls_ecp_group_id id, const uint8_t *hash, const uint8_t
     } else if (id == MBEDTLS_ECP_DP_SECP256R1) {
         test_ecdsa_verify(id, sha, r_be, s_be, pub_x, pub_y);
     }
+
+    mbedtls_mpi_free(&r);
+    mbedtls_mpi_free(&s);
+    mbedtls_mpi_free(&key_mpi);
 }
 
 TEST_CASE("mbedtls ECDSA signature generation on SECP192R1", "[mbedtls][efuse_key]")
 {
-    test_ecdsa_sign(MBEDTLS_ECP_DP_SECP192R1, sha, ecdsa192_sign_pub_x, ecdsa192_sign_pub_y);
+    test_ecdsa_sign(MBEDTLS_ECP_DP_SECP192R1, sha, ecdsa192_sign_pub_x, ecdsa192_sign_pub_y, false);
 }
 
 TEST_CASE("mbedtls ECDSA signature generation on SECP256R1", "[mbedtls][efuse_key]")
 {
-    test_ecdsa_sign(MBEDTLS_ECP_DP_SECP256R1, sha, ecdsa256_sign_pub_x, ecdsa256_sign_pub_y);
+    test_ecdsa_sign(MBEDTLS_ECP_DP_SECP256R1, sha, ecdsa256_sign_pub_x, ecdsa256_sign_pub_y, false);
 }
+
+#ifdef SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE
+
+TEST_CASE("mbedtls ECDSA deterministic signature generation on SECP192R1", "[mbedtls][efuse_key]")
+{
+    test_ecdsa_sign(MBEDTLS_ECP_DP_SECP192R1, sha, ecdsa192_sign_pub_x, ecdsa192_sign_pub_y, true);
+}
+
+TEST_CASE("mbedtls ECDSA deterministic signature generation on SECP256R1", "[mbedtls][efuse_key]")
+{
+    test_ecdsa_sign(MBEDTLS_ECP_DP_SECP256R1, sha, ecdsa256_sign_pub_x, ecdsa256_sign_pub_y, true);
+}
+
+#endif
 
 #ifdef SOC_ECDSA_SUPPORT_EXPORT_PUBKEY
 
@@ -269,6 +291,7 @@ void test_ecdsa_export_pubkey(mbedtls_ecp_group_id id, const uint8_t *pub_x, con
     TEST_ASSERT_EQUAL_HEX8_ARRAY(pub_y, export_pub_y, len);
 
     mbedtls_ecdsa_free(keypair);
+    mbedtls_pk_free(&key_ctx);
 }
 
 TEST_CASE("mbedtls ECDSA export public key on SECP192R1", "[mbedtls][efuse_key]")

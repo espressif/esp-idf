@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,6 +10,7 @@
 #include "hal/assert.h"
 #include "soc/ecdsa_reg.h"
 #include "soc/hp_sys_clkrst_struct.h"
+#include "soc/soc_caps.h"
 #include "hal/ecdsa_types.h"
 
 #ifdef __cplusplus
@@ -217,6 +218,36 @@ static inline void ecdsa_ll_set_z_mode(ecdsa_ll_sha_mode_t mode)
 }
 
 /**
+ * @brief Set the signature generation type of ECDSA operation
+ *
+ * @param type Type of the ECDSA signature
+ */
+static inline void ecdsa_ll_set_k_type(ecdsa_sign_type_t type)
+{
+    switch (type) {
+        case ECDSA_K_TYPE_TRNG:
+            REG_CLR_BIT(ECDSA_CONF_REG, ECDSA_DETERMINISTIC_K);
+            break;
+        case ECDSA_K_TYPE_DETERMINISITIC:
+            REG_SET_BIT(ECDSA_CONF_REG, ECDSA_DETERMINISTIC_K);
+            break;
+        default:
+            HAL_ASSERT(false && "Unsupported K type");
+            break;
+    }
+}
+
+/**
+ * @brief Set the loop number value that is used for deterministic derivation of K
+ *
+ * @param loop_number Loop number for deterministic K
+ */
+static inline void ecdsa_ll_set_deterministic_loop(uint16_t loop_number)
+{
+    REG_SET_FIELD(ECDSA_CONF_REG, ECDSA_DETERMINISTIC_LOOP, loop_number);
+}
+
+/**
  * @brief Set the stage of ECDSA operation
  *
  * @param stage Stage of operation
@@ -303,7 +334,7 @@ static inline bool ecdsa_ll_sha_is_busy(void)
 /**
  * @brief Write the ECDSA parameter
  *
- * @param param Parameter to be writen
+ * @param param Parameter to be written
  * @param buf   Buffer containing data
  * @param len   Length of buffer
  */
@@ -373,16 +404,25 @@ static inline void ecdsa_ll_read_param(ecdsa_ll_param_t param, uint8_t *buf, uin
 }
 
 /**
- * @brief Get result of ECDSA verification operation
+ * @brief Check if the ECDSA operation is successful
  *
- *        This is only valid for ECDSA verify mode
- *
- * @return - 1, if signature verification succeeds
+ * @return - 1, if ECDSA operation succeeds
  *         - 0, otherwise
  */
-static inline int ecdsa_ll_get_verification_result(void)
+static inline int ecdsa_ll_get_operation_result(void)
 {
     return REG_GET_BIT(ECDSA_RESULT_REG, ECDSA_OPERATION_RESULT);
+}
+
+/**
+ * @brief Check if the k value is greater than the curve order.
+ *
+ * @return 0, k value is not greater than the curve order. In this case, the k value is the set k value.
+ * @return 1, k value is greater than than the curve order. In this case, the k value is the set (k mod n).
+ */
+static inline int ecdsa_ll_check_k_value(void)
+{
+    return REG_GET_BIT(ECDSA_RESULT_REG, ECDSA_K_VALUE_WARNING);
 }
 
 #ifdef __cplusplus
