@@ -433,6 +433,21 @@ menu "Bootloader config"
             (The application and bootoloader must be compiled with the same option).
             The RTC FAST memory has access only through PRO_CPU.
 
+    config BOOTLOADER_CUSTOM_RESERVE_RTC_IN_CRC
+        bool "Include custom memory in the CRC calculation"
+        depends on BOOTLOADER_CUSTOM_RESERVE_RTC
+        default n
+        help
+            This option allows the customer to use the legacy bootloader behavior when the
+            RTC FAST memory CRC calculation takes place. When this option is enabled, the
+            allocated user custom data will be taken into account in the CRC calculcation.
+            This means that any change to the custom data would need a CRC update to prevent
+            the bootloader from marking this data as corrupted.
+            If this option is disabled, the custom data will not be taken into account when
+            calculating the RTC FAST memory CRC. The user custom data can be changed freely,
+            without the need to update the CRC.
+            THIS OPTION MUST BE THE SAME FOR BOTH THE BOOTLOADER AND THE APPLICATION BUILDS.
+
     config BOOTLOADER_CUSTOM_RESERVE_RTC_SIZE
         hex "Size in bytes for custom purposes"
         default 0
