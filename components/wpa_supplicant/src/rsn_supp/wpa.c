@@ -2348,6 +2348,7 @@ int wpa_set_bss(char *macddr, char * bssid, u8 pairwise_cipher, u8 group_cipher,
     sm->ap_notify_completed_rsne = esp_wifi_sta_is_ap_notify_completed_rsne_internal();
     sm->use_ext_key_id = (sm->proto == WPA_PROTO_WPA);
     pmksa_cache_clear_current(sm);
+    sm->sae_pwe = esp_wifi_get_config_sae_pwe_h2e_internal(WIFI_IF_STA);
 
     struct rsn_pmksa_cache_entry *pmksa = NULL;
     if (use_pmk_cache) {
