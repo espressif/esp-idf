@@ -126,6 +126,12 @@ examples/peripherals/jpeg/jpeg_decode:
   depends_components:
     - esp_driver_jpeg
 
+examples/peripherals/jpeg/jpeg_encode:
+  disable:
+    - if: SOC_JPEG_ENCODE_SUPPORTED != 1
+  depends_components:
+    - esp_driver_jpeg
+
 examples/peripherals/lcd/i2c_oled:
   disable:
     - if: SOC_I2C_SUPPORTED != 1
