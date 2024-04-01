@@ -312,7 +312,8 @@ static bool hostap_sta_join(void **sta, u8 *bssid, u8 *wpa_ie, u8 wpa_ie_len, bo
     }
 
     if (*sta) {
-       ap_free_sta(hapd, *sta);
+        ap_free_sta(hapd, *sta);
+        *sta = NULL;
     }
     sta_info = ap_sta_add(hapd, bssid);
     if (!sta_info) {
