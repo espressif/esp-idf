@@ -214,6 +214,12 @@ static esp_err_t check_and_generate_encryption_keys(void)
         }
         ESP_LOGI(TAG, "Using pre-loaded flash encryption key in efuse");
     }
+
+#if SOC_KEY_MANAGER_SUPPORTED
+    // Force Key Manager to use eFuse key for XTS-AES operation
+    key_mgr_hal_set_key_usage(ESP_KEY_MGR_XTS_AES_128_KEY, ESP_KEY_MGR_USE_EFUSE_KEY);
+#endif
+
     return ESP_OK;
 }
 
