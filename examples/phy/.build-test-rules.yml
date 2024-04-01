@@ -1,5 +1,9 @@
 # Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
 
+examples/phy/antenna:
+  disable:
+    - if: IDF_TARGET in ["esp32p4", "esp32h2"]
+      reason: not supported
 examples/phy/cert_test:
   enable:
     - if: IDF_TARGET in ["esp32c3", "esp32s3"]

@@ -279,6 +279,12 @@ void esp_phy_enable(esp_phy_modem_t modem)
 #if !CONFIG_IDF_TARGET_ESP32
         phy_track_pll_init();
 #endif
+
+    if (phy_ant_need_update()) {
+        phy_ant_update();
+        phy_ant_clr_update_flag();
+    }
+
     }
     phy_set_modem_flag(modem);
 #if !CONFIG_IDF_TARGET_ESP32

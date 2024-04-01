@@ -175,7 +175,8 @@ ESP32_DOCS = ['api-reference/system/himem.rst',
               'api-reference/peripherals/dac.rst',
               'api-reference/peripherals/sd_pullup_requirements.rst',
               'hw-reference/esp32/**',
-              'api-guides/RF_calibration.rst'] + FTDI_JTAG_DOCS + QEMU_DOCS
+              'api-guides/RF_calibration.rst',
+              'api-guides/phy.rst'] + FTDI_JTAG_DOCS + QEMU_DOCS
 
 ESP32S2_DOCS = ['hw-reference/esp32s2/**',
                 'api-guides/usb-console.rst',
@@ -183,26 +184,32 @@ ESP32S2_DOCS = ['hw-reference/esp32s2/**',
                 'api-reference/peripherals/temp_sensor.rst',
                 'api-reference/system/async_memcpy.rst',
                 'api-reference/peripherals/touch_element.rst',
-                'api-guides/RF_calibration.rst'] + FTDI_JTAG_DOCS + USB_OTG_DFU_DOCS + USB_OTG_CONSOLE_DOCS
+                'api-guides/RF_calibration.rst',
+                'api-guides/phy.rst'] + FTDI_JTAG_DOCS + USB_OTG_DFU_DOCS + USB_OTG_CONSOLE_DOCS
 
 ESP32S3_DOCS = ['hw-reference/esp32s3/**',
                 'api-reference/system/ipc.rst',
                 'api-guides/flash_psram_config.rst',
                 'api-reference/peripherals/sd_pullup_requirements.rst',
-                'api-guides/RF_calibration.rst'] + USB_OTG_DFU_DOCS + USB_OTG_CONSOLE_DOCS
+                'api-guides/RF_calibration.rst',
+                'api-guides/phy.rst'] + USB_OTG_DFU_DOCS + USB_OTG_CONSOLE_DOCS
 
 # No JTAG docs for this one as it gets gated on SOC_USB_SERIAL_JTAG_SUPPORTED down below.
 ESP32C3_DOCS = ['hw-reference/esp32c3/**',
-                'api-guides/RF_calibration.rst'] + QEMU_DOCS
+                'api-guides/RF_calibration.rst',
+                'api-guides/phy.rst'] + QEMU_DOCS
 
-ESP32C2_DOCS = ['api-guides/RF_calibration.rst']
+ESP32C2_DOCS = ['api-guides/RF_calibration.rst',
+                'api-guides/phy.rst']
 
 ESP32C5_DOCS = ['']
 
 ESP32C6_DOCS = ['api-guides/RF_calibration.rst',
-                'api-reference/peripherals/sd_pullup_requirements.rst']
+                'api-reference/peripherals/sd_pullup_requirements.rst',
+                'api-guides/phy.rst']
 
-ESP32H2_DOCS = ['api-guides/RF_calibration.rst']
+ESP32H2_DOCS = ['api-guides/RF_calibration.rst',
+                'api-guides/phy.rst']
 
 ESP32P4_DOCS = ['api-reference/system/ipc.rst',
                 'api-reference/peripherals/sd_pullup_requirements.rst']

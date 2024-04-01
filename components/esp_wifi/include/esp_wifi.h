@@ -453,7 +453,7 @@ esp_err_t esp_wifi_deauth_sta(uint16_t aid);
   *
   * @param     config  configuration settings for scanning, if set to NULL default settings will be used
   *                    of which default values are show_hidden:false, scan_type:active, scan_time.active.min:0,
-  *                    scan_time.active.max:120 miliseconds, scan_time.passive:360 miliseconds
+  *                    scan_time.active.max:120 milliseconds, scan_time.passive:360 milliseconds
   *
   * @param     block if block is true, this API will block the caller until the scan is done, otherwise
   *                         it will return immediately
@@ -659,7 +659,7 @@ esp_err_t esp_wifi_get_bandwidth(wifi_interface_t ifx, wifi_bandwidth_t *bw);
   * @attention 2. When device is in STA mode, this API should not be called when STA is scanning or connecting to an external AP
   * @attention 3. When device is in softAP mode, this API should not be called when softAP has connected to external STAs
   * @attention 4. When device is in STA+softAP mode, this API should not be called when in the scenarios described above
-  * @attention 5. The channel info set by this API will not be stored in NVS. So If you want to remeber the channel used before wifi stop,
+  * @attention 5. The channel info set by this API will not be stored in NVS. So If you want to remember the channel used before wifi stop,
   *               you need to call this API again after wifi start, or you can call `esp_wifi_set_config()` to store the channel info in NVS.
   *
   * @param     primary  for HT20, primary is the channel number, for HT40, primary is the primary channel
@@ -1018,7 +1018,7 @@ esp_err_t esp_wifi_set_vendor_ie_cb(esp_vendor_ie_cb_t cb, void *ctx);
 esp_err_t esp_wifi_set_max_tx_power(int8_t power);
 
 /**
-  * @brief     Get maximum transmiting power after WiFi start
+  * @brief     Get maximum transmitting power after WiFi start
   *
   * @param     power Maximum WiFi transmitting power, unit is 0.25dBm.
   *
@@ -1149,7 +1149,7 @@ esp_err_t esp_wifi_set_csi(bool en);
   *    - ESP_ERR_WIFI_NOT_INIT: WiFi is not initialized by esp_wifi_init
   *    - ESP_ERR_INVALID_ARG: Invalid argument, e.g. parameter is NULL, invalid GPIO number etc
   */
-esp_err_t esp_wifi_set_ant_gpio(const wifi_ant_gpio_config_t *config);
+esp_err_t esp_wifi_set_ant_gpio(const wifi_ant_gpio_config_t *config) __attribute__((deprecated("Please use esp_phy_set_ant_gpio instead")));
 
 /**
   * @brief     Get current antenna GPIO configuration
@@ -1161,7 +1161,7 @@ esp_err_t esp_wifi_set_ant_gpio(const wifi_ant_gpio_config_t *config);
   *    - ESP_ERR_WIFI_NOT_INIT: WiFi is not initialized by esp_wifi_init
   *    - ESP_ERR_INVALID_ARG: invalid argument, e.g. parameter is NULL
   */
-esp_err_t esp_wifi_get_ant_gpio(wifi_ant_gpio_config_t *config);
+esp_err_t esp_wifi_get_ant_gpio(wifi_ant_gpio_config_t *config) __attribute__((deprecated("Please use esp_phy_get_ant_gpio instead")));
 
 
 /**
@@ -1174,7 +1174,7 @@ esp_err_t esp_wifi_get_ant_gpio(wifi_ant_gpio_config_t *config);
   *    - ESP_ERR_WIFI_NOT_INIT: WiFi is not initialized by esp_wifi_init
   *    - ESP_ERR_INVALID_ARG: Invalid argument, e.g. parameter is NULL, invalid antenna mode or invalid GPIO number
   */
-esp_err_t esp_wifi_set_ant(const wifi_ant_config_t *config);
+esp_err_t esp_wifi_set_ant(const wifi_ant_config_t *config) __attribute__((deprecated("Please use esp_phy_set_ant instead")));
 
 /**
   * @brief     Get current antenna configuration
@@ -1186,7 +1186,7 @@ esp_err_t esp_wifi_set_ant(const wifi_ant_config_t *config);
   *    - ESP_ERR_WIFI_NOT_INIT: WiFi is not initialized by esp_wifi_init
   *    - ESP_ERR_INVALID_ARG: invalid argument, e.g. parameter is NULL
   */
-esp_err_t esp_wifi_get_ant(wifi_ant_config_t *config);
+esp_err_t esp_wifi_get_ant(wifi_ant_config_t *config) __attribute__((deprecated("Please use esp_phy_get_ant instead")));
 
 /**
  * @brief      Get the TSF time
@@ -1311,7 +1311,7 @@ esp_err_t esp_wifi_ftm_resp_set_offset(int16_t offset_cm);
   *                valid FTM measurements in the buffer. Total number of entries can be found in the event
   *                WIFI_EVENT_FTM_REPORT as ftm_report_num_entries
   * @attention  2. The internal FTM report is freed upon use of this API which means the API can only be used
-  *                once afer every FTM session initiated
+  *                once after every FTM session initiated
   * @attention  3. Passing the buffer as NULL merely frees the FTM report
   *
   * @param      report  Pointer to the buffer for receiving the FTM report

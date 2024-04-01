@@ -49,7 +49,7 @@ I (599) system_api: Base MAC address is not set, read default base MAC address f
 I (599) system_api: Base MAC address is not set, read default base MAC address from BLK0 of EFUSE
 I (629) wifi: wifi firmware version: 2d94f02
 I (629) wifi: config NVS flash: enabled
-I (629) wifi: config nano formating: disabled
+I (629) wifi: config nano formatting: disabled
 I (629) wifi: Init dynamic tx buffer num: 32
 I (629) wifi: Init data frame dynamic rx buffer num: 32
 I (639) wifi: Init management frame dynamic rx buffer num: 32
@@ -94,7 +94,7 @@ I (599) system_api: Base MAC address is not set, read default base MAC address f
 I (599) system_api: Base MAC address is not set, read default base MAC address from BLK0 of EFUSE
 I (629) wifi: wifi firmware version: 2d94f02
 I (629) wifi: config NVS flash: enabled
-I (629) wifi: config nano formating: disabled
+I (629) wifi: config nano formatting: disabled
 I (629) wifi: Init dynamic tx buffer num: 32
 I (629) wifi: Init data frame dynamic rx buffer num: 32
 I (639) wifi: Init management frame dynamic rx buffer num: 32
