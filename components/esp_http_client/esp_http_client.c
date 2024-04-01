@@ -220,6 +220,7 @@ static int http_on_header_event(esp_http_client_handle_t client)
 static int http_on_header_field(http_parser *parser, const char *at, size_t length)
 {
     esp_http_client_t *client = parser->data;
+    http_on_header_event(client);
     http_utils_append_string(&client->current_header_key, at, length);
 
     return 0;
@@ -240,7 +241,6 @@ static int http_on_header_value(http_parser *parser, const char *at, size_t leng
         http_utils_append_string(&client->auth_header, at, length);
     }
     http_utils_append_string(&client->current_header_value, at, length);
-    http_on_header_event(client);
     return 0;
 }
 
