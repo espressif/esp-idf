@@ -1534,3 +1534,7 @@ config SOC_JPEG_CODEC_SUPPORTED
 config SOC_JPEG_DECODE_SUPPORTED
     bool
     default y
+
+config SOC_JPEG_ENCODE_SUPPORTED
+    bool
+    default y

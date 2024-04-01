@@ -625,4 +625,4 @@
 /*--------------------------- JPEG --------------------------------*/
 #define SOC_JPEG_CODEC_SUPPORTED                  (1)
 #define SOC_JPEG_DECODE_SUPPORTED                 (1)
-// #define SOC_JPEG_ENCODE_SUPPORTED                 (1) // TODO: IDF-6512
+#define SOC_JPEG_ENCODE_SUPPORTED                 (1)

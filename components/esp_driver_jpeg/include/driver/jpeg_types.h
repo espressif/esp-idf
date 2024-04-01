@@ -47,9 +47,36 @@ typedef enum {
 } jpeg_dec_buffer_alloc_direction_t;
 
 /**
+ * @brief Enumeration for jpeg input format.
+ */
+typedef enum {
+    JPEG_ENCODE_IN_FORMAT_RGB888 = COLOR_TYPE_ID(COLOR_SPACE_RGB, COLOR_PIXEL_RGB888),       /*!< input RGB888 format */
+    JPEG_ENCODE_IN_FORMAT_RGB565 = COLOR_TYPE_ID(COLOR_SPACE_RGB, COLOR_PIXEL_RGB565),       /*!< input RGB565 format */
+    JPEG_ENCODE_IN_FORMAT_GRAY = COLOR_TYPE_ID(COLOR_SPACE_GRAY, COLOR_PIXEL_GRAY8),         /*!< input GRAY format */
+} jpeg_enc_input_format_t;
+
+/**
+ * @brief Enumeration for jpeg encoder alloc buffer direction.
+ */
+typedef enum {
+    JPEG_ENC_ALLOC_INPUT_BUFFER = 0,                   /*!< Alloc the picture input buffer, (decompressed format in encoder) */
+    JPEG_ENC_ALLOC_OUTPUT_BUFFER = 1,                  /*!< Alloc the picture output buffer, (compressed format in encoder) */
+} jpeg_enc_buffer_alloc_direction_t;
+
+/**
  * @brief Type of jpeg decoder handle
  */
 typedef struct jpeg_decoder_t *jpeg_decoder_handle_t;
+
+/**
+ * @brief Type of jpeg codec handle
+ */
+typedef struct jpeg_codec_t *jpeg_codec_handle_t;
+
+/**
+ * @brief Type of jpeg encoder handle
+ */
+typedef struct jpeg_encoder_t *jpeg_encoder_handle_t;
 
 #ifdef __cplusplus
 }

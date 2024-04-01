@@ -126,7 +126,7 @@ esp_err_t jpeg_del_decoder_engine(jpeg_decoder_handle_t decoder_engine);
  * @param[out] allocated_size Actual allocated buffer size.
  * @return Pointer to the allocated memory space, or NULL if allocation fails.
  */
-void *jpeg_alloc_decoder_mem(size_t size, jpeg_decode_memory_alloc_cfg_t *mem_cfg, size_t *allocated_size);
+void *jpeg_alloc_decoder_mem(size_t size, const jpeg_decode_memory_alloc_cfg_t *mem_cfg, size_t *allocated_size);
 
 #ifdef __cplusplus
 }
