@@ -1,170 +1,177 @@
 menu "PHY"
 
-    config ESP_PHY_CALIBRATION_AND_DATA_STORAGE
-        bool "Store phy calibration data in NVS"
-        default y
-        help
-            If this option is enabled, NVS will be initialized and calibration data will be loaded from there.
-            PHY calibration will be skipped on deep sleep wakeup. If calibration data is not found, full calibration
-            will be performed and stored in NVS. Normally, only partial calibration will be performed.
-            If this option is disabled, full calibration will be performed.
+    config ESP_PHY_ENABLED
+        bool
+        default y if (SOC_PHY_SUPPORTED)
 
-            If it's easy that your board calibrate bad data, choose 'n'.
-            Two cases for example, you should choose 'n':
-            1.If your board is easy to be booted up with antenna disconnected.
-            2.Because of your board design, each time when you do calibration, the result are too unstable.
-            If unsure, choose 'y'.
+    if (ESP_PHY_ENABLED)
+        config ESP_PHY_CALIBRATION_AND_DATA_STORAGE
+            bool "Store phy calibration data in NVS"
+            default y
+            help
+                If this option is enabled, NVS will be initialized and calibration data will be loaded from there.
+                PHY calibration will be skipped on deep sleep wakeup. If calibration data is not found, full
+                calibration will be performed and stored in NVS. Normally, only partial calibration will be performed.
+                If this option is disabled, full calibration will be performed.
 
-    menuconfig ESP_PHY_INIT_DATA_IN_PARTITION
-        bool "Use a partition to store PHY init data"
-        depends on SOC_WIFI_SUPPORTED
-        default n
-        help
-            If enabled, PHY init data will be loaded from a partition.
-            When using a custom partition table, make sure that PHY data
-            partition is included (type: 'data', subtype: 'phy').
-            With default partition tables, this is done automatically.
-            If PHY init data is stored in a partition, it has to be flashed there,
-            otherwise runtime error will occur.
+                If it's easy that your board calibrate bad data, choose 'n'.
+                Two cases for example, you should choose 'n':
+                1.If your board is easy to be booted up with antenna disconnected.
+                2.Because of your board design, each time when you do calibration, the result are too unstable.
+                If unsure, choose 'y'.
 
-            If this option is not enabled, PHY init data will be embedded
-            into the application binary.
+        menuconfig ESP_PHY_INIT_DATA_IN_PARTITION
+            bool "Use a partition to store PHY init data"
+            depends on SOC_WIFI_SUPPORTED
+            default n
+            help
+                If enabled, PHY init data will be loaded from a partition.
+                When using a custom partition table, make sure that PHY data
+                partition is included (type: 'data', subtype: 'phy').
+                With default partition tables, this is done automatically.
+                If PHY init data is stored in a partition, it has to be flashed there,
+                otherwise runtime error will occur.
 
-            If unsure, choose 'n'.
+                If this option is not enabled, PHY init data will be embedded
+                into the application binary.
 
-    config ESP_PHY_DEFAULT_INIT_IF_INVALID
-        bool "Reset default PHY init data if invalid"
-        default n
-        depends on ESP_PHY_INIT_DATA_IN_PARTITION
-        help
-            If enabled, PHY init data will be restored to default if
-            it cannot be verified successfully to avoid endless bootloops.
+                If unsure, choose 'n'.
 
-            If unsure, choose 'n'.
-
-    if ESP_PHY_INIT_DATA_IN_PARTITION
-        config ESP_PHY_MULTIPLE_INIT_DATA_BIN
-            bool "Support multiple PHY init data bin"
+        config ESP_PHY_DEFAULT_INIT_IF_INVALID
+            bool "Reset default PHY init data if invalid"
+            default n
             depends on ESP_PHY_INIT_DATA_IN_PARTITION
-            default n
             help
-                If enabled, the corresponding PHY init data type can be automatically switched
-                according to the country code. China's PHY init data bin is used by default.
-                Can be modified by country information in API esp_wifi_set_country().
-                The priority of switching the PHY init data type is:
-                1. Country configured by API esp_wifi_set_country()
-                and the parameter policy is WIFI_COUNTRY_POLICY_MANUAL.
-                2. Country notified by the connected AP.
-                3. Country configured by API esp_wifi_set_country()
-                and the parameter policy is WIFI_COUNTRY_POLICY_AUTO.
+                If enabled, PHY init data will be restored to default if
+                it cannot be verified successfully to avoid endless bootloops.
 
-        config ESP_PHY_MULTIPLE_INIT_DATA_BIN_EMBED
-            bool "Support embedded multiple phy init data bin to app bin"
-            depends on ESP_PHY_MULTIPLE_INIT_DATA_BIN
-            default n
-            help
-                If enabled, multiple phy init data bin will embedded into app bin
-                If not enabled, multiple phy init data bin will still leave alone, and need to be flashed by users.
+                If unsure, choose 'n'.
 
-        config ESP_PHY_INIT_DATA_ERROR
-            bool "Terminate operation when PHY init data error"
-            depends on ESP_PHY_MULTIPLE_INIT_DATA_BIN
+        if ESP_PHY_INIT_DATA_IN_PARTITION
+            config ESP_PHY_MULTIPLE_INIT_DATA_BIN
+                bool "Support multiple PHY init data bin"
+                depends on ESP_PHY_INIT_DATA_IN_PARTITION
+                default n
+                help
+                    If enabled, the corresponding PHY init data type can be automatically switched
+                    according to the country code. China's PHY init data bin is used by default.
+                    Can be modified by country information in API esp_wifi_set_country().
+                    The priority of switching the PHY init data type is:
+                    1. Country configured by API esp_wifi_set_country()
+                    and the parameter policy is WIFI_COUNTRY_POLICY_MANUAL.
+                    2. Country notified by the connected AP.
+                    3. Country configured by API esp_wifi_set_country()
+                    and the parameter policy is WIFI_COUNTRY_POLICY_AUTO.
+
+            config ESP_PHY_MULTIPLE_INIT_DATA_BIN_EMBED
+                bool "Support embedded multiple phy init data bin to app bin"
+                depends on ESP_PHY_MULTIPLE_INIT_DATA_BIN
+                default n
+                help
+                    If enabled, multiple phy init data bin will embedded into app bin
+                    If not enabled, multiple phy init data bin will still leave alone, and need to be flashed by users.
+
+            config ESP_PHY_INIT_DATA_ERROR
+                bool "Terminate operation when PHY init data error"
+                depends on ESP_PHY_MULTIPLE_INIT_DATA_BIN
+                default n
+                help
+                    If enabled, when an error occurs while the PHY init data is updated,
+                    the program will terminate and restart.
+                    If not enabled, the PHY init data will not be updated when an error occurs.
+        endif
+
+        config ESP_PHY_MAX_WIFI_TX_POWER
+            int "Max WiFi TX power (dBm)"
+            range 10 20
+            default 20
+            help
+                Set maximum transmit power for WiFi radio. Actual transmit power for high
+                data rates may be lower than this setting.
+
+        config ESP_PHY_MAX_TX_POWER
+            int
+            default ESP_PHY_MAX_WIFI_TX_POWER
+
+        config ESP_PHY_MAC_BB_PD
+            bool "Power down MAC and baseband of Wi-Fi and Bluetooth when PHY is disabled"
+            depends on SOC_PM_SUPPORT_MAC_BB_PD && FREERTOS_USE_TICKLESS_IDLE
             default n
             help
-                If enabled, when an error occurs while the PHY init data is updated,
-                the program will terminate and restart.
-                If not enabled, the PHY init data will not be updated when an error occurs.
+                If enabled, the MAC and baseband of Wi-Fi and Bluetooth will be powered
+                down when PHY is disabled. Enabling this setting reduces power consumption
+                by a small amount but increases RAM use by approximately 4 KB(Wi-Fi only),
+                2 KB(Bluetooth only) or 5.3 KB(Wi-Fi + Bluetooth).
+
+        config ESP_PHY_REDUCE_TX_POWER
+            bool "Reduce PHY TX power when brownout reset"
+            depends on ESP_BROWNOUT_DET
+            default n
+            help
+                When brownout reset occurs, reduce PHY TX power to keep the code running.
+
+        config ESP_PHY_ENABLE_USB
+            bool "Keep the USB PHY enabled when initializing WiFi"
+            depends on SOC_WIFI_PHY_NEEDS_USB_WORKAROUND
+            default y if IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3 \
+                || ESP_CONSOLE_USB_SERIAL_JTAG || ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG
+            default n
+            help
+                On some ESP targets, the USB PHY can interfere with WiFi thus lowering WiFi performance.
+                As a result, on those affected ESP targets, the ESP PHY library's initialization will automatically
+                disable the USB PHY to get best WiFi performance.
+                This option controls whether or not the ESP PHY library will keep the USB PHY enabled on
+                initialization.
+
+                Note: This option can be disabled to increase WiFi performance. However, disabling this option will
+                also mean that the USB PHY cannot be used while WiFi is enabled.
+
+
+        config ESP_PHY_ENABLE_CERT_TEST
+            bool "Enable RF certification test functions"
+            default n
+            depends on IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3
+            help
+                If enabled, you can use RF certification test APIs.
+
+        choice ESP_PHY_CALIBRATION_MODE
+            prompt "Calibration mode"
+            default ESP_PHY_RF_CAL_PARTIAL
+            help
+                Select PHY calibration mode. During RF initialization, the partial calibration
+                method is used by default for RF calibration. Full calibration takes about 100ms
+                more than partial calibration. If boot duration is not critical, it is suggested
+                to use the full calibration method. No calibration method is only used when the
+                device wakes up from deep sleep.
+
+            config ESP_PHY_RF_CAL_PARTIAL
+                bool "Calibration partial"
+            config ESP_PHY_RF_CAL_NONE
+                bool "Calibration none"
+            config ESP_PHY_RF_CAL_FULL
+                bool "Calibration full"
+        endchoice #ESP_PHY_CALIBRATION_MODE
+
+        config ESP_PHY_CALIBRATION_MODE
+            int
+            default 0 if ESP_PHY_RF_CAL_PARTIAL
+            default 1 if ESP_PHY_RF_CAL_NONE
+            default 2 if ESP_PHY_RF_CAL_FULL
+
+        config ESP_PHY_IMPROVE_RX_11B
+            bool "Improve Wi-Fi receive 11b pkts"
+            default n
+            depends on SOC_PHY_IMPROVE_RX_11B
+            help
+                This is a workaround to improve Wi-Fi receive 11b pkts for some modules using AC-DC power supply with
+                high interference, enable this option will sacrifice Wi-Fi OFDM receive performance.
+                But to guarantee 11b receive performance serves as a bottom line in this case.
+
+        config ESP_PHY_PLL_TRACK_DEBUG
+            bool "Enable pll track logging"
+            default n
+            help
+                If enabled, there will be some logs while pll tracking
+
     endif
-
-    config ESP_PHY_MAX_WIFI_TX_POWER
-        int "Max WiFi TX power (dBm)"
-        range 10 20
-        default 20
-        help
-            Set maximum transmit power for WiFi radio. Actual transmit power for high
-            data rates may be lower than this setting.
-
-    config ESP_PHY_MAX_TX_POWER
-        int
-        default ESP_PHY_MAX_WIFI_TX_POWER
-
-    config ESP_PHY_MAC_BB_PD
-        bool "Power down MAC and baseband of Wi-Fi and Bluetooth when PHY is disabled"
-        depends on SOC_PM_SUPPORT_MAC_BB_PD && FREERTOS_USE_TICKLESS_IDLE
-        default n
-        help
-            If enabled, the MAC and baseband of Wi-Fi and Bluetooth will be powered
-            down when PHY is disabled. Enabling this setting reduces power consumption
-            by a small amount but increases RAM use by approximately 4 KB(Wi-Fi only),
-            2 KB(Bluetooth only) or 5.3 KB(Wi-Fi + Bluetooth).
-
-    config ESP_PHY_REDUCE_TX_POWER
-        bool "Reduce PHY TX power when brownout reset"
-        depends on ESP_BROWNOUT_DET
-        default n
-        help
-            When brownout reset occurs, reduce PHY TX power to keep the code running.
-
-    config ESP_PHY_ENABLE_USB
-        bool "Keep the USB PHY enabled when initializing WiFi"
-        depends on SOC_WIFI_PHY_NEEDS_USB_WORKAROUND
-        default y if IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3 \
-            || ESP_CONSOLE_USB_SERIAL_JTAG || ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG
-        default n
-        help
-            On some ESP targets, the USB PHY can interfere with WiFi thus lowering WiFi performance. As a result, on
-            those affected ESP targets, the ESP PHY library's initialization will automatically disable the USB PHY to
-            get best WiFi performance. This option controls whether or not the ESP PHY library will keep the USB PHY
-            enabled on initialization.
-
-            Note: This option can be disabled to increase WiFi performance. However, disabling this option will also
-            mean that the USB PHY cannot be used while WiFi is enabled.
-
-
-    config ESP_PHY_ENABLE_CERT_TEST
-        bool "Enable RF certification test functions"
-        default n
-        depends on IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3
-        help
-            If enabled, you can use RF certification test APIs.
-
-    choice ESP_PHY_CALIBRATION_MODE
-        prompt "Calibration mode"
-        default ESP_PHY_RF_CAL_PARTIAL
-        help
-            Select PHY calibration mode. During RF initialization, the partial calibration
-            method is used by default for RF calibration. Full calibration takes about 100ms
-            more than partial calibration. If boot duration is not critical, it is suggested
-            to use the full calibration method. No calibration method is only used when the
-            device wakes up from deep sleep.
-
-        config ESP_PHY_RF_CAL_PARTIAL
-            bool "Calibration partial"
-        config ESP_PHY_RF_CAL_NONE
-            bool "Calibration none"
-        config ESP_PHY_RF_CAL_FULL
-            bool "Calibration full"
-    endchoice #ESP_PHY_CALIBRATION_MODE
-
-    config ESP_PHY_CALIBRATION_MODE
-        int
-        default 0 if ESP_PHY_RF_CAL_PARTIAL
-        default 1 if ESP_PHY_RF_CAL_NONE
-        default 2 if ESP_PHY_RF_CAL_FULL
-
-    config ESP_PHY_IMPROVE_RX_11B
-        bool "Improve Wi-Fi receive 11b pkts"
-        default n
-        depends on SOC_PHY_IMPROVE_RX_11B
-        help
-            This is a workaround to improve Wi-Fi receive 11b pkts for some modules using AC-DC power supply with
-            high interference, enable this option will sacrifice Wi-Fi OFDM receive performance.
-            But to guarantee 11b receive performance serves as a bottom line in this case.
-
-    config ESP_PHY_PLL_TRACK_DEBUG
-        bool "Enable pll track logging"
-        default n
-        help
-            If enabled, there will be some logs while pll tracking
-
 endmenu  # PHY

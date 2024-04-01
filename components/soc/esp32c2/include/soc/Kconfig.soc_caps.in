@@ -27,6 +27,10 @@ config SOC_GPTIMER_SUPPORTED
     bool
     default y
 
+config SOC_PHY_SUPPORTED
+    bool
+    default y
+
 config SOC_BT_SUPPORTED
     bool
     default y

@@ -42,21 +42,11 @@ static int lib_printf(const char* tag, const char* format, va_list arg)
     return len;
 }
 
-int phy_printf(const char* format, ...)
+int coexist_printf(const char* format, ...)
 {
     va_list arg;
     va_start(arg, format);
-    int res = lib_printf("phy", format, arg);
-    va_end(arg);
-    return res;
-}
-
-
-int rtc_printf(const char* format, ...)
-{
-    va_list arg;
-    va_start(arg, format);
-    int res = lib_printf("rtc", format, arg);
+    int res = lib_printf("coexist", format, arg);
     va_end(arg);
     return res;
 }

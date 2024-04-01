@@ -25,6 +25,7 @@
 #define SOC_ADC_SUPPORTED               1
 #define SOC_UART_SUPPORTED              1
 #define SOC_PCNT_SUPPORTED              1
+#define SOC_PHY_SUPPORTED               1
 #define SOC_WIFI_SUPPORTED              1
 #define SOC_TWAI_SUPPORTED              1
 #define SOC_GDMA_SUPPORTED              1
@@ -183,7 +184,7 @@
 // digital I/O pad powered by VDD3P3_CPU or VDD_SPI(GPIO_NUM_26~GPIO_NUM_48)
 #define SOC_GPIO_VALID_DIGITAL_IO_PAD_MASK 0x0001FFFFFC000000ULL
 
-// The Clock Out singnal is binding to the pin's IO_MUX function
+// The Clock Out signal is binding to the pin's IO_MUX function
 #define SOC_GPIO_CLOCKOUT_BY_IO_MUX    (1)
 
 /*-------------------------- Dedicated GPIO CAPS -----------------------------*/

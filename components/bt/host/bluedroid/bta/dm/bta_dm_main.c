@@ -31,7 +31,9 @@
 #include "osi/allocator.h"
 #include <string.h>
 
+#ifdef CONFIG_ESP_COEX_ENABLED
 #include "esp_coexist.h"
+#endif
 
 /*****************************************************************************
 ** Constants and types
@@ -91,7 +93,7 @@ const tBTA_DM_ACTION bta_dm_action[BTA_DM_MAX_EVT] = {
     bta_dm_pin_reply,                       /* BTA_DM_API_PIN_REPLY_EVT */
 #endif  ///SMP_INCLUDED == TRUE
 #if (BTA_DM_PM_INCLUDED == TRUE)
-    /* power manger events */
+    /* power manager events */
     bta_dm_pm_btm_status,                   /* BTA_DM_PM_BTM_STATUS_EVT */
     bta_dm_pm_timer,                        /* BTA_DM_PM_TIMER_EVT */
 #endif /* #if (BTA_DM_PM_INCLUDED == TRUE) */

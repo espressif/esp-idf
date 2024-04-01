@@ -67,6 +67,10 @@ config SOC_TEMP_SENSOR_SUPPORTED
     bool
     default y
 
+config SOC_PHY_SUPPORTED
+    bool
+    default y
+
 config SOC_WIFI_SUPPORTED
     bool
     default y

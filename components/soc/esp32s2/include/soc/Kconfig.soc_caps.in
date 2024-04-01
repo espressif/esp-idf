@@ -51,6 +51,10 @@ config SOC_PCNT_SUPPORTED
     bool
     default y
 
+config SOC_PHY_SUPPORTED
+    bool
+    default y
+
 config SOC_WIFI_SUPPORTED
     bool
     default y

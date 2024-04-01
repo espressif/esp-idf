@@ -70,6 +70,7 @@
 #define SOC_SDMMC_HOST_SUPPORTED    1
 #define SOC_BT_SUPPORTED            1
 #define SOC_PCNT_SUPPORTED          1
+#define SOC_PHY_SUPPORTED           1
 #define SOC_WIFI_SUPPORTED          1
 #define SOC_SDIO_SLAVE_SUPPORTED    1
 #define SOC_TWAI_SUPPORTED          1
@@ -186,7 +187,7 @@
 // digital I/O pad powered by VDD3P3_CPU or VDD_SPI(GPIO_NUM: 1, 3, 5, 6, 7, 8, 9, 10, 11, 16, 17, 18, 19, 21, 22, 23)
 #define SOC_GPIO_VALID_DIGITAL_IO_PAD_MASK 0xEF0FEAULL
 
-// The Clock Out singnal is binding to the pin's IO_MUX function
+// The Clock Out signal is binding to the pin's IO_MUX function
 #define SOC_GPIO_CLOCKOUT_BY_IO_MUX    (1)
 
 /*-------------------------- I2C CAPS ----------------------------------------*/

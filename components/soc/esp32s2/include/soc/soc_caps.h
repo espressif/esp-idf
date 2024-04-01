@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -49,6 +49,7 @@
 #define SOC_RISCV_COPROC_SUPPORTED      1
 #define SOC_USB_OTG_SUPPORTED           1
 #define SOC_PCNT_SUPPORTED              1
+#define SOC_PHY_SUPPORTED               1
 #define SOC_WIFI_SUPPORTED              1
 #define SOC_ULP_SUPPORTED               1
 #define SOC_CCOMP_TIMER_SUPPORTED       1
@@ -175,7 +176,7 @@
 // digital I/O pad powered by VDD3P3_CPU or VDD_SPI(GPIO_NUM_26~GPIO_NUM_46)
 #define SOC_GPIO_VALID_DIGITAL_IO_PAD_MASK  0x00007FFFFC000000ULL
 
-// The Clock Out singnal is binding to the pin's IO_MUX function
+// The Clock Out signal is binding to the pin's IO_MUX function
 #define SOC_GPIO_CLOCKOUT_BY_IO_MUX    (1)
 
 /*-------------------------- Dedicated GPIO CAPS ---------------------------------------*/
@@ -254,7 +255,7 @@
 #define SOC_RMT_MEM_WORDS_PER_CHANNEL         64 /*!< Each channel owns 64 words memory (1 word = 4 Bytes) */
 #define SOC_RMT_SUPPORT_RX_DEMODULATION       1  /*!< Support signal demodulation on RX path (i.e. remove carrier) */
 #define SOC_RMT_SUPPORT_TX_ASYNC_STOP         1  /*!< Support stop transmission asynchronously */
-#define SOC_RMT_SUPPORT_TX_LOOP_COUNT         1  /*!< Support transmiting specified number of cycles in loop mode */
+#define SOC_RMT_SUPPORT_TX_LOOP_COUNT         1  /*!< Support transmitting specified number of cycles in loop mode */
 #define SOC_RMT_SUPPORT_TX_SYNCHRO            1  /*!< Support coordinate a group of TX channels to start simultaneously */
 #define SOC_RMT_SUPPORT_TX_CARRIER_DATA_ONLY  1  /*!< TX carrier can be modulated to data phase only */
 #define SOC_RMT_SUPPORT_REF_TICK              1  /*!< Support set REF_TICK as the RMT clock source */
