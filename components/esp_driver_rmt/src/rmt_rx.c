@@ -286,12 +286,12 @@ esp_err_t rmt_new_rx_channel(const rmt_rx_channel_config_t *config, rmt_channel_
         .pull_up_en = true,
         .pin_bit_mask = BIT64(config->gpio_num),
     };
+    // gpio_config also connects the IO_MUX to the GPIO matrix
     ESP_GOTO_ON_ERROR(gpio_config(&gpio_conf), err, TAG, "config GPIO failed");
     rx_channel->base.gpio_num = config->gpio_num;
     esp_rom_gpio_connect_in_signal(config->gpio_num,
                                    rmt_periph_signals.groups[group_id].channels[channel_id + RMT_RX_CHANNEL_OFFSET_IN_GROUP].rx_sig,
                                    config->flags.invert_in);
-    gpio_func_sel(config->gpio_num, PIN_FUNC_GPIO);
 
     // initialize other members of rx channel
     portMUX_INITIALIZE(&rx_channel->base.spinlock);
@@ -355,6 +355,9 @@ esp_err_t rmt_receive(rmt_channel_handle_t channel, void *buffer, size_t buffer_
 {
     ESP_RETURN_ON_FALSE_ISR(channel && buffer && buffer_size && config, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
     ESP_RETURN_ON_FALSE_ISR(channel->direction == RMT_CHANNEL_DIRECTION_RX, ESP_ERR_INVALID_ARG, TAG, "invalid channel direction");
+#if !SOC_RMT_SUPPORT_RX_PINGPONG
+    ESP_RETURN_ON_FALSE_ISR(!config->flags.en_partial_rx, ESP_ERR_NOT_SUPPORTED, TAG, "partial receive not supported");
+#endif
     rmt_rx_channel_t *rx_chan = __containerof(channel, rmt_rx_channel_t, base);
     size_t per_dma_block_size = 0;
     size_t last_dma_block_size = 0;
