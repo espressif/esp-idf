@@ -646,6 +646,13 @@ config BT_NIMBLE_PERIODIC_ADV_ENH
     help
         Enable the periodic advertising enhancements
 
+config BT_NIMBLE_AOA_AOD
+    bool "Direction Finding"
+    depends on BT_NIMBLE_50_FEATURE_SUPPORT && SOC_BLE_CTE_SUPPORTED
+    default n
+    help
+        Enable support for Connectionless and Connection Oriented Direction Finding
+
 menuconfig BT_NIMBLE_GATT_CACHING
     bool "Enable GATT caching"
     depends on BT_NIMBLE_ENABLED && BT_NIMBLE_50_FEATURE_SUPPORT
