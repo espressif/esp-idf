@@ -332,6 +332,7 @@ static bool hostap_sta_join(void **sta, u8 *bssid, u8 *wpa_ie, u8 wpa_ie_len, u8
 #endif /* CONFIG_SAE */
         if (!esp_wifi_ap_is_sta_sae_reauth_node(bssid)) {
             ap_free_sta(hapd, old_sta);
+            *sta = NULL;
         }
 #ifdef CONFIG_SAE
           else if (old_sta && old_sta->lock) {
