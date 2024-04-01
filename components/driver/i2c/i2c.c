@@ -276,6 +276,16 @@ static void i2c_hw_enable(i2c_port_t i2c_num)
     I2C_EXIT_CRITICAL(&(i2c_context[i2c_num].spinlock));
 }
 
+#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
+static esp_err_t i2c_sleep_retention_init(void *arg)
+{
+    i2c_port_t i2c_num = *(i2c_port_t *)arg;
+    esp_err_t ret = sleep_retention_entries_create(i2c_regs_retention[i2c_num].link_list, i2c_regs_retention[i2c_num].link_num, REGDMA_LINK_PRI_7, I2C_SLEEP_RETENTION_MODULE(i2c_num));
+    ESP_RETURN_ON_ERROR(ret, I2C_TAG, "failed to allocate mem for sleep retention");
+    return ret;
+}
+#endif
+
 /*
     For i2c master mode, we don't need to use a buffer for the data, the APIs will execute the master commands
 and return after all of the commands have been sent out or when error occurs. So when we send master commands,
@@ -415,8 +425,13 @@ esp_err_t i2c_driver_install(i2c_port_t i2c_num, i2c_mode_t mode, size_t slv_rx_
 #endif // SOC_I2C_SUPPORT_SLAVE
 
 #if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && !CONFIG_IDF_TARGET_ESP32P4 // TODO: IDF-9353
-    ret = sleep_retention_entries_create(i2c_regs_retention[i2c_num].link_list, i2c_regs_retention[i2c_num].link_num, REGDMA_LINK_PRI_7, I2C_SLEEP_RETENTION_MODULE(i2c_num));
-    ESP_GOTO_ON_ERROR(ret, err, I2C_TAG, "failed to allocate mem for sleep retention");
+    sleep_retention_module_init_param_t init_param = {
+        .cbs = { .create = { .handle = i2c_sleep_retention_init, .arg = &i2c_num } }
+    };
+    ret = sleep_retention_module_init(I2C_SLEEP_RETENTION_MODULE(i2c_num), &init_param);
+    if (ret == ESP_OK) {
+        sleep_retention_module_allocate(I2C_SLEEP_RETENTION_MODULE(i2c_num));
+    }
 #endif
     return ESP_OK;
 
@@ -471,7 +486,10 @@ esp_err_t i2c_driver_delete(i2c_port_t i2c_num)
     p_i2c->intr_handle = NULL;
 
 #if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && !CONFIG_IDF_TARGET_ESP32P4 // TODO: IDF-9353
-    sleep_retention_entries_destroy(I2C_SLEEP_RETENTION_MODULE(i2c_num));
+    esp_err_t err = sleep_retention_module_free(I2C_SLEEP_RETENTION_MODULE(i2c_num));
+    if (err == ESP_OK) {
+        err = sleep_retention_module_deinit(I2C_SLEEP_RETENTION_MODULE(i2c_num));
+    }
 #endif
 
     if (p_i2c->cmd_mux) {

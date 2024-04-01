@@ -501,9 +501,10 @@ IRAM_ATTR void controller_wakeup_cb(void *arg)
 }
 
 #ifdef CONFIG_FREERTOS_USE_TICKLESS_IDLE
-static esp_err_t sleep_modem_ble_mac_modem_state_init(uint8_t extra)
+static esp_err_t sleep_modem_ble_mac_retention_init(void *arg)
 {
     uint8_t size;
+    int extra = *(int *)arg;
     const sleep_retention_entries_config_t *ble_mac_modem_config = esp_ble_mac_retention_link_get(&size, extra);
     esp_err_t err = sleep_retention_entries_create(ble_mac_modem_config, size, REGDMA_LINK_PRI_BT_MAC_BB, SLEEP_RETENTION_MODULE_BLE_MAC);
     if (err == ESP_OK) {
@@ -512,9 +513,27 @@ static esp_err_t sleep_modem_ble_mac_modem_state_init(uint8_t extra)
     return err;
 }
 
+static esp_err_t sleep_modem_ble_mac_modem_state_init(uint8_t extra)
+{
+    int retention_args = extra;
+    sleep_retention_module_init_param_t init_param = {
+        .cbs     = { .create = { .handle = sleep_modem_ble_mac_retention_init, .arg = &retention_args } },
+        .depends = BIT(SLEEP_RETENTION_MODULE_BT_BB)
+    };
+    esp_err_t err = sleep_retention_module_init(SLEEP_RETENTION_MODULE_BLE_MAC, &init_param);
+    if (err == ESP_OK) {
+        err = sleep_retention_module_allocate(SLEEP_RETENTION_MODULE_BLE_MAC);
+    }
+    return err;
+}
+
 static void sleep_modem_ble_mac_modem_state_deinit(void)
 {
-    sleep_retention_entries_destroy(SLEEP_RETENTION_MODULE_BLE_MAC);
+    esp_err_t err = sleep_retention_module_free(SLEEP_RETENTION_MODULE_BLE_MAC);
+    if (err == ESP_OK) {
+        err = sleep_retention_module_deinit(SLEEP_RETENTION_MODULE_BLE_MAC);
+        assert(err == ESP_OK);
+    }
 }
 
 void sleep_modem_light_sleep_overhead_set(uint32_t overhead)

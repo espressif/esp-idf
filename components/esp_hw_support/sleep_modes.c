@@ -2136,7 +2136,11 @@ static uint32_t get_power_down_flags(void)
 #endif
 
 #if SOC_PM_SUPPORT_MODEM_PD
-    if ((s_config.domain[ESP_PD_DOMAIN_MODEM].pd_option != ESP_PD_OPTION_ON) && modem_domain_pd_allowed()) {
+    if ((s_config.domain[ESP_PD_DOMAIN_MODEM].pd_option != ESP_PD_OPTION_ON) && modem_domain_pd_allowed()
+#if SOC_PM_MODEM_RETENTION_BY_REGDMA
+        && clock_domain_pd_allowed()
+#endif
+        ) {
         pd_flags |= RTC_SLEEP_PD_MODEM;
     }
 #endif

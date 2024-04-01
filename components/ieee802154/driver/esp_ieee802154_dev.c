@@ -69,6 +69,7 @@ static portMUX_TYPE s_ieee802154_spinlock = portMUX_INITIALIZER_UNLOCKED;
 static intr_handle_t s_ieee802154_isr_handle = NULL;
 
 static esp_err_t ieee802154_sleep_init(void);
+static esp_err_t ieee802154_sleep_deinit(void);
 static void next_operation(void);
 static esp_err_t ieee802154_transmit_internal(const uint8_t *frame, bool cca);
 
@@ -710,12 +711,6 @@ void ieee802154_enable(void)
 void ieee802154_disable(void)
 {
     modem_clock_module_disable(ieee802154_periph.module);
-#if SOC_PM_MODEM_RETENTION_BY_REGDMA && CONFIG_FREERTOS_USE_TICKLESS_IDLE
-#if SOC_PM_RETENTION_HAS_CLOCK_BUG && CONFIG_MAC_BB_PD
-    sleep_modem_unregister_mac_bb_module_prepare_callback(sleep_modem_mac_bb_power_down_prepare,
-                                                     sleep_modem_mac_bb_power_up_prepare);
-#endif // SOC_PM_RETENTION_HAS_CLOCK_BUG && CONFIG_MAC_BB_PD
-#endif // SOC_PM_MODEM_RETENTION_BY_REGDMA && CONFIG_FREERTOS_USE_TICKLESS_IDLE
     ieee802154_set_state(IEEE802154_STATE_DISABLE);
 }
 
@@ -768,6 +763,7 @@ esp_err_t ieee802154_mac_deinit(void)
         ret = esp_intr_free(s_ieee802154_isr_handle);
         s_ieee802154_isr_handle = NULL;
     }
+    ret = ieee802154_sleep_deinit();
     return ret;
 }
 
@@ -915,21 +911,52 @@ esp_err_t ieee802154_receive_at(uint32_t time)
     return ESP_OK;
 }
 
-static esp_err_t ieee802154_sleep_init(void)
-{
-    esp_err_t err = ESP_OK;
 #if SOC_PM_MODEM_RETENTION_BY_REGDMA && CONFIG_FREERTOS_USE_TICKLESS_IDLE
+static esp_err_t ieee802154_sleep_retention_init(void *arg)
+{
     #define N_REGS_IEEE802154() (((IEEE802154_MAC_DATE_REG - IEEE802154_REG_BASE) / 4) + 1)
     const static sleep_retention_entries_config_t ieee802154_mac_regs_retention[] = {
         [0] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_MODEM_IEEE802154_LINK(0x00), IEEE802154_REG_BASE, IEEE802154_REG_BASE, N_REGS_IEEE802154(), 0, 0), .owner = IEEE802154_LINK_OWNER },
     };
-    err = sleep_retention_entries_create(ieee802154_mac_regs_retention, ARRAY_SIZE(ieee802154_mac_regs_retention), REGDMA_LINK_PRI_IEEE802154, SLEEP_RETENTION_MODULE_802154_MAC);
+    esp_err_t err = sleep_retention_entries_create(ieee802154_mac_regs_retention, ARRAY_SIZE(ieee802154_mac_regs_retention), REGDMA_LINK_PRI_IEEE802154, SLEEP_RETENTION_MODULE_802154_MAC);
     ESP_RETURN_ON_ERROR(err, IEEE802154_TAG, "failed to allocate memory for ieee802154 mac retention");
-    ESP_LOGI(IEEE802154_TAG, "ieee802154 mac sleep retention initialization");
+    ESP_LOGD(IEEE802154_TAG, "ieee802154 mac sleep retention initialization");
+    return err;
+}
+#endif
 
+static esp_err_t ieee802154_sleep_init(void)
+{
+    esp_err_t err = ESP_OK;
+#if SOC_PM_MODEM_RETENTION_BY_REGDMA && CONFIG_FREERTOS_USE_TICKLESS_IDLE
+    sleep_retention_module_init_param_t init_param = {
+        .cbs     = { .create = { .handle = ieee802154_sleep_retention_init, .arg = NULL } },
+        .depends = BIT(SLEEP_RETENTION_MODULE_BT_BB) | BIT(SLEEP_RETENTION_MODULE_CLOCK_MODEM)
+    };
+    err = sleep_retention_module_init(SLEEP_RETENTION_MODULE_802154_MAC, &init_param);
+    if (err == ESP_OK) {
+        err = sleep_retention_module_allocate(SLEEP_RETENTION_MODULE_802154_MAC);
+    }
+    ESP_RETURN_ON_ERROR(err, IEEE802154_TAG, "failed to create sleep retention linked list for ieee802154 mac retention");
 #if SOC_PM_RETENTION_HAS_CLOCK_BUG && CONFIG_MAC_BB_PD
     sleep_modem_register_mac_bb_module_prepare_callback(sleep_modem_mac_bb_power_down_prepare,
                                                    sleep_modem_mac_bb_power_up_prepare);
+#endif // SOC_PM_RETENTION_HAS_CLOCK_BUG && CONFIG_MAC_BB_PD
+#endif // SOC_PM_MODEM_RETENTION_BY_REGDMA && CONFIG_FREERTOS_USE_TICKLESS_IDLE
+    return err;
+}
+
+static esp_err_t ieee802154_sleep_deinit(void)
+{
+    esp_err_t err = ESP_OK;
+#if SOC_PM_MODEM_RETENTION_BY_REGDMA && CONFIG_FREERTOS_USE_TICKLESS_IDLE
+    err = sleep_retention_module_free(SLEEP_RETENTION_MODULE_802154_MAC);
+    if (err == ESP_OK) {
+        err = sleep_retention_module_deinit(SLEEP_RETENTION_MODULE_802154_MAC);
+    }
+#if SOC_PM_RETENTION_HAS_CLOCK_BUG && CONFIG_MAC_BB_PD
+    sleep_modem_unregister_mac_bb_module_prepare_callback(sleep_modem_mac_bb_power_down_prepare,
+                                                     sleep_modem_mac_bb_power_up_prepare);
 #endif // SOC_PM_RETENTION_HAS_CLOCK_BUG && CONFIG_MAC_BB_PD
 #endif // SOC_PM_MODEM_RETENTION_BY_REGDMA && CONFIG_FREERTOS_USE_TICKLESS_IDLE
     return err;

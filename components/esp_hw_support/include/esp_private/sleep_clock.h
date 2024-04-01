@@ -42,32 +42,26 @@ extern "C" {
 bool clock_domain_pd_allowed(void);
 
 /**
- * @brief  PCR module power down initialize
+ * @brief SoC system clock retention initialize.
  *
- * @return ESP_OK on success
- *         ESP_ERR_INVALID_ARG on invalid sleep_retention_entries_create args
- *         No memory for the retention link
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_NO_MEM not enough memory for system clock retention
+ *      - ESP_ERR_INVALID_ARG if either of the arguments is out of range
  */
-esp_err_t sleep_clock_system_retention_init(void);
+esp_err_t sleep_clock_system_retention_init(void *arg);
 
+#if CONFIG_MAC_BB_PD || CONFIG_BT_LE_SLEEP_ENABLE || CONFIG_IEEE802154_SLEEP_ENABLE
 /**
- * @brief  PCR module power down deinitialize
- */
-void sleep_clock_system_retention_deinit(void);
-
-/**
- * @brief  Modem syscon module power down initialize
+ * @brief Modem system clock retention initialize.
  *
- * @return ESP_OK on success
- *         ESP_ERR_INVALID_ARG on invalid sleep_retention_entries_create args
- *         No memory for the retention link
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_NO_MEM not enough memory for modem clock retention
+ *      - ESP_ERR_INVALID_ARG if either of the arguments is out of range
  */
-esp_err_t sleep_clock_modem_retention_init(void);
-
-/**
- * @brief  Modem syscon module power down deinitialize
- */
-void sleep_clock_modem_retention_deinit(void);
+esp_err_t sleep_clock_modem_retention_init(void *arg);
+#endif
 
 #ifdef __cplusplus
 }

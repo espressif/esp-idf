@@ -10,7 +10,7 @@
 
 static __attribute__((unused)) const char *TAG = "sleep_clock";
 
-esp_err_t sleep_clock_system_retention_init(void)
+esp_err_t sleep_clock_system_retention_init(void *arg)
 {
 #if CONFIG_IDF_TARGET_ESP32C5_MP_VERSION
     #define N_REGS_PCR()    (((PCR_SRAM_POWER_CONF_1_REG - DR_REG_PCR_BASE) / 4) + 1)
@@ -28,13 +28,8 @@ esp_err_t sleep_clock_system_retention_init(void)
     return ESP_OK;
 }
 
-void sleep_clock_system_retention_deinit(void)
-{
-    sleep_retention_entries_destroy(SLEEP_RETENTION_MODULE_CLOCK_SYSTEM);
-}
-
 #if CONFIG_MAC_BB_PD || CONFIG_BT_LE_SLEEP_ENABLE || CONFIG_IEEE802154_SLEEP_ENABLE
-esp_err_t sleep_clock_modem_retention_init(void)
+esp_err_t sleep_clock_modem_retention_init(void *arg)
 {
 #if CONFIG_IDF_TARGET_ESP32C5
     #define N_REGS_SYSCON() (((MODEM_SYSCON_MEM_RF2_CONF_REG - MODEM_SYSCON_TEST_CONF_REG) / 4) + 1)
@@ -53,10 +48,5 @@ esp_err_t sleep_clock_modem_retention_init(void)
     ESP_RETURN_ON_ERROR(err, TAG, "failed to allocate memory for modem (SYSCON) retention, 1 level priority");
     ESP_LOGI(TAG, "Modem Power, Clock and Reset sleep retention initialization");
     return ESP_OK;
-}
-
-void sleep_clock_modem_retention_deinit(void)
-{
-    sleep_retention_entries_destroy(SLEEP_RETENTION_MODULE_CLOCK_MODEM);
 }
 #endif
