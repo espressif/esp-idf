@@ -85,7 +85,7 @@ esp_err_t mcpwm_capture_timer_disable(mcpwm_cap_timer_handle_t cap_timer);
 esp_err_t mcpwm_capture_timer_start(mcpwm_cap_timer_handle_t cap_timer);
 
 /**
- * @brief Start MCPWM capture timer
+ * @brief Stop MCPWM capture timer
  *
  * @param[in] cap_timer MCPWM capture timer, allocated by `mcpwm_new_capture_timer()`
  * @return
