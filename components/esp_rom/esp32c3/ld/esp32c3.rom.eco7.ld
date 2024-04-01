@@ -6,7 +6,7 @@
 esf_buf_alloc = 0x400015bc;
 esf_buf_alloc_dynamic = 0x400015c0;
 esf_buf_recycle = 0x400015c4;
-hal_mac_tx_set_ppdu = 0x400015d4;
+/*hal_mac_tx_set_ppdu = 0x400015d4;*/
 ic_mac_deinit = 0x400015dc;
 lmacDiscardMSDU = 0x400015f4;
 /*lmacSetTxFrame = 0x40001628;*/
@@ -39,7 +39,7 @@ ieee80211_encap_esfbuf = 0x4000185c;
 /*sta_input = 0x40001870;*/
 ieee80211_crypto_decap = 0x4000189c;
 ieee80211_decap = 0x400018a0;
-coex_core_timer_idx_get = 0x400018d0;
+/*coex_core_timer_idx_get = 0x400018d0;*/
 rom1_chip_i2c_readReg = 0x40001924;
 rom1_chip_i2c_writeReg = 0x40001928;
 rom_index_to_txbbgain = 0x40001964;
