@@ -251,6 +251,10 @@
     #endif /* CONFIG_FREERTOS_SMP */
 #endif /* def __ASSEMBLER__ */
 
+#if CONFIG_FREERTOS_USE_APPLICATION_TASK_TAG
+    #define configUSE_APPLICATION_TASK_TAG    1
+#endif // CONFIG_FREERTOS_USE_APPLICATION_TASK_TAG
+
 /* ----------------------------------------------- Amazon SMP FreeRTOS -------------------------------------------------
  * - All Amazon SMP FreeRTOS specific configurations
  * ------------------------------------------------------------------------------------------------------------------ */
