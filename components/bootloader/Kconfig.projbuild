@@ -370,7 +370,7 @@ menu "Bootloader config"
         select EFUSE_VIRTUAL_KEEP_IN_FLASH
         help
             This option allows to emulate read/write operations with all eFuses and efuse secure version.
-            It allows to test anti-rollback implemention without permanent write eFuse bits.
+            It allows to test anti-rollback implementation without permanent write eFuse bits.
             There should be an entry in partition table with following details: `emul_efuse, data, efuse, , 0x2000`.
 
             This option enables: EFUSE_VIRTUAL and EFUSE_VIRTUAL_KEEP_IN_FLASH.
@@ -458,7 +458,7 @@ menu "Bootloader config"
             this area remains valid when rebooted, except for power loss.
             This memory is located at a fixed address and is available
             for both the bootloader and the application.
-            (The application and bootoloader must be compiled with the same option).
+            (The application and bootloader must be compiled with the same option).
             The RTC FAST memory has access only through PRO_CPU.
 
     config BOOTLOADER_CUSTOM_RESERVE_RTC_IN_CRC
@@ -468,7 +468,7 @@ menu "Bootloader config"
         help
             This option allows the customer to use the legacy bootloader behavior when the
             RTC FAST memory CRC calculation takes place. When this option is enabled, the
-            allocated user custom data will be taken into account in the CRC calculcation.
+            allocated user custom data will be taken into account in the CRC calculation.
             This means that any change to the custom data would need a CRC update to prevent
             the bootloader from marking this data as corrupted.
             If this option is disabled, the custom data will not be taken into account when
@@ -801,7 +801,7 @@ menu "Security features"
         default N
         help
             When Secure Boot V2 is enabled, by default the bootloader is not flashed along with other artifacts
-            like the application and the partition table images, i.e. bootloader has to be seperately flashed
+            like the application and the partition table images, i.e. bootloader has to be separately flashed
             using the command `idf.py bootloader flash`, whereas, the application and partition table can be flashed
             using the command `idf.py flash` itself.
             Enabling this option allows flashing the bootloader along with the other artifacts
