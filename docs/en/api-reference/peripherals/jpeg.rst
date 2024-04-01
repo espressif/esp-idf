@@ -1,5 +1,5 @@
-JPEG Decoder
-============
+JPEG Encoder and Decoder
+========================
 
 Introduction
 ------------
@@ -15,6 +15,7 @@ The JPEG driver offers following services:
 
 -  `Resource Allocation <#resource-allocation>`__ - covers how to allocate JPEG resources with properly set of configurations. It also covers how to recycle the resources when they finished working.
 -  `JPEG Decoder Engine <#jpeg_decoder_engine>`__ - covers behavior of JPEG decoder engine. Introduce how to use decoder engine functions to decode an image (from jpg format to raw format).
+-  `JPEG Encoder Engine <#jpeg_encoder_engine>`__ - covers behavior of JPEG encoder engine. Introduce how to use encoder engine functions to encode an image (from raw format to jpg format).
 -  `Thread Safety <#thread-safety>`__ - lists which APIs are guaranteed to be thread safe by the driver.
 -  `Kconfig Options <#kconfig-options>`__ - lists the supported Kconfig options that can bring different effects to the driver.
 
@@ -46,6 +47,29 @@ Uninstall JPEG decoder engine
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 If a previously installed JPEG engine is no longer needed, it's recommended to recycle the resource by calling :cpp:func:`jpeg_del_decoder_engine`, so that to release the underlying hardware.
+
+Install JPEG encoder engine
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The JPEG encoder engine requires the configuration specified by :cpp:type:`jpeg_encode_engine_cfg_t`.
+
+If the configurations in :cpp:type:`jpeg_encode_engine_cfg_t` is specified, users can call :cpp:func:`jpeg_new_encoder_engine` to allocate and initialize a JPEG decoder engine. This function will return an JPEG decoder handle if it runs correctly. You can take following code as reference.
+
+.. code:: c
+
+    jpeg_encoder_handle_t encoder_engine;
+
+    jpeg_encode_engine_cfg_t encode_eng_cfg = {
+        .intr_priority = 0,
+        .timeout_ms = 40,
+    };
+
+    ESP_ERROR_CHECK(jpeg_new_encoder_engine(&encode_eng_cfg, &encoder_engine));
+
+Uninstall JPEG encoder engine
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+If a previously installed JPEG engine is no longer needed, it's recommended to recycle the resource by calling :cpp:func:`jpeg_del_encoder_engine`, so that the underlying hardware is released.
 
 JPEG Decoder Engine
 ^^^^^^^^^^^^^^^^^^^
@@ -86,11 +110,50 @@ Overall, You can take following code as reference, the code is going to decode a
     uint32_t out_size = 0;
     ESP_ERROR_CHECK(jpeg_decoder_process(jpgd_handle, &decode_cfg_rgb, bit_stream, bit_stream_size, out_buf, &out_size));
 
-.. note::
 
-    Firstly, in above code, you should make sure the `bit_stream` and `out_buf` should be aligned by certain rules. We provide a helper function :cpp:func:`jpeg_alloc_decoder_mem` to help you malloc a buffer which is aligned in both size and address.
-    Secondly, the content of `bit_stream` buffer should not be changed until :cpp:func:`jpeg_decoder_process` returns.
-    Thirdly, the width and hight of output picture would be 16 bytes aligned if original picture is formatted by YUV420 or YUV422. For example, if the input picture is 1080*1920, the output picture will be 1088*1920. That is the restriction of jpeg protocol. Please provide sufficient output buffer memory.
+There are some Tips that can help you use this driver more accurately:
+
+Firstly, in above code, you should make sure the `bit_stream` and `out_buf` should be aligned by certain rules. We provide a helper function :cpp:func:`jpeg_alloc_decoder_mem` to help you malloc a buffer which is aligned in both size and address.
+
+Secondly, the content of `bit_stream` buffer should not be changed until :cpp:func:`jpeg_decoder_process` returns.
+
+Thirdly, the width and height of output picture would be 16 bytes aligned if original picture is formatted by YUV420 or YUV422. For example, if the input picture is 1080*1920, the output picture will be 1088*1920. That is the restriction of jpeg protocol. Please provide sufficient output buffer memory.
+
+JPEG Encoder Engine
+^^^^^^^^^^^^^^^^^^^
+
+After installing the JPEG encoder driver by :cpp:func:`jpeg_new_encoder_engine`, {IDF_TARGET_NAME} is ready to decode JPEG pictures by :cpp:func:`jpeg_encoder_process`. :cpp:func:`jpeg_encoder_process` is flexible for decoding different types of pictures by a configurable parameter called :cpp:type:`jpeg_encode_cfg_t`:
+
+Below is the example of code that encodes a 1080*1920 picture:
+
+.. code:: c
+
+    jpeg_encode_cfg_t enc_config = {
+        .src_type = JPEG_ENCODE_IN_FORMAT_RGB888,
+        .sub_sample = JPEG_DOWN_SAMPLING_YUV422,
+        .image_quality = 80,
+        .width = 1920,
+        .height = 1080,
+    };
+
+    uint8_t *raw_buf_1080p = (uint8_t*)jpeg_alloc_encoder_mem(raw_size_1080p);
+    if (raw_buf_1080p == NULL) {
+        ESP_LOGE(TAG, "alloc 1080p tx buffer error");
+        return;
+    }
+    uint8_t *jpg_buf_1080p = (uint8_t*)jpeg_alloc_encoder_mem(raw_size_1080p / 10); // Assume that compression ratio of 10 to 1
+    if (jpg_buf_1080p == NULL) {
+        ESP_LOGE(TAG, "alloc jpg_buf_1080p error");
+        return;
+    }
+
+    ESP_ERROR_CHECK(jpeg_encoder_process(jpeg_handle, &enc_config, raw_buf_1080p, raw_size_1080p, jpg_buf_1080p, &jpg_size_1080p););
+
+There are some Tips that can help you use this driver more accurately:
+
+Firstly, in above code, you should make sure the `raw_buf_1080p` and `jpg_buf_1080p` should aligned by calling :cpp:func:`jpeg_alloc_encoder_mem`.
+
+Secondly, the content of `raw_buf_1080p` buffer should not be changed until :cpp:func:`jpeg_encoder_process` returns.
 
 Thread Safety
 ^^^^^^^^^^^^^
@@ -108,6 +171,10 @@ API Reference
 .. only:: SOC_JPEG_DECODE_SUPPORTED
 
     .. include-build-file:: inc/jpeg_decode.inc
+
+.. only:: SOC_JPEG_ENCODE_SUPPORTED
+
+    .. include-build-file:: inc/jpeg_encode.inc
 
 .. include-build-file:: inc/components/esp_driver_jpeg/include/driver/jpeg_types.inc
 .. include-build-file:: inc/components/hal/include/hal/jpeg_types.inc

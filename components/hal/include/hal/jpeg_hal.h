@@ -103,6 +103,15 @@ typedef void (*jpeg_config_quantization_coefficient_t)(jpeg_soc_handle_t hw, uin
  */
 extern jpeg_config_quantization_coefficient_t dqt_func[JPEG_COMPONENT_NUMBER_MAX];
 
+/**
+ * Set the quantization coefficients for luminance and chrominance in the JPEG hardware accelerator context.
+ *
+ * @param hal Pointer to the JPEG hardware accelerator context.
+ * @param lqnr Pointer to an array of luminance quantization coefficients.
+ * @param cqnr Pointer to an array of chrominance quantization coefficients.
+ */
+void jpeg_hal_set_quantization_coefficient(jpeg_hal_context_t *hal, uint32_t *lqnr, uint32_t *cqnr);
+
 #ifdef __cplusplus
 }
 #endif

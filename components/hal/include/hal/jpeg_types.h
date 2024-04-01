@@ -71,6 +71,16 @@ typedef enum {
     JPEG_DOWN_SAMPLING_MAX,               /*!< Max value of sample enumeration */
 } jpeg_down_sampling_type_t;
 
+/**
+ * @brief JPEG encoder source formats.
+ */
+typedef enum {
+    JPEG_ENC_SRC_RGB888 = COLOR_TYPE_ID(COLOR_SPACE_RGB, COLOR_PIXEL_RGB888),   /*!< JPEG encoder source RGB888 */
+    JPEG_ENC_SRC_YUV422 = COLOR_TYPE_ID(COLOR_SPACE_YUV, COLOR_PIXEL_YUV422),   /*!< JPEG encoder source YUV422 */
+    JPEG_ENC_SRC_RGB565 = COLOR_TYPE_ID(COLOR_SPACE_RGB, COLOR_PIXEL_RGB565),   /*!< JPEG encoder source RGB565 */
+    JPEG_ENC_SRC_GRAY = COLOR_TYPE_ID(COLOR_SPACE_GRAY, COLOR_PIXEL_GRAY8),     /*!< JPEG encoder source GRAY */
+} jpeg_enc_src_type_t;
+
 #ifdef __cplusplus
 }
 #endif

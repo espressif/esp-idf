@@ -22,7 +22,8 @@ repos:
             .*_pb2.py|
             .*.pb-c.h|
             .*.pb-c.c|
-            .*.yuv
+            .*.yuv|
+            .*.rgb
           )$
       - id: end-of-file-fixer
         exclude: *whitespace_excludes

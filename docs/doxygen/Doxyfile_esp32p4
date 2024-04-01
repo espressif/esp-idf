@@ -21,6 +21,7 @@ INPUT += \
     $(PROJECT_PATH)/components/esp_driver_isp/include/driver/isp_types.h \
     $(PROJECT_PATH)/components/esp_driver_isp/include/driver/isp_af.h \
     $(PROJECT_PATH)/components/esp_driver_jpeg/include/driver/jpeg_decode.h \
+    $(PROJECT_PATH)/components/esp_driver_jpeg/include/driver/jpeg_encode.h \
     $(PROJECT_PATH)/components/esp_lcd/dsi/include/esp_lcd_mipi_dsi.h \
     $(PROJECT_PATH)/components/soc/$(IDF_TARGET)/include/soc/adc_channel.h \
     $(PROJECT_PATH)/components/soc/$(IDF_TARGET)/include/soc/clk_tree_defs.h \

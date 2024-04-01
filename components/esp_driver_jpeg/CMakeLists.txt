@@ -13,6 +13,12 @@ if(CONFIG_SOC_JPEG_CODEC_SUPPORTED)
                         "jpeg_decode.c"
         )
     endif()
+    if(CONFIG_SOC_JPEG_ENCODE_SUPPORTED)
+        list(APPEND srcs
+                        "jpeg_emit_marker.c"
+                        "jpeg_encode.c"
+        )
+    endif()
 endif()
 
 idf_component_register(SRCS ${srcs}

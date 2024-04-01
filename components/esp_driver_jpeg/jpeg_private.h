@@ -30,7 +30,10 @@ extern "C" {
 // JPEG encoder and decoder shares same interrupt ID.
 #define JPEG_INTR_ALLOC_FLAG              (ESP_INTR_FLAG_SHARED)
 
+#define JPEG_ALIGN_UP(num, align)         (((num) + ((align) - 1)) & ~((align) - 1))
+
 typedef struct jpeg_decoder_t jpeg_decoder_t;
+typedef struct jpeg_encoder_t jpeg_encoder_t;
 typedef struct jpeg_codec_t jpeg_codec_t;
 typedef struct jpeg_codec_t *jpeg_codec_handle_t;
 
@@ -121,6 +124,52 @@ typedef struct {
     jpeg_dma2d_evt_enum_t dma_evt;   // jpeg-2ddma event, (triggered from 2ddma interrupt)
     uint32_t jpgd_status;            // jpeg decoder status, (triggered from jpeg interrupt)
 } jpeg_dma2d_dec_evt_t;
+
+typedef enum {
+    JPEG_ENC_SRC_RGB888_HB = 0,      // Input RGB888 format
+    // TODO: Support encoder source format for yuv422
+    // JPEG_ENC_SRC_YUV422_HB = 1,   // Input YUV422 format
+    JPEG_ENC_SRC_RGB565_HB = 2,      // Input RGB565 format
+    JPEG_ENC_SRC_GRAY_HB = 3,        // Input GRAY format
+    JPEG_ENC_BEST_HB_MAX,
+} jpeg_enc_format_hb_t;
+
+typedef struct {
+    jpeg_dma2d_evt_enum_t dma_evt;    // jpeg-2ddma event, (triggered from 2ddma interrupt)
+    uint32_t encoder_status;          // jpeg encoder status, (triggered from jpeg interrupt)
+} jpeg_enc_dma2d_evt_t;
+
+typedef struct {
+    uint8_t *header_buf;                           // Pointer to the header of jpeg header buffer
+    uint32_t header_len;                           // Record for header length
+    uint32_t m_quantization_tables[2][JPEG_QUANTIZATION_TABLE_LEN];         // quantization tables
+    uint8_t num_components;                        // number of components
+    uint32_t origin_h;                             // horizontal of original picture
+    uint32_t origin_v;                             // vertical of original picture
+    uint32_t quality;                              // JPEG compressed quality.
+    jpeg_down_sampling_type_t sub_sample;          // Picture sub-sampling method
+} jpeg_enc_header_info_t;
+
+struct jpeg_encoder_t {
+    jpeg_codec_t *codec_base;                      // Pointer to jpeg codec hardware base
+    jpeg_enc_src_type_t color_space;               // Picture source color space
+    jpeg_enc_input_format_t picture_format;        // Source picture format
+    jpeg_enc_header_info_t *header_info;           // Pointer to header buffer information
+    uint32_t bytes_per_pixel;                      // Bytes per pixel of source image format
+    uint8_t mcux;                                  // the best value of minimum coding unit horizontal unit
+    uint8_t mcuy;                                  // minimum coding unit vertical unit
+    jpeg_isr_handler_t *intr_handle;               // jpeg encoder interrupt handler
+    TickType_t timeout_tick;                       // timeout value for jpeg decoder (in cpu tick).
+    QueueHandle_t evt_queue;                       // jpeg event from 2DDMA and JPEG engine
+    // dma_handles
+    dma2d_pool_handle_t dma2d_group_handle;        // 2D-DMA group handle
+    dma2d_descriptor_t *rxlink;                    // Pointer to 2D-DMA rx descriptor
+    dma2d_descriptor_t *txlink;                    // Pointer to 2D-DMA tx descriptor
+    uint32_t dma_desc_size;                        // tx and rx linker alignment
+    dma2d_trans_t* trans_desc;                     // DMA2D transaction descriptor
+    dma2d_channel_handle_t dma2d_rx_channel;       // DMA2D RX channel handle
+    dma2d_channel_handle_t dma2d_tx_channel;       // DMA2D TX channel handle
+};
 
 #define JPEG_DMA2D_2D_ENABLE       (1)        // DMA2D two dimension enable
 #define JPEG_DMA2D_2D_DISABLE      (0)        // DMA2D one dimension enable

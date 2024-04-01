@@ -36,8 +36,6 @@
 
 static const char *TAG = "jpeg.decoder";
 
-#define ALIGN_UP(num, align)    (((num) + ((align) - 1)) & ~((align) - 1))
-
 static void s_decoder_error_log_print(uint32_t status);
 static esp_err_t jpeg_dec_config_dma_descriptor(jpeg_decoder_handle_t decoder_engine);
 static esp_err_t jpeg_parse_marker(jpeg_decoder_handle_t decoder_engine, const uint8_t *in_buf, uint32_t inbuf_len);
@@ -77,7 +75,7 @@ esp_err_t jpeg_new_decoder_engine(const jpeg_decode_engine_cfg_t *dec_eng_cfg, j
 
     uint32_t cache_line_size = cache_hal_get_cache_line_size(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_DATA);
     uint32_t alignment = cache_line_size;
-    size_t dma_desc_mem_size = ALIGN_UP(sizeof(dma2d_descriptor_t), cache_line_size);
+    size_t dma_desc_mem_size = JPEG_ALIGN_UP(sizeof(dma2d_descriptor_t), cache_line_size);
 
     decoder_engine->rxlink = (dma2d_descriptor_t*)heap_caps_aligned_calloc(alignment, 1, dma_desc_mem_size, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL | JPEG_MEM_ALLOC_CAPS);
     ESP_GOTO_ON_FALSE(decoder_engine->rxlink, ESP_ERR_NO_MEM, err, TAG, "no memory for jpeg decode rxlink");
@@ -279,7 +277,7 @@ esp_err_t jpeg_del_decoder_engine(jpeg_decoder_handle_t decoder_engine)
     return ESP_OK;
 }
 
-void *jpeg_alloc_decoder_mem(size_t size, jpeg_decode_memory_alloc_cfg_t *mem_cfg, size_t *allocated_size)
+void *jpeg_alloc_decoder_mem(size_t size, const jpeg_decode_memory_alloc_cfg_t *mem_cfg, size_t *allocated_size)
 {
     /*
        Principle of buffer align.
@@ -289,7 +287,7 @@ void *jpeg_alloc_decoder_mem(size_t size, jpeg_decode_memory_alloc_cfg_t *mem_cf
     size_t cache_align = 0;
     esp_cache_get_alignment(ESP_CACHE_MALLOC_FLAG_PSRAM, &cache_align);
     if (mem_cfg->buffer_direction == JPEG_DEC_ALLOC_OUTPUT_BUFFER) {
-        size = ALIGN_UP(size, cache_align);
+        size = JPEG_ALIGN_UP(size, cache_align);
         *allocated_size = size;
         return heap_caps_aligned_calloc(cache_align, 1, size, MALLOC_CAP_SPIRAM);
     } else {

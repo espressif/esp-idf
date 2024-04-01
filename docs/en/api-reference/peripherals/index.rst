@@ -25,6 +25,7 @@ Peripherals API
     lcd/index
     :SOC_GP_LDO_SUPPORTED: ldo_regulator
     ledc
+    :SOC_JPEG_CODEC_SUPPORTED: jpeg
     :SOC_MIPI_CSI_SUPPORTED: camera_driver
     :SOC_MCPWM_SUPPORTED: mcpwm
     :SOC_PARLIO_SUPPORTED: parlio
@@ -39,7 +40,6 @@ Peripherals API
     spi_master
     spi_slave
     :SOC_SPI_SUPPORT_SLAVE_HD_VER2: spi_slave_hd
-    :SOC_JPEG_CODEC_SUPPORTED: jpeg
     :SOC_TEMP_SENSOR_SUPPORTED: temp_sensor
     :SOC_TOUCH_SENSOR_SUPPORTED: touch_pad
     :esp32s2: touch_element

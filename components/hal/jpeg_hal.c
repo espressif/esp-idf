@@ -95,3 +95,14 @@ jpeg_config_quantization_coefficient_t dqt_func[JPEG_COMPONENT_NUMBER_MAX] = {
     jpeg_ll_write_quantization_coefficient_t2,
     jpeg_ll_write_quantization_coefficient_t3,
 };
+
+void jpeg_hal_set_quantization_coefficient(jpeg_hal_context_t *hal, uint32_t *lqnr, uint32_t *cqnr)
+{
+    jpeg_ll_set_access_qnr_ram_mode(hal->dev, 1);
+    jpeg_ll_luminance_qnr_table_id(hal->dev, 0);
+    jpeg_ll_chrominance_qnr_table_id(hal->dev, 1);
+    jpeg_ll_write_quantization_coefficient_t0(hal->dev, lqnr);
+    jpeg_ll_write_quantization_coefficient_t1(hal->dev, cqnr);
+    jpeg_ll_write_quantization_coefficient_t2(hal->dev, lqnr);
+    jpeg_ll_write_quantization_coefficient_t3(hal->dev, cqnr);
+}
