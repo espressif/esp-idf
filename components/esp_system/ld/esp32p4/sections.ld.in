@@ -26,6 +26,9 @@ SECTIONS
     *rtc_wake_stub*.*(.text .text.*)
     *(.rtc_text_end_test)
 
+    /* Align the end of RTC code region as per PMP granularity */
+    . = ALIGN(_esp_pmp_align_size);
+
     ALIGNED_SYMBOL(4, _rtc_text_end)
   } > lp_ram_seg
 
@@ -190,6 +193,9 @@ SECTIONS
   /* Marks the end of IRAM code segment */
   .iram0.text_end (NOLOAD) :
   {
+    /* Align the end of code region as per PMP region granularity */
+    . = ALIGN(_esp_pmp_align_size);
+
     ALIGNED_SYMBOL(4, _iram_text_end)
   } > sram_low
 
