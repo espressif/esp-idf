@@ -56,6 +56,7 @@ esp_err_t adc_channel_to_io(adc_unit_t unit_id, adc_channel_t channel, int * con
 ---------------------------------------------------------------*/
 static __attribute__((constructor)) void adc_hw_calibration(void)
 {
+    adc_apb_periph_claim();
     //Calculate all ICode
     for (int i = 0; i < SOC_ADC_PERIPH_NUM; i++) {
         adc_hal_calibration_init(i);
