@@ -14,7 +14,11 @@ urb_t *urb_alloc(size_t data_buffer_size, int num_isoc_packets)
     urb_t *urb = heap_caps_calloc(1, sizeof(urb_t) + (sizeof(usb_isoc_packet_desc_t) * num_isoc_packets), MALLOC_CAP_DEFAULT);
     void *data_buffer;
     size_t real_size;
-    esp_dma_malloc(data_buffer_size, 0, &data_buffer, &real_size);
+    esp_dma_mem_info_t dma_mem_info = {
+        .dma_alignment_bytes = 4,
+    };
+    //TODO: IDF-9639
+    esp_dma_capable_malloc(data_buffer_size, &dma_mem_info, &data_buffer, &real_size);
     if (urb == NULL || data_buffer == NULL)     {
         goto err;
     }

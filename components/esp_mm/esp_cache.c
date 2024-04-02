@@ -218,10 +218,6 @@ esp_err_t esp_cache_get_alignment(uint32_t flags, size_t *out_alignment)
     }
 
     data_cache_line_size = cache_hal_get_cache_line_size(cache_level, CACHE_TYPE_DATA);
-    if (data_cache_line_size == 0) {
-        //default alignment
-        data_cache_line_size = 4;
-    }
 
     *out_alignment = data_cache_line_size;
 

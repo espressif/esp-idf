@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -246,6 +246,17 @@ esp_err_t sdmmc_host_get_real_freq(int slot, int* real_freq_khz);
  *        - ESP_ERR_NOT_SUPPORTED: ESP32 doesn't support this feature.
  */
 esp_err_t sdmmc_host_set_input_delay(int slot, sdmmc_delay_phase_t delay_phase);
+
+/**
+ * @brief Get the DMA memory information for the host driver
+ *
+ * @param[in]  slot slot number (SDMMC_HOST_SLOT_0 or SDMMC_HOST_SLOT_1)
+ * @param[out] dma_mem_info  DMA memory information structure
+ * @return
+ *        - ESP_OK:                ON success.
+ *        - ESP_ERR_INVALID_ARG:   Invalid argument.
+ */
+esp_err_t sdmmc_host_get_dma_info(int slot, esp_dma_mem_info_t *dma_mem_info);
 
 #ifdef __cplusplus
 }

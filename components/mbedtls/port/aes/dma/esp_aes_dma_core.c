@@ -46,7 +46,7 @@
 #define AES_DMA_INTR_TRIG_LEN 2000
 
 /* With buffers in PSRAM (worst condition) we still achieve a speed of 4 MB/s
-   thus a 2 second timeout value should be suffient for even very large buffers.
+   thus a 2 second timeout value should be sufficient for even very large buffers.
  */
 #define AES_WAIT_INTR_TIMEOUT_MS 2000
 
@@ -98,7 +98,7 @@ void esp_aes_intr_alloc(void)
 
         static StaticSemaphore_t op_sem_buf;
         op_complete_sem = xSemaphoreCreateBinaryStatic(&op_sem_buf);
-        // Static semaphore creation is unlikley to fail but still basic sanity
+        // Static semaphore creation is unlikely to fail but still basic sanity
         assert(op_complete_sem != NULL);
     }
 }
@@ -164,7 +164,7 @@ static int esp_aes_dma_wait_complete(bool use_intr, crypto_dma_desc_t *output_de
 }
 
 
-/* Output buffers in external ram needs to be 16-byte aligned and DMA cant access input in the iCache mem range,
+/* Output buffers in external ram needs to be 16-byte aligned and DMA can't access input in the iCache mem range,
    reallocate them into internal memory and encrypt in chunks to avoid
    having to malloc too big of a buffer
 
@@ -276,7 +276,11 @@ static inline void dma_desc_append(crypto_dma_desc_t **head, crypto_dma_desc_t *
 static inline void *aes_dma_calloc(size_t num, size_t size, uint32_t caps, size_t *actual_size)
 {
     void *ptr = NULL;
-    esp_dma_calloc(num, size, caps, &ptr, actual_size);
+    esp_dma_mem_info_t dma_mem_info = {
+        .extra_heap_caps = caps,
+        .dma_alignment_bytes = DMA_DESC_MEM_ALIGN_SIZE,
+    };
+    esp_dma_capable_calloc(num, size, &dma_mem_info, &ptr, actual_size);
     return ptr;
 }
 

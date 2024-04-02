@@ -266,8 +266,10 @@ urb_t *test_hcd_alloc_urb(int num_isoc_packets, size_t data_buffer_size)
     urb_t *urb = heap_caps_calloc(1, sizeof(urb_t) + (sizeof(usb_isoc_packet_desc_t) * num_isoc_packets), MALLOC_CAP_DEFAULT);
     void *data_buffer;
     size_t real_size;
-    esp_dma_malloc(data_buffer_size, 0, &data_buffer, &real_size);
-
+    esp_dma_mem_info_t dma_mem_info = {
+        .dma_alignment_bytes = 4,
+    };
+    esp_dma_capable_malloc(data_buffer_size, &dma_mem_info, &data_buffer, &real_size);
     TEST_ASSERT_NOT_NULL_MESSAGE(urb, "Failed to allocate URB");
     TEST_ASSERT_NOT_NULL_MESSAGE(data_buffer, "Failed to allocate transfer buffer");
 

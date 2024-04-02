@@ -23,7 +23,7 @@ typedef enum {
 } hal_utils_div_round_opt_t;
 
 /**
- * @brief Clock infomation
+ * @brief Clock information
  *
  */
 typedef struct {
@@ -53,7 +53,7 @@ typedef struct {
  * @note  Speed first algorithm, Time complexity O(log n).
  *        About 8~10 times faster than the accurate algorithm
  *
- * @param[in]  clk_info     The clock infomation
+ * @param[in]  clk_info     The clock information
  * @param[out] clk_div      The clock division with integral and fractal part
  * @return
  *      - 0: Failed to get the result because the division is out of range
@@ -66,7 +66,7 @@ uint32_t hal_utils_calc_clk_div_frac_fast(const hal_utils_clk_info_t *clk_info, 
  * @note  Accuracy first algorithm, Time complexity O(n).
  *        About 1~hundreds times more accurate than the fast algorithm
  *
- * @param[in]  clk_info     The clock infomation
+ * @param[in]  clk_info     The clock information
  * @param[out] clk_div      The clock division with integral and fractal part
  * @return
  *      - 0: Failed to get the result because the division is out of range
@@ -77,12 +77,12 @@ uint32_t hal_utils_calc_clk_div_frac_accurate(const hal_utils_clk_info_t *clk_in
 /**
  * @brief Calculate the clock division without fractal part
  *
- * @param[in]  clk_info     The clock infomation
+ * @param[in]  clk_info     The clock information
  * @param[out] int_div      The clock integral division
  * @return
  *      - 0: Failed to get the result because the division is out of range,
  *           but parameter `int_div` will still be assigned to min/max division that given in `clk_info`,
- *           incase the caller still want to use the min/max division in this case.
+ *           in case the caller still want to use the min/max division in this case.
  *      - others: The real output clock frequency
  */
 uint32_t hal_utils_calc_clk_div_integer(const hal_utils_clk_info_t *clk_info, uint32_t *int_div);
@@ -100,6 +100,52 @@ static inline uint8_t hal_utils_bitwise_reverse8(uint8_t n)
     n = ((n & 0xcc) >> 2) | ((n & 0x33) << 2);
     n = ((n & 0xaa) >> 1) | ((n & 0x55) << 1);
     return n;
+}
+
+/**
+ * @brief Helper function to calculate the GCD between two numbers using the Euclidean algorithm.
+ * Calculate the Greatest Common Divisor (GDC) of two unsigned numbers
+ *
+ * @param num_1 First number
+ * @param num_2 Second number
+ * @return GCD of 'a' and 'b'
+ */
+__attribute__((always_inline))
+static inline uint32_t hal_utils_gcd(uint32_t num_1, uint32_t num_2)
+{
+    uint32_t a, b, rem;
+    // Always mod larger number by smaller number
+    if (num_1 > num_2) {
+        a = num_1;
+        b = num_2;
+    } else {
+        b = num_2;
+        a = num_1;
+    }
+
+    rem = a % b;
+    while (rem != 0) {
+        a = b;
+        b = rem;
+        rem = a % b;
+    }
+    return b;
+}
+
+/**
+ * @brief Get the least common multiple of two integer
+ *
+ * @param[in]  Integer A
+ * @param[in]  Integer B
+ *
+ * @return     LCM of A and B
+ */
+__attribute__((always_inline))
+static inline uint32_t hal_utils_calc_lcm(uint32_t a, uint32_t b)
+{
+    a = a == 0 ? 1 : a;
+    b = b == 0 ? 1 : b;
+    return (a * b / hal_utils_gcd(a, b));
 }
 
 #ifdef __cplusplus

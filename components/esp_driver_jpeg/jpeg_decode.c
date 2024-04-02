@@ -176,7 +176,11 @@ esp_err_t jpeg_decoder_process(jpeg_decoder_handle_t decoder_engine, const jpeg_
     ESP_RETURN_ON_FALSE(decoder_engine, ESP_ERR_INVALID_ARG, TAG, "jpeg decode handle is null");
     ESP_RETURN_ON_FALSE(decode_cfg, ESP_ERR_INVALID_ARG, TAG, "jpeg decode config is null");
     ESP_RETURN_ON_FALSE(decode_outbuf, ESP_ERR_INVALID_ARG, TAG, "jpeg decode picture buffer is null");
-    ESP_RETURN_ON_FALSE(esp_dma_is_buffer_aligned(decode_outbuf, outbuf_size, ESP_DMA_BUF_LOCATION_PSRAM), ESP_ERR_INVALID_ARG, TAG, "jpeg decode decode_outbuf or out_buffer size is not aligned, please use jpeg_alloc_decoder_mem to malloc your buffer");
+    esp_dma_mem_info_t dma_mem_info = {
+        .dma_alignment_bytes = 4,
+    };
+    //TODO: IDF-9637
+    ESP_RETURN_ON_FALSE(esp_dma_is_buffer_alignment_satisfied(decode_outbuf, outbuf_size, dma_mem_info), ESP_ERR_INVALID_ARG, TAG, "jpeg decode decode_outbuf or out_buffer size is not aligned, please use jpeg_alloc_decoder_mem to malloc your buffer");
 
     esp_err_t ret = ESP_OK;
 

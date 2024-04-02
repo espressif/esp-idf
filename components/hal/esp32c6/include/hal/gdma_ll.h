@@ -50,6 +50,8 @@ extern "C" {
 #define GDMA_LL_AHB_NUM_GROUPS        1 // Number of AHB GDMA groups
 #define GDMA_LL_AHB_PAIRS_PER_GROUP   3 // Number of GDMA pairs in each AHB group
 
+#define GDMA_LL_AHB_DESC_ALIGNMENT    4
+
 #define GDMA_LL_TX_ETM_EVENT_TABLE(group, chan, event)                                     \
     (uint32_t[1][3][GDMA_ETM_EVENT_MAX]){{{                                                \
                                               [GDMA_ETM_EVENT_EOF] = GDMA_EVT_OUT_EOF_CH0, \

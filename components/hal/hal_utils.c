@@ -7,25 +7,6 @@
 #include "hal/hal_utils.h"
 #include "hal/assert.h"
 
-/**
- * @brief helper function, calculate the Greatest Common Divisor
- * @note gcd(a, b) = gcd(b, a % b)
- * @param a bigger value
- * @param b smaller value
- * @return result of gcd(a, b)
- */
-__attribute__((always_inline))
-static inline uint32_t _gcd(uint32_t a, uint32_t b)
-{
-    uint32_t c = a % b;
-    while (c != 0) {
-        a = b;
-        b = c;
-        c = a % b;
-    }
-    return b;
-}
-
 __attribute__((always_inline))
 static inline uint32_t _sub_abs(uint32_t a, uint32_t b)
 {
@@ -45,7 +26,7 @@ uint32_t hal_utils_calc_clk_div_frac_fast(const hal_utils_clk_info_t *clk_info, 
         // Carry bit if the decimal is greater than 1.0 - 1.0 / ((max_fract - 1) * 2)
         if (freq_error < clk_info->exp_freq_hz - clk_info->exp_freq_hz / (clk_info->max_fract - 1) * 2) {
             // Calculate the Greatest Common Divisor, time complexity O(log n)
-            uint32_t gcd = _gcd(clk_info->exp_freq_hz, freq_error);
+            uint32_t gcd = hal_utils_gcd(clk_info->exp_freq_hz, freq_error);
             // divide by the Greatest Common Divisor to get the accurate fraction before normalization
             div_denom = clk_info->exp_freq_hz / gcd;
             div_numer = freq_error / gcd;

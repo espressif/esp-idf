@@ -921,3 +921,13 @@ static esp_err_t sdmmc_host_pullup_en_internal(int slot, int width)
     }
     return ESP_OK;
 }
+
+esp_err_t sdmmc_host_get_dma_info(int slot, esp_dma_mem_info_t *dma_mem_info)
+{
+    if (!(slot == 0 || slot == 1)) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    dma_mem_info->extra_heap_caps = MALLOC_CAP_DMA;
+    dma_mem_info->dma_alignment_bytes = 4;
+    return ESP_OK;
+}

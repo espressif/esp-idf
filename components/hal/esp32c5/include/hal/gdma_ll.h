@@ -99,6 +99,8 @@ extern "C" {
 // TODO: Workaround for C5-beta3 only. C5-mp can still vectorized channels into an array in gdma_struct.h
 #define GDMA_LL_CHANNEL_GET_REG_ADDR(dev, ch)      ((volatile gdma_chn_reg_t*[]){&dev->channel0, &dev->channel1, &dev->channel2}[(ch)])
 
+#define GDMA_LL_AHB_DESC_ALIGNMENT    4
+
 ///////////////////////////////////// Common /////////////////////////////////////////
 
 /**

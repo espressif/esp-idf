@@ -385,7 +385,7 @@ uint8_t *emac_esp_dma_alloc_recv_buf(emac_esp_dma_handle_t emac_esp_dma, uint32_
         buf = malloc(copy_len);
         if (buf != NULL) {
             emac_esp_dma_auto_buf_info_t *buff_info = (emac_esp_dma_auto_buf_info_t *)buf;
-            /* no need to check allocated buffer min lenght prior writing since we know that EMAC DMA is configured to
+            /* no need to check allocated buffer min length prior writing since we know that EMAC DMA is configured to
             not forward erroneous or undersized frames (less than 64B) on ESP32, see emac_hal_init_dma_default */
 #ifndef NDEBUG
             buff_info->magic_id = EMAC_HAL_BUF_MAGIC_ID;
@@ -531,15 +531,20 @@ esp_err_t emac_esp_new_dma(const emac_esp_dma_config_t* config, emac_esp_dma_han
     /* alloc memory for ethernet dma descriptor */
     uint32_t desc_size = CONFIG_ETH_DMA_RX_BUFFER_NUM * sizeof(eth_dma_rx_descriptor_t) +
                          CONFIG_ETH_DMA_TX_BUFFER_NUM * sizeof(eth_dma_tx_descriptor_t);
-    esp_dma_calloc(1, desc_size, 0, (void*)&emac_esp_dma->descriptors, NULL);
+    esp_dma_mem_info_t dma_mem_info = {
+        .extra_heap_caps = MALLOC_CAP_INTERNAL,
+        .dma_alignment_bytes = 4,
+    };
+    esp_dma_capable_calloc(1, desc_size, &dma_mem_info, (void*)&emac_esp_dma->descriptors, NULL);
+
     ESP_GOTO_ON_FALSE(emac_esp_dma->descriptors, ESP_ERR_NO_MEM, err, TAG, "no mem for descriptors");
     /* alloc memory for ethernet dma buffer */
     for (int i = 0; i < CONFIG_ETH_DMA_RX_BUFFER_NUM; i++) {
-        esp_dma_calloc(1, CONFIG_ETH_DMA_BUFFER_SIZE, 0, (void*)&emac_esp_dma->rx_buf[i], NULL);
+        esp_dma_capable_calloc(1, CONFIG_ETH_DMA_BUFFER_SIZE, &dma_mem_info, (void*)&emac_esp_dma->rx_buf[i], NULL);
         ESP_GOTO_ON_FALSE(emac_esp_dma->rx_buf[i], ESP_ERR_NO_MEM, err, TAG, "no mem for RX DMA buffers");
     }
     for (int i = 0; i < CONFIG_ETH_DMA_TX_BUFFER_NUM; i++) {
-        esp_dma_calloc(1, CONFIG_ETH_DMA_BUFFER_SIZE, 0, (void*)&emac_esp_dma->tx_buf[i], NULL);
+        esp_dma_capable_calloc(1, CONFIG_ETH_DMA_BUFFER_SIZE, &dma_mem_info, (void*)&emac_esp_dma->tx_buf[i], NULL);
         ESP_GOTO_ON_FALSE(emac_esp_dma->tx_buf[i], ESP_ERR_NO_MEM, err, TAG, "no mem for TX DMA buffers");
     }
     emac_hal_init(&emac_esp_dma->hal);

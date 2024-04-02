@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -53,7 +53,8 @@ typedef int sdspi_dev_handle_t;
     .command_timeout_ms = 0, \
     .get_real_freq = &sdspi_host_get_real_freq, \
     .input_delay_phase = SDMMC_DELAY_PHASE_0, \
-    .set_input_delay = NULL \
+    .set_input_delay = NULL, \
+    .get_dma_info = &sdspi_host_get_dma_info, \
 }
 
 /**
@@ -208,6 +209,17 @@ esp_err_t sdspi_host_io_int_enable(sdspi_dev_handle_t handle);
  *      - ESP_OK on success
  */
 esp_err_t sdspi_host_io_int_wait(sdspi_dev_handle_t handle, TickType_t timeout_ticks);
+
+/**
+ * @brief Get the DMA memory information for the host driver
+ *
+ * @param[in]  slot          Not used
+ * @param[out] dma_mem_info  DMA memory information structure
+ * @return
+ *        - ESP_OK:                ON success.
+ *        - ESP_ERR_INVALID_ARG:   Invalid argument.
+ */
+esp_err_t sdspi_host_get_dma_info(int slot, esp_dma_mem_info_t *dma_mem_info);
 
 #ifdef __cplusplus
 }

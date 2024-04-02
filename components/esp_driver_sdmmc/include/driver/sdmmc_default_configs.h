@@ -46,6 +46,7 @@ extern "C" {
     .set_input_delay = &sdmmc_host_set_input_delay, \
     .dma_aligned_buffer = NULL, \
     .pwr_ctrl_handle = NULL, \
+    .get_dma_info = &sdmmc_host_get_dma_info, \
 }
 
 #define SDMMC_SLOT_NO_CD      GPIO_NUM_NC     ///< indicates that card detect line is not used
