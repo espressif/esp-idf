@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -1633,6 +1633,13 @@
 #else
 #define MYNEWT_VAL_BLE_ENABLE_CONN_REATTEMPT (0)
 #endif
+#endif
+
+#ifndef MYNEWT_VAL_BLE_HCI_VS
+#define MYNEWT_VAL_BLE_HCI_VS    CONFIG_BT_NIMBLE_VS_SUPPORT
+#define MYNEWT_VAL_BLE_HCI_VS_OCF_OFFSET (0)
+#else
+#define MYNEWT_VAL_BLE_HCI_VS    (0)
 #endif
 
 #endif
