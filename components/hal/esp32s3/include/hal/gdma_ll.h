@@ -338,7 +338,7 @@ static inline uint32_t gdma_ll_rx_get_prefetched_desc_addr(gdma_dev_t *dev, uint
  */
 static inline void gdma_ll_rx_set_weight(gdma_dev_t *dev, uint32_t channel, uint32_t weight)
 {
-    dev->channel[channel].in.wight.rx_weight = weight;
+    dev->channel[channel].in.weight.rx_weight = weight;
 }
 
 /**
@@ -597,7 +597,7 @@ static inline uint32_t gdma_ll_tx_get_prefetched_desc_addr(gdma_dev_t *dev, uint
  */
 static inline void gdma_ll_tx_set_weight(gdma_dev_t *dev, uint32_t channel, uint32_t weight)
 {
-    dev->channel[channel].out.wight.tx_weight = weight;
+    dev->channel[channel].out.weight.tx_weight = weight;
 }
 
 /**
