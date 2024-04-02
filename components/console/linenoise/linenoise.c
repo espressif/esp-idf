@@ -107,6 +107,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdio.h>
+#include "sdkconfig.h"
 #if !CONFIG_IDF_TARGET_LINUX
 // On Linux, we don't need __fbufsize (see comments below), and
 // __fbufsize not available on MacOS (which is also considered "Linux" target)
@@ -580,7 +581,7 @@ static void refreshMultiLine(struct linenoiseState *l) {
     int rows = (plen+l->len+l->cols-1)/l->cols; /* rows used by current buf. */
     int rpos = (plen+l->oldpos+l->cols)/l->cols; /* cursor relative row. */
     int rpos2; /* rpos after refresh. */
-    int col; /* colum position, zero-based. */
+    int col; /* column position, zero-based. */
     int old_rows = l->maxrows;
     int j;
     int fd = fileno(stdout);
@@ -635,7 +636,7 @@ static void refreshMultiLine(struct linenoiseState *l) {
     rpos2 = (plen+l->pos+l->cols)/l->cols; /* current cursor relative row. */
     lndebug("rpos2 %d", rpos2);
 
-    /* Go up till we reach the expected positon. */
+    /* Go up till we reach the expected position. */
     if (rows-rpos2 > 0) {
         lndebug("go-up %d", rows-rpos2);
         snprintf(seq,64,"\x1b[%dA", rows-rpos2);
@@ -796,7 +797,7 @@ void linenoiseEditBackspace(struct linenoiseState *l) {
     }
 }
 
-/* Delete the previosu word, maintaining the cursor at the start of the
+/* Delete the previous word, maintaining the cursor at the start of the
  * current word. */
 void linenoiseEditDeletePrevWord(struct linenoiseState *l) {
     size_t old_pos = l->pos;
