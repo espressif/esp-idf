@@ -25,15 +25,6 @@ components/lwip/lwip/src/include/lwip/priv/memp_std.h
 components/lwip/include/lwip/sockets.h
 components/lwip/lwip/src/include/lwip/prot/nd6.h
 
-## Header produced non-zero object:
-components/esp_phy/esp32/include/phy_init_data.h
-components/esp_phy/esp32s2/include/phy_init_data.h
-components/esp_phy/esp32s3/include/phy_init_data.h
-components/esp_phy/esp32c3/include/phy_init_data.h
-components/esp_phy/esp32c2/include/phy_init_data.h
-components/esp_phy/esp32c5/include/phy_init_data.h
-components/esp_phy/esp32c6/include/phy_init_data.h
-
 components/spi_flash/include/spi_flash_chip_issi.h
 components/spi_flash/include/spi_flash_chip_mxic.h
 components/spi_flash/include/spi_flash_chip_gd.h
