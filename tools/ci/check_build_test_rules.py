@@ -261,7 +261,7 @@ def check_test_scripts(
 
         if _app.verified_targets == actual_verified_targets:
             return True
-        elif _app.verified_targets == sorted(actual_verified_targets + bypass_check_test_targets or []):  # type: ignore
+        elif not (set(_app.verified_targets) - set(actual_verified_targets + (bypass_check_test_targets or []))):
             print(f'WARNING: bypass test script check on {_app.app_dir} for targets {bypass_check_test_targets} ')
             return True
 
