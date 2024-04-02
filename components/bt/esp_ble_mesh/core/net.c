@@ -34,7 +34,7 @@
 #include "mesh_v1.1/utils.h"
 
 /* Minimum valid Mesh Network PDU length. The Network headers
- * themselves take up 9 bytes. After that there is a minumum of 1 byte
+ * themselves take up 9 bytes. After that there is a minimum of 1 byte
  * payload for both CTL=1 and CTL=0 PDUs (smallest OpCode is 1 byte). CTL=1
  * PDUs must use a 64-bit (8 byte) NetMIC, whereas CTL=0 PDUs have at least
  * a 32-bit (4 byte) NetMIC and AppMIC giving again a total of 8 bytes.
@@ -1808,7 +1808,7 @@ void bt_mesh_net_recv(struct net_buf_simple *data, int8_t rssi,
                       bt_mesh_elem_find(rx.ctx.recv_dst));
 
     if (IS_ENABLED(CONFIG_BLE_MESH_GATT_PROXY_SERVER) &&
-        bt_mesh_private_gatt_proxy_state_get() == BLE_MESH_PRIVATE_GATT_PROXY_DISABLED &&
+        bt_mesh_private_gatt_proxy_state_get() != BLE_MESH_PRIVATE_GATT_PROXY_ENABLED &&
         net_if == BLE_MESH_NET_IF_PROXY) {
         bt_mesh_proxy_server_addr_add(data, rx.ctx.addr);
 
