@@ -227,6 +227,11 @@ static inline bool _is_internal_client(void *client)
     if (p_host_lib_obj->constant.enum_client && (client == p_host_lib_obj->constant.enum_client)) {
         return true;
     }
+#if ENABLE_USB_HUBS
+    if (p_host_lib_obj->constant.hub_client && (client == p_host_lib_obj->constant.hub_client)) {
+        return true;
+    }
+#endif // ENABLE_USB_HUBS
     return false;
 }
 
@@ -311,9 +316,15 @@ static void usbh_event_callback(usbh_event_data_t *event_data, void *arg)
             .new_dev.address = event_data->new_dev_data.dev_addr,
         };
         send_event_msg_to_clients(&event_msg, true, 0);
+#if ENABLE_USB_HUBS
+        hub_notify_new_dev(event_data->new_dev_data.dev_addr);
+#endif // ENABLE_USB_HUBS
         break;
     }
     case USBH_EVENT_DEV_GONE: {
+#if ENABLE_USB_HUBS
+        hub_notify_dev_gone(event_data->new_dev_data.dev_addr);
+#endif // ENABLE_USB_HUBS
         // Prepare event msg, send only to clients that have opened the device
         usb_host_client_event_msg_t event_msg = {
             .event = USB_HOST_CLIENT_EVENT_DEV_GONE,
@@ -324,9 +335,10 @@ static void usbh_event_callback(usbh_event_data_t *event_data, void *arg)
     }
     case USBH_EVENT_DEV_FREE: {
         // Let the Hub driver know that the device is free and its port can be recycled
-        ESP_ERROR_CHECK(hub_port_recycle(event_data->dev_free_data.parent_dev_hdl,
-                                         event_data->dev_free_data.port_num,
-                                         event_data->dev_free_data.dev_uid));
+        // Port could be absent, no need to verify
+        hub_port_recycle(event_data->dev_free_data.parent_dev_hdl,
+                         event_data->dev_free_data.port_num,
+                         event_data->dev_free_data.dev_uid);
         break;
     }
     case USBH_EVENT_ALL_FREE: {
@@ -378,6 +390,8 @@ static void enum_event_callback(enum_event_data_t *event_data, void *arg)
         hub_port_reset(event_data->reset_req.parent_dev_hdl, event_data->reset_req.parent_port_num);
         break;
     case ENUM_EVENT_COMPLETED:
+        // Notify port that device completed enumeration
+        hub_port_active(event_data->complete.parent_dev_hdl, event_data->complete.parent_port_num);
         // Propagate a new device event
         ESP_ERROR_CHECK(usbh_devs_new_dev_event(event_data->complete.dev_hdl));
         break;
@@ -995,6 +1009,9 @@ esp_err_t usb_host_device_free_all(void)
     HOST_CHECK_FROM_CRIT(p_host_lib_obj->dynamic.flags.num_clients == 0, ESP_ERR_INVALID_STATE);    // All clients must have been deregistered
     HOST_EXIT_CRITICAL();
     esp_err_t ret;
+#if ENABLE_USB_HUBS
+    hub_notify_all_free();
+#endif // ENABLE_USB_HUBS
     ret = usbh_devs_mark_all_free();
     // If ESP_ERR_NOT_FINISHED is returned, caller must wait for USB_HOST_LIB_EVENT_FLAGS_ALL_FREE to confirm all devices are free
     return ret;
