@@ -179,6 +179,10 @@ if(NOT BOOTLOADER_BUILD)
         list(APPEND srcs "ds_hal.c")
     endif()
 
+    if(CONFIG_SOC_USB_SERIAL_JTAG_SUPPORTED)
+        list(APPEND srcs "usb_serial_jtag_hal.c")
+    endif()
+
     if(CONFIG_SOC_USB_OTG_SUPPORTED)
         list(APPEND srcs
                     "usb_dwc_hal.c"
