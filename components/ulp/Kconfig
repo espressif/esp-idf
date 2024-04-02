@@ -32,8 +32,8 @@ menu "Ultra Low Power (ULP) Co-processor"
         depends on ULP_COPROC_ENABLED
         default 512 if IDF_TARGET_ESP32
         default 4096 if !IDF_TARGET_ESP32
-        range 32 8176 if !IDF_TARGET_ESP32C6
-        range 32 16352 if IDF_TARGET_ESP32C6
+        range 32 8176 if IDF_TARGET_ESP32 || IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3
+        range 32 16352 if IDF_TARGET_ESP32C5 || IDF_TARGET_ESP32C6
         range 32 32768 if IDF_TARGET_ESP32P4
         help
             Bytes of memory to reserve for ULP Co-processor firmware & data.
