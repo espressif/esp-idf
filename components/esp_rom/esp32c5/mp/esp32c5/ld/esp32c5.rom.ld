@@ -6,7 +6,7 @@
 /* ROM function interface esp32c5.rom.ld for esp32c5
  *
  *
- * Generated from ./target/esp32c5/interface-esp32c5.yml md5sum 2f8bd1d8c95e398fe4f1ea496130ceb5
+ * Generated from ./target/esp32c5/interface-esp32c5.yml md5sum f5c146321f24f88ad1f27234da5aed11
  *
  * Compatible with ROM where ECO version equal or greater to 0.
  *
@@ -228,7 +228,12 @@ Cache_MSPI_MMU_Set_Secure = 0x400006d8;
 Cache_Count_Flash_Pages = 0x400006dc;
 Cache_Travel_Tag_Memory = 0x400006e0;
 Cache_Get_Virtual_Addr = 0x400006e4;
-Cache_Flash_To_SPIRAM_Copy = 0x400006e8;
+flash2spiram_instruction_offset = 0x400006e8;
+flash2spiram_rodata_offset = 0x400006ec;
+flash_instr_rodata_start_page = 0x400006f0;
+flash_instr_rodata_end_page = 0x400006f4;
+Cache_Set_IDROM_MMU_Info = 0x400006f8;
+Cache_Flash_To_SPIRAM_Copy = 0x400006fc;
 /* Data (.data, .bss, .rodata) */
 rom_cache_op_cb = 0x4085ffcc;
 rom_cache_internal_table_ptr = 0x4085ffc8;
@@ -239,8 +244,8 @@ rom_cache_internal_table_ptr = 0x4085ffc8;
  ***************************************/
 
 /* Functions */
-ets_clk_get_xtal_freq = 0x400006ec;
-ets_clk_get_cpu_freq = 0x400006f0;
+ets_clk_get_xtal_freq = 0x40000700;
+ets_clk_get_cpu_freq = 0x40000704;
 
 
 /***************************************
@@ -248,21 +253,21 @@ ets_clk_get_cpu_freq = 0x400006f0;
  ***************************************/
 
 /* Functions */
-gpio_set_output_level = 0x400006f4;
-gpio_get_input_level = 0x400006f8;
-gpio_matrix_in = 0x400006fc;
-gpio_matrix_out = 0x40000700;
-gpio_bypass_matrix_in = 0x40000704;
-gpio_output_disable = 0x40000708;
-gpio_output_enable = 0x4000070c;
-gpio_pad_input_disable = 0x40000710;
-gpio_pad_input_enable = 0x40000714;
-gpio_pad_pulldown = 0x40000718;
-gpio_pad_pullup = 0x4000071c;
-gpio_pad_select_gpio = 0x40000720;
-gpio_pad_set_drv = 0x40000724;
-gpio_pad_unhold = 0x40000728;
-gpio_pad_hold = 0x4000072c;
+gpio_set_output_level = 0x40000708;
+gpio_get_input_level = 0x4000070c;
+gpio_matrix_in = 0x40000710;
+gpio_matrix_out = 0x40000714;
+gpio_bypass_matrix_in = 0x40000718;
+gpio_output_disable = 0x4000071c;
+gpio_output_enable = 0x40000720;
+gpio_pad_input_disable = 0x40000724;
+gpio_pad_input_enable = 0x40000728;
+gpio_pad_pulldown = 0x4000072c;
+gpio_pad_pullup = 0x40000730;
+gpio_pad_select_gpio = 0x40000734;
+gpio_pad_set_drv = 0x40000738;
+gpio_pad_unhold = 0x4000073c;
+gpio_pad_hold = 0x40000740;
 
 
 /***************************************
@@ -270,72 +275,33 @@ gpio_pad_hold = 0x4000072c;
  ***************************************/
 
 /* Functions */
-esprv_intc_int_set_priority = 0x40000730;
-esprv_intc_int_set_threshold = 0x40000734;
-esprv_intc_int_enable = 0x40000738;
-esprv_intc_int_disable = 0x4000073c;
-esprv_intc_int_set_type = 0x40000740;
-PROVIDE( intr_handler_set = 0x40000744 );
-intr_matrix_set = 0x40000748;
-ets_intr_register_ctx = 0x4000074c;
-ets_intr_lock = 0x40000750;
-ets_intr_unlock = 0x40000754;
-ets_isr_attach = 0x40000758;
-ets_isr_mask = 0x4000075c;
-ets_isr_unmask = 0x40000760;
+esprv_intc_int_set_priority = 0x40000744;
+esprv_intc_int_set_threshold = 0x40000748;
+esprv_intc_int_enable = 0x4000074c;
+esprv_intc_int_disable = 0x40000750;
+esprv_intc_int_set_type = 0x40000754;
+PROVIDE( intr_handler_set = 0x40000758 );
+intr_matrix_set = 0x4000075c;
+ets_intr_register_ctx = 0x40000760;
+ets_intr_lock = 0x40000764;
+ets_intr_unlock = 0x40000768;
+ets_isr_attach = 0x4000076c;
+ets_isr_mask = 0x40000770;
+ets_isr_unmask = 0x40000774;
 
 
 /***************************************
- Group crypto
+ Group crc
  ***************************************/
 
 /* Functions */
-md5_vector = 0x40000764;
-MD5Init = 0x40000768;
-MD5Update = 0x4000076c;
-MD5Final = 0x40000770;
-crc32_le = 0x40000774;
-crc16_le = 0x40000778;
-crc8_le = 0x4000077c;
-crc32_be = 0x40000780;
-crc16_be = 0x40000784;
-crc8_be = 0x40000788;
-esp_crc8 = 0x4000078c;
-ets_sha_enable = 0x40000790;
-ets_sha_disable = 0x40000794;
-ets_sha_get_state = 0x40000798;
-ets_sha_init = 0x4000079c;
-ets_sha_process = 0x400007a0;
-ets_sha_starts = 0x400007a4;
-ets_sha_update = 0x400007a8;
-ets_sha_finish = 0x400007ac;
-ets_sha_clone = 0x400007b0;
-ets_hmac_enable = 0x400007b4;
-ets_hmac_disable = 0x400007b8;
-ets_hmac_calculate_message = 0x400007bc;
-ets_hmac_calculate_downstream = 0x400007c0;
-ets_hmac_invalidate_downstream = 0x400007c4;
-ets_jtag_enable_temporarily = 0x400007c8;
-ets_aes_enable = 0x400007cc;
-ets_aes_disable = 0x400007d0;
-ets_aes_setkey = 0x400007d4;
-ets_aes_block = 0x400007d8;
-ets_aes_setkey_dec = 0x400007dc;
-ets_aes_setkey_enc = 0x400007e0;
-ets_bigint_enable = 0x400007e4;
-ets_bigint_disable = 0x400007e8;
-ets_bigint_multiply = 0x400007ec;
-ets_bigint_modmult = 0x400007f0;
-ets_bigint_modexp = 0x400007f4;
-ets_bigint_wait_finish = 0x400007f8;
-ets_bigint_getz = 0x400007fc;
-ets_ds_enable = 0x40000800;
-ets_ds_disable = 0x40000804;
-ets_ds_start_sign = 0x40000808;
-ets_ds_is_busy = 0x4000080c;
-ets_ds_finish_sign = 0x40000810;
-ets_ds_encrypt_params = 0x40000814;
-ets_mgf1_sha256 = 0x40000818;
+crc32_le = 0x40000778;
+crc16_le = 0x4000077c;
+crc8_le = 0x40000780;
+crc32_be = 0x40000784;
+crc16_be = 0x40000788;
+crc8_be = 0x4000078c;
+esp_crc8 = 0x40000790;
 /* Data (.data, .bss, .rodata) */
 crc32_le_table_ptr = 0x4004fff8;
 crc16_le_table_ptr = 0x4004fff4;
@@ -346,35 +312,87 @@ crc8_be_table_ptr = 0x4004ffe4;
 
 
 /***************************************
+ Group md5
+ ***************************************/
+
+/* Functions */
+md5_vector = 0x40000794;
+MD5Init = 0x40000798;
+MD5Update = 0x4000079c;
+MD5Final = 0x400007a0;
+
+
+/***************************************
+ Group hwcrypto
+ ***************************************/
+
+/* Functions */
+ets_sha_enable = 0x400007a4;
+ets_sha_disable = 0x400007a8;
+ets_sha_get_state = 0x400007ac;
+ets_sha_init = 0x400007b0;
+ets_sha_process = 0x400007b4;
+ets_sha_starts = 0x400007b8;
+ets_sha_update = 0x400007bc;
+ets_sha_finish = 0x400007c0;
+ets_sha_clone = 0x400007c4;
+ets_hmac_enable = 0x400007c8;
+ets_hmac_disable = 0x400007cc;
+ets_hmac_calculate_message = 0x400007d0;
+ets_hmac_calculate_downstream = 0x400007d4;
+ets_hmac_invalidate_downstream = 0x400007d8;
+ets_aes_enable = 0x400007dc;
+ets_aes_disable = 0x400007e0;
+ets_aes_setkey = 0x400007e4;
+ets_aes_block = 0x400007e8;
+ets_aes_setkey_dec = 0x400007ec;
+ets_aes_setkey_enc = 0x400007f0;
+ets_bigint_enable = 0x400007f4;
+ets_bigint_disable = 0x400007f8;
+ets_bigint_multiply = 0x400007fc;
+ets_bigint_modmult = 0x40000800;
+ets_bigint_modexp = 0x40000804;
+ets_bigint_wait_finish = 0x40000808;
+ets_bigint_getz = 0x4000080c;
+ets_ds_enable = 0x40000810;
+ets_ds_disable = 0x40000814;
+ets_ds_start_sign = 0x40000818;
+ets_ds_is_busy = 0x4000081c;
+ets_ds_finish_sign = 0x40000820;
+ets_ds_encrypt_params = 0x40000824;
+
+
+/***************************************
  Group efuse
  ***************************************/
 
 /* Functions */
-ets_efuse_read = 0x4000081c;
-ets_efuse_program = 0x40000820;
-ets_efuse_clear_program_registers = 0x40000824;
-ets_efuse_write_key = 0x40000828;
-ets_efuse_get_read_register_address = 0x4000082c;
-ets_efuse_get_key_purpose = 0x40000830;
-ets_efuse_key_block_unused = 0x40000834;
-ets_efuse_find_unused_key_block = 0x40000838;
-ets_efuse_rs_calculate = 0x4000083c;
-ets_efuse_count_unused_key_blocks = 0x40000840;
-ets_efuse_secure_boot_enabled = 0x40000844;
-ets_efuse_secure_boot_aggressive_revoke_enabled = 0x40000848;
-ets_efuse_cache_encryption_enabled = 0x4000084c;
-ets_efuse_download_modes_disabled = 0x40000850;
-ets_efuse_find_purpose = 0x40000854;
-ets_efuse_force_send_resume = 0x40000858;
-ets_efuse_get_flash_delay_us = 0x4000085c;
-ets_efuse_get_uart_print_control = 0x40000860;
-ets_efuse_direct_boot_mode_disabled = 0x40000864;
-ets_efuse_security_download_modes_enabled = 0x40000868;
-ets_efuse_jtag_disabled = 0x4000086c;
-ets_efuse_usb_print_is_disabled = 0x40000870;
-ets_efuse_usb_download_mode_disabled = 0x40000874;
-ets_efuse_usb_device_disabled = 0x40000878;
-ets_efuse_secure_boot_fast_wake_enabled = 0x4000087c;
+ets_efuse_read = 0x40000828;
+ets_efuse_program = 0x4000082c;
+ets_efuse_clear_program_registers = 0x40000830;
+ets_efuse_write_key = 0x40000834;
+ets_efuse_get_read_register_address = 0x40000838;
+ets_efuse_get_key_purpose = 0x4000083c;
+ets_efuse_key_block_unused = 0x40000840;
+ets_efuse_find_unused_key_block = 0x40000844;
+ets_efuse_rs_calculate = 0x40000848;
+ets_efuse_count_unused_key_blocks = 0x4000084c;
+ets_efuse_secure_boot_enabled = 0x40000850;
+ets_efuse_secure_boot_aggressive_revoke_enabled = 0x40000854;
+ets_efuse_cache_encryption_enabled = 0x40000858;
+ets_efuse_download_modes_disabled = 0x4000085c;
+ets_efuse_find_purpose = 0x40000860;
+ets_efuse_force_send_resume = 0x40000864;
+ets_efuse_get_flash_delay_us = 0x40000868;
+ets_efuse_get_uart_print_control = 0x4000086c;
+ets_efuse_direct_boot_mode_disabled = 0x40000870;
+ets_efuse_security_download_modes_enabled = 0x40000874;
+ets_efuse_jtag_disabled = 0x40000878;
+ets_efuse_usb_print_is_disabled = 0x4000087c;
+ets_efuse_usb_download_mode_disabled = 0x40000880;
+ets_efuse_usb_device_disabled = 0x40000884;
+ets_efuse_secure_boot_fast_wake_enabled = 0x40000888;
+ets_jtag_enable_temporarily = 0x4000088c;
 
 
 /***************************************
@@ -382,9 +400,9 @@ ets_efuse_secure_boot_fast_wake_enabled = 0x4000087c;
  ***************************************/
 
 /* Functions */
-esp_rom_check_recover_key = 0x40000880;
-esp_rom_km_huk_conf = 0x40000884;
-esp_rom_km_huk_risk = 0x40000888;
+esp_rom_check_recover_key = 0x40000890;
+esp_rom_km_huk_conf = 0x40000894;
+esp_rom_km_huk_risk = 0x40000898;
 
 
 /***************************************
@@ -392,13 +410,14 @@ esp_rom_km_huk_risk = 0x40000888;
  ***************************************/
 
 /* Functions */
-ets_emsa_pss_verify = 0x4000088c;
-ets_rsa_pss_verify = 0x40000890;
-ets_ecdsa_verify = 0x40000894;
-ets_secure_boot_verify_bootloader_with_keys = 0x40000898;
-ets_secure_boot_verify_signature = 0x4000089c;
-ets_secure_boot_read_key_digests = 0x400008a0;
-ets_secure_boot_revoke_public_key_digest = 0x400008a4;
+ets_emsa_pss_verify = 0x4000089c;
+ets_rsa_pss_verify = 0x400008a0;
+ets_ecdsa_verify = 0x400008a4;
+ets_secure_boot_verify_bootloader_with_keys = 0x400008a8;
+ets_secure_boot_verify_signature = 0x400008ac;
+ets_secure_boot_read_key_digests = 0x400008b0;
+ets_mgf1_sha256 = 0x400008b4;
+ets_secure_boot_revoke_public_key_digest = 0x400008b8;
 
 
 /***************************************
@@ -406,7 +425,7 @@ ets_secure_boot_revoke_public_key_digest = 0x400008a4;
  ***************************************/
 
 /* Functions */
-usb_serial_device_rx_one_char = 0x40000aa4;
-usb_serial_device_rx_one_char_block = 0x40000aa8;
-usb_serial_device_tx_flush = 0x40000aac;
-usb_serial_device_tx_one_char = 0x40000ab0;
+usb_serial_device_rx_one_char = 0x40000ab8;
+usb_serial_device_rx_one_char_block = 0x40000abc;
+usb_serial_device_tx_flush = 0x40000ac0;
+usb_serial_device_tx_one_char = 0x40000ac4;

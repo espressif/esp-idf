@@ -6,7 +6,7 @@
 /* ROM function interface esp32c5.rom.heap.ld for esp32c5
  *
  *
- * Generated from ./target/esp32c5/interface-esp32c5.yml md5sum 6ed52af1f620a978e86457a92f3d325a
+ * Generated from ./target/esp32c5/interface-esp32c5.yml md5sum f5c146321f24f88ad1f27234da5aed11
  *
  * Compatible with ROM where ECO version equal or greater to 0.
  *
