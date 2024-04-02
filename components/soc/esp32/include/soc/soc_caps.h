@@ -103,6 +103,7 @@
 #define SOC_RNG_SUPPORTED           1
 #define SOC_LIGHT_SLEEP_SUPPORTED   1
 #define SOC_DEEP_SLEEP_SUPPORTED    1
+#define SOC_LP_PERIPH_SHARE_INTERRUPT   1   // LP peripherals sharing the same interrupt source
 
 #if SOC_CAPS_ECO_VER < 200
 #define SOC_DPORT_WORKAROUND                   1

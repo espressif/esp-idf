@@ -9,7 +9,7 @@
 #include "soc/chip_revision.h"
 #include "hal/efuse_hal.h"
 
-#if !CONFIG_IDF_TARGET_ESP32C6 && !CONFIG_IDF_TARGET_ESP32H2 && !CONFIG_IDF_TARGET_ESP32P4 && !CONFIG_IDF_TARGET_ESP32C5 // TODO: IDF-5645
+#if !CONFIG_IDF_TARGET_ESP32C6 && !CONFIG_IDF_TARGET_ESP32H2 && !CONFIG_IDF_TARGET_ESP32P4 && !CONFIG_IDF_TARGET_ESP32C5 &&! CONFIG_IDF_TARGET_ESP32C61 // TODO: IDF-5645
 #include "soc/rtc_cntl_reg.h"
 #else
 #include "soc/lp_wdt_reg.h"
@@ -66,7 +66,8 @@ __attribute__((weak)) void bootloader_clock_configure(void)
         }
 #endif
 
-#if CONFIG_IDF_TARGET_ESP32C6 || CONFIG_IDF_TARGET_ESP32C5
+//TODO: [ESP32C61] IDF-9274, basic rtc support
+#if CONFIG_IDF_TARGET_ESP32C6 || CONFIG_IDF_TARGET_ESP32C5 || CONFIG_IDF_TARGET_ESP32C61
         // TODO: IDF-5781 Some of esp32c6 SOC_RTC_FAST_CLK_SRC_XTAL_D2 rtc_fast clock has timing issue
         // Force to use SOC_RTC_FAST_CLK_SRC_RC_FAST since 2nd stage bootloader
         clk_cfg.fast_clk_src = SOC_RTC_FAST_CLK_SRC_RC_FAST;
@@ -93,8 +94,8 @@ __attribute__((weak)) void bootloader_clock_configure(void)
 #endif // CONFIG_ESP_SYSTEM_RTC_EXT_XTAL
 
 // TODO: IDF-8938 Need refactor! Does not belong to clock configuration.
-#if CONFIG_IDF_TARGET_ESP32C6 || CONFIG_IDF_TARGET_ESP32C5
-#if CONFIG_IDF_TARGET_ESP32C5
+#if CONFIG_IDF_TARGET_ESP32C6 || CONFIG_IDF_TARGET_ESP32C5 || CONFIG_IDF_TARGET_ESP32C61
+#if CONFIG_IDF_TARGET_ESP32C5 || CONFIG_IDF_TARGET_ESP32C61
 #define LP_ANALOG_PERI_LP_ANA_LP_INT_ENA_REG            LP_ANA_LP_INT_ENA_REG
 #define LP_ANALOG_PERI_LP_ANA_BOD_MODE0_LP_INT_ENA      LP_ANA_BOD_MODE0_LP_INT_ENA
 #define LP_ANALOG_PERI_LP_ANA_LP_INT_CLR_REG            LP_ANA_LP_INT_CLR_REG
