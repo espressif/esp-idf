@@ -172,6 +172,7 @@ Light-sleep 外设下电
 
         当外设电源域在睡眠期间断电时，IO_MUX 和 GPIO 模块都处于下电状态，这意味着芯片引脚的状态不会受这些模块控制。要在休眠期间保持 IO 的状态，需要在配置 GPIO 状态前后调用 :cpp:func:`gpio_hold_dis` 和 :cpp:func:`gpio_hold_en`。此操作可确保 IO 配置被锁存，防止 IO 在睡眠期间浮空。
 
+
 API 参考
 -------------
 

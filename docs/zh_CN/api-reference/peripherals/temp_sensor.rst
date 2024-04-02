@@ -46,6 +46,7 @@
     - :ref:`temp-power-management` - 介绍更改功耗模式（如 Light-sleep 模式）对温度传感器造成的影响。
     :SOC_TEMPERATURE_SENSOR_INTR_SUPPORT: - :ref:`temp-iram-safe` - 介绍在禁用 cache 时如何提高温度传感器的性能。
     - :ref:`temp-thread-safety` - 介绍如何使驱动程序具备线程安全性。
+    :SOC_TEMPERATURE_SENSOR_SUPPORT_ETM: - :ref:`temperature-sensor-etm-event-and-task` - 介绍哪些事件和任务可以连接到 ETM 通道。
 
 .. _temp-resource-allocation:
 
@@ -177,6 +178,21 @@
 
 温度传感器中并未添加任何确保线程安全的额外保护，因为温度传感器通常只在一个任务中调用。如果要在不同任务中使用该驱动程序，请设置额外的锁进行保护。
 
+.. only:: SOC_TEMPERATURE_SENSOR_SUPPORT_ETM
+
+    .. _temperature-sensor-etm-event-and-task:
+
+    ETM 事件和任务
+    ^^^^^^^^^^^^^^^^^^
+
+    温度传感器能够生成事件，这些事件可以与 :doc:ETM </api-reference/peripherals/etm> 模块进行交互。:cpp:type:temperature_sensor_etm_event_type_t 中列出了所有支持的事件。可以调用 :cpp:func:temperature_sensor_new_etm_event 来获取相应的 ETM 事件句柄。:cpp:type:temperature_sensor_etm_task_type_t 中列出了所有支持的任务。可以调用 :cpp:func:temperature_sensor_new_etm_task 来获取相应的 ETM 任务句柄。
+
+    .. note::
+
+        - 对于 :cpp:member:`temperature_sensor_etm_event_type_t::event_type` 的 :cpp:enumerator:`TEMPERATURE_SENSOR_EVENT_OVER_LIMIT` 取决于首先设置的阈值类型。如果是通过 :cpp:func:`temperature_sensor_set_absolute_threshold` 设置了绝对阈值，那么 :cpp:enumerator:`TEMPERATURE_SENSOR_EVENT_OVER_LIMIT` 将指代绝对阈值。同样，如果是通过 :cpp:func:`temperature_sensor_set_delta_threshold` 设置了增量阈值，那么 :cpp:enumerator:`TEMPERATURE_SENSOR_EVENT_OVER_LIMIT` 将指代增量阈值。
+
+    有关如何将事件和任务连接到 ETM 通道的详细信息，请参阅 :doc:ETM </api-reference/peripherals/etm> 文档。
+
 意外情况
 --------------------
 
@@ -199,3 +215,8 @@ API 参考
 ----------------------------------
 
 .. include-build-file:: inc/temperature_sensor.inc
+.. include-build-file:: inc/temperature_sensor_types.inc
+
+.. only:: SOC_TEMPERATURE_SENSOR_SUPPORT_ETM
+
+    .. include-build-file:: inc/temperature_sensor_etm.inc
