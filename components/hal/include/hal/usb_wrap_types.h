@@ -13,7 +13,7 @@
 extern "C" {
 #endif
 
-#if SOC_USB_OTG_SUPPORTED
+#if (SOC_USB_OTG_PERIPH_NUM > 0)
 
 /**
  * @brief USB WRAP pull up/down resistor override values
@@ -46,7 +46,7 @@ typedef struct {
     bool rx_rcv;        /**< Differential receive data from D+ and D- lines */
 } usb_wrap_test_mode_vals_t;
 
-#endif // SOC_USB_OTG_SUPPORTED
+#endif // (SOC_USB_OTG_PERIPH_NUM > 0)
 
 #ifdef __cplusplus
 }
