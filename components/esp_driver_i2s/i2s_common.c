@@ -283,6 +283,7 @@ static esp_err_t i2s_register_channel(i2s_controller_t *i2s_obj, i2s_dir_t dir, 
     new_chan->dma.curr_desc = NULL;
     new_chan->start = NULL;
     new_chan->stop = NULL;
+    new_chan->reserve_gpio_mask = 0;
 
     if (dir == I2S_DIR_TX) {
         if (i2s_obj->tx_chan) {
@@ -749,7 +750,42 @@ esp_err_t i2s_init_dma_intr(i2s_chan_handle_t handle, int intr_flag)
     return ESP_OK;
 }
 
-void i2s_gpio_check_and_set(int gpio, uint32_t signal_idx, bool is_input, bool is_invert)
+static uint64_t s_i2s_get_pair_chan_gpio_mask(i2s_chan_handle_t handle)
+{
+    if (handle->dir == I2S_DIR_TX) {
+        return handle->controller->rx_chan ? handle->controller->rx_chan->reserve_gpio_mask : 0;
+    }
+    return handle->controller->tx_chan ? handle->controller->tx_chan->reserve_gpio_mask : 0;
+}
+
+void i2s_output_gpio_reserve(i2s_chan_handle_t handle, int gpio_num)
+{
+    bool used_by_pair_chan = false;
+    /* If the gpio is used by the pair channel do not show warning for this case */
+    if (handle->controller->full_duplex) {
+        used_by_pair_chan = !!(s_i2s_get_pair_chan_gpio_mask(handle) & BIT64(gpio_num));
+    }
+    /* reserve the GPIO output path, because we don't expect another peripheral to signal to the same GPIO */
+    if (!used_by_pair_chan && (esp_gpio_reserve(BIT64(gpio_num)) & BIT64(gpio_num))) {
+        ESP_LOGW(TAG, "GPIO %d is not usable, maybe conflict with others", gpio_num);
+    }
+    handle->reserve_gpio_mask |= BIT64(gpio_num);
+}
+
+void i2s_output_gpio_revoke(i2s_chan_handle_t handle, uint64_t gpio_mask)
+{
+    uint64_t revoke_mask = gpio_mask;
+    /* If the gpio is used by the pair channel do not show warning for this case */
+    if (handle->controller->full_duplex) {
+        uint64_t pair_chan_gpio_mask = s_i2s_get_pair_chan_gpio_mask(handle);
+        /* Only revoke the gpio which is not used by the pair channel */
+        revoke_mask = (pair_chan_gpio_mask ^ gpio_mask) & gpio_mask;
+    }
+    esp_gpio_revoke(revoke_mask);
+    handle->reserve_gpio_mask &= ~gpio_mask;
+}
+
+void i2s_gpio_check_and_set(i2s_chan_handle_t handle, int gpio, uint32_t signal_idx, bool is_input, bool is_invert)
 {
     /* Ignore the pin if pin = I2S_GPIO_UNUSED */
     if (gpio != (int)I2S_GPIO_UNUSED) {
@@ -759,15 +795,17 @@ void i2s_gpio_check_and_set(int gpio, uint32_t signal_idx, bool is_input, bool i
             gpio_set_direction(gpio, GPIO_MODE_INPUT);
             esp_rom_gpio_connect_in_signal(gpio, signal_idx, is_invert);
         } else {
+            i2s_output_gpio_reserve(handle, gpio);
             gpio_set_direction(gpio, GPIO_MODE_OUTPUT);
             esp_rom_gpio_connect_out_signal(gpio, signal_idx, is_invert, 0);
         }
     }
 }
 
-void i2s_gpio_loopback_set(int gpio, uint32_t out_sig_idx, uint32_t in_sig_idx)
+void i2s_gpio_loopback_set(i2s_chan_handle_t handle, int gpio, uint32_t out_sig_idx, uint32_t in_sig_idx)
 {
     if (gpio != (int)I2S_GPIO_UNUSED) {
+        i2s_output_gpio_reserve(handle,  gpio);
         gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[gpio], PIN_FUNC_GPIO);
         gpio_set_direction(gpio, GPIO_MODE_INPUT_OUTPUT);
         esp_rom_gpio_connect_out_signal(gpio, out_sig_idx, 0, 0);
@@ -775,7 +813,7 @@ void i2s_gpio_loopback_set(int gpio, uint32_t out_sig_idx, uint32_t in_sig_idx)
     }
 }
 
-esp_err_t i2s_check_set_mclk(i2s_port_t id, int gpio_num, i2s_clock_src_t clk_src, bool is_invert)
+esp_err_t i2s_check_set_mclk(i2s_chan_handle_t handle, i2s_port_t id, int gpio_num, i2s_clock_src_t clk_src, bool is_invert)
 {
     if (gpio_num == (int)I2S_GPIO_UNUSED) {
         return ESP_OK;
@@ -784,6 +822,7 @@ esp_err_t i2s_check_set_mclk(i2s_port_t id, int gpio_num, i2s_clock_src_t clk_sr
     bool is_i2s0 = id == I2S_NUM_0;
     bool is_apll = clk_src == I2S_CLK_SRC_APLL;
     if (g_i2s.controller[id]->mclk_out_hdl == NULL) {
+        i2s_output_gpio_reserve(handle, gpio_num);
         soc_clkout_sig_id_t clkout_sig = is_apll ? CLKOUT_SIG_APLL : (is_i2s0 ? CLKOUT_SIG_I2S0 : CLKOUT_SIG_I2S1);
         ESP_RETURN_ON_ERROR(esp_clock_output_start(clkout_sig, gpio_num, &(g_i2s.controller[id]->mclk_out_hdl)), TAG, "mclk configure failed");
     }
@@ -791,11 +830,11 @@ esp_err_t i2s_check_set_mclk(i2s_port_t id, int gpio_num, i2s_clock_src_t clk_sr
     ESP_RETURN_ON_FALSE(GPIO_IS_VALID_GPIO(gpio_num), ESP_ERR_INVALID_ARG, TAG, "mck_io_num invalid");
 #if SOC_I2S_HW_VERSION_2
     if (clk_src == I2S_CLK_SRC_EXTERNAL) {
-        i2s_gpio_check_and_set(gpio_num, i2s_periph_signal[id].mck_in_sig, true, is_invert);
+        i2s_gpio_check_and_set(handle, gpio_num, i2s_periph_signal[id].mck_in_sig, true, is_invert);
     } else
 #endif  // SOC_I2S_HW_VERSION_2
     {
-        i2s_gpio_check_and_set(gpio_num, i2s_periph_signal[id].mck_out_sig, false, is_invert);
+        i2s_gpio_check_and_set(handle, gpio_num, i2s_periph_signal[id].mck_out_sig, false, is_invert);
     }
 #endif  // CONFIG_IDF_TARGET_ESP32
     ESP_LOGD(TAG, "MCLK is pinned to GPIO%d on I2S%d", gpio_num, id);
@@ -930,6 +969,9 @@ esp_err_t i2s_del_channel(i2s_chan_handle_t handle)
         esp_pm_lock_delete(handle->pm_lock);
     }
 #endif
+    if (handle->reserve_gpio_mask) {
+        i2s_output_gpio_revoke(handle, handle->reserve_gpio_mask);
+    }
     if (handle->mode_info) {
         free(handle->mode_info);
     }

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,6 +20,7 @@
 #include "esp_private/gdma.h"
 #endif
 #include "esp_private/periph_ctrl.h"
+#include "esp_private/esp_gpio_reserve.h"
 #include "esp_pm.h"
 #include "esp_err.h"
 #include "sdkconfig.h"
@@ -146,6 +147,7 @@ struct i2s_channel_obj_t {
     esp_pm_lock_handle_t    pm_lock;        /*!< Power management lock, to avoid apb clock frequency changes while i2s is working */
 #endif
     QueueHandle_t           msg_queue;      /*!< Message queue handler, used for transporting data between interrupt and read/write task */
+    uint64_t                reserve_gpio_mask; /*!< The gpio mask that has been reserved by I2S */
     i2s_event_callbacks_internal_t   callbacks;      /*!< Callback functions */
     void                    *user_data;     /*!< User data for callback functions */
     void (*start)(i2s_chan_handle_t);       /*!< start tx/rx channel */
@@ -224,16 +226,18 @@ uint32_t i2s_get_source_clk_freq(i2s_clock_src_t clk_src, uint32_t mclk_freq_hz)
 /**
  * @brief Check gpio validity and attach to corresponding signal
  *
+ * @param handle        I2S channel handle
  * @param gpio          GPIO number
  * @param signal_idx    Signal index
  * @param is_input      Is input gpio
  * @param is_invert     Is invert gpio
  */
-void i2s_gpio_check_and_set(int gpio, uint32_t signal_idx, bool is_input, bool is_invert);
+void i2s_gpio_check_and_set(i2s_chan_handle_t handle, int gpio, uint32_t signal_idx, bool is_input, bool is_invert);
 
 /**
  * @brief Check gpio validity and output mclk signal
  *
+ * @param handle        I2S channel handle
  * @param id            I2S port id
  * @param gpio_num      GPIO number
  * @param clk_src       The clock source of this I2S port
@@ -242,16 +246,33 @@ void i2s_gpio_check_and_set(int gpio, uint32_t signal_idx, bool is_input, bool i
  *      - ESP_OK                Set mclk output gpio success
  *      - ESP_ERR_INVALID_ARG   Invalid GPIO number
  */
-esp_err_t i2s_check_set_mclk(i2s_port_t id, int gpio_num, i2s_clock_src_t clk_src, bool is_invert);
+esp_err_t i2s_check_set_mclk(i2s_chan_handle_t handle, i2s_port_t id, int gpio_num, i2s_clock_src_t clk_src, bool is_invert);
 
 /**
  * @brief Attach data out signal and data in signal to a same gpio
  *
+ * @param handle        I2S channel handle
  * @param gpio          GPIO number
  * @param out_sig_idx   Data out signal index
  * @param in_sig_idx    Data in signal index
  */
-void i2s_gpio_loopback_set(int gpio, uint32_t out_sig_idx, uint32_t in_sig_idx);
+void i2s_gpio_loopback_set(i2s_chan_handle_t handle, int gpio, uint32_t out_sig_idx, uint32_t in_sig_idx);
+
+/**
+ * @brief Reserve the GPIO that configured as I2S output signal
+ *
+ * @param handle    I2S channel handle
+ * @param gpio_num  The output gpio number to be reserved
+ */
+void i2s_output_gpio_reserve(i2s_chan_handle_t handle, int gpio_num);
+
+/**
+ * @brief Revoke the GPIO that configured as I2S output signal
+ *
+ * @param handle    I2S channel handle
+ * @param gpio_mask The output gpio mask to be revoked
+ */
+void i2s_output_gpio_revoke(i2s_chan_handle_t handle, uint64_t gpio_mask);
 
 #ifdef __cplusplus
 }
