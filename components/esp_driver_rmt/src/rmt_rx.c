@@ -265,6 +265,13 @@ esp_err_t rmt_new_rx_channel(const rmt_rx_channel_config_t *config, rmt_channel_
         ESP_LOGW(TAG, "channel resolution loss, real=%"PRIu32, rx_channel->base.resolution_hz);
     }
 
+    rx_channel->filter_clock_resolution_hz = group->resolution_hz;
+    // On esp32 and esp32s2, the counting clock used by the RX filter always comes from APB clock
+    // no matter what the clock source is used by the RMT channel as the "core" clock
+#if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2
+    esp_clk_tree_src_get_freq_hz(SOC_MOD_CLK_APB, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &rx_channel->filter_clock_resolution_hz);
+#endif
+
     rmt_ll_rx_set_mem_blocks(hal->regs, channel_id, rx_channel->base.mem_block_num);
     rmt_ll_rx_set_mem_owner(hal->regs, channel_id, RMT_LL_MEM_OWNER_HW);
 #if SOC_RMT_SUPPORT_RX_PINGPONG
@@ -383,7 +390,7 @@ esp_err_t rmt_receive(rmt_channel_handle_t channel, void *buffer, size_t buffer_
     rmt_hal_context_t *hal = &group->hal;
     int channel_id = channel->channel_id;
 
-    uint32_t filter_reg_value = ((uint64_t)group->resolution_hz * config->signal_range_min_ns) / 1000000000UL;
+    uint32_t filter_reg_value = ((uint64_t)rx_chan->filter_clock_resolution_hz * config->signal_range_min_ns) / 1000000000UL;
     uint32_t idle_reg_value = ((uint64_t)channel->resolution_hz * config->signal_range_max_ns) / 1000000000UL;
     ESP_RETURN_ON_FALSE_ISR(filter_reg_value <= RMT_LL_MAX_FILTER_VALUE, ESP_ERR_INVALID_ARG, TAG, "signal_range_min_ns too big");
     ESP_RETURN_ON_FALSE_ISR(idle_reg_value <= RMT_LL_MAX_IDLE_VALUE, ESP_ERR_INVALID_ARG, TAG, "signal_range_max_ns too big");
