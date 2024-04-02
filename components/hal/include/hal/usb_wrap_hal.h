@@ -12,6 +12,7 @@
 #include "soc/soc_caps.h"
 #if SOC_USB_OTG_SUPPORTED
 #include "soc/usb_wrap_struct.h"
+#include "hal/usb_wrap_ll.h"
 #endif
 #if SOC_USB_SERIAL_JTAG_SUPPORTED
 #include "soc/usb_serial_jtag_struct.h"
@@ -41,6 +42,7 @@ typedef struct {
  */
 void usb_fsls_phy_hal_init(usb_fsls_phy_hal_context_t *hal);
 
+#if USB_WRAP_LL_EXT_PHY_SUPPORTED
 /**
  * @brief Configure internal/external PHY for USB_OTG
  *
@@ -48,6 +50,7 @@ void usb_fsls_phy_hal_init(usb_fsls_phy_hal_context_t *hal);
  * @param phy_target USB PHY target
  */
 void usb_fsls_phy_hal_otg_conf(usb_fsls_phy_hal_context_t *hal, usb_phy_target_t phy_target);
+#endif // USB_WRAP_LL_EXT_PHY_SUPPORTED
 
 #if SOC_USB_SERIAL_JTAG_SUPPORTED
 /**
@@ -75,7 +78,7 @@ void usb_fsls_phy_hal_int_load_conf_host(usb_fsls_phy_hal_context_t *hal);
 void usb_fsls_phy_hal_int_load_conf_dev(usb_fsls_phy_hal_context_t *hal, usb_phy_speed_t speed);
 
 /**
- * @brief Enable/Disable test mode for internal PHY to mimick host-device disconnection
+ * @brief Enable/Disable test mode for internal PHY to mimic host-device disconnection
  *
  * @param hal Context of the HAL layer
  * @param disconn Whether to disconnect

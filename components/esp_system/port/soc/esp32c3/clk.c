@@ -246,9 +246,12 @@ __attribute__((weak)) void esp_perip_clk_init(void)
                            SYSTEM_WIFI_CLK_UNUSED_BIT12;
 
 #if !CONFIG_USJ_ENABLE_USB_SERIAL_JTAG && !CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG_ENABLED
+        /* This function only called on startup thus is thread safe. To avoid build errors/warnings
+         * declare __DECLARE_RCC_ATOMIC_ENV here. */
+        int __DECLARE_RCC_ATOMIC_ENV __attribute__((unused));
         // Disable USB-Serial-JTAG clock and it's pad if not used
         usb_serial_jtag_ll_phy_enable_pad(false);
-        _usb_serial_jtag_ll_enable_bus_clock(false);
+        usb_serial_jtag_ll_enable_bus_clock(false);
 #endif
     }
 

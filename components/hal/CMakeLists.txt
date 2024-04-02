@@ -4,7 +4,7 @@ set(srcs "hal_utils.c")
 set(includes "platform_port/include")
 
 # target specific include must be added before the generic one
-# becuase of the "include_next" directive used by the efuse_hal.h
+# because of the "include_next" directive used by the efuse_hal.h
 if(NOT ${target} STREQUAL "linux")
     list(APPEND includes "${target}/include")
 endif()
@@ -257,10 +257,9 @@ if(NOT BOOTLOADER_BUILD)
     endif()
 
     if(CONFIG_SOC_USB_OTG_SUPPORTED)
-        list(APPEND srcs "usb_dwc_hal.c")
-        if(NOT ${target} STREQUAL "esp32p4")
-            list(APPEND srcs "usb_wrap_hal.c")
-        endif()
+        list(APPEND srcs
+                    "usb_dwc_hal.c"
+                    "usb_wrap_hal.c")
     endif()
 
     if(${target} STREQUAL "esp32")
