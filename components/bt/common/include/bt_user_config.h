@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -48,6 +48,15 @@
 #define UC_BTC_TASK_STACK_SIZE              CONFIG_BT_BTC_TASK_STACK_SIZE
 #else
 #define UC_BTC_TASK_STACK_SIZE              4096
+#endif
+
+/**********************************************************
+ * Alarm reference
+ **********************************************************/
+#ifdef CONFIG_BT_ALARM_MAX_NUM
+#define UC_ALARM_MAX_NUM                    CONFIG_BT_ALARM_MAX_NUM
+#else
+#define UC_ALARM_MAX_NUM                    50
 #endif
 
 /**********************************************************
