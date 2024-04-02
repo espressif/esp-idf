@@ -29,6 +29,10 @@ if(CONFIG_SOC_USB_OTG_SUPPORTED)
     list(APPEND priv_includes "private_include")
 endif()
 
+if(CONFIG_USB_HOST_HUBS_SUPPORTED)
+    list(APPEND srcs "ext_hub.c")
+endif()
+
 idf_component_register(SRCS ${srcs}
                        INCLUDE_DIRS ${include}
                        PRIV_INCLUDE_DIRS ${priv_includes}
