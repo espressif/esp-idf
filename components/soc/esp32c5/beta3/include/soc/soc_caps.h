@@ -495,7 +495,7 @@
 #define SOC_UART_SUPPORT_FSM_TX_WAIT_SEND   (1)
 
 /*-------------------------- COEXISTENCE HARDWARE PTI CAPS -------------------------------*/
-// #define SOC_COEX_HW_PTI                 (1)
+#define SOC_COEX_HW_PTI                 (1)
 
 /*-------------------------- EXTERNAL COEXISTENCE CAPS -------------------------------------*/
 // #define SOC_EXTERNAL_COEX_ADVANCE              (1) /*!< HARDWARE ADVANCED EXTERNAL COEXISTENCE CAPS */

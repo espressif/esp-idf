@@ -22,7 +22,7 @@ case $IDF_TARGET in
     esp32s3)
         PREFIX=xtensa-esp32s3-elf-
         ;;
-    esp32c2|esp32c3|esp32c6|esp32h2)
+    esp32c2|esp32c3|esp32c6|esp32h2|esp32c5)
         PREFIX=riscv32-esp-elf-
         ;;
     *)
@@ -61,7 +61,7 @@ echo "Checking libraries for target ${IDF_TARGET}..."
 check_md5 ${IDF_PATH}/components/esp_coex/include/private/esp_coexist_adapter.h g_coex_adapter_funcs_md5
 
 case $IDF_TARGET in
-    esp32c6|esp32h2)
+    esp32c6|esp32h2|esp32c5)
     check_md5 ${IDF_PATH}/components/esp_coex/include/esp_coex_i154.h g_coex_i154_funcs_md5
     ;;
 esac
