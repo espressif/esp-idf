@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -360,6 +360,15 @@ esp_err_t hcd_port_set_fifo_bias(hcd_port_handle_t port_hdl, hcd_port_fifo_bias_
  * @retval ESP_ERR_NOT_SUPPORTED: The pipe's configuration cannot be supported
  */
 esp_err_t hcd_pipe_alloc(hcd_port_handle_t port_hdl, const hcd_pipe_config_t *pipe_config, hcd_pipe_handle_t *pipe_hdl);
+
+/**
+ * @brief Get maximum packet size (mps) of HCD pipe
+ *
+ * @param[in] port_hdl Pipe handle
+ *
+ * @retval HCD pipe mps
+ */
+int hcd_pipe_get_mps(hcd_pipe_handle_t pipe_hdl);
 
 /**
  * @brief Free a pipe
