@@ -111,7 +111,8 @@
 
 /* ----------------------- System -------------------------- */
 
-#define configMAX_TASK_NAME_LEN    CONFIG_FREERTOS_MAX_TASK_NAME_LEN
+#define configUSE_APPLICATION_TASK_TAG           CONFIG_FREERTOS_USE_APPLICATION_TASK_TAG
+#define configMAX_TASK_NAME_LEN                  CONFIG_FREERTOS_MAX_TASK_NAME_LEN
 
 /* If deletion callbacks are enabled, the number of TLSP's are doubled (i.e.,
  * the length of the TCB's pvThreadLocalStoragePointersThis array). This allows

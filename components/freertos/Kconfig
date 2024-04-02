@@ -143,6 +143,12 @@ menu "FreeRTOS"
                 - The FreeRTOS tick hook is NOT the same as the ESP-IDF Tick Interrupt Hook, but both can be enabled
                   simultaneously.
 
+        config FREERTOS_USE_APPLICATION_TASK_TAG
+            bool "configUSE_APPLICATION_TASK_TAG"
+            default n
+            help
+                Enables the application task tag (see configUSE_APPLICATION_TASK_TAG documentation for more details).
+
         config FREERTOS_MAX_TASK_NAME_LEN
             int "configMAX_TASK_NAME_LEN"
             range 1 256
