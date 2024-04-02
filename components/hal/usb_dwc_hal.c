@@ -11,20 +11,13 @@
 #include "sdkconfig.h"
 #include "soc/chip_revision.h"
 #include "soc/usb_dwc_cfg.h"
+#include "soc/usb_dwc_periph.h"
 #include "hal/usb_dwc_hal.h"
 #include "hal/usb_dwc_ll.h"
 #include "hal/efuse_hal.h"
 #include "hal/assert.h"
 
 // ------------------------------------------------ Macros and Types ---------------------------------------------------
-
-// TODO: Remove target specific section after support for multiple USB peripherals is implemented
-#include "sdkconfig.h"
-#if (CONFIG_IDF_TARGET_ESP32P4)
-#define USB_BASE USB_DWC_HS
-#else
-#define USB_BASE USB_DWC
-#endif
 
 // ---------------------- Constants ------------------------
 
@@ -118,10 +111,14 @@ static void set_defaults(usb_dwc_hal_context_t *hal)
     //GUSBCFG register
     usb_dwc_ll_gusbcfg_dis_hnp_cap(hal->dev);       //Disable HNP
     usb_dwc_ll_gusbcfg_dis_srp_cap(hal->dev);       //Disable SRP
-#if (OTG_HSPHY_INTERFACE != 0)
-    usb_dwc_ll_gusbcfg_set_timeout_cal(hal->dev, 5); // 5 PHY clocks for our HS PHY
-    usb_dwc_ll_gusbcfg_set_utmi_phy(hal->dev);
-#endif // (OTG_HSPHY_INTERFACE != 0)
+
+    // Check if this USB-DWC supports HS PHY, if yes, use it
+    uint32_t ghwcfg[4];
+    usb_dwc_ll_ghwcfg_get_hw_config(hal->dev, &ghwcfg[0], &ghwcfg[1], &ghwcfg[2], &ghwcfg[3]);
+    if (((usb_dwc_ghwcfg2_reg_t)ghwcfg[1]).hsphytype != 0) {
+        usb_dwc_ll_gusbcfg_set_timeout_cal(hal->dev, 5); // 5 PHY clocks for our HS PHY
+        usb_dwc_ll_gusbcfg_set_utmi_phy(hal->dev);
+    }
     //Enable interruts
     usb_dwc_ll_gintmsk_dis_intrs(hal->dev, 0xFFFFFFFF);     //Mask all interrupts first
     usb_dwc_ll_gintmsk_en_intrs(hal->dev, CORE_INTRS_EN_MSK);   //Unmask global interrupts
@@ -134,7 +131,7 @@ static void set_defaults(usb_dwc_hal_context_t *hal)
 void usb_dwc_hal_init(usb_dwc_hal_context_t *hal)
 {
     //Check if a peripheral is alive by reading the core ID registers
-    usb_dwc_dev_t *dev = &USB_BASE;
+    usb_dwc_dev_t *dev = USB_DWC_LL_GET_HW(0);
     uint32_t core_id = usb_dwc_ll_gsnpsid_get_id(dev);
     HAL_ASSERT(core_id == CORE_REG_GSNPSID);
     (void) core_id;     //Suppress unused variable warning if asserts are disabled
@@ -270,7 +267,7 @@ void usb_dwc_hal_port_enable(usb_dwc_hal_context_t *hal)
 
 bool usb_dwc_hal_chan_alloc(usb_dwc_hal_context_t *hal, usb_dwc_hal_chan_t *chan_obj, void *chan_ctx)
 {
-    HAL_ASSERT(hal->flags.fifo_sizes_set);  //FIFO sizes should be set befor attempting to allocate a channel
+    HAL_ASSERT(hal->flags.fifo_sizes_set);  //FIFO sizes should be set before attempting to allocate a channel
     //Attempt to allocate channel
     if (hal->channels.num_allocd == OTG_NUM_HOST_CHAN) {
         return false;    //Out of free channels
