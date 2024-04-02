@@ -297,7 +297,7 @@ To test flash encryption process, take the following steps:
     - :ref:`Select encryption mode <CONFIG_SECURE_FLASH_ENCRYPTION_MODE>` (**Development mode** by default).
     :esp32: - :ref:`Select UART ROM download mode <CONFIG_SECURE_UART_ROM_DL_MODE>` (**enabled** by default). Note that for the ESP32 target, the choice is only available when :ref:`CONFIG_ESP32_REV_MIN` level is set to 3 (ESP32 V3).
     :not esp32: - :ref:`Select UART ROM download mode <CONFIG_SECURE_UART_ROM_DL_MODE>` (**enabled** by default).
-    :esp32s2 or esp32s3 or esp32c2: - Set :ref:`Size of generated XTS-AES key <CONFIG_SECURE_FLASH_ENCRYPTION_KEYSIZE>`.
+    :SOC_FLASH_ENCRYPTION_XTS_AES_OPTIONS: - Set :ref:`Size of generated XTS-AES key <CONFIG_SECURE_FLASH_ENCRYPTION_KEYSIZE>`.
     - :ref:`Select the appropriate bootloader log verbosity <CONFIG_BOOTLOADER_LOG_LEVEL>`.
     - Save the configuration and exit.
 
