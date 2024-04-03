@@ -1,10 +1,11 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <string.h>
 #include "sdkconfig.h"
+#include "soc/soc_caps.h"
 #include "esp_rom_efuse.h"
 #include "esp_mac.h"
 #include "esp_efuse.h"
@@ -18,7 +19,7 @@
 #define MAC_ADDR_UNIVERSE_BT_OFFSET 1
 #endif
 
-#if CONFIG_SOC_IEEE802154_SUPPORTED
+#if SOC_IEEE802154_SUPPORTED
 #define ESP_MAC_ADDRESS_LEN 8
 #else
 #define ESP_MAC_ADDRESS_LEN 6
@@ -39,7 +40,7 @@ typedef struct {
 } mac_t;
 
 static mac_t s_mac_table[] = {
-#if CONFIG_SOC_WIFI_SUPPORTED
+#if SOC_WIFI_SUPPORTED
     {ESP_MAC_WIFI_STA,      STATE_INIT, 6, {0}},
     {ESP_MAC_WIFI_SOFTAP,   STATE_INIT, 6, {0}},
 #endif
@@ -50,7 +51,7 @@ static mac_t s_mac_table[] = {
 
     {ESP_MAC_ETH,           STATE_INIT, 6, {0}},
 
-#ifdef CONFIG_SOC_IEEE802154_SUPPORTED
+#ifdef SOC_IEEE802154_SUPPORTED
     {ESP_MAC_IEEE802154,    STATE_INIT, ESP_MAC_ADDRESS_LEN, {0}},
     {ESP_MAC_EFUSE_EXT,     STATE_INIT, 2, {0}},
 #endif
@@ -65,7 +66,7 @@ static mac_t s_mac_table[] = {
 static esp_err_t generate_mac(uint8_t *mac, uint8_t *base_mac_addr, esp_mac_type_t type);
 static esp_err_t get_efuse_factory_mac(uint8_t *mac);
 static esp_err_t get_efuse_mac_custom(uint8_t *mac);
-#if CONFIG_SOC_IEEE802154_SUPPORTED
+#if SOC_IEEE802154_SUPPORTED
 static esp_err_t get_efuse_mac_ext(uint8_t *mac);
 #endif
 
@@ -102,7 +103,7 @@ static esp_err_t get_mac_addr_from_mac_table(uint8_t *mac, int idx, bool silent)
              ) {
                  err = get_efuse_mac_custom(s_mac_table[idx].mac);
              }
-#if CONFIG_SOC_IEEE802154_SUPPORTED
+#if SOC_IEEE802154_SUPPORTED
             else if (type == ESP_MAC_EFUSE_EXT) {
                 err = get_efuse_mac_ext(s_mac_table[idx].mac);
             }
@@ -170,7 +171,7 @@ esp_err_t esp_base_mac_addr_get(uint8_t *mac)
     return esp_read_mac(mac, ESP_MAC_BASE);
 }
 
-#if CONFIG_SOC_IEEE802154_SUPPORTED
+#if SOC_IEEE802154_SUPPORTED
 static esp_err_t get_efuse_mac_ext(uint8_t *mac)
 {
     // ff:fe
@@ -201,7 +202,7 @@ esp_err_t esp_efuse_mac_get_custom(uint8_t *mac)
     if (err != ESP_OK) {
         return err;
     }
-#if CONFIG_SOC_IEEE802154_SUPPORTED
+#if SOC_IEEE802154_SUPPORTED
     return insert_mac_ext_into_mac(mac);
 #else
     return ESP_OK;
@@ -258,7 +259,7 @@ esp_err_t esp_efuse_mac_get_default(uint8_t *mac)
     if (err != ESP_OK) {
         return err;
     }
-#if CONFIG_SOC_IEEE802154_SUPPORTED
+#if SOC_IEEE802154_SUPPORTED
     return insert_mac_ext_into_mac(mac);
 #else
     return ESP_OK;
@@ -358,53 +359,58 @@ esp_err_t esp_read_mac(uint8_t *mac, esp_mac_type_t type)
 static esp_err_t generate_mac(uint8_t *mac, uint8_t *base_mac_addr, esp_mac_type_t type)
 {
     switch (type) {
+#if SOC_WIFI_SUPPORTED
     case ESP_MAC_WIFI_STA:
         memcpy(mac, base_mac_addr, 6);
         break;
     case ESP_MAC_WIFI_SOFTAP:
-#if CONFIG_ESP_MAC_ADDR_UNIVERSE_WIFI_AP
-        memcpy(mac, base_mac_addr, 6);
-        // as a result of some esp32s2 chips burned with one MAC address by mistake,
-        // there are some MAC address are reserved for this bug fix.
-        // related mistake MAC address is 0x7cdfa1003000~0x7cdfa1005fff,
-        // reserved MAC address is 0x7cdfa1020000~0x7cdfa1022fff (MAC address + 0x1d000).
-#ifdef CONFIG_IDF_TARGET_ESP32S2
-        uint8_t mac_begin[6] = { 0x7c, 0xdf, 0xa1, 0x00, 0x30, 0x00 };
-        uint8_t mac_end[6]   = { 0x7c, 0xdf, 0xa1, 0x00, 0x5f, 0xff };
-        if (memcmp(mac, mac_begin, 6) >= 0 && memcmp(mac_end, mac, 6) >= 0 ) {
-            mac[3] += 0x02; // contain carry bit
-            mac[4] += 0xd0;
-        } else {
-            mac[5] += 1;
-        }
-#else
-        mac[5] += 1;
-#endif // IDF_TARGET_ESP32S2
-#else
-        esp_derive_local_mac(mac, base_mac_addr);
-#endif // CONFIG_ESP_MAC_ADDR_UNIVERSE_WIFI_AP
+        #if CONFIG_ESP_MAC_ADDR_UNIVERSE_WIFI_AP
+            memcpy(mac, base_mac_addr, 6);
+            // as a result of some esp32s2 chips burned with one MAC address by mistake,
+            // there are some MAC address are reserved for this bug fix.
+            // related mistake MAC address is 0x7cdfa1003000~0x7cdfa1005fff,
+            // reserved MAC address is 0x7cdfa1020000~0x7cdfa1022fff (MAC address + 0x1d000).
+            #ifdef CONFIG_IDF_TARGET_ESP32S2
+                uint8_t mac_begin[6] = { 0x7c, 0xdf, 0xa1, 0x00, 0x30, 0x00 };
+                uint8_t mac_end[6]   = { 0x7c, 0xdf, 0xa1, 0x00, 0x5f, 0xff };
+                if (memcmp(mac, mac_begin, 6) >= 0 && memcmp(mac_end, mac, 6) >= 0 ) {
+                    mac[3] += 0x02; // contain carry bit
+                    mac[4] += 0xd0;
+                } else {
+                    mac[5] += 1;
+                }
+            #else
+                mac[5] += 1;
+            #endif // IDF_TARGET_ESP32S2
+        #else
+            esp_derive_local_mac(mac, base_mac_addr);
+        #endif // CONFIG_ESP_MAC_ADDR_UNIVERSE_WIFI_AP
         break;
-    case ESP_MAC_BT:
+#endif // SOC_WIFI_SUPPORTED
+
 #if CONFIG_ESP_MAC_ADDR_UNIVERSE_BT
+    case ESP_MAC_BT:
         memcpy(mac, base_mac_addr, 6);
-#if SOC_WIFI_SUPPORTED
-        // If the chips do not have wifi module, the mac address do not need to add the BT offset
-        mac[5] += MAC_ADDR_UNIVERSE_BT_OFFSET;
-#endif //SOC_WIFI_SUPPORTED
-#else
-        return ESP_ERR_NOT_SUPPORTED;
-#endif // CONFIG_ESP_MAC_ADDR_UNIVERSE_BT
+        #if SOC_WIFI_SUPPORTED
+            // If the chips do not have wifi module, the mac address do not need to add the BT offset
+            mac[5] += MAC_ADDR_UNIVERSE_BT_OFFSET;
+        #endif // SOC_WIFI_SUPPORTED
         break;
+#endif // CONFIG_ESP_MAC_ADDR_UNIVERSE_BT
+
     case ESP_MAC_ETH:
 #if CONFIG_ESP_MAC_ADDR_UNIVERSE_ETH
         memcpy(mac, base_mac_addr, 6);
-        mac[5] += 3;
+        #if SOC_WIFI_SUPPORTED || CONFIG_ESP_MAC_ADDR_UNIVERSE_BT
+            mac[5] += 3;
+        #endif // SOC_WIFI_SUPPORTED || CONFIG_ESP_MAC_ADDR_UNIVERSE_BT
 #else
         base_mac_addr[5] += 1;
         esp_derive_local_mac(mac, base_mac_addr);
 #endif // CONFIG_ESP_MAC_ADDR_UNIVERSE_ETH
         break;
-#if CONFIG_SOC_IEEE802154_SUPPORTED
+
+#if SOC_IEEE802154_SUPPORTED
     case ESP_MAC_IEEE802154:
         // 60:55:f9
         memcpy(mac, base_mac_addr, 3);
@@ -414,7 +420,8 @@ static esp_err_t generate_mac(uint8_t *mac, uint8_t *base_mac_addr, esp_mac_type
         memcpy(&mac[5], &base_mac_addr[3], 3);
         // 60:55:f9:ff:fe:f7:2c:a2
         break;
-#endif
+#endif // SOC_IEEE802154_SUPPORTED
+
     default:
         ESP_LOGE(TAG, "unsupported mac type");
         return ESP_ERR_NOT_SUPPORTED;

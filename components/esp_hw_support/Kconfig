@@ -39,6 +39,12 @@ menu "Hardware Settings"
         config ESP_MAC_UNIVERSAL_MAC_ADDRESSES_FOUR
             bool
 
+        config ESP_MAC_UNIVERSAL_MAC_ADDRESSES
+            int
+            default 1 if ESP_MAC_UNIVERSAL_MAC_ADDRESSES_ONE
+            default 2 if ESP_MAC_UNIVERSAL_MAC_ADDRESSES_TWO
+            default 4 if ESP_MAC_UNIVERSAL_MAC_ADDRESSES_FOUR
+
             # Insert chip-specific MAC config
         orsource "./port/$IDF_TARGET/Kconfig.mac"
 
