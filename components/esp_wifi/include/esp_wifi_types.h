@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -591,7 +591,9 @@ typedef struct {
     uint8_t resp_mac[6];        /**< MAC address of the FTM Responder */
     uint8_t channel;            /**< Primary channel of the FTM Responder */
     uint8_t frm_count;          /**< No. of FTM frames requested in terms of 4 or 8 bursts (allowed values - 0(No pref), 16, 24, 32, 64) */
-    uint16_t burst_period;      /**< Requested time period between consecutive FTM bursts in 100's of milliseconds (0 - No pref) */
+    uint16_t burst_period;      /**< Requested period between FTM bursts in 100's of milliseconds (allowed values 0(No pref) - 100) */
+    bool use_get_report_api;    /**< True - Using esp_wifi_ftm_get_report to get FTM report, False - Using ftm_report_data from
+                                     WIFI_EVENT_FTM_REPORT to get FTM report */
 } wifi_ftm_initiator_cfg_t;
 
 /**
@@ -774,6 +776,8 @@ typedef enum {
     FTM_STATUS_CONF_REJECTED,   /**< Peer rejected FTM configuration in FTM Request */
     FTM_STATUS_NO_RESPONSE,     /**< Peer did not respond to FTM Requests */
     FTM_STATUS_FAIL,            /**< Unknown error during FTM exchange */
+    FTM_STATUS_NO_VALID_MSMT,   /**< FTM session did not result in any valid measurements */
+    FTM_STATUS_USER_TERM,       /**< User triggered termination */
 } wifi_ftm_status_t;
 
 /** Argument structure for */
@@ -794,7 +798,8 @@ typedef struct {
     uint32_t rtt_raw;                           /**< Raw average Round-Trip-Time with peer in Nano-Seconds */
     uint32_t rtt_est;                           /**< Estimated Round-Trip-Time with peer in Nano-Seconds */
     uint32_t dist_est;                          /**< Estimated one-way distance in Centi-Meters */
-    wifi_ftm_report_entry_t *ftm_report_data;   /**< Pointer to FTM Report with multiple entries, should be freed after use */
+    wifi_ftm_report_entry_t *ftm_report_data;   /**< Pointer to FTM Report, should be freed after use. Note: Highly recommended
+                                                     to use API esp_wifi_ftm_get_report to get the report instead of using this */
     uint8_t ftm_report_num_entries;             /**< Number of entries in the FTM Report data */
 } wifi_event_ftm_report_t;
 
