@@ -28,7 +28,7 @@ extern "C" {
  * Macro which can be used to check the error code. If the code is not ESP_OK, it prints the message and returns.
  * This macro is used when the function returns void.
  */
-#define ESP_RETURN_VOID_ON_ERROR(x, log_tag, format, ...) do {                                       \
+#define ESP_EXIT_ON_ERROR(x, log_tag, format, ...) do {                                       \
         (void)log_tag;                                                                          \
         esp_err_t err_rc_ = (x);                                                                \
         if (unlikely(err_rc_ != ESP_OK)) {                                                      \
@@ -87,7 +87,7 @@ extern "C" {
  * Macro which can be used to check the condition. If the condition is not 'true', it prints the message
  * and returns without a value.
  */
-#define ESP_RETURN_VOID_ON_FALSE(a, log_tag, format, ...) do {                                  \
+#define ESP_EXIT_ON_FALSE(a, log_tag, format, ...) do {                                  \
         (void)log_tag;                                                                          \
         if (unlikely(!(a))) {                                                                   \
             return;                                                                             \
@@ -153,7 +153,7 @@ extern "C" {
  * Macro which can be used to check the error code. If the code is not ESP_OK, it prints the message and returns.
  * This macro is used when the function returns void.
  */
-#define ESP_RETURN_VOID_ON_ERROR(x, log_tag, format, ...) do {                                             \
+#define ESP_EXIT_ON_ERROR(x, log_tag, format, ...) do {                                             \
         esp_err_t err_rc_ = (x);                                                                           \
         if (unlikely(err_rc_ != ESP_OK)) {                                                                 \
             ESP_LOGE(log_tag, "%s(%d): " format, __FUNCTION__, __LINE__ __VA_OPT__(,) __VA_ARGS__);        \
@@ -212,7 +212,7 @@ extern "C" {
  * Macro which can be used to check the condition. If the condition is not 'true', it prints the message
  * and returns without a value.
  */
-#define ESP_RETURN_VOID_ON_FALSE(a, err_code, log_tag, format, ...) do {                                   \
+#define ESP_EXIT_ON_FALSE(a, err_code, log_tag, format, ...) do {                                   \
         if (unlikely(!(a))) {                                                                              \
             ESP_LOGE(log_tag, "%s(%d): " format, __FUNCTION__, __LINE__ __VA_OPT__(,) __VA_ARGS__);        \
             return;                                                                                        \
@@ -269,7 +269,7 @@ extern "C" {
  * Macro which can be used to check the error code. If the code is not ESP_OK, it prints the message and returns.
  * This macro is used when the function returns void.
  */
-#define ESP_RETURN_VOID_ON_ERROR(x, log_tag, format, ...) do {                                  \
+#define ESP_EXIT_ON_ERROR(x, log_tag, format, ...) do {                                  \
         esp_err_t err_rc_ = (x);                                                                \
         if (unlikely(err_rc_ != ESP_OK)) {                                                      \
             ESP_LOGE(log_tag, "%s(%d): " format, __FUNCTION__, __LINE__, ##__VA_ARGS__);        \
@@ -328,7 +328,7 @@ extern "C" {
  * Macro which can be used to check the condition. If the condition is not 'true', it prints the message
  * and returns without a value.
  */
-#define ESP_RETURN_VOID_ON_FALSE(a, log_tag, format, ...) do {                                  \
+#define ESP_EXIT_ON_FALSE(a, log_tag, format, ...) do {                                  \
         if (unlikely(!(a))) {                                                                   \
             ESP_LOGE(log_tag, "%s(%d): " format, __FUNCTION__, __LINE__, ##__VA_ARGS__);        \
             return;                                                                             \
