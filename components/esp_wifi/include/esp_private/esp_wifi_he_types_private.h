@@ -121,33 +121,33 @@ typedef struct {
 } __attribute__((packed)) esp_wifi_vht_siga1_t;
 
 typedef struct {
-    uint32_t ru_allocation :8;
-    uint32_t crc :4;
-    uint32_t tail :6; //18 bits
+    uint32_t ru_allocation : 8;
+    uint32_t crc : 4;
+    uint32_t tail : 6; //18 bits
 } esp_wifi_mu_sigb_common_t;
 
 typedef struct {
-    uint32_t ru_allocation :16;
-    uint32_t center_26tone_ru :1;
-    uint32_t crc :4;
-    uint32_t tail :6; //not included into the sigb_common_info (21bits)
+    uint32_t ru_allocation : 16;
+    uint32_t center_26tone_ru : 1;
+    uint32_t crc : 4;
+    uint32_t tail : 6; //not included into the sigb_common_info (21bits)
 } esp_wifi_mu_sigb_common_80mhz_ppdu_t;
 
 typedef struct {
-    uint32_t sta_id :11;
-    uint32_t nsts :3;
-    uint32_t beamformed :1;
-    uint32_t he_mcs :4;
-    uint32_t dcm :1;
-    uint32_t coding :1;
+    uint32_t sta_id : 11;
+    uint32_t nsts : 3;
+    uint32_t beamformed : 1;
+    uint32_t he_mcs : 4;
+    uint32_t dcm : 1;
+    uint32_t coding : 1;
 } esp_wifi_mu_sigb_user_non_mimo_t;
 
 typedef struct {
-    uint32_t sta_id :11;
-    uint32_t spatial_config :4;
-    uint32_t he_mcs :4;
-    uint32_t rsvd :1;
-    uint32_t coding :1;
+    uint32_t sta_id : 11;
+    uint32_t spatial_config : 4;
+    uint32_t he_mcs : 4;
+    uint32_t rsvd : 1;
+    uint32_t coding : 1;
 } esp_wifi_mu_sigb_user_mimo_t;
 
 #define ESP_TEST_RX_MU_USER_NUM        (9)

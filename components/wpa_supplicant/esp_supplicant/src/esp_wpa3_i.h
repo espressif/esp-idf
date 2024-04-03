@@ -62,7 +62,7 @@ bool wpa3_hostap_auth_deinit(void);
 
 static inline void esp_wifi_register_wpa3_ap_cb(struct wpa_funcs *wpa_cb)
 {
-	wpa_cb->wpa3_hostap_handle_auth = NULL;
+    wpa_cb->wpa3_hostap_handle_auth = NULL;
 }
 
 #endif /* CONFIG_SAE */

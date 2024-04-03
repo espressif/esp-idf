@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -20,8 +20,8 @@ TEST_CASE("wifi set country code", "[wifi_init]")
     TEST_ESP_OK(esp_wifi_init(&cfg));
 
     wifi_country_t country;
-    wifi_country_t country_01 = {.cc="01", .schan=1, .nchan=11, .policy=WIFI_COUNTRY_POLICY_MANUAL};
-    wifi_country_t country_CN = {.cc="CN", .schan=1, .nchan=13, .policy=WIFI_COUNTRY_POLICY_MANUAL};
+    wifi_country_t country_01 = {.cc = "01", .schan = 1, .nchan = 11, .policy = WIFI_COUNTRY_POLICY_MANUAL};
+    wifi_country_t country_CN = {.cc = "CN", .schan = 1, .nchan = 13, .policy = WIFI_COUNTRY_POLICY_MANUAL};
 
     ESP_LOGI(TAG, EMPH_STR("esp_wifi_get_country (default)"));
     TEST_ESP_OK(esp_wifi_get_country(&country));
@@ -33,7 +33,6 @@ TEST_CASE("wifi set country code", "[wifi_init]")
     ESP_LOGI(TAG, EMPH_STR("esp_wifi_get_country"));
     TEST_ESP_OK(esp_wifi_get_country(&country));
     TEST_ASSERT(country.cc[0] == country_CN.cc[0] && country.cc[1] == country_CN.cc[1]);
-
 
     ESP_LOGI(TAG, EMPH_STR("esp_wifi_deinit"));
     TEST_ESP_OK(esp_wifi_deinit());
@@ -54,7 +53,6 @@ TEST_CASE("wifi set country code", "[wifi_init]")
     ESP_LOGI(TAG, EMPH_STR("esp_wifi_get_country_code"));
     TEST_ESP_OK(esp_wifi_get_country_code(&country_code_string[0]));
     TEST_ASSERT(country_code_string[0] == country_code_string_CN[0] && country_code_string[1] == country_code_string_CN[1]);
-
 
     ESP_LOGI(TAG, EMPH_STR("esp_wifi_deinit"));
     TEST_ESP_OK(esp_wifi_deinit());

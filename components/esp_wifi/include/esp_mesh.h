@@ -144,7 +144,6 @@ extern "C" {
 #define MESH_ASSOC_FLAG_ROOTS_FOUND         (0x20)     /**< roots conflict is found, means that thre are at least two roots in the mesh network */
 #define MESH_ASSOC_FLAG_ROOT_FIXED          (0x40)     /**< the root is fixed in the mesh network */
 
-
 /**
  * @brief Mesh PS (Power Save) duty cycle type
  */

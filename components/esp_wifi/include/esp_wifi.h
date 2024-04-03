@@ -4,7 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-
 /*               Notes about WiFi Programming
  *
  *  WiFi programming model can be depicted as following picture:
@@ -561,7 +560,6 @@ esp_err_t esp_wifi_scan_get_ap_record(wifi_ap_record_t *ap_record);
   */
 esp_err_t esp_wifi_clear_ap_list(void);
 
-
 /**
   * @brief     Get information of AP to which the device is associated with
   *
@@ -748,7 +746,6 @@ esp_err_t esp_wifi_set_country(const wifi_country_t *country);
   *    - ESP_ERR_INVALID_ARG: invalid argument
   */
 esp_err_t esp_wifi_get_country(wifi_country_t *country);
-
 
 /**
   * @brief     Set MAC address of WiFi station, soft-AP or NAN interface.
@@ -983,7 +980,7 @@ esp_err_t esp_wifi_set_storage(wifi_storage_t storage);
   * @param     vnd_ie Pointer to the vendor specific element data received.
   * @param     rssi Received signal strength indication.
   */
-typedef void (*esp_vendor_ie_cb_t) (void *ctx, wifi_vendor_ie_type_t type, const uint8_t sa[6], const vendor_ie_data_t *vnd_ie, int rssi);
+typedef void (*esp_vendor_ie_cb_t)(void *ctx, wifi_vendor_ie_type_t type, const uint8_t sa[6], const vendor_ie_data_t *vnd_ie, int rssi);
 
 /**
   * @brief     Set 802.11 Vendor-Specific Information Element
@@ -1115,7 +1112,6 @@ esp_err_t esp_wifi_80211_tx(wifi_interface_t ifx, const void *buffer, int len, b
   */
 typedef void (* wifi_csi_cb_t)(void *ctx, wifi_csi_info_t *data);
 
-
 /**
   * @brief Register the RX callback function of CSI data.
   *
@@ -1193,7 +1189,6 @@ esp_err_t esp_wifi_set_ant_gpio(const wifi_ant_gpio_config_t *config) __attribut
   *    - ESP_ERR_INVALID_ARG: invalid argument, e.g. parameter is NULL
   */
 esp_err_t esp_wifi_get_ant_gpio(wifi_ant_gpio_config_t *config) __attribute__((deprecated("Please use esp_phy_get_ant_gpio instead")));
-
 
 /**
   * @brief     Set antenna configuration

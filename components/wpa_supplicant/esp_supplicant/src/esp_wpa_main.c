@@ -114,7 +114,7 @@ int wpa_config_bss(uint8_t *bssid)
 
     esp_wifi_get_macaddr_internal(0, mac);
     ret = wpa_set_bss((char *)mac, (char *)bssid, esp_wifi_sta_get_pairwise_cipher_internal(), esp_wifi_sta_get_group_cipher_internal(),
-                (char *)esp_wifi_sta_get_prof_password_internal(), ssid->ssid, ssid->len);
+                      (char *)esp_wifi_sta_get_prof_password_internal(), ssid->ssid, ssid->len);
     return ret;
 }
 
@@ -136,7 +136,7 @@ bool  wpa_attach(void)
 {
     bool ret = true;
     ret = wpa_sm_init();
-    if(ret) {
+    if (ret) {
         ret = (esp_wifi_register_eapol_txdonecb_internal(eapol_txcb) == ESP_OK);
     }
     esp_set_scan_ie();
@@ -167,8 +167,8 @@ bool wpa_ap_rx_eapol(void *hapd_data, void *sm_data, u8 *data, size_t data_len)
     int wps_type = esp_wifi_get_wps_type_internal();
 
     if ((wps_type == WPS_TYPE_PBC) ||
-	(wps_type == WPS_TYPE_PIN)) {
-	ieee802_1x_receive(hapd, sta->addr, data, data_len);
+            (wps_type == WPS_TYPE_PIN)) {
+        ieee802_1x_receive(hapd, sta->addr, data, data_len);
         return true;
     }
 #endif
@@ -285,24 +285,24 @@ static void wpa_sta_connected_cb(uint8_t *bssid)
 static void wpa_sta_disconnected_cb(uint8_t reason_code)
 {
     switch (reason_code) {
-        case WIFI_REASON_AUTH_EXPIRE:
-        case WIFI_REASON_NOT_AUTHED:
-        case WIFI_REASON_NOT_ASSOCED:
-        case WIFI_REASON_4WAY_HANDSHAKE_TIMEOUT:
-        case WIFI_REASON_INVALID_PMKID:
-        case WIFI_REASON_AUTH_FAIL:
-        case WIFI_REASON_ASSOC_FAIL:
-        case WIFI_REASON_CONNECTION_FAIL:
-        case WIFI_REASON_HANDSHAKE_TIMEOUT:
-            esp_wpa3_free_sae_data();
+    case WIFI_REASON_AUTH_EXPIRE:
+    case WIFI_REASON_NOT_AUTHED:
+    case WIFI_REASON_NOT_ASSOCED:
+    case WIFI_REASON_4WAY_HANDSHAKE_TIMEOUT:
+    case WIFI_REASON_INVALID_PMKID:
+    case WIFI_REASON_AUTH_FAIL:
+    case WIFI_REASON_ASSOC_FAIL:
+    case WIFI_REASON_CONNECTION_FAIL:
+    case WIFI_REASON_HANDSHAKE_TIMEOUT:
+        esp_wpa3_free_sae_data();
+        wpa_sta_clear_curr_pmksa();
+        wpa_sm_notify_disassoc(&gWpaSm);
+        break;
+    default:
+        if (g_wpa_pmk_caching_disabled) {
             wpa_sta_clear_curr_pmksa();
-            wpa_sm_notify_disassoc(&gWpaSm);
-            break;
-        default:
-            if (g_wpa_pmk_caching_disabled) {
-                wpa_sta_clear_curr_pmksa();
-            }
-            break;
+        }
+        break;
     }
 #ifdef CONFIG_OWE_STA
     owe_deinit();
@@ -346,7 +346,7 @@ static int check_n_add_wps_sta(struct hostapd_data *hapd, struct sta_info *sta_i
 }
 #endif
 
-static bool hostap_sta_join(void **sta, u8 *bssid, u8 *wpa_ie, u8 wpa_ie_len,u8 *rsnxe, u8 rsnxe_len, bool *pmf_enable, int subtype)
+static bool hostap_sta_join(void **sta, u8 *bssid, u8 *wpa_ie, u8 wpa_ie_len, u8 *rsnxe, u8 rsnxe_len, bool *pmf_enable, int subtype)
 {
     struct sta_info *sta_info = NULL;
     struct hostapd_data *hapd = hostapd_get_hapd_data();
@@ -370,7 +370,7 @@ static bool hostap_sta_join(void **sta, u8 *bssid, u8 *wpa_ie, u8 wpa_ie_len,u8 
             ap_free_sta(hapd, old_sta);
         }
 #ifdef CONFIG_SAE
-          else if (old_sta && old_sta->lock) {
+        else if (old_sta && old_sta->lock) {
             sta_info = old_sta;
             goto process_old_sta;
         }
@@ -379,7 +379,7 @@ static bool hostap_sta_join(void **sta, u8 *bssid, u8 *wpa_ie, u8 wpa_ie_len,u8 
 
     sta_info = ap_get_sta(hapd, bssid);
     if (!sta_info) {
-        sta_info = ap_sta_add(hapd,bssid);
+        sta_info = ap_sta_add(hapd, bssid);
         if (!sta_info) {
             wpa_printf(MSG_ERROR, "failed to add station " MACSTR, MAC2STR(bssid));
             goto fail;
@@ -396,7 +396,6 @@ static bool hostap_sta_join(void **sta, u8 *bssid, u8 *wpa_ie, u8 wpa_ie_len,u8 
 
 process_old_sta:
 #endif /* CONFIG_SAE */
-
 
 #ifdef CONFIG_WPS_REGISTRAR
     if (check_n_add_wps_sta(hapd, sta_info, wpa_ie, wpa_ie_len, pmf_enable, subtype) == 0) {

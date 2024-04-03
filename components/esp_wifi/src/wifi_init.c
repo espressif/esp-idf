@@ -162,7 +162,7 @@ static esp_err_t wifi_deinit_internal(void)
     }
 
     if (esp_wifi_internal_reg_rxcb(WIFI_IF_STA,  NULL) != ESP_OK ||
-        esp_wifi_internal_reg_rxcb(WIFI_IF_AP,  NULL) != ESP_OK) {
+            esp_wifi_internal_reg_rxcb(WIFI_IF_AP,  NULL) != ESP_OK) {
         ESP_LOGW(TAG, "Failed to unregister Rx callbacks");
     }
 
@@ -349,7 +349,7 @@ esp_err_t esp_wifi_init(const wifi_init_config_t *config)
 
 #if CONFIG_MAC_BB_PD
     if (esp_register_mac_bb_pd_callback(pm_mac_sleep) != ESP_OK
-        || esp_register_mac_bb_pu_callback(pm_mac_wakeup) != ESP_OK) {
+            || esp_register_mac_bb_pu_callback(pm_mac_wakeup) != ESP_OK) {
 
         esp_unregister_mac_bb_pd_callback(pm_mac_sleep);
         esp_unregister_mac_bb_pu_callback(pm_mac_wakeup);
@@ -418,7 +418,7 @@ esp_err_t esp_wifi_init(const wifi_init_config_t *config)
 #ifdef CONFIG_PM_ENABLE
         if (s_wifi_modem_sleep_lock == NULL) {
             result = esp_pm_lock_create(ESP_PM_APB_FREQ_MAX, 0, "wifi",
-                    &s_wifi_modem_sleep_lock);
+                                        &s_wifi_modem_sleep_lock);
             if (result != ESP_OK) {
                 ESP_LOGE(TAG, "Failed to create pm lock (0x%x)", result);
                 goto _deinit;

@@ -181,7 +181,6 @@ esp_err_t esp_wifi_ap_wps_disable(void);
   */
 esp_err_t esp_wifi_ap_wps_start(const unsigned char *pin);
 
-
 /**
   * @}
   */

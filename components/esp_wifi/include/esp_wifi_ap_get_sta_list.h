@@ -13,7 +13,6 @@
 extern "C" {
 #endif
 
-
 #ifndef ESP_WIFI_MAX_CONN_NUM
 // Number of maximum wifi connection may be undefined if we have no native wifi support on this target
 //   and at the same time there's no native interface injected by the wifi_remote component.

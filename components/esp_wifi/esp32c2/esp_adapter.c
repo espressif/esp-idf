@@ -56,17 +56,17 @@ extern void wifi_apb80m_request(void);
 extern void wifi_apb80m_release(void);
 #endif
 
-IRAM_ATTR void *wifi_malloc( size_t size )
+IRAM_ATTR void *wifi_malloc(size_t size)
 {
     return malloc(size);
 }
 
-IRAM_ATTR void *wifi_realloc( void *ptr, size_t size )
+IRAM_ATTR void *wifi_realloc(void *ptr, size_t size)
 {
     return realloc(ptr, size);
 }
 
-IRAM_ATTR void *wifi_calloc( size_t n, size_t size )
+IRAM_ATTR void *wifi_calloc(size_t n, size_t size)
 {
     return calloc(n, size);
 }
@@ -77,16 +77,16 @@ static void * IRAM_ATTR wifi_zalloc_wrapper(size_t size)
     return ptr;
 }
 
-wifi_static_queue_t* wifi_create_queue( int queue_len, int item_size)
+wifi_static_queue_t* wifi_create_queue(int queue_len, int item_size)
 {
     wifi_static_queue_t *queue = NULL;
 
-    queue = (wifi_static_queue_t*)heap_caps_malloc(sizeof(wifi_static_queue_t), MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT);
+    queue = (wifi_static_queue_t*)heap_caps_malloc(sizeof(wifi_static_queue_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
     if (!queue) {
         return NULL;
     }
 
-    queue->handle = xQueueCreate( queue_len, item_size);
+    queue->handle = xQueueCreate(queue_len, item_size);
     return queue;
 }
 
@@ -317,31 +317,31 @@ static int get_time_wrapper(void *t)
 
 static void * IRAM_ATTR realloc_internal_wrapper(void *ptr, size_t size)
 {
-    return heap_caps_realloc(ptr, size, MALLOC_CAP_8BIT|MALLOC_CAP_DMA|MALLOC_CAP_INTERNAL);
+    return heap_caps_realloc(ptr, size, MALLOC_CAP_8BIT | MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
 }
 
 static void * IRAM_ATTR calloc_internal_wrapper(size_t n, size_t size)
 {
-    return heap_caps_calloc(n, size, MALLOC_CAP_8BIT|MALLOC_CAP_DMA|MALLOC_CAP_INTERNAL);
+    return heap_caps_calloc(n, size, MALLOC_CAP_8BIT | MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
 }
 
 static void * IRAM_ATTR zalloc_internal_wrapper(size_t size)
 {
-    void *ptr = heap_caps_calloc(1, size, MALLOC_CAP_8BIT|MALLOC_CAP_DMA|MALLOC_CAP_INTERNAL);
+    void *ptr = heap_caps_calloc(1, size, MALLOC_CAP_8BIT | MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
     return ptr;
 }
 
 static esp_err_t nvs_open_wrapper(const char* name, unsigned int open_mode, nvs_handle_t *out_handle)
 {
-    return nvs_open(name,(nvs_open_mode_t)open_mode, out_handle);
+    return nvs_open(name, (nvs_open_mode_t)open_mode, out_handle);
 }
 
 static void esp_log_writev_wrapper(unsigned int level, const char *tag, const char *format, va_list args)
 {
-    return esp_log_writev((esp_log_level_t)level,tag,format,args);
+    return esp_log_writev((esp_log_level_t)level, tag, format, args);
 }
 
-static void esp_log_write_wrapper(unsigned int level,const char *tag,const char *format, ...)
+static void esp_log_write_wrapper(unsigned int level, const char *tag, const char *format, ...)
 {
     va_list list;
     va_start(list, format);
@@ -568,8 +568,8 @@ wifi_osi_funcs_t g_wifi_osi_funcs = {
     ._queue_msg_waiting = (uint32_t(*)(void *))uxQueueMessagesWaiting,
     ._event_group_create = (void *(*)(void))xEventGroupCreate,
     ._event_group_delete = (void(*)(void *))vEventGroupDelete,
-    ._event_group_set_bits = (uint32_t(*)(void *,uint32_t))xEventGroupSetBits,
-    ._event_group_clear_bits = (uint32_t(*)(void *,uint32_t))xEventGroupClearBits,
+    ._event_group_set_bits = (uint32_t(*)(void *, uint32_t))xEventGroupSetBits,
+    ._event_group_clear_bits = (uint32_t(*)(void *, uint32_t))xEventGroupClearBits,
     ._event_group_wait_bits = event_group_wait_bits_wrapper,
     ._task_create_pinned_to_core = task_create_pinned_to_core_wrapper,
     ._task_create = task_create_wrapper,

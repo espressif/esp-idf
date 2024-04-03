@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  *
@@ -24,7 +24,6 @@
 #include "freertos/task.h"
 #include "freertos/event_groups.h"
 
-
 #ifndef TEST_SUFFIX_STR
 #define TEST_SUFFIX_STR "_0000"
 #endif
@@ -34,14 +33,12 @@
 #define TEST_DEFAULT_CHANNEL (6)
 #define CONNECT_TIMEOUT_MS   (8000)
 
-
 #define GOT_IP_EVENT             (1)
 #define WIFI_DISCONNECT_EVENT    (1<<1)
 #define WIFI_STA_CONNECTED       (1<<2)
 #define WIFI_AP_STA_CONNECTED    (1<<3)
 
 #define EVENT_HANDLER_FLAG_DO_NOT_AUTO_RECONNECT 0x00000001
-
 
 static const char* TAG = "test_wifi";
 static uint32_t wifi_event_handler_flag;
@@ -51,60 +48,59 @@ static esp_netif_t* s_sta_netif = NULL;
 static EventGroupHandle_t wifi_events;
 
 static void wifi_event_handler(void* arg, esp_event_base_t event_base,
-                                int32_t event_id, void* event_data)
+                               int32_t event_id, void* event_data)
 {
     ESP_LOGI(TAG, "wifi event handler: %"PRIi32, event_id);
-    switch(event_id) {
-        case WIFI_EVENT_STA_START:
-            ESP_LOGI(TAG, "WIFI_EVENT_STA_START");
-            break;
-        case WIFI_EVENT_AP_STACONNECTED:
-            ESP_LOGI(TAG, "WIFI_EVENT_AP_STACONNECTED");
-            if (wifi_events) {
-                xEventGroupSetBits(wifi_events, WIFI_AP_STA_CONNECTED);
-            }
-            break;
-        case WIFI_EVENT_STA_CONNECTED:
-            ESP_LOGI(TAG, "WIFI_EVENT_STA_CONNECTED");
-            if (wifi_events) {
-                xEventGroupSetBits(wifi_events, WIFI_STA_CONNECTED);
-            }
-            break;
-        case WIFI_EVENT_STA_DISCONNECTED:
-            ESP_LOGI(TAG, "WIFI_EVENT_STA_DISCONNECTED");
-            wifi_event_sta_disconnected_t *event = (wifi_event_sta_disconnected_t *)event_data;
-            ESP_LOGI(TAG, "disconnect reason: %u", event->reason);
-            if (! (EVENT_HANDLER_FLAG_DO_NOT_AUTO_RECONNECT & wifi_event_handler_flag) ) {
-                TEST_ESP_OK(esp_wifi_connect());
-            }
-            if (wifi_events) {
-                xEventGroupSetBits(wifi_events, WIFI_DISCONNECT_EVENT);
-            }
-            break;
-        default:
-            break;
+    switch (event_id) {
+    case WIFI_EVENT_STA_START:
+        ESP_LOGI(TAG, "WIFI_EVENT_STA_START");
+        break;
+    case WIFI_EVENT_AP_STACONNECTED:
+        ESP_LOGI(TAG, "WIFI_EVENT_AP_STACONNECTED");
+        if (wifi_events) {
+            xEventGroupSetBits(wifi_events, WIFI_AP_STA_CONNECTED);
+        }
+        break;
+    case WIFI_EVENT_STA_CONNECTED:
+        ESP_LOGI(TAG, "WIFI_EVENT_STA_CONNECTED");
+        if (wifi_events) {
+            xEventGroupSetBits(wifi_events, WIFI_STA_CONNECTED);
+        }
+        break;
+    case WIFI_EVENT_STA_DISCONNECTED:
+        ESP_LOGI(TAG, "WIFI_EVENT_STA_DISCONNECTED");
+        wifi_event_sta_disconnected_t *event = (wifi_event_sta_disconnected_t *)event_data;
+        ESP_LOGI(TAG, "disconnect reason: %u", event->reason);
+        if (!(EVENT_HANDLER_FLAG_DO_NOT_AUTO_RECONNECT & wifi_event_handler_flag)) {
+            TEST_ESP_OK(esp_wifi_connect());
+        }
+        if (wifi_events) {
+            xEventGroupSetBits(wifi_events, WIFI_DISCONNECT_EVENT);
+        }
+        break;
+    default:
+        break;
     }
     return;
 }
 
-
 static void ip_event_handler(void* arg, esp_event_base_t event_base,
-                                int32_t event_id, void* event_data)
+                             int32_t event_id, void* event_data)
 {
     ip_event_got_ip_t *event;
 
     ESP_LOGI(TAG, "ip event handler");
-    switch(event_id) {
-        case IP_EVENT_STA_GOT_IP:
-            event = (ip_event_got_ip_t*)event_data;
-            ESP_LOGI(TAG, "IP_EVENT_STA_GOT_IP");
-            ESP_LOGI(TAG, "got ip:" IPSTR, IP2STR(&event->ip_info.ip));
-            if (wifi_events) {
-                xEventGroupSetBits(wifi_events, GOT_IP_EVENT);
-            }
-            break;
-        default:
-            break;
+    switch (event_id) {
+    case IP_EVENT_STA_GOT_IP:
+        event = (ip_event_got_ip_t*)event_data;
+        ESP_LOGI(TAG, "IP_EVENT_STA_GOT_IP");
+        ESP_LOGI(TAG, "got ip:" IPSTR, IP2STR(&event->ip_info.ip));
+        if (wifi_events) {
+            xEventGroupSetBits(wifi_events, GOT_IP_EVENT);
+        }
+        break;
+    default:
+        break;
     }
     return;
 }
@@ -131,18 +127,17 @@ static esp_err_t event_deinit(void)
 
 #define EMPH_STR(s) "****** "s" ******"
 
-
 static void start_wifi_as_softap(void)
 {
     wifi_config_t w_config = {
         .ap.ssid = TEST_DEFAULT_SSID,
         .ap.password = TEST_DEFAULT_PWD,
         .ap.ssid_len = strlen(TEST_DEFAULT_SSID),
-        .ap.channel = TEST_DEFAULT_CHANNEL,
-        .ap.authmode = WIFI_AUTH_WPA2_PSK,
-        .ap.ssid_hidden = false,
-        .ap.max_connection = 4,
-        .ap.beacon_interval = 100,
+           .ap.channel = TEST_DEFAULT_CHANNEL,
+           .ap.authmode = WIFI_AUTH_WPA2_PSK,
+           .ap.ssid_hidden = false,
+           .ap.max_connection = 4,
+           .ap.beacon_interval = 100,
     };
 
     event_init();
@@ -181,7 +176,7 @@ static void stop_wifi(void)
         vEventGroupDelete(wifi_events);
         wifi_events = NULL;
     }
-    vTaskDelay(500/portTICK_PERIOD_MS);
+    vTaskDelay(500 / portTICK_PERIOD_MS);
 }
 
 static void receive_ds2ds_packet(void)
@@ -189,7 +184,7 @@ static void receive_ds2ds_packet(void)
     start_wifi_as_softap();
 
     // wait for sender to send packets
-    vTaskDelay(1000/portTICK_PERIOD_MS);
+    vTaskDelay(1000 / portTICK_PERIOD_MS);
     stop_wifi();
 }
 
@@ -210,7 +205,7 @@ static void send_ds2ds_packet(void)
         esp_wifi_80211_tx(WIFI_IF_AP, ds2ds_pdu, sizeof(ds2ds_pdu), true);
         vTaskDelay(50 / portTICK_PERIOD_MS);
     }
-    vTaskDelay(500/portTICK_PERIOD_MS);
+    vTaskDelay(500 / portTICK_PERIOD_MS);
     stop_wifi();
 }
 
@@ -228,7 +223,7 @@ static void wifi_connect(void)
     TEST_ESP_OK(esp_wifi_set_config(WIFI_IF_STA, &w_config));
     TEST_ESP_OK(esp_wifi_connect());
     ESP_LOGI(TAG, "start esp_wifi_connect: %s", TEST_DEFAULT_SSID);
-    bits = xEventGroupWaitBits(wifi_events, GOT_IP_EVENT, 1, 0, CONNECT_TIMEOUT_MS/portTICK_PERIOD_MS);
+    bits = xEventGroupWaitBits(wifi_events, GOT_IP_EVENT, 1, 0, CONNECT_TIMEOUT_MS / portTICK_PERIOD_MS);
     TEST_ASSERT(bits & GOT_IP_EVENT);
 }
 
@@ -238,7 +233,7 @@ static void test_wifi_connection_sta(void)
     start_wifi_as_sta();
 
     // make sure softap has started
-    vTaskDelay(1000/portTICK_PERIOD_MS);
+    vTaskDelay(1000 / portTICK_PERIOD_MS);
     wifi_connect();
 
     // do not auto reconnect after connected
@@ -258,7 +253,7 @@ static void test_wifi_connection_softap(void)
     start_wifi_as_softap();
 
     // wait station connected
-    bits = xEventGroupWaitBits(wifi_events, WIFI_AP_STA_CONNECTED, 1, 0, CONNECT_TIMEOUT_MS/portTICK_PERIOD_MS);
+    bits = xEventGroupWaitBits(wifi_events, WIFI_AP_STA_CONNECTED, 1, 0, CONNECT_TIMEOUT_MS / portTICK_PERIOD_MS);
     TEST_ASSERT(bits & WIFI_AP_STA_CONNECTED);
 
     // wait 70s (longer than station side)
@@ -275,7 +270,7 @@ static void esp_wifi_connect_first_time(void)
 {
     start_wifi_as_sta();
     // make sure softap has started
-    vTaskDelay(1000/portTICK_PERIOD_MS);
+    vTaskDelay(1000 / portTICK_PERIOD_MS);
 
     wifi_config_t w_config;
     memset(&w_config, 0, sizeof(w_config));
@@ -296,7 +291,7 @@ static void test_wifi_connect_at_scan_phase(void)
     esp_wifi_connect_first_time();
 
     // connect when first connect in scan
-    vTaskDelay(300/portTICK_PERIOD_MS);
+    vTaskDelay(300 / portTICK_PERIOD_MS);
     ESP_LOGI(TAG, "connect when first connect in scan");
     TEST_ESP_ERR(ESP_ERR_WIFI_CONN, esp_wifi_connect());
     wifi_event_handler_flag |= EVENT_HANDLER_FLAG_DO_NOT_AUTO_RECONNECT;
@@ -310,7 +305,7 @@ static void test_wifi_connect_before_connected_phase(void)
     esp_wifi_connect_first_time();
 
     // connect before connected
-    vTaskDelay(730/portTICK_PERIOD_MS);
+    vTaskDelay(730 / portTICK_PERIOD_MS);
     ESP_LOGI(TAG, "connect when first connect after scan before connected");
     TEST_ESP_ERR(ESP_ERR_WIFI_CONN, esp_wifi_connect());
     wifi_event_handler_flag |= EVENT_HANDLER_FLAG_DO_NOT_AUTO_RECONNECT;
@@ -328,7 +323,7 @@ static void test_wifi_connect_after_connected_phase(void)
     xEventGroupClearBits(wifi_events, WIFI_STA_CONNECTED | WIFI_DISCONNECT_EVENT);
     ESP_LOGI(TAG, "connect after connected");
     TEST_ESP_OK(esp_wifi_connect());
-    bits = xEventGroupWaitBits(wifi_events, WIFI_STA_CONNECTED | WIFI_DISCONNECT_EVENT, pdTRUE, pdFALSE, CONNECT_TIMEOUT_MS/portTICK_PERIOD_MS);
+    bits = xEventGroupWaitBits(wifi_events, WIFI_STA_CONNECTED | WIFI_DISCONNECT_EVENT, pdTRUE, pdFALSE, CONNECT_TIMEOUT_MS / portTICK_PERIOD_MS);
     // shouldn't reconnect
     TEST_ASSERT((bits & WIFI_AP_STA_CONNECTED) == 0);
     // shouldn't disconnect
@@ -344,7 +339,7 @@ static void set_wifi_softap(void)
     start_wifi_as_softap();
 
     // wait for sta connect
-    vTaskDelay(20000/portTICK_PERIOD_MS);
+    vTaskDelay(20000 / portTICK_PERIOD_MS);
     stop_wifi();
 }
 
