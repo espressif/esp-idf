@@ -376,7 +376,7 @@ extern "C" {
             return err_code;                                                                    \
         }                                                                                       \
     } while(0)
-    
+
 /**
  * A version of ESP_RETURN_ON_FALSE() macro that can be called from ISR.
  */
