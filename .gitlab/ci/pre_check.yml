@@ -25,7 +25,8 @@ check_version:
 check_api_usage:
   extends: .pre_check_template
   script:
-    - tools/ci/check_examples_rom_header.sh
+    - python -m pip install ast-grep-cli # use ast-grep to describe customized lint rules
+    - ast-grep scan
     - tools/ci/check_api_violation.sh
     - tools/ci/check_examples_extra_component_dirs.sh
 

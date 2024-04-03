@@ -49,3 +49,4 @@ tools/ci/python_packages/idf_http_server_test/**/*
 tools/ci/python_packages/idf_iperf_test_util/**/*
 tools/esp_prov/**/*
 tools/ci/sort_yaml.py
+tools/ci/sg_rules/*
