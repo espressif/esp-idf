@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,7 +20,7 @@
 #include "nvs_flash.h"
 #include "esp_efuse.h"
 #include "esp_timer.h"
-#include "esp_sleep.h"
+#include "esp_private/esp_sleep_internal.h"
 #include "sdkconfig.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/portmacro.h"
@@ -865,9 +865,9 @@ void esp_phy_load_cal_and_init(void)
     esp_phy_release_init_data(init_data);
 #endif
 
-    ESP_ERROR_CHECK(esp_deep_sleep_register_hook(&phy_close_rf));
+    ESP_ERROR_CHECK(esp_deep_sleep_register_phy_hook(&phy_close_rf));
 #if !CONFIG_IDF_TARGET_ESP32
-    ESP_ERROR_CHECK(esp_deep_sleep_register_hook(&phy_xpd_tsens));
+    ESP_ERROR_CHECK(esp_deep_sleep_register_phy_hook(&phy_xpd_tsens));
 #endif
 
     free(cal_data); // PHY maintains a copy of calibration data, so we can free this
