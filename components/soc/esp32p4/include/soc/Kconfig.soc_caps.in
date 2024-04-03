@@ -601,6 +601,10 @@ config SOC_ANA_CMPR_SUPPORT_ETM
 
 config SOC_I2C_NUM
     int
+    default 3
+
+config SOC_HP_I2C_NUM
+    int
     default 2
 
 config SOC_I2C_FIFO_LEN

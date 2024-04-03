@@ -553,6 +553,10 @@ config SOC_DEDIC_PERIPH_ALWAYS_ENABLE
 
 config SOC_I2C_NUM
     int
+    default 2
+
+config SOC_HP_I2C_NUM
+    int
     default 1
 
 config SOC_I2C_FIFO_LEN

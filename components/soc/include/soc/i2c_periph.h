@@ -25,6 +25,7 @@ typedef struct {
     const uint8_t sda_in_sig;
     const uint8_t scl_out_sig;
     const uint8_t scl_in_sig;
+    const uint8_t iomux_func;
     const uint8_t irq;
     const periph_module_t module;
 } i2c_signal_conn_t;
@@ -37,7 +38,7 @@ typedef struct {
     uint32_t link_num;
 } i2c_reg_ctx_link_t;
 
-extern const i2c_reg_ctx_link_t i2c_regs_retention[SOC_I2C_NUM];
+extern const i2c_reg_ctx_link_t i2c_regs_retention[SOC_HP_I2C_NUM];
 #endif
 #endif  // SOC_I2C_SUPPORTED
 

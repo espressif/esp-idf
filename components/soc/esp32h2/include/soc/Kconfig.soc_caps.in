@@ -555,6 +555,10 @@ config SOC_I2C_NUM
     int
     default 2
 
+config SOC_HP_I2C_NUM
+    int
+    default 2
+
 config SOC_I2C_FIFO_LEN
     int
     default 32

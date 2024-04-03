@@ -208,7 +208,7 @@
 // Support to hold a single digital I/O when the digital domain is powered off
 #define SOC_GPIO_SUPPORT_HOLD_SINGLE_IO_IN_DSLP  (1)
 
-// The Clock Out singnal is route to the pin by GPIO matrix
+// The Clock Out signal is route to the pin by GPIO matrix
 // #define SOC_GPIO_CLOCKOUT_BY_GPIO_MATRIX    (1)
 
 /*-------------------------- RTCIO CAPS --------------------------------------*/
@@ -227,7 +227,8 @@
 
 /*-------------------------- I2C CAPS ----------------------------------------*/
 // ESP32-C5 has 1 I2C
-#define SOC_I2C_NUM                 (1UL)
+#define SOC_I2C_NUM                 (1U)
+#define SOC_HP_I2C_NUM              (1U)
 
 // #define SOC_I2C_FIFO_LEN            (32) /*!< I2C hardware FIFO depth */
 // #define SOC_I2C_CMD_REG_NUM         (8)  /*!< Number of I2C command registers */
@@ -501,7 +502,7 @@
 // #define SOC_PM_SUPPORT_BEACON_WAKEUP    (1)
 // #define SOC_PM_SUPPORT_BT_WAKEUP        (1)
 // #define SOC_PM_SUPPORT_EXT1_WAKEUP      (1)
-// #define SOC_PM_SUPPORT_EXT1_WAKEUP_MODE_PER_PIN   (1) /*!<Supports one bit per pin to configue the EXT1 trigger level */
+// #define SOC_PM_SUPPORT_EXT1_WAKEUP_MODE_PER_PIN   (1) /*!<Supports one bit per pin to configure the EXT1 trigger level */
 #define SOC_PM_SUPPORT_CPU_PD           (1)
 #define SOC_PM_SUPPORT_MODEM_PD         (1)
 #define SOC_PM_SUPPORT_XTAL32K_PD       (1)

@@ -27,6 +27,12 @@
 #include "esp_clk_tree.h"
 #include "clk_ctrl_os.h"
 #include "esp_private/gpio.h"
+#if SOC_LP_I2C_SUPPORTED
+#include "hal/rtc_io_ll.h"
+#include "driver/rtc_io.h"
+#include "soc/rtc_io_channel.h"
+#include "driver/lp_io.h"
+#endif
 #if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
 #include "esp_private/sleep_retention.h"
 #endif
@@ -69,22 +75,38 @@ static esp_err_t s_i2c_bus_handle_acquire(i2c_port_num_t port_num, i2c_bus_handl
             bus->port_num = port_num;
             bus->spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
             bus->bus_mode = mode;
+            bus->is_lp_i2c = (bus->port_num < SOC_HP_I2C_NUM) ? false : true;
 
 #if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && !CONFIG_IDF_TARGET_ESP32P4 // TODO: IDF-9353
-            sleep_retention_module_init_param_t init_param = {
-                .cbs = { .create = { .handle = s_i2c_sleep_retention_init, .arg = (void *)bus } }
-            };
-            ret = sleep_retention_module_init(I2C_SLEEP_RETENTION_MODULE(port_num), &init_param);
-            if (ret == ESP_OK) {
-                sleep_retention_module_allocate(I2C_SLEEP_RETENTION_MODULE(port_num));
+            if (bus->is_lp_i2c == false) {
+                sleep_retention_module_init_param_t init_param = {
+                    .cbs = { .create = { .handle = s_i2c_sleep_retention_init, .arg = (void *)bus } }
+                };
+                ret = sleep_retention_module_init(I2C_SLEEP_RETENTION_MODULE(port_num), &init_param);
+                if (ret == ESP_OK) {
+                    sleep_retention_module_allocate(I2C_SLEEP_RETENTION_MODULE(port_num));
+                }
+            } else {
+                ESP_LOGW(TAG, "Detected PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP is enabled while LP_I2C is used. Sleep retention is not supported on LP I2C. Please use it properly");
             }
 #endif
 
             // Enable the I2C module
-            I2C_RCC_ATOMIC() {
-                i2c_ll_enable_bus_clock(bus->port_num, true);
-                i2c_ll_reset_register(bus->port_num);
+            if (!bus->is_lp_i2c) {
+                I2C_RCC_ATOMIC() {
+                    i2c_ll_enable_bus_clock(bus->port_num, true);
+                    i2c_ll_reset_register(bus->port_num);
+                }
             }
+#if SOC_LP_I2C_SUPPORTED
+            else {
+                LP_I2C_BUS_CLK_ATOMIC() {
+                    lp_i2c_ll_enable_bus_clock(bus->port_num - SOC_HP_I2C_NUM, true);
+                    lp_i2c_ll_reset_register(bus->port_num - SOC_HP_I2C_NUM);
+                }
+            }
+#endif
+
             I2C_CLOCK_SRC_ATOMIC() {
                 i2c_hal_init(&bus->hal, port_num);
             }
@@ -117,7 +139,7 @@ esp_err_t i2c_acquire_bus_handle(i2c_port_num_t port_num, i2c_bus_handle_t *i2c_
     esp_err_t ret = ESP_OK;
     _lock_acquire(&s_i2c_platform.mutex);
     if (port_num == -1) {
-        for (int i = 0; i < SOC_I2C_NUM; i++) {
+        for (int i = 0; i < SOC_HP_I2C_NUM; i++) {
             bus_occupied = i2c_bus_occupied(i);
             if (bus_occupied == false) {
                 ret = s_i2c_bus_handle_acquire(i, i2c_new_bus, mode);
@@ -154,9 +176,11 @@ esp_err_t i2c_release_bus_handle(i2c_bus_handle_t i2c_bus)
             do_deinitialize = true;
             s_i2c_platform.buses[port_num] = NULL;
 #if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && !CONFIG_IDF_TARGET_ESP32P4 // TODO: IDF-9353
-            esp_err_t err = sleep_retention_module_free(I2C_SLEEP_RETENTION_MODULE(port_num));
-            if (err == ESP_OK) {
-                err = sleep_retention_module_deinit(I2C_SLEEP_RETENTION_MODULE(port_num));
+            if (i2c_bus->is_lp_i2c == false) {
+                esp_err_t err = sleep_retention_module_free(I2C_SLEEP_RETENTION_MODULE(port_num));
+                if (err == ESP_OK) {
+                    err = sleep_retention_module_deinit(I2C_SLEEP_RETENTION_MODULE(port_num));
+                }
             }
 #endif
             if (i2c_bus->intr_handle) {
@@ -166,9 +190,18 @@ esp_err_t i2c_release_bus_handle(i2c_bus_handle_t i2c_bus)
                 ESP_RETURN_ON_ERROR(esp_pm_lock_delete(i2c_bus->pm_lock), TAG, "delete pm_lock failed");
             }
             // Disable I2C module
-            I2C_RCC_ATOMIC() {
-                i2c_ll_enable_bus_clock(port_num, false);
+            if (!i2c_bus->is_lp_i2c) {
+                I2C_RCC_ATOMIC() {
+                    i2c_ll_enable_bus_clock(port_num, false);
+                }
             }
+#if SOC_LP_I2C_SUPPORTED
+            else {
+                LP_I2C_BUS_CLK_ATOMIC() {
+                    lp_i2c_ll_enable_bus_clock(port_num - SOC_HP_I2C_NUM, false);
+                }
+            }
+#endif
             free(i2c_bus);
         }
     }
@@ -192,7 +225,7 @@ esp_err_t i2c_release_bus_handle(i2c_bus_handle_t i2c_bus)
     return ESP_OK;
 }
 
-esp_err_t i2c_select_periph_clock(i2c_bus_handle_t handle, i2c_clock_source_t clk_src)
+esp_err_t i2c_select_periph_clock(i2c_bus_handle_t handle, soc_module_clk_t clk_src)
 {
     esp_err_t ret = ESP_OK;
     ESP_RETURN_ON_FALSE(handle, ESP_ERR_INVALID_ARG, TAG, "I2C empty controller handle");
@@ -211,7 +244,7 @@ esp_err_t i2c_select_periph_clock(i2c_bus_handle_t handle, i2c_clock_source_t cl
 
     // TODO: [clk_tree] to use a generic clock enable/disable or acquire/release function for all clock source
 #if SOC_I2C_SUPPORT_RTC
-    if (clk_src == I2C_CLK_SRC_RC_FAST) {
+    if (clk_src == (soc_module_clk_t)I2C_CLK_SRC_RC_FAST) {
         // RC_FAST clock is not enabled automatically on start up, we enable it here manually.
         // Note there's a ref count in the enable/disable function, we must call them in pair in the driver.
         periph_rtc_dig_clk8m_enable();
@@ -229,18 +262,23 @@ esp_err_t i2c_select_periph_clock(i2c_bus_handle_t handle, i2c_clock_source_t cl
     esp_pm_lock_type_t pm_lock_type = ESP_PM_NO_LIGHT_SLEEP;
 
 #if SOC_I2C_SUPPORT_RTC
-    if (clk_src == I2C_CLK_SRC_RC_FAST) {
+    if (clk_src == (soc_module_clk_t)I2C_CLK_SRC_RC_FAST) {
         // I2C use fifo, which connected to APB, so we cannot use I2C either when in light sleep.
-        need_pm_lock = ESP_PM_NO_LIGHT_SLEEP;
+        pm_lock_type = ESP_PM_NO_LIGHT_SLEEP;
     }
 #endif // SOC_I2C_SUPPORT_RTC
 
 #if SOC_I2C_SUPPORT_APB
-    if (clk_src == I2C_CLK_SRC_APB) {
+    if (clk_src == (soc_module_clk_t)I2C_CLK_SRC_APB) {
         // APB clock frequency can be changed during DFS
         pm_lock_type = ESP_PM_APB_FREQ_MAX;
     }
 #endif // SOC_I2C_SUPPORT_APB
+
+    if (handle->is_lp_i2c) {
+        // Even for LP I2C, the clock will also be powered down when going into light sleep.
+        pm_lock_type = ESP_PM_NO_LIGHT_SLEEP;
+    }
 
     if (need_pm_lock) {
         sprintf(handle->pm_lock_name, "I2C_%d", handle->port_num); // e.g. PORT_0
@@ -253,10 +291,8 @@ esp_err_t i2c_select_periph_clock(i2c_bus_handle_t handle, i2c_clock_source_t cl
     return ret;
 }
 
-esp_err_t i2c_common_set_pins(i2c_bus_handle_t handle)
+static esp_err_t s_hp_i2c_pins_config(i2c_bus_handle_t handle)
 {
-    esp_err_t ret = ESP_OK;
-    ESP_RETURN_ON_FALSE(handle, ESP_ERR_INVALID_ARG, TAG, "I2C empty controller handle");
     int port_id = handle->port_num;
 
     // SDA pin configurations
@@ -286,5 +322,71 @@ esp_err_t i2c_common_set_pins(i2c_bus_handle_t handle)
     gpio_func_sel(handle->scl_num, PIN_FUNC_GPIO);
     esp_rom_gpio_connect_out_signal(handle->scl_num, i2c_periph_signal[port_id].scl_out_sig, 0, 0);
     esp_rom_gpio_connect_in_signal(handle->scl_num, i2c_periph_signal[port_id].scl_in_sig, 0);
+
+    return ESP_OK;
+}
+
+#if SOC_LP_I2C_SUPPORTED
+
+static esp_err_t s_lp_i2c_pins_config(i2c_bus_handle_t handle)
+{
+    ESP_RETURN_ON_ERROR(!rtc_gpio_is_valid_gpio(handle->sda_num), TAG, "LP I2C SDA GPIO invalid");
+    ESP_RETURN_ON_ERROR(!rtc_gpio_is_valid_gpio(handle->scl_num), TAG, "LP I2C SCL GPIO invalid");
+
+#if !SOC_LP_GPIO_MATRIX_SUPPORTED
+    /* Verify that the SDA and SCL line belong to the LP IO Mux I2C function group */
+    ESP_RETURN_ON_FALSE((handle->sda_num == LP_I2C_SDA_IOMUX_PAD), ESP_ERR_INVALID_ARG, TAG, LP_I2C_SDA_PIN_ERR_LOG);
+    ESP_RETURN_ON_FALSE((handle->scl_num == LP_I2C_SCL_IOMUX_PAD), ESP_ERR_INVALID_ARG, TAG, LP_I2C_SCL_PIN_ERR_LOG);
+#endif /* !SOC_LP_GPIO_MATRIX_SUPPORTED */
+    int port_id = handle->port_num;
+
+    rtc_gpio_init(handle->sda_num);
+    rtc_gpio_set_direction(handle->sda_num, RTC_GPIO_MODE_INPUT_OUTPUT_OD);
+    rtc_gpio_pulldown_dis(handle->sda_num);
+    if (handle->pull_up_enable) {
+        rtc_gpio_pullup_en(handle->sda_num);
+    } else {
+        rtc_gpio_pullup_dis(handle->sda_num);
+    }
+#if !SOC_LP_GPIO_MATRIX_SUPPORTED
+    rtc_gpio_iomux_func_sel(handle->sda_num, i2c_periph_signal[port_id].iomux_func);
+#else
+    lp_gpio_connect_out_signal(handle->sda_num, i2c_periph_signal[port_id].scl_out_sig, 0, 0);
+    lp_gpio_connect_in_signal(handle->sda_num, i2c_periph_signal[port_id].scl_in_sig, 0);
+#endif
+
+    rtc_gpio_init(handle->scl_num);
+    rtc_gpio_set_direction(handle->scl_num, RTC_GPIO_MODE_INPUT_OUTPUT_OD);
+    rtc_gpio_pulldown_dis(handle->scl_num);
+    if (handle->pull_up_enable) {
+        rtc_gpio_pullup_en(handle->scl_num);
+    } else {
+        rtc_gpio_pullup_dis(handle->scl_num);
+    }
+#if !SOC_LP_GPIO_MATRIX_SUPPORTED
+    rtc_gpio_iomux_func_sel(handle->scl_num, i2c_periph_signal[port_id].iomux_func);
+#else
+    lp_gpio_connect_out_signal(handle->scl_num, i2c_periph_signal[port_id].sda_out_sig, 0, 0);
+    lp_gpio_connect_in_signal(handle->scl_num, i2c_periph_signal[port_id].sda_in_sig, 0);
+#endif
+
+    return ESP_OK;
+}
+
+#endif // SOC_LP_I2C_SUPPORTED
+
+esp_err_t i2c_common_set_pins(i2c_bus_handle_t handle)
+{
+    esp_err_t ret = ESP_OK;
+
+    if (handle->is_lp_i2c == false) {
+        ESP_RETURN_ON_ERROR(s_hp_i2c_pins_config(handle), TAG, "config i2c pins failed");
+    }
+#if SOC_LP_I2C_SUPPORTED
+    else {
+        ESP_RETURN_ON_ERROR(s_lp_i2c_pins_config(handle), TAG, "config i2c lp pins failed");
+    }
+#endif
+
     return ret;
 }

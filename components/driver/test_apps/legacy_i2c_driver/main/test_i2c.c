@@ -47,11 +47,11 @@
 #define READ_BIT   I2C_MASTER_READ  /*!< I2C master read */
 #define ACK_CHECK_EN   0x1     /*!< I2C master will check ack from slave*/
 
-static DRAM_ATTR i2c_dev_t *const I2C[SOC_I2C_NUM] = { &I2C0,
-#if SOC_I2C_NUM > 1
-                                                       &I2C1,
+static DRAM_ATTR i2c_dev_t *const I2C[SOC_HP_I2C_NUM] = { &I2C0,
+#if SOC_HP_I2C_NUM > 1
+                                                          &I2C1,
 #endif
-                                                     };
+                                                        };
 
 #define ACK_VAL 0
 #define NACK_VAL 1
@@ -503,7 +503,7 @@ static void i2c_slave_repeat_read(void)
 
 TEST_CASE_MULTIPLE_DEVICES("I2C repeat write test", "[i2c][test_env=generic_multi_device][timeout=150]", i2c_master_repeat_write, i2c_slave_repeat_read);
 
-#if SOC_I2C_NUM > 1
+#if SOC_HP_I2C_NUM > 1
 
 static void i2c_master_write_test_more_ports(void)
 {
