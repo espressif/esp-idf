@@ -249,7 +249,6 @@ security/secure-boot-v1.rst
 security/index.rst
 about.rst
 resources.rst
-migration-guides/release-5.x/5.2/bluetooth-classic.rst
 migration-guides/release-5.x/5.2/ieee802154.rst
 migration-guides/release-5.x/5.2/gcc.rst
 migration-guides/release-5.x/5.2/protocols.rst
