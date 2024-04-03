@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -50,7 +50,7 @@ extern "C" {
 
 #endif //CONFIG_BT_ENABLED
 
-#define ESP_BT_CONTROLLER_CONFIG_MAGIC_VAL  0x20221207
+#define ESP_BT_CONTROLLER_CONFIG_MAGIC_VAL  0x20240315
 
 /**
  * @brief Bluetooth mode for controller enable/disable
@@ -167,6 +167,12 @@ the adv packet will be discarded until the memory is restored. */
 #define BTDM_CONTROLLER_SCO_DATA_PATH_HCI           0   // SCO data is routed to HCI
 #define BTDM_CONTROLLER_SCO_DATA_PATH_PCM           1   // SCO data path is PCM
 
+#ifdef CONFIG_BTDM_CTRL_SCAN_BACKOFF_UPPERLIMITMAX
+#define BTDM_CTRL_SCAN_BACKOFF_UPPERLIMITMAX CONFIG_BTDM_CTRL_SCAN_BACKOFF_UPPERLIMITMAX
+#else
+#define BTDM_CTRL_SCAN_BACKOFF_UPPERLIMITMAX  0
+#endif
+
 #define BT_CONTROLLER_INIT_CONFIG_DEFAULT() {                              \
     .controller_task_stack_size = ESP_TASK_BT_CONTROLLER_STACK,            \
     .controller_task_prio = ESP_TASK_BT_CONTROLLER_PRIO,                   \
@@ -190,6 +196,7 @@ the adv packet will be discarded until the memory is restored. */
     .pcm_polar = CONFIG_BTDM_CTRL_PCM_POLAR_EFF,                           \
     .hli = BTDM_CTRL_HLI,                                                  \
     .dup_list_refresh_period = SCAN_DUPL_CACHE_REFRESH_PERIOD,             \
+    .ble_scan_backoff = BTDM_CTRL_SCAN_BACKOFF_UPPERLIMITMAX,              \
     .magic = ESP_BT_CONTROLLER_CONFIG_MAGIC_VAL,                           \
 }
 
@@ -233,6 +240,7 @@ typedef struct {
     uint8_t pcm_polar;                      /*!< PCM polar trig (falling clk edge & rising clk edge) */
     bool hli;                               /*!< Using high level interrupt or not */
     uint16_t dup_list_refresh_period;       /*!< Duplicate scan list refresh period */
+    bool ble_scan_backoff;                  /*!< BLE scan backoff */
     uint32_t magic;                         /*!< Magic number */
 } esp_bt_controller_config_t;
 
