@@ -1,6 +1,5 @@
 # SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
-
 import os
 import subprocess
 import sys
@@ -10,6 +9,7 @@ from pytest_embedded import Dut
 
 
 @pytest.mark.esp32
+@pytest.mark.generic
 def test_examples_parttool(dut: Dut) -> None:
     # Verify factory firmware
     dut.expect('Partitions Tool Example')

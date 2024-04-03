@@ -55,7 +55,9 @@ TARGETS_DUAL_CORE_NAMES = [x.mark.name for x in TARGETS_DUAL_CORE]
 
 # The tests which panic on external stack require PSRAM capable runners
 CONFIGS_EXTRAM_STACK = [
-    pytest.param('coredump_extram_stack', marks=[pytest.mark.esp32, pytest.mark.esp32s2, pytest.mark.psram, pytest.mark.esp32s3, pytest.mark.quad_psram])
+    pytest.param('coredump_extram_stack', marks=[pytest.mark.esp32, pytest.mark.psram]),
+    pytest.param('coredump_extram_stack', marks=[pytest.mark.esp32s2, pytest.mark.generic]),
+    pytest.param('coredump_extram_stack', marks=[pytest.mark.esp32s3, pytest.mark.quad_psram]),
 ]
 
 TARGETS_HW_STACK_GUARD = [
@@ -517,6 +519,7 @@ def test_assert_cache_disabled(
 
 
 @pytest.mark.esp32
+@pytest.mark.generic
 @pytest.mark.parametrize('config', ['panic_delay'], indirect=True)
 def test_panic_delay(dut: PanicTestDut) -> None:
     dut.run_test_func('test_storeprohibited')
@@ -831,6 +834,7 @@ def test_drom_reg_execute_violation(dut: PanicTestDut, test_func_name: str) -> N
 
 
 @pytest.mark.esp32
+@pytest.mark.generic
 @pytest.mark.parametrize('config', ['gdbstub_coredump'], indirect=True)
 def test_gdbstub_coredump(dut: PanicTestDut) -> None:
     test_func_name = 'test_storeprohibited'
