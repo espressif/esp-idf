@@ -650,3 +650,9 @@ config BT_NIMBLE_HOST_QUEUE_CONG_CHECK
         When scanning and scan duplicate is not enabled, if there are a lot of adv packets around
         or application layer handling adv packets is slow, it will cause the controller memory
         to run out. if enabled, adv packets will be lost when host queue is congested.
+
+config BT_NIMBLE_VS_SUPPORT
+    bool "Enable support for VSC and VSE"
+    help
+        This option is used to enable support for sending Vendor Specific HCI commands and handling
+        Vendor Specific HCI Events.
