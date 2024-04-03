@@ -49,7 +49,7 @@ With this information, the scanner can synchronize with the advertiser and they 
 #include "freertos/semphr.h"
 ```
 
-These `includes` are required for the FreeRTOS and underlaying system components to run, including the logging functionality and a library to store data in non-volatile flash memory. We are interested in `“bt.h”`, `“esp_bt_main.h”`, `"esp_gap_ble_api.h"` and `“esp_gattc_api.h”`, which expose the BLE APIs required to implement this example.
+These `includes` are required for the FreeRTOS and underlying system components to run, including the logging functionality and a library to store data in non-volatile flash memory. We are interested in `“bt.h”`, `“esp_bt_main.h”`, `"esp_gap_ble_api.h"` and `“esp_gattc_api.h”`, which expose the BLE APIs required to implement this example.
 
 * `esp_bt.h`: configures the BT controller and VHCI from the host side.
 * `esp_bt_main.h`: initializes and enables the Bluedroid stack.
@@ -86,8 +86,8 @@ void app_main(void)
         ESP_LOGE(LOG_TAG, "%s enable controller failed: %s", __func__, esp_err_to_name(ret));
         return;
     }
-    esp_bluedroid_config_t bluedroid_cfg = BT_BLUEDROID_INIT_CONFIG_DEFAULT();
-    ret = esp_bluedroid_init_with_cfg(&bluedroid_cfg);
+
+    ret = esp_bluedroid_init();
     if (ret) {
         ESP_LOGE(LOG_TAG, "%s init bluetooth failed: %s", __func__, esp_err_to_name(ret));
         return;
@@ -152,8 +152,7 @@ There are four Bluetooth modes supported:
 After the initialization of the BT controller, the Bluedroid stack, which includes the common definitions and APIs for both BT Classic and BLE, is initialized and enabled by using:
 
 ```c
-esp_bluedroid_config_t bluedroid_cfg = BT_BLUEDROID_INIT_CONFIG_DEFAULT();
-ret = esp_bluedroid_init_with_cfg(&bluedroid_cfg);
+ret = esp_bluedroid_init();
 ret = esp_bluedroid_enable();
 ```
 The main function ends by registering the GAP and GATT event handlers, as well as the Application Profile and set the maximum supported MTU size.
@@ -190,7 +189,7 @@ The func will be called in the context of bin semaphore esp_ble_gap_set_ext_scan
 * @brief ext scan parameters
 */
 typedef struct {
-    esp_ble_addr_type_t own_addr_type;        /*!< ext scan own addresss type */
+    esp_ble_addr_type_t own_addr_type;        /*!< ext scan own address type */
     esp_ble_scan_filter_t filter_policy;      /*!< ext scan filter policy */
     esp_ble_scan_duplicate_t  scan_duplicate; /*!< ext scan duplicate scan */
     esp_ble_ext_scan_cfg_mask_t cfg_mask;     /*!< ext scan config mask */
@@ -213,7 +212,7 @@ can.*/
 
      uint16_t scan_window;          /*!< ext scan window. The duration of the LE scan
 . LE_Scan_Window shall be less than or equal to LE_Scan_Interval*/
-    //Range: 0x0004 to 0x4000                                                            //Defaul
+    //Range: 0x0004 to 0x4000                                                            //Default
 t: 0x0010 (10 ms)
     //Time = N * 0.625 msec
     //Time Range: 2.5 msec to 10240 msec

@@ -156,8 +156,7 @@ void ble_ibeacon_appRegister(void)
 
 void ble_ibeacon_init(void)
 {
-    esp_bluedroid_config_t bluedroid_cfg = BT_BLUEDROID_INIT_CONFIG_DEFAULT();
-    esp_bluedroid_init_with_cfg(&bluedroid_cfg);
+    esp_bluedroid_init();
     esp_bluedroid_enable();
     ble_ibeacon_appRegister();
 }
