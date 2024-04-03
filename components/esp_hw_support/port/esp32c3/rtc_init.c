@@ -40,6 +40,7 @@ void rtc_init(rtc_config_t cfg)
      * No worry about the power consumption, Because modem Force PD will be set at the end of this function.
      */
     CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_PWC_REG, RTC_CNTL_WIFI_FORCE_PD);
+    CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_WIFI_FORCE_ISO);
 
     REGI2C_WRITE_MASK(I2C_DIG_REG, I2C_DIG_REG_XPD_DIG_REG, 0);
     REGI2C_WRITE_MASK(I2C_DIG_REG, I2C_DIG_REG_XPD_RTC_REG, 0);
@@ -263,7 +264,7 @@ uint32_t get_rtc_dbias_by_efuse(uint8_t chip_version, uint32_t dig_dbias)
 static void set_rtc_dig_dbias()
 {
     /*
-    1. a reasonable dig_dbias which by scaning pvt to make 160 CPU run successful stored in efuse;
+    1. a reasonable dig_dbias which by scanning pvt to make 160 CPU run successful stored in efuse;
     2. also we store some value in efuse, include:
         k_rtc_ldo (slope of rtc voltage & rtc_dbias);
         k_dig_ldo (slope of digital voltage & digital_dbias);
