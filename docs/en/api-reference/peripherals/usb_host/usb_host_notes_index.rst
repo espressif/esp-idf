@@ -1,6 +1,8 @@
 USB Host Maintainers Notes (Introduction)
 =========================================
 
+:link_to_translation:`zh_CN:[中文]`
+
 This document contains information regarding the implementation details of the USB Host stack. This document is intended for the maintainers and third-party contributors of the USB Host stack. Users of the USB Host stack should refer to :doc:`../usb_host` instead.
 
 .. warning::

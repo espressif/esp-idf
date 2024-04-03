@@ -1,11 +1,13 @@
-USB 主机维护者注意事项(简介)
+USB 主机维护者注意事项（简介）
 ==============================
 
-本文档包含有关 USB 主机协议栈实现细节的信息,面向 USB 主机协议栈的维护者和第三方贡献者。USB 主机协议栈的用户请参考 :doc:`../usb_host`。
+:link_to_translation:`en:[English]`
+
+本文档包含有关 USB 主机协议栈实现细节的信息面向，USB 主机协议栈的维护者和第三方贡献者。USB 主机协议栈的用户请参考 :doc:`../usb_host`。
 
 .. warning::
 
-    USB 主机协议栈的实现细节属于私有 API，因此，除 USB 主机库外的所有层均不遵循 :ref:`ESP-IDF's 版本简介<versioning-scheme>` 即允许进行重大更改。
+    USB 主机协议栈的实现细节属于私有 API，因此，除 USB 主机库外的所有层均不遵循 :ref:`ESP-IDF's 版本简介<versioning-scheme>`，即允许进行重大更改。
 
 .. figure:: ../../../../_static/usb_host/stack-overview.png
     :align: center
@@ -22,7 +24,7 @@ USB 主机维护者注意事项(简介)
 
 待写章节：
 
-- USB 主机维护者注意事项 (HAL 和 LL)
+- USB 主机维护者注意事项（HAL 和 LL）
 - USB 主机维护者注意事项 (HCD)
 - USB 主机维护者注意事项 (USBH)
 - USB 主机维护者注意事项 (Hub)
@@ -49,5 +51,5 @@ ESP-IDF USB 主机协议栈（以下简称为主机协议栈）的实现考虑�
 
 **主机协议栈目前存在以下显著局限：**
 
-- 不支持 HS (高速) 设备
-- 不支持集线器 (当前仅支持单个设备)
+- 不支持 HS（高速）设备
+- 不支持集线器（当前仅支持单个设备）
