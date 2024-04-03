@@ -241,7 +241,6 @@ TEST_CASE("Can wake up from automatic light sleep by GPIO", "[pm][ignore]")
 #endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S3)
 #endif //CONFIG_ULP_COPROC_TYPE_FSM
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32P4) //TODO: IDF-9628
 typedef struct {
     int delay_us;
     int result;
@@ -295,7 +294,6 @@ TEST_CASE("vTaskDelay duration is correct with light sleep enabled", "[pm]")
 
     light_sleep_disable();
 }
-#endif
 
 /* This test is similar to the one in test_esp_timer.c, but since we can't use
  * ref_clock, this test uses RTC clock for timing. Also enables automatic
