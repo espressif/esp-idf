@@ -16,6 +16,7 @@
 #include "esp_private/esp_pmu.h"
 #include "esp_sleep.h"
 #include "hal/efuse_hal.h"
+#include "hal/clk_tree_ll.h"
 
 // Please define the frequently called modules in the low bit,
 // which will improve the execution efficiency
@@ -363,10 +364,29 @@ void modem_clock_select_lp_clock_source(periph_module_t module, modem_clock_lpcl
 
 #if SOC_BT_SUPPORTED
     case PERIPH_BT_MODULE:
+#if CONFIG_IDF_TARGET_ESP32H2
+        bool rc_clk_en = true;
+        bool selected = (src == MODEM_CLOCK_LPCLK_SRC_MAIN_XTAL) ||
+                        (src == MODEM_CLOCK_LPCLK_SRC_RC_SLOW);
+        if (selected) {
+            rc_clk_en = clk_ll_rc32k_is_enabled();
+            if (!rc_clk_en) {
+                clk_ll_rc32k_enable();
+            }
+            modem_clock_hal_select_ble_rtc_timer_lpclk_source(MODEM_CLOCK_instance()->hal, MODEM_CLOCK_LPCLK_SRC_RC32K);
+        }
+#endif // CONFIG_IDF_TARGET_ESP32H2
         modem_clock_hal_deselect_all_ble_rtc_timer_lpclk_source(MODEM_CLOCK_instance()->hal);
         modem_clock_hal_select_ble_rtc_timer_lpclk_source(MODEM_CLOCK_instance()->hal, src);
         modem_clock_hal_set_ble_rtc_timer_divisor_value(MODEM_CLOCK_instance()->hal, divider);
         modem_clock_hal_enable_ble_rtc_timer_clock(MODEM_CLOCK_instance()->hal, true);
+#if CONFIG_IDF_TARGET_ESP32H2
+        if (!rc_clk_en) {
+            extern void esp_ble_rtc_ticks_delay(uint32_t ticks);
+            esp_ble_rtc_ticks_delay(2);
+            clk_ll_rc32k_disable();
+        }
+#endif // CONFIG_IDF_TARGET_ESP32H2
 #if SOC_BLE_USE_WIFI_PWR_CLK_WORKAROUND
         if (efuse_hal_chip_revision() != 0) {
             if (src == MODEM_CLOCK_LPCLK_SRC_MAIN_XTAL) {
