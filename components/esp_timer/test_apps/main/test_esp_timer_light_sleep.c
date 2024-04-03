@@ -8,6 +8,8 @@
 #include <time.h>
 #include <sys/time.h>
 #include <sys/param.h>
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 #include "esp_timer.h"
 #include "unity.h"
 #include "esp_rom_sys.h"
@@ -54,6 +56,7 @@ TEST_CASE("Test the periodic timer does not handle lost events during light slee
     // times_skipped is about 12 (4 from each sleep time).
     TEST_ESP_OK(esp_timer_dump(stdout));
     TEST_ESP_OK(esp_timer_delete(periodic_timer));
+    vTaskDelay(3); // wait for the esp_timer task to delete all timers
 }
 
 #endif // SOC_LIGHT_SLEEP_SUPPORTED
