@@ -378,6 +378,16 @@ extern "C" {
     } while(0)
     
 /**
+ * A version of ESP_RETURN_ON_FALSE() macro that can be called from ISR.
+ */
+#define ESP_RETURN_ON_FALSE_ISR(a, err_code, log_tag, format, ...) do {                         \
+        if (unlikely(!(a))) {                                                                   \
+            ESP_EARLY_LOGE(log_tag, "%s(%d): " format, __FUNCTION__, __LINE__, ##__VA_ARGS__);  \
+            return err_code;                                                                    \
+        }                                                                                       \
+    } while(0)
+
+/**
  * Macro which can be used to check the condition. If the condition is not 'true', it prints the message
  * and returns without a value.
  */
@@ -389,12 +399,12 @@ extern "C" {
     } while(0)
 
 /**
- * A version of ESP_RETURN_ON_FALSE() macro that can be called from ISR.
+ * A version of ESP_EXIT_ON_FALSE() macro that can be called from ISR.
  */
-#define ESP_RETURN_ON_FALSE_ISR(a, err_code, log_tag, format, ...) do {                         \
+#define ESP_EXIT_ON_FALSE_ISR(a, log_tag, format, ...) do {                              \
         if (unlikely(!(a))) {                                                                   \
             ESP_EARLY_LOGE(log_tag, "%s(%d): " format, __FUNCTION__, __LINE__, ##__VA_ARGS__);  \
-            return err_code;                                                                    \
+            return;                                                                             \
         }                                                                                       \
     } while(0)
 
