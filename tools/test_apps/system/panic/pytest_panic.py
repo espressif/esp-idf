@@ -778,10 +778,7 @@ def test_rtc_slow_reg2_execute_violation(dut: PanicTestDut, test_func_name: str)
 @pytest.mark.generic
 def test_irom_reg_write_violation(dut: PanicTestDut, test_func_name: str) -> None:
     dut.run_test_func(test_func_name)
-    if dut.target == 'esp32c6':
-        dut.expect_gme('Store access fault')
-    elif dut.target == 'esp32h2':
-        dut.expect_gme('Cache error')
+    dut.expect_gme('Store access fault')
     dut.expect_reg_dump(0)
 
 
