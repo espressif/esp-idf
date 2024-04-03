@@ -108,6 +108,16 @@ extern "C" {
 /**
  * A version of ESP_RETURN_ON_FALSE() macro that can be called from ISR.
  */
+#define ESP_EXIT_ON_FALSE_ISR(a, log_tag, format, ...) do {                                  \
+        (void)log_tag;                                                                          \
+        if (unlikely(!(a))) {                                                                   \
+            return;                                                                             \
+        }                                                                                       \
+    } while(0)
+
+/**
+ * A version of ESP_RETURN_ON_FALSE() macro that can be called from ISR.
+ */
 #define ESP_RETURN_ON_FALSE_ISR(a, err_code, log_tag, format, ...) do {                         \
         (void)log_tag;                                                                          \
         if (unlikely(!(a))) {                                                                   \
