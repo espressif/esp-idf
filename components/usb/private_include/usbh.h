@@ -178,13 +178,13 @@ esp_err_t usbh_process(void);
  * @param[out] num_devs_ret Current number of devices
  * @return esp_err_t
  */
-esp_err_t usbh_num_devs(int *num_devs_ret);
+esp_err_t usbh_devs_num(int *num_devs_ret);
 
 /**
  * @brief Fill list with address of currently connected devices
  *
  * - This function fills the provided list with the address of current connected devices
- * - Device address can then be used in usbh_dev_open()
+ * - Device address can then be used in usbh_devs_open()
  * - If there are more devices than the list_len, this function will only fill
  *   up to list_len number of devices.
  *
@@ -193,18 +193,18 @@ esp_err_t usbh_num_devs(int *num_devs_ret);
  * @param[out] num_dev_ret Number of devices filled into list
  * @return esp_err_t
  */
-esp_err_t usbh_dev_addr_list_fill(int list_len, uint8_t *dev_addr_list, int *num_dev_ret);
+esp_err_t usbh_devs_addr_list_fill(int list_len, uint8_t *dev_addr_list, int *num_dev_ret);
 
 /**
  * @brief Mark that all devices should be freed at the next possible opportunity
  *
- * A device marked as free will not be freed until the last client using the device has called usbh_dev_close()
+ * A device marked as free will not be freed until the last client using the device has called usbh_devs_close()
  *
  * @return
  *  - ESP_OK: There were no devices to free to begin with. Current state is all free
  *  - ESP_ERR_NOT_FINISHED: One or more devices still need to be freed (but have been marked "to be freed")
  */
-esp_err_t usbh_dev_mark_all_free(void);
+esp_err_t usbh_devs_mark_all_free(void);
 
 /**
  * @brief Open a device by address
@@ -215,17 +215,17 @@ esp_err_t usbh_dev_mark_all_free(void);
  * @param[out] dev_hdl Device handle
  * @return esp_err_t
  */
-esp_err_t usbh_dev_open(uint8_t dev_addr, usb_device_handle_t *dev_hdl);
+esp_err_t usbh_devs_open(uint8_t dev_addr, usb_device_handle_t *dev_hdl);
 
 /**
  * @brief CLose a device
  *
- * Device can be opened by calling usbh_dev_open()
+ * Device can be opened by calling usbh_devs_open()
  *
  * @param[in] dev_hdl Device handle
  * @return esp_err_t
  */
-esp_err_t usbh_dev_close(usb_device_handle_t dev_hdl);
+esp_err_t usbh_devs_close(usb_device_handle_t dev_hdl);
 
 // ------------------------------------------------ Device Functions ---------------------------------------------------
 
@@ -282,7 +282,7 @@ esp_err_t usbh_dev_get_config_desc(usb_device_handle_t dev_hdl, const usb_config
  *
  * This function allows clients to allocate a non-default endpoint (i.e., not EP0) on a connected device
  *
- * - A client must have opened the device using usbh_dev_open() before attempting to allocate an endpoint on the device
+ * - A client must have opened the device using usbh_devs_open() before attempting to allocate an endpoint on the device
  * - A client should call this function to allocate all endpoints in an interface that the client has claimed.
  * - A client must allocate an endpoint using this function before attempting to communicate with it
  * - Once the client allocates an endpoint, the client is now owns/manages the endpoint. No other client should use or
