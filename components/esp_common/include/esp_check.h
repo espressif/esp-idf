@@ -25,10 +25,21 @@ extern "C" {
     } while(0)
 
 /**
+ * A version of ESP_RETURN_ON_ERROR() macro that can be called from ISR.
+ */
+#define ESP_RETURN_ON_ERROR_ISR(x, log_tag, format, ...) do {                                   \
+        (void)log_tag;                                                                          \
+        esp_err_t err_rc_ = (x);                                                                \
+        if (unlikely(err_rc_ != ESP_OK)) {                                                      \
+            return err_rc_;                                                                     \
+        }                                                                                       \
+    } while(0)
+
+/**
  * Macro which can be used to check the error code. If the code is not ESP_OK, it prints the message and returns.
  * This macro is used when the function returns void.
  */
-#define ESP_EXIT_ON_ERROR(x, log_tag, format, ...) do {                                       \
+#define ESP_EXIT_ON_ERROR(x, log_tag, format, ...) do {                                         \
         (void)log_tag;                                                                          \
         esp_err_t err_rc_ = (x);                                                                \
         if (unlikely(err_rc_ != ESP_OK)) {                                                      \
@@ -37,13 +48,13 @@ extern "C" {
     } while(0)
 
 /**
- * A version of ESP_RETURN_ON_ERROR() macro that can be called from ISR.
+ * A version of ESP_EXIT_ON_ERROR() macro that can be called from ISR.
  */
-#define ESP_RETURN_ON_ERROR_ISR(x, log_tag, format, ...) do {                                   \
+#define ESP_EXIT_ON_ERROR_ISR(x, log_tag, format, ...) do {                                     \
         (void)log_tag;                                                                          \
         esp_err_t err_rc_ = (x);                                                                \
         if (unlikely(err_rc_ != ESP_OK)) {                                                      \
-            return err_rc_;                                                                     \
+            return;                                                                             \
         }                                                                                       \
     } while(0)
 
@@ -159,7 +170,7 @@ extern "C" {
             return err_rc_;                                                                                \
         }                                                                                                  \
     } while(0)
-    
+
 /**
  * Macro which can be used to check the error code. If the code is not ESP_OK, it prints the message and returns.
  * This macro is used when the function returns void.
