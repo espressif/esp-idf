@@ -1010,6 +1010,9 @@ examples/bluetooth/esp_ble_mesh/aligenie_demo/components/vendor_model/include/ge
 examples/bluetooth/esp_ble_mesh/aligenie_demo/components/vendor_model/include/genie_util.h
 examples/bluetooth/nimble/blecent/main/blecent.h
 examples/bluetooth/nimble/blecent/main/main.c
+examples/bluetooth/nimble/blecsc/main/blecsc_sens.h
+examples/bluetooth/nimble/blecsc/main/gatt_svr.c
+examples/bluetooth/nimble/blecsc/main/main.c
 examples/bluetooth/nimble/blehr/main/blehr_sens.h
 examples/bluetooth/nimble/blehr/main/gatt_svr.c
 examples/bluetooth/nimble/blehr/main/main.c
