@@ -147,7 +147,7 @@ if BT_LE_EXT_ADV
             Enable this option to start periodic advertisement.
 
     config BT_LE_PERIODIC_ADV_SYNC_TRANSFER
-        bool "Enable Transer Sync Events"
+        bool "Enable Transfer Sync Events"
         depends on BT_LE_ENABLE_PERIODIC_ADV
         default y
         help
@@ -421,6 +421,26 @@ config BT_LE_SLEEP_ENABLE
     help
         Enable BLE sleep
 
+choice BT_LE_LP_CLK_SRC
+    prompt "BLE low power clock source"
+    default BT_LE_LP_CLK_SRC_MAIN_XTAL
+    config BT_LE_LP_CLK_SRC_MAIN_XTAL
+        bool "Use main XTAL as RTC clock source"
+        help
+            User main XTAL as RTC clock source.
+            This option is recommended if external 32.768k XTAL is not available.
+            Using the external 32.768 kHz XTAL will have lower current consumption
+            in light sleep compared to using the main XTAL.
+
+    config BT_LE_LP_CLK_SRC_DEFAULT
+        bool "Use system RTC slow clock source"
+        help
+            Use the same slow clock source as system RTC
+            Using any clock source other than external 32.768 kHz XTAL at pin0 supports only
+            legacy ADV and SCAN due to low clock accuracy.
+
+endchoice
+
 config BT_LE_USE_ESP_TIMER
     bool "Use Esp Timer for callout"
     depends on !BT_NIMBLE_ENABLED
@@ -464,3 +484,17 @@ config BT_CTRL_BLE_ADV_REPORT_DISCARD_THRSHOLD
 config BT_LE_RELEASE_IRAM_SUPPORTED
     bool
     default y
+
+config BT_LE_TX_CCA_ENABLED
+    bool "Enable TX CCA feature"
+    default n
+    help
+        Enable CCA feature to cancel sending the packet if the signal power is stronger than CCA threshold.
+
+config BT_LE_CCA_RSSI_THRESH
+    int "CCA RSSI threshold value"
+    depends on BT_LE_TX_CCA_ENABLED
+    range 20 100
+    default 20
+    help
+        Power threshold of CCA in unit of -1 dBm.
