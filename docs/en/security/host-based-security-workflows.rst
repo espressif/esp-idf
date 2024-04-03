@@ -255,21 +255,25 @@ In this case, all the eFuses related to Flash Encryption are written with help o
 
         Please update the EFUSE_NAME with the eFuse that you need to burn. Multiple eFuses can be burned at the same time by appending them to the above command (e.g., EFUSE_NAME VAL EFUSE_NAME2 VAL2). More documentation about `espefuse.py` can be found `here <https://docs.espressif.com/projects/esptool/en/latest/esp32/espefuse/index.html>`_.
 
-  B) Write protect security eFuses
+  .. only:: esp32
 
-    After burning the respective eFuses we need to write_protect the security configurations
+    B) Write protect security eFuses
 
-    .. only:: esp32
+      After burning the respective eFuses we need to write_protect the security configurations. It can be done by burning following eFuse
 
       .. code:: bash
 
-        espefuse.py --port PORT write_protect_efuse MAC
+        espefuse.py --port PORT write_protect_efuse DIS_CACHE
 
       .. note::
 
-        The write disable bit for MAC also write disables DIS_CACHE which is required to prevent accidental burning of this bit.
+        The write protection of above eFuse also write protects multiple other eFuses, Please refer to the {IDF_TARGET_NAME} eFuse table for more details.
 
-    .. only:: not esp32
+  .. only:: SOC_EFUSE_DIS_ICACHE
+
+    B) Write protect security eFuses
+
+      After burning the respective eFuses we need to write_protect the security configurations. It can be done by burning following eFuse
 
       .. code:: bash
 
