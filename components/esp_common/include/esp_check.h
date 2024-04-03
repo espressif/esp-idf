@@ -82,6 +82,7 @@ extern "C" {
             return err_code;                                                                    \
         }                                                                                       \
     } while(0)
+
 /**
  * Macro which can be used to check the condition. If the condition is not 'true', it prints the message
  * and returns without a value.
@@ -147,6 +148,7 @@ extern "C" {
             return err_rc_;                                                                                \
         }                                                                                                  \
     } while(0)
+
 /**
  * A version of ESP_RETURN_ON_ERROR() macro that can be called from ISR.
  */
@@ -169,6 +171,7 @@ extern "C" {
             return;                                                                                        \
         }                                                                                                  \
     } while(0)
+
 /**
  * A version of ESP_EXIT_ON_ERROR() macro that can be called from ISR.
  */
@@ -225,6 +228,7 @@ extern "C" {
             return err_code;                                                                               \
         }                                                                                                  \
     } while(0)
+
 /**
  * Macro which can be used to check the condition. If the condition is not 'true', it prints the message
  * and returns without a value.
@@ -235,6 +239,7 @@ extern "C" {
             return;                                                                                        \
         }                                                                                                  \
     } while(0)
+
 /**
  * A version of ESP_EXIT_ON_FALSE() macro that can be called from ISR.
  */
@@ -244,6 +249,7 @@ extern "C" {
             return;                                                                                        \
         }                                                                                                  \
     } while(0)
+
 /**
  * Macro which can be used to check the condition. If the condition is not 'true', it prints the message,
  * sets the local variable 'ret' to the supplied 'err_code', and then exits by jumping to 'goto_tag'.
@@ -302,6 +308,7 @@ extern "C" {
             return;                                                                             \
         }                                                                                       \
     } while(0)
+
 /**
  * A version of ESP_EXIT_ON_ERROR() macro that can be called from ISR.
  */
