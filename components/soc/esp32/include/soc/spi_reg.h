@@ -1,16 +1,8 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #ifndef __SPI_REG_H__
 #define __SPI_REG_H__
 
@@ -297,20 +289,6 @@
 #define SPI_MISO_DELAY_MODE_M  ((SPI_MISO_DELAY_MODE_V)<<(SPI_MISO_DELAY_MODE_S))
 #define SPI_MISO_DELAY_MODE_V  0x3
 #define SPI_MISO_DELAY_MODE_S  16
-/* SPI_CK_OUT_HIGH_MODE : R/W ;bitpos:[15:12] ;default: 4'h0 ; */
-/*description: modify spi clock duty ratio when the value is lager than 8,
- the bits are combined with spi_clkcnt_N bits and spi_clkcnt_H bits.*/
-#define SPI_CK_OUT_HIGH_MODE  0x0000000F
-#define SPI_CK_OUT_HIGH_MODE_M  ((SPI_CK_OUT_HIGH_MODE_V)<<(SPI_CK_OUT_HIGH_MODE_S))
-#define SPI_CK_OUT_HIGH_MODE_V  0xF
-#define SPI_CK_OUT_HIGH_MODE_S  12
-/* SPI_CK_OUT_LOW_MODE : R/W ;bitpos:[11:8] ;default: 4'h0 ; */
-/*description: modify spi clock duty ratio when the value is lager than 8,
- the bits are combined with spi_clkcnt_N bits and spi_clkcnt_L bits.*/
-#define SPI_CK_OUT_LOW_MODE  0x0000000F
-#define SPI_CK_OUT_LOW_MODE_M  ((SPI_CK_OUT_LOW_MODE_V)<<(SPI_CK_OUT_LOW_MODE_S))
-#define SPI_CK_OUT_LOW_MODE_V  0xF
-#define SPI_CK_OUT_LOW_MODE_S  8
 /* SPI_HOLD_TIME : R/W ;bitpos:[7:4] ;default: 4'h1 ; */
 /*description: delay cycles of cs pin by spi clock, this bits combined with spi_cs_hold bit.*/
 #define SPI_HOLD_TIME  0x0000000F
@@ -327,7 +305,7 @@
 
 #define SPI_CLOCK_REG(i)          (REG_SPI_BASE(i) + 0x18)
 /* SPI_CLK_EQU_SYSCLK : R/W ;bitpos:[31] ;default: 1'b1 ; */
-/*description: In the master mode 1: spi_clk is eqaul to system 0: spi_clk is
+/*description: In the master mode 1: spi_clk is equal to system 0: spi_clk is
  divided from system clock.*/
 #define SPI_CLK_EQU_SYSCLK  (BIT(31))
 #define SPI_CLK_EQU_SYSCLK_M  (BIT(31))

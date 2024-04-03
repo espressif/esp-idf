@@ -1,16 +1,8 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #ifndef _SOC_SPI_STRUCT_H_
 #define _SOC_SPI_STRUCT_H_
 
@@ -85,8 +77,7 @@ typedef volatile struct spi_dev_s {
         struct {
             uint32_t setup_time:       4;                   /*(cycles-1) of ,prepare, phase by spi clock, this bits combined with spi_cs_setup bit.*/
             uint32_t hold_time:        4;                   /*delay cycles of cs pin by spi clock, this bits combined with spi_cs_hold bit.*/
-            uint32_t ck_out_low_mode:  4;                   /*modify spi clock duty ratio when the value is lager than 8, the bits are combined with spi_clkcnt_N bits and spi_clkcnt_L bits.*/
-            uint32_t ck_out_high_mode: 4;                   /*modify spi clock duty ratio when the value is lager than 8, the bits are combined with spi_clkcnt_N bits and spi_clkcnt_H bits.*/
+            uint32_t reserved8_15:     8;                   /*reserved */
             uint32_t miso_delay_mode:  2;                   /*MISO signals are delayed by spi_clk. 0: zero  1: if spi_ck_out_edge or spi_ck_i_edge is set 1  delayed by half cycle    else delayed by one cycle  2: if spi_ck_out_edge or spi_ck_i_edge is set 1  delayed by one cycle  else delayed by half cycle  3: delayed one cycle*/
             uint32_t miso_delay_num:   3;                   /*MISO signals are delayed by system clock cycles*/
             uint32_t mosi_delay_mode:  2;                   /*MOSI signals are delayed by spi_clk. 0: zero  1: if spi_ck_out_edge or spi_ck_i_edge is set 1  delayed by half cycle    else delayed by one cycle  2: if spi_ck_out_edge or spi_ck_i_edge is set 1  delayed by one cycle  else delayed by half cycle  3: delayed one cycle*/
@@ -102,7 +93,7 @@ typedef volatile struct spi_dev_s {
             uint32_t clkcnt_h:       6;                     /*In the master mode it must be floor((spi_clkcnt_N+1)/2-1). In the slave mode it must be 0.*/
             uint32_t clkcnt_n:       6;                     /*In the master mode it is the divider of spi_clk. So spi_clk frequency is system/(spi_clkdiv_pre+1)/(spi_clkcnt_N+1)*/
             uint32_t clkdiv_pre:    13;                     /*In the master mode it is pre-divider of spi_clk.*/
-            uint32_t clk_equ_sysclk: 1;                     /*In the master mode 1: spi_clk is eqaul to system 0: spi_clk is divided from system clock.*/
+            uint32_t clk_equ_sysclk: 1;                     /*In the master mode 1: spi_clk is equal to system 0: spi_clk is divided from system clock.*/
         };
         uint32_t val;
     } clock;
