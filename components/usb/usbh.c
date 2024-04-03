@@ -64,7 +64,7 @@ struct device_s {
         uint32_t action_flags;
         int num_ctrl_xfers_inflight;
         usb_device_state_t state;
-        uint32_t ref_count;
+        uint32_t open_count;
     } dynamic;
     // Mux protected members must be protected by the USBH mux_lock when accessed
     struct {
@@ -702,7 +702,7 @@ esp_err_t usbh_process(void)
 
 // ---------------------------------------------- Device Pool Functions ------------------------------------------------
 
-esp_err_t usbh_num_devs(int *num_devs_ret)
+esp_err_t usbh_devs_num(int *num_devs_ret)
 {
     USBH_CHECK(num_devs_ret != NULL, ESP_ERR_INVALID_ARG);
     xSemaphoreTake(p_usbh_obj->constant.mux_lock, portMAX_DELAY);
@@ -711,7 +711,7 @@ esp_err_t usbh_num_devs(int *num_devs_ret)
     return ESP_OK;
 }
 
-esp_err_t usbh_dev_addr_list_fill(int list_len, uint8_t *dev_addr_list, int *num_dev_ret)
+esp_err_t usbh_devs_addr_list_fill(int list_len, uint8_t *dev_addr_list, int *num_dev_ret)
 {
     USBH_CHECK(dev_addr_list != NULL && num_dev_ret != NULL, ESP_ERR_INVALID_ARG);
     USBH_ENTER_CRITICAL();
@@ -741,7 +741,7 @@ esp_err_t usbh_dev_addr_list_fill(int list_len, uint8_t *dev_addr_list, int *num
     return ESP_OK;
 }
 
-esp_err_t usbh_dev_mark_all_free(void)
+esp_err_t usbh_devs_mark_all_free(void)
 {
     USBH_ENTER_CRITICAL();
     /*
@@ -763,11 +763,11 @@ esp_err_t usbh_dev_mark_all_free(void)
         while (dev_obj_cur != NULL) {
             // Keep a copy of the next item first in case we remove the current item
             dev_obj_next = TAILQ_NEXT(dev_obj_cur, dynamic.tailq_entry);
-            if (dev_obj_cur->dynamic.ref_count == 0) {
-                // Device is not referenced. Can free immediately.
+            if (dev_obj_cur->dynamic.open_count == 0) {
+                // Device is not opened. Can free immediately.
                 call_proc_req_cb |= _dev_set_actions(dev_obj_cur, DEV_ACTION_FREE);
             } else {
-                // Device is still referenced. Just mark it as waiting to be freed
+                // Device is still opened. Just mark it as waiting to be freed
                 dev_obj_cur->dynamic.flags.waiting_free = 1;
             }
             // At least one device needs to be freed. User needs to wait for USBH_EVENT_ALL_FREE event
@@ -783,7 +783,7 @@ esp_err_t usbh_dev_mark_all_free(void)
     return (wait_for_free) ? ESP_ERR_NOT_FINISHED : ESP_OK;
 }
 
-esp_err_t usbh_dev_open(uint8_t dev_addr, usb_device_handle_t *dev_hdl)
+esp_err_t usbh_devs_open(uint8_t dev_addr, usb_device_handle_t *dev_hdl)
 {
     USBH_CHECK(dev_hdl != NULL, ESP_ERR_INVALID_ARG);
     esp_err_t ret;
@@ -806,11 +806,11 @@ esp_err_t usbh_dev_open(uint8_t dev_addr, usb_device_handle_t *dev_hdl)
     }
 exit:
     if (found_dev_obj != NULL) {
-        // The device is not in a state to be referenced
+        // The device is not in a state to be opened
         if (dev_obj->dynamic.flags.is_gone || dev_obj->dynamic.flags.waiting_free) {
             ret = ESP_ERR_INVALID_STATE;
         } else {
-            dev_obj->dynamic.ref_count++;
+            dev_obj->dynamic.open_count++;
             *dev_hdl = (usb_device_handle_t)found_dev_obj;
             ret = ESP_OK;
         }
@@ -822,18 +822,18 @@ exit:
     return ret;
 }
 
-esp_err_t usbh_dev_close(usb_device_handle_t dev_hdl)
+esp_err_t usbh_devs_close(usb_device_handle_t dev_hdl)
 {
     USBH_CHECK(dev_hdl != NULL, ESP_ERR_INVALID_ARG);
     device_t *dev_obj = (device_t *)dev_hdl;
 
     USBH_ENTER_CRITICAL();
-    dev_obj->dynamic.ref_count--;
+    dev_obj->dynamic.open_count--;
     bool call_proc_req_cb = false;
-    if (dev_obj->dynamic.ref_count == 0) {
+    if (dev_obj->dynamic.open_count == 0) {
         // Sanity check.
         assert(dev_obj->dynamic.num_ctrl_xfers_inflight == 0);  // There cannot be any control transfer in-flight
-        assert(!dev_obj->dynamic.flags.waiting_free);   // This can only be set when ref count reaches 0
+        assert(!dev_obj->dynamic.flags.waiting_free);   // This can only be set when open_count reaches 0
         if (dev_obj->dynamic.flags.is_gone || dev_obj->dynamic.flags.waiting_free) {
             // Device is already gone or is awaiting to be freed. Trigger the USBH process to free the device
             call_proc_req_cb = _dev_set_actions(dev_obj, DEV_ACTION_FREE);
@@ -1152,11 +1152,11 @@ esp_err_t usbh_hub_dev_gone(usb_device_handle_t dev_hdl)
     USBH_ENTER_CRITICAL();
     dev_obj->dynamic.flags.is_gone = 1;
     // Check if the device can be freed immediately
-    if (dev_obj->dynamic.ref_count == 0) {
-        // Device is not currently referenced at all. Can free immediately.
+    if (dev_obj->dynamic.open_count == 0) {
+        // Device is not currently opened at all. Can free immediately.
         call_proc_req_cb = _dev_set_actions(dev_obj, DEV_ACTION_FREE);
     } else {
-        // Device is still being referenced. Flush endpoints and propagate device gone event
+        // Device is still opened. Flush endpoints and propagate device gone event
         call_proc_req_cb = _dev_set_actions(dev_obj,
                                             DEV_ACTION_EPn_HALT_FLUSH |
                                             DEV_ACTION_EP0_FLUSH |
