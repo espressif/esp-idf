@@ -18,11 +18,6 @@
 #include "esp_private/esp_ipc.h"
 #include "esp_attr.h"
 #include "hal/wdt_hal.h"
-#if CONFIG_IDF_TARGET_ESP32
-#include "esp32/rom/libc_stubs.h"
-#elif CONFIG_IDF_TARGET_ESP32S2
-#include "esp32s2/rom/libc_stubs.h"
-#endif
 
 #if CONFIG_APPTRACE_GCOV_ENABLE
 
