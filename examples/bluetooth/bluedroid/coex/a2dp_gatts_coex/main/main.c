@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -45,7 +45,7 @@
 /* log tag */
 #define BT_BLE_COEX_TAG             "BT_BLE_COEX"
 /* device name */
-#define BT_DEVICE_NAME              "ESP_COEX_A2DP_DEMO"
+#define BTDM_DEVICE_NAME            "ESP_COEX_BTDM_DEMO"
 #define BLE_ADV_NAME                "ESP_COEX_BLE_DEMO"
 
 /* BLE defines */
@@ -669,7 +669,8 @@ static void bt_av_hdl_stack_evt(uint16_t event, void *p_param)
     switch (event) {
     /* when do the stack up, this event comes */
     case BT_APP_EVT_STACK_UP: {
-        esp_bt_dev_set_device_name(BT_DEVICE_NAME);
+        esp_bt_gap_set_device_name(BTDM_DEVICE_NAME);
+        esp_ble_gap_set_device_name(BTDM_DEVICE_NAME);
         esp_bt_gap_register_callback(bt_app_gap_cb);
 
         assert(esp_avrc_ct_init() == ESP_OK);

@@ -94,7 +94,7 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_
             ESP_LOGE(TAG, "create attr table failed, error code = 0x%x", ret);
             return;
         }
-        ret = esp_bt_dev_set_device_name(g_ble_cfg_p->device_name);
+        ret = esp_ble_gap_set_device_name(g_ble_cfg_p->device_name);
         if (ret) {
             ESP_LOGE(TAG, "set device name failed, error code = 0x%x", ret);
             return;

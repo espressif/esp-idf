@@ -26,7 +26,7 @@ First, let’s take a look at the includes:
 #include "esp_gatt_common_api.h"
 #include "sdkconfig.h"
 ```
-These includes are required for the FreeRTOS and underlaying system components to run, including the logging functionality and a library to store data in non-volatile flash memory. We are interested in `"esp_bt.h"`, `"esp_bt_main.h"`, `"esp_gap_ble_api.h"` and `"esp_gatts_api.h"`, which expose the BLE APIs required to implement this example.
+These includes are required for the FreeRTOS and underlying system components to run, including the logging functionality and a library to store data in non-volatile flash memory. We are interested in `"esp_bt.h"`, `"esp_bt_main.h"`, `"esp_gap_ble_api.h"` and `"esp_gatts_api.h"`, which expose the BLE APIs required to implement this example.
 
 * `esp_bt.h`: implements BT controller and VHCI configuration procedures from the host side.
 * `esp_bt_main.h`: implements initialization and enabling of the Bluedroid stack.
@@ -255,7 +255,7 @@ An advertising payload can be up to 31 bytes of data. It is possible the paramet
 It is possible to also advertise customized raw data using the `esp_ble_gap_config_adv_data_raw()`
 and `esp_ble_gap_config_scan_rsp_data_raw()` functions, which require to create and pass a buffer for both advertising data and scanning response data. In this example, the raw data is represented by the `raw_adv_data[]` and `raw_scan_rsp_data[]` arrays.
 
-Finally, to set the device name, the `esp_bt_dev_set_device_name()` function is used. The registering event handler is shown as follows:
+Finally, to set the device name, the `esp_ble_gap_set_device_name()` function is used. The registering event handler is shown as follows:
 
 ```c
 static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if, esp_ble_gatts_cb_param_t *param) {
@@ -267,7 +267,7 @@ static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_i
          gl_profile_tab[PROFILE_A_APP_ID].service_id.id.uuid.len = ESP_UUID_LEN_16;
          gl_profile_tab[PROFILE_A_APP_ID].service_id.id.uuid.uuid.uuid16 = GATTS_SERVICE_UUID_TEST_A;
 
-         esp_bt_dev_set_device_name(TEST_DEVICE_NAME);
+         esp_ble_gap_set_device_name(TEST_DEVICE_NAME);
 #ifdef CONFIG_SET_RAW_ADV_DATA
         esp_err_t raw_adv_ret = esp_ble_gap_config_adv_data_raw(raw_adv_data, sizeof(raw_adv_data));
         if (raw_adv_ret){

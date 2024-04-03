@@ -473,7 +473,6 @@ typedef enum {
 #define BTM_COD_SERVICE_CLASS_LO_B    0x00E0
 #define BTM_COD_SERVICE_CLASS_MASK    0xFFE0
 
-
 /* BTM service definitions
 ** Used for storing EIR data to bit mask
 */
@@ -2079,7 +2078,7 @@ BOOLEAN BTM_IsDeviceUp (void);
 **
 *******************************************************************************/
 //extern
-tBTM_STATUS BTM_SetLocalDeviceName (char *p_name);
+tBTM_STATUS BTM_SetLocalDeviceName (char *p_name, tBT_DEVICE_TYPE name_type);
 
 /*******************************************************************************
 **
@@ -2108,7 +2107,7 @@ tBTM_STATUS  BTM_SetDeviceClass (DEV_CLASS dev_class);
 **
 *******************************************************************************/
 //extern
-tBTM_STATUS BTM_ReadLocalDeviceName (char **p_name);
+tBTM_STATUS BTM_ReadLocalDeviceName (char **p_name, tBT_DEVICE_TYPE name_type);
 
 /*******************************************************************************
 **

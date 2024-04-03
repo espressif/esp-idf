@@ -81,7 +81,8 @@ void btm_dev_init (void)
 
     /* Initialize nonzero defaults */
 #if (BTM_MAX_LOC_BD_NAME_LEN > 0)
-    memset(btm_cb.cfg.bd_name, 0, sizeof(tBTM_LOC_BD_NAME));
+    memset(btm_cb.cfg.ble_bd_name, 0, sizeof(tBTM_LOC_BD_NAME));
+    memset(btm_cb.cfg.bredr_bd_name, 0, sizeof(tBTM_LOC_BD_NAME));
 #endif
 
     btm_cb.devcb.reset_timer.param  = (TIMER_PARAM_TYPE)TT_DEV_RESET;
@@ -449,11 +450,11 @@ static void btm_decode_ext_features_page (UINT8 page_number, const BD_FEATURES p
 ** Returns          status of the operation
 **
 *******************************************************************************/
-tBTM_STATUS BTM_SetLocalDeviceName (char *p_name)
+tBTM_STATUS BTM_SetLocalDeviceName (char *p_name, tBT_DEVICE_TYPE name_type)
 {
     UINT8    *p;
 
-    if (!p_name || !p_name[0] || (strlen ((char *)p_name) > BD_NAME_LEN)) {
+    if (!p_name || !p_name[0] || (strlen ((char *)p_name) > BD_NAME_LEN) || (name_type > BT_DEVICE_TYPE_DUMO)) {
         return (BTM_ILLEGAL_VALUE);
     }
 
@@ -463,16 +464,26 @@ tBTM_STATUS BTM_SetLocalDeviceName (char *p_name)
 
 #if BTM_MAX_LOC_BD_NAME_LEN > 0
     /* Save the device name if local storage is enabled */
-    p = (UINT8 *)btm_cb.cfg.bd_name;
-    if (p != (UINT8 *)p_name) {
-        BCM_STRNCPY_S(btm_cb.cfg.bd_name, p_name, BTM_MAX_LOC_BD_NAME_LEN);
-        btm_cb.cfg.bd_name[BTM_MAX_LOC_BD_NAME_LEN] = '\0';
+    if (name_type & BT_DEVICE_TYPE_BLE) {
+        p = (UINT8 *)btm_cb.cfg.ble_bd_name;
+        if (p != (UINT8 *)p_name) {
+            BCM_STRNCPY_S(btm_cb.cfg.ble_bd_name, p_name, BTM_MAX_LOC_BD_NAME_LEN);
+            btm_cb.cfg.ble_bd_name[BTM_MAX_LOC_BD_NAME_LEN] = '\0';
+        }
+    }
+
+    if (name_type & BT_DEVICE_TYPE_BREDR) {
+        p = (UINT8 *)btm_cb.cfg.bredr_bd_name;
+        if (p != (UINT8 *)p_name) {
+            BCM_STRNCPY_S(btm_cb.cfg.bredr_bd_name, p_name, BTM_MAX_LOC_BD_NAME_LEN);
+            btm_cb.cfg.bredr_bd_name[BTM_MAX_LOC_BD_NAME_LEN] = '\0';
+        }
     }
 #else
     p = (UINT8 *)p_name;
 #endif
 #if CLASSIC_BT_INCLUDED
-    if (btsnd_hcic_change_name(p)) {
+    if ((name_type & BT_DEVICE_TYPE_BREDR) && btsnd_hcic_change_name(p)) {
         return (BTM_CMD_STARTED);
     } else
 #endif
@@ -496,10 +507,33 @@ tBTM_STATUS BTM_SetLocalDeviceName (char *p_name)
 **                              is returned and p_name is set to NULL
 **
 *******************************************************************************/
-tBTM_STATUS BTM_ReadLocalDeviceName (char **p_name)
+tBTM_STATUS BTM_ReadLocalDeviceName (char **p_name, tBT_DEVICE_TYPE name_type)
 {
+    /*
+    // name_type should be BT_DEVICE_TYPE_BLE or BT_DEVICE_TYPE_BREDR
+    if (name_type > BT_DEVICE_TYPE_BREDR) {
+        *p_name = NULL;
+        BTM_TRACE_ERROR("name_type unknown %d", name_type);
+        return (BTM_NO_RESOURCES);
+    }
+    */
+
 #if BTM_MAX_LOC_BD_NAME_LEN > 0
-    *p_name = btm_cb.cfg.bd_name;
+    if ((name_type == BT_DEVICE_TYPE_DUMO) &&
+        (BCM_STRNCMP_S(btm_cb.cfg.bredr_bd_name, btm_cb.cfg.ble_bd_name, BTM_MAX_LOC_BD_NAME_LEN) != 0)) {
+        *p_name = NULL;
+        BTM_TRACE_ERROR("Error, BLE and BREDR have different names, return NULL\n");
+        return (BTM_NO_RESOURCES);
+    }
+
+    if (name_type & BT_DEVICE_TYPE_BLE) {
+        *p_name = btm_cb.cfg.ble_bd_name;
+    }
+
+    if (name_type & BT_DEVICE_TYPE_BREDR) {
+        *p_name = btm_cb.cfg.bredr_bd_name;
+    }
+
     return (BTM_SUCCESS);
 #else
     *p_name = NULL;
@@ -747,7 +781,7 @@ void btm_vsc_complete (UINT8 *p, UINT16 opcode, UINT16 evt_len,
 
     /* If there was a callback address for vcs complete, call it */
     if (p_vsc_cplt_cback) {
-        /* Pass paramters to the callback function */
+        /* Pass parameters to the callback function */
         vcs_cplt_params.opcode = opcode;        /* Number of bytes in return info */
         vcs_cplt_params.param_len = evt_len;    /* Number of bytes in return info */
         vcs_cplt_params.p_param_buf = p;

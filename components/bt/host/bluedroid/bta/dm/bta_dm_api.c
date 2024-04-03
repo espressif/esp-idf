@@ -166,7 +166,7 @@ void BTA_DisableTestMode(void)
 ** Returns          void
 **
 *******************************************************************************/
-void BTA_DmSetDeviceName(const char *p_name)
+void BTA_DmSetDeviceName(const char *p_name, tBT_DEVICE_TYPE name_type)
 {
 
     tBTA_DM_API_SET_NAME    *p_msg;
@@ -176,6 +176,7 @@ void BTA_DmSetDeviceName(const char *p_name)
         /* truncate the name if needed */
         BCM_STRNCPY_S((char *)p_msg->name, p_name, BD_NAME_LEN);
         p_msg->name[BD_NAME_LEN] = '\0';
+        p_msg->name_type = name_type;
 
         bta_sys_sendmsg(p_msg);
     }
@@ -191,13 +192,14 @@ void BTA_DmSetDeviceName(const char *p_name)
 ** Returns          void
 **
 *******************************************************************************/
-void BTA_DmGetDeviceName(tBTA_GET_DEV_NAME_CBACK *p_cback)
+void BTA_DmGetDeviceName(tBTA_GET_DEV_NAME_CBACK *p_cback, tBT_DEVICE_TYPE name_type)
 {
     tBTA_DM_API_GET_NAME *p_msg;
 
     if ((p_msg = (tBTA_DM_API_GET_NAME *) osi_malloc(sizeof(tBTA_DM_API_GET_NAME))) != NULL) {
         p_msg->hdr.event = BTA_DM_API_GET_NAME_EVT;
         p_msg->p_cback = p_cback;
+        p_msg->name_type = name_type;
         bta_sys_sendmsg(p_msg);
     }
 }
