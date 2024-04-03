@@ -35,7 +35,7 @@
 
 /**
  * Function called when a cache error occurs. It prints details such as the
- * explanation of why the panic occured.
+ * explanation of why the panic occurred.
  */
 static inline void print_cache_err_details(const void *frame)
 {
@@ -55,7 +55,7 @@ static inline void print_assist_debug_details(const void *frame)
 {
     uint32_t core_id = esp_hw_stack_guard_get_fired_cpu();
     if (core_id == ESP_HW_STACK_GUARD_NOT_FIRED) {
-        panic_print_str("ASSIST_DEBUG is not triggered BUT interrupt occured!\r\n\r\n");
+        panic_print_str("ASSIST_DEBUG is not triggered BUT interrupt occurred!\r\n\r\n");
         core_id = 0;
     }
     uint32_t sp_min, sp_max;
@@ -82,7 +82,7 @@ static inline void print_assist_debug_details(const void *frame)
 
 /**
  * Function called when a memory protection error occurs (PMS). It prints details such as the
- * explanation of why the panic occured.
+ * explanation of why the panic occurred.
  */
 #if CONFIG_ESP_SYSTEM_MEMPROT_FEATURE
 
@@ -214,7 +214,7 @@ void panic_soc_fill_info(void *f, panic_info_t *info)
     info->reason = "Unknown reason";
     info->addr = (void *) frame->mepc;
 
-    /* The mcause has been set by the CPU when the panic occured.
+    /* The mcause has been set by the CPU when the panic occurred.
      * All SoC-level panic will call this function, thus, this register
      * lets us know which error was triggered. */
     if (frame->mcause == ETS_CACHEERR_INUM) {
