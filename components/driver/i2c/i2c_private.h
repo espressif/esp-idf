@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -118,12 +118,14 @@ struct i2c_master_bus_t {
     i2c_operation_t i2c_ops[I2C_STATIC_OPERATION_ARRAY_MAX];         // I2C operation array
     _Atomic uint16_t trans_idx;                                      // Index of I2C transaction command.
     SemaphoreHandle_t cmd_semphr;                                    // Semaphore between task and interrupt, using for synchronizing ISR and I2C task.
+    QueueHandle_t event_queue;                                       // I2C event queue
     uint32_t read_buf_pos;                                           // Read buffer position
     bool contains_read;                                              // Whether command array includes read operation, true: yes, otherwise, false.
     uint32_t read_len_static;                                        // Read static buffer length
     uint32_t w_r_size;                                               // The size send/receive last time.
     bool trans_over_buffer;                                          // Data length is more than hardware fifo length, needs interrupt.
-    bool asnyc_trans;                                                // asynchronous transaction, true after callback is installed.
+    bool async_trans;                                                // asynchronous transaction, true after callback is installed.
+    bool ack_check_disable;                                          // Disable ACK check
     volatile bool trans_done;                                                 // transaction command finish
     SLIST_HEAD(i2c_master_device_list_head, i2c_master_device_list) device_list;      // I2C device (instance) list
     // asnyc trans members
@@ -138,11 +140,11 @@ struct i2c_master_bus_t {
     bool trans_finish;                                               // true if current command has been sent out.
     bool queue_trans;                                                // true if current transaction is in queue
     bool new_queue;                                                  // true if allow a new queue transaction
-    size_t index;                                                    // transaction index
     QueueHandle_t trans_queues[I2C_TRANS_QUEUE_MAX];                 // transaction queues.
     StaticQueue_t trans_queue_structs[I2C_TRANS_QUEUE_MAX];          // memory to store the static structure for trans_queues
-    i2c_operation_t **i2c_anyc_ops;                                  // pointer to asynchronous operation.
-    uint8_t **anyc_write_buffer;                                     // pointer to asynchronous write buffer.
+    i2c_operation_t (*i2c_async_ops)[I2C_STATIC_OPERATION_ARRAY_MAX]; // pointer to asynchronous operation(s).
+    uint32_t ops_prepare_idx;                                        // Index for the operations can be written into `i2c_async_ops` array.
+    uint32_t ops_cur_size;                                           // Indicates how many operations have already put in `i2c_async_ops`.
     i2c_transaction_t i2c_trans_pool[];                              // I2C transaction pool.
 };
 
@@ -151,6 +153,7 @@ struct i2c_master_dev_t {
     uint16_t device_address;              // I2C device address
     uint32_t scl_speed_hz;                // SCL clock frequency
     i2c_addr_bit_len_t addr_10bits;       // Whether I2C device is a 10-bits address device.
+    bool ack_check_disable;               // Disable ACK check
     i2c_master_callback_t on_trans_done;  // I2C master transaction done callback.
     void *user_ctx;                       // Callback user context
 };

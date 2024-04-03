@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,6 +14,7 @@ extern "C" {
 #include <stdbool.h>
 #include "soc/soc_caps.h"
 #include "soc/clk_tree_defs.h"
+#include "hal/hal_utils.h"
 
 /**
  * @brief I2C port number, can be I2C_NUM_0 ~ (I2C_NUM_MAX-1).

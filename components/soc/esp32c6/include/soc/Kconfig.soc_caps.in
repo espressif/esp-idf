@@ -531,6 +531,10 @@ config SOC_I2C_SUPPORT_SLAVE
     bool
     default y
 
+config SOC_I2C_SUPPORT_HW_FSM_RST
+    bool
+    default y
+
 config SOC_I2C_SUPPORT_HW_CLR_BUS
     bool
     default y
