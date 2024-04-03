@@ -111,6 +111,14 @@ config SOC_MODEM_CLOCK_SUPPORTED
     bool
     default y
 
+config SOC_BT_SUPPORTED
+    bool
+    default y
+
+config SOC_PHY_SUPPORTED
+    bool
+    default y
+
 config SOC_XTAL_SUPPORT_40M
     bool
     default y
@@ -640,5 +648,41 @@ config SOC_CLK_RC32K_SUPPORTED
     default y
 
 config SOC_RCC_IS_INDEPENDENT
+    bool
+    default y
+
+config SOC_BLE_SUPPORTED
+    bool
+    default y
+
+config SOC_BLE_MESH_SUPPORTED
+    bool
+    default y
+
+config SOC_ESP_NIMBLE_CONTROLLER
+    bool
+    default y
+
+config SOC_BLE_50_SUPPORTED
+    bool
+    default y
+
+config SOC_BLE_DEVICE_PRIVACY_SUPPORTED
+    bool
+    default y
+
+config SOC_BLE_POWER_CONTROL_SUPPORTED
+    bool
+    default y
+
+config SOC_BLE_PERIODIC_ADV_ENH_SUPPORTED
+    bool
+    default y
+
+config SOC_BLUFI_SUPPORTED
+    bool
+    default y
+
+config SOC_BLE_MULTI_CONN_OPTIMIZATION
     bool
     default y

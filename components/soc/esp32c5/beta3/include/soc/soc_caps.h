@@ -78,6 +78,8 @@
 // #define SOC_LIGHT_SLEEP_SUPPORTED       1  // TODO: [ESP32C5] IDF-8640
 // #define SOC_DEEP_SLEEP_SUPPORTED        1  // TODO: [ESP32C5] IDF-8638
 #define SOC_MODEM_CLOCK_SUPPORTED       1     // TODO: [ESP32C5] IDF-8845 need check, it is opened because pll has been used on beta3
+#define SOC_BT_SUPPORTED                1
+#define SOC_PHY_SUPPORTED               1
 
 /*-------------------------- XTAL CAPS ---------------------------------------*/
 #define SOC_XTAL_SUPPORT_40M            1
@@ -557,17 +559,15 @@
 // #define SOC_WIFI_HE_SUPPORT                 (1)    /*!< Support Wi-Fi 6 */
 
 /*---------------------------------- Bluetooth CAPS ----------------------------------*/
-// #define SOC_BLE_SUPPORTED               (1)    /*!< Support Bluetooth Low Energy hardware */
-// #define SOC_BLE_MESH_SUPPORTED          (1)    /*!< Support BLE MESH */
-// #define SOC_ESP_NIMBLE_CONTROLLER       (1)    /*!< Support BLE EMBEDDED controller V1 */
-// #define SOC_BLE_50_SUPPORTED            (1)    /*!< Support Bluetooth 5.0 */
-// #define SOC_BLE_DEVICE_PRIVACY_SUPPORTED (1)   /*!< Support BLE device privacy mode */
-// #define SOC_BLE_POWER_CONTROL_SUPPORTED (1)    /*!< Support Bluetooth Power Control */
-// #define SOC_BLE_PERIODIC_ADV_ENH_SUPPORTED  (1)    /*!< Support For BLE Periodic Adv Enhancements */
-// #define SOC_BLUFI_SUPPORTED             (1)    /*!< Support BLUFI */
-// #define SOC_BLE_MULTI_CONN_OPTIMIZATION (1)    /*!< Support multiple connections optimization */
-
-// #define SOC_BLE_USE_WIFI_PWR_CLK_WORKAROUND (1)
+#define SOC_BLE_SUPPORTED                   (1)    /*!< Support Bluetooth Low Energy hardware */
+#define SOC_BLE_MESH_SUPPORTED              (1)    /*!< Support BLE MESH */
+#define SOC_ESP_NIMBLE_CONTROLLER           (1)    /*!< Support BLE EMBEDDED controller V1 */
+#define SOC_BLE_50_SUPPORTED                (1)    /*!< Support Bluetooth 5.0 */
+#define SOC_BLE_DEVICE_PRIVACY_SUPPORTED    (1)    /*!< Support BLE device privacy mode */
+#define SOC_BLE_POWER_CONTROL_SUPPORTED     (1)    /*!< Support Bluetooth Power Control */
+#define SOC_BLE_PERIODIC_ADV_ENH_SUPPORTED  (1)    /*!< Support For BLE Periodic Adv Enhancements */
+#define SOC_BLUFI_SUPPORTED                 (1)    /*!< Support BLUFI */
+#define SOC_BLE_MULTI_CONN_OPTIMIZATION     (1)    /*!< Support multiple connections optimization */
 
 /*------------------------------------- PHY CAPS -------------------------------------*/
 // #define SOC_PHY_COMBO_MODULE                  (1) /*!< Support Wi-Fi, BLE and 15.4*/

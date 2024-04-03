@@ -24,6 +24,9 @@ elseif(CONFIG_IDF_TARGET_ESP32C6)
 
 elseif(CONFIG_IDF_TARGET_ESP32H2)
     set(target_specific_include_dirs include/esp32h2/include)
+
+elseif(CONFIG_IDF_TARGET_ESP32C5)
+    set(target_specific_include_dirs include/esp32c5/include)
 endif()
 
 set(common_include_dirs
@@ -93,6 +96,10 @@ if(CONFIG_BT_ENABLED)
 
         elseif(CONFIG_IDF_TARGET_ESP32H2)
             list(APPEND srcs "controller/esp32h2/bt.c")
+
+        elseif(CONFIG_IDF_TARGET_ESP32C5)
+            list(APPEND srcs "controller/esp32c5/bt.c")
+
         endif()
 
         list(APPEND include_dirs ${target_specific_include_dirs})
@@ -844,6 +851,9 @@ if(CONFIG_BT_ENABLED)
     elseif(CONFIG_IDF_TARGET_ESP32H2)
         add_prebuilt_library(libble_app "controller/lib_esp32h2/esp32h2-bt-lib/libble_app.a")
         target_link_libraries(${COMPONENT_LIB} PRIVATE libble_app)
+    elseif(CONFIG_IDF_TARGET_ESP32C5)
+        add_prebuilt_library(libble_app "controller/lib_esp32c5/esp32c5-bt-lib/libble_app.a")
+        target_link_libraries(${COMPONENT_LIB} PRIVATE libble_app)
     endif()
 
     set_source_files_properties(
@@ -871,6 +881,9 @@ if(CONFIG_BLE_MESH)
         target_link_libraries(${COMPONENT_LIB} PRIVATE ble_mesh)
     elseif(CONFIG_IDF_TARGET_ESP32H2)
         add_prebuilt_library(ble_mesh "esp_ble_mesh/lib/lib/esp32h2/libble_mesh.a")
+        target_link_libraries(${COMPONENT_LIB} PRIVATE ble_mesh)
+    elseif(CONFIG_IDF_TARGET_ESP32C5)
+        add_prebuilt_library(ble_mesh "esp_ble_mesh/lib/lib/esp32C5/libble_mesh.a")
         target_link_libraries(${COMPONENT_LIB} PRIVATE ble_mesh)
     endif()
 endif()

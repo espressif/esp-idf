@@ -132,6 +132,10 @@
 	path = components/bt/controller/lib_esp32c6/esp32c6-bt-lib
 	url = ../../espressif/esp32c6-bt-lib.git
 
+[submodule "components/bt/controller/lib_esp32c5/esp32c5-bt-lib"]
+	path = components/bt/controller/lib_esp32c5/esp32c5-bt-lib
+	url = ../../espressif/esp32c5-bt-lib.git
+
 [submodule "components/heap/tlsf"]
 	path = components/heap/tlsf
 	url = ../../espressif/tlsf.git
