@@ -577,8 +577,6 @@ components/soc/esp32/include/soc/slc_struct.h
 components/soc/esp32/include/soc/soc_pins.h
 components/soc/esp32/include/soc/soc_ulp.h
 components/soc/esp32/include/soc/spi_pins.h
-components/soc/esp32/include/soc/spi_reg.h
-components/soc/esp32/include/soc/spi_struct.h
 components/soc/esp32/include/soc/syscon_reg.h
 components/soc/esp32/include/soc/syscon_struct.h
 components/soc/esp32/include/soc/touch_sensor_channel.h
