@@ -214,9 +214,7 @@ struct pipe_obj {
             uint32_t waiting_halt: 1;
             uint32_t pipe_cmd_processing: 1;
             uint32_t has_urb: 1;            // Indicates there is at least one URB either pending, in-flight, or done
-            uint32_t persist: 1;            // indicates that this pipe should persist through a run-time port reset
-            uint32_t reset_lock: 1;         // Indicates that this pipe is undergoing a run-time reset
-            uint32_t reserved27: 27;
+            uint32_t reserved29: 29;
         };
         uint32_t val;
     } cs_flags;
@@ -559,28 +557,6 @@ static esp_err_t _pipe_cmd_flush(pipe_t *pipe);
 static esp_err_t _pipe_cmd_clear(pipe_t *pipe);
 
 // ------------------------ Port ---------------------------
-
-/**
- * @brief Prepare persistent pipes for reset
- *
- * This function checks if all pipes are reset persistent and proceeds to free their underlying HAL channels for the
- * persistent pipes. This should be called before a run time reset
- *
- * @param port Port object
- * @return true All pipes are persistent and their channels are freed
- * @return false Not all pipes are persistent
- */
-static bool _port_persist_all_pipes(port_t *port);
-
-/**
- * @brief Recovers all persistent pipes after a reset
- *
- * This function will recover all persistent pipes after a reset and reallocate their underlying HAl channels. This
- * function should be called after a reset.
- *
- * @param port Port object
- */
-static void _port_recover_all_pipes(port_t *port);
 
 /**
  * @brief Checks if all pipes are in the halted state
@@ -1162,44 +1138,6 @@ esp_err_t hcd_uninstall(void)
 
 // ----------------------- Helpers -------------------------
 
-static bool _port_persist_all_pipes(port_t *port)
-{
-    if (port->num_pipes_queued > 0) {
-        // All pipes must be idle before we run-time reset
-        return false;
-    }
-    bool all_persist = true;
-    pipe_t *pipe;
-    // Check that each pipe is persistent
-    TAILQ_FOREACH(pipe, &port->pipes_idle_tailq, tailq_entry) {
-        if (!pipe->cs_flags.persist) {
-            all_persist = false;
-            break;
-        }
-    }
-    if (!all_persist) {
-        // At least one pipe is not persistent. All pipes must be freed or made persistent before we can reset
-        return false;
-    }
-    TAILQ_FOREACH(pipe, &port->pipes_idle_tailq, tailq_entry) {
-        pipe->cs_flags.reset_lock = 1;
-        usb_dwc_hal_chan_free(port->hal, pipe->chan_obj);
-    }
-    return true;
-}
-
-static void _port_recover_all_pipes(port_t *port)
-{
-    pipe_t *pipe;
-    TAILQ_FOREACH(pipe, &port->pipes_idle_tailq, tailq_entry) {
-        pipe->cs_flags.persist = 0;
-        pipe->cs_flags.reset_lock = 0;
-        usb_dwc_hal_chan_alloc(port->hal, pipe->chan_obj, (void *)pipe);
-        usb_dwc_hal_chan_set_ep_char(port->hal, pipe->chan_obj, &pipe->ep_char);
-    }
-    CACHE_SYNC_FRAME_LIST(port->frame_list);
-}
-
 static bool _port_check_all_pipes_halted(port_t *port)
 {
     bool all_halted = true;
@@ -1276,20 +1214,26 @@ static esp_err_t _port_cmd_power_off(port_t *port)
 static esp_err_t _port_cmd_reset(port_t *port)
 {
     esp_err_t ret;
-    // Port can only a reset when it is in the enabled or disabled states (in case of new connection)
+
+    // Port can only a reset when it is in the enabled or disabled (in the case of a new connection)states.
     if (port->state != HCD_PORT_STATE_ENABLED && port->state != HCD_PORT_STATE_DISABLED) {
         ret = ESP_ERR_INVALID_STATE;
         goto exit;
     }
-    bool is_runtime_reset = (port->state == HCD_PORT_STATE_ENABLED) ? true : false;
-    if (is_runtime_reset && !_port_persist_all_pipes(port)) {
-        // If this is a run time reset, check all pipes that are still allocated can persist the reset
+    // Port can only be reset if all pipes are idle
+    if (port->num_pipes_queued > 0) {
         ret = ESP_ERR_INVALID_STATE;
         goto exit;
     }
-    // All pipes (if any_) are guaranteed to be persistent at this point. Proceed to resetting the bus
+    /*
+    Proceed to resetting the bus
+    - Update the port's state variable
+    - Hold the bus in the reset state for RESET_HOLD_MS.
+    - Return the bus to the idle state for RESET_RECOVERY_MS
+    */
     port->state = HCD_PORT_STATE_RESETTING;
-    // Put and hold the bus in the reset state. If the port was previously enabled, a disabled event will occur after this
+
+    // Place the bus into the reset state. If the port was previously enabled, a disabled event will occur after this
     usb_dwc_hal_port_toggle_reset(port->hal, true);
     HCD_EXIT_CRITICAL();
     vTaskDelay(pdMS_TO_TICKS(RESET_HOLD_MS));
@@ -1299,7 +1243,8 @@ static esp_err_t _port_cmd_reset(port_t *port)
         ret = ESP_ERR_INVALID_RESPONSE;
         goto bailout;
     }
-    // Return the bus to the idle state and hold it for the required reset recovery time. Port enabled event should occur
+
+    // Return the bus to the idle state. Port enabled event should occur
     usb_dwc_hal_port_toggle_reset(port->hal, false);
     HCD_EXIT_CRITICAL();
     vTaskDelay(pdMS_TO_TICKS(RESET_RECOVERY_MS));
@@ -1309,16 +1254,20 @@ static esp_err_t _port_cmd_reset(port_t *port)
         ret = ESP_ERR_INVALID_RESPONSE;
         goto bailout;
     }
-    // Set FIFO sizes based on the selected biasing
-    usb_dwc_hal_set_fifo_bias(port->hal, port->fifo_bias);
-    // We start periodic scheduling only after a RESET command since SOFs only start after a reset
-    usb_dwc_hal_port_set_frame_list(port->hal, port->frame_list, FRAME_LIST_LEN);
-    usb_dwc_hal_port_periodic_enable(port->hal);
+
+    // Reinitialize port registers.
+    usb_dwc_hal_set_fifo_bias(port->hal, port->fifo_bias);  // Set FIFO biases
+    usb_dwc_hal_port_set_frame_list(port->hal, port->frame_list, FRAME_LIST_LEN);   // Set periodic frame list
+    usb_dwc_hal_port_periodic_enable(port->hal);    // Enable periodic scheduling
+
     ret = ESP_OK;
 bailout:
-    if (is_runtime_reset) {
-        _port_recover_all_pipes(port);
+    // Reinitialize channel registers
+    pipe_t *pipe;
+    TAILQ_FOREACH(pipe, &port->pipes_idle_tailq, tailq_entry) {
+        usb_dwc_hal_chan_set_ep_char(port->hal, pipe->chan_obj, &pipe->ep_char);
     }
+    CACHE_SYNC_FRAME_LIST(port->frame_list);
 exit:
     return ret;
 }
@@ -1987,8 +1936,7 @@ esp_err_t hcd_pipe_free(hcd_pipe_handle_t pipe_hdl)
     HCD_ENTER_CRITICAL();
     // Check that all URBs have been removed and pipe has no pending events
     HCD_CHECK_FROM_CRIT(!pipe->multi_buffer_control.buffer_is_executing
-                        && !pipe->cs_flags.has_urb
-                        && !pipe->cs_flags.reset_lock,
+                        && !pipe->cs_flags.has_urb,
                         ESP_ERR_INVALID_STATE);
     // Remove pipe from the list of idle pipes (it must be in the idle list because it should have no queued URBs)
     TAILQ_REMOVE(&pipe->port->pipes_idle_tailq, pipe, tailq_entry);
@@ -2011,8 +1959,7 @@ esp_err_t hcd_pipe_update_mps(hcd_pipe_handle_t pipe_hdl, int mps)
     HCD_ENTER_CRITICAL();
     // Check if pipe is in the correct state to be updated
     HCD_CHECK_FROM_CRIT(!pipe->cs_flags.pipe_cmd_processing &&
-                        !pipe->cs_flags.has_urb &&
-                        !pipe->cs_flags.reset_lock,
+                        !pipe->cs_flags.has_urb,
                         ESP_ERR_INVALID_STATE);
     pipe->ep_char.mps = mps;
     // Update the underlying channel's registers
@@ -2027,8 +1974,7 @@ esp_err_t hcd_pipe_update_dev_addr(hcd_pipe_handle_t pipe_hdl, uint8_t dev_addr)
     HCD_ENTER_CRITICAL();
     // Check if pipe is in the correct state to be updated
     HCD_CHECK_FROM_CRIT(!pipe->cs_flags.pipe_cmd_processing &&
-                        !pipe->cs_flags.has_urb &&
-                        !pipe->cs_flags.reset_lock,
+                        !pipe->cs_flags.has_urb,
                         ESP_ERR_INVALID_STATE);
     pipe->ep_char.dev_addr = dev_addr;
     // Update the underlying channel's registers
@@ -2043,25 +1989,10 @@ esp_err_t hcd_pipe_update_callback(hcd_pipe_handle_t pipe_hdl, hcd_pipe_callback
     HCD_ENTER_CRITICAL();
     // Check if pipe is in the correct state to be updated
     HCD_CHECK_FROM_CRIT(!pipe->cs_flags.pipe_cmd_processing &&
-                        !pipe->cs_flags.has_urb &&
-                        !pipe->cs_flags.reset_lock,
+                        !pipe->cs_flags.has_urb,
                         ESP_ERR_INVALID_STATE);
     pipe->callback = callback;
     pipe->callback_arg = user_arg;
-    HCD_EXIT_CRITICAL();
-    return ESP_OK;
-}
-
-esp_err_t hcd_pipe_set_persist_reset(hcd_pipe_handle_t pipe_hdl)
-{
-    pipe_t *pipe = (pipe_t *)pipe_hdl;
-    HCD_ENTER_CRITICAL();
-    // Check if pipe is in the correct state to be updated
-    HCD_CHECK_FROM_CRIT(!pipe->cs_flags.pipe_cmd_processing &&
-                        !pipe->cs_flags.has_urb &&
-                        !pipe->cs_flags.reset_lock,
-                        ESP_ERR_INVALID_STATE);
-    pipe->cs_flags.persist = 1;
     HCD_EXIT_CRITICAL();
     return ESP_OK;
 }
@@ -2102,27 +2033,22 @@ esp_err_t hcd_pipe_command(hcd_pipe_handle_t pipe_hdl, hcd_pipe_cmd_t command)
     esp_err_t ret = ESP_OK;
 
     HCD_ENTER_CRITICAL();
-    // Cannot execute pipe commands the pipe is already executing a command, or if the pipe or its port are no longer valid
-    if (pipe->cs_flags.reset_lock) {
-        ret = ESP_ERR_INVALID_STATE;
-    } else {
-        pipe->cs_flags.pipe_cmd_processing = 1;
-        switch (command) {
-        case HCD_PIPE_CMD_HALT: {
-            ret = _pipe_cmd_halt(pipe);
-            break;
-        }
-        case HCD_PIPE_CMD_FLUSH: {
-            ret = _pipe_cmd_flush(pipe);
-            break;
-        }
-        case HCD_PIPE_CMD_CLEAR: {
-            ret = _pipe_cmd_clear(pipe);
-            break;
-        }
-        }
-        pipe->cs_flags.pipe_cmd_processing = 0;
+    pipe->cs_flags.pipe_cmd_processing = 1;
+    switch (command) {
+    case HCD_PIPE_CMD_HALT: {
+        ret = _pipe_cmd_halt(pipe);
+        break;
     }
+    case HCD_PIPE_CMD_FLUSH: {
+        ret = _pipe_cmd_flush(pipe);
+        break;
+    }
+    case HCD_PIPE_CMD_CLEAR: {
+        ret = _pipe_cmd_clear(pipe);
+        break;
+    }
+    }
+    pipe->cs_flags.pipe_cmd_processing = 0;
     HCD_EXIT_CRITICAL();
     return ret;
 }
@@ -2658,8 +2584,7 @@ esp_err_t hcd_urb_enqueue(hcd_pipe_handle_t pipe_hdl, urb_t *urb)
     // Check that pipe and port are in the correct state to receive URBs
     HCD_CHECK_FROM_CRIT(pipe->port->state == HCD_PORT_STATE_ENABLED         // The pipe's port must be in the correct state
                         && pipe->state == HCD_PIPE_STATE_ACTIVE             // The pipe must be in the correct state
-                        && !pipe->cs_flags.pipe_cmd_processing              // Pipe cannot currently be processing a pipe command
-                        && !pipe->cs_flags.reset_lock,                      // Pipe cannot be persisting through a port reset
+                        && !pipe->cs_flags.pipe_cmd_processing,             // Pipe cannot currently be processing a pipe command
                         ESP_ERR_INVALID_STATE);
     // Use the URB's reserved_ptr to store the pipe's
     urb->hcd_ptr = (void *)pipe;

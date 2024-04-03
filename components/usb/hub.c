@@ -285,7 +285,6 @@ static bool enum_stage_start(enum_ctrl_t *enum_ctrl)
 
 static bool enum_stage_second_reset(enum_ctrl_t *enum_ctrl)
 {
-    ESP_ERROR_CHECK(hcd_pipe_set_persist_reset(enum_ctrl->pipe));  // Persist the default pipe through the reset
     if (hcd_port_command(p_hub_driver_obj->constant.root_port_hdl, HCD_PORT_CMD_RESET) != ESP_OK) {
         ESP_LOGE(HUB_DRIVER_TAG, "Failed to issue second reset");
         return false;
