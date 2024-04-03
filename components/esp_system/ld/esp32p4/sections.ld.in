@@ -18,7 +18,12 @@ SECTIONS
    */
   .rtc.text :
   {
-    ALIGNED_SYMBOL(4, _rtc_fast_start)
+    /* Align the start of RTC code region as per PMP granularity
+     * this ensures we do not overwrite the permissions for the previous
+     * region (ULP mem/RTC reserved) regardless of their end alignment
+     */
+    ALIGNED_SYMBOL(_esp_pmp_align_size, _rtc_fast_start)
+    ALIGNED_SYMBOL(_esp_pmp_align_size, _rtc_text_start)
 
     arrays[rtc_text]
     mapping[rtc_text]
@@ -119,20 +124,21 @@ SECTIONS
   {
     ALIGNED_SYMBOL(4, _rtc_reserved_start)
 
+    KEEP(*(.bootloader_data_rtc_mem .bootloader_data_rtc_mem.*))
+    *(.rtc_timer_data_in_rtc_mem .rtc_timer_data_in_rtc_mem.*)
+
     /**
      * New data can only be added here to ensure existing data are not moved.
-     * Because data have adhered to the end of the segment and code is relied
+     * Because data have adhered to the beginning of the segment and code is relied
      * on it.
      * >> put new data here <<
      */
-
-    *(.rtc_timer_data_in_rtc_mem .rtc_timer_data_in_rtc_mem.*)
-    KEEP(*(.bootloader_data_rtc_mem .bootloader_data_rtc_mem.*))
 
     _rtc_reserved_end = ABSOLUTE(.);
   } > rtc_reserved_seg
 
   _rtc_reserved_length = _rtc_reserved_end - _rtc_reserved_start;
+  _rtc_ulp_memory_start = _rtc_reserved_start + LENGTH(rtc_reserved_seg);
   ASSERT((_rtc_reserved_length <= LENGTH(rtc_reserved_seg)),
           "RTC reserved segment data does not fit.")
 

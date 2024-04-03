@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -41,6 +41,8 @@
 #define _esp_mmu_page_size CONFIG_MMU_PAGE_SIZE
 #endif
 
+#define ALIGN_UP(SIZE, AL)   (((SIZE) + (AL - 1)) & ~(AL - 1))
+
 #if CONFIG_SOC_RTC_MEM_SUPPORTED
     #if CONFIG_BOOTLOADER_RESERVE_RTC_MEM
         #ifdef CONFIG_BOOTLOADER_CUSTOM_RESERVE_RTC
@@ -57,9 +59,15 @@
 
     #if CONFIG_IDF_TARGET_ESP32
         #define RESERVE_RTC_MEM (RTC_TIMER_RESERVE_RTC)
+    #elif CONFIG_ESP_ROM_HAS_LP_ROM && CONFIG_ULP_COPROC_ENABLED
+	/* RTC Reserved is placed before ULP memory, expand it to make sure the ULP start address
+	   has the required alignment */
+	    #define ULP_ALIGNMENT_REQ_BYTES 256
+        #define RESERVE_RTC_MEM ALIGN_UP(ESP_BOOTLOADER_RESERVE_RTC + RTC_TIMER_RESERVE_RTC, ULP_ALIGNMENT_REQ_BYTES)
     #else
         #define RESERVE_RTC_MEM (ESP_BOOTLOADER_RESERVE_RTC + RTC_TIMER_RESERVE_RTC)
     #endif
+
 #endif // SOC_RTC_MEM_SUPPORTED
 
 #define QUOTED_STRING(STRING) #STRING

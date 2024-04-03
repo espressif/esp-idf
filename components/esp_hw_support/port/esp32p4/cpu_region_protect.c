@@ -209,6 +209,7 @@ void esp_cpu_configure_region_protection(void)
 
     // 6. LP memory
 #if CONFIG_ESP_SYSTEM_PMP_IDRAM_SPLIT && !BOOTLOADER_BUILD
+    extern int _rtc_text_start;
     extern int _rtc_text_end;
     /* Reset the corresponding PMP config because PMP_ENTRY_SET only sets the given bits
      * Bootloader might have given extra permissions and those won't be cleared
@@ -218,13 +219,9 @@ void esp_cpu_configure_region_protection(void)
     PMP_ENTRY_CFG_RESET(11);
     PMP_ENTRY_CFG_RESET(12);
     PMP_ENTRY_SET(9, SOC_RTC_IRAM_LOW, NONE);
-#if CONFIG_ULP_COPROC_RESERVE_MEM
-    // First part of LP mem is reserved for coprocessor
-    PMP_ENTRY_SET(10, SOC_RTC_IRAM_LOW + CONFIG_ULP_COPROC_RESERVE_MEM, PMP_TOR | RW);
-#else // CONFIG_ULP_COPROC_RESERVE_MEM
-    // Repeat same previous entry, to ensure next entry has correct base address (TOR)
-    PMP_ENTRY_SET(10, SOC_RTC_IRAM_LOW, NONE);
-#endif // !CONFIG_ULP_COPROC_RESERVE_MEM
+    // First part of LP mem is reserved for RTC reserved mem (shared between bootloader and app)
+    // as well as memory for ULP coprocessor
+    PMP_ENTRY_SET(10, (int)&_rtc_text_start, PMP_TOR | RW);
     PMP_ENTRY_SET(11, (int)&_rtc_text_end, PMP_TOR | RX);
     PMP_ENTRY_SET(12, SOC_RTC_IRAM_HIGH, PMP_TOR | RW);
 #else

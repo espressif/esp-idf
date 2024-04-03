@@ -36,6 +36,7 @@ list(REMOVE_DUPLICATES component_includes)
 list(APPEND ULP_PREPROCESSOR_ARGS ${component_includes})
 list(APPEND ULP_PREPROCESSOR_ARGS -I${COMPONENT_DIR})
 list(APPEND ULP_PREPROCESSOR_ARGS -I${sdkconfig_dir})
+list(APPEND ULP_PREPROCESSOR_ARGS -I${IDF_PATH}/components/esp_system/ld)
 
 target_include_directories(${ULP_APP_NAME} PRIVATE ${COMPONENT_INCLUDES})
 

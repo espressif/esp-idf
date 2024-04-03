@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -30,6 +30,11 @@
 #if CONFIG_APP_BUILD_USE_FLASH_SECTIONS
 #define IDROM_SEG_SIZE   (CONFIG_MMU_PAGE_SIZE << 10)
 #endif
+
+#define LP_ROM_DRAM_START 0x5010fa80 // Value taken from ROM elf, includes LP ROM stack
+#define LP_RAM_END        0x50110000
+#define LP_ROM_DRAM_SIZE  (LP_RAM_END - LP_ROM_DRAM_START)
+
 
 MEMORY
 {
@@ -73,10 +78,10 @@ MEMORY
    * lp ram memory (RWX). Persists over deep sleep. // TODO: IDF-5667
    */
 #if CONFIG_ULP_COPROC_ENABLED
-  lp_ram_seg(RW)  :                 org = 0x50108000 + CONFIG_ULP_COPROC_RESERVE_MEM,
-                                    len = 0x8000 - CONFIG_ULP_COPROC_RESERVE_MEM - RESERVE_RTC_MEM
+  lp_ram_seg(RW)  :                 org = 0x50108000 + RESERVE_RTC_MEM + CONFIG_ULP_COPROC_RESERVE_MEM,
+                                    len = 0x8000 - CONFIG_ULP_COPROC_RESERVE_MEM - RESERVE_RTC_MEM - LP_ROM_DRAM_SIZE
 #else
-  lp_ram_seg(RW)  :                 org = 0x50108000 , len = 0x8000 - RESERVE_RTC_MEM
+  lp_ram_seg(RW)  :                 org = 0x50108000 + RESERVE_RTC_MEM, len = 0x8000 - RESERVE_RTC_MEM
 #endif // CONFIG_ULP_COPROC_ENABLED
 
   /* We reduced the size of lp_ram_seg by RESERVE_RTC_MEM value.
@@ -85,8 +90,9 @@ MEMORY
        - (lower addr) rtc timer data (s_rtc_timer_retain_mem, see esp_clk.c files).
        - (higher addr) bootloader rtc data (s_bootloader_retain_mem, when a Kconfig option is on).
      The aim of this is to keep data that will not be moved around and have a fixed address.
+     This segment is placed at the beginning of LP RAM, as the end of LP RAM is occupied by LP ROM stack/data
   */
-  lp_reserved_seg(RW) :        org = 0x50108000 + 0x8000 - RESERVE_RTC_MEM, len = RESERVE_RTC_MEM
+  lp_reserved_seg(RW) :        org = 0x50108000, len = RESERVE_RTC_MEM
 }
 
 /* Heap ends at top of dram0_0_seg */

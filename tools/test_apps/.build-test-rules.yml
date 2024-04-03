@@ -212,6 +212,12 @@ tools/test_apps/system/ram_loadable_app:
     - if: IDF_TARGET in ["esp32p4"]
       temporary: true
       reason: TBD # TODO: IDF-8994
+
+tools/test_apps/system/rtc_mem_reserve:
+  enable:
+    - if: IDF_TARGET in ["esp32p4"]
+      reason: only P4 has a potential conflict due to using rtc mem for lp rom data/stack
+
 tools/test_apps/system/startup:
   disable:
     - if: CONFIG_NAME == "main_task_cpu1" and IDF_TARGET not in ["esp32", "esp32s3"]
