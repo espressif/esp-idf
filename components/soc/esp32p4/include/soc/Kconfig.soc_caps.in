@@ -1011,6 +1011,10 @@ config SOC_SDMMC_IO_POWER_EXTERNAL
     bool
     default y
 
+config SOC_SDMMC_PSRAM_DMA_CAPABLE
+    bool
+    default y
+
 config SOC_SHA_DMA_MAX_BUFFER_SIZE
     int
     default 3968

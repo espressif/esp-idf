@@ -405,6 +405,9 @@ esp_err_t sdmmc_write_sectors(sdmmc_card_t* card, const void* src,
     size_t block_size = card->csd.sector_size;
     esp_dma_mem_info_t dma_mem_info;
     card->host.get_dma_info(card->host.slot, &dma_mem_info);
+#ifdef SOC_SDMMC_PSRAM_DMA_CAPABLE
+    dma_mem_info.extra_heap_caps |= MALLOC_CAP_SPIRAM;
+#endif
     if (esp_dma_is_buffer_alignment_satisfied(src, block_size * block_count, dma_mem_info)) {
         err = sdmmc_write_sectors_dma(card, src, start_block, block_count, block_size * block_count);
     } else {
@@ -413,6 +416,9 @@ esp_err_t sdmmc_write_sectors(sdmmc_card_t* card, const void* src,
         // DMA-capable buffer.
         void *tmp_buf = NULL;
         size_t actual_size = 0;
+        // Clear the SPIRAM flag. We don't want to force the allocation into SPIRAM, the allocator
+        // will decide based on the buffer size and memory availability.
+        dma_mem_info.extra_heap_caps &= ~MALLOC_CAP_SPIRAM;
         err = esp_dma_capable_malloc(block_size, &dma_mem_info, &tmp_buf, &actual_size);
         if (err != ESP_OK) {
             return err;

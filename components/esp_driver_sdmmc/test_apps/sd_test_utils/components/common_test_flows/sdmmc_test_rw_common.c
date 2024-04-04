@@ -1,13 +1,16 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 #include <sys/time.h>
+#include "esp_dma_utils.h"
+#include "esp_heap_caps.h"
 #include "test_utils.h"
 #include "sdkconfig.h"
 #include "soc/soc_caps.h"
@@ -17,7 +20,8 @@
 #include "sdmmc_test_rw_common.h"
 
 static void do_single_rw_perf_test(sdmmc_card_t* card, size_t start_block,
-                                   size_t block_count, size_t alignment, FILE* performance_log);
+                                   size_t block_count, size_t alignment, FILE* performance_log,
+                                   uint32_t extra_alloc_caps);
 
 static void fill_buffer(uint32_t seed, uint8_t* dst, size_t count)
 {
@@ -41,13 +45,22 @@ static void check_buffer(uint32_t seed, const uint8_t* src, size_t count)
 }
 
 static void do_single_rw_perf_test(sdmmc_card_t* card, size_t start_block,
-                                   size_t block_count, size_t alignment, FILE* performance_log)
+                                   size_t block_count, size_t alignment, FILE* performance_log,
+                                   uint32_t extra_alloc_caps)
 {
     size_t block_size = card->csd.sector_size;
     size_t total_size = block_size * block_count;
-    printf(" %8d |  %3d  |   %d   |    %4.1f  ", start_block, block_count, alignment, total_size / 1024.0f);
+    const char* alloc_str = (extra_alloc_caps & MALLOC_CAP_SPIRAM) ? "spiram" : " sram ";
+    printf(" %8d |  %3d  |   %d   | %s |    %4.1f  ", start_block, block_count, alignment, alloc_str, total_size / 1024.0f);
 
-    uint32_t* buffer = heap_caps_malloc(total_size + 4, MALLOC_CAP_DMA);
+    size_t actual_size = 0;
+    uint32_t *buffer = NULL;
+    esp_dma_mem_info_t dma_mem_info = {
+        .extra_heap_caps = extra_alloc_caps,
+        .dma_alignment_bytes = 64,
+    };
+    TEST_ESP_OK(esp_dma_capable_malloc(total_size + 4, &dma_mem_info, (void**) &buffer, &actual_size));
+
     size_t offset = alignment % 4;
     uint8_t* c_buffer = (uint8_t*) buffer + offset;
     fill_buffer(start_block, c_buffer, total_size / sizeof(buffer[0]));
@@ -80,10 +93,10 @@ static void do_single_rw_perf_test(sdmmc_card_t* card, size_t start_block,
         static const char wr_speed_str[] = "SDMMC_WR_SPEED";
         static const char rd_speed_str[] = "SDMMC_RD_SPEED";
         int aligned = ((alignment % 4) == 0) ? 1 : 0;
-        IDF_LOG_PERFORMANCE(wr_speed_str, "%d, blk_n: %d, aligned: %d",
-                            (int)(total_size * 1000 / time_wr), block_count, aligned);
-        IDF_LOG_PERFORMANCE(rd_speed_str, "%d, blk_n: %d, aligned: %d",
-                            (int)(total_size * 1000 / time_rd), block_count, aligned);
+        IDF_LOG_PERFORMANCE(wr_speed_str, "%d, blk_n: %d, aligned: %d, alloc: %s",
+                            (int)(total_size * 1000 / time_wr), block_count, aligned, alloc_str);
+        IDF_LOG_PERFORMANCE(rd_speed_str, "%d, blk_n: %d, aligned: %d, alloc: %s",
+                            (int)(total_size * 1000 / time_rd), block_count, aligned, alloc_str);
         stdout = old_stdout;
     }
 }
@@ -93,7 +106,13 @@ void sdmmc_test_rw_unaligned_buffer(sdmmc_card_t* card)
     const size_t buffer_size = 4096;
     const size_t block_count = buffer_size / 512;
     const size_t extra = 4;
-    uint8_t* buffer = heap_caps_malloc(buffer_size + extra, MALLOC_CAP_DMA);
+    const size_t total_size = buffer_size + extra;
+    size_t actual_size = 0;
+    uint8_t *buffer = NULL;
+    esp_dma_mem_info_t dma_mem_info = {
+        .dma_alignment_bytes = 64,
+    };
+    TEST_ESP_OK(esp_dma_capable_malloc(total_size + 4, &dma_mem_info, (void**) &buffer, &actual_size));
 
     // Check read behavior: do aligned write, then unaligned read
     const uint32_t seed = 0x89abcdef;
@@ -116,20 +135,30 @@ void sdmmc_test_rw_unaligned_buffer(sdmmc_card_t* card)
 void sdmmc_test_rw_performance(sdmmc_card_t *card, FILE *perf_log)
 {
     sdmmc_card_print_info(stdout, card);
-    printf("  sector  | count | align | size(kB)  | wr_time(ms) | wr_speed(MB/s)  |  rd_time(ms)  | rd_speed(MB/s)\n");
+    printf("  sector  | count | align | alloc  | size(kB)  | wr_time(ms) | wr_speed(MB/s)  |  rd_time(ms)  | rd_speed(MB/s)\n");
     const int offset = 0;
     /* aligned */
-    do_single_rw_perf_test(card, offset, 1, 4, perf_log);
-    do_single_rw_perf_test(card, offset, 4, 4, perf_log);
-    do_single_rw_perf_test(card, offset, 8, 4, perf_log);
-    do_single_rw_perf_test(card, offset, 16, 4, perf_log);
-    do_single_rw_perf_test(card, offset, 32, 4, perf_log);
-    do_single_rw_perf_test(card, offset, 64, 4, perf_log);
-    do_single_rw_perf_test(card, offset, 128, 4, perf_log);
+    do_single_rw_perf_test(card, offset, 1, 4, perf_log, 0);
+    do_single_rw_perf_test(card, offset, 4, 4, perf_log, 0);
+    do_single_rw_perf_test(card, offset, 8, 4, perf_log, 0);
+    do_single_rw_perf_test(card, offset, 16, 4, perf_log, 0);
+    do_single_rw_perf_test(card, offset, 32, 4, perf_log, 0);
+    do_single_rw_perf_test(card, offset, 64, 4, perf_log, 0);
+    do_single_rw_perf_test(card, offset, 128, 4, perf_log, 0);
     /* unaligned */
-    do_single_rw_perf_test(card, offset, 1, 1, perf_log);
-    do_single_rw_perf_test(card, offset, 8, 1, perf_log);
-    do_single_rw_perf_test(card, offset, 128, 1, perf_log);
+    do_single_rw_perf_test(card, offset, 1, 1, perf_log, 0);
+    do_single_rw_perf_test(card, offset, 8, 1, perf_log, 0);
+    do_single_rw_perf_test(card, offset, 128, 1, perf_log, 0);
+#if CONFIG_SPIRAM && SOC_SDMMC_PSRAM_DMA_CAPABLE
+    /* spiram */
+    do_single_rw_perf_test(card, offset, 1, 4, perf_log, MALLOC_CAP_SPIRAM);
+    do_single_rw_perf_test(card, offset, 4, 4, perf_log, MALLOC_CAP_SPIRAM);
+    do_single_rw_perf_test(card, offset, 8, 4, perf_log, MALLOC_CAP_SPIRAM);
+    do_single_rw_perf_test(card, offset, 16, 4, perf_log, MALLOC_CAP_SPIRAM);
+    do_single_rw_perf_test(card, offset, 32, 4, perf_log, MALLOC_CAP_SPIRAM);
+    do_single_rw_perf_test(card, offset, 64, 4, perf_log, MALLOC_CAP_SPIRAM);
+    do_single_rw_perf_test(card, offset, 128, 4, perf_log, MALLOC_CAP_SPIRAM);
+#endif
 }
 
 void sdmmc_test_rw_with_offset(sdmmc_card_t* card)
@@ -137,22 +166,22 @@ void sdmmc_test_rw_with_offset(sdmmc_card_t* card)
     sdmmc_card_print_info(stdout, card);
     printf("  sector  | count | align | size(kB)  | wr_time(ms) | wr_speed(MB/s)  |  rd_time(ms)  | rd_speed(MB/s)\n");
     /* aligned */
-    do_single_rw_perf_test(card, 1, 16, 4, NULL);
-    do_single_rw_perf_test(card, 16, 32, 4, NULL);
-    do_single_rw_perf_test(card, 48, 64, 4, NULL);
-    do_single_rw_perf_test(card, 128, 128, 4, NULL);
-    do_single_rw_perf_test(card, card->csd.capacity - 64, 32, 4, NULL);
-    do_single_rw_perf_test(card, card->csd.capacity - 64, 64, 4, NULL);
-    do_single_rw_perf_test(card, card->csd.capacity - 8, 1, 4, NULL);
-    do_single_rw_perf_test(card, card->csd.capacity / 2, 1, 4, NULL);
-    do_single_rw_perf_test(card, card->csd.capacity / 2, 4, 4, NULL);
-    do_single_rw_perf_test(card, card->csd.capacity / 2, 8, 4, NULL);
-    do_single_rw_perf_test(card, card->csd.capacity / 2, 16, 4, NULL);
-    do_single_rw_perf_test(card, card->csd.capacity / 2, 32, 4, NULL);
-    do_single_rw_perf_test(card, card->csd.capacity / 2, 64, 4, NULL);
-    do_single_rw_perf_test(card, card->csd.capacity / 2, 128, 4, NULL);
+    do_single_rw_perf_test(card, 1, 16, 4, NULL, 0);
+    do_single_rw_perf_test(card, 16, 32, 4, NULL, 0);
+    do_single_rw_perf_test(card, 48, 64, 4, NULL, 0);
+    do_single_rw_perf_test(card, 128, 128, 4, NULL, 0);
+    do_single_rw_perf_test(card, card->csd.capacity - 64, 32, 4, NULL, 0);
+    do_single_rw_perf_test(card, card->csd.capacity - 64, 64, 4, NULL, 0);
+    do_single_rw_perf_test(card, card->csd.capacity - 8, 1, 4, NULL, 0);
+    do_single_rw_perf_test(card, card->csd.capacity / 2, 1, 4, NULL, 0);
+    do_single_rw_perf_test(card, card->csd.capacity / 2, 4, 4, NULL, 0);
+    do_single_rw_perf_test(card, card->csd.capacity / 2, 8, 4, NULL, 0);
+    do_single_rw_perf_test(card, card->csd.capacity / 2, 16, 4, NULL, 0);
+    do_single_rw_perf_test(card, card->csd.capacity / 2, 32, 4, NULL, 0);
+    do_single_rw_perf_test(card, card->csd.capacity / 2, 64, 4, NULL, 0);
+    do_single_rw_perf_test(card, card->csd.capacity / 2, 128, 4, NULL, 0);
     /* unaligned */
-    do_single_rw_perf_test(card, card->csd.capacity / 2, 1, 1, NULL);
-    do_single_rw_perf_test(card, card->csd.capacity / 2, 8, 1, NULL);
-    do_single_rw_perf_test(card, card->csd.capacity / 2, 128, 1, NULL);
+    do_single_rw_perf_test(card, card->csd.capacity / 2, 1, 1, NULL, 0);
+    do_single_rw_perf_test(card, card->csd.capacity / 2, 8, 1, NULL, 0);
+    do_single_rw_perf_test(card, card->csd.capacity / 2, 128, 1, NULL, 0);
 }
