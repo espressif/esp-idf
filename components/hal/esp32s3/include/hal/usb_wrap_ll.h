@@ -12,6 +12,12 @@
 #include "soc/system_struct.h"
 #include "soc/usb_wrap_struct.h"
 #include "soc/rtc_cntl_struct.h"
+#include "hal/usb_wrap_types.h"
+
+/* ----------------------------- Macros & Types ----------------------------- */
+
+#define USB_WRAP_LL_EXT_PHY_SUPPORTED           1   // Can route to an external FSLS PHY
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -105,17 +111,14 @@ FORCE_INLINE_ATTR void usb_wrap_ll_phy_disable_vref_override(usb_wrap_dev_t *hw)
  * @brief Enable override of USB FSLS PHY's pull up/down resistors
  *
  * @param hw Start address of the USB Wrap registers
- * @param dp_pu Enable D+ pullup
- * @param dm_pu Enable D- pullup
- * @param dp_pd Enable D+ pulldown
- * @param dm_pd Enable D- pulldown
+ * @param vals Override values to set
  */
-FORCE_INLINE_ATTR void usb_wrap_ll_phy_enable_pull_override(usb_wrap_dev_t *hw, bool dp_pu, bool dm_pu, bool dp_pd, bool dm_pd)
+FORCE_INLINE_ATTR void usb_wrap_ll_phy_enable_pull_override(usb_wrap_dev_t *hw, const usb_wrap_pull_override_vals_t *vals)
 {
-    hw->otg_conf.dp_pullup = dp_pu;
-    hw->otg_conf.dp_pulldown = dp_pd;
-    hw->otg_conf.dm_pullup = dm_pu;
-    hw->otg_conf.dm_pulldown = dm_pd;
+    hw->otg_conf.dp_pullup = vals->dp_pu;
+    hw->otg_conf.dp_pulldown = vals->dp_pd;
+    hw->otg_conf.dm_pullup = vals->dm_pu;
+    hw->otg_conf.dm_pulldown = vals->dm_pd;
     hw->otg_conf.pad_pull_override = 1;
 }
 
@@ -190,30 +193,19 @@ FORCE_INLINE_ATTR void usb_wrap_ll_phy_enable_test_mode(usb_wrap_dev_t *hw, bool
  * @brief Set the USB FSLS PHY's signal test values
  *
  * @param hw Start address of the USB Wrap registers
- * @param oen Output Enable (active low) signal
- * @param tx_dp TX D+
- * @param tx_dm TX D-
- * @param rx_dp RX D+
- * @param rx_dm RX D-
- * @param rx_rcv RX RCV
+ * @param vals Test values to set
  */
-FORCE_INLINE_ATTR void usb_wrap_ll_phy_test_mode_set_signals(usb_wrap_dev_t *hw,
-                                                             bool oen,
-                                                             bool tx_dp,
-                                                             bool tx_dm,
-                                                             bool rx_dp,
-                                                             bool rx_dm,
-                                                             bool rx_rcv)
+FORCE_INLINE_ATTR void usb_wrap_ll_phy_test_mode_set_signals(usb_wrap_dev_t *hw, const usb_wrap_test_mode_vals_t *vals)
 {
     usb_wrap_test_conf_reg_t test_conf;
     test_conf.val = hw->test_conf.val;
 
-    test_conf.test_usb_wrap_oe = oen;
-    test_conf.test_tx_dp = tx_dp;
-    test_conf.test_tx_dm = tx_dm;
-    test_conf.test_rx_rcv = rx_rcv;
-    test_conf.test_rx_dp = rx_dp;
-    test_conf.test_rx_dm = rx_dm;
+    test_conf.test_usb_wrap_oe = vals->tx_enable_n;
+    test_conf.test_tx_dp = vals->tx_dp;
+    test_conf.test_tx_dm = vals->tx_dm;
+    test_conf.test_rx_rcv = vals->rx_rcv;
+    test_conf.test_rx_dp = vals->rx_dp;
+    test_conf.test_rx_dm = vals->rx_dm;
 
     hw->test_conf.val = test_conf.val;
 }

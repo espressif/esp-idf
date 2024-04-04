@@ -4,24 +4,20 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// The LL layer of the USB-serial-jtag controller
-
 #pragma once
+
 #include <stdbool.h>
 #include "esp_attr.h"
 #include "soc/system_struct.h"
 #include "soc/rtc_cntl_struct.h"
 #include "soc/usb_serial_jtag_reg.h"
 #include "soc/usb_serial_jtag_struct.h"
+#include "hal/usb_serial_jtag_types.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+/* ----------------------------- Macros & Types ----------------------------- */
 
-//The in and out endpoints are this long.
-#define USB_SERIAL_JTAG_PACKET_SZ_BYTES 64
-
-#define USB_SERIAL_JTAG_LL_INTR_MASK         (0x7ffff) //All interrupt mask
+#define USB_SERIAL_JTAG_LL_INTR_MASK            (0x7ffff)   // All interrupts mask
+#define USB_SERIAL_JTAG_LL_EXT_PHY_SUPPORTED    1   // Can route to an external FSLS PHY
 
 // Define USB_SERIAL_JTAG interrupts
 // Note the hardware has more interrupts, but they're only useful for debugging
@@ -34,6 +30,11 @@ typedef enum {
     USB_SERIAL_JTAG_INTR_BUS_RESET              = (1 << 9),
     USB_SERIAL_JTAG_INTR_EP1_ZERO_PAYLOAD       = (1 << 10),
 } usb_serial_jtag_intr_t;
+
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /* ----------------------------- USJ Peripheral ----------------------------- */
 
@@ -126,7 +127,7 @@ static inline uint32_t usb_serial_jtag_ll_read_rxfifo(uint8_t *buf, uint32_t rd_
  *         is room in the buffer.
  *
  * @param  buf The data buffer.
- * @param  wr_len The data length needs to be writen.
+ * @param  wr_len The data length needs to be written.
  *
  * @return Amount of bytes actually written. May be less than wr_len.
  */
@@ -253,17 +254,14 @@ FORCE_INLINE_ATTR void usb_serial_jtag_ll_phy_disable_vref_override(void)
 /**
  * @brief Enable override of USB FSLS PHY's pull up/down resistors
  *
- * @param dp_pu Enable D+ pullup
- * @param dm_pu Enable D- pullup
- * @param dp_pd Enable D+ pulldown
- * @param dm_pd Enable D- pulldown
+ * @param vals Override values to set
  */
-FORCE_INLINE_ATTR void usb_serial_jtag_ll_phy_enable_pull_override(bool dp_pu, bool dm_pu, bool dp_pd, bool dm_pd)
+FORCE_INLINE_ATTR void usb_serial_jtag_ll_phy_enable_pull_override(const usb_serial_jtag_pull_override_vals_t *vals)
 {
-    USB_SERIAL_JTAG.conf0.dp_pullup = dp_pu;
-    USB_SERIAL_JTAG.conf0.dp_pulldown = dp_pd;
-    USB_SERIAL_JTAG.conf0.dm_pullup = dm_pu;
-    USB_SERIAL_JTAG.conf0.dm_pulldown = dm_pd;
+    USB_SERIAL_JTAG.conf0.dp_pullup = vals->dp_pu;
+    USB_SERIAL_JTAG.conf0.dp_pulldown = vals->dp_pd;
+    USB_SERIAL_JTAG.conf0.dm_pullup = vals->dm_pu;
+    USB_SERIAL_JTAG.conf0.dm_pulldown = vals->dm_pd;
     USB_SERIAL_JTAG.conf0.pad_pull_override = 1;
 }
 
@@ -318,8 +316,8 @@ FORCE_INLINE_ATTR void usb_serial_jtag_ll_phy_set_tx_edge(bool clk_neg_edge)
 /* ----------------------------- RCC Functions  ----------------------------- */
 
 /**
- * @brief Enable the bus clock for  USB Serial_JTAG module
- * @param clk_en True if enable the clock of USB Serial_JTAG module
+ * @brief Enable the bus clock for USJ module
+ * @param clk_en True if enable the clock of USJ module
  */
 FORCE_INLINE_ATTR void usb_serial_jtag_ll_enable_bus_clock(bool clk_en)
 {
@@ -327,7 +325,7 @@ FORCE_INLINE_ATTR void usb_serial_jtag_ll_enable_bus_clock(bool clk_en)
 }
 
 /**
- * @brief Reset the usb serial jtag module
+ * @brief Reset the USJ module
  */
 FORCE_INLINE_ATTR void usb_serial_jtag_ll_reset_register(void)
 {
@@ -336,9 +334,9 @@ FORCE_INLINE_ATTR void usb_serial_jtag_ll_reset_register(void)
 }
 
 /**
- * Get the enable status USB Serial_JTAG module
+ * Get the enable status of the USJ module
  *
- * @return Return true if USB Serial_JTAG module is enabled
+ * @return Return true if USJ module is enabled
  */
 FORCE_INLINE_ATTR bool usb_serial_jtag_ll_module_is_enabled(void)
 {

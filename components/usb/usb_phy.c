@@ -257,7 +257,9 @@ esp_err_t usb_new_phy(const usb_phy_config_t *config, usb_phy_handle_t *handle_r
 
     usb_fsls_phy_hal_init(&(phy_context->hal_context));
     if (config->controller == USB_PHY_CTRL_OTG) {
+#if USB_WRAP_LL_EXT_PHY_SUPPORTED
         usb_fsls_phy_hal_otg_conf(&(phy_context->hal_context), config->target == USB_PHY_TARGET_EXT);
+#endif
     }
 #if SOC_USB_SERIAL_JTAG_SUPPORTED
     else if (config->controller == USB_PHY_CTRL_SERIAL_JTAG) {
@@ -324,7 +326,13 @@ esp_err_t usb_del_phy(usb_phy_handle_t handle)
         p_phy_ctrl_obj->external_phy = NULL;
     } else {
         // Clear pullup and pulldown loads on D+ / D-, and disable the pads
-        usb_wrap_ll_phy_enable_pull_override(handle->hal_context.wrap_dev, false, false, false, false);
+        usb_wrap_pull_override_vals_t vals = {
+            .dp_pu = false,
+            .dm_pu = false,
+            .dp_pd = false,
+            .dm_pd = false,
+        };
+        usb_wrap_ll_phy_enable_pull_override(handle->hal_context.wrap_dev, &vals);
         usb_wrap_ll_phy_enable_pad(handle->hal_context.wrap_dev, false);
         p_phy_ctrl_obj->internal_phy = NULL;
     }

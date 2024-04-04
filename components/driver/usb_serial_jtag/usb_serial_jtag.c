@@ -175,8 +175,12 @@ esp_err_t usb_serial_jtag_driver_install(usb_serial_jtag_driver_config_t *usb_se
     atomic_store(&p_usb_serial_jtag_obj->fifo_status, FIFO_IDLE);
 
     // Configure PHY
+#if USB_SERIAL_JTAG_LL_EXT_PHY_SUPPORTED
     usb_serial_jtag_ll_phy_enable_external(false);  // Use internal PHY
     usb_serial_jtag_ll_phy_enable_pad(true);        // Enable USB PHY pads
+#else // USB_SERIAL_JTAG_LL_EXT_PHY_SUPPORTED
+    usb_serial_jtag_ll_phy_set_defaults();          // External PHY not supported. Set default values.
+#endif // USB_WRAP_LL_EXT_PHY_SUPPORTED
 
     usb_serial_jtag_ll_clr_intsts_mask(USB_SERIAL_JTAG_INTR_SERIAL_IN_EMPTY|
                                          USB_SERIAL_JTAG_INTR_SERIAL_OUT_RECV_PKT);
