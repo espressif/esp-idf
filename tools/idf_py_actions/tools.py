@@ -352,9 +352,19 @@ class RunTool:
         stderr_output_file = os.path.join(self.build_dir, log_dir_name, f'idf_py_stderr_output_{p.pid}')
         stdout_output_file = os.path.join(self.build_dir, log_dir_name, f'idf_py_stdout_output_{p.pid}')
         if p.stderr and p.stdout:  # it only to avoid None type in p.std
-            await asyncio.gather(
-                self.read_and_write_stream(p.stderr, stderr_output_file, sys.stderr),
-                self.read_and_write_stream(p.stdout, stdout_output_file, sys.stdout))
+            try:
+                await asyncio.gather(
+                    self.read_and_write_stream(p.stderr, stderr_output_file, sys.stderr),
+                    self.read_and_write_stream(p.stdout, stdout_output_file, sys.stdout))
+            except asyncio.CancelledError:
+                # The process we are trying to read from was terminated. Print the
+                # message here and let the asyncio to finish, because
+                # Runner context in asyncio.run is closing the event loop and
+                # if exception is raised(unhandled here) the transport is not closed before
+                # the even loop is closed and we get RuntimeError: Event loop is closed
+                # in the transport __del__ function because it's trying to use the closed
+                # even loop.
+                red_print(f'\n{self.tool_name} process terminated\n')
         await p.wait()  # added for avoiding None returncode
         return p, stderr_output_file, stdout_output_file
 
