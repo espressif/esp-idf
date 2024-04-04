@@ -4,7 +4,7 @@ set(srcs "hal_utils.c")
 set(includes "platform_port/include")
 
 # target specific include must be added before the generic one
-# becuase of the "include_next" directive used by the efuse_hal.h
+# because of the "include_next" directive used by the efuse_hal.h
 if(NOT ${target} STREQUAL "linux")
     list(APPEND includes "${target}/include")
 endif()
