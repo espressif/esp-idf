@@ -29,29 +29,6 @@
 #define ALIGN_UP_TO_MMU_PAGE_SIZE(addr) (((addr) + (SOC_MMU_PAGE_SIZE) - 1) & ~((SOC_MMU_PAGE_SIZE) - 1))
 #define ALIGN_DOWN_TO_MMU_PAGE_SIZE(addr)  ((addr) & ~((SOC_MMU_PAGE_SIZE) - 1))
 
-/**
- * @brief Generate the PMP address field value for PMPCFG.A == NAPOT
- *
- * NOTE: Here, (end-start) must be a power of 2 size and start must
- * be aligned to this size. This API returns UINT32_MAX on failing
- * these conditions, which when plugged into the PMP entry registers
- * does nothing. This skips the corresponding region's protection.
- *
- * @param start      Region starting address
- * @param end        Region ending address
- *
- * @return uint32_t PMP address field value
- */
-static inline uint32_t pmpaddr_napot(uint32_t start, uint32_t end)
-{
-    uint32_t size = end - start;
-    if ((size & (size - 1)) || (start % size)) {
-        return UINT32_MAX;
-    }
-
-    return start | ((size - 1) >> 1);
-}
-
 static void esp_cpu_configure_invalid_regions(void)
 {
     const unsigned PMA_NONE                            = PMA_L | PMA_EN;
@@ -180,22 +157,18 @@ void esp_cpu_configure_region_protection(void)
 
 #if CONFIG_ESP_SYSTEM_PMP_IDRAM_SPLIT && !BOOTLOADER_BUILD
     extern int _instruction_reserved_end;
-    extern int _rodata_reserved_start;
     extern int _rodata_reserved_end;
 
     const uint32_t irom_resv_end = ALIGN_UP_TO_MMU_PAGE_SIZE((uint32_t)(&_instruction_reserved_end));
-    const uint32_t drom_resv_start = ALIGN_DOWN_TO_MMU_PAGE_SIZE((uint32_t)(&_rodata_reserved_start));
     const uint32_t drom_resv_end = ALIGN_UP_TO_MMU_PAGE_SIZE((uint32_t)(&_rodata_reserved_end));
 
-    // 4. I_Cache (flash)
+    // 4. I_Cache / D_Cache (flash)
     PMP_ENTRY_CFG_RESET(8);
-    const uint32_t pmpaddr8 = pmpaddr_napot(SOC_IROM_LOW, irom_resv_end);
-    PMP_ENTRY_SET(8, pmpaddr8, PMP_NAPOT | RX);
-
-    // 5. D_Cache (flash)
     PMP_ENTRY_CFG_RESET(9);
-    const uint32_t pmpaddr9 = pmpaddr_napot(drom_resv_start, drom_resv_end);
-    PMP_ENTRY_SET(9, pmpaddr9, PMP_NAPOT | R);
+    PMP_ENTRY_CFG_RESET(10);
+    PMP_ENTRY_SET(8, SOC_IROM_LOW, NONE);
+    PMP_ENTRY_SET(9, irom_resv_end, PMP_TOR | RX);
+    PMP_ENTRY_SET(10, drom_resv_end, PMP_TOR | R);
 #else
     // 4. I_Cache / D_Cache (flash)
     const uint32_t pmpaddr8 = PMPADDR_NAPOT(SOC_IROM_LOW, SOC_IROM_HIGH);
@@ -209,29 +182,29 @@ void esp_cpu_configure_region_protection(void)
     /* Reset the corresponding PMP config because PMP_ENTRY_SET only sets the given bits
      * Bootloader might have given extra permissions and those won't be cleared
      */
-    PMP_ENTRY_CFG_RESET(10);
     PMP_ENTRY_CFG_RESET(11);
     PMP_ENTRY_CFG_RESET(12);
     PMP_ENTRY_CFG_RESET(13);
-    PMP_ENTRY_SET(10, SOC_RTC_IRAM_LOW, NONE);
+    PMP_ENTRY_CFG_RESET(14);
+    PMP_ENTRY_SET(11, SOC_RTC_IRAM_LOW, NONE);
 #if CONFIG_ULP_COPROC_RESERVE_MEM
     // First part of LP mem is reserved for coprocessor
-    PMP_ENTRY_SET(11, SOC_RTC_IRAM_LOW + CONFIG_ULP_COPROC_RESERVE_MEM, PMP_TOR | RW);
+    PMP_ENTRY_SET(12, SOC_RTC_IRAM_LOW + CONFIG_ULP_COPROC_RESERVE_MEM, PMP_TOR | RW);
 #else // CONFIG_ULP_COPROC_RESERVE_MEM
     // Repeat same previous entry, to ensure next entry has correct base address (TOR)
-    PMP_ENTRY_SET(11, SOC_RTC_IRAM_LOW, NONE);
+    PMP_ENTRY_SET(12, SOC_RTC_IRAM_LOW, NONE);
 #endif // !CONFIG_ULP_COPROC_RESERVE_MEM
-    PMP_ENTRY_SET(12, (int)&_rtc_text_end, PMP_TOR | RX);
-    PMP_ENTRY_SET(13, SOC_RTC_IRAM_HIGH, PMP_TOR | RW);
+    PMP_ENTRY_SET(13, (int)&_rtc_text_end, PMP_TOR | RX);
+    PMP_ENTRY_SET(14, SOC_RTC_IRAM_HIGH, PMP_TOR | RW);
 #else
-    const uint32_t pmpaddr10 = PMPADDR_NAPOT(SOC_RTC_IRAM_LOW, SOC_RTC_IRAM_HIGH);
-    PMP_ENTRY_SET(10, pmpaddr10, PMP_NAPOT | CONDITIONAL_RWX);
+    const uint32_t pmpaddr11 = PMPADDR_NAPOT(SOC_RTC_IRAM_LOW, SOC_RTC_IRAM_HIGH);
+    PMP_ENTRY_SET(11, pmpaddr11, PMP_NAPOT | CONDITIONAL_RWX);
     _Static_assert(SOC_RTC_IRAM_LOW < SOC_RTC_IRAM_HIGH, "Invalid RTC IRAM region");
 #endif
 
 
     // 7. Peripheral addresses
-    const uint32_t pmpaddr14 = PMPADDR_NAPOT(SOC_PERIPHERAL_LOW, SOC_PERIPHERAL_HIGH);
-    PMP_ENTRY_SET(14, pmpaddr14, PMP_NAPOT | RW);
+    const uint32_t pmpaddr15 = PMPADDR_NAPOT(SOC_PERIPHERAL_LOW, SOC_PERIPHERAL_HIGH);
+    PMP_ENTRY_SET(15, pmpaddr15, PMP_NAPOT | RW);
     _Static_assert(SOC_PERIPHERAL_LOW < SOC_PERIPHERAL_HIGH, "Invalid peripheral region");
 }
