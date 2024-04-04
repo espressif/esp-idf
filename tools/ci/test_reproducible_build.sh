@@ -26,7 +26,7 @@ for path in \
   # test gdb
   rm -f gdb.txt
   elf_file=$(find build_first -maxdepth 1 -iname '*.elf')
-  xtensa-esp32-elf-gdb -x build_first/prefix_map_gdbinit -ex 'set logging on' -ex 'set pagination off' -ex 'list' -ex 'quit' "$elf_file"
+  xtensa-esp32-elf-gdb -x build_first/prefix_map_gdbinit -ex 'set logging enabled' -ex 'set pagination off' -ex 'list app_main' -ex 'quit' "$elf_file"
   if grep "No such file or directory" gdb.txt; then
     exit 1
   fi
