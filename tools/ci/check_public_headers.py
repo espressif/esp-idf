@@ -23,7 +23,7 @@ from typing import Union
 
 
 class HeaderFailed(Exception):
-    """Base header failure exeption"""
+    """Base header failure exception"""
     pass
 
 
@@ -80,15 +80,6 @@ def exec_cmd(what: List, out_file: Union['tempfile._TemporaryFileWrapper[bytes]'
 
 
 class PublicHeaderChecker:
-    # Intermediate results
-    COMPILE_ERR_REF_CONFIG_HDR_FAILED = 1  # -> Cannot compile and failed with injected SDKCONFIG #error (header FAILs)
-    COMPILE_ERR_ERROR_MACRO_HDR_OK = 2     # -> Cannot compile, but failed with "#error" directive (header seems OK)
-    COMPILE_ERR_HDR_FAILED = 3             # -> Cannot compile with another issue, logged if verbose (header FAILs)
-    PREPROC_OUT_ZERO_HDR_OK = 4            # -> Both preprocessors produce zero out (header file is OK)
-    PREPROC_OUT_SAME_HRD_FAILED = 5        # -> Both preprocessors produce the same, non-zero output (header file FAILs)
-    PREPROC_OUT_DIFFERENT_WITH_EXT_C_HDR_OK = 6    # -> Both preprocessors produce different, non-zero output with extern "C" (header seems OK)
-    PREPROC_OUT_DIFFERENT_NO_EXT_C_HDR_FAILED = 7  # -> Both preprocessors produce different, non-zero output without extern "C" (header fails)
-    HEADER_CONTAINS_STATIC_ASSERT = 8      # -> Header file contains _Static_assert instead of static_assert or ESP_STATIC_ASSERT
 
     def log(self, message: str, debug: bool=False) -> None:
         if self.verbose or debug:
@@ -109,6 +100,8 @@ class PublicHeaderChecker:
         self.auto_soc_header = re.compile(r'components/soc/esp[a-z0-9_]+(?:/\w+)?/include/(soc|modem)/[a-zA-Z0-9_]+.h')
         self.assembly_nocode = r'^\s*(\.file|\.text|\.ident|\.option|\.attribute).*$'
         self.check_threads: List[Thread] = []
+        self.stdc = '--std=c99'
+        self.stdcpp = '--std=c++17'
 
         self.job_queue: queue.Queue = queue.Queue()
         self.failed_queue: queue.Queue = queue.Queue()
@@ -152,54 +145,17 @@ class PublicHeaderChecker:
             while t.is_alive() and not self.terminate.is_set():
                 t.join(1)  # joins with timeout to respond to keyboard interrupt
 
-    # Checks one header calling:
-    # - preprocess_one_header() to test and compare preprocessor outputs
-    # - check_no_code() to test if header contains some executable code
-    # Procedure
-    # 1) Preprocess the include file with C preprocessor and with CPP preprocessor
-    #   - Pass the test if the preprocessor outputs are the same and whitespaces only (#define only header)
-    #   - Fail the test if the preprocessor outputs are the same (but with some code)
-    #   - If outputs different, continue with 2)
-    # 2) Strip out all include directives to generate "temp.h"
-    # 3) Preprocess the temp.h the same way in (1)
-    #   - Pass the test if the preprocessor outputs are the same and whitespaces only (#include only header)
-    #   - Fail the test if the preprocessor outputs are the same (but with some code)
-    #   - If outputs different, pass the test
-    # 4) If header passed the steps 1) and 3) test that it produced zero assembly code
+    # Checks one header procedure:
+    # - Preprocess the include file with C preprocessor and with CPP preprocessor, compare check for possible issues
+    # - Compile the header with both C and C++ compiler
     def check_one_header(self, header: str, num: int) -> None:
-        res = self.preprocess_one_header(header, num)
-        if res == self.COMPILE_ERR_REF_CONFIG_HDR_FAILED:
-            raise HeaderFailedSdkconfig()
-        elif res == self.COMPILE_ERR_ERROR_MACRO_HDR_OK:
-            return self.compile_one_header(header)
-        elif res == self.COMPILE_ERR_HDR_FAILED:
-            raise HeaderFailedPreprocessError()
-        elif res == self.PREPROC_OUT_ZERO_HDR_OK:
-            return self.compile_one_header(header)
-        elif res == self.PREPROC_OUT_SAME_HRD_FAILED:
-            raise HeaderFailedCppGuardMissing()
-        elif res == self.HEADER_CONTAINS_STATIC_ASSERT:
-            raise HeaderFailedContainsStaticAssert()
-        else:
-            self.compile_one_header(header)
-            temp_header = None
-            try:
-                _, _, _, temp_header, _ = exec_cmd_to_temp_file(['sed', '/#include/d; /#error/d', header], suffix='.h')
-                res = self.preprocess_one_header(temp_header, num, ignore_common_issues=True)
-                if res == self.PREPROC_OUT_SAME_HRD_FAILED:
-                    raise HeaderFailedCppGuardMissing()
-                elif res == self.PREPROC_OUT_DIFFERENT_NO_EXT_C_HDR_FAILED:
-                    raise HeaderFailedCppGuardMissing()
-            finally:
-                if temp_header:
-                    os.unlink(temp_header)
+        self.preprocess_one_header(header, num)
+        self.compile_one_header_with(self.gcc, self.stdc, header)
+        self.compile_one_header_with(self.gpp, self.stdcpp, header)
 
-    def compile_one_header(self, header: str) -> None:
-        self.compile_one_header_with(self.gcc, header)
-        self.compile_one_header_with(self.gpp, header)
-
-    def compile_one_header_with(self, compiler: str, header: str) -> None:
-        rc, out, err, cmd = exec_cmd([compiler, '-S', '-o-', '-include', header, self.main_c] + self.include_dir_flags)
+    # Checks if the header contains some assembly code and whether it is compilable
+    def compile_one_header_with(self, compiler: str, std_flags: str, header: str) -> None:
+        rc, out, err, cmd = exec_cmd([compiler, std_flags, '-S', '-o-', '-include', header, self.main_c] + self.include_dir_flags)
         if rc == 0:
             if not re.sub(self.assembly_nocode, '', out, flags=re.M).isspace():
                 raise HeaderFailedContainsCode()
@@ -209,58 +165,96 @@ class PublicHeaderChecker:
         self.log('\nCompilation command failed:\n{}\n'.format(cmd), True)
         raise HeaderFailedBuildError(compiler)
 
-    def preprocess_one_header(self, header: str, num: int, ignore_common_issues: bool=False) -> int:
+    # Checks one header using preprocessing and parsing
+    #   1) Remove comments and check
+    #        - if we have some `CONFIG_...` macros (for test 2)
+    #        - static asserts
+    #   2) Preprocess with C++ flags and test orphan Kconfig macros, or compiler error
+    #   3) Preprocess with C flags and test for compiler errors
+    #   4) Compare outputs from steps 2) and 3)
+    #       - outputs are the same, but contain only whitespaces -> header is OK (contains only preprocessor directives)
+    #       - outputs are the same, but contain some code -> FAIL the test, we're missing `extern "C"` somewhere
+    #       - outputs are different:
+    #           - check for `extern "C"` in the diff
+    #               - Not present? -> FAIL the test, we're missing `extern "C"` somewhere
+    #               - Present? -- extern "C" is there, but could be from included headers
+    #                   - check for `extern "C"` in the orig header (output of step 1)
+    #                       - Present? -> header is OK (we're have the `extern "C"` in the header under test)
+    #                       - Not present? -- we're missing `extern "C"` in our header, but do we really need it?
+    #                           - Remove all directives and harmless macro invocations from our current header
+    #                               - We still have some code? -> FAIL the test (our header needs extern "C")
+    #                               - Only whitespaces -> header is OK (it contains only macros and directives)
+    def preprocess_one_header(self, header: str, num: int) -> None:
         all_compilation_flags = ['-w', '-P', '-E', '-DESP_PLATFORM', '-include', header, self.main_c] + self.include_dir_flags
         # just strip comments to check for CONFIG_... macros or static asserts
         rc, out, err, _ = exec_cmd([self.gcc, '-fpreprocessed', '-dD',  '-P',  '-E', header] + self.include_dir_flags)
-        if not ignore_common_issues:    # We ignore issues on sdkconfig and static asserts, as we're looking at "preprocessed output"
-            if re.search(self.kconfig_macro, out):
-                # enable defined #error if sdkconfig.h not included
-                all_compilation_flags.append('-DIDF_CHECK_SDKCONFIG_INCLUDED')
-            # If the file contain _Static_assert or static_assert, make sure it does't not define ESP_STATIC_ASSERT and that it
-            # is not an automatically generated soc header file
-            grp = re.search(self.static_assert, out)
-            # Normalize the potential A//B, A/./B, A/../A, from the name
-            normalized_path = os.path.normpath(header)
-            if grp and not re.search(self.defines_assert, out) and not re.search(self.auto_soc_header, normalized_path):
-                self.log('{}: FAILED: contains {}. Please use ESP_STATIC_ASSERT'.format(header, grp.group(1)), True)
-                return self.HEADER_CONTAINS_STATIC_ASSERT
+        # we ignore the rc here, as the `-fpreprocessed` flag expects the file to have macros already expanded, so we might get some errors
+        # here we use it only to remove comments (even if the command returns non-zero code it produces the correct output)
+        if re.search(self.kconfig_macro, out):
+            # enable defined #error if sdkconfig.h not included
+            all_compilation_flags.append('-DIDF_CHECK_SDKCONFIG_INCLUDED')
+        # If the file contain _Static_assert or static_assert, make sure it doesn't not define ESP_STATIC_ASSERT and that it
+        # is not an automatically generated soc header file
+        grp = re.search(self.static_assert, out)
+        # Normalize the potential A//B, A/./B, A/../A, from the name
+        normalized_path = os.path.normpath(header)
+        if grp and not re.search(self.defines_assert, out) and not re.search(self.auto_soc_header, normalized_path):
+            self.log('{}: FAILED: contains {}. Please use ESP_STATIC_ASSERT'.format(header, grp.group(1)), True)
+            raise HeaderFailedContainsStaticAssert()
         try:
             # compile with C++, check for errors, outputs for a temp file
-            rc, cpp_out, err, cpp_out_file, cmd = exec_cmd_to_temp_file([self.gpp, '--std=c++17'] + all_compilation_flags)
+            rc, cpp_out, err, cpp_out_file, cmd = exec_cmd_to_temp_file([self.gpp, self.stdcpp] + all_compilation_flags)
             if rc != 0:
                 if re.search(self.error_macro, err):
                     if re.search(self.error_orphan_kconfig, err):
                         self.log('{}: CONFIG_VARS_USED_WHILE_SDKCONFIG_NOT_INCLUDED'.format(header), True)
-                        return self.COMPILE_ERR_REF_CONFIG_HDR_FAILED
+                        raise HeaderFailedSdkconfig()
                     self.log('{}: Error directive failure: OK'.format(header))
-                    return self.COMPILE_ERR_ERROR_MACRO_HDR_OK
+                    return
                 self.log('{}: FAILED: compilation issue'.format(header), True)
                 self.log(err, True)
                 self.log('\nCompilation command failed:\n{}\n'.format(cmd), True)
-                return self.COMPILE_ERR_HDR_FAILED
+                raise HeaderFailedPreprocessError()
             # compile with C compiler, outputs to another temp file
-            rc, _, err, c99_out_file, _ = exec_cmd_to_temp_file([self.gcc, '--std=c99'] + all_compilation_flags)
+            rc, _, err, c_out_file, _ = exec_cmd_to_temp_file([self.gcc, self.stdc] + all_compilation_flags)
             if rc != 0:
-                self.log('{} FAILED should never happen'.format(header))
-                return self.COMPILE_ERR_HDR_FAILED
+                self.log('{} FAILED: compilation in C (while C++ compilation passes)'.format(header))
+                raise HeaderFailedPreprocessError()
             # diff the two outputs
-            rc, diff, err, _ = exec_cmd(['diff', c99_out_file, cpp_out_file])
+            rc, diff, err, _ = exec_cmd(['diff', c_out_file, cpp_out_file])
             if not diff or diff.isspace():
                 if not cpp_out or cpp_out.isspace():
                     self.log('{} The same, but empty out - OK'.format(header))
-                    return self.PREPROC_OUT_ZERO_HDR_OK
+                    return
                 self.log('{} FAILED C and C++ preprocessor output is the same!'.format(header), True)
-                return self.PREPROC_OUT_SAME_HRD_FAILED
+                raise HeaderFailedCppGuardMissing()
             if re.search(self.extern_c, diff):
-                self.log('{} extern C present - OK'.format(header))
-                return self.PREPROC_OUT_DIFFERENT_WITH_EXT_C_HDR_OK
+                self.log('{} extern C present in the diff'.format(header))
+                # now check the extern "C" is really in the unprocessed header
+                if re.search(self.extern_c, out):
+                    self.log('{} extern C present in the actual header, too - OK'.format(header))
+                    return
+                # at this point we know that the header itself is missing extern-C, so we need to check if it contains an actual *code*
+                # we remove all preprocessor's directive to check if there's any code besides macros
+                macros = re.compile(r'(?m)^\s*#(?:.*\\\r?\n)*.*$')  # Matches multiline preprocessor directives
+                without_macros = macros.sub('', out)
+                if without_macros.isspace():
+                    self.log("{} Header doesn't need extern-C, it's all just macros - OK".format(header))
+                    return
+                # at this point we know that the header is not only composed of macro definitions, but could just contain some "harmless" macro calls
+                # let's remove them and check again
+                macros_calls = r'(.*?)ESP_STATIC_ASSERT[^;]+;'   # static assert macro only, we could add more if needed
+                without_macros = re.sub(macros_calls, '', without_macros, flags=re.DOTALL)
+                if without_macros.isspace():
+                    self.log("{} Header doesn't need extern-C, it's all macros definitions and calls - OK".format(header))
+                    return
+
             self.log('{} Different but no extern C - FAILED'.format(header), True)
-            return self.PREPROC_OUT_DIFFERENT_NO_EXT_C_HDR_FAILED
+            raise HeaderFailedCppGuardMissing()
         finally:
             os.unlink(cpp_out_file)
             try:
-                os.unlink(c99_out_file)
+                os.unlink(c_out_file)
             except Exception:
                 pass
 
@@ -277,9 +271,18 @@ class PublicHeaderChecker:
         except FileNotFoundError:
             pass
         subprocess.check_call(['idf.py', '-B', build_dir, f'-DSDKCONFIG={sdkconfig}', 'reconfigure'], cwd=project_dir)
+
+        def get_std(json: List, extension: str) -> str:
+            # compile commands for the files with specified extension, containing C(XX) standard flag
+            command = [c for c in j if c['file'].endswith('.' + extension) and '-std=' in c['command']][0]
+            return str([s for s in command['command'].split() if 'std=' in s][0])     # grab the std flag
+
         build_commands_json = os.path.join(build_dir, 'compile_commands.json')
         with open(build_commands_json, 'r', encoding='utf-8') as f:
-            build_command = json.load(f)[0]['command'].split()
+            j = json.load(f)
+            self.stdc = get_std(j, 'c')
+            self.stdcpp = get_std(j, 'cpp')
+            build_command = j[0]['command'].split()
         include_dir_flags = []
         include_dirs = []
         # process compilation flags (includes and defines)

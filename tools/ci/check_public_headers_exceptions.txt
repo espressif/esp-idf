@@ -24,6 +24,7 @@ components/esp_rom/include/esp32s2/rom/rsa_pss.h
 components/lwip/lwip/src/include/lwip/priv/memp_std.h
 components/lwip/include/lwip/sockets.h
 components/lwip/lwip/src/include/lwip/prot/nd6.h
+components/lwip/lwip/src/include/netif/ppp/
 
 components/spi_flash/include/spi_flash_chip_issi.h
 components/spi_flash/include/spi_flash_chip_mxic.h
@@ -48,7 +49,7 @@ components/mbedtls/port/dynamic/esp_mbedtls_dynamic_impl.h
 components/esp-tls/private_include/
 
 components/protobuf-c/
-
+components/protocomm/proto-c/
 
 components/fatfs/vfs/vfs_fat_internal.h
 components/fatfs/src/ffconf.h
@@ -77,6 +78,7 @@ components/esp_gdbstub/include/esp_gdbstub.h
 
 components/esp_hw_support/include/esp_memprot.h
 components/esp_hw_support/include/esp_private/esp_memprot_internal.h
+components/esp_hw_support/include/esp_private/esp_riscv_intr.h
 
 ### Here are the files that use CONFIG_XXX values but don't include sdkconfig.h
 #
@@ -139,3 +141,9 @@ components/espcoredump/include/port/xtensa/esp_core_dump_summary_port.h
 components/riscv/include/esp_private/panic_reason.h
 components/riscv/include/riscv/interrupt.h
 components/riscv/include/riscv/rvruntime-frames.h
+
+# should be private include, but 'private_include' is a subdir of public includes
+components/console/private_include/console_private.h
+
+# Missing extern "C"
+components/esp_driver_spi/include/esp_private/spi_master_internal.h
