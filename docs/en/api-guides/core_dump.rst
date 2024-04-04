@@ -77,7 +77,8 @@ The core dump partition is automatically declared when using the default partiti
 
 .. important::
 
-    If :doc:`../security/flash-encryption` is enabled on the device, please add an ``encrypted`` flag to the core dump partition declaration.
+    If :doc:`../security/flash-encryption` is enabled on the device, please add an ``encrypted`` flag to the core dump partition declaration. Please note that the core dump cannot be read from encrypted partitions using ``idf.py coredump-info`` or ``idf.py coredump-debug`` commands.
+    It is recommended to read the core dump from ESP which will automatically decrypt the partition and send it for analysis, which can be done by running e.g. ``idf.py coredump-info -c <path-to-core-dump>``.
 
     .. code-block:: none
 
