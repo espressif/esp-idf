@@ -153,6 +153,7 @@
 
 /docs/                                   @esp-idf-codeowners/docs
 /docs/**/api-guides/tools/               @esp-idf-codeowners/tools
+/docs/en/api-guides/core_dump.rst        @esp-idf-codeowners/debugging
 /docs/en/api-guides/jtag-debugging/      @esp-idf-codeowners/debugging
 /docs/**/api-reference/bluetooth/        @esp-idf-codeowners/bluetooth
 /docs/**/api-reference/network/          @esp-idf-codeowners/network @esp-idf-codeowners/wifi

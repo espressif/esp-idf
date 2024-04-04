@@ -98,6 +98,11 @@ or
     idf.py coredump-debug
 
 
+.. note::
+
+    The ``idf.py coredump-info`` and ``idf.py coredump-debug`` commands are wrappers around the `esp-coredump` tool for easier use in the ESP-IDF environment. For more information see :ref:`core_dump_commands` section.
+
+
 Core Dump to UART
 -----------------
 
@@ -184,6 +189,8 @@ or
     idf.py coredump-debug -c </path/to/saved/base64/text>
 
 
+.. _core_dump_commands:
+
 Core Dump Commands
 ------------------
 
@@ -191,6 +198,12 @@ ESP-IDF provides special commands to help to retrieve and analyze core dumps:
 
 * ``idf.py coredump-info`` - prints crashed task's registers, call stack, list of available tasks in the system, memory regions, and contents of memory stored in core dump (TCBs and stacks).
 * ``idf.py coredump-debug`` - creates core dump ELF file and runs GDB debug session with this file. You can examine memory, variables, and task states manually. Note that since not all memory is saved in the core dump, only the values of variables allocated on the stack are meaningful.
+
+For advanced users who want to pass additional arguments or use custom ELF files, it is possible to use the `esp-coredump <https://github.com/espressif/esp-coredump>`_ tool directly. For more information, use in ESP-IDF environment:
+
+.. code-block:: bash
+
+    esp-coredump --help
 
 
 ROM Functions in Backtraces
