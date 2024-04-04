@@ -507,6 +507,7 @@ These include:
 - :ref:`CONFIG_MBEDTLS_ECP_FIXED_POINT_OPTIM`
 - Change :ref:`CONFIG_MBEDTLS_TLS_MODE` if both server & client functionalities are not needed
 - Consider disabling some cipher suites listed in the ``TLS Key Exchange Methods`` sub-menu (i.e., :ref:`CONFIG_MBEDTLS_KEY_EXCHANGE_RSA`)
+- Consider disabling :ref:`CONFIG_MBEDTLS_ERROR_STRINGS` if the application is pulling in mbedTLS error strings because of :cpp:func:`mbedtls_strerror` usage
 
 The help text for each option has some more information for reference.
 
