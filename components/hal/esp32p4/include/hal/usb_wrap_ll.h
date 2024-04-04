@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,13 +9,15 @@
 #include <stdbool.h>
 #include "esp_attr.h"
 #include "soc/soc.h"
-#include "soc/system_reg.h"
+#include "soc/lp_system_struct.h"
+#include "soc/lp_clkrst_struct.h"
+#include "soc/hp_sys_clkrst_struct.h"
 #include "soc/usb_wrap_struct.h"
 #include "hal/usb_wrap_types.h"
 
 /* ----------------------------- Macros & Types ----------------------------- */
 
-#define USB_WRAP_LL_EXT_PHY_SUPPORTED           1   // Can route to an external FSLS PHY
+#define USB_WRAP_LL_SELECT_PHY_SUPPORTED        1   // Can swap to another internal FSLS PHY
 
 
 #ifdef __cplusplus
@@ -23,6 +25,46 @@ extern "C" {
 #endif
 
 /* ---------------------------- USB PHY Control  ---------------------------- */
+
+/**
+ * @brief Sets default
+ *
+ * Some register fields/features of the USB WRAP are redundant on the ESP32-P4.
+ * This function those fields are set to the appropriate default values.
+ *
+ * @param hw Start address of the USB Wrap registers
+ */
+FORCE_INLINE_ATTR void usb_wrap_ll_phy_set_defaults(usb_wrap_dev_t *hw)
+{
+    // External FSLS PHY is not supported
+    hw->otg_conf.phy_sel = 0;
+    hw->otg_conf.usb_pad_enable = 1;
+}
+
+/**
+ * @brief Select the internal USB FSLS PHY for the USB WRAP
+ *
+ * @param hw Start address of the USB Wrap registers
+ * @param phy_idx Selected PHY's index
+ */
+FORCE_INLINE_ATTR void usb_wrap_ll_phy_select(usb_wrap_dev_t *hw, unsigned int phy_idx)
+{
+    // Enable SW control mapping USB_WRAP and USJ to USB FSLS PHY 0 and 1
+    LP_SYS.usb_ctrl.sw_hw_usb_phy_sel = 1;
+    /*
+    For 'sw_usb_phy_sel':
+    False - USJ mapped to USB FSLS PHY 0, USB_WRAP mapped to USB FSLS PHY 1 (default)
+    True  - USJ mapped to USB FSLS PHY 1, USB_WRAP mapped to USB FSLS PHY 0
+    */
+    switch (phy_idx) {
+    case 0:
+        LP_SYS.usb_ctrl.sw_usb_phy_sel = true;
+    case 1:
+        LP_SYS.usb_ctrl.sw_usb_phy_sel = false;
+    default:
+        break;
+    }
+}
 
 /**
  * @brief Enables and sets the override value for the session end signal
@@ -44,17 +86,6 @@ FORCE_INLINE_ATTR void usb_wrap_ll_phy_enable_srp_sessend_override(usb_wrap_dev_
 FORCE_INLINE_ATTR void usb_wrap_ll_phy_disable_srp_sessend_override(usb_wrap_dev_t *hw)
 {
     hw->otg_conf.srp_sessend_override = 0;
-}
-
-/**
- * @brief Sets whether the USB Wrap's FSLS PHY interface routes to an internal or external PHY
- *
- * @param hw Start address of the USB Wrap registers
- * @param enable Enables external PHY, internal otherwise
- */
-FORCE_INLINE_ATTR void usb_wrap_ll_phy_enable_external(usb_wrap_dev_t *hw, bool enable)
-{
-    hw->otg_conf.phy_sel = enable;
 }
 
 /**
@@ -142,7 +173,7 @@ FORCE_INLINE_ATTR void usb_wrap_ll_phy_set_pullup_strength(usb_wrap_dev_t *hw, b
  */
 FORCE_INLINE_ATTR bool usb_wrap_ll_phy_is_pad_enabled(usb_wrap_dev_t *hw)
 {
-    return hw->otg_conf.pad_enable;
+    return hw->otg_conf.usb_pad_enable;
 }
 
 /**
@@ -153,7 +184,7 @@ FORCE_INLINE_ATTR bool usb_wrap_ll_phy_is_pad_enabled(usb_wrap_dev_t *hw)
  */
 FORCE_INLINE_ATTR void usb_wrap_ll_phy_enable_pad(usb_wrap_dev_t *hw, bool enable)
 {
-    hw->otg_conf.pad_enable = enable;
+    hw->otg_conf.usb_pad_enable = enable;
 }
 
 /**
@@ -204,27 +235,31 @@ FORCE_INLINE_ATTR void usb_wrap_ll_phy_test_mode_set_signals(usb_wrap_dev_t *hw,
 /* ----------------------------- RCC Functions  ----------------------------- */
 
 /**
- * Enable the bus clock for USB Wrap module
+ * Enable the bus clock for USB Wrap module and USB_DWC_FS controller
  * @param clk_en True if enable the clock of USB Wrap module
  */
 FORCE_INLINE_ATTR void usb_wrap_ll_enable_bus_clock(bool clk_en)
 {
-    REG_SET_FIELD(DPORT_PERIP_CLK_EN0_REG, DPORT_USB_CLK_EN, clk_en);
+    // Enable/disable system clock for USB_WRAP and USB_DWC_FS
+    HP_SYS_CLKRST.soc_clk_ctrl1.reg_usb_otg11_sys_clk_en = clk_en;
+    // Enable PHY clock (48MHz) for USB FSLS PHY 1
+    LP_AON_CLKRST.hp_usb_clkrst_ctrl0.usb_otg11_48m_clk_en = clk_en;
 }
 
-// SYSTEM.perip_clk_enx are shared registers, so this function must be used in an atomic way
+// HP_SYS_CLKRST.soc_clk_ctrlx and LP_AON_CLKRST.hp_usb_clkrst_ctrlx are shared registers, so this function must be used in an atomic way
 #define usb_wrap_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; usb_wrap_ll_enable_bus_clock(__VA_ARGS__)
 
 /**
- * @brief Reset the USB Wrap module
+ * @brief Reset the USB Wrap module and USB_DWC_FS controller
  */
 FORCE_INLINE_ATTR void usb_wrap_ll_reset_register(void)
 {
-    REG_SET_FIELD(DPORT_PERIP_RST_EN0_REG, DPORT_USB_RST, 1);
-    REG_SET_FIELD(DPORT_PERIP_RST_EN0_REG, DPORT_USB_RST, 0);
+    // Reset the USB_WRAP and USB_DWC_FS
+    LP_AON_CLKRST.hp_usb_clkrst_ctrl1.rst_en_usb_otg11 = 1;
+    LP_AON_CLKRST.hp_usb_clkrst_ctrl1.rst_en_usb_otg11 = 0;
 }
 
-// SYSTEM.perip_rst_enx are shared registers, so this function must be used in an atomic way
+// P_AON_CLKRST.hp_usb_clkrst_ctrlx are shared registers, so this function must be used in an atomic way
 #define usb_wrap_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; usb_wrap_ll_reset_register(__VA_ARGS__)
 
 #ifdef __cplusplus

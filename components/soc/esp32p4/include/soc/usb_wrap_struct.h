@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -94,7 +94,10 @@ typedef union {
          *  Force phy clock always on.
          */
         uint32_t phy_clk_force_on:1;
-        uint32_t reserved_21:1;
+        /** phy_tx_edge_sel : R/W; bitpos: [21]; default: 0;
+         *  Select PHY tx signal output clock edge.1'b0: negedge;1'b1: posedge.
+         */
+        uint32_t phy_tx_edge_sel:1;
         /** dfifo_force_pu : R/W; bitpos: [22]; default: 0;
          *  Disable the dfifo to go into low power mode. The data in dfifo will not lost.
          */
@@ -107,6 +110,44 @@ typedef union {
     };
     uint32_t val;
 } usb_wrap_otg_conf_reg_t;
+
+/** Type of test_conf register
+ *  TEST relative configuration registers.
+ */
+typedef union {
+    struct {
+        /** test_enable : R/W; bitpos: [0]; default: 0;
+         *  Enable to test the USB pad.
+         */
+        uint32_t test_enable:1;
+        /** test_usb_wrap_oe : R/W; bitpos: [1]; default: 0;
+         *  USB pad one in test.
+         */
+        uint32_t test_usb_wrap_oe:1;
+        /** test_tx_dp : R/W; bitpos: [2]; default: 0;
+         *  USB D+ tx value in test.
+         */
+        uint32_t test_tx_dp:1;
+        /** test_tx_dm : R/W; bitpos: [3]; default: 0;
+         *  USB D- tx value in test.
+         */
+        uint32_t test_tx_dm:1;
+        /** test_rx_rcv : RO; bitpos: [4]; default: 0;
+         *  USB differential rx value in test.
+         */
+        uint32_t test_rx_rcv:1;
+        /** test_rx_dp : RO; bitpos: [5]; default: 0;
+         *  USB D+ rx value in test.
+         */
+        uint32_t test_rx_dp:1;
+        /** test_rx_dm : RO; bitpos: [6]; default: 0;
+         *  USB D- rx value in test.
+         */
+        uint32_t test_rx_dm:1;
+        uint32_t reserved_7:25;
+    };
+    uint32_t val;
+} usb_wrap_test_conf_reg_t;
 
 /** Type of date register
  *  Date register.
@@ -124,7 +165,8 @@ typedef union {
 
 typedef struct usb_wrap_dev_t {
     volatile usb_wrap_otg_conf_reg_t otg_conf;
-    uint32_t reserved_004[254];
+    volatile usb_wrap_test_conf_reg_t test_conf;
+    uint32_t reserved_008[253];
     volatile usb_wrap_date_reg_t date;
 } usb_wrap_dev_t;
 
