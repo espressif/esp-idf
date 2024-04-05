@@ -1240,31 +1240,81 @@ void esp_netif_free_rx_buffer(void *h, void* buffer)
     esp_netif->driver_free_rx_buffer(esp_netif->driver_handle, buffer);
 }
 
+#ifdef CONFIG_ESP_NETIF_REPORT_DATA_TRAFFIC
+static esp_err_t esp_netif_tx_rx_event_api(esp_netif_api_msg_t *msg)
+{
+    bool enable = (bool)msg->data;
+    esp_netif_t *esp_netif = msg->esp_netif;
+    if (esp_netif == NULL) {
+        ESP_LOGE(TAG, "Invalid esp_netif");
+    }
+
+    ESP_LOGD(TAG, "%s esp_netif:%p", __func__, esp_netif);
+    esp_netif->tx_rx_events_enabled = enable;
+
+    return ESP_OK;
+}
+#endif
+
+esp_err_t esp_netif_tx_rx_event_enable(esp_netif_t *esp_netif)
+{
+#ifdef CONFIG_ESP_NETIF_REPORT_DATA_TRAFFIC
+    return esp_netif_lwip_ipc_call(esp_netif_tx_rx_event_api, esp_netif, (void*)true /* Enable */);
+#else
+    return ESP_FAIL;
+#endif
+}
+
+esp_err_t esp_netif_tx_rx_event_disable(esp_netif_t *esp_netif)
+{
+#ifdef CONFIG_ESP_NETIF_REPORT_DATA_TRAFFIC
+    return esp_netif_lwip_ipc_call(esp_netif_tx_rx_event_api, esp_netif, (void*)false /* Disable */);
+#else
+    return ESP_FAIL;
+#endif
+}
+
 esp_err_t esp_netif_transmit(esp_netif_t *esp_netif, void* data, size_t len)
 {
 #ifdef CONFIG_ESP_NETIF_REPORT_DATA_TRAFFIC
-    ip_event_transmit_receive_t evt = {
-        .esp_netif = esp_netif,
-        .len = len,
-    };
-    esp_event_post(IP_EVENT, IP_EVENT_TRANSMIT, &evt, sizeof(evt), 0);
+    if (unlikely(esp_netif->tx_rx_events_enabled)) {
+        ip_event_tx_rx_t evt = {
+            .esp_netif = esp_netif,
+            .len = len,
+            .dir = ESP_NETIF_TX,
+        };
+        esp_event_post(IP_EVENT, IP_EVENT_TX_RX, &evt, sizeof(evt), 0);
+    }
 #endif
     return (esp_netif->driver_transmit)(esp_netif->driver_handle, data, len);
 }
 
 esp_err_t esp_netif_transmit_wrap(esp_netif_t *esp_netif, void *data, size_t len, void *pbuf)
 {
+#ifdef CONFIG_ESP_NETIF_REPORT_DATA_TRAFFIC
+    if (unlikely(esp_netif->tx_rx_events_enabled)) {
+        ip_event_tx_rx_t evt = {
+            .esp_netif = esp_netif,
+            .len = len,
+            .dir = ESP_NETIF_TX,
+        };
+        esp_event_post(IP_EVENT, IP_EVENT_TX_RX, &evt, sizeof(evt), 0);
+    }
+#endif
     return (esp_netif->driver_transmit_wrap)(esp_netif->driver_handle, data, len, pbuf);
 }
 
 esp_err_t esp_netif_receive(esp_netif_t *esp_netif, void *buffer, size_t len, void *eb)
 {
 #ifdef CONFIG_ESP_NETIF_REPORT_DATA_TRAFFIC
-    ip_event_transmit_receive_t evt = {
-        .esp_netif = esp_netif,
-        .len = len,
-    };
-    esp_event_post(IP_EVENT, IP_EVENT_RECEIVE, &evt, sizeof(evt), 0);
+    if (unlikely(esp_netif->tx_rx_events_enabled)) {
+        ip_event_tx_rx_t evt = {
+            .esp_netif = esp_netif,
+            .len = len,
+            .dir = ESP_NETIF_RX,
+        };
+        esp_event_post(IP_EVENT, IP_EVENT_TX_RX, &evt, sizeof(evt), 0);
+    }
 #endif
 #ifdef CONFIG_ESP_NETIF_RECEIVE_REPORT_ERRORS
     return esp_netif->lwip_input_fn(esp_netif->netif_handle, buffer, len, eb);
