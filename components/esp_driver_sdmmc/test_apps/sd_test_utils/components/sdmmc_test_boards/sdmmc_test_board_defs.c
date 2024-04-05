@@ -341,7 +341,7 @@ static const sdmmc_test_board_info_t s_board_info = {
             .d7 = GPIO_NUM_NC,
             .cd = GPIO_NUM_NC,
             .wp = GPIO_NUM_NC,
-            .unused_pin = 2,
+            .unused_pin = 54,
         }
     },
 };
