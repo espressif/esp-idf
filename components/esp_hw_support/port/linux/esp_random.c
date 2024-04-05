@@ -1,40 +1,38 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <stdlib.h>
-#include <time.h>
+#include <stddef.h>
 #include <stdint.h>
 #include <assert.h>
-#include <string.h>
-#include <sys/param.h>
+#include <unistd.h>
 
 #include "esp_log.h"
 
-static const char* TAG = "esp-random";
+#define GETENTROPY_MAX_LEN 256
 
-static void __attribute__((constructor)) esp_random_init(void)
-{
-    srand(time(NULL));
-    ESP_LOGW(TAG, "esp_random do not provide a cryptographically secure numbers on Linux, and should never be used for anything security related");
-}
+static void __attribute__((constructor)) esp_random_init(void) { }
 
 uint32_t esp_random(void)
 {
-    /* Adding INT32_MAX to shift the results such that after conversion to uint32_t we still get 32 bits of random data */
-    return (rand() + INT32_MAX);
+    uint32_t random_number;
+    assert(getentropy(&random_number, sizeof(random_number)) == 0);
+    return random_number;
 }
 
 void esp_fill_random(void *buf, size_t len)
 {
     assert(buf != NULL);
-    uint8_t *buf_bytes = (uint8_t *)buf;
-    while (len > 0) {
-        uint32_t word = esp_random();
-        uint32_t to_copy = MIN(sizeof(word), len);
-        memcpy(buf_bytes, &word, to_copy);
-        buf_bytes += to_copy;
-        len -= to_copy;
+
+    // Note that we can't use getentropy() with len > 256 directly (see getentropy man page),
+    // hence reading in chunks
+    const size_t FULL_CHUNKS_NUM = (len / GETENTROPY_MAX_LEN);
+    const size_t REST_CHUNK_SIZE = len % GETENTROPY_MAX_LEN;
+
+    for (size_t chunk_num = 0; chunk_num < FULL_CHUNKS_NUM; chunk_num++) {
+        assert(getentropy(buf + chunk_num * GETENTROPY_MAX_LEN, GETENTROPY_MAX_LEN) == 0);
     }
+
+    assert(getentropy(buf + FULL_CHUNKS_NUM * GETENTROPY_MAX_LEN, REST_CHUNK_SIZE) == 0);
 }
