@@ -8,6 +8,15 @@ set(CMAKE_EXECUTABLE_SUFFIX ".elf")
 option(ULP_COCPU_IS_RISCV "Use RISC-V based ULP" OFF)
 option(ULP_COCPU_IS_LP_CORE "Use RISC-V based LP Core" OFF)
 
+function(create_arg_file arguments output_file)
+    # Escape all spaces
+    list(TRANSFORM arguments REPLACE " " "\\\\ ")
+    # Create a single string with all args separated by space
+    list(JOIN arguments " " arguments)
+    # Write it into the response file
+    file(WRITE ${output_file} ${arguments})
+endfunction()
+
 message(STATUS "Building ULP app ${ULP_APP_NAME}")
 
 # Check the supported assembler version
@@ -22,14 +31,13 @@ get_filename_component(sdkconfig_dir ${SDKCONFIG_HEADER} DIRECTORY)
 foreach(include ${COMPONENT_INCLUDES})
     list(APPEND component_includes -I${include})
 endforeach()
+list(REMOVE_DUPLICATES component_includes)
 
 list(APPEND ULP_PREPROCESSOR_ARGS ${component_includes})
 list(APPEND ULP_PREPROCESSOR_ARGS -I${COMPONENT_DIR})
 list(APPEND ULP_PREPROCESSOR_ARGS -I${sdkconfig_dir})
 
 target_include_directories(${ULP_APP_NAME} PRIVATE ${COMPONENT_INCLUDES})
-
-list(APPEND ULP_PREPROCESSOR_ARGS -D__ASSEMBLER__)
 
 # Pre-process the linker script
 if(ULP_COCPU_IS_RISCV)
@@ -41,8 +49,14 @@ else()
 endif()
 
 get_filename_component(ULP_LD_SCRIPT ${ULP_LD_TEMPLATE} NAME)
+
+# Put all arguments to the list
+set(preprocessor_args -D__ASSEMBLER__ -E -P -xc -o ${ULP_LD_SCRIPT} ${ULP_PREPROCESSOR_ARGS} ${ULP_LD_TEMPLATE})
+set(compiler_arguments_file ${CMAKE_CURRENT_BINARY_DIR}/${ULP_LD_SCRIPT}_args.txt)
+create_arg_file("${preprocessor_args}" "${compiler_arguments_file}")
+
 add_custom_command(OUTPUT ${ULP_LD_SCRIPT}
-                   COMMAND ${CMAKE_C_COMPILER} -E -P -xc -o ${ULP_LD_SCRIPT} ${ULP_PREPROCESSOR_ARGS} ${ULP_LD_TEMPLATE}
+                   COMMAND ${CMAKE_C_COMPILER} @${compiler_arguments_file}
                    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
                    MAIN_DEPENDENCY ${ULP_LD_TEMPLATE}
                    DEPENDS ${SDKCONFIG_HEADER}
@@ -130,11 +144,15 @@ else()
     foreach(ulp_s_source ${ULP_S_SOURCES})
         get_filename_component(ulp_ps_source ${ulp_s_source} NAME_WE)
         set(ulp_ps_output ${CMAKE_CURRENT_BINARY_DIR}/${ulp_ps_source}.ulp.S)
+        # Put all arguments to the list
+        set(preprocessor_args -D__ASSEMBLER__ -E -P -xc -o ${ulp_ps_output} ${ULP_PREPROCESSOR_ARGS} ${ulp_s_source})
+        set(compiler_arguments_file ${CMAKE_CURRENT_BINARY_DIR}/${ulp_ps_source}_args.txt)
+        create_arg_file("${preprocessor_args}" "${compiler_arguments_file}")
+
         # Generate preprocessed assembly files.
         add_custom_command(OUTPUT ${ulp_ps_output}
                            WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-                           COMMAND ${CMAKE_C_COMPILER} -E -P -xc ${ULP_PREPROCESSOR_ARGS}
-                           -o ${ulp_ps_output} ${ulp_s_source}
+                           COMMAND ${CMAKE_C_COMPILER} @${compiler_arguments_file}
                            DEPENDS ${ulp_s_source}
                            VERBATIM)
         # During assembly file compilation, output listing files as well.
