@@ -1102,7 +1102,6 @@ examples/system/console/advanced/components/cmd_nvs/cmd_nvs.c
 examples/system/console/advanced/components/cmd_nvs/cmd_nvs.h
 examples/system/console/advanced/components/cmd_system/cmd_system.c
 examples/system/console/advanced/components/cmd_system/cmd_system.h
-examples/system/console/advanced/main/console_example_main.c
 examples/system/console/basic/main/console_example_main.c
 examples/system/efuse/main/efuse_main.c
 examples/system/esp_event/default_event_loop/main/event_source.h

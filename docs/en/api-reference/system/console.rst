@@ -191,11 +191,7 @@ Application Examples
 
 - :example:`system/console/basic` demonstrates how to use the REPL (Read-Eval-Print Loop) APIs of the Console Component to create an interactive shell on {IDF_TARGET_NAME}, which can be controlled over a serial interface, supporting UART and USB interfaces, and can serve as a basis for applications requiring a command-line interface.
 
-- :example:`system/console/advanced` demonstrates how to use the Console Component to create an interactive shell on {IDF_TARGET_NAME}, which can be controlled over a serial port, providing a basis for applications that require a command-line interface.
-
-.. only:: esp32s3
-
-    - :example:`system/console/advanced_usb_cdc` demonstrates how to create and interact with an interactive shell with a command-line interface, over the {IDF_TARGET_NAME}'s USB_OTG peripheral.
+- :example:`system/console/advanced` demonstrates how to use the Console Component to create an interactive shell on {IDF_TARGET_NAME}, which can be controlled over a serial interface, supporting UART and USB interfaces, providing a basis for applications that require a command-line interface.
 
 API Reference
 -------------
