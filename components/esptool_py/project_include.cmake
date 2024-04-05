@@ -94,7 +94,7 @@ if(NOT CONFIG_APP_BUILD_TYPE_RAM AND CONFIG_APP_BUILD_GENERATE_BINARIES)
     endif()
 endif()
 
-# We still set "--min-rev" to keep the app compatible with older booloaders where this field is controlled.
+# We still set "--min-rev" to keep the app compatible with older bootloaders where this field is controlled.
 if(CONFIG_IDF_TARGET_ESP32)
     # for this chip min_rev is major revision
     math(EXPR min_rev "${CONFIG_ESP_REV_MIN_FULL} / 100")
@@ -241,6 +241,21 @@ add_custom_target(uf2-app
     )
 
 
+set(MERGE_BIN_ARGS merge_bin -o "${CMAKE_CURRENT_BINARY_DIR}/merge.bin" "@${CMAKE_CURRENT_BINARY_DIR}/flash_args")
+
+add_custom_target(merge_bin
+    COMMAND ${CMAKE_COMMAND}
+    -D "IDF_PATH=${idf_path}"
+    -D "SERIAL_TOOL=${ESPTOOLPY}"
+    -D "SERIAL_TOOL_ARGS=${MERGE_BIN_ARGS}"
+    -D "WORKING_DIRECTORY=${CMAKE_CURRENT_BINARY_DIR}"
+    -P run_serial_tool.cmake
+    WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
+    DEPENDS gen_project_binary bootloader
+    USES_TERMINAL
+    VERBATIM
+    )
+
 set(MONITOR_ARGS "")
 
 list(APPEND MONITOR_ARGS "--toolchain-prefix;${_CMAKE_TOOLCHAIN_PREFIX};")
@@ -348,7 +363,7 @@ endfunction()
 # This function takes a fifth optional named parameter: "ALWAYS_PLAINTEXT". As
 # its name states, it marks whether the image should be flashed as plain text or
 # not. If build macro CONFIG_SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT is set and
-# this parameter is provided, then the image will be flahsed as plain text
+# this parameter is provided, then the image will be flashed as plain text
 # (not encrypted) on the target. This parameter will be ignored if build macro
 # CONFIG_SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT is not set.
 function(esptool_py_flash_target_image target_name image_name offset image)
@@ -474,7 +489,7 @@ $<JOIN:$<TARGET_PROPERTY:${target_name},IMAGES>,\n>")
         # If we only have encrypted images to flash, we must use legacy
         # --encrypt parameter.
         # As the properties ENCRYPTED_IMAGES and NON_ENCRYPTED_IMAGES have not
-        # been geenrated yet, we must use CMake expression generator to test
+        # been generated yet, we must use CMake expression generator to test
         # which esptool.py options we can use.
 
         # The variable has_non_encrypted_image will be evaluated to "1" if some
@@ -503,7 +518,7 @@ ${non_encrypted_files}\n\
 ${if_enc_expr}\
 ${encrypted_files}")
 
-        # The expression is ready to be geenrated, write it to the file which
+        # The expression is ready to be generated, write it to the file which
         # extension is .in
         file_generate("${CMAKE_CURRENT_BINARY_DIR}/encrypted_${target_name}_args.in"
                       CONTENT "${flash_args_content}")
