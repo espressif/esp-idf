@@ -35,6 +35,9 @@
 #endif
 
 #if IMPL_NEWLIB_TIME_FUNCS
+// time functions are implemented -- they should not be weak
+#define WEAK_UNLESS_TIMEFUNC_IMPL
+
 // stores the start time of the slew
 static uint64_t s_adjtime_start_us;
 // is how many microseconds total to slew
@@ -102,9 +105,13 @@ static void adjtime_corr_stop(void)
     }
     _lock_release(&s_time_lock);
 }
+#else
+
+// no time functions are actually implemented -- allow users to override them
+#define WEAK_UNLESS_TIMEFUNC_IMPL __attribute__((weak))
 #endif
 
-int adjtime(const struct timeval *delta, struct timeval *outdelta)
+WEAK_UNLESS_TIMEFUNC_IMPL int adjtime(const struct timeval *delta, struct timeval *outdelta)
 {
 #if IMPL_NEWLIB_TIME_FUNCS
     if (outdelta != NULL) {
@@ -157,7 +164,7 @@ clock_t IRAM_ATTR _times_r(struct _reent *r, struct tms *ptms)
     return (clock_t) tv.tv_sec;
 }
 
-int IRAM_ATTR _gettimeofday_r(struct _reent *r, struct timeval *tv, void *tz)
+WEAK_UNLESS_TIMEFUNC_IMPL int IRAM_ATTR _gettimeofday_r(struct _reent *r, struct timeval *tv, void *tz)
 {
     (void) tz;
 
@@ -174,7 +181,7 @@ int IRAM_ATTR _gettimeofday_r(struct _reent *r, struct timeval *tv, void *tz)
 #endif
 }
 
-int settimeofday(const struct timeval *tv, const struct timezone *tz)
+WEAK_UNLESS_TIMEFUNC_IMPL int settimeofday(const struct timeval *tv, const struct timezone *tz)
 {
     (void) tz;
 #if IMPL_NEWLIB_TIME_FUNCS
@@ -211,7 +218,7 @@ unsigned int sleep(unsigned int seconds)
     return 0;
 }
 
-int clock_settime(clockid_t clock_id, const struct timespec *tp)
+WEAK_UNLESS_TIMEFUNC_IMPL int clock_settime(clockid_t clock_id, const struct timespec *tp)
 {
 #if IMPL_NEWLIB_TIME_FUNCS
     if (tp == NULL) {
@@ -236,7 +243,7 @@ int clock_settime(clockid_t clock_id, const struct timespec *tp)
 #endif
 }
 
-int clock_gettime(clockid_t clock_id, struct timespec *tp)
+WEAK_UNLESS_TIMEFUNC_IMPL int clock_gettime(clockid_t clock_id, struct timespec *tp)
 {
 #if IMPL_NEWLIB_TIME_FUNCS
     if (tp == NULL) {
@@ -267,7 +274,7 @@ int clock_gettime(clockid_t clock_id, struct timespec *tp)
 #endif
 }
 
-int clock_getres(clockid_t clock_id, struct timespec *res)
+WEAK_UNLESS_TIMEFUNC_IMPL int clock_getres(clockid_t clock_id, struct timespec *res)
 {
 #if IMPL_NEWLIB_TIME_FUNCS
     if (res == NULL) {
