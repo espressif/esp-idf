@@ -1,4 +1,4 @@
-﻿*********************************************
+*********************************************
 Linux 和 macOS 平台工具链的标准设置
 *********************************************
 
@@ -44,7 +44,7 @@ Linux 用户
 
 - Arch::
 
-    sudo pacman -S --needed gcc git make flex bison gperf python cmake ninja ccache dfu-util libusb
+    sudo pacman -S --needed gcc git make flex bison gperf python cmake ninja ccache dfu-util libusb which
 
 .. note::
     - 使用 ESP-IDF 需要 CMake 3.16 或以上版本。较早的 Linux 发行版可能需要升级自身的软件源仓库，或开启 backports 套件库，或安装 "cmake3" 软件包（不是安装 "cmake"）。

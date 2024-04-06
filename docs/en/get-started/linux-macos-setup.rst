@@ -44,7 +44,7 @@ CentOS 7 is still supported but CentOS version 8 is recommended for a better use
 
 - Arch::
 
-    sudo pacman -S --needed gcc git make flex bison gperf python cmake ninja ccache dfu-util libusb
+    sudo pacman -S --needed gcc git make flex bison gperf python cmake ninja ccache dfu-util libusb which
 
 .. note::
     - CMake version 3.16 or newer is required for use with ESP-IDF. Run "tools/idf_tools.py install cmake" to install a suitable version if your OS versions does not have one.
