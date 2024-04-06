@@ -60,6 +60,7 @@
 #define DHCP_OPTION_PERFORM_ROUTER_DISCOVERY 31
 #define DHCP_OPTION_BROADCAST_ADDRESS 28
 #define DHCP_OPTION_REQ_LIST     55
+#define DHCP_OPTION_CAPTIVEPORTAL_URI 160
 #define DHCP_OPTION_END         255
 
 //#define USE_CLASS_B_NET 1
@@ -139,6 +140,7 @@ struct dhcps_t {
     void* dhcps_cb_arg;
     struct udp_pcb *dhcps_pcb;
     dhcps_handle_state state;
+    char *dhcps_captiveportal_uri;
 };
 
 
@@ -165,6 +167,7 @@ dhcps_t *dhcps_new(void)
     dhcps->dhcps_offer = 0xFF;
     dhcps->dhcps_dns = 0x00;
     dhcps->dhcps_pcb = NULL;
+    dhcps->dhcps_captiveportal_uri = NULL;
     dhcps->state = DHCPS_HANDLE_CREATED;
     return dhcps;
 }
@@ -400,6 +403,7 @@ static u8_t *add_msg_type(u8_t *optptr, u8_t type)
 *******************************************************************************/
 static u8_t *add_offer_options(dhcps_t *dhcps, u8_t *optptr)
 {
+    u32_t i;
     ip4_addr_t ipadd;
 
     ipadd.addr = *((u32_t *) &dhcps->server_address);
@@ -467,6 +471,17 @@ static u8_t *add_offer_options(dhcps_t *dhcps, u8_t *optptr)
     *optptr++ = 2;
     *optptr++ = 0x05;
     *optptr++ = 0xdc;
+
+    if (dhcps->dhcps_captiveportal_uri) {
+        size_t length = strlen(dhcps->dhcps_captiveportal_uri);
+
+        *optptr++ = DHCP_OPTION_CAPTIVEPORTAL_URI;
+        *optptr++ = length;
+        for (i = 0; i < length; i++)
+        {
+            *optptr++ = dhcps->dhcps_captiveportal_uri[i];
+        }
+    }
 
     *optptr++ = DHCP_OPTION_PERFORM_ROUTER_DISCOVERY;
     *optptr++ = 1;
@@ -1531,5 +1546,21 @@ err_t dhcps_dns_getserver(dhcps_t *dhcps, ip4_addr_t *dnsserver)
         return ERR_OK;
     }
     return ERR_ARG;
+}
+
+/******************************************************************************
+ * FunctionName : dhcps_set_captiveportal_uri
+ * Description  : set URI for captive portal DHCPS option
+ * Parameters   : portaluri -- The URI of the captive portal
+ * Returns      : ERR_ARG if invalid handle, ERR_OK on success
+ *******************************************************************************/
+err_t dhcps_set_captiveportal_uri(dhcps_t *dhcps, const char *portaluri)
+{
+    if (dhcps == NULL)
+    {
+        return ERR_ARG;
+    }
+    strcpy(dhcps->dhcps_captiveportal_uri, portaluri);
+    return ERR_OK;
 }
 #endif // ESP_DHCPS

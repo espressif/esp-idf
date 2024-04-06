@@ -176,6 +176,20 @@ err_t dhcps_dns_setserver(dhcps_t *dhcps, const ip_addr_t *dnsserver);
  */
 err_t dhcps_dns_getserver(dhcps_t *dhcps, ip4_addr_t *dnsserver);
 
+/******************************************************************************
+ * FunctionName : dhcps_set_captiveportal_uri
+ * Description  : set URI for captive portal DHCPS option
+ * Parameters   : portaluri -- The URI of the captive portal
+ * Returns      : ERR_ARG if invalid handle, ERR_OK on success
+ *******************************************************************************/
+ /**
+ * @brief Sets URI for captive portal DHCP server option
+ * @param dhcps Pointer to the DHCP handle
+ * @param portaluri URI of the captive portal
+ * @return ERR_ARG if invalid handle, ERR_OK on success
+ */
+err_t dhcps_set_captiveportal_uri(dhcps_t *dhcps, const char *portaluri);
+
 /**
  * @brief Sets callback on assigning an IP to the connected client
  * @param dhcps Pointer to the DHCP handle
