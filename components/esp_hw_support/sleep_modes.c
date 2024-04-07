@@ -1591,7 +1591,11 @@ bool esp_sleep_is_valid_wakeup_gpio(gpio_num_t gpio_num)
 #if SOC_RTCIO_PIN_COUNT > 0
     return RTC_GPIO_IS_VALID_GPIO(gpio_num);
 #else
+#if !CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION    // TODO: IDF-9673
     return GPIO_IS_DEEP_SLEEP_WAKEUP_VALID_GPIO(gpio_num);
+#else
+    return true;
+#endif
 #endif
 }
 
