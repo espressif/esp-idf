@@ -13,7 +13,7 @@ The SPI0/1 bus is shared between the instruction & data cache (for firmware exec
 
 .. only:: SOC_SPI_MEM_SUPPORT_AUTO_SUSPEND
 
-    On {IDF_TARGET_NAME}, the config option :ref:`CONFIG_SPI_FLASH_AUTO_SUSPEND` (enabled by default) allows the cache to read flash concurrently with SPI1 operations. See :ref:`auto-suspend` for more details.
+    On {IDF_TARGET_NAME}, the config option :ref:`CONFIG_SPI_FLASH_AUTO_SUSPEND` allows the cache to read flash concurrently with SPI1 operations. This is an optional feature that depends on special SPI Flash models, hence disabled by default. See :ref:`auto-suspend` for more details.
 
     If this option is disabled, the caches must be disabled while reading/writing/erasing operations. There are some constraints using driver on the SPI1 bus, see :ref:`impact_disabled_cache`. These constraints will cause more IRAM/DRAM usages.
 
