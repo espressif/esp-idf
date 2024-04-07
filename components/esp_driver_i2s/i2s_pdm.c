@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -132,23 +132,23 @@ static esp_err_t i2s_pdm_tx_set_gpio(i2s_chan_handle_t handle, const i2s_pdm_tx_
                         ESP_ERR_INVALID_ARG, TAG, "dout gpio is invalid");
     i2s_pdm_tx_config_t *pdm_tx_cfg = (i2s_pdm_tx_config_t *)handle->mode_info;
     /* Set data output GPIO */
-    i2s_gpio_check_and_set(gpio_cfg->dout, i2s_periph_signal[id].data_out_sig, false, false);
+    i2s_gpio_check_and_set(handle, gpio_cfg->dout, i2s_periph_signal[id].data_out_sig, false, false);
 #if SOC_I2S_PDM_MAX_TX_LINES > 1
     if (pdm_tx_cfg->slot_cfg.line_mode == I2S_PDM_TX_TWO_LINE_DAC) {
-        i2s_gpio_check_and_set(gpio_cfg->dout2, i2s_periph_signal[id].data_out_sigs[1], false, false);
+        i2s_gpio_check_and_set(handle, gpio_cfg->dout2, i2s_periph_signal[id].data_out_sigs[1], false, false);
     }
 #endif
 
     if (handle->role == I2S_ROLE_SLAVE) {
         /* For "tx + slave" mode, select TX signal index for ws and bck */
         if (!handle->controller->full_duplex) {
-            i2s_gpio_check_and_set(gpio_cfg->clk, i2s_periph_signal[id].s_tx_ws_sig, true, gpio_cfg->invert_flags.clk_inv);
+            i2s_gpio_check_and_set(handle, gpio_cfg->clk, i2s_periph_signal[id].s_tx_ws_sig, true, gpio_cfg->invert_flags.clk_inv);
             /* For "tx + rx + slave" or "rx + slave" mode, select RX signal index for ws and bck */
         } else {
-            i2s_gpio_check_and_set(gpio_cfg->clk, i2s_periph_signal[id].s_rx_ws_sig, true, gpio_cfg->invert_flags.clk_inv);
+            i2s_gpio_check_and_set(handle, gpio_cfg->clk, i2s_periph_signal[id].s_rx_ws_sig, true, gpio_cfg->invert_flags.clk_inv);
         }
     } else {
-        i2s_gpio_check_and_set(gpio_cfg->clk, i2s_periph_signal[id].m_tx_ws_sig, false, gpio_cfg->invert_flags.clk_inv);
+        i2s_gpio_check_and_set(handle, gpio_cfg->clk, i2s_periph_signal[id].m_tx_ws_sig, false, gpio_cfg->invert_flags.clk_inv);
     }
 #if SOC_I2S_HW_VERSION_2
     I2S_CLOCK_SRC_ATOMIC() {
@@ -311,6 +311,9 @@ esp_err_t i2s_channel_reconfig_pdm_tx_gpio(i2s_chan_handle_t handle, const i2s_p
     ESP_GOTO_ON_FALSE(handle->mode == I2S_COMM_MODE_PDM, ESP_ERR_INVALID_ARG, err, TAG, "This handle is not working in standard mode");
     ESP_GOTO_ON_FALSE(handle->state == I2S_CHAN_STATE_READY, ESP_ERR_INVALID_STATE, err, TAG, "Invalid state, I2S should be disabled before reconfiguring the gpio");
 
+    if (handle->reserve_gpio_mask) {
+        i2s_output_gpio_revoke(handle, handle->reserve_gpio_mask);
+    }
     ESP_GOTO_ON_ERROR(i2s_pdm_tx_set_gpio(handle, gpio_cfg), err, TAG, "set i2s standard slot failed");
     xSemaphoreGive(handle->mutex);
 
@@ -422,21 +425,21 @@ static esp_err_t i2s_pdm_rx_set_gpio(i2s_chan_handle_t handle, const i2s_pdm_rx_
 #if SOC_I2S_PDM_MAX_RX_LINES > 1
     for (int i = 0; i < SOC_I2S_PDM_MAX_RX_LINES; i++) {
         if (pdm_rx_cfg->slot_cfg.slot_mask & (0x03 << (i * 2))) {
-            i2s_gpio_check_and_set(gpio_cfg->dins[i], i2s_periph_signal[id].data_in_sigs[i], true, false);
+            i2s_gpio_check_and_set(handle, gpio_cfg->dins[i], i2s_periph_signal[id].data_in_sigs[i], true, false);
         }
     }
 #else
-    i2s_gpio_check_and_set(gpio_cfg->din, i2s_periph_signal[id].data_in_sig, true, false);
+    i2s_gpio_check_and_set(handle, gpio_cfg->din, i2s_periph_signal[id].data_in_sig, true, false);
 #endif
 
     if (handle->role == I2S_ROLE_SLAVE) {
         /* For "tx + rx + slave" or "rx + slave" mode, select RX signal index for ws and bck */
-        i2s_gpio_check_and_set(gpio_cfg->clk, i2s_periph_signal[id].s_rx_ws_sig, true, gpio_cfg->invert_flags.clk_inv);
+        i2s_gpio_check_and_set(handle, gpio_cfg->clk, i2s_periph_signal[id].s_rx_ws_sig, true, gpio_cfg->invert_flags.clk_inv);
     } else {
         if (!handle->controller->full_duplex) {
-            i2s_gpio_check_and_set(gpio_cfg->clk, i2s_periph_signal[id].m_rx_ws_sig, false, gpio_cfg->invert_flags.clk_inv);
+            i2s_gpio_check_and_set(handle, gpio_cfg->clk, i2s_periph_signal[id].m_rx_ws_sig, false, gpio_cfg->invert_flags.clk_inv);
         } else {
-            i2s_gpio_check_and_set(gpio_cfg->clk, i2s_periph_signal[id].m_tx_ws_sig, false, gpio_cfg->invert_flags.clk_inv);
+            i2s_gpio_check_and_set(handle, gpio_cfg->clk, i2s_periph_signal[id].m_tx_ws_sig, false, gpio_cfg->invert_flags.clk_inv);
         }
     }
 #if SOC_I2S_HW_VERSION_2
@@ -595,6 +598,9 @@ esp_err_t i2s_channel_reconfig_pdm_rx_gpio(i2s_chan_handle_t handle, const i2s_p
     ESP_GOTO_ON_FALSE(handle->mode == I2S_COMM_MODE_PDM, ESP_ERR_INVALID_ARG, err, TAG, "This handle is not working in standard mode");
     ESP_GOTO_ON_FALSE(handle->state == I2S_CHAN_STATE_READY, ESP_ERR_INVALID_STATE, err, TAG, "Invalid state, I2S should be disabled before reconfiguring the gpio");
 
+    if (handle->reserve_gpio_mask) {
+        i2s_output_gpio_revoke(handle, handle->reserve_gpio_mask);
+    }
     ESP_GOTO_ON_ERROR(i2s_pdm_rx_set_gpio(handle, gpio_cfg), err, TAG, "set i2s standard slot failed");
     xSemaphoreGive(handle->mutex);
 
