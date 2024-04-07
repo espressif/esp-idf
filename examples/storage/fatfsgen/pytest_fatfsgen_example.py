@@ -1,12 +1,12 @@
-# SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
-
 import os
 import re
 import shutil
 import sys
 from datetime import datetime
-from subprocess import STDOUT, run
+from subprocess import run
+from subprocess import STDOUT
 from typing import List
 
 import pytest
@@ -51,8 +51,8 @@ def compare_folders(fp1: str, fp2: str) -> bool:
         return f1_.read() == f2_.read()
 
 
-# Example_GENERIC
 @pytest.mark.esp32
+@pytest.mark.generic
 @pytest.mark.parametrize('config', ['test_read_only_partition_gen',
                                     'test_read_only_partition_gen_default_dt',
                                     'test_read_only_partition_gen_ln',

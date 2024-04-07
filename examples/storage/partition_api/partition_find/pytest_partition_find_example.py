@@ -1,6 +1,5 @@
 # SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
-
 import re
 
 import pytest
@@ -9,6 +8,7 @@ from pytest_embedded import Dut
 
 @pytest.mark.esp32
 @pytest.mark.esp32c3
+@pytest.mark.generic
 def test_partition_find_example(dut: Dut) -> None:
     def expect_partition(name: str, offset: int, size: int) -> None:
         dut.expect(re.compile(str.encode("found partition '{}' at offset {:#x} with size {:#x}".format(name, offset, size))), timeout=5)
