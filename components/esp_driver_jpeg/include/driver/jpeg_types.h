@@ -69,11 +69,6 @@ typedef enum {
 typedef struct jpeg_decoder_t *jpeg_decoder_handle_t;
 
 /**
- * @brief Type of jpeg codec handle
- */
-typedef struct jpeg_codec_t *jpeg_codec_handle_t;
-
-/**
  * @brief Type of jpeg encoder handle
  */
 typedef struct jpeg_encoder_t *jpeg_encoder_handle_t;

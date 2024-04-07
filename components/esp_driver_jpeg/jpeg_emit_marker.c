@@ -6,15 +6,13 @@
 
 #include <stdio.h>
 #include <string.h>
+#include "sys/param.h"
 #include "esp_log.h"
 #include "jpeg_private.h"
 #include "private/jpeg_param.h"
 #include "private/jpeg_emit_marker.h"
 #include "hal/jpeg_defs.h"
 #include "esp_private/esp_cache_private.h"
-
-#define JPEG_MAX(a, b) (((a) > (b)) ? (a) : (b))
-#define JPEG_MIN(a, b) (((a) < (b)) ? (a) : (b))
 
 static void emit_byte(jpeg_enc_header_info_t *header_info, uint8_t i)
 {
@@ -66,7 +64,7 @@ static void compute_quant_table(uint32_t *quant_table, const uint32_t *basic_tab
     for (int i = 0; i < 64; i++) {
         int temp = *basic_table++;
         temp = (temp * scaling_factor + 50L) / 100L;
-        *quant_table++ = JPEG_MIN(JPEG_MAX(temp, 1), 255);
+        *quant_table++ = MIN(MAX(temp, 1), 255);
     }
 }
 
@@ -232,7 +230,10 @@ esp_err_t emit_com_marker(jpeg_enc_header_info_t *header_info)
     size_t cache_align = 0;
     esp_cache_get_alignment(ESP_CACHE_MALLOC_FLAG_PSRAM, &cache_align);
     // compensate_size = aligned_size - SOS marker size(2 * header_info->num_components + 2 + 1 + 3 + 2) - COM marker size(4).
-    uint32_t compensate_size = ((header_info->header_len / cache_align + 1) * cache_align) - header_info->header_len - (2 * header_info->num_components + 2 + 1 + 3 + 2) - 4;
+    int compensate_size = ((header_info->header_len / cache_align + 1) * cache_align) - header_info->header_len - (2 * header_info->num_components + 2 + 1 + 3 + 2) - 4;
+    if (compensate_size < 0) {
+        compensate_size += cache_align;
+    }
     emit_marker(header_info, JPEG_M_COM & 0xff);
     emit_word(header_info, compensate_size);
     for (int i = 0; i < compensate_size; i++) {

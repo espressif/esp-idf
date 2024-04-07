@@ -90,26 +90,20 @@ void app_main(void)
         .buffer_direction = JPEG_DEC_ALLOC_INPUT_BUFFER,
     };
 
-    jpeg_new_encoder_engine(&encode_eng_cfg, &jpeg_handle);
+    ESP_ERROR_CHECK(jpeg_new_encoder_engine(&encode_eng_cfg, &jpeg_handle));
     // Read 1080p raw picture
     fseek(file_raw_1080p, 0, SEEK_END);
     raw_size_1080p = ftell(file_raw_1080p);
     fseek(file_raw_1080p, 0, SEEK_SET);
     size_t tx_buffer_size = 0;
     uint8_t *raw_buf_1080p = (uint8_t*)jpeg_alloc_encoder_mem(raw_size_1080p, &tx_mem_cfg, &tx_buffer_size);
-    if (raw_buf_1080p == NULL) {
-        ESP_LOGE(TAG, "alloc 1080p tx buffer error");
-        return;
-    }
+    assert(raw_buf_1080p != NULL);
     fread(raw_buf_1080p, 1, raw_size_1080p, file_raw_1080p);
     fclose(file_raw_1080p);
 
     size_t rx_buffer_size = 0;
     uint8_t *jpg_buf_1080p = (uint8_t*)jpeg_alloc_encoder_mem(raw_size_1080p / 10, &rx_mem_cfg, &rx_buffer_size); // Assume that compression ratio of 10 to 1
-    if (jpg_buf_1080p == NULL) {
-        ESP_LOGE(TAG, "alloc jpg_buf_1080p error");
-        return;
-    }
+    assert(jpg_buf_1080p != NULL);
 
     jpeg_encode_cfg_t enc_config = {
         .src_type = JPEG_ENCODE_IN_FORMAT_RGB888,
@@ -119,7 +113,7 @@ void app_main(void)
         .height = 1080,
     };
 
-    jpeg_encoder_process(jpeg_handle, &enc_config, raw_buf_1080p, raw_size_1080p, jpg_buf_1080p, rx_buffer_size, &jpg_size_1080p);
+    ESP_ERROR_CHECK(jpeg_encoder_process(jpeg_handle, &enc_config, raw_buf_1080p, raw_size_1080p, jpg_buf_1080p, rx_buffer_size, &jpg_size_1080p));
 
     FILE *file_jpg_1080p = fopen(s_outfile_1080p, "wb");
     ESP_LOGI(TAG, "outfile:%s",  s_outfile_1080p);
