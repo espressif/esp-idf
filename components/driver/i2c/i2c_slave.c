@@ -1,10 +1,11 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <string.h>
+#include <sys/param.h>
 #include "esp_types.h"
 #include "esp_intr_alloc.h"
 #include "freertos/FreeRTOS.h"
@@ -59,10 +60,11 @@ static IRAM_ATTR void s_i2c_handle_rx_fifo_wm(i2c_slave_dev_handle_t i2c_slave, 
     i2c_hal_context_t *hal = &i2c_slave->base->hal;
     uint32_t rx_fifo_cnt;
     i2c_ll_get_rxfifo_cnt(hal->dev, &rx_fifo_cnt);
-    i2c_ll_read_rxfifo(hal->dev, i2c_slave->data_buf, rx_fifo_cnt);
-    memcpy(t->buffer + i2c_slave->already_receive_len, i2c_slave->data_buf, rx_fifo_cnt);
-    i2c_slave->already_receive_len += rx_fifo_cnt;
-    t->rcv_fifo_cnt -= rx_fifo_cnt;
+    uint32_t fifo_cnt_rd = MIN(t->rcv_fifo_cnt, rx_fifo_cnt);
+    i2c_ll_read_rxfifo(hal->dev, i2c_slave->data_buf, fifo_cnt_rd);
+    memcpy(t->buffer + i2c_slave->already_receive_len, i2c_slave->data_buf, fifo_cnt_rd);
+    i2c_slave->already_receive_len += fifo_cnt_rd;
+    t->rcv_fifo_cnt -= fifo_cnt_rd;
 }
 
 static IRAM_ATTR void s_i2c_handle_complete(i2c_slave_dev_handle_t i2c_slave, i2c_slave_receive_t *t, BaseType_t *do_yield)
@@ -227,7 +229,7 @@ esp_err_t i2c_new_slave_device(const i2c_slave_config_t *slave_config, i2c_slave
     if (slave_config->intr_priority) {
         isr_flags |= 1 << (slave_config->intr_priority);
     }
-    ret = esp_intr_alloc_intrstatus(i2c_periph_signal[i2c_port_num].irq, I2C_INTR_ALLOC_FLAG, (uint32_t)i2c_ll_get_interrupt_status_reg(hal->dev), I2C_LL_SLAVE_EVENT_INTR, s_slave_isr_handle_default, i2c_slave, &i2c_slave->base->intr_handle);
+    ret = esp_intr_alloc_intrstatus(i2c_periph_signal[i2c_port_num].irq, isr_flags, (uint32_t)i2c_ll_get_interrupt_status_reg(hal->dev), I2C_LL_SLAVE_EVENT_INTR, s_slave_isr_handle_default, i2c_slave, &i2c_slave->base->intr_handle);
     ESP_GOTO_ON_ERROR(ret, err, TAG, "install i2c slave interrupt failed");
 
     portENTER_CRITICAL(&i2c_slave->base->spinlock);
@@ -280,6 +282,7 @@ err:
 static esp_err_t i2c_slave_bus_destroy(i2c_slave_dev_handle_t i2c_slave)
 {
     if (i2c_slave) {
+        i2c_ll_disable_intr_mask(i2c_slave->base->hal.dev, I2C_LL_SLAVE_EVENT_INTR);
         if (i2c_slave->slv_rx_mux) {
             vSemaphoreDeleteWithCaps(i2c_slave->slv_rx_mux);
             i2c_slave->slv_rx_mux = NULL;
