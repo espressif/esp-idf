@@ -19,7 +19,6 @@
 #include "soc/rmt_periph.h"
 #include "hal/rmt_ll.h"
 #include "driver/gpio.h"
-#include "esp_clk_tree.h"
 #include "esp_private/periph_ctrl.h"
 
 static const char *TAG = "rmt";

@@ -331,7 +331,7 @@ RMT 是一种特殊的通信外设，无法像 SPI 和 I2C 那样发送原始字
 
 - :cpp:member:`rmt_receive_config_t::signal_range_min_ns` 指定高电平或低电平有效脉冲的最小持续时间。如果脉冲宽度小于指定值，硬件会将其视作干扰信号并忽略。
 - :cpp:member:`rmt_receive_config_t::signal_range_max_ns` 指定高电平或低电平有效脉冲的最大持续时间。如果脉冲宽度大于指定值，接收器会将其视作 **停止信号**，并立即生成接收完成事件。
-- 如果传入的数据包很长，无法一次性保存在用户缓冲区中，可以通过将 :cpp:member:`rmt_receive_config_t::extra_flags::en_partial_rx` 设置为 ``true`` 来开启部分接收功能。在这种情况下，当用户缓冲区快满的时候，驱动会多次调用 :cpp:member:`rmt_rx_event_callbacks_t::on_recv_done` 回调函数来通知用户去处理已经收到的数据。你可以检查 :cpp:member::`rmt_rx_done_event_data_t::is_last` 的值来了解当前事务是否已经结束。
+- 如果传入的数据包很长，无法一次性保存在用户缓冲区中，可以通过将 :cpp:member:`rmt_receive_config_t::extra_flags::en_partial_rx` 设置为 ``true`` 来开启部分接收功能。在这种情况下，当用户缓冲区快满的时候，驱动会多次调用 :cpp:member:`rmt_rx_event_callbacks_t::on_recv_done` 回调函数来通知用户去处理已经收到的数据。你可以检查 :cpp:member::`rmt_rx_done_event_data_t::is_last` 的值来了解当前事务是否已经结束。请注意，并不是所有 ESP 系列芯片都支持这个功能，它依赖硬件提供的 “ping-pong 接收” 或者 “DMA 接收” 的能力。
 
 根据以上配置调用 :cpp:func:`rmt_receive` 后，RMT 接收器会启动 RX 机制。注意，以上配置均针对特定事务存在，也就是说，要开启新一轮的接收时，需要再次设置 :cpp:type:`rmt_receive_config_t` 选项。接收器会将传入信号以 :cpp:type:`rmt_symbol_word_t` 的格式保存在内部内存块或 DMA 缓冲区中。
 
