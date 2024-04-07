@@ -36,6 +36,11 @@ extern "C" {
 #define I2C_RCC_ATOMIC()
 #endif
 
+#if SOC_LP_I2C_SUPPORTED
+#define LP_I2C_SRC_CLK_ATOMIC()    PERIPH_RCC_ATOMIC()
+#define LP_I2C_BUS_CLK_ATOMIC()    PERIPH_RCC_ATOMIC()
+#endif
+
 #if CONFIG_I2C_ISR_IRAM_SAFE
 #define I2C_MEM_ALLOC_CAPS    (MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT)
 #else
@@ -100,9 +105,10 @@ typedef struct {
 
 struct i2c_bus_t {
     i2c_port_num_t port_num; // Port(Bus) ID, index from 0
+    bool is_lp_i2c;        // true if current port is lp_i2c. false is hp_i2c
     portMUX_TYPE spinlock; // To protect pre-group register level concurrency access
     i2c_hal_context_t hal; // Hal layer for each port(bus)
-    i2c_clock_source_t clk_src; // Record the port clock source
+    soc_module_clk_t clk_src; // Record the port clock source
     uint32_t clk_src_freq_hz; // Record the clock source frequency
     int sda_num; // SDA pin number
     int scl_num; // SCL pin number
@@ -232,7 +238,7 @@ esp_err_t i2c_release_bus_handle(i2c_bus_handle_t i2c_bus);
  *      - ESP_ERR_INVALID_STATE: Set clock source failed because the clk_src is different from other I2C controller
  *      - ESP_FAIL: Set clock source failed because of other error
  */
-esp_err_t i2c_select_periph_clock(i2c_bus_handle_t handle, i2c_clock_source_t clk_src);
+esp_err_t i2c_select_periph_clock(i2c_bus_handle_t handle, soc_module_clk_t clk_src);
 
 /**
  * @brief Set I2C SCL/SDA pins

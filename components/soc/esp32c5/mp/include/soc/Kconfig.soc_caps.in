@@ -131,6 +131,10 @@ config SOC_I2C_NUM
     int
     default 1
 
+config SOC_HP_I2C_NUM
+    int
+    default 1
+
 config SOC_LEDC_SUPPORT_PLL_DIV_CLOCK
     bool
     default y

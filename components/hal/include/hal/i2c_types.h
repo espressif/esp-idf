@@ -21,9 +21,9 @@ extern "C" {
  */
 typedef enum {
     I2C_NUM_0 = 0,              /*!< I2C port 0 */
-#if SOC_I2C_NUM >= 2
+#if SOC_HP_I2C_NUM >= 2
     I2C_NUM_1,                  /*!< I2C port 1 */
-#endif /* SOC_I2C_NUM >= 2 */
+#endif /* SOC_HP_I2C_NUM >= 2 */
 #if SOC_LP_I2C_NUM >= 1
     LP_I2C_NUM_0,               /*< LP_I2C port 0 */
 #endif /* SOC_LP_I2C_NUM >= 1 */
@@ -44,9 +44,9 @@ typedef enum {
  * @brief Data structure for calculating I2C bus timing.
  */
 typedef struct {
-    uint16_t clkm_div;          /*!< I2C core clock devider */
+    uint16_t clkm_div;          /*!< I2C core clock divider */
     uint16_t scl_low;           /*!< I2C scl low period */
-    uint16_t scl_high;          /*!< I2C scl hight period */
+    uint16_t scl_high;          /*!< I2C scl high period */
     uint16_t scl_wait_high;     /*!< I2C scl wait_high period */
     uint16_t sda_hold;          /*!< I2C scl low period */
     uint16_t sda_sample;        /*!< I2C sda sample time */
@@ -103,6 +103,14 @@ typedef enum {
  * @brief I2C group clock source
  */
 typedef soc_periph_i2c_clk_src_t i2c_clock_source_t;
+
+#if SOC_LP_I2C_SUPPORTED
+/**
+ * @brief LP_UART source clock
+ */
+typedef soc_periph_lp_i2c_clk_src_t lp_i2c_clock_source_t;
+#endif
+
 #else
 /**
  * @brief Default type

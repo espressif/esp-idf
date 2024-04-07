@@ -19,10 +19,15 @@ extern "C" {
  * @brief I2C master bus specific configurations
  */
 typedef struct {
-    i2c_port_num_t i2c_port;              /*!< I2C port number, `-1` for auto selecting */
+    i2c_port_num_t i2c_port;              /*!< I2C port number, `-1` for auto selecting, (not include LP I2C instance) */
     gpio_num_t sda_io_num;                /*!< GPIO number of I2C SDA signal, pulled-up internally */
     gpio_num_t scl_io_num;                /*!< GPIO number of I2C SCL signal, pulled-up internally */
-    i2c_clock_source_t clk_source;        /*!< Clock source of I2C master bus, channels in the same group must use the same clock source */
+    union {
+        i2c_clock_source_t clk_source;        /*!< Clock source of I2C master bus */
+#if SOC_LP_I2C_SUPPORTED
+        lp_i2c_clock_source_t lp_source_clk;       /*!< LP_UART source clock selection */
+#endif
+    };
     uint8_t glitch_ignore_cnt;            /*!< If the glitch period on the line is less than this value, it can be filtered out, typically value is 7 (unit: I2C module clock cycle)*/
     int intr_priority;                    /*!< I2C interrupt priority, if set to 0, driver will select the default priority (1,2,3). */
     size_t trans_queue_depth;             /*!< Depth of internal transfer queue, increase this value can support more transfers pending in the background, only valid in asynchronous transaction. (Typically max_device_num * per_transaction)*/

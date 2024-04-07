@@ -9,6 +9,8 @@
 #include "soc/regdma.h"
 #include "soc/i2c_reg.h"
 
+#define LP_I2C_MUX_FUNC  (1)
+
 /*
  Bunch of constants for every I2C peripheral: GPIO signals, irqs, hw addr of registers etc
 */
@@ -20,6 +22,15 @@ const i2c_signal_conn_t i2c_periph_signal[SOC_I2C_NUM] = {
         .scl_in_sig = I2CEXT0_SCL_IN_IDX,
         .irq = ETS_I2C_EXT0_INTR_SOURCE,
         .module = PERIPH_I2C0_MODULE,
+    },
+    {
+        .sda_out_sig = 0,
+        .sda_in_sig = 0,
+        .scl_out_sig = 0,
+        .scl_in_sig = 0,
+        .iomux_func = LP_I2C_MUX_FUNC,
+        .irq = ETS_LP_I2C_INTR_SOURCE,
+        .module = PERIPH_LP_I2C0_MODULE,
     },
 };
 
@@ -48,6 +59,6 @@ static const regdma_entries_config_t i2c0_regs_retention[] = {
            .owner = ENTRY(0) | ENTRY(2) }, \
 };
 
-const i2c_reg_ctx_link_t i2c_regs_retention[SOC_I2C_NUM] = {
+const i2c_reg_ctx_link_t i2c_regs_retention[SOC_HP_I2C_NUM] = {
     {i2c0_regs_retention, ARRAY_SIZE(i2c0_regs_retention)},
 };

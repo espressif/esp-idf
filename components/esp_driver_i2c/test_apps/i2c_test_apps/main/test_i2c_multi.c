@@ -613,7 +613,7 @@ static void slave_init_for_probe(void)
 
 TEST_CASE_MULTIPLE_DEVICES("I2C master probe slave test", "[i2c][test_env=generic_multi_device][timeout=150]", master_probe_slave, slave_init_for_probe);
 
-#if SOC_I2C_NUM > 1
+#if SOC_HP_I2C_NUM > 1
 // Now chips with multiple I2C controllers are up to 2, can test more ports when we have more I2C controllers.
 static void i2c_master_write_test_more_port(void)
 {

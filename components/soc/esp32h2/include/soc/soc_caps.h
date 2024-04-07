@@ -236,6 +236,7 @@
 /*-------------------------- I2C CAPS ----------------------------------------*/
 // ESP32-H2 has 2 I2C
 #define SOC_I2C_NUM                 (2U)
+#define SOC_HP_I2C_NUM              (2U)
 
 #define SOC_I2C_FIFO_LEN            (32) /*!< I2C hardware FIFO depth */
 #define SOC_I2C_CMD_REG_NUM         (8)  /*!< Number of I2C command registers */

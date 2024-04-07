@@ -72,7 +72,7 @@ static const regdma_entries_config_t i2c1_regs_retention[] = {
            .owner = ENTRY(0) | ENTRY(2) }, \
 };
 
-const i2c_reg_ctx_link_t i2c_regs_retention[SOC_I2C_NUM] = {
+const i2c_reg_ctx_link_t i2c_regs_retention[SOC_HP_I2C_NUM] = {
     {i2c0_regs_retention, ARRAY_SIZE(i2c0_regs_retention)},
     {i2c1_regs_retention, ARRAY_SIZE(i2c1_regs_retention)},
 };
