@@ -1,10 +1,12 @@
 JPEG Encoder and Decoder
 ========================
 
+:link_to_translation:`zh_CN:[中文]`
+
 Introduction
 ------------
 
-JPEG is a commonly used method of lossy compression for digital images, particularly for those images produced by digital photography. The degree of compression can be adjusted, allowing a selectable tradeoff between storage size and image quality. JPEG typically achieves 10:1 compression with little perceptible loss in image quality.
+JPEG is a commonly used method of lossy compression for digital images, particularly for those images produced by digital photography. The compression level varies with changes in image size and compression quality. JPEG typically achieves 10:1 compression with little perceptible loss in image quality.
 
 JPEG codec on {IDF_TARGET_NAME} is an image codec, which is based on the JPEG baseline standard, for compressing and decompressing images to reduce the bandwidth required to transmit images or the space required to store images, making it possible to process large-resolution images. But please note, at one time, the codec engine can only work as either encoder or decoder.
 
@@ -20,7 +22,7 @@ This document covers the following sections:
 -  `Performance Overview <#performance-overview>`__ - covers encoder and decoder performance.
 -  `Pixel Storage Layout for Different Color Formats <#pixel-storage-layout-for-different-color-formats>`__ - covers color space order overview required in this JPEG decoder and encoder.
 -  `Thread Safety <#thread-safety>`__ - lists which APIs are guaranteed to be thread safe by the driver.
--  `Power Management <#power-management>`__ - describes how jpeg driver would be affected by power consumption.
+-  `Power Management <#power-management>`__ - describes how JPEG driver would be affected by power consumption.
 -  `Kconfig Options <#kconfig-options>`__ - lists the supported Kconfig options that can bring different effects to the driver.
 
 Resource Allocation
@@ -97,37 +99,25 @@ JPEG Decoder Engine
 
 After installing the JPEG decoder driver by :cpp:func:`jpeg_new_decoder_engine`, {IDF_TARGET_NAME} is ready to decode JPEG pictures by :cpp:func:`jpeg_decoder_process`. :cpp:func:`jpeg_decoder_process` is flexible for decoding different types of pictures by a configurable parameter called :cpp:type:`jpeg_decode_cfg_t`.
 
-Moreover, our jpeg decoder api provides a helper function which helps you get the basic information of your given image. Calling :cpp:func:`jpeg_decoder_get_info` would return the picture information structure called :cpp:func:`jpeg_decoder_get_info`. If you already know the picture basic information, this functions is unnecessary to be called.
+Moreover, our JPEG decoder API provides a helper function which helps you get the basic information of your given image. Calling :cpp:func:`jpeg_decoder_get_info` would return the picture information structure called :cpp:func:`jpeg_decoder_get_info`. If you already know the picture basic information, this functions is unnecessary to be called.
 
 The format conversions supported by this driver are listed in the table below:
 
-+----------------------------------------+-----------------------------------+
-| Format of the already compressed image |   Format after decompressing      |
-+========================================+===================================+
-|                                        |               RGB565              |
-|               YUV444                   +-----------------------------------+
-|                                        |               RGB888              |
-|                                        +-----------------------------------+
-|                                        |               YUV444              |
-+----------------------------------------+-----------------------------------+
-|                                        |               RGB565              |
-|                                        +-----------------------------------+
-|                                        |               RGB888              |
-|               YUV422                   +-----------------------------------+
-|                                        |               YUV444              |
-|                                        +-----------------------------------+
-|                                        |               YUV422              |
-+----------------------------------------+-----------------------------------+
-|                                        |               RGB565              |
-|                                        +-----------------------------------+
-|                                        |               RGB888              |
-|               YUV420                   +-----------------------------------+
-|                                        |               YUV444              |
-|                                        +-----------------------------------+
-|                                        |               YUV420              |
-+----------------------------------------+-----------------------------------+
-|                GRAY                    |                GRAY               |
-+----------------------------------------+-----------------------------------+
+.. list-table::
+    :header-rows: 1
+    :widths: 50 50
+    :align: center
+
+    * - Format of the already compressed image
+      - Format after decompressing
+    * - YUV444
+      - RGB565/RGB888
+    * - YUV422
+      - RGB565/RGB888
+    * - YUV420
+      - RGB565/RGB888
+    * - GRAY
+      - GRAY
 
 Overall, You can take following code as reference, the code is going to decode a 1080*1920 picture.
 
@@ -158,34 +148,32 @@ Overall, You can take following code as reference, the code is going to decode a
     ESP_ERROR_CHECK(jpeg_decoder_process(decoder_engine, &decode_cfg_rgb, bit_stream, bit_stream_size, out_buf, &out_size));
 
 
-There are some Tips that can help you use this driver more accurately:
+There are some tips that can help you use this driver more accurately:
 
 1. In above code, you should make sure the `bit_stream` and `out_buf` should be aligned by certain rules. We provide a helper function :cpp:func:`jpeg_alloc_decoder_mem` to help you malloc a buffer which is aligned in both size and address.
 
 2. The content of `bit_stream` buffer should not be changed until :cpp:func:`jpeg_decoder_process` returns.
 
-3. The width and height of output picture would be 16 bytes aligned if original picture is formatted by YUV420 or YUV422. For example, if the input picture is 1080*1920, the output picture will be 1088*1920. That is the restriction of jpeg protocol. Please provide sufficient output buffer memory.
+3. The width and height of output picture would be 16 bytes aligned if original picture is compressed by YUV420 or YUV422. For example, if the input picture is 1080*1920, the output picture will be 1088*1920. That is the restriction of jpeg protocol. Please provide sufficient output buffer memory.
 
 JPEG Encoder Engine
 ^^^^^^^^^^^^^^^^^^^
 
-After installing the JPEG encoder driver by :cpp:func:`jpeg_new_encoder_engine`, {IDF_TARGET_NAME} is ready to decode JPEG pictures by :cpp:func:`jpeg_encoder_process`. :cpp:func:`jpeg_encoder_process` is flexible for decoding different types of pictures by a configurable parameter called :cpp:type:`jpeg_encode_cfg_t`.
+After installing the JPEG encoder driver by :cpp:func:`jpeg_new_encoder_engine`, {IDF_TARGET_NAME} is ready to encode JPEG pictures by :cpp:func:`jpeg_encoder_process`. :cpp:func:`jpeg_encoder_process` is flexible for decoding different types of pictures by a configurable parameter called :cpp:type:`jpeg_encode_cfg_t`.
 
 The format conversions supported by this driver are listed in the table below:
 
-+--------------------------+--------------------------------------+
-| Format of Original Image | Down sampling method                 |
-+==========================+======================================+
-|                          |               YUV444                 |
-|                          +--------------------------------------+
-|      RGB565/RGB888       |               YUV422                 |
-|                          +--------------------------------------+
-|                          |               YUV420                 |
-+--------------------------+--------------------------------------+
-|          GRAY            |                GRAY                  |
-+--------------------------+--------------------------------------+
-|         YUV422           |               YUV422                 |
-+--------------------------+--------------------------------------+
+.. list-table::
+    :header-rows: 1
+    :widths: 50 50
+    :align: center
+
+    * - Format of Original Image
+      - Down sampling method
+    * - RGB565/RGB888
+      - YUV444/YUV422/YUV420
+    * - GRAY
+      - GRAY
 
 
 Below is the example of code that encodes a 1080*1920 picture:
@@ -214,7 +202,7 @@ Below is the example of code that encodes a 1080*1920 picture:
 
     ESP_ERROR_CHECK(jpeg_encoder_process(jpeg_handle, &enc_config, raw_buf_1080p, raw_size_1080p, jpg_buf_1080p, &jpg_size_1080p););
 
-There are some Tips that can help you use this driver more accurately:
+There are some tips that can help you use this driver more accurately:
 
 1. In above code, you should make sure the `raw_buf_1080p` and `jpg_buf_1080p` should aligned by calling :cpp:func:`jpeg_alloc_encoder_mem`.
 
@@ -225,72 +213,133 @@ There are some Tips that can help you use this driver more accurately:
 Performance Overview
 ^^^^^^^^^^^^^^^^^^^^
 
-This section provides some measurements of the decoder and encoder performance. The data presented in the tables below gives the average values of decoding or encoding a randomly chosen picture fragments for 50 times. All tests were performed at a CPU frequency of 360MHz and a SPIRAM clock frequency of 200MHz. Only JPEG related code is run in this test, no other modules are involved (e.g. USB Camera, etc.).
+This section provides some measurements of the decoder and encoder performance. The data presented in the tables below gives the average values of decoding or encoding a randomly chosen picture fragments for 50 times. All tests were performed at a CPU frequency of 360MHz and a SPI RAM clock frequency of 200MHz. Only JPEG related code is run in this test, no other modules are involved (e.g. USB Camera, etc.).
 
 Both decoder and encoder are not cause too much CPU involvement. Only header parse causes CPU source. Calculations related to JPEG compression, such as DCT, quantization, huffman encoding/decoding, etc., are done entirely in hardware.
 
 JPEG decoder performance
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-+----------------+-------------------------------------------------------------------------------------+------------------+
-|   JPEG Size    |                                 Pixel Format                                        |                  |
-+--------+-------+--------------------------------------------+----------------------------------------+ Performance(fps) +
-| Height | Width | in(Format of the already compressed image) | out(Format after decompressing)        |                  |
-+--------+-------+--------------------------------------------+----------------------------------------+------------------+
-|  1080  | 1920  |                YUV422                      |            RGB888/RGB565               |   48             |
-+--------+-------+--------------------------------------------+----------------------------------------+------------------+
-|  720   | 1280  |                YUV422                      |            RGB888/RGB565               |   109            |
-+--------+-------+--------------------------------------------+----------------------------------------+------------------+
-|  480   | 800   |                YUV422                      |            RGB888/RGB565               |   253            |
-+--------+-------+--------------------------------------------+----------------------------------------+------------------+
-|  480   | 640   |                YUV422                      |            RGB888/RGB565               |   307            |
-+--------+-------+--------------------------------------------+----------------------------------------+------------------+
-|  480   | 320   |                YUV422                      |            RGB888/RGB565               |   571            |
-+--------+-------+--------------------------------------------+----------------------------------------+------------------+
-|  720   | 1280  |                 GRAY                       |               GRAY                     |   161            |
-+--------+-------+--------------------------------------------+----------------------------------------+------------------+
-|  480   | 800   |                YUV444                      |              YUV444                    |   129            |
-+--------+-------+--------------------------------------------+----------------------------------------+------------------+
-|  480   | 800   |                YUV422                      |            YUV444/YUV422               |   190            |
-+--------+-------+--------------------------------------------+----------------------------------------+------------------+
-|  480   | 800   |                YUV420                      |            YUV444/YUV420               |   253            |
-+--------+-------+--------------------------------------------+----------------------------------------+------------------+
+.. list-table::
+    :header-rows: 1
+    :widths: 25 25 25 25 25
+    :align: center
+
+    * - JPEG Height
+      - JPEG Width
+      - Pixel Format in [#]_
+      - Pixel Format out [#]_
+      - Performance (fps)
+    * - 1080
+      - 1920
+      - YUV422
+      - RGB888/RGB565
+      - 48
+    * - 720
+      - 1280
+      - YUV422
+      - RGB888/RGB565
+      - 109
+    * - 480
+      - 800
+      - YUV422
+      - RGB888/RGB565
+      - 253
+    * - 480
+      - 640
+      - YUV422
+      - RGB888/RGB565
+      - 307
+    * - 480
+      - 320
+      - YUV422
+      - RGB888/RGB565
+      - 571
+    * - 720
+      - 1280
+      - GRAY
+      - GRAY
+      - 161
+
+.. [#] Format of the already compressed image
+.. [#] Format after decompressing
 
 JPEG encoder performance
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-+----------------+-------------------------------------------------------------------------------------+------------------+
-|   JPEG Size    |                                 Pixel Format                                        |                  |
-+--------+-------+-----------------------------------------+-------------------------------------------+ Performance(fps) +
-| Height | Width |      in(Format of Original Image)       | out(Down sampling method)                 |                  |
-+--------+-------+-----------------------------------------+-------------------------------------------+------------------+
-|  1080  | 1920  |                RGB888                   |            YUV422                         |   26             |
-+--------+-------+-----------------------------------------+-------------------------------------------+------------------+
-|  1080  | 1920  |                RGB565                   |            YUV422                         |   36             |
-+--------+-------+-----------------------------------------+-------------------------------------------+------------------+
-|  1080  | 1920  |                RGB565                   |            YUV420                         |   40             |
-+--------+-------+-----------------------------------------+-------------------------------------------+------------------+
-|  1080  | 1920  |                RGB565                   |            YUV444                         |   24             |
-+--------+-------+-----------------------------------------+-------------------------------------------+------------------+
-|  1080  | 1920  |                RGB888                   |            YUV422                         |   26             |
-+--------+-------+-----------------------------------------+-------------------------------------------+------------------+
-|  720   | 1280  |                RGB565                   |            YUV420                         |   88             |
-+--------+-------+-----------------------------------------+-------------------------------------------+------------------+
-|  720   | 1280  |                RGB565                   |            YUV444                         |   55             |
-+--------+-------+-----------------------------------------+-------------------------------------------+------------------+
-|  720   | 1280  |                RGB565                   |            YUV422                         |   81             |
-+--------+-------+-----------------------------------------+-------------------------------------------+------------------+
-|  480   | 800   |                RGB888                   |            YUV420                         |   142            |
-+--------+-------+-----------------------------------------+-------------------------------------------+------------------+
-|  480   | 640   |                RGB888                   |            YUV420                         |   174            |
-+--------+-------+-----------------------------------------+-------------------------------------------+------------------+
-|  480   | 320   |                RGB888                   |            YUV420                         |   315            |
-+--------+-------+-----------------------------------------+-------------------------------------------+------------------+
-|  720   | 1280  |                 GRAY                    |             GRAY                          |   163            |
-+--------+-------+-----------------------------------------+-------------------------------------------+------------------+
-|  480   | 800   |                YUV422                   |            YUV422                         |   146            |
-+--------+-------+-----------------------------------------+-------------------------------------------+------------------+
+.. list-table::
+    :header-rows: 1
+    :widths: 25 25 25 25 25
+    :align: center
 
+    * - JPEG Height
+      - JPEG Width
+      - Pixel Format in [#]_
+      - Pixel Format out [#]_
+      - Performance (fps)
+    * - 1080
+      - 1920
+      - RGB888
+      - YUV422
+      - 26
+    * - 1080
+      - 1920
+      - RGB565
+      - YUV422
+      - 36
+    * - 1080
+      - 1920
+      - RGB565
+      - YUV420
+      - 40
+    * - 1080
+      - 1920
+      - RGB565
+      - YUV444
+      - 24
+    * - 1080
+      - 1920
+      - RGB888
+      - YUV422
+      - 26
+    * - 720
+      - 1280
+      - RGB565
+      - YUV420
+      - 88
+    * - 720
+      - 1280
+      - RGB565
+      - YUV444
+      - 55
+    * - 720
+      - 1280
+      - RGB565
+      - YUV422
+      - 81
+    * - 480
+      - 800
+      - RGB888
+      - YUV420
+      - 142
+    * - 640
+      - 800
+      - RGB888
+      - YUV420
+      - 174
+    * - 480
+      - 320
+      - RGB888
+      - YUV420
+      - 315
+    * - 720
+      - 1280
+      - GRAY
+      - GRAY
+      - 163
+
+.. [#] Format of Original Image
+.. [#] Down sampling method
 
 Pixel Storage Layout for Different Color Formats
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -376,9 +425,9 @@ The factory function :cpp:func:`jpeg_new_decoder_engine`, :cpp:func:`jpeg_decode
 Power Management
 ^^^^^^^^^^^^^^^^
 
-When power management is enabled (i.e., :ref:`CONFIG_PM_ENABLE` is set), the system needs to adjust or stop the source clock of JPEG to enter Light-sleep, thus potentially changing the JPEG decoder or encoder process. This might lead to unexpected behavior in hardware calculation. To prevent such issues, entering light sleep is disabled for the time when JPEG encoder or decoder is working.
+When power management is enabled (i.e., :ref:`CONFIG_PM_ENABLE` is set), the system needs to adjust or stop the source clock of JPEG to enter Light-sleep, thus potentially changing the JPEG decoder or encoder process. This might lead to unexpected behavior in hardware calculation. To prevent such issues, entering Light-sleep is disabled for the time when JPEG encoder or decoder is working.
 
-Whenever the user is decoding or encoding via JPEG (i.e., calling :cpp:func:`jpeg_encoder_process` or :cpp:func:`jpeg_decoder_process`), the driver guarantees that the power management lock is acquired by setting it to :cpp:enumerator:`esp_pm_lock_type_t::ESP_PM_NO_LIGHT_SLEEP`. Once the encoding or decoding is finished, the driver releases the lock and the system can enter light sleep.
+Whenever the user is decoding or encoding via JPEG (i.e., calling :cpp:func:`jpeg_encoder_process` or :cpp:func:`jpeg_decoder_process`), the driver guarantees that the power management lock is acquired by setting it to :cpp:enumerator:`esp_pm_lock_type_t::ESP_PM_CPU_FREQ_MAX`. Once the encoding or decoding is finished, the driver releases the lock and the system can enter Light-sleep.
 
 Kconfig Options
 ^^^^^^^^^^^^^^^
@@ -388,7 +437,7 @@ Kconfig Options
 Maintainers' Notes
 ------------------
 
-The JPEG driver usage of hardware resources and its process workflow are shown in the following graph:
+The JPEG driver usage of hardware resources and its dependency status are shown in the following graph:
 
 .. figure:: ../../../_static/diagrams/jpeg/jpeg_drv_file_structure.png
     :align: center

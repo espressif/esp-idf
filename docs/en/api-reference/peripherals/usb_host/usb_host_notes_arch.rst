@@ -1,6 +1,8 @@
 USB Host Maintainers Notes (Architecture)
 =========================================
 
+:link_to_translation:`zh_CN:[中文]`
+
 The Host Stack is roughly split into multiple layers of abstraction, with each layer representing different USB concepts and a different level of USB Host operation. For example, a higher layer may present an abstraction of devices and application data transfers, whereas a lower layer may present an abstraction of endpoints and USB transfers.
 
 Layer Descriptions
@@ -45,9 +47,9 @@ Layer Dependencies
 
 The Host Stack roughly follows a top to bottom hierarchy with inter-layer dependencies. Given layers A (highest), B, and C (lowest), the Host Stack has the following inter-layer dependency rules:
 
-- a particular layer can use the API of any layer directly below (Layer A using layer B is allowed)
+- a particular layer can use the API of any layer directly below (Layer A using layer B is allowed).
 - a particular layer can use the API of any layer indirectly below (Layer A using layer C is allowed) i.e., skipping layers.
-- a particular layer must not use the API of any layer above (Layer C using layer A/B is forbidden)
+- a particular layer must not use the API of any layer above (Layer C using layer A/B is forbidden).
 
 .. note::
 
