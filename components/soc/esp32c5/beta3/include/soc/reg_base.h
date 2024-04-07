@@ -72,6 +72,7 @@
 #define DR_REG_MODEM_PWR_BASE                     0x600AD000
 #define DR_REG_I2C_ANA_MST_BASE                   0x600AF800
 
+#define PWDET_CONF_REG                            0x600A0810
 /**
  * @brief LP System (RTC) Modules
  *
@@ -101,3 +102,4 @@
 #define DR_REG_ASSIST_DEBUG_BASE                  0x600C2000
 #define DR_REG_INTPRI_BASE                        0x600C5000
 #define DR_REG_CACHE_BASE                         0x600C8000  // CACHE_CONFIG/EXTMEM
+#define DR_REG_CLINT_M_BASE                       0x20000000

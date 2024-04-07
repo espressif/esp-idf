@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -71,7 +71,7 @@ extern "C" {
  *  0: anti-DPA disable. 1~3: anti-DPA enable with different security level. The larger
  *  the number, the stronger the ability to resist DPA attacks and the higher the
  *  security level, but it will increase the computational overhead of the hardware
- *  crypto-accelerators. Only avaliable if HP_SYS_SEC_DPA_CFG_SEL is 0.
+ *  crypto-accelerators. Only available if HP_SYS_SEC_DPA_CFG_SEL is 0.
  */
 #define HP_SYS_SEC_DPA_LEVEL    0x00000003U
 #define HP_SYS_SEC_DPA_LEVEL_M  (HP_SYS_SEC_DPA_LEVEL_V << HP_SYS_SEC_DPA_LEVEL_S)
