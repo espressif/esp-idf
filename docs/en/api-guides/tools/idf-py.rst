@@ -120,6 +120,8 @@ This command automatically builds the project if necessary, and then flash it to
 
 .. note:: The environment variables ``ESPPORT`` and ``ESPBAUD`` can be used to set default values for the ``-p`` and ``-b`` options, respectively. Providing these options on the command line overrides the default.
 
+``idf.py`` uses the ``write_flash`` command of ``esptool.py`` under the hood to flash the target. You can pass additional arguments to configure the flash writing process using the ``--extra-args`` option. For example, to `write to an external SPI flash chip <https://docs.espressif.com/projects/esptool/en/latest/esptool/advanced-options.html#custom-spi-pin-configuration>`_, use the following command: ``idf.py flash --extra-args="--spi-connection <CLK>,<Q>,<D>,<HD>,<CS>"``. To see the full list of available arguments, run ``esptool.py write_flash --help`` or see the `esptool.py documentation <https://docs.espressif.com/projects/esptool/en/latest/esptool/index.html>`_.
+
 Similarly to the ``build`` command, the command can be run with ``app``, ``bootloader`` and ``partition-table`` arguments to flash only the app, bootloader or partition table as applicable.
 
 Hints on How to Resolve Errors
