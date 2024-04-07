@@ -4,8 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// The HAL layer for PAU (ESP32-C6 specific part)
-
 #include "soc/soc.h"
 #include "esp_attr.h"
 #include "hal/pau_hal.h"
