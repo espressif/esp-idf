@@ -1030,6 +1030,7 @@ static esp_err_t IRAM_ATTR deep_sleep_start(bool allow_sleep_rejection)
      */
     portENTER_CRITICAL(&spinlock_rtc_deep_sleep);
     esp_ipc_isr_stall_other_cpu();
+    esp_ipc_isr_stall_pause();
 
     // record current RTC time
     s_config.rtc_ticks_at_sleep_start = rtc_time_get();
@@ -1096,6 +1097,7 @@ static esp_err_t IRAM_ATTR deep_sleep_start(bool allow_sleep_rejection)
         }
     }
     // Never returns here, except that the sleep is rejected.
+    esp_ipc_isr_stall_resume();
     esp_ipc_isr_release_other_cpu();
     portEXIT_CRITICAL(&spinlock_rtc_deep_sleep);
     return err;
@@ -1236,6 +1238,7 @@ esp_err_t esp_light_sleep_start(void)
     sleep_smp_cpu_sleep_prepare();
 #else
     esp_ipc_isr_stall_other_cpu();
+    esp_ipc_isr_stall_pause();
 #endif
 #endif
 
@@ -1389,6 +1392,7 @@ esp_err_t esp_light_sleep_start(void)
 #if CONFIG_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP && SOC_PM_CPU_RETENTION_BY_SW
     sleep_smp_cpu_wakeup_prepare();
 #else
+    esp_ipc_isr_stall_resume();
     esp_ipc_isr_release_other_cpu();
 #endif
 #endif

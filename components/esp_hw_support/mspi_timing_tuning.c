@@ -28,6 +28,10 @@
 #include "hal/spimem_flash_ll.h"
 #endif
 
+#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
+#include "esp_ipc_isr.h"
+#endif
+
 #if CONFIG_ESPTOOLPY_FLASHFREQ_120M
 #define FLASH_FREQUENCY_MHZ 120
 #elif CONFIG_ESPTOOLPY_FLASHFREQ_80M
@@ -517,6 +521,13 @@ void mspi_timing_enter_high_speed_mode(bool control_spi1)
 
 void mspi_timing_change_speed_mode_cache_safe(bool switch_down)
 {
+#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE && !CONFIG_FREERTOS_UNICORE
+    // For esp chips with two levels of Cache, if another core attempts to access SPI Flash or PSRAM after the
+    // cache is freeze, the access will fail and will keep retrying. This will completely block the L1 Cache,
+    // causing the current core to be unable to access the stack and data in the L2 RAM, which will causes a
+    // deadlock, so we need to stall another core at first.
+    esp_ipc_isr_stall_other_cpu();
+#endif
     /**
      * If a no-cache-freeze-supported chip needs timing tuning, add a protection way:
      * - spinlock
@@ -539,6 +550,10 @@ void mspi_timing_change_speed_mode_cache_safe(bool switch_down)
 #if SOC_CACHE_FREEZE_SUPPORTED
     cache_hal_unfreeze(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_ALL);
 #endif  //#if SOC_CACHE_FREEZE_SUPPORTED
+
+#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE && !CONFIG_FREERTOS_UNICORE
+    esp_ipc_isr_release_other_cpu();
+#endif
 }
 
 /*------------------------------------------------------------------------------
