@@ -7,8 +7,10 @@ set(srcs "commands.c"
 
 if(${target} STREQUAL "linux")
     list(APPEND srcs "esp_console_repl_linux.c")
+    set(requires "")
 else()
     list(APPEND srcs "esp_console_repl_chip.c")
+    set(requires vfs esp_vfs_console)
 endif()
 
 set(argtable_srcs argtable3/arg_cmd.c
@@ -31,7 +33,7 @@ idf_component_register(SRCS ${srcs}
                             ${argtable_srcs}
                     INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}
                     PRIV_INCLUDE_DIRS private_include
-                    REQUIRES vfs esp_vfs_console
+                    REQUIRES "${requires}"
                     PRIV_REQUIRES esp_driver_uart
                                   esp_driver_usb_serial_jtag
                     )

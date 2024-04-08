@@ -262,13 +262,14 @@ endfunction()
 # Resolve the requirement component to the component target created for that component.
 #
 function(__build_resolve_and_add_req var component_target req type)
-    __component_get_target(_component_target ${req})
-    __component_get_property(_component_registered ${component_target} __COMPONENT_REGISTERED)
-    if(NOT _component_target OR NOT _component_registered)
-        message(FATAL_ERROR "Failed to resolve component '${req}'.")
+    __component_get_target(_req_target ${req})
+    __component_get_property(_req_registered ${_req_target} __COMPONENT_REGISTERED)
+    if(NOT _req_target OR NOT _req_registered)
+        __component_get_property(_component_name ${component_target} COMPONENT_NAME)
+        message(FATAL_ERROR "Failed to resolve component '${req}' required by component '${_component_name}'.")
     endif()
-    __component_set_property(${component_target} ${type} ${_component_target} APPEND)
-    set(${var} ${_component_target} PARENT_SCOPE)
+    __component_set_property(${component_target} ${type} ${_req_target} APPEND)
+    set(${var} ${_req_target} PARENT_SCOPE)
 endfunction()
 
 #
@@ -449,7 +450,7 @@ endfunction()
 #                       if PROJECT_DIR is set and CMAKE_SOURCE_DIR/sdkconfig if not
 # @param[in, optional] SDKCONFIG_DEFAULTS (single value) config defaults file to use for the build; defaults
 #                       to none (Kconfig defaults or previously generated config are used)
-# @param[in, optional] BUILD_DIR (single value) directory for build artifacts; defautls to CMAKE_BINARY_DIR
+# @param[in, optional] BUILD_DIR (single value) directory for build artifacts; defaults to CMAKE_BINARY_DIR
 # @param[in, optional] COMPONENTS (multivalue) select components to process among the components
 #                       known by the build system
 #                       (added via `idf_build_component`). This argument is used to trim the build.

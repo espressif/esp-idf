@@ -35,8 +35,13 @@ if(BOOTLOADER_BUILD)
                     PRIV_INCLUDE_DIRS "${private_include}")
 else()
     list(APPEND srcs "src/esp_efuse_startup.c")
+    if(${target} STREQUAL "linux")
+        set(priv_requires soc spi_flash esp_system esp_partition)
+    else()
+        set(priv_requires bootloader_support soc spi_flash esp_system esp_partition esp_app_format)
+    endif()
     idf_component_register(SRCS "${srcs}"
-                    PRIV_REQUIRES bootloader_support soc spi_flash esp_system esp_partition esp_app_format
+                    PRIV_REQUIRES "${priv_requires}"
                     INCLUDE_DIRS "${include_dirs}"
                     PRIV_INCLUDE_DIRS "${private_include}")
     if(NOT ${target} STREQUAL "linux")
