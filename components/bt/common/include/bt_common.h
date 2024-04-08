@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -62,6 +62,24 @@
 
 #ifndef BT_BLE_DYNAMIC_ENV_MEMORY
 #define BT_BLE_DYNAMIC_ENV_MEMORY  FALSE
+#endif
+
+#if UC_BT_HCI_LOG_DEBUG_EN
+#define BT_HCI_LOG_INCLUDED  UC_BT_HCI_LOG_DEBUG_EN
+#else
+#define BT_HCI_LOG_INCLUDED  FALSE
+#endif
+
+#if UC_BT_HCI_LOG_DATA_BUFFER_SIZE
+#define HCI_LOG_DATA_BUFFER_SIZE  UC_BT_HCI_LOG_DATA_BUFFER_SIZE
+#else
+#define HCI_BUFFER_SIZE  (5)
+#endif
+
+#if UC_BT_HCI_ADV_BUFFER_SIZE
+#define HCI_LOG_ADV_BUFFER_SIZE  UC_BT_HCI_LOG_ADV_BUFFER_SIZE
+#else
+#define HCI_LOG_ADV_BUFFER_SIZE  (5)
 #endif
 
 /* OS Configuration from User config (eg: sdkconfig) */
