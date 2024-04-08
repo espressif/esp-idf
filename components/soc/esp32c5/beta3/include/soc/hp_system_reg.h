@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -48,6 +48,13 @@ extern "C" {
  *  HP memory usage configuration register
  */
 #define HP_SYS_SRAM_USAGE_CONF_REG (DR_REG_HP_SYS_BASE + 0x4)
+/** HP_SYS_CACHE_USAGE : HRO; bitpos: [0]; default: 0;
+ *  reserved
+ */
+#define HP_SYS_CACHE_USAGE    (BIT(0))
+#define HP_SYS_CACHE_USAGE_M  (HP_SYS_CACHE_USAGE_V << HP_SYS_CACHE_USAGE_S)
+#define HP_SYS_CACHE_USAGE_V  0x00000001U
+#define HP_SYS_CACHE_USAGE_S  0
 /** HP_SYS_SRAM_USAGE : R/W; bitpos: [11:8]; default: 0;
  *  0: cpu use hp-memory. 1:mac-dump accessing hp-memory.
  */
@@ -191,6 +198,58 @@ extern "C" {
 #define HP_SYS_HP_PERI_TIMEOUT_UID_V  0x0000007FU
 #define HP_SYS_HP_PERI_TIMEOUT_UID_S  0
 
+/** HP_SYS_MODEM_PERI_TIMEOUT_CONF_REG register
+ *  MODEM_PERI_TIMEOUT configuration register
+ */
+#define HP_SYS_MODEM_PERI_TIMEOUT_CONF_REG (DR_REG_HP_SYS_BASE + 0x24)
+/** HP_SYS_MODEM_PERI_TIMEOUT_THRES : R/W; bitpos: [15:0]; default: 65535;
+ *  Set the timeout threshold for bus access, corresponding to the number of clock
+ *  cycles of the clock domain.
+ */
+#define HP_SYS_MODEM_PERI_TIMEOUT_THRES    0x0000FFFFU
+#define HP_SYS_MODEM_PERI_TIMEOUT_THRES_M  (HP_SYS_MODEM_PERI_TIMEOUT_THRES_V << HP_SYS_MODEM_PERI_TIMEOUT_THRES_S)
+#define HP_SYS_MODEM_PERI_TIMEOUT_THRES_V  0x0000FFFFU
+#define HP_SYS_MODEM_PERI_TIMEOUT_THRES_S  0
+/** HP_SYS_MODEM_PERI_TIMEOUT_INT_CLEAR : WT; bitpos: [16]; default: 0;
+ *  Set this bit as 1 to clear timeout interrupt
+ */
+#define HP_SYS_MODEM_PERI_TIMEOUT_INT_CLEAR    (BIT(16))
+#define HP_SYS_MODEM_PERI_TIMEOUT_INT_CLEAR_M  (HP_SYS_MODEM_PERI_TIMEOUT_INT_CLEAR_V << HP_SYS_MODEM_PERI_TIMEOUT_INT_CLEAR_S)
+#define HP_SYS_MODEM_PERI_TIMEOUT_INT_CLEAR_V  0x00000001U
+#define HP_SYS_MODEM_PERI_TIMEOUT_INT_CLEAR_S  16
+/** HP_SYS_MODEM_PERI_TIMEOUT_PROTECT_EN : R/W; bitpos: [17]; default: 1;
+ *  Set this bit as 1 to enable timeout protection for accessing modem registers
+ */
+#define HP_SYS_MODEM_PERI_TIMEOUT_PROTECT_EN    (BIT(17))
+#define HP_SYS_MODEM_PERI_TIMEOUT_PROTECT_EN_M  (HP_SYS_MODEM_PERI_TIMEOUT_PROTECT_EN_V << HP_SYS_MODEM_PERI_TIMEOUT_PROTECT_EN_S)
+#define HP_SYS_MODEM_PERI_TIMEOUT_PROTECT_EN_V  0x00000001U
+#define HP_SYS_MODEM_PERI_TIMEOUT_PROTECT_EN_S  17
+
+/** HP_SYS_MODEM_PERI_TIMEOUT_ADDR_REG register
+ *  MODEM_PERI_TIMEOUT_ADDR register
+ */
+#define HP_SYS_MODEM_PERI_TIMEOUT_ADDR_REG (DR_REG_HP_SYS_BASE + 0x28)
+/** HP_SYS_MODEM_PERI_TIMEOUT_ADDR : RO; bitpos: [31:0]; default: 0;
+ *  Record the address information of abnormal access
+ */
+#define HP_SYS_MODEM_PERI_TIMEOUT_ADDR    0xFFFFFFFFU
+#define HP_SYS_MODEM_PERI_TIMEOUT_ADDR_M  (HP_SYS_MODEM_PERI_TIMEOUT_ADDR_V << HP_SYS_MODEM_PERI_TIMEOUT_ADDR_S)
+#define HP_SYS_MODEM_PERI_TIMEOUT_ADDR_V  0xFFFFFFFFU
+#define HP_SYS_MODEM_PERI_TIMEOUT_ADDR_S  0
+
+/** HP_SYS_MODEM_PERI_TIMEOUT_UID_REG register
+ *  MODEM_PERI_TIMEOUT_UID register
+ */
+#define HP_SYS_MODEM_PERI_TIMEOUT_UID_REG (DR_REG_HP_SYS_BASE + 0x2c)
+/** HP_SYS_MODEM_PERI_TIMEOUT_UID : RO; bitpos: [6:0]; default: 0;
+ *  Record master id[4:0] & master permission[6:5] when trigger timeout. This register
+ *  will be cleared after the interrupt is cleared.
+ */
+#define HP_SYS_MODEM_PERI_TIMEOUT_UID    0x0000007FU
+#define HP_SYS_MODEM_PERI_TIMEOUT_UID_M  (HP_SYS_MODEM_PERI_TIMEOUT_UID_V << HP_SYS_MODEM_PERI_TIMEOUT_UID_S)
+#define HP_SYS_MODEM_PERI_TIMEOUT_UID_V  0x0000007FU
+#define HP_SYS_MODEM_PERI_TIMEOUT_UID_S  0
+
 /** HP_SYS_SDIO_CTRL_REG register
  *  SDIO Control configuration register
  */
@@ -253,6 +312,228 @@ extern "C" {
 #define HP_SYS_CORE_RUNSTALLED_M  (HP_SYS_CORE_RUNSTALLED_V << HP_SYS_CORE_RUNSTALLED_S)
 #define HP_SYS_CORE_RUNSTALLED_V  0x00000001U
 #define HP_SYS_CORE_RUNSTALLED_S  1
+
+/** HP_SYS_MEM_TEST_CONF_REG register
+ *  MEM_TEST configuration register
+ */
+#define HP_SYS_MEM_TEST_CONF_REG (DR_REG_HP_SYS_BASE + 0x44)
+/** HP_SYS_HP_MEM_WPULSE : R/W; bitpos: [2:0]; default: 0;
+ *  This field controls hp system memory WPULSE parameter.
+ */
+#define HP_SYS_HP_MEM_WPULSE    0x00000007U
+#define HP_SYS_HP_MEM_WPULSE_M  (HP_SYS_HP_MEM_WPULSE_V << HP_SYS_HP_MEM_WPULSE_S)
+#define HP_SYS_HP_MEM_WPULSE_V  0x00000007U
+#define HP_SYS_HP_MEM_WPULSE_S  0
+/** HP_SYS_HP_MEM_WA : R/W; bitpos: [5:3]; default: 4;
+ *  This field controls hp system memory WA parameter.
+ */
+#define HP_SYS_HP_MEM_WA    0x00000007U
+#define HP_SYS_HP_MEM_WA_M  (HP_SYS_HP_MEM_WA_V << HP_SYS_HP_MEM_WA_S)
+#define HP_SYS_HP_MEM_WA_V  0x00000007U
+#define HP_SYS_HP_MEM_WA_S  3
+/** HP_SYS_HP_MEM_RA : R/W; bitpos: [7:6]; default: 0;
+ *  This field controls hp system memory RA parameter.
+ */
+#define HP_SYS_HP_MEM_RA    0x00000003U
+#define HP_SYS_HP_MEM_RA_M  (HP_SYS_HP_MEM_RA_V << HP_SYS_HP_MEM_RA_S)
+#define HP_SYS_HP_MEM_RA_V  0x00000003U
+#define HP_SYS_HP_MEM_RA_S  6
+
+/** HP_SYS_AUDIO_CODEC_SDADC_CNTL_REG register
+ *  reserved
+ */
+#define HP_SYS_AUDIO_CODEC_SDADC_CNTL_REG (DR_REG_HP_SYS_BASE + 0x50)
+/** HP_SYS_SDADC_PAD_EN_VNCP : R/W; bitpos: [0]; default: 0;
+ *  reserved
+ */
+#define HP_SYS_SDADC_PAD_EN_VNCP    (BIT(0))
+#define HP_SYS_SDADC_PAD_EN_VNCP_M  (HP_SYS_SDADC_PAD_EN_VNCP_V << HP_SYS_SDADC_PAD_EN_VNCP_S)
+#define HP_SYS_SDADC_PAD_EN_VNCP_V  0x00000001U
+#define HP_SYS_SDADC_PAD_EN_VNCP_S  0
+/** HP_SYS_SDADC_PAD_FAST_CHG : R/W; bitpos: [1]; default: 0;
+ *  reserved
+ */
+#define HP_SYS_SDADC_PAD_FAST_CHG    (BIT(1))
+#define HP_SYS_SDADC_PAD_FAST_CHG_M  (HP_SYS_SDADC_PAD_FAST_CHG_V << HP_SYS_SDADC_PAD_FAST_CHG_S)
+#define HP_SYS_SDADC_PAD_FAST_CHG_V  0x00000001U
+#define HP_SYS_SDADC_PAD_FAST_CHG_S  1
+/** HP_SYS_SDADC_PAD_EN_0V : R/W; bitpos: [2]; default: 0;
+ *  reserved
+ */
+#define HP_SYS_SDADC_PAD_EN_0V    (BIT(2))
+#define HP_SYS_SDADC_PAD_EN_0V_M  (HP_SYS_SDADC_PAD_EN_0V_V << HP_SYS_SDADC_PAD_EN_0V_S)
+#define HP_SYS_SDADC_PAD_EN_0V_V  0x00000001U
+#define HP_SYS_SDADC_PAD_EN_0V_S  2
+/** HP_SYS_SDADC_EN_CHOPPER : R/W; bitpos: [3]; default: 1;
+ *  reserved
+ */
+#define HP_SYS_SDADC_EN_CHOPPER    (BIT(3))
+#define HP_SYS_SDADC_EN_CHOPPER_M  (HP_SYS_SDADC_EN_CHOPPER_V << HP_SYS_SDADC_EN_CHOPPER_S)
+#define HP_SYS_SDADC_EN_CHOPPER_V  0x00000001U
+#define HP_SYS_SDADC_EN_CHOPPER_S  3
+/** HP_SYS_SDADC_EN_DEM : R/W; bitpos: [4]; default: 1;
+ *  reserved
+ */
+#define HP_SYS_SDADC_EN_DEM    (BIT(4))
+#define HP_SYS_SDADC_EN_DEM_M  (HP_SYS_SDADC_EN_DEM_V << HP_SYS_SDADC_EN_DEM_S)
+#define HP_SYS_SDADC_EN_DEM_V  0x00000001U
+#define HP_SYS_SDADC_EN_DEM_S  4
+/** HP_SYS_SDADC_DREG_OA : R/W; bitpos: [7:5]; default: 3;
+ *  reserved
+ */
+#define HP_SYS_SDADC_DREG_OA    0x00000007U
+#define HP_SYS_SDADC_DREG_OA_M  (HP_SYS_SDADC_DREG_OA_V << HP_SYS_SDADC_DREG_OA_S)
+#define HP_SYS_SDADC_DREG_OA_V  0x00000007U
+#define HP_SYS_SDADC_DREG_OA_S  5
+/** HP_SYS_SDADC_DGAIN_INPUT : R/W; bitpos: [9:8]; default: 3;
+ *  reserved
+ */
+#define HP_SYS_SDADC_DGAIN_INPUT    0x00000003U
+#define HP_SYS_SDADC_DGAIN_INPUT_M  (HP_SYS_SDADC_DGAIN_INPUT_V << HP_SYS_SDADC_DGAIN_INPUT_S)
+#define HP_SYS_SDADC_DGAIN_INPUT_V  0x00000003U
+#define HP_SYS_SDADC_DGAIN_INPUT_S  8
+/** HP_SYS_SDADC_DCAP : R/W; bitpos: [14:10]; default: 12;
+ *  reserved
+ */
+#define HP_SYS_SDADC_DCAP    0x0000001FU
+#define HP_SYS_SDADC_DCAP_M  (HP_SYS_SDADC_DCAP_V << HP_SYS_SDADC_DCAP_S)
+#define HP_SYS_SDADC_DCAP_V  0x0000001FU
+#define HP_SYS_SDADC_DCAP_S  10
+
+/** HP_SYS_AUDIO_CODEC_DAC_L_CNTL_REG register
+ *  reserved
+ */
+#define HP_SYS_AUDIO_CODEC_DAC_L_CNTL_REG (DR_REG_HP_SYS_BASE + 0x54)
+/** HP_SYS_ENHANCE_L_AUDIO_DAC : R/W; bitpos: [0]; default: 0;
+ *  reserved
+ */
+#define HP_SYS_ENHANCE_L_AUDIO_DAC    (BIT(0))
+#define HP_SYS_ENHANCE_L_AUDIO_DAC_M  (HP_SYS_ENHANCE_L_AUDIO_DAC_V << HP_SYS_ENHANCE_L_AUDIO_DAC_S)
+#define HP_SYS_ENHANCE_L_AUDIO_DAC_V  0x00000001U
+#define HP_SYS_ENHANCE_L_AUDIO_DAC_S  0
+/** HP_SYS_GAIN_L_AUDIO_DAC : R/W; bitpos: [5:1]; default: 19;
+ *  reserved
+ */
+#define HP_SYS_GAIN_L_AUDIO_DAC    0x0000001FU
+#define HP_SYS_GAIN_L_AUDIO_DAC_M  (HP_SYS_GAIN_L_AUDIO_DAC_V << HP_SYS_GAIN_L_AUDIO_DAC_S)
+#define HP_SYS_GAIN_L_AUDIO_DAC_V  0x0000001FU
+#define HP_SYS_GAIN_L_AUDIO_DAC_S  1
+/** HP_SYS_MUTE_L_AUDIO_DAC : R/W; bitpos: [6]; default: 0;
+ *  reserved
+ */
+#define HP_SYS_MUTE_L_AUDIO_DAC    (BIT(6))
+#define HP_SYS_MUTE_L_AUDIO_DAC_M  (HP_SYS_MUTE_L_AUDIO_DAC_V << HP_SYS_MUTE_L_AUDIO_DAC_S)
+#define HP_SYS_MUTE_L_AUDIO_DAC_V  0x00000001U
+#define HP_SYS_MUTE_L_AUDIO_DAC_S  6
+/** HP_SYS_XPD_L_AUDIO_DAC : R/W; bitpos: [7]; default: 0;
+ *  reserved
+ */
+#define HP_SYS_XPD_L_AUDIO_DAC    (BIT(7))
+#define HP_SYS_XPD_L_AUDIO_DAC_M  (HP_SYS_XPD_L_AUDIO_DAC_V << HP_SYS_XPD_L_AUDIO_DAC_S)
+#define HP_SYS_XPD_L_AUDIO_DAC_V  0x00000001U
+#define HP_SYS_XPD_L_AUDIO_DAC_S  7
+
+/** HP_SYS_AUDIO_CODEC_DAC_L_DIN_REG register
+ *  reserved
+ */
+#define HP_SYS_AUDIO_CODEC_DAC_L_DIN_REG (DR_REG_HP_SYS_BASE + 0x58)
+/** HP_SYS_DAC_DIN_L : R/W; bitpos: [21:0]; default: 0;
+ *  reserved
+ */
+#define HP_SYS_DAC_DIN_L    0x003FFFFFU
+#define HP_SYS_DAC_DIN_L_M  (HP_SYS_DAC_DIN_L_V << HP_SYS_DAC_DIN_L_S)
+#define HP_SYS_DAC_DIN_L_V  0x003FFFFFU
+#define HP_SYS_DAC_DIN_L_S  0
+
+/** HP_SYS_AUDIO_CODEC_DAC_R_CNTL_REG register
+ *  reserved
+ */
+#define HP_SYS_AUDIO_CODEC_DAC_R_CNTL_REG (DR_REG_HP_SYS_BASE + 0x5c)
+/** HP_SYS_ENHANCE_R_AUDIO_DAC : R/W; bitpos: [0]; default: 0;
+ *  reserved
+ */
+#define HP_SYS_ENHANCE_R_AUDIO_DAC    (BIT(0))
+#define HP_SYS_ENHANCE_R_AUDIO_DAC_M  (HP_SYS_ENHANCE_R_AUDIO_DAC_V << HP_SYS_ENHANCE_R_AUDIO_DAC_S)
+#define HP_SYS_ENHANCE_R_AUDIO_DAC_V  0x00000001U
+#define HP_SYS_ENHANCE_R_AUDIO_DAC_S  0
+/** HP_SYS_GAIN_R_AUDIO_DAC : R/W; bitpos: [5:1]; default: 19;
+ *  reserved
+ */
+#define HP_SYS_GAIN_R_AUDIO_DAC    0x0000001FU
+#define HP_SYS_GAIN_R_AUDIO_DAC_M  (HP_SYS_GAIN_R_AUDIO_DAC_V << HP_SYS_GAIN_R_AUDIO_DAC_S)
+#define HP_SYS_GAIN_R_AUDIO_DAC_V  0x0000001FU
+#define HP_SYS_GAIN_R_AUDIO_DAC_S  1
+/** HP_SYS_MUTE_R_AUDIO_DAC : R/W; bitpos: [6]; default: 0;
+ *  reserved
+ */
+#define HP_SYS_MUTE_R_AUDIO_DAC    (BIT(6))
+#define HP_SYS_MUTE_R_AUDIO_DAC_M  (HP_SYS_MUTE_R_AUDIO_DAC_V << HP_SYS_MUTE_R_AUDIO_DAC_S)
+#define HP_SYS_MUTE_R_AUDIO_DAC_V  0x00000001U
+#define HP_SYS_MUTE_R_AUDIO_DAC_S  6
+/** HP_SYS_XPD_R_AUDIO_DAC : R/W; bitpos: [7]; default: 0;
+ *  reserved
+ */
+#define HP_SYS_XPD_R_AUDIO_DAC    (BIT(7))
+#define HP_SYS_XPD_R_AUDIO_DAC_M  (HP_SYS_XPD_R_AUDIO_DAC_V << HP_SYS_XPD_R_AUDIO_DAC_S)
+#define HP_SYS_XPD_R_AUDIO_DAC_V  0x00000001U
+#define HP_SYS_XPD_R_AUDIO_DAC_S  7
+
+/** HP_SYS_AUDIO_CODEC_DAC_R_DIN_REG register
+ *  reserved
+ */
+#define HP_SYS_AUDIO_CODEC_DAC_R_DIN_REG (DR_REG_HP_SYS_BASE + 0x60)
+/** HP_SYS_DAC_DIN_R : R/W; bitpos: [21:0]; default: 0;
+ *  reserved
+ */
+#define HP_SYS_DAC_DIN_R    0x003FFFFFU
+#define HP_SYS_DAC_DIN_R_M  (HP_SYS_DAC_DIN_R_V << HP_SYS_DAC_DIN_R_S)
+#define HP_SYS_DAC_DIN_R_V  0x003FFFFFU
+#define HP_SYS_DAC_DIN_R_S  0
+
+/** HP_SYS_AUDIO_CODEC_PLL_CNTL_REG register
+ *  reserved
+ */
+#define HP_SYS_AUDIO_CODEC_PLL_CNTL_REG (DR_REG_HP_SYS_BASE + 0x64)
+/** HP_SYS_CAL_STOP_PLLA : R/W; bitpos: [0]; default: 0;
+ *  reserved
+ */
+#define HP_SYS_CAL_STOP_PLLA    (BIT(0))
+#define HP_SYS_CAL_STOP_PLLA_M  (HP_SYS_CAL_STOP_PLLA_V << HP_SYS_CAL_STOP_PLLA_S)
+#define HP_SYS_CAL_STOP_PLLA_V  0x00000001U
+#define HP_SYS_CAL_STOP_PLLA_S  0
+/** HP_SYS_CAL_END_PLLA : RO; bitpos: [1]; default: 0;
+ *  reserved
+ */
+#define HP_SYS_CAL_END_PLLA    (BIT(1))
+#define HP_SYS_CAL_END_PLLA_M  (HP_SYS_CAL_END_PLLA_V << HP_SYS_CAL_END_PLLA_S)
+#define HP_SYS_CAL_END_PLLA_V  0x00000001U
+#define HP_SYS_CAL_END_PLLA_S  1
+
+/** HP_SYS_AUDIO_CODEC_DATA_MODE_CNTL_REG register
+ *  reserved
+ */
+#define HP_SYS_AUDIO_CODEC_DATA_MODE_CNTL_REG (DR_REG_HP_SYS_BASE + 0x68)
+/** HP_SYS_AUDIO_ADC_MODE : R/W; bitpos: [1:0]; default: 0;
+ *  reserved
+ */
+#define HP_SYS_AUDIO_ADC_MODE    0x00000003U
+#define HP_SYS_AUDIO_ADC_MODE_M  (HP_SYS_AUDIO_ADC_MODE_V << HP_SYS_AUDIO_ADC_MODE_S)
+#define HP_SYS_AUDIO_ADC_MODE_V  0x00000003U
+#define HP_SYS_AUDIO_ADC_MODE_S  0
+/** HP_SYS_AUDIO_DAC_DSM_MODE_R : R/W; bitpos: [3:2]; default: 0;
+ *  reserved
+ */
+#define HP_SYS_AUDIO_DAC_DSM_MODE_R    0x00000003U
+#define HP_SYS_AUDIO_DAC_DSM_MODE_R_M  (HP_SYS_AUDIO_DAC_DSM_MODE_R_V << HP_SYS_AUDIO_DAC_DSM_MODE_R_S)
+#define HP_SYS_AUDIO_DAC_DSM_MODE_R_V  0x00000003U
+#define HP_SYS_AUDIO_DAC_DSM_MODE_R_S  2
+/** HP_SYS_AUDIO_DAC_DSM_MODE_L : R/W; bitpos: [5:4]; default: 0;
+ *  reserved
+ */
+#define HP_SYS_AUDIO_DAC_DSM_MODE_L    0x00000003U
+#define HP_SYS_AUDIO_DAC_DSM_MODE_L_M  (HP_SYS_AUDIO_DAC_DSM_MODE_L_V << HP_SYS_AUDIO_DAC_DSM_MODE_L_S)
+#define HP_SYS_AUDIO_DAC_DSM_MODE_L_V  0x00000003U
+#define HP_SYS_AUDIO_DAC_DSM_MODE_L_S  4
 
 /** HP_SYS_SPROM_CTRL_REG register
  *  reserved
@@ -418,6 +699,73 @@ extern "C" {
 #define HP_SYS_ADC_CK_DATA_OE_M  (HP_SYS_ADC_CK_DATA_OE_V << HP_SYS_ADC_CK_DATA_OE_S)
 #define HP_SYS_ADC_CK_DATA_OE_V  0x00000001U
 #define HP_SYS_ADC_CK_DATA_OE_S  15
+
+/** HP_SYS_RND_ECO_REG register
+ *  redcy eco register.
+ */
+#define HP_SYS_RND_ECO_REG (DR_REG_HP_SYS_BASE + 0x3e0)
+/** HP_SYS_REDCY_ENA : W/R; bitpos: [0]; default: 0;
+ *  Only reserved for ECO.
+ */
+#define HP_SYS_REDCY_ENA    (BIT(0))
+#define HP_SYS_REDCY_ENA_M  (HP_SYS_REDCY_ENA_V << HP_SYS_REDCY_ENA_S)
+#define HP_SYS_REDCY_ENA_V  0x00000001U
+#define HP_SYS_REDCY_ENA_S  0
+/** HP_SYS_REDCY_RESULT : RO; bitpos: [1]; default: 0;
+ *  Only reserved for ECO.
+ */
+#define HP_SYS_REDCY_RESULT    (BIT(1))
+#define HP_SYS_REDCY_RESULT_M  (HP_SYS_REDCY_RESULT_V << HP_SYS_REDCY_RESULT_S)
+#define HP_SYS_REDCY_RESULT_V  0x00000001U
+#define HP_SYS_REDCY_RESULT_S  1
+
+/** HP_SYS_RND_ECO_LOW_REG register
+ *  redcy eco low register.
+ */
+#define HP_SYS_RND_ECO_LOW_REG (DR_REG_HP_SYS_BASE + 0x3e4)
+/** HP_SYS_REDCY_LOW : W/R; bitpos: [31:0]; default: 0;
+ *  Only reserved for ECO.
+ */
+#define HP_SYS_REDCY_LOW    0xFFFFFFFFU
+#define HP_SYS_REDCY_LOW_M  (HP_SYS_REDCY_LOW_V << HP_SYS_REDCY_LOW_S)
+#define HP_SYS_REDCY_LOW_V  0xFFFFFFFFU
+#define HP_SYS_REDCY_LOW_S  0
+
+/** HP_SYS_RND_ECO_HIGH_REG register
+ *  redcy eco high register.
+ */
+#define HP_SYS_RND_ECO_HIGH_REG (DR_REG_HP_SYS_BASE + 0x3e8)
+/** HP_SYS_REDCY_HIGH : W/R; bitpos: [31:0]; default: 4294967295;
+ *  Only reserved for ECO.
+ */
+#define HP_SYS_REDCY_HIGH    0xFFFFFFFFU
+#define HP_SYS_REDCY_HIGH_M  (HP_SYS_REDCY_HIGH_V << HP_SYS_REDCY_HIGH_S)
+#define HP_SYS_REDCY_HIGH_V  0xFFFFFFFFU
+#define HP_SYS_REDCY_HIGH_S  0
+
+/** HP_SYS_DEBUG_REG register
+ *  HP-SYSTEM debug register
+ */
+#define HP_SYS_DEBUG_REG (DR_REG_HP_SYS_BASE + 0x3f4)
+/** HP_SYS_FPGA_DEBUG : R/W; bitpos: [0]; default: 1;
+ *  Reserved
+ */
+#define HP_SYS_FPGA_DEBUG    (BIT(0))
+#define HP_SYS_FPGA_DEBUG_M  (HP_SYS_FPGA_DEBUG_V << HP_SYS_FPGA_DEBUG_S)
+#define HP_SYS_FPGA_DEBUG_V  0x00000001U
+#define HP_SYS_FPGA_DEBUG_S  0
+
+/** HP_SYS_CLOCK_GATE_REG register
+ *  HP-SYSTEM clock gating configure register
+ */
+#define HP_SYS_CLOCK_GATE_REG (DR_REG_HP_SYS_BASE + 0x3f8)
+/** HP_SYS_CLK_EN : R/W; bitpos: [0]; default: 0;
+ *  Set this bit as 1 to force on clock gating.
+ */
+#define HP_SYS_CLK_EN    (BIT(0))
+#define HP_SYS_CLK_EN_M  (HP_SYS_CLK_EN_V << HP_SYS_CLK_EN_S)
+#define HP_SYS_CLK_EN_V  0x00000001U
+#define HP_SYS_CLK_EN_S  0
 
 /** HP_SYS_DATE_REG register
  *  Date register.

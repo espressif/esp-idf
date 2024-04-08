@@ -57,7 +57,7 @@
 #define DR_REG_GPIO_BASE                          0x60091000
 #define DR_REG_MEM_MONITOR_BASE                   0x60092000
 #define DR_REG_PAU_BASE                           0x60093000
-#define DR_REG_HP_SYSTEM_BASE                     0x60095000
+#define DR_REG_HP_SYS_BASE                        0x60095000
 #define DR_REG_PCR_BASE                           0x60096000
 #define DR_REG_TEE_BASE                           0x60098000
 #define DR_REG_HP_APM_BASE                        0x60099000

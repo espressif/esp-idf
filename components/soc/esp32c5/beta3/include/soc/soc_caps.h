@@ -60,9 +60,9 @@
 // #define SOC_BOD_SUPPORTED               1  // TODO: [ESP32C5] IDF-8647
 // #define SOC_APM_SUPPORTED               1  // TODO: [ESP32C5] IDF-8614, IDF-8615
 #define SOC_PMU_SUPPORTED               1  // TODO: [ESP32C5] IDF-8667
-// #define SOC_PAU_SUPPORTED               1  // TODO: [ESP32C5] IDF-8638, IDF-8640
+#define SOC_PAU_SUPPORTED               1  // TODO: [ESP32C5] IDF-8638
 #define SOC_LP_TIMER_SUPPORTED          1  // TODO: [ESP32C5] IDF-8636
-#define SOC_LP_AON_SUPPORTED            1  // TODO: [ESP32C5] IDF-8638, IDF-8640
+#define SOC_LP_AON_SUPPORTED            1  // TODO: [ESP32C5] IDF-8638
 #define SOC_LP_PERIPHERALS_SUPPORTED    1
 // #define SOC_LP_I2C_SUPPORTED            1  // TODO: [ESP32C5] IDF-8634
 #define SOC_ULP_SUPPORTED               1
@@ -76,7 +76,7 @@
 // #define SOC_ECDSA_SUPPORTED             1  // TODO: [ESP32C5] IDF-8618
 // #define SOC_KEY_MANAGER_SUPPORTED       1  // TODO: [ESP32C5] IDF-8621
 // #define SOC_HUK_SUPPORTED               1  // TODO: [ESP32C5] IDF-8617
-// #define SOC_LIGHT_SLEEP_SUPPORTED       1  // TODO: [ESP32C5] IDF-8640
+#define SOC_LIGHT_SLEEP_SUPPORTED       1
 // #define SOC_DEEP_SLEEP_SUPPORTED        1  // TODO: [ESP32C5] IDF-8638
 #define SOC_MODEM_CLOCK_SUPPORTED       1     // TODO: [ESP32C5] IDF-8845 need check, it is opened because pll has been used on beta3
 #define SOC_BT_SUPPORTED                1
@@ -519,7 +519,7 @@
 #define SOC_PM_SUPPORT_RC32K_PD         (1)
 #define SOC_PM_SUPPORT_RC_FAST_PD       (1)
 #define SOC_PM_SUPPORT_VDDSDIO_PD       (1)
-// #define SOC_PM_SUPPORT_TOP_PD           (1) // TODO: IDF-8643
+#define SOC_PM_SUPPORT_TOP_PD           (1)
 #define SOC_PM_SUPPORT_HP_AON_PD        (1)
 // #define SOC_PM_SUPPORT_MAC_BB_PD        (1)
 #define SOC_PM_SUPPORT_RTC_PERIPH_PD    (1)
@@ -531,7 +531,7 @@
 #define SOC_PM_SUPPORT_DEEPSLEEP_CHECK_STUB_ONLY   (1) /*!<Supports CRC only the stub code in RTC memory */
 
 #define SOC_PM_CPU_RETENTION_BY_SW          (1)
-// #define SOC_PM_MODEM_RETENTION_BY_REGDMA    (1)
+#define SOC_PM_MODEM_RETENTION_BY_REGDMA    (1)
 // #define SOC_PM_RETENTION_HAS_CLOCK_BUG      (1)
 
 #define SOC_PM_PAU_LINK_NUM             (4)
