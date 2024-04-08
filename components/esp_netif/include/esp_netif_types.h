@@ -37,7 +37,7 @@ extern "C" {
 
 
 /**
- * @brief Definition of ESP-NETIF bridge controll
+ * @brief Definition of ESP-NETIF bridge control
  */
 #define ESP_NETIF_BR_FLOOD      -1
 #define ESP_NETIF_BR_DROP        0
@@ -89,6 +89,7 @@ typedef enum{
     ESP_NETIF_IP_REQUEST_RETRY_TIME         = 52,   /**< Request IP address retry counter */
     ESP_NETIF_VENDOR_CLASS_IDENTIFIER       = 60,   /**< Vendor Class Identifier of a DHCP client */
     ESP_NETIF_VENDOR_SPECIFIC_INFO          = 43,   /**< Vendor Specific Information of a DHCP server */
+    ESP_NETIF_CAPTIVEPORTAL_URI             = 114,  /**< Captive Portal Identification */
 } esp_netif_dhcp_option_id_t;
 
 /** IP event declarations */
@@ -127,7 +128,7 @@ typedef struct {
  */
 typedef struct {
     esp_netif_t *esp_netif;          /*!< Pointer to corresponding esp-netif object */
-    esp_netif_ip_info_t ip_info;     /*!< IP address, netmask, gatway IP address */
+    esp_netif_ip_info_t ip_info;     /*!< IP address, netmask, gateway IP address */
     bool ip_changed;                 /*!< Whether the assigned IP has changed or not */
 } ip_event_got_ip_t;
 

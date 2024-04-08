@@ -498,7 +498,6 @@ components/hal/spi_slave_hal_iram.c
 components/idf_test/include/idf_performance.h
 components/log/host_test/log_test/main/log_test.cpp
 components/lwip/apps/ping/ping.c
-components/lwip/include/apps/dhcpserver/dhcpserver_options.h
 components/lwip/include/apps/esp_ping.h
 components/lwip/include/apps/ping/ping.h
 components/mbedtls/esp_crt_bundle/test_gen_crt_bundle/test_gen_crt_bundle.py
