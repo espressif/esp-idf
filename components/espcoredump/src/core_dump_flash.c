@@ -10,6 +10,7 @@
 #include "core_dump_checksum.h"
 #include "esp_flash_internal.h"
 #include "esp_flash_encrypt.h"
+#include "esp_core_dump_common.h"
 #include "esp_rom_crc.h"
 #include "esp_private/spi_flash_os.h"
 #include "spi_flash_mmap.h"
@@ -42,14 +43,6 @@ typedef struct _core_dump_flash_config_t {
 
 /* Core dump flash data. */
 static core_dump_flash_config_t s_core_flash_config;
-
-void esp_core_dump_print_write_start(void) __attribute__((alias("esp_core_dump_flash_print_write_start")));
-void esp_core_dump_print_write_end(void) __attribute__((alias("esp_core_dump_flash_print_write_end")));
-esp_err_t esp_core_dump_write_init(void) __attribute__((alias("esp_core_dump_flash_hw_init")));
-esp_err_t esp_core_dump_write_prepare(core_dump_write_data_t *wr_data, uint32_t *data_len) __attribute__((alias("esp_core_dump_flash_write_prepare")));
-esp_err_t esp_core_dump_write_start(core_dump_write_data_t *wr_data) __attribute__((alias("esp_core_dump_flash_write_start")));
-esp_err_t esp_core_dump_write_end(core_dump_write_data_t *wr_data) __attribute__((alias("esp_core_dump_flash_write_end")));
-esp_err_t esp_core_dump_write_data(core_dump_write_data_t *wr_data, void *data, uint32_t data_len) __attribute__((alias("esp_core_dump_flash_write_data")));
 
 #define ESP_COREDUMP_FLASH_WRITE(_off_, _data_, _len_)           esp_flash_write(esp_flash_default_chip, _data_, _off_, _len_)
 #define ESP_COREDUMP_FLASH_WRITE_ENCRYPTED(_off_, _data_, _len_) esp_flash_write_encrypted(esp_flash_default_chip, _off_, _data_, _len_)
@@ -148,7 +141,7 @@ static void esp_core_dump_partition_init(void)
     }
 }
 
-static esp_err_t esp_core_dump_flash_write_data(core_dump_write_data_t* wr_data, uint8_t* data, uint32_t data_size)
+static esp_err_t esp_core_dump_flash_write_data(core_dump_write_data_t* wr_data, void * data, uint32_t data_size)
 {
     esp_err_t err = ESP_OK;
     uint32_t written = 0;
@@ -356,7 +349,7 @@ static esp_err_t esp_core_dump_flash_write_end(core_dump_write_data_t *wr_data)
     return err;
 }
 
-void esp_core_dump_init(void)
+void esp_core_dump_flash_init(void)
 {
     esp_core_dump_partition_init();
 
@@ -444,6 +437,16 @@ esp_err_t esp_core_dump_image_check(void)
 
     return ESP_OK;
 }
+
+esp_core_dump_output_t esp_core_dump_output_flash = {
+    .print_write_start = esp_core_dump_flash_print_write_start,
+    .print_write_end = esp_core_dump_flash_print_write_end,
+    .write_init = esp_core_dump_flash_hw_init,
+    .write_prepare = esp_core_dump_flash_write_prepare,
+    .write_start = esp_core_dump_flash_write_start,
+    .write_data = esp_core_dump_flash_write_data,
+    .write_end = esp_core_dump_flash_write_end,
+};
 
 #endif
 

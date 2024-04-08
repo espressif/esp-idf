@@ -19,7 +19,7 @@ Configurations
 Destination
 ^^^^^^^^^^^
 
-The :ref:`CONFIG_ESP_COREDUMP_TO_FLASH_OR_UART` option enables or disables core dump, and selects the core dump destination if enabled. When a crash occurs, the generated core dump file can either be saved to flash, or output to a connected host over UART.
+Core dumps are enabled by selecting at least one of :ref:`CONFIG_ESP_COREDUMP_TO_FLASH` or :ref:`CONFIG_ESP_COREDUMP_TO_UART`. When a crash occurs, the generated core dump file can be saved to flash, output to a connected host over UART, or both.
 
 
 Format & Size
@@ -253,7 +253,7 @@ Supported Notations and RAM Regions
 Example
 ^^^^^^^
 
-1. In :ref:`project-configuration-menu`, enable :ref:`COREDUMP TO FLASH <CONFIG_ESP_COREDUMP_TO_FLASH_OR_UART>`, then save and exit.
+1. In :ref:`project-configuration-menu`, enable :ref:`COREDUMP TO FLASH <CONFIG_ESP_COREDUMP_TO_FLASH>`, then save and exit.
 
 2. In your project, create a global variable in the DRAM area, such as:
 
