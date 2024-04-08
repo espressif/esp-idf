@@ -47,7 +47,7 @@ typedef struct i2c_platform_t {
 
 static i2c_platform_t s_i2c_platform = {}; // singleton platform
 
-#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
+#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && SOC_I2C_SUPPORT_SLEEP_RETENTION
 static esp_err_t s_i2c_sleep_retention_init(void *arg)
 {
     i2c_bus_t *bus = (i2c_bus_t *)arg;
@@ -77,7 +77,7 @@ static esp_err_t s_i2c_bus_handle_acquire(i2c_port_num_t port_num, i2c_bus_handl
             bus->bus_mode = mode;
             bus->is_lp_i2c = (bus->port_num < SOC_HP_I2C_NUM) ? false : true;
 
-#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && !CONFIG_IDF_TARGET_ESP32P4 // TODO: IDF-9353
+#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && SOC_I2C_SUPPORT_SLEEP_RETENTION
             if (bus->is_lp_i2c == false) {
                 sleep_retention_module_init_param_t init_param = {
                     .cbs = { .create = { .handle = s_i2c_sleep_retention_init, .arg = (void *)bus } }
@@ -175,7 +175,7 @@ esp_err_t i2c_release_bus_handle(i2c_bus_handle_t i2c_bus)
         if (s_i2c_platform.count[port_num] == 0) {
             do_deinitialize = true;
             s_i2c_platform.buses[port_num] = NULL;
-#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && !CONFIG_IDF_TARGET_ESP32P4 // TODO: IDF-9353
+#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && SOC_I2C_SUPPORT_SLEEP_RETENTION
             if (i2c_bus->is_lp_i2c == false) {
                 esp_err_t err = sleep_retention_module_free(I2C_SLEEP_RETENTION_MODULE(port_num));
                 if (err == ESP_OK) {
