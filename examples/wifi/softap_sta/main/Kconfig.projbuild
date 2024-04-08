@@ -56,9 +56,9 @@ menu "Example Configuration"
             default ESP_WIFI_AUTH_WPA2_PSK
             help
                 The weakest authmode to accept in the scan mode.
-                This value defaults to ESP_WIFI_AUTH_WPA2_PSK incase password is present
+                This value defaults to ESP_WIFI_AUTH_WPA2_PSK in case password is present
                 and ESP_WIFI_AUTH_OPEN is used. Please select ESP_WIFI_AUTH_WEP / ESP_WIFI_AUTH_WPA_PSK
-                incase AP is operating in WEP / WPA mode.
+                in case AP is operating in WEP / WPA mode.
 
             config ESP_WIFI_AUTH_OPEN
                 bool "OPEN"
