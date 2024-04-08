@@ -308,7 +308,7 @@ static inline void ppa_ll_srm_set_tx_yuv_range(ppa_dev_t *dev, color_range_t ran
 }
 
 /**
- * @brief Enable PPA SRM input data wrap in RGB (e.g. ARGB becomes BGRA, RGB becomes BGR)
+ * @brief Enable PPA SRM input data swap in RGB (e.g. ARGB becomes BGRA, RGB becomes BGR)
  *
  * @param dev Peripheral instance address
  * @param enable True to enable; False to disable
