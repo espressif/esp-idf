@@ -1,0 +1,564 @@
+
+menu "HCI Config"
+
+    choice BT_LE_HCI_INTERFACE
+        prompt "Select HCI interface"
+        default BT_LE_HCI_INTERFACE_USE_RAM
+
+        config BT_LE_HCI_INTERFACE_USE_RAM
+            bool "ram"
+            help
+                Use RAM as HCI interface
+        config BT_LE_HCI_INTERFACE_USE_UART
+            bool "uart"
+            help
+                Use UART as HCI interface
+    endchoice
+
+    config BT_LE_HCI_UART_PORT
+        int "HCI UART port"
+        depends on BT_LE_HCI_INTERFACE_USE_UART
+        default 1
+        help
+            Set the port number of HCI UART
+
+    config BT_LE_HCI_UART_FLOWCTRL
+        bool "HCI uart Hardware Flow ctrl"
+        depends on BT_LE_HCI_INTERFACE_USE_UART
+        default n
+
+    config BT_LE_HCI_UART_TX_PIN
+        int "HCI uart Tx gpio"
+        depends on BT_LE_HCI_INTERFACE_USE_UART
+        default 19
+
+    config BT_LE_HCI_UART_RX_PIN
+        int "HCI uart Rx gpio"
+        depends on BT_LE_HCI_INTERFACE_USE_UART
+        default 10
+
+    config BT_LE_HCI_UART_RTS_PIN
+        int "HCI uart RTS gpio"
+        depends on BT_LE_HCI_UART_FLOWCTRL
+        default 4
+
+    config BT_LE_HCI_UART_CTS_PIN
+        int "HCI uart CTS gpio"
+        depends on BT_LE_HCI_UART_FLOWCTRL
+        default 5
+
+    config BT_LE_HCI_UART_BAUD
+        int "HCI uart baudrate"
+        depends on BT_LE_HCI_INTERFACE_USE_UART
+        default 921600
+        help
+            HCI uart baud rate 115200 ~ 1000000
+
+    choice BT_LE_HCI_UART_PARITY
+        prompt "select uart parity"
+        depends on BT_LE_HCI_INTERFACE_USE_UART
+        default BT_LE_HCI_UART_UART_PARITY_DISABLE
+
+        config BT_LE_HCI_UART_UART_PARITY_DISABLE
+            bool "PARITY_DISABLE"
+            help
+                UART_PARITY_DISABLE
+        config BT_LE_HCI_UART_UART_PARITY_EVEN
+            bool "PARITY_EVEN"
+            help
+                UART_PARITY_EVEN
+        config BT_LE_HCI_UART_UART_PARITY_ODD
+            bool "PARITY_ODD"
+            help
+                UART_PARITY_ODD
+    endchoice
+
+    config BT_LE_HCI_UART_TASK_STACK_SIZE
+        int "HCI uart task stack size"
+        depends on BT_LE_HCI_INTERFACE_USE_UART
+        default 1000
+        help
+            Set the size of uart task stack
+endmenu
+
+config BT_LE_CONTROLLER_NPL_OS_PORTING_SUPPORT
+    bool
+    default y
+    help
+        Enable NPL porting for controller.
+
+
+menuconfig BT_LE_50_FEATURE_SUPPORT
+    bool "Enable BLE 5 feature"
+    depends on !BT_NIMBLE_ENABLED
+    default y
+    help
+        Enable BLE 5 feature
+
+config BT_LE_LL_CFG_FEAT_LE_2M_PHY
+    bool "Enable 2M Phy"
+    depends on BT_LE_50_FEATURE_SUPPORT
+    default y
+    help
+        Enable 2M-PHY
+
+config BT_LE_LL_CFG_FEAT_LE_CODED_PHY
+    bool "Enable coded Phy"
+    depends on BT_LE_50_FEATURE_SUPPORT
+    default y
+    help
+        Enable coded-PHY
+
+config BT_LE_EXT_ADV
+    bool "Enable extended advertising"
+    depends on BT_LE_50_FEATURE_SUPPORT
+    default y
+    help
+        Enable this option to do extended advertising. Extended advertising
+        will be supported from BLE 5.0 onwards.
+
+if BT_LE_EXT_ADV
+    config BT_LE_MAX_EXT_ADV_INSTANCES
+        int "Maximum number of extended advertising instances."
+        range 0 4
+        default 1
+        depends on BT_LE_EXT_ADV
+        help
+            Change this option to set maximum number of extended advertising
+            instances. Minimum there is always one instance of
+            advertising. Enter how many more advertising instances you
+            want.
+            Each extended advertising instance will take about 0.5k DRAM.
+
+    config BT_LE_EXT_ADV_MAX_SIZE
+        int "Maximum length of the advertising data."
+        range 0 1650
+        default 1650
+        depends on BT_LE_EXT_ADV
+        help
+            Defines the length of the extended adv data. The value should not
+            exceed 1650.
+
+    config BT_LE_ENABLE_PERIODIC_ADV
+        bool "Enable periodic advertisement."
+        default y
+        depends on BT_LE_EXT_ADV
+        help
+            Enable this option to start periodic advertisement.
+
+    config BT_LE_PERIODIC_ADV_SYNC_TRANSFER
+        bool "Enable Transfer Sync Events"
+        depends on BT_LE_ENABLE_PERIODIC_ADV
+        default y
+        help
+            This enables controller transfer periodic sync events to host
+
+endif
+
+config BT_LE_MAX_PERIODIC_SYNCS
+    int "Maximum number of periodic advertising syncs"
+    depends on BT_LE_50_FEATURE_SUPPORT && !BT_NIMBLE_ENABLED
+
+    range 0 8
+    default 1 if BT_LE_ENABLE_PERIODIC_ADV
+    default 0
+    help
+        Set this option to set the upper limit for number of periodic sync
+        connections. This should be less than maximum connections allowed by
+        controller.
+
+config BT_LE_MAX_PERIODIC_ADVERTISER_LIST
+    int "Maximum number of periodic advertiser list"
+    depends on BT_LE_50_FEATURE_SUPPORT && !BT_NIMBLE_ENABLED
+    range 1 5
+    default 5
+    help
+        Set this option to set the upper limit for number of periodic advertiser list.
+
+config BT_LE_POWER_CONTROL_ENABLED
+    bool "Enable controller support for BLE Power Control"
+    depends on BT_LE_50_FEATURE_SUPPORT && !BT_NIMBLE_ENABLED && IDF_TARGET_ESP32C6
+    default n
+    help
+        Set this option to enable the Power Control feature on controller
+
+menu "Memory Settings"
+    depends on !BT_NIMBLE_ENABLED
+
+    config BT_LE_MSYS_1_BLOCK_COUNT
+        int "MSYS_1 Block Count"
+        default 12
+        help
+            MSYS is a system level mbuf registry. For prepare write & prepare
+            responses MBUFs are allocated out of msys_1 pool. For NIMBLE_MESH
+            enabled cases, this block count is increased by 8 than user defined
+            count.
+
+    config BT_LE_MSYS_1_BLOCK_SIZE
+        int "MSYS_1 Block Size"
+        default 256
+        help
+            Dynamic memory size of block 1
+
+    config BT_LE_MSYS_2_BLOCK_COUNT
+        int "MSYS_2 Block Count"
+        default 24
+        help
+            Dynamic memory count
+
+    config BT_LE_MSYS_2_BLOCK_SIZE
+        int "MSYS_2 Block Size"
+        default 320
+        help
+            Dynamic memory size of block 2
+
+    config BT_LE_MSYS_BUF_FROM_HEAP
+        bool "Get Msys Mbuf from heap"
+        default y
+        depends on BT_LE_MSYS_INIT_IN_CONTROLLER
+        help
+            This option sets the source of the shared msys mbuf memory between
+            the Host and the Controller. Allocate the memory from the heap if
+            this option is sets, from the mempool otherwise.
+
+    config BT_LE_ACL_BUF_COUNT
+        int "ACL Buffer count"
+        default 10
+        help
+            The number of ACL data buffers.
+
+    config BT_LE_ACL_BUF_SIZE
+        int "ACL Buffer size"
+        default 517
+        help
+            This is the maximum size of the data portion of HCI ACL data packets.
+            It does not include the HCI data header (of 4 bytes)
+
+    config BT_LE_HCI_EVT_BUF_SIZE
+        int "HCI Event Buffer size"
+        default 257 if BT_LE_EXT_ADV
+        default 70
+        help
+            This is the size of each HCI event buffer in bytes. In case of
+            extended advertising, packets can be fragmented. 257 bytes is the
+            maximum size of a packet.
+
+    config BT_LE_HCI_EVT_HI_BUF_COUNT
+        int "High Priority HCI Event Buffer count"
+        default 30
+        help
+            This is the high priority HCI events' buffer size. High-priority
+            event buffers are for everything except advertising reports. If there
+            are no free high-priority event buffers then host will try to allocate a
+            low-priority buffer instead
+
+    config BT_LE_HCI_EVT_LO_BUF_COUNT
+        int "Low Priority HCI Event Buffer count"
+        default 8
+        help
+            This is the low priority HCI events' buffer size. Low-priority event
+            buffers are only used for advertising reports. If there are no free
+            low-priority event buffers, then an incoming advertising report will
+            get dropped
+endmenu
+
+config BT_LE_CONTROLLER_TASK_STACK_SIZE
+    int "Controller task stack size"
+    default 5120 if BLE_MESH
+    default 4096
+    help
+        This configures stack size of NimBLE controller task
+
+menuconfig BT_LE_CONTROLLER_LOG_ENABLED
+    bool "Controller log enable"
+    default n
+    help
+        Enable controller log
+
+config BT_LE_CONTROLLER_LOG_CTRL_ENABLED
+    bool "enable controller log module"
+    depends on BT_LE_CONTROLLER_LOG_ENABLED
+    default y
+    help
+            Enable controller log module
+
+config BT_LE_CONTROLLER_LOG_HCI_ENABLED
+    bool "enable HCI log module"
+    depends on BT_LE_CONTROLLER_LOG_ENABLED
+    default y
+    help
+            Enable hci log module
+
+config BT_LE_CONTROLLER_LOG_DUMP_ONLY
+    bool "Controller log dump mode only"
+    depends on BT_LE_CONTROLLER_LOG_ENABLED
+    default y
+    help
+            Only operate in dump mode
+
+config BT_LE_LOG_CTRL_BUF1_SIZE
+    int "size of the first BLE controller LOG buffer"
+    depends on BT_LE_CONTROLLER_LOG_ENABLED
+    default 4096
+    help
+            Configure the size of the first BLE controller LOG buffer.
+
+config BT_LE_LOG_CTRL_BUF2_SIZE
+    int "size of the second BLE controller LOG buffer"
+    depends on BT_LE_CONTROLLER_LOG_ENABLED
+    default 1024
+    help
+            Configure the size of the second BLE controller LOG buffer.
+
+config BT_LE_LOG_HCI_BUF_SIZE
+    int "size of the BLE HCI LOG buffer"
+    depends on BT_LE_CONTROLLER_LOG_ENABLED
+    default 4096
+    help
+            Configure the size of the BLE HCI LOG buffer.
+
+config BT_LE_LL_RESOLV_LIST_SIZE
+    int "BLE LL Resolving list size"
+    range 1 5
+    default 4
+    help
+        Configure the size of resolving list used in link layer.
+
+menuconfig BT_LE_SECURITY_ENABLE
+    bool "Enable BLE SM feature"
+    depends on !BT_NIMBLE_ENABLED
+    default y
+    help
+        Enable BLE sm feature
+
+config BT_LE_SM_LEGACY
+    bool "Security manager legacy pairing"
+    depends on BT_LE_SECURITY_ENABLE
+    default y
+    help
+        Enable security manager legacy pairing
+
+config BT_LE_SM_SC
+    bool "Security manager secure connections (4.2)"
+    depends on BT_LE_SECURITY_ENABLE
+    default y
+    help
+        Enable security manager secure connections
+
+config BT_LE_SM_SC_DEBUG_KEYS
+    bool "Use predefined public-private key pair"
+    default n
+    depends on BT_LE_SECURITY_ENABLE && BT_LE_SM_SC
+    help
+        If this option is enabled, SM uses predefined DH key pair as described
+        in Core Specification, Vol. 3, Part H, 2.3.5.6.1. This allows to
+        decrypt air traffic easily and thus should only be used for debugging.
+
+config BT_LE_LL_CFG_FEAT_LE_ENCRYPTION
+    bool "Enable LE encryption"
+    depends on BT_LE_SECURITY_ENABLE
+    default y
+    help
+        Enable encryption connection
+
+config BT_LE_CRYPTO_STACK_MBEDTLS
+    bool "Override TinyCrypt with mbedTLS for crypto computations"
+    default y
+    depends on !BT_NIMBLE_ENABLED
+    select MBEDTLS_ECP_RESTARTABLE
+    select MBEDTLS_CMAC_C
+    help
+        Enable this option to choose mbedTLS instead of TinyCrypt for crypto
+        computations.
+
+config BT_LE_WHITELIST_SIZE
+    int "BLE white list size"
+    range 1 15
+    default 12
+    depends on !BT_NIMBLE_ENABLED
+
+    help
+        BLE list size
+
+config BT_LE_LL_DUP_SCAN_LIST_COUNT
+    int "BLE duplicate scan list count"
+    range 5 100
+    default 20
+    help
+        config the max count of duplicate scan list
+
+config BT_LE_LL_SCA
+    int "BLE Sleep clock accuracy"
+    range 0 500
+    default 60
+    help
+        Sleep clock accuracy of our device (in ppm)
+
+config BT_LE_MAX_CONNECTIONS
+    int "Maximum number of concurrent connections"
+    depends on !BT_NIMBLE_ENABLED
+    range 1 70
+    default 3
+    help
+        Defines maximum number of concurrent BLE connections. For ESP32, user
+        is expected to configure BTDM_CTRL_BLE_MAX_CONN from controller menu
+        along with this option. Similarly for ESP32-C3 or ESP32-S3, user is expected to
+        configure BT_CTRL_BLE_MAX_ACT from controller menu.
+        Each connection will take about 1k DRAM.
+
+choice BT_LE_COEX_PHY_CODED_TX_RX_TLIM
+    prompt "Coexistence: limit on MAX Tx/Rx time for coded-PHY connection"
+    default BT_LE_COEX_PHY_CODED_TX_RX_TLIM_DIS
+    depends on ESP_COEX_SW_COEXIST_ENABLE
+    help
+        When using PHY-Coded in BLE connection, limitation on max tx/rx time can be applied to
+        better avoid dramatic performance deterioration of Wi-Fi.
+
+    config BT_LE_COEX_PHY_CODED_TX_RX_TLIM_EN
+        bool "Force Enable"
+        help
+            Always enable the limitation on max tx/rx time for Coded-PHY connection
+
+    config BT_LE_COEX_PHY_CODED_TX_RX_TLIM_DIS
+        bool "Force Disable"
+        help
+            Disable the limitation on max tx/rx time for Coded-PHY connection
+endchoice
+
+config BT_LE_COEX_PHY_CODED_TX_RX_TLIM_EFF
+    int
+    default 0 if !ESP_COEX_SW_COEXIST_ENABLE
+    default 1 if BT_LE_COEX_PHY_CODED_TX_RX_TLIM_EN
+    default 0 if BT_LE_COEX_PHY_CODED_TX_RX_TLIM_DIS
+
+config BT_LE_SLEEP_ENABLE
+    bool "Enable BLE sleep"
+    default n
+    help
+        Enable BLE sleep
+
+choice BT_LE_LP_CLK_SRC
+    prompt "BLE low power clock source"
+    default BT_LE_LP_CLK_SRC_MAIN_XTAL
+    config BT_LE_LP_CLK_SRC_MAIN_XTAL
+        bool "Use main XTAL as RTC clock source"
+        help
+            User main XTAL as RTC clock source.
+            This option is recommended if external 32.768k XTAL is not available.
+            Using the external 32.768 kHz XTAL will have lower current consumption
+            in light sleep compared to using the main XTAL.
+
+    config BT_LE_LP_CLK_SRC_DEFAULT
+        bool "Use system RTC slow clock source"
+        help
+            Use the same slow clock source as system RTC
+            Using any clock source other than external 32.768 kHz XTAL supports only
+            legacy ADV and SCAN due to low clock accuracy.
+
+endchoice
+
+config BT_LE_USE_ESP_TIMER
+    bool "Enable Esp Timer for Callout"
+    depends on !BT_NIMBLE_ENABLED
+    default y
+    help
+        Set this option to use Esp Timer which has higher priority timer
+        instead of FreeRTOS timer
+config BT_CTRL_BLE_ADV_REPORT_FLOW_CTRL_SUPP
+    bool "BLE adv report flow control supported"
+    default y
+    help
+        The function is mainly used to enable flow control for advertising reports. When it is enabled,
+        advertising reports will be discarded by the controller if the number of unprocessed advertising
+        reports exceeds the size of BLE adv report flow control.
+
+config BT_CTRL_BLE_ADV_REPORT_FLOW_CTRL_NUM
+    int "BLE adv report flow control number"
+    depends on BT_CTRL_BLE_ADV_REPORT_FLOW_CTRL_SUPP
+    range 50 1000
+    default 100
+    help
+        The number of unprocessed advertising report that bluetooth host can save.If you set
+        `BT_CTRL_BLE_ADV_REPORT_FLOW_CTRL_NUM` to a small value, this may cause adv packets lost.
+        If you set `BT_CTRL_BLE_ADV_REPORT_FLOW_CTRL_NUM` to a large value, bluetooth host may cache a
+        lot of adv packets and this may cause system memory run out. For example, if you set
+        it to 50, the maximum memory consumed by host is 35 * 50 bytes. Please set
+        `BT_CTRL_BLE_ADV_REPORT_FLOW_CTRL_NUM` according to your system free memory and handle adv
+        packets as fast as possible, otherwise it will cause adv packets lost.
+
+config BT_CTRL_BLE_ADV_REPORT_DISCARD_THRSHOLD
+    int "BLE adv lost event threshold value"
+    depends on BT_CTRL_BLE_ADV_REPORT_FLOW_CTRL_SUPP
+    range 1 1000
+    default 20
+    help
+        When adv report flow control is enabled, The ADV lost event will be generated when the number
+        of ADV packets lost in the controller reaches this threshold. It is better to set a larger value.
+        If you set `BT_CTRL_BLE_ADV_REPORT_DISCARD_THRSHOLD` to a small value or printf every adv lost event, it
+        may cause adv packets lost more.
+
+config BT_LE_SCAN_DUPL
+    bool "BLE Scan Duplicate Options"
+    default y
+    help
+        This select enables parameters setting of BLE scan duplicate.
+
+choice BT_LE_SCAN_DUPL_TYPE
+    prompt "Scan Duplicate Type"
+    default BT_LE_SCAN_DUPL_TYPE_DEVICE
+    depends on BT_LE_SCAN_DUPL
+    help
+        Scan duplicate have three ways. one is "Scan Duplicate By Device Address", This way is to use
+        advertiser address filtering. The adv packet of the same address is only allowed to be reported once.
+        Another way is "Scan Duplicate By Device Address And Advertising Data". This way is to use advertising
+        data and device address filtering. All different adv packets with the same address are allowed to be
+        reported. The last way is "Scan Duplicate By Advertising Data". This way is to use advertising data
+        filtering. All same advertising data only allow to be reported once even though they are from
+        different devices.
+
+    config BT_LE_SCAN_DUPL_TYPE_DEVICE
+        bool "Scan Duplicate By Device Address"
+        help
+            This way is to use advertiser address filtering. The adv packet of the same address is only
+            allowed to be reported once
+
+    config BT_LE_SCAN_DUPL_TYPE_DATA
+        bool "Scan Duplicate By Advertising Data"
+        help
+            This way is to use advertising data filtering. All same advertising data only allow to be reported
+            once even though they are from different devices.
+
+    config BT_LE_SCAN_DUPL_TYPE_DATA_DEVICE
+        bool "Scan Duplicate By Device Address And Advertising Data"
+        help
+            This way is to use advertising data and device address filtering. All different adv packets with
+            the same address are allowed to be reported.
+endchoice
+
+config BT_LE_SCAN_DUPL_TYPE
+    int
+    depends on BT_LE_SCAN_DUPL
+    default 0 if BT_LE_SCAN_DUPL_TYPE_DEVICE
+    default 1 if BT_LE_SCAN_DUPL_TYPE_DATA
+    default 2 if BT_LE_SCAN_DUPL_TYPE_DATA_DEVICE
+    default 0
+
+config BT_LE_SCAN_DUPL_CACHE_REFRESH_PERIOD
+    int "Duplicate scan list refresh period (seconds)"
+    depends on BT_LE_SCAN_DUPL
+    range 0 1000
+    default 0
+    help
+        If the period value is non-zero, the controller will periodically clear the device information
+        stored in the scan duuplicate filter. If it is 0, the scan duuplicate filter will not be cleared
+        until the scanning is disabled. Duplicate advertisements for this period should not be sent to the
+        Host in advertising report events.
+        There are two scenarios where the ADV packet will be repeatedly reported:
+        1. The duplicate scan cache is full, the controller will delete the oldest device information and
+        add new device information.
+        2. When the refresh period is up, the controller will clear all device information and start filtering
+        again.
+
+config BT_LE_MSYS_INIT_IN_CONTROLLER
+    bool "Msys Mbuf Init in Controller"
+    default y
