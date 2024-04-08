@@ -46,6 +46,23 @@ API 说明
 
 建立起始会话大约需要两秒，在时钟速度较慢或日志记录冗余信息较多的情况下，可能需要花费更多时间。后续通过已打开的安全套接字建立请求的速度会更快，最快只需不到 100 ms。
 
+事件处理
+--------------
+
+ESP HTTPS 服务器在特定事件发生时，可以通过 :doc:`../system/esp_event` 触发事件处理程序。处理程序必须使用 :cpp:func:`esp_event_handler_register` 进行注册，以帮助 ESP HTTPS 服务器处理事件。
+
+:cpp:enum:`esp_https_server_event_id_t` 包含了 ESP HTTPS 服务器可能发生的所有事件。
+
+事件循环中不同 ESP HTTPS 服务器事件的预期数据类型如下所示：
+
+    - HTTPS_SERVER_EVENT_ERROR          :   ``esp_https_server_last_error_t``
+    - HTTPS_SERVER_EVENT_START          :   ``NULL``
+    - HTTPS_SERVER_EVENT_ON_CONNECTED   :   ``NULL``
+    - HTTPS_SERVER_EVENT_ON_DATA        :   ``int``
+    - HTTPS_SERVER_EVENT_SENT_DATA      :   ``NULL``
+    - HTTPS_SERVER_EVENT_DISCONNECTED   :   ``NULL``
+    - HTTPS_SERVER_EVENT_STOP           :   ``NULL``
+
 API 参考
 ---------
 
