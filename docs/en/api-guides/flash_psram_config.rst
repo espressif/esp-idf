@@ -6,16 +6,25 @@ This page is a guide for configuring SPI Flash and external SPI RAM. Supported f
 Terminology
 -----------
 
-=============      ===========================
-Term               Definition
-=============      ===========================
-**SPI**            Serial Peripheral Interface
-**MSPI**           Memory SPI Peripheral, SPI Peripheral dedicated for memory
-**SDR**            Single Data Rate
-**DDR**            Double Data Rate
-**line mode**      Number of signals used to transfer data in the data phase of SPI transactions. e.g., for 4-bit-mode, the speed of the data phase would be 4 bit per clock cycle.
-**FxRx**           F stands for Flash, R stands for PSRAM, x stands for line mode. e.g., F4R4 stands for an {IDF_TARGET_NAME} with Quad Flash and Quad PSRAM
-=============      ===========================
+.. list-table::
+    :header-rows: 1
+    :widths: 20 80
+    :align: center
+
+    * - Term
+      - Definition
+    * - **SPI**
+      - Serial Peripheral Interface
+    * - **MSPI**
+      - Memory SPI Peripheral, SPI Peripheral dedicated for memory
+    * - **SDR**
+      - Single Data Transfer Rate (SDR), also known as STR (Single Transfer Rate)
+    * - **DDR**
+      - Double Data Transfer Rate (DDR), also known as DTR (Double Transfer Rate)
+    * - **line mode**
+      - Number of signals used to transfer data in the data phase of SPI transactions. e.g., for 4-bit-mode, the speed of the data phase would be 4 bit per clock cycle.
+    * - **FxRx**
+      - F stands for Flash, R stands for PSRAM, x stands for line mode. e.g., F4R4 stands for an {IDF_TARGET_NAME} with Quad Flash and Quad PSRAM.
 
 .. note::
 
