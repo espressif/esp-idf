@@ -334,9 +334,6 @@ static void test_rmt_receive_filter(rmt_clock_source_t clk_src)
     rmt_channel_handle_t rx_channel = NULL;
     TEST_ESP_OK(rmt_new_rx_channel(&rx_channel_cfg, &rx_channel));
 
-    // initialize the GPIO level to low
-    TEST_ESP_OK(gpio_set_level(TEST_RMT_GPIO_NUM_A, 0));
-
     printf("register rx event callbacks\r\n");
     rmt_rx_event_callbacks_t cbs = {
         .on_recv_done = test_rmt_received_done,
