@@ -280,9 +280,7 @@ static void enable_timer_group0_for_calibration(void)
         }
     }
 #else
-    // no critical section is needed for bootloader
-    int __DECLARE_RCC_RC_ATOMIC_ENV;
-    timer_ll_enable_bus_clock(0, true);
-    timer_ll_reset_register(0);
+    _timer_ll_enable_bus_clock(0, true);
+    _timer_ll_reset_register(0);
 #endif
 }

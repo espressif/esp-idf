@@ -79,7 +79,7 @@ static inline void _timer_ll_enable_bus_clock(int group_id, bool enable)
  *
  * @param group_id Group ID
  */
-static inline void timer_ll_reset_register(int group_id)
+static inline void _timer_ll_reset_register(int group_id)
 {
     if (group_id == 0) {
         PCR.timergroup0_conf.tg0_rst_en = 1;
@@ -94,7 +94,7 @@ static inline void timer_ll_reset_register(int group_id)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_RC_ATOMIC_ENV variable in advance
-#define timer_ll_reset_register(...) (void)__DECLARE_RCC_RC_ATOMIC_ENV; timer_ll_reset_register(__VA_ARGS__)
+#define timer_ll_reset_register(...) (void)__DECLARE_RCC_RC_ATOMIC_ENV; _timer_ll_reset_register(__VA_ARGS__)
 
 /**
  * @brief Set clock source for timer
@@ -203,7 +203,7 @@ static inline void timer_ll_set_count_direction(timg_dev_t *hw, uint32_t timer_n
 }
 
 /**
- * @brief Enable timer, start couting
+ * @brief Enable timer, start counting
  *
  * @param hw Timer Group register base address
  * @param timer_num Timer number in the group
