@@ -70,13 +70,13 @@ FORCE_INLINE_ATTR void esp_core_dump_setup_stack(void)
     s_core_dump_sp = (uint8_t *)((uint32_t)(s_coredump_stack + ESP_COREDUMP_STACK_SIZE - 1) & ~0xf);
     memset(s_coredump_stack, COREDUMP_STACK_FILL_BYTE, ESP_COREDUMP_STACK_SIZE);
 
-    /* watchpoint 1 can be used for task stack overflow detection, re-use it, it is no more necessary */
+    /* watchpoint 1 can be used for task stack overflow detection, reuse it, it is no more necessary */
     //esp_cpu_clear_watchpoint(1);
     //esp_cpu_set_watchpoint(1, s_coredump_stack, 1, ESP_WATCHPOINT_STORE);
 
 #if CONFIG_ESP_SYSTEM_HW_STACK_GUARD
     /* Save the current area we are watching to restore it later */
-    esp_hw_stack_guard_get_bounds(&s_stack_context.sp_min, &s_stack_context.sp_max);
+    esp_hw_stack_guard_get_bounds(xPortGetCoreID(), &s_stack_context.sp_min, &s_stack_context.sp_max);
     /* Since the stack is going to change, make sure we disable protection or an exception would be triggered */
     esp_hw_stack_guard_monitor_stop();
 #endif // CONFIG_ESP_SYSTEM_HW_STACK_GUARD
