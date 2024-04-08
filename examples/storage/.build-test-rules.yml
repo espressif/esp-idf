@@ -26,8 +26,9 @@ examples/storage/ext_flash_fatfs:
     - spi_flash
     - driver
   disable:
-    - if: IDF_TARGET == "esp32p4"
-      reason: not supported yet
+    - if: IDF_TARGET in ["esp32p4", "esp32c5"]
+      temporary: true
+      reason: not supported on p4 and c5  # TODO: [ESP32C5] IDF-8715
   disable_test:
     - if: IDF_TARGET not in ["esp32"]
       temporary: true
@@ -45,6 +46,10 @@ examples/storage/nvs_rw_blob:
   depends_components:
     - nvs_flash
     - driver
+  disable:
+    - if: IDF_TARGET == "esp32c5"
+      temporary: true
+      reason: not supported yet  # TODO: [ESP32C5] IDF-8717
   disable_test:
     - if: IDF_TARGET not in ["esp32", "esp32c3"]
       reason: only one target per arch needed
@@ -113,6 +118,9 @@ examples/storage/perf_benchmark:
     - if: IDF_TARGET == "esp32p4" and CONFIG_NAME in ["sdmmc_1line", "sdmmc_4line", "sdspi_1line"]
       temporary: true
       reason: SDMMC and SDSPI not supported on P4 yet # TODO: IDF-6502, IDF-7501
+    - if: IDF_TARGET == "esp32c5"
+      temporary: true
+      reason: not supported yet  # TODO: [ESP32C5] IDF-8704
   disable_test:
     - if: IDF_TARGET == "esp32p4" and CONFIG_NAME in ["spiflash"]
       temporary: true

@@ -7,3 +7,7 @@ components/app_trace/test_apps:
     - soc
     - driver
     - esp_hw_support
+  disable:
+    - if: IDF_TARGET == "esp32c5"
+      temporary: true
+      reason: not support yet # TODO: [ESP32C5] IDF-8705

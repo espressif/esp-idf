@@ -24,9 +24,9 @@ components/fatfs/test_apps/flash_wl:
 
 components/fatfs/test_apps/sdcard:
   disable:
-    - if: IDF_TARGET == "esp32p4"
+    - if: IDF_TARGET in ["esp32p4", "esp32c5"]
       temporary: true
-      reason: target esp32p4 is not supported yet # TODO: IDF-7501
+      reason: target esp32p4, esp32c5 is not supported yet # TODO: [ESP32P4] IDF-7501 [ESP32C5] IDF-8704
   disable_test:
     - if: IDF_TARGET not in ["esp32", "esp32c3"]
       temporary: true

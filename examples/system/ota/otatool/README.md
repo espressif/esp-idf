@@ -1,5 +1,5 @@
-| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C6 | ESP32-P4 | ESP32-S2 | ESP32-S3 |
-| ----------------- | ----- | -------- | -------- | -------- | -------- | -------- | -------- |
+| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C5 | ESP32-C6 | ESP32-P4 | ESP32-S2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- | -------- | -------- | -------- |
 
 # OTA Tool Example
 
@@ -14,7 +14,7 @@ programmatic invocation of the tool's functions via the Python API and command-l
 that on Windows, the shell script example requires a POSIX-compatible environment via MSYS2/Git Bash/WSL etc.
 
 The built application in this example outputs the currently running partition, whose output is used to verify if the tool switched OTA
-partitions succesfully. The built application binary is written to all OTA partitions at the start of the example to be able to determine the running
+partitions successfully. The built application binary is written to all OTA partitions at the start of the example to be able to determine the running
 partition for all switches performed.
 
 ## How to use example

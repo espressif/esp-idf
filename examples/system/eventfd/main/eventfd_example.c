@@ -143,8 +143,8 @@ static void collector_task(void *arg)
         if (elapsed >= PRINT_INTERVAL_MSEC * 1000) {
             ESP_LOGI(TAG, "=================================");
             ESP_LOGI(TAG, "Select timeouted for %d times", select_timeout_count);
-            ESP_LOGI(TAG, "Timer triggerred for %d times", timer_trigger_count);
-            ESP_LOGI(TAG, "Progress triggerred for %d times", progress_trigger_count);
+            ESP_LOGI(TAG, "Timer triggered for %d times", timer_trigger_count);
+            ESP_LOGI(TAG, "Progress triggered for %d times", progress_trigger_count);
             ESP_LOGI(TAG, "=================================");
             previous = current;
         }

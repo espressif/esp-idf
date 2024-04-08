@@ -2,6 +2,6 @@
 
 components/app_update/test_apps:
   disable:
-    - if: IDF_TARGET in ["esp32c6", "esp32h2", "esp32p4"]
+    - if: IDF_TARGET in ["esp32c6", "esp32h2", "esp32p4", "esp32c5"]
       temporary: true
-      reason: target esp32c6, esp32h2, esp32p4 is not supported yet # TODO: IDF-8068
+      reason: target esp32c6, esp32h2, esp32p4, esp32c5 is not supported yet # TODO: IDF-8068, [ESP32C5] IDF-8638

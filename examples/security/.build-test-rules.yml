@@ -1,6 +1,10 @@
 # Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
 
 examples/security/flash_encryption:
+  disable:
+    - if: IDF_TARGET == "esp32c5"
+      temporary: true
+      reason: not supported yet  # TODO: [ESP32C5] IDF-8622
   disable_test:
     - if: IDF_TARGET in ["esp32s2", "esp32s3", "esp32c6", "esp32h2", "esp32c2", "esp32p4"]
       temporary: true

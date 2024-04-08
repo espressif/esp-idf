@@ -210,6 +210,10 @@ tools/test_apps/system/panic:
     - if: INCLUDE_DEFAULT == 1 or IDF_TARGET in ["esp32p4"] # preview targets
 
 tools/test_apps/system/ram_loadable_app:
+  disable:
+    - if: IDF_TARGET == "esp32c5"
+      temporary: true
+      reason: not supported  # TODO: [ESP32C5] IDF-8644
   disable_test:
     - if: IDF_TARGET in ["esp32p4"]
       temporary: true

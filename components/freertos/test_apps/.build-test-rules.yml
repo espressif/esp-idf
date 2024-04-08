@@ -2,9 +2,9 @@
 
 components/freertos/test_apps/freertos:
   disable:
-    - if: CONFIG_NAME == "smp" and IDF_TARGET == "esp32p4"
+    - if: IDF_TARGET == "esp32c5" or (CONFIG_NAME == "smp" and IDF_TARGET == "esp32p4")
       temporary: true
-      reason: target(s) not supported yet
+      reason: target(s) not supported yet  # TODO: [ESP32C5] IDF-8672
 
 components/freertos/test_apps/orig_inc_path:
   enable:
