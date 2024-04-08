@@ -465,7 +465,6 @@ components/esp_phy/src/phy_init_esp32hxx.c
 components/esp_phy/test/test_phy_rtc.c
 components/esp_pm/include/esp_private/pm_impl.h
 components/esp_pm/include/esp_private/pm_trace.h
-components/esp_pm/test/test_pm.c
 components/esp_rom/esp32/ld/esp32.rom.api.ld
 components/esp_rom/esp32/ld/esp32.rom.eco3.ld
 components/esp_rom/esp32/ld/esp32.rom.ld
