@@ -47,7 +47,8 @@ else()
     # No local wifi: provide only netif bindings
     set(srcs
             "src/wifi_default.c"
-            "src/wifi_netif.c")
+            "src/wifi_netif.c"
+            "src/wifi_default_ap.c")
     set(local_include_dirs)
 
 endif()
