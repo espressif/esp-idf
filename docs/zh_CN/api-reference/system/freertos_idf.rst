@@ -351,7 +351,7 @@ Vanilla FreeRTOS 通过禁用中断实现临界区 (Critical Section)，以防�
           taskEXIT_CRITICAL(&my_spinlock);
       }
 
-- 静态分配自旋锁并使用 ``portMUX_INITIALIZE()`` 初始化：
+- 动态分配自旋锁并使用 ``portMUX_INITIALIZE()`` 初始化：
 
   .. code:: c
 
