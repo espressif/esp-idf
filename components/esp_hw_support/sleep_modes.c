@@ -1244,8 +1244,8 @@ esp_err_t esp_light_sleep_start(void)
     sleep_smp_cpu_sleep_prepare();
 #else
     esp_ipc_isr_stall_other_cpu();
-    esp_ipc_isr_stall_pause();
 #endif
+    esp_ipc_isr_stall_pause();
 #endif
 
 #if CONFIG_ESP_SLEEP_CACHE_SAFE_ASSERTION && CONFIG_PM_SLP_IRAM_OPT
@@ -1395,10 +1395,10 @@ esp_err_t esp_light_sleep_start(void)
 #endif
 
 #if !CONFIG_FREERTOS_UNICORE
+    esp_ipc_isr_stall_resume();
 #if CONFIG_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP && SOC_PM_CPU_RETENTION_BY_SW
     sleep_smp_cpu_wakeup_prepare();
 #else
-    esp_ipc_isr_stall_resume();
     esp_ipc_isr_release_other_cpu();
 #endif
 #endif

@@ -586,7 +586,6 @@ void sleep_smp_cpu_sleep_prepare(void)
     esp_ipc_isr_call((esp_ipc_isr_func_t)smp_core_do_retention, NULL);
 #else
     esp_ipc_isr_stall_other_cpu();
-    esp_ipc_isr_stall_pause();
 #endif
 }
 
@@ -601,7 +600,6 @@ void sleep_smp_cpu_wakeup_prepare(void)
     }
     atomic_store(&s_smp_retention_state[core_id], SMP_IDLE);
 #else
-    esp_ipc_isr_stall_resume();
     esp_ipc_isr_release_other_cpu();
 #endif
 }
