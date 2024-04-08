@@ -1333,7 +1333,7 @@ tBTM_STATUS BTM_BleSetConnectableMode(tBTM_BLE_CONN_MODE connectable_mode)
 **
 ** Function         btm_set_conn_mode_adv_init_addr
 **
-** Description      set initator address type and local address type based on adv
+** Description      set initiator address type and local address type based on adv
 **                  mode.
 **
 **
@@ -2001,7 +2001,7 @@ tBTM_STATUS BTM_BleSetRandAddress(BD_ADDR rand_addr)
     }
 
     if (btm_cb.ble_ctr_cb.inq_var.state != BTM_BLE_IDLE) {
-        BTM_TRACE_ERROR("Advertising or scaning now, can't set randaddress %d", btm_cb.ble_ctr_cb.inq_var.state);
+        BTM_TRACE_ERROR("Advertising or scanning now, can't set randaddress %d", btm_cb.ble_ctr_cb.inq_var.state);
         return BTM_SET_STATIC_RAND_ADDR_FAIL;
     }
     memcpy(btm_cb.ble_ctr_cb.addr_mgnt_cb.private_addr, rand_addr, BD_ADDR_LEN);
@@ -2030,7 +2030,7 @@ void BTM_BleClearRandAddress(void)
 {
     tBTM_BLE_CB  *p_cb = &btm_cb.ble_ctr_cb;
     if (btm_cb.ble_ctr_cb.addr_mgnt_cb.own_addr_type == BLE_ADDR_RANDOM && (p_cb->inq_var.state != BTM_BLE_IDLE)) {
-        BTM_TRACE_ERROR("Advertising or scaning now, can't restore public address ");
+        BTM_TRACE_ERROR("Advertising or scanning now, can't restore public address ");
         return;
     }
     memset(btm_cb.ble_ctr_cb.addr_mgnt_cb.static_rand_addr, 0, BD_ADDR_LEN);
@@ -3728,7 +3728,7 @@ static void btm_ble_process_adv_pkt_cont(BD_ADDR bda, UINT8 addr_type, UINT8 evt
         /* never been report as an LE device */
         if (p_i &&
                 (!(p_i->inq_info.results.device_type & BT_DEVICE_TYPE_BLE) ||
-                 /* scan repsonse to be updated */
+                 /* scan response to be updated */
                  (!p_i->scan_rsp))) {
             update = TRUE;
         } else if (BTM_BLE_IS_DISCO_ACTIVE(btm_cb.ble_ctr_cb.scan_activity)) {
@@ -4002,7 +4002,7 @@ static void btm_ble_stop_discover(void)
 **
 ** Description      Set or clear adv states in topology mask
 **
-** Returns          operation status. TRUE if sucessful, FALSE otherwise.
+** Returns          operation status. TRUE if successful, FALSE otherwise.
 **
 *******************************************************************************/
 typedef BOOLEAN (BTM_TOPOLOGY_FUNC_PTR)(tBTM_BLE_STATE_MASK);
@@ -4263,7 +4263,7 @@ void btm_ble_timeout(TIMER_LIST_ENT *p_tle)
         break;
 
     case BTU_TTYPE_BLE_GAP_LIM_DISC:
-        /* lim_timeout expiried, limited discovery should exit now */
+        /* lim_timeout expired, limited discovery should exit now */
         btm_cb.btm_inq_vars.discoverable_mode &= ~BTM_BLE_LIMITED_DISCOVERABLE;
         btm_ble_set_adv_flag(btm_cb.btm_inq_vars.connectable_mode, btm_cb.btm_inq_vars.discoverable_mode);
         break;
@@ -4700,6 +4700,15 @@ BOOLEAN BTM_BleClearAdv(tBTM_CLEAR_ADV_CMPL_CBACK *p_clear_adv_cback)
     }
 
     p_cb->inq_var.p_clear_adv_cb = p_clear_adv_cback;
+    return TRUE;
+}
+BOOLEAN BTM_BleSetRpaTimeout(uint16_t rpa_timeout,tBTM_SET_RPA_TIMEOUT_CMPL_CBACK *p_set_rpa_timeout_cback)
+{
+    if ((btsnd_hcic_ble_set_rand_priv_addr_timeout(rpa_timeout)) != TRUE) {
+        BTM_TRACE_ERROR("Set RPA Timeout error, rpa_timeout:0x%04x",rpa_timeout);
+        return FALSE;
+    }
+    btm_cb.devcb.p_ble_set_rpa_timeout_cmpl_cb = p_set_rpa_timeout_cback;
     return TRUE;
 }
 
