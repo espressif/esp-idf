@@ -30,11 +30,11 @@ bool clock_domain_pd_allowed(void)
 
     uint32_t mask = 0;
     if (inited_modules & sys_clk_dep_modules) {
-        mask |= SLEEP_RETENTION_MODULE_CLOCK_SYSTEM;
+        mask |= BIT(SLEEP_RETENTION_MODULE_CLOCK_SYSTEM);
     }
     if (inited_modules & modem_clk_dep_modules) {
 #if SOC_WIFI_SUPPORTED || SOC_BT_SUPPORTED || SOC_IEEE802154_SUPPORTED
-        mask |= SLEEP_RETENTION_MODULE_CLOCK_MODEM;
+        mask |= BIT(SLEEP_RETENTION_MODULE_CLOCK_MODEM);
 #endif
     }
     return ((inited_modules & mask) == (created_modules & mask));
