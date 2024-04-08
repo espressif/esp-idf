@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,6 +11,8 @@
 #include "esp_bt.h"
 #include "osi/future.h"
 #include "osi/allocator.h"
+#include "hci_log/bt_hci_log.h"
+#include "bt_common.h"
 
 static bool bd_already_enable = false;
 static bool bd_already_init = false;
@@ -157,6 +159,10 @@ esp_err_t esp_bluedroid_init(void)
 
     bd_already_init = true;
 
+#if (BT_HCI_LOG_INCLUDED == TRUE)
+    bt_hci_log_init();
+#endif // (BT_HCI_LOG_INCLUDED == TRUE)
+
     return ESP_OK;
 }
 
@@ -198,6 +204,10 @@ esp_err_t esp_bluedroid_deinit(void)
     }
 
     btc_deinit();
+
+#if (BT_HCI_LOG_INCLUDED == TRUE)
+    bt_hci_log_deinit();
+#endif // (BT_HCI_LOG_INCLUDED == TRUE)
 
     bd_already_init = false;
 

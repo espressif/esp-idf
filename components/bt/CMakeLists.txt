@@ -47,11 +47,13 @@ if(CONFIG_BT_ENABLED)
          common/api/include/api
          common/btc/profile/esp/blufi/include
          common/btc/profile/esp/include
+         common/hci_log/include
         )
 
 
     list(APPEND srcs "common/btc/core/btc_alarm.c"
          "common/api/esp_blufi_api.c"
+         "common/hci_log/bt_hci_log.c"
          "common/btc/core/btc_manage.c"
          "common/btc/core/btc_task.c"
          "common/btc/profile/esp/blufi/blufi_prf.c"
