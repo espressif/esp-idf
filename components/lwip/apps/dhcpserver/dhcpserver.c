@@ -60,6 +60,7 @@
 #define DHCP_OPTION_PERFORM_ROUTER_DISCOVERY 31
 #define DHCP_OPTION_BROADCAST_ADDRESS 28
 #define DHCP_OPTION_REQ_LIST     55
+#define DHCP_OPTION_CAPTIVEPORTAL_URI 114
 #define DHCP_OPTION_END         255
 
 //#define USE_CLASS_B_NET 1
@@ -135,6 +136,7 @@ struct dhcps_t {
     dhcps_time_t dhcps_lease_time;
     dhcps_offer_t dhcps_offer;
     dhcps_offer_t dhcps_dns;
+    char *dhcps_captiveportal_uri;
     dhcps_cb_t dhcps_cb;
     void* dhcps_cb_arg;
     struct udp_pcb *dhcps_pcb;
@@ -164,6 +166,7 @@ dhcps_t *dhcps_new(void)
     dhcps->dhcps_lease_time = DHCPS_LEASE_TIME_DEF;
     dhcps->dhcps_offer = 0xFF;
     dhcps->dhcps_dns = 0x00;
+    dhcps->dhcps_captiveportal_uri = NULL;
     dhcps->dhcps_pcb = NULL;
     dhcps->state = DHCPS_HANDLE_CREATED;
     return dhcps;
@@ -239,6 +242,10 @@ void *dhcps_option_info(dhcps_t *dhcps, u8_t op_id, u32_t opt_len)
             }
 
             break;
+        case CAPTIVEPORTAL_URI:
+            option_arg = &dhcps->dhcps_captiveportal_uri;
+
+            break;
         default:
             break;
     }
@@ -292,6 +299,11 @@ err_t dhcps_set_option_info(dhcps_t *dhcps, u8_t op_id, void *opt_info, u32_t op
                 dhcps->dhcps_mask = *(ip4_addr_t *)opt_info;
             }
 
+            break;
+
+        case CAPTIVEPORTAL_URI:
+            dhcps->dhcps_captiveportal_uri = (char *)opt_info;
+            break;
 
         default:
             break;
@@ -400,6 +412,7 @@ static u8_t *add_msg_type(u8_t *optptr, u8_t type)
 *******************************************************************************/
 static u8_t *add_offer_options(dhcps_t *dhcps, u8_t *optptr)
 {
+    u32_t i;
     ip4_addr_t ipadd;
 
     ipadd.addr = *((u32_t *) &dhcps->server_address);
@@ -467,6 +480,17 @@ static u8_t *add_offer_options(dhcps_t *dhcps, u8_t *optptr)
     *optptr++ = 2;
     *optptr++ = 0x05;
     *optptr++ = 0xdc;
+
+    if (dhcps->dhcps_captiveportal_uri) {
+        size_t length = strlen(dhcps->dhcps_captiveportal_uri);
+
+        *optptr++ = DHCP_OPTION_CAPTIVEPORTAL_URI;
+        *optptr++ = length;
+        for (i = 0; i < length; i++)
+        {
+            *optptr++ = dhcps->dhcps_captiveportal_uri[i];
+        }
+    }
 
     *optptr++ = DHCP_OPTION_PERFORM_ROUTER_DISCOVERY;
     *optptr++ = 1;
@@ -1006,7 +1030,7 @@ static s16_t parse_msg(dhcps_t *dhcps, struct dhcps_msg *m, u16_t len)
                     dhcps->client_address.addr = dhcps->client_address_plus.addr;
                 }
 
-                if (flag == false) { // search the fisrt unused ip
+                if (flag == false) { // search the first unused ip
                     if (first_address.addr < pdhcps_pool->ip.addr) {
                         flag = true;
                     } else {

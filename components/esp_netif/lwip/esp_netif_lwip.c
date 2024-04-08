@@ -2398,6 +2398,10 @@ esp_err_t esp_netif_dhcps_option_api(esp_netif_api_msg_t *msg)
                 }
                 break;
             }
+            case ESP_NETIF_CAPTIVEPORTAL_URI: {
+                opt_info = (char *)opt->val;
+                break;
+            }
 
             default:
                 break;
