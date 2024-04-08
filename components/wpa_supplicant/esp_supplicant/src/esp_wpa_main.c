@@ -325,9 +325,12 @@ static bool hostap_sta_join(void **sta, u8 *bssid, u8 *wpa_ie, u8 wpa_ie_len,u8 
             }
             return false;
         }
+#endif /* CONFIG_SAE */
         if (!esp_wifi_ap_is_sta_sae_reauth_node(bssid)) {
             ap_free_sta(hapd, old_sta);
-        } else if (old_sta && old_sta->lock) {
+        }
+#ifdef CONFIG_SAE
+          else if (old_sta && old_sta->lock) {
             sta_info = old_sta;
             goto process_old_sta;
         }
@@ -350,9 +353,10 @@ static bool hostap_sta_join(void **sta, u8 *bssid, u8 *wpa_ie, u8 wpa_ie_len,u8 
         }
         return false;
     }
-#endif /* CONFIG_SAE */
 
 process_old_sta:
+#endif /* CONFIG_SAE */
+
 
 #ifdef CONFIG_WPS_REGISTRAR
     if (check_n_add_wps_sta(hapd, sta_info, wpa_ie, wpa_ie_len, pmf_enable, subtype) == 0) {
