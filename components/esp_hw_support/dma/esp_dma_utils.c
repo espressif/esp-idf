@@ -18,7 +18,6 @@
 #include "hal/hal_utils.h"
 
 static const char *TAG = "dma_utils";
-_Static_assert(ESP_DMA_MALLOC_FLAG_PSRAM == ESP_CACHE_MALLOC_FLAG_PSRAM);
 
 #define ALIGN_UP_BY(num, align) (((num) + ((align) - 1)) & ~((align) - 1))
 #define ALIGN_DOWN_BY(num, align) ((num) & (~((align) - 1)))
@@ -38,7 +37,7 @@ esp_err_t esp_dma_capable_malloc(size_t size, const esp_dma_mem_info_t *dma_mem_
 
     int heap_caps = dma_mem_info->extra_heap_caps | MALLOC_CAP_DMA;
     if (dma_mem_info->extra_heap_caps & MALLOC_CAP_SPIRAM) {
-        cache_flags |= ESP_DMA_MALLOC_FLAG_PSRAM;
+        cache_flags |= MALLOC_CAP_SPIRAM;
         heap_caps = dma_mem_info->extra_heap_caps | MALLOC_CAP_SPIRAM;
     }
 
