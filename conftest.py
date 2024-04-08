@@ -448,3 +448,41 @@ def pytest_unconfigure(config: Config) -> None:
     if _pytest_embedded:
         del config.stash[IDF_PYTEST_EMBEDDED_KEY]
         config.pluginmanager.unregister(_pytest_embedded)
+
+
+dut_artifacts_url = []
+
+
+@pytest.hookimpl(hookwrapper=True)
+def pytest_runtest_makereport(item, call):  # type: ignore
+    outcome = yield
+    report = outcome.get_result()
+    report.sections = []
+    if report.failed:
+        _dut = item.funcargs.get('dut')
+        if not _dut:
+            return
+
+        job_id = os.getenv('CI_JOB_ID', 0)
+        url = os.getenv('CI_PAGES_URL', '').replace('esp-idf', '-/esp-idf')
+        template = f'{url}/-/jobs/{job_id}/artifacts/pytest_embedded_log/{{}}'
+        logs_files = []
+
+        def get_path(x: str) -> str:
+            return x.split('pytest_embedded_log/', 1)[1]
+        if isinstance(_dut, list):
+            logs_files.extend([template.format(get_path(d.logfile)) for d in _dut])
+            dut_artifacts_url.append('{}:'.format(_dut[0].test_case_name))
+        else:
+            logs_files.append(template.format(get_path(_dut.logfile)))
+            dut_artifacts_url.append('{}:'.format(_dut.test_case_name))
+
+        for file in logs_files:
+            dut_artifacts_url.append('    - {}'.format(file))
+
+
+def pytest_terminal_summary(terminalreporter, exitstatus, config):  # type: ignore
+    if dut_artifacts_url:
+        terminalreporter.ensure_newline()
+        terminalreporter.section('Failed Test Artifacts URL', sep='-', red=True, bold=True)
+        terminalreporter.line('\n'.join(dut_artifacts_url))
