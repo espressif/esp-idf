@@ -272,6 +272,9 @@ esp_err_t gptimer_set_alarm_action(gptimer_handle_t timer, const gptimer_alarm_c
 {
     ESP_RETURN_ON_FALSE_ISR(timer, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
     if (config) {
+#if CONFIG_GPTIMER_CTRL_FUNC_IN_IRAM
+        ESP_RETURN_ON_FALSE_ISR(esp_ptr_internal(config), ESP_ERR_INVALID_ARG, TAG, "alarm config struct not in internal RAM");
+#endif
         // When auto_reload is enabled, alarm_count should not be equal to reload_count
         bool valid_auto_reload = !config->flags.auto_reload_on_alarm || config->alarm_count != config->reload_count;
         ESP_RETURN_ON_FALSE_ISR(valid_auto_reload, ESP_ERR_INVALID_ARG, TAG, "reload count can't equal to alarm count");
