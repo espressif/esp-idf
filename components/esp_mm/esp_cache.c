@@ -120,7 +120,10 @@ esp_err_t esp_cache_aligned_malloc(size_t size, uint32_t flags, void **out_ptr, 
 
     size = ALIGN_UP_BY(size, data_cache_line_size);
     ptr = heap_caps_aligned_alloc(data_cache_line_size, size, heap_caps);
-    ESP_RETURN_ON_FALSE_ISR(ptr, ESP_ERR_NO_MEM, TAG, "no enough heap memory for (%"PRId32")B alignment", data_cache_line_size);
+    if (!ptr) {
+        ESP_LOGW(TAG, "no enough heap memory for (%"PRId32")B alignment", data_cache_line_size);
+        return ESP_ERR_NO_MEM;
+    }
 
     *out_ptr = ptr;
     if (actual_size) {
