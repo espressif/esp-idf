@@ -1065,7 +1065,7 @@ void *transfer_descriptor_list_alloc(size_t list_len, size_t *list_len_bytes_out
 #if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
     // Required Transfer Descriptor List size (in bytes) might not be aligned to cache line size, align the size up
     size_t data_cache_line_size = 0;
-    esp_cache_get_alignment(ESP_CACHE_MALLOC_FLAG_DMA, &data_cache_line_size);
+    esp_cache_get_alignment(MALLOC_CAP_DMA, &data_cache_line_size);
     const size_t required_list_len_bytes = list_len * sizeof(usb_dwc_ll_dma_qtd_t);
     *list_len_bytes_out = ALIGN_UP_BY(required_list_len_bytes, data_cache_line_size);
 #else

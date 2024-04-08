@@ -835,7 +835,7 @@ esp_err_t spi_bus_initialize(spi_host_device_t host_id, const spi_bus_config_t *
             goto cleanup;
         }
 #if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
-        esp_cache_get_alignment(ESP_CACHE_MALLOC_FLAG_DMA, (size_t *)&bus_attr->internal_mem_align_size);
+        esp_cache_get_alignment(MALLOC_CAP_DMA, (size_t *)&bus_attr->internal_mem_align_size);
 #else
         bus_attr->internal_mem_align_size = 4;
 #endif
