@@ -318,9 +318,19 @@ bt_status_t btc_hf_init(void)
 
     BTC_TRACE_DEBUG("%s - max_hf_clients=%d", __func__, btc_max_hf_clients);
 
+#if HFP_DYNAMIC_MEMORY == TRUE
+    if (hf_local_param == NULL) {
+        if ((hf_local_param = (hf_local_param_t *)osi_malloc(BTC_HF_NUM_CB * sizeof(hf_local_param_t))) == NULL) {
+            BTC_TRACE_ERROR("%s malloc failed!", __func__);
+            return BT_STATUS_NOMEM;
+        }
+    }
+    memset((void *)hf_local_param, 0, BTC_HF_NUM_CB * sizeof(hf_local_param_t));
+#endif
+
     /* Invoke the enable service API to the core to set the appropriate service_id
      * Internally, the HSP_SERVICE_ID shall also be enabled if HFP is enabled (phone)
-     * othwerwise only HSP is enabled (tablet)*/
+     * otherwise only HSP is enabled (tablet)*/
 #if (defined(BTC_HF_SERVICES) && (BTC_HF_SERVICES & BTA_HFP_SERVICE_MASK))
     btc_dm_enable_service(BTA_HFP_SERVICE_ID);
 #else
@@ -747,7 +757,7 @@ static bt_status_t btc_hf_phone_state_update(bt_bdaddr_t *bd_addr,int num_active
         }
         /* CIND response should have been updated. */
         BTA_AgResult(BTA_AG_HANDLE_ALL, res, &ag_res);
-        /* Just open SCO conenction. */
+        /* Just open SCO connection. */
         BTA_AgAudioOpen(ag_res.audio_handle);
         activeCallUpdated = TRUE;
     }
@@ -1560,7 +1570,7 @@ void btc_hf_cb_handler(btc_msg_t *msg)
             CHECK_HF_IDX(idx);
             BTC_TRACE_DEBUG("AG Bitmap of peer-codecs %d", p_data->val.num);
 #if (BTM_WBS_INCLUDED == TRUE)
-            /* If the peer supports mSBC and the BTC prefferred codec is also mSBC, then
+            /* If the peer supports mSBC and the BTC preferred codec is also mSBC, then
             ** we should set the BTA AG Codec to mSBC. This would trigger a +BCS to mSBC at the time
             ** of SCO connection establishment */
             if ((btc_conf_hf_force_wbs == TRUE) && (p_data->val.num & BTA_AG_CODEC_MSBC)) {
@@ -1596,7 +1606,7 @@ void btc_hf_cb_handler(btc_msg_t *msg)
                 BTC_TRACE_DEBUG("AG final seleded codec is %d 1=CVSD 2=MSBC", p_data->val.num);
                 memcpy(param.bcs_rep.remote_addr, &hf_local_param[idx].btc_hf_cb.connected_bda,sizeof(esp_bd_addr_t));
                 param.bcs_rep.mode = p_data->val.num;
-                /* No ESP_HF_WBS_NONE case, becuase HFP 1.6 supported device can send BCS */
+                /* No ESP_HF_WBS_NONE case, because HFP 1.6 supported device can send BCS */
                 btc_hf_cb_to_app(ESP_HF_BCS_RESPONSE_EVT, &param);
             } while (0);
             break;
