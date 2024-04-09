@@ -441,7 +441,7 @@ static void s_jpeg_enc_config_picture_color_space(jpeg_encoder_handle_t encoder_
 {
     jpeg_hal_context_t *hal = &encoder_engine->codec_base->hal;
     color_space_pixel_format_t picture_format;
-    jpeg_ll_config_picture_color_space(hal->dev, encoder_engine->color_space);
+    jpeg_ll_config_picture_pixel_format(hal->dev, encoder_engine->color_space);
     picture_format.color_type_id = encoder_engine->picture_format;
     encoder_engine->bytes_per_pixel = color_hal_pixel_format_get_bit_depth(picture_format);
     if (encoder_engine->color_space == JPEG_ENC_SRC_GRAY) {

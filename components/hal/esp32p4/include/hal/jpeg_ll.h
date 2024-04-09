@@ -632,10 +632,10 @@ static inline uint32_t jpeg_ll_get_intr_status(jpeg_dev_t *hw)
     return hw->int_st.val;
 }
 
-static inline void jpeg_ll_config_picture_color_space(jpeg_dev_t *hw, jpeg_enc_src_type_t color_space)
+static inline void jpeg_ll_config_picture_pixel_format(jpeg_dev_t *hw, jpeg_enc_src_type_t pixel_format)
 {
     uint8_t cs = 0;
-    switch (color_space) {
+    switch (pixel_format) {
     case JPEG_ENC_SRC_RGB888:
         cs = 0;
         break;

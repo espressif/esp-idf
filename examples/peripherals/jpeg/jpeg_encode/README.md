@@ -17,6 +17,7 @@ This example makes use of the hardware-based JPEG encoder. If you have multiple 
 * A USB cable for power supply and serial communication
 * Computer with ESP-IDF installed and configured
 * The raw picture is the only source that you need to prepare (We have an [esp1080p.rgb](https://github.com/espressif/esp-idf/tree/master/examples/peripherals/jpeg/jpeg_encode/resources/esp1080.rgb) in resources folder, you can also get it from [jpeg_decode](https://github.com/espressif/esp-idf/tree/master/examples/peripherals/jpeg/jpeg_decode) example).
+* ffmpeg can also be used to produce rgb picture. For example `ffmpeg -i input.jpg -pix_fmt rgb24 output.rgb`
 
 ### Build and Flash
 
