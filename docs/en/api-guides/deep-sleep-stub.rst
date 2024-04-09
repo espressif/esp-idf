@@ -120,6 +120,14 @@ CRC Check For Wake Stubs
 
     When the `CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP` option is enabled, all the RTC fast memory except the wake stubs area is added to the heap.
 
+Going back to deep-sleep
+------------------------
+
+Before going back to deep-sleep you must set a wake up source. This can be a timer, GPIO pin or the ULP. This has to be set using `REG_SET_FIELD(RTC_CNTL_WAKEUP_STATE_REG, RTC_CNTL_WAKEUP_ENA, WAKEUP_MASK)`, where `WAKEUP_MASK` is a byte containing true on all enabled wakeup reasons. These reasons are defined in: https://github.com/espressif/esp-idf/blob/master/components/esp_rom/include/esp32/rom/rtc.h.
+
+.. note:: When using ULP wakeup, it is probably best to leave the wakeup state and just start the RTC timer using `REG_SET_FIELD(RTC_CNTL_STATE0_REG, RTC_CNTL_ULP_CP_SLP_TIMER_EN, 1)`.
+
+After a wakeup source has been set, you must set the wake stub program as entrypoint for the next wake using `esp_wake_stub_sleep('pointer to you wakestub function')`. This function will also put the ESP32 back into deep sleep.
 
 Example
 -------
