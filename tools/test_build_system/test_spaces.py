@@ -10,7 +10,7 @@ from pathlib import Path
 import pytest
 from test_build_system_helpers import run_idf_py
 
-# In this test file the test are grouped into 3 bundels
+# In this test file the test are grouped into 3 bundles
 # It would be better to have every test separate,
 # but that would mean doing idf_copy each time, and copying takes most of the time
 
@@ -27,12 +27,10 @@ def test_spaces_bundle1(idf_copy: Path) -> None:
     run_idf_py('build', workdir=(idf_copy / 'examples' / 'get-started' / 'hello_world'))
     # test spiffsgen
     run_idf_py('build', workdir=(idf_copy / 'examples' / 'storage' / 'spiffsgen'))
-    # bug reported in IDF-9151
-    if sys.platform != 'win32':
-        # test build ulp_fsm
-        run_idf_py('build', workdir=(idf_copy / 'examples' / 'system' / 'ulp' / 'ulp_fsm' / 'ulp'))
-        # test build ulp_riscv
-        run_idf_py('-DIDF_TARGET=esp32s2', 'build', workdir=(idf_copy / 'examples' / 'system' / 'ulp' / 'ulp_riscv' / 'gpio'))
+    # test build ulp_fsm
+    run_idf_py('build', workdir=(idf_copy / 'examples' / 'system' / 'ulp' / 'ulp_fsm' / 'ulp'))
+    # test build ulp_riscv
+    run_idf_py('-DIDF_TARGET=esp32s2', 'build', workdir=(idf_copy / 'examples' / 'system' / 'ulp' / 'ulp_riscv' / 'gpio'))
 
 
 @pytest.mark.idf_copy('esp idf with spaces')
