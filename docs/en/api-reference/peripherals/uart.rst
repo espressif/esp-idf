@@ -1,6 +1,8 @@
 Universal Asynchronous Receiver/Transmitter (UART)
 ==================================================
 
+:link_to_translation:`zh_CN:[中文]`
+
 {IDF_TARGET_UART_EXAMPLE_PORT:default = "UART_NUM_1", esp32 = "UART_NUM_2", esp32s3 = "UART_NUM_2"}
 
 Introduction
@@ -114,10 +116,14 @@ Install Drivers
 
 Once the communication pins are set, install the driver by calling :cpp:func:`uart_driver_install` and specify the following parameters:
 
+- UART port number
 - Size of TX ring buffer
 - Size of RX ring buffer
-- Event queue handle and size
+- Pointer to store the event queue handle
+- Event queue size
 - Flags to allocate an interrupt
+
+.. _driver-code-snippet:
 
 The function allocates the required internal resources for the UART driver.
 
@@ -225,23 +231,45 @@ Use Interrupts
 
 There are many interrupts that can be generated depending on specific UART states or detected errors. The full list of available interrupts is provided in *{IDF_TARGET_NAME} Technical Reference Manual* > *UART Controller (UART)* > *UART Interrupts* and *UHCI Interrupts* [`PDF <{IDF_TARGET_TRM_EN_URL}#uart>`__]. You can enable or disable specific interrupts by calling :cpp:func:`uart_enable_intr_mask` or :cpp:func:`uart_disable_intr_mask` respectively.
 
-The :cpp:func:`uart_driver_install` function installs the driver's internal interrupt handler to manage the TX and RX ring buffers and provides high-level API functions like events (see below).
+The UART driver provides a convenient way to handle specific interrupts by wrapping them into corresponding events. Events defined in :cpp:type:`uart_event_type_t` can be reported to a user application using the FreeRTOS queue functionality.
 
-The API provides a convenient way to handle specific interrupts discussed in this document by wrapping them into dedicated functions:
+To receive the events that have happened, call :cpp:func:`uart_driver_install` and get the event queue handle returned from the function. Please see the above :ref:`code snippet <driver-code-snippet>` as an example.
 
-- **Event detection**: There are several events defined in :cpp:type:`uart_event_type_t` that may be reported to a user application using the FreeRTOS queue functionality. You can enable this functionality when calling :cpp:func:`uart_driver_install` described in :ref:`uart-api-driver-installation`. An example of using Event detection can be found in :example:`peripherals/uart/uart_events`.
+The processed events include the following:
 
-- **FIFO space threshold or transmission timeout reached**: The TX and RX FIFO buffers can trigger an interrupt when they are filled with a specific number of characters, or on a timeout of sending or receiving data. To use these interrupts, do the following:
+- **FIFO overflow** (:cpp:enumerator:`UART_FIFO_OVF`): The RX FIFO can trigger an interrupt when it receives more data than the FIFO can store.
 
-    - Configure respective threshold values of the buffer length and timeout by entering them in the structure :cpp:type:`uart_intr_config_t` and calling :cpp:func:`uart_intr_config`
-    - Enable the interrupts using the functions :cpp:func:`uart_enable_tx_intr` and :cpp:func:`uart_enable_rx_intr`
-    - Disable these interrupts using the corresponding functions :cpp:func:`uart_disable_tx_intr` or :cpp:func:`uart_disable_rx_intr`
+    - (Optional) Configure the full threshold of the FIFO space by entering it in the structure :cpp:type:`uart_intr_config_t` and call :cpp:func:`uart_intr_config` to set the configuration. This can help the data stored in the RX FIFO can be processed timely in the driver to avoid FIFO overflow.
+    - Enable the interrupts using the functions :cpp:func:`uart_enable_rx_intr`.
+    - Disable these interrupts using the corresponding functions :cpp:func:`uart_disable_rx_intr`.
 
-- **Pattern detection**: An interrupt triggered on detecting a 'pattern' of the same character being received/sent repeatedly. This functionality is demonstrated in the example :example:`peripherals/uart/uart_events`. It can be used, e.g., to detect a command string with a specific number of identical characters (the 'pattern') at the end. The following functions are available:
+  .. code-block:: c
+
+      const uart_port_t uart_num = {IDF_TARGET_UART_EXAMPLE_PORT};
+      // Configure a UART interrupt threshold and timeout
+      uart_intr_config_t uart_intr = {
+          .intr_enable_mask = UART_INTR_RXFIFO_FULL | UART_INTR_RXFIFO_TOUT,
+          .rxfifo_full_thresh = 100,
+          .rx_timeout_thresh = 10,
+      };
+      ESP_ERROR_CHECK(uart_intr_config(uart_num, &uart_intr));
+
+      // Enable UART RX FIFO full threshold and timeout interrupts
+      ESP_ERROR_CHECK(uart_enable_rx_intr(uart_num));
+
+- **Pattern detection** (:cpp:enumerator:`UART_PATTERN_DET`): An interrupt triggered on detecting a 'pattern' of the same character being received/sent repeatedly. It can be used, e.g., to detect a command string with a specific number of identical characters (the 'pattern') at the end. The following functions are available:
 
     - Configure and enable this interrupt using :cpp:func:`uart_enable_pattern_det_baud_intr`
     - Disable the interrupt using :cpp:func:`uart_disable_pattern_det_intr`
 
+  .. code-block:: c
+
+      //Set UART pattern detect function
+      uart_enable_pattern_det_baud_intr(EX_UART_NUM, '+', PATTERN_CHR_NUM, 9, 0, 0);
+
+- **Other events**: The UART driver can report other events such as data receiving (:cpp:enumerator:`UART_DATA`), ring buffer full (:cpp:enumerator:`UART_BUFFER_FULL`), detecting NULL after the stop bit (:cpp:enumerator:`UART_BREAK`), parity check error (:cpp:enumerator:`UART_PARITY_ERR`), and frame error (:cpp:enumerator:`UART_FRAME_ERR`).
+
+The strings inside of brackets indicate corresponding event names. An example of how to handle various UART events can be found in :example:`peripherals/uart/uart_events`.
 
 .. _uart-api-deleting-driver:
 
