@@ -1983,20 +1983,6 @@ esp_err_t hcd_pipe_update_dev_addr(hcd_pipe_handle_t pipe_hdl, uint8_t dev_addr)
     return ESP_OK;
 }
 
-esp_err_t hcd_pipe_update_callback(hcd_pipe_handle_t pipe_hdl, hcd_pipe_callback_t callback, void *user_arg)
-{
-    pipe_t *pipe = (pipe_t *)pipe_hdl;
-    HCD_ENTER_CRITICAL();
-    // Check if pipe is in the correct state to be updated
-    HCD_CHECK_FROM_CRIT(!pipe->cs_flags.pipe_cmd_processing &&
-                        !pipe->cs_flags.has_urb,
-                        ESP_ERR_INVALID_STATE);
-    pipe->callback = callback;
-    pipe->callback_arg = user_arg;
-    HCD_EXIT_CRITICAL();
-    return ESP_OK;
-}
-
 void *hcd_pipe_get_context(hcd_pipe_handle_t pipe_hdl)
 {
     pipe_t *pipe = (pipe_t *)pipe_hdl;
