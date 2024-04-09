@@ -8,7 +8,7 @@
  *
  * SPDX-License-Identifier: MIT
  *
- * SPDX-FileContributor: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
  * this software and associated documentation files (the "Software"), to deal in
@@ -172,7 +172,7 @@ BaseType_t xPortInterruptedFromISRContext(void);
 static inline UBaseType_t xPortSetInterruptMaskFromISR(void);
 
 /**
- * @brief Reenable interrupts in a nested manner (meant to be called from ISRs)
+ * @brief Re-enable interrupts in a nested manner (meant to be called from ISRs)
  *
  * @warning Only applies to current CPU.
  * @param prev_level Previous interrupt level
@@ -513,15 +513,11 @@ extern void _frxt_setup_switch( void );     //Defined in portasm.S
 
 #define portCONFIGURE_TIMER_FOR_RUN_TIME_STATS()
 
-/**
- * - Fine resolution uses ccount
- * - ALT is coarse and uses esp_timer
- * @note [refactor-todo] Make fine and alt timers mutually exclusive
- */
-#define portGET_RUN_TIME_COUNTER_VALUE() xthal_get_ccount()
 #ifdef CONFIG_FREERTOS_RUN_TIME_STATS_USING_ESP_TIMER
-#define portALT_GET_RUN_TIME_COUNTER_VALUE(x) do {x = (uint32_t)esp_timer_get_time();} while(0)
-#endif
+#define portGET_RUN_TIME_COUNTER_VALUE()        ((configRUN_TIME_COUNTER_TYPE) esp_timer_get_time())
+#else // Uses CCOUNT
+#define portGET_RUN_TIME_COUNTER_VALUE()        ((configRUN_TIME_COUNTER_TYPE) xthal_get_ccount())
+#endif // CONFIG_FREERTOS_RUN_TIME_STATS_USING_ESP_TIMER
 
 // --------------------- TCB Cleanup -----------------------
 
