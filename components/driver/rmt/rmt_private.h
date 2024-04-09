@@ -21,6 +21,7 @@
 #include "hal/cache_ll.h"
 #include "esp_intr_alloc.h"
 #include "esp_heap_caps.h"
+#include "esp_clk_tree.h"
 #include "esp_pm.h"
 #include "esp_attr.h"
 #include "esp_private/gdma.h"
@@ -180,6 +181,7 @@ typedef struct {
 
 struct rmt_rx_channel_t {
     rmt_channel_t base;                  // channel base class
+    uint32_t filter_clock_resolution_hz; // filter clock resolution, in Hz
     size_t mem_off;                      // starting offset to fetch the symbols in RMT-MEM
     size_t ping_pong_symbols;            // ping-pong size (half of the RMT channel memory)
     rmt_rx_done_callback_t on_recv_done; // callback, invoked on receive done

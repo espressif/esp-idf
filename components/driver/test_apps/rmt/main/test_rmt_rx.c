@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -24,13 +24,13 @@
 typedef struct {
     TaskHandle_t task_to_notify;
     size_t received_symbol_num;
-} test_nec_rx_user_data_t;
+} test_rx_user_data_t;
 
 TEST_RMT_CALLBACK_ATTR
 static bool test_rmt_rx_done_callback(rmt_channel_handle_t channel, const rmt_rx_done_event_data_t *edata, void *user_data)
 {
     BaseType_t high_task_wakeup = pdFALSE;
-    test_nec_rx_user_data_t *test_user_data = (test_nec_rx_user_data_t *)user_data;
+    test_rx_user_data_t *test_user_data = (test_rx_user_data_t *)user_data;
     rmt_symbol_word_t *remote_codes = edata->received_symbols;
     esp_rom_printf("%u symbols decoded:\r\n", edata->num_symbols);
     for (size_t i = 0; i < edata->num_symbols; i++) {
@@ -45,7 +45,7 @@ static void test_rmt_rx_nec_carrier(size_t mem_block_symbols, bool with_dma, rmt
 {
     uint32_t const test_rx_buffer_symbols = 128;
     rmt_symbol_word_t *remote_codes = heap_caps_aligned_calloc(64, test_rx_buffer_symbols, sizeof(rmt_symbol_word_t),
-                                      MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA);
+                                                               MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA);
     TEST_ASSERT_NOT_NULL(remote_codes);
 
     rmt_rx_channel_config_t rx_channel_cfg = {
@@ -63,7 +63,7 @@ static void test_rmt_rx_nec_carrier(size_t mem_block_symbols, bool with_dma, rmt
     rmt_rx_event_callbacks_t cbs = {
         .on_recv_done = test_rmt_rx_done_callback,
     };
-    test_nec_rx_user_data_t test_user_data = {
+    test_rx_user_data_t test_user_data = {
         .task_to_notify = xTaskGetCurrentTaskHandle(),
     };
     TEST_ESP_OK(rmt_rx_register_event_callbacks(rx_channel, &cbs, &test_user_data));
@@ -200,4 +200,127 @@ TEST_CASE("rmt rx nec with carrier", "[rmt]")
 #if SOC_RMT_SUPPORT_DMA
     test_rmt_rx_nec_carrier(128, true, RMT_CLK_SRC_DEFAULT);
 #endif
+}
+
+TEST_RMT_CALLBACK_ATTR
+static bool test_rmt_received_done(rmt_channel_handle_t channel, const rmt_rx_done_event_data_t *edata, void *user_data)
+{
+    BaseType_t high_task_wakeup = pdFALSE;
+    test_rx_user_data_t *test_user_data = (test_rx_user_data_t *)user_data;
+    test_user_data->received_symbol_num += edata->num_symbols;
+    // when receive done, notify the task to check the received data
+    vTaskNotifyGiveFromISR(test_user_data->task_to_notify, &high_task_wakeup);
+    return high_task_wakeup == pdTRUE;
+}
+
+static void test_rmt_receive_filter(rmt_clock_source_t clk_src)
+{
+    uint32_t const test_rx_buffer_symbols = 32;
+    rmt_symbol_word_t *receive_user_buf = heap_caps_aligned_calloc(64, test_rx_buffer_symbols, sizeof(rmt_symbol_word_t),
+                                                                   MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA);
+    TEST_ASSERT_NOT_NULL(receive_user_buf);
+
+    rmt_rx_channel_config_t rx_channel_cfg = {
+        .clk_src = clk_src,
+        .resolution_hz = 1000000, // 1MHz, 1 tick = 1us
+        .mem_block_symbols = SOC_RMT_MEM_WORDS_PER_CHANNEL,
+        .gpio_num = TEST_RMT_GPIO_NUM_A,
+        .flags.io_loop_back = true, // the GPIO will act like a loopback
+    };
+    printf("install rx channel\r\n");
+    rmt_channel_handle_t rx_channel = NULL;
+    TEST_ESP_OK(rmt_new_rx_channel(&rx_channel_cfg, &rx_channel));
+
+    printf("register rx event callbacks\r\n");
+    rmt_rx_event_callbacks_t cbs = {
+        .on_recv_done = test_rmt_received_done,
+    };
+    test_rx_user_data_t test_user_data = {
+        .task_to_notify = xTaskGetCurrentTaskHandle(),
+        .received_symbol_num = 0,
+    };
+    TEST_ESP_OK(rmt_rx_register_event_callbacks(rx_channel, &cbs, &test_user_data));
+
+    // use TX channel to simulate the input signal
+    rmt_tx_channel_config_t tx_channel_cfg = {
+        .clk_src = clk_src,
+        .resolution_hz = 1000000, // 1MHz, 1 tick = 1us
+        .mem_block_symbols = SOC_RMT_MEM_WORDS_PER_CHANNEL,
+        .trans_queue_depth = 4,
+        .gpio_num = TEST_RMT_GPIO_NUM_A,
+        .flags.io_loop_back = true, // TX channel and RX channel will bounded to the same GPIO
+    };
+    printf("install tx channel\r\n");
+    rmt_channel_handle_t tx_channel = NULL;
+    TEST_ESP_OK(rmt_new_tx_channel(&tx_channel_cfg, &tx_channel));
+
+    printf("install a simple copy encoder\r\n");
+    rmt_encoder_handle_t copy_encoder = NULL;
+    rmt_copy_encoder_config_t encoder_cfg = {};
+    TEST_ESP_OK(rmt_new_copy_encoder(&encoder_cfg, &copy_encoder));
+    rmt_transmit_config_t transmit_config = {
+        .loop_count = 0, // no loop
+    };
+
+    printf("enable tx channel\r\n");
+    TEST_ESP_OK(rmt_enable(tx_channel));
+    printf("enable rx channel\r\n");
+    TEST_ESP_OK(rmt_enable(rx_channel));
+
+    rmt_receive_config_t rx_config = {
+        .signal_range_min_ns = 3000, // filter out the pulses shorter than 3us
+        .signal_range_max_ns = 12000000,
+    };
+    // ready to receive
+    TEST_ESP_OK(rmt_receive(rx_channel, receive_user_buf, test_rx_buffer_symbols * sizeof(rmt_symbol_word_t), &rx_config));
+
+    // generate short pulse of width 2us, should be filtered out
+    printf("send a short pulse\r\n");
+    rmt_symbol_word_t short_pulse = {
+        .level0 = 1,
+        .duration0 = 2, // pulse width 2us
+        .level1 = 0,
+        .duration1 = 1,
+    };
+    TEST_ESP_OK(rmt_transmit(tx_channel, copy_encoder, &short_pulse, sizeof(short_pulse), &transmit_config));
+    TEST_ASSERT_EQUAL(0, ulTaskNotifyTake(pdFALSE, pdMS_TO_TICKS(1000)));
+    printf("received %zu symbols\r\n", test_user_data.received_symbol_num);
+    TEST_ASSERT_EQUAL(0, test_user_data.received_symbol_num);
+
+    printf("send a long pulse\r\n");
+    // generate long pulse of width 10us, should be received
+    rmt_symbol_word_t long_pulse = {
+        .level0 = 1,
+        .duration0 = 10, // pulse width 10us
+        .level1 = 0,
+        .duration1 = 1,
+    };
+    TEST_ESP_OK(rmt_transmit(tx_channel, copy_encoder, &long_pulse, sizeof(long_pulse), &transmit_config));
+    TEST_ASSERT_NOT_EQUAL(0, ulTaskNotifyTake(pdFALSE, pdMS_TO_TICKS(1000)));
+    printf("received %zu symbols\r\n", test_user_data.received_symbol_num);
+    TEST_ASSERT_EQUAL(1, test_user_data.received_symbol_num);
+
+    // verify the received data
+    printf("{%d:%d},{%d:%d}\r\n", receive_user_buf[0].level0, receive_user_buf[0].duration0, receive_user_buf[0].level1, receive_user_buf[0].duration1);
+    TEST_ASSERT_EQUAL(1, receive_user_buf[0].level0);
+    TEST_ASSERT_INT_WITHIN(2, 10, receive_user_buf[0].duration0);
+    TEST_ASSERT_EQUAL(0, receive_user_buf[0].level1);
+
+    printf("disable tx and rx channels\r\n");
+    TEST_ESP_OK(rmt_disable(tx_channel));
+    TEST_ESP_OK(rmt_disable(rx_channel));
+    printf("delete channels and encoder\r\n");
+    TEST_ESP_OK(rmt_del_channel(rx_channel));
+    TEST_ESP_OK(rmt_del_channel(tx_channel));
+    TEST_ESP_OK(rmt_del_encoder(copy_encoder));
+    free(receive_user_buf);
+}
+
+TEST_CASE("rmt rx filter functionality", "[rmt]")
+{
+    // test width different clock sources
+    rmt_clock_source_t clk_srcs[] = SOC_RMT_CLKS;
+    for (size_t i = 0; i < sizeof(clk_srcs) / sizeof(clk_srcs[0]); i++) {
+        test_rmt_receive_filter(clk_srcs[i]);
+    }
 }
