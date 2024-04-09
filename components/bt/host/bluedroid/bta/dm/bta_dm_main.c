@@ -59,6 +59,7 @@ const tBTA_DM_ACTION bta_dm_action[BTA_DM_MAX_EVT] = {
     bta_dm_disable,                         /* BTA_DM_API_DISABLE_EVT */
     bta_dm_set_dev_name,                    /* BTA_DM_API_SET_NAME_EVT */
     bta_dm_get_dev_name,                    /* BTA_DM_API_GET_NAME_EVT */
+    bta_dm_send_vendor_hci,                 /* BTA_DM_API_SEND_VENDOR_HCI_CMD_EVT */
 #if (CLASSIC_BT_INCLUDED == TRUE)
     bta_dm_config_eir,                      /* BTA_DM_API_CONFIG_EIR_EVT */
     bta_dm_set_acl_pkt_types,               /* BTA_DM_API_SET_ACL_PKT_TYPES_EVT */
