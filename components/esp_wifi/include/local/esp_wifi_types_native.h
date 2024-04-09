@@ -127,6 +127,7 @@ typedef struct wifi_csi_info_t {
     uint8_t *hdr;              /**< header of the wifi packet */
     uint8_t *payload;          /**< payload of the wifi packet */
     uint16_t payload_len;      /**< payload len of the wifi packet */
+    uint16_t rx_seq;           /**< rx sequence number of the wifi packet */
 } wifi_csi_info_t;
 
 #ifdef __cplusplus

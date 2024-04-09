@@ -608,7 +608,7 @@ esp_err_t esp_wifi_get_ps(wifi_ps_type_t *type);
   *            if CONFIG_SOC_WIFI_HE_SUPPORT and band is 5G, the default protocol is (WIFI_PROTOCOL_11A|WIFI_PROTOCOL_11N|WIFI_PROTOCOL_11AC|WIFI_PROTOCOL_11AX).
   *
   * @attention 2.4G: Support 802.11b or 802.11bg or 802.11bgn or 802.11bgnax or LR mode
-  *            5G: Support 802.11a or 802.11an or 802.11anac or 802.11anacax or LR mode
+  *            5G: Support 802.11a or 802.11an or 802.11anac or 802.11anacax
   *
   * @param     ifx  interfaces
   * @param     protocol_bitmap  WiFi protocol bitmap

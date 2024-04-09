@@ -123,10 +123,6 @@ config SOC_BT_SUPPORTED
     bool
     default y
 
-config SOC_PHY_SUPPORTED
-    bool
-    default y
-
 config SOC_XTAL_SUPPORT_40M
     bool
     default y
@@ -671,6 +667,38 @@ config SOC_RCC_IS_INDEPENDENT
     bool
     default y
 
+config SOC_WIFI_HW_TSF
+    bool
+    default y
+
+config SOC_WIFI_FTM_SUPPORT
+    bool
+    default n
+
+config SOC_WIFI_GCMP_SUPPORT
+    bool
+    default y
+
+config SOC_WIFI_WAPI_SUPPORT
+    bool
+    default y
+
+config SOC_WIFI_CSI_SUPPORT
+    bool
+    default y
+
+config SOC_WIFI_MESH_SUPPORT
+    bool
+    default y
+
+config SOC_WIFI_HE_SUPPORT
+    bool
+    default y
+
+config SOC_WIFI_HE_SUPPORT_5G
+    bool
+    default y
+
 config SOC_BLE_SUPPORTED
     bool
     default y
@@ -704,37 +732,5 @@ config SOC_BLUFI_SUPPORTED
     default y
 
 config SOC_BLE_MULTI_CONN_OPTIMIZATION
-    bool
-    default y
-
-config SOC_WIFI_HW_TSF
-    bool
-    default y
-
-config SOC_WIFI_FTM_SUPPORT
-    bool
-    default n
-
-config SOC_WIFI_GCMP_SUPPORT
-    bool
-    default y
-
-config SOC_WIFI_WAPI_SUPPORT
-    bool
-    default y
-
-config SOC_WIFI_CSI_SUPPORT
-    bool
-    default y
-
-config SOC_WIFI_MESH_SUPPORT
-    bool
-    default y
-
-config SOC_WIFI_HE_SUPPORT
-    bool
-    default y
-
-config SOC_WIFI_HE_SUPPORT_5G
     bool
     default y
