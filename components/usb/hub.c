@@ -40,6 +40,7 @@ implement the bare minimum to control the root HCD port.
 
 #define ENUM_CTRL_TRANSFER_MAX_DATA_LEN             CONFIG_USB_HOST_CONTROL_TRANSFER_MAX_SIZE
 #define ENUM_DEV_ADDR                               1       // Device address used in enumeration
+#define ENUM_DEV_UID                                1       // Unique ID for device connected to root port
 #define ENUM_CONFIG_INDEX_DEFAULT                   0       // Index used to get the first configuration descriptor of the device
 #define ENUM_SHORT_DESC_REQ_LEN                     8       // Number of bytes to request when getting a short descriptor (just enough to get bMaxPacketSize0 or wTotalLength)
 #define ENUM_WORST_CASE_MPS_LS                      8       // The worst case MPS of EP0 for a LS device
@@ -63,9 +64,8 @@ implement the bare minimum to control the root HCD port.
 typedef enum {
     ROOT_PORT_STATE_NOT_POWERED,    /**< Root port initialized and/or not powered */
     ROOT_PORT_STATE_POWERED,        /**< Root port is powered, device is not connected */
-    ROOT_PORT_STATE_ENUM,           /**< A device has been connected to the root port and is undergoing enumeration */
-    ROOT_PORT_STATE_ENUM_FAILED,    /**< Enumeration of a connected device has failed. Waiting for that device to be disconnected */
-    ROOT_PORT_ACTIVE,               /**< The connected device was enumerated and port is active */
+    ROOT_PORT_STATE_DISABLED,       /**< A device is connected but is disabled (i.e., not reset, no SOFs are sent) */
+    ROOT_PORT_STATE_ENABLED,        /**< A device is connected, port has been reset, SOFs are sent */
     ROOT_PORT_STATE_RECOVERY,       /**< Root port encountered an error and needs to be recovered */
 } root_port_state_t;
 
@@ -159,7 +159,6 @@ typedef struct {
     urb_t *urb;                     /**< URB used for enumeration control transfers. Max data length of ENUM_CTRL_TRANSFER_MAX_DATA_LEN */
     // Initialized at start of a particular enumeration
     usb_device_handle_t dev_hdl;    /**< Handle of device being enumerated */
-    hcd_pipe_handle_t pipe;         /**< Default pipe handle of the device being enumerated */
     // Updated during enumeration
     enum_stage_t stage;             /**< Current enumeration stage */
     int expect_num_bytes;           /**< Expected number of bytes for IN transfers stages. Set to 0 for OUT transfer */
@@ -192,7 +191,7 @@ typedef struct {
     } dynamic;
     // Single thread members don't require a critical section so long as they are never accessed from multiple threads
     struct {
-        usb_device_handle_t root_dev_hdl;   // Indicates if an enumerated device is connected to the root port
+        unsigned int root_dev_uid;  // UID of the device connected to root port. 0 if no device connected
         enum_ctrl_t enum_ctrl;
     } single_thread;
     // Constant members do no change after installation thus do not require a critical section
@@ -245,40 +244,26 @@ const char *HUB_DRIVER_TAG = "HUB";
 static bool root_port_callback(hcd_port_handle_t port_hdl, hcd_port_event_t port_event, void *user_arg, bool in_isr);
 
 /**
- * @brief HCD pipe callback for the default pipe of the device under enumeration
+ * @brief Control transfer callback used for enumeration
  *
- * - This callback is called from the context of the HCD, so any event handling should be deferred to hub_process()
- * - This callback needs to call proc_req_cb to ensure that hub_process() gets a chance to run
- *
- * @param pipe_hdl HCD pipe handle
- * @param pipe_event Pipe event
- * @param user_arg Callback argument
- * @param in_isr Whether callback is in an ISR context
- * @return Whether a yield is required
+ * @param transfer Transfer object
  */
-static bool enum_dflt_pipe_callback(hcd_pipe_handle_t pipe_hdl, hcd_pipe_event_t pipe_event, void *user_arg, bool in_isr);
+static void enum_transfer_callback(usb_transfer_t *transfer);
 
 // ------------------------------------------------- Enum Functions ----------------------------------------------------
 
 static bool enum_stage_start(enum_ctrl_t *enum_ctrl)
 {
-    // Get the speed of the device, and set the enum MPS to the worst case size for now
-    usb_speed_t speed;
-    if (hcd_port_get_speed(p_hub_driver_obj->constant.root_port_hdl, &speed) != ESP_OK) {
-        return false;
-    }
-    enum_ctrl->bMaxPacketSize0 = (speed == USB_SPEED_LOW) ? ENUM_WORST_CASE_MPS_LS : ENUM_WORST_CASE_MPS_FS;
-    // Try to add the device to USBH
-    usb_device_handle_t enum_dev_hdl;
-    hcd_pipe_handle_t enum_dflt_pipe_hdl;
-    // We use NULL as the parent device to indicate the Root Hub port 1. We currently only support a single device
-    if (usbh_hub_add_dev(p_hub_driver_obj->constant.root_port_hdl, speed, &enum_dev_hdl, &enum_dflt_pipe_hdl) != ESP_OK) {
-        return false;
-    }
-    // Set our own default pipe callback
-    ESP_ERROR_CHECK(hcd_pipe_update_callback(enum_dflt_pipe_hdl, enum_dflt_pipe_callback, NULL));
-    enum_ctrl->dev_hdl = enum_dev_hdl;
-    enum_ctrl->pipe = enum_dflt_pipe_hdl;
+    // Open the newly added device (at address 0)
+    ESP_ERROR_CHECK(usbh_devs_open(0, &p_hub_driver_obj->single_thread.enum_ctrl.dev_hdl));
+
+    // Get the speed of the device to set the initial MPS of EP0
+    usb_device_info_t dev_info;
+    ESP_ERROR_CHECK(usbh_dev_get_info(p_hub_driver_obj->single_thread.enum_ctrl.dev_hdl, &dev_info));
+    enum_ctrl->bMaxPacketSize0 = (dev_info.speed == USB_SPEED_LOW) ? ENUM_WORST_CASE_MPS_LS : ENUM_WORST_CASE_MPS_FS;
+
+    // Lock the device for enumeration. This allows us call usbh_dev_set_...() functions during enumeration
+    ESP_ERROR_CHECK(usbh_dev_enum_lock(p_hub_driver_obj->single_thread.enum_ctrl.dev_hdl));
 
     // Flag to gracefully exit the enumeration process if requested by the user in the enumeration filter cb
 #ifdef ENABLE_ENUM_FILTER_CALLBACK
@@ -445,7 +430,7 @@ static bool enum_stage_transfer(enum_ctrl_t *enum_ctrl)
         abort();
         break;
     }
-    if (hcd_urb_enqueue(enum_ctrl->pipe, enum_ctrl->urb) != ESP_OK) {
+    if (usbh_dev_submit_ctrl_urb(enum_ctrl->dev_hdl, enum_ctrl->urb) != ESP_OK) {
         ESP_LOGE(HUB_DRIVER_TAG, "Failed to submit: %s", enum_stage_strings[enum_ctrl->stage]);
         return false;
     }
@@ -470,18 +455,10 @@ static bool enum_stage_wait(enum_ctrl_t *enum_ctrl)
 
 static bool enum_stage_transfer_check(enum_ctrl_t *enum_ctrl)
 {
-    // Dequeue the URB
-    urb_t *dequeued_enum_urb = hcd_urb_dequeue(enum_ctrl->pipe);
-    assert(dequeued_enum_urb == enum_ctrl->urb);
-
     // Check transfer status
-    usb_transfer_t *transfer = &dequeued_enum_urb->transfer;
+    usb_transfer_t *transfer = &enum_ctrl->urb->transfer;
     if (transfer->status != USB_TRANSFER_STATUS_COMPLETED) {
         ESP_LOGE(HUB_DRIVER_TAG, "Bad transfer status %d: %s", transfer->status, enum_stage_strings[enum_ctrl->stage]);
-        if (transfer->status == USB_TRANSFER_STATUS_STALL) {
-            // EP stalled, clearing the pipe to execute further stages
-            ESP_ERROR_CHECK(hcd_pipe_command(enum_ctrl->pipe, HCD_PIPE_CMD_CLEAR));
-        }
         return false;
     }
     // Check IN transfer returned the expected correct number of bytes
@@ -508,8 +485,8 @@ static bool enum_stage_transfer_check(enum_ctrl_t *enum_ctrl)
             ret = false;
             break;
         }
-        // Update and save the MPS of the default pipe
-        if (hcd_pipe_update_mps(enum_ctrl->pipe, device_desc->bMaxPacketSize0) != ESP_OK) {
+        // Update and save the MPS of the EP0
+        if (usbh_dev_set_ep0_mps(enum_ctrl->dev_hdl, device_desc->bMaxPacketSize0) != ESP_OK) {
             ESP_LOGE(HUB_DRIVER_TAG, "Failed to update MPS");
             ret = false;
             break;
@@ -520,16 +497,15 @@ static bool enum_stage_transfer_check(enum_ctrl_t *enum_ctrl)
         break;
     }
     case ENUM_STAGE_CHECK_ADDR: {
-        // Update the pipe and device's address, and fill the address into the device object
-        ESP_ERROR_CHECK(hcd_pipe_update_dev_addr(enum_ctrl->pipe, ENUM_DEV_ADDR));
-        ESP_ERROR_CHECK(usbh_hub_enum_fill_dev_addr(enum_ctrl->dev_hdl, ENUM_DEV_ADDR));
+        // Update the device's address
+        ESP_ERROR_CHECK(usbh_dev_set_addr(enum_ctrl->dev_hdl, ENUM_DEV_ADDR));
         ret = true;
         break;
     }
     case ENUM_STAGE_CHECK_FULL_DEV_DESC: {
-        // Fill device descriptor into the device object
+        // Set the device's descriptor
         const usb_device_desc_t *device_desc = (const usb_device_desc_t *)(transfer->data_buffer + sizeof(usb_setup_packet_t));
-        ESP_ERROR_CHECK(usbh_hub_enum_fill_dev_desc(enum_ctrl->dev_hdl, device_desc));
+        ESP_ERROR_CHECK(usbh_dev_set_desc(enum_ctrl->dev_hdl, device_desc));
         enum_ctrl->iManufacturer = device_desc->iManufacturer;
         enum_ctrl->iProduct = device_desc->iProduct;
         enum_ctrl->iSerialNumber = device_desc->iSerialNumber;
@@ -558,10 +534,10 @@ static bool enum_stage_transfer_check(enum_ctrl_t *enum_ctrl)
         break;
     }
     case ENUM_STAGE_CHECK_FULL_CONFIG_DESC: {
-        // Fill configuration descriptor into the device object
+        // Set the device's configuration descriptor
         const usb_config_desc_t *config_desc = (usb_config_desc_t *)(transfer->data_buffer + sizeof(usb_setup_packet_t));
         enum_ctrl->bConfigurationValue = config_desc->bConfigurationValue;
-        ESP_ERROR_CHECK(usbh_hub_enum_fill_config_desc(enum_ctrl->dev_hdl, config_desc));
+        ESP_ERROR_CHECK(usbh_dev_set_config_desc(enum_ctrl->dev_hdl, config_desc));
         ret = true;
         break;
     }
@@ -638,7 +614,7 @@ static bool enum_stage_transfer_check(enum_ctrl_t *enum_ctrl)
             } else {    // ENUM_STAGE_CHECK_FULL_PROD_STR_DESC
                 select = 2;
             }
-            ESP_ERROR_CHECK(usbh_hub_enum_fill_str_desc(enum_ctrl->dev_hdl, str_desc, select));
+            ESP_ERROR_CHECK(usbh_dev_set_str_desc(enum_ctrl->dev_hdl, str_desc, select));
             ret = true;
             break;
         }
@@ -653,43 +629,27 @@ static bool enum_stage_transfer_check(enum_ctrl_t *enum_ctrl)
 
 static void enum_stage_cleanup(enum_ctrl_t *enum_ctrl)
 {
-    // We currently only support a single device connected to the root port. Move the device handle from enum to root
-    HUB_DRIVER_ENTER_CRITICAL();
-    p_hub_driver_obj->dynamic.root_port_state = ROOT_PORT_ACTIVE;
-    HUB_DRIVER_EXIT_CRITICAL();
-    p_hub_driver_obj->single_thread.root_dev_hdl = enum_ctrl->dev_hdl;
-    usb_device_handle_t dev_hdl = enum_ctrl->dev_hdl;
+    // Unlock the device as we are done with the enumeration
+    ESP_ERROR_CHECK(usbh_dev_enum_unlock(enum_ctrl->dev_hdl));
+    // Propagate a new device event
+    ESP_ERROR_CHECK(usbh_devs_new_dev_event(enum_ctrl->dev_hdl));
+    // We are done with using the device. Close it.
+    ESP_ERROR_CHECK(usbh_devs_close(enum_ctrl->dev_hdl));
     // Clear values in enum_ctrl
     enum_ctrl->dev_hdl = NULL;
-    enum_ctrl->pipe = NULL;
-    // Update device object after enumeration is done
-    ESP_ERROR_CHECK(usbh_hub_enum_done(dev_hdl));
 }
 
 static void enum_stage_cleanup_failed(enum_ctrl_t *enum_ctrl)
 {
-    // Enumeration failed. Clear the enum device handle and pipe
     if (enum_ctrl->dev_hdl) {
-        // If enumeration failed due to a port event, we need to Halt, flush, and dequeue enum default pipe in case there
-        // was an in-flight URB.
-        ESP_ERROR_CHECK(hcd_pipe_command(enum_ctrl->pipe, HCD_PIPE_CMD_HALT));
-        ESP_ERROR_CHECK(hcd_pipe_command(enum_ctrl->pipe, HCD_PIPE_CMD_FLUSH));
-        hcd_urb_dequeue(enum_ctrl->pipe);   // This could return NULL if there
-        ESP_ERROR_CHECK(usbh_hub_enum_failed(enum_ctrl->dev_hdl)); // Free the underlying device object first before recovering the port
+        // Close the device and unlock it as we done with enumeration
+        ESP_ERROR_CHECK(usbh_dev_enum_unlock(enum_ctrl->dev_hdl));
+        ESP_ERROR_CHECK(usbh_devs_close(enum_ctrl->dev_hdl));
+        // We allow this to fail in case the device object was already freed
+        usbh_devs_remove(ENUM_DEV_UID);
     }
     // Clear values in enum_ctrl
     enum_ctrl->dev_hdl = NULL;
-    enum_ctrl->pipe = NULL;
-    HUB_DRIVER_ENTER_CRITICAL();
-    // Enum could have failed due to a port error. If so, we need to trigger a port recovery
-    if (p_hub_driver_obj->dynamic.root_port_state == ROOT_PORT_STATE_RECOVERY) {
-        p_hub_driver_obj->dynamic.port_reqs |= PORT_REQ_RECOVER;
-        p_hub_driver_obj->dynamic.flags.actions |= HUB_DRIVER_FLAG_ACTION_PORT_REQ;
-    } else {
-        // Otherwise, we move to the enum failed state and wait for the device to disconnect
-        p_hub_driver_obj->dynamic.root_port_state = ROOT_PORT_STATE_ENUM_FAILED;
-    }
-    HUB_DRIVER_EXIT_CRITICAL();
 }
 
 static enum_stage_t get_next_stage(enum_stage_t old_stage, enum_ctrl_t *enum_ctrl)
@@ -803,13 +763,13 @@ static bool root_port_callback(hcd_port_handle_t port_hdl, hcd_port_event_t port
     return p_hub_driver_obj->constant.proc_req_cb(USB_PROC_REQ_SOURCE_HUB, in_isr, p_hub_driver_obj->constant.proc_req_cb_arg);
 }
 
-static bool enum_dflt_pipe_callback(hcd_pipe_handle_t pipe_hdl, hcd_pipe_event_t pipe_event, void *user_arg, bool in_isr)
+static void enum_transfer_callback(usb_transfer_t *transfer)
 {
-    // Note: This callback may have triggered when a failed enumeration is already cleaned up (e.g., due to a failed port reset)
+    // We simply trigger a processing request to handle the completed enumeration control transfer
     HUB_DRIVER_ENTER_CRITICAL_SAFE();
     p_hub_driver_obj->dynamic.flags.actions |= HUB_DRIVER_FLAG_ACTION_ENUM_EVENT;
     HUB_DRIVER_EXIT_CRITICAL_SAFE();
-    return p_hub_driver_obj->constant.proc_req_cb(USB_PROC_REQ_SOURCE_HUB, in_isr, p_hub_driver_obj->constant.proc_req_cb_arg);
+    p_hub_driver_obj->constant.proc_req_cb(USB_PROC_REQ_SOURCE_HUB, false, p_hub_driver_obj->constant.proc_req_cb_arg);
 }
 
 // ---------------------- Handlers -------------------------
@@ -822,17 +782,32 @@ static void root_port_handle_events(hcd_port_handle_t root_port_hdl)
         // Nothing to do
         break;
     case HCD_PORT_EVENT_CONNECTION: {
-        if (hcd_port_command(root_port_hdl, HCD_PORT_CMD_RESET) == ESP_OK) {
-            ESP_LOGD(HUB_DRIVER_TAG, "Root port reset");
-            // Start enumeration
-            HUB_DRIVER_ENTER_CRITICAL();
-            p_hub_driver_obj->dynamic.flags.actions |= HUB_DRIVER_FLAG_ACTION_ENUM_EVENT;
-            p_hub_driver_obj->dynamic.root_port_state = ROOT_PORT_STATE_ENUM;
-            HUB_DRIVER_EXIT_CRITICAL();
-            p_hub_driver_obj->single_thread.enum_ctrl.stage = ENUM_STAGE_START;
-        } else {
+        if (hcd_port_command(root_port_hdl, HCD_PORT_CMD_RESET) != ESP_OK) {
             ESP_LOGE(HUB_DRIVER_TAG, "Root port reset failed");
+            goto reset_err;
         }
+        ESP_LOGD(HUB_DRIVER_TAG, "Root port reset");
+        usb_speed_t speed;
+        if (hcd_port_get_speed(p_hub_driver_obj->constant.root_port_hdl, &speed) != ESP_OK) {
+            goto new_dev_err;
+        }
+        // Allocate a new device. We use a fixed ENUM_DEV_UID for now since we only support a single device
+        if (usbh_devs_add(ENUM_DEV_UID, speed, p_hub_driver_obj->constant.root_port_hdl) != ESP_OK) {
+            ESP_LOGE(HUB_DRIVER_TAG, "Failed to add device");
+            goto new_dev_err;
+        }
+        p_hub_driver_obj->single_thread.root_dev_uid = ENUM_DEV_UID;
+        // Start enumeration
+        HUB_DRIVER_ENTER_CRITICAL();
+        p_hub_driver_obj->dynamic.flags.actions |= HUB_DRIVER_FLAG_ACTION_ENUM_EVENT;
+        p_hub_driver_obj->dynamic.root_port_state = ROOT_PORT_STATE_ENABLED;
+        HUB_DRIVER_EXIT_CRITICAL();
+        p_hub_driver_obj->single_thread.enum_ctrl.stage = ENUM_STAGE_START;
+        break;
+new_dev_err:
+        // We allow this to fail in case a disconnect/port error happens while disabling.
+        hcd_port_command(p_hub_driver_obj->constant.root_port_hdl, HCD_PORT_CMD_DISABLE);
+reset_err:
         break;
     }
     case HCD_PORT_EVENT_DISCONNECTION:
@@ -842,18 +817,13 @@ static void root_port_handle_events(hcd_port_handle_t root_port_hdl)
         HUB_DRIVER_ENTER_CRITICAL();
         switch (p_hub_driver_obj->dynamic.root_port_state) {
         case ROOT_PORT_STATE_POWERED: // This occurred before enumeration
-        case ROOT_PORT_STATE_ENUM_FAILED: // This occurred after a failed enumeration.
-            // Therefore, there's no device and we can go straight to port recovery
+        case ROOT_PORT_STATE_DISABLED: // This occurred after the device has already been disabled
+            // Therefore, there's no device object to clean up, and we can go straight to port recovery
             p_hub_driver_obj->dynamic.port_reqs |= PORT_REQ_RECOVER;
             p_hub_driver_obj->dynamic.flags.actions |= HUB_DRIVER_FLAG_ACTION_PORT_REQ;
             break;
-        case ROOT_PORT_STATE_ENUM:
-            // This occurred during enumeration. Therefore, we need to cleanup the failed enumeration
-            p_hub_driver_obj->dynamic.flags.actions |= HUB_DRIVER_FLAG_ACTION_ENUM_EVENT;
-            p_hub_driver_obj->single_thread.enum_ctrl.stage = ENUM_STAGE_CLEANUP_FAILED;
-            break;
-        case ROOT_PORT_ACTIVE:
-            // There was an enumerated device. We need to indicate to USBH that the device is gone
+        case ROOT_PORT_STATE_ENABLED:
+            // There is an enabled (active) device. We need to indicate to USBH that the device is gone
             pass_event_to_usbh = true;
             break;
         default:
@@ -863,7 +833,10 @@ static void root_port_handle_events(hcd_port_handle_t root_port_hdl)
         p_hub_driver_obj->dynamic.root_port_state = ROOT_PORT_STATE_RECOVERY;
         HUB_DRIVER_EXIT_CRITICAL();
         if (pass_event_to_usbh) {
-            ESP_ERROR_CHECK(usbh_hub_dev_gone(p_hub_driver_obj->single_thread.root_dev_hdl));
+            // The port must have a device object
+            assert(p_hub_driver_obj->single_thread.root_dev_uid != 0);
+            // We allow this to fail in case the device object was already freed
+            usbh_devs_remove(p_hub_driver_obj->single_thread.root_dev_uid);
         }
         break;
     }
@@ -955,7 +928,6 @@ static void enum_handle_events(void)
         stage_pass = true;
         break;
     default:
-        // Note: Don't abort here. The enum_dflt_pipe_callback() can trigger a HUB_DRIVER_FLAG_ACTION_ENUM_EVENT after a cleanup.
         stage_pass = true;
         break;
     }
@@ -977,18 +949,22 @@ static void enum_handle_events(void)
 
 // ---------------------------------------------- Hub Driver Functions -------------------------------------------------
 
-esp_err_t hub_install(hub_config_t *hub_config)
+esp_err_t hub_install(hub_config_t *hub_config, void **client_ret)
 {
     HUB_DRIVER_ENTER_CRITICAL();
     HUB_DRIVER_CHECK_FROM_CRIT(p_hub_driver_obj == NULL, ESP_ERR_INVALID_STATE);
     HUB_DRIVER_EXIT_CRITICAL();
+    esp_err_t ret;
+
     // Allocate Hub driver object
     hub_driver_t *hub_driver_obj = heap_caps_calloc(1, sizeof(hub_driver_t), MALLOC_CAP_DEFAULT);
     urb_t *enum_urb = urb_alloc(sizeof(usb_setup_packet_t) + ENUM_CTRL_TRANSFER_MAX_DATA_LEN, 0);
     if (hub_driver_obj == NULL || enum_urb == NULL) {
         return ESP_ERR_NO_MEM;
     }
-    esp_err_t ret;
+    enum_urb->usb_host_client = (void *)hub_driver_obj;
+    enum_urb->transfer.callback = enum_transfer_callback;
+
     // Install HCD port
     hcd_port_config_t port_config = {
         .fifo_bias = HUB_ROOT_HCD_PORT_FIFO_BIAS,
@@ -1001,6 +977,7 @@ esp_err_t hub_install(hub_config_t *hub_config)
     if (ret != ESP_OK) {
         goto err;
     }
+
     // Initialize Hub driver object
     hub_driver_obj->single_thread.enum_ctrl.stage = ENUM_STAGE_NONE;
     hub_driver_obj->single_thread.enum_ctrl.urb = enum_urb;
@@ -1020,6 +997,9 @@ esp_err_t hub_install(hub_config_t *hub_config)
     }
     p_hub_driver_obj = hub_driver_obj;
     HUB_DRIVER_EXIT_CRITICAL();
+
+    // Write-back client_ret pointer
+    *client_ret = (void *)hub_driver_obj;
     ret = ESP_OK;
 
     return ret;
@@ -1081,31 +1061,31 @@ esp_err_t hub_root_stop(void)
     return ret;
 }
 
-esp_err_t hub_dev_is_free(uint8_t dev_addr)
+esp_err_t hub_port_recycle(unsigned int dev_uid)
 {
-    assert(dev_addr == ENUM_DEV_ADDR);
-    assert(p_hub_driver_obj->single_thread.root_dev_hdl);
-    // Device is free, we can now request its port be recycled
-    hcd_port_state_t port_state = hcd_port_get_state(p_hub_driver_obj->constant.root_port_hdl);
-    p_hub_driver_obj->single_thread.root_dev_hdl = NULL;
+    if (dev_uid == p_hub_driver_obj->single_thread.root_dev_uid) {
+        // Device is free, we can now request its port be recycled
+        hcd_port_state_t port_state = hcd_port_get_state(p_hub_driver_obj->constant.root_port_hdl);
+        p_hub_driver_obj->single_thread.root_dev_uid = 0;
+        HUB_DRIVER_ENTER_CRITICAL();
+        // How the port is recycled will depend on the port's state
+        switch (port_state) {
+        case HCD_PORT_STATE_ENABLED:
+            p_hub_driver_obj->dynamic.port_reqs |= PORT_REQ_DISABLE;
+            break;
+        case HCD_PORT_STATE_RECOVERY:
+            p_hub_driver_obj->dynamic.port_reqs |= PORT_REQ_RECOVER;
+            break;
+        default:
+            abort();    // Should never occur
+            break;
+        }
+        p_hub_driver_obj->dynamic.flags.actions |= HUB_DRIVER_FLAG_ACTION_PORT_REQ;
+        HUB_DRIVER_EXIT_CRITICAL();
 
-    HUB_DRIVER_ENTER_CRITICAL();
-    // How the port is recycled will depend on the port's state
-    switch (port_state) {
-    case HCD_PORT_STATE_ENABLED:
-        p_hub_driver_obj->dynamic.port_reqs |= PORT_REQ_DISABLE;
-        break;
-    case HCD_PORT_STATE_RECOVERY:
-        p_hub_driver_obj->dynamic.port_reqs |= PORT_REQ_RECOVER;
-        break;
-    default:
-        abort();    // Should never occur
-        break;
+        p_hub_driver_obj->constant.proc_req_cb(USB_PROC_REQ_SOURCE_HUB, false, p_hub_driver_obj->constant.proc_req_cb_arg);
     }
-    p_hub_driver_obj->dynamic.flags.actions |= HUB_DRIVER_FLAG_ACTION_PORT_REQ;
-    HUB_DRIVER_EXIT_CRITICAL();
 
-    p_hub_driver_obj->constant.proc_req_cb(USB_PROC_REQ_SOURCE_HUB, false, p_hub_driver_obj->constant.proc_req_cb_arg);
     return ESP_OK;
 }
 
