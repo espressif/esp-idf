@@ -25,7 +25,6 @@ api-guides/wifi.rst
 api-guides/bluetooth.rst
 api-guides/wireshark-user-guide.rst
 api-guides/esp-wifi-mesh.rst
-api-guides/core_dump.rst
 api-guides/inc/external-ram-esp32-notes.rst
 api-guides/dfu.rst
 api-guides/current-consumption-measurement-modules.rst
