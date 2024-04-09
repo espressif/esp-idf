@@ -1,6 +1,8 @@
 Cloud Frameworks
 ================
 
+:link_to_translation:`zh_CN:[中文]`
+
 {IDF_TARGET_NAME} supports multiple cloud frameworks using agents built on top of ESP-IDF. Here are the pointers to various supported cloud frameworks' agents and examples:
 
 
