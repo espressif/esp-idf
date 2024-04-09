@@ -96,6 +96,7 @@
 /components/esp_https_ota/            @esp-idf-codeowners/app-utilities
 /components/esp_https_server/         @esp-idf-codeowners/app-utilities
 /components/esp_hw_support/           @esp-idf-codeowners/system @esp-idf-codeowners/peripherals
+/components/esp_hw_support/lowpower/  @esp-idf-codeowners/power-management
 /components/esp_lcd/                  @esp-idf-codeowners/peripherals
 /components/esp_local_ctrl/           @esp-idf-codeowners/app-utilities
 /components/esp_mm/                   @esp-idf-codeowners/peripherals
