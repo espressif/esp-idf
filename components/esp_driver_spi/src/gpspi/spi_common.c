@@ -21,6 +21,7 @@
 #include "esp_private/spi_common_internal.h"
 #include "esp_private/spi_share_hw_ctrl.h"
 #include "esp_private/esp_cache_private.h"
+#include "esp_dma_utils.h"
 #include "hal/spi_hal.h"
 #include "hal/gpio_hal.h"
 #if CONFIG_IDF_TARGET_ESP32
@@ -285,8 +286,12 @@ esp_err_t spicommon_dma_desc_alloc(spi_dma_ctx_t *dma_ctx, int cfg_max_sz, int *
         dma_desc_ct = 1;    //default to 4k when max is not given
     }
 
-    dma_ctx->dmadesc_tx = heap_caps_aligned_alloc(DMA_DESC_MEM_ALIGN_SIZE, sizeof(spi_dma_desc_t) * dma_desc_ct, MALLOC_CAP_DMA);
-    dma_ctx->dmadesc_rx = heap_caps_aligned_alloc(DMA_DESC_MEM_ALIGN_SIZE, sizeof(spi_dma_desc_t) * dma_desc_ct, MALLOC_CAP_DMA);
+    esp_dma_mem_info_t dma_mem_info = {
+        .dma_alignment_bytes = DMA_DESC_MEM_ALIGN_SIZE,
+    };
+    esp_dma_capable_malloc(sizeof(spi_dma_desc_t) * dma_desc_ct, &dma_mem_info, (void*)&dma_ctx->dmadesc_tx, NULL);
+    esp_dma_capable_malloc(sizeof(spi_dma_desc_t) * dma_desc_ct, &dma_mem_info, (void*)&dma_ctx->dmadesc_rx, NULL);
+
     if (dma_ctx->dmadesc_tx == NULL || dma_ctx->dmadesc_rx == NULL) {
         if (dma_ctx->dmadesc_tx) {
             free(dma_ctx->dmadesc_tx);
@@ -875,6 +880,15 @@ cleanup:
     free(bus_ctx[host_id]);
     bus_ctx[host_id] = NULL;
     return err;
+}
+
+esp_err_t spi_bus_dma_memory_malloc(size_t size, void **out_ptr, uint32_t extra_heap_caps, size_t *actual_size)
+{
+    esp_dma_mem_info_t dma_mem_info = {
+        .extra_heap_caps = extra_heap_caps,
+        .dma_alignment_bytes = DMA_DESC_MEM_ALIGN_SIZE,
+    };
+    return esp_dma_capable_malloc(size, &dma_mem_info, out_ptr, actual_size);
 }
 
 const spi_bus_attr_t* spi_bus_get_attr(spi_host_device_t host_id)
