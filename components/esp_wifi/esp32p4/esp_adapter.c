@@ -53,6 +53,8 @@ extern void wifi_apb80m_request(void);
 extern void wifi_apb80m_release(void);
 #endif
 
+extern uint8_t *esp_extconn_get_mac(void);
+
 IRAM_ATTR void *wifi_malloc(size_t size)
 {
 #if CONFIG_SPIRAM_TRY_ALLOCATE_WIFI_LWIP
@@ -402,7 +404,21 @@ static void esp_log_write_wrapper(unsigned int level, const char *tag, const cha
 
 static esp_err_t esp_read_mac_wrapper(uint8_t *mac, unsigned int type)
 {
-    return ESP_FAIL;
+    if (mac == NULL) {
+        ESP_LOGE(TAG, "mac address param is NULL");
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    // get mac address from target
+    memcpy(mac, esp_extconn_get_mac(), 6);
+
+    if (type == ESP_MAC_WIFI_SOFTAP) {
+        mac[5] += 1;
+    }
+
+    ESP_LOGD(TAG, "%s MAC addr: " MACSTR, (type == ESP_MAC_WIFI_STA ? "STA" : "AP"), MAC2STR(mac));
+
+    return ESP_OK;
 }
 
 static int coex_init_wrapper(void)
