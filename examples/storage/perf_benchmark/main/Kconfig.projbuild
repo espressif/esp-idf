@@ -1,7 +1,27 @@
 menu "Performance Benchmark Example Configuration"
+    config EXAMPLE_TARGET_RW_SIZE
+        int "Target size for read/write (bytes)"
+        default 65536
+        help
+            This is the target size used for the benchmark,
+            it represents how much data will be transferred in each test.
+            (The actual size of the allocated buffer will be larger for "more than target size" cases.)
+            The test will test will show the performance of reading and writing
+            of both slightly more and slightly less than this size as well.
+            This will greatly affect the performance of the benchmark.
+            In general, the larger the rw size, the better the performance.
+            For FATFS, the best performance is achieved when the rw size
+            matches the cluster size or is at least a multiple of the sector size.
 
-    config EXAMPLE_USE_MEGABYTES
-        bool "Use megabytes instead of megabits"
+    config EXAMPLE_TEST_TRIES
+        int "Number of test tries"
+        default 10
+        help
+            The number of times to run the benchmark.
+            The average value will be displayed.
+
+    config EXAMPLE_USE_BYTES
+        bool "Use bytes instead of bits"
         default y
         help
             If this config item is set, the IO speed will be displayed in megabytes per second
@@ -28,11 +48,28 @@ menu "Performance Benchmark Example Configuration"
             help
                 If this config item is set, FATFS will be tested.
 
+        config EXAMPLE_FATFS_SPIFLASH_CLUSTER_SIZE
+            depends on EXAMPLE_TEST_SPIFLASH_FATFS
+            int "Cluster size for FATFS on internal flash"
+            default EXAMPLE_TARGET_RW_SIZE
+            help
+                The cluster size of the FATFS filesystem.
+                The cluster size must be a multiple of the sector size.
+                The default value is the same as the target read/write size.
+                The larger the cluster size, the better the performance,
+                but the more space will be wasted on the storage medium.
+
         config EXAMPLE_TEST_SPIFLASH_SPIFFS
             bool "Test SPIFFS"
             default y
             help
                 If this config item is set, SPIFFS will be tested.
+
+        config EXAMPLE_TEST_SPIFLASH_LITTLEFS
+            bool "Test LittleFS"
+            default y
+            help
+                If this config item is set, LittleFS will be tested.
 
     endmenu  # "Internal flash test config"
 
@@ -73,6 +110,23 @@ menu "Performance Benchmark Example Configuration"
             default y
             help
                 If this config item is set, FATFS will be tested.
+
+        config EXAMPLE_FATFS_SD_CARD_CLUSTER_SIZE
+            depends on EXAMPLE_TEST_SD_CARD_FATFS
+            int "Cluster size for FATFS on SD card"
+            default EXAMPLE_TARGET_RW_SIZE
+            help
+                The cluster size of the FATFS filesystem.
+                The cluster size must be a multiple of the sector size.
+                The default value is the same as the target read/write size.
+                The larger the cluster size, the better the performance,
+                but the more space will be wasted on the storage medium.
+
+        config EXAMPLE_TEST_SD_CARD_LITTLEFS
+            bool "Test LittleFS"
+            default y
+            help
+                If this config item is set, LittleFS will be tested.
 
         choice EXAMPLE_SD_CARD_FREQ_PICKER
             prompt "SD card frequency"

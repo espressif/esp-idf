@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -15,58 +15,37 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <sys/time.h>
+#include "esp_err.h"
 #include "esp_log.h"
 #include "esp_check.h"
 #include "esp_partition.h"
 #include "esp_vfs_fat.h"
 #include "esp_spiffs.h"
-#include "soc/soc_caps.h"
-#if SOC_SDMMC_HOST_SUPPORTED
-#include "driver/sdmmc_host.h"
-#endif
-#include "driver/sdspi_host.h"
-#include "driver/sdmmc_defs.h"
-#include "sdmmc_cmd.h"
 #include "wear_levelling.h"
 
+#include "esp_littlefs.h"
+
 #include "sdkconfig.h"
-#include "tests.h"
+#include "perf_benchmark_example_tests.h"
+#include "perf_benchmark_example_sd_utils.h"
 
 static const char *TAG = "example";
+#ifdef CONFIG_EXAMPLE_TEST_SPIFLASH
 static const char *flash_partition_label = "storage";
+#endif // CONFIG_EXAMPLE_TEST_SPIFLASH
 wl_handle_t s_wl_handle = WL_INVALID_HANDLE;
-sdmmc_host_t host_g;
-#ifdef CONFIG_EXAMPLE_USE_SDMMC
-sdmmc_slot_config_t slot_config_g;
-#else // CONFIG_EXAMPLE_USE_SDMMC
-sdspi_device_config_t slot_config_g;
-#endif // CONFIG_EXAMPLE_USE_SDSPI
 
-#ifdef CONFIG_EXAMPLE_SD_FREQ_PROBING
-#define EXAMPLE_SD_FREQ SDMMC_FREQ_PROBING
-#elif CONFIG_EXAMPLE_SD_FREQ_DEFAULT
-#define EXAMPLE_SD_FREQ SDMMC_FREQ_DEFAULT
-#elif CONFIG_EXAMPLE_SD_FREQ_HIGHSPEED
-#define EXAMPLE_SD_FREQ SDMMC_FREQ_HIGHSPEED
-#elif CONFIG_EXAMPLE_SD_FREQ_CUSTOM
-#define EXAMPLE_SD_FREQ CONFIG_EXAMPLE_SD_FREQ_CUSTOM_VAL
-#else
-#define EXAMPLE_SD_FREQ SDMMC_FREQ_DEFAULT
-#endif
-
-#ifdef CONFIG_EXAMPLE_USE_SDMMC
-void init_sd_config(sdmmc_host_t *out_host, sdmmc_slot_config_t *out_slot_config, int freq_khz);
-#else // CONFIG_EXAMPLE_USE_SDMMC
-void init_sd_config(sdmmc_host_t *out_host, sdspi_device_config_t *out_slot_config, int freq_khz);
-#endif // CONFIG_EXAMPLE_USE_SDSPI
 void test_spiflash_raw(void);
 void test_spiflash_fatfs(void);
 void test_spiflash_spiffs(void);
+void test_spiflash_littlefs(void);
 void test_sd_raw(void);
 void test_sd_fatfs(void);
+void test_sd_littlefs(void);
 
 void app_main(void)
 {
+    ESP_LOGI(TAG, "Starting benchmark test with target size %d bytes", CONFIG_EXAMPLE_TARGET_RW_SIZE);
 #ifdef CONFIG_EXAMPLE_TEST_SPIFLASH
     ESP_LOGI(TAG, "Internal flash test");
 
@@ -85,7 +64,12 @@ void app_main(void)
     test_spiflash_spiffs();
 #endif // CONFIG_EXAMPLE_TEST_SPIFLASH_SPIFFS
 
+#ifdef CONFIG_EXAMPLE_TEST_SPIFLASH_LITTLEFS
+    test_spiflash_littlefs();
+#endif // CONFIG_EXAMPLE_TEST_SPIFLASH_LITTLEFS
+
 #endif // CONFIG_EXAMPLE_TEST_SPIFLASH
+
 #ifdef CONFIG_EXAMPLE_TEST_SD_CARD
     ESP_LOGI(TAG, "SD card test");
 
@@ -102,9 +86,17 @@ void app_main(void)
     test_sd_fatfs();
 #endif // CONFIG_EXAMPLE_TEST_SD_CARD_FATFS
 
+/* SD card - LittleFS */
+#ifdef CONFIG_EXAMPLE_TEST_SD_CARD_LITTLEFS
+    test_sd_littlefs();
+#endif // CONFIG_EXAMPLE_TEST_SD_CARD_LITTLEFS
+
 #endif // CONFIG_EXAMPLE_TEST_SD_CARD
 }
 
+#if CONFIG_EXAMPLE_TEST_SPIFLASH
+
+#ifdef CONFIG_EXAMPLE_TEST_SPIFLASH_RAW
 void test_spiflash_raw(void)
 {
     esp_err_t ret = ESP_OK;
@@ -122,21 +114,26 @@ void test_spiflash_raw(void)
     }
     ESP_LOGI(TAG, "WL layer mounted");
 
-    spiflash_speed_test_raw_run();
+    spiflash_speed_test_raw_run(CONFIG_EXAMPLE_TEST_TRIES);
 
     ret = wl_unmount(s_wl_handle);
     ESP_ERROR_CHECK(ret);
     ESP_LOGI(TAG, "WL layer unmounted");
 }
+#endif // CONFIG_EXAMPLE_TEST_SPIFLASH_RAW
 
+#ifdef CONFIG_EXAMPLE_TEST_SPIFLASH_FATFS
 void test_spiflash_fatfs(void)
 {
     esp_err_t ret = ESP_OK;
-    ESP_LOGI(TAG, "Mounting FATFS partition...");
     esp_vfs_fat_sdmmc_mount_config_t mount_config_spiflash = {
         .format_if_mount_failed = true,
         .max_files = 5,
-        .allocation_unit_size = 16 * 1024};
+        .allocation_unit_size = CONFIG_EXAMPLE_FATFS_SPIFLASH_CLUSTER_SIZE,
+    };
+
+    ESP_LOGI(TAG, "Mounting FATFS partition, with cluster size %d bytes", mount_config_spiflash.allocation_unit_size);
+
     ret = esp_vfs_fat_spiflash_mount_rw_wl(FLASH_BASE_PATH, flash_partition_label, &mount_config_spiflash, &s_wl_handle);
     if (ret == ESP_OK) {
         ESP_LOGI(TAG, "FATFS mounted to %s", FLASH_BASE_PATH);
@@ -145,14 +142,16 @@ void test_spiflash_fatfs(void)
         ESP_ERROR_CHECK(ret);
     }
 
-    spiflash_speed_test_fs_run();
+    spiflash_speed_test_fatfs_run(CONFIG_EXAMPLE_TEST_TRIES);
 
     // Unregister FATFS and unmount storage partition
     ret = esp_vfs_fat_spiflash_unmount_rw_wl(FLASH_BASE_PATH, s_wl_handle);
     ESP_ERROR_CHECK(ret);
     ESP_LOGI(TAG, "FATFS partition unmounted");
 }
+#endif // CONFIG_EXAMPLE_TEST_SPIFLASH_FATFS
 
+#ifdef CONFIG_EXAMPLE_TEST_SPIFLASH_SPIFFS
 void test_spiflash_spiffs(void)
 {
     esp_err_t ret = ESP_OK;
@@ -180,69 +179,85 @@ void test_spiflash_spiffs(void)
         ESP_ERROR_CHECK(ret);
     }
 
-    spiflash_speed_test_fs_run();
+    spiflash_speed_test_spiffs_run(1); // if run multiple times, it will fail, because spiffs can't delete files
 
     // Unregister SPIFFS and unmount storage partition
     ret = esp_vfs_spiffs_unregister(conf.partition_label);
     ESP_ERROR_CHECK(ret);
     ESP_LOGI(TAG, "SPIFFS partition unmounted");
 }
+#endif // CONFIG_EXAMPLE_TEST_SPIFLASH_SPIFFS
 
+#ifdef CONFIG_EXAMPLE_TEST_SPIFLASH_LITTLEFS
+void test_spiflash_littlefs(void)
+{
+    esp_err_t ret = ESP_OK;
+    ESP_LOGI(TAG, "Mounting LittleFS partition...");
+    esp_vfs_littlefs_conf_t conf = {
+        .base_path = FLASH_BASE_PATH,
+        .partition_label = flash_partition_label,
+        .format_if_mount_failed = true,
+    };
+
+    // Use settings defined above to initialize and mount LittleFS filesystem.
+    // Note: esp_vfs_littlefs_register is an all-in-one convenience function.
+    ret = esp_vfs_littlefs_register(&conf);
+
+    if (ret == ESP_OK) {
+        ESP_LOGI(TAG, "LittleFS mounted to %s", FLASH_BASE_PATH);
+    } else {
+        if (ret == ESP_FAIL) {
+            ESP_LOGE(TAG, "Failed to mount or format filesystem");
+        } else if (ret == ESP_ERR_NOT_FOUND) {
+            ESP_LOGE(TAG, "Failed to find LittleFS partition");
+        } else {
+            ESP_LOGE(TAG, "Failed to initialize LittleFS (%s)", esp_err_to_name(ret));
+        }
+    }
+
+    spiflash_speed_test_littlefs_run(CONFIG_EXAMPLE_TEST_TRIES);
+
+    // Unregister LittleFS and unmount storage partition
+    ret = esp_vfs_littlefs_unregister(conf.partition_label);
+    ESP_ERROR_CHECK(ret);
+    ESP_LOGI(TAG, "LittleFS partition unmounted");
+}
+#endif // CONFIG_EXAMPLE_TEST_SPIFLASH_LITTLEFS
+#endif // CONFIG_EXAMPLE_TEST_SPIFLASH
+
+#ifdef CONFIG_EXAMPLE_TEST_SD_CARD
+
+#ifdef CONFIG_EXAMPLE_TEST_SD_CARD_RAW
 void test_sd_raw(void)
 {
     esp_err_t ret = ESP_OK;
     sdmmc_card_t *card;
 
     ESP_LOGI(TAG, "Mounting SD card - raw access");
-    card = (sdmmc_card_t *)malloc(sizeof(sdmmc_card_t));
-    if (card == NULL) {
-        ESP_LOGE(TAG, "Failed to allocate sdmmc_card_t structure");
-        ESP_ERROR_CHECK(ESP_ERR_NO_MEM);
-    }
-// Initialize the interface
-#ifdef CONFIG_EXAMPLE_USE_SDMMC
-    ret = sdmmc_host_init();
+    ret = init_sd_card(&card);
     ESP_ERROR_CHECK(ret);
-    ret = sdmmc_host_init_slot(SDMMC_HOST_SLOT_1, &slot_config_g);
-    ESP_ERROR_CHECK(ret);
-#elif CONFIG_EXAMPLE_USE_SDSPI // CONFIG_EXAMPLE_USE_SDMMC
-    int card_handle = -1;
-    ret = sdspi_host_init_device((const sdspi_device_config_t *)&slot_config_g, &card_handle);
-    ESP_ERROR_CHECK(ret);
-#endif // CONFIG_EXAMPLE_USE_SDSPI
 
-    ret = sdmmc_card_init(&host_g, card);
-    if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to initialize SD card (%s)", esp_err_to_name(ret));
-        ESP_LOGE(TAG, "If you were using SDMMC and switched to SPI reinsert the SD card or power cycle the board");
-        free(card);
-        ESP_ERROR_CHECK(ret);
-    }
-    ESP_LOGI(TAG, "SD card mounted - raw access");
-    sdmmc_card_print_info(stdout, card);
+    sdcard_speed_test_raw_run(card, CONFIG_EXAMPLE_TEST_TRIES);
 
-    sdcard_speed_test_raw_run(card);
-
-// Unmount SD card
-#ifdef CONFIG_EXAMPLE_USE_SDMMC
-    sdmmc_host_deinit();
-#else // CONFIG_EXAMPLE_USE_SDMMC
-    sdspi_host_deinit();
-#endif // CONFIG_EXAMPLE_USE_SDSPI
-    free(card);
+    deinit_sd_card(&card);
     ESP_LOGI(TAG, "SD card unmounted - raw access");
 }
+#endif // CONFIG_EXAMPLE_TEST_SD_CARD_RAW
 
+#ifdef CONFIG_EXAMPLE_TEST_SD_CARD_FATFS
 void test_sd_fatfs(void)
 {
     esp_err_t ret = ESP_OK;
     sdmmc_card_t *card;
 
-    ESP_LOGI(TAG, "Mounting SD card - FATFS");
     esp_vfs_fat_sdmmc_mount_config_t mount_config_sdcard = {
         .format_if_mount_failed = true,
         .max_files = 5,
-        .allocation_unit_size = 16 * 1024};
+        .allocation_unit_size = CONFIG_EXAMPLE_FATFS_SD_CARD_CLUSTER_SIZE,
+    };
+
+    ESP_LOGI(TAG, "Mounting SD card - FATFS, with cluster size %d bytes", mount_config_sdcard.allocation_unit_size);
+
 #ifdef CONFIG_EXAMPLE_USE_SDMMC
     ret = esp_vfs_fat_sdmmc_mount(SD_BASE_PATH, &host_g, &slot_config_g, &mount_config_sdcard, &card);
 #else // CONFIG_EXAMPLE_USE_SDMMC
@@ -258,80 +273,52 @@ void test_sd_fatfs(void)
     sdmmc_card_print_info(stdout, card);
     ESP_LOGI(TAG, "SD card mounted - FATFS");
 
-    sdcard_speed_test_fatfs_run();
+    sdcard_speed_test_fatfs_run(CONFIG_EXAMPLE_TEST_TRIES);
 
     // Unmount SD card
     esp_vfs_fat_sdcard_unmount(SD_BASE_PATH, card);
     ESP_LOGI(TAG, "SD card unmounted - FATFS");
 }
+#endif // CONFIG_EXAMPLE_TEST_SD_CARD_FATFS
 
-#ifdef CONFIG_EXAMPLE_TEST_SD_CARD
-#ifdef CONFIG_EXAMPLE_USE_SDMMC
-void init_sd_config(sdmmc_host_t *out_host, sdmmc_slot_config_t *out_slot_config, int freq_khz) {
-#else // CONFIG_EXAMPLE_USE_SDMMC
-void init_sd_config(sdmmc_host_t *out_host, sdspi_device_config_t *out_slot_config, int freq_khz) {
-#endif // CONFIG_EXAMPLE_USE_SDSPI
+#ifdef CONFIG_EXAMPLE_TEST_SD_CARD_LITTLEFS
+void test_sd_littlefs(void)
+{
+    esp_err_t ret = ESP_OK;
+    sdmmc_card_t *card;
 
-    // By default, SD card frequency is initialized to SDMMC_FREQ_DEFAULT (20MHz)
-    // For setting a specific frequency, use host.max_freq_khz
-    // (range 400kHz - 40MHz for SDMMC, 400kHz - 20MHz for SDSPI)
-    // Example: for fixed frequency of 10MHz, use host.max_freq_khz = 10000;
-#ifdef CONFIG_EXAMPLE_USE_SDMMC
-    ESP_LOGI(TAG, "Using SDMMC peripheral");
-    sdmmc_host_t host = SDMMC_HOST_DEFAULT();
-    host.max_freq_khz = freq_khz;
+    ESP_LOGI(TAG, "Mounting SD card - LittleFS");
 
-    // This initializes the slot without card detect (CD) and write protect (WP) signals.
-    // Modify slot_config.gpio_cd and slot_config.gpio_wp if your board has these signals.
-    sdmmc_slot_config_t slot_config = SDMMC_SLOT_CONFIG_DEFAULT();
-
-    // Set bus width to use:
-    #ifdef CONFIG_EXAMPLE_SDMMC_BUS_WIDTH_4
-        slot_config.width = 4;
-    #else
-        slot_config.width = 1;
-    #endif
-
-    // On chips where the GPIOs used for SD card can be configured, set them in
-    // the slot_config structure:
-    #ifdef CONFIG_SOC_SDMMC_USE_GPIO_MATRIX
-        slot_config.clk = CONFIG_EXAMPLE_PIN_CLK;
-        slot_config.cmd = CONFIG_EXAMPLE_PIN_CMD;
-        slot_config.d0 = CONFIG_EXAMPLE_PIN_D0;
-        #ifdef CONFIG_EXAMPLE_SDMMC_BUS_WIDTH_4
-            slot_config.d1 = CONFIG_EXAMPLE_PIN_D1;
-            slot_config.d2 = CONFIG_EXAMPLE_PIN_D2;
-            slot_config.d3 = CONFIG_EXAMPLE_PIN_D3;
-        #endif  // CONFIG_EXAMPLE_SDMMC_BUS_WIDTH_4
-    #endif  // CONFIG_SOC_SDMMC_USE_GPIO_MATRIX
-
-    // Enable internal pullups on enabled pins. The internal pullups
-    // are insufficient however, please make sure 10k external pullups are
-    // connected on the bus. This is for debug / example purpose only.
-    slot_config.flags |= SDMMC_SLOT_FLAG_INTERNAL_PULLUP;
-#else // CONFIG_EXAMPLE_USE_SDMMC
-    ESP_LOGI(TAG, "Using SPI peripheral");
-    sdmmc_host_t host = SDSPI_HOST_DEFAULT();
-    host.max_freq_khz = freq_khz;
-
-    spi_bus_config_t bus_cfg = {
-        .mosi_io_num = CONFIG_EXAMPLE_PIN_MOSI,
-        .miso_io_num = CONFIG_EXAMPLE_PIN_MISO,
-        .sclk_io_num = CONFIG_EXAMPLE_PIN_CLK,
-        .quadwp_io_num = -1,
-        .quadhd_io_num = -1,
-        .max_transfer_sz = 4000,
-    };
-    esp_err_t ret = spi_bus_initialize(host.slot, &bus_cfg, SDSPI_DEFAULT_DMA);
+    ret = init_sd_card(&card);
     ESP_ERROR_CHECK(ret);
 
-    // This initializes the slot without card detect (CD) and write protect (WP) signals.
-    // Modify slot_config.gpio_cd and slot_config.gpio_wp if your board has these signals.
-    sdspi_device_config_t slot_config = SDSPI_DEVICE_CONFIG_DEFAULT();
-    slot_config.gpio_cs = CONFIG_EXAMPLE_PIN_CS;
-    slot_config.host_id = host.slot;
-#endif // CONFIG_EXAMPLE_USE_SDSPI
-    *out_host = host;
-    *out_slot_config = slot_config;
+    esp_vfs_littlefs_conf_t conf = {
+        .base_path = SD_BASE_PATH,
+        .sdcard = card,
+        .format_if_mount_failed = true,
+    };
+
+    ret = esp_vfs_littlefs_register(&conf);
+
+    if (ret == ESP_OK) {
+        ESP_LOGI(TAG, "LittleFS mounted to %s", SD_BASE_PATH);
+    } else {
+        if (ret == ESP_FAIL) {
+            ESP_LOGE(TAG, "Failed to mount or format filesystem");
+        } else if (ret == ESP_ERR_NOT_FOUND) {
+            ESP_LOGE(TAG, "Failed to find LittleFS partition");
+        } else {
+            ESP_LOGE(TAG, "Failed to initialize LittleFS (%s)", esp_err_to_name(ret));
+        }
+    }
+    ESP_LOGI(TAG, "SD card mounted - LittleFS");
+
+    sdcard_speed_test_littlefs_run(CONFIG_EXAMPLE_TEST_TRIES);
+
+    // Unmount SD card
+    esp_vfs_littlefs_unregister_sdmmc(card);
+    deinit_sd_card(&card);
+    ESP_LOGI(TAG, "SD card unmounted - LittleFS");
 }
+#endif // CONFIG_EXAMPLE_TEST_SD_CARD_LITTLEFS
 #endif // CONFIG_EXAMPLE_TEST_SD_CARD

@@ -10,6 +10,38 @@
 This example demonstrates a benchmark of a storage media such as SPI flash memory and SD card.
 Only ESP32 and ESP32-S3 targets can use SDMMC mode when connecting to a SD card.
 
+This example provides comparison between different types of storage in terms of speed under various configurable (from menuconfig) conditions
+
+Currently these mediums and file-systems are supported:
+- SPI Flash
+    - Raw access
+    - FATFS
+    - SPIFFS
+    - LittleFS
+- SDMMC/SDSPI card
+    - Raw access
+    - FATFS
+    - LittleFS
+
+### Comparison scheme
+
+For each filesystem, four sets of benchmarks are run:
+- Target size R/W
+- More than target size R/W (about target_size x 1.2)
+- Less than target size R/W (about target_size / 1.2)
+- Tiny size                 (255 bytes)
+
+Some filesystems are also tested in two modes:
+- New file - new file gets created every time
+- Normal - the old file gets overwritten each time (`O_TRUNC`)
+
+Every benchmark (except SPIFFS ones) is run multiple times (can be configuredd) for better accuracy, as the results often vary between runs.
+We recommend using at least `100` runs, but default is set to `10` for convenience.
+
+### Disclaimer
+
+While this benchmark tries to give objective results, they may vary by significant amount with different settings, especially for filesystem with large amount of compile time configuration options such as LittleFS.
+
 ### Pin assignments for SD card connection
 
 The GPIO pin numbers used to connect an SD card can be customized using the following:
@@ -65,6 +97,10 @@ This command will burn the `XPD_SDIO_TIEH`, `XPD_SDIO_FORCE`, and `XPD_SDIO_REG`
 
 See [the document about pullup requirements](https://docs.espressif.com/projects/esp-idf/en/latest/api-reference/peripherals/sd_pullup_requirements.html) for more details about pullup support and compatibility of modules and development boards.
 
+### Note about SPIFFS
+
+The test for SPIFFS is run only once, because SPIFFS has a problem with deleting files.
+
 ## How to use example
 
 ### Configure
@@ -73,10 +109,13 @@ See [the document about pullup requirements](https://docs.espressif.com/projects
 
 1. Configure the example (`idf.py menuconfig` -> "Performance Benchmark Example Configuration") whether you want to:
 
+- Set size of data to write
 - Test internal SPI flash
-  - Raw access
+  - Raw access (through wear-leveling)
   - FATFS
+    - Set cluster size
   - SPIFFS
+  - LittleFS
 
 - Test SD card
   - Select SD card interface
@@ -85,10 +124,23 @@ See [the document about pullup requirements](https://docs.espressif.com/projects
   - SD card test configuration
     - Raw access
     - FATFS
+    - LittleFS
     - Set SD card frequency
     - Set GPIO pins
 
 Some configuration options may be available for ESP32 and ESP32-S3 only.
+
+#### Note about LittleFS
+
+LittleFS offers many other compile time configuration options which need to be set in it's component config.
+These setting will have effect on it's performance.
+
+#### Note about FATFS
+
+To achieve the best performance the cluster should match with the target size, and be as high as possible.
+However the higher the cluster size the more space will be wasted by partially filled clusters.
+Keep in mind that the cluster size needs to be a multiple of sector size for SPI-flash that's 4096 and for SD-Card it's 512.
+Also, the size of the storage medium determines maximum cluster size, for that reason this example uses 2MB of flash just for the filesystem (4MB by default, for smaller cluster sizes (16k) around 1MB should be enough.
 
 ### Build and flash
 
@@ -107,139 +159,140 @@ See the Getting Started Guide for full steps to configure and use ESP-IDF to bui
 ## Example output
 
 ```
-I (345) example: Start of the example
-I (355) example: Internal flash test
-I (355) example: Mountig WL layer...
-I (415) example: WL layer mounted
-I (505) example: Test with 128kiB file
-Wrote 131072 bytes in 320.295ms (0.390MiB/s) to address 0
-I (895) example: WL layer unmounted
-I (895) example: Mounting FATFS partition...
-W (895) vfs_fat_spiflash: f_mount failed (13)
-I (895) vfs_fat_spiflash: Formatting FATFS partition, allocation unit size=16384
-I (1105) vfs_fat_spiflash: Mounting again
-I (1105) example: FATFS mounted to /spiflash
-I (1205) example: Test with 128kiB file
-Wrote 131072 bytes (buffer size 4096B) in 1295.988ms (0.096MiB/s)
-Wrote 131072 bytes (buffer size 8192B) in 1277.569ms (0.098MiB/s)
-Wrote 131072 bytes (buffer size 16384B) in 1439.405ms (0.087MiB/s)
-Read 131072 bytes (buffer size 4096B) in 17.721ms (7.054MiB/s)
-Read 131072 bytes (buffer size 8192B) in 16.945ms (7.377MiB/s)
-Read 131072 bytes (buffer size 16384B) in 16.596ms (7.532MiB/s)
-I (5705) example: Test with 256kiB file
-Wrote 262144 bytes (buffer size 4096B) in 2529.380ms (0.099MiB/s)
-Wrote 262144 bytes (buffer size 8192B) in 2867.352ms (0.087MiB/s)
-Wrote 262144 bytes (buffer size 16384B) in 2879.113ms (0.087MiB/s)
-Read 262144 bytes (buffer size 4096B) in 34.809ms (7.182MiB/s)
-Read 262144 bytes (buffer size 8192B) in 33.315ms (7.504MiB/s)
-Read 262144 bytes (buffer size 16384B) in 32.601ms (7.668MiB/s)
-I (14535) example: Test with 512kiB file
-Wrote 524288 bytes (buffer size 4096B) in 5119.009ms (0.098MiB/s)
-Wrote 524288 bytes (buffer size 8192B) in 5897.010ms (0.085MiB/s)
-Wrote 524288 bytes (buffer size 16384B) in 5888.743ms (0.085MiB/s)
-Read 524288 bytes (buffer size 4096B) in 68.975ms (7.249MiB/s)
-Read 524288 bytes (buffer size 8192B) in 66.063ms (7.569MiB/s)
-Read 524288 bytes (buffer size 16384B) in 64.624ms (7.737MiB/s)
-I (32295) example: FATFS partition unmounted
-I (32295) example: Mounting SPIFFS partition...
-W (32295) SPIFFS: mount failed, -10025. formatting...
-I (38195) example: SPIFFS mounted to /spiflash
-I (41555) example: Partition size: total: 896321, used: 0
-I (41645) example: Test with 128kiB file
-Wrote 131072 bytes (buffer size 4096B) in 819.950ms (0.152MiB/s)
-Wrote 131072 bytes (buffer size 8192B) in 777.949ms (0.161MiB/s)
-Wrote 131072 bytes (buffer size 16384B) in 751.682ms (0.166MiB/s)
-Read 131072 bytes (buffer size 4096B) in 101.810ms (1.228MiB/s)
-Read 131072 bytes (buffer size 8192B) in 99.518ms (1.256MiB/s)
-Read 131072 bytes (buffer size 16384B) in 98.472ms (1.269MiB/s)
-I (45335) example: Test with 256kiB file
-Wrote 262144 bytes (buffer size 4096B) in 1650.525ms (0.151MiB/s)
-Wrote 262144 bytes (buffer size 8192B) in 3220.004ms (0.078MiB/s)
-Wrote 262144 bytes (buffer size 16384B) in 7139.803ms (0.035MiB/s)
-Read 262144 bytes (buffer size 4096B) in 204.933ms (1.220MiB/s)
-Read 262144 bytes (buffer size 8192B) in 200.330ms (1.248MiB/s)
-Read 262144 bytes (buffer size 16384B) in 198.129ms (1.262MiB/s)
-I (60365) example: Test with 512kiB file
-Wrote 524288 bytes (buffer size 4096B) in 13917.135ms (0.036MiB/s)
-Wrote 524288 bytes (buffer size 8192B) in 14302.046ms (0.035MiB/s)
-Wrote 524288 bytes (buffer size 16384B) in 14411.794ms (0.035MiB/s)
-Read 524288 bytes (buffer size 4096B) in 317.944ms (1.573MiB/s)
-Read 524288 bytes (buffer size 8192B) in 308.865ms (1.619MiB/s)
-Read 524288 bytes (buffer size 16384B) in 304.305ms (1.643MiB/s)
-I (108835) example: SPIFFS partition unmounted
-I (108835) example: SD card test
-I (108845) example: Initializing SD card
-I (108845) example: Using SDMMC peripheral
-I (108855) example: Mounting SD card - raw access
-I (108855) gpio: GPIO[36]| InputEn: 0| OutputEn: 0| OpenDrain: 0| Pullup: 1| Pulldown: 0| Intr:0
-I (108865) gpio: GPIO[35]| InputEn: 0| OutputEn: 0| OpenDrain: 0| Pullup: 1| Pulldown: 0| Intr:0
-I (108875) gpio: GPIO[37]| InputEn: 0| OutputEn: 0| OpenDrain: 0| Pullup: 1| Pulldown: 0| Intr:0
-I (108885) gpio: GPIO[38]| InputEn: 0| OutputEn: 0| OpenDrain: 0| Pullup: 1| Pulldown: 0| Intr:0
-I (108895) gpio: GPIO[33]| InputEn: 0| OutputEn: 0| OpenDrain: 0| Pullup: 1| Pulldown: 0| Intr:0
-I (108905) gpio: GPIO[34]| InputEn: 0| OutputEn: 1| OpenDrain: 0| Pullup: 0| Pulldown: 0| Intr:0
-I (108955) gpio: GPIO[34]| InputEn: 0| OutputEn: 0| OpenDrain: 0| Pullup: 1| Pulldown: 0| Intr:0
-I (108965) example: SD card mounted - raw access
-Name: USD00
+I (302) main_task: Calling app_main()
+I (302) example: Starting benchmark test with target size 65536 bytes
+I (302) example: Internal flash test
+I (302) example: Mountig WL layer...
+I (622) example: WL layer mounted
+[SPI Flash raw write                                    ] (100x)   96.610 ms    64.00 kB      0.647 MB/s
+[SPI Flash raw read                                     ] (100x)    8.076 ms    64.00 kB      7.739 MB/s
+I (11242) example: WL layer unmounted
+I (11242) example: Mounting FATFS partition, with cluster size 65536 bytes
+W (11242) vfs_fat_spiflash: f_mount failed (13)
+I (11252) vfs_fat_spiflash: Formatting FATFS partition, allocation unit size=65536
+I (11672) vfs_fat_spiflash: Mounting again
+I (11672) example: FATFS mounted to /spiflash
+[SPI FATFS (new file): write target size                ] (100x) 1053.682 ms    64.00 kB      0.059 MB/s
+[SPI FATFS (new file): read target size                 ] (100x)    8.124 ms    64.00 kB      7.694 MB/s
+[SPI FATFS (new file): write more than target size      ] (100x) 1259.972 ms    76.80 kB      0.060 MB/s
+[SPI FATFS (new file): read more than target size       ] (100x)   10.728 ms    76.80 kB      6.991 MB/s
+[SPI FATFS (new file): write less than target size      ] (100x)  850.835 ms    53.33 kB      0.061 MB/s
+[SPI FATFS (new file): read less than target size       ] (100x)    7.156 ms    53.33 kB      7.278 MB/s
+[SPI FATFS (new file): write tiny size                  ] (100x)    1.180 ms     0.25 kB      0.206 MB/s
+[SPI FATFS (new file): read tiny size                   ] (100x)    0.585 ms     0.25 kB      0.416 MB/s
+I (510282) example: FATFS partition unmounted
+I (510282) example: Mounting SPIFFS partition...
+W (510282) SPIFFS: mount failed, -10025. formatting...
+I (530862) example: SPIFFS mounted to /spiflash
+[SPI SPIFFS (new file): write target size               ] (1x)  464.198 ms    64.00 kB      0.135 MB/s
+[SPI SPIFFS (new file): read target size                ] (1x)  137.664 ms    64.00 kB      0.454 MB/s
+[SPI SPIFFS (new file): write more than target size     ] (1x)  555.745 ms    76.80 kB      0.135 MB/s
+[SPI SPIFFS (new file): read more than target size      ] (1x)  146.080 ms    76.80 kB      0.513 MB/s
+[SPI SPIFFS (new file): write less than target size     ] (1x)  390.201 ms    53.33 kB      0.133 MB/s
+[SPI SPIFFS (new file): read less than target size      ] (1x)  128.494 ms    53.33 kB      0.405 MB/s
+[SPI SPIFFS (new file): write tiny size                 ] (1x)    0.050 ms     0.25 kB      4.864 MB/s
+[SPI SPIFFS (new file): read tiny size                  ] (1x)    0.412 ms     0.25 kB      0.590 MB/s
+I (534762) example: SPIFFS partition unmounted
+I (534762) example: Mounting LittleFS partition...
+E (534772) esp_littlefs: /IDF/examples/storage/perf_benchmark/managed_components/joltwallet__littlefs/src/littlefs/lfs.c:1366:error: Corrupted dir pair at {0x0, 0x1}
+
+W (534782) esp_littlefs: mount failed,  (-84). formatting...
+I (534862) example: LittleFS mounted to /spiflash
+[SPI LittleFS (new file): write target size             ] (100x)  946.405 ms    64.00 kB      0.066 MB/s
+[SPI LittleFS (new file): read target size              ] (100x)   28.988 ms    64.00 kB      2.156 MB/s
+[SPI LittleFS (new file): write more than target size   ] (100x) 1176.518 ms    76.80 kB      0.064 MB/s
+[SPI LittleFS (new file): read more than target size    ] (100x)   39.843 ms    76.80 kB      1.882 MB/s
+[SPI LittleFS (new file): write less than target size   ] (100x)  821.555 ms    53.33 kB      0.063 MB/s
+[SPI LittleFS (new file): read less than target size    ] (100x)   25.848 ms    53.33 kB      2.015 MB/s
+[SPI LittleFS (new file): write tiny size               ] (100x)    0.043 ms     0.25 kB      5.635 MB/s
+[SPI LittleFS (new file): read tiny size                ] (100x)    0.036 ms     0.25 kB      6.685 MB/s
+I (849202) example: LittleFS partition unmounted
+I (849202) example: SD card test
+I (849202) example: Initializing SD card
+I (849212) sd_utils: Using SDMMC peripheral
+I (849212) example: Mounting SD card - raw access
+I (849222) gpio: GPIO[13]| InputEn: 0| OutputEn: 1| OpenDrain: 0| Pullup: 0| Pulldown: 0| Intr:0
+I (849272) sd_utils: SD card mounted - raw access
+Name: SD64G
 Type: SDHC/SDXC
 Speed: 40.00 MHz (limit: 40.00 MHz)
-Size: 15080MB
-CSD: ver=2, sector_size=512, capacity=30883840 read_bl_len=9
+Size: 59640MB
+CSD: ver=2, sector_size=512, capacity=122142720 read_bl_len=9
 SSR: bus_width=4
-Wrote 65536 bytes in 25.321ms (2.468MiB/s) to sector 415075
-Read 65536 bytes in 3.809ms (16.409MiB/s) from sector 415075
-Wrote 131072 bytes in 7.415ms (16.858MiB/s) to sector 823598
-Read 131072 bytes in 7.149ms (17.485MiB/s) from sector 823598
-Wrote 196608 bytes in 10.829ms (17.315MiB/s) to sector 180761
-Read 196608 bytes in 10.539ms (17.791MiB/s) from sector 180761
-I (109045) example: SD card unmounted - raw access
-I (109045) example: Mounting SD card - FATFS
-I (109045) gpio: GPIO[36]| InputEn: 0| OutputEn: 0| OpenDrain: 0| Pullup: 1| Pulldown: 0| Intr:0
-I (109055) gpio: GPIO[35]| InputEn: 0| OutputEn: 0| OpenDrain: 0| Pullup: 1| Pulldown: 0| Intr:0
-I (109065) gpio: GPIO[37]| InputEn: 0| OutputEn: 0| OpenDrain: 0| Pullup: 1| Pulldown: 0| Intr:0
-I (109075) gpio: GPIO[38]| InputEn: 0| OutputEn: 0| OpenDrain: 0| Pullup: 1| Pulldown: 0| Intr:0
-I (109085) gpio: GPIO[33]| InputEn: 0| OutputEn: 0| OpenDrain: 0| Pullup: 1| Pulldown: 0| Intr:0
-I (109095) gpio: GPIO[34]| InputEn: 0| OutputEn: 1| OpenDrain: 0| Pullup: 0| Pulldown: 0| Intr:0
-I (109145) gpio: GPIO[34]| InputEn: 0| OutputEn: 0| OpenDrain: 0| Pullup: 1| Pulldown: 0| Intr:0
-W (109155) vfs_fat_sdmmc: failed to mount card (13)
-W (109155) vfs_fat_sdmmc: partitioning card
-W (109155) vfs_fat_sdmmc: formatting card, allocation unit size=16384
-W (110525) vfs_fat_sdmmc: mounting again
-Name: USD00
+[SD raw write                                           ] (100x)    6.757 ms    16.00 kB      2.312 MB/s
+[SD raw read                                            ] (100x)    3.856 ms    16.00 kB      4.053 MB/s
+[SD raw write                                           ] (100x)   13.380 ms    32.00 kB      2.336 MB/s
+[SD raw read                                            ] (100x)    3.852 ms    32.00 kB      8.112 MB/s
+[SD raw write                                           ] (100x)   13.145 ms    48.00 kB      3.566 MB/s
+[SD raw read                                            ] (100x)    3.853 ms    48.00 kB     12.167 MB/s
+[SD raw write                                           ] (100x)    4.924 ms    64.00 kB     12.692 MB/s
+[SD raw read                                            ] (100x)    3.855 ms    64.00 kB     16.212 MB/s
+I (854662) example: SD card unmounted - raw access
+I (854662) example: Mounting SD card - FATFS, with cluster size 65536 bytes
+I (854672) gpio: GPIO[13]| InputEn: 0| OutputEn: 1| OpenDrain: 0| Pullup: 0| Pulldown: 0| Intr:0
+W (854722) vfs_fat_sdmmc: failed to mount card (13)
+W (854722) vfs_fat_sdmmc: partitioning card
+W (854722) vfs_fat_sdmmc: formatting card, allocation unit size=65536
+W (857742) vfs_fat_sdmmc: mounting again
+Name: SD64G
 Type: SDHC/SDXC
 Speed: 40.00 MHz (limit: 40.00 MHz)
-Size: 15080MB
-CSD: ver=2, sector_size=512, capacity=30883840 read_bl_len=9
+Size: 59640MB
+CSD: ver=2, sector_size=512, capacity=122142720 read_bl_len=9
 SSR: bus_width=4
-I (110535) example: SD card mounted - FATFS
-I (110715) example: Test with 1MiB file
-Wrote 1048576 bytes (buffer size 4096B) in 200.241ms (4.994MiB/s)
-Wrote 1048576 bytes (buffer size 8192B) in 129.756ms (7.707MiB/s)
-Wrote 1048576 bytes (buffer size 16384B) in 91.955ms (10.875MiB/s)
-Wrote 1048576 bytes (buffer size 32768B) in 91.424ms (10.938MiB/s)
-Read 1048576 bytes (buffer size 4096B) in 121.086ms (8.259MiB/s)
-Read 1048576 bytes (buffer size 8192B) in 87.896ms (11.377MiB/s)
-Read 1048576 bytes (buffer size 16384B) in 72.525ms (13.788MiB/s)
-Read 1048576 bytes (buffer size 32768B) in 74.664ms (13.393MiB/s)
-I (111655) example: Test with 4MiB file
-Wrote 4194304 bytes (buffer size 4096B) in 797.167ms (5.018MiB/s)
-Wrote 4194304 bytes (buffer size 8192B) in 533.538ms (7.497MiB/s)
-Wrote 4194304 bytes (buffer size 16384B) in 530.830ms (7.535MiB/s)
-Wrote 4194304 bytes (buffer size 32768B) in 497.953ms (8.033MiB/s)
-Read 4194304 bytes (buffer size 4096B) in 473.495ms (8.448MiB/s)
-Read 4194304 bytes (buffer size 8192B) in 351.240ms (11.388MiB/s)
-Read 4194304 bytes (buffer size 16384B) in 289.767ms (13.804MiB/s)
-Read 4194304 bytes (buffer size 32768B) in 287.260ms (13.925MiB/s)
-I (115495) example: Test with 16MiB file
-Wrote 16777216 bytes (buffer size 4096B) in 4754.141ms (3.365MiB/s)
-Wrote 16777216 bytes (buffer size 8192B) in 2290.545ms (6.985MiB/s)
-Wrote 16777216 bytes (buffer size 16384B) in 2088.811ms (7.660MiB/s)
-Wrote 16777216 bytes (buffer size 32768B) in 2148.595ms (7.447MiB/s)
-Read 16777216 bytes (buffer size 4096B) in 1899.620ms (8.423MiB/s)
-Read 16777216 bytes (buffer size 8192B) in 1419.345ms (11.273MiB/s)
-Read 16777216 bytes (buffer size 16384B) in 1158.909ms (13.806MiB/s)
-Read 16777216 bytes (buffer size 32768B) in 1148.426ms (13.932MiB/s)
-I (132515) example: SD card unmounted - FATFS
-I (132515) example: End of the example
+I (857742) example: SD card mounted - FATFS
+[SD FATFS (new file): write target size                 ] (100x)    6.236 ms    64.00 kB     10.022 MB/s
+[SD FATFS (new file): read target size                  ] (100x)    3.923 ms    64.00 kB     15.932 MB/s
+[SD FATFS (new file): write more than target size       ] (100x)    9.519 ms    76.80 kB      7.879 MB/s
+[SD FATFS (new file): read more than target size        ] (100x)    5.690 ms    76.80 kB     13.181 MB/s
+[SD FATFS (new file): write less than target size       ] (100x)    6.953 ms    53.33 kB      7.491 MB/s
+[SD FATFS (new file): read less than target size        ] (100x)    3.624 ms    53.33 kB     14.372 MB/s
+[SD FATFS (new file): write tiny size                   ] (100x)    0.423 ms     0.25 kB      0.575 MB/s
+[SD FATFS (new file): read tiny size                    ] (100x)    0.345 ms     0.25 kB      0.704 MB/s
+[SD FATFS: write target size                            ] (100x)    5.186 ms    64.00 kB     12.051 MB/s
+[SD FATFS: read target size                             ] (100x)    3.907 ms    64.00 kB     15.995 MB/s
+[SD FATFS: write more than target size                  ] (100x)  136.273 ms    76.80 kB      0.550 MB/s
+[SD FATFS: read more than target size                   ] (100x)   46.052 ms    76.80 kB      1.629 MB/s
+[SD FATFS: write less than target size                  ] (100x)  105.132 ms    53.33 kB      0.495 MB/s
+[SD FATFS: read less than target size                   ] (100x)   31.151 ms    53.33 kB      1.672 MB/s
+[SD FATFS: write tiny size                              ] (100x)    0.456 ms     0.25 kB      0.533 MB/s
+[SD FATFS: read tiny size                               ] (100x)    0.200 ms     0.25 kB      1.217 MB/s
+I (899172) example: SD card unmounted - FATFS
+I (899172) example: Mounting SD card - LittleFS
+I (899182) gpio: GPIO[13]| InputEn: 0| OutputEn: 1| OpenDrain: 0| Pullup: 0| Pulldown: 0| Intr:0
+I (899232) sd_utils: SD card mounted - raw access
+Name: SD64G
+Type: SDHC/SDXC
+Speed: 40.00 MHz (limit: 40.00 MHz)
+Size: 59640MB
+CSD: ver=2, sector_size=512, capacity=122142720 read_bl_len=9
+SSR: bus_width=4
+I (899232) esp_littlefs: Using SD card handle 0x3ffd8880 for LittleFS mount
+W (899242) esp_littlefs: SD card is too big (sector=512, count=122142720; total=62537072640 bytes), throttling to maximum possible 8388607 blocks
+E (899262) esp_littlefs: /IDF/examples/storage/perf_benchmark/managed_components/joltwallet__littlefs/src/littlefs/lfs.c:1366:error: Corrupted dir pair at {0x0, 0x1}
+
+W (899272) esp_littlefs: mount failed,  (-84). formatting...
+I (901892) esp_littlefs: SD card formatted!
+I (901932) example: LittleFS mounted to /sdcard
+I (901932) example: SD card mounted - LittleFS
+[SD LittleFS (new file): write target size              ] (100x) 2723.682 ms    64.00 kB      0.023 MB/s
+[SD LittleFS (new file): read target size               ] (100x)  235.108 ms    64.00 kB      0.266 MB/s
+[SD LittleFS (new file): write more than target size    ] (100x) 3312.231 ms    76.80 kB      0.023 MB/s
+[SD LittleFS (new file): read more than target size     ] (100x)  402.211 ms    76.80 kB      0.186 MB/s
+[SD LittleFS (new file): write less than target size    ] (100x) 2311.122 ms    53.33 kB      0.023 MB/s
+[SD LittleFS (new file): read less than target size     ] (100x)  226.808 ms    53.33 kB      0.230 MB/s
+[SD LittleFS (new file): write tiny size                ] (100x)   17.263 ms     0.25 kB      0.014 MB/s
+[SD LittleFS (new file): read tiny size                 ] (100x)    0.348 ms     0.25 kB      0.699 MB/s
+[SD LittleFS: write target size                         ] (100x) 2928.440 ms    64.00 kB      0.021 MB/s
+[SD LittleFS: read target size                          ] (100x)  692.110 ms    64.00 kB      0.090 MB/s
+[SD LittleFS: write more than target size               ] (100x) 3547.740 ms    76.80 kB      0.021 MB/s
+[SD LittleFS: read more than target size                ] (100x)  952.181 ms    76.80 kB      0.079 MB/s
+[SD LittleFS: write less than target size               ] (100x) 2418.240 ms    53.33 kB      0.022 MB/s
+[SD LittleFS: read less than target size                ] (100x)  520.300 ms    53.33 kB      0.100 MB/s
+[SD LittleFS: write tiny size                           ] (100x)   10.540 ms     0.25 kB      0.023 MB/s
+[SD LittleFS: read tiny size                            ] (100x)    0.840 ms     0.25 kB      0.289 MB/s
+I (2958872) example: SD card unmounted - LittleFS
+I (2958872) main_task: Returned from app_main()
 ```
 
 ## Troubleshooting
