@@ -220,7 +220,7 @@ typedef struct {
 esp_err_t dma2d_apply_strategy(dma2d_channel_handle_t dma2d_chan, const dma2d_strategy_config_t *config);
 
 /**
- * @brief A collection of transfer ability items that each 2D-DMA channel could apply to improve transfer efficiency
+ * @brief A collection of transfer ability items that each 2D-DMA channel could apply to improve transfer efficiency or to ensure desired transfer block size
  *
  * @note The 2D-DMA driver has no knowledge about the DMA buffer (address and size) used by upper layer.
  *       So it's the responsibility of the **upper layer** to take care of the buffer address and size.
@@ -231,6 +231,8 @@ typedef struct {
     bool desc_burst_en;                             /*!< If set / clear, DMA channel enables / disables burst reading descriptor link */
     dma2d_data_burst_length_t data_burst_length;    /*!< Configure the DMA channel burst reading data length */
     dma2d_macro_block_size_t mb_size;               /*!< Configure the DMA channel macro block size (only useful in DMA2D_DESCRIPTOR_BLOCK_RW_MODE_MULTIPLE mode) */
+    uint32_t dscr_port_block_h;                     /*!< Configure the DMA TX channel horizontal width of the block in dscr-port mode (unit: pixel) */
+    uint32_t dscr_port_block_v;                     /*!< Configure the DMA TX channel vertical height of the block in dscr-port mode (unit: pixel) */
 } dma2d_transfer_ability_t;
 
 /**

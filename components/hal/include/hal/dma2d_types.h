@@ -31,7 +31,7 @@ struct dma2d_descriptor_align8_s {
         uint32_t dma2d_en : 1;        /*!< Whether to enable 2D functionality */
         uint32_t suc_eof : 1;         /*!< Whether the descriptor is the last one in the link */
         uint32_t owner : 1;           /*!< Who is allowed to access the buffer that this descriptor points to, select DMA2D_DESCRIPTOR_BUFFER_OWNER_CPU or DMA2D_DESCRIPTOR_BUFFER_OWNER_DMA
-                                           When owner is chosen to be DMA, after DMA finishs with the descriptor, it will clear this bit
+                                           When owner is chosen to be DMA, after DMA finishes with the descriptor, it will clear this bit
                                            For data transfer, the bit won't be cleared unless DMA2D_OUT_AUTO_WRBACK is enabled */
     };                                /*!< Descriptor Word 0 */
     struct {

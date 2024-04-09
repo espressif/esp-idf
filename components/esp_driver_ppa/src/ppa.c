@@ -291,69 +291,69 @@ static esp_err_t ppa_engine_release(ppa_engine_t *ppa_engine)
     return ret;
 }
 
-esp_err_t ppa_register_invoker(const ppa_invoker_config_t *config, ppa_invoker_handle_t *ret_invoker)
+esp_err_t ppa_register_client(const ppa_client_config_t *config, ppa_client_handle_t *ret_client)
 {
     esp_err_t ret = ESP_OK;
-    ESP_RETURN_ON_FALSE(config && ret_invoker, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    ESP_RETURN_ON_FALSE(config && ret_client, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
     ESP_RETURN_ON_FALSE(config->oper_type < PPA_OPERATION_NUM, ESP_ERR_INVALID_ARG, TAG, "unknown operation");
 
-    ppa_invoker_t *invoker = (ppa_invoker_t *)heap_caps_calloc(1, sizeof(ppa_invoker_t), PPA_MEM_ALLOC_CAPS);
-    ESP_RETURN_ON_FALSE(invoker, ESP_ERR_NO_MEM, TAG, "no mem to register invoker");
+    ppa_client_t *client = (ppa_client_t *)heap_caps_calloc(1, sizeof(ppa_client_t), PPA_MEM_ALLOC_CAPS);
+    ESP_RETURN_ON_FALSE(client, ESP_ERR_NO_MEM, TAG, "no mem to register client");
 
     uint32_t ring_buf_size = MAX(1, config->max_pending_trans_num);
-    invoker->trans_elm_ptr_queue = xQueueCreateWithCaps(ring_buf_size, sizeof(uint32_t), PPA_MEM_ALLOC_CAPS);
-    ESP_GOTO_ON_FALSE(invoker->trans_elm_ptr_queue && ppa_malloc_transaction(invoker->trans_elm_ptr_queue, ring_buf_size, config->oper_type),
+    client->trans_elm_ptr_queue = xQueueCreateWithCaps(ring_buf_size, sizeof(uint32_t), PPA_MEM_ALLOC_CAPS);
+    ESP_GOTO_ON_FALSE(client->trans_elm_ptr_queue && ppa_malloc_transaction(client->trans_elm_ptr_queue, ring_buf_size, config->oper_type),
                       ESP_ERR_NO_MEM, err, TAG, "no mem for transaction storage");
 
-    invoker->oper_type = config->oper_type;
-    invoker->done_cb = config->done_cb;
-    invoker->spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
-    invoker->in_accepting_trans_state = true;
+    client->oper_type = config->oper_type;
+    client->done_cb = config->done_cb;
+    client->spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
+    client->in_accepting_trans_state = true;
     if (config->oper_type == PPA_OPERATION_SRM) {
         ppa_engine_config_t engine_config = {
             .engine = PPA_ENGINE_TYPE_SRM,
         };
-        ESP_GOTO_ON_ERROR(ppa_engine_acquire(&engine_config, &invoker->engine), err, TAG, "unable to acquire SRM engine");
+        ESP_GOTO_ON_ERROR(ppa_engine_acquire(&engine_config, &client->engine), err, TAG, "unable to acquire SRM engine");
     } else if (config->oper_type == PPA_OPERATION_BLEND || config->oper_type == PPA_OPERATION_FILL) {
         ppa_engine_config_t engine_config = {
             .engine = PPA_ENGINE_TYPE_BLEND,
         };
-        ESP_GOTO_ON_ERROR(ppa_engine_acquire(&engine_config, &invoker->engine), err, TAG, "unable to acquire Blending engine");
+        ESP_GOTO_ON_ERROR(ppa_engine_acquire(&engine_config, &client->engine), err, TAG, "unable to acquire Blending engine");
     }
-    *ret_invoker = invoker;
+    *ret_client = client;
 
 err:
     if (ret != ESP_OK) {
-        ppa_unregister_invoker(invoker);
+        ppa_unregister_client(client);
     }
     return ret;
 }
 
-esp_err_t ppa_unregister_invoker(ppa_invoker_handle_t ppa_invoker)
+esp_err_t ppa_unregister_client(ppa_client_handle_t ppa_client)
 {
-    ESP_RETURN_ON_FALSE(ppa_invoker, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    ESP_RETURN_ON_FALSE(ppa_client, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
 
     bool do_unregister = false;
-    portENTER_CRITICAL(&ppa_invoker->spinlock);
-    if (ppa_invoker->trans_cnt == 0) {
-        ppa_invoker->in_accepting_trans_state = false;
+    portENTER_CRITICAL(&ppa_client->spinlock);
+    if (ppa_client->trans_cnt == 0) {
+        ppa_client->in_accepting_trans_state = false;
         do_unregister = true;
     }
-    portEXIT_CRITICAL(&ppa_invoker->spinlock);
-    ESP_RETURN_ON_FALSE(do_unregister, ESP_ERR_INVALID_STATE, TAG, "invoker still has unprocessed trans");
+    portEXIT_CRITICAL(&ppa_client->spinlock);
+    ESP_RETURN_ON_FALSE(do_unregister, ESP_ERR_INVALID_STATE, TAG, "client still has unprocessed trans");
 
-    if (ppa_invoker->engine) {
-        ppa_engine_release(ppa_invoker->engine);
+    if (ppa_client->engine) {
+        ppa_engine_release(ppa_client->engine);
     }
 
-    if (ppa_invoker->trans_elm_ptr_queue) {
+    if (ppa_client->trans_elm_ptr_queue) {
         ppa_trans_t *trans_elm = NULL;
-        while (xQueueReceive(ppa_invoker->trans_elm_ptr_queue, (void *)&trans_elm, 0)) {
+        while (xQueueReceive(ppa_client->trans_elm_ptr_queue, (void *)&trans_elm, 0)) {
             ppa_free_transaction(trans_elm);
         }
-        vQueueDeleteWithCaps(ppa_invoker->trans_elm_ptr_queue);
+        vQueueDeleteWithCaps(ppa_client->trans_elm_ptr_queue);
     }
-    free(ppa_invoker);
+    free(ppa_client);
     return ESP_OK;
 }
 
@@ -418,16 +418,16 @@ static void ppa_free_transaction(ppa_trans_t *trans_elm)
     }
 }
 
-static bool ppa_recycle_transaction(ppa_invoker_handle_t ppa_invoker, ppa_trans_t *trans_elm)
+static bool ppa_recycle_transaction(ppa_client_handle_t ppa_client, ppa_trans_t *trans_elm)
 {
-    // Reset transaction and send back to invoker's trans_elm_ptr_queue
+    // Reset transaction and send back to client's trans_elm_ptr_queue
     // TODO: To be very safe, we shall memset all to 0, and reconnect necessary pointers？
     BaseType_t HPTaskAwoken;
-    assert(xQueueSendFromISR(ppa_invoker->trans_elm_ptr_queue, &trans_elm, &HPTaskAwoken));
+    assert(xQueueSendFromISR(ppa_client->trans_elm_ptr_queue, &trans_elm, &HPTaskAwoken));
     return HPTaskAwoken;
 }
 
-static esp_err_t ppa_do_operation(ppa_invoker_handle_t ppa_invoker, ppa_engine_t *ppa_engine_base, ppa_trans_t *trans_elm, ppa_trans_mode_t mode)
+static esp_err_t ppa_do_operation(ppa_client_handle_t ppa_client, ppa_engine_t *ppa_engine_base, ppa_trans_t *trans_elm, ppa_trans_mode_t mode)
 {
     esp_err_t ret = ESP_OK;
 
@@ -435,19 +435,19 @@ static esp_err_t ppa_do_operation(ppa_invoker_handle_t ppa_invoker, ppa_engine_t
     assert((esp_pm_lock_acquire(s_platform.pm_lock) == ESP_OK) && "acquire pm_lock failed");
 #endif
 
-    portENTER_CRITICAL(&ppa_invoker->spinlock);
+    portENTER_CRITICAL(&ppa_client->spinlock);
     // TODO: Check whether trans_cnt and trans_elm_ptr_queue need in one spinlock!!!
-    if (ppa_invoker->in_accepting_trans_state) {
+    if (ppa_client->in_accepting_trans_state) {
         // Send transaction into PPA engine queue
         STAILQ_INSERT_TAIL(&ppa_engine_base->trans_stailq, trans_elm, entry);
-        ppa_invoker->trans_cnt++;
+        ppa_client->trans_cnt++;
     } else {
         ret = ESP_FAIL;
     }
-    portEXIT_CRITICAL(&ppa_invoker->spinlock);
+    portEXIT_CRITICAL(&ppa_client->spinlock);
 
     if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "The invoker cannot accept transaction now");
+        ESP_LOGE(TAG, "The client cannot accept transaction now");
         goto err;
     }
 
@@ -478,9 +478,9 @@ static esp_err_t ppa_do_operation(ppa_invoker_handle_t ppa_invoker, ppa_engine_t
                 assert((esp_pm_lock_release(ppa_engine_base->pm_lock) == ESP_OK) && "release pm_lock failed");
 #endif
                 xSemaphoreGive(ppa_engine_base->sem);
-                portENTER_CRITICAL(&ppa_invoker->spinlock);
-                ppa_invoker->trans_cnt--;
-                portEXIT_CRITICAL(&ppa_invoker->spinlock);
+                portENTER_CRITICAL(&ppa_client->spinlock);
+                ppa_client->trans_cnt--;
+                portEXIT_CRITICAL(&ppa_client->spinlock);
                 goto err;
             }
         } else {
@@ -494,7 +494,7 @@ static esp_err_t ppa_do_operation(ppa_invoker_handle_t ppa_invoker, ppa_engine_t
         // }
         xSemaphoreTake(trans_elm->sem, portMAX_DELAY); // Given in the ISR
         // Sanity check new_trans_elm not in trans_stailq anymore? (loop takes time tho)
-        // ppa_recycle_transaction(ppa_invoker, trans_elm); // TODO: Do we need it to be here or can be at the end of done_cb?
+        // ppa_recycle_transaction(ppa_client, trans_elm); // TODO: Do we need it to be here or can be at the end of done_cb?
     }
 
 #if CONFIG_PM_ENABLE
@@ -510,13 +510,13 @@ static bool ppa_transaction_done_cb(dma2d_channel_handle_t dma2d_chan, dma2d_eve
     bool need_yield = false;
     BaseType_t HPTaskAwoken;
     ppa_trans_t *trans_elm = (ppa_trans_t *)user_data;
-    ppa_invoker_t *invoker = trans_elm->invoker;
+    ppa_client_t *client = trans_elm->client;
     ppa_dma2d_trans_on_picked_config_t *trans_on_picked_desc = (ppa_dma2d_trans_on_picked_config_t *)trans_elm->trans_desc->user_config;
     ppa_engine_t *engine_base = trans_on_picked_desc->ppa_engine;
 
-    if (invoker->done_cb) {
+    if (client->done_cb) {
         ppa_event_data_t edata = {};
-        need_yield |= invoker->done_cb(invoker, &edata, trans_elm->user_data);
+        need_yield |= client->done_cb(client, &edata, trans_elm->user_data);
     }
 
     ppa_trans_t *next_start_trans = NULL;
@@ -543,10 +543,10 @@ static bool ppa_transaction_done_cb(dma2d_channel_handle_t dma2d_chan, dma2d_eve
     // }
 
     // TODO: Check whether trans_cnt and trans_elm_ptr_queue need in one spinlock!!!
-    portENTER_CRITICAL_ISR(&invoker->spinlock);
-    need_yield |= ppa_recycle_transaction(invoker, trans_elm);
-    invoker->trans_cnt--;
-    portEXIT_CRITICAL_ISR(&invoker->spinlock);
+    portENTER_CRITICAL_ISR(&client->spinlock);
+    need_yield |= ppa_recycle_transaction(client, trans_elm);
+    client->trans_cnt--;
+    portEXIT_CRITICAL_ISR(&client->spinlock);
 
     return need_yield;
 }
@@ -560,34 +560,40 @@ static bool ppa_srm_transaction_on_picked(uint32_t num_chans, const dma2d_trans_
     ppa_srm_oper_t *srm_trans_desc = (ppa_srm_oper_t *)trans_on_picked_desc->srm_desc;
     ppa_srm_engine_t *srm_engine = __containerof(trans_on_picked_desc->ppa_engine, ppa_srm_engine_t, base);
 
+    // Reset SRM engine
+    ppa_ll_srm_reset(s_platform.hal.dev);
+
     // Get the required 2D-DMA channel handles
-    uint32_t dma2d_tx_chan_idx = 0;
-    uint32_t dma2d_rx_chan_idx = 1;
-    if (dma2d_chans[0].dir == DMA2D_CHANNEL_DIRECTION_RX) {
-        dma2d_tx_chan_idx = 1;
-        dma2d_rx_chan_idx = 0;
+    dma2d_channel_handle_t dma2d_tx_chan = NULL;
+    dma2d_channel_handle_t dma2d_rx_chan = NULL;
+    for (uint32_t i = 0; i < num_chans; i++) {
+        if (dma2d_chans[i].dir == DMA2D_CHANNEL_DIRECTION_TX) {
+            dma2d_tx_chan = dma2d_chans[i].chan;
+        }
+        if (dma2d_chans[i].dir == DMA2D_CHANNEL_DIRECTION_RX) {
+            dma2d_rx_chan = dma2d_chans[i].chan;
+        }
     }
-    dma2d_channel_handle_t dma2d_tx_chan = dma2d_chans[dma2d_tx_chan_idx].chan;
-    dma2d_channel_handle_t dma2d_rx_chan = dma2d_chans[dma2d_rx_chan_idx].chan;
+    assert(dma2d_tx_chan && dma2d_rx_chan);
 
     color_space_pixel_format_t in_pixel_format = {
-        .color_type_id = srm_trans_desc->in_color.mode,
+        .color_type_id = srm_trans_desc->in.srm_cm,
     };
 
     // Fill 2D-DMA descriptors
-    srm_engine->dma_tx_desc->vb_size = srm_trans_desc->in_block_h;
-    srm_engine->dma_tx_desc->hb_length = srm_trans_desc->in_block_w;
+    srm_engine->dma_tx_desc->vb_size = srm_trans_desc->in.block_h;
+    srm_engine->dma_tx_desc->hb_length = srm_trans_desc->in.block_w;
     srm_engine->dma_tx_desc->err_eof = 0;
     srm_engine->dma_tx_desc->dma2d_en = 1;
     srm_engine->dma_tx_desc->suc_eof = 1;
     srm_engine->dma_tx_desc->owner = DMA2D_DESCRIPTOR_BUFFER_OWNER_DMA;
-    srm_engine->dma_tx_desc->va_size = srm_trans_desc->in_pic_h;
-    srm_engine->dma_tx_desc->ha_length = srm_trans_desc->in_pic_w;
+    srm_engine->dma_tx_desc->va_size = srm_trans_desc->in.pic_h;
+    srm_engine->dma_tx_desc->ha_length = srm_trans_desc->in.pic_w;
     srm_engine->dma_tx_desc->pbyte = dma2d_desc_pixel_format_to_pbyte_value(in_pixel_format);
-    srm_engine->dma_tx_desc->y = srm_trans_desc->in_block_offset_y;
-    srm_engine->dma_tx_desc->x = srm_trans_desc->in_block_offset_x;
+    srm_engine->dma_tx_desc->y = srm_trans_desc->in.block_offset_y;
+    srm_engine->dma_tx_desc->x = srm_trans_desc->in.block_offset_x;
     srm_engine->dma_tx_desc->mode = DMA2D_DESCRIPTOR_BLOCK_RW_MODE_SINGLE;
-    srm_engine->dma_tx_desc->buffer = (void *)srm_trans_desc->in_buffer;
+    srm_engine->dma_tx_desc->buffer = (void *)srm_trans_desc->in.buffer;
     srm_engine->dma_tx_desc->next = NULL;
 
     // vb_size, hb_length can be any value (auto writeback). However, if vb_size/hb_length is 0, it triggers 2D-DMA DESC_ERROR interrupt, and dma2d driver will automatically ends the transaction. Therefore, to avoid this, we set them to 1.
@@ -597,13 +603,13 @@ static bool ppa_srm_transaction_on_picked(uint32_t num_chans, const dma2d_trans_
     srm_engine->dma_rx_desc->dma2d_en = 1;
     srm_engine->dma_rx_desc->suc_eof = 1;
     srm_engine->dma_rx_desc->owner = DMA2D_DESCRIPTOR_BUFFER_OWNER_DMA;
-    srm_engine->dma_rx_desc->va_size = srm_trans_desc->out_pic_h;
-    srm_engine->dma_rx_desc->ha_length = srm_trans_desc->out_pic_w;
+    srm_engine->dma_rx_desc->va_size = srm_trans_desc->out.pic_h;
+    srm_engine->dma_rx_desc->ha_length = srm_trans_desc->out.pic_w;
     // pbyte can be any value
-    srm_engine->dma_rx_desc->y = srm_trans_desc->out_block_offset_y;
-    srm_engine->dma_rx_desc->x = srm_trans_desc->out_block_offset_x;
+    srm_engine->dma_rx_desc->y = srm_trans_desc->out.block_offset_y;
+    srm_engine->dma_rx_desc->x = srm_trans_desc->out.block_offset_x;
     srm_engine->dma_rx_desc->mode = DMA2D_DESCRIPTOR_BLOCK_RW_MODE_SINGLE;
-    srm_engine->dma_rx_desc->buffer = (void *)srm_trans_desc->out_buffer;
+    srm_engine->dma_rx_desc->buffer = (void *)srm_trans_desc->out.buffer;
     srm_engine->dma_rx_desc->next = NULL;
 
     esp_cache_msync((void *)srm_engine->dma_tx_desc, s_platform.dma_desc_mem_size, ESP_CACHE_MSYNC_FLAG_DIR_C2M);
@@ -622,16 +628,19 @@ static bool ppa_srm_transaction_on_picked(uint32_t num_chans, const dma2d_trans_
         .data_burst_length = DMA2D_DATA_BURST_LENGTH_128,
         .desc_burst_en = true,
         .mb_size = DMA2D_MACRO_BLOCK_SIZE_NONE,
+        // Configure the block size to be received by the SRM engine, which is passed from the 2D-DMA TX channel (i.e. 2D-DMA dscr-port mode)
+        .dscr_port_block_h = (srm_trans_desc->in.srm_cm == PPA_SRM_COLOR_MODE_YUV420) ? PPA_LL_SRM_YUV420_BLOCK_SIZE : PPA_LL_SRM_DEFAULT_BLOCK_SIZE,
+        .dscr_port_block_v = (srm_trans_desc->in.srm_cm == PPA_SRM_COLOR_MODE_YUV420) ? PPA_LL_SRM_YUV420_BLOCK_SIZE : PPA_LL_SRM_DEFAULT_BLOCK_SIZE,
     };
     dma2d_set_transfer_ability(dma2d_tx_chan, &dma_transfer_ability);
     dma2d_set_transfer_ability(dma2d_rx_chan, &dma_transfer_ability);
 
     // YUV444 and YUV422 are not supported by PPA module, need to utilize 2D-DMA color space conversion feature to do a conversion
-    ppa_srm_color_mode_t ppa_in_color_mode = srm_trans_desc->in_color.mode;
+    ppa_srm_color_mode_t ppa_in_color_mode = srm_trans_desc->in.srm_cm;
     if (ppa_in_color_mode == PPA_SRM_COLOR_MODE_YUV444) {
         ppa_in_color_mode = PPA_SRM_COLOR_MODE_RGB888;
         dma2d_csc_config_t dma_tx_csc = {0};
-        if (srm_trans_desc->in_color.yuv_std == COLOR_CONV_STD_RGB_YUV_BT601) {
+        if (srm_trans_desc->in.yuv_std == COLOR_CONV_STD_RGB_YUV_BT601) {
             dma_tx_csc.tx_csc_option = DMA2D_CSC_TX_YUV444_TO_RGB888_601;
         } else {
             dma_tx_csc.tx_csc_option = DMA2D_CSC_TX_YUV444_TO_RGB888_709;
@@ -640,7 +649,7 @@ static bool ppa_srm_transaction_on_picked(uint32_t num_chans, const dma2d_trans_
     } else if (ppa_in_color_mode == PPA_SRM_COLOR_MODE_YUV422) {
         ppa_in_color_mode = PPA_SRM_COLOR_MODE_RGB888;
         dma2d_csc_config_t dma_tx_csc = {0};
-        if (srm_trans_desc->in_color.yuv_std == COLOR_CONV_STD_RGB_YUV_BT601) {
+        if (srm_trans_desc->in.yuv_std == COLOR_CONV_STD_RGB_YUV_BT601) {
             dma_tx_csc.tx_csc_option = DMA2D_CSC_TX_YUV422_TO_RGB888_601;
         } else {
             dma_tx_csc.tx_csc_option = DMA2D_CSC_TX_YUV422_TO_RGB888_709;
@@ -648,9 +657,7 @@ static bool ppa_srm_transaction_on_picked(uint32_t num_chans, const dma2d_trans_
         dma2d_configure_color_space_conversion(dma2d_tx_chan, &dma_tx_csc);
     }
 
-    // TODO: YUV420 needs to change dev->out_channel[channel].out_dscr_port_blk.out_dscr_port_blk_h/v_chn to 20
-
-    ppa_srm_color_mode_t ppa_out_color_mode = srm_trans_desc->out_color.mode;
+    ppa_srm_color_mode_t ppa_out_color_mode = srm_trans_desc->out.srm_cm;
     if (ppa_out_color_mode == PPA_SRM_COLOR_MODE_YUV444) {
         ppa_out_color_mode = PPA_SRM_COLOR_MODE_YUV420;
         dma2d_csc_config_t dma_rx_csc = {
@@ -664,8 +671,6 @@ static bool ppa_srm_transaction_on_picked(uint32_t num_chans, const dma2d_trans_
     };
     dma2d_register_rx_event_callbacks(dma2d_rx_chan, &dma_event_cbs, (void *)trans_on_picked_desc->trans_elm);
 
-    ppa_ll_srm_reset(s_platform.hal.dev);
-
     dma2d_set_desc_addr(dma2d_tx_chan, (intptr_t)srm_engine->dma_tx_desc);
     dma2d_set_desc_addr(dma2d_rx_chan, (intptr_t)srm_engine->dma_rx_desc);
     dma2d_start(dma2d_tx_chan);
@@ -673,22 +678,20 @@ static bool ppa_srm_transaction_on_picked(uint32_t num_chans, const dma2d_trans_
 
     // Configure PPA SRM engine
     ppa_ll_srm_set_rx_color_mode(s_platform.hal.dev, ppa_in_color_mode);
-    if (COLOR_SPACE_TYPE(ppa_in_color_mode) == COLOR_SPACE_YUV) {
-        ppa_ll_srm_set_rx_yuv_range(s_platform.hal.dev, srm_trans_desc->in_color.yuv_range);
-        ppa_ll_srm_set_yuv2rgb_std(s_platform.hal.dev, srm_trans_desc->in_color.yuv_std);
+    if (COLOR_SPACE_TYPE((uint32_t)ppa_in_color_mode) == COLOR_SPACE_YUV) {
+        ppa_ll_srm_set_rx_yuv_range(s_platform.hal.dev, srm_trans_desc->in.yuv_range);
+        ppa_ll_srm_set_rx_yuv2rgb_std(s_platform.hal.dev, srm_trans_desc->in.yuv_std);
     }
-    ppa_ll_srm_enable_rx_byte_swap(s_platform.hal.dev, srm_trans_desc->in_color.byte_swap);
-    ppa_ll_srm_enable_rx_rgb_swap(s_platform.hal.dev, srm_trans_desc->in_color.rgb_swap);
-    ppa_ll_srm_configure_rx_alpha(s_platform.hal.dev, srm_trans_desc->in_color.alpha_update_mode, srm_trans_desc->in_color.alpha_value);
+    ppa_ll_srm_enable_rx_byte_swap(s_platform.hal.dev, srm_trans_desc->byte_swap);
+    ppa_ll_srm_enable_rx_rgb_swap(s_platform.hal.dev, srm_trans_desc->rgb_swap);
+    ppa_ll_srm_configure_rx_alpha(s_platform.hal.dev, srm_trans_desc->alpha_update_mode, srm_trans_desc->alpha_value);
 
     ppa_ll_srm_set_tx_color_mode(s_platform.hal.dev, ppa_out_color_mode);
-    if (COLOR_SPACE_TYPE(ppa_out_color_mode) == COLOR_SPACE_YUV) {
-        ppa_ll_srm_set_rx_yuv_range(s_platform.hal.dev, srm_trans_desc->out_color.yuv_range);
-        ppa_ll_srm_set_yuv2rgb_std(s_platform.hal.dev, srm_trans_desc->out_color.yuv_std);
+    if (COLOR_SPACE_TYPE((uint32_t)ppa_out_color_mode) == COLOR_SPACE_YUV) {
+        ppa_ll_srm_set_tx_yuv_range(s_platform.hal.dev, srm_trans_desc->out.yuv_range);
+        ppa_ll_srm_set_tx_rgb2yuv_std(s_platform.hal.dev, srm_trans_desc->out.yuv_std);
     }
 
-    // TODO: sr_macro_bk_ro_bypass
-    // PPA.sr_byte_order.sr_macro_bk_ro_bypass = 1;
     ppa_ll_srm_set_rotation_angle(s_platform.hal.dev, srm_trans_desc->rotation_angle);
     ppa_ll_srm_set_scaling_x(s_platform.hal.dev, srm_trans_desc->scale_x_int, srm_trans_desc->scale_x_frag);
     ppa_ll_srm_set_scaling_y(s_platform.hal.dev, srm_trans_desc->scale_y_int, srm_trans_desc->scale_y_frag);
@@ -701,35 +704,42 @@ static bool ppa_srm_transaction_on_picked(uint32_t num_chans, const dma2d_trans_
     return false;
 }
 
-esp_err_t ppa_do_scale_rotate_mirror(ppa_invoker_handle_t ppa_invoker, const ppa_srm_operation_config_t *oper_config, const ppa_trans_config_t *trans_config)
+esp_err_t ppa_do_scale_rotate_mirror(ppa_client_handle_t ppa_client, const ppa_srm_oper_trans_config_t *config)
 {
-    ESP_RETURN_ON_FALSE(ppa_invoker && oper_config && trans_config, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
-    ESP_RETURN_ON_FALSE(ppa_invoker->oper_type == PPA_OPERATION_SRM, ESP_ERR_INVALID_ARG, TAG, "invoker is not for SRM operations");
-    ESP_RETURN_ON_FALSE(trans_config->mode <= PPA_TRANS_MODE_NON_BLOCKING, ESP_ERR_INVALID_ARG, TAG, "invalid mode");
+    ESP_RETURN_ON_FALSE(ppa_client && config, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    ESP_RETURN_ON_FALSE(ppa_client->oper_type == PPA_OPERATION_SRM, ESP_ERR_INVALID_ARG, TAG, "client is not for SRM operations");
+    ESP_RETURN_ON_FALSE(config->mode <= PPA_TRANS_MODE_NON_BLOCKING, ESP_ERR_INVALID_ARG, TAG, "invalid mode");
     // in_buffer could be anywhere (ram, flash, psram), out_buffer ptr cannot in flash region
-    ESP_RETURN_ON_FALSE(esp_ptr_internal(oper_config->out_buffer) || esp_ptr_external_ram(oper_config->out_buffer), ESP_ERR_INVALID_ARG, TAG, "invalid out_buffer addr");
-    ESP_RETURN_ON_FALSE((uintptr_t)oper_config->out_buffer % s_platform.buf_alignment_size == 0 && oper_config->out_buffer_size % s_platform.buf_alignment_size == 0,
-                        ESP_ERR_INVALID_ARG, TAG, "out_buffer addr or size not aligned to cache line size");
+    ESP_RETURN_ON_FALSE(esp_ptr_internal(config->out.buffer) || esp_ptr_external_ram(config->out.buffer), ESP_ERR_INVALID_ARG, TAG, "invalid out.buffer addr");
+    ESP_RETURN_ON_FALSE((uintptr_t)config->out.buffer % s_platform.buf_alignment_size == 0 && config->out.buffer_size % s_platform.buf_alignment_size == 0,
+                        ESP_ERR_INVALID_ARG, TAG, "out.buffer addr or out.buffer_size not aligned to cache line size");
     color_space_pixel_format_t out_pixel_format = {
-        .color_type_id = oper_config->out_color.mode,
+        .color_type_id = config->out.srm_cm,
     };
-    uint32_t out_pic_len = oper_config->out_pic_w * oper_config->out_pic_h * color_hal_pixel_format_get_bit_depth(out_pixel_format) / 8;
-    ESP_RETURN_ON_FALSE(out_pic_len <= oper_config->out_buffer_size, ESP_ERR_INVALID_ARG, TAG, "out_pic_w/h mismatch with out_buffer_size");
-    ESP_RETURN_ON_FALSE(oper_config->scale_x < (PPA_LL_SRM_SCALING_INT_MAX + 1) && oper_config->scale_x >= (1.0 / PPA_LL_SRM_SCALING_FRAG_MAX) &&
-                        oper_config->scale_y < (PPA_LL_SRM_SCALING_INT_MAX + 1) && oper_config->scale_y >= (1.0 / PPA_LL_SRM_SCALING_FRAG_MAX),
+    uint32_t out_pic_len = config->out.pic_w * config->out.pic_h * color_hal_pixel_format_get_bit_depth(out_pixel_format) / 8;
+    ESP_RETURN_ON_FALSE(out_pic_len <= config->out.buffer_size, ESP_ERR_INVALID_ARG, TAG, "out.pic_w/h mismatch with out.buffer_size");
+    ESP_RETURN_ON_FALSE(config->scale_x < (PPA_LL_SRM_SCALING_INT_MAX + 1) && config->scale_x >= (1.0 / PPA_LL_SRM_SCALING_FRAG_MAX) &&
+                        config->scale_y < (PPA_LL_SRM_SCALING_INT_MAX + 1) && config->scale_y >= (1.0 / PPA_LL_SRM_SCALING_FRAG_MAX),
                         ESP_ERR_INVALID_ARG, TAG, "invalid scale");
-    ESP_RETURN_ON_FALSE((uint32_t)(oper_config->scale_x * oper_config->in_block_w) <= (oper_config->out_pic_w - oper_config->out_block_offset_x) &&
-                        (uint32_t)(oper_config->scale_y * oper_config->in_block_h) <= (oper_config->out_pic_h - oper_config->out_block_offset_y),
+    uint32_t new_block_w = 0;
+    uint32_t new_block_h = 0;
+    if (config->rotation_angle == PPA_SRM_ROTATION_ANGLE_0 || config->rotation_angle == PPA_SRM_ROTATION_ANGLE_180) {
+        new_block_w = (uint32_t)(config->scale_x * config->in.block_w);
+        new_block_h = (uint32_t)(config->scale_y * config->in.block_h);
+    } else {
+        new_block_w = (uint32_t)(config->scale_y * config->in.block_h);
+        new_block_h = (uint32_t)(config->scale_x * config->in.block_w);
+    }
+    ESP_RETURN_ON_FALSE(new_block_w <= (config->out.pic_w - config->out.block_offset_x) &&
+                        new_block_h <= (config->out.pic_h - config->out.block_offset_y),
                         ESP_ERR_INVALID_ARG, TAG, "scale does not fit in the out pic");
-    if (oper_config->in_color.byte_swap) {
-        ESP_RETURN_ON_FALSE(oper_config->in_color.mode == PPA_SRM_COLOR_MODE_ARGB8888 || oper_config->in_color.mode == PPA_SRM_COLOR_MODE_RGB565,
-                            ESP_ERR_INVALID_ARG, TAG, "in_color_mode does not support byte_swap");
+    if (config->byte_swap) {
+        PPA_CHECK_CM_SUPPORT_BYTE_SWAP("in.srm", (uint32_t)config->in.srm_cm);
     }
-    if (oper_config->in_color.rgb_swap) {
-        ESP_RETURN_ON_FALSE(COLOR_SPACE_TYPE((uint32_t)oper_config->in_color.mode) == COLOR_SPACE_ARGB || COLOR_SPACE_TYPE((uint32_t)oper_config->in_color.mode) == COLOR_SPACE_RGB,
-                            ESP_ERR_INVALID_ARG, TAG, "in_color_mode does not support rgb_swap");
+    if (config->rgb_swap) {
+        PPA_CHECK_CM_SUPPORT_RGB_SWAP("in.srm", (uint32_t)config->in.srm_cm);
     }
-    ESP_RETURN_ON_FALSE(oper_config->in_color.alpha_value <= 0xFF, ESP_ERR_INVALID_ARG, TAG, "invalid alpha_value");
+    ESP_RETURN_ON_FALSE(config->alpha_value <= 0xFF, ESP_ERR_INVALID_ARG, TAG, "invalid alpha_value");
     // To reduce complexity, rotation_angle, color_mode, alpha_update_mode correctness are checked in their corresponding LL functions
     // TODO:
     // YUV420: in desc, ha/hb/va/vb/x/y must be even number
@@ -738,53 +748,53 @@ esp_err_t ppa_do_scale_rotate_mirror(ppa_invoker_handle_t ppa_invoker, const ppa
     // Write back and invalidate are performed on the entire picture (the window content is not continuous in the buffer)
     // Write back in_buffer
     color_space_pixel_format_t in_pixel_format = {
-        .color_type_id = oper_config->in_color.mode,
+        .color_type_id = config->in.srm_cm,
     };
-    uint32_t in_pic_len = oper_config->in_pic_w * oper_config->in_pic_h * color_hal_pixel_format_get_bit_depth(in_pixel_format) / 8;
-    esp_cache_msync(oper_config->in_buffer, in_pic_len, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED);
+    uint32_t in_pic_len = config->in.pic_w * config->in.pic_h * color_hal_pixel_format_get_bit_depth(in_pixel_format) / 8;
+    esp_cache_msync(config->in.buffer, in_pic_len, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED);
     // Invalidate out_buffer
-    esp_cache_msync(oper_config->out_buffer, oper_config->out_buffer_size, ESP_CACHE_MSYNC_FLAG_DIR_M2C);
+    esp_cache_msync(config->out.buffer, config->out.buffer_size, ESP_CACHE_MSYNC_FLAG_DIR_M2C);
 
     esp_err_t ret = ESP_OK;
     ppa_trans_t *trans_elm = NULL;
-    if (xQueueReceive(ppa_invoker->trans_elm_ptr_queue, (void *)&trans_elm, 0)) {
+    if (xQueueReceive(ppa_client->trans_elm_ptr_queue, (void *)&trans_elm, 0)) {
         dma2d_trans_config_t *dma_trans_desc = trans_elm->trans_desc;
 
         ppa_dma2d_trans_on_picked_config_t *trans_on_picked_desc = dma_trans_desc->user_config;
 
         ppa_srm_oper_t *srm_trans_desc = (ppa_srm_oper_t *)trans_on_picked_desc->srm_desc;
-        memcpy(srm_trans_desc, oper_config, sizeof(ppa_srm_operation_config_t));
+        memcpy(srm_trans_desc, config, sizeof(ppa_srm_oper_trans_config_t));
         srm_trans_desc->scale_x_int = (uint32_t)srm_trans_desc->scale_x;
         srm_trans_desc->scale_x_frag = (uint32_t)(srm_trans_desc->scale_x * (PPA_LL_SRM_SCALING_FRAG_MAX + 1)) & PPA_LL_SRM_SCALING_FRAG_MAX;
         srm_trans_desc->scale_y_int = (uint32_t)srm_trans_desc->scale_y;
         srm_trans_desc->scale_y_frag = (uint32_t)(srm_trans_desc->scale_y * (PPA_LL_SRM_SCALING_FRAG_MAX + 1)) & PPA_LL_SRM_SCALING_FRAG_MAX;
 
-        trans_on_picked_desc->ppa_engine = ppa_invoker->engine;
+        trans_on_picked_desc->ppa_engine = ppa_client->engine;
         trans_on_picked_desc->trigger_periph = DMA2D_TRIG_PERIPH_PPA_SRM;
 
         dma_trans_desc->tx_channel_num = 1;
         dma_trans_desc->rx_channel_num = 1;
         dma_trans_desc->channel_flags = 0;
-        if (oper_config->in_color.mode == PPA_SRM_COLOR_MODE_YUV422 || oper_config->in_color.mode == PPA_SRM_COLOR_MODE_YUV444) {
+        if (config->in.srm_cm == PPA_SRM_COLOR_MODE_YUV422 || config->in.srm_cm == PPA_SRM_COLOR_MODE_YUV444) {
             dma_trans_desc->channel_flags |= DMA2D_CHANNEL_FUNCTION_FLAG_TX_CSC;
         }
-        if (oper_config->out_color.mode == PPA_SRM_COLOR_MODE_YUV444) {
+        if (config->out.srm_cm == PPA_SRM_COLOR_MODE_YUV444) {
             dma_trans_desc->channel_flags |= DMA2D_CHANNEL_FUNCTION_FLAG_RX_CSC;
         }
         dma_trans_desc->specified_tx_channel_mask = 0;
         dma_trans_desc->specified_rx_channel_mask = 0;
 
-        trans_elm->invoker = ppa_invoker;
-        trans_elm->user_data = trans_config->user_data;
-        xSemaphoreTake(trans_elm->sem, 0); // Ensure no transaction semphore before transaction starts
+        trans_elm->client = ppa_client;
+        trans_elm->user_data = config->user_data;
+        xSemaphoreTake(trans_elm->sem, 0); // Ensure no transaction semaphore before transaction starts
 
-        ret = ppa_do_operation(ppa_invoker, ppa_invoker->engine, trans_elm, trans_config->mode);
+        ret = ppa_do_operation(ppa_client, ppa_client->engine, trans_elm, config->mode);
         if (ret != ESP_OK) {
-            ppa_recycle_transaction(ppa_invoker, trans_elm);
+            ppa_recycle_transaction(ppa_client, trans_elm);
         }
     } else {
         ret = ESP_FAIL;
-        ESP_LOGE(TAG, "exceed maximum pending transactions for the invoker, consider increase max_pending_trans_num");
+        ESP_LOGE(TAG, "exceed maximum pending transactions for the client, consider increase max_pending_trans_num");
     }
     return ret;
 }
@@ -797,6 +807,9 @@ static bool ppa_blend_transaction_on_picked(uint32_t num_chans, const dma2d_tran
 
     ppa_blend_oper_t *blend_trans_desc = (ppa_blend_oper_t *)trans_on_picked_desc->blend_desc;
     ppa_blend_engine_t *blend_engine = __containerof(trans_on_picked_desc->ppa_engine, ppa_blend_engine_t, base);
+
+    // Reset blending engine
+    ppa_ll_blend_reset(s_platform.hal.dev);
 
     // Get the required 2D-DMA channel handles
     dma2d_channel_handle_t dma2d_tx_bg_chan = NULL;
@@ -817,59 +830,59 @@ static bool ppa_blend_transaction_on_picked(uint32_t num_chans, const dma2d_tran
     assert(dma2d_tx_bg_chan && dma2d_tx_fg_chan && dma2d_rx_chan);
 
     color_space_pixel_format_t in_bg_pixel_format = {
-        .color_type_id = blend_trans_desc->in_bg_color.mode,
+        .color_type_id = blend_trans_desc->in_bg.blend_cm,
     };
     color_space_pixel_format_t in_fg_pixel_format = {
-        .color_type_id = blend_trans_desc->in_fg_color.mode,
+        .color_type_id = blend_trans_desc->in_fg.blend_cm,
     };
     color_space_pixel_format_t out_pixel_format = {
-        .color_type_id = blend_trans_desc->out_color.mode,
+        .color_type_id = blend_trans_desc->out.blend_cm,
     };
 
     // Fill 2D-DMA descriptors
-    blend_engine->dma_tx_bg_desc->vb_size = blend_trans_desc->in_bg_fg_block_h;
-    blend_engine->dma_tx_bg_desc->hb_length = blend_trans_desc->in_bg_fg_block_w;
+    blend_engine->dma_tx_bg_desc->vb_size = blend_trans_desc->in_bg.block_h;
+    blend_engine->dma_tx_bg_desc->hb_length = blend_trans_desc->in_bg.block_w;
     blend_engine->dma_tx_bg_desc->err_eof = 0;
     blend_engine->dma_tx_bg_desc->dma2d_en = 1;
     blend_engine->dma_tx_bg_desc->suc_eof = 1;
     blend_engine->dma_tx_bg_desc->owner = DMA2D_DESCRIPTOR_BUFFER_OWNER_DMA;
-    blend_engine->dma_tx_bg_desc->va_size = blend_trans_desc->in_bg_pic_h;
-    blend_engine->dma_tx_bg_desc->ha_length = blend_trans_desc->in_bg_pic_w;
+    blend_engine->dma_tx_bg_desc->va_size = blend_trans_desc->in_bg.pic_h;
+    blend_engine->dma_tx_bg_desc->ha_length = blend_trans_desc->in_bg.pic_w;
     blend_engine->dma_tx_bg_desc->pbyte = dma2d_desc_pixel_format_to_pbyte_value(in_bg_pixel_format);
-    blend_engine->dma_tx_bg_desc->y = blend_trans_desc->in_bg_block_offset_y;
-    blend_engine->dma_tx_bg_desc->x = blend_trans_desc->in_bg_block_offset_x;
+    blend_engine->dma_tx_bg_desc->y = blend_trans_desc->in_bg.block_offset_y;
+    blend_engine->dma_tx_bg_desc->x = blend_trans_desc->in_bg.block_offset_x;
     blend_engine->dma_tx_bg_desc->mode = DMA2D_DESCRIPTOR_BLOCK_RW_MODE_SINGLE;
-    blend_engine->dma_tx_bg_desc->buffer = (void *)blend_trans_desc->in_bg_buffer;
+    blend_engine->dma_tx_bg_desc->buffer = (void *)blend_trans_desc->in_bg.buffer;
     blend_engine->dma_tx_bg_desc->next = NULL;
 
-    blend_engine->dma_tx_fg_desc->vb_size = blend_trans_desc->in_bg_fg_block_h;
-    blend_engine->dma_tx_fg_desc->hb_length = blend_trans_desc->in_bg_fg_block_w;
+    blend_engine->dma_tx_fg_desc->vb_size = blend_trans_desc->in_fg.block_h;
+    blend_engine->dma_tx_fg_desc->hb_length = blend_trans_desc->in_fg.block_w;
     blend_engine->dma_tx_fg_desc->err_eof = 0;
     blend_engine->dma_tx_fg_desc->dma2d_en = 1;
     blend_engine->dma_tx_fg_desc->suc_eof = 1;
     blend_engine->dma_tx_fg_desc->owner = DMA2D_DESCRIPTOR_BUFFER_OWNER_DMA;
-    blend_engine->dma_tx_fg_desc->va_size = blend_trans_desc->in_fg_pic_h;
-    blend_engine->dma_tx_fg_desc->ha_length = blend_trans_desc->in_fg_pic_w;
+    blend_engine->dma_tx_fg_desc->va_size = blend_trans_desc->in_fg.pic_h;
+    blend_engine->dma_tx_fg_desc->ha_length = blend_trans_desc->in_fg.pic_w;
     blend_engine->dma_tx_fg_desc->pbyte = dma2d_desc_pixel_format_to_pbyte_value(in_fg_pixel_format);
-    blend_engine->dma_tx_fg_desc->y = blend_trans_desc->in_fg_block_offset_y;
-    blend_engine->dma_tx_fg_desc->x = blend_trans_desc->in_fg_block_offset_x;
+    blend_engine->dma_tx_fg_desc->y = blend_trans_desc->in_fg.block_offset_y;
+    blend_engine->dma_tx_fg_desc->x = blend_trans_desc->in_fg.block_offset_x;
     blend_engine->dma_tx_fg_desc->mode = DMA2D_DESCRIPTOR_BLOCK_RW_MODE_SINGLE;
-    blend_engine->dma_tx_fg_desc->buffer = (void *)blend_trans_desc->in_fg_buffer;
+    blend_engine->dma_tx_fg_desc->buffer = (void *)blend_trans_desc->in_fg.buffer;
     blend_engine->dma_tx_fg_desc->next = NULL;
 
-    blend_engine->dma_rx_desc->vb_size = blend_trans_desc->in_bg_fg_block_h;
-    blend_engine->dma_rx_desc->hb_length = blend_trans_desc->in_bg_fg_block_w;
+    blend_engine->dma_rx_desc->vb_size = blend_trans_desc->in_fg.block_h; // in_bg.block_h == in_fg.block_h
+    blend_engine->dma_rx_desc->hb_length = blend_trans_desc->in_fg.block_w; // in_bg.block_w == in_fg.block_w
     blend_engine->dma_rx_desc->err_eof = 0;
     blend_engine->dma_rx_desc->dma2d_en = 1;
     blend_engine->dma_rx_desc->suc_eof = 1;
     blend_engine->dma_rx_desc->owner = DMA2D_DESCRIPTOR_BUFFER_OWNER_DMA;
-    blend_engine->dma_rx_desc->va_size = blend_trans_desc->out_pic_h;
-    blend_engine->dma_rx_desc->ha_length = blend_trans_desc->out_pic_w;
+    blend_engine->dma_rx_desc->va_size = blend_trans_desc->out.pic_h;
+    blend_engine->dma_rx_desc->ha_length = blend_trans_desc->out.pic_w;
     blend_engine->dma_rx_desc->pbyte = dma2d_desc_pixel_format_to_pbyte_value(out_pixel_format);
-    blend_engine->dma_rx_desc->y = blend_trans_desc->out_block_offset_y;
-    blend_engine->dma_rx_desc->x = blend_trans_desc->out_block_offset_x;
+    blend_engine->dma_rx_desc->y = blend_trans_desc->out.block_offset_y;
+    blend_engine->dma_rx_desc->x = blend_trans_desc->out.block_offset_x;
     blend_engine->dma_rx_desc->mode = DMA2D_DESCRIPTOR_BLOCK_RW_MODE_SINGLE;
-    blend_engine->dma_rx_desc->buffer = (void *)blend_trans_desc->out_buffer;
+    blend_engine->dma_rx_desc->buffer = (void *)blend_trans_desc->out.buffer;
     blend_engine->dma_rx_desc->next = NULL;
 
     esp_cache_msync((void *)blend_engine->dma_tx_bg_desc, s_platform.dma_desc_mem_size, ESP_CACHE_MSYNC_FLAG_DIR_C2M);
@@ -901,8 +914,6 @@ static bool ppa_blend_transaction_on_picked(uint32_t num_chans, const dma2d_tran
     };
     dma2d_register_rx_event_callbacks(dma2d_rx_chan, &dma_event_cbs, (void *)trans_on_picked_desc->trans_elm);
 
-    ppa_ll_blend_reset(s_platform.hal.dev);
-
     dma2d_set_desc_addr(dma2d_tx_bg_chan, (intptr_t)blend_engine->dma_tx_bg_desc);
     dma2d_set_desc_addr(dma2d_tx_fg_chan, (intptr_t)blend_engine->dma_tx_fg_desc);
     dma2d_set_desc_addr(dma2d_rx_chan, (intptr_t)blend_engine->dma_rx_desc);
@@ -911,30 +922,30 @@ static bool ppa_blend_transaction_on_picked(uint32_t num_chans, const dma2d_tran
     dma2d_start(dma2d_rx_chan);
 
     // Configure PPA Blending engine
-    ppa_ll_blend_set_rx_bg_color_mode(s_platform.hal.dev, blend_trans_desc->in_bg_color.mode);
-    ppa_ll_blend_enable_rx_bg_byte_swap(s_platform.hal.dev, blend_trans_desc->in_bg_color.byte_swap);
-    ppa_ll_blend_enable_rx_bg_rgb_swap(s_platform.hal.dev, blend_trans_desc->in_bg_color.rgb_swap);
-    ppa_ll_blend_configure_rx_bg_alpha(s_platform.hal.dev, blend_trans_desc->in_bg_color.alpha_update_mode, blend_trans_desc->in_bg_color.alpha_value);
+    ppa_ll_blend_set_rx_bg_color_mode(s_platform.hal.dev, blend_trans_desc->in_bg.blend_cm);
+    ppa_ll_blend_enable_rx_bg_byte_swap(s_platform.hal.dev, blend_trans_desc->bg_byte_swap);
+    ppa_ll_blend_enable_rx_bg_rgb_swap(s_platform.hal.dev, blend_trans_desc->bg_rgb_swap);
+    ppa_ll_blend_configure_rx_bg_alpha(s_platform.hal.dev, blend_trans_desc->bg_alpha_update_mode, blend_trans_desc->bg_alpha_value);
 
-    ppa_ll_blend_set_rx_fg_color_mode(s_platform.hal.dev, blend_trans_desc->in_fg_color.mode);
-    if (COLOR_SPACE_TYPE(blend_trans_desc->in_fg_color.mode) == COLOR_SPACE_ALPHA) {
-        ppa_ll_blend_set_rx_fg_fix_rgb(s_platform.hal.dev, blend_trans_desc->in_fg_color.fix_rgb_val);
+    ppa_ll_blend_set_rx_fg_color_mode(s_platform.hal.dev, blend_trans_desc->in_fg.blend_cm);
+    if (COLOR_SPACE_TYPE((uint32_t)blend_trans_desc->in_fg.blend_cm) == COLOR_SPACE_ALPHA) {
+        ppa_ll_blend_set_rx_fg_fix_rgb(s_platform.hal.dev, blend_trans_desc->fg_fix_rgb_val);
     }
-    ppa_ll_blend_enable_rx_fg_byte_swap(s_platform.hal.dev, blend_trans_desc->in_fg_color.byte_swap);
-    ppa_ll_blend_enable_rx_fg_rgb_swap(s_platform.hal.dev, blend_trans_desc->in_fg_color.rgb_swap);
-    ppa_ll_blend_configure_rx_fg_alpha(s_platform.hal.dev, blend_trans_desc->in_fg_color.alpha_update_mode, blend_trans_desc->in_fg_color.alpha_value);
+    ppa_ll_blend_enable_rx_fg_byte_swap(s_platform.hal.dev, blend_trans_desc->fg_byte_swap);
+    ppa_ll_blend_enable_rx_fg_rgb_swap(s_platform.hal.dev, blend_trans_desc->fg_rgb_swap);
+    ppa_ll_blend_configure_rx_fg_alpha(s_platform.hal.dev, blend_trans_desc->fg_alpha_update_mode, blend_trans_desc->fg_alpha_value);
 
-    ppa_ll_blend_set_tx_color_mode(s_platform.hal.dev, blend_trans_desc->out_color.mode);
+    ppa_ll_blend_set_tx_color_mode(s_platform.hal.dev, blend_trans_desc->out.blend_cm);
 
     // Color keying
     ppa_ll_blend_configure_rx_bg_ck_range(s_platform.hal.dev,
-                                          blend_trans_desc->in_bg_color.ck_en ? blend_trans_desc->in_bg_color.ck_rgb_low_thres : 0xFFFFFF,
-                                          blend_trans_desc->in_bg_color.ck_en ? blend_trans_desc->in_bg_color.ck_rgb_high_thres : 0);
+                                          blend_trans_desc->bg_ck_en ? blend_trans_desc->bg_ck_rgb_low_thres : 0xFFFFFF,
+                                          blend_trans_desc->bg_ck_en ? blend_trans_desc->bg_ck_rgb_high_thres : 0);
     ppa_ll_blend_configure_rx_fg_ck_range(s_platform.hal.dev,
-                                          blend_trans_desc->in_fg_color.ck_en ? blend_trans_desc->in_fg_color.ck_rgb_low_thres : 0xFFFFFF,
-                                          blend_trans_desc->in_fg_color.ck_en ? blend_trans_desc->in_fg_color.ck_rgb_high_thres : 0);
-    ppa_ll_blend_set_ck_default_rgb(s_platform.hal.dev, (blend_trans_desc->in_bg_color.ck_en && blend_trans_desc->in_fg_color.ck_en) ? blend_trans_desc->out_color.ck_rgb_default_val : 0);
-    ppa_ll_blend_enable_ck_fg_bg_reverse(s_platform.hal.dev, blend_trans_desc->out_color.ck_reverse_bg2fg);
+                                          blend_trans_desc->fg_ck_en ? blend_trans_desc->fg_ck_rgb_low_thres : 0xFFFFFF,
+                                          blend_trans_desc->fg_ck_en ? blend_trans_desc->fg_ck_rgb_high_thres : 0);
+    ppa_ll_blend_set_ck_default_rgb(s_platform.hal.dev, (blend_trans_desc->bg_ck_en && blend_trans_desc->fg_ck_en) ? blend_trans_desc->ck_rgb_default_val : 0);
+    ppa_ll_blend_enable_ck_fg_bg_reverse(s_platform.hal.dev, blend_trans_desc->ck_reverse_bg2fg);
 
     ppa_ll_blend_start(s_platform.hal.dev, PPA_LL_BLEND_TRANS_MODE_BLEND);
 
@@ -942,74 +953,71 @@ static bool ppa_blend_transaction_on_picked(uint32_t num_chans, const dma2d_tran
     return false;
 }
 
-esp_err_t ppa_do_blend(ppa_invoker_handle_t ppa_invoker, const ppa_blend_operation_config_t *oper_config, const ppa_trans_config_t *trans_config)
+esp_err_t ppa_do_blend(ppa_client_handle_t ppa_client, const ppa_blend_oper_trans_config_t *config)
 {
-    ESP_RETURN_ON_FALSE(ppa_invoker && oper_config && trans_config, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
-    ESP_RETURN_ON_FALSE(ppa_invoker->oper_type == PPA_OPERATION_BLEND, ESP_ERR_INVALID_ARG, TAG, "invoker is not for blend operations");
-    ESP_RETURN_ON_FALSE(trans_config->mode <= PPA_TRANS_MODE_NON_BLOCKING, ESP_ERR_INVALID_ARG, TAG, "invalid mode");
+    ESP_RETURN_ON_FALSE(ppa_client && config, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    ESP_RETURN_ON_FALSE(ppa_client->oper_type == PPA_OPERATION_BLEND, ESP_ERR_INVALID_ARG, TAG, "client is not for blend operations");
+    ESP_RETURN_ON_FALSE(config->mode <= PPA_TRANS_MODE_NON_BLOCKING, ESP_ERR_INVALID_ARG, TAG, "invalid mode");
     // in_buffer could be anywhere (ram, flash, psram), out_buffer ptr cannot in flash region
-    ESP_RETURN_ON_FALSE(esp_ptr_internal(oper_config->out_buffer) || esp_ptr_external_ram(oper_config->out_buffer), ESP_ERR_INVALID_ARG, TAG, "invalid out_buffer addr");
-    ESP_RETURN_ON_FALSE((uintptr_t)oper_config->out_buffer % s_platform.buf_alignment_size == 0 && oper_config->out_buffer_size % s_platform.buf_alignment_size == 0,
-                        ESP_ERR_INVALID_ARG, TAG, "out_buffer addr or size not aligned to cache line size");
+    ESP_RETURN_ON_FALSE(esp_ptr_internal(config->out.buffer) || esp_ptr_external_ram(config->out.buffer), ESP_ERR_INVALID_ARG, TAG, "invalid out.buffer addr");
+    ESP_RETURN_ON_FALSE((uintptr_t)config->out.buffer % s_platform.buf_alignment_size == 0 && config->out.buffer_size % s_platform.buf_alignment_size == 0,
+                        ESP_ERR_INVALID_ARG, TAG, "out.buffer addr or out.buffer_size not aligned to cache line size");
     color_space_pixel_format_t out_pixel_format = {
-        .color_type_id = oper_config->out_color.mode,
+        .color_type_id = config->out.blend_cm,
     };
-    uint32_t out_pic_len = oper_config->out_pic_w * oper_config->out_pic_h * color_hal_pixel_format_get_bit_depth(out_pixel_format) / 8;
-    ESP_RETURN_ON_FALSE(out_pic_len <= oper_config->out_buffer_size, ESP_ERR_INVALID_ARG, TAG, "out_pic_w/h mismatch with out_buffer_size");
-    if (oper_config->in_bg_color.byte_swap) {
-        ESP_RETURN_ON_FALSE(oper_config->in_bg_color.mode == PPA_BLEND_COLOR_MODE_ARGB8888 || oper_config->in_bg_color.mode == PPA_BLEND_COLOR_MODE_RGB565,
-                            ESP_ERR_INVALID_ARG, TAG, "in_bg_color_mode does not support byte_swap");
+    uint32_t out_pic_len = config->out.pic_w * config->out.pic_h * color_hal_pixel_format_get_bit_depth(out_pixel_format) / 8;
+    ESP_RETURN_ON_FALSE(out_pic_len <= config->out.buffer_size, ESP_ERR_INVALID_ARG, TAG, "out.pic_w/h mismatch with out.buffer_size");
+    ESP_RETURN_ON_FALSE(config->in_bg.block_w == config->in_fg.block_w && config->in_bg.block_h == config->in_fg.block_h,
+                        ESP_ERR_INVALID_ARG, TAG, "in_bg.block_w/h must be equal to in_fg.block_w/h");
+    if (config->bg_byte_swap) {
+        PPA_CHECK_CM_SUPPORT_BYTE_SWAP("in_bg.blend", (uint32_t)config->in_bg.blend_cm);
     }
-    if (oper_config->in_bg_color.rgb_swap) {
-        ESP_RETURN_ON_FALSE(COLOR_SPACE_TYPE((uint32_t)oper_config->in_bg_color.mode) == COLOR_SPACE_ARGB || COLOR_SPACE_TYPE((uint32_t)oper_config->in_bg_color.mode) == COLOR_SPACE_RGB,
-                            ESP_ERR_INVALID_ARG, TAG, "in_bg_color_mode does not support rgb_swap");
+    if (config->bg_rgb_swap) {
+        PPA_CHECK_CM_SUPPORT_RGB_SWAP("in_bg.blend", (uint32_t)config->in_bg.blend_cm);
     }
-    if (oper_config->in_fg_color.byte_swap) {
-        ESP_RETURN_ON_FALSE(oper_config->in_fg_color.mode == PPA_BLEND_COLOR_MODE_ARGB8888 || oper_config->in_fg_color.mode == PPA_BLEND_COLOR_MODE_RGB565,
-                            ESP_ERR_INVALID_ARG, TAG, "in_fg_color_mode does not support byte_swap");
+    if (config->fg_byte_swap) {
+        PPA_CHECK_CM_SUPPORT_BYTE_SWAP("in_fg.blend", (uint32_t)config->in_fg.blend_cm);
     }
-    if (oper_config->in_fg_color.rgb_swap) {
-        ESP_RETURN_ON_FALSE(COLOR_SPACE_TYPE((uint32_t)oper_config->in_fg_color.mode) == COLOR_SPACE_ARGB || COLOR_SPACE_TYPE((uint32_t)oper_config->in_fg_color.mode) == COLOR_SPACE_RGB,
-                            ESP_ERR_INVALID_ARG, TAG, "in_fg_color_mode does not support rgb_swap");
+    if (config->fg_rgb_swap) {
+        PPA_CHECK_CM_SUPPORT_RGB_SWAP("in_fg.blend", (uint32_t)config->in_fg.blend_cm);
     }
-    ESP_RETURN_ON_FALSE(oper_config->in_bg_color.alpha_value <= 0xFF && oper_config->in_fg_color.alpha_value <= 0xFF, ESP_ERR_INVALID_ARG, TAG, "invalid alpha_value");
-    if (oper_config->in_bg_color.mode == PPA_BLEND_COLOR_MODE_L4) {
-        ESP_RETURN_ON_FALSE(oper_config->in_bg_fg_block_h % 2 == 0 && oper_config->in_bg_block_offset_x % 2 == 0,
-                            ESP_ERR_INVALID_ARG, TAG, "bg_block_h and bg_block_offset_x must be even");
+    ESP_RETURN_ON_FALSE(config->bg_alpha_value <= 0xFF && config->fg_alpha_value <= 0xFF, ESP_ERR_INVALID_ARG, TAG, "invalid bg/fg_alpha_value");
+    if (config->in_bg.blend_cm == PPA_BLEND_COLOR_MODE_L4) {
+        ESP_RETURN_ON_FALSE(config->in_bg.block_w % 2 == 0 && config->in_bg.block_offset_x % 2 == 0,
+                            ESP_ERR_INVALID_ARG, TAG, "in_bg.block_w and in_bg.block_offset_x must be even");
     }
-    if (oper_config->in_fg_color.mode == PPA_BLEND_COLOR_MODE_A4 || oper_config->in_fg_color.mode == PPA_BLEND_COLOR_MODE_L4) {
-        ESP_RETURN_ON_FALSE(oper_config->in_bg_fg_block_h % 2 == 0 && oper_config->in_fg_block_offset_x % 2 == 0,
-                            ESP_ERR_INVALID_ARG, TAG, "fg_block_h and fg_block_offset_x must be even");
+    if (config->in_fg.blend_cm == PPA_BLEND_COLOR_MODE_A4 || config->in_fg.blend_cm == PPA_BLEND_COLOR_MODE_L4) {
+        ESP_RETURN_ON_FALSE(config->in_fg.block_w % 2 == 0 && config->in_fg.block_offset_x % 2 == 0,
+                            ESP_ERR_INVALID_ARG, TAG, "in_fg.block_w and in_fg.block_offset_x must be even");
     }
     // To reduce complexity, color_mode, alpha_update_mode correctness are checked in their corresponding LL functions
-    // TODO: Check in_bg.block_w == in_fg.block_w && in_bg.block_h == in_fg.block_h
 
     // Write back and invalidate are performed on the entire picture (the window content is not continuous in the buffer)
     // Write back in_bg_buffer, in_fg_buffer
     color_space_pixel_format_t in_bg_pixel_format = {
-        .color_type_id = oper_config->in_bg_color.mode,
+        .color_type_id = config->in_bg.blend_cm,
     };
-    uint32_t in_bg_pic_len = oper_config->in_bg_pic_w * oper_config->in_bg_pic_h * color_hal_pixel_format_get_bit_depth(in_bg_pixel_format) / 8;
-    esp_cache_msync(oper_config->in_bg_buffer, in_bg_pic_len, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED);
+    uint32_t in_bg_pic_len = config->in_bg.pic_w * config->in_bg.pic_h * color_hal_pixel_format_get_bit_depth(in_bg_pixel_format) / 8;
+    esp_cache_msync(config->in_bg.buffer, in_bg_pic_len, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED);
     color_space_pixel_format_t in_fg_pixel_format = {
-        .color_type_id = oper_config->in_fg_color.mode,
+        .color_type_id = config->in_fg.blend_cm,
     };
-    uint32_t in_fg_pic_len = oper_config->in_fg_pic_w * oper_config->in_fg_pic_h * color_hal_pixel_format_get_bit_depth(in_fg_pixel_format) / 8;
-    esp_cache_msync(oper_config->in_fg_buffer, in_fg_pic_len, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED);
+    uint32_t in_fg_pic_len = config->in_fg.pic_w * config->in_fg.pic_h * color_hal_pixel_format_get_bit_depth(in_fg_pixel_format) / 8;
+    esp_cache_msync(config->in_fg.buffer, in_fg_pic_len, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED);
     // Invalidate out_buffer
-    esp_cache_msync(oper_config->out_buffer, oper_config->out_buffer_size, ESP_CACHE_MSYNC_FLAG_DIR_M2C);
+    esp_cache_msync(config->out.buffer, config->out.buffer_size, ESP_CACHE_MSYNC_FLAG_DIR_M2C);
 
     esp_err_t ret = ESP_OK;
     ppa_trans_t *trans_elm = NULL;
-    if (xQueueReceive(ppa_invoker->trans_elm_ptr_queue, (void *)&trans_elm, 0)) {
+    if (xQueueReceive(ppa_client->trans_elm_ptr_queue, (void *)&trans_elm, 0)) {
         dma2d_trans_config_t *dma_trans_desc = trans_elm->trans_desc;
 
         ppa_dma2d_trans_on_picked_config_t *trans_on_picked_desc = dma_trans_desc->user_config;
 
         ppa_blend_oper_t *blend_trans_desc = (ppa_blend_oper_t *)trans_on_picked_desc->blend_desc;
-        memcpy(blend_trans_desc, oper_config, sizeof(ppa_blend_operation_config_t));
+        memcpy(blend_trans_desc, config, sizeof(ppa_blend_oper_trans_config_t));
 
-        trans_on_picked_desc->ppa_engine = ppa_invoker->engine;
+        trans_on_picked_desc->ppa_engine = ppa_client->engine;
         trans_on_picked_desc->trigger_periph = DMA2D_TRIG_PERIPH_PPA_BLEND;
 
         dma_trans_desc->tx_channel_num = 2;
@@ -1018,17 +1026,17 @@ esp_err_t ppa_do_blend(ppa_invoker_handle_t ppa_invoker, const ppa_blend_operati
         dma_trans_desc->specified_tx_channel_mask = 0;
         dma_trans_desc->specified_rx_channel_mask = 0;
 
-        trans_elm->invoker = ppa_invoker;
-        trans_elm->user_data = trans_config->user_data;
-        xSemaphoreTake(trans_elm->sem, 0); // Ensure no transaction semphore before transaction starts
+        trans_elm->client = ppa_client;
+        trans_elm->user_data = config->user_data;
+        xSemaphoreTake(trans_elm->sem, 0); // Ensure no transaction semaphore before transaction starts
 
-        ret = ppa_do_operation(ppa_invoker, ppa_invoker->engine, trans_elm, trans_config->mode);
+        ret = ppa_do_operation(ppa_client, ppa_client->engine, trans_elm, config->mode);
         if (ret != ESP_OK) {
-            ppa_recycle_transaction(ppa_invoker, trans_elm);
+            ppa_recycle_transaction(ppa_client, trans_elm);
         }
     } else {
         ret = ESP_FAIL;
-        ESP_LOGE(TAG, "exceed maximum pending transactions for the invoker, consider increase max_pending_trans_num");
+        ESP_LOGE(TAG, "exceed maximum pending transactions for the client, consider increase max_pending_trans_num");
     }
     return ret;
 }
@@ -1042,12 +1050,15 @@ static bool ppa_fill_transaction_on_picked(uint32_t num_chans, const dma2d_trans
     ppa_fill_oper_t *fill_trans_desc = (ppa_fill_oper_t *)trans_on_picked_desc->fill_desc;
     ppa_blend_engine_t *blend_engine = __containerof(trans_on_picked_desc->ppa_engine, ppa_blend_engine_t, base);
 
+    // Reset blending engine
+    ppa_ll_blend_reset(s_platform.hal.dev);
+
     // Get the required 2D-DMA channel handles
     assert(dma2d_chans[0].dir == DMA2D_CHANNEL_DIRECTION_RX);
     dma2d_channel_handle_t dma2d_rx_chan = dma2d_chans[0].chan;
 
     color_space_pixel_format_t out_pixel_format = {
-        .color_type_id = fill_trans_desc->out_color.mode,
+        .color_type_id = fill_trans_desc->out.fill_cm,
     };
 
     // Fill 2D-DMA descriptors
@@ -1057,13 +1068,13 @@ static bool ppa_fill_transaction_on_picked(uint32_t num_chans, const dma2d_trans
     blend_engine->dma_rx_desc->dma2d_en = 1;
     blend_engine->dma_rx_desc->suc_eof = 1;
     blend_engine->dma_rx_desc->owner = DMA2D_DESCRIPTOR_BUFFER_OWNER_DMA;
-    blend_engine->dma_rx_desc->va_size = fill_trans_desc->out_pic_h;
-    blend_engine->dma_rx_desc->ha_length = fill_trans_desc->out_pic_w;
+    blend_engine->dma_rx_desc->va_size = fill_trans_desc->out.pic_h;
+    blend_engine->dma_rx_desc->ha_length = fill_trans_desc->out.pic_w;
     blend_engine->dma_rx_desc->pbyte = dma2d_desc_pixel_format_to_pbyte_value(out_pixel_format);
-    blend_engine->dma_rx_desc->y = fill_trans_desc->out_block_offset_y;
-    blend_engine->dma_rx_desc->x = fill_trans_desc->out_block_offset_x;
+    blend_engine->dma_rx_desc->y = fill_trans_desc->out.block_offset_y;
+    blend_engine->dma_rx_desc->x = fill_trans_desc->out.block_offset_x;
     blend_engine->dma_rx_desc->mode = DMA2D_DESCRIPTOR_BLOCK_RW_MODE_SINGLE;
-    blend_engine->dma_rx_desc->buffer = (void *)fill_trans_desc->out_buffer;
+    blend_engine->dma_rx_desc->buffer = (void *)fill_trans_desc->out.buffer;
     blend_engine->dma_rx_desc->next = NULL;
 
     esp_cache_msync((void *)blend_engine->dma_rx_desc, s_platform.dma_desc_mem_size, ESP_CACHE_MSYNC_FLAG_DIR_C2M);
@@ -1087,14 +1098,12 @@ static bool ppa_fill_transaction_on_picked(uint32_t num_chans, const dma2d_trans
     };
     dma2d_register_rx_event_callbacks(dma2d_rx_chan, &dma_event_cbs, (void *)trans_on_picked_desc->trans_elm);
 
-    ppa_ll_blend_reset(s_platform.hal.dev);
-
     dma2d_set_desc_addr(dma2d_rx_chan, (intptr_t)blend_engine->dma_rx_desc);
     dma2d_start(dma2d_rx_chan);
 
     // Configure PPA Blending engine
     ppa_ll_blend_configure_filling_block(s_platform.hal.dev, fill_trans_desc->fill_argb_color, fill_trans_desc->fill_block_w, fill_trans_desc->fill_block_h);
-    ppa_ll_blend_set_tx_color_mode(s_platform.hal.dev, fill_trans_desc->out_color.mode);
+    ppa_ll_blend_set_tx_color_mode(s_platform.hal.dev, fill_trans_desc->out.fill_cm);
 
     ppa_ll_blend_start(s_platform.hal.dev, PPA_LL_BLEND_TRANS_MODE_FILL);
 
@@ -1102,36 +1111,36 @@ static bool ppa_fill_transaction_on_picked(uint32_t num_chans, const dma2d_trans
     return false;
 }
 
-esp_err_t ppa_do_fill(ppa_invoker_handle_t ppa_invoker, const ppa_fill_operation_config_t *oper_config, const ppa_trans_config_t *trans_config)
+esp_err_t ppa_do_fill(ppa_client_handle_t ppa_client, const ppa_fill_oper_trans_config_t *config)
 {
-    ESP_RETURN_ON_FALSE(ppa_invoker && oper_config && trans_config, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
-    ESP_RETURN_ON_FALSE(ppa_invoker->oper_type == PPA_OPERATION_FILL, ESP_ERR_INVALID_ARG, TAG, "invoker is not for fill operations");
-    ESP_RETURN_ON_FALSE(trans_config->mode <= PPA_TRANS_MODE_NON_BLOCKING, ESP_ERR_INVALID_ARG, TAG, "invalid mode");
+    ESP_RETURN_ON_FALSE(ppa_client && config, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    ESP_RETURN_ON_FALSE(ppa_client->oper_type == PPA_OPERATION_FILL, ESP_ERR_INVALID_ARG, TAG, "client is not for fill operations");
+    ESP_RETURN_ON_FALSE(config->mode <= PPA_TRANS_MODE_NON_BLOCKING, ESP_ERR_INVALID_ARG, TAG, "invalid mode");
     // out_buffer ptr cannot in flash region
-    ESP_RETURN_ON_FALSE(esp_ptr_internal(oper_config->out_buffer) || esp_ptr_external_ram(oper_config->out_buffer), ESP_ERR_INVALID_ARG, TAG, "invalid out_buffer addr");
-    ESP_RETURN_ON_FALSE((uintptr_t)oper_config->out_buffer % s_platform.buf_alignment_size == 0 && oper_config->out_buffer_size % s_platform.buf_alignment_size == 0,
-                        ESP_ERR_INVALID_ARG, TAG, "out_buffer addr or size not aligned to cache line size");
+    ESP_RETURN_ON_FALSE(esp_ptr_internal(config->out.buffer) || esp_ptr_external_ram(config->out.buffer), ESP_ERR_INVALID_ARG, TAG, "invalid out.buffer addr");
+    ESP_RETURN_ON_FALSE((uintptr_t)config->out.buffer % s_platform.buf_alignment_size == 0 && config->out.buffer_size % s_platform.buf_alignment_size == 0,
+                        ESP_ERR_INVALID_ARG, TAG, "out.buffer addr or out.buffer_size not aligned to cache line size");
     color_space_pixel_format_t out_pixel_format = {
-        .color_type_id = oper_config->out_color.mode,
+        .color_type_id = config->out.fill_cm,
     };
-    uint32_t out_pic_len = oper_config->out_pic_w * oper_config->out_pic_h * color_hal_pixel_format_get_bit_depth(out_pixel_format) / 8;
-    ESP_RETURN_ON_FALSE(out_pic_len <= oper_config->out_buffer_size, ESP_ERR_INVALID_ARG, TAG, "out_pic_w/h mismatch with out_buffer_size");
+    uint32_t out_pic_len = config->out.pic_w * config->out.pic_h * color_hal_pixel_format_get_bit_depth(out_pixel_format) / 8;
+    ESP_RETURN_ON_FALSE(out_pic_len <= config->out.buffer_size, ESP_ERR_INVALID_ARG, TAG, "out.pic_w/h mismatch with out.buffer_size");
     // To reduce complexity, color_mode, fill_block_w/h correctness are checked in their corresponding LL functions
 
     // Write back and invalidate are performed on the entire picture (the window content is not continuous in the buffer)
-    esp_cache_msync(oper_config->out_buffer, oper_config->out_buffer_size, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_INVALIDATE);
+    esp_cache_msync(config->out.buffer, config->out.buffer_size, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_INVALIDATE);
 
     esp_err_t ret = ESP_OK;
     ppa_trans_t *trans_elm = NULL;
-    if (xQueueReceive(ppa_invoker->trans_elm_ptr_queue, (void *)&trans_elm, 0)) {
+    if (xQueueReceive(ppa_client->trans_elm_ptr_queue, (void *)&trans_elm, 0)) {
         dma2d_trans_config_t *dma_trans_desc = trans_elm->trans_desc;
 
         ppa_dma2d_trans_on_picked_config_t *trans_on_picked_desc = dma_trans_desc->user_config;
 
         ppa_fill_oper_t *fill_trans_desc = (ppa_fill_oper_t *)trans_on_picked_desc->fill_desc;
-        memcpy(fill_trans_desc, oper_config, sizeof(ppa_fill_operation_config_t));
+        memcpy(fill_trans_desc, config, sizeof(ppa_fill_oper_trans_config_t));
 
-        trans_on_picked_desc->ppa_engine = ppa_invoker->engine;
+        trans_on_picked_desc->ppa_engine = ppa_client->engine;
         trans_on_picked_desc->trigger_periph = DMA2D_TRIG_PERIPH_PPA_BLEND;
 
         dma_trans_desc->tx_channel_num = 0;
@@ -1140,17 +1149,17 @@ esp_err_t ppa_do_fill(ppa_invoker_handle_t ppa_invoker, const ppa_fill_operation
         dma_trans_desc->specified_tx_channel_mask = 0;
         dma_trans_desc->specified_rx_channel_mask = 0;
 
-        trans_elm->invoker = ppa_invoker;
-        trans_elm->user_data = trans_config->user_data;
-        xSemaphoreTake(trans_elm->sem, 0); // Ensure no transaction semphore before transaction starts
+        trans_elm->client = ppa_client;
+        trans_elm->user_data = config->user_data;
+        xSemaphoreTake(trans_elm->sem, 0); // Ensure no transaction semaphore before transaction starts
 
-        ret = ppa_do_operation(ppa_invoker, ppa_invoker->engine, trans_elm, trans_config->mode);
+        ret = ppa_do_operation(ppa_client, ppa_client->engine, trans_elm, config->mode);
         if (ret != ESP_OK) {
-            ppa_recycle_transaction(ppa_invoker, trans_elm);
+            ppa_recycle_transaction(ppa_client, trans_elm);
         }
     } else {
         ret = ESP_FAIL;
-        ESP_LOGE(TAG, "exceed maximum pending transactions for the invoker, consider increase max_pending_trans_num");
+        ESP_LOGE(TAG, "exceed maximum pending transactions for the client, consider increase max_pending_trans_num");
     }
     return ret;
 }

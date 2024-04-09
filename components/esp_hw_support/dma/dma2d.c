@@ -828,6 +828,9 @@ esp_err_t dma2d_set_transfer_ability(dma2d_channel_handle_t dma2d_chan, const dm
         dma2d_ll_tx_enable_descriptor_burst(group->hal.dev, channel_id, ability->desc_burst_en);
         dma2d_ll_tx_set_data_burst_length(group->hal.dev, channel_id, ability->data_burst_length);
         dma2d_ll_tx_set_macro_block_size(group->hal.dev, channel_id, ability->mb_size);
+        if (ability->dscr_port_block_h && ability->dscr_port_block_v) {
+            dma2d_ll_tx_set_dscr_port_block_size(group->hal.dev, channel_id, ability->dscr_port_block_h, ability->dscr_port_block_v);
+        }
     } else {
         dma2d_ll_rx_enable_descriptor_burst(group->hal.dev, channel_id, ability->desc_burst_en);
         dma2d_ll_rx_set_data_burst_length(group->hal.dev, channel_id, ability->data_burst_length);

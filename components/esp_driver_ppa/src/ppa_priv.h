@@ -25,6 +25,14 @@ extern "C" {
 
 #define PPA_PM_LOCK_NAME_LEN_MAX 16
 
+#define PPA_CHECK_CM_SUPPORT_BYTE_SWAP(str, color_type_id) \
+            ESP_RETURN_ON_FALSE(color_type_id == COLOR_TYPE_ID(COLOR_SPACE_ARGB, COLOR_PIXEL_ARGB8888) || color_type_id == COLOR_TYPE_ID(COLOR_SPACE_RGB, COLOR_PIXEL_RGB565), \
+                                ESP_ERR_INVALID_ARG, TAG, str "_cm does not support byte_swap");
+
+#define PPA_CHECK_CM_SUPPORT_RGB_SWAP(str, color_type_id) \
+            ESP_RETURN_ON_FALSE(COLOR_SPACE_TYPE(color_type_id) == COLOR_SPACE_ARGB || COLOR_SPACE_TYPE(color_type_id) == COLOR_SPACE_RGB, \
+                                ESP_ERR_INVALID_ARG, TAG, str "_cm does not support rgb_swap");
+
 /******************************** ENGINE *************************************/
 // PPA module contains SRM engine and Blending engine
 
@@ -59,60 +67,43 @@ typedef struct {
 
 /******************************** CLIENT *************************************/
 
-typedef struct ppa_invoker_t ppa_invoker_t;
+typedef struct ppa_client_t ppa_client_t;
 
-struct ppa_invoker_t {
-    ppa_operation_t oper_type;                    // The PPA operation type that the invoker wants to do in speciality
+struct ppa_client_t {
+    ppa_operation_t oper_type;                    // The PPA operation type that the client wants to do in speciality
     ppa_engine_t *engine;                         // Pointer to the PPA engine that in charge of performing the PPA operation
     uint32_t trans_cnt;                           // Number of pending PPA transactions
     portMUX_TYPE spinlock;                        // Client level spinlock
-    bool in_accepting_trans_state;                // Indicates whether the invoker can accept new PPA transaction requests now
+    bool in_accepting_trans_state;                // Indicates whether the client can accept new PPA transaction requests now
     ppa_event_callback_t done_cb;                 // Transaction done callback
     QueueHandle_t trans_elm_ptr_queue;            // Queue that contains the pointers to the allocated memory to save the transaction contexts
 };
 
 /****************************** OPERATION ************************************/
 
-// The elements in this structure listed first are identical to the elements in structure `ppa_blend_operation_config_t`
+// The elements in this structure listed first are identical to the elements in structure `ppa_srm_oper_trans_config_t`
 // With adding a few extra elements in the end
 // This allows memcpy
 typedef struct {
-    void *in_buffer;
-    uint32_t in_pic_w;
-    uint32_t in_pic_h;
-    uint32_t in_block_w;
-    uint32_t in_block_h;
-    uint32_t in_block_offset_x;
-    uint32_t in_block_offset_y;
+    ppa_in_pic_blk_config_t in;
+    ppa_out_pic_blk_config_t out;
 
-    void *out_buffer;
-    uint32_t out_buffer_size;
-    uint32_t out_pic_w;
-    uint32_t out_pic_h;
-    uint32_t out_block_offset_x;
-    uint32_t out_block_offset_y;
-
+    // scale-rotate-mirror manipulation
     ppa_srm_rotation_angle_t rotation_angle;
     float scale_x;
     float scale_y;
     bool mirror_x;
     bool mirror_y;
 
-    struct {
-        ppa_srm_color_mode_t mode;
-        color_range_t yuv_range;
-        color_conv_std_rgb_yuv_t yuv_std;
-        bool rgb_swap;
-        bool byte_swap;
-        ppa_alpha_update_mode_t alpha_update_mode;
-        uint32_t alpha_value;
-    } in_color;
+    // input data manipulation
+    bool rgb_swap;
+    bool byte_swap;
+    ppa_alpha_update_mode_t alpha_update_mode;
+    uint32_t alpha_value;
 
-    struct {
-        ppa_srm_color_mode_t mode;
-        color_range_t yuv_range;
-        color_conv_std_rgb_yuv_t yuv_std;
-    } out_color;
+    ppa_trans_mode_t mode;
+    // uint32_t timeout;
+    void *user_data;
 
     uint32_t scale_x_int;
     uint32_t scale_x_frag;
@@ -120,9 +111,9 @@ typedef struct {
     uint32_t scale_y_frag;
 } ppa_srm_oper_t;
 
-typedef ppa_blend_operation_config_t ppa_blend_oper_t;
+typedef ppa_blend_oper_trans_config_t ppa_blend_oper_t;
 
-typedef ppa_fill_operation_config_t ppa_fill_oper_t;
+typedef ppa_fill_oper_trans_config_t ppa_fill_oper_t;
 
 /***************************** TRANSACTION ***********************************/
 
@@ -132,7 +123,7 @@ typedef struct ppa_trans_s {
     dma2d_trans_config_t *trans_desc;             // Pointer to the structure containing the configurations for a 2D-DMA transaction
     dma2d_trans_t *dma_trans_placeholder;         // Pointer to the memory to store the 2D-DMA transaction context
     SemaphoreHandle_t sem;                        // Semaphore to block when the transaction has not finished
-    ppa_invoker_t *invoker;                       // Pointer to the invoker who requested the transaction
+    ppa_client_t *client;                         // Pointer to the client who requested the transaction
     void *user_data;                              // User registered event data (per transaction)
 } ppa_trans_t;
 

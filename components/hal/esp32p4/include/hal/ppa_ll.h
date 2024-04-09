@@ -27,6 +27,9 @@ extern "C" {
 #define PPA_LL_SRM_SCALING_INT_MAX   PPA_SR_SCAL_X_INT_V
 #define PPA_LL_SRM_SCALING_FRAG_MAX  PPA_SR_SCAL_X_FRAG_V
 
+#define PPA_LL_SRM_DEFAULT_BLOCK_SIZE   18 // 18 x 18 block size
+#define PPA_LL_SRM_YUV420_BLOCK_SIZE    20 // 20 x 20 block size
+
 /**
  * @brief Enumeration of PPA blending mode
  */
@@ -229,7 +232,7 @@ static inline void ppa_ll_srm_set_tx_color_mode(ppa_dev_t *dev, ppa_srm_color_mo
  * @param dev Peripheral instance address
  * @param std One of the RGB-YUV conversion standards in color_conv_std_rgb_yuv_t
  */
-static inline void ppa_ll_srm_set_yuv2rgb_std(ppa_dev_t *dev, color_conv_std_rgb_yuv_t std)
+static inline void ppa_ll_srm_set_rx_yuv2rgb_std(ppa_dev_t *dev, color_conv_std_rgb_yuv_t std)
 {
     switch (std) {
     case COLOR_CONV_STD_RGB_YUV_BT601:
@@ -250,7 +253,7 @@ static inline void ppa_ll_srm_set_yuv2rgb_std(ppa_dev_t *dev, color_conv_std_rgb
  * @param dev Peripheral instance address
  * @param std One of the RGB-YUV conversion standards in color_conv_std_rgb_yuv_t
  */
-static inline void ppa_ll_srm_set_rgb2yuv_std(ppa_dev_t *dev, color_conv_std_rgb_yuv_t std)
+static inline void ppa_ll_srm_set_tx_rgb2yuv_std(ppa_dev_t *dev, color_conv_std_rgb_yuv_t std)
 {
     switch (std) {
     case COLOR_CONV_STD_RGB_YUV_BT601:
