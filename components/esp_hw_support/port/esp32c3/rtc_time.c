@@ -36,7 +36,7 @@
 uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cycles)
 {
     /* On ESP32C3, choosing RTC_CAL_RTC_MUX results in calibration of
-     * the 150k RTC clock regardless of the currenlty selected SLOW_CLK.
+     * the 150k RTC clock regardless of the currently selected SLOW_CLK.
      * On the ESP32, it used the currently selected SLOW_CLK.
      * The following code emulates ESP32 behavior:
      */
@@ -206,9 +206,7 @@ static void enable_timer_group0_for_calibration(void)
         }
     }
 #else
-    // no critical section is needed for bootloader
-    int __DECLARE_RCC_RC_ATOMIC_ENV;
-    timer_ll_enable_bus_clock(0, true);
-    timer_ll_reset_register(0);
+    _timer_ll_enable_bus_clock(0, true);
+    _timer_ll_reset_register(0);
 #endif
 }

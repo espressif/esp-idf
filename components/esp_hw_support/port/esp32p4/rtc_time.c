@@ -69,7 +69,7 @@ uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cycles)
 
     /* Enable requested clock (some clocks are always on) */
     // All clocks on/off takes time to be stable, so we shouldn't frequently enable/disable the clock
-    // Only enable if orignally was disabled, and set back to the disable state after calibration is done
+    // Only enable if originally was disabled, and set back to the disable state after calibration is done
     // If the clock is already on, then do nothing
     bool dig_32k_xtal_enabled = clk_ll_xtal32k_digi_is_enabled();
     if (cal_clk == RTC_CAL_32K_XTAL && !dig_32k_xtal_enabled) {
@@ -240,9 +240,7 @@ static void enable_timer_group0_for_calibration(void)
         }
     }
 #else
-    // no critical section is needed for bootloader
-    int __DECLARE_RCC_RC_ATOMIC_ENV;
-    timer_ll_enable_bus_clock(0, true);
-    timer_ll_reset_register(0);
+    _timer_ll_enable_bus_clock(0, true);
+    _timer_ll_reset_register(0);
 #endif
 }

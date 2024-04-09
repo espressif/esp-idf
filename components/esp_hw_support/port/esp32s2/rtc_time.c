@@ -116,7 +116,7 @@ static uint32_t rtc_clk_cal_internal_cycling(rtc_cal_sel_t cal_clk, uint32_t slo
 }
 
 /**
- * @brief Slowclk period calculating funtion used by rtc_clk_cal and rtc_clk_cal_cycling
+ * @brief Slowclk period calculating function used by rtc_clk_cal and rtc_clk_cal_cycling
  * @param xtal_cycles number of xtal cycles count
  * @param slowclk_cycles number of slow clock cycles to count
  * @return slow clock period
@@ -140,7 +140,7 @@ static uint32_t rtc_clk_xtal_to_slowclk(uint64_t xtal_cycles, uint32_t slowclk_c
 uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cycles, uint32_t cal_mode)
 {
     /* On ESP32S2, choosing RTC_CAL_RTC_MUX results in calibration of
-     * the 90k RTC clock regardless of the currenlty selected SLOW_CLK.
+     * the 90k RTC clock regardless of the currently selected SLOW_CLK.
      * On the ESP32, it used the currently selected SLOW_CLK.
      * The following code emulates ESP32 behavior:
      */
@@ -271,9 +271,7 @@ static void enable_timer_group0_for_calibration(void)
         }
     }
 #else
-    // no critical section is needed for bootloader
-    int __DECLARE_RCC_RC_ATOMIC_ENV;
-    timer_ll_enable_bus_clock(0, true);
-    timer_ll_reset_register(0);
+    _timer_ll_enable_bus_clock(0, true);
+    _timer_ll_reset_register(0);
 #endif
 }
