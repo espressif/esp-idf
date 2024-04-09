@@ -419,22 +419,6 @@ esp_err_t hcd_pipe_update_mps(hcd_pipe_handle_t pipe_hdl, int mps);
 esp_err_t hcd_pipe_update_dev_addr(hcd_pipe_handle_t pipe_hdl, uint8_t dev_addr);
 
 /**
- * @brief Update a pipe's callback
- *
- * This function is intended to be called on default pipes at the end of enumeration to switch to a callback that
- * handles the completion of regular control transfer.
- * - Pipe is not current processing a command
- * - Pipe does not have any enqueued URBs
- * - Port cannot be resetting
- *
- * @param pipe_hdl Pipe handle
- * @param callback Callback
- * @param user_arg Callback argument
- * @return esp_err_t
- */
-esp_err_t hcd_pipe_update_callback(hcd_pipe_handle_t pipe_hdl, hcd_pipe_callback_t callback, void *user_arg);
-
-/**
  * @brief Get the context variable of a pipe from its handle
  *
  * @param pipe_hdl Pipe handle
