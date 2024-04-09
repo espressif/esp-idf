@@ -352,6 +352,17 @@ esp_eth_phy_t *esp_eth_phy_new_dp83848(const eth_phy_config_t *config);
 */
 esp_eth_phy_t *esp_eth_phy_new_ksz80xx(const eth_phy_config_t *config);
 
+/**
+* @brief Create a PHY instance of JL1101
+*
+* @param[in] config: configuration of PHY
+*
+* @return
+*      - instance: create PHY instance successfully
+*      - NULL: create PHY instance failed because some error occurred
+*/
+esp_eth_phy_t *esp_eth_phy_new_jl1101(const eth_phy_config_t *config);
+
 #if CONFIG_ETH_SPI_ETHERNET_DM9051
 /**
 * @brief Create a PHY instance of DM9051
