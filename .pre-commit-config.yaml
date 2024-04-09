@@ -188,7 +188,7 @@ repos:
         name: Check gitlab yaml files
         entry: tools/ci/gitlab_yaml_linter.py
         language: python
-        files: '\.gitlab-ci\.yml|\.gitlab/ci/.+\.yml'
+        files: '\.gitlab-ci\.yml|\.gitlab/ci/.+\.yml|\.gitmodules'
         pass_filenames: false
         additional_dependencies:
           - PyYAML == 5.3.1
