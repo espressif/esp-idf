@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -102,6 +102,7 @@ typedef enum {
 #if (BLE_42_FEATURE_SUPPORT == TRUE)
     BTC_GAP_BLE_ACT_CLEAR_ADV,
 #endif // #if (BLE_42_FEATURE_SUPPORT == TRUE)
+    BTC_GAP_BLE_ACT_VENDOR_HCI_CMD_EVT,
 } btc_gap_ble_act_t;
 
 /* btc_ble_gap_args_t */
@@ -248,6 +249,12 @@ typedef union {
     struct dtm_rx_start_args {
         uint8_t rx_channel;
     } dtm_rx_start;
+    //BTC_DEV_VENDOR_HCI_CMD_EVT
+    struct vendor_cmd_send_args {
+        uint16_t  opcode;
+        uint8_t  param_len;
+        uint8_t *p_param_buf;
+    } vendor_cmd_send;
 } btc_ble_gap_args_t;
 #if (BLE_50_FEATURE_SUPPORT == TRUE)
 

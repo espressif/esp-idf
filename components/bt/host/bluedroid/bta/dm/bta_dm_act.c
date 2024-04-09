@@ -729,6 +729,14 @@ void bta_dm_cfg_coex_status (tBTA_DM_MSG *p_data)
 }
 #endif
 
+void bta_dm_send_vendor_hci(tBTA_DM_MSG *p_data)
+{
+    BTM_VendorSpecificCommand(p_data->vendor_hci_cmd.opcode,
+                              p_data->vendor_hci_cmd.param_len,
+                              p_data->vendor_hci_cmd.p_param_buf,
+                              p_data->vendor_hci_cmd.vendor_hci_cb);
+}
+
 /*******************************************************************************
 **
 ** Function         bta_dm_set_afh_channels
