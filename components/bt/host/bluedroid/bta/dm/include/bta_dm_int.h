@@ -54,6 +54,7 @@ enum {
     BTA_DM_API_DISABLE_EVT,
     BTA_DM_API_SET_NAME_EVT,
     BTA_DM_API_GET_NAME_EVT,
+    BTA_DM_API_SEND_VENDOR_HCI_CMD_EVT,
 #if (CLASSIC_BT_INCLUDED == TRUE)
     BTA_DM_API_CONFIG_EIR_EVT,
 #endif
@@ -249,6 +250,14 @@ typedef struct {
     BT_HDR              hdr;
     tBTA_GET_DEV_NAME_CBACK *p_cback;
 } tBTA_DM_API_GET_NAME;
+
+typedef struct {
+    BT_HDR    hdr;
+    UINT16    opcode;
+    UINT8    param_len;
+    UINT8     *p_param_buf;
+    tBTA_SEND_VENDOR_HCI_CMPL_CBACK *vendor_hci_cb;
+}tBTA_DM_API_SEND_VENDOR_HCI_CMD;
 
 /* data type for BTA_DM_API_CONFIG_EIR_EVT */
 typedef struct {
@@ -1122,6 +1131,7 @@ typedef union {
 
     tBTA_DM_API_SET_NAME set_name;
     tBTA_DM_API_GET_NAME get_name;
+    tBTA_DM_API_SEND_VENDOR_HCI_CMD vendor_hci_cmd;
     tBTA_DM_API_CONFIG_EIR config_eir;
 
     tBTA_DM_API_SET_AFH_CHANNELS set_afh_channels;
@@ -1630,6 +1640,7 @@ extern void bta_dm_enable (tBTA_DM_MSG *p_data);
 extern void bta_dm_disable (tBTA_DM_MSG *p_data);
 extern void bta_dm_set_dev_name (tBTA_DM_MSG *p_data);
 extern void bta_dm_get_dev_name (tBTA_DM_MSG *p_data);
+extern void bta_dm_send_vendor_hci(tBTA_DM_MSG *p_data);
 #if (CLASSIC_BT_INCLUDED == TRUE)
 extern void bta_dm_config_eir (tBTA_DM_MSG *p_data);
 #endif

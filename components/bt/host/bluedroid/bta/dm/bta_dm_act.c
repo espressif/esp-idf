@@ -707,6 +707,14 @@ void bta_dm_get_dev_name (tBTA_DM_MSG *p_data)
     }
 }
 
+void bta_dm_send_vendor_hci(tBTA_DM_MSG *p_data)
+{
+    BTM_VendorSpecificCommand(p_data->vendor_hci_cmd.opcode,
+                              p_data->vendor_hci_cmd.param_len,
+                              p_data->vendor_hci_cmd.p_param_buf,
+                              p_data->vendor_hci_cmd.vendor_hci_cb);
+}
+
 /*******************************************************************************
 **
 ** Function         bta_dm_set_afh_channels

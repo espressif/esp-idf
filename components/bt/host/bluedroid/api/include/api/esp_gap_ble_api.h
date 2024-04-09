@@ -224,6 +224,7 @@ typedef enum {
     ESP_GAP_BLE_DTM_TEST_UPDATE_EVT,                             /*!< when direct test mode state changes, the event comes */
     // BLE_INCLUDED
     ESP_GAP_BLE_ADV_CLEAR_COMPLETE_EVT,                          /*!< When clear advertising complete, the event comes */
+    ESP_GAP_BLE_VENDOR_CMD_COMPLETE_EVT,                          /*!< When vendor hci command complete, the event comes */
     ESP_GAP_BLE_EVT_MAX,                                         /*!< when maximum advertising event complete, the event comes */
 } esp_gap_ble_cb_event_t;
 
@@ -237,6 +238,8 @@ typedef uint8_t esp_gap_ble_channels[ESP_GAP_BLE_CHANNELS_LEN];
 #define ESP_BLE_ADV_DATA_LEN_MAX               31
 /// Scan response data maximum length
 #define ESP_BLE_SCAN_RSP_DATA_LEN_MAX          31
+
+#define VENDOR_HCI_CMD_MASK                    (0x3F << 10) /**!< 0xFC00 */
 
 /* relate to BTM_BLE_AD_TYPE_xxx in stack/btm_ble_api.h */
 /// The type of advertising data(not adv_type)
@@ -363,6 +366,15 @@ typedef enum {
     ///DTM test end event
     DTM_TEST_STOP_EVT,
 } esp_ble_dtm_update_evt_t;
+
+/**
+ * @brief Vendor HCI command parameters
+ */
+typedef struct {
+    uint16_t opcode;                /*!< vendor hci command opcode */
+    uint8_t param_len;              /*!< the length of parameter */
+    uint8_t *p_param_buf;           /*!< the point of parameter buffer */
+} esp_ble_vendor_cmd_params_t;
 
 #if (BLE_42_FEATURE_SUPPORT == TRUE)
 /**
@@ -1462,6 +1474,14 @@ typedef union {
         esp_ble_dtm_update_evt_t update_evt;        /*!< DTM state change event, 0x00: DTM TX start, 0x01: DTM RX start, 0x02:DTM end */
         uint16_t num_of_pkt;                        /*!< number of packets received, only valid if update_evt is DTM_TEST_STOP_EVT and shall be reported as 0 for a transmitter */
     } dtm_state_update;                             /*!< Event parameter of ESP_GAP_BLE_DTM_TEST_UPDATE_EVT */
+    /**
+     * @brief ESP_GAP_BLE_VENDOR_CMD_COMPLETE_EVT
+     */
+    struct vendor_cmd_cmpl_evt_param {
+        uint16_t        opcode;                     /*!< vendor hci command opcode */
+        uint16_t        param_len;                  /*!< The length of parameter buffer */
+        uint8_t         *p_param_buf;               /*!< The point of parameter buffer */
+    } vendor_cmd_cmpl;                              /*!< Event parameter of ESP_GAP_BLE_VENDOR_CMD_COMPLETE_EVT */
 } esp_ble_gap_cb_param_t;
 
 /**
@@ -2530,6 +2550,19 @@ esp_err_t esp_ble_dtm_stop(void);
 *
 */
 esp_err_t esp_ble_gap_clear_advertising(void);
+
+/**
+ * @brief           This function is called to send vendor hci command.
+ *
+ *
+ *
+ * @param[in]       vendor_cmd_param: vendor hci command parameters
+ *
+ * @return
+ *                  - ESP_OK : success
+ *                  - other  : failed
+ */
+esp_err_t esp_ble_gap_vendor_command_send(esp_ble_vendor_cmd_params_t *vendor_cmd_param);
 
 #ifdef __cplusplus
 }
