@@ -379,6 +379,7 @@ tHID_STATUS HID_HostAddDev ( BD_ADDR addr, UINT16 attr_mask, UINT8 *handle )
     if (!hh_cb.devices[i].in_use) {
         hh_cb.devices[i].in_use = TRUE;
         hh_cb.devices[i].delay_remove = FALSE;
+        hh_cb.devices[i].is_orig = FALSE;
         memcpy( hh_cb.devices[i].addr, addr, sizeof( BD_ADDR ) ) ;
         hh_cb.devices[i].state = HID_DEV_NO_CONN;
         hh_cb.devices[i].conn_tries = 0 ;
@@ -486,6 +487,7 @@ tHID_STATUS HID_HostOpenDev ( UINT8 dev_handle )
     }
 
     hh_cb.devices[dev_handle].conn_tries = 1;
+    hh_cb.devices[dev_handle].is_orig = TRUE;
     return hidh_conn_initiate( dev_handle );
 }
 
@@ -649,6 +651,25 @@ BOOLEAN hid_known_hid_device (BD_ADDR bd_addr)
     /* Check if this device is marked as HID Device in IOP Dev */
     HIDH_TRACE_DEBUG("hid_known_hid_device:remote is not HID device");
     return FALSE;
+}
+
+BOOLEAN HID_HostConnectOrig(UINT8 dev_handle)
+{
+    BOOLEAN ret = FALSE;
+
+    do {
+        if (!hh_cb.reg_flag) {
+            break;
+        }
+
+        if ((dev_handle >= HID_HOST_MAX_DEVICES) || (!hh_cb.devices[dev_handle].in_use)) {
+            break;
+        }
+
+        ret = hh_cb.devices[dev_handle].is_orig;
+    } while (0);
+
+    return ret;
 }
 
 #endif //HID_HOST_INCLUDED
