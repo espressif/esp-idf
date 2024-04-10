@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -584,7 +584,7 @@ ork.*/
 #define RTC_CNTL_TOUCH_APPROACH_LOOP_DONE_INT_ENA_V  0x1
 #define RTC_CNTL_TOUCH_APPROACH_LOOP_DONE_INT_ENA_S  20
 /* RTC_CNTL_GLITCH_DET_INT_ENA : R/W ;bitpos:[19] ;default: 1'b0 ; */
-/*description: enbale gitch det interrupt.*/
+/*description: enable gitch det interrupt.*/
 #define RTC_CNTL_GLITCH_DET_INT_ENA    (BIT(19))
 #define RTC_CNTL_GLITCH_DET_INT_ENA_M  (BIT(19))
 #define RTC_CNTL_GLITCH_DET_INT_ENA_V  0x1
@@ -2122,7 +2122,7 @@ ork.*/
 #define RTC_CNTL_SWD_AUTO_FEED_EN_V  0x1
 #define RTC_CNTL_SWD_AUTO_FEED_EN_S  31
 /* RTC_CNTL_SWD_DISABLE : R/W ;bitpos:[30] ;default: 1'b0 ; */
-/*description: disabel SWD.*/
+/*description: disable SWD.*/
 #define RTC_CNTL_SWD_DISABLE    (BIT(30))
 #define RTC_CNTL_SWD_DISABLE_M  (BIT(30))
 #define RTC_CNTL_SWD_DISABLE_V  0x1
@@ -2666,7 +2666,7 @@ ork.*/
 #define RTC_CNTL_XTAL32K_RESTART_WAIT_V  0xFFFF
 #define RTC_CNTL_XTAL32K_RESTART_WAIT_S  4
 /* RTC_CNTL_XTAL32K_RETURN_WAIT : R/W ;bitpos:[3:0] ;default: 4'h0 ; */
-/*description: cycles to wait to return noral xtal 32k.*/
+/*description: cycles to wait to return normal xtal 32k.*/
 #define RTC_CNTL_XTAL32K_RETURN_WAIT    0x0000000F
 #define RTC_CNTL_XTAL32K_RETURN_WAIT_M  ((RTC_CNTL_XTAL32K_RETURN_WAIT_V)<<(RTC_CNTL_XTAL32K_RETURN_WAIT_S))
 #define RTC_CNTL_XTAL32K_RETURN_WAIT_V  0xF
@@ -3238,7 +3238,7 @@ ork.*/
 #define RTC_CNTL_TOUCH_APPROACH_LOOP_DONE_INT_ENA_W1TS_V  0x1
 #define RTC_CNTL_TOUCH_APPROACH_LOOP_DONE_INT_ENA_W1TS_S  20
 /* RTC_CNTL_GLITCH_DET_INT_ENA_W1TS : WO ;bitpos:[19] ;default: 1'b0 ; */
-/*description: enbale gitch det interrupt.*/
+/*description: enable gitch det interrupt.*/
 #define RTC_CNTL_GLITCH_DET_INT_ENA_W1TS    (BIT(19))
 #define RTC_CNTL_GLITCH_DET_INT_ENA_W1TS_M  (BIT(19))
 #define RTC_CNTL_GLITCH_DET_INT_ENA_W1TS_V  0x1
@@ -3366,7 +3366,7 @@ ork.*/
 #define RTC_CNTL_TOUCH_APPROACH_LOOP_DONE_INT_ENA_W1TC_V  0x1
 #define RTC_CNTL_TOUCH_APPROACH_LOOP_DONE_INT_ENA_W1TC_S  20
 /* RTC_CNTL_GLITCH_DET_INT_ENA_W1TC : WO ;bitpos:[19] ;default: 1'b0 ; */
-/*description: enbale gitch det interrupt.*/
+/*description: enable gitch det interrupt.*/
 #define RTC_CNTL_GLITCH_DET_INT_ENA_W1TC    (BIT(19))
 #define RTC_CNTL_GLITCH_DET_INT_ENA_W1TC_M  (BIT(19))
 #define RTC_CNTL_GLITCH_DET_INT_ENA_W1TC_V  0x1
@@ -3689,7 +3689,7 @@ Due to the LDO slaves, RTC_CNTL_DATE_REG[18:13] can only be used for LDO adjustm
 /*LDO SLAVE : R/W ;bitpos:[18:13] ; default: 6'd0 ;*/
 /*description: .*/
 #define RTC_CNTL_SLAVE_PD    0x0000003F
-#define RTC_CNTL_SLAVE_PD_M  ((RTC_CNTL_SLAVE_V)<<(RTC_CNTL_SLAVE_S))
+#define RTC_CNTL_SLAVE_PD_M  ((RTC_CNTL_SLAVE_PD_V)<<(RTC_CNTL_SLAVE_PD_S))
 #define RTC_CNTL_SLAVE_PD_V  0x3F
 #define RTC_CNTL_SLAVE_PD_S  13
 
