@@ -9,6 +9,18 @@
 
 namespace nvs {
 
+#if defined(SEGGER_H) && defined(GLOBAL_H)
+NVS_GUARD_SYSVIEW_MACRO_EXPANSION_PUSH();
+#undef U8
+#undef I8
+#undef U16
+#undef I16
+#undef U32
+#undef I32
+#undef U64
+#undef I64
+#endif
+
 /**
  * The possible blob types. This is a helper definition for template functions.
  */
@@ -28,6 +40,9 @@ enum class ItemType : uint8_t {
     ANY  = NVS_TYPE_ANY
 };
 
+#if defined(SEGGER_H) && defined(GLOBAL_H)
+NVS_GUARD_SYSVIEW_MACRO_EXPANSION_POP();
+#endif
 
 /**
  * @brief A handle allowing nvs-entry related operations on the NVS.
