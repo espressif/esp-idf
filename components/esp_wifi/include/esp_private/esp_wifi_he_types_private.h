@@ -195,7 +195,7 @@ typedef struct {
     uint32_t mu_bru_id_2047: 16;
     uint32_t mu_uru_id_2046: 16;
 #else
-    uint32_t rc_alloc_96_num_2046;
+    uint32_t ru_alloc_96_num_2046;
     uint32_t ru_alloc_112_num_2046;
 #endif
 } esp_test_rx_mu_statistics_t; //10932 bytes
