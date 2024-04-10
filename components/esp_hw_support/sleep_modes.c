@@ -1532,7 +1532,19 @@ static void ext0_wakeup_prepare(void)
 #if SOC_PM_SUPPORT_EXT1_WAKEUP
 esp_err_t esp_sleep_enable_ext1_wakeup(uint64_t io_mask, esp_sleep_ext1_wakeup_mode_t level_mode)
 {
-    if (level_mode > ESP_EXT1_WAKEUP_ANY_HIGH) {
+    if (io_mask == 0 && level_mode > ESP_EXT1_WAKEUP_ANY_HIGH) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    // Reset all EXT1 configs
+    esp_sleep_disable_ext1_wakeup_io(0);
+
+    return esp_sleep_enable_ext1_wakeup_io(io_mask, level_mode);
+}
+
+
+esp_err_t esp_sleep_enable_ext1_wakeup_io(uint64_t io_mask, esp_sleep_ext1_wakeup_mode_t level_mode)
+{
+    if (io_mask == 0 && level_mode > ESP_EXT1_WAKEUP_ANY_HIGH) {
         return ESP_ERR_INVALID_ARG;
     }
     // Translate bit map of GPIO numbers into the bit map of RTC IO numbers
@@ -1547,13 +1559,58 @@ esp_err_t esp_sleep_enable_ext1_wakeup(uint64_t io_mask, esp_sleep_ext1_wakeup_m
         }
         rtc_gpio_mask |= BIT(rtc_io_number_get(gpio));
     }
-    s_config.ext1_rtc_gpio_mask = rtc_gpio_mask;
+
+#if !SOC_PM_SUPPORT_EXT1_WAKEUP_MODE_PER_PIN
+    uint32_t ext1_rtc_gpio_mask = 0;
+    uint32_t ext1_trigger_mode = 0;
+
+    ext1_rtc_gpio_mask = s_config.ext1_rtc_gpio_mask | rtc_gpio_mask;
     if (level_mode) {
-        s_config.ext1_trigger_mode = io_mask;
+        ext1_trigger_mode = s_config.ext1_trigger_mode | rtc_gpio_mask;
     } else {
-        s_config.ext1_trigger_mode = 0;
+        ext1_trigger_mode = s_config.ext1_trigger_mode & (~rtc_gpio_mask);
+    }
+    if (((ext1_rtc_gpio_mask & ext1_trigger_mode) != ext1_rtc_gpio_mask) &&
+    ((ext1_rtc_gpio_mask & ext1_trigger_mode) != 0)) {
+        return ESP_ERR_NOT_SUPPORTED;
+    }
+#endif
+
+    s_config.ext1_rtc_gpio_mask |= rtc_gpio_mask;
+    if (level_mode) {
+        s_config.ext1_trigger_mode |= rtc_gpio_mask;
+    } else {
+        s_config.ext1_trigger_mode &= (~rtc_gpio_mask);
     }
     s_config.wakeup_triggers |= RTC_EXT1_TRIG_EN;
+    return ESP_OK;
+}
+
+esp_err_t esp_sleep_disable_ext1_wakeup_io(uint64_t io_mask)
+{
+    if (io_mask == 0) {
+        s_config.ext1_rtc_gpio_mask = 0;
+        s_config.ext1_trigger_mode = 0;
+    } else {
+        // Translate bit map of GPIO numbers into the bit map of RTC IO numbers
+        uint32_t rtc_gpio_mask = 0;
+        for (int gpio = 0; io_mask; ++gpio, io_mask >>= 1) {
+            if ((io_mask & 1) == 0) {
+                continue;
+            }
+            if (!esp_sleep_is_valid_wakeup_gpio(gpio)) {
+                ESP_LOGE(TAG, "Not an RTC IO Considering io_mask: GPIO%d", gpio);
+                return ESP_ERR_INVALID_ARG;
+            }
+            rtc_gpio_mask |= BIT(rtc_io_number_get(gpio));
+        }
+        s_config.ext1_rtc_gpio_mask &= (~rtc_gpio_mask);
+        s_config.ext1_trigger_mode &= (~rtc_gpio_mask);
+    }
+
+    if (s_config.ext1_rtc_gpio_mask == 0) {
+        s_config.wakeup_triggers &= (~RTC_EXT1_TRIG_EN);
+    }
     return ESP_OK;
 }
 
