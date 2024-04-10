@@ -242,7 +242,8 @@ esp_err_t esp_vfs_fat_spiflash_format_cfg_rw_wl(const char* base_path, const cha
         assert(found);
         if (s_ctx[id]->flags & FORMATTED_DURING_LAST_MOUNT) {
             ESP_LOGD(TAG, "partition was formatted during mounting, skipping another format");
-            return ESP_OK;
+            ret = ESP_OK;
+            goto mount_back;
         }
     } else {
         partition_was_mounted = true;
