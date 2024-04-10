@@ -3689,7 +3689,7 @@ Due to the LDO slaves, RTC_CNTL_DATE_REG[18:13] can only be used for LDO adjustm
 /*LDO SLAVE : R/W ;bitpos:[18:13] ; default: 6'd0 ;*/
 /*description: .*/
 #define RTC_CNTL_SLAVE_PD    0x0000003F
-#define RTC_CNTL_SLAVE_PD_M  ((RTC_CNTL_SLAVE_V)<<(RTC_CNTL_SLAVE_S))
+#define RTC_CNTL_SLAVE_PD_M  ((RTC_CNTL_SLAVE_PD_V)<<(RTC_CNTL_SLAVE_PD_S))
 #define RTC_CNTL_SLAVE_PD_V  0x3F
 #define RTC_CNTL_SLAVE_PD_S  13
 
