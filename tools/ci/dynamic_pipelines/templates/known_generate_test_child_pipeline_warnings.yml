@@ -12,7 +12,6 @@ no_runner_tags:
   - esp32c2,jtag,xtal_40mhz
   - esp32c3,flash_multi
   - esp32c3,sdcard_sdmode
-  - esp32c6,esp32h2,esp32s3,openthread_bbr
   - esp32c6,jtag
   - esp32h2,jtag
   - esp32p4,jtag
