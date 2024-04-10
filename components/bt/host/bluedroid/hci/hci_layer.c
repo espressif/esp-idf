@@ -144,6 +144,10 @@ void hci_shut_down(void)
 
 bool hci_downstream_data_post(uint32_t timeout)
 {
+    if (hci_host_env.downstream_data_ready == NULL) {
+        HCI_TRACE_WARNING("%s downstream_data_ready event not created", __func__);
+        return false;
+    }
     return osi_thread_post_event(hci_host_env.downstream_data_ready, timeout);
 }
 
@@ -263,7 +267,7 @@ static void transmit_command(
     // in case the upper layer didn't already
     command->event = MSG_STACK_TO_HC_HCI_CMD;
 
-    HCI_TRACE_DEBUG("HCI Enqueue Comamnd opcode=0x%x\n", metadata->opcode);
+    HCI_TRACE_DEBUG("HCI Enqueue Command opcode=0x%x\n", metadata->opcode);
     BTTRC_DUMP_BUFFER(NULL, command->data + command->offset, command->len);
 
     fixed_pkt_queue_enqueue(hci_host_env.command_queue, linked_pkt, FIXED_PKT_QUEUE_MAX_TIMEOUT);
