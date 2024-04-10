@@ -1,0 +1,32 @@
+# Refer to https://ast-grep.github.io/guide/rule-config.html for Rule Essentials
+id: no-private-rom-api-in-c-examples
+message: Don't use private ROM APIs in the examples
+severity: error # error, warning, info, hint
+note: Only APIs prefixed with "esp_rom_" are treated as public.
+language: C
+files:
+  - "./examples/**/*"
+rule:
+  kind: preproc_include
+  has:
+    field: path
+    regex: "rom/.*h"
+    pattern: $N
+fix: ''
+
+---
+
+id: no-private-rom-api-in-cpp-examples
+message: Don't use private ROM APIs in the examples
+severity: error # error, warning, info, hint
+note: Only APIs prefixed with "esp_rom_" are treated as public.
+language: Cpp
+files:
+  - "./examples/**/*"
+rule:
+  kind: preproc_include
+  has:
+    field: path
+    regex: "rom/.*h"
+    pattern: $N
+fix: ''

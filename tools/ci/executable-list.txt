@@ -55,7 +55,6 @@ tools/ci/check_codeowners.py
 tools/ci/check_deprecated_kconfigs.py
 tools/ci/check_esp_memory_utils_headers.sh
 tools/ci/check_examples_extra_component_dirs.sh
-tools/ci/check_examples_rom_header.sh
 tools/ci/check_executables.py
 tools/ci/check_idf_version.sh
 tools/ci/check_kconfigs.py
