@@ -9,7 +9,7 @@
 
 .. gpio-summary
 
-Current GPIO is for {IDF_TARGET_NAME} beta3 version. {IDF_TARGET_NAME} MP version would have 2 more available IOs, and some pin functions are changed. The {IDF_TARGET_NAME} MP version will be updated later.
+Current GPIOs are for {IDF_TARGET_NAME} beta3 version. {IDF_TARGET_NAME} MP version would have 2 more available IOs, and some pin functions are changed. The {IDF_TARGET_NAME} MP version will be updated later.
 
 The {IDF_TARGET_NAME} chip features 27 physical GPIO pins (GPIO0 ~ GPIO26). Each pin can be used as a general-purpose I/O, or to be connected to an internal peripheral signal. Through GPIO matrix and IO MUX, peripheral input signals can be from any IO pins, and peripheral output signals can be routed to any IO pins. Together these modules provide highly configurable I/O. For more details, see *{IDF_TARGET_NAME} Technical Reference Manual* > *IO MUX and GPIO Matrix (GPIO, IO_MUX)* [`PDF <{IDF_TARGET_TRM_EN_URL}#iomuxgpio>`__].
 
@@ -159,11 +159,10 @@ The table below provides more information on pin usage, and please note the comm
       -
       - USB-JTAG
 
-
 .. note::
 
     - Strapping pin: GPIO2, GPIO3, GPIO6, and GPIO7 are strapping pins. For more information, please refer to `datasheet <{IDF_TARGET_DATASHEET_EN_URL}>`__.
-	  - SPI0/1: GPIO18-24 are usually used for SPI flash and not recommended for other uses.
-	  - USB-JTAG: GPIO 25 and 26 are used by USB-JTAG by default. In order to use them as GPIOs, USB-JTAG will be disabled by the drivers.
+	  - SPI0/1: GPIO18 ~ GPIO24 are usually used for SPI flash and not recommended for other uses.
+	  - USB-JTAG: GPIO25 and GPIO26 are used by USB-JTAG by default. If they are reconfigured to operate as normal GPIOs, USB-JTAG functionality will be disabled.
 
 ---

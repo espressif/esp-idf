@@ -180,8 +180,8 @@ The table below provides more information on pin usage, and please note the comm
 .. note::
 
     - Strapping pin: GPIO4, GPIO5, GPIO8, GPIO9, and GPIO15 are strapping pins. For more information, please refer to `datasheet <{IDF_TARGET_DATASHEET_EN_URL}>`__.
-	  - SPI0/1: GPIO24-30 are usually used for SPI flash and not recommended for other uses.
-	  - USB-JTAG: GPIO 12 and 13 are used by USB-JTAG by default. In order to use them as GPIOs, USB-JTAG will be disabled by the drivers.
+	  - SPI0/1: GPIO24 ~ GPIO30 are usually used for SPI flash and not recommended for other uses.
+	  - USB-JTAG: GPIO12 and GPIO13 are used by USB-JTAG by default. If they are reconfigured to operate as normal GPIOs, USB-JTAG functionality will be disabled.
     - For chip variants with an SiP flash built in, GPIO24 ~ GPIO30 are dedicated to connecting the SiP flash; GPIO10 ~ GPIO11 are not led out to any chip pins; therefore, only the remaining 22 GPIO pins are available.
     - For chip variants without an in-package flash, GPIO14 is not led out to any chip pins.
 
