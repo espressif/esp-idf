@@ -36,6 +36,30 @@ OTA 数据分区的容量是 2 个 flash 扇区的大小（0x2000 字节），�
 * 应用程序出现严重错误，无法继续工作，必须回滚到此前的版本，:cpp:func:`esp_ota_mark_app_invalid_rollback_and_reboot` 将正在运行的版本标记为 ``ESP_OTA_IMG_INVALID`` 然后复位。引导加载程序不会选取此版本，而是启动此前正常运行的版本。
 * 如果 :ref:`CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE` 使能，则无需调用函数便可复位，回滚至之前的应用版本。
 
+可使用以下代码检测 OTA 更新后应用程序的首次启动。首次启动时，应用程序会检查其状态并执行检测。如果检测成功，应用程序调用 :cpp:func:`esp_ota_mark_app_valid_cancel_rollback` 函数，确认应用运行成功。如果检测失败，应用程序调用 :cpp:func:`esp_ota_mark_app_invalid_rollback_and_reboot` 函数，回滚至之前的应用版本。
+
+如果应用程序由于中止、重启或掉电无法启动或运行上述代码，引导加载程序在下一次启动尝试中会将该应用程序的状态标记为 ``ESP_OTA_IMG_INVALID``，并回滚至之前的应用版本。
+
+.. code:: c
+
+    const esp_partition_t *running = esp_ota_get_running_partition();
+    esp_ota_img_states_t ota_state;
+    if (esp_ota_get_state_partition(running, &ota_state) == ESP_OK) {
+        if (ota_state == ESP_OTA_IMG_PENDING_VERIFY) {
+            // run diagnostic function ...
+            bool diagnostic_is_ok = diagnostic();
+            if (diagnostic_is_ok) {
+                ESP_LOGI(TAG, "Diagnostics completed successfully! Continuing execution ...");
+                esp_ota_mark_app_valid_cancel_rollback();
+            } else {
+                ESP_LOGE(TAG, "Diagnostics failed! Start rollback to the previous version ...");
+                esp_ota_mark_app_invalid_rollback_and_reboot();
+            }
+        }
+    }
+
+请查看 :example:`system/ota/native_ota_example` 获取包含上述代码片段的完整示例。
+
 .. note::
 
   应用程序的状态不是写到程序的二进制镜像，而是写到 ``otadata`` 分区。该分区有一个 ``ota_seq`` 计数器，该计数器是 OTA 应用分区的指针，指向下次启动时选取应用所在的分区 (ota_0, ota_1, ...)。
