@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -267,6 +267,59 @@ esp_err_t esp_sleep_enable_ext0_wakeup(gpio_num_t gpio_num, int level);
  *       the pins during sleep. HOLD feature will be acted on the pin internally
  *       before the system entering sleep, and this can further reduce power consumption.
  *
+ * @note Call this func will reset the previous ext1 configuration.
+ *
+ * @note This function will be deprecated in release/v6.0. Please switch to use `esp_sleep_enable_ext1_wakeup_io` and `esp_sleep_disable_ext1_wakeup_io`
+ *
+ * @param io_mask  Bit mask of GPIO numbers which will cause wakeup. Only GPIOs
+ *                 which have RTC functionality can be used in this bit map.
+ *                 For different SoCs, the related GPIOs are:
+ *                    - ESP32: 0, 2, 4, 12-15, 25-27, 32-39
+ *                    - ESP32-S2: 0-21
+ *                    - ESP32-S3: 0-21
+ *                    - ESP32-C6: 0-7
+ *                    - ESP32-H2: 7-14
+ * @param level_mode Select logic function used to determine wakeup condition:
+ *                   When target chip is ESP32:
+ *                      - ESP_EXT1_WAKEUP_ALL_LOW: wake up when all selected GPIOs are low
+ *                      - ESP_EXT1_WAKEUP_ANY_HIGH: wake up when any of the selected GPIOs is high
+ *                   When target chip is ESP32-S2, ESP32-S3, ESP32-C6 or ESP32-H2:
+ *                      - ESP_EXT1_WAKEUP_ANY_LOW: wake up when any of the selected GPIOs is low
+ *                      - ESP_EXT1_WAKEUP_ANY_HIGH: wake up when any of the selected GPIOs is high
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_INVALID_ARG if io_mask is zero,
+ *        or mode is invalid
+ */
+esp_err_t esp_sleep_enable_ext1_wakeup(uint64_t io_mask, esp_sleep_ext1_wakeup_mode_t level_mode);
+
+/**
+ * @brief Enable ext1 wakeup pins with IO masks.
+ *
+ * This will append selected IOs to the wakeup IOs, it will not reset previously enabled IOs.
+ * To reset specific previously enabled IOs, call esp_sleep_disable_ext1_wakeup_io with the io_mask.
+ * To reset all the enabled IOs, call esp_sleep_disable_ext1_wakeup_io(0).
+ *
+ * This function uses external wakeup feature of RTC controller.
+ * It will work even if RTC peripherals are shut down during sleep.
+ *
+ * This feature can monitor any number of pins which are in RTC IOs.
+ * Once selected pins go into the state given by level_mode argument,
+ * the chip will be woken up.
+ *
+ * @note This function does not modify pin configuration. The pins are
+ *       configured in esp_deep_sleep_start/esp_light_sleep_start,
+ *       immediately before entering sleep mode.
+ *
+ * @note Internal pullups and pulldowns don't work when RTC peripherals are
+ *       shut down. In this case, external resistors need to be added.
+ *       Alternatively, RTC peripherals (and pullups/pulldowns) may be
+ *       kept enabled using esp_sleep_pd_config function. If we turn off the
+ *       ``RTC_PERIPH`` domain or certain chips lack the ``RTC_PERIPH`` domain,
+ *       we will use the HOLD feature to maintain the pull-up and pull-down on
+ *       the pins during sleep. HOLD feature will be acted on the pin internally
+ *       before the system entering sleep, and this can further reduce power consumption.
+ *
  * @param io_mask  Bit mask of GPIO numbers which will cause wakeup. Only GPIOs
  *                 which have RTC functionality can be used in this bit map.
  *                 For different SoCs, the related GPIOs are:
@@ -286,8 +339,28 @@ esp_err_t esp_sleep_enable_ext0_wakeup(gpio_num_t gpio_num, int level);
  *      - ESP_OK on success
  *      - ESP_ERR_INVALID_ARG if any of the selected GPIOs is not an RTC GPIO,
  *        or mode is invalid
+ *      - ESP_ERR_NOT_SUPPORTED when wakeup level will become different between
+ *        ext1 IOs if !SOC_PM_SUPPORT_EXT1_WAKEUP_MODE_PER_PIN
  */
-esp_err_t esp_sleep_enable_ext1_wakeup(uint64_t io_mask, esp_sleep_ext1_wakeup_mode_t level_mode);
+esp_err_t esp_sleep_enable_ext1_wakeup_io(uint64_t io_mask, esp_sleep_ext1_wakeup_mode_t level_mode);
+
+/**
+ * @brief Disable ext1 wakeup pins with IO masks. This will remove selected IOs from the wakeup IOs.
+ * @param io_mask  Bit mask of GPIO numbers which will cause wakeup. Only GPIOs
+ *                 which have RTC functionality can be used in this bit map.
+ *                 If value is zero, this func will remove all previous ext1 configuration.
+ *                 For different SoCs, the related GPIOs are:
+ *                    - ESP32: 0, 2, 4, 12-15, 25-27, 32-39
+ *                    - ESP32-S2: 0-21
+ *                    - ESP32-S3: 0-21
+ *                    - ESP32-C6: 0-7
+ *                    - ESP32-H2: 7-14
+ *
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_INVALID_ARG if any of the selected GPIOs is not an RTC GPIO.
+ */
+esp_err_t esp_sleep_disable_ext1_wakeup_io(uint64_t io_mask);
 
 #if SOC_PM_SUPPORT_EXT1_WAKEUP_MODE_PER_PIN
 /**
@@ -328,6 +401,7 @@ esp_err_t esp_sleep_enable_ext1_wakeup(uint64_t io_mask, esp_sleep_ext1_wakeup_m
  *        or mode is invalid
  */
 esp_err_t esp_sleep_enable_ext1_wakeup_with_level_mask(uint64_t io_mask, uint64_t level_mask);
+
 #endif // SOC_PM_SUPPORT_EXT1_WAKEUP_MODE_PER_PIN
 #endif // SOC_PM_SUPPORT_EXT1_WAKEUP
 

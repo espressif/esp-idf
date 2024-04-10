@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -40,12 +40,10 @@ void example_deep_sleep_register_ext1_wakeup(void)
     printf("Enabling EXT1 wakeup on pins GPIO%d, GPIO%d\n", ext_wakeup_pin_1, ext_wakeup_pin_2);
 
 #if SOC_PM_SUPPORT_EXT1_WAKEUP_MODE_PER_PIN
-    const uint64_t ext_wakeup_mode = CONFIG_EXAMPLE_EXT1_WAKEUP_MODE_PIN_1 << ext_wakeup_pin_1 | \
-                                     CONFIG_EXAMPLE_EXT1_WAKEUP_MODE_PIN_2 << ext_wakeup_pin_2;
-    ESP_ERROR_CHECK(esp_sleep_enable_ext1_wakeup_with_level_mask(ext_wakeup_pin_1_mask | ext_wakeup_pin_2_mask, ext_wakeup_mode));
+    ESP_ERROR_CHECK(esp_sleep_enable_ext1_wakeup_io(ext_wakeup_pin_1_mask, CONFIG_EXAMPLE_EXT1_WAKEUP_MODE_PIN_1));
+    ESP_ERROR_CHECK(esp_sleep_enable_ext1_wakeup_io(ext_wakeup_pin_2_mask, CONFIG_EXAMPLE_EXT1_WAKEUP_MODE_PIN_2));
 #else
-    const esp_sleep_ext1_wakeup_mode_t ext_wakeup_mode = CONFIG_EXAMPLE_EXT1_WAKEUP_MODE;
-    ESP_ERROR_CHECK(esp_sleep_enable_ext1_wakeup(ext_wakeup_pin_1_mask | ext_wakeup_pin_2_mask, ext_wakeup_mode));
+    ESP_ERROR_CHECK(esp_sleep_enable_ext1_wakeup_io(ext_wakeup_pin_1_mask | ext_wakeup_pin_2_mask, CONFIG_EXAMPLE_EXT1_WAKEUP_MODE));
 #endif
 
     /* If there are no external pull-up/downs, tie wakeup pins to inactive level with internal pull-up/downs via RTC IO
