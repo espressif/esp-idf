@@ -1,0 +1,8 @@
+name: 'openthread'
+version: '2023-07-06'
+cpe: cpe:2.3:o:google:openthread:{}:*:*:*:*:*:*:*
+supplier: 'Organization: Espressif Systems (Shanghai) CO LTD'
+originator: 'Organization: Google LLC'
+description: OpenThread released by Google is an open-source implementation of the Thread networking
+url: https://github.com/espressif/openthread
+hash: be7d36e4ff9cf7df6dfce54e58a31163c87b93f7
