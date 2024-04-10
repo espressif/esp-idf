@@ -13,7 +13,7 @@ components/fatfs/test_apps/flash_ro:
 
 components/fatfs/test_apps/flash_wl:
   disable_test:
-    - if: IDF_TARGET not in ["esp32", "esp32c3"]
+    - if: IDF_TARGET not in ["esp32", "esp32c3", "linux"]
       reason: only one target per arch needed
   depends_components:
     - esp_partition

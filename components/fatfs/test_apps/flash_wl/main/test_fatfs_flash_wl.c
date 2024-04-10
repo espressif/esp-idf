@@ -46,12 +46,14 @@ static void test_teardown(void)
     TEST_ESP_OK(esp_vfs_fat_spiflash_unmount_rw_wl("/spiflash", s_test_wl_handle));
 }
 
+#ifdef CONFIG_SPI_WL_TEST_ERASE_PARTITION
 static void corrupt_wl_data(void)
 {
-    esp_partition_t* part = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_FAT, NULL);
+    const esp_partition_t* part = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_FAT, NULL);
     TEST_ASSERT_NOT_NULL(part);
     TEST_ESP_OK(esp_partition_erase_range(part, 0, part->size));
 }
+#endif
 
 TEST_CASE("(WL) can format partition", "[fatfs][wear_levelling][timeout=120]")
 {
