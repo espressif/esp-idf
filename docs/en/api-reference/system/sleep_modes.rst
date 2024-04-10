@@ -92,10 +92,10 @@ RTC peripherals or RTC memories don't need to be powered on during sleep in this
 
 .. only:: SOC_PM_SUPPORT_EXT1_WAKEUP
 
-    External Wakeup (ext1)
-    ^^^^^^^^^^^^^^^^^^^^^^
+    External Wakeup (``ext1``)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-    The RTC controller contains the logic to trigger wakeup using multiple RTC GPIOs. One of the following two logic functions can be used to trigger general ext1 wakeup:
+    The RTC controller contains the logic to trigger wakeup using multiple RTC GPIOs. One of the following two logic functions can be used to trigger ext1 wakeup:
 
     .. only:: esp32
 
@@ -107,13 +107,13 @@ RTC peripherals or RTC memories don't need to be powered on during sleep in this
         - wake up if any of the selected pins is high (``ESP_EXT1_WAKEUP_ANY_HIGH``)
         - wake up if any of the selected pins is low (``ESP_EXT1_WAKEUP_ANY_LOW``)
 
-    This wakeup source is implemented by the RTC controller. As such, RTC peripherals and RTC memories can be powered down in this mode. However, if RTC peripherals are powered down, internal pullup and pulldown resistors will be disabled if we don't use the HOLD feature. To use internal pullup or pulldown resistors, request the RTC peripherals power domain to be kept on during sleep, and configure pullup/pulldown resistors using ``rtc_gpio_`` functions before entering sleep::
+    This wakeup source is controlled by the RTC controller. Unlike ``ext0``, this wakeup source supports wakeup even when the RTC peripheral is powered down. Although the power domain of the RTC peripheral, where RTC IOs are located, is powered down during sleep modes, ESP-IDF will automatically lock the state of the wakeup pin before the system enters sleep modes and unlock upon exiting sleep modes. Therefore, the internal pull-up or pull-down resistors can still be configured for the wakeup pin::
 
         esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_PERIPH, ESP_PD_OPTION_ON);
         rtc_gpio_pullup_dis(gpio_num);
         rtc_gpio_pulldown_en(gpio_num);
 
-    If we turn off the ``RTC_PERIPH`` domain, we will use the HOLD feature to maintain the pull-up and pull-down on the pins during sleep. HOLD feature will be acted on the pin internally before the system entering sleep, and this can further reduce power consumption::
+    If we turn off the ``RTC_PERIPH`` domain, we will use the HOLD feature to maintain the pull-up and pull-down on the pins during sleep. HOLD feature will be acted on the pin internally before the system enters sleep modes, and this can further reduce power consumption::
 
         rtc_gpio_pullup_dis(gpio_num);
         rtc_gpio_pulldown_en(gpio_num);
@@ -123,16 +123,25 @@ RTC peripherals or RTC memories don't need to be powered on during sleep in this
         gpio_pullup_dis(gpio_num);
         gpio_pulldown_en(gpio_num);
 
-    :cpp:func:`esp_sleep_enable_ext1_wakeup` function can be used to enable this wakeup source for general ext1 wakeup.
+    :cpp:func:`esp_sleep_enable_ext1_wakeup_io` function can be used to append ext1 wakeup IO and set corresponding wakeup level.
+
+    :cpp:func:`esp_sleep_disable_ext1_wakeup_io` function can be used to remove ext1 wakeup IO.
 
     .. only:: SOC_PM_SUPPORT_EXT1_WAKEUP_MODE_PER_PIN
 
-        Besides the above mentioned general ext1 wakeup, the RTC controller also contains a more powerful logic to trigger wakeup using multiple RTC GPIOs with a customized RTC IO wakeup level bitmap. This can be configured with :cpp:func`esp_sleep_enable_ext1_wakeup_with_level_mask`.
+        The RTC controller also supports triggering wakeup, allowing configurable IO to use different wakeup levels simultaneously. This can be configured with :cpp:func:`esp_sleep_enable_ext1_wakeup_io` or :cpp:func:`esp_sleep_enable_ext1_wakeup_with_level_mask`.
+
+    .. only:: not SOC_PM_SUPPORT_EXT1_WAKEUP_MODE_PER_PIN
+
+        .. note::
+
+           Due to hardware limitation, when we use more than one IO for EXT1 wakeup, it is not allowed to configure different wakeup levels for the IOs, and there is corresponding inspection mechanism in :cpp:func:`esp_sleep_enable_ext1_wakeup_io`.
 
     .. warning::
+
         - To use the EXT1 wakeup, the IO pad(s) are configured as RTC IO. Therefore, before using these pads as digital GPIOs, users need to reconfigure them by calling the :cpp:func:`rtc_gpio_deinit` function.
 
-        - If the RTC peripherals are configured to be powered down (which is by default), the wakeup IOs will be set to the holding state before entering sleep. Therefore, after the chip wakes up from Light-sleep, please call `rtc_gpio_hold_dis` to disable the hold function to perform any pin re-configuration. For Deep-sleep wakeup, this is already being handled at the application startup stage.
+        - If the RTC peripherals are configured to be powered down (which is by default), the wakeup IOs will be set to the holding state before entering sleep. Therefore, after the chip wakes up from Light-sleep, please call ``rtc_gpio_hold_dis`` to disable the hold function to perform any pin re-configuration. For Deep-sleep wakeup, this is already being handled at the application startup stage.
 
 .. only:: SOC_ULP_SUPPORTED
 
