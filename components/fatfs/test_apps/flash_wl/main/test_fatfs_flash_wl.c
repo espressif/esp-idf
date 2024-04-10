@@ -46,8 +46,18 @@ static void test_teardown(void)
     TEST_ESP_OK(esp_vfs_fat_spiflash_unmount_rw_wl("/spiflash", s_test_wl_handle));
 }
 
+static void corrupt_wl_data(void)
+{
+    esp_partition_t* part = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_FAT, NULL);
+    TEST_ASSERT_NOT_NULL(part);
+    TEST_ESP_OK(esp_partition_erase_range(part, 0, part->size));
+}
+
 TEST_CASE("(WL) can format partition", "[fatfs][wear_levelling][timeout=120]")
 {
+#ifdef CONFIG_SPI_WL_TEST_ERASE_PARTITION
+    corrupt_wl_data();
+#endif
     TEST_ESP_OK(esp_vfs_fat_spiflash_format_rw_wl("/spiflash", NULL));
     test_setup();
     vfs_fat_spiflash_ctx_t* ctx = get_vfs_fat_spiflash_ctx(s_test_wl_handle);
@@ -58,6 +68,9 @@ TEST_CASE("(WL) can format partition", "[fatfs][wear_levelling][timeout=120]")
 
 TEST_CASE("(WL) can format partition with config", "[fatfs][wear_levelling][timeout=120]")
 {
+#ifdef CONFIG_SPI_WL_TEST_ERASE_PARTITION
+    corrupt_wl_data();
+#endif
     esp_vfs_fat_mount_config_t format_config = {
         .format_if_mount_failed = true,
         .max_files = 5,
