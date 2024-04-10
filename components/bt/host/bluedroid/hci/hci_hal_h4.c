@@ -43,6 +43,7 @@
 #include "l2c_int.h"
 #endif ///C2H_FLOW_CONTROL_INCLUDED == TRUE
 #include "stack/hcimsgs.h"
+#include "hci_log/bt_hci_log.h"
 
 #define HCI_BLE_EVENT 0x3e
 #define PACKET_TYPE_TO_INBOUND_INDEX(type) ((type) - 2)
@@ -441,7 +442,7 @@ static void hci_hal_h4_hdl_rx_packet(BT_HDR *packet)
         uint8_t len = 0;
         STREAM_TO_UINT8(len, stream);
 #endif
-        HCI_TRACE_ERROR("Workround stream corrupted during LE SCAN: pkt_len=%d ble_event_len=%d\n",
+        HCI_TRACE_ERROR("Workaround stream corrupted during LE SCAN: pkt_len=%d ble_event_len=%d\n",
                   packet->len, len);
         osi_free(packet);
         return;
@@ -554,10 +555,14 @@ static int host_recv_pkt_cb(uint8_t *data, uint16_t len)
     bool is_adv_rpt = host_recv_adv_packet(data);
 
     if (!is_adv_rpt) {
+#if (BT_HCI_LOG_INCLUDED == TRUE)
+        uint8_t data_type = ((data[0] == 2) ? HCI_LOG_DATA_TYPE_C2H_ACL : data[0]);
+        bt_hci_log_record_hci_data(data_type, data, len);
+#endif // (BT_HCI_LOG_INCLUDED == TRUE)
         pkt_size = BT_HDR_SIZE + len;
         pkt = (BT_HDR *) osi_calloc(pkt_size);
         if (!pkt) {
-            HCI_TRACE_ERROR("%s couldn't aquire memory for inbound data buffer.\n", __func__);
+            HCI_TRACE_ERROR("%s couldn't acquire memory for inbound data buffer.\n", __func__);
             assert(0);
         }
 
@@ -567,6 +572,10 @@ static int host_recv_pkt_cb(uint8_t *data, uint16_t len)
         memcpy(pkt->data, data, len);
         fixed_queue_enqueue(hci_hal_env.rx_q, pkt, FIXED_QUEUE_MAX_TIMEOUT);
     } else {
+#if (BT_HCI_LOG_INCLUDED == TRUE)
+        // data type is adv report
+        bt_hci_log_record_hci_adv(HCI_LOG_DATA_TYPE_ADV, data, len);
+#endif // (BT_HCI_LOG_INCLUDED == TRUE)
 #if !BLE_ADV_REPORT_FLOW_CONTROL
         // drop the packets if pkt_queue length goes beyond upper limit
         if (pkt_queue_length(hci_hal_env.adv_rpt_q) > HCI_HAL_BLE_ADV_RPT_QUEUE_LEN_MAX) {
