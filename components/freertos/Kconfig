@@ -161,6 +161,13 @@ menu "FreeRTOS"
                 Enable backward compatibility with APIs prior to FreeRTOS v8.0.0. (see
                 configENABLE_BACKWARD_COMPATIBILITY documentation for more details).
 
+        config FREERTOS_USE_TIMERS
+            bool "configUSE_TIMERS"
+            default y
+            depends on !IDF_TARGET_LINUX
+            help
+                Enable FreeRTOS Software Timers.
+
         config FREERTOS_TIMER_SERVICE_TASK_NAME
             string "configTIMER_SERVICE_TASK_NAME"
             default "Tmr Svc"

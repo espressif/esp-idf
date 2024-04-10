@@ -183,7 +183,11 @@
 
 /* ------------------- Software Timer ---------------------- */
 
-#define configUSE_TIMERS                          1
+#if CONFIG_FREERTOS_USE_TIMERS
+    #define configUSE_TIMERS                      1
+#else
+    #define configUSE_TIMERS                      0
+#endif
 #define configTIMER_TASK_PRIORITY                 CONFIG_FREERTOS_TIMER_TASK_PRIORITY
 #define configTIMER_QUEUE_LENGTH                  CONFIG_FREERTOS_TIMER_QUEUE_LENGTH
 #define configTIMER_TASK_STACK_DEPTH              CONFIG_FREERTOS_TIMER_TASK_STACK_DEPTH
@@ -214,7 +218,11 @@
 #define INCLUDE_uxTaskGetStackHighWaterMark        1
 #define INCLUDE_eTaskGetState                      1
 #define INCLUDE_xTaskResumeFromISR                 1
-#define INCLUDE_xTimerPendFunctionCall             1
+#if CONFIG_FREERTOS_USE_TIMERS
+  #define INCLUDE_xTimerPendFunctionCall           1
+#else
+  #define INCLUDE_xTimerPendFunctionCall           0
+#endif
 #define INCLUDE_xTaskGetSchedulerState             1
 #define INCLUDE_xTaskGetCurrentTaskHandle          1
 
