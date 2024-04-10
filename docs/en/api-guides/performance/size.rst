@@ -505,9 +505,9 @@ These include:
 - :ref:`CONFIG_MBEDTLS_ECP_C` (Alternatively: Leave this option enabled but disable some of the elliptic curves listed in the sub-menu.)
 - :ref:`CONFIG_MBEDTLS_ECP_NIST_OPTIM`
 - :ref:`CONFIG_MBEDTLS_ECP_FIXED_POINT_OPTIM`
-- Change :ref:`CONFIG_MBEDTLS_TLS_MODE` if both server & client functionalities are not needed
-- Consider disabling some cipher suites listed in the ``TLS Key Exchange Methods`` sub-menu (i.e., :ref:`CONFIG_MBEDTLS_KEY_EXCHANGE_RSA`)
-- Consider disabling :ref:`CONFIG_MBEDTLS_ERROR_STRINGS` if the application is pulling in mbedTLS error strings because of :cpp:func:`mbedtls_strerror` usage
+- Change :ref:`CONFIG_MBEDTLS_TLS_MODE` if both server & client functionalities are not needed.
+- Consider disabling some cipher suites listed in the ``TLS Key Exchange Methods`` sub-menu (i.e., :ref:`CONFIG_MBEDTLS_KEY_EXCHANGE_RSA`).
+- Consider disabling :ref:`CONFIG_MBEDTLS_ERROR_STRINGS` if the application is already pulling in mbedTLS error strings through using :cpp:func:`mbedtls_strerror`.
 
 The help text for each option has some more information for reference.
 
