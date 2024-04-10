@@ -101,31 +101,3 @@ esp_err_t esp_bt_config_file_path_update(const char *file_path)
 
     return btc_config_file_path_update(file_path);
 }
-
-esp_err_t esp_bt_dev_vendor_command_send(esp_bt_dev_vendor_cmd_params_t *vendor_cmd_param)
-{
-    btc_msg_t msg = {0};
-    btc_dev_args_t arg;
-
-    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
-        return ESP_ERR_INVALID_STATE;
-    }
-
-    if (!vendor_cmd_param || !vendor_cmd_param->p_param_buf || !vendor_cmd_param->param_len) {
-        return ESP_ERR_NOT_ALLOWED;
-    }
-    // If command is not a VSC, return error
-    if ((vendor_cmd_param->opcode & VENDOR_HCI_CMD_MASK) != VENDOR_HCI_CMD_MASK) {
-        return ESP_ERR_NOT_ALLOWED;
-    }
-
-    msg.sig = BTC_SIG_API_CALL;
-    msg.pid = BTC_PID_DEV;
-    msg.act = BTC_DEV_ACT_VENDOR_HCI_CMD_EVT;
-    arg.vendor_cmd_send.opcode = vendor_cmd_param->opcode;
-    arg.vendor_cmd_send.param_len = vendor_cmd_param->param_len;
-    arg.vendor_cmd_send.p_param_buf = vendor_cmd_param->p_param_buf;
-
-    return (btc_transfer_context(&msg, &arg, sizeof(btc_dev_args_t), btc_dev_call_arg_deep_copy, btc_dev_call_arg_deep_free)
-                == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
-}

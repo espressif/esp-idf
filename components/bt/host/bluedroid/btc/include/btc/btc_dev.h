@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,7 +17,6 @@ typedef enum {
 #if (ESP_COEX_VSC_INCLUDED == TRUE)
     BTC_DEV_ACT_CFG_COEX_STATUS,
 #endif
-    BTC_DEV_ACT_VENDOR_HCI_CMD_EVT,
 } btc_dev_act_t;
 
 /* btc_dev_args_t */
@@ -35,13 +34,6 @@ typedef union {
         uint8_t status;
     } cfg_coex_status;
 #endif
-
-    //BTC_DEV_VENDOR_HCI_CMD_EVT
-    struct vendor_cmd_send_args {
-        uint16_t  opcode;
-        uint8_t  param_len;
-        uint8_t *p_param_buf;
-    } vendor_cmd_send;
 } btc_dev_args_t;
 
 void btc_dev_call_handler(btc_msg_t *msg);
