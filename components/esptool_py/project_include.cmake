@@ -82,11 +82,6 @@ if(NOT CONFIG_APP_BUILD_TYPE_RAM AND CONFIG_APP_BUILD_GENERATE_BINARIES)
         # Set ESPFLASHSIZE to 'detect' *after* esptool_elf2image_args are generated,
         # as elf2image can't have 'detect' as an option...
         set(ESPFLASHSIZE detect)
-
-        # Flash size detection updates the image header which would invalidate the appended
-        # SHA256 digest. Therefore, a digest is not appended in that case.
-        # This argument requires esptool>=4.1.
-        list(APPEND esptool_elf2image_args --dont-append-digest)
     endif()
 
     if(CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME)
@@ -94,7 +89,7 @@ if(NOT CONFIG_APP_BUILD_TYPE_RAM AND CONFIG_APP_BUILD_GENERATE_BINARIES)
     endif()
 endif()
 
-# We still set "--min-rev" to keep the app compatible with older booloaders where this field is controlled.
+# We still set "--min-rev" to keep the app compatible with older bootloaders where this field is controlled.
 if(CONFIG_IDF_TARGET_ESP32)
     # for this chip min_rev is major revision
     math(EXPR min_rev "${CONFIG_ESP_REV_MIN_FULL} / 100")
@@ -115,11 +110,6 @@ if(CONFIG_ESPTOOLPY_HEADER_FLASHSIZE_UPDATE)
     # Set ESPFLASHSIZE to 'detect' *after* esptool_elf2image_args are generated,
     # as elf2image can't have 'detect' as an option...
     set(ESPFLASHSIZE detect)
-
-    # Flash size detection updates the image header which would invalidate the appended
-    # SHA256 digest. Therefore, a digest is not appended in that case.
-    # This argument requires esptool>=4.1.
-    list(APPEND esptool_elf2image_args --dont-append-digest)
 endif()
 
 if(CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME)
@@ -348,7 +338,7 @@ endfunction()
 # This function takes a fifth optional named parameter: "ALWAYS_PLAINTEXT". As
 # its name states, it marks whether the image should be flashed as plain text or
 # not. If build macro CONFIG_SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT is set and
-# this parameter is provided, then the image will be flahsed as plain text
+# this parameter is provided, then the image will be flashed as plain text
 # (not encrypted) on the target. This parameter will be ignored if build macro
 # CONFIG_SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT is not set.
 function(esptool_py_flash_target_image target_name image_name offset image)
@@ -474,7 +464,7 @@ $<JOIN:$<TARGET_PROPERTY:${target_name},IMAGES>,\n>")
         # If we only have encrypted images to flash, we must use legacy
         # --encrypt parameter.
         # As the properties ENCRYPTED_IMAGES and NON_ENCRYPTED_IMAGES have not
-        # been geenrated yet, we must use CMake expression generator to test
+        # been generated yet, we must use CMake expression generator to test
         # which esptool.py options we can use.
 
         # The variable has_non_encrypted_image will be evaluated to "1" if some
@@ -503,7 +493,7 @@ ${non_encrypted_files}\n\
 ${if_enc_expr}\
 ${encrypted_files}")
 
-        # The expression is ready to be geenrated, write it to the file which
+        # The expression is ready to be generated, write it to the file which
         # extension is .in
         file_generate("${CMAKE_CURRENT_BINARY_DIR}/encrypted_${target_name}_args.in"
                       CONTENT "${flash_args_content}")
