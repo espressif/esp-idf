@@ -21,7 +21,7 @@ extern "C" {
  *
  * 2) External 40MHz Crystal Clock: XTAL
  *
- * 3) Internal 136kHz RC Oscillator: RC_SLOW (may also referrred as SOSC in TRM or reg. description)
+ * 3) Internal 136kHz RC Oscillator: RC_SLOW (may also referred as SOSC in TRM or reg. description)
  *
  *    This RC oscillator generates a ~136kHz clock signal output as the RC_SLOW_CLK. The exact frequency of this clock
  *    can be computed in runtime through calibration.
@@ -341,6 +341,20 @@ typedef enum {
     I2S_CLK_SRC_APLL = SOC_MOD_CLK_APLL,                /*!< Select APLL as the source clock */
     I2S_CLK_SRC_EXTERNAL = -1,                          /*!< Select external clock as source clock */
 } soc_periph_i2s_clk_src_t;
+
+/**
+ * @brief Array initializer for all supported clock sources of LP I2S
+ */
+#define SOC_LP_I2S_CLKS {SOC_MOD_CLK_LP_PERI, SOC_MOD_CLK_XTAL_D2}
+
+/**
+ * @brief LP I2S clock source enum
+ */
+typedef enum {
+    LP_I2S_CLK_SRC_DEFAULT = SOC_MOD_CLK_LP_PERI,          /*!< Select LP_PERI as the default source clock */
+    LP_I2S_CLK_SRC_LP_PERI = SOC_MOD_CLK_LP_PERI,          /*!< Select LP_PERI as the source clock */
+    LP_I2S_CLK_SRC_XTAL_D2 = SOC_MOD_CLK_XTAL_D2,          /*!< LP_I2S source clock is XTAL_D2 */
+} soc_periph_lp_i2s_clk_src_t;
 
 //////////////////////////////////////////////////LCD///////////////////////////////////////////////////////////////////
 
