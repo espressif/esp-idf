@@ -249,6 +249,17 @@ BOOLEAN hid_known_hid_device (BD_ADDR bd_addr);
 *******************************************************************************/
 extern UINT8 HID_HostSetTraceLevel (UINT8 new_level);
 
+/*******************************************************************************
+**
+** Function         HID_HostConnectOrig
+**
+** Description      Check if the HID Host initiates the connection
+**
+** Returns          TRUE if the HID Host initiates the connection else FALSE
+**
+*******************************************************************************/
+extern BOOLEAN HID_HostConnectOrig(UINT8 dev_handle);
+
 #ifdef __cplusplus
 }
 #endif
