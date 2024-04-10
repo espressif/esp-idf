@@ -23,6 +23,14 @@ config SOC_ASYNC_MEMCPY_SUPPORTED
     bool
     default y
 
+config SOC_PHY_SUPPORTED
+    bool
+    default y
+
+config SOC_WIFI_SUPPORTED
+    bool
+    default y
+
 config SOC_SUPPORTS_SECURE_DL_MODE
     bool
     default y
@@ -112,10 +120,6 @@ config SOC_MODEM_CLOCK_SUPPORTED
     default y
 
 config SOC_BT_SUPPORTED
-    bool
-    default y
-
-config SOC_PHY_SUPPORTED
     bool
     default y
 
@@ -599,6 +603,14 @@ config SOC_UART_SUPPORT_FSM_TX_WAIT_SEND
     bool
     default y
 
+config SOC_COEX_HW_PTI
+    bool
+    default y
+
+config SOC_WIFI_LIGHT_SLEEP_CLK_WIDTH
+    int
+    default 12
+
 config SOC_PM_SUPPORT_CPU_PD
     bool
     default y
@@ -652,6 +664,38 @@ config SOC_CLK_RC32K_SUPPORTED
     default y
 
 config SOC_RCC_IS_INDEPENDENT
+    bool
+    default y
+
+config SOC_WIFI_HW_TSF
+    bool
+    default y
+
+config SOC_WIFI_FTM_SUPPORT
+    bool
+    default n
+
+config SOC_WIFI_GCMP_SUPPORT
+    bool
+    default y
+
+config SOC_WIFI_WAPI_SUPPORT
+    bool
+    default y
+
+config SOC_WIFI_CSI_SUPPORT
+    bool
+    default y
+
+config SOC_WIFI_MESH_SUPPORT
+    bool
+    default y
+
+config SOC_WIFI_HE_SUPPORT
+    bool
+    default y
+
+config SOC_WIFI_HE_SUPPORT_5G
     bool
     default y
 

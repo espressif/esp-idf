@@ -76,12 +76,12 @@ if(CONFIG_ESP_PHY_ENABLED)
             target_link_libraries(${COMPONENT_LIB} PUBLIC rtc)
             target_link_libraries(${COMPONENT_LIB} INTERFACE $<TARGET_FILE:${esp_phy_lib}> libphy.a librtc.a
             $<TARGET_FILE:${esp_phy_lib}>)
-        elseif(CONFIG_IDF_TARGET_ESP32S2)
-            target_link_libraries(${COMPONENT_LIB} INTERFACE $<TARGET_FILE:${esp_phy_lib}> libphy.a
-            $<TARGET_FILE:${esp_phy_lib}>)
         elseif(CONFIG_SOC_BT_SUPPORTED OR CONFIG_SOC_IEEE802154_SUPPORTED)
             target_link_libraries(${COMPONENT_LIB} PUBLIC btbb)
             target_link_libraries(${COMPONENT_LIB} INTERFACE $<TARGET_FILE:${esp_phy_lib}> libphy.a libbtbb.a
+            $<TARGET_FILE:${esp_phy_lib}>)
+        elseif(CONFIG_SOC_WIFI_SUPPORTED)
+            target_link_libraries(${COMPONENT_LIB} INTERFACE $<TARGET_FILE:${esp_phy_lib}> libphy.a
             $<TARGET_FILE:${esp_phy_lib}>)
         endif()
 

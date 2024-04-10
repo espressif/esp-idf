@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -30,14 +30,14 @@ esp_err_t esp_wifi_set_htc_omc(const esp_wifi_htc_omc_t *om);
 void esp_wifi_enable_rx_stbc(bool enable);
 void esp_wifi_enable_su_bmfmee(bool enable);
 esp_err_t esp_wifi_set_tf_padding_duration(int tf_padding_duration);
-void esp_test_set_tx_mcs_pwr(wifi_phy_rate_t rate, int8_t max_pwr);
 
 void hal_he_set_ul_mu(bool ul_mu_disable, bool ul_mu_data_disable);
-void hal_he_set_bf_report_rate(sig_mode_t sig_mode, wifi_phy_rate_t rate);
+void hal_he_set_bf_report_rate(sig_mode_t sig_mode, wifi_phy_rate_t rate, bool ersu, bool dcm);
 
 void dbg_read_muedca_timer(uint8_t aci);
 void dbg_read_axtb_diag(void);
 void dbg_read_ax_diag(bool verbose);
+void dbg_read_tx_mplen(const void*, uint8_t ac);
 void dbg_tb_ignore_cca_enable(bool enable);
 
 esp_err_t esp_wifi_sta_report_bsscolor_collision(void);
@@ -51,6 +51,14 @@ esp_err_t esp_test_get_rx_error_occurs(esp_test_rx_error_occurs_t *err_occurs);
 void esp_test_clr_hw_statistics(void);
 esp_err_t esp_test_get_hw_rx_statistics(esp_test_hw_rx_statistics_t *hw_rx_stats);
 esp_err_t esp_test_get_hw_tb_statistics(esp_test_hw_tb_statistics_t *hw_tb_stats);
+
+/**
+  * @brief     Get tx stats enabled ACI bitmap
+  *
+  * @return
+  *    - acibitmap
+  */
+uint8_t esp_wifi_get_tx_statistics_ena_acibitmap(void);
 
 /**
   * @brief     Clear DL MU-MIMO and DL OFDMA reception statistics.
@@ -162,7 +170,7 @@ esp_err_t esp_wifi_softap_add_color_change_announcement(uint8_t color);
 *
 * @attention This API should be called after esp_wifi_start().
 *
-* @param[in] bss_max_idle_enable enbale bss max idle
+* @param[in] bss_max_idle_enable enable bss max idle
 * @param[in] bss_max_idle_period_secs bss max idle period, unit seconds
 * @param[in] protected_keep_alive using protected/unprotected frame to keep alive
 *
@@ -200,6 +208,12 @@ esp_err_t esp_wifi_sta_reset_muedca_timer(uint8_t aci_bitmap);
   *    - ESP_ERR_INVALID_ARG: invalid argument
   */
 esp_err_t esp_wifi_sta_set_bss_color_collision_detection(int threshold, int duration);
+
+esp_err_t esp_test_clr_rx_ctrls(void);
+esp_err_t esp_test_get_rx_ctrls(esp_test_rx_ctrl_t* rx);
+
+void hal_set_tx_pwr(wifi_phy_rate_t rate,  int8_t max_pwr);
+int8_t hal_get_tx_pwr(wifi_phy_rate_t rate);
 
 #ifdef __cplusplus
 }

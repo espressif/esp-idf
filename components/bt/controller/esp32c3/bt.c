@@ -22,7 +22,10 @@
 #include "esp_random.h"
 #include "esp_task.h"
 #include "esp_attr.h"
+#ifdef CONFIG_ESP_PHY_ENABLED
 #include "esp_phy_init.h"
+#include "esp_private/phy.h"
+#endif
 #include "esp_bt.h"
 #include "esp_err.h"
 #include "esp_log.h"
@@ -34,11 +37,12 @@
 #include "soc/rtc.h"
 #include "soc/rtc_cntl_reg.h"
 #include "soc/soc_memory_layout.h"
+#ifdef CONFIG_ESP_COEX_ENABLED
 #include "private/esp_coexist_internal.h"
+#endif
 #include "esp_timer.h"
 #include "esp_sleep.h"
 #include "esp_rom_sys.h"
-#include "esp_private/phy.h"
 #if CONFIG_IDF_TARGET_ESP32C3
 #include "riscv/interrupt.h"
 #include "esp32c3/rom/rom_layout.h"

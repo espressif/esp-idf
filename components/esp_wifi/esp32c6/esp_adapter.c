@@ -32,16 +32,20 @@
 #include "esp_private/esp_modem_clock.h"
 #include "esp_private/wifi_os_adapter.h"
 #include "esp_private/wifi.h"
+#ifdef CONFIG_ESP_PHY_ENABLED
 #include "esp_phy_init.h"
+#include "phy_init_data.h"
+#endif
 #include "soc/rtc_cntl_periph.h"
 #include "soc/rtc.h"
-#include "phy_init_data.h"
 #include "esp_private/periph_ctrl.h"
 #include "esp_private/esp_clk.h"
 #include "nvs.h"
 #include "os.h"
 #include "esp_smartconfig.h"
+#ifdef CONFIG_ESP_COEX_ENABLED
 #include "private/esp_coexist_internal.h"
+#endif
 #include "esp32c6/rom/ets_sys.h"
 #include "private/esp_modem_wrapper.h"
 #include "esp_private/esp_modem_clock.h"

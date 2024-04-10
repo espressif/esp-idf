@@ -119,6 +119,8 @@ typedef struct {
     uint64_t               feature_caps;           /**< Enables additional WiFi features and capabilities */
     bool                   sta_disconnected_pm;    /**< WiFi Power Management for station at disconnected status */
     int                    espnow_max_encrypt_num; /**< Maximum encrypt number of peers supported by espnow */
+    int                    tx_hetb_queue_num;      /**< WiFi TX HE TB QUEUE number for STA HE TB PPDU transmission */
+    bool                   dump_hesigb_enable;     /**< enable dump sigb field */
     int                    magic;                  /**< WiFi init magic number, it should be the last field */
 } wifi_init_config_t;
 
@@ -241,7 +243,19 @@ extern wifi_osi_funcs_t g_wifi_osi_funcs;
 #define WIFI_FTM_RESPONDER 0
 #endif
 
-#define CONFIG_FEATURE_WPA3_SAE_BIT (1<<0)
+#if CONFIG_ESP_WIFI_ENABLE_DUMP_HESIGB && !WIFI_CSI_ENABLED
+#define WIFI_DUMP_HESIGB_ENABLED  true
+#else
+#define WIFI_DUMP_HESIGB_ENABLED  false
+#endif
+
+#if CONFIG_ESP_WIFI_TX_HETB_QUEUE_NUM
+#define WIFI_TX_HETB_QUEUE_NUM CONFIG_ESP_WIFI_TX_HETB_QUEUE_NUM
+#else
+#define WIFI_TX_HETB_QUEUE_NUM 1
+#endif
+
+#define CONFIG_FEATURE_WPA3_SAE_BIT     (1<<0)
 #define CONFIG_FEATURE_CACHE_TX_BUF_BIT (1<<1)
 #define CONFIG_FEATURE_FTM_INITIATOR_BIT (1<<2)
 #define CONFIG_FEATURE_FTM_RESPONDER_BIT (1<<3)
@@ -276,6 +290,8 @@ extern wifi_osi_funcs_t g_wifi_osi_funcs;
     .feature_caps = WIFI_FEATURE_CAPS, \
     .sta_disconnected_pm = WIFI_STA_DISCONNECTED_PM_ENABLED,  \
     .espnow_max_encrypt_num = CONFIG_ESP_WIFI_ESPNOW_MAX_ENCRYPT_NUM, \
+    .tx_hetb_queue_num = WIFI_TX_HETB_QUEUE_NUM, \
+    .dump_hesigb_enable = WIFI_DUMP_HESIGB_ENABLED, \
     .magic = WIFI_INIT_CONFIG_MAGIC\
 }
 
@@ -588,9 +604,11 @@ esp_err_t esp_wifi_get_ps(wifi_ps_type_t *type);
 /**
   * @brief     Set protocol type of specified interface
   *            The default protocol is (WIFI_PROTOCOL_11B|WIFI_PROTOCOL_11G|WIFI_PROTOCOL_11N).
-  *            if CONFIG_SOC_WIFI_HE_SUPPORT, the default protocol is (WIFI_PROTOCOL_11B|WIFI_PROTOCOL_11G|WIFI_PROTOCOL_11N|WIFI_PROTOCOL_11AX).
+  *            if CONFIG_SOC_WIFI_HE_SUPPORT and band is 2.4G, the default protocol is (WIFI_PROTOCOL_11B|WIFI_PROTOCOL_11G|WIFI_PROTOCOL_11N|WIFI_PROTOCOL_11AX).
+  *            if CONFIG_SOC_WIFI_HE_SUPPORT and band is 5G, the default protocol is (WIFI_PROTOCOL_11A|WIFI_PROTOCOL_11N|WIFI_PROTOCOL_11AC|WIFI_PROTOCOL_11AX).
   *
-  * @attention Support 802.11b or 802.11bg or 802.11bgn or 802.11bgnax or LR mode
+  * @attention 2.4G: Support 802.11b or 802.11bg or 802.11bgn or 802.11bgnax or LR mode
+  *            5G: Support 802.11a or 802.11an or 802.11anac or 802.11anacax
   *
   * @param     ifx  interfaces
   * @param     protocol_bitmap  WiFi protocol bitmap
@@ -1127,6 +1145,19 @@ esp_err_t esp_wifi_set_csi_rx_cb(wifi_csi_cb_t cb, void *ctx);
 esp_err_t esp_wifi_set_csi_config(const wifi_csi_config_t *config);
 
 /**
+  * @brief Get CSI data configuration
+  *
+  * @param config configuration
+  *
+  * return
+  *    - ESP_OK: succeed
+  *    - ESP_ERR_WIFI_NOT_INIT: WiFi is not initialized by esp_wifi_init
+  *    - ESP_ERR_WIFI_NOT_STARTED: WiFi is not started by esp_wifi_start or promiscuous mode is not enabled
+  *    - ESP_ERR_INVALID_ARG: invalid argument
+  */
+esp_err_t esp_wifi_get_csi_config(wifi_csi_config_t *config);
+
+/**
   * @brief Enable or disable CSI
   *
   * @param en true - enable, false - disable
@@ -1501,6 +1532,32 @@ esp_err_t esp_wifi_set_dynamic_cs(bool enabled);
   *    - ESP_FAIL: failed
   */
 esp_err_t esp_wifi_sta_get_rssi(int *rssi);
+
+#if SOC_WIFI_HE_SUPPORT_5G
+/**
+  * @brief     Set wifi band.
+  *
+  * @param[in]    band wifi band 2.4G / 5G / 2.4G + 5G
+  *
+    * @return
+  *    - ESP_OK: succeed
+  *    - ESP_ERR_WIFI_NOT_INIT: WiFi is not initialized by esp_wifi_init
+  *    - ESP_ERR_INVALID_ARG: invalid argument
+  */
+esp_err_t esp_wifi_set_band(wifi_band_t band);
+
+/**
+  * @brief     Get wifi band.
+  *
+  * @param[in]    band store band of wifi
+  *
+    * @return
+  *    - ESP_OK: succeed
+  *    - ESP_ERR_WIFI_NOT_INIT: WiFi is not initialized by esp_wifi_init
+  *    - ESP_ERR_INVALID_ARG: invalid argument
+  */
+esp_err_t esp_wifi_get_band(wifi_band_t* band);
+#endif /* SOC_WIFI_HE_SUPPORT_5G */
 
 #ifdef __cplusplus
 }

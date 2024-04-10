@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -25,7 +25,9 @@
 #include "esp_task.h"
 #include "esp_intr_alloc.h"
 #include "esp_attr.h"
+#ifdef CONFIG_ESP_PHY_ENABLED
 #include "esp_phy_init.h"
+#endif
 #include "esp_bt.h"
 #include "esp_err.h"
 #include "esp_log.h"
@@ -35,7 +37,9 @@
 #include "soc/rtc.h"
 #include "soc/soc_memory_layout.h"
 #include "soc/dport_reg.h"
+#ifdef CONFIG_ESP_COEX_ENABLED
 #include "private/esp_coexist_internal.h"
+#endif
 #include "esp_timer.h"
 #if !CONFIG_FREERTOS_UNICORE
 #include "esp_ipc.h"
@@ -760,7 +764,7 @@ static int32_t queue_send_hlevel_wrapper(void *queue, void *item, uint32_t block
  * @param  item  The message which will be send
  * @param  hptw  need do task yield or not
  * @return       send success or not
- *               There is an issue here:  When the queue is full, it may reture true but it send fail to the queue, sometimes.
+ *               There is an issue here:  When the queue is full, it may return true but it send fail to the queue, sometimes.
  *               But in Bluetooth controller's isr, We don't care about the return value.
  *               It only required tp send success when the queue is empty all the time.
  *               So, this function meets the requirement.
@@ -1695,7 +1699,7 @@ esp_err_t esp_bt_controller_enable(esp_bt_mode_t mode)
 
     sdk_config_set_bt_pll_track_enable(true);
 
-    // inititalize bluetooth baseband
+    // initialize bluetooth baseband
     btdm_check_and_init_bb();
 
     ret = btdm_controller_enable(mode);
@@ -1858,7 +1862,7 @@ esp_err_t esp_ble_scan_dupilcate_list_flush(void)
 
 /**
  * This function re-write controller's function,
- * As coredump can not show paramerters in function which is in a .a file.
+ * As coredump can not show parameters in function which is in a .a file.
  *
  * After coredump fixing this issue, just delete this function.
  */

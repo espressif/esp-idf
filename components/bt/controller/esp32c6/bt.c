@@ -23,9 +23,9 @@
 #include "esp_log.h"
 #endif // ESP_PLATFORM
 
-#if CONFIG_SW_COEXIST_ENABLE
+#ifdef CONFIG_ESP_COEX_ENABLED
 #include "private/esp_coexist_internal.h"
-#endif // CONFIG_SW_COEXIST_ENABLE
+#endif // CONFIG_ESP_COEX_ENABLED
 
 #include "nimble/nimble_npl_os.h"
 #include "nimble/ble_hci_trans.h"
@@ -35,7 +35,9 @@
 #include "esp_intr_alloc.h"
 #include "esp_sleep.h"
 #include "esp_pm.h"
+#ifdef CONFIG_ESP_PHY_ENABLED
 #include "esp_phy_init.h"
+#endif
 #include "esp_private/periph_ctrl.h"
 #include "hci_uart.h"
 #include "bt_osi_mem.h"

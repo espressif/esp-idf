@@ -280,7 +280,7 @@ menu "Wi-Fi"
 
         config ESP_WIFI_EXTRA_IRAM_OPT
             bool "WiFi EXTRA IRAM speed optimization"
-            default y if IDF_TARGET_ESP32C6
+            default y if SOC_WIFI_HE_SUPPORT
             default n
             help
                 Select this option to place additional frequently called Wi-Fi library functions
@@ -335,6 +335,7 @@ menu "Wi-Fi"
             bool "WiFi SLP IRAM speed optimization"
             select PM_SLP_DEFAULT_PARAMS_OPT
             select PERIPH_CTRL_FUNC_IN_IRAM
+            default y if SOC_WIFI_HE_SUPPORT
             help
                 Select this option to place called Wi-Fi library TBTT process and receive beacon functions in IRAM.
                 Some functions can be put in IRAM either by ESP_WIFI_IRAM_OPT and ESP_WIFI_RX_IRAM_OPT, or this one.
@@ -469,14 +470,6 @@ menu "Wi-Fi"
             depends on SOC_WIFI_NAN_SUPPORT
             help
                 Enable WiFi Aware (NAN) feature.
-
-        config ESP_WIFI_ENABLE_WIFI_TX_STATS
-            bool "Enable Wi-Fi transmission statistics"
-            depends on SOC_WIFI_HE_SUPPORT
-            default "y"
-            help
-                Enable Wi-Fi transmission statistics. Total support 4 access category. Each access category
-                will use 346 bytes memory.
 
         config ESP_WIFI_MBEDTLS_CRYPTO
             bool "Use MbedTLS crypto APIs"
@@ -614,10 +607,18 @@ menu "Wi-Fi"
             help
                 Select this option to enable WPS registrar support in softAP mode.
 
+        config ESP_WIFI_ENABLE_WIFI_TX_STATS
+            bool "Enable Wi-Fi transmission statistics"
+            depends on SOC_WIFI_HE_SUPPORT
+            default n
+            help
+                Enable Wi-Fi transmission statistics. Total support 4 access category. Each access category
+                will use 346 bytes memory.
+
         config ESP_WIFI_ENABLE_WIFI_RX_STATS
             bool "Enable Wi-Fi reception statistics"
             depends on SOC_WIFI_HE_SUPPORT
-            default "y"
+            default n
             help
                 Enable Wi-Fi reception statistics. Total support 2 access category. Each access category
                 will use 190 bytes memory.
@@ -625,9 +626,46 @@ menu "Wi-Fi"
         config ESP_WIFI_ENABLE_WIFI_RX_MU_STATS
             bool "Enable Wi-Fi DL MU-MIMO and DL OFDMA reception statistics"
             depends on ESP_WIFI_ENABLE_WIFI_RX_STATS
-            default "y"
+            default n
             help
                 Enable Wi-Fi DL MU-MIMO and DL OFDMA reception statistics. Will use 10932 bytes memory.
+
+        config ESP_WIFI_TX_HETB_QUEUE_NUM
+            int "WiFi TX HE TB QUEUE number for STA HE TB PPDU transmission"
+            depends on SOC_WIFI_HE_SUPPORT
+            range 1 4
+            default 3
+            help
+                Set the maximum number of queue that can be aggregated by the STA in the A-MPDU carried in the
+                HE TB PPDU.
+
+        config ESP_WIFI_ENABLE_DUMP_HESIGB
+            bool "Enable Wi-Fi dump HE-SIGB which is contained in DL HE MU PPDUs"
+            depends on SOC_WIFI_HE_SUPPORT_5G
+            default "n"
+            help
+                Enable Wi-Fi dump HE-SIGB which is contained in DL HE MU PPDUs.
+
+        config ESP_WIFI_ENABLE_DUMP_MU_CFO
+            bool "Enable Wi-Fi dump MU CFO"
+            depends on SOC_WIFI_HE_SUPPORT_5G
+            default "n"
+            help
+                Enable Wi-Fi dump MU CFO.
+
+        config ESP_WIFI_ENABLE_DUMP_CTRL_NDPA
+            bool "Enable Wi-Fi dump NDPA frames"
+            depends on SOC_WIFI_HE_SUPPORT_5G
+            default "n"
+            help
+                Enable Wi-Fi dump NDPA frames.
+
+        config ESP_WIFI_ENABLE_DUMP_CTRL_BFRP
+            bool "Enable Wi-Fi dump BFRP frames"
+            depends on SOC_WIFI_HE_SUPPORT_5G
+            default "n"
+            help
+                Enable Wi-Fi dump BFRP frames.
 
         menu "WPS Configuration Options"
             config ESP_WIFI_WPS_STRICT

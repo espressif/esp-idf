@@ -23,7 +23,7 @@
 #include "esp_log.h"
 #endif
 
-#if CONFIG_SW_COEXIST_ENABLE
+#ifdef CONFIG_ESP_COEX_ENABLED
 #include "private/esp_coexist_internal.h"
 #endif
 
@@ -35,7 +35,9 @@
 #include "esp_intr_alloc.h"
 #include "esp_sleep.h"
 #include "esp_pm.h"
+#ifdef CONFIG_ESP_PHY_ENABLED
 #include "esp_phy_init.h"
+#endif
 #include "soc/syscon_reg.h"
 #include "soc/modem_clkrst_reg.h"
 #include "esp_private/periph_ctrl.h"

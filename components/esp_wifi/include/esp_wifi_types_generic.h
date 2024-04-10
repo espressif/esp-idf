@@ -230,13 +230,23 @@ typedef struct {
     uint32_t phy_11g:1;                   /**< bit: 1 flag to identify if 11g mode is enabled or not */
     uint32_t phy_11n:1;                   /**< bit: 2 flag to identify if 11n mode is enabled or not */
     uint32_t phy_lr:1;                    /**< bit: 3 flag to identify if low rate is enabled or not */
-    uint32_t phy_11ax:1;                  /**< bit: 4 flag to identify if 11ax mode is enabled or not */
-    uint32_t wps:1;                       /**< bit: 5 flag to identify if WPS is supported or not */
-    uint32_t ftm_responder:1;             /**< bit: 6 flag to identify if FTM is supported in responder mode */
-    uint32_t ftm_initiator:1;             /**< bit: 7 flag to identify if FTM is supported in initiator mode */
-    uint32_t reserved:24;                 /**< bit: 8..31 reserved */
+    uint32_t phy_11a:1;                   /**< bit: 4 flag to identify if 11ax mode is enabled or not */
+    uint32_t phy_11ac:1;                  /**< bit: 5 flag to identify if 11ax mode is enabled or not */
+    uint32_t phy_11ax:1;                  /**< bit: 6 flag to identify if 11ax mode is enabled or not */
+    uint32_t wps:1;                       /**< bit: 7 flag to identify if WPS is supported or not */
+    uint32_t ftm_responder:1;             /**< bit: 8 flag to identify if FTM is supported in responder mode */
+    uint32_t ftm_initiator:1;             /**< bit: 9 flag to identify if FTM is supported in initiator mode */
+    uint32_t reserved:22;                 /**< bit: 10..31 reserved */
     wifi_country_t country;               /**< country information of AP */
     wifi_he_ap_info_t he_ap;              /**< HE AP info */
+    uint8_t bandwidth;                    /**< For either 20 MHz or 40 MHz operation, the Channel Width field is set to 0.
+                                               For AP 80 MHz this value is set to 1. For AP 160MHz sets this value is set to 2.
+                                               For AP 80+80MHz this value is set to 3*/
+    uint8_t vht_ch_freq1;                 /**< this fields are used only AP bandwidth is 80 and 160 MHz, to transmit the center channel
+                                               frequency of the BSS. For AP bandwidth is 80+80MHz, it is the center channel frequency
+                                               of the lower frequency segment.*/
+    uint8_t vht_ch_freq2;                 /**< this fields are used only AP bandwidth is 80+80MHz, and is used to transmit the center
+                                               channel frequency of the second segment. */
 } wifi_ap_record_t;
 
 typedef enum {
@@ -262,15 +272,22 @@ typedef enum {
     WIFI_PS_MAX_MODEM,   /**< Maximum modem power saving. In this mode, interval to receive beacons is determined by the listen_interval parameter in wifi_sta_config_t */
 } wifi_ps_type_t;
 
-#define WIFI_PROTOCOL_11B         1
-#define WIFI_PROTOCOL_11G         2
-#define WIFI_PROTOCOL_11N         4
-#define WIFI_PROTOCOL_LR          8
-#define WIFI_PROTOCOL_11AX        16
+#define WIFI_PROTOCOL_11B         0x1
+#define WIFI_PROTOCOL_11G         0x2
+#define WIFI_PROTOCOL_11N         0x4
+#define WIFI_PROTOCOL_LR          0x8
+#define WIFI_PROTOCOL_11A         0x10
+#define WIFI_PROTOCOL_11AC        0x20
+#define WIFI_PROTOCOL_11AX        0x40
 
 typedef enum {
-    WIFI_BW_HT20 = 1, /* Bandwidth is HT20 */
-    WIFI_BW_HT40,     /* Bandwidth is HT40 */
+    WIFI_BW_HT20   = 1,       /* Bandwidth is HT20      */
+    WIFI_BW20 = WIFI_BW_HT20, /* Bandwidth is 20 MHz    */
+    WIFI_BW_HT40   = 2,       /* Bandwidth is HT40      */
+    WIFI_BW40 = WIFI_BW_HT40, /* Bandwidth is 40 MHz    */
+    WIFI_BW80      = 3,       /* Bandwidth is 80 MHz    */
+    WIFI_BW160     = 4,       /* Bandwidth is 160 MHz   */
+    WIFI_BW80_BW80 = 5,       /* Bandwidth is 80+80 MHz */
 } wifi_bandwidth_t;
 
 /** Configuration structure for Protected Management Frame */
@@ -377,9 +394,11 @@ typedef struct {
     uint32_t phy_11g:1;      /**< bit: 1 flag to identify if 11g mode is enabled or not */
     uint32_t phy_11n:1;      /**< bit: 2 flag to identify if 11n mode is enabled or not */
     uint32_t phy_lr:1;       /**< bit: 3 flag to identify if low rate is enabled or not */
-    uint32_t phy_11ax:1;     /**< bit: 4 flag to identify if 11ax mode is enabled or not */
-    uint32_t is_mesh_child:1;/**< bit: 5 flag to identify mesh child */
-    uint32_t reserved:26;    /**< bit: 6..31 reserved */
+    uint32_t phy_11a:1;      /**< bit: 4 flag to identify if 11ax mode is enabled or not */
+    uint32_t phy_11ac:1;     /**< bit: 5 flag to identify if 11ax mode is enabled or not */
+    uint32_t phy_11ax:1;     /**< bit: 6 flag to identify if 11ax mode is enabled or not */
+    uint32_t is_mesh_child:1;/**< bit: 7 flag to identify mesh child */
+    uint32_t reserved:24;    /**< bit: 8..31 reserved */
 } wifi_sta_info_t;
 
 typedef enum {
@@ -420,9 +439,11 @@ typedef enum
     WIFI_PHY_MODE_LR,   /**< PHY mode for Low Rate */
     WIFI_PHY_MODE_11B,  /**< PHY mode for 11b */
     WIFI_PHY_MODE_11G,  /**< PHY mode for 11g */
+    WIFI_PHY_MODE_11A,  /**< PHY mode for 11a */
     WIFI_PHY_MODE_HT20, /**< PHY mode for Bandwidth HT20 */
     WIFI_PHY_MODE_HT40, /**< PHY mode for Bandwidth HT40 */
     WIFI_PHY_MODE_HE20, /**< PHY mode for Bandwidth HE20 */
+    WIFI_PHY_MODE_VHT20,/**< PHY mode for Bandwidth VHT20 */
 } wifi_phy_mode_t;
 
 /**
@@ -776,6 +797,7 @@ typedef enum {
     WIFI_EVENT_ITWT_TEARDOWN,           /**< iTWT teardown */
     WIFI_EVENT_ITWT_PROBE,              /**< iTWT probe */
     WIFI_EVENT_ITWT_SUSPEND,            /**< iTWT suspend */
+    WIFI_EVENT_TWT_WAKEUP,              /**< TWT wakeup */
 
     WIFI_EVENT_NAN_STARTED,              /**< NAN Discovery has started */
     WIFI_EVENT_NAN_STOPPED,              /**< NAN Discovery has stopped */
@@ -1022,6 +1044,13 @@ typedef struct {
     uint8_t report[ESP_WIFI_MAX_NEIGHBOR_REP_LEN];  /**< Neighbor Report received from the AP*/
     uint16_t report_len;                            /**< Length of the report*/
 } wifi_event_neighbor_report_t;
+
+/** Argument structure for wifi band */
+typedef enum {
+    WIFI_BAND_2G = 1,                   /* Band is 2.4G */
+    WIFI_BAND_5G = 2,                   /* Band is 5G */
+    WIFI_BAND_2G_5G = 3,                /* Band is 2,4G + 5G */
+} wifi_band_t;
 
 #ifdef __cplusplus
 }

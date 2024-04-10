@@ -453,7 +453,11 @@ Deep-sleep 有如下可配置选项：
 
   为方便用户选择合适的低功耗模式，在介绍具体内容前先给出 Wi-Fi 场景下低功耗模式总结表，以方便用户根据需求快速选择想要了解的内容。
 
-  .. include:: sleep-current/{IDF_TARGET_PATH_NAME}_summary.inc
+  .. todo - add sleep-current/esp32c5_summary.inc
+
+  .. only:: not esp32c5
+
+    .. include:: sleep-current/{IDF_TARGET_PATH_NAME}_summary.inc
 
   .. note::
 
@@ -692,7 +696,11 @@ Deep-sleep 有如下可配置选项：
 
   配置表现：
 
-  .. include:: sleep-current/{IDF_TARGET_PATH_NAME}_modem_sleep.inc
+  .. todo - add sleep-current/esp32c5_modem_sleep.inc
+
+  .. only:: not esp32c5
+
+    .. include:: sleep-current/{IDF_TARGET_PATH_NAME}_modem_sleep.inc
 
   Auto Light-sleep + Wi-Fi 场景配置：
 
@@ -702,7 +710,11 @@ Deep-sleep 有如下可配置选项：
 
   该配置表现为 Auto Light-sleep 纯系统推荐配置 + 默认的 Wi-Fi 相关配置在 Wi-Fi 场景的表现。
 
-  .. include:: sleep-current/{IDF_TARGET_PATH_NAME}_light_sleep.inc
+  .. todo - add sleep-current/esp32c5_light_sleep.inc
+
+  .. only:: not esp32c5
+
+    .. include:: sleep-current/{IDF_TARGET_PATH_NAME}_light_sleep.inc
 
   Deep-sleep + Wi-Fi 场景配置：
 

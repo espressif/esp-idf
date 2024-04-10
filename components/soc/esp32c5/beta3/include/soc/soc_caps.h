@@ -31,7 +31,8 @@
 #define SOC_ASYNC_MEMCPY_SUPPORTED      1
 // #define SOC_USB_SERIAL_JTAG_SUPPORTED   1  // TODO: [ESP32C5] IDF-8721
 // #define SOC_TEMP_SENSOR_SUPPORTED       1  // TODO: [ESP32C5] IDF-8727
-// #define SOC_WIFI_SUPPORTED              1  // TODO: [ESP32C5] IDF-8851
+#define SOC_PHY_SUPPORTED               1
+#define SOC_WIFI_SUPPORTED              1
 #define SOC_SUPPORTS_SECURE_DL_MODE     1
 // #define SOC_LP_CORE_SUPPORTED           1  // TODO: [ESP32C5] IDF-8637
 #define SOC_EFUSE_KEY_PURPOSE_FIELD     1
@@ -494,7 +495,7 @@
 #define SOC_UART_SUPPORT_FSM_TX_WAIT_SEND   (1)
 
 /*-------------------------- COEXISTENCE HARDWARE PTI CAPS -------------------------------*/
-// #define SOC_COEX_HW_PTI                 (1)
+#define SOC_COEX_HW_PTI                 (1)
 
 /*-------------------------- EXTERNAL COEXISTENCE CAPS -------------------------------------*/
 // #define SOC_EXTERNAL_COEX_ADVANCE              (1) /*!< HARDWARE ADVANCED EXTERNAL COEXISTENCE CAPS */
@@ -504,7 +505,7 @@
 // #define SOC_PHY_DIG_REGS_MEM_SIZE       (21*4)
 
 /*--------------- WIFI LIGHT SLEEP CLOCK WIDTH CAPS --------------------------*/
-// #define SOC_WIFI_LIGHT_SLEEP_CLK_WIDTH  (12)
+#define SOC_WIFI_LIGHT_SLEEP_CLK_WIDTH  (12)
 
 /*-------------------------- Power Management CAPS ----------------------------*/
 // #define SOC_PM_SUPPORT_WIFI_WAKEUP      (1)
@@ -551,13 +552,14 @@
 // #define SOC_TEMPERATURE_SENSOR_INTR_SUPPORT                   (1)
 
 /*------------------------------------ WI-FI CAPS ------------------------------------*/
-// #define SOC_WIFI_HW_TSF                     (1)    /*!< Support hardware TSF */
-// #define SOC_WIFI_FTM_SUPPORT                (0)    /*!< Support FTM */
-// #define SOC_WIFI_GCMP_SUPPORT               (1)    /*!< Support GCMP(GCMP128 and GCMP256) */
-// #define SOC_WIFI_WAPI_SUPPORT               (1)    /*!< Support WAPI */
-// #define SOC_WIFI_CSI_SUPPORT                (1)    /*!< Support CSI */
-// #define SOC_WIFI_MESH_SUPPORT               (1)    /*!< Support WIFI MESH */
-// #define SOC_WIFI_HE_SUPPORT                 (1)    /*!< Support Wi-Fi 6 */
+#define SOC_WIFI_HW_TSF                     (1)    /*!< Support hardware TSF */
+#define SOC_WIFI_FTM_SUPPORT                (0)    /*!< Support FTM */
+#define SOC_WIFI_GCMP_SUPPORT               (1)    /*!< Support GCMP(GCMP128 and GCMP256) */
+#define SOC_WIFI_WAPI_SUPPORT               (1)    /*!< Support WAPI */
+#define SOC_WIFI_CSI_SUPPORT                (1)    /*!< Support CSI */
+#define SOC_WIFI_MESH_SUPPORT               (1)    /*!< Support WIFI MESH */
+#define SOC_WIFI_HE_SUPPORT                 (1)    /*!< Support Wi-Fi 6 in 2.4G */
+#define SOC_WIFI_HE_SUPPORT_5G              (1)    /*!< Support Wi-Fi 6 in 5G */
 
 /*---------------------------------- Bluetooth CAPS ----------------------------------*/
 #define SOC_BLE_SUPPORTED                   (1)    /*!< Support Bluetooth Low Energy hardware */
