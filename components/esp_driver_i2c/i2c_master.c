@@ -431,7 +431,7 @@ static void s_i2c_send_commands(i2c_master_bus_handle_t i2c_master, TickType_t t
             };
             i2c_ll_master_write_cmd_reg(hal->dev, hw_stop_cmd, 0);
             i2c_hal_master_trans_start(hal);
-            return;
+            break;
         }
 
         i2c_operation_t *i2c_operation = &i2c_master->i2c_trans.ops[i2c_master->trans_idx];
@@ -584,7 +584,7 @@ static esp_err_t s_i2c_transaction_start(i2c_master_dev_handle_t i2c_dev, int xf
 IRAM_ATTR static void i2c_isr_receive_handler(i2c_master_bus_t *i2c_master)
 {
     i2c_hal_context_t *hal = &i2c_master->base->hal;
-    while (i2c_ll_is_bus_busy(hal->dev)) {}
+
     if (i2c_master->status == I2C_STATUS_READ) {
         i2c_operation_t *i2c_operation = &i2c_master->i2c_trans.ops[i2c_master->trans_idx];
         portENTER_CRITICAL_ISR(&i2c_master->base->spinlock);
@@ -645,7 +645,9 @@ static void IRAM_ATTR i2c_master_isr_handler_default(void *arg)
         xQueueSendFromISR(i2c_master->event_queue, (void *)&i2c_master->event, &HPTaskAwoken);
     }
     if (i2c_master->contains_read == true) {
-        i2c_isr_receive_handler(i2c_master);
+        if (int_mask & I2C_LL_INTR_MST_COMPLETE || int_mask & I2C_LL_INTR_END_DETECT) {
+            i2c_isr_receive_handler(i2c_master);
+        }
     }
 
     if (i2c_master->async_trans) {
