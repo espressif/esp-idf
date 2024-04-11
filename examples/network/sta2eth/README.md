@@ -10,7 +10,7 @@ This example aims to demonstrate 1-1 bridge using WiFi station and one of these 
 - USB acting as NCM device (supported for ESP32-S2 and ESP32-S3)
 
 It also allows for reconfiguring WiFi settings using a virtual network in the Ethernet. The reconfiguration mode is initialized if the WiFi settings are not available, connection fails or manually by long pressing the Boot button (GPIO0).
-It is possible to configure WiFi settings (SSID and password) in a browser on an address `"wifi.settings"` or using unified provisioning.
+It is possible to configure WiFi settings (SSID and password) in a browser on a hostname `"http://wifi.settings"` or using unified provisioning.
 
 ## How to use example
 
