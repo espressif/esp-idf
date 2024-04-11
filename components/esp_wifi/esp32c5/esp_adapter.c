@@ -661,8 +661,6 @@ wifi_osi_funcs_t g_wifi_osi_funcs = {
 #if SOC_PM_MODEM_RETENTION_BY_REGDMA
     ._regdma_link_set_write_wait_content = regdma_link_set_write_wait_content,
     ._sleep_retention_find_link_by_id = sleep_retention_find_link_by_id,
-    ._sleep_retention_entries_create = (int (*)(const void *, int, int, int))sleep_retention_entries_create,
-    ._sleep_retention_entries_destroy = sleep_retention_entries_destroy,
 #endif
     ._coex_schm_process_restart = coex_schm_process_restart_wrapper,
     ._coex_schm_register_cb = coex_schm_register_cb_wrapper,
