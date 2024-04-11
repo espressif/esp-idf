@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -36,6 +36,29 @@ extern "C" {
     } while(0)
 
 /**
+ * Macro which can be used to check the error code. If the code is not ESP_OK, it prints the message and returns.
+ * This macro is used when the function returns void.
+ */
+#define ESP_RETURN_VOID_ON_ERROR(x, log_tag, format, ...) do {                                         \
+        (void)log_tag;                                                                          \
+        esp_err_t err_rc_ = (x);                                                                \
+        if (unlikely(err_rc_ != ESP_OK)) {                                                      \
+            return;                                                                             \
+        }                                                                                       \
+    } while(0)
+
+/**
+ * A version of ESP_RETURN_VOID_ON_ERROR() macro that can be called from ISR.
+ */
+#define ESP_RETURN_VOID_ON_ERROR_ISR(x, log_tag, format, ...) do {                                     \
+        (void)log_tag;                                                                          \
+        esp_err_t err_rc_ = (x);                                                                \
+        if (unlikely(err_rc_ != ESP_OK)) {                                                      \
+            return;                                                                             \
+        }                                                                                       \
+    } while(0)
+
+/**
  * Macro which can be used to check the error code. If the code is not ESP_OK, it prints the message,
  * sets the local variable 'ret' to the code, and then exits by jumping to 'goto_tag'.
  */
@@ -68,6 +91,27 @@ extern "C" {
         (void)log_tag;                                                                          \
         if (unlikely(!(a))) {                                                                   \
             return err_code;                                                                    \
+        }                                                                                       \
+    } while(0)
+
+/**
+ * Macro which can be used to check the condition. If the condition is not 'true', it prints the message
+ * and returns without a value.
+ */
+#define ESP_RETURN_VOID_ON_FALSE(a, log_tag, format, ...) do {                                  \
+        (void)log_tag;                                                                          \
+        if (unlikely(!(a))) {                                                                   \
+            return;                                                                             \
+        }                                                                                       \
+    } while(0)
+
+/**
+ * A version of ESP_RETURN_ON_FALSE() macro that can be called from ISR.
+ */
+#define ESP_RETURN_VOID_ON_FALSE_ISR(a, log_tag, format, ...) do {                                  \
+        (void)log_tag;                                                                          \
+        if (unlikely(!(a))) {                                                                   \
+            return;                                                                             \
         }                                                                                       \
     } while(0)
 
@@ -138,6 +182,29 @@ extern "C" {
     } while(0)
 
 /**
+ * Macro which can be used to check the error code. If the code is not ESP_OK, it prints the message and returns.
+ * This macro is used when the function returns void.
+ */
+#define ESP_RETURN_VOID_ON_ERROR(x, log_tag, format, ...) do {                                             \
+        esp_err_t err_rc_ = (x);                                                                           \
+        if (unlikely(err_rc_ != ESP_OK)) {                                                                 \
+            ESP_LOGE(log_tag, "%s(%d): " format, __FUNCTION__, __LINE__ __VA_OPT__(,) __VA_ARGS__);        \
+            return;                                                                                        \
+        }                                                                                                  \
+    } while(0)
+
+/**
+ * A version of ESP_RETURN_VOID_ON_ERROR() macro that can be called from ISR.
+ */
+#define ESP_RETURN_VOID_ON_ERROR_ISR(x, log_tag, format, ...) do {                                         \
+        esp_err_t err_rc_ = (x);                                                                           \
+        if (unlikely(err_rc_ != ESP_OK)) {                                                                 \
+            ESP_EARLY_LOGE(log_tag, "%s(%d): " format, __FUNCTION__, __LINE__ __VA_OPT__(,) __VA_ARGS__);  \
+            return;                                                                                        \
+        }                                                                                                  \
+    } while(0)
+
+/**
  * Macro which can be used to check the error code. If the code is not ESP_OK, it prints the message,
  * sets the local variable 'ret' to the code, and then exits by jumping to 'goto_tag'.
  */
@@ -180,6 +247,27 @@ extern "C" {
         if (unlikely(!(a))) {                                                                              \
             ESP_EARLY_LOGE(log_tag, "%s(%d): " format, __FUNCTION__, __LINE__ __VA_OPT__(,) __VA_ARGS__);  \
             return err_code;                                                                               \
+        }                                                                                                  \
+    } while(0)
+
+/**
+ * Macro which can be used to check the condition. If the condition is not 'true', it prints the message
+ * and returns without a value.
+ */
+#define ESP_RETURN_VOID_ON_FALSE(a, err_code, log_tag, format, ...) do {                                   \
+        if (unlikely(!(a))) {                                                                              \
+            ESP_LOGE(log_tag, "%s(%d): " format, __FUNCTION__, __LINE__ __VA_OPT__(,) __VA_ARGS__);        \
+            return;                                                                                        \
+        }                                                                                                  \
+    } while(0)
+
+/**
+ * A version of ESP_RETURN_VOID_ON_FALSE() macro that can be called from ISR.
+ */
+#define ESP_RETURN_VOID_ON_FALSE_ISR(a, log_tag, format, ...) do {                                        \
+        if (unlikely(!(a))) {                                                                              \
+            ESP_EARLY_LOGE(log_tag, "%s(%d): " format, __FUNCTION__, __LINE__ __VA_OPT__(,) __VA_ARGS__);  \
+            return;                                                                                        \
         }                                                                                                  \
     } while(0)
 
@@ -231,6 +319,29 @@ extern "C" {
     } while(0)
 
 /**
+ * Macro which can be used to check the error code. If the code is not ESP_OK, it prints the message and returns.
+ * This macro is used when the function returns void.
+ */
+#define ESP_RETURN_VOID_ON_ERROR(x, log_tag, format, ...) do {                                  \
+        esp_err_t err_rc_ = (x);                                                                \
+        if (unlikely(err_rc_ != ESP_OK)) {                                                      \
+            ESP_LOGE(log_tag, "%s(%d): " format, __FUNCTION__, __LINE__, ##__VA_ARGS__);        \
+            return;                                                                             \
+        }                                                                                       \
+    } while(0)
+
+/**
+ * A version of ESP_RETURN_VOID_ON_ERROR() macro that can be called from ISR.
+ */
+#define ESP_RETURN_VOID_ON_ERROR_ISR(x, log_tag, format, ...) do {                              \
+        esp_err_t err_rc_ = (x);                                                                \
+        if (unlikely(err_rc_ != ESP_OK)) {                                                      \
+            ESP_EARLY_LOGE(log_tag, "%s(%d): " format, __FUNCTION__, __LINE__, ##__VA_ARGS__);  \
+            return;                                                                             \
+        }                                                                                       \
+    } while(0)
+
+/**
  * Macro which can be used to check the error code. If the code is not ESP_OK, it prints the message,
  * sets the local variable 'ret' to the code, and then exits by jumping to 'goto_tag'.
  */
@@ -273,6 +384,27 @@ extern "C" {
         if (unlikely(!(a))) {                                                                   \
             ESP_EARLY_LOGE(log_tag, "%s(%d): " format, __FUNCTION__, __LINE__, ##__VA_ARGS__);  \
             return err_code;                                                                    \
+        }                                                                                       \
+    } while(0)
+
+/**
+ * Macro which can be used to check the condition. If the condition is not 'true', it prints the message
+ * and returns without a value.
+ */
+#define ESP_RETURN_VOID_ON_FALSE(a, log_tag, format, ...) do {                                  \
+        if (unlikely(!(a))) {                                                                   \
+            ESP_LOGE(log_tag, "%s(%d): " format, __FUNCTION__, __LINE__, ##__VA_ARGS__);        \
+            return;                                                                             \
+        }                                                                                       \
+    } while(0)
+
+/**
+ * A version of ESP_RETURN_VOID_ON_FALSE() macro that can be called from ISR.
+ */
+#define ESP_RETURN_VOID_ON_FALSE_ISR(a, log_tag, format, ...) do {                              \
+        if (unlikely(!(a))) {                                                                   \
+            ESP_EARLY_LOGE(log_tag, "%s(%d): " format, __FUNCTION__, __LINE__, ##__VA_ARGS__);  \
+            return;                                                                             \
         }                                                                                       \
     } while(0)
 
