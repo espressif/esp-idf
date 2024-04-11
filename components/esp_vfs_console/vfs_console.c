@@ -98,7 +98,11 @@ int console_fcntl(int fd, int cmd, int arg)
 
 int console_fsync(int fd)
 {
-    return fsync(vfs_console.fd_primary);
+    const int ret_val = fsync(vfs_console.fd_primary);
+#if CONFIG_ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG
+    (void)fsync(vfs_console.fd_secondary);
+#endif
+    return ret_val;
 }
 
 #ifdef CONFIG_VFS_SUPPORT_DIR
