@@ -15,11 +15,6 @@ if(CONFIG_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP)
     endif()
 endif()
 
-if(CONFIG_IDF_TARGET_ESP32C5)
-    list(REMOVE_ITEM srcs "cpu_retention/port/${target}/sleep_cpu.c"         # TODO: [ESP32C5] IDF-8638, IDF-8640
-        )
-endif()
-
 add_prefix(srcs "${CMAKE_CURRENT_LIST_DIR}/" "${srcs}")
 
 target_sources(${COMPONENT_LIB} PRIVATE "${srcs}")

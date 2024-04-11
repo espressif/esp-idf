@@ -134,7 +134,9 @@ typedef enum {
     RTC_CAL_RC32K = SOC_RTC_SLOW_CLK_SRC_RC32K,            //!< Internal 32kHz RC oscillator, as one type of 32k clock
     RTC_CAL_32K_XTAL = SOC_RTC_SLOW_CLK_SRC_XTAL32K,       //!< External 32kHz XTAL, as one type of 32k clock
     RTC_CAL_32K_OSC_SLOW = SOC_RTC_SLOW_CLK_SRC_OSC_SLOW,  //!< External slow clock signal input by lp_pad_gpio0, as one type of 32k clock
-    // RTC_CAL_RC_FAST                                        //!< Internal 20MHz RC oscillator
+#if CONFIG_IDF_TARGET_ESP32C5_MP_VERSION
+    RTC_CAL_RC_FAST                                        //!< Internal 20MHz RC oscillator
+#endif
 } rtc_cal_sel_t;
 
 /**

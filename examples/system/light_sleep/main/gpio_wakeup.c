@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -15,6 +15,10 @@
 #if CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32C2 || CONFIG_IDF_TARGET_ESP32H2 \
     || CONFIG_IDF_TARGET_ESP32C6
 #define BOOT_BUTTON_NUM         9
+#elif CONFIG_IDF_TARGET_ESP32C5_MP_VERSION
+#define BOOT_BUTTON_NUM         28
+#elif CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
+#define BOOT_BUTTON_NUM         7
 #elif CONFIG_IDF_TARGET_ESP32P4
 #define BOOT_BUTTON_NUM         35
 #else

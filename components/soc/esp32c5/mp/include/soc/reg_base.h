@@ -107,3 +107,4 @@
 #define DR_REG_ASSIST_DEBUG_BASE                  0x600C2000
 #define DR_REG_INTPRI_BASE                        0x600C5000
 #define DR_REG_CACHE_BASE                         0x600C8000  // CACHE_CONFIG/EXTMEM
+#define DR_REG_CLINT_M_BASE                       0x20000000

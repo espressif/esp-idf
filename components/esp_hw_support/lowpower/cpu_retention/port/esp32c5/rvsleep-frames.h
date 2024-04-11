@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -86,7 +86,7 @@ STRUCT_BEGIN
 
     STRUCT_FIELD (long, 4, RV_SLP_CTX_PMUFUNC,  pmufunc)    /* A field is used to identify whether it is going
                                                              * to sleep or has just been awakened. We use the
-                                                             * lowest 2 bits as indication infomation, 3 means
+                                                             * lowest 2 bits as indication information, 3 means
                                                              * being awakened, 1 means going to sleep */
 #if CONFIG_PM_CHECK_SLEEP_RETENTION_FRAME
     STRUCT_FIELD (long, 4, RV_SLP_CSF_CTX_CRC,  frame_crc)  /* Used to check RvCoreCriticalSleepFrame integrity */
@@ -111,7 +111,6 @@ STRUCT_END(RvCoreCriticalSleepFrame)
  */
 STRUCT_BEGIN
     STRUCT_FIELD (long, 4, RV_SLP_CTX_MSCRATCH,         mscratch)
-    STRUCT_FIELD (long, 4, RV_SLP_CTX_MIDELEG,          mideleg)
     STRUCT_FIELD (long, 4, RV_SLP_CTX_MISA,             misa)
     STRUCT_FIELD (long, 4, RV_SLP_CTX_TSELECT,          tselect)
     STRUCT_FIELD (long, 4, RV_SLP_CTX_TDATA1,           tdata1)
@@ -171,21 +170,16 @@ STRUCT_BEGIN
     STRUCT_FIELD (long, 4, RV_SLP_CTX_PMACFG14,         pmacfg14)
     STRUCT_FIELD (long, 4, RV_SLP_CTX_PMACFG15,         pmacfg15)
 
-    STRUCT_FIELD (long, 4, RV_SLP_CTX_UTVEC,            utvec)
-    STRUCT_FIELD (long, 4, RV_SLP_CTX_USTATUS,          ustatus)
-    STRUCT_FIELD (long, 4, RV_SLP_CTX_UEPC,             uepc)
-    STRUCT_FIELD (long, 4, RV_SLP_CTX_UCAUSE,           ucause)
+    STRUCT_FIELD (long, 4, RV_SLP_CTX_MCYCLE,           mcycle)
 
-    STRUCT_FIELD (long, 4, RV_SLP_CTX_MPCER,            mpcer)
-    STRUCT_FIELD (long, 4, RV_SLP_CTX_MPCMR,            mpcmr)
-    STRUCT_FIELD (long, 4, RV_SLP_CTX_MPCCR,            mpccr)
-    STRUCT_FIELD (long, 4, RV_SLP_CTX_CPU_TESTBUS_CTRL, cpu_testbus_ctrl)
-    STRUCT_FIELD (long, 4, RV_SLP_CTX_UPCER,            upcer)
-    STRUCT_FIELD (long, 4, RV_SLP_CTX_UPCMR,            upcmr)
-    STRUCT_FIELD (long, 4, RV_SLP_CTX_UPCCR,            upccr)
-    STRUCT_FIELD (long, 4, RV_SLP_CTX_UGPIO_OEN,        ugpio_oen)
-    STRUCT_FIELD (long, 4, RV_SLP_CTX_UGPIO_IN,         ugpio_in)
-    STRUCT_FIELD (long, 4, RV_SLP_CTX_UGPIO_OUT,        ugpio_out)
+    STRUCT_FIELD (long, 4, RV_SLP_CTX_MTVT,             mtvt)
+    STRUCT_FIELD (long, 4, RV_SLP_CTX_MNXTI,            mnxti)
+    STRUCT_FIELD (long, 4, RV_SLP_CTX_MINTSTATUS,       mintstatus)
+    STRUCT_FIELD (long, 4, RV_SLP_CTX_MXSTATUS,         mxstatus)
+    STRUCT_FIELD (long, 4, RV_SLP_CTX_MHCR,             mhcr)
+    STRUCT_FIELD (long, 4, RV_SLP_CTX_MHINT,            mhint)
+    STRUCT_FIELD (long, 4, RV_SLP_CTX_MEXSTATUS,        mexstatus)
+    STRUCT_FIELD (long, 4, RV_SLP_CTX_JVT,              jvt)
 #if CONFIG_PM_CHECK_SLEEP_RETENTION_FRAME
     STRUCT_FIELD (long, 4, RV_SLP_NCSF_CTX_CRC,         frame_crc)        /* Used to check RvCoreNonCriticalSleepFrame integrity */
 #endif

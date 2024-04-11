@@ -683,7 +683,11 @@ static IRAM_ATTR void sleep_low_power_clock_calibration(bool is_dslp)
     if ((s_lightsleep_cnt % CONFIG_PM_LIGHTSLEEP_RTC_OSC_CAL_INTERVAL == 0) || is_dslp)
 #endif
     {
+#if !CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
         s_config.fast_clk_cal_period = rtc_clk_cal(RTC_CAL_RC_FAST, FAST_CLK_SRC_CAL_CYCLES);
+#else
+        s_config.fast_clk_cal_period = 0x8000;
+#endif
     }
 #endif
 }
@@ -886,7 +890,7 @@ static esp_err_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t m
             esp_sleep_isolate_digital_gpio();
 #endif
 
-#if ESP_ROM_SUPPORT_DEEP_SLEEP_WAKEUP_STUB
+#if ESP_ROM_SUPPORT_DEEP_SLEEP_WAKEUP_STUB && SOC_DEEP_SLEEP_SUPPORTED
 #if SOC_PM_SUPPORT_DEEPSLEEP_CHECK_STUB_ONLY
             esp_set_deep_sleep_wake_stub_default_entry();
 #elif !CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP && SOC_RTC_FAST_MEM_SUPPORTED
@@ -994,10 +998,12 @@ static esp_err_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t m
         misc_modules_wake_prepare();
     }
 
+#if SOC_SPI_MEM_SUPPORT_TIMING_TUNING
     if (cpu_freq_config.source == SOC_CPU_CLK_SRC_PLL) {
         // Turn up MSPI speed if switch to PLL
         mspi_timing_change_speed_mode_cache_safe(false);
     }
+#endif
 
     // re-enable UART output
     resume_uarts();
@@ -1585,7 +1591,11 @@ bool esp_sleep_is_valid_wakeup_gpio(gpio_num_t gpio_num)
 #if SOC_RTCIO_PIN_COUNT > 0
     return RTC_GPIO_IS_VALID_GPIO(gpio_num);
 #else
+#if !CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION    // TODO: IDF-9673
     return GPIO_IS_DEEP_SLEEP_WAKEUP_VALID_GPIO(gpio_num);
+#else
+    return true;
+#endif
 #endif
 }
 
