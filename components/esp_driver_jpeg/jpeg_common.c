@@ -43,9 +43,9 @@ esp_err_t jpeg_acquire_codec_handle(jpeg_codec_handle_t *jpeg_new_codec)
     jpeg_codec_t *codec = NULL;
     _lock_acquire(&s_jpeg_platform.mutex);
     if (!s_jpeg_platform.jpeg_codec) {
-        new_codec = true;
         codec = heap_caps_calloc(1, sizeof(jpeg_codec_t), JPEG_MEM_ALLOC_CAPS);
         if (codec) {
+            new_codec = true;
             s_jpeg_platform.jpeg_codec = codec;
             codec->intr_priority = -1;
             codec->spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
@@ -59,7 +59,7 @@ esp_err_t jpeg_acquire_codec_handle(jpeg_codec_handle_t *jpeg_new_codec)
                 jpeg_ll_reset_module_register();
             }
 #if CONFIG_PM_ENABLE
-            ESP_RETURN_ON_ERROR(esp_pm_lock_create(ESP_PM_NO_LIGHT_SLEEP, 0, "jpeg_codec", &codec->pm_lock), TAG, "create pm lock failed");
+            ESP_RETURN_ON_ERROR(esp_pm_lock_create(ESP_PM_CPU_FREQ_MAX, 0, "jpeg_codec", &codec->pm_lock), TAG, "create pm lock failed");
 #endif
             jpeg_hal_init(&codec->hal);
         } else {
@@ -68,14 +68,14 @@ esp_err_t jpeg_acquire_codec_handle(jpeg_codec_handle_t *jpeg_new_codec)
         }
     }
 
-    if (codec) {
+    if (s_jpeg_platform.jpeg_codec) {
         s_jpeg_platform.count++;
     }
     if (new_codec) {
         ESP_LOGD(TAG, "new jpeg module has been acquired at (%p)", codec);
     }
 
-    *jpeg_new_codec = codec;
+    *jpeg_new_codec = s_jpeg_platform.jpeg_codec;
     _lock_release(&s_jpeg_platform.mutex);
     return ret;
 }

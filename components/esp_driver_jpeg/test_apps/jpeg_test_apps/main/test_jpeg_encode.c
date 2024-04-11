@@ -13,6 +13,7 @@
 #include "freertos/FreeRTOS.h"
 #include "esp_private/periph_ctrl.h"
 #include "driver/jpeg_encode.h"
+#include "driver/jpeg_decode.h"
 #include "esp_log.h"
 #include "test_jpeg_performance.h"
 #include "esp_system.h"
@@ -90,4 +91,30 @@ TEST_CASE("JPEG encode performance test for 480*640 RGB->YUV picture", "[jpeg]")
     free(jpg_buf_480p);
     free(raw_buf_480p);
     TEST_ESP_OK(jpeg_del_encoder_engine(jpeg_handle));
+}
+
+TEST_CASE("jpeg initialize twice test", "[jpeg]")
+{
+    jpeg_encoder_handle_t encoder_handle = NULL;
+
+    jpeg_encode_engine_cfg_t encode_eng_cfg = {
+        .intr_priority = 0,
+        .timeout_ms = 40,
+    };
+
+    TEST_ESP_OK(jpeg_new_encoder_engine(&encode_eng_cfg, &encoder_handle));
+    assert(encoder_handle != NULL);
+
+    jpeg_decoder_handle_t decoder_handle = NULL;
+
+    jpeg_decode_engine_cfg_t decode_eng_cfg = {
+        .intr_priority = 0,
+        .timeout_ms = 40,
+    };
+
+    TEST_ESP_OK(jpeg_new_decoder_engine(&decode_eng_cfg, &decoder_handle));
+    assert(decoder_handle != NULL);
+
+    TEST_ESP_OK(jpeg_del_encoder_engine(encoder_handle));
+    TEST_ESP_OK(jpeg_del_decoder_engine(decoder_handle));
 }
