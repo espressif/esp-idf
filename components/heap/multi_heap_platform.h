@@ -16,10 +16,6 @@
 
 typedef portMUX_TYPE multi_heap_lock_t;
 
-inline bool addr_not_null(void* addr) {
-    return addr != NULL;
-}
-
 /* Because malloc/free can happen inside an ISR context,
    we need to use portmux spinlocks here not RTOS mutexes */
 #define MULTI_HEAP_LOCK(PLOCK) do {                         \
