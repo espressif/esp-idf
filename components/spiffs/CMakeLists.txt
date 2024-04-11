@@ -25,3 +25,5 @@ endif()
 
 # Upstream SPIFFS code uses format specifiers in debug logging macros inconsistently
 set_source_files_properties(${original_srcs} PROPERTIES COMPILE_FLAGS -Wno-format)
+
+target_compile_options(${COMPONENT_LIB} PUBLIC -Wno-error=tautological-compare)

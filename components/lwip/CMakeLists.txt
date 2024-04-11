@@ -179,6 +179,8 @@ if(CONFIG_LWIP_ENABLE)
     target_compile_options(${COMPONENT_LIB} PRIVATE -Wno-address)
     target_compile_definitions(${COMPONENT_LIB} PRIVATE ESP_LWIP_COMPONENT_BUILD)
 
+    target_compile_options(${COMPONENT_LIB} PUBLIC -Wno-error=address)
+
     set_source_files_properties(
         lwip/src/netif/ppp/pppos.c
         PROPERTIES COMPILE_FLAGS

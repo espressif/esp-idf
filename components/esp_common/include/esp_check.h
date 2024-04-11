@@ -7,6 +7,7 @@
 
 #include "esp_err.h"
 #include "esp_log.h"
+#include <stdbool.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -298,6 +299,13 @@ extern "C" {
             goto goto_tag;                                                                      \
         }                                                                                       \
     } while (0)
+
+/**
+ * Checks if pointer is NULL without "the comparison will always evaluate as true/false"
+ */
+static inline bool addr_not_null(void* addr) {
+    return addr != NULL;
+}
 
 #endif // !(defined(__cplusplus) && (__cplusplus >  201703L))
 
