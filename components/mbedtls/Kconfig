@@ -123,7 +123,7 @@ menu "mbedTLS"
 
             The option will decrease heap cost when handshake, but also lead to problem:
 
-            Becasue all certificate, private key and DHM data are freed so users should register
+            Because all certificate, private key and DHM data are freed so users should register
             certificate and private key to ssl config object again.
 
     config MBEDTLS_DYNAMIC_FREE_CA_CERT
@@ -447,6 +447,17 @@ menu "mbedTLS"
             and modular exponentiation for up to SOC_RSA_MAX_BIT_LEN bit results.
 
             These operations are used by RSA.
+
+    config MBEDTLS_LARGE_KEY_SOFTWARE_MPI
+        bool "Fallback to software implementation for larger MPI values"
+        depends on MBEDTLS_HARDWARE_MPI
+        default y if SOC_RSA_MAX_BIT_LEN <= 3072 # HW max 3072 bits
+        default n
+        help
+            Fallback to software implementation for RSA key lengths
+            larger than SOC_RSA_MAX_BIT_LEN. If this is not active
+            then the ESP will be unable to process keys greater
+            than SOC_RSA_MAX_BIT_LEN.
 
     config MBEDTLS_MPI_USE_INTERRUPT
         bool "Use interrupt for MPI exp-mod operations"
@@ -888,13 +899,13 @@ menu "mbedTLS"
             bool "X.509 CRL parsing"
             default y
             help
-                Support for parsing X.509 Certifificate Revocation Lists.
+                Support for parsing X.509 Certificate Revocation Lists.
 
         config MBEDTLS_X509_CSR_PARSE_C
             bool "X.509 CSR parsing"
             default y
             help
-                Support for parsing X.509 Certifificate Signing Requests
+                Support for parsing X.509 Certificate Signing Requests
 
     endmenu # Certificates
 
@@ -1085,16 +1096,13 @@ menu "mbedTLS"
         help
             Enable the pthread wrapper layer for the threading layer.
 
-    config MBEDTLS_LARGE_KEY_SOFTWARE_MPI
-        bool "Fallback to software implementation for larger MPI values"
-        depends on MBEDTLS_HARDWARE_MPI
-        default y if SOC_RSA_MAX_BIT_LEN <= 3072 # HW max 3072 bits
-        default n
+    config MBEDTLS_ERROR_STRINGS
+        bool "Enable error code to error string conversion"
+        default y
         help
-            Fallback to software implementation for RSA key lengths
-            larger than SOC_RSA_MAX_BIT_LEN. If this is not active
-            then the ESP will be unable to process keys greater
-            than SOC_RSA_MAX_BIT_LEN.
+            Enables mbedtls_strerror() for converting error codes to error strings.
+            Disabling this config can save some code/rodata size as the error
+            string conversion implementation is replaced with an empty stub.
 
     config MBEDTLS_USE_CRYPTO_ROM_IMPL
         bool "Use ROM implementation of the crypto algorithm"
