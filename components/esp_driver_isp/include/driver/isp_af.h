@@ -10,8 +10,6 @@
 #include <stdbool.h>
 #include "esp_err.h"
 #include "driver/isp_types.h"
-#include "driver/isp.h"
-#include "soc/soc_caps.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -21,10 +19,9 @@ extern "C" {
  * @brief AF controller config
  */
 typedef struct {
-#if SOC_ISP_AF_WINDOW_NUMS
-    isp_af_window_t window[SOC_ISP_AF_WINDOW_NUMS];    ///< AF window settings
-#endif
+    isp_af_window_t window[ISP_AF_WINDOW_NUM];         ///< The sampling windows of AF
     int edge_thresh;                                   ///< Edge threshold, definition higher than this value will be counted as a valid pixel for calculating AF result
+    int intr_priority;                                 ///< The interrupt priority, range 0~7, if set to 0, the driver will try to allocate an interrupt with a relative low priority (1,2,3) otherwise the larger the higher, 7 is NMI
 } esp_isp_af_config_t;
 
 /**
@@ -80,17 +77,57 @@ esp_err_t esp_isp_af_controller_enable(isp_af_ctrlr_t af_ctrlr);
 esp_err_t esp_isp_af_controller_disable(isp_af_ctrlr_t af_ctrlr);
 
 /**
- * @brief Get AF result
+ * @brief Trigger AF luminance and definition statistics for one time and get the result
+ * @note  This function is a synchronous and block function,
+ *        it only returns when AF luminance and definition statistics is done or timeout.
+ *        It's a simple method to get the result directly for one time.
  *
- * @param[in]  af_ctrlr  AF controller handle
- * @param[out] out_res   AF result
+ * @param[in]  af_ctrlr   AF controller handle
+ * @param[in]  timeout_ms Timeout in millisecond
+ *                            - timeout_ms < 0:   Won't return until finished
+ *                            - timeout_ms = 0:   No timeout, trigger one time statistics and return immediately,
+ *                                                in this case, the result won't be assigned in this function,
+ *                                                but you can get the result in the callback `esp_isp_af_env_detector_evt_cbs_t::on_env_statistics_done`
+ *                            - timeout_ms > 0:   Wait for specified milliseconds, if not finished, then return timeout error
+ * @param[out] out_res    AF luminance and definition statistics result, can be NULL if `timeout_ms = 0`
  *
  * @return
  *         - ESP_OK                On success
+ *         - ESP_ERR_TIMEOUT       If the waiting time exceeds the specified timeout.
  *         - ESP_ERR_INVALID_ARG   If the combination of arguments is invalid.
  *         - ESP_ERR_INVALID_STATE Driver state is invalid.
  */
-esp_err_t esp_isp_af_controller_get_oneshot_result(isp_af_ctrlr_t af_ctrlr, isp_af_result_t *out_res);
+esp_err_t esp_isp_af_controller_get_oneshot_statistics(isp_af_ctrlr_t af_ctrlr, int timeout_ms, isp_af_result_t *out_res);
+
+/** @cond */
+#define esp_isp_af_controller_get_oneshot_result(af_ctrlr, out_res)     \
+        esp_isp_af_controller_get_oneshot_statistics(af_ctrlr, -1, out_res)    // Alias
+/** @endcond */
+
+/**
+ * @brief Start AF continuous statistics of the luminance and definition in the windows
+ * @note  This function is an asynchronous and non-block function,
+ *        it will start the continuous statistics and return immediately.
+ *        You have to register the AF callback and get the result from the callback event data.
+ *
+ * @param[in]  af_ctrlr  AF controller handle
+ * @return
+ *         - ESP_OK                On success
+ *         - ESP_ERR_INVALID_ARG   Null pointer
+ *         - ESP_ERR_INVALID_STATE Driver state is invalid.
+ */
+esp_err_t esp_isp_af_controller_start_continuous_statistics(isp_af_ctrlr_t af_ctrlr);
+
+/**
+ * @brief Stop AF continuous statistics of the luminance and definition in the windows
+ *
+ * @param[in]  af_ctrlr  AF controller handle
+ * @return
+ *         - ESP_OK                On success
+ *         - ESP_ERR_INVALID_ARG   Null pointer
+ *         - ESP_ERR_INVALID_STATE Driver state is invalid.
+ */
+esp_err_t esp_isp_af_controller_stop_continuous_statistics(isp_af_ctrlr_t af_ctrlr);
 
 /*---------------------------------------------
                 AF Env Monitor
@@ -99,7 +136,9 @@ esp_err_t esp_isp_af_controller_get_oneshot_result(isp_af_ctrlr_t af_ctrlr, isp_
  * @brief AF environment detector config
  */
 typedef struct {
-    int interval;    ///< Interval between environment detection, in frames
+    int interval;    /*!< Interval between environment detection, in frames.
+                      *   i.e., AF controller will trigger the statistic periodically to detect the environment change.
+                      */
 } esp_isp_af_env_config_t;
 
 /**
@@ -133,7 +172,7 @@ esp_err_t esp_isp_af_controller_set_env_detector_threshold(isp_af_ctrlr_t af_ctr
  * @brief Event data structure
  */
 typedef struct {
-    //empty for future proof
+    isp_af_result_t af_result;      /*!< The AF statistics result */
 } esp_isp_af_env_detector_evt_data_t;
 
 /**
@@ -155,7 +194,8 @@ typedef bool (*esp_isp_af_env_detector_callback_t)(isp_af_ctrlr_t af_ctrlr, cons
  *       Involved variables should be in internal RAM as well.
  */
 typedef struct {
-    esp_isp_af_env_detector_callback_t on_env_change;    ///< Event callback, invoked when environment change happens.
+    esp_isp_af_env_detector_callback_t on_env_statistics_done;  ///< Event callback, invoked when environment sample done.
+    esp_isp_af_env_detector_callback_t on_env_change;       ///< Event callback, invoked when environment change happens.
 } esp_isp_af_env_detector_evt_cbs_t;
 
 /**

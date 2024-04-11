@@ -3,7 +3,7 @@ set(srcs)
 set(public_include "include")
 
 if(CONFIG_SOC_ISP_SUPPORTED)
-    list(APPEND srcs "src/isp.c"
+    list(APPEND srcs "src/isp_core.c"
                      "src/isp_af.c")
 endif()
 

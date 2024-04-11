@@ -12,28 +12,13 @@
 #include "esp_heap_caps.h"
 #include "freertos/FreeRTOS.h"
 #include "esp_clk_tree.h"
-#include "driver/isp.h"
+#include "driver/isp_core.h"
 #include "esp_private/periph_ctrl.h"
 #include "esp_private/mipi_csi_share_hw_ctrl.h"
 #include "hal/hal_utils.h"
-#include "hal/isp_types.h"
-#include "hal/isp_hal.h"
-#include "hal/isp_ll.h"
 #include "soc/mipi_csi_bridge_struct.h"
 #include "soc/isp_periph.h"
 #include "isp_internal.h"
-
-#if CONFIG_ISP_ISR_IRAM_SAFE
-#define ISP_INTR_ALLOC_FLAGS    (ESP_INTR_FLAG_IRAM)
-#else
-#define ISP_INTR_ALLOC_FLAGS    0
-#endif
-
-#if CONFIG_ISP_ISR_IRAM_SAFE
-#define ISP_MEM_ALLOC_CAPS   (MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT)
-#else
-#define ISP_MEM_ALLOC_CAPS   MALLOC_CAP_DEFAULT
-#endif
 
 typedef struct isp_platform_t {
     _lock_t         mutex;
@@ -199,103 +184,6 @@ esp_err_t esp_isp_disable(isp_proc_handle_t proc)
 
     isp_ll_enable(proc->hal.hw, false);
     proc->isp_fsm = ISP_FSM_INIT;
-
-    return ESP_OK;
-}
-
-/*---------------------------------------------------------------
-                      INTR
----------------------------------------------------------------*/
-static void IRAM_ATTR s_isp_isr_dispatcher(void *arg)
-{
-    isp_processor_t *proc = (isp_processor_t *)arg;
-    bool need_yield = false;
-
-    //Check and clear hw events
-    uint32_t af_events = isp_hal_check_clear_intr_event(&proc->hal, ISP_LL_EVENT_AF_MASK);
-
-    bool do_dispatch = false;
-    //Deal with hw events
-    if (af_events) {
-        portENTER_CRITICAL_ISR(&proc->spinlock);
-        do_dispatch = proc->af_isr_added;
-        portEXIT_CRITICAL_ISR(&proc->spinlock);
-
-        if (do_dispatch) {
-            need_yield |= esp_isp_af_isr(proc, af_events);
-        }
-        do_dispatch = false;
-    }
-
-    if (need_yield) {
-        portYIELD_FROM_ISR();
-    }
-}
-
-esp_err_t esp_isp_register_isr(isp_proc_handle_t proc, isp_submodule_t submodule)
-{
-    esp_err_t ret = ESP_FAIL;
-    ESP_RETURN_ON_FALSE(proc, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
-
-    bool do_alloc = false;
-    portENTER_CRITICAL(&proc->spinlock);
-    proc->isr_ref_counts++;
-    if (proc->isr_ref_counts == 1) {
-        assert(!proc->intr_hdl);
-        do_alloc = true;
-    }
-
-    switch (submodule) {
-    case ISP_SUBMODULE_AF:
-        proc->af_isr_added = true;
-        break;
-    default:
-        assert(false);
-    }
-    portEXIT_CRITICAL(&proc->spinlock);
-
-    if (do_alloc) {
-        ret = esp_intr_alloc(isp_hw_info.instances[proc->proc_id].irq, ISP_INTR_ALLOC_FLAGS, s_isp_isr_dispatcher, (void *)proc, &proc->intr_hdl);
-        if (ret != ESP_OK) {
-            ESP_LOGE(TAG, "no intr source");
-            return ret;
-        }
-        esp_intr_enable(proc->intr_hdl);
-    }
-
-    return ESP_OK;
-}
-
-esp_err_t esp_isp_deregister_isr(isp_proc_handle_t proc, isp_submodule_t submodule)
-{
-    esp_err_t ret = ESP_FAIL;
-    ESP_RETURN_ON_FALSE(proc, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
-
-    bool do_free = false;
-    portENTER_CRITICAL(&proc->spinlock);
-    proc->isr_ref_counts--;
-    assert(proc->isr_ref_counts >= 0);
-    if (proc->isr_ref_counts == 0) {
-        assert(proc->intr_hdl);
-        do_free = true;
-    }
-
-    switch (submodule) {
-    case ISP_SUBMODULE_AF:
-        proc->af_isr_added = false;
-        break;
-    default:
-        assert(false);
-    }
-    portEXIT_CRITICAL(&proc->spinlock);
-
-    if (do_free) {
-        esp_intr_disable(proc->intr_hdl);
-        ret = esp_intr_free(proc->intr_hdl);
-        if (ret != ESP_OK) {
-            return ret;
-        }
-    }
 
     return ESP_OK;
 }

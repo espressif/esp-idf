@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -49,14 +49,6 @@ void isp_hal_init(isp_hal_context_t *hal, int isp_id);
  * @param[in] window     Window info, see `isp_af_window_t`
  */
 void isp_hal_af_window_config(const isp_hal_context_t *hal, int window_id, const isp_af_window_t *window);
-
-/**
- * @brief Get AF oneshot result
- *
- * @param[in]  hal      Context of the HAL layer
- * @param[out] out_res  AF result
- */
-void isp_hal_af_get_oneshot_result(const isp_hal_context_t *hal, isp_af_result_t *out_res);
 
 /*---------------------------------------------------------------
                       INTR

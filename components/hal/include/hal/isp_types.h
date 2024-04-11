@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -48,6 +48,12 @@ typedef enum {
 /*---------------------------------------------------------------
                       AF
 ---------------------------------------------------------------*/
+#if SOC_ISP_AF_WINDOW_NUMS
+#define ISP_AF_WINDOW_NUM   SOC_ISP_AF_WINDOW_NUMS      // The AF window number for sampling
+#else
+#define ISP_AF_WINDOW_NUM   0
+#endif
+
 /**
  * @brief ISP AF window
  */
@@ -62,10 +68,8 @@ typedef struct {
  * @brief ISP AF result
  */
 typedef struct {
-#if SOC_ISP_SUPPORTED
-    int definition[SOC_ISP_AF_WINDOW_NUMS];    ///< Definition, it refers how clear and sharp an image is
-    int luminance[SOC_ISP_AF_WINDOW_NUMS];     ///< Luminance, it refers how luminant an image is
-#endif
+    int definition[ISP_AF_WINDOW_NUM];    ///< Definition, it refers how clear and sharp an image is
+    int luminance[ISP_AF_WINDOW_NUM];     ///< Luminance, it refers how luminant an image is
 } isp_af_result_t;
 
 #ifdef __cplusplus
