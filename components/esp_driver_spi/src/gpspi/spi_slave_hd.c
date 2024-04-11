@@ -591,7 +591,7 @@ static esp_err_t s_spi_slave_hd_setup_priv_trans(spi_host_device_t host, spi_sla
     if (((uint32_t)orig_trans->data) | (byte_len & (alignment - 1))) {
         ESP_RETURN_ON_FALSE(orig_trans->flags & SPI_SLAVE_HD_TRANS_DMA_BUFFER_ALIGN_AUTO, ESP_ERR_INVALID_ARG, TAG, "data buffer addr&len not align to %d, or not dma_capable", alignment);
         byte_len = (byte_len + alignment - 1) & (~(alignment - 1));  // up align to alignment
-        ESP_LOGD(TAG, "Re-allocate %s buffer of len %ld for DMA", (chan == SPI_SLAVE_CHAN_TX) ? "TX" : "RX", byte_len);
+        ESP_LOGD(TAG, "Re-allocate %s buffer of len %d for DMA", (chan == SPI_SLAVE_CHAN_TX) ? "TX" : "RX", byte_len);
         priv_trans->aligned_buffer = heap_caps_aligned_alloc(64, byte_len, MALLOC_CAP_DMA);
         if (priv_trans->aligned_buffer == NULL) {
             return ESP_ERR_NO_MEM;

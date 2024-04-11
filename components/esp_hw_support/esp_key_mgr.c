@@ -135,7 +135,7 @@ static bool check_huk_info_validity(const esp_key_mgr_huk_info_t *huk_info)
 {
     uint32_t calc_crc = esp_rom_crc32_le(0, huk_info->info, KEY_MGR_HUK_INFO_SIZE);
     if (calc_crc != huk_info->crc) {
-        ESP_LOGE(TAG, "Calculated CRC for HUK %lX does not match with %lX", calc_crc, huk_info->crc);
+        ESP_LOGE(TAG, "Calculated CRC for HUK %X does not match with %X", calc_crc, huk_info->crc);
         return false;
     }
     return true;
@@ -145,7 +145,7 @@ static bool check_key_info_validity(const esp_key_mgr_key_info_t *key_info)
 {
     uint32_t calc_crc = esp_rom_crc32_le(0, key_info->info, KEY_MGR_KEY_RECOVERY_INFO_SIZE);
     if (calc_crc != key_info->crc) {
-        ESP_LOGE(TAG, "Calculated CRC for Key info %lX does not match with %lX", calc_crc, key_info->crc);
+        ESP_LOGE(TAG, "Calculated CRC for Key info %X does not match with %X", calc_crc, key_info->crc);
         return false;
     }
     return true;
