@@ -137,15 +137,14 @@ void heap_caps_init(void)
              * is done by the top level API heap_caps_malloc(). So we need to add it manually
              * after successful allocation. Allocate extra 4 bytes for that purpose. */
             heaps_array = multi_heap_malloc(temp_heaps[i].heap, MULTI_HEAP_ADD_BLOCK_OWNER_SIZE(sizeof(heap_t) * num_heaps));
-            assert(heaps_array != NULL);
-            MULTI_HEAP_SET_BLOCK_OWNER(heaps_array);
-            heaps_array = (heap_t *)MULTI_HEAP_ADD_BLOCK_OWNER_OFFSET(heaps_array);
             if (heaps_array != NULL) {
                 break;
             }
         }
     }
     assert(heaps_array != NULL); /* if NULL, there's not enough free startup heap space */
+    MULTI_HEAP_SET_BLOCK_OWNER(heaps_array);
+    heaps_array = (heap_t *)MULTI_HEAP_ADD_BLOCK_OWNER_OFFSET(heaps_array);
 
     memcpy(heaps_array, temp_heaps, sizeof(heap_t)*num_heaps);
 
