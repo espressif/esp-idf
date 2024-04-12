@@ -234,6 +234,7 @@
 // The Clock Out signal is route to the pin by GPIO matrix
 #define SOC_GPIO_CLOCKOUT_BY_GPIO_MATRIX         (1)
 #define SOC_GPIO_CLOCKOUT_CHANNEL_NUM            (2)
+#define SOC_CLOCKOUT_SUPPORT_CHANNEL_DIVIDER     (1)
 
 // Support to force hold all IOs
 #define SOC_GPIO_SUPPORT_FORCE_HOLD              (1)

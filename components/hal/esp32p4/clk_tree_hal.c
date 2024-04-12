@@ -83,7 +83,13 @@ uint32_t clk_hal_xtal_get_freq_mhz(void)
 void clk_hal_clock_output_setup(soc_clkout_sig_id_t clk_sig, clock_out_channel_t channel_id)
 {
     clk_ll_set_dbg_clk_ctrl(clk_sig, channel_id);
+    clk_ll_set_dbg_clk_channel_divider(channel_id, 1);
     clk_ll_enable_dbg_clk_channel(channel_id, true);
+}
+
+void clk_hal_clock_output_set_divider(clock_out_channel_t channel_id, uint32_t div_num)
+{
+    clk_ll_set_dbg_clk_channel_divider(channel_id, div_num);
 }
 
 void clk_hal_clock_output_teardown(clock_out_channel_t channel_id)

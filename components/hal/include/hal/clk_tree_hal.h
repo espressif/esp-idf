@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -67,6 +67,15 @@ uint32_t clk_hal_apll_get_freq_hz(void);
  * @param channel_id The clock output channel to setup
  */
 void clk_hal_clock_output_setup(soc_clkout_sig_id_t clk_sig, clock_out_channel_t channel_id);
+
+#if SOC_CLOCKOUT_SUPPORT_CHANNEL_DIVIDER
+/**
+ * @brief Output the mapped clock after frequency division
+ * @param channel_id channel id that need to be configured with frequency division
+ * @param div_num  clock frequency division value
+ */
+void clk_hal_clock_output_set_divider(clock_out_channel_t channel_id, uint32_t div_num);
+#endif
 
 /**
  * @brief Teardown clock output channel configuration

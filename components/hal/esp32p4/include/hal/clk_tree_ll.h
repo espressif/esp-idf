@@ -833,21 +833,39 @@ static inline __attribute__((always_inline)) void clk_ll_set_dbg_clk_ctrl(soc_cl
 {
     if (channel_id == CLKOUT_CHANNEL_1) {
         HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.dbg_clk_ctrl0, reg_dbg_ch0_sel, clk_sig);
-        HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.dbg_clk_ctrl0, reg_dbg_ch0_div_num, 0);
     } else if (channel_id == CLKOUT_CHANNEL_2) {
         HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.dbg_clk_ctrl0, reg_dbg_ch1_sel, clk_sig);
-        HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.dbg_clk_ctrl1, reg_dbg_ch1_div_num, 0);
     } else {
         abort();
     }
 }
 
+/**
+ * @brief Enable the clock output channel
+ * @param  enable Enable or disable the clock output channel
+ */
 static inline __attribute__((always_inline)) void clk_ll_enable_dbg_clk_channel(clock_out_channel_t channel_id, bool enable)
 {
     if (channel_id == CLKOUT_CHANNEL_1) {
         HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.dbg_clk_ctrl1, reg_dbg_ch0_en, enable);
     } else if (channel_id == CLKOUT_CHANNEL_2) {
         HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.dbg_clk_ctrl1, reg_dbg_ch1_en, enable);
+    } else {
+        abort();
+    }
+}
+
+/**
+ * @brief Output the mapped clock after frequency division
+ * @param channel_id channel id that need to be configured with frequency division
+ * @param div_num  clock frequency division value
+ */
+static inline __attribute__((always_inline)) void clk_ll_set_dbg_clk_channel_divider(clock_out_channel_t channel_id, uint32_t div_num)
+{
+    if (channel_id == CLKOUT_CHANNEL_1) {
+        HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.dbg_clk_ctrl0, reg_dbg_ch0_div_num, div_num - 1);
+    } else if (channel_id == CLKOUT_CHANNEL_2) {
+        HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.dbg_clk_ctrl1, reg_dbg_ch1_div_num, div_num - 1);
     } else {
         abort();
     }

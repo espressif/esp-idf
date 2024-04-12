@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -88,7 +88,6 @@ static clkout_channel_handle_t* clkout_channel_alloc(soc_clkout_sig_id_t clk_sig
         allocated_channel->mapped_io_bmap |= BIT(gpio_num);
         allocated_channel->mapped_clock = clk_sig;
         allocated_channel->ref_cnt++;
-
         if (allocated_channel->ref_cnt == 1) {
             portENTER_CRITICAL(&s_clkout_lock);
 #if SOC_CLOCKOUT_HAS_SOURCE_GATE
@@ -218,6 +217,18 @@ esp_err_t esp_clock_output_stop(esp_clock_output_mapping_handle_t clkout_mapping
     clkout_mapping_free(clkout_mapping_hdl);
     return ESP_OK;
 }
+
+#if SOC_CLOCKOUT_SUPPORT_CHANNEL_DIVIDER
+esp_err_t esp_clock_output_set_divider(esp_clock_output_mapping_handle_t clkout_mapping_hdl, uint32_t div_num)
+{
+    ESP_RETURN_ON_FALSE(((div_num > 0) && (div_num <= 256)), ESP_ERR_INVALID_ARG, TAG, "Divider number must be in the range of [1,  256]");
+    ESP_RETURN_ON_FALSE((clkout_mapping_hdl != NULL), ESP_ERR_INVALID_ARG, TAG, "Clock out mapping handle passed in is invalid");
+    portENTER_CRITICAL(&clkout_mapping_hdl->clkout_mapping_lock);
+    clk_hal_clock_output_set_divider(clkout_mapping_hdl->clkout_channel_hdl->channel_id, div_num);
+    portEXIT_CRITICAL(&clkout_mapping_hdl->clkout_mapping_lock);
+    return ESP_OK;
+}
+#endif
 
 #if CONFIG_IDF_TARGET_ESP32
 // Due to a hardware bug, PIN_CTRL cannot select 0xf output, whereas 0xf is the default value.

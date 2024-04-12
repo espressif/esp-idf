@@ -35,6 +35,9 @@ void output_clock_1(void *pvParameter)
     esp_clock_output_mapping_handle_t clkout_mapping_hdl;
     for (int i = 0; i < TEST_LOOPS; ++i) {
         TEST_ESP_OK(esp_clock_output_start(test_clk_out_sig[0], test_clk_out_io[0], &clkout_mapping_hdl));
+#if SOC_CLOCKOUT_SUPPORT_CHANNEL_DIVIDER
+        TEST_ESP_OK(esp_clock_output_set_divider(clkout_mapping_hdl, 8));
+#endif
         vTaskDelay(3);
         TEST_ESP_OK(esp_clock_output_stop(clkout_mapping_hdl));
         vTaskDelay(7);
