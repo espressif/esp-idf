@@ -242,6 +242,29 @@ esp_err_t esp_ble_gap_set_resolvable_private_address_timeout(uint16_t rpa_timeou
     return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gap_args_t), NULL, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
+
+esp_err_t esp_ble_gap_add_device_to_resolving_list(esp_bd_addr_t peer_addr, uint8_t addr_type, uint8_t *peer_irk)
+{
+    ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
+
+    if (addr_type > BLE_ADDR_TYPE_RANDOM ||!peer_addr || (addr_type && ((peer_addr[0] & 0xC0) != 0xC0))) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    btc_msg_t msg = {0};
+    btc_ble_gap_args_t arg;
+
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_GAP_BLE;
+    msg.act = BTC_GAP_BLE_ACT_ADD_DEVICE_TO_RESOLVING_LIST;
+
+    memcpy(arg.add_dev_to_resolving_list.addr, peer_addr, ESP_BD_ADDR_LEN);
+    arg.add_dev_to_resolving_list.addr_type = addr_type;
+    memcpy(arg.add_dev_to_resolving_list.irk, peer_irk, ESP_PEER_IRK_LEN);
+
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gap_args_t), NULL, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+}
+
 esp_err_t esp_ble_gap_clear_rand_addr(void)
 {
     btc_msg_t msg;

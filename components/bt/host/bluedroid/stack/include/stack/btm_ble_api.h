@@ -2664,6 +2664,27 @@ BOOLEAN BTM_BleClearAdv(tBTM_CLEAR_ADV_CMPL_CBACK *p_clear_adv_cback);
 *******************************************************************************/
 BOOLEAN BTM_BleSetRpaTimeout(uint16_t rpa_timeout, tBTM_SET_RPA_TIMEOUT_CMPL_CBACK  *p_set_rpa_timeout_cback);
 
+/*******************************************************************************
+**
+** Function         BTM_BleAddDevToResolvingList
+**
+** Description      This function is called to add a device to the resolving list
+**                  used to generate and resolve Resolvable Private Addresses (RPAs)
+**                  in the Bluetooth Controller.
+**
+** Parameters       addr - The address of the device to be added to the resolving list.
+**                  addr_type - The address type of the device (public or random).
+**                  irk - The Identity Resolving Key (IRK) of the device.
+**                  p_add_dev_to_resolving_list_callback - Callback function to be called when the operation is completed.
+**
+** Returns          TRUE if the operation was successful, otherwise FALSE.
+**
+*******************************************************************************/
+BOOLEAN BTM_BleAddDevToResolvingList(BD_ADDR addr,
+                                      uint8_t addr_type,
+                                      uint8_t irk[],
+                                      tBTM_ADD_DEV_TO_RESOLVING_LIST_CMPL_CBACK *p_add_dev_to_resolving_list_callback);
+
 /*
 #ifdef __cplusplus
 }

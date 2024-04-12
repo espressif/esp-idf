@@ -5685,6 +5685,15 @@ void bta_dm_ble_gap_set_rpa_timeout(tBTA_DM_MSG *p_data)
     BTM_BleSetRpaTimeout(p_data->set_rpa_timeout.rpa_timeout,p_data->set_rpa_timeout.p_set_rpa_timeout_cback);
 }
 
+void bta_dm_ble_gap_add_dev_to_resolving_list(tBTA_DM_MSG *p_data)
+{
+    APPL_TRACE_API("%s", __func__);
+    BTM_BleAddDevToResolvingList(p_data->add_dev_to_resolving_list.addr,
+                                  p_data->add_dev_to_resolving_list.addr_type,
+                                  p_data->add_dev_to_resolving_list.irk,
+                                  p_data->add_dev_to_resolving_list.p_add_dev_to_resolving_list_callback);
+}
+
 #if (BLE_50_FEATURE_SUPPORT == TRUE)
 void bta_dm_ble_gap_dtm_enhance_tx_start(tBTA_DM_MSG *p_data)
 {

@@ -227,6 +227,7 @@ tBTM_CMPL_CB        *p_ble_channels_cmpl_cb; /* Callback function to be called  
 tBTM_SET_RPA_TIMEOUT_CMPL_CBACK  *p_ble_set_rpa_timeout_cmpl_cb; /* Callback function to be called  When
                                                 ble set rpa timeout is completed   */
 
+tBTM_ADD_DEV_TO_RESOLVING_LIST_CMPL_CBACK *p_add_dev_to_resolving_list_cmpl_cb;
 tBTM_CMPL_CB        *p_le_test_cmd_cmpl_cb;   /* Callback function to be called when
                                                   LE test mode command has been sent successfully */
 
