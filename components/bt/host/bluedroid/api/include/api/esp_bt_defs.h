@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,7 +19,7 @@ extern "C" {
         return ESP_ERR_INVALID_STATE;                \
     }
 
-#define ESP_BT_STATUS_BASE_FOR_HCI_ERR  0X0100  /* base for coverting HCI error code to ESP status */
+#define ESP_BT_STATUS_BASE_FOR_HCI_ERR  0X0100  /* base for converting HCI error code to ESP status */
 
 /* relate to BT_STATUS_xxx in bt_def.h */
 /// Status Return Value
@@ -162,6 +162,9 @@ typedef enum {
 
 /// Bluetooth address length
 #define ESP_BD_ADDR_LEN     6
+
+/// Bluetooth peer irk
+#define ESP_PEER_IRK_LEN    16
 
 /// Bluetooth device address
 typedef uint8_t esp_bd_addr_t[ESP_BD_ADDR_LEN];

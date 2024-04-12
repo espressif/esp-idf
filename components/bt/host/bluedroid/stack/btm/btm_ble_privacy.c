@@ -275,6 +275,14 @@ void btm_ble_add_resolving_list_entry_complete(UINT8 *p, UINT16 evt_len)
 {
     UINT8 status;
     STREAM_TO_UINT8(status, p);
+    if (btm_cb.devcb.p_add_dev_to_resolving_list_cmpl_cb) {
+        tBTM_ADD_DEV_TO_RESOLVING_LIST_CMPL_CBACK   *p_cb = btm_cb.devcb.p_add_dev_to_resolving_list_cmpl_cb;
+        if (p_cb) {
+            (*p_cb)(status);
+        }
+    } else {
+        BTM_TRACE_DEBUG("no resolving list callback");
+    }
 
     BTM_TRACE_DEBUG("%s status = %d", __func__, status);
 
