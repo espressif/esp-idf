@@ -5,4 +5,11 @@ menu "Example Configuration"
         help
             Enable this option, DMA2D will be used to copy the LVGL draw buffer to the target frame buffer.
             This can save some CPU time and improve the performance.
+
+    config EXAMPLE_MONITOR_FPS_BY_GPIO
+        bool "Monitor FPS by GPIO"
+        default y
+        help
+            Enable this option, you can visualize the FPS by attaching a logic analyzer to a specific GPIO.
+            The GPIO will output a square wave with the frequency of FPS/2.
 endmenu

@@ -140,20 +140,35 @@ typedef struct {
 } esp_lcd_dpi_panel_event_data_t;
 
 /**
- * @brief Declare the prototype of the function that will be invoked when DPI panel finishes transferring color data
+ * @brief A general function callback prototype for DPI panel driver
  *
  * @param[in] panel LCD panel handle, which is created by factory API like esp_lcd_new_panel_dpi()
  * @param[in] edata DPI panel event data, fed by driver
  * @param[in] user_ctx User data
  * @return Whether a high priority task has been waken up by this function
  */
-typedef bool (*esp_lcd_dpi_panel_color_trans_done_cb_t)(esp_lcd_panel_handle_t panel, esp_lcd_dpi_panel_event_data_t *edata, void *user_ctx);
+typedef bool (*esp_lcd_dpi_panel_general_cb_t)(esp_lcd_panel_handle_t panel, esp_lcd_dpi_panel_event_data_t *edata, void *user_ctx);
+
+/**
+ * @brief Declare the prototype of the function that will be invoked
+ *        when driver finishes coping user's color buffer to frame buffer
+ */
+typedef esp_lcd_dpi_panel_general_cb_t esp_lcd_dpi_panel_color_trans_done_cb_t;
+
+/**
+ * @brief Declare the prototype of the function that will be invoked
+ *        when driver finishes refreshing the frame buffer to the screen
+ */
+typedef esp_lcd_dpi_panel_general_cb_t esp_lcd_dpi_panel_refresh_done_cb_t;
 
 /**
  * @brief Type of LCD DPI panel callbacks
  */
 typedef struct {
-    esp_lcd_dpi_panel_color_trans_done_cb_t on_color_trans_done; /*!< Callback invoked when color data transfer has finished */
+    esp_lcd_dpi_panel_color_trans_done_cb_t on_color_trans_done; /*!< Invoked when user's color buffer copied to the internal frame buffer.
+                                                                      This is an indicator that the draw buffer can be recycled safely.
+                                                                      But doesn't mean the draw buffer finishes the refreshing to the screen. */
+    esp_lcd_dpi_panel_refresh_done_cb_t on_refresh_done;         /*!< Invoked when the internal frame buffer finishes refreshing to the screen */
 } esp_lcd_dpi_panel_event_callbacks_t;
 
 /**

@@ -43,6 +43,7 @@ struct esp_lcd_dpi_panel_t {
     esp_async_fbcpy_handle_t fbcpy_handle; // Use DMA2D to do frame buffer copy
     SemaphoreHandle_t draw_sem;            // A semaphore used to synchronize the draw operations when DMA2D is used
     esp_lcd_dpi_panel_color_trans_done_cb_t on_color_trans_done; // Callback invoked when color data transfer has finished
+    esp_lcd_dpi_panel_refresh_done_cb_t on_refresh_done; // Callback invoked when one refresh operation finished (kinda like a vsync end)
     void *user_ctx; // User context for the callback
 };
 
@@ -69,16 +70,29 @@ static bool async_fbcpy_done_cb(esp_async_fbcpy_handle_t mcp, esp_async_fbcpy_ev
 }
 
 IRAM_ATTR
-static bool dma_list_invalid_block_cb(dw_gdma_channel_handle_t chan, const dw_gdma_break_event_data_t *event_data, void *user_data)
+static bool dma_trans_done_cb(dw_gdma_channel_handle_t chan, const dw_gdma_trans_done_event_data_t *event_data, void *user_data)
 {
-    dw_gdma_lli_handle_t lli = event_data->invalid_lli;
+    bool yield_needed = false;
+    esp_lcd_dpi_panel_t *dpi_panel = (esp_lcd_dpi_panel_t *)user_data;
+    uint8_t fb_index = dpi_panel->cur_fb_index;
+    dw_gdma_link_list_handle_t link_list = dpi_panel->link_lists[fb_index];
+
+    // restart the DMA transfer, keep refreshing the LCD
     dw_gdma_block_markers_t markers = {
-        .is_valid = true, // mark the block as valid so that the DMA can continue the transfer
+        .is_valid = true,
+        .is_last = true,
     };
-    dw_gdma_lli_set_block_markers(lli, markers);
-    // after the item is marked as valid again, tell the DMA to continue the transfer
-    dw_gdma_channel_continue(chan);
-    return false;
+    dw_gdma_lli_set_block_markers(dw_gdma_link_list_get_item(link_list, 0), markers);
+    dw_gdma_channel_use_link_list(chan, link_list);
+    dw_gdma_channel_enable_ctrl(chan, true);
+
+    // the DMA descriptor is large enough to carry a whole frame buffer, so this event can also be treated as a fake "vsync end"
+    if (dpi_panel->on_refresh_done) {
+        if (dpi_panel->on_refresh_done(&dpi_panel->base, NULL, dpi_panel->user_ctx)) {
+            yield_needed = true;
+        }
+    }
+    return yield_needed;
 }
 
 // Please note, errors happened in this function is just propagated to the caller
@@ -109,8 +123,8 @@ static esp_err_t dpi_panel_create_dma_link(esp_lcd_dpi_panel_t *dpi_panel)
 
     // create DMA link lists
     dw_gdma_link_list_config_t link_list_config = {
-        .num_items = 1, // NOTE: we assume one DMA link item can carry the whole image
-        .link_type = DW_GDMA_LINKED_LIST_TYPE_CIRCULAR,
+        .num_items = DPI_PANEL_LLI_PER_FRAME,
+        .link_type = DW_GDMA_LINKED_LIST_TYPE_SINGLY,
     };
     for (int i = 0; i < dpi_panel->num_fbs; i++) {
         ESP_RETURN_ON_ERROR(dw_gdma_new_link_list(&link_list_config, &link_list), TAG, "create DMA link list failed");
@@ -119,9 +133,9 @@ static esp_err_t dpi_panel_create_dma_link(esp_lcd_dpi_panel_t *dpi_panel)
 
     // register DMA ISR callbacks
     dw_gdma_event_callbacks_t dsi_dma_cbs = {
-        .on_invalid_block = dma_list_invalid_block_cb,
+        .on_full_trans_done = dma_trans_done_cb,
     };
-    ESP_RETURN_ON_ERROR(dw_gdma_channel_register_event_callbacks(dma_chan, &dsi_dma_cbs, NULL), TAG, "register DMA callbacks failed");
+    ESP_RETURN_ON_ERROR(dw_gdma_channel_register_event_callbacks(dma_chan, &dsi_dma_cbs, dpi_panel), TAG, "register DMA callbacks failed");
 
     return ESP_OK;
 }
@@ -356,6 +370,7 @@ static esp_err_t dpi_panel_init(esp_lcd_panel_t *panel)
         dw_gdma_lli_config_transfer(dw_gdma_link_list_get_item(link_list, 0), &dma_transfer_config);
         dw_gdma_block_markers_t markers = {
             .is_valid = true,
+            .is_last = true,
         };
         dw_gdma_lli_set_block_markers(dw_gdma_link_list_get_item(link_list, 0), markers);
     }
@@ -410,11 +425,6 @@ static esp_err_t dpi_panel_draw_bitmap(esp_lcd_panel_t *panel, int x_start, int 
         // the buffer to be flushed is still within the frame buffer, so even an unaligned address is OK
         esp_cache_msync(cache_sync_start, cache_sync_size, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED);
 
-        // update the link connections for all DMA link lists, make draw_buf_fb_index take effect automatically in the next DMA loop
-        for (int i = 0; i < dpi_panel->num_fbs; i++) {
-            dw_gdma_lli_set_next(dw_gdma_link_list_get_item(dpi_panel->link_lists[i], 0),
-                                 dw_gdma_link_list_get_item(dpi_panel->link_lists[draw_buf_fb_index], 0));
-        }
         dpi_panel->cur_fb_index = draw_buf_fb_index;
         // invoke the trans done callback
         if (dpi_panel->on_color_trans_done) {
@@ -506,6 +516,7 @@ esp_err_t esp_lcd_dpi_panel_register_event_callbacks(esp_lcd_panel_handle_t pane
     ESP_RETURN_ON_FALSE(panel && cbs, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
     esp_lcd_dpi_panel_t *dpi_panel = __containerof(panel, esp_lcd_dpi_panel_t, base);
     dpi_panel->on_color_trans_done = cbs->on_color_trans_done;
+    dpi_panel->on_refresh_done = cbs->on_refresh_done;
     dpi_panel->user_ctx = user_ctx;
 
     return ESP_OK;

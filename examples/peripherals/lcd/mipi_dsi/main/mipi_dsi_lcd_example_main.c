@@ -51,6 +51,10 @@ static const char *TAG = "example";
 #define EXAMPLE_PIN_NUM_BK_LIGHT                -1
 #define EXAMPLE_PIN_NUM_LCD_RST                 -1
 
+#if CONFIG_EXAMPLE_MONITOR_FPS_BY_GPIO
+#define EXAMPLE_PIN_NUM_FPS_MONITOR             20  // Monitor the FPS by toggling the GPIO
+#endif
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////// Please update the following configuration according to your Application ///////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -123,6 +127,17 @@ static bool example_notify_lvgl_flush_ready(esp_lcd_panel_handle_t panel, esp_lc
     return false;
 }
 
+#if CONFIG_EXAMPLE_MONITOR_FPS_BY_GPIO
+static bool example_monitor_fps(esp_lcd_panel_handle_t panel, esp_lcd_dpi_panel_event_data_t *edata, void *user_ctx)
+{
+    static int io_level = 0;
+    // please note, the real FPS should be 2*frequency of this GPIO toggling
+    gpio_set_level(EXAMPLE_PIN_NUM_FPS_MONITOR, io_level);
+    io_level = !io_level;
+    return false;
+}
+#endif
+
 static void example_bsp_enable_dsi_phy_power(void)
 {
     // Turn on the power for MIPI DSI PHY, so it can go from "No Power" state to "Shutdown" state
@@ -155,8 +170,23 @@ static void example_bsp_set_lcd_backlight(uint32_t level)
 #endif
 }
 
+#if CONFIG_EXAMPLE_MONITOR_FPS_BY_GPIO
+static void example_bsp_init_fps_monitor_io(void)
+{
+    gpio_config_t monitor_io_conf = {
+        .mode = GPIO_MODE_OUTPUT,
+        .pin_bit_mask = 1ULL << EXAMPLE_PIN_NUM_FPS_MONITOR,
+    };
+    ESP_ERROR_CHECK(gpio_config(&monitor_io_conf));
+}
+#endif
+
 void app_main(void)
 {
+#if CONFIG_EXAMPLE_MONITOR_FPS_BY_GPIO
+    example_bsp_init_fps_monitor_io();
+#endif
+
     example_bsp_enable_dsi_phy_power();
     example_bsp_init_lcd_backlight();
     example_bsp_set_lcd_backlight(EXAMPLE_LCD_BK_LIGHT_OFF_LEVEL);
@@ -246,6 +276,9 @@ void app_main(void)
     ESP_LOGI(TAG, "Register DPI panel event callback for LVGL flush ready notification");
     esp_lcd_dpi_panel_event_callbacks_t cbs = {
         .on_color_trans_done = example_notify_lvgl_flush_ready,
+#if CONFIG_EXAMPLE_MONITOR_FPS_BY_GPIO
+        .on_refresh_done = example_monitor_fps,
+#endif
     };
     ESP_ERROR_CHECK(esp_lcd_dpi_panel_register_event_callbacks(mipi_dpi_panel, &cbs, display));
 

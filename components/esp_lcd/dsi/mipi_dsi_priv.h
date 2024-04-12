@@ -26,6 +26,8 @@
 
 #define DPI_PANEL_MAX_FB_NUM 3 // maximum number of supported frame buffers for DPI panel
 
+#define DPI_PANEL_LLI_PER_FRAME 1 // NOTE: we assume ONE DMA link item can carry the WHOLE image (1920*1080)
+
 #ifdef __cplusplus
 extern "C" {
 #endif
