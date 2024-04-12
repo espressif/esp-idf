@@ -210,8 +210,9 @@ __attribute__((weak)) void esp_perip_clk_init(void)
     esp_sleep_pd_config(pu_domain, ESP_PD_OPTION_ON);
 
     soc_reset_reason_t rst_reason = esp_rom_get_reset_reason(0);
-    if (rst_reason != RESET_REASON_CPU0_MWDT0 && rst_reason != RESET_REASON_CPU0_MWDT1      \
-            && rst_reason != RESET_REASON_CPU0_SW && rst_reason != RESET_REASON_CPU0_RTC_WDT) {
+    if ((rst_reason != RESET_REASON_CPU0_MWDT0) && (rst_reason != RESET_REASON_CPU0_MWDT1)      \
+            && (rst_reason != RESET_REASON_CPU0_SW) && (rst_reason != RESET_REASON_CPU0_RTC_WDT)    \
+            && (rst_reason != RESET_REASON_CPU0_JTAG)) {
 #if CONFIG_ESP_CONSOLE_UART_NUM != 0
         uart_ll_enable_bus_clock(UART_NUM_0, false);
 #elif CONFIG_ESP_CONSOLE_UART_NUM != 1
@@ -280,8 +281,8 @@ __attribute__((weak)) void esp_perip_clk_init(void)
 #endif
     }
 
-    if (rst_reason == RESET_REASON_CHIP_POWER_ON || rst_reason == RESET_REASON_CHIP_BROWN_OUT \
-            || rst_reason == RESET_REASON_SYS_RTC_WDT || rst_reason == RESET_REASON_SYS_SUPER_WDT) {
+    if ((rst_reason == RESET_REASON_CHIP_POWER_ON) || (rst_reason == RESET_REASON_CHIP_BROWN_OUT) \
+            || (rst_reason == RESET_REASON_SYS_RTC_WDT) || (rst_reason == RESET_REASON_SYS_SUPER_WDT)) {
         _lp_clkrst_ll_enable_rng_clock(false);
         CLEAR_PERI_REG_MASK(LPPERI_CLK_EN_REG, LPPERI_OTP_DBG_CK_EN);
         CLEAR_PERI_REG_MASK(LPPERI_CLK_EN_REG, LPPERI_LP_ANA_I2C_CK_EN);
