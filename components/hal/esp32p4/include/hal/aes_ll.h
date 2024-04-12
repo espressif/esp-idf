@@ -48,7 +48,8 @@ static inline void aes_ll_reset_register(void)
     HP_SYS_CLKRST.hp_rst_en2.reg_rst_en_aes = 1;
     HP_SYS_CLKRST.hp_rst_en2.reg_rst_en_aes = 0;
 
-    // Clear reset on digital signature, otherwise AES is held in reset
+    // Clear reset on digital signature and parent crypto, otherwise AES is held in reset
+    HP_SYS_CLKRST.hp_rst_en2.reg_rst_en_crypto = 0;
     HP_SYS_CLKRST.hp_rst_en2.reg_rst_en_ds = 0;
 }
 
@@ -308,11 +309,11 @@ static inline void aes_ll_gcm_set_j0(const uint8_t *j0)
 }
 
 /**
- * @brief Sets the number of effective bits of incomplete blocks in plaintext/cipertext.
+ * @brief Sets the number of effective bits of incomplete blocks in plaintext/ciphertext.
  *
  * @note Only affects AES-GCM
  *
- * @param num_valid_bits the number of effective bits of incomplete blocks in plaintext/cipertext.
+ * @param num_valid_bits the number of effective bits of incomplete blocks in plaintext/ciphertext.
  */
 static inline void aes_ll_gcm_set_num_valid_bit(size_t num_valid_bits)
 {

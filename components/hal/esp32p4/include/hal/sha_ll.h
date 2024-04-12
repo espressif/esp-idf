@@ -36,7 +36,8 @@ static inline void sha_ll_reset_register(void)
     HP_SYS_CLKRST.hp_rst_en2.reg_rst_en_sha = 1;
     HP_SYS_CLKRST.hp_rst_en2.reg_rst_en_sha = 0;
 
-    // Clear reset on digital signature, hmac and ecdsa, otherwise SHA is held in reset
+    // Clear reset on digital signature, hmac, ecdsa and parent crypto, otherwise SHA is held in reset
+    HP_SYS_CLKRST.hp_rst_en2.reg_rst_en_crypto = 0;
     HP_SYS_CLKRST.hp_rst_en2.reg_rst_en_ds = 0;
     HP_SYS_CLKRST.hp_rst_en2.reg_rst_en_hmac = 0;
     HP_SYS_CLKRST.hp_rst_en2.reg_rst_en_ecdsa = 0;
