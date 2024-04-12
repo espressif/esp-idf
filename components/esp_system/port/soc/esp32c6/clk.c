@@ -217,9 +217,9 @@ __attribute__((weak)) void esp_perip_clk_init(void)
     modem_clock_select_lp_clock_source(PERIPH_WIFI_MODULE, modem_lpclk_src, 0);
 
     soc_reset_reason_t rst_reason = esp_rom_get_reset_reason(0);
-    if (rst_reason != RESET_REASON_CPU0_MWDT0 && rst_reason != RESET_REASON_CPU0_MWDT1      \
-            && rst_reason != RESET_REASON_CPU0_SW && rst_reason != RESET_REASON_CPU0_RTC_WDT    \
-            && RESET_REASON_CPU0_JTAG) {
+    if ((rst_reason != RESET_REASON_CPU0_MWDT0) && (rst_reason != RESET_REASON_CPU0_MWDT1)      \
+            && (rst_reason != RESET_REASON_CPU0_SW) && (rst_reason != RESET_REASON_CPU0_RTC_WDT)    \
+            && (rst_reason != RESET_REASON_CPU0_JTAG)) {
 #if CONFIG_ESP_CONSOLE_UART_NUM != 0
         uart_ll_enable_bus_clock(UART_NUM_0, false);
 #elif CONFIG_ESP_CONSOLE_UART_NUM != 1
@@ -289,8 +289,8 @@ __attribute__((weak)) void esp_perip_clk_init(void)
 #endif
     }
 
-    if (rst_reason == RESET_REASON_CHIP_POWER_ON || rst_reason == RESET_REASON_CHIP_BROWN_OUT \
-            || rst_reason == RESET_REASON_SYS_RTC_WDT || rst_reason == RESET_REASON_SYS_SUPER_WDT) {
+    if ((rst_reason == RESET_REASON_CHIP_POWER_ON) || (rst_reason == RESET_REASON_CHIP_BROWN_OUT) \
+            || (rst_reason == RESET_REASON_SYS_RTC_WDT) || (rst_reason == RESET_REASON_SYS_SUPER_WDT)) {
         _lp_i2c_ll_enable_bus_clock(0, false);
         _lp_uart_ll_enable_bus_clock(0, false);
         lp_core_ll_enable_bus_clock(false);
