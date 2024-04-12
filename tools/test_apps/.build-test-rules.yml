@@ -20,10 +20,6 @@ tools/test_apps/build_system/ld_non_contiguous_memory:
   disable:
     - if: SOC_MEM_NON_CONTIGUOUS_SRAM != 1
 
-tools/test_apps/linux_compatible/driver_mock:
-  enable:
-    - if: IDF_TARGET == "linux"
-
 tools/test_apps/linux_compatible/generic_build_test:
   enable:
     - if: IDF_TARGET in ["esp32", "esp32c3", "linux"]
@@ -34,10 +30,8 @@ tools/test_apps/linux_compatible/linux_freertos:
   enable:
     - if: IDF_TARGET == "linux"
 
-tools/test_apps/linux_compatible/wifi_build_test:
+tools/test_apps/linux_compatible/mock_build_test:
   enable:
-    - if: IDF_TARGET == "linux"
-  disable_test:
     - if: IDF_TARGET == "linux"
 
 tools/test_apps/peripherals/i2c_wifi:
