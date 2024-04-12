@@ -132,11 +132,14 @@ test_cli_installer:
     entrypoint: [""]  # use system python3. no extra pip package installed
   script:
     # Tools must be downloaded for testing
+    # We could use "idf_tools.py download all", but we don't want to install clang because of its huge size
     - python3 ${IDF_PATH}/tools/idf_tools.py download required qemu-riscv32 qemu-xtensa
     - cd ${IDF_PATH}/tools/test_idf_tools
     - python3 -m pip install jsonschema
     - python3 ./test_idf_tools.py -v
     - python3 ./test_idf_tools_python_env.py
+    # It runs at the end because it modifies dependencies
+    - IDF_TEST_MAY_BREAK_DEPENDENCIES=1 python3 ./test_idf_tools.py -v TestSystemDependencies.test_commands_when_nodeps
 
 .test_efuse_table_on_host_template:
   extends: .host_test_template

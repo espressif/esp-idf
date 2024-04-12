@@ -9,10 +9,12 @@ import shutil
 import sys
 import tempfile
 import unittest
+from subprocess import check_call
+from subprocess import STDOUT
 from unittest.mock import patch
 
 try:
-    from contextlib import redirect_stdout
+    from contextlib import redirect_stdout, redirect_stderr
 except ImportError:
     import contextlib
 
@@ -22,6 +24,13 @@ except ImportError:
         sys.stdout = target
         yield
         sys.stdout = original
+
+    @contextlib.contextmanager  # type: ignore
+    def redirect_stderr(target):
+        original = sys.stderr
+        sys.stderr = target
+        yield
+        sys.stderr = original
 
 try:
     from cStringIO import StringIO
@@ -97,9 +106,8 @@ XTENSA_ELF_ARCHIVE_PATTERN = XTENSA_ELF + '-' \
     + (XTENSA_ELF_VERSION[len('esp-'):] if XTENSA_ELF_VERSION.startswith('esp-') else XTENSA_ELF_VERSION)
 
 
-# TestUsage takes care of general test setup and executes tests that behaves the same on both platforms
-# TestUsage class serves as a parent for classes TestUsageUnix and TestUsageWin
-class TestUsage(unittest.TestCase):
+# TestUsageBase takes care of general test setup to use the idf_tools commands
+class TestUsageBase(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
@@ -158,6 +166,30 @@ class TestUsage(unittest.TestCase):
             idf_tools.main(['--non-interactive'] + action)
         output = output_stream.getvalue()
         return output
+
+    def run_idf_tools_with_error(self, action, assertError=False):
+        output_stream = StringIO()
+        error_stream = StringIO()
+        is_error_occured = False
+        try:
+            with redirect_stderr(error_stream), redirect_stdout(output_stream):
+                idf_tools.main(['--non-interactive'] + action)
+        except SystemExit:
+            is_error_occured = True
+            if assertError:
+                pass
+            else:
+                raise
+        if assertError:
+            self.assertTrue(is_error_occured, 'idf_tools should fail if assertError is set')
+        output = output_stream.getvalue()
+        error = error_stream.getvalue()
+        return output, error
+
+
+# TestUsage executes tests that behaves the same on both platforms
+# TestUsage class serves as a parent for classes TestUsageUnix and TestUsageWin
+class TestUsage(TestUsageBase):
 
     def test_tools_for_wildcards1(self):
         required_tools_installed = 2
@@ -1069,6 +1101,41 @@ class TestArmDetection(unittest.TestCase):
             with patch('sys.executable', TestArmDetection.ELF_HEADERS[exec_platform]):
                 for platform in TestArmDetection.ARM_PLATFORMS:
                     self.assertEqual(idf_tools.Platforms.detect_linux_arm_platform(platform), exec_platform)
+
+
+# TestSystemDependencies tests behaviour when system dependencies had been broken, on linux
+@unittest.skipUnless(sys.platform == 'linux', reason='Tools for LINUX differ')
+@unittest.skipUnless(int(os.getenv('IDF_TEST_MAY_BREAK_DEPENDENCIES', 0)) == 1, reason='Do not run destructive tests by default')
+class TestSystemDependencies(TestUsageBase):
+
+    @classmethod
+    def tearDownClass(cls):
+        # We won't restore dependencies because `apt-get update` and `apt-get install` require network access and take a lot of time on the runners
+        print('\nINFO: System dependencies have been modified for TestSystemDependencies. Other tests may not work correctly')
+        super(TestSystemDependencies, cls).tearDownClass()
+
+    def test_commands_when_nodeps(self):
+        # Prerequisites
+        # (don't go to the setUpClass() because it's a part of this test case)
+
+        self.run_idf_tools_with_action(['install', 'required', 'qemu-xtensa'])
+        with open(os.devnull, 'w') as devnull:
+            check_call(['dpkg', '--purge', 'libsdl2-2.0-0'], stdout=devnull, stderr=STDOUT)
+
+        # Tests
+
+        _, err_output = self.run_idf_tools_with_error(['list'])
+        self.assertIn(f'ERROR: tool {QEMU_XTENSA} version {QEMU_XTENSA_VERSION} is installed, but cannot be run', err_output)
+
+        _, err_output = self.run_idf_tools_with_error(['export'])
+        self.assertIn(f'ERROR: tool {QEMU_XTENSA} version {QEMU_XTENSA_VERSION} is installed, but cannot be run', err_output)
+
+        _,err_output = self.run_idf_tools_with_error(['check'], assertError=True)
+        self.assertIn(f'ERROR: tool {QEMU_XTENSA} version {QEMU_XTENSA_VERSION} is installed, but cannot be run', err_output)
+
+        _,err_output = self.run_idf_tools_with_error(['install', 'qemu-xtensa'], assertError=True)
+        self.assertIn(f'ERROR: tool {QEMU_XTENSA} version {QEMU_XTENSA_VERSION} is installed, but getting error', err_output)
+        self.assertIn(f'ERROR: Failed to check the tool while installed', err_output)
 
 
 if __name__ == '__main__':
