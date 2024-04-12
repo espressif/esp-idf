@@ -12,8 +12,6 @@
 #include "sd_pwr_ctrl.h"
 #include "sd_pwr_ctrl_by_on_chip_ldo.h"
 
-//TODO: IDF-8734
-#if !CONFIG_IDF_TARGET_ESP32 && !CONFIG_IDF_TARGET_ESP32S3
 TEST_CASE("CD input works in SD mode", "[sdmmc]")
 {
     sdmmc_host_t config = SDMMC_HOST_DEFAULT();
@@ -75,4 +73,3 @@ TEST_CASE("WP input works in SD mode", "[sdmmc]")
     TEST_ESP_OK(sd_pwr_ctrl_del_on_chip_ldo(config.pwr_ctrl_handle));
 #endif
 }
-#endif
