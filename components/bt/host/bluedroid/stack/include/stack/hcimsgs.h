@@ -625,7 +625,7 @@ BOOLEAN btsnd_hcic_write_voice_settings(UINT16 flags);            /* Write Voice
 
 
 BOOLEAN btsnd_hcic_write_auto_flush_tout(UINT16 handle,
-        UINT16 timeout);    /* Write Retransmit Timout */
+        UINT16 timeout);    /* Write Retransmit Timeout */
 
 #define HCIC_PARAM_SIZE_WRITE_AUTO_FLUSH_TOUT    4
 

@@ -224,6 +224,7 @@ enum {
     BTA_DM_API_DTM_STOP_EVT,
     BTA_DM_API_BLE_CLEAR_ADV_EVT,
     BTA_DM_API_SET_RPA_TIMEOUT_EVT,
+    BTA_DM_API_ADD_DEV_TO_RESOLVING_LIST_EVT,
 #endif
     BTA_DM_MAX_EVT
 };
@@ -789,6 +790,14 @@ typedef struct {
     tBTA_SET_RPA_TIMEOUT_CMPL_CBACK  *p_set_rpa_timeout_cback;
 } tBTA_DM_API_SET_RPA_TIMEOUT;
 
+typedef struct {
+    BT_HDR      hdr;                                    // Event header
+    esp_bd_addr_t addr;                                 // Bluetooth device address
+    UINT8       addr_type;                              // Type of the address
+    UINT8       irk[PEER_IRK_LEN];                     // Identity Resolving Key (IRK)
+    tBTA_ADD_DEV_TO_RESOLVING_LIST_CMPL_CBACK *p_add_dev_to_resolving_list_callback; // Callback function pointer
+} tBTA_DM_API_ADD_DEV_TO_RESOLVING_LIST;
+
 /* set adv parameter for BLE advertising */
 typedef struct {
     BT_HDR                  hdr;
@@ -1294,6 +1303,7 @@ typedef union {
     tBTA_DM_APT_SET_DEV_ADDR            set_addr;
     tBTA_DM_APT_CLEAR_ADDR              clear_addr;
     tBTA_DM_API_SET_RPA_TIMEOUT         set_rpa_timeout;
+    tBTA_DM_API_ADD_DEV_TO_RESOLVING_LIST add_dev_to_resolving_list;
     tBTA_DM_API_BLE_MULTI_ADV_ENB       ble_multi_adv_enb;
     tBTA_DM_API_BLE_MULTI_ADV_PARAM     ble_multi_adv_param;
     tBTA_DM_API_BLE_MULTI_ADV_DATA      ble_multi_adv_data;
@@ -1789,6 +1799,7 @@ extern void bta_dm_ble_gap_dtm_rx_start(tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_gap_dtm_stop(tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_gap_clear_adv(tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_gap_set_rpa_timeout(tBTA_DM_MSG *p_data);
+extern void bta_dm_ble_gap_add_dev_to_resolving_list(tBTA_DM_MSG *p_data);
 #if (BLE_50_FEATURE_SUPPORT == TRUE)
 extern void bta_dm_ble_gap_dtm_enhance_tx_start(tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_gap_dtm_enhance_rx_start(tBTA_DM_MSG *p_data);

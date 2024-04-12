@@ -2918,6 +2918,40 @@ void BTA_DmBleSetRpaTimeout(uint16_t rpa_timeout,tBTA_SET_RPA_TIMEOUT_CMPL_CBACK
     }
 }
 
+/*******************************************************************************
+**
+** Function         BTA_DmBleAddDevToResolvingList
+**
+** Description      This function adds a device to the resolving list of the
+**                  Bluetooth controller. The resolving list is used for resolving
+**                  the identity of devices using resolvable private addresses (RPAs).
+**
+** Parameters       addr: Bluetooth device address to be added to the resolving list
+**                  addr_type: Type of the address (public or random)
+**                  irk: Identity Resolving Key (IRK) of the device
+**                  add_dev_to_resolving_list_callback: Callback function to be invoked
+**                                                     upon completion of the operation
+**
+** Returns          void
+**
+*******************************************************************************/
+void BTA_DmBleAddDevToResolvingList(BD_ADDR addr,
+                                    uint8_t addr_type,
+                                    PEER_IRK irk,
+                                    tBTA_ADD_DEV_TO_RESOLVING_LIST_CMPL_CBACK *add_dev_to_resolving_list_callback)
+{
+    tBTA_DM_API_ADD_DEV_TO_RESOLVING_LIST *p_msg;
+    if ((p_msg = (tBTA_DM_API_ADD_DEV_TO_RESOLVING_LIST *) osi_malloc(sizeof(tBTA_DM_API_ADD_DEV_TO_RESOLVING_LIST))) != NULL) {
+        memset(p_msg, 0, sizeof(tBTA_DM_API_ADD_DEV_TO_RESOLVING_LIST));
+        p_msg->hdr.event = BTA_DM_API_ADD_DEV_TO_RESOLVING_LIST_EVT;
+        memcpy(p_msg->addr, addr, BD_ADDR_LEN); // Copy the device address to the message
+        p_msg->addr_type = addr_type;                      // Assign the address type to the message
+        memcpy(p_msg->irk, irk, PEER_IRK_LEN);            // Copy the IRK to the message
+        p_msg->p_add_dev_to_resolving_list_callback = add_dev_to_resolving_list_callback;
+        bta_sys_sendmsg(p_msg);
+    }
+}
+
 void BTA_DmClearRandAddress(void)
 {
     tBTA_DM_APT_CLEAR_ADDR *p_msg;
