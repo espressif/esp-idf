@@ -170,10 +170,16 @@ extern const char *r_ble_controller_get_rom_compile_version(void);
 #if CONFIG_BT_RELEASE_IRAM
 extern uint32_t _iram_bt_text_start;
 extern uint32_t _bss_bt_end;
-#else
-extern uint32_t _bt_bss_end;
-extern uint32_t _bt_controller_data_start;
 #endif
+
+extern uint32_t _bt_bss_start;
+extern uint32_t _bt_bss_end;
+extern uint32_t _bt_controller_bss_start;
+extern uint32_t _bt_controller_bss_end;
+extern uint32_t _bt_data_start;
+extern uint32_t _bt_data_end;
+extern uint32_t _bt_controller_data_start;
+extern uint32_t _bt_controller_data_end;
 
 /* Local Function Declaration
  *********************************************************************
@@ -893,9 +899,48 @@ static esp_err_t try_heap_caps_add_region(intptr_t start, intptr_t end)
     return ret;
 }
 
+typedef struct {
+    intptr_t start;
+    intptr_t end;
+    const char* name;
+} bt_area_t;
+
+static esp_err_t esp_bt_mem_release_area(const bt_area_t *area)
+{
+    esp_err_t ret = ESP_OK;
+    intptr_t mem_start = area->start;
+    intptr_t mem_end = area->end;
+    if (mem_start != mem_end) {
+        ESP_LOGD(NIMBLE_PORT_LOG_TAG, "Release %s [0x%08x] - [0x%08x], len %d", area->name, mem_start, mem_end, mem_end - mem_start);
+        ret = try_heap_caps_add_region(mem_start, mem_end);
+    }
+    return ret;
+}
+
+#ifndef CONFIG_BT_RELEASE_IRAM
+static esp_err_t esp_bt_mem_release_areas(const bt_area_t *area1, const bt_area_t *area2)
+{
+    esp_err_t ret = ESP_OK;
+
+    if(area1->end == area2->start) {
+        bt_area_t merged_area = {
+            .start = area1->start,
+            .end = area2->end,
+            .name = area1->name
+        };
+        ret = esp_bt_mem_release_area(&merged_area);
+    } else {
+        esp_bt_mem_release_area(area1);
+        ret = esp_bt_mem_release_area(area2);
+    }
+
+    return ret;
+}
+#endif
+
 esp_err_t esp_bt_mem_release(esp_bt_mode_t mode)
 {
-    intptr_t mem_start, mem_end;
+    esp_err_t ret = ESP_OK;
 
 #if CONFIG_BT_RELEASE_IRAM && CONFIG_ESP_SYSTEM_PMP_IDRAM_SPLIT
     /* Release Bluetooth text section and merge Bluetooth data, bss & text into a large free heap
@@ -904,26 +949,58 @@ esp_err_t esp_bt_mem_release(esp_bt_mode_t mode)
      * memory into 3 different regions (IRAM, BLE-IRAM, DRAM). So `ESP_SYSTEM_PMP_IDRAM_SPLIT` needs
      * to be disabled.
      */
-    ESP_LOGE(NIMBLE_PORT_LOG_TAG, "`ESP_SYSTEM_PMP_IDRAM_SPLIT` should be disabled!");
-    assert(0);
+    #error "ESP_SYSTEM_PMP_IDRAM_SPLIT should be disabled to allow BT to be released"
 #endif // CONFIG_BT_RELEASE_IRAM && CONFIG_ESP_SYSTEM_PMP_IDRAM_SPLIT
 
-    if (mode & ESP_BT_MODE_BLE) {
-#if CONFIG_BT_RELEASE_IRAM
-        mem_start = (intptr_t)MAP_IRAM_TO_DRAM((intptr_t)&_iram_bt_text_start);
-        mem_end = (intptr_t)&_bss_bt_end;
-#else
-        mem_start = (intptr_t)&_bt_controller_data_start;
-        mem_end = (intptr_t)&_bt_bss_end;
-#endif // CONFIG_BT_RELEASE_IRAM
-        if (mem_start != mem_end) {
-            ESP_LOGI(NIMBLE_PORT_LOG_TAG, "Release BLE [0x%08x] - [0x%08x], len %d", mem_start,
-                     mem_end, mem_end - mem_start);
-            ESP_ERROR_CHECK(try_heap_caps_add_region(mem_start, mem_end));
-        }
+    if (ble_controller_status != ESP_BT_CONTROLLER_STATUS_IDLE) {
+        return ESP_ERR_INVALID_STATE;
     }
 
-    return ESP_OK;
+    if ((mode & ESP_BT_MODE_BLE) == 0) {
+        return ret;
+    }
+
+#if CONFIG_BT_RELEASE_IRAM
+    bt_area_t merged_region = {
+        .start = (intptr_t)MAP_IRAM_TO_DRAM((intptr_t)&_iram_bt_text_start),
+        .end = (intptr_t)&_bss_bt_end,
+        .name = "BT Text, BSS and Data"
+    };
+    ret = esp_bt_mem_release_area(&merged_region);
+#else
+    bt_area_t bss = {
+        .start = (intptr_t)&_bt_bss_start,
+        .end   = (intptr_t)&_bt_bss_end,
+        .name  = "BT BSS",
+    };
+    bt_area_t cont_bss = {
+        .start = (intptr_t)&_bt_controller_bss_start,
+        .end   = (intptr_t)&_bt_controller_bss_end,
+        .name  = "BT Controller BSS",
+    };
+    bt_area_t data = {
+        .start = (intptr_t)&_bt_data_start,
+        .end   = (intptr_t)&_bt_data_end,
+        .name  = "BT Data",
+    };
+    bt_area_t cont_data = {
+        .start = (intptr_t)&_bt_controller_data_start,
+        .end   = (intptr_t)&_bt_controller_data_end,
+        .name  = "BT Controller Data"
+    };
+
+    /* Start by freeing Bluetooth BSS section */
+    if (ret == ESP_OK) {
+        ret = esp_bt_mem_release_areas(&bss, &cont_bss);
+    }
+
+    /* Do the same thing with the Bluetooth data section */
+    if (ret == ESP_OK) {
+        ret = esp_bt_mem_release_areas(&data, &cont_data);
+    }
+#endif
+
+    return ret;
 }
 
 
