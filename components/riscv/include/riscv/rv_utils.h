@@ -19,10 +19,12 @@
 extern "C" {
 #endif
 
+#if SOC_CPU_HAS_CSR_PC
 /*performance counter*/
 #define CSR_PCER_MACHINE    0x7e0
 #define CSR_PCMR_MACHINE    0x7e1
 #define CSR_PCCR_MACHINE    0x7e2
+#endif /* SOC_CPU_HAS_CSR_PC */
 
 #if SOC_CPU_HAS_FPU
 
@@ -97,8 +99,7 @@ FORCE_INLINE_ATTR void *rv_utils_get_sp(void)
 
 FORCE_INLINE_ATTR uint32_t __attribute__((always_inline)) rv_utils_get_cycle_count(void)
 {
-#if SOC_INT_CLIC_SUPPORTED
-    //TODO: IDF-7848
+#if !SOC_CPU_HAS_CSR_PC
     return RV_READ_CSR(mcycle);
 #else
     return RV_READ_CSR(CSR_PCCR_MACHINE);
@@ -107,8 +108,7 @@ FORCE_INLINE_ATTR uint32_t __attribute__((always_inline)) rv_utils_get_cycle_cou
 
 FORCE_INLINE_ATTR void __attribute__((always_inline)) rv_utils_set_cycle_count(uint32_t ccount)
 {
-#if SOC_INT_CLIC_SUPPORTED
-    //TODO: IDF-7848
+#if !SOC_CPU_HAS_CSR_PC
     RV_WRITE_CSR(mcycle, ccount);
 #else
     RV_WRITE_CSR(CSR_PCCR_MACHINE, ccount);
@@ -238,8 +238,8 @@ FORCE_INLINE_ATTR void __attribute__((always_inline)) rv_utils_restore_intlevel_
      * By executing ~8 nop instructions, or by performing a memory load right now, the previous memory write
      * operations is forced, making the new threshold active.
      *
-     * Without this we risk executing the next several instrucitons before getting interrupted
-     * This is especially bad if we immediatly enter a new critical section
+     * Without this we risk executing the next several instructions before getting interrupted
+     * This is especially bad if we immediately enter a new critical section
      */
     REG_READ(CLIC_INT_THRESH_REG);
 }
@@ -353,8 +353,8 @@ FORCE_INLINE_ATTR void rv_utils_disable_fpu(void)
 
 FORCE_INLINE_ATTR void rv_utils_set_breakpoint(int bp_num, uint32_t bp_addr)
 {
-    /* The code bellow sets breakpoint which will trigger `Breakpoint` exception
-     * instead transfering control to debugger. */
+    /* The code below sets breakpoint which will trigger `Breakpoint` exception
+     * instead transferring control to debugger. */
     RV_WRITE_CSR(tselect, bp_num);
     RV_WRITE_CSR(tcontrol, TCONTROL_MPTE | TCONTROL_MTE);
     RV_WRITE_CSR(tdata1, TDATA1_USER | TDATA1_MACHINE | TDATA1_EXECUTE);
