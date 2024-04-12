@@ -145,7 +145,8 @@ struct i2c_master_bus_t {
     bool trans_over_buffer;                                          // Data length is more than hardware fifo length, needs interrupt.
     bool async_trans;                                                // asynchronous transaction, true after callback is installed.
     bool ack_check_disable;                                          // Disable ACK check
-    volatile bool trans_done;                                                 // transaction command finish
+    volatile bool trans_done;                                        // transaction command finish
+    bool bypass_nack_log;                                             // Bypass the error log. Sometimes the error is expected.
     SLIST_HEAD(i2c_master_device_list_head, i2c_master_device_list) device_list;      // I2C device (instance) list
     // async trans members
     bool async_break;                                                // break transaction loop flag.
