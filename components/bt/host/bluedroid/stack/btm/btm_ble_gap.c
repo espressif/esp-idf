@@ -4713,6 +4713,20 @@ BOOLEAN BTM_BleSetRpaTimeout(uint16_t rpa_timeout,tBTM_SET_RPA_TIMEOUT_CMPL_CBAC
     return TRUE;
 }
 
+BOOLEAN BTM_BleAddDevToResolvingList(BD_ADDR addr,
+                                      uint8_t addr_type,
+                                      uint8_t irk[],
+                                      tBTM_ADD_DEV_TO_RESOLVING_LIST_CMPL_CBACK *p_add_dev_to_resolving_list_callback)
+{
+    UINT8 *local_irk = btm_cb.devcb.id_keys.irk;
+    if ((btsnd_hcic_ble_add_device_resolving_list(addr_type, addr, irk, local_irk)) != TRUE) {
+        BTM_TRACE_ERROR("Add device to resolving list error");
+        return FALSE;
+    }
+    btm_cb.devcb.p_add_dev_to_resolving_list_cmpl_cb = p_add_dev_to_resolving_list_callback;
+    return TRUE;
+}
+
 bool btm_ble_adv_pkt_ready(void)
 {
     tBTM_BLE_CB *p_cb = &btm_cb.ble_ctr_cb;

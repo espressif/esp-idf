@@ -907,6 +907,25 @@ static void btc_set_rpa_timeout_callback(UINT8 status)
     }
 }
 
+static void btc_add_dev_to_resolving_list_callback(UINT8 status)
+{
+    esp_ble_gap_cb_param_t param;
+    bt_status_t ret;
+    btc_msg_t msg = {0};
+
+    msg.sig = BTC_SIG_API_CB;
+    msg.pid = BTC_PID_GAP_BLE;
+    msg.act = ESP_GAP_BLE_ADD_DEV_TO_RESOLVING_LIST_COMPLETE_EVT;
+
+    param.add_dev_to_resolving_list_cmpl.status = btc_btm_status_to_esp_status(status);
+
+    ret = btc_transfer_context(&msg, &param, sizeof(esp_ble_gap_cb_param_t), NULL, NULL);
+
+    if (ret != BT_STATUS_SUCCESS) {
+        BTC_TRACE_ERROR("%s btc_transfer_context failed\n", __func__);
+    }
+}
+
 #if (SMP_INCLUDED == TRUE)
 static void btc_set_encryption_callback(BD_ADDR bd_addr, tBTA_TRANSPORT transport, tBTA_STATUS enc_status)
 {
@@ -1425,6 +1444,14 @@ static void btc_ble_set_rpa_timeout(uint16_t rpa_timeout,tBTA_SET_RPA_TIMEOUT_CM
     BTA_DmBleSetRpaTimeout(rpa_timeout,set_rpa_timeout_cback);
 }
 
+static void btc_ble_add_device_to_resolving_list(BD_ADDR addr,
+                                                 uint8_t addr_type,
+                                                 uint8_t irk[],
+                                                 tBTA_ADD_DEV_TO_RESOLVING_LIST_CMPL_CBACK *add_dev_to_resolving_list_callback)
+{
+    BTA_DmBleAddDevToResolvingList(addr, addr_type, irk, add_dev_to_resolving_list_callback);
+}
+
 static void btc_ble_clear_rand_addr (void)
 {
     BTA_DmClearRandAddress();
@@ -1901,6 +1928,13 @@ void btc_gap_ble_call_handler(btc_msg_t *msg)
     }
     case BTC_GAP_BLE_ACT_SET_RESOLVABLE_PRIVATE_ADDRESS_TIMEOUT: {
         btc_ble_set_rpa_timeout(arg->set_rpa_timeout.rpa_timeout,btc_set_rpa_timeout_callback);
+        break;
+    }
+    case BTC_GAP_BLE_ACT_ADD_DEVICE_TO_RESOLVING_LIST: {
+        btc_ble_add_device_to_resolving_list(arg->add_dev_to_resolving_list.addr,
+                                            arg->add_dev_to_resolving_list.addr_type,
+                                            arg->add_dev_to_resolving_list.irk,
+                                            btc_add_dev_to_resolving_list_callback);
         break;
     }
     case BTC_GAP_BLE_ACT_CLEAR_RAND_ADDRESS: {

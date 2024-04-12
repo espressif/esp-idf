@@ -102,8 +102,9 @@ typedef enum {
 #if (BLE_42_FEATURE_SUPPORT == TRUE)
     BTC_GAP_BLE_ACT_CLEAR_ADV,
 #endif // #if (BLE_42_FEATURE_SUPPORT == TRUE)
-    BTC_GAP_BLE_ACT_VENDOR_HCI_CMD_EVT,
     BTC_GAP_BLE_ACT_SET_RESOLVABLE_PRIVATE_ADDRESS_TIMEOUT,
+    BTC_GAP_BLE_ACT_ADD_DEVICE_TO_RESOLVING_LIST,
+    BTC_GAP_BLE_ACT_VENDOR_HCI_CMD_EVT,
 } btc_gap_ble_act_t;
 
 /* btc_ble_gap_args_t */
@@ -145,6 +146,12 @@ typedef union {
     struct set_rpa_timeout_args {
         uint16_t rpa_timeout;
     } set_rpa_timeout;
+    //BTC_GAP_BLE_ACT_ADD_DEVICE_TO_RESOLVING_LIST
+    struct add_dev_to_resolving_list_args {
+        esp_bd_addr_t addr;
+        uint8_t addr_type;
+        uint8_t irk[PEER_IRK_LEN];
+    } add_dev_to_resolving_list;
     //BTC_GAP_BLE_ACT_CONFIG_LOCAL_PRIVACY,
     struct cfg_local_privacy_args {
         bool privacy_enable;
