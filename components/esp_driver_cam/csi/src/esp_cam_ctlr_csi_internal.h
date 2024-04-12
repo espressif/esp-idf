@@ -55,6 +55,7 @@ struct csi_controller_t {
     size_t                      fb_size_in_bytes;   //Frame buffer size, in bytes
     esp_cam_ctlr_trans_t        trans;              //Saved done transaction to be given out to callers
     void                        *backup_buffer;     //backup buffer to make csi bridge can work to avoid wrong state
+    bool                        bk_buffer_exposed;  //status of if back_buffer is exposed to users
     QueueHandle_t               trans_que;          //transaction queue
     esp_cam_ctlr_evt_cbs_t      cbs;                //user callbacks
     void                        *cbs_user_data;     //callback userdata
