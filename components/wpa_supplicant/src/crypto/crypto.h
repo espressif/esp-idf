@@ -798,7 +798,7 @@ const struct crypto_bignum * crypto_ec_get_order(struct crypto_ec *e);
  */
 
 /**
- * crypto_ec_get_b - Get 'b' coeffiecient of an EC group's curve
+ * crypto_ec_get_b - Get 'b' coefficient of an EC group's curve
  * @e: EC context from crypto_ec_init()
  * Returns: 'b' coefficient (bignum) of the group
  */
@@ -949,19 +949,19 @@ int crypto_ec_get_publickey_buf(struct crypto_key *key, u8 *key_buf, int len);
 struct crypto_ec_group *crypto_ec_get_group_from_key(struct crypto_key *key);
 
 /**
- * crypto_ec_get_private_key - Get EC private key (in bignum format)
+ * crypto_ec_key_get_private_key - Get EC private key (in bignum format)
  * @key: crypto key
  * Returns: Private key
  */
-struct crypto_bignum *crypto_ec_get_private_key(struct crypto_key *key);
+struct crypto_bignum *crypto_ec_key_get_private_key(struct crypto_key *key);
 
 /**
- * crypto_ec_get_key - Read key from character stream
+ * crypto_ec_key_parse_priv - Read key from character stream
  * @privkey: Private key
  * @privkey_len: private key len
  * Returns: Crypto key
  */
-struct crypto_key *crypto_ec_get_key(const u8 *privkey, size_t privkey_len);
+struct crypto_key *crypto_ec_key_parse_priv(const u8 *privkey, size_t privkey_len);
 
 /**
  * crypto_ec_get_mbedtls_to_nist_group_id - get nist group from mbedtls internal group
@@ -1029,14 +1029,14 @@ struct crypto_key *crypto_ec_parse_subpub_key(const unsigned char *p, size_t len
 int crypto_is_ec_key(struct crypto_key *key);
 
 /**
- * crypto_ec_gen_keypair: generate crypto ec keypair
+ * crypto_ec_key_gen: generate crypto ec keypair
  * @ike_group: grpup
  * Return: crypto key
  */
-struct crypto_key * crypto_ec_gen_keypair(u16 ike_group);
+struct crypto_key * crypto_ec_key_gen(u16 ike_group);
 
 /**
- * crypto_ec_write_pub_key: return public key in charater buffer
+ * crypto_ec_write_pub_key: return public key in character buffer
  * @key: crypto key
  * @der_len: buffer len
  * Return: public key buffer
@@ -1047,7 +1047,7 @@ int crypto_ec_write_pub_key(struct crypto_key *key, unsigned char **key_buf);
  * crypto_ec_set_pubkey_point: set bignum point on ec curve
  * @group: ec group
  * @buf: x,y coordinate
- * @len: length of x and y coordiate
+ * @len: length of x and y coordinate
  * Return : crypto key
  */
 struct crypto_key * crypto_ec_set_pubkey_point(const struct crypto_ec_group *group,
@@ -1058,19 +1058,19 @@ struct crypto_key * crypto_ec_set_pubkey_point(const struct crypto_ec_group *gro
  */
 void crypto_ec_free_key(struct crypto_key *key);
 /**
- * crypto_debug_print_ec_key: print ec key
+ * crypto_ec_key_debug_print: print ec key
  * @title: title
  * @key: crypto key
  * Return: None
  */
-void crypto_debug_print_ec_key(const char *title, struct crypto_key *key);
+void crypto_ec_key_debug_print(const char *title, struct crypto_key *key);
 
 /**
- * crypto_ec_get_public_key: Public key from crypto key
+ * crypto_ec_key_get_public_key: Public key from crypto key
  * @key: crypto key
  * Return : Public key
  */
-struct crypto_ec_point *crypto_ec_get_public_key(struct crypto_key *key);
+struct crypto_ec_point *crypto_ec_key_get_public_key(struct crypto_key *key);
 
 /**
  * crypto_get_order: free crypto key
@@ -1079,7 +1079,7 @@ struct crypto_ec_point *crypto_ec_get_public_key(struct crypto_key *key);
 int crypto_get_order(struct crypto_ec_group *group, struct crypto_bignum *x);
 
 /**
- * crypto_ec_get_affine_coordinates : get affine corrdinate of ec curve
+ * crypto_ec_get_affine_coordinates : get affine coordinate of ec curve
  * @e: ec curve
  * @pt: point
  * @x: x coordinate
@@ -1105,7 +1105,7 @@ int crypto_key_compare(struct crypto_key *key1, struct crypto_key *key2);
 /*
  * crypto_write_pubkey_der: get public key in der format
  * @csign: key
- * @key_buf: key buffer in charater format
+ * @key_buf: key buffer in character format
  * Return : len of char buffer if success
  */
 int crypto_write_pubkey_der(struct crypto_key *csign, unsigned char **key_buf);
@@ -1120,8 +1120,8 @@ void crypto_free_buffer(unsigned char *buf);
 /**
  * @crypto_ec_get_priv_key_der: get private key in der format
  * @key: key structure
- * @key_data: key data in charater buffer
- * @key_len = key length of charater buffer
+ * @key_data: key data in character buffer
+ * @key_len = key length of character buffer
  * Return : 0 if success
  */
 int crypto_ec_get_priv_key_der(struct crypto_key *key, unsigned char **key_data, int *key_len);
