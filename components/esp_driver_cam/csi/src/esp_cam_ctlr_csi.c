@@ -99,12 +99,17 @@ esp_err_t esp_cam_new_csi_ctlr(const esp_cam_ctlr_csi_config_t *config, esp_cam_
     csi_controller_t *ctlr = heap_caps_calloc(1, sizeof(csi_controller_t), CSI_MEM_ALLOC_CAPS);
     ESP_RETURN_ON_FALSE(ctlr, ESP_ERR_NO_MEM, TAG, "no mem for csi controller context");
 
+    ret = s_csi_claim_controller(ctlr);
+    if (ret != ESP_OK) {
+        //claim fail, clean and return directly
+        free(ctlr);
+        ESP_RETURN_ON_ERROR(ret, TAG, "no available csi controller");
+    }
+
     ESP_LOGD(TAG, "config->queue_items: %d", config->queue_items);
     ctlr->trans_que = xQueueCreateWithCaps(config->queue_items, sizeof(esp_cam_ctlr_trans_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
     ESP_GOTO_ON_FALSE(ctlr->trans_que, ESP_ERR_NO_MEM, err, TAG, "no memory for transaction queue");
 
-    //claim a controller, then do assignment
-    ESP_GOTO_ON_ERROR(s_csi_claim_controller(ctlr), err, TAG, "no available csi controller");
 #if SOC_ISP_SHARE_CSI_BRG
     ESP_GOTO_ON_ERROR(mipi_csi_brg_claim(MIPI_CSI_BRG_USER_CSI, &ctlr->csi_brg_id), err, TAG, "csi bridge is in use already");
     ctlr->csi_brg_in_use = true;

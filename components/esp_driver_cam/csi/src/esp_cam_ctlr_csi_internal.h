@@ -26,7 +26,7 @@ extern "C" {
 #endif
 
 typedef enum {
-    CSI_FSM_INIT,
+    CSI_FSM_INIT = 1,
     CSI_FSM_ENABLED,
     CSI_FSM_STARTED,
 } csi_fsm_t;
