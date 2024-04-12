@@ -29,6 +29,10 @@ menu "SDMMC Test Board Configuration"
             bool "ESP32-C3 breakout board"
             depends on IDF_TARGET_ESP32C3
 
+        config SDMMC_BOARD_ESP32P4_EV_BOARD
+            bool "ESP32-P4 Function EV Board"
+            depends on IDF_TARGET_ESP32P4
+
         config SDMMC_BOARD_CUSTOM_SD
             depends on SOC_SDMMC_HOST_SUPPORTED
             bool "Custom SD (choose pins)"

@@ -30,15 +30,9 @@ void sdmmc_test_sd_skip_if_board_incompatible(int slot, int width, int freq_khz,
 
     int board_max_freq_khz = sdmmc_test_board_get_slot_info(slot)->max_freq_khz;
     if (board_max_freq_khz > 0 && board_max_freq_khz < freq_khz) {
-#if SOC_SDMMC_IO_POWER_EXTERNAL
-        TEST_ESP_OK(sd_pwr_ctrl_del_on_chip_ldo(config.pwr_ctrl_handle));
-#endif
         TEST_IGNORE_MESSAGE("Board doesn't support required max_freq_khz");
     }
     if (slot_config.width < width) {
-#if SOC_SDMMC_IO_POWER_EXTERNAL
-        TEST_ESP_OK(sd_pwr_ctrl_del_on_chip_ldo(config.pwr_ctrl_handle));
-#endif
         TEST_IGNORE_MESSAGE("Board doesn't support required bus width");
     }
 }
@@ -84,6 +78,17 @@ void sdmmc_test_sd_begin(int slot, int width, int freq_khz, int ddr, sdmmc_card_
         config.flags |= SDMMC_HOST_FLAG_DDR;
     }
 
+#if SOC_SDMMC_IO_POWER_EXTERNAL
+#define SDMMC_PWR_LDO_CHANNEL   4
+    sd_pwr_ctrl_ldo_config_t ldo_config = {
+        .ldo_chan_id = SDMMC_PWR_LDO_CHANNEL,
+    };
+    sd_pwr_ctrl_handle_t pwr_ctrl_handle = NULL;
+
+    TEST_ESP_OK(sd_pwr_ctrl_new_on_chip_ldo(&ldo_config, &pwr_ctrl_handle));
+    config.pwr_ctrl_handle = pwr_ctrl_handle;
+#endif
+
     sdmmc_test_board_card_power_set(true);
     TEST_ESP_OK(sdmmc_host_init());
     TEST_ESP_OK(sdmmc_host_init_slot(slot, &slot_config));
@@ -123,7 +128,7 @@ void sdmmc_test_sd_end(sdmmc_card_t *card)
     }
     esp_log_level_set("gpio", old_level);
 
-    //Need to reset GPIO first, otherrwise cannot discharge VDD of card completely.
+    //Need to reset GPIO first, otherwise cannot discharge VDD of card completely.
     sdmmc_test_board_card_power_set(false);
 #if SOC_SDMMC_IO_POWER_EXTERNAL
     TEST_ESP_OK(sd_pwr_ctrl_del_on_chip_ldo(card->host.pwr_ctrl_handle));
