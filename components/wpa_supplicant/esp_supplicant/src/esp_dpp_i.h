@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,7 +10,6 @@
 #include "esp_err.h"
 #include "utils/includes.h"
 #include "utils/common.h"
-
 #include "common/dpp.h"
 #include "esp_dpp.h"
 #include "esp_wifi_driver.h"
@@ -58,6 +57,12 @@ struct esp_dpp_context_t {
 
 int esp_supp_rx_action(uint8_t *hdr, uint8_t *payload, size_t len, uint8_t channel);
 esp_err_t esp_dpp_post_evt(uint32_t evt_id, uint32_t data);
+
+#ifdef CONFIG_TESTING_OPTIONS
+int dpp_test_gen_invalid_key(struct wpabuf *msg,
+				    const struct dpp_curve_params *curve);
+char * dpp_corrupt_connector_signature(const char *connector);
+#endif /* CONFIG_TESTING_OPTIONS */
 
 #ifdef CONFIG_ESP_WIFI_DPP_SUPPORT
 bool is_dpp_enabled(void);

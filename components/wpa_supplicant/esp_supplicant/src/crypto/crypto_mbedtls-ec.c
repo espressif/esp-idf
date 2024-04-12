@@ -564,7 +564,7 @@ void crypto_ec_free_key(struct crypto_key *key)
     os_free(key);
 }
 
-struct crypto_ec_point *crypto_ec_get_public_key(struct crypto_key *key)
+struct crypto_ec_point *crypto_ec_key_get_public_key(struct crypto_key *key)
 {
     mbedtls_pk_context *pkey = (mbedtls_pk_context *)key;
 
@@ -614,7 +614,7 @@ int crypto_ec_key_group(struct crypto_ec_key *key)
     return iana_group;
 }
 
-struct crypto_bignum *crypto_ec_get_private_key(struct crypto_key *key)
+struct crypto_bignum *crypto_ec_key_get_private_key(struct crypto_key *key)
 {
     mbedtls_pk_context *pkey = (mbedtls_pk_context *)key;
 
@@ -669,7 +669,7 @@ int crypto_write_pubkey_der(struct crypto_key *key, unsigned char **key_buf)
     return len;
 }
 
-struct crypto_key *crypto_ec_get_key(const u8 *privkey, size_t privkey_len)
+struct crypto_key *crypto_ec_key_parse_priv(const u8 *privkey, size_t privkey_len)
 {
     int ret;
     mbedtls_pk_context *kctx = (mbedtls_pk_context *)crypto_alloc_key();
@@ -841,7 +841,7 @@ int crypto_edcsa_sign_verify(const unsigned char *hash,
     return ret;
 }
 
-void crypto_debug_print_ec_key(const char *title, struct crypto_key *key)
+void crypto_ec_key_debug_print(const char *title, struct crypto_key *key)
 {
 #ifdef DEBUG_PRINT
     mbedtls_pk_context *pkey = (mbedtls_pk_context *)key;
@@ -852,12 +852,12 @@ void crypto_debug_print_ec_key(const char *title, struct crypto_key *key)
     int len = mbedtls_mpi_size((mbedtls_mpi *)crypto_ec_get_prime((struct crypto_ec *)crypto_ec_get_group_from_key(key)));
 
     wpa_printf(MSG_ERROR, "prime len is %d", len);
-    crypto_ec_point_to_bin((struct crypto_ec *)crypto_ec_get_group_from_key(key), crypto_ec_get_public_key(key), x, y);
-    crypto_bignum_to_bin(crypto_ec_get_private_key(key),
-                         d, len, len);
-    wpa_hexdump(MSG_ERROR, "Q_x:", x, 32);
-    wpa_hexdump(MSG_ERROR, "Q_y:", y, 32);
-    wpa_hexdump(MSG_ERROR, "d:     ",  d, 32);
+    crypto_ec_point_to_bin((struct crypto_ec *)crypto_ec_get_group_from_key(key), crypto_ec_key_get_public_key(key), x, y);
+    crypto_bignum_to_bin(crypto_ec_key_get_private_key(key),
+                d, len, len);
+    wpa_hexdump(MSG_INFO, "Q_x:", x, 32);
+    wpa_hexdump(MSG_INFO, "Q_y:", y, 32);
+    wpa_hexdump(MSG_INFO, "d:     ",  d , 32);
 #endif
 }
 
@@ -885,7 +885,7 @@ int crypto_is_ec_key(struct crypto_key *key)
     return  ret;
 }
 
-struct crypto_key * crypto_ec_gen_keypair(u16 ike_group)
+struct crypto_key * crypto_ec_key_gen(u16 ike_group)
 {
     mbedtls_pk_context *kctx = (mbedtls_pk_context *)crypto_alloc_key();
 
