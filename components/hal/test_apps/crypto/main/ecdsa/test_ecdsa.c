@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: CC0-1.0
  */
@@ -14,6 +14,9 @@
 #include "hal/ecdsa_hal.h"
 #include "hal/ecdsa_ll.h"
 #include "hal/ecdsa_types.h"
+#include "hal/ecc_ll.h"
+#include "hal/mpi_ll.h"
+#include "soc/soc_caps.h"
 
 #include "memory_checks.h"
 #include "unity_fixture.h"
@@ -26,10 +29,32 @@ static void ecdsa_enable_and_reset(void)
         ecdsa_ll_enable_bus_clock(true);
         ecdsa_ll_reset_register();
     }
+
+    ECC_RCC_ATOMIC() {
+        ecc_ll_enable_bus_clock(true);
+        ecc_ll_reset_register();
+    }
+
+#ifdef SOC_ECDSA_USES_MPI
+    MPI_RCC_ATOMIC() {
+        mpi_ll_enable_bus_clock(true);
+        mpi_ll_reset_register();
+    }
+#endif
 }
 
 static void ecdsa_disable(void)
 {
+#ifdef SOC_ECDSA_USES_MPI
+    MPI_RCC_ATOMIC() {
+        mpi_ll_enable_bus_clock(false);
+    }
+#endif
+
+    ECC_RCC_ATOMIC() {
+        ecc_ll_enable_bus_clock(false);
+    }
+
     ECDSA_RCC_ATOMIC() {
         ecdsa_ll_enable_bus_clock(false);
     }
@@ -80,7 +105,7 @@ static void test_ecdsa_corrupt_data(bool is_p256, uint8_t* sha, uint8_t* r_le, u
         len = 24;
     }
 
-    // Randomly select a bit and corrupt its correpsonding value
+    // Randomly select a bit and corrupt its corresponding value
     uint16_t r_bit = esp_random() % len * 8;
 
     printf("Corrupting SHA bit %d...\n", r_bit);
@@ -141,9 +166,16 @@ static void test_ecdsa_sign(bool is_p256, uint8_t* sha, uint8_t* r_le, uint8_t* 
 
     ecdsa_enable_and_reset();
 
+    bool process_again = false;
+
     do {
         ecdsa_hal_gen_signature(&conf, sha_le, r_le, s_le, len);
-    } while(!memcmp(r_le, zeroes, len) || !memcmp(s_le, zeroes, len));
+
+        process_again = !ecdsa_hal_get_operation_result()
+                        || !memcmp(r_le, zeroes, len)
+                        || !memcmp(s_le, zeroes, len);
+
+    } while(process_again);
 
     ecdsa_disable();
 }
@@ -162,6 +194,7 @@ static void test_ecdsa_export_pubkey(bool is_p256, bool use_km_key)
 {
     uint8_t pub_x[32] = {0};
     uint8_t pub_y[32] = {0};
+    uint8_t zeroes[32] = {0};
     uint16_t len;
 
     ecdsa_hal_config_t conf = {
@@ -184,7 +217,17 @@ static void test_ecdsa_export_pubkey(bool is_p256, bool use_km_key)
     }
 
     ecdsa_enable_and_reset();
-    ecdsa_hal_export_pubkey(&conf, pub_x, pub_y, len);
+
+    bool process_again = false;
+
+    do {
+        ecdsa_hal_export_pubkey(&conf, pub_x, pub_y, len);
+
+        process_again = !ecdsa_hal_get_operation_result()
+                        || !memcmp(pub_x, zeroes, len)
+                        || !memcmp(pub_y, zeroes, len);
+
+    } while (process_again);
 
     if (is_p256) {
         TEST_ASSERT_EQUAL_HEX8_ARRAY(ecdsa256_pub_x, pub_x, len);

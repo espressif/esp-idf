@@ -1,11 +1,13 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <string.h>
 #include "hal/ecdsa_ll.h"
 #include "hal/ecdsa_hal.h"
+#include "hal/ecc_ll.h"
+#include "hal/mpi_ll.h"
 #include "esp_crypto_lock.h"
 #include "esp_efuse.h"
 #include "esp_private/esp_crypto_lock_internal.h"
@@ -14,6 +16,7 @@
 #include "mbedtls/asn1write.h"
 #include "mbedtls/platform_util.h"
 #include "ecdsa/ecdsa_alt.h"
+#include "soc/soc_caps.h"
 
 #define ECDSA_KEY_MAGIC             (short) 0xECD5A
 #define ECDSA_SHA_LEN               32
@@ -29,6 +32,21 @@ static void esp_ecdsa_acquire_hardware(void)
         ecdsa_ll_enable_bus_clock(true);
         ecdsa_ll_reset_register();
     }
+
+    ECC_RCC_ATOMIC() {
+        ecc_ll_enable_bus_clock(true);
+        ecc_ll_reset_register();
+    }
+
+#ifdef SOC_ECDSA_USES_MPI
+    /* We need to reset the MPI peripheral because ECDSA peripheral
+     * of some targets use the MPI peripheral as well.
+     */
+    MPI_RCC_ATOMIC() {
+        mpi_ll_enable_bus_clock(true);
+        mpi_ll_reset_register();
+    }
+#endif /* SOC_ECDSA_USES_MPI */
 }
 
 static void esp_ecdsa_release_hardware(void)
@@ -36,6 +54,16 @@ static void esp_ecdsa_release_hardware(void)
     ECDSA_RCC_ATOMIC() {
         ecdsa_ll_enable_bus_clock(false);
     }
+
+    ECC_RCC_ATOMIC() {
+        ecc_ll_enable_bus_clock(false);
+    }
+
+#ifdef SOC_ECDSA_USES_MPI
+    MPI_RCC_ATOMIC() {
+        mpi_ll_enable_bus_clock(false);
+    }
+#endif /* SOC_ECDSA_USES_MPI */
 
     esp_crypto_ecdsa_lock_release();
 }
@@ -91,9 +119,16 @@ int esp_ecdsa_load_pubkey(mbedtls_ecp_keypair *keypair, int efuse_blk)
 
     esp_ecdsa_acquire_hardware();
 
+    bool process_again = false;
+
     do {
         ecdsa_hal_export_pubkey(&conf, qx_le, qy_le, len);
-    } while (!memcmp(qx_le, zeroes, len) || !memcmp(qy_le, zeroes, len));
+
+        process_again = !ecdsa_hal_get_operation_result()
+                        || !memcmp(qx_le, zeroes, len)
+                        || !memcmp(qy_le, zeroes, len);
+
+    } while (process_again);
 
     esp_ecdsa_release_hardware();
 
@@ -240,6 +275,8 @@ static int esp_ecdsa_sign(mbedtls_ecp_group *grp, mbedtls_mpi* r, mbedtls_mpi* s
 
     esp_ecdsa_acquire_hardware();
 
+    bool process_again = false;
+
     do {
         ecdsa_hal_config_t conf = {
             .mode = ECDSA_MODE_SIGN_GEN,
@@ -250,7 +287,12 @@ static int esp_ecdsa_sign(mbedtls_ecp_group *grp, mbedtls_mpi* r, mbedtls_mpi* s
         };
 
         ecdsa_hal_gen_signature(&conf, sha_le, r_le, s_le, len);
-    } while (!memcmp(r_le, zeroes, len) || !memcmp(s_le, zeroes, len));
+
+        process_again = !ecdsa_hal_get_operation_result()
+                        || !memcmp(r_le, zeroes, len)
+                        || !memcmp(s_le, zeroes, len);
+
+    } while (process_again);
 
     esp_ecdsa_release_hardware();
 
