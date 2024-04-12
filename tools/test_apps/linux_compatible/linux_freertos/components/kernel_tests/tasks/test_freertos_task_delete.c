@@ -60,7 +60,7 @@ static void tsk_blocks_frequently(void *param)
     }
 }
 
-TEST_CASE("FreeRTOS Delete Blocked Tasks", "[freertos][ignore]") // TODO: esp_rom_delay_us is interrupted by signal
+TEST_CASE("FreeRTOS Delete Blocked Tasks", "[freertos]")
 {
     TaskHandle_t blocking_tasks[configNUM_CORES + 1]; // one per CPU, plus one unpinned task
     tsk_blocks_param_t params[configNUM_CORES + 1] = { 0 };

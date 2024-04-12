@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,6 +10,8 @@
 #include <stdarg.h>
 #include <assert.h>
 #include <unistd.h>
+#include <errno.h>
+#include <time.h>
 #include "esp_rom_sys.h"
 
 static void call_linux_putc(char c);
@@ -264,9 +266,16 @@ int esp_rom_printf(const char *fmt, ...)
 
 void esp_rom_delay_us(uint32_t us)
 {
-    int sleep_result = usleep(us);
-    assert(sleep_result == 0);
-    (void)sleep_result; // Prevents compiler from optimizing out usleep() due to unused result. Also prevents warning.
+    struct timespec wait_time = {
+        .tv_sec = us / 1000000,
+        .tv_nsec = us % 1000000 * 1000,
+    };
+    /*
+        If nanosleep() is interrupted by a signal handler, nanosleep()
+        returns -1, sets errno to EINTR, and writes the remaining time.
+        The remaining time is used to call nanosleep() again and complete the specified pause.
+    */
+    while (nanosleep(&wait_time, &wait_time) == -1 && errno == EINTR) { };
 }
 
 void esp_rom_install_channel_putc(int channel, void (*putc)(char c))
