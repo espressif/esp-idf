@@ -156,7 +156,7 @@ typedef enum {
     ESP_GAP_BLE_PASSKEY_REQ_EVT,                            /*!< passkey request event */
     ESP_GAP_BLE_OOB_REQ_EVT,                                /*!< OOB request event */
     ESP_GAP_BLE_LOCAL_IR_EVT,                               /*!< BLE local IR (identity Root 128-bit random static value used to generate Long Term Key) event */
-    ESP_GAP_BLE_LOCAL_ER_EVT,                               /*!< BLE local ER (Encryption Root vakue used to genrate identity resolving key) event */
+    ESP_GAP_BLE_LOCAL_ER_EVT,                               /*!< BLE local ER (Encryption Root value used to generate identity resolving key) event */
     ESP_GAP_BLE_NC_REQ_EVT,                                 /*!< Numeric Comparison request event */
     //BLE_42_FEATURE_SUPPORT
     ESP_GAP_BLE_ADV_STOP_COMPLETE_EVT,                      /*!< When stop adv complete, the event comes */
@@ -786,9 +786,9 @@ typedef uint8_t esp_ble_gap_all_phys_t;
 #define ESP_BLE_GAP_PRI_PHY_CODED  ESP_BLE_GAP_PHY_CODED  /*!< Primary Phy is LE CODED */
 typedef uint8_t esp_ble_gap_pri_phy_t; // primary phy
 
-#define ESP_BLE_GAP_PHY_1M_PREF_MASK                   (1 << 0) /*!< The Host prefers use the LE1M transmitter or reciever PHY */
-#define ESP_BLE_GAP_PHY_2M_PREF_MASK                   (1 << 1) /*!< The Host prefers use the LE2M transmitter or reciever PHY */
-#define ESP_BLE_GAP_PHY_CODED_PREF_MASK                (1 << 2) /*!< The Host prefers use the LE CODED transmitter or reciever PHY */
+#define ESP_BLE_GAP_PHY_1M_PREF_MASK                   (1 << 0) /*!< The Host prefers use the LE1M transmitter or receiver PHY */
+#define ESP_BLE_GAP_PHY_2M_PREF_MASK                   (1 << 1) /*!< The Host prefers use the LE2M transmitter or receiver PHY */
+#define ESP_BLE_GAP_PHY_CODED_PREF_MASK                (1 << 2) /*!< The Host prefers use the LE CODED transmitter or receiver PHY */
 typedef uint8_t esp_ble_gap_phy_mask_t;
 
 #define ESP_BLE_GAP_PHY_OPTIONS_NO_PREF                  0 /*!< The Host has no preferred coding when transmitting on the LE Coded PHY */
@@ -1500,6 +1500,27 @@ esp_err_t esp_ble_gap_register_callback(esp_gap_ble_cb_t callback);
  *
  */
 esp_gap_ble_cb_t esp_ble_gap_get_callback(void);
+
+/**
+ * @brief           This function is called to register user pointer
+ *
+ * @param[in]       ptr: user pointer to set
+ *
+ * @return
+ *                  - ESP_OK : success
+ *                  - other  : failed
+ *
+ */
+esp_err_t esp_ble_gap_register_ptr(void *ptr);
+
+/**
+ * @brief           This function is called to get the current gap user pointer
+ *
+ * @return
+ *                  - current user pointer (may be NULL if not set)
+ *
+ */
+void *esp_ble_gap_get_ptr(void);
 
 #if (BLE_42_FEATURE_SUPPORT == TRUE)
 /**

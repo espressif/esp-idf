@@ -295,8 +295,8 @@ static bt_status_t btc_task_post(btc_msg_t *msg, uint32_t timeout)
 /**
  * transfer an message to another module in the different task.
  * @param  msg       message
- * @param  arg       paramter
- * @param  arg_len   length of paramter
+ * @param  arg       parameter
+ * @param  arg_len   length of parameter
  * @param  copy_func deep copy function
  * @param  free_func deep free function
  * @return           BT_STATUS_SUCCESS: success
@@ -342,7 +342,7 @@ bt_status_t btc_transfer_context(btc_msg_t *msg, void *arg, int arg_len, btc_arg
 }
 
 /**
- * transfer an message to another module in tha same task.
+ * transfer an message to another module in the same task.
  * @param  msg       message
  * @return           BT_STATUS_SUCCESS: success
  *                   others: fail
@@ -378,6 +378,11 @@ static void btc_deinit_mem(void) {
     if (btc_profile_cb_tab) {
         osi_free(btc_profile_cb_tab);
         btc_profile_cb_tab = NULL;
+    }
+
+    if (btc_profile_ptr_tab) {
+        osi_free(btc_profile_ptr_tab);
+        btc_profile_ptr_tab = NULL;
     }
 
 #if (BLE_INCLUDED == TRUE)
@@ -441,6 +446,11 @@ static bt_status_t btc_init_mem(void) {
         goto error_exit;
     }
     memset((void *)btc_profile_cb_tab, 0, sizeof(void *) * BTC_PID_NUM);
+
+    if ((btc_profile_ptr_tab = (void **)osi_malloc(sizeof(void *) * BTC_PID_NUM)) == NULL) {
+        goto error_exit;
+    }
+    memset((void *)btc_profile_ptr_tab, 0, sizeof(void *) * BTC_PID_NUM);
 
 #if (BLE_INCLUDED == TRUE)
     if ((gl_bta_adv_data_ptr = (tBTA_BLE_ADV_DATA *)osi_malloc(sizeof(tBTA_BLE_ADV_DATA))) == NULL) {

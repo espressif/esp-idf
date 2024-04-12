@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,8 +10,10 @@
 
 #if BTC_DYNAMIC_MEMORY == FALSE
 void *btc_profile_cb_tab[BTC_PID_NUM] = {};
+void *btc_profile_ptr_tab[BTC_PID_NUM] = {};
 #else
 void **btc_profile_cb_tab;
+void **btc_profile_ptr_tab;
 #endif
 
 void esp_profile_cb_reset(void)
@@ -20,6 +22,7 @@ void esp_profile_cb_reset(void)
 
     for (i = 0; i < BTC_PID_NUM; i++) {
         btc_profile_cb_tab[i] = NULL;
+        btc_profile_ptr_tab[i] = NULL;
     }
 }
 
@@ -41,4 +44,24 @@ void *btc_profile_cb_get(btc_pid_t profile_id)
     }
 
     return btc_profile_cb_tab[profile_id];
+}
+
+int btc_profile_ptr_set(btc_pid_t profile_id, void *ptr)
+{
+    if (profile_id < 0 || profile_id >= BTC_PID_NUM) {
+        return -1;
+    }
+
+    btc_profile_ptr_tab[profile_id] = ptr;
+
+    return 0;
+}
+
+void *btc_profile_ptr_get(btc_pid_t profile_id)
+{
+    if (profile_id < 0 || profile_id >= BTC_PID_NUM) {
+        return NULL;
+    }
+
+    return btc_profile_ptr_tab[profile_id];
 }
