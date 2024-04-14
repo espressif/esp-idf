@@ -26,6 +26,18 @@
 
 #define WD_PREFIX "./components/nvs_flash/host_test/nvs_host_test/" // path from ci cwd to the location of host test
 
+#if defined(SEGGER_H) && defined(GLOBAL_H)
+NVS_GUARD_SYSVIEW_MACRO_EXPANSION_PUSH();
+#undef U8
+#undef I8
+#undef U16
+#undef I16
+#undef U32
+#undef I32
+#undef U64
+#undef I64
+#endif
+
 stringstream s_perf;
 
 TEST_CASE("crc32 behaves as expected", "[nvs]")
@@ -3405,3 +3417,7 @@ TEST_CASE("dump all performance data", "[nvs]")
     std::cout << s_perf.str() << std::endl;
     std::cout << "====================" << std::endl;
 }
+
+#if defined(SEGGER_H) && defined(GLOBAL_H)
+NVS_GUARD_SYSVIEW_MACRO_EXPANSION_POP();
+#endif

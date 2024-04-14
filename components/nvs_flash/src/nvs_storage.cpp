@@ -23,6 +23,18 @@
 #include "esp_log.h"
 #define TAG "nvs_storage"
 
+#if defined(SEGGER_H) && defined(GLOBAL_H)
+NVS_GUARD_SYSVIEW_MACRO_EXPANSION_PUSH();
+#undef U8
+#undef I8
+#undef U16
+#undef I16
+#undef U32
+#undef I32
+#undef U64
+#undef I64
+#endif
+
 namespace nvs
 {
 
@@ -983,3 +995,7 @@ bool Storage::nextEntry(nvs_opaque_iterator_t* it)
 
 
 }
+
+#if defined(SEGGER_H) && defined(GLOBAL_H)
+NVS_GUARD_SYSVIEW_MACRO_EXPANSION_POP();
+#endif
