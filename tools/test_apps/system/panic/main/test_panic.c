@@ -140,7 +140,15 @@ void test_task_wdt_cpu1(void)
 
 void __attribute__((no_sanitize_undefined)) test_storeprohibited(void)
 {
-    *(int*) 0x1 = 0;
+    *(int*) 0x4 = 0;
+    test_task_wdt_cpu0(); /* Trap for unhandled asynchronous bus errors */
+}
+
+void __attribute__((no_sanitize_undefined)) test_loadprohibited(void)
+{
+    static int __attribute__((used)) var;
+    var = *(int*) 0x4;
+    test_task_wdt_cpu0(); /* Trap for unhandled asynchronous bus errors */
 }
 
 void IRAM_ATTR test_cache_error(void)
@@ -222,7 +230,7 @@ void test_ub(void)
  * used for memory protection.
  *
  * However, this test is not valid for S2 and S3, because they have PMS
- * enabled on top of this, giving unpredicatable results.
+ * enabled on top of this, giving unpredictable results.
  */
 #if CONFIG_IDF_TARGET_ESP32
 void test_illegal_access(void)

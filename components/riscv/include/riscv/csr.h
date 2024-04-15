@@ -155,6 +155,20 @@ extern "C" {
 #define TDATA1_HIT_S     (20)
 
 
+/********************************************************
+   Espressif's bus error exceptions registers and fields
+ ********************************************************/
+
+#define MEXSTATUS   0x7E1
+#define MHINT       0x7C5
+
+#define LDPC0       0xBE0
+#define LDPC1       0xBE1
+
+#define STPC0       0xBF0
+#define STPC1       0xBF1
+#define STPC2       0xBF2
+
 /* RISC-V CSR macros
  * Adapted from https://github.com/michaeljclark/riscv-probe/blob/master/libfemto/include/arch/riscv/machine.h
  */

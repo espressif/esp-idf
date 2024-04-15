@@ -1551,6 +1551,10 @@ config SOC_MEM_NON_CONTIGUOUS_SRAM
     bool
     default y
 
+config SOC_ASYNCHRONOUS_BUS_ERROR_MODE
+    bool
+    default y
+
 config SOC_EMAC_USE_IO_MUX
     bool
     default y

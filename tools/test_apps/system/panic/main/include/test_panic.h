@@ -39,6 +39,8 @@ void test_panic_extram_stack(void);
 void test_task_wdt_cpu1(void);
 #endif
 
+void test_loadprohibited(void);
+
 void test_storeprohibited(void);
 
 void test_cache_error(void);

@@ -101,6 +101,7 @@ void app_main(void)
 #if !CONFIG_FREERTOS_UNICORE
     HANDLE_TEST(test_name, test_task_wdt_cpu1);
 #endif
+    HANDLE_TEST(test_name, test_loadprohibited);
     HANDLE_TEST(test_name, test_storeprohibited);
     HANDLE_TEST(test_name, test_cache_error);
     HANDLE_TEST(test_name, test_int_wdt_cache_disabled);

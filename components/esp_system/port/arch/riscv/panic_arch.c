@@ -294,6 +294,14 @@ void panic_arch_fill_info(void *frame, panic_info_t *info)
 
     info->description = "Exception was unhandled.";
 
+#if SOC_ASYNCHRONOUS_BUS_ERROR_MODE
+    uintptr_t bus_error_pc = rv_utils_asynchronous_bus_get_error_pc();
+    if (bus_error_pc) {
+        /* Change mepc with the fault pc address */
+        regs->mepc = bus_error_pc;
+    }
+#endif // SOC_ASYNCHRONOUS_BUS_ERROR_MODE
+
     info->addr = (void *) regs->mepc;
 }
 

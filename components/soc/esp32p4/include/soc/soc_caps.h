@@ -629,6 +629,7 @@
 /*-------------------------- Memory CAPS --------------------------*/
 #define SOC_MEM_TCM_SUPPORTED                      (1)
 #define SOC_MEM_NON_CONTIGUOUS_SRAM                (1)
+#define SOC_ASYNCHRONOUS_BUS_ERROR_MODE            (1)
 /*--------------------------- EMAC --------------------------------*/
 #define SOC_EMAC_USE_IO_MUX                        (1) /*!< GPIO matrix is used to select GPIO pads */
 
