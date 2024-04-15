@@ -149,7 +149,7 @@ esp_err_t esp_cam_new_csi_ctlr(const esp_cam_ctlr_csi_config_t *config, esp_cam_
 
     size_t dma_alignment = 4;  //TODO: IDF-9126, replace with dwgdma alignment API
     size_t cache_alignment = 1;
-    ESP_GOTO_ON_ERROR(esp_cache_get_alignment(ESP_CACHE_MALLOC_FLAG_PSRAM | ESP_CACHE_MALLOC_FLAG_DMA, &cache_alignment), err, TAG, "failed to get cache alignment");
+    ESP_GOTO_ON_ERROR(esp_cache_get_alignment(MALLOC_CAP_SPIRAM | MALLOC_CAP_DMA, &cache_alignment), err, TAG, "failed to get cache alignment");
     size_t alignment = MAX(cache_alignment, dma_alignment);
     ESP_LOGD(TAG, "alignment: 0x%x\n", alignment);
 

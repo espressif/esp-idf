@@ -525,7 +525,7 @@ TEST_CASE("DW_GDMA M2M Test: memory set with fixed address", "[DW_GDMA]")
     // memset: source in psram and destination in sram
     size_t ext_mem_alignment = 0;
     size_t int_mem_alignment = 0;
-    TEST_ESP_OK(esp_cache_get_alignment(ESP_CACHE_MALLOC_FLAG_PSRAM, &ext_mem_alignment));
+    TEST_ESP_OK(esp_cache_get_alignment(MALLOC_CAP_SPIRAM, &ext_mem_alignment));
     TEST_ESP_OK(esp_cache_get_alignment(0, &int_mem_alignment));
     uint8_t *src_buf = heap_caps_aligned_calloc(ext_mem_alignment, 1, 256, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
     uint8_t *dst_buf = heap_caps_aligned_calloc(int_mem_alignment, 1, 256, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);

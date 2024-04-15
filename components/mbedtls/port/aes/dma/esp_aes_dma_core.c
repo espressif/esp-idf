@@ -291,11 +291,11 @@ static inline size_t get_cache_line_size(const void *addr)
 
 #if (CONFIG_SPIRAM && SOC_PSRAM_DMA_CAPABLE)
     if (esp_ptr_external_ram(addr)) {
-        ret = esp_cache_get_alignment(ESP_CACHE_MALLOC_FLAG_PSRAM, &cache_line_size);
+        ret = esp_cache_get_alignment(MALLOC_CAP_SPIRAM, &cache_line_size);
     } else
 #endif
     {
-        ret = esp_cache_get_alignment(ESP_CACHE_MALLOC_FLAG_DMA, &cache_line_size);
+        ret = esp_cache_get_alignment(MALLOC_CAP_DMA, &cache_line_size);
     }
 
     if (ret != ESP_OK) {
@@ -949,7 +949,7 @@ int esp_aes_process_dma(esp_aes_context *ctx, const unsigned char *input, unsign
         }
         if (esp_ptr_external_ram(output)) {
             size_t dcache_line_size;
-            ret = esp_cache_get_alignment(ESP_CACHE_MALLOC_FLAG_PSRAM, &dcache_line_size);
+            ret = esp_cache_get_alignment(MALLOC_CAP_SPIRAM, &dcache_line_size);
             if (ret != ESP_OK) {
                 return ret;
             }

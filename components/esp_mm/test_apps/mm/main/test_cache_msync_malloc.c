@@ -20,7 +20,7 @@ TEST_CASE("test esp_cache_aligned_malloc_prefer", "[cache]")
 {
     void *ptr = NULL;
     size_t actual_size = 0;
-    TEST_ESP_OK(esp_cache_aligned_malloc_prefer(40, &ptr, &actual_size, 1, ESP_CACHE_MALLOC_FLAG_DMA, 0));
+    TEST_ESP_OK(esp_cache_aligned_malloc_prefer(40, &ptr, &actual_size, 1, MALLOC_CAP_DMA, 0));
     TEST_ASSERT(esp_ptr_dma_capable(ptr));
     ESP_LOGI(TAG, "actual size: 0x%x", actual_size);
 
@@ -31,7 +31,7 @@ TEST_CASE("test esp_cache_aligned_calloc_prefer", "[cache]")
 {
     void *ptr = NULL;
     size_t actual_size = 0;
-    TEST_ESP_OK(esp_cache_aligned_calloc_prefer(1, 40, &ptr, &actual_size, 1, ESP_CACHE_MALLOC_FLAG_DMA, 0));
+    TEST_ESP_OK(esp_cache_aligned_calloc_prefer(1, 40, &ptr, &actual_size, 1, MALLOC_CAP_DMA, 0));
     TEST_ASSERT(esp_ptr_dma_capable(ptr));
     ESP_LOGI(TAG, "actual size: 0d%d", actual_size);
 

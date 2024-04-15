@@ -228,7 +228,7 @@ esp_err_t emit_com_marker(jpeg_enc_header_info_t *header_info)
 {
     // Calculate how many bytes should be compensate to make it byte aligned.
     size_t cache_align = 0;
-    esp_cache_get_alignment(ESP_CACHE_MALLOC_FLAG_PSRAM, &cache_align);
+    esp_cache_get_alignment(MALLOC_CAP_SPIRAM, &cache_align);
     // compensate_size = aligned_size - SOS marker size(2 * header_info->num_components + 2 + 1 + 3 + 2) - COM marker size(4).
     int compensate_size = ((header_info->header_len / cache_align + 1) * cache_align) - header_info->header_len - (2 * header_info->num_components + 2 + 1 + 3 + 2) - 4;
     if (compensate_size < 0) {

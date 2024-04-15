@@ -122,7 +122,7 @@ esp_err_t spi_slave_hd_init(spi_host_device_t host_id, const spi_bus_config_t *b
 
 #if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
         size_t alignment;
-        esp_cache_get_alignment(ESP_CACHE_MALLOC_FLAG_DMA, &alignment);
+        esp_cache_get_alignment(MALLOC_CAP_DMA, &alignment);
         host->internal_mem_align_size = alignment;
 #else
         host->internal_mem_align_size = 4;

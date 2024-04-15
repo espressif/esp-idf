@@ -294,7 +294,7 @@ void *jpeg_alloc_encoder_mem(size_t size, const jpeg_encode_memory_alloc_cfg_t *
        For input buffer(for decoder is PSRAM write to 2DDMA), no restriction for any align (both cache writeback and requirement from 2DDMA).
     */
     size_t cache_align = 0;
-    esp_cache_get_alignment(ESP_CACHE_MALLOC_FLAG_PSRAM, &cache_align);
+    esp_cache_get_alignment(MALLOC_CAP_SPIRAM, &cache_align);
     if (mem_cfg->buffer_direction == JPEG_ENC_ALLOC_OUTPUT_BUFFER) {
         size = JPEG_ALIGN_UP(size, cache_align);
         *allocated_size = size;
