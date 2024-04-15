@@ -24,6 +24,7 @@ def test_esp_timer(dut: Dut) -> None:
 
 
 @pytest.mark.esp32
+@pytest.mark.generic
 @pytest.mark.psram
 @pytest.mark.parametrize('config', [
     'psram',
