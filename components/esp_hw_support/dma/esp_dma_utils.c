@@ -40,6 +40,11 @@ esp_err_t esp_dma_capable_malloc(size_t size, const esp_dma_mem_info_t *dma_mem_
     if (dma_mem_info->extra_heap_caps & MALLOC_CAP_SPIRAM) {
         cache_flags |= ESP_DMA_MALLOC_FLAG_PSRAM;
         heap_caps = dma_mem_info->extra_heap_caps | MALLOC_CAP_SPIRAM;
+        /**
+         * This is a workaround because we don't have `MALLOC_CAP_DMA | MALLOC_CAP_SPIRAM`
+         * match when using heap_cap related allocations.
+         */
+        heap_caps &= ~MALLOC_CAP_DMA;
     }
 
     esp_err_t ret = esp_cache_get_alignment(cache_flags, &cache_alignment_bytes);
