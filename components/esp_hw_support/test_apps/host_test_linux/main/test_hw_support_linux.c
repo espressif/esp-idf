@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,13 +8,13 @@
 #include "unity.h"
 #include "esp_random.h"
 
-/* Note: these are just sanity tests, the implementation of esp_random do not produce cryptographically secure numbers on Linux
+/* Note: these are just sanity tests, the implementation of esp_random() relies on getentropy() on Linux.
 */
+
+const size_t NUM_RANDOM = 128; /* in most cases this is massive overkill */
 
 TEST_CASE("call esp_random()", "[random]")
 {
-    const size_t NUM_RANDOM = 128; /* in most cases this is massive overkill */
-
     uint32_t zeroes = UINT32_MAX;
     uint32_t ones = 0;
     for (int i = 0; i < NUM_RANDOM - 1; i++) {
@@ -69,10 +69,62 @@ TEST_CASE("call esp_fill_random()", "[random]")
     }
 }
 
+TEST_CASE("esp_fill_random() fills exactly one byte", "[random]")
+{
+    const size_t BUF_SZ = 2;
+    uint8_t buf[BUF_SZ];
+    uint8_t one_buf[BUF_SZ];
+    bzero(one_buf, BUF_SZ);
+    for (size_t i = 0; i < NUM_RANDOM - 1; i++) {
+        esp_fill_random(buf, BUF_SZ - 1);
+        for (size_t j = 0; j < BUF_SZ - 1; j++) {
+            one_buf[j] |= buf[j];
+        }
+    }
 
+    TEST_ASSERT_EQUAL(0, one_buf[BUF_SZ - 1]);
+    TEST_ASSERT_GREATER_THAN(0, one_buf[BUF_SZ - 2]);
+}
+
+// The underlying system call accepts max 256 bytes, test that esp_fill_random() can read more
+TEST_CASE("esp_fill_random() fills exactly 256 bytes", "[random]")
+{
+    const size_t BUF_SZ = 257;
+    uint8_t buf[BUF_SZ];
+    uint8_t one_buf[BUF_SZ];
+    bzero(one_buf, BUF_SZ);
+    for (size_t i = 0; i < NUM_RANDOM - 1; i++) {
+        esp_fill_random(buf, BUF_SZ - 1);
+        for (size_t j = 0; j < BUF_SZ - 1; j++) {
+            one_buf[j] |= buf[j];
+        }
+    }
+
+    TEST_ASSERT_EQUAL(0, one_buf[BUF_SZ - 1]);
+    TEST_ASSERT_GREATER_THAN(0, one_buf[BUF_SZ - 2]);
+    TEST_ASSERT_GREATER_THAN(0, one_buf[0]);
+}
+
+TEST_CASE("esp_fill_random() fills exactly 257 bytes", "[random]")
+{
+    const size_t BUF_SZ = 258;
+    uint8_t buf[BUF_SZ];
+    uint8_t one_buf[BUF_SZ];
+    bzero(one_buf, BUF_SZ);
+    for (size_t i = 0; i < NUM_RANDOM - 1; i++) {
+        esp_fill_random(buf, BUF_SZ - 1);
+        for (size_t j = 0; j < BUF_SZ - 1; j++) {
+            one_buf[j] |= buf[j];
+        }
+    }
+
+    TEST_ASSERT_EQUAL(0, one_buf[BUF_SZ - 1]);
+    TEST_ASSERT_GREATER_THAN(0, one_buf[BUF_SZ - 2]);
+    TEST_ASSERT_GREATER_THAN(0, one_buf[0]);
+}
 
 void app_main(void)
 {
-    printf("Running heap linux API host test app");
+    printf("Running hw support linux API host test app");
     unity_run_menu();
 }
