@@ -933,7 +933,7 @@ esp_err_t esp_enable_cache_wrap(bool icache_wrap_enable)
 
 #if CONFIG_IDF_TARGET_ESP32P4
 //TODO: IDF-5670
-void esp_config_l2_cache_mode(void)
+void IRAM_ATTR esp_config_l2_cache_mode(void)
 {
     cache_size_t cache_size;
     cache_line_size_t cache_line_size;
