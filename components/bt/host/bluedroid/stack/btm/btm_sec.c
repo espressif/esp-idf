@@ -809,7 +809,7 @@ void btm_sec_clr_temp_auth_service (BD_ADDR bda)
         return;
     }
 
-    /* Reset the temporary authorized flag so that next time (untrusted) service is accessed autorization will take place */
+    /* Reset the temporary authorized flag so that next time (untrusted) service is accessed authorization will take place */
     if (p_dev_rec->last_author_service_id != BTM_SEC_NO_LAST_SERVICE_ID && p_dev_rec->p_cur_service) {
         BTM_TRACE_DEBUG ("btm_sec_clr_auth_service_by_psm [clearing device: %02x:%02x:%02x:%02x:%02x:%02x]\n",
                          bda[0], bda[1], bda[2], bda[3], bda[4], bda[5]);
@@ -1364,7 +1364,7 @@ tBTM_STATUS BTM_SetEncryption (BD_ADDR bd_addr, tBT_TRANSPORT transport, tBTM_SE
             || (transport == BT_TRANSPORT_LE && p_dev_rec->ble_hci_handle == BTM_SEC_INVALID_HANDLE)
 #endif
        ) {
-        /* Connection should be up and runnning */
+        /* Connection should be up and running */
         BTM_TRACE_WARNING ("Security Manager: BTM_SetEncryption not connected\n");
 
         if (p_callback) {
@@ -1790,15 +1790,15 @@ UINT16 BTM_BuildOobData(UINT8 *p_data, UINT16 max_len, BT_OCTET16 c,
         }
 #if BTM_MAX_LOC_BD_NAME_LEN > 0
         name_size = name_len;
-        if (name_size > strlen(btm_cb.cfg.bd_name)) {
+        if (name_size > strlen(btm_cb.cfg.bredr_bd_name)) {
             name_type = BTM_EIR_COMPLETE_LOCAL_NAME_TYPE;
-            name_size = (UINT16)strlen(btm_cb.cfg.bd_name);
+            name_size = (UINT16)strlen(btm_cb.cfg.bredr_bd_name);
         }
         delta = name_size + 2;
         if (max_len >= delta) {
             *p++ = name_size + 1;
             *p++ = name_type;
-            ARRAY_TO_STREAM (p, btm_cb.cfg.bd_name, name_size);
+            ARRAY_TO_STREAM (p, btm_cb.cfg.bredr_bd_name, name_size);
             len     += delta;
             max_len -= delta;
         }
@@ -2118,7 +2118,7 @@ tBTM_STATUS btm_sec_l2cap_access_req (BD_ADDR bd_addr, UINT16 psm, UINT16 handle
 
     /* If there is no application registered with this PSM do not allow connection */
     if (!p_serv_rec) {
-        BTM_TRACE_WARNING ("%s() PSM: %d no application registerd\n", __func__, psm);
+        BTM_TRACE_WARNING ("%s() PSM: %d no application registered\n", __func__, psm);
         (*p_callback) (bd_addr, transport, p_ref_data, BTM_MODE_UNSUPPORTED);
         return (BTM_MODE_UNSUPPORTED);
     }
@@ -2514,7 +2514,7 @@ tBTM_STATUS btm_sec_mx_access_request (BD_ADDR bd_addr, UINT16 psm, BOOLEAN is_o
 
         if (rc == BTM_SUCCESS) {
             BTM_TRACE_EVENT("%s: allow to bypass, checking authorization\n", __FUNCTION__);
-            /* the security in BTM_SEC_IN_FLAGS is fullfilled so far, check the requirements in */
+            /* the security in BTM_SEC_IN_FLAGS is fulfilled so far, check the requirements in */
             /* btm_sec_execute_procedure */
             if ((is_originator && (p_serv_rec->security_flags & BTM_SEC_OUT_AUTHORIZE)) ||
                     (!is_originator && (p_serv_rec->security_flags & BTM_SEC_IN_AUTHORIZE))) {
@@ -3979,7 +3979,7 @@ void btm_sec_auth_complete (UINT16 handle, UINT8 status)
                         /* or BR key is higher security than existing LE keys */
                         (!(p_dev_rec->sec_flags & BTM_SEC_LE_LINK_KEY_AUTHED) &&
                          (p_dev_rec->sec_flags & BTM_SEC_LINK_KEY_AUTHED)))) {
-                BTM_TRACE_DEBUG ("link encrypted afer dedic bonding can use SMP_BR_CHNL\n");
+                BTM_TRACE_DEBUG ("link encrypted after dedic bonding can use SMP_BR_CHNL\n");
 
                 if (btm_sec_is_master(p_dev_rec)) {
                     // Encryption is required to start SM over BR/EDR
@@ -4255,7 +4255,7 @@ static void btm_sec_connect_after_reject_timeout (TIMER_LIST_ENT *p_tle)
 ** Function         btm_sec_connected
 **
 ** Description      This function is when a connection to the peer device is
-**                  establsihed
+**                  established
 **
 ** Returns          void
 **
@@ -5926,7 +5926,7 @@ static BOOLEAN btm_sec_check_prefetch_pin (tBTM_SEC_DEV_REC  *p_dev_rec)
 **
 ** Function         btm_sec_auth_payload_tout
 **
-** Description      Processes the HCI Autheniticated Payload Timeout Event
+** Description      Processes the HCI Authenticated Payload Timeout Event
 **                  indicating that a packet containing a valid MIC on the
 **                  connection handle was not received within the programmed
 **                  timeout value. (Spec Default is 30 secs, but can be
@@ -6294,7 +6294,7 @@ static BOOLEAN btm_sec_is_master(tBTM_SEC_DEV_REC *p_dev_rec)
 ** Description      This function is called when legacy authentication is used
 **                  and only remote device has completed the authentication
 **
-** Returns          TRUE if aunthentication command sent successfully
+** Returns          TRUE if authentication command sent successfully
 **
 *******************************************************************************/
 BOOLEAN btm_sec_legacy_authentication_mutual (tBTM_SEC_DEV_REC *p_dev_rec)

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -35,6 +35,7 @@ typedef enum {
     BTC_GAP_BT_SET_PAGE_TO_EVT,
     BTC_GAP_BT_GET_PAGE_TO_EVT,
     BTC_GAP_BT_SET_ACL_PKT_TYPES_EVT,
+    BTC_GAP_BT_GET_DEV_NAME_CMPL_EVT,
 }btc_gap_bt_evt_t;
 
 typedef enum {
@@ -58,6 +59,8 @@ typedef enum {
     BTC_GAP_BT_ACT_SET_PAGE_TIMEOUT,
     BTC_GAP_BT_ACT_GET_PAGE_TIMEOUT,
     BTC_GAP_BT_ACT_SET_ACL_PKT_TYPES,
+    BTC_GAP_BT_ACT_SET_DEV_NAME,
+    BTC_GAP_BT_ACT_GET_DEV_NAME,
 } btc_gap_bt_act_t;
 
 /* btc_bt_gap_args_t */
@@ -165,6 +168,10 @@ typedef union {
         uint16_t pkt_types;
     } set_acl_pkt_types;
 
+    // BTC_GAP_BT_ACT_SET_DEV_NAME
+    struct bt_set_dev_name_args {
+        char *device_name;
+    } bt_set_dev_name;
 } btc_gap_bt_args_t;
 
 void btc_gap_bt_call_handler(btc_msg_t *msg);
