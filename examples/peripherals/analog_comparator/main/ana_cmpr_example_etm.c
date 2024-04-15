@@ -26,21 +26,19 @@ static void example_etm_bind_ana_cmpr_event_with_gpio_task(ana_cmpr_handle_t cmp
         .event_type = ANA_CMPR_EVENT_POS_CROSS,
     };
     ESP_ERROR_CHECK(ana_cmpr_new_etm_event(cmpr, &evt_cfg, &cmpr_pos_evt));
-    evt_cfg.event_type = GPIO_ETM_EVENT_EDGE_NEG;
+    evt_cfg.event_type = ANA_CMPR_EVENT_NEG_CROSS;
     ESP_ERROR_CHECK(ana_cmpr_new_etm_event(cmpr, &evt_cfg, &cmpr_neg_evt));
 
     /* Allocate the GPIO set & clear tasks */
-    esp_etm_task_handle_t gpio_pos_task = NULL;
-    esp_etm_task_handle_t gpio_neg_task = NULL;
-    gpio_etm_task_config_t task_cfg = {
-        .action = GPIO_ETM_TASK_ACTION_SET,
-    };
-    ESP_ERROR_CHECK(gpio_new_etm_task(&task_cfg, &gpio_pos_task));
-    task_cfg.action = GPIO_ETM_TASK_ACTION_CLR;
-    ESP_ERROR_CHECK(gpio_new_etm_task(&task_cfg, &gpio_neg_task));
+    esp_etm_task_handle_t gpio_set_task = NULL;
+    esp_etm_task_handle_t gpio_clr_task = NULL;
+    gpio_etm_task_config_t task_cfg = {};
+    task_cfg.actions[0] = GPIO_ETM_TASK_ACTION_SET;
+    task_cfg.actions[1] = GPIO_ETM_TASK_ACTION_CLR;
+    ESP_ERROR_CHECK(gpio_new_etm_task(&task_cfg, &gpio_set_task, &gpio_clr_task));
     /* Add task to the monitor GPIO */
-    ESP_ERROR_CHECK(gpio_etm_task_add_gpio(gpio_pos_task, EXAMPLE_MONITOR_GPIO_NUM));
-    ESP_ERROR_CHECK(gpio_etm_task_add_gpio(gpio_neg_task, EXAMPLE_MONITOR_GPIO_NUM));
+    ESP_ERROR_CHECK(gpio_etm_task_add_gpio(gpio_set_task, EXAMPLE_MONITOR_GPIO_NUM));
+    ESP_ERROR_CHECK(gpio_etm_task_add_gpio(gpio_clr_task, EXAMPLE_MONITOR_GPIO_NUM));
 
     /* Allocate the Event Task Matrix channels */
     esp_etm_channel_handle_t etm_pos_handle;
@@ -49,8 +47,8 @@ static void example_etm_bind_ana_cmpr_event_with_gpio_task(ana_cmpr_handle_t cmp
     ESP_ERROR_CHECK(esp_etm_new_channel(&etm_cfg, &etm_pos_handle));
     ESP_ERROR_CHECK(esp_etm_new_channel(&etm_cfg, &etm_neg_handle));
     /* Bind the events and tasks */
-    ESP_ERROR_CHECK(esp_etm_channel_connect(etm_pos_handle, cmpr_pos_evt, gpio_pos_task));
-    ESP_ERROR_CHECK(esp_etm_channel_connect(etm_neg_handle, cmpr_neg_evt, gpio_neg_task));
+    ESP_ERROR_CHECK(esp_etm_channel_connect(etm_pos_handle, cmpr_pos_evt, gpio_set_task));
+    ESP_ERROR_CHECK(esp_etm_channel_connect(etm_neg_handle, cmpr_neg_evt, gpio_clr_task));
     /* Enable the ETM channels */
     ESP_ERROR_CHECK(esp_etm_channel_enable(etm_pos_handle));
     ESP_ERROR_CHECK(esp_etm_channel_enable(etm_neg_handle));
