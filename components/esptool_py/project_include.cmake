@@ -240,10 +240,24 @@ add_custom_target(uf2-app
     VERBATIM
     )
 
+set(MERGE_BIN_ARGS merge_bin)
+if(DEFINED ENV{ESP_MERGE_BIN_OUTPUT})
+    list(APPEND MERGE_BIN_ARGS "-o" "$ENV{ESP_MERGE_BIN_OUTPUT}")
+else()
+    if(DEFINED ENV{ESP_MERGE_BIN_FORMAT} AND "$ENV{ESP_MERGE_BIN_FORMAT}" STREQUAL "hex")
+        list(APPEND MERGE_BIN_ARGS "-o" "${CMAKE_CURRENT_BINARY_DIR}/merged-binary.hex")
+    else()
+        list(APPEND MERGE_BIN_ARGS "-o" "${CMAKE_CURRENT_BINARY_DIR}/merged-binary.bin")
+    endif()
+endif()
 
-set(MERGE_BIN_ARGS merge_bin -o "${CMAKE_CURRENT_BINARY_DIR}/merge.bin" "@${CMAKE_CURRENT_BINARY_DIR}/flash_args")
+if(DEFINED ENV{ESP_MERGE_BIN_FORMAT})
+    list(APPEND MERGE_BIN_ARGS "-f" "$ENV{ESP_MERGE_BIN_FORMAT}")
+endif()
 
-add_custom_target(merge_bin
+list(APPEND MERGE_BIN_ARGS "@${CMAKE_CURRENT_BINARY_DIR}/flash_args")
+
+add_custom_target(merge-bin
     COMMAND ${CMAKE_COMMAND}
     -D "IDF_PATH=${idf_path}"
     -D "SERIAL_TOOL=${ESPTOOLPY}"
