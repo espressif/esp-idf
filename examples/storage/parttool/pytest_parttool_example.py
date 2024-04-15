@@ -1,6 +1,5 @@
-# SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
-
 import os
 import subprocess
 import sys
@@ -17,8 +16,7 @@ def test_examples_parttool(dut: Dut) -> None:
     dut.expect('Example end')
 
     # Close connection to DUT
-    dut.pexpect_proc.terminate()
-    dut.serial.stop_redirect_thread()
+    dut.serial.close()
 
     # Run the example python script
     idf_path = os.getenv('IDF_PATH')
