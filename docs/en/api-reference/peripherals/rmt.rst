@@ -428,6 +428,18 @@ Besides the primitive encoders provided by the driver, the user can implement hi
     :caption: RMT Encoder Chain
     :align: center
 
+Simple Callback Encoder
+~~~~~~~~~~~~~~~~~~~~~~~
+
+A simple callback encoder is created by calling :cpp:func:`rmt_new_simple_encoder`. The simple callback encoder allows you to provide a callback that reads data from userspace and writes symbols to the output stream without having to chain other encoders. The callback itself gets a pointer to the data passed to :cpp:func:`rmt_transmit`, a counter indicating the amount of symbols already written by the callback in this transmission, and a pointer where to write the encoded RMT symbols as well as the free space there. If the space is not enough for the callback to encode something, it can return 0 and the RMT will wait for previous symbols to be transmitted and call the callback again, now with more space available. If the callback successfully writes RMT symbols, it should return the number of symbols written.
+
+A configuration structure :cpp:type:`rmt_simple_encoder_config_t` should be provided in advance before calling :cpp:func:`rmt_new_simple_encoder`:
+
+- :cpp:member:`rmt_simple_encoder_config_t::callback` and :cpp:member:`rmt_simple_encoder_config_t::arg` provide the callback function and an opaque argument that will be passed to that function.
+- :cpp:member:`rmt_simple_encoder_config_t::min_chunk_size` specifies the minimum amount of free space, in symbols, the encoder will be always be able to write some data to. In other words, when this amount of free space is passed to the encoder, it should never return 0 (except when the encoder is done encoding symbols).
+
+While the functionality of an encoding process using the simple callback encoder can usually also realized by chaining other encoders, the simple callback can be more easy to understand and maintain than an encoder chain.
+
 Customize RMT Encoder for NEC Protocol
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
