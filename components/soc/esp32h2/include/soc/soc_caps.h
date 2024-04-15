@@ -181,8 +181,6 @@
 
 // GPIO peripheral has the ETM extension
 #define SOC_GPIO_SUPPORT_ETM          1
-#define SOC_GPIO_ETM_EVENTS_PER_GROUP 8
-#define SOC_GPIO_ETM_TASKS_PER_GROUP  8
 
 // Target has no full LP IO subsystem, GPIO7~14 remain LP function (powered by VDD3V3_LP, and can be used as ext1 wakeup pins)
 // Digital IOs have their own registers to control pullup/down/capability
