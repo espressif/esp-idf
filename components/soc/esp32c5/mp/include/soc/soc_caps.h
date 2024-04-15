@@ -57,9 +57,9 @@
 // #define SOC_BOD_SUPPORTED               1  // TODO: [ESP32C5] IDF-8647
 // #define SOC_APM_SUPPORTED               1  // TODO: [ESP32C5] IDF-8614
 // #define SOC_PMU_SUPPORTED               1  // TODO: [ESP32C5] IDF-8667
-// #define SOC_PAU_SUPPORTED               1  // TODO: [ESP32C5] IDF-8638, IDF-8640
+// #define SOC_PAU_SUPPORTED               1  // TODO: [ESP32C5] IDF-8638
 // #define SOC_LP_TIMER_SUPPORTED          1  // TODO: [ESP32C5] IDF-8636
-// #define SOC_LP_AON_SUPPORTED            1  // TODO: [ESP32C5] IDF-8638, IDF-8640
+// #define SOC_LP_AON_SUPPORTED            1  // TODO: [ESP32C5] IDF-8638
 // #define SOC_LP_PERIPHERALS_SUPPORTED    1  // TODO: [ESP32C5] IDF-8695, IDF-8723, IDF-8719
 // #define SOC_LP_I2C_SUPPORTED            1  // TODO: [ESP32C5] IDF-8634
 // #define SOC_ULP_LP_UART_SUPPORTED       1  // TODO: [ESP32C5] IDF-8633
@@ -244,6 +244,8 @@
 // #define SOC_I2C_SLAVE_CAN_GET_STRETCH_CAUSE    (1)
 // #define SOC_I2C_SLAVE_SUPPORT_I2CRAM_ACCESS   (1)
 // #define SOC_I2C_SLAVE_SUPPORT_SLAVE_UNMATCH    (1)
+
+// #define SOC_I2C_SUPPORT_SLEEP_RETENTION (1) // TODO: IDF-9693
 
 /*-------------------------- LP_I2C CAPS -------------------------------------*/
 // ESP32-C5 has 1 LP_I2C
