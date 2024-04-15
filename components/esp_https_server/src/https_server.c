@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2018-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -366,7 +366,6 @@ exit:
         free((void *) cfg->cacert_buf);
     }
     free(cfg);
-    free(*ssl_ctx);
     return ret;
 }
 
@@ -379,14 +378,17 @@ esp_err_t httpd_ssl_start(httpd_handle_t *pHandle, struct httpd_ssl_config *conf
     ESP_LOGI(TAG, "Starting server");
 
     esp_err_t ret = ESP_OK;
+    httpd_ssl_ctx_t *ssl_ctx = NULL;
+
     if (HTTPD_SSL_TRANSPORT_SECURE == config->transport_mode) {
-        httpd_ssl_ctx_t *ssl_ctx = calloc(1, sizeof(httpd_ssl_ctx_t));
+        ssl_ctx = calloc(1, sizeof(httpd_ssl_ctx_t));
         if (!ssl_ctx) {
             return ESP_ERR_NO_MEM;
         }
 
         ret = create_secure_context(config, &ssl_ctx);
         if (ret != ESP_OK) {
+            free(ssl_ctx);
             return ret;
         }
 
@@ -411,7 +413,11 @@ esp_err_t httpd_ssl_start(httpd_handle_t *pHandle, struct httpd_ssl_config *conf
     httpd_handle_t handle = NULL;
 
     ret = httpd_start(&handle, &config->httpd);
-    if (ret != ESP_OK) return ret;
+    if (ret != ESP_OK) {
+        free(ssl_ctx);
+        ssl_ctx = NULL;
+        return ret;
+    }
 
     *pHandle = handle;
 
