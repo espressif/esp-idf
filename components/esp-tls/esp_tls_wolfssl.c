@@ -97,7 +97,7 @@ static esp_err_t esp_load_wolfssl_verify_buffer(esp_tls_t *tls, const unsigned c
             wolf_fileformat = WOLFSSL_FILETYPE_ASN1;
         }
         if (type == FILE_TYPE_SELF_CERT) {
-            if ((*err_ret = wolfSSL_CTX_use_certificate_buffer( (WOLFSSL_CTX *)tls->priv_ctx, cert_buf, cert_len, wolf_fileformat)) == WOLFSSL_SUCCESS) {
+            if ((*err_ret = wolfSSL_CTX_use_certificate_chain_buffer_format( (WOLFSSL_CTX *)tls->priv_ctx, cert_buf, cert_len, wolf_fileformat)) == WOLFSSL_SUCCESS) {
                 return ESP_OK;
             }
             return ESP_FAIL;
