@@ -20,7 +20,7 @@ extern "C" {
 typedef enum {
     PPA_OPERATION_SRM,              /*!< Do scale-rotate-mirror operation */
     PPA_OPERATION_BLEND,            /*!< Do blend operation */
-    PPA_OPERATION_FILL,             /*!< Do fill operation */
+    PPA_OPERATION_FILL,             /*!< Do fill operation, use one constant pixel to fill a target window */
     PPA_OPERATION_NUM,              /*!< Quantity of PPA operations */
 } ppa_operation_t;
 
@@ -30,35 +30,10 @@ typedef enum {
 typedef struct ppa_client_t *ppa_client_handle_t;
 
 /**
- * @brief Type of PPA transaction handle
- */
-typedef struct ppa_trans_t *ppa_trans_handle_t;
-
-/**
- * @brief Type of PPA event data
- */
-typedef struct {
-    ;
-} ppa_event_data_t;
-
-/**
- * @brief Type of PPA event callback
- *
- * @param ppa_client PPA client handle
- * @param event_data PPA event data
- * @param user_data User registered data from calling `ppa_do_xxx` to perform an operation
- *
- * @return Whether a task switch is needed after the callback function returns, this is usually due to the callback
- *         wakes up some high priority task.
- */
-typedef bool (*ppa_event_callback_t)(ppa_client_handle_t ppa_client, ppa_event_data_t *event_data, void *user_data);
-
-/**
  * @brief A collection of configuration items that used for registering a PPA client
  */
 typedef struct {
     ppa_operation_t oper_type;          /*!< The desired PPA operation for the client */
-    ppa_event_callback_t done_cb;       /*!< Callback function to be executed when a PPA transaction finishes */
     uint32_t max_pending_trans_num;     /*!< The maximum number of pending transactions for the client.
                                              By default, it will be 1, which is sufficient if all transactions are performed with `PPA_TRANS_MODE_BLOCKING` */
 } ppa_client_config_t;
@@ -68,6 +43,7 @@ typedef struct {
  *
  * @param[in] config Pointer to a collection of configurations for the client
  * @param[out] ret_client Returned client handle
+ *
  * @return
  *      - ESP_OK: Register the PPA client successfully
  *      - ESP_ERR_INVALID_ARG: Register the PPA client failed because of invalid argument
@@ -80,12 +56,54 @@ esp_err_t ppa_register_client(const ppa_client_config_t *config, ppa_client_hand
  * @brief Unregister a PPA client
  *
  * @param[in] ppa_client PPA client handle, allocated by `ppa_register_client`
+ *
  * @return
  *      - ESP_OK: Unregister the PPA client successfully
  *      - ESP_ERR_INVALID_ARG: Unregister the PPA client failed because of invalid argument
  *      - ESP_ERR_INVALID_STATE: Unregister the PPA client failed because there are unfinished transactions
  */
 esp_err_t ppa_unregister_client(ppa_client_handle_t ppa_client);
+
+/**
+ * @brief Type of PPA event data
+ */
+typedef struct {
+    ;
+} ppa_event_data_t;
+
+/**
+ * @brief Type of PPA event callback
+ *
+ * @param[in] ppa_client PPA client handle
+ * @param[in] event_data PPA event data
+ * @param[in] user_data User registered data from calling `ppa_do_xxx` to perform an operation
+ *
+ * @return Whether a task switch is needed after the callback function returns, this is usually due to the callback
+ *         wakes up some high priority task.
+ */
+typedef bool (*ppa_event_callback_t)(ppa_client_handle_t ppa_client, ppa_event_data_t *event_data, void *user_data);
+
+/**
+ * @brief Group of supported PPA callbacks
+ */
+typedef struct {
+    ppa_event_callback_t on_trans_done;     /*! Invoked when a PPA transaction finishes */
+} ppa_event_callbacks_t;
+
+/**
+ * @brief Register event callbacks for a PPA client
+ *
+ * @param[in] ppa_client PPA client handle
+ * @param[in] cbs Structure with all PPA callbacks
+ *
+ * @note Any user private data that wants to be passed directly to callback's user_data is provided per PPA transaction.
+ *       Please check the `user_data` field in `ppa_xxx_oper_config_t` structure.
+ *
+ * @return
+ *      - ESP_OK: Register event callbacks for the PPA client successfully
+ *      - ESP_ERR_INVALID_ARG: Register event callbacks for the PPA client failed because of invalid argument
+ */
+esp_err_t ppa_client_register_event_callbacks(ppa_client_handle_t ppa_client, const ppa_event_callbacks_t *cbs);
 
 /**
  * @brief A collection of configuration items for an input picture and the target block inside the picture
@@ -159,13 +177,13 @@ typedef struct {
 
     ppa_trans_mode_t mode;                      /*!< Determines whether to block inside the operation functions, see `ppa_trans_mode_t` */
     void *user_data;                            /*!< User registered data to be passed into `done_cb` callback function */
-} ppa_srm_oper_trans_config_t;
+} ppa_srm_oper_config_t;
 
 /**
  * @brief Perform a scaling-rotating-mirroring (SRM) operation to a picture
  *
  * @param[in] ppa_client PPA client handle that has been registered to do SRM operations
- * @param[in] config Pointer to a collection of configurations for the SRM operation transaction, ppa_srm_oper_trans_config_t
+ * @param[in] config Pointer to a collection of configurations for the SRM operation transaction, ppa_srm_oper_config_t
  *
  * @return
  *      - ESP_OK: Perform a SRM operation successfully
@@ -173,7 +191,7 @@ typedef struct {
  *      - ESP_ERR_NO_MEM: Perform a SRM operation failed because out of memory
  *      - ESP_FAIL: Perform a SRM operation failed because the client cannot accept transaction now
  */
-esp_err_t ppa_do_scale_rotate_mirror(ppa_client_handle_t ppa_client, const ppa_srm_oper_trans_config_t *config);
+esp_err_t ppa_do_scale_rotate_mirror(ppa_client_handle_t ppa_client, const ppa_srm_oper_config_t *config);
 
 /**
  * @brief A collection of configuration items to do a PPA blend operation transaction
@@ -215,13 +233,13 @@ typedef struct {
 
     ppa_trans_mode_t mode;                         /*!< Determines whether to block inside the operation functions, see `ppa_trans_mode_t` */
     void *user_data;                               /*!< User registered data to be passed into `done_cb` callback function */
-} ppa_blend_oper_trans_config_t;
+} ppa_blend_oper_config_t;
 
 /**
  * @brief Perform a blending operation to a picture
  *
  * @param[in] ppa_client PPA client handle that has been registered to do blend operations
- * @param[in] config Pointer to a collection of configurations for the blend operation transaction, ppa_blend_oper_trans_config_t
+ * @param[in] config Pointer to a collection of configurations for the blend operation transaction, ppa_blend_oper_config_t
  *
  * @return
  *      - ESP_OK: Perform a blend operation successfully
@@ -229,7 +247,7 @@ typedef struct {
  *      - ESP_ERR_NO_MEM: Perform a blend operation failed because out of memory
  *      - ESP_FAIL: Perform a blend operation failed because the client cannot accept transaction now
  */
-esp_err_t ppa_do_blend(ppa_client_handle_t ppa_client, const ppa_blend_oper_trans_config_t *config);
+esp_err_t ppa_do_blend(ppa_client_handle_t ppa_client, const ppa_blend_oper_config_t *config);
 
 /**
  * @brief A collection of configuration items to do a PPA fill operation transaction
@@ -243,13 +261,13 @@ typedef struct {
 
     ppa_trans_mode_t mode;                         /*!< Determines whether to block inside the operation functions, see `ppa_trans_mode_t` */
     void *user_data;                               /*!< User registered data to be passed into `done_cb` callback function */
-} ppa_fill_oper_trans_config_t;
+} ppa_fill_oper_config_t;
 
 /**
  * @brief Perform a filling operation to a picture
  *
  * @param[in] ppa_client PPA client handle that has been registered to do fill operations
- * @param[in] config Pointer to a collection of configurations for the fill operation transaction, ppa_fill_oper_trans_config_t
+ * @param[in] config Pointer to a collection of configurations for the fill operation transaction, ppa_fill_oper_config_t
  *
  * @return
  *      - ESP_OK: Perform a fill operation successfully
@@ -257,7 +275,7 @@ typedef struct {
  *      - ESP_ERR_NO_MEM: Perform a fill operation failed because out of memory
  *      - ESP_FAIL: Perform a fill operation failed because the client cannot accept transaction now
  */
-esp_err_t ppa_do_fill(ppa_client_handle_t ppa_client, const ppa_fill_oper_trans_config_t *config);
+esp_err_t ppa_do_fill(ppa_client_handle_t ppa_client, const ppa_fill_oper_config_t *config);
 
 #ifdef __cplusplus
 }
