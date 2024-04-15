@@ -114,6 +114,18 @@ static esp_err_t s_i2c_hw_fsm_reset(i2c_master_bus_handle_t i2c_master)
     return ESP_OK;
 }
 
+static void s_i2c_err_log_print(i2c_master_event_t event, bool bypass_nack_log)
+{
+    if (event == I2C_EVENT_TIMEOUT) {
+        ESP_LOGE(TAG, "I2C transaction timeout detected");
+    }
+    if (bypass_nack_log != true) {
+        if (event == I2C_EVENT_NACK) {
+            ESP_LOGE(TAG, "I2C transaction unexpected nack detected");
+        }
+    }
+}
+
 //////////////////////////////////////I2C operation functions////////////////////////////////////////////
 /**
  * @brief This function is used to send I2C write command, which is divided in two parts.
@@ -412,6 +424,7 @@ static void s_i2c_send_commands(i2c_master_bus_handle_t i2c_master, TickType_t t
             // Software timeout, clear the command link and finish this transaction.
             i2c_master->cmd_idx = 0;
             i2c_master->trans_idx = 0;
+            atomic_store(&i2c_master->status, I2C_STATUS_TIMEOUT);
             return;
         }
 
@@ -431,7 +444,9 @@ static void s_i2c_send_commands(i2c_master_bus_handle_t i2c_master, TickType_t t
             };
             i2c_ll_master_write_cmd_reg(hal->dev, hw_stop_cmd, 0);
             i2c_hal_master_trans_start(hal);
-            return;
+            // The master trans start would start a transaction.
+            // Queue wait for the event instead of return directly.
+            break;
         }
 
         i2c_operation_t *i2c_operation = &i2c_master->i2c_trans.ops[i2c_master->trans_idx];
@@ -453,6 +468,7 @@ static void s_i2c_send_commands(i2c_master_bus_handle_t i2c_master, TickType_t t
         if (event == I2C_EVENT_DONE) {
             atomic_store(&i2c_master->status, I2C_STATUS_DONE);
         }
+        s_i2c_err_log_print(event, i2c_master->bypass_nack_log);
     } else {
         i2c_master->cmd_idx = 0;
         i2c_master->trans_idx = 0;
@@ -584,7 +600,7 @@ static esp_err_t s_i2c_transaction_start(i2c_master_dev_handle_t i2c_dev, int xf
 IRAM_ATTR static void i2c_isr_receive_handler(i2c_master_bus_t *i2c_master)
 {
     i2c_hal_context_t *hal = &i2c_master->base->hal;
-    while (i2c_ll_is_bus_busy(hal->dev)) {}
+
     if (i2c_master->status == I2C_STATUS_READ) {
         i2c_operation_t *i2c_operation = &i2c_master->i2c_trans.ops[i2c_master->trans_idx];
         portENTER_CRITICAL_ISR(&i2c_master->base->spinlock);
@@ -645,7 +661,9 @@ static void IRAM_ATTR i2c_master_isr_handler_default(void *arg)
         xQueueSendFromISR(i2c_master->event_queue, (void *)&i2c_master->event, &HPTaskAwoken);
     }
     if (i2c_master->contains_read == true) {
-        i2c_isr_receive_handler(i2c_master);
+        if (int_mask & I2C_LL_INTR_MST_COMPLETE || int_mask & I2C_LL_INTR_END_DETECT) {
+            i2c_isr_receive_handler(i2c_master);
+        }
     }
 
     if (i2c_master->async_trans) {
@@ -1113,6 +1131,8 @@ esp_err_t i2c_master_probe(i2c_master_bus_handle_t bus_handle, uint16_t address,
     bus_handle->cmd_idx = 0;
     bus_handle->trans_idx = 0;
     bus_handle->trans_done = false;
+    bus_handle->status = I2C_STATUS_IDLE;
+    bus_handle->bypass_nack_log = true;
     i2c_hal_context_t *hal = &bus_handle->base->hal;
     i2c_operation_t i2c_ops[] = {
         {.hw_cmd = I2C_TRANS_START_COMMAND},
@@ -1145,6 +1165,7 @@ esp_err_t i2c_master_probe(i2c_master_bus_handle_t bus_handle, uint16_t address,
 
     // Reset the status to done, in order not influence next time transaction.
     bus_handle->status = I2C_STATUS_DONE;
+    bus_handle->bypass_nack_log = false;
     i2c_ll_disable_intr_mask(hal->dev, I2C_LL_MASTER_EVENT_INTR);
     xSemaphoreGive(bus_handle->bus_lock_mux);
     return ret;
