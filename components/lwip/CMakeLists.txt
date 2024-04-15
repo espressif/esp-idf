@@ -57,6 +57,7 @@ if(CONFIG_LWIP_ENABLE)
         "lwip/src/core/ipv4/ip4_napt.c"
         "lwip/src/core/ipv4/ip4_addr.c"
         "lwip/src/core/ipv4/ip4_frag.c"
+        "lwip/src/core/ipv4/acd.c"
         "lwip/src/core/ipv6/dhcp6.c"
         "lwip/src/core/ipv6/ethip6.c"
         "lwip/src/core/ipv6/icmp6.c"
