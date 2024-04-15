@@ -519,14 +519,6 @@ config SOC_GPIO_SUPPORT_ETM
     bool
     default y
 
-config SOC_GPIO_ETM_EVENTS_PER_GROUP
-    int
-    default 8
-
-config SOC_GPIO_ETM_TASKS_PER_GROUP
-    int
-    default 8
-
 config SOC_GPIO_SUPPORT_RTC_INDEPENDENT
     bool
     default y
