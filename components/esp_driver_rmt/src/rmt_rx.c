@@ -188,6 +188,10 @@ esp_err_t rmt_new_rx_channel(const rmt_rx_channel_config_t *config, rmt_channel_
     ESP_RETURN_ON_FALSE(config->flags.with_dma == 0, ESP_ERR_NOT_SUPPORTED, TAG, "DMA not supported");
 #endif // SOC_RMT_SUPPORT_DMA
 
+#if !SOC_RMT_SUPPORT_SLEEP_BACKUP
+    ESP_RETURN_ON_FALSE(config->flags.backup_before_sleep == 0, ESP_ERR_NOT_SUPPORTED, TAG, "register back up is not supported");
+#endif // SOC_RMT_SUPPORT_SLEEP_BACKUP
+
     // malloc channel memory
     uint32_t mem_caps = RMT_MEM_ALLOC_CAPS;
     rx_channel = heap_caps_calloc(1, sizeof(rmt_rx_channel_t), mem_caps);
@@ -226,6 +230,12 @@ esp_err_t rmt_new_rx_channel(const rmt_rx_channel_config_t *config, rmt_channel_
     rmt_hal_context_t *hal = &group->hal;
     int channel_id = rx_channel->base.channel_id;
     int group_id = group->group_id;
+
+#if RMT_USE_RETENTION_LINK
+    if (config->flags.backup_before_sleep != 0) {
+        rmt_create_retention_module(group);
+    }
+#endif // RMT_USE_RETENTION_LINK
 
     // reset channel, make sure the RX engine is not working, and events are cleared
     portENTER_CRITICAL(&group->spinlock);

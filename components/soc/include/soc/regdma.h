@@ -46,6 +46,7 @@ extern "C" {
 #define REGDMA_MODEM_IEEE802154_LINK(_pri)  ((0x17 << 8) | _pri)
 #define REGDMA_GDMA_LINK(_pri)              ((0x18 << 8) | _pri)
 #define REGDMA_I2C_LINK(_pri)               ((0x19 << 8) | _pri)
+#define REGDMA_RMT_LINK(_pri)               ((0x20 << 8) | _pri)
 #define REGDMA_MODEM_FE_LINK(_pri)          ((0xFF << 8) | _pri)
 
 #define REGDMA_LINK_PRI_SYS_CLK                 REGDMA_LINK_PRI_0
@@ -58,6 +59,7 @@ extern "C" {
 #define REGDMA_LINK_PRI_SYS_PERIPH_LOW          REGDMA_LINK_PRI_6 // TG0 & IO MUX & SPI MEM & Systimer
 #define REGDMA_LINK_PRI_IEEE802154              REGDMA_LINK_PRI_7
 #define REGDMA_LINK_PRI_GDMA                    REGDMA_LINK_PRI_7
+#define REGDMA_LINK_PRI_RMT                     REGDMA_LINK_PRI_7
 
 typedef enum {
     REGDMA_LINK_PRI_0 = 0,

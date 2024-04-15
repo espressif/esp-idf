@@ -93,6 +93,7 @@ RMT 接收器可以对输入信号采样，将其转换为 RMT 数据格式，�
 - :cpp:member:`rmt_tx_channel_config_t::io_loop_back` 启用通道所分配的 GPIO 上的输入和输出功能，将发送通道和接收通道绑定到同一个 GPIO 上，从而实现回环功能。
 - :cpp:member:`rmt_tx_channel_config_t::io_od_mode` 配置通道分配的 GPIO 为开漏模式 (open-drain)。当与 :cpp:member:`rmt_tx_channel_config_t::io_loop_back` 结合使用时，可以实现双向总线，如 1-wire。
 - :cpp:member:`rmt_tx_channel_config_t::intr_priority` 设置中断的优先级。如果设置为 ``0`` ，驱动将会使用一个中低优先级的中断（优先级可能为 1，2 或 3），否则会使用 :cpp:member:`rmt_tx_channel_config_t::intr_priority` 指定的优先级。请使用优先级序号 (1, 2, 3)，而不是 bitmask 的形式（(1<<1)，(1<<2)，(1<<3)）。请注意，中断优先级一旦设置，在 :cpp:func:`rmt_del_channel` 被调用之前不可再次修改。
+- :cpp:member:`rmt_tx_channel_config_t::backup_before_sleep` 用于使能在进入睡眠模式前备份 RMT 寄存器。这个选项需要用户在功耗和内存使用之间取得平衡。如果功耗不是一个问题，可以禁用这个选项来节省内存。但如果想要节省功耗，应该使能这个选项，在进入睡眠模式前保存 RMT 寄存器，并在唤醒后恢复它们。这个功能依赖于特定的硬件模块，如果你在不支持的芯片上启用这个标志，你会得到一个错误信息，如 ``register back up is not supported``。
 
 将必要参数填充到结构体 :cpp:type:`rmt_tx_channel_config_t` 后，可以调用 :cpp:func:`rmt_new_tx_channel` 来分配和初始化 TX 通道。如果函数运行正确，会返回 RMT 通道句柄；如果 RMT 资源池内缺少空闲通道，会返回 :c:macro:`ESP_ERR_NOT_FOUND` 错误；如果硬件不支持 DMA 后端等部分功能，则返回 :c:macro:`ESP_ERR_NOT_SUPPORTED` 错误。
 
@@ -127,6 +128,7 @@ RMT 接收器可以对输入信号采样，将其转换为 RMT 数据格式，�
 - :cpp:member:`rmt_rx_channel_config_t::with_dma` 为通道启用 DMA 后端。启用 DMA 后端可以释放 CPU 上的大部分通道工作负载，显著减轻 CPU 负担。但并非所有 ESP 芯片都支持 DMA 后端，在启用此选项前，请参阅 [`TRM <{IDF_TARGET_TRM_EN_URL}#rmt>`__]。若所选芯片不支持 DMA 后端，可能会报告 :c:macro:`ESP_ERR_NOT_SUPPORTED` 错误。
 - :cpp:member:`rmt_rx_channel_config_t::io_loop_back` 启用通道所分配的 GPIO 上的输入和输出功能，将发送通道和接收通道绑定到同一个 GPIO 上，从而实现回环功能。
 - :cpp:member:`rmt_rx_channel_config_t::intr_priority` 设置中断的优先级。如果设置为 ``0`` ，驱动将会使用一个中低优先级的中断（优先级可能为 1，2 或 3），否则会使用 :cpp:member:`rmt_rx_channel_config_t::intr_priority` 指定的优先级。请使用优先级序号 (1，2，3)，而不是 bitmask 的形式（(1<<1)，(1<<2)，(1<<3)）。请注意，中断优先级一旦设置，在 :cpp:func:`rmt_del_channel` 被调用之前不可再次修改。
+- :cpp:member:`rmt_rx_channel_config_t::backup_before_sleep` 用于使能在进入睡眠模式前备份 RMT 寄存器。这个选项需要用户在功耗和内存使用之间取得平衡。如果功耗不是一个问题，可以禁用这个选项来节省内存。但如果想要节省功耗，应该使能这个选项，在进入睡眠模式前保存 RMT 寄存器，并在唤醒后恢复它们。这个功能依赖于特定的硬件模块，如果你在不支持的芯片上启用这个标志，你会得到一个错误信息，如 ``register back up is not supported``。
 
 将必要参数填充到结构体 :cpp:type:`rmt_rx_channel_config_t` 后，可以调用 :cpp:func:`rmt_new_rx_channel` 来分配和初始化 RX 通道。如果函数运行正确，会返回 RMT 通道句柄；如果 RMT 资源池内缺少空闲通道，会返回 :c:macro:`ESP_ERR_NOT_FOUND` 错误；如果硬件不支持 DMA 后端等部分功能，则返回 :c:macro:`ESP_ERR_NOT_SUPPORTED` 错误。
 
@@ -428,6 +430,18 @@ RMT 编码器是 RMT TX 事务的一部分，用于在特定时间生成正确�
     :caption: RMT 编码器链
     :align: center
 
+简易回调编码器
+~~~~~~~~~~~~~~
+
+简易回调编码器通过调用 :cpp:func:`rmt_new_simple_encoder` 创建。简易回调编码器允许用户提供一个回调函数，该函数从用户空间读取数据并将 RMT 符号写入输出流，无需链式组合其他编码器。回调函数会接收到传递给 :cpp:func:`rmt_transmit` 的数据指针、回调函数在此次传输中已写入的符号数量计数器、编码后的 RMT 符号指针以及空闲空间大小。如果空间不足以编码数据，回调函数可以返回 0，此时 RMT 驱动将等待先前的符号传输完成，然后再次调用回调函数，此时应该会有更多的空间可用。如果回调函数成功编码 RMT 符号，应返回已编码的符号数量。
+
+在调用 :cpp:func:`rmt_new_simple_encoder` 前，应预先提供配置结构体 :cpp:type:`rmt_simple_encoder_config_t`，具体配置如下：
+
+- :cpp:member:`rmt_simple_encoder_config_t::callback` 和 :cpp:member:`rmt_simple_encoder_config_t::arg` 为必选项，分别用于提供回调函数和传递给回调函数的不透明参数。
+- :cpp:member:`rmt_simple_encoder_config_t::min_chunk_size` 指定了编码器始终能够写入一些数据的最小空闲空间，以符号为单位。换句话说，当传递给编码器的空闲空间达到这个数量时，它不应该返回 0（除非编码器已经完成了符号的编码）。
+
+简易回调编码器的功能通常可以通过链式组合其他编码器来实现，但相比编码器链，简易回调编码器更易于理解和维护。
+
 自定义 NEC 协议的 RMT 编码器
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -537,11 +551,13 @@ RMT 编码器是 RMT TX 事务的一部分，用于在特定时间生成正确�
 电源管理
 ^^^^^^^^^^^^^^^^
 
-通过 :ref:`CONFIG_PM_ENABLE` 选项启用电源管理时，系统会在进入 Light-sleep 模式前调整 APB 频率。该操作可能改变 RMT 内部计数器的分辨率。
+当电源管理 :ref:`CONFIG_PM_ENABLE` 被启用的时候，系统在进入睡眠前可能会调整或禁用时钟源。结果是，RMT 内部的时间基准无法按预期工作。
 
-然而，驱动程序可以通过获取 :cpp:enumerator:`ESP_PM_APB_FREQ_MAX` 类型的电源管理锁，防止系统改变 APB 频率。每当驱动创建以 :cpp:enumerator:`RMT_CLK_SRC_APB` 作为时钟源的 RMT 通道时，都会在通过 :cpp:func:`rmt_enable` 启用通道后获取电源管理锁。反之，调用 :cpp:func:`rmt_disable` 时，驱动程序释放锁。这也意味着 :cpp:func:`rmt_enable` 和 :cpp:func:`rmt_disable` 应成对出现。
+驱动程序可以通过创建一个电源管理锁来防止上述问题。锁的类型会根据不同的时钟源来设置。驱动程序将在 :cpp:func:`rmt_enable` 中拿锁，并在 :cpp:func:`rmt_disable` 中释放锁。这意味着，无论电源管理策略如何，在这两个函数之间的任何 RMT 事务都可以保证正常工作。在此期间，时钟源不会被禁用或调整频率。
 
-如果将通道时钟源设置为其他选项，如 :cpp:enumerator:`RMT_CLK_SRC_XTAL`，则驱动程序不会为其安装电源管理锁。对于低功耗应用程序来说，只要时钟源仍然可以提供足够的分辨率，不安装电源管理锁更为合适。
+.. only:: SOC_RMT_SUPPORT_SLEEP_BACKUP
+
+    除了时钟源的潜在变化外，当启用电源管理时，系统还可以关闭 RMT 寄存器所在的电源域。为确保 RMT 驱动程序在睡眠后继续工作，用户要么选择将 RMT 相关的寄存器备份到 RAM 中，要么拒绝关闭电源域。你可以根据应用需求在 :cpp:member:`rmt_tx_channel_config_t::backup_before_sleep` 和 :cpp:member:`rmt_rx_channel_config_t::backup_before_sleep` 中设置是否需要启用寄存器备份，在功耗和内存使用之间做权衡。
 
 .. _rmt-iram-safe:
 
