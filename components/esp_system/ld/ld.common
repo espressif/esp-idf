@@ -9,6 +9,18 @@
 /* CPU instruction prefetch padding size for flash mmap scenario */
 #define _esp_flash_mmap_prefetch_pad_size 16
 
+/*
+ * PMP region granularity size
+ * Software may determine the PMP granularity by writing zero to pmp0cfg, then writing all ones
+ * to pmpaddr0, then reading back pmpaddr0. If G is the index of the least-significant bit set,
+ * the PMP granularity is 2^G+2 bytes.
+ */
+#ifdef CONFIG_SOC_CPU_PMP_REGION_GRANULARITY
+#define _esp_pmp_align_size CONFIG_SOC_CPU_PMP_REGION_GRANULARITY
+#else
+#define _esp_pmp_align_size 0
+#endif
+
 /* CPU instruction prefetch padding size for memory protection scenario */
 #ifdef CONFIG_SOC_MEMPROT_CPU_PREFETCH_PAD_SIZE
 #define _esp_memprot_prefetch_pad_size CONFIG_SOC_MEMPROT_CPU_PREFETCH_PAD_SIZE
