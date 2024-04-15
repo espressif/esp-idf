@@ -60,6 +60,19 @@ uint32_t clk_hal_xtal_get_freq_mhz(void);
 uint32_t clk_hal_apll_get_freq_hz(void);
 #endif //SOC_CLK_APLL_SUPPORTED
 
+/**
+ * @brief Set up clock output channel
+ * @param clk_sig    The clock signal source to be mapped to GPIOs
+ * @param channel_id The clock output channel to setup
+ */
+void clk_hal_clock_output_setup(soc_clkout_sig_id_t clk_sig, uint8_t channel_id);
+
+/**
+ * @brief Teardown clock output channel configuration
+ * @param channel_id The clock output channel to teardown
+ */
+void clk_hal_clock_output_teardown(uint8_t channel_id);
+
 #ifdef __cplusplus
 }
 #endif

@@ -4,9 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "soc/clkout_channel.h"
+#include "hal/assert.h"
 #include "hal/clk_tree_hal.h"
 #include "hal/clk_tree_ll.h"
-#include "hal/assert.h"
+#include "hal/gpio_ll.h"
 #include "hal/log.h"
 
 static const char *CLK_HAL_TAG = "clk_hal";
@@ -110,4 +112,14 @@ uint32_t clk_hal_apll_get_freq_hz(void)
     uint32_t denominator = (o_div + 2) << 17;
     uint32_t apll_freq_hz = (uint32_t)((xtal_freq_hz * numerator) / denominator);
     return apll_freq_hz;
+}
+
+void clk_hal_clock_output_setup(soc_clkout_sig_id_t clk_sig, uint8_t channel_id)
+{
+    gpio_ll_set_pin_ctrl(clk_sig, CLKOUT_CHANNEL_MASK(channel_id), CLKOUT_CHANNEL_SHIFT(channel_id));
+}
+
+void clk_hal_clock_output_teardown(uint8_t channel_id)
+{
+    gpio_ll_set_pin_ctrl(0, CLKOUT_CHANNEL_MASK(channel_id), CLKOUT_CHANNEL_SHIFT(channel_id));
 }
