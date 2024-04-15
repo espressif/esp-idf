@@ -50,8 +50,11 @@ implement the bare minimum to control the root HCD port.
 
 // Hub driver action flags. LISTED IN THE ORDER THEY SHOULD BE HANDLED IN within hub_process(). Some actions are mutually exclusive
 #define HUB_DRIVER_FLAG_ACTION_ROOT_EVENT           0x01
-#define HUB_DRIVER_FLAG_ACTION_PORT                 0x02
+#define HUB_DRIVER_FLAG_ACTION_PORT_REQ             0x02
 #define HUB_DRIVER_FLAG_ACTION_ENUM_EVENT           0x04
+
+#define PORT_REQ_DISABLE                            0x01
+#define PORT_REQ_RECOVER                            0x02
 
 /**
  * @brief Root port states
@@ -185,6 +188,7 @@ typedef struct {
             uint32_t val;
         } flags;
         root_port_state_t root_port_state;
+        unsigned int port_reqs;
     } dynamic;
     // Single thread members don't require a critical section so long as they are never accessed from multiple threads
     struct {
@@ -679,7 +683,8 @@ static void enum_stage_cleanup_failed(enum_ctrl_t *enum_ctrl)
     HUB_DRIVER_ENTER_CRITICAL();
     // Enum could have failed due to a port error. If so, we need to trigger a port recovery
     if (p_hub_driver_obj->dynamic.root_port_state == ROOT_PORT_STATE_RECOVERY) {
-        p_hub_driver_obj->dynamic.flags.actions |= HUB_DRIVER_FLAG_ACTION_PORT;
+        p_hub_driver_obj->dynamic.port_reqs |= PORT_REQ_RECOVER;
+        p_hub_driver_obj->dynamic.flags.actions |= HUB_DRIVER_FLAG_ACTION_PORT_REQ;
     } else {
         // Otherwise, we move to the enum failed state and wait for the device to disconnect
         p_hub_driver_obj->dynamic.root_port_state = ROOT_PORT_STATE_ENUM_FAILED;
@@ -839,7 +844,8 @@ static void root_port_handle_events(hcd_port_handle_t root_port_hdl)
         case ROOT_PORT_STATE_POWERED: // This occurred before enumeration
         case ROOT_PORT_STATE_ENUM_FAILED: // This occurred after a failed enumeration.
             // Therefore, there's no device and we can go straight to port recovery
-            p_hub_driver_obj->dynamic.flags.actions |= HUB_DRIVER_FLAG_ACTION_PORT;
+            p_hub_driver_obj->dynamic.port_reqs |= PORT_REQ_RECOVER;
+            p_hub_driver_obj->dynamic.flags.actions |= HUB_DRIVER_FLAG_ACTION_PORT_REQ;
             break;
         case ROOT_PORT_STATE_ENUM:
             // This occurred during enumeration. Therefore, we need to cleanup the failed enumeration
@@ -864,6 +870,30 @@ static void root_port_handle_events(hcd_port_handle_t root_port_hdl)
     default:
         abort();    // Should never occur
         break;
+    }
+}
+
+static void root_port_req(hcd_port_handle_t root_port_hdl)
+{
+    unsigned int port_reqs;
+
+    HUB_DRIVER_ENTER_CRITICAL();
+    port_reqs = p_hub_driver_obj->dynamic.port_reqs;
+    p_hub_driver_obj->dynamic.port_reqs = 0;
+    HUB_DRIVER_EXIT_CRITICAL();
+
+    if (port_reqs & PORT_REQ_DISABLE) {
+        ESP_LOGD(HUB_DRIVER_TAG, "Disabling root port");
+        // We allow this to fail in case a disconnect/port error happens while disabling.
+        hcd_port_command(p_hub_driver_obj->constant.root_port_hdl, HCD_PORT_CMD_DISABLE);
+    }
+    if (port_reqs & PORT_REQ_RECOVER) {
+        ESP_LOGD(HUB_DRIVER_TAG, "Recovering root port");
+        ESP_ERROR_CHECK(hcd_port_recover(p_hub_driver_obj->constant.root_port_hdl));
+        ESP_ERROR_CHECK(hcd_port_command(p_hub_driver_obj->constant.root_port_hdl, HCD_PORT_CMD_POWER_ON));
+        HUB_DRIVER_ENTER_CRITICAL();
+        p_hub_driver_obj->dynamic.root_port_state = ROOT_PORT_STATE_POWERED;
+        HUB_DRIVER_EXIT_CRITICAL();
     }
 }
 
@@ -1055,10 +1085,24 @@ esp_err_t hub_dev_is_free(uint8_t dev_addr)
 {
     assert(dev_addr == ENUM_DEV_ADDR);
     assert(p_hub_driver_obj->single_thread.root_dev_hdl);
-    p_hub_driver_obj->single_thread.root_dev_hdl = NULL;
     // Device is free, we can now request its port be recycled
+    hcd_port_state_t port_state = hcd_port_get_state(p_hub_driver_obj->constant.root_port_hdl);
+    p_hub_driver_obj->single_thread.root_dev_hdl = NULL;
+
     HUB_DRIVER_ENTER_CRITICAL();
-    p_hub_driver_obj->dynamic.flags.actions |= HUB_DRIVER_FLAG_ACTION_PORT;
+    // How the port is recycled will depend on the port's state
+    switch (port_state) {
+    case HCD_PORT_STATE_ENABLED:
+        p_hub_driver_obj->dynamic.port_reqs |= PORT_REQ_DISABLE;
+        break;
+    case HCD_PORT_STATE_RECOVERY:
+        p_hub_driver_obj->dynamic.port_reqs |= PORT_REQ_RECOVER;
+        break;
+    default:
+        abort();    // Should never occur
+        break;
+    }
+    p_hub_driver_obj->dynamic.flags.actions |= HUB_DRIVER_FLAG_ACTION_PORT_REQ;
     HUB_DRIVER_EXIT_CRITICAL();
 
     p_hub_driver_obj->constant.proc_req_cb(USB_PROC_REQ_SOURCE_HUB, false, p_hub_driver_obj->constant.proc_req_cb_arg);
@@ -1076,29 +1120,8 @@ esp_err_t hub_process(void)
         if (action_flags & HUB_DRIVER_FLAG_ACTION_ROOT_EVENT) {
             root_port_handle_events(p_hub_driver_obj->constant.root_port_hdl);
         }
-        if (action_flags & HUB_DRIVER_FLAG_ACTION_PORT) {
-            // Check current state of port
-            hcd_port_state_t port_state = hcd_port_get_state(p_hub_driver_obj->constant.root_port_hdl);
-            switch (port_state) {
-            case HCD_PORT_STATE_ENABLED:
-                // Port is still enabled with a connect device. Disable it.
-                ESP_LOGD(HUB_DRIVER_TAG, "Disabling root port");
-                // We allow this to fail in case a disconnect/port error happens while disabling.
-                hcd_port_command(p_hub_driver_obj->constant.root_port_hdl, HCD_PORT_CMD_DISABLE);
-                break;
-            case HCD_PORT_STATE_RECOVERY:
-                // Port is in recovery after a disconnect/error. Recover it.
-                ESP_LOGD(HUB_DRIVER_TAG, "Recovering root port");
-                ESP_ERROR_CHECK(hcd_port_recover(p_hub_driver_obj->constant.root_port_hdl));
-                ESP_ERROR_CHECK(hcd_port_command(p_hub_driver_obj->constant.root_port_hdl, HCD_PORT_CMD_POWER_ON));
-                HUB_DRIVER_ENTER_CRITICAL();
-                p_hub_driver_obj->dynamic.root_port_state = ROOT_PORT_STATE_POWERED;
-                HUB_DRIVER_EXIT_CRITICAL();
-                break;
-            default:
-                abort(); // Should never occur
-                break;
-            }
+        if (action_flags & HUB_DRIVER_FLAG_ACTION_PORT_REQ) {
+            root_port_req(p_hub_driver_obj->constant.root_port_hdl);
         }
         if (action_flags & HUB_DRIVER_FLAG_ACTION_ENUM_EVENT) {
             enum_handle_events();
