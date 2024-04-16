@@ -219,13 +219,12 @@ variables:
     - *setup_tools_and_idf_python_venv
     - fetch_submodules
 
-.after_script:build:macos:ccache:upload-when-fail:
+.after_script:build:macos:upload-when-fail:
   after_script:
     # macos is running shell executor, which means it would use
     # the system installed /usr/local/bin/python3 by default.
     # Ensure pyenv and PYENV_VERSION installed
     - eval "$(pyenv init -)"
-    - *show_ccache_statistics
     - *upload_failed_job_log_artifacts
 
 .before_script:build:

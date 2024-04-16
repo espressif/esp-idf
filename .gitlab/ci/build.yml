@@ -206,13 +206,14 @@ pytest_build_system_macos:
   extends:
     - .test_build_system_template
     - .before_script:build:macos
-    - .after_script:build:macos:ccache:upload-when-fail
+    - .after_script:build:macos:upload-when-fail
     - .rules:build:macos
   tags:
     - macos_shell
   parallel: 3
   variables:
     PYENV_VERSION: "3.8"
+    CI_CCACHE_DISABLE: "1"  # ccache: error: Read-only file system
 
 build_docker:
   extends:
