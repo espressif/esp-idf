@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -63,6 +63,7 @@ typedef enum
     ESP_HF_WBS_RESPONSE_EVT,                  /*!< Codec Status */
     ESP_HF_BCS_RESPONSE_EVT,                  /*!< Final Codec Choice */
     ESP_HF_PKT_STAT_NUMS_GET_EVT,             /*!< Request number of packet different status */
+    ESP_HF_PROF_STATE_EVT,                    /*!< Indicate HF init or deinit complete */
 } esp_hf_cb_event_t;
 
 /// Dial type of ESP_HF_DIAL_EVT
@@ -223,6 +224,13 @@ typedef union
         uint32_t tx_discarded;    /*!< the total number of packets send lost */
     } pkt_nums;                   /*!< AG callback param of ESP_HF_PKT_STAT_NUMS_GET_EVT */
 
+    /**
+     * @brief ESP_HF_PROF_STATE_EVT
+     */
+    struct ag_prof_stat_param {
+        esp_hf_prof_state_t state;                /*!< hf profile state param */
+    } prof_stat;                                  /*!< status to indicate hf prof init or deinit */
+
 } esp_hf_cb_param_t;                              /*!< HFP AG callback param compound*/
 
 /**
@@ -284,6 +292,7 @@ esp_err_t esp_hf_ag_register_callback(esp_hf_cb_t callback);
  *
  * @brief           Initialize the bluetooth HF AG module.
  *                  This function should be called after esp_bluedroid_enable() completes successfully.
+ *                  ESP_HF_PROF_STATE_EVT with ESP_HF_INIT_SUCCESS will reported to the APP layer.
  *
  * @return
  *                  - ESP_OK: if the initialization request is sent successfully
@@ -297,6 +306,7 @@ esp_err_t esp_hf_ag_init(void);
  *
  * @brief           De-initialize for HF AG module.
  *                  This function should be called only after esp_bluedroid_enable() completes successfully.
+ *                  ESP_HF_PROF_STATE_EVT with ESP_HF_DEINIT_SUCCESS will reported to the APP layer.
  *
  * @return
  *                  - ESP_OK: success
@@ -504,13 +514,13 @@ esp_err_t esp_hf_ag_cind_response(esp_bd_addr_t remote_addr,
 
 /**
  *
- * @brief           Reponse for AT+COPS command from HF Client.
+ * @brief           Response for AT+COPS command from HF Client.
  *                  As a precondition to use this API, Service Level Connection shall exist with HFP client.
  *
  * @param[in]       remote_addr: remote bluetooth device address
  * @param[in]       name: current operator name
  * @return
- *                  - ESP_OK: reponse for AT+COPS command is sent to lower layer
+ *                  - ESP_OK: response for AT+COPS command is sent to lower layer
  *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
  *                  - ESP_FAIL: others
  *
@@ -529,7 +539,7 @@ esp_err_t esp_hf_ag_cops_response(esp_bd_addr_t remote_addr, char *name);
  * @param[in]       mode: current call mode (voice/data/fax)
  * @param[in]       mpty: single or multi type
  * @param[in]       number: current call number
- * @param[in]       type: international type or unknow
+ * @param[in]       type: international type or unknown
  * @return
  *                  - ESP_OK: response to AT+CLCC command is sent to lower layer
  *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
