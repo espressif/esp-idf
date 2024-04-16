@@ -82,8 +82,7 @@ void *hostap_init(void)
     pairwise_cipher = esp_wifi_ap_get_prof_pairwise_cipher_internal();
 
 #ifdef CONFIG_IEEE80211W
-    if((auth_conf->wpa & WPA_PROTO_RSN) == WPA_PROTO_RSN)
-    {
+    if ((auth_conf->wpa & WPA_PROTO_RSN) == WPA_PROTO_RSN) {
         esp_wifi_get_pmf_config_internal(&pmf_cfg, WIFI_IF_AP);
         if (pmf_cfg.required) {
             pairwise_cipher = WIFI_CIPHER_TYPE_CCMP;
@@ -147,7 +146,7 @@ void *hostap_init(void)
 
 #ifdef CONFIG_SAE
     if (authmode == WIFI_AUTH_WPA3_PSK ||
-        authmode == WIFI_AUTH_WPA2_WPA3_PSK) {
+            authmode == WIFI_AUTH_WPA2_WPA3_PSK) {
         if (wpa3_hostap_auth_init(hapd) != 0) {
             goto fail;
         }
@@ -191,7 +190,7 @@ void hostapd_cleanup(struct hostapd_data *hapd)
     if (hapd == NULL) {
         return;
     }
-    if(hapd->wpa_auth) {
+    if (hapd->wpa_auth) {
         wpa_deinit(hapd->wpa_auth);
         hapd->wpa_auth = NULL;
     }
@@ -209,7 +208,7 @@ void hostapd_cleanup(struct hostapd_data *hapd)
 
     if (dl_list_empty(&hapd->sae_commit_queue)) {
         dl_list_for_each_safe(q, tmp, &hapd->sae_commit_queue,
-                struct hostapd_sae_commit_queue, list) {
+                              struct hostapd_sae_commit_queue, list) {
             dl_list_del(&q->list);
             os_free(q);
         }
@@ -217,8 +216,8 @@ void hostapd_cleanup(struct hostapd_data *hapd)
 
 #endif /* CONFIG_SAE */
 #ifdef CONFIG_WPS_REGISTRAR
-    if (esp_wifi_get_wps_type_internal () != WPS_TYPE_DISABLE ||
-        esp_wifi_get_wps_status_internal() != WPS_STATUS_DISABLE) {
+    if (esp_wifi_get_wps_type_internal() != WPS_TYPE_DISABLE ||
+            esp_wifi_get_wps_status_internal() != WPS_STATUS_DISABLE) {
         esp_wifi_ap_wps_disable();
     }
 #endif /* CONFIG_WPS_REGISTRAR */
@@ -226,7 +225,6 @@ void hostapd_cleanup(struct hostapd_data *hapd)
     global_hapd = NULL;
 
 }
-
 
 bool hostap_deinit(void *data)
 {
@@ -242,7 +240,7 @@ bool hostap_deinit(void *data)
     wpa3_hostap_auth_deinit();
     /* Wait till lock is released by wpa3 task */
     if (g_wpa3_hostap_auth_api_lock &&
-        WPA3_HOSTAP_AUTH_API_LOCK() == pdTRUE) {
+            WPA3_HOSTAP_AUTH_API_LOCK() == pdTRUE) {
         WPA3_HOSTAP_AUTH_API_UNLOCK();
     }
 #endif /* CONFIG_SAE */
@@ -263,8 +261,8 @@ int esp_wifi_build_rsnxe(struct hostapd_data *hapd, u8 *eid, size_t len)
     }
 
     if (wpa_key_mgmt_sae(hapd->wpa_auth->conf.wpa_key_mgmt) &&
-        (hapd->conf->sae_pwe == SAE_PWE_HASH_TO_ELEMENT
-         || hapd->conf->sae_pwe == SAE_PWE_BOTH)) {
+            (hapd->conf->sae_pwe == SAE_PWE_HASH_TO_ELEMENT
+             || hapd->conf->sae_pwe == SAE_PWE_BOTH)) {
         capab |= BIT(WLAN_RSNX_CAPAB_SAE_H2E);
     }
 
@@ -282,7 +280,7 @@ int esp_wifi_build_rsnxe(struct hostapd_data *hapd, u8 *eid, size_t len)
 }
 
 u16 esp_send_assoc_resp(struct hostapd_data *hapd, const u8 *addr,
-        u16 status_code, bool omit_rsnxe, int subtype)
+                        u16 status_code, bool omit_rsnxe, int subtype)
 {
 #define ASSOC_RESP_LENGTH 20
     u8 buf[ASSOC_RESP_LENGTH];

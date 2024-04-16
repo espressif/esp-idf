@@ -65,7 +65,6 @@ components_not_formatted_temporary:
     - "/components/esp_phy/"
     - "/components/esp_pm/"
     - "/components/esp_rom/"
-    - "/components/esp_wifi/"
     - "/components/esp-tls/"
     - "/components/esptool_py/"
     - "/components/fatfs/"
@@ -95,7 +94,6 @@ components_not_formatted_temporary:
     - "/components/vfs/"
     - "/components/wear_levelling/"
     - "/components/wifi_provisioning/"
-    - "/components/wpa_supplicant/"
     - "/components/xtensa/"
     - "/examples/bluetooth/"
     - "/examples/build_system/"
@@ -133,6 +131,8 @@ components_not_formatted_permanent:
     - "/components/xtensa/include/xtensa/"
     # FAT FS (upstream source code)
     - "/components/fatfs/src/"
+    # wpa_supplicant upstream code
+    - "/components/wpa_supplicant/src/"
     # Nginx HTTP parser (upstream source code)
     - "/components/http_parser/"
     # Argtable (upstream source code)

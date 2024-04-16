@@ -83,8 +83,9 @@ static nan_ctx_t s_nan_ctx;
 
 void esp_wifi_nan_get_ipv6_linklocal_from_mac(ip6_addr_t *ip6, uint8_t *mac_addr)
 {
-    if (ip6 == NULL || mac_addr == NULL)
+    if (ip6 == NULL || mac_addr == NULL) {
         return;
+    }
     /* Link-local prefix. */
     ip6->addr[0] = htonl(0xfe800000ul);
     ip6->addr[1] = 0;

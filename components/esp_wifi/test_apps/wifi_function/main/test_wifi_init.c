@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -15,24 +15,23 @@
 
 #define EMPH_STR(s) "****** "s" ******"
 
-
 static const char* TAG = "test_wifi_init";
 
 static void wifi_event_handler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data)
 {
     printf("wifi event handle called.\n");
-    switch(event_id) {
-        case WIFI_EVENT_AP_START:
-            ESP_LOGI(TAG, "WIFI_EVENT_AP_START");
-            break;
-        case WIFI_EVENT_STA_START:
-            ESP_LOGI(TAG, "WIFI_EVENT_STA_START");
-            break;
-        case WIFI_EVENT_STA_DISCONNECTED:
-            ESP_LOGI(TAG, "WIFI_EVENT_STA_DISCONNECTED");
-            break;
-        default:
-            break;
+    switch (event_id) {
+    case WIFI_EVENT_AP_START:
+        ESP_LOGI(TAG, "WIFI_EVENT_AP_START");
+        break;
+    case WIFI_EVENT_STA_START:
+        ESP_LOGI(TAG, "WIFI_EVENT_STA_START");
+        break;
+    case WIFI_EVENT_STA_DISCONNECTED:
+        ESP_LOGI(TAG, "WIFI_EVENT_STA_DISCONNECTED");
+        break;
+    default:
+        break;
     }
     return;
 }
@@ -46,7 +45,7 @@ static esp_err_t event_init(void)
 
 static esp_err_t event_deinit(void)
 {
-    ESP_ERROR_CHECK(esp_event_handler_unregister(WIFI_EVENT,ESP_EVENT_ANY_ID,&wifi_event_handler));
+    ESP_ERROR_CHECK(esp_event_handler_unregister(WIFI_EVENT, ESP_EVENT_ANY_ID, &wifi_event_handler));
     ESP_ERROR_CHECK(esp_event_loop_delete_default());
     return ESP_OK;
 }
@@ -75,9 +74,9 @@ TEST_CASE("wifi driver can start on APP CPU", "[wifi_init]")
     TEST_ASSERT_NOT_NULL(sema);
     printf("Creating tasks\n");
 #ifndef CONFIG_FREERTOS_UNICORE
-    xTaskCreatePinnedToCore(wifi_driver_can_start_on_APP_CPU_task, "wifi_driver_can_start_on_APP_CPU_task", 2048*2, &sema, 3, &th, 1);
+    xTaskCreatePinnedToCore(wifi_driver_can_start_on_APP_CPU_task, "wifi_driver_can_start_on_APP_CPU_task", 2048 * 2, &sema, 3, &th, 1);
 #else
-    xTaskCreate(wifi_driver_can_start_on_APP_CPU_task, "wifi_driver_can_start_on_APP_CPU_task", 2048*2, &sema, 3, &th);
+    xTaskCreate(wifi_driver_can_start_on_APP_CPU_task, "wifi_driver_can_start_on_APP_CPU_task", 2048 * 2, &sema, 3, &th);
 #endif
     TEST_ASSERT_NOT_NULL(th);
     xSemaphoreTake(sema, portMAX_DELAY);

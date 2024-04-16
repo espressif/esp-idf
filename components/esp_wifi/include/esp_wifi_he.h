@@ -15,7 +15,6 @@
 extern "C" {
 #endif
 
-
 /**
   * @brief     Set up an individual TWT agreement (NegotiationType=0) or change TWT parameters of the existing TWT agreement
   *            - TWT Wake Interval = TWT Wake Interval Mantissa * (2 ^ TWT Wake Interval Exponent), unit: us

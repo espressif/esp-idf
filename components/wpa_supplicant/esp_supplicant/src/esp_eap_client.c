@@ -165,7 +165,7 @@ static void wpa2_rxq_init(void)
 static void wpa2_rxq_enqueue(struct wpa2_rx_param *param)
 {
     DATA_MUTEX_TAKE();
-    STAILQ_INSERT_TAIL(&s_wpa2_rxq,param, bqentry);
+    STAILQ_INSERT_TAIL(&s_wpa2_rxq, param, bqentry);
     DATA_MUTEX_GIVE();
 }
 
@@ -175,7 +175,7 @@ static struct wpa2_rx_param * wpa2_rxq_dequeue(void)
     DATA_MUTEX_TAKE();
     if ((param = STAILQ_FIRST(&s_wpa2_rxq)) != NULL) {
         STAILQ_REMOVE_HEAD(&s_wpa2_rxq, bqentry);
-        STAILQ_NEXT(param,bqentry) = NULL;
+        STAILQ_NEXT(param, bqentry) = NULL;
     }
     DATA_MUTEX_GIVE();
     return param;
@@ -187,14 +187,14 @@ static void wpa2_rxq_deinit(void)
     DATA_MUTEX_TAKE();
     while ((param = STAILQ_FIRST(&s_wpa2_rxq)) != NULL) {
         STAILQ_REMOVE_HEAD(&s_wpa2_rxq, bqentry);
-        STAILQ_NEXT(param,bqentry) = NULL;
+        STAILQ_NEXT(param, bqentry) = NULL;
         os_free(param->buf);
         os_free(param);
     }
     DATA_MUTEX_GIVE();
 }
 
-void wpa2_task(void *pvParameters )
+void wpa2_task(void *pvParameters)
 {
     ETSEvent *e;
     struct eap_sm *sm = gEapSm;
@@ -205,10 +205,10 @@ void wpa2_task(void *pvParameters )
     }
 
     for (;;) {
-        if ( TRUE == os_queue_recv(s_wpa2_queue, &e, OS_BLOCK) ) {
+        if (TRUE == os_queue_recv(s_wpa2_queue, &e, OS_BLOCK)) {
             if (e->sig < SIG_WPA2_MAX) {
                 DATA_MUTEX_TAKE();
-                if(sm->wpa2_sig_cnt[e->sig]) {
+                if (sm->wpa2_sig_cnt[e->sig]) {
                     sm->wpa2_sig_cnt[e->sig]--;
                 } else {
                     wpa_printf(MSG_ERROR, "wpa2_task: invalid sig cnt, sig=%" PRId32 " cnt=%d", e->sig, sm->wpa2_sig_cnt[e->sig]);
@@ -225,7 +225,7 @@ void wpa2_task(void *pvParameters )
             case SIG_WPA2_RX: {
                 struct wpa2_rx_param *param = NULL;
 
-                while ((param = wpa2_rxq_dequeue()) != NULL){
+                while ((param = wpa2_rxq_dequeue()) != NULL) {
                     eap_sm_rx_eapol_internal(param->sa, param->buf, param->len, param->bssid);
                     os_free(param->buf);
                     os_free(param);
@@ -320,8 +320,8 @@ int eap_sm_send_eapol(struct eap_sm *sm, struct wpabuf *resp)
     }
 
     outbuf = wpa_alloc_eapol(sm, IEEE802_1X_TYPE_EAP_PACKET,
-                                 wpabuf_head_u8(resp), wpabuf_len(resp),
-                                 &outlen, NULL);
+                             wpabuf_head_u8(resp), wpabuf_len(resp),
+                             &outlen, NULL);
     if (!outbuf) {
         return ESP_ERR_NO_MEM;
     }
@@ -357,7 +357,7 @@ int eap_sm_process_request(struct eap_sm *sm, struct wpabuf *reqData)
     }
 
     if (ehdr->identifier == sm->current_identifier &&
-        sm->lastRespData != NULL) {
+            sm->lastRespData != NULL) {
         /*Retransmit*/
         resp = sm->lastRespData;
         goto send_resp;
@@ -398,7 +398,7 @@ int eap_sm_process_request(struct eap_sm *sm, struct wpabuf *reqData)
 
         if (!eap_sm_allowMethod(sm, reqVendor, reqVendorMethod)) {
             wpa_printf(MSG_DEBUG, "EAP: vendor %" PRIu32 " method %" PRIu32 " not allowed",
-                    reqVendor, reqVendorMethod);
+                       reqVendor, reqVendorMethod);
             wpa_msg(sm->msg_ctx, MSG_INFO, WPA_EVENT_EAP_PROPOSED_METHOD
                     "vendor=%" PRIu32 " method=%" PRIu32 " -> NAK",
                     reqVendor, reqVendorMethod);
@@ -502,20 +502,20 @@ static int wpa2_ent_rx_eapol(u8 *src_addr, u8 *buf, u32 len, uint8_t *bssid)
     hdr = (struct ieee802_1x_hdr *) buf;
 
     switch (hdr->type) {
-	    case IEEE802_1X_TYPE_EAPOL_START:
-	    case IEEE802_1X_TYPE_EAP_PACKET:
-	    case IEEE802_1X_TYPE_EAPOL_LOGOFF:
-		    ret = eap_sm_rx_eapol(src_addr, buf, len, bssid);
-		    break;
-	    case IEEE802_1X_TYPE_EAPOL_KEY:
-            ret = wpa_sm_rx_eapol(src_addr, buf, len);
-		    break;
-	    default:
-		wpa_printf(MSG_ERROR, "Unknown EAPOL packet type - %d", hdr->type);
-		    break;
+    case IEEE802_1X_TYPE_EAPOL_START:
+    case IEEE802_1X_TYPE_EAP_PACKET:
+    case IEEE802_1X_TYPE_EAPOL_LOGOFF:
+        ret = eap_sm_rx_eapol(src_addr, buf, len, bssid);
+        break;
+    case IEEE802_1X_TYPE_EAPOL_KEY:
+        ret = wpa_sm_rx_eapol(src_addr, buf, len);
+        break;
+    default:
+        wpa_printf(MSG_ERROR, "Unknown EAPOL packet type - %d", hdr->type);
+        break;
     }
 
-	return ret;
+    return ret;
 }
 
 static int eap_sm_rx_eapol_internal(u8 *src_addr, u8 *buf, u32 len, uint8_t *bssid)
@@ -543,7 +543,7 @@ static int eap_sm_rx_eapol_internal(u8 *src_addr, u8 *buf, u32 len, uint8_t *bss
     tmp = buf;
 
     hdr = (struct ieee802_1x_hdr *) tmp;
-    ehdr = (struct eap_hdr *) (hdr + 1);
+    ehdr = (struct eap_hdr *)(hdr + 1);
     plen = be_to_host16(hdr->length);
     data_len = plen + sizeof(*hdr);
 
@@ -578,9 +578,9 @@ static int eap_sm_rx_eapol_internal(u8 *src_addr, u8 *buf, u32 len, uint8_t *bss
     case EAP_CODE_REQUEST:
         /* Handle EAP-reauthentication case */
         if (sm->finish_state == WPA2_ENT_EAP_STATE_SUCCESS) {
-                wpa_printf(MSG_INFO, "EAP Re-authentication in progress");
-		wpa2_set_eap_state(WPA2_ENT_EAP_STATE_IN_PROGRESS);
-	}
+            wpa_printf(MSG_INFO, "EAP Re-authentication in progress");
+            wpa2_set_eap_state(WPA2_ENT_EAP_STATE_IN_PROGRESS);
+        }
 
         req = wpabuf_alloc_copy((u8 *)ehdr, len - sizeof(*hdr));
         ret = eap_sm_process_request(sm, req);
@@ -596,7 +596,7 @@ static int eap_sm_rx_eapol_internal(u8 *src_addr, u8 *buf, u32 len, uint8_t *bss
             wpa_printf(MSG_INFO, ">>>>>EAP FINISH");
             ret = WPA2_ENT_EAP_STATE_SUCCESS;
             wpa2_set_eap_state(WPA2_ENT_EAP_STATE_SUCCESS);
-	    eap_deinit_prev_method(sm, "EAP Success");
+            eap_deinit_prev_method(sm, "EAP Success");
         } else {
             wpa_printf(MSG_INFO, ">>>>>EAP FAILED, receive EAP_SUCCESS but pmk is empty, potential attack!");
             ret = WPA2_ENT_EAP_STATE_FAIL;
@@ -638,7 +638,7 @@ static int wpa2_start_eapol_internal(void)
 
     if (wpa_sta_cur_pmksa_matches_akm()) {
         wpa_printf(MSG_DEBUG,
-                "RSN: PMKSA caching - do not send EAPOL-Start");
+                   "RSN: PMKSA caching - do not send EAPOL-Start");
         return ESP_FAIL;
     }
 
@@ -902,8 +902,8 @@ esp_err_t esp_wifi_sta_enterprise_disable(void)
 }
 
 esp_err_t esp_eap_client_set_certificate_and_key(const unsigned char *client_cert, int client_cert_len,
-		const unsigned char *private_key, int private_key_len,
-		const unsigned char *private_key_passwd, int private_key_passwd_len)
+                                                 const unsigned char *private_key, int private_key_len,
+                                                 const unsigned char *private_key_passwd, int private_key_passwd_len)
 {
     if (client_cert && client_cert_len > 0) {
         g_wpa_client_cert = client_cert;
@@ -1098,24 +1098,24 @@ esp_err_t esp_eap_client_get_disable_time_check(bool *disable)
 esp_err_t esp_eap_client_set_ttls_phase2_method(esp_eap_ttls_phase2_types type)
 {
     switch (type) {
-        case ESP_EAP_TTLS_PHASE2_EAP:
-            g_wpa_ttls_phase2_type = "auth=EAP";
-            break;
-        case ESP_EAP_TTLS_PHASE2_MSCHAPV2:
-            g_wpa_ttls_phase2_type = "auth=MSCHAPV2";
-            break;
-        case ESP_EAP_TTLS_PHASE2_MSCHAP:
-            g_wpa_ttls_phase2_type = "auth=MSCHAP";
-            break;
-        case ESP_EAP_TTLS_PHASE2_PAP:
-            g_wpa_ttls_phase2_type = "auth=PAP";
-            break;
-        case ESP_EAP_TTLS_PHASE2_CHAP:
-            g_wpa_ttls_phase2_type = "auth=CHAP";
-            break;
-        default:
-            g_wpa_ttls_phase2_type = "auth=MSCHAPV2";
-            break;
+    case ESP_EAP_TTLS_PHASE2_EAP:
+        g_wpa_ttls_phase2_type = "auth=EAP";
+        break;
+    case ESP_EAP_TTLS_PHASE2_MSCHAPV2:
+        g_wpa_ttls_phase2_type = "auth=MSCHAPV2";
+        break;
+    case ESP_EAP_TTLS_PHASE2_MSCHAP:
+        g_wpa_ttls_phase2_type = "auth=MSCHAP";
+        break;
+    case ESP_EAP_TTLS_PHASE2_PAP:
+        g_wpa_ttls_phase2_type = "auth=PAP";
+        break;
+    case ESP_EAP_TTLS_PHASE2_CHAP:
+        g_wpa_ttls_phase2_type = "auth=CHAP";
+        break;
+    default:
+        g_wpa_ttls_phase2_type = "auth=MSCHAPV2";
+        break;
     }
     return ESP_OK;
 }
@@ -1164,8 +1164,8 @@ esp_err_t esp_eap_client_set_fast_params(esp_eap_fast_config config)
     }
     if (config.fast_max_pac_list_len && config.fast_max_pac_list_len < 100) {
         os_snprintf((char *) &config_for_supplicant + strlen(config_for_supplicant),
-                   PHASE1_PARAM_STRING_LEN - strlen(config_for_supplicant),
-                   "fast_max_pac_list_len=%d ", config.fast_max_pac_list_len);
+                    PHASE1_PARAM_STRING_LEN - strlen(config_for_supplicant),
+                    "fast_max_pac_list_len=%d ", config.fast_max_pac_list_len);
     } else if (config.fast_max_pac_list_len >= 100) {
         return ESP_ERR_INVALID_ARG;
     }

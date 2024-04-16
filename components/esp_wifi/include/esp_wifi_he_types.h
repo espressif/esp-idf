@@ -114,17 +114,16 @@ typedef enum {
 /**
   * @brief TWT setup config
   */
-typedef struct
-{
+typedef struct {
     wifi_twt_setup_cmds_t setup_cmd;    /**< Indicates the type of TWT command */
-    uint16_t trigger :1;                /**< 1: a trigger-enabled TWT, 0: a non-trigger-enabled TWT */
-    uint16_t flow_type :1;              /**< 0: an announced TWT, 1: an unannounced TWT */
-    uint16_t flow_id :3;                /**< When set up an individual TWT agreement, the flow id will be assigned by AP after a successful agreement setup.
+    uint16_t trigger : 1;               /**< 1: a trigger-enabled TWT, 0: a non-trigger-enabled TWT */
+    uint16_t flow_type : 1;             /**< 0: an announced TWT, 1: an unannounced TWT */
+    uint16_t flow_id : 3;                /**< When set up an individual TWT agreement, the flow id will be assigned by AP after a successful agreement setup.
                                              flow_id could be specified to a value in the range of [0, 7], but it might be changed by AP in the response.
                                              When change TWT parameters of the existing TWT agreement, flow_id should be an existing one. The value range is [0, 7]. */
-    uint16_t wake_invl_expn :5;         /**< TWT Wake Interval Exponent. The value range is [0, 31]. */
-    uint16_t wake_duration_unit :1;     /**< TWT Wake duration unit, 0: 256us 1: TU (TU = 1024us)*/
-    uint16_t reserved :5;               /**< bit: 11.15 reserved */
+    uint16_t wake_invl_expn : 5;        /**< TWT Wake Interval Exponent. The value range is [0, 31]. */
+    uint16_t wake_duration_unit : 1;    /**< TWT Wake duration unit, 0: 256us 1: TU (TU = 1024us)*/
+    uint16_t reserved : 5;              /**< bit: 11.15 reserved */
     uint8_t min_wake_dura;              /**< Nominal Minimum Wake Duration, indicates the minimum amount of time, in unit of 256 us, that the TWT requesting STA expects that it needs to be awake. The value range is [1, 255]. */
     uint16_t wake_invl_mant;            /**< TWT Wake Interval Mantissa. The value range is [1, 65535]. */
     uint16_t twt_id;                    /**< TWT connection id, the value range is [0, 32767]. */
@@ -161,38 +160,38 @@ typedef enum {
   */
 #if CONFIG_IDF_TARGET_ESP32C5
 typedef struct {
-    signed rssi:8;                                /**< the RSSI of the reception frame */
-    unsigned rate:5;                              /**< if cur_bb_format is RX_BB_FORMAT_11B, it's the transmission rate. otherwise it's Rate field of L-SIG */
+    signed rssi: 8;                               /**< the RSSI of the reception frame */
+    unsigned rate: 5;                             /**< if cur_bb_format is RX_BB_FORMAT_11B, it's the transmission rate. otherwise it's Rate field of L-SIG */
     unsigned : 1;                                 /**< reserved */
     unsigned : 2;                                 /**< reserved */
     unsigned : 12;                                /**< reserved */
-    unsigned rxmatch0:1;                          /**< indicate whether the reception frame is from interface 0 */
-    unsigned rxmatch1:1;                          /**< indicate whether the reception frame is from interface 1 */
-    unsigned rxmatch2:1;                          /**< indicate whether the reception frame is from interface 2 */
-    unsigned rxmatch3:1;                          /**< indicate whether the reception frame is from interface 3 */
+    unsigned rxmatch0: 1;                         /**< indicate whether the reception frame is from interface 0 */
+    unsigned rxmatch1: 1;                         /**< indicate whether the reception frame is from interface 1 */
+    unsigned rxmatch2: 1;                         /**< indicate whether the reception frame is from interface 2 */
+    unsigned rxmatch3: 1;                         /**< indicate whether the reception frame is from interface 3 */
     uint32_t he_siga1;                            /**< HE-SIGA1 or HT-SIG or VHT-SIG */
-    unsigned rxend_state:8;                       /**< reception state, 0: successful, others: failure */
+    unsigned rxend_state: 8;                      /**< reception state, 0: successful, others: failure */
     uint16_t he_siga2;                            /**< HE-SIGA2 */
     unsigned : 7;                                 /**< reserved */
-    unsigned is_group:1;                          /**< indicate whether the reception is a group addressed frame */
-    unsigned timestamp:32;                        /**< timestamp. The local time when this packet is received. It is precise only if modem sleep or light sleep is not enabled. unit: microsecond */
+    unsigned is_group: 1;                         /**< indicate whether the reception is a group addressed frame */
+    unsigned timestamp: 32;                       /**< timestamp. The local time when this packet is received. It is precise only if modem sleep or light sleep is not enabled. unit: microsecond */
     unsigned : 15;                                /**< reserved */
     unsigned : 15;                                /**< reserved */
     unsigned : 2;                                 /**< reserved */
-    unsigned noise_floor:8;                       /**< the noise floor of the reception frame */
+    unsigned noise_floor: 8;                      /**< the noise floor of the reception frame */
     signed : 8;                                   /**< reserved */
     signed : 8;                                   /**< reserved */
     unsigned : 8;                                 /**< reserved */
     unsigned : 8;                                 /**< reserved */
     unsigned : 8;                                 /**< reserved */
     unsigned : 2;                                 /**< reserved */
-    unsigned sigb_len:10;                         /**< the sigb length */
+    unsigned sigb_len: 10;                        /**< the sigb length */
     unsigned : 1;                                 /**< reserved */
     unsigned : 1;                                 /**< reserved */
     unsigned : 1;                                 /**< reserved */
     unsigned : 1;                                 /**< reserved */
-    unsigned channel:4;                           /**< the primary channel */
-    unsigned second:4;                            /**< the second channel if in HT40 */
+    unsigned channel: 4;                          /**< the primary channel */
+    unsigned second: 4;                           /**< the second channel if in HT40 */
     unsigned : 12;                                /**< reserved */
     unsigned : 4;                                 /**< reserved */
     unsigned : 1;                                 /**< reserved */
@@ -204,9 +203,9 @@ typedef struct {
     unsigned : 1;                                 /**< reserved */
     unsigned : 12;                                /**< reserved */
     unsigned : 12;                                /**< reserved */
-    unsigned cur_bb_format:4;                     /**< the format of the reception frame */
-    unsigned rx_channel_estimate_len:10;          /**< the length of the channel information */
-    unsigned rx_channel_estimate_info_vld:1;      /**< indicate the channel information is valid */
+    unsigned cur_bb_format: 4;                    /**< the format of the reception frame */
+    unsigned rx_channel_estimate_len: 10;         /**< the length of the channel information */
+    unsigned rx_channel_estimate_info_vld: 1;     /**< indicate the channel information is valid */
     unsigned : 5;                                 /**< reserved */
     unsigned : 21;                                /**< reserved */
     unsigned : 10;                                /**< reserved */
@@ -221,11 +220,11 @@ typedef struct {
     unsigned : 1;                                 /**< reserved */
     unsigned : 8;                                 /**< reserved */
     unsigned : 16;                                /**< reserved */
-    unsigned sig_len:14;                          /**< the length of the reception MPDU */
+    unsigned sig_len: 14;                         /**< the length of the reception MPDU */
     unsigned : 2;                                 /**< reserved */
-    unsigned dump_len:14;                         /**< the length of the reception MPDU excluding the FCS */
+    unsigned dump_len: 14;                        /**< the length of the reception MPDU excluding the FCS */
     unsigned : 2;                                 /**< reserved */
-    unsigned rx_state:8;                          /**< reception state, 0: successful, others: failure */
+    unsigned rx_state: 8;                         /**< reception state, 0: successful, others: failure */
     unsigned : 8;                                 /**< reserved */
     unsigned : 16;                                /**< reserved */
 } __attribute__((packed)) esp_wifi_rxctrl_t;

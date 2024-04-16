@@ -40,7 +40,7 @@ typedef void (*neighbor_rep_request_cb)(void *ctx, const uint8_t *report, size_t
 
 __attribute__((deprecated("Use 'esp_rrm_send_neighbor_report_request' instead")))
 int esp_rrm_send_neighbor_rep_request(neighbor_rep_request_cb cb,
-                                     void *cb_ctx);
+                                      void *cb_ctx);
 /**
   * @brief  Send Radio measurement neighbor report request to connected AP
   * @return

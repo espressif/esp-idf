@@ -41,20 +41,20 @@ typedef struct {
 } wps_ioctl_param_t;
 
 #ifdef ESP_SUPPLICANT
-enum wps_sm_state{
-     WAIT_START,
-     WPA_MESG,
-     WPA_FAIL
+enum wps_sm_state {
+    WAIT_START,
+    WPA_MESG,
+    WPA_FAIL
 };
 #endif /* ESP_SUPPLICANT */
 
-#define WPS_IGNORE_SEL_REG_MAX_CNT	4
+#define WPS_IGNORE_SEL_REG_MAX_CNT  4
 
-#define WPS_MAX_DIS_AP_NUM	10
+#define WPS_MAX_DIS_AP_NUM  10
 
 /* Bssid of the discard AP which is discarded for not select reg or other reason */
-struct discard_ap_list_t{
-	u8 bssid[6];
+struct discard_ap_list_t {
+    u8 bssid[6];
 };
 
 #ifndef MAX_PASSPHRASE_LEN

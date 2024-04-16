@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2010-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2010-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -86,7 +86,7 @@ static void sc_ack_send_task(void *pvParameters)
         remote_port = SC_ACK_TOUCH_SERVER_PORT;
     } else if (ack->type == SC_TYPE_ESPTOUCH_V2) {
         uint8_t port_bit =  ack->ctx.token;
-        if(port_bit > 3) {
+        if (port_bit > 3) {
             port_bit = 0;
         }
         remote_port = SC_ACK_TOUCH_V2_SERVER_PORT(port_bit);
@@ -194,8 +194,7 @@ static void sc_ack_send_task(void *pvParameters)
                     goto _end;
                 }
             }
-        }
-        else {
+        } else {
             vTaskDelay((TickType_t)(100 / portTICK_PERIOD_MS));
         }
     }

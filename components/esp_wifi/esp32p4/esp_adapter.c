@@ -53,10 +53,10 @@ extern void wifi_apb80m_request(void);
 extern void wifi_apb80m_release(void);
 #endif
 
-IRAM_ATTR void *wifi_malloc( size_t size )
+IRAM_ATTR void *wifi_malloc(size_t size)
 {
 #if CONFIG_SPIRAM_TRY_ALLOCATE_WIFI_LWIP
-    return heap_caps_malloc_prefer(size, 2, MALLOC_CAP_DEFAULT|MALLOC_CAP_SPIRAM, MALLOC_CAP_DEFAULT|MALLOC_CAP_INTERNAL);
+    return heap_caps_malloc_prefer(size, 2, MALLOC_CAP_DEFAULT | MALLOC_CAP_SPIRAM, MALLOC_CAP_DEFAULT | MALLOC_CAP_INTERNAL);
 #else
     return malloc(size);
 #endif
@@ -66,10 +66,10 @@ IRAM_ATTR void *wifi_malloc( size_t size )
  If CONFIG_SPIRAM_TRY_ALLOCATE_WIFI_LWIP is enabled. Prefer to allocate a chunk of memory in SPIRAM firstly.
  If failed, try to allocate it in internal memory then.
  */
-IRAM_ATTR void *wifi_realloc( void *ptr, size_t size )
+IRAM_ATTR void *wifi_realloc(void *ptr, size_t size)
 {
 #if CONFIG_SPIRAM_TRY_ALLOCATE_WIFI_LWIP
-    return heap_caps_realloc_prefer(ptr, size, 2, MALLOC_CAP_DEFAULT|MALLOC_CAP_SPIRAM, MALLOC_CAP_DEFAULT|MALLOC_CAP_INTERNAL);
+    return heap_caps_realloc_prefer(ptr, size, 2, MALLOC_CAP_DEFAULT | MALLOC_CAP_SPIRAM, MALLOC_CAP_DEFAULT | MALLOC_CAP_INTERNAL);
 #else
     return realloc(ptr, size);
 #endif
@@ -79,10 +79,10 @@ IRAM_ATTR void *wifi_realloc( void *ptr, size_t size )
  If CONFIG_SPIRAM_TRY_ALLOCATE_WIFI_LWIP is enabled. Prefer to allocate a chunk of memory in SPIRAM firstly.
  If failed, try to allocate it in internal memory then.
  */
-IRAM_ATTR void *wifi_calloc( size_t n, size_t size )
+IRAM_ATTR void *wifi_calloc(size_t n, size_t size)
 {
 #if CONFIG_SPIRAM_TRY_ALLOCATE_WIFI_LWIP
-    return heap_caps_calloc_prefer(n, size, 2, MALLOC_CAP_DEFAULT|MALLOC_CAP_SPIRAM, MALLOC_CAP_DEFAULT|MALLOC_CAP_INTERNAL);
+    return heap_caps_calloc_prefer(n, size, 2, MALLOC_CAP_DEFAULT | MALLOC_CAP_SPIRAM, MALLOC_CAP_DEFAULT | MALLOC_CAP_INTERNAL);
 #else
     return calloc(n, size);
 #endif
@@ -94,7 +94,7 @@ static void *IRAM_ATTR wifi_zalloc_wrapper(size_t size)
     return ptr;
 }
 
-wifi_static_queue_t *wifi_create_queue( int queue_len, int item_size)
+wifi_static_queue_t *wifi_create_queue(int queue_len, int item_size)
 {
     wifi_static_queue_t *queue = NULL;
 
@@ -105,12 +105,12 @@ wifi_static_queue_t *wifi_create_queue( int queue_len, int item_size)
 
 #if CONFIG_SPIRAM_USE_MALLOC
 
-    queue->storage = heap_caps_calloc(1, sizeof(StaticQueue_t) + (queue_len*item_size), MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT);
+    queue->storage = heap_caps_calloc(1, sizeof(StaticQueue_t) + (queue_len * item_size), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
     if (!queue->storage) {
         goto _error;
     }
 
-    queue->handle = xQueueCreateStatic( queue_len, item_size, ((uint8_t*)(queue->storage)) + sizeof(StaticQueue_t), (StaticQueue_t*)(queue->storage));
+    queue->handle = xQueueCreateStatic(queue_len, item_size, ((uint8_t*)(queue->storage)) + sizeof(StaticQueue_t), (StaticQueue_t*)(queue->storage));
 
     if (!queue->handle) {
         goto _error;
@@ -129,7 +129,7 @@ _error:
 
     return NULL;
 #else
-    queue->handle = xQueueCreate( queue_len, item_size);
+    queue->handle = xQueueCreate(queue_len, item_size);
     return queue;
 #endif
 }
@@ -550,10 +550,10 @@ bool IRAM_ATTR esp_coex_common_env_is_chip_wrapper(void)
 void * esp_coex_common_spin_lock_create_wrapper(void)
 {
     portMUX_TYPE tmp = portMUX_INITIALIZER_UNLOCKED;
-    void *mux = heap_caps_malloc(sizeof(portMUX_TYPE), MALLOC_CAP_8BIT|MALLOC_CAP_INTERNAL);
+    void *mux = heap_caps_malloc(sizeof(portMUX_TYPE), MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL);
 
     if (mux) {
-        memcpy(mux,&tmp,sizeof(portMUX_TYPE));
+        memcpy(mux, &tmp, sizeof(portMUX_TYPE));
         return mux;
     }
     return NULL;
@@ -630,7 +630,7 @@ void IRAM_ATTR esp_coex_common_timer_arm_us_wrapper(void *ptimer, uint32_t us, b
 
 void * IRAM_ATTR esp_coex_common_malloc_internal_wrapper(size_t size)
 {
-    return heap_caps_malloc(size, MALLOC_CAP_8BIT|MALLOC_CAP_DMA|MALLOC_CAP_INTERNAL);
+    return heap_caps_malloc(size, MALLOC_CAP_8BIT | MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
 }
 
 wifi_osi_funcs_t g_wifi_osi_funcs = {
