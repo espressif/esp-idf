@@ -133,6 +133,6 @@ For any technical queries, please open an [issue](https://github.com/espressif/e
 
 _Provide references to important documents_
 
-- Link to the ESP-IDF feature's API reference, for example [ESP-IDF: ESP Timer feature](https://docs.espressif.com/projects/esp-idf/en/latest/api-reference/system/esp_timer.html)
+- _Link to the ESP-IDF feature's API reference, for example [ESP-IDF: ESP Timer feature](https://docs.espressif.com/projects/esp-idf/en/latest/api-reference/system/esp_timer.html)_
 - [ESP-IDF Getting Started](https://docs.espressif.com/projects/esp-idf/en/latest/get-started/index.html#get-started)
 - [Project Configuration](https://docs.espressif.com/projects/esp-idf/en/latest/api-reference/kconfig.html) (Kconfig Options)

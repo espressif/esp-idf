@@ -58,7 +58,7 @@ idf.py set-target esp32
 
 ### Configure the Project
 
-For information about Kconfig options, see [Project Configuration](https://docs.espressif.com/projects/esp-idf/en/latest/api-reference/kconfig.html) > ESP Timer (High Resolution Timer).
+For information about Kconfig options, see [Project Configuration](https://docs.espressif.com/projects/esp-idf/en/latest/api-reference/kconfig.html).
 
 To conveniently check or modify Kconfig options for this example in a project configuration menu, run:
 
