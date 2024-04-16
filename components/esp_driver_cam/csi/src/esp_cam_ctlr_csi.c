@@ -154,16 +154,19 @@ esp_err_t esp_cam_new_csi_ctlr(const esp_cam_ctlr_csi_config_t *config, esp_cam_
     ctlr->fb_size_in_bytes = fb_size_in_bits / 8;
     ESP_LOGD(TAG, "ctlr->fb_size_in_bytes=%d", ctlr->fb_size_in_bytes);
 
-    size_t dma_alignment = 4;  //TODO: IDF-9126, replace with dwgdma alignment API
-    size_t cache_alignment = 1;
-    ESP_GOTO_ON_ERROR(esp_cache_get_alignment(MALLOC_CAP_SPIRAM | MALLOC_CAP_DMA, &cache_alignment), err, TAG, "failed to get cache alignment");
-    size_t alignment = MAX(cache_alignment, dma_alignment);
-    ESP_LOGD(TAG, "alignment: 0x%x\n", alignment);
+    ctlr->bk_buffer_dis = config->bk_buffer_dis;
+    if (!ctlr->bk_buffer_dis) {
+        size_t dma_alignment = 4;  //TODO: IDF-9126, replace with dwgdma alignment API
+        size_t cache_alignment = 1;
+        ESP_GOTO_ON_ERROR(esp_cache_get_alignment(MALLOC_CAP_SPIRAM | MALLOC_CAP_DMA, &cache_alignment), err, TAG, "failed to get cache alignment");
+        size_t alignment = MAX(cache_alignment, dma_alignment);
+        ESP_LOGD(TAG, "alignment: 0x%x\n", alignment);
 
-    ctlr->backup_buffer = heap_caps_aligned_alloc(alignment, ctlr->fb_size_in_bytes, MALLOC_CAP_SPIRAM);
-    ESP_GOTO_ON_FALSE(ctlr->backup_buffer, ESP_ERR_NO_MEM, err, TAG, "no mem for backup buffer");
-    ESP_LOGD(TAG, "ctlr->backup_buffer: %p\n", ctlr->backup_buffer);
-    esp_cache_msync((void *)(ctlr->backup_buffer), ctlr->fb_size_in_bytes, ESP_CACHE_MSYNC_FLAG_DIR_C2M);
+        ctlr->backup_buffer = heap_caps_aligned_alloc(alignment, ctlr->fb_size_in_bytes, MALLOC_CAP_SPIRAM);
+        ESP_GOTO_ON_FALSE(ctlr->backup_buffer, ESP_ERR_NO_MEM, err, TAG, "no mem for backup buffer");
+        ESP_LOGD(TAG, "ctlr->backup_buffer: %p\n", ctlr->backup_buffer);
+        esp_cache_msync((void *)(ctlr->backup_buffer), ctlr->fb_size_in_bytes, ESP_CACHE_MSYNC_FLAG_DIR_C2M);
+    }
 
     mipi_csi_hal_config_t hal_config;
     hal_config.frame_height = config->h_res;
@@ -246,7 +249,9 @@ esp_err_t s_del_csi_ctlr(csi_controller_t *ctlr)
     PERIPH_RCC_ATOMIC() {
         mipi_csi_ll_enable_phy_config_clock(ctlr->csi_id, 0);
     }
-    free(ctlr->backup_buffer);
+    if (!ctlr->bk_buffer_dis) {
+        free(ctlr->backup_buffer);
+    }
     vQueueDeleteWithCaps(ctlr->trans_que);
     free(ctlr);
 
@@ -330,7 +335,7 @@ static bool csi_dma_trans_done_callback(dw_gdma_channel_handle_t chan, const dw_
         } else {
             csi_dma_transfer_config.dst.addr = (uint32_t)(new_trans.buffer);
         }
-    } else {
+    } else if (!ctlr->bk_buffer_dis) {
         use_backup = true;
     }
 
@@ -339,6 +344,8 @@ static bool csi_dma_trans_done_callback(dw_gdma_channel_handle_t chan, const dw_
         new_trans.buflen = ctlr->fb_size_in_bytes;
         ESP_EARLY_LOGD(TAG, "no new buffer or no long enough new buffer, use driver internal buffer");
         csi_dma_transfer_config.dst.addr = (uint32_t)ctlr->backup_buffer;
+    } else {
+        assert(false && "no new buffer, and no driver internal buffer");
     }
 
     ESP_EARLY_LOGD(TAG, "new_trans.buffer: %p, new_trans.buflen: %d", new_trans.buffer, new_trans.buflen);
@@ -422,9 +429,11 @@ esp_err_t s_ctlr_csi_start(esp_cam_ctlr_handle_t handle)
     if (ctlr->cbs.on_get_new_trans) {
         ctlr->cbs.on_get_new_trans(handle, &trans, ctlr->cbs_user_data);
         ESP_RETURN_ON_FALSE(trans.buffer, ESP_ERR_INVALID_STATE, TAG, "no ready transaction, cannot start");
-    } else {
+    } else if (!ctlr->bk_buffer_dis) {
         trans.buffer = ctlr->backup_buffer;
         trans.buflen = ctlr->fb_size_in_bytes;
+    } else {
+        ESP_RETURN_ON_FALSE(false, ESP_ERR_INVALID_STATE, TAG, "no ready transaction, and no backup buffer");
     }
 
     ESP_LOGD(TAG, "trans.buffer: %p, trans.buflen: %d", trans.buffer, trans.buflen);
