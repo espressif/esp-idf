@@ -50,6 +50,7 @@ api-reference/peripherals/usb_host/usb_host_notes_arch.rst
 api-reference/peripherals/usb_host/usb_host_notes_index.rst
 api-reference/peripherals/usb_host/usb_host_notes_dwc_otg.rst
 api-reference/peripherals/usb_host/usb_host_notes_design.rst
+api-reference/peripherals/usb_host/usb_host_notes_usbh.rst
 api-reference/peripherals/usb_device.rst
 api-reference/peripherals/touch_element.rst
 api-reference/peripherals/ana_cmpr.rst
