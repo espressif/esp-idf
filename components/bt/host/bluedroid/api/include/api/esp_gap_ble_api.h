@@ -225,7 +225,8 @@ typedef enum {
     // BLE_INCLUDED
     ESP_GAP_BLE_ADV_CLEAR_COMPLETE_EVT,                          /*!< When clear advertising complete, the event comes */
     ESP_GAP_BLE_SET_RPA_TIMEOUT_COMPLETE_EVT,                    /*!< When set the Resolvable Private Address (RPA) timeout completes, the event comes */
-    ESP_GAP_BLE_VENDOR_CMD_COMPLETE_EVT,                          /*!< When vendor hci command complete, the event comes */
+    ESP_GAP_BLE_ADD_DEV_TO_RESOLVING_LIST_COMPLETE_EVT,          /*!< when add a device to the resolving list completes, the event comes*/
+    ESP_GAP_BLE_VENDOR_CMD_COMPLETE_EVT,                         /*!< When vendor hci command complete, the event comes */
     ESP_GAP_BLE_EVT_MAX,                                         /*!< when maximum advertising event complete, the event comes */
 } esp_gap_ble_cb_event_t;
 
@@ -1160,6 +1161,13 @@ typedef union {
         esp_bt_status_t status;                     /*!< Indicate the set RPA timeout operation success status */
     } set_rpa_timeout_cmpl;                         /*!< Event parameter of ESP_GAP_BLE_SET_RPA_TIMEOUT_COMPLETE_EVT */
     /**
+     * @brief ESP_GAP_BLE_ADD_DEV_TO_RESOLVING_LIST_COMPLETE_EVT
+     */
+    struct ble_add_dev_to_resolving_list_cmpl_evt_param {
+        esp_bt_status_t status;         /*!< Indicates the success status of adding a device to the resolving list */
+    } add_dev_to_resolving_list_cmpl;  /*!< Event parameter of ESP_GAP_BLE_ADD_DEV_TO_RESOLVING_LIST_COMPLETE_EVT */
+
+    /**
      * @brief ESP_GAP_BLE_REMOVE_BOND_DEV_COMPLETE_EVT
      */
     struct ble_remove_bond_dev_cmpl_evt_param {
@@ -1635,13 +1643,13 @@ esp_err_t esp_ble_gap_set_pkt_data_len(esp_bd_addr_t remote_device, uint16_t tx_
  *
  * @param[in]       rand_addr: The address to be configured. Refer to the table below for possible address subtypes:
  *
- *               | address [47:46] | Address Type             |
- *               |-----------------|--------------------------|
- *               |      0b00       | Non-Resolvable Private   |
- *               |                 | Address                  |
- *               |-----------------|--------------------------|
- *               |      0b11       | Static Random Address    |
- *               |-----------------|--------------------------|
+ *               | address [47:46] | Address Type                | Corresponding API                      |
+ *               |-----------------|-----------------------------|----------------------------------------|
+ *               |      0b00       | Non-Resolvable Private      | esp_ble_gap_addr_create_nrpa           |
+ *               |                 | Address (NRPA)              |                                        |
+ *               |-----------------|-----------------------------|----------------------------------------|
+ *               |      0b11       | Static Random Address       | esp_ble_gap_addr_create_static         |
+ *               |-----------------|-----------------------------|----------------------------------------|
  *
  * @return
  *                  - ESP_OK : success
@@ -1649,6 +1657,22 @@ esp_err_t esp_ble_gap_set_pkt_data_len(esp_bd_addr_t remote_device, uint16_t tx_
  *
  */
 esp_err_t esp_ble_gap_set_rand_addr(esp_bd_addr_t rand_addr);
+
+/**
+ * @brief           Create a static device address
+ * @param[out]      rand_addr: Pointer to the buffer where the static device address will be stored.
+ * @return          - ESP_OK : Success
+ *                  - Other  : Failed
+ */
+esp_err_t esp_ble_gap_addr_create_static(esp_bd_addr_t rand_addr);
+
+/**
+ * @brief           Create a non-resolvable private address (NRPA)
+ * @param[out]      rand_addr: Pointer to the buffer where the NRPA will be stored.
+ * @return          - ESP_OK : Success
+ *                  - Other  : Failed
+ */
+esp_err_t esp_ble_gap_addr_create_nrpa(esp_bd_addr_t rand_addr);
 
 /**
  * @brief           This function sets the length of time the Controller uses a Resolvable Private Address
@@ -1667,6 +1691,27 @@ esp_err_t esp_ble_gap_set_rand_addr(esp_bd_addr_t rand_addr);
  */
 esp_err_t esp_ble_gap_set_resolvable_private_address_timeout(uint16_t rpa_timeout);
 
+
+/**
+ * @brief           This function adds a device to the resolving list used to generate and resolve Resolvable Private Addresses
+ *                  in the Controller.
+ *
+ * @note            Note: This function shall not be used when address resolution is enabled in the Controller and:
+ *                      - Advertising (other than periodic advertising) is enabled,
+ *                      - Scanning is enabled, or
+ *                      - an HCI_LE_Create_Connection, HCI_LE_Extended_Create_Connection, or HCI_LE_Periodic_Advertising_Create_Sync command is pending.
+ *                  This command may be used at any time when address resolution is disabled in the Controller.
+ *                  The added device shall be set to Network Privacy mode.
+ *
+ * @param[in]       peer_addr: The peer identity address of the device to be added to the resolving list.
+ * @param[in]       addr_type: The address type of the peer identity address (BLE_ADDR_TYPE_PUBLIC or BLE_ADDR_TYPE_RANDOM).
+ * @param[in]       peer_irk: The Identity Resolving Key (IRK) of the device.
+ * @return
+ *                  - ESP_OK : success
+ *                  - other  : failed
+ *
+ */
+esp_err_t esp_ble_gap_add_device_to_resolving_list(esp_bd_addr_t peer_addr, uint8_t addr_type, uint8_t *peer_irk);
 /**
  * @brief           This function clears the random address for the application
  *
@@ -1676,8 +1721,6 @@ esp_err_t esp_ble_gap_set_resolvable_private_address_timeout(uint16_t rpa_timeou
  *
  */
 esp_err_t esp_ble_gap_clear_rand_addr(void);
-
-
 
 /**
  * @brief           Enable/disable privacy (including address resolution) on the local device
@@ -1992,7 +2035,6 @@ esp_err_t esp_ble_remove_bond_device(esp_bd_addr_t bd_addr);
 *
 */
 int esp_ble_get_bond_device_num(void);
-
 
 /**
 * @brief           Get the device from the security database list of peer device.
