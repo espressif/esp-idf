@@ -202,6 +202,21 @@ void BTA_DmGetDeviceName(tBTA_GET_DEV_NAME_CBACK *p_cback)
     }
 }
 
+void BTA_DmsendVendorHciCmd(UINT16 opcode, UINT8 param_len, UINT8 *p_param_buf, tBTA_SEND_VENDOR_HCI_CMPL_CBACK p_vendor_cmd_complete_cback)
+{
+    tBTA_DM_API_SEND_VENDOR_HCI_CMD *p_msg;
+    if ((p_msg = (tBTA_DM_API_SEND_VENDOR_HCI_CMD *)osi_malloc(sizeof(tBTA_DM_API_SEND_VENDOR_HCI_CMD) + param_len)) != NULL) {
+        p_msg->hdr.event = BTA_DM_API_SEND_VENDOR_HCI_CMD_EVT;
+        p_msg->opcode = opcode;
+        p_msg->param_len = param_len;
+        p_msg->p_param_buf = (UINT8 *)(p_msg + 1);
+        memcpy(p_msg->p_param_buf, p_param_buf, param_len);
+        p_msg->vendor_hci_cb = p_vendor_cmd_complete_cback;
+
+        bta_sys_sendmsg(p_msg);
+    }
+}
+
 #if (CLASSIC_BT_INCLUDED == TRUE)
 
 void BTA_DmConfigEir(tBTA_DM_EIR_CONF *eir_config)
@@ -2501,6 +2516,49 @@ void BTA_DmBleSetDataLength(BD_ADDR remote_device, UINT16 tx_data_length, tBTA_S
     }
 }
 
+void BTA_DmBleDtmTxStart(uint8_t tx_channel, uint8_t len_of_data, uint8_t pkt_payload, tBTA_DTM_CMD_CMPL_CBACK *p_dtm_cmpl_cback)
+{
+    tBTA_DM_API_BLE_DTM_TX_START *p_msg;
+
+    if ((p_msg = (tBTA_DM_API_BLE_DTM_TX_START *)osi_malloc(sizeof(tBTA_DM_API_BLE_DTM_TX_START)))
+            != NULL) {
+        p_msg->hdr.event = BTA_DM_API_DTM_TX_START_EVT;
+        p_msg->tx_channel = tx_channel;
+        p_msg->len_of_data = len_of_data;
+        p_msg->pkt_payload = pkt_payload;
+        p_msg->p_dtm_cmpl_cback = p_dtm_cmpl_cback;
+
+        bta_sys_sendmsg(p_msg);
+    }
+}
+
+void BTA_DmBleDtmRxStart(uint8_t rx_channel, tBTA_DTM_CMD_CMPL_CBACK *p_dtm_cmpl_cback)
+{
+    tBTA_DM_API_BLE_DTM_RX_START *p_msg;
+
+    if ((p_msg = (tBTA_DM_API_BLE_DTM_RX_START *)osi_malloc(sizeof(tBTA_DM_API_BLE_DTM_RX_START)))
+            != NULL) {
+        p_msg->hdr.event = BTA_DM_API_DTM_RX_START_EVT;
+        p_msg->rx_channel= rx_channel;
+        p_msg->p_dtm_cmpl_cback = p_dtm_cmpl_cback;
+
+        bta_sys_sendmsg(p_msg);
+    }
+}
+
+void BTA_DmBleDtmStop(tBTA_DTM_CMD_CMPL_CBACK *p_dtm_cmpl_cback)
+{
+    tBTA_DM_API_BLE_DTM_STOP *p_msg;
+
+    if ((p_msg = (tBTA_DM_API_BLE_DTM_STOP *)osi_malloc(sizeof(tBTA_DM_API_BLE_DTM_STOP)))
+            != NULL) {
+        p_msg->hdr.event = BTA_DM_API_DTM_STOP_EVT;
+        p_msg->p_dtm_cmpl_cback = p_dtm_cmpl_cback;
+
+        bta_sys_sendmsg(p_msg);
+    }
+}
+
 #endif
 
 /*******************************************************************************
@@ -3179,6 +3237,39 @@ void BTA_DmBleGapExtConnect(tBLE_ADDR_TYPE own_addr_type, const BD_ADDR peer_add
         APPL_TRACE_ERROR("%s malloc failed", __func__);
     }
 
+}
+
+void BTA_DmBleDtmEnhTxStart(uint8_t tx_channel, uint8_t len_of_data, uint8_t pkt_payload, uint8_t phy, tBTA_DTM_CMD_CMPL_CBACK *p_dtm_cmpl_cback)
+{
+    tBTA_DM_API_BLE_DTM_ENH_TX_START *p_msg;
+
+    if ((p_msg = (tBTA_DM_API_BLE_DTM_ENH_TX_START *)osi_malloc(sizeof(tBTA_DM_API_BLE_DTM_ENH_TX_START)))
+            != NULL) {
+        p_msg->hdr.event = BTA_DM_API_DTM_ENH_TX_START_EVT;
+        p_msg->tx_channel = tx_channel;
+        p_msg->len_of_data = len_of_data;
+        p_msg->pkt_payload = pkt_payload;
+        p_msg->phy = phy;
+        p_msg->p_dtm_cmpl_cback = p_dtm_cmpl_cback;
+
+        bta_sys_sendmsg(p_msg);
+    }
+}
+
+void BTA_DmBleDtmEnhRxStart(uint8_t rx_channel, uint8_t phy, uint8_t modulation_index, tBTA_DTM_CMD_CMPL_CBACK *p_dtm_cmpl_cback)
+{
+    tBTA_DM_API_BLE_DTM_ENH_RX_START *p_msg;
+
+    if ((p_msg = (tBTA_DM_API_BLE_DTM_ENH_RX_START *)osi_malloc(sizeof(tBTA_DM_API_BLE_DTM_ENH_RX_START)))
+            != NULL) {
+        p_msg->hdr.event = BTA_DM_API_DTM_ENH_RX_START_EVT;
+        p_msg->rx_channel= rx_channel;
+        p_msg->phy = phy;
+        p_msg->modulation_index = modulation_index;
+        p_msg->p_dtm_cmpl_cback = p_dtm_cmpl_cback;
+
+        bta_sys_sendmsg(p_msg);
+    }
 }
 
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)

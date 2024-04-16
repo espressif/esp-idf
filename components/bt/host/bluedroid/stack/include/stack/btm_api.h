@@ -189,6 +189,8 @@ typedef void (tBTM_UPDATE_CONN_PARAM_CBACK) (UINT8 status, BD_ADDR bd_addr, tBTM
 
 typedef void (tBTM_SET_PKT_DATA_LENGTH_CBACK) (UINT8 status, tBTM_LE_SET_PKT_DATA_LENGTH_PARAMS *data_length_params);
 
+typedef void (tBTM_DTM_CMD_CMPL_CBACK) (void *p1);
+
 typedef void (tBTM_SET_RAND_ADDR_CBACK) (UINT8 status);
 
 typedef void (tBTM_UPDATE_WHITELIST_CBACK) (UINT8 status, tBTM_WL_OPERATION wl_opration);

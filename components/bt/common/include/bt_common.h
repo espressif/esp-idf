@@ -72,6 +72,24 @@
 #define BT_BLE_DYNAMIC_ENV_MEMORY  FALSE
 #endif
 
+#if UC_BT_HCI_LOG_DEBUG_EN
+#define BT_HCI_LOG_INCLUDED  UC_BT_HCI_LOG_DEBUG_EN
+#else
+#define BT_HCI_LOG_INCLUDED  FALSE
+#endif
+
+#if UC_BT_HCI_LOG_DATA_BUFFER_SIZE
+#define HCI_LOG_DATA_BUFFER_SIZE  UC_BT_HCI_LOG_DATA_BUFFER_SIZE
+#else
+#define HCI_BUFFER_SIZE  (5)
+#endif
+
+#if UC_BT_HCI_ADV_BUFFER_SIZE
+#define HCI_LOG_ADV_BUFFER_SIZE  UC_BT_HCI_LOG_ADV_BUFFER_SIZE
+#else
+#define HCI_LOG_ADV_BUFFER_SIZE  (5)
+#endif
+
 /* OS Configuration from User config (eg: sdkconfig) */
 #define TASK_PINNED_TO_CORE         UC_TASK_PINNED_TO_CORE
 #define BT_TASK_MAX_PRIORITIES      configMAX_PRIORITIES

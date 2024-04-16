@@ -57,6 +57,31 @@ menu "Bluetooth"
         source "$IDF_PATH/components/bt/host/nimble/Kconfig.in"
     endmenu
 
+    config BT_HCI_LOG_DEBUG_EN
+        depends on BT_BLUEDROID_ENABLED || BT_NIMBLE_ENABLED
+        bool "Enable Bluetooth HCI debug mode"
+        default n
+        help
+            This option is used to enable bluetooth debug mode, which saves the hci layer data stream.
+
+    config BT_HCI_LOG_DATA_BUFFER_SIZE
+        depends on BT_HCI_LOG_DEBUG_EN
+        int "Size of the cache used for HCI data in Bluetooth HCI debug mode (N*1024 bytes)"
+        range 1 100
+        default 5
+        help
+            This option is to configure the buffer size of the hci data steam cache in hci debug mode.
+            This is a ring buffer, the new data will overwrite the oldest data if the buffer is full.
+
+    config BT_HCI_LOG_ADV_BUFFER_SIZE
+        depends on BT_HCI_LOG_DEBUG_EN
+        int "Size of the cache used for adv report in Bluetooth HCI debug mode (N*1024 bytes)"
+        range 1 100
+        default 8
+        help
+            This option is to configure the buffer size of the hci adv report cache in hci debug mode.
+            This is a ring buffer, the new data will overwrite the oldest data if the buffer is full.
+
 endmenu
 
 menuconfig BLE_MESH
