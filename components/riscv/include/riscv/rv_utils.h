@@ -45,27 +45,6 @@ extern "C" {
    and spinlocks */
 #define RVHAL_EXCM_LEVEL    4
 
-/* SW defined interrupt threshold level to allow all interrupts */
-#if SOC_INT_CLIC_SUPPORTED
-/* set global CLIC masking level. When CLIC is supported, all interrupt priority levels less than or equal to the threshold level are masked. */
-#define RVHAL_INTR_ENABLE_THRESH    0
-#else
-#define RVHAL_INTR_ENABLE_THRESH    1
-#endif /* SOC_INT_CLIC_SUPPORTED */
-
-/* On CLIC, the interrupt threshold is stored in the upper (NLBITS) of the mintthresh register, with the other (8 - NLBITS)
- * defaulted to 1. We form the interrupt level bits here to avoid doing this at run time */
-#if SOC_INT_CLIC_SUPPORTED
-/* Helper macro to translate absolute interrupt level to CLIC interrupt threshold bits in the mintthresh reg */
-#define CLIC_INT_THRESH(intlevel)       (((((intlevel) << (8 - NLBITS))) | 0x1f) << CLIC_CPU_INT_THRESH_S)
-
-/* Helper macro to set interrupt level RVHAL_EXCM_LEVEL. Used during critical sections */
-#define RVHAL_EXCM_LEVEL_CLIC           (CLIC_INT_THRESH(RVHAL_EXCM_LEVEL - 1))
-
-/* Helper macro to enable interrupts. */
-#define RVHAL_INTR_ENABLE_THRESH_CLIC   (CLIC_INT_THRESH(RVHAL_INTR_ENABLE_THRESH))
-#endif /* SOC_INT_CLIC_SUPPORTED */
-
 /* --------------------------------------------------- CPU Control -----------------------------------------------------
  *
  * ------------------------------------------------------------------------------------------------------------------ */
@@ -119,48 +98,12 @@ FORCE_INLINE_ATTR void __attribute__((always_inline)) rv_utils_set_cycle_count(u
  *
  * ------------------------------------------------------------------------------------------------------------------ */
 
-// ---------------- Interrupt Descriptors ------------------
-
 // --------------- Interrupt Configuration -----------------
-#if SOC_INT_CLIC_SUPPORTED
-FORCE_INLINE_ATTR void rv_utils_set_mtvt(uint32_t mtvt_val)
-{
-#define MTVT 0x307
-    RV_WRITE_CSR(MTVT, mtvt_val);
-}
-#endif
 
 FORCE_INLINE_ATTR void rv_utils_set_mtvec(uint32_t mtvec_val)
 {
-#if SOC_INT_CLIC_SUPPORTED
-    mtvec_val |= 3; // Set MODE field to 3 to treat MTVT + 4*interrupt_id as the service entry address for HW vectored interrupts
-#else
-    mtvec_val |= 1; // Set MODE field to treat MTVEC as a vector base address
-#endif
-    RV_WRITE_CSR(mtvec, mtvec_val);
+    RV_WRITE_CSR(mtvec, mtvec_val | MTVEC_MODE_CSR);
 }
-
-// TODO: [ESP32C5] IDF-8655 need refactor for C5 MP
-#if SOC_INT_CLIC_SUPPORTED && !CONFIG_IDF_TARGET_ESP32C5_MP_VERSION
- FORCE_INLINE_ATTR __attribute__((pure)) uint32_t rv_utils_get_interrupt_level(void)
-{
-#if CONFIG_IDF_TARGET_ESP32P4
-    // As per CLIC specs, mintstatus CSR should be at 0xFB1, however esp32p4 implements it at 0x346
-    #define MINTSTATUS 0x346
-#elif CONFIG_IDF_TARGET_ESP32C5
-    // TODO: [ESP32C5] IDF-8654, IDF-8655 (inherit from P4) Check the correctness
-    #define MINTSTATUS 0x346
-#elif CONFIG_IDF_TARGET_ESP32C61
-    // TODO: [ESP32C61] IDF-9261, IDF-9262 (inherit from c6) Check
-    #define MINTSTATUS 0xFB1
-    #define MINTTHRESH 0x347
-#else
-    #error "rv_utils_get_mintstatus() is not implemented. Check for correct mintstatus register address."
-#endif /* CONFIG_IDF_TARGET_ESP32P4 */
-    uint32_t mintstatus = RV_READ_CSR(MINTSTATUS);
-    return ((mintstatus >> 24) & 0xFF); // Return the mintstatus[31:24] bits to get the mil field
-}
-#endif /* SOC_INT_CLIC_SUPPORTED */
 
 // ------------------ Interrupt Control --------------------
 
@@ -180,126 +123,6 @@ FORCE_INLINE_ATTR void rv_utils_intr_disable(uint32_t intr_mask)
     RV_SET_CSR(mstatus, old_mstatus & MSTATUS_MIE);
 }
 
-
-#if SOC_INT_CLIC_SUPPORTED
-
-FORCE_INLINE_ATTR void __attribute__((always_inline)) rv_utils_restore_intlevel(uint32_t restoreval)
-{
-    // TODO: [ESP32C5] IDF-8655 need refactor for C5 MP
-#if CONFIG_IDF_TARGET_ESP32C5_MP_VERSION
-    #define MINTTHRESH         0x347
-    RV_WRITE_CSR(MINTTHRESH, restoreval);
-#elif CONFIG_IDF_TARGET_ESP32C61
-    // TODO: [ESP32C61] IDF-9261, changed in verify code, pls check
-    // RV_WRITE_CSR(MINTTHRESH, restoreval);
-#else
-    REG_SET_FIELD(CLIC_INT_THRESH_REG, CLIC_CPU_INT_THRESH, ((restoreval << (8 - NLBITS))) | 0x1f);
-#endif  // !CONFIG_IDF_TARGET_ESP32C5_MP_VERSION
-}
-
-FORCE_INLINE_ATTR uint32_t __attribute__((always_inline)) rv_utils_set_intlevel(uint32_t intlevel)
-{
-    uint32_t old_thresh;
-    // TODO: [ESP32C5] IDF-8655 need refactor for C5 MP
-#if CONFIG_IDF_TARGET_ESP32C5_MP_VERSION
-    old_thresh = RV_READ_CSR(MINTTHRESH);
-    RV_WRITE_CSR(MINTTHRESH, ((intlevel << (8 - NLBITS)) | 0x1f));
-#else
-    // TODO: [ESP32C61] IDF-9261 pls check
-    uint32_t old_mstatus = RV_CLEAR_CSR(mstatus, MSTATUS_MIE);
-
-    old_thresh = REG_GET_FIELD(CLIC_INT_THRESH_REG, CLIC_CPU_INT_THRESH);
-    old_thresh = (old_thresh >> (8 - NLBITS));
-    /* Upper bits should already be 0, but let's be safe and keep NLBITS */
-    old_thresh &= BIT(NLBITS) - 1;
-
-    REG_SET_FIELD(CLIC_INT_THRESH_REG, CLIC_CPU_INT_THRESH, ((intlevel << (8 - NLBITS))) | 0x1f);
-    /**
-     * After writing the threshold register, the new threshold is not directly taken into account by the CPU.
-     * By executing ~8 nop instructions, or by performing a memory load right now, the previous memory write
-     * operations is forced, making the new threshold active. It is then safe to re-enable MIE bit in mstatus.
-     */
-    REG_READ(CLIC_INT_THRESH_REG);
-    RV_SET_CSR(mstatus, old_mstatus & MSTATUS_MIE);
-#endif
-    return old_thresh;
-}
-
-/* Direct register write version of rv_utils_restore_intlevel(). Used to speed up critical sections. */
-FORCE_INLINE_ATTR void __attribute__((always_inline)) rv_utils_restore_intlevel_regval(uint32_t restoreval)
-{
-    /* This function expects restoreval to be in the format needed to restore the interrupt level with
-     * a single write to the mintthresh register without further manipulations needed.
-     * This is done to quicken up exit for critical sections */
-    REG_WRITE(CLIC_INT_THRESH_REG, restoreval);
-
-    /**
-     * After writing the threshold register, the new threshold is not directly taken into account by the CPU.
-     * By executing ~8 nop instructions, or by performing a memory load right now, the previous memory write
-     * operations is forced, making the new threshold active.
-     *
-     * Without this we risk executing the next several instructions before getting interrupted
-     * This is especially bad if we immediately enter a new critical section
-     */
-    REG_READ(CLIC_INT_THRESH_REG);
-}
-
-/* Direct register write version of rv_utils_set_intlevel(). Used to speed up critical sections. */
-FORCE_INLINE_ATTR uint32_t __attribute__((always_inline)) rv_utils_set_intlevel_regval(uint32_t intlevel)
-{
-    uint32_t old_mstatus = RV_CLEAR_CSR(mstatus, MSTATUS_MIE);
-    uint32_t old_thresh = REG_READ(CLIC_INT_THRESH_REG);
-
-    /* This function expects the interrupt level to be available in the format needed for mintthresh reg.
-     * Providing an absolute interrupt level will result in incorrect behavior.
-     * See CLIC_INT_THRESH() macro for details of how the interrupt level must be provided. */
-    REG_WRITE(CLIC_INT_THRESH_REG, intlevel);
-    /**
-     * After writing the threshold register, the new threshold is not directly taken into account by the CPU.
-     * By executing ~8 nop instructions, or by performing a memory load right now, the previous memory write
-     * operations is forced, making the new threshold active. It is then safe to re-enable MIE bit in mstatus.
-     */
-    REG_READ(CLIC_INT_THRESH_REG);
-    RV_SET_CSR(mstatus, old_mstatus & MSTATUS_MIE);
-
-    /* We return the mintthresh register value and NOT the absolute interrupt threshold level.
-     * This is done to avoid extra bit manipulations during critical sections. */
-    return old_thresh;
-}
-
-FORCE_INLINE_ATTR uint32_t __attribute__((always_inline)) rv_utils_mask_int_level_lower_than(uint32_t intlevel)
-{
-    /* CLIC's set interrupt level is inclusive, i.e. it does mask the set level  */
-    return rv_utils_set_intlevel(intlevel - 1);
-}
-
-#endif /* SOC_INT_CLIC_SUPPORTED */
-
-
-FORCE_INLINE_ATTR uint32_t rv_utils_intr_get_enabled_mask(void)
-{
-#if SOC_INT_CLIC_SUPPORTED
-    unsigned intr_ena_mask = 0;
-    unsigned intr_num;
-    for (intr_num = 0; intr_num < 32; intr_num++) {
-        if (REG_GET_BIT(CLIC_INT_CTRL_REG(intr_num + CLIC_EXT_INTR_NUM_OFFSET), CLIC_INT_IE))
-            intr_ena_mask |= BIT(intr_num);
-    }
-    return intr_ena_mask;
-#else
-    return REG_READ(INTERRUPT_CORE0_CPU_INT_ENABLE_REG);
-#endif
-}
-
-FORCE_INLINE_ATTR void rv_utils_intr_edge_ack(unsigned int intr_num)
-{
-#if SOC_INT_CLIC_SUPPORTED
-    REG_SET_BIT(CLIC_INT_CTRL_REG(intr_num + CLIC_EXT_INTR_NUM_OFFSET) , CLIC_INT_IP);
-#else
-    REG_SET_BIT(INTERRUPT_CORE0_CPU_INT_CLEAR_REG, intr_num);
-#endif
-}
-
 FORCE_INLINE_ATTR void rv_utils_intr_global_enable(void)
 {
     RV_SET_CSR(mstatus, MSTATUS_MIE);
@@ -310,6 +133,10 @@ FORCE_INLINE_ATTR void rv_utils_intr_global_disable(void)
     RV_CLEAR_CSR(mstatus, MSTATUS_MIE);
 }
 
+/**
+ * The other rv_utils functions related to each interrupt controller are defined in `interrupt_clic.h`, `interrupt_plic.h`,
+ * and `interrupt_intc.h`.
+ */
 
 #if SOC_CPU_HAS_FPU
 

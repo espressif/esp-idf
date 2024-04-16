@@ -8,7 +8,7 @@
 #include "soc/soc_caps.h"
 #include "soc/reg_base.h"
 
-/* Do not use INTC on targets that have harware CLIC */
+/* Do not use INTC on targets that have hardware CLIC */
 #if SOC_CPU_HAS_FLEXIBLE_INTC && !SOC_INT_CLIC_SUPPORTED
 
 #include "soc/interrupt_reg.h"

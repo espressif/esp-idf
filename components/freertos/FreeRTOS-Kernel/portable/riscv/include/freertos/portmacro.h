@@ -146,7 +146,7 @@ typedef uint32_t TickType_t;
 UBaseType_t xPortSetInterruptMaskFromISR(void);
 
 /**
- * @brief Reenable interrupts in a nested manner (meant to be called from ISRs)
+ * @brief Re-enable interrupts in a nested manner (meant to be called from ISRs)
  *
  * @warning Only applies to current CPU.
  * @param prev_int_level Previous interrupt level
@@ -663,27 +663,10 @@ static inline void __attribute__((always_inline)) vPortExitCriticalSafe(portMUX_
 
 // ---------------------- Yielding -------------------------
 
-// TODO: [ESP32C61] IDF-9280, changed in verify code, pls check
-#if CONFIG_IDF_TARGET_ESP32C61
-FORCE_INLINE_ATTR bool xPortCanYield(void)
-{
-#if SOC_INT_CLIC_SUPPORTED
-    uint32_t threshold1 = (RV_READ_CSR(MINTTHRESH)) >> (8 - NLBITS);
-    uint32_t threshold2 = (RV_READ_CSR(MINTSTATUS)) >> (24 + (8 - NLBITS));
-    return (threshold1 == 0) && (threshold2 == 0) ;
-#else
-    uint32_t threshold = REG_READ(INTERRUPT_CURRENT_CORE_INT_THRESH_REG);
-    return (threshold <= 1);
-#endif /* SOC_INT_CLIC_SUPPORTED */
-}
-#else
 FORCE_INLINE_ATTR bool xPortCanYield(void)
 {
 
 #if SOC_INT_CLIC_SUPPORTED
-// TODO: [ESP32C5] IDF-8655 simplify the code for c5 mp
-#if !CONFIG_IDF_TARGET_ESP32C5_MP_VERSION
-    uint32_t threshold = REG_READ(INTERRUPT_CURRENT_CORE_INT_THRESH_REG);
     /* When CLIC is supported:
      *  - The lowest interrupt threshold level is 0. Therefore, an interrupt threshold level above 0 would mean that we
      *    are in a critical section.
@@ -692,18 +675,9 @@ FORCE_INLINE_ATTR bool xPortCanYield(void)
      *    level, we read the machine-mode interrupt level (mil) field from the mintstatus CSR. A non-zero value indicates
      *    that we are in an interrupt context.
      */
+    uint32_t threshold = rv_utils_get_interrupt_threshold();
     uint32_t intr_level = rv_utils_get_interrupt_level();
-    threshold = threshold >> (CLIC_CPU_INT_THRESH_S + (8 - NLBITS));
-
     return ((intr_level == 0) && (threshold == 0));
-#else
-    #define MINTSTATUS         0xfb1
-    #define MINTTHRESH         0x347
-    uint32_t threshold1 = (RV_READ_CSR(MINTTHRESH)) >> (8 - NLBITS);
-    uint32_t threshold2 = (RV_READ_CSR(MINTSTATUS)) >> (24 + (8 - NLBITS));
-    return (threshold1 == 0) && (threshold2 == 0) ;
-#endif
-
 #else/* !SOC_INT_CLIC_SUPPORTED */
     uint32_t threshold = REG_READ(INTERRUPT_CURRENT_CORE_INT_THRESH_REG);
     /* when enter critical code, FreeRTOS will mask threshold to RVHAL_EXCM_LEVEL
@@ -713,7 +687,6 @@ FORCE_INLINE_ATTR bool xPortCanYield(void)
     return (threshold <= 1);
 #endif
 }
-#endif
 
 /* ------------------------------------------------------ Misc ---------------------------------------------------------
  * - Miscellaneous porting macros

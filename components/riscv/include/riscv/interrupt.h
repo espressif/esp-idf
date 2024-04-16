@@ -23,7 +23,7 @@ enum intr_type {
 #include "esp_private/interrupt_clic.h"
 #elif SOC_INT_PLIC_SUPPORTED
 #include "esp_private/interrupt_plic.h"
-#else
+#elif SOC_CPU_HAS_FLEXIBLE_INTC
 #include "esp_private/interrupt_intc.h"
 #endif
 
