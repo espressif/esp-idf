@@ -141,12 +141,12 @@ Sometimes the USB-to-UART bridge is external. This is often used in small develo
 
     For the {IDF_TARGET_NAME}, the USB peripheral is available, allowing you to flash the binaries without the need for an external USB-to-UART bridge.
 
-    {IDF_TARGET_USB_PIN_DM:default="Not Updated!", esp32c3="GPIO18", esp32s3="GPIO19", esp32s2="GPIO19", esp32c6="GPIO12", esp32h2="GPIO26"}
-    {IDF_TARGET_USB_PIN_DP:default="Not Updated!", esp32c3="GPIO19", esp32s3="GPIO20", esp32s2="GPIO20", esp32c6="GPIO13", esp32h2="GPIO27"}
+    {IDF_TARGET_USB_PIN_DM:default="Not Updated!", esp32c3="GPIO18", esp32s3="GPIO19", esp32s2="GPIO19", esp32c6="GPIO12", esp32h2="GPIO26", esp32p4="GPIO24/26"}
+    {IDF_TARGET_USB_PIN_DP:default="Not Updated!", esp32c3="GPIO19", esp32s3="GPIO20", esp32s2="GPIO20", esp32c6="GPIO13", esp32h2="GPIO27", esp32p4="GPIO25/27"}
 
     The USB on the {IDF_TARGET_NAME} uses the **{IDF_TARGET_USB_PIN_DP}** for **D+** and **{IDF_TARGET_USB_PIN_DM}** for **D-**.
 
-    .. only:: SOC_USB_SERIAL_JTAG_SUPPORTED and not esp32s3
+    .. only:: SOC_USB_SERIAL_JTAG_SUPPORTED and not esp32s3 and not esp32p4
 
         .. note:: The {IDF_TARGET_NAME} supports only *USB CDC and JTAG*.
 
@@ -348,6 +348,8 @@ To spare you the trouble of installing a serial terminal program, macOS offers t
 Example Output
 ^^^^^^^^^^^^^^
 
+{IDF_TARGET_STRAP_GPIO:default="[NEEDS TO BE UPDATED]", esp32="GPIO0", esp32s2="GPIO0", esp32s3="GPIO0", esp32c2="GPIO9", esp32c3="GPIO9", esp32c6="GPIO9", esp32h2="GPIO9", esp32p4="GPIO35"}
+
 An example log is shown below. Reset the board if you do not see anything.
 
 .. highlight:: none
@@ -376,7 +378,7 @@ If you can see readable log output, it means serial connection is working and yo
 
 .. note::
 
-   For some serial port wiring configurations, the serial RTS & DTR pins need to be disabled in the terminal program before the {IDF_TARGET_NAME} booting and producing serial output. This depends on the hardware itself, most development boards (including all Espressif boards) *do not* have this issue. The issue is present if RTS & DTR are wired directly to the EN & GPIO0 pins. See the `esptool documentation`_ for more details.
+   For some serial port wiring configurations, the serial RTS & DTR pins need to be disabled in the terminal program before the {IDF_TARGET_NAME} booting and producing serial output. This depends on the hardware itself, most development boards (including all Espressif boards) *do not* have this issue. The issue is present if RTS & DTR are wired directly to the EN & {IDF_TARGET_STRAP_GPIO} pins. See the `esptool documentation`_ for more details.
 
 If you got here from :ref:`get-started-connect` when installing s/w for {IDF_TARGET_NAME} development, then you can continue with :ref:`get-started-configure`.
 
