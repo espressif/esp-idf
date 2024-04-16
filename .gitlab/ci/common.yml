@@ -52,7 +52,6 @@ variables:
   IDF_PATH: "$CI_PROJECT_DIR"
   V: "0"
   CHECKOUT_REF_SCRIPT: "$CI_PROJECT_DIR/tools/ci/checkout_project_ref.py"
-  PYTHON_VER: 3.8.17
 
   # Docker images
   ESP_ENV_IMAGE: "${CI_DOCKER_REGISTRY}/esp-env-v5.3:1"
@@ -208,6 +207,10 @@ variables:
 
 .before_script:build:macos:
   before_script:
+    # macos is running shell executor, which means it would use
+    # the system installed /usr/local/bin/python3 by default.
+    # Ensure pyenv and PYENV_VERSION installed
+    - eval "$(pyenv init -)"
     - *common-before_scripts
     # On macOS, these tools need to be installed
     - export IDF_TOOLS_PATH="${HOME}/.espressif_runner_${CI_RUNNER_ID}_${CI_CONCURRENT_ID}"
@@ -215,6 +218,15 @@ variables:
     # This adds tools (compilers) and the version-specific Python environment to PATH
     - *setup_tools_and_idf_python_venv
     - fetch_submodules
+
+.after_script:build:macos:ccache:upload-when-fail:
+  after_script:
+    # macos is running shell executor, which means it would use
+    # the system installed /usr/local/bin/python3 by default.
+    # Ensure pyenv and PYENV_VERSION installed
+    - eval "$(pyenv init -)"
+    - *show_ccache_statistics
+    - *upload_failed_job_log_artifacts
 
 .before_script:build:
   before_script:
