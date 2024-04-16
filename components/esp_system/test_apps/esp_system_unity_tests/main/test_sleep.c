@@ -78,7 +78,6 @@ TEST_CASE_MULTIPLE_STAGES("enter deep sleep on APP CPU and wake up using timer",
 
 #endif
 
-#if !(CONFIG_SPIRAM && CONFIG_IDF_TARGET_ESP32P4) // TODO: IDF-9569
 static void do_deep_sleep_timer(void)
 {
     esp_sleep_enable_timer_wakeup(2000000);
@@ -111,7 +110,6 @@ TEST_CASE("wake up from light sleep using timer", "[deepsleep]")
                (tv_stop.tv_usec - tv_start.tv_usec) * 1e-3f;
     TEST_ASSERT_INT32_WITHIN(500, 2000, (int) dt);
 }
-#endif
 
 //NOTE: Explained in IDF-1445 | MR !14996
 #if !(CONFIG_SPIRAM) || (CONFIG_SPIRAM_MALLOC_ALWAYSINTERNAL >= 16384)
@@ -253,7 +251,6 @@ TEST_CASE("light sleep and frequency switching", "[deepsleep]")
     }
 }
 
-#if !(CONFIG_SPIRAM && CONFIG_IDF_TARGET_ESP32P4) // TODO: IDF-9569
 static void do_deep_sleep(void)
 {
     esp_sleep_enable_timer_wakeup(100000);
@@ -289,7 +286,6 @@ TEST_CASE_MULTIPLE_STAGES("enter deep sleep after abort", "[deepsleep][reset=abo
                           do_abort,
                           check_abort_reset_and_sleep,
                           check_sleep_reset);
-#endif
 
 #if ESP_ROM_SUPPORT_DEEP_SLEEP_WAKEUP_STUB
 static RTC_DATA_ATTR uint32_t s_wake_stub_var;
@@ -331,7 +327,7 @@ TEST_CASE_MULTIPLE_STAGES("can set sleep wake stub", "[deepsleep][reset=DEEPSLEE
    trigger a CRC calculation (done in hardware) for the entire RTC FAST memory
    before going to deep sleep and if it's invalid then the stub is not
    run. Also, while the CRC is being calculated the RTC FAST memory is not
-   accesible by the CPU (reads all zeros).
+   accessible by the CPU (reads all zeros).
 */
 
 static void increment_rtc_memory_cb(void *arg)
@@ -491,7 +487,7 @@ static void trigger_deepsleep(void)
     struct timeval start;
 
     // Use NVS instead of RTC mem to store the start time of deep sleep
-    // Beacuse not all esp chips support RTC mem(such as esp32c2)
+    // Because not all esp chips support RTC mem(such as esp32c2)
     // Initialize NVS
     esp_err_t err = nvs_flash_init();
     if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND) {

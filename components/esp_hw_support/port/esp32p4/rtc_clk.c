@@ -13,6 +13,7 @@
 #include "esp32p4/rom/rtc.h"
 #include "soc/rtc.h"
 #include "esp_private/rtc_clk.h"
+#include "esp_attr.h"
 #include "esp_hw_log.h"
 #include "esp_rom_sys.h"
 #include "hal/clk_tree_ll.h"
@@ -25,6 +26,9 @@ static const char *TAG = "rtc_clk";
 
 // CPLL frequency option, in 360/400MHz. Zero if CPLL is not enabled.
 static int s_cur_cpll_freq = 0;
+
+// MPLL frequency option, 400MHz. Zero if MPLL is not enabled.
+static DRAM_ATTR uint32_t s_cur_mpll_freq = 0;
 
 void rtc_clk_32k_enable(bool enable)
 {
@@ -483,6 +487,7 @@ bool rtc_dig_8m_enabled(void)
 void rtc_clk_mpll_disable(void)
 {
     clk_ll_mpll_disable();
+    s_cur_mpll_freq = 0;
 }
 
 void rtc_clk_mpll_enable(void)
@@ -500,4 +505,10 @@ void rtc_clk_mpll_configure(uint32_t xtal_freq, uint32_t mpll_freq)
     while(!regi2c_ctrl_ll_mpll_calibration_is_done());
     /* MPLL calibration stop */
     regi2c_ctrl_ll_mpll_calibration_stop();
+    s_cur_mpll_freq = mpll_freq;
+}
+
+uint32_t rtc_clk_mpll_get_freq(void)
+{
+    return s_cur_mpll_freq;
 }

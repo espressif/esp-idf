@@ -16,6 +16,7 @@
 #include "esp_private/esp_sleep_internal.h"
 #include "esp_private/esp_timer_private.h"
 #include "esp_private/periph_ctrl.h"
+#include "esp_private/rtc_clk.h"
 #include "esp_private/sleep_event.h"
 #include "esp_private/system_internal.h"
 #include "esp_log.h"
@@ -27,6 +28,7 @@
 #include "soc/soc_caps.h"
 #include "driver/rtc_io.h"
 #include "hal/rtc_io_hal.h"
+#include "hal/clk_tree_hal.h"
 
 #if SOC_PM_SUPPORT_PMU_MODEM_STATE
 #include "esp_private/pm_impl.h"
@@ -924,6 +926,13 @@ static esp_err_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t m
 #endif
 #endif
 
+#if SOC_CLK_MPLL_SUPPORTED
+            uint32_t mpll_freq_mhz = rtc_clk_mpll_get_freq();
+            if (mpll_freq_mhz) {
+                rtc_clk_mpll_disable();
+            }
+#endif
+
 #if SOC_DCDC_SUPPORTED
             uint64_t ldo_increased_us = rtc_time_slowclk_to_us(rtc_time_get() - s_config.rtc_ticks_at_ldo_prepare, s_config.rtc_clk_cal_period);
             if (ldo_increased_us < LDO_POWER_TAKEOVER_PREPARATION_TIME_US) {
@@ -949,6 +958,13 @@ static esp_err_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t m
             esp_sleep_execute_event_callbacks(SLEEP_EVENT_HW_EXIT_SLEEP, (void *)0);
 #else
             result = call_rtc_sleep_start(reject_triggers, config.lslp_mem_inf_fpu, deep_sleep);
+#endif
+
+#if SOC_CLK_MPLL_SUPPORTED
+            if (mpll_freq_mhz) {
+                rtc_clk_mpll_enable();
+                rtc_clk_mpll_configure(clk_hal_xtal_get_freq_mhz(), mpll_freq_mhz);
+            }
 #endif
 
             /* Unhold the SPI CS pin */
