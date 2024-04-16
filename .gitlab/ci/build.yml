@@ -537,6 +537,7 @@ pytest_build_system_macos:
   extends:
     - .test_build_system_template
     - .before_script:build:macos
+    - .after_script:build:macos:ccache:upload-when-fail
     - .rules:build:macos
   tags:
     - macos_shell
@@ -549,6 +550,8 @@ pytest_build_system_macos:
     expire_in: 2 days
     reports:
       junit: XUNIT_RESULT.xml
+  variables:
+    PYENV_VERSION: "3.8"
 
 build_docker:
   extends:
