@@ -117,7 +117,8 @@ USB_DOCS = ['api-reference/peripherals/usb_device.rst',
             'api-reference/peripherals/usb_host/usb_host_notes_arch.rst',
             'api-reference/peripherals/usb_host/usb_host_notes_design.rst',
             'api-reference/peripherals/usb_host/usb_host_notes_dwc_otg.rst',
-            'api-reference/peripherals/usb_host/usb_host_notes_index.rst']
+            'api-reference/peripherals/usb_host/usb_host_notes_index.rst',
+            'api-reference/peripherals/usb_host/usb_host_notes_usbh.rst']
 
 I80_LCD_DOCS = ['api-reference/peripherals/lcd/i80_lcd.rst']
 RGB_LCD_DOCS = ['api-reference/peripherals/lcd/rgb_lcd.rst']

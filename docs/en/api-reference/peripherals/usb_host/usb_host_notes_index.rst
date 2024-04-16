@@ -21,12 +21,12 @@ This document is split into the following sections:
     usb_host_notes_design
     usb_host_notes_arch
     usb_host_notes_dwc_otg
+    usb_host_notes_usbh
 
 Todo:
 
 - USB Host Maintainers Notes (HAL & LL)
 - USB Host Maintainers Notes (HCD)
-- USB Host Maintainers Notes (USBH)
 - USB Host Maintainers Notes (Hub)
 - USB Host Maintainers Notes (USB Host Library)
 
