@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,6 +12,16 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/// profile states
+typedef enum {
+    ESP_HF_INIT_SUCCESS = 0,                /*!< Indicate init successful */
+    ESP_HF_INIT_ALREADY,                    /*!< Indicate init repeated */
+    ESP_HF_INIT_FAIL,                       /*!< Indicate init fail */
+    ESP_HF_DEINIT_SUCCESS,                  /*!< Indicate deinit successful */
+    ESP_HF_DEINIT_ALREADY,                  /*!< Indicate deinit repeated */
+    ESP_HF_DEINIT_FAIL,                     /*!< Indicate deinit fail */
+} esp_hf_prof_state_t;
 
 /// in-band ring tone state
 typedef enum {
@@ -128,7 +138,7 @@ typedef enum {
 
 /// +CLCC address type
 typedef enum {
-    ESP_HF_CALL_ADDR_TYPE_UNKNOWN = 0x81,            /*!< unkown address type */
+    ESP_HF_CALL_ADDR_TYPE_UNKNOWN = 0x81,            /*!< unknown address type */
     ESP_HF_CALL_ADDR_TYPE_INTERNATIONAL = 0x91,      /*!< international address */
 } esp_hf_call_addr_type_t;
 
@@ -160,7 +170,7 @@ typedef enum
     ESP_HF_NREC_START
 } esp_hf_nrec_t;
 
-///+CCWA resposne status
+///+CCWA response status
 typedef enum {
     ESP_HF_CALL_WAITING_INACTIVE,
     ESP_HF_CALL_WAITING_ACTIVE,
