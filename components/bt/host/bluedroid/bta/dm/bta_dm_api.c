@@ -227,6 +227,21 @@ void BTA_DmCfgCoexStatus(UINT8 op, UINT8 type, UINT8 status)
 }
 #endif
 
+void BTA_DmsendVendorHciCmd(UINT16 opcode, UINT8 param_len, UINT8 *p_param_buf, tBTA_SEND_VENDOR_HCI_CMPL_CBACK p_vendor_cmd_complete_cback)
+{
+    tBTA_DM_API_SEND_VENDOR_HCI_CMD *p_msg;
+    if ((p_msg = (tBTA_DM_API_SEND_VENDOR_HCI_CMD *)osi_malloc(sizeof(tBTA_DM_API_SEND_VENDOR_HCI_CMD) + param_len)) != NULL) {
+        p_msg->hdr.event = BTA_DM_API_SEND_VENDOR_HCI_CMD_EVT;
+        p_msg->opcode = opcode;
+        p_msg->param_len = param_len;
+        p_msg->p_param_buf = (UINT8 *)(p_msg + 1);
+        memcpy(p_msg->p_param_buf, p_param_buf, param_len);
+        p_msg->vendor_hci_cb = p_vendor_cmd_complete_cback;
+
+        bta_sys_sendmsg(p_msg);
+    }
+}
+
 #if (CLASSIC_BT_INCLUDED == TRUE)
 
 void BTA_DmConfigEir(tBTA_DM_EIR_CONF *eir_config)

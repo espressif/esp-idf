@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -96,6 +96,24 @@
 #define UC_BT_BLUEDROID_MEM_DEBUG TRUE
 #else
 #define UC_BT_BLUEDROID_MEM_DEBUG FALSE
+#endif
+
+#ifdef CONFIG_BT_HCI_LOG_DEBUG_EN
+#define UC_BT_HCI_LOG_DEBUG_EN  TRUE
+#else
+#define UC_BT_HCI_LOG_DEBUG_EN  FALSE
+#endif
+
+#ifdef CONFIG_BT_HCI_LOG_DATA_BUFFER_SIZE
+#define UC_BT_HCI_LOG_DATA_BUFFER_SIZE  CONFIG_BT_HCI_LOG_DATA_BUFFER_SIZE
+#else
+#define UC_BT_HCI_LOG_DATA_BUFFER_SIZE  (5)
+#endif
+
+#ifdef CONFIG_BT_HCI_LOG_ADV_BUFFER_SIZE
+#define UC_BT_HCI_LOG_ADV_BUFFER_SIZE CONFIG_BT_HCI_LOG_ADV_BUFFER_SIZE
+#else
+#define UC_BT_HCI_LOG_ADV_BUFFER_SIZE  (5)
 #endif
 
 #endif /* __BT_USER_CONFIG_H__ */

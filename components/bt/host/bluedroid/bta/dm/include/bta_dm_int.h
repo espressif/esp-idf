@@ -57,6 +57,7 @@ enum {
 #if (ESP_COEX_VSC_INCLUDED == TRUE)
     BTA_DM_API_CFG_COEX_ST_EVT,
 #endif
+    BTA_DM_API_SEND_VENDOR_HCI_CMD_EVT,
 #if (CLASSIC_BT_INCLUDED == TRUE)
     BTA_DM_API_CONFIG_EIR_EVT,
     BTA_DM_API_PAGE_TO_SET_EVT,
@@ -264,6 +265,14 @@ typedef struct {
     UINT8  status;
 } tBTA_DM_API_CFG_COEX_STATUS;
 #endif
+
+typedef struct {
+    BT_HDR    hdr;
+    UINT16    opcode;
+    UINT8    param_len;
+    UINT8     *p_param_buf;
+    tBTA_SEND_VENDOR_HCI_CMPL_CBACK *vendor_hci_cb;
+}tBTA_DM_API_SEND_VENDOR_HCI_CMD;
 
 /* data type for BTA_DM_API_CONFIG_EIR_EVT */
 typedef struct {
@@ -1162,6 +1171,7 @@ typedef union {
 #if (ESP_COEX_VSC_INCLUDED == TRUE)
     tBTA_DM_API_CFG_COEX_STATUS cfg_coex_status;
 #endif
+    tBTA_DM_API_SEND_VENDOR_HCI_CMD vendor_hci_cmd;
     tBTA_DM_API_CONFIG_EIR config_eir;
 
     tBTA_DM_API_SET_AFH_CHANNELS set_afh_channels;
@@ -1676,6 +1686,7 @@ extern void bta_dm_get_dev_name (tBTA_DM_MSG *p_data);
 #if (ESP_COEX_VSC_INCLUDED == TRUE)
 extern void bta_dm_cfg_coex_status(tBTA_DM_MSG *p_data);
 #endif
+extern void bta_dm_send_vendor_hci(tBTA_DM_MSG *p_data);
 #if (CLASSIC_BT_INCLUDED == TRUE)
 extern void bta_dm_config_eir (tBTA_DM_MSG *p_data);
 extern void bta_dm_set_page_timeout (tBTA_DM_MSG *p_data);
