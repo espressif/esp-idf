@@ -52,12 +52,12 @@ Supported since ESP-IDF v4.2.
 
 | Release branch         | Recommended | Required |
 |------------------------|-------------|----------|
-| release/v4.2           | v4.2.3      | v4.2     |
-| release/v4.3           | v4.3.3      | v4.3     |
-| release/v4.4           | v4.4.6      | v4.4     |
-| release/v5.0           | v5.0.4      | v5.0     |
-| release/v5.1           | v5.1.2      | v5.1     |
-| release/v5.2 and above | v5.2        | v5.2     |
+| release/v4.2           | v4.2.3+     | v4.2     |
+| release/v4.3           | v4.3.3+     | v4.3     |
+| release/v4.4           | v4.4.6+     | v4.4     |
+| release/v5.0           | v5.0.4+     | v5.0     |
+| release/v5.1           | v5.1.2+     | v5.1     |
+| release/v5.2 and above | v5.2+       | v5.2     |
 
 ### ESP32-C3
 
@@ -68,6 +68,17 @@ Supported since ESP-IDF v4.3.
 #### v0.4
 
 To be added.
+
+#### v1.1
+
+| Release branch         | Recommended | Required |
+|------------------------|-------------|----------|
+| release/v4.2           | EOL         | EOL      |
+| release/v4.3           | v4.3.7+     | v4.3.7   |
+| release/v4.4           | v4.4.7+     | v4.4.7   |
+| release/v5.0           | v5.0.5+     | v5.0.5   |
+| release/v5.1           | v5.1.3+     | v5.1.3   |
+| release/v5.2 and above | v5.2+       | v5.2     |
 
 ### ESP32-S3
 
