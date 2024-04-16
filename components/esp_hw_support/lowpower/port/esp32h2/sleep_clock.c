@@ -10,7 +10,7 @@
 #include "modem/modem_lpcon_reg.h"
 
 
-static __attribute__((unused)) const char *TAG = "sleep_clock";
+static const char *TAG = "sleep_clock";
 
 esp_err_t sleep_clock_system_retention_init(void *arg)
 {
@@ -36,7 +36,9 @@ esp_err_t sleep_clock_modem_retention_init(void *arg)
 
     const static sleep_retention_entries_config_t modem_regs_retention[] = {
         [0] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_MODEMSYSCON_LINK(0), MODEM_SYSCON_TEST_CONF_REG, MODEM_SYSCON_TEST_CONF_REG, N_REGS_SYSCON(), 0, 0), .owner = ENTRY(0) | ENTRY(1) }, /* MODEM SYSCON */
+#if SOC_PM_RETENTION_SW_TRIGGER_REGDMA
         [1] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_MODEMLPCON_LINK(0),  MODEM_LPCON_TEST_CONF_REG, MODEM_LPCON_TEST_CONF_REG, N_REGS_LPCON(), 0, 0), .owner = ENTRY(0) | ENTRY(1) } /* MODEM LPCON */
+#endif
     };
 
     esp_err_t err = sleep_retention_entries_create(modem_regs_retention, ARRAY_SIZE(modem_regs_retention), REGDMA_LINK_PRI_MODEM_CLK, SLEEP_RETENTION_MODULE_CLOCK_MODEM);
@@ -48,3 +50,52 @@ esp_err_t sleep_clock_modem_retention_init(void *arg)
     #undef N_REGS_SYSCON
 }
 #endif
+
+bool clock_domain_pd_allowed(void)
+{
+    const uint32_t inited_modules = sleep_retention_get_inited_modules();
+    const uint32_t created_modules = sleep_retention_get_created_modules();
+    const uint32_t sys_clk_dep_modules = (const uint32_t) (BIT(SLEEP_RETENTION_MODULE_SYS_PERIPH));
+
+    /* The clock and reset of MODEM (WiFi, BLE and 15.4) modules are managed
+     * through MODEM_SYSCON, when one or more MODEMs are initialized, it is
+     * necessary to check the state of CLOCK_MODEM to determine MODEM domain on
+     * or off. The clock and reset of digital peripherals are managed through
+     * PCR, with TOP domain similar to MODEM domain. */
+    uint32_t modem_clk_dep_modules = 0;
+#if SOC_BT_SUPPORTED
+    modem_clk_dep_modules |= BIT(SLEEP_RETENTION_MODULE_BLE_MAC) | BIT(SLEEP_RETENTION_MODULE_BT_BB);
+#endif
+#if SOC_IEEE802154_SUPPORTED
+    modem_clk_dep_modules |= BIT(SLEEP_RETENTION_MODULE_802154_MAC) | BIT(SLEEP_RETENTION_MODULE_BT_BB);
+#endif
+
+    uint32_t mask = 0;
+    if (inited_modules & sys_clk_dep_modules) {
+        mask |= BIT(SLEEP_RETENTION_MODULE_CLOCK_SYSTEM);
+    }
+    if (inited_modules & modem_clk_dep_modules) {
+#if SOC_BT_SUPPORTED || SOC_IEEE802154_SUPPORTED
+        mask |= BIT(SLEEP_RETENTION_MODULE_CLOCK_MODEM);
+#endif
+    }
+    return ((inited_modules & mask) == (created_modules & mask));
+}
+
+ESP_SYSTEM_INIT_FN(sleep_clock_startup_init, SECONDARY, BIT(0), 106)
+{
+    sleep_retention_module_init_param_t init_param = {
+        .cbs       = { .create = { .handle = sleep_clock_system_retention_init, .arg = NULL } },
+        .attribute = SLEEP_RETENTION_MODULE_ATTR_PASSIVE
+    };
+    sleep_retention_module_init(SLEEP_RETENTION_MODULE_CLOCK_SYSTEM, &init_param);
+
+#if CONFIG_MAC_BB_PD || CONFIG_BT_LE_SLEEP_ENABLE || CONFIG_IEEE802154_SLEEP_ENABLE
+    init_param = (sleep_retention_module_init_param_t) {
+        .cbs       = { .create = { .handle = sleep_clock_modem_retention_init, .arg = NULL } },
+        .attribute = SLEEP_RETENTION_MODULE_ATTR_PASSIVE
+    };
+    sleep_retention_module_init(SLEEP_RETENTION_MODULE_CLOCK_MODEM, &init_param);
+#endif
+    return ESP_OK;
+}
