@@ -220,7 +220,7 @@ RTC peripherals or RTC memories do not need to be powered on during sleep in thi
     External Wakeup (``ext1``)
     ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-    The RTC controller contains the logic to trigger wakeup using multiple RTC GPIOs. One of the following two logic functions can be used to trigger general ext1 wakeup:
+    The RTC controller contains the logic to trigger wakeup using multiple RTC GPIOs. One of the following two logic functions can be used to trigger ext1 wakeup:
 
     .. only:: esp32
 
@@ -248,11 +248,19 @@ RTC peripherals or RTC memories do not need to be powered on during sleep in thi
         gpio_pullup_dis(gpio_num);
         gpio_pulldown_en(gpio_num);
 
-    :cpp:func:`esp_sleep_enable_ext1_wakeup` function can be used to enable this wakeup source for general ext1 wakeup.
+    :cpp:func:`esp_sleep_enable_ext1_wakeup_io` function can be used to append ext1 wakeup IO and set corresponding wakeup level.
+
+    :cpp:func:`esp_sleep_disable_ext1_wakeup_io` function can be used to remove ext1 wakeup IO.
 
     .. only:: SOC_PM_SUPPORT_EXT1_WAKEUP_MODE_PER_PIN
 
-        Besides the above mentioned general ext1 wakeup, the RTC controller also contains a more powerful logic to trigger wakeup using multiple RTC GPIOs with a customized RTC IO wakeup level bitmap. This can be configured with :cpp:func`esp_sleep_enable_ext1_wakeup_with_level_mask`.
+        The RTC controller also supports triggering wakeup, allowing configurable IO to use different wakeup levels simultaneously. This can be configured with :cpp:func:`esp_sleep_enable_ext1_wakeup_io` or :cpp:func:`esp_sleep_enable_ext1_wakeup_with_level_mask`.
+
+    .. only:: not SOC_PM_SUPPORT_EXT1_WAKEUP_MODE_PER_PIN
+
+        .. note::
+
+           Due to hardware limitation, when we use more than one IO for EXT1 wakeup, it is not allowed to configure different wakeup levels for the IOs, and there is corresponding inspection mechanism in :cpp:func:`esp_sleep_enable_ext1_wakeup_io`.
 
     .. warning::
 
