@@ -202,6 +202,10 @@ before_script:
 
 .before_script_macos:
   before_script:
+    # macos is running shell executor, which means it would use
+    # the system installed /usr/local/bin/python3 by default.
+    # Ensure pyenv and PYENV_VERSION installed
+    - eval "$(pyenv init -)"
     - *common-before_scripts
     # On macOS, these tools need to be installed
     - export IDF_TOOLS_PATH="${HOME}/.espressif_runner_${CI_RUNNER_ID}_${CI_CONCURRENT_ID}"

@@ -684,6 +684,7 @@ test_build_system_cmake_macos:
     - macos_shell
   variables:
     SHELL_TEST_SCRIPT: test_build_system_cmake.sh
+    PYENV_VERSION: "3.7"
   script:
     - ${IDF_PATH}/tools/ci/test_configure_ci_environment.sh
     - rm -rf test_build_system
