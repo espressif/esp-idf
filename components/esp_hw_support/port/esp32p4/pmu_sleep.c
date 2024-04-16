@@ -159,6 +159,10 @@ const pmu_sleep_config_t* pmu_sleep_config_default(
         config->digital = digital_default;
 
         pmu_sleep_analog_config_t analog_default = PMU_SLEEP_ANALOG_LSLP_CONFIG_DEFAULT(pd_flags);
+#if CONFIG_SPIRAM
+        analog_default.hp_sys.analog.pd_cur = 1;
+        analog_default.lp_sys[PMU_MODE_LP_SLEEP].analog.pd_cur = 1;
+#endif
         config->analog = analog_default;
     }
     return config;
