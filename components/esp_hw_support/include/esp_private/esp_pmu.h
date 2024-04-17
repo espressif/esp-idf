@@ -161,12 +161,6 @@ typedef struct {
 
 pmu_context_t * PMU_instance(void);
 
-typedef enum pmu_hp_sysclk_src {
-    PMU_HP_SYSCLK_XTAL = 0,
-    PMU_HP_SYSCLK_PLL,
-    PMU_HP_SYSCLK_FOSC
-} pmu_hp_sysclk_src_t;
-
 typedef enum pmu_sleep_protect_mode {
     PMU_SLEEP_PROTECT_HP_SLEEP = 0,
     PMU_SLEEP_PROTECT_XTAL,
