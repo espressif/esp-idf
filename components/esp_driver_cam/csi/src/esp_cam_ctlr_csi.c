@@ -42,6 +42,8 @@ static bool csi_dma_trans_done_callback(dw_gdma_channel_handle_t chan, const dw_
 static esp_err_t s_del_csi_ctlr(csi_controller_t *ctlr);
 static esp_err_t s_ctlr_del(esp_cam_ctlr_t *cam_ctlr);
 static esp_err_t s_register_event_callbacks(esp_cam_ctlr_handle_t handle, const esp_cam_ctlr_evt_cbs_t *cbs, void *user_data);
+static esp_err_t s_csi_ctlr_get_internal_buffer(esp_cam_ctlr_handle_t handle, uint32_t fb_num, const void **fb0, ...);
+static esp_err_t s_csi_ctlr_get_buffer_length(esp_cam_ctlr_handle_t handle, size_t *ret_fb_len);
 static esp_err_t s_csi_ctlr_enable(esp_cam_ctlr_handle_t ctlr);
 static esp_err_t s_ctlr_csi_start(esp_cam_ctlr_handle_t handle);
 static esp_err_t s_ctlr_csi_stop(esp_cam_ctlr_handle_t handle);
@@ -99,12 +101,17 @@ esp_err_t esp_cam_new_csi_ctlr(const esp_cam_ctlr_csi_config_t *config, esp_cam_
     csi_controller_t *ctlr = heap_caps_calloc(1, sizeof(csi_controller_t), CSI_MEM_ALLOC_CAPS);
     ESP_RETURN_ON_FALSE(ctlr, ESP_ERR_NO_MEM, TAG, "no mem for csi controller context");
 
+    ret = s_csi_claim_controller(ctlr);
+    if (ret != ESP_OK) {
+        //claim fail, clean and return directly
+        free(ctlr);
+        ESP_RETURN_ON_ERROR(ret, TAG, "no available csi controller");
+    }
+
     ESP_LOGD(TAG, "config->queue_items: %d", config->queue_items);
     ctlr->trans_que = xQueueCreateWithCaps(config->queue_items, sizeof(esp_cam_ctlr_trans_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
     ESP_GOTO_ON_FALSE(ctlr->trans_que, ESP_ERR_NO_MEM, err, TAG, "no memory for transaction queue");
 
-    //claim a controller, then do assignment
-    ESP_GOTO_ON_ERROR(s_csi_claim_controller(ctlr), err, TAG, "no available csi controller");
 #if SOC_ISP_SHARE_CSI_BRG
     ESP_GOTO_ON_ERROR(mipi_csi_brg_claim(MIPI_CSI_BRG_USER_CSI, &ctlr->csi_brg_id), err, TAG, "csi bridge is in use already");
     ctlr->csi_brg_in_use = true;
@@ -207,6 +214,8 @@ esp_err_t esp_cam_new_csi_ctlr(const esp_cam_ctlr_csi_config_t *config, esp_cam_
     ctlr->base.disable = s_csi_ctlr_disable;
     ctlr->base.receive = s_ctlr_csi_receive;
     ctlr->base.register_event_callbacks = s_register_event_callbacks;
+    ctlr->base.get_internal_buffer = s_csi_ctlr_get_internal_buffer;
+    ctlr->base.get_buffer_len = s_csi_ctlr_get_buffer_length;
 
     *ret_handle = &(ctlr->base);
 
@@ -248,6 +257,36 @@ static esp_err_t s_ctlr_del(esp_cam_ctlr_t *cam_ctlr)
 {
     csi_controller_t *csi_ctlr = __containerof(cam_ctlr, csi_controller_t, base);
     ESP_RETURN_ON_ERROR(s_del_csi_ctlr(csi_ctlr), TAG, "failed to del csi_ctlr");
+    return ESP_OK;
+}
+
+static esp_err_t s_csi_ctlr_get_internal_buffer(esp_cam_ctlr_handle_t handle, uint32_t fb_num, const void **fb0, ...)
+{
+    csi_controller_t *csi_ctlr = __containerof(handle, csi_controller_t, base);
+    ESP_RETURN_ON_FALSE((csi_ctlr->csi_fsm >= CSI_FSM_INIT) && (csi_ctlr->backup_buffer), ESP_ERR_INVALID_STATE, TAG, "driver don't initialized or back_buffer not available");
+    ESP_RETURN_ON_FALSE(fb_num && fb_num <= 1, ESP_ERR_INVALID_ARG, TAG, "invalid frame buffer number");
+
+    csi_ctlr->bk_buffer_exposed = true;
+    const void **fb_itor = fb0;
+    va_list args;
+    va_start(args, fb0);
+    for (uint32_t i = 0; i < fb_num; i++) {
+        if (fb_itor) {
+            *fb_itor = csi_ctlr->backup_buffer;
+            fb_itor = va_arg(args, const void **);
+        }
+    }
+    va_end(args);
+
+    return ESP_OK;
+}
+
+static esp_err_t s_csi_ctlr_get_buffer_length(esp_cam_ctlr_handle_t handle, size_t *ret_fb_len)
+{
+    csi_controller_t *csi_ctlr = __containerof(handle, csi_controller_t, base);
+    ESP_RETURN_ON_FALSE((csi_ctlr->csi_fsm >= CSI_FSM_INIT) && (csi_ctlr->backup_buffer), ESP_ERR_INVALID_STATE, TAG, "driver don't initialized or back_buffer not available");
+
+    *ret_fb_len = csi_ctlr->fb_size_in_bytes;
     return ESP_OK;
 }
 
@@ -306,7 +345,7 @@ static bool csi_dma_trans_done_callback(dw_gdma_channel_handle_t chan, const dw_
     dw_gdma_channel_config_transfer(chan, &csi_dma_transfer_config);
     dw_gdma_channel_enable_ctrl(chan, true);
 
-    if (ctlr->trans.buffer != ctlr->backup_buffer) {
+    if ((ctlr->trans.buffer != ctlr->backup_buffer) || ctlr->bk_buffer_exposed) {
         esp_err_t ret = esp_cache_msync((void *)(ctlr->trans.buffer), ctlr->trans.received_size, ESP_CACHE_MSYNC_FLAG_INVALIDATE);
         assert(ret == ESP_OK);
         assert(ctlr->cbs.on_trans_finished);

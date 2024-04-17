@@ -102,6 +102,36 @@ esp_err_t esp_cam_del_ctlr(esp_cam_ctlr_handle_t handle);
  */
 esp_err_t esp_cam_ctlr_register_event_callbacks(esp_cam_ctlr_handle_t handle, const esp_cam_ctlr_evt_cbs_t *cbs, void *user_data);
 
+/**
+ * @brief Get ESP CAM controller internal malloced backup buffer(s) addr
+ *
+ * @note Generally, data in internal buffer is ready when `on_trans_finished` event
+ *
+ * @param[in]   handle      ESP CAM controller handle
+ * @param[in]   fb_num      Number of frame buffer(s) to get. This value must be the same as the number of the followed fbN parameters
+ * @param[out]  fb0         Address of the frame buffer 0 (first frame buffer)
+ * @param[out]  ...         List of other frame buffers if any
+ *
+ * @return
+ *        - ESP_OK
+ *        - ESP_ERR_INVALID_ARG:   Invalid argument
+ *        - ESP_ERR_INVALID_STATE: Invalid driver state
+ */
+esp_err_t esp_cam_ctlr_get_frame_buffer(esp_cam_ctlr_handle_t handle, uint32_t fb_num, const void **fb0, ...);
+
+/**
+ * @brief Get ESP CAM controller internal backup buffer length
+ *
+ * @param[in]   handle      ESP CAM controller handle
+ * @param[out]  ret_fb_len  Optional, The size of each frame buffer, in bytes.
+ *
+ * @return
+ *        - ESP_OK
+ *        - ESP_ERR_INVALID_ARG:   NULL ptr
+ *        - ESP_ERR_INVALID_STATE: Invalid driver state
+ */
+esp_err_t esp_cam_ctlr_get_frame_buffer_len(esp_cam_ctlr_handle_t handle, size_t *ret_fb_len);
+
 #ifdef __cplusplus
 }
 #endif
