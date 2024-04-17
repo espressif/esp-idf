@@ -1298,7 +1298,7 @@ ESP-IDF 构建属性
 .. code-block:: none
 
   idf_build_get_property(python PYTHON)
-  message(STATUS "The Python intepreter is: ${python}")
+  message(STATUS "The Python interpreter is: ${python}")
 
 - BUILD_DIR - 构建目录；由 ``idf_build_process`` 的 BUILD_DIR 参数设置。
 - BUILD_COMPONENTS - 包含在构建中的组件列表；由 ``idf_build_process`` 设置。
@@ -1418,7 +1418,7 @@ ESP-IDF 组件属性
 - MANAGED_REQUIRES - IDF 组件管理器从 ``idf_component.yml`` 清单文件的依赖关系中添加的公共组件依赖关系列表。
 - PRIV_INCLUDE_DIRS - 组件私有 include 目录列表；在 LIBRARY 类型的组件 ``idf_component_register`` PRIV_INCLUDE_DIRS 参数中设置。
 - PRIV_REQUIRES - 私有组件依赖关系列表；根据 ``idf_component_register`` PRIV_REQUIRES 参数的值以及 ``idf_component.yml`` 清单文件中的依赖关系设置。
-- REQUIRED_IDF_TARGETS - 组件支持的目标列表；由 ``idf_component_register``  EMBED_TXTFILES 参数设置。
+- REQUIRED_IDF_TARGETS - 组件支持的目标列表；由 ``idf_component_register`` REQUIRED_IDF_TARGETS 参数设置。
 - REQUIRES - 公共组件依赖关系列表；根据 ``idf_component_register`` REQUIRES 参数的值以及 ``idf_component.yml`` 清单文件中的依赖关系设置。
 - SRCS - 组件源文件列表；由 ``idf_component_register`` 的 SRCS 或 SRC_DIRS/EXCLUDE_SRCS 参数设置。
 - WHOLE_ARCHIVE - 如果该属性被设置为 ``TRUE`` （或是其他 CMake 布尔“真”值：1、``ON``、``YES``、``Y`` 等），链接时会在组件库的前后分别添加 ``-Wl,--whole-archive`` 和 ``-Wl,--no-whole-archive`` 选项。这可以强制链接器将每个目标文件包含到可执行文件中，即使该目标文件没有解析来自应用程序其余部分的任何引用。当组件中包含依赖链接时注册的插件或模块时，通常会使用该方法。默认情况下，此属性为 ``FALSE``。可以从组件的 CMakeLists.txt 文件中将其设置为 ``TRUE``。
