@@ -85,6 +85,10 @@ mkspiffs
 
     python esptool.py --chip {IDF_TARGET_PATH_NAME} --port [port] --baud [baud] write_flash -z 0x110000 spiffs.bin
 
+.. note::
+
+    通过 ``--spi-connection <CLK>,<Q>,<D>,<HD>,<CS>`` 选项，可以配置 ``esptool.py`` 的 ``write_flash`` 命令，从而 `将 spiffs 数据写入外部 SPI flash 芯片 <https://docs.espressif.com/projects/esptool/en/latest/esptool/advanced-options.html#custom-spi-pin-configuration>`_。只需指定分配给外部 flash 的 GPIO 管脚，如 ``python esptool.py write_flash --spi-connection 6,7,8,9,11 -z 0x110000 spiffs.bin``。
+
 选择合适的 SPIFFS 工具
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
