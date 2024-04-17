@@ -1018,7 +1018,6 @@ r_ble_lll_conn_coex_dpc_update_on_event_scheduled = 0x400014e4;
 r_ble_lll_conn_coex_dpc_update_on_event_started = 0x400014e8;
 r_ble_lll_conn_cth_flow_alloc_credit = 0x400014ec;
 r_ble_lll_conn_current_sm_over = 0x400014f4;
-r_ble_lll_conn_event_end_timer_cb = 0x40001508;
 r_ble_lll_conn_event_is_over = 0x40001510;
 r_ble_lll_conn_event_start_cb = 0x40001514;
 r_ble_lll_conn_free_rx_mbuf = 0x40001518;
