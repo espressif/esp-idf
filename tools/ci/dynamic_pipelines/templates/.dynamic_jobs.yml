@@ -50,7 +50,7 @@
     PYTEST_NODES: ""
     TARGET_SELECTOR: ""
     ENV_MARKERS: ""
-    PYTEST_EXTRA_FLAGS: "--dev-passwd ${ETHERNET_TEST_PASSWORD} --dev-user ${ETHERNET_TEST_USER}"
+    PYTEST_EXTRA_FLAGS: "--dev-passwd ${ETHERNET_TEST_PASSWORD} --dev-user ${ETHERNET_TEST_USER} --capture=fd --verbosity=0"
   cache:
     # Usually do not need submodule-cache in target_test
     - key: pip-cache-${LATEST_GIT_TAG}
