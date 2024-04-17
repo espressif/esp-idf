@@ -451,6 +451,10 @@ Limitations
 
 ESP-IDF additions to lwIP still suffer from the global DNS limitation, described in :ref:`lwip-dns-limitation`. To address this limitation from application code, the ``FALLBACK_DNS_SERVER_ADDRESS()`` macro can be utilized to define a global DNS fallback server accessible from all interfaces. Alternatively, you have the option to maintain per-interface DNS servers and reconfigure them whenever the default interface changes.
 
+The number of IP addresses returned by network database APIs such as ``getaddrinfo()`` and ``gethostbyname()`` is restricted by the macro ``DNS_MAX_HOST_IP``. By default, the value of this macro is set to 1.
+
+In the implementation of ``getaddrinfo()``, the canonical name is not available. Therefore, the ``ai_canonname`` field of the first returned ``addrinfo`` structure will always refer to the ``nodename`` argument or a string with the same contents.
+
 Calling ``send()`` or ``sendto()`` repeatedly on a UDP socket may eventually fail with ``errno`` equal to ``ENOMEM``. This failure occurs due to the limitations of buffer sizes in the lower-layer network interface drivers. If all driver transmit buffers are full, the UDP transmission will fail. For applications that transmit a high volume of UDP datagrams and aim to avoid any dropped datagrams by the sender, it is advisable to implement error code checking and employ a retransmission mechanism with a short delay.
 
 .. only:: esp32
