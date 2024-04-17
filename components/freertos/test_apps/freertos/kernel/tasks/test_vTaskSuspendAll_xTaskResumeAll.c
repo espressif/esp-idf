@@ -631,6 +631,8 @@ TEST_CASE("Test xTaskResumeAll resumes pended tasks", "[freertos]")
         TEST_ASSERT_EQUAL(pdTRUE, xTaskCreatePinnedToCore(test_pended_running_task, "susp", 2048, (void *)xTaskGetCurrentTaskHandle(), UNITY_FREERTOS_PRIORITY + 1, &susp_tsk_hdl, i));
         // Wait for to be notified to test completion
         ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+        // Add a short delay to allow the test_pended_running_task to go to suspend state
+        vTaskDelay(1);
         vTaskDelete(susp_tsk_hdl);
     }
     // Add a short delay to allow the idle task to free any remaining task memory
