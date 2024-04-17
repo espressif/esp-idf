@@ -59,7 +59,7 @@ static bool ulp_is_running(uint32_t *counter_variable)
     uint32_t start_cnt = *counter_variable;
 
     /* Wait a few ULP wakeup cycles to ensure ULP has run */
-    vTaskDelay((5 * ULP_SLEEP_DURATION_US / 1000) / portTICK_PERIOD_MS);
+    vTaskDelay(1000 / portTICK_PERIOD_MS);
 
     uint32_t end_cnt = *counter_variable;
     printf("start run count: %" PRIu32 ", end run count %" PRIu32 "\n", start_cnt, end_cnt);

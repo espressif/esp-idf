@@ -1,5 +1,5 @@
-| Supported Targets | ESP32-C6 |
-| ----------------- | -------- |
+| Supported Targets | ESP32-C6 | ESP32-P4 |
+| ----------------- | -------- | -------- |
 
 # LP UART Print Example
 

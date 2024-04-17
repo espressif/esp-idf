@@ -18,6 +18,10 @@
 #include "ulp_lp_core_lp_timer_shared.h"
 #include "hal/lp_core_ll.h"
 
+#if CONFIG_IDF_TARGET_ESP32P4
+#include "esp32p4/rom/rtc.h"
+#endif
+
 #if CONFIG_IDF_TARGET_ESP32P4 || CONFIG_IDF_TARGET_ESP32C5
 #define LP_CORE_RCC_ATOMIC() PERIPH_RCC_ATOMIC()
 #else
@@ -67,6 +71,12 @@ esp_err_t ulp_lp_core_run(ulp_lp_core_cfg_t* cfg)
         boot_addr = (intptr_t)(&_rtc_ulp_memory_start);
     } else {
         boot_addr = SOC_LP_ROM_LOW;
+        /* Disable UART init in ROM, it defaults to XTAL clk src
+         * which is not powered on during deep sleep
+         * This will cause the ROM code to get stuck during UART output
+         * if used
+         */
+        REG_SET_BIT(LP_UART_INIT_CTRL_REG, 1 << 0);
     }
 
     lp_core_ll_set_boot_address(boot_addr);

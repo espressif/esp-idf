@@ -29,6 +29,8 @@ void lp_core_printf(const char* format, ...);
  *
  * @note This function must be called before printing anything when the LP core boots from LP ROM but does not install
  *       putc handler. This is possible when the LP ROM is instructed so by setting bit#1 in the LP_SYSTEM_REG_LP_STORE9_REG register.
+ *       Disabling ROM UART init is default behavior in IDF, since the clock configured by the ROM code for UART (XTAL) is normally
+ *       powered down during sleep.
  */
 extern void ets_install_uart_printf(void);
 void (*lp_core_install_uart_printf)(void) = ets_install_uart_printf;
