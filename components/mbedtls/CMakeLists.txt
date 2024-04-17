@@ -3,6 +3,10 @@ idf_build_get_property(python PYTHON)
 
 set(priv_requires soc esp_hw_support)
 
+# Variable DISABLE_PACKAGE_CONFIG_AND_INSTALL is set to true to use old policy for mbedtls/pkgconfig.
+# if set to false, we need to set policy in mbedtls/mbedtls/pkgconfig.CMakeLists
+set(DISABLE_PACKAGE_CONFIG_AND_INSTALL true)
+
 if(NOT BOOTLOADER_BUILD)
     list(APPEND priv_requires esp_pm)
 endif()
