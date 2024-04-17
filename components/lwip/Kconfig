@@ -669,7 +669,7 @@ menu "LWIP"
                 LWIP_TCP_RECCVMBOX_SIZE packets for each TCP socket, so the maximum possible cached TCP packets
                 for all TCP sockets is LWIP_TCP_RECCVMBOX_SIZE multiples the maximum TCP socket number. In other
                 words, the bigger LWIP_TCP_RECVMBOX_SIZE means more memory.
-                On the other hand, if the receiv mail box is too small, the mail box may be full. If the
+                On the other hand, if the receive mail box is too small, the mail box may be full. If the
                 mail box is full, the LWIP drops the packets. So generally we need to make sure the TCP
                 receive mail box is big enough to avoid packet drop between LWIP core and application.
 
@@ -813,7 +813,7 @@ menu "LWIP"
                 UDP_RECCVMBOX_SIZE packets for each UDP socket, so the maximum possible cached UDP packets
                 for all UDP sockets is UDP_RECCVMBOX_SIZE multiples the maximum UDP socket number. In other
                 words, the bigger UDP_RECVMBOX_SIZE means more memory.
-                On the other hand, if the receiv mail box is too small, the mail box may be full. If the
+                On the other hand, if the receive mail box is too small, the mail box may be full. If the
                 mail box is full, the LWIP drops the packets. So generally we need to make sure the UDP
                 receive mail box is big enough to avoid packet drop between LWIP core and application.
 
@@ -1060,12 +1060,12 @@ menu "LWIP"
                 SNTP callback for such replies should be set accordingly (see sntp_servermode_dhcp() func.)
 
         config LWIP_DHCP_MAX_NTP_SERVERS
-            int "Maximum number of NTP servers aquired via DHCP"
+            int "Maximum number of NTP servers acquired via DHCP"
             default 1
             range 1 16
             depends on LWIP_DHCP_GET_NTP_SRV
             help
-                Set maximum number of NTP servers aquired via DHCP-offer.
+                Set maximum number of NTP servers acquired via DHCP-offer.
                 Should be less or equal to "Maximum number of NTP servers", any extra servers would be just ignored.
 
         config LWIP_SNTP_UPDATE_DELAY
@@ -1100,6 +1100,12 @@ menu "LWIP"
     endmenu # SNTP
 
     menu "DNS"
+
+        config LWIP_DNS_MAX_HOST_IP
+            int "Maximum number of IP addresses per host"
+            default 1
+            help
+                Maximum number of IP addresses that can be returned by DNS queries for a single host.
 
         config LWIP_DNS_MAX_SERVERS
             int "Maximum number of DNS servers"
