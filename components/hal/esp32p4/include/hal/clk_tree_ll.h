@@ -7,6 +7,7 @@
 #pragma once
 
 #include <stdint.h>
+#include "soc/clkout_channel.h"
 #include "soc/soc.h"
 #include "soc/clk_tree_defs.h"
 #include "soc/hp_sys_clkrst_reg.h"
@@ -821,6 +822,53 @@ static inline __attribute__((always_inline)) void clk_ll_rtc_slow_store_cal(uint
 static inline __attribute__((always_inline)) uint32_t clk_ll_rtc_slow_load_cal(void)
 {
     return REG_READ(RTC_SLOW_CLK_CAL_REG);
+}
+
+/**
+ * @brief Clock output channel configuration
+ * @param clk_sig    The clock signal source to be mapped to GPIOs
+ * @param channel_id The clock output channel to setup
+ */
+static inline __attribute__((always_inline)) void clk_ll_set_dbg_clk_ctrl(soc_clkout_sig_id_t clk_sig, clock_out_channel_t channel_id)
+{
+    if (channel_id == CLKOUT_CHANNEL_1) {
+        HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.dbg_clk_ctrl0, reg_dbg_ch0_sel, clk_sig);
+    } else if (channel_id == CLKOUT_CHANNEL_2) {
+        HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.dbg_clk_ctrl0, reg_dbg_ch1_sel, clk_sig);
+    } else {
+        abort();
+    }
+}
+
+/**
+ * @brief Enable the clock output channel
+ * @param  enable Enable or disable the clock output channel
+ */
+static inline __attribute__((always_inline)) void clk_ll_enable_dbg_clk_channel(clock_out_channel_t channel_id, bool enable)
+{
+    if (channel_id == CLKOUT_CHANNEL_1) {
+        HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.dbg_clk_ctrl1, reg_dbg_ch0_en, enable);
+    } else if (channel_id == CLKOUT_CHANNEL_2) {
+        HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.dbg_clk_ctrl1, reg_dbg_ch1_en, enable);
+    } else {
+        abort();
+    }
+}
+
+/**
+ * @brief Output the mapped clock after frequency division
+ * @param channel_id channel id that need to be configured with frequency division
+ * @param div_num  clock frequency division value
+ */
+static inline __attribute__((always_inline)) void clk_ll_set_dbg_clk_channel_divider(clock_out_channel_t channel_id, uint32_t div_num)
+{
+    if (channel_id == CLKOUT_CHANNEL_1) {
+        HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.dbg_clk_ctrl0, reg_dbg_ch0_div_num, div_num - 1);
+    } else if (channel_id == CLKOUT_CHANNEL_2) {
+        HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.dbg_clk_ctrl1, reg_dbg_ch1_div_num, div_num - 1);
+    } else {
+        abort();
+    }
 }
 
 #ifdef __cplusplus

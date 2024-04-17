@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,8 +11,9 @@
 #include "esp_clock_output.h"
 #include "esp_check.h"
 #include "esp_rom_gpio.h"
-#include "clkout_channel.h"
+#include "soc/clkout_channel.h"
 #include "hal/gpio_hal.h"
+#include "hal/clk_tree_hal.h"
 #include "hal/clk_tree_ll.h"
 #include "soc/soc_caps.h"
 #include "soc/io_mux_reg.h"
@@ -20,7 +21,7 @@
 typedef struct clkout_channel_handle {
     bool is_mapped;
     soc_clkout_sig_id_t mapped_clock;
-    uint8_t channel_id;
+    clock_out_channel_t channel_id;
     uint8_t ref_cnt;
     uint64_t mapped_io_bmap;
     portMUX_TYPE clkout_channel_lock;
@@ -87,13 +88,12 @@ static clkout_channel_handle_t* clkout_channel_alloc(soc_clkout_sig_id_t clk_sig
         allocated_channel->mapped_io_bmap |= BIT(gpio_num);
         allocated_channel->mapped_clock = clk_sig;
         allocated_channel->ref_cnt++;
-
         if (allocated_channel->ref_cnt == 1) {
             portENTER_CRITICAL(&s_clkout_lock);
 #if SOC_CLOCKOUT_HAS_SOURCE_GATE
             clk_ll_enable_clkout_source(clk_sig, true);
 #endif
-            gpio_ll_set_pin_ctrl(clk_sig, CLKOUT_CHANNEL_MASK(allocated_channel->channel_id), CLKOUT_CHANNEL_SHIFT(allocated_channel->channel_id));
+            clk_hal_clock_output_setup(clk_sig, allocated_channel->channel_id);
             portEXIT_CRITICAL(&s_clkout_lock);
         }
         portEXIT_CRITICAL(&allocated_channel->clkout_channel_lock);
@@ -150,7 +150,7 @@ static void clkout_channel_free(clkout_channel_handle_t *channel_hdl)
 #if SOC_CLOCKOUT_HAS_SOURCE_GATE
         clk_ll_enable_clkout_source(channel_hdl->mapped_clock, false);
 #endif
-        gpio_ll_set_pin_ctrl(0, CLKOUT_CHANNEL_MASK(channel_hdl->channel_id), CLKOUT_CHANNEL_SHIFT(channel_hdl->channel_id));
+        clk_hal_clock_output_teardown(channel_hdl->channel_id);
         portEXIT_CRITICAL(&s_clkout_lock);
         channel_hdl->mapped_clock = CLKOUT_SIG_INVALID;
         channel_hdl->is_mapped = false;
@@ -187,7 +187,11 @@ static void clkout_mapping_free(esp_clock_output_mapping_t *mapping_hdl)
 esp_err_t esp_clock_output_start(soc_clkout_sig_id_t clk_sig, gpio_num_t gpio_num, esp_clock_output_mapping_handle_t *clkout_mapping_ret_hdl)
 {
     ESP_RETURN_ON_FALSE((clkout_mapping_ret_hdl != NULL), ESP_ERR_INVALID_ARG, TAG, "Clock out mapping handle passed in is invalid");
+#if SOC_GPIO_CLOCKOUT_BY_GPIO_MATRIX
+    ESP_RETURN_ON_FALSE(GPIO_IS_VALID_GPIO(gpio_num), ESP_ERR_INVALID_ARG, TAG, "%s", "Output GPIO number error");
+#else
     ESP_RETURN_ON_FALSE(IS_VALID_CLKOUT_IO(gpio_num), ESP_ERR_INVALID_ARG, TAG, "%s", "Output GPIO number error");
+#endif
 
     esp_clock_output_mapping_t *hdl;
     SLIST_FOREACH(hdl, &s_mapping_list, next) {
@@ -213,6 +217,18 @@ esp_err_t esp_clock_output_stop(esp_clock_output_mapping_handle_t clkout_mapping
     clkout_mapping_free(clkout_mapping_hdl);
     return ESP_OK;
 }
+
+#if SOC_CLOCKOUT_SUPPORT_CHANNEL_DIVIDER
+esp_err_t esp_clock_output_set_divider(esp_clock_output_mapping_handle_t clkout_mapping_hdl, uint32_t div_num)
+{
+    ESP_RETURN_ON_FALSE(((div_num > 0) && (div_num <= 256)), ESP_ERR_INVALID_ARG, TAG, "Divider number must be in the range of [1,  256]");
+    ESP_RETURN_ON_FALSE((clkout_mapping_hdl != NULL), ESP_ERR_INVALID_ARG, TAG, "Clock out mapping handle passed in is invalid");
+    portENTER_CRITICAL(&clkout_mapping_hdl->clkout_mapping_lock);
+    clk_hal_clock_output_set_divider(clkout_mapping_hdl->clkout_channel_hdl->channel_id, div_num);
+    portEXIT_CRITICAL(&clkout_mapping_hdl->clkout_mapping_lock);
+    return ESP_OK;
+}
+#endif
 
 #if CONFIG_IDF_TARGET_ESP32
 // Due to a hardware bug, PIN_CTRL cannot select 0xf output, whereas 0xf is the default value.
