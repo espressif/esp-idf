@@ -171,6 +171,7 @@ enum KEY_ACTION{
 	CTRL_U = 21,        /* Ctrl+u */
 	CTRL_W = 23,        /* Ctrl+w */
 	ESC = 27,           /* Escape */
+	UNIT_SEP = 31,      /* ctrl-_ */
 	BACKSPACE =  127    /* Backspace */
 };
 
@@ -1110,14 +1111,13 @@ static int linenoiseRaw(char *buf, size_t buflen, const char *prompt) {
 static int linenoiseDumb(char* buf, size_t buflen, const char* prompt) {
     /* dumb terminal, fall back to fgets */
     fputs(prompt, stdout);
+    flushWrite();
     size_t count = 0;
     while (count < buflen) {
         int c = fgetc(stdin);
         if (c == '\n') {
             break;
-        } else if (c >= 0x1c && c <= 0x1f){
-            continue; /* consume arrow keys */
-        } else if (c == BACKSPACE || c == 0x8) {
+        } else if (c == BACKSPACE || c == CTRL_H) {
             if (count > 0) {
                 buf[count - 1] = 0;
                 count--;
@@ -1129,11 +1129,17 @@ static int linenoiseDumb(char* buf, size_t buflen, const char* prompt) {
                 /* Consume backspace if the command line is empty to avoid erasing the prompt */
                 continue;
             }
+
+        } else if (c <= UNIT_SEP) {
+            /* Consume all character that are non printable (the backspace
+             * case is handled above) */
+            continue;
         } else {
             buf[count] = c;
             ++count;
         }
         fputc(c, stdout); /* echo */
+        flushWrite();
     }
     fputc('\n', stdout);
     flushWrite();
