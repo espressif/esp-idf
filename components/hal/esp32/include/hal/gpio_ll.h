@@ -643,9 +643,9 @@ static inline bool gpio_ll_is_digital_io_hold(gpio_dev_t *hw, uint32_t gpio_num)
     case 1: mask = BIT(1); break;
     case 3: mask = BIT(0); break;
     case 5: mask = BIT(8); break;
-    case 6 ... 11 : mask = BIT(gpio_num - 4); break;
+    case 6 ... 11 : mask = BIT((gpio_num - 4)); break;
     case 16 ... 19:
-    case 21 ... 23: mask = BIT(gpio_num - 7); break;
+    case 21 ... 23: mask = BIT((gpio_num - 7)); break;
     default: break;
     }
 
