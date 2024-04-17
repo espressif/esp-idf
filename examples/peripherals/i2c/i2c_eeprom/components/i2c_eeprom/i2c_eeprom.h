@@ -20,7 +20,7 @@ typedef struct {
 struct i2c_eeprom_t {
     i2c_master_dev_handle_t i2c_dev;      /*!< I2C device handle */
     uint8_t addr_wordlen;                 /*!< block address wordlen */
-    uint8_t *buffer;                      /*!< I2C transaction buffer */
+    uint8_t addr_buffer[4];                 /*!< I2C transaction address buffer */
     uint8_t write_time_ms;                /*!< I2C eeprom write time(ms)*/
 };
 
