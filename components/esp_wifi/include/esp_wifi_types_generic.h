@@ -144,6 +144,18 @@ typedef enum {
     WIFI_SECOND_CHAN_BELOW,     /**< the channel width is HT40 and the secondary channel is below the primary channel */
 } wifi_second_chan_t;
 
+#define WIFI_ACTIVE_SCAN_MIN_DEFAULT_TIME 0
+#define WIFI_ACTIVE_SCAN_MAX_DEFAULT_TIME 120
+#define WIFI_PASSIVE_SCAN_DEFAULT_TIME 360
+#define WIFI_SCAN_HOME_CHANNEL_DWELL_DEFAULT_TIME 30
+
+#define WIFI_SCAN_PARAMS_DEFAULT_CONFIG() { \
+    .scan_time.active.min = WIFI_ACTIVE_SCAN_MIN_DEFAULT_TIME, \
+    .scan_time.active.max = WIFI_ACTIVE_SCAN_MAX_DEFAULT_TIME, \
+    .scan_time.passive = WIFI_PASSIVE_SCAN_DEFAULT_TIME, \
+    .home_chan_dwell_time = WIFI_SCAN_HOME_CHANNEL_DWELL_DEFAULT_TIME\
+}
+
 typedef enum {
     WIFI_SCAN_TYPE_ACTIVE = 0,  /**< active scan */
     WIFI_SCAN_TYPE_PASSIVE,     /**< passive scan */
@@ -179,6 +191,12 @@ typedef struct {
     uint8_t home_chan_dwell_time;                      /**< time spent at home channel between scanning consecutive channels. */
     wifi_scan_channel_bitmap_t channel_bitmap;         /**< Channel bitmap for setting specific channels to be scanned. For 2.4ghz channels set ghz_2_channels from BIT(1) to BIT(14) from LSB to MSB order to indicate channels to be scanned. Currently scanning in 5ghz channels is not supported. Please note that the 'channel' parameter above needs to be set to 0 to allow scanning by bitmap. */
 } wifi_scan_config_t;
+
+/** @brief Parameters default scan configurations. */
+typedef struct {
+    wifi_scan_time_t scan_time;  /**< scan time per channel */
+    uint8_t home_chan_dwell_time;/**< time spent at home channel between scanning consecutive channels.*/
+} wifi_scan_default_params_t;
 
 typedef enum {
     WIFI_CIPHER_TYPE_NONE = 0,   /**< the cipher type is none */

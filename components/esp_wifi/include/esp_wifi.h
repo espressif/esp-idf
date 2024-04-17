@@ -469,6 +469,7 @@ esp_err_t esp_wifi_deauth_sta(uint16_t aid);
   * @param     config  configuration settings for scanning, if set to NULL default settings will be used
   *                    of which default values are show_hidden:false, scan_type:active, scan_time.active.min:0,
   *                    scan_time.active.max:120 milliseconds, scan_time.passive:360 milliseconds
+  *                    home_chan_dwell_time:30ms
   *
   * @param     block if block is true, this API will block the caller until the scan is done, otherwise
   *                         it will return immediately
@@ -482,6 +483,47 @@ esp_err_t esp_wifi_deauth_sta(uint16_t aid);
   *    - others: refer to error code in esp_err.h
   */
 esp_err_t esp_wifi_scan_start(const wifi_scan_config_t *config, bool block);
+
+/**
+  * @brief     Set default parameters used for scanning by station.
+  *
+  * @attention The values set using this API are also used for scans used while connecting.
+  *
+  * @attention The values of maximum active scan time and passive scan time per channel are limited to 1500 milliseconds.
+  *
+  * @attention The home_chan_dwell_time needs to be a minimum of 30ms and a maximum of 150ms.
+  *
+  * @attention Set any of the parameters to 0 to indicate using the default parameters -
+  *            scan_time.active.min : 0ms, scan_time.active.max : 120ms home_chan_dwell_time : 30ms
+  *            scan_time.passive : 360ms
+  *
+  * @attention Default values can be retrieved using the macro WIFI_SCAN_PARAMS_DEFAULT_CONFIG()
+  *
+  * @attention Set the config parameter to NULL to reset previously set scan parameters to their default values.
+  *
+  * @param     config  default configuration settings for all scans by stations
+  *
+  * @return
+  *    - ESP_OK: succeed
+  *    - ESP_FAIL: failed as station mode has not been started yet
+  *    - ESP_ERR_INVALID_ARG: values provided do not satisfy the requirements
+  *    - ESP_ERR_NOT_SUPPORTED: This API is not supported in AP mode yet
+  *    - ESP_ERR_INVALID_STATE: a scan/connect is in progress right now, cannot change scan parameters
+  *    - others: refer to error code in esp_err.h
+  */
+esp_err_t esp_wifi_set_scan_parameters(const wifi_scan_default_params_t *config);
+
+/**
+  * @brief     Get default parameters used for scanning by station.
+  *
+  * @param     config  structure variable within which scan default params will be stored
+  *
+  * @return
+  *    - ESP_OK: succeed
+  *    - ESP_ERR_INVALID_ARG: passed parameter does not point to a valid memory
+  *    - others: refer to error code in esp_err.h
+  */
+esp_err_t esp_wifi_get_scan_parameters(wifi_scan_default_params_t *config);
 
 /**
   * @brief     Stop the scan in process
