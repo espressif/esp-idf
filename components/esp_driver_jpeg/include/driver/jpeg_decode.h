@@ -9,6 +9,7 @@
 #include <stdint.h>
 #include "esp_err.h"
 #include "jpeg_types.h"
+#include "hal/jpeg_types.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -19,7 +20,7 @@ extern "C" {
  */
 typedef struct {
     jpeg_dec_output_format_t output_format;   /*!< JPEG decoder output format */
-    jpeg_dec_rgb_element_order_t rgb_order; /*!< JPEG decoder output order */
+    jpeg_dec_rgb_element_order_t rgb_order;   /*!< JPEG decoder output order */
     jpeg_yuv_rgb_conv_std_t conv_std;         /*!< JPEG decoder yuv->rgb standard */
 } jpeg_decode_cfg_t;
 
@@ -37,6 +38,7 @@ typedef struct {
 typedef struct {
     uint32_t width;          /*!< Number of pixels in the horizontal direction */
     uint32_t height;         /*!< Number of pixels in the vertical direction */
+    jpeg_down_sampling_type_t sample_method;     /*!< compressed JPEG picture sampling method */
 } jpeg_decode_picture_info_t;
 
 /**

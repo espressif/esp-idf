@@ -168,7 +168,7 @@ def main():  # type: () -> None
     height = args.height
     width = args.width
 
-    data = open_picture('/media/simon/USB STICK/420.YUV')
+    data = open_picture(args.pic_path)
     if (args.pic_type == 'rgb565'):
         picture_show_rgb565(data, height, width)
     elif (args.pic_type == 'rgb888'):

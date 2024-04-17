@@ -36,7 +36,7 @@ extern const uint8_t zigzag_arr[64];
  * decompression. It is used to decode the Huffman-coded symbols in the compressed
  * data stream during the decoding process.
  */
-extern const uint32_t dec_hb_tbl[JPEG_DOWN_SAMPLING_MAX][JPEG_DEC_BEST_HB_MAX];
+extern const uint32_t dec_hb_tbl[JPEG_DOWN_SAMPLING_NUM][JPEG_DEC_BEST_HB_MAX];
 
 /**
  * @brief DMA2D best hb value table for JPEG compression.
@@ -45,7 +45,7 @@ extern const uint32_t dec_hb_tbl[JPEG_DOWN_SAMPLING_MAX][JPEG_DEC_BEST_HB_MAX];
  * compression. It is used to decode the Huffman-coded symbols in the compressed
  * data stream during the encoding process.
  */
-extern const uint32_t enc_hb_tbl[JPEG_ENC_BEST_HB_MAX][JPEG_DOWN_SAMPLING_MAX];
+extern const uint32_t enc_hb_tbl[JPEG_ENC_BEST_HB_MAX][JPEG_DOWN_SAMPLING_NUM];
 
 /**
  * @brief Setup the standard Huffman tables (JPEG standard sections K.3.3)
