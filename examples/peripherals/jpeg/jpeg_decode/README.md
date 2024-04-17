@@ -51,7 +51,7 @@ I (13336) jpeg.example: Card unmounted
 I (13336) main_task: Returned from app_main()
 ```
 
-Moreover, we provided a helper script called `open_rgb.py`, which can help you easily see the outputs on your computer. For requirements component you need, you can call `pip install -r requirements.txt` under `examples/peripheral/jpeg/jpeg_decode` folder.
+Also, the helper script [open_raw_picture.py](./open_raw_picture.py) simplifies the visualization of the output on your computer. For this to work, go to `examples/peripheral/jpeg/jpeg_decode` and install the requirements by running `pip install -r requirements.txt`.
 
 ## Troubleshooting
 
