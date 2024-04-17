@@ -25,7 +25,7 @@ esp_err_t i2c_eeprom_init(i2c_master_bus_handle_t bus_handle, const i2c_eeprom_c
 {
     esp_err_t ret = ESP_OK;
     i2c_eeprom_handle_t out_handle;
-    out_handle = (i2c_eeprom_handle_t)calloc(1, sizeof(i2c_eeprom_handle_t));
+    out_handle = (i2c_eeprom_handle_t)calloc(1, sizeof(i2c_eeprom_t));
     ESP_GOTO_ON_FALSE(out_handle, ESP_ERR_NO_MEM, err, TAG, "no memory for i2c eeprom device");
 
     i2c_device_config_t i2c_dev_conf = {
