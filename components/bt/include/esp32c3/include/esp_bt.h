@@ -616,6 +616,15 @@ void esp_wifi_bt_power_domain_on(void);
  */
 void esp_wifi_bt_power_domain_off(void);
 
+/**
+ * @brief Get the Bluetooth module sleep clock source.
+ *
+ * Note that this function shall not be invoked before esp_bt_controller_init()
+ *
+ * @return  clock source used in Bluetooth low power mode
+ */
+esp_bt_sleep_clock_t esp_bt_get_lpclk_src(void);
+
 #ifdef __cplusplus
 }
 #endif
