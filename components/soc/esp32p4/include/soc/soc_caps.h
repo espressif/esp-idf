@@ -415,6 +415,7 @@
 /* Supported host clock delay phase number */
 #define SOC_SDMMC_DELAY_PHASE_NUM    4
 #define SOC_SDMMC_IO_POWER_EXTERNAL  1    ///< SDMMC IO power controlled by external power supply
+#define SOC_SDMMC_PSRAM_DMA_CAPABLE  1    ///< SDMMC peripheral can do DMA transfer to/from PSRAM
 
 // TODO: IDF-5353 (Copy from esp32c3, need check)
 /*--------------------------- SHA CAPS ---------------------------------------*/
