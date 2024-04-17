@@ -200,7 +200,7 @@ void esp_newlib_init_global_stdio(const char *stdio_dev)
 
 ESP_SYSTEM_INIT_FN(init_newlib_stdio, CORE, BIT(0), 115)
 {
-#if defined(CONFIG_VFS_SUPPORT_IO) && !defined(CONFIG_ESP_CONSOLE_NONE)
+#if defined(CONFIG_VFS_SUPPORT_IO)
     esp_newlib_init_global_stdio("/dev/console");
 #else
     esp_newlib_init_global_stdio(NULL);
