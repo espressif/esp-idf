@@ -85,6 +85,10 @@ To flash the image onto {IDF_TARGET_NAME} at offset 0x110000, run::
 
     python esptool.py --chip {IDF_TARGET_PATH_NAME} --port [port] --baud [baud] write_flash -z 0x110000 spiffs.bin
 
+.. note::
+
+    You can configure the ``write_flash`` command of ``esptool.py`` to `write the spiffs data to an external SPI flash chip <https://docs.espressif.com/projects/esptool/en/latest/esptool/advanced-options.html#custom-spi-pin-configuration>`_ using the ``--spi-connection <CLK>,<Q>,<D>,<HD>,<CS>`` option. Just specify the GPIO pins assigned to the external flash, e.g. ``python esptool.py write_flash --spi-connection 6,7,8,9,11 -z 0x110000 spiffs.bin``.
+
 Notes on Which SPIFFS Tool to Use
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
