@@ -48,7 +48,7 @@
 static const char *UART_TAG = "uart";
 
 #define UART_EMPTY_THRESH_DEFAULT       (10)
-#define LP_UART_EMPTY_THRESH_DEFAULT    (2)
+#define LP_UART_EMPTY_THRESH_DEFAULT    (4)
 #define UART_FULL_THRESH_DEFAULT        (120)
 #define LP_UART_FULL_THRESH_DEFAULT     (10)
 #define UART_TOUT_THRESH_DEFAULT        (10)

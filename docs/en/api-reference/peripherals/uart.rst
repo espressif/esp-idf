@@ -12,7 +12,7 @@ The {IDF_TARGET_NAME} chip has {IDF_TARGET_SOC_UART_HP_NUM} UART controllers (al
 
 Each UART controller is independently configurable with parameters such as baud rate, data bit length, bit ordering, number of stop bits, parity bit, etc. All the regular UART controllers are compatible with UART-enabled devices from various manufacturers and can also support Infrared Data Association (IrDA) protocols.
 
-.. only:: SOC_UART_LP_NUM
+.. only:: SOC_UART_HAS_LP_UART
 
     Additionally, the {IDF_TARGET_NAME} chip has one low-power (LP) UART controller. It is the cut-down version of regular UART. Usually, the LP UART controller only support basic UART functionality with a much smaller RAM size, and does not support IrDA or RS485 protocols. For a full list of difference between UART and LP UART, please refer to the **{IDF_TARGET_NAME} Technical Reference Manual** > **UART Controller (UART)** > **Features** [`PDF <{IDF_TARGET_TRM_EN_URL}#uart>`__]).
 
@@ -29,6 +29,10 @@ The overview describes how to establish communication between an {IDF_TARGET_NAM
 6. :ref:`uart-api-deleting-driver` - Freeing allocated resources if a UART communication is no longer required
 
 Steps 1 to 3 comprise the configuration stage. Step 4 is where the UART starts operating. Steps 5 and 6 are optional.
+
+.. only:: SOC_UART_HAS_LP_UART
+
+    Additionally, when using the LP UART Controller you need to pay attention to :ref:`uart-api-lp-uart-driver`.
 
 The UART driver's functions identify each of the UART controllers using :cpp:type:`uart_port_t`. This identification is needed for all the following function calls.
 
@@ -239,18 +243,35 @@ The API provides a convenient way to handle specific interrupts discussed in thi
     - Disable the interrupt using :cpp:func:`uart_disable_pattern_det_intr`
 
 
-Macros
-^^^^^^
-
-The API also defines several macros. For example, :c:macro:`UART_HW_FIFO_LEN` defines the length of hardware FIFO buffers; :c:macro:`UART_BITRATE_MAX` gives the maximum baud rate supported by the UART controllers, etc.
-
-
 .. _uart-api-deleting-driver:
 
 Deleting a Driver
 ^^^^^^^^^^^^^^^^^
 
 If the communication established with :cpp:func:`uart_driver_install` is no longer required, the driver can be removed to free allocated resources by calling :cpp:func:`uart_driver_delete`.
+
+
+Macros
+^^^^^^
+
+The API also defines several macros. For example, :c:macro:`UART_HW_FIFO_LEN` defines the length of hardware FIFO buffers; :c:macro:`UART_BITRATE_MAX` gives the maximum baud rate supported by the UART controllers, etc.
+
+.. only:: SOC_UART_HAS_LP_UART
+
+    .. _uart-api-lp-uart-driver:
+
+    Use LP UART Controller with HP Core
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    The UART driver also supports to control the LP UART controller when the chip is in active mode. The configuration steps for the LP UART are the same as the steps for a normal UART controller, except:
+
+    .. list::
+
+        - The port number for the LP UART controller is defined by :c:macro:`LP_UART_NUM_0`.
+        - The available clock sources for the LP UART controller can be found in :cpp:type:`lp_uart_sclk_t`.
+        - The size of the hardware FIFO for the LP UART controller is much smaller, which is defined in :c:macro:`SOC_LP_UART_FIFO_LEN`.
+        :SOC_LP_GPIO_MATRIX_SUPPORTED: - The GPIO pins for the LP UART controller can only be selected from the LP GPIO pins.
+        :not SOC_LP_GPIO_MATRIX_SUPPORTED: - The GPIO pins for the LP UART controller are unalterable, because there is no LP GPIO matrix on the target. Please see **{IDF_TARGET_NAME} Technical Reference Manual** > **IO MUX and GPIO Matrix (GPIO, IO MUX)** > **LP IO MUX Functions List** [`PDF <{IDF_TARGET_TRM_EN_URL}#lp-io-mux-func-list>`__] for the specific pin numbers.
 
 
 Overview of RS485 Specific Communication 0ptions
