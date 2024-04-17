@@ -10,6 +10,28 @@ GPIO Summary
     :start-after: gpio-summary
     :end-before: ---
 
+.. only:: SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
+
+    .. only:: not SOC_LP_PERIPHERALS_SUPPORTED
+
+        There is also separate "RTC GPIO" support, which functions when GPIOs are routed to the "RTC" low-power and analog subsystem. These pin functions can be used when:
+
+    .. only:: SOC_LP_PERIPHERALS_SUPPORTED
+
+        There is also separate "RTC GPIO" support, which functions when GPIOs are routed to the "RTC" low-power, analog subsystem, and Low-Power(LP) peripherals. These pin functions can be used when:
+
+    .. list::
+
+        - In Deep-sleep mode
+        :SOC_ULP_FSM_SUPPORTED: - The :doc:`Ultra Low Power FSM co-processor <../../api-reference/system/ulp>` is running
+        :SOC_RISCV_COPROC_SUPPORTED: - The :doc:`Ultra Low Power RISC-V co-processor <../../api-reference/system/ulp-risc-v>` is running
+        :SOC_LP_CORE_SUPPORTED: - The :doc:`Ultra Low Power LP-Core co-processor <../../api-reference/system/ulp-lp-core>` is running
+        - Analog functions such as ADC/DAC/etc are in use
+        :SOC_LP_PERIPHERALS_SUPPORTED: - LP peripherals, such as LP_UART, LP_I2C, are in use
+
+Check Current Configuration of IOs
+----------------------------------
+
 GPIO driver offers a dump function :cpp:func:`gpio_dump_io_configuration` to show the current configurations of IOs, such as pull-up/pull-down, input/output enable, pin mapping, etc. Below is an example of how to dump the configuration of GPIO4, GPIO18, and GPIO26:
 
 ::
@@ -49,27 +71,25 @@ In addition, if you would like to dump the configurations of all IOs, you can us
 
     gpio_dump_all_io_configuration(stdout, SOC_GPIO_VALID_GPIO_MASK);
 
-If an IO pin is routed to a peripheral signal through the GPIO matrix, the signal ID printed in the dump information is defined in the ``soc/gpio_sig_map.h`` file. The word ``**RESERVED**`` indicates the IO is occupied by either FLASH or PSRAM. It is strongly not recommended to reconfigure them for other application purposes.
+If an IO pin is routed to a peripheral signal through the GPIO matrix, the signal ID printed in the dump information is defined in the :component_file:`soc/{IDF_TARGET_PATH_NAME}/include/soc/gpio_sig_map.h` header file. The word ``**RESERVED**`` indicates the IO is occupied by either SPI flash or PSRAM. It is strongly not recommended to reconfigure them for other application purposes.
 
-.. only:: SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
+.. only:: esp32c3 or esp32c6 or esp32h2 or esp32p4 or esp32s2 or esp32s3
 
-    .. only:: not SOC_LP_PERIPHERALS_SUPPORTED
+    Configure USB PHY Pins to GPIO
+    -------------------------------
 
-        There is also separate "RTC GPIO" support, which functions when GPIOs are routed to the "RTC" low-power and analog subsystem. These pin functions can be used when:
+    To configure the USB PHY pins to GPIO, you can use the function :cpp:func:`gpio_config`. Below is an example of how to configure the USB PHY pins to GPIO:
 
-    .. only:: SOC_LP_PERIPHERALS_SUPPORTED
+    .. code-block:: c
 
-        There is also separate "RTC GPIO" support, which functions when GPIOs are routed to the "RTC" low-power, analog subsystem, and Low-Power(LP) peripherals. These pin functions can be used when:
-
-    .. list::
-
-        - In Deep-sleep mode
-        :SOC_ULP_FSM_SUPPORTED: - The :doc:`Ultra Low Power FSM co-processor <../../api-reference/system/ulp>` is running
-        :SOC_RISCV_COPROC_SUPPORTED: - The :doc:`Ultra Low Power RISC-V co-processor <../../api-reference/system/ulp-risc-v>` is running
-        :SOC_LP_CORE_SUPPORTED: - The :doc:`Ultra Low Power LP-Core co-processor <../../api-reference/system/ulp-lp-core>` is running
-        - Analog functions such as ADC/DAC/etc are in use
-        :SOC_LP_PERIPHERALS_SUPPORTED: - LP peripherals, such as LP_UART, LP_I2C, are in use
-
+        gpio_config_t usb_phy_conf = {
+            .pin_bit_mask = (1ULL << USB_PHY_DP_PIN) | (1ULL << USB_PHY_DM_PIN),
+            .mode = GPIO_MODE_INPUT_OUTPUT,
+            .pull_up_en = 0,
+            .pull_down_en = 0,
+            .intr_type = GPIO_INTR_DISABLE,
+        };
+        gpio_config(&usb_phy_conf);
 
 .. only:: SOC_GPIO_SUPPORT_PIN_GLITCH_FILTER or SOC_GPIO_FLEX_GLITCH_FILTER_NUM
 
