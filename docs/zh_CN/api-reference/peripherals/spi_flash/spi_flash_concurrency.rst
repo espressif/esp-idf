@@ -13,7 +13,7 @@ SPI1 flash 并发约束
 
 .. only:: SOC_SPI_MEM_SUPPORT_AUTO_SUSPEND
 
-    在 {IDF_TARGET_NAME} 上，默认启用的配置选项 :ref:`CONFIG_SPI_FLASH_AUTO_SUSPEND` 允许 flash/PSRAM 的 cache 访问和 SPI1 的操作并发执行。请参阅 :ref:`auto-suspend`，查看详细信息。
+    在 {IDF_TARGET_NAME} 上，配置选项 :ref:`CONFIG_SPI_FLASH_AUTO_SUSPEND` 允许 Flash 的 cache 访问和 SPI1 的操作并发执行。该选项是可选的，依赖于特定的 SPI Flash 型号，因此默认是关闭的。请参阅 :ref:`auto-suspend`，查看详细信息。
 
     禁用该选项时，在读取/写入/擦除 flash 期间，必须禁用 cache。使用驱动访问 SPI1 的相关约束参见 :ref:`impact_disabled_cache`。这些约束会带来更多的 IRAM/DRAM 消耗。
 
