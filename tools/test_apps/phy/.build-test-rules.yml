@@ -1,0 +1,15 @@
+# Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
+
+tools/test_apps/phy/phy_multi_init_data_test:
+  disable:
+    - if: SOC_WIFI_SUPPORTED != 1
+
+tools/test_apps/phy/phy_tsens:
+  disable:
+    - if: SOC_WIFI_SUPPORTED != 1 or SOC_TEMP_SENSOR_SUPPORTED != 1
+  depends_components:
+    - hal
+    - driver
+    - esp_phy
+    - esp_hw_support
+    - esp_wifi

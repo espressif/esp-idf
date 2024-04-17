@@ -1,0 +1,106 @@
+# Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
+
+tools/test_apps/system/bootloader_sections:
+  disable:
+    - if: CONFIG_NAME == "rtc_retain" and SOC_RTC_FAST_MEM_SUPPORTED != 1
+
+tools/test_apps/system/build_test:
+  disable:
+    - if: CONFIG_NAME == "no_rvfplib" and ESP_ROM_HAS_RVFPLIB != 1
+    - if: CONFIG_NAME == "usb_serial_jtag" AND SOC_USB_SERIAL_JTAG_SUPPORTED != 1
+    - if: CONFIG_NAME == "usb_console_ets_printf" AND SOC_USB_OTG_SUPPORTED != 1
+    - if: CONFIG_NAME == "phy_multiple_init_data" AND IDF_TARGET == "esp32p4" # Update with caps here when IDF-7460 is resolved
+
+tools/test_apps/system/cxx_no_except:
+  enable:
+    - if: IDF_TARGET == "esp32" or IDF_TARGET == "esp32c3"
+      temporary: true
+      reason: the other targets are not tested yet
+
+tools/test_apps/system/cxx_pthread_bluetooth:
+  enable:
+    - if: IDF_TARGET in ["esp32", "esp32c2", "esp32c3", "esp32s2", "esp32s3"]
+      temporary: true
+      reason: the other targets are not supported yet
+
+tools/test_apps/system/eh_frame:
+  enable:
+    - if: IDF_TARGET in ["esp32c2", "esp32c3"]
+      temporary: true
+      reason: the other targets are not tested yet
+
+tools/test_apps/system/g0_components:
+  enable:
+    - if: INCLUDE_DEFAULT == 1 or IDF_TARGET in ["esp32p4", "esp32c5", "esp32c61"] # preview targets
+
+tools/test_apps/system/g1_components:
+
+tools/test_apps/system/gdb_loadable_elf:
+  disable_test:
+    - if: IDF_TARGET != "esp32"
+      temporary: true
+      reason: lack of runners
+  disable:
+    - if: IDF_TARGET == "esp32c6" or IDF_TARGET == "esp32h2"
+      temporary: true
+      reason: target esp32c6, esp32h2 is not supported yet
+
+tools/test_apps/system/gdbstub_runtime:
+  disable:
+    - if: IDF_TARGET == "esp32p4"
+      temporary: true
+      reason: not supported yet #TODO: IDF-7510
+
+tools/test_apps/system/longjmp_test:
+  enable:
+    - if: IDF_TARGET in ["esp32", "esp32s2", "esp32s3"]
+      temporary: true
+      reason: the other targets are not tested yet
+  disable_test:
+    - if: IDF_TARGET == "esp32s3"
+      temporary: true
+      reason: lack of runners
+
+tools/test_apps/system/memprot:
+  enable:
+    - if: IDF_TARGET in ["esp32c3", "esp32s2", "esp32s3"]
+      temporary: true
+      reason: the other targets are not tested yet
+
+tools/test_apps/system/no_embedded_paths:
+  enable:
+    - if: IDF_TARGET in ["esp32", "esp32c3", "esp32s2"]
+      temporary: true
+      reason: the other targets are not tested yet
+
+tools/test_apps/system/panic:
+  enable:
+    - if: INCLUDE_DEFAULT == 1 or IDF_TARGET in ["esp32p4"] # preview targets
+
+tools/test_apps/system/ram_loadable_app:
+  disable:
+    - if: IDF_TARGET == "esp32c5"
+      temporary: true
+      reason: not supported  # TODO: [ESP32C5] IDF-8644
+  disable_test:
+    - if: IDF_TARGET in ["esp32p4"]
+      temporary: true
+      reason: TBD # TODO: IDF-8994
+
+tools/test_apps/system/rtc_mem_reserve:
+  enable:
+    - if: IDF_TARGET in ["esp32p4"]
+      reason: only P4 has a potential conflict due to using rtc mem for lp rom data/stack
+
+tools/test_apps/system/startup:
+  disable:
+    - if: CONFIG_NAME == "main_task_cpu1" and IDF_TARGET not in ["esp32", "esp32s3"]
+
+tools/test_apps/system/test_watchpoint:
+  enable:
+    - if: IDF_TARGET in ["esp32", "esp32c3"] # Just one test per architecture
+
+tools/test_apps/system/unicore_bootloader:
+  enable:
+    - if: SOC_CPU_CORES_NUM > 1
+      reason: the test should be run on multicore chips

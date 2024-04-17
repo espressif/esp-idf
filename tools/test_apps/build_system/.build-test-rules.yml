@@ -1,0 +1,21 @@
+# Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
+
+tools/test_apps/build_system/bootloader:
+  disable:
+    - if: IDF_TARGET == "linux"
+      reason: the test should run on all targets except linux
+
+tools/test_apps/build_system/custom_partition_subtypes:
+  enable:
+    - if: IDF_TARGET in ["esp32", "linux"]
+      reason: the test should be run on ESP32 and linux
+
+tools/test_apps/build_system/embed_test:
+  enable:
+    - if: IDF_TARGET in ["esp32", "esp32c3"]
+      temporary: false
+      reason: Hardware independent feature, no need to test on all targets
+
+tools/test_apps/build_system/ld_non_contiguous_memory:
+  disable:
+    - if: SOC_MEM_NON_CONTIGUOUS_SRAM != 1

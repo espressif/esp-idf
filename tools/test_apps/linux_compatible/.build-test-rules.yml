@@ -1,0 +1,15 @@
+# Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
+
+tools/test_apps/linux_compatible/generic_build_test:
+  enable:
+    - if: IDF_TARGET in ["esp32", "esp32c3", "linux"]
+  depends_components:
+    - log
+
+tools/test_apps/linux_compatible/linux_freertos:
+  enable:
+    - if: IDF_TARGET == "linux"
+
+tools/test_apps/linux_compatible/mock_build_test:
+  enable:
+    - if: IDF_TARGET == "linux"
