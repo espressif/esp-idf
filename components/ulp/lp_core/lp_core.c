@@ -24,6 +24,10 @@
 #define LP_CORE_RCC_ATOMIC()
 #endif
 
+#if ESP_ROM_HAS_LP_ROM
+extern uint32_t _rtc_ulp_memory_start;
+#endif //ESP_ROM_HAS_LP_ROM
+
 const static char* TAG = "ulp-lp-core";
 
 #define WAKEUP_SOURCE_MAX_NUMBER 5
@@ -60,13 +64,13 @@ esp_err_t ulp_lp_core_run(ulp_lp_core_cfg_t* cfg)
     /* If we have a LP ROM we boot from it, before jumping to the app code */
     intptr_t boot_addr;
     if (cfg->skip_lp_rom_boot) {
-        boot_addr = (intptr_t)RTC_SLOW_MEM;
+        boot_addr = (intptr_t)(&_rtc_ulp_memory_start);
     } else {
         boot_addr = SOC_LP_ROM_LOW;
     }
 
     lp_core_ll_set_boot_address(boot_addr);
-    lp_core_ll_set_app_boot_address((intptr_t)RTC_SLOW_MEM);
+    lp_core_ll_set_app_boot_address((intptr_t)(&_rtc_ulp_memory_start));
 #endif //ESP_ROM_HAS_LP_ROM
 
     LP_CORE_RCC_ATOMIC() {
@@ -128,8 +132,11 @@ esp_err_t ulp_lp_core_load_binary(const uint8_t* program_binary, size_t program_
 
     /* Turn off LP CPU before loading binary */
     ulp_lp_core_stop();
-
-    uint8_t* base = (uint8_t*) RTC_SLOW_MEM;
+#if ESP_ROM_HAS_LP_ROM
+    uint32_t* base = (uint32_t*)&_rtc_ulp_memory_start;
+#else
+    uint32_t* base = RTC_SLOW_MEM;
+#endif
 
     //Start by clearing memory reserved with zeros, this will also will initialize the bss:
     hal_memset(base, 0, CONFIG_ULP_COPROC_RESERVE_MEM);

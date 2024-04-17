@@ -227,6 +227,10 @@
 #define SOC_ROM_STACK_START         0x4ff3cfc0
 #define SOC_ROM_STACK_SIZE          0x2000
 
+#define LP_ROM_DRAM_START 0x5010fa80 // Value taken from ROM elf, includes LP ROM stack
+#define LP_RAM_END        0x50110000
+#define LP_ROM_DRAM_SIZE  (LP_RAM_END - LP_ROM_DRAM_START)
+
 //On RISC-V CPUs, the interrupt sources are all external interrupts, whose type, source and priority are configured by SW.
 //There is no HW NMI conception. SW should controlled the masked levels through INT_THRESH_REG.
 

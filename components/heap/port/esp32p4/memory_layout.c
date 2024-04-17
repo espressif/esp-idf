@@ -47,11 +47,11 @@ enum {
 /**
  * Defined the attributes and allocation priority of each memory on the chip,
  * The heap allocator will traverse all types of memory types in column High Priority Matching and match the specified caps at first,
- * if no memory caps matched or the allocation is failed, it will go to columns Medium Priorty Matching and Low Priority Matching
+ * if no memory caps matched or the allocation is failed, it will go to columns Medium Priority Matching and Low Priority Matching
  * in turn to continue matching.
  */
 const soc_memory_type_desc_t soc_memory_types[SOC_MEMORY_TYPE_NUM] = {
-    /*                       Mem Type Name  | High Priority Matching   | Medium Priorty Matching                      | Low Priority Matching */
+    /*                       Mem Type Name  | High Priority Matching   | Medium Priority Matching                      | Low Priority Matching */
     [SOC_MEMORY_TYPE_L2MEM]  = { "RAM",     { MALLOC_L2MEM_BASE_CAPS,    0,                                             0 }},
     [SOC_MEMORY_TYPE_SPIRAM] = { "SPIRAM",  { MALLOC_CAP_SPIRAM,         ESP32P4_MEM_COMMON_CAPS,                       0 }},
     [SOC_MEMORY_TYPE_TCM]    = { "TCM",     { MALLOC_CAP_TCM,            ESP32P4_MEM_COMMON_CAPS | MALLOC_CAP_INTERNAL, 0 }},
@@ -74,6 +74,12 @@ const size_t soc_memory_type_count = sizeof(soc_memory_types) / sizeof(soc_memor
 #define APP_USABLE_DIRAM_END    (SOC_ROM_STACK_START - SOC_ROM_STACK_SIZE) // 0x4ff3cfc0 - 0x2000 = 0x4ff3afc0
 #define STARTUP_DATA_SIZE      (SOC_DRAM_HIGH - CONFIG_CACHE_L2_CACHE_SIZE - APP_USABLE_DIRAM_END) // 0x4ffc0000 - 0x20000/0x40000/0x80000 - 0x4ff3afc0 = 0x65040 / 0x45040 / 0x5040
 
+#if CONFIG_ULP_COPROC_ENABLED
+#define APP_USABLE_LP_RAM_SIZE  0x8000 - LP_ROM_DRAM_SIZE
+#else
+#define APP_USABLE_LP_RAM_SIZE  0x8000
+#endif //CONFIG_ULP_COPROC_ENABLED
+
 const soc_memory_region_t soc_memory_regions[] = {
 #ifdef CONFIG_SPIRAM
     { SOC_EXTRAM_LOW,       SOC_EXTRAM_SIZE,                        SOC_MEMORY_TYPE_SPIRAM, 0,                      false}, //PSRAM, if available
@@ -81,7 +87,7 @@ const soc_memory_region_t soc_memory_regions[] = {
     { SOC_DRAM_LOW,         APP_USABLE_DIRAM_END - SOC_DRAM_LOW,    SOC_MEMORY_TYPE_L2MEM,  SOC_IRAM_LOW,           false},
     { APP_USABLE_DIRAM_END, STARTUP_DATA_SIZE,                      SOC_MEMORY_TYPE_L2MEM,  APP_USABLE_DIRAM_END,   true},
 #ifdef CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP
-    { 0x50108000,           0x8000,                                 SOC_MEMORY_TYPE_RTCRAM, 0,                      false}, //LPRAM
+    { 0x50108000,           APP_USABLE_LP_RAM_SIZE,                 SOC_MEMORY_TYPE_RTCRAM, 0,                      false}, //LPRAM
 #endif
     { 0x30100000,           0x2000,                                 SOC_MEMORY_TYPE_TCM,    0,                      false},
 };
@@ -92,6 +98,7 @@ const size_t soc_memory_region_count = sizeof(soc_memory_regions) / sizeof(soc_m
 extern int _data_start_low, _data_start_high, _heap_start_low, _heap_start_high, _iram_start, _iram_end, _rtc_force_slow_end;
 extern int _tcm_text_start, _tcm_data_end;
 extern int _rtc_reserved_start, _rtc_reserved_end;
+extern int _rtc_ulp_memory_start;
 
 /**
  * Reserved memory regions.
@@ -112,8 +119,10 @@ SOC_RESERVE_MEMORY_REGION((intptr_t)&_tcm_text_start, (intptr_t)&_tcm_data_end, 
 SOC_RESERVE_MEMORY_REGION( SOC_EXTRAM_LOW, SOC_EXTRAM_HIGH, extram_region);
 #endif
 
-#ifdef CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP
-SOC_RESERVE_MEMORY_REGION(SOC_RTC_DRAM_LOW, (intptr_t)&_rtc_force_slow_end, rtcram_data);
-#endif
 
+#ifdef CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP
 SOC_RESERVE_MEMORY_REGION((intptr_t)&_rtc_reserved_start, (intptr_t)&_rtc_reserved_end, rtc_reserved_data);
+/* This includes any memory reserved for ULP RAM */
+SOC_RESERVE_MEMORY_REGION((intptr_t)&_rtc_reserved_end, (intptr_t)&_rtc_force_slow_end, rtcram_data);
+
+#endif
