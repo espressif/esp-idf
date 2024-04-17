@@ -37,6 +37,21 @@ menu "Example Configuration"
             For Station, If the station does not receive a beacon frame from the connected SoftAP during the
             inactive time, disconnect from SoftAP. Default 6s.
 
+    choice EXAMPLE_WIFI_BAND_MODE
+        prompt "wifi band"
+        default EXAMPLE_WIFI_BAND_MODE_2G
+        depends on SOC_WIFI_HE_SUPPORT_5G
+        help
+            WiFi band for the example to use.
+
+        config EXAMPLE_WIFI_BAND_MODE_2G
+            bool "2G"
+        config EXAMPLE_WIFI_BAND_MODE_5G
+            bool "5G"
+        config EXAMPLE_WIFI_BAND_MODE_AUTO
+            bool "Auto"
+    endchoice
+
     choice EXAMPLE_POWER_SAVE_MODE
         prompt "power save mode"
         default EXAMPLE_POWER_SAVE_MIN_MODEM
