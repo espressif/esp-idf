@@ -6,53 +6,53 @@
 
 #include <stdint.h>
 
-int esp_log_util_cvt(unsigned long long val, char *buf, long radix, int pad, const char *digits)
+int esp_log_util_cvt(unsigned long long val, long radix, int pad, const char *digits, char *buf)
 {
-#ifdef SUPPORT_LITTLE_RADIX
-    char temp[64];
-#else
-    char temp[32];
-#endif
-    char *buf_or = buf;
-    char *cp = temp;
+    char *orig_buf = buf;
     int length = 0;
 
-    if (val == 0) {
-        /* Special case */
-        *cp++ = '0';
-    } else {
-        while (val) {
-            *cp++ = digits[val % radix];
-            val /= radix;
-        }
-    }
-    while (cp != temp) {
-        *buf++ = *--cp;
+    // val = 123
+    do {
+        *buf++ = digits[val % radix];
+        val /= radix;
+        length++;
+    } while (val);
+    //        3   2   1
+    // buf = [0] [1] [2] [3]
+
+    // length = 3, pad = 6
+    while (pad > 0 && pad > length) {
+        *buf++ = '0';
         length++;
     }
     *buf = '\0';
-    if (length < pad) {
-        pad = pad - length;
-        int i = 0;
-        while (pad-- > 0) {
-            temp[i] = buf_or[i];
-            buf_or[i] = '0';
-            i++;
-            length++;
-        }
-        for (int k = 0; k < i; k++) {
-            buf_or[i + k] = temp[k];
-        }
+    // length = 6
+    //        3   2   1   0   0   0  \0
+    // buf = [0] [1] [2] [3] [4] [5] [6]
+
+    --buf;
+    // reverse the order of characters
+    //             3   2   1   0   0   0  \0
+    //            [0] [1] [2] [3] [4] [5] [6]
+    // orig_buf -- ^                   ^ ----- buf
+    while (orig_buf < buf) {
+        char first_char = *orig_buf;
+        char last_char = *buf;
+        *buf-- = first_char;
+        *orig_buf++ = last_char;
     }
+    //        0   0   0   1   2   3  \0
+    // buf = [0] [1] [2] [3] [4] [5] [6]
+
     return (length);
 }
 
 int esp_log_util_cvt_hex(unsigned long long val, int pad, char *buf)
 {
-    return esp_log_util_cvt(val, buf, 16, pad, "0123456789abcdef");
+    return esp_log_util_cvt(val, 16, pad, "0123456789abcdef", buf);
 }
 
 int esp_log_util_cvt_dec(unsigned long long val, int pad, char *buf)
 {
-    return esp_log_util_cvt(val, buf, 10, pad, "0123456789");
+    return esp_log_util_cvt(val, 10, pad, "0123456789", buf);
 }

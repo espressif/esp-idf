@@ -10,6 +10,7 @@
 #include <regex>
 #include <iostream>
 #include "esp_log.h"
+#include "esp_private/log_util.h"
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -320,4 +321,52 @@ TEST_CASE("changing early log level")
 
     ESP_EARLY_LOGI(TEST_TAG, "must indeed be printed");
     CHECK(regex_search(fix.get_print_buffer_string(), test_print) == true);
+}
+
+TEST_CASE("esp_log_util_cvt")
+{
+    char buf[128];
+    CHECK(esp_log_util_cvt_dec(123456, 0, buf) == 6);
+    CHECK(strcmp(buf, "123456") == 0);
+    memset(buf, 0, sizeof(buf));
+
+    CHECK(esp_log_util_cvt_dec(123456, 2, buf) == 6);
+    CHECK(strcmp(buf, "123456") == 0);
+    memset(buf, 0, sizeof(buf));
+
+    CHECK(esp_log_util_cvt_dec(123456, 8, buf) == 8);
+    CHECK(strcmp(buf, "00123456") == 0);
+    memset(buf, 0, sizeof(buf));
+
+    CHECK(esp_log_util_cvt_dec(1, 0, buf) == 1);
+    CHECK(strcmp(buf, "1") == 0);
+    memset(buf, 0, sizeof(buf));
+
+    CHECK(esp_log_util_cvt_dec(0, 0, buf) == 1);
+    CHECK(strcmp(buf, "0") == 0);
+    memset(buf, 0, sizeof(buf));
+
+    CHECK(esp_log_util_cvt_dec(0, 4, buf) == 4);
+    CHECK(strcmp(buf, "0000") == 0);
+    memset(buf, 0, sizeof(buf));
+
+    CHECK(esp_log_util_cvt_dec(1, 2, buf) == 2);
+    CHECK(strcmp(buf, "01") == 0);
+    memset(buf, 0, sizeof(buf));
+
+    CHECK(esp_log_util_cvt_hex(0x73f, -1, buf) == 3);
+    CHECK(strcmp(buf, "73f") == 0);
+    memset(buf, 0, sizeof(buf));
+
+    CHECK(esp_log_util_cvt_hex(0x73f, 2, buf) == 3);
+    CHECK(strcmp(buf, "73f") == 0);
+    memset(buf, 0, sizeof(buf));
+
+    CHECK(esp_log_util_cvt_hex(0x73f, 3, buf) == 3);
+    CHECK(strcmp(buf, "73f") == 0);
+    memset(buf, 0, sizeof(buf));
+
+    CHECK(esp_log_util_cvt_hex(0x73f, 4, buf) == 4);
+    CHECK(strcmp(buf, "073f") == 0);
+    memset(buf, 0, sizeof(buf));
 }
