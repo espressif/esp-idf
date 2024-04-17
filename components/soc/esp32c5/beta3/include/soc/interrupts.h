@@ -48,6 +48,7 @@ typedef enum {
     ETS_CPU_PERI_TIMEOUT_INTR_SOURCE,
     ETS_GPIO_INTR_SOURCE,                       /**< interrupt of GPIO, level*/
     ETS_GPIO_NMI_SOURCE,                        /**< interrupt of GPIO, NMI*/
+    ETS_GPIO_SD_INTR_SOURCE,
     ETS_PAU_INTR_SOURCE,
     ETS_HP_PERI_TIMEOUT_INTR_SOURCE,
     ETS_MODEM_PERI_TIMEOUT_INTR_SOURCE,
@@ -55,7 +56,6 @@ typedef enum {
     ETS_HP_APM_M1_INTR_SOURCE,
     ETS_HP_APM_M2_INTR_SOURCE,
     ETS_HP_APM_M3_INTR_SOURCE,
-    ETS_HP_APM_M4_INTR_SOURCE,
     ETS_LP_APM0_INTR_SOURCE,
     ETS_MSPI_INTR_SOURCE,
     ETS_I2S1_INTR_SOURCE,                       /**< interrupt of I2S1, level*/
@@ -63,16 +63,16 @@ typedef enum {
     ETS_UART0_INTR_SOURCE,                      /**< interrupt of UART0, level*/
     ETS_UART1_INTR_SOURCE,                      /**< interrupt of UART1, level*/
     ETS_LEDC_INTR_SOURCE,                       /**< interrupt of LED PWM, level*/
-    ETS_TWAI0_INTR_SOURCE,                      /**< interrupt of can0, level*/
-    ETS_TWAI0_TIMER_INTR_SOURCE,                /**< interrupt of can0 timer, level*/
-    ETS_TWAI1_INTR_SOURCE,                      /**< interrupt of can1, level*/
-    ETS_TWAI1_TIMER_INTR_SOURCE,                /**< interrupt of can0 timer, level*/
+    ETS_TWAI0_INTR_SOURCE,                      /**< interrupt of twai0, level*/
+    ETS_TWAI1_INTR_SOURCE,                      /**< interrupt of twai1, level*/
     ETS_USB_SERIAL_JTAG_INTR_SOURCE,            /**< interrupt of USB, level*/
     ETS_RMT_INTR_SOURCE,                        /**< interrupt of remote controller, level*/
     ETS_I2C_EXT0_INTR_SOURCE,                   /**< interrupt of I2C controller1, level*/
     ETS_TG0_T0_LEVEL_INTR_SOURCE,               /**< interrupt of TIMER_GROUP0, TIMER0, level*/
+    ETS_TG0_T1_LEVEL_INTR_SOURCE,               /**< interrupt of TIMER_GROUP0, TIMER1, level*/
     ETS_TG0_WDT_LEVEL_INTR_SOURCE,              /**< interrupt of TIMER_GROUP0, WATCH DOG, level*/
     ETS_TG1_T0_LEVEL_INTR_SOURCE,               /**< interrupt of TIMER_GROUP1, TIMER0, level*/
+    ETS_TG1_T1_LEVEL_INTR_SOURCE,               /**< interrupt of TIMER_GROUP1, TIMER1, level*/
     ETS_TG1_WDT_LEVEL_INTR_SOURCE,              /**< interrupt of TIMER_GROUP1, WATCHDOG, level*/
     ETS_SYSTIMER_TARGET0_INTR_SOURCE,           /**< interrupt of system timer 0 */
     ETS_SYSTIMER_TARGET1_INTR_SOURCE,           /**< interrupt of system timer 1 */
@@ -82,6 +82,11 @@ typedef enum {
     ETS_PCNT_INTR_SOURCE,
     ETS_PARL_IO_TX_INTR_SOURCE,
     ETS_PARL_IO_RX_INTR_SOURCE,
+    ETS_SLC0_INTR_SOURCE,
+    ETS_SLC1_INTR_SOURCE,
+    ETS_USB_OTG20_INTR_SOURCE,
+    ETS_USB_OTG20_MULTI_PROC_INTR_SOURCE,
+    ETS_USB_OTG20_MISC_INTR_SOURCE,
     ETS_DMA_IN_CH0_INTR_SOURCE,                    /**< interrupt of general DMA IN channel 0, LEVEL*/
     ETS_DMA_IN_CH1_INTR_SOURCE,                    /**< interrupt of general DMA IN channel 1, LEVEL*/
     ETS_DMA_IN_CH2_INTR_SOURCE,                    /**< interrupt of general DMA IN channel 2, LEVEL*/
