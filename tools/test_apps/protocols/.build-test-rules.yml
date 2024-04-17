@@ -1,0 +1,33 @@
+# Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
+
+tools/test_apps/protocols/esp_netif/build_config:
+  enable:
+    - if: IDF_TARGET in ["esp32", "esp32c2"]
+      temporary: false
+      reason: No need to test on all targets
+
+tools/test_apps/protocols/mqtt/publish_connect_test:
+  enable:
+    - if: IDF_TARGET in ["esp32", "esp32c3", "esp32s2"]
+      temporary: true
+      reason: the other targets are not tested yet
+  disable_test:
+    - if: IDF_TARGET == "esp32s2" or IDF_TARGET == "esp32c3"
+      temporary: true
+      reason: lack of runners
+  depends_components:
+    - esp_eth
+  depends_filepatterns:
+    - tools/ci/python_packages/common_test_methods.py
+    - examples/common_components/**/*
+    - examples/protocols/**/*
+    - examples/system/ota/**/*
+    - examples/ethernet/iperf/**/*
+    - examples/network/vlan_support/**/*
+    - components/esp_netif/esp_netif_handlers.c
+
+tools/test_apps/protocols/netif_components:
+  enable:
+    - if: IDF_TARGET == "esp32"
+      temporary: true
+      reason: one target is enough to verify netif component dependencies
