@@ -1136,10 +1136,16 @@ static int linenoiseDumb(char* buf, size_t buflen, const char* prompt) {
         } else if (c == BACKSPACE || c == 0x8) {
             if (count > 0) {
                 buf[count - 1] = 0;
-                count --;
+                count--;
+
+                /* Only erase symbol echoed from stdin. */
+                fputs("\x08 ", stdout); /* Windows CMD: erase symbol under cursor */
+                flushWrite();
+            } else {
+                /* Consume backspace if the command line is empty to avoid erasing the prompt */
+                continue;
             }
-            fputs("\x08 ", stdout); /* Windows CMD: erase symbol under cursor */
-            flushWrite();
+
         } else {
             buf[count] = c;
             ++count;
