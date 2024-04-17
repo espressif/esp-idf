@@ -1596,6 +1596,21 @@ esp_err_t esp_wifi_set_band(wifi_band_t band);
 esp_err_t esp_wifi_get_band(wifi_band_t* band);
 #endif /* SOC_WIFI_HE_SUPPORT_5G */
 
+#if CONFIG_ESP_COEX_POWER_MANAGEMENT
+/**
+  * @brief      Enable Wi-Fi coexistence power management
+  *
+  * @attention  This API should be called after esp_wifi_init().
+  *
+  * @param      enabled Wi-Fi coexistence power management is enabled or not.
+  *
+  * @return
+  *    - ESP_OK: succeed
+  *    - others: failed
+  */
+esp_err_t esp_wifi_coex_pwr_configure(bool enabled);
+#endif
+
 #ifdef __cplusplus
 }
 #endif

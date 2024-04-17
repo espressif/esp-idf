@@ -496,6 +496,16 @@ static int coex_schm_register_cb_wrapper(int type, int(*cb)(int))
     return 0;
 }
 
+static int coex_schm_flexible_period_set_wrapper(uint8_t period)
+{
+    return 0;
+}
+
+static uint8_t coex_schm_flexible_period_get_wrapper(void)
+{
+    return 1;
+}
+
 static void IRAM_ATTR esp_empty_wrapper(void)
 {
 
@@ -750,5 +760,7 @@ wifi_osi_funcs_t g_wifi_osi_funcs = {
     ._coex_register_start_cb = coex_register_start_cb_wrapper,
     ._coex_schm_process_restart = coex_schm_process_restart_wrapper,
     ._coex_schm_register_cb = coex_schm_register_cb_wrapper,
+    ._coex_schm_flexible_period_set = coex_schm_flexible_period_set_wrapper,
+    ._coex_schm_flexible_period_get = coex_schm_flexible_period_get_wrapper,
     ._magic = ESP_WIFI_OS_ADAPTER_MAGIC,
 };
