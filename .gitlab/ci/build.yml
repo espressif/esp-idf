@@ -56,7 +56,7 @@
   variables:
     IDF_TOOLCHAIN: clang
     TEST_BUILD_OPTS_EXTRA: ""
-    TEST_DIR: tools/test_apps/system/cxx_pthread_bluetooth
+    TEST_DIR: tools/test_apps/system/clang_build_test
   script:
     # CI specific options start from "--parallel-count xxx". could ignore when running locally
     - run_cmd python tools/ci/ci_build_apps.py $TEST_DIR -v
