@@ -340,7 +340,7 @@ typedef struct {
     },                                                      \
     .lp_sys[PMU_MODE_LP_SLEEP] = {                          \
         .analog = {                                         \
-            .drv_b         = PMU_LP_DRVB_DEEPSLEEP,         \
+            .drv_b         = PMU_LP_DRVB_LIGHTSLEEP,        \
             .pd_cur        = PMU_PD_CUR_SLEEP_DEFAULT,      \
             .bias_sleep    = PMU_BIASSLP_SLEEP_DEFAULT,     \
             .slp_xpd       = PMU_LP_SLP_XPD_SLEEP_DEFAULT,  \
@@ -407,7 +407,7 @@ typedef struct {
 
 typedef struct pmu_sleep_machine_constant {
     struct {
-        uint16_t    min_slp_time_us;            /* Mininum sleep protection time (unit: microsecond) */
+        uint16_t    min_slp_time_us;            /* Minimum sleep protection time (unit: microsecond) */
         uint8_t     reserved0;
         uint16_t    reserved1;
         uint16_t    analog_wait_time_us;        /* LP LDO power up wait time (unit: microsecond) */
@@ -418,7 +418,7 @@ typedef struct pmu_sleep_machine_constant {
         uint16_t    power_up_wait_time_us;      /* (unit: microsecond) */
     } lp;
     struct {
-        uint16_t    min_slp_time_us;            /* Mininum sleep protection time (unit: microsecond) */
+        uint16_t    min_slp_time_us;            /* Minimum sleep protection time (unit: microsecond) */
         uint16_t    analog_wait_time_us;        /* HP LDO power up wait time (unit: microsecond) */
         uint16_t    power_supply_wait_time_us;  /* (unit: microsecond) */
         uint16_t    power_up_wait_time_us;      /* (unit: microsecond) */
