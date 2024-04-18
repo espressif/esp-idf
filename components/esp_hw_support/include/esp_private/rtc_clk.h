@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -32,7 +32,7 @@ void rtc_clk_cpu_set_to_default_config(void);
  * Currently, this function is only used for tracking whether USB Serial/JTAG is using the 48MHz PHY clock
  *
  * Note: Calling this function only helps to not disable the BBPLL clock in `rtc_clk_cpu_freq_set_config`.
- *       For light and deep sleep, whether to disable the BBPLL in the interal call to `rtc_clk_cpu_freq_set_xtal`
+ *       For light and deep sleep, whether to disable the BBPLL in the internal call to `rtc_clk_cpu_freq_set_xtal`
  *       varies for targets.
  *       On ESP32C3/S3, USB CDC device can not function properly during sleep due to the lack of APB clock. Therefore.
  *       `rtc_clk_cpu_freq_set_xtal` will always disable BBPLL, no matter whether BBPLL has any consumer.
@@ -65,6 +65,13 @@ void rtc_clk_mpll_disable(void);
  * @param[in] mpll_freq  MPLL frequency
  */
 void rtc_clk_mpll_configure(uint32_t xtal_freq, uint32_t mpll_freq);
+
+/**
+ * Get the MPLL frequency
+ * @return the value of MPLL frequency in MHz
+ */
+uint32_t rtc_clk_mpll_get_freq(void);
+
 #endif  //#if SOC_CLK_MPLL_SUPPORTED
 
 /**
