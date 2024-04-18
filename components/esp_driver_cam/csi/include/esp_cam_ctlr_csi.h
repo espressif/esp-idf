@@ -32,8 +32,11 @@ typedef struct {
     int lane_bit_rate_mbps;                     ///< Lane bit rate in Mbps
     mipi_csi_color_t input_data_color_type;     ///< Input color type
     mipi_csi_color_t output_data_color_type;    ///< Output color type
-    bool byte_swap_en;                          ///< Enable byte swap
     int queue_items;                            ///< Queue items
+    struct {
+        uint32_t byte_swap_en   : 1;            ///< Enable byte swap
+        uint32_t bk_buffer_dis  : 1;            ///< Disable backup buffer
+    };                                          ///< Boolean Flags
 } esp_cam_ctlr_csi_config_t;
 
 /**

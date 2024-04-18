@@ -71,8 +71,9 @@ esp_err_t esp_cam_ctlr_get_frame_buffer(esp_cam_ctlr_handle_t handle, uint32_t f
 
     va_list args;
     va_start(args, fb0);
-    return handle->get_internal_buffer(handle, fb_num, fb0, args);
+    esp_err_t ret = handle->get_internal_buffer(handle, fb_num, fb0, args);
     va_end(args);
+    return ret;
 }
 
 esp_err_t esp_cam_ctlr_get_frame_buffer_len(esp_cam_ctlr_handle_t handle, size_t *ret_fb_len)
