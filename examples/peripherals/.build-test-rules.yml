@@ -444,7 +444,7 @@ examples/peripherals/usb/device:
   disable:
     - if: SOC_USB_OTG_SUPPORTED != 1
   disable_test:
-    - if: IDF_TARGET not in ["esp32s2", "esp32s3"]
+    - if: IDF_TARGET not in ["esp32s2"]
       temporary: true
       reason: lack of runners with usb_device tag
   depends_components:
@@ -457,7 +457,7 @@ examples/peripherals/usb/device/tusb_ncm:
   disable:
     - if: SOC_USB_OTG_SUPPORTED != 1 or SOC_WIFI_SUPPORTED != 1
   disable_test:
-    - if: IDF_TARGET not in ["esp32s2", "esp32s3"]
+    - if: IDF_TARGET not in ["esp32s2"]
       temporary: true
       reason: lack of runners with usb_device tag
   depends_components:
