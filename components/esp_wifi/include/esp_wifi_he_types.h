@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -239,6 +239,26 @@ typedef struct {
     uint8_t flow_id_bitmap;              /**< bitmap of the suspended flow id */
     uint32_t actual_suspend_time_ms[8];  /**< the actual suspend time for each flow id, unit: ms */
 } wifi_event_sta_itwt_suspend_t;
+
+/**
+  * @brief TWT types
+  */
+typedef enum {
+    TWT_TYPE_INDIVIDUAL,                 /**< individual twt */
+    TWT_TYPE_BROADCAST,                  /**< broadcast twt */
+    TWT_TYPE_MAX,                        /**< the max value */
+} wifi_twt_type_t;
+
+/** Argument structure for twt configuration */
+typedef struct {
+    bool post_wakeup_event;              /**< post twt wakeup event */
+} wifi_twt_config_t;
+
+/** Argument structure for WIFI_EVENT_TWT_WAKEUP event */
+typedef struct {
+    wifi_twt_type_t twt_type;           /**< twt type */
+    uint8_t flow_id;                    /**< flow id */
+} wifi_event_sta_twt_wakeup_t;
 
 #ifdef __cplusplus
 }

@@ -580,6 +580,7 @@ typedef struct {
     uint8_t *hdr;              /**< header of the wifi packet */
     uint8_t *payload;          /**< payload of the wifi packet */
     uint16_t payload_len;      /**< payload len of the wifi packet */
+    uint16_t rx_seq;           /**< rx sequence number of the wifi packet */
 } wifi_csi_info_t;
 
 /**
@@ -892,6 +893,7 @@ typedef enum {
     WIFI_EVENT_ITWT_TEARDOWN,           /**< iTWT teardown */
     WIFI_EVENT_ITWT_PROBE,              /**< iTWT probe */
     WIFI_EVENT_ITWT_SUSPEND,            /**< iTWT suspend */
+    WIFI_EVENT_TWT_WAKEUP,              /**< TWT wakeup */
 
     WIFI_EVENT_NAN_STARTED,              /**< NAN Discovery has started */
     WIFI_EVENT_NAN_STOPPED,              /**< NAN Discovery has stopped */
