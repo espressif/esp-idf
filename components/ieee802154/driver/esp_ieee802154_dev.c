@@ -363,7 +363,9 @@ static IRAM_ATTR void next_operation(void)
             enable_rx();
         } else {
             ieee802154_set_state(IEEE802154_STATE_IDLE);
+#if !CONFIG_IEEE802154_TEST
             ieee802154_sleep();
+#endif
         }
     }
 }
