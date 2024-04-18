@@ -3,6 +3,8 @@
 CLion
 #####
 
+:link_to_translation:`en:[English]`
+
 CLion是什么？
 ~~~~~~~~~~~~~
 
