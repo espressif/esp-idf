@@ -11,6 +11,7 @@
 #include "driver/sdmmc_host.h"
 #include "esp_attr.h"
 #include "driver/jpeg_decode.h"
+#include "sd_pwr_ctrl_by_on_chip_ldo.h"
 
 static const char *TAG = "jpeg.example";
 static sdmmc_card_t *s_card;
@@ -38,6 +39,21 @@ static esp_err_t sdcard_init(void)
 
     sdmmc_host_t host = SDMMC_HOST_DEFAULT();
     host.max_freq_khz = SDMMC_FREQ_HIGHSPEED;
+
+#if CONFIG_EXAMPLE_SDMMC_IO_POWER_INTERNAL_LDO
+    sd_pwr_ctrl_ldo_config_t ldo_config = {
+        .ldo_chan_id = 4, // `LDO_VO4` is used as the SDMMC IO power
+    };
+    sd_pwr_ctrl_handle_t pwr_ctrl_handle = NULL;
+
+    ret = sd_pwr_ctrl_new_on_chip_ldo(&ldo_config, &pwr_ctrl_handle);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to new an on-chip ldo power control driver");
+        return ret;
+    }
+    host.pwr_ctrl_handle = pwr_ctrl_handle;
+#endif
+
     // This initializes the slot without card detect (CD) and write protect (WP) signals.
     // Modify slot_config.gpio_cd and slot_config.gpio_wp if your board has these signals.
     sdmmc_slot_config_t slot_config = SDMMC_SLOT_CONFIG_DEFAULT();
@@ -65,6 +81,13 @@ static void sdcard_deinit(void)
 {
     const char mount_point[] = MOUNT_POINT;
     esp_vfs_fat_sdcard_unmount(mount_point, s_card);
+#if SOC_SDMMC_IO_POWER_EXTERNAL
+    esp_err_t ret = sd_pwr_ctrl_del_on_chip_ldo(s_card->host.pwr_ctrl_handle);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to delete on-chip ldo power control driver");
+        return;
+    }
+#endif
 }
 
 void app_main(void)
