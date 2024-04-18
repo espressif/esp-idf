@@ -208,7 +208,14 @@ esp_err_t ppa_do_scale_rotate_mirror(ppa_client_handle_t ppa_client, const ppa_s
     if (config->rgb_swap) {
         PPA_CHECK_CM_SUPPORT_RGB_SWAP("in.srm", (uint32_t)config->in.srm_cm);
     }
-    ESP_RETURN_ON_FALSE(config->alpha_value <= 0xFF, ESP_ERR_INVALID_ARG, TAG, "invalid alpha_value");
+    uint32_t new_alpha_value = 0;
+    if (config->alpha_update_mode == PPA_ALPHA_FIX_VALUE) {
+        ESP_RETURN_ON_FALSE(config->alpha_fix_val <= 0xFF, ESP_ERR_INVALID_ARG, TAG, "invalid alpha_fix_val");
+        new_alpha_value = config->alpha_fix_val;
+    } else if (config->alpha_update_mode == PPA_ALPHA_SCALE) {
+        ESP_RETURN_ON_FALSE(config->alpha_scale_ratio > 0 && config->alpha_scale_ratio < 1, ESP_ERR_INVALID_ARG, TAG, "invalid alpha_scale_ratio");
+        new_alpha_value = (uint32_t)(config->alpha_scale_ratio * 256);
+    }
     // To reduce complexity, rotation_angle, color_mode, alpha_update_mode correctness are checked in their corresponding LL functions
     // TODO:
     // YUV420: in desc, ha/hb/va/vb/x/y must be even number
@@ -237,6 +244,7 @@ esp_err_t ppa_do_scale_rotate_mirror(ppa_client_handle_t ppa_client, const ppa_s
         srm_trans_desc->scale_x_frag = (uint32_t)(srm_trans_desc->scale_x * (PPA_LL_SRM_SCALING_FRAG_MAX + 1)) & PPA_LL_SRM_SCALING_FRAG_MAX;
         srm_trans_desc->scale_y_int = (uint32_t)srm_trans_desc->scale_y;
         srm_trans_desc->scale_y_frag = (uint32_t)(srm_trans_desc->scale_y * (PPA_LL_SRM_SCALING_FRAG_MAX + 1)) & PPA_LL_SRM_SCALING_FRAG_MAX;
+        srm_trans_desc->alpha_value = new_alpha_value;
 
         trans_on_picked_desc->ppa_engine = ppa_client->engine;
         trans_on_picked_desc->trigger_periph = DMA2D_TRIG_PERIPH_PPA_SRM;

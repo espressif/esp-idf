@@ -199,7 +199,22 @@ esp_err_t ppa_do_blend(ppa_client_handle_t ppa_client, const ppa_blend_oper_conf
     if (config->fg_rgb_swap) {
         PPA_CHECK_CM_SUPPORT_RGB_SWAP("in_fg.blend", (uint32_t)config->in_fg.blend_cm);
     }
-    ESP_RETURN_ON_FALSE(config->bg_alpha_value <= 0xFF && config->fg_alpha_value <= 0xFF, ESP_ERR_INVALID_ARG, TAG, "invalid bg/fg_alpha_value");
+    uint32_t new_bg_alpha_value = 0;
+    if (config->bg_alpha_update_mode == PPA_ALPHA_FIX_VALUE) {
+        ESP_RETURN_ON_FALSE(config->bg_alpha_fix_val <= 0xFF, ESP_ERR_INVALID_ARG, TAG, "invalid bg_alpha_fix_val");
+        new_bg_alpha_value = config->bg_alpha_fix_val;
+    } else if (config->bg_alpha_update_mode == PPA_ALPHA_SCALE) {
+        ESP_RETURN_ON_FALSE(config->bg_alpha_scale_ratio > 0 && config->bg_alpha_scale_ratio < 1, ESP_ERR_INVALID_ARG, TAG, "invalid bg_alpha_scale_ratio");
+        new_bg_alpha_value = (uint32_t)(config->bg_alpha_scale_ratio * 256);
+    }
+    uint32_t new_fg_alpha_value = 0;
+    if (config->fg_alpha_update_mode == PPA_ALPHA_FIX_VALUE) {
+        ESP_RETURN_ON_FALSE(config->fg_alpha_fix_val <= 0xFF, ESP_ERR_INVALID_ARG, TAG, "invalid fg_alpha_fix_val");
+        new_fg_alpha_value = config->fg_alpha_fix_val;
+    } else if (config->fg_alpha_update_mode == PPA_ALPHA_SCALE) {
+        ESP_RETURN_ON_FALSE(config->fg_alpha_scale_ratio > 0 && config->fg_alpha_scale_ratio < 1, ESP_ERR_INVALID_ARG, TAG, "invalid fg_alpha_scale_ratio");
+        new_fg_alpha_value = (uint32_t)(config->fg_alpha_scale_ratio * 256);
+    }
     if (config->in_bg.blend_cm == PPA_BLEND_COLOR_MODE_L4) {
         ESP_RETURN_ON_FALSE(config->in_bg.block_w % 2 == 0 && config->in_bg.block_offset_x % 2 == 0,
                             ESP_ERR_INVALID_ARG, TAG, "in_bg.block_w and in_bg.block_offset_x must be even");
@@ -234,6 +249,8 @@ esp_err_t ppa_do_blend(ppa_client_handle_t ppa_client, const ppa_blend_oper_conf
 
         ppa_blend_oper_t *blend_trans_desc = (ppa_blend_oper_t *)trans_on_picked_desc->blend_desc;
         memcpy(blend_trans_desc, config, sizeof(ppa_blend_oper_config_t));
+        blend_trans_desc->bg_alpha_value = new_bg_alpha_value;
+        blend_trans_desc->fg_alpha_value = new_fg_alpha_value;
 
         trans_on_picked_desc->ppa_engine = ppa_client->engine;
         trans_on_picked_desc->trigger_periph = DMA2D_TRIG_PERIPH_PPA_BLEND;

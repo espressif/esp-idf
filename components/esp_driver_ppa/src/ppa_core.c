@@ -220,7 +220,8 @@ static esp_err_t ppa_engine_release(ppa_engine_t *ppa_engine)
             vSemaphoreDeleteWithCaps(srm_engine->base.sem);
 #if CONFIG_PM_ENABLE
             if (srm_engine->base.pm_lock) {
-                assert(esp_pm_lock_delete(srm_engine->base.pm_lock) == ESP_OK);
+                ret = esp_pm_lock_delete(srm_engine->base.pm_lock);
+                assert(ret == ESP_OK);
             }
 #endif
             free(srm_engine);
@@ -238,7 +239,8 @@ static esp_err_t ppa_engine_release(ppa_engine_t *ppa_engine)
             vSemaphoreDeleteWithCaps(blending_engine->base.sem);
 #if CONFIG_PM_ENABLE
             if (blending_engine->base.pm_lock) {
-                assert(esp_pm_lock_delete(blending_engine->base.pm_lock) == ESP_OK);
+                ret = esp_pm_lock_delete(blending_engine->base.pm_lock);
+                assert(ret == ESP_OK);
             }
 #endif
             free(blending_engine);
@@ -250,7 +252,9 @@ static esp_err_t ppa_engine_release(ppa_engine_t *ppa_engine)
 
 #if CONFIG_PM_ENABLE
         if (s_platform.pm_lock) {
-            assert(esp_pm_lock_delete(s_platform.pm_lock) == ESP_OK);
+            ret = esp_pm_lock_delete(s_platform.pm_lock);
+            assert(ret == ESP_OK);
+            s_platform.pm_lock = NULL;
         }
 #endif
 
@@ -389,7 +393,8 @@ static bool ppa_malloc_transaction(QueueHandle_t trans_elm_ptr_queue, uint32_t t
         new_trans_elm->sem = ppa_trans_sem;
 
         // Fill the ring buffer with allocated transaction element pointer
-        assert(xQueueSend(trans_elm_ptr_queue, &new_trans_elm, 0));
+        BaseType_t sent = xQueueSend(trans_elm_ptr_queue, &new_trans_elm, 0);
+        assert(sent);
     }
     return res;
 }
@@ -409,16 +414,19 @@ bool ppa_recycle_transaction(ppa_client_handle_t ppa_client, ppa_trans_t *trans_
     // Reset transaction and send back to client's trans_elm_ptr_queue
     // TODO: To be very safe, we shall memset all to 0, and reconnect necessary pointers？
     BaseType_t HPTaskAwoken;
-    assert(xQueueSendFromISR(ppa_client->trans_elm_ptr_queue, &trans_elm, &HPTaskAwoken));
+    BaseType_t sent = xQueueSendFromISR(ppa_client->trans_elm_ptr_queue, &trans_elm, &HPTaskAwoken);
+    assert(sent);
     return HPTaskAwoken;
 }
 
 esp_err_t ppa_do_operation(ppa_client_handle_t ppa_client, ppa_engine_t *ppa_engine_base, ppa_trans_t *trans_elm, ppa_trans_mode_t mode)
 {
     esp_err_t ret = ESP_OK;
+    esp_err_t pm_lock_ret __attribute__((unused));
 
 #if CONFIG_PM_ENABLE
-    assert((esp_pm_lock_acquire(s_platform.pm_lock) == ESP_OK) && "acquire pm_lock failed");
+    pm_lock_ret = esp_pm_lock_acquire(s_platform.pm_lock);
+    assert((pm_lock_ret == ESP_OK) && "acquire pm_lock failed");
 #endif
 
     portENTER_CRITICAL(&ppa_client->spinlock);
@@ -453,7 +461,8 @@ esp_err_t ppa_do_operation(ppa_client_handle_t ppa_client, ppa_engine_t *ppa_eng
         portEXIT_CRITICAL(&ppa_engine_base->spinlock);
         if (found) {
 #if CONFIG_PM_ENABLE
-            assert((esp_pm_lock_acquire(ppa_engine_base->pm_lock) == ESP_OK) && "acquire pm_lock failed");
+            pm_lock_ret = esp_pm_lock_acquire(ppa_engine_base->pm_lock);
+            assert((pm_lock_ret == ESP_OK) && "acquire pm_lock failed");
 #endif
             ret = ppa_dma2d_enqueue(trans_elm);
             if (ret != ESP_OK) {
@@ -461,7 +470,8 @@ esp_err_t ppa_do_operation(ppa_client_handle_t ppa_client, ppa_engine_t *ppa_eng
                 STAILQ_REMOVE(&ppa_engine_base->trans_stailq, trans_elm, ppa_trans_s, entry);
                 portEXIT_CRITICAL(&ppa_engine_base->spinlock);
 #if CONFIG_PM_ENABLE
-                assert((esp_pm_lock_release(ppa_engine_base->pm_lock) == ESP_OK) && "release pm_lock failed");
+                pm_lock_ret = esp_pm_lock_release(ppa_engine_base->pm_lock);
+                assert((pm_lock_ret == ESP_OK) && "release pm_lock failed");
 #endif
                 xSemaphoreGive(ppa_engine_base->sem);
                 portENTER_CRITICAL(&ppa_client->spinlock);
@@ -484,7 +494,8 @@ esp_err_t ppa_do_operation(ppa_client_handle_t ppa_client, ppa_engine_t *ppa_eng
     }
 
 #if CONFIG_PM_ENABLE
-    assert((esp_pm_lock_release(s_platform.pm_lock) == ESP_OK) && "release pm_lock failed");
+    pm_lock_ret = esp_pm_lock_release(s_platform.pm_lock);
+    assert((pm_lock_ret == ESP_OK) && "release pm_lock failed");
 #endif
 
 err:
@@ -517,7 +528,8 @@ bool ppa_transaction_done_cb(dma2d_channel_handle_t dma2d_chan, dma2d_event_data
         ppa_dma2d_enqueue(next_start_trans);
     } else {
 #if CONFIG_PM_ENABLE
-        assert((esp_pm_lock_release(engine_base->pm_lock) == ESP_OK));
+        esp_err_t pm_lock_ret = esp_pm_lock_release(engine_base->pm_lock);
+        assert(pm_lock_ret == ESP_OK);
 #endif
         xSemaphoreGiveFromISR(engine_base->sem, &HPTaskAwoken);
         need_yield |= (HPTaskAwoken == pdTRUE);

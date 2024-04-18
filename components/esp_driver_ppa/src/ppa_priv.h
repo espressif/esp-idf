@@ -86,7 +86,7 @@ struct ppa_client_t {
 /****************************** OPERATION ************************************/
 
 // The elements in this structure listed first are identical to the elements in structure `ppa_srm_oper_config_t`
-// With adding a few extra elements in the end
+// With adding a few extra elements at the end
 // This allows memcpy
 typedef struct {
     ppa_in_pic_blk_config_t in;
@@ -103,19 +103,62 @@ typedef struct {
     bool rgb_swap;
     bool byte_swap;
     ppa_alpha_update_mode_t alpha_update_mode;
-    uint32_t alpha_value;
+    union {
+        uint32_t alpha_fix_val;
+        float alpha_scale_ratio;
+    };
 
     ppa_trans_mode_t mode;
-    // uint32_t timeout;
     void *user_data;
 
-    uint32_t scale_x_int;
-    uint32_t scale_x_frag;
-    uint32_t scale_y_int;
-    uint32_t scale_y_frag;
+    uint32_t scale_x_int;                         // Calculation result for the integral part of the scale_x to be directly written to register
+    uint32_t scale_x_frag;                        // Calculation result for the fractional part of the scale_x to be directly written to register
+    uint32_t scale_y_int;                         // Calculation result for the integral part of the scale_y to be directly written to register
+    uint32_t scale_y_frag;                        // Calculation result for the fractional part of the scale_y to be directly written to register
+    uint32_t alpha_value;                         // Calculation result for the fix alpha value to be directly written to register
 } ppa_srm_oper_t;
 
-typedef ppa_blend_oper_config_t ppa_blend_oper_t;
+// The elements in this structure listed first are identical to the elements in structure `ppa_blend_oper_config_t`
+// With adding a few extra elements at the end
+// This allows memcpy
+typedef struct {
+    ppa_in_pic_blk_config_t in_bg;
+    ppa_in_pic_blk_config_t in_fg;
+    ppa_out_pic_blk_config_t out;
+
+    // input data manipulation
+    bool bg_rgb_swap;
+    bool bg_byte_swap;
+    ppa_alpha_update_mode_t bg_alpha_update_mode;
+    union {
+        uint32_t bg_alpha_fix_val;
+        float bg_alpha_scale_ratio;
+    };
+    bool fg_rgb_swap;
+    bool fg_byte_swap;
+    ppa_alpha_update_mode_t fg_alpha_update_mode;
+    union {
+        uint32_t fg_alpha_fix_val;
+        float fg_alpha_scale_ratio;
+    };
+    uint32_t fg_fix_rgb_val;
+
+    // color-keying
+    bool bg_ck_en;
+    uint32_t bg_ck_rgb_low_thres;
+    uint32_t bg_ck_rgb_high_thres;
+    bool fg_ck_en;
+    uint32_t fg_ck_rgb_low_thres;
+    uint32_t fg_ck_rgb_high_thres;
+    uint32_t ck_rgb_default_val;
+    bool ck_reverse_bg2fg;
+
+    ppa_trans_mode_t mode;
+    void *user_data;
+
+    uint32_t bg_alpha_value;                      // Calculation result for the fix alpha value for BG to be directly written to register
+    uint32_t fg_alpha_value;                      // Calculation result for the fix alpha value for FG to be directly written to register
+} ppa_blend_oper_t;
 
 typedef ppa_fill_oper_config_t ppa_fill_oper_t;
 

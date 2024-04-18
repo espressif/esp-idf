@@ -55,6 +55,8 @@ esp_err_t ppa_register_client(const ppa_client_config_t *config, ppa_client_hand
 /**
  * @brief Unregister a PPA client
  *
+ * @note This will also free the resources occupied by the client
+ *
  * @param[in] ppa_client PPA client handle, allocated by `ppa_register_client`
  *
  * @return
@@ -170,10 +172,13 @@ typedef struct {
     bool rgb_swap;                              /*!< Whether to swap the input data in RGB (e.g. ARGB becomes BGRA, RGB becomes BGR) */
     bool byte_swap;                             /*!< Whether to swap the input data in byte. Only available feature if input picture color mode is ARGB8888 or RGB565 */
     ppa_alpha_update_mode_t alpha_update_mode;  /*!< Select whether the alpha channel of the input picture needs update */
-    uint32_t alpha_value;                       /*!< Range: 0 ~ 255
-                                                     When PPA_ALPHA_FIX_VALUE mode is selected, alpha_value is the alpha value to be replaced with (output_alpha = alpha_value)
-                                                     When PPA_ALPHA_SCALE mode is selected, alpha_value/256 is the multiplier to the input alpha value (output_alpha = input_alpha * alpha_value / 256)
-                                                     When other alpha modes are selected, this field is not used */
+    union {
+        uint32_t alpha_fix_val;                 /*!< Range: [0, 255]
+                                                     When PPA_ALPHA_FIX_VALUE mode is selected, alpha_fix_val is the new alpha value to replace the input alpha value (output_alpha = alpha_fix_val) */
+        float alpha_scale_ratio;                /*!< Range: (0, 1)
+                                                     When PPA_ALPHA_SCALE mode is selected, alpha_scale_ratio is the multiplier to the input alpha value (output_alpha = alpha_scale_ratio * input_alpha)
+                                                     Ratio resolution is 1/256 */
+    };
 
     ppa_trans_mode_t mode;                      /*!< Determines whether to block inside the operation functions, see `ppa_trans_mode_t` */
     void *user_data;                            /*!< User registered data to be passed into `done_cb` callback function */
@@ -205,17 +210,23 @@ typedef struct {
     bool bg_rgb_swap;                              /*!< Whether to swap the background input data in RGB (e.g. ARGB becomes BGRA, RGB becomes BGR) */
     bool bg_byte_swap;                             /*!< Whether to swap the background input data in byte. Only available feature if input BG picture color mode is ARGB8888 or RGB565 */
     ppa_alpha_update_mode_t bg_alpha_update_mode;  /*!< Select whether the alpha channel of the input background picture needs update */
-    uint32_t bg_alpha_value;                       /*!< Range: 0 ~ 255
-                                                        When PPA_ALPHA_FIX_VALUE mode is selected, alpha_value is the alpha value to be replaced with (output_alpha = alpha_value)
-                                                        When PPA_ALPHA_SCALE mode is selected, alpha_value/256 is the multiplier to the input alpha value (output_alpha = input_alpha * alpha_value / 256)
-                                                        When other alpha modes are selected, this field is not used */
+    union {
+        uint32_t bg_alpha_fix_val;                 /*!< Range: [0, 255]
+                                                        When PPA_ALPHA_FIX_VALUE mode is selected, alpha_fix_val is the new alpha value to replace the input alpha value (output_alpha = alpha_fix_val) */
+        float bg_alpha_scale_ratio;                /*!< Range: (0, 1)
+                                                        When PPA_ALPHA_SCALE mode is selected, alpha_scale_ratio is the multiplier to the input alpha value (output_alpha = alpha_scale_ratio * input_alpha)
+                                                        Ratio resolution is 1/256 */
+    };
     bool fg_rgb_swap;                              /*!< Whether to swap the foreground input data in RGB (e.g. ARGB becomes BGRA, RGB becomes BGR) */
     bool fg_byte_swap;                             /*!< Whether to swap the foreground input data in byte. Only available feature if input FG picture color mode is ARGB8888 or RGB565 */
     ppa_alpha_update_mode_t fg_alpha_update_mode;  /*!< Select whether the alpha channel of the input foreground picture needs update */
-    uint32_t fg_alpha_value;                       /*!< Range: 0 ~ 255
-                                                        When PPA_ALPHA_FIX_VALUE mode is selected, alpha_value is the alpha value to be replaced with (output_alpha = alpha_value)
-                                                        When PPA_ALPHA_SCALE mode is selected, alpha_value/256 is the multiplier to the input alpha value (output_alpha = input_alpha * alpha_value / 256)
-                                                        When other alpha modes are selected, this field is not used */
+    union {
+        uint32_t fg_alpha_fix_val;                 /*!< Range: [0, 255]
+                                                        When PPA_ALPHA_FIX_VALUE mode is selected, alpha_fix_val is the new alpha value to replace the input alpha value (output_alpha = alpha_fix_val) */
+        float fg_alpha_scale_ratio;                /*!< Range: (0, 1)
+                                                        When PPA_ALPHA_SCALE mode is selected, alpha_scale_ratio is the multiplier to the input alpha value (output_alpha = alpha_scale_ratio * input_alpha)
+                                                        Ratio resolution is 1/256 */
+    };
     uint32_t fg_fix_rgb_val;                       /*!< When in_fg.blend_cm is PPA_BLEND_COLOR_MODE_A8/4, this field can be used to set a fixed color for the foreground, in RGB888 format (R[23:16], G[15: 8], B[7:0]) */
 
     // color-keying
