@@ -77,7 +77,8 @@ ELF 格式具备扩展特性，支持在发生崩溃时保存更多关于错误�
 
 .. important::
 
-    如果设备启用了 :doc:`../security/flash-encryption`，请在核心转储分区中添加 ``encrypted`` 标志。
+    如果设备启用了 :doc:`../security/flash-encryption`，请在核心转储分区中添加 ``encrypted`` 标志。请注意，使用 ``idf.py coredump-info`` 或 ``idf.py coredump-debug`` 命令无法从加密分区读取核心转储。
+    建议使用 ``idf.py coredump-info -c <path-to-core-dump>`` 命令从 ESP 设备侧读取核心转储，ESP 设备会自动解密分区并发送到相应位置用于分析。
 
     .. code-block:: none
 
@@ -96,6 +97,11 @@ ELF 格式具备扩展特性，支持在发生崩溃时保存更多关于错误�
 .. code-block:: bash
 
     idf.py coredump-debug
+
+
+.. note::
+
+    ``idf.py coredump-info`` 命令和 ``idf.py coredump-debug`` 命令对 `esp-coredump` 工具进行了封装，可以在 ESP-IDF 环境中轻松使用。更多信息，请参考 :ref:`core_dump_commands`。
 
 
 将核心转储保存到 UART
@@ -184,6 +190,8 @@ ELF 格式具备扩展特性，支持在发生崩溃时保存更多关于错误�
     idf.py coredump-debug -c </path/to/saved/base64/text>
 
 
+.. _core_dump_commands:
+
 核心转储命令
 ------------------
 
@@ -191,6 +199,12 @@ ESP-IDF 提供了一些特殊命令，有助于检索和分析核心转储：
 
 * ``idf.py coredump-info`` - 打印崩溃任务的寄存器、调用栈、系统可用任务列表、内存区域以及核心转储中存储的内存内容（包括 TCB 和栈）。
 * ``idf.py coredump-debug`` - 创建核心转储 ELF 文件，并使用该文件运行 GDB 调试会话。你可以手动检查内存、变量和任务状态。请注意，由于并未将所有内存保存在核心转储中，因此只有在栈上分配的变量的值才有意义。
+
+高阶用户如果需要传递额外参数或使用自定义 ELF 文件，可直接使用 `esp-coredump <https://github.com/espressif/esp-coredump>`_ 工具。如果在 ESP-IDF 环境中使用该工具，可运行如下命令查询更多信息：
+
+.. code-block:: bash
+
+    esp-coredump --help
 
 
 回溯中的 ROM 函数
