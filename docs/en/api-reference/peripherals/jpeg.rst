@@ -18,6 +18,7 @@ This document covers the following sections:
 -  `JPEG Decoder Engine <#jpeg-decoder-engine>`__ - covers behavior of JPEG decoder engine. Introduce how to use decoder engine functions to decode an image (from jpg format to raw format).
 -  `JPEG Encoder Engine <#jpeg-encoder-engine>`__ - covers behavior of JPEG encoder engine. Introduce how to use encoder engine functions to encode an image (from raw format to jpg format).
 -  `Performance Overview <#performance-overview>`__ - covers encoder and decoder performance.
+-  `Pixel Storage Layout for Different Color Formats <#pixel-storage-layout-for-different-color-formats>`__ - covers color space order overview required in this JPEG decoder and encoder.
 -  `Thread Safety <#thread-safety>`__ - lists which APIs are guaranteed to be thread safe by the driver.
 -  `Power Management <#power-management>`__ - describes how jpeg driver would be affected by power consumption.
 -  `Kconfig Options <#kconfig-options>`__ - lists the supported Kconfig options that can bring different effects to the driver.
@@ -104,18 +105,28 @@ The format conversions supported by this driver are listed in the table below:
 | Format of the already compressed image |   Format after decompressing      |
 +========================================+===================================+
 |                                        |               RGB565              |
-|             YUV444                     +-----------------------------------+
+|               YUV444                   +-----------------------------------+
 |                                        |               RGB888              |
+|                                        +-----------------------------------+
+|                                        |               YUV444              |
 +----------------------------------------+-----------------------------------+
 |                                        |               RGB565              |
-|             YUV422                     +-----------------------------------+
+|                                        +-----------------------------------+
 |                                        |               RGB888              |
+|               YUV422                   +-----------------------------------+
+|                                        |               YUV444              |
+|                                        +-----------------------------------+
+|                                        |               YUV422              |
 +----------------------------------------+-----------------------------------+
 |                                        |               RGB565              |
-|             YUV420                     +-----------------------------------+
+|                                        +-----------------------------------+
 |                                        |               RGB888              |
+|               YUV420                   +-----------------------------------+
+|                                        |               YUV444              |
+|                                        +-----------------------------------+
+|                                        |               YUV420              |
 +----------------------------------------+-----------------------------------+
-|              GRAY                      |                GRAY               |
+|                GRAY                    |                GRAY               |
 +----------------------------------------+-----------------------------------+
 
 Overall, You can take following code as reference, the code is going to decode a 1080*1920 picture.
@@ -167,11 +178,13 @@ The format conversions supported by this driver are listed in the table below:
 +==========================+======================================+
 |                          |               YUV444                 |
 |                          +--------------------------------------+
-|       RGB565/RGB888      |               YUV422                 |
+|      RGB565/RGB888       |               YUV422                 |
 |                          +--------------------------------------+
 |                          |               YUV420                 |
 +--------------------------+--------------------------------------+
-|        GRAY              |                GRAY                  |
+|          GRAY            |                GRAY                  |
++--------------------------+--------------------------------------+
+|         YUV422           |               YUV422                 |
 +--------------------------+--------------------------------------+
 
 
@@ -236,6 +249,12 @@ JPEG decoder performance
 +--------+-------+--------------------------------------------+----------------------------------------+------------------+
 |  720   | 1280  |                 GRAY                       |               GRAY                     |   161            |
 +--------+-------+--------------------------------------------+----------------------------------------+------------------+
+|  480   | 800   |                YUV444                      |              YUV444                    |   129            |
++--------+-------+--------------------------------------------+----------------------------------------+------------------+
+|  480   | 800   |                YUV422                      |            YUV444/YUV422               |   190            |
++--------+-------+--------------------------------------------+----------------------------------------+------------------+
+|  480   | 800   |                YUV420                      |            YUV444/YUV420               |   253            |
++--------+-------+--------------------------------------------+----------------------------------------+------------------+
 
 JPEG encoder performance
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -269,7 +288,85 @@ JPEG encoder performance
 +--------+-------+-----------------------------------------+-------------------------------------------+------------------+
 |  720   | 1280  |                 GRAY                    |             GRAY                          |   163            |
 +--------+-------+-----------------------------------------+-------------------------------------------+------------------+
+|  480   | 800   |                YUV422                   |            YUV422                         |   146            |
++--------+-------+-----------------------------------------+-------------------------------------------+------------------+
 
+
+Pixel Storage Layout for Different Color Formats
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The encoder and decoder described in this guide use the same uncompressed raw image formats (RGB, YUV). Therefore, the encoder and decoder are not discussed separately in this section. The pixel layout of the following formats applies to the input direction of the encoder and the output direction of the decoder (if supported). The specific pixel layout is shown in the following figure:
+
+RGB888
+~~~~~~
+
+In the following picture, each small block means one bit.
+
+.. figure:: ../../../_static/diagrams/jpeg/rgb888.png
+    :align: center
+    :alt: RGB888 pixel order
+
+    RGB888 pixel order
+
+For RGB888, the order can be changed via :cpp:member:`jpeg_decode_cfg_t::rgb_order` sets the pixel to `RGB` order.
+
+.. figure:: ../../../_static/diagrams/jpeg/rgb888_bigendian.png
+    :align: center
+    :alt: RGB888 pixel big endian order
+
+    RGB888 pixel big endian order
+
+RGB565
+~~~~~~
+
+In the following picture, each small block means one bit.
+
+.. figure:: ../../../_static/diagrams/jpeg/rgb565.png
+    :align: center
+    :alt: RGB565 pixel order
+
+    RGB565 pixel order
+
+For RGB565, the order can be changed via :cpp:member:`jpeg_decode_cfg_t::rgb_order` sets the pixel to `RGB` order.
+
+.. figure:: ../../../_static/diagrams/jpeg/rgb565_bigendian.png
+    :align: center
+    :alt: RGB565 pixel big endian order
+
+    RGB565 pixel big endian order
+
+YUV444
+~~~~~~
+
+In the following picture, each small block means one byte.
+
+.. figure:: ../../../_static/diagrams/jpeg/yuv444.png
+    :align: center
+    :alt: YUV444 pixel order
+
+    YUV444 pixel order
+
+YUV422
+~~~~~~
+
+In the following picture, each small block means one byte.
+
+.. figure:: ../../../_static/diagrams/jpeg/yuv422.png
+    :align: center
+    :alt: YUV422 pixel order
+
+    YUV422 pixel order
+
+YUV420
+~~~~~~
+
+In the following picture, each small block means one byte.
+
+.. figure:: ../../../_static/diagrams/jpeg/yuv420.png
+    :align: center
+    :alt: YUV420 pixel order
+
+    YUV420 pixel order
 
 Thread Safety
 ^^^^^^^^^^^^^

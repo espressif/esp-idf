@@ -39,7 +39,7 @@ const uint8_t zigzag_arr[64] = {
  * decompression. It is used to decode the Huffman-coded symbols in the compressed
  * data stream during the decoding process.
  */
-const uint32_t dec_hb_tbl[JPEG_DOWN_SAMPLING_MAX][JPEG_DEC_BEST_HB_MAX] = {
+const uint32_t dec_hb_tbl[JPEG_DOWN_SAMPLING_NUM][JPEG_DEC_BEST_HB_MAX] = {
     {40, 40, 40, 32, 0},
     {64, 32, 32, 64, 0},
     {48, 32, 32, 48, 0},
@@ -53,7 +53,7 @@ const uint32_t dec_hb_tbl[JPEG_DOWN_SAMPLING_MAX][JPEG_DEC_BEST_HB_MAX] = {
  * compression. It is used to decode the Huffman-coded symbols in the compressed
  * data stream during the encoding process.
  */
-const uint32_t enc_hb_tbl[JPEG_ENC_BEST_HB_MAX][JPEG_DOWN_SAMPLING_MAX] = {
+const uint32_t enc_hb_tbl[JPEG_ENC_BEST_HB_MAX][JPEG_DOWN_SAMPLING_NUM] = {
     {40, 32, 32, 0},
     {0,  64, 0,  0},
     {64, 64, 48, 0},

@@ -23,6 +23,7 @@ extern "C" {
 
 #define DHT_TC_NUM (2)  /// Table type
 #define DHT_TH_NUM (2)  /// Huffman table destination identifier
+#define JPEG_DOWN_SAMPLING_NUM (4) // The number of down sampling methods
 
 /**
  * @brief Enum for JPEG codec working mode.
@@ -44,9 +45,9 @@ typedef struct {
  * @brief Enum for JPEG sampling mode.
  */
 typedef enum {
-    JPEG_SAMPLE_MODE_YUV444 = COLOR_PIXEL_YUV444,  ///< sample in YUV444
-    JPEG_SAMPLE_MODE_YUV422 = COLOR_PIXEL_YUV422,  ///< sample in YUV422
-    JPEG_SAMPLE_MODE_YUV420 = COLOR_PIXEL_YUV420,  ///< sample in YUV420
+    JPEG_SAMPLE_MODE_YUV444 = COLOR_TYPE_ID(COLOR_SPACE_YUV, COLOR_PIXEL_YUV444),  ///< sample in YUV444
+    JPEG_SAMPLE_MODE_YUV422 = COLOR_TYPE_ID(COLOR_SPACE_YUV, COLOR_PIXEL_YUV422),  ///< sample in YUV422
+    JPEG_SAMPLE_MODE_YUV420 = COLOR_TYPE_ID(COLOR_SPACE_YUV, COLOR_PIXEL_YUV420),  ///< sample in YUV420
 } jpeg_sample_mode_t;
 
 /**
@@ -64,11 +65,10 @@ typedef union {
  * @brief Enumeration for jpeg decoder sample methods.
 */
 typedef enum {
-    JPEG_DOWN_SAMPLING_YUV444 = 0,        /*!< Sample by YUV444 */
-    JPEG_DOWN_SAMPLING_YUV422 = 1,        /*!< Sample by YUV422 */
-    JPEG_DOWN_SAMPLING_YUV420 = 2,        /*!< Sample by YUV420 */
-    JPEG_DOWN_SAMPLING_GRAY   = 3,        /*!< Sample the gray picture */
-    JPEG_DOWN_SAMPLING_MAX,               /*!< Max value of sample enumeration */
+    JPEG_DOWN_SAMPLING_YUV444 = COLOR_TYPE_ID(COLOR_SPACE_YUV, COLOR_PIXEL_YUV444),        /*!< Sample by YUV444 */
+    JPEG_DOWN_SAMPLING_YUV422 = COLOR_TYPE_ID(COLOR_SPACE_YUV, COLOR_PIXEL_YUV422),        /*!< Sample by YUV422 */
+    JPEG_DOWN_SAMPLING_YUV420 = COLOR_TYPE_ID(COLOR_SPACE_YUV, COLOR_PIXEL_YUV420),        /*!< Sample by YUV420 */
+    JPEG_DOWN_SAMPLING_GRAY   = COLOR_TYPE_ID(COLOR_SPACE_GRAY, COLOR_PIXEL_GRAY8),        /*!< Sample the gray picture */
 } jpeg_down_sampling_type_t;
 
 /**

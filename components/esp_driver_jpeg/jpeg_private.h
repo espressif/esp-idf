@@ -56,9 +56,8 @@ struct jpeg_codec_t {
 };
 
 typedef enum {
-    // TODO: Support DR and YUV444 on decoder.
-    //JPEG_DEC_DR_HB = 0,          /*!< Direct output */
-    //JPEG_DEC_YUV444_HB = 1,      /*!< output YUV444 format */
+    JPEG_DEC_DIRECT_OUTPUT_HB = 0, /*!< Direct output */
+    JPEG_DEC_YUV444_HB = 1,        /*!< output YUV444 format */
     JPEG_DEC_RGB888_HB = 2,        /*!< output RGB888 format */
     JPEG_DEC_RGB565_HB = 3,        /*!< output RGB565 format */
     JPEG_DEC_GRAY_HB = 4,          /*!< output the gray picture */
@@ -96,9 +95,10 @@ struct jpeg_decoder_t {
     jpeg_dec_header_info_t *header_info;         // Pointer to current picture information
     jpeg_down_sampling_type_t sample_method;     // method of sampling the JPEG picture.
     jpeg_dec_output_format_t output_format;      // picture output format.
-    jpeg_dec_rgb_element_order_t rgb_order;        // RGB pixel order
+    jpeg_dec_rgb_element_order_t rgb_order;      // RGB pixel order
     jpeg_yuv_rgb_conv_std_t conv_std;            // YUV RGB conversion standard
-    uint8_t pixel;                               // size per pixel
+    bool no_color_conversion;                    // No color conversion, directly output based on compressed format
+    uint8_t bit_per_pixel;                       // bit size per pixel
     QueueHandle_t evt_queue;                     // jpeg event from 2DDMA and JPEG engine
     uint8_t *decoded_buf;                        // pointer to the rx buffer.
     uint32_t total_size;                         // jpeg picture origin size (in bytes)
@@ -127,8 +127,7 @@ typedef struct {
 
 typedef enum {
     JPEG_ENC_SRC_RGB888_HB = 0,      // Input RGB888 format
-    // TODO: Support encoder source format for yuv422
-    // JPEG_ENC_SRC_YUV422_HB = 1,   // Input YUV422 format
+    JPEG_ENC_SRC_YUV422_HB = 1,       // Input YUV422 format
     JPEG_ENC_SRC_RGB565_HB = 2,      // Input RGB565 format
     JPEG_ENC_SRC_GRAY_HB = 3,        // Input GRAY format
     JPEG_ENC_BEST_HB_MAX,
