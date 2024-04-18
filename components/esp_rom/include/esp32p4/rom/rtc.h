@@ -50,6 +50,9 @@ extern "C" {
   *     RTC_CNTL_STORE5_REG     APB bus frequency
   *     RTC_CNTL_STORE6_REG     FAST_RTC_MEMORY_ENTRY
   *     RTC_CNTL_STORE7_REG     FAST_RTC_MEMORY_CRC
+  *     LP_SYS_LP_STORE8_REG    sleep mode and wake stub address
+  *     LP_SYS_LP_STORE9_REG    LP_UART_INIT_CTRL
+  *     LP_SYS_LP_STORE10_REG   LP_ROM_LOG_CTRL
   *************************************************************************************
   */
 
@@ -74,6 +77,10 @@ extern "C" {
  */
 #define RTC_SLEEP_WAKE_STUB_ADDR_REG  LP_SYSTEM_REG_LP_STORE8_REG
 #define RTC_SLEEP_MODE_REG            LP_SYSTEM_REG_LP_STORE8_REG
+
+// lp uart init status, 0 - need init, 1 - no init.
+#define LP_UART_INIT_CTRL_REG   LP_SYSTEM_REG_LP_STORE9_REG
+#define ROM_LOG_CTRL_REG        LP_SYSTEM_REG_LP_STORE10_REG
 
 typedef enum {
     AWAKE = 0,             //<CPU ON

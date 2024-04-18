@@ -165,9 +165,9 @@ To enhance the capabilities of the ULP LP-Core coprocessor, it has access to per
     ULP LP-Core ROM
     ---------------
 
-    The ULP LP-Core ROM is a small pre-built piece of code located in LP-ROM, which is not modifiable by users. Similar to the bootloader ROM code ran by the main CPU, this code is executed when the ULP LP-Core coprocessor is started. The ROM code initializes the ULP LP-Core coprocessor and then jumps to the user program. The ROM code is responsible for initializing the LP UART and printing boot messages.
+    The ULP LP-Core ROM is a small pre-built piece of code located in LP-ROM, which is not modifiable by users. Similar to the bootloader ROM code ran by the main CPU, this code is executed when the ULP LP-Core coprocessor is started. The ROM code initializes the ULP LP-Core coprocessor and then jumps to the user program. The ROM code also prints boot messages if the LP UART has been initialized.
 
-    The ROM code is not executed if :cpp:member:`ulp_lp_core_cfg_t::skip_lp_rom_boot` is set to true. This is useful when you need the ULP to wake-up as quickly as possible and the extra overhead of initializing UART and printing is unwanted.
+    The ROM code is not executed if :cpp:member:`ulp_lp_core_cfg_t::skip_lp_rom_boot` is set to true. This is useful when you need the ULP to wake-up as quickly as possible and the extra overhead of initializing and printing is unwanted.
 
     In addition to the boot-up code mentioned above the ROM code also provides the following functions and interfaces:
 

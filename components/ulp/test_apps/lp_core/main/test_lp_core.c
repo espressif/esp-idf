@@ -121,7 +121,7 @@ TEST_CASE("Test LP core delay", "[lp_core]")
 #define LP_TIMER_TEST_DURATION_S        (5)
 #define LP_TIMER_TEST_SLEEP_DURATION_US (20000)
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32P4, ESP32C5)
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C5)
 
 static void do_ulp_wakeup_deepsleep(lp_core_test_commands_t ulp_cmd)
 {
@@ -177,6 +177,10 @@ static void do_ulp_wakeup_with_lp_timer_deepsleep(void)
     ulp_lp_core_cfg_t cfg = {
         .wakeup_source = ULP_LP_CORE_WAKEUP_SOURCE_LP_TIMER,
         .lp_timer_sleep_duration_us = LP_TIMER_TEST_SLEEP_DURATION_US,
+#if ESP_ROM_HAS_LP_ROM
+        /* ROM Boot takes quite a bit longer, which skews the numbers of wake-ups. skip rom boot to keep the calculation simple */
+        .skip_lp_rom_boot = true,
+#endif
     };
 
     load_and_start_lp_core_firmware(&cfg, lp_core_main_counter_bin_start, lp_core_main_counter_bin_end);
@@ -212,7 +216,7 @@ TEST_CASE_MULTIPLE_STAGES("LP Timer can wakeup lp core periodically during deep 
                           do_ulp_wakeup_with_lp_timer_deepsleep,
                           check_reset_reason_and_sleep_duration);
 
-#endif //#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32P4, ESP32C5)
+#endif //#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C5)
 
 TEST_CASE("LP Timer can wakeup lp core periodically", "[lp_core]")
 {

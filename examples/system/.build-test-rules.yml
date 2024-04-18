@@ -261,10 +261,6 @@ examples/system/task_watchdog:
 examples/system/ulp/lp_core/gpio:
   enable:
     - if: SOC_LP_CORE_SUPPORTED == 1
-  disable:
-    - if: IDF_TARGET == "esp32p4"
-      temporary: true
-      reason: target esp32p4 is not supported yet, TODO IDF-7536
   depends_components:
     - ulp
 
@@ -281,18 +277,12 @@ examples/system/ulp/lp_core/lp_i2c:
 examples/system/ulp/lp_core/lp_uart/lp_uart_echo:
   disable:
     - if: SOC_ULP_LP_UART_SUPPORTED != 1
-    - if: IDF_TARGET == "esp32p4"
-      temporary: true
-      reason: target esp32p4 is not supported yet TODO IDF-9407
   depends_components:
     - ulp
 
 examples/system/ulp/lp_core/lp_uart/lp_uart_print:
   disable:
     - if: SOC_ULP_LP_UART_SUPPORTED != 1
-    - if: IDF_TARGET == "esp32p4"
-      temporary: true
-      reason: target esp32p4 is not supported yet TODO IDF-9407
   depends_components:
     - ulp
 
