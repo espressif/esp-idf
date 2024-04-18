@@ -38,6 +38,7 @@ typedef enum {
 #if (ENC_KEY_SIZE_CTRL_MODE != ENC_KEY_SIZE_CTRL_MODE_NONE)
     BTC_GAP_BT_SET_MIN_ENC_KEY_SIZE_EVT,
 #endif
+    BTC_GAP_BT_GET_DEV_NAME_CMPL_EVT,
 }btc_gap_bt_evt_t;
 
 typedef enum {
@@ -64,6 +65,8 @@ typedef enum {
 #if (ENC_KEY_SIZE_CTRL_MODE != ENC_KEY_SIZE_CTRL_MODE_NONE)
     BTC_GAP_BT_ACT_SET_MIN_ENC_KEY_SIZE,
 #endif
+    BTC_GAP_BT_ACT_SET_DEV_NAME,
+    BTC_GAP_BT_ACT_GET_DEV_NAME,
 } btc_gap_bt_act_t;
 
 /* btc_bt_gap_args_t */
@@ -177,6 +180,11 @@ typedef union {
         uint8_t key_size;
     } set_min_enc_key_size;
 #endif
+
+    // BTC_GAP_BT_ACT_SET_DEV_NAME
+    struct bt_set_dev_name_args {
+        char *device_name;
+    } bt_set_dev_name;
 } btc_gap_bt_args_t;
 
 void btc_gap_bt_call_handler(btc_msg_t *msg);

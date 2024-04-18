@@ -96,7 +96,7 @@ const uint8_t *esp_bt_dev_get_address(void);
  *                  - ESP_ERR_INVALID_STATE : if bluetooth stack is not yet enabled
  *                  - ESP_FAIL : others
  */
-esp_err_t esp_bt_dev_set_device_name(const char *name);
+esp_err_t esp_bt_dev_set_device_name(const char *name) __attribute__((deprecated("Please use esp_bt_gap_set_device_name or esp_ble_gap_set_device_name")));
 
 /**
  * @brief           Get bluetooth device name. This function should be called after esp_bluedroid_enable()
@@ -110,7 +110,7 @@ esp_err_t esp_bt_dev_set_device_name(const char *name);
  *                  - ESP_ERR_INVALID_STATE : if bluetooth stack is not yet enabled
  *                  - ESP_FAIL : others
  */
-esp_err_t esp_bt_dev_get_device_name(void);
+esp_err_t esp_bt_dev_get_device_name(void) __attribute__((deprecated("Please use esp_bt_gap_get_device_name or esp_ble_gap_get_device_name")));
 
 /**
  * @brief           Config bluetooth device coexis status. This function should be called after esp_bluedroid_enable()

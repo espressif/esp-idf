@@ -1132,7 +1132,7 @@ int bt_mesh_gatts_service_start(struct bt_mesh_gatt_service *svc)
 
 int bt_mesh_gatts_set_local_device_name(const char *name)
 {
-    BTM_SetLocalDeviceName((char *)name);
+    BTM_SetLocalDeviceName((char *)name, BT_DEVICE_TYPE_BLE);
 
     return 0;
 }
@@ -1481,7 +1481,7 @@ static void bt_mesh_bta_gattc_cb(tBTA_GATTC_EVT event, tBTA_GATTC *p_data)
                 result = NULL;
             }
 
-            /* Register Notification fot Mesh Provisioning/Proxy Data Out Characteristic */
+            /* Register Notification for Mesh Provisioning/Proxy Data Out Characteristic */
             status = BTA_GATTC_RegisterForNotifications(bt_mesh_gattc_if, bt_mesh_gattc_info[i].addr.val,
                      bt_mesh_gattc_info[i].data_out_handle);
             if (status != BTA_GATT_OK) {

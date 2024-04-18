@@ -500,7 +500,7 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_
     switch (event) {
     	case ESP_GATTS_REG_EVT:
     	    ESP_LOGI(GATTS_TABLE_TAG, "%s %d", __func__, __LINE__);
-        	esp_bt_dev_set_device_name(SAMPLE_DEVICE_NAME);
+        	esp_ble_gap_set_device_name(SAMPLE_DEVICE_NAME);
 
         	ESP_LOGI(GATTS_TABLE_TAG, "%s %d", __func__, __LINE__);
         	esp_ble_gap_config_adv_data_raw((uint8_t *)spp_adv_data, sizeof(spp_adv_data));
@@ -689,8 +689,8 @@ void app_main(void)
     }
 
     ESP_LOGI(GATTS_TABLE_TAG, "%s init bluetooth", __func__);
-    esp_bluedroid_config_t bluedroid_cfg = BT_BLUEDROID_INIT_CONFIG_DEFAULT();
-    ret = esp_bluedroid_init_with_cfg(&bluedroid_cfg);
+
+    ret = esp_bluedroid_init();
     if (ret) {
         ESP_LOGE(GATTS_TABLE_TAG, "%s init bluetooth failed: %s", __func__, esp_err_to_name(ret));
         return;

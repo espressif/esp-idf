@@ -2236,16 +2236,16 @@ UINT8 *btm_ble_build_adv_data(tBTM_BLE_AD_MASK *p_data_mask, UINT8 **p_dst,
         /* device name */
 #if BTM_MAX_LOC_BD_NAME_LEN > 0
         if (len > MIN_ADV_LENGTH && data_mask & BTM_BLE_AD_BIT_DEV_NAME) {
-            if (strlen(btm_cb.cfg.bd_name) > (UINT16)(len - MIN_ADV_LENGTH)) {
+            if (strlen(btm_cb.cfg.ble_bd_name) > (UINT16)(len - MIN_ADV_LENGTH)) {
                 cp_len = (UINT16)(len - MIN_ADV_LENGTH);
                 *p++ = cp_len + 1;
                 *p++ = BTM_BLE_AD_TYPE_NAME_SHORT;
-                ARRAY_TO_STREAM(p, btm_cb.cfg.bd_name, cp_len);
+                ARRAY_TO_STREAM(p, btm_cb.cfg.ble_bd_name, cp_len);
             } else {
-                cp_len = (UINT16)strlen(btm_cb.cfg.bd_name);
+                cp_len = (UINT16)strlen(btm_cb.cfg.ble_bd_name);
                 *p++ = cp_len + 1;
                 *p++ = BTM_BLE_AD_TYPE_NAME_CMPL;
-                ARRAY_TO_STREAM(p, btm_cb.cfg.bd_name, cp_len);
+                ARRAY_TO_STREAM(p, btm_cb.cfg.ble_bd_name, cp_len);
             }
             len -= (cp_len + MIN_ADV_LENGTH);
             data_mask &= ~BTM_BLE_AD_BIT_DEV_NAME;

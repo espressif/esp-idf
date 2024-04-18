@@ -1694,6 +1694,18 @@ void btc_gap_ble_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
         }
         break;
     }
+    case BTC_GAP_BLE_ACT_SET_DEV_NAME:{
+        btc_ble_gap_args_t *src = (btc_ble_gap_args_t *)p_src;
+        btc_ble_gap_args_t *dst = (btc_ble_gap_args_t *)p_dest;
+        dst->set_dev_name.device_name = (char *)osi_malloc((BTC_MAX_LOC_BD_NAME_LEN + 1) * sizeof(char));
+        if (dst->set_dev_name.device_name) {
+            BCM_STRNCPY_S(dst->set_dev_name.device_name, src->set_dev_name.device_name, BTC_MAX_LOC_BD_NAME_LEN);
+            dst->set_dev_name.device_name[BTC_MAX_LOC_BD_NAME_LEN] = '\0';
+        } else {
+            BTC_TRACE_ERROR("%s %d no mem\n",__func__, msg->act);
+        }
+        break;
+    }
     default:
         BTC_TRACE_ERROR("Unhandled deep copy %d\n", msg->act);
         break;
@@ -1822,6 +1834,14 @@ void btc_gap_ble_arg_deep_free(btc_msg_t *msg)
         }
         break;
     }
+    case BTC_GAP_BLE_ACT_SET_DEV_NAME:{
+        char *p_name = ((btc_ble_gap_args_t *)msg->arg)->set_dev_name.device_name;
+        if (p_name) {
+            osi_free((uint8_t *)p_name);
+        }
+        break;
+    }
+        break;
     default:
         BTC_TRACE_DEBUG("Unhandled deep free %d\n", msg->act);
         break;
@@ -1944,10 +1964,10 @@ void btc_gap_ble_call_handler(btc_msg_t *msg)
         break;
 #endif // #if (BLE_42_FEATURE_SUPPORT == TRUE)
     case BTC_GAP_BLE_ACT_SET_DEV_NAME:
-        BTA_DmSetDeviceName(arg->set_dev_name.device_name);
+        BTA_DmSetDeviceName(arg->set_dev_name.device_name, BT_DEVICE_TYPE_BLE);
         break;
     case BTC_GAP_BLE_ACT_GET_DEV_NAME:
-        BTA_DmGetDeviceName(btc_gap_ble_get_dev_name_callback);
+        BTA_DmGetDeviceName(btc_gap_ble_get_dev_name_callback, BT_DEVICE_TYPE_BLE);
         break;
 #if (BLE_42_FEATURE_SUPPORT == TRUE)
     case BTC_GAP_BLE_ACT_CFG_ADV_DATA_RAW:

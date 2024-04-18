@@ -901,7 +901,7 @@ void app_main(void)
 
 #if CONFIG_BT_HID_DEVICE_ENABLED
     ESP_LOGI(TAG, "setting device name");
-    esp_bt_dev_set_device_name(bt_hid_config.device_name);
+    esp_bt_gap_set_device_name(bt_hid_config.device_name);
     ESP_LOGI(TAG, "setting cod major, peripheral");
     esp_bt_cod_t cod;
     cod.major = ESP_BT_COD_MAJOR_DEV_PERIPHERAL;

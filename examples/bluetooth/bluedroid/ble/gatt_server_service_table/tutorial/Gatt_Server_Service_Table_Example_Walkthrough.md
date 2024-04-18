@@ -29,7 +29,7 @@ Let’s start by taking a look at the included headers in the [gatts_table_creat
 #include "esp_bt_main.h"
 #include “gatts_table_creat_demo.h"
 ```
-These includes are required for the *FreeRTOS* and underlaying system components to run, including logging functionality and a library to store data in non-volatile flash memory. We are interested in ``bt.h``, ``esp_bt_main.h``, ``esp_gap_ble_api.h`` and ``esp_gatts_api.h`` which expose the BLE APIs required to implement this example.
+These includes are required for the *FreeRTOS* and underlying system components to run, including logging functionality and a library to store data in non-volatile flash memory. We are interested in ``bt.h``, ``esp_bt_main.h``, ``esp_gap_ble_api.h`` and ``esp_gatts_api.h`` which expose the BLE APIs required to implement this example.
 
 * ``bt.h``: implements BT controller and VHCI configuration procedures from the host side.
 * ``esp_bt_main.h``: implements initialization and enabling of the Bluedroid stack.
@@ -101,8 +101,8 @@ void app_main()
     }
 
     ESP_LOGI(GATTS_TABLE_TAG, "%s init bluetooth", __func__);
-    esp_bluedroid_config_t bluedroid_cfg = BT_BLUEDROID_INIT_CONFIG_DEFAULT();
-    ret = esp_bluedroid_init_with_cfg(&bluedroid_cfg);
+
+    ret = esp_bluedroid_init();
     if (ret) {
         ESP_LOGE(GATTS_TABLE_TAG, "%s init bluetooth failed", __func__);
         return;
@@ -165,7 +165,7 @@ The ``ESP_HEART_RATE_APP_ID`` serves as an application ID, distinguishing betwee
 
 The register application event is the first one that is triggered during the lifetime of the program. This example uses this event to configure advertising parameters upon registration in the profile event handler. The functions used to achieve this are:
 
-* ``esp_bt_dev_set_device_name()``: used to set the advertised device name.
+* ``esp_ble_gap_set_device_name()``: used to set the advertised device name.
 * ``esp_ble_gap_config_adv_data()``: used to configure standard advertising data.
 
 The function used to configure standard Bluetooth Specification advertisement parameters is ``esp_ble_gap_config_adv_data()`` which takes a pointer to an ``esp_ble_adv_data_t`` structure. The ``esp_ble_adv_data_t`` data structure for advertising data has the following definition:
@@ -210,7 +210,7 @@ static esp_ble_adv_data_t heart_rate_adv_config = {
 
 The minimum and maximum slave preferred connection intervals are set in units of 1.25 ms. In this example, the minimum slave preferred connection interval is defined as 0x0006 * 1.25 ms = 7.5 ms and the maximum slave preferred connection interval is initialized as 0x0010 * 1.25 ms = 20 ms.
 
-An advertising payload can be up to 31 bytes of data. It is possible that some of the parameters surpass the 31-byte advertisement packet limit which causes the stack to cut the message and leave some of the parameters out. To solve this, usually the longer parameters are stored in the scan response, which can be configured using the same ``esp_ble_gap_config_adv_data()`` function and an additional esp_ble_adv_data_t type structure with the .set_scan_rsp parameter is set to true. Finally, to set the device name the ``esp_bt_dev_set_device_name()`` function is used. The registering event handler is shown as follows:
+An advertising payload can be up to 31 bytes of data. It is possible that some of the parameters surpass the 31-byte advertisement packet limit which causes the stack to cut the message and leave some of the parameters out. To solve this, usually the longer parameters are stored in the scan response, which can be configured using the same ``esp_ble_gap_config_adv_data()`` function and an additional esp_ble_adv_data_t type structure with the .set_scan_rsp parameter is set to true. Finally, to set the device name the ``esp_ble_gap_set_device_name()`` function is used. The registering event handler is shown as follows:
 
 ```c
 static void gatts_profile_event_handler(esp_gatts_cb_event_t event,
@@ -220,7 +220,7 @@ esp_gatt_if_t gatts_if, esp_ble_gatts_cb_param_t *param)
     switch (event) {
         case ESP_GATTS_REG_EVT:
             ESP_LOGI(GATTS_TABLE_TAG, "%s %d", __func__, __LINE__);
-            esp_bt_dev_set_device_name(SAMPLE_DEVICE_NAME);
+            esp_ble_gap_set_device_name(SAMPLE_DEVICE_NAME);
             ESP_LOGI(GATTS_TABLE_TAG, "%s %d", __func__, __LINE__);
             esp_ble_gap_config_adv_data(&heart_rate_adv_config);
             ESP_LOGI(GATTS_TABLE_TAG, "%s %d", __func__, __LINE__);

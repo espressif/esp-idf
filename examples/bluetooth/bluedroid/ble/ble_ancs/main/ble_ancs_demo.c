@@ -332,7 +332,7 @@ static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_
     switch (event) {
     case ESP_GATTC_REG_EVT:
         ESP_LOGI(BLE_ANCS_TAG, "REG_EVT");
-        esp_bt_dev_set_device_name(EXAMPLE_DEVICE_NAME);
+        esp_ble_gap_set_device_name(EXAMPLE_DEVICE_NAME);
         esp_ble_gap_config_local_icon (ESP_BLE_APPEARANCE_GENERIC_WATCH);
         //generate a resolvable random address
         esp_ble_gap_config_local_privacy(true);
@@ -521,7 +521,7 @@ static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_
             memcpy(&data_buffer.buffer[data_buffer.len], param->notify.value, param->notify.value_len);
             data_buffer.len += param->notify.value_len;
             if (param->notify.value_len == (gl_profile_tab[PROFILE_A_APP_ID].MTU_size - 3)) {
-                // cpoy and wait next packet, start timer 500ms
+                // copy and wait next packet, start timer 500ms
                 esp_timer_start_periodic(periodic_timer, 500000);
             } else {
                 esp_timer_stop(periodic_timer);
@@ -639,8 +639,8 @@ void app_main(void)
     }
 
     ESP_LOGI(BLE_ANCS_TAG, "%s init bluetooth", __func__);
-    esp_bluedroid_config_t bluedroid_cfg = BT_BLUEDROID_INIT_CONFIG_DEFAULT();
-    ret = esp_bluedroid_init_with_cfg(&bluedroid_cfg);
+
+    ret = esp_bluedroid_init();
     if (ret) {
         ESP_LOGE(BLE_ANCS_TAG, "%s init bluetooth failed: %s", __func__, esp_err_to_name(ret));
         return;

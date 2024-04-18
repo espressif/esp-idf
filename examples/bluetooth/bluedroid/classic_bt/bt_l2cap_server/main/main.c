@@ -270,7 +270,7 @@ static void esp_hdl_sdp_cb_evt(uint16_t event, void *p_param)
     case ESP_SDP_CREATE_RECORD_COMP_EVT:
         ESP_LOGI(SDP_TAG, "ESP_SDP_CREATE_RECORD_COMP_EVT: status:%d", sdp_param->create_record.status);
         if (sdp_param->create_record.status == ESP_SDP_SUCCESS) {
-            esp_bt_dev_set_device_name(EXAMPLE_DEVICE_NAME);
+            esp_bt_gap_set_device_name(EXAMPLE_DEVICE_NAME);
             esp_bt_gap_set_scan_mode(ESP_BT_CONNECTABLE, ESP_BT_GENERAL_DISCOVERABLE);
         }
         break;

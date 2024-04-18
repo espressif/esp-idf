@@ -256,12 +256,12 @@ static void bt_app_gap_start_up(void)
     esp_bt_gap_register_callback(bt_app_gap_cb);
 
     char *dev_name = "ESP_GAP_INQRUIY";
-    esp_bt_dev_set_device_name(dev_name);
+    esp_bt_gap_set_device_name(dev_name);
 
     /* set discoverable and connectable mode, wait to be connected */
     esp_bt_gap_set_scan_mode(ESP_BT_CONNECTABLE, ESP_BT_GENERAL_DISCOVERABLE);
 
-    /* inititialize device information and status */
+    /* initialize device information and status */
     bt_app_gap_init();
 
     /* start to discover nearby Bluetooth devices */

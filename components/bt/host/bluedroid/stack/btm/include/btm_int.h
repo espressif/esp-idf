@@ -721,7 +721,8 @@ struct tBTM_SEC_DEV_REC{
 */
 typedef struct {
 #if BTM_MAX_LOC_BD_NAME_LEN > 0
-    tBTM_LOC_BD_NAME bd_name;                    /* local Bluetooth device name */
+    tBTM_LOC_BD_NAME bredr_bd_name;                 /* local BREDR device name */
+    tBTM_LOC_BD_NAME ble_bd_name;                   /* local BLE device name */
 #endif
     BOOLEAN          pin_type;                   /* TRUE if PIN type is fixed */
     UINT8            pin_code_len;               /* Bonding information */
