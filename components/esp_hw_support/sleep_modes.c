@@ -1424,7 +1424,6 @@ esp_err_t esp_light_sleep_start(void)
         wdt_hal_disable(&rtc_wdt_ctx);
         wdt_hal_write_protect_enable(&rtc_wdt_ctx);
     }
-    portEXIT_CRITICAL(&s_config.lock);
 
 #if CONFIG_ESP_TASK_WDT_USE_ESP_TIMER
     /* Restart the Task Watchdog timer as it was stopped before sleeping. */
@@ -1441,6 +1440,8 @@ esp_err_t esp_light_sleep_start(void)
         s_sleep_ctx->sleep_request_result = err;
     }
 #endif
+
+    portEXIT_CRITICAL(&s_config.lock);
     return err;
 }
 
