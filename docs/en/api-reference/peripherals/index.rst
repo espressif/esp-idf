@@ -20,7 +20,7 @@ Peripherals API
     :SOC_DEDICATED_GPIO_SUPPORTED: dedic_gpio
     :SOC_HMAC_SUPPORTED: hmac
     :SOC_DIG_SIGN_SUPPORTED: ds
-    i2c
+    :SOC_I2C_SUPPORTED: i2c
     :SOC_I2S_SUPPORTED: i2s
     :SOC_ISP_SUPPORTED: isp
     :SOC_JPEG_CODEC_SUPPORTED: jpeg
@@ -33,12 +33,12 @@ Peripherals API
     :SOC_RMT_SUPPORTED: rmt
     :SOC_SDMMC_HOST_SUPPORTED or SOC_SDIO_SLAVE_SUPPORTED: sd_pullup_requirements
     :SOC_SDMMC_HOST_SUPPORTED: sdmmc_host
-    sdspi_host
+    :SOC_GPSPI_SUPPORTED: sdspi_host
     :SOC_SDIO_SLAVE_SUPPORTED: sdio_slave
     :SOC_SDM_SUPPORTED: sdm
-    spi_flash/index
-    spi_master
-    spi_slave
+    :SOC_SPI_FLASH_SUPPORTED: spi_flash/index
+    :SOC_GPSPI_SUPPORTED: spi_master
+    :SOC_GPSPI_SUPPORTED: spi_slave
     :SOC_SPI_SUPPORT_SLAVE_HD_VER2: spi_slave_hd
     :SOC_TEMP_SENSOR_SUPPORTED: temp_sensor
     :SOC_TOUCH_SENSOR_SUPPORTED: touch_pad

@@ -206,6 +206,11 @@ SPI flash 实现
 OS 函数
 ^^^^^^^^^^^^
 
+.. toctree::
+   :hidden:
+
+   ../spi_features
+
 OS 函数层目前支持访问锁和延迟的方法。
 
 锁（见 :ref:`spi_bus_lock`）用于解决同一 SPI 总线上的设备访问和 SPI flash 芯片访问之间的冲突。例如：

@@ -150,6 +150,15 @@ TWAI_DOCS = ['api-reference/peripherals/twai.rst']
 
 SDM_DOCS = ['api-reference/peripherals/sdm.rst']
 
+I2C_DOCS = ['api-reference/peripherals/i2c.rst',
+            'api-reference/peripherals/lcd/i2c_lcd.rst']
+
+SPI_DOCS = ['api-reference/peripherals/spi_master.rst',
+            'api-reference/peripherals/spi_slave.rst',
+            'api-reference/peripherals/sdspi_host.rst',
+            'api-reference/peripherals/sdspi_share.rst',
+            'api-reference/peripherals/lcd/spi_lcd.rst']
+
 I2S_DOCS = ['api-reference/peripherals/i2s.rst']
 
 ISP_DOCS = ['api-reference/peripherals/isp.rst']
@@ -254,6 +263,8 @@ conditional_include_dict = {'SOC_BT_SUPPORTED':BT_DOCS,
                             'CONFIG_IDF_TARGET_ARCH_RISCV':RISCV_DOCS,
                             'SOC_TEMP_SENSOR_SUPPORTED':TEMP_SENSOR_DOCS,
                             'SOC_TWAI_SUPPORTED':TWAI_DOCS,
+                            'SOC_I2C_SUPPORTED':I2C_DOCS,
+                            'SOC_GPSPI_SUPPORTED':SPI_DOCS,
                             'SOC_I2S_SUPPORTED':I2S_DOCS,
                             'SOC_ISP_SUPPORTED':ISP_DOCS,
                             'SOC_RTC_MEM_SUPPORTED': RTC_MEM_DOCS,

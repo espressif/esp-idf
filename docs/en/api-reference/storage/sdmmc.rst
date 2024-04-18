@@ -10,7 +10,7 @@ The SD/SDIO/MMC driver currently supports SD memory, SDIO cards, and eMMC chips.
 
 .. list::
     :SOC_SDMMC_HOST_SUPPORTED: - SDMMC host driver (:component_file:`esp_driver_sdmmc/include/driver/sdmmc_host.h`), see :doc:`SDMMC Host API <../peripherals/sdmmc_host>` for more details.
-    - SDSPI host driver (:component_file:`esp_driver_sdspi/include/driver/sdspi_host.h`), see :doc:`SD SPI Host API <../peripherals/sdspi_host>` for more details.
+    :SOC_GPSPI_SUPPORTED: - SDSPI host driver (:component_file:`esp_driver_sdspi/include/driver/sdspi_host.h`), see :doc:`SD SPI Host API <../peripherals/sdspi_host>` for more details.
 
 Protocol Layer vs Host Layer
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^

@@ -7,7 +7,7 @@ endif()
 set(srcs "")
 set(includes "")
 
-if(CONFIG_ULP_COPROC_ENABLED OR (CONFIG_IDF_DOC_BUILD AND CONFIG_SOC_ULP_SUPPORTED))
+if(CONFIG_ULP_COPROC_ENABLED OR CONFIG_IDF_DOC_BUILD)
     list(APPEND includes
         ulp_common/include)
 endif()

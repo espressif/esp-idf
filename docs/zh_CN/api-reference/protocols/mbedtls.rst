@@ -68,7 +68,7 @@ ESP-IDF 中的示例使用 :doc:`/api-reference/protocols/esp_tls`，为访问�
     - :ref:`CONFIG_MBEDTLS_CERTIFICATE_BUNDLE`: 支持受信任的根证书包（更多信息请参考 :doc:`/api-reference/protocols/esp_crt_bundle`）
     - :ref:`CONFIG_MBEDTLS_CLIENT_SSL_SESSION_TICKETS`: 支持 TLS 会话恢复：客户端会话票证
     - :ref:`CONFIG_MBEDTLS_SERVER_SSL_SESSION_TICKETS`: 支持 TLS 会话恢复：服务会话票证
-    - :ref:`CONFIG_MBEDTLS_HARDWARE_SHA`: 支持硬件 SHA 加速
+    :SOC_SHA_SUPPORTED: - :ref:`CONFIG_MBEDTLS_HARDWARE_SHA`: 支持硬件 SHA 加速
     :SOC_AES_SUPPORTED: - :ref:`CONFIG_MBEDTLS_HARDWARE_AES`: 支持硬件 AES 加速
     :SOC_MPI_SUPPORTED: - :ref:`CONFIG_MBEDTLS_HARDWARE_MPI`: 支持硬件 MPI (bignum) 加速
     :SOC_ECC_SUPPORTED: - :ref:`CONFIG_MBEDTLS_HARDWARE_ECC`: 支持硬件 ECC 加速
