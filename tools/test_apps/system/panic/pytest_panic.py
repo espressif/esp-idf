@@ -365,14 +365,12 @@ def test_illegal_instruction(
     common_test(dut, config, expected_backtrace=get_default_backtrace(test_func_name))
 
 
-@pytest.mark.parametrize('config', CONFIGS, indirect=True)
-@pytest.mark.generic
-def test_storeprohibited(dut: PanicTestDut, config: str, test_func_name: str) -> None:
+def check_x_prohibited(dut: PanicTestDut, config: str, test_func_name: str, operation: str) -> None:
     dut.run_test_func(test_func_name)
     if dut.is_xtensa:
-        dut.expect_gme('StoreProhibited')
+        dut.expect_gme(f'{operation}Prohibited')
     else:
-        dut.expect_gme('Store access fault')
+        dut.expect_gme(f'{operation} access fault')
     dut.expect_reg_dump(0)
     if dut.is_xtensa:
         dut.expect_backtrace()
@@ -382,6 +380,18 @@ def test_storeprohibited(dut: PanicTestDut, config: str, test_func_name: str) ->
     dut.expect_none('Guru Meditation')
 
     common_test(dut, config, expected_backtrace=get_default_backtrace(test_func_name))
+
+
+@pytest.mark.parametrize('config', CONFIGS, indirect=True)
+@pytest.mark.generic
+def test_storeprohibited(dut: PanicTestDut, config: str, test_func_name: str) -> None:
+    check_x_prohibited(dut, config, test_func_name, 'Store')
+
+
+@pytest.mark.parametrize('config', CONFIGS, indirect=True)
+@pytest.mark.generic
+def test_loadprohibited(dut: PanicTestDut, config: str, test_func_name: str) -> None:
+    check_x_prohibited(dut, config, test_func_name, 'Load')
 
 
 @pytest.mark.parametrize('config', CONFIGS, indirect=True)
