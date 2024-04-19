@@ -170,7 +170,11 @@ typedef struct {
 	LBA_t	bitbase;		/* Allocation bitmap base sector */
 #endif
 	LBA_t	winsect;		/* Current sector appearing in the win[] */
+#if FF_USE_DYN_BUFFER
+	BYTE*	win;	        /* Disk access window for Directory, FAT (and file data at tiny cfg) */
+#else
 	BYTE	win[FF_MAX_SS];	/* Disk access window for Directory, FAT (and file data at tiny cfg) */
+#endif
 } FATFS;
 
 
@@ -215,7 +219,11 @@ typedef struct {
 	DWORD*	cltbl;			/* Pointer to the cluster link map table (nulled on open, set by application) */
 #endif
 #if !FF_FS_TINY
+#if FF_USE_DYN_BUFFER
+	BYTE*	buf;	        /* File private data read/write window */
+#else
 	BYTE	buf[FF_MAX_SS];	/* File private data read/write window */
+#endif
 #endif
 } FIL;
 
@@ -289,7 +297,7 @@ typedef enum {
 	FR_MKFS_ABORTED,		/* (14) The f_mkfs() aborted due to any problem */
 	FR_TIMEOUT,				/* (15) Could not get a grant to access the volume within defined period */
 	FR_LOCKED,				/* (16) The operation is rejected according to the file sharing policy */
-	FR_NOT_ENOUGH_CORE,		/* (17) LFN working buffer could not be allocated */
+	FR_NOT_ENOUGH_CORE,		/* (17) Buffer could not be allocated */
 	FR_TOO_MANY_OPEN_FILES,	/* (18) Number of open files > FF_FS_LOCK */
 	FR_INVALID_PARAMETER	/* (19) Given parameter is invalid */
 } FRESULT;

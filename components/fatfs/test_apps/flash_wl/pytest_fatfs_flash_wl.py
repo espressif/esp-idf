@@ -13,14 +13,12 @@ from pytest_embedded import Dut
         'default',
         'release',
         'fastseek',
+        'auto_fsync',
+        'no_dyn_buffers',
     ]
 )
 def test_fatfs_flash_wl_generic(dut: Dut) -> None:
-    dut.expect_exact('Press ENTER to see the list of tests')
-    dut.write('')
-    dut.expect_exact('Enter test for running.')
-    dut.write('*')
-    dut.expect_unity_test_output(timeout=180)
+    dut.run_all_single_board_cases(timeout=240)
 
 
 @pytest.mark.esp32
@@ -33,8 +31,4 @@ def test_fatfs_flash_wl_generic(dut: Dut) -> None:
     ]
 )
 def test_fatfs_flash_wl_psram(dut: Dut) -> None:
-    dut.expect_exact('Press ENTER to see the list of tests')
-    dut.write('')
-    dut.expect_exact('Enter test for running.')
-    dut.write('*')
-    dut.expect_unity_test_output(timeout=180)
+    dut.run_all_single_board_cases(timeout=180)

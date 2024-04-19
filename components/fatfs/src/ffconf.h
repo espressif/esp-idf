@@ -311,6 +311,13 @@
 /  The FF_FS_TIMEOUT defines timeout period in unit of O/S time tick.
 */
 
+#define FF_USE_DYN_BUFFER CONFIG_FATFS_USE_DYN_BUFFERS
+/* The option FF_USE_DYN_BUFFER controls source of size used for buffers in the FS and FIL objects.
+/
+/   0: Disable dynamic buffer size and use static size buffers defined by FF_MAX_SS.
+/   1: Enable dynamic buffer size and use ff_memmalloc() to allocate buffers.
+*/
+
 #include <sys/param.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
