@@ -18,6 +18,7 @@
 
 #if SOC_KEY_MANAGER_SUPPORTED
 #include "hal/key_mgr_hal.h"
+#include "hal/mspi_timing_tuning_ll.h"
 #include "soc/keymng_reg.h"
 #endif
 
@@ -217,8 +218,15 @@ static esp_err_t check_and_generate_encryption_keys(void)
     }
 
 #if SOC_KEY_MANAGER_SUPPORTED
+#if CONFIG_IDF_TARGET_ESP32C5 && SOC_KEY_MANAGER_SUPPORTED
+    // TODO: [ESP32C5] IDF-8622 find a more proper place for these codes
+    REG_SET_BIT(KEYMNG_STATIC_REG, KEYMNG_USE_EFUSE_KEY_FLASH);
+    REG_SET_BIT(PCR_MSPI_CLK_CONF_REG, PCR_MSPI_AXI_RST_EN);
+    REG_CLR_BIT(PCR_MSPI_CLK_CONF_REG, PCR_MSPI_AXI_RST_EN);
+#endif
     // Force Key Manager to use eFuse key for XTS-AES operation
     key_mgr_hal_set_key_usage(ESP_KEY_MGR_XTS_AES_128_KEY, ESP_KEY_MGR_USE_EFUSE_KEY);
+    _mspi_timing_ll_reset_mspi();
 #endif
 
     return ESP_OK;
@@ -262,13 +270,6 @@ esp_err_t esp_flash_encrypt_contents(void)
     esp_err_t err;
     esp_partition_info_t partition_table[ESP_PARTITION_TABLE_MAX_ENTRIES];
     int num_partitions;
-
-#if CONFIG_IDF_TARGET_ESP32C5 && SOC_KEY_MANAGER_SUPPORTED
-    // TODO: [ESP32C5] IDF-8622 find a more proper place for these codes
-    REG_SET_BIT(KEYMNG_STATIC_REG, KEYMNG_USE_EFUSE_KEY_FLASH);
-    REG_SET_BIT(PCR_MSPI_CLK_CONF_REG, PCR_MSPI_AXI_RST_EN);
-    REG_CLR_BIT(PCR_MSPI_CLK_CONF_REG, PCR_MSPI_AXI_RST_EN);
-#endif
 
 #ifdef CONFIG_SOC_EFUSE_CONSISTS_OF_ONE_KEY_BLOCK
     REG_WRITE(SENSITIVE_XTS_AES_KEY_UPDATE_REG, 1);
