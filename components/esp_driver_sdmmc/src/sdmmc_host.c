@@ -348,7 +348,8 @@ esp_err_t sdmmc_host_start_command(int slot, sdmmc_hw_cmd_t cmd, uint32_t arg)
     if (!(slot == 0 || slot == 1)) {
         return ESP_ERR_INVALID_ARG;
     }
-    if (!sdmmc_ll_is_card_detected(s_host_ctx.hal.dev, slot)) {
+    // if this isn't a clock update command, check the card detect status
+    if (!sdmmc_ll_is_card_detected(s_host_ctx.hal.dev, slot) && !cmd.update_clk_reg) {
         return ESP_ERR_NOT_FOUND;
     }
     if (cmd.data_expected && cmd.rw && sdmmc_ll_is_card_write_protected(s_host_ctx.hal.dev, slot)) {
