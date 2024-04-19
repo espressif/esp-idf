@@ -4,7 +4,7 @@ Speed Optimization
 :link_to_translation:`zh_CN:[中文]`
 
 {IDF_TARGET_CONTROLLER_CORE_CONFIG:default="CONFIG_BT_CTRL_PINNED_TO_CORE", esp32="CONFIG_BTDM_CTRL_PINNED_TO_CORE_CHOICE", esp32s3="CONFIG_BT_CTRL_PINNED_TO_CORE_CHOICE"}
-{IDF_TARGET_RF_TYPE:default="Wi-Fi/Bluetooth", esp32s2="Wi-Fi", esp32c6="Wi-Fi/Bluetooth/802.15.4", esp32h2="Bluetooth/802.15.4"}
+{IDF_TARGET_RF_TYPE:default="Wi-Fi/Bluetooth", esp32s2="Wi-Fi", esp32c6="Wi-Fi/Bluetooth/802.15.4", esp32h2="Bluetooth/802.15.4, esp32c5="Wi-Fi/Bluetooth/802.15.4"}
 
 Overview
 --------
@@ -88,6 +88,36 @@ The following optimizations improve the execution of nearly all code, including 
     :not SOC_CPU_HAS_FPU: - Avoid using floating point arithmetic ``float``. On {IDF_TARGET_NAME} these calculations are emulated in software and are very slow. If possible, use fixed point representations, a different method of integer representation, or convert part of the calculation to be integer only before switching to floating point.
     - Avoid using double precision floating point arithmetic ``double``. These calculations are emulated in software and are very slow. If possible then use an integer-based representation, or single-precision floating point.
 
+
+.. only:: esp32s2 or esp32s3 or esp32p4
+
+    Change cache size
+    ^^^^^^^^^^^^^^^^^
+
+    On {IDF_TARGET_NAME}, increasing the overall speed can be achieved to some degree by increasing the size of cache and thus potentially decreasing the frequency of "cache misses" through the Kconfig option(s) listed below.
+
+    .. list::
+
+        :esp32s2: - :ref:`CONFIG_ESP32S2_INSTRUCTION_CACHE_SIZE`.
+        :esp32s2: - :ref:`CONFIG_ESP32S2_DATA_CACHE_SIZE`.
+        :esp32s3: - :ref:`CONFIG_ESP32S3_INSTRUCTION_CACHE_SIZE`.
+        :esp32s3: - :ref:`CONFIG_ESP32S3_DATA_CACHE_SIZE`.
+        :esp32p4: - :ref:`CONFIG_CACHE_L2_CACHE_SIZE`.
+
+
+    .. note::
+
+        Increasing the cache size will also result in reducing the amount of available RAM.
+
+
+.. only:: SOC_CACHE_L2_CACHE_SIZE_CONFIGURABLE
+
+    .. note::
+
+        On {IDF_TARGET_NAME}, the L2 cache size is configurable via the Kconfig option :ref:`CONFIG_CACHE_L2_CACHE_SIZE`.
+        Setting the L2 cache size to its smallest value will maximize the available RAM while also potentially augmenting the frequency of "cache misses".
+        Setting the L2 cache size to its largest value will potentially lower the frequency of "cache misses" at the cost of reducing the available RAM.
+
 Reduce Logging Overhead
 ^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -110,6 +140,7 @@ The following options also increase execution speed, but are not recommended as 
    - Set :ref:`CONFIG_COMPILER_OPTIMIZATION_ASSERTION_LEVEL` to disabled. This also reduces firmware binary size by a small amount. However, it may increase the severity of bugs in the firmware including security-related bugs. If it is necessary to do this to optimize a particular function, consider adding ``#define NDEBUG`` at the top of that single source file instead.
 
 .. _speed-targeted-optimizations:
+
 
 Targeted Optimizations
 ----------------------
@@ -135,6 +166,8 @@ In addition to the overall performance improvements shown above, the following o
    :SOC_RTC_FAST_MEM_SUPPORTED: - If using Deep-sleep mode, setting :ref:`CONFIG_BOOTLOADER_SKIP_VALIDATE_IN_DEEP_SLEEP` allows a faster wake from sleep. Note that if using Secure Boot, this represents a security compromise, as Secure Boot validation are not be performed on wake.
    - Setting :ref:`CONFIG_BOOTLOADER_SKIP_VALIDATE_ON_POWER_ON` skips verifying the binary on every boot from the power-on reset. How much time this saves depends on the binary size and the flash settings. Note that this setting carries some risk if the flash becomes corrupt unexpectedly. Read the help text of the :ref:`config item <CONFIG_BOOTLOADER_SKIP_VALIDATE_ON_POWER_ON>` for an explanation and recommendations if using this option.
    - It is possible to save a small amount of time during boot by disabling RTC slow clock calibration. To do so, set :ref:`CONFIG_RTC_CLK_CAL_CYCLES` to 0. Any part of the firmware that uses RTC slow clock as a timing source will be less accurate as a result.
+   :SOC_SPIRAM_SUPPORTED: - When external memory is used (:ref:`CONFIG_SPIRAM` enabled), enabling memory test on the external memory (:ref:`CONFIG_SPIRAM_MEMTEST`) can have a large impact on startup time (approximately 1 second per 4MiB of memory tested). Disabling the memory tests will reduce startup time at the expense of testing the external memory.
+   :SOC_SPIRAM_SUPPORTED: - When external memory is used (:ref:`CONFIG_SPIRAM` enabled), enabling comprehensive poisoning will increase the startup time (approximately 300 milliseconds per 4MiB of memory set) since all the memory used as heap (including the external memory) will be set to a default value.
 
 The example project :example:`system/startup_time` is pre-configured to optimize startup time. The file :example_file:`system/startup_time/sdkconfig.defaults` contain all of these settings. You can append these to the end of your project's own ``sdkconfig`` file to merge the settings, but please read the documentation for each setting first.
 
@@ -207,13 +240,25 @@ Choosing Task Priorities of the Application
 
 .. only:: not SOC_HP_CPU_HAS_MULTIPLE_CORES
 
-    In general, it is not recommended to set task priorities higher than the built-in {IDF_TARGET_RF_TYPE} operations as starving them of CPU may make the system unstable. For very short timing-critical operations that do not use the network, use an ISR or a very restricted task (with very short bursts of runtime only) at the highest priority (24). Choosing priority 19 allows lower-layer {IDF_TARGET_RF_TYPE} functionality to run without delays, but still preempts the lwIP TCP/IP stack and other less time-critical internal functionality - this is the best option for time-critical tasks that do not perform network operations. Any task that does TCP/IP network operations should run at a lower priority than the lwIP TCP/IP task (18) to avoid priority-inversion issues.
+    .. only:: SOC_WIFI_SUPPORTED or SOC_BT_SUPPORTED or SOC_IEEE802154_SUPPORTED
 
-.. only:: SOC_HP_CPU_HAS_MULTIPLE_CORES
+        In general, it is not recommended to set task priorities higher than the built-in {IDF_TARGET_RF_TYPE} operations as starving them of CPU may make the system unstable.
+
+    For very short timing-critical operations that do not use the network, use an ISR or a very restricted task (with very short bursts of runtime only) at the highest priority (24).
+
+    .. only:: SOC_WIFI_SUPPORTED or SOC_BT_SUPPORTED or SOC_IEEE802154_SUPPORTED
+
+        Choosing priority 19 allows lower-layer {IDF_TARGET_RF_TYPE} functionality to run without delays, but still preempts the lwIP TCP/IP stack and other less time-critical internal functionality - this is the best option for time-critical tasks that do not perform network operations.
+
+    Any task that does TCP/IP network operations should run at a lower priority than the lwIP TCP/IP task (18) to avoid priority-inversion issues.
+
+.. only:: not SOC_HP_CPU_HAS_MULTIPLE_CORES
 
     With a few exceptions, most importantly the lwIP TCP/IP task, in the default configuration most built-in tasks are pinned to Core 0. This makes it quite easy for the application to place high priority tasks on Core 1. Using priority 19 or higher guarantees that an application task can run on Core 1 without being preempted by any built-in task. To further isolate the tasks running on each CPU, configure the :ref:`lwIP task <CONFIG_LWIP_TCPIP_TASK_AFFINITY>` to only run on Core 0 instead of either core, which may reduce total TCP/IP throughput depending on what other tasks are running.
 
-    In general, it is not recommended to set task priorities on Core 0 higher than the built-in {IDF_TARGET_RF_TYPE} operations as starving them of CPU may make the system unstable. Choosing priority 19 and Core 0 allows lower-layer {IDF_TARGET_RF_TYPE} functionality to run without delays, but still pre-empts the lwIP TCP/IP stack and other less time-critical internal functionality. This is an option for time-critical tasks that do not perform network operations. Any task that does TCP/IP network operations should run at lower priority than the lwIP TCP/IP task (18) to avoid priority-inversion issues.
+    .. only:: SOC_WIFI_SUPPORTED or SOC_BT_SUPPORTED or SOC_IEEE802154_SUPPORTED
+
+        In general, it is not recommended to set task priorities on Core 0 higher than the built-in {IDF_TARGET_RF_TYPE} operations as starving them of CPU may make the system unstable. Choosing priority 19 and Core 0 allows lower-layer {IDF_TARGET_RF_TYPE} functionality to run without delays, but still pre-empts the lwIP TCP/IP stack and other less time-critical internal functionality. This is an option for time-critical tasks that do not perform network operations. Any task that does TCP/IP network operations should run at lower priority than the lwIP TCP/IP task (18) to avoid priority-inversion issues.
 
     .. note::
 
