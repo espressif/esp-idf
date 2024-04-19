@@ -29,7 +29,7 @@ entries:
             sleep_gpio:gpio_sleep_mode_config_apply (noflash)
         if SOC_PM_CPU_RETENTION_BY_RTCCNTL = y && (PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP = y || SOC_PM_SUPPORT_TAGMEM_PD = y):
             sleep_cpu:sleep_enable_cpu_retention (noflash)
-        if PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP = y:
+        if PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP = y || (SOC_CPU_IN_TOP_DOMAIN = y && PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP = y):
             sleep_cpu:cpu_domain_pd_allowed (noflash)
         if SOC_PM_SUPPORT_TOP_PD = y:
             sleep_clock:clock_domain_pd_allowed (noflash)
