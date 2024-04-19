@@ -15,6 +15,7 @@
 #include "esp_vfs_console.h"
 #include "sdkconfig.h"
 #include "esp_private/startup_internal.h"
+#include "esp_vfs_null.h"
 
 #define STRINGIFY(s) STRINGIFY2(s)
 #define STRINGIFY2(s) #s
@@ -52,6 +53,8 @@ int console_open(const char * path, int flags, int mode)
     vfs_console.fd_primary = open("/dev/usbserjtag", flags, mode);
 #elif CONFIG_ESP_CONSOLE_USB_CDC
     vfs_console.fd_primary = open("/dev/cdcacm", flags, mode);
+#else
+    vfs_console.fd_primary = open("/dev/null", flags, mode);
 #endif
 
 // Secondary port open
@@ -207,13 +210,15 @@ esp_err_t esp_vfs_console_register(void)
     if (err != ESP_OK) {
         return err;
     }
+#else
+    esp_vfs_null_register();
+    primary_vfs = esp_vfs_null_get_vfs();
 #endif
 
 // Secondary vfs part.
 #if CONFIG_ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG
     secondary_vfs = esp_vfs_usb_serial_jtag_get_vfs();
 #endif
-
     err = esp_vfs_dev_console_register();
     return err;
 }

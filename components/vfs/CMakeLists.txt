@@ -7,6 +7,7 @@ endif()
 list(APPEND sources "vfs.c"
                     "vfs_eventfd.c"
                     "vfs_semihost.c"
+                    "nullfs.c"
                     )
 
 list(APPEND pr esp_timer

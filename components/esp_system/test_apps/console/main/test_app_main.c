@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <stdio.h>
+#include <assert.h>
 #include "sdkconfig.h"
 
 #include "esp_rom_uart.h"
@@ -14,6 +15,9 @@
 
 #include "driver/uart.h"
 #include "soc/uart_channel.h"
+
+#include <fcntl.h>
+#include <unistd.h>
 
 #if CONFIG_ESP_CONSOLE_NONE
 /* Set up UART on UART_0 (console) to be able to
@@ -48,6 +52,15 @@ static void console_none_print(void)
 void app_main(void)
 {
     printf("Hello World\n");
+
+    int fd = open("/dev/null", O_RDWR);
+    assert(fd >= 0); // Standard check
+
+    // Check if correct file descriptor is returned
+    // In this case it should be neither of 0, 1, 2 (== stdin, stdout, stderr)
+    assert(fd > 2);
+
+    close(fd);
 
 #if CONFIG_ESP_CONSOLE_NONE
     console_none_print();
