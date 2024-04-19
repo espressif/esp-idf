@@ -61,13 +61,9 @@ Supported since ESP-IDF v4.2.
 
 ### ESP32-C3
 
-#### v0.2, v0.3
+#### v0.2 - v0.4
 
 Supported since ESP-IDF v4.3.
-
-#### v0.4
-
-To be added.
 
 #### v1.1
 
