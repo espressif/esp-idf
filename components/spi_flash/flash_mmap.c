@@ -81,6 +81,8 @@ static LIST_HEAD(mmap_entries_head, mmap_entry_) s_mmap_entries_head =
 static uint8_t s_mmap_page_refcnt[SOC_MMU_REGIONS_COUNT * SOC_MMU_PAGES_PER_REGION] = {0};
 static uint32_t s_mmap_last_handle = 0;
 
+static uint32_t spi_flash_protected_read_mmu_entry(int index);
+
 
 static void IRAM_ATTR spi_flash_mmap_init(void)
 {
@@ -330,15 +332,6 @@ static void IRAM_ATTR NOINLINE_ATTR spi_flash_protected_mmap_init(void)
     spi_flash_enable_interrupts_caches_and_other_cpu();
 }
 
-static uint32_t IRAM_ATTR NOINLINE_ATTR spi_flash_protected_read_mmu_entry(int index)
-{
-    uint32_t value;
-    spi_flash_disable_interrupts_caches_and_other_cpu();
-    value = mmu_ll_read_entry(MMU_TABLE_CORE0, index);
-    spi_flash_enable_interrupts_caches_and_other_cpu();
-    return value;
-}
-
 void spi_flash_mmap_dump(void)
 {
     spi_flash_protected_mmap_init();
@@ -373,48 +366,6 @@ uint32_t IRAM_ATTR spi_flash_mmap_get_free_pages(spi_flash_mmap_memory_t memory)
     spi_flash_enable_interrupts_caches_and_other_cpu();
     return count;
 }
-
-size_t spi_flash_cache2phys(const void *cached)
-{
-    intptr_t c = (intptr_t)cached;
-    size_t cache_page;
-    int offset = 0;
-    if (c >= SOC_MMU_VADDR1_START_ADDR && c < SOC_MMU_VADDR1_FIRST_USABLE_ADDR) {
-        /* IRAM address, doesn't map to flash */
-        return SPI_FLASH_CACHE2PHYS_FAIL;
-    }
-    if (c < SOC_MMU_VADDR1_FIRST_USABLE_ADDR) {
-        /* expect cache is in DROM */
-        cache_page = (c - SOC_MMU_VADDR0_START_ADDR) / SPI_FLASH_MMU_PAGE_SIZE + SOC_MMU_DROM0_PAGES_START;
-#if CONFIG_SPIRAM_RODATA
-        if (c >= (uint32_t)&_rodata_reserved_start && c <= (uint32_t)&_rodata_reserved_end) {
-            offset = rodata_flash2spiram_offset();
-        }
-#endif
-    } else {
-        /* expect cache is in IROM */
-        cache_page = (c - SOC_MMU_VADDR1_START_ADDR) / SPI_FLASH_MMU_PAGE_SIZE + SOC_MMU_IROM0_PAGES_START;
-#if CONFIG_SPIRAM_FETCH_INSTRUCTIONS
-        if (c >= (uint32_t)&_instruction_reserved_start && c <= (uint32_t)&_instruction_reserved_end) {
-            offset = instruction_flash2spiram_offset();
-        }
-#endif
-    }
-
-    if (cache_page >= PAGES_LIMIT) {
-        /* cached address was not in IROM or DROM */
-        return SPI_FLASH_CACHE2PHYS_FAIL;
-    }
-    uint32_t phys_page = spi_flash_protected_read_mmu_entry(cache_page);
-    bool entry_is_invalid = mmu_ll_get_entry_is_invalid(MMU_TABLE_CORE0, cache_page);
-    if (entry_is_invalid) {
-        /* page is not mapped */
-        return SPI_FLASH_CACHE2PHYS_FAIL;
-    }
-    uint32_t phys_offs = ((phys_page & SOC_MMU_ADDR_MASK) + offset) * SPI_FLASH_MMU_PAGE_SIZE;
-    return phys_offs | (c & (SPI_FLASH_MMU_PAGE_SIZE-1));
-}
-
 const void *IRAM_ATTR spi_flash_phys2cache(size_t phys_offs, spi_flash_mmap_memory_t memory)
 {
     uint32_t phys_page = phys_offs / SPI_FLASH_MMU_PAGE_SIZE;
@@ -532,3 +483,57 @@ IRAM_ATTR bool spi_flash_check_and_flush_cache(size_t start_addr, size_t length)
     return ret;
 }
 #endif //!CONFIG_SPI_FLASH_ROM_IMPL
+
+#if !CONFIG_SPI_FLASH_ROM_IMPL || CONFIG_SPIRAM_FETCH_INSTRUCTIONS || CONFIG_SPIRAM_RODATA
+static uint32_t IRAM_ATTR NOINLINE_ATTR spi_flash_protected_read_mmu_entry(int index)
+{
+    uint32_t value;
+    spi_flash_disable_interrupts_caches_and_other_cpu();
+    value = mmu_ll_read_entry(MMU_TABLE_CORE0, index);
+    spi_flash_enable_interrupts_caches_and_other_cpu();
+    return value;
+}
+
+//The ROM implementation returns physical address of the PSRAM when the .text or .rodata is in the PSRAM.
+//Always patch it when SPIRAM_FETCH_INSTRUCTIONS or SPIRAM_RODATA is set.
+size_t spi_flash_cache2phys(const void *cached)
+{
+    intptr_t c = (intptr_t)cached;
+    size_t cache_page;
+    int offset = 0;
+    if (c >= SOC_MMU_VADDR1_START_ADDR && c < SOC_MMU_VADDR1_FIRST_USABLE_ADDR) {
+        /* IRAM address, doesn't map to flash */
+        return SPI_FLASH_CACHE2PHYS_FAIL;
+    }
+    if (c < SOC_MMU_VADDR1_FIRST_USABLE_ADDR) {
+        /* expect cache is in DROM */
+        cache_page = (c - SOC_MMU_VADDR0_START_ADDR) / SPI_FLASH_MMU_PAGE_SIZE + SOC_MMU_DROM0_PAGES_START;
+#if CONFIG_SPIRAM_RODATA
+        if (c >= (uint32_t)&_rodata_reserved_start && c <= (uint32_t)&_rodata_reserved_end) {
+            offset = rodata_flash2spiram_offset();
+        }
+#endif
+    } else {
+        /* expect cache is in IROM */
+        cache_page = (c - SOC_MMU_VADDR1_START_ADDR) / SPI_FLASH_MMU_PAGE_SIZE + SOC_MMU_IROM0_PAGES_START;
+#if CONFIG_SPIRAM_FETCH_INSTRUCTIONS
+        if (c >= (uint32_t)&_instruction_reserved_start && c <= (uint32_t)&_instruction_reserved_end) {
+            offset = instruction_flash2spiram_offset();
+        }
+#endif
+    }
+
+    if (cache_page >= PAGES_LIMIT) {
+        /* cached address was not in IROM or DROM */
+        return SPI_FLASH_CACHE2PHYS_FAIL;
+    }
+    uint32_t phys_page = spi_flash_protected_read_mmu_entry(cache_page);
+    bool entry_is_invalid = mmu_ll_get_entry_is_invalid(MMU_TABLE_CORE0, cache_page);
+    if (entry_is_invalid) {
+        /* page is not mapped */
+        return SPI_FLASH_CACHE2PHYS_FAIL;
+    }
+    uint32_t phys_offs = ((phys_page & SOC_MMU_ADDR_MASK) + offset) * SPI_FLASH_MMU_PAGE_SIZE;
+    return phys_offs | (c & (SPI_FLASH_MMU_PAGE_SIZE-1));
+}
+#endif
