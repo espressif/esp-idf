@@ -1495,6 +1495,10 @@ config SOC_PAU_IN_TOP_DOMAIN
     bool
     default y
 
+config SOC_CPU_IN_TOP_DOMAIN
+    bool
+    default y
+
 config SOC_PSRAM_VDD_POWER_MPLL
     bool
     default y
