@@ -19,7 +19,7 @@ SDMMC 主机驱动和 SD SPI 主机驱动（:component_file:`esp_driver_sdmmc/in
 .. list::
 
     :SOC_SDMMC_HOST_SUPPORTED: - 如需初始化和配置 SDMMC 主机，请参阅 :doc:`SDMMC 主机 API <../peripherals/sdmmc_host>`
-    - 如需初始化和配置 SD SPI 主机，请参阅 :doc:`SD SPI 主机 API <../peripherals/sdspi_host>`
+    :SOC_GPSPI_SUPPORTED: - 如需初始化和配置 SD SPI 主机，请参阅 :doc:`SD SPI 主机 API <../peripherals/sdspi_host>`
 
 
 .. only:: SOC_SDMMC_HOST_SUPPORTED
