@@ -270,38 +270,6 @@ uint32_t spi_flash_mmap_get_free_pages(spi_flash_mmap_memory_t memory)
     return len / CONFIG_MMU_PAGE_SIZE;
 }
 
-
-size_t spi_flash_cache2phys(const void *cached)
-{
-    if (cached == NULL) {
-        return SPI_FLASH_CACHE2PHYS_FAIL;
-    }
-
-    esp_err_t ret = ESP_FAIL;
-    uint32_t paddr = 0;
-    mmu_target_t target = 0;
-
-    ret = esp_mmu_vaddr_to_paddr((void *)cached, &paddr, &target);
-    if (ret != ESP_OK) {
-        return SPI_FLASH_CACHE2PHYS_FAIL;
-    }
-
-    int offset = 0;
-#if CONFIG_SPIRAM_RODATA
-    if ((uint32_t)cached >= (uint32_t)&_rodata_reserved_start && (uint32_t)cached <= (uint32_t)&_rodata_reserved_end) {
-        offset = rodata_flash2spiram_offset();
-    }
-#endif
-#if CONFIG_SPIRAM_FETCH_INSTRUCTIONS
-    if ((uint32_t)cached >= (uint32_t)&_instruction_reserved_start && (uint32_t)cached <= (uint32_t)&_instruction_reserved_end) {
-        offset = instruction_flash2spiram_offset();
-    }
-#endif
-
-    return paddr + offset * CONFIG_MMU_PAGE_SIZE;
-}
-
-
 const void * spi_flash_phys2cache(size_t phys_offs, spi_flash_mmap_memory_t memory)
 {
     esp_err_t ret = ESP_FAIL;
@@ -384,3 +352,37 @@ IRAM_ATTR bool spi_flash_check_and_flush_cache(size_t start_addr, size_t length)
     return ret;
 }
 #endif //!CONFIG_SPI_FLASH_ROM_IMPL
+
+#if !CONFIG_SPI_FLASH_ROM_IMPL || CONFIG_SPIRAM_FETCH_INSTRUCTIONS || CONFIG_SPIRAM_RODATA
+//The ROM implementation returns physical address of the PSRAM when the .text or .rodata is in the PSRAM.
+//Always patch it when SPIRAM_FETCH_INSTRUCTIONS or SPIRAM_RODATA is set.
+size_t spi_flash_cache2phys(const void *cached)
+{
+    if (cached == NULL) {
+        return SPI_FLASH_CACHE2PHYS_FAIL;
+    }
+
+    esp_err_t ret = ESP_FAIL;
+    uint32_t paddr = 0;
+    mmu_target_t target = 0;
+
+    ret = esp_mmu_vaddr_to_paddr((void *)cached, &paddr, &target);
+    if (ret != ESP_OK) {
+        return SPI_FLASH_CACHE2PHYS_FAIL;
+    }
+
+    int offset = 0;
+#if CONFIG_SPIRAM_RODATA
+    if ((uint32_t)cached >= (uint32_t)&_rodata_reserved_start && (uint32_t)cached <= (uint32_t)&_rodata_reserved_end) {
+        offset = rodata_flash2spiram_offset();
+    }
+#endif
+#if CONFIG_SPIRAM_FETCH_INSTRUCTIONS
+    if ((uint32_t)cached >= (uint32_t)&_instruction_reserved_start && (uint32_t)cached <= (uint32_t)&_instruction_reserved_end) {
+        offset = instruction_flash2spiram_offset();
+    }
+#endif
+
+    return paddr + offset * CONFIG_MMU_PAGE_SIZE;
+}
+#endif
