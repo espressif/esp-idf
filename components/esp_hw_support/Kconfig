@@ -281,6 +281,8 @@ menu "Hardware Settings"
 
     endmenu
 
+    orsource "./port/$IDF_TARGET/Kconfig.dcdc"
+
     orsource "./port/$IDF_TARGET/Kconfig.ldo"
 
     # Invisible bringup bypass options for esp_hw_support component
