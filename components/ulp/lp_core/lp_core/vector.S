@@ -5,6 +5,7 @@
  */
 
 #include "riscv/rvruntime-frames.h"
+#include "soc/soc_caps.h"
 
     .equ SAVE_REGS, 32
     .equ CONTEXT_SIZE, (SAVE_REGS * 4)
@@ -92,47 +93,54 @@
 .endm
 
 
-	.section	.init.vector,"ax"
-
-	.global _vector_table
-	.type _vector_table, @function
-_vector_table:
-	.option push
-	.option norvc
-
-	.rept 30
-	j _panic_handler
-	.endr
-	j _interrupt_handler // All interrupts are routed to mtvec + 4*30, i.e. the 31st entry
-	j _panic_handler
-
-	.option pop
-	.size _vector_table, .-_vector_table
-
-
 /* _panic_handler: handle all exception */
 	.section	.text.handlers,"ax"
 	.global _panic_handler
 	.type _panic_handler, @function
 _panic_handler:
-	call ulp_lp_core_panic_handler
-_end:
-	j _end /* loop forever */
+    save_general_regs RV_STK_FRMSZ
+    save_mepc
 
+    addi  t0, sp, RV_STK_FRMSZ /* restore sp with the value when trap happened */
+
+     /* Save CSRs */
+    sw    t0, RV_STK_SP(sp)
+    csrr  t0, mstatus
+    sw    t0, RV_STK_MSTATUS(sp)
+    csrr  t0, mcause
+    sw    t0, RV_STK_MCAUSE(sp)
+    csrr  t0, mtvec
+    sw    t0, RV_STK_MTVEC(sp)
+    csrr  t0, mhartid
+    sw    t0, RV_STK_MHARTID(sp)
+    csrr  t0, mtval
+    sw    t0, RV_STK_MTVAL(sp)
+
+    csrr	a1, mcause				/* exception cause */
+
+    mv	a0, sp					    /* RvExcFrame *regs */
+    call ulp_lp_core_panic_handler
+_end:
+    j _end /* loop forever */
+
+
+#if SOC_LP_CORE_SINGLE_INTERRUPT_VECTOR
 
 /* interrupt_handler: handle all interrupt */
-	.section	.text.handlers,"ax"
-	.global _interrupt_handler
-	.type _interrupt_handler, @function
+    .section	.text.handlers,"ax"
+    .global _interrupt_handler
+    .type _interrupt_handler, @function
 _interrupt_handler:
 	/* save registers & mepc to stack */
     save_general_regs
     save_mepc
 
-	call ulp_lp_core_intr_handler
+    call ulp_lp_core_intr_handler
 
-	/* restore registers & mepc from stack */
+    /* restore registers & mepc from stack */
     restore_mepc
     restore_general_regs
     /* exit, this will also re-enable the interrupts */
-	mret
+    mret
+
+#endif // SOC_LP_CORE_SINGLE_INTERRUPT_VECTOR

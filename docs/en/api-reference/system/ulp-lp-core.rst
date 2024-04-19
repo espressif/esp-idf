@@ -178,7 +178,7 @@ To enhance the capabilities of the ULP LP-Core coprocessor, it has access to per
     Since these functions are already present in LP-ROM no matter what, using these in your program allows you to reduce the RAM footprint of your ULP application.
 
 
-ULP LP-Core interrupts
+ULP LP-Core Interrupts
 ----------------------
 
 The LP-Core coprocessor can be configured to handle interrupts from various sources. Examples of such interrupts could be LP IO low/high or LP timer interrupts. To register a handler for an interrupt simply override any of the weak handlers provided by IDF. A complete list of handlers can be found in :component_file:`ulp_lp_core_interrupts.h <ulp/lp_core/lp_core/include/ulp_lp_core_interrupts.h>`. For details on which interrupts are available on a specific target, please consult the Low Power CPU chapter in the Technical Reference Manual.`
@@ -195,6 +195,22 @@ For example, to override the handler for the LP IO interrupt, you can define the
 :c:macro:`LP_CORE_ISR_ATTR` is a macro that is used to define the interrupt handler function. This macro ensures that registers are saved and restored correctly when the interrupt handler is called.
 
 In addition to configuring the interrupt related registers for the interrupt source you want to handle, you also need to enable the interrupts globally in the LP-Core interrupt controller. This can be done using the :cpp:func:`ulp_lp_core_intr_enable` function.
+
+Debugging ULP LP-Core Applications
+----------------------------------
+
+When programming the LP-Core, it can sometimes be challenging to figure out why the program is not behaving as expected. Here are some strategies to help you debug your LP-Core program:
+
+ * Use the LP-UART to print: the LP-Core has access to the LP-UART peripheral, which can be used for printing information independently of the main CPU sleep state. See :example:`system/ulp/lp_core/lp_uart/lp_uart_print` for an example of how to use this driver.
+
+ * Share program state through shared variables: as described in :ref:`ulp-lp-core-access-variables`, both the main CPU and the ULP core can easily access global variables in RTC memory. Writing state information to such a variable from the ULP and reading it from the main CPU can help you discern what is happening on the ULP core. The downside of this approach is that it requires the main CPU to be awake, which will not always be the case. Keeping the main CPU awake might even, in some cases, mask problems, as some issues may only occur when certain power domains are powered down.
+
+ * Panic handler: the LP-Core has a panic handler that can dump the state of the LP-Core registers to the LP-UART when an exception is detected. To enable the panic handler, set the :ref:`CONFIG_ULP_PANIC_OUTPUT_ENABLE` option to ``y``. This option can be kept disabled to reduce LP-RAM usage by the LP-Core application. To recover a backtrace from the panic dump it is possible to use  esp-idf-monitor_., e.g.:
+
+.. code-block:: bash
+
+    python -m esp_idf_monitor --toolchain-prefix riscv32-esp-elf- --target {IDF_TARGET_NAME} --decode-panic backtrace PATH_TO_ULP_ELF_FILE
+
 
 Application Examples
 --------------------
@@ -224,3 +240,5 @@ LP Core API Reference
 .. include-build-file:: inc/ulp_lp_core_uart.inc
 .. include-build-file:: inc/ulp_lp_core_print.inc
 .. include-build-file:: inc/ulp_lp_core_interrupts.inc
+
+.. _esp-idf-monitor: https://github.com/espressif/esp-idf-monitor

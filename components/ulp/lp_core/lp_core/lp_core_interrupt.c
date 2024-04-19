@@ -9,6 +9,7 @@
 #include "sdkconfig.h"
 #include "hal/lp_core_ll.h"
 #include "riscv/rv_utils.h"
+#include "riscv/rvruntime-frames.h"
 
 #if CONFIG_IDF_TARGET_ESP32C6
 /* Enable interrupt 30, which all external interrupts are routed to*/
@@ -36,6 +37,11 @@ void ulp_lp_core_intr_disable(void)
     RV_CLEAR_CSR(mstatus, MSTATUS_MIE);
 }
 
+void  __attribute__((weak)) ulp_lp_core_panic_handler(RvExcFrame *frame, int exccause)
+{
+    abort();
+}
+
 static void ulp_lp_core_default_intr_handler(void)
 {
     abort();
@@ -59,11 +65,6 @@ void __attribute__((weak, alias("ulp_lp_core_default_intr_handler"))) ulp_lp_cor
 void __attribute__((weak, alias("ulp_lp_core_default_intr_handler"))) ulp_lp_core_lp_wdt_intr_handler(void);
 void __attribute__((weak, alias("ulp_lp_core_default_intr_handler"))) ulp_lp_core_lp_rtc_intr_handler(void);
 void __attribute__((weak, alias("ulp_lp_core_default_intr_handler"))) ulp_lp_core_sw_intr_handler(void);
-
-void ulp_lp_core_panic_handler(void)
-{
-    abort();
-}
 
 #if CONFIG_IDF_TARGET_ESP32C6
 
