@@ -101,7 +101,7 @@ if(ULP_COCPU_IS_RISCV)
 elseif(ULP_COCPU_IS_LP_CORE)
     list(APPEND ULP_S_SOURCES
     "${IDF_PATH}/components/ulp/lp_core/lp_core/start.S"
-    "${IDF_PATH}/components/ulp/lp_core/lp_core/vector.S"
+    "${IDF_PATH}/components/ulp/lp_core/lp_core/port/${IDF_TARGET}/vector.S"
     "${IDF_PATH}/components/ulp/lp_core/shared/ulp_lp_core_memory_shared.c"
     "${IDF_PATH}/components/ulp/lp_core/shared/ulp_lp_core_lp_timer_shared.c"
     "${IDF_PATH}/components/ulp/lp_core/lp_core/lp_core_startup.c"
@@ -111,6 +111,7 @@ elseif(ULP_COCPU_IS_LP_CORE)
     "${IDF_PATH}/components/hal/uart_hal.c"
     "${IDF_PATH}/components/ulp/lp_core/lp_core/lp_core_uart.c"
     "${IDF_PATH}/components/ulp/lp_core/lp_core/lp_core_print.c"
+    "${IDF_PATH}/components/ulp/lp_core/lp_core/lp_core_interrupt.c"
     "${IDF_PATH}/components/ulp/lp_core/lp_core/lp_core_i2c.c")
 
     target_link_options(${ULP_APP_NAME} PRIVATE "-nostartfiles")

@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <stdarg.h>
+#include "sdkconfig.h"
 #include "ulp_lp_core_uart.h"
 
 #if !CONFIG_ULP_ROM_PRINT_ENABLE

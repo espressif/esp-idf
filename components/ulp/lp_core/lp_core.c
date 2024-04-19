@@ -36,6 +36,8 @@ const static char* TAG = "ulp-lp-core";
 
 #define WAKEUP_SOURCE_MAX_NUMBER 5
 
+#define RESET_HANDLER_ADDR (intptr_t)(&_rtc_ulp_memory_start + 0x80 / 4) // Placed after the 0x80 byte long vector table
+
 /* Maps the flags defined in ulp_lp_core.h e.g. ULP_LP_CORE_WAKEUP_SOURCE_HP_CPU to their actual HW values */
 static uint32_t wakeup_src_sw_to_hw_flag_lookup[WAKEUP_SOURCE_MAX_NUMBER] = {
     LP_CORE_LL_WAKEUP_SOURCE_HP_CPU,
@@ -68,7 +70,7 @@ esp_err_t ulp_lp_core_run(ulp_lp_core_cfg_t* cfg)
     /* If we have a LP ROM we boot from it, before jumping to the app code */
     intptr_t boot_addr;
     if (cfg->skip_lp_rom_boot) {
-        boot_addr = (intptr_t)(&_rtc_ulp_memory_start);
+        boot_addr = RESET_HANDLER_ADDR;
     } else {
         boot_addr = SOC_LP_ROM_LOW;
         /* Disable UART init in ROM, it defaults to XTAL clk src
@@ -80,7 +82,8 @@ esp_err_t ulp_lp_core_run(ulp_lp_core_cfg_t* cfg)
     }
 
     lp_core_ll_set_boot_address(boot_addr);
-    lp_core_ll_set_app_boot_address((intptr_t)(&_rtc_ulp_memory_start));
+    lp_core_ll_set_app_boot_address(RESET_HANDLER_ADDR);
+
 #endif //ESP_ROM_HAS_LP_ROM
 
     LP_CORE_RCC_ATOMIC() {
@@ -160,4 +163,9 @@ void ulp_lp_core_stop(void)
     /* Disable wake-up source and put lp core to sleep */
     lp_core_ll_set_wakeup_source(0);
     lp_core_ll_request_sleep();
+}
+
+void ulp_lp_core_sw_intr_trigger(void)
+{
+    lp_core_ll_hp_wake_lp();
 }

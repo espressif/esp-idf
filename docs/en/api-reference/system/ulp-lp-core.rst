@@ -178,6 +178,24 @@ To enhance the capabilities of the ULP LP-Core coprocessor, it has access to per
     Since these functions are already present in LP-ROM no matter what, using these in your program allows you to reduce the RAM footprint of your ULP application.
 
 
+ULP LP-Core interrupts
+----------------------
+
+The LP-Core coprocessor can be configured to handle interrupts from various sources. Examples of such interrupts could be LP IO low/high or LP timer interrupts. To register a handler for an interrupt simply override any of the weak handlers provided by IDF. A complete list of handlers can be found in :component_file:`ulp_lp_core_interrupts.h <ulp/lp_core/lp_core/include/ulp_lp_core_interrupts.h>`. For details on which interrupts are available on a specific target, please consult the Low Power CPU chapter in the Technical Reference Manual.`
+
+For example, to override the handler for the LP IO interrupt, you can define the following function in your ULP LP-Core code:
+
+.. code-block:: c
+
+    void LP_CORE_ISR_ATTR ulp_lp_core_lp_io_intr_handler(void)
+    {
+        // Handle the interrupt and clear the interrupt source
+    }
+
+:c:macro:`LP_CORE_ISR_ATTR` is a macro that is used to define the interrupt handler function. This macro ensures that registers are saved and restored correctly when the interrupt handler is called.
+
+In addition to configuring the interrupt related registers for the interrupt source you want to handle, you also need to enable the interrupts globally in the LP-Core interrupt controller. This can be done using the :cpp:func:`ulp_lp_core_intr_enable` function.
+
 Application Examples
 --------------------
 
@@ -185,6 +203,7 @@ Application Examples
 * :example:`system/ulp/lp_core/lp_i2c` reads external I2C ambient light sensor (BH1750) while the main CPU is in Deep-sleep and wakes up the main CPU once a threshold is met.
 * :example:`system/ulp/lp_core/lp_uart/lp_uart_echo` reads data written to a serial console and echoes it back. This example demonstrates the usage of the LP UART driver running on the LP core.
 * :example:`system/ulp/lp_core/lp_uart/lp_uart_print` shows how to print various statements from a program running on the LP core.
+* :example:`system/ulp/lp_core/interrupt` shows how to register an interrupt handler on the LP core to receive an interrupt triggered by the main CPU.
 
 API Reference
 -------------
@@ -204,3 +223,4 @@ LP Core API Reference
 .. include-build-file:: inc/ulp_lp_core_i2c.inc
 .. include-build-file:: inc/ulp_lp_core_uart.inc
 .. include-build-file:: inc/ulp_lp_core_print.inc
+.. include-build-file:: inc/ulp_lp_core_interrupts.inc

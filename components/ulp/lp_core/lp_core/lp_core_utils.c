@@ -135,3 +135,13 @@ void __attribute__((noreturn)) abort(void)
 
     while (1);
 }
+
+void ulp_lp_core_sw_intr_enable(bool enable)
+{
+    pmu_ll_lp_enable_sw_intr(&PMU, enable);
+}
+
+void ulp_lp_core_sw_intr_clear(void)
+{
+    pmu_ll_lp_clear_sw_intr_status(&PMU);
+}
