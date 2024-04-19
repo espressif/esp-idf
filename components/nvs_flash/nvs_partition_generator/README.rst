@@ -18,6 +18,8 @@ To use this utility in encryption mode, install the following packages:
 
 All the required packages are included in `requirements.txt` in the root of the ESP-IDF directory.
 
+.. _nvs-csv-file-format: 
+
 CSV File Format
 ~~~~~~~~~~~~~~~
 
@@ -241,6 +243,8 @@ You can run the utility to generate only the encryption key partition using the 
         python nvs_partition_gen.py generate-key --key_protect_hmac --kp_hmac_inputkey testdata/sample_hmac_key.bin
 
     .. note:: You can provide the custom filename for the HMAC key as well as the encryption key as a parameter.
+
+.. _generate-encrypted-nvs-partition:
 
 Generate Encrypted NVS Partition
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
