@@ -1,16 +1,18 @@
-Deep Sleep Wake Stubs
+Deep-sleep Wake Stubs
 =====================
+
+:link_to_translation:`zh_CN:[中文]`
 
 Introduction
 ------------
 
-The wakeup time from Deep-sleep mode is much longer, compared to Light-sleep and Modem-sleep modes as ROM and RAM are both powered down in this case, and the CPU needs more time for SPI booting. However, {IDF_TARGET_NAME} supports running a “deep sleep wake stub” when coming out of deep sleep. This function runs immediately as soon as the chip wakes up - before any normal initialization, bootloader, or ESP-IDF code has run.
+The wakeup time from Deep-sleep mode is much longer, compared to Light-sleep and Modem-sleep modes as ROM and RAM are both powered down in this case, and the CPU needs more time for SPI booting. However, {IDF_TARGET_NAME} supports running a “Deep-sleep wake stub” when coming out of Deep-sleep. This function runs immediately as soon as the chip wakes up - before any normal initialization, bootloader, or ESP-IDF code has run.
 
 Specifically, after waking up from Deep-sleep mode, {IDF_TARGET_NAME} starts partial initialization. Then RTC fast memory will be validated with CRC. If validation passes, the wake stub code will be executed.
 
-As {IDF_TARGET_NAME} has just woken up from deep sleep, most of the peripherals are in the reset state. The SPI flash has not been mapped. Thus, wake stub code can only call functions implemented in ROM or loaded into RTC fast memory, which retains content during deep sleep.
+As {IDF_TARGET_NAME} has just woken up from Deep-sleep, most of the peripherals are in the reset state. The SPI flash has not been mapped. Thus, wake stub code can only call functions implemented in ROM or loaded into RTC fast memory, which retains content during Deep-sleep.
 
-From the above, utilizing the wake stub functionality in an application you can quickly run some code when waking up from Deep-sleep mode, without having to wait for the whole boot-up process. However, the stub size is restricted by the size of RTC fast memory.
+From the above, by utilizing the wake stub functionality in an application, you can quickly run some code when waking up from Deep-sleep mode, without having to wait for the whole boot-up process. However, the stub size is restricted by the size of RTC fast memory.
 
 .. only:: SOC_RTC_SLOW_MEM_SUPPORTED
 
@@ -25,9 +27,9 @@ Next we will introduce how to implement the wake stub code in an application.
 Implement wake stub
 -------------------
 
-The wake stub in esp-idf is realized by the function :cpp:func:`esp_wake_deep_sleep()`. This function is executed whenever the SoC wakes from deep sleep. As this function is weakly-linked to the default function :cpp:func:`esp_default_wake_deep_sleep()`, if your application contains a function with the name ``esp_wake_deep_sleep()``, the default version :cpp:func:`esp_default_wake_deep_sleep()` in esp-idf will be overridden.
+The wake stub in esp-idf is realized by the function :cpp:func:`esp_wake_deep_sleep()`. This function is executed whenever the SoC wakes from Deep-sleep. As this function is weakly-linked to the default function :cpp:func:`esp_default_wake_deep_sleep()`, if your application contains a function with the name ``esp_wake_deep_sleep()``, the default version :cpp:func:`esp_default_wake_deep_sleep()` in esp-idf will be overridden.
 
-Please note that implementing the function :cpp:func:`esp_wake_deep_sleep()` in your application is not mandatory for utilizing the deep sleep functionality. It becomes necessary only if you want to introduce certain behavior immediately upon the SoC's wake-up.
+Please note that implementing the function :cpp:func:`esp_wake_deep_sleep()` in your application is not mandatory for utilizing the Deep-sleep functionality. It becomes necessary only if you want to introduce certain behavior immediately upon the SoC's wake-up.
 
 When you develop a customized wake stub, the first step it should do is to call the default function :cpp:func:`esp_default_wake_deep_sleep()`.
 
@@ -44,7 +46,7 @@ Implementing the wake stub function in your application includes the following s
 Load Wake Stub Code into RTC Fast Memory
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The wake stub code can only call functions present in ROM or loaded into RTC fast memory. All other RAM locations are unintiailized and contain random data. While the wake stub code can use other RAM areas for temporary storage, the contents of these areas will be overwritten either upon returning to deep sleep mode or upon initiating esp-idf.
+The wake stub code can only call functions present in ROM or loaded into RTC fast memory. All other RAM locations are unintiailized and contain random data. While the wake stub code can use other RAM areas for temporary storage, the contents of these areas will be overwritten either upon returning to Deep-sleep mode or upon initiating esp-idf.
 
 Wake stub code is a part of the main esp-idf application. During regular execution of esp-idf, functions can call the wake stub code or access RTC memory, treating them as a regular part of the application.
 
@@ -70,7 +72,7 @@ The second method is preferable when writing longer code segments in RTC fast me
     Load Wake Stub Data into RTC memory
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-    RTC memory must include read-only data used by the wake stub code. Data in RTC memory is initialized whenever the SoC restarts, except when waking from deep sleep. In such cases, the data retained before entering to deep sleep are kept. Data used by the wake stub code must be resident in RTC memory, i.e. RTC fast memory or in RTC slow memory.
+    RTC memory must include read-only data used by the wake stub code. Data in RTC memory is initialized whenever the SoC restarts, except when waking from Deep-sleep. In such cases, the data retained before entering to Deep-sleep are kept. Data used by the wake stub code must be resident in RTC memory, i.e. RTC fast memory or in RTC slow memory.
 
     The data can be specified in the following two methods:
 
@@ -143,7 +145,7 @@ However, any string constants used in this way must be declared as arrays and ma
 
 The second approach is advisable when incorporating strings or more complex code segments.
 
-You can enable the Kconfig option :ref:`CONFIG_BOOTLOADER_SKIP_VALIDATE_IN_DEEP_SLEEP` to reduce wake-up time. See more information in :doc:`Fast boot from Deep Sleep <bootloader>`.
+You can enable the Kconfig option :ref:`CONFIG_BOOTLOADER_SKIP_VALIDATE_IN_DEEP_SLEEP` to reduce wake-up time. See more information in :doc:`Fast boot from Deep-sleep <bootloader>`.
 
 All of the above functions are declared in :component_file:`esp_hw_support/include/esp_sleep.h`.
 
@@ -152,6 +154,6 @@ Example
 
 .. only:: SOC_RTC_FAST_MEM_SUPPORTED
 
-ESP-IDF provides an example to show how to implement the deep sleep wake stub.
+ESP-IDF provides an example to show how to implement the Deep-sleep wake stub.
 
 - :example:`system/deep_sleep_wake_stub`

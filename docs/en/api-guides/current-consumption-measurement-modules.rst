@@ -1,9 +1,11 @@
 Current Consumption Measurement of Modules
 ==========================================
 
+:link_to_translation:`zh_CN:[中文]`
+
 {IDF_TARGET_SOC_BOOT_PIN:default="Not updated", esp32="IO0", esp32s2="IO0", esp32s3="IO0", esp32c3="IO9", esp32c2="IO9", "esp32c6"="IO9", "esp32h2"="IO9"}
 
-You may want to know the current consumption of a `module <https://www.espressif.com/en/products/modules>`__ in deep-sleep mode, :doc:`other power-saving modes </api-reference/system/sleep_modes>`, and active mode to develop some applications sensitive to power consumption. This section introduces how to measure the current consumption of a module running such an application.
+You may want to know the current consumption of a `module <https://www.espressif.com/en/products/modules>`__ in Deep-sleep mode, :doc:`other power-saving modes </api-reference/system/sleep_modes>`, and Active mode to develop some applications sensitive to power consumption. This section introduces how to measure the current consumption of a module running such an application.
 
 
 Notes to Measurement
@@ -22,7 +24,7 @@ Can We Use a Development Board?
 
 .. only:: esp32c6 or esp32h2
 
-    With such development boards, you can measure current consumption of modules in deep-sleep mode by flashing chips with the :example:`deep_sleep <system/deep_sleep>` example. However, you can also measure current of bare modules equipped with {IDF_TARGET_NAME} chip using the following method.
+    With such development boards, you can measure current consumption of modules in Deep-sleep mode by flashing chips with the :example:`deep_sleep <system/deep_sleep>` example. However, you can also measure current of bare modules equipped with {IDF_TARGET_NAME} chip using the following method.
 
 .. only:: esp32 or esp32s2 or esp32s3 or esp32c2 or esp32c3
 
@@ -32,17 +34,17 @@ Can We Use a Development Board?
 How to Choose an Appropriate Ammeter?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-In the :example:`deep_sleep <system/deep_sleep>` example, the module will be woken up every 20 seconds. In deep-sleep mode, the current in the module is just several microamps (μA), while in active mode, the current is in the order of milliamps (mA). The high dynamic current range makes accurate measurement difficult. Ordinary ammeters cannot dynamically switch the measurement range fast enough.
+In the :example:`deep_sleep <system/deep_sleep>` example, the module will be woken up every 20 seconds. In Deep-sleep mode, the current in the module is just several microamps (μA), while in active mode, the current is in the order of milliamps (mA). The high dynamic current range makes accurate measurement difficult. Ordinary ammeters cannot dynamically switch the measurement range fast enough.
 
 Additionally, ordinary ammeters have a relatively high internal resistance, resulting in a significant voltage drop. This may cause the module to enter an unstable state, as it is powered by a voltage smaller than the minimum required voltage supply.
 
-Therefore, an ammeter suitable for measuring current in deep-sleep mode should have low internal resistance and, ideally, switch current ranges dynamically. We recommend two options: the `Joulescope ammeter <https://www.joulescope.com/>`__ and the `Power Profiler Kit II from Nordic <https://www.nordicsemi.com/Products/Development-hardware/Power-Profiler-Kit-2.?lang=en>`__.
+Therefore, an ammeter suitable for measuring current in Deep-sleep mode should have low internal resistance and, ideally, switch current ranges dynamically. We recommend two options: the `Joulescope ammeter <https://www.joulescope.com/>`__ and the `Power Profiler Kit II from Nordic <https://www.nordicsemi.com/Products/Development-hardware/Power-Profiler-Kit-2.?lang=en>`__.
 
 
 Joulescope Ammeter
 """"""""""""""""""
 
-The Joulescope ammeter combines high-speed sampling and rapid dynamic current range switching to provide accurate and seamless current and energy measurements, even for devices with rapidly varying current consumption. Joulescope accurately measures electrical current over nine orders of magnitude from amps down to nanoamps. This wide range allows for accurate and precise current measurements for devices. Additionally, Joulescope has a total voltage drop of 25 mV at 1 A, which keeps the module running normally. These two features make Joulescope a perfect option for measuring the module switching between deep-sleep mode and wake-up mode.
+The Joulescope ammeter combines high-speed sampling and rapid dynamic current range switching to provide accurate and seamless current and energy measurements, even for devices with rapidly varying current consumption. Joulescope accurately measures electrical current over nine orders of magnitude from amps down to nanoamps. This wide range allows for accurate and precise current measurements for devices. Additionally, Joulescope has a total voltage drop of 25 mV at 1 A, which keeps the module running normally. These two features make Joulescope a perfect option for measuring the module switching between Deep-sleep mode and wake-up mode.
 
 Joulescope has no display screen. You need to connect it to a PC to visualize the current waveforms of the measured module. For specific instructions, please follow the documentation provided by the manufacturer.
 
@@ -50,7 +52,7 @@ Joulescope has no display screen. You need to connect it to a PC to visualize th
 Nordic Power Profiler Kit II
 """"""""""""""""""""""""""""
 
-The Nordic Power Profiler Kit II has an advanced analog measurement unit with a high dynamic measurement range. This allows for accurate power consumption measurements for the entire range typically seen in low-power embedded applications, all the way from single μAs to 1 A. The resolution varies between 100 nA and 1 mA, depending on the measurement range, and is high enough to detect small spikes often seen in low-power optimized systems.
+The Nordic Power Profiler Kit II has an advanced analog measurement unit with a high dynamic measurement range. This allows for accurate power consumption measurements for the entire range typically seen in low-power embedded applications, all the way from several microamps to 1 A. The resolution varies between 100 nA and 1 mA, depending on the measurement range, and is high enough to detect small spikes often seen in low-power optimized systems.
 
 
 Hardware Connection
@@ -113,7 +115,7 @@ Measurement Steps
 
 ESP32-S3-WROOM-1 is used as an example in the measurement, and other modules can be measured similarly. For the specific current consumption of chips in different modes, please refer to the Current Consumption subsection in the corresponding `chip datasheet <https://www.espressif.com/en/support/download/documents/chips?keys=&field_download_document_type_tid%5B%5D=510>`__.
 
-You can refer to the following steps to measure the current in deep-sleep mode.
+You can refer to the following steps to measure the current in Deep-sleep mode.
 
 - Connect the aforementioned devices according to the hardware connection.
 
@@ -125,13 +127,13 @@ You can refer to the following steps to measure the current in deep-sleep mode.
 
 .. only:: esp32
 
-    For modules with an external resistor on GPIO12 (such as ESP32-WROVER-E/IE), you should call :cpp:func:`rtc_gpio_isolate` before going into deep sleep. This is to isolate the GPIO12 pin from external circuits to further minimize current consumption. Please note, for other modules, you do not have to call this function, otherwise, you may get abnormal results.
+    For modules with an external resistor on GPIO12 (such as ESP32-WROVER-E/IE), you should call :cpp:func:`rtc_gpio_isolate` before going into Deep-sleep. This is to isolate the GPIO12 pin from external circuits to further minimize current consumption. Please note, for other modules, you do not have to call this function, otherwise, you may get abnormal results.
 
 - By default, the module will be woken up every 20 seconds (you can change the timing by modifying the code of this example). To check if the example runs as expected, you can monitor the module operation by running ``idf.py -p PORT monitor`` (please replace PORT with your serial port name).
 
 - Open the Joulescope software to see the current waveform as shown in the image below.
 
-From the waveforms, you can obtain that the current of the module in deep-sleep mode is 8.14 μA. In addition, you can also see the current of the module in active mode, which is about 23.88 mA. The waveforms also show that the average power consumption during deep-sleep mode is 26.85 μW, and the average power consumption during active mode is 78.32 mW.
+From the waveforms, you can obtain that the current of the module in Deep-sleep mode is 8.14 μA. In addition, you can also see the current of the module in active mode, which is about 23.88 mA. The waveforms also show that the average power consumption during Deep-sleep mode is 26.85 μW, and the average power consumption during active mode is 78.32 mW.
 
 .. figure:: /../_static/current_measure_waveform.png
     :align: center
