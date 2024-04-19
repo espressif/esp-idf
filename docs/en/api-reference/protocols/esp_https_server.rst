@@ -49,11 +49,11 @@ The initial session setup can take about two seconds, or more with slower clock 
 Event Handling
 --------------
 
-ESP HTTPS Server has various events for which a handler can be triggered by :doc:`the Event Loop library <../system/esp_event>` when the particular event occurs. The handler has to be registered using :cpp:func:`esp_event_handler_register`. This helps in event handling for ESP HTTPS Server.
+ESP HTTPS Server has various events for which a handler can be triggered by the :doc:`../system/esp_event` when the particular event occurs. The handler has to be registered using :cpp:func:`esp_event_handler_register`. This helps in event handling for ESP HTTPS Server.
 
 :cpp:enum:`esp_https_server_event_id_t` has all the events which can happen for ESP HTTPS server.
 
-Expected data type for different ESP HTTP server events in event loop:
+Expected data type for different ESP HTTPS server events in event loop:
 
     - HTTPS_SERVER_EVENT_ERROR          :   ``esp_https_server_last_error_t``
     - HTTPS_SERVER_EVENT_START          :   ``NULL``
