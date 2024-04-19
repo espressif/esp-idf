@@ -7,10 +7,6 @@ contribute/copyright-guide.rst
 contribute/install-pre-commit-hook.rst
 contribute/index.rst
 api-guides/core_dump_internals.rst
-api-guides/performance/speed.rst
-api-guides/performance/size.rst
-api-guides/performance/ram-usage.rst
-api-guides/performance/index.rst
 api-guides/jtag-debugging/debugging-examples.rst
 api-guides/jtag-debugging/configure-ft2232h-jtag.rst
 api-guides/jtag-debugging/tips-and-quirks.rst
