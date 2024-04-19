@@ -11,6 +11,7 @@
 #include "esp_rom_caps.h"
 #include "lp_core_test_app.h"
 #include "lp_core_test_app_counter.h"
+#include "lp_core_test_app_isr.h"
 
 #if SOC_LP_TIMER_SUPPORTED
 #include "lp_core_test_app_set_timer_wakeup.h"
@@ -26,6 +27,10 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
+#include "hal/lp_core_ll.h"
+#include "hal/rtc_io_ll.h"
+#include "driver/rtc_io.h"
+
 extern const uint8_t lp_core_main_bin_start[] asm("_binary_lp_core_test_app_bin_start");
 extern const uint8_t lp_core_main_bin_end[]   asm("_binary_lp_core_test_app_bin_end");
 
@@ -37,6 +42,9 @@ extern const uint8_t lp_core_main_set_timer_wakeup_bin_end[]   asm("_binary_lp_c
 
 extern const uint8_t lp_core_main_gpio_bin_start[] asm("_binary_lp_core_test_app_gpio_bin_start");
 extern const uint8_t lp_core_main_gpio_bin_end[]   asm("_binary_lp_core_test_app_gpio_bin_end");
+
+extern const uint8_t lp_core_main_isr_bin_start[] asm("_binary_lp_core_test_app_isr_bin_start");
+extern const uint8_t lp_core_main_isr_bin_end[]   asm("_binary_lp_core_test_app_isr_bin_end");
 
 static void load_and_start_lp_core_firmware(ulp_lp_core_cfg_t* cfg, const uint8_t* firmware_start, const uint8_t* firmware_end)
 {
@@ -325,3 +333,49 @@ TEST_CASE("LP core gpio tests", "[ulp]")
 }
 
 #endif //SOC_LP_TIMER_SUPPORTED
+
+#define ISR_TEST_ITERATIONS 100
+#define IO_TEST_PIN 0
+#include "lp_core_uart.h"
+
+TEST_CASE("LP core ISR tests", "[ulp]")
+{
+    lp_core_uart_cfg_t ucfg = LP_CORE_UART_DEFAULT_CONFIG();
+
+    ESP_ERROR_CHECK(lp_core_uart_init(&ucfg));
+
+    /* Load ULP firmware and start the coprocessor */
+    ulp_lp_core_cfg_t cfg = {
+        .wakeup_source = ULP_LP_CORE_WAKEUP_SOURCE_HP_CPU,
+    };
+
+    load_and_start_lp_core_firmware(&cfg, lp_core_main_isr_bin_start, lp_core_main_isr_bin_end);
+
+    while (!ulp_isr_test_started) {
+    }
+
+    for (int i = 0; i < ISR_TEST_ITERATIONS; i++) {
+        lp_core_ll_hp_wake_lp();
+        vTaskDelay(pdMS_TO_TICKS(10));
+    }
+
+    printf("ULP PMU ISR triggered %"PRIu32" times\n", ulp_pmu_isr_counter);
+    TEST_ASSERT_EQUAL(ISR_TEST_ITERATIONS, ulp_pmu_isr_counter);
+
+    /* Test LP IO interrupt */
+    rtc_gpio_init(IO_TEST_PIN);
+    rtc_gpio_set_direction(IO_TEST_PIN, RTC_GPIO_MODE_INPUT_ONLY);
+    TEST_ASSERT_EQUAL(0, ulp_io_isr_counter);
+
+    for (int i = 0; i < ISR_TEST_ITERATIONS; i++) {
+#if CONFIG_IDF_TARGET_ESP32C6
+        LP_IO.status_w1ts.val = 0x00000001; // Set GPIO 0 intr status to high
+#else
+        LP_GPIO.status_w1ts.val = 0x00000001; // Set GPIO 0 intr status to high
+#endif
+        vTaskDelay(pdMS_TO_TICKS(10));
+    }
+
+    printf("ULP LP IO ISR triggered %"PRIu32" times\n", ulp_io_isr_counter);
+    TEST_ASSERT_EQUAL(ISR_TEST_ITERATIONS, ulp_io_isr_counter);
+}

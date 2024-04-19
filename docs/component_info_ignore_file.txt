@@ -6,6 +6,7 @@ components/ulp/lp_core/lp_core/include/ulp_lp_core_i2c.h
 components/ulp/lp_core/lp_core/include/ulp_lp_core_print.h
 components/ulp/lp_core/lp_core/include/ulp_lp_core_uart.h
 components/ulp/lp_core/lp_core/include/ulp_lp_core_utils.h
+components/ulp/lp_core/lp_core/include/ulp_lp_core_interrupts.h
 # ESSL headers do not belong to any IDF component, in a user project it will come from a managed component
 components/driver/test_apps/components/esp_serial_slave_link/include/esp_serial_slave_link/essl_sdio.h
 components/driver/test_apps/components/esp_serial_slave_link/include/esp_serial_slave_link/essl_spi.h
