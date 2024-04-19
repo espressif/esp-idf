@@ -18,6 +18,7 @@
 #include "soc/soc.h"
 #include "soc/iomux_mspi_pin_reg.h"
 #include "soc/iomux_mspi_pin_struct.h"
+#include "soc/hp_sys_clkrst_reg.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -70,6 +71,20 @@ typedef enum {
     MSPI_LL_PIN_DQS1,
     MSPI_LL_PIN_MAX,
 } mspi_ll_pin_t;
+
+/**
+ * Reset the MSPI clock
+ */
+__attribute__((always_inline))
+static inline void _mspi_timing_ll_reset_mspi(void)
+{
+   REG_SET_BIT(HP_SYS_CLKRST_HP_RST_EN0_REG, HP_SYS_CLKRST_REG_RST_EN_MSPI_AXI);
+   REG_CLR_BIT(HP_SYS_CLKRST_HP_RST_EN0_REG, HP_SYS_CLKRST_REG_RST_EN_MSPI_AXI);
+}
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_RC_ATOMIC_ENV variable in advance
+#define mspi_timing_ll_reset_mspi(...) (void)__DECLARE_RCC_RC_ATOMIC_ENV; _mspi_timing_ll_reset_mspi(__VA_ARGS__)
 
 /**
  * Set all MSPI DQS phase
