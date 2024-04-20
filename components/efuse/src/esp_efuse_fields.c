@@ -58,7 +58,7 @@ esp_err_t esp_efuse_update_secure_version(uint32_t secure_version)
 {
     size_t size = MIN(APP_SEC_VER_SIZE_EFUSE_FIELD, esp_efuse_get_field_size(ESP_EFUSE_SECURE_VERSION));
     if (size < secure_version) {
-        ESP_LOGE(TAG, "Max secure version is %d. Given %"PRIu32" version can not be written.", size, secure_version);
+        ESP_LOGE(TAG, "Max secure version is %u. Given %"PRIu32" version can not be written.", (unsigned)size, secure_version);
         return ESP_ERR_INVALID_ARG;
     }
     esp_efuse_coding_scheme_t coding_scheme = esp_efuse_get_coding_scheme(ESP_EFUSE_SECURE_VERSION_NUM_BLOCK);

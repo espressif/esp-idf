@@ -1,0 +1,7 @@
+config ESP_REV_MIN_FULL
+    int
+    default 0
+
+config ESP_REV_MAX_FULL
+    int
+    default 999

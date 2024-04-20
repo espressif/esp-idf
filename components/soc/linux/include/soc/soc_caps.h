@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -21,6 +21,10 @@
 
 #pragma once
 
+/*-------------------------- COMMON CAPS ---------------------------------------*/
+#define SOC_EFUSE_SUPPORTED                 (1)
+#define SOC_EFUSE_KEY_PURPOSE_FIELD         (1)
+
 /*-------------------------- GPIO CAPS ---------------------------------------*/
 #define SOC_GPIO_IN_RANGE_MAX           (65535)
 #define SOC_GPIO_OUT_RANGE_MAX          (65535)
@@ -28,3 +32,24 @@
 /*-------------------------- I2C CAPS ----------------------------------------*/
 #define SOC_I2C_SUPPORT_SLAVE   (1)
 #define SOC_I2C_SUPPORT_10BIT_ADDR   (1)
+
+/*-------------------------- eFuse CAPS----------------------------*/
+#define SOC_EFUSE_DIS_DOWNLOAD_ICACHE  (1)
+#define SOC_EFUSE_DIS_DOWNLOAD_DCACHE  (1)
+#define SOC_EFUSE_HARD_DIS_JTAG        (1)
+#define SOC_EFUSE_DIS_USB_JTAG         (1)
+#define SOC_EFUSE_SOFT_DIS_JTAG        (1)
+#define SOC_EFUSE_DIS_DIRECT_BOOT      (1)
+#define SOC_EFUSE_DIS_ICACHE           (1)
+
+/*-------------------------- Secure Boot CAPS----------------------------*/
+#define SOC_SECURE_BOOT_V2_RSA              (1)
+#define SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS   (3U)
+#define SOC_EFUSE_REVOKE_BOOT_KEY_DIGESTS   (1)
+#define SOC_SUPPORT_SECURE_BOOT_REVOKE_KEY  (1)
+
+/*-------------------------- Flash Encryption CAPS----------------------------*/
+#define SOC_FLASH_ENCRYPTION_XTS_AES         (1)
+#define SOC_FLASH_ENCRYPTION_XTS_AES_OPTIONS (1)
+#define SOC_FLASH_ENCRYPTION_XTS_AES_128     (1)
+#define SOC_FLASH_ENCRYPTION_XTS_AES_256     (1)

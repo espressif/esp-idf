@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,18 +11,18 @@
 #include "unity.h"
 #include "esp_log.h"
 #include <string.h>
+#include "hal/efuse_ll.h"
 #include "esp_efuse.h"
 #include "esp_efuse_table.h"
 #include "esp_efuse_utility.h"
 #include "esp_efuse_test_table.h"
 #include "esp_timer.h"
-#include "bootloader_random.h"
+#include "esp_random.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
 #include "sdkconfig.h"
 #include "esp_rom_efuse.h"
-#include "bootloader_common.h"
 
 #ifdef CONFIG_IDF_TARGET_ESP32
 #define MAC_FACTORY_HAS_CRC 1
@@ -35,6 +35,7 @@ __attribute__((unused)) static const char* TAG = "efuse_test";
 
 static void test_read_blob(void)
 {
+    esp_efuse_utility_erase_virt_blocks();
     esp_efuse_utility_update_virt_blocks();
     esp_efuse_utility_debug_dump_blocks();
 
@@ -75,6 +76,7 @@ TEST_CASE("efuse test read_field_blob", "[efuse]")
 
 static void test_read_cnt(void)
 {
+    esp_efuse_utility_erase_virt_blocks();
     esp_efuse_utility_update_virt_blocks();
     esp_efuse_utility_debug_dump_blocks();
 
@@ -403,9 +405,7 @@ void test_cnt_part(const esp_efuse_desc_t* field[], uint8_t *arr_r, int arr_size
     while(field_size > num_bits_summ_r) {
         num_bits_w = 0;
         while(num_bits_w == 0 || (num_bits_summ_r + num_bits_w) > field_size) {
-            bootloader_random_enable();
-            bootloader_fill_random(&num_bits_w, 1);
-            bootloader_random_disable();
+            esp_fill_random(&num_bits_w, 1);
             num_bits_w = num_bits_w * field_size / 255;
             if (num_bits_w != 0 && (num_bits_summ_r + num_bits_w) <= field_size) {
                 break;
@@ -438,16 +438,12 @@ void test_blob_part(const esp_efuse_desc_t* field[], uint8_t *arr_w, uint8_t *ar
     int num_bits_summ_r = 0;
     int num_bits_w = 0;
     memset(arr_w, 0, arr_size);
-    bootloader_random_enable();
-    bootloader_fill_random(arr_w, arr_size);
-    bootloader_random_disable();
+    esp_fill_random(arr_w, arr_size);
     ESP_LOG_BUFFER_HEX_LEVEL(TAG, arr_w, arr_size, ESP_LOG_INFO);
     while(field_size > num_bits_summ_r) {
         num_bits_w = 0;
         while(num_bits_w == 0 || (num_bits_summ_r + num_bits_w) > field_size) {
-            bootloader_random_enable();
-            bootloader_fill_random(&num_bits_w, 1);
-            bootloader_random_disable();
+            esp_fill_random(&num_bits_w, 1);
             num_bits_w = num_bits_w * field_size / 255;
             if (num_bits_w != 0 && (num_bits_summ_r + num_bits_w) <= field_size) {
                 break;
@@ -498,9 +494,7 @@ void check_efuse_table_test(int cycle)
             ESP_LOGI(TAG, "Cycle#%d/%d", c, cycle);
 
             memset(arr_w, 0, arr_size);
-            bootloader_random_enable();
-            bootloader_fill_random(arr_w, arr_size);
-            bootloader_random_disable();
+            esp_fill_random(arr_w, arr_size);
             cut_tail_arr(arr_w, 0, field_size);
 
             esp_efuse_utility_erase_virt_blocks();
@@ -523,6 +517,8 @@ void check_efuse_table_test(int cycle)
 
 TEST_CASE("efuse esp_efuse_table_test", "[efuse]")
 {
+    esp_efuse_utility_erase_virt_blocks();
+    esp_efuse_utility_debug_dump_blocks();
     esp_efuse_coding_scheme_t coding_scheme = esp_efuse_get_coding_scheme(EFUSE_BLK2);
     if (coding_scheme == EFUSE_CODING_SCHEME_NONE) {
         check_efuse_table_test(2);
@@ -534,6 +530,8 @@ TEST_CASE("efuse esp_efuse_table_test", "[efuse]")
 
 TEST_CASE("Test esp_efuse_read_block esp_efuse_write_block functions", "[efuse]")
 {
+    esp_efuse_utility_erase_virt_blocks();
+    esp_efuse_utility_debug_dump_blocks();
     int count_useful_reg = 0;
     esp_efuse_coding_scheme_t coding_scheme = esp_efuse_get_coding_scheme(EFUSE_BLK2);
     if (coding_scheme == EFUSE_CODING_SCHEME_NONE) {
@@ -730,6 +728,7 @@ TEST_CASE("Batch mode is thread-safe", "[efuse]")
 #endif // #ifndef CONFIG_FREERTOS_UNICORE
 
 
+#if !CONFIG_IDF_TARGET_LINUX
 static volatile bool cmd_stop_reset_task1;
 static void efuse_burn_task(void* arg)
 {
@@ -787,6 +786,7 @@ TEST_CASE("Check a case when ESP_ERR_DAMAGED_READING occurs and read and burn ar
     vSemaphoreDelete(sema[0]);
     vSemaphoreDelete(sema[1]);
 }
+#endif // !CONFIG_IDF_TARGET_LINUX
 #endif // #ifdef CONFIG_EFUSE_VIRTUAL
 
 #ifndef CONFIG_FREERTOS_UNICORE
@@ -864,5 +864,5 @@ TEST_CASE("Test a real write (FPGA)", "[efuse]")
 TEST_CASE("Test chip_ver_pkg APIs return the same value", "[efuse]")
 {
     esp_efuse_utility_update_virt_blocks();
-    TEST_ASSERT_EQUAL_INT(esp_efuse_get_pkg_ver(), bootloader_common_get_chip_ver_pkg());
+    TEST_ASSERT_EQUAL_INT(esp_efuse_get_pkg_ver(), efuse_ll_get_chip_ver_pkg());
 }

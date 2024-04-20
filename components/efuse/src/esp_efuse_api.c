@@ -118,7 +118,7 @@ esp_err_t esp_efuse_write_field_cnt(const esp_efuse_desc_t* field[], size_t cnt)
         err = esp_efuse_utility_process(field, &cnt, 0, esp_efuse_utility_write_cnt);
 
         if (cnt != 0) {
-            ESP_LOGE(TAG, "The required number of bits can not be set. [Not set %d]", cnt);
+            ESP_LOGE(TAG, "The required number of bits can not be set. [Not set %u]", (unsigned)cnt);
             err = ESP_ERR_EFUSE_CNT_IS_FULL;
         }
         if (err == ESP_OK_EFUSE_CNT) {

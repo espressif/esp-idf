@@ -44,9 +44,15 @@ examples/system/deep_sleep_wake_stub:
       reason: target(s) is not supported yet  # TODO: [ESP32C5] IDF-8638
 
 examples/system/efuse:
+  enable:
+    - if: INCLUDE_DEFAULT == 1 or IDF_TARGET == "linux"
   disable:
-    - if: IDF_TARGET != "esp32" and (NIGHTLY_RUN != "1" or IDF_TARGET == "linux")
-      reason: no target specific functionality, testing on a single target is sufficient
+    - if: IDF_TARGET not in ["esp32", "linux"] and NIGHTLY_RUN != "1"
+    - if: IDF_TARGET == "linux" and CONFIG_NAME == "virt_flash_enc"
+    - if: IDF_TARGET == "linux" and CONFIG_NAME == "virt_flash_enc_release"
+    - if: IDF_TARGET == "linux" and CONFIG_NAME == "virt_sb_v2_and_fe"
+    - if: IDF_TARGET == "linux" and CONFIG_NAME == "virt_secure_boot_v2"
+      reason: Security features are not yet supported for Linux.
   depends_components:
     - efuse
     - bootloader_support

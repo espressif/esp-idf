@@ -150,7 +150,7 @@ void esp_efuse_utility_reset(void)
     esp_efuse_utility_clear_program_registers();
     ++s_burn_counter;
     for (int num_block = EFUSE_BLK0; num_block < EFUSE_BLK_MAX; num_block++) {
-        for (uint32_t addr_wr_block = range_write_addr_blocks[num_block].start; addr_wr_block <= range_write_addr_blocks[num_block].end; addr_wr_block += 4) {
+        for (uintptr_t addr_wr_block = range_write_addr_blocks[num_block].start; addr_wr_block <= range_write_addr_blocks[num_block].end; addr_wr_block += 4) {
             REG_WRITE(addr_wr_block, 0);
         }
     }
@@ -159,7 +159,7 @@ void esp_efuse_utility_reset(void)
 void esp_efuse_utility_debug_dump_pending(void)
 {
     for (int num_block = 0; num_block < EFUSE_BLK_MAX; num_block++) {
-        for (uint32_t addr_wr_block = range_write_addr_blocks[num_block].start; addr_wr_block <= range_write_addr_blocks[num_block].end; addr_wr_block += 4) {
+        for (uintptr_t addr_wr_block = range_write_addr_blocks[num_block].start; addr_wr_block <= range_write_addr_blocks[num_block].end; addr_wr_block += 4) {
             if (REG_READ(addr_wr_block) != 0) {
                 esp_efuse_utility_debug_dump_single_block(num_block, false);
                 break;
@@ -203,7 +203,7 @@ void esp_efuse_utility_update_virt_blocks(void)
         ESP_EARLY_LOGW(TAG, "[Virtual] Loading virtual efuse blocks from real efuses");
         for (int num_block = EFUSE_BLK0; num_block < EFUSE_BLK_MAX; num_block++) {
             int subblock = 0;
-            for (uint32_t addr_rd_block = range_read_addr_blocks[num_block].start; addr_rd_block <= range_read_addr_blocks[num_block].end; addr_rd_block += 4) {
+            for (uintptr_t addr_rd_block = range_read_addr_blocks[num_block].start; addr_rd_block <= range_read_addr_blocks[num_block].end; addr_rd_block += 4) {
                 virt_blocks[num_block][subblock++] = REG_READ(addr_rd_block);
             }
             ESP_EARLY_LOGD(TAG, "[Virtual] virt_blocks[%d] is filled by EFUSE_BLOCK%d", num_block, num_block);
@@ -223,17 +223,17 @@ void esp_efuse_utility_debug_dump_single_block(int num_block, bool from_read)
     esp_rom_printf("%d) ", num_block);
     int num_reg = 0;
     if (from_read) {
-        for (uint32_t addr_rd_block = range_read_addr_blocks[num_block].start; addr_rd_block <= range_read_addr_blocks[num_block].end; addr_rd_block += 4, num_reg++) {
+        for (uintptr_t addr_rd_block = range_read_addr_blocks[num_block].start; addr_rd_block <= range_read_addr_blocks[num_block].end; addr_rd_block += 4, num_reg++) {
 #ifdef CONFIG_EFUSE_VIRTUAL
-            esp_rom_printf("0x%08" PRIx32, virt_blocks[num_block][num_reg]);
+            esp_rom_printf("%08" PRIx32 " ", virt_blocks[num_block][num_reg]);
 #else
-            esp_rom_printf("0x%08" PRIx32, REG_READ(addr_rd_block));
+            esp_rom_printf("%08" PRIx32 " ", REG_READ(addr_rd_block));
             (void) num_reg;
 #endif
         }
     } else {
-        for (uint32_t addr_wr_block = range_write_addr_blocks[num_block].start; addr_wr_block <= range_write_addr_blocks[num_block].end; addr_wr_block += 4, num_reg++) {
-            esp_rom_printf("0x%08" PRIx32, REG_READ(addr_wr_block));
+        for (uintptr_t addr_wr_block = range_write_addr_blocks[num_block].start; addr_wr_block <= range_write_addr_blocks[num_block].end; addr_wr_block += 4, num_reg++) {
+            esp_rom_printf("%08" PRIx32 " ", REG_READ(addr_wr_block));
         }
     }
     esp_rom_printf("\n");
@@ -291,7 +291,7 @@ static void write_reg(esp_efuse_block_t blk, unsigned int num_reg, uint32_t valu
     assert(blk >= 0 && blk < EFUSE_BLK_MAX);
     assert(num_reg <= (range_read_addr_blocks[blk].end - range_read_addr_blocks[blk].start) / sizeof(uint32_t));
 
-    uint32_t addr_wr_reg = range_write_addr_blocks[blk].start + num_reg * 4;
+    uintptr_t addr_wr_reg = range_write_addr_blocks[blk].start + num_reg * 4;
     uint32_t reg_to_write = REG_READ(addr_wr_reg) | value;
     // The register can be written in parts so we combine the new value with the one already available.
     REG_WRITE(addr_wr_reg, reg_to_write);
@@ -399,11 +399,11 @@ static bool check_range_of_bits(esp_efuse_block_t blk, int offset_in_bits, int s
     return true;
 }
 
-uint32_t esp_efuse_utility_get_read_register_address(esp_efuse_block_t block)
+uintptr_t esp_efuse_utility_get_read_register_address(esp_efuse_block_t block)
 {
     assert(block < EFUSE_BLK_MAX);
 #ifdef CONFIG_EFUSE_VIRTUAL
-    return (uint32_t)&virt_blocks[block][0];
+    return (uintptr_t)&virt_blocks[block][0];
 #else
     return range_read_addr_blocks[block].start;
 #endif
@@ -501,8 +501,8 @@ void esp_efuse_utility_write_efuses_to_flash(void)
 
 bool esp_efuse_utility_is_correct_written_data(esp_efuse_block_t block, unsigned r_data_len)
 {
-    uint32_t* w_data = (uint32_t*)range_write_addr_blocks[block].start;
-    uint32_t* r_data = (uint32_t*)range_read_addr_blocks[block].start;
+    uintptr_t* w_data = (uintptr_t*)range_write_addr_blocks[block].start;
+    uintptr_t* r_data = (uintptr_t*)range_read_addr_blocks[block].start;
 
     bool correct_written_data = memcmp(w_data, r_data, r_data_len) == 0;
     if (correct_written_data) {
