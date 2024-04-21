@@ -102,5 +102,7 @@ ENV IDF_PYTHON_CHECK_CONSTRAINTS=no
 ENV IDF_CCACHE_ENABLE=1
 
 COPY entrypoint.sh /opt/esp/entrypoint.sh
+RUN chmod u+x /opt/esp/entrypoint.sh
+
 ENTRYPOINT [ "/opt/esp/entrypoint.sh" ]
 CMD [ "/bin/bash" ]
