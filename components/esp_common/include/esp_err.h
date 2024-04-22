@@ -34,6 +34,7 @@ typedef int esp_err_t;
 #define ESP_ERR_INVALID_VERSION     0x10A   /*!< Version was invalid */
 #define ESP_ERR_INVALID_MAC         0x10B   /*!< MAC address was invalid */
 #define ESP_ERR_NOT_FINISHED        0x10C   /*!< There are items remained to retrieve */
+#define ESP_ERR_NOT_ALLOWED         0x10D   /*!< Operation is not allowed */
 #define ESP_ERR_ROC_IN_PROGRESS     0x10E   /*!< ROC Operation is in progress */
 
 

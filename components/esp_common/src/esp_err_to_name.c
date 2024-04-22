@@ -131,6 +131,9 @@ static const esp_err_msg_t esp_err_msg_table[] = {
 #   ifdef      ESP_ERR_NOT_FINISHED
     ERR_TBL_IT(ESP_ERR_NOT_FINISHED),                           /*   268 0x10c There are items remained to retrieve */
 #   endif
+#   ifdef      ESP_ERR_NOT_ALLOWED
+    ERR_TBL_IT(ESP_ERR_NOT_ALLOWED),                            /*   269 0x10d Operation is not allowed */
+#   endif
 #   ifdef      ESP_ERR_ROC_IN_PROGRESS
     ERR_TBL_IT(ESP_ERR_ROC_IN_PROGRESS),                        /*   270 0x10e ROC Operation is in progress */
 #   endif
