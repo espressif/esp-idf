@@ -36,7 +36,6 @@
 #define SOC_RTC_FAST_MEM_SUPPORTED      1
 #define SOC_RTC_MEM_SUPPORTED           1       //TODO: [ESP32C61] IDF-9274
 // #define SOC_I2S_SUPPORTED               1    //TODO: [ESP32C61] IDF-9312, IDF-9313
-// #define SOC_SDM_SUPPORTED               1    //TODO: [ESP32C61] IDF-9335
 // #define SOC_GPSPI_SUPPORTED             1    //TODO: [ESP32C61] IDF-9299, IDF-9300, IDF-9301
 // #define SOC_LEDC_SUPPORTED              1    //TODO: [ESP32C61] IDF-9291
 // #define SOC_I2C_SUPPORTED               1    //TODO: [ESP32C61] IDF-9296, IDF-9297
@@ -181,9 +180,8 @@
 /*-------------------------- GPIO CAPS ---------------------------------------*/
 // ESP32-C61 has 1 GPIO peripheral
 #define SOC_GPIO_PORT                      1U
-#define SOC_GPIO_PIN_COUNT                 25
+#define SOC_GPIO_PIN_COUNT                 22
 // #define SOC_GPIO_SUPPORT_PIN_GLITCH_FILTER 1 //TODO: [ESP32C61] IDF-9340
-// #define SOC_GPIO_FLEX_GLITCH_FILTER_NUM    8 //TODO: [ESP32C61] IDF-9340
 
 // GPIO peripheral has the ETM extension
 // #define SOC_GPIO_SUPPORT_ETM          1  //TODO: [ESP32C61] IDF-9340
@@ -202,10 +200,10 @@
 #define SOC_GPIO_IN_RANGE_MAX           21
 #define SOC_GPIO_OUT_RANGE_MAX          21
 
-#define SOC_GPIO_DEEP_SLEEP_WAKE_VALID_GPIO_MASK        (0ULL | BIT0 | BIT1 | BIT2 | BIT3 | BIT4 | BIT5 | BIT6 | BIT7)
+#define SOC_GPIO_DEEP_SLEEP_WAKE_VALID_GPIO_MASK        (0ULL | BIT0 | BIT1 | BIT2 | BIT3 | BIT4 | BIT5 | BIT6)
 
-// digital I/O pad powered by VDD3P3_CPU or VDD_SPI(GPIO_NUM_8~GPIO_NUM_30)
-#define SOC_GPIO_VALID_DIGITAL_IO_PAD_MASK 0x000000007FFFFF00ULL
+// digital I/O pad powered by VDD3P3_CPU or VDD_SPI(GPIO_NUM_7~GPIO_NUM_21)
+#define SOC_GPIO_VALID_DIGITAL_IO_PAD_MASK 0x00000000003FFF80ULL
 
 // Support to force hold all IOs
 #define SOC_GPIO_SUPPORT_FORCE_HOLD              (1)
@@ -368,12 +366,6 @@
 #define SOC_SHA_SUPPORT_SHA1            (1)
 #define SOC_SHA_SUPPORT_SHA224          (1)
 #define SOC_SHA_SUPPORT_SHA256          (1)
-
-/*-------------------------- Sigma Delta Modulator CAPS -----------------*/
-#define SOC_SDM_GROUPS               1U
-#define SOC_SDM_CHANNELS_PER_GROUP   4
-#define SOC_SDM_CLK_SUPPORT_PLL_F80M 1
-#define SOC_SDM_CLK_SUPPORT_XTAL     1
 
 /*-------------------------- SPI CAPS ----------------------------------------*/
 #define SOC_SPI_PERIPH_NUM          2

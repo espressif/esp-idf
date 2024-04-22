@@ -161,7 +161,7 @@ config SOC_GPIO_PORT
 
 config SOC_GPIO_PIN_COUNT
     int
-    default 25
+    default 22
 
 config SOC_GPIO_ETM_EVENTS_PER_GROUP
     int
@@ -189,7 +189,7 @@ config SOC_GPIO_DEEP_SLEEP_WAKE_VALID_GPIO_MASK
 
 config SOC_GPIO_VALID_DIGITAL_IO_PAD_MASK
     hex
-    default 0x000000007FFFFF00
+    default 0x00000000003FFF80
 
 config SOC_GPIO_SUPPORT_FORCE_HOLD
     bool
@@ -572,22 +572,6 @@ config SOC_SHA_SUPPORT_SHA224
     default y
 
 config SOC_SHA_SUPPORT_SHA256
-    bool
-    default y
-
-config SOC_SDM_GROUPS
-    int
-    default 1
-
-config SOC_SDM_CHANNELS_PER_GROUP
-    int
-    default 4
-
-config SOC_SDM_CLK_SUPPORT_PLL_F80M
-    bool
-    default y
-
-config SOC_SDM_CLK_SUPPORT_XTAL
     bool
     default y
 
