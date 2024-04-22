@@ -142,12 +142,13 @@ When the ULP is woken up, it will go through the following steps:
 
 .. list::
 
-    :CONFIG_ESP_ROM_HAS_LP_ROM: #. Unless :cpp:member:`ulp_lp_core_cfg_t::skip_lp_rom_boot` is specified: run ROM start-up code and jump to the entry point in LP RAM. ROM start-up code will initialize lp-uart as well as print boot messages.
+    :CONFIG_ESP_ROM_HAS_LP_ROM: #. Unless :cpp:member:`ulp_lp_core_cfg_t::skip_lp_rom_boot` is specified, run ROM start-up code and jump to the entry point in LP RAM. ROM start-up code will initialize LP UART as well as print boot messages.
     #. Initialize system feature, e.g., interrupts
     #. Call user code ``main()``
     #. Return from ``main()``
     #. If ``lp_timer_sleep_duration_us`` is specified, then configure the next wake-up alarm
     #. Call :cpp:func:`ulp_lp_core_halt`
+
 
 ULP LP-Core Peripheral Support
 ------------------------------
@@ -169,10 +170,10 @@ To enhance the capabilities of the ULP LP-Core coprocessor, it has access to per
 
     The ROM code is not executed if :cpp:member:`ulp_lp_core_cfg_t::skip_lp_rom_boot` is set to true. This is useful when you need the ULP to wake-up as quickly as possible and the extra overhead of initializing and printing is unwanted.
 
-    In addition to the boot-up code mentioned above the ROM code also provides the following functions and interfaces:
+    In addition to the boot-up code mentioned above, the ROM code also provides the following functions and interfaces:
 
-    * :component_file:`ROM.ld Interface <esp_rom/esp32p4/ld/esp32p4lp.rom.ld>`
-    * :component_file:`newlib.ld Interface <esp_rom/esp32p4/ld/esp32p4lp.rom.newlib.ld>`
+    * :component_file:`ROM.ld Interface <esp_rom/{IDF_TARGET_PATH_NAME}/ld/{IDF_TARGET_PATH_NAME}lp.rom.ld>`
+    * :component_file:`newlib.ld Interface <esp_rom/{IDF_TARGET_PATH_NAME}/ld/{IDF_TARGET_PATH_NAME}lp.rom.newlib.ld>`
 
     Since these functions are already present in LP-ROM no matter what, using these in your program allows you to reduce the RAM footprint of your ULP application.
 

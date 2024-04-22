@@ -140,20 +140,43 @@ ULP 有以下唤醒源：
 
 ULP 被唤醒时会经历以下步骤：
 
-1. 初始化系统功能，如中断
-2. 调用用户代码 ``main()``
-3. 从 ``main()`` 返回
-4. 如果指定了 ``lp_timer_sleep_duration_us``，则配置下一个唤醒闹钟
-5. 调用 :cpp:func:`ulp_lp_core_halt`
+.. list::
+
+    :CONFIG_ESP_ROM_HAS_LP_ROM: #. 除非已指定 :cpp:member:`ulp_lp_core_cfg_t::skip_lp_rom_boot`，否则运行 ROM 启动代码并跳转至 LP RAM 中的入口地址。ROM 启动代码将初始化 LP UART 并打印启动信息。
+    #. 初始化系统功能，如中断
+    #. 调用用户代码 ``main()``
+    #. 从 ``main()`` 返回
+    #. 如果指定了 ``lp_timer_sleep_duration_us``，则配置下一个唤醒闹钟
+    #. 调用 :cpp:func:`ulp_lp_core_halt`
+
 
 ULP LP-Core 支持的外设
 ------------------------------
 
 为了增强 ULP LP-Core 协处理器的功能，它可以访问在低功耗电源域运行的外设。ULP LP-Core 协处理器可以在主 CPU 处于睡眠模式时与这些外设进行交互，并在达到唤醒条件时唤醒主 CPU。以下为支持的外设：
 
- * LP IO
- * LP I2C
- * LP UART
+.. list::
+
+    * LP IO
+    * LP I2C
+    * LP UART
+
+.. only:: CONFIG_ESP_ROM_HAS_LP_ROM
+
+    ULP LP-Core ROM
+    ---------------
+
+    ULP LP-Core ROM 是位于 LP-ROM 中的一小段预编译代码，用户无法修改。与主 CPU 运行的引导加载程序 ROM 代码类似，ULP LP-Core ROM 也在 ULP LP-Core 协处理器启动时执行。该 ROM 代码会初始化 ULP LP-Core 协处理器，随后跳转到用户程序。如果已初始化 LP UART，该 ROM 代码还会打印启动信息。
+
+    如果已将 :cpp:member:`ulp_lp_core_cfg_t::skip_lp_rom_boot` 设置为真，则不会执行 ULP LP-Core ROM 代码。如需尽快唤醒 ULP，同时避免初始化和信息打印产生额外开销，则可使用这一功能。
+
+    除上述启动代码，ULP LP-Core ROM 代码还提供以下功能和接口：
+
+    * :component_file:`ROM.ld 接口 <esp_rom/{IDF_TARGET_PATH_NAME}/ld/{IDF_TARGET_PATH_NAME}lp.rom.ld>`
+    * :component_file:`newlib.ld 接口 <esp_rom/{IDF_TARGET_PATH_NAME}/ld/{IDF_TARGET_PATH_NAME}lp.rom.newlib.ld>`
+
+    在任何情况下，这些函数都存在于 LP-ROM 中，因此在程序中使用这些函数可以减少 ULP 应用程序的 RAM 占用。
+
 
 应用示例
 --------------------
