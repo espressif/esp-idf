@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -285,16 +285,20 @@ inline __attribute__((always_inline)) bool sleep_modem_wifi_modem_link_done(void
 bool modem_domain_pd_allowed(void)
 {
 #if SOC_PM_MODEM_RETENTION_BY_REGDMA
-    const uint32_t modules = sleep_retention_get_modules();
-    const uint32_t mask_wifi = (const uint32_t) (SLEEP_RETENTION_MODULE_WIFI_MAC |
-                                                 SLEEP_RETENTION_MODULE_WIFI_BB);
-    const uint32_t mask_ble = (const uint32_t) (SLEEP_RETENTION_MODULE_BLE_MAC |
-                                                SLEEP_RETENTION_MODULE_BT_BB);
-    const uint32_t mask_154 = (const uint32_t) (SLEEP_RETENTION_MODULE_802154_MAC |
-                                                SLEEP_RETENTION_MODULE_BT_BB);
-    return (((modules & mask_wifi) == mask_wifi) ||
-            ((modules & mask_ble)  == mask_ble) ||
-            ((modules & mask_154)  == mask_154));
+    const uint32_t inited_modules = sleep_retention_get_inited_modules();
+    const uint32_t created_modules = sleep_retention_get_created_modules();
+
+    uint32_t mask = 0;
+#if SOC_WIFI_SUPPORTED
+    mask |= BIT(SLEEP_RETENTION_MODULE_WIFI_MAC) | BIT(SLEEP_RETENTION_MODULE_WIFI_BB);
+#endif
+#if SOC_BT_SUPPORTED
+    mask |= BIT(SLEEP_RETENTION_MODULE_BLE_MAC) | BIT(SLEEP_RETENTION_MODULE_BT_BB);
+#endif
+#if SOC_IEEE802154_SUPPORTED
+    mask |= BIT(SLEEP_RETENTION_MODULE_802154_MAC) | BIT(SLEEP_RETENTION_MODULE_BT_BB);
+#endif
+    return ((inited_modules & mask) == (created_modules & mask));
 #else
     return false; /* MODEM power domain is controlled by each module (WiFi, Bluetooth or 15.4) of modem */
 #endif

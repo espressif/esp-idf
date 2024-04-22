@@ -18,6 +18,8 @@
 extern "C" {
 #endif
 
+#define GDMA_CH_RETENTION_GET_MODULE_ID(group_id, pair_id) (SLEEP_RETENTION_MODULE_GDMA_CH0 + (SOC_GDMA_PAIRS_PER_GROUP_MAX * group_id) + pair_id)
+
 #define GDMA_LL_GET_HW(id) (((id) == 0) ? (&GDMA) : NULL)
 
 #define GDMA_LL_CHANNEL_MAX_PRIORITY 5 // supported priority levels: [0,5]
