@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -31,7 +31,7 @@ typedef enum {
     HTTP_EVENT_ERROR = 0,       /*!< This event occurs when there are any errors during execution */
     HTTP_EVENT_ON_CONNECTED,    /*!< Once the HTTP has been connected to the server, no data exchange has been performed */
     HTTP_EVENT_HEADERS_SENT,     /*!< After sending all the headers to the server */
-    HTTP_EVENT_HEADER_SENT = HTTP_EVENT_HEADERS_SENT, /*!< This header has been kept for backward compatability
+    HTTP_EVENT_HEADER_SENT = HTTP_EVENT_HEADERS_SENT, /*!< This header has been kept for backward compatibility
                                                            and will be deprecated in future versions esp-idf */
     HTTP_EVENT_ON_HEADER,       /*!< Occurs when receiving each header sent from the server */
     HTTP_EVENT_ON_DATA,         /*!< Occurs when receiving data from the server, possibly multiple portions of the packet */
@@ -120,7 +120,7 @@ typedef enum {
 typedef enum {
     HTTP_AUTH_TYPE_NONE = 0,    /*!< No authention */
     HTTP_AUTH_TYPE_BASIC,       /*!< HTTP Basic authentication */
-    HTTP_AUTH_TYPE_DIGEST,      /*!< HTTP Disgest authentication */
+    HTTP_AUTH_TYPE_DIGEST,      /*!< HTTP Digest authentication */
 } esp_http_client_auth_type_t;
 
 /**
@@ -238,7 +238,7 @@ esp_http_client_handle_t esp_http_client_init(const esp_http_client_config_t *co
  *             must be set while making a call to esp_http_client_init() API.
  *             You can do any amount of calls to esp_http_client_perform while using the same esp_http_client_handle_t. The underlying connection may be kept open if the server allows it.
  *             If you intend to transfer more than one file, you are even encouraged to do so.
- *             esp_http_client will then attempt to re-use the same connection for the following transfers, thus making the operations faster, less CPU intense and using less network resources.
+ *             esp_http_client will then attempt to reuse the same connection for the following transfers, thus making the operations faster, less CPU intense and using less network resources.
  *             Just note that you will have to use `esp_http_client_set_**` between the invokes to set options for the following esp_http_client_perform.
  *
  * @note       You must never call this function simultaneously from two places using the same client handle.
@@ -601,7 +601,7 @@ esp_http_client_transport_t esp_http_client_get_transport_type(esp_http_client_h
  * @brief      Set redirection URL.
  *             When received the 30x code from the server, the client stores the redirect URL provided by the server.
  *             This function will set the current URL to redirect to enable client to execute the redirection request.
- *             When `disable_auto_redirect` is set, the client will not call this function but the event `HTTP_EVENT_REDIRECT` will be dispatched giving the user contol over the redirection event.
+ *             When `disable_auto_redirect` is set, the client will not call this function but the event `HTTP_EVENT_REDIRECT` will be dispatched giving the user control over the redirection event.
  *
  * @param[in]  client  The esp_http_client handle
  *
@@ -610,6 +610,18 @@ esp_http_client_transport_t esp_http_client_get_transport_type(esp_http_client_h
  *     - ESP_FAIL
  */
 esp_err_t esp_http_client_set_redirection(esp_http_client_handle_t client);
+
+/**
+ * @brief      Reset the redirection counter.
+ *             This is useful to reset redirect counter in cases where the same handle is used for multiple requests.
+ *
+ * @param[in]  client  The esp_http_client handle
+ *
+ * @return
+ *     - ESP_OK
+ *     - ESP_ERR_INVALID_ARG
+ */
+esp_err_t esp_http_client_reset_redirect_counter(esp_http_client_handle_t client);
 
 /**
  * @brief      On receiving a custom authentication header, this API can be invoked to set the
@@ -665,7 +677,7 @@ int esp_http_client_read_response(esp_http_client_handle_t client, char *buffer,
 /**
  * @brief       Process all remaining response data
  *              This uses an internal buffer to repeatedly receive, parse, and discard response data until complete data is processed.
- *              As no additional user-supplied buffer is required, this may be preferrable to `esp_http_client_read_response` in situations where the content of the response may be ignored.
+ *              As no additional user-supplied buffer is required, this may be preferable to `esp_http_client_read_response` in situations where the content of the response may be ignored.
  *
  * @param[in]  client  The esp_http_client handle
  * @param      len     Length of data discarded
