@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -957,9 +957,19 @@ esp_err_t esp_http_client_set_redirection(esp_http_client_handle_t client)
     return err;
 }
 
+esp_err_t esp_http_client_reset_redirect_counter(esp_http_client_handle_t client)
+{
+    if (client == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    client->redirect_counter = 0;
+    return ESP_OK;
+}
+
 static esp_err_t esp_http_check_response(esp_http_client_handle_t client)
 {
     if (client->response->status_code >= HttpStatus_Ok && client->response->status_code < HttpStatus_MultipleChoices) {
+        client->redirect_counter = 0;
         return ESP_OK;
     }
     if (client->redirect_counter >= client->max_redirection_count) {
