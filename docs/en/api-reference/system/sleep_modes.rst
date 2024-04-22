@@ -37,7 +37,7 @@ In Deep-sleep mode, the CPUs, most of the RAM, and all digital peripherals that 
     Wi-Fi/Bluetooth and Sleep Modes
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-    In Deep-sleep and Light-sleep modes, the wireless peripherals are powered down. Before entering Deep-sleep or Light-sleep modes, the application must disable Wi-Fi and Bluetooth using the appropriate calls (i.e., :cpp:func:`esp_bluedroid_disable`, :cpp:func:`esp_bt_controller_disable`, :cpp:func:`esp_wifi_stop`). Wi-Fi and Bluetooth connections are not maintained in Deep-sleep or Light-sleep mode, even if these functions are not called.
+    In Deep-sleep and Light-sleep modes, the wireless peripherals are powered down. Before entering Deep-sleep or Light-sleep modes, the application must disable Wi-Fi and Bluetooth using the appropriate calls (i.e., :cpp:func:`nimble_port_stop`, :cpp:func:`nimble_port_deinit`, :cpp:func:`esp_bluedroid_disable`, :cpp:func:`esp_bluedroid_deinit`, :cpp:func:`esp_bt_controller_disable`, :cpp:func:`esp_bt_controller_deinit`, :cpp:func:`esp_wifi_stop`). Wi-Fi and Bluetooth connections are not maintained in Deep-sleep or Light-sleep mode, even if these functions are not called.
 
     If Wi-Fi/Bluetooth connections need to be maintained, enable Wi-Fi/Bluetooth Modem-sleep mode and automatic Light-sleep feature (see :doc:`Power Management APIs <power_management>`). This allows the system to wake up from sleep automatically when required by the Wi-Fi/Bluetooth driver, thereby maintaining the connection.
 
