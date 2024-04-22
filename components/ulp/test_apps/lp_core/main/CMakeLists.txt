@@ -4,6 +4,10 @@ if(CONFIG_SOC_LP_I2C_SUPPORTED)
     list(APPEND app_sources "test_lp_core_i2c.c")
 endif()
 
+if(CONFIG_SOC_ULP_LP_UART_SUPPORTED)
+    list(APPEND app_sources "test_lp_core_uart.c")
+endif()
+
 set(lp_core_sources         "lp_core/test_main.c")
 set(lp_core_sources_counter "lp_core/test_main_counter.c")
 
@@ -15,6 +19,10 @@ set(lp_core_sources_gpio "lp_core/test_main_gpio.c")
 
 if(CONFIG_SOC_LP_I2C_SUPPORTED)
     set(lp_core_sources_i2c "lp_core/test_main_i2c.c")
+endif()
+
+if(CONFIG_SOC_ULP_LP_UART_SUPPORTED)
+    set(lp_core_sources_uart "lp_core/test_main_uart.c")
 endif()
 
 idf_component_register(SRCS ${app_sources}
@@ -35,4 +43,8 @@ ulp_embed_binary(lp_core_test_app_gpio "${lp_core_sources_gpio}" "${lp_core_exp_
 
 if(CONFIG_SOC_LP_I2C_SUPPORTED)
     ulp_embed_binary(lp_core_test_app_i2c "${lp_core_sources_i2c}" "${lp_core_exp_dep_srcs}")
+endif()
+
+if(CONFIG_SOC_ULP_LP_UART_SUPPORTED)
+    ulp_embed_binary(lp_core_test_app_uart "${lp_core_sources_uart}" "${lp_core_exp_dep_srcs}")
 endif()
