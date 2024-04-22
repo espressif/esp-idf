@@ -307,20 +307,6 @@ static int ws_connect(esp_transport_handle_t t, const char *host, int port, int 
         return -1;
     }
 
-    if (delim_ptr != NULL) {
-        size_t delim_pos = delim_ptr - ws->buffer + sizeof(delimiter) - 1;
-        size_t remaining_len = ws->buffer_len - delim_pos;
-        if (remaining_len > 0) {
-            memmove(ws->buffer, ws->buffer + delim_pos, remaining_len);
-            ws->buffer_len = remaining_len;
-        } else {
-#ifdef CONFIG_WS_DYNAMIC_BUFFER
-            free(ws->buffer);
-            ws->buffer = NULL;
-#endif
-            ws->buffer_len = 0;
-        }
-    }
     // See esp_crypto_sha1() arg size
     unsigned char expected_server_sha1[20];
     // Size of base64 coded string see above
@@ -340,6 +326,22 @@ static int ws_connect(esp_transport_handle_t t, const char *host, int port, int 
         ESP_LOGE(TAG, "Invalid websocket key");
         return -1;
     }
+
+    if (delim_ptr != NULL) {
+        size_t delim_pos = delim_ptr - ws->buffer + sizeof(delimiter) - 1;
+        size_t remaining_len = ws->buffer_len - delim_pos;
+        if (remaining_len > 0) {
+            memmove(ws->buffer, ws->buffer + delim_pos, remaining_len);
+            ws->buffer_len = remaining_len;
+        } else {
+#ifdef CONFIG_WS_DYNAMIC_BUFFER
+            free(ws->buffer);
+            ws->buffer = NULL;
+#endif
+            ws->buffer_len = 0;
+        }
+    }
+
     return 0;
 }
 
