@@ -54,6 +54,7 @@ class AppUploader(AppDownloader):
             'flasher_args.json',
             'flash_project_args',
             'config/sdkconfig.json',
+            'sdkconfig',
             'project_description.json',
         ],
         ArtifactType.LOGS: [

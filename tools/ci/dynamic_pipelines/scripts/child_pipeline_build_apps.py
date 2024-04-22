@@ -1,12 +1,12 @@
 # SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-
 import argparse
 import sys
 
 import __init__  # noqa: F401 # inject the system path
 from dynamic_pipelines.constants import TEST_RELATED_APPS_FILENAME
-from idf_build_apps import build_apps, setup_logging
+from idf_build_apps import build_apps
+from idf_build_apps import setup_logging
 from idf_build_apps.utils import semicolon_separated_str_to_list
 from idf_ci.app import import_apps_from_txt
 from idf_pytest.constants import DEFAULT_IGNORE_WARNING_FILEPATH
@@ -69,5 +69,6 @@ if __name__ == '__main__':
             collect_size_info='size_info_@p.txt',
             collect_app_info=args.collect_app_info,
             junitxml=args.junitxml,
+            copy_sdkconfig=True,
         )
     )
