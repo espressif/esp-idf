@@ -85,7 +85,7 @@ Error message will typically look like this::
 ``ESP_RETURN_ON_ERROR`` Macro
 -----------------------------
 
-:c:macro:`ESP_RETURN_ON_ERROR` macro checks the error code, if the error code is not equal :c:macro:`ESP_OK`, it prints the message and returns.
+:c:macro:`ESP_RETURN_ON_ERROR` macro checks the error code, if the error code is not equal :c:macro:`ESP_OK`, it prints the message and returns the error code.
 
 
 .. _esp-goto-on-error-macro:
