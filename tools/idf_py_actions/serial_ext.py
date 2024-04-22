@@ -1,17 +1,23 @@
-# SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-
 import json
 import os
 import shlex
 import signal
 import sys
-from typing import Any, Dict, List, Optional
+from typing import Any
+from typing import Dict
+from typing import List
+from typing import Optional
 
 import click
 from idf_py_actions.global_options import global_options
-from idf_py_actions.tools import (PropertyDict, RunTool, ensure_build_directory, get_default_serial_port,
-                                  get_sdkconfig_value, run_target)
+from idf_py_actions.tools import ensure_build_directory
+from idf_py_actions.tools import get_default_serial_port
+from idf_py_actions.tools import get_sdkconfig_value
+from idf_py_actions.tools import PropertyDict
+from idf_py_actions.tools import run_target
+from idf_py_actions.tools import RunTool
 
 PYTHON = sys.executable
 
@@ -34,7 +40,7 @@ PORT = {
 }
 
 
-def yellow_print(message, newline='\n'):  # type: (str, Optional[str]) -> None
+def yellow_print(message: str, newline: Optional[str]='\n') -> None:
     """Print a message to stderr with yellow highlighting """
     sys.stderr.write('%s%s%s%s' % ('\033[0;33m', message, '\033[0m', newline))
     sys.stderr.flush()
@@ -212,6 +218,47 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
         ensure_build_directory(args, ctx.info_name)
         run_target(target_name, args, {'ESPBAUD': str(args.baud), 'ESPPORT': args.port})
 
+    def merge_bin(action: str,
+                  ctx: click.core.Context,
+                  args: PropertyDict,
+                  output: str,
+                  format: str,
+                  md5_disable: str,
+                  flash_offset: str,
+                  fill_flash_size: str) -> None:
+        ensure_build_directory(args, ctx.info_name)
+        project_desc = _get_project_desc(ctx, args)
+        merge_bin_args = [PYTHON, '-m', 'esptool']
+        target = project_desc['target']
+        merge_bin_args += ['--chip', target]
+        merge_bin_args += ['merge_bin']  # needs to be after the --chip option
+        if not output:
+            if format in ('raw', 'uf2'):
+                output = 'merged-binary.bin'
+            elif format == 'hex':
+                output = 'merged-binary.hex'
+        merge_bin_args += ['-o', output]
+        if format:
+            merge_bin_args += ['-f', format]
+        if md5_disable:
+            if format != 'uf2':
+                yellow_print('idf.py merge-bin: --md5-disable is only valid for UF2 format. Option will be ignored.')
+            else:
+                merge_bin_args += ['--md5-disable']
+        if flash_offset:
+            if format != 'raw':
+                yellow_print('idf.py merge-bin: --flash-offset is only valid for RAW format. Option will be ignored.')
+            else:
+                merge_bin_args += ['-t', flash_offset]
+        if fill_flash_size:
+            if format != 'raw':
+                yellow_print('idf.py merge-bin: --fill-flash-size is only valid for RAW format, option will be ignored.')
+            else:
+                merge_bin_args += ['--fill-flash-size', fill_flash_size]
+        merge_bin_args += ['@flash_args']
+        print(f'Merged binary {output} will be created in the build directory...')
+        RunTool('merge_bin', merge_bin_args, args.build_dir, build_dir=args.build_dir, hints=not args.no_hints)()
+
     BAUD_AND_PORT = [BAUD_RATE, PORT]
     flash_options = BAUD_AND_PORT + [
         {
@@ -251,6 +298,37 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
                 'hidden': True,
                 'help': 'Erase entire flash chip.',
                 'options': BAUD_AND_PORT,
+            },
+            'merge-bin': {
+                'callback': merge_bin,
+                'options': [
+                    {
+                        'names': ['--output', '-o'],
+                        'help': ('Output filename'),
+                        'type': click.Path(),
+                    },
+                    {
+                        'names': ['--format', '-f'],
+                        'help': ('Format of the output file'),
+                        'type': click.Choice(['hex', 'uf2', 'raw']),
+                        'default': 'raw',
+                    },
+                    {
+                        'names': ['--md5-disable'],
+                        'is_flag': True,
+                        'help': ('[ONLY UF2] Disable MD5 checksum in UF2 output.'),
+                    },
+                    {
+                        'names': ['--flash-offset', '-t'],
+                        'help': ('[ONLY RAW] Flash offset where the output file will be flashed.'),
+                    },
+                    {
+                        'names': ['--fill-flash-size'],
+                        'help': ('[ONLY RAW] If set, the final binary file will be padded with FF bytes up to this flash size.'),
+                        'type': click.Choice(['256KB', '512KB', '1MB', '2MB', '4MB', '8MB', '16MB', '32MB', '64MB', '128MB']),
+                    },
+                ],
+                'dependencies': ['all'],  # all = build
             },
             'monitor': {
                 'callback':

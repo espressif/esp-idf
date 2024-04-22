@@ -305,3 +305,13 @@ def test_save_defconfig_check(idf_py: IdfPyFunc, test_app_copy: Path) -> None:
         'Missing CONFIG_IDF_TARGET="esp32c3" in sdkconfig.defaults'
     assert file_contains(test_app_copy / 'sdkconfig.defaults', 'CONFIG_PARTITION_TABLE_OFFSET=0x8001'), \
         'Missing CONFIG_PARTITION_TABLE_OFFSET=0x8001 in sdkconfig.defaults'
+
+
+def test_merge_bin_cmd(idf_py: IdfPyFunc, test_app_copy: Path) -> None:
+    logging.info('Test if merge-bin command works correctly')
+    idf_py('merge-bin')
+    assert (test_app_copy / 'build' / 'merged-binary.bin').is_file()
+    idf_py('merge-bin', '--output', 'merged-binary-2.bin')
+    assert (test_app_copy / 'build' / 'merged-binary-2.bin').is_file()
+    idf_py('merge-bin', '--format', 'hex')
+    assert (test_app_copy / 'build' / 'merged-binary.hex').is_file()
