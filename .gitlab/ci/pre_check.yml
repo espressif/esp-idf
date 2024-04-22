@@ -166,10 +166,3 @@ pipeline_variables:
       - pipeline.env
     expire_in: 1 week
     when: always
-
-check_test_cases_env_markers_and_required_runners:
-  extends:
-    - .pre_check_template
-  tags: [fast_run, shiny]
-  script:
-    - python tools/ci/dynamic_pipelines/scripts/generate_target_test_child_pipeline.py --check

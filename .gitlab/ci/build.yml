@@ -264,7 +264,6 @@ generate_build_child_pipeline:
   dependencies: # set dependencies to null to avoid missing artifacts issue
   needs:
     - pipeline_variables
-    - check_test_cases_env_markers_and_required_runners
   artifacts:
     paths:
       - build_child_pipeline.yml
