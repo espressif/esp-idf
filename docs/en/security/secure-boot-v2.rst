@@ -37,6 +37,10 @@ Secure Boot V2
 
     ``Secure Boot V2`` is available for ESP32-C3 from ECO3 onwards. To use these options in menuconfig, set :ref:`CONFIG_ESP32C3_REV_MIN` greater than or equal to `Rev 3`.
 
+.. note::
+
+    In this guide, most used commands are in the form of ``idf.py secure-<command>``, which is a wrapper around corresponding ``espsecure.py <command>``. The idf.py-based commands provides more user-friendly experience, although may lack some of the advanced functionality of their espsecure.py-based counterparts.
+
 Background
 ----------
 
@@ -378,7 +382,7 @@ How To Enable Secure Boot V2
 
 5. Set other menuconfig options (as desired). Then exit menuconfig and save your configuration.
 
-6. The first time you run ``idf.py build``, if the signing key is not found then an error message will be printed with a command to generate a signing key via ``espsecure.py generate_signing_key``.
+6. The first time you run ``idf.py build``, if the signing key is not found then an error message will be printed with a command to generate a signing key via ``idf.py secure-generate-signing-key``.
 
 .. important::
    A signing key generated this way will use the best random number source available to the OS and its Python installation (`/dev/urandom` on OSX/Linux and `CryptGenRandom()` on Windows). If this random number source is weak, then the private key will be weak.
@@ -422,7 +426,7 @@ Restrictions After Secure Boot Is Enabled
 Generating Secure Boot Signing Key
 ----------------------------------
 
-The build system will prompt you with a command to generate a new signing key via ``espsecure.py generate_signing_key``.
+The build system will prompt you with a command to generate a new signing key via ``idf.py secure-generate-signing-key``.
 
 .. only:: esp32 or SOC_SECURE_BOOT_V2_RSA
 
@@ -465,20 +469,20 @@ Remember that the strength of the Secure Boot system depends on keeping the sign
 Remote Signing of Images
 ------------------------
 
-Signing Using ``espsecure.py``
+Signing Using ``idf.py``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 For production builds, it can be good practice to use a remote signing server rather than have the signing key on the build machine (which is the default esp-idf Secure Boot configuration). The espsecure.py command line program can be used to sign app images & partition table data for Secure Boot, on a remote system.
 
 To use remote signing, disable the option :ref:`CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES` and build the firmware. The private signing key does not need to be present on the build system.
 
-After the app image and partition table are built, the build system will print signing steps using espsecure.py::
+After the app image and partition table are built, the build system will print signing steps using idf.py::
 
-  espsecure.py sign_data BINARY_FILE --version 2 --keyfile PRIVATE_SIGNING_KEY
+  idf.py secure-sign-data BINARY_FILE --keyfile PRIVATE_SIGNING_KEY
 
 The above command appends the image signature to the existing binary. You can use the `--output` argument to write the signed binary to a separate file::
 
-  espsecure.py sign_data --version 2 --keyfile PRIVATE_SIGNING_KEY --output SIGNED_BINARY_FILE BINARY_FILE
+  idf.py secure-sign-data --keyfile PRIVATE_SIGNING_KEY --output SIGNED_BINARY_FILE BINARY_FILE
 
 Signing Using Pre-calculated Signatures
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -487,7 +491,7 @@ If you have valid pre-calculated signatures generated for an image and their cor
 
 In such cases, the firmware image should be built by disabling the option :ref:`CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES`. This image will be secure-padded and to generate a signed binary use the following command::
 
-  espsecure.py sign_data --version 2 --pub-key PUBLIC_SIGNING_KEY --signature SIGNATURE_FILE --output SIGNED_BINARY_FILE BINARY_FILE
+  idf.py secure-sign-data --pub-key PUBLIC_SIGNING_KEY --signature SIGNATURE_FILE --output SIGNED_BINARY_FILE BINARY_FILE
 
 The above command verifies the signature, generates a signature block (refer to :ref:`signature-block-format`) and appends it to the binary file.
 
@@ -514,7 +518,7 @@ Secure Boot Best Practices
 
 * Generate the signing key on a system with a quality source of entropy.
 * Keep the signing key private at all times. A leak of this key will compromise the Secure Boot system.
-* Do not allow any third party to observe any aspects of the key generation or signing process using espsecure.py. Both processes are vulnerable to timing or other side-channel attacks.
+* Do not allow any third party to observe any aspects of the key generation or signing process using ``idf.py secure-`` commands. Both processes are vulnerable to timing or other side-channel attacks.
 * Enable all Secure Boot options in the Secure Boot Configuration. These include flash encryption, disabling of JTAG, disabling BASIC ROM interpreter, and disabling the UART bootloader encrypted flash access.
 * Use Secure Boot in combination with :doc:`flash-encryption` to prevent local readout of the flash contents.
 
@@ -536,8 +540,8 @@ Secure Boot Best Practices
 
     * The bootloader should be signed with all the private key(s) that are needed for the life of the device, before it is flashed.
     * The build system can sign with at most one private key, user has to run manual commands to append more signatures if necessary.
-    * You can use the append functionality of ``espsecure.py``, this command would also printed at the end of the Secure Boot V2 enabled bootloader compilation.
-        espsecure.py sign_data -k secure_boot_signing_key2.pem -v 2 --append_signatures -o signed_bootloader.bin build/bootloader/bootloader.bin
+    * You can use the append functionality of ``idf.py secure-sign-data``, this command would also printed at the end of the Secure Boot V2 enabled bootloader compilation.
+        idf.py secure-sign-data -k secure_boot_signing_key2.pem --append_signatures -o signed_bootloader.bin build/bootloader/bootloader.bin
     * While signing with multiple private keys, it is recommended that the private keys be signed independently, if possible on different servers and stored separately.
     * You can check the signatures attached to a binary using -
         espsecure.py signature_info_v2 datafile.bin
@@ -595,11 +599,11 @@ Manual Commands
 
 Secure boot is integrated into the esp-idf build system, so ``idf.py build`` will sign an app image and ``idf.py bootloader`` will produce a signed bootloader if secure signed binaries on build is enabled.
 
-However, it is possible to use the ``espsecure.py`` tool to make standalone signatures and digests.
+However, it is possible to use the ``idf.py`` tool to make standalone signatures and digests.
 
 To sign a binary image::
 
-  espsecure.py sign_data --version 2 --keyfile ./my_signing_key.pem --output ./image_signed.bin image-unsigned.bin
+  idf.py secure-sign-data --keyfile ./my_signing_key.pem --output ./image_signed.bin image-unsigned.bin
 
 Keyfile is the PEM file containing an {IDF_TARGET_SBV2_KEY} private signing key.
 
