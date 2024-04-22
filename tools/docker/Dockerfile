@@ -41,10 +41,10 @@ RUN : \
 
 # To build the image for a branch or a tag of IDF, pass --build-arg IDF_CLONE_BRANCH_OR_TAG=name.
 # To build the image with a specific commit ID of IDF, pass --build-arg IDF_CHECKOUT_REF=commit-id.
-# It is possibe to combine both, e.g.:
+# It is possible to combine both, e.g.:
 #   IDF_CLONE_BRANCH_OR_TAG=release/vX.Y
 #   IDF_CHECKOUT_REF=<some commit on release/vX.Y branch>.
-# Use IDF_CLONE_SHALLOW=1 to peform shallow clone (i.e. --depth=1 --shallow-submodules)
+# Use IDF_CLONE_SHALLOW=1 to perform shallow clone (i.e. --depth=1 --shallow-submodules)
 # Use IDF_CLONE_SHALLOW_DEPTH=X to define the depth if IDF_CLONE_SHALLOW is used (i.e. --depth=X)
 # Use IDF_INSTALL_TARGETS to install tools only for selected chip targets (CSV)
 
@@ -102,5 +102,7 @@ ENV IDF_PYTHON_CHECK_CONSTRAINTS=no
 ENV IDF_CCACHE_ENABLE=1
 
 COPY entrypoint.sh /opt/esp/entrypoint.sh
+RUN chmod u+x /opt/esp/entrypoint.sh
+
 ENTRYPOINT [ "/opt/esp/entrypoint.sh" ]
 CMD [ "/bin/bash" ]
