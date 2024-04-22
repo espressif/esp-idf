@@ -58,24 +58,24 @@ ELF 格式具备扩展特性，支持在发生崩溃时保存更多关于错误�
 
    如果使用了独立的栈，建议栈大小应大于 1300 字节，确保核心转储例程本身不会导致栈溢出。
 
+.. only:: not esp32c5
 
-Core Dump Memory Regions
-^^^^^^^^^^^^^^^^^^^^^^^^
+    核心转储内存区域
+    ^^^^^^^^^^^^^^^^
 
-By default, core dumps typically save CPU registers, tasks data and summary of the panic reason. When the :ref:`CONFIG_ESP_COREDUMP_CAPTURE_DRAM` option is selected, ``.bss`` and ``.data`` sections and ``heap`` data will also be part of the dump.
+    核心转储默认保存 CPU 寄存器、任务数据和崩溃原因。选择 :ref:`CONFIG_ESP_COREDUMP_CAPTURE_DRAM` 选项后，``.bss`` 段和 ``.data`` 段以及 ``heap`` 数据也将保存到转储中。
 
-For a better debugging experience, it is recommended to dump these sections. However, this will result in a larger coredump file. The required additional storage space may vary based on the amount of DRAM the application uses.
-
-.. note::
+    推荐将上面提到的几个数据段都保存到核心转储中，以方便调试。但这会导致核心转储文件变大，具体所需的额外存储空间取决于应用程序使用的 DRAM 大小。
 
     .. only:: SOC_SPIRAM_SUPPORTED
 
-        Apart from the crashed task's TCB and stack, data located in the external RAM will not be stored in the core dump file, this include variables defined with ``EXT_RAM_BSS_ATTR`` or ``EXT_RAM_NOINIT_ATTR`` attributes, as well as any data stored in the ``extram_bss`` section.
+        .. note::
 
-.. note::
+            除了崩溃任务的 TCB 和栈外，位于外部 RAM 中的数据不会保存到核心转储文件中，包括使用 ``EXT_RAM_BSS_ATTR`` 或 ``EXT_RAM_NOINIT_ATTR`` 属性定义的变量，以及存储在 ``extram_bss`` 段中的任何数据。
 
-    This feature is only enabled when using the ELF file format.
+    .. note::
 
+        该功能仅在使用 ELF 文件格式时可用。
 
 将核心转储保存到 flash
 -----------------------
