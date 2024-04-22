@@ -172,7 +172,7 @@ config BTDM_CTRL_PINNED_TO_CORE
 choice BTDM_CTRL_HCI_MODE_CHOICE
     prompt "HCI mode"
     help
-        Speicify HCI mode as VHCI or UART(H4)
+        Specify HCI mode as VHCI or UART(H4)
 
     config BTDM_CTRL_HCI_MODE_VHCI
         bool "VHCI"
@@ -397,6 +397,14 @@ config BTDM_CTRL_FULL_SCAN_SUPPORTED
     help
         The full scan function is mainly used to provide BLE scan performance.
         This is required for scenes with high scan performance requirements, such as BLE Mesh scenes.
+
+config BTDM_CTRL_SCAN_BACKOFF_UPPERLIMITMAX
+    bool "Disable active scan backoff"
+    default n
+    help
+        Disable active scan backoff. The bluetooth spec requires that scanners should run a backoff procedure to
+        minimize collision of scan request PDUs from nultiple scanners. If scan backoff is disabled, in active
+        scanning, scan request PDU will be sent every time when HW receives scannable ADV PDU.
 
 config BTDM_BLE_ADV_REPORT_FLOW_CTRL_SUPP
     bool "BLE adv report flow control supported"
