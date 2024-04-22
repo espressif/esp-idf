@@ -136,7 +136,7 @@ static esp_err_t s_af_process(void *arg, int *out_definition_thresh, int *out_lu
             af_current_best = af_current;
         }
 
-        ESP_LOGV(TAG, "af_sum: %"PRId32", af_current: %"PRId32".%"PRId32, af_sum, (int)af_current, (int)((int)(af_current * 1000) % 1000));
+        ESP_LOGV(TAG, "af_sum: %d, af_current: %d.%d", af_sum, (int)af_current, (int)((int)(af_current * 1000) % 1000));
     }
 
     // second search
