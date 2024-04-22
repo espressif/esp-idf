@@ -18,6 +18,7 @@
 #include "esp_async_memcpy.h"
 #include "soc/soc_caps.h"
 #include "hal/dma_types.h"
+#include "esp_dma_utils.h"
 
 #define IDF_LOG_PERFORMANCE(item, value_fmt, value, ...) \
     printf("[Performance][%s]: " value_fmt "\n", item, value, ##__VA_ARGS__)
@@ -26,10 +27,7 @@
 #define ALIGN_DOWN(size, align)  ((size) & ~((align) - 1))
 
 #if CONFIG_IDF_TARGET_ESP32P4
-#define TEST_MEMCPY_DST_BASE_ALIGN 64
 #define TEST_MEMCPY_BUFFER_SIZE_MUST_ALIGN_CACHE 1
-#else
-#define TEST_MEMCPY_DST_BASE_ALIGN 4
 #endif
 
 typedef struct {
@@ -56,23 +54,23 @@ static void async_memcpy_setup_testbench(memcpy_testbench_context_t *test_contex
     uint8_t *dst_buf = NULL;
     uint8_t *from_addr = NULL;
     uint8_t *to_addr = NULL;
-#if CONFIG_SPIRAM && SOC_AHB_GDMA_SUPPORT_PSRAM
+
+    esp_dma_mem_info_t mem_info = {
+        .dma_alignment_bytes = test_context->align,
+    };
     if (test_context->src_in_psram) {
-        src_buf = heap_caps_aligned_alloc(test_context->align, buffer_size, MALLOC_CAP_SPIRAM);
+        mem_info.extra_heap_caps = MALLOC_CAP_SPIRAM;
     } else {
-        src_buf = heap_caps_aligned_alloc(test_context->align, buffer_size, MALLOC_CAP_8BIT | MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
+        mem_info.extra_heap_caps = 0;
     }
+    TEST_ESP_OK(esp_dma_capable_calloc(1, buffer_size, &mem_info, (void **)&src_buf, NULL));
     if (test_context->dst_in_psram) {
-        dst_buf = heap_caps_aligned_alloc(test_context->align, buffer_size, MALLOC_CAP_SPIRAM);
+        mem_info.extra_heap_caps = MALLOC_CAP_SPIRAM;
     } else {
-        dst_buf = heap_caps_aligned_alloc(test_context->align, buffer_size, MALLOC_CAP_8BIT | MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
+        mem_info.extra_heap_caps = 0;
     }
-#else
-    src_buf = heap_caps_aligned_alloc(test_context->align, buffer_size, MALLOC_CAP_8BIT | MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
-    dst_buf = heap_caps_aligned_alloc(test_context->align, buffer_size, MALLOC_CAP_8BIT | MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
-#endif
-    TEST_ASSERT_NOT_NULL_MESSAGE(src_buf, "allocate source buffer failed");
-    TEST_ASSERT_NOT_NULL_MESSAGE(dst_buf, "allocate destination buffer failed");
+    TEST_ESP_OK(esp_dma_capable_calloc(1, buffer_size, &mem_info, (void **)&dst_buf, NULL));
+
     // adding extra offset
     from_addr = src_buf + test_context->offset;
     to_addr = dst_buf;
@@ -113,8 +111,13 @@ TEST_CASE("memory copy the same buffer with different content", "[async mcp]")
     async_memcpy_config_t config = ASYNC_MEMCPY_DEFAULT_CONFIG();
     async_memcpy_handle_t driver = NULL;
     TEST_ESP_OK(esp_async_memcpy_install(&config, &driver));
-    uint8_t *sbuf = heap_caps_aligned_alloc(TEST_MEMCPY_DST_BASE_ALIGN, 256, MALLOC_CAP_8BIT | MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
-    uint8_t *dbuf = heap_caps_aligned_alloc(TEST_MEMCPY_DST_BASE_ALIGN, 256, MALLOC_CAP_8BIT | MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
+    uint8_t *sbuf = NULL;
+    uint8_t *dbuf = NULL;
+    esp_dma_mem_info_t mem_info = {
+        .dma_alignment_bytes = 4,
+    };
+    TEST_ESP_OK(esp_dma_capable_calloc(1, 256, &mem_info, (void **)&sbuf, NULL));
+    TEST_ESP_OK(esp_dma_capable_calloc(1, 256, &mem_info, (void **)&dbuf, NULL));
     for (int j = 0; j < 20; j++) {
         TEST_ESP_OK(esp_async_memcpy(driver, dbuf, sbuf, 256, NULL, NULL));
         vTaskDelay(pdMS_TO_TICKS(10));
@@ -136,7 +139,7 @@ static void test_memory_copy_one_by_one(async_memcpy_handle_t driver)
 {
     uint32_t aligned_test_buffer_size[] = {256, 512, 1024, 2048, 4096};
     memcpy_testbench_context_t test_context = {
-        .align = TEST_MEMCPY_DST_BASE_ALIGN,
+        .align = 4,
     };
 
     for (int i = 0; i < sizeof(aligned_test_buffer_size) / sizeof(aligned_test_buffer_size[0]); i++) {
@@ -216,9 +219,13 @@ TEST_CASE("memory copy done callback", "[async mcp]")
     async_memcpy_handle_t driver = NULL;
     TEST_ESP_OK(esp_async_memcpy_install(&config, &driver));
 
-    uint8_t *src_buf = heap_caps_aligned_alloc(TEST_MEMCPY_DST_BASE_ALIGN, 256, MALLOC_CAP_8BIT | MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
-    // destination address should aligned to data cache line
-    uint8_t *dst_buf = heap_caps_aligned_alloc(TEST_MEMCPY_DST_BASE_ALIGN, 256, MALLOC_CAP_8BIT | MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
+    uint8_t *src_buf = NULL;
+    uint8_t *dst_buf = NULL;
+    esp_dma_mem_info_t mem_info = {
+        .dma_alignment_bytes = 4,
+    };
+    TEST_ESP_OK(esp_dma_capable_calloc(1, 256, &mem_info, (void **)&src_buf, NULL));
+    TEST_ESP_OK(esp_dma_capable_calloc(1, 256, &mem_info, (void **)&dst_buf, NULL));
 
     SemaphoreHandle_t sem = xSemaphoreCreateBinary();
     TEST_ESP_OK(esp_async_memcpy(driver, dst_buf, src_buf, 256, test_async_memcpy_cb_v1, sem));
@@ -235,38 +242,39 @@ TEST_CASE("memory copy by DMA on the fly", "[async mcp]")
     async_memcpy_handle_t driver = NULL;
     TEST_ESP_OK(esp_async_memcpy_install(&config, &driver));
 
-    uint32_t test_buffer_len[] = {512, 1024, 2048, 4096, 5011};
+    uint32_t aligned_test_buffer_size[] = {512, 1024, 2048, 4096, 4608};
     memcpy_testbench_context_t test_context[5] = {
         [0 ... 4] = {
-            .align = TEST_MEMCPY_DST_BASE_ALIGN,
+            .align = 4,
         }
     };
 
     // Aligned case
-    for (int i = 0; i < sizeof(test_buffer_len) / sizeof(test_buffer_len[0]); i++) {
+    for (int i = 0; i < sizeof(aligned_test_buffer_size) / sizeof(aligned_test_buffer_size[0]); i++) {
         test_context[i].seed = i;
-        test_context[i].buffer_size = test_buffer_len[i];
+        test_context[i].buffer_size = aligned_test_buffer_size[i];
         async_memcpy_setup_testbench(&test_context[i]);
     }
-    for (int i = 0; i < sizeof(test_buffer_len) / sizeof(test_buffer_len[0]); i++) {
+    for (int i = 0; i < sizeof(aligned_test_buffer_size) / sizeof(aligned_test_buffer_size[0]); i++) {
         TEST_ESP_OK(esp_async_memcpy(driver, test_context[i].to_addr, test_context[i].from_addr, test_context[i].copy_size, NULL, NULL));
     }
-    for (int i = 0; i < sizeof(test_buffer_len) / sizeof(test_buffer_len[0]); i++) {
+    for (int i = 0; i < sizeof(aligned_test_buffer_size) / sizeof(aligned_test_buffer_size[0]); i++) {
         async_memcpy_verify_and_clear_testbench(i, test_context[i].copy_size, test_context[i].src_buf, test_context[i].dst_buf, test_context[i].from_addr, test_context[i].to_addr);
     }
 
 #if !TEST_MEMCPY_BUFFER_SIZE_MUST_ALIGN_CACHE
+    uint32_t unaligned_test_buffer_size[] = {511, 1023, 2047, 4095, 5011};
     // Non-aligned case
-    for (int i = 0; i < sizeof(test_buffer_len) / sizeof(test_buffer_len[0]); i++) {
+    for (int i = 0; i < sizeof(unaligned_test_buffer_size) / sizeof(unaligned_test_buffer_size[0]); i++) {
         test_context[i].seed = i;
-        test_context[i].buffer_size = test_buffer_len[i];
+        test_context[i].buffer_size = unaligned_test_buffer_size[i];
         test_context[i].offset = 3;
         async_memcpy_setup_testbench(&test_context[i]);
     }
-    for (int i = 0; i < sizeof(test_buffer_len) / sizeof(test_buffer_len[0]); i++) {
+    for (int i = 0; i < sizeof(unaligned_test_buffer_size) / sizeof(unaligned_test_buffer_size[0]); i++) {
         TEST_ESP_OK(esp_async_memcpy(driver, test_context[i].to_addr, test_context[i].from_addr, test_context[i].copy_size, NULL, NULL));
     }
-    for (int i = 0; i < sizeof(test_buffer_len) / sizeof(test_buffer_len[0]); i++) {
+    for (int i = 0; i < sizeof(unaligned_test_buffer_size) / sizeof(unaligned_test_buffer_size[0]); i++) {
         async_memcpy_verify_and_clear_testbench(i, test_context[i].copy_size, test_context[i].src_buf, test_context[i].dst_buf, test_context[i].from_addr, test_context[i].to_addr);
     }
 #endif
@@ -328,7 +336,7 @@ static void memcpy_performance_test(uint32_t buffer_size)
     IDF_LOG_PERFORMANCE("CPU_COPY", "%.2f MB/s, dir: SRAM->SRAM, size: %zu Bytes", throughput, test_context.buffer_size);
     async_memcpy_verify_and_clear_testbench(test_context.seed, test_context.copy_size, test_context.src_buf, test_context.dst_buf, test_context.from_addr, test_context.to_addr);
 
-#if CONFIG_SPIRAM && SOC_AHB_GDMA_SUPPORT_PSRAM
+#if SOC_AHB_GDMA_SUPPORT_PSRAM
     // 2. PSRAM->PSRAM
     test_context.src_in_psram = true;
     test_context.dst_in_psram = true;
