@@ -35,7 +35,6 @@ enum { HID_DEV_NO_CONN, HID_DEV_CONNECTED };
 typedef struct per_device_ctb {
     BOOLEAN        in_use;
     BOOLEAN        delay_remove;
-    BOOLEAN        is_orig;
     BD_ADDR        addr;  /* BD-Addr of the host device */
     UINT16         attr_mask; /* 0x01- virtual_cable; 0x02- normally_connectable; 0x03- reconn_initiate;
                                  0x04- sdp_disable; */
@@ -66,6 +65,7 @@ extern tHID_STATUS hidh_conn_reg (void);
 extern void hidh_conn_dereg( void );
 extern tHID_STATUS hidh_conn_disconnect (UINT8 dhandle);
 extern tHID_STATUS hidh_conn_initiate (UINT8 dhandle);
+extern BOOLEAN hidh_conn_is_orig(UINT8 dhandle);
 extern void hidh_proc_repage_timeout (TIMER_LIST_ENT *p_tle);
 #ifdef __cplusplus
 extern "C" {
