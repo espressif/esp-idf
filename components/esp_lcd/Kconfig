@@ -36,5 +36,20 @@ menu "LCD and Touch Panel"
                     Only need to enable it when in your application, the DMA can't deliver data
                     as fast as the LCD consumes it.
         endif # SOC_LCD_RGB_SUPPORTED
+
+        if SOC_MIPI_DSI_SUPPORTED
+            config LCD_DSI_ISR_IRAM_SAFE
+                bool "DSI LCD ISR IRAM-Safe"
+                default n
+                select DW_GDMA_ISR_IRAM_SAFE
+                select DW_GDMA_CTRL_FUNC_IN_IRAM
+                select DW_GDMA_SETTER_FUNC_IN_IRAM
+                select DW_GDMA_GETTER_FUNC_IN_IRAM
+                help
+                    Ensure the LCD interrupt is IRAM-Safe by allowing the interrupt handler to be
+                    executable when the cache is disabled (e.g. SPI Flash write).
+                    If you want the LCD driver to keep flushing the screen even when cache ops disabled,
+                    you can enable this option. Note, this will also increase the IRAM usage.
+        endif # SOC_MIPI_DSI_SUPPORTED
     endmenu
 endmenu

@@ -23,7 +23,11 @@
 #define DSI_RCC_ATOMIC()
 #endif
 
-#define DSI_MEM_ALLOC_CAPS MALLOC_CAP_DEFAULT
+#if CONFIG_LCD_DSI_ISR_IRAM_SAFE
+#define DSI_MEM_ALLOC_CAPS      (MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT)
+#else
+#define DSI_MEM_ALLOC_CAPS      MALLOC_CAP_DEFAULT
+#endif
 
 #define DPI_PANEL_MAX_FB_NUM 3 // maximum number of supported frame buffers for DPI panel
 
