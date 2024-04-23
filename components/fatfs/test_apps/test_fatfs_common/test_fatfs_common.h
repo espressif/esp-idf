@@ -80,3 +80,5 @@ void test_fatfs_info(const char* base_path, const char* filepath);
 #if FF_USE_EXPAND
 void test_fatfs_create_contiguous_file(const char* base_path, const char* full_path);
 #endif
+
+void test_fatfs_readdir_stat(const char* path);
