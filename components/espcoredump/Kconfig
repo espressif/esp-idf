@@ -47,6 +47,18 @@ menu "Core dump"
             depends on ESP_COREDUMP_DATA_FORMAT_ELF
     endchoice
 
+    config ESP_COREDUMP_CAPTURE_DRAM
+        bool "Include whole .bss and .data sections and heap data into core dump file"
+        default n
+        #TODO: Heap walker api is not ready for the esp32c5 (IDF-9641)
+        depends on ESP_COREDUMP_DATA_FORMAT_ELF && !IDF_TARGET_ESP32C5
+        help
+            Storing these sections can help with easier debugging and troubleshooting.
+            However, additional storage space will be required in the core dump partition.
+            At least 128KB should be reserved, but the actual amount required may vary based
+            on the application's DRAM usage.
+            Note that sections located in external RAM will not be stored.
+
     config ESP_COREDUMP_CHECK_BOOT
         bool "Check core dump data integrity on boot"
         default y
@@ -112,7 +124,8 @@ menu "Core dump"
         help
             Size of the memory to be reserved for core dump stack. If 0 core dump process will run on
             the stack of crashed task/ISR, otherwise special stack will be allocated.
-            To ensure that core dump itself will not overflow task/ISR stack set this to the value above 800.
+            To ensure that core dump itself will not overflow task/ISR stack set this to the value around 1300-1800
+            depending on the chosen checksum calculation method. SHA256 method needs more stack space than CRC32.
             NOTE: It eats DRAM.
 
     config ESP_COREDUMP_SUMMARY_STACKDUMP_SIZE
