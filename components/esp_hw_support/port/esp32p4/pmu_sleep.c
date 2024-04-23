@@ -149,26 +149,35 @@ const pmu_sleep_config_t* pmu_sleep_config_default(
     iram_pd_flags |= (pd_flags & PMU_SLEEP_PD_MEM_G1) ? BIT(1) : 0;
     iram_pd_flags |= (pd_flags & PMU_SLEEP_PD_MEM_G2) ? BIT(2) : 0;
     iram_pd_flags |= (pd_flags & PMU_SLEEP_PD_MEM_G3) ? BIT(3) : 0;
-    config->power = power_default;
-
-    pmu_sleep_param_config_t param_default = PMU_SLEEP_PARAM_CONFIG_DEFAULT(pd_flags);
-    config->param = *pmu_sleep_param_config_default(&param_default, &power_default, pd_flags, adjustment, slowclk_period, fastclk_period);
 
     if (dslp) {
         config->param.lp_sys.analog_wait_target_cycle  = rtc_time_us_to_slowclk(PMU_LP_ANALOG_WAIT_TARGET_TIME_DSLP_US, slowclk_period);
         pmu_sleep_analog_config_t analog_default = PMU_SLEEP_ANALOG_DSLP_CONFIG_DEFAULT(pd_flags);
         config->analog = analog_default;
     } else {
+        // Get light sleep digital_default
         pmu_sleep_digital_config_t digital_default = PMU_SLEEP_DIGITAL_LSLP_CONFIG_DEFAULT(pd_flags);
         config->digital = digital_default;
 
+        // Get light sleep analog default
         pmu_sleep_analog_config_t analog_default = PMU_SLEEP_ANALOG_LSLP_CONFIG_DEFAULT(pd_flags);
 #if CONFIG_SPIRAM
         analog_default.hp_sys.analog.pd_cur = 1;
         analog_default.lp_sys[PMU_MODE_LP_SLEEP].analog.pd_cur = 1;
 #endif
+
+#if CONFIG_ESP_SLEEP_KEEP_DCDC_ALWAYS_ON
+        power_default.hp_sys.dig_power.dcdc_switch_pd_en = 0;
+        analog_default.hp_sys.analog.dcm_vset = CONFIG_ESP_SLEEP_DCM_VSET_VAL_IN_SLEEP;
+        analog_default.hp_sys.analog.dcm_mode = 1;
+#endif
         config->analog = analog_default;
     }
+
+    config->power = power_default;
+    pmu_sleep_param_config_t param_default = PMU_SLEEP_PARAM_CONFIG_DEFAULT(pd_flags);
+    config->param = *pmu_sleep_param_config_default(&param_default, &power_default, pd_flags, adjustment, slowclk_period, fastclk_period);
+
     return config;
 }
 
@@ -194,6 +203,8 @@ static void pmu_sleep_digital_init(pmu_context_t *ctx, const pmu_sleep_digital_c
 static void pmu_sleep_analog_init(pmu_context_t *ctx, const pmu_sleep_analog_config_t *analog, bool dslp)
 {
     assert(ctx->hal);
+    pmu_ll_hp_set_dcm_mode                    (ctx->hal->dev, HP(SLEEP), analog->hp_sys.analog.dcm_mode);
+    pmu_ll_hp_set_dcm_vset                    (ctx->hal->dev, HP(SLEEP), analog->hp_sys.analog.dcm_vset);
     pmu_ll_hp_set_current_power_off           (ctx->hal->dev, HP(SLEEP), analog->hp_sys.analog.pd_cur);
     pmu_ll_hp_set_bias_sleep_enable           (ctx->hal->dev, HP(SLEEP), analog->hp_sys.analog.bias_sleep);
     pmu_ll_hp_set_regulator_sleep_memory_xpd  (ctx->hal->dev, HP(SLEEP), analog->hp_sys.analog.slp_mem_xpd);
@@ -250,10 +261,10 @@ void pmu_sleep_init(const pmu_sleep_config_t *config, bool dslp)
 }
 
 void pmu_sleep_increase_ldo_volt(void) {
-    REG_SET_FIELD(PMU_HP_ACTIVE_HP_REGULATOR0_REG, PMU_HP_ACTIVE_HP_REGULATOR_DBIAS, 30);
-    REG_SET_BIT(PMU_HP_ACTIVE_HP_REGULATOR0_REG, PMU_HP_ACTIVE_HP_REGULATOR_XPD);
+    pmu_ll_hp_set_regulator_dbias(&PMU, PMU_MODE_HP_ACTIVE, 30);
+    pmu_ll_hp_set_regulator_xpd(&PMU, PMU_MODE_HP_ACTIVE, 1);
     // Decrease the DCDC voltage to reduce the voltage difference between the DCDC and the LDO to avoid overshooting the DCDC voltage during wake-up.
-    REG_SET_FIELD(PMU_HP_ACTIVE_BIAS_REG, PMU_HP_ACTIVE_DCM_VSET, 24);
+    pmu_ll_hp_set_dcm_vset(&PMU, PMU_MODE_HP_ACTIVE, 24);
 }
 
 void pmu_sleep_shutdown_dcdc(void) {
@@ -301,19 +312,26 @@ TCM_IRAM_ATTR uint32_t pmu_sleep_start(uint32_t wakeup_opt, uint32_t reject_opt,
         ;
     }
 
-    return pmu_sleep_finish();
+    return pmu_sleep_finish(dslp);
 }
 
-TCM_IRAM_ATTR bool pmu_sleep_finish(void)
+TCM_IRAM_ATTR bool pmu_sleep_finish(bool dslp)
 {
-    REG_SET_FIELD(PMU_HP_ACTIVE_BIAS_REG, PMU_HP_ACTIVE_DCM_VSET, 27);
-    if (pmu_ll_hp_is_sleep_reject(PMU_instance()->hal->dev)) {
-        // If sleep is rejected, the hardware wake-up process that turns on DCDC
-        // is skipped, and software is used to enable DCDC here.
-        pmu_sleep_enable_dcdc();
-        esp_rom_delay_us(950);
+#if CONFIG_ESP_SLEEP_KEEP_DCDC_ALWAYS_ON
+    if (!dslp) {
+        // Keep DCDC always on during light sleep, no need to adjust LDO.
+    } else
+#endif
+    {
+        pmu_ll_hp_set_dcm_vset(&PMU, PMU_MODE_HP_ACTIVE, 27);
+        if (pmu_ll_hp_is_sleep_reject(PMU_instance()->hal->dev)) {
+            // If sleep is rejected, the hardware wake-up process that turns on DCDC
+            // is skipped, and software is used to enable DCDC here.
+            pmu_sleep_enable_dcdc();
+            esp_rom_delay_us(950);
+        }
+        pmu_sleep_shutdown_ldo();
     }
-    pmu_sleep_shutdown_ldo();
 
     unsigned chip_version = efuse_hal_chip_revision();
     if (!ESP_CHIP_REV_ABOVE(chip_version, 1)) {
