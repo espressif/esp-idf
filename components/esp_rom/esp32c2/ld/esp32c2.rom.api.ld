@@ -35,6 +35,8 @@ PROVIDE ( esp_rom_mbedtls_md5_starts_ret = mbedtls_md5_starts_ret );
 PROVIDE ( esp_rom_mbedtls_md5_update_ret = mbedtls_md5_update_ret );
 PROVIDE ( esp_rom_mbedtls_md5_finish_ret = mbedtls_md5_finish_ret );
 
+PROVIDE ( esp_rom_software_reset_system = software_reset );
+
 PROVIDE ( esp_rom_printf   = ets_printf );
 PROVIDE ( esp_rom_install_uart_printf = ets_install_uart_printf );
 PROVIDE ( esp_rom_delay_us = ets_delay_us );
