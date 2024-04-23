@@ -165,9 +165,7 @@ r_lld_cca_lbt_handle = 0x40001df8;
 r_lld_cca_scst_timeout_check = 0x40001dfc;
 r_lld_cca_chan_avl_timeout_check = 0x40001e00;
 
-r_lld_scan_start_hook = 0x40001c74;
 r_lld_con_start_hook = 0x40001ca8;
-r_lld_init_start_hook = 0x40001cb8;
 
 /* ble Functions eco */
 r_bt_bb_isr = 0x40000b9c;
@@ -215,6 +213,8 @@ r_llc_llcp_channel_map_ind_ack = 0x40001d68;
 r_rwble_isr = 0x40001464;
 r_lld_scan_start_eco = 0x40001d24;
 r_lld_scan_try_sched_eco = 0x40001dac;
+r_lld_scan_start_hook = 0x40001c74;
+r_lld_init_start_hook = 0x40001cb8;
 */
 
 
