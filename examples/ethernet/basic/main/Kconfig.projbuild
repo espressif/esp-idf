@@ -1,0 +1,9 @@
+menu "Example Configuration"
+    config EXAMPLE_ETH_DEINIT_AFTER_S
+        int "Stop and deinit Ethernet after elapsing number of secs"
+        range -1 300
+        default -1
+        help
+            This option is for demonstration purposes only to demonstrate deinitialization of the Ethernet driver.
+            Set to -1 to not deinitialize.
+endmenu
