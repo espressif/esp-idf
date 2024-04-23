@@ -335,6 +335,12 @@ static inline void rtcio_ll_wakeup_disable(int rtcio_num)
 static inline void rtcio_ll_intr_enable(int rtcio_num, rtcio_ll_intr_type_t type)
 {
     LP_IO.pin[rtcio_num].int_type = type;
+
+    /* Work around for HW issue,
+       need to also enable this clk, so that LP_IO.status.status_interrupt can get updated,
+       and trigger the interrupt on the LP Core
+    */
+    LP_IO.date.clk_en = 1;
 }
 
 /**
