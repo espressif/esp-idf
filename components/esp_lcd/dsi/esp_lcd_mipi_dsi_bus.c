@@ -55,6 +55,15 @@ esp_err_t esp_lcd_new_dsi_bus(const esp_lcd_dsi_bus_config_t *bus_config, esp_lc
         mipi_dsi_ll_enable_phy_reference_clock(bus_id, true);
     }
 
+#if CONFIG_PM_ENABLE
+    // When MIPI DSI is working, we don't expect the clock source would be turned off
+    esp_pm_lock_type_t pm_lock_type = ESP_PM_NO_LIGHT_SLEEP;
+    ret  = esp_pm_lock_create(pm_lock_type, 0, "dsi_phy", &dsi_bus->pm_lock);
+    ESP_GOTO_ON_ERROR(ret, err, TAG, "create PM lock failed");
+    // before we configure the PLL, we want the clock source to be stable
+    esp_pm_lock_acquire(dsi_bus->pm_lock);
+#endif
+
     // initialize HAL context
     mipi_dsi_hal_config_t hal_config = {
         .bus_id = bus_id,
@@ -124,6 +133,10 @@ esp_err_t esp_lcd_del_dsi_bus(esp_lcd_dsi_bus_handle_t bus)
     // disable the APB clock for accessing the DSI peripheral registers
     DSI_RCC_ATOMIC() {
         mipi_dsi_ll_enable_bus_clock(bus_id, false);
+    }
+    if (bus->pm_lock) {
+        esp_pm_lock_release(bus->pm_lock);
+        esp_pm_lock_delete(bus->pm_lock);
     }
     free(bus);
     return ESP_OK;
