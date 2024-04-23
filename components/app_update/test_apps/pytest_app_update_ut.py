@@ -19,7 +19,7 @@ def run_multiple_stages(dut: Dut, test_case_num: int, stages: int) -> None:
 
 
 @pytest.mark.supported_targets
-@pytest.mark.temp_skip_ci(targets=['esp32c6', 'esp32h2', 'esp32p4'], reason='c6/h2/p4 support TBD')  # TODO: IDF-8959
+@pytest.mark.temp_skip_ci(targets=['esp32c6', 'esp32h2'], reason='c6/h2 support TBD')
 @pytest.mark.generic
 def test_app_update(dut: Dut) -> None:
     extra_data = dut.parse_test_menu()
