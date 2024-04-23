@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,6 +16,7 @@
 #include "soc/soc.h"
 #include "soc/rtc_periph.h"
 #include "esp_attr.h"
+#include "esp_rom_sys.h"
 #include "bootloader_flash.h"
 #include "esp_intr_alloc.h"
 #include "hal/brownout_hal.h"
@@ -56,7 +57,10 @@ IRAM_ATTR static void rtc_brownout_isr_handler(void *arg)
         ESP_DRAM_LOGI(TAG, "Brownout detector was triggered\r\n\r\n");
     }
 
-    esp_restart_noos();
+    esp_rom_software_reset_system();
+    while (true) {
+        ;
+    }
 }
 #endif // CONFIG_ESP_SYSTEM_BROWNOUT_INTR
 
