@@ -21,6 +21,8 @@ if(NOT CONFIG_APP_BUILD_TYPE_PURE_RAM_APP)
     endif()
 endif()
 
+list(APPEND srcs "heap_align_hw.c")
+
 idf_component_register(SRCS ${srcs}
                        INCLUDE_DIRS ${includes}
                        PRIV_REQUIRES ${priv_requires}

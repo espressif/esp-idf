@@ -93,7 +93,10 @@ esp_err_t esp_cache_msync(void *addr, size_t size, int flags)
     return ESP_OK;
 }
 
-esp_err_t esp_cache_aligned_malloc(size_t size, uint32_t heap_caps, void **out_ptr, size_t *actual_size)
+//The esp_cache_aligned_malloc function is marked deprecated but also called by other
+//(also deprecated) functions in this file. In order to work around that generating warnings, it's
+//split into a non-deprecated internal function and the stubbed external deprecated function.
+static esp_err_t esp_cache_aligned_malloc_internal(size_t size, uint32_t heap_caps, void **out_ptr, size_t *actual_size)
 {
     ESP_RETURN_ON_FALSE_ISR(out_ptr, ESP_ERR_INVALID_ARG, TAG, "null pointer");
     uint32_t valid_caps = MALLOC_CAP_SPIRAM | MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA;
@@ -127,6 +130,12 @@ esp_err_t esp_cache_aligned_malloc(size_t size, uint32_t heap_caps, void **out_p
     return ESP_OK;
 }
 
+//this is the deprecated stub for the above function
+esp_err_t esp_cache_aligned_malloc(size_t size, uint32_t heap_caps, void **out_ptr, size_t *actual_size)
+{
+    return esp_cache_aligned_malloc_internal(size, heap_caps, out_ptr, actual_size);
+}
+
 esp_err_t esp_cache_aligned_malloc_prefer(size_t size, void **out_ptr, size_t *actual_size, size_t flag_nums, ...)
 {
     ESP_RETURN_ON_FALSE_ISR(out_ptr, ESP_ERR_INVALID_ARG, TAG, "null pointer");
@@ -139,7 +148,7 @@ esp_err_t esp_cache_aligned_malloc_prefer(size_t size, void **out_ptr, size_t *a
 
     while (flag_nums--) {
         flags = va_arg(argp, uint32_t);
-        ret = esp_cache_aligned_malloc(size, flags, out_ptr, actual_size);
+        ret = esp_cache_aligned_malloc_internal(size, flags, out_ptr, actual_size);
         if (ret == ESP_OK) {
             break;
         }
@@ -161,7 +170,7 @@ esp_err_t esp_cache_aligned_calloc(size_t n, size_t size, uint32_t heap_caps, vo
     ESP_RETURN_ON_FALSE_ISR(!ovf, ESP_ERR_INVALID_ARG, TAG, "wrong size, total size overflow");
 
     void *ptr = NULL;
-    ret = esp_cache_aligned_malloc(size_bytes, heap_caps, &ptr, actual_size);
+    ret = esp_cache_aligned_malloc_internal(size_bytes, heap_caps, &ptr, actual_size);
     if (ret == ESP_OK) {
         memset(ptr, 0, size_bytes);
         *out_ptr = ptr;
@@ -188,7 +197,7 @@ esp_err_t esp_cache_aligned_calloc_prefer(size_t n, size_t size, void **out_ptr,
     int arg;
     for (int i = 0; i < flag_nums; i++) {
         arg = va_arg(argp, int);
-        ret = esp_cache_aligned_malloc_prefer(size_bytes, &ptr, actual_size, flag_nums, arg);
+        ret = esp_cache_aligned_malloc_internal(size_bytes, arg, &ptr, actual_size);
         if (ret == ESP_OK) {
             memset(ptr, 0, size_bytes);
             *out_ptr = ptr;
