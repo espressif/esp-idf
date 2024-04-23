@@ -39,7 +39,7 @@ For the complete list of error codes, see :doc:`Error Code Reference <../api-ref
 Converting Error Codes to Error Messages
 ----------------------------------------
 
-For each error code defined in ESP-IDF components, :cpp:type:`esp_err_t` value can be converted to an error code name using :cpp:func:`esp_err_to_name` or :cpp:func:`esp_err_to_name_r` functions. For example, passing ``0x101`` to :cpp:func:`esp_err_to_name` will return "ESP_ERR_NO_MEM" string. Such strings can be used in log output to make it easier to understand which error has happened.
+For each error code defined in ESP-IDF components, :cpp:type:`esp_err_t` value can be converted to an error code name using :cpp:func:`esp_err_to_name` or :cpp:func:`esp_err_to_name_r` functions. For example, passing ``0x101`` to :cpp:func:`esp_err_to_name` will return a ``ESP_ERR_NO_MEM`` string. Such strings can be used in log output to make it easier to understand which error has happened.
 
 Additionally, :cpp:func:`esp_err_to_name_r` function will attempt to interpret the error code as a `standard POSIX error code <https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/errno.h.html>`_, if no matching ``ESP_ERR_`` value is found. This is done using ``strerror_r`` function. POSIX error codes (such as ``ENOENT``, ``ENOMEM``) are defined in ``errno.h`` and are typically obtained from ``errno`` variable. In ESP-IDF this variable is thread-local: multiple FreeRTOS tasks have their own copies of ``errno``. Functions which set ``errno`` only modify its value for the task they run in.
 
@@ -53,7 +53,9 @@ This feature is enabled by default, but can be disabled to reduce application bi
 
 :c:macro:`ESP_ERROR_CHECK` macro serves similar purpose as ``assert``, except that it checks :cpp:type:`esp_err_t` value rather than a ``bool`` condition. If the argument of :c:macro:`ESP_ERROR_CHECK` is not equal :c:macro:`ESP_OK`, then an error message is printed on the console, and ``abort()`` is called.
 
-Error message will typically look like this::
+Error message will typically look like this:
+
+.. code-block:: none
 
     ESP_ERROR_CHECK failed: esp_err_t 0x107 (ESP_ERR_TIMEOUT) at 0x400d1fdf
 
@@ -63,7 +65,9 @@ Error message will typically look like this::
 
     Backtrace: 0x40086e7c:0x3ffb4ff0 0x40087328:0x3ffb5010 0x400d1fdf:0x3ffb5030 0x400d0816:0x3ffb5050
 
-.. note:: If :doc:`ESP-IDF monitor <tools/idf-monitor>` is used, addresses in the backtrace will be converted to file names and line numbers.
+.. note::
+
+    If :doc:`ESP-IDF monitor <tools/idf-monitor>` is used, addresses in the backtrace will be converted to file names and line numbers.
 
 - The first line mentions the error code as a hexadecimal value, and the identifier used for this error in source code. The latter depends on :ref:`CONFIG_ESP_ERR_TO_NAME_LOOKUP` option being set. Address in the program where error has occurred is printed as well.
 
@@ -85,7 +89,7 @@ Error message will typically look like this::
 ``ESP_RETURN_ON_ERROR`` Macro
 -----------------------------
 
-:c:macro:`ESP_RETURN_ON_ERROR` macro checks the error code, if the error code is not equal :c:macro:`ESP_OK`, it prints the message and returns.
+:c:macro:`ESP_RETURN_ON_ERROR` macro checks the error code, if the error code is not equal :c:macro:`ESP_OK`, it prints the message and returns the error code.
 
 
 .. _esp-goto-on-error-macro:
@@ -93,7 +97,7 @@ Error message will typically look like this::
 ``ESP_GOTO_ON_ERROR`` Macro
 ---------------------------
 
-:c:macro:`ESP_GOTO_ON_ERROR` macro checks the error code, if the error code is not equal :c:macro:`ESP_OK`, it prints the message, sets the local variable `ret` to the code, and then exits by jumping to `goto_tag`.
+:c:macro:`ESP_GOTO_ON_ERROR` macro checks the error code, if the error code is not equal :c:macro:`ESP_OK`, it prints the message, sets the local variable ``ret`` to the code, and then exits by jumping to ``goto_tag``.
 
 
 .. _esp-return-on-false-macro:
@@ -101,7 +105,7 @@ Error message will typically look like this::
 ``ESP_RETURN_ON_FALSE`` Macro
 -----------------------------
 
-:c:macro:`ESP_RETURN_ON_FALSE` macro checks the condition, if the condition is not equal `true`, it prints the message and returns with the supplied `err_code`.
+:c:macro:`ESP_RETURN_ON_FALSE` macro checks the condition, if the condition is not equal ``true``, it prints the message and returns with the supplied ``err_code``.
 
 
 .. _esp-goto-on-false-macro:
@@ -109,15 +113,17 @@ Error message will typically look like this::
 ``ESP_GOTO_ON_FALSE`` Macro
 ---------------------------
 
-:c:macro:`ESP_GOTO_ON_FALSE` macro checks the condition, if the condition is not equal `true`, it prints the message, sets the local variable `ret` to the supplied `err_code`, and then exits by jumping to `goto_tag`.
+:c:macro:`ESP_GOTO_ON_FALSE` macro checks the condition, if the condition is not equal ``true``, it prints the message, sets the local variable ``ret`` to the supplied ``err_code``, and then exits by jumping to ``goto_tag``.
 
 
 .. _check_macros_examples:
 
-``CHECK MACROS Examples``
+``CHECK MACROS`` Examples
 -------------------------
 
-Some examples::
+Some examples
+
+.. code-block:: c
 
     static const char* TAG = "Test";
 
@@ -139,9 +145,9 @@ Some examples::
 
 .. note::
 
-     If the option :ref:`CONFIG_COMPILER_OPTIMIZATION_CHECKS_SILENT` in Kconfig is enabled, the err message will be discarded, while the other action works as is.
+     If the option :ref:`CONFIG_COMPILER_OPTIMIZATION_CHECKS_SILENT` in Kconfig is enabled, the error message will be discarded, while the other action works as is.
 
-     The ``ESP_RETURN_XX`` and ``ESP_GOTO_xx`` macros cannot be called from ISR. While there are ``xx_ISR`` versions for each of them, e.g., `ESP_RETURN_ON_ERROR_ISR`, these macros could be used in ISR.
+     The ``ESP_RETURN_XX`` and ``ESP_GOTO_xx`` macros cannot be called from ISR. While there are ``xx_ISR`` versions for each of them, e.g., ``ESP_RETURN_ON_ERROR_ISR``, these macros could be used in ISR.
 
 
 Error Handling Patterns
@@ -149,11 +155,13 @@ Error Handling Patterns
 
 1. Attempt to recover. Depending on the situation, we may try the following methods:
 
-   - retry the call after some time;
-   - attempt to de-initialize the driver and re-initialize it again;
-   - fix the error condition using an out-of-band mechanism (e.g reset an external peripheral which is not responding).
+    - retry the call after some time;
+    - attempt to de-initialize the driver and re-initialize it again;
+    - fix the error condition using an out-of-band mechanism (e.g reset an external peripheral which is not responding).
 
-   Example::
+    Example:
+
+    .. code-block:: c
 
         esp_err_t err;
         do {
@@ -166,7 +174,9 @@ Error Handling Patterns
 
 2. Propagate the error to the caller. In some middleware components this means that a function must exit with the same error code, making sure any resource allocations are rolled back.
 
-   Example::
+    Example:
+
+    .. code-block:: c
 
         sdmmc_card_t* card = calloc(1, sizeof(sdmmc_card_t));
         if (card == NULL) {
@@ -183,11 +193,13 @@ Error Handling Patterns
 
 3. Convert into unrecoverable error, for example using ``ESP_ERROR_CHECK``. See `ESP_ERROR_CHECK macro`_ section for details.
 
-   Terminating the application in case of an error is usually undesirable behavior for middleware components, but is sometimes acceptable at application level.
+    Terminating the application in case of an error is usually undesirable behavior for middleware components, but is sometimes acceptable at application level.
 
-   Many ESP-IDF examples use ``ESP_ERROR_CHECK`` to handle errors from various APIs. This is not the best practice for applications, and is done to make example code more concise.
+    Many ESP-IDF examples use ``ESP_ERROR_CHECK`` to handle errors from various APIs. This is not the best practice for applications, and is done to make example code more concise.
 
-   Example::
+    Example:
+
+    .. code-block:: c
 
         ESP_ERROR_CHECK(spi_bus_initialize(host, bus_config, dma_chan));
 
