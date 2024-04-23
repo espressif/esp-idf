@@ -24,6 +24,7 @@ menu "DCDC Regulator Configurations"
             value according to the model of external DCDC selected in your hardware solution.
 
             For the DCDC chip model recommended by ESP, the recommended configuration
-            valuesare listed below:
-                - TI-TLV62569/TLV62569P: 14
+            values are listed below:
+
+            - TI-TLV62569/TLV62569P: 14
 endmenu

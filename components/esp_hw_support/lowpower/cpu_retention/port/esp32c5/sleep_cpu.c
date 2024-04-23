@@ -435,7 +435,7 @@ static IRAM_ATTR esp_err_t do_cpu_retention(sleep_cpu_entry_cb_t goto_sleep,
     }
 #endif
 
-    return pmu_sleep_finish();
+    return pmu_sleep_finish(dslp);
 }
 
 esp_err_t IRAM_ATTR esp_sleep_cpu_retention(uint32_t (*goto_sleep)(uint32_t, uint32_t, uint32_t, bool),

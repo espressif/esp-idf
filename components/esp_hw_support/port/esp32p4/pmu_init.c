@@ -79,7 +79,6 @@ void pmu_hp_system_init(pmu_context_t *ctx, pmu_hp_mode_t mode, pmu_hp_system_pa
     pmu_ll_hp_set_bias_xpd                    (ctx->hal->dev, mode, anlg->bias.xpd_bias);
     pmu_ll_hp_set_dcm_mode                    (ctx->hal->dev, mode, anlg->bias.dcm_mode);
     pmu_ll_hp_set_dcm_vset                    (ctx->hal->dev, mode, anlg->bias.dcm_vset);
-    pmu_ll_hp_set_bias_xpd                    (ctx->hal->dev, mode, anlg->bias.xpd_bias);
     pmu_ll_hp_set_dbg_atten                   (ctx->hal->dev, mode, anlg->bias.dbg_atten);
     pmu_ll_hp_set_current_power_off           (ctx->hal->dev, mode, anlg->bias.pd_cur);
     pmu_ll_hp_set_bias_sleep_enable           (ctx->hal->dev, mode, anlg->bias.bias_sleep);
