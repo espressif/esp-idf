@@ -7,6 +7,12 @@ set(includes "platform_port/include")
 # because of the "include_next" directive used by the efuse_hal.h
 if(NOT ${target} STREQUAL "linux")
     list(APPEND includes "${target}/include")
+
+    if(CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION)
+        list(APPEND includes "${target}/beta3/include")
+    elseif(CONFIG_IDF_TARGET_ESP32C5_MP_VERSION)
+        list(APPEND includes "${target}/mp/include")
+    endif()
 endif()
 list(APPEND includes "include")
 

@@ -19,6 +19,8 @@
 #include "hal/cache_ll.h"
 #include "hal/cache_hal.h"
 #include "esp_cache.h"
+#include "esp_memory_utils.h"
+#include "soc/soc_caps.h"
 
 TEST_CASE("GDMA channel allocation", "[GDMA]")
 {
@@ -183,7 +185,7 @@ static void test_gdma_m2m_mode(gdma_channel_handle_t tx_chan, gdma_channel_handl
     size_t sram_alignment = cache_hal_get_cache_line_size(CACHE_LL_LEVEL_INT_MEM, CACHE_TYPE_DATA);
     size_t alignment = MAX(sram_alignment, 8);
     uint8_t *src_buf = heap_caps_aligned_calloc(alignment, 1, 256, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
-    uint8_t *dst_buf = heap_caps_aligned_calloc(alignment, 1, 256, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+    uint8_t *dst_buf = heap_caps_aligned_calloc(alignment, 1, 384, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
     TEST_ASSERT_NOT_NULL(src_buf);
     TEST_ASSERT_NOT_NULL(dst_buf);
     dma_descriptor_align8_t *tx_descs = (dma_descriptor_align8_t *) src_buf;
@@ -199,6 +201,19 @@ static void test_gdma_m2m_mode(gdma_channel_handle_t tx_chan, gdma_channel_handl
         // do write-back for the source data because it's in the cache
         TEST_ESP_OK(esp_cache_msync((void *)src_data, 128, ESP_CACHE_MSYNC_FLAG_DIR_C2M));
     }
+#if SOC_DMA_CAN_ACCESS_MSPI_MEM
+    const char *src_string = "GDMA can fetch data from MSPI Flash";
+    size_t src_string_len = strlen(src_string);
+    TEST_ASSERT_TRUE(esp_ptr_in_drom(src_string));
+
+    // Only gonna copy length = src_string_len, set the character after to be 0xFF
+    // So that we can check if the copied length is correct
+    dst_data[128 + src_string_len] = 0xFF;
+    if (sram_alignment) {
+        // do write-back for the dst data because it's in the cache
+        TEST_ESP_OK(esp_cache_msync((void *)dst_data, 256, ESP_CACHE_MSYNC_FLAG_DIR_C2M));
+    }
+#endif
 
 #ifdef CACHE_LL_L2MEM_NON_CACHE_ADDR
     dma_descriptor_align8_t *tx_descs_nc = (dma_descriptor_align8_t *)(CACHE_LL_L2MEM_NON_CACHE_ADDR(tx_descs));
@@ -219,11 +234,23 @@ static void test_gdma_m2m_mode(gdma_channel_handle_t tx_chan, gdma_channel_handl
     tx_descs_nc[1].dw0.size = 64;
     tx_descs_nc[1].dw0.length = 64;
     tx_descs_nc[1].dw0.owner = DMA_DESCRIPTOR_BUFFER_OWNER_DMA;
+#if !SOC_DMA_CAN_ACCESS_MSPI_MEM
     tx_descs_nc[1].dw0.suc_eof = 1;
     tx_descs_nc[1].next = NULL;
+#else
+    tx_descs_nc[1].dw0.suc_eof = 0;
+    tx_descs_nc[1].next = &tx_descs[2];
+
+    tx_descs_nc[2].buffer = (void *)src_string;
+    tx_descs_nc[2].dw0.size = src_string_len + 1; // +1 for '\0'
+    tx_descs_nc[2].dw0.length = src_string_len;
+    tx_descs_nc[2].dw0.owner = DMA_DESCRIPTOR_BUFFER_OWNER_DMA;
+    tx_descs_nc[2].dw0.suc_eof = 1;
+    tx_descs_nc[2].next = NULL;
+#endif
 
     rx_descs_nc->buffer = dst_data;
-    rx_descs_nc->dw0.size = 128;
+    rx_descs_nc->dw0.size = 256;
     rx_descs_nc->dw0.owner = DMA_DESCRIPTOR_BUFFER_OWNER_DMA;
     rx_descs_nc->dw0.suc_eof = 1;
     rx_descs_nc->next = NULL;
@@ -235,7 +262,7 @@ static void test_gdma_m2m_mode(gdma_channel_handle_t tx_chan, gdma_channel_handl
 
     if (sram_alignment) {
         // the destination data are not reflected to the cache, so do an invalidate to ask the cache load new data
-        TEST_ESP_OK(esp_cache_msync((void *)dst_data, 128, ESP_CACHE_MSYNC_FLAG_DIR_M2C));
+        TEST_ESP_OK(esp_cache_msync((void *)dst_data, 256, ESP_CACHE_MSYNC_FLAG_DIR_M2C));
     }
 
     // check the DMA descriptor write-back feature
@@ -245,6 +272,11 @@ static void test_gdma_m2m_mode(gdma_channel_handle_t tx_chan, gdma_channel_handl
     for (int i = 0; i < 128; i++) {
         TEST_ASSERT_EQUAL(i, dst_data[i]);
     }
+#if SOC_DMA_CAN_ACCESS_MSPI_MEM
+    TEST_ASSERT_TRUE(dst_data[128 + src_string_len] == 0xFF);
+    dst_data[128 + src_string_len] = '\0';
+    TEST_ASSERT_TRUE(strcmp(src_string, (const char *)((uint32_t)dst_data + 128)) == 0);
+#endif
     free((void *)src_buf);
     free((void *)dst_buf);
     vSemaphoreDelete(done_sem);

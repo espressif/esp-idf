@@ -36,7 +36,7 @@ typedef struct {
     uint32_t link_num;
 } gdma_chx_reg_ctx_link_t;
 
-extern const gdma_chx_reg_ctx_link_t gdma_chx_regs_retention[SOC_GDMA_PAIRS_PER_GROUP_MAX][SOC_GDMA_PAIRS_PER_GROUP_MAX];
+extern const gdma_chx_reg_ctx_link_t gdma_chx_regs_retention[SOC_GDMA_NUM_GROUPS_MAX][SOC_GDMA_PAIRS_PER_GROUP_MAX];
 #endif
 
 #endif
