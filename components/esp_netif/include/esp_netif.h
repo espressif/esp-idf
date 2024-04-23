@@ -112,7 +112,7 @@ esp_err_t esp_netif_attach(esp_netif_t *esp_netif, esp_netif_iodriver_handle dri
  * to TCP/IP stack. Similarly esp_netif_transmit is called from the TCP/IP stack whenever
  * a packet ought to output to the communication media.
  *
- * @note These IO functions are registerd (installed) automatically for default interfaces
+ * @note These IO functions are registered (installed) automatically for default interfaces
  * (interfaces with the keys such as WIFI_STA_DEF, WIFI_AP_DEF, ETH_DEF). Custom interface
  * has to register these IO functions when creating interface using @ref esp_netif_new
  *
@@ -137,6 +137,33 @@ esp_err_t esp_netif_attach(esp_netif_t *esp_netif, esp_netif_iodriver_handle dri
  *         - ESP_OK
  */
 esp_err_t esp_netif_receive(esp_netif_t *esp_netif, void *buffer, size_t len, void *eb);
+
+/**
+ * @brief Enables transmit/receive event reporting for a network interface.
+ *
+ * These functions enables transmit and receive events reporting for a given esp-netif instance.
+ * Event reporting can be used to track data transfer activity and trigger application-specific actions.
+ *
+ * @param[in]  esp_netif Handle to esp-netif instance
+ *
+ * @return
+ *         - ESP_OK: Successfully enabled event reporting
+ *         - ESP_FAIL: Event reporting not configured
+ */
+esp_err_t esp_netif_tx_rx_event_enable(esp_netif_t *esp_netif);
+
+/**
+ * @brief Disables transmit/receive event reporting for a network interface.
+ *
+ * These functions disables transmit and receive events reporting for a given esp-netif instance.
+ *
+ * @param[in]  esp_netif Handle to esp-netif instance
+ *
+ * @return
+ *         - ESP_OK: Successfully disabled event reporting
+ *         - ESP_FAIL: Event reporting not configured
+ */
+esp_err_t esp_netif_tx_rx_event_disable(esp_netif_t *esp_netif);
 
 /**
  * @}
@@ -898,7 +925,7 @@ esp_err_t esp_netif_str_to_ip4(const char *src, esp_ip4_addr_t *dst);
 
 /**
  * @brief Converts Ascii internet IPv6 address into esp_ip4_addr_t
- * Zeros in the IP address can be stripped or completely ommited: "2001:db8:85a3:0:0:0:2:1" or "2001:db8::2:1")
+ * Zeros in the IP address can be stripped or completely omitted: "2001:db8:85a3:0:0:0:2:1" or "2001:db8::2:1")
  *
  * @param[in] src IPv6 address in ascii representation (e.g. ""2001:0db8:85a3:0000:0000:0000:0002:0001")
  * @param[out] dst Address of the target esp_ip6_addr_t structure to receive converted address
@@ -972,7 +999,7 @@ const char *esp_netif_get_desc(esp_netif_t *esp_netif);
  *
  * @param[in]  esp_netif Handle to esp-netif instance
  *
- * @return Integer representing the instance's route-prio, or -1 if invalid paramters
+ * @return Integer representing the instance's route-prio, or -1 if invalid parameters
  */
 int esp_netif_get_route_prio(esp_netif_t *esp_netif);
 

@@ -373,6 +373,58 @@ For more specific cases, please consult this guide: :doc:`/api-reference/network
         * When using Wi-Fi in ``AP+STA`` mode, both these interfaces have to be created.
 
 
+IP Event: Transmit/Receive Packet
+---------------------------------
+
+This event, ``IP_EVENT_TX_RX``, is triggered for every transmitted or received IP packet. It provides information about packet transmission or reception, data length, and the ``esp_netif`` handle.
+
+Enabling the Event
+------------------
+
+**Compile Time:**
+
+The feature can be completely disabled during compilation time using the flag :ref:`CONFIG_ESP_NETIF_REPORT_DATA_TRAFFIC` in the kconfig.
+
+**Run Time:**
+
+At runtime, you can enable or disable this event using the functions :cpp:func:`esp_netif_tx_rx_event_enable()` and :cpp:func:`esp_netif_tx_rx_event_disable()`.
+
+Event Registration
+------------------
+
+To handle this event, you need to register a handler using the following syntax:
+
+.. code-block:: c
+
+    static void
+    tx_rx_event_handler(void *arg, esp_event_base_t event_base,
+                                    int32_t event_id, void *event_data)
+    {
+        ip_event_tx_rx_t *event = (ip_event_tx_rx_t *)event_data;
+
+        if (event->dir == ESP_NETIF_TX) {
+            ESP_LOGI(TAG, "Got TX event: Interface \"%s\" data len: %d", esp_netif_get_desc(event->esp_netif), event->len);
+        } else if (event->dir == ESP_NETIF_RX) {
+            ESP_LOGI(TAG, "Got RX event: Interface \"%s\" data len: %d", esp_netif_get_desc(event->esp_netif), event->len);
+        } else {
+            ESP_LOGI(TAG, "Got Unknown event: Interface \"%s\"", esp_netif_get_desc(event->esp_netif));
+        }
+    }
+
+    esp_event_handler_register(IP_EVENT, IP_EVENT_TX_RX, &tx_rx_event_handler, NULL);
+
+Here, ``tx_rx_event_handler`` is the name of the function that will handle the event.
+
+Event Data Structure
+---------------------
+
+The event data structure, :cpp:class:`ip_event_tx_rx_t`, contains the following fields:
+
+- :cpp:member:`ip_event_tx_rx_t::dir`: Indicates whether the packet was transmitted (``ESP_NETIF_TX``) or received (``ESP_NETIF_RX``).
+- :cpp:member:`ip_event_tx_rx_t::len`: Length of the data frame.
+- :cpp:member:`ip_event_tx_rx_t::esp_netif`: The network interface on which the packet was sent or received.
+
+
 API Reference
 -------------
 

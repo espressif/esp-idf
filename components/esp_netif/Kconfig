@@ -9,7 +9,7 @@ menu "ESP NETIF Adapter"
 
             The IP address may be lost because of some reasons, e.g. when the station disconnects
             from soft-AP, or when DHCP IP renew fails etc. If the IP lost timer is enabled, it will
-            be started everytime the IP is lost. Event SYSTEM_EVENT_STA_LOST_IP will be raised if
+            be started every time the IP is lost. Event SYSTEM_EVENT_STA_LOST_IP will be raised if
             the timer expires. The IP lost timer is stopped if the station get the IP again before
             the timer expires.
 
@@ -35,6 +35,13 @@ menu "ESP NETIF Adapter"
 
     config ESP_NETIF_USES_TCPIP_WITH_BSD_API
         bool # Set to true if the chosen TCP/IP stack provides BSD socket API
+
+    config ESP_NETIF_REPORT_DATA_TRAFFIC
+        bool "Report data traffic via events"
+        default y
+        help
+            Enable if esp_netif_transmit() and esp_netif_receive() should generate events. This can be useful
+            to blink data traffic indication lights.
 
     config ESP_NETIF_RECEIVE_REPORT_ERRORS
         bool "Use esp_err_t to report errors from esp_netif_receive"
@@ -76,5 +83,5 @@ menu "ESP NETIF Adapter"
         default n
         help
             Enable LwIP IEEE 802.1D bridge support in ESP-NETIF. Note that "Number of clients store data in netif"
-            (LWIP_NUM_NETIF_CLIENT_DATA) option needs to be properly configured to be LwIP bridge avaiable!
+            (LWIP_NUM_NETIF_CLIENT_DATA) option needs to be properly configured to be LwIP bridge available!
 endmenu
