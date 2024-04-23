@@ -19,7 +19,7 @@ menu "GDMA Configurations"
         bool "Enable debug log"
         default n
         help
-            Wether to enable the debug log message for GDMA driver.
+            Whether to enable the debug log message for GDMA driver.
             Note that, this option only controls the GDMA driver log, won't affect other drivers.
 endmenu # GDMA Configurations
 
@@ -40,6 +40,13 @@ menu "DW_GDMA Configurations"
             Place DW_GDMA setter functions (e.g. dw_gdma_channel_set_block_markers) into IRAM,
             so that these functions can be IRAM-safe and able to be called in the other IRAM interrupt context.
 
+    config DW_GDMA_GETTER_FUNC_IN_IRAM
+        bool
+        default n
+        help
+            Place DW_GDMA getter functions (e.g. dw_gdma_link_list_get_item) into IRAM,
+            so that these functions can be IRAM-safe and able to be called in the other IRAM interrupt context.
+
     config DW_GDMA_ISR_IRAM_SAFE
         bool
         default n
@@ -52,7 +59,7 @@ menu "DW_GDMA Configurations"
         bool "Enable debug log"
         default n
         help
-            Wether to enable the debug log message for DW_GDMA driver.
+            Whether to enable the debug log message for DW_GDMA driver.
             Note that, this option only controls the DW_GDMA driver log, won't affect other drivers.
 endmenu # DW_GDMA Configurations
 

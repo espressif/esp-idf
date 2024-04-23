@@ -78,10 +78,15 @@ entries:
     # put DW_GDMA control functions in IRAM
     if DW_GDMA_CTRL_FUNC_IN_IRAM = y:
         dw_gdma: dw_gdma_channel_continue (noflash)
+        dw_gdma: dw_gdma_channel_enable_ctrl (noflash)
 
     if DW_GDMA_SETTER_FUNC_IN_IRAM = y:
         dw_gdma: dw_gdma_channel_set_block_markers (noflash)
         dw_gdma: dw_gdma_lli_set_block_markers (noflash)
+        dw_gdma: dw_gdma_channel_use_link_list (noflash)
+
+    if DW_GDMA_GETTER_FUNC_IN_IRAM = y:
+        dw_gdma: dw_gdma_link_list_get_item (noflash)
 
 [mapping:dma2d_driver]
 archive: libesp_hw_support.a

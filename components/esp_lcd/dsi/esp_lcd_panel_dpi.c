@@ -14,6 +14,7 @@
 #include "esp_cache.h"
 #include "mipi_dsi_priv.h"
 #include "esp_async_fbcpy.h"
+#include "esp_memory_utils.h"
 #include "esp_private/dw_gdma.h"
 #include "hal/cache_hal.h"
 #include "hal/cache_ll.h"
@@ -528,6 +529,17 @@ esp_err_t esp_lcd_dpi_panel_register_event_callbacks(esp_lcd_panel_handle_t pane
 {
     ESP_RETURN_ON_FALSE(panel && cbs, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
     esp_lcd_dpi_panel_t *dpi_panel = __containerof(panel, esp_lcd_dpi_panel_t, base);
+#if CONFIG_LCD_DSI_ISR_IRAM_SAFE
+    if (cbs->on_color_trans_done) {
+        ESP_RETURN_ON_FALSE(esp_ptr_in_iram(cbs->on_color_trans_done), ESP_ERR_INVALID_ARG, TAG, "on_color_trans_done callback not in IRAM");
+    }
+    if (cbs->on_refresh_done) {
+        ESP_RETURN_ON_FALSE(esp_ptr_in_iram(cbs->on_refresh_done), ESP_ERR_INVALID_ARG, TAG, "on_refresh_done callback not in IRAM");
+    }
+    if (user_ctx) {
+        ESP_RETURN_ON_FALSE(esp_ptr_internal(user_ctx), ESP_ERR_INVALID_ARG, TAG, "user context not in internal RAM");
+    }
+#endif // CONFIG_LCD_RGB_ISR_IRAM_SAFE
     dpi_panel->on_color_trans_done = cbs->on_color_trans_done;
     dpi_panel->on_refresh_done = cbs->on_refresh_done;
     dpi_panel->user_ctx = user_ctx;
