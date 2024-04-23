@@ -168,7 +168,7 @@ __attribute__((always_inline))
 static inline uint32_t cache_ll_get_line_size(uint32_t cache_level, cache_type_t type, uint32_t cache_id)
 {
     uint32_t size = 0;
-    size = Cache_Get_Cache_Line_Size();
+    size = Cache_Get_Line_Size();
     return size;
 }
 

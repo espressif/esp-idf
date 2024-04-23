@@ -25,11 +25,15 @@ extern "C" {
  * @param[out] out_ptr          A pointer to the memory allocated successfully
  * @param[out] actual_size      Actual size for allocation in bytes, when the size you specified doesn't meet the cache alignment requirements, this value might be bigger than the size you specified. Set null if you don't care this value.
  *
+ * @deprecated This function is deprecated and will be removed in the future.
+ *             Use 'heap_caps_malloc' with MALLOC_CAP_CACHE_ALIGNED caps instead
+ *
  * @return
  *        - ESP_OK:
  *        - ESP_ERR_INVALID_ARG: Invalid argument
  *        - ESP_ERR_NO_MEM:      No enough memory for allocation
  */
+__attribute__((deprecated("Use 'heap_caps_malloc' with MALLOC_CAP_CACHE_ALIGNED caps instead")))
 esp_err_t esp_cache_aligned_malloc(size_t size, uint32_t heap_caps, void **out_ptr, size_t *actual_size);
 
 /**
@@ -45,11 +49,15 @@ esp_err_t esp_cache_aligned_malloc(size_t size, uint32_t heap_caps, void **out_p
  *                          the next parameter. It will try in this order until allocating a chunk of memory successfully
  *                          or fail to allocate memories with any of the parameters.
  *
+ * @deprecated This function is deprecated and will be removed in the future.
+ *             Use 'heap_caps_malloc_prefer' with MALLOC_CAP_CACHE_ALIGNED caps instead
+ *
  * @return
  *        - ESP_OK:
  *        - ESP_ERR_INVALID_ARG: Invalid argument
  *        - ESP_ERR_NO_MEM:      No enough memory for allocation
  */
+__attribute__((deprecated("Use 'heap_caps_malloc_prefer' with MALLOC_CAP_CACHE_ALIGNED caps instead")))
 esp_err_t esp_cache_aligned_malloc_prefer(size_t size, void **out_ptr, size_t *actual_size, size_t flag_nums, ...);
 
 /**
@@ -63,11 +71,15 @@ esp_err_t esp_cache_aligned_malloc_prefer(size_t size, void **out_ptr, size_t *a
  * @param[out] out_ptr          A pointer to the memory allocated successfully
  * @param[out] actual_size      Actual size for allocation in bytes, when the size you specified doesn't meet the cache alignment requirements, this value might be bigger than the size you specified. Set null if you don't care this value.
  *
+ * @deprecated This function is deprecated and will be removed in the future.
+ *             Use 'heap_caps_calloc' with MALLOC_CAP_CACHE_ALIGNED caps instead
+ *
  * @return
  *        - ESP_OK:
  *        - ESP_ERR_INVALID_ARG: Invalid argument
  *        - ESP_ERR_NO_MEM:      No enough memory for allocation
  */
+__attribute__((deprecated("Use 'heap_caps_calloc' with MALLOC_CAP_CACHE_ALIGNED caps instead")))
 esp_err_t esp_cache_aligned_calloc(size_t n, size_t size, uint32_t heap_caps, void **out_ptr, size_t *actual_size);
 
 /**
@@ -84,11 +96,15 @@ esp_err_t esp_cache_aligned_calloc(size_t n, size_t size, uint32_t heap_caps, vo
  *                          the next parameter. It will try in this order until allocating a chunk of memory successfully
  *                          or fail to allocate memories with any of the parameters.
  *
+ * @deprecated This function is deprecated and will be removed in the future.
+ *             Use 'heap_caps_calloc_prefer' with MALLOC_CAP_CACHE_ALIGNED caps instead
+ *
  * @return
  *        - ESP_OK:
  *        - ESP_ERR_INVALID_ARG: Invalid argument
  *        - ESP_ERR_NO_MEM:      No enough memory for allocation
  */
+__attribute__((deprecated("Use 'heap_caps_calloc' with MALLOC_CAP_CACHE_ALIGNED caps instead")))
 esp_err_t esp_cache_aligned_calloc_prefer(size_t n, size_t size, void **out_ptr, size_t *actual_size, size_t flag_nums, ...);
 
 /**
