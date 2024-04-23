@@ -562,11 +562,11 @@ def test_TCP_NAT64(Init_interface:bool, dut: Tuple[IdfDut, IdfDut, IdfDut]) -> N
     'config, count, app_path, target', [
         ('cli_h2|sleepy_c6', 2,
          f'{os.path.join(os.path.dirname(__file__), "ot_cli")}'
-         f'|{os.path.join(os.path.dirname(__file__), "ot_sleepy_device")}',
+         f'|{os.path.join(os.path.dirname(__file__), "ot_sleepy_device/light_sleep")}',
          'esp32h2|esp32c6'),
         ('cli_c6|sleepy_h2', 2,
          f'{os.path.join(os.path.dirname(__file__), "ot_cli")}'
-         f'|{os.path.join(os.path.dirname(__file__), "ot_sleepy_device")}',
+         f'|{os.path.join(os.path.dirname(__file__), "ot_sleepy_device/light_sleep")}',
          'esp32c6|esp32h2'),
     ],
     indirect=True,
