@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -29,6 +29,7 @@ typedef struct {
 
     isp_af_sa_scheme_sensor_info_t sensor_info;
     isp_af_sa_scheme_sensor_drv_t sensor_drv;
+    void *arg;
 } af_scheme_context_t;
 
 /* ------------------------ Interface Functions --------------------------- */
@@ -78,7 +79,7 @@ esp_err_t isp_af_delete_sa_scheme(isp_af_scheme_handle_t scheme)
     return ESP_OK;
 }
 
-esp_err_t isp_af_sa_scheme_register_sensor_driver(isp_af_scheme_handle_t scheme, const isp_af_sa_scheme_sensor_drv_t *sensor_drv, const isp_af_sa_scheme_sensor_info_t *info)
+esp_err_t isp_af_sa_scheme_register_sensor_driver(isp_af_scheme_handle_t scheme, const isp_af_sa_scheme_sensor_drv_t *sensor_drv, const isp_af_sa_scheme_sensor_info_t *info, void *arg)
 {
     ESP_RETURN_ON_FALSE(scheme, ESP_ERR_INVALID_ARG, TAG, "invalid arg: null pointer");
     ESP_RETURN_ON_FALSE(scheme->ctx, ESP_ERR_INVALID_STATE, TAG, "no scheme created yet");
@@ -86,6 +87,7 @@ esp_err_t isp_af_sa_scheme_register_sensor_driver(isp_af_scheme_handle_t scheme,
     af_scheme_context_t *ctx = scheme->ctx;
     ctx->sensor_drv.af_sensor_set_focus = sensor_drv->af_sensor_set_focus;
     ctx->sensor_info.focus_val_max = info->focus_val_max;
+    ctx->arg = arg;
 
     return ESP_OK;
 }
@@ -117,7 +119,7 @@ static esp_err_t s_af_process(void *arg, int *out_definition_thresh, int *out_lu
 
     isp_af_result_t result = {};
 
-    ESP_RETURN_ON_ERROR(ctx->sensor_drv.af_sensor_set_focus(0), TAG, "sensor set focus val fail");
+    ESP_RETURN_ON_ERROR(ctx->sensor_drv.af_sensor_set_focus(0, ctx->arg), TAG, "sensor set focus val fail");
 
     ESP_LOGV(TAG, "//----------- af start ----------//");
 
@@ -128,7 +130,7 @@ static esp_err_t s_af_process(void *arg, int *out_definition_thresh, int *out_lu
 
     for (int x = 0; x <= ctx->first_approx_cycles; x++) {
         af_current = af_current_base + x * ctx->first_step_val;
-        ESP_RETURN_ON_ERROR(ctx->sensor_drv.af_sensor_set_focus(af_current), TAG, "sensor set focus val fail");
+        ESP_RETURN_ON_ERROR(ctx->sensor_drv.af_sensor_set_focus(af_current, ctx->arg), TAG, "sensor set focus val fail");
         ESP_RETURN_ON_ERROR(esp_isp_af_controller_get_oneshot_result(ctx->af_ctlr, &result), TAG, "get AF result fail");
         af_sum = result.definition[0] + result.definition[1] + result.definition[2];
         if (af_sum > af_sum_max) {
@@ -154,7 +156,7 @@ static esp_err_t s_af_process(void *arg, int *out_definition_thresh, int *out_lu
             af_current = 0;
         }
 
-        ESP_RETURN_ON_ERROR(ctx->sensor_drv.af_sensor_set_focus(af_current), TAG, "sensor set focus val fail");
+        ESP_RETURN_ON_ERROR(ctx->sensor_drv.af_sensor_set_focus(af_current, ctx->arg), TAG, "sensor set focus val fail");
         ESP_RETURN_ON_ERROR(esp_isp_af_controller_get_oneshot_result(ctx->af_ctlr, &result), TAG, "get AF result fail");
         af_sum = result.definition[0] + result.definition[1] + result.definition[2];
         if (af_sum > af_sum_max) {
@@ -167,7 +169,7 @@ static esp_err_t s_af_process(void *arg, int *out_definition_thresh, int *out_lu
     // af done
     ESP_LOGV(TAG, "//----------- af done ----------//");
     ESP_LOGV(TAG, "af_sum_max: %d, af_current_best: %d.%d", af_sum_max, (int)af_current_best, (int)((int)(af_current_best * 1000) % 1000));
-    ESP_RETURN_ON_ERROR(ctx->sensor_drv.af_sensor_set_focus(af_current_best), TAG, "sensor set focus val fail");
+    ESP_RETURN_ON_ERROR(ctx->sensor_drv.af_sensor_set_focus(af_current_best, ctx->arg), TAG, "sensor set focus val fail");
 
     // update env threshold
     ESP_LOGV(TAG, "//------- update env threshold -------//");
