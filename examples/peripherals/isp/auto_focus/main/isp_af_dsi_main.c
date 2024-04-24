@@ -6,9 +6,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "esp_attr.h"
-#include "esp_log.h"
 #include "freertos/FreeRTOS.h"
+#include "esp_log.h"
+#include "esp_heap_caps.h"
 #include "esp_lcd_mipi_dsi.h"
 #include "esp_lcd_panel_ops.h"
 #include "esp_lcd_ili9881c.h"
@@ -16,6 +16,7 @@
 #include "esp_cache.h"
 #include "driver/i2c_master.h"
 #include "driver/isp.h"
+#include "isp_af_scheme_sa.h"
 #include "esp_cam_ctlr_csi.h"
 #include "esp_cam_ctlr.h"
 #include "esp_sccb_intf.h"
@@ -25,10 +26,138 @@
 #include "example_dsi_init.h"
 #include "example_config.h"
 
-static const char *TAG = "cam_dsi";
+static const char *TAG = "isp_dsi";
 
 static bool s_camera_get_new_vb(esp_cam_ctlr_handle_t handle, esp_cam_ctlr_trans_t *trans, void *user_data);
 static bool s_camera_get_finished_trans(esp_cam_ctlr_handle_t handle, esp_cam_ctlr_trans_t *trans, void *user_data);
+
+typedef union {
+    struct {
+        uint16_t s    : 4;
+        uint16_t d    : 10;
+        uint16_t flag : 1;
+        uint16_t pd   : 1;
+    };
+    struct {
+        uint16_t byte2 : 8;
+        uint16_t byte1 : 8;
+    };
+    uint16_t val;
+} dw9714_reg_t;
+
+static bool IRAM_ATTR s_env_change_cb(isp_af_ctrlr_t af_ctrlr, const esp_isp_af_env_detector_evt_data_t *edata, void *user_data)
+{
+    BaseType_t mustYield = pdFALSE;
+    TaskHandle_t task_handle = (TaskHandle_t)user_data;
+    vTaskNotifyGiveFromISR(task_handle, &mustYield);
+
+    return (mustYield == pdTRUE);
+}
+
+static esp_err_t s_sensor_set_focus_val(int focus_val, void *arg)
+{
+    esp_sccb_io_handle_t dw9714_io_handle = arg;
+
+    dw9714_reg_t reg = {0};
+    reg.d = (uint16_t)((focus_val / 120.0) * 1023.0);
+
+    uint8_t data[2] = {0};
+    data[0] = reg.byte1;
+    data[1] = reg.byte2;
+
+    uint16_t reg_addr = (data[0] << 8) + (data[1]);
+    uint8_t reg_val = 0;
+
+    esp_err_t ret = esp_sccb_transmit_reg_a16v8(dw9714_io_handle, reg_addr, reg_val);
+    if (ret != ESP_OK) {
+        printf("dw9714 esp_sccb_transmit_reg_a16v8 failed\n");
+        return ret;
+    }
+
+    return ESP_OK;
+}
+
+static void af_task(void *arg)
+{
+    TaskHandle_t task_handle = xTaskGetCurrentTaskHandle();
+
+    typedef struct af_task_param_t {
+        isp_proc_handle_t isp_proc;
+        esp_sccb_io_handle_t dw9714_io_handle;
+    } af_task_param_t;
+
+    af_task_param_t af_task_param  = *(af_task_param_t *)arg;
+
+    /**
+     * AF window, windows for ISP hardware to record the
+     * - lunimance
+     * - definition
+     * of the current windows
+     */
+    esp_isp_af_config_t af_config = {
+        .window = {
+            [0] = {
+                .top_left_x = (CONFIG_EXAMPLE_MIPI_CSI_DISP_HRES / 2) - 100,
+                .bottom_right_x = (CONFIG_EXAMPLE_MIPI_CSI_DISP_HRES / 2) + 99,
+                .top_left_y = (CONFIG_EXAMPLE_MIPI_CSI_DISP_VRES / 2) - 100,
+                .bottom_right_y = (CONFIG_EXAMPLE_MIPI_CSI_DISP_VRES / 2) + 99,
+            },
+            [1] = {
+                .top_left_x = (CONFIG_EXAMPLE_MIPI_CSI_DISP_HRES / 2) - 100,
+                .bottom_right_x = (CONFIG_EXAMPLE_MIPI_CSI_DISP_HRES / 2) + 99,
+                .top_left_y = (CONFIG_EXAMPLE_MIPI_CSI_DISP_VRES / 2) - 100,
+                .bottom_right_y = (CONFIG_EXAMPLE_MIPI_CSI_DISP_VRES / 2) + 99,
+            },
+            [2] = {
+                .top_left_x = (CONFIG_EXAMPLE_MIPI_CSI_DISP_HRES / 2) - 100,
+                .bottom_right_x = (CONFIG_EXAMPLE_MIPI_CSI_DISP_HRES / 2) + 99,
+                .top_left_y = (CONFIG_EXAMPLE_MIPI_CSI_DISP_VRES / 2) - 100,
+                .bottom_right_y = (CONFIG_EXAMPLE_MIPI_CSI_DISP_VRES / 2) + 99,
+            },
+        },
+        .edge_thresh = 128,
+    };
+
+    isp_af_ctrlr_t af_ctrlr = NULL;
+    ESP_ERROR_CHECK(esp_isp_new_af_controller(af_task_param.isp_proc, &af_config, &af_ctrlr));
+
+    esp_isp_af_env_config_t env_config = {
+        .interval = 10,
+    };
+    ESP_ERROR_CHECK(esp_isp_af_controller_set_env_detector(af_ctrlr, &env_config));
+
+    esp_isp_af_env_detector_evt_cbs_t cbs = {
+        .on_env_change = s_env_change_cb,
+    };
+    ESP_ERROR_CHECK(esp_isp_af_env_detector_register_event_callbacks(af_ctrlr, &cbs, task_handle));
+
+    isp_af_sa_scheme_config_t af_scheme_config = {
+        .first_step_val = 12,
+        .first_approx_cycles = 10,
+        .second_step_val = 2,
+        .second_approx_cycles = 10,
+    };
+    isp_af_scheme_handle_t af_scheme = NULL;
+    ESP_ERROR_CHECK(isp_af_create_sa_scheme(af_ctrlr, &af_scheme_config, &af_scheme));
+
+    isp_af_sa_scheme_sensor_drv_t sensor_driver = {
+        .af_sensor_set_focus = s_sensor_set_focus_val,
+    };
+    isp_af_sa_scheme_sensor_info_t sensor_info = {
+        .focus_val_max = 120,
+    };
+    ESP_ERROR_CHECK(isp_af_sa_scheme_register_sensor_driver(af_scheme, &sensor_driver, &sensor_info, af_task_param.dw9714_io_handle));
+
+    int definition_thresh = 0;
+    int luminance_thresh = 0;
+    ESP_ERROR_CHECK(esp_isp_af_controller_enable(af_ctrlr));
+
+    while (1) {
+        ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+        ESP_ERROR_CHECK(isp_af_process(af_scheme, &definition_thresh, &luminance_thresh));
+        ESP_ERROR_CHECK(esp_isp_af_controller_set_env_detector_threshold(af_ctrlr, definition_thresh, luminance_thresh));
+    }
+}
 
 void app_main(void)
 {
@@ -86,6 +215,10 @@ void app_main(void)
     };
     ESP_ERROR_CHECK(sccb_new_i2c_io(bus_handle, &i2c_config, &ov5647_io_handle));
 
+    esp_sccb_io_handle_t dw9714_io_handle = NULL;
+    i2c_config.device_address = EXAMPLE_DW9714_DEV_ADDR;
+    ESP_ERROR_CHECK(sccb_new_i2c_io(bus_handle, &i2c_config, &dw9714_io_handle));
+
     //---------------CSI Init------------------//
     esp_cam_ctlr_csi_config_t csi_config = {
         .ctlr_id = 0,
@@ -98,8 +231,8 @@ void app_main(void)
         .byte_swap_en = false,
         .queue_items = 1,
     };
-    esp_cam_ctlr_handle_t cam_handle = NULL;
-    ret = esp_cam_new_csi_ctlr(&csi_config, &cam_handle);
+    esp_cam_ctlr_handle_t handle = NULL;
+    ret = esp_cam_new_csi_ctlr(&csi_config, &handle);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "csi init fail[%d]", ret);
         return;
@@ -109,13 +242,12 @@ void app_main(void)
         .on_get_new_trans = s_camera_get_new_vb,
         .on_trans_finished = s_camera_get_finished_trans,
     };
-    if (esp_cam_ctlr_register_event_callbacks(cam_handle, &cbs, &new_trans) != ESP_OK) {
+    if (esp_cam_ctlr_register_event_callbacks(handle, &cbs, &new_trans) != ESP_OK) {
         ESP_LOGE(TAG, "ops register fail");
         return;
     }
 
-    ESP_ERROR_CHECK(esp_cam_ctlr_enable(cam_handle));
-
+    ESP_ERROR_CHECK(esp_cam_ctlr_enable(handle));
     //---------------ISP Init------------------//
     isp_proc_handle_t isp_proc = NULL;
     esp_isp_processor_cfg_t isp_config = {
@@ -131,6 +263,17 @@ void app_main(void)
     ESP_ERROR_CHECK(esp_isp_new_processor(&isp_config, &isp_proc));
     ESP_ERROR_CHECK(esp_isp_enable(isp_proc));
 
+    typedef struct af_task_param_t {
+        isp_proc_handle_t isp_proc;
+        esp_sccb_io_handle_t dw9714_io_handle;
+    } af_task_param_t;
+
+    af_task_param_t af_task_param = {
+        .isp_proc = isp_proc,
+        .dw9714_io_handle = dw9714_io_handle,
+    };
+    xTaskCreatePinnedToCore(af_task, "af_task", 8192, &af_task_param, 5, NULL, 0);
+
     //---------------DSI Panel Init------------------//
     example_dsi_ili9881c_panel_init(ili9881c_ctrl_panel);
 
@@ -138,7 +281,7 @@ void app_main(void)
     memset(frame_buffer, 0xFF, frame_buffer_size);
     esp_cache_msync((void *)frame_buffer, frame_buffer_size, ESP_CACHE_MSYNC_FLAG_DIR_C2M);
 
-    if (esp_cam_ctlr_start(cam_handle) != ESP_OK) {
+    if (esp_cam_ctlr_start(handle) != ESP_OK) {
         ESP_LOGE(TAG, "Driver start fail");
         return;
     }
@@ -169,10 +312,12 @@ void app_main(void)
 #if CONFIG_EXAMPLE_MIPI_CSI_VRES_640
         if (!strcmp(parray[i].name, "MIPI_2lane_24Minput_RAW8_800x640_50fps")) {
             cam_cur_fmt = (esp_cam_sensor_format_t *) & (parray[i].name);
+            break;
         }
 #else
         if (!strcmp(parray[i].name, "MIPI_2lane_24Minput_RAW8_800x1280_50fps")) {
             cam_cur_fmt = (esp_cam_sensor_format_t *) & (parray[i].name);
+            break;
         }
 #endif
     }
@@ -193,7 +338,7 @@ void app_main(void)
     example_dpi_panel_init(mipi_dpi_panel);
 
     while (1) {
-        ESP_ERROR_CHECK(esp_cam_ctlr_receive(cam_handle, &new_trans, ESP_CAM_CTLR_MAX_DELAY));
+        ESP_ERROR_CHECK(esp_cam_ctlr_receive(handle, &new_trans, ESP_CAM_CTLR_MAX_DELAY));
     }
 }
 
@@ -206,7 +351,7 @@ static bool s_camera_get_new_vb(esp_cam_ctlr_handle_t handle, esp_cam_ctlr_trans
     return false;
 }
 
-static bool s_camera_get_finished_trans(esp_cam_ctlr_handle_t handle, esp_cam_ctlr_trans_t *trans, void *user_data)
+bool s_camera_get_finished_trans(esp_cam_ctlr_handle_t handle, esp_cam_ctlr_trans_t *trans, void *user_data)
 {
     return false;
 }

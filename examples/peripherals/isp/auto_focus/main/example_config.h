@@ -18,6 +18,7 @@ extern "C" {
 #define EXAMPLE_MIPI_CSI_LANE_BITRATE_MBPS      200 //line_rate = pclk * 4
 
 #define EXAMPLE_OV5647_DEV_ADDR                 0x36
+#define EXAMPLE_DW9714_DEV_ADDR                 0xC
 #ifdef __cplusplus
 }
 #endif
