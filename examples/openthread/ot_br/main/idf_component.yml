@@ -1,7 +1,7 @@
 ## IDF Component Manager Manifest File
 dependencies:
   espressif/esp_ot_cli_extension:
-    version: "~1.0.0"
+    version: "~1.1.0"
   espressif/mdns: "^1.0.3"
   ## Required IDF version
   idf:
