@@ -42,9 +42,10 @@ typedef struct {
  * - Initializes the HCD root port
  *
  * @param[in] hub_config Hub driver configuration
+ * @param[out] client_ret Unique pointer to identify the Hub as a USB Host client
  * @return esp_err_t
  */
-esp_err_t hub_install(hub_config_t *hub_config);
+esp_err_t hub_install(hub_config_t *hub_config, void **client_ret);
 
 /**
  * @brief Uninstall Hub driver
@@ -78,15 +79,16 @@ esp_err_t hub_root_start(void);
 esp_err_t hub_root_stop(void);
 
 /**
- * @brief Indicate to the Hub driver that a device has been freed
+ * @brief Indicate to the Hub driver that a device's port can be recycled
  *
- * Hub driver can now recover the port that the device was connected to
+ * The device connected to the port has been freed. The Hub driver can now
+ * recycled the port.
  *
- * @param dev_addr Device address
+ * @param dev_uid Device's unique ID
  * @return
  *     - ESP_OK: Success
  */
-esp_err_t hub_dev_is_free(uint8_t dev_addr);
+esp_err_t hub_port_recycle(unsigned int dev_uid);
 
 /**
  * @brief Hub driver's processing function
