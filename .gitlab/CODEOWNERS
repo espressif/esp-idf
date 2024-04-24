@@ -154,20 +154,21 @@
 /components/wpa_supplicant/           @esp-idf-codeowners/wifi @esp-idf-codeowners/app-utilities/mbedtls
 /components/xtensa/                   @esp-idf-codeowners/system
 
-/docs/                                   @esp-idf-codeowners/docs
-/docs/**/api-guides/tools/               @esp-idf-codeowners/tools
-/docs/en/api-guides/core_dump.rst        @esp-idf-codeowners/debugging
-/docs/en/api-guides/jtag-debugging/      @esp-idf-codeowners/debugging
-/docs/**/api-reference/bluetooth/        @esp-idf-codeowners/bluetooth
-/docs/**/api-reference/network/          @esp-idf-codeowners/network @esp-idf-codeowners/wifi
-/docs/**/api-reference/peripherals/      @esp-idf-codeowners/peripherals
-/docs/**/api-reference/peripherals/usb*  @esp-idf-codeowners/peripherals @esp-idf-codeowners/peripherals/usb
-/docs/**/api-reference/protocols/        @esp-idf-codeowners/network @esp-idf-codeowners/app-utilities
-/docs/**/api-reference/provisioning/     @esp-idf-codeowners/app-utilities/provisioning
-/docs/**/api-reference/storage/          @esp-idf-codeowners/storage
-/docs/**/api-reference/system/           @esp-idf-codeowners/system
-/docs/**/security/                       @esp-idf-codeowners/security
-/docs/**/migration-guides/               @esp-idf-codeowners/docs @esp-idf-codeowners/all-maintainers
+/docs/                                      @esp-idf-codeowners/docs
+/docs/**/api-guides/tools/                  @esp-idf-codeowners/tools
+/docs/en/api-guides/core_dump.rst           @esp-idf-codeowners/debugging
+/docs/en/api-guides/jtag-debugging/         @esp-idf-codeowners/debugging
+/docs/**/api-reference/bluetooth/           @esp-idf-codeowners/bluetooth
+/docs/**/api-reference/network/             @esp-idf-codeowners/network @esp-idf-codeowners/wifi
+/docs/**/api-reference/peripherals/         @esp-idf-codeowners/peripherals
+/docs/**/api-reference/peripherals/usb*     @esp-idf-codeowners/peripherals @esp-idf-codeowners/peripherals/usb
+/docs/**/api-reference/peripherals/usb*/    @esp-idf-codeowners/peripherals @esp-idf-codeowners/peripherals/usb
+/docs/**/api-reference/protocols/           @esp-idf-codeowners/network @esp-idf-codeowners/app-utilities
+/docs/**/api-reference/provisioning/        @esp-idf-codeowners/app-utilities/provisioning
+/docs/**/api-reference/storage/             @esp-idf-codeowners/storage
+/docs/**/api-reference/system/              @esp-idf-codeowners/system
+/docs/**/security/                          @esp-idf-codeowners/security
+/docs/**/migration-guides/                  @esp-idf-codeowners/docs @esp-idf-codeowners/all-maintainers
 
 /examples/README.md           @esp-idf-codeowners/docs @esp-idf-codeowners/ci
 /examples/**/*.py             @esp-idf-codeowners/ci @esp-idf-codeowners/tools
