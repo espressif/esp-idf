@@ -3,6 +3,9 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+#include "sdkconfig.h"
+
 /*  Default entry point:  */
 ENTRY(call_start_cpu0);
 
@@ -313,9 +316,11 @@ SECTIONS
     *(.gnu.linkonce.e.*)
     *(.gnu.version_r)
     . = (. + 3) & ~ 3;
+#if CONFIG_COMPILER_CXX_EXCEPTIONS
     __eh_frame = ABSOLUTE(.);
     KEEP(*(.eh_frame))
     . = (. + 7) & ~ 3;
+#endif // CONFIG_COMPILER_CXX_EXCEPTIONS
     /*  C++ constructor and destructor tables
 
         Make a point of not including anything from crtbegin.o or crtend.o, as IDF doesn't use toolchain crt
@@ -459,12 +464,20 @@ SECTIONS
     */
   .xt.prop 0 :
   {
-    KEEP (*(.xt.prop .gnu.linkonce.prop.*))
+    KEEP (*(.xt.prop .xt.prop.* .gnu.linkonce.prop.*))
   }
 
   .xt.lit 0 :
   {
-    KEEP (*(.xt.lit .gnu.linkonce.p.*))
+    KEEP (*(.xt.lit .xt.lit.* .gnu.linkonce.p.*))
+  }
+
+  /DISCARD/ :
+  {
+   *(.eh_frame_hdr)
+#if !CONFIG_COMPILER_CXX_EXCEPTIONS
+   *(.eh_frame)
+#endif // !CONFIG_COMPILER_CXX_EXCEPTIONS
   }
 }
 
