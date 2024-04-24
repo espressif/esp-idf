@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -39,7 +39,10 @@ typedef enum {
 typedef void *esp_https_ota_handle_t;
 typedef esp_err_t(*http_client_init_cb_t)(esp_http_client_handle_t);
 
-#if CONFIG_ESP_HTTPS_OTA_DECRYPT_CB
+#if CONFIG_ESP_HTTPS_OTA_DECRYPT_CB || __DOXYGEN__
+/**
+ * @brief ESP HTTPS OTA decrypt callback args
+ */
 typedef struct {
     const char *data_in;    /*!< Pointer to data to be decrypted */
     size_t data_in_len;     /*!< Input data length */
@@ -48,7 +51,7 @@ typedef struct {
 } decrypt_cb_arg_t;
 
 typedef esp_err_t(*decrypt_cb_t)(decrypt_cb_arg_t *args, void *user_ctx);
-#endif // CONFIG_ESP_HTTPS_OTA_DECRYPT_CB
+#endif // CONFIG_ESP_HTTPS_OTA_DECRYPT_CB || __DOXYGEN__
 
 /**
  * @brief ESP HTTPS OTA configuration
@@ -60,7 +63,7 @@ typedef struct {
     bool partial_http_download;                    /*!< Enable Firmware image to be downloaded over multiple HTTP requests */
     int max_http_request_size;                     /*!< Maximum request size for partial HTTP download */
     uint32_t buffer_caps;                          /*!< The memory capability to use when allocating the buffer for OTA update. Default capability is MALLOC_CAP_DEFAULT */
-#if CONFIG_ESP_HTTPS_OTA_DECRYPT_CB
+#if CONFIG_ESP_HTTPS_OTA_DECRYPT_CB || __DOXYGEN__
     decrypt_cb_t decrypt_cb;                       /*!< Callback for external decryption layer */
     void *decrypt_user_ctx;                        /*!< User context for external decryption layer */
     uint16_t enc_img_header_size;                  /*!< Header size of pre-encrypted ota image header */
