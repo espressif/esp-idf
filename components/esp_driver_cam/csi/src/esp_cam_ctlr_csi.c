@@ -300,6 +300,7 @@ static bool csi_dma_trans_done_callback(dw_gdma_channel_handle_t chan, const dw_
     bool need_yield = false;
     BaseType_t high_task_woken = pdFALSE;
     csi_controller_t *ctlr = (csi_controller_t *)user_data;
+    bool has_new_trans = false;
     bool use_backup = false;
 
     dw_gdma_block_transfer_config_t csi_dma_transfer_config = {};
@@ -328,12 +329,14 @@ static bool csi_dma_trans_done_callback(dw_gdma_channel_handle_t chan, const dw_
             use_backup = true;
         } else {
             csi_dma_transfer_config.dst.addr = (uint32_t)(new_trans.buffer);
+            has_new_trans = true;
         }
     } else if (xQueueReceiveFromISR(ctlr->trans_que, &new_trans, &high_task_woken) == pdTRUE) {
         if (!(new_trans.buffer) || new_trans.buflen < ctlr->fb_size_in_bytes) {
             use_backup = true;
         } else {
             csi_dma_transfer_config.dst.addr = (uint32_t)(new_trans.buffer);
+            has_new_trans = true;
         }
     } else if (!ctlr->bk_buffer_dis) {
         use_backup = true;
@@ -344,7 +347,9 @@ static bool csi_dma_trans_done_callback(dw_gdma_channel_handle_t chan, const dw_
         new_trans.buflen = ctlr->fb_size_in_bytes;
         ESP_EARLY_LOGD(TAG, "no new buffer or no long enough new buffer, use driver internal buffer");
         csi_dma_transfer_config.dst.addr = (uint32_t)ctlr->backup_buffer;
-    } else {
+    }
+
+    if (!has_new_trans) {
         assert(false && "no new buffer, and no driver internal buffer");
     }
 

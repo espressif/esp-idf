@@ -1,0 +1,25 @@
+menu "Example Configuration"
+    config EXAMPLE_USED_LDO_CHAN_ID
+        int "example used LDO channel ID"
+        default 3
+        help
+            Example used LDO channel ID, you may check datasheet to know more details.
+
+    config EXAMPLE_USED_LDO_VOLTAGE_MV
+        int "example used LDO voltage in mV"
+        default 2500
+        range 0 3300
+        help
+            Example used LDO voltage, in mV
+
+    choice EXAMPLE_MIPI_CSI_VRES
+        bool "Set MIPI CSI verticol resolution"
+        default EXAMPLE_MIPI_CSI_VRES_640
+
+        config EXAMPLE_MIPI_CSI_VRES_640
+            bool "640"
+        config EXAMPLE_MIPI_CSI_VRES_1280
+            bool "1280"
+    endchoice
+
+endmenu
