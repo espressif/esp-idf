@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,7 +15,7 @@
 #include "driver/gpio.h"
 #include "esp_async_memcpy.h"
 
-TEST_CASE("async_memcpy_eof_event", "[etm]")
+TEST_CASE("async_memcpy_eof_event", "[GDMA][ETM]")
 {
     const uint32_t output_gpio = 1;
     // async_memcpy done ---> ETM channel A ---> GPIO toggle
