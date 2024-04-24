@@ -114,7 +114,6 @@ api-reference/peripherals/usb_host/usb_host_notes_design.rst
 api-reference/peripherals/usb_host/usb_host_notes_usbh.rst
 api-reference/peripherals/hmac.rst
 api-reference/peripherals/usb_device.rst
-api-reference/peripherals/gpio.rst
 api-reference/peripherals/sdspi_host.rst
 api-reference/peripherals/spi_slave.rst
 api-reference/peripherals/etm.rst
