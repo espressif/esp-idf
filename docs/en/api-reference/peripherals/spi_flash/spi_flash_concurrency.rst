@@ -77,6 +77,13 @@ Non-IRAM-Safe Interrupt Handlers
 
 If the ``ESP_INTR_FLAG_IRAM`` flag is not set when registering, the interrupt handler will not get executed when the caches are disabled. Once the caches are restored, the non-IRAM-safe interrupts will be re-enabled. After this moment, the interrupt handler will run normally again. This means that as long as caches are disabled, users will not see the corresponding hardware event happening.
 
+.. only:: SOC_DMA_CAN_ACCESS_MSPI_MEM
+
+    When DMA Read Data from Flash
+    -----------------------------
+
+    When DMA is reading data from Flash, erase/write operations from SPI1 take higher priority in hardware, resulting in unpredictable data read by DMA. It is recommended to stop DMA access to Flash before erasing or writing to it. If DMA cannot be stopped (for example, the LCD needs to continuously refresh image data stored in Flash), it is advisable to copy such data to PSRAM or internal SRAM.
+
 
 .. only:: SOC_SPI_MEM_SUPPORT_AUTO_SUSPEND
 
