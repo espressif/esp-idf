@@ -364,17 +364,21 @@ SECTIONS
 
   .eh_frame_hdr :
   {
+#if CONFIG_COMPILER_CXX_EXCEPTIONS || CONFIG_ESP_SYSTEM_USE_EH_FRAME
     ALIGNED_SYMBOL(4, __eh_frame_hdr)
 
     KEEP (*(.eh_frame_hdr))
 
     __eh_frame_hdr_end = ABSOLUTE(.);
+#endif // CONFIG_COMPILER_CXX_EXCEPTIONS || CONFIG_ESP_SYSTEM_USE_EH_FRAME
+
     . = ALIGN(ALIGNOF(.eh_frame));
   } > default_rodata_seg
   ASSERT_SECTIONS_GAP(.eh_frame_hdr, .eh_frame)
 
   .eh_frame :
   {
+#if CONFIG_COMPILER_CXX_EXCEPTIONS || CONFIG_ESP_SYSTEM_USE_EH_FRAME
     ALIGNED_SYMBOL(4, __eh_frame)
 
     KEEP (*(.eh_frame))
@@ -385,6 +389,8 @@ SECTIONS
     LONG(0);
 
     __eh_frame_end = ABSOLUTE(.);
+#endif // CONFIG_COMPILER_CXX_EXCEPTIONS || CONFIG_ESP_SYSTEM_USE_EH_FRAME
+
     . = ALIGN(ALIGNOF(.flash.tdata));
   } > default_rodata_seg
   ASSERT_SECTIONS_GAP(.eh_frame, .flash.tdata)
@@ -432,11 +438,18 @@ SECTIONS
     ALIGNED_SYMBOL(16, _heap_start)
   } > sram_seg
 
-  /**
-   * Discarding .rela.* sections results in the following mapping:
-   * .rela.text.* -> .text.*
-   * .rela.data.* -> .data.*
-   * And so forth...
-   */
-  /DISCARD/ : { *(.rela.*) }
+  /DISCARD/ :
+  {
+   /**
+    * Discarding .rela.* sections results in the following mapping:
+    * .rela.text.* -> .text.*
+    * .rela.data.* -> .data.*
+    * And so forth...
+    */
+   *(.rela.*)
+#if !(CONFIG_COMPILER_CXX_EXCEPTIONS || CONFIG_ESP_SYSTEM_USE_EH_FRAME)
+   *(.eh_frame_hdr)
+   *(.eh_frame)
+#endif // !(CONFIG_COMPILER_CXX_EXCEPTIONS || CONFIG_ESP_SYSTEM_USE_EH_FRAME)
+  }
 }
