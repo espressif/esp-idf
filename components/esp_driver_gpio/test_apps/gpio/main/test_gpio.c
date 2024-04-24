@@ -535,6 +535,8 @@ TEST_CASE("GPIO_set_output_level_get_input_level_test", "[gpio]")
     TEST_ASSERT_EQUAL_INT_MESSAGE(1, gpio_get_level(TEST_GPIO_EXT_IN_IO), "get level error! the level should be high!");
 }
 
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C5)
+// C5 on FPGA do not support GPIO pull down
 // This test routes constant-high/low signal to pins, another way is to directly connect TEST_GPIO_EXT_IN_IO to
 // 3.3v or GND pin
 TEST_CASE("GPIO_get_level_from_fixed_voltage_test", "[gpio]")
@@ -661,6 +663,8 @@ TEST_CASE("GPIO_mode_test", "[gpio]")
     gpio_set_level(TEST_GPIO_EXT_OUT_IO, !level);
     TEST_ASSERT_EQUAL_INT_MESSAGE(!level, gpio_get_level(TEST_GPIO_EXT_IN_IO), "direction GPIO_MODE_INPUT_OUTPUT set error, it gives incorrect output");
 }
+
+#endif
 
 static void prompt_to_continue(const char *str)
 {
