@@ -9,6 +9,9 @@ pytest-rerunfailures
 pytest-timeout
 pytest-ignore-test-results
 
+# ci
+minio
+
 # build
 python-gitlab
 idf-build-apps
