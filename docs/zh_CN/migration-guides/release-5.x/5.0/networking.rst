@@ -140,6 +140,8 @@ TCP/IP 适配器是在 ESP-IDF v4.1 之前使用的网络接口抽象组件。�
 * :component_file:`DNS <esp_netif/include/esp_netif.h#L516>`
 * :component_file:`IP address <esp_netif/include/esp_netif.h#L568>`
 
+TCP/IP 适配器 API ``tcpip_adapter_get_sta_list()`` 用于获取与软件接入点 (softAP) 相关联的 Wi-Fi 站点列表，现已移到 Wi-Fi 组件，并更名为 :cpp:func:`esp_wifi_ap_get_sta_list_with_ip()`，它是 ESP-NETIF API :cpp:func:`esp_netif_dhcps_get_clients_by_mac()` 一个特例。无论服务器在哪个网络接口上运行，该 API 都可更方便地提供连接到 DHCP 服务器的客户端列表。
+
 默认事件处理程序
 ^^^^^^^^^^^^^^^^^^^^^^
 
