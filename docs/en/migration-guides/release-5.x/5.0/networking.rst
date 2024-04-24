@@ -131,6 +131,8 @@ All the ``tcpip_adapter`` functions have their ``esp-netif`` counter-part. Pleas
 *  :component_file:`DNS <esp_netif/include/esp_netif.h#L516>`
 *  :component_file:`IP address <esp_netif/include/esp_netif.h#L568>`
 
+The TCP/IP Adapter API ``tcpip_adapter_get_sta_list()`` that was used to acquire a list of associated Wi-Fi stations to the Software Access Point (softAP) has been moved to the Wi-Fi component and renamed to :cpp:func:`esp_wifi_ap_get_sta_list_with_ip()`, which is a special case of the ESP-NETIF API :cpp:func:`esp_netif_dhcps_get_clients_by_mac()` that could be used more generally to provide a list of clients connected to a DHCP server no matter which network interface the server is running on.
+
 Default Event Handlers
 ^^^^^^^^^^^^^^^^^^^^^^
 
