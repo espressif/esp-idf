@@ -15,6 +15,7 @@ from pytest_embedded_idf import IdfDut
 def test_examples_sysview_tracing_heap_log(idf_path: str, dut: IdfDut) -> None:
     trace_log = os.path.join(os.path.dirname(dut.gdb._logfile), 'heap_log.svdat')  # pylint: disable=protected-access
 
+    dut.gdb.write('set width unlimited')  # Don't split output lines for easy parsing
     dut.gdb.write('mon reset halt')
     dut.gdb.write('maintenance flush register-cache')
 
