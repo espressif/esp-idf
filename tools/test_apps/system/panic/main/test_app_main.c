@@ -100,6 +100,8 @@ void app_main(void)
     HANDLE_TEST(test_name, test_ub);
     HANDLE_TEST(test_name, test_assert);
     HANDLE_TEST(test_name, test_assert_cache_disabled);
+    HANDLE_TEST(test_name, test_assert_cache_write_back_error_can_print_backtrace);
+    HANDLE_TEST(test_name, test_assert_cache_write_back_error_can_print_backtrace2);
 
 #if CONFIG_TEST_MEMPROT
 
