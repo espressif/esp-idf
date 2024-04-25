@@ -795,6 +795,10 @@ config SOC_RMT_SUPPORT_RC_FAST
     bool
     default y
 
+config SOC_RMT_SUPPORT_SLEEP_BACKUP
+    bool
+    default y
+
 config SOC_MCPWM_GROUPS
     int
     default 1

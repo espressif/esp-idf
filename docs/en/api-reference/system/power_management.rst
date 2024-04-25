@@ -146,6 +146,7 @@ Light-sleep Peripheral Power Down
     - TIMG0
     - SPI0/1
     - SYSTIMER
+    - RMT
 
     The following peripherals are not yet supported:
     - ETM
@@ -160,7 +161,6 @@ Light-sleep Peripheral Power Down
     - TWAI
     - LEDC
     - MCPWM
-    - RMT
     - SARADC
     - SDIO
     - PARL_IO

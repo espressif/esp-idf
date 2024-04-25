@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -27,6 +27,7 @@
 #include "esp_private/gdma.h"
 #include "esp_private/esp_gpio_reserve.h"
 #include "esp_private/gpio.h"
+#include "esp_private/sleep_retention.h"
 #include "driver/rmt_common.h"
 
 #ifdef __cplusplus
@@ -71,6 +72,9 @@ typedef dma_descriptor_align4_t rmt_dma_descriptor_t;
 
 #define ALIGN_UP(num, align)    (((num) + ((align) - 1)) & ~((align) - 1))
 #define ALIGN_DOWN(num, align)  ((num) & ~((align) - 1))
+
+// Use retention link only when the target supports sleep retention and PM is enabled
+#define RMT_USE_RETENTION_LINK  (SOC_RMT_SUPPORT_SLEEP_BACKUP && CONFIG_PM_ENABLE && CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP)
 
 typedef struct {
     struct {
@@ -119,6 +123,10 @@ struct rmt_group_t {
     rmt_rx_channel_t *rx_channels[SOC_RMT_RX_CANDIDATES_PER_GROUP]; // array of RMT RX channels
     rmt_sync_manager_t *sync_manager; // sync manager, this can be extended into an array if there're more sync controllers in one RMT group
     int intr_priority;     // RMT interrupt priority
+#if RMT_USE_RETENTION_LINK
+    sleep_retention_module_t sleep_retention_module; // sleep retention module
+    bool retention_link_created;       // mark if the retention link is created
+#endif
 };
 
 struct rmt_channel_t {
@@ -246,6 +254,13 @@ bool rmt_set_intr_priority_to_group(rmt_group_t *group, int intr_priority);
  * @return isr_flags
  */
 int rmt_get_isr_flags(rmt_group_t *group);
+
+/**
+ * @brief Create sleep retention link
+ *
+ * @param group RMT group handle, returned from `rmt_acquire_group_handle`
+ */
+void rmt_create_retention_module(rmt_group_t *group);
 
 #ifdef __cplusplus
 }

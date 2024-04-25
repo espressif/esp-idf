@@ -417,7 +417,7 @@ static esp_err_t rmt_simple_encoder_reset(rmt_encoder_t *encoder)
 static esp_err_t rmt_del_simple_encoder(rmt_encoder_t *encoder)
 {
     rmt_simple_encoder_t *simple_encoder = __containerof(encoder, rmt_simple_encoder_t, base);
-    if (simple_encoder) {
+    if (simple_encoder->ovf_buf) {
         free(simple_encoder->ovf_buf);
     }
     free(simple_encoder);

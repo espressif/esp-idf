@@ -146,6 +146,7 @@ Light-sleep 外设下电
     - TIMG0
     - SPI0/1
     - SYSTIMER
+    - RMT
 
     以下外设尚未支持：
     - ETM
@@ -160,7 +161,6 @@ Light-sleep 外设下电
     - TWAI
     - LEDC
     - MCPWM
-    - RMT
     - SARADC
     - SDIO
     - PARL_IO

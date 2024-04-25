@@ -8,6 +8,10 @@ if(CONFIG_RMT_ISR_IRAM_SAFE)
     list(APPEND srcs "test_rmt_iram.c")
 endif()
 
+if(CONFIG_SOC_LIGHT_SLEEP_SUPPORTED AND CONFIG_PM_ENABLE)
+    list(APPEND srcs "test_rmt_sleep.c")
+endif()
+
 idf_component_register(SRCS "${srcs}"
                        PRIV_REQUIRES unity esp_driver_rmt esp_driver_gpio esp_timer esp_psram
                        WHOLE_ARCHIVE)

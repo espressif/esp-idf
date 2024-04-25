@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -44,6 +44,9 @@ typedef struct {
         uint32_t with_dma: 1;     /*!< If set, the driver will allocate an RMT channel with DMA capability */
         uint32_t io_loop_back: 1; /*!< The signal output from the GPIO will be fed to the input path as well */
         uint32_t io_od_mode: 1;   /*!< Configure the GPIO as open-drain mode */
+        uint32_t backup_before_sleep: 1; /*!< If set, the driver will backup/restore the RMT registers before/after entering/exist sleep mode.
+                                              By this approach, the system can power off RMT's power domain.
+                                              This can save power, but at the expense of more RAM being consumed */
     } flags;                      /*!< TX channel config flags */
 } rmt_tx_channel_config_t;
 
