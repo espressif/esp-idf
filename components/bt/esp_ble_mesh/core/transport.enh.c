@@ -2,7 +2,7 @@
 
 /*
  * SPDX-FileCopyrightText: 2017 Intel Corporation
- * SPDX-FileContributor: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -121,22 +121,22 @@ static bt_mesh_mutex_t seg_rx_lock;
 
 static inline void bt_mesh_seg_tx_lock(void)
 {
-    bt_mesh_mutex_lock(&seg_tx_lock);
+    bt_mesh_r_mutex_lock(&seg_tx_lock);
 }
 
 static inline void bt_mesh_seg_tx_unlock(void)
 {
-    bt_mesh_mutex_unlock(&seg_tx_lock);
+    bt_mesh_r_mutex_unlock(&seg_tx_lock);
 }
 
 static inline void bt_mesh_seg_rx_lock(void)
 {
-    bt_mesh_mutex_lock(&seg_rx_lock);
+    bt_mesh_r_mutex_lock(&seg_rx_lock);
 }
 
 static inline void bt_mesh_seg_rx_unlock(void)
 {
-    bt_mesh_mutex_unlock(&seg_rx_lock);
+    bt_mesh_r_mutex_unlock(&seg_rx_lock);
 }
 
 uint8_t bt_mesh_seg_send_interval(void)
@@ -2349,8 +2349,8 @@ void bt_mesh_trans_init(void)
         seg_rx[i].buf.data = seg_rx[i].buf.__buf;
     }
 
-    bt_mesh_mutex_create(&seg_tx_lock);
-    bt_mesh_mutex_create(&seg_rx_lock);
+    bt_mesh_r_mutex_create(&seg_tx_lock);
+    bt_mesh_r_mutex_create(&seg_rx_lock);
 }
 
 #if CONFIG_BLE_MESH_DEINIT
@@ -2360,7 +2360,7 @@ void bt_mesh_trans_deinit(bool erase)
     bt_mesh_tx_reset();
     bt_mesh_rpl_reset(erase);
 
-    bt_mesh_mutex_free(&seg_tx_lock);
-    bt_mesh_mutex_free(&seg_rx_lock);
+    bt_mesh_r_mutex_free(&seg_tx_lock);
+    bt_mesh_r_mutex_free(&seg_rx_lock);
 }
 #endif /* CONFIG_BLE_MESH_DEINIT */
