@@ -908,7 +908,6 @@ static void UART_ISR_ATTR uart_rx_intr_handler_default(void *param)
     uint8_t uart_num = p_uart->uart_num;
     int rx_fifo_len = 0;
     uint32_t uart_intr_status = 0;
-    uart_event_t uart_event;
     BaseType_t HPTaskAwoken = 0;
     bool need_yield = false;
     static uint8_t pat_flg = 0;
@@ -921,7 +920,9 @@ static void UART_ISR_ATTR uart_rx_intr_handler_default(void *param)
         if (uart_intr_status == 0) {
             break;
         }
-        uart_event.type = UART_EVENT_MAX;
+        uart_event_t uart_event = {
+            .type = UART_EVENT_MAX,
+        };
         if (uart_intr_status & UART_INTR_TXFIFO_EMPTY) {
             UART_ENTER_CRITICAL_ISR(&(uart_context[uart_num].spinlock));
             uart_hal_disable_intr_mask(&(uart_context[uart_num].hal), UART_INTR_TXFIFO_EMPTY);
