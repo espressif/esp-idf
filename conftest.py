@@ -26,6 +26,7 @@ import typing as t
 import zipfile
 from copy import deepcopy
 from datetime import datetime
+from urllib.parse import quote
 
 import common_test_methods  # noqa: F401
 import gitlab_api
@@ -478,7 +479,7 @@ def pytest_runtest_makereport(item, call):  # type: ignore
             dut_artifacts_url.append('{}:'.format(_dut.test_case_name))
 
         for file in logs_files:
-            dut_artifacts_url.append('    - {}'.format(file))
+            dut_artifacts_url.append('    - {}'.format(quote(file, safe=':/')))
 
 
 def pytest_terminal_summary(terminalreporter, exitstatus, config):  # type: ignore
