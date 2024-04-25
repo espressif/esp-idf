@@ -201,7 +201,7 @@ static void test_gdma_m2m_mode(gdma_channel_handle_t tx_chan, gdma_channel_handl
         // do write-back for the source data because it's in the cache
         TEST_ESP_OK(esp_cache_msync((void *)src_data, 128, ESP_CACHE_MSYNC_FLAG_DIR_C2M));
     }
-#if SOC_DMA_CAN_ACCESS_MSPI_MEM
+#if SOC_DMA_CAN_ACCESS_FLASH
     const char *src_string = "GDMA can fetch data from MSPI Flash";
     size_t src_string_len = strlen(src_string);
     TEST_ASSERT_TRUE(esp_ptr_in_drom(src_string));
@@ -234,7 +234,7 @@ static void test_gdma_m2m_mode(gdma_channel_handle_t tx_chan, gdma_channel_handl
     tx_descs_nc[1].dw0.size = 64;
     tx_descs_nc[1].dw0.length = 64;
     tx_descs_nc[1].dw0.owner = DMA_DESCRIPTOR_BUFFER_OWNER_DMA;
-#if !SOC_DMA_CAN_ACCESS_MSPI_MEM
+#if !SOC_DMA_CAN_ACCESS_FLASH
     tx_descs_nc[1].dw0.suc_eof = 1;
     tx_descs_nc[1].next = NULL;
 #else
@@ -272,7 +272,7 @@ static void test_gdma_m2m_mode(gdma_channel_handle_t tx_chan, gdma_channel_handl
     for (int i = 0; i < 128; i++) {
         TEST_ASSERT_EQUAL(i, dst_data[i]);
     }
-#if SOC_DMA_CAN_ACCESS_MSPI_MEM
+#if SOC_DMA_CAN_ACCESS_FLASH
     TEST_ASSERT_TRUE(dst_data[128 + src_string_len] == 0xFF);
     dst_data[128 + src_string_len] = '\0';
     TEST_ASSERT_TRUE(strcmp(src_string, (const char *)((uint32_t)dst_data + 128)) == 0);

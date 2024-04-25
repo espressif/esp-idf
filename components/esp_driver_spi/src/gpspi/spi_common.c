@@ -240,12 +240,13 @@ static esp_err_t alloc_dma_chan(spi_host_device_t host_id, spi_dma_chan_t dma_ch
             gdma_connect(dma_ctx->rx_dma_chan, GDMA_MAKE_TRIGGER(GDMA_TRIG_PERIPH_SPI, 3));
         }
 #endif
-        gdma_transfer_ability_t ability = {
-            .psram_trans_align = 0, // fall back to use the same size of the psram data cache line size
-            .sram_trans_align = 4,
+        // TODO: add support to allow SPI transfer PSRAM buffer
+        gdma_transfer_config_t trans_cfg = {
+            .max_data_burst_size = 16,
+            .access_ext_mem = false,
         };
-        ESP_RETURN_ON_ERROR(gdma_set_transfer_ability(dma_ctx->tx_dma_chan, &ability), SPI_TAG, "set gdma tx transfer ability failed");
-        ESP_RETURN_ON_ERROR(gdma_set_transfer_ability(dma_ctx->rx_dma_chan, &ability), SPI_TAG, "set gdma rx transfer ability failed");
+        ESP_RETURN_ON_ERROR(gdma_config_transfer(dma_ctx->tx_dma_chan, &trans_cfg), SPI_TAG, "config gdma tx transfer failed");
+        ESP_RETURN_ON_ERROR(gdma_config_transfer(dma_ctx->rx_dma_chan, &trans_cfg), SPI_TAG, "config gdma rx transfer failed");
     }
     return ret;
 }

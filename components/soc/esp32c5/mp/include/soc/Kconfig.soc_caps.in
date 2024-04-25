@@ -155,7 +155,7 @@ config SOC_CPU_IDRAM_SPLIT_USING_PMP
     bool
     default y
 
-config SOC_DMA_CAN_ACCESS_MSPI_MEM
+config SOC_DMA_CAN_ACCESS_FLASH
     bool
     default y
 

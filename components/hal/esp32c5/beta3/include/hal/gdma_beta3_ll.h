@@ -13,7 +13,6 @@
 #include "soc/gdma_struct.h"
 #include "soc/gdma_reg.h"
 #include "soc/soc_etm_source.h"
-#include "soc/pcr_struct.h"
 #include "soc/retention_periph_defs.h"
 
 #ifdef __cplusplus
@@ -101,25 +100,6 @@ extern "C" {
 #define GDMA_LL_AHB_DESC_ALIGNMENT    4
 
 ///////////////////////////////////// Common /////////////////////////////////////////
-
-/**
- * @brief Enable the bus clock for the DMA module
- */
-static inline void gdma_ll_enable_bus_clock(int group_id, bool enable)
-{
-    (void)group_id;
-    PCR.gdma_conf.gdma_clk_en = enable;
-}
-
-/**
- * @brief Reset the DMA module
- */
-static inline void gdma_ll_reset_register(int group_id)
-{
-    (void)group_id;
-    PCR.gdma_conf.gdma_rst_en = 1;
-    PCR.gdma_conf.gdma_rst_en = 0;
-}
 
 /**
  * @brief Force enable register clock
