@@ -246,4 +246,5 @@ void gdma_ahb_hal_init(gdma_hal_context_t *hal, const gdma_hal_config_t *config)
 #if SOC_GDMA_SUPPORT_ETM
     hal->enable_etm_task = gdma_ahb_hal_enable_etm_task;
 #endif // SOC_GDMA_SUPPORT_ETM
+    ahb_dma_ll_set_default_memory_range(hal->ahb_dma_dev);
 }

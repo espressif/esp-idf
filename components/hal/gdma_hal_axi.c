@@ -246,4 +246,5 @@ void gdma_axi_hal_init(gdma_hal_context_t *hal, const gdma_hal_config_t *config)
 #if SOC_GDMA_SUPPORT_ETM
     hal->enable_etm_task = gdma_axi_hal_enable_etm_task;
 #endif // SOC_GDMA_SUPPORT_ETM
+    axi_dma_ll_set_default_memory_range(hal->axi_dma_dev);
 }
