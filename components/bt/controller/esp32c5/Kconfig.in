@@ -365,7 +365,6 @@ config BT_LE_CRYPTO_STACK_MBEDTLS
     bool "Override TinyCrypt with mbedTLS for crypto computations"
     default y
     depends on !BT_NIMBLE_ENABLED
-    select MBEDTLS_ECP_RESTARTABLE
     select MBEDTLS_CMAC_C
     help
         Enable this option to choose mbedTLS instead of TinyCrypt for crypto
