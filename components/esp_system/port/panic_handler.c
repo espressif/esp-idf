@@ -151,9 +151,20 @@ static void panic_handler(void *frame, bool pseudo_excause)
             busy_wait();
         } else if (panic_get_cause(frame) == PANIC_RSN_INTWDT_CPU1 && core_id == 0) {
             busy_wait();
-        } else if (panic_get_cause(frame) == PANIC_RSN_CACHEERR && core_id != esp_cache_err_get_cpuid()) {
-            g_exc_frames[core_id] = NULL; // Only print the backtrace for the offending core
-            busy_wait();
+        } else if (panic_get_cause(frame) == PANIC_RSN_CACHEERR) {
+            // The invalid cache access interrupt calls to the panic handler.
+            // When the cache interrupt happens, we can not determine the CPU where the
+            // invalid cache access has occurred.
+            if (esp_cache_err_get_cpuid() == -1) {
+                // We can not determine the CPU where the invalid cache access has occurred.
+                // Print backtraces for both CPUs.
+                if (core_id != 0) {
+                    busy_wait();
+                }
+            } else if (core_id != esp_cache_err_get_cpuid()) {
+                g_exc_frames[core_id] = NULL; // Only print the backtrace for the offending core
+                busy_wait();
+            }
         }
 #if CONFIG_ESP_SYSTEM_HW_STACK_GUARD
         else if (panic_get_cause(frame) == ETS_ASSIST_DEBUG_INUM &&
@@ -183,7 +194,7 @@ static void panic_handler(void *frame, bool pseudo_excause)
 #if __XTENSA__
         if (!(esp_ptr_executable(esp_cpu_pc_to_addr(panic_get_address(frame))) && (panic_get_address(frame) & 0xC0000000U))) {
             /* Xtensa ABI sets the 2 MSBs of the PC according to the windowed call size
-             * Incase the PC is invalid, GDB will fail to translate addresses to function names
+             * In case the PC is invalid, GDB will fail to translate addresses to function names
              * Hence replacing the PC to a placeholder address in case of invalid PC
              */
             panic_set_address(frame, (uint32_t)&_invalid_pc_placeholder);
