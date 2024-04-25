@@ -68,6 +68,60 @@ To build the application on Linux, the target has to be set to ``linux`` and the
   idf.py build
   idf.py monitor
 
+Troubleshooting
+---------------
+
+Since the applications are compiled for the host, they can be debugged with all the tools available on the host. E.g., this could be `GDB <https://man7.org/linux/man-pages/man1/gdb.1.html>`_ and `Valgrind <https://linux.die.net/man/1/valgrind>`_ on Linux. For cases where no debugger is attached, the segmentation fault and Abort signal handlers are customized to print additional information to the user and to increase compatibility with the ESP-IDF tools.
+
+.. note::
+
+  The following features are by no means a replacement for running the application in a debugger. It is only meant to give some additional information, e.g., if a battery of tests runs on Linux in a CI/CD system where only the application logs are collected. To trace down the actual issue in most cases, you will need to reproduce it with a debugger attached. A debugger is much more convenient too, because, for example, you do not need to convert addresses to line numbers.
+
+Segmentation Faults
+^^^^^^^^^^^^^^^^^^^
+
+On Linux, applications prints an error message and a rudimentary backtrace once it encounters a segmentation fault. This information can be used to find the line numbers in the source code where the issue occurred. The following is an example of a segmentation fault in the Hello-World application:
+
+.. code-block::
+
+  ...
+  Hello world!
+  ERROR: Segmentation Fault, here's your backtrace:
+  path/to/esp-idf/examples/get-started/hello_world/build/hello_world.elf(+0x2d1b)[0x55d3f636ad1b]
+  /lib/x86_64-linux-gnu/libc.so.6(+0x3c050)[0x7f49f0e00050]
+  path/to/esp-idf/examples/get-started/hello_world/build/hello_world.elf(+0x6198)[0x55d3f636e198]
+  path/to/esp-idf/examples/get-started/hello_world/build/hello_world.elf(+0x5909)[0x55d3f636d909]
+  path/to/esp-idf/examples/get-started/hello_world/build/hello_world.elf(+0x2c93)[0x55d3f636ac93]
+  path/to/esp-idf/examples/get-started/hello_world/build/hello_world.elf(+0x484e)[0x55d3f636c84e]
+  /lib/x86_64-linux-gnu/libc.so.6(+0x89134)[0x7f49f0e4d134]
+  /lib/x86_64-linux-gnu/libc.so.6(+0x1097dc)[0x7f49f0ecd7dc]
+
+Note that the addresses (``+0x...``) are relative binary addresses, which still need to be converted to the source code line numbers (see below).
+Note furthermore that the backtrace is created from the signal handler, which means that the two uppermost stack frames are not of interest. Instead, the third line is the uppermost stack frame where the issue occurred:
+
+.. code-block::
+
+  path/to/esp-idf/examples/get-started/hello_world/build/hello_world.elf(+0x6198)[0x55d3f636e198]
+
+To retrieve the actual line in the source code, we need to call the tool ``addr2line`` with the file name and the relative address (in this case ``+0x6198``):
+
+.. code-block::
+
+  $ addr2line -e path/to/esp-idf/examples/get-started/hello_world/build/hello_world.elf +0x6198
+  path/to/esp-idf/components/esp_hw_support/port/linux/chip_info.c:13
+
+From here on, you should use elaborate debugging tools available on the host to further trace the issue down.
+For more information on ``addr2line`` and how to call it, see the `addr2line man page <https://linux.die.net/man/1/addr2line>`_.
+
+Aborts
+^^^^^^
+
+Once ``abort()`` has been called, the following line is printed:
+
+.. code-block::
+
+  ERROR: Aborted
+
 .. _component-linux-mock-support:
 
 Component Linux/Mock Support Overview

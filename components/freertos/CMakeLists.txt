@@ -2,7 +2,7 @@
 #
 # The FreeRTOS component mainly contains
 # - Different FreeRTOS kernel implementations (namely IDF FreeRTOS and Amazon SMP FreeRTOS).
-# - Different ports of each architecture for each kernel implementaiton.
+# - Different ports of each architecture for each kernel implementation.
 # - IDF additions to FreeRTOS (e.g., features and API) to augment FreeRTOS
 #
 # The FreeRTOS component organizes its files as follows
@@ -12,7 +12,7 @@
 # - `./esp_additions`
 #       - Additional features added by ESP-IDF to augment FreeRTOS, and not part of the original kernel
 # - `./FreeRTOS-Kernel-...`
-#       - Different FreeRTOS kernel implementations. Each implementaiton is kept in its own directory.
+#       - Different FreeRTOS kernel implementations. Each implementation is kept in its own directory.
 #       - Ports for the implementation are kept in `FreeRTOS-Kernel-.../portable/xxx/`\
 # - `./test_apps`
 #       - Contains all unit tests/test apps for the FreeRTOS component.
