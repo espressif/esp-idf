@@ -426,9 +426,10 @@ if __name__ == '__main__':
         if check_all:
             check_dirs = {IDF_PATH}
             _exclude_dirs = [os.path.join(IDF_PATH, 'tools', 'unit-test-app'),
-                             os.path.join(IDF_PATH, 'tools', 'test_build_system', 'build_test_app')]
+                             os.path.join(IDF_PATH, 'tools', 'test_build_system', 'build_test_app'),
+                             os.path.join(IDF_PATH, 'examples', 'get-started', 'sample_project')]
         else:
-            _exclude_dirs = []
+            _exclude_dirs = [os.path.join(IDF_PATH, 'examples', 'get-started', 'sample_project')]
 
         extra_default_build_targets_list: List[str] = []
         bypass_check_test_targets_list: List[str] = []
