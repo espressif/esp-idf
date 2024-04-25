@@ -676,11 +676,10 @@ esp_err_t esp_wifi_get_ps(wifi_ps_type_t *type);
 /**
   * @brief     Set protocol type of specified interface
   *            The default protocol is (WIFI_PROTOCOL_11B|WIFI_PROTOCOL_11G|WIFI_PROTOCOL_11N).
-  *            if CONFIG_SOC_WIFI_HE_SUPPORT and band is 2.4G, the default protocol is (WIFI_PROTOCOL_11B|WIFI_PROTOCOL_11G|WIFI_PROTOCOL_11N|WIFI_PROTOCOL_11AX).
-  *            if CONFIG_SOC_WIFI_HE_SUPPORT and band is 5G, the default protocol is (WIFI_PROTOCOL_11A|WIFI_PROTOCOL_11N|WIFI_PROTOCOL_11AC|WIFI_PROTOCOL_11AX).
+  *            if CONFIG_SOC_WIFI_HE_SUPPORT, the default protocol is (WIFI_PROTOCOL_11B|WIFI_PROTOCOL_11G|WIFI_PROTOCOL_11N|WIFI_PROTOCOL_11AX).
   *
   * @attention 2.4G: Support 802.11b or 802.11bg or 802.11bgn or 802.11bgnax or LR mode
-  *            5G: Support 802.11a or 802.11an or 802.11anac or 802.11anacax
+  * @attention only support set band 2.4G protocol
   *
   * @param     ifx  interfaces
   * @param     protocol_bitmap  WiFi protocol bitmap
@@ -1642,6 +1641,79 @@ esp_err_t esp_wifi_get_band(wifi_band_t* band);
   */
 esp_err_t esp_wifi_coex_pwr_configure(bool enabled);
 #endif
+
+/**
+  * @brief     Set protocol type of specified interface and specified band
+  *            The default protocol is (WIFI_PROTOCOL_11B|WIFI_PROTOCOL_11G|WIFI_PROTOCOL_11N).
+  *            if CONFIG_SOC_WIFI_HE_SUPPORT and band is 2.4G, the default protocol is (WIFI_PROTOCOL_11B|WIFI_PROTOCOL_11G|WIFI_PROTOCOL_11N|WIFI_PROTOCOL_11AX).
+  *            if CONFIG_SOC_WIFI_HE_SUPPORT and band is 5G, the default protocol is (WIFI_PROTOCOL_11A|WIFI_PROTOCOL_11N|WIFI_PROTOCOL_11AC|WIFI_PROTOCOL_11AX).
+  *
+  * @attention 2.4G: Support 802.11b or 802.11bg or 802.11bgn or 802.11bgnax or LR mode
+  *            5G: Support 802.11a or 802.11an or 802.11anac or 802.11anacax
+  *
+  * @param     band wifi band 2.4G / 5G
+  * @param     ifx  interfaces
+  * @param     bitmap  WiFi protocol bitmap
+  *
+  * @return
+  *    - ESP_OK: succeed
+  *    - ESP_ERR_WIFI_NOT_INIT: WiFi is not initialized by esp_wifi_init
+  *    - ESP_ERR_WIFI_IF: invalid interface
+  *    - others: refer to error codes in esp_err.h
+  */
+esp_err_t esp_wifi_band_set_protocol(wifi_band_t band, wifi_interface_t ifx, uint32_t bitmap);
+
+/**
+  * @brief     Get the current protocol bitmap of the specified interface and specified band
+  *
+  * @param     band wifi band 2.4G / 5G
+  * @param     ifx  interface
+  * @param[out] bitmap  store current WiFi protocol bitmap of interface ifx
+  *
+  * @return
+  *    - ESP_OK: succeed
+  *    - ESP_ERR_WIFI_NOT_INIT: WiFi is not initialized by esp_wifi_init
+  *    - ESP_ERR_WIFI_IF: invalid interface
+  *    - ESP_ERR_INVALID_ARG: invalid argument
+  *    - others: refer to error codes in esp_err.h
+  */
+esp_err_t esp_wifi_band_get_protocol(wifi_band_t band, wifi_interface_t ifx, uint32_t *bitmap);
+
+/**
+  * @brief     Set the bandwidth of specified interface and specified band
+  *
+  * @attention 1. API return false if try to configure an interface that is not enabled
+  * @attention 2. WIFI_BW_HT40 is supported only when the interface support 11N
+  *
+  * @param     band wifi band 2.4G / 5G
+  * @param     ifx  interface to be configured
+  * @param     bw  bandwidth
+  *
+  * @return
+  *    - ESP_OK: succeed
+  *    - ESP_ERR_WIFI_NOT_INIT: WiFi is not initialized by esp_wifi_init
+  *    - ESP_ERR_WIFI_IF: invalid interface
+  *    - ESP_ERR_INVALID_ARG: invalid argument
+  *    - others: refer to error codes in esp_err.h
+  */
+esp_err_t esp_wifi_band_set_bandwidth(wifi_band_t band, wifi_interface_t ifx, wifi_bandwidth_t bw);
+
+/**
+  * @brief     Get the bandwidth of specified interface and specified band
+  *
+  * @attention 1. API return false if try to get a interface that is not enable
+  *
+  * @param     band wifi band 2.4G / 5G
+  * @param     ifx interface to be configured
+  * @param[out] bw  store bandwidth of interface ifx
+  *
+  * @return
+  *    - ESP_OK: succeed
+  *    - ESP_ERR_WIFI_NOT_INIT: WiFi is not initialized by esp_wifi_init
+  *    - ESP_ERR_WIFI_IF: invalid interface
+  *    - ESP_ERR_INVALID_ARG: invalid argument
+  */
+esp_err_t esp_wifi_band_get_bandwidth(wifi_band_t band, wifi_interface_t ifx, wifi_bandwidth_t *bw);
 
 #ifdef __cplusplus
 }

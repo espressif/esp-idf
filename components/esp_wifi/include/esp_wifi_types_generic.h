@@ -346,6 +346,7 @@ typedef struct {
     bool ftm_responder;         /**< Enable FTM Responder mode */
     wifi_pmf_config_t pmf_cfg;  /**< Configuration for Protected Management Frame */
     wifi_sae_pwe_method_t sae_pwe_h2e;  /**< Configuration for SAE PWE derivation method */
+    uint8_t channel_5g;         /**< 5G Channel of soft-AP */
 } wifi_ap_config_t;
 
 #define SAE_H2E_IDENTIFIER_LEN 32
