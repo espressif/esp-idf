@@ -51,6 +51,7 @@ extern "C" {
 #define GDMA_LL_AHB_PAIRS_PER_GROUP   3 // Number of GDMA pairs in each AHB group
 
 #define GDMA_LL_AHB_DESC_ALIGNMENT    4
+#define GDMA_LL_AHB_RX_BURST_NEEDS_ALIGNMENT  1
 
 #define GDMA_LL_TX_ETM_EVENT_TABLE(group, chan, event)                                     \
     (uint32_t[1][3][GDMA_ETM_EVENT_MAX]){{{                                                \
