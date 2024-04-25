@@ -56,7 +56,7 @@ GPIO 事件
 
 GPIO **边沿** 事件是最常见的事件类型，任何 GPIO 管脚均可触发这类事件。要创建 GPIO 事件句柄，请调用 :cpp:func:`gpio_new_etm_event`，并使用 :cpp:type:`gpio_etm_event_config_t` 提供的配置信息：
 
-- :cpp:member:`gpio_etm_event_config_t::edge` 决定触发事件的边沿类型，支持的边沿类型已在 :cpp:type:`gpio_etm_event_edge_t` 中列出。
+- :cpp:member:`gpio_etm_event_config_t::edge` 或 :cpp:member:`gpio_etm_event_config_t::edges` 决定触发事件的边沿类型，支持的边沿类型已在 :cpp:type:`gpio_etm_event_edge_t` 中列出。
 
 接下来，请调用 :cpp:func:`gpio_etm_event_bind_gpio` 函数，连接 GPIO ETM 事件句柄与 GPIO 管脚。注意，要设置 GPIO 管脚，只能使用由 :cpp:func:`gpio_new_etm_event` 函数创建的 ETM 事件句柄。对于其他类型的 ETM 事件，调用此函数，将返回 :c:macro:`ESP_ERR_INVALID_ARG` 错误。该函数也无法完成 GPIO 的初始化，在使用 GPIO ETM 事件之前，仍需调用 :cpp:func:`gpio_config` 函数，设置 GPIO 管脚的属性，如方向、高/低电平模式等。
 
@@ -82,9 +82,9 @@ ETM 任务对其操作进行了抽象，在软件中表示为 :cpp:type:`esp_etm
 GPIO 任务
 ~~~~~~~~~~
 
-GPIO 任务是最常见的任务类型，一个 GPIO 任务可以同时管理多个 GPIO 管脚。当 ETM 通道激活任务时，任务可以同时设置管理的所有 GPIO 引脚，使其设置/清除/切换状态。要创建 GPIO 任务句柄，请调用 :cpp:func:`gpio_new_etm_task`，并使用 :cpp:type:`gpio_etm_task_config_t` 提供的配置信息：
+GPIO 任务是最常见的任务类型。一个 GPIO 可以采取一个或多个 GPIO 操作，而一个 GPIO 任务也可以同时管理多个 GPIO 管脚。当 ETM 通道激活任务时，任务可以同时设置管理的所有 GPIO 引脚，使其设置/清除/切换状态。要创建 GPIO 任务句柄，请调用 :cpp:func:`gpio_new_etm_task`，并使用 :cpp:type:`gpio_etm_task_config_t` 提供的配置信息：
 
-- :cpp:member:`gpio_etm_task_config_t::action` 决定 ETM 任务将采取的 GPIO 操作，支持的操作类型在 :cpp:type:`gpio_etm_task_action_t` 中列出。
+- :cpp:member:`gpio_etm_task_config_t::action` 或 :cpp:member:`gpio_etm_task_config_t::actions` 决定 ETM 任务将采取的 GPIO 操作，支持的操作类型在 :cpp:type:`gpio_etm_task_action_t` 中列出。如果一个 GPIO 需要采取多个 GPIO 操作，这些操作任务的创建必须通过配置 :cpp:member:`gpio_etm_task_config_t::actions` 的数组并在一次 :cpp:func:`gpio_new_etm_task` 调用中一并完成。
 
 接下来，需要连接 GPIO ETM 任务句柄与 GPIO 管脚。为此，请调用 :cpp:func:`gpio_etm_task_add_gpio` 函数。如果需要任务句柄管理更多的 GPIO 管脚，可以重复调用以上函数，注意，要设置 GPIO 管脚，只能使用由 :cpp:func:`gpio_new_etm_task` 函数创建的 ETM 任务句柄。对于其他类型的 ETM 任务，调用此函数，将返回 :c:macro:`ESP_ERR_INVALID_ARG` 错误。该函数也无法完成 GPIO 的初始化，在使用 GPIO ETM 任务之前，仍需调用 :cpp:func:`gpio_config` 函数，设置 GPIO 管脚的属性，如方向、高/低电平模式等。
 
