@@ -1,8 +1,17 @@
 # Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
 
-components/bt/test_apps:
+components/bt/test_apps/basic_unit_test:
   disable:
     - if: IDF_TARGET not in ["esp32", "esp32c3"]
+      reason: Sufficient to run the tests on one chip of each architecture
+  depends_components:
+    - bt
+
+components/bt/test_apps/memory_release:
+  disable:
+    - if: IDF_TARGET not in ["esp32", "esp32c2"]
+    - if: CONFIG_NAME == "iram" and IDF_TARGET != "esp32c2"
+    - if: CONFIG_NAME == "psram" and SOC_SPIRAM_SUPPORTED != 1
       reason: Sufficient to run the tests on one chip of each architecture
   depends_components:
     - bt

@@ -1,4 +1,4 @@
-[sections:bt_text]
+[sections:bt_iram_text]
 entries:
     .iram1+
 
@@ -17,9 +17,9 @@ entries:
 entries:
     COMMON
 
-[scheme:bt_start_end]
+[scheme:bt_default]
 entries:
-    bt_text -> iram0_bt_text
+    bt_iram_text -> iram0_bt_text
     bt_bss -> dram0_bt_bss
     bt_common -> dram0_bt_bss
     bt_data -> dram0_bt_data
@@ -36,25 +36,15 @@ entries:
 [mapping:bt]
 archive: libbt.a
 entries:
-    * (bt_start_end);
+    * (bt_default);
         bt_bss -> dram0_bt_bss ALIGN(4) ALIGN(4, post) SURROUND(bt_bss),
         bt_common -> dram0_bt_bss ALIGN(4) ALIGN(4, post) SURROUND(bt_common),
         bt_data -> dram0_bt_data  ALIGN(4) ALIGN(4, post) SURROUND(bt_data)
-    if ESP_ALLOW_BSS_SEG_EXTERNAL_MEMORY = y:
-        * (extram_bss)
 
-[mapping:btdm]
-archive: libbtdm_app.a
-entries:
-    * (bt_start_end);
-        bt_bss -> dram0_bt_bss ALIGN(4) ALIGN(4, post) SURROUND(btdm_bss),
-        bt_common -> dram0_bt_bss ALIGN(4) ALIGN(4, post) SURROUND(btdm_common),
-        bt_data -> dram0_bt_data ALIGN(4) ALIGN(4, post) SURROUND(btdm_data)
-
-[mapping:bt_controller]
+[mapping:ble_app]
 archive: libble_app.a
 entries:
-    * (bt_start_end);
+    * (bt_default);
         bt_bss -> dram0_bt_bss ALIGN(4) ALIGN(4, post) SURROUND(bt_controller_bss),
         bt_common -> dram0_bt_bss ALIGN(4) ALIGN(4, post) SURROUND(bt_controller_common),
         bt_data -> dram0_bt_data ALIGN(4) ALIGN(4, post) SURROUND(bt_controller_data)
