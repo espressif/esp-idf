@@ -29,9 +29,6 @@ const uint32_t GPIO_PIN_MUX_REG[] = {
     IO_MUX_GPIO19_REG,
     IO_MUX_GPIO20_REG,
     IO_MUX_GPIO21_REG,
-    IO_MUX_GPIO22_REG,
-    IO_MUX_GPIO23_REG,
-    IO_MUX_GPIO24_REG,
 };
 
 _Static_assert(sizeof(GPIO_PIN_MUX_REG) == SOC_GPIO_PIN_COUNT * sizeof(uint32_t), "Invalid size of GPIO_PIN_MUX_REG");
@@ -59,9 +56,6 @@ const uint32_t GPIO_HOLD_MASK[] = {
     BIT(19),         //GPIO19
     BIT(20),         //GPIO20
     BIT(21),         //GPIO21
-    BIT(22),         //GPIO22
-    BIT(23),         //GPIO23
-    BIT(24),         //GPIO24
 };
 
 _Static_assert(sizeof(GPIO_HOLD_MASK) == SOC_GPIO_PIN_COUNT * sizeof(uint32_t), "Invalid size of GPIO_HOLD_MASK");

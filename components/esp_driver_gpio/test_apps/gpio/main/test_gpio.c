@@ -860,8 +860,7 @@ TEST_CASE("GPIO_USB_DP_pin_pullup_disable_test", "[gpio]")
 }
 #endif //SOC_USB_SERIAL_JTAG_SUPPORTED
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C5)
-// TODO: IDF-8638 Remove when light sleep is supported on ESP32C5
+#if SOC_LIGHT_SLEEP_SUPPORTED
 // Ignored in CI because it needs manually connect TEST_GPIO_INPUT_LEVEL_LOW_PIN to 3.3v to wake up from light sleep
 TEST_CASE("GPIO_light_sleep_wake_up_test", "[gpio][ignore]")
 {
