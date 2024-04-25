@@ -340,6 +340,7 @@ static inline void print_cache_err_details(const void *f)
             break;
         case EXTMEM_DCACHE_WRITE_FLASH_ST:
             panic_print_str("Write back error occurred while dcache tries to write back to flash\r\n");
+            panic_print_str("The following backtrace may not indicate the code that caused Cache invalid access\r\n");
             break;
         case EXTMEM_MMU_ENTRY_FAULT_ST:
             vaddr = REG_READ(EXTMEM_CACHE_MMU_FAULT_VADDR_REG);

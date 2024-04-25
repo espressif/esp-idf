@@ -535,6 +535,42 @@ def test_assert_cache_disabled(
     )
 
 
+def cache_error_log_check(dut: PanicTestDut) -> None:
+    if dut.is_xtensa:
+        if dut.target == 'esp32s3':
+            dut.expect_exact("Guru Meditation Error: Core  / panic'ed (Cache disabled but cached memory region accessed)")
+            dut.expect_exact('Write back error occurred while dcache tries to write back to flash')
+            dut.expect_exact('The following backtrace may not indicate the code that caused Cache invalid access')
+        else:
+            dut.expect_exact("Guru Meditation Error: Core  0 panic'ed (LoadStoreError)")
+    else:
+        dut.expect_exact("Guru Meditation Error: Core  0 panic'ed (Store access fault)")
+    dut.expect_reg_dump(0)
+    if dut.target == 'esp32s3':
+        dut.expect_reg_dump(1)
+    dut.expect_cpu_reset()
+
+
+@pytest.mark.generic
+@pytest.mark.supported_targets
+@pytest.mark.parametrize('config', ['panic'], indirect=True)
+def test_assert_cache_write_back_error_can_print_backtrace(
+    dut: PanicTestDut, config: str, test_func_name: str
+) -> None:
+    dut.run_test_func(test_func_name)
+    cache_error_log_check(dut)
+
+
+@pytest.mark.generic
+@pytest.mark.supported_targets
+@pytest.mark.parametrize('config', ['panic'], indirect=True)
+def test_assert_cache_write_back_error_can_print_backtrace2(
+    dut: PanicTestDut, config: str, test_func_name: str
+) -> None:
+    dut.run_test_func(test_func_name)
+    cache_error_log_check(dut)
+
+
 @pytest.mark.esp32
 @pytest.mark.generic
 @pytest.mark.parametrize('config', ['panic_delay'], indirect=True)
