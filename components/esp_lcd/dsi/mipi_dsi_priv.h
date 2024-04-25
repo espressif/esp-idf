@@ -9,6 +9,7 @@
 #include "hal/mipi_dsi_ll.h"
 #include "esp_heap_caps.h"
 #include "esp_private/periph_ctrl.h"
+#include "esp_pm.h"
 
 #if SOC_PERIPH_CLK_CTRL_SHARED
 #define DSI_CLOCK_SRC_ATOMIC() PERIPH_RCC_ATOMIC()
@@ -22,7 +23,11 @@
 #define DSI_RCC_ATOMIC()
 #endif
 
-#define DSI_MEM_ALLOC_CAPS MALLOC_CAP_DEFAULT
+#if CONFIG_LCD_DSI_ISR_IRAM_SAFE
+#define DSI_MEM_ALLOC_CAPS      (MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT)
+#else
+#define DSI_MEM_ALLOC_CAPS      MALLOC_CAP_DEFAULT
+#endif
 
 #define DPI_PANEL_MAX_FB_NUM 3 // maximum number of supported frame buffers for DPI panel
 
@@ -35,6 +40,7 @@ extern "C" {
 typedef struct esp_lcd_dsi_bus_t {
     int bus_id;
     mipi_dsi_hal_context_t hal;
+    esp_pm_lock_handle_t pm_lock;
 } esp_lcd_dsi_bus_t;
 
 #ifdef __cplusplus
