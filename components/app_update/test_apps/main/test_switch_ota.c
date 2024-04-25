@@ -841,8 +841,7 @@ static void test_flow6(void)
 // 3 Stage: run OTA0    -> check it -> erase OTA_DATA for next tests    -> PASS
 TEST_CASE_MULTIPLE_STAGES("Switching between factory, OTA0 using esp_ota_write_with_offset", "[app_update][timeout=90][reset=DEEPSLEEP_RESET, DEEPSLEEP_RESET]", start_test, test_flow6, test_flow6);
 
-//IDF-5145
-TEST_CASE("Test bootloader_common_get_sha256_of_partition returns ESP_ERR_IMAGE_INVALID when image is ivalid", "[partitions]")
+TEST_CASE("Test bootloader_common_get_sha256_of_partition returns ESP_ERR_IMAGE_INVALID when image is invalid", "[partitions]")
 {
     const esp_partition_t *cur_app = esp_ota_get_running_partition();
     ESP_LOGI(TAG, "copy current app to next part");
