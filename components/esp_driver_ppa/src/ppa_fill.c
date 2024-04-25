@@ -77,7 +77,7 @@ bool ppa_fill_transaction_on_picked(uint32_t num_chans, const dma2d_trans_channe
     dma2d_start(dma2d_rx_chan);
 
     // Configure PPA Blending engine
-    ppa_ll_blend_configure_filling_block(platform->hal.dev, fill_trans_desc->fill_argb_color, fill_trans_desc->fill_block_w, fill_trans_desc->fill_block_h);
+    ppa_ll_blend_configure_filling_block(platform->hal.dev, &fill_trans_desc->fill_argb_color, fill_trans_desc->fill_block_w, fill_trans_desc->fill_block_h);
     ppa_ll_blend_set_tx_color_mode(platform->hal.dev, fill_trans_desc->out.fill_cm);
 
     ppa_ll_blend_start(platform->hal.dev, PPA_LL_BLEND_TRANS_MODE_FILL);
@@ -104,11 +104,14 @@ esp_err_t ppa_do_fill(ppa_client_handle_t ppa_client, const ppa_fill_oper_config
     // To reduce complexity, color_mode, fill_block_w/h correctness are checked in their corresponding LL functions
 
     // Write back and invalidate are performed on the entire picture (the window content is not continuous in the buffer)
-    esp_cache_msync(config->out.buffer, config->out.buffer_size, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_INVALIDATE);
+    esp_cache_msync((void *)config->out.buffer, config->out.buffer_size, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_INVALIDATE);
 
     esp_err_t ret = ESP_OK;
     ppa_trans_t *trans_elm = NULL;
-    if (xQueueReceive(ppa_client->trans_elm_ptr_queue, (void *)&trans_elm, 0)) {
+    portENTER_CRITICAL(&ppa_client->spinlock);
+    bool trans_elm_acquired = xQueueReceive(ppa_client->trans_elm_ptr_queue, (void *)&trans_elm, 0);
+    portEXIT_CRITICAL(&ppa_client->spinlock);
+    if (trans_elm_acquired) {
         dma2d_trans_config_t *dma_trans_desc = trans_elm->trans_desc;
 
         ppa_dma2d_trans_on_picked_config_t *trans_on_picked_desc = dma_trans_desc->user_config;

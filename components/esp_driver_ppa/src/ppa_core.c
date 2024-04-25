@@ -46,10 +46,10 @@ static esp_err_t ppa_engine_release(ppa_engine_t *ppa_engine);
 static bool ppa_malloc_transaction(QueueHandle_t trans_elm_ptr_queue, uint32_t trans_elm_num, ppa_operation_t oper_type);
 static void ppa_free_transaction(ppa_trans_t *trans_elm);
 
-const dma2d_trans_on_picked_callback_t ppa_oper_trans_on_picked_func[PPA_OPERATION_NUM] = {
-    ppa_srm_transaction_on_picked,
-    ppa_blend_transaction_on_picked,
-    ppa_fill_transaction_on_picked,
+const dma2d_trans_on_picked_callback_t ppa_oper_trans_on_picked_func[PPA_OPERATION_INVALID] = {
+    [PPA_OPERATION_SRM] = ppa_srm_transaction_on_picked,
+    [PPA_OPERATION_BLEND] = ppa_blend_transaction_on_picked,
+    [PPA_OPERATION_FILL] = ppa_fill_transaction_on_picked,
 };
 
 static esp_err_t ppa_engine_acquire(const ppa_engine_config_t *config, ppa_engine_t **ret_engine)
@@ -104,9 +104,11 @@ static esp_err_t ppa_engine_acquire(const ppa_engine_config_t *config, ppa_engin
             }
 
 #if CONFIG_PM_ENABLE
-            ret = esp_pm_lock_create(ESP_PM_NO_LIGHT_SLEEP, 0, "ppa_srm", &srm_engine->base.pm_lock);
-            if (ret != ESP_OK) {
-                ESP_LOGE(TAG, "create pm lock failed");
+            if (ret == ESP_OK) {
+                ret = esp_pm_lock_create(ESP_PM_CPU_FREQ_MAX, 0, "ppa_srm", &srm_engine->base.pm_lock);
+                if (ret != ESP_OK) {
+                    ESP_LOGE(TAG, "create pm lock failed");
+                }
             }
 #endif
         } else {
@@ -147,9 +149,11 @@ static esp_err_t ppa_engine_acquire(const ppa_engine_config_t *config, ppa_engin
             }
 
 #if CONFIG_PM_ENABLE
-            ret = esp_pm_lock_create(ESP_PM_NO_LIGHT_SLEEP, 0, "ppa_blending", &blending_engine->base.pm_lock);
-            if (ret != ESP_OK) {
-                ESP_LOGE(TAG, "create pm lock failed");
+            if (ret == ESP_OK) {
+                ret = esp_pm_lock_create(ESP_PM_CPU_FREQ_MAX, 0, "ppa_blending", &blending_engine->base.pm_lock);
+                if (ret != ESP_OK) {
+                    ESP_LOGE(TAG, "create pm lock failed");
+                }
             }
 #endif
         } else {
@@ -180,16 +184,6 @@ static esp_err_t ppa_engine_acquire(const ppa_engine_config_t *config, ppa_engin
                 ESP_LOGE(TAG, "install 2D-DMA failed");
                 goto wrap_up;
             }
-
-#if CONFIG_PM_ENABLE
-            assert(!s_platform.pm_lock);
-            // Create and acquire the PM lock
-            ret = esp_pm_lock_create(ESP_PM_NO_LIGHT_SLEEP, 0, "ppa", &s_platform.pm_lock);
-            if (ret != ESP_OK) {
-                ESP_LOGE(TAG, "create pm lock failed");
-                goto wrap_up;
-            }
-#endif
         }
     }
 wrap_up:
@@ -250,14 +244,6 @@ static esp_err_t ppa_engine_release(ppa_engine_t *ppa_engine)
     if (!s_platform.srm && !s_platform.blending) {
         assert(s_platform.srm_engine_ref_count == 0 && s_platform.blend_engine_ref_count == 0);
 
-#if CONFIG_PM_ENABLE
-        if (s_platform.pm_lock) {
-            ret = esp_pm_lock_delete(s_platform.pm_lock);
-            assert(ret == ESP_OK);
-            s_platform.pm_lock = NULL;
-        }
-#endif
-
         if (s_platform.dma2d_pool_handle) {
             dma2d_release_pool(s_platform.dma2d_pool_handle); // TODO: check return value. If not ESP_OK, then must be error on other 2D-DMA clients :( Give a warning log?
             s_platform.dma2d_pool_handle = NULL;
@@ -278,19 +264,19 @@ esp_err_t ppa_register_client(const ppa_client_config_t *config, ppa_client_hand
 {
     esp_err_t ret = ESP_OK;
     ESP_RETURN_ON_FALSE(config && ret_client, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
-    ESP_RETURN_ON_FALSE(config->oper_type < PPA_OPERATION_NUM, ESP_ERR_INVALID_ARG, TAG, "unknown operation");
+    ESP_RETURN_ON_FALSE(config->oper_type < PPA_OPERATION_INVALID, ESP_ERR_INVALID_ARG, TAG, "unknown operation");
 
     ppa_client_t *client = (ppa_client_t *)heap_caps_calloc(1, sizeof(ppa_client_t), PPA_MEM_ALLOC_CAPS);
     ESP_RETURN_ON_FALSE(client, ESP_ERR_NO_MEM, TAG, "no mem to register client");
 
-    uint32_t ring_buf_size = MAX(1, config->max_pending_trans_num);
-    client->trans_elm_ptr_queue = xQueueCreateWithCaps(ring_buf_size, sizeof(uint32_t), PPA_MEM_ALLOC_CAPS);
-    ESP_GOTO_ON_FALSE(client->trans_elm_ptr_queue && ppa_malloc_transaction(client->trans_elm_ptr_queue, ring_buf_size, config->oper_type),
+    // Allocate memory for storing transaction contexts and create a queue to save these trans_elm_ptr
+    uint32_t queue_size = MAX(1, config->max_pending_trans_num);
+    client->trans_elm_ptr_queue = xQueueCreateWithCaps(queue_size, sizeof(uint32_t), PPA_MEM_ALLOC_CAPS);
+    ESP_GOTO_ON_FALSE(client->trans_elm_ptr_queue && ppa_malloc_transaction(client->trans_elm_ptr_queue, queue_size, config->oper_type),
                       ESP_ERR_NO_MEM, err, TAG, "no mem for transaction storage");
 
     client->oper_type = config->oper_type;
     client->spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
-    client->in_accepting_trans_state = true;
     if (config->oper_type == PPA_OPERATION_SRM) {
         ppa_engine_config_t engine_config = {
             .engine = PPA_ENGINE_TYPE_SRM,
@@ -318,7 +304,6 @@ esp_err_t ppa_unregister_client(ppa_client_handle_t ppa_client)
     bool do_unregister = false;
     portENTER_CRITICAL(&ppa_client->spinlock);
     if (ppa_client->trans_cnt == 0) {
-        ppa_client->in_accepting_trans_state = false;
         do_unregister = true;
     }
     portEXIT_CRITICAL(&ppa_client->spinlock);
@@ -387,12 +372,12 @@ static bool ppa_malloc_transaction(QueueHandle_t trans_elm_ptr_queue, uint32_t t
         trans_on_picked_desc->op_desc = ppa_trans_desc;
         trans_on_picked_desc->trans_elm = new_trans_elm;
         dma_trans_desc->user_config = (void *)trans_on_picked_desc;
-        dma_trans_desc->on_job_picked = ppa_oper_trans_on_picked_func[oper_type]; // TODO: This maybe better to be in the ppa_do_xxx function
+        dma_trans_desc->on_job_picked = ppa_oper_trans_on_picked_func[oper_type];
         new_trans_elm->trans_desc = dma_trans_desc;
         new_trans_elm->dma_trans_placeholder = dma_trans_elm;
         new_trans_elm->sem = ppa_trans_sem;
 
-        // Fill the ring buffer with allocated transaction element pointer
+        // Fill the queue with allocated transaction element pointer
         BaseType_t sent = xQueueSend(trans_elm_ptr_queue, &new_trans_elm, 0);
         assert(sent);
     }
@@ -424,26 +409,13 @@ esp_err_t ppa_do_operation(ppa_client_handle_t ppa_client, ppa_engine_t *ppa_eng
     esp_err_t ret = ESP_OK;
     esp_err_t pm_lock_ret __attribute__((unused));
 
-#if CONFIG_PM_ENABLE
-    pm_lock_ret = esp_pm_lock_acquire(s_platform.pm_lock);
-    assert((pm_lock_ret == ESP_OK) && "acquire pm_lock failed");
-#endif
-
     portENTER_CRITICAL(&ppa_client->spinlock);
-    // TODO: Check whether trans_cnt and trans_elm_ptr_queue need in one spinlock!!!
-    if (ppa_client->in_accepting_trans_state) {
-        // Send transaction into PPA engine queue
-        STAILQ_INSERT_TAIL(&ppa_engine_base->trans_stailq, trans_elm, entry);
-        ppa_client->trans_cnt++;
-    } else {
-        ret = ESP_FAIL;
-    }
+    // Send transaction into PPA engine queue
+    portENTER_CRITICAL(&ppa_engine_base->spinlock);
+    STAILQ_INSERT_TAIL(&ppa_engine_base->trans_stailq, trans_elm, entry);
+    portEXIT_CRITICAL(&ppa_engine_base->spinlock);
+    ppa_client->trans_cnt++;
     portEXIT_CRITICAL(&ppa_client->spinlock);
-
-    if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "The client cannot accept transaction now");
-        goto err;
-    }
 
     TickType_t ticks_to_wait = (mode == PPA_TRANS_MODE_NON_BLOCKING) ? 0 : portMAX_DELAY;
     if (xSemaphoreTake(ppa_engine_base->sem, ticks_to_wait) == pdTRUE) {
@@ -469,11 +441,11 @@ esp_err_t ppa_do_operation(ppa_client_handle_t ppa_client, ppa_engine_t *ppa_eng
                 portENTER_CRITICAL(&ppa_engine_base->spinlock);
                 STAILQ_REMOVE(&ppa_engine_base->trans_stailq, trans_elm, ppa_trans_s, entry);
                 portEXIT_CRITICAL(&ppa_engine_base->spinlock);
+                xSemaphoreGive(ppa_engine_base->sem);
 #if CONFIG_PM_ENABLE
                 pm_lock_ret = esp_pm_lock_release(ppa_engine_base->pm_lock);
                 assert((pm_lock_ret == ESP_OK) && "release pm_lock failed");
 #endif
-                xSemaphoreGive(ppa_engine_base->sem);
                 portENTER_CRITICAL(&ppa_client->spinlock);
                 ppa_client->trans_cnt--;
                 portEXIT_CRITICAL(&ppa_client->spinlock);
@@ -489,14 +461,8 @@ esp_err_t ppa_do_operation(ppa_client_handle_t ppa_client, ppa_engine_t *ppa_eng
         //     printf("ppa intr: %ld\n", PPA.int_raw.val);
         // }
         xSemaphoreTake(trans_elm->sem, portMAX_DELAY); // Given in the ISR
-        // Sanity check new_trans_elm not in trans_stailq anymore? (loop takes time tho)
-        // ppa_recycle_transaction(ppa_client, trans_elm); // TODO: Do we need it to be here or can be at the end of done_cb?
+        // TODO: Sanity check new_trans_elm not in trans_stailq anymore? (loop takes time tho)
     }
-
-#if CONFIG_PM_ENABLE
-    pm_lock_ret = esp_pm_lock_release(s_platform.pm_lock);
-    assert((pm_lock_ret == ESP_OK) && "release pm_lock failed");
-#endif
 
 err:
     return ret;
@@ -510,11 +476,9 @@ bool ppa_transaction_done_cb(dma2d_channel_handle_t dma2d_chan, dma2d_event_data
     ppa_client_t *client = trans_elm->client;
     ppa_dma2d_trans_on_picked_config_t *trans_on_picked_desc = (ppa_dma2d_trans_on_picked_config_t *)trans_elm->trans_desc->user_config;
     ppa_engine_t *engine_base = trans_on_picked_desc->ppa_engine;
-
-    if (client->done_cb) {
-        ppa_event_data_t edata = {};
-        need_yield |= client->done_cb(client, &edata, trans_elm->user_data);
-    }
+    // Save callback contexts
+    ppa_event_callback_t done_cb = client->done_cb;
+    void *trans_elm_user_data = trans_elm->user_data;
 
     ppa_trans_t *next_start_trans = NULL;
     portENTER_CRITICAL_ISR(&engine_base->spinlock);
@@ -523,28 +487,34 @@ bool ppa_transaction_done_cb(dma2d_channel_handle_t dma2d_chan, dma2d_event_data
     next_start_trans = STAILQ_FIRST(&engine_base->trans_stailq);
     portEXIT_CRITICAL_ISR(&engine_base->spinlock);
 
+    portENTER_CRITICAL_ISR(&client->spinlock);
+    // Release transaction semaphore to unblock ppa_do_operation
+    xSemaphoreGiveFromISR(trans_elm->sem, &HPTaskAwoken);
+    need_yield |= (HPTaskAwoken == pdTRUE);
+
+    // Then recycle transaction elm
+    need_yield |= ppa_recycle_transaction(client, trans_elm);
+
+    client->trans_cnt--;
+    portEXIT_CRITICAL_ISR(&client->spinlock);
+
     // If there is next trans in PPA engine queue, send it to DMA queue; otherwise, release the engine semaphore
     if (next_start_trans) {
         ppa_dma2d_enqueue(next_start_trans);
     } else {
+        xSemaphoreGiveFromISR(engine_base->sem, &HPTaskAwoken);
+        need_yield |= (HPTaskAwoken == pdTRUE);
 #if CONFIG_PM_ENABLE
         esp_err_t pm_lock_ret = esp_pm_lock_release(engine_base->pm_lock);
         assert(pm_lock_ret == ESP_OK);
 #endif
-        xSemaphoreGiveFromISR(engine_base->sem, &HPTaskAwoken);
-        need_yield |= (HPTaskAwoken == pdTRUE);
     }
-    // Recycle transaction and release transaction semaphore
-    // if (trans_elm->sem != NULL) {
-    xSemaphoreGiveFromISR(trans_elm->sem, &HPTaskAwoken);
-    need_yield |= (HPTaskAwoken == pdTRUE);
-    // }
 
-    // TODO: Check whether trans_cnt and trans_elm_ptr_queue need in one spinlock!!!
-    portENTER_CRITICAL_ISR(&client->spinlock);
-    need_yield |= ppa_recycle_transaction(client, trans_elm);
-    client->trans_cnt--;
-    portEXIT_CRITICAL_ISR(&client->spinlock);
+    // Process last transaction's callback
+    if (done_cb) {
+        ppa_event_data_t edata = {};
+        need_yield |= done_cb(client, &edata, trans_elm_user_data);
+    }
 
     return need_yield;
 }

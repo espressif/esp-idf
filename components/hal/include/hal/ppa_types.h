@@ -81,6 +81,22 @@ typedef enum {
                                    If input format does not contain alpha info, A' = 0, i.e. a layer with 0% opacity. */
 } ppa_alpha_update_mode_t;
 
+/**
+ * @brief Enumeration of PPA supported color conversion standard between RGB and YUV (determines the YUV<->RGB conversion equation)
+ */
+typedef enum {
+    PPA_COLOR_CONV_STD_RGB_YUV_BT601 = COLOR_CONV_STD_RGB_YUV_BT601,      /*!< YUV<->RGB conversion standard: BT.601 */
+    PPA_COLOR_CONV_STD_RGB_YUV_BT709 = COLOR_CONV_STD_RGB_YUV_BT709,      /*!< YUV<->RGB conversion standard: BT.709 */
+} ppa_color_conv_std_rgb_yuv_t;
+
+/**
+ * @brief Enumeration of PPA supported color range (determines the YUV<->RGB conversion equation)
+ */
+typedef enum {
+    PPA_COLOR_RANGE_LIMIT = COLOR_RANGE_LIMIT,      /*!< Limited color range, 16 is the darkest black and 235 is the brightest white */
+    PPA_COLOR_RANGE_FULL = COLOR_RANGE_FULL,        /*!< Full color range, 0 is the darkest black and 255 is the brightest white */
+} ppa_color_range_t;
+
 #ifdef __cplusplus
 }
 #endif

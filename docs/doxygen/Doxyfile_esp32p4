@@ -17,12 +17,14 @@ INPUT += \
     $(PROJECT_PATH)/components/esp_driver_cam/include/esp_cam_ctlr_types.h \
     $(PROJECT_PATH)/components/esp_driver_cam/csi/include/esp_cam_ctlr_csi.h \
     $(PROJECT_PATH)/components/hal/include/hal/jpeg_types.h \
+    $(PROJECT_PATH)/components/hal/include/hal/ppa_types.h \
     $(PROJECT_PATH)/components/esp_driver_jpeg/include/driver/jpeg_types.h \
     $(PROJECT_PATH)/components/esp_driver_isp/include/driver/isp.h \
     $(PROJECT_PATH)/components/esp_driver_isp/include/driver/isp_types.h \
     $(PROJECT_PATH)/components/esp_driver_isp/include/driver/isp_af.h \
     $(PROJECT_PATH)/components/esp_driver_jpeg/include/driver/jpeg_decode.h \
     $(PROJECT_PATH)/components/esp_driver_jpeg/include/driver/jpeg_encode.h \
+    $(PROJECT_PATH)/components/esp_driver_ppa/include/driver/ppa.h \
     $(PROJECT_PATH)/components/esp_lcd/dsi/include/esp_lcd_mipi_dsi.h \
     $(PROJECT_PATH)/components/soc/$(IDF_TARGET)/include/soc/adc_channel.h \
     $(PROJECT_PATH)/components/soc/$(IDF_TARGET)/include/soc/clk_tree_defs.h \

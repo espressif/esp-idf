@@ -146,7 +146,7 @@ bool ppa_blend_transaction_on_picked(uint32_t num_chans, const dma2d_trans_chann
 
     ppa_ll_blend_set_rx_fg_color_mode(platform->hal.dev, blend_trans_desc->in_fg.blend_cm);
     if (COLOR_SPACE_TYPE((uint32_t)blend_trans_desc->in_fg.blend_cm) == COLOR_SPACE_ALPHA) {
-        ppa_ll_blend_set_rx_fg_fix_rgb(platform->hal.dev, blend_trans_desc->fg_fix_rgb_val);
+        ppa_ll_blend_set_rx_fg_fix_rgb(platform->hal.dev, &blend_trans_desc->fg_fix_rgb_val);
     }
     ppa_ll_blend_enable_rx_fg_byte_swap(platform->hal.dev, blend_trans_desc->fg_byte_swap);
     ppa_ll_blend_enable_rx_fg_rgb_swap(platform->hal.dev, blend_trans_desc->fg_rgb_swap);
@@ -231,18 +231,21 @@ esp_err_t ppa_do_blend(ppa_client_handle_t ppa_client, const ppa_blend_oper_conf
         .color_type_id = config->in_bg.blend_cm,
     };
     uint32_t in_bg_pic_len = config->in_bg.pic_w * config->in_bg.pic_h * color_hal_pixel_format_get_bit_depth(in_bg_pixel_format) / 8;
-    esp_cache_msync(config->in_bg.buffer, in_bg_pic_len, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED);
+    esp_cache_msync((void *)config->in_bg.buffer, in_bg_pic_len, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED);
     color_space_pixel_format_t in_fg_pixel_format = {
         .color_type_id = config->in_fg.blend_cm,
     };
     uint32_t in_fg_pic_len = config->in_fg.pic_w * config->in_fg.pic_h * color_hal_pixel_format_get_bit_depth(in_fg_pixel_format) / 8;
-    esp_cache_msync(config->in_fg.buffer, in_fg_pic_len, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED);
+    esp_cache_msync((void *)config->in_fg.buffer, in_fg_pic_len, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED);
     // Invalidate out_buffer
-    esp_cache_msync(config->out.buffer, config->out.buffer_size, ESP_CACHE_MSYNC_FLAG_DIR_M2C);
+    esp_cache_msync((void *)config->out.buffer, config->out.buffer_size, ESP_CACHE_MSYNC_FLAG_DIR_M2C);
 
     esp_err_t ret = ESP_OK;
     ppa_trans_t *trans_elm = NULL;
-    if (xQueueReceive(ppa_client->trans_elm_ptr_queue, (void *)&trans_elm, 0)) {
+    portENTER_CRITICAL(&ppa_client->spinlock);
+    bool trans_elm_acquired = xQueueReceive(ppa_client->trans_elm_ptr_queue, (void *)&trans_elm, 0);
+    portEXIT_CRITICAL(&ppa_client->spinlock);
+    if (trans_elm_acquired) {
         dma2d_trans_config_t *dma_trans_desc = trans_elm->trans_desc;
 
         ppa_dma2d_trans_on_picked_config_t *trans_on_picked_desc = dma_trans_desc->user_config;

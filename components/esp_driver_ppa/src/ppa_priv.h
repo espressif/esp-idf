@@ -78,7 +78,6 @@ struct ppa_client_t {
     ppa_engine_t *engine;                         // Pointer to the PPA engine that in charge of performing the PPA operation
     uint32_t trans_cnt;                           // Number of pending PPA transactions
     portMUX_TYPE spinlock;                        // Client level spinlock
-    bool in_accepting_trans_state;                // Indicates whether the client can accept new PPA transaction requests now
     ppa_event_callback_t done_cb;                 // Transaction done callback
     QueueHandle_t trans_elm_ptr_queue;            // Queue that contains the pointers to the allocated memory to save the transaction contexts
 };
@@ -141,7 +140,7 @@ typedef struct {
         uint32_t fg_alpha_fix_val;
         float fg_alpha_scale_ratio;
     };
-    uint32_t fg_fix_rgb_val;
+    color_pixel_rgb888_data_t fg_fix_rgb_val;
 
     // color-keying
     bool bg_ck_en;
@@ -209,9 +208,6 @@ struct ppa_platform_t {
     uint32_t blend_engine_ref_count;            // Reference count used to protect PPA blending engine acquire and release
     size_t buf_alignment_size;                  // Alignment requirement for the outgoing buffer addr and size to satisfy cache line size
     uint32_t dma_desc_mem_size;                 // Alignment requirement for the 2D-DMA descriptor to satisfy cache line size
-#if CONFIG_PM_ENABLE
-    esp_pm_lock_handle_t pm_lock;               // Power management lock
-#endif
 };
 
 #ifdef __cplusplus

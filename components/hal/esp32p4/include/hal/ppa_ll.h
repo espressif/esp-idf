@@ -230,15 +230,15 @@ static inline void ppa_ll_srm_set_tx_color_mode(ppa_dev_t *dev, ppa_srm_color_mo
  * @brief Set YUV to RGB protocol when PPA SRM RX pixel color space is YUV
  *
  * @param dev Peripheral instance address
- * @param std One of the RGB-YUV conversion standards in color_conv_std_rgb_yuv_t
+ * @param std One of the RGB-YUV conversion standards in ppa_color_conv_std_rgb_yuv_t
  */
-static inline void ppa_ll_srm_set_rx_yuv2rgb_std(ppa_dev_t *dev, color_conv_std_rgb_yuv_t std)
+static inline void ppa_ll_srm_set_rx_yuv2rgb_std(ppa_dev_t *dev, ppa_color_conv_std_rgb_yuv_t std)
 {
     switch (std) {
-    case COLOR_CONV_STD_RGB_YUV_BT601:
+    case PPA_COLOR_CONV_STD_RGB_YUV_BT601:
         dev->sr_color_mode.yuv2rgb_protocol = 0;
         break;
-    case COLOR_CONV_STD_RGB_YUV_BT709:
+    case PPA_COLOR_CONV_STD_RGB_YUV_BT709:
         dev->sr_color_mode.yuv2rgb_protocol = 1;
         break;
     default:
@@ -251,15 +251,15 @@ static inline void ppa_ll_srm_set_rx_yuv2rgb_std(ppa_dev_t *dev, color_conv_std_
  * @brief Set RGB to YUV protocol when PPA SRM TX pixel color space is YUV
  *
  * @param dev Peripheral instance address
- * @param std One of the RGB-YUV conversion standards in color_conv_std_rgb_yuv_t
+ * @param std One of the RGB-YUV conversion standards in ppa_color_conv_std_rgb_yuv_t
  */
-static inline void ppa_ll_srm_set_tx_rgb2yuv_std(ppa_dev_t *dev, color_conv_std_rgb_yuv_t std)
+static inline void ppa_ll_srm_set_tx_rgb2yuv_std(ppa_dev_t *dev, ppa_color_conv_std_rgb_yuv_t std)
 {
     switch (std) {
-    case COLOR_CONV_STD_RGB_YUV_BT601:
+    case PPA_COLOR_CONV_STD_RGB_YUV_BT601:
         dev->sr_color_mode.rgb2yuv_protocol = 0;
         break;
-    case COLOR_CONV_STD_RGB_YUV_BT709:
+    case PPA_COLOR_CONV_STD_RGB_YUV_BT709:
         dev->sr_color_mode.rgb2yuv_protocol = 1;
         break;
     default:
@@ -272,15 +272,15 @@ static inline void ppa_ll_srm_set_tx_rgb2yuv_std(ppa_dev_t *dev, color_conv_std_
  * @brief Set PPA SRM YUV input range
  *
  * @param dev Peripheral instance address
- * @param range One of color range options in color_range_t
+ * @param range One of color range options in ppa_color_range_t
  */
-static inline void ppa_ll_srm_set_rx_yuv_range(ppa_dev_t *dev, color_range_t range)
+static inline void ppa_ll_srm_set_rx_yuv_range(ppa_dev_t *dev, ppa_color_range_t range)
 {
     switch (range) {
-    case COLOR_RANGE_LIMIT:
+    case PPA_COLOR_RANGE_LIMIT:
         dev->sr_color_mode.yuv_rx_range = 0;
         break;
-    case COLOR_RANGE_FULL:
+    case PPA_COLOR_RANGE_FULL:
         dev->sr_color_mode.yuv_rx_range = 1;
         break;
     default:
@@ -293,15 +293,15 @@ static inline void ppa_ll_srm_set_rx_yuv_range(ppa_dev_t *dev, color_range_t ran
  * @brief Set PPA SRM YUV output range
  *
  * @param dev Peripheral instance address
- * @param range One of color range options in color_range_t
+ * @param range One of color range options in ppa_color_range_t
  */
-static inline void ppa_ll_srm_set_tx_yuv_range(ppa_dev_t *dev, color_range_t range)
+static inline void ppa_ll_srm_set_tx_yuv_range(ppa_dev_t *dev, ppa_color_range_t range)
 {
     switch (range) {
-    case COLOR_RANGE_LIMIT:
+    case PPA_COLOR_RANGE_LIMIT:
         dev->sr_color_mode.yuv_tx_range = 0;
         break;
-    case COLOR_RANGE_FULL:
+    case PPA_COLOR_RANGE_FULL:
         dev->sr_color_mode.yuv_tx_range = 1;
         break;
     default:
@@ -643,10 +643,10 @@ static inline void ppa_ll_blend_configure_rx_fg_alpha(ppa_dev_t *dev, ppa_alpha_
  * @param hb The horizontal width of image block that would be filled in fix pixel filling mode. The unit is pixel.
  * @param vb The vertical height of image block that would be filled in fix pixel filling mode. The unit is pixel.
  */
-static inline void ppa_ll_blend_configure_filling_block(ppa_dev_t *dev, uint32_t data, uint32_t hb, uint32_t vb)
+static inline void ppa_ll_blend_configure_filling_block(ppa_dev_t *dev, color_pixel_argb8888_data_t *data, uint32_t hb, uint32_t vb)
 {
     HAL_ASSERT(hb <= PPA_BLEND_HB_V && vb <= PPA_BLEND_VB_V);
-    dev->blend_fix_pixel.blend_tx_fix_pixel = data;
+    dev->blend_fix_pixel.blend_tx_fix_pixel = data->val;
     dev->blend_tx_size.blend_hb = hb;
     dev->blend_tx_size.blend_vb = vb;
 }
@@ -657,9 +657,11 @@ static inline void ppa_ll_blend_configure_filling_block(ppa_dev_t *dev, uint32_t
  * @param dev Peripheral instance address
  * @param rgb RGB color for A4/A8 mode in RGB888 format
  */
-static inline void ppa_ll_blend_set_rx_fg_fix_rgb(ppa_dev_t *dev, uint32_t rgb)
+static inline void ppa_ll_blend_set_rx_fg_fix_rgb(ppa_dev_t *dev, color_pixel_rgb888_data_t *rgb)
 {
-    dev->blend_rgb.val = rgb;
+    dev->blend_rgb.blend1_rx_b = rgb->b;
+    dev->blend_rgb.blend1_rx_g = rgb->g;
+    dev->blend_rgb.blend1_rx_r = rgb->r;
 }
 
 /*

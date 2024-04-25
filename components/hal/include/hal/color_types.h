@@ -150,6 +150,44 @@ typedef enum {
     COLOR_RGB_ELEMENT_ORDER_BGR, /*!< RGB element order: BGR */
 } color_rgb_element_order_t;
 
+/*---------------------------------------------------------------
+                Data Structure for Color Pixel Unit
+---------------------------------------------------------------*/
+
+/**
+ * @brief Data structure for ARGB8888 pixel unit
+ */
+typedef union {
+    struct {
+        uint32_t b: 8;      /*!< B component [0, 255] */
+        uint32_t g: 8;      /*!< G component [0, 255] */
+        uint32_t r: 8;      /*!< R component [0, 255] */
+        uint32_t a: 8;      /*!< A component [0, 255] */
+    };
+    uint32_t val;           /*!< 32-bit ARGB8888 value */
+} color_pixel_argb8888_data_t;
+
+/**
+ * @brief Data structure for RGB888 pixel unit
+ */
+typedef struct {
+        uint8_t b;      /*!< B component [0, 255] */
+        uint8_t g;      /*!< G component [0, 255] */
+        uint8_t r;      /*!< R component [0, 255] */
+} color_pixel_rgb888_data_t;
+
+/**
+ * @brief Data structure for RGB565 pixel unit
+ */
+typedef union {
+    struct {
+        uint16_t b: 5;      /*!< B component [0, 31] */
+        uint16_t g: 6;      /*!< G component [0, 63] */
+        uint16_t r: 5;      /*!< R component [0, 31] */
+    };
+    uint16_t val;           /*!< 16-bit RGB565 value */
+} color_pixel_rgb565_data_t;
+
 #ifdef __cplusplus
 }
 #endif

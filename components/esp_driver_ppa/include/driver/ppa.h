@@ -21,7 +21,7 @@ typedef enum {
     PPA_OPERATION_SRM,              /*!< Do scale-rotate-mirror operation */
     PPA_OPERATION_BLEND,            /*!< Do blend operation */
     PPA_OPERATION_FILL,             /*!< Do fill operation, use one constant pixel to fill a target window */
-    PPA_OPERATION_NUM,              /*!< Quantity of PPA operations */
+    PPA_OPERATION_INVALID,          /*!< Invalid PPA operations, indicates the quantity of available PPA operations */
 } ppa_operation_t;
 
 /**
@@ -89,7 +89,7 @@ typedef bool (*ppa_event_callback_t)(ppa_client_handle_t ppa_client, ppa_event_d
  * @brief Group of supported PPA callbacks
  */
 typedef struct {
-    ppa_event_callback_t on_trans_done;     /*! Invoked when a PPA transaction finishes */
+    ppa_event_callback_t on_trans_done;     /*!< Invoked when a PPA transaction finishes */
 } ppa_event_callbacks_t;
 
 /**
@@ -111,7 +111,7 @@ esp_err_t ppa_client_register_event_callbacks(ppa_client_handle_t ppa_client, co
  * @brief A collection of configuration items for an input picture and the target block inside the picture
  */
 typedef struct {
-    void *buffer;                           /*!< Pointer to the input picture buffer */
+    const void *buffer;                     /*!< Pointer to the input picture buffer */
     uint32_t pic_w;                         /*!< Input picture width (unit: pixel) */
     uint32_t pic_h;                         /*!< Input picture height (unit: pixel) */
     uint32_t block_w;                       /*!< Target block width (unit: pixel) */
@@ -123,8 +123,8 @@ typedef struct {
         ppa_blend_color_mode_t blend_cm;    /*!< Color mode of the picture in a PPA blend operation. Supported color mode in `ppa_blend_color_mode_t` */
         ppa_fill_color_mode_t fill_cm;      /*!< Color mode of the picture in a PPA fill operation. Supported color mode in `ppa_fill_color_mode_t` */
     };
-    color_range_t yuv_range;                /*!< When the color mode is any YUV color space, this field is to describe its color range */
-    color_conv_std_rgb_yuv_t yuv_std;       /*!< When the color mode is any YUV color space, this field is to describe its YUV<->RGB conversion standard */
+    ppa_color_range_t yuv_range;            /*!< When the color mode is any YUV color space, this field is to describe its color range */
+    ppa_color_conv_std_rgb_yuv_t yuv_std;   /*!< When the color mode is any YUV color space, this field is to describe its YUV<->RGB conversion standard */
 } ppa_in_pic_blk_config_t;
 
 /**
@@ -142,8 +142,8 @@ typedef struct {
         ppa_blend_color_mode_t blend_cm;    /*!< Color mode of the picture in a PPA blend operation. Supported color mode in `ppa_blend_color_mode_t` */
         ppa_fill_color_mode_t fill_cm;      /*!< Color mode of the picture in a PPA fill operation. Supported color mode in `ppa_fill_color_mode_t` */
     };
-    color_range_t yuv_range;                /*!< When the color mode is any YUV color space, this field is to describe its color range */
-    color_conv_std_rgb_yuv_t yuv_std;       /*!< When the color mode is any YUV color space, this field is to describe its YUV<->RGB conversion standard */
+    ppa_color_range_t yuv_range;            /*!< When the color mode is any YUV color space, this field is to describe its color range */
+    ppa_color_conv_std_rgb_yuv_t yuv_std;   /*!< When the color mode is any YUV color space, this field is to describe its YUV<->RGB conversion standard */
 } ppa_out_pic_blk_config_t;
 
 /**
@@ -193,8 +193,7 @@ typedef struct {
  * @return
  *      - ESP_OK: Perform a SRM operation successfully
  *      - ESP_ERR_INVALID_ARG: Perform a SRM operation failed because of invalid argument
- *      - ESP_ERR_NO_MEM: Perform a SRM operation failed because out of memory
- *      - ESP_FAIL: Perform a SRM operation failed because the client cannot accept transaction now
+ *      - ESP_FAIL: Perform a SRM operation failed because the client's pending transactions has reached its maximum capacity
  */
 esp_err_t ppa_do_scale_rotate_mirror(ppa_client_handle_t ppa_client, const ppa_srm_oper_config_t *config);
 
@@ -227,7 +226,7 @@ typedef struct {
                                                         When PPA_ALPHA_SCALE mode is selected, alpha_scale_ratio is the multiplier to the input alpha value (output_alpha = alpha_scale_ratio * input_alpha)
                                                         Ratio resolution is 1/256 */
     };
-    uint32_t fg_fix_rgb_val;                       /*!< When in_fg.blend_cm is PPA_BLEND_COLOR_MODE_A8/4, this field can be used to set a fixed color for the foreground, in RGB888 format (R[23:16], G[15: 8], B[7:0]) */
+    color_pixel_rgb888_data_t fg_fix_rgb_val;      /*!< When in_fg.blend_cm is PPA_BLEND_COLOR_MODE_A8/4, this field can be used to set a fixed color for the foreground, in RGB888 format */
 
     // color-keying
     // A pixel, where its background element and foreground element are both out of their color-keying ranges, will follow Alpha Blending
@@ -255,8 +254,7 @@ typedef struct {
  * @return
  *      - ESP_OK: Perform a blend operation successfully
  *      - ESP_ERR_INVALID_ARG: Perform a blend operation failed because of invalid argument
- *      - ESP_ERR_NO_MEM: Perform a blend operation failed because out of memory
- *      - ESP_FAIL: Perform a blend operation failed because the client cannot accept transaction now
+ *      - ESP_FAIL: Perform a blend operation failed because the client's pending transactions has reached its maximum capacity
  */
 esp_err_t ppa_do_blend(ppa_client_handle_t ppa_client, const ppa_blend_oper_config_t *config);
 
@@ -268,7 +266,7 @@ typedef struct {
 
     uint32_t fill_block_w;                         /*!< The width of the block to be filled (unit: pixel) */
     uint32_t fill_block_h;                         /*!< The height of the block to be filled (unit: pixel) */
-    uint32_t fill_argb_color;                      /*!< The color to be filled, in ARGB8888 format ((A[31:24], R[23:16], G[15: 8], B[7:0])) */
+    color_pixel_argb8888_data_t fill_argb_color;   /*!< The color to be filled, in ARGB8888 format */
 
     ppa_trans_mode_t mode;                         /*!< Determines whether to block inside the operation functions, see `ppa_trans_mode_t` */
     void *user_data;                               /*!< User registered data to be passed into `done_cb` callback function */
@@ -283,8 +281,7 @@ typedef struct {
  * @return
  *      - ESP_OK: Perform a fill operation successfully
  *      - ESP_ERR_INVALID_ARG: Perform a fill operation failed because of invalid argument
- *      - ESP_ERR_NO_MEM: Perform a fill operation failed because out of memory
- *      - ESP_FAIL: Perform a fill operation failed because the client cannot accept transaction now
+ *      - ESP_FAIL: Perform a fill operation failed because the client's pending transactions has reached its maximum capacity
  */
 esp_err_t ppa_do_fill(ppa_client_handle_t ppa_client, const ppa_fill_oper_config_t *config);
 
