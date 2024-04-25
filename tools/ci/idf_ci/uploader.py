@@ -61,7 +61,7 @@ class AppUploader(AppDownloader):
             DEFAULT_BUILD_LOG_FILENAME,
         ],
         ArtifactType.SIZE_REPORTS: [
-            '**/build*/size.json',
+            'size.json',
         ],
     }
 
