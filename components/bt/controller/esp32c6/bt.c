@@ -581,6 +581,9 @@ esp_err_t controller_sleep_init(void)
         goto error;
     }
 #if CONFIG_FREERTOS_USE_TICKLESS_IDLE
+#if CONFIG_BT_LE_SLEEP_ENABLE && !CONFIG_MAC_BB_PD
+#error "CONFIG_MAC_BB_PD required for BLE light sleep to run properly"
+#endif // CONFIG_BT_LE_SLEEP_ENABLE && !CONFIG_MAC_BB_PD
     /* Create a new regdma link for BLE related register restoration */
     rc = sleep_modem_ble_mac_modem_state_init(1);
     assert(rc == 0);
