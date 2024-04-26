@@ -169,6 +169,7 @@ When {IDF_TARGET_NAME} receives UART input from external devices, it is often ne
 
 :cpp:func:`esp_sleep_enable_uart_wakeup` function can be used to enable this wakeup source.
 
+After waking-up from UART, you should send some extra data through the UART port in Active mode, so that the internal wakeup indication signal can be cleared. Otherwises, the next UART wake-up would trigger with two less rising edges than the configured threshold value.
 
 Power-down of RTC Peripherals and Memories
 ------------------------------------------
