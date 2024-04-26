@@ -418,3 +418,7 @@
     re: "-Werror=(xor-used-as-pow|enum-int-mismatch|self-move|dangling-reference)"
     hint: "The warning(s) '{}' may appear after compiler update above GCC-13\nTo suppress these warnings use 'idf.py menuconfig' to enable configure option 'Compiler options' -> 'Disable new warnings introduced in GCC 13'\nPlease note that this is not a permanent solution, and this option will be removed in a future update of the ESP-IDF.\nIt is strongly recommended to fix all warnings, as they may indicate potential issues!"
     match_to_output: True
+
+-
+    re: "unplaced orphan section"
+    hint: "Avoid creating custom sections. Please refer to the 'Linker Script Generation' article in the IDF documentation to address this. Or set option CONFIG_COMPILER_ORPHAN_SECTIONS_PLACE (not recommended)."
