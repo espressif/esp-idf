@@ -1,6 +1,8 @@
 Memory Synchronization
 **********************
 
+:link_to_translation:`zh_CN:[中文]`
+
 .. toctree::
    :maxdepth: 1
 
@@ -29,7 +31,7 @@ This leads to potential cache data coherence issue:
 - When a DMA transaction changes the content of a piece of memory, and the content has been cached already. Under this condition:
 
    - CPU may read stale data.
-   - the stale data in the cache may be written back to the memory. The new data updated by the previous DMA transaction will be overwritten.
+   - The stale data in the cache may be written back to the memory. The new data updated by the previous DMA transaction will be overwritten.
 
 - CPU changes the content of an address. The content is in the cache, but not in the memory yet (cache will write back the content to the memory according to its own strategy). Under this condition:
 
@@ -40,11 +42,11 @@ There are three common methods to address such cache data coherence issue:
 .. list::
 
    1. Hardware based cache Coherent Interconnect, {IDF_TARGET_NAME} does not have such ability.
-   2. Use the DMA buffer from non-cacheable memory. Memory that CPU access it without going through cache is called non-cacheable memory.
+   2. Use the DMA buffer from non-cacheable memory. Non-cacheable memory refers to the type of memory that is accessed by CPU without going through cache.
    3. Explicitly call a memory synchronization API to writeback the content in the cache back to the memory, or invalidate the content in the cache.
 
 
-Memory Synchronisation Driver
+Memory Synchronization Driver
 =============================
 
 The suggested way to deal with such cache data coherence issue is by using the memory synchronization API :cpp:func:`esp_cache_msync` provided by ESP-IDF `esp_mm` component.
@@ -71,7 +73,7 @@ Calling :cpp:func:`esp_cache_msync` will do a synchronization between cache and 
 
 .. list::
 
-   - :c:macro:`ESP_CACHE_MSYNC_FLAG_DIR_C2M`. With this flag, content in the specified address region is written back to the memory. This direction is usually used **after** the content of an address is updated by the CPU, e.g. a memset to the address. Operation in this direction should happen **before** a DMA operation to the same address.
+   - :c:macro:`ESP_CACHE_MSYNC_FLAG_DIR_C2M`. With this flag, content in the specified address region is written back to the memory. This direction is usually used **after** the content of an address is updated by the CPU, e.g., a memset to the address. Operation in this direction should happen **before** a DMA operation to the same address.
    - :c:macro:`ESP_CACHE_MSYNC_FLAG_DIR_M2C`. With this flag, content in the specified address region is invalidated from the cache. This direction is usually used **after** the content of an address is updated by the DMA. Operation in this direction should happen **before** a CPU read operation to the same address.
 
 The above two flags help select the synchronization direction. Specially, if neither of these two flags are used, :cpp:func:`esp_cache_msync` will by default select the :c:macro:`ESP_CACHE_MSYNC_FLAG_DIR_C2M` direction. Users are not allowed to set both of the two flags at the same time.
@@ -81,13 +83,13 @@ The above two flags help select the synchronization direction. Specially, if nei
    - :c:macro:`ESP_CACHE_MSYNC_FLAG_TYPE_DATA`.
    - :c:macro:`ESP_CACHE_MSYNC_FLAG_TYPE_INST`.
 
-The above two flags help select the type of the synchronization address. Specially, if neither of these two flags are used, :cpp:func:`esp_cache_msync` will by default select the :c:macro:`ESP_CACHE_MSYNC_FLAG_TYPE_DATA` direction. Users are not allowed to set both of the two flags at the same time.
+The above two flags help select the type of the synchronization address. Specially, if neither of these two flags are used, :cpp:func:`esp_cache_msync` will by default select the :c:macro:`ESP_CACHE_MSYNC_FLAG_TYPE_DATA` type. Users are not allowed to set both of the two flags at the same time.
 
 
 .. list::
 
    - :c:macro:`ESP_CACHE_MSYNC_FLAG_INVALIDATE`. This flag is used to trigger a cache invalidation to the specified address region, after the region is written back to the memory. This flag is mainly used for :c:macro:`ESP_CACHE_MSYNC_FLAG_DIR_C2M` direction. For :c:macro:`ESP_CACHE_MSYNC_FLAG_DIR_M2C` direction, behaviour is the same as if the :c:macro:`ESP_CACHE_MSYNC_FLAG_INVALIDATE` flag is not set.
-   - :c:macro:`ESP_CACHE_MSYNC_FLAG_UNALIGNED`. This flag force the :cpp:func:`esp_cache_msync` API to do synchronization without checking the address and size alignment. For more details, see chapter `Address Alignment Requirement` following.
+   - :c:macro:`ESP_CACHE_MSYNC_FLAG_UNALIGNED`. This flag force the :cpp:func:`esp_cache_msync` API to do synchronization without checking the address and size alignment. For more details, see section `Address Alignment Requirement` following.
 
 
 Address Alignment Requirement
@@ -106,8 +108,8 @@ Memory Allocation Helper
 
 cache memory synchronization is usually considered when DMA is involved. ESP-IDF provides an API to do memory allocation that can meet the alignment requirement from both the cache and the DMA.
 
-- :cpp:func:`esp_dma_capable_malloc`, this API allocates a chunk of memory that meets the alignment requirement from both the cache and the DMA.
-- :cpp:func:`esp_dma_capable_calloc`, this API allocates a chunk of memory that meets the alignment requirement from both the cache and the DMA. The initialized value in the memory is set to zero.
+- :cpp:func:`esp_dma_capable_malloc`. This API allocates a chunk of memory that meets the alignment requirement from both the cache and the DMA.
+- :cpp:func:`esp_dma_capable_calloc`. This API allocates a chunk of memory that meets the alignment requirement from both the cache and the DMA. The initialized value in the memory is set to zero.
 
 You can also use :c:macro:`ESP_DMA_MALLOC_FLAG_PSRAM` to allocate from the PSRAM.
 
@@ -115,7 +117,7 @@ You can also use :c:macro:`ESP_DMA_MALLOC_FLAG_PSRAM` to allocate from the PSRAM
 Warning for Address Alignment Requirement
 -----------------------------------------
 
-You can set the :c:macro:`ESP_CACHE_MSYNC_FLAG_UNALIGNED` flag to bypass such check. Note you should be very careful about using this flag. cache memory synchronization to an unaligned address region may silently corrupt the memory.
+You can set the :c:macro:`ESP_CACHE_MSYNC_FLAG_UNALIGNED` flag to bypass such check. Note you should be very careful about using this flag. Cache memory synchronization to an unaligned address region may silently corrupt the memory.
 
 For example, assume:
 
