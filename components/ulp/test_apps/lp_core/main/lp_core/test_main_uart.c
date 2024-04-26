@@ -9,6 +9,7 @@
 #include "test_shared.h"
 #include "ulp_lp_core_utils.h"
 #include "ulp_lp_core_uart.h"
+#include "ulp_lp_core_print.h"
 
 #define LP_UART_PORT_NUM            LP_UART_NUM_0
 #define LP_UART_BUFFER_LEN          UART_BUF_SIZE
@@ -24,6 +25,14 @@ uint8_t rx_data[LP_UART_BUFFER_LEN] = {};
 /* Data transmission length */
 volatile uint8_t tx_len = 0;
 volatile uint8_t rx_len = 0;
+
+/* LP Core print test variables */
+volatile char test_string[25];
+volatile char test_long_string[200];
+volatile int test_signed_integer;
+volatile uint32_t test_unsigned_integer;
+volatile int test_hex;
+volatile char test_character;
 
 int main(void)
 {
@@ -69,6 +78,18 @@ int main(void)
                 bytes_remaining -= bytes_received;
                 idx += bytes_received;
             }
+        }
+
+        if (test_cmd == LP_CORE_LP_UART_PRINT_TEST) {
+            /* Write various cases to test lp_core_printf to test various format specifiers */
+            lp_core_printf("%s\r\n", test_string);
+            lp_core_printf("%s\r\n", test_long_string);
+            lp_core_printf("Test printf signed integer %d\r\n", test_signed_integer);
+            lp_core_printf("Test printf unsigned integer %u\r\n", test_unsigned_integer);
+            lp_core_printf("Test printf hex %x\r\n", test_hex);
+            lp_core_printf("Test printf character %c\r\n", test_character);
+            // TODO: Floating point prints are not supported
+            // lp_core_printf("Test printf float %f\r\n", (float)0.99);
         }
 
         /* Synchronize with the HP core running the test */
