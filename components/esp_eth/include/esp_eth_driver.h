@@ -1,12 +1,20 @@
 /*
- * SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 #pragma once
 
 #include "esp_eth_com.h"
-#include "esp_eth_mac.h"
+#if CONFIG_ETH_USE_SPI_ETHERNET
+#include "esp_eth_mac_spi.h"
+#endif // CONFIG_ETH_USE_SPI_ETHERNET
+#if CONFIG_ETH_USE_ESP32_EMAC
+#include "esp_eth_mac_esp.h"
+#endif // CONFIG_ETH_USE_ESP32_EMAC
+#if  CONFIG_ETH_USE_OPENETH
+#include "esp_eth_mac_openeth.h"
+#endif // CONFIG_ETH_USE_OPENETH
 #include "esp_eth_phy.h"
 
 #ifdef __cplusplus
@@ -151,8 +159,8 @@ typedef enum {
     ETH_CMD_READ_PHY_REG,             /*!< Read PHY register */
     ETH_CMD_WRITE_PHY_REG,            /*!< Write PHY register */
 
-    ETH_CMD_CUSTOM_MAC_CMDS = 0x0FFF, // Offset for start of MAC custom commands
-    ETH_CMD_CUSTOM_PHY_CMDS = 0x1FFF, // Offset for start of PHY custom commands
+    ETH_CMD_CUSTOM_MAC_CMDS = ETH_CMD_CUSTOM_MAC_CMDS_OFFSET, // Offset for start of MAC custom commands
+    ETH_CMD_CUSTOM_PHY_CMDS = ETH_CMD_CUSTOM_PHY_CMDS_OFFSET, // Offset for start of PHY custom commands
 } esp_eth_io_cmd_t;
 
 /**
@@ -272,7 +280,7 @@ esp_err_t esp_eth_transmit(esp_eth_handle_t hdl, void *buf, size_t length);
 * @param[in] argc number variable arguments
 * @param ... variable arguments
 * @return
-*       - ESP_OK: transmit successfull
+*       - ESP_OK: transmit successful
 *       - ESP_ERR_INVALID_STATE: invalid driver state (e.i. driver is not started)
 *       - ESP_ERR_TIMEOUT: transmit frame buffer failed because HW was not get available in predefined period
 *       - ESP_FAIL: transmit frame buffer failed because some other error occurred
@@ -280,7 +288,7 @@ esp_err_t esp_eth_transmit(esp_eth_handle_t hdl, void *buf, size_t length);
 esp_err_t esp_eth_transmit_vargs(esp_eth_handle_t hdl, uint32_t argc, ...);
 
 /**
-* @brief Misc IO function of Etherent driver
+* @brief Misc IO function of Ethernet driver
 *
 * @param[in] hdl: handle of Ethernet driver
 * @param[in] cmd: IO control command
@@ -313,6 +321,28 @@ esp_err_t esp_eth_transmit_vargs(esp_eth_handle_t hdl, uint32_t argc, ...);
 * @li Note that additional control commands may be available for specific MAC or PHY chips. Please consult specific MAC or PHY documentation or driver code.
 */
 esp_err_t esp_eth_ioctl(esp_eth_handle_t hdl, esp_eth_io_cmd_t cmd, void *data);
+
+/**
+* @brief Get PHY instance memory address
+*
+* @param[in] hdl handle of Ethernet driver
+* @param[out] phy pointer to memory to store the instance
+* @return esp_err_t
+*       - ESP_OK: success
+*       - ESP_ERR_INVALID_ARG: failed because of some invalid argument
+*/
+esp_err_t esp_eth_get_phy_instance(esp_eth_handle_t hdl, esp_eth_phy_t **phy);
+
+/**
+* @brief Get MAC instance memory address
+*
+* @param[in] hdl handle of Ethernet driver
+* @param[out] mac pointer to memory to store the instance
+* @return esp_err_t
+*       - ESP_OK: success
+*       - ESP_ERR_INVALID_ARG: failed because of some invalid argument
+*/
+esp_err_t esp_eth_get_mac_instance(esp_eth_handle_t hdl, esp_eth_mac_t **mac);
 
 /**
 * @brief Increase Ethernet driver reference

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -154,20 +154,21 @@
 #define GPIO_PAD_SET_DRV(num, drv) PIN_SET_DRV(IOMUX_REG_GPIO##num, drv)
 
 // TODO: IDF-7499, IDF-7495
-// Pins defined here are all wrong (Ln153-164). On P4, these pins are individual pins, don't use normal GPIO pins anymore.
+// SPI pins defined here are all wrong. On P4, these pins are individual pins, don't use normal GPIO pins anymore.
 // Please check iomux_mspi_pin_struct/reg.h
-#define SPI_CS1_GPIO_NUM 26
-#define SPI_HD_GPIO_NUM  27
-#define SPI_WP_GPIO_NUM  28
-#define SPI_CS0_GPIO_NUM 29
-#define SPI_CLK_GPIO_NUM 30
-#define SPI_Q_GPIO_NUM   31
-#define SPI_D_GPIO_NUM   32
-#define SPI_D4_GPIO_NUM  33
-#define SPI_D5_GPIO_NUM  34
-#define SPI_D6_GPIO_NUM  35
-#define SPI_D7_GPIO_NUM  36
-#define SPI_DQS_GPIO_NUM 37
+#include "soc/gpio_num.h"
+#define SPI_CS1_GPIO_NUM GPIO_NUM_MAX
+#define SPI_HD_GPIO_NUM  GPIO_NUM_MAX
+#define SPI_WP_GPIO_NUM  GPIO_NUM_MAX
+#define SPI_CS0_GPIO_NUM GPIO_NUM_MAX
+#define SPI_CLK_GPIO_NUM GPIO_NUM_MAX
+#define SPI_Q_GPIO_NUM   GPIO_NUM_MAX
+#define SPI_D_GPIO_NUM   GPIO_NUM_MAX
+#define SPI_D4_GPIO_NUM  GPIO_NUM_MAX
+#define SPI_D5_GPIO_NUM  GPIO_NUM_MAX
+#define SPI_D6_GPIO_NUM  GPIO_NUM_MAX
+#define SPI_D7_GPIO_NUM  GPIO_NUM_MAX
+#define SPI_DQS_GPIO_NUM GPIO_NUM_MAX
 
 #define SD_CLK_GPIO_NUM           43
 #define SD_CMD_GPIO_NUM           44
@@ -331,63 +332,63 @@
 
 #define PERIPHS_IO_MUX_U_PAD_GPIO28               (REG_IO_MUX_BASE + 0x74)
 #define FUNC_GPIO28_DBG_PSRAM_D_PAD                                      4
-#define FUNC_GPIO28_GMAC_PHY_RXDV_PAD                                    3
+#define FUNC_GPIO28_EMAC_PHY_RXDV_PAD                                    3
 #define FUNC_GPIO28_SPI2_CS_PAD                                          2
 #define FUNC_GPIO28_GPIO28                                               1
 #define FUNC_GPIO28_GPIO28_0                                             0
 
 #define PERIPHS_IO_MUX_U_PAD_GPIO29               (REG_IO_MUX_BASE + 0x78)
 #define FUNC_GPIO29_DBG_PSRAM_Q_PAD                                      4
-#define FUNC_GPIO29_GMAC_PHY_RXD0_PAD                                    3
+#define FUNC_GPIO29_EMAC_PHY_RXD0_PAD                                    3
 #define FUNC_GPIO29_SPI2_D_PAD                                           2
 #define FUNC_GPIO29_GPIO29                                               1
 #define FUNC_GPIO29_GPIO29_0                                             0
 
 #define PERIPHS_IO_MUX_U_PAD_GPIO30               (REG_IO_MUX_BASE + 0x7C)
 #define FUNC_GPIO30_DBG_PSRAM_WP_PAD                                     4
-#define FUNC_GPIO30_GMAC_PHY_RXD1_PAD                                    3
+#define FUNC_GPIO30_EMAC_PHY_RXD1_PAD                                    3
 #define FUNC_GPIO30_SPI2_CK_PAD                                          2
 #define FUNC_GPIO30_GPIO30                                               1
 #define FUNC_GPIO30_GPIO30_0                                             0
 
 #define PERIPHS_IO_MUX_U_PAD_GPIO31               (REG_IO_MUX_BASE + 0x80)
 #define FUNC_GPIO31_DBG_PSRAM_HOLD_PAD                                   4
-#define FUNC_GPIO31_GMAC_PHY_RXER_PAD                                    3
+#define FUNC_GPIO31_EMAC_PHY_RXER_PAD                                    3
 #define FUNC_GPIO31_SPI2_Q_PAD                                           2
 #define FUNC_GPIO31_GPIO31                                               1
 #define FUNC_GPIO31_GPIO31_0                                             0
 
 #define PERIPHS_IO_MUX_U_PAD_GPIO32               (REG_IO_MUX_BASE + 0x84)
 #define FUNC_GPIO32_DBG_PSRAM_DQ4_PAD                                    4
-#define FUNC_GPIO32_GMAC_RMII_CLK_PAD                                    3
+#define FUNC_GPIO32_EMAC_RMII_CLK_PAD                                    3
 #define FUNC_GPIO32_SPI2_HOLD_PAD                                        2
 #define FUNC_GPIO32_GPIO32                                               1
 #define FUNC_GPIO32_GPIO32_0                                             0
 
 #define PERIPHS_IO_MUX_U_PAD_GPIO33               (REG_IO_MUX_BASE + 0x88)
 #define FUNC_GPIO33_DBG_PSRAM_DQ5_PAD                                    4
-#define FUNC_GPIO33_GMAC_PHY_TXEN_PAD                                    3
+#define FUNC_GPIO33_EMAC_PHY_TXEN_PAD                                    3
 #define FUNC_GPIO33_SPI2_WP_PAD                                          2
 #define FUNC_GPIO33_GPIO33                                               1
 #define FUNC_GPIO33_GPIO33_0                                             0
 
 #define PERIPHS_IO_MUX_U_PAD_GPIO34               (REG_IO_MUX_BASE + 0x8C)
 #define FUNC_GPIO34_DBG_PSRAM_DQ6_PAD                                    4
-#define FUNC_GPIO34_GMAC_PHY_TXD0_PAD                                    3
+#define FUNC_GPIO34_EMAC_PHY_TXD0_PAD                                    3
 #define FUNC_GPIO34_SPI2_IO4_PAD                                         2
 #define FUNC_GPIO34_GPIO34                                               1
 #define FUNC_GPIO34_GPIO34_0                                             0
 
 #define PERIPHS_IO_MUX_U_PAD_GPIO35               (REG_IO_MUX_BASE + 0x90)
 #define FUNC_GPIO35_DBG_PSRAM_DQ7_PAD                                    4
-#define FUNC_GPIO35_GMAC_PHY_TXD1_PAD                                    3
+#define FUNC_GPIO35_EMAC_PHY_TXD1_PAD                                    3
 #define FUNC_GPIO35_SPI2_IO5_PAD                                         2
 #define FUNC_GPIO35_GPIO35                                               1
 #define FUNC_GPIO35_GPIO35_0                                             0
 
 #define PERIPHS_IO_MUX_U_PAD_GPIO36               (REG_IO_MUX_BASE + 0x94)
 #define FUNC_GPIO36_DBG_PSRAM_DQS_0_PAD                                  4
-#define FUNC_GPIO36_GMAC_PHY_TXER_PAD                                    3
+#define FUNC_GPIO36_EMAC_PHY_TXER_PAD                                    3
 #define FUNC_GPIO36_SPI2_IO6_PAD                                         2
 #define FUNC_GPIO36_GPIO36                                               1
 #define FUNC_GPIO36_GPIO36_0                                             0
@@ -411,99 +412,99 @@
 
 #define PERIPHS_IO_MUX_U_PAD_GPIO40               (REG_IO_MUX_BASE + 0xA4)
 #define FUNC_GPIO40_DBG_PSRAM_DQ9_PAD                                    4
-#define FUNC_GPIO40_GMAC_PHY_TXEN_PAD                                    3
+#define FUNC_GPIO40_EMAC_PHY_TXEN_PAD                                    3
 #define FUNC_GPIO40_BIST_PAD                                             2
 #define FUNC_GPIO40_GPIO40                                               1
 #define FUNC_GPIO40_SD1_CDATA1_PAD                                       0
 
 #define PERIPHS_IO_MUX_U_PAD_GPIO41               (REG_IO_MUX_BASE + 0xA8)
 #define FUNC_GPIO41_DBG_PSRAM_DQ10_PAD                                   4
-#define FUNC_GPIO41_GMAC_PHY_TXD0_PAD                                    3
+#define FUNC_GPIO41_EMAC_PHY_TXD0_PAD                                    3
 #define FUNC_GPIO41_BIST_PAD                                             2
 #define FUNC_GPIO41_GPIO41                                               1
 #define FUNC_GPIO41_SD1_CDATA2_PAD                                       0
 
 #define PERIPHS_IO_MUX_U_PAD_GPIO42               (REG_IO_MUX_BASE + 0xAC)
 #define FUNC_GPIO42_DBG_PSRAM_DQ11_PAD                                   4
-#define FUNC_GPIO42_GMAC_PHY_TXD1_PAD                                    3
+#define FUNC_GPIO42_EMAC_PHY_TXD1_PAD                                    3
 #define FUNC_GPIO42_BIST_PAD                                             2
 #define FUNC_GPIO42_GPIO42                                               1
 #define FUNC_GPIO42_SD1_CDATA3_PAD                                       0
 
 #define PERIPHS_IO_MUX_U_PAD_GPIO43               (REG_IO_MUX_BASE + 0xB0)
 #define FUNC_GPIO43_DBG_PSRAM_DQ12_PAD                                   4
-#define FUNC_GPIO43_GMAC_PHY_TXER_PAD                                    3
+#define FUNC_GPIO43_EMAC_PHY_TXER_PAD                                    3
 #define FUNC_GPIO43_BIST_PAD                                             2
 #define FUNC_GPIO43_GPIO43                                               1
 #define FUNC_GPIO43_SD1_CCLK_PAD                                         0
 
 #define PERIPHS_IO_MUX_U_PAD_GPIO44               (REG_IO_MUX_BASE + 0xB4)
 #define FUNC_GPIO44_DBG_PSRAM_DQ13_PAD                                   4
-#define FUNC_GPIO44_GMAC_RMII_CLK_PAD                                    3
+#define FUNC_GPIO44_EMAC_RMII_CLK_PAD                                    3
 #define FUNC_GPIO44_BIST_PAD                                             2
 #define FUNC_GPIO44_GPIO44                                               1
 #define FUNC_GPIO44_SD1_CCMD_PAD                                         0
 
 #define PERIPHS_IO_MUX_U_PAD_GPIO45               (REG_IO_MUX_BASE + 0xB8)
 #define FUNC_GPIO45_DBG_PSRAM_DQ14_PAD                                   4
-#define FUNC_GPIO45_GMAC_PHY_RXDV_PAD                                    3
+#define FUNC_GPIO45_EMAC_PHY_RXDV_PAD                                    3
 #define FUNC_GPIO45_BIST_PAD                                             2
 #define FUNC_GPIO45_GPIO45                                               1
 #define FUNC_GPIO45_SD1_CDATA4_PAD                                       0
 
 #define PERIPHS_IO_MUX_U_PAD_GPIO46               (REG_IO_MUX_BASE + 0xBC)
 #define FUNC_GPIO46_DBG_PSRAM_DQ15_PAD                                   4
-#define FUNC_GPIO46_GMAC_PHY_RXD0_PAD                                    3
+#define FUNC_GPIO46_EMAC_PHY_RXD0_PAD                                    3
 #define FUNC_GPIO46_BIST_PAD                                             2
 #define FUNC_GPIO46_GPIO46                                               1
 #define FUNC_GPIO46_SD1_CDATA5_PAD                                       0
 
 #define PERIPHS_IO_MUX_U_PAD_GPIO47               (REG_IO_MUX_BASE + 0xC0)
 #define FUNC_GPIO47_DBG_PSRAM_DQS_1_PAD                                  4
-#define FUNC_GPIO47_GMAC_PHY_RXD1_PAD                                    3
+#define FUNC_GPIO47_EMAC_PHY_RXD1_PAD                                    3
 #define FUNC_GPIO47_BIST_PAD                                             2
 #define FUNC_GPIO47_GPIO47                                               1
 #define FUNC_GPIO47_SD1_CDATA6_PAD                                       0
 
 #define PERIPHS_IO_MUX_U_PAD_GPIO48               (REG_IO_MUX_BASE + 0xC4)
-#define FUNC_GPIO48_GMAC_PHY_RXER_PAD                                    3
+#define FUNC_GPIO48_EMAC_PHY_RXER_PAD                                    3
 #define FUNC_GPIO48_BIST_PAD                                             2
 #define FUNC_GPIO48_GPIO48                                               1
 #define FUNC_GPIO48_SD1_CDATA7_PAD                                       0
 
 #define PERIPHS_IO_MUX_U_PAD_GPIO49               (REG_IO_MUX_BASE + 0xC8)
 #define FUNC_GPIO49_DBG_FLASH_CS_PAD                                      4
-#define FUNC_GPIO49_GMAC_PHY_TXEN_PAD                                    3
+#define FUNC_GPIO49_EMAC_PHY_TXEN_PAD                                    3
 #define FUNC_GPIO49_GPIO49                                               1
 #define FUNC_GPIO49_GPIO49_0                                             0
 
 #define PERIPHS_IO_MUX_U_PAD_GPIO50               (REG_IO_MUX_BASE + 0xCC)
 #define FUNC_GPIO50_DBG_FLASH_Q_PAD                                       4
-#define FUNC_GPIO50_GMAC_RMII_CLK_PAD                                    3
+#define FUNC_GPIO50_EMAC_RMII_CLK_PAD                                    3
 #define FUNC_GPIO50_GPIO50                                               1
 #define FUNC_GPIO50_GPIO50_0                                             0
 
 #define PERIPHS_IO_MUX_U_PAD_GPIO51               (REG_IO_MUX_BASE + 0xD0)
 #define FUNC_GPIO51_DBG_FLASH_WP_PAD                                     4
-#define FUNC_GPIO51_GMAC_PHY_RXDV_PAD                                    3
+#define FUNC_GPIO51_EMAC_PHY_RXDV_PAD                                    3
 #define FUNC_GPIO51_GPIO51                                               1
 #define FUNC_GPIO51_GPIO51_0                                             0
 
 #define PERIPHS_IO_MUX_U_PAD_GPIO52               (REG_IO_MUX_BASE + 0xD4)
 #define FUNC_GPIO52_DBG_FLASH_HOLD_PAD                                   4
-#define FUNC_GPIO52_GMAC_PHY_RXD0_PAD                                    3
+#define FUNC_GPIO52_EMAC_PHY_RXD0_PAD                                    3
 #define FUNC_GPIO52_GPIO52                                               1
 #define FUNC_GPIO52_GPIO52_0                                             0
 
 #define PERIPHS_IO_MUX_U_PAD_GPIO53               (REG_IO_MUX_BASE + 0xD8)
 #define FUNC_GPIO53_DBG_FLASH_CK_PAD                                      4
-#define FUNC_GPIO53_GMAC_PHY_RXD1_PAD                                    3
+#define FUNC_GPIO53_EMAC_PHY_RXD1_PAD                                    3
 #define FUNC_GPIO53_GPIO53                                               1
 #define FUNC_GPIO53_GPIO53_0                                             0
 
 #define PERIPHS_IO_MUX_U_PAD_GPIO54               (REG_IO_MUX_BASE + 0xDC)
 #define FUNC_GPIO54_DBG_FLASH_D_PAD                                       4
-#define FUNC_GPIO54_GMAC_PHY_RXER_PAD                                    3
+#define FUNC_GPIO54_EMAC_PHY_RXER_PAD                                    3
 #define FUNC_GPIO54_GPIO54                                               1
 #define FUNC_GPIO54_GPIO54_0                                             0
 

@@ -114,7 +114,7 @@ extern "C" {
 typedef struct {
     uint16_t cs: 1;     //!< Carrier sense lost (flag set by HW)
     uint16_t df: 1;     //!< Defer indication (flag set by HW)
-    uint16_t lc: 1;     //!< Late collision occured (flag set by HW)
+    uint16_t lc: 1;     //!< Late collision occurred (flag set by HW)
     uint16_t rl: 1;     //!< TX failed due to retransmission limit (flag set by HW)
     uint16_t rtry: 4;   //!< Number of retries before the frame was sent (set by HW)
     uint16_t ur: 1;     //!< Underrun status (flag set by HW)

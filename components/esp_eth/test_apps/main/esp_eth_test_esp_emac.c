@@ -9,10 +9,11 @@
 #include "freertos/event_groups.h"
 #include "esp_log.h"
 #include "esp_eth_test_common.h"
+#include "hal/emac_hal.h" // for MAC_HAL_TDES0_* control bits
 
-#define ETHERTYPE_TX_STD        0x2222  // frame transmitted via emac_hal_transmit_frame
-#define ETHERTYPE_TX_MULTI_2    0x2223  // frame transmitted via emac_hal_transmit_multiple_buf_frame (2 buffers)
-#define ETHERTYPE_TX_MULTI_3    0x2224  // frame transmitted via emac_hal_transmit_multiple_buf_frame (3 buffers)
+#define ETHERTYPE_TX_STD        0x2222  // frame transmitted via _transmit_frame
+#define ETHERTYPE_TX_MULTI_2    0x2223  // frame transmitted via _transmit_multiple_buf_frame (2 buffers)
+#define ETHERTYPE_TX_MULTI_3    0x2224  // frame transmitted via _transmit_multiple_buf_frame (3 buffers)
 
 #define MINIMUM_TEST_FRAME_SIZE 64
 
@@ -36,12 +37,12 @@ static esp_err_t eth_recv_esp_emac_check_cb(esp_eth_handle_t hdl, uint8_t *buffe
 
     ESP_LOGI(TAG, "recv frame size: %" PRIu16, expected_size);
     TEST_ASSERT_EQUAL(expected_size, length);
-    // frame transmitted via emac_hal_transmit_frame
+    // frame transmitted via _transmit_frame
     if (pkt->proto == ETHERTYPE_TX_STD) {
         for (int i = 0; i < recv_info->expected_size - ETH_HEADER_LEN; i++) {
             TEST_ASSERT_EQUAL(pkt->data[i], i & 0xFF);
         }
-    // frame transmitted via emac_hal_transmit_multiple_buf_frame (2 buffers)
+    // frame transmitted via _multiple_buf_frame (2 buffers)
     } else if (pkt->proto == ETHERTYPE_TX_MULTI_2) {
         uint8_t *data_p = pkt->data;
         for (int i = 0; i < recv_info->expected_size - ETH_HEADER_LEN; i++) {
@@ -357,15 +358,17 @@ TEST_CASE("internal emac interrupt priority", "[esp_emac]")
     vEventGroupDelete(eth_event_group);
 }
 
-#if CONFIG_IDF_TARGET_ESP32P4 // IDF-8993
-#include "hal/emac_hal.h"
-#include "hal/emac_ll.h"
-#include "soc/emac_mac_struct.h"
-static esp_err_t eth_recv_err_esp_emac_check_cb(esp_eth_handle_t hdl, uint8_t *buffer, uint32_t length, void *priv)
+#define TEST_FRAMES_NUM CONFIG_ETH_DMA_RX_BUFFER_NUM
+
+static uint8_t *s_recv_frames[TEST_FRAMES_NUM];
+static uint8_t s_recv_frames_cnt = 0;
+
+static esp_err_t eth_recv_esp_emac_err_check_cb(esp_eth_handle_t hdl, uint8_t *buffer, uint32_t length, void *priv)
 {
     SemaphoreHandle_t mutex = (SemaphoreHandle_t)priv;
-    free(buffer);
-    xSemaphoreGive(mutex);
+    s_recv_frames[s_recv_frames_cnt++] = buffer;
+    if (s_recv_frames_cnt >= TEST_FRAMES_NUM)
+        xSemaphoreGive(mutex);
     return ESP_OK;
 }
 
@@ -394,7 +397,7 @@ TEST_CASE("internal emac erroneous frames", "[esp_emac]")
     bool loopback_en = true;
     esp_eth_ioctl(eth_handle, ETH_CMD_S_PHY_LOOPBACK, &loopback_en);
 
-    TEST_ESP_OK(esp_eth_update_input_path(eth_handle, eth_recv_err_esp_emac_check_cb, mutex));
+    TEST_ESP_OK(esp_eth_update_input_path(eth_handle, eth_recv_esp_emac_err_check_cb, mutex));
 
     // start the driver
     TEST_ESP_OK(esp_eth_start(eth_handle));
@@ -413,23 +416,96 @@ TEST_CASE("internal emac erroneous frames", "[esp_emac]")
     TEST_ESP_OK(esp_eth_ioctl(eth_handle, ETH_CMD_G_MAC_ADDR, local_mac_addr));
     memcpy(test_pkt->src, local_mac_addr, ETH_ADDR_LEN);
     // fill with data
-    for (int i = 0; i < ETH_MAX_PAYLOAD_LEN; i++) {
+    int i;
+    for (i = 1; i < ETH_MAX_PAYLOAD_LEN; i++) {
         test_pkt->data[i] = i & 0xFF;
     }
 
-    emac_ll_checksum_offload_mode(&EMAC_MAC, ETH_CHECKSUM_SW);
+    size_t transmit_size = CONFIG_ETH_DMA_BUFFER_SIZE;
+    uint8_t frame_id = 0;
 
-    size_t transmit_size = 1072;
-    TEST_ESP_OK(esp_eth_transmit(eth_handle, test_pkt, transmit_size));
+    ESP_LOGI(TAG, "Verify non-failure frame condition");
+    for (i = 1; i <= TEST_FRAMES_NUM; i++) {
+        test_pkt->data[0] = frame_id++;
+        TEST_ESP_OK(esp_eth_transmit(eth_handle, test_pkt, transmit_size));
+        // if we have only 10 or less Rx buffers, they can be all used pretty fast => wait to be freed prior next Tx
+        if (CONFIG_ETH_DMA_RX_BUFFER_NUM <= 10 && !(i % (CONFIG_ETH_DMA_RX_BUFFER_NUM / 2))) {
+            ESP_LOGI(TAG, "wait prior Tx (frame num %i)", i);
+            vTaskDelay(10);
+        }
+    }
+    ESP_LOGI(TAG, "num of sent frames: %d", TEST_FRAMES_NUM);
     TEST_ASSERT(xSemaphoreTake(mutex, pdMS_TO_TICKS(500)));
+    ESP_LOGI(TAG, "num of recv frames: %d", s_recv_frames_cnt);
 
-    free(test_pkt);
+    for (i = 0; i < s_recv_frames_cnt; i++) {
+        emac_frame_t *recv_frame = (emac_frame_t *)s_recv_frames[i];
+        ESP_LOGI(TAG, "recv frame id %" PRIu8, recv_frame->data[0]);
+        free(recv_frame);
+    }
+    TEST_ASSERT_EQUAL_UINT8(TEST_FRAMES_NUM, s_recv_frames_cnt);
+    s_recv_frames_cnt = 0;
+
+    printf("\n");
+    ESP_LOGI(TAG, "Verify failure condition when every second frame has invalid CRC");
+    uint32_t emac_tx_dbg_flag = EMAC_HAL_TDES0_CRC_APPEND_DISABLE;
+    for (i = 1; i <= TEST_FRAMES_NUM; i++) {
+        test_pkt->data[0] = frame_id++;
+        // make every 2nd frame invalid
+        if (!(i % 2)) {
+            TEST_ESP_OK(esp_eth_ioctl(eth_handle, ETH_MAC_ESP_CMD_SET_TDES0_CFG_BITS, &emac_tx_dbg_flag));
+        }
+        TEST_ESP_OK(esp_eth_transmit(eth_handle, test_pkt, transmit_size));
+        if (!(i % 2)) {
+            TEST_ESP_OK(esp_eth_ioctl(eth_handle, ETH_MAC_ESP_CMD_CLEAR_TDES0_CFG_BITS, &emac_tx_dbg_flag));
+        }
+    }
+    ESP_LOGI(TAG, "num of sent frames: %d (every 2nd invalid)", TEST_FRAMES_NUM);
+    TEST_ASSERT_FALSE(xSemaphoreTake(mutex, pdMS_TO_TICKS(500)));
+    ESP_LOGI(TAG, "num of recv frames: %d", s_recv_frames_cnt);
+
+    for (i = 0; i < s_recv_frames_cnt; i++) {
+        emac_frame_t *recv_frame = (emac_frame_t *)s_recv_frames[i];
+        ESP_LOGI(TAG, "recv frame id %" PRIu8, recv_frame->data[0]);
+        free(recv_frame);
+    }
+    TEST_ASSERT_EQUAL_UINT8(TEST_FRAMES_NUM / 2, s_recv_frames_cnt);
+    s_recv_frames_cnt = 0;
+
+    ESP_LOGI(TAG, "Verify full Rx DMA failure condition");
+    // suspend ETH Rx task so the DMA is filled
+    vTaskSuspend(xTaskGetHandle("emac_rx"));
+    transmit_size = CONFIG_ETH_DMA_BUFFER_SIZE - 4; // -4 bytes to the frame fit into one descriptor even with CRC
+    // fill the descriptors, keep one free
+    for (i = 1; i <= CONFIG_ETH_DMA_RX_BUFFER_NUM - 1; i++) {
+        test_pkt->data[0] = frame_id++;
+        TEST_ESP_OK(esp_eth_transmit(eth_handle, test_pkt, transmit_size));
+        vTaskDelay(1); // to prevent "insufficient TX buffer size" error
+    }
+    transmit_size = CONFIG_ETH_DMA_BUFFER_SIZE; // now, we will need 2 descriptors to store the frame (with CRC) but only one is free
+    test_pkt->data[0] = frame_id++;
+    TEST_ESP_OK(esp_eth_transmit(eth_handle, test_pkt, transmit_size));
+    vTaskDelay(50);
+    vTaskResume(xTaskGetHandle("emac_rx"));
+
+    ESP_LOGI(TAG, "num of sent frames: %d", i);
+    TEST_ASSERT_FALSE(xSemaphoreTake(mutex, pdMS_TO_TICKS(500)));
+    ESP_LOGI(TAG, "num of recv frames: %d", s_recv_frames_cnt);
+
+    for (i = 0; i < s_recv_frames_cnt; i++) {
+        emac_frame_t *recv_frame = (emac_frame_t *)s_recv_frames[i];
+        ESP_LOGI(TAG, "recv frame id %" PRIu8, recv_frame->data[0]);
+        free(recv_frame);
+    }
+    TEST_ASSERT_EQUAL_INT(CONFIG_ETH_DMA_RX_BUFFER_NUM - 1, s_recv_frames_cnt); // one frame is missing due to "Descriptor Error"
+    s_recv_frames_cnt = 0;
 
     // stop Ethernet driver
     TEST_ESP_OK(esp_eth_stop(eth_handle));
-    /* wait for connection stop */
+    // wait for connection stop
     bits = xEventGroupWaitBits(eth_event_group, ETH_STOP_BIT, true, true, pdMS_TO_TICKS(ETH_STOP_TIMEOUT_MS));
     TEST_ASSERT((bits & ETH_STOP_BIT) == ETH_STOP_BIT);
+    free(test_pkt);
     TEST_ESP_OK(esp_eth_driver_uninstall(eth_handle));
     TEST_ESP_OK(phy->del(phy));
     TEST_ESP_OK(mac->del(mac));
@@ -439,4 +515,3 @@ TEST_CASE("internal emac erroneous frames", "[esp_emac]")
     vEventGroupDelete(eth_event_group);
     vSemaphoreDelete(mutex);
 }
-#endif

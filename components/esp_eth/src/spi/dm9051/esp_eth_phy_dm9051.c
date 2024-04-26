@@ -67,7 +67,7 @@ typedef union {
         uint32_t monsel1 : 1; /* Vendor monitor select  */
         uint32_t mdix_down : 1; /* Set 1 to disable HP Auto-MDIX */
         uint32_t mdix_fix : 1; /* When mdix_down = 1, MDIX_CNTL value depend on the register value. */
-        uint32_t autoneg_lpbk : 1; /* Set 1 to enable autonegotioation loopback */
+        uint32_t autoneg_lpbk : 1; /* Set 1 to enable autonegotiation loopback */
         uint32_t mdxi_cntl : 1; /* Polarity of MDI/MDIX value */
         uint32_t reserved2 : 1; /* Reserved */
         uint32_t nway_pwr : 1; /* Set 1 to enable power savings during autonegotiation period */
@@ -195,7 +195,7 @@ static esp_err_t dm9051_loopback(esp_eth_phy_t *phy, bool enable)
     phy_802_3_t *phy_802_3 = esp_eth_phy_into_phy_802_3(phy);
     esp_eth_mediator_t *eth = phy_802_3->eth;
     /* Set Loopback function */
-    // Enable Auto-negotiation loopback in Speficic control register
+    // Enable Auto-negotiation loopback in Specific control register
     bmcr_reg_t bmcr;
     scr_reg_t scr;
     ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, phy_802_3->addr, ETH_PHY_BMCR_REG_ADDR, &(bmcr.val)), err, TAG, "read BMCR failed");

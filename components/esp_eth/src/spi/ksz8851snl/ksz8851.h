@@ -1,22 +1,11 @@
-// Copyright (c) 2021 Vladimir Chistyakov
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-// SOFTWARE.
+/*
+ * SPDX-FileCopyrightText: 2021 Vladimir Chistyakov
+ *
+ * SPDX-License-Identifier: MIT
+ *
+ * SPDX-FileContributor: 2024 Espressif Systems (Shanghai) CO LTD
+ */
+
 #pragma once
 
 
@@ -314,7 +303,7 @@ typedef enum {
     P1ANAR_ADV_10_HALF  = 0x0020U, ///< RW Adv 10 Half
 
     P1ANLPR_NEXT_PAGE    = 0x8000U, ///< RO Next page (not supported)
-    P1ANLPR_LP_ACK       = 0x4000U, ///< RO LP ACK (not suppported)
+    P1ANLPR_LP_ACK       = 0x4000U, ///< RO LP ACK (not supported)
     P1ANLPR_REMOTE_FAULT = 0x2000U, ///< RO Remote fault (not supported)
     P1ANLPR_PAUSE        = 0x0400U, ///< RO Pause
     P1ANLPR_ADV_100_FULL = 0x0100U, ///< RO Adv 100 Full

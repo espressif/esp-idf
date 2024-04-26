@@ -6,8 +6,6 @@
 
 #pragma once
 
-
-
 #include <stdint.h>
 #include <stdbool.h>
 #include "esp_assert.h"
@@ -29,14 +27,27 @@ extern "C" {
 
 #if CONFIG_IDF_TARGET_ESP32P4
 // Descriptor must be 64B aligned for ESP32P4 due to cache arrangement
-#define DMA_DESC_SIZE 64
-// ESP32P4 EMAC interface clock configuration is shared among other modules in registers
-#define EMAC_IF_RCC_ATOMIC() PERIPH_RCC_ATOMIC()
+#define EMAC_HAL_DMA_DESC_SIZE                              (64)
 #else
-#define DMA_DESC_SIZE  32
-#define EMAC_IF_RCC_ATOMIC()
+#define EMAC_HAL_DMA_DESC_SIZE                              (32)
 #endif
 
+
+/* DMA descriptor control bits */
+#define EMAC_HAL_TDES0_INTR_ON_COMPLET                      (1 << 30)
+#define EMAC_HAL_TDES0_CRC_APPEND_DISABLE                   (1 << 27)
+#define EMAC_HAL_TDES0_PAD_DISABLE                          (1 << 26)
+#define EMAC_HAL_TDES0_TX_TS_ENABLE                         (1 << 25)
+#define EMAC_HAL_TDES0_CRC_REPLACE_CTRL                     (1 << 24)
+#define EMAC_HAL_TDES0_IP_CRC_INSERT_HDR                    (1 << 22)
+#define EMAC_HAL_TDES0_IP_CRC_INSERT_HDR_PAYLOAD            (2 << 22)
+#define EMAC_HAL_TDES0_IP_CRC_INSERT_HDR_PAYLOAD_PSEUDO     (3 << 22)
+#define EMAC_HAL_TDES0_VLAN_REMOVE                          (1 << 18)
+#define EMAC_HAL_TDES0_VLAN_INSERT                          (2 << 18)
+#define EMAC_HAL_TDES0_VLAN_REPLACE                         (3 << 18)
+
+#define EMAC_HAL_TDES0_IP_CRC_INSERT_DISABLE_MASK           (3 << 22)
+#define EMAC_HAL_TDES0_VLAN_INSERT_DISABLE_MASK             (3 << 18)
 
 /**
 * @brief Ethernet DMA TX Descriptor
@@ -65,7 +76,7 @@ typedef struct {
             uint32_t TransmitEndRing : 1;         /*!< Descriptor list reached its final descriptor */
             uint32_t ChecksumInsertControl : 2;   /*!< Control checksum calculation and insertion */
             uint32_t CRCReplacementControl : 1;   /*!< Control CRC replace */
-            uint32_t TransmitTimestampEnable : 1; /*!< Enable IEEE1588 harware timestamping */
+            uint32_t TransmitTimestampEnable : 1; /*!< Enable IEEE1588 hardware timestamping */
             uint32_t DisablePad : 1;              /*!< Control add padding when frame short than 64 bytes */
             uint32_t DisableCRC : 1;              /*!< Control append CRC to the end of frame */
             uint32_t FirstSegment : 1;            /*!< Buffer contains the first segment of a frame */
@@ -91,25 +102,12 @@ typedef struct {
     uint32_t TimeStampLow;        /*!< Transmit Frame Timestamp Low */
     uint32_t TimeStampHigh;       /*!< Transmit Frame Timestamp High */
 
-#if CONFIG_IDF_TARGET_ESP32P4
-// TODO: must be 64B aligned for ESP32P4 (due to cache arrangement)
-// Could be better optimized (EMAC DMA block supports 32/64/128)?
-    uint32_t Reserved8;
-    uint32_t Reserved9;
-    uint32_t Reserved10;
-    uint32_t Reserved11;
-    uint32_t Reserved12;
-    uint32_t Reserved13;
-    uint32_t Reserved14;
-    uint32_t Reserved15;
+#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
+    // descriptor must be aligned (due to cache arrangement)
+    uint8_t CacheAlign[EMAC_HAL_DMA_DESC_SIZE - 32]; // 32 is size of EMAC DMA descriptor without alignment
 #endif
 } eth_dma_tx_descriptor_t;
-#define EMAC_DMATXDESC_CHECKSUM_BYPASS 0            /*!< Checksum engine bypass */
-#define EMAC_DMATXDESC_CHECKSUM_IPV4HEADER 1        /*!< IPv4 header checksum insertion  */
-#define EMAC_DMATXDESC_CHECKSUM_TCPUDPICMPSEGMENT 2 /*!< TCP/UDP/ICMP Checksum Insertion calculated over segment only */
-#define EMAC_DMATXDESC_CHECKSUM_TCPUDPICMPFULL 3    /*!< TCP/UDP/ICMP Checksum Insertion fully calculated */
-
-ASSERT_TYPE_SIZE(eth_dma_tx_descriptor_t, DMA_DESC_SIZE);
+ASSERT_TYPE_SIZE(eth_dma_tx_descriptor_t, EMAC_HAL_DMA_DESC_SIZE);
 
 /**
 * @brief Ethernet DMA RX Descriptor
@@ -182,21 +180,13 @@ typedef struct {
     uint32_t TimeStampLow;  /*!< Receive frame timestamp low */
     uint32_t TimeStampHigh; /*!< Receive frame timestamp high */
 
-#if CONFIG_IDF_TARGET_ESP32P4
-// TODO: must be 64B aligned for ESP32P4 (due to cache arrangement)
-// Could be better optimized (EMAC DMA block supports 32/64/128)?
-    uint32_t Reserved8;
-    uint32_t Reserved9;
-    uint32_t Reserved10;
-    uint32_t Reserved11;
-    uint32_t Reserved12;
-    uint32_t Reserved13;
-    uint32_t Reserved14;
-    uint32_t Reserved15;
+#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
+    // descriptor must be aligned (due to cache arrangement)
+    uint8_t CacheAlign[EMAC_HAL_DMA_DESC_SIZE - 32]; // 32 is size of EMAC DMA descriptor without alignment
 #endif
 } eth_dma_rx_descriptor_t;
 
-ASSERT_TYPE_SIZE(eth_dma_rx_descriptor_t, DMA_DESC_SIZE);
+ASSERT_TYPE_SIZE(eth_dma_rx_descriptor_t, EMAC_HAL_DMA_DESC_SIZE);
 
 typedef struct emac_mac_dev_s *emac_mac_soc_regs_t;
 typedef struct emac_dma_dev_s *emac_dma_soc_regs_t;
@@ -278,71 +268,9 @@ void emac_hal_start(emac_hal_context_t *hal);
  * @return
  *     - ESP_OK: succeed
   *    - ESP_ERR_INVALID_STATE: previous frame transmission/reception is not completed. When this error occurs,
-  *      wait and reapeat the EMAC stop again.
+  *      wait and repeat the EMAC stop again.
  */
 esp_err_t emac_hal_stop(emac_hal_context_t *hal);
-
-/**
- * @brief Transmit data from buffer over EMAC
- *
- * @param[in] hal EMAC HAL context infostructure
- * @param[in] buf buffer to be transmitted
- * @param[in] length length of the buffer
- * @return number of transmitted bytes when success
- */
-uint32_t emac_hal_transmit_frame(emac_hal_context_t *hal, uint8_t *buf, uint32_t length);
-
-/**
- * @brief Transmit data from multiple buffers over EMAC in single Ethernet frame. Data will be joint into
- *        single frame in order in which the buffers are stored in input array.
- *
- * @param[in] hal EMAC HAL context infostructure
- * @param[in] buffs array of pointers to buffers to be transmitted
- * @param[in] lengths array of lengths of the buffers
- * @param[in] inbuffs_cnt number of buffers (i.e. input arrays size)
- * @return number of transmitted bytes when success
- *
- * @pre @p lengths array must have the same size as @p buffs array and their elements need to be stored in the same
- *      order, i.e. lengths[1] is a length assocaited with data buffer referenced at buffs[1] position.
- */
-uint32_t emac_hal_transmit_multiple_buf_frame(emac_hal_context_t *hal, uint8_t **buffs, uint32_t *lengths, uint32_t inbuffs_cnt);
-
-/**
- * @brief Allocate buffer with size equal to actually received Ethernet frame size.
- *
- * @param[in] hal EMAC HAL context infostructure
- * @param[in, out] size as an input defines maximum size of buffer to be allocated. As an output, indicates actual size of received
- *                      Ethernet frame which is waiting to be processed. Returned size may be 0 when there is no waiting frame.
- *
- * @note If maximum allowed size of buffer to be allocated is less than actual size of received Ethernet frame, the buffer
- *       is allocated with that limit and the frame will be truncated by emac_hal_receive_frame.
- *
- * @return Pointer to allocated buffer
- *         NULL when allocation fails or when there is no waiting Ethernet frame
- */
-uint8_t *emac_hal_alloc_recv_buf(emac_hal_context_t *hal, uint32_t *size);
-
-/**
- * @brief Copy received Ethernet frame from EMAC DMA memory space to application.
- *
- * @param[in] hal EMAC HAL context infostructure
- * @param[in] buf buffer into which the Ethernet frame is to be copied
- * @param[in] size buffer size. When buffer was allocated by ::emac_hal_alloc_recv_buf, this parameter needs to be set
- *                 to EMAC_HAL_BUF_SIZE_AUTO
- * @param[out] frames_remain number of frames remaining to be processed
- * @param[out] free_desc muber of free DMA Rx descriptors
- *
- * @return number of copied bytes when success
- *         0 when there is no waiting Ethernet frame or on error
- *
- * @note FCS field is never copied
- * @note If buffer size is less than actual size of received Ethernet frame, the frame will be truncated.
- * @note When this function is called with EMAC_HAL_BUF_SIZE_AUTO size parameter, buffer needs to be allocated by
- *       ::emac_hal_alloc_recv_buf function at first.
- */
-uint32_t emac_hal_receive_frame(emac_hal_context_t *hal, uint8_t *buf, uint32_t size, uint32_t *frames_remain, uint32_t *free_desc);
-
-uint32_t emac_hal_flush_recv_frame(emac_hal_context_t *hal, uint32_t *frames_remain, uint32_t *free_desc);
 
 void emac_hal_enable_flow_ctrl(emac_hal_context_t *hal, bool enable);
 

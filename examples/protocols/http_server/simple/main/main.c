@@ -397,9 +397,9 @@ static httpd_handle_t start_webserver(void)
     httpd_handle_t server = NULL;
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
 #if CONFIG_IDF_TARGET_LINUX
-    // Setting port as 8001 when building for Linux. Port 80 can be used only by a priviliged user in linux.
-    // So when a unpriviliged user tries to run the application, it throws bind error and the server is not started.
-    // Port 8001 can be used by an unpriviliged user as well. So the application will not throw bind error and the
+    // Setting port as 8001 when building for Linux. Port 80 can be used only by a privileged user in linux.
+    // So when a unprivileged user tries to run the application, it throws bind error and the server is not started.
+    // Port 8001 can be used by an unprivileged user as well. So the application will not throw bind error and the
     // server will be started.
     config.server_port = 8001;
 #endif // !CONFIG_IDF_TARGET_LINUX

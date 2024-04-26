@@ -12,7 +12,6 @@
 #include "esp_attr.h"
 #include "esp_log.h"
 #include "esp_check.h"
-#include "esp_eth_driver.h"
 #include "esp_pm.h"
 #include "esp_mac.h"
 #include "esp_cpu.h"
@@ -66,8 +65,6 @@ typedef struct {
     uint32_t free_rx_descriptor;
     uint32_t flow_control_high_water_mark;
     uint32_t flow_control_low_water_mark;
-    emac_esp_smi_gpio_config_t smi_gpio;
-    eth_mac_clock_config_t clock_config;
     uint8_t addr[ETH_ADDR_LEN];
     bool isr_need_yield;
     bool flow_ctrl_enabled; // indicates whether the user want to do flow control
@@ -82,19 +79,10 @@ typedef struct {
 #ifdef CONFIG_IDF_TARGET_ESP32
     esp_clock_output_mapping_handle_t rmii_clk_hdl; // we use the esp_clock_output driver to output a pre-configured APLL clock as the RMII reference clock
 #endif
-
-#ifdef CONFIG_IDF_TARGET_ESP32P4
-    eth_mac_clock_config_t clock_config_out_in;
-    union
-    {
-        emac_esp_mii_gpio_config_t mii_gpio;
-        emac_esp_rmii_gpio_config_t rmii_gpio;
-    };
-#endif // CONFIG_IDF_TARGET_ESP32P4
 } emac_esp32_t;
 
-static esp_err_t esp_emac_alloc_driver_obj(const eth_mac_config_t *config, emac_esp32_t **emac_out_hdl);
-static void esp_emac_free_driver_obj(emac_esp32_t *emac);
+static esp_err_t emac_esp_alloc_driver_obj(const eth_mac_config_t *config, emac_esp32_t **emac_out_hdl);
+static void emac_esp_free_driver_obj(emac_esp32_t *emac);
 static esp_err_t emac_esp32_start(esp_eth_mac_t *mac);
 static esp_err_t emac_esp32_stop(esp_eth_mac_t *mac);
 
@@ -209,11 +197,11 @@ static esp_err_t emac_esp32_set_speed(esp_eth_mac_t *mac, eth_speed_t speed)
         // Set RMII clk_rx/clk_tx divider to get 25MHz for 100mbps mode or 2.5MHz for 10mbps mode
         if (emac_hal_get_phy_intf(&emac->hal) == EMAC_DATA_INTERFACE_RMII) {
             if (speed == ETH_SPEED_10M) {
-                EMAC_IF_RCC_ATOMIC () {
+                EMAC_IF_RCC_ATOMIC() {
                     emac_hal_clock_rmii_rx_tx_div(&emac->hal, RMII_10M_SPEED_RX_TX_CLK_DIV);
                 }
             } else {
-                EMAC_IF_RCC_ATOMIC () {
+                EMAC_IF_RCC_ATOMIC() {
                     emac_hal_clock_rmii_rx_tx_div(&emac->hal, RMII_100M_SPEED_RX_TX_CLK_DIV);
                 }
             }
@@ -268,6 +256,28 @@ static esp_err_t emac_esp32_set_peer_pause_ability(esp_eth_mac_t *mac, uint32_t 
     return ESP_OK;
 }
 
+esp_err_t emac_esp_custom_ioctl(esp_eth_mac_t *mac, int cmd, void *data)
+{
+    emac_esp32_t *emac = __containerof(mac, emac_esp32_t, parent);
+
+    switch (cmd)
+    {
+    case ETH_MAC_ESP_CMD_PTP_ENABLE:
+        return ESP_ERR_NOT_SUPPORTED;
+    case ETH_MAC_ESP_CMD_SET_TDES0_CFG_BITS:
+        ESP_RETURN_ON_FALSE(data != NULL, ESP_ERR_INVALID_ARG, TAG, "cannot set DMA tx desc flag to null");
+        emac_esp_dma_set_tdes0_ctrl_bits(emac->emac_dma_hndl, *(uint32_t *)data);
+        break;
+    case ETH_MAC_ESP_CMD_CLEAR_TDES0_CFG_BITS:
+        ESP_RETURN_ON_FALSE(data != NULL, ESP_ERR_INVALID_ARG, TAG, "cannot clear DMA tx desc flag with null");
+        emac_esp_dma_clear_tdes0_ctrl_bits(emac->emac_dma_hndl, *(uint32_t *)data);
+        break;
+    default:
+        ESP_RETURN_ON_ERROR(ESP_ERR_INVALID_ARG, TAG, "unknown io command: %i", cmd);
+    }
+    return ESP_OK;
+}
+
 static esp_err_t emac_esp32_transmit(esp_eth_mac_t *mac, uint8_t *buf, uint32_t length)
 {
     esp_err_t ret = ESP_OK;
@@ -304,7 +314,8 @@ static esp_err_t emac_esp32_receive(esp_eth_mac_t *mac, uint8_t *buf, uint32_t *
     uint32_t expected_len = *length;
     emac_esp32_t *emac = __containerof(mac, emac_esp32_t, parent);
     ESP_GOTO_ON_FALSE(buf && length, ESP_ERR_INVALID_ARG, err, TAG, "can't set buf and length to null");
-    uint32_t receive_len = emac_esp_dma_receive_frame(emac->emac_dma_hndl, buf, expected_len, &emac->frames_remain, &emac->free_rx_descriptor);
+    uint32_t receive_len = emac_esp_dma_receive_frame(emac->emac_dma_hndl, buf, expected_len);
+    emac_esp_dma_get_remain_frames(emac->emac_dma_hndl, &emac->frames_remain, &emac->free_rx_descriptor);
     /* we need to check the return value in case the buffer size is not enough */
     ESP_GOTO_ON_FALSE(expected_len >= receive_len, ESP_ERR_INVALID_SIZE, err, TAG, "received buffer longer than expected");
     *length = receive_len;
@@ -327,12 +338,12 @@ static void emac_esp32_rx_task(void *arg)
             buffer = emac_esp_dma_alloc_recv_buf(emac->emac_dma_hndl, &frame_len);
             /* we have memory to receive the frame of maximal size previously defined */
             if (buffer != NULL) {
-                uint32_t recv_len = emac_esp_dma_receive_frame(emac->emac_dma_hndl, buffer, EMAC_HAL_BUF_SIZE_AUTO, &emac->frames_remain, &emac->free_rx_descriptor);
+                uint32_t recv_len = emac_esp_dma_receive_frame(emac->emac_dma_hndl, buffer, EMAC_DMA_BUF_SIZE_AUTO);
                 if (recv_len == 0) {
                     ESP_LOGE(TAG, "frame copy error");
                     free(buffer);
                     /* ensure that interface to EMAC does not get stuck with unprocessed frames */
-                    emac_esp_dma_flush_recv_frame(emac->emac_dma_hndl, &emac->frames_remain, &emac->free_rx_descriptor);
+                    emac_esp_dma_flush_recv_frame(emac->emac_dma_hndl);
                 } else if (frame_len > recv_len) {
                     ESP_LOGE(TAG, "received frame was truncated");
                     free(buffer);
@@ -344,8 +355,9 @@ static void emac_esp32_rx_task(void *arg)
             } else if (frame_len) {
                 ESP_LOGE(TAG, "no mem for receive buffer");
                 /* ensure that interface to EMAC does not get stuck with unprocessed frames */
-                emac_esp_dma_flush_recv_frame(emac->emac_dma_hndl, &emac->frames_remain, &emac->free_rx_descriptor);
+                emac_esp_dma_flush_recv_frame(emac->emac_dma_hndl);
             }
+            emac_esp_dma_get_remain_frames(emac->emac_dma_hndl, &emac->frames_remain, &emac->free_rx_descriptor);
 #if CONFIG_ETH_SOFT_FLOW_CONTROL
             // we need to do extra checking of remained frames in case there are no unhandled frames left, but pause frame is still undergoing
             if ((emac->free_rx_descriptor < emac->flow_control_low_water_mark) && emac->do_flow_ctrl && emac->frames_remain) {
@@ -401,8 +413,6 @@ static esp_err_t emac_esp32_init(esp_eth_mac_t *mac)
     emac_esp32_t *emac = __containerof(mac, emac_esp32_t, parent);
     esp_eth_mediator_t *eth = emac->eth;
 
-    /* init gpio used by smi interface */
-    emac_esp32_gpio_init_smi(&emac->smi_gpio);
     ESP_GOTO_ON_ERROR(eth->on_state_changed(eth, ETH_STATE_LLINIT, NULL), err, TAG, "lowlevel init failed");
     /* software reset */
     emac_hal_reset(&emac->hal);
@@ -451,7 +461,7 @@ static esp_err_t emac_esp32_start(esp_eth_mac_t *mac)
 {
     emac_esp32_t *emac = __containerof(mac, emac_esp32_t, parent);
     /* reset descriptor chain */
-    emac_esp_dma_reset_desc_chain(emac->emac_dma_hndl);
+    emac_esp_dma_reset(emac->emac_dma_hndl);
     emac_hal_start(&emac->hal);
     return ESP_OK;
 }
@@ -474,8 +484,9 @@ static esp_err_t emac_esp32_stop(esp_eth_mac_t *mac)
 static esp_err_t emac_esp32_del(esp_eth_mac_t *mac)
 {
     emac_esp32_t *emac = __containerof(mac, emac_esp32_t, parent);
-    esp_emac_free_driver_obj(emac);
-    /// disable bus clock
+    emac_esp_free_driver_obj(emac);
+    emac_esp_gpio_deinit_all();
+    // disable bus clock
     PERIPH_RCC_ATOMIC() {
         emac_ll_enable_bus_clock(0, false);
     }
@@ -502,7 +513,7 @@ IRAM_ATTR void emac_isr_default_handler(void *args)
 #endif
 }
 
-static void esp_emac_free_driver_obj(emac_esp32_t *emac)
+static void emac_esp_free_driver_obj(emac_esp32_t *emac)
 {
     if (emac) {
         if (emac->rx_task_hdl) {
@@ -537,7 +548,7 @@ static void esp_emac_free_driver_obj(emac_esp32_t *emac)
     }
 }
 
-static esp_err_t esp_emac_alloc_driver_obj(const eth_mac_config_t *config, emac_esp32_t **emac_out_hdl)
+static esp_err_t emac_esp_alloc_driver_obj(const eth_mac_config_t *config, emac_esp32_t **emac_out_hdl)
 {
     esp_err_t ret = ESP_OK;
     emac_esp32_t *emac = NULL;
@@ -548,8 +559,7 @@ static esp_err_t esp_emac_alloc_driver_obj(const eth_mac_config_t *config, emac_
     }
     ESP_GOTO_ON_FALSE(emac, ESP_ERR_NO_MEM, err, TAG, "no mem for esp emac object");
 
-    emac_esp_dma_config_t emac_dma_config;
-    ESP_GOTO_ON_ERROR(emac_esp_new_dma(&emac_dma_config, &emac->emac_dma_hndl), err, TAG, "create EMAC DMA object failed");
+    ESP_GOTO_ON_ERROR(emac_esp_new_dma(NULL, &emac->emac_dma_hndl), err, TAG, "create EMAC DMA object failed");
 
     /* alloc PM lock */
 #ifdef CONFIG_PM_ENABLE
@@ -565,88 +575,65 @@ static esp_err_t esp_emac_alloc_driver_obj(const eth_mac_config_t *config, emac_
     ESP_GOTO_ON_FALSE(xReturned == pdPASS, ESP_FAIL, err, TAG, "create emac_rx task failed");
 
     *emac_out_hdl = emac;
-    return ESP_OK;
 err:
-    esp_emac_free_driver_obj(emac);
     return ret;
 }
 
-static esp_err_t esp_emac_config_data_interface(const eth_esp32_emac_config_t *esp32_emac_config, emac_esp32_t *emac)
+static esp_err_t emac_esp_config_data_interface(const eth_esp32_emac_config_t *esp32_emac_config, emac_esp32_t *emac)
 {
     esp_err_t ret = ESP_OK;
     switch (esp32_emac_config->interface) {
     case EMAC_DATA_INTERFACE_MII:
-        emac->clock_config = esp32_emac_config->clock_config;
         /* MII interface GPIO initialization */
-        ESP_GOTO_ON_ERROR(emac_esp_iomux_init_mii(NULL), err, TAG, "invalid EMAC MII data plane GPIO");
+#if SOC_EMAC_MII_USE_GPIO_MATRIX
+        ESP_GOTO_ON_ERROR(emac_esp_gpio_matrix_init_mii(&esp32_emac_config->emac_dataif_gpio.mii), err, TAG, "failed to initialize EMAC MII GPIO Matrix");
+#else
+        eth_mac_mii_gpio_config_t *mii_data_gpio = NULL;
+#if SOC_EMAC_USE_MULTI_IO_MUX
+        mii_data_gpio = &esp32_emac_config->emac_dataif_gpio.mii;
+#endif // SOC_EMAC_USE_MULTI_IO_MUX
+        ESP_GOTO_ON_ERROR(emac_esp_iomux_init_mii(mii_data_gpio), err, TAG, "invalid EMAC MII data plane GPIO");
+#endif // SOC_EMAC_MII_USE_GPIO_MATRIX
         /* Enable MII clock */
         EMAC_IF_RCC_ATOMIC() {
             emac_hal_clock_enable_mii(&emac->hal);
         }
         break;
     case EMAC_DATA_INTERFACE_RMII:
-        // by default, the clock mode is selected at compile time (by Kconfig)
-        if (esp32_emac_config->clock_config.rmii.clock_mode == EMAC_CLK_DEFAULT) {
-#ifdef CONFIG_IDF_TARGET_ESP32
-#if CONFIG_ETH_RMII_CLK_INPUT
-#if CONFIG_ETH_RMII_CLK_IN_GPIO == 0
-            emac->clock_config.rmii.clock_mode = EMAC_CLK_EXT_IN;
-            emac->clock_config.rmii.clock_gpio = CONFIG_ETH_RMII_CLK_IN_GPIO;
-#else
-#error "ESP32 EMAC only support input RMII clock to GPIO0"
-#endif // CONFIG_ETH_RMII_CLK_IN_GPIO == 0
-#elif CONFIG_ETH_RMII_CLK_OUTPUT
-            emac->clock_config.rmii.clock_mode = EMAC_CLK_OUT;
-#if CONFIG_ETH_RMII_CLK_OUTPUT_GPIO0
-            emac->clock_config.rmii.clock_gpio = 0;
-#elif CONFIG_ETH_RMII_CLK_OUT_GPIO
-            emac->clock_config.rmii.clock_gpio = CONFIG_ETH_RMII_CLK_OUT_GPIO;
-#endif // CONFIG_ETH_RMII_CLK_OUTPUT_GPIO0
-#else
-#error "Unsupported RMII clock mode"
-#endif // CONFIG_ETH_RMII_CLK_INPUT
-#else // EMAC_CLK_DEFAULT "not supported for ESP32P4" - this configuration has been kept due to compatibility reasons for ESP32
-            ESP_LOGE(TAG, "EMAC_CLK_DEFAULT options is only supported by ESP32");
-            return ESP_ERR_INVALID_ARG;
-#endif // CONFIG_IDF_TARGET_ESP32
-        } else {
-            emac->clock_config = esp32_emac_config->clock_config;
-#ifdef CONFIG_IDF_TARGET_ESP32P4
-            emac->clock_config_out_in = esp32_emac_config->clock_config_out_in;
-#endif // CONFIG_IDF_TARGET_ESP32P4
-        }
         /* RMII interface GPIO initialization */
-#ifdef CONFIG_IDF_TARGET_ESP32
-        ESP_GOTO_ON_ERROR(emac_esp_iomux_init_rmii(NULL), err, TAG, "invalid EMAC RMII data plane GPIO");
-#else
-        ESP_GOTO_ON_ERROR(emac_esp_iomux_init_rmii(&emac->rmii_gpio), err, TAG, "invalid EMAC RMII data plane GPIO");
-#endif // CONFIG_IDF_TARGET_ESP32
+        const eth_mac_rmii_gpio_config_t *rmii_data_gpio = NULL;
+#if SOC_EMAC_USE_MULTI_IO_MUX
+        rmii_data_gpio = &esp32_emac_config->emac_dataif_gpio.rmii;
+#endif // SOC_EMAC_USE_MULTI_IO_MUX
+        ESP_GOTO_ON_ERROR(emac_esp_iomux_init_rmii(rmii_data_gpio), err, TAG, "invalid EMAC RMII data plane GPIO");
         /* If ref_clk is configured as input */
-        if (emac->clock_config.rmii.clock_mode == EMAC_CLK_EXT_IN) {
-            ESP_GOTO_ON_ERROR(emac_esp_iomux_rmii_clk_input(emac->clock_config.rmii.clock_gpio), err, TAG, "invalid EMAC RMII clock input GPIO");
+        if (esp32_emac_config->clock_config.rmii.clock_mode == EMAC_CLK_EXT_IN) {
+            ESP_GOTO_ON_ERROR(emac_esp_iomux_rmii_clk_input(esp32_emac_config->clock_config.rmii.clock_gpio), err, TAG, "invalid EMAC RMII clock input GPIO");
             EMAC_IF_RCC_ATOMIC() {
                 emac_hal_clock_enable_rmii_input(&emac->hal);
             }
-        } else if (emac->clock_config.rmii.clock_mode == EMAC_CLK_OUT) {
+        } else if (esp32_emac_config->clock_config.rmii.clock_mode == EMAC_CLK_OUT) {
             ESP_GOTO_ON_ERROR(emac_config_pll_clock(emac), err, TAG, "Configure (A/M)PLL for RMII failed");
-#if CONFIG_IDF_TARGET_ESP32
+#if CONFIG_IDF_TARGET_ESP32P4
+            /* Output RMII clock is routed back to input externally */
+            ESP_GOTO_ON_FALSE(esp32_emac_config->clock_config_out_in.rmii.clock_mode == EMAC_CLK_EXT_IN && esp32_emac_config->clock_config_out_in.rmii.clock_gpio >= 0,
+                              ESP_ERR_INVALID_ARG, err, TAG, "invalid EMAC input of output clock mode");
+            ESP_GOTO_ON_ERROR(emac_esp_iomux_rmii_clk_input(esp32_emac_config->clock_config_out_in.rmii.clock_gpio), err, TAG, "invalid EMAC RMII clock input GPIO");
+            EMAC_IF_RCC_ATOMIC() {
+                emac_hal_clock_enable_rmii_input(&emac->hal);
+            }
+#elif CONFIG_IDF_TARGET_ESP32
             // we can also use the IOMUX to route the APLL clock to specific GPIO
-            if (emac->clock_config.rmii.clock_gpio == EMAC_APPL_CLK_OUT_GPIO) {
+            if (esp32_emac_config->clock_config.rmii.clock_gpio == EMAC_APPL_CLK_OUT_GPIO) {
                 ESP_GOTO_ON_ERROR(esp_clock_output_start(CLKOUT_SIG_APLL, EMAC_APPL_CLK_OUT_GPIO, &emac->rmii_clk_hdl),
                                   err, TAG, "start APLL clock output failed");
-            }
-#elif CONFIG_IDF_TARGET_ESP32P4
-            /* Output RMII clock is routed back to input externally */
-            ESP_GOTO_ON_FALSE(emac->clock_config_out_in.rmii.clock_mode == EMAC_CLK_EXT_IN && emac->clock_config_out_in.rmii.clock_gpio >= 0,
-                              ESP_ERR_INVALID_ARG, err, TAG, "invalid EMAC input of output clock mode");
-            ESP_GOTO_ON_ERROR(emac_esp_iomux_rmii_clk_input(emac->clock_config_out_in.rmii.clock_gpio), err, TAG, "invalid EMAC RMII clock input GPIO");
-            EMAC_IF_RCC_ATOMIC() {
-                emac_hal_clock_enable_rmii_input(&emac->hal);
-            }
+            } else
 #endif
-            ESP_GOTO_ON_ERROR(emac_esp_iomux_rmii_clk_ouput(emac->clock_config.rmii.clock_gpio), err, TAG, "invalid EMAC RMII clock output GPIO");
+            {
+                ESP_GOTO_ON_ERROR(emac_esp_iomux_rmii_clk_ouput(esp32_emac_config->clock_config.rmii.clock_gpio), err, TAG, "invalid EMAC RMII clock output GPIO");
+            }
             /* Enable RMII Output clock */
-            EMAC_IF_RCC_ATOMIC () {
+            EMAC_IF_RCC_ATOMIC() {
                 emac_hal_clock_enable_rmii_output(&emac->hal);
             }
         } else {
@@ -671,7 +658,7 @@ esp_eth_mac_t *esp_eth_mac_new_esp32(const eth_esp32_emac_config_t *esp32_config
                             TAG, "invalid interrupt priority: %d", esp32_config->intr_priority);
     }
 
-    ret_code = esp_emac_alloc_driver_obj(config, &emac);
+    ret_code = emac_esp_alloc_driver_obj(config, &emac);
     ESP_RETURN_ON_FALSE(ret_code == ESP_OK, NULL, TAG, "alloc driver object failed");
 
     // enable bus clock for the EMAC module, and reset the registers into default state
@@ -697,21 +684,15 @@ esp_eth_mac_t *esp_eth_mac_new_esp32(const eth_esp32_emac_config_t *esp32_config
                               emac_isr_default_handler, &emac->hal, &(emac->intr_hdl));
     ESP_GOTO_ON_FALSE(ret_code == ESP_OK, NULL, err, TAG, "alloc emac interrupt failed");
 
-#ifdef SOC_EMAC_USE_IO_MUX
-    emac->rmii_gpio.tx_en_num = esp32_config->emac_dataif_gpio.rmii.tx_en_num;
-    emac->rmii_gpio.txd0_num = esp32_config->emac_dataif_gpio.rmii.txd0_num;
-    emac->rmii_gpio.txd1_num = esp32_config->emac_dataif_gpio.rmii.txd1_num;
-    emac->rmii_gpio.crs_dv_num = esp32_config->emac_dataif_gpio.rmii.crs_dv_num;
-    emac->rmii_gpio.rxd0_num = esp32_config->emac_dataif_gpio.rmii.rxd0_num;
-    emac->rmii_gpio.rxd1_num = esp32_config->emac_dataif_gpio.rmii.rxd1_num;
-#endif // SOC_EMAC_USE_IO_MUX
-    ret_code = esp_emac_config_data_interface(esp32_config, emac);
+    /* init GPIO used by SMI interface */
+    ret_code = emac_esp_gpio_init_smi(&esp32_config->smi_gpio);
+    ESP_GOTO_ON_FALSE(ret_code == ESP_OK, NULL, err, TAG, "SMI GPIO init failed");
+    /* init GPIO and CLK for data interface */
+    ret_code = emac_esp_config_data_interface(esp32_config, emac);
     ESP_GOTO_ON_FALSE(ret_code == ESP_OK, NULL, err, TAG, "config emac interface failed");
 
     emac->dma_burst_len = esp32_config->dma_burst_len;
     emac->sw_reset_timeout_ms = config->sw_reset_timeout_ms;
-    emac->smi_gpio.mdc_num = esp32_config->smi_mdc_gpio_num;
-    emac->smi_gpio.mdio_num = esp32_config->smi_mdio_gpio_num;
 
     emac->flow_control_high_water_mark = FLOW_CONTROL_HIGH_WATER_MARK;
     emac->flow_control_low_water_mark = FLOW_CONTROL_LOW_WATER_MARK;
@@ -734,9 +715,11 @@ esp_eth_mac_t *esp_eth_mac_new_esp32(const eth_esp32_emac_config_t *esp32_config
     emac->parent.transmit = emac_esp32_transmit;
     emac->parent.transmit_vargs = emac_esp32_transmit_multiple_bufs;
     emac->parent.receive = emac_esp32_receive;
+    emac->parent.custom_ioctl = emac_esp_custom_ioctl;
     return &(emac->parent);
 
 err:
-    esp_emac_free_driver_obj(emac);
+    emac_esp_free_driver_obj(emac);
+    emac_esp_gpio_deinit_all();
     return ret;
 }
