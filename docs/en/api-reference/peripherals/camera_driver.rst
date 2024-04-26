@@ -60,7 +60,7 @@ Resource Allocation
 Uninstall Camera Controller Driver
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-If a previously installed Camera Controller Driver is no longer needed, it's recommended to recycle the resource by calling :cpp:func:`esp_cam_del_ctlr`, so that to release the underlying hardware.
+If a previously installed Camera Controller Driver is no longer needed, it's recommended to recycle the resource by calling :cpp:func:`esp_cam_ctlr_del`, so that to release the underlying hardware.
 
 .. _cam-enable-disable:
 
@@ -127,7 +127,7 @@ After the Camera Controller Driver starts receiving, it can generate a specific 
 Thread Safety
 ^^^^^^^^^^^^^
 
-The factory function :cpp:func:`esp_cam_new_csi_ctlr` and :cpp:func:`esp_cam_del_ctlr` are guaranteed to be thread safe by the driver, which means, user can call them from different RTOS tasks without protection by extra locks.
+The factory function :cpp:func:`esp_cam_new_csi_ctlr` and :cpp:func:`esp_cam_ctlr_del` are guaranteed to be thread safe by the driver, which means, user can call them from different RTOS tasks without protection by extra locks.
 
 .. _cam-kconfig-options:
 

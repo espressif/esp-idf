@@ -87,7 +87,7 @@ esp_err_t esp_cam_ctlr_receive(esp_cam_ctlr_handle_t handle, esp_cam_ctlr_trans_
  *        - ESP_ERR_INVALID_ARG:   Invalid argument
  *        - ESP_ERR_INVALID_STATE: Invalid state
  */
-esp_err_t esp_cam_del_ctlr(esp_cam_ctlr_handle_t handle);
+esp_err_t esp_cam_ctlr_del(esp_cam_ctlr_handle_t handle);
 
 /**
  * @brief Register ESP CAM controller event callbacks
