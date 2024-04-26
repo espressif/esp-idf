@@ -14,6 +14,7 @@
 #include "esp_cache.h"
 #include "mipi_dsi_priv.h"
 #include "esp_async_fbcpy.h"
+#include "esp_memory_utils.h"
 #include "esp_private/dw_gdma.h"
 #include "hal/cache_hal.h"
 #include "hal/cache_ll.h"
@@ -42,6 +43,7 @@ struct esp_lcd_dpi_panel_t {
     dw_gdma_link_list_handle_t link_lists[DPI_PANEL_MAX_FB_NUM]; // DMA link list
     esp_async_fbcpy_handle_t fbcpy_handle; // Use DMA2D to do frame buffer copy
     SemaphoreHandle_t draw_sem;            // A semaphore used to synchronize the draw operations when DMA2D is used
+    esp_pm_lock_handle_t pm_lock;          // Power management lock
     esp_lcd_dpi_panel_color_trans_done_cb_t on_color_trans_done; // Callback invoked when color data transfer has finished
     esp_lcd_dpi_panel_refresh_done_cb_t on_refresh_done; // Callback invoked when one refresh operation finished (kinda like a vsync end)
     void *user_ctx; // User context for the callback
@@ -232,6 +234,14 @@ esp_err_t esp_lcd_new_panel_dpi(esp_lcd_dsi_bus_handle_t bus, const esp_lcd_dpi_
         mipi_dsi_ll_enable_dpi_clock(bus_id, true);
     }
 
+#if CONFIG_PM_ENABLE
+    // When MIPI DSI is working, we don't expect the clock source would be turned off
+    esp_pm_lock_type_t pm_lock_type = ESP_PM_NO_LIGHT_SLEEP;
+    ret  = esp_pm_lock_create(pm_lock_type, 0, "dsi_dpi", &dpi_panel->pm_lock);
+    ESP_GOTO_ON_ERROR(ret, err, TAG, "create PM lock failed");
+    esp_pm_lock_acquire(dpi_panel->pm_lock);
+#endif
+
     // create DMA resources
     ESP_GOTO_ON_ERROR(dpi_panel_create_dma_link(dpi_panel), err, TAG, "initialize DMA link failed");
 
@@ -317,6 +327,10 @@ static esp_err_t dpi_panel_del(esp_lcd_panel_t *panel)
     }
     if (dpi_panel->draw_sem) {
         vSemaphoreDelete(dpi_panel->draw_sem);
+    }
+    if (dpi_panel->pm_lock) {
+        esp_pm_lock_release(dpi_panel->pm_lock);
+        esp_pm_lock_delete(dpi_panel->pm_lock);
     }
     free(dpi_panel);
     return ESP_OK;
@@ -515,6 +529,17 @@ esp_err_t esp_lcd_dpi_panel_register_event_callbacks(esp_lcd_panel_handle_t pane
 {
     ESP_RETURN_ON_FALSE(panel && cbs, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
     esp_lcd_dpi_panel_t *dpi_panel = __containerof(panel, esp_lcd_dpi_panel_t, base);
+#if CONFIG_LCD_DSI_ISR_IRAM_SAFE
+    if (cbs->on_color_trans_done) {
+        ESP_RETURN_ON_FALSE(esp_ptr_in_iram(cbs->on_color_trans_done), ESP_ERR_INVALID_ARG, TAG, "on_color_trans_done callback not in IRAM");
+    }
+    if (cbs->on_refresh_done) {
+        ESP_RETURN_ON_FALSE(esp_ptr_in_iram(cbs->on_refresh_done), ESP_ERR_INVALID_ARG, TAG, "on_refresh_done callback not in IRAM");
+    }
+    if (user_ctx) {
+        ESP_RETURN_ON_FALSE(esp_ptr_internal(user_ctx), ESP_ERR_INVALID_ARG, TAG, "user context not in internal RAM");
+    }
+#endif // CONFIG_LCD_RGB_ISR_IRAM_SAFE
     dpi_panel->on_color_trans_done = cbs->on_color_trans_done;
     dpi_panel->on_refresh_done = cbs->on_refresh_done;
     dpi_panel->user_ctx = user_ctx;

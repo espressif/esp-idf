@@ -38,7 +38,7 @@ components/esp_lcd/test_apps/mipi_dsi_lcd:
   disable_test:
     - if: IDF_TARGET == "esp32p4"
       temporary: true
-      reason: lack of runners
+      reason: lack of runners, DSI can't work without an LCD connected
 
 components/esp_lcd/test_apps/rgb_lcd:
   depends_components:
