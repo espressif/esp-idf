@@ -149,6 +149,8 @@ INPUT = \
     $(PROJECT_PATH)/components/esp_eth/include/esp_eth_com.h \
     $(PROJECT_PATH)/components/esp_eth/include/esp_eth_driver.h \
     $(PROJECT_PATH)/components/esp_eth/include/esp_eth_mac.h \
+    $(PROJECT_PATH)/components/esp_eth/include/esp_eth_mac_esp.h \
+    $(PROJECT_PATH)/components/esp_eth/include/esp_eth_mac_spi.h \
     $(PROJECT_PATH)/components/esp_eth/include/esp_eth_netif_glue.h \
     $(PROJECT_PATH)/components/esp_eth/include/esp_eth_phy_802_3.h \
     $(PROJECT_PATH)/components/esp_eth/include/esp_eth_phy.h \

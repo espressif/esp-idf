@@ -6,6 +6,7 @@
  * SPDX-FileContributor: 2021-2024 Espressif Systems (Shanghai) CO LTD
  */
 #include <stdlib.h>
+#include "esp_eth_phy.h"
 #include "esp_check.h"
 #include "esp_heap_caps.h"
 #include "esp_log.h"
@@ -13,7 +14,6 @@
 #include "esp_rom_gpio.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "esp_eth_driver.h"
 #include "ksz8851.h"
 
 
@@ -149,7 +149,7 @@ err:
 
 /**
  * @note This function is responsible for restarting a new auto-negotiation,
- *       the result of negotiation won't be relected to uppler layers.
+ *       the result of negotiation won't be reflected to upper layers.
  *       Instead, the negotiation result is fetched by linker timer, see `phy_ksz8851_get_link()`
  */
 static esp_err_t phy_ksz8851_autonego_ctrl(esp_eth_phy_t *phy, eth_phy_autoneg_cmd_t cmd, bool *autonego_en_stat)

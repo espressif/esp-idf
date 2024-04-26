@@ -8,6 +8,7 @@
 
 #include <string.h>
 #include <inttypes.h>
+#include "esp_eth_mac_spi.h"
 #include "esp_log.h"
 #include "esp_check.h"
 #include "esp_cpu.h"
@@ -17,7 +18,6 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
-#include "esp_eth_driver.h"
 #include "ksz8851.h"
 #include "esp_timer.h"
 

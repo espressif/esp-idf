@@ -62,7 +62,7 @@ typedef union {
  */
 typedef union {
     struct {
-        uint32_t op_mode : 3;    /* Operation Mode Idicator */
+        uint32_t op_mode : 3;    /* Operation Mode Indicator */
         uint32_t force_mdix : 1; /* Force the MDIX channel to be selected */
         uint32_t reserved1 : 4;  /* Reserved */
         uint32_t link_up : 1;    /* Indicate the link status is OK or FAIL */

@@ -398,7 +398,6 @@ components/bt/host/bluedroid/stack/smp/smp_main.c
 components/bt/host/bluedroid/stack/smp/smp_utils.c
 components/console/linenoise/linenoise.c
 components/console/linenoise/linenoise.h
-components/esp_eth/src/ksz8851.h
 components/esp_event/host_test/esp_event_unit_test/main/esp_event_test.cpp
 components/esp_event/host_test/fixtures.hpp
 components/esp_hid/include/esp_hidd.h
@@ -718,7 +717,6 @@ components/soc/esp32s3/include/soc/wdev_reg.h
 components/soc/esp32s3/ledc_periph.c
 components/soc/esp32s3/uart_periph.c
 components/soc/include/soc/dedic_gpio_periph.h
-components/soc/include/soc/emac_periph.h
 components/soc/include/soc/gpio_periph.h
 components/soc/include/soc/ledc_periph.h
 components/soc/lldesc.c

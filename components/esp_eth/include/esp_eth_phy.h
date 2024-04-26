@@ -16,7 +16,7 @@ extern "C" {
 #define ESP_ETH_PHY_ADDR_AUTO (-1)
 
 /**
- * @brief Auto-negotiation controll commands
+ * @brief Auto-negotiation control commands
  *
  */
 typedef enum {
@@ -253,7 +253,7 @@ struct esp_eth_phy_s {
     *       - ESP_FAIL: process io command failed because some other error occurred
     *       - ESP_ERR_NOT_SUPPORTED: requested feature is not supported
     */
-    esp_err_t (*custom_ioctl)(esp_eth_phy_t *phy, uint32_t cmd, void *data);
+    esp_err_t (*custom_ioctl)(esp_eth_phy_t *phy, int cmd, void *data);
 
     /**
     * @brief Free memory of Ethernet PHY instance

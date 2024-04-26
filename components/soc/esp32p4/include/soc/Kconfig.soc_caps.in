@@ -1571,7 +1571,15 @@ config SOC_ASYNCHRONOUS_BUS_ERROR_MODE
     bool
     default y
 
-config SOC_EMAC_USE_IO_MUX
+config SOC_EMAC_IEEE_1588_SUPPORT
+    bool
+    default y
+
+config SOC_EMAC_USE_MULTI_IO_MUX
+    bool
+    default y
+
+config SOC_EMAC_MII_USE_GPIO_MATRIX
     bool
     default y
 

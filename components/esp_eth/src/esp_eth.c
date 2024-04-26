@@ -499,6 +499,24 @@ err:
     return ret;
 }
 
+esp_err_t esp_eth_get_phy_instance(esp_eth_handle_t hdl, esp_eth_phy_t **phy)
+{
+    esp_eth_driver_t *eth_driver = (esp_eth_driver_t *)hdl;
+    ESP_RETURN_ON_FALSE(eth_driver, ESP_ERR_INVALID_ARG, TAG, "ethernet driver handle can't be null");
+    ESP_RETURN_ON_FALSE(phy != NULL, ESP_ERR_INVALID_ARG, TAG, "can't store PHY instance to null");
+    *phy = eth_driver->phy;
+    return ESP_OK;
+}
+
+esp_err_t esp_eth_get_mac_instance(esp_eth_handle_t hdl, esp_eth_mac_t **mac)
+{
+    esp_eth_driver_t *eth_driver = (esp_eth_driver_t *)hdl;
+    ESP_RETURN_ON_FALSE(eth_driver, ESP_ERR_INVALID_ARG, TAG, "ethernet driver handle can't be null");
+    ESP_RETURN_ON_FALSE(mac != NULL, ESP_ERR_INVALID_ARG, TAG, "can't store MAC instance to null");
+    *mac = eth_driver->mac;
+    return ESP_OK;
+}
+
 esp_err_t esp_eth_increase_reference(esp_eth_handle_t hdl)
 {
     esp_err_t ret = ESP_OK;

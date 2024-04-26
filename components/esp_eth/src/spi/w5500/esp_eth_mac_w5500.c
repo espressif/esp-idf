@@ -7,12 +7,12 @@
 #include <stdlib.h>
 #include <sys/cdefs.h>
 #include <inttypes.h>
+#include "esp_eth_mac_spi.h"
 #include "driver/gpio.h"
 #include "driver/spi_master.h"
 #include "esp_attr.h"
 #include "esp_log.h"
 #include "esp_check.h"
-#include "esp_eth_driver.h"
 #include "esp_system.h"
 #include "esp_intr_alloc.h"
 #include "esp_heap_caps.h"
@@ -550,7 +550,7 @@ static esp_err_t emac_w5500_enable_flow_ctrl(esp_eth_mac_t *mac, bool enable)
 
 static esp_err_t emac_w5500_set_peer_pause_ability(esp_eth_mac_t *mac, uint32_t ability)
 {
-    /* w5500 doesn't suppport PAUSE function, so accept any value */
+    /* w5500 doesn't support PAUSE function, so accept any value */
     return ESP_ERR_NOT_SUPPORTED;
 }
 
@@ -823,7 +823,7 @@ static esp_err_t emac_w5500_init(esp_eth_mac_t *mac)
     /* reset w5500 */
     ESP_GOTO_ON_ERROR(w5500_reset(emac), err, TAG, "reset w5500 failed");
     /* verify chip id */
-    ESP_GOTO_ON_ERROR(w5500_verify_id(emac), err, TAG, "vefiry chip ID failed");
+    ESP_GOTO_ON_ERROR(w5500_verify_id(emac), err, TAG, "verify chip ID failed");
     /* default setup of internal registers */
     ESP_GOTO_ON_ERROR(w5500_setup_default(emac), err, TAG, "w5500 default setup failed");
     return ESP_OK;
