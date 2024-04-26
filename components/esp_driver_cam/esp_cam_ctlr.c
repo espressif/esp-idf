@@ -84,7 +84,7 @@ esp_err_t esp_cam_ctlr_get_frame_buffer_len(esp_cam_ctlr_handle_t handle, size_t
     return handle->get_buffer_len(handle, ret_fb_len);
 }
 
-esp_err_t esp_cam_del_ctlr(esp_cam_ctlr_handle_t handle)
+esp_err_t esp_cam_ctlr_del(esp_cam_ctlr_handle_t handle)
 {
     ESP_RETURN_ON_FALSE(handle, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
     ESP_RETURN_ON_FALSE(handle->del, ESP_ERR_NOT_SUPPORTED, TAG, "controller driver function not supported");
