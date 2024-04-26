@@ -118,14 +118,17 @@ class TestUsageBase(unittest.TestCase):
         old_tools_dir = os.environ.get('IDF_TOOLS_PATH') or os.path.expanduser(idf_tools.IDF_TOOLS_PATH_DEFAULT)
 
         mirror_prefix_map = None
-        if os.path.exists(old_tools_dir):
-            mirror_prefix_map = 'https://dl.espressif.com/dl/toolchains/preview,file:' + os.path.join(old_tools_dir,
-                                                                                                      'dist')
-            mirror_prefix_map += ';https://dl.espressif.com/dl,file:' + os.path.join(old_tools_dir, 'dist')
-            mirror_prefix_map += ';https://github.com/espressif/.*/releases/download/.*/,file:' + os.path.join(
-                old_tools_dir, 'dist', '')
+        if os.path.exists(old_tools_dir) and sys.platform != 'win32':
+            # These are are all mapping to filesystem. Windows cannot download from there not even if file:// is omitted
+            local = ''.join(['file://', os.path.join(old_tools_dir, 'dist', '')])
+
+            mirror_prefix_map = ';'.join([f'https://dl.espressif.com/dl,{local}',
+                                          f'https://github.com/.*/.*/releases/download/.*/,{local}'])
+
+        # Windows will keep downloading the tools from default location or IDF_MIRROR_PREFIX_MAP if set globally
+
         if mirror_prefix_map:
-            print('Using IDF_MIRROR_PREFIX_MAP={}'.format(mirror_prefix_map))
+            print(f'Using IDF_MIRROR_PREFIX_MAP={mirror_prefix_map}')
             os.environ['IDF_MIRROR_PREFIX_MAP'] = mirror_prefix_map
 
         cls.temp_tools_dir = tempfile.mkdtemp(prefix='idf_tools_tmp')

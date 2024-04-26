@@ -31,7 +31,7 @@ test_cli_installer_win:
     IDF_PATH: "$CI_PROJECT_DIR"
   script:
     # Tools must be downloaded for testing
-    - python ${IDF_PATH}\tools\idf_tools.py download required qemu-riscv32 qemu-xtensa
+    - python ${IDF_PATH}\tools\idf_tools.py download required qemu-riscv32 qemu-xtensa cmake
     - cd ${IDF_PATH}\tools\test_idf_tools
     - python -m pip install jsonschema
     - python .\test_idf_tools.py
