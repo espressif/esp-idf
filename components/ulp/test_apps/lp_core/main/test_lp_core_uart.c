@@ -91,6 +91,7 @@ static lp_core_uart_cfg_t lp_uart_cfg1 = {
 
 /* Global test data */
 const uint8_t start_pattern[4] = {0xDE, 0xAD, 0xBE, 0xEF};
+const uint8_t end_pattern[4] = {0xFE, 0xED, 0xBE, 0xEF};
 uint8_t expected_rx_data[UART_BUF_SIZE];
 #define TEST_DATA_LEN 234 // Select a random number of bytes to transmit
 
@@ -99,9 +100,15 @@ static void setup_test_data(uint8_t *tx_data, uint8_t *rx_data)
     if (tx_data) {
         /* Copy the start pattern followed by the test data */
         memcpy(tx_data, start_pattern, sizeof(start_pattern));
-        for (int i = sizeof(start_pattern); i < TEST_DATA_LEN + sizeof(start_pattern); i++) {
+        int i = 0;
+        for (i = sizeof(start_pattern); i < TEST_DATA_LEN + sizeof(start_pattern); i++) {
             tx_data[i] = i + 7 - sizeof(start_pattern); // We use test data which is i + 7
         }
+        /* Copy the end pattern to mark the end of transmission.
+         * This is used by the LP core during read operations to
+         * notify the HP core of test completion.
+         */
+        memcpy(tx_data + i, end_pattern, sizeof(end_pattern));
     }
 
     if (rx_data) {
@@ -327,7 +334,7 @@ static void hp_uart_write(void)
     unity_wait_for_signal("LP UART recv ready");
 
     /* Write data to LP UART */
-    uart_write_bytes(UART_NUM_1, (const char *)tx_data, TEST_DATA_LEN + sizeof(start_pattern));
+    uart_write_bytes(UART_NUM_1, (const char *)tx_data, TEST_DATA_LEN + sizeof(start_pattern) + sizeof(end_pattern));
 
     /* Uninstall the HP UART driver */
     uart_driver_delete(UART_NUM_1);
@@ -350,7 +357,6 @@ static void test_lp_uart_read(void)
 
     /* Setup test data */
     setup_test_data(NULL, expected_rx_data);
-    ulp_tx_len = TEST_DATA_LEN + sizeof(start_pattern);
 
     /* Start the test */
     ESP_LOGI(TAG, "Read test start");
@@ -414,7 +420,7 @@ static void hp_uart_write_options(void)
     unity_wait_for_signal("LP UART recv ready");
 
     /* Write data to LP UART */
-    uart_write_bytes(UART_NUM_1, (const char *)tx_data, TEST_DATA_LEN + sizeof(start_pattern));
+    uart_write_bytes(UART_NUM_1, (const char *)tx_data, TEST_DATA_LEN + sizeof(start_pattern) + sizeof(end_pattern));
 
     /* Uninstall the HP UART driver */
     uart_driver_delete(UART_NUM_1);
@@ -437,7 +443,6 @@ static void test_lp_uart_read_options(void)
 
     /* Setup test data */
     setup_test_data(NULL, expected_rx_data);
-    ulp_tx_len = TEST_DATA_LEN + sizeof(start_pattern);
 
     /* Start the test */
     ESP_LOGI(TAG, "Read test start");
@@ -466,6 +471,52 @@ static void test_lp_uart_read_options(void)
     TEST_ASSERT_EQUAL_HEX8_ARRAY(expected_rx_data, rx_data + data_idx, TEST_DATA_LEN);
 }
 
+static void test_lp_uart_read_multi_byte(void)
+{
+    /* Setup LP UART with updated configuration */
+    TEST_ASSERT(ESP_OK == lp_core_uart_init(&lp_uart_cfg));
+
+    /* Wait for the HP UART device to be initialized */
+    unity_wait_for_signal("HP UART init done");
+
+    /* Load and Run the LP core firmware */
+    ulp_lp_core_cfg_t lp_cfg = {
+        .wakeup_source = ULP_LP_CORE_WAKEUP_SOURCE_HP_CPU,
+    };
+    load_and_start_lp_core_firmware(&lp_cfg, lp_core_main_uart_bin_start, lp_core_main_uart_bin_end);
+
+    /* Setup test data */
+    setup_test_data(NULL, expected_rx_data);
+    ulp_rx_len = TEST_DATA_LEN + sizeof(start_pattern);
+
+    /* Start the test */
+    ESP_LOGI(TAG, "Read test start");
+    ulp_test_cmd = LP_CORE_LP_UART_MULTI_BYTE_READ_TEST;
+    vTaskDelay(10);
+
+    /* Notify the HP UART to write data */
+    unity_send_signal("LP UART recv ready");
+
+    /* Wait for test completion */
+    while (ulp_test_cmd_reply != LP_CORE_COMMAND_OK) {
+        vTaskDelay(10);
+    }
+
+    /* Check if we received the start pattern */
+    uint8_t *rx_data = (uint8_t*)&ulp_rx_data;
+    int data_idx = -1;
+    for (int i = 0; i < UART_BUF_SIZE; i++) {
+        if (!memcmp(rx_data + i, start_pattern, sizeof(start_pattern))) {
+            data_idx = i + 4; // Index of byte just after the start_pattern
+        }
+    }
+
+    /* Verify test data. We verify 10 bytes less because the multi-device can sometimes
+     * begin with garbage data which fills the initial part of the receive buffer. */
+    ESP_LOGI(TAG, "Verify Rx data");
+    TEST_ASSERT_EQUAL_HEX8_ARRAY(expected_rx_data, rx_data + data_idx, TEST_DATA_LEN - 10);
+}
+
 /* Test LP UART write operation with default LP UART initialization configuration */
 TEST_CASE_MULTIPLE_DEVICES("LP-Core LP-UART write test - default config", "[lp_core][test_env=generic_multi_device][timeout=150]", test_lp_uart_write, hp_uart_read);
 /* Test LP UART write operation with updated LP UART initialization configuration */
@@ -474,3 +525,5 @@ TEST_CASE_MULTIPLE_DEVICES("LP-Core LP-UART write test - optional config", "[lp_
 TEST_CASE_MULTIPLE_DEVICES("LP-Core LP-UART read test - default config", "[lp_core][test_env=generic_multi_device][timeout=150]", test_lp_uart_read, hp_uart_write);
 /* Test LP UART read operation with updated LP UART initialization configuration */
 TEST_CASE_MULTIPLE_DEVICES("LP-Core LP-UART read test - optional config", "[lp_core][test_env=generic_multi_device][timeout=150]", test_lp_uart_read_options, hp_uart_write_options);
+/* Test LP UART multi-byte read operation */
+TEST_CASE_MULTIPLE_DEVICES("LP-Core LP-UART multi-byte read test", "[lp_core][test_env=generic_multi_device][timeout=150]", test_lp_uart_read_multi_byte, hp_uart_write);

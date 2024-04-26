@@ -23,6 +23,7 @@ uint8_t rx_data[LP_UART_BUFFER_LEN] = {};
 
 /* Data transmission length */
 volatile uint8_t tx_len = 0;
+volatile uint8_t rx_len = 0;
 
 int main(void)
 {
@@ -39,13 +40,34 @@ int main(void)
 
         if (test_cmd == LP_CORE_LP_UART_READ_TEST) {
             /* Read data from LP UART */
-            int bytes_remaining = tx_len;
+            int bytes_received = 0;
+            int idx = 0;
+            while (1) {
+                /* Read 1 byte at a time until we receive the end_pattern of 0xFEEDBEEF */
+                bytes_received = lp_core_uart_read_bytes(LP_UART_PORT_NUM, rx_data + idx, 1, 100);
+                if (bytes_received < 0) {
+                    break;
+                }
+                if (idx > 3 && rx_data[idx] == 0xEF && rx_data[idx - 1] == 0xBE && rx_data[idx - 2] == 0xED && rx_data[idx - 3] == 0xFE) {
+                    /* Break and notify HP core of test completion */
+                    break;
+                }
+                idx += bytes_received;
+            }
+        }
+
+        if (test_cmd == LP_CORE_LP_UART_MULTI_BYTE_READ_TEST) {
+            int bytes_remaining = rx_len;
             int bytes_received = 0;
             int idx = 0;
             while (bytes_remaining > 0) {
-                bytes_received = lp_core_uart_read_bytes(LP_UART_PORT_NUM, rx_data + idx, tx_len, LP_UART_TRANS_WAIT_FOREVER);
-                idx += bytes_received;
+                /* Read as much data as we can in one iteration */
+                bytes_received = lp_core_uart_read_bytes(LP_UART_PORT_NUM, rx_data + idx, bytes_remaining, LP_UART_TRANS_WAIT_FOREVER);
+                if (bytes_received < 0) {
+                    break;
+                }
                 bytes_remaining -= bytes_received;
+                idx += bytes_received;
             }
         }
 
