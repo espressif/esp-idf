@@ -12,6 +12,20 @@
 
 #pragma once
 
+#if (defined(__APPLE__) && defined(__MACH__))
+// MacOS
+
+#if !defined(__containerof)
+#define __containerof(ptr, type, member) ({         \
+    const typeof( ((type *)0)->member ) *__mptr = (ptr); \
+    (type *)( (char *)__mptr - offsetof(type,member) );})
+#endif
+
+#include_next <sys/cdefs.h> // include the actual cdefs.h (which does not contain containerof)
+
+#else
+// Linux
+
 #include <stdint.h>
 
 // We need a define. We can't typedef here since, depending on the include order,
@@ -20,3 +34,5 @@
 
 #include_next <sys/cdefs.h>
 #include <bsd/sys/cdefs.h>
+
+#endif
