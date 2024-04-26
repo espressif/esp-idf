@@ -16,6 +16,8 @@
 #include "esp_memory_utils.h"
 #include "esp_private/esp_cache_private.h"
 #include "esp_private/periph_ctrl.h"
+#include "soc/soc_caps.h"
+#include "sdkconfig.h"
 
 #if CONFIG_PM_ENABLE
 #include "esp_pm.h"
@@ -36,10 +38,19 @@
 #include "aes/esp_aes_gcm.h"
 #endif
 
+#ifdef SOC_AXI_DMA_EXT_MEM_ENC_ALIGNMENT
+#include "esp_flash_encrypt.h"
+#endif /* SOC_AXI_DMA_EXT_MEM_ENC_ALIGNMENT */
+
 /* Max size of each chunk to process when output buffer is in unaligned external ram
    must be a multiple of block size
 */
+#if (CONFIG_IDF_TARGET_ESP32P4 && CONFIG_SPIRAM && SOC_PSRAM_DMA_CAPABLE)
+/* As P4 has larger memory than other targets, thus we can support a larger chunk write size */
+#define AES_MAX_CHUNK_WRITE_SIZE 8*1024
+#else
 #define AES_MAX_CHUNK_WRITE_SIZE 1600
+#endif
 
 /* Input over this length will yield and wait for interrupt instead of
    busy-waiting, 30000 bytes is approx 0.5 ms */
@@ -163,6 +174,26 @@ static int esp_aes_dma_wait_complete(bool use_intr, crypto_dma_desc_t *output_de
     return 0;
 }
 
+static inline size_t get_cache_line_size(const void *addr)
+{
+    esp_err_t ret = ESP_FAIL;
+    size_t cache_line_size = 0;
+
+#if (CONFIG_SPIRAM && SOC_PSRAM_DMA_CAPABLE)
+    if (esp_ptr_external_ram(addr)) {
+        ret = esp_cache_get_alignment(MALLOC_CAP_SPIRAM, &cache_line_size);
+    } else
+#endif
+    {
+        ret = esp_cache_get_alignment(MALLOC_CAP_DMA, &cache_line_size);
+    }
+
+    if (ret != ESP_OK) {
+        return 0;
+    }
+
+    return cache_line_size;
+}
 
 /* Output buffers in external ram needs to be 16-byte aligned and DMA can't access input in the iCache mem range,
    reallocate them into internal memory and encrypt in chunks to avoid
@@ -176,13 +207,29 @@ static int esp_aes_process_dma_ext_ram(esp_aes_context *ctx, const unsigned char
     size_t chunk_len;
     int ret = 0;
     int offset = 0;
+    uint32_t heap_caps = 0;
     unsigned char *input_buf = NULL;
     unsigned char *output_buf = NULL;
     const unsigned char *dma_input;
     chunk_len = MIN(AES_MAX_CHUNK_WRITE_SIZE, len);
 
+    size_t input_alignment = 1;
+    size_t output_alignment = 1;
+
+/* When AES-DMA operations are carried out using external memory with external memory encryption enabled,
+   we need to make sure that the addresses and the sizes of the buffers on which the DMA operates are 16 byte-aligned. */
+#ifdef SOC_AXI_DMA_EXT_MEM_ENC_ALIGNMENT
+    if (esp_flash_encryption_enabled()) {
+        if (esp_ptr_external_ram(input) || esp_ptr_external_ram(output) || esp_ptr_in_drom(input) || esp_ptr_in_drom(output)) {
+            input_alignment = MAX(get_cache_line_size(input), SOC_AXI_DMA_EXT_MEM_ENC_ALIGNMENT);
+            output_alignment = MAX(get_cache_line_size(output), SOC_AXI_DMA_EXT_MEM_ENC_ALIGNMENT);
+        }
+    }
+#endif /* SOC_AXI_DMA_EXT_MEM_ENC_ALIGNMENT */
+
     if (realloc_input) {
-        input_buf = heap_caps_malloc(chunk_len, MALLOC_CAP_DMA);
+        heap_caps = MALLOC_CAP_8BIT | (esp_ptr_external_ram(input) ? MALLOC_CAP_SPIRAM : MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
+        input_buf = heap_caps_aligned_alloc(input_alignment, chunk_len, heap_caps);
 
         if (input_buf == NULL) {
             mbedtls_platform_zeroize(output, len);
@@ -192,7 +239,8 @@ static int esp_aes_process_dma_ext_ram(esp_aes_context *ctx, const unsigned char
     }
 
     if (realloc_output) {
-        output_buf = heap_caps_malloc(chunk_len, MALLOC_CAP_DMA);
+        heap_caps = MALLOC_CAP_8BIT | (esp_ptr_external_ram(output) ? MALLOC_CAP_SPIRAM : MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
+        output_buf = heap_caps_aligned_alloc(output_alignment, chunk_len, heap_caps);
 
         if (output_buf == NULL) {
             mbedtls_platform_zeroize(output, len);
@@ -282,27 +330,6 @@ static inline void *aes_dma_calloc(size_t num, size_t size, uint32_t caps, size_
     };
     esp_dma_capable_calloc(num, size, &dma_mem_info, &ptr, actual_size);
     return ptr;
-}
-
-static inline size_t get_cache_line_size(const void *addr)
-{
-    esp_err_t ret = ESP_FAIL;
-    size_t cache_line_size = 0;
-
-#if (CONFIG_SPIRAM && SOC_PSRAM_DMA_CAPABLE)
-    if (esp_ptr_external_ram(addr)) {
-        ret = esp_cache_get_alignment(MALLOC_CAP_SPIRAM, &cache_line_size);
-    } else
-#endif
-    {
-        ret = esp_cache_get_alignment(MALLOC_CAP_DMA, &cache_line_size);
-    }
-
-    if (ret != ESP_OK) {
-        return 0;
-    }
-
-    return cache_line_size;
 }
 
 static inline esp_err_t dma_desc_link(crypto_dma_desc_t *dmadesc, size_t crypto_dma_desc_num, size_t cache_line_size)
@@ -404,7 +431,7 @@ static esp_err_t generate_descriptor_list(const uint8_t *buffer, const size_t le
     dma_descs_needed = (unaligned_start_bytes ? 1 : 0) + dma_desc_get_required_num(aligned_block_bytes, max_desc_size) + (unaligned_end_bytes ? 1 : 0);
 
     /* Allocate memory for DMA descriptors of total size aligned up to a multiple of cache line size */
-    dma_descriptors = (crypto_dma_desc_t *) aes_dma_calloc(dma_descs_needed, sizeof(crypto_dma_desc_t), MALLOC_CAP_DMA, NULL);
+    dma_descriptors = (crypto_dma_desc_t *) aes_dma_calloc(dma_descs_needed, sizeof(crypto_dma_desc_t), MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL, NULL);
     if (dma_descriptors == NULL) {
         ESP_LOGE(TAG, "Failed to allocate memory for the array of DMA descriptors");
         return ESP_FAIL;
@@ -413,7 +440,7 @@ static esp_err_t generate_descriptor_list(const uint8_t *buffer, const size_t le
     size_t populated_dma_descs = 0;
 
     if (unaligned_start_bytes) {
-        start_alignment_stream_buffer = aes_dma_calloc(alignment_buffer_size, sizeof(uint8_t), AES_DMA_ALLOC_CAPS, NULL);
+        start_alignment_stream_buffer = aes_dma_calloc(alignment_buffer_size, sizeof(uint8_t), AES_DMA_ALLOC_CAPS | (esp_ptr_external_ram(buffer) ? MALLOC_CAP_SPIRAM : MALLOC_CAP_INTERNAL) , NULL);
         if (start_alignment_stream_buffer == NULL) {
             ESP_LOGE(TAG, "Failed to allocate memory for start alignment buffer");
             return ESP_FAIL;
@@ -435,7 +462,7 @@ static esp_err_t generate_descriptor_list(const uint8_t *buffer, const size_t le
     }
 
     if (unaligned_end_bytes) {
-        end_alignment_stream_buffer = aes_dma_calloc(alignment_buffer_size, sizeof(uint8_t), AES_DMA_ALLOC_CAPS, NULL);
+        end_alignment_stream_buffer = aes_dma_calloc(alignment_buffer_size, sizeof(uint8_t), AES_DMA_ALLOC_CAPS | (esp_ptr_external_ram(buffer) ? MALLOC_CAP_SPIRAM : MALLOC_CAP_INTERNAL), NULL);
         if (end_alignment_stream_buffer == NULL) {
             ESP_LOGE(TAG, "Failed to allocate memory for end alignment buffer");
             return ESP_FAIL;
@@ -498,6 +525,20 @@ int esp_aes_process_dma(esp_aes_context *ctx, const unsigned char *input, unsign
         mbedtls_platform_zeroize(output, len);
         return MBEDTLS_ERR_AES_INVALID_INPUT_LENGTH;
     }
+
+#ifdef SOC_AXI_DMA_EXT_MEM_ENC_ALIGNMENT
+    if (esp_flash_encryption_enabled()) {
+        if (esp_ptr_external_ram(input) || esp_ptr_external_ram(output) || esp_ptr_in_drom(input) || esp_ptr_in_drom(output)) {
+            if (((intptr_t)(input) & (SOC_AXI_DMA_EXT_MEM_ENC_ALIGNMENT - 1)) != 0) {
+                input_needs_realloc = true;
+            }
+
+            if (((intptr_t)(output) & (SOC_AXI_DMA_EXT_MEM_ENC_ALIGNMENT - 1)) != 0) {
+                output_needs_realloc = true;
+            }
+        }
+    }
+#endif /* SOC_AXI_DMA_EXT_MEM_ENC_ALIGNMENT */
 
     /* DMA cannot access memory in the iCache range, copy input to internal ram */
     if (!s_check_dma_capable(input)) {
