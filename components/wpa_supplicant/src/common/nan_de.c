@@ -1209,6 +1209,12 @@ int nan_de_publish(struct nan_de *de, const char *service_name,
 		return -1;
 	}
 
+	if (!params->unsolicited && !params->solicited) {
+		wpa_printf(MSG_INFO,
+			   "NAN: Publish() - both unsolicited and solicited disabled is invalid");
+		return -1;
+	}
+
 	publish_id = nan_de_get_handle(de);
 	if (publish_id < 1)
 		return -1;
