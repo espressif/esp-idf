@@ -6,47 +6,28 @@ SD/SDIO/MMC 驱动程序
 概述
 --------
 
-SD/SDIO/MMC 驱动是一种基于 SDMMC 和 SD SPI 主机驱动的协议级驱动程序，目前已支持 SD 存储器、SDIO 卡和 eMMC 芯片。
+SD/SDIO/MMC 驱动目前支持 SD 存储器、SDIO 卡和 eMMC 芯片。这是一个协议层驱动 (:component_file:`sdmmc/include/sdmmc_cmd.h`)，可以由以下方式实现：
 
-SDMMC 主机驱动和 SD SPI 主机驱动（:component_file:`esp_driver_sdmmc/include/driver/sdmmc_host.h` 和 :component_file:`esp_driver_sdspi/include/driver/sdspi_host.h`）为以下功能提供 API：
+.. list::
+  :SOC_SDMMC_HOST_SUPPORTED: - SDMMC 主机驱动 (:component_file:`esp_driver_sdmmc/include/driver/sdmmc_host.h`)，详情请参阅 :doc:`SDMMC Host API <../peripherals/sdmmc_host>`。
+  :SOC_GPSPI_SUPPORTED: - SDSPI 主机驱动 (:component_file:`esp_driver_sdspi/include/driver/sdspi_host.h`)，详情请参阅 :doc:`SD SPI Host API <../peripherals/sdspi_host>`。
+
+协议层与主机层
+^^^^^^^^^^^^^^
+
+本文中的 SDMMC 协议层能处理 SD 协议的具体细节，例如卡初始化流程和各种数据传输命令流程。该协议层通过 :cpp:class:`sdmmc_host_t` 结构体与主机通信。该结构体包含指向主机各种功能的指针。
+
+主机驱动通过支持以下功能来实现协议驱动：
 
 - 发送命令至从设备
 - 接收和发送数据
 - 处理总线错误
 
-初始化函数及配置函数：
+.. blockdiag:: /../_static/diagrams/sd/sd_arch.diag
+    :scale: 100%
+    :caption: SD 主机端组件架构
+    :align: center
 
-.. list::
-
-    :SOC_SDMMC_HOST_SUPPORTED: - 如需初始化和配置 SDMMC 主机，请参阅 :doc:`SDMMC 主机 API <../peripherals/sdmmc_host>`
-    :SOC_GPSPI_SUPPORTED: - 如需初始化和配置 SD SPI 主机，请参阅 :doc:`SD SPI 主机 API <../peripherals/sdspi_host>`
-
-
-.. only:: SOC_SDMMC_HOST_SUPPORTED
-
-    本文档中所述的 SDMMC 协议层仅处理 SD 协议相关事项，例如卡初始化和数据传输命令。
-
-    协议层通过 :cpp:class:`sdmmc_host_t` 结构体和主机协同工作，该结构体包含指向主机各类函数的指针。
-
-管脚配置
-------------------
-
-..only:: SOC_SDMMC_USE_IOMUX and not SOC_SDMMC_USE_GPIO_MATRIX
-
-    SDMMC 管脚为专用管脚，无需配置。
-
-..only:: SOC_SDMMC_USE_GPIO_MATRIX and not SOC_SDMMC_USE_IOMUX
-
-    SDMMC 管脚信号通过 GPIO 交换矩阵配置，请在 :cpp:type:`sdmmc_slot_config_t` 中配置管脚。
-
-..only:: esp32p4
-
-    SDMMC 有两个卡槽：
-
-    .. list::
-
-        - 卡槽 0 管脚为 UHS-I 模式专用，但驱动程序尚不支持此模式。
-        - 卡槽 1 管脚可通过 GPIO 交换矩阵配置，用于 UHS-I 之外的情况。如要使用卡槽 1，请在 :cpp:type:`sdmmc_slot_config_t` 中配置管脚。
 
 应用示例
 -------------------

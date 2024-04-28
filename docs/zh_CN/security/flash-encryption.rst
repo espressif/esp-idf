@@ -929,6 +929,7 @@ flash 加密的高级功能
     :esp32c3: - ``DIS_PAD_JTAG`` 和 ``DIS_USB_JTAG`` 禁用 JTAG。
     :esp32s3: - ``HARD_DIS_JTAG`` 和 ``DIS_USB_JTAG`` 禁用 JTAG。
     - ``DIS_DIRECT_BOOT``（即之前的 ``DIS_LEGACY_SPI_BOOT``）禁用传统的 SPI 启动模式。
+    :SOC_EFUSE_DIS_DOWNLOAD_MSPI: - ``DIS_DOWNLOAD_MSPI`` 在下载模式下禁用 MSPI 访问
 
 为了能启用这些功能，可在首次启动前仅烧录部分 eFuse，并用未设置值 0 写保护其他部分。例如:
 

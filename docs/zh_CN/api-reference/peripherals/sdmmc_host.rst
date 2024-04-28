@@ -73,10 +73,10 @@ SDMMC 主机驱动
 
 .. only:: esp32p4
 
-    - 卡槽 :c:macro:`SDMMC_HOST_SLOT_1` 通过GPIO矩阵连接。这意味着任何GPIO都可以用于每个SD卡信号。它适用于非UHS-I用途。
-    - 卡槽 :c:macro:`SDMMC_HOST_SLOT_0` 专用于UHS-I模式，驱动程序中尚不支持该模式。
+    - 卡槽 :c:macro:`SDMMC_HOST_SLOT_1` 通过 GPIO 交换矩阵路由，即任何 GPIO 都可以用于每个 SD 卡信号。这适用于非 UHS-I 用途。
+    - 卡槽 :c:macro:`SDMMC_HOST_SLOT_0` 专用于 UHS-I 模式，驱动程序中尚不支持该模式。
 
-    目前SDMMC主机需要为IO电平提供外部电压参考。如果您自行购买ESP32P4芯片并计划使用SDMMC外设，请参阅 :ref:'wr-ctrl' 。
+    在 {IDF_TARGET_NAME} 上，SDMMC 主机需要外部电源为 IO 电压供电。详情请参阅 :ref:`pwr-ctrl`。
 
 支持的速率模式
 ---------------------
@@ -123,7 +123,7 @@ SDMMC 主机驱动支持以下速率模式：
 
 如需选择标准速率以外的特定频率，请根据所使用的 SD 接口（SDMMC 或 SDSPI）确定适当频率范围，并选择其中的任意值。然而，实际的时钟频率会由底层驱动程序计算，可能与你所需的值不同。
 
-使用 SDMMC 接口时，``max_freq_khz`` 即频率上限，因此最终的频率值应始终低于该上限。而使用 SDSPI 接口时，驱动程序会提供最接近的适配频率，因此该值可以大于、等于或小于 ``max_freq_khz``。
+使用 SDMMC 接口时，``max_freq_khz`` 即频率上限，因此最终的频率值应始终低于或等于该上限。而使用 SDSPI 接口时，驱动程序会提供最接近的适配频率，因此该值可以大于、等于或小于 ``max_freq_khz``。
 
 请配置 :cpp:class:`sdmmc_slot_config_t` 的 ``width`` 字段，配置总线宽度。例如，配置 1 线模式的代码如下：
 
@@ -166,13 +166,16 @@ SDMMC 主机驱动支持以下速率模式：
 
     .. _pwr-ctrl:
 
-    配置供电和参考电压
+    配置电压电平
     ------------------
 
-    {IDF_TARGET_NAME} SDMMC主机需要为IO电平提供外部电压参考 ，以支持高速设备， 驱动器将动态配置电压参考。您可以使用片上可编程LDO作为从机电源和电压参考 ，也可以提供正确的外部电源。
+    {IDF_TARGET_NAME} SDMMC 主机需要通过 VDDPST_5 (SD_VREF) 管脚从外部提供 IO 电压。如果设计不需要更高速度的 SD 模式，则将此管脚连接到 3.3 V 供电即可。
 
-    - 要使用片上LDO ，请确保 VDDPST_5(sd_vref) 引脚连接到所选的片上LD通道 ，并调用 :cpp:func:'sd_pwr_ctrl_new_on_chip_ldo' 分配所选的LDO通道 ，然后将 'pwr_ctr_handle' 传递给 :cpp:class:'sdmmc_host_t::pwr_ctl_handle' 。
-    - 要使用外部电源，请确保 VDDPST_5(sd_vref) 引脚已连接，然后按照 :cpp:class:'sd_pwr_ctrl_drv_t' 构造外部电源控制结构体，并将其传递给 :cpp:class:'sdmmc_host_t::pwr_ctr_handle'。
+    如果设计需要更高速度的 SD 模式（仅在 1.8 V IO 电平下工作），则有两种可选方案：
+
+    - 使用片上可编程 LDO。将所需的 LDO 输出通道连接到 VDDPST_5 (SD_VREF) 管脚上，并调用 :cpp:func:`sd_pwr_ctrl_new_on_chip_ldo` 来初始化 SD 电源控制驱动。最后，将 :cpp:class:`sdmmc_host_t::pwr_ctl_handle` 设置为生成句柄。
+    - 使用外部可编程 LDO。同样，将 LDO 输出连接到 VDDPST_5 (SD_VREF) 管脚，并自定义 `sd_pwr_ctrl` 驱动程序来控制 LDO。最后，将 :cpp:class:`sdmmc_host_t::pwr_ctrl_handle` 分配给驱动程序实例句柄。
+
 
 eMMC 芯片的 DDR 模式
 -----------------------
