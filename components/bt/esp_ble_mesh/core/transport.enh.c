@@ -517,6 +517,12 @@ static bool send_next_segment(struct seg_tx *tx, int *result)
 
     net_tx.ctx->net_idx = tx->sub->net_idx;
 
+    /**
+     * Add one to the ref count only if the segment can be further
+     * processed by the network.
+     */
+    seg = net_buf_ref(seg);
+
     err = bt_mesh_net_send(&net_tx, seg, &seg_sent_cb, tx);
     if (err) {
         BT_ERR("Send seg %u failed (err %d)", tx->last_seg_n, err);
@@ -966,7 +972,18 @@ static int send_seg(struct bt_mesh_net_tx *net_tx, struct net_buf_simple *sdu,
             }
         }
 
-        tx->seg[seg_o] = net_buf_ref(seg);
+        /**
+         * If the net buffer allocation of the subsequent
+         * segments of this segment message fails, it will
+         * cause the ref count of the previously allocated
+         * successful segments to not be unref, which will
+         * cause the net buffer leakage to occur, so it is
+         * necessary to wait until all the segments have been
+         * allocated, and then when the segment is confirmed
+         * that it will be network layer for further processing,
+         * then ref of the net buffer should be plus one.
+         */
+        tx->seg[seg_o] = seg;
 
         BT_DBG("Seg %u/%u prepared", seg_o, tx->seg_n);
     }
@@ -975,6 +992,11 @@ static int send_seg(struct bt_mesh_net_tx *net_tx, struct net_buf_simple *sdu,
      * tx->seg[0] will be NULL here.
      */
     if (tx->seg[0]) {
+        /**
+         * Add one to the ref count only if the segment can be further
+         * processed by the network.
+         */
+        tx->seg[0] = net_buf_ref(tx->seg[0]);
         err = bt_mesh_net_send(net_tx, tx->seg[0], &seg_sent_cb, tx);
         if (err) {
             BT_ERR("Send 1st seg failed (err %d)", err);
