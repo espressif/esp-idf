@@ -271,7 +271,6 @@ err:
 esp_err_t jpeg_del_decoder_engine(jpeg_decoder_handle_t decoder_engine)
 {
     ESP_RETURN_ON_FALSE(decoder_engine, ESP_ERR_INVALID_ARG, TAG, "jpeg decode handle is null");
-    ESP_RETURN_ON_ERROR(jpeg_release_codec_handle(decoder_engine->codec_base), TAG, "release codec failed");
 
     if (decoder_engine) {
         if (decoder_engine->rxlink) {
@@ -295,6 +294,7 @@ esp_err_t jpeg_del_decoder_engine(jpeg_decoder_handle_t decoder_engine)
         if (decoder_engine->intr_handle) {
             jpeg_isr_deregister(decoder_engine->codec_base, decoder_engine->intr_handle);
         }
+        ESP_RETURN_ON_ERROR(jpeg_release_codec_handle(decoder_engine->codec_base), TAG, "release codec failed");
         free(decoder_engine);
     }
     return ESP_OK;
