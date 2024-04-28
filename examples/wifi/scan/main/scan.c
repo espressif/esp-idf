@@ -185,8 +185,8 @@ static void wifi_scan(void)
 #endif /*USE_CHANNEL_BTIMAP*/
 
     ESP_LOGI(TAG, "Max AP number ap_info can hold = %u", number);
-    ESP_ERROR_CHECK(esp_wifi_scan_get_ap_records(&number, ap_info));
     ESP_ERROR_CHECK(esp_wifi_scan_get_ap_num(&ap_count));
+    ESP_ERROR_CHECK(esp_wifi_scan_get_ap_records(&number, ap_info));
     ESP_LOGI(TAG, "Total APs scanned = %u, actual AP number ap_info holds = %u", ap_count, number);
     for (int i = 0; i < number; i++) {
         ESP_LOGI(TAG, "SSID \t\t%s", ap_info[i].ssid);
