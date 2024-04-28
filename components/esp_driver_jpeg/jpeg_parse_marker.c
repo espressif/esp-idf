@@ -130,10 +130,10 @@ esp_err_t jpeg_parse_sof_marker(jpeg_dec_header_info_t *header_info)
 
     // The vertical and horizontal in process must be divided by mcu block.
     if (header_info->origin_v % header_info->mcuy != 0) {
-        header_info->process_v = (ceil(header_info->origin_v / header_info->mcuy) + 1) * header_info->mcuy;
+        header_info->process_v = (uint32_t)(ceil(header_info->origin_v / header_info->mcuy) + 1) * header_info->mcuy;
     }
     if (header_info->origin_h % header_info->mcux != 0) {
-        header_info->process_h = (ceil(header_info->origin_h / header_info->mcux) + 1) * header_info->mcux;
+        header_info->process_h = (uint32_t)(ceil(header_info->origin_h / header_info->mcux) + 1) * header_info->mcux;
     }
 
     return ESP_OK;
