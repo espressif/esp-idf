@@ -398,7 +398,7 @@ typedef tBTM_BLE_128SERVICE tBTA_BLE_128SERVICE;
 typedef tBTM_BLE_32SERVICE  tBTA_BLE_32SERVICE;
 
 typedef struct {
-    tBTA_BLE_INT_RANGE      int_range;          /* slave prefered conn interval range */
+    tBTA_BLE_INT_RANGE      int_range;          /* slave preferred conn interval range */
     tBTA_BLE_MANU           *p_manu;            /* manufacturer data */
     tBTA_BLE_SERVICE        *p_services;        /* 16 bits services */
     tBTA_BLE_128SERVICE     *p_services_128b;   /* 128 bits service */
@@ -432,6 +432,10 @@ typedef tBTM_DTM_CMD_CMPL_CBACK tBTA_DTM_CMD_CMPL_CBACK;
 typedef tBTM_SET_RAND_ADDR_CBACK tBTA_SET_RAND_ADDR_CBACK;
 
 typedef tBTM_SET_LOCAL_PRIVACY_CBACK tBTA_SET_LOCAL_PRIVACY_CBACK;
+
+typedef tBTM_SET_RPA_TIMEOUT_CMPL_CBACK tBTA_SET_RPA_TIMEOUT_CMPL_CBACK;
+
+typedef tBTM_ADD_DEV_TO_RESOLVING_LIST_CMPL_CBACK tBTA_ADD_DEV_TO_RESOLVING_LIST_CMPL_CBACK;
 
 typedef tBTM_CMPL_CB tBTA_CMPL_CB;
 
@@ -662,7 +666,7 @@ typedef UINT8 tBTA_SIG_STRENGTH_MASK;
 // btla-specific --
 #define BTA_DM_DEV_UNPAIRED_EVT         25      /* BT unpair event */
 #define BTA_DM_HW_ERROR_EVT             26      /* BT Chip H/W error */
-#define BTA_DM_LE_FEATURES_READ         27      /* Cotroller specific LE features are read */
+#define BTA_DM_LE_FEATURES_READ         27      /* Controller specific LE features are read */
 #define BTA_DM_ENER_INFO_READ           28      /* Energy info read */
 #define BTA_DM_BLE_DEV_UNPAIRED_EVT     29      /* BLE unpair event */
 #define BTA_DM_SP_KEY_REQ_EVT           30      /* Simple Pairing Passkey request */
@@ -1101,7 +1105,7 @@ typedef struct {
 #define BTA_DM_INQ_RES_EVT              0       /* Inquiry result for a peer device. */
 #define BTA_DM_INQ_CMPL_EVT             1       /* Inquiry complete. */
 #define BTA_DM_DISC_RES_EVT             2       /* Discovery result for a peer device. */
-#define BTA_DM_DISC_BLE_RES_EVT         3       /* Discovery result for BLE GATT based servoce on a peer device. */
+#define BTA_DM_DISC_BLE_RES_EVT         3       /* Discovery result for BLE GATT based service on a peer device. */
 #define BTA_DM_DISC_CMPL_EVT            4       /* Discovery complete. */
 #define BTA_DM_DI_DISC_CMPL_EVT         5       /* Discovery complete. */
 #define BTA_DM_SEARCH_CANCEL_CMPL_EVT   6       /* Search cancelled */
@@ -1888,7 +1892,7 @@ extern void BTA_DmDiscoverUUID(BD_ADDR bd_addr, tSDP_UUID *uuid,
 **
 ** Function         BTA_DmGetCachedRemoteName
 **
-** Description      Retieve cached remote name if available
+** Description      Retrieve cached remote name if available
 **
 ** Returns          BTA_SUCCESS if cached name was retrieved
 **                  BTA_FAILURE if cached name is not available
@@ -2239,7 +2243,7 @@ extern void BTA_DmBleSetBgConnType(tBTA_DM_BLE_CONN_TYPE bg_conn_type, tBTA_DM_B
 ** Description      Send BLE SMP passkey reply.
 **
 ** Parameters:      bd_addr          - BD address of the peer
-**                  accept           - passkey entry sucessful or declined.
+**                  accept           - passkey entry successful or declined.
 **                  passkey          - passkey value, must be a 6 digit number,
 **                                     can be lead by 0.
 **
@@ -2405,7 +2409,7 @@ extern void BTA_DmSetBleScanFilterParams(tGATT_IF client_if, UINT32 scan_interva
 **
 ** Parameters:      adv_int_min    - adv interval minimum
 **                  adv_int_max    - adv interval max
-**                  p_dir_bda      - directed adv initator address
+**                  p_dir_bda      - directed adv initiator address
 **
 ** Returns          void
 **
@@ -2431,7 +2435,7 @@ extern void BTA_DmSetBleAdvParamsAll (UINT16 adv_int_min, UINT16 adv_int_max,
 **                  services: if service is not empty, service discovery will be done.
 **                            for all GATT based service condition, put num_uuid, and
 **                            p_uuid is the pointer to the list of UUID values.
-**                  p_cback: callback functino when search is completed.
+**                  p_cback: callback function when search is completed.
 **
 **
 **
@@ -2490,7 +2494,7 @@ extern void BTA_DmDiscoverByTransport(BD_ADDR bd_addr, tBTA_SERVICE_MASK_EXT *p_
 **
 ** Parameters:      bd_addr       - Address of the peer device
 **                  transport     - transport of the link to be encruypted
-**                  p_callback    - Pointer to callback function to indicat the
+**                  p_callback    - Pointer to callback function to indicate the
 **                                  link encryption status
 **                  sec_act       - This is the security action to indicate
 **                                  what knid of BLE security level is required for
@@ -2547,7 +2551,11 @@ extern void BTA_DmBleStopAdvertising(void);
 
 extern void BTA_DmSetRandAddress(BD_ADDR rand_addr, tBTA_SET_RAND_ADDR_CBACK *p_set_rand_addr_cback);
 extern void BTA_DmClearRandAddress(void);
-
+extern void BTA_DmBleSetRpaTimeout(uint16_t rpa_timeout,tBTA_SET_RPA_TIMEOUT_CMPL_CBACK *p_set_rpa_timeout_cback);
+extern void BTA_DmBleAddDevToResolvingList(BD_ADDR addr,
+                                    uint8_t addr_type,
+                                    PEER_IRK irk,
+                                    tBTA_ADD_DEV_TO_RESOLVING_LIST_CMPL_CBACK *add_dev_to_resolving_list_callback);
 #endif
 
 #if BLE_INCLUDED == TRUE
@@ -2558,7 +2566,7 @@ extern void BTA_DmClearRandAddress(void);
 **
 ** Description      Enable/disable privacy on the local device
 **
-** Parameters:      privacy_enable   - enable/disabe privacy on remote device.
+** Parameters:      privacy_enable   - enable/disable privacy on remote device.
 **                  set_local_privacy_cback -callback to be called with result
 ** Returns          void
 **
@@ -2585,7 +2593,7 @@ extern void BTA_DmBleConfigLocalIcon(uint16_t icon);
 ** Description      Enable/disable privacy on a remote device
 **
 ** Parameters:      bd_addr          - BD address of the peer
-**                  privacy_enable   - enable/disabe privacy on remote device.
+**                  privacy_enable   - enable/disable privacy on remote device.
 **
 ** Returns          void
 **
