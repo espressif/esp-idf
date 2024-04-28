@@ -1470,6 +1470,40 @@ esp_err_t spi_bus_get_max_transaction_len(spi_host_device_t host_id, size_t *max
 /*-----------------------------------------------------------
  * Below functions should be in the same spinlock
  *-----------------------------------------------------------*/
+static SPI_MASTER_ISR_ATTR spi_dma_desc_t *s_sct_setup_desc_anywhere(spi_dma_desc_t *desc_root, spi_dma_desc_t *desc_start, uint32_t desc_num, const void *data, int len, bool is_rx)
+{
+    while (len) {
+        int dmachunklen = len;
+        if (dmachunklen > LLDESC_MAX_NUM_PER_DESC) {
+            dmachunklen = LLDESC_MAX_NUM_PER_DESC;
+        }
+        if (is_rx) {
+            //Receive needs DMA length rounded to next 32-bit boundary
+            desc_start->dw0.size = (dmachunklen + 3) & (~3);
+        } else {
+            desc_start->dw0.size = dmachunklen;
+            desc_start->dw0.length = dmachunklen;
+        }
+        desc_start->buffer = (uint8_t *)data;
+        desc_start->dw0.suc_eof = 0;
+        desc_start->dw0.owner = DMA_DESCRIPTOR_BUFFER_OWNER_DMA;
+        len -= dmachunklen;
+        data += dmachunklen;
+        if (len) {
+            desc_start->next = (desc_start == &desc_root[desc_num - 1]) ? desc_root : &desc_start[1];
+            desc_start = desc_start->next;
+        }
+    }
+    // desc_start is now walk to the end of used desc
+    desc_start->dw0.suc_eof = 1; //Mark last DMA desc as end of stream.
+    desc_start->next = NULL;
+    return desc_start;
+}
+
+static SPI_MASTER_ISR_ATTR int s_sct_desc_get_required_num(uint32_t bytes_len)
+{
+    return (bytes_len + LLDESC_MAX_NUM_PER_DESC - 1) / LLDESC_MAX_NUM_PER_DESC;
+}
 /*-------------------------
  *            TX
  *------------------------*/
@@ -1478,13 +1512,12 @@ static void SPI_MASTER_ISR_ATTR spi_hal_sct_tx_dma_desc_recycle(spi_sct_desc_ctx
     desc_ctx->tx_free_desc_num += recycle_num;
 }
 
-static void s_sct_prepare_tx_seg(spi_sct_desc_ctx_t *desc_ctx, const uint32_t conf_buffer[SOC_SPI_SCT_BUFFER_NUM_MAX], const void *send_buffer, uint32_t buf_len_bytes, spi_dma_desc_t **trans_head)
+static void SPI_MASTER_ISR_ATTR s_sct_prepare_tx_seg(spi_sct_desc_ctx_t *desc_ctx, const uint32_t conf_buffer[SOC_SPI_SCT_BUFFER_NUM_MAX], const void *send_buffer, uint32_t buf_len_bytes, spi_dma_desc_t **trans_head)
 {
-    HAL_ASSERT(desc_ctx->tx_free_desc_num >= 1 + lldesc_get_required_num(buf_len_bytes));
     const spi_dma_ctx_t *dma_ctx = __containerof(desc_ctx, spi_host_t, sct_desc_pool)->dma_ctx;
 
     *trans_head = desc_ctx->cur_tx_seg_link;
-    spicommon_dma_desc_setup_link(desc_ctx->cur_tx_seg_link, conf_buffer, SOC_SPI_SCT_BUFFER_NUM_MAX * 4, false);
+    s_sct_setup_desc_anywhere(dma_ctx->dmadesc_tx, desc_ctx->cur_tx_seg_link, dma_ctx->dma_desc_num, conf_buffer, SOC_SPI_SCT_BUFFER_NUM_MAX * 4, false);
     spi_dma_desc_t *conf_buffer_link = desc_ctx->cur_tx_seg_link;
     desc_ctx->tx_free_desc_num -= 1;
 
@@ -1496,37 +1529,36 @@ static void s_sct_prepare_tx_seg(spi_sct_desc_ctx_t *desc_ctx, const uint32_t co
     }
 
     if (send_buffer && buf_len_bytes) {
-        spicommon_dma_desc_setup_link(desc_ctx->cur_tx_seg_link, send_buffer, buf_len_bytes, false);
+        desc_ctx->tx_seg_link_tail = s_sct_setup_desc_anywhere(dma_ctx->dmadesc_tx, desc_ctx->cur_tx_seg_link, dma_ctx->dma_desc_num, send_buffer, buf_len_bytes, false);
         conf_buffer_link->next = desc_ctx->cur_tx_seg_link;
-        for (int i = 0; i < lldesc_get_required_num(buf_len_bytes); i++) {
-            desc_ctx->tx_seg_link_tail = desc_ctx->cur_tx_seg_link;
-            desc_ctx->cur_tx_seg_link++;
-            if (desc_ctx->cur_tx_seg_link == dma_ctx->dmadesc_tx + dma_ctx->dma_desc_num) {
-                //As there is enough space, so we simply point this to the pool head
-                desc_ctx->cur_tx_seg_link = dma_ctx->dmadesc_tx;
-            }
+        desc_ctx->cur_tx_seg_link = desc_ctx->tx_seg_link_tail + 1;
+        if (desc_ctx->cur_tx_seg_link == dma_ctx->dmadesc_tx + dma_ctx->dma_desc_num) {
+            //As there is enough space, so we simply point this to the pool head
+            desc_ctx->cur_tx_seg_link = dma_ctx->dmadesc_tx;
         }
-        desc_ctx->tx_free_desc_num -= lldesc_get_required_num(buf_len_bytes);
+        desc_ctx->tx_free_desc_num -= s_sct_desc_get_required_num(buf_len_bytes);
     }
 }
 
-static esp_err_t spi_hal_sct_new_tx_dma_desc_head(spi_sct_desc_ctx_t *desc_ctx, const uint32_t conf_buffer[SOC_SPI_SCT_BUFFER_NUM_MAX], const void *send_buffer, uint32_t buf_len_bytes, spi_dma_desc_t **trans_head, uint32_t *used_desc_num)
+static esp_err_t SPI_MASTER_ISR_ATTR spi_hal_sct_new_tx_dma_desc_head(spi_sct_desc_ctx_t *desc_ctx, const uint32_t conf_buffer[SOC_SPI_SCT_BUFFER_NUM_MAX], const void *send_buffer, uint32_t buf_len_bytes, spi_dma_desc_t **trans_head, uint32_t *used_desc_num)
 {
     //1 desc for the conf_buffer, other for data.
-    if (desc_ctx->tx_free_desc_num < 1 + lldesc_get_required_num(buf_len_bytes)) {
+    int desc_need = 1 + s_sct_desc_get_required_num(buf_len_bytes);
+    if (desc_ctx->tx_free_desc_num < desc_need) {
         return ESP_ERR_NO_MEM;
     }
 
     s_sct_prepare_tx_seg(desc_ctx, conf_buffer, send_buffer, buf_len_bytes, trans_head);
-    *used_desc_num = 1 + lldesc_get_required_num(buf_len_bytes);
+    *used_desc_num = desc_need;
 
     return ESP_OK;
 }
 
-static esp_err_t spi_hal_sct_link_tx_seg_dma_desc(spi_sct_desc_ctx_t *desc_ctx, const uint32_t conf_buffer[SOC_SPI_SCT_BUFFER_NUM_MAX], const void *send_buffer, uint32_t buf_len_bytes, uint32_t *used_desc_num)
+static esp_err_t SPI_MASTER_ISR_ATTR spi_hal_sct_link_tx_seg_dma_desc(spi_sct_desc_ctx_t *desc_ctx, const uint32_t conf_buffer[SOC_SPI_SCT_BUFFER_NUM_MAX], const void *send_buffer, uint32_t buf_len_bytes, uint32_t *used_desc_num)
 {
     //1 desc for the conf_buffer, other for data.
-    if (desc_ctx->tx_free_desc_num < 1 + lldesc_get_required_num(buf_len_bytes)) {
+    int desc_need = 1 + s_sct_desc_get_required_num(buf_len_bytes);
+    if (desc_ctx->tx_free_desc_num < desc_need) {
         return ESP_ERR_NO_MEM;
     }
 
@@ -1537,7 +1569,7 @@ static esp_err_t spi_hal_sct_link_tx_seg_dma_desc(spi_sct_desc_ctx_t *desc_ctx, 
 
     spi_dma_desc_t *internal_head = NULL;
     s_sct_prepare_tx_seg(desc_ctx, conf_buffer, send_buffer, buf_len_bytes, &internal_head);
-    *used_desc_num += 1 + lldesc_get_required_num(buf_len_bytes);
+    *used_desc_num += desc_need;
 
     return ESP_OK;
 }
@@ -1550,40 +1582,38 @@ static void SPI_MASTER_ISR_ATTR spi_hal_sct_rx_dma_desc_recycle(spi_sct_desc_ctx
     desc_ctx->rx_free_desc_num += recycle_num;
 }
 
-static void s_sct_prepare_rx_seg(spi_sct_desc_ctx_t *desc_ctx, const void *recv_buffer, uint32_t buf_len_bytes, spi_dma_desc_t **trans_head)
+static void SPI_MASTER_ISR_ATTR s_sct_prepare_rx_seg(spi_sct_desc_ctx_t *desc_ctx, const void *recv_buffer, uint32_t buf_len_bytes, spi_dma_desc_t **trans_head)
 {
-    HAL_ASSERT(desc_ctx->rx_free_desc_num >= lldesc_get_required_num(buf_len_bytes));
     const spi_dma_ctx_t *dma_ctx = __containerof(desc_ctx, spi_host_t, sct_desc_pool)->dma_ctx;
 
     *trans_head = desc_ctx->cur_rx_seg_link;
-    spicommon_dma_desc_setup_link(desc_ctx->cur_rx_seg_link, recv_buffer, buf_len_bytes, true);
-    for (int i = 0; i < lldesc_get_required_num(buf_len_bytes); i++) {
-        desc_ctx->rx_seg_link_tail = desc_ctx->cur_rx_seg_link;
-        desc_ctx->cur_rx_seg_link++;
-        if (desc_ctx->cur_rx_seg_link == dma_ctx->dmadesc_rx + dma_ctx->dma_desc_num) {
-            //As there is enough space, so we simply point this to the pool head
-            desc_ctx->cur_rx_seg_link = dma_ctx->dmadesc_rx;
-        }
+    desc_ctx->rx_seg_link_tail = s_sct_setup_desc_anywhere(dma_ctx->dmadesc_rx, desc_ctx->cur_rx_seg_link, dma_ctx->dma_desc_num, recv_buffer, buf_len_bytes, true);
+    desc_ctx->cur_rx_seg_link = desc_ctx->rx_seg_link_tail + 1;
+    if (desc_ctx->cur_rx_seg_link == dma_ctx->dmadesc_rx + dma_ctx->dma_desc_num) {
+        //As there is enough space, so we simply point this to the pool head
+        desc_ctx->cur_rx_seg_link = dma_ctx->dmadesc_rx;
     }
 
-    desc_ctx->rx_free_desc_num -= lldesc_get_required_num(buf_len_bytes);
+    desc_ctx->rx_free_desc_num -= s_sct_desc_get_required_num(buf_len_bytes);
 }
 
-static esp_err_t spi_hal_sct_new_rx_dma_desc_head(spi_sct_desc_ctx_t *desc_ctx, const void *recv_buffer, uint32_t buf_len_bytes, spi_dma_desc_t **trans_head, uint32_t *used_desc_num)
+static esp_err_t SPI_MASTER_ISR_ATTR spi_hal_sct_new_rx_dma_desc_head(spi_sct_desc_ctx_t *desc_ctx, const void *recv_buffer, uint32_t buf_len_bytes, spi_dma_desc_t **trans_head, uint32_t *used_desc_num)
 {
-    if (desc_ctx->rx_free_desc_num < lldesc_get_required_num(buf_len_bytes)) {
+    int desc_need = s_sct_desc_get_required_num(buf_len_bytes);
+    if (desc_ctx->rx_free_desc_num < desc_need) {
         return ESP_ERR_NO_MEM;
     }
 
     s_sct_prepare_rx_seg(desc_ctx, recv_buffer, buf_len_bytes, trans_head);
-    *used_desc_num = lldesc_get_required_num(buf_len_bytes);
+    *used_desc_num = desc_need;
 
     return ESP_OK;
 }
 
-static esp_err_t spi_hal_sct_link_rx_seg_dma_desc(spi_sct_desc_ctx_t *desc_ctx, const void *recv_buffer, uint32_t buf_len_bytes,  uint32_t *used_desc_num)
+static esp_err_t SPI_MASTER_ISR_ATTR spi_hal_sct_link_rx_seg_dma_desc(spi_sct_desc_ctx_t *desc_ctx, const void *recv_buffer, uint32_t buf_len_bytes,  uint32_t *used_desc_num)
 {
-    if (desc_ctx->rx_free_desc_num < lldesc_get_required_num(buf_len_bytes)) {
+    int desc_need = s_sct_desc_get_required_num(buf_len_bytes);
+    if (desc_ctx->rx_free_desc_num < desc_need) {
         return ESP_ERR_NO_MEM;
     }
 
@@ -1594,7 +1624,7 @@ static esp_err_t spi_hal_sct_link_rx_seg_dma_desc(spi_sct_desc_ctx_t *desc_ctx, 
 
     spi_dma_desc_t *internal_head = NULL;
     s_sct_prepare_rx_seg(desc_ctx, recv_buffer, buf_len_bytes, &internal_head);
-    *used_desc_num += lldesc_get_required_num(buf_len_bytes);
+    *used_desc_num += desc_need;
 
     return ESP_OK;
 }
