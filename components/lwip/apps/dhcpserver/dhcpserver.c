@@ -1335,6 +1335,7 @@ err_t dhcps_start(dhcps_t *dhcps, struct netif *netif, ip4_addr_t ip)
 
     dhcps->client_address_plus.addr = dhcps->dhcps_poll.start_ip.addr;
 
+    udp_bind_netif(dhcps->dhcps_pcb, dhcps->dhcps_netif);
     udp_bind(dhcps->dhcps_pcb, &netif->ip_addr, DHCPS_SERVER_PORT);
     udp_recv(dhcps->dhcps_pcb, handle_dhcp, dhcps);
 #if DHCPS_DEBUG
