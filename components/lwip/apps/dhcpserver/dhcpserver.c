@@ -1006,7 +1006,7 @@ static s16_t parse_msg(dhcps_t *dhcps, struct dhcps_msg *m, u16_t len)
                     dhcps->client_address.addr = dhcps->client_address_plus.addr;
                 }
 
-                if (flag == false) { // search the fisrt unused ip
+                if (flag == false) { // search the first unused ip
                     if (first_address.addr < pdhcps_pool->ip.addr) {
                         flag = true;
                     } else {
