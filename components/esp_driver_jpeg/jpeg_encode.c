@@ -262,6 +262,7 @@ esp_err_t jpeg_encoder_process(jpeg_encoder_handle_t encoder_engine, const jpeg_
         }
 
         if (s_rcv_event.dma_evt & JPEG_DMA2D_RX_EOF) {
+            ESP_GOTO_ON_ERROR(esp_cache_msync((void*)encoder_engine->rxlink, encoder_engine->dma_desc_size, ESP_CACHE_MSYNC_FLAG_DIR_M2C), err, TAG, "sync memory to cache failed");
             compressed_size = s_dma_desc_get_len(encoder_engine->rxlink);
             uint32_t _compressed_size = JPEG_ALIGN_UP(compressed_size, cache_hal_get_cache_line_size(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_DATA));
             ESP_GOTO_ON_ERROR(esp_cache_msync((void*)(bit_stream + encoder_engine->header_info->header_len), _compressed_size, ESP_CACHE_MSYNC_FLAG_DIR_M2C), err, TAG, "sync memory to cache failed");
@@ -283,7 +284,6 @@ err:
 esp_err_t jpeg_del_encoder_engine(jpeg_encoder_handle_t encoder_engine)
 {
     ESP_RETURN_ON_FALSE(encoder_engine, ESP_ERR_INVALID_ARG, TAG, "jpeg encoder handle is null");
-    ESP_RETURN_ON_ERROR(jpeg_release_codec_handle(encoder_engine->codec_base), TAG, "release codec failed");
 
     if (encoder_engine) {
         if (encoder_engine->rxlink) {
@@ -307,6 +307,7 @@ esp_err_t jpeg_del_encoder_engine(jpeg_encoder_handle_t encoder_engine)
         if (encoder_engine->intr_handle) {
             jpeg_isr_deregister(encoder_engine->codec_base, encoder_engine->intr_handle);
         }
+        ESP_RETURN_ON_ERROR(jpeg_release_codec_handle(encoder_engine->codec_base), TAG, "release codec failed");
         free(encoder_engine);
     }
     return ESP_OK;
