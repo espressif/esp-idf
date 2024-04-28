@@ -1376,6 +1376,9 @@ static void btu_hcif_hdl_command_status (UINT16 opcode, UINT8 status, UINT8 *p_c
                 break;
 
 #if BLE_INCLUDED == TRUE
+#if (BLE_50_FEATURE_SUPPORT == TRUE)
+            case HCI_BLE_EXT_CREATE_CONN:
+#endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
             case HCI_BLE_CREATE_LL_CONN:
                 btm_ble_create_ll_conn_complete(status);
                 break;
