@@ -44,6 +44,5 @@ api-reference/network/esp_nan.rst
 api-reference/network/esp_wifi.rst
 api-reference/network/index.rst
 api-reference/system/sleep_modes.rst
-api-reference/system/random.rst
 api-reference/system/power_management.rst
 api-reference/system/inc/power_management_esp32p4.rst
