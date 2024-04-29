@@ -21,6 +21,8 @@ esp_err_t esp_lcd_new_dsi_bus(const esp_lcd_dsi_bus_config_t *bus_config, esp_lc
 {
     esp_err_t ret = ESP_OK;
     ESP_RETURN_ON_FALSE(bus_config && ret_bus, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    ESP_RETURN_ON_FALSE(bus_config->num_data_lanes <= MIPI_DSI_LL_MAX_DATA_LANES,
+                        ESP_ERR_INVALID_ARG, TAG, "invalid number of data lanes %d", bus_config->num_data_lanes);
     ESP_RETURN_ON_FALSE(bus_config->lane_bit_rate_mbps >= MIPI_DSI_LL_MIN_PHY_MBPS &&
                         bus_config->lane_bit_rate_mbps <= MIPI_DSI_LL_MAX_PHY_MBPS, ESP_ERR_INVALID_ARG, TAG,
                         "invalid lane bit rate %"PRIu32, bus_config->lane_bit_rate_mbps);
@@ -64,11 +66,16 @@ esp_err_t esp_lcd_new_dsi_bus(const esp_lcd_dsi_bus_config_t *bus_config, esp_lc
     esp_pm_lock_acquire(dsi_bus->pm_lock);
 #endif
 
+    // if the number of data lanes is not assigned, fallback to the maximum number of data lanes
+    int num_data_lanes = bus_config->num_data_lanes;
+    if (num_data_lanes == 0) {
+        num_data_lanes = MIPI_DSI_LL_MAX_DATA_LANES;
+    }
     // initialize HAL context
     mipi_dsi_hal_config_t hal_config = {
         .bus_id = bus_id,
         .lane_bit_rate_mbps = bus_config->lane_bit_rate_mbps,
-        .num_data_lanes = bus_config->num_data_lanes,
+        .num_data_lanes = num_data_lanes,
     };
     mipi_dsi_hal_init(&dsi_bus->hal, &hal_config);
     mipi_dsi_hal_context_t *hal = &dsi_bus->hal;
@@ -84,7 +91,7 @@ esp_err_t esp_lcd_new_dsi_bus(const esp_lcd_dsi_bus_config_t *bus_config, esp_lc
     while (!mipi_dsi_phy_ll_is_pll_locked(hal->host)) {
         vTaskDelay(pdMS_TO_TICKS(1));
     }
-    while (!mipi_dsi_phy_ll_are_lanes_stopped(hal->host)) {
+    while (!mipi_dsi_phy_ll_are_lanes_stopped(hal->host, num_data_lanes)) {
         vTaskDelay(pdMS_TO_TICKS(1));
     }
 
