@@ -123,18 +123,6 @@ static inline void ldo_ll_set_output_voltage_mv(int ldo_id, int voltage_mv)
         mul = 7;
         dref = 15;
     }
-    if (mul > 7) {
-        mul = 7;
-    }
-    if (mul < 0) {
-        mul = 0;
-    }
-    if (dref > 15) {
-        dref = 15;
-    }
-    if (dref < 0) {
-        dref = 0;
-    }
     /**
      * tieh_sel:
      *  - 0: tieh;
