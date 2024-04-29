@@ -29,6 +29,7 @@ from gitlab.v4.objects import Project
 from gitlab_api import Gitlab
 from idf_build_apps import App
 from idf_ci.app import import_apps_from_txt
+from idf_ci_utils import IDF_PATH
 from idf_pytest.script import get_pytest_cases
 
 
@@ -126,30 +127,44 @@ def generate_target_test_child_pipeline(
     with open(KNOWN_GENERATE_TEST_CHILD_PIPELINE_WARNINGS_FILEPATH) as fr:
         known_warnings_dict = yaml.safe_load(fr) or dict()
 
-    failed = False
     known_no_env_marker_test_cases = set(known_warnings_dict.get('no_env_marker_test_cases', []))
     no_env_marker_test_cases = set(issues['no_env_marker_test_cases'])
 
+    no_env_marker_test_cases_fail = False
     if no_env_marker_test_cases - known_no_env_marker_test_cases:
         print('ERROR: NEW "no_env_marker_test_cases" detected:')
         for case in no_env_marker_test_cases - known_no_env_marker_test_cases:
             print(f'  - {case}')
-        failed = True
+        no_env_marker_test_cases_fail = True
+
+        print('Please add at least one environment markers to the test cases listed above. '
+              'You may check all the env markers here: tools/ci/idf_pytest/constants.py')
 
     known_no_runner_tags = set(known_warnings_dict.get('no_runner_tags', []))
     no_runner_tags = set(issues['no_runner_tags'])
 
+    no_runner_tags_fail = False
     if no_runner_tags - known_no_runner_tags:
         print('ERROR: NEW "no_runner_tags" detected:')
         for tag in no_runner_tags - known_no_runner_tags:
             print(f'  - {tag}')
-        failed = True
+        no_runner_tags_fail = True
 
-    if failed:
-        raise SystemExit(
-            f'Please fix the issue, '
-            f'or update the known warnings file: {KNOWN_GENERATE_TEST_CHILD_PIPELINE_WARNINGS_FILEPATH}'
+        print(
+            '- If you\'re the owner of the missing runners, '
+            'please make sure the runners are online and have the required tags.\n'
+            '- If you\'re the owner of the test cases that require the missing tags, '
+            'please add at least one runner with the required tags.\n'
+            '- For other users, please contact the runner owner first, '
+            'or report this issue in our internal CI channel.\n'
+            'If the issue cannot be solved in a short time, '
+            'please add the missing tags to the "no_runner_tags" section '
+            'under the file inside ESP-IDF repo: '
+            f'{os.path.relpath(KNOWN_GENERATE_TEST_CHILD_PIPELINE_WARNINGS_FILEPATH, IDF_PATH)}.'
         )
+
+    if no_env_marker_test_cases_fail or no_runner_tags_fail:
+        raise SystemExit('Failed to generate target test child pipeline.')
 
     dump_jobs_to_yaml(target_test_jobs, output_filepath, extra_include_yml)
     print(f'Generate child pipeline yaml file {output_filepath} with {sum(j.parallel for j in target_test_jobs)} jobs')
