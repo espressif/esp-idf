@@ -3,6 +3,9 @@
 components/esp_driver_uart/test_apps/rs485:
   disable:
     - if: SOC_UART_SUPPORTED != 1
+    - if: IDF_TARGET in ["esp32c61"]
+      temporary: true
+      reason: IDF-9320 uart driver
   disable_test:
     - if: IDF_TARGET != "esp32"
       temporary: true
@@ -14,6 +17,9 @@ components/esp_driver_uart/test_apps/rs485:
 components/esp_driver_uart/test_apps/uart:
   disable:
     - if: SOC_UART_SUPPORTED != 1
+    - if: IDF_TARGET in ["esp32c61"]
+      temporary: true
+      reason: IDF-9320 uart driver
   disable_test:
     - if: IDF_TARGET == "esp32p4"
       temporary: true
