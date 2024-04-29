@@ -102,6 +102,10 @@ if(CONFIG_LWIP_ENABLE)
         "port/sockets_ext.c"
         "port/freertos/sys_arch.c")
 
+    if(CONFIG_LWIP_NETIF_API)
+        list(APPEND srcs "port/if_index.c")
+    endif()
+
     if(CONFIG_LWIP_PPP_SUPPORT)
         list(APPEND srcs
             "lwip/src/netif/ppp/auth.c"
