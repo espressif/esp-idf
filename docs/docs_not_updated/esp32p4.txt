@@ -6,15 +6,6 @@ api-guides/partition-tables.rst
 api-guides/app_trace.rst
 api-guides/thread-local-storage.rst
 api-guides/error-handling.rst
-api-guides/tools/idf-tools.rst
-api-guides/tools/idf-clang-tidy.rst
-api-guides/tools/idf-component-manager.rst
-api-guides/tools/idf-py.rst
-api-guides/tools/idf-windows-installer.rst
-api-guides/tools/idf-monitor.rst
-api-guides/tools/idf-tools-notes.inc
-api-guides/tools/idf-docker-image.rst
-api-guides/tools/index.rst
 api-guides/RF_calibration.rst
 api-guides/deep-sleep-stub.rst
 api-guides/coexist.rst
