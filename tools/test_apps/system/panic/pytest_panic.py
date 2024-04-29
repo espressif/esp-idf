@@ -91,6 +91,13 @@ CONFIGS_HW_STACK_GUARD_DUAL_CORE = [
 
 CONFIG_CAPTURE_DRAM = [pytest.param('coredump_flash_capture_dram', marks=TARGETS_ALL)]
 
+CONFIG_COREDUMP_SUMMARY = [pytest.param('coredump_flash_elf_sha', marks=TARGETS_ALL)]
+
+CONFIG_COREDUMP_SUMMARY_FLASH_ENCRYPTED = [
+    pytest.param('coredump_flash_encrypted', marks=[pytest.mark.esp32, pytest.mark.esp32c3]),
+    pytest.param('coredump_flash_encrypted_coredump_plain', marks=[pytest.mark.esp32, pytest.mark.esp32c3])
+]
+
 # Panic abort information will start with this string.
 PANIC_ABORT_PREFIX = 'Panic reason: '
 
@@ -982,3 +989,29 @@ def test_capture_dram(dut: PanicTestDut, config: str, test_func_name: str) -> No
     if dut.target != 'esp32c2':
         assert int(dut.gdb_data_eval_expr('g_rtc_data_var')) == 0x55AA
         assert int(dut.gdb_data_eval_expr('g_rtc_fast_var')) == 0xAABBCCDD
+
+
+def _test_coredump_summary(dut: PanicTestDut, flash_encrypted: bool, coredump_encrypted: bool) -> None:
+    dut.run_test_func('test_setup_coredump_summary')
+    dut.expect_cpu_reset()
+    if flash_encrypted:
+        dut.expect_exact('Flash encryption mode is DEVELOPMENT (not secure)')
+    dut.run_test_func('test_coredump_summary')
+    if flash_encrypted and not coredump_encrypted:
+        dut.expect_exact('Flash encryption enabled in hardware and core dump partition is not encrypted!')
+        return
+    dut.expect_elf_sha256('App ELF file SHA256: ')
+    dut.expect_exact('Crashed task: main')
+    dut.expect(PANIC_ABORT_PREFIX + r'assert failed:[\s\w()]*?\s[.\w/]*\.(?:c|cpp|h|hpp):\d.*$')
+
+
+@pytest.mark.generic
+@pytest.mark.parametrize('config', CONFIG_COREDUMP_SUMMARY, indirect=True)
+def test_coredump_summary(dut: PanicTestDut) -> None:
+    _test_coredump_summary(dut, False, False)
+
+
+@pytest.mark.flash_encryption
+@pytest.mark.parametrize('config', CONFIG_COREDUMP_SUMMARY_FLASH_ENCRYPTED, indirect=True)
+def test_coredump_summary_flash_encrypted(dut: PanicTestDut, config: str) -> None:
+    _test_coredump_summary(dut, True, config == 'coredump_flash_encrypted')

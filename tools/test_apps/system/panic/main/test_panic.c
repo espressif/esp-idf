@@ -13,6 +13,7 @@
 #include "esp_flash.h"
 #include "esp_system.h"
 #include "spi_flash_mmap.h"
+#include "esp_core_dump.h"
 
 #include "esp_private/cache_utils.h"
 #include "esp_memory_utils.h"
@@ -267,6 +268,33 @@ void test_ub(void)
     uint8_t stuff[1] = {rand()};
     printf("%d\n", stuff[rand()]);
 }
+
+#if CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH && CONFIG_ESP_COREDUMP_DATA_FORMAT_ELF
+void test_setup_coredump_summary(void)
+{
+    if (esp_core_dump_image_erase() != ESP_OK)
+        die("Coredump image can not be erased!");
+    assert(0);
+}
+
+void test_coredump_summary(void)
+{
+    esp_core_dump_summary_t *summary = malloc(sizeof(esp_core_dump_summary_t));
+    if (summary) {
+        esp_err_t err = esp_core_dump_get_summary(summary);
+        if (err == ESP_OK) {
+            printf("App ELF file SHA256: %s\n", (char *)summary->app_elf_sha256);
+            printf("Crashed task: %s\n", summary->exc_task);
+            char panic_reason[200];
+            err = esp_core_dump_get_panic_reason(panic_reason, sizeof(panic_reason));
+            if (err == ESP_OK) {
+                printf("Panic reason: %s\n", panic_reason);
+            }
+        }
+        free(summary);
+    }
+}
+#endif
 
 /* NOTE: The following test verifies the behaviour for the
  * Xtensa-specific MPU instructions (Refer WDTLB, DSYNC, WDTIB, ISYNC)
