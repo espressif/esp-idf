@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -66,6 +66,11 @@ void test_assert_cache_write_back_error_can_print_backtrace2(void);
 void test_illegal_access(void);
 
 void test_capture_dram(void);
+
+#if CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH && CONFIG_ESP_COREDUMP_DATA_FORMAT_ELF
+void test_setup_coredump_summary(void);
+void test_coredump_summary(void);
+#endif
 
 #ifdef __cplusplus
 }
