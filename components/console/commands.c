@@ -250,22 +250,22 @@ static struct {
 
 static void print_arg_help(cmd_item_t *it)
 {
-     /* First line: command name and hint
-      * Pad all the hints to the same column
-      */
-     const char *hint = (it->hint) ? it->hint : "";
-     printf("%-s %s\n", it->command, hint);
-     /* Second line: print help.
-      * Argtable has a nice helper function for this which does line
-      * wrapping.
-      */
-     printf("  "); // arg_print_formatted does not indent the first line
-     arg_print_formatted(stdout, 2, 78, it->help);
-     /* Finally, print the list of arguments */
-     if (it->argtable) {
-         arg_print_glossary(stdout, (void **) it->argtable, "  %12s  %s\n");
-     }
-     printf("\n");
+    /* First line: command name and hint
+     * Pad all the hints to the same column
+     */
+    const char *hint = (it->hint) ? it->hint : "";
+    printf("%-s %s\n", it->command, hint);
+    /* Second line: print help.
+     * Argtable has a nice helper function for this which does line
+     * wrapping.
+     */
+    printf("  "); // arg_print_formatted does not indent the first line
+    arg_print_formatted(stdout, 2, 78, it->help);
+    /* Finally, print the list of arguments */
+    if (it->argtable) {
+        arg_print_glossary(stdout, (void **) it->argtable, "  %12s  %s\n");
+    }
+    printf("\n");
 }
 
 static int help_command(int argc, char **argv)
@@ -322,7 +322,7 @@ esp_err_t esp_console_register_help_command(void)
     esp_console_cmd_t command = {
         .command = "help",
         .help = "Print the summary of all registered commands if no arguments "
-                "are given, otherwise print summary of given command.",
+        "are given, otherwise print summary of given command.",
         .func = &help_command,
         .argtable = &help_args
     };

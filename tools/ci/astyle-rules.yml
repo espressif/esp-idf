@@ -49,7 +49,6 @@ components_not_formatted_temporary:
     - "/components/bootloader/"
     - "/components/bt/"
     - "/components/cmock/"
-    - "/components/console/"
     - "/components/efuse/"
     - "/components/esp_coex/"
     - "/components/esp_eth/"
