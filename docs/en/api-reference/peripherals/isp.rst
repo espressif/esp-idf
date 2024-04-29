@@ -25,6 +25,7 @@ The ISP driver offers following services:
 -  `Resource Allocation <#isp-resource-allocation>`__ - covers how to allocate ISP resources with properly set of configurations. It also covers how to recycle the resources when they finished working.
 -  `Enable and disable ISP processor <#isp-enable-disable>`__ - covers how to enable and disable an ISP processor.
 -  `Get AF oneshot result <#isp-af-get-oneshot-result>`__ - covers how to get AF oneshot result.
+-  `Start AF statistics continuously <#isp-af-start-conti-stat>`__ - covers how to start the continuous AF statistics.
 -  `Register callback <#isp-callback>`__ - covers how to hook user specific code to ISP driver event callback function.
 -  `Thread Safety <#isp-thread-safety>`__ - lists which APIs are guaranteed to be thread safe by the driver.
 -  `Kconfig Options <#isp-kconfig-options>`__ - lists the supported Kconfig options that can bring different effects to the driver.
@@ -114,7 +115,7 @@ Calling :cpp:func:`esp_isp_af_controller_disable` does the opposite, that is, pu
 Get Auto-Focus (AF) Oneshot Result
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Calling :cpp:func:`esp_isp_af_controller_get_oneshot_result` to get oneshot AF result. You can take following code as reference.
+Calling :cpp:func:`esp_isp_af_controller_get_oneshot_statistics` to get oneshot AF statistics result. You can take following code as reference.
 
 .. code:: c
 
@@ -123,8 +124,42 @@ Calling :cpp:func:`esp_isp_af_controller_get_oneshot_result` to get oneshot AF r
     };
     isp_af_ctrlr_t af_ctrlr = NULL;
     ESP_ERROR_CHECK(esp_isp_new_af_controller(isp_proc, &af_config, &af_ctrlr));
+    ESP_ERROR_CHECK(esp_isp_af_controller_enable(af_ctrlr));
     isp_af_result_t result = {};
-    ESP_ERROR_CHECK(esp_isp_af_controller_get_oneshot_result(ctx->af_ctlr, &result));
+    /* Trigger the AF statistics and get its result for one time with timeout value 2000ms. */
+    ESP_ERROR_CHECK(esp_isp_af_controller_get_oneshot_statistics(af_ctrlr, 2000, &result));
+
+.. _isp-af-start-conti-stat:
+
+Start Auto-Focus (AF) Statistics Continuously
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Aside from the above oneshot API, the ISP AF driver also provides a way to start AF statistics continuously. Calling :cpp:func:`esp_isp_af_controller_start_continuous_statistics` to start the continuous statistics and :cpp:func:`esp_isp_af_controller_stop_continuous_statistics` to stop it.
+
+Note that if you want to use the continuous statistics, you need to register the :cpp:member:`esp_isp_af_env_detector_evt_cbs_t::on_env_statistics_done` or :cpp:member:`esp_isp_af_env_detector_evt_cbs_t::on_env_change` callback to get the statistics result. See how to register in `Register Event Callbacks <#isp-callback>`__
+
+.. code:: c
+
+    isp_af_ctrlr_t af_ctrlr = NULL;
+    esp_isp_af_config_t af_config = {
+        .edge_thresh = 128,
+    };
+    isp_af_result_t stat_res = {};
+    /* Create the af controller */
+    ESP_ERROR_CHECK(esp_isp_new_af_controller(isp_proc, &af_config, &af_ctrlr));
+    /* Enabled the af controller */
+    ESP_ERROR_CHECK(esp_isp_af_controller_enable(af_ctrlr));
+    /* Start continuous AF statistics */
+    ESP_ERROR_CHECK(esp_isp_af_controller_start_continuous_statistics(af_ctrlr));
+    // You can do other stuffs here, the statistics result can be obtained in the callback
+    // ......
+    // vTaskDelay(pdMS_TO_TICKS(1000));
+    /* Stop continuous AF statistics */
+    ESP_ERROR_CHECK(esp_isp_af_controller_stop_continuous_statistics(af_ctrlr));
+    /* Disable the af controller */
+    ESP_ERROR_CHECK(esp_isp_af_controller_disable(af_ctrlr));
+    /* Delete the af controller and free the resources */
+    ESP_ERROR_CHECK(esp_isp_del_af_controller(af_ctrlr));
 
 Set Auto-Focus (AF) Environment Detector
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -161,6 +196,7 @@ Register Image Signal Processor (ISP) Auto-Focus (AF) Environment Detector Event
 
 After the ISP AF environment detector starts up, it can generate a specific event dynamically. If you have some functions that should be called when the event happens, please hook your function to the interrupt service routine by calling :cpp:func:`esp_isp_af_env_detector_register_event_callbacks`. All supported event callbacks are listed in :cpp:type:`esp_isp_af_env_detector_evt_cbs_t`:
 
+-  :cpp:member:`esp_isp_af_env_detector_evt_cbs_t::on_env_statistics_done` sets a callback function for environment statistics done. As this function is called within the ISR context, you must ensure that the function does not attempt to block (e.g., by making sure that only FreeRTOS APIs with ``ISR`` suffix are called from within the function). The function prototype is declared in :cpp:type:`esp_isp_af_env_detector_callback_t`.
 -  :cpp:member:`esp_isp_af_env_detector_evt_cbs_t::on_env_change` sets a callback function for environment change. As this function is called within the ISR context, you must ensure that the function does not attempt to block (e.g., by making sure that only FreeRTOS APIs with ``ISR`` suffix are called from within the function). The function prototype is declared in :cpp:type:`esp_isp_af_env_detector_callback_t`.
 
 You can save your own context to :cpp:func:`esp_isp_af_env_detector_register_event_callbacks` as well, via the parameter ``user_data``. The user data will be directly passed to the callback function.

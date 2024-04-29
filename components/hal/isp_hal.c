@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -30,22 +30,6 @@ void isp_hal_af_window_config(const isp_hal_context_t *hal, int window_id, const
 {
     isp_ll_af_set_window_range(hal->hw, window_id, window->top_left_x, window->top_left_y, window->bottom_right_x, window->bottom_right_y);
 }
-
-void isp_hal_af_get_oneshot_result(const isp_hal_context_t *hal, isp_af_result_t *out_res)
-{
-    isp_ll_clear_intr(hal->hw, ISP_LL_EVENT_AF_FDONE);
-    isp_ll_af_manual_update(hal->hw);
-
-    while (!(isp_ll_get_intr_raw(hal->hw) & ISP_LL_EVENT_AF_FDONE)) {
-        ;
-    }
-
-    for (int i = 0; i < SOC_ISP_AF_WINDOW_NUMS; i++) {
-        out_res->definition[i] = isp_ll_af_get_window_sum(hal->hw, i);
-        out_res->luminance[i] = isp_ll_af_get_window_lum(hal->hw, i);
-    }
-}
-
 
 /*---------------------------------------------------------------
                       INTR, put in iram
