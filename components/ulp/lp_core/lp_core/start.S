@@ -9,6 +9,11 @@
 
 /* The reset vector, jumps to startup code */
 reset_vector:
+
+    /* _vector_table: Only 256-byte aligned addresses are allowed */
+    la      t0, _vector_table
+    csrw    mtvec, t0
+
 	j __start
 
 __start:

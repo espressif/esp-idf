@@ -41,6 +41,15 @@ typedef enum {
 } rtcio_ll_wake_type_t;
 
 typedef enum {
+    RTCIO_INTR_DISABLE = 0,     /*!< Disable GPIO interrupt                             */
+    RTCIO_INTR_POSEDGE = 1,     /*!< GPIO interrupt type : rising edge                  */
+    RTCIO_INTR_NEGEDGE = 2,     /*!< GPIO interrupt type : falling edge                 */
+    RTCIO_INTR_ANYEDGE = 3,     /*!< GPIO interrupt type : both rising and falling edge */
+    RTCIO_INTR_LOW_LEVEL = 4,   /*!< GPIO interrupt type : input low level trigger      */
+    RTCIO_INTR_HIGH_LEVEL = 5,  /*!< GPIO interrupt type : input high level trigger     */
+} rtcio_ll_intr_type_t;
+
+typedef enum {
     RTCIO_LL_OUTPUT_NORMAL = 0,    /*!< RTCIO output mode is normal. */
     RTCIO_LL_OUTPUT_OD = 0x1,      /*!< RTCIO output mode is open-drain. */
 } rtcio_ll_out_mode_t;
@@ -314,6 +323,18 @@ static inline void rtcio_ll_wakeup_disable(int rtcio_num)
 {
     LP_IO.pin[rtcio_num].wakeup_enable = 0;
     LP_IO.pin[rtcio_num].int_type = RTCIO_LL_WAKEUP_DISABLE;
+}
+
+/**
+ * Enable interrupt function and set interrupt type
+ *
+ * @param rtcio_num The index of rtcio. 0 ~ MAX(rtcio).
+ * @param type  Interrupt type on high level or low level.
+ */
+
+static inline void rtcio_ll_intr_enable(int rtcio_num, rtcio_ll_intr_type_t type)
+{
+    LP_IO.pin[rtcio_num].int_type = type;
 }
 
 /**

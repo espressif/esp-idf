@@ -63,6 +63,14 @@ esp_err_t ulp_lp_core_load_binary(const uint8_t* program_binary, size_t program_
  */
 void ulp_lp_core_stop(void);
 
+/**
+ * @brief Trigger a SW interrupt to the LP CPU from the PMU
+ *
+ * @note This is the same SW trigger that is used to wake up the LP CPU
+ *
+ */
+void ulp_lp_core_sw_intr_trigger(void);
+
 #ifdef __cplusplus
 }
 #endif

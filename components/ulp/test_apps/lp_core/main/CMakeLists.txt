@@ -34,6 +34,7 @@ set(lp_core_exp_dep_srcs ${app_sources})
 
 ulp_embed_binary(lp_core_test_app "${lp_core_sources}" "${lp_core_exp_dep_srcs}")
 ulp_embed_binary(lp_core_test_app_counter "${lp_core_sources_counter}" "${lp_core_exp_dep_srcs}")
+ulp_embed_binary(lp_core_test_app_isr "lp_core/test_main_isr.c"  "${lp_core_exp_dep_srcs}")
 
 if(CONFIG_SOC_LP_TIMER_SUPPORTED)
     ulp_embed_binary(lp_core_test_app_set_timer_wakeup "${lp_core_sources_set_timer_wakeup}" "${lp_core_exp_dep_srcs}")

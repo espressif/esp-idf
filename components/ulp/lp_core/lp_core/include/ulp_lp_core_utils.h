@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,6 +12,7 @@ extern "C" {
 
 #include <stdint.h>
 #include <stdlib.h>
+#include <stdbool.h>
 
 /**
  * @brief Traverse all possible wake-up sources and update the wake-up cause so that
@@ -71,6 +72,22 @@ __attribute__((__noreturn__))  void ulp_lp_core_halt(void);
  * @brief The LP core puts itself to sleep and disables all wakeup sources.
  */
 __attribute__((__noreturn__))  void ulp_lp_core_stop_lp_core(void);
+
+/**
+ * @brief Enable the SW triggered interrupt from the PMU
+ *
+ * @note This is the same SW trigger interrupt that is used to wake up the LP CPU
+ *
+ * @param enable true to enable, false to disable
+ *
+ */
+void ulp_lp_core_sw_intr_enable(bool enable);
+
+/**
+ * @brief Clear the interrupt status for the SW triggered interrupt from the PMU
+ *
+ */
+void ulp_lp_core_sw_intr_clear(void);
 
 #ifdef __cplusplus
 }
