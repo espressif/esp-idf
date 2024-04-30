@@ -198,7 +198,6 @@ static esp_err_t panel_st7789_draw_bitmap(esp_lcd_panel_t *panel, int x_start, i
                                           const void *color_data)
 {
     st7789_panel_t *st7789 = __containerof(panel, st7789_panel_t, base);
-    assert((x_start < x_end) && (y_start < y_end) && "start position must be smaller than end position");
     esp_lcd_panel_io_handle_t io = st7789->io;
 
     x_start += st7789->x_gap;

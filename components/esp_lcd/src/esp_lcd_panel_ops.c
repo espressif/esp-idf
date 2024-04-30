@@ -32,6 +32,7 @@ esp_err_t esp_lcd_panel_del(esp_lcd_panel_handle_t panel)
 esp_err_t esp_lcd_panel_draw_bitmap(esp_lcd_panel_handle_t panel, int x_start, int y_start, int x_end, int y_end, const void *color_data)
 {
     ESP_RETURN_ON_FALSE(panel, ESP_ERR_INVALID_ARG, TAG, "invalid panel handle");
+    ESP_RETURN_ON_FALSE((x_start < x_end) && (y_start < y_end), ESP_ERR_INVALID_ARG, TAG, "start position must be smaller than end position");
     ESP_RETURN_ON_FALSE(panel->draw_bitmap, ESP_ERR_NOT_SUPPORTED, TAG, "draw_bitmap is not supported by this panel");
     return panel->draw_bitmap(panel, x_start, y_start, x_end, y_end, color_data);
 }
