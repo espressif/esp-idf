@@ -314,6 +314,20 @@ void BTM_BleRegiseterConnParamCallback(tBTM_UPDATE_CONN_PARAM_CBACK *update_conn
 
 /*******************************************************************************
 **
+** Function         BTM_BleRegiseterPktLengthChangeCallback
+**
+** Description      Registers a callback function for packet length changes.
+**
+** Returns          void
+**
+*******************************************************************************/
+void BTM_BleRegiseterPktLengthChangeCallback(tBTM_SET_PKT_DATA_LENGTH_CBACK *ptk_len_chane_cb)
+{
+    conn_param_update_cb.set_pkt_data_length_cb = ptk_len_chane_cb;
+}
+
+/*******************************************************************************
+**
 ** Function         BTM_BleUpdateAdvWhitelist
 **
 ** Description      Add or remove device from advertising white list
