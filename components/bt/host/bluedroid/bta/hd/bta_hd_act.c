@@ -724,6 +724,26 @@ extern void bta_hd_exit_suspend_act(tBTA_HD_DATA *p_data)
 
 /*******************************************************************************
  *
+ * Function         bta_hd_open_failure
+ *
+ * Description
+ *
+ * Returns          void
+ *
+ ******************************************************************************/
+extern void bta_hd_open_failure(tBTA_HD_DATA *p_data)
+{
+    tBTA_HD_CBACK_DATA *p_cback = (tBTA_HD_CBACK_DATA *)p_data;
+    tBTA_HD cback_data = {0};
+
+    bdcpy(cback_data.conn.bda, p_cback->addr);
+    cback_data.conn.status = BTA_HD_ERROR;
+    cback_data.conn.conn_status = BTA_HD_CONN_STATE_DISCONNECTED;
+    bta_hd_cb.p_cback(BTA_HD_OPEN_EVT, &cback_data);
+}
+
+/*******************************************************************************
+ *
  * Function         bta_hd_cback
  *
  * Description      BTA HD callback function
