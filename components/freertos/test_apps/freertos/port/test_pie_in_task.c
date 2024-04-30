@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,27 +13,25 @@
 #include "unity.h"
 #include "test_utils.h"
 
+/* PIE instructions set is currently only supported in GCC compiler */
 #if SOC_CPU_HAS_PIE
 
 /**
- * @brief Performs the sum of two 4-word vectors using the PIE.
+ * @brief Performs the signed sum of two 4-word vectors using the PIE.
  *
  * @param a First vector
  * @param b Second vector
  * @param dst Destination to store the sum
- *
- * @returns a will store a + b
  */
-static void pie_vector_add(const int32_t a[4], const int32_t b[4], int32_t dst[4])
-{
-    asm volatile("esp.vld.128.ip q0, a0, 0\n"
-                 "esp.vld.128.ip q1, a1, 0\n"
-                 "esp.vadd.s32 q2, q0, q1\n"
-                 "esp.vst.128.ip q2, a2, 0\n"
-                 ::);
-}
+void pie_vector_signed_add(const int32_t a[4], const int32_t b[4], int32_t dst[4]);
 
 /* ------------------------------------------------------------------------------------------------------------------ */
+
+typedef struct {
+    int32_t cst;
+    TaskHandle_t main;
+    SemaphoreHandle_t sem;
+} pie_params_t;
 
 /*
 Test PIE usage from a task context
@@ -59,16 +57,22 @@ Expected:
 
 static void pinned_task(void *arg)
 {
+    pie_params_t *param = (pie_params_t*) arg;
     ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
 
-    int32_t a[4] = { 42, 42, 42, 42};
+    int32_t constant = 42 * param->cst;
+    int32_t a[4] = { constant, constant, constant, constant };
     int32_t b[4] = { 10, 20, 30, 40 };
     int32_t dst[4] = { 0 };
 
-    pie_vector_add(a, b, dst);
+    pie_vector_signed_add(a, b, dst);
 
-    // Indicate done wand wait to be deleted
-    xSemaphoreGive((SemaphoreHandle_t)arg);
+    for (int i = 0; i < sizeof(a) / sizeof(uint32_t); i++) {
+        TEST_ASSERT_EQUAL(dst[i], a[i] + b[i]);
+    }
+
+    // Indicate done and wait to be deleted
+    xSemaphoreGive((SemaphoreHandle_t)param->sem);
     vTaskSuspend(NULL);
 }
 
@@ -79,15 +83,20 @@ TEST_CASE("PIE: Usage in task", "[freertos]")
 
     for (int iter = 0; iter < TEST_PINNED_NUM_ITERS; iter++) {
         TaskHandle_t task_handles[CONFIG_FREERTOS_NUMBER_OF_CORES][TEST_PINNED_NUM_TASKS];
+        pie_params_t params[CONFIG_FREERTOS_NUMBER_OF_CORES][TEST_PINNED_NUM_TASKS];
 
         // Create test tasks for each core
         for (int i = 0; i < CONFIG_FREERTOS_NUMBER_OF_CORES; i++) {
             for (int j = 0; j < TEST_PINNED_NUM_TASKS; j++) {
-                TEST_ASSERT_EQUAL(pdTRUE, xTaskCreatePinnedToCore(pinned_task, "task", 4096, (void *)done_sem, UNITY_FREERTOS_PRIORITY + 1, &task_handles[i][j], i));
+                params[i][j] = (pie_params_t) {
+                    .cst = i + j + 1,
+                    .sem = done_sem,
+                };
+                TEST_ASSERT_EQUAL(pdTRUE, xTaskCreatePinnedToCore(pinned_task, "task", 4096, (void *) &params[i][j], UNITY_FREERTOS_PRIORITY + 1, &task_handles[i][j], i));
             }
         }
 
-        // Start the created tasks simultaneously
+        // Start the created tasks
         for (int i = 0; i < CONFIG_FREERTOS_NUMBER_OF_CORES; i++) {
             for (int j = 0; j < TEST_PINNED_NUM_TASKS; j++) {
                 xTaskNotifyGive(task_handles[i][j]);
@@ -159,7 +168,7 @@ static void unpinned_task(void *arg)
     int32_t b[4] = { 111, 222, 333, 444 };
     int32_t dst[4] = { 0 };
 
-    pie_vector_add(a, b, dst);
+    pie_vector_signed_add(a, b, dst);
 
     for (int i = 0; i < sizeof(a) / sizeof(uint32_t); i++) {
         TEST_ASSERT_EQUAL(dst[i], a[i] + b[i]);
@@ -196,24 +205,19 @@ TEST_CASE("PIE: Usage in unpinned task", "[freertos]")
     }
 }
 
-typedef struct {
-    int32_t cst;
-    TaskHandle_t main;
-} ParamsPIE;
-
 /**
  * @brief Function performing some simple calculation using the PIE coprocessor.
  *        The goal is to be preempted by a task that also uses the PIE on the same core.
  */
-void pie_calculation(void* arg)
+static void pie_calculation(void* arg)
 {
-    ParamsPIE* p = (ParamsPIE*) arg;
+    pie_params_t* p = (pie_params_t*) arg;
     const int32_t cst = p->cst;
     int32_t a[4] = { cst, cst, cst, cst };
     int32_t dst[4] = { 0 };
 
     for (int i = 0; i < 10; i++) {
-        pie_vector_add(a, dst, dst);
+        pie_vector_signed_add(a, dst, dst);
 
         /* Give some time to the other to interrupt us before checking `f` value */
         esp_rom_delay_us(1000);
@@ -237,7 +241,7 @@ TEST_CASE("PIE: Unsolicited context switch between tasks using the PIE", "[freer
     /* Create two tasks that are on the same core and use the same FPU */
     TaskHandle_t unity_task_handle = xTaskGetCurrentTaskHandle();
     TaskHandle_t tasks[2];
-    ParamsPIE params[2] = {
+    pie_params_t params[2] = {
         { .cst =  1, .main = unity_task_handle },
         { .cst = -1, .main = unity_task_handle },
     };
@@ -249,5 +253,6 @@ TEST_CASE("PIE: Unsolicited context switch between tasks using the PIE", "[freer
     ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
 }
 
-#endif // CONFIG_FREERTOS_NUMBER_OF_CORES > 1
-#endif // SOC_CPU_HAS_PIE
+#endif /* CONFIG_FREERTOS_NUMBER_OF_CORES > 1 */
+
+#endif /* SOC_CPU_HAS_PIE */

@@ -60,6 +60,11 @@
 #include "soc/hp_system_reg.h"
 #endif
 
+#if SOC_CPU_HAS_HWLOOP
+#include "riscv/csr.h"
+#include "riscv/csr_hwlp.h"
+#endif
+
 #if ( SOC_CPU_COPROC_NUM > 0 )
 
 #include "esp_private/panic_internal.h"
@@ -125,9 +130,23 @@ StackType_t *xIsrStackBottom[portNUM_PROCESSORS] = {0};
 BaseType_t xPortStartScheduler(void)
 {
 #if ( SOC_CPU_COPROC_NUM > 0 )
+
+#if SOC_CPU_HAS_FPU
     /* Disable FPU so that the first task to use it will trigger an exception */
     rv_utils_disable_fpu();
-#endif
+#endif /* SOC_CPU_HAS_FPU */
+
+#if SOC_CPU_HAS_PIE
+    /* Similarly, disable PIE */
+    rv_utils_disable_pie();
+#endif /* SOC_CPU_HAS_FPU */
+
+#if SOC_CPU_HAS_HWLOOP
+    /* Initialize the Hardware loop feature */
+    RV_WRITE_CSR(CSR_HWLP_STATE_REG, HWLP_INITIAL_STATE);
+#endif /* SOC_CPU_HAS_HWLOOP */
+#endif /* ( SOC_CPU_COPROC_NUM > 0 ) */
+
     /* Initialize all kernel state tracking variables */
     BaseType_t coreID = xPortGetCoreID();
     port_uxInterruptNesting[coreID] = 0;
@@ -826,7 +845,7 @@ RvCoprocSaveArea* pxPortGetCoprocArea(StaticTask_t* task, bool allocate, int cop
  * @param coreid    Current core
  * @param coproc    Coprocessor to save context of
  *
- * @returns Coprocessor former owner's save are, can be NULL is there was no owner yet, can be -1 if
+ * @returns Coprocessor former owner's save area, can be NULL if there was no owner yet, can be -1 if
  *          the former owner is the same as the new owner.
  */
 RvCoprocSaveArea* pxPortUpdateCoprocOwner(int coreid, int coproc, StaticTask_t* owner)

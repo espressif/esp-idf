@@ -92,7 +92,7 @@ rtos_save_\name\()_coproc:
     \save_coproc_regs a0
 rtos_save_\name\()_coproc_nosave:
 #if ( configNUM_CORES > 1 )
-    /* Pin current task to current core */
+    /* Pin current task to current core, s1 has pxCurrentTCBs */
     mv    a0, s1
     csrr  a1, mhartid
     call  vPortTaskPinToCore
@@ -184,7 +184,33 @@ rtos_save_\name\()_coproc_norestore:
 .endm
 
 
-generate_coprocessor_routine hwlp, HWLP_COPROC_IDX, hwlp_enable, hwlp_save_regs, hwlp_restore_regs
+    /**
+     * @brief Restore the HWLP registers contained in the dedicated save area if the given task ever used it.
+     *        This routine sets the HWLP context to clean in any case.
+     *
+     * @param a0 StaticTask address for the newly scheduled task
+     */
+hwlp_restore_if_used:
+    addi  sp, sp, -16
+    sw    ra, (sp)
+    /* Check if the HWLP was in use beforehand */
+    li    a1, 0
+    li    a2, HWLP_COPROC_IDX
+    call  pxPortGetCoprocArea
+    /* Get the enable flags from the coprocessor save area */
+    lw    a1, RV_COPROC_ENABLE(a0)
+    /* To avoid having branches below, set the coprocessor enable flag now */
+    andi  a2, a1, 1 << HWLP_COPROC_IDX
+    beqz  a2, _hwlp_restore_never_used
+    /* Enable bit was set, restore the coprocessor context */
+    lw    a0, RV_COPROC_SA+HWLP_COPROC_IDX*4(a0)      /* a0 = RvCoprocSaveArea->sa_coprocs[HWLP_COPROC_IDX] */
+    hwlp_restore_regs a0
+_hwlp_restore_never_used:
+    /* Clear the context */
+    csrwi CSR_HWLP_STATE_REG, HWLP_CLEAN_STATE
+    lw   ra, (sp)
+    addi sp, sp, 16
+    ret
 
 #endif /* SOC_CPU_HAS_HWLOOP */
 
@@ -192,7 +218,7 @@ generate_coprocessor_routine hwlp, HWLP_COPROC_IDX, hwlp_enable, hwlp_save_regs,
 #if SOC_CPU_HAS_PIE
 
 /**
- * @brief Macros to enable and disable the hardware loop feature on the current core
+ * @brief Macros to enable and disable the PIE coprocessor on the current core
  */
 .macro pie_enable scratch_reg=a0
     li      \scratch_reg, 1
@@ -200,7 +226,7 @@ generate_coprocessor_routine hwlp, HWLP_COPROC_IDX, hwlp_enable, hwlp_save_regs,
 .endm
 
 /**
- * @brief Disable HW Loop CPU feature while returning the former status in the given register
+ * @brief Disable the PIE coprocessor while returning the former status in the given register
  */
 .macro pie_disable reg
     csrrw \reg, CSR_PIE_STATE_REG, zero
@@ -213,7 +239,7 @@ generate_coprocessor_routine hwlp, HWLP_COPROC_IDX, hwlp_enable, hwlp_save_regs,
 .endm
 
 /**
- * @brief Macros to save and restore the hardware loop registers to and from the given frame
+ * @brief Macros to save and restore the PIE coprocessor registers to and from the given frame
  */
 .macro pie_save_regs frame=a0
     /* Save the 128-bit Q registers from the frame memory and then frame += 16 */
@@ -427,15 +453,16 @@ rtos_current_tcb:
  * 16-bit instructions.
  * @returns Context that should be given to `rtos_int_exit`. On targets that have coprocessors,
  * this value is a bitmap where bit i is 1 if coprocessor i is enable, 0 if it is disabled.
+ * This routine can use the s registers too since they are not used by the caller (yet)
  */
     .global rtos_int_enter
     .type rtos_int_enter, @function
 rtos_int_enter:
 #if ( configNUM_CORES > 1 )
-    csrr    a5, mhartid                     /* a5 = coreID */
-    slli    a5, a5, 2                       /* a5 = coreID * 4 */
+    csrr    s0, mhartid                     /* s0 = coreID */
+    slli    s0, s0, 2                       /* s0 = coreID * 4 */
     la      a0, port_xSchedulerRunning      /* a0 = &port_xSchedulerRunning */
-    add     a0, a0, a5                      /* a0 = &port_xSchedulerRunning[coreID] */
+    add     a0, a0, s0                      /* a0 = &port_xSchedulerRunning[coreID] */
     lw      a0, (a0)                        /* a0 = port_xSchedulerRunning[coreID] */
 #else
     lw      a0, port_xSchedulerRunning      /* a0 = port_xSchedulerRunning */
@@ -446,7 +473,7 @@ rtos_int_enter:
     /* Increment the ISR nesting count */
     la      a0, port_uxInterruptNesting     /* a0 = &port_uxInterruptNesting */
 #if ( configNUM_CORES > 1 )
-    add     a0, a0, a5                      /* a0 = &port_uxInterruptNesting[coreID] // a5 already contains coreID * 4 */
+    add     a0, a0, s0                      /* a0 = &port_uxInterruptNesting[coreID] // s0 contains coreID * 4 */
 #endif /* ( configNUM_CORES > 1 ) */
     lw      a1, 0(a0)                       /* a1 = port_uxInterruptNesting[coreID] */
     addi    a2, a1, 1                       /* a2 = a1 + 1 */
@@ -456,19 +483,13 @@ rtos_int_enter:
     li      a0, 0                           /* return 0 in case we are going to branch */
     bnez    a1, rtos_int_enter_end          /* if (port_uxInterruptNesting[coreID] > 0) jump to rtos_int_enter_end */
 
-    li      a7, 0
+    li      s2, 0
 #if SOC_CPU_COPROC_NUM > 0
     /* Disable the coprocessors to forbid the ISR from using it */
-#if SOC_CPU_HAS_HWLOOP
-    /* The current HWLP status will be returned in a0 */
-    hwlp_disable a0
-    or      a7, a7, a0
-#endif /* SOC_CPU_HAS_HWLOOP */
-
 #if SOC_CPU_HAS_PIE
-    /* The current HWLP status will be returned in a0 */
+    /* The current PIE coprocessor status will be returned in a0 */
     pie_disable a0
-    or      a7, a7, a0
+    or      s2, s2, a0
 #endif /* SOC_CPU_HAS_PIE */
 
 #if SOC_CPU_HAS_FPU
@@ -485,24 +506,48 @@ rtos_int_enter:
     /* Save the current sp in pxCurrentTCBs[coreID] and load the ISR stack on to sp */
 #if ( configNUM_CORES > 1 )
     la      a0, pxCurrentTCBs               /* a0 = &pxCurrentTCBs */
-    add     a0, a0, a5                      /* a0 = &pxCurrentTCBs[coreID] // a5 already contains coreID * 4 */
+    add     a0, a0, s0                      /* a0 = &pxCurrentTCBs[coreID] // s0 already contains coreID * 4 */
     lw      a0, (a0)                        /* a0 = pxCurrentTCBs[coreID] */
     sw      sp, 0(a0)                       /* pxCurrentTCBs[coreID] = sp */
-    la      a0, xIsrStackTop                /* a0 = &xIsrStackTop */
-    add     a0, a0, a5                      /* a0 = &xIsrStackTop[coreID] // a5 already contains coreID * 4 */
-    lw      sp, (a0)                        /* sp = xIsrStackTop[coreID] */
+    /* We may need a0 below to call pxPortGetCoprocArea */
+    la      a1, xIsrStackTop                /* a1 = &xIsrStackTop */
+    add     a1, a1, s0                      /* a1 = &xIsrStackTop[coreID] // s0 already contains coreID * 4 */
+    lw      sp, (a1)                        /* sp = xIsrStackTop[coreID] */
 #else
     lw      a0, pxCurrentTCBs               /* a0 = pxCurrentTCBs */
     sw      sp, 0(a0)                       /* pxCurrentTCBs[0] = sp */
     lw      sp, xIsrStackTop                /* sp = xIsrStackTop */
 #endif /* ( configNUM_CORES > 1 ) */
 
+#if SOC_CPU_HAS_HWLOOP
+    /* Check if the current task used the Hardware loop feature, by reading the state */
+    csrr    a1, CSR_HWLP_STATE_REG
+    addi    a1, a1, -HWLP_DIRTY_STATE
+    bnez    a1, 1f
+    /* State is dirty! The hardware loop feature was used, save the registers */
+    li      a1, 1                           /* Allocate the save area if not already allocated */
+    li      a2, HWLP_COPROC_IDX
+    mv      s1, ra
+    call    pxPortGetCoprocArea
+    mv      ra, s1
+    /* Set the enable flags from the coprocessor save area */
+    lw      a1, RV_COPROC_ENABLE(a0)
+    ori     a1, a1, 1 << HWLP_COPROC_IDX
+    sw      a1, RV_COPROC_ENABLE(a0)
+    /* Get the area where we need to save the HWLP registers */
+    lw      a0, RV_COPROC_SA+HWLP_COPROC_IDX*4(a0)      /* a0 = RvCoprocSaveArea->sa_coprocs[\coproc_idx] */
+    hwlp_save_regs a0
+    /* Disable the HWLP feature so that ISR cannot use them */
+    csrwi   CSR_HWLP_STATE_REG, HWLP_CLEAN_STATE
+1:
+#endif
+
 #if CONFIG_ESP_SYSTEM_HW_STACK_GUARD
     /* Prepare the parameters for esp_hw_stack_guard_set_bounds(xIsrStackBottom, xIsrStackTop); */
 #if ( configNUM_CORES > 1 )
     /* Load the xIsrStack for the current core and set the new bounds */
     la      a0, xIsrStackBottom
-    add     a0, a0, a5                      /* a0 = &xIsrStackBottom[coreID] */
+    add     a0, a0, s0                      /* a0 = &xIsrStackBottom[coreID] */
     lw      a0, (a0)                        /* a0 = xIsrStackBottom[coreID] */
 #else
     lw      a0, xIsrStackBottom
@@ -514,8 +559,8 @@ rtos_int_enter:
     ESP_HW_STACK_GUARD_MONITOR_START_CUR_CORE a0 a1
 #endif /* CONFIG_ESP_SYSTEM_HW_STACK_GUARD */
 
-    /* Return the coprocessor context from a7 */
-    mv      a0, a7
+    /* Return the coprocessor context from s2 */
+    mv      a0, s2
 rtos_int_enter_end:
     ret
 
@@ -569,11 +614,11 @@ isr_skip_decrement:
     /* If the CPU reached this label, a2 (uxInterruptNesting) is 0 for sure */
 
     /* Schedule the next task if a yield is pending */
-    la      s7, xPortSwitchFlag             /* a0 = &xPortSwitchFlag */
+    la      s7, xPortSwitchFlag             /* s7 = &xPortSwitchFlag */
 #if ( configNUM_CORES > 1 )
-    add     s7, s7, a1                      /* a0 = &xPortSwitchFlag[coreID] // a1 already contains coreID * 4  */
+    add     s7, s7, a1                      /* s7 = &xPortSwitchFlag[coreID] // a1 already contains coreID * 4  */
 #endif /* ( configNUM_CORES > 1 ) */
-    lw      a0, 0(s7)                       /* a2 = xPortSwitchFlag[coreID] */
+    lw      a0, 0(s7)                       /* a0 = xPortSwitchFlag[coreID] */
     beqz    a0, no_switch_restore_coproc    /* if (xPortSwitchFlag[coreID] == 0) jump to no_switch_restore_coproc */
 
     /* Preserve return address and schedule next task. To speed up the process, and because this current routine
@@ -601,10 +646,19 @@ isr_skip_decrement:
     mv      ra, s10                         /* Restore original return address */
     beq     a0, s9, no_switch_restore_coproc
 
+#if SOC_CPU_HAS_HWLOOP
+    /* We have to restore the context of the HWLP if the newly scheduled task used it before. In all cases, this
+     * routine will also clean the state and set it to clean */
+    mv      s7, ra
+    /* a0 contains the current TCB address */
+    call    hwlp_restore_if_used
+    mv      ra, s7
+#endif /* SOC_CPU_HAS_HWLOOP */
+
 #if SOC_CPU_HAS_FPU
     /* Disable the FPU in the `mstatus` value to return */
-    li      a0, ~CSR_MSTATUS_FPU_DISABLE
-    and     s11, s11, a0
+    li      a1, ~CSR_MSTATUS_FPU_DISABLE
+    and     s11, s11, a1
 #endif /* SOC_CPU_HAS_FPU */
     j       no_switch_restored
 
@@ -614,17 +668,24 @@ no_switch_restore_coproc:
     /* We reach here either because there is no switch scheduled or because the TCB that is going to be scheduled
      * is the same as the one that has been interrupted. In both cases, we need to restore the coprocessors status */
 #if SOC_CPU_HAS_HWLOOP
-    andi    a0, s8, 1 << HWLP_COPROC_IDX
-    beqz    a0, 1f
-    hwlp_enable a0
+    /* Check if the ISR altered the state of the HWLP */
+    csrr    a1, CSR_HWLP_STATE_REG
+    addi    a1, a1, -HWLP_DIRTY_STATE
+    bnez    a1, 1f
+    /* ISR used the HWLP, restore the HWLP context! */
+    mv      s7, ra
+    /* a0 contains the current TCB address */
+    call    hwlp_restore_if_used
+    mv      ra, s7
 1:
+    /* Else, the ISR hasn't touched HWLP registers, we don't need to restore the HWLP registers */
 #endif /* SOC_CPU_HAS_HWLOOP */
 
 #if SOC_CPU_HAS_PIE
     andi    a0, s8, 1 << PIE_COPROC_IDX
-    beqz    a0, 1f
+    beqz    a0, 2f
     pie_enable a0
-1:
+2:
 #endif /* SOC_CPU_HAS_PIE */
 
 no_switch_restored:

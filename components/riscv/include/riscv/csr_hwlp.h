@@ -18,6 +18,11 @@
  */
 #define CSR_HWLP_STATE_REG      0x7F1
 
+#define HWLP_OFF_STATE          0
+#define HWLP_INITIAL_STATE      1
+#define HWLP_CLEAN_STATE        2
+#define HWLP_DIRTY_STATE        3
+
 #define CSR_LOOP0_START_ADDR    0x7C6
 #define CSR_LOOP0_END_ADDR      0x7C7
 #define CSR_LOOP0_COUNT         0x7C8
