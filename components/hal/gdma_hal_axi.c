@@ -91,14 +91,16 @@ void gdma_axi_hal_enable_burst(gdma_hal_context_t *hal, int chan_id, gdma_channe
     }
 }
 
-void gdma_axi_hal_set_strategy(gdma_hal_context_t *hal, int chan_id, gdma_channel_direction_t dir, bool en_owner_check, bool en_desc_write_back)
+void gdma_axi_hal_set_strategy(gdma_hal_context_t *hal, int chan_id, gdma_channel_direction_t dir, bool en_owner_check, bool en_desc_write_back, bool eof_till_popped)
 {
     if (dir == GDMA_CHANNEL_DIRECTION_RX) {
         axi_dma_ll_rx_enable_owner_check(hal->axi_dma_dev, chan_id, en_owner_check);
         // RX direction always has the descriptor write-back feature enabled
+        // RX direction don't need config eof_mode
     } else {
         axi_dma_ll_tx_enable_owner_check(hal->axi_dma_dev, chan_id, en_owner_check);
         axi_dma_ll_tx_enable_auto_write_back(hal->axi_dma_dev, chan_id, en_desc_write_back);
+        axi_dma_ll_tx_set_eof_mode(hal->axi_dma_dev, chan_id, eof_till_popped);
     }
 }
 

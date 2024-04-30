@@ -60,9 +60,9 @@ void gdma_hal_set_ext_mem_align(gdma_hal_context_t *hal, int chan_id, gdma_chann
     }
 }
 
-void gdma_hal_set_strategy(gdma_hal_context_t *hal, int chan_id, gdma_channel_direction_t dir, bool en_owner_check, bool en_desc_write_back)
+void gdma_hal_set_strategy(gdma_hal_context_t *hal, int chan_id, gdma_channel_direction_t dir, bool en_owner_check, bool en_desc_write_back, bool eof_till_popped)
 {
-    hal->set_strategy(hal, chan_id, dir, en_owner_check, en_desc_write_back);
+    hal->set_strategy(hal, chan_id, dir, en_owner_check, en_desc_write_back, eof_till_popped);
 }
 
 void gdma_hal_enable_intr(gdma_hal_context_t *hal, int chan_id, gdma_channel_direction_t dir, uint32_t intr_event_mask, bool en_or_dis)

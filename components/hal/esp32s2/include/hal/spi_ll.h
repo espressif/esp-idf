@@ -337,7 +337,7 @@ static inline void spi_ll_cpu_rx_fifo_reset(spi_dev_t *hw)
 /**
  * Reset SPI DMA TX FIFO
  *
- * On ESP32S2, this function is not seperated
+ * On ESP32S2, this function is not separated
  *
  * @param hw Beginning address of the peripheral registers.
  */
@@ -350,7 +350,7 @@ static inline void spi_ll_dma_tx_fifo_reset(spi_dev_t *hw)
 /**
  * Reset SPI DMA RX FIFO
  *
- * On ESP32S2, this function is not seperated
+ * On ESP32S2, this function is not separated
  *
  * @param hw Beginning address of the peripheral registers.
  */
@@ -701,7 +701,7 @@ static inline void spi_ll_master_set_clock_by_reg(spi_dev_t *hw, const spi_ll_cl
  * Get the frequency of given dividers. Don't use in app.
  *
  * @param fapb APB clock of the system.
- * @param pre Pre devider.
+ * @param pre Pre divider.
  * @param n main divider.
  *
  * @return Frequency of given dividers.
@@ -712,10 +712,10 @@ static inline int spi_ll_freq_for_pre_n(int fapb, int pre, int n)
 }
 
 /**
- * Calculate the nearest frequency avaliable for master.
+ * Calculate the nearest frequency available for master.
  *
  * @param fapb APB clock of the system.
- * @param hz Frequncy desired.
+ * @param hz Frequency desired.
  * @param duty_cycle Duty cycle desired.
  * @param out_reg Output address to store the calculated clock configurations for the return frequency.
  *
@@ -795,7 +795,7 @@ static inline int spi_ll_master_cal_clock(int fapb, int hz, int duty_cycle, spi_
  *
  * @param hw Beginning address of the peripheral registers.
  * @param fapb APB clock of the system.
- * @param hz Frequncy desired.
+ * @param hz Frequency desired.
  * @param duty_cycle Duty cycle desired.
  *
  * @return Actual frequency that is used.
@@ -1079,10 +1079,10 @@ static inline uint32_t spi_ll_slave_get_rcv_bitlen(spi_dev_t *hw)
     item(SPI_LL_INTR_WRBUF,         slave.int_wr_buf_done_en,       slv_wrbuf_dlen.wr_buf_done,     slv_wrbuf_dlen.wr_buf_done=0) \
     item(SPI_LL_INTR_RDDMA,         slave.int_rd_dma_done_en,       slv_rd_byte.rd_dma_done,        slv_rd_byte.rd_dma_done=0) \
     item(SPI_LL_INTR_WRDMA,         slave.int_wr_dma_done_en,       slave1.wr_dma_done,             slave1.wr_dma_done=0) \
+    item(SPI_LL_INTR_SEG_DONE,      slave.int_dma_seg_trans_en,     hold.dma_seg_trans_done,        hold.dma_seg_trans_done=0) \
     item(SPI_LL_INTR_IN_SUC_EOF,    dma_int_ena.in_suc_eof,         dma_int_raw.in_suc_eof,         dma_int_clr.in_suc_eof=1) \
     item(SPI_LL_INTR_OUT_EOF,       dma_int_ena.out_eof,            dma_int_raw.out_eof,            dma_int_clr.out_eof=1) \
     item(SPI_LL_INTR_OUT_TOTAL_EOF, dma_int_ena.out_total_eof,      dma_int_raw.out_total_eof,      dma_int_clr.out_total_eof=1) \
-    item(SPI_LL_INTR_SEG_DONE,      slave.int_dma_seg_trans_en,     hold.dma_seg_trans_done,        hold.dma_seg_trans_done=0) \
     item(SPI_LL_INTR_IN_FULL,       dma_int_ena.infifo_full_err,    dma_int_raw.infifo_full_err,    dma_int_clr.infifo_full_err=1) \
     item(SPI_LL_INTR_OUT_EMPTY,     dma_int_ena.outfifo_empty_err,  dma_int_raw.outfifo_empty_err,  dma_int_clr.outfifo_empty_err=1) \
     item(SPI_LL_INTR_CMD7,          dma_int_ena.cmd7,               dma_int_raw.cmd7,               dma_int_clr.cmd7=1) \
@@ -1428,7 +1428,7 @@ static inline void spi_dma_ll_enable_out_auto_wrback(spi_dma_dev_t *dma_out, uin
 }
 
 /**
- * Get the last outlink descriptor address when DMA produces out_eof intrrupt
+ * Get the last outlink descriptor address when DMA produces out_eof interrupt
  *
  * @param dma_out Beginning address of the DMA peripheral registers which transmits the data from RAM to a peripheral.
  * @param channel DMA channel, for chip version compatibility, not used.

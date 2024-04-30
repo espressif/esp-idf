@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2010-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2010-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -25,18 +25,6 @@ extern "C"
 {
 #endif
 
-#ifdef CONFIG_SPI_MASTER_ISR_IN_IRAM
-#define SPI_MASTER_ISR_ATTR IRAM_ATTR
-#else
-#define SPI_MASTER_ISR_ATTR
-#endif
-
-#ifdef CONFIG_SPI_MASTER_IN_IRAM
-#define SPI_MASTER_ATTR IRAM_ATTR
-#else
-#define SPI_MASTER_ATTR
-#endif
-
 //NOTE!! If both A and B are not defined, '#if (A==B)' is true, because GCC use 0 stand for undefined symbol
 #if SOC_GPSPI_SUPPORTED && defined(SOC_GDMA_BUS_AXI) && (SOC_GDMA_TRIG_PERIPH_SPI2_BUS == SOC_GDMA_BUS_AXI)
 #define DMA_DESC_MEM_ALIGN_SIZE 8
@@ -44,6 +32,15 @@ typedef dma_descriptor_align8_t spi_dma_desc_t;
 #else
 #define DMA_DESC_MEM_ALIGN_SIZE 4
 typedef dma_descriptor_align4_t spi_dma_desc_t;
+#endif
+
+#if SOC_NON_CACHEABLE_OFFSET
+#include "hal/cache_ll.h"
+#define ADDR_DMA_2_CPU(addr)   ((typeof(addr))CACHE_LL_L2MEM_NON_CACHE_ADDR(addr))
+#define ADDR_CPU_2_DMA(addr)   ((typeof(addr))CACHE_LL_L2MEM_CACHE_ADDR(addr))
+#else
+#define ADDR_DMA_2_CPU(addr)   (addr)
+#define ADDR_CPU_2_DMA(addr)   (addr)
 #endif
 
 /// Attributes of an SPI bus

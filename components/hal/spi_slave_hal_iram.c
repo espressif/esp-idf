@@ -1,38 +1,6 @@
 #include "hal/spi_slave_hal.h"
 #include "hal/spi_ll.h"
-#include "soc/ext_mem_defs.h"
 #include "soc/soc_caps.h"
-
-//This GDMA related part will be introduced by GDMA dedicated APIs in the future. Here we temporarily use macros.
-#if SOC_GDMA_SUPPORTED
-#if (SOC_GDMA_TRIG_PERIPH_SPI2_BUS == SOC_GDMA_BUS_AHB) && (SOC_AHB_GDMA_VERSION == 1)
-#include "soc/gdma_struct.h"
-#include "hal/gdma_ll.h"
-#define spi_dma_ll_rx_reset(dev, chan)                             gdma_ll_rx_reset_channel(&GDMA, chan)
-#define spi_dma_ll_tx_reset(dev, chan)                             gdma_ll_tx_reset_channel(&GDMA, chan);
-#define spi_dma_ll_rx_start(dev, chan, addr) do {\
-            gdma_ll_rx_set_desc_addr(&GDMA, chan, (uint32_t)addr);\
-            gdma_ll_rx_start(&GDMA, chan);\
-        } while (0)
-#define spi_dma_ll_tx_start(dev, chan, addr) do {\
-            gdma_ll_tx_set_desc_addr(&GDMA, chan, (uint32_t)addr);\
-            gdma_ll_tx_start(&GDMA, chan);\
-        } while (0)
-
-#elif (SOC_GDMA_TRIG_PERIPH_SPI2_BUS == SOC_GDMA_BUS_AXI)   //TODO: IDF-6152, refactor spi hal layer
-#include "hal/axi_dma_ll.h"
-#define spi_dma_ll_rx_reset(dev, chan)                             axi_dma_ll_rx_reset_channel(&AXI_DMA, chan)
-#define spi_dma_ll_tx_reset(dev, chan)                             axi_dma_ll_tx_reset_channel(&AXI_DMA, chan);
-#define spi_dma_ll_rx_start(dev, chan, addr) do {\
-            axi_dma_ll_rx_set_desc_addr(&AXI_DMA, chan, (uint32_t)addr);\
-            axi_dma_ll_rx_start(&AXI_DMA, chan);\
-        } while (0)
-#define spi_dma_ll_tx_start(dev, chan, addr) do {\
-            axi_dma_ll_tx_set_desc_addr(&AXI_DMA, chan, (uint32_t)addr);\
-            axi_dma_ll_tx_start(&AXI_DMA, chan);\
-        } while (0)
-#endif
-#endif  //SOC_GDMA_SUPPORTED
 
 bool spi_slave_hal_usr_is_done(spi_slave_hal_context_t* hal)
 {
@@ -45,89 +13,48 @@ void spi_slave_hal_user_start(const spi_slave_hal_context_t *hal)
     spi_ll_user_start(hal->hw);
 }
 
-#if SOC_NON_CACHEABLE_OFFSET
-#define ADDR_DMA_2_CPU(addr)   ((typeof(addr))((uint32_t)(addr) + SOC_NON_CACHEABLE_OFFSET))
-#define ADDR_CPU_2_DMA(addr)   ((typeof(addr))((uint32_t)(addr) - SOC_NON_CACHEABLE_OFFSET))
-#else
-#define ADDR_DMA_2_CPU(addr)   (addr)
-#define ADDR_CPU_2_DMA(addr)   (addr)
-#endif
-
-static void s_spi_slave_hal_dma_desc_setup_link(spi_dma_desc_t *dmadesc, const void *data, int len, bool is_rx)
+void spi_slave_hal_hw_prepare_rx(spi_dev_t *hw)
 {
-    dmadesc = ADDR_DMA_2_CPU(dmadesc);
-    int n = 0;
-    while (len) {
-        int dmachunklen = len;
-        if (dmachunklen > DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED) {
-            dmachunklen = DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED;
-        }
-        if (is_rx) {
-            //Receive needs DMA length rounded to next 32-bit boundary
-            dmadesc[n].dw0.size = (dmachunklen + 3) & (~3);
-        } else {
-            dmadesc[n].dw0.size = dmachunklen;
-            dmadesc[n].dw0.length = dmachunklen;
-        }
-        dmadesc[n].buffer = (uint8_t *)data;
-        dmadesc[n].dw0.suc_eof = 0;
-        dmadesc[n].dw0.owner = DMA_DESCRIPTOR_BUFFER_OWNER_DMA;
-        dmadesc[n].next = ADDR_CPU_2_DMA(&dmadesc[n + 1]);
-        len -= dmachunklen;
-        data += dmachunklen;
-        n++;
-    }
-    dmadesc[n - 1].dw0.suc_eof = 1; //Mark last DMA desc as end of stream.
-    dmadesc[n - 1].next = NULL;
+    spi_ll_dma_rx_fifo_reset(hw);
+    spi_ll_infifo_full_clr(hw);
+    spi_ll_dma_rx_enable(hw, 1);
 }
 
-void spi_slave_hal_prepare_data(const spi_slave_hal_context_t *hal)
+void spi_slave_hal_hw_prepare_tx(spi_dev_t *hw)
 {
-    if (hal->use_dma) {
+    spi_ll_dma_tx_fifo_reset(hw);
+    spi_ll_outfifo_empty_clr(hw);
+    spi_ll_dma_tx_enable(hw, 1);
+}
 
-        //Fill DMA descriptors
-        if (hal->rx_buffer) {
-            s_spi_slave_hal_dma_desc_setup_link(hal->dmadesc_rx, hal->rx_buffer, ((hal->bitlen + 7) / 8), true);
+void spi_slave_hal_hw_reset(spi_slave_hal_context_t *hal)
+{
+    spi_ll_slave_reset(hal->hw);
+}
 
-            //reset dma inlink, this should be reset before spi related reset
-            spi_dma_ll_rx_reset(hal->dma_in, hal->rx_dma_chan);
-            spi_ll_dma_rx_fifo_reset(hal->dma_in);
-            spi_ll_slave_reset(hal->hw);
-            spi_ll_infifo_full_clr(hal->hw);
+void spi_slave_hal_hw_fifo_reset(spi_slave_hal_context_t *hal, bool tx_rst, bool rx_rst)
+{
+    tx_rst ? spi_ll_cpu_tx_fifo_reset(hal->hw) : 0;
+    rx_rst ? spi_ll_cpu_rx_fifo_reset(hal->hw) : 0;
+}
 
-            spi_ll_dma_rx_enable(hal->hw, 1);
-            spi_dma_ll_rx_start(hal->dma_in, hal->rx_dma_chan, (lldesc_t *)hal->dmadesc_rx);
-        }
-        if (hal->tx_buffer) {
-            s_spi_slave_hal_dma_desc_setup_link(hal->dmadesc_tx, hal->tx_buffer, (hal->bitlen + 7) / 8, false);
-
-            //reset dma outlink, this should be reset before spi related reset
-            spi_dma_ll_tx_reset(hal->dma_out, hal->tx_dma_chan);
-            spi_ll_dma_tx_fifo_reset(hal->dma_out);
-            spi_ll_slave_reset(hal->hw);
-            spi_ll_outfifo_empty_clr(hal->hw);
-
-            spi_ll_dma_tx_enable(hal->hw, 1);
-            spi_dma_ll_tx_start(hal->dma_out, hal->tx_dma_chan, (lldesc_t *)hal->dmadesc_tx);
-        }
-    } else {
-        //No DMA. Turn off SPI and copy data to transmit buffers.
-        if (hal->tx_buffer) {
-            spi_ll_slave_reset(hal->hw);
-            spi_ll_write_buffer(hal->hw, hal->tx_buffer, hal->bitlen);
-        }
-
-        spi_ll_cpu_tx_fifo_reset(hal->hw);
+void spi_slave_hal_push_tx_buffer(spi_slave_hal_context_t *hal)
+{
+    if (hal->tx_buffer) {
+        spi_ll_write_buffer(hal->hw, hal->tx_buffer, hal->bitlen);
     }
+}
 
+void spi_slave_hal_set_trans_bitlen(spi_slave_hal_context_t *hal)
+{
     spi_ll_slave_set_rx_bitlen(hal->hw, hal->bitlen);
     spi_ll_slave_set_tx_bitlen(hal->hw, hal->bitlen);
+}
 
-#ifdef CONFIG_IDF_TARGET_ESP32
-    //SPI Slave mode on ESP32 requires MOSI/MISO enable
-    spi_ll_enable_mosi(hal->hw, (hal->rx_buffer == NULL) ? 0 : 1);
-    spi_ll_enable_miso(hal->hw, (hal->tx_buffer == NULL) ? 0 : 1);
-#endif
+void spi_slave_hal_enable_data_line(spi_slave_hal_context_t *hal)
+{
+    spi_ll_enable_mosi(hal->hw, (hal->rx_buffer != NULL));
+    spi_ll_enable_miso(hal->hw, (hal->tx_buffer != NULL));
 }
 
 void spi_slave_hal_store_result(spi_slave_hal_context_t *hal)

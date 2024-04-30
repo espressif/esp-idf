@@ -404,7 +404,7 @@ esp_err_t gdma_apply_strategy(gdma_channel_handle_t dma_chan, const gdma_strateg
     gdma_group_t *group = pair->group;
     gdma_hal_context_t *hal = &group->hal;
 
-    gdma_hal_set_strategy(hal, pair->pair_id, dma_chan->direction, config->owner_check, config->auto_update_desc);
+    gdma_hal_set_strategy(hal, pair->pair_id, dma_chan->direction, config->owner_check, config->auto_update_desc, config->eof_till_data_popped);
 
     return ESP_OK;
 }

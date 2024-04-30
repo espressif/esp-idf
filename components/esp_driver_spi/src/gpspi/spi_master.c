@@ -133,6 +133,27 @@ We have two bits to control the interrupt:
 #include "esp_cache.h"
 #endif
 
+#ifdef CONFIG_SPI_MASTER_ISR_IN_IRAM
+#define SPI_MASTER_ISR_ATTR IRAM_ATTR
+#else
+#define SPI_MASTER_ISR_ATTR
+#endif
+
+#ifdef CONFIG_SPI_MASTER_IN_IRAM
+#define SPI_MASTER_ATTR IRAM_ATTR
+#else
+#define SPI_MASTER_ATTR
+#endif
+
+#if SOC_PERIPH_CLK_CTRL_SHARED
+#define SPI_MASTER_PERI_CLOCK_ATOMIC() PERIPH_RCC_ATOMIC()
+#else
+#define SPI_MASTER_PERI_CLOCK_ATOMIC()
+#endif
+
+static const char *SPI_TAG = "spi_master";
+#define SPI_CHECK(a, str, ret_val)  ESP_RETURN_ON_FALSE_ISR(a, ret_val, SPI_TAG, str)
+
 typedef struct spi_device_t spi_device_t;
 
 /// struct to hold private transaction data (like tx and rx buffer for DMA).
@@ -209,15 +230,6 @@ struct spi_device_t {
 };
 
 static spi_host_t* bus_driver_ctx[SOC_SPI_PERIPH_NUM] = {};
-
-static const char *SPI_TAG = "spi_master";
-#define SPI_CHECK(a, str, ret_val)  ESP_RETURN_ON_FALSE_ISR(a, ret_val, SPI_TAG, str)
-
-#if SOC_PERIPH_CLK_CTRL_SHARED
-#define SPI_MASTER_PERI_CLOCK_ATOMIC() PERIPH_RCC_ATOMIC()
-#else
-#define SPI_MASTER_PERI_CLOCK_ATOMIC()
-#endif
 
 static void spi_intr(void *arg);
 static void spi_bus_intr_enable(void *host);
