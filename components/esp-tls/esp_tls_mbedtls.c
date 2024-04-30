@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -45,6 +45,16 @@ static esp_err_t esp_mbedtls_init_pk_ctx_for_ds(const void *pki);
 
 static const char *TAG = "esp-tls-mbedtls";
 static mbedtls_x509_crt *global_cacert = NULL;
+
+#if CONFIG_NEWLIB_NANO_FORMAT
+#define NEWLIB_NANO_SSIZE_T_COMPAT_FORMAT           "X"
+#define NEWLIB_NANO_SIZE_T_COMPAT_FORMAT            PRIu32
+#define NEWLIB_NANO_SIZE_T_COMPAT_CAST(size_t_var)  (uint32_t)size_t_var
+#else
+#define NEWLIB_NANO_SSIZE_T_COMPAT_FORMAT           "zX"
+#define NEWLIB_NANO_SIZE_T_COMPAT_FORMAT            "zu"
+#define NEWLIB_NANO_SIZE_T_COMPAT_CAST(size_t_var)  size_t_var
+#endif
 
 /* This function shall return the error message when appropriate log level has been set, otherwise this function shall do nothing */
 static void mbedtls_print_error_msg(int error)
@@ -266,7 +276,7 @@ ssize_t esp_mbedtls_read(esp_tls_t *tls, char *data, size_t datalen)
         }
         if (ret != ESP_TLS_ERR_SSL_WANT_READ  && ret != ESP_TLS_ERR_SSL_WANT_WRITE) {
             ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_MBEDTLS, -ret);
-            ESP_LOGE(TAG, "read error :-0x%04zX:", -ret);
+            ESP_LOGE(TAG, "read error :-0x%04"NEWLIB_NANO_SSIZE_T_COMPAT_FORMAT, -ret);
             mbedtls_print_error_msg(ret);
         }
     }
@@ -282,19 +292,20 @@ ssize_t esp_mbedtls_write(esp_tls_t *tls, const char *data, size_t datalen)
             write_len = MBEDTLS_SSL_OUT_CONTENT_LEN;
         }
         if (datalen > MBEDTLS_SSL_OUT_CONTENT_LEN) {
-            ESP_LOGD(TAG, "Fragmenting data of excessive size :%zu, offset: %zu, size %zu", datalen, written, write_len);
+            ESP_LOGD(TAG, "Fragmenting data of excessive size :%"NEWLIB_NANO_SIZE_T_COMPAT_FORMAT", offset: %"NEWLIB_NANO_SIZE_T_COMPAT_FORMAT", size %"NEWLIB_NANO_SIZE_T_COMPAT_FORMAT,
+                    NEWLIB_NANO_SIZE_T_COMPAT_CAST(datalen), NEWLIB_NANO_SIZE_T_COMPAT_CAST(written), NEWLIB_NANO_SIZE_T_COMPAT_CAST(write_len));
         }
         ssize_t ret = mbedtls_ssl_write(&tls->ssl, (unsigned char*) data + written, write_len);
         if (ret <= 0) {
             if (ret != ESP_TLS_ERR_SSL_WANT_READ  && ret != ESP_TLS_ERR_SSL_WANT_WRITE && ret != 0) {
                 ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_MBEDTLS, -ret);
                 ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_ESP, ESP_ERR_MBEDTLS_SSL_WRITE_FAILED);
-                ESP_LOGE(TAG, "write error :-0x%04zX:", -ret);
+                ESP_LOGE(TAG, "write error :-0x%04"NEWLIB_NANO_SSIZE_T_COMPAT_FORMAT, -ret);
                 mbedtls_print_error_msg(ret);
                 return ret;
             } else {
                 // Exiting the tls-write process as less than desired datalen are writable
-                ESP_LOGD(TAG, "mbedtls_ssl_write() returned -0x%04zX, already written %zu, exitting...", -ret, written);
+                ESP_LOGD(TAG, "mbedtls_ssl_write() returned -0x%04"NEWLIB_NANO_SSIZE_T_COMPAT_FORMAT", already written %"NEWLIB_NANO_SIZE_T_COMPAT_FORMAT", exiting...", -ret, NEWLIB_NANO_SIZE_T_COMPAT_CAST(written));
                 mbedtls_print_error_msg(ret);
                 return (written > 0) ? written : ret;
             }
