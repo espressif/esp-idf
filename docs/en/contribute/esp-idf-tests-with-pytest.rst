@@ -478,6 +478,7 @@ Build Directories
 
 By default, each test case looks for the required binary files in the following directories (in order):
 
+- Directory set by ``--build-dir`` command line argument, if specified.
 - ``build_<target>_<sdkconfig>``
 - ``build_<target>``
 - ``build_<sdkconfig>``

@@ -212,6 +212,9 @@ def build_dir(
         check_dirs = [f'build_{target}_{config}']
     else:
         check_dirs = []
+        build_dir_arg = request.config.getoption('build_dir', None)
+        if build_dir_arg:
+            check_dirs.append(build_dir_arg)
         if target is not None and config is not None:
             check_dirs.append(f'build_{target}_{config}')
         if target is not None:

@@ -574,6 +574,7 @@ CI 用于执行所有相关测试的命令为： ``pytest <parent_dir> --target 
 
 默认情况下，pytest 脚本会按照以下顺序查找编译目录：
 
+- 由 ``--build-dir`` 命令行参数设置的目录。（当指定时）
 - ``build_<target>_<sdkconfig>``
 - ``build_<target>``
 - ``build_<sdkconfig>``
