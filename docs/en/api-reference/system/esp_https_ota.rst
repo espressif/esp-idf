@@ -70,7 +70,7 @@ Example that uses advanced ESP_HTTPS_OTA APIs: :example:`system/ota/advanced_htt
 OTA Upgrades with Pre-Encrypted Firmware
 ----------------------------------------
 
-Pre-Encrypted firmware is a completely independent scheme from :doc:`../../security/flash-encryption`. Primary reasons for this are as follows:
+Pre-encrypted firmware is a completely independent scheme from :doc:`../../security/flash-encryption`. Primary reasons for this are as follows:
 
  * Flash encryption scheme recommends using per-device unique encryption key that is internally generated. This makes pre-encryption of the firmware on OTA update server infeasible.
 
@@ -78,13 +78,13 @@ Pre-Encrypted firmware is a completely independent scheme from :doc:`../../secur
 
  * Even for devices where flash encryption is not enabled, it could be requirement that firmware image over OTA is still encrypted in nature.
 
-Pre-Encrypted firmware distribution ensures that the firmware image stays encrypted **in transit** from the server to the device (irrespective of the underlying transport security). First the pre-encrypted software layer will decrypt the firmware (received over network) on device and then re-encrypt the contents using platform flash encryption (if enabled) before writing to flash.
+Pre-encrypted firmware distribution ensures that the firmware image stays encrypted **in transit** from the server to the device (irrespective of the underlying transport security). First the pre-encrypted software layer will decrypt the firmware (received over network) on device and then re-encrypt the contents using platform flash encryption (if enabled) before writing to flash.
 
 Design
 ^^^^^^
 
-* This scheme requires an unique RSA-3072 public-private key pair to be generated first. The public key stays on the OTA update server for encryption purpose and the private key is part of the device (e.g., embedded in firmware) for decryption purpose.
-* Pre-Encrypted firmware is encrypted using AES-GCM key which is then appended to the image as header (along with config parameters).
+* This scheme requires a unique RSA-3072 public-private key pair to be generated first. The public key stays on the OTA update server for encryption purpose and the private key is part of the device (e.g., embedded in firmware) for decryption purpose.
+* Pre-encrypted firmware is encrypted using AES-GCM key which is then appended to the image as header (along with config parameters).
 * Further the AES-GCM key gets encrypted using RSA public key and the resultant image gets hosted on the OTA update server.
 * On the device side, first the AES-GCM key is retrieved by decrypting the image header using RSA private key available to the device.
 * Finally, the contents of the image are decrypted using AES-GCM key (and config parameters) and written to the flash storage.
@@ -92,7 +92,7 @@ Design
 This whole workflow is managed by an external component `esp_encrypted_image <https://github.com/espressif/idf-extra-components/blob/master/esp_encrypted_img>`_ and it gets plugged into the OTA update framework through decryption callback (:cpp:member:`esp_https_ota_config_t::decrypt_cb`) mechanism.
 
 .. note::
-    Supported scheme is based on RSA-3072 and the private key on device side must be protected using platform security features.
+    The supported scheme is based on RSA-3072 and the private key on device side must be protected using platform security features.
 
 Example
 ^^^^^^^
