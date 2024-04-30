@@ -14,6 +14,7 @@
 #include "esp_attr.h"
 #include "riscv/csr.h"
 #include "riscv/interrupt.h"
+#include "riscv/csr_pie.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -166,6 +167,27 @@ FORCE_INLINE_ATTR void rv_utils_disable_fpu(void)
 }
 
 #endif /* SOC_CPU_HAS_FPU */
+
+
+/* ------------------------------------------------- PIE Related ----------------------------------------------------
+ *
+ * ------------------------------------------------------------------------------------------------------------------ */
+
+#if SOC_CPU_HAS_PIE
+
+FORCE_INLINE_ATTR void rv_utils_enable_pie(void)
+{
+    RV_WRITE_CSR(CSR_PIE_STATE_REG, 1);
+}
+
+
+FORCE_INLINE_ATTR void rv_utils_disable_pie(void)
+{
+    RV_WRITE_CSR(CSR_PIE_STATE_REG, 0);
+}
+
+#endif /* SOC_CPU_HAS_FPU */
+
 
 
 /* -------------------------------------------------- Memory Ports -----------------------------------------------------

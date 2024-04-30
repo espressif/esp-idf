@@ -411,6 +411,10 @@ config SOC_BRANCH_PREDICTOR_SUPPORTED
     bool
     default y
 
+config SOC_CPU_COPROC_NUM
+    int
+    default 3
+
 config SOC_CPU_HAS_FPU
     bool
     default y
@@ -426,10 +430,6 @@ config SOC_CPU_HAS_HWLOOP
 config SOC_CPU_HAS_PIE
     bool
     default y
-
-config SOC_CPU_COPROC_NUM
-    int
-    default 3
 
 config SOC_HP_CPU_HAS_MULTIPLE_CORES
     bool

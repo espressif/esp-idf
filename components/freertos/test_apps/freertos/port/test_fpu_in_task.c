@@ -192,7 +192,7 @@ TEST_CASE("FPU: Usage in unpinned task", "[freertos]")
 typedef struct {
     bool negative;
     TaskHandle_t main;
-} ParamsFPU;
+} fpu_params_t;
 
 /**
  * @brief Function performing some simple calculation using several FPU registers.
@@ -200,7 +200,7 @@ typedef struct {
  */
 void fpu_calculation(void* arg)
 {
-    ParamsFPU* p = (ParamsFPU*) arg;
+    fpu_params_t* p = (fpu_params_t*) arg;
     const bool negative = p->negative;
     const float init = negative ? -1.f : 1.f;
     float f = init;
@@ -236,7 +236,7 @@ TEST_CASE("FPU: Unsolicited context switch between tasks using FPU", "[freertos]
     /* Create two tasks that are on the same core and use the same FPU */
     TaskHandle_t unity_task_handle = xTaskGetCurrentTaskHandle();
     TaskHandle_t tasks[2];
-    ParamsFPU params[2] = {
+    fpu_params_t params[2] = {
         { .negative = false, .main = unity_task_handle },
         { .negative = true,  .main = unity_task_handle },
     };

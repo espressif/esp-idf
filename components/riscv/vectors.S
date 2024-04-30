@@ -168,17 +168,12 @@ _panic_handler:
     /* EXT_ILL CSR should contain the reason for the Illegal Instruction */
     csrrw a0, EXT_ILL_CSR, zero
 
-#if SOC_CPU_HAS_HWLOOP
-    /* Check if the HWLOOP bit is set. */
-    andi a1, a0, EXT_ILL_RSN_HWLP
-    bnez a1, rtos_save_hwlp_coproc
-#endif // SOC_CPU_HAS_HWLOOP
-
+    /* Hardware loop cannot be treated lazily, so we should never end here if a HWLP instruction is used */
 #if SOC_CPU_HAS_PIE
-    /* Check if the HWLOOP bit is set. */
+    /* Check if the PIE bit is set. */
     andi a1, a0, EXT_ILL_RSN_PIE
     bnez a1, rtos_save_pie_coproc
-#endif // SOC_CPU_HAS_HWLOOP
+#endif /* SOC_CPU_HAS_PIE */
 
 #if SOC_CPU_HAS_FPU
     /* Check if the FPU bit is set. When targets have the FPU reason bug (SOC_CPU_HAS_FPU_EXT_ILL_BUG),

@@ -21,23 +21,24 @@
  */
 #if SOC_CPU_HAS_PIE
 
-static void use_pie(uint32_t a[4], uint32_t b[4])
-{
-    asm volatile("esp.vld.128.ip q0, %0, 0\n"
-                 "esp.vld.128.ip q1, %2, 0\n"
-                 "esp.vadd.u32 q2, q0, q1\n"
-                 "esp.vst.128.ip q2, %0, 0\n"
-                 : "=r"(a) : "r"(a), "r"(b));
-}
+/**
+ * @brief Performs the signed sum of two 4-word vectors using the PIE.
+ *
+ * @param a First vector
+ * @param b Second vector
+ * @param dst Destination to store the sum
+ */
+void pie_vector_unsigned_add(const uint32_t a[4], const uint32_t b[4], uint32_t dst[4]);
 
 static void other_task(void* arg)
 {
     uint32_t a[4] = { 1, 2, 3, 4};
     uint32_t b[4] = { 42, 43, 44, 45};
+    uint32_t dst[4] = { 0 };
     const TaskHandle_t main_task = (TaskHandle_t) arg;
 
     /* This task must also use the PIE coprocessor to force a PIE context flush on the main task */
-    use_pie(a, b);
+    pie_vector_unsigned_add(a, b, dst);
 
     xTaskNotifyGive(main_task);
     vTaskDelete(NULL);
@@ -48,6 +49,7 @@ TEST_CASE("PIE: Context save does not affect stack watermark", "[freertos]")
     /* Setup some random values */
     uint32_t a[4] = { 0x3f00ffff, 0xffe10045, 0xffe10096, 0x42434546};
     uint32_t b[4] = { 0x42, 0xbb43, 0x6644, 0x845};
+    uint32_t dst[4] = { 0 };
 
     TaskHandle_t pvCreatedTask;
     /* Force the FreeRTOS port layer to store a PIE context in the current task.
@@ -59,7 +61,7 @@ TEST_CASE("PIE: Context save does not affect stack watermark", "[freertos]")
     const UBaseType_t before_watermark = uxTaskGetStackHighWaterMark(current_handle);
 
     /* Use the PIE unit, the context will NOT be flushed until another task starts using it */
-    use_pie(a, b);
+    pie_vector_unsigned_add(a, b, dst);
 
     xTaskCreatePinnedToCore(other_task,
                             "OtherTask",
