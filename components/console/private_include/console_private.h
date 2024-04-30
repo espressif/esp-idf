@@ -47,5 +47,5 @@ void esp_console_repl_task(void *args);
 esp_err_t esp_console_common_init(size_t max_cmdline_length, esp_console_repl_com_t *repl_com);
 esp_err_t esp_console_setup_prompt(const char *prompt, esp_console_repl_com_t *repl_com);
 esp_err_t esp_console_setup_history(const char *history_path,
-        uint32_t max_history_len,
-        esp_console_repl_com_t *repl_com);
+                                    uint32_t max_history_len,
+                                    esp_console_repl_com_t *repl_com);

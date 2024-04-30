@@ -78,7 +78,7 @@ typedef struct {
  */
 typedef struct {
     int channel;     //!< UART channel number (count from zero)
-    int baud_rate;   //!< Comunication baud rate
+    int baud_rate;   //!< Communication baud rate
     int tx_gpio_num; //!< GPIO number for TX path, -1 means using default one
     int rx_gpio_num; //!< GPIO number for RX path, -1 means using default one
 } esp_console_dev_uart_config_t;
