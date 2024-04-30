@@ -20,31 +20,6 @@ typedef struct {
 } intr_desc_t;
 
 
-/**
- * @brief Reserve the interrupts on the core where Bluetooth will run.
- * The macro CONFIG_BT_CTRL_PINNED_TO_CORE is only defined if Bluetooth controller is enabled.
- * It is set to the core where it will run.
- */
-#ifdef CONFIG_BT_CTRL_PINNED_TO_CORE
-    #if CONFIG_BT_CTRL_PINNED_TO_CORE == 0
-        #define CORE_0_INTERRUPT_5  ESP_CPU_INTR_DESC_FLAG_RESVD
-        #define CORE_1_INTERRUPT_5  0
-        #define CORE_0_INTERRUPT_8  ESP_CPU_INTR_DESC_FLAG_RESVD
-        #define CORE_1_INTERRUPT_8  0
-    #elif CONFIG_BT_CTRL_PINNED_TO_CORE == 1
-        #define CORE_0_INTERRUPT_5  0
-        #define CORE_1_INTERRUPT_5  ESP_CPU_INTR_DESC_FLAG_RESVD
-        #define CORE_0_INTERRUPT_8  0
-        #define CORE_1_INTERRUPT_8  ESP_CPU_INTR_DESC_FLAG_RESVD
-    #endif
-#else // Bluetooth not enabled
-    #define CORE_0_INTERRUPT_5  0
-    #define CORE_1_INTERRUPT_5  0
-    #define CORE_0_INTERRUPT_8  0
-    #define CORE_1_INTERRUPT_8  0
-#endif
-
-
 const static intr_desc_t intr_desc_table [SOC_CPU_INTR_NUM] = {
     /* Interrupt 0 reserved for WMAC (Wifi) */
 #if CONFIG_ESP_WIFI_TASK_PINNED_TO_CORE_0
@@ -57,12 +32,10 @@ const static intr_desc_t intr_desc_table [SOC_CPU_INTR_NUM] = {
     [3] = { 1, ESP_CPU_INTR_TYPE_LEVEL,  { 0,                              0                               } },
     /* Interrupt 4 reserved for WBB */
     [4] = { 1, ESP_CPU_INTR_TYPE_LEVEL,  { ESP_CPU_INTR_DESC_FLAG_RESVD,   0                               } },
-    /* Interrupt 5 reserved for BT/BLE Controller */
-    [5] = { 1, ESP_CPU_INTR_TYPE_LEVEL,  { CORE_0_INTERRUPT_5,             CORE_1_INTERRUPT_5              } },
+    [5] = { 1, ESP_CPU_INTR_TYPE_LEVEL,  { 0,                              0                               } },
     [6] = { 1, ESP_CPU_INTR_TYPE_NA,     { ESP_CPU_INTR_DESC_FLAG_SPECIAL, ESP_CPU_INTR_DESC_FLAG_SPECIAL  } },
     [7] = { 1, ESP_CPU_INTR_TYPE_NA,     { ESP_CPU_INTR_DESC_FLAG_SPECIAL, ESP_CPU_INTR_DESC_FLAG_SPECIAL  } },
-    /* Interrupt 8 reserved for BT/BLE Controller */
-    [8] = { 1, ESP_CPU_INTR_TYPE_LEVEL,  { CORE_0_INTERRUPT_8,             CORE_1_INTERRUPT_8              } },
+    [8] = { 1, ESP_CPU_INTR_TYPE_LEVEL,  { 0,                              0                               } },
     [9] = { 1, ESP_CPU_INTR_TYPE_LEVEL,  { 0,                              0                               } },
     [10] = { 1, ESP_CPU_INTR_TYPE_EDGE,  { 0,                              0                               } },
     [11] = { 3, ESP_CPU_INTR_TYPE_NA,    { ESP_CPU_INTR_DESC_FLAG_SPECIAL, ESP_CPU_INTR_DESC_FLAG_SPECIAL  } },

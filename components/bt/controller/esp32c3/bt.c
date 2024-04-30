@@ -115,7 +115,7 @@ do{\
 } while(0)
 
 #define OSI_FUNCS_TIME_BLOCKING  0xffffffff
-#define OSI_VERSION              0x00010008
+#define OSI_VERSION              0x00010009
 #define OSI_MAGIC_VALUE          0xFADEBEAD
 
 /* Types definition
@@ -142,15 +142,24 @@ typedef struct {
 
 typedef void (* osi_intr_handler)(void);
 
+typedef struct {
+    int source;               /*!< ISR source */
+    int flags;                /*!< ISR alloc flag */
+    void (*fn)(void *);       /*!< ISR function */
+    void *arg;                /*!< ISR function args*/
+    intr_handle_t *handle;    /*!< ISR handle */
+    esp_err_t ret;
+} btdm_isr_alloc_t;
+
 /* OSI function */
 struct osi_funcs_t {
     uint32_t _magic;
     uint32_t _version;
-    void (*_interrupt_set)(int cpu_no, int intr_source, int interrupt_no, int interrpt_prio);
-    void (*_interrupt_clear)(int interrupt_source, int interrupt_no);
-    void (*_interrupt_handler_set)(int interrupt_no, intr_handler_t fn, void *arg);
-    void (*_interrupt_disable)(void);
-    void (*_interrupt_restore)(void);
+    int (* _interrupt_alloc)(int cpu_id, int source, intr_handler_t handler, void *arg, void **ret_handle);
+    int (* _interrupt_free)(void *handle);
+    void (*_interrupt_handler_set_rsv)(int interrupt_no, intr_handler_t fn, void *arg);
+    void (*_global_intr_disable)(void);
+    void (*_global_intr_restore)(void);
     void (*_task_yield)(void);
     void (*_task_yield_from_isr)(void);
     void *(*_semphr_create)(uint32_t max, uint32_t init);
@@ -195,8 +204,8 @@ struct osi_funcs_t {
     uint32_t (* _coex_schm_interval_get)(void);
     uint8_t (* _coex_schm_curr_period_get)(void);
     void *(* _coex_schm_curr_phase_get)(void);
-    void (* _interrupt_on)(int intr_num);
-    void (* _interrupt_off)(int intr_num);
+    int (* _interrupt_enable)(void *handle);
+    int (* _interrupt_disable)(void *handle);
     void (* _esp_hw_power_down)(void);
     void (* _esp_hw_power_up)(void);
     void (* _ets_backup_dma_copy)(uint32_t reg, uint32_t mem_addr, uint32_t num, bool to_rem);
@@ -277,11 +286,10 @@ extern uint32_t _bt_controller_data_end;
 /* Local Function Declare
  *********************************************************************
  */
-static void interrupt_set_wrapper(int cpu_no, int intr_source, int intr_num, int intr_prio);
-static void interrupt_clear_wrapper(int intr_source, int intr_num);
-static void interrupt_handler_set_wrapper(int n, intr_handler_t fn, void *arg);
-static void interrupt_disable(void);
-static void interrupt_restore(void);
+static int interrupt_alloc_wrapper(int cpu_id, int source, intr_handler_t handler, void *arg, void **ret_handle);
+static int interrupt_free_wrapper(void *handle);
+static void global_interrupt_disable(void);
+static void global_interrupt_restore(void);
 static void task_yield_from_isr(void);
 static void *semphr_create_wrapper(uint32_t max, uint32_t init);
 static void semphr_delete_wrapper(void *semphr);
@@ -319,8 +327,8 @@ static void coex_schm_status_bit_clear_wrapper(uint32_t type, uint32_t status);
 static uint32_t coex_schm_interval_get_wrapper(void);
 static uint8_t coex_schm_curr_period_get_wrapper(void);
 static void * coex_schm_curr_phase_get_wrapper(void);
-static void interrupt_on_wrapper(int intr_num);
-static void interrupt_off_wrapper(int intr_num);
+static int interrupt_enable_wrapper(void *handle);
+static int interrupt_disable_wrapper(void *handle);
 static void btdm_hw_mac_power_up_wrapper(void);
 static void btdm_hw_mac_power_down_wrapper(void);
 static void btdm_backup_dma_copy_wrapper(uint32_t reg, uint32_t mem_addr, uint32_t num,  bool to_mem);
@@ -341,11 +349,11 @@ static void bt_controller_deinit_internal(void);
 static const struct osi_funcs_t osi_funcs_ro = {
     ._magic = OSI_MAGIC_VALUE,
     ._version = OSI_VERSION,
-    ._interrupt_set = interrupt_set_wrapper,
-    ._interrupt_clear = interrupt_clear_wrapper,
-    ._interrupt_handler_set = interrupt_handler_set_wrapper,
-    ._interrupt_disable = interrupt_disable,
-    ._interrupt_restore = interrupt_restore,
+    ._interrupt_alloc = interrupt_alloc_wrapper,
+    ._interrupt_free = interrupt_free_wrapper,
+    ._interrupt_handler_set_rsv = NULL,
+    ._global_intr_disable = global_interrupt_disable,
+    ._global_intr_restore = global_interrupt_restore,
     ._task_yield = vPortYield,
     ._task_yield_from_isr = task_yield_from_isr,
     ._semphr_create = semphr_create_wrapper,
@@ -390,8 +398,8 @@ static const struct osi_funcs_t osi_funcs_ro = {
     ._coex_schm_interval_get = coex_schm_interval_get_wrapper,
     ._coex_schm_curr_period_get = coex_schm_curr_period_get_wrapper,
     ._coex_schm_curr_phase_get = coex_schm_curr_phase_get_wrapper,
-    ._interrupt_on = interrupt_on_wrapper,
-    ._interrupt_off = interrupt_off_wrapper,
+    ._interrupt_enable = interrupt_enable_wrapper,
+    ._interrupt_disable = interrupt_disable_wrapper,
     ._esp_hw_power_down = btdm_hw_mac_power_down_wrapper,
     ._esp_hw_power_up = btdm_hw_mac_power_up_wrapper,
     ._ets_backup_dma_copy = btdm_backup_dma_copy_wrapper,
@@ -478,35 +486,44 @@ static inline void esp_bt_power_domain_off(void)
     esp_wifi_bt_power_domain_off();
 }
 
-static void interrupt_set_wrapper(int cpu_no, int intr_source, int intr_num, int intr_prio)
+static void btdm_intr_alloc(void *arg)
 {
-    esp_rom_route_intr_matrix(cpu_no, intr_source, intr_num);
-#if __riscv
-    esprv_int_set_priority(intr_num, intr_prio);
-    esprv_int_set_type(intr_num, 0);
+    btdm_isr_alloc_t *p = arg;
+    p->ret = esp_intr_alloc(p->source, p->flags, p->fn, p->arg, p->handle);
+}
+
+static int interrupt_alloc_wrapper(int cpu_id, int source, intr_handler_t handler, void *arg, void **ret_handle)
+{
+    btdm_isr_alloc_t p;
+    p.source = source;
+    p.flags = ESP_INTR_FLAG_LEVEL3 | ESP_INTR_FLAG_IRAM;
+    p.fn = handler;
+    p.arg = arg;
+    p.handle = (intr_handle_t *)ret_handle;
+#if CONFIG_FREERTOS_UNICORE
+    btdm_intr_alloc(&p);
+#else
+    esp_ipc_call_blocking(cpu_id, btdm_intr_alloc, &p);
 #endif
+    return p.ret;
 }
 
-static void interrupt_clear_wrapper(int intr_source, int intr_num)
+static int interrupt_free_wrapper(void *handle)
 {
+    return esp_intr_free((intr_handle_t)handle);
 }
 
-static void interrupt_handler_set_wrapper(int n, intr_handler_t fn, void *arg)
+static int interrupt_enable_wrapper(void *handle)
 {
-    esp_cpu_intr_set_handler(n, fn, arg);
+    return esp_intr_enable((intr_handle_t)handle);
 }
 
-static void interrupt_on_wrapper(int intr_num)
+static int interrupt_disable_wrapper(void *handle)
 {
-    esp_cpu_intr_enable(1 << intr_num);
+    return esp_intr_disable((intr_handle_t)handle);
 }
 
-static void interrupt_off_wrapper(int intr_num)
-{
-    esp_cpu_intr_disable(1<<intr_num);
-}
-
-static void IRAM_ATTR interrupt_disable(void)
+static void IRAM_ATTR global_interrupt_disable(void)
 {
     if (xPortInIsrContext()) {
         portENTER_CRITICAL_ISR(&global_int_mux);
@@ -515,7 +532,7 @@ static void IRAM_ATTR interrupt_disable(void)
     }
 }
 
-static void IRAM_ATTR interrupt_restore(void)
+static void IRAM_ATTR global_interrupt_restore(void)
 {
     if (xPortInIsrContext()) {
         portEXIT_CRITICAL_ISR(&global_int_mux);
