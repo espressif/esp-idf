@@ -135,3 +135,5 @@ API Reference
 -------------
 
 .. include-build-file:: inc/esp_log.inc
+.. include-build-file:: inc/esp_log_level.inc
+.. include-build-file:: inc/esp_log_buffer.inc

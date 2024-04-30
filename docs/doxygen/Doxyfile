@@ -267,6 +267,8 @@ INPUT = \
     $(PROJECT_PATH)/components/ieee802154/include/esp_ieee802154_types.h \
     $(PROJECT_PATH)/components/ieee802154/include/esp_ieee802154.h \
     $(PROJECT_PATH)/components/log/include/esp_log.h \
+    $(PROJECT_PATH)/components/log/include/esp_log_level.h \
+    $(PROJECT_PATH)/components/log/include/esp_log_buffer.h \
     $(PROJECT_PATH)/components/lwip/include/apps/esp_sntp.h \
     $(PROJECT_PATH)/components/lwip/include/apps/ping/ping_sock.h \
     $(PROJECT_PATH)/components/mbedtls/esp_crt_bundle/include/esp_crt_bundle.h \

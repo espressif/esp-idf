@@ -10,6 +10,7 @@
 #include <regex>
 #include <iostream>
 #include "esp_log.h"
+#include "esp_private/log_util.h"
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -24,6 +25,7 @@ public:
     BasicLogFixture(esp_log_level_t log_level = ESP_LOG_VERBOSE)
     {
         std::memset(print_buffer, 0, BUFFER_SIZE);
+        buffer_idx = 0;
         esp_log_level_set("*", log_level);
     }
 
@@ -40,11 +42,13 @@ public:
     void reset_buffer()
     {
         std::memset(print_buffer, 0, BUFFER_SIZE);
+        buffer_idx = 0;
         additional_reset();
     }
 
 protected:
     char print_buffer [BUFFER_SIZE];
+    int buffer_idx;
 
     virtual void additional_reset() { }
 };
@@ -75,7 +79,9 @@ private:
 
     int print_to_buffer(const char *format, va_list args)
     {
-        int ret = vsnprintf(print_buffer, BUFFER_SIZE, format, args);
+        // Added support for multi-line log, for example ESP_LOG_BUFFER...
+        int ret = vsnprintf(&print_buffer[buffer_idx], BUFFER_SIZE, format, args);
+        buffer_idx += ret;
         return ret;
     }
 
@@ -215,6 +221,19 @@ TEST_CASE("log bytes > 127")
     CHECK(regex_search(fix.get_print_buffer_string(), buffer_regex));
 }
 
+TEST_CASE("log buffer char")
+{
+    PrintFixture fix(ESP_LOG_INFO);
+    const char g[] = "The way to get started is to quit talking and begin doing. - Walt Disney";
+    const std::regex buffer_regex("I \\([0-9]*\\) test: The way to get s.*\n\
+.*I \\([0-9]*\\) test: tarted is to qui.*\n\
+.*I \\([0-9]*\\) test: t talking and be.*\n\
+.*I \\([0-9]*\\) test: gin doing. - Wal.*\n\
+.*I \\([0-9]*\\) test: t Disney", std::regex::ECMAScript);
+    ESP_LOG_BUFFER_CHAR(TEST_TAG, g, sizeof(g));
+    CHECK(regex_search(fix.get_print_buffer_string(), buffer_regex) == true);
+}
+
 TEST_CASE("log buffer dump")
 {
     PrintFixture fix(ESP_LOG_INFO);
@@ -302,4 +321,52 @@ TEST_CASE("changing early log level")
 
     ESP_EARLY_LOGI(TEST_TAG, "must indeed be printed");
     CHECK(regex_search(fix.get_print_buffer_string(), test_print) == true);
+}
+
+TEST_CASE("esp_log_util_cvt")
+{
+    char buf[128];
+    CHECK(esp_log_util_cvt_dec(123456, 0, buf) == 6);
+    CHECK(strcmp(buf, "123456") == 0);
+    memset(buf, 0, sizeof(buf));
+
+    CHECK(esp_log_util_cvt_dec(123456, 2, buf) == 6);
+    CHECK(strcmp(buf, "123456") == 0);
+    memset(buf, 0, sizeof(buf));
+
+    CHECK(esp_log_util_cvt_dec(123456, 8, buf) == 8);
+    CHECK(strcmp(buf, "00123456") == 0);
+    memset(buf, 0, sizeof(buf));
+
+    CHECK(esp_log_util_cvt_dec(1, 0, buf) == 1);
+    CHECK(strcmp(buf, "1") == 0);
+    memset(buf, 0, sizeof(buf));
+
+    CHECK(esp_log_util_cvt_dec(0, 0, buf) == 1);
+    CHECK(strcmp(buf, "0") == 0);
+    memset(buf, 0, sizeof(buf));
+
+    CHECK(esp_log_util_cvt_dec(0, 4, buf) == 4);
+    CHECK(strcmp(buf, "0000") == 0);
+    memset(buf, 0, sizeof(buf));
+
+    CHECK(esp_log_util_cvt_dec(1, 2, buf) == 2);
+    CHECK(strcmp(buf, "01") == 0);
+    memset(buf, 0, sizeof(buf));
+
+    CHECK(esp_log_util_cvt_hex(0x73f, -1, buf) == 3);
+    CHECK(strcmp(buf, "73f") == 0);
+    memset(buf, 0, sizeof(buf));
+
+    CHECK(esp_log_util_cvt_hex(0x73f, 2, buf) == 3);
+    CHECK(strcmp(buf, "73f") == 0);
+    memset(buf, 0, sizeof(buf));
+
+    CHECK(esp_log_util_cvt_hex(0x73f, 3, buf) == 3);
+    CHECK(strcmp(buf, "73f") == 0);
+    memset(buf, 0, sizeof(buf));
+
+    CHECK(esp_log_util_cvt_hex(0x73f, 4, buf) == 4);
+    CHECK(strcmp(buf, "073f") == 0);
+    memset(buf, 0, sizeof(buf));
 }
