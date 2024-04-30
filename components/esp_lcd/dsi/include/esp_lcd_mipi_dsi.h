@@ -21,7 +21,7 @@ extern "C" {
  */
 typedef struct {
     int bus_id;                              /*!< Select which DSI controller, index from 0 */
-    uint8_t num_data_lanes;                  /*!< Number of data lanes */
+    uint8_t num_data_lanes;                  /*!< Number of data lanes, if set to 0, the driver will fallback to use maximum number of lanes */
     mipi_dsi_phy_clock_source_t phy_clk_src; /*!< MIPI DSI PHY clock source */
     uint32_t lane_bit_rate_mbps;             /*!< Lane bit rate in Mbps */
 } esp_lcd_dsi_bus_config_t;
