@@ -419,9 +419,17 @@ config SOC_CPU_HAS_FPU_EXT_ILL_BUG
     bool
     default y
 
+config SOC_CPU_HAS_HWLOOP
+    bool
+    default y
+
+config SOC_CPU_HAS_PIE
+    bool
+    default y
+
 config SOC_CPU_COPROC_NUM
     int
-    default 2
+    default 3
 
 config SOC_HP_CPU_HAS_MULTIPLE_CORES
     bool

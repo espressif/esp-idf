@@ -160,7 +160,9 @@
 #define SOC_BRANCH_PREDICTOR_SUPPORTED  1
 #define SOC_CPU_HAS_FPU                 1
 #define SOC_CPU_HAS_FPU_EXT_ILL_BUG     1       // EXT_ILL CSR doesn't support FLW/FSW
-#define SOC_CPU_COPROC_NUM              2
+#define SOC_CPU_HAS_HWLOOP              1
+#define SOC_CPU_HAS_PIE                 1
+#define SOC_CPU_COPROC_NUM              3
 #define SOC_HP_CPU_HAS_MULTIPLE_CORES   1   // Convenience boolean macro used to determine if a target has multiple cores.
 
 #define SOC_CPU_BREAKPOINTS_NUM             3

@@ -13,27 +13,45 @@
 #include "unity.h"
 #include "test_utils.h"
 
-#if SOC_CPU_HAS_FPU
+#if SOC_CPU_HAS_PIE
+
+/**
+ * @brief Performs the sum of two 4-word vectors using the PIE.
+ *
+ * @param a First vector
+ * @param b Second vector
+ * @param dst Destination to store the sum
+ *
+ * @returns a will store a + b
+ */
+static void pie_vector_add(const int32_t a[4], const int32_t b[4], int32_t dst[4])
+{
+    asm volatile("esp.vld.128.ip q0, a0, 0\n"
+                 "esp.vld.128.ip q1, a1, 0\n"
+                 "esp.vadd.s32 q2, q0, q1\n"
+                 "esp.vst.128.ip q2, a2, 0\n"
+                 ::);
+}
 
 /* ------------------------------------------------------------------------------------------------------------------ */
 
 /*
-Test FPU usage from a task context
+Test PIE usage from a task context
 
 Purpose:
-    - Test that the FPU can be used from a task context
-    - Test that FPU context is properly saved and restored
-    - Test that FPU context is cleaned up on task deletion by running multiple iterations
+    - Test that the PIE can be used from a task context
+    - Test that PIE context is properly saved and restored
+    - Test that PIE context is cleaned up on task deletion by running multiple iterations
 Procedure:
     - Create TEST_PINNED_NUM_TASKS tasks pinned to each core
     - Start each task
-    - Each task updates a float variable and then blocks (to allow other tasks to run thus forcing the an FPU context
+    - Each task updates a float variable and then blocks (to allow other tasks to run thus forcing the a PIE context
       save and restore).
     - Delete each task
     - Repeat test for TEST_PINNED_NUM_ITERS iterations
 Expected:
     - Correct float value calculated by each task
-    - Each task cleans up its FPU context on deletion
+    - Each task cleans up its PIE context on deletion
 */
 
 #define TEST_PINNED_NUM_TASKS       3
@@ -43,26 +61,18 @@ static void pinned_task(void *arg)
 {
     ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
 
-    /*
-    Use the FPU
-    - We test using a calculation that will cause a change in mantissa and exponent for extra thoroughness
-    - cosf(0.0f) should return 1.0f, thus we are simply doubling test_float every iteration.
-    - Therefore, we should end up with (0.01) * (2^8) = 2.56 at the end of the loop
-    */
-    volatile float test_float = 0.01f;
-    for (int i = 0; i < 8; i++) {
-        test_float = test_float * 2.0f * cosf(0.0f);
-        vTaskDelay(1);  // Block to cause a context switch, forcing the FPU context to be saved
-    }
-    // We allow a 0.1% delta on the final result in case of any loss of precision from floating point calculations
-    TEST_ASSERT_FLOAT_WITHIN(0.00256f, 2.56f, test_float);
+    int32_t a[4] = { 42, 42, 42, 42};
+    int32_t b[4] = { 10, 20, 30, 40 };
+    int32_t dst[4] = { 0 };
+
+    pie_vector_add(a, b, dst);
 
     // Indicate done wand wait to be deleted
     xSemaphoreGive((SemaphoreHandle_t)arg);
     vTaskSuspend(NULL);
 }
 
-TEST_CASE("FPU: Usage in task", "[freertos]")
+TEST_CASE("PIE: Usage in task", "[freertos]")
 {
     SemaphoreHandle_t done_sem = xSemaphoreCreateCounting(CONFIG_FREERTOS_NUMBER_OF_CORES * TEST_PINNED_NUM_TASKS, 0);
     TEST_ASSERT_NOT_EQUAL(NULL, done_sem);
@@ -105,22 +115,22 @@ TEST_CASE("FPU: Usage in task", "[freertos]")
 /* ------------------------------------------------------------------------------------------------------------------ */
 
 /*
-Test FPU usage will pin an unpinned task
+Test PIE usage will pin an unpinned task
 
 Purpose:
-    - Test that unpinned tasks are automatically pinned to the current core on the task's first use of the FPU
-    - Test that FPU context is cleaned up on task deletion by running multiple iterations
+    - Test that unpinned tasks are automatically pinned to the current core on the task's first use of the PIE
+    - Test that PIE context is cleaned up on task deletion by running multiple iterations
 Procedure:
     - Create an unpinned task
     - Task disables scheduling/preemption to ensure that it does not switch cores
-    - Task uses the FPU
-    - Task checks its core affinity after FPU usage
+    - Task uses the PIE
+    - Task checks its core affinity after PIE usage
     - Task deletes itself
     - Repeat test for TEST_UNPINNED_NUM_ITERS iterations
 Expected:
-    - Task remains unpinned until its first usage of the FPU
-    - The task becomes pinned to the current core after first use of the FPU
-    - Each task cleans up its FPU context on deletion
+    - Task remains unpinned until its first usage of the PIE
+    - The task becomes pinned to the current core after first use of the PIE
+    - Each task cleans up its PIE context on deletion
 */
 
 #if CONFIG_FREERTOS_NUMBER_OF_CORES > 1
@@ -145,18 +155,15 @@ static void unpinned_task(void *arg)
 #endif
 #endif // !CONFIG_FREERTOS_UNICORE
 
-    /*
-    Use the FPU
-    - We test using a calculation that will cause a change in mantissa and exponent for extra thoroughness
-    - cosf(0.0f) should return 1.0f, thus we are simply doubling test_float every iteration.
-    - Therefore, we should end up with (0.01) * (2^8) = 2.56 at the end of the loop
-    */
-    volatile float test_float = 0.01f;
-    for (int i = 0; i < 8; i++) {
-        test_float = test_float * 2.0f * cosf(0.0f);
+    int32_t a[4] = { 0, 1, 2, 3};
+    int32_t b[4] = { 111, 222, 333, 444 };
+    int32_t dst[4] = { 0 };
+
+    pie_vector_add(a, b, dst);
+
+    for (int i = 0; i < sizeof(a) / sizeof(uint32_t); i++) {
+        TEST_ASSERT_EQUAL(dst[i], a[i] + b[i]);
     }
-    // We allow a 0.1% delta on the final result in case of any loss of precision from floating point calculations
-    TEST_ASSERT_FLOAT_WITHIN(0.00256f, 2.56f, test_float);
 
 #if !CONFIG_FREERTOS_UNICORE
 #if CONFIG_FREERTOS_SMP
@@ -177,7 +184,7 @@ static void unpinned_task(void *arg)
     vTaskDelete(NULL);
 }
 
-TEST_CASE("FPU: Usage in unpinned task", "[freertos]")
+TEST_CASE("PIE: Usage in unpinned task", "[freertos]")
 {
     TaskHandle_t unity_task_handle = xTaskGetCurrentTaskHandle();
     for (int iter = 0; iter < TEST_UNPINNED_NUM_ITERS; iter++) {
@@ -190,63 +197,57 @@ TEST_CASE("FPU: Usage in unpinned task", "[freertos]")
 }
 
 typedef struct {
-    bool negative;
+    int32_t cst;
     TaskHandle_t main;
-} ParamsFPU;
+} ParamsPIE;
 
 /**
- * @brief Function performing some simple calculation using several FPU registers.
- *        The goal is to be preempted by a task that also uses the FPU on the same core.
+ * @brief Function performing some simple calculation using the PIE coprocessor.
+ *        The goal is to be preempted by a task that also uses the PIE on the same core.
  */
-void fpu_calculation(void* arg)
+void pie_calculation(void* arg)
 {
-    ParamsFPU* p = (ParamsFPU*) arg;
-    const bool negative = p->negative;
-    const float init = negative ? -1.f : 1.f;
-    float f = init;
+    ParamsPIE* p = (ParamsPIE*) arg;
+    const int32_t cst = p->cst;
+    int32_t a[4] = { cst, cst, cst, cst };
+    int32_t dst[4] = { 0 };
 
     for (int i = 0; i < 10; i++) {
-        /* The following calculation doesn't really have any meaning, we try to use several FPU registers and operations */
-        float delta = negative ? -1.1f : 1.1f;
-        for (int i = 0; i < 1000; i++) {
-            f += delta;
-            delta += negative ? -0.1f : 0.1f;
-        }
+        pie_vector_add(a, dst, dst);
+
         /* Give some time to the other to interrupt us before checking `f` value */
         esp_rom_delay_us(1000);
 
-        /**
-         * If the FPU context was not saved properly by FreeRTOS, our value `f` will not have to correct sign!
-         * It'll have the sign of the other tasks' `f` value.
-         * Use assert to make sure the sign is correct. Using TEST_ASSERT_TRUE triggers a stack overflow.
-         */
-        assert((negative && f < 0.0f) || (!negative && f > 0.0f));
-        f = init;
+        /* Using TEST_ASSERT_TRUE triggers a stack overflow, make sure the sign is still correct */
+        assert((dst[0] < 0 && cst < 0) || (dst[0] > 0 && cst > 0));
 
-        /* Give the hand back to FreeRTOS to avoid any watchdog */
+        /* Give the hand back to FreeRTOS to avoid any watchdog error */
         vTaskDelay(2);
     }
+
+    /* Make sure the result is correct */
+    assert((dst[0] * cst == 10));
 
     xTaskNotifyGive(p->main);
     vTaskDelete(NULL);
 }
 
-TEST_CASE("FPU: Unsolicited context switch between tasks using FPU", "[freertos]")
+TEST_CASE("PIE: Unsolicited context switch between tasks using the PIE", "[freertos]")
 {
     /* Create two tasks that are on the same core and use the same FPU */
     TaskHandle_t unity_task_handle = xTaskGetCurrentTaskHandle();
     TaskHandle_t tasks[2];
-    ParamsFPU params[2] = {
-        { .negative = false, .main = unity_task_handle },
-        { .negative = true,  .main = unity_task_handle },
+    ParamsPIE params[2] = {
+        { .cst =  1, .main = unity_task_handle },
+        { .cst = -1, .main = unity_task_handle },
     };
 
-    xTaskCreatePinnedToCore(fpu_calculation, "Task1", 2048, params + 0, UNITY_FREERTOS_PRIORITY + 1, &tasks[0], 1);
-    xTaskCreatePinnedToCore(fpu_calculation, "Task2", 2048, params + 1, UNITY_FREERTOS_PRIORITY + 1, &tasks[1], 1);
+    xTaskCreatePinnedToCore(pie_calculation, "Task1", 2048, params + 0, UNITY_FREERTOS_PRIORITY + 1, &tasks[0], 1);
+    xTaskCreatePinnedToCore(pie_calculation, "Task2", 2048, params + 1, UNITY_FREERTOS_PRIORITY + 1, &tasks[1], 1);
 
     ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
     ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
 }
 
 #endif // CONFIG_FREERTOS_NUMBER_OF_CORES > 1
-#endif // SOC_CPU_HAS_FPU
+#endif // SOC_CPU_HAS_PIE
