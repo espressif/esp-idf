@@ -230,7 +230,7 @@ FORCE_INLINE_ATTR UBaseType_t uxInitialiseStackTLS(UBaseType_t uxStackPointer, u
 #if CONFIG_FREERTOS_TASK_FUNCTION_WRAPPER
 static void vPortTaskWrapper(TaskFunction_t pxCode, void *pvParameters)
 {
-    __asm__ volatile(".cfi_undefined ra");  // tell to debugger that it's outermost (inital) frame
+    __asm__ volatile(".cfi_undefined ra");  // tell to debugger that it's outermost (initial) frame
     extern void __attribute__((noreturn)) panic_abort(const char *details);
     static char DRAM_ATTR msg[80] = "FreeRTOS: FreeRTOS Task \"\0";
     pxCode(pvParameters);
@@ -356,7 +356,7 @@ StackType_t *pxPortInitialiseStack(StackType_t *pxTopOfStack, TaskFunction_t pxC
     HIGH ADDRESS
     |---------------------------| <- pxTopOfStack on entry
     | TLS Variables             |
-    | ------------------------- | <- Start of useable stack
+    | ------------------------- | <- Start of usable stack
     | Starting stack frame      |
     | ------------------------- | <- pxTopOfStack on return (which is the tasks current SP)
     |             |             |
@@ -374,7 +374,7 @@ StackType_t *pxPortInitialiseStack(StackType_t *pxTopOfStack, TaskFunction_t pxC
     | Coproc. Save Area         | <- RvCoprocSaveArea
     | ------------------------- |
     | TLS Variables             |
-    | ------------------------- | <- Start of useable stack
+    | ------------------------- | <- Start of usable stack
     | Starting stack frame      |
     | ------------------------- | <- pxTopOfStack on return (which is the tasks current SP)
     |             |             |
@@ -430,7 +430,7 @@ BaseType_t xPortInIsrContext(void)
     /* Disable interrupts to fetch the coreID atomically */
     irqStatus = portSET_INTERRUPT_MASK_FROM_ISR();
 
-    /* Return the interrupt nexting counter for this core */
+    /* Return the interrupt nesting counter for this core */
     ret = port_uxInterruptNesting[xPortGetCoreID()];
 
     /* Restore interrupts */
@@ -445,7 +445,7 @@ BaseType_t xPortInIsrContext(void)
 
 BaseType_t IRAM_ATTR xPortInterruptedFromISRContext(void)
 {
-    /* Return the interrupt nexting counter for this core */
+    /* Return the interrupt nesting counter for this core */
     return port_uxInterruptNesting[xPortGetCoreID()];
 }
 
@@ -536,7 +536,7 @@ BaseType_t __attribute__((optimize("-O3"))) xPortEnterCriticalTimeout(portMUX_TY
 void __attribute__((optimize("-O3"))) vPortExitCriticalMultiCore(portMUX_TYPE *mux)
 {
     /* This function may be called in a nested manner. Therefore, we only need
-     * to reenable interrupts if this is the last call to exit the critical. We
+     * to re-enable interrupts if this is the last call to exit the critical. We
      * can use the nesting count to determine whether this is the last exit call.
      */
     spinlock_release(mux);
@@ -787,9 +787,14 @@ RvCoprocSaveArea* pxPortGetCoprocArea(StaticTask_t* task, bool allocate, int cop
     /* Check if coprocessor area is allocated */
     if (allocate && sa->sa_coprocs[coproc] == NULL) {
         const uint32_t coproc_sa_sizes[] = {
-            RV_COPROC0_SIZE, RV_COPROC1_SIZE
+            RV_COPROC0_SIZE, RV_COPROC1_SIZE, RV_COPROC2_SIZE
         };
-        /* The allocator points to a usable part of the stack, use it for the coprocessor */
+        const uint32_t coproc_sa_align[] = {
+            RV_COPROC0_ALIGN, RV_COPROC1_ALIGN, RV_COPROC2_ALIGN
+        };
+        /* The allocator points to a usable part of the stack, use it for the coprocessor.
+         * Align it up to the coprocessor save area requirement */
+        sa->sa_allocator = (sa->sa_allocator + coproc_sa_align[coproc] - 1) & ~(coproc_sa_align[coproc] - 1);
         sa->sa_coprocs[coproc] = (void*) (sa->sa_allocator);
         sa->sa_allocator += coproc_sa_sizes[coproc];
         /* Update the lowest address of the stack to prevent FreeRTOS performing overflow/watermark checks on the coprocessors contexts */
@@ -800,9 +805,9 @@ RvCoprocSaveArea* pxPortGetCoprocArea(StaticTask_t* task, bool allocate, int cop
         if (task_sp <= task->pxDummy6) {
             /* In theory we need to call vApplicationStackOverflowHook to trigger the stack overflow callback,
              * but in practice, since we are already in an exception handler, this won't work, so let's manually
-             * trigger an exception with the previous FPU owner's TCB */
+             * trigger an exception with the previous coprocessor owner's TCB */
             g_panic_abort = true;
-            g_panic_abort_details = (char *) "ERROR: Stack overflow while saving FPU context!\n";
+            g_panic_abort_details = (char *) "ERROR: Stack overflow while saving coprocessor context!\n";
             xt_unhandled_exception(task_sp);
         }
     }
@@ -821,7 +826,8 @@ RvCoprocSaveArea* pxPortGetCoprocArea(StaticTask_t* task, bool allocate, int cop
  * @param coreid    Current core
  * @param coproc    Coprocessor to save context of
  *
- * @returns Coprocessor former owner's save area
+ * @returns Coprocessor former owner's save are, can be NULL is there was no owner yet, can be -1 if
+ *          the former owner is the same as the new owner.
  */
 RvCoprocSaveArea* pxPortUpdateCoprocOwner(int coreid, int coproc, StaticTask_t* owner)
 {
@@ -830,8 +836,11 @@ RvCoprocSaveArea* pxPortUpdateCoprocOwner(int coreid, int coproc, StaticTask_t* 
     StaticTask_t** owner_addr = &port_uxCoprocOwner[ coreid ][ coproc ];
     /* Atomically exchange former owner with the new one */
     StaticTask_t* former = Atomic_SwapPointers_p32((void**) owner_addr, owner);
-    /* Get the save area of former owner */
-    if (former != NULL) {
+    /* Get the save area of former owner. small optimization here, if the former owner is the new owner,
+     * return -1. This will simplify the assembly code while making it faster. */
+    if (former == owner) {
+        sa = (void*) -1;
+    } else if (former != NULL) {
         /* Allocate coprocessor memory if not available yet */
         sa = pxPortGetCoprocArea(former, true, coproc);
     }
