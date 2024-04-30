@@ -706,7 +706,6 @@ static esp_err_t rgb_panel_draw_bitmap(esp_lcd_panel_t *panel, int x_start, int 
 {
     esp_rgb_panel_t *rgb_panel = __containerof(panel, esp_rgb_panel_t, base);
     ESP_RETURN_ON_FALSE(rgb_panel->num_fbs > 0, ESP_ERR_NOT_SUPPORTED, TAG, "no frame buffer installed");
-    assert((x_start < x_end) && (y_start < y_end) && "start position must be smaller than end position");
 
     // check if we need to copy the draw buffer (pointed by the color_data) to the driver's frame buffer
     bool do_copy = false;
@@ -726,18 +725,19 @@ static esp_err_t rgb_panel_draw_bitmap(esp_lcd_panel_t *panel, int x_start, int 
     y_start += rgb_panel->y_gap;
     x_end += rgb_panel->x_gap;
     y_end += rgb_panel->y_gap;
-    // round the boundary
+
+    // clip to boundaries
     int h_res = rgb_panel->timings.h_res;
     int v_res = rgb_panel->timings.v_res;
     if (rgb_panel->rotate_mask & ROTATE_MASK_SWAP_XY) {
-        x_start = MIN(x_start, v_res);
+        x_start = MAX(x_start, 0);
         x_end = MIN(x_end, v_res);
-        y_start = MIN(y_start, h_res);
+        y_start = MAX(y_start, 0);
         y_end = MIN(y_end, h_res);
     } else {
-        x_start = MIN(x_start, h_res);
+        x_start = MAX(x_start, 0);
         x_end = MIN(x_end, h_res);
-        y_start = MIN(y_start, v_res);
+        y_start = MAX(y_start, 0);
         y_end = MIN(y_end, v_res);
     }
 
