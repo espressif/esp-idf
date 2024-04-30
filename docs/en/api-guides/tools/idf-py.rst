@@ -83,7 +83,7 @@ Build the Project: ``build``
 
 This command builds the project found in the current directory. This can involve multiple steps:
 
-  - Create the build directory if needed. The sub-directory ``build`` is used to hold build output, although this can be changed with the ``-B`` option.
+  - Create the build directory if needed. The sub-directory "build" is used to hold build output, although this can be changed with the ``-B`` option.
   - Run CMake_ as necessary to configure the project and generate build files for the main build tool.
   - Run the main build tool (Ninja_ or `GNU Make`). By default, the build tool is automatically detected but it can be explicitly set by passing the ``-G`` option to ``idf.py``.
 
@@ -228,7 +228,7 @@ Global Options
 To list all available root level options, run ``idf.py --help``. To list options that are specific for a subcommand, run ``idf.py <command> --help``, e.g., ``idf.py monitor --help``. Here is a list of some useful options:
 
 - ``-C <dir>`` allows overriding the project directory from the default current working directory.
-- ``-B <dir>`` allows overriding the build directory from the default ``build`` subdirectory of the project directory.
+- ``-B <dir>`` allows overriding the build directory from the default "build" subdirectory of the project directory.
 - ``--ccache`` enables CCache_ when compiling source files if the CCache_ tool is installed. This can dramatically reduce the build time.
 
 .. important::

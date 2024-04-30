@@ -1,5 +1,5 @@
 IDF 前端工具 - ``idf.py``
-**************************************
+**********************************
 
 :link_to_translation:`en:[English]`
 
@@ -83,7 +83,7 @@ ESP-IDF 支持多个目标芯片，运行 ``idf.py --list-targets`` 查看当前
 
 此命令将构建当前目录下的工程，具体步骤如下：
 
-  - 若有需要，创建构建子目录 ``build`` 保存构建输出文件，使用 ``-B`` 选项可改变子目录的路径。
+  - 若有需要，创建构建子目录 "build" 保存构建输出文件，使用 ``-B`` 选项可改变子目录的路径。
   - 必要时运行 CMake_ 配置工程，并为主要构建工具生成构建文件。
   - 运行主要构建工具（Ninja_ 或 ``GNU Make``）。默认情况下，构建工具会完成自动检测，也可通过将 ``-G`` 选项传递给 ``idf.py`` 来显式设置构建工具。
 
@@ -107,7 +107,7 @@ ESP-IDF 支持多个目标芯片，运行 ``idf.py --list-targets`` 查看当前
 
   idf.py fullclean
 
-此命令将删除所有 ``build`` 子目录内容，包括 CMake 配置输出。下次构建时，CMake 将重新配置其输出。注意，此命令将递归删除构建目录下的 *所有* 文件（工程配置将保留），请谨慎使用。
+此命令将删除所有 "build" 子目录内容，包括 CMake 配置输出。下次构建时，CMake 将重新配置其输出。注意，此命令将递归删除构建目录下的 *所有* 文件（工程配置将保留），请谨慎使用。
 
 烧录工程：``flash``
 ------------------------
@@ -119,6 +119,8 @@ ESP-IDF 支持多个目标芯片，运行 ``idf.py --list-targets`` 查看当前
 此命令将在需要时自动构建工程，随后将其烧录到目标芯片。使用 ``-p`` 和 ``-b`` 选项可分别设置串口名称和烧录程序的波特率。
 
 .. note:: 环境变量 ``ESPPORT`` 和 ``ESPBAUD`` 可分别设置 ``-p`` 和 ``-b`` 选项的默认值，在命令行上设置这些选项的参数可覆盖默认值。
+
+``idf.py`` 在内部使用 ``esptool.py`` 的 ``write_flash`` 命令来烧录目标设备。通过 ``--extra-args`` 选项传递额外的参数，并配置烧录过程。例如，要 `写入到外部 SPI flash 芯片 <https://docs.espressif.com/projects/esptool/en/latest/esptool/advanced-options.html#custom-spi-pin-configuration>`_，请使用以下命令： ``idf.py flash --extra-args="--spi-connection <CLK>,<Q>,<D>,<HD>,<CS>"``。要查看所有可用参数，请运行 ``esptool.py write_flash --help`` 或查看 `esptool.py 文档 <https://docs.espressif.com/projects/esptool/en/latest/esptool/index.html>`_。
 
 与 ``build`` 命令类似，使用 ``app``、``bootloader`` 或 ``partition-table`` 参数运行此命令，可选择仅烧录应用程序、引导加载程序或分区表。
 
@@ -210,7 +212,7 @@ ESP-IDF 支持多个目标芯片，运行 ``idf.py --list-targets`` 查看当前
 
   idf.py uf2
 
-此命令将在构建目录中生成一个 UF2（`USB 烧录格式 <https://github.com/microsoft/uf2>`_) 二进制文件 ``uf2.bin``，该文件包含所有烧录目标芯片所必需的二进制文件，即引导加载程序、应用程序和分区表。
+此命令将在构建目录中生成一个 UF2（`USB 烧录格式 <https://github.com/microsoft/uf2>`_）二进制文件 ``uf2.bin``，该文件包含所有烧录目标芯片所必需的二进制文件，即引导加载程序、应用程序和分区表。
 
 在 ESP 芯片上运行 `ESP USB Bridge <https://github.com/espressif/esp-usb-bridge>`_ 项目将创建一个 USB 大容量存储设备，用户可以将生成的 UF2 文件复制到该 USB 设备中，桥接 MCU 将使用该文件来烧录目标 MCU。这一操作十分简单，只需将文件复制（或“拖放”）到文件资源管理器访问的公开磁盘中即可。
 
@@ -226,7 +228,7 @@ ESP-IDF 支持多个目标芯片，运行 ``idf.py --list-targets`` 查看当前
 运行 ``idf.py --help`` 列出所有可用的根级别选项。要列出特定子命令的选项，请运行 ``idf.py <command> --help``，如 ``idf.py monitor --help``。部分常用选项如下：
 
 - ``-C <dir>`` 支持从默认的当前工作目录覆盖工程目录。
-- ``-B <dir>`` 支持从工程目录的默认 ``build`` 子目录覆盖构建目录。
+- ``-B <dir>`` 支持从工程目录的默认 "build" 子目录覆盖构建目录。
 - ``--ccache`` 可以在安装了 CCache_ 工具的前提下，在构建源文件时启用 CCache_，减少部分构建耗时。
 
 .. important::
