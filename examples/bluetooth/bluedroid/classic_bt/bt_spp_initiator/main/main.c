@@ -192,7 +192,7 @@ static void esp_spp_cb(esp_spp_cb_event_t event, esp_spp_cb_param_t *param)
             ESP_LOGI(SPP_TAG, "ESP_SPP_WRITE_EVT len:%d handle:%"PRIu32" cong:%d", param->write.len, param->write.handle,
                      param->write.cong);
             if (param->write.len < 128) {
-                esp_log_buffer_hex("", spp_data, param->write.len);
+                ESP_LOG_BUFFER_HEX("", spp_data, param->write.len);
                 /* Delay a little to avoid the task watch dog */
                 vTaskDelay(pdMS_TO_TICKS(10));
             }
@@ -249,12 +249,12 @@ static void esp_bt_gap_cb(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_param_t *pa
     switch(event){
     case ESP_BT_GAP_DISC_RES_EVT:
         ESP_LOGI(SPP_TAG, "ESP_BT_GAP_DISC_RES_EVT");
-        esp_log_buffer_hex(SPP_TAG, param->disc_res.bda, ESP_BD_ADDR_LEN);
+        ESP_LOG_BUFFER_HEX(SPP_TAG, param->disc_res.bda, ESP_BD_ADDR_LEN);
         /* Find the target peer device name in the EIR data */
         for (int i = 0; i < param->disc_res.num_prop; i++){
             if (param->disc_res.prop[i].type == ESP_BT_GAP_DEV_PROP_EIR
                 && get_name_from_eir(param->disc_res.prop[i].val, peer_bdname, &peer_bdname_len)){
-                esp_log_buffer_char(SPP_TAG, peer_bdname, peer_bdname_len);
+                ESP_LOG_BUFFER_CHAR(SPP_TAG, peer_bdname, peer_bdname_len);
                 if (strlen(remote_device_name) == peer_bdname_len
                     && strncmp(peer_bdname, remote_device_name, peer_bdname_len) == 0) {
                     memcpy(peer_bd_addr, param->disc_res.bda, ESP_BD_ADDR_LEN);
@@ -278,7 +278,7 @@ static void esp_bt_gap_cb(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_param_t *pa
     case ESP_BT_GAP_AUTH_CMPL_EVT:{
         if (param->auth_cmpl.stat == ESP_BT_STATUS_SUCCESS) {
             ESP_LOGI(SPP_TAG, "authentication success: %s", param->auth_cmpl.device_name);
-            esp_log_buffer_hex(SPP_TAG, param->auth_cmpl.bda, ESP_BD_ADDR_LEN);
+            ESP_LOG_BUFFER_HEX(SPP_TAG, param->auth_cmpl.bda, ESP_BD_ADDR_LEN);
         } else {
             ESP_LOGE(SPP_TAG, "authentication failed, status:%d", param->auth_cmpl.stat);
         }

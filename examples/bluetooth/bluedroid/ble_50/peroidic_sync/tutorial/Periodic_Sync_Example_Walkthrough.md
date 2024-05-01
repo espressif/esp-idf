@@ -317,7 +317,7 @@ ic_adv_sync_lost.sync_handle);
     case ESP_GAP_BLE_PERIODIC_ADV_SYNC_ESTAB_EVT:
         ESP_LOGI(LOG_TAG, "ESP_GAP_BLE_PERIODIC_ADV_SYNC_ESTAB_EVT, status %d", param->periodic_a
 dv_sync_estab.status);
-        esp_log_buffer_hex("sync addr", param->periodic_adv_sync_estab.adv_addr, 6);
+        ESP_LOG_BUFFER_HEX("sync addr", param->periodic_adv_sync_estab.adv_addr, 6);
         ESP_LOGI(LOG_TAG, "sync handle %d sid %d perioic adv interval %d adv phy %d", param->periodic_adv_sync_estab.sync_handle,
                                                                                       param->periodic_adv_sync_estab.sid,
                                                                                       param->periodic_adv_sync_estab.period_adv_interval,

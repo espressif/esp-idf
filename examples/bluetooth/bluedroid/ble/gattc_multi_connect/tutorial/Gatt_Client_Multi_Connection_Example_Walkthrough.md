@@ -152,7 +152,7 @@ case ESP_GAP_BLE_SCAN_STOP_COMPLETE_EVT:
 	gl_profile_tab[PROFILE_A_APP_ID].conn_id = p_data->open.conn_id;
 	ESP_LOGI(GATTC_TAG, "ESP_GATTC_OPEN_EVT conn_id %d, if %d, status %d, mtu %d", p_data->open.conn_id, gattc_if, p_data->open.status, p_data->open.mtu);
 	ESP_LOGI(GATTC_TAG, "REMOTE BDA:");
-	esp_log_buffer_hex(GATTC_TAG, p_data->open.remote_bda, sizeof(esp_bd_addr_t));
+	ESP_LOG_BUFFER_HEX(GATTC_TAG, p_data->open.remote_bda, sizeof(esp_bd_addr_t));
 	esp_err_t mtu_ret = esp_ble_gattc_config_mtu (gattc_if, p_data->open.conn_id, 200);
 	if (mtu_ret){
 	ESP_LOGE(GATTC_TAG, "config MTU error, error code = %x", mtu_ret);
@@ -268,7 +268,7 @@ At this point the client has acquired all characteristics from the remote device
 	```c
 	case ESP_GATTC_NOTIFY_EVT:
         ESP_LOGI(GATTC_TAG, "ESP_GATTC_NOTIFY_EVT, Receive notify value:");
-        esp_log_buffer_hex(GATTC_TAG, p_data->notify.value, p_data->notify.value_len);
+        ESP_LOG_BUFFER_HEX(GATTC_TAG, p_data->notify.value, p_data->notify.value_len);
         //write  back
         esp_ble_gattc_write_char(gattc_if,
                                 gl_profile_tab[PROFILE_A_APP_ID].conn_id,

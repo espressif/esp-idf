@@ -357,11 +357,11 @@ We are interested in the `ESP_GAP_SEARCH_INQ_RES_EVT` event, which is called eve
         esp_ble_gap_cb_param_t *scan_result = (esp_ble_gap_cb_param_t *)param;
         switch (scan_result->scan_rst.search_evt) {
 	        case ESP_GAP_SEARCH_INQ_RES_EVT:
-		        esp_log_buffer_hex(GATTC_TAG, scan_result->scan_rst.bda, 6);
+		        ESP_LOG_BUFFER_HEX(GATTC_TAG, scan_result->scan_rst.bda, 6);
 		        ESP_LOGI(GATTC_TAG, "searched Adv Data Len %d, Scan Response Len %d", scan_result->scan_rst.adv_data_len, scan_result->scan_rst.scan_rsp_len);
 		        adv_name = esp_ble_resolve_adv_data(scan_result->scan_rst.ble_adv, ESP_BLE_AD_TYPE_NAME_CMPL, &adv_name_len);
 		        ESP_LOGI(GATTC_TAG, "searched Device Name Len %d", adv_name_len);
-		        esp_log_buffer_char(GATTC_TAG, adv_name, adv_name_len);
+		        ESP_LOG_BUFFER_CHAR(GATTC_TAG, adv_name, adv_name_len);
 		        ESP_LOGI(GATTC_TAG, " ");
 		        if (adv_name != NULL) {
 			        if (strlen(remote_device_name) == adv_name_len && strncmp((char *)adv_name, remote_device_name, adv_name_len) == 0) {
@@ -386,7 +386,7 @@ Every time we receive a result from the `ESP_GAP_SEARCH_INQ_RES_EVT` event, the 
 
 ```c
 case ESP_GAP_SEARCH_INQ_RES_EVT:
-     esp_log_buffer_hex(GATTC_TAG, scan_result->scan_rst.bda, 6);
+     ESP_LOG_BUFFER_HEX(GATTC_TAG, scan_result->scan_rst.bda, 6);
 ```
 
 The client then prints the advertised data length and the scan response length:
@@ -400,7 +400,7 @@ In order to get the device name, we use the `esp_ble_resolve_adv_data()` functio
 ```c
 adv_name = esp_ble_resolve_adv_data(scan_result->scan_rst.ble_adv, ESP_BLE_AD_TYPE_NAME_CMPL, &adv_name_len);
 ESP_LOGI(GATTC_TAG, "searched Device Name Len %d", adv_name_len);
-esp_log_buffer_char(GATTC_TAG, adv_name, adv_name_len);
+ESP_LOG_BUFFER_CHAR(GATTC_TAG, adv_name, adv_name_len);
 ```
 
 Finally if the remote device name is the same as we have defined above, the local device stops scanning and tries to open a connection to the remote device using the `esp_ble_gattc_open()` function. This function takes as parameters the Application Profile GATT interface, the remote server address and a boolean value. The boolean value is used to indicate if the connection is done directly or if it’s done in the background (auto-connection), at the moment this boolean value must be set to true in order to establish the connection. Notice that the client opens a virtual connection to the server. The virtual connection returns a connection ID. The virtual connection is the connection between the Application Profile and the remote server. Since many Application Profiles can run on one ESP32, there could be many virtual connection opened to the same remote server. There is also the physical connection which is the actual BLE link between the client and the server. Therefore, if the physical connection is disconnected with the `esp_ble_gap_disconnect()` function, all other virtual connections are closed as well. In this example, each Application Profile creates a virtual connection to the same server with the `esp_ble_gattc_open()` function, so when the close function is called, only that connection from the Application Profile is closed, while if the gap disconnect function is called, both connections will be closed. In addition, connect events are propagated to all profiles because it relates to the physical connection, while open events are propagated only to the profile that creates the virtual connection.
@@ -417,7 +417,7 @@ ATT_MTU is defined as the maximum size of any packet sent between a client and a
         gl_profile_tab[PROFILE_A_APP_ID].conn_id = p_data->connect.conn_id;
         memcpy(gl_profile_tab[PROFILE_A_APP_ID].remote_bda, p_data->connect.remote_bda, sizeof(esp_bd_addr_t));
         ESP_LOGI(GATTC_TAG, "REMOTE BDA:");
-        esp_log_buffer_hex(GATTC_TAG, gl_profile_tab[PROFILE_A_APP_ID].remote_bda, sizeof(esp_bd_addr_t));
+        ESP_LOG_BUFFER_HEX(GATTC_TAG, gl_profile_tab[PROFILE_A_APP_ID].remote_bda, sizeof(esp_bd_addr_t));
         esp_err_t mtu_ret = esp_ble_gattc_send_mtu_req (gattc_if, conn_id);
         if (mtu_ret){
             ESP_LOGE(GATTC_TAG, "config MTU error, error code = %x", mtu_ret);
@@ -433,7 +433,7 @@ gl_profile_tab[PROFILE_A_APP_ID].conn_id = p_data->connect.conn_id;
 memcpy(gl_profile_tab[PROFILE_A_APP_ID].remote_bda, p_data->connect.remote_bda,
 		sizeof(esp_bd_addr_t));
 ESP_LOGI(GATTC_TAG, "REMOTE BDA:");
-esp_log_buffer_hex(GATTC_TAG, gl_profile_tab[PROFILE_A_APP_ID].remote_bda,
+ESP_LOG_BUFFER_HEX(GATTC_TAG, gl_profile_tab[PROFILE_A_APP_ID].remote_bda,
 		sizeof(esp_bd_addr_t));
 ```
 

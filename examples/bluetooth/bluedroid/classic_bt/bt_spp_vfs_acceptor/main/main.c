@@ -79,7 +79,7 @@ static void spp_read_handle(void * param)
             vTaskDelay(500 / portTICK_PERIOD_MS);
         } else {
             ESP_LOGI(SPP_TAG, "fd = %d data_len = %d", fd, size);
-            esp_log_buffer_hex(SPP_TAG, spp_data, size);
+            ESP_LOG_BUFFER_HEX(SPP_TAG, spp_data, size);
             /* To avoid task watchdog */
             vTaskDelay(10 / portTICK_PERIOD_MS);
         }
@@ -162,7 +162,7 @@ void esp_bt_gap_cb(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_param_t *param)
     case ESP_BT_GAP_AUTH_CMPL_EVT:{
         if (param->auth_cmpl.stat == ESP_BT_STATUS_SUCCESS) {
             ESP_LOGI(SPP_TAG, "authentication success: %s", param->auth_cmpl.device_name);
-            esp_log_buffer_hex(SPP_TAG, param->auth_cmpl.bda, ESP_BD_ADDR_LEN);
+            ESP_LOG_BUFFER_HEX(SPP_TAG, param->auth_cmpl.bda, ESP_BD_ADDR_LEN);
         } else {
             ESP_LOGE(SPP_TAG, "authentication failed, status:%d", param->auth_cmpl.stat);
         }

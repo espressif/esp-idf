@@ -806,7 +806,7 @@ static esp_err_t start_command_read_blocks(slot_info_t *slot, sdspi_hw_cmd_t *cm
             crc_of_data = sdspi_crc16(data, will_receive + extra_data_size);
             if (crc_of_data != crc) {
                 ESP_LOGE(TAG, "data CRC failed, got=0x%04x expected=0x%04x", crc_of_data, crc);
-                esp_log_buffer_hex(TAG, data, 16);
+                ESP_LOG_BUFFER_HEX(TAG, data, 16);
                 return ESP_ERR_INVALID_CRC;
             }
         }

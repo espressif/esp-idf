@@ -155,7 +155,7 @@ void esp_log_buffer_hexdump_internal(const char *tag, const void *buffer, uint16
  * @deprecated This function is deprecated and will be removed in the future.
  *             Please use ESP_LOG_BUFFER_HEX
  */
-// __attribute__((deprecated("Use 'ESP_LOG_BUFFER_HEX' instead")))
+__attribute__((deprecated("Use 'ESP_LOG_BUFFER_HEX' instead")))
 static inline void esp_log_buffer_hex(const char *tag, const void *buffer, uint16_t buff_len)
 {
     ESP_LOG_BUFFER_HEX(tag, buffer, buff_len);
@@ -166,7 +166,7 @@ static inline void esp_log_buffer_hex(const char *tag, const void *buffer, uint1
  * @deprecated This function is deprecated and will be removed in the future.
  *             Please use ESP_LOG_BUFFER_CHAR
  */
-// __attribute__((deprecated("Use 'ESP_LOG_BUFFER_CHAR' instead")))
+__attribute__((deprecated("Use 'ESP_LOG_BUFFER_CHAR' instead")))
 static inline void esp_log_buffer_char(const char *tag, const void *buffer, uint16_t buff_len)
 {
     ESP_LOG_BUFFER_CHAR(tag, buffer, buff_len);
