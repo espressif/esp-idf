@@ -3,7 +3,6 @@ api-guides/performance/size.rst
 api-guides/performance/ram-usage.rst
 api-guides/performance/index.rst
 api-guides/partition-tables.rst
-api-guides/app_trace.rst
 api-guides/RF_calibration.rst
 api-guides/deep-sleep-stub.rst
 api-guides/coexist.rst
@@ -12,7 +11,6 @@ api-guides/usb-serial-jtag-console.rst
 api-guides/wifi.rst
 api-guides/usb-otg-console.rst
 api-guides/esp-wifi-mesh.rst
-api-guides/SYSVIEW_FreeRTOS.txt
 api-guides/dfu.rst
 api-guides/current-consumption-measurement-modules.rst
 api-guides/wifi-security.rst
@@ -51,7 +49,6 @@ api-reference/network/esp_nan.rst
 api-reference/network/esp_wifi.rst
 api-reference/network/index.rst
 api-reference/system/sleep_modes.rst
-api-reference/system/app_trace.rst
 api-reference/system/random.rst
 api-reference/system/power_management.rst
 api-reference/system/inc/power_management_esp32p4.rst
