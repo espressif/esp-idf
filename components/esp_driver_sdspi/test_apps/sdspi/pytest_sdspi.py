@@ -10,4 +10,4 @@ from pytest_embedded_idf import IdfDut
 @pytest.mark.esp32p4
 @pytest.mark.sdcard_spimode
 def test_sdspi(dut: IdfDut) -> None:
-    dut.run_all_single_board_cases()
+    dut.run_all_single_board_cases(reset=True)
