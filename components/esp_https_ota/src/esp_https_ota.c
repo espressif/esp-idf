@@ -194,9 +194,15 @@ static const char* ota_event_name_table[] = {
     "ESP_HTTPS_OTA_ABORT",
 };
 
+#if CONFIG_ESP_HTTPS_OTA_EVENT_POST_TIMEOUT == -1
+#define ESP_HTTPS_OTA_EVENT_POST_TIMEOUT portMAX_DELAY
+#else
+#define ESP_HTTPS_OTA_EVENT_POST_TIMEOUT pdMS_TO_TICKS(CONFIG_ESP_HTTPS_OTA_EVENT_POST_TIMEOUT)
+#endif
+
 static void esp_https_ota_dispatch_event(int32_t event_id, const void* event_data, size_t event_data_size)
 {
-    if (esp_event_post(ESP_HTTPS_OTA_EVENT, event_id, event_data, event_data_size, portMAX_DELAY) != ESP_OK) {
+    if (esp_event_post(ESP_HTTPS_OTA_EVENT, event_id, event_data, event_data_size, ESP_HTTPS_OTA_EVENT_POST_TIMEOUT) != ESP_OK) {
         ESP_LOGE(TAG, "Failed to post https_ota event: %s", ota_event_name_table[event_id]);
     }
 }
