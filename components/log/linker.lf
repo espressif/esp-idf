@@ -2,8 +2,5 @@
 archive: liblog.a
 entries:
     log_write:esp_log_write (noflash)
-    log_freertos:esp_log_timestamp (noflash)
-    log_freertos:esp_log_early_timestamp (noflash)
-    log_freertos:esp_log_impl_lock (noflash)
-    log_freertos:esp_log_impl_lock_timeout (noflash)
-    log_freertos:esp_log_impl_unlock (noflash)
+    log_timestamp:esp_log_timestamp (noflash)
+    log_timestamp:esp_log_early_timestamp (noflash)

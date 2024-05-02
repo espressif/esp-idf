@@ -1,6 +1,16 @@
 idf_build_get_property(target IDF_TARGET)
 
-set(srcs "")
+if(BOOTLOADER_BUILD)
+    set(system_target "noos")
+else()
+    if(${target} STREQUAL "linux")
+        set(system_target "linux")
+    else()
+        set(system_target "os")
+    endif()
+endif()
+
+set(srcs "src/${system_target}/log_timestamp.c")
 set(priv_requires "")
 
 if(BOOTLOADER_BUILD)
