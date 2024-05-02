@@ -104,7 +104,7 @@ static void stack_in_extram(void* arg) {
     abort();
 }
 
-void test_panic_extram_stack(void) {
+void test_panic_extram_stack_heap(void) {
     /* Start by initializing a Task which has a stack in external RAM */
     StaticTask_t handle;
     const uint32_t stack_size = 8192;
@@ -119,8 +119,17 @@ void test_panic_extram_stack(void) {
 
     vTaskDelay(1000);
 }
+#if CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
+static EXT_RAM_BSS_ATTR StackType_t stack[8192];
+void test_panic_extram_stack_bss(void)
+{
+    StaticTask_t handle;
 
+    xTaskCreateStatic(stack_in_extram, "Task_stack_extram", sizeof(stack), NULL, 4, stack, &handle);
 
+    vTaskDelay(1000);
+}
+#endif
 #endif // ESP_COREDUMP_ENABLE_TO_FLASH && SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY
 
 
