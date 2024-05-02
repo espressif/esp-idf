@@ -3,6 +3,14 @@
 examples/ethernet/basic:
   enable:
     - if: INCLUDE_DEFAULT == 1
+  disable:
+    - if: IDF_TARGET == "esp32c5"
+      temporary: true
+      reason: not supported yet # TODO: [ESP32C5] IDF-8697
+  disable_test:
+    - if: IDF_TARGET not in ["esp32"]
+      temporary: true
+      reason: lack of runners
   depends_components:
     - esp_eth
     - esp_netif
