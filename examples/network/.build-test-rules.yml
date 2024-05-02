@@ -5,11 +5,17 @@ examples/network/bridge:
     - if: IDF_TARGET != "esp32"
       reason: Generic functionality, no need to be run on specific targets
   depends_components:
+    - esp_eth
+    - esp_netif
+    - lwip
     - esp_driver_spi
 
 examples/network/eth2ap:
   disable:
     - if: SOC_WIFI_SUPPORTED != 1
+  depends_components:
+    - esp_eth
+    - esp_wifi
 
 examples/network/simple_sniffer:
   disable:
@@ -33,6 +39,13 @@ examples/network/simple_sniffer:
 examples/network/sta2eth:
   disable:
     - if: SOC_WIFI_SUPPORTED != 1
+  depends_components:
+    - esp_eth
+    - esp_wifi
+    - protocomm
+    - usb
+    - esp_tinyusb
+    - http-server
 
 examples/network/vlan_support:
   disable_test:
