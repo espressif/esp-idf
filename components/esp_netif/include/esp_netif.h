@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -594,6 +594,23 @@ esp_err_t esp_netif_napt_disable(esp_netif_t *esp_netif);
 /**
  * @brief  Set or Get DHCP server option
  *
+ * @note Please note that not all combinations of identifiers and options are supported.
+ * Get operations:
+ *  * IP_ADDRESS_LEASE_TIME
+ *  * ESP_NETIF_SUBNET_MASK/REQUESTED_IP_ADDRESS (both options do the same, they reflect dhcps_lease_t)
+ *  * ROUTER_SOLICITATION_ADDRESS
+ *  * DOMAIN_NAME_SERVER
+ * Set operations:
+ *  * IP_ADDRESS_LEASE_TIME
+ *  * ESP_NETIF_SUBNET_MASK -- set operation is allowed only if the configured mask corresponds to the settings,
+ *                             if not, please use esp_netif_set_ip_info() to prevent misconfiguration of DHCPS.
+ *  * REQUESTED_IP_ADDRESS -- if the address pool is enabled, a sanity check for start/end addresses is performed
+ *                             before setting.
+ *  * ROUTER_SOLICITATION_ADDRESS
+ *  * DOMAIN_NAME_SERVER
+ *  * ESP_NETIF_CAPTIVEPORTAL_URI -- set operation copies the pointer to the URI, so it is owned by the application
+ *                                    and needs to be maintained valid throughout the entire DHCP Server lifetime.
+ *
  * @param[in]  esp_netif Handle to esp-netif instance
  * @param[in] opt_op ESP_NETIF_OP_SET to set an option, ESP_NETIF_OP_GET to get an option.
  * @param[in] opt_id Option index to get or set, must be one of the supported enum values.
@@ -612,6 +629,16 @@ esp_netif_dhcps_option(esp_netif_t *esp_netif, esp_netif_dhcp_option_mode_t opt_
 
 /**
  * @brief  Set or Get DHCP client option
+ *
+ * @note Please note that not all combinations of identifiers and options are supported.
+ * Get operations:
+ *  * ESP_NETIF_IP_REQUEST_RETRY_TIME
+ *  * ESP_NETIF_VENDOR_SPECIFIC_INFO -- only available if ESP_DHCP_DISABLE_VENDOR_CLASS_IDENTIFIER=n
+ * Set operations:
+ *  * ESP_NETIF_IP_REQUEST_RETRY_TIME
+ *  * ESP_NETIF_VENDOR_SPECIFIC_INFO -- only available if ESP_DHCP_DISABLE_VENDOR_CLASS_IDENTIFIER=n
+ *                                      lwip layer creates its own copy of the supplied identifier.
+ *                                      (the internal copy could be feed by calling dhcp_free_vendor_class_identifier())
  *
  * @param[in]  esp_netif Handle to esp-netif instance
  * @param[in] opt_op ESP_NETIF_OP_SET to set an option, ESP_NETIF_OP_GET to get an option.

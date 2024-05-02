@@ -24,7 +24,6 @@
 #define EXAMPLE_ESP_WIFI_SSID CONFIG_ESP_WIFI_SSID
 #define EXAMPLE_ESP_WIFI_PASS CONFIG_ESP_WIFI_PASSWORD
 #define EXAMPLE_MAX_STA_CONN CONFIG_ESP_MAX_STA_CONN
-#define EXAMPLE_ENABLE_DHCP_CAPTIVEPORTAL_URI CONFIG_ESP_ENABLE_DHCP_CAPTIVEPORTAL
 
 extern const char root_start[] asm("_binary_root_html_start");
 extern const char root_end[] asm("_binary_root_html_end");
@@ -80,6 +79,7 @@ static void wifi_init_softap(void)
              EXAMPLE_ESP_WIFI_SSID, EXAMPLE_ESP_WIFI_PASS);
 }
 
+#ifdef CONFIG_ESP_ENABLE_DHCP_CAPTIVEPORTAL
 static void dhcp_set_captiveportal_url(void) {
     // get the IP of the access point to redirect to
     esp_netif_ip_info_t ip_info;
@@ -91,6 +91,7 @@ static void dhcp_set_captiveportal_url(void) {
 
     // turn the IP into a URI
     char* captiveportal_uri = (char*) malloc(32 * sizeof(char));
+    assert(captiveportal_uri && "Failed to allocate captiveportal_uri");
     strcpy(captiveportal_uri, "http://");
     strcat(captiveportal_uri, ip_addr);
 
@@ -102,6 +103,7 @@ static void dhcp_set_captiveportal_url(void) {
     ESP_ERROR_CHECK(esp_netif_dhcps_option(netif, ESP_NETIF_OP_SET, ESP_NETIF_CAPTIVEPORTAL_URI, captiveportal_uri, strlen(captiveportal_uri)));
     ESP_ERROR_CHECK_WITHOUT_ABORT(esp_netif_dhcps_start(netif));
 }
+#endif // CONFIG_ESP_ENABLE_DHCP_CAPTIVEPORTAL
 
 // HTTP GET Handler
 static esp_err_t root_get_handler(httpd_req_t *req)
@@ -180,7 +182,7 @@ void app_main(void)
     wifi_init_softap();
 
     // Configure DNS-based captive portal, if configured
-    #if CONFIG_ESP_ENABLE_DHCP_CAPTIVEPORTAL
+    #ifdef CONFIG_ESP_ENABLE_DHCP_CAPTIVEPORTAL
         dhcp_set_captiveportal_url();
     #endif
 
