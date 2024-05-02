@@ -96,7 +96,10 @@ void app_main(void)
 #endif // CONFIG_FREERTOS_UNICORE
 #endif // CONFIG_ESP_SYSTEM_HW_STACK_GUARD
 #if CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH && CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY
-    HANDLE_TEST(test_name, test_panic_extram_stack);
+    HANDLE_TEST(test_name, test_panic_extram_stack_heap);
+#if CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
+    HANDLE_TEST(test_name, test_panic_extram_stack_bss);
+#endif
 #endif
 #if CONFIG_ESP_COREDUMP_CAPTURE_DRAM
     HANDLE_TEST(test_name, test_capture_dram);

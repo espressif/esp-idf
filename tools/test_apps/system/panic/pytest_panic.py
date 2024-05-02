@@ -69,11 +69,13 @@ CONFIGS_DUAL_CORE = [
 # This list is used to check if the target is a dual-core one.
 TARGETS_DUAL_CORE_NAMES = [x.mark.name for x in TARGETS_DUAL_CORE]
 
-# The tests which panic on external stack require PSRAM capable runners
 CONFIGS_EXTRAM_STACK = [
-    pytest.param('coredump_extram_stack', marks=[pytest.mark.esp32, pytest.mark.psram]),
-    pytest.param('coredump_extram_stack', marks=[pytest.mark.esp32s2, pytest.mark.generic]),
-    pytest.param('coredump_extram_stack', marks=[pytest.mark.esp32s3, pytest.mark.quad_psram]),
+    pytest.param('coredump_flash_extram_stack_heap_esp32', marks=[pytest.mark.esp32, pytest.mark.psram]),
+    pytest.param('coredump_flash_extram_stack_heap_esp32s2', marks=[pytest.mark.esp32s2, pytest.mark.generic]),
+    pytest.param('coredump_flash_extram_stack_heap_esp32s3', marks=[pytest.mark.esp32s3, pytest.mark.quad_psram]),
+    pytest.param('coredump_flash_extram_stack_bss_esp32', marks=[pytest.mark.esp32, pytest.mark.psram]),
+    pytest.param('coredump_flash_extram_stack_bss_esp32s2', marks=[pytest.mark.esp32s2, pytest.mark.generic]),
+    pytest.param('coredump_flash_extram_stack_bss_esp32s3', marks=[pytest.mark.esp32s3, pytest.mark.quad_psram]),
 ]
 
 CONFIGS_HW_STACK_GUARD = [
@@ -207,8 +209,11 @@ def test_task_wdt_cpu1(dut: PanicTestDut, config: str, test_func_name: str) -> N
 
 
 @pytest.mark.parametrize('config', CONFIGS_EXTRAM_STACK, indirect=True)
-def test_panic_extram_stack(dut: PanicTestDut, config: str, test_func_name: str) -> None:
-    dut.run_test_func(test_func_name)
+def test_panic_extram_stack(dut: PanicTestDut, config: str) -> None:
+    if 'heap' in config:
+        dut.run_test_func('test_panic_extram_stack_heap')
+    else:
+        dut.run_test_func('test_panic_extram_stack_bss')
     dut.expect_none('Allocated stack is not in external RAM')
     dut.expect_none('Guru Meditation')
     dut.expect_backtrace()
@@ -221,7 +226,22 @@ def test_panic_extram_stack(dut: PanicTestDut, config: str, test_func_name: str)
     # The caller must be accessible after restoring the stack
     dut.expect_exact('Core dump has been saved to flash.')
 
-    common_test(dut, config)
+    if dut.target == 'esp32':
+        # ESP32 External data memory range [0x3f800000-0x3fc00000)
+        coredump_pattern = re.compile('.coredump.tasks.data (0x3[fF][8-9a-bA-B][0-9a-fA-F]{5}) (0x[a-fA-F0-9]+) RW')
+    elif dut.target == 'esp32s2':
+        # ESP32-S2 External data memory range [0x3f500000-0x3ff80000)
+        coredump_pattern = re.compile('.coredump.tasks.data (0x3[fF][5-9a-fA-F][0-7][0-9a-fA-F]{4}) (0x[a-fA-F0-9]+) RW')
+    else:
+        # ESP32-S3 External data memory range [0x3c000000-0x3e000000)
+        coredump_pattern = re.compile('.coredump.tasks.data (0x3[c-dC-D][0-9a-fA-F]{6}) (0x[a-fA-F0-9]+) RW')
+
+    common_test(
+        dut,
+        config,
+        expected_backtrace=None,
+        expected_coredump=[coredump_pattern]
+    )
 
 
 @pytest.mark.parametrize('config', CONFIGS, indirect=True)

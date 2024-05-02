@@ -32,7 +32,10 @@ void test_hw_stack_guard_cpu1(void);
 #endif // CONFIG_ESP_SYSTEM_HW_STACK_GUARD
 
 #if CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH && CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY
-void test_panic_extram_stack(void);
+void test_panic_extram_stack_heap(void);
+#if CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
+void test_panic_extram_stack_bss(void);
+#endif
 #endif
 
 #if !CONFIG_FREERTOS_UNICORE

@@ -334,7 +334,9 @@ static int elf_process_task_tcb(core_dump_elf_t *self, core_dump_task_header_t *
 static int elf_process_task_stack(core_dump_elf_t *self, core_dump_task_header_t *task)
 {
     int ret = 0;
-    uint32_t stack_vaddr, stack_len = 0, stack_paddr = 0;
+    uint32_t stack_vaddr;
+    uint32_t stack_len = 0;
+    uint32_t stack_paddr = 0;
 
     ELF_CHECK_ERR((task), ELF_PROC_ERR_OTHER, "Invalid input data.");
 
@@ -343,8 +345,11 @@ static int elf_process_task_stack(core_dump_elf_t *self, core_dump_task_header_t
                              task->tcb_addr, stack_vaddr, stack_len);
 
 #if CONFIG_ESP_COREDUMP_CAPTURE_DRAM
-    /* If the task data located in the PSRAM, we will save it here.
-        Otherwise it will be saved in esp_core_dump_store_section()
+    /*
+        When saving all data sections (enabled by `CONFIG_ESP_COREDUMP_CAPTURE_DRAM`),
+        the task stack located in DRAM will be saved in `esp_core_dump_store_section()`.
+        Therefore, we filter them out here.
+        PSRAM data do not fall into any ELF section, so we always save such stacks here.
     */
     if (esp_ptr_external_ram((void *)stack_vaddr))
 #endif
@@ -457,11 +462,12 @@ static int elf_save_task(core_dump_elf_t *self, core_dump_task_header_t *task)
 
 static int elf_process_task_data(core_dump_elf_t *self)
 {
-    int elf_len = 0, ret;
+    int elf_len = 0;
     core_dump_task_header_t task_hdr = { 0 };
     core_dump_mem_seg_header_t interrupted_stack = { 0 };
     TaskIterator_t task_iter;
-    uint16_t tasks_num = 0, bad_tasks_num = 0;
+    uint16_t tasks_num = 0;
+    uint16_t bad_tasks_num = 0;
 
     ESP_COREDUMP_LOG_PROCESS("================   Processing task data   ================");
     // processes all task's stack data and writes segment data into partition
@@ -474,7 +480,7 @@ static int elf_process_task_data(core_dump_elf_t *self)
             bad_tasks_num++;
             continue;
         }
-        ret = elf_save_task(self, &task_hdr);
+        int ret = elf_save_task(self, &task_hdr);
         ELF_CHECK_ERR((ret > 0), ret,
                       "Task %x, TCB write failed, return (%d).", task_iter.pxTaskHandle, ret);
         elf_len += ret;
