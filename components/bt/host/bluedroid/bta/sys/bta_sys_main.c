@@ -578,6 +578,14 @@ void bta_sys_sendmsg(void *p_msg)
     }
 }
 
+void bta_alarm_cb(void *data)
+{
+    assert(data != NULL);
+    TIMER_LIST_ENT *p_tle = (TIMER_LIST_ENT *)data;
+
+    btu_task_post(SIG_BTU_BTA_ALARM, p_tle, OSI_THREAD_MAX_TIMEOUT);
+}
+
 /*******************************************************************************
 **
 ** Function         bta_sys_start_timer
@@ -588,26 +596,25 @@ void bta_sys_sendmsg(void *p_msg)
 ** Returns          void
 **
 *******************************************************************************/
-void bta_alarm_cb(void *data)
-{
-    assert(data != NULL);
-    TIMER_LIST_ENT *p_tle = (TIMER_LIST_ENT *)data;
-
-    btu_task_post(SIG_BTU_BTA_ALARM, p_tle, OSI_THREAD_MAX_TIMEOUT);
-}
-
 void bta_sys_start_timer(TIMER_LIST_ENT *p_tle, UINT16 type, INT32 timeout_ms)
 {
     assert(p_tle != NULL);
 
     // Get the alarm for this p_tle.
+    osi_alarm_t *alarm;
     osi_mutex_lock(&bta_alarm_lock, OSI_MUTEX_MAX_TIMEOUT);
-    if (!hash_map_has_key(bta_alarm_hash_map, p_tle)) {
-        hash_map_set(bta_alarm_hash_map, p_tle, osi_alarm_new("bta_sys", bta_alarm_cb, p_tle, 0));
+    alarm = hash_map_get(bta_alarm_hash_map, p_tle);
+    if (!alarm) {
+        alarm = osi_alarm_new("bta_sys", bta_alarm_cb, p_tle, 0);
+        if (alarm) {
+            if (!hash_map_set(bta_alarm_hash_map, p_tle, alarm)) {
+                osi_alarm_free(alarm);
+                alarm = NULL;
+            }
+        }
     }
     osi_mutex_unlock(&bta_alarm_lock);
 
-    osi_alarm_t *alarm = hash_map_get(bta_alarm_hash_map, p_tle);
     if (alarm == NULL) {
         APPL_TRACE_ERROR("%s unable to create alarm.", __func__);
         return;
