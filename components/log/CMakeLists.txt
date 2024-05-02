@@ -11,20 +11,14 @@ else()
 endif()
 
 set(srcs "src/${system_target}/log_timestamp.c"
-         "src/log_timestamp_common.c")
+         "src/log_timestamp_common.c"
+         "src/${system_target}/log_lock.c")
 set(priv_requires "")
 
-if(BOOTLOADER_BUILD)
-    list(APPEND srcs "log_noos.c")
-else()
-    list(APPEND srcs "src/os/log_write.c")
+if(NOT BOOTLOADER_BUILD)
+    list(APPEND priv_requires soc hal esp_hw_support)
 
-    if(${target} STREQUAL "linux")
-        list(APPEND srcs "log_linux.c")
-    else()
-        list(APPEND srcs "log_freertos.c")
-        list(APPEND priv_requires soc hal esp_hw_support)
-    endif()
+    list(APPEND srcs "src/os/log_write.c")
 
     # Buffer APIs call ESP_LOG_LEVEL -> esp_log_write, which can not used in bootloader.
     list(APPEND srcs "src/buffer/log_buffers.c"
