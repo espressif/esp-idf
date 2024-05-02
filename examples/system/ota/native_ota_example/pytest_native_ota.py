@@ -110,9 +110,10 @@ def start_https_server(ota_image_dir: str, server_ip: str, server_port: int) -> 
     requestHandler = https_request_handler()
     httpd = http.server.HTTPServer((server_ip, server_port), requestHandler)
 
-    httpd.socket = ssl.wrap_socket(httpd.socket,
-                                   keyfile=key_file,
-                                   certfile=server_file, server_side=True)
+    ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+    ssl_context.load_cert_chain(certfile=server_file, keyfile=key_file)
+
+    httpd.socket = ssl_context.wrap_socket(httpd.socket, server_side=True)
     httpd.serve_forever()
 
 
@@ -186,8 +187,8 @@ def test_examples_protocol_native_ota_example_truncated_bin(dut: Dut) -> None:
     with open(binary_file, 'rb+') as fr:
         bin_data = fr.read(truncated_bin_size)
     binary_file = os.path.join(dut.app.binary_path, truncated_bin_name)
-    with open(binary_file, 'wb+') as fo:
-        fo.write(bin_data)
+    with open(binary_file, 'wb+') as output_file:
+        output_file.write(bin_data)
     # Start server
     thread1 = multiprocessing.Process(target=start_https_server, args=(dut.app.binary_path, '0.0.0.0', server_port))
     thread1.daemon = True
@@ -215,7 +216,7 @@ def test_examples_protocol_native_ota_example_truncated_bin(dut: Dut) -> None:
 @pytest.mark.ethernet_ota
 def test_examples_protocol_native_ota_example_truncated_header(dut: Dut) -> None:
     """
-    Working of OTA if headers of binary file are truncated is vaildated in this test case.
+    Working of OTA if headers of binary file are truncated is validated in this test case.
     Application should return with error message in this case.
     steps: |
       1. join AP/Ethernet
@@ -235,8 +236,8 @@ def test_examples_protocol_native_ota_example_truncated_header(dut: Dut) -> None
     with open(binary_file, 'rb+') as fr:
         bin_data = fr.read(truncated_bin_size)
     binary_file = os.path.join(dut.app.binary_path, truncated_bin_name)
-    with open(binary_file, 'wb+') as fo:
-        fo.write(bin_data)
+    with open(binary_file, 'wb+') as output_file:
+        output_file.write(bin_data)
     # Start server
     thread1 = multiprocessing.Process(target=start_https_server, args=(dut.app.binary_path, '0.0.0.0', server_port))
     thread1.daemon = True
@@ -275,17 +276,17 @@ def test_examples_protocol_native_ota_example_random(dut: Dut) -> None:
     server_port = 8002
     # Random binary file to be generated
     random_bin_name = 'random.bin'
-    # Size of random binary file. 32000 is choosen, to reduce the time required to run the test-case
+    # Size of random binary file. 32000 is chosen, to reduce the time required to run the test-case
     random_bin_size = 32000
     # check and log bin size
     binary_file = os.path.join(dut.app.binary_path, random_bin_name)
-    fo = open(binary_file, 'wb+')
+    output_file = open(binary_file, 'wb+')
     # First byte of binary file is always set to zero. If first byte is generated randomly,
     # in some cases it may generate 0xE9 which will result in failure of testcase.
-    with open(binary_file, 'wb+') as fo:
-        fo.write(struct.pack('B', 0))
+    with open(binary_file, 'wb+') as output_file:
+        output_file.write(struct.pack('B', 0))
         for _ in range(random_bin_size - 1):
-            fo.write(struct.pack('B', random.randrange(0,255,1)))
+            output_file.write(struct.pack('B', random.randrange(0,255,1)))
     # Start server
     thread1 = multiprocessing.Process(target=start_https_server, args=(dut.app.binary_path, '0.0.0.0', server_port))
     thread1.daemon = True
