@@ -18,6 +18,7 @@ static void do_one_sdspi_probe(int slot, int freq_khz)
     sdmmc_card_print_info(stdout, &card);
     uint8_t* buffer = heap_caps_calloc(512, 1, MALLOC_CAP_DMA);
     TEST_ESP_OK(sdmmc_read_sectors(&card, buffer, 0, 1));
+    free(buffer);
     sdmmc_test_spi_end(slot, &card);
 }
 
@@ -32,15 +33,12 @@ TEST_CASE("sdspi probe, slot 0, HS", "[sdspi]")
     do_one_sdspi_probe(SLOT_0, SDMMC_FREQ_HIGHSPEED);
 }
 
-#if !CONFIG_IDF_TARGET_ESP32 && !CONFIG_IDF_TARGET_ESP32S3
-//TODO: IDF-8750. Leaks too much memory, needs check
 TEST_CASE("sdspi probe, slot 1", "[sdspi]")
 {
     do_one_sdspi_probe(SLOT_1, SDMMC_FREQ_PROBING);
     do_one_sdspi_probe(SLOT_1, SDMMC_FREQ_DEFAULT);
     do_one_sdspi_probe(SLOT_1, SDMMC_FREQ_CUSTOM_10M);
 }
-#endif
 
 #if !CONFIG_IDF_TARGET_ESP32 && !CONFIG_IDF_TARGET_ESP32S3
 //TODO: IDF-8749
