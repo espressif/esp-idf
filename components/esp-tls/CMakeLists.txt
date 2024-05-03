@@ -1,4 +1,4 @@
-set(srcs esp_tls.c esp-tls-crypto/esp_tls_crypto.c esp_tls_error_capture.c)
+set(srcs esp_tls.c esp-tls-crypto/esp_tls_crypto.c esp_tls_error_capture.c esp_tls_platform_port.c)
 if(CONFIG_ESP_TLS_USING_MBEDTLS)
     list(APPEND srcs
         "esp_tls_mbedtls.c")
@@ -9,7 +9,7 @@ if(CONFIG_ESP_TLS_USING_WOLFSSL)
         "esp_tls_wolfssl.c")
 endif()
 
-set(priv_req http_parser)
+set(priv_req http_parser esp_timer)
 if(NOT ${IDF_TARGET} STREQUAL "linux")
     list(APPEND priv_req lwip)
 endif()
@@ -17,7 +17,7 @@ endif()
 idf_component_register(SRCS "${srcs}"
                     INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR} esp-tls-crypto
                     PRIV_INCLUDE_DIRS "private_include"
-                    # mbedtls is public requirements becasue esp_tls.h
+                    # mbedtls is public requirements because esp_tls.h
                     # includes mbedtls header files.
                     REQUIRES mbedtls
                     PRIV_REQUIRES ${priv_req})
