@@ -432,6 +432,10 @@ esp_err_t httpd_resp_send_err(httpd_req_t *req, httpd_err_code_t error, const ch
         status = "411 Length Required";
         msg    = "Client must specify Content-Length";
         break;
+    case HTTPD_413_CONTENT_TOO_LARGE:
+        status = "413 Content Too Large";
+        msg    = "Content is too large";
+        break;
     case HTTPD_431_REQ_HDR_FIELDS_TOO_LARGE:
         status = "431 Request Header Fields Too Large";
         msg    = "Header fields are too long";
