@@ -608,6 +608,9 @@ typedef enum {
      */
     HTTPD_411_LENGTH_REQUIRED,
 
+    /* Incoming payload is too large */
+    HTTPD_413_PAYLOAD_TOO_LARGE,
+
     /* URI length greater than CONFIG_HTTPD_MAX_URI_LEN */
     HTTPD_414_URI_TOO_LONG,
 
