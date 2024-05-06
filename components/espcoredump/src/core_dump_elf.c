@@ -482,7 +482,7 @@ static int elf_write_tasks_data(core_dump_elf_t *self)
 
 #if CONFIG_ESP_COREDUMP_CAPTURE_DRAM
         /* Only crashed task data will be saved here. The other task's data will be automatically saved within the sections */
-        if (esp_core_dump_get_current_task_handle() != task_iter.pxTaskHandle)
+        if (esp_core_dump_get_current_task_handle() == task_iter.pxTaskHandle)
 #endif
         {
             ret = elf_save_task(self, &task_hdr);
