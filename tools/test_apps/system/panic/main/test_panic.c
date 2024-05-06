@@ -285,6 +285,11 @@ void test_coredump_summary(void)
         if (err == ESP_OK) {
             printf("App ELF file SHA256: %s\n", (char *)summary->app_elf_sha256);
             printf("Crashed task: %s\n", summary->exc_task);
+#if __XTENSA__
+            printf("Exception cause: %ld\n", summary->ex_info.exc_cause);
+#else
+            printf("Exception cause: %ld\n", summary->ex_info.mcause);
+#endif
             char panic_reason[200];
             err = esp_core_dump_get_panic_reason(panic_reason, sizeof(panic_reason));
             if (err == ESP_OK) {
