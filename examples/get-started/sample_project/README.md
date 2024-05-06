@@ -2,8 +2,7 @@
 
 (For general overview of examples and their usage, see the `README.md` file in the upper level 'examples' directory.)
 
-> **Note**:
->
+> [!NOTE]
 > After you click any link to [ESP-IDF Programming Guide](https://docs.espressif.com/projects/esp-idf/en/latest/index.html), go to the top of the sidebar, then make sure you have the appropriate **Espressif chip** (target) and **ESP-IDF version** selected in the dropdown menus.
 
 This is the example of a simplest buildable project. It is also used by the command `idf.py create-project` which copies these files to the path specified by the user and sets the project name.

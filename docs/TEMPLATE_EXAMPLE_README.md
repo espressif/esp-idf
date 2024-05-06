@@ -13,8 +13,7 @@ _Example Title should use the word "example" instead of "demo", "test" or any si
 
 (For general overview of examples and their usage, see the `README.md` file in the upper level 'examples' directory.)
 
-> **Note**:
->
+> [!NOTE]
 > After you click any link to [ESP-IDF Programming Guide](https://docs.espressif.com/projects/esp-idf/en/latest/index.html), go to the top of the sidebar, then make sure you have the appropriate **Espressif chip** (target) and **ESP-IDF version** selected in the dropdown menus.
 
 _What is this example? What does it do?_
