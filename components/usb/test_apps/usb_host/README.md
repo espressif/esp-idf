@@ -7,5 +7,5 @@ There are two sets of tests in this application:
 1. Low-speed: Expects low-speed USB mouse with interrupt endpoint to be connected
 2. Full-speed: Expects full-speed USB flash disk with 2 bulk endpoints to be connected
 
-For running these tests locally, you will have to update device definitions (VID, PID, ...) in [test_usb_mock_msc.h](../common/test_usb_mock_msc.h) and [test_usb_mock_hid.h](../common/test_usb_mock_hid.h).
+For running these tests locally, you will have to update device definitions (VID, PID, ...) in [mock_msc.h](../common/mock_msc.h) and [mock_hid.h](../common/mock_hid.h).
 

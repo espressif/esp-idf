@@ -20,7 +20,7 @@ void setUp(void)
 
 void tearDown(void)
 {
-    //Short delay to allow task to be cleaned up
+    // Short delay to allow task to be cleaned up
     vTaskDelay(10);
     test_hcd_teardown(port_hdl);
     port_hdl = NULL;

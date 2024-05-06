@@ -9,7 +9,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "usb/usb_types_ch9.h"
-#include "test_usb_mock_msc.h"
+#include "mock_msc.h"
 
 // ---------------------------------------------------- MSC SCSI -------------------------------------------------------
 
@@ -41,7 +41,7 @@ static const usb_config_desc_t mock_msc_config_desc = {
     .bConfigurationValue = 1,
     .iConfiguration = 0,
     .bmAttributes = 0x80,
-    .bMaxPower = 0x70, //224mA
+    .bMaxPower = 0x70, // 224mA
 };
 
 static const usb_intf_desc_t mock_msc_intf_desc = {
@@ -51,8 +51,8 @@ static const usb_intf_desc_t mock_msc_intf_desc = {
     .bAlternateSetting = MOCK_MSC_SCSI_INTF_ALT_SETTING,
     .bNumEndpoints = 2,
     .bInterfaceClass = USB_CLASS_MASS_STORAGE,
-    .bInterfaceSubClass = 0x06, //SCSI
-    .bInterfaceProtocol = 0x50, //Bulk only
+    .bInterfaceSubClass = 0x06, // SCSI
+    .bInterfaceProtocol = 0x50, // Bulk only
     .iInterface = 0,
 };
 
@@ -66,18 +66,18 @@ usb_ep_desc_t mock_msc_scsi_bulk_in_ep_desc;
 const usb_ep_desc_t mock_msc_scsi_bulk_out_ep_desc_fs = {
     .bLength = sizeof(usb_ep_desc_t),
     .bDescriptorType = USB_B_DESCRIPTOR_TYPE_ENDPOINT,
-    .bEndpointAddress = MOCK_MSC_SCSI_BULK_OUT_EP_ADDR,       //EP 1 OUT
+    .bEndpointAddress = MOCK_MSC_SCSI_BULK_OUT_EP_ADDR,       // EP 1 OUT
     .bmAttributes = USB_BM_ATTRIBUTES_XFER_BULK,
-    .wMaxPacketSize = MOCK_MSC_SCSI_BULK_EP_MPS_FS,           //MPS of 64 bytes
+    .wMaxPacketSize = MOCK_MSC_SCSI_BULK_EP_MPS_FS,           // MPS of 64 bytes
     .bInterval = 0,
 };
 
 const usb_ep_desc_t mock_msc_scsi_bulk_out_ep_desc_hs = {
     .bLength = sizeof(usb_ep_desc_t),
     .bDescriptorType = USB_B_DESCRIPTOR_TYPE_ENDPOINT,
-    .bEndpointAddress = MOCK_MSC_SCSI_BULK_OUT_EP_ADDR,       //EP 1 OUT
+    .bEndpointAddress = MOCK_MSC_SCSI_BULK_OUT_EP_ADDR,       // EP 1 OUT
     .bmAttributes = USB_BM_ATTRIBUTES_XFER_BULK,
-    .wMaxPacketSize = MOCK_MSC_SCSI_BULK_EP_MPS_HS,           //MPS of 512 bytes
+    .wMaxPacketSize = MOCK_MSC_SCSI_BULK_EP_MPS_HS,           // MPS of 512 bytes
     .bInterval = 0,
 };
 
@@ -86,7 +86,7 @@ const usb_ep_desc_t mock_msc_scsi_bulk_in_ep_desc_fs = {
     .bDescriptorType = USB_B_DESCRIPTOR_TYPE_ENDPOINT,
     .bEndpointAddress = MOCK_MSC_SCSI_BULK_IN_EP_ADDR,
     .bmAttributes = USB_BM_ATTRIBUTES_XFER_BULK,
-    .wMaxPacketSize = MOCK_MSC_SCSI_BULK_EP_MPS_FS,           //MPS of 64 bytes
+    .wMaxPacketSize = MOCK_MSC_SCSI_BULK_EP_MPS_FS,           // MPS of 64 bytes
     .bInterval = 0,
 };
 
@@ -95,20 +95,20 @@ const usb_ep_desc_t mock_msc_scsi_bulk_in_ep_desc_hs = {
     .bDescriptorType = USB_B_DESCRIPTOR_TYPE_ENDPOINT,
     .bEndpointAddress = MOCK_MSC_SCSI_BULK_IN_EP_ADDR,
     .bmAttributes = USB_BM_ATTRIBUTES_XFER_BULK,
-    .wMaxPacketSize = MOCK_MSC_SCSI_BULK_EP_MPS_HS,           //MPS of 512 bytes
+    .wMaxPacketSize = MOCK_MSC_SCSI_BULK_EP_MPS_HS,           // MPS of 512 bytes
     .bInterval = 0,
 };
 
 void mock_msc_scsi_init_cbw(mock_msc_bulk_cbw_t *cbw, bool is_read, int offset, int num_sectors, uint32_t tag)
 {
-    cbw->dCBWSignature = 0x43425355;    //Fixed value
-    cbw->dCBWTag = tag; //Random value that is echoed back
+    cbw->dCBWSignature = 0x43425355;    // Fixed value
+    cbw->dCBWTag = tag; // Random value that is echoed back
     cbw->dCBWDataTransferLength = num_sectors * MOCK_MSC_SCSI_SECTOR_SIZE;
-    cbw->bmCBWFlags = (is_read) ? (1 << 7) : 0; //If this is a read, set the direction flag
+    cbw->bmCBWFlags = (is_read) ? (1 << 7) : 0; // If this is a read, set the direction flag
     cbw->bCBWLUN = MOCK_MSC_SCSI_LUN;
-    cbw->bCBWCBLength = 10;     //The length of the SCSI command
-    //Initialize SCSI CMD as READ10 or WRITE 10
-    cbw->CBWCB.opcode = (is_read) ? 0x28 : 0x2A;  //SCSI CMD READ10 or WRITE10
+    cbw->bCBWCBLength = 10;     // The length of the SCSI command
+    // Initialize SCSI CMD as READ10 or WRITE 10
+    cbw->CBWCB.opcode = (is_read) ? 0x28 : 0x2A;  // SCSI CMD READ10 or WRITE10
     cbw->CBWCB.flags = 0;
     cbw->CBWCB.lba_3 = (offset >> 24);
     cbw->CBWCB.lba_2 = (offset >> 16);

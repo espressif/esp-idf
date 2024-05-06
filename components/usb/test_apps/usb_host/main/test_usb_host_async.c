@@ -11,7 +11,7 @@
 #include "esp_err.h"
 #include "esp_intr_alloc.h"
 #include "test_usb_common.h"
-#include "test_usb_mock_msc.h"
+#include "mock_msc.h"
 #include "msc_client.h"
 #include "ctrl_client.h"
 #include "usb/usb_host.h"
@@ -46,7 +46,7 @@ Procedure:
 
 TEST_CASE("Test USB Host async client (single client)", "[usb_host][full_speed][high_speed]")
 {
-    //Create task to run client that communicates with MSC SCSI interface
+    // Create task to run client that communicates with MSC SCSI interface
     msc_client_test_param_t params = {
         .num_sectors_to_read = TEST_MSC_NUM_SECTORS_TOTAL,
         .num_sectors_per_xfer = TEST_MSC_NUM_SECTORS_PER_XFER,
@@ -57,11 +57,11 @@ TEST_CASE("Test USB Host async client (single client)", "[usb_host][full_speed][
     TaskHandle_t task_hdl;
     xTaskCreatePinnedToCore(msc_client_async_seq_task, "async", 4096, (void *)&params, 2, &task_hdl, 0);
     TEST_ASSERT_NOT_NULL_MESSAGE(task_hdl, "Failed to create async task");
-    //Start the task
+    // Start the task
     xTaskNotifyGive(task_hdl);
 
     while (1) {
-        //Start handling system events
+        // Start handling system events
         uint32_t event_flags;
         usb_host_lib_handle_events(portMAX_DELAY, &event_flags);
         if (event_flags & USB_HOST_LIB_EVENT_FLAGS_NO_CLIENTS) {
@@ -96,7 +96,7 @@ Procedure:
 */
 TEST_CASE("Test USB Host async client (multi client)", "[usb_host][full_speed][high_speed]")
 {
-    //Create task to run the MSC client
+    // Create task to run the MSC client
     msc_client_test_param_t msc_params = {
         .num_sectors_to_read = TEST_MSC_NUM_SECTORS_TOTAL,
         .num_sectors_per_xfer = TEST_MSC_NUM_SECTORS_PER_XFER,
@@ -108,7 +108,7 @@ TEST_CASE("Test USB Host async client (multi client)", "[usb_host][full_speed][h
     xTaskCreatePinnedToCore(msc_client_async_seq_task, "msc", 4096, (void *)&msc_params, 2, &msc_task_hdl, 0);
     TEST_ASSERT_NOT_NULL_MESSAGE(msc_task_hdl, "Failed to create MSC task");
 
-    //Create task a control transfer client
+    // Create task a control transfer client
     ctrl_client_test_param_t ctrl_params = {
         .num_ctrl_xfer_to_send = TEST_CTRL_NUM_TRANSFERS,
         .idVendor = MOCK_MSC_SCSI_DEV_ID_VENDOR,
@@ -118,12 +118,12 @@ TEST_CASE("Test USB Host async client (multi client)", "[usb_host][full_speed][h
     xTaskCreatePinnedToCore(ctrl_client_async_seq_task, "ctrl", 4096, (void *)&ctrl_params, 2, &ctrl_task_hdl, 0);
     TEST_ASSERT_NOT_NULL_MESSAGE(ctrl_task_hdl, "Failed to create CTRL task");
 
-    //Start both tasks
+    // Start both tasks
     xTaskNotifyGive(msc_task_hdl);
     xTaskNotifyGive(ctrl_task_hdl);
 
     while (1) {
-        //Start handling system events
+        // Start handling system events
         uint32_t event_flags;
         usb_host_lib_handle_events(portMAX_DELAY, &event_flags);
         if (event_flags & USB_HOST_LIB_EVENT_FLAGS_NO_CLIENTS) {
@@ -188,7 +188,7 @@ static void test_async_client_cb(const usb_host_client_event_msg_t *event_msg, v
 
 TEST_CASE("Test USB Host async API", "[usb_host][full_speed][low_speed]")
 {
-    //Register two clients
+    // Register two clients
     client_test_stage_t client0_stage = CLIENT_TEST_STAGE_NONE;
     client_test_stage_t client1_stage = CLIENT_TEST_STAGE_NONE;
 
@@ -206,7 +206,7 @@ TEST_CASE("Test USB Host async API", "[usb_host][full_speed][low_speed]")
     client_config.async.callback_arg = (void *)&client1_stage;
     TEST_ASSERT_EQUAL(ESP_OK, usb_host_client_register(&client_config, &client1_hdl));
 
-    //Wait until the device connects and the clients receive the event
+    // Wait until the device connects and the clients receive the event
     while (!(client0_stage == CLIENT_TEST_STAGE_CONN && client1_stage == CLIENT_TEST_STAGE_CONN)) {
         usb_host_lib_handle_events(0, NULL);
         usb_host_client_handle_events(client0_hdl, 0);
@@ -214,35 +214,35 @@ TEST_CASE("Test USB Host async API", "[usb_host][full_speed][low_speed]")
         vTaskDelay(pdMS_TO_TICKS(10));
     }
 
-    //Check that both clients can open the device
+    // Check that both clients can open the device
     TEST_ASSERT_NOT_EQUAL(0, dev_addr);
     usb_device_handle_t client0_dev_hdl;
     usb_device_handle_t client1_dev_hdl;
     printf("Opening device\n");
     TEST_ASSERT_EQUAL(ESP_OK, usb_host_device_open(client0_hdl, dev_addr, &client0_dev_hdl));
     TEST_ASSERT_EQUAL(ESP_OK, usb_host_device_open(client1_hdl, dev_addr, &client1_dev_hdl));
-    TEST_ASSERT_EQUAL_PTR(client0_dev_hdl, client1_dev_hdl);    //Check that its the same device
-    //Check that a client cannot open a non-existent device
+    TEST_ASSERT_EQUAL_PTR(client0_dev_hdl, client1_dev_hdl);    // Check that its the same device
+    // Check that a client cannot open a non-existent device
     TEST_ASSERT_NOT_EQUAL(ESP_OK, usb_host_device_open(client0_hdl, 0, &client0_dev_hdl));
 
-    //Check that the device cannot be opened again by the same client
+    // Check that the device cannot be opened again by the same client
     usb_device_handle_t dummy_dev_hdl;
     TEST_ASSERT_NOT_EQUAL(ESP_OK, usb_host_device_open(client0_hdl, dev_addr, &dummy_dev_hdl));
     TEST_ASSERT_NOT_EQUAL(ESP_OK, usb_host_device_open(client1_hdl, dev_addr, &dummy_dev_hdl));
     printf("Claiming interface\n");
-    //Check that both clients cannot claim the same interface
+    // Check that both clients cannot claim the same interface
     TEST_ASSERT_EQUAL(ESP_OK, usb_host_interface_claim(client0_hdl, client0_dev_hdl, MOCK_MSC_SCSI_INTF_NUMBER, MOCK_MSC_SCSI_INTF_ALT_SETTING));
     TEST_ASSERT_NOT_EQUAL(ESP_OK, usb_host_interface_claim(client1_hdl, client1_dev_hdl, MOCK_MSC_SCSI_INTF_NUMBER, MOCK_MSC_SCSI_INTF_ALT_SETTING));
-    //Check that client0 cannot claim the same interface multiple times
+    // Check that client0 cannot claim the same interface multiple times
     TEST_ASSERT_NOT_EQUAL(ESP_OK, usb_host_interface_claim(client0_hdl, client0_dev_hdl, MOCK_MSC_SCSI_INTF_NUMBER, MOCK_MSC_SCSI_INTF_ALT_SETTING));
 
     printf("Releasing interface\n");
-    //Check that client0 can release the interface
+    // Check that client0 can release the interface
     TEST_ASSERT_EQUAL(ESP_OK, usb_host_interface_release(client0_hdl, client0_dev_hdl, MOCK_MSC_SCSI_INTF_NUMBER));
-    //Check that client0 cannot release interface it has not claimed
+    // Check that client0 cannot release interface it has not claimed
     TEST_ASSERT_NOT_EQUAL(ESP_OK, usb_host_interface_release(client0_hdl, client0_dev_hdl, MOCK_MSC_SCSI_INTF_NUMBER));
 
-    //Wait until the device disconnects and the clients receive the event
+    // Wait until the device disconnects and the clients receive the event
     test_usb_set_phy_state(false, 0);
     while (!(client0_stage == CLIENT_TEST_STAGE_DCONN && client1_stage == CLIENT_TEST_STAGE_DCONN)) {
         usb_host_lib_handle_events(0, NULL);
@@ -254,7 +254,7 @@ TEST_CASE("Test USB Host async API", "[usb_host][full_speed][low_speed]")
     TEST_ASSERT_EQUAL(ESP_OK, usb_host_device_close(client0_hdl, client0_dev_hdl));
     TEST_ASSERT_EQUAL(ESP_OK, usb_host_device_close(client1_hdl, client1_dev_hdl));
 
-    //Deregister the clients
+    // Deregister the clients
     TEST_ASSERT_EQUAL(ESP_OK, usb_host_client_deregister(client0_hdl));
     TEST_ASSERT_EQUAL(ESP_OK, usb_host_client_deregister(client1_hdl));
 
