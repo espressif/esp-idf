@@ -778,6 +778,14 @@ static esp_err_t elf_core_dump_image_mmap(esp_partition_mmap_handle_t* core_data
         return err;
     }
 
+    /* Data read from the mmapped core dump partition will be garbage if flash
+     * encryption is enabled in hardware and core dump partition is not encrypted
+     */
+    if (esp_flash_encryption_enabled() && !core_part->encrypted) {
+        ESP_COREDUMP_LOGE("Flash encryption enabled in hardware and core dump partition is not encrypted!");
+        return ESP_ERR_NOT_SUPPORTED;
+    }
+
     /* map the full core dump partition, including the checksum. */
     return esp_partition_mmap(core_part, 0, out_size, ESP_PARTITION_MMAP_DATA,
                               map_addr, core_data_handle);
