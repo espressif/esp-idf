@@ -402,9 +402,9 @@ static void esp_gap_cb(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *par
         break;
     case ESP_GAP_BLE_SET_PKT_LENGTH_COMPLETE_EVT:
         ESP_LOGI(GATTC_TAG, "packet length updated: rx = %d, tx = %d, status = %d",
-                  param->pkt_data_length_cmpl.params.rx_len,
-                  param->pkt_data_length_cmpl.params.tx_len,
-                  param->pkt_data_length_cmpl.status);
+                  param->pkt_data_lenth_cmpl.params.rx_len,
+                  param->pkt_data_lenth_cmpl.params.tx_len,
+                  param->pkt_data_lenth_cmpl.status);
         break;
     default:
         break;
