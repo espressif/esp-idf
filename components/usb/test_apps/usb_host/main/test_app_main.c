@@ -11,17 +11,17 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "test_usb_common.h"
-#include "test_usb_mock_msc.h"
+#include "mock_msc.h"
 #include "usb/usb_host.h"
 
 void setUp(void)
 {
     mock_msc_scsi_init_reference_descriptors();
     unity_utils_record_free_mem();
-    test_usb_init_phy();    //Initialize the internal USB PHY and USB Controller for testing
-    //Install USB Host
+    test_usb_init_phy();    // Initialize the internal USB PHY and USB Controller for testing
+    // Install USB Host
     usb_host_config_t host_config = {
-        .skip_phy_setup = true,     //test_usb_init_phy() will already have setup the internal USB PHY for us
+        .skip_phy_setup = true,     // test_usb_init_phy() will already have setup the internal USB PHY for us
         .intr_flags = ESP_INTR_FLAG_LEVEL1,
     };
     ESP_ERROR_CHECK(usb_host_install(&host_config));
@@ -30,11 +30,11 @@ void setUp(void)
 
 void tearDown(void)
 {
-    //Short delay to allow task to be cleaned up
+    // Short delay to allow task to be cleaned up
     vTaskDelay(10);
-    //Clean up USB Host
+    // Clean up USB Host
     ESP_ERROR_CHECK(usb_host_uninstall());
-    test_usb_deinit_phy();  //Deinitialize the internal USB PHY after testing
+    test_usb_deinit_phy();  // Deinitialize the internal USB PHY after testing
     unity_utils_evaluate_leaks();
 }
 

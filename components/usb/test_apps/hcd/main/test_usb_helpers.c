@@ -333,7 +333,7 @@ static uint8_t config_desc_bytes [] = {
 };
 _Static_assert(sizeof(config_desc_bytes) == 0x0185, "Configuration Descriptor size does not match");
 
-#define TEST_NUM_INTF_DESC      3   //Total number of interface descriptors (including alternate)
+#define TEST_NUM_INTF_DESC      3   // Total number of interface descriptors (including alternate)
 
 // --------------------- Sub-Test 1 ------------------------
 
@@ -348,7 +348,7 @@ static void test_walk_desc(const usb_config_desc_t *config_desc)
         cur_desc = usb_parse_next_descriptor_of_type(cur_desc, config_desc->wTotalLength, USB_B_DESCRIPTOR_TYPE_INTERFACE, &offset);
         TEST_ASSERT_NOT_NULL(cur_desc);
     }
-    //Attempting to look for another interface descriptor should result in NULL
+    // Attempting to look for another interface descriptor should result in NULL
     cur_desc = usb_parse_next_descriptor_of_type(cur_desc, config_desc->wTotalLength, USB_B_DESCRIPTOR_TYPE_INTERFACE, &offset);
     TEST_ASSERT_NULL(cur_desc);
 }
@@ -358,11 +358,11 @@ Test if the count of number of alternate descriptors is correct
 */
 static void test_alt_intf_desc_count(const usb_config_desc_t *config_desc)
 {
-    //bInterface 0 has no alternate interfaces
+    // bInterface 0 has no alternate interfaces
     TEST_ASSERT_EQUAL(0, usb_parse_interface_number_of_alternate(config_desc, 0));
-    //bInterface 1 has 1 alternate interface
+    // bInterface 1 has 1 alternate interface
     TEST_ASSERT_EQUAL(1, usb_parse_interface_number_of_alternate(config_desc, 1));
-    //Non existent bInterface 2 should return -1
+    // Non existent bInterface 2 should return -1
     TEST_ASSERT_EQUAL(-1, usb_parse_interface_number_of_alternate(config_desc, 2));
 }
 
@@ -370,10 +370,10 @@ static void test_parse_intf_and_ep(const usb_config_desc_t *config_desc)
 {
     int offset_intf = 0;
 
-    //Get bInterfaceNumber 0 (index 0)
+    // Get bInterfaceNumber 0 (index 0)
     const usb_intf_desc_t *intf_desc = usb_parse_interface_descriptor(config_desc, 0, 0, &offset_intf);
     TEST_ASSERT_NOT_NULL(intf_desc);
-    //Should only have one endpoint
+    // Should only have one endpoint
     int offset_ep = offset_intf;
     const usb_ep_desc_t *ep_desc = usb_parse_endpoint_descriptor_by_index(intf_desc, 0, config_desc->wTotalLength, &offset_ep);
     TEST_ASSERT_NOT_NULL(ep_desc);
@@ -382,20 +382,20 @@ static void test_parse_intf_and_ep(const usb_config_desc_t *config_desc)
     ep_desc = usb_parse_endpoint_descriptor_by_index(intf_desc, 1, config_desc->wTotalLength, &offset_ep);
     TEST_ASSERT_NULL(ep_desc);
 
-    //Get bInterfaceNumber 1 alternate setting 0
+    // Get bInterfaceNumber 1 alternate setting 0
     offset_intf = 0;
     intf_desc = usb_parse_interface_descriptor(config_desc, 1, 0, &offset_intf);
     TEST_ASSERT_NOT_NULL(intf_desc);
-    //Should have no endpoints
+    // Should have no endpoints
     offset_ep = offset_intf;
     ep_desc = usb_parse_endpoint_descriptor_by_index(intf_desc, 0, config_desc->wTotalLength, &offset_ep);
     TEST_ASSERT_NULL(ep_desc);
 
-    //Get bInterfaceNumber 1 alternate setting 1
+    // Get bInterfaceNumber 1 alternate setting 1
     offset_intf = 0;
     intf_desc = usb_parse_interface_descriptor(config_desc, 1, 1, &offset_intf);
     TEST_ASSERT_NOT_NULL(intf_desc);
-    //Should only have one endpoint
+    // Should only have one endpoint
     offset_ep = offset_intf;
     ep_desc = usb_parse_endpoint_descriptor_by_index(intf_desc, 0, config_desc->wTotalLength, &offset_ep);
     TEST_ASSERT_NOT_NULL(ep_desc);
@@ -408,21 +408,21 @@ static void test_parse_intf_and_ep(const usb_config_desc_t *config_desc)
 static void test_parse_ep_by_address(const usb_config_desc_t *config_desc)
 {
     int offset_ep = 0;
-    //Get bInterface 0 bAlternateSetting 0 EP 0x83
+    // Get bInterface 0 bAlternateSetting 0 EP 0x83
     const usb_ep_desc_t *ep_desc = usb_parse_endpoint_descriptor_by_address(config_desc, 0, 0, 0x83, &offset_ep);
     TEST_ASSERT_NOT_NULL(ep_desc);
     TEST_ASSERT_EQUAL(0x83, ep_desc->bEndpointAddress);
-    //Getting same EP address under different interface should return NULL
+    // Getting same EP address under different interface should return NULL
     offset_ep = 0;
     ep_desc = usb_parse_endpoint_descriptor_by_address(config_desc, 1, 0, 0x83, &offset_ep);
     TEST_ASSERT_NULL(ep_desc);
 
-    //Get bInterface 1 bAlternateSetting 1 EP 0x81
+    // Get bInterface 1 bAlternateSetting 1 EP 0x81
     offset_ep = 0;
     ep_desc = usb_parse_endpoint_descriptor_by_address(config_desc, 1, 1, 0x81, &offset_ep);
     TEST_ASSERT_NOT_NULL(ep_desc);
     TEST_ASSERT_EQUAL(0x81, ep_desc->bEndpointAddress);
-    //Getting same EP address under different interface should return NULL
+    // Getting same EP address under different interface should return NULL
     offset_ep = 0;
     ep_desc = usb_parse_endpoint_descriptor_by_address(config_desc, 1, 0, 0x81, &offset_ep);
     TEST_ASSERT_NULL(ep_desc);
