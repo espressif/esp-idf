@@ -933,7 +933,7 @@ static void elf_parse_version_info(esp_core_dump_summary_t *summary, void *data)
 {
     core_dump_elf_version_info_t *version = (core_dump_elf_version_info_t *)data;
     summary->core_dump_version = version->version;
-    memcpy(summary->app_elf_sha256, version->app_elf_sha256, ELF_APP_SHA256_SIZE);
+    memcpy(summary->app_elf_sha256, version->app_elf_sha256, sizeof(summary->app_elf_sha256));
     ESP_COREDUMP_LOGD("Core dump version 0x%x", summary->core_dump_version);
     ESP_COREDUMP_LOGD("App ELF SHA2 %s", (char *)summary->app_elf_sha256);
 }
