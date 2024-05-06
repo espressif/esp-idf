@@ -974,7 +974,7 @@ typedef struct{
   tBTM_SET_PKT_DATA_LENGTH_CBACK *set_pkt_data_length_cb;
 }tBTM_CallbackFunc;
 
-extern tBTM_CallbackFunc conn_param_update_cb;
+extern tBTM_CallbackFunc conn_callback_func;
 /* security action for L2CAP COC channels */
 #define BTM_SEC_OK                1
 #define BTM_SEC_ENCRYPT           2    /* encrypt the link with current key */
