@@ -957,9 +957,18 @@ def test_illegal_access(dut: PanicTestDut, config: str, test_func_name: str) -> 
 @pytest.mark.generic
 def test_capture_dram(dut: PanicTestDut, config: str, test_func_name: str) -> None:
     dut.run_test_func(test_func_name)
-
+    regex_pattern = rb'assert failed:[\s\w()]*?\s[.\w/]*\.(?:c|cpp|h|hpp):\d.*$'
+    dut.expect(re.compile(regex_pattern, re.MULTILINE))
+    if dut.is_xtensa:
+        dut.expect_backtrace()
+    else:
+        dut.expect_stack_dump()
     dut.expect_elf_sha256()
     dut.expect_none(['Guru Meditation', 'Re-entered core dump'])
+
+    dut.expect_exact('Save core dump to flash...')
+    dut.expect_exact('Core dump has been saved to flash.')
+    dut.expect('Rebooting...')
 
     core_elf_file = dut.process_coredump_flash()
     dut.start_gdb_for_coredump(core_elf_file)
