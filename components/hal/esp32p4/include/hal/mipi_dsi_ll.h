@@ -14,7 +14,8 @@
 #include "hal/mipi_dsi_brg_ll.h"
 #include "hal/mipi_dsi_phy_ll.h"
 
-#define MIPI_DSI_LL_NUM_BUS 1 // 1 MIPI DSI bus
+#define MIPI_DSI_LL_NUM_BUS        1 // support only 1 MIPI DSI bus
+#define MIPI_DSI_LL_MAX_DATA_LANES 2 // support up to 2 data lanes
 
 #ifdef __cplusplus
 extern "C" {
