@@ -6,7 +6,13 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <assert.h>
+
+// getentropy live in different header files on Mac and Linux
+#if (defined(__APPLE__) && defined(__MACH__))
+#include <sys/random.h>
+#else
 #include <unistd.h>
+#endif
 
 #include "esp_log.h"
 
