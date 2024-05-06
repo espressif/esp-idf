@@ -23,9 +23,9 @@
 #ifdef CONFIG_VFS_SUPPORT_DIR
 struct cached_data{
 #if FF_USE_LFN
-	char file_path[FILENAME_MAX+FF_LFN_BUF+1];
+	char file_path[FILENAME_MAX+1+FF_LFN_BUF+1]; //FILENAME_MAX+1: for dir_path, FF_LFN_BUF+1: for file name
 #else
-	char file_path[FILENAME_MAX+FF_SFN_BUF+1];
+	char file_path[FILENAME_MAX+1+FF_SFN_BUF+1]; //FILENAME_MAX+1: for dir_path, FF_LFN_BUF+1: for file name
 #endif
 	FILINFO fileinfo;
 };
