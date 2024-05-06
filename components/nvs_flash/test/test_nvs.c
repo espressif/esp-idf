@@ -1,4 +1,6 @@
 #include <stdio.h>
+#include <sys/param.h>
+
 #include <ctype.h>
 #include <errno.h>
 #include <stdlib.h>
@@ -483,6 +485,7 @@ TEST_CASE("test nvs apis for nvs partition generator utility with encryption ena
     extern const char nvs_key_end[]   asm("_binary_encryption_keys_bin_end");
 
     extern const char nvs_data_start[] asm("_binary_partition_encrypted_bin_start");
+    extern const char nvs_data_end[] asm("_binary_partition_encrypted_bin_end");
 
     extern const char sample_bin_start[] asm("_binary_sample_bin_start");
 
@@ -505,7 +508,11 @@ TEST_CASE("test nvs apis for nvs partition generator utility with encryption ena
         ESP_ERROR_CHECK( esp_partition_write(key_part, i, nvs_key_start + i, SPI_FLASH_SEC_SIZE) );
     }
 
-    for (int i = 0; i < nvs_part->size; i+= SPI_FLASH_SEC_SIZE) {
+    const int content_size = nvs_data_end - nvs_data_start - 1;
+    TEST_ASSERT_TRUE((content_size % SPI_FLASH_SEC_SIZE) == 0);
+
+    const int size_to_write = MIN(content_size, nvs_part->size);
+    for (int i = 0; i < size_to_write; i+= SPI_FLASH_SEC_SIZE) {
         ESP_ERROR_CHECK( esp_partition_write(nvs_part, i, nvs_data_start + i, SPI_FLASH_SEC_SIZE) );
     }
 
