@@ -1,6 +1,7 @@
-# SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import fnmatch
+import glob
 import json
 import locale
 import os
@@ -8,18 +9,33 @@ import re
 import shutil
 import subprocess
 import sys
-from typing import Any, Dict, List, Optional
+from typing import Any
+from typing import Dict
+from typing import List
+from typing import Optional
 from urllib.error import URLError
-from urllib.request import Request, urlopen
+from urllib.request import Request
+from urllib.request import urlopen
 from webbrowser import open_new_tab
 
 import click
 from click.core import Context
-from idf_py_actions.constants import GENERATORS, PREVIEW_TARGETS, SUPPORTED_TARGETS, URL_TO_DOC
+from idf_py_actions.constants import GENERATORS
+from idf_py_actions.constants import PREVIEW_TARGETS
+from idf_py_actions.constants import SUPPORTED_TARGETS
+from idf_py_actions.constants import URL_TO_DOC
 from idf_py_actions.errors import FatalError
 from idf_py_actions.global_options import global_options
-from idf_py_actions.tools import (PropertyDict, TargetChoice, ensure_build_directory, generate_hints, get_target,
-                                  idf_version, merge_action_lists, print_warning, run_target, yellow_print)
+from idf_py_actions.tools import ensure_build_directory
+from idf_py_actions.tools import generate_hints
+from idf_py_actions.tools import get_target
+from idf_py_actions.tools import idf_version
+from idf_py_actions.tools import merge_action_lists
+from idf_py_actions.tools import print_warning
+from idf_py_actions.tools import PropertyDict
+from idf_py_actions.tools import run_target
+from idf_py_actions.tools import TargetChoice
+from idf_py_actions.tools import yellow_print
 
 
 def action_extensions(base_actions: Dict, project_path: str) -> Any:
@@ -34,7 +50,7 @@ def action_extensions(base_actions: Dict, project_path: str) -> Any:
         run_target(target_name, args, force_progression=GENERATORS[args.generator].get('force_progression', False))
 
     def size_target(target_name: str, ctx: Context, args: PropertyDict, output_format: str,
-                    output_file: str, legacy: bool) -> None:
+                    output_file: str, diff_map_file: str, legacy: bool) -> None:
         """
         Builds the app and then executes a size-related target passed in 'target_name'.
         `tool_error_handler` handler is used to suppress errors during the build,
@@ -44,6 +60,8 @@ def action_extensions(base_actions: Dict, project_path: str) -> Any:
         def tool_error_handler(e: int, stdout: str, stderr: str) -> None:
             for hint in generate_hints(stdout, stderr):
                 yellow_print(hint)
+
+        env: Dict[str, Any] = {}
 
         if not legacy and output_format != 'json':
             try:
@@ -55,28 +73,43 @@ def action_extensions(base_actions: Dict, project_path: str) -> Any:
                 # Legacy mode is used only when explicitly requested with --legacy option
                 # or when "--format json" option is specified. Here we enable the
                 # esp-idf-size refactored version with ESP_IDF_SIZE_NG env. variable.
-                os.environ['ESP_IDF_SIZE_NG'] = '1'
+                env['ESP_IDF_SIZE_NG'] = '1'
                 # ESP_IDF_SIZE_FORCE_TERMINAL is set to force terminal control codes even
                 # if stdout is not attached to terminal. This is set to pass color codes
                 # from esp-idf-size to idf.py.
-                os.environ['ESP_IDF_SIZE_FORCE_TERMINAL'] = '1'
+                env['ESP_IDF_SIZE_FORCE_TERMINAL'] = '1'
 
         if legacy and output_format in ['json2', 'raw', 'tree']:
             # These formats are supported in new version only.
             # We would get error from the esp-idf-size anyway, so print error early.
             raise FatalError(f'Legacy esp-idf-size does not support {output_format} format')
 
-        os.environ['SIZE_OUTPUT_FORMAT'] = output_format
+        env['SIZE_OUTPUT_FORMAT'] = output_format
         if output_file:
-            os.environ['SIZE_OUTPUT_FILE'] = os.path.abspath(output_file)
+            env['SIZE_OUTPUT_FILE'] = os.path.abspath(output_file)
+        if diff_map_file:
+            diff_map_file = os.path.abspath(diff_map_file)
+            if os.path.isdir(diff_map_file):
+                # The diff_map_file argument is a directory. Try to look for the map
+                # file directly in it, in case it's a build directory or in one level below
+                # if it's a project directory.
+                files = glob.glob(os.path.join(diff_map_file, '*.map')) or glob.glob(os.path.join(diff_map_file, '*/*.map'))
+                if not files:
+                    raise FatalError(f'No diff map file found in {diff_map_file} directory')
+                if len(files) > 1:
+                    map_files = ', '.join(files)
+                    raise FatalError(f'Two or more diff map files {map_files} found in {diff_map_file} directory')
+                diff_map_file = files[0]
+
+            env['SIZE_DIFF_FILE'] = diff_map_file
 
         ensure_build_directory(args, ctx.info_name)
         run_target('all', args, force_progression=GENERATORS[args.generator].get('force_progression', False),
                    custom_error_handler=tool_error_handler)
-        run_target(target_name, args)
+        run_target(target_name, args, env=env)
 
     def list_build_system_targets(target_name: str, ctx: Context, args: PropertyDict) -> None:
-        """Shows list of targets known to build sytem (make/ninja)"""
+        """Shows list of targets known to build system (make/ninja)"""
         build_target('help', ctx, args)
 
     def menuconfig(target_name: str, ctx: Context, args: PropertyDict, style: str) -> None:
@@ -383,6 +416,9 @@ def action_extensions(base_actions: Dict, project_path: str) -> Any:
                      'is_flag': True,
                      'default': os.environ.get('ESP_IDF_SIZE_LEGACY', '0') == '1',
                      'help': 'Use legacy esp-idf-size version'},
+                    {'names': ['--diff', 'diff_map_file'],
+                     'help': ('Show the differences in comparison with another project. '
+                              'Argument can be map file or project directory.')},
                     {'names': ['--output-file', 'output_file'],
                      'help': 'Print output to the specified file instead of to the standard output'}]
 
