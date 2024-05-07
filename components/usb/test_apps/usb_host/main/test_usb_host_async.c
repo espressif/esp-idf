@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,7 +11,7 @@
 #include "esp_err.h"
 #include "esp_intr_alloc.h"
 #include "test_usb_common.h"
-#include "mock_msc.h"
+#include "dev_msc.h"
 #include "msc_client.h"
 #include "ctrl_client.h"
 #include "usb/usb_host.h"
@@ -51,8 +51,6 @@ TEST_CASE("Test USB Host async client (single client)", "[usb_host][full_speed][
         .num_sectors_to_read = TEST_MSC_NUM_SECTORS_TOTAL,
         .num_sectors_per_xfer = TEST_MSC_NUM_SECTORS_PER_XFER,
         .msc_scsi_xfer_tag = TEST_MSC_SCSI_TAG,
-        .idVendor = MOCK_MSC_SCSI_DEV_ID_VENDOR,
-        .idProduct = MOCK_MSC_SCSI_DEV_ID_PRODUCT,
     };
     TaskHandle_t task_hdl;
     xTaskCreatePinnedToCore(msc_client_async_seq_task, "async", 4096, (void *)&params, 2, &task_hdl, 0);
@@ -101,8 +99,6 @@ TEST_CASE("Test USB Host async client (multi client)", "[usb_host][full_speed][h
         .num_sectors_to_read = TEST_MSC_NUM_SECTORS_TOTAL,
         .num_sectors_per_xfer = TEST_MSC_NUM_SECTORS_PER_XFER,
         .msc_scsi_xfer_tag = TEST_MSC_SCSI_TAG,
-        .idVendor = MOCK_MSC_SCSI_DEV_ID_VENDOR,
-        .idProduct = MOCK_MSC_SCSI_DEV_ID_PRODUCT,
     };
     TaskHandle_t msc_task_hdl;
     xTaskCreatePinnedToCore(msc_client_async_seq_task, "msc", 4096, (void *)&msc_params, 2, &msc_task_hdl, 0);
@@ -111,8 +107,6 @@ TEST_CASE("Test USB Host async client (multi client)", "[usb_host][full_speed][h
     // Create task a control transfer client
     ctrl_client_test_param_t ctrl_params = {
         .num_ctrl_xfer_to_send = TEST_CTRL_NUM_TRANSFERS,
-        .idVendor = MOCK_MSC_SCSI_DEV_ID_VENDOR,
-        .idProduct = MOCK_MSC_SCSI_DEV_ID_PRODUCT,
     };
     TaskHandle_t ctrl_task_hdl;
     xTaskCreatePinnedToCore(ctrl_client_async_seq_task, "ctrl", 4096, (void *)&ctrl_params, 2, &ctrl_task_hdl, 0);
@@ -226,21 +220,35 @@ TEST_CASE("Test USB Host async API", "[usb_host][full_speed][low_speed]")
     TEST_ASSERT_NOT_EQUAL(ESP_OK, usb_host_device_open(client0_hdl, 0, &client0_dev_hdl));
 
     // Check that the device cannot be opened again by the same client
+    const dev_msc_info_t *dev_info = dev_msc_get_info();
     usb_device_handle_t dummy_dev_hdl;
     TEST_ASSERT_NOT_EQUAL(ESP_OK, usb_host_device_open(client0_hdl, dev_addr, &dummy_dev_hdl));
     TEST_ASSERT_NOT_EQUAL(ESP_OK, usb_host_device_open(client1_hdl, dev_addr, &dummy_dev_hdl));
     printf("Claiming interface\n");
     // Check that both clients cannot claim the same interface
-    TEST_ASSERT_EQUAL(ESP_OK, usb_host_interface_claim(client0_hdl, client0_dev_hdl, MOCK_MSC_SCSI_INTF_NUMBER, MOCK_MSC_SCSI_INTF_ALT_SETTING));
-    TEST_ASSERT_NOT_EQUAL(ESP_OK, usb_host_interface_claim(client1_hdl, client1_dev_hdl, MOCK_MSC_SCSI_INTF_NUMBER, MOCK_MSC_SCSI_INTF_ALT_SETTING));
+    TEST_ASSERT_EQUAL(ESP_OK, usb_host_interface_claim(client0_hdl,
+                                                       client0_dev_hdl,
+                                                       dev_info->bInterfaceNumber,
+                                                       dev_info->bAlternateSetting));
+    TEST_ASSERT_NOT_EQUAL(ESP_OK, usb_host_interface_claim(client1_hdl,
+                                                           client1_dev_hdl,
+                                                           dev_info->bInterfaceNumber,
+                                                           dev_info->bAlternateSetting));
     // Check that client0 cannot claim the same interface multiple times
-    TEST_ASSERT_NOT_EQUAL(ESP_OK, usb_host_interface_claim(client0_hdl, client0_dev_hdl, MOCK_MSC_SCSI_INTF_NUMBER, MOCK_MSC_SCSI_INTF_ALT_SETTING));
+    TEST_ASSERT_NOT_EQUAL(ESP_OK, usb_host_interface_claim(client0_hdl,
+                                                           client0_dev_hdl,
+                                                           dev_info->bInterfaceNumber,
+                                                           dev_info->bAlternateSetting));
 
     printf("Releasing interface\n");
     // Check that client0 can release the interface
-    TEST_ASSERT_EQUAL(ESP_OK, usb_host_interface_release(client0_hdl, client0_dev_hdl, MOCK_MSC_SCSI_INTF_NUMBER));
+    TEST_ASSERT_EQUAL(ESP_OK, usb_host_interface_release(client0_hdl,
+                                                         client0_dev_hdl,
+                                                         dev_info->bInterfaceNumber));
     // Check that client0 cannot release interface it has not claimed
-    TEST_ASSERT_NOT_EQUAL(ESP_OK, usb_host_interface_release(client0_hdl, client0_dev_hdl, MOCK_MSC_SCSI_INTF_NUMBER));
+    TEST_ASSERT_NOT_EQUAL(ESP_OK, usb_host_interface_release(client0_hdl,
+                                                             client0_dev_hdl,
+                                                             dev_info->bInterfaceNumber));
 
     // Wait until the device disconnects and the clients receive the event
     test_usb_set_phy_state(false, 0);
