@@ -116,7 +116,9 @@ Configure MAC and PHY
 
 The Ethernet driver is composed of two parts: MAC and PHY.
 
-.. only:: SOC_EMAC_SUPPORTED
+.. TODO remove esp32p4 (IDF-9057)
+
+.. only:: SOC_EMAC_SUPPORTED and not esp32p4
 
     The communication between MAC and PHY can have diverse choices: **MII** (Media Independent Interface), **RMII** (Reduced Media Independent Interface), etc.
 
@@ -143,7 +145,7 @@ The Ethernet driver is composed of two parts: MAC and PHY.
 
     * Some PHY chips can derive the ``REF_CLK`` from its externally connected 25 MHz crystal oscillator (as seen the option **a** in the picture). In this case, you should configure :cpp:member:`eth_mac_clock_config_t::clock_mode` of :cpp:member:`eth_esp32_emac_config_t::clock_config` to :cpp:enumerator:`emac_rmii_clock_mode_t::EMAC_CLK_EXT_IN`.
 
-    * Some PHY chip uses an externally connected 50MHz crystal oscillator or other clock sources, which can also be used as the ``REF_CLK`` for the MAC side (as seen the option **b** in the picture). In this case, you still need to configure :cpp:member:`eth_mac_clock_config_t::clock_mode` of :cpp:member:`eth_esp32_emac_config_t::clock_config` to :cpp:enumerator:`emac_rmii_clock_mode_t::EMAC_CLK_EXT_IN`.
+    * Some PHY chip uses an externally connected 50 MHz crystal oscillator or other clock sources, which can also be used as the ``REF_CLK`` for the MAC side (as seen the option **b** in the picture). In this case, you still need to configure :cpp:member:`eth_mac_clock_config_t::clock_mode` of :cpp:member:`eth_esp32_emac_config_t::clock_config` to :cpp:enumerator:`emac_rmii_clock_mode_t::EMAC_CLK_EXT_IN`.
 
     * Some EMAC controllers can generate the ``REF_CLK`` using an internal high-precision PLL (as seen the option **c** in the picture). In this case, you should configure :cpp:member:`eth_mac_clock_config_t::clock_mode` of :cpp:member:`eth_esp32_emac_config_t::clock_config` to :cpp:enumerator:`emac_rmii_clock_mode_t::EMAC_CLK_OUT`.
 
