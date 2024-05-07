@@ -59,7 +59,7 @@ config BT_A2DP_ENABLE
     depends on BT_CLASSIC_ENABLED
     default n
     help
-        Advanced Audio Distrubution Profile
+        Advanced Audio Distribution Profile
 
 config BT_SPP_ENABLED
     bool "SPP"
@@ -114,7 +114,7 @@ config BT_HFP_WBS_ENABLE
     default y
     help
         This enables Wide Band Speech. Should disable it when SCO data path is PCM.
-        Otherwise there will be no data transmited via GPIOs.
+        Otherwise there will be no data transmitted via GPIOs.
 
 
 menuconfig BT_HID_ENABLED
@@ -1065,7 +1065,7 @@ config BT_ACL_CONNECTIONS
         is used.
 
 config BT_MULTI_CONNECTION_ENBALE
-    bool "Enable BLE multi-conections"
+    bool "Enable BLE multi-connections"
     depends on BT_BLE_ENABLED
     default y
     help
