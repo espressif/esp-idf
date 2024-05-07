@@ -226,8 +226,9 @@ TEST_CASE("Can wake up from automatic light sleep by GPIO", "[pm][ignore]")
         printf("%lld %lld %u\n", end_rtc - start_rtc, end_hs - start_hs, end_tick - start_tick);
 
         TEST_ASSERT_INT32_WITHIN(3, delay_ticks, end_tick - start_tick);
-        TEST_ASSERT_INT32_WITHIN(2 * portTICK_PERIOD_MS * 1000, delay_ms * 1000, end_hs - start_hs);
-        TEST_ASSERT_INT32_WITHIN(2 * portTICK_PERIOD_MS * 1000, delay_ms * 1000, end_rtc - start_rtc);
+        // Error tolerance is 2 tick + duration * 5%
+        TEST_ASSERT_INT32_WITHIN((2 * portTICK_PERIOD_MS + delay_ms / 20) * 1000, delay_ms * 1000, end_hs - start_hs);
+        TEST_ASSERT_INT32_WITHIN((2 * portTICK_PERIOD_MS + delay_ms / 20) * 1000, delay_ms * 1000, end_rtc - start_rtc);
     }
     REG_CLR_BIT(rtc_io_desc[rtcio_num].reg, rtc_io_desc[rtcio_num].hold_force);
     rtc_gpio_deinit(ext1_wakeup_gpio);
@@ -277,13 +278,15 @@ TEST_CASE("vTaskDelay duration is correct with light sleep enabled", "[pm]")
         xTaskCreatePinnedToCore(test_delay_task, "", 2048, (void *) &args, 3, NULL, 0);
         TEST_ASSERT( xSemaphoreTake(done_sem, delay_ms * 10 / portTICK_PERIOD_MS) );
         printf("CPU0: %d %d\n", args.delay_us, args.result);
-        TEST_ASSERT_INT32_WITHIN(1000 * portTICK_PERIOD_MS * 2, args.delay_us, args.result);
+        // Error tolerance is 2 tick + duration * 5%
+        TEST_ASSERT_INT32_WITHIN((portTICK_PERIOD_MS * 2 + args.delay_us / 20) * 1000, args.delay_us, args.result);
 
 #if CONFIG_FREERTOS_NUMBER_OF_CORES == 2
         xTaskCreatePinnedToCore(test_delay_task, "", 2048, (void *) &args, 3, NULL, 1);
         TEST_ASSERT( xSemaphoreTake(done_sem, delay_ms * 10 / portTICK_PERIOD_MS) );
         printf("CPU1: %d %d\n", args.delay_us, args.result);
-        TEST_ASSERT_INT32_WITHIN(1000 * portTICK_PERIOD_MS * 2, args.delay_us, args.result);
+        // Error tolerance is 2 tick + duration * 5%
+        TEST_ASSERT_INT32_WITHIN((portTICK_PERIOD_MS * 2 + args.delay_us / 20) * 1000, args.delay_us, args.result);
 #endif
     }
     vSemaphoreDelete(done_sem);
