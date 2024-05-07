@@ -321,6 +321,7 @@ static bool hostap_sta_join(void **sta, u8 *bssid, u8 *wpa_ie, u8 wpa_ie_len, u8
 {
     struct sta_info *sta_info = NULL;
     struct hostapd_data *hapd = hostapd_get_hapd_data();
+    uint8_t reason = WLAN_REASON_PREV_AUTH_NOT_VALID;
 
     if (!hapd) {
         goto fail;
@@ -379,7 +380,7 @@ process_old_sta:
         goto fail;
     }
 #endif
-    if (wpa_ap_join(sta_info, bssid, wpa_ie, wpa_ie_len, rsnxe, rsnxe_len, pmf_enable, subtype, pairwise_cipher)) {
+    if (hostap_new_assoc_sta(sta_info, bssid, wpa_ie, wpa_ie_len, rsnxe, rsnxe_len, pmf_enable, subtype, pairwise_cipher, &reason)) {
         goto done;
     } else {
         goto fail;
@@ -400,7 +401,7 @@ fail:
         os_semphr_give(sta_info->lock);
     }
 #endif /* CONFIG_SAE */
-    esp_wifi_ap_deauth_internal(bssid, WLAN_REASON_PREV_AUTH_NOT_VALID);
+    esp_wifi_ap_deauth_internal(bssid, reason);
     return false;
 }
 #endif

@@ -7,6 +7,7 @@
 #include "utils/includes.h"
 
 #include "utils/common.h"
+#include "utils/eloop.h"
 #include "crypto/sha1.h"
 #include "common/ieee802_11_defs.h"
 #include "common/eapol_common.h"
@@ -21,6 +22,9 @@
 #include "esp_wps.h"
 #include "esp_wps_i.h"
 
+#include "ap/sta_info.h"
+#include "common/sae.h"
+#include "ap/ieee802_11.h"
 #define WIFI_PASSWORD_LEN_MAX 65
 
 struct hostapd_data *global_hapd;
@@ -321,4 +325,144 @@ u16 esp_send_assoc_resp(struct hostapd_data *hapd, const u8 *addr,
 done:
     os_free(reply);
     return res;
+}
+
+uint8_t wpa_status_to_reason_code(int status)
+{
+    switch (status) {
+    case WLAN_STATUS_INVALID_IE:
+        return WLAN_REASON_INVALID_IE;
+    case WLAN_STATUS_GROUP_CIPHER_NOT_VALID:
+        return WLAN_REASON_GROUP_CIPHER_NOT_VALID;
+    case WLAN_STATUS_PAIRWISE_CIPHER_NOT_VALID:
+        return WLAN_REASON_PAIRWISE_CIPHER_NOT_VALID;
+    case WLAN_STATUS_AKMP_NOT_VALID:
+        return WLAN_REASON_AKMP_NOT_VALID;
+    case WLAN_STATUS_CIPHER_REJECTED_PER_POLICY:
+        return WLAN_REASON_CIPHER_SUITE_REJECTED;
+    case WLAN_STATUS_INVALID_PMKID:
+        return WLAN_REASON_INVALID_PMKID;
+    case WLAN_STATUS_INVALID_MDIE:
+        return WLAN_REASON_INVALID_MDE;
+    default:
+        return WLAN_REASON_UNSPECIFIED;
+    }
+}
+
+bool hostap_new_assoc_sta(struct sta_info *sta, uint8_t *bssid, uint8_t *wpa_ie,
+                          uint8_t wpa_ie_len, uint8_t *rsnxe, uint8_t rsnxe_len,
+                          bool *pmf_enable, int subtype, uint8_t *pairwise_cipher, uint8_t *reason)
+{
+    struct hostapd_data *hapd = (struct hostapd_data*)esp_wifi_get_hostap_private_internal();
+    enum wpa_validate_result res = WPA_IE_OK;
+    int status = WLAN_STATUS_SUCCESS;
+    bool omit_rsnxe = false;
+
+    if (!sta || !bssid || !wpa_ie) {
+        return false;
+    }
+
+    if (hapd) {
+        if (hapd->wpa_auth->conf.wpa) {
+            if (sta->wpa_sm) {
+                wpa_auth_sta_deinit(sta->wpa_sm);
+            }
+
+            sta->wpa_sm = wpa_auth_sta_init(hapd->wpa_auth, bssid);
+            wpa_printf(MSG_DEBUG, "init wpa sm=%p", sta->wpa_sm);
+
+            if (sta->wpa_sm == NULL) {
+                status = WLAN_STATUS_AP_UNABLE_TO_HANDLE_NEW_STA;
+                goto send_resp;
+            }
+
+            res = wpa_validate_wpa_ie(hapd->wpa_auth, sta->wpa_sm, wpa_ie, wpa_ie_len, rsnxe, rsnxe_len);
+
+#ifdef CONFIG_SAE
+            if (wpa_auth_uses_sae(sta->wpa_sm) && sta->sae &&
+                    sta->sae->state == SAE_ACCEPTED) {
+                wpa_auth_add_sae_pmkid(sta->wpa_sm, sta->sae->pmkid);
+            }
+#endif /* CONFIG_SAE */
+
+            status = wpa_res_to_status_code(res);
+
+send_resp:
+            if (!rsnxe) {
+                omit_rsnxe = true;
+            }
+
+            if (esp_send_assoc_resp(hapd, bssid, status, omit_rsnxe, subtype) != WLAN_STATUS_SUCCESS) {
+                status = WLAN_STATUS_AP_UNABLE_TO_HANDLE_NEW_STA;
+            }
+
+            if (status != WLAN_STATUS_SUCCESS) {
+                *reason = wpa_status_to_reason_code(status);
+                return false;
+            }
+
+            //Check whether AP uses Management Frame Protection for this connection
+            *pmf_enable = wpa_auth_uses_mfp(sta->wpa_sm);
+            *pairwise_cipher = GET_BIT_POSITION(sta->wpa_sm->pairwise);
+        }
+
+        wpa_auth_sta_associated(hapd->wpa_auth, sta->wpa_sm);
+    }
+
+    return true;
+}
+
+#ifdef CONFIG_WPS_REGISTRAR
+static void ap_free_sta_timeout(void *ctx, void *data)
+{
+    struct hostapd_data *hapd = (struct hostapd_data *) ctx;
+    u8 *addr = (u8 *) data;
+    struct sta_info *sta = ap_get_sta(hapd, addr);
+
+    if (sta) {
+        ap_free_sta(hapd, sta);
+    }
+
+    os_free(addr);
+}
+#endif
+
+bool wpa_ap_remove(u8* bssid)
+{
+    struct hostapd_data *hapd = hostapd_get_hapd_data();
+
+    if (!hapd) {
+        return false;
+    }
+    struct sta_info *sta = ap_get_sta(hapd, bssid);
+    if (!sta) {
+        return false;
+    }
+
+#ifdef CONFIG_SAE
+    if (sta->lock) {
+        if (os_semphr_take(sta->lock, 0)) {
+            ap_free_sta(hapd, sta);
+        } else {
+            sta->remove_pending = true;
+        }
+        return true;
+    }
+#endif /* CONFIG_SAE */
+
+#ifdef CONFIG_WPS_REGISTRAR
+    wpa_printf(MSG_DEBUG, "wps_status=%d", wps_get_status());
+    if (wps_get_status() == WPS_STATUS_PENDING) {
+        u8 *addr = os_malloc(ETH_ALEN);
+
+        if (!addr) {
+            return false;
+        }
+        os_memcpy(addr, sta->addr, ETH_ALEN);
+        eloop_register_timeout(0, 10000, ap_free_sta_timeout, hapd, addr);
+    } else
+#endif
+        ap_free_sta(hapd, sta);
+
+    return true;
 }
