@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: CC0-1.0
  */
@@ -7,17 +7,16 @@
 #include "unity.h"
 #include "unity_test_runner.h"
 #include "unity_test_utils_memory.h"
-
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "test_usb_common.h"
-#include "mock_msc.h"
+#include "dev_msc.h"
 #include "usb/usb_host.h"
 
 void setUp(void)
 {
-    mock_msc_scsi_init_reference_descriptors();
     unity_utils_record_free_mem();
+    dev_msc_init();
     test_usb_init_phy();    // Initialize the internal USB PHY and USB Controller for testing
     // Install USB Host
     usb_host_config_t host_config = {

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,6 +11,7 @@
 #include "esp_intr_alloc.h"
 #include "test_usb_common.h"
 #include "mock_msc.h"
+#include "dev_msc.h"
 #include "msc_client.h"
 #include "ctrl_client.h"
 #include "usb/usb_host.h"
@@ -84,12 +85,11 @@ Procedure:
 TEST_CASE("Test USB Host sudden disconnection (single client)", "[usb_host][full_speed]")
 {
     // Create task to run client that communicates with MSC SCSI interface
+    const dev_msc_info_t *dev_info = dev_msc_get_info();
     msc_client_test_param_t params = {
         .num_sectors_to_read = 1,   // Unused by disconnect MSC client
-        .num_sectors_per_xfer = TEST_FORCE_DCONN_NUM_TRANSFERS * MOCK_MSC_SCSI_SECTOR_SIZE,
+        .num_sectors_per_xfer = TEST_FORCE_DCONN_NUM_TRANSFERS * dev_info->scsi_sector_size,
         .msc_scsi_xfer_tag = TEST_MSC_SCSI_TAG,
-        .idVendor = MOCK_MSC_SCSI_DEV_ID_VENDOR,
-        .idProduct = MOCK_MSC_SCSI_DEV_ID_PRODUCT,
     };
     TaskHandle_t task_hdl;
     xTaskCreatePinnedToCore(msc_client_async_dconn_task, "async", 4096, (void *)&params, 2, &task_hdl, 0);
