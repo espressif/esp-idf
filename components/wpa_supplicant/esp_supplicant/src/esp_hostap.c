@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,6 +7,7 @@
 #include "utils/includes.h"
 
 #include "utils/common.h"
+//#include "utils/eloop.h"
 #include "crypto/sha1.h"
 #include "common/ieee802_11_defs.h"
 #include "common/eapol_common.h"
@@ -19,6 +20,10 @@
 #include "esp_wifi_types.h"
 #include "esp_wps.h"
 #include "esp_wps_i.h"
+
+#include "ap/sta_info.h"
+#include "common/sae.h"
+//#include "ap/ieee802_11.h"
 
 struct hostapd_data *global_hapd;
 
@@ -180,6 +185,120 @@ bool hostap_deinit(void *data)
     os_free(hapd);
     esp_wifi_unset_appie_internal(WIFI_APPIE_WPA);
     global_hapd = NULL;
+
+    return true;
+}
+
+u16 wpa_res_to_status_code(enum wpa_validate_result res)
+{
+    switch (res) {
+    case WPA_IE_OK:
+        return WLAN_STATUS_SUCCESS;
+    case WPA_INVALID_IE:
+        return WLAN_STATUS_INVALID_IE;
+    case WPA_INVALID_GROUP:
+        return WLAN_STATUS_GROUP_CIPHER_NOT_VALID;
+    case WPA_INVALID_PAIRWISE:
+        return WLAN_STATUS_PAIRWISE_CIPHER_NOT_VALID;
+    case WPA_INVALID_AKMP:
+        return WLAN_STATUS_AKMP_NOT_VALID;
+    case WPA_NOT_ENABLED:
+        return WLAN_STATUS_INVALID_IE;
+    case WPA_ALLOC_FAIL:
+        return WLAN_STATUS_UNSPECIFIED_FAILURE;
+    case WPA_MGMT_FRAME_PROTECTION_VIOLATION:
+        return WLAN_STATUS_ROBUST_MGMT_FRAME_POLICY_VIOLATION;
+    case WPA_INVALID_MGMT_GROUP_CIPHER:
+        return WLAN_STATUS_CIPHER_REJECTED_PER_POLICY;
+    case WPA_INVALID_MDIE:
+        return WLAN_STATUS_INVALID_MDIE;
+    case WPA_INVALID_PROTO:
+        return WLAN_STATUS_INVALID_IE;
+    case WPA_INVALID_PMKID:
+        return WLAN_STATUS_INVALID_PMKID;
+    case WPA_DENIED_OTHER_REASON:
+        return WLAN_STATUS_ASSOC_DENIED_UNSPEC;
+    }
+    return WLAN_STATUS_INVALID_IE;
+}
+
+uint8_t wpa_status_to_reason_code(int status)
+{
+    switch (status) {
+    case WLAN_STATUS_INVALID_IE:
+        return WLAN_REASON_INVALID_IE;
+    case WLAN_STATUS_GROUP_CIPHER_NOT_VALID:
+        return WLAN_REASON_GROUP_CIPHER_NOT_VALID;
+    case WLAN_STATUS_PAIRWISE_CIPHER_NOT_VALID:
+        return WLAN_REASON_PAIRWISE_CIPHER_NOT_VALID;
+    case WLAN_STATUS_AKMP_NOT_VALID:
+        return WLAN_REASON_AKMP_NOT_VALID;
+    case WLAN_STATUS_CIPHER_REJECTED_PER_POLICY:
+        return WLAN_REASON_CIPHER_SUITE_REJECTED;
+    case WLAN_STATUS_INVALID_PMKID:
+        return WLAN_REASON_INVALID_PMKID;
+    case WLAN_STATUS_INVALID_MDIE:
+        return WLAN_REASON_INVALID_MDE;
+    default:
+        return WLAN_REASON_UNSPECIFIED;
+    }
+}
+
+bool hostap_new_assoc_sta(struct sta_info *sta, uint8_t *bssid, uint8_t *wpa_ie,
+                          uint8_t wpa_ie_len, bool *pmf_enable, uint8_t *pairwise_cipher, uint8_t *reason)
+{
+    struct hostapd_data *hapd = (struct hostapd_data*)esp_wifi_get_hostap_private_internal();
+    enum wpa_validate_result res = WPA_IE_OK;
+    int status = WLAN_STATUS_SUCCESS;
+
+    if (!sta || !bssid || !wpa_ie) {
+        return false;
+    }
+
+    if (hapd) {
+        if (hapd->wpa_auth->conf.wpa) {
+            if (sta->wpa_sm) {
+                wpa_auth_sta_deinit(sta->wpa_sm);
+            }
+
+            sta->wpa_sm = wpa_auth_sta_init(hapd->wpa_auth, bssid);
+            wpa_printf(MSG_DEBUG, "init wpa sm=%p", sta->wpa_sm);
+
+            if (sta->wpa_sm == NULL) {
+                status = WLAN_STATUS_AP_UNABLE_TO_HANDLE_NEW_STA;
+                goto send_resp;
+            }
+
+            res = wpa_validate_wpa_ie(hapd->wpa_auth, sta->wpa_sm, wpa_ie, wpa_ie_len);
+
+            status = wpa_res_to_status_code(res);
+
+send_resp:
+            if (status != WLAN_STATUS_SUCCESS) {
+                *reason = wpa_status_to_reason_code(status);
+                return false;
+            }
+
+            //Check whether AP uses Management Frame Protection for this connection
+            *pmf_enable = wpa_auth_uses_mfp(sta->wpa_sm);
+            *pairwise_cipher = GET_BIT_POSITION(sta->wpa_sm->pairwise);
+        }
+
+        wpa_auth_sta_associated(hapd->wpa_auth, sta->wpa_sm);
+    }
+
+    return true;
+}
+
+bool wpa_ap_remove(void* sta_info)
+{
+    struct hostapd_data *hapd = hostapd_get_hapd_data();
+
+    if (!sta_info || !hapd) {
+        return false;
+    }
+
+    ap_free_sta(hapd, sta_info);
 
     return true;
 }
