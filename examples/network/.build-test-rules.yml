@@ -26,7 +26,6 @@ examples/network/simple_sniffer:
       reason: lack of runners
   depends_filepatterns:
     - tools/ci/python_packages/common_test_methods.py
-    - examples/common_components/protocol_examples_common/**/*
     - examples/protocols/**/*
     - examples/wifi/**/*
     - examples/network/simple_sniffer/**/*
@@ -35,6 +34,7 @@ examples/network/simple_sniffer:
   depends_components:
     - app_update
     - esp_https_ota
+    - protocol_examples_common
 
 examples/network/sta2eth:
   disable:

@@ -148,8 +148,7 @@ examples/system/ota/advanced_https_ota:
     - esp_wifi
     - esp_phy
     - bt
-  depends_filepatterns:
-    - examples/common_components/protocol_examples_common/**/*
+    - protocol_examples_common
 
 examples/system/ota/native_ota_example:
   disable:
@@ -166,8 +165,7 @@ examples/system/ota/native_ota_example:
     - esp_eth
     - esp_driver_gpio
     - bootloader_support
-  depends_filepatterns:
-    - examples/common_components/protocol_examples_common/**/*
+    - protocol_examples_common
 
 examples/system/ota/otatool:
   disable:
@@ -191,8 +189,7 @@ examples/system/ota/pre_encrypted_ota:
     - esp_eth
     - mbedtls
     - bootloader_support
-  depends_filepatterns:
-    - examples/common_components/protocol_examples_common/**/*
+    - protocol_examples_common
 
 examples/system/ota/simple_ota_example:
   disable:

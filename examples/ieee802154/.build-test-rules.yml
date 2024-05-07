@@ -5,9 +5,9 @@
     - esp_coex
     - esp_phy
     - ieee802154
+    - cmd_system
   depends_filepatterns:
     - examples/ieee802154/**/*
-    - examples/system/console/advanced/components/cmd_system/**/*
 
 examples/ieee802154/ieee802154_cli:
   enable:

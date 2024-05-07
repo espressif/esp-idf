@@ -12,8 +12,7 @@
     - nvs_flash
     - console
     - esp_pm
-  depends_filepatterns:
-    - examples/common_components/protocol_examples_common/**/*
+    - protocol_examples_common
 
 examples/wifi:
   <<: *wifi_depends_default
@@ -52,9 +51,9 @@ examples/wifi/iperf:
     - esp_event
     - esp_coex
     - wpa_supplicant
+    - cmd_system
   depends_filepatterns:
     - examples/common_components/iperf/**/*
-    - examples/system/console/advanced/components/cmd_system/**/*
 
 examples/wifi/itwt:
   <<: *wifi_depends_default
