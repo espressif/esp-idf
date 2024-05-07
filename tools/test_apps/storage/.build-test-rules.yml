@@ -38,3 +38,15 @@ tools/test_apps/storage/sdmmc_console:
     - sdmmc
     - esp_driver_sdmmc
     - esp_driver_sdspi
+
+tools/test_apps/storage/std_filesystem:
+  enable:
+    - if: IDF_TARGET in ["esp32", "esp32c3"]
+      reason: one Xtensa and one RISC-V chip should be enough
+  disable:
+    - if: IDF_TOOLCHAIN == "clang"
+      reason: Issue with C++ exceptions on Xtensa, issue with getrandom linking on RISC-V
+  depends_components:
+    - vfs
+    - newlib
+    - fatfs
