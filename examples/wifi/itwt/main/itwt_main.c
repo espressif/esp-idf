@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -183,7 +183,11 @@ static void itwt_teardown_handler(void *arg, esp_event_base_t event_base,
                                   int32_t event_id, void *event_data)
 {
     wifi_event_sta_itwt_teardown_t *teardown = (wifi_event_sta_itwt_teardown_t *) event_data;
-    ESP_LOGI(TAG, "<WIFI_EVENT_ITWT_TEARDOWN>flow_id %d%s", teardown->flow_id, (teardown->flow_id == 8) ? "(all twt)" : "");
+    if (teardown->status == ITWT_TEARDOWN_FAIL) {
+        ESP_LOGE(TAG, "<WIFI_EVENT_ITWT_TEARDOWN>flow_id %d%s, twt teardown frame tx failed", teardown->flow_id, (teardown->flow_id == 8) ? "(all twt)" : "");
+    } else {
+        ESP_LOGI(TAG, "<WIFI_EVENT_ITWT_TEARDOWN>flow_id %d%s", teardown->flow_id, (teardown->flow_id == 8) ? "(all twt)" : "");
+    }
 }
 
 static void itwt_suspend_handler(void *arg, esp_event_base_t event_base,
