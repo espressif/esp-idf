@@ -4,7 +4,7 @@
 :link_to_translation:`en:[English]`
 
 {IDF_TARGET_CONTROLLER_CORE_CONFIG:default="CONFIG_BT_CTRL_PINNED_TO_CORE", esp32="CONFIG_BTDM_CTRL_PINNED_TO_CORE_CHOICE", esp32s3="CONFIG_BT_CTRL_PINNED_TO_CORE_CHOICE"}
-{IDF_TARGET_RF_TYPE:default="Wi-Fi/蓝牙", esp32s2="Wi-Fi", esp32c6="Wi-Fi/蓝牙/802.15.4", esp32h2="蓝牙/802.15.4"}
+{IDF_TARGET_RF_TYPE:default="Wi-Fi/蓝牙", esp32s2="Wi-Fi", esp32c6="Wi-Fi/蓝牙/802.15.4", esp32h2="蓝牙/802.15.4, esp32c5="Wi-Fi/蓝牙/802.15.4"}
 
 概述
 -----------
@@ -56,7 +56,7 @@
 
   .. only:: SOC_HP_CPU_HAS_MULTIPLE_CORES
 
-      CPU 周期是各核心独立计数的，因此本方法仅适用于测量中断处理程序或固定在单个核心上的任务。
+      CPU 周期是各内核独立计数的，因此本方法仅适用于测量中断处理程序或固定在单个核上的任务。
 
 - 在执行“微基准测试”时（即仅对运行时间不到 1-2 ms 的小代码段进行基准测试），二进制文件会影响 flash 缓存的性能，进而可能会导致计时测量出现较大差异。这是因为二进制布局可能会导致在特定的执行顺序中产生不同模式的缓存缺失。执行较大测试代码通常可以抵消这种影响。在基准测试时多次执行一个小函数可以减少 flash 缓存缺失的影响。另外，将该代码移到 IRAM 中（参见 :ref:`speed-targeted-optimizations` ）也可以解决这个问题。
 
@@ -88,6 +88,36 @@
     :not SOC_CPU_HAS_FPU: - 避免使用浮点运算 ``float``。{IDF_TARGET_NAME} 通过软件模拟进行浮点运算，因此速度非常慢。可以考虑使用不同的整数表示方法进行运算，如定点表示法，或者将部分计算用整数运算后再切换为浮点运算。
     - 避免使用双精度浮点运算 ``double``。{IDF_TARGET_NAME} 通过软件模拟进行双精度浮点运算，因此速度非常慢。可以考虑使用基于整数的表示方法或单精度浮点数。
 
+
+.. only:: esp32s2 or esp32s3 or esp32p4
+
+    更改 cache 大小
+    ^^^^^^^^^^^^^^^
+
+    在 {IDF_TARGET_NAME} 上，通过下面列出的 Kconfig 选项增加 cache 的大小，“cache 缺失”的频率可能会降低，从而在一定程度上提高整体速度。
+
+    .. list::
+
+        :esp32s2: - :ref:`CONFIG_ESP32S2_INSTRUCTION_CACHE_SIZE`.
+        :esp32s2: - :ref:`CONFIG_ESP32S2_DATA_CACHE_SIZE`.
+        :esp32s3: - :ref:`CONFIG_ESP32S3_INSTRUCTION_CACHE_SIZE`.
+        :esp32s3: - :ref:`CONFIG_ESP32S3_DATA_CACHE_SIZE`.
+        :esp32p4: - :ref:`CONFIG_CACHE_L2_CACHE_SIZE`.
+
+
+    .. note::
+
+        增加 cache 大小也将导致可用 RAM 的减少。
+
+
+.. only:: SOC_CACHE_L2_CACHE_SIZE_CONFIGURABLE
+
+    .. note::
+
+        在 {IDF_TARGET_NAME} 上，可以通过 Kconfig 选项 :ref:`CONFIG_CACHE_L2_CACHE_SIZE` 来配置 L2 cache 大小。
+        将 L2 cache 大小设为最小，则可用 RAM 大小达到最大，但也可能提高“cache 缺失”的频率。
+        将 L2 cache 大小设为最大，则“cache 缺失”的频率可能降低，但可用 RAM 大小也随之减少。
+
 减少日志开销
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -109,6 +139,7 @@
    - 禁用 :ref:`CONFIG_COMPILER_OPTIMIZATION_ASSERTION_LEVEL` 。这也会略微减小固件二进制文件大小。然而，它可能导致出现更严重的 bug，甚至出现安全性 bug。如果为了优化特定函数而必须禁用该选项，可以考虑在该源文件的顶部单独添加 ``#define NDEBUG`` 。
 
 .. _speed-targeted-optimizations:
+
 
 针对性优化
 ---------------------------
@@ -134,6 +165,8 @@
    :SOC_RTC_FAST_MEM_SUPPORTED: - 如果使用 Deep-sleep 模式，启用 :ref:`CONFIG_BOOTLOADER_SKIP_VALIDATE_IN_DEEP_SLEEP` 可以加快从睡眠中唤醒的速度。请注意，启用该选项后在唤醒时将不会执行安全启动验证，需要考量安全风险。
    - 设置 :ref:`CONFIG_BOOTLOADER_SKIP_VALIDATE_ON_POWER_ON` 可以在每次上电复位启动时跳过二进制文件验证，节省的时间取决于二进制文件大小和 flash 设置。请注意，如果 flash 意外损坏，此设置将有一定风险。更多关于使用该选项的解释和建议，参见 :ref:`项目配置 <CONFIG_BOOTLOADER_SKIP_VALIDATE_ON_POWER_ON>` 。
    - 禁用 RTC 慢速时钟校准可以节省一小部分启动时间。设置 :ref:`CONFIG_RTC_CLK_CAL_CYCLES` 为 0 可以实现该操作。设置后，以 RTC 慢速时钟为时钟源的固件部分精确度将降低。
+   :SOC_SPIRAM_SUPPORTED: - 使用外部内存（启用 :ref:`CONFIG_SPIRAM`）时，启用外部内存 (:ref:`CONFIG_SPIRAM_MEMTEST`) 测试可能会大大增加启动时间（每测试 4 MB 的内存大约增加 1 秒）。禁用内存测试将减少启动时间，但将无法对外部存储器进行测试。
+   :SOC_SPIRAM_SUPPORTED: - 使用外部内存（启用 :ref:`CONFIG_SPIRAM`）时，所有用作堆的内存（包括外部内存）都将被设为默认值，所以启用全面的 poisoning 将增加启动时间（每设置 4 MiB 的内存大约增加 300 毫秒）。
 
 示例项目 :example:`system/startup_time` 预配了优化启动时间的设置，文件 :example_file:`system/startup_time/sdkconfig.defaults` 包含了所有相关设置。可以将这些设置追加到项目中 ``sdkconfig`` 文件的末尾并合并，但请事先阅读每个设置的相关说明。
 
@@ -180,24 +213,24 @@ ESP-IDF 启动的系统任务预设了固定优先级。启动时，一些任务
 
     .. list::
 
-        - :ref:`app-main-task` 中执行 app_main 函数的主任务优先级最低 (1) 且默认固定在核心 0 上执行（ :ref:`可配置 <CONFIG_ESP_MAIN_TASK_AFFINITY>` ）。
-        - 系统任务 :doc:`/api-reference/system/esp_timer` 用于管理定时器事件并执行回调函数，优先级较高 (22, ``ESP_TASK_TIMER_PRIO``) 且固定在核心 0 上执行。
-        - FreeRTOS 初始化调度器时会创建定时器任务，用于处理 FreeRTOS 定时器的回调函数，优先级最低（1， :ref:`可配置 <CONFIG_FREERTOS_TIMER_TASK_PRIORITY>` ）且固定在核心 0 上执行。
-        - 系统任务 :doc:`/api-reference/system/esp_event` 用于管理默认的系统事件循环并执行回调函数，优先级较高 (20, ``ESP_TASK_EVENT_PRIO``) 且固定在核心 0 上执行。此配置仅在应用程序调用 :cpp:func:`esp_event_loop_create_default` 时使用。可以调用 :cpp:func:`esp_event_loop_create` 添加自定义任务配置。
-        - :doc:`/api-guides/lwip` TCP/IP 任务优先级较高 (18, ``ESP_TASK_TCPIP_PRIO``) 且并未固定在特定核心上执行（ :ref:`可配置 <CONFIG_LWIP_TCPIP_TASK_AFFINITY>` ）。
-        :SOC_WIFI_SUPPORTED: - :doc:`/api-guides/wifi` 任务优先级较高 (23) 且默认固定在核心 0 上执行（ :ref:`可配置 <CONFIG_ESP_WIFI_TASK_CORE_ID>` ）。
-        :SOC_WIFI_SUPPORTED: - 使用 Wi-Fi Protected Setup (WPS)、WPA2 EAP-TLS、Device Provisioning Protocol (DPP) 或 BSS Transition Management (BTM) 等功能时，Wi-Fi wpa_supplicant 组件可能会创建优先级较低的专用任务 (2)，这些任务并未固定在特定核心上执行。
-        :SOC_BT_SUPPORTED: - :doc:`/api-reference/bluetooth/controller_vhci` 任务优先级较高 (23, ``ESP_TASK_BT_CONTROLLER_PRIO``) 且默认固定在核心 0 上执行（ :ref:`可配置 <{IDF_TARGET_CONTROLLER_CORE_CONFIG}>` ）。蓝牙控制器需要以低延迟响应请求，因此其任务应始终为最高优先级的任务之一并分配给单个 CPU 执行。
-        :SOC_BT_SUPPORTED: - :doc:`/api-reference/bluetooth/nimble/index` 任务优先级较高 (21) 且默认固定在核心 0 上执行（ :ref:`可配置 <CONFIG_BT_NIMBLE_PINNED_TO_CORE_CHOICE>` ）.
+        - :ref:`app-main-task` 中执行 app_main 函数的主任务优先级最低 (1) 且默认固定在核 0 上执行（ :ref:`可配置 <CONFIG_ESP_MAIN_TASK_AFFINITY>` ）。
+        - 系统任务 :doc:`/api-reference/system/esp_timer` 用于管理定时器事件并执行回调函数，优先级较高 (22, ``ESP_TASK_TIMER_PRIO``) 且固定在核 0 上执行。
+        - FreeRTOS 初始化调度器时会创建定时器任务，用于处理 FreeRTOS 定时器的回调函数，优先级最低（1， :ref:`可配置 <CONFIG_FREERTOS_TIMER_TASK_PRIORITY>` ）且固定在核 0 上执行。
+        - 系统任务 :doc:`/api-reference/system/esp_event` 用于管理默认的系统事件循环并执行回调函数，优先级较高 (20, ``ESP_TASK_EVENT_PRIO``) 且固定在核 0 上执行。此配置仅在应用程序调用 :cpp:func:`esp_event_loop_create_default` 时使用。可以调用 :cpp:func:`esp_event_loop_create` 添加自定义任务配置。
+        - :doc:`/api-guides/lwip` TCP/IP 任务优先级较高 (18, ``ESP_TASK_TCPIP_PRIO``) 且并未固定在特定内核上执行（ :ref:`可配置 <CONFIG_LWIP_TCPIP_TASK_AFFINITY>` ）。
+        :SOC_WIFI_SUPPORTED: - :doc:`/api-guides/wifi` 任务优先级较高 (23) 且默认固定在核 0 上执行（ :ref:`可配置 <CONFIG_ESP_WIFI_TASK_CORE_ID>` ）。
+        :SOC_WIFI_SUPPORTED: - 使用 Wi-Fi Protected Setup (WPS)、WPA2 EAP-TLS、Device Provisioning Protocol (DPP) 或 BSS Transition Management (BTM) 等功能时，Wi-Fi wpa_supplicant 组件可能会创建优先级较低的专用任务 (2)，这些任务并未固定在特定内核上执行。
+        :SOC_BT_SUPPORTED: - :doc:`/api-reference/bluetooth/controller_vhci` 任务优先级较高 (23, ``ESP_TASK_BT_CONTROLLER_PRIO``) 且默认固定在核 0 上执行（ :ref:`可配置 <{IDF_TARGET_CONTROLLER_CORE_CONFIG}>` ）。蓝牙控制器需要以低延迟响应请求，因此其任务应始终为最高优先级的任务之一并分配给单个 CPU 执行。
+        :SOC_BT_SUPPORTED: - :doc:`/api-reference/bluetooth/nimble/index` 任务优先级较高 (21) 且默认固定在核 0 上执行（ :ref:`可配置 <CONFIG_BT_NIMBLE_PINNED_TO_CORE_CHOICE>` ）.
         :esp32: - 使用 :doc:`/api-reference/bluetooth/index` 时会创建多个任务:
                - 堆栈事件回调任务 ("BTC") 优先级较高 (19)。
                - 堆栈 BTU 层任务优先级较高 (20)。
                - Host HCI 主任务优先级较高 (22)。
 
-               所有 Bluedroid 任务默认固定在同一个核心上执行，即核心 0（ :ref:`可配置 <CONFIG_BT_BLUEDROID_PINNED_TO_CORE_CHOICE>` ）。
+               所有 Bluedroid 任务默认固定在同一个核心上执行，即核 0（ :ref:`可配置 <CONFIG_BT_BLUEDROID_PINNED_TO_CORE_CHOICE>` ）。
 
-        - 以太网驱动程序会创建一个 MAC 任务，用于接收以太网帧。如果使用默认配置 ``ETH_MAC_DEFAULT_CONFIG`` ，则该任务为中高优先级 (15) 且并未固定在特定核心上执行。可以在以太网 MAC 初始化时输入自定义 :cpp:class:`eth_mac_config_t` 结构体来更改此设置。
-        - 如果使用 :doc:`/api-reference/protocols/mqtt` 组件，它会创建优先级默认为 5 的任务（ :ref:`可配置 <CONFIG_MQTT_TASK_PRIORITY>` ，也可通过 :ref:`CONFIG_MQTT_USE_CUSTOM_CONFIG` 调整）。该任务未固定在特定核心上执行（ :ref:`可配置 <CONFIG_MQTT_TASK_CORE_SELECTION_ENABLED>` ）。
+        - 以太网驱动程序会创建一个 MAC 任务，用于接收以太网帧。如果使用默认配置 ``ETH_MAC_DEFAULT_CONFIG`` ，则该任务为中高优先级 (15) 且并未固定在特定内核上执行。可以在以太网 MAC 初始化时输入自定义 :cpp:class:`eth_mac_config_t` 结构体来更改此设置。
+        - 如果使用 :doc:`/api-reference/protocols/mqtt` 组件，它会创建优先级默认为 5 的任务（ :ref:`可配置 <CONFIG_MQTT_TASK_PRIORITY>` ，也可通过 :ref:`CONFIG_MQTT_USE_CUSTOM_CONFIG` 调整）。该任务未固定在特定内核上执行（ :ref:`可配置 <CONFIG_MQTT_TASK_CORE_SELECTION_ENABLED>` ）。
         - 关于 ``mDNS`` 服务的任务优先级，参见 `性能优化 <https://espressif.github.io/esp-protocols/mdns/en/index.html#performance-optimization>`__ 。
 
 
@@ -206,17 +239,29 @@ ESP-IDF 启动的系统任务预设了固定优先级。启动时，一些任务
 
 .. only:: not SOC_HP_CPU_HAS_MULTIPLE_CORES
 
-    由于 {IDF_TARGET_RF_TYPE} 操作饥饿可能导致系统不稳定，通常不建议让特定任务的优先级高于 {IDF_TARGET_RF_TYPE} 操作的内置优先级。对于非常短且无需网络的实时操作，可以使用中断服务程序或极受限的任务（仅运行极短时间）并设置为最高优先级 (24)。将特定任务优先级设为 19 不会妨碍较低层级的 {IDF_TARGET_RF_TYPE} 功能无延迟运行，但仍然会抢占 lwIP TCP/IP 堆栈以及其他非实时内部功能，这对于不执行网络操作的实时任务而言是最佳选项。lwIP TCP/IP 任务优先级 (18) 应高于所有执行 TCP/IP 网络操作的任务，以保证任务正常执行。
+    .. only:: SOC_WIFI_SUPPORTED or SOC_BT_SUPPORTED or SOC_IEEE802154_SUPPORTED
 
-.. only:: SOC_HP_CPU_HAS_MULTIPLE_CORES
+        一般情况下，不建议将任务优先级设置得比内置的 {IDF_TARGET_RF_TYPE} 操作更高，因为这样可能会使 CPU 被长时间占用，导致系统不稳定。
 
-    默认配置下，除了个别例外，尤其是 lwIP TCP/IP 任务，大多数内置任务都固定在核心 0 上执行。因此，应用程序可以方便地将高优先级任务放置在核心 1 上执行。优先级大于等于 19 的应用程序任务在核心 1 上运行时可以确保不会被任何内置任务抢占。为了进一步隔离各个 CPU 上运行的任务，配置 :ref:`lwIP 任务 <CONFIG_LWIP_TCPIP_TASK_AFFINITY>` ，可以使 lwIP 任务仅在核心 0 上运行，而非上述任一核心，这可能会根据其他任务的运行情况减少总 TCP/IP 吞吐量。
+    对于非常短、对时序要求严格且不涉及网络的操作，可以使用中断服务程序或是限制运行时间的最高优先级 (24) 任务。
 
-    由于 {IDF_TARGET_RF_TYPE} 操作饥饿可能导致系统不稳定，通常不建议让核心 0 上特定任务的优先级高于 {IDF_TARGET_RF_TYPE} 操作的内置优先级。将特定任务优先级设置为 19 并在核心 0 上运行，不会妨碍较低层级的 {IDF_TARGET_RF_TYPE} 功能无延迟运行，但仍然会抢占 lwIP TCP/IP 堆栈以及其他非实时内部功能，该选项适用于不执行网络操作的实时任务。lwIP TCP/IP 任务优先级 (18) 应高于所有执行 TCP/IP 网络操作的任务，以保证任务正常执行。
+    .. only:: SOC_WIFI_SUPPORTED or SOC_BT_SUPPORTED or SOC_IEEE802154_SUPPORTED
+
+        将特定任务优先级设为 19，则较低层级的 {IDF_TARGET_RF_TYPE} 功能可以无延迟运行，且仍然会抢占 lwIP TCP/IP 堆栈以及其他非实时内部功能，这对于不执行网络操作的实时任务而言是最佳选项。
+
+    lwIP TCP/IP 任务优先级 (18) 应高于所有执行 TCP/IP 网络操作的任务，从而避免优先级反转的问题。
+
+.. only:: not SOC_HP_CPU_HAS_MULTIPLE_CORES
+
+    默认配置下，除了个别例外，尤其是 lwIP TCP/IP 任务，大多数内置任务都固定在核 0 上执行。因此，应用程序可以方便地将高优先级任务放置在核 1 上执行。优先级大于等于 19 的应用程序任务在核 1 上运行时可以确保不会被任何内置任务抢占。为了进一步隔离各个 CPU 上运行的任务，配置 :ref:`lwIP 任务 <CONFIG_LWIP_TCPIP_TASK_AFFINITY>` ，可以使 lwIP 任务仅在核 0 上运行，而非其他内核，这可能会根据其他任务的运行情况减少总 TCP/IP 吞吐量。
+
+    .. only:: SOC_WIFI_SUPPORTED or SOC_BT_SUPPORTED or SOC_IEEE802154_SUPPORTED
+
+        一般情况下，不建议将核 0 上的任务优先级设置得比内置的 {IDF_TARGET_RF_TYPE} 操作更高，因为这样可能会使 CPU 被长时间占用，导致系统不稳定。选择优先级为 19 并在核 0 上运行可以使底层 {IDF_TARGET_RF_TYPE} 功能运行无延迟，但仍会抢占 lwIP TCP/IP 栈和其他不太关键的内部功能。这对于无需执行网络操作且时序要求高的任务来说是一个选择。执行 TCP/IP 网络操作的任何任务都应该以低于 lwIP TCP/IP 任务 (18) 的优先级运行，以避免优先级反转问题。
 
     .. note::
 
-        如果要让特定任务始终先于 ESP-IDF 内置任务运行，并不需要将其固定在核心 1 上。将该任务优先级设置为小于等于 17，则无需与核心绑定，那么核心 0 上没有执行较高优先级的内置任务时，该任务也可以选择在核心 0 上执行。使用未固定的任务可以提高整体 CPU 利用率，但这会增加任务调度的复杂性。
+        如果要让特定任务始终先于 ESP-IDF 内置任务运行，并不需要将其固定在核 1 上。将该任务优先级设置为小于等于 17，则无需与内核绑定，那么核 0 上没有执行较高优先级的内置任务时，该任务也可以选择在核 0 上执行。使用未固定的任务可以提高整体 CPU 利用率，但这会增加任务调度的复杂性。
 
 .. note::
 
@@ -234,7 +279,7 @@ ESP-IDF 支持动态 :doc:`/api-reference/system/intr_alloc` 和中断抢占。�
 .. list::
 
     - 调用 :cpp:func:`esp_intr_alloc` 时使用 ``ESP_INTR_FLAG_LEVEL2`` 或 ``ESP_INTR_FLAG_LEVEL3`` 等标志，可以为更重要的中断设定更高优先级。
-    :SOC_HP_CPU_HAS_MULTIPLE_CORES: - 将中断分配到不运行内置 {IDF_TARGET_RF_TYPE} 任务的 CPU 上执行，即默认情况下，将中断分配到核心 1 上执行，参见 :ref:`built-in-task-priorities` 。调用 :cpp:func:`esp_intr_alloc`  函数即可将中断分配到函数所在 CPU。
+    :SOC_HP_CPU_HAS_MULTIPLE_CORES: - 将中断分配到不运行内置 {IDF_TARGET_RF_TYPE} 任务的 CPU 上执行，即默认情况下，将中断分配到核 1 上执行，参见 :ref:`built-in-task-priorities` 。调用 :cpp:func:`esp_intr_alloc`  函数即可将中断分配到函数所在 CPU。
     - 如果确定整个中断处理程序可以在 IRAM 中运行（参见 :ref:`iram-safe-interrupt-handlers` ），那么在调用 :cpp:func:`esp_intr_alloc` 分配中断时，请设置 ``ESP_INTR_FLAG_IRAM`` 标志，这样可以防止在应用程序固件写入内置 SPI flash 时临时禁用中断。
     - 即使是非 IRAM 安全的中断处理程序，如果需要频繁执行，可以考虑将处理程序的函数移到 IRAM 中，从而尽可能规避执行中断代码时发生 flash 缓存缺失的可能性（参见 :ref:`speed-targeted-optimizations` ）。如果可以确保只有部分处理程序位于 IRAM 中，则无需添加 ``ESP_INTR_FLAG_IRAM`` 标志将程序标记为 IRAM 安全。
 

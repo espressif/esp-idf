@@ -183,6 +183,7 @@ IRAM 优化
 
    任何最终未用于静态 IRAM 的内存都将添加到堆内存中。
 
+
 .. only:: esp32c3
 
     flash 暂停特性
@@ -233,3 +234,19 @@ IRAM 优化
 .. note::
 
     部分配置选项可以将一些功能移动到 IRAM 中，从而提高性能，但这类选项默认不进行配置，因此未在此列出。了解启用上述选项对 IRAM 大小造成的影响，请参阅配置项的帮助文本。
+
+
+.. only:: esp32s2 or esp32s3 or esp32p4
+
+   改变 cache 大小
+   ^^^^^^^^^^^^^^^^^
+
+   {IDF_TARGET_NAME} RAM 内存可用大小取决于 cache 的大小。在下面列出的 Kconfig 选项中减少 cache 大小将会增加可用的 RAM。
+
+   .. list::
+
+      :esp32s2: - :ref:`CONFIG_ESP32S2_INSTRUCTION_CACHE_SIZE`
+      :esp32s2: - :ref:`CONFIG_ESP32S2_DATA_CACHE_SIZE`
+      :esp32s3: - :ref:`CONFIG_ESP32S3_INSTRUCTION_CACHE_SIZE`
+      :esp32s3: - :ref:`CONFIG_ESP32S3_DATA_CACHE_SIZE`
+      :esp32p4: - :ref:`CONFIG_CACHE_L2_CACHE_SIZE`
