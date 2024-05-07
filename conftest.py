@@ -25,7 +25,6 @@ import re
 import typing as t
 import zipfile
 from copy import deepcopy
-from datetime import datetime
 from urllib.parse import quote
 
 import common_test_methods  # noqa: F401
@@ -56,15 +55,10 @@ def idf_path() -> str:
     return os.path.dirname(__file__)
 
 
-@pytest.fixture(scope='session', autouse=True)
-def session_tempdir() -> str:
-    _tmpdir = os.path.join(
-        os.path.dirname(__file__),
-        'pytest_embedded_log',
-        datetime.now().strftime('%Y-%m-%d_%H-%M-%S'),
-    )
-    os.makedirs(_tmpdir, exist_ok=True)
-    return _tmpdir
+@pytest.fixture(scope='session')
+def session_root_logdir(idf_path: str) -> str:
+    """Session scoped log dir for pytest-embedded"""
+    return idf_path
 
 
 @pytest.fixture
