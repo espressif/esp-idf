@@ -463,7 +463,6 @@ config BT_NIMBLE_CRYPTO_STACK_MBEDTLS
     bool "Override TinyCrypt with mbedTLS for crypto computations"
     default y
     depends on BT_NIMBLE_ENABLED
-    select MBEDTLS_ECP_RESTARTABLE
     select MBEDTLS_CMAC_C
     help
         Enable this option to choose mbedTLS instead of TinyCrypt for crypto
@@ -562,7 +561,7 @@ if BT_NIMBLE_EXT_ADV
             Enable this option to start periodic advertisement.
 
     config BT_NIMBLE_PERIODIC_ADV_SYNC_TRANSFER
-        bool "Enable Transer Sync Events"
+        bool "Enable Transfer Sync Events"
         depends on BT_NIMBLE_ENABLE_PERIODIC_ADV
         default y
         help
