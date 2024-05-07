@@ -171,6 +171,12 @@ static void reassemble_and_dispatch(BT_HDR *packet)
                 return;
             }
             partial_packet = (BT_HDR *)osi_calloc(full_length + sizeof(BT_HDR));
+
+            if (partial_packet == NULL) {
+               HCI_TRACE_WARNING("%s full_length %d no memory.\n", __func__, full_length);
+               assert(0);
+            }
+
             partial_packet->event = packet->event;
             partial_packet->len = full_length;
             partial_packet->offset = packet->len;
