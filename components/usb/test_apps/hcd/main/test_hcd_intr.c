@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,8 +8,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 #include "unity.h"
-#include "mock_msc.h"
-#include "mock_hid.h"
+#include "dev_hid.h"
 #include "test_hcd_common.h"
 
 // --------------------------------------------------- Test Cases ------------------------------------------------------
@@ -36,7 +35,6 @@ Note: Some mice will NAK until it is moved, so try moving the mouse around if th
 
 #define TEST_HID_DEV_SPEED                  USB_SPEED_LOW
 #define NUM_URBS                            3
-#define URB_DATA_BUFF_SIZE                  MOCK_HID_MOUSE_INTR_IN_MPS
 #define NUM_URB_ITERS                       (NUM_URBS * 100)
 
 TEST_CASE("Test HCD interrupt pipe URBs", "[intr][low_speed]")
@@ -49,11 +47,13 @@ TEST_CASE("Test HCD interrupt pipe URBs", "[intr][low_speed]")
     uint8_t dev_addr = test_hcd_enum_device(default_pipe);
 
     // Allocate interrupt pipe and URBS
-    hcd_pipe_handle_t intr_pipe = test_hcd_pipe_alloc(port_hdl, &mock_hid_mouse_in_ep_desc, dev_addr, port_speed);
+    const usb_ep_desc_t *in_ep_desc = dev_hid_get_in_ep_desc(port_speed);
+    const int data_buff_size = USB_EP_DESC_GET_MPS(in_ep_desc);
+    hcd_pipe_handle_t intr_pipe = test_hcd_pipe_alloc(port_hdl, in_ep_desc, dev_addr, port_speed);
     urb_t *urb_list[NUM_URBS];
     for (int i = 0; i < NUM_URBS; i++) {
-        urb_list[i] = test_hcd_alloc_urb(0, URB_DATA_BUFF_SIZE);
-        urb_list[i]->transfer.num_bytes = URB_DATA_BUFF_SIZE;
+        urb_list[i] = test_hcd_alloc_urb(0, data_buff_size);
+        urb_list[i]->transfer.num_bytes = data_buff_size;
         urb_list[i]->transfer.context = URB_CONTEXT_VAL;
     }
 
@@ -69,7 +69,8 @@ TEST_CASE("Test HCD interrupt pipe URBs", "[intr][low_speed]")
         urb_t *urb = hcd_urb_dequeue(intr_pipe);
         TEST_ASSERT_EQUAL_MESSAGE(USB_TRANSFER_STATUS_COMPLETED, urb->transfer.status, "Transfer NOT completed");
         TEST_ASSERT_EQUAL(URB_CONTEXT_VAL, urb->transfer.context);
-        mock_hid_process_report((mock_hid_mouse_report_t *)urb->transfer.data_buffer, iter_count);
+        // Byte 1 and 2 contains x and y movement respectively
+        printf("X mov %d, Y mov %d\n", urb->transfer.data_buffer[1], urb->transfer.data_buffer[2]);
         // Requeue URB
         if (iter_count > NUM_URBS) {
             TEST_ASSERT_EQUAL(ESP_OK, hcd_urb_enqueue(intr_pipe, urb));
