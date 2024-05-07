@@ -20,7 +20,6 @@ import os
 import re
 import sys
 from copy import deepcopy
-from datetime import datetime
 from typing import Callable, Optional
 
 import pytest
@@ -58,15 +57,10 @@ def idf_path() -> str:
     return os.path.dirname(__file__)
 
 
-@pytest.fixture(scope='session', autouse=True)
-def session_tempdir() -> str:
-    _tmpdir = os.path.join(
-        os.path.dirname(__file__),
-        'pytest_embedded_log',
-        datetime.now().strftime('%Y-%m-%d_%H-%M-%S'),
-    )
-    os.makedirs(_tmpdir, exist_ok=True)
-    return _tmpdir
+@pytest.fixture(scope='session')
+def session_root_logdir(idf_path: str) -> str:
+    """Session scoped log dir for pytest-embedded"""
+    return idf_path
 
 
 @pytest.fixture
