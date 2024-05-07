@@ -395,25 +395,8 @@ typedef uint32_t (*esp_crc32_le_t)(uint32_t crc, uint8_t const *buf, uint32_t le
 typedef struct wpa_crypto_funcs_t {
     uint32_t size;                                   /**< The crypto callback function structure size */
     uint32_t version;                                /**< The crypto callback function structure version */
-    esp_aes_wrap_t aes_wrap;                         /**< The AES wrap callback function used by esp_wifi */
-    esp_aes_unwrap_t aes_unwrap;                     /**< The AES unwrap callback function used by esp_wifi */
     esp_hmac_sha256_vector_t hmac_sha256_vector;     /**< The SHA256 callback function used by esp_wifi */
-    esp_sha256_prf_t sha256_prf;                     /**< The SHA256 PRF callback function used by esp_wifi */
-    esp_hmac_md5_t hmac_md5;                         /**< HMAC-MD5 callback function over data buffer (RFC 2104) */
-    esp_hmac_md5_vector_t hamc_md5_vector;           /**< HMAC-MD5 callback function over data vector (RFC 2104) */
-    esp_hmac_sha1_t hmac_sha1;                       /**< HMAC-SHA1 callback function over data buffer (RFC 2104) */
-    esp_hmac_sha1_vector_t hmac_sha1_vector;         /**< HMAC-SHA1 callback function over data vector (RFC 2104) */
-    esp_sha1_prf_t sha1_prf;                         /**< SHA1-based Pseudo-Random Function (PRF) (IEEE 802.11i, 8.5.1.1) callback function */
-    esp_sha1_vector_t sha1_vector;                   /**< SHA-1 hash callback function for data vector */
-    esp_pbkdf2_sha1_t pbkdf2_sha1;                   /**< SHA1-based key derivation function (PBKDF2) callback function for IEEE 802.11i */
-    esp_rc4_skip_t rc4_skip;                         /**< XOR RC4 stream callback function to given data with skip-stream-start */
-    esp_md5_vector_t md5_vector;                     /**< MD5 hash callback function for data vector */
-    esp_aes_encrypt_t aes_encrypt;                   /**< Encrypt one AES block callback function */
-    esp_aes_encrypt_init_t aes_encrypt_init;         /**< Initialize AES callback function for encryption */
-    esp_aes_encrypt_deinit_t aes_encrypt_deinit;     /**< Deinitialize AES encryption callback function */
-    esp_aes_decrypt_t aes_decrypt;                   /**< Decrypt one AES block callback function */
-    esp_aes_decrypt_init_t aes_decrypt_init;         /**< Initialize AES callback function for decryption */
-    esp_aes_decrypt_deinit_t aes_decrypt_deinit;     /**< Deinitialize AES decryption callback function */
+    esp_pbkdf2_sha1_t pbkdf2_sha1;                   /**< SHA1-based key derivation function (PBKDF2) callback function for IEEE 802.11 */
     esp_aes_128_encrypt_t aes_128_encrypt;           /**< The AES 128 encrypt callback function used by esp_wifi */
     esp_aes_128_decrypt_t aes_128_decrypt;           /**< The AES 128 decrypt callback function used by esp_wifi */
     esp_omac1_aes_128_t omac1_aes_128;               /**< One-Key CBC MAC (OMAC1) hash with AES-128 callback function for MIC computation */
@@ -421,7 +404,6 @@ typedef struct wpa_crypto_funcs_t {
     esp_ccmp_encrypt_t ccmp_encrypt;                 /**< Encrypt data callback function using CCMP */
     esp_aes_gmac_t aes_gmac;                         /**< One-Key GMAC hash callback function with AES for MIC computation */
     esp_sha256_vector_t sha256_vector;               /**< SHA256 hash callback function for data vector */
-    esp_crc32_le_t crc32;                            /**< CRC32 value callback function in little endian */
 } wpa_crypto_funcs_t;
 
 /**
