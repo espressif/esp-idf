@@ -86,7 +86,7 @@ static inline bool mpi_ll_check_memory_init_complete(void)
 
 static inline void mpi_ll_start_op(mpi_op_t op)
 {
-    REG_WRITE(MPI_LL_OPERATIONS[op], 1);
+    REG_WRITE(MPI_OPERATIONS_REG[op], 1);
 }
 
 static inline bool mpi_ll_get_int_status(void)
@@ -101,7 +101,7 @@ static inline bool mpi_ll_get_int_status(void)
 */
 static inline void mpi_ll_write_to_mem_block(mpi_param_t param, size_t offset, const uint32_t* p, size_t n, size_t num_words)
 {
-    uint32_t mem_base = MPI_LL_BLOCK_BASES[param] + offset;
+    uint32_t mem_base = MPI_BLOCK_BASES[param] + offset;
     uint32_t* pbase = (uint32_t*) mem_base;
     uint32_t copy_words = MIN(num_words, n);
 
@@ -123,12 +123,12 @@ static inline void mpi_ll_write_m_prime(uint32_t Mprime)
 
 static inline void mpi_ll_write_rinv(uint32_t rinv)
 {
-    REG_WRITE(MPI_LL_BLOCK_BASES[MPI_PARAM_Z], rinv);
+    REG_WRITE(MPI_BLOCK_BASES[MPI_PARAM_Z], rinv);
 }
 
 static inline void mpi_ll_write_at_offset(mpi_param_t param, int offset, uint32_t value)
 {
-    uint32_t mem_base = MPI_LL_BLOCK_BASES[param] + offset;
+    uint32_t mem_base = MPI_BLOCK_BASES[param] + offset;
     REG_WRITE(mem_base, value);
 }
 
@@ -138,7 +138,7 @@ static inline void mpi_ll_write_at_offset(mpi_param_t param, int offset, uint32_
 */
 static inline void mpi_ll_read_from_mem_block(uint32_t* p, size_t n, size_t num_words)
 {
-    uint32_t mem_base = MPI_LL_BLOCK_BASES[MPI_PARAM_Z];
+    uint32_t mem_base = MPI_BLOCK_BASES[MPI_PARAM_Z];
     /* Copy data from memory block registers */
     const size_t REG_WIDTH = sizeof(uint32_t);
     for (size_t i = 0; i < num_words; i++) {
