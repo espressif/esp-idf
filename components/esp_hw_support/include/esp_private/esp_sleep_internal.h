@@ -31,13 +31,35 @@ typedef struct {
 void esp_sleep_set_sleep_context(esp_sleep_context_t *sleep_ctx);
 #endif
 
+typedef enum {
+    ESP_SLEEP_RTC_USE_RC_FAST_MODE,       //!< The mode requested by RTC peripherals to keep RC_FAST clock on during sleep (both HP_SLEEP and LP_SLEEP mode). (Will override the RC_FAST domain config by esp_sleep_pd_config)
+    ESP_SLEEP_DIG_USE_RC_FAST_MODE,       //!< The mode requested by digital peripherals to keep RC_FAST clock on during sleep (both HP_SLEEP and LP_SLEEP mode). (!!! Only valid for lightsleep, will override the RC_FAST domain config by esp_sleep_pd_config)
+    ESP_SLEEP_USE_ADC_TSEN_MONITOR_MODE,  //!< Will enables the use of ADC and temperature sensor in monitor (ULP) mode.
+    ESP_SLEEP_ULTRA_LOW_MODE,             //!< In ultra low mode, 2uA is saved, but RTC memory can't use at high temperature, and RTCIO can't be used as INPUT.
+    ESP_SLEEP_RTC_FAST_USE_XTAL_MODE,     //!< The mode in which the crystal is used as the RTC_FAST clock source, need keep XTAL on in HP_SLEEP mode when ULP is working.
+    ESP_SLEEP_DIG_USE_XTAL_MODE,          //!< The mode requested by digital peripherals to keep XTAL clock on during sleep (both HP_SLEEP and LP_SLEEP mode). (!!! Only valid for lightsleep, will override the XTAL domain config by esp_sleep_pd_config)
+    ESP_SLEEP_MODE_MAX,
+} esp_sleep_sub_mode_t;
+
 /**
- * @brief Enables the use of ADC and temperature sensor in monitor (ULP) mode
+ * @brief Set sub-sleep power mode in sleep, mode enabled status is maintained by reference count.
+ *        This submode configuration will kept after deep sleep wakeup.
  *
- * @note  This state is kept in RTC memory and will keep its value after a deep sleep wakeup
+ * @param  mode     sub-sleep mode type
+ * @param  activate Activate or deactivate the sleep sub mode
  *
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_INVALID_ARG if either of the arguments is out of range
  */
-void esp_sleep_enable_adc_tsens_monitor(bool enable);
+esp_err_t esp_sleep_sub_mode_config(esp_sleep_sub_mode_t mode, bool activate);
+
+/**
+ * Dump the sub-sleep power mode enable status
+ * @param  stream     The stream to dump to, if NULL then nothing will be dumped
+ * @return            return the reference count array pointer
+ */
+int32_t* esp_sleep_sub_mode_dump_config(FILE *stream);
 
 #if SOC_GPIO_SUPPORT_HOLD_IO_IN_DSLP && !SOC_GPIO_SUPPORT_HOLD_SINGLE_IO_IN_DSLP
 /**

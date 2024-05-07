@@ -272,6 +272,7 @@ static portMUX_TYPE spinlock_rtc_deep_sleep = portMUX_INITIALIZER_UNLOCKED;
 
 static const char *TAG = "sleep";
 static RTC_FAST_ATTR bool s_adc_tsen_enabled = false;
+static RTC_FAST_ATTR int32_t s_sleep_sub_mode_ref_cnt[ESP_SLEEP_MODE_MAX] = { 0 };
 //in this mode, 2uA is saved, but RTC memory can't use at high temperature, and RTCIO can't be used as INPUT.
 static bool s_ultra_low_enabled = false;
 
@@ -891,6 +892,12 @@ static esp_err_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t m
          * in case the wakeup is already triggered.
          */
         reject_triggers |= sleep_modem_reject_triggers();
+    }
+
+
+    // Override user-configured XTAL power modes.
+    if (s_sleep_sub_mode_ref_cnt[ESP_SLEEP_DIG_USE_XTAL_MODE] && !deep_sleep) {
+        pd_flags &= ~RTC_SLEEP_PD_XTAL;
     }
 
     //Append some flags in addition to power domains
@@ -2168,6 +2175,42 @@ esp_err_t esp_sleep_pd_config(esp_sleep_pd_domain_t domain, esp_sleep_pd_option_
     return ESP_OK;
 }
 
+esp_err_t esp_sleep_sub_mode_config(esp_sleep_sub_mode_t mode, bool activate)
+{
+    if (mode >= ESP_SLEEP_MODE_MAX) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    portENTER_CRITICAL_SAFE(&s_config.lock);
+    if (activate) {
+        s_sleep_sub_mode_ref_cnt[mode]++;
+    } else {
+        s_sleep_sub_mode_ref_cnt[mode]--;
+    }
+    assert(s_sleep_sub_mode_ref_cnt[mode] >= 0);
+    portEXIT_CRITICAL_SAFE(&s_config.lock);
+    return ESP_OK;
+}
+
+int32_t* esp_sleep_sub_mode_dump_config(FILE *stream) {
+    if (stream) {
+        for (uint32_t mode = 0; mode < ESP_SLEEP_MODE_MAX; mode++) {
+            fprintf(stream, LOG_COLOR_I "%s : %s (cnt = %" PRId32 ")\n" LOG_RESET_COLOR,
+                            (const char*[]){
+                                [ESP_SLEEP_RTC_USE_RC_FAST_MODE]        = "ESP_SLEEP_RTC_USE_RC_FAST_MODE",
+                                [ESP_SLEEP_DIG_USE_RC_FAST_MODE]        = "ESP_SLEEP_DIG_USE_RC_FAST_MODE",
+                                [ESP_SLEEP_USE_ADC_TSEN_MONITOR_MODE]   = "ESP_SLEEP_USE_ADC_TSEN_MONITOR_MODE",
+                                [ESP_SLEEP_ULTRA_LOW_MODE]              = "ESP_SLEEP_ULTRA_LOW_MODE",
+                                [ESP_SLEEP_RTC_FAST_USE_XTAL_MODE]      = "ESP_SLEEP_RTC_FAST_USE_XTAL_MODE",
+                                [ESP_SLEEP_DIG_USE_XTAL_MODE]           = "ESP_SLEEP_DIG_USE_XTAL_MODE",
+                            }[mode],
+                            s_sleep_sub_mode_ref_cnt[mode] ? "ENABLED" : "DISABLED",
+                            s_sleep_sub_mode_ref_cnt[mode]);
+        }
+    }
+    return s_sleep_sub_mode_ref_cnt;
+}
+
 /**
  * The modules in the CPU and modem power domains still depend on the top power domain.
  * To be safe, the CPU and Modem power domains must also be powered off and saved when
@@ -2372,12 +2415,17 @@ esp_deep_sleep_disable_rom_logging(void)
     rtc_suppress_rom_log();
 }
 
-void esp_sleep_enable_adc_tsens_monitor(bool enable)
+__attribute__((deprecated("Please use esp_sleep_sub_mode_config instead"))) void esp_sleep_periph_use_8m(bool use_or_not)
 {
-    s_adc_tsen_enabled = enable;
+    esp_sleep_sub_mode_config(ESP_SLEEP_USE_RC_FAST_MODE, use_or_not);
 }
 
-void rtc_sleep_enable_ultra_low(bool enable)
+__attribute__((deprecated("Please use esp_sleep_sub_mode_config instead"))) void esp_sleep_enable_adc_tsens_monitor(bool enable)
 {
-    s_ultra_low_enabled = enable;
+    esp_sleep_sub_mode_config(ESP_SLEEP_USE_ADC_TSEN_MONITOR_MODE, enable);
+}
+
+__attribute__((deprecated("Please use esp_sleep_sub_mode_config instead"))) void rtc_sleep_enable_ultra_low(bool enable)
+{
+    esp_sleep_sub_mode_config(ESP_SLEEP_ULTRA_LOW_MODE, enable);
 }
