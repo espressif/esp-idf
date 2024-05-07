@@ -103,10 +103,10 @@ repos:
         name: Check type annotations in python files
         entry: tools/ci/check_type_comments.py
         additional_dependencies:
-          - 'mypy==0.940'
-          - 'mypy-extensions==0.4.3'
-          - 'types-setuptools==57.4.14'
-          - 'types-PyYAML==0.1.9'
+          - 'mypy'
+          - 'mypy-extensions'
+          - 'types-setuptools'
+          - 'types-PyYAML'
           - 'types-requests'
         exclude: >
           (?x)^(
