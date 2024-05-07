@@ -302,9 +302,18 @@ typedef struct {
     uint64_t target_wake_time;            /**< TWT SP start time */
 } wifi_event_sta_itwt_setup_t;
 
+/**
+  * @brief iTWT teardown status
+  */
+typedef enum {
+    ITWT_TEARDOWN_FAIL,               /**< station sends teardown frame fail */
+    ITWT_TEARDOWN_SUCCESS,            /**< 1) station successfully sends teardown frame to AP; 2) station receives teardown frame from AP */
+} wifi_itwt_teardown_status_t;
+
 /** Argument structure for WIFI_EVENT_TWT_TEARDOWN event */
 typedef struct {
     uint8_t flow_id;                     /**< flow id */
+    wifi_itwt_teardown_status_t status;  /**< itwt teardown status */
 } wifi_event_sta_itwt_teardown_t;
 
 /**
