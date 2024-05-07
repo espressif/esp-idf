@@ -27,6 +27,7 @@
 #include "pmu_param.h"
 #include "esp_rom_sys.h"
 #include "esp_rom_uart.h"
+#include "hal/efuse_hal.h"
 
 #define HP(state)   (PMU_MODE_HP_ ## state)
 #define LP(state)   (PMU_MODE_LP_ ## state)
@@ -317,8 +318,11 @@ TCM_IRAM_ATTR bool pmu_sleep_finish(void)
     }
     pmu_sleep_shutdown_ldo();
 
-    REGI2C_WRITE_MASK(I2C_CPLL, I2C_CPLL_OC_DIV_7_0, 6); // lower default cpu_pll freq to 400M
-    REGI2C_WRITE_MASK(I2C_SYSPLL, I2C_SYSPLL_OC_DIV_7_0, 8); // lower default sys_pll freq to 480M
+    unsigned chip_version = efuse_hal_chip_revision();
+    if (chip_version == 0) {
+        REGI2C_WRITE_MASK(I2C_CPLL, I2C_CPLL_OC_DIV_7_0, 6); // lower default cpu_pll freq to 400M
+        REGI2C_WRITE_MASK(I2C_SYSPLL, I2C_SYSPLL_OC_DIV_7_0, 8); // lower default sys_pll freq to 480M
+    }
     return pmu_ll_hp_is_sleep_reject(PMU_instance()->hal->dev);
 }
 

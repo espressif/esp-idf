@@ -91,13 +91,16 @@ static inline void bootloader_hardware_init(void)
 {
     // regi2c is enabled by default on ESP32P4, do nothing
 
-    // On ESP32P4 ECO0, the default (power on reset) CPLL and SPLL frequencies are very high, lower them to avoid bias may not be enough in bootloader
-    // And we are fixing SPLL to be 480MHz at all runtime
-    // Suppose to fix the issue on ECO1, will check when chip comes back
-    // TODO: IDF-8939
-    REGI2C_WRITE_MASK(I2C_CPLL, I2C_CPLL_OC_DIV_7_0, 6); // lower default cpu_pll freq to 400M
-    REGI2C_WRITE_MASK(I2C_SYSPLL, I2C_SYSPLL_OC_DIV_7_0, 8); // lower default sys_pll freq to 480M
-    esp_rom_delay_us(100);
+    unsigned chip_version = efuse_hal_chip_revision();
+    if (chip_version == 0) {
+        // On ESP32P4 ECO0, the default (power on reset) CPLL and SPLL frequencies are very high, lower them to avoid bias may not be enough in bootloader
+        // And we are fixing SPLL to be 480MHz at all runtime
+        // Suppose to fix the issue on ECO1, will check when chip comes back
+        // TODO: IDF-8939
+        REGI2C_WRITE_MASK(I2C_CPLL, I2C_CPLL_OC_DIV_7_0, 6); // lower default cpu_pll freq to 400M
+        REGI2C_WRITE_MASK(I2C_SYSPLL, I2C_SYSPLL_OC_DIV_7_0, 8); // lower default sys_pll freq to 480M
+        esp_rom_delay_us(100);
+    }
     REGI2C_WRITE_MASK(I2C_BIAS, I2C_BIAS_DREG_1P1, 10);
     REGI2C_WRITE_MASK(I2C_BIAS, I2C_BIAS_DREG_1P1_PVT, 10);
 }
