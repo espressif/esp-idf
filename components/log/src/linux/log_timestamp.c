@@ -8,7 +8,7 @@
 #include <time.h>
 #include "esp_log_timestamp.h"
 
-uint32_t esp_log_timestamp(void)
+uint32_t esp_log_early_timestamp(void)
 {
     struct timespec current_time;
     int result = clock_gettime(CLOCK_MONOTONIC, &current_time);
@@ -16,3 +16,5 @@ uint32_t esp_log_timestamp(void)
     uint32_t milliseconds = current_time.tv_sec * 1000 + current_time.tv_nsec / 1000000;
     return milliseconds;
 }
+
+uint32_t esp_log_timestamp(void) __attribute__((alias("esp_log_early_timestamp")));

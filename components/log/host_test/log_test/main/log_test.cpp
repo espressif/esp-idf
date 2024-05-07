@@ -11,10 +11,24 @@
 #include <iostream>
 #include "esp_log.h"
 #include "esp_private/log_util.h"
+#include "esp_private/log_timestamp.h"
+#include "sdkconfig.h"
 
 #include <catch2/catch_test_macros.hpp>
 
 using namespace std;
+
+#define EARLY_TIMESTAMP "[0-9]*"
+
+#if CONFIG_LOG_TIMESTAMP_SOURCE_RTOS
+#define TIMESTAMP "[0-9]*"
+#elif CONFIG_LOG_TIMESTAMP_SOURCE_SYSTEM
+#define TIMESTAMP "[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{3}"
+#elif CONFIG_LOG_TIMESTAMP_SOURCE_SYSTEM_FULL
+#define TIMESTAMP "[0-9]{2}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{3}"
+#else
+#define TIMESTAMP ""
+#endif
 
 static const char *TEST_TAG = "test";
 
@@ -135,7 +149,7 @@ PutcFixture *PutcFixture::instance = nullptr;
 TEST_CASE("verbose log level")
 {
     PrintFixture fix(ESP_LOG_VERBOSE);
-    const std::regex test_print("V \\([0-9]*\\) test: verbose", std::regex::ECMAScript);
+    const std::regex test_print("V \\(" TIMESTAMP "\\) test: verbose", std::regex::ECMAScript);
 
     ESP_LOGV(TEST_TAG, "verbose");
     CHECK(regex_search(fix.get_print_buffer_string(), test_print) == true);
@@ -144,7 +158,7 @@ TEST_CASE("verbose log level")
 TEST_CASE("debug log level")
 {
     PrintFixture fix(ESP_LOG_DEBUG);
-    const std::regex test_print("D \\([0-9]*\\) test: debug", std::regex::ECMAScript);
+    const std::regex test_print("D \\(" TIMESTAMP "\\) test: debug", std::regex::ECMAScript);
 
     ESP_LOGD(TEST_TAG, "debug");
     CHECK(regex_search(fix.get_print_buffer_string(), test_print) == true);
@@ -153,7 +167,7 @@ TEST_CASE("debug log level")
 TEST_CASE("info log level")
 {
     PrintFixture fix(ESP_LOG_INFO);
-    const std::regex test_print("I \\([0-9]*\\) test: info", std::regex::ECMAScript);
+    const std::regex test_print("I \\(" TIMESTAMP "\\) test: info", std::regex::ECMAScript);
 
     ESP_LOGI(TEST_TAG, "info");
     CHECK(regex_search(fix.get_print_buffer_string(), test_print) == true);
@@ -162,7 +176,7 @@ TEST_CASE("info log level")
 TEST_CASE("warn log level")
 {
     PrintFixture fix(ESP_LOG_WARN);
-    const std::regex test_print("W \\([0-9]*\\) test: warn", std::regex::ECMAScript);
+    const std::regex test_print("W \\(" TIMESTAMP "\\) test: warn", std::regex::ECMAScript);
 
     ESP_LOGW(TEST_TAG, "warn");
     CHECK(regex_search(fix.get_print_buffer_string(), test_print) == true);
@@ -171,7 +185,7 @@ TEST_CASE("warn log level")
 TEST_CASE("error log level")
 {
     PrintFixture fix(ESP_LOG_ERROR);
-    const std::regex test_print("E \\([0-9]*\\) test: error", std::regex::ECMAScript);
+    const std::regex test_print("E \\(" TIMESTAMP "\\) test: error", std::regex::ECMAScript);
 
     ESP_LOGE(TEST_TAG, "error");
     CHECK(regex_search(fix.get_print_buffer_string(), test_print) == true);
@@ -181,7 +195,7 @@ TEST_CASE("error log level")
 TEST_CASE("changing log level")
 {
     PrintFixture fix(ESP_LOG_INFO);
-    const std::regex test_print("I \\([0-9]*\\) test: must indeed be printed", std::regex::ECMAScript);
+    const std::regex test_print("I \\(" TIMESTAMP "\\) test: must indeed be printed", std::regex::ECMAScript);
 
     ESP_LOGI(TEST_TAG, "must indeed be printed");
     CHECK(regex_search(fix.get_print_buffer_string(), test_print) == true);
@@ -208,7 +222,7 @@ TEST_CASE("log buffer")
         0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18,
     };
     ESP_LOG_BUFFER_HEX(TEST_TAG, buffer, sizeof(buffer));
-    const std::regex buffer_regex("I \\([0-9]*\\) test: 01 02 03 04 05 06 07 08 11 12 13 14 15 16 17 18", std::regex::ECMAScript);
+    const std::regex buffer_regex("I \\(" TIMESTAMP "\\) test: 01 02 03 04 05 06 07 08 11 12 13 14 15 16 17 18", std::regex::ECMAScript);
     CHECK(regex_search(fix.get_print_buffer_string(), buffer_regex));
 }
 
@@ -219,7 +233,7 @@ TEST_CASE("log bytes > 127")
         0xff, 0x80,
     };
     ESP_LOG_BUFFER_HEX(TEST_TAG, buffer, sizeof(buffer));
-    const std::regex buffer_regex("I \\([0-9]*\\) test: ff 80", std::regex::ECMAScript);
+    const std::regex buffer_regex("I \\(" TIMESTAMP "\\) test: ff 80", std::regex::ECMAScript);
     CHECK(regex_search(fix.get_print_buffer_string(), buffer_regex));
 }
 
@@ -227,11 +241,11 @@ TEST_CASE("log buffer char")
 {
     PrintFixture fix(ESP_LOG_INFO);
     const char g[] = "The way to get started is to quit talking and begin doing. - Walt Disney";
-    const std::regex buffer_regex("I \\([0-9]*\\) test: The way to get s.*\n\
-.*I \\([0-9]*\\) test: tarted is to qui.*\n\
-.*I \\([0-9]*\\) test: t talking and be.*\n\
-.*I \\([0-9]*\\) test: gin doing. - Wal.*\n\
-.*I \\([0-9]*\\) test: t Disney", std::regex::ECMAScript);
+    const std::regex buffer_regex("I \\(" TIMESTAMP "\\) test: The way to get s.*\n\
+.*I \\(" TIMESTAMP "\\) test: tarted is to qui.*\n\
+.*I \\(" TIMESTAMP "\\) test: t talking and be.*\n\
+.*I \\(" TIMESTAMP "\\) test: gin doing. - Wal.*\n\
+.*I \\(" TIMESTAMP "\\) test: t Disney", std::regex::ECMAScript);
     ESP_LOG_BUFFER_CHAR(TEST_TAG, g, sizeof(g));
     CHECK(regex_search(fix.get_print_buffer_string(), buffer_regex) == true);
 }
@@ -244,7 +258,7 @@ TEST_CASE("log buffer dump")
         0xff, 0xfe, 0xfd, 0xfc, 0xfb, 0xfa, 0xf9, 0xf8
     };
     ESP_LOG_BUFFER_HEXDUMP(TEST_TAG, buffer, sizeof(buffer), ESP_LOG_INFO);
-    const std::regex buffer_regex("I \\([0-9]*\\) test: 0x[0-9a-f]+\\s+"
+    const std::regex buffer_regex("I \\(" TIMESTAMP "\\) test: 0x[0-9a-f]+\\s+"
                                   "00 00 00 00 05 06 07 08  ff fe fd fc fb fa f9 f8 "
                                   "\\s+|[\\.]{16}|", std::regex::ECMAScript);
     CHECK(regex_search(fix.get_print_buffer_string(), buffer_regex));
@@ -262,7 +276,7 @@ TEST_CASE("rom printf")
 TEST_CASE("early verbose log level")
 {
     PutcFixture fix;
-    const std::regex test_print("V \\([0-9]*\\) test: verbose", std::regex::ECMAScript);
+    const std::regex test_print("V \\(" EARLY_TIMESTAMP "\\) test: verbose", std::regex::ECMAScript);
 
     ESP_EARLY_LOGV(TEST_TAG, "verbose");
     CHECK(regex_search(fix.get_print_buffer_string(), test_print) == true);
@@ -271,7 +285,7 @@ TEST_CASE("early verbose log level")
 TEST_CASE("early debug log level")
 {
     PutcFixture fix;
-    const std::regex test_print("D \\([0-9]*\\) test: debug", std::regex::ECMAScript);
+    const std::regex test_print("D \\(" EARLY_TIMESTAMP "\\) test: debug", std::regex::ECMAScript);
 
     ESP_EARLY_LOGD(TEST_TAG, "debug");
     CHECK(regex_search(fix.get_print_buffer_string(), test_print) == true);
@@ -280,7 +294,7 @@ TEST_CASE("early debug log level")
 TEST_CASE("early info log level")
 {
     PutcFixture fix;
-    const std::regex test_print("I \\([0-9]*\\) test: info", std::regex::ECMAScript);
+    const std::regex test_print("I \\(" EARLY_TIMESTAMP "\\) test: info", std::regex::ECMAScript);
 
     ESP_EARLY_LOGI(TEST_TAG, "info");
     CHECK(regex_search(fix.get_print_buffer_string(), test_print) == true);
@@ -289,7 +303,7 @@ TEST_CASE("early info log level")
 TEST_CASE("early warn log level")
 {
     PutcFixture fix;
-    const std::regex test_print("W \\([0-9]*\\) test: warn", std::regex::ECMAScript);
+    const std::regex test_print("W \\(" EARLY_TIMESTAMP "\\) test: warn", std::regex::ECMAScript);
 
     ESP_EARLY_LOGW(TEST_TAG, "warn");
     CHECK(regex_search(fix.get_print_buffer_string(), test_print) == true);
@@ -298,7 +312,7 @@ TEST_CASE("early warn log level")
 TEST_CASE("early error log level")
 {
     PutcFixture fix;
-    const std::regex test_print("E \\([0-9]*\\) test: error", std::regex::ECMAScript);
+    const std::regex test_print("E \\(" EARLY_TIMESTAMP "\\) test: error", std::regex::ECMAScript);
 
     ESP_EARLY_LOGE(TEST_TAG, "error");
     CHECK(regex_search(fix.get_print_buffer_string(), test_print) == true);
@@ -308,7 +322,7 @@ TEST_CASE("early error log level")
 TEST_CASE("changing early log level")
 {
     PutcFixture fix(ESP_LOG_INFO);
-    const std::regex test_print("I \\([0-9]*\\) test: must indeed be printed", std::regex::ECMAScript);
+    const std::regex test_print("I \\(" EARLY_TIMESTAMP "\\) test: must indeed be printed", std::regex::ECMAScript);
 
     ESP_EARLY_LOGI(TEST_TAG, "must indeed be printed");
     CHECK(regex_search(fix.get_print_buffer_string(), test_print) == true);
@@ -373,4 +387,20 @@ TEST_CASE("esp_log_util_cvt")
     CHECK(esp_log_util_cvt_hex(0x73f, 4, buf) == 4);
     CHECK(strcmp(buf, "073f") == 0);
     memset(buf, 0, sizeof(buf));
+}
+
+TEST_CASE("esp_log_timestamp_str")
+{
+    char buffer[64];
+    bool critical = true;
+    uint64_t timestamp_ms = esp_log_timestamp64(critical);
+    esp_log_timestamp_str(critical, timestamp_ms, buffer);
+    const std::regex test_print(EARLY_TIMESTAMP, std::regex::ECMAScript);
+    CHECK(regex_search(string(buffer), test_print) == true);
+
+    critical = false;
+    timestamp_ms = esp_log_timestamp64(critical);
+    esp_log_timestamp_str(critical, timestamp_ms, buffer);
+    const std::regex test_print2(TIMESTAMP, std::regex::ECMAScript);
+    CHECK(regex_search(string(buffer), test_print2) == true);
 }

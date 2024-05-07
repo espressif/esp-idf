@@ -10,7 +10,8 @@ else()
     endif()
 endif()
 
-set(srcs "src/${system_target}/log_timestamp.c")
+set(srcs "src/${system_target}/log_timestamp.c"
+         "src/log_timestamp_common.c")
 set(priv_requires "")
 
 if(BOOTLOADER_BUILD)
