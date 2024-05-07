@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -60,6 +60,16 @@ typedef enum {
     HTTP_TRANSPORT_OVER_SSL,        /*!< Transport over ssl */
 } esp_http_client_transport_t;
 
+/*
+* @brief TLS Protocol version
+*/
+typedef enum {
+   ESP_HTTP_CLIENT_TLS_VER_ANY = 0,         /* No preference */
+   ESP_HTTP_CLIENT_TLS_VER_TLS_1_2 = 0x1,   /* (D)TLS 1.2 */
+   ESP_HTTP_CLIENT_TLS_VER_TLS_1_3 = 0x2,   /* (D)TLS 1.3 */
+   ESP_HTTP_CLIENT_TLS_VER_MAX,             /* to indicate max */
+} esp_http_client_proto_ver_t;
+
 typedef esp_err_t (*http_event_handle_cb)(esp_http_client_event_t *evt);
 
 /**
@@ -115,6 +125,7 @@ typedef struct {
     size_t                      client_key_len;      /*!< Length of the buffer pointed to by client_key_pem. May be 0 for null-terminated pem */
     const char                  *client_key_password;      /*!< Client key decryption password string */
     size_t                      client_key_password_len;   /*!< String length of the password pointed to by client_key_password */
+    esp_http_client_proto_ver_t tls_version;         /*!< TLS protocol version of the connection, e.g., TLS 1.2, TLS 1.3 (default - no preference) */
     const char                  *user_agent;         /*!< The User Agent string to send with HTTP requests */
     esp_http_client_method_t    method;                   /*!< HTTP Method */
     int                         timeout_ms;               /*!< Network timeout in milliseconds */
