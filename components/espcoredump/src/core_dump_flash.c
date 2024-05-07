@@ -12,6 +12,7 @@
 #include "esp_flash_encrypt.h"
 #include "esp_rom_crc.h"
 #include "esp_private/spi_flash_os.h"
+#include "spi_flash_mmap.h"
 
 #define BLANK_COREDUMP_SIZE 0xFFFFFFFF
 
