@@ -22,6 +22,7 @@ This section contains reference of the high-level storage APIs. They are based o
     :maxdepth: 1
 
     fatfs
+    fatfsgen
     mass_mfg.rst
     nvs_flash
     nvs_encryption
