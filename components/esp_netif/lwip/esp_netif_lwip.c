@@ -1247,6 +1247,7 @@ static esp_err_t esp_netif_tx_rx_event_api(esp_netif_api_msg_t *msg)
     esp_netif_t *esp_netif = msg->esp_netif;
     if (esp_netif == NULL) {
         ESP_LOGE(TAG, "Invalid esp_netif");
+        return ESP_ERR_ESP_NETIF_INVALID_PARAMS;
     }
 
     ESP_LOGD(TAG, "%s esp_netif:%p", __func__, esp_netif);
