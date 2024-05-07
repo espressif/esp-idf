@@ -7,14 +7,17 @@
 #include "unity.h"
 #include "unity_test_runner.h"
 #include "unity_test_utils_memory.h"
-
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "dev_msc.h"
+#include "dev_hid.h"
 #include "test_hcd_common.h"
 
 void setUp(void)
 {
     unity_utils_record_free_mem();
+    dev_msc_init();
+    dev_hid_init();
     port_hdl = test_hcd_setup();
 }
 

@@ -10,14 +10,13 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 #include "unity.h"
-#include "mock_msc.h"
+#include "dev_isoc.h"
+#include "usb/usb_types_ch9.h"
 #include "test_usb_common.h"
 #include "test_hcd_common.h"
 
 #define NUM_URBS                3
 #define NUM_PACKETS_PER_URB     3
-#define ISOC_PACKET_SIZE        MOCK_ISOC_EP_MPS
-#define URB_DATA_BUFF_SIZE      (NUM_PACKETS_PER_URB * ISOC_PACKET_SIZE)
 #define POST_ENQUEUE_DELAY_US   20
 #define ENQUEUE_DELAY (OTG_HSPHY_INTERFACE ? 100 : 500) // With this delay we want to enqueue the URBs at different times
 
@@ -53,18 +52,20 @@ TEST_CASE("Test HCD isochronous pipe URBs", "[isoc][full_speed]")
     uint8_t dev_addr = test_hcd_enum_device(default_pipe);
 
     // Create ISOC OUT pipe to non-existent device
-    hcd_pipe_handle_t isoc_out_pipe = test_hcd_pipe_alloc(port_hdl, &mock_isoc_out_ep_desc, dev_addr + 1, port_speed);
+    const usb_ep_desc_t *out_ep_desc = dev_isoc_get_out_ep_desc(port_speed);
+    const int isoc_packet_size = USB_EP_DESC_GET_MPS(out_ep_desc);
+    hcd_pipe_handle_t isoc_out_pipe = test_hcd_pipe_alloc(port_hdl, out_ep_desc, dev_addr + 1, port_speed);
     // Create URBs
     urb_t *urb_list[NUM_URBS];
     // Initialize URBs
     for (int urb_idx = 0; urb_idx < NUM_URBS; urb_idx++) {
-        urb_list[urb_idx] = test_hcd_alloc_urb(NUM_PACKETS_PER_URB, URB_DATA_BUFF_SIZE);
-        urb_list[urb_idx]->transfer.num_bytes = URB_DATA_BUFF_SIZE;
+        urb_list[urb_idx] = test_hcd_alloc_urb(NUM_PACKETS_PER_URB, NUM_PACKETS_PER_URB * isoc_packet_size);
+        urb_list[urb_idx]->transfer.num_bytes = NUM_PACKETS_PER_URB * isoc_packet_size;
         urb_list[urb_idx]->transfer.context = URB_CONTEXT_VAL;
         for (int pkt_idx = 0; pkt_idx < NUM_PACKETS_PER_URB; pkt_idx++) {
-            urb_list[urb_idx]->transfer.isoc_packet_desc[pkt_idx].num_bytes = ISOC_PACKET_SIZE;
+            urb_list[urb_idx]->transfer.isoc_packet_desc[pkt_idx].num_bytes = isoc_packet_size;
             // Each packet will consist of the same byte, but each subsequent packet's byte will increment (i.e., packet 0 transmits all 0x0, packet 1 transmits all 0x1)
-            memset(&urb_list[urb_idx]->transfer.data_buffer[pkt_idx * ISOC_PACKET_SIZE], (urb_idx * NUM_URBS) + pkt_idx, ISOC_PACKET_SIZE);
+            memset(&urb_list[urb_idx]->transfer.data_buffer[pkt_idx * isoc_packet_size], (urb_idx * NUM_URBS) + pkt_idx, isoc_packet_size);
         }
     }
     // Enqueue URBs
@@ -81,7 +82,7 @@ TEST_CASE("Test HCD isochronous pipe URBs", "[isoc][full_speed]")
         TEST_ASSERT_EQUAL(urb_list[urb_idx], urb);
         TEST_ASSERT_EQUAL(URB_CONTEXT_VAL, urb->transfer.context);
         // Overall URB status and overall number of bytes
-        TEST_ASSERT_EQUAL(URB_DATA_BUFF_SIZE, urb->transfer.actual_num_bytes);
+        TEST_ASSERT_EQUAL(NUM_PACKETS_PER_URB * isoc_packet_size, urb->transfer.actual_num_bytes);
         TEST_ASSERT_EQUAL_MESSAGE(USB_TRANSFER_STATUS_COMPLETED, urb->transfer.status, "Transfer NOT completed");
         for (int pkt_idx = 0; pkt_idx < NUM_PACKETS_PER_URB; pkt_idx++) {
             TEST_ASSERT_EQUAL_MESSAGE(USB_TRANSFER_STATUS_COMPLETED, urb->transfer.isoc_packet_desc[pkt_idx].status, "Transfer NOT completed");
@@ -127,12 +128,14 @@ TEST_CASE("Test HCD isochronous pipe URBs all", "[isoc][full_speed]")
 
     urb_t *urb_list[NUM_URBS];
     hcd_pipe_handle_t unused_pipes[OTG_NUM_HOST_CHAN];
+    const usb_ep_desc_t *out_ep_desc = dev_isoc_get_out_ep_desc(port_speed);
+    const int isoc_packet_size = USB_EP_DESC_GET_MPS(out_ep_desc);
 
     // For all channels
     for (int channel = 0; channel < OTG_NUM_HOST_CHAN - 1; channel++) {
         // Allocate unused pipes, so the active isoc_out_pipe uses different channel index
         for (int ch = 0; ch < channel; ch++) {
-            unused_pipes[ch] = test_hcd_pipe_alloc(port_hdl, &mock_isoc_out_ep_desc, dev_addr + 1, port_speed);
+            unused_pipes[ch] = test_hcd_pipe_alloc(port_hdl, out_ep_desc, dev_addr + 1, port_speed);
         }
 
         // For all intervals
@@ -142,20 +145,21 @@ TEST_CASE("Test HCD isochronous pipe URBs all", "[isoc][full_speed]")
             unsigned num_packets_per_urb = 32; // This is maximum number of packets if interval = 1. This is limited by FRAME_LIST_LEN
             num_packets_per_urb >>= (interval - 1);
             // Create ISOC OUT pipe
-            usb_ep_desc_t isoc_out_ep = mock_isoc_out_ep_desc; // Implicit copy
+            usb_ep_desc_t isoc_out_ep;
+            memcpy(&isoc_out_ep, out_ep_desc, sizeof(usb_ep_desc_t));
             isoc_out_ep.bInterval = interval;
             isoc_out_ep.bEndpointAddress = interval; // So you can see the bInterval value in trace
             hcd_pipe_handle_t isoc_out_pipe = test_hcd_pipe_alloc(port_hdl, &isoc_out_ep, channel + 1, port_speed); // Channel number represented in dev_num, so you can see it in trace
 
             // Initialize URBs
             for (int urb_idx = 0; urb_idx < NUM_URBS; urb_idx++) {
-                urb_list[urb_idx] = test_hcd_alloc_urb(num_packets_per_urb, num_packets_per_urb * ISOC_PACKET_SIZE);
-                urb_list[urb_idx]->transfer.num_bytes = num_packets_per_urb * ISOC_PACKET_SIZE;
+                urb_list[urb_idx] = test_hcd_alloc_urb(num_packets_per_urb, num_packets_per_urb * isoc_packet_size);
+                urb_list[urb_idx]->transfer.num_bytes = num_packets_per_urb * isoc_packet_size;
                 urb_list[urb_idx]->transfer.context = URB_CONTEXT_VAL;
                 for (int pkt_idx = 0; pkt_idx < num_packets_per_urb; pkt_idx++) {
-                    urb_list[urb_idx]->transfer.isoc_packet_desc[pkt_idx].num_bytes = ISOC_PACKET_SIZE;
+                    urb_list[urb_idx]->transfer.isoc_packet_desc[pkt_idx].num_bytes = isoc_packet_size;
                     // Each packet will consist of the same byte, but each subsequent packet's byte will increment (i.e., packet 0 transmits all 0x0, packet 1 transmits all 0x1)
-                    memset(&urb_list[urb_idx]->transfer.data_buffer[pkt_idx * ISOC_PACKET_SIZE], (urb_idx * num_packets_per_urb) + pkt_idx, ISOC_PACKET_SIZE);
+                    memset(&urb_list[urb_idx]->transfer.data_buffer[pkt_idx * isoc_packet_size], (urb_idx * num_packets_per_urb) + pkt_idx, isoc_packet_size);
                 }
             }
 
@@ -176,7 +180,7 @@ TEST_CASE("Test HCD isochronous pipe URBs all", "[isoc][full_speed]")
                 TEST_ASSERT_EQUAL(urb_list[urb_idx], urb);
                 TEST_ASSERT_EQUAL(URB_CONTEXT_VAL, urb->transfer.context);
                 // Overall URB status and overall number of bytes
-                TEST_ASSERT_EQUAL(num_packets_per_urb * ISOC_PACKET_SIZE, urb->transfer.actual_num_bytes);
+                TEST_ASSERT_EQUAL(num_packets_per_urb * isoc_packet_size, urb->transfer.actual_num_bytes);
                 TEST_ASSERT_EQUAL_MESSAGE(USB_TRANSFER_STATUS_COMPLETED, urb->transfer.status, "Transfer NOT completed");
                 for (int pkt_idx = 0; pkt_idx < num_packets_per_urb; pkt_idx++) {
                     TEST_ASSERT_EQUAL_MESSAGE(USB_TRANSFER_STATUS_COMPLETED, urb->transfer.isoc_packet_desc[pkt_idx].status, "Transfer NOT completed");
@@ -235,18 +239,20 @@ TEST_CASE("Test HCD isochronous pipe sudden disconnect", "[isoc][full_speed]")
     uint8_t dev_addr = test_hcd_enum_device(default_pipe);
 
     // Create ISOC OUT pipe to non-existent device
-    hcd_pipe_handle_t isoc_out_pipe = test_hcd_pipe_alloc(port_hdl, &mock_isoc_out_ep_desc, dev_addr + 1, port_speed);
+    const usb_ep_desc_t *out_ep_desc = dev_isoc_get_out_ep_desc(port_speed);
+    const int isoc_packet_size = USB_EP_DESC_GET_MPS(out_ep_desc);
+    hcd_pipe_handle_t isoc_out_pipe = test_hcd_pipe_alloc(port_hdl, out_ep_desc, dev_addr + 1, port_speed);
     // Create URBs
     urb_t *urb_list[NUM_URBS];
     // Initialize URBs
     for (int urb_idx = 0; urb_idx < NUM_URBS; urb_idx++) {
-        urb_list[urb_idx] = test_hcd_alloc_urb(NUM_PACKETS_PER_URB, URB_DATA_BUFF_SIZE);
-        urb_list[urb_idx]->transfer.num_bytes = URB_DATA_BUFF_SIZE;
+        urb_list[urb_idx] = test_hcd_alloc_urb(NUM_PACKETS_PER_URB, NUM_PACKETS_PER_URB * isoc_packet_size);
+        urb_list[urb_idx]->transfer.num_bytes = NUM_PACKETS_PER_URB * isoc_packet_size;
         urb_list[urb_idx]->transfer.context = URB_CONTEXT_VAL;
         for (int pkt_idx = 0; pkt_idx < NUM_PACKETS_PER_URB; pkt_idx++) {
-            urb_list[urb_idx]->transfer.isoc_packet_desc[pkt_idx].num_bytes = ISOC_PACKET_SIZE;
+            urb_list[urb_idx]->transfer.isoc_packet_desc[pkt_idx].num_bytes = isoc_packet_size;
             // Each packet will consist of the same byte, but each subsequent packet's byte will increment (i.e., packet 0 transmits all 0x0, packet 1 transmits all 0x1)
-            memset(&urb_list[urb_idx]->transfer.data_buffer[pkt_idx * ISOC_PACKET_SIZE], (urb_idx * NUM_URBS) + pkt_idx, ISOC_PACKET_SIZE);
+            memset(&urb_list[urb_idx]->transfer.data_buffer[pkt_idx * isoc_packet_size], (urb_idx * NUM_URBS) + pkt_idx, isoc_packet_size);
         }
     }
     // Enqueue URBs

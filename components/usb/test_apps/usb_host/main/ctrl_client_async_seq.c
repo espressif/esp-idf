@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,6 +11,7 @@
 #include "esp_err.h"
 #include "esp_log.h"
 #include "test_usb_common.h"
+#include "dev_msc.h"
 #include "ctrl_client.h"
 #include "usb/usb_host.h"
 #include "unity.h"
@@ -47,14 +48,19 @@ typedef enum {
 } test_stage_t;
 
 typedef struct {
+    // Test parameters
     ctrl_client_test_param_t test_param;
+    // MSC device info
+    uint8_t dev_addr;
+    usb_speed_t dev_speed;
+    // Client variables
+    usb_host_client_handle_t client_hdl;
+    usb_device_handle_t dev_hdl;
+    // Test state
     test_stage_t cur_stage;
     test_stage_t next_stage;
     uint8_t num_xfer_done;
     uint8_t num_xfer_sent;
-    uint8_t dev_addr_to_open;
-    usb_host_client_handle_t client_hdl;
-    usb_device_handle_t dev_hdl;
     const usb_config_desc_t *config_desc_cached;
 } ctrl_client_obj_t;
 
@@ -79,7 +85,7 @@ static void ctrl_client_event_cb(const usb_host_client_event_msg_t *event_msg, v
     case USB_HOST_CLIENT_EVENT_NEW_DEV:
         TEST_ASSERT_EQUAL(TEST_STAGE_WAIT_CONN, ctrl_obj->cur_stage);
         ctrl_obj->next_stage = TEST_STAGE_DEV_OPEN;
-        ctrl_obj->dev_addr_to_open = event_msg->new_dev.address;
+        ctrl_obj->dev_addr = event_msg->new_dev.address;
         break;
     default:
         abort();    // Should never occur in this test
@@ -133,16 +139,21 @@ void ctrl_client_async_seq_task(void *arg)
         case TEST_STAGE_DEV_OPEN: {
             ESP_LOGD(CTRL_CLIENT_TAG, "Open");
             // Open the device
-            TEST_ASSERT_EQUAL_MESSAGE(ESP_OK, usb_host_device_open(ctrl_obj.client_hdl, ctrl_obj.dev_addr_to_open, &ctrl_obj.dev_hdl), "Failed to open the device");
+            TEST_ASSERT_EQUAL_MESSAGE(ESP_OK, usb_host_device_open(ctrl_obj.client_hdl, ctrl_obj.dev_addr, &ctrl_obj.dev_hdl), "Failed to open the device");
+            // Get device info to get device speed
+            usb_device_info_t dev_info;
+            TEST_ASSERT_EQUAL(ESP_OK, usb_host_device_info(ctrl_obj.dev_hdl, &dev_info));
+            ctrl_obj.dev_speed = dev_info.speed;
             // Target our transfers to the device
             for (int i = 0; i < NUM_TRANSFER_OBJ; i++) {
                 ctrl_xfer[i]->device_handle = ctrl_obj.dev_hdl;
             }
-            // Check the VID/PID of the opened device
+            // Check that the device descriptor matches our expected MSC device
             const usb_device_desc_t *device_desc;
+            const usb_device_desc_t *device_desc_ref = dev_msc_get_dev_desc(ctrl_obj.dev_speed);
             TEST_ASSERT_EQUAL(ESP_OK, usb_host_get_device_descriptor(ctrl_obj.dev_hdl, &device_desc));
-            TEST_ASSERT_EQUAL(ctrl_obj.test_param.idVendor, device_desc->idVendor);
-            TEST_ASSERT_EQUAL(ctrl_obj.test_param.idProduct, device_desc->idProduct);
+            TEST_ASSERT_EQUAL(device_desc_ref->bLength, device_desc->bLength);
+            TEST_ASSERT_EQUAL_MEMORY_MESSAGE(device_desc_ref, device_desc, sizeof(usb_device_desc_t), "Device descriptors do not match.");
             // Cache the active configuration descriptor for later comparison
             TEST_ASSERT_EQUAL(ESP_OK, usb_host_get_active_config_descriptor(ctrl_obj.dev_hdl, &ctrl_obj.config_desc_cached));
             ctrl_obj.next_stage = TEST_STAGE_CTRL_XFER;
