@@ -77,6 +77,13 @@ IRAM 安全中断处理程序
 
 如果在注册时没有设置 ``ESP_INTR_FLAG_IRAM`` 标志，当禁用 cache 时，将不会执行中断处理程序。一旦 cache 恢复，非 IRAM 安全的中断将重新启用，中断处理程序随即再次正常运行。这意味着，只要禁用了 cache，就不会发生相应的硬件事件。
 
+.. only:: SOC_DMA_CAN_ACCESS_MSPI_MEM
+
+    当 DMA 也可以访问 Flash 中的数据时
+    ----------------------------------
+
+    当 DMA 正在从 Flash 中读取数据时，来自 SPI1 的擦/写操作优先级会更高，导致 DMA 读到错误的数据。建议在擦写 Flash 之前先停止 DMA 对 Flash 的访问。如果 DMA 不可以停止，比如 LCD 需要持续刷新保存在 Flash 中的图像数据，建议将此类数据拷贝到 PSRAM 或者内部的 SRAM 中。
+
 
 .. only:: SOC_SPI_MEM_SUPPORT_AUTO_SUSPEND
 

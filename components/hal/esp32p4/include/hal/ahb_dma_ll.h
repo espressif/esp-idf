@@ -57,6 +57,18 @@ static inline void ahb_dma_ll_reset_fsm(ahb_dma_dev_t *dev)
     dev->misc_conf.ahbm_rst_inter = 0;
 }
 
+/**
+ * @brief Preset valid memory range for AHB-DMA
+ *
+ * @param dev DMA register base address
+ */
+static inline void ahb_dma_ll_set_default_memory_range(ahb_dma_dev_t *dev)
+{
+    // AHB-DMA can access L2MEM, L2ROM, MSPI Flash, MSPI PSRAM
+    dev->intr_mem_start_addr.val = 0x40000000;
+    dev->intr_mem_end_addr.val = 0x4FFC0000;
+}
+
 ///////////////////////////////////// RX /////////////////////////////////////////
 /**
  * @brief Get DMA RX channel interrupt status word
