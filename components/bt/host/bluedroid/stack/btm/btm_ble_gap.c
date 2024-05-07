@@ -70,7 +70,7 @@ static tBTM_BLE_VSC_CB *cmn_ble_gap_vsc_cb_ptr;
 static tBTM_BLE_CTRL_FEATURES_CBACK    *p_ctrl_le_feature_rd_cmpl_cback = NULL;
 #endif
 
-tBTM_CallbackFunc conn_param_update_cb;
+tBTM_CallbackFunc conn_callback_func;
 /*******************************************************************************
 **  Local functions
 *******************************************************************************/
@@ -309,7 +309,21 @@ void btm_ble_sem_free(void)
 *******************************************************************************/
 void BTM_BleRegiseterConnParamCallback(tBTM_UPDATE_CONN_PARAM_CBACK *update_conn_param_cb)
 {
-    conn_param_update_cb.update_conn_param_cb = update_conn_param_cb;
+    conn_callback_func.update_conn_param_cb = update_conn_param_cb;
+}
+
+/*******************************************************************************
+**
+** Function         BTM_BleRegiseterPktLengthChangeCallback
+**
+** Description      Registers a callback function for packet length changes.
+**
+** Returns          void
+**
+*******************************************************************************/
+void BTM_BleRegiseterPktLengthChangeCallback(tBTM_SET_PKT_DATA_LENGTH_CBACK *ptk_len_chane_cb)
+{
+    conn_callback_func.set_pkt_data_length_cb = ptk_len_chane_cb;
 }
 
 /*******************************************************************************

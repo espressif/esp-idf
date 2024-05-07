@@ -175,14 +175,14 @@ BOOLEAN L2CA_UpdateBleConnParams (BD_ADDR rem_bda, UINT16 min_int, UINT16 max_in
         L2CAP_TRACE_ERROR("There are two connection parameter requests that are being updated, please try later ");
     }
 
-    if ((need_cb == TRUE) && (conn_param_update_cb.update_conn_param_cb != NULL)) {
+    if ((need_cb == TRUE) && (conn_callback_func.update_conn_param_cb != NULL)) {
         tBTM_LE_UPDATE_CONN_PRAMS update_param;
         update_param.max_conn_int = max_int;
         update_param.min_conn_int = min_int;
         update_param.conn_int = p_lcb->current_used_conn_interval;
         update_param.slave_latency = p_lcb->current_used_conn_latency;
         update_param.supervision_tout = p_lcb->current_used_conn_timeout;
-        (conn_param_update_cb.update_conn_param_cb)(status, p_lcb->remote_bd_addr, &update_param);
+        (conn_callback_func.update_conn_param_cb)(status, p_lcb->remote_bd_addr, &update_param);
         return (status == HCI_SUCCESS);
     }
 
@@ -287,7 +287,7 @@ UINT8 L2CA_GetBleConnRole (BD_ADDR bd_addr)
 **
 ** Function l2cble_notify_le_connection
 **
-** Description This function notifiy the l2cap connection to the app layer
+** Description This function notify the l2cap connection to the app layer
 **
 ** Returns none
 **
@@ -647,7 +647,7 @@ void l2cble_process_conn_update_evt (UINT16 handle, UINT8 status, UINT16 conn_in
     p_lcb->conn_update_mask &= ~L2C_BLE_UPDATE_PARAM_FULL;
     btu_stop_timer(&p_lcb->upda_con_timer);
 
-    if (conn_param_update_cb.update_conn_param_cb != NULL) {
+    if (conn_callback_func.update_conn_param_cb != NULL) {
         l2c_send_update_conn_params_cb(p_lcb, status);
     }
 
@@ -686,7 +686,7 @@ void l2cble_get_conn_param_format_err_from_contoller (UINT8 status, UINT16 handl
 
     btu_stop_timer (&p_lcb->upda_con_timer);
 
-    if (conn_param_update_cb.update_conn_param_cb != NULL) {
+    if (conn_callback_func.update_conn_param_cb != NULL) {
         l2c_send_update_conn_params_cb(p_lcb, status);
     }
     if ((p_lcb->conn_update_mask & L2C_BLE_UPDATE_PARAM_FULL) != 0){
@@ -868,7 +868,7 @@ void l2cble_process_sig_cmd (tL2C_LCB *p_lcb, UINT8 *p, UINT16 pkt_len)
 **
 ** Function         l2cble_init_direct_conn
 **
-** Description      This function is to initate a direct connection
+** Description      This function is to initiate a direct connection
 **
 ** Returns          TRUE connection initiated, FALSE otherwise.
 **
@@ -894,7 +894,7 @@ BOOLEAN l2cble_init_direct_conn (tL2C_LCB *p_lcb)
 
     /* There can be only one BLE connection request outstanding at a time */
     if (p_dev_rec == NULL) {
-        L2CAP_TRACE_WARNING ("unknown device, can not initate connection");
+        L2CAP_TRACE_WARNING ("unknown device, can not initiate connection");
         return (FALSE);
     }
 
@@ -947,7 +947,7 @@ BOOLEAN l2cble_init_direct_conn (tL2C_LCB *p_lcb)
 
     if (!btm_ble_topology_check(BTM_BLE_STATE_INIT)) {
         l2cu_release_lcb (p_lcb);
-        L2CAP_TRACE_ERROR("initate direct connection fail, topology limitation");
+        L2CAP_TRACE_ERROR("initiate direct connection fail, topology limitation");
         return FALSE;
     }
     uint32_t link_timeout = L2CAP_BLE_LINK_CONNECT_TOUT;
@@ -981,7 +981,7 @@ BOOLEAN l2cble_init_direct_conn (tL2C_LCB *p_lcb)
                                             BLE_CE_LEN_MIN,                       /* UINT16 min_len       */
                                             BLE_CE_LEN_MIN)) {                    /* UINT16 max_len       */
             l2cu_release_lcb (p_lcb);
-            L2CAP_TRACE_ERROR("initate direct connection fail, no resources");
+            L2CAP_TRACE_ERROR("initiate direct connection fail, no resources");
             return (FALSE);
         } else {
             p_lcb->link_state = LST_CONNECTING;
@@ -1033,7 +1033,7 @@ BOOLEAN l2cble_init_direct_conn (tL2C_LCB *p_lcb)
         btm_ble_set_conn_st (BLE_DIR_CONN);
         if(!btsnd_hcic_ble_create_ext_conn(&aux_conn)) {
             l2cu_release_lcb (p_lcb);
-            L2CAP_TRACE_ERROR("initate Aux connection failed, no resources");
+            L2CAP_TRACE_ERROR("initiate Aux connection failed, no resources");
         }
 #else
     L2CAP_TRACE_ERROR("BLE 5.0 not support!\n");
@@ -1324,15 +1324,18 @@ void l2cble_process_data_length_change_event(UINT16 handle, UINT16 tx_data_len, 
     if(p_acl) {
         p_acl->data_length_params = data_length_params;
         if (p_acl->p_set_pkt_data_cback) {
+            // Only when the corresponding API is called will the callback be registered
             (*p_acl->p_set_pkt_data_cback)(BTM_SUCCESS, &data_length_params);
+        } else {
+            // If the callback is not registered,using global callback
+            (*conn_callback_func.set_pkt_data_length_cb)(BTM_SUCCESS, &data_length_params);
         }
-
         p_acl->data_len_updating = false;
         if(p_acl->data_len_waiting) {
             p_acl->data_len_waiting = false;
             p_acl->p_set_pkt_data_cback = p_acl->p_set_data_len_cback_waiting;
             p_acl->p_set_data_len_cback_waiting = NULL;
-            // if value is same, triger callback directly
+            // if value is same, trigger callback directly
             if(p_acl->tx_len_waiting == p_acl->data_length_params.tx_len) {
                 if(p_acl->p_set_pkt_data_cback) {
                     (*p_acl->p_set_pkt_data_cback)(BTM_SUCCESS, &p_acl->data_length_params);
@@ -1396,7 +1399,7 @@ void l2cble_set_fixed_channel_tx_data_length(BD_ADDR remote_bda, UINT16 fix_cid,
 *******************************************************************************/
 void l2c_send_update_conn_params_cb(tL2C_LCB *p_lcb, UINT8 status)
 {
-    if(conn_param_update_cb.update_conn_param_cb != NULL){
+    if(conn_callback_func.update_conn_param_cb != NULL){
         tBTM_LE_UPDATE_CONN_PRAMS update_param;
         //if myself update the connection parameters
         if (p_lcb->updating_param_flag){
@@ -1412,7 +1415,7 @@ void l2c_send_update_conn_params_cb(tL2C_LCB *p_lcb, UINT8 status)
         update_param.slave_latency = p_lcb->current_used_conn_latency;
         update_param.supervision_tout = p_lcb->current_used_conn_timeout;
 
-        (conn_param_update_cb.update_conn_param_cb)(status, p_lcb->remote_bd_addr, &update_param);
+        (conn_callback_func.update_conn_param_cb)(status, p_lcb->remote_bd_addr, &update_param);
     }
 }
 
