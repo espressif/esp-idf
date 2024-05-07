@@ -51,9 +51,6 @@ examples/wifi/iperf:
     - esp_event
     - esp_coex
     - wpa_supplicant
-    - cmd_system
-  depends_filepatterns:
-    - examples/common_components/iperf/**/*
 
 examples/wifi/itwt:
   <<: *wifi_depends_default
