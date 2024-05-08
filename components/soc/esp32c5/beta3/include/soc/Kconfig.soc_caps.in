@@ -571,6 +571,10 @@ config SOC_TIMER_GROUP_TOTAL_TIMERS
     int
     default 2
 
+config SOC_EFUSE_ECDSA_KEY
+    bool
+    default y
+
 config SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS
     int
     default 3
