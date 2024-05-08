@@ -32,7 +32,7 @@ TEST_CASE("TEST CSI driver allocation", "[csi]")
     TEST_ESP_OK(esp_cam_ctlr_get_frame_buffer_len(handle, &bk_buffer_len));
     TEST_ASSERT_NOT_NULL(bk_buffer);
     TEST_ASSERT_EQUAL((csi_config.h_res * csi_config.v_res * 2), bk_buffer_len); // out type RGB565 using 2 byte / pixel
-    TEST_ESP_OK(esp_cam_del_ctlr(handle));
+    TEST_ESP_OK(esp_cam_ctlr_del(handle));
 }
 
 TEST_CASE("TEST CSI driver no backup buffer usage", "[csi]")
@@ -59,5 +59,5 @@ TEST_CASE("TEST CSI driver no backup buffer usage", "[csi]")
     TEST_ESP_ERR(ESP_ERR_INVALID_STATE, esp_cam_ctlr_get_frame_buffer_len(handle, &bk_buffer_len));
     TEST_ASSERT_NULL(bk_buffer);
     TEST_ASSERT_EQUAL(0, bk_buffer_len);
-    TEST_ESP_OK(esp_cam_del_ctlr(handle));
+    TEST_ESP_OK(esp_cam_ctlr_del(handle));
 }
