@@ -59,6 +59,20 @@ static inline void axi_dma_ll_reset_fsm(axi_dma_dev_t *dev)
     dev->misc_conf.axim_rst_wr_inter = 0;
 }
 
+/**
+ * @brief Preset valid memory range for AXI-DMA
+ *
+ * @param dev DMA register base address
+ */
+static inline void axi_dma_ll_set_default_memory_range(axi_dma_dev_t *dev)
+{
+    // AXI-DMA can access L2MEM, L2ROM, MSPI Flash, MSPI PSRAM
+    dev->intr_mem_start_addr.val = 0x4FC00000;
+    dev->intr_mem_end_addr.val = 0x4FFC0000;
+    dev->extr_mem_start_addr.val = 0x40000000;
+    dev->extr_mem_end_addr.val = 0x4C000000;
+}
+
 ///////////////////////////////////// RX /////////////////////////////////////////
 /**
  * @brief Get DMA RX channel interrupt status word

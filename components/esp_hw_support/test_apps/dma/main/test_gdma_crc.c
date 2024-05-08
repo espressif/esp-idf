@@ -11,6 +11,7 @@
 #include "freertos/semphr.h"
 #include "unity.h"
 #include "esp_heap_caps.h"
+#include "esp_memory_utils.h"
 #include "esp_private/gdma.h"
 #include "hal/dma_types.h"
 #include "soc/soc_caps.h"
@@ -62,6 +63,8 @@ static void test_gdma_crc_calculation(gdma_channel_handle_t tx_chan, int test_nu
     uint32_t crc_result = 0;
     const char *test_input_string = "Share::Connect::Innovate";
     size_t input_data_size = strlen(test_input_string);
+    // this test case also test the GDMA can fetch data from MSPI Flash
+    TEST_ASSERT_TRUE(esp_ptr_in_drom(test_input_string));
     printf("Calculate CRC value for string: \"%s\"\r\n", test_input_string);
 
     gdma_trigger_t m2m_trigger = GDMA_MAKE_TRIGGER(GDMA_TRIG_PERIPH_M2M, 0);
@@ -71,27 +74,22 @@ static void test_gdma_crc_calculation(gdma_channel_handle_t tx_chan, int test_nu
     m2m_trigger.instance_id = __builtin_ctz(free_m2m_id_mask);
     TEST_ESP_OK(gdma_connect(tx_chan, m2m_trigger));
 
-    // allocate the source and destination buffer from SRAM
-    // |--------------------------------------------------|
-    // | 128 bytes DMA descriptor | 128 bytes data buffer |
-    // |--------------------------------------------------|
-    size_t sram_alignment = cache_hal_get_cache_line_size(CACHE_LL_LEVEL_INT_MEM, CACHE_TYPE_DATA);
-    uint8_t *src_buf = heap_caps_aligned_calloc(sram_alignment, 1, 256, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
-    TEST_ASSERT_NOT_NULL(src_buf);
-    dma_descriptor_align8_t *tx_descs = (dma_descriptor_align8_t *) src_buf;
-    uint8_t *src_data = src_buf + 64;
-    memcpy(src_data, test_input_string, input_data_size);
+    size_t sram_cache_line_size = cache_hal_get_cache_line_size(CACHE_LL_LEVEL_INT_MEM, CACHE_TYPE_DATA);
+    size_t alignment = MAX(sram_cache_line_size, 8);
+    dma_descriptor_align8_t *tx_descs = heap_caps_aligned_calloc(alignment, 1, sizeof(dma_descriptor_align8_t),
+                                                                 MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+    TEST_ASSERT_NOT_NULL(tx_descs);
 
-    tx_descs->buffer = src_data;
-    tx_descs->dw0.size = 256 - 64;
+    tx_descs->buffer = (void *)test_input_string;
+    tx_descs->dw0.size = input_data_size + 1; // +1 for '\0'
     tx_descs->dw0.length = input_data_size;
     tx_descs->dw0.owner = DMA_DESCRIPTOR_BUFFER_OWNER_DMA;
     tx_descs->dw0.suc_eof = 1;
     tx_descs->next = NULL;
 
-    if (sram_alignment) {
+    if (sram_cache_line_size) {
         // do write-back for the buffer because it's in the cache
-        TEST_ESP_OK(esp_cache_msync((void *)src_buf, 256, ESP_CACHE_MSYNC_FLAG_DIR_C2M));
+        TEST_ESP_OK(esp_cache_msync((void *)tx_descs, sizeof(dma_descriptor_align8_t), ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED));
     }
 
     for (int i = 0; i < test_num_crc_algorithm; i++) {
@@ -111,7 +109,7 @@ static void test_gdma_crc_calculation(gdma_channel_handle_t tx_chan, int test_nu
         TEST_ASSERT_EQUAL(crc_test_cases[i].expected_result, crc_result);
     }
 
-    free(src_buf);
+    free(tx_descs);
 }
 
 TEST_CASE("GDMA CRC Calculation", "[GDMA][CRC]")
