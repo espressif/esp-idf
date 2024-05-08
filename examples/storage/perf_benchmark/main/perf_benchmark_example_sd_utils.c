@@ -13,6 +13,10 @@
 #if SOC_SDMMC_HOST_SUPPORTED
 #include "driver/sdmmc_host.h"
 #endif
+#if SOC_SDMMC_IO_POWER_EXTERNAL
+#include "sd_pwr_ctrl_by_on_chip_ldo.h"
+#endif
+#include "esp_err.h"
 #include "esp_log.h"
 
 #ifdef CONFIG_EXAMPLE_TEST_SD_CARD
@@ -31,6 +35,22 @@ void init_sd_config(sdmmc_host_t *out_host, sdmmc_slot_config_t *out_slot_config
 #else // CONFIG_EXAMPLE_USE_SDMMC
 void init_sd_config(sdmmc_host_t *out_host, sdspi_device_config_t *out_slot_config, int freq_khz) {
 #endif // CONFIG_EXAMPLE_USE_SDSPI
+
+    // For SoCs where the SD power can be supplied both via an internal or external (e.g. on-board LDO) power supply.
+    // When using specific IO pins (which can be used for ultra high-speed SDMMC) to connect to the SD card
+    // and the internal LDO power supply, we need to initialize the power supply first.
+#if CONFIG_EXAMPLE_SD_PWR_CTRL_LDO_INTERNAL_IO
+    sd_pwr_ctrl_ldo_config_t ldo_config = {
+        .ldo_chan_id = CONFIG_EXAMPLE_SD_PWR_CTRL_LDO_IO_ID,
+    };
+    sd_pwr_ctrl_handle_t pwr_ctrl_handle = NULL;
+
+    esp_err_t sd_pwr_ctrl_ret = sd_pwr_ctrl_new_on_chip_ldo(&ldo_config, &pwr_ctrl_handle);
+    if (sd_pwr_ctrl_ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to create a new an on-chip LDO power control driver");
+        ESP_ERROR_CHECK(sd_pwr_ctrl_ret);
+    }
+#endif // CONFIG_EXAMPLE_SD_PWR_CTRL_LDO_INTERNAL_IO
 
     // By default, SD card frequency is initialized to SDMMC_FREQ_DEFAULT (20MHz)
     // For setting a specific frequency, use host.max_freq_khz
@@ -91,6 +111,11 @@ void init_sd_config(sdmmc_host_t *out_host, sdspi_device_config_t *out_slot_conf
     slot_config.gpio_cs = CONFIG_EXAMPLE_PIN_CS;
     slot_config.host_id = host.slot;
 #endif // CONFIG_EXAMPLE_USE_SDSPI
+
+#if CONFIG_EXAMPLE_SD_PWR_CTRL_LDO_INTERNAL_IO
+    host.pwr_ctrl_handle = pwr_ctrl_handle;
+#endif // CONFIG_EXAMPLE_SD_PWR_CTRL_LDO_INTERNAL_IO
+
     *out_host = host;
     *out_slot_config = slot_config;
 }
@@ -137,6 +162,18 @@ void deinit_sd_card(sdmmc_card_t **card) {
 #else // CONFIG_EXAMPLE_USE_SDMMC
     sdspi_host_deinit();
 #endif // CONFIG_EXAMPLE_USE_SDSPI
+
+    // Deinitialize the power control driver if it was used
+#if CONFIG_EXAMPLE_SD_PWR_CTRL_LDO_INTERNAL_IO
+    sd_pwr_ctrl_handle_t pwr_ctrl_handle = (*card)->host.pwr_ctrl_handle;
+    esp_err_t ret = sd_pwr_ctrl_del_on_chip_ldo(pwr_ctrl_handle);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to delete the on-chip LDO power control driver");
+        ESP_ERROR_CHECK(ret);
+    }
+    pwr_ctrl_handle = NULL;
+#endif
+
     free(*card);
     *card = NULL;
 }

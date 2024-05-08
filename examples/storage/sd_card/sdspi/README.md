@@ -41,12 +41,12 @@ This example doesn't utilize card detect (CD) and write protect (WP) signals fro
 
 The table below shows the default pin assignments.
 
-SD card pin | SPI pin | ESP32 pin     | ESP32-S2, ESP32-S3 | ESP32-H2 | ESP32-C3 and other chips  |  Notes
-------------|---------|---------------|--------------------|----------|---------------------------|-------------
- D0         | MISO    | GPIO2         | GPIO37             | GPIO0    | GPIO6                     |
- D3         | CS      | GPIO13 (MTCK) | GPIO34             | GPIO1    | GPIO1                     |
- CLK        | SCK     | GPIO14 (MTMS) | GPIO36             | GPIO4    | GPIO5                     |
- CMD        | MOSI    | GPIO15 (MTDO) | GPIO35             | GPIO5    | GPIO4                     |  10k pullup
+SD card pin | SPI pin | ESP32 pin     | ESP32-S2, ESP32-S3 | ESP32-P4 | ESP32-H2 | ESP32-C3 and other chips |  Notes
+------------|---------|---------------|--------------------|----------|----------|--------------------------|------------
+ D0         | MISO    | GPIO2         | GPIO37             | GPIO13   | GPIO0    | GPIO6                    |
+ D3         | CS      | GPIO13 (MTCK) | GPIO34             | GPIO10   | GPIO1    | GPIO1                    |
+ CLK        | SCK     | GPIO14 (MTMS) | GPIO36             | GPIO12   | GPIO4    | GPIO5                    |
+ CMD        | MOSI    | GPIO15 (MTDO) | GPIO35             | GPIO11   | GPIO5    | GPIO4                    | 10k pullup
 
 
 #### ESP32 related notes
@@ -62,6 +62,28 @@ Some boards require specific manipulation to enable UART Download mode (GPIO2 lo
 With the default pin assignments, this example is compatible ESP32-S2-USB-OTG and ESP32-S3-USB-OTG development boards.
 
 For other development boards, adjust the pin assignments as explained above.
+
+#### ESP32-P4 related notes
+
+On ESP32-P4, Slot 1 of the SDMMC peripheral is connected to GPIO pins using GPIO matrix. This allows arbitrary GPIOs to be used to connect an SD card. In this example, GPIOs can be configured in two ways:
+
+1. Using menuconfig: Run `idf.py menuconfig` in the project directory and open `SD SPI Example Configuration` menu.
+2. In the source code: See the initialization of `sdmmc_slot_config_t slot_config` structure in the example code.
+
+Default pins for SDSPI are listed in the table above [Pin assignments](#1-pin-assignments) and using them doesn't require any additional settings.
+
+However on some development boards the SD card slot can be wired to default dedicated pins for SDMMC, which are listed in the table below.
+
+SD card pin | ESP32-P4 pin 
+------------|--------------     
+D0  (MISO)  | GPIO39
+D3  (CS)    | GPIO42
+CLK (SCK)   | GPIO43
+CMD (MOSI)  | GPIO44
+
+These pins are able to connect to an ultra high-speed SD card (UHS-I) which requires 1.8V switching (instead of the regular 3.3V). This means the user has to provide an external LDO power supply to use them, or to enable and configure an internal LDO via `idf.py menuconfig` -> `SD/MMC Example Configuration` -> `SD power supply comes from internal LDO IO`.
+
+When using different GPIO pins this is not required and `SD power supply comes from internal LDO IO` setting can be disabled.
 
 #### Notes for ESP32-C3 and other chips
 

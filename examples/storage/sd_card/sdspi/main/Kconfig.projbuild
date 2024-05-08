@@ -93,4 +93,19 @@ menu "SD SPI Example Configuration"
         default 6 if IDF_TARGET_ESP32S3
         default 1
 
+    config EXAMPLE_SD_PWR_CTRL_LDO_INTERNAL_IO
+        depends on SOC_SDMMC_IO_POWER_EXTERNAL
+        bool "SD power supply comes from internal LDO IO (READ HELP!)"
+        default n
+        help
+            Only needed when the SD card is connected to specific IO pins which can be used for high-speed SDMMC.
+            Please read the schematic first and check if the SD VDD is connected to any internal LDO output.
+            Unselect this option if the SD card is powered by an external power supply.
+
+    config EXAMPLE_SD_PWR_CTRL_LDO_IO_ID
+        depends on SOC_SDMMC_IO_POWER_EXTERNAL && EXAMPLE_SD_PWR_CTRL_LDO_INTERNAL_IO
+        int "LDO ID"
+        default 4 if IDF_TARGET_ESP32P4
+        help
+            Please read the schematic first and input your LDO ID.
 endmenu
