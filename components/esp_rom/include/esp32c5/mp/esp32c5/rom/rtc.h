@@ -79,7 +79,6 @@ typedef enum {
     POWERON_RESET          =  1,    /**<1, Vbat power on reset*/
     RTC_SW_SYS_RESET       =  3,    /**<3, Software reset digital core (hp system)*/
     DEEPSLEEP_RESET        =  5,    /**<5, Deep Sleep reset digital core (hp system)*/
-    SDIO_RESET             =  6,    /**<6, Reset by SLC module, reset digital core (hp system)*/
     TG0WDT_SYS_RESET       =  7,    /**<7, Timer Group0 Watch dog reset digital core (hp system)*/
     TG1WDT_SYS_RESET       =  8,    /**<8, Timer Group1 Watch dog reset digital core (hp system)*/
     RTCWDT_SYS_RESET       =  9,    /**<9, RTC Watch dog Reset digital core (hp system)*/
@@ -121,7 +120,6 @@ typedef enum {
     EXT_EVENT1_TRIG = BIT1,
     GPIO_TRIG       = BIT2,
     TIMER_EXPIRE    = BIT3,
-    SDIO_TRIG       = BIT4,
     MAC_TRIG        = BIT5,
     UART0_TRIG      = BIT6,
     UART1_TRIG      = BIT7,
@@ -140,7 +138,6 @@ typedef enum {
     EXT_EVENT1_TRIG_EN = EXT_EVENT1_TRIG,
     GPIO_TRIG_EN       = GPIO_TRIG,
     TIMER_EXPIRE_EN    = TIMER_EXPIRE,
-    SDIO_TRIG_EN       = SDIO_TRIG,
     MAC_TRIG_EN        = MAC_TRIG,
     UART0_TRIG_EN      = UART0_TRIG,
     UART1_TRIG_EN      = UART1_TRIG,
