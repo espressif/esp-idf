@@ -1759,7 +1759,7 @@ A config option :ref:`CONFIG_ESP_WIFI_11R_SUPPORT` and configuration parameter :
 {IDF_TARGET_NAME} Wi-Fi Power-saving Mode
 -----------------------------------------
 
-This subsection will briefly introduce the concepts and usage related to Wi-Fi Power Saving Mode, for a more detailed introduction please refer to the :doc:`Low Power Mode User Guide <../api-guides/low-power-mode>`
+This subsection will briefly introduce the concepts and usage related to Wi-Fi Power Saving Mode, for a more detailed introduction please refer to the :doc:`Low Power Mode User Guide <../api-guides/low-power-mode/index>`
 
 Station Sleep
 ++++++++++++++++++++++
