@@ -23,7 +23,9 @@ Implementation of the HUB driver that only supports the Root Hub with a single p
 implement the bare minimum to control the root HCD port.
 */
 
-#define HUB_ROOT_PORT_NUM                           1   // HCD only supports one port
+#define HUB_ROOT_PORT_NUM                           1  // HCD only supports one port
+#define HUB_ROOT_DEV_UID                            1  // Unique device ID
+
 #ifdef CONFIG_USB_HOST_HW_BUFFER_BIAS_IN
 #define HUB_ROOT_HCD_PORT_FIFO_BIAS                 HCD_PORT_FIFO_BIAS_RX
 #elif CONFIG_USB_HOST_HW_BUFFER_BIAS_PERIODIC_OUT
@@ -40,7 +42,6 @@ implement the bare minimum to control the root HCD port.
 
 #define ENUM_CTRL_TRANSFER_MAX_DATA_LEN             CONFIG_USB_HOST_CONTROL_TRANSFER_MAX_SIZE
 #define ENUM_DEV_ADDR                               1       // Device address used in enumeration
-#define ENUM_DEV_UID                                1       // Unique ID for device connected to root port
 #define ENUM_CONFIG_INDEX_DEFAULT                   0       // Index used to get the first configuration descriptor of the device
 #define ENUM_SHORT_DESC_REQ_LEN                     8       // Number of bytes to request when getting a short descriptor (just enough to get bMaxPacketSize0 or wTotalLength)
 #define ENUM_WORST_CASE_MPS_LS                      8       // The worst case MPS of EP0 for a LS device
@@ -199,6 +200,8 @@ typedef struct {
         hcd_port_handle_t root_port_hdl;
         usb_proc_req_cb_t proc_req_cb;
         void *proc_req_cb_arg;
+        hub_event_cb_t event_cb;
+        void *event_cb_arg;
     } constant;
 } hub_driver_t;
 
@@ -274,7 +277,8 @@ static bool enum_stage_start(enum_ctrl_t *enum_ctrl)
 
 static bool enum_stage_second_reset(enum_ctrl_t *enum_ctrl)
 {
-    if (hcd_port_command(p_hub_driver_obj->constant.root_port_hdl, HCD_PORT_CMD_RESET) != ESP_OK) {
+    // Hub Driver currently support only one root port, so the second reset always in root port
+    if (hub_port_reset(NULL, 0) != ESP_OK) {
         ESP_LOGE(HUB_DRIVER_TAG, "Failed to issue second reset");
         return false;
     }
@@ -646,7 +650,7 @@ static void enum_stage_cleanup_failed(enum_ctrl_t *enum_ctrl)
         ESP_ERROR_CHECK(usbh_dev_enum_unlock(enum_ctrl->dev_hdl));
         ESP_ERROR_CHECK(usbh_dev_close(enum_ctrl->dev_hdl));
         // We allow this to fail in case the device object was already freed
-        usbh_devs_remove(ENUM_DEV_UID);
+        usbh_devs_remove(HUB_ROOT_DEV_UID);
     }
     // Clear values in enum_ctrl
     enum_ctrl->dev_hdl = NULL;
@@ -777,6 +781,8 @@ static void enum_transfer_callback(usb_transfer_t *transfer)
 static void root_port_handle_events(hcd_port_handle_t root_port_hdl)
 {
     hcd_port_event_t port_event = hcd_port_handle_event(root_port_hdl);
+    hub_event_data_t event_data = { 0 };
+
     switch (port_event) {
     case HCD_PORT_EVENT_NONE:
         // Nothing to do
@@ -792,9 +798,9 @@ static void root_port_handle_events(hcd_port_handle_t root_port_hdl)
             goto new_dev_err;
         }
 
-        // Allocate a new device. We use a fixed ENUM_DEV_UID for now since we only support a single device
+        // Allocate a new device. We use a fixed HUB_ROOT_DEV_UID for now since we only support a single device
         usbh_dev_params_t params = {
-            .uid = ENUM_DEV_UID,
+            .uid = HUB_ROOT_DEV_UID,
             .speed = speed,
             .root_port_hdl = p_hub_driver_obj->constant.root_port_hdl,
         };
@@ -803,13 +809,18 @@ static void root_port_handle_events(hcd_port_handle_t root_port_hdl)
             ESP_LOGE(HUB_DRIVER_TAG, "Failed to add device");
             goto new_dev_err;
         }
-        p_hub_driver_obj->single_thread.root_dev_uid = ENUM_DEV_UID;
+        p_hub_driver_obj->single_thread.root_dev_uid = HUB_ROOT_DEV_UID;
+
         // Start enumeration
         HUB_DRIVER_ENTER_CRITICAL();
         p_hub_driver_obj->dynamic.flags.actions |= HUB_DRIVER_FLAG_ACTION_ENUM_EVENT;
         p_hub_driver_obj->dynamic.root_port_state = ROOT_PORT_STATE_ENABLED;
         HUB_DRIVER_EXIT_CRITICAL();
         p_hub_driver_obj->single_thread.enum_ctrl.stage = ENUM_STAGE_START;
+
+        event_data.event = HUB_EVENT_CONNECTED;
+        event_data.connected.uid = p_hub_driver_obj->single_thread.root_dev_uid;
+        p_hub_driver_obj->constant.event_cb(&event_data, p_hub_driver_obj->constant.event_cb_arg);
         break;
 new_dev_err:
         // We allow this to fail in case a disconnect/port error happens while disabling.
@@ -820,7 +831,7 @@ reset_err:
     case HCD_PORT_EVENT_DISCONNECTION:
     case HCD_PORT_EVENT_ERROR:
     case HCD_PORT_EVENT_OVERCURRENT: {
-        bool pass_event_to_usbh = false;
+        bool port_has_device = false;
         HUB_DRIVER_ENTER_CRITICAL();
         switch (p_hub_driver_obj->dynamic.root_port_state) {
         case ROOT_PORT_STATE_POWERED: // This occurred before enumeration
@@ -831,7 +842,7 @@ reset_err:
             break;
         case ROOT_PORT_STATE_ENABLED:
             // There is an enabled (active) device. We need to indicate to USBH that the device is gone
-            pass_event_to_usbh = true;
+            port_has_device = true;
             break;
         default:
             abort();    // Should never occur
@@ -839,11 +850,13 @@ reset_err:
         }
         p_hub_driver_obj->dynamic.root_port_state = ROOT_PORT_STATE_RECOVERY;
         HUB_DRIVER_EXIT_CRITICAL();
-        if (pass_event_to_usbh) {
+        if (port_has_device) {
             // The port must have a device object
             assert(p_hub_driver_obj->single_thread.root_dev_uid != 0);
-            // We allow this to fail in case the device object was already freed
-            usbh_devs_remove(p_hub_driver_obj->single_thread.root_dev_uid);
+
+            event_data.event = HUB_EVENT_DISCONNECTED;
+            event_data.disconnected.uid = p_hub_driver_obj->single_thread.root_dev_uid;
+            p_hub_driver_obj->constant.event_cb(&event_data, p_hub_driver_obj->constant.event_cb_arg);
         }
         break;
     }
@@ -954,6 +967,32 @@ static void enum_handle_events(void)
     enum_set_next_stage(enum_ctrl, stage_pass);
 }
 
+static esp_err_t root_port_recycle(void)
+{
+    // Device is free, we can now request its port be recycled
+    hcd_port_state_t port_state = hcd_port_get_state(p_hub_driver_obj->constant.root_port_hdl);
+    p_hub_driver_obj->single_thread.root_dev_uid = 0;
+    HUB_DRIVER_ENTER_CRITICAL();
+    // How the port is recycled will depend on the port's state
+    switch (port_state) {
+    case HCD_PORT_STATE_ENABLED:
+        p_hub_driver_obj->dynamic.port_reqs |= PORT_REQ_DISABLE;
+        break;
+    case HCD_PORT_STATE_RECOVERY:
+        p_hub_driver_obj->dynamic.port_reqs |= PORT_REQ_RECOVER;
+        break;
+    default:
+        abort();    // Should never occur
+        break;
+    }
+    p_hub_driver_obj->dynamic.flags.actions |= HUB_DRIVER_FLAG_ACTION_PORT_REQ;
+    HUB_DRIVER_EXIT_CRITICAL();
+
+    p_hub_driver_obj->constant.proc_req_cb(USB_PROC_REQ_SOURCE_HUB, false, p_hub_driver_obj->constant.proc_req_cb_arg);
+
+    return ESP_OK;
+}
+
 // ---------------------------------------------- Hub Driver Functions -------------------------------------------------
 
 esp_err_t hub_install(hub_config_t *hub_config, void **client_ret)
@@ -979,8 +1018,8 @@ esp_err_t hub_install(hub_config_t *hub_config, void **client_ret)
         .callback_arg = NULL,
         .context = NULL,
     };
-    hcd_port_handle_t port_hdl;
-    ret = hcd_port_init(HUB_ROOT_PORT_NUM, &port_config, &port_hdl);
+    hcd_port_handle_t root_port_hdl;
+    ret = hcd_port_init(HUB_ROOT_PORT_NUM, &port_config, &root_port_hdl);
     if (ret != ESP_OK) {
         goto err;
     }
@@ -991,9 +1030,11 @@ esp_err_t hub_install(hub_config_t *hub_config, void **client_ret)
 #ifdef ENABLE_ENUM_FILTER_CALLBACK
     hub_driver_obj->single_thread.enum_ctrl.enum_filter_cb = hub_config->enum_filter_cb;
 #endif // ENABLE_ENUM_FILTER_CALLBACK
-    hub_driver_obj->constant.root_port_hdl = port_hdl;
+    hub_driver_obj->constant.root_port_hdl = root_port_hdl;
     hub_driver_obj->constant.proc_req_cb = hub_config->proc_req_cb;
     hub_driver_obj->constant.proc_req_cb_arg = hub_config->proc_req_cb_arg;
+    hub_driver_obj->constant.event_cb = hub_config->event_cb;
+    hub_driver_obj->constant.event_cb_arg = hub_config->event_cb_arg;
 
     HUB_DRIVER_ENTER_CRITICAL();
     hub_driver_obj->dynamic.root_port_state = ROOT_PORT_STATE_NOT_POWERED;
@@ -1012,7 +1053,7 @@ esp_err_t hub_install(hub_config_t *hub_config, void **client_ret)
     return ret;
 
 assign_err:
-    ESP_ERROR_CHECK(hcd_port_deinit(port_hdl));
+    ESP_ERROR_CHECK(hcd_port_deinit(root_port_hdl));
 err:
     urb_free(enum_urb);
     heap_caps_free(hub_driver_obj);
@@ -1068,32 +1109,59 @@ esp_err_t hub_root_stop(void)
     return ret;
 }
 
-esp_err_t hub_port_recycle(unsigned int dev_uid)
+esp_err_t hub_port_recycle(usb_device_handle_t parent_dev_hdl, uint8_t parent_port_num, unsigned int dev_uid)
 {
-    if (dev_uid == p_hub_driver_obj->single_thread.root_dev_uid) {
-        // Device is free, we can now request its port be recycled
-        hcd_port_state_t port_state = hcd_port_get_state(p_hub_driver_obj->constant.root_port_hdl);
-        p_hub_driver_obj->single_thread.root_dev_uid = 0;
-        HUB_DRIVER_ENTER_CRITICAL();
-        // How the port is recycled will depend on the port's state
-        switch (port_state) {
-        case HCD_PORT_STATE_ENABLED:
-            p_hub_driver_obj->dynamic.port_reqs |= PORT_REQ_DISABLE;
-            break;
-        case HCD_PORT_STATE_RECOVERY:
-            p_hub_driver_obj->dynamic.port_reqs |= PORT_REQ_RECOVER;
-            break;
-        default:
-            abort();    // Should never occur
-            break;
-        }
-        p_hub_driver_obj->dynamic.flags.actions |= HUB_DRIVER_FLAG_ACTION_PORT_REQ;
-        HUB_DRIVER_EXIT_CRITICAL();
+    HUB_DRIVER_ENTER_CRITICAL();
+    HUB_DRIVER_CHECK_FROM_CRIT(p_hub_driver_obj != NULL, ESP_ERR_INVALID_STATE);
+    HUB_DRIVER_EXIT_CRITICAL();
 
-        p_hub_driver_obj->constant.proc_req_cb(USB_PROC_REQ_SOURCE_HUB, false, p_hub_driver_obj->constant.proc_req_cb_arg);
+    esp_err_t ret = ESP_FAIL;
+
+    if (parent_port_num == 0) {
+        if (p_hub_driver_obj->single_thread.root_dev_uid) {
+            // If root port has a device, it should be with correct uid
+            assert(dev_uid == p_hub_driver_obj->single_thread.root_dev_uid);
+            p_hub_driver_obj->single_thread.root_dev_uid = 0;
+        }
+        ret = root_port_recycle();
+    } else {
+        ESP_LOGW(HUB_DRIVER_TAG, "Recycling External Port has not been implemented yet");
+        return ESP_ERR_NOT_SUPPORTED;
     }
 
-    return ESP_OK;
+    return ret;
+}
+
+esp_err_t hub_port_reset(usb_device_handle_t parent_dev_hdl, uint8_t parent_port_num)
+{
+    HUB_DRIVER_ENTER_CRITICAL();
+    HUB_DRIVER_CHECK_FROM_CRIT(p_hub_driver_obj != NULL, ESP_ERR_INVALID_STATE);
+    HUB_DRIVER_EXIT_CRITICAL();
+
+    esp_err_t ret = ESP_FAIL;
+
+    if (parent_port_num == 0) {
+        // The port must have a device object
+        assert(p_hub_driver_obj->single_thread.root_dev_uid != 0);
+
+        ret = hcd_port_command(p_hub_driver_obj->constant.root_port_hdl, HCD_PORT_CMD_RESET);
+        if (ret != ESP_OK) {
+            ESP_LOGE(HUB_DRIVER_TAG, "Failed to issue root port reset");
+        }
+
+        hub_event_data_t event_data = {
+            .event = HUB_EVENT_RESET_COMPLETED,
+            .disconnected = {
+                .uid = p_hub_driver_obj->single_thread.root_dev_uid,
+            },
+        };
+        p_hub_driver_obj->constant.event_cb(&event_data, p_hub_driver_obj->constant.event_cb_arg);
+    } else {
+        ESP_LOGW(HUB_DRIVER_TAG, "Reset External Port has not been implemented yet");
+        return ESP_ERR_NOT_SUPPORTED;
+    }
+
+    return ret;
 }
 
 esp_err_t hub_process(void)
