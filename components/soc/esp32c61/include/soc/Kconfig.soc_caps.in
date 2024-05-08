@@ -779,7 +779,7 @@ config SOC_EFUSE_DIS_ICACHE
     bool
     default y
 
-config SOC_EFUSE_BLOCK9_KEY_PURPOSE_QUIRK
+config SOC_EFUSE_ECDSA_KEY
     bool
     default y
 
