@@ -853,7 +853,7 @@ esp_err_t usb_host_device_open(usb_host_client_handle_t client_hdl, uint8_t dev_
     return ret;
 
 already_opened:
-    ESP_ERROR_CHECK(usbh_devs_close(dev_hdl));
+    ESP_ERROR_CHECK(usbh_dev_close(dev_hdl));
 exit:
     return ret;
 }
@@ -895,7 +895,7 @@ esp_err_t usb_host_device_close(usb_host_client_handle_t client_hdl, usb_device_
     _clear_client_opened_device(client_obj, dev_addr);
     HOST_EXIT_CRITICAL();
 
-    ESP_ERROR_CHECK(usbh_devs_close(dev_hdl));
+    ESP_ERROR_CHECK(usbh_dev_close(dev_hdl));
     ret = ESP_OK;
 exit:
     xSemaphoreGive(p_host_lib_obj->constant.mux_lock);
