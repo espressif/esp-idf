@@ -107,7 +107,7 @@ ESP-IDF 支持多个目标芯片，运行 ``idf.py --list-targets`` 查看当前
 
   idf.py fullclean
 
-此命令将删除所有 ``build`` 子目录内容，包括 CMake 配置输出。下次构建时，CMake 将重新配置其输出。注意，此命令将递归删除构建目录下的 *所有* 文件（工程配置将保留），请谨慎使用。
+此命令将删除所有 "build" 子目录内容，包括 CMake 配置输出。下次构建时，CMake 将重新配置其输出。注意，此命令将递归删除构建目录下的 *所有* 文件（工程配置将保留），请谨慎使用。
 
 烧录工程：``flash``
 ------------------------
@@ -120,7 +120,43 @@ ESP-IDF 支持多个目标芯片，运行 ``idf.py --list-targets`` 查看当前
 
 .. note:: 环境变量 ``ESPPORT`` 和 ``ESPBAUD`` 可分别设置 ``-p`` 和 ``-b`` 选项的默认值，在命令行上设置这些选项的参数可覆盖默认值。
 
+``idf.py`` 在内部使用 ``esptool.py`` 的 ``write_flash`` 命令来烧录目标设备。通过 ``--extra-args`` 选项传递额外的参数，并配置烧录过程。例如，要 `写入到外部 SPI flash 芯片 <https://docs.espressif.com/projects/esptool/en/latest/esptool/advanced-options.html#custom-spi-pin-configuration>`_，请使用以下命令： ``idf.py flash --extra-args="--spi-connection <CLK>,<Q>,<D>,<HD>,<CS>"``。要查看所有可用参数，请运行 ``esptool.py write_flash --help`` 或查看 `esptool.py 文档 <https://docs.espressif.com/projects/esptool/en/latest/esptool/index.html>`_。
+
 与 ``build`` 命令类似，使用 ``app``、``bootloader`` 或 ``partition-table`` 参数运行此命令，可选择仅烧录应用程序、引导加载程序或分区表。
+
+.. _merging-binaries:
+
+合并二进制文件：``merge-bin``
+-----------------------------
+
+.. code-block:: bash
+
+  idf.py merge-bin [-o output-file] [-f format] [<format-specific-options>]
+
+在某些情况下（例如将文件传输到另一台机器，且不借助 ESP-IDF 对其进行烧录），只烧录一个文件比烧录 ``idf.py build`` 生成的多个文件更为便捷。
+
+``idf.py merge-bin`` 命令会根据项目配置合并引导加载程序、分区表、应用程序本身以及其他分区（如果有的话），并在构建文件夹中创建一个二进制文件 ``merged-binary.[bin|hex]``，之后可对其进行烧录。
+
+合并后的文件的输出格式可以是二进制 (raw)，IntelHex (hex) 以及 UF2 (uf2)。
+
+uf2 二进制文件也可以通过 :ref:`idf.py uf2 <generate-uf2-binary>` 生成。``idf.py uf2`` 命令在功能上与 ``idf.py merge-bin -f uf2`` 命令等效，而将二进制文件合并成上述各种格式时，``idf.py merge-bin`` 命令更具灵活性与可选性。
+
+用法示例:
+
+.. code-block:: bash
+
+  idf.py merge-bin -o my-merged-binary.bin -f raw
+
+还有一些特定格式的选项，如下所示:
+
+- 仅针对 raw 格式：
+
+  - ``--flash-offset``： 此选项创建的合并二进制文件将在指定偏移处进行烧录，而不是在标准偏移地址 0x0 处。
+  - ``--fill-flash-size``： 设置此选项，系统将在最终的二进制文件中添加 FF 字节直至文件大小与 flash 大小等同，从而确保烧录范围能够完整地覆盖整个 flash 芯片，所有区域都被正确写入。
+
+- 仅针对 uf2 格式：
+
+  - ``--md5-disable``： 在与 `tinyuf2 <https://github.com/adafruit/tinyuf2>`__ 等工具进行集成时，可以启用此选项，在每个数据块的末尾禁用 MD5 校验和。
 
 错误处理提示
 ==============================
@@ -201,6 +237,8 @@ ESP-IDF 支持多个目标芯片，运行 ``idf.py --list-targets`` 查看当前
 
 此命令将从 ESP-IDF 目录中删除生成的 Python 字节码。字节码在切换 ESP-IDF 和 Python 版本时可能会引起问题，建议在切换 Python 版本后运行此命令。
 
+.. _generate-uf2-binary:
+
 生成 UF2 二进制文件：``uf2``
 ---------------------------------
 
@@ -213,6 +251,8 @@ ESP-IDF 支持多个目标芯片，运行 ``idf.py --list-targets`` 查看当前
 在 ESP 芯片上运行 `ESP USB Bridge <https://github.com/espressif/esp-usb-bridge>`_ 项目将创建一个 USB 大容量存储设备，用户可以将生成的 UF2 文件复制到该 USB 设备中，桥接 MCU 将使用该文件来烧录目标 MCU。这一操作十分简单，只需将文件复制（或“拖放”）到文件资源管理器访问的公开磁盘中即可。
 
 如需仅为应用程序生成 UF2 二进制文件，即不包含加载引导程序和分区表，请使用 ``uf2-app`` 命令。
+
+``idf.py uf2`` 命令在功能上与 :ref:`上述 <merging-binaries>` ``idf.py merge-bin -f uf2`` 命令等效。而将二进制文件合并为除 uf2 以外的各种格式时，``idf.py merge-bin`` 命令更具灵活性和可选性。
 
 .. code-block:: bash
 

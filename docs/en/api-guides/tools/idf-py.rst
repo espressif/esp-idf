@@ -150,9 +150,12 @@ Example usage:
 There are also some format specific options, which are listed below:
 
 - Only for raw format:
+
   - ``--flash-offset``: This option will create a merged binary that should be flashed at the specified offset, instead of at the standard offset of 0x0.
   - ``--fill-flash-size``: If set, the final binary file will be padded with FF bytes up to this flash size in order to fill the full flash content with the image and re-write the whole flash chip upon flashing.
+
 - Only for uf2 format:
+
   - ``--md5-disable``: This option will disable MD5 checksums at the end of each block. This can be useful for integration with e.g. `tinyuf2 <https://github.com/adafruit/tinyuf2>`__.
 
 Hints on How to Resolve Errors
