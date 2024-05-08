@@ -179,28 +179,34 @@ menu "Performance Benchmark Example Configuration"
                 config EXAMPLE_PIN_CMD
                     int "CMD GPIO number"
                     default 35 if IDF_TARGET_ESP32S3
+                    default 44 if IDF_TARGET_ESP32P4
 
                 config EXAMPLE_PIN_CLK
                     int "CLK GPIO number"
                     default 36 if IDF_TARGET_ESP32S3
+                    default 43 if IDF_TARGET_ESP32P4
 
                 config EXAMPLE_PIN_D0
                     int "D0 GPIO number"
                     default 37 if IDF_TARGET_ESP32S3
+                    default 39 if IDF_TARGET_ESP32P4
 
                 if EXAMPLE_SDMMC_BUS_WIDTH_4
 
                     config EXAMPLE_PIN_D1
                         int "D1 GPIO number"
                         default 38 if IDF_TARGET_ESP32S3
+                        default 40 if IDF_TARGET_ESP32P4
 
                     config EXAMPLE_PIN_D2
                         int "D2 GPIO number"
                         default 33 if IDF_TARGET_ESP32S3
+                        default 41 if IDF_TARGET_ESP32P4
 
                     config EXAMPLE_PIN_D3
                         int "D3 GPIO number"
                         default 34 if IDF_TARGET_ESP32S3
+                        default 42 if IDF_TARGET_ESP32P4
 
                 endif  # EXAMPLE_SDMMC_BUS_WIDTH_4
 
@@ -242,6 +248,22 @@ menu "Performance Benchmark Example Configuration"
                 default 1  # C3 and others
 
         endif  # EXAMPLE_USE_SDSPI
+
+        config EXAMPLE_SD_PWR_CTRL_LDO_INTERNAL_IO
+            depends on SOC_SDMMC_IO_POWER_EXTERNAL
+            bool "SD power supply comes from internal LDO IO (READ HELP!)"
+            default y
+            help
+                Only needed when the SD card is connected to specific IO pins which can be used for high-speed SDMMC.
+                Please read the schematic first and check if the SD VDD is connected to any internal LDO output.
+                Unselect this option if the SD card is powered by an external power supply.
+
+        config EXAMPLE_SD_PWR_CTRL_LDO_IO_ID
+            depends on SOC_SDMMC_IO_POWER_EXTERNAL && EXAMPLE_SD_PWR_CTRL_LDO_INTERNAL_IO
+            int "LDO ID"
+            default 4 if IDF_TARGET_ESP32P4
+            help
+                Please read the schematic first and input your LDO ID.
 
     endmenu  # "SD card test config"
 

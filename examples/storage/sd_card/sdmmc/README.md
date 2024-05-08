@@ -70,7 +70,7 @@ GPIO34        | D3          | not used in 1-line SD mode, but card's D3 pin must
 
 On ESP32-P4, Slot 1 of the SDMMC peripheral is connected to GPIO pins using GPIO matrix. This allows arbitrary GPIOs to be used to connect an SD card. In this example, GPIOs can be configured in two ways:
 
-1. Using menuconfig: Run `idf.py menuconfig` in the project directory and open "SD/MMC Example Configuration" menu.
+1. Using menuconfig: Run `idf.py menuconfig` in the project directory and open `SD/MMC Example Configuration` menu.
 2. In the source code: See the initialization of `sdmmc_slot_config_t slot_config` structure in the example code.
 
 The table below lists the default pin assignments.
@@ -83,6 +83,10 @@ GPIO39        | D0          | 10k pullup
 GPIO40        | D1          | not used in 1-line SD mode; 10k pullup in 4-line mode
 GPIO41        | D2          | not used in 1-line SD mode; 10k pullup in 4-line mode
 GPIO42        | D3          | not used in 1-line SD mode, but card's D3 pin must have a 10k pullup
+
+Default dedicated pins on ESP32-P4 are able to connect to an ultra high-speed SD card (UHS-I) which requires 1.8V switching (instead of the regular 3.3V). This means the user has to provide an external LDO power supply to use them, or to enable and configure an internal LDO via `idf.py menuconfig` -> `SD/MMC Example Configuration` -> `SD power supply comes from internal LDO IO`.
+
+When using different GPIO pins this is not required and `SD power supply comes from internal LDO IO` setting can be disabled.
 
 ### 4-line and 1-line SD modes
 
