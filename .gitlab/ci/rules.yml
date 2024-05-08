@@ -86,6 +86,7 @@
   - "tools/test_idf_py/**/*"
 
   - "tools/idf_size.py"
+  - "tools/test_idf_size/**/*"
 
   - "tools/tools.json"
   - "tools/tools_schema.json"
