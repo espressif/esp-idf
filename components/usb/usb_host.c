@@ -310,7 +310,9 @@ static void usbh_event_callback(usbh_event_data_t *event_data, void *arg)
     }
     case USBH_EVENT_DEV_FREE: {
         // Let the Hub driver know that the device is free and its port can be recycled
-        ESP_ERROR_CHECK(hub_port_recycle(event_data->dev_free_data.dev_uid));
+        ESP_ERROR_CHECK(hub_port_recycle(event_data->dev_free_data.parent_dev_hdl,
+                                         event_data->dev_free_data.port_num,
+                                         event_data->dev_free_data.dev_uid));
         break;
     }
     case USBH_EVENT_ALL_FREE: {
@@ -321,6 +323,25 @@ static void usbh_event_callback(usbh_event_data_t *event_data, void *arg)
         HOST_EXIT_CRITICAL();
         break;
     }
+    default:
+        abort();    // Should never occur
+        break;
+    }
+}
+
+static void hub_event_callback(hub_event_data_t *event_data, void *arg)
+{
+    switch (event_data->event) {
+    case HUB_EVENT_CONNECTED:
+        // Nothing to do, because enumeration still holding in Hub Driver
+        break;
+    case HUB_EVENT_RESET_COMPLETED:
+        // Nothing to do, because enumeration still holding in Hub Driver
+        break;
+    case HUB_EVENT_DISCONNECTED:
+        // We allow this to fail in case the device object was already freed
+        usbh_devs_remove(event_data->disconnected.uid);
+        break;
     default:
         abort();    // Should never occur
         break;
@@ -428,6 +449,8 @@ esp_err_t usb_host_install(const usb_host_config_t *config)
     hub_config_t hub_config = {
         .proc_req_cb = proc_req_callback,
         .proc_req_cb_arg = NULL,
+        .event_cb = hub_event_callback,
+        .event_cb_arg = NULL,
 #ifdef ENABLE_ENUM_FILTER_CALLBACK
         .enum_filter_cb = config->enum_filter_cb,
 #endif // ENABLE_ENUM_FILTER_CALLBACK
