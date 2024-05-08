@@ -3,6 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <sys/param.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
@@ -416,6 +417,14 @@ static esp_err_t dpi_panel_draw_bitmap(esp_lcd_panel_t *panel, int x_start, int 
     uint8_t *draw_buffer = (uint8_t *)color_data;
     size_t frame_buffer_size = dpi_panel->frame_buffer_size;
     size_t bytes_per_pixel = dpi_panel->bytes_per_pixel;
+
+    // clip to boundaries
+    int h_res = dpi_panel->h_pixels;
+    int v_res = dpi_panel->v_pixels;
+    x_start = MAX(x_start, 0);
+    x_end = MIN(x_end, h_res);
+    y_start = MAX(y_start, 0);
+    y_end = MIN(y_end, v_res);
 
     bool do_copy = false;
     uint8_t draw_buf_fb_index = 0;
