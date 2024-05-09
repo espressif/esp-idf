@@ -188,7 +188,6 @@ static esp_err_t panel_nt35510_draw_bitmap(esp_lcd_panel_t *panel, int x_start, 
                                            const void *color_data)
 {
     nt35510_panel_t *nt35510 = __containerof(panel, nt35510_panel_t, base);
-    assert((x_start < x_end) && (y_start < y_end) && "start position must be smaller than end position");
     esp_lcd_panel_io_handle_t io = nt35510->io;
 
     x_start += nt35510->x_gap;

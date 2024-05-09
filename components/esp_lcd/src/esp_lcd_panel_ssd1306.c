@@ -168,7 +168,6 @@ static esp_err_t panel_ssd1306_init(esp_lcd_panel_t *panel)
 static esp_err_t panel_ssd1306_draw_bitmap(esp_lcd_panel_t *panel, int x_start, int y_start, int x_end, int y_end, const void *color_data)
 {
     ssd1306_panel_t *ssd1306 = __containerof(panel, ssd1306_panel_t, base);
-    assert((x_start < x_end) && (y_start < y_end) && "start position must be smaller than end position");
     esp_lcd_panel_io_handle_t io = ssd1306->io;
 
     // adding extra gap
