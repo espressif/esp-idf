@@ -46,9 +46,9 @@
 // #define SOC_I2C_SUPPORTED               1  // TODO: [ESP32C5] IDF-8694, IDF-8696
 #define SOC_SYSTIMER_SUPPORTED          1     // TODO: [ESP32C5] IDF-8707
 // #define SOC_AES_SUPPORTED               1  // TODO: [ESP32C5] IDF-8627
-// #define SOC_MPI_SUPPORTED               1
+#define SOC_MPI_SUPPORTED               1
 // #define SOC_SHA_SUPPORTED               1  // TODO: [ESP32C5] IDF-8624
-// #define SOC_RSA_SUPPORTED               1  // TODO: [ESP32C5] IDF-8620
+#define SOC_RSA_SUPPORTED               1
 // #define SOC_HMAC_SUPPORTED              1  // TODO: [ESP32C5] IDF-8616
 // #define SOC_DIG_SIGN_SUPPORTED          1  // TODO: [ESP32C5] IDF-8619
 #define SOC_ECC_SUPPORTED               1
@@ -344,8 +344,8 @@
 // #define SOC_PARLIO_TX_RX_SHARE_INTERRUPT     1   /*!< TX and RX unit share the same interrupt source number */
 
 /*--------------------------- MPI CAPS ---------------------------------------*/
-// #define SOC_MPI_MEM_BLOCKS_NUM (4)
-// #define SOC_MPI_OPERATIONS_NUM (3)
+#define SOC_MPI_MEM_BLOCKS_NUM (4)
+#define SOC_MPI_OPERATIONS_NUM (3)
 
 /*--------------------------- RSA CAPS ---------------------------------------*/
 #define SOC_RSA_MAX_BIT_LEN    (3072)
