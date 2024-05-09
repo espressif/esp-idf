@@ -7,7 +7,6 @@ api-guides/RF_calibration.rst
 api-guides/deep-sleep-stub.rst
 api-guides/coexist.rst
 api-guides/flash_psram_config.rst
-api-guides/usb-serial-jtag-console.rst
 api-guides/wifi.rst
 api-guides/usb-otg-console.rst
 api-guides/esp-wifi-mesh.rst
