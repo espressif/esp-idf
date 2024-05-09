@@ -482,7 +482,7 @@ static int elf_write_tasks_data(core_dump_elf_t *self)
 
 #if CONFIG_ESP_COREDUMP_CAPTURE_DRAM
         /* Only crashed task data will be saved here. The other task's data will be automatically saved within the sections */
-        if (esp_core_dump_get_current_task_handle() != task_iter.pxTaskHandle)
+        if (esp_core_dump_get_current_task_handle() == task_iter.pxTaskHandle)
 #endif
         {
             ret = elf_save_task(self, &task_hdr);
@@ -916,6 +916,14 @@ static esp_err_t elf_core_dump_image_mmap(esp_partition_mmap_handle_t* core_data
         return err;
     }
 
+    /* Data read from the mmapped core dump partition will be garbage if flash
+     * encryption is enabled in hardware and core dump partition is not encrypted
+     */
+    if (esp_flash_encryption_enabled() && !core_part->encrypted) {
+        ESP_COREDUMP_LOGE("Flash encryption enabled in hardware and core dump partition is not encrypted!");
+        return ESP_ERR_NOT_SUPPORTED;
+    }
+
     /* map the full core dump partition, including the checksum. */
     return esp_partition_mmap(core_part, 0, out_size, ESP_PARTITION_MMAP_DATA,
                               map_addr, core_data_handle);
@@ -925,7 +933,7 @@ static void elf_parse_version_info(esp_core_dump_summary_t *summary, void *data)
 {
     core_dump_elf_version_info_t *version = (core_dump_elf_version_info_t *)data;
     summary->core_dump_version = version->version;
-    memcpy(summary->app_elf_sha256, version->app_elf_sha256, ELF_APP_SHA256_SIZE);
+    memcpy(summary->app_elf_sha256, version->app_elf_sha256, sizeof(summary->app_elf_sha256));
     ESP_COREDUMP_LOGD("Core dump version 0x%x", summary->core_dump_version);
     ESP_COREDUMP_LOGD("App ELF SHA2 %s", (char *)summary->app_elf_sha256);
 }

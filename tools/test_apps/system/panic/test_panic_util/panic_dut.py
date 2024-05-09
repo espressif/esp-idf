@@ -106,13 +106,13 @@ class PanicTestDut(IdfDut):
         # no digital system reset for panic handling restarts (see IDF-7255)
         self.expect(r'.*rst:.*(RTC_SW_CPU_RST|SW_CPU_RESET|SW_CPU)')
 
-    def expect_elf_sha256(self) -> None:
+    def expect_elf_sha256(self, caption: str = 'ELF file SHA256: ') -> None:
         """Expect method for ELF SHA256 line"""
         elf_sha256 = sha256(self.app.elf_file)
         elf_sha256_len = int(
             self.app.sdkconfig.get('CONFIG_APP_RETRIEVE_LEN_ELF_SHA', '9')
         )
-        self.expect_exact('ELF file SHA256: ' + elf_sha256[0:elf_sha256_len])
+        self.expect_exact(caption + elf_sha256[0:elf_sha256_len])
 
     def expect_coredump(self, output_file_name: str, patterns: List[Union[str, re.Pattern]]) -> None:
         with open(output_file_name, 'r') as file:
