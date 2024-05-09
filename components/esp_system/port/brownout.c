@@ -28,7 +28,7 @@
 #define BROWNOUT_DET_LVL 0
 #endif
 
-static __attribute__((unused)) DRAM_ATTR const char *TAG = "BOD";
+static __attribute__((unused)) DRAM_ATTR const char TAG[] = "BOD";
 
 #if CONFIG_ESP_SYSTEM_BROWNOUT_INTR
 IRAM_ATTR static void rtc_brownout_isr_handler(void *arg)
