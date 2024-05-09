@@ -9,6 +9,7 @@
 #include <stdint.h>
 #include "soc/clkout_channel.h"
 #include "soc/soc.h"
+#include "soc/chip_revision.h"
 #include "soc/clk_tree_defs.h"
 #include "soc/hp_sys_clkrst_reg.h"
 #include "soc/hp_sys_clkrst_struct.h"
@@ -23,6 +24,7 @@
 #include "esp32p4/rom/rtc.h"
 #include "hal/misc.h"
 #include "hal/efuse_hal.h"
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -310,12 +312,10 @@ static inline __attribute__((always_inline)) uint32_t clk_ll_cpll_get_freq_mhz(u
 {
     uint8_t div = REGI2C_READ_MASK(I2C_CPLL, I2C_CPLL_OC_DIV_7_0);
     uint8_t ref_div = REGI2C_READ_MASK(I2C_CPLL, I2C_CPLL_OC_REF_DIV);
-#if !ESP_CHIP_REV_ABOVE(ESP_HAL_CHIP_REV_MIN, 1)
     unsigned chip_version = efuse_hal_chip_revision();
     if (!ESP_CHIP_REV_ABOVE(chip_version, 1)) {
         return xtal_freq_mhz * (div + 4) / (ref_div + 1);
     } else
-#endif
     return xtal_freq_mhz * div / (ref_div + 1);
 }
 
@@ -343,11 +343,12 @@ static inline __attribute__((always_inline)) void clk_ll_cpll_set_config(uint32_
     uint8_t dchgp = 5;
     uint8_t dcur = 3;
     uint8_t oc_enb_fcal = 0;
-    unsigned chip_version = efuse_hal_chip_revision();
 
     // Currently, only supporting 40MHz XTAL
     HAL_ASSERT(xtal_freq_mhz == SOC_XTAL_FREQ_40M);
-    if (chip_version == 0) {
+
+    unsigned chip_version = efuse_hal_chip_revision();
+    if (!ESP_CHIP_REV_ABOVE(chip_version, 1)) {
         switch (cpll_freq_mhz) {
         case CLK_LL_PLL_400M_FREQ_MHZ:
             /* Configure 400M CPLL */
@@ -362,7 +363,7 @@ static inline __attribute__((always_inline)) void clk_ll_cpll_set_config(uint32_
             break;
         }
     } else {
-        /*div7_0 bit2 & bit3 will swap from ECO1*/
+        /*div7_0 bit2 & bit3 is swapped from ECO1*/
         switch (cpll_freq_mhz) {
         case CLK_LL_PLL_400M_FREQ_MHZ:
             /* Configure 400M CPLL */
