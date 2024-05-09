@@ -1592,7 +1592,7 @@ static inline uint32_t timeout_from_offered(uint32_t lease, uint32_t min)
 #define ESP_LWIP                        1
 #define ESP_LWIP_ARP                    1
 #define ESP_PER_SOC_TCP_WND             0
-#define ESP_THREAD_SAFE                 1
+#define ESP_THREAD_SAFE                 1       /* Not used (to be removed in v6.x) */
 #define ESP_THREAD_SAFE_DEBUG           LWIP_DBG_OFF
 #define ESP_DHCP                        1
 #define ESP_DNS                         1
@@ -1630,11 +1630,9 @@ static inline uint32_t timeout_from_offered(uint32_t lease, uint32_t min)
 
 
 #if LWIP_NETCONN_SEM_PER_THREAD
-#if ESP_THREAD_SAFE
 #define LWIP_NETCONN_THREAD_SEM_GET() sys_thread_sem_get()
 #define LWIP_NETCONN_THREAD_SEM_ALLOC() sys_thread_sem_init()
 #define LWIP_NETCONN_THREAD_SEM_FREE() sys_thread_sem_deinit()
-#endif
 #endif
 
 /**
