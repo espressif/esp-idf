@@ -51,7 +51,8 @@
 // #define SOC_RSA_SUPPORTED               1  // TODO: [ESP32C5] IDF-8620
 // #define SOC_HMAC_SUPPORTED              1  // TODO: [ESP32C5] IDF-8616
 // #define SOC_DIG_SIGN_SUPPORTED          1  // TODO: [ESP32C5] IDF-8619
-// #define SOC_ECC_SUPPORTED               1  // TODO: [ESP32C5] IDF-8625
+#define SOC_ECC_SUPPORTED               1
+#define SOC_ECC_EXTENDED_MODES_SUPPORTED   1
 #define SOC_FLASH_ENC_SUPPORTED         1     // TODO: [ESP32C5] IDF-8622
 // #define SOC_SECURE_BOOT_SUPPORTED       1  // TODO: [ESP32C5] IDF-8623
 // #define SOC_BOD_SUPPORTED               1  // TODO: [ESP32C5] IDF-8647
