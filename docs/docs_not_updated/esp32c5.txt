@@ -6,7 +6,6 @@ contribute/style-guide.rst
 contribute/copyright-guide.rst
 contribute/install-pre-commit-hook.rst
 contribute/index.rst
-api-guides/core_dump_internals.rst
 api-guides/performance/speed.rst
 api-guides/performance/size.rst
 api-guides/performance/ram-usage.rst
@@ -22,7 +21,6 @@ api-guides/jtag-debugging/building-openocd-windows.rst
 api-guides/jtag-debugging/index.rst
 api-guides/jtag-debugging/configure-builtin-jtag.rst
 api-guides/partition-tables.rst
-api-guides/app_trace.rst
 api-guides/thread-local-storage.rst
 api-guides/error-handling.rst
 api-guides/tools/idf-tools.rst
@@ -163,7 +161,6 @@ api-reference/network/esp_netif.rst
 api-reference/system/sleep_modes.rst
 api-reference/system/mm_sync.rst
 api-reference/system/ota.rst
-api-reference/system/app_trace.rst
 api-reference/system/perfmon.rst
 api-reference/system/esp_function_with_shared_stack.rst
 api-reference/system/efuse.rst
