@@ -1702,7 +1702,7 @@ static void prov_capabilities(const uint8_t idx, const uint8_t *data)
 
     algorithms = sys_get_be16(&data[1]);
     BT_INFO("Algorithms:        0x%04x", algorithms);
-    if (algorithms != BIT(PROV_ALG_P256)) {
+    if (!(algorithms & BIT(PROV_ALG_P256))) {
         BT_ERR("Invalid algorithms 0x%04x", algorithms);
         goto fail;
     }
