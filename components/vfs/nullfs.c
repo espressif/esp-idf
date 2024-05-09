@@ -3,6 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include "sdkconfig.h"
 #include <stdio.h>
 #include <sys/types.h>
 #include <stddef.h>
@@ -16,6 +17,7 @@
 #include <fcntl.h>
 #include "esp_vfs.h"
 #include "esp_log.h"
+#include "esp_err.h"
 #include "esp_private/startup_internal.h"
 
 #include "esp_vfs_null.h"
@@ -27,7 +29,8 @@ typedef enum {
     VFS_NULL_WRITE = 1 << 1,
 } vfs_null_flags_t;
 
-typedef uint64_t vfs_null_ctx_t;
+typedef uint32_t vfs_null_ctx_t;
+#define VFS_NULL_MAX_FDS (sizeof(vfs_null_ctx_t) * 4)
 
 #define GET_FLAGS(ctx, fd) ((ctx >> (fd * 2)) & 0x3)
 #define SET_FLAGS(ctx, fd, flags) (ctx |= (flags << (fd * 2)))
@@ -38,12 +41,17 @@ typedef uint64_t vfs_null_ctx_t;
 #define SET_WRITABLE(ctx, fd) SET_FLAGS(ctx, fd, VFS_NULL_WRITE)
 #define SET_READABLE(ctx, fd) SET_FLAGS(ctx, fd, VFS_NULL_READ)
 
-#define FD_IN_RANGE(fd) (fd >= 0 && fd < 32)
+#define FD_IN_RANGE(fd) (fd >= 0 && fd < VFS_NULL_MAX_FDS)
 #define IS_FD_VALID(fd) (FD_IN_RANGE(fd) && GET_FLAGS(g_fds, fd) != VFS_NULL_CLOSED)
 
-static vfs_null_ctx_t g_fds = 0;
-
+#ifdef CONFIG_ESP_CONSOLE_NONE // Prevents recursive logging
 static const char* TAG = "nullfs";
+#define NULLFS_LOGD(TAG, fmt, ...) ESP_LOGD(TAG, fmt, ##__VA_ARGS__)
+#else
+#define NULLFS_LOGD(TAG, fmt, ...)
+#endif
+
+static vfs_null_ctx_t g_fds = 0;
 
 static ssize_t vfs_null_write(int fd, const void *data, size_t size);
 static off_t vfs_null_lseek(int fd, off_t offset, int whence);
@@ -124,7 +132,7 @@ static ssize_t vfs_null_read(int fd, void *data, size_t size)
 {
     UNUSED(data);
 
-    ESP_LOGD(TAG, "read %u bytes", size);
+    NULLFS_LOGD(TAG, "read %u bytes", size);
 
     if (FD_IN_RANGE(fd) && READABLE(g_fds, fd)) {
         return 0; // EOF
@@ -140,7 +148,7 @@ static int vfs_null_pread(int fd, void *data, size_t size, off_t offset)
     UNUSED(size);
     UNUSED(offset);
 
-    ESP_LOGD(TAG, "pread %u bytes at offset %ld", size, offset);
+    NULLFS_LOGD(TAG, "pread %u bytes at offset %ld", size, offset);
 
     if (!FD_IN_RANGE(fd) || !READABLE(g_fds, fd)) {
         errno = EBADF;
@@ -156,7 +164,7 @@ static int vfs_null_pwrite(int fd, const void *data, size_t size, off_t offset)
     UNUSED(data);
     UNUSED(offset);
 
-    ESP_LOGD(TAG, "pwrite %u bytes at offset %ld", size, offset);
+    NULLFS_LOGD(TAG, "pwrite %u bytes at offset %ld", size, offset);
 
     if (!FD_IN_RANGE(fd) || !WRITABLE(g_fds, fd)) {
         errno = EBADF;
@@ -168,7 +176,7 @@ static int vfs_null_pwrite(int fd, const void *data, size_t size, off_t offset)
 
 static int vfs_null_get_empty_fd(void)
 {
-    for (int i = 0; i < 32; i++) {
+    for (int i = 0; i < VFS_NULL_MAX_FDS; i++) {
         if (GET_FLAGS(g_fds, i) == VFS_NULL_CLOSED) {
             return i;
         }
@@ -181,7 +189,7 @@ static int vfs_null_open(const char* path, int flags, int mode)
 {
     UNUSED(mode);
 
-    ESP_LOGD(TAG, "open %s, flags %d", path, flags);
+    NULLFS_LOGD(TAG, "open %s, flags %d", path, flags);
 
     // Possibly check if the flags are valid
 
@@ -302,10 +310,12 @@ static int vfs_null_fsync(int fd)
     return 0;
 }
 
+#if defined(CONFIG_VFS_INITIALIZE_DEV_NULL) || defined(CONFIG_ESP_CONSOLE_NONE)
 ESP_SYSTEM_INIT_FN(init_vfs_nullfs, CORE, BIT(0), 113)
 {
     return esp_vfs_null_register();
 }
+#endif // CONFIG_VFS_INITIALIZE_DEV_NULL
 
 void esp_vfs_include_nullfs_register(void)
 {
