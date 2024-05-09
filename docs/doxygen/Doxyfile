@@ -305,6 +305,7 @@ INPUT = \
     $(PROJECT_PATH)/components/vfs/include/esp_vfs_dev.h \
     $(PROJECT_PATH)/components/vfs/include/esp_vfs_eventfd.h \
     $(PROJECT_PATH)/components/vfs/include/esp_vfs_semihost.h \
+    $(PROJECT_PATH)/components/vfs/include/esp_vfs_null.h \
     $(PROJECT_PATH)/components/vfs/include/esp_vfs.h \
     $(PROJECT_PATH)/components/wear_levelling/include/wear_levelling.h \
     $(PROJECT_PATH)/components/wifi_provisioning/include/wifi_provisioning/manager.h \
