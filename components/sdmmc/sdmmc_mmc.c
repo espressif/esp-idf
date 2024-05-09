@@ -199,7 +199,7 @@ esp_err_t sdmmc_mmc_decode_csd(sdmmc_response_t response, sdmmc_csd_t* out_csd)
         return 1;
     }
     int read_bl_size = 1 << out_csd->read_block_len;
-    out_csd->sector_size = MIN(read_bl_size, 512);
+    out_csd->sector_size = MAX(read_bl_size, 512);
     if (out_csd->sector_size < read_bl_size) {
         out_csd->capacity *= read_bl_size / out_csd->sector_size;
     }
