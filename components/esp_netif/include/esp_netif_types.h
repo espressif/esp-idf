@@ -89,6 +89,7 @@ typedef enum{
     ESP_NETIF_IP_REQUEST_RETRY_TIME         = 52,   /**< Request IP address retry counter */
     ESP_NETIF_VENDOR_CLASS_IDENTIFIER       = 60,   /**< Vendor Class Identifier of a DHCP client */
     ESP_NETIF_VENDOR_SPECIFIC_INFO          = 43,   /**< Vendor Specific Information of a DHCP server */
+    ESP_NETIF_CAPTIVEPORTAL_URI             = 114,  /**< Captive Portal Identification */
 } esp_netif_dhcp_option_id_t;
 
 /** IP event declarations */
