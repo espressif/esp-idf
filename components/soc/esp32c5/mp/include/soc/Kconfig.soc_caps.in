@@ -63,7 +63,15 @@ config SOC_SYSTIMER_SUPPORTED
     bool
     default y
 
+config SOC_AES_SUPPORTED
+    bool
+    default y
+
 config SOC_MPI_SUPPORTED
+    bool
+    default y
+
+config SOC_SHA_SUPPORTED
     bool
     default y
 
@@ -92,6 +100,22 @@ config SOC_XTAL_SUPPORT_40M
     default y
 
 config SOC_XTAL_SUPPORT_48M
+    bool
+    default y
+
+config SOC_AES_SUPPORT_DMA
+    bool
+    default y
+
+config SOC_AES_GDMA
+    bool
+    default y
+
+config SOC_AES_SUPPORT_AES_128
+    bool
+    default y
+
+config SOC_AES_SUPPORT_AES_256
     bool
     default y
 
@@ -386,6 +410,34 @@ config SOC_MPI_OPERATIONS_NUM
 config SOC_RSA_MAX_BIT_LEN
     int
     default 3072
+
+config SOC_SHA_DMA_MAX_BUFFER_SIZE
+    int
+    default 3968
+
+config SOC_SHA_SUPPORT_DMA
+    bool
+    default y
+
+config SOC_SHA_SUPPORT_RESUME
+    bool
+    default y
+
+config SOC_SHA_GDMA
+    bool
+    default y
+
+config SOC_SHA_SUPPORT_SHA1
+    bool
+    default y
+
+config SOC_SHA_SUPPORT_SHA224
+    bool
+    default y
+
+config SOC_SHA_SUPPORT_SHA256
+    bool
+    default y
 
 config SOC_SPI_PERIPH_NUM
     int
