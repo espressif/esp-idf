@@ -63,7 +63,7 @@ void sys_delay_ms(uint32_t ms);
  */
 #define sys_mbox_set_invalid( x )  *x = NULL
 
-#define sys_sem_valid( x ) ( ( ( *x ) == NULL) ? pdFALSE : pdTRUE )
+#define sys_sem_valid( x ) ( ( (x) == NULL ) ? pdFALSE : ( ( *x ) == NULL ? pdFALSE : pdTRUE ) )
 #define sys_sem_set_invalid( x ) ( ( *x ) = NULL )
 
 void sys_delay_ms(uint32_t ms);
