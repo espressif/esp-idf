@@ -3,8 +3,6 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-/** ROM APIs
- */
 
 PROVIDE ( esp_rom_crc32_le = crc32_le );
 PROVIDE ( esp_rom_crc16_le = crc16_le );
