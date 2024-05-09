@@ -1,7 +1,7 @@
 # internal use only for CI
 # some CI related util functions
 #
-# SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 #
 import contextlib
@@ -13,7 +13,12 @@ import sys
 from contextlib import redirect_stdout
 from dataclasses import dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, List, Optional, Set, Union
+from typing import Any
+from typing import List
+from typing import Optional
+from typing import Set
+from typing import TYPE_CHECKING
+from typing import Union
 
 try:
     from idf_py_actions.constants import PREVIEW_TARGETS, SUPPORTED_TARGETS
@@ -25,7 +30,7 @@ except ImportError:
 if TYPE_CHECKING:
     from _pytest.python import Function
 
-IDF_PATH = os.path.abspath(os.getenv('IDF_PATH', os.path.join(os.path.dirname(__file__), '..', '..')))
+IDF_PATH: str = os.path.abspath(os.getenv('IDF_PATH', os.path.join(os.path.dirname(__file__), '..', '..')))
 
 
 def get_submodule_dirs(full_path: bool = False) -> List[str]:

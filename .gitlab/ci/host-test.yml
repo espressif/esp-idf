@@ -307,7 +307,7 @@ test_pytest_qemu:
     when: always
     paths:
       - XUNIT_RESULT.xml
-      - pytest_embedded_log/
+      - pytest-embedded/
     reports:
       junit: XUNIT_RESULT.xml
     expire_in: 1 week
@@ -332,7 +332,7 @@ test_pytest_linux:
     when: always
     paths:
       - XUNIT_RESULT.xml
-      - pytest_embedded_log/
+      - pytest-embedded/
     reports:
       junit: XUNIT_RESULT.xml
     expire_in: 1 week
