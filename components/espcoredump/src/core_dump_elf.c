@@ -17,6 +17,7 @@
 
 #ifdef CONFIG_ESP_COREDUMP_DATA_FORMAT_ELF
 #include <sys/param.h>      // for the MIN macro
+#include <sys/time.h>
 #include "esp_app_desc.h"
 #endif
 
@@ -852,6 +853,12 @@ static esp_err_t esp_core_dump_write_elf(void)
     dump_hdr.tcb_sz = 0; // unused in ELF format
     dump_hdr.mem_segs_num = 0; // unused in ELF format
     dump_hdr.chip_rev = efuse_hal_chip_revision();
+    dump_hdr.boot_time = esp_timer_get_time();
+
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    dump_hdr.unix_time = tv.tv_sec * 1000000 + tv.tv_usec;
+
     err = esp_core_dump_write_data(&self.write_data, &dump_hdr, sizeof(core_dump_header_t));
     if (err != ESP_OK) {
         ESP_COREDUMP_LOGE("Failed to write core dump header (%d)!", err);
