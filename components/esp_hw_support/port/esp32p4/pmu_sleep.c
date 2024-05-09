@@ -12,6 +12,7 @@
 #include "esp_err.h"
 #include "esp_attr.h"
 #include "esp_private/regi2c_ctrl.h"
+#include "soc/chip_revision.h"
 #include "soc/soc.h"
 #include "soc/regi2c_syspll.h"
 #include "soc/regi2c_cpll.h"
@@ -319,7 +320,7 @@ TCM_IRAM_ATTR bool pmu_sleep_finish(void)
     pmu_sleep_shutdown_ldo();
 
     unsigned chip_version = efuse_hal_chip_revision();
-    if (chip_version == 0) {
+    if (!ESP_CHIP_REV_ABOVE(chip_version, 1)) {
         REGI2C_WRITE_MASK(I2C_CPLL, I2C_CPLL_OC_DIV_7_0, 6); // lower default cpu_pll freq to 400M
         REGI2C_WRITE_MASK(I2C_SYSPLL, I2C_SYSPLL_OC_DIV_7_0, 8); // lower default sys_pll freq to 480M
     }
