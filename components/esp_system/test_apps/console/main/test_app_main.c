@@ -54,11 +54,11 @@ void app_main(void)
     printf("Hello World\n");
 
     int fd = open("/dev/null", O_RDWR);
-    assert(fd >= 0); // Standard check
+    assert(fd >= 0 && "Could not open file"); // Standard check
 
     // Check if correct file descriptor is returned
     // In this case it should be neither of 0, 1, 2 (== stdin, stdout, stderr)
-    assert(fd > 2);
+    assert(fd > 2 && "Incorrect file descriptor returned, stdin, stdout, stderr were not correctly assigned");
 
     close(fd);
 
