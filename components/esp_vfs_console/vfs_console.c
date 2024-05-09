@@ -211,7 +211,6 @@ esp_err_t esp_vfs_console_register(void)
         return err;
     }
 #else
-    esp_vfs_null_register();
     primary_vfs = esp_vfs_null_get_vfs();
 #endif
 

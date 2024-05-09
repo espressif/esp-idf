@@ -10,6 +10,9 @@
 #include <string.h>
 #include <sys/errno.h>
 #include <sys/stat.h>
+#include <sys/ioctl.h>
+#include <sys/fcntl.h>
+#include <sys/types.h>
 #include <fcntl.h>
 #include "esp_vfs.h"
 #include "esp_log.h"
@@ -36,6 +39,7 @@ typedef uint64_t vfs_null_ctx_t;
 #define SET_READABLE(ctx, fd) SET_FLAGS(ctx, fd, VFS_NULL_READ)
 
 #define FD_IN_RANGE(fd) (fd >= 0 && fd < 32)
+#define IS_FD_VALID(fd) (FD_IN_RANGE(fd) && GET_FLAGS(g_fds, fd) != VFS_NULL_CLOSED)
 
 static vfs_null_ctx_t g_fds = 0;
 
@@ -86,7 +90,6 @@ esp_err_t esp_vfs_null_register(void)
 
 static ssize_t vfs_null_write(int fd, const void *data, size_t size)
 {
-    UNUSED(fd);
     UNUSED(data);
 
     if (FD_IN_RANGE(fd) && WRITABLE(g_fds, fd)) {
@@ -99,11 +102,12 @@ static ssize_t vfs_null_write(int fd, const void *data, size_t size)
 
 static off_t vfs_null_lseek(int fd, off_t offset, int whence)
 {
-    UNUSED(fd);
     UNUSED(offset);
-    UNUSED(whence);
 
-    ESP_LOGD(TAG, "lseek %ld", offset);
+    if (!IS_FD_VALID(fd)) {
+        errno = EBADF;
+        return -1;
+    }
 
     switch (whence) {
     case SEEK_SET:
@@ -118,7 +122,6 @@ static off_t vfs_null_lseek(int fd, off_t offset, int whence)
 
 static ssize_t vfs_null_read(int fd, void *data, size_t size)
 {
-    UNUSED(fd);
     UNUSED(data);
 
     ESP_LOGD(TAG, "read %u bytes", size);
@@ -133,24 +136,34 @@ static ssize_t vfs_null_read(int fd, void *data, size_t size)
 
 static int vfs_null_pread(int fd, void *data, size_t size, off_t offset)
 {
-    UNUSED(fd);
     UNUSED(data);
     UNUSED(size);
     UNUSED(offset);
 
-    errno = ESPIPE;
-    return -1;
+    ESP_LOGD(TAG, "pread %u bytes at offset %ld", size, offset);
+
+    if (!FD_IN_RANGE(fd) || !READABLE(g_fds, fd)) {
+        errno = EBADF;
+        return -1;
+    }
+
+    return 0; // EOF
+
 }
 
 static int vfs_null_pwrite(int fd, const void *data, size_t size, off_t offset)
 {
-    UNUSED(fd);
     UNUSED(data);
-    UNUSED(size);
     UNUSED(offset);
 
-    errno = ESPIPE;
-    return -1;
+    ESP_LOGD(TAG, "pwrite %u bytes at offset %ld", size, offset);
+
+    if (!FD_IN_RANGE(fd) || !WRITABLE(g_fds, fd)) {
+        errno = EBADF;
+        return -1;
+    }
+
+    return size;
 }
 
 static int vfs_null_get_empty_fd(void)
@@ -221,7 +234,7 @@ static int vfs_null_fstat(int fd, struct stat *st)
     st->st_nlink = 1;
     st->st_uid = 0;
     st->st_gid = 0;
-    st->st_rdev = makedev(1, 3); // Null device (from Linux)
+    st->st_size = 0;
 
     return 0;
 }
@@ -240,7 +253,7 @@ static int vfs_null_stat(const char* path, struct stat *st)
     st->st_nlink = 1;
     st->st_uid = 0;
     st->st_gid = 0;
-    st->st_rdev = makedev(1, 3); // Null device (from Linux)
+    st->st_size = 0;
 
     return 0;
 }
@@ -289,9 +302,12 @@ static int vfs_null_fsync(int fd)
     return 0;
 }
 
-#if CONFIG_ESP_CONSOLE_NONE
 ESP_SYSTEM_INIT_FN(init_vfs_nullfs, CORE, BIT(0), 113)
 {
     return esp_vfs_null_register();
 }
-#endif
+
+void esp_vfs_include_nullfs_register(void)
+{
+    // Linker hook function, exists to make the linker examine this file
+}
