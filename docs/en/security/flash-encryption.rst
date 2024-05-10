@@ -17,17 +17,6 @@ Introduction
 
 Flash encryption is intended for encrypting the contents of the {IDF_TARGET_NAME}'s off-chip flash memory. Once this feature is enabled, firmware is flashed as plaintext, and then the data is encrypted in place on the first boot. As a result, physical readout of flash will not be sufficient to recover most flash contents.
 
-With flash encryption enabled, the following types of data are encrypted by default:
-
-- Firmware bootloader
-- Partition Table
-- All "app" type partitions
-
-Other types of data can be encrypted conditionally:
-
-- Any partition marked with the ``encrypted`` flag in the partition table. For details, see :ref:`encrypted-partition-flag`.
-- Secure Boot bootloader digest if Secure Boot is enabled (see below).
-
 .. only:: esp32
 
     :doc:`Secure Boot <secure-boot-v2>` is a separate feature which can be used together with flash encryption to create an even more secure environment.
@@ -39,6 +28,24 @@ Other types of data can be encrypted conditionally:
 .. important::
 
     Enabling flash encryption limits the options for further updates of {IDF_TARGET_NAME}. Before using this feature, read the document and make sure to understand the implications.
+
+.. _encrypted-partitions:
+
+Encrypted Partitions
+--------------------
+
+With flash encryption enabled, the following types of data are encrypted by default:
+
+- Firmware bootloader
+- Partition Table
+- :ref:`nvs_key_partition`
+- Otadata
+- All "app" type partitions
+
+Other types of data can be encrypted conditionally:
+
+- Any partition marked with the ``encrypted`` flag in the partition table. For details, see :ref:`encrypted-partition-flag`.
+- Secure Boot bootloader digest if Secure Boot is enabled (see below).
 
 .. _flash-encryption-efuse:
 
