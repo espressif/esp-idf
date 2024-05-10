@@ -51,13 +51,13 @@ ESP-IDF 支持多个目标芯片，运行 ``idf.py --list-targets`` 查看当前
 
 .. important::
 
-    ``idf.py set-target`` 将清除构建目录，并重新生成 ``sdkconfig`` 文件，原来的 ``sdkconfig`` 文件保存为 ``sdkconfig.old``。
+    ``idf.py set-target`` 将清除 build 目录，并重新生成 ``sdkconfig`` 文件，原来的 ``sdkconfig`` 文件保存为 ``sdkconfig.old``。
 
 .. note::
 
     ``idf.py set-target`` 命令与以下操作效果相同：
 
-    1. 清除构建目录 (``idf.py fullclean``)
+    1. 清除 build 目录 (``idf.py fullclean``)
     2. 删除 sdkconfig 文件 (``mv sdkconfig sdkconfig.old``)
     3. 使用新的目标芯片重新配置工程 (``idf.py -DIDF_TARGET=esp32 reconfigure``)
 
@@ -83,7 +83,7 @@ ESP-IDF 支持多个目标芯片，运行 ``idf.py --list-targets`` 查看当前
 
 此命令将构建当前目录下的工程，具体步骤如下：
 
-  - 若有需要，创建构建子目录 ``build`` 保存构建输出文件，使用 ``-B`` 选项可改变子目录的路径。
+  - 若有需要，创建 build 目录。"build" 子目录可以保存构建输出文件，使用 ``-B`` 选项可改变子目录的路径。
   - 必要时运行 CMake_ 配置工程，并为主要构建工具生成构建文件。
   - 运行主要构建工具（Ninja_ 或 ``GNU Make``）。默认情况下，构建工具会完成自动检测，也可通过将 ``-G`` 选项传递给 ``idf.py`` 来显式设置构建工具。
 
@@ -98,7 +98,7 @@ ESP-IDF 支持多个目标芯片，运行 ``idf.py --list-targets`` 查看当前
 
   idf.py clean
 
-此命令可清除构建目录中的构建输出文件，下次构建时，工程将完全重新构建。注意，使用此选项不会删除构建文件夹内的 CMake 配置输出。
+此命令可清除 build 目录中的构建输出文件，下次构建时，工程将完全重新构建。注意，使用此选项不会删除 build 文件夹内的 CMake 配置输出。
 
 删除所有构建内容：``fullclean``
 -------------------------------------------
@@ -107,7 +107,7 @@ ESP-IDF 支持多个目标芯片，运行 ``idf.py --list-targets`` 查看当前
 
   idf.py fullclean
 
-此命令将删除所有 "build" 子目录内容，包括 CMake 配置输出。下次构建时，CMake 将重新配置其输出。注意，此命令将递归删除构建目录下的 *所有* 文件（工程配置将保留），请谨慎使用。
+此命令将删除所有 build 目录下的内容，包括 CMake 配置输出。下次构建时，CMake 将重新配置其输出。注意，此命令将递归删除 build 目录下的 *所有* 文件（工程配置将保留），请谨慎使用。
 
 烧录工程：``flash``
 ------------------------
@@ -135,7 +135,7 @@ ESP-IDF 支持多个目标芯片，运行 ``idf.py --list-targets`` 查看当前
 
 在某些情况下（例如将文件传输到另一台机器，且不借助 ESP-IDF 对其进行烧录），只烧录一个文件比烧录 ``idf.py build`` 生成的多个文件更为便捷。
 
-``idf.py merge-bin`` 命令会根据项目配置合并引导加载程序、分区表、应用程序本身以及其他分区（如果有的话），并在构建文件夹中创建一个二进制文件 ``merged-binary.[bin|hex]``，之后可对其进行烧录。
+``idf.py merge-bin`` 命令会根据项目配置合并引导加载程序、分区表、应用程序本身以及其他分区（如果有的话），并在 build 文件夹中创建一个二进制文件 ``merged-binary.[bin|hex]``，之后可对其进行烧录。
 
 合并后的文件的输出格式可以是二进制 (raw)，IntelHex (hex) 以及 UF2 (uf2)。
 
@@ -151,12 +151,12 @@ uf2 二进制文件也可以通过 :ref:`idf.py uf2 <generate-uf2-binary>` 生�
 
 - 仅针对 raw 格式：
 
-  - ``--flash-offset``： 此选项创建的合并二进制文件将在指定偏移处进行烧录，而不是在标准偏移地址 0x0 处。
-  - ``--fill-flash-size``： 设置此选项，系统将在最终的二进制文件中添加 FF 字节直至文件大小与 flash 大小等同，从而确保烧录范围能够完整地覆盖整个 flash 芯片，所有区域都被正确写入。
+  - ``--flash-offset``：此选项创建的合并二进制文件应在指定偏移处进行烧录，而不是在标准偏移地址 0x0 处。
+  - ``--fill-flash-size``：设置此选项，系统将在最终的二进制文件中添加 FF 字节直至文件大小与 flash 大小等同，从而确保烧录范围能够完整地覆盖整个 flash 芯片，所有区域都被正确写入。
 
 - 仅针对 uf2 格式：
 
-  - ``--md5-disable``： 在与 `tinyuf2 <https://github.com/adafruit/tinyuf2>`__ 等工具进行集成时，可以启用此选项，在每个数据块的末尾禁用 MD5 校验和。
+  - ``--md5-disable``：该选项会在每个数据块的末尾禁用 MD5 校验和。在与 `tinyuf2 <https://github.com/adafruit/tinyuf2>`__ 等工具进行集成时，可以启用此选项。
 
 错误处理提示
 ==============================
@@ -246,7 +246,7 @@ uf2 二进制文件也可以通过 :ref:`idf.py uf2 <generate-uf2-binary>` 生�
 
   idf.py uf2
 
-此命令将在构建目录中生成一个 UF2（`USB 烧录格式 <https://github.com/microsoft/uf2>`_) 二进制文件 ``uf2.bin``，该文件包含所有烧录目标芯片所必需的二进制文件，即引导加载程序、应用程序和分区表。
+此命令将在 build 目录中生成一个 UF2（`USB 烧录格式 <https://github.com/microsoft/uf2>`_) 二进制文件 ``uf2.bin``，该文件包含所有烧录目标芯片所必需的二进制文件，即引导加载程序、应用程序和分区表。
 
 在 ESP 芯片上运行 `ESP USB Bridge <https://github.com/espressif/esp-usb-bridge>`_ 项目将创建一个 USB 大容量存储设备，用户可以将生成的 UF2 文件复制到该 USB 设备中，桥接 MCU 将使用该文件来烧录目标 MCU。这一操作十分简单，只需将文件复制（或“拖放”）到文件资源管理器访问的公开磁盘中即可。
 
@@ -273,7 +273,7 @@ uf2 二进制文件也可以通过 :ref:`idf.py uf2 <generate-uf2-binary>` 生�
 运行 ``idf.py --help`` 列出所有可用的根级别选项。要列出特定子命令的选项，请运行 ``idf.py <command> --help``，如 ``idf.py monitor --help``。部分常用选项如下：
 
 - ``-C <dir>`` 支持从默认的当前工作目录覆盖工程目录。
-- ``-B <dir>`` 支持从工程目录的默认 ``build`` 子目录覆盖构建目录。
+- ``-B <dir>`` 支持从工程目录的默认 ``build`` 子目录覆盖 build 目录。
 - ``--ccache`` 可以在安装了 CCache_ 工具的前提下，在构建源文件时启用 CCache_，减少部分构建耗时。
 
 .. important::

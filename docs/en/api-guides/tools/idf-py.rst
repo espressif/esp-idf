@@ -83,7 +83,7 @@ Build the Project: ``build``
 
 This command builds the project found in the current directory. This can involve multiple steps:
 
-  - Create the build directory if needed. The sub-directory ``build`` is used to hold build output, although this can be changed with the ``-B`` option.
+  - Create the build directory if needed. The sub-directory "build" is used to hold build output, although this can be changed with the ``-B`` option.
   - Run CMake_ as necessary to configure the project and generate build files for the main build tool.
   - Run the main build tool (Ninja_ or `GNU Make`). By default, the build tool is automatically detected but it can be explicitly set by passing the ``-G`` option to ``idf.py``.
 
@@ -107,7 +107,7 @@ Delete the Entire Build Contents: ``fullclean``
 
   idf.py fullclean
 
-This command deletes the entire "build" directory contents, which includes all CMake configuration output. The next time the project is built, CMake will configure it from scratch. Note that this option recursively deletes **all** files in the build directory, so use with care. Project configuration is not deleted.
+This command deletes the entire build directory contents, which includes all CMake configuration output. The next time the project is built, CMake will configure it from scratch. Note that this option recursively deletes **all** files in the build directory, so use with care. Project configuration is not deleted.
 
 Flash the Project: ``flash``
 ----------------------------
