@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -23,7 +23,7 @@
 
 static uint32_t buffer[1024];
 
-/* read-only region used for mmap tests, intialised in setup_mmap_tests() */
+/* read-only region used for mmap tests, initialised in setup_mmap_tests() */
 static uint32_t start;
 static uint32_t end;
 
@@ -359,7 +359,14 @@ TEST_CASE("phys2cache/cache2phys basic checks", "[spi_flash][mmap]")
     /* esp_partition_find is in IROM */
     uint32_t phys = spi_flash_cache2phys(esp_partition_find);
     TEST_ASSERT_NOT_EQUAL(SPI_FLASH_CACHE2PHYS_FAIL, phys);
+#if !CONFIG_SPIRAM_FLASH_LOAD_TO_PSRAM
+    /**
+     * On CONFIG_SPIRAM_FLASH_LOAD_TO_PSRAM=y condition
+     * spi_flash_phys2cache will return exactly the flash paddr corresponding vaddr.
+     * Whereas `constant_data` is now actually on PSRAM
+     */
     TEST_ASSERT_EQUAL_PTR(esp_partition_find, spi_flash_phys2cache(phys, SPI_FLASH_MMAP_INST));
+#endif
 #if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2
     TEST_ASSERT_EQUAL_PTR(NULL, spi_flash_phys2cache(phys, SPI_FLASH_MMAP_DATA));
 #endif  //#if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2
@@ -371,8 +378,14 @@ TEST_CASE("phys2cache/cache2phys basic checks", "[spi_flash][mmap]")
     /* 'constant_data' should be in DROM */
     phys = spi_flash_cache2phys(&constant_data);
     TEST_ASSERT_NOT_EQUAL(SPI_FLASH_CACHE2PHYS_FAIL, phys);
-    TEST_ASSERT_EQUAL_PTR(&constant_data,
-                          spi_flash_phys2cache(phys, SPI_FLASH_MMAP_DATA));
+#if !CONFIG_SPIRAM_FLASH_LOAD_TO_PSRAM
+    /**
+     * On CONFIG_SPIRAM_FLASH_LOAD_TO_PSRAM=y condition,
+     * spi_flash_phys2cache will return exactly the flash paddr corresponding vaddr.
+     * Whereas `constant_data` is now actually on PSRAM
+     */
+    TEST_ASSERT_EQUAL_PTR(&constant_data, spi_flash_phys2cache(phys, SPI_FLASH_MMAP_DATA));
+#endif
 #if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2
     TEST_ASSERT_EQUAL_PTR(NULL, spi_flash_phys2cache(phys, SPI_FLASH_MMAP_INST));
 #endif  //#if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2
@@ -404,7 +417,18 @@ TEST_CASE("mmap consistent with phys2cache/cache2phys", "[spi_flash][mmap]")
     spi_flash_munmap(handle1);
     handle1 = 0;
 
+    esp_rom_printf("ptr; 0x%x\n", ptr);
+
+#if !CONFIG_SPIRAM_FLASH_LOAD_TO_PSRAM
+    /**
+     * On CONFIG_SPIRAM_FLASH_LOAD_TO_PSRAM=y condition, this is reasonable as there are two MMUs.
+     * Unmapping flash one, if it's XIP_PSRAM, we can still find it via `spi_flash_cache2phys`
+     *
+     * TODO, design a new API dedicated for `esp_ota_get_running_partition` usage, then here we can
+     * update this `spi_flash_cache2phys` back to its normal behaviour
+     */
     TEST_ASSERT_EQUAL_HEX(SPI_FLASH_CACHE2PHYS_FAIL, spi_flash_cache2phys(ptr));
+#endif
 }
 
 TEST_CASE("munmap followed by mmap flushes cache", "[spi_flash][mmap]")

@@ -24,6 +24,7 @@
 #include "esp_private/system_internal.h"
 #include "esp_private/spi_flash_os.h"
 #include "esp_private/esp_clk.h"
+#include "esp_private/esp_gpio_reserve.h"
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/rom/cache.h"
 #include "esp32/rom/spi_flash.h"
@@ -149,6 +150,15 @@ void IRAM_ATTR esp_mspi_pin_init(void)
     }
     //Set F4R4 board pin drive strength. TODO: IDF-3663
 #endif
+}
+
+void esp_mspi_pin_reserve(void)
+{
+    uint64_t reserve_pin_mask = 0;
+    for (esp_mspi_io_t i = 0; i < ESP_MSPI_IO_MAX; i++) {
+        reserve_pin_mask |= BIT64(esp_mspi_get_io(i));
+    }
+    esp_gpio_reserve(reserve_pin_mask);
 }
 
 esp_err_t IRAM_ATTR spi_flash_init_chip_state(void)

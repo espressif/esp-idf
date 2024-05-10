@@ -44,6 +44,40 @@ menu "PSRAM config"
         default 100 if SPIRAM_SPEED_100M
         default 200 if SPIRAM_SPEED_200M
 
+    config SPIRAM_FETCH_INSTRUCTIONS
+        bool
+        help
+            Enable this option allows moving application's instruction segment from the SPI Flash to
+            PSRAM
+
+    config SPIRAM_RODATA
+        bool
+        help
+            Enable this option allows moving application's rodata segment from the SPI Flash to
+            PSRAM
+
+    config SPIRAM_XIP_FROM_PSRAM
+        bool "Enable Executable in place from (XiP) from PSRAM feature"
+        default n
+        select SPIRAM_FETCH_INSTRUCTIONS
+        select SPIRAM_RODATA
+        select SPIRAM_FLASH_LOAD_TO_PSRAM
+        help
+            If enabled, firmware in flash including instructions and data will be moved into PSRAM on startup,
+            firmware code will execute directly from PSRAM.
+
+            With this option enabled, code that requires execution during an MSPI1 Flash operation
+            does not have to be placed in IRAM. Therefore codes that need to be executing during Flash
+            operations can continue working normally.
+
+            Enabling this option will have better performance (see External RAM documentation for more details).
+
+    config SPIRAM_FLASH_LOAD_TO_PSRAM
+        bool
+        help
+            This is a helper indicating this condition:
+            `CONFIG_SPIRAM_XIP_FROM_PSRAM && CONFIG_IDF_TARGET_ESP32P4`
+
     config SPIRAM_ECC_ENABLE
         bool "Enable PSRAM ECC"
         default n

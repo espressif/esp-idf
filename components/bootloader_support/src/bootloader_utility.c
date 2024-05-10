@@ -25,6 +25,7 @@
 #include "soc/rtc_periph.h"
 #include "soc/timer_periph.h"
 #include "hal/mmu_hal.h"
+#include "hal/mmu_ll.h"
 #include "hal/cache_types.h"
 #include "hal/cache_ll.h"
 #include "hal/cache_hal.h"
@@ -43,6 +44,7 @@
 #include "bootloader_sha.h"
 #include "bootloader_console.h"
 #include "bootloader_soc.h"
+#include "bootloader_memory_utils.h"
 #include "esp_efuse.h"
 #include "esp_fault.h"
 
@@ -715,10 +717,20 @@ static void unpack_load_app(const esp_image_metadata_t *data)
     // Find DROM & IROM addresses, to configure MMU mappings
     for (int i = 0; i < data->image.segment_count; i++) {
         const esp_image_segment_header_t *header = &data->segments[i];
+        bool text_or_rodata = false;
+
         //`SOC_DROM_LOW` and `SOC_DROM_HIGH` are the same as `SOC_IROM_LOW` and `SOC_IROM_HIGH`, reasons are in above `note`
         if (header->load_addr >= SOC_DROM_LOW && header->load_addr < SOC_DROM_HIGH) {
+            text_or_rodata = true;
+        }
+#if SOC_MMU_PER_EXT_MEM_TARGET
+        if (header->load_addr >= SOC_EXTRAM_LOW && header->load_addr < SOC_EXTRAM_HIGH) {
+            text_or_rodata = true;
+        }
+#endif
+        if (text_or_rodata) {
             /**
-             * D/I are shared, but there should not be a third segment on flash
+             * D/I are shared, but there should not be a third segment on flash/psram
              */
             assert(rom_index < 2);
             rom_addr[rom_index] = data->segment_data[i];
@@ -785,6 +797,20 @@ static void unpack_load_app(const esp_image_metadata_t *data)
 }
 #endif  //#if SOC_MMU_DI_VADDR_SHARED
 
+//unused for esp32
+__attribute__((unused))
+static bool s_flash_seg_needs_map(uint32_t vaddr)
+{
+#if SOC_MMU_PER_EXT_MEM_TARGET
+    //For these chips, segments on PSRAM will be mapped in app
+    bool is_psram = esp_ptr_in_extram((void *)vaddr);
+    return !is_psram;
+#else
+    //For these chips, segments on Flash always need to be mapped
+    return true;
+#endif
+}
+
 static void set_cache_and_start_app(
     uint32_t drom_addr,
     uint32_t drom_load_addr,
@@ -822,8 +848,13 @@ static void set_cache_and_start_app(
     ESP_EARLY_LOGV(TAG, "after mapping rodata, starting from paddr=0x%08" PRIx32 " and vaddr=0x%08" PRIx32 ", 0x%" PRIx32 " bytes are mapped", drom_addr_aligned, drom_load_addr_aligned, drom_page_count * SPI_FLASH_MMU_PAGE_SIZE);
 #else
     uint32_t actual_mapped_len = 0;
-    mmu_hal_map_region(0, MMU_TARGET_FLASH0, drom_load_addr_aligned, drom_addr_aligned, drom_size, &actual_mapped_len);
-    ESP_EARLY_LOGV(TAG, "after mapping rodata, starting from paddr=0x%08" PRIx32 " and vaddr=0x%08" PRIx32 ", 0x%" PRIx32 " bytes are mapped", drom_addr_aligned, drom_load_addr_aligned, actual_mapped_len);
+    if (s_flash_seg_needs_map(drom_load_addr_aligned)) {
+        mmu_hal_map_region(0, MMU_TARGET_FLASH0, drom_load_addr_aligned, drom_addr_aligned, drom_size, &actual_mapped_len);
+        ESP_EARLY_LOGV(TAG, "after mapping rodata, starting from paddr=0x%08" PRIx32 " and vaddr=0x%08" PRIx32 ", 0x%" PRIx32 " bytes are mapped", drom_addr_aligned, drom_load_addr_aligned, actual_mapped_len);
+    }
+    //we use the MMU_LL_END_DROM_ENTRY_ID mmu entry as a map page for app to find the boot partition
+    mmu_hal_map_region(0, MMU_TARGET_FLASH0, MMU_LL_END_DROM_ENTRY_VADDR, drom_addr_aligned, CONFIG_MMU_PAGE_SIZE, &actual_mapped_len);
+    ESP_EARLY_LOGV(TAG, "mapped one page of the rodata, from paddr=0x%08" PRIx32 " and vaddr=0x%08" PRIx32 ", 0x%" PRIx32 " bytes are mapped", drom_addr_aligned, drom_load_addr_aligned, actual_mapped_len);
 #endif
 
     //-----------------------MAP IROM--------------------------
@@ -840,8 +871,10 @@ static void set_cache_and_start_app(
     ESP_LOGV(TAG, "rc=%d", rc);
     ESP_EARLY_LOGV(TAG, "after mapping text, starting from paddr=0x%08" PRIx32 " and vaddr=0x%08" PRIx32 ", 0x%" PRIx32 " bytes are mapped", irom_addr_aligned, irom_load_addr_aligned, irom_page_count * SPI_FLASH_MMU_PAGE_SIZE);
 #else
-    mmu_hal_map_region(0, MMU_TARGET_FLASH0, irom_load_addr_aligned, irom_addr_aligned, irom_size, &actual_mapped_len);
-    ESP_EARLY_LOGV(TAG, "after mapping text, starting from paddr=0x%08" PRIx32 " and vaddr=0x%08" PRIx32 ", 0x%" PRIx32 " bytes are mapped", irom_addr_aligned, irom_load_addr_aligned, actual_mapped_len);
+    if (s_flash_seg_needs_map(irom_load_addr_aligned)) {
+        mmu_hal_map_region(0, MMU_TARGET_FLASH0, irom_load_addr_aligned, irom_addr_aligned, irom_size, &actual_mapped_len);
+        ESP_EARLY_LOGV(TAG, "after mapping text, starting from paddr=0x%08" PRIx32 " and vaddr=0x%08" PRIx32 ", 0x%" PRIx32 " bytes are mapped", irom_addr_aligned, irom_load_addr_aligned, actual_mapped_len);
+    }
 #endif
 
     //----------------------Enable corresponding buses----------------

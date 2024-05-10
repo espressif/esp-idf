@@ -43,17 +43,6 @@ extern "C" {
 #define LDO_LL_EXT_LDO_MUL_VOL_STEP    250
 
 /**
- * Trick to be adapted to the LDO register structure
- *
- * In pmu_ext_ldo_info_t ext_ldo[6] registers:
- * - ext_ldo[0] is LDO1
- * - ext_ldo[3] is LDO2
- * - ext_ldo[1] is LDO3
- * - ext_ldo[4] is LDO4
- */
-#define LDO_ID2INDEX(id)       (uint8_t[]){0,3,1,4}[id]
-
-/**
  * LDO ID to real unit ID
  */
 #define LDO_ID2UNIT(ldo_id)    ((ldo_id) - 1)
@@ -79,8 +68,8 @@ __attribute__((always_inline))
 static inline void ldo_ll_enable(int ldo_id, bool enable)
 {
     HAL_ASSERT(ldo_id < LDO_LL_UNIT_NUM);
-
-    PMU.ext_ldo[LDO_ID2INDEX(ldo_id)].pmu_ext_ldo.xpd = enable;
+    uint8_t index_array[LDO_LL_UNIT_NUM] = {0,3,1,4};
+    PMU.ext_ldo[index_array[ldo_id]].pmu_ext_ldo.xpd = enable;
 }
 
 /**
@@ -150,11 +139,12 @@ static inline void ldo_ll_set_output_voltage_mv(int ldo_id, int voltage_mv)
      *  - 0: efuse
      *  - 1: tieh_sel
      */
-    PMU.ext_ldo[LDO_ID2INDEX(ldo_id)].pmu_ext_ldo.tieh_sel = 0;
-    PMU.ext_ldo[LDO_ID2INDEX(ldo_id)].pmu_ext_ldo.tieh = 0;
-    PMU.ext_ldo[LDO_ID2INDEX(ldo_id)].pmu_ext_ldo.force_tieh_sel = 1;
-    PMU.ext_ldo[LDO_ID2INDEX(ldo_id)].pmu_ext_ldo_ana.dref = dref;
-    PMU.ext_ldo[LDO_ID2INDEX(ldo_id)].pmu_ext_ldo_ana.mul = mul;
+    uint8_t index_array[LDO_LL_UNIT_NUM] = {0,3,1,4};
+    PMU.ext_ldo[index_array[ldo_id]].pmu_ext_ldo.tieh_sel = 0;
+    PMU.ext_ldo[index_array[ldo_id]].pmu_ext_ldo.tieh = 0;
+    PMU.ext_ldo[index_array[ldo_id]].pmu_ext_ldo.force_tieh_sel = 1;
+    PMU.ext_ldo[index_array[ldo_id]].pmu_ext_ldo_ana.dref = dref;
+    PMU.ext_ldo[index_array[ldo_id]].pmu_ext_ldo_ana.mul = mul;
 }
 
 #ifdef __cplusplus

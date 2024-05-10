@@ -38,7 +38,7 @@
 #define MEM_REGION_MERGED             -1
 
 /**
- * We have some hw related tests for vaddr region capabilites
+ * We have some hw related tests for vaddr region capabilities
  * Use this macro to disable paddr check as we need to reuse certain paddr blocks
  */
 #define ENABLE_PADDR_CHECK            !ESP_MMAP_TEST_ALLOW_MAP_TO_MAPPED_PADDR
@@ -184,6 +184,13 @@ static void s_reserve_drom_region(mem_region_t *hw_mem_regions, int region_nums)
     }
 }
 #endif  //#if CONFIG_APP_BUILD_USE_FLASH_SECTIONS
+
+#if SOC_MMU_PER_EXT_MEM_TARGET
+static inline uint32_t s_get_mmu_id_from_target(mmu_target_t target)
+{
+    return (target == MMU_TARGET_FLASH0) ? MMU_LL_FLASH_MMU_ID : MMU_LL_PSRAM_MMU_ID;
+}
+#endif
 
 void esp_mmu_map_init(void)
 {
@@ -381,16 +388,11 @@ static void IRAM_ATTR NOINLINE_ATTR s_do_cache_invalidate(uint32_t vaddr_start, 
 #endif // CONFIG_IDF_TARGET_ESP32
 }
 
-#if MMU_LL_MMU_PER_TARGET
+#if SOC_MMU_PER_EXT_MEM_TARGET
 FORCE_INLINE_ATTR uint32_t s_mapping_operation(mmu_target_t target, uint32_t vaddr_start, esp_paddr_t paddr_start, uint32_t size)
 {
     uint32_t actual_mapped_len = 0;
-    uint32_t mmu_id = 0;
-    if (target == MMU_TARGET_FLASH0) {
-        mmu_id = MMU_LL_FLASH_MMU_ID;
-    } else {
-        mmu_id = MMU_LL_PSRAM_MMU_ID;
-    }
+    uint32_t mmu_id = s_get_mmu_id_from_target(target);
     mmu_hal_map_region(mmu_id, target, vaddr_start, paddr_start, size, &actual_mapped_len);
 
     return actual_mapped_len;
@@ -584,17 +586,11 @@ err:
     return ret;
 }
 
-#if MMU_LL_MMU_PER_TARGET
+#if SOC_MMU_PER_EXT_MEM_TARGET
 FORCE_INLINE_ATTR void s_unmapping_operation(uint32_t vaddr_start, uint32_t size)
 {
-    uint32_t mmu_id = 0;
     mmu_target_t target = mmu_ll_vaddr_to_target(vaddr_start);
-
-    if (target == MMU_TARGET_FLASH0) {
-        mmu_id = MMU_LL_FLASH_MMU_ID;
-    } else {
-        mmu_id = MMU_LL_PSRAM_MMU_ID;
-    }
+    uint32_t mmu_id = s_get_mmu_id_from_target(target);
     mmu_hal_unmap_region(mmu_id, vaddr_start, size);
 }
 #else
@@ -748,8 +744,12 @@ static bool NOINLINE_ATTR IRAM_ATTR s_vaddr_to_paddr(uint32_t vaddr, esp_paddr_t
 {
     //we call this for now, but this will be refactored to move out of `spi_flash`
     spi_flash_disable_interrupts_caches_and_other_cpu();
-    //On ESP32, core 1 settings should be the same as the core 0
     bool is_mapped = mmu_hal_vaddr_to_paddr(0, vaddr, out_paddr, out_target);
+#if SOC_MMU_PER_EXT_MEM_TARGET
+    if (!is_mapped) {
+        is_mapped = mmu_hal_vaddr_to_paddr(1, vaddr, out_paddr, out_target);
+    }
+#endif
     spi_flash_enable_interrupts_caches_and_other_cpu();
 
     return is_mapped;
@@ -776,8 +776,11 @@ static bool NOINLINE_ATTR IRAM_ATTR s_paddr_to_vaddr(esp_paddr_t paddr, mmu_targ
 {
     //we call this for now, but this will be refactored to move out of `spi_flash`
     spi_flash_disable_interrupts_caches_and_other_cpu();
-    //On ESP32, core 1 settings should be the same as the core 0
-    bool found = mmu_hal_paddr_to_vaddr(0, paddr, target, type, out_vaddr);
+    uint32_t mmu_id = 0;
+#if SOC_MMU_PER_EXT_MEM_TARGET
+    mmu_id = s_get_mmu_id_from_target(target);
+#endif
+    bool found = mmu_hal_paddr_to_vaddr(mmu_id, paddr, target, type, out_vaddr);
     spi_flash_enable_interrupts_caches_and_other_cpu();
 
     return found;

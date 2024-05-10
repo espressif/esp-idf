@@ -185,7 +185,7 @@ idf_component_register(SRCS ${srcs}
                        PRIV_INCLUDE_DIRS port/include include/esp_private
                        REQUIRES ${requires}
                        PRIV_REQUIRES "${priv_requires}"
-                       LDFRAGMENTS linker.lf dma/linker.lf)
+                       LDFRAGMENTS linker.lf dma/linker.lf ldo/linker.lf)
 
 idf_build_get_property(target IDF_TARGET)
 add_subdirectory(port/${target})
