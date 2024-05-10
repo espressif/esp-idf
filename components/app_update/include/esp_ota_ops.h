@@ -116,6 +116,8 @@ esp_err_t esp_ota_begin(const esp_partition_t* partition, size_t image_size, esp
  *    - ESP_ERR_OTA_VALIDATE_FAILED: First byte of image contains invalid app image magic byte.
  *    - ESP_ERR_FLASH_OP_TIMEOUT or ESP_ERR_FLASH_OP_FAIL: Flash write failed.
  *    - ESP_ERR_OTA_SELECT_INFO_INVALID: OTA data partition has invalid contents
+ *    - ESP_ERR_INVALID_SIZE: if write would go out of bounds of the partition
+ *    - or one of error codes from lower-level flash driver.
  */
 esp_err_t esp_ota_write(esp_ota_handle_t handle, const void* data, size_t size);
 
