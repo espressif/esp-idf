@@ -22,6 +22,7 @@
    :maxdepth: 1
 
    fatfs
+   fatfsgen
    mass_mfg.rst
    nvs_flash
    nvs_encryption
