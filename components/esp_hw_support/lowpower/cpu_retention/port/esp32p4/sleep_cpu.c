@@ -15,7 +15,7 @@
 #include "esp_ipc_isr.h"
 #include "esp_sleep.h"
 #include "esp_log.h"
-#include "esp_crc.h"
+#include "esp_rom_crc.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_heap_caps.h"
@@ -374,12 +374,12 @@ static TCM_IRAM_ATTR void cpu_domain_dev_regs_restore(cpu_domain_dev_sleep_frame
 #if CONFIG_PM_CHECK_SLEEP_RETENTION_FRAME
 static TCM_IRAM_ATTR void update_retention_frame_crc(uint32_t *frame_ptr, uint32_t frame_check_size, uint32_t *frame_crc_ptr)
 {
-    *(frame_crc_ptr) = esp_crc32_le(0, (void *)frame_ptr, frame_check_size);
+    *(frame_crc_ptr) = esp_rom_crc32_le(0, (void *)frame_ptr, frame_check_size);
 }
 
 static TCM_IRAM_ATTR void validate_retention_frame_crc(uint32_t *frame_ptr, uint32_t frame_check_size, uint32_t *frame_crc_ptr)
 {
-    if(*(frame_crc_ptr) != esp_crc32_le(0, (void *)(frame_ptr), frame_check_size)){
+    if(*(frame_crc_ptr) != esp_rom_crc32_le(0, (void *)(frame_ptr), frame_check_size)){
         // resume uarts
         for (int i = 0; i < SOC_UART_NUM; ++i) {
             if (!uart_ll_is_enabled(i)) {
