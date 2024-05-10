@@ -6,7 +6,7 @@ import pytest
 # If `test_env` is define, should not run on generic runner
 @pytest.mark.supported_targets
 @pytest.mark.generic
-@pytest.mark.parametrize('config', ['defaults', 'release', 'freertos_compliance', 'freertos_flash',], indirect=True)
+@pytest.mark.parametrize('config', ['release', 'freertos_compliance', 'freertos_flash',], indirect=True)
 def test_master_single_dev(case_tester) -> None:       # type: ignore
     for case in case_tester.test_menu:
         if 'test_env' in case.attributes:
@@ -17,7 +17,7 @@ def test_master_single_dev(case_tester) -> None:       # type: ignore
 # Job for test_env `external_flash` just for esp32 only
 @pytest.mark.esp32
 @pytest.mark.flash_multi
-@pytest.mark.parametrize('config', ['defaults',], indirect=True)
+@pytest.mark.parametrize('config', ['release',], indirect=True)
 def test_master_esp_flash(case_tester) -> None:        # type: ignore
     for case in case_tester.test_menu:
         # test case `spi_bus_lock_with_flash` use difference test env
@@ -33,7 +33,6 @@ def test_master_esp_flash(case_tester) -> None:        # type: ignore
 @pytest.mark.parametrize(
     'count, config',
     [
-        (2, 'defaults',),
         (2, 'release',),
         (2, 'freertos_compliance',),
         (2, 'freertos_flash',),

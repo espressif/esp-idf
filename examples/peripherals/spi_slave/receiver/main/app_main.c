@@ -121,7 +121,17 @@ void app_main(void)
         //spi_slave_transmit does not return until the master has done a transmission, so by here we have sent our data and
         //received data from the master. Print it.
         printf("Received: %s\n", recvbuf);
+
+        //pause the slave to save power, transaction will also be paused
+        ret = spi_slave_disable(RCV_HOST);
+        if (ret == ESP_OK) {
+            printf("slave paused ...\n");
+        }
+        vTaskDelay(100);    //now is able to sleep or do something to save power, any following transaction will be ignored
+        ret = spi_slave_enable(RCV_HOST);
+        if (ret == ESP_OK) {
+            printf("slave ready !\n");
+        }
         n++;
     }
-
 }

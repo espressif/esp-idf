@@ -252,6 +252,7 @@ void same_pin_func_sel(spi_bus_config_t bus, spi_device_interface_config_t dev, 
 void spi_master_trans_impl_gpio(spi_bus_config_t bus, uint8_t cs_pin, uint8_t speed_hz, void *tx, void *rx, uint32_t len)
 {
     uint8_t *u8_tx = tx, *u8_rx = rx;
+    gpio_set_level(cs_pin, 1);  //ensure CS is inactive before transaction start
     esp_rom_gpio_connect_out_signal(cs_pin, SIG_GPIO_OUT_IDX, 0, 0);
     esp_rom_gpio_connect_out_signal(bus.sclk_io_num, SIG_GPIO_OUT_IDX, 0, 0);
     esp_rom_gpio_connect_out_signal(bus.mosi_io_num, SIG_GPIO_OUT_IDX, 0, 0);

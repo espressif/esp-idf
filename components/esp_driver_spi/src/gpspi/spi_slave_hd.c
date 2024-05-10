@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stdatomic.h>
 #include "esp_compiler.h"
 #include "esp_log.h"
 #include "esp_check.h"
@@ -38,6 +39,7 @@ typedef struct {
 
 typedef struct {
     spi_host_device_t host_id;
+    _Atomic spi_bus_fsm_t fsm;
     spi_dma_ctx_t   *dma_ctx;
     uint16_t internal_mem_align_size;
     int max_transfer_sz;
@@ -117,6 +119,7 @@ esp_err_t spi_slave_hd_init(spi_host_device_t host_id, const spi_bus_config_t *b
     host->host_id = host_id;
     host->int_spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
     host->append_mode = append_mode;
+    atomic_store(&host->fsm, SPI_BUS_FSM_ENABLED);
 
     ret = spicommon_dma_chan_alloc(host_id, config->dma_chan, &host->dma_ctx);
     if (ret != ESP_OK) {
@@ -178,7 +181,7 @@ esp_err_t spi_slave_hd_init(spi_host_device_t host_id, const spi_bus_config_t *b
     spi_slave_hd_hal_init(&host->hal, &hal_config);
 
 #ifdef CONFIG_PM_ENABLE
-    ret = esp_pm_lock_create(ESP_PM_APB_FREQ_MAX, 0, "spi_slave", &host->pm_lock);
+    ret = esp_pm_lock_create(ESP_PM_APB_FREQ_MAX, 0, "spi_slave_hd", &host->pm_lock);
     if (ret != ESP_OK) {
         goto cleanup;
     }
@@ -340,6 +343,46 @@ esp_err_t spi_slave_hd_deinit(spi_host_device_t host_id)
 
     free(host);
     spihost[host_id] = NULL;
+    return ESP_OK;
+}
+
+esp_err_t spi_slave_hd_enable(spi_host_device_t host_id)
+{
+    SPIHD_CHECK(VALID_HOST(host_id), "invalid host", ESP_ERR_INVALID_ARG);
+    SPIHD_CHECK(spihost[host_id], "host not slave or not initialized", ESP_ERR_INVALID_ARG);
+    spi_bus_fsm_t curr_sta = SPI_BUS_FSM_DISABLED;
+    SPIHD_CHECK(atomic_compare_exchange_strong(&spihost[host_id]->fsm, &curr_sta, SPI_BUS_FSM_ENABLED), "host already enabled", ESP_ERR_INVALID_STATE);
+
+#ifdef CONFIG_PM_ENABLE
+    esp_pm_lock_acquire(spihost[host_id]->pm_lock);
+#endif //CONFIG_PM_ENABLE
+
+// If going to TOP_PD power down, the bus_clock is required during reg_dma, and will be disabled by sleep flow then
+#if !CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
+    SPI_COMMON_RCC_CLOCK_ATOMIC() {
+        spi_ll_enable_bus_clock(host_id, true);
+    }
+#endif
+    return ESP_OK;
+}
+
+esp_err_t spi_slave_hd_disable(spi_host_device_t host_id)
+{
+    SPIHD_CHECK(VALID_HOST(host_id), "invalid host", ESP_ERR_INVALID_ARG);
+    SPIHD_CHECK(spihost[host_id], "host not slave or not initialized", ESP_ERR_INVALID_ARG);
+    spi_bus_fsm_t curr_sta = SPI_BUS_FSM_ENABLED;
+    SPIHD_CHECK(atomic_compare_exchange_strong(&spihost[host_id]->fsm, &curr_sta, SPI_BUS_FSM_DISABLED), "host already disabled", ESP_ERR_INVALID_STATE);
+
+#ifdef CONFIG_PM_ENABLE
+    esp_pm_lock_release(spihost[host_id]->pm_lock);
+#endif //CONFIG_PM_ENABLE
+
+// same as above
+#if !CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
+    SPI_COMMON_RCC_CLOCK_ATOMIC() {
+        spi_ll_enable_bus_clock(host_id, false);
+    }
+#endif
     return ESP_OK;
 }
 

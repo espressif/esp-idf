@@ -44,6 +44,12 @@ typedef dma_descriptor_align4_t spi_dma_desc_t;
 #define ADDR_CPU_2_DMA(addr)   (addr)
 #endif
 
+// Status of a spi bus
+typedef enum {
+    SPI_BUS_FSM_DISABLED,               ///< Bus is disabled, clock and power is allowed to be closed.
+    SPI_BUS_FSM_ENABLED,                ///< Bus is ready to be used
+} spi_bus_fsm_t;
+
 /// Attributes of an SPI bus
 typedef struct {
     spi_bus_config_t bus_cfg;           ///< Config used to initialize the bus
