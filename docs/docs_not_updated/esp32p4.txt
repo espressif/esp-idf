@@ -52,12 +52,3 @@ api-reference/system/sleep_modes.rst
 api-reference/system/random.rst
 api-reference/system/power_management.rst
 api-reference/system/inc/power_management_esp32p4.rst
-get-started/establish-serial-connection.rst
-get-started/linux-macos-setup.rst
-get-started/linux-macos-start-project.rst
-get-started/windows-setup.rst
-get-started/start-project.rst
-get-started/flashing-troubleshooting.rst
-get-started/windows-start-project.rst
-get-started/index.rst
-get-started/windows-setup-update.rst
