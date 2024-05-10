@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -43,8 +43,6 @@ parlio_group_t *parlio_acquire_group_handle(int group_id)
         if (group) {
             new_group = true;
             s_platform.groups[group_id] = group;
-            group->group_id = group_id;
-            group->spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
             // enable APB access PARLIO registers
             periph_module_enable(parlio_periph_signals.groups[group_id].module);
             periph_module_reset(parlio_periph_signals.groups[group_id].module);
@@ -61,6 +59,8 @@ parlio_group_t *parlio_acquire_group_handle(int group_id)
     _lock_release(&s_platform.mutex);
 
     if (new_group) {
+        portMUX_INITIALIZE(&group->spinlock);
+        group->group_id = group_id;
         ESP_LOGD(TAG, "new group(%d) at %p", group_id, group);
     }
     return group;
@@ -79,11 +79,11 @@ void parlio_release_group_handle(parlio_group_t *group)
         // hal layer deinitialize
         parlio_hal_deinit(&group->hal);
         periph_module_disable(parlio_periph_signals.groups[group_id].module);
-        free(group);
     }
     _lock_release(&s_platform.mutex);
 
     if (do_deinitialize) {
+        free(group);
         ESP_LOGD(TAG, "del group(%d)", group_id);
     }
 }

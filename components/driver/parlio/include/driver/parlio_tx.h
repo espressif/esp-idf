@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -150,6 +150,9 @@ esp_err_t parlio_tx_unit_register_event_callbacks(parlio_tx_unit_handle_t tx_uni
  */
 typedef struct {
     uint32_t idle_value; /*!< The value on the data line when the parallel IO is in idle state */
+    struct {
+        uint32_t queue_nonblocking : 1; /*!< If set, when the transaction queue is full, driver will not block the thread but return directly */
+    } flags;                            /*!< Transmit specific config flags */
 } parlio_transmit_config_t;
 
 /**
