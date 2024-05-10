@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -277,6 +277,7 @@ const void * spi_flash_phys2cache(size_t phys_offs, spi_flash_mmap_memory_t memo
     mmu_target_t target = MMU_TARGET_FLASH0;
 
     __attribute__((unused)) uint32_t phys_page = phys_offs / CONFIG_MMU_PAGE_SIZE;
+#if !SOC_MMU_PER_EXT_MEM_TARGET
 #if CONFIG_SPIRAM_FETCH_INSTRUCTIONS
     if (phys_page >= instruction_flash_start_page_get() && phys_page <= instruction_flash_end_page_get()) {
         target = MMU_TARGET_PSRAM0;
@@ -290,6 +291,7 @@ const void * spi_flash_phys2cache(size_t phys_offs, spi_flash_mmap_memory_t memo
         phys_offs -= rodata_flash2spiram_offset() * CONFIG_MMU_PAGE_SIZE;
     }
 #endif
+#endif  //#if !SOC_MMU_PER_EXT_MEM_TARGET
 
     mmu_vaddr_t type = (memory == SPI_FLASH_MMAP_DATA) ? MMU_VADDR_DATA : MMU_VADDR_INSTRUCTION;
     ret = esp_mmu_paddr_to_vaddr(phys_offs, target, type, &ptr);
@@ -366,12 +368,22 @@ size_t spi_flash_cache2phys(const void *cached)
     uint32_t paddr = 0;
     mmu_target_t target = 0;
 
+#if CONFIG_SPIRAM_FLASH_LOAD_TO_PSRAM //TODO: IDF-9049
+    paddr = mmu_xip_psram_flash_vaddr_to_paddr(cached);
+    //SPI_FLASH_CACHE2PHYS_FAIL is UINT32_MAX
+    if (paddr != SPI_FLASH_CACHE2PHYS_FAIL) {
+        return paddr;
+    }
+#endif
+
     ret = esp_mmu_vaddr_to_paddr((void *)cached, &paddr, &target);
     if (ret != ESP_OK) {
         return SPI_FLASH_CACHE2PHYS_FAIL;
     }
 
     int offset = 0;
+
+#if !SOC_MMU_PER_EXT_MEM_TARGET //TODO: IDF-9049
 #if CONFIG_SPIRAM_RODATA
     if ((uint32_t)cached >= (uint32_t)&_rodata_reserved_start && (uint32_t)cached <= (uint32_t)&_rodata_reserved_end) {
         offset = rodata_flash2spiram_offset();
@@ -382,6 +394,7 @@ size_t spi_flash_cache2phys(const void *cached)
         offset = instruction_flash2spiram_offset();
     }
 #endif
+#endif  //#if !SOC_MMU_PER_EXT_MEM_TARGET
 
     return paddr + offset * CONFIG_MMU_PAGE_SIZE;
 }

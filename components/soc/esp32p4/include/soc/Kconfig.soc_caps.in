@@ -815,6 +815,10 @@ config SOC_MMU_DI_VADDR_SHARED
     bool
     default y
 
+config SOC_MMU_PER_EXT_MEM_TARGET
+    bool
+    default y
+
 config SOC_MPU_CONFIGURABLE_REGIONS_SUPPORTED
     bool
     default n

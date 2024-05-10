@@ -1,0 +1,5 @@
+[mapping:bootloader_support]
+archive: libbootloader_support.a
+entries:
+    if APP_BUILD_TYPE_RAM = n:
+        image_process (noflash)

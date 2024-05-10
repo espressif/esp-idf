@@ -82,6 +82,7 @@
 #endif // SOC_INT_CLIC_SUPPORTED
 
 #include "esp_private/esp_mmu_map_private.h"
+#include "esp_private/image_process.h"
 #if CONFIG_SPIRAM
 #include "esp_psram.h"
 #include "esp_private/mmu_psram_flash.h"
@@ -90,7 +91,6 @@
 
 #include "esp_private/spi_flash_os.h"
 #include "esp_private/mspi_timing_tuning.h"
-#include "esp_private/esp_gpio_reserve.h"
 #include "bootloader_flash_config.h"
 #include "bootloader_flash.h"
 #include "esp_private/crosscore_int.h"
@@ -532,7 +532,7 @@ void IRAM_ATTR call_start_cpu0(void)
 #if CONFIG_ESPTOOLPY_OCT_FLASH && !CONFIG_ESPTOOLPY_FLASH_MODE_AUTO_DETECT
     bool efuse_opflash_en = efuse_ll_get_flash_type();
     if (!efuse_opflash_en) {
-        ESP_EARLY_LOGE(TAG, "Octal Flash option selected, but EFUSE not configured!");
+        ESP_DRAM_LOGE(TAG, "Octal Flash option selected, but EFUSE not configured!");
         abort();
     }
 #endif
@@ -562,17 +562,23 @@ void IRAM_ATTR call_start_cpu0(void)
 
     esp_mmu_map_init();
 
+#if !CONFIG_APP_BUILD_TYPE_ELF_RAM
+#if CONFIG_SPIRAM_FLASH_LOAD_TO_PSRAM
+    ESP_ERROR_CHECK(image_process());
+#endif
+#endif
+
 #if CONFIG_SPIRAM_BOOT_INIT
     if (esp_psram_init() != ESP_OK) {
 #if CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
-        ESP_EARLY_LOGE(TAG, "Failed to init external RAM, needed for external .bss segment");
+        ESP_DRAM_LOGE(TAG, "Failed to init external RAM, needed for external .bss segment");
         abort();
 #endif
 
 #if CONFIG_SPIRAM_IGNORE_NOTFOUND
         ESP_EARLY_LOGI(TAG, "Failed to init external RAM; continuing without it.");
 #else
-        ESP_EARLY_LOGE(TAG, "Failed to init external RAM!");
+        ESP_DRAM_LOGE(TAG, "Failed to init external RAM!");
         abort();
 #endif
     }
@@ -581,15 +587,10 @@ void IRAM_ATTR call_start_cpu0(void)
     //----------------------------------Separator-----------------------------//
     /**
      * @note
-     * After this stage, you can place non-internal ram code
+     * After this stage, you can access the flash through the cache, i.e. run code which is not placed in IRAM
+     * or print string which locates on flash
      */
-
-    /* Reserve the GPIO pins */
-    uint64_t reserve_pin_mask = 0;
-    for (esp_mspi_io_t i = 0; i < ESP_MSPI_IO_MAX; i++) {
-        reserve_pin_mask |= BIT64(esp_mspi_get_io(i));
-    }
-    esp_gpio_reserve_pins(reserve_pin_mask);
+    esp_mspi_pin_reserve();
 
 #endif // !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
 
@@ -598,10 +599,6 @@ void IRAM_ATTR call_start_cpu0(void)
 #else
     ESP_EARLY_LOGI(TAG, "Multicore app");
 #endif
-
-    if (esp_efuse_check_errors() != ESP_OK) {
-        esp_restart();
-    }
 
     bootloader_init_mem();
 

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,11 +20,12 @@
 extern "C" {
 #endif
 
-///< MMU is per target
-#define MMU_LL_MMU_PER_TARGET    1
-
 #define MMU_LL_FLASH_MMU_ID      0
 #define MMU_LL_PSRAM_MMU_ID      1
+#define MMU_LL_FLASH_VADDR_TO_PSRAM_VADDR(flash_vaddr)  ((flash_vaddr) + SOC_IRAM_FLASH_PSRAM_OFFSET)
+#define MMU_LL_PSRAM_VADDR_TO_FLASH_VADDR(psram_vaddr)  ((psram_vaddr) - SOC_IRAM_FLASH_PSRAM_OFFSET)
+#define MMU_LL_END_DROM_ENTRY_VADDR                     (SOC_DRAM_FLASH_ADDRESS_HIGH - SOC_MMU_PAGE_SIZE)
+#define MMU_LL_END_DROM_ENTRY_ID                        (SOC_MMU_ENTRY_NUM - 1)
 
 /**
  * Convert MMU virtual address to linear address

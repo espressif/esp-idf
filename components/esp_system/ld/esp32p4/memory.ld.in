@@ -47,6 +47,10 @@ MEMORY
   tcm_idram_seg (RX) :               org = 0x30100000, len = 0x2000
 
 #if CONFIG_APP_BUILD_USE_FLASH_SECTIONS
+#if CONFIG_SPIRAM_FETCH_INSTRUCTIONS
+  /* PSRAM mapped instruction data */
+  irom_seg (RX) :                    org = 0x48000020, len = IDROM_SEG_SIZE - 0x20
+#else
   /* Flash mapped instruction data */
   irom_seg (RX) :                    org = 0x40000020, len = IDROM_SEG_SIZE - 0x20
 
@@ -57,6 +61,7 @@ MEMORY
    * header. Setting this offset makes it simple to meet the flash cache MMU's
    * constraint that (paddr % 64KB == vaddr % 64KB).)
    */
+#endif // CONFIG_SPIRAM_FETCH_INSTRUCTIONS
 #endif // CONFIG_APP_BUILD_USE_FLASH_SECTIONS
 
   /**
@@ -68,8 +73,13 @@ MEMORY
   sram_high (RW) :                org = SRAM_HIGH_START, len = SRAM_HIGH_SIZE
 
 #if CONFIG_APP_BUILD_USE_FLASH_SECTIONS
+#if CONFIG_SPIRAM_RODATA
+  /* PSRAM mapped constant data */
+  drom_seg (R) :                     org = 0x48000020, len = IDROM_SEG_SIZE - 0x20
+#else
   /* Flash mapped constant data */
   drom_seg (R) :                     org = 0x40000020, len = IDROM_SEG_SIZE - 0x20
+#endif // CONFIG_SPIRAM_RODATA
 
   /* (See irom_seg for meaning of 0x20 offset in the above.) */
 #endif // CONFIG_APP_BUILD_USE_FLASH_SECTIONS
