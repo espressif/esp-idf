@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -14,6 +14,13 @@
 #include "esp_task_wdt.h"
 #include "test_utils.h"
 #include "soc/rtc.h"
+
+#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && SOC_TIMER_SUPPORT_SLEEP_RETENTION
+#include "esp_sleep.h"
+#include "esp_private/esp_sleep_internal.h"
+#include "esp_private/sleep_cpu.h"
+#include "esp_private/esp_pmu.h"
+#endif
 
 #define TASK_WDT_TIMEOUT_MS     1000
 
@@ -40,6 +47,36 @@ TEST_CASE("Task WDT task timeout", "[task_wdt]")
     TEST_ASSERT_EQUAL(ESP_OK, esp_task_wdt_delete(NULL));
     TEST_ASSERT_EQUAL(ESP_OK, esp_task_wdt_deinit());
 }
+
+#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && SOC_TIMER_SUPPORT_SLEEP_RETENTION
+TEST_CASE("Task WDT task timeout after peripheral powerdown lightsleep", "[task_wdt]")
+{
+    timeout_flag = false;
+    esp_task_wdt_config_t twdt_config = {
+        .timeout_ms = TASK_WDT_TIMEOUT_MS,
+        .idle_core_mask = 0,
+        .trigger_panic = false,
+    };
+    TEST_ASSERT_EQUAL(ESP_OK, esp_task_wdt_init(&twdt_config));
+    TEST_ASSERT_EQUAL(ESP_OK, esp_task_wdt_add(NULL));
+
+    TEST_ESP_OK(sleep_cpu_configure(true));
+    esp_sleep_context_t sleep_ctx;
+    esp_sleep_set_sleep_context(&sleep_ctx);
+    esp_sleep_enable_timer_wakeup(10 * 1000);
+    esp_light_sleep_start();
+
+    TEST_ASSERT_EQUAL(PMU_SLEEP_PD_TOP, sleep_ctx.sleep_flags & PMU_SLEEP_PD_TOP);
+    TEST_ASSERT_EQUAL(0, sleep_ctx.sleep_request_result);
+
+    // Short delay to allow timeout to occur
+    esp_rom_delay_us(TASK_WDT_TIMEOUT_MS * 1000);
+    TEST_ASSERT_EQUAL(true, timeout_flag);
+    TEST_ASSERT_EQUAL(ESP_OK, esp_task_wdt_delete(NULL));
+    TEST_ASSERT_EQUAL(ESP_OK, esp_task_wdt_deinit());
+    TEST_ESP_OK(sleep_cpu_configure(false));
+}
+#endif
 
 #if SOC_MWDT_SUPPORT_XTAL
 
@@ -92,7 +129,7 @@ TEST_CASE("Task WDT inactive when no task to watch", "[task_wdt]")
     TEST_ASSERT_EQUAL(ESP_OK, esp_task_wdt_add(NULL));
     esp_rom_delay_us(TASK_WDT_TIMEOUT_MS * 1000);
     TEST_ASSERT_EQUAL(true, timeout_flag);
-    /* Remove the task we just addded and make sure the WDT is stopped*/
+    /* Remove the task we just added and make sure the WDT is stopped*/
     timeout_flag = false;
     TEST_ASSERT_EQUAL(ESP_OK, esp_task_wdt_delete(NULL));
     esp_rom_delay_us(2 * TASK_WDT_TIMEOUT_MS * 1000);
