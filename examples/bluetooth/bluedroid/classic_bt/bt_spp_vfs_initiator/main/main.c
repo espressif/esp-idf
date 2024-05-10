@@ -194,7 +194,7 @@ static void esp_spp_cb(uint16_t e, void *p)
     case ESP_SPP_VFS_REGISTER_EVT:
         if (param->vfs_register.status == ESP_SPP_SUCCESS) {
             ESP_LOGI(SPP_TAG, "ESP_SPP_VFS_REGISTER_EVT");
-            esp_bt_dev_set_device_name(EXAMPLE_DEVICE_NAME);
+            esp_bt_gap_set_device_name(EXAMPLE_DEVICE_NAME);
             esp_bt_gap_set_scan_mode(ESP_BT_CONNECTABLE, ESP_BT_GENERAL_DISCOVERABLE);
             esp_bt_gap_start_discovery(inq_mode, inq_len, inq_num_rsps);
         } else {

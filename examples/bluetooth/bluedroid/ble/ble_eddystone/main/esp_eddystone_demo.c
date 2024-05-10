@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -111,7 +111,7 @@ static void esp_gap_cb(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t* par
                         return;
                     } else {
                         // The received adv data is a correct eddystone frame packet.
-                        // Here, we get the eddystone infomation in eddystone_res, we can use the data in res to do other things.
+                        // Here, we get the eddystone information in eddystone_res, we can use the data in res to do other things.
                         // For example, just print them:
                         ESP_LOGI(DEMO_TAG, "--------Eddystone Found----------");
                         esp_log_buffer_hex("EDDYSTONE_DEMO: Device address:", scan_result->scan_rst.bda, ESP_BD_ADDR_LEN);
@@ -154,8 +154,7 @@ void esp_eddystone_appRegister(void)
 
 void esp_eddystone_init(void)
 {
-    esp_bluedroid_config_t bluedroid_cfg = BT_BLUEDROID_INIT_CONFIG_DEFAULT();
-    esp_bluedroid_init_with_cfg(&bluedroid_cfg);
+    esp_bluedroid_init();
     esp_bluedroid_enable();
     esp_eddystone_appRegister();
 }

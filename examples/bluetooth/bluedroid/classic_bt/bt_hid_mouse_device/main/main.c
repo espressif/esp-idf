@@ -431,7 +431,7 @@ void app_main(void)
     }
 
     ESP_LOGI(TAG, "setting device name");
-    esp_bt_dev_set_device_name("HID Mouse Example");
+    esp_bt_gap_set_device_name("HID Mouse Example");
 
     ESP_LOGI(TAG, "setting cod major, peripheral");
     esp_bt_cod_t cod;

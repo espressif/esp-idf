@@ -70,7 +70,7 @@ esp_err_t esp_bluedroid_disable(void);
  *            - ESP_OK : Succeed
  *            - Other  : Failed
  */
-esp_err_t esp_bluedroid_init(void) __attribute__((deprecated("Please use esp_bluedroid_init_with_cfg")));
+esp_err_t esp_bluedroid_init(void);
 
 /**
  * @brief     Init and alloc the resource for bluetooth, must be prior to every bluetooth stuff.

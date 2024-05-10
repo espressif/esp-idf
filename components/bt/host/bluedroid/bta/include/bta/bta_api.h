@@ -1720,7 +1720,7 @@ extern void BTA_DisableTestMode(void);
 ** Returns          void
 **
 *******************************************************************************/
-extern void BTA_DmSetDeviceName(const char *p_name);
+extern void BTA_DmSetDeviceName(const char *p_name, tBT_DEVICE_TYPE name_type);
 
 /*******************************************************************************
 **
@@ -1732,7 +1732,7 @@ extern void BTA_DmSetDeviceName(const char *p_name);
 ** Returns          void
 **
 *******************************************************************************/
-extern void BTA_DmGetDeviceName(tBTA_GET_DEV_NAME_CBACK *p_cback);
+extern void BTA_DmGetDeviceName(tBTA_GET_DEV_NAME_CBACK *p_cback, tBT_DEVICE_TYPE name_type);
 
 /*******************************************************************************
 **

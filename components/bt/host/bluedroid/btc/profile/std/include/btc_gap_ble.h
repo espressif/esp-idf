@@ -173,7 +173,7 @@ typedef union {
     //BTC_GAP_BLE_ACT_SET_DEV_NAME,
     struct set_dev_name_args {
 #define ESP_GAP_DEVICE_NAME_MAX (32)
-        char device_name[ESP_GAP_DEVICE_NAME_MAX + 1];
+        char *device_name;
     } set_dev_name;
 #if (BLE_42_FEATURE_SUPPORT == TRUE)
     //BTC_GAP_BLE_ACT_CFG_ADV_DATA_RAW,

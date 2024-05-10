@@ -250,11 +250,13 @@ typedef struct {
 typedef struct {
     BT_HDR              hdr;
     BD_NAME             name; /* max 248 bytes name, plus must be Null terminated */
+    tBT_DEVICE_TYPE     name_type; /* name for BLE, name for BT or name for BTDM */
 } tBTA_DM_API_SET_NAME;
 
 typedef struct {
-    BT_HDR              hdr;
+    BT_HDR                  hdr;
     tBTA_GET_DEV_NAME_CBACK *p_cback;
+    tBT_DEVICE_TYPE         name_type;
 } tBTA_DM_API_GET_NAME;
 
 #if (ESP_COEX_VSC_INCLUDED == TRUE)

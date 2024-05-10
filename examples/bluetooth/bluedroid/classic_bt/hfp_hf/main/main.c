@@ -197,7 +197,7 @@ void app_main(void)
     app_gpio_pcm_io_cfg();
 #endif
 
-    /* configure externel chip for acoustic echo cancellation */
+    /* configure external chip for acoustic echo cancellation */
 #if ACOUSTIC_ECHO_CANCELLATION_ENABLE
     app_gpio_aec_io_cfg();
 #endif /* ACOUSTIC_ECHO_CANCELLATION_ENABLE */
@@ -232,7 +232,7 @@ static void bt_hf_client_hdl_stack_evt(uint16_t event, void *p_param)
     case BT_APP_EVT_STACK_UP: {
         /* set up device name */
         char *dev_name = "ESP_HFP_HF";
-        esp_bt_dev_set_device_name(dev_name);
+        esp_bt_gap_set_device_name(dev_name);
 
         /* register GAP callback function */
         esp_bt_gap_register_callback(esp_bt_gap_cb);

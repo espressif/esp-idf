@@ -41,7 +41,7 @@ void btc_dev_call_handler(btc_msg_t *msg)
 
     switch (msg->act) {
     case BTC_DEV_ACT_SET_DEVICE_NAME:
-        BTA_DmSetDeviceName(arg->set_dev_name.device_name);
+        BTA_DmSetDeviceName(arg->set_dev_name.device_name, BT_DEVICE_TYPE_DUMO);
         break;
 #if (ESP_COEX_VSC_INCLUDED == TRUE)
     case BTC_DEV_ACT_CFG_COEX_STATUS:

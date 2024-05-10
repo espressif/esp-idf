@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -226,7 +226,7 @@ static void bt_app_gap_cb(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_param_t *pa
                 s_a2d_state = APP_AV_STATE_CONNECTING;
                 ESP_LOGI(BT_AV_TAG, "Device discovery stopped.");
                 ESP_LOGI(BT_AV_TAG, "a2dp connecting to peer: %s", s_peer_bdname);
-                /* connect source to peer device specificed by Bluetooth Device Address */
+                /* connect source to peer device specified by Bluetooth Device Address */
                 esp_a2d_source_connect(s_peer_bda);
             } else {
                 /* not discovered, continue to discover */
@@ -287,6 +287,13 @@ static void bt_app_gap_cb(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_param_t *pa
     case ESP_BT_GAP_MODE_CHG_EVT:
         ESP_LOGI(BT_AV_TAG, "ESP_BT_GAP_MODE_CHG_EVT mode: %d", param->mode_chg.mode);
         break;
+    case ESP_BT_GAP_GET_DEV_NAME_CMPL_EVT:
+        if (param->get_dev_name_cmpl.status == ESP_BT_STATUS_SUCCESS) {
+            ESP_LOGI(BT_AV_TAG, "ESP_BT_GAP_GET_DEV_NAME_CMPL_EVT device name: %s", param->get_dev_name_cmpl.name);
+        } else {
+            ESP_LOGI(BT_AV_TAG, "ESP_BT_GAP_GET_DEV_NAME_CMPL_EVT failed, state: %d", param->get_dev_name_cmpl.status);
+        }
+        break;
     /* other */
     default: {
         ESP_LOGI(BT_AV_TAG, "event: %d", event);
@@ -305,7 +312,7 @@ static void bt_av_hdl_stack_evt(uint16_t event, void *p_param)
     /* when stack up worked, this event comes */
     case BT_APP_STACK_UP_EVT: {
         char *dev_name = LOCAL_DEVICE_NAME;
-        esp_bt_dev_set_device_name(dev_name);
+        esp_bt_gap_set_device_name(dev_name);
         esp_bt_gap_register_callback(bt_app_gap_cb);
 
         esp_avrc_ct_init();
@@ -321,6 +328,7 @@ static void bt_av_hdl_stack_evt(uint16_t event, void *p_param)
 
         /* Avoid the state error of s_a2d_state caused by the connection initiated by the peer device. */
         esp_bt_gap_set_scan_mode(ESP_BT_NON_CONNECTABLE, ESP_BT_NON_DISCOVERABLE);
+        esp_bt_gap_get_device_name();
 
         ESP_LOGI(BT_AV_TAG, "Starting device discovery...");
         s_a2d_state = APP_AV_STATE_DISCOVERING;
@@ -398,7 +406,7 @@ static void bt_app_av_sm_hdlr(uint16_t event, void *param)
 static void bt_app_av_state_unconnected_hdlr(uint16_t event, void *param)
 {
     esp_a2d_cb_param_t *a2d = NULL;
-    /* handle the events of intrest in unconnected state */
+    /* handle the events of interest in unconnected state */
     switch (event) {
     case ESP_A2D_CONNECTION_STATE_EVT:
     case ESP_A2D_AUDIO_STATE_EVT:
@@ -430,7 +438,7 @@ static void bt_app_av_state_connecting_hdlr(uint16_t event, void *param)
 {
     esp_a2d_cb_param_t *a2d = NULL;
 
-    /* handle the events of intrest in connecting state */
+    /* handle the events of interest in connecting state */
     switch (event) {
     case ESP_A2D_CONNECTION_STATE_EVT: {
         a2d = (esp_a2d_cb_param_t *)(param);
@@ -497,7 +505,7 @@ static void bt_app_av_media_proc(uint16_t event, void *param)
                 s_intv_cnt = 0;
                 s_media_state = APP_AV_MEDIA_STATE_STARTED;
             } else {
-                /* not started succesfully, transfer to idle state */
+                /* not started successfully, transfer to idle state */
                 ESP_LOGI(BT_AV_TAG, "a2dp media start failed.");
                 s_media_state = APP_AV_MEDIA_STATE_IDLE;
             }
@@ -542,7 +550,7 @@ static void bt_app_av_state_connected_hdlr(uint16_t event, void *param)
 {
     esp_a2d_cb_param_t *a2d = NULL;
 
-    /* handle the events of intrest in connected state */
+    /* handle the events of interest in connected state */
     switch (event) {
     case ESP_A2D_CONNECTION_STATE_EVT: {
         a2d = (esp_a2d_cb_param_t *)(param);
@@ -560,7 +568,7 @@ static void bt_app_av_state_connected_hdlr(uint16_t event, void *param)
         break;
     }
     case ESP_A2D_AUDIO_CFG_EVT:
-        // not suppposed to occur for A2DP source
+        // not supposed to occur for A2DP source
         break;
     case ESP_A2D_MEDIA_CTRL_ACK_EVT:
     case BT_APP_HEART_BEAT_EVT: {
@@ -583,7 +591,7 @@ static void bt_app_av_state_disconnecting_hdlr(uint16_t event, void *param)
 {
     esp_a2d_cb_param_t *a2d = NULL;
 
-    /* handle the events of intrest in disconnecing state */
+    /* handle the events of interest in disconnecing state */
     switch (event) {
     case ESP_A2D_CONNECTION_STATE_EVT: {
         a2d = (esp_a2d_cb_param_t *)(param);
@@ -676,13 +684,13 @@ static void bt_av_hdl_avrc_ct_evt(uint16_t event, void *p_param)
         }
         break;
     }
-    /* when passthrough responsed, this event comes */
+    /* when passthrough responded, this event comes */
     case ESP_AVRC_CT_PASSTHROUGH_RSP_EVT: {
         ESP_LOGI(BT_RC_CT_TAG, "AVRC passthrough response: key_code 0x%x, key_state %d, rsp_code %d", rc->psth_rsp.key_code,
                     rc->psth_rsp.key_state, rc->psth_rsp.rsp_code);
         break;
     }
-    /* when metadata responsed, this event comes */
+    /* when metadata responded, this event comes */
     case ESP_AVRC_CT_METADATA_RSP_EVT: {
         ESP_LOGI(BT_RC_CT_TAG, "AVRC metadata response: attribute id 0x%x, %s", rc->meta_rsp.attr_id, rc->meta_rsp.attr_text);
         free(rc->meta_rsp.attr_text);
@@ -708,7 +716,7 @@ static void bt_av_hdl_avrc_ct_evt(uint16_t event, void *p_param)
         bt_av_volume_changed();
         break;
     }
-    /* when set absolute volume responsed, this event comes */
+    /* when set absolute volume responded, this event comes */
     case ESP_AVRC_CT_SET_ABSOLUTE_VOLUME_RSP_EVT: {
         ESP_LOGI(BT_RC_CT_TAG, "Set absolute volume response: volume %d", rc->set_volume_rsp.volume);
         break;
