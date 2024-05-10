@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2018-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -510,7 +510,7 @@ int httpd_default_recv(httpd_handle_t hd, int sockfd, char *buf, size_t buf_len,
  * @param[in] req                       Pointer to handshake request that will be handled
  * @param[in] supported_subprotocol     Pointer to the subprotocol supported by this URI
  * @return
- *  - ESP_OK                        : When handshake is sucessful
+ *  - ESP_OK                        : When handshake is successful
  *  - ESP_ERR_NOT_FOUND             : When some headers (Sec-WebSocket-*) are not found
  *  - ESP_ERR_INVALID_VERSION       : The WebSocket version is not "13"
  *  - ESP_ERR_INVALID_STATE         : Handshake was done beforehand
@@ -525,7 +525,7 @@ esp_err_t httpd_ws_respond_server_handshake(httpd_req_t *req, const char *suppor
  *
  * @param[in] req    Pointer to handshake request that will be handled
  * @return
- *  - ESP_OK                        : When handshake is sucessful
+ *  - ESP_OK                        : When handshake is successful
  *  - ESP_ERR_INVALID_ARG           : Argument is invalid (null or non-WebSocket)
  *  - ESP_ERR_INVALID_STATE         : Received only some parts of a control frame
  *  - ESP_FAIL                      : Socket failures
@@ -552,6 +552,12 @@ esp_err_t httpd_sess_trigger_close_(httpd_handle_t handle, struct sock_db *sessi
 /** End of WebSocket related functions
  * @}
  */
+
+#if CONFIG_HTTPD_SERVER_EVENT_POST_TIMEOUT == -1
+#define ESP_HTTP_SERVER_EVENT_POST_TIMEOUT portMAX_DELAY
+#else
+#define ESP_HTTP_SERVER_EVENT_POST_TIMEOUT pdMS_TO_TICKS(CONFIG_HTTPD_SERVER_EVENT_POST_TIMEOUT)
+#endif
 
 /**
  * @brief Function to dispatch events in default event loop

@@ -42,7 +42,7 @@ ESP_EVENT_DEFINE_BASE(ESP_HTTP_SERVER_EVENT);
 
 void esp_http_server_dispatch_event(int32_t event_id, const void* event_data, size_t event_data_size)
 {
-    esp_err_t err = esp_event_post(ESP_HTTP_SERVER_EVENT, event_id, event_data, event_data_size, portMAX_DELAY);
+    esp_err_t err = esp_event_post(ESP_HTTP_SERVER_EVENT, event_id, event_data, event_data_size, ESP_HTTP_SERVER_EVENT_POST_TIMEOUT);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Failed to post esp_http_server event: %s", esp_err_to_name(err));
     }
@@ -55,7 +55,7 @@ static esp_err_t httpd_accept_conn(struct httpd_data *hd, int listen_fd)
         if (!httpd_is_sess_available(hd)) {
             /* Queue asynchronous closure of the least recently used session */
             return httpd_sess_close_lru(hd);
-            /* Returning from this allowes the main server thread to process
+            /* Returning from this allows the main server thread to process
              * the queued asynchronous control message for closing LRU session.
              * Since connection request hasn't been addressed yet using accept()
              * therefore httpd_accept_conn() will be called again, but this time
