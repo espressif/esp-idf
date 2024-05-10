@@ -81,6 +81,7 @@
 #define SOC_MODEM_CLOCK_SUPPORTED       1     // TODO: [ESP32C5] IDF-8845 need check, it is opened because pll has been used on beta3
 #define SOC_BT_SUPPORTED                1
 #define SOC_PHY_SUPPORTED               1
+// #define SOC_PM_SUPPORTED                1  // TODO: [ESP32C5] IDF-8643
 
 /*-------------------------- XTAL CAPS ---------------------------------------*/
 #define SOC_XTAL_SUPPORT_40M            1

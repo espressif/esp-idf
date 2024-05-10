@@ -72,6 +72,7 @@
 // #define SOC_KEY_MANAGER_SUPPORTED       1  // TODO: [ESP32C5] IDF-8621
 // #define SOC_HUK_SUPPORTED               1  // TODO: [ESP32C5] IDF-8617
 // #define SOC_MODEM_CLOCK_SUPPORTED       1  // TODO: [ESP32C5] IDF-8845
+// #define SOC_PM_SUPPORTED                1  // TODO: [ESP32C5] IDF-8643
 
 /*-------------------------- XTAL CAPS ---------------------------------------*/
 #define SOC_XTAL_SUPPORT_40M            1
