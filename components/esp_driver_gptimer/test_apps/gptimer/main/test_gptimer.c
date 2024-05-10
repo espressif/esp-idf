@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,6 +12,15 @@
 #include "driver/gptimer.h"
 #include "soc/soc_caps.h"
 #include "esp_attr.h"
+
+#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && SOC_TIMER_SUPPORT_SLEEP_RETENTION
+#include "esp_random.h"
+#include "esp_rom_uart.h"
+#include "esp_sleep.h"
+#include "esp_private/esp_sleep_internal.h"
+#include "esp_private/sleep_cpu.h"
+#include "esp_private/esp_pmu.h"
+#endif
 
 #if CONFIG_GPTIMER_ISR_IRAM_SAFE
 #define TEST_ALARM_CALLBACK_ATTR IRAM_ATTR
@@ -596,3 +605,82 @@ TEST_CASE("gptimer_trig_alarm_with_old_count", "[gptimer]")
     TEST_ESP_OK(gptimer_disable(timer));
     TEST_ESP_OK(gptimer_del_timer(timer));
 }
+
+#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && SOC_TIMER_SUPPORT_SLEEP_RETENTION
+static gptimer_handle_t timers[SOC_TIMER_GROUP_TOTAL_TIMERS];
+static uint32_t timer_resolution_hz[SOC_TIMER_GROUP_TOTAL_TIMERS];
+
+static void test_gptimer_retention(gptimer_config_t *timer_config)
+{
+    for (int i = 0; i < SOC_TIMER_GROUP_TOTAL_TIMERS; i++) {
+        TEST_ESP_OK(gptimer_new_timer(timer_config, &timers[i]));
+        TEST_ESP_OK(gptimer_get_resolution(timers[i], &timer_resolution_hz[i]));
+
+        unsigned long long count_start_value = 0, count_end_value = 0;
+
+        // Let gptimer run for a while
+        TEST_ESP_OK(gptimer_enable(timers[i]));
+        TEST_ESP_OK(gptimer_start(timers[i]));
+        vTaskDelay((esp_random() % 500) / portTICK_PERIOD_MS);
+        TEST_ESP_OK(gptimer_stop(timers[i]));
+        TEST_ESP_OK(gptimer_disable(timers[i]));
+        TEST_ESP_OK(gptimer_get_raw_count(timers[i], &count_start_value));
+
+        esp_sleep_context_t sleep_ctx;
+        esp_sleep_set_sleep_context(&sleep_ctx);
+        TEST_ESP_OK(sleep_cpu_configure(true));
+        esp_rom_output_tx_wait_idle(0);
+        esp_sleep_enable_timer_wakeup(50 * 1000);
+        esp_light_sleep_start();
+
+        if (timer_config->flags.backup_before_sleep) {
+            TEST_ASSERT_EQUAL(PMU_SLEEP_PD_TOP, sleep_ctx.sleep_flags & PMU_SLEEP_PD_TOP);
+        } else {
+            TEST_ASSERT_EQUAL(0, sleep_ctx.sleep_flags & PMU_SLEEP_PD_TOP);
+        }
+
+        TEST_ASSERT_EQUAL(0, sleep_ctx.sleep_request_result);
+
+        TEST_ESP_OK(gptimer_enable(timers[i]));
+        TEST_ESP_OK(gptimer_start(timers[i]));
+
+        uint32_t random_time_ms = 500 + esp_random() % 2000;
+        vTaskDelay(random_time_ms / portTICK_PERIOD_MS);
+        TEST_ESP_OK(gptimer_get_raw_count(timers[i], &count_end_value));
+
+        // Error tolerance is 2%
+        TEST_ASSERT_UINT_WITHIN(random_time_ms / 50, random_time_ms, 1000 * (count_end_value - count_start_value) / (unsigned long long)timer_resolution_hz[i]);
+
+        TEST_ESP_OK(gptimer_stop(timers[i]));
+        TEST_ESP_OK(gptimer_disable(timers[i]));
+        TEST_ESP_OK(gptimer_del_timer(timers[i]));
+        TEST_ESP_OK(sleep_cpu_configure(false));
+    }
+}
+
+TEST_CASE("gptimer context kept after peripheral powerdown lightsleep with backup_before_sleep enable", "[gptimer]")
+{
+    printf("install gptimer driver\r\n");
+    gptimer_config_t timer_config = {
+        .resolution_hz = 10 * 1000, // 10KHz, 1 tick = 0.1ms
+        .clk_src = GPTIMER_CLK_SRC_DEFAULT,
+        .direction = GPTIMER_COUNT_UP,
+        .flags.backup_before_sleep = true
+    };
+
+    test_gptimer_retention(&timer_config);
+}
+
+TEST_CASE("gptimer context kept after peripheral powerdown lightsleep with backup_before_sleep disable", "[gptimer]")
+{
+    printf("install gptimer driver\r\n");
+    gptimer_config_t timer_config = {
+        .resolution_hz = 10 * 1000, // 10KHz, 1 tick = 0.1ms
+        .clk_src = GPTIMER_CLK_SRC_DEFAULT,
+        .direction = GPTIMER_COUNT_UP,
+        .flags.backup_before_sleep = false
+    };
+
+    test_gptimer_retention(&timer_config);
+}
+#endif
