@@ -88,6 +88,9 @@ ESP-IDF 已支持使用 `FreeRTOS POSIX/Linux 模拟器 <https://www.freertos.or
    * - driver
      - 是
      - 否
+   * - esp_app_format
+     - 否
+     - 是
    * - esp_common
      - 否
      - 是

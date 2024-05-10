@@ -11,9 +11,13 @@
 #include "sdkconfig.h"
 
 #include "esp_log.h"
+
+// startup_internal.h is necessary for startup function definition, which does not exist on Linux (TODO: IDF-9950)
+#if !CONFIG_IDF_TARGET_LINUX
 #include "esp_private/startup_internal.h"
 
 static const char *TAG = "app_init";
+#endif
 
 // Application version info
 const __attribute__((weak)) __attribute__((section(".rodata_desc")))  esp_app_desc_t esp_app_desc = {
@@ -30,6 +34,11 @@ const __attribute__((weak)) __attribute__((section(".rodata_desc")))  esp_app_de
     .project_name = PROJECT_NAME,
 #endif
     .idf_ver = IDF_VER,
+
+// On Linux we just initialize the hash to some known value for testing
+#if CONFIG_IDF_TARGET_LINUX
+    .app_elf_sha256 = { 0xDE, 0xAD, 0xBE, 0xEF, 0x47, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1A, 0x1B},
+#endif
 
 #ifdef CONFIG_BOOTLOADER_APP_SECURE_VERSION
     .secure_version = CONFIG_BOOTLOADER_APP_SECURE_VERSION,
@@ -100,6 +109,9 @@ int esp_app_get_elf_sha256(char* dst, size_t size)
     return n;
 }
 
+// startup function definition and execution does not exist on the Linux target
+// (TODO: IDF-9950)
+#if !CONFIG_IDF_TARGET_LINUX
 ESP_SYSTEM_INIT_FN(init_show_app_info, CORE, BIT(0), 20)
 {
     // Load the current ELF SHA256
@@ -127,3 +139,4 @@ ESP_SYSTEM_INIT_FN(init_show_app_info, CORE, BIT(0), 20)
     }
     return ESP_OK;
 }
+#endif
