@@ -11,7 +11,7 @@ import typing as t
 from functools import cached_property
 from pathlib import Path
 
-IDF_PATH = os.path.abspath(os.getenv('IDF_PATH', os.path.join(os.path.dirname(__file__), '..', '..')))
+IDF_PATH: str = os.path.abspath(os.getenv('IDF_PATH', os.path.join(os.path.dirname(__file__), '..', '..')))
 
 
 def get_submodule_dirs(full_path: bool = False) -> t.List[str]:

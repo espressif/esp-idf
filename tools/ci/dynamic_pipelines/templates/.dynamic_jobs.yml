@@ -60,7 +60,7 @@
   artifacts:
     paths:
       - XUNIT_RESULT*.xml
-      - pytest_embedded_log/
+      - pytest-embedded/
 # Child pipeline reports won't be collected in the main one
 # https://gitlab.com/groups/gitlab-org/-/epics/8205
 #    reports:

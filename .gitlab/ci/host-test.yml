@@ -298,7 +298,7 @@ test_pytest_qemu:
   artifacts:
     paths:
       - XUNIT_RESULT.xml
-      - pytest_embedded_log/
+      - pytest-embedded/
     reports:
       junit: XUNIT_RESULT.xml
   allow_failure: true # IDFCI-1752
@@ -332,7 +332,7 @@ test_pytest_linux:
   artifacts:
     paths:
       - XUNIT_RESULT.xml
-      - pytest_embedded_log/
+      - pytest-embedded/
       - "**/build*/build_log.txt"
     reports:
       junit: XUNIT_RESULT.xml
