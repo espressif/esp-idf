@@ -157,7 +157,7 @@ esp_err_t esp_ota_begin(const esp_partition_t *partition, size_t image_size, esp
         }
     }
 
-    new_entry = (ota_ops_entry_t *) calloc(sizeof(ota_ops_entry_t), 1);
+    new_entry = (ota_ops_entry_t *) calloc(1, sizeof(ota_ops_entry_t));
     if (new_entry == NULL) {
         return ESP_ERR_NO_MEM;
     }

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2018-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -28,7 +28,7 @@ on B. Note that this goes for every 32-byte cache line: this implies that if a p
 A, the write to Y may show up before the write to X does.
 
 It gets even worse when both A and B are written: theoretically, a write to a 32-byte cache line in A can be entirely
-undone because of a write to a different addres in B that happens to be in the same 32-byte cache line.
+undone because of a write to a different address in B that happens to be in the same 32-byte cache line.
 
 Because of these reasons, we do not allow double mappings at all. This, however, has other implications that make
 supporting ranges not really useful. Because the lack of double mappings, applications will need to do their own
@@ -153,8 +153,8 @@ void __attribute__((constructor)) esp_himem_init(void)
     int paddr_end = maxram;
     s_ramblockcnt = ((paddr_end - paddr_start) / CACHE_BLOCKSIZE);
     //Allocate data structures
-    s_ram_descriptor = calloc(sizeof(ramblock_t), s_ramblockcnt);
-    s_range_descriptor = calloc(sizeof(rangeblock_t), SPIRAM_BANKSWITCH_RESERVE);
+    s_ram_descriptor = calloc(s_ramblockcnt, sizeof(ramblock_t));
+    s_range_descriptor = calloc(SPIRAM_BANKSWITCH_RESERVE, sizeof(rangeblock_t));
     if (s_ram_descriptor == NULL || s_range_descriptor == NULL) {
         ESP_EARLY_LOGE(TAG, "Cannot allocate memory for meta info. Not initializing!");
         free(s_ram_descriptor);
@@ -195,11 +195,11 @@ esp_err_t esp_himem_alloc(size_t size, esp_himem_handle_t *handle_out)
         return ESP_ERR_INVALID_SIZE;
     }
     int blocks = size / CACHE_BLOCKSIZE;
-    esp_himem_ramdata_t *r = calloc(sizeof(esp_himem_ramdata_t), 1);
+    esp_himem_ramdata_t *r = calloc(1, sizeof(esp_himem_ramdata_t));
     if (!r) {
         goto nomem;
     }
-    r->block = calloc(sizeof(uint16_t), blocks);
+    r->block = calloc(blocks, sizeof(uint16_t));
     if (!r->block) {
         goto nomem;
     }
@@ -245,7 +245,7 @@ esp_err_t esp_himem_alloc_map_range(size_t size, esp_himem_rangehandle_t *handle
     ESP_RETURN_ON_FALSE(s_ram_descriptor != NULL, ESP_ERR_INVALID_STATE, TAG, "Himem not available!");
     ESP_RETURN_ON_FALSE(size % CACHE_BLOCKSIZE == 0, ESP_ERR_INVALID_SIZE, TAG, "requested size not aligned to blocksize");
     int blocks = size / CACHE_BLOCKSIZE;
-    esp_himem_rangedata_t *r = calloc(sizeof(esp_himem_rangedata_t), 1);
+    esp_himem_rangedata_t *r = calloc(1, sizeof(esp_himem_rangedata_t));
     if (!r) {
         return ESP_ERR_NO_MEM;
     }
@@ -338,7 +338,7 @@ esp_err_t esp_himem_map(esp_himem_handle_t handle, esp_himem_rangehandle_t range
 esp_err_t esp_himem_unmap(esp_himem_rangehandle_t range, void *ptr, size_t len)
 {
     //Note: doesn't actually unmap, just clears cache and marks blocks as unmapped.
-    //Future optimization: could actually lazy-unmap here: essentially, do nothing and only clear the cache when we re-use
+    //Future optimization: could actually lazy-unmap here: essentially, do nothing and only clear the cache when we reuse
     //the block for a different physical address.
     int range_offset = (uint32_t)ptr - VIRT_HIMEM_RANGE_START;
     int range_block = (range_offset / CACHE_BLOCKSIZE) - range->block_start;

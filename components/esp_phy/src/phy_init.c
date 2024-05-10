@@ -820,7 +820,7 @@ void esp_phy_load_cal_and_init(void)
 #endif
 
     esp_phy_calibration_data_t* cal_data =
-            (esp_phy_calibration_data_t*) calloc(sizeof(esp_phy_calibration_data_t), 1);
+            (esp_phy_calibration_data_t*) calloc(1, sizeof(esp_phy_calibration_data_t));
     if (cal_data == NULL) {
         ESP_LOGE(TAG, "failed to allocate memory for RF calibration data");
         abort();
