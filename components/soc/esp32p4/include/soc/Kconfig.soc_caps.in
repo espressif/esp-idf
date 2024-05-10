@@ -263,6 +263,10 @@ config SOC_DEEP_SLEEP_SUPPORTED
     bool
     default y
 
+config SOC_PM_SUPPORTED
+    bool
+    default y
+
 config SOC_XTAL_SUPPORT_40M
     bool
     default y

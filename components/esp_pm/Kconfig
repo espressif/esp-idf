@@ -2,8 +2,7 @@ menu "Power Management"
     config PM_ENABLE
         bool "Support for power management"
         # SMP FreeRTOS currently does not support power management IDF-4997
-        # Power Management is not supported on ESP32C5 MP IDF-8643
-        depends on (!FREERTOS_SMP && !IDF_TARGET_ESP32C5) || __DOXYGEN__
+        depends on (!FREERTOS_SMP && SOC_PM_SUPPORTED) || __DOXYGEN__
         default n
         help
             If enabled, application is compiled with support for power management.
