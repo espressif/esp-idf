@@ -1,8 +1,6 @@
-# SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-
 # pylint: disable=W0621  # redefined-outer-name
-
 # This file is a pytest root configuration file and provide the following functionalities:
 # 1. Defines a few fixtures that could be used under the whole project.
 # 2. Defines a few hook functions.
@@ -12,7 +10,6 @@
 #
 # This is an experimental feature, and if you found any bug or have any question, please report to
 # https://github.com/espressif/pytest-embedded/issues
-
 import logging
 import os
 import re
@@ -20,10 +17,14 @@ import sys
 import xml.etree.ElementTree as ET
 from datetime import datetime
 from fnmatch import fnmatch
-from typing import Callable, List, Optional, Tuple
+from typing import Callable
+from typing import List
+from typing import Optional
+from typing import Tuple
 
 import pytest
-from _pytest.config import Config, ExitCode
+from _pytest.config import Config
+from _pytest.config import ExitCode
 from _pytest.fixtures import FixtureRequest
 from _pytest.main import Session
 from _pytest.nodes import Item
@@ -31,7 +32,8 @@ from _pytest.python import Function
 from _pytest.reports import TestReport
 from _pytest.runner import CallInfo
 from _pytest.terminal import TerminalReporter
-from pytest_embedded.plugin import multi_dut_argument, multi_dut_fixture
+from pytest_embedded.plugin import multi_dut_argument
+from pytest_embedded.plugin import multi_dut_fixture
 from pytest_embedded.utils import find_by_suffix
 from pytest_embedded_idf.dut import IdfDut
 
@@ -138,6 +140,7 @@ ENV_MARKERS = {
     'generic_multi_device': 'generic multiple devices whose corresponding gpio pins are connected to each other.',
     'twai_network': 'multiple runners form a TWAI network.',
     'sdio_master_slave': 'Test sdio multi board.',
+    'usj_device': 'Test usb_serial_jtag and usb_serial_jtag is used as serial only (not console)',
 }
 
 

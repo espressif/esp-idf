@@ -288,6 +288,14 @@ examples/peripherals/usb:
   disable:
     - if: SOC_USB_OTG_SUPPORTED != 1
 
+examples/peripherals/usb_serial_jtag/usb_serial_jtag_echo:
+  disable:
+    - if: SOC_USB_SERIAL_JTAG_SUPPORTED != 1
+  disable_test:
+    - if: IDF_TARGET in ["esp32s3", "esp32c3", "esp32h2"]
+      temporary: true
+      reason: lack of runners. Hardware is similar, test on one target is enough currently.
+
 examples/peripherals/wave_gen:
   enable:
     - if: IDF_TARGET == "esp32"
