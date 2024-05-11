@@ -84,17 +84,18 @@ Supported since ESP-IDF v4.4.
 
 ### ESP32-C2 & ESP8684
 
-#### v1.0
+#### v1.0, v1.1
 
 Supported since ESP-IDF v5.0.
 
-#### v1.1
-
-To be added.
-
 #### v1.2
 
-To be added.
+| Release branch         | Recommended | Required |
+|------------------------|-------------|----------|
+| release/v5.0           | v5.0.7+     | v5.0     |
+| release/v5.1           | v5.1.4+     | v5.1     |
+| release/v5.2           | v5.2.2+     | v5.2     |
+| release/v5.3 and above | v5.3+       | v5.3     |
 
 ### ESP32-C6
 
