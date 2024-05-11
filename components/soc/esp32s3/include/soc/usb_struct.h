@@ -1,26 +1,40 @@
-// Copyright 2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #pragma once
 
 #include <stdint.h>
-#include "usb_types.h"
 
-#include <stdint.h>
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/* USB IN EP Register block type */
+typedef struct usb_in_ep_reg {
+    volatile uint32_t diepctl;
+    uint32_t reserved;
+    volatile uint32_t diepint;
+    uint32_t reserved1;
+    volatile uint32_t dieptsiz;
+    volatile uint32_t diepdma;
+    volatile uint32_t dtxfsts;
+    uint32_t reserved2;
+} usb_in_endpoint_t;
+
+/* USB OUT EP Register block type */
+typedef struct usb_out_ep_reg {
+    volatile uint32_t doepctl;
+    uint32_t reserved;
+    volatile uint32_t doepint;
+    uint32_t reserved1;
+    volatile uint32_t doeptsiz;
+    volatile uint32_t doepdma;
+    uint32_t reserved2;
+    uint32_t reserved3;
+} usb_out_endpoint_t;
 
 typedef struct usb_reg {
     volatile uint32_t gotgctl;              // 0x0000 OTG Control and Status Register
@@ -83,10 +97,10 @@ typedef struct usb_reg {
     volatile uint32_t dtknqr4_fifoemptymsk; // 0x0834 Device IN Endpoint FIFO Empty Interrupt Mask register
     uint32_t reserved_0x0838_0x0900[50];    // 0x0838 to 0x0900
     // Input Endpoints
-    usb_in_endpoint_t in_ep_reg[USB_IN_EP_NUM];     // 0x0900 to 0x09e0 IN EP registers
+    usb_in_endpoint_t in_ep_reg[7];         // 0x0900 to 0x09e0 IN EP registers
     uint32_t reserved_0x09e0_0x0b00[72];    // 0x09e0 to 0x0b00
     // Output Endpoints
-    usb_out_endpoint_t out_ep_reg[USB_OUT_EP_NUM];  // 0x0b00 to 0x0be0 OUT EP registers
+    usb_out_endpoint_t out_ep_reg[7];       // 0x0b00 to 0x0be0 OUT EP registers
     uint32_t reserved_0x0be0_0x0d00[72];    // 0x0be0 to 0x0d00
     uint32_t reserved_0x0d00_0x0e00[64];    // 0x0d00 to 0x0e00
     /**

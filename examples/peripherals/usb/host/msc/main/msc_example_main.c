@@ -18,7 +18,6 @@
 #include "ffconf.h"
 #include "esp_vfs.h"
 #include "errno.h"
-#include "hal/usb_hal.h"
 #include "driver/gpio.h"
 #include <esp_vfs_fat.h>
 
