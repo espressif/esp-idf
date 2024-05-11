@@ -183,6 +183,10 @@ config SOC_LP_PERIPH_SHARE_INTERRUPT
     bool
     default y
 
+config SOC_PM_SUPPORTED
+    bool
+    default y
+
 config SOC_XTAL_SUPPORT_40M
     bool
     default y

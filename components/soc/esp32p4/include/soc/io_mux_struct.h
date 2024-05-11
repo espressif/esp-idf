@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,7 +11,7 @@ extern "C" {
 #endif
 
 /** Type of GPIO register
- *  IOMUX gpio configuration register
+ *  IO MUX gpio configuration register
  */
 typedef union {
     struct {
@@ -36,7 +36,7 @@ typedef union {
          */
         uint32_t mcu_ie:1;
         /** mcu_drv : R/W; bitpos: [5:6]; default: 0;
-         *  select drive strenth on sleep mode
+         *  select drive strength on sleep mode
          */
         uint32_t mcu_drv:2;
         /** fun_wpd : R/W; bitpos: [7]; default: 0;
@@ -52,7 +52,7 @@ typedef union {
          */
         uint32_t fun_ie:1;
         /** fun_drv : R/W; bitpos: [10:11]; default: 2;
-         *  select drive strenth, 0:5mA, 1:10mA, 2:20mA, 3:40mA
+         *  select drive strength, 0:5mA, 1:10mA, 2:20mA, 3:40mA
          */
         uint32_t fun_drv:2;
         /** mcu_sel : R/W; bitpos: [12:14]; default: 0;
@@ -66,10 +66,10 @@ typedef union {
         uint32_t reserved16 :16;
     };
     uint32_t val;
-} iomux_gpio_reg_t;
+} io_mux_gpio_reg_t;
 
 /** Type of date register
- *  IOMUX version register
+ *  IO_MUX version register
  */
 typedef union {
     struct {
@@ -80,20 +80,20 @@ typedef union {
         uint32_t reserved_28:4;
     };
     uint32_t val;
-} iomux_date_reg_t;
+} io_mux_date_reg_t;
 
 
-typedef struct iomux_dev_t {
+typedef struct io_mux_dev_t {
     uint32_t reserved_0;
-    volatile iomux_gpio_reg_t gpio[57];
+    volatile io_mux_gpio_reg_t gpio[57];
     uint32_t reserved_e8[7];
-    volatile iomux_date_reg_t date;
-} iomux_dev_t;
+    volatile io_mux_date_reg_t date;
+} io_mux_dev_t;
 
-extern iomux_dev_t IOMUX;
+extern io_mux_dev_t IO_MUX;
 
 #ifndef __cplusplus
-_Static_assert(sizeof(iomux_dev_t) == 0x108, "Invalid size of iomux_dev_t structure");
+_Static_assert(sizeof(io_mux_dev_t) == 0x108, "Invalid size of io_mux_dev_t structure");
 #endif
 
 #ifdef __cplusplus

@@ -74,6 +74,7 @@
 // #define SOC_PAU_SUPPORTED               0
 // #define SOC_LP_I2C_SUPPORTED            0    //TODO: [ESP32C61] IDF-9330, IDF-9337
 // #define SOC_ULP_LP_UART_SUPPORTED       0    //TODO: [ESP32C61] IDF-9329, IDF-9341
+// #define SOC_PM_SUPPORTED                1
 
 /*-------------------------- XTAL CAPS ---------------------------------------*/
 #define SOC_XTAL_SUPPORT_40M            1
