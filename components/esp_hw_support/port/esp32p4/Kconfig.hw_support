@@ -11,11 +11,14 @@ choice ESP32P4_REV_MIN
 
     config ESP32P4_REV_MIN_0
         bool "Rev v0.0"
+    config ESP32P4_REV_MIN_1
+        bool "Rev v0.1"
 endchoice
 
 config ESP32P4_REV_MIN_FULL
     int
     default 0 if ESP32P4_REV_MIN_0
+    default 1 if ESP32P4_REV_MIN_1
 
 config ESP_REV_MIN_FULL
     int
