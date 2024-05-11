@@ -115,7 +115,7 @@ esp_err_t esp_isp_new_af_controller(isp_proc_handle_t isp_proc, const esp_isp_af
 
     // Register the AF ISR
     uint32_t intr_st_reg_addr = isp_ll_get_intr_status_reg_addr(isp_proc->hal.hw);
-    int intr_priority = af_config->intr_priority > 0 ? af_config->intr_priority & (BIT(8) - 1) : ESP_INTR_FLAG_LOWMED;
+    int intr_priority = af_config->intr_priority > 0 && af_config->intr_priority <= 7 ? BIT(af_config->intr_priority) : ESP_INTR_FLAG_LOWMED;
     ESP_GOTO_ON_ERROR(esp_intr_alloc_intrstatus(isp_hw_info.instances[isp_proc->proc_id].irq, ISP_INTR_ALLOC_FLAGS | intr_priority, intr_st_reg_addr, ISP_LL_EVENT_AF_MASK,
                                                 s_isp_af_default_isr, af_ctlr, &af_ctlr->intr_handle), err2, TAG, "allocate interrupt failed");
 
