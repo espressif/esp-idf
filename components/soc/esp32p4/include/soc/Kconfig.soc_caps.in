@@ -63,6 +63,10 @@ config SOC_ETM_SUPPORTED
     bool
     default y
 
+config SOC_PARLIO_SUPPORTED
+    bool
+    default y
+
 config SOC_ASYNC_MEMCPY_SUPPORTED
     bool
     default y
@@ -986,6 +990,10 @@ config SOC_PARLIO_TX_UNIT_MAX_DATA_WIDTH
 config SOC_PARLIO_RX_UNIT_MAX_DATA_WIDTH
     int
     default 16
+
+config SOC_PARLIO_RX_CLK_SUPPORT_OUTPUT
+    bool
+    default y
 
 config SOC_PARLIO_TX_SIZE_BY_DMA
     bool
