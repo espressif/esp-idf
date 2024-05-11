@@ -445,9 +445,22 @@ static void regdma_link_update_stats_wrapper(void *link, int entry, int depth)
     regdma_link_update_stats(regdma_link_get_stats(link), entry, depth);
 }
 
+static void regdma_link_iterator(void *link, int entry, void (*hook)(void *, int, int))
+{
+    assert(entry < REGDMA_LINK_ENTRY_NUM);
+
+    int iter = 0;
+    while (link) {
+        if (hook) {
+            (*hook)(link, entry, iter++);
+        }
+        link = regdma_link_get_next(link, entry);
+    }
+}
+
 void regdma_link_stats(void *link, int entry)
 {
-    regdma_link_recursive_impl(link, entry, 0, regdma_link_update_stats_wrapper);
+    regdma_link_iterator(link, entry, regdma_link_update_stats_wrapper);
 }
 
 static void regdma_link_destroy_wrapper(void *link, int entry, int depth)
