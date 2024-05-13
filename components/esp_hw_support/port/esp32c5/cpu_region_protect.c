@@ -70,7 +70,13 @@ static void esp_cpu_configure_invalid_regions(void)
 void esp_cpu_configure_region_protection(void)
 {
     // ROM has configured the MSPI region with RX permission, we should add W attribute for psram
-    PMA_ENTRY_SET_NAPOT(0, SOC_IROM_LOW, (SOC_IROM_HIGH - SOC_IROM_LOW), PMA_NAPOT | PMA_L | PMA_EN | PMA_R | PMA_W | PMA_X);
+    PMA_ENTRY_SET_NAPOT(0, SOC_IROM_LOW, (SOC_IROM_HIGH - SOC_IROM_LOW), PMA_NAPOT | PMA_EN | PMA_R | PMA_W | PMA_X);
+
+    // Configure just the area around 0x0 for now so that we at least get exceptions for
+    // writes/reads to NULL pointers, as well as code that relies on writes to 0x0
+    // to abort/assert
+    PMA_ENTRY_SET_NAPOT(1, 0, SOC_DEBUG_LOW, PMA_NAPOT | PMA_EN);
+
     return;
     /* Notes on implementation:
      *
