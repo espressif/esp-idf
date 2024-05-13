@@ -27,7 +27,7 @@ TEST_CASE("lcd_rgb_panel_yuv422_conversion", "[lcd]")
     esp_lcd_panel_handle_t panel_handle = NULL;
     esp_lcd_rgb_panel_config_t panel_config = {
         .data_width = 16,
-        .psram_trans_align = 64,
+        .dma_burst_size = 64,
         .bits_per_pixel = 16, // YUV422: 16bits per pixel
         .clk_src = LCD_CLK_SRC_DEFAULT,
         .disp_gpio_num = TEST_LCD_DISP_EN_GPIO,
