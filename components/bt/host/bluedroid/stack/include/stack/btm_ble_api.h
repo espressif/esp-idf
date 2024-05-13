@@ -1002,6 +1002,8 @@ typedef void (tBTM_START_STOP_ADV_CMPL_CBACK) (UINT8 status);
 
 typedef void (tBTM_UPDATE_DUPLICATE_EXCEPTIONAL_LIST_CMPL_CBACK) (tBTM_STATUS status, uint8_t subcode, uint32_t length, uint8_t *device_info);
 typedef void (tBTM_CLEAR_ADV_CMPL_CBACK) (UINT8 status);
+typedef void (tBTM_SET_PRIVACY_MODE_CMPL_CBACK) (tBTM_STATUS status);
+
 #if (BLE_50_FEATURE_SUPPORT == TRUE)
 #define    BTM_BLE_5_GAP_READ_PHY_COMPLETE_EVT                     1
 #define    BTM_BLE_5_GAP_SET_PREFERED_DEFAULT_PHY_COMPLETE_EVT     2
@@ -1044,7 +1046,8 @@ typedef void (tBTM_CLEAR_ADV_CMPL_CBACK) (UINT8 status);
 #define    BTM_BLE_GAP_SET_PAST_PARAMS_COMPLETE_EVT                38
 #define    BTM_BLE_GAP_PERIODIC_ADV_SYNC_TRANS_RECV_EVT            39
 #endif // #if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
-#define    BTM_BLE_5_GAP_UNKNOWN_EVT                               40
+#define    BTM_BLE_GAP_SET_PRIVACY_MODE_COMPLETE_EVT               40
+#define    BTM_BLE_5_GAP_UNKNOWN_EVT                               41
 typedef UINT8 tBTM_BLE_5_GAP_EVENT;
 
 #define BTM_BLE_EXT_ADV_DATA_COMPLETE          0x00
@@ -2684,6 +2687,25 @@ BOOLEAN BTM_BleAddDevToResolvingList(BD_ADDR addr,
                                       uint8_t addr_type,
                                       uint8_t irk[],
                                       tBTM_ADD_DEV_TO_RESOLVING_LIST_CMPL_CBACK *p_add_dev_to_resolving_list_callback);
+
+/*******************************************************************************
+**
+** Function         BTM_BleSetPrivacyMode
+**
+** Description      This function is called to set the privacy mode of device in resolving list
+**
+** Parameters       addr_type - The address type of the device in resolving list (public or random).
+**                  addr - The address of the device in resolving list.
+**                  privacy_mode - The privacy mode (network or device) of the device.
+**                  p_callback - Callback function to be called when the operation is completed.
+**
+** Returns          TRUE if the operation was successful, otherwise FALSE.
+**
+*******************************************************************************/
+BOOLEAN BTM_BleSetPrivacyMode(UINT8 addr_type,
+                              BD_ADDR bd_addr,
+                              UINT8 privacy_mode,
+                              tBTM_SET_PRIVACY_MODE_CMPL_CBACK *p_callback);
 
 /*
 #ifdef __cplusplus
