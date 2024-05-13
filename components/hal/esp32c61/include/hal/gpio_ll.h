@@ -57,15 +57,15 @@ static inline void gpio_ll_get_io_config(gpio_dev_t *hw, uint32_t gpio_num,
                                          bool *pu, bool *pd, bool *ie, bool *oe, bool *od, uint32_t *drv,
                                          uint32_t *fun_sel, uint32_t *sig_out, bool *slp_sel)
 {
-    *pu = IOMUX.gpion[gpio_num].gpion_fun_wpu;
-    *pd = IOMUX.gpion[gpio_num].gpion_fun_wpd;
-    *ie = IOMUX.gpion[gpio_num].gpion_fun_ie;
+    *pu = IO_MUX.gpion[gpio_num].gpion_fun_wpu;
+    *pd = IO_MUX.gpion[gpio_num].gpion_fun_wpd;
+    *ie = IO_MUX.gpion[gpio_num].gpion_fun_ie;
     *oe = (hw->enable.val & (1 << gpio_num)) >> gpio_num;
     *od = hw->pinn[gpio_num].pinn_pad_driver;
-    *drv = IOMUX.gpion[gpio_num].gpion_fun_drv;
-    *fun_sel = IOMUX.gpion[gpio_num].gpion_mcu_sel;
+    *drv = IO_MUX.gpion[gpio_num].gpion_fun_drv;
+    *fun_sel = IO_MUX.gpion[gpio_num].gpion_mcu_sel;
     *sig_out = hw->funcn_out_sel_cfg[gpio_num].funcn_out_sel;
-    *slp_sel = IOMUX.gpion[gpio_num].gpion_slp_sel;
+    *slp_sel = IO_MUX.gpion[gpio_num].gpion_slp_sel;
 }
 
 /**
@@ -76,7 +76,7 @@ static inline void gpio_ll_get_io_config(gpio_dev_t *hw, uint32_t gpio_num,
   */
 static inline void gpio_ll_pullup_en(gpio_dev_t *hw, uint32_t gpio_num)
 {
-    IOMUX.gpion[gpio_num].gpion_fun_wpu = 1;
+    IO_MUX.gpion[gpio_num].gpion_fun_wpu = 1;
 }
 
 /**
@@ -88,7 +88,7 @@ static inline void gpio_ll_pullup_en(gpio_dev_t *hw, uint32_t gpio_num)
 __attribute__((always_inline))
 static inline void gpio_ll_pullup_dis(gpio_dev_t *hw, uint32_t gpio_num)
 {
-    IOMUX.gpion[gpio_num].gpion_fun_wpu = 0;
+    IO_MUX.gpion[gpio_num].gpion_fun_wpu = 0;
 }
 
 /**
@@ -99,7 +99,7 @@ static inline void gpio_ll_pullup_dis(gpio_dev_t *hw, uint32_t gpio_num)
   */
 static inline void gpio_ll_pulldown_en(gpio_dev_t *hw, uint32_t gpio_num)
 {
-    IOMUX.gpion[gpio_num].gpion_fun_wpd = 1;
+    IO_MUX.gpion[gpio_num].gpion_fun_wpd = 1;
 }
 
 /**
@@ -120,7 +120,7 @@ static inline void gpio_ll_pulldown_dis(gpio_dev_t *hw, uint32_t gpio_num)
         USB_SERIAL_JTAG.conf0.exchg_pins_override = 1;
         USB_SERIAL_JTAG.conf0.dp_pullup = 0;
     }
-    IOMUX.gpion[gpio_num].gpion_fun_wpd = 0;
+    IO_MUX.gpion[gpio_num].gpion_fun_wpd = 0;
 }
 
 /**
@@ -221,7 +221,7 @@ static inline void gpio_ll_intr_disable(gpio_dev_t *hw, uint32_t gpio_num)
 __attribute__((always_inline))
 static inline void gpio_ll_input_disable(gpio_dev_t *hw, uint32_t gpio_num)
 {
-    IOMUX.gpion[gpio_num].gpion_fun_ie = 0;
+    IO_MUX.gpion[gpio_num].gpion_fun_ie = 0;
 }
 
 /**
@@ -232,7 +232,7 @@ static inline void gpio_ll_input_disable(gpio_dev_t *hw, uint32_t gpio_num)
   */
 static inline void gpio_ll_input_enable(gpio_dev_t *hw, uint32_t gpio_num)
 {
-    IOMUX.gpion[gpio_num].gpion_fun_ie = 1;
+    IO_MUX.gpion[gpio_num].gpion_fun_ie = 1;
 }
 
 /**
@@ -243,7 +243,7 @@ static inline void gpio_ll_input_enable(gpio_dev_t *hw, uint32_t gpio_num)
  */
 static inline void gpio_ll_pin_filter_enable(gpio_dev_t *hw, uint32_t gpio_num)
 {
-    IOMUX.gpion[gpio_num].gpion_filter_en = 1;
+    IO_MUX.gpion[gpio_num].gpion_filter_en = 1;
 }
 
 /**
@@ -254,7 +254,7 @@ static inline void gpio_ll_pin_filter_enable(gpio_dev_t *hw, uint32_t gpio_num)
  */
 static inline void gpio_ll_pin_filter_disable(gpio_dev_t *hw, uint32_t gpio_num)
 {
-    IOMUX.gpion[gpio_num].gpion_filter_en = 0;
+    IO_MUX.gpion[gpio_num].gpion_filter_en = 0;
 }
 
 /**
@@ -371,7 +371,7 @@ static inline void gpio_ll_wakeup_disable(gpio_dev_t *hw, uint32_t gpio_num)
   */
 static inline void gpio_ll_set_drive_capability(gpio_dev_t *hw, uint32_t gpio_num, gpio_drive_cap_t strength)
 {
-    IOMUX.gpion[gpio_num].gpion_fun_drv = strength;
+    IO_MUX.gpion[gpio_num].gpion_fun_drv = strength;
 }
 
 /**
@@ -383,7 +383,7 @@ static inline void gpio_ll_set_drive_capability(gpio_dev_t *hw, uint32_t gpio_nu
   */
 static inline void gpio_ll_get_drive_capability(gpio_dev_t *hw, uint32_t gpio_num, gpio_drive_cap_t *strength)
 {
-    *strength = (gpio_drive_cap_t)(IOMUX.gpion[gpio_num].gpion_fun_drv);
+    *strength = (gpio_drive_cap_t)(IO_MUX.gpion[gpio_num].gpion_fun_drv);
 }
 
 /**
@@ -429,7 +429,7 @@ static inline bool gpio_ll_is_digital_io_hold(gpio_dev_t *hw, uint32_t gpio_num)
 }
 
 /**
-  * @brief Set pad input to a peripheral signal through the IOMUX.
+  * @brief Set pad input to a peripheral signal through the IO_MUX.
   *
   * @param hw Peripheral GPIO hardware instance address.
   * @param gpio_num GPIO number of the pad.
@@ -439,7 +439,7 @@ __attribute__((always_inline))
 static inline void gpio_ll_iomux_in(gpio_dev_t *hw, uint32_t gpio, uint32_t signal_idx)
 {
     hw->func_in_sel_cfg[signal_idx].sig_in_sel = 0;
-    IOMUX.gpion[gpio].gpion_fun_ie = 1;
+    IO_MUX.gpion[gpio].gpion_fun_ie = 1;
 }
 
 /**
@@ -483,11 +483,11 @@ static inline void gpio_ll_func_sel(gpio_dev_t *hw, uint8_t gpio_num, uint32_t f
     if (gpio_num == USB_INT_PHY0_DM_GPIO_NUM || gpio_num == USB_INT_PHY0_DP_GPIO_NUM) {
         USB_SERIAL_JTAG.conf0.usb_pad_enable = 0;
     }
-    IOMUX.gpion[gpio_num].gpion_mcu_sel = func;
+    IO_MUX.gpion[gpio_num].gpion_mcu_sel = func;
 }
 
 /**
-  * @brief Set peripheral output to an GPIO pad through the IOMUX.
+  * @brief Set peripheral output to an GPIO pad through the IO_MUX.
   *
   * @param hw Peripheral GPIO hardware instance address.
   * @param gpio_num gpio_num GPIO number of the pad.
@@ -570,7 +570,7 @@ static inline void gpio_ll_force_unhold_all(void)
   */
 static inline void gpio_ll_sleep_sel_en(gpio_dev_t *hw, uint32_t gpio_num)
 {
-    IOMUX.gpion[gpio_num].gpion_slp_sel = 1;
+    IO_MUX.gpion[gpio_num].gpion_slp_sel = 1;
 }
 
 /**
@@ -582,7 +582,7 @@ static inline void gpio_ll_sleep_sel_en(gpio_dev_t *hw, uint32_t gpio_num)
   */
 static inline void gpio_ll_sleep_sel_dis(gpio_dev_t *hw, uint32_t gpio_num)
 {
-    IOMUX.gpion[gpio_num].gpion_slp_sel = 0;
+    IO_MUX.gpion[gpio_num].gpion_slp_sel = 0;
 }
 
 /**
@@ -593,7 +593,7 @@ static inline void gpio_ll_sleep_sel_dis(gpio_dev_t *hw, uint32_t gpio_num)
   */
 static inline void gpio_ll_sleep_pullup_dis(gpio_dev_t *hw, uint32_t gpio_num)
 {
-    IOMUX.gpion[gpio_num].gpion_mcu_wpu = 0;
+    IO_MUX.gpion[gpio_num].gpion_mcu_wpu = 0;
 }
 
 /**
@@ -604,7 +604,7 @@ static inline void gpio_ll_sleep_pullup_dis(gpio_dev_t *hw, uint32_t gpio_num)
   */
 static inline void gpio_ll_sleep_pullup_en(gpio_dev_t *hw, uint32_t gpio_num)
 {
-    IOMUX.gpion[gpio_num].gpion_mcu_wpu = 1;
+    IO_MUX.gpion[gpio_num].gpion_mcu_wpu = 1;
 }
 
 /**
@@ -615,7 +615,7 @@ static inline void gpio_ll_sleep_pullup_en(gpio_dev_t *hw, uint32_t gpio_num)
   */
 static inline void gpio_ll_sleep_pulldown_en(gpio_dev_t *hw, uint32_t gpio_num)
 {
-    IOMUX.gpion[gpio_num].gpion_mcu_wpd = 1;
+    IO_MUX.gpion[gpio_num].gpion_mcu_wpd = 1;
 }
 
 /**
@@ -626,7 +626,7 @@ static inline void gpio_ll_sleep_pulldown_en(gpio_dev_t *hw, uint32_t gpio_num)
   */
 static inline void gpio_ll_sleep_pulldown_dis(gpio_dev_t *hw, uint32_t gpio_num)
 {
-    IOMUX.gpion[gpio_num].gpion_mcu_wpd = 0;
+    IO_MUX.gpion[gpio_num].gpion_mcu_wpd = 0;
 }
 
 /**
@@ -637,7 +637,7 @@ static inline void gpio_ll_sleep_pulldown_dis(gpio_dev_t *hw, uint32_t gpio_num)
   */
 static inline void gpio_ll_sleep_input_disable(gpio_dev_t *hw, uint32_t gpio_num)
 {
-    IOMUX.gpion[gpio_num].gpion_mcu_ie = 0;
+    IO_MUX.gpion[gpio_num].gpion_mcu_ie = 0;
 }
 
 /**
@@ -648,7 +648,7 @@ static inline void gpio_ll_sleep_input_disable(gpio_dev_t *hw, uint32_t gpio_num
   */
 static inline void gpio_ll_sleep_input_enable(gpio_dev_t *hw, uint32_t gpio_num)
 {
-    IOMUX.gpion[gpio_num].gpion_mcu_ie = 1;
+    IO_MUX.gpion[gpio_num].gpion_mcu_ie = 1;
 }
 
 /**
@@ -659,7 +659,7 @@ static inline void gpio_ll_sleep_input_enable(gpio_dev_t *hw, uint32_t gpio_num)
   */
 static inline void gpio_ll_sleep_output_disable(gpio_dev_t *hw, uint32_t gpio_num)
 {
-    IOMUX.gpion[gpio_num].gpion_mcu_oe = 0;
+    IO_MUX.gpion[gpio_num].gpion_mcu_oe = 0;
 }
 
 /**
@@ -670,7 +670,7 @@ static inline void gpio_ll_sleep_output_disable(gpio_dev_t *hw, uint32_t gpio_nu
   */
 static inline void gpio_ll_sleep_output_enable(gpio_dev_t *hw, uint32_t gpio_num)
 {
-    IOMUX.gpion[gpio_num].gpion_mcu_oe = 1;
+    IO_MUX.gpion[gpio_num].gpion_mcu_oe = 1;
 }
 
 #ifdef __cplusplus
