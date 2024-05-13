@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -76,6 +76,15 @@ esp_err_t esp_create_mbedtls_handle(const char *hostname, size_t hostlen, const 
     assert(tls != NULL);
     int ret;
     esp_err_t esp_ret = ESP_FAIL;
+
+#ifdef CONFIG_MBEDTLS_SSL_PROTO_TLS1_3
+    psa_status_t status = psa_crypto_init();
+    if (status != PSA_SUCCESS) {
+        ESP_LOGE(TAG, "Failed to initialize PSA crypto, returned %d\n", (int) status);
+        return esp_ret;
+    }
+#endif // CONFIG_MBEDTLS_SSL_PROTO_TLS1_3
+
     tls->server_fd.fd = tls->sockfd;
     mbedtls_ssl_init(&tls->ssl);
     mbedtls_ctr_drbg_init(&tls->ctr_drbg);
@@ -86,6 +95,24 @@ esp_err_t esp_create_mbedtls_handle(const char *hostname, size_t hostlen, const 
         esp_ret = set_client_config(hostname, hostlen, (esp_tls_cfg_t *)cfg, tls);
         if (esp_ret != ESP_OK) {
             ESP_LOGE(TAG, "Failed to set client configurations, returned [0x%04X] (%s)", esp_ret, esp_err_to_name(esp_ret));
+            goto exit;
+        }
+        const esp_tls_proto_ver_t tls_ver = ((esp_tls_cfg_t *)cfg)->tls_version;
+        if (tls_ver == ESP_TLS_VER_TLS_1_3) {
+#if CONFIG_MBEDTLS_SSL_PROTO_TLS1_3
+            ESP_LOGD(TAG, "Setting TLS version to 0x%4x", MBEDTLS_SSL_VERSION_TLS1_3);
+            mbedtls_ssl_conf_min_tls_version(&tls->conf, MBEDTLS_SSL_VERSION_TLS1_3);
+            mbedtls_ssl_conf_max_tls_version(&tls->conf, MBEDTLS_SSL_VERSION_TLS1_3);
+#else
+            ESP_LOGW(TAG, "TLS 1.3 is not enabled in config, continuing with default TLS protocol");
+#endif
+        } else if (tls_ver == ESP_TLS_VER_TLS_1_2) {
+            ESP_LOGD(TAG, "Setting TLS version to 0x%4x", MBEDTLS_SSL_VERSION_TLS1_2);
+            mbedtls_ssl_conf_min_tls_version(&tls->conf, MBEDTLS_SSL_VERSION_TLS1_2);
+            mbedtls_ssl_conf_max_tls_version(&tls->conf, MBEDTLS_SSL_VERSION_TLS1_2);
+        } else if (tls_ver != ESP_TLS_VER_ANY) {
+            ESP_LOGE(TAG, "Unsupported protocol version");
+            esp_ret = ESP_ERR_INVALID_ARG;
             goto exit;
         }
     } else if (tls->role == ESP_TLS_SERVER) {
@@ -114,11 +141,6 @@ esp_err_t esp_create_mbedtls_handle(const char *hostname, size_t hostlen, const 
 
 #ifdef CONFIG_MBEDTLS_DEBUG
     mbedtls_esp_enable_debug_log(&tls->conf, CONFIG_MBEDTLS_DEBUG_LEVEL);
-#endif
-
-#ifdef CONFIG_MBEDTLS_SSL_PROTO_TLS1_3
-    mbedtls_ssl_conf_min_tls_version(&tls->conf, MBEDTLS_SSL_VERSION_TLS1_3);
-    mbedtls_ssl_conf_max_tls_version(&tls->conf, MBEDTLS_SSL_VERSION_TLS1_3);
 #endif
 
     if ((ret = mbedtls_ssl_setup(&tls->ssl, &tls->conf)) != 0) {
@@ -224,6 +246,18 @@ ssize_t esp_mbedtls_read(esp_tls_t *tls, char *data, size_t datalen)
 {
 
     ssize_t ret = mbedtls_ssl_read(&tls->ssl, (unsigned char *)data, datalen);
+#if CONFIG_MBEDTLS_CLIENT_SSL_SESSION_TICKETS
+    // If a post-handshake message is received, connection state is changed to `MBEDTLS_SSL_TLS1_3_NEW_SESSION_TICKET`
+    // Call mbedtls_ssl_read() till state is `MBEDTLS_SSL_TLS1_3_NEW_SESSION_TICKET` or return code is `MBEDTLS_ERR_SSL_RECEIVED_NEW_SESSION_TICKET`
+    // to process session tickets in TLS 1.3 connection
+    if (mbedtls_ssl_get_version_number(&tls->ssl) == MBEDTLS_SSL_VERSION_TLS1_3) {
+        while (ret == MBEDTLS_ERR_SSL_RECEIVED_NEW_SESSION_TICKET || tls->ssl.MBEDTLS_PRIVATE(state) == MBEDTLS_SSL_TLS1_3_NEW_SESSION_TICKET) {
+            ESP_LOGD(TAG, "got session ticket in TLS 1.3 connection, retry read");
+            ret = mbedtls_ssl_read(&tls->ssl, (unsigned char *)data, datalen);
+        }
+    }
+#endif // CONFIG_MBEDTLS_CLIENT_SSL_SESSION_TICKETS
+
     if (ret < 0) {
         if (ret == MBEDTLS_ERR_SSL_PEER_CLOSE_NOTIFY) {
             return 0;

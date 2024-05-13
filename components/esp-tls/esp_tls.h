@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -79,6 +79,16 @@ typedef enum esp_tls_addr_family {
     ESP_TLS_AF_INET,                      /**< IPv4 address family. */
     ESP_TLS_AF_INET6,                     /**< IPv6 address family. */
 } esp_tls_addr_family_t;
+
+/*
+* @brief ESP-TLS TLS Protocol version
+*/
+typedef enum {
+   ESP_TLS_VER_ANY = 0,         /* No preference */
+   ESP_TLS_VER_TLS_1_2 = 0x1,   /* (D)TLS 1.2 */
+   ESP_TLS_VER_TLS_1_3 = 0x2,   /* (D)TLS 1.3 */
+   ESP_TLS_VER_TLS_MAX,         /* to indicate max */
+} esp_tls_proto_ver_t;
 
 /**
  * @brief      ESP-TLS configuration parameters
@@ -197,6 +207,7 @@ typedef struct esp_tls_cfg {
 #endif /* CONFIG_ESP_TLS_CLIENT_SESSION_TICKETS */
 
     esp_tls_addr_family_t addr_family;      /*!< The address family to use when connecting to a host. */
+    esp_tls_proto_ver_t tls_version;        /*!< TLS protocol version of the connection, e.g., TLS 1.2, TLS 1.3 (default - no preference) */
 } esp_tls_cfg_t;
 
 #ifdef CONFIG_ESP_TLS_SERVER
