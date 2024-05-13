@@ -32,7 +32,6 @@ typedef enum {
     RESET_REASON_CHIP_BROWN_OUT  = 0x01, // VDD voltage is not stable and resets the chip
     RESET_REASON_CORE_SW         = 0x03, // Software resets the digital core (hp system) by LP_AON_HPSYS_SW_RESET
     RESET_REASON_CORE_DEEP_SLEEP = 0x05, // Deep sleep reset the digital core (hp system)
-    RESET_REASON_CORE_SDIO       = 0x06, // SDIO module resets the digital core (hp system)
     RESET_REASON_CORE_MWDT0      = 0x07, // Main watch dog 0 resets digital core (hp system)
     RESET_REASON_CORE_MWDT1      = 0x08, // Main watch dog 1 resets digital core (hp system)
     RESET_REASON_CORE_RTC_WDT    = 0x09, // RTC watch dog resets digital core (hp system)
