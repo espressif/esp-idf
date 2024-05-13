@@ -5,7 +5,7 @@
  */
 
 #include "sdkconfig.h"
-
+#include <stdint.h>
 #if CONFIG_IDF_TARGET_LINUX
 #include <sys/time.h>
 #include <time.h>
