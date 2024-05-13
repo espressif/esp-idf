@@ -165,7 +165,7 @@ static void on_ppp_notify_phase(ppp_pcb *pcb, u8_t phase, void *ctx)
 #endif // PPP_NOTIFY_PHASE
 
 /**
- * @brief PPP low level output callback used to transmit data using standard esp-netif interafce
+ * @brief PPP low level output callback used to transmit data using standard esp-netif interface
  *
  * @param pcb PPP control block
  * @param data Buffer to write to serial port
@@ -255,6 +255,10 @@ esp_err_t esp_netif_start_ppp(esp_netif_t *esp_netif)
         // Set our preferred address, and accept the remote
         ppp_ctx->ppp->ipcp_wantoptions.ouraddr = ppp_ctx->ppp_our_ip4_addr.addr;
         ppp_ctx->ppp->ipcp_wantoptions.accept_remote = 1;
+        ppp_ctx->ppp->ask_for_local = 1;    /* `ask_for_local` option in the lwip's pcb is `0` by default and causes
+                                             * the initial negotiation IPCP request to reset our own address to '0.0.0.0'.
+                                             * https://github.com/lwip-tcpip/lwip/blob/1cc1536e/src/netif/ppp/ipcp.c#L728-L729
+                                             */
     }
     if (ppp_ctx->ppp_their_ip4_addr.addr != IPADDR_ANY) {
         // Set their preferred address, and accept the local
