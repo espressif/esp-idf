@@ -31,7 +31,7 @@ Once wakeup sources are configured, application can enter sleep mode using :cpp:
     WiFi/BT and sleep modes
     -----------------------
 
-    In deep sleep and light sleep modes, wireless peripherals are powered down. Before entering light sleep modes, applications must disable WiFi and BT using appropriate calls (:cpp:func:`esp_bluedroid_disable`, :cpp:func:`esp_bt_controller_disable`, :cpp:func:`esp_wifi_stop`). WiFi and BT connections will not be maintained in deep sleep or light sleep, even if these functions are not called.
+    In Deep-sleep and Light-sleep modes, the wireless peripherals are powered down. Before entering Deep-sleep or Light-sleep modes, the application must disable Wi-Fi and Bluetooth using the appropriate calls (i.e., :cpp:func:`nimble_port_stop`, :cpp:func:`nimble_port_deinit`, :cpp:func:`esp_bluedroid_disable`, :cpp:func:`esp_bluedroid_deinit`, :cpp:func:`esp_bt_controller_disable`, :cpp:func:`esp_bt_controller_deinit`, :cpp:func:`esp_wifi_stop`). Wi-Fi and Bluetooth connections are not maintained in Deep-sleep or Light-sleep mode, even if these functions are not called.
 
     If Wi-Fi/Bluetooth connections need to be maintained, enable Wi-Fi/Bluetooth Modem-sleep mode and automatic Light-sleep feature (see :doc:`Power Management APIs <power_management>`). This will allow the system to wake up from sleep automatically when required by the Wi-Fi/Bluetooth driver, thereby maintaining the connection.
 
@@ -99,7 +99,7 @@ This wakeup mode doesn't require RTC peripherals or RTC memories to be powered o
 
         - wake up if any of the selected pins is high (``ESP_EXT1_WAKEUP_ANY_HIGH``)
         - wake up if all the selected pins are low (``ESP_EXT1_WAKEUP_ALL_LOW``)
-    
+
     .. only:: esp32s2 or esp32s3
 
         - wake up if any of the selected pins is high (``ESP_EXT1_WAKEUP_ANY_HIGH``)
@@ -111,7 +111,7 @@ This wakeup mode doesn't require RTC peripherals or RTC memories to be powered o
         rtc_gpio_pullup_dis(gpio_num);
         rtc_gpio_pulldown_en(gpio_num);
 
-    .. warning:: 
+    .. warning::
         - To use the EXT1 wakeup, the IO pad(s) are configured as RTC IO. Thus if these pads want to be used as digital GPIOs after waking up from sleep, ``rtc_gpio_deinit(gpio_num)`` function needs to be called first.
 
         - If the RTC peripherals are configured to be powered down (which is by default), the wakeup IOs will be set to holding state before entering sleep. Therefore, after waking up from Light-sleep, please call `rtc_gpio_hold_dis` to disable the hold function to perform any pin re-configuration. For Deep-sleep wakeup, this is already being handled at the application startup stage.
@@ -148,7 +148,7 @@ This wakeup mode doesn't require RTC peripherals or RTC memories to be powered o
 
     .. warning::
         Before entering light sleep mode, check if any GPIO pin to be driven is part of the {IDF_TARGET_SPI_POWER_DOMAIN} power domain. If so, this power domain must be configured to remain ON during sleep.
-        
+
         For example, on ESP32-WROOM-32 board, GPIO16 and GPIO17 are linked to {IDF_TARGET_SPI_POWER_DOMAIN} power domain. If they are configured to remain high during
         light sleep, the power domain should be configured to remain powered ON. This can be done with :cpp:func:`esp_sleep_pd_config()`::
 
