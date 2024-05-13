@@ -217,6 +217,7 @@ enum {
     BTA_DM_API_BLE_CLEAR_ADV_EVT,
     BTA_DM_API_SET_RPA_TIMEOUT_EVT,
     BTA_DM_API_ADD_DEV_TO_RESOLVING_LIST_EVT,
+    BTA_DM_API_SET_PRIVACY_MODE_EVT,
 #endif
     BTA_DM_MAX_EVT
 };
@@ -909,6 +910,14 @@ typedef struct {
     tBTA_CLEAR_ADV_CMPL_CBACK       *p_clear_adv_cback;
 } tBTA_DM_API_CLEAR_ADV;
 
+typedef struct {
+    BT_HDR                              hdr;
+    tBLE_ADDR_TYPE                      addr_type;
+    BD_ADDR                             addr;
+    UINT8                               privacy_mode;
+    tBTA_SET_PRIVACY_MODE_CMPL_CBACK    *p_cback;
+} tBTA_DM_API_SET_PRIVACY_MODE;
+
 #endif /* BLE_INCLUDED */
 
 /* data type for BTA_DM_API_REMOVE_ACL_EVT */
@@ -1306,6 +1315,7 @@ typedef union {
     tBTA_DM_API_BLE_DTM_RX_START    dtm_rx_start;
     tBTA_DM_API_BLE_DTM_STOP        dtm_stop;
     tBTA_DM_API_CLEAR_ADV           ble_clear_adv;
+    tBTA_DM_API_SET_PRIVACY_MODE    ble_set_privacy_mode;
 #endif
 
     tBTA_DM_API_REMOVE_ACL              remove_acl;
@@ -1745,6 +1755,7 @@ extern void bta_dm_ble_gap_dtm_stop(tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_gap_clear_adv(tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_gap_set_rpa_timeout(tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_gap_add_dev_to_resolving_list(tBTA_DM_MSG *p_data);
+extern void bta_dm_ble_gap_set_privacy_mode(tBTA_DM_MSG *p_data);
 #if (BLE_50_FEATURE_SUPPORT == TRUE)
 extern void bta_dm_ble_gap_dtm_enhance_tx_start(tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_gap_dtm_enhance_rx_start(tBTA_DM_MSG *p_data);
