@@ -31,7 +31,7 @@ static esp_lcd_panel_handle_t test_rgb_panel_initialization(size_t data_width, s
     esp_lcd_panel_handle_t panel_handle = NULL;
     esp_lcd_rgb_panel_config_t panel_config = {
         .data_width = data_width,
-        .psram_trans_align = 64,
+        .dma_burst_size = 64,
         .bounce_buffer_size_px = bb_pixels,
         .bits_per_pixel = bpp,
         .clk_src = LCD_CLK_SRC_DEFAULT,
