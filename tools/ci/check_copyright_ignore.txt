@@ -1043,9 +1043,6 @@ examples/cxx/rtti/main/rtti_example_main.cpp
 examples/ethernet/basic/main/ethernet_example_main.c
 examples/ethernet/enc28j60/components/eth_enc28j60/enc28j60.h
 examples/ethernet/enc28j60/main/enc28j60_example_main.c
-examples/ethernet/iperf/main/cmd_ethernet.c
-examples/ethernet/iperf/main/cmd_ethernet.h
-examples/ethernet/iperf/main/ethernet_example_main.c
 examples/get-started/blink/main/blink_example_main.c
 examples/get-started/sample_project/main/main.c
 examples/mesh/internal_communication/main/include/mesh_light.h

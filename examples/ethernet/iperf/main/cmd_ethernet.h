@@ -1,19 +1,20 @@
-/* Console example — declarations of command registration functions.
+/*
+ * SPDX-FileCopyrightText: 2018-2024 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Unlicense OR CC0-1.0
+ */
 
-   This example code is in the Public Domain (or CC0 licensed, at your option.)
-
-   Unless required by applicable law or agreed to in writing, this
-   software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
-   CONDITIONS OF ANY KIND, either express or implied.
-*/
 #pragma once
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+#include "esp_netif.h"
+#include "esp_eth.h"
+
 // Register Ethernet functions
-void register_ethernet(void);
+void register_ethernet_commands(void);
 
 #ifdef __cplusplus
 }
