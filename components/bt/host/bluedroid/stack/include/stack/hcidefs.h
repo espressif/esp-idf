@@ -384,8 +384,8 @@
 #define HCI_BLE_RD_TRANSMIT_POWER           (0x004B | HCI_GRP_BLE_CMDS)
 #define HCI_BLE_RD_RF_PATH_COMPENSATION     (0x004C | HCI_GRP_BLE_CMDS)
 #define HCI_BLE_WR_RF_PATH_COMPENSATION     (0x004D | HCI_GRP_BLE_CMDS)
-#define HCI_BLE_SET_PRIVACY_MODE            (0x004E | HCI_GRP_BLE_CMDS)
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
+#define HCI_BLE_SET_PRIVACY_MODE            (0x004E | HCI_GRP_BLE_CMDS)
 #if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
 #define HCI_BLE_SET_PERIOD_ADV_RECV_ENABLE  (0x0059 | HCI_GRP_BLE_CMDS)
 #define HCI_BLE_PERIOD_ADV_SYNC_TRANS       (0x005A | HCI_GRP_BLE_CMDS)
@@ -1134,18 +1134,18 @@ typedef UINT8 tHCI_STATUS;
 #define HCI_MIN_INQ_LAP                 0x9E8B00
 #define HCI_MAX_INQ_LAP                 0x9E8B3F
 
-/* HCI role defenitions */
+/* HCI role definitions */
 #define HCI_ROLE_MASTER                 0x00
 #define HCI_ROLE_SLAVE                  0x01
 #define HCI_ROLE_UNKNOWN                0xff
 
-/* HCI mode defenitions */
+/* HCI mode definitions */
 #define HCI_MODE_ACTIVE                 0x00
 #define HCI_MODE_HOLD                   0x01
 #define HCI_MODE_SNIFF                  0x02
 #define HCI_MODE_PARK                   0x03
 
-/* HCI Flow Control Mode defenitions */
+/* HCI Flow Control Mode definitions */
 #define HCI_PACKET_BASED_FC_MODE        0x00
 #define HCI_BLOCK_BASED_FC_MODE         0x01
 
@@ -1414,7 +1414,7 @@ typedef UINT8 tHCI_STATUS;
 /* Define an invalid value for a handle */
 #define HCI_INVALID_HANDLE              0xFFFF
 
-/* Define max ammount of data in the HCI command */
+/* Define max amount of data in the HCI command */
 #define HCI_COMMAND_SIZE        255
 
 /* Define the preamble length for all HCI Commands.
