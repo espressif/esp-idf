@@ -332,7 +332,7 @@ tBTM_STATUS BTM_BleSetExtendedAdvRandaddr(UINT8 instance, BD_ADDR rand_addr)
                         __func__, btm_ble_hci_status_to_str(err), err);
         status = BTM_ILLEGAL_VALUE;
     } else {
-        // set random address success, update address infor
+        // set random address success, update address info
         if(extend_adv_cb.inst[instance].configured && extend_adv_cb.inst[instance].connetable) {
             BTM_BleSetStaticAddr(rand_addr);
             BTM_UpdateAddrInfor(BLE_ADDR_RANDOM, rand_addr);
@@ -416,7 +416,7 @@ end:
             BTM_TRACE_ERROR("LE EA SetParams: cmd err=0x%x", err);
             status = BTM_ILLEGAL_VALUE;
         } else {
-            // set addr success, update address infor
+            // set addr success, update address info
             BTM_UpdateAddrInfor(BLE_ADDR_RANDOM, rand_addr);
         }
     }
@@ -592,12 +592,12 @@ tBTM_STATUS BTM_BleStartExtAdvRestart(uint8_t con_handle)
        }
     }
 
-    if((index >= MAX_BLE_ADV_INSTANCE) || (!adv_record[index].invalid) || (adv_record[index].retry_count > GATTC_CONNECT_RETRY_COUNT)) {
+    if((index >= MAX_BLE_ADV_INSTANCE) || (!adv_record[index].invalid)) {
         return BTM_WRONG_MODE;
     }
 
     adv_record[index].retry_count ++;
-    BTM_TRACE_DEBUG("remote device did not reveive aux connect response, retatrt the extend adv to reconnect, adv handle %d con_handle %d\n", index, con_handle);
+    BTM_TRACE_DEBUG("remote device did not receive aux connect response, retatrt the extend adv to reconnect, adv handle %d con_handle %d\n", index, con_handle);
     ext_adv.instance = adv_record[index].instance;
     ext_adv.duration = adv_record[index].duration;
     ext_adv.max_events = adv_record[index].max_events;
