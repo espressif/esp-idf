@@ -632,8 +632,9 @@ config BT_NIMBLE_PERIODIC_ADV_ENH
 menuconfig BT_NIMBLE_GATT_CACHING
     bool "Enable GATT caching"
     depends on BT_NIMBLE_ENABLED && BT_NIMBLE_50_FEATURE_SUPPORT
+    select BT_NIMBLE_DYNAMIC_SERVICE
     help
-            Enable GATT caching
+        Enable GATT caching
 config BT_NIMBLE_GATT_CACHING_MAX_CONNS
     int "Maximum connections to be cached"
     depends on BT_NIMBLE_GATT_CACHING
