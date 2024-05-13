@@ -40,6 +40,7 @@
 #include "wps/wps_defs.h"
 #include "wps/wps.h"
 
+bool g_wpa_pmk_caching_disabled = 0;
 const wifi_osi_funcs_t *wifi_funcs;
 struct wpa_funcs *wpa_cb;
 
@@ -261,6 +262,9 @@ static void wpa_sta_disconnected_cb(uint8_t reason_code)
             wpa_sm_notify_disassoc(&gWpaSm);
             break;
         default:
+            if (g_wpa_pmk_caching_disabled) {
+                wpa_sta_clear_curr_pmksa();
+            }
             break;
     }
 #ifdef CONFIG_OWE_STA
@@ -458,4 +462,10 @@ int esp_supplicant_deinit(void)
     eloop_destroy();
     wpa_cb = NULL;
     return esp_wifi_unregister_wpa_cb_internal();
+}
+
+esp_err_t esp_supplicant_disable_pmk_caching(bool disable)
+{
+    g_wpa_pmk_caching_disabled = disable;
+    return ESP_OK;
 }
