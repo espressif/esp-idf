@@ -995,6 +995,25 @@ esp_err_t esp_ble_dtm_stop(void)
     return (btc_transfer_context(&msg, NULL, 0, NULL, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
+esp_err_t esp_ble_gap_set_privacy_mode(esp_ble_addr_type_t addr_type, esp_bd_addr_t addr, esp_ble_privacy_mode_t mode)
+{
+    btc_msg_t msg;
+    btc_ble_gap_args_t arg;
+
+    ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
+
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_GAP_BLE;
+    msg.act = BTC_GAP_BLE_SET_PRIVACY_MODE;
+
+    arg.set_privacy_mode.addr_type = addr_type;
+    memcpy(arg.set_privacy_mode.addr, addr, sizeof(esp_bd_addr_t));
+    arg.set_privacy_mode.privacy_mode = mode;
+
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gap_args_t), NULL, NULL)
+            == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+}
+
 #if (BLE_50_FEATURE_SUPPORT == TRUE)
 
 esp_err_t esp_ble_gap_read_phy(esp_bd_addr_t bd_addr)
