@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -248,16 +248,12 @@ extern uint32_t _data_end_btdm_rom;
 
 extern uint32_t _bt_bss_start;
 extern uint32_t _bt_bss_end;
-extern uint32_t _nimble_bss_start;
-extern uint32_t _nimble_bss_end;
-extern uint32_t _btdm_bss_start;
-extern uint32_t _btdm_bss_end;
+extern uint32_t _bt_controller_bss_start;
+extern uint32_t _bt_controller_bss_end;
 extern uint32_t _bt_data_start;
 extern uint32_t _bt_data_end;
-extern uint32_t _nimble_data_start;
-extern uint32_t _nimble_data_end;
-extern uint32_t _btdm_data_start;
-extern uint32_t _btdm_data_end;
+extern uint32_t _bt_controller_data_start;
+extern uint32_t _bt_controller_data_end;
 
 extern void config_bt_funcs_reset(void);
 extern void config_ble_funcs_reset(void);
@@ -805,7 +801,7 @@ static int32_t queue_send_hlevel_wrapper(void *queue, void *item, uint32_t block
  * @param  item  The message which will be send
  * @param  hptw  need do task yield or not
  * @return       send success or not
- *               There is an issue here:  When the queue is full, it may reture true but it send fail to the queue, sometimes.
+ *               There is an issue here:  When the queue is full, it may return true but it send fail to the queue, sometimes.
  *               But in Bluetooth controller's isr, We don't care about the return value.
  *               It only required tp send success when the queue is empty all the time.
  *               So, this function meets the requirement.
@@ -1337,7 +1333,45 @@ static esp_err_t try_heap_caps_add_region(intptr_t start, intptr_t end)
     return ret;
 }
 
-esp_err_t esp_bt_controller_mem_release(esp_bt_mode_t mode)
+typedef struct {
+    intptr_t start;
+    intptr_t end;
+    const char* name;
+} bt_area_t;
+
+
+static esp_err_t esp_bt_mem_release_area(const bt_area_t *area)
+{
+    esp_err_t ret = ESP_OK;
+    intptr_t mem_start = area->start;
+    intptr_t mem_end = area->end;
+    if (mem_start != mem_end) {
+        ESP_LOGD(BTDM_LOG_TAG, "Release %s [0x%08x] - [0x%08x], len %d", area->name, mem_start, mem_end, mem_end - mem_start);
+        ret = try_heap_caps_add_region(mem_start, mem_end);
+    }
+    return ret;
+}
+
+static esp_err_t esp_bt_mem_release_areas(const bt_area_t *area1, const bt_area_t *area2)
+{
+    esp_err_t ret = ESP_OK;
+
+    if (area1->end == area2->start) {
+        bt_area_t merged_area = {
+            .start = area1->start,
+            .end = area2->end,
+            .name = area1->name
+        };
+        ret = esp_bt_mem_release_area(&merged_area);
+    } else {
+        esp_bt_mem_release_area(area1);
+        ret = esp_bt_mem_release_area(area2);
+    }
+
+    return ret;
+}
+
+static esp_err_t esp_bt_controller_rom_mem_release(esp_bt_mode_t mode)
 {
     bool update = true;
     intptr_t mem_start=(intptr_t) NULL, mem_end=(intptr_t) NULL;
@@ -1388,61 +1422,86 @@ esp_err_t esp_bt_controller_mem_release(esp_bt_mode_t mode)
         }
     }
 
-    if (mode == ESP_BT_MODE_BTDM) {
-        mem_start = (intptr_t)&_btdm_bss_start;
-        mem_end = (intptr_t)&_btdm_bss_end;
-        if (mem_start != mem_end) {
-            ESP_LOGD(BTDM_LOG_TAG, "Release BTDM BSS [0x%08x] - [0x%08x]", mem_start, mem_end);
-            ESP_ERROR_CHECK(try_heap_caps_add_region(mem_start, mem_end));
-        }
-        mem_start = (intptr_t)&_btdm_data_start;
-        mem_end = (intptr_t)&_btdm_data_end;
-        if (mem_start != mem_end) {
-            ESP_LOGD(BTDM_LOG_TAG, "Release BTDM Data [0x%08x] - [0x%08x]", mem_start, mem_end);
-            ESP_ERROR_CHECK(try_heap_caps_add_region(mem_start, mem_end));
-        }
-    }
     return ESP_OK;
+}
+
+esp_err_t esp_bt_controller_mem_release(esp_bt_mode_t mode)
+{
+    esp_err_t ret = ESP_OK;
+
+    if (btdm_controller_status != ESP_BT_CONTROLLER_STATUS_IDLE) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    if (mode == ESP_BT_MODE_BTDM) {
+        bt_area_t cont_bss = {
+            .start = (intptr_t)&_bt_controller_bss_start,
+            .end   = (intptr_t)&_bt_controller_bss_end,
+            .name  = "BT Controller BSS",
+        };
+        bt_area_t cont_data = {
+            .start = (intptr_t)&_bt_controller_data_start,
+            .end   = (intptr_t)&_bt_controller_data_end,
+            .name  = "BT Controller Data"
+        };
+
+        ret = esp_bt_mem_release_areas(&cont_data, &cont_bss);
+    }
+
+    if (ret == ESP_OK) {
+        ret = esp_bt_controller_rom_mem_release(mode);
+    }
+
+    return ret;
 }
 
 esp_err_t esp_bt_mem_release(esp_bt_mode_t mode)
 {
-    int ret;
-    intptr_t mem_start, mem_end;
+    esp_err_t ret = ESP_OK;
 
-    ret = esp_bt_controller_mem_release(mode);
-    if (ret != ESP_OK) {
-        return ret;
+    if (btdm_controller_status != ESP_BT_CONTROLLER_STATUS_IDLE) {
+        return ESP_ERR_INVALID_STATE;
     }
+
+    bt_area_t bss = {
+        .start = (intptr_t)&_bt_bss_start,
+        .end   = (intptr_t)&_bt_bss_end,
+        .name  = "BT BSS",
+    };
+    bt_area_t cont_bss = {
+        .start = (intptr_t)&_bt_controller_bss_start,
+        .end   = (intptr_t)&_bt_controller_bss_end,
+        .name  = "BT Controller BSS",
+    };
+    bt_area_t data = {
+        .start = (intptr_t)&_bt_data_start,
+        .end   = (intptr_t)&_bt_data_end,
+        .name  = "BT Data",
+    };
+    bt_area_t cont_data = {
+        .start = (intptr_t)&_bt_controller_data_start,
+        .end   = (intptr_t)&_bt_controller_data_end,
+        .name  = "BT Controller Data"
+    };
 
     if (mode == ESP_BT_MODE_BTDM) {
-        mem_start = (intptr_t)&_bt_bss_start;
-        mem_end = (intptr_t)&_bt_bss_end;
-        if (mem_start != mem_end) {
-            ESP_LOGD(BTDM_LOG_TAG, "Release BT BSS [0x%08x] - [0x%08x]", mem_start, mem_end);
-            ESP_ERROR_CHECK(try_heap_caps_add_region(mem_start, mem_end));
-        }
-        mem_start = (intptr_t)&_bt_data_start;
-        mem_end = (intptr_t)&_bt_data_end;
-        if (mem_start != mem_end) {
-            ESP_LOGD(BTDM_LOG_TAG, "Release BT Data [0x%08x] - [0x%08x]", mem_start, mem_end);
-            ESP_ERROR_CHECK(try_heap_caps_add_region(mem_start, mem_end));
+        /* Start by freeing Bluetooth BSS section */
+        if (ret == ESP_OK) {
+            ret = esp_bt_mem_release_areas(&bss, &cont_bss);
         }
 
-        mem_start = (intptr_t)&_nimble_bss_start;
-        mem_end = (intptr_t)&_nimble_bss_end;
-        if (mem_start != mem_end) {
-            ESP_LOGD(BTDM_LOG_TAG, "Release NimBLE BSS [0x%08x] - [0x%08x]", mem_start, mem_end);
-            ESP_ERROR_CHECK(try_heap_caps_add_region(mem_start, mem_end));
-        }
-        mem_start = (intptr_t)&_nimble_data_start;
-        mem_end = (intptr_t)&_nimble_data_end;
-        if (mem_start != mem_end) {
-            ESP_LOGD(BTDM_LOG_TAG, "Release NimBLE Data [0x%08x] - [0x%08x]", mem_start, mem_end);
-            ESP_ERROR_CHECK(try_heap_caps_add_region(mem_start, mem_end));
+        /* Do the same thing with the Bluetooth data section */
+        if (ret == ESP_OK) {
+            ret = esp_bt_mem_release_areas(&data, &cont_data);
         }
     }
-    return ESP_OK;
+
+    /* free data and BSS section for Bluetooth controller ROM code */
+    if (ret == ESP_OK) {
+        ret = esp_bt_controller_rom_mem_release(mode);
+    }
+
+    return ret;
 }
 
 #if CONFIG_BTDM_CTRL_HLI
@@ -1751,7 +1810,7 @@ esp_err_t esp_bt_controller_enable(esp_bt_mode_t mode)
 
     sdk_config_set_bt_pll_track_enable(true);
 
-    // inititalize bluetooth baseband
+    // initialize bluetooth baseband
     btdm_check_and_init_bb();
 
     ret = btdm_controller_enable(mode);
@@ -1914,7 +1973,7 @@ esp_err_t esp_ble_scan_dupilcate_list_flush(void)
 
 /**
  * This function re-write controller's function,
- * As coredump can not show paramerters in function which is in a .a file.
+ * As coredump can not show parameters in function which is in a .a file.
  *
  * After coredump fixing this issue, just delete this function.
  */

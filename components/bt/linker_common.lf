@@ -6,10 +6,16 @@ entries:
 entries:
     COMMON
 
-[scheme:bt_start_end]
+[scheme:bt_default]
 entries:
     bt_bss -> dram0_bss
     bt_common -> dram0_bss
+    data -> dram0_data
+
+[scheme:bt_extram_bss]
+entries:
+    bt_bss -> extern_ram
+    bt_common -> extern_ram
     data -> dram0_data
 
 # For the following fragments, order matters for
@@ -25,25 +31,12 @@ entries:
 archive: libbt.a
 entries:
     if ESP_ALLOW_BSS_SEG_EXTERNAL_MEMORY = y:
-        * (extram_bss)
+        * (bt_extram_bss);
+            bt_bss -> extern_ram ALIGN(4) ALIGN(4, post) SURROUND(bt_bss),
+            bt_common -> extern_ram ALIGN(4) ALIGN(4, post) SURROUND(bt_common),
+            data -> dram0_data  ALIGN(4) ALIGN(4, post) SURROUND(bt_data)
     else:
-        * (bt_start_end);
+        * (bt_default);
             bt_bss -> dram0_bss ALIGN(4) ALIGN(4, post) SURROUND(bt_bss),
             bt_common -> dram0_bss ALIGN(4) ALIGN(4, post) SURROUND(bt_common),
             data -> dram0_data  ALIGN(4) ALIGN(4, post) SURROUND(bt_data)
-
-[mapping:btdm]
-archive: libbtdm_app.a
-entries:
-    * (bt_start_end);
-        bt_bss -> dram0_bss ALIGN(4) ALIGN(4, post) SURROUND(btdm_bss),
-        bt_common -> dram0_bss ALIGN(4) ALIGN(4, post) SURROUND(btdm_common),
-        data -> dram0_data ALIGN(4) ALIGN(4, post) SURROUND(btdm_data)
-
-[mapping:nimble]
-archive: libnimble.a
-entries:
-    * (bt_start_end);
-        bt_bss -> dram0_bss ALIGN(4) ALIGN(4, post) SURROUND(nimble_bss),
-        bt_common -> dram0_bss ALIGN(4) ALIGN(4, post) SURROUND(nimble_common),
-        data -> dram0_data ALIGN(4) ALIGN(4, post) SURROUND(nimble_data)
