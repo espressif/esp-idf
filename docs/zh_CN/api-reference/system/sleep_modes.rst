@@ -95,44 +95,53 @@ RTC 控制器中内嵌定时器，可用于在预定义的时间到达后唤醒�
     外部唤醒 (``ext1``)
     ^^^^^^^^^^^^^^^^^^^^^^
 
-    RTC 控制器中包含使用多个 RTC GPIO 触发唤醒的逻辑。从以下两个逻辑函数中任选其一，均可触发普通 ext1 唤醒：
+    RTC 控制器中包含使用多个 RTC GPIO 触发唤醒的逻辑。从以下两个逻辑函数中任选其一，均可触发 ext1 唤醒：
 
     .. only:: esp32
 
-        - 当任意一个所选管脚为高电平时唤醒(ESP_EXT1_WAKEUP_ANY_HIGH)
+        - 当任意一个所选管脚为高电平时唤醒 (ESP_EXT1_WAKEUP_ANY_HIGH)
         - 当所有所选管脚为低电平时唤醒 (ESP_EXT1_WAKEUP_ALL_LOW)
 
     .. only:: esp32s2 or esp32s3 or esp32c6 or esp32h2
 
-        - 当任意一个所选管脚为高电平时唤醒(ESP_EXT1_WAKEUP_ANY_HIGH)
-        - 当任意一个所选管脚为低电平时唤醒(ESP_EXT1_WAKEUP_ANY_LOW)
+        - 当任意一个所选管脚为高电平时唤醒 (ESP_EXT1_WAKEUP_ANY_HIGH)
+        - 当任意一个所选管脚为低电平时唤醒 (ESP_EXT1_WAKEUP_ANY_LOW)
 
-    此唤醒源由 RTC 控制器实现。这种模式下的 RTC 外设和 RTC 内存可以被断电。然而，如果RTC外设被断电，如果我们不使用 HOLD 功能，内部上拉和下拉电阻将被禁用。想要使用内部上拉和下拉电阻，需要 RTC 外设电源域在睡眠期间保持开启，并在进入睡眠前使用函数 ``rtc_gpio_`` 配置上拉或下拉电阻。
+    此唤醒源由 RTC 控制器实现。区别于 ``ext0`` 唤醒源，在 RTC 外设断电的情况下此唤醒源同样支持唤醒。虽然睡眠期间 RTC IO 所在的 RTC 外设电源域将会断电，但是 ESP-IDF 会自动在系统进入睡眠前锁定唤醒管脚的状态并在退出睡眠时解除锁定，所以仍然可为唤醒管脚配置内部上拉或下拉电阻::
 
         esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_PERIPH, ESP_PD_OPTION_ON);
         gpio_pullup_dis(gpio_num);
         gpio_pulldown_en(gpio_num);
 
-    如果我们关闭 ``RTC_PERIPH`` 域，我们将使用 HOLD 功能在睡眠期间维持引脚上的上拉和下拉电阻。所选管脚的 HOLD 功能会在系统真正进入睡眠前被开启，这有助于进一步减小睡眠时的功耗。
+    如果我们关闭 ``RTC_PERIPH`` 域，我们将使用 HOLD 功能在睡眠期间维持管脚上的上拉和下拉电阻。所选管脚的 HOLD 功能会在系统真正进入睡眠前被开启，这有助于进一步减小睡眠时的功耗::
 
         rtc_gpio_pullup_dis(gpio_num);
         rtc_gpio_pulldown_en(gpio_num);
 
-    如果某些芯片缺少 ``RTC_PERIPH`` 域，我们只能使用 HOLD 功能来在睡眠期间维持引脚上的上拉和下拉电阻。
+    如果某些芯片缺少 ``RTC_PERIPH`` 域，我们只能使用 HOLD 功能来在睡眠期间维持管脚上的上拉和下拉电阻::
 
         gpio_pullup_dis(gpio_num);
         gpio_pulldown_en(gpio_num);
 
-    可调用 :cpp:func:`esp_sleep_enable_ext1_wakeup` 函数来启用普通 ext1 唤醒。
+    可调用 :cpp:func:`esp_sleep_enable_ext1_wakeup_io` 函数可用于增加 ext1 唤醒 IO 并设置相应的唤醒电平。
+
+    可调用 :cpp:func:`esp_sleep_disable_ext1_wakeup_io` 函数可用于移除 ext1 唤醒 IO。
 
     .. only:: SOC_PM_SUPPORT_EXT1_WAKEUP_MODE_PER_PIN
 
-        除了上述提到的普通 ext1 唤醒之外，当前的 RTC 控制器也包含更强大的逻辑，可以使用多个 RTC GPIO 并根据自定义的 RTC IO 唤醒电平位图来唤醒。这可以通过:cpp:func:`esp_sleep_enable_ext1_wakeup_with_level_mask` 函数来进行配置。
+        当前的 RTC 控制器也包含更强大的逻辑，允许配置的 IO 同时使用不同的唤醒电平。这可以通过 :cpp:func:`esp_sleep_enable_ext1_wakeup_io` 或 :cpp:func:`esp_sleep_enable_ext1_wakeup_with_level_mask` 函数来进行配置。
+
+    .. only:: not SOC_PM_SUPPORT_EXT1_WAKEUP_MODE_PER_PIN
+
+       .. note::
+
+           由于硬件限制，当我们将多个 IO 用于 EXT1 唤醒，此时不允许将这些 IO 的唤醒模式配置成不同的电平，在 :cpp:func:`esp_sleep_enable_ext1_wakeup_io` 已有相应的内部检查机制。
 
     .. warning::
+
         - 使用 EXT1 唤醒源时，用于唤醒的 IO pad 将被配置为 RTC IO。因此，在将该 pad 用作数字 GPIO 之前，请调用 :cpp:func:`rtc_gpio_deinit` 函数对其进行重新配置。
 
-        - RTC 外设在默认情况下配置为断电，此时，唤醒 IO 在进入睡眠状态前将被设置为保持状态。因此，从 Light-sleep 状态唤醒芯片后，请调用 `rtc_gpio_hold_dis` 来禁用保持功能，以便对管脚进行重新配置。对于 Deep-sleep 唤醒，此问题已经在应用启动阶段解决。
+        - RTC 外设在默认情况下配置为断电，此时，唤醒 IO 在进入睡眠状态前将被设置为保持状态。因此，从 Light-sleep 状态唤醒芯片后，请调用 ``rtc_gpio_hold_dis`` 来禁用保持功能，以便对管脚进行重新配置。对于 Deep-sleep 唤醒，此问题已经在应用启动阶段解决。
 
 .. only:: SOC_ULP_SUPPORTED
 
