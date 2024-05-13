@@ -1,6 +1,5 @@
-# SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
-
 import hashlib
 import logging
 from typing import Callable
@@ -24,6 +23,13 @@ def test_hello_world(
 @pytest.mark.linux
 @pytest.mark.host_test
 def test_hello_world_linux(dut: IdfDut) -> None:
+    dut.expect('Hello world!')
+
+
+@pytest.mark.linux
+@pytest.mark.host_test
+@pytest.mark.macos_shell
+def test_hello_world_macos(dut: IdfDut) -> None:
     dut.expect('Hello world!')
 
 

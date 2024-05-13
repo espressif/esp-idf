@@ -46,6 +46,7 @@ SPECIAL_MARKERS = {
 ENV_MARKERS = {
     # special markers
     'qemu': 'build and test using qemu, not real target',
+    'macos_shell': 'tests should be run on macos hosts',
     # single-dut markers
     'generic': 'tests should be run on generic runners',
     'flash_suspend': 'support flash suspend feature',
