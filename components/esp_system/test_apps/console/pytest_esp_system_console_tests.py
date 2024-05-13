@@ -20,7 +20,6 @@ JTAG_SERIAL_MARKS = [
     pytest.mark.esp32c3,
     pytest.mark.esp32c6,
     pytest.mark.esp32h2,
-    pytest.mark.esp32p4,
 ]
 
 
