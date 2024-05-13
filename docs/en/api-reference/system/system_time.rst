@@ -3,11 +3,11 @@ System Time
 
 :link_to_translation:`zh_CN:[中文]`
 
-{IDF_TARGET_RTC_CLK_FRE:default="Not updated", esp32="150 kHz", esp32s2="90 kHz", esp32s3="136 kHz", esp32c3="136 kHz", esp32c2="136 kHz", esp32c6="150 kHz", esp32h2="150 kHz", esp32p4="150 kHz"}
+{IDF_TARGET_RTC_CLK_FRE:default="Not updated", esp32="150 kHz", esp32s2="90 kHz", esp32s3="136 kHz", esp32c3="136 kHz", esp32c2="136 kHz", esp32c5="136 kHz", esp32c6="136 kHz", esp32h2="136 kHz", esp32p4="136 kHz"}
 {IDF_TARGET_INT_OSC_FRE:default="Not updated", esp32="8.5 MHz", esp32s2="8.5 MHz", esp32s3="17.5 MHz", esp32c3="17.5 MHz", esp32c2="17.5 MHz"}
 {IDF_TARGET_INT_OSC_FRE_DIVIDED:default="Not updated", esp32="about 33 kHz", esp32s2="about 33 kHz", esp32s3="about 68 kHz", esp32c3="about 68 kHz", esp32c2="about 68 kHz"}
-{IDF_TARGET_EXT_CRYSTAL_PIN:default="Not updated", esp32="32K_XP and 32K_XN", esp32s2="XTAL_32K_P and XTAL_32K_N", esp32s3="XTAL_32K_P and XTAL_32K_N", esp32c3="XTAL_32K_P and XTAL_32K_N", esp32c6="XTAL_32K_P and XTAL_32K_N", esp32h2="XTAL_32K_P and XTAL_32K_N", esp32p4="XTAL_32K_P and XTAL_32K_N"}
-{IDF_TARGET_EXT_OSC_PIN:default="Not updated", esp32="32K_XN", esp32s2="XTAL_32K_P", esp32s3="XTAL_32K_P", esp32c3="XTAL_32K_P", esp32c2="GPIO0", esp32c6="XTAL_32K_P", esp32h2="XTAL_32K_P", esp32p4="XTAL_32K_P"}
+{IDF_TARGET_EXT_CRYSTAL_PIN:default="Not updated", esp32="32K_XP and 32K_XN", esp32s2="XTAL_32K_P and XTAL_32K_N", esp32s3="XTAL_32K_P and XTAL_32K_N", esp32c3="XTAL_32K_P and XTAL_32K_N", esp32c5="XTAL_32K_P and XTAL_32K_N", esp32c6="XTAL_32K_P and XTAL_32K_N", esp32h2="XTAL_32K_P and XTAL_32K_N", esp32p4="XTAL_32K_P and XTAL_32K_N"}
+{IDF_TARGET_EXT_OSC_PIN:default="Not updated", esp32="32K_XN", esp32s2="XTAL_32K_P", esp32s3="XTAL_32K_P", esp32c3="XTAL_32K_P", esp32c2="GPIO0", esp32c5="XTAL_32K_P", esp32c6="XTAL_32K_P", esp32h2="XTAL_32K_P", esp32p4="XTAL_32K_P"}
 
 
 Overview
