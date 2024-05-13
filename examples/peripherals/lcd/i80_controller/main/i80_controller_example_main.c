@@ -93,8 +93,7 @@ static const char *TAG = "example";
 #define EXAMPLE_LVGL_TASK_STACK_SIZE   (4 * 1024)
 #define EXAMPLE_LVGL_TASK_PRIORITY     2
 
-// Supported alignment: 16, 32, 64. A higher alignment can enables higher burst transfer size, thus a higher i80 bus throughput.
-#define EXAMPLE_PSRAM_DATA_ALIGNMENT   64
+#define EXAMPLE_DMA_BURST_SIZE         64 // 16, 32, 64. Higher burst size can improve the performance when the DMA buffer comes from PSRAM
 
 static SemaphoreHandle_t lvgl_mux = NULL;
 
@@ -248,8 +247,7 @@ void example_init_i80_bus(esp_lcd_panel_io_handle_t *io_handle, void *user_ctx)
         },
         .bus_width = CONFIG_EXAMPLE_LCD_I80_BUS_WIDTH,
         .max_transfer_bytes = EXAMPLE_LCD_H_RES * 100 * sizeof(uint16_t),
-        .psram_trans_align = EXAMPLE_PSRAM_DATA_ALIGNMENT,
-        .sram_trans_align = 4,
+        .dma_burst_size = EXAMPLE_DMA_BURST_SIZE,
     };
     ESP_ERROR_CHECK(esp_lcd_new_i80_bus(&bus_config, &i80_bus));
 

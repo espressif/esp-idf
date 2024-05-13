@@ -29,8 +29,7 @@ I80 Interfaced LCD
             },
             .bus_width = 8,
             .max_transfer_bytes = EXAMPLE_LCD_H_RES * 100 * sizeof(uint16_t), // transfer 100 lines of pixels (assume pixel is RGB565) at most in one transaction
-            .psram_trans_align = EXAMPLE_PSRAM_DATA_ALIGNMENT,
-            .sram_trans_align = 4,
+            .dma_burst_size = EXAMPLE_DMA_BURST_SIZE,
         };
         ESP_ERROR_CHECK(esp_lcd_new_i80_bus(&bus_config, &i80_bus));
 
