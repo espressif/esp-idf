@@ -273,6 +273,14 @@ static inline void axi_dma_ll_rx_enable_etm_task(axi_dma_dev_t *dev, uint32_t ch
     dev->in[channel].conf.in_conf0.in_etm_en_chn = enable;
 }
 
+/**
+ * @brief Whether to enable the mean access ecc or aes domain
+ */
+static inline void axi_dma_ll_rx_enable_ext_mem_ecc_aes_access(axi_dma_dev_t *dev, uint32_t channel, bool enable)
+{
+    dev->in[channel].conf.in_conf0.in_ecc_aec_en_chn = enable;
+}
+
 ///////////////////////////////////// TX /////////////////////////////////////////
 /**
  * @brief Get DMA TX channel interrupt status word
@@ -469,6 +477,14 @@ static inline void axi_dma_ll_tx_disconnect_from_periph(axi_dma_dev_t *dev, uint
 static inline void axi_dma_ll_tx_enable_etm_task(axi_dma_dev_t *dev, uint32_t channel, bool enable)
 {
     dev->out[channel].conf.out_conf0.out_etm_en_chn = enable;
+}
+
+/**
+ * @brief Whether to enable the mean access ecc or aes domain
+ */
+static inline void axi_dma_ll_tx_enable_ext_mem_ecc_aes_access(axi_dma_dev_t *dev, uint32_t channel, bool enable)
+{
+    dev->out[channel].conf.out_conf0.out_ecc_aec_en_chn = enable;
 }
 
 ///////////////////////////////////// CRC-TX /////////////////////////////////////////
