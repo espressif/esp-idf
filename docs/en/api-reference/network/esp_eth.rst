@@ -152,7 +152,7 @@ The Ethernet driver is composed of two parts: MAC and PHY.
     .. only:: esp32
 
         .. note::
-            The ``REF_CLK`` can be also configured via Project Configuration when :cpp:member:`eth_esp32_emac_config_t::clock_config::mode` of :cpp:member:`eth_esp32_emac_config_t::clock_config` is set to :cpp:enumerator:`emac_rmii_clock_mode_t::EMAC_CLK_DEFAULT`. Choose appropriately ``CONFIG_ETH_RMII_CLK_INPUT`` or ``CONFIG_ETH_RMII_CLK_OUTPUT`` option under :ref:`CONFIG_ETH_RMII_CLK_MODE` configuration based on your design as discussed above.
+            The ``REF_CLK`` can be also configured via Project Configuration when :cpp:class:`eth_esp32_emac_config_t` is initialized using :c:macro:`ETH_ESP32_EMAC_DEFAULT_CONFIG` macro. In the Project Configuration, choose appropriately ``CONFIG_ETH_RMII_CLK_INPUT`` or ``CONFIG_ETH_RMII_CLK_OUTPUT`` option under :ref:`CONFIG_ETH_RMII_CLK_MODE` configuration based on your design as discussed above.
 
         .. warning::
             If the RMII clock mode is configured to :cpp:enumerator:`emac_rmii_clock_mode_t::EMAC_CLK_OUT` (or ``CONFIG_ETH_RMII_CLK_OUTPUT`` is selected), then ``GPIO0`` can be used to output the ``REF_CLK`` signal. See :cpp:enumerator:`emac_rmii_clock_gpio_t::EMAC_APPL_CLK_OUT_GPIO` or :ref:`CONFIG_ETH_RMII_CLK_OUTPUT_GPIO0` for more information.
@@ -190,12 +190,12 @@ The Ethernet driver is composed of two parts: MAC and PHY.
 
     **No matter which RMII clock mode you select, you really need to take care of the signal integrity of REF_CLK in your hardware design!** Keep the trace as short as possible. Keep it away from RF devices and inductor elements.
 
-    .. only:: not SOC_EMAC_USE_IO_MUX
+    .. only:: not SOC_EMAC_USE_MULTI_IO_MUX
 
         .. note::
             Signals used in the data plane are fixed to specific GPIOs via IO_MUX, they can not be modified to other GPIOs. Signals used in the control plane can be routed to any free GPIOs via Matrix. Please refer to :doc:`ESP32-Ethernet-Kit <../../hw-reference/esp32/get-started-ethernet-kit>` for hardware design example.
 
-    .. only:: SOC_EMAC_USE_IO_MUX
+    .. only:: SOC_EMAC_USE_MULTI_IO_MUX
 
         .. note::
             Signals used in the data plane can be configured to predefined set of GPIOs via IO_MUX for the RMII, see below table. The data plane GPIO configuration is performed by the driver based on content of :cpp:member:`eth_esp32_emac_config_t::emac_dataif_gpio`. Signals used in the control plane can be routed to any free GPIOs via GPIO Matrix.
@@ -252,7 +252,7 @@ Basic common configuration for MAC layer is described in :cpp:class:`eth_mac_con
 
         * :cpp:member:`eth_esp32_emac_config_t::intr_priority`: sets the priority of the MAC interrupt. If it is set to ``0`` or a negative value, the driver will allocate an interrupt with a default priority. Otherwise, the driver will use the given priority. Note that *Low* and *Medium* interrupt priorities (1 to 3) can be set since these can be handled in C.
 
-        :SOC_EMAC_USE_IO_MUX: * :cpp:member:`eth_esp32_emac_config_t::emac_dataif_gpio`: configuration of EMAC MII/RMII data plane GPIO numbers.
+        :SOC_EMAC_USE_MULTI_IO_MUX: * :cpp:member:`eth_esp32_emac_config_t::emac_dataif_gpio`: configuration of EMAC MII/RMII data plane GPIO numbers.
 
         :not SOC_EMAC_RMII_CLK_OUT_INTERNAL_LOOPBACK: * :cpp:member:`eth_esp32_emac_config_t::clock_config_out_in`: configuration of EMAC input interface clock when ``REF_CLK`` signal is generated internally and is looped back to the EMAC externally. The mode must be always configured to :cpp:enumerator:`emac_rmii_clock_mode_t::EMAC_CLK_EXT_IN`. This option is valid only when configuration of :cpp:member:`eth_esp32_emac_config_t::clock_config` is set to :cpp:enumerator:`emac_rmii_clock_mode_t::EMAC_CLK_OUT`.
 
@@ -551,12 +551,12 @@ Custom PHY Driver
 
 There are multiple PHY manufacturers with wide portfolios of chips available. The ESP-IDF already supports several PHY chips however one can easily get to a point where none of them satisfies the user's actual needs due to price, features, stock availability, etc.
 
-Luckily, a management interface between EMAC and PHY is standardized by IEEE 802.3 in Section 22.2.4 Management Functions. It defines provisions of the so-called "MII Management Interface" to control the PHY and gather status from the PHY. A set of management registers is defined to control chip behavior, link properties, auto-negotiation configuration, etc. This basic management functionality is addressed by :component_file:`esp_eth/src/esp_eth_phy_802_3.c` in ESP-IDF and so it makes the creation of a new custom PHY chip driver quite a simple task.
+Luckily, a management interface between EMAC and PHY is standardized by IEEE 802.3 in Section 22.2.4 Management Functions. It defines provisions of the so-called "MII Management Interface" to control the PHY and gather status from the PHY. A set of management registers is defined to control chip behavior, link properties, auto-negotiation configuration, etc. This basic management functionality is addressed by :component_file:`esp_eth/src/phy/esp_eth_phy_802_3.c` in ESP-IDF and so it makes the creation of a new custom PHY chip driver quite a simple task.
 
 .. note::
     Always consult with PHY datasheet since some PHY chips may not comply with IEEE 802.3, Section 22.2.4. It does not mean you are not able to create a custom PHY driver, but it just requires more effort. You will have to define all PHY management functions.
 
-The majority of PHY management functionality required by the ESP-IDF Ethernet driver is covered by the :component_file:`esp_eth/src/esp_eth_phy_802_3.c`. However, the following may require developing chip-specific management functions:
+The majority of PHY management functionality required by the ESP-IDF Ethernet driver is covered by the :component_file:`esp_eth/src/phy/esp_eth_phy_802_3.c`. However, the following may require developing chip-specific management functions:
 
     * Link status which is almost always chip-specific
     * Chip initialization, even though not strictly required, should be customized to at least ensure that the expected chip is used
@@ -564,11 +564,11 @@ The majority of PHY management functionality required by the ESP-IDF Ethernet dr
 
 **Steps to create a custom PHY driver:**
 
-1. Define vendor-specific registry layout based on the PHY datasheet. See :component_file:`esp_eth/src/esp_eth_phy_ip101.c` as an example.
+1. Define vendor-specific registry layout based on the PHY datasheet. See :component_file:`esp_eth/src/phy/esp_eth_phy_ip101.c` as an example.
 2. Prepare derived PHY management object info structure which:
 
     * must contain at least parent IEEE 802.3 :cpp:class:`phy_802_3_t` object
-    * optionally contain additional variables needed to support non-IEEE 802.3 or customized functionality. See :component_file:`esp_eth/src/esp_eth_phy_ksz80xx.c` as an example.
+    * optionally contain additional variables needed to support non-IEEE 802.3 or customized functionality. See :component_file:`esp_eth/src/phy/esp_eth_phy_ksz80xx.c` as an example.
 
 3. Define chip-specific management call-back functions.
 4. Initialize parent IEEE 802.3 object and re-assign chip-specific management call-back functions.
@@ -585,6 +585,8 @@ API Reference
 .. include-build-file:: inc/esp_eth_driver.inc
 .. include-build-file:: inc/esp_eth_com.inc
 .. include-build-file:: inc/esp_eth_mac.inc
+.. include-build-file:: inc/esp_eth_mac_esp.inc
+.. include-build-file:: inc/esp_eth_mac_spi.inc
 .. include-build-file:: inc/esp_eth_phy.inc
 .. include-build-file:: inc/esp_eth_phy_802_3.inc
 .. include-build-file:: inc/esp_eth_netif_glue.inc

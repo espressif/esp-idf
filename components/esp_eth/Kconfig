@@ -24,7 +24,7 @@ menu "Ethernet"
         endchoice
 
         if ETH_PHY_INTERFACE_RMII
-            choice ETH_RMII_CLK_MODE
+            choice ETH_RMII_CLK_MODE # IDF-9724
                 depends on IDF_TARGET_ESP32
                 prompt "RMII clock mode"
                 default ETH_RMII_CLK_INPUT

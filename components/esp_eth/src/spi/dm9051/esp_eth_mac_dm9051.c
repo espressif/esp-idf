@@ -8,12 +8,12 @@
 #include <stdlib.h>
 #include <sys/cdefs.h>
 #include <inttypes.h>
+#include "esp_eth_mac_spi.h"
 #include "driver/gpio.h"
 #include "driver/spi_master.h"
 #include "esp_attr.h"
 #include "esp_log.h"
 #include "esp_check.h"
-#include "esp_eth_driver.h"
 #include "esp_timer.h"
 #include "esp_system.h"
 #include "esp_intr_alloc.h"

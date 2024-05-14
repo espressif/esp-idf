@@ -9,11 +9,9 @@
 #include "esp_mac.h"
 #include "driver/gpio.h"
 #include "sdkconfig.h"
-#if CONFIG_ETH_USE_SPI_ETHERNET
+#if CONFIG_EXAMPLE_USE_SPI_ETHERNET
 #include "driver/spi_master.h"
-#endif // CONFIG_ETH_USE_SPI_ETHERNET
-
-static const char *TAG = "example_eth_init";
+#endif // CONFIG_EXAMPLE_USE_SPI_ETHERNET
 
 #if CONFIG_EXAMPLE_SPI_ETHERNETS_NUM
 #define SPI_ETHERNETS_NUM           CONFIG_EXAMPLE_SPI_ETHERNETS_NUM
@@ -45,6 +43,12 @@ typedef struct {
     uint8_t *mac_addr;
 }spi_eth_module_config_t;
 
+static const char *TAG = "example_eth_init";
+#if CONFIG_EXAMPLE_USE_SPI_ETHERNET
+static bool gpio_isr_svc_init_by_eth = false; // indicates that we initialized the GPIO ISR service
+#endif // CONFIG_EXAMPLE_USE_SPI_ETHERNET
+
+
 #if CONFIG_EXAMPLE_USE_INTERNAL_ETHERNET
 /**
  * @brief Internal ESP32 Ethernet initialization
@@ -69,8 +73,8 @@ static esp_eth_handle_t eth_init_internal(esp_eth_mac_t **mac_out, esp_eth_phy_t
     // Init vendor specific MAC config to default
     eth_esp32_emac_config_t esp32_emac_config = ETH_ESP32_EMAC_DEFAULT_CONFIG();
     // Update vendor specific MAC config based on board configuration
-    esp32_emac_config.smi_mdc_gpio_num = CONFIG_EXAMPLE_ETH_MDC_GPIO;
-    esp32_emac_config.smi_mdio_gpio_num = CONFIG_EXAMPLE_ETH_MDIO_GPIO;
+    esp32_emac_config.smi_gpio.mdc_num = CONFIG_EXAMPLE_ETH_MDC_GPIO;
+    esp32_emac_config.smi_gpio.mdio_num = CONFIG_EXAMPLE_ETH_MDIO_GPIO;
 #if CONFIG_EXAMPLE_USE_SPI_ETHERNET
     // The DMA is shared resource between EMAC and the SPI. Therefore, adjust
     // EMAC DMA burst length when SPI Ethernet is used along with EMAC.
@@ -128,17 +132,19 @@ static esp_err_t spi_bus_init(void)
 {
     esp_err_t ret = ESP_OK;
 
+#if (CONFIG_EXAMPLE_ETH_SPI_INT0_GPIO >= 0) || (CONFIG_EXAMPLE_ETH_SPI_INT1_GPIO > 0)
     // Install GPIO ISR handler to be able to service SPI Eth modules interrupts
     ret = gpio_install_isr_service(0);
-    if (ret != ESP_OK) {
-        if (ret == ESP_ERR_INVALID_STATE) {
-            ESP_LOGW(TAG, "GPIO ISR handler has been already installed");
-            ret = ESP_OK; // ISR handler has been already installed so no issues
-        } else {
-            ESP_LOGE(TAG, "GPIO ISR handler install failed");
-            goto err;
-        }
+    if (ret == ESP_OK) {
+        gpio_isr_svc_init_by_eth = true;
+    } else if (ret == ESP_ERR_INVALID_STATE) {
+        ESP_LOGW(TAG, "GPIO ISR handler has been already installed");
+        ret = ESP_OK; // ISR handler has been already installed so no issues
+    } else {
+        ESP_LOGE(TAG, "GPIO ISR handler install failed");
+        goto err;
     }
+#endif
 
     // Init SPI bus
     spi_bus_config_t buscfg = {
@@ -283,7 +289,7 @@ esp_err_t example_eth_init(esp_eth_handle_t *eth_handles_out[], uint8_t *eth_cnt
         ESP_GOTO_ON_FALSE(eth_handles[eth_cnt], ESP_FAIL, err, TAG, "SPI Ethernet init failed");
         eth_cnt++;
     }
-#endif // CONFIG_ETH_USE_SPI_ETHERNET
+#endif // CONFIG_EXAMPLE_USE_SPI_ETHERNET
 #else
     ESP_LOGD(TAG, "no Ethernet device selected to init");
 #endif // CONFIG_EXAMPLE_USE_INTERNAL_ETHERNET || CONFIG_EXAMPLE_USE_SPI_ETHERNET
@@ -296,4 +302,37 @@ err:
     free(eth_handles);
     return ret;
 #endif
+}
+
+esp_err_t example_eth_deinit(esp_eth_handle_t *eth_handles, uint8_t eth_cnt)
+{
+    ESP_RETURN_ON_FALSE(eth_handles != NULL, ESP_ERR_INVALID_ARG, TAG, "array of Ethernet handles cannot be NULL");
+    for (int i = 0; i < eth_cnt; i++) {
+        esp_eth_mac_t *mac = NULL;
+        esp_eth_phy_t *phy = NULL;
+        if (eth_handles[i] != NULL) {
+            esp_eth_get_mac_instance(eth_handles[i], &mac);
+            esp_eth_get_phy_instance(eth_handles[i], &phy);
+            ESP_RETURN_ON_ERROR(esp_eth_driver_uninstall(eth_handles[i]), TAG, "Ethernet %p uninstall failed", eth_handles[i]);
+        }
+        if (mac != NULL) {
+            mac->del(mac);
+        }
+        if (phy != NULL) {
+            phy->del(phy);
+        }
+    }
+#if CONFIG_EXAMPLE_USE_SPI_ETHERNET
+    spi_bus_free(CONFIG_EXAMPLE_ETH_SPI_HOST);
+#if (CONFIG_EXAMPLE_ETH_SPI_INT0_GPIO >= 0) || (CONFIG_EXAMPLE_ETH_SPI_INT1_GPIO > 0)
+    // We installed the GPIO ISR service so let's uninstall it too.
+    // BE CAREFUL HERE though since the service might be used by other functionality!
+    if (gpio_isr_svc_init_by_eth) {
+        ESP_LOGW(TAG, "uninstalling GPIO ISR service!");
+        gpio_uninstall_isr_service();
+    }
+#endif
+#endif //CONFIG_EXAMPLE_USE_SPI_ETHERNET
+    free(eth_handles);
+    return ESP_OK;
 }

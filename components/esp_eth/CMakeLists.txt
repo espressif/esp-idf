@@ -12,11 +12,11 @@ set(ld_fragments linker.lf)
 # As CONFIG_ETH_ENABLED comes from Kconfig, it is not evaluated yet
 # when components are being registered.
 # Thus, always add the (private) requirements, regardless of Kconfig
-set(priv_requires driver log esp_timer)
+set(priv_requires log esp_timer esp_driver_spi esp_driver_gpio)
 
 # If Ethernet disabled in Kconfig, this is a config-only component
 if(CONFIG_ETH_ENABLED)
-    set(srcs "src/esp_eth.c" "src/esp_eth_phy_802_3.c")
+    set(srcs "src/esp_eth.c" "src/phy/esp_eth_phy_802_3.c")
     set(include "include")
 
     if(NOT CMAKE_BUILD_EARLY_EXPANSION)
@@ -27,34 +27,34 @@ if(CONFIG_ETH_ENABLED)
     endif()
 
     if(CONFIG_ETH_USE_ESP32_EMAC)
-        list(APPEND srcs "src/esp_eth_mac_esp.c"
-                         "src/esp_eth_mac_esp_dma.c"
-                         "src/esp_eth_mac_esp_gpio.c"
-                         "src/esp_eth_phy_dp83848.c"
-                         "src/esp_eth_phy_ip101.c"
-                         "src/esp_eth_phy_ksz80xx.c"
-                         "src/esp_eth_phy_lan87xx.c"
-                         "src/esp_eth_phy_rtl8201.c")
+        list(APPEND srcs "src/mac/esp_eth_mac_esp.c"
+                         "src/mac/esp_eth_mac_esp_dma.c"
+                         "src/mac/esp_eth_mac_esp_gpio.c"
+                         "src/phy/esp_eth_phy_dp83848.c"
+                         "src/phy/esp_eth_phy_ip101.c"
+                         "src/phy/esp_eth_phy_ksz80xx.c"
+                         "src/phy/esp_eth_phy_lan87xx.c"
+                         "src/phy/esp_eth_phy_rtl8201.c")
     endif()
 
     if(CONFIG_ETH_SPI_ETHERNET_DM9051)
-        list(APPEND srcs "src/esp_eth_mac_dm9051.c"
-                         "src/esp_eth_phy_dm9051.c")
+        list(APPEND srcs "src/spi/dm9051/esp_eth_mac_dm9051.c"
+                         "src/spi/dm9051/esp_eth_phy_dm9051.c")
     endif()
 
     if(CONFIG_ETH_SPI_ETHERNET_W5500)
-        list(APPEND srcs "src/esp_eth_mac_w5500.c"
-                         "src/esp_eth_phy_w5500.c")
+        list(APPEND srcs "src/spi/w5500/esp_eth_mac_w5500.c"
+                         "src/spi/w5500/esp_eth_phy_w5500.c")
     endif()
 
     if(CONFIG_ETH_SPI_ETHERNET_KSZ8851SNL)
-        list(APPEND srcs "src/esp_eth_mac_ksz8851snl.c"
-                         "src/esp_eth_phy_ksz8851snl.c")
+        list(APPEND srcs "src/spi/ksz8851snl/esp_eth_mac_ksz8851snl.c"
+                         "src/spi/ksz8851snl/esp_eth_phy_ksz8851snl.c")
     endif()
 
     if(CONFIG_ETH_USE_OPENETH)
-        list(APPEND srcs "src/esp_eth_mac_openeth.c"
-                         "src/esp_eth_phy_dp83848.c")
+        list(APPEND srcs "src/openeth/esp_eth_mac_openeth.c"
+                         "src/phy/esp_eth_phy_dp83848.c")
     endif()
 endif()
 
@@ -66,7 +66,7 @@ idf_component_register(SRCS "${srcs}"
 
 if(CONFIG_ETH_ENABLED)
     if(CONFIG_ETH_USE_SPI_ETHERNET)
-        idf_component_optional_requires(PUBLIC driver esp_driver_gpio)
+        idf_component_optional_requires(PUBLIC esp_driver_spi)
     endif()
     idf_component_optional_requires(PRIVATE esp_netif esp_pm)
     if(CONFIG_SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE)

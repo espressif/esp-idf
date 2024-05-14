@@ -635,7 +635,9 @@
 #define SOC_MEM_NON_CONTIGUOUS_SRAM                (1)
 #define SOC_ASYNCHRONOUS_BUS_ERROR_MODE            (1)
 /*--------------------------- EMAC --------------------------------*/
-#define SOC_EMAC_USE_IO_MUX                        (1) /*!< GPIO matrix is used to select GPIO pads */
+#define SOC_EMAC_IEEE_1588_SUPPORT                 (1)      /*!< EMAC Supports IEEE1588 time stamping */
+#define SOC_EMAC_USE_MULTI_IO_MUX                  (1)      /*!< Multiple GPIO pad options exist to connect EMAC signal via IO_MUX */
+#define SOC_EMAC_MII_USE_GPIO_MATRIX               (1)      /*!< EMAC MII signals are connected to GPIO pads via GPIO Matrix */
 
 /*--------------------------- JPEG --------------------------------*/
 #define SOC_JPEG_CODEC_SUPPORTED                  (1)
