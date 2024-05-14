@@ -11,17 +11,17 @@ tools/test_apps/system/build_test:
     - if: CONFIG_NAME == "usb_console_ets_printf" AND SOC_USB_OTG_SUPPORTED != 1
     - if: CONFIG_NAME == "phy_multiple_init_data" AND IDF_TARGET == "esp32p4" # Update with caps here when IDF-7460 is resolved
 
+tools/test_apps/system/clang_build_test:
+  enable:
+    - if: IDF_TARGET in ["esp32", "esp32s2", "esp32s3", "esp32c2", "esp32c3", "esp32c5", "esp32c6", "esp32h2", "esp32p4"]
+      temporary: true
+      reason: the other targets are not supported yet
+
 tools/test_apps/system/cxx_no_except:
   enable:
     - if: IDF_TARGET == "esp32" or IDF_TARGET == "esp32c3"
       temporary: true
       reason: the other targets are not tested yet
-
-tools/test_apps/system/cxx_pthread_bluetooth:
-  enable:
-    - if: IDF_TARGET in ["esp32", "esp32c2", "esp32c3", "esp32s2", "esp32s3"]
-      temporary: true
-      reason: the other targets are not supported yet
 
 tools/test_apps/system/eh_frame:
   enable:

@@ -136,13 +136,8 @@ void esp_newlib_init(void)
     syscall_table_ptr = &s_stub_table;
 #endif
 
-#if __NEWLIB__ > 4 || ( __NEWLIB__ == 4 && __NEWLIB_MINOR__ > 1 ) /* TODO: IDF-8134 */
     memset(&__sglue, 0, sizeof(__sglue));
     _global_impure_ptr = _GLOBAL_REENT;
-#else
-    static struct _reent s_reent;
-    _GLOBAL_REENT = &s_reent;
-#endif
 
     /* Ensure that the initialization of sfp is prevented until esp_newlib_init_global_stdio() is explicitly invoked. */
     _GLOBAL_REENT->__cleanup = esp_cleanup_r;

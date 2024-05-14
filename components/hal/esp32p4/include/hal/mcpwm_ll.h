@@ -276,7 +276,7 @@ static inline uint32_t mcpwm_ll_intr_get_status(mcpwm_dev_t *mcpwm)
  * @brief Clear MCPWM interrupt status by mask
  *
  * @param mcpwm Peripheral instance address
- * @param mask Interupt status mask
+ * @param mask Interrupt status mask
  */
 __attribute__((always_inline))
 static inline void mcpwm_ll_intr_clear_status(mcpwm_dev_t *mcpwm, uint32_t mask)
@@ -1745,6 +1745,7 @@ static inline uint32_t mcpwm_ll_group_get_clock_prescale(mcpwm_dev_t *mcpwm)
     } else if (mcpwm == &MCPWM1) {
         return HAL_FORCE_READ_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl20, reg_mcpwm1_clk_div_num) + 1;
     }
+    return 0;
 }
 
 static inline uint32_t mcpwm_ll_timer_get_clock_prescale(mcpwm_dev_t *mcpwm, int timer_id)

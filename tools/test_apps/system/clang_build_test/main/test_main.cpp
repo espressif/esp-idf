@@ -80,7 +80,7 @@ esp_pthread_cfg_t create_config(const char *name, int core_id, int stack, int pr
 
 extern "C" void app_main(void)
 {
-    // Create a thread using deafult values that can run on any core
+    // Create a thread using default values that can run on any core
     auto cfg = esp_pthread_get_default_config();
     esp_pthread_set_cfg(&cfg);
     std::thread any_core(thread_func_any_core);

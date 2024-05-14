@@ -56,7 +56,7 @@
   variables:
     IDF_TOOLCHAIN: clang
     TEST_BUILD_OPTS_EXTRA: ""
-    TEST_DIR: tools/test_apps/system/cxx_pthread_bluetooth
+    TEST_DIR: tools/test_apps/system/clang_build_test
   script:
     # CI specific options start from "--parallel-count xxx". could ignore when running locally
     - run_cmd python tools/ci/ci_build_apps.py $TEST_DIR -v
@@ -143,7 +143,7 @@ build_clang_test_apps_esp32s3:
     # For RISCV clang generates '.linker-options' sections of type 'llvm_linker_options' in asm files.
     # See (https://llvm.org/docs/Extensions.html#linker-options-section-linker-options).
     # Binutils gas ignores them with warning.
-    # TODO: LLVM-112, Use integrated assembler.
+    # TODO: LLVM-333, Use integrated assembler.
     TEST_BUILD_OPTS_EXTRA: "--ignore-warning-str 'Warning: unrecognized section type'"
 
 build_clang_test_apps_esp32c3:
@@ -164,10 +164,29 @@ build_clang_test_apps_esp32c6:
   extends:
     - .build_clang_test_apps_riscv
     - .rules:build
-  # TODO: c6 builds fail in master due to missing headers
-  allow_failure: true
   variables:
     IDF_TARGET: esp32c6
+
+build_clang_test_apps_esp32c5:
+  extends:
+    - .build_clang_test_apps_riscv
+    - .rules:build
+  variables:
+    IDF_TARGET: esp32c5
+
+build_clang_test_apps_esp32h2:
+  extends:
+    - .build_clang_test_apps_riscv
+    - .rules:build
+  variables:
+    IDF_TARGET: esp32h2
+
+build_clang_test_apps_esp32p4:
+  extends:
+    - .build_clang_test_apps_riscv
+    - .rules:build
+  variables:
+    IDF_TARGET: esp32p4
 
 ######################
 # Build System Tests #

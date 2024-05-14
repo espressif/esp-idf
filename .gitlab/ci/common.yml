@@ -83,6 +83,12 @@ variables:
   # This is used only if CI_PYTHON_TOOL_REPO is not empty.
   CI_PYTHON_TOOL_BRANCH: ""
 
+  # Set this variable to Clang toolchain distro URL to be used.
+  # NOTE: We have separate toolchains for Xtensa and RISCV, therefore jobs for one arch will fail.
+  # This is OK as far as we use CI_CLANG_DISTRO_URL for pre-release tests purposes only.
+  # Keep the variable empty when not used.
+  CI_CLANG_DISTRO_URL: ""
+
   # Set this variable to specify the file name for the known failure cases.
   KNOWN_FAILURE_CASES_FILE_NAME: "master.txt"
 
@@ -152,7 +158,7 @@ variables:
   fi
 
   # Install esp-clang if necessary
-  if [[ "$IDF_TOOLCHAIN" == "clang" ]]; then
+  if [[ "$IDF_TOOLCHAIN" == "clang" && -z "$CI_CLANG_DISTRO_URL" ]]; then
     $IDF_PATH/tools/idf_tools.py --non-interactive install esp-clang
   fi
 
@@ -167,7 +173,7 @@ variables:
 
   source ./export.sh
 
-  # Custom clang
+  # Custom clang toolchain
   if [[ ! -z "$CI_CLANG_DISTRO_URL" ]]; then
     echo "Using custom clang from ${CI_CLANG_DISTRO_URL}"
     wget $CI_CLANG_DISTRO_URL
