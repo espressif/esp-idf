@@ -2462,22 +2462,29 @@ void vTaskEndScheduler( void )
 
 void vTaskSuspendAll( void )
 {
-    /* A critical section is not required as the variable is of type
+    /* For SMP, we need to take the kernel lock here as we are about to access
+     * kernel data structures.
+     *
+     * For single-core, a critical section is not required as the variable is of type
      * BaseType_t.  Please read Richard Barry's reply in the following link to a
      * post in the FreeRTOS support forum before reporting this as a bug! -
      * https://goo.gl/wu4acr */
+    prvENTER_CRITICAL_SMP_ONLY( &xKernelLock );
+    {
+        /* portSOFTWARE_BARRIER() is only implemented for emulated/simulated ports that
+         * do not otherwise exhibit real time behaviour. */
+        portSOFTWARE_BARRIER();
 
-    /* portSOFTWARE_BARRIER() is only implemented for emulated/simulated ports that
-     * do not otherwise exhibit real time behaviour. */
-    portSOFTWARE_BARRIER();
+        /* The scheduler is suspended if uxSchedulerSuspended is non-zero.  An increment
+         * is used to allow calls to vTaskSuspendAll() to nest. */
+        ++uxSchedulerSuspended[ portGET_CORE_ID() ];
 
-    /* The scheduler is suspended if uxSchedulerSuspended is non-zero.  An increment
-     * is used to allow calls to vTaskSuspendAll() to nest. */
-    ++uxSchedulerSuspended[ portGET_CORE_ID() ];
-
-    /* Enforces ordering for ports and optimised compilers that may otherwise place
-     * the above increment elsewhere. */
-    portMEMORY_BARRIER();
+        /* Enforces ordering for ports and optimised compilers that may otherwise place
+         * the above increment elsewhere. */
+        portMEMORY_BARRIER();
+    }
+    /* Release the previously taken kernel lock. */
+    prvEXIT_CRITICAL_SMP_ONLY( &xKernelLock );
 }
 /*----------------------------------------------------------*/
 
