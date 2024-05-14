@@ -31,8 +31,8 @@ static const char s_hex_to_char_mapping[16] = {
     '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'
 };
 
-bt_hci_log_t g_bt_hci_log_data_ctl  = {0};
-bt_hci_log_t g_bt_hci_log_adv_ctl  = {0};
+static bt_hci_log_t g_bt_hci_log_data_ctl  = {0};
+static bt_hci_log_t g_bt_hci_log_adv_ctl  = {0};
 
 esp_err_t bt_hci_log_init(void)
 {
@@ -98,35 +98,35 @@ static char IRAM_ATTR *bt_data_type_to_str(uint8_t data_type)
     {
     case HCI_LOG_DATA_TYPE_COMMAND:
         // hci cmd data
-        tag = "CMD";
+        tag = "C";
         break;
     case HCI_LOG_DATA_TYPE_H2C_ACL:
         // host to controller hci acl data
-        tag = "HAL";
+        tag = "H";
         break;
     case HCI_LOG_DATA_TYPE_SCO:
         // hci sco data
-        tag = "SCO";
+        tag = "S";
         break;
     case HCI_LOG_DATA_TYPE_EVENT:
         // hci event
-        tag = "EVT";
+        tag = "E";
         break;
     case HCI_LOG_DATA_TYPE_ADV:
         // controller adv report data
-        tag = "ADV";
+        tag = NULL;
         break;
     case HCI_LOG_DATA_TYPE_C2H_ACL:
         // controller to host hci acl data
-        tag = "CAL";
+        tag = "D";
         break;
     case HCI_LOG_DATA_TYPE_SELF_DEFINE:
         // self-defining data
-        tag = "ST";
+        tag = "S";
         break;
     default:
         // unknown data type
-        tag = "UK";
+        tag = "U";
         break;
     }
 
