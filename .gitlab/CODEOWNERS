@@ -119,6 +119,7 @@
 /components/fatfs/                    @esp-idf-codeowners/storage
 /components/freertos/                 @esp-idf-codeowners/system
 /components/hal/                      @esp-idf-codeowners/peripherals
+/components/hal/test_apps/crypto/     @esp-idf-codeowners/peripherals @esp-idf-codeowners/security
 /components/heap/                     @esp-idf-codeowners/system
 /components/http_parser/              @esp-idf-codeowners/app-utilities
 /components/idf_test/                 @esp-idf-codeowners/ci
