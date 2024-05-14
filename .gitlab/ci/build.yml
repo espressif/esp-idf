@@ -156,11 +156,12 @@ build_clang_test_apps_esp32s3:
   extends:
     - .build_cmake_clang_template
   variables:
-    # For RISCV clang generates '.linker-options' sections of type 'llvm_linker_options' in asm files.
-    # See (https://llvm.org/docs/Extensions.html#linker-options-section-linker-options).
-    # Binutils gas ignores them with warning.
-    # TODO: LLVM-333, Use integrated assembler.
-    TEST_BUILD_OPTS_EXTRA: "--ignore-warning-str 'Warning: unrecognized section type'"
+    # https://reviews.llvm.org/D90108.
+    # GNU 'as' lets .weak override .globl since binutils-gdb
+    # https://github.com/bminor/binutils-gdb/commit/5ca547dc2399a0a5d9f20626d4bf5547c3ccfddd (1996)
+    # while MC lets the last directive win (PR38921).
+    # For RISCV chips we use integrated assembler by default, so suppress this warning to pass CI pipeline.
+    TEST_BUILD_OPTS_EXTRA: "--ignore-warning-str 'changed binding to STB_WEAK'"
 
 build_clang_test_apps_esp32c3:
   extends:

@@ -441,7 +441,7 @@ rtos_current_tcb:
     lw      a0, pxCurrentTCBs
 #endif /* ( configNUM_CORES > 1 ) */
     ret
-    .size, .-rtos_current_tcb
+    .size rtos_current_tcb, .-rtos_current_tcb
 
 
 /**
