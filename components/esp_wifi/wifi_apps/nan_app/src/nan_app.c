@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -28,12 +28,13 @@
 #define NDP_REJECTED        BIT5
 
 /* Macros */
-#define MACADDR_LEN 6
+#define MACADDR_LEN             6
 #define MACADDR_EQUAL(a1, a2)   (memcmp(a1, a2, MACADDR_LEN))
 #define MACADDR_COPY(dst, src)  (memcpy(dst, src, MACADDR_LEN))
-#define NAN_DW_INTVL_MS 524     /* NAN DW interval (512 TU's ~= 524 mSec) */
-#define NAN_NDP_RESP_TIMEOUT_DW 4
+#define NAN_DW_INTVL_MS         524     /* NAN DW interval (512 TU's ~= 524 mSec) */
+#define NAN_NDP_RESP_TIMEOUT_DW 8
 #define NAN_NDP_RESP_TIMEOUT    NAN_NDP_RESP_TIMEOUT_DW*NAN_DW_INTVL_MS
+#define NAN_NDP_TERM_TIMEOUT    2*NAN_DW_INTVL_MS /* NDP Termination Timeout - 2 DW*/
 
 /* Global Variables */
 static const char *TAG = "nan_app";
@@ -800,7 +801,7 @@ esp_err_t esp_wifi_nan_stop(void)
 
         NAN_DATA_UNLOCK();
         os_event_group_clear_bits(nan_event_group, NDP_TERMINATED);
-        os_event_group_wait_bits(nan_event_group, NDP_TERMINATED, pdFALSE, pdFALSE, portMAX_DELAY);
+        os_event_group_wait_bits(nan_event_group, NDP_TERMINATED, pdFALSE, pdFALSE, pdMS_TO_TICKS(NAN_NDP_TERM_TIMEOUT));
         os_event_group_clear_bits(nan_event_group, NDP_TERMINATED);
         /* Wait for 1 NAN DW interval (512 TU's ~= 524 mSec) for successful termination */
         g_wifi_osi_funcs._task_delay(NAN_DW_INTVL_MS/portTICK_PERIOD_MS);
