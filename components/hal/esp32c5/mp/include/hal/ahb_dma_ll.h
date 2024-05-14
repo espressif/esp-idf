@@ -1,32 +1,123 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 #pragma once
 
-#include <stddef.h>
+#include <stddef.h> /* Required for NULL constant */
 #include <stdint.h>
 #include <stdbool.h>
-#include "hal/assert.h"
-#include "hal/misc.h"
-#include "hal/hal_utils.h"
+#include "soc/soc_caps.h"
 #include "hal/gdma_types.h"
-#include "hal/gdma_ll.h"
 #include "soc/ahb_dma_struct.h"
 #include "soc/ahb_dma_reg.h"
+#include "soc/soc_etm_source.h"
+#include "soc/pcr_struct.h"
+#include "soc/retention_periph_defs.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+#define GDMA_CH_RETENTION_GET_MODULE_ID(group_id, pair_id) (SLEEP_RETENTION_MODULE_GDMA_CH0 << (SOC_GDMA_PAIRS_PER_GROUP_MAX * group_id) << pair_id)
+
 #define AHB_DMA_LL_GET_HW(id) (((id) == 0) ? (&AHB_DMA) : NULL)
 
+#define GDMA_LL_CHANNEL_MAX_PRIORITY 5 // supported priority levels: [0,5]
+
+#define GDMA_LL_RX_EVENT_MASK       (0x7F)
+#define GDMA_LL_TX_EVENT_MASK       (0x3F)
+
 // any "dummy" peripheral ID can be used for M2M mode
-#define AHB_DMA_LL_M2M_FREE_PERIPH_ID_MASK (0xFAC2)
+#define AHB_DMA_LL_M2M_FREE_PERIPH_ID_MASK (0xFC31)
 #define AHB_DMA_LL_INVALID_PERIPH_ID       (0x3F)
 
+#define GDMA_LL_EVENT_TX_FIFO_UDF   (1<<5)
+#define GDMA_LL_EVENT_TX_FIFO_OVF   (1<<4)
+#define GDMA_LL_EVENT_RX_FIFO_UDF   (1<<6)
+#define GDMA_LL_EVENT_RX_FIFO_OVF   (1<<5)
+#define GDMA_LL_EVENT_TX_TOTAL_EOF  (1<<3)
+#define GDMA_LL_EVENT_RX_DESC_EMPTY (1<<4)
+#define GDMA_LL_EVENT_TX_DESC_ERROR (1<<2)
+#define GDMA_LL_EVENT_RX_DESC_ERROR (1<<3)
+#define GDMA_LL_EVENT_TX_EOF        (1<<1)
+#define GDMA_LL_EVENT_TX_DONE       (1<<0)
+#define GDMA_LL_EVENT_RX_ERR_EOF    (1<<2)
+#define GDMA_LL_EVENT_RX_SUC_EOF    (1<<1)
+#define GDMA_LL_EVENT_RX_DONE       (1<<0)
+
+#define GDMA_LL_AHB_GROUP_START_ID    0 // AHB GDMA group ID starts from 0
+#define GDMA_LL_AHB_NUM_GROUPS        1 // Number of AHB GDMA groups
+#define GDMA_LL_AHB_PAIRS_PER_GROUP   3 // Number of GDMA pairs in each AHB group
+
+#define GDMA_LL_TX_ETM_EVENT_TABLE(group, chan, event)                                     \
+    (uint32_t[1][3][GDMA_ETM_EVENT_MAX]){{{                                                \
+                                              [GDMA_ETM_EVENT_EOF] = GDMA_EVT_OUT_EOF_CH0, \
+                                          },                                               \
+                                          {                                                \
+                                              [GDMA_ETM_EVENT_EOF] = GDMA_EVT_OUT_EOF_CH1, \
+                                          },                                               \
+                                          {                                                \
+                                              [GDMA_ETM_EVENT_EOF] = GDMA_EVT_OUT_EOF_CH2, \
+                                          }}}[group][chan][event]
+
+#define GDMA_LL_RX_ETM_EVENT_TABLE(group, chan, event)                                        \
+    (uint32_t[1][3][GDMA_ETM_EVENT_MAX]){{{                                                   \
+                                              [GDMA_ETM_EVENT_EOF] = GDMA_EVT_IN_SUC_EOF_CH0, \
+                                          },                                                  \
+                                          {                                                   \
+                                              [GDMA_ETM_EVENT_EOF] = GDMA_EVT_IN_SUC_EOF_CH1, \
+                                          },                                                  \
+                                          {                                                   \
+                                              [GDMA_ETM_EVENT_EOF] = GDMA_EVT_IN_SUC_EOF_CH2, \
+                                          }}}[group][chan][event]
+
+#define GDMA_LL_TX_ETM_TASK_TABLE(group, chan, task)                                          \
+    (uint32_t[1][3][GDMA_ETM_TASK_MAX]){{{                                                    \
+                                             [GDMA_ETM_TASK_START] = GDMA_TASK_OUT_START_CH0, \
+                                         },                                                   \
+                                         {                                                    \
+                                             [GDMA_ETM_TASK_START] = GDMA_TASK_OUT_START_CH1, \
+                                         },                                                   \
+                                         {                                                    \
+                                             [GDMA_ETM_TASK_START] = GDMA_TASK_OUT_START_CH2, \
+                                         }}}[group][chan][task]
+
+#define GDMA_LL_RX_ETM_TASK_TABLE(group, chan, task)                                         \
+    (uint32_t[1][3][GDMA_ETM_TASK_MAX]){{{                                                   \
+                                             [GDMA_ETM_TASK_START] = GDMA_TASK_IN_START_CH0, \
+                                         },                                                  \
+                                         {                                                   \
+                                             [GDMA_ETM_TASK_START] = GDMA_TASK_IN_START_CH1, \
+                                         },                                                  \
+                                         {                                                   \
+                                             [GDMA_ETM_TASK_START] = GDMA_TASK_IN_START_CH2, \
+                                         }}}[group][chan][task]
+
+#define GDMA_LL_AHB_DESC_ALIGNMENT    4
+
 ///////////////////////////////////// Common /////////////////////////////////////////
+
+/**
+ * @brief Enable the bus clock for the DMA module
+ */
+static inline void gdma_ll_enable_bus_clock(int group_id, bool enable)
+{
+    (void)group_id;
+    PCR.gdma_conf.gdma_clk_en = enable;
+}
+
+/**
+ * @brief Reset the DMA module
+ */
+static inline void gdma_ll_reset_register(int group_id)
+{
+    (void)group_id;
+    PCR.gdma_conf.gdma_rst_en = 1;
+    PCR.gdma_conf.gdma_rst_en = 0;
+}
+
 /**
  * @brief Force enable register clock
  */
@@ -65,8 +156,8 @@ static inline void ahb_dma_ll_reset_fsm(ahb_dma_dev_t *dev)
 static inline void ahb_dma_ll_set_default_memory_range(ahb_dma_dev_t *dev)
 {
     // AHB-DMA can access L2MEM, L2ROM, MSPI Flash, MSPI PSRAM
-    dev->intr_mem_start_addr.val = 0x40000000;
-    dev->intr_mem_end_addr.val = 0x4FFC0000;
+    dev->intr_mem_start_addr.val = 0x40800000;
+    dev->intr_mem_end_addr.val = 0x44000000;
 }
 
 ///////////////////////////////////// RX /////////////////////////////////////////
@@ -125,7 +216,7 @@ static inline void ahb_dma_ll_rx_enable_owner_check(ahb_dma_dev_t *dev, uint32_t
  */
 static inline void ahb_dma_ll_rx_enable_data_burst(ahb_dma_dev_t *dev, uint32_t channel, bool enable)
 {
-    dev->channel[channel].in.in_conf0.in_data_burst_en_chn = enable;
+    // dev->channel[channel].in.in_conf0.in_data_burst_mode_sel_chn = enable; // single/incr4/incr8/incr16
 }
 
 /**
@@ -165,7 +256,7 @@ static inline bool ahb_dma_ll_rx_is_fifo_empty(ahb_dma_dev_t *dev, uint32_t chan
 }
 
 /**
- * @brief Get number of bytes remained in the L1 RX FIFO
+ * @brief Get number of bytes in RX FIFO
  * @param fifo_level only supports level 1
  */
 static inline uint32_t ahb_dma_ll_rx_get_fifo_bytes(ahb_dma_dev_t *dev, uint32_t channel, uint32_t fifo_level)
@@ -283,7 +374,7 @@ static inline void ahb_dma_ll_rx_connect_to_periph(ahb_dma_dev_t *dev, uint32_t 
  */
 static inline void ahb_dma_ll_rx_disconnect_from_periph(ahb_dma_dev_t *dev, uint32_t channel)
 {
-    dev->channel[channel].in.in_peri_sel.peri_in_sel_chn = GDMA_LL_INVALID_PERIPH_ID;
+    dev->channel[channel].in.in_peri_sel.peri_in_sel_chn = AHB_DMA_LL_INVALID_PERIPH_ID;
     dev->channel[channel].in.in_conf0.mem_trans_en_chn = false;
 }
 
@@ -353,7 +444,7 @@ static inline void ahb_dma_ll_tx_enable_owner_check(ahb_dma_dev_t *dev, uint32_t
  */
 static inline void ahb_dma_ll_tx_enable_data_burst(ahb_dma_dev_t *dev, uint32_t channel, bool enable)
 {
-    dev->channel[channel].out.out_conf0.out_data_burst_en_chn = enable;
+    // dev->channel[channel].out.out_conf0.out_data_burst_mode_sel_chn = enable;
 }
 
 /**
@@ -510,7 +601,7 @@ static inline void ahb_dma_ll_tx_connect_to_periph(ahb_dma_dev_t *dev, uint32_t 
  */
 static inline void ahb_dma_ll_tx_disconnect_from_periph(ahb_dma_dev_t *dev, uint32_t channel)
 {
-    dev->channel[channel].out.out_peri_sel.peri_out_sel_chn = GDMA_LL_INVALID_PERIPH_ID;
+    dev->channel[channel].out.out_peri_sel.peri_out_sel_chn = AHB_DMA_LL_INVALID_PERIPH_ID;
 }
 
 /**
@@ -521,128 +612,6 @@ static inline void ahb_dma_ll_tx_disconnect_from_periph(ahb_dma_dev_t *dev, uint
 static inline void ahb_dma_ll_tx_enable_etm_task(ahb_dma_dev_t *dev, uint32_t channel, bool enable)
 {
     dev->channel[channel].out.out_conf0.out_etm_en_chn = enable;
-}
-
-///////////////////////////////////// CRC-TX /////////////////////////////////////////
-
-/**
- * @brief Clear the CRC result for the TX channel
- */
-static inline void ahb_dma_ll_tx_crc_clear(ahb_dma_dev_t *dev, uint32_t channel)
-{
-    dev->out_crc_arb[channel].crc_clear.out_crc_clear_chn_reg = 1;
-    dev->out_crc_arb[channel].crc_clear.out_crc_clear_chn_reg = 0;
-}
-
-/**
- * @brief Set CRC width for TX channel
- */
-static inline void ahb_dma_ll_tx_crc_set_width(ahb_dma_dev_t *dev, uint32_t channel, uint32_t width)
-{
-    HAL_ASSERT(width <= 32);
-    dev->out_crc_arb[channel].crc_width.tx_crc_width_chn = (width - 1) / 8;
-}
-
-/**
- * @brief Set CRC initial value for TX channel
- */
-static inline void ahb_dma_ll_tx_crc_set_init_value(ahb_dma_dev_t *dev, uint32_t channel, uint32_t value)
-{
-    dev->out_crc_arb[channel].crc_init_data.out_crc_init_data_chn = value;
-}
-
-/**
- * @brief Get CRC result for TX channel
- */
-static inline uint32_t ahb_dma_ll_tx_crc_get_result(ahb_dma_dev_t *dev, uint32_t channel)
-{
-    return dev->out_crc_arb[channel].crc_final_result.out_crc_final_result_chn;
-}
-
-/**
- * @brief Latch the CRC configuration to the hardware, TX channel
- */
-static inline void ahb_dma_ll_tx_crc_latch_config(ahb_dma_dev_t *dev, uint32_t channel)
-{
-    dev->out_crc_arb[channel].crc_width.tx_crc_latch_flag_chn = 1;
-    dev->out_crc_arb[channel].crc_width.tx_crc_latch_flag_chn = 0;
-}
-
-/**
- * @brief Set the lfsr and data mask that used by the Parallel CRC calculation formula for a given CRC bit, TX channel
- */
-static inline void ahb_dma_ll_tx_crc_set_lfsr_data_mask(ahb_dma_dev_t *dev, uint32_t channel, uint32_t crc_bit,
-                                                        uint32_t lfsr_mask, uint32_t data_mask, bool reverse_data_mask)
-{
-    dev->out_crc_arb[channel].crc_en_addr.tx_crc_en_addr_chn = crc_bit;
-    dev->out_crc_arb[channel].crc_en_wr_data.tx_crc_en_wr_data_chn = lfsr_mask;
-    dev->out_crc_arb[channel].crc_data_en_addr.tx_crc_data_en_addr_chn = crc_bit;
-    if (reverse_data_mask) {
-        // "& 0xff" because the hardware only support 8-bit data
-        data_mask = hal_utils_bitwise_reverse8(data_mask & 0xFF);
-    }
-    HAL_FORCE_MODIFY_U32_REG_FIELD(dev->out_crc_arb[channel].crc_data_en_wr_data, tx_crc_data_en_wr_data_chn, data_mask);
-}
-
-///////////////////////////////////// CRC-RX /////////////////////////////////////////
-
-/**
- * @brief Clear the CRC result for the RX channel
- */
-static inline void ahb_dma_ll_rx_crc_clear(ahb_dma_dev_t *dev, uint32_t channel)
-{
-    dev->in_crc_arb[channel].crc_clear.in_crc_clear_chn_reg = 1;
-    dev->in_crc_arb[channel].crc_clear.in_crc_clear_chn_reg = 0;
-}
-
-/**
- * @brief Set CRC width for RX channel
- */
-static inline void ahb_dma_ll_rx_crc_set_width(ahb_dma_dev_t *dev, uint32_t channel, uint32_t width)
-{
-    HAL_ASSERT(width <= 32);
-    dev->in_crc_arb[channel].crc_width.rx_crc_width_chn = (width - 1) / 8;
-}
-
-/**
- * @brief Set CRC initial value for RX channel
- */
-static inline void ahb_dma_ll_rx_crc_set_init_value(ahb_dma_dev_t *dev, uint32_t channel, uint32_t value)
-{
-    dev->in_crc_arb[channel].crc_init_data.in_crc_init_data_chn = value;
-}
-
-/**
- * @brief Get CRC result for RX channel
- */
-static inline uint32_t ahb_dma_ll_rx_crc_get_result(ahb_dma_dev_t *dev, uint32_t channel)
-{
-    return dev->in_crc_arb[channel].crc_final_result.in_crc_final_result_chn;
-}
-
-/**
- * @brief Latch the CRC configuration to the hardware, RX channel
- */
-static inline void ahb_dma_ll_rx_crc_latch_config(ahb_dma_dev_t *dev, uint32_t channel)
-{
-    dev->in_crc_arb[channel].crc_width.rx_crc_latch_flag_chn = 1;
-    dev->in_crc_arb[channel].crc_width.rx_crc_latch_flag_chn = 0;
-}
-
-/**
- * @brief Set the lfsr and data mask that used by the Parallel CRC calculation formula for a given CRC bit, RX channel
- */
-static inline void ahb_dma_ll_rx_crc_set_lfsr_data_mask(ahb_dma_dev_t *dev, uint32_t channel, uint32_t crc_bit,
-                                                        uint32_t lfsr_mask, uint32_t data_mask, bool reverse_data_mask)
-{
-    dev->in_crc_arb[channel].crc_en_addr.rx_crc_en_addr_chn = crc_bit;
-    dev->in_crc_arb[channel].crc_en_wr_data.rx_crc_en_wr_data_chn = lfsr_mask;
-    dev->in_crc_arb[channel].crc_data_en_addr.rx_crc_data_en_addr_chn = crc_bit;
-    if (reverse_data_mask) {
-        // "& 0xff" because the hardware only support 8-bit data
-        data_mask = hal_utils_bitwise_reverse8(data_mask & 0xFF);
-    }
-    HAL_FORCE_MODIFY_U32_REG_FIELD(dev->in_crc_arb[channel].crc_data_en_wr_data, rx_crc_data_en_wr_data_chn, data_mask);
 }
 
 #ifdef __cplusplus
