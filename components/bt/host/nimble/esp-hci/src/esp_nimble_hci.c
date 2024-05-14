@@ -19,8 +19,6 @@
 #include "freertos/semphr.h"
 #include "esp_compiler.h"
 #include "soc/soc_caps.h"
-#include "bt_common.h"
-#include "hci_log/bt_hci_log.h"
 
 #define NIMBLE_VHCI_TIMEOUT_MS  2000
 #define BLE_HCI_EVENT_HDR_LEN               (2)
@@ -86,9 +84,6 @@ int ble_hci_trans_hs_cmd_tx(uint8_t *cmd)
     }
 
     if (xSemaphoreTake(vhci_send_sem, NIMBLE_VHCI_TIMEOUT_MS / portTICK_PERIOD_MS) == pdTRUE) {
-#if (BT_HCI_LOG_INCLUDED == TRUE)
-        bt_hci_log_record_hci_data(cmd[0], cmd, len);
-#endif
         esp_vhci_host_send_packet(cmd, len);
     } else {
         rc = BLE_HS_ETIMEOUT_HCI;
@@ -128,9 +123,6 @@ int ble_hci_trans_hs_acl_tx(struct os_mbuf *om)
     len += OS_MBUF_PKTLEN(om);
 
     if (xSemaphoreTake(vhci_send_sem, NIMBLE_VHCI_TIMEOUT_MS / portTICK_PERIOD_MS) == pdTRUE) {
-#if (BT_HCI_LOG_INCLUDED == TRUE)
-        bt_hci_log_record_hci_data(data[0], data, len);
-#endif
         esp_vhci_host_send_packet(data, len);
     } else {
         rc = BLE_HS_ETIMEOUT_HCI;
@@ -370,18 +362,12 @@ static int host_rcv_pkt(uint8_t *data, uint16_t len)
         /* Allocate LE Advertising Report Event from lo pool only */
         if ((data[1] == BLE_HCI_EVCODE_LE_META) &&
             (data[3] == BLE_HCI_LE_SUBEV_ADV_RPT || data[3] == BLE_HCI_LE_SUBEV_EXT_ADV_RPT)) {
-#if (BT_HCI_LOG_INCLUDED == TRUE)
-            bt_hci_log_record_hci_adv(HCI_LOG_DATA_TYPE_ADV, data, len);
-#endif
             evbuf = ble_hci_trans_buf_alloc(BLE_HCI_TRANS_BUF_EVT_LO);
             /* Skip advertising report if we're out of memory */
             if (!evbuf) {
                 return 0;
             }
         } else {
-#if (BT_HCI_LOG_INCLUDED == TRUE)
-            bt_hci_log_record_hci_data(data[0], data, len);
-#endif
             evbuf = ble_hci_trans_buf_alloc(BLE_HCI_TRANS_BUF_EVT_HI);
             assert(evbuf != NULL);
         }
@@ -392,9 +378,6 @@ static int host_rcv_pkt(uint8_t *data, uint16_t len)
         rc = ble_hci_trans_ll_evt_tx(evbuf);
         assert(rc == 0);
     } else if (data[0] == BLE_HCI_UART_H4_ACL) {
-#if (BT_HCI_LOG_INCLUDED == TRUE)
-        bt_hci_log_record_hci_data(HCI_LOG_DATA_TYPE_C2H_ACL, data, len);
-#endif
         ble_hci_rx_acl(data + 1, len - 1);
     }
     return 0;
@@ -467,10 +450,6 @@ esp_err_t esp_nimble_hci_init(void)
         goto err;
     }
 
-#if (BT_HCI_LOG_INCLUDED == TRUE)
-    bt_hci_log_init();
-#endif // (BT_HCI_LOG_INCLUDED == TRUE)
-
     xSemaphoreGive(vhci_send_sem);
 
 #if MYNEWT_VAL(BLE_QUEUE_CONG_CHECK)
@@ -518,10 +497,6 @@ esp_err_t esp_nimble_hci_deinit(void)
     }
 
     ble_buf_free();
-
-#if (BT_HCI_LOG_INCLUDED == TRUE)
-    bt_hci_log_deinit();
-#endif // (BT_HCI_LOG_INCLUDED == TRUE)
 
 #if MYNEWT_VAL(BLE_QUEUE_CONG_CHECK)
     ble_adv_list_deinit();
