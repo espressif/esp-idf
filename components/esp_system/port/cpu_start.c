@@ -93,7 +93,6 @@
 #include "bootloader_flash_config.h"
 #include "bootloader_flash.h"
 #include "esp_private/crosscore_int.h"
-#include "esp_flash_encrypt.h"
 
 #include "esp_private/sleep_gpio.h"
 #include "hal/wdt_hal.h"
@@ -114,6 +113,7 @@
 #include "esp_rom_spiflash.h"
 #include "bootloader_init.h"
 #include "esp_private/bootloader_flash_internal.h"
+#include "spi_flash_mmap.h"
 #endif // CONFIG_APP_BUILD_TYPE_RAM
 
 //This dependency will be removed in the future

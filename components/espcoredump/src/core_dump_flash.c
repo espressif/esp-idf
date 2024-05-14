@@ -12,6 +12,7 @@
 #include "esp_flash_encrypt.h"
 #include "esp_rom_crc.h"
 #include "esp_private/spi_flash_os.h"
+#include "spi_flash_mmap.h"
 
 #define BLANK_COREDUMP_SIZE 0xFFFFFFFF
 
@@ -258,7 +259,7 @@ static esp_err_t esp_core_dump_flash_write_prepare(core_dump_write_data_t *wr_da
         padding = COREDUMP_CACHE_SIZE - modulo;
     }
 
-    /* Now we can check whether we have enough space in our core dump parition
+    /* Now we can check whether we have enough space in our core dump partition
      * or not. */
     if ((*data_len + padding + cs_len) > s_core_flash_config.partition.size) {
         ESP_COREDUMP_LOGE("Not enough space to save core dump!");
