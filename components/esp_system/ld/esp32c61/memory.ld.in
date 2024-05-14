@@ -16,7 +16,7 @@
 #include "ld.common"
 
 #define SRAM_SEG_START     0x40800000
-#define SRAM_SEG_END       0x4084E5F0  /* 2nd stage bootloader iram_loader_seg start address */
+#define SRAM_SEG_END       0x4083ea70  /* 2nd stage bootloader iram_loader_seg start address */
 #define SRAM_SEG_SIZE      SRAM_SEG_END - SRAM_SEG_START
 
 #if CONFIG_APP_BUILD_USE_FLASH_SECTIONS
