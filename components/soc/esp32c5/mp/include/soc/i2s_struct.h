@@ -267,117 +267,33 @@ typedef union {
     uint32_t val;
 } i2s_rx_recomb_ctrl_reg_t;
 
-/** Type of rx_recomb_dma_ch0 register
+/** Type of rx_recomb_dma_chn register
  *  I2S RX recombined-dma-channel configuration register
  */
 typedef union {
     struct {
-        /** rx_recomb_dma_ch0_valid : R/W; bitpos: [0]; default: 0;
+        /** rx_recomb_dma_ch_valid : R/W; bitpos: [0]; default: 0;
          *  Set this bit to enable the adc-dma-channel.
          */
-        uint32_t rx_recomb_dma_ch0_valid:1;
-        /** rx_recomb_dma_ch0_style : R/W; bitpos: [4:1]; default: 0;
+        uint32_t rx_recomb_dma_ch_valid:1;
+        /** rx_recomb_dma_ch_style : R/W; bitpos: [4:1]; default: 0;
          *  Set this field to set the recombined-dma-channel style. If choose to use i2s
          *  extracted ch 1&3 in 4 channels, the style should be: 6'b1010.
          */
-        uint32_t rx_recomb_dma_ch0_style:4;
-        /** rx_recomb_dma_ch0_order : R/W; bitpos: [12:5]; default: 0;
+        uint32_t rx_recomb_dma_ch_style:4;
+        /** rx_recomb_dma_ch_order : R/W; bitpos: [12:5]; default: 0;
          *  Set this field to set the recombined-dma-channel order. If choose to use the order
          *  ch3 -> ch1, the order should be: 8'd7 = {2'd0,2'd0,2'd1,2'd3}.
          */
-        uint32_t rx_recomb_dma_ch0_order:8;
-        /** rx_recomb_dma_ch0_eof_num : R/W; bitpos: [28:13]; default: 0;
+        uint32_t rx_recomb_dma_ch_order:8;
+        /** rx_recomb_dma_ch_eof_num : R/W; bitpos: [28:13]; default: 0;
          *  Set this field to set the receive eof byte length of the recombined-dma-channel.
          */
-        uint32_t rx_recomb_dma_ch0_eof_num:16;
+        uint32_t rx_recomb_dma_ch_eof_num:16;
         uint32_t reserved_29:3;
     };
     uint32_t val;
-} i2s_rx_recomb_dma_ch0_reg_t;
-
-/** Type of rx_recomb_dma_ch1 register
- *  I2S RX recombined-dma-channel configuration register
- */
-typedef union {
-    struct {
-        /** rx_recomb_dma_ch1_valid : R/W; bitpos: [0]; default: 0;
-         *  Set this bit to enable the adc-dma-channel.
-         */
-        uint32_t rx_recomb_dma_ch1_valid:1;
-        /** rx_recomb_dma_ch1_style : R/W; bitpos: [4:1]; default: 0;
-         *  Set this field to set the recombined-dma-channel style. If choose to use i2s
-         *  extracted ch 1&3 in 4 channels, the style should be: 6'b1010.
-         */
-        uint32_t rx_recomb_dma_ch1_style:4;
-        /** rx_recomb_dma_ch1_order : R/W; bitpos: [12:5]; default: 0;
-         *  Set this field to set the recombined-dma-channel order. If choose to use the order
-         *  ch3 -> ch1, the order should be: 8'd7 = {2'd0,2'd0,2'd1,2'd3}.
-         */
-        uint32_t rx_recomb_dma_ch1_order:8;
-        /** rx_recomb_dma_ch1_eof_num : R/W; bitpos: [28:13]; default: 0;
-         *  Set this field to set the receive eof byte length of the recombined-dma-channel.
-         */
-        uint32_t rx_recomb_dma_ch1_eof_num:16;
-        uint32_t reserved_29:3;
-    };
-    uint32_t val;
-} i2s_rx_recomb_dma_ch1_reg_t;
-
-/** Type of rx_recomb_dma_ch2 register
- *  I2S RX recombined-dma-channel configuration register
- */
-typedef union {
-    struct {
-        /** rx_recomb_dma_ch2_valid : R/W; bitpos: [0]; default: 0;
-         *  Set this bit to enable the adc-dma-channel.
-         */
-        uint32_t rx_recomb_dma_ch2_valid:1;
-        /** rx_recomb_dma_ch2_style : R/W; bitpos: [4:1]; default: 0;
-         *  Set this field to set the recombined-dma-channel style. If choose to use i2s
-         *  extracted ch 1&3 in 4 channels, the style should be: 6'b1010.
-         */
-        uint32_t rx_recomb_dma_ch2_style:4;
-        /** rx_recomb_dma_ch2_order : R/W; bitpos: [12:5]; default: 0;
-         *  Set this field to set the recombined-dma-channel order. If choose to use the order
-         *  ch3 -> ch1, the order should be: 8'd7 = {2'd0,2'd0,2'd1,2'd3}.
-         */
-        uint32_t rx_recomb_dma_ch2_order:8;
-        /** rx_recomb_dma_ch2_eof_num : R/W; bitpos: [28:13]; default: 0;
-         *  Set this field to set the receive eof byte length of the recombined-dma-channel.
-         */
-        uint32_t rx_recomb_dma_ch2_eof_num:16;
-        uint32_t reserved_29:3;
-    };
-    uint32_t val;
-} i2s_rx_recomb_dma_ch2_reg_t;
-
-/** Type of rx_recomb_dma_ch3 register
- *  I2S RX recombined-dma-channel configuration register
- */
-typedef union {
-    struct {
-        /** rx_recomb_dma_ch3_valid : R/W; bitpos: [0]; default: 0;
-         *  Set this bit to enable the adc-dma-channel.
-         */
-        uint32_t rx_recomb_dma_ch3_valid:1;
-        /** rx_recomb_dma_ch3_style : R/W; bitpos: [4:1]; default: 0;
-         *  Set this field to set the recombined-dma-channel style. If choose to use i2s
-         *  extracted ch 1&3 in 4 channels, the style should be: 6'b1010.
-         */
-        uint32_t rx_recomb_dma_ch3_style:4;
-        /** rx_recomb_dma_ch3_order : R/W; bitpos: [12:5]; default: 0;
-         *  Set this field to set the recombined-dma-channel order. If choose to use the order
-         *  ch3 -> ch1, the order should be: 8'd7 = {2'd0,2'd0,2'd1,2'd3}.
-         */
-        uint32_t rx_recomb_dma_ch3_order:8;
-        /** rx_recomb_dma_ch3_eof_num : R/W; bitpos: [28:13]; default: 0;
-         *  Set this field to set the receive eof byte length of the recombined-dma-channel.
-         */
-        uint32_t rx_recomb_dma_ch3_eof_num:16;
-        uint32_t reserved_29:3;
-    };
-    uint32_t val;
-} i2s_rx_recomb_dma_ch3_reg_t;
+} i2s_rx_recomb_dma_chn_reg_t;
 
 /** Type of rx_pdm2pcm_conf register
  *  I2S RX configure register
@@ -510,7 +426,7 @@ typedef union {
     uint32_t val;
 } i2s_rx_tdm_ctrl_reg_t;
 
-/** Type of rxeof_num register
+/** Type of rx_eof_num register
  *  I2S RX data number control register.
  */
 typedef union {
@@ -523,7 +439,7 @@ typedef union {
         uint32_t reserved_16:16;
     };
     uint32_t val;
-} i2s_rxeof_num_reg_t;
+} i2s_rx_eof_num_reg_t;
 
 
 /** Group: TX Control and configuration registers */
@@ -549,7 +465,7 @@ typedef union {
          */
         uint32_t tx_slave_mod:1;
         /** tx_stop_en : R/W; bitpos: [4]; default: 1;
-         *  Set this bit to stop disable output BCK signal and WS signal when tx FIFO is emtpy
+         *  Set this bit to stop disable output BCK signal and WS signal when tx FIFO is empty
          */
         uint32_t tx_stop_en:1;
         /** tx_chan_equal : R/W; bitpos: [5]; default: 0;
@@ -987,7 +903,7 @@ typedef union {
     uint32_t val;
 } i2s_lc_hung_conf_reg_t;
 
-/** Type of conf_sigle_data register
+/** Type of conf_single_data register
  *  I2S signal data register
  */
 typedef union {
@@ -998,7 +914,7 @@ typedef union {
         uint32_t single_data:32;
     };
     uint32_t val;
-} i2s_conf_sigle_data_reg_t;
+} i2s_conf_single_data_reg_t;
 
 
 /** Group: TX status registers */
@@ -1119,10 +1035,7 @@ typedef struct {
     volatile i2s_rx_conf1_reg_t rx_conf1;
     volatile i2s_tx_conf1_reg_t tx_conf1;
     volatile i2s_rx_recomb_ctrl_reg_t rx_recomb_ctrl;
-    volatile i2s_rx_recomb_dma_ch0_reg_t rx_recomb_dma_ch0;
-    volatile i2s_rx_recomb_dma_ch1_reg_t rx_recomb_dma_ch1;
-    volatile i2s_rx_recomb_dma_ch2_reg_t rx_recomb_dma_ch2;
-    volatile i2s_rx_recomb_dma_ch3_reg_t rx_recomb_dma_ch3;
+    volatile i2s_rx_recomb_dma_chn_reg_t rx_recomb_dma_ch[4];
     volatile i2s_tx_pcm2pdm_conf_reg_t tx_pcm2pdm_conf;
     volatile i2s_tx_pcm2pdm_conf1_reg_t tx_pcm2pdm_conf1;
     volatile i2s_rx_pdm2pcm_conf_reg_t rx_pdm2pcm_conf;
@@ -1131,8 +1044,8 @@ typedef struct {
     volatile i2s_rx_timing_reg_t rx_timing;
     volatile i2s_tx_timing_reg_t tx_timing;
     volatile i2s_lc_hung_conf_reg_t lc_hung_conf;
-    volatile i2s_rxeof_num_reg_t rxeof_num;
-    volatile i2s_conf_sigle_data_reg_t conf_sigle_data;
+    volatile i2s_rx_eof_num_reg_t rx_eof_num;
+    volatile i2s_conf_single_data_reg_t conf_single_data;
     volatile i2s_state_reg_t state;
     volatile i2s_etm_conf_reg_t etm_conf;
     volatile i2s_fifo_cnt_reg_t fifo_cnt;
@@ -1141,7 +1054,7 @@ typedef struct {
     volatile i2s_date_reg_t date;
 } i2s_dev_t;
 
-extern i2s_dev_t I2S;
+extern i2s_dev_t I2S0;
 
 #ifndef __cplusplus
 _Static_assert(sizeof(i2s_dev_t) == 0x84, "Invalid size of i2s_dev_t structure");

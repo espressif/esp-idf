@@ -74,13 +74,17 @@ I2S 时钟
 
 - :cpp:enumerator:`i2s_clock_src_t::I2S_CLK_SRC_DEFAULT`：默认 PLL 时钟。
 
-.. only:: not esp32h2
+.. only:: SOC_I2S_SUPPORTS_PLL_F160M
 
     - :cpp:enumerator:`i2s_clock_src_t::I2S_CLK_SRC_PLL_160M`：160 MHz PLL 时钟。
 
-.. only:: esp32h2
+.. only:: SOC_I2S_SUPPORTS_PLL_F96M
 
     - :cpp:enumerator:`i2s_clock_src_t::I2S_CLK_SRC_PLL_96M`：96 MHz PLL 时钟。
+
+.. only:: SOC_I2S_SUPPORTS_PLL_F240M
+
+    - :cpp:enumerator:`i2s_clock_src_t::I2S_CLK_SRC_PLL_240M`：240 MHz PLL 时钟。
 
 .. only:: SOC_I2S_SUPPORTS_APLL
 
@@ -117,6 +121,7 @@ ESP32-C6    I2S 0     I2S 0     无        I2S 0     无         无
 ESP32-S3   I2S 0/1    I2S 0     I2S 0    I2S 0/1    无         无
 ESP32-H2    I2S 0     I2S 0     无        I2S 0     无         无
 ESP32-P4   I2S 0~2    I2S 0     I2S 0    I2S 0~2    无         无
+ESP32-C5    I2S 0     I2S 0     无        I2S 0     无         无
 =========  ========  ========  ========  ========  ========  ==========
 
 标准模式
