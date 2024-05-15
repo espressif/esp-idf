@@ -88,6 +88,8 @@ static void ieee802154_receive_done(uint8_t *data, esp_ieee802154_frame_info_t *
         esp_rom_printf("receive buffer full, drop the current frame.\n");
     } else {
         // Otherwise, post it to the upper layer.
+        // Ignore bit8 for the frame length, due to the max frame length is 127 based 802.15.4 spec.
+        data[0] = data[0] & 0x7f;
         frame_info->process = true;
         esp_ieee802154_receive_done(data, frame_info);
     }
@@ -901,11 +903,11 @@ esp_err_t ieee802154_receive_at(uint32_t time)
     uint32_t rx_target_time = time - IEEE802154_RX_RAMPUP_TIME_US;
     uint32_t current_time;
     IEEE802154_RF_ENABLE();
+    ieee802154_enter_critical();
     rx_init();
     IEEE802154_SET_TXRX_PTI(IEEE802154_SCENE_RX_AT);
     set_next_rx_buffer();
     ieee802154_set_state(IEEE802154_STATE_RX);
-    ieee802154_enter_critical();
     ieee802154_etm_set_event_task(IEEE802154_ETM_CHANNEL1, ETM_EVENT_TIMER0_OVERFLOW, ETM_TASK_RX_START);
     current_time = (uint32_t)esp_timer_get_time();
     ieee802154_timer0_set_threshold((is_target_time_expired(rx_target_time, current_time) ? 0 : (rx_target_time - current_time))); //uint: 1us
