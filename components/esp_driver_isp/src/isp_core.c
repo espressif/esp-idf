@@ -73,6 +73,7 @@ esp_err_t esp_isp_new_processor(const esp_isp_processor_cfg_t *proc_config, isp_
     esp_err_t ret = ESP_FAIL;
     ESP_RETURN_ON_FALSE(proc_config && ret_proc, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
     ESP_RETURN_ON_FALSE(proc_config->input_data_source == ISP_INPUT_DATA_SOURCE_CSI, ESP_ERR_NOT_SUPPORTED, TAG, "only support CSI as input source at this moment");
+    ESP_RETURN_ON_FALSE(proc_config->input_data_color_type == ISP_COLOR_RAW8, ESP_ERR_NOT_SUPPORTED, TAG, "input data type not supported");
 
     isp_processor_t *proc = heap_caps_calloc(1, sizeof(isp_processor_t), ISP_MEM_ALLOC_CAPS);
     ESP_RETURN_ON_FALSE(proc, ESP_ERR_NO_MEM, TAG, "no mem");
