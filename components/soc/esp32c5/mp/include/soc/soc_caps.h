@@ -42,7 +42,7 @@
 #define SOC_RMT_SUPPORTED               1
 // #define SOC_SDM_SUPPORTED               1  // TODO: [ESP32C5] IDF-8687
 #define SOC_GPSPI_SUPPORTED             1
-// #define SOC_LEDC_SUPPORTED              1  // TODO: [ESP32C5] IDF-8684
+#define SOC_LEDC_SUPPORTED              1
 // #define SOC_I2C_SUPPORTED               1  // TODO: [ESP32C5] IDF-8694, IDF-8696
 #define SOC_SYSTIMER_SUPPORTED          1     // TODO: [ESP32C5] IDF-8707
 // #define SOC_AES_SUPPORTED               1  // TODO: [ESP32C5] IDF-8627
@@ -274,15 +274,14 @@
 #define SOC_I2S_TDM_FULL_DATA_WIDTH (1)  /*!< No limitation to data bit width when using multiple slots */
 
 /*-------------------------- LEDC CAPS ---------------------------------------*/
-// TODO: [ESP32C5] 8684
 #define SOC_LEDC_SUPPORT_PLL_DIV_CLOCK      (1)
 #define SOC_LEDC_SUPPORT_XTAL_CLOCK         (1)
 #define SOC_LEDC_CHANNEL_NUM                (6)
-// #define SOC_LEDC_TIMER_BIT_WIDTH            (20)
-// #define SOC_LEDC_SUPPORT_FADE_STOP          (1)
-// #define SOC_LEDC_GAMMA_CURVE_FADE_SUPPORTED (1)
-// #define SOC_LEDC_GAMMA_CURVE_FADE_RANGE_MAX (16)
-// #define SOC_LEDC_FADE_PARAMS_BIT_WIDTH      (10)
+#define SOC_LEDC_TIMER_BIT_WIDTH            (20)
+#define SOC_LEDC_SUPPORT_FADE_STOP          (1)
+#define SOC_LEDC_GAMMA_CURVE_FADE_SUPPORTED (1)
+#define SOC_LEDC_GAMMA_CURVE_FADE_RANGE_MAX (16)
+#define SOC_LEDC_FADE_PARAMS_BIT_WIDTH      (10)
 
 /*-------------------------- MMU CAPS ----------------------------------------*/
 // TODO: [ESP32C5] IDF-8658
@@ -540,7 +539,7 @@
 // #define SOC_PM_PAU_LINK_NUM             (4)
 
 /*-------------------------- CLOCK SUBSYSTEM CAPS ----------------------------------------*/
-#define SOC_CLK_RC_FAST_SUPPORT_CALIBRATION       (1)
+// #define SOC_CLK_RC_FAST_SUPPORT_CALIBRATION       (1) // TODO: IDF-8642
 #define SOC_MODEM_CLOCK_IS_INDEPENDENT            (1)
 
 #define SOC_CLK_XTAL32K_SUPPORTED                 (1)     /*!< Support to connect an external low frequency crystal */

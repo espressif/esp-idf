@@ -1,7 +1,7 @@
 LED PWM 控制器
 ==============
 
-{IDF_TARGET_LEDC_MAX_FADE_RANGE_NUM: default="1", esp32c6="16", esp32h2="16", esp32p4="16"}
+{IDF_TARGET_LEDC_MAX_FADE_RANGE_NUM: default="1", esp32c6="16", esp32h2="16", esp32p4="16", esp32c5="16"}
 
 :link_to_translation:`en:[English]`
 
@@ -147,7 +147,26 @@ LED PWM 控制器可在无需 CPU 干预的情况下自动改变占空比，实�
          - ~ 20 MHz
          - 支持动态调频 (DFS) 功能，支持 Light-sleep 模式
        * - XTAL_CLK
-         - 40 MHz
+         - 40/26 MHz
+         - 支持动态调频 (DFS) 功能
+
+.. only:: esp32c5
+
+    .. list-table:: {IDF_TARGET_NAME} LEDC 时钟源特性
+       :widths: 10 10 30
+       :header-rows: 1
+
+       * - 时钟名称
+         - 时钟频率
+         - 时钟功能
+       * - PLL_80M_CLK
+         - 80 MHz
+         - /
+       * - RC_FAST_CLK
+         - ~ 17.5 MHz
+         - 支持动态调频 (DFS) 功能，支持 Light-sleep 模式
+       * - XTAL_CLK
+         - 48/40 MHz
          - 支持动态调频 (DFS) 功能
 
 .. only:: esp32c6
