@@ -48,7 +48,7 @@ void esp_log_buffer_hex_internal(const char *tag, const void *buffer, uint16_t b
         }
 
         for (int i = 0; i < bytes_cur_line; i ++) {
-            sprintf(hex_buffer + 3 * i, "%02x ", ptr_line[i]);
+            sprintf(hex_buffer + 3 * i, "%02x ", (unsigned char) ptr_line[i]);
         }
         ESP_LOG_LEVEL(log_level, tag, "%s", hex_buffer);
         buffer += bytes_cur_line;
@@ -100,7 +100,7 @@ void esp_log_buffer_hexdump_internal(const char *tag, const void *buffer, uint16
     const char *ptr_line;
     //format: field[length]
     // ADDR[10]+"   "+DATA_HEX[8*3]+" "+DATA_HEX[8*3]+"  |"+DATA_CHAR[8]+"|"
-    char hd_buffer[10 + 3 + BYTES_PER_LINE * 3 + 3 + BYTES_PER_LINE + 1 + 1];
+    char hd_buffer[2 + sizeof(void *) * 2 + 3 + BYTES_PER_LINE * 3 + 1 + 3 + BYTES_PER_LINE + 1 + 1];
     char *ptr_hd;
     int bytes_cur_line;
 
@@ -125,7 +125,7 @@ void esp_log_buffer_hexdump_internal(const char *tag, const void *buffer, uint16
                 ptr_hd += sprintf(ptr_hd, " ");
             }
             if (i < bytes_cur_line) {
-                ptr_hd += sprintf(ptr_hd, " %02x", ptr_line[i]);
+                ptr_hd += sprintf(ptr_hd, " %02x", (unsigned char) ptr_line[i]);
             } else {
                 ptr_hd += sprintf(ptr_hd, "   ");
             }

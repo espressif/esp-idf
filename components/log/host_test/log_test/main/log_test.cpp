@@ -205,6 +205,31 @@ TEST_CASE("log buffer")
     CHECK(regex_search(fix.get_print_buffer_string(), buffer_regex));
 }
 
+TEST_CASE("log bytes > 127")
+{
+    PrintFixture fix(ESP_LOG_INFO);
+    const uint8_t buffer[] = {
+        0xff, 0x80,
+    };
+    ESP_LOG_BUFFER_HEX(TEST_TAG, buffer, sizeof(buffer));
+    const std::regex buffer_regex("I \\([0-9]*\\) test: ff 80", std::regex::ECMAScript);
+    CHECK(regex_search(fix.get_print_buffer_string(), buffer_regex));
+}
+
+TEST_CASE("log buffer dump")
+{
+    PrintFixture fix(ESP_LOG_INFO);
+    const uint8_t buffer[] = {
+        0x00, 0x00, 0x00, 0x00, 0x05, 0x06, 0x07, 0x08,
+        0xff, 0xfe, 0xfd, 0xfc, 0xfb, 0xfa, 0xf9, 0xf8
+    };
+    ESP_LOG_BUFFER_HEXDUMP(TEST_TAG, buffer, sizeof(buffer), ESP_LOG_INFO);
+    const std::regex buffer_regex("I \\([0-9]*\\) test: 0x[0-9a-f]+\\s+"
+                                  "00 00 00 00 05 06 07 08  ff fe fd fc fb fa f9 f8 "
+                                  "\\s+|[\\.]{16}|", std::regex::ECMAScript);
+    CHECK(regex_search(fix.get_print_buffer_string(), buffer_regex));
+}
+
 TEST_CASE("rom printf")
 {
     PutcFixture fix;
