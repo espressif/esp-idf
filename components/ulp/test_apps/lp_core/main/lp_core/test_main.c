@@ -71,11 +71,9 @@ void handle_commands(lp_core_test_commands_t cmd)
         break;
 
     case LP_CORE_NO_COMMAND:
-        main_cpu_reply = LP_CORE_COMMAND_NOK;
         break;
 
     default:
-        main_cpu_reply = LP_CORE_COMMAND_NOK;
         break;
     }
 }
