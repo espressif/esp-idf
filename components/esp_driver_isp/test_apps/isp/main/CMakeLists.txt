@@ -8,6 +8,7 @@ endif()
 set(priv_requires
         unity
         esp_driver_isp
+        esp_psram
 )
 
 idf_component_register(SRCS ${srcs}

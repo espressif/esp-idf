@@ -19,7 +19,7 @@
 #include "hal/hal_utils.h"
 #include "soc/mipi_csi_bridge_struct.h"
 #include "soc/isp_periph.h"
-#include "isp_internal.h"
+#include "esp_private/isp_private.h"
 
 static const char *TAG = "ISP_BF";
 
