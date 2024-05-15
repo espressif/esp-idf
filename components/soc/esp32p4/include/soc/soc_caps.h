@@ -542,6 +542,7 @@
 #define SOC_EFUSE_SOFT_DIS_JTAG 1
 /* Capability to disable the MSPI access in download mode */
 #define SOC_EFUSE_DIS_DOWNLOAD_MSPI 1
+#define SOC_EFUSE_ECDSA_KEY 1
 
 /*-------------------------- Secure Boot CAPS----------------------------*/
 #define SOC_SECURE_BOOT_V2_RSA              1

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -63,7 +63,7 @@ TEST_CASE("Test efuse API blocks burning XTS and ECDSA keys into BLOCK9", "[efus
     purpose = ESP_EFUSE_KEY_PURPOSE_XTS_AES_256_KEY_2;
     TEST_ESP_ERR(ESP_ERR_NOT_SUPPORTED, esp_efuse_write_key(EFUSE_BLK9, purpose, &key, sizeof(key)));
 #endif
-#if SOC_ECDSA_SUPPORTED
+#if SOC_EFUSE_ECDSA_KEY
     purpose = ESP_EFUSE_KEY_PURPOSE_ECDSA_KEY;
     TEST_ESP_ERR(ESP_ERR_NOT_SUPPORTED, esp_efuse_write_key(EFUSE_BLK9, purpose, &key, sizeof(key)));
 #endif
@@ -90,7 +90,7 @@ static esp_err_t s_check_key(esp_efuse_block_t num_key, void* wr_key)
             purpose == ESP_EFUSE_KEY_PURPOSE_XTS_AES_256_KEY_1 ||
             purpose == ESP_EFUSE_KEY_PURPOSE_XTS_AES_256_KEY_2 ||
 #endif
-#if SOC_ECDSA_SUPPORTED
+#if SOC_EFUSE_ECDSA_KEY
             purpose == ESP_EFUSE_KEY_PURPOSE_ECDSA_KEY ||
 #endif
             purpose == ESP_EFUSE_KEY_PURPOSE_HMAC_DOWN_ALL ||
@@ -169,7 +169,7 @@ TEST_CASE("Test esp_efuse_write_key for virt mode", "[efuse]")
                 purpose == ESP_EFUSE_KEY_PURPOSE_XTS_AES_256_KEY_1 ||
                 purpose == ESP_EFUSE_KEY_PURPOSE_XTS_AES_256_KEY_2 ||
 #endif //#ifdef SOC_EFUSE_SUPPORT_XTS_AES_256_KEYS
-#if SOC_ECDSA_SUPPORTED
+#if SOC_EFUSE_ECDSA_KEY
                 purpose == ESP_EFUSE_KEY_PURPOSE_ECDSA_KEY ||
 #endif
                 purpose == ESP_EFUSE_KEY_PURPOSE_XTS_AES_128_KEY)) {
@@ -204,7 +204,7 @@ TEST_CASE("Test 1 esp_efuse_write_key for FPGA", "[efuse]")
 
     esp_efuse_purpose_t purpose [] = {
         ESP_EFUSE_KEY_PURPOSE_USER,
-#if SOC_ECDSA_SUPPORTED
+#if SOC_EFUSE_ECDSA_KEY
         ESP_EFUSE_KEY_PURPOSE_ECDSA_KEY,
 #else
         ESP_EFUSE_KEY_PURPOSE_RESERVED,
