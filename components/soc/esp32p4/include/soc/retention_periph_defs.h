@@ -25,6 +25,12 @@ typedef enum periph_retention_module {
     SLEEP_RETENTION_MODULE_TG1_WDT      = 4,
     SLEEP_RETENTION_MODULE_TG0_TIMER    = 5,
     SLEEP_RETENTION_MODULE_TG1_TIMER    = 6,
+    /* MISC Peripherals */
+    SLEEP_RETENTION_MODULE_UART0        = 7,
+    SLEEP_RETENTION_MODULE_UART1        = 8,
+    SLEEP_RETENTION_MODULE_UART2        = 9,
+    SLEEP_RETENTION_MODULE_UART3        = 10,
+    SLEEP_RETENTION_MODULE_UART4        = 11,
 
     SLEEP_RETENTION_MODULE_MAX          = 31
 } periph_retention_module_t;
@@ -40,6 +46,12 @@ typedef enum periph_retention_module_bitmap {
     SLEEP_RETENTION_MODULE_BM_TG1_WDT      = BIT(SLEEP_RETENTION_MODULE_TG1_WDT),
     SLEEP_RETENTION_MODULE_BM_TG0_TIMER    = BIT(SLEEP_RETENTION_MODULE_TG0_TIMER),
     SLEEP_RETENTION_MODULE_BM_TG1_TIMER    = BIT(SLEEP_RETENTION_MODULE_TG1_TIMER),
+    /* MISC Peripherals */
+    SLEEP_RETENTION_MODULE_BM_UART0        = BIT(SLEEP_RETENTION_MODULE_UART0),
+    SLEEP_RETENTION_MODULE_BM_UART1        = BIT(SLEEP_RETENTION_MODULE_UART1),
+    SLEEP_RETENTION_MODULE_BM_UART2        = BIT(SLEEP_RETENTION_MODULE_UART2),
+    SLEEP_RETENTION_MODULE_BM_UART3        = BIT(SLEEP_RETENTION_MODULE_UART3),
+    SLEEP_RETENTION_MODULE_BM_UART4        = BIT(SLEEP_RETENTION_MODULE_UART4),
 
     SLEEP_RETENTION_MODULE_BM_ALL = (uint32_t)-1
 } periph_retention_module_bitmap_t;
@@ -49,7 +61,13 @@ typedef enum periph_retention_module_bitmap {
                                     | SLEEP_RETENTION_MODULE_BM_TG0_WDT    \
                                     | SLEEP_RETENTION_MODULE_BM_TG1_WDT    \
                                     | SLEEP_RETENTION_MODULE_BM_TG0_TIMER  \
-                                    | SLEEP_RETENTION_MODULE_BM_TG1_TIMER)
+                                    | SLEEP_RETENTION_MODULE_BM_TG1_TIMER  \
+                                    | SLEEP_RETENTION_MODULE_BM_UART0      \
+                                    | SLEEP_RETENTION_MODULE_BM_UART1      \
+                                    | SLEEP_RETENTION_MODULE_BM_UART2      \
+                                    | SLEEP_RETENTION_MODULE_BM_UART3      \
+                                    | SLEEP_RETENTION_MODULE_BM_UART4      \
+                                   )
 
 #ifdef __cplusplus
 }

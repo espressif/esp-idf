@@ -46,16 +46,6 @@ extern const regdma_entries_config_t l2_cache_regs_retention[L2_CACHE_RETENTION_
 extern const regdma_entries_config_t hp_system_regs_retention[HP_SYSTEM_RETENTION_LINK_LEN];
 
 /**
- * @brief Provide access to uart configuration registers retention
- * context definition.
- *
- * This is an internal function of the sleep retention driver, and is not
- * useful for external use.
- */
-#define UART_RETENTION_LINK_LEN     3
-extern const regdma_entries_config_t uart_regs_retention[UART_RETENTION_LINK_LEN];
-
-/**
  * @brief Provide access to timer group configuration registers retention
  * context definition.
  *
