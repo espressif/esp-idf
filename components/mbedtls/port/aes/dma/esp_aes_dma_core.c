@@ -207,7 +207,8 @@ static int esp_aes_process_dma_ext_ram(esp_aes_context *ctx, const unsigned char
     size_t chunk_len;
     int ret = 0;
     int offset = 0;
-    uint32_t heap_caps = 0;
+    uint32_t input_heap_caps = MALLOC_CAP_DMA;
+    uint32_t output_heap_caps = MALLOC_CAP_DMA;
     unsigned char *input_buf = NULL;
     unsigned char *output_buf = NULL;
     const unsigned char *dma_input;
@@ -223,14 +224,15 @@ static int esp_aes_process_dma_ext_ram(esp_aes_context *ctx, const unsigned char
         if (esp_ptr_external_ram(input) || esp_ptr_external_ram(output) || esp_ptr_in_drom(input) || esp_ptr_in_drom(output)) {
             input_alignment = MAX(get_cache_line_size(input), SOC_AXI_DMA_EXT_MEM_ENC_ALIGNMENT);
             output_alignment = MAX(get_cache_line_size(output), SOC_AXI_DMA_EXT_MEM_ENC_ALIGNMENT);
+
+            input_heap_caps = MALLOC_CAP_8BIT | (esp_ptr_external_ram(input) ? MALLOC_CAP_SPIRAM : MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
+            output_heap_caps = MALLOC_CAP_8BIT | (esp_ptr_external_ram(output) ? MALLOC_CAP_SPIRAM : MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
         }
     }
 #endif /* SOC_AXI_DMA_EXT_MEM_ENC_ALIGNMENT */
 
     if (realloc_input) {
-        heap_caps = MALLOC_CAP_8BIT | (esp_ptr_external_ram(input) ? MALLOC_CAP_SPIRAM : MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
-        input_buf = heap_caps_aligned_alloc(input_alignment, chunk_len, heap_caps);
-
+        input_buf = heap_caps_aligned_alloc(input_alignment, chunk_len, input_heap_caps);
         if (input_buf == NULL) {
             mbedtls_platform_zeroize(output, len);
             ESP_LOGE(TAG, "Failed to allocate memory");
@@ -239,9 +241,7 @@ static int esp_aes_process_dma_ext_ram(esp_aes_context *ctx, const unsigned char
     }
 
     if (realloc_output) {
-        heap_caps = MALLOC_CAP_8BIT | (esp_ptr_external_ram(output) ? MALLOC_CAP_SPIRAM : MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
-        output_buf = heap_caps_aligned_alloc(output_alignment, chunk_len, heap_caps);
-
+        output_buf = heap_caps_aligned_alloc(output_alignment, chunk_len, output_heap_caps);
         if (output_buf == NULL) {
             mbedtls_platform_zeroize(output, len);
             ESP_LOGE(TAG, "Failed to allocate memory");
