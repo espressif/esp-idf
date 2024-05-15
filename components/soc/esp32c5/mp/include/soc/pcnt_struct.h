@@ -217,74 +217,22 @@ typedef union {
     uint32_t val;
 } pcnt_ctrl_reg_t;
 
-/** Type of u3_change_conf register
+/** Type of un_change_conf register
  *  Configuration register for unit $n's step value.
  */
 typedef union {
     struct {
-        /** cnt_step_u3 : R/W; bitpos: [15:0]; default: 0;
-         *  Configures the step value for unit 3.
+        /** cnt_step : R/W; bitpos: [15:0]; default: 0;
+         *  Configures the step value for unit n.
          */
-        uint32_t cnt_step_u3:16;
+        uint32_t cnt_step:16;
         /** cnt_step_lim_u3 : R/W; bitpos: [31:16]; default: 0;
-         *  Configures the step limit value for unit 3.
+         *  Configures the step limit value for unit n.
          */
-        uint32_t cnt_step_lim_u3:16;
+        uint32_t cnt_step_lim:16;
     };
     uint32_t val;
-} pcnt_u3_change_conf_reg_t;
-
-/** Type of u2_change_conf register
- *  Configuration register for unit $n's step value.
- */
-typedef union {
-    struct {
-        /** cnt_step_u2 : R/W; bitpos: [15:0]; default: 0;
-         *  Configures the step value for unit 2.
-         */
-        uint32_t cnt_step_u2:16;
-        /** cnt_step_lim_u2 : R/W; bitpos: [31:16]; default: 0;
-         *  Configures the step limit value for unit 2.
-         */
-        uint32_t cnt_step_lim_u2:16;
-    };
-    uint32_t val;
-} pcnt_u2_change_conf_reg_t;
-
-/** Type of u1_change_conf register
- *  Configuration register for unit $n's step value.
- */
-typedef union {
-    struct {
-        /** cnt_step_u1 : R/W; bitpos: [15:0]; default: 0;
-         *  Configures the step value for unit 1.
-         */
-        uint32_t cnt_step_u1:16;
-        /** cnt_step_lim_u1 : R/W; bitpos: [31:16]; default: 0;
-         *  Configures the step limit value for unit 1.
-         */
-        uint32_t cnt_step_lim_u1:16;
-    };
-    uint32_t val;
-} pcnt_u1_change_conf_reg_t;
-
-/** Type of u0_change_conf register
- *  Configuration register for unit $n's step value.
- */
-typedef union {
-    struct {
-        /** cnt_step_u0 : R/W; bitpos: [15:0]; default: 0;
-         *  Configures the step value for unit 0.
-         */
-        uint32_t cnt_step_u0:16;
-        /** cnt_step_lim_u0 : R/W; bitpos: [31:16]; default: 0;
-         *  Configures the step limit value for unit 0.
-         */
-        uint32_t cnt_step_lim_u0:16;
-    };
-    uint32_t val;
-} pcnt_u0_change_conf_reg_t;
-
+} pcnt_un_change_conf_reg_t;
 
 /** Group: Status Register */
 /** Type of un_cnt register
@@ -488,30 +436,20 @@ typedef union {
 } pcnt_date_reg_t;
 
 
-typedef struct {
-    volatile pcnt_un_conf0_reg_t u0_conf0;
-    volatile pcnt_un_conf1_reg_t u0_conf1;
-    volatile pcnt_un_conf2_reg_t u0_conf2;
-    volatile pcnt_un_conf0_reg_t u1_conf0;
-    volatile pcnt_un_conf1_reg_t u1_conf1;
-    volatile pcnt_un_conf2_reg_t u1_conf2;
-    volatile pcnt_un_conf0_reg_t u2_conf0;
-    volatile pcnt_un_conf1_reg_t u2_conf1;
-    volatile pcnt_un_conf2_reg_t u2_conf2;
-    volatile pcnt_un_conf0_reg_t u3_conf0;
-    volatile pcnt_un_conf1_reg_t u3_conf1;
-    volatile pcnt_un_conf2_reg_t u3_conf2;
-    volatile pcnt_un_cnt_reg_t un_cnt[4];
+typedef struct pcnt_dev_t {
+    volatile struct {
+        pcnt_un_conf0_reg_t conf0;
+        pcnt_un_conf1_reg_t conf1;
+        pcnt_un_conf2_reg_t conf2;
+    } conf_unit[4];
+    volatile pcnt_un_cnt_reg_t cnt_unit[4];
     volatile pcnt_int_raw_reg_t int_raw;
     volatile pcnt_int_st_reg_t int_st;
     volatile pcnt_int_ena_reg_t int_ena;
     volatile pcnt_int_clr_reg_t int_clr;
-    volatile pcnt_un_status_reg_t un_status[4];
+    volatile pcnt_un_status_reg_t status_unit[4];
     volatile pcnt_ctrl_reg_t ctrl;
-    volatile pcnt_u3_change_conf_reg_t u3_change_conf;
-    volatile pcnt_u2_change_conf_reg_t u2_change_conf;
-    volatile pcnt_u1_change_conf_reg_t u1_change_conf;
-    volatile pcnt_u0_change_conf_reg_t u0_change_conf;
+    volatile pcnt_un_change_conf_reg_t change_conf_unit[4]; // Note the unit order is 3210
     uint32_t reserved_074[34];
     volatile pcnt_date_reg_t date;
 } pcnt_dev_t;
