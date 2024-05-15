@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,11 +15,6 @@
 
 #include "mbedtls/ecp.h"
 #include "mbedtls/platform_util.h"
-
-#define ECP_VALIDATE_RET( cond )    \
-    MBEDTLS_INTERNAL_VALIDATE_RET( cond, MBEDTLS_ERR_ECP_BAD_INPUT_DATA )
-#define ECP_VALIDATE( cond )        \
-    MBEDTLS_INTERNAL_VALIDATE( cond )
 
 #if defined(MBEDTLS_ECP_MUL_ALT) || defined(MBEDTLS_ECP_MUL_ALT_SOFT_FALLBACK)
 
@@ -99,8 +94,9 @@ int mbedtls_ecp_check_pubkey( const mbedtls_ecp_group *grp,
 #endif
     }
 
-    ECP_VALIDATE_RET( grp != NULL );
-    ECP_VALIDATE_RET( pt  != NULL );
+    if (grp == NULL || pt == NULL) {
+        return MBEDTLS_ERR_ECP_BAD_INPUT_DATA;
+    }
 
     /* Must use affine coordinates */
     if( mbedtls_mpi_cmp_int( &pt->Z, 1 ) != 0 )
