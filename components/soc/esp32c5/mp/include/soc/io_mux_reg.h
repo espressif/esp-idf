@@ -205,7 +205,6 @@ extern "C" {
 #define FUNC_GPIO7_GPIO7_0                                               0
 
 #define PERIPHS_IO_MUX_U_PAD_GPIO8                (REG_IO_MUX_BASE + 0x20)
-#define FUNC_GPIO8_FSPICS0                                               2
 #define FUNC_GPIO8_GPIO8                                                 1
 #define FUNC_GPIO8_GPIO8_0                                               0
 
@@ -214,6 +213,7 @@ extern "C" {
 #define FUNC_GPIO9_GPIO9_0                                               0
 
 #define PERIPHS_IO_MUX_U_PAD_GPIO10               (REG_IO_MUX_BASE + 0x28)
+#define FUNC_GPIO10_FSPICS0                                              2
 #define FUNC_GPIO10_GPIO10                                               1
 #define FUNC_GPIO10_GPIO10_0                                             0
 
