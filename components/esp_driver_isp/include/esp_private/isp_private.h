@@ -19,11 +19,13 @@
 #include "freertos/queue.h"
 #include "freertos/idf_additions.h"
 #include "driver/isp_types.h"
+#include "soc/soc_caps.h"
+#if SOC_ISP_SUPPORTED
 #include "hal/isp_hal.h"
 #include "hal/isp_ll.h"
 #include "hal/isp_types.h"
 #include "soc/isp_periph.h"
-#include "soc/soc_caps.h"
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -43,23 +45,28 @@ typedef enum {
     ISP_FSM_START,
 } isp_fsm_t;
 
+#if SOC_ISP_SUPPORTED
 /*---------------------------------------------------------------
             Driver Context
 ---------------------------------------------------------------*/
 typedef struct isp_processor_t {
-    int                  proc_id;
-    isp_hal_context_t    hal;
+    int                         proc_id;
+    isp_hal_context_t           hal;
 #if SOC_ISP_SHARE_CSI_BRG
-    int                  csi_brg_id;
-    void                 *csi_brg_hw;
+    int                         csi_brg_id;
+    void                        *csi_brg_hw;
 #endif
-    isp_fsm_t            isp_fsm;
-    portMUX_TYPE         spinlock;
-
+    isp_fsm_t                   isp_fsm;
+    portMUX_TYPE                spinlock;
+    color_space_pixel_format_t  in_color_format;
+    color_space_pixel_format_t  out_color_format;
+    uint32_t                    h_res;
+    uint32_t                    v_res;
     /* sub module contexts */
-    isp_af_ctrlr_t       af_ctlr[SOC_ISP_AF_CTLR_NUMS];
-    isp_fsm_t            bf_fsm;
+    isp_af_ctlr_t               af_ctlr[SOC_ISP_AF_CTLR_NUMS];
+    isp_fsm_t                   bf_fsm;
 } isp_processor_t;
+#endif
 
 #ifdef __cplusplus
 }

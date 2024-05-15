@@ -71,7 +71,7 @@ If the configurations in :cpp:type:`esp_isp_af_config_t` is specified, users can
     esp_isp_af_config_t af_config = {
         .edge_thresh = 128,
     };
-    isp_af_ctrlr_t af_ctrlr = NULL;
+    isp_af_ctlr_t af_ctrlr = NULL;
     ESP_ERROR_CHECK(esp_isp_new_af_controller(isp_proc, &af_config, &af_ctrlr));
 
 You can use the created handle to do driver enable / disable the ISP AF driver and ISP AF Env module installation.
@@ -122,7 +122,7 @@ Calling :cpp:func:`esp_isp_af_controller_get_oneshot_statistics` to get oneshot 
     esp_isp_af_config_t af_config = {
         .edge_thresh = 128,
     };
-    isp_af_ctrlr_t af_ctrlr = NULL;
+    isp_af_ctlr_t af_ctrlr = NULL;
     ESP_ERROR_CHECK(esp_isp_new_af_controller(isp_proc, &af_config, &af_ctrlr));
     ESP_ERROR_CHECK(esp_isp_af_controller_enable(af_ctrlr));
     isp_af_result_t result = {};
@@ -140,7 +140,7 @@ Note that if you want to use the continuous statistics, you need to register the
 
 .. code:: c
 
-    isp_af_ctrlr_t af_ctrlr = NULL;
+    isp_af_ctlr_t af_ctrlr = NULL;
     esp_isp_af_config_t af_config = {
         .edge_thresh = 128,
     };
@@ -171,7 +171,7 @@ Calling :cpp:func:`esp_isp_af_controller_set_env_detector` to set an ISP AF envi
     esp_isp_af_env_config_t env_config = {
         .interval = 10,
     };
-    isp_af_ctrlr_t af_ctrlr = NULL;
+    isp_af_ctlr_t af_ctrlr = NULL;
     ESP_ERROR_CHECK(esp_isp_new_af_controller(isp_proc, &af_config, &af_ctrlr));
     ESP_ERROR_CHECK(esp_isp_af_controller_set_env_detector(af_ctrlr, &env_config));
 

@@ -46,6 +46,15 @@ typedef enum {
 } isp_color_t;
 
 /*---------------------------------------------------------------
+                      DVP
+---------------------------------------------------------------*/
+#if SOC_ISP_AF_WINDOW_NUMS
+#define ISP_DVP_DATA_SIG_NUM   SOC_ISP_DVP_DATA_WIDTH_MAX // The ISP DVP data signal number
+#else
+#define ISP_DVP_DATA_SIG_NUM   0
+#endif
+
+/*---------------------------------------------------------------
                       AF
 ---------------------------------------------------------------*/
 #if SOC_ISP_AF_WINDOW_NUMS

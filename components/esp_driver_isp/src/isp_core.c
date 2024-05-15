@@ -19,7 +19,7 @@
 #include "hal/hal_utils.h"
 #include "soc/mipi_csi_bridge_struct.h"
 #include "soc/isp_periph.h"
-#include "isp_internal.h"
+#include "esp_private/isp_private.h"
 
 typedef struct isp_platform_t {
     _lock_t         mutex;
@@ -73,7 +73,7 @@ esp_err_t esp_isp_new_processor(const esp_isp_processor_cfg_t *proc_config, isp_
 {
     esp_err_t ret = ESP_FAIL;
     ESP_RETURN_ON_FALSE(proc_config && ret_proc, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
-    ESP_RETURN_ON_FALSE(proc_config->input_data_source == ISP_INPUT_DATA_SOURCE_CSI, ESP_ERR_NOT_SUPPORTED, TAG, "only support CSI as input source at this moment");
+    ESP_RETURN_ON_FALSE(proc_config->input_data_source != ISP_INPUT_DATA_SOURCE_DWGDMA, ESP_ERR_NOT_SUPPORTED, TAG, "input source not supported yet");
     ESP_RETURN_ON_FALSE(proc_config->input_data_color_type == ISP_COLOR_RAW8, ESP_ERR_NOT_SUPPORTED, TAG, "input data type not supported");
 
     isp_processor_t *proc = heap_caps_calloc(1, sizeof(isp_processor_t), ISP_MEM_ALLOC_CAPS);
@@ -142,6 +142,11 @@ esp_err_t esp_isp_new_processor(const esp_isp_processor_cfg_t *proc_config, isp_
     isp_ll_enable_line_end_packet_exist(proc->hal.hw, proc_config->has_line_end_packet);
     isp_ll_set_intput_data_h_pixel_num(proc->hal.hw, proc_config->h_res);
     isp_ll_set_intput_data_v_row_num(proc->hal.hw, proc_config->v_res);
+
+    proc->in_color_format = in_color_format;
+    proc->out_color_format = out_color_format;
+    proc->h_res = proc_config->h_res;
+    proc->v_res = proc_config->v_res;
 
     *ret_proc = proc;
 

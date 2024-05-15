@@ -20,7 +20,7 @@ typedef struct isp_processor_t *isp_proc_handle_t;
 /**
  * @brief Type of ISP AF controller handle
  */
-typedef struct isp_af_controller_t *isp_af_ctrlr_t;
+typedef struct isp_af_controller_t *isp_af_ctlr_t;
 
 #ifdef __cplusplus
 }

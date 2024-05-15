@@ -16,11 +16,6 @@ extern "C" {
 #endif
 
 /**
- * @brief ESP CAM controller max timeout value
- */
-#define ESP_CAM_CTLR_MAX_DELAY UINT32_MAX
-
-/**
  * @brief ESP CAM CSI controller configurations
  */
 typedef struct {
@@ -30,8 +25,8 @@ typedef struct {
     uint32_t v_res;                             ///< Input vertical resolution, i.e. the number of lines in a frame
     uint8_t data_lane_num;                      ///< Data lane num
     int lane_bit_rate_mbps;                     ///< Lane bit rate in Mbps
-    mipi_csi_color_t input_data_color_type;     ///< Input color type
-    mipi_csi_color_t output_data_color_type;    ///< Output color type
+    cam_ctlr_color_t input_data_color_type;     ///< Input color type
+    cam_ctlr_color_t output_data_color_type;    ///< Output color type
     int queue_items;                            ///< Queue items
     struct {
         uint32_t byte_swap_en   : 1;            ///< Enable byte swap
