@@ -22,7 +22,7 @@ typedef enum periph_retention_module {
      * TEE, APM, UART, IOMUX, SPIMEM, SysTimer, etc.. */
     SLEEP_RETENTION_MODULE_SYS_PERIPH   = 3,
     /* Timer Group by target*/
-    SLEEP_RETENTION_MODULE_TG0_WDT     = 4,
+    SLEEP_RETENTION_MODULE_TG0_WDT      = 4,
     SLEEP_RETENTION_MODULE_TG1_WDT      = 5,
     SLEEP_RETENTION_MODULE_TG0_TIMER    = 6,
     SLEEP_RETENTION_MODULE_TG1_TIMER    = 7,
@@ -35,6 +35,8 @@ typedef enum periph_retention_module {
     SLEEP_RETENTION_MODULE_I2C0         = 12,
     SLEEP_RETENTION_MODULE_I2C1         = 13,
     SLEEP_RETENTION_MODULE_RMT0         = 14,
+    SLEEP_RETENTION_MODULE_UART0        = 15,
+    SLEEP_RETENTION_MODULE_UART1        = 16,
 
     /* Modem module, which includes BLE and 802.15.4 */
     SLEEP_RETENTION_MODULE_BLE_MAC      = 28,
@@ -64,6 +66,8 @@ typedef enum periph_retention_module_bitmap {
     SLEEP_RETENTION_MODULE_BM_I2C0         = BIT(SLEEP_RETENTION_MODULE_I2C0),
     SLEEP_RETENTION_MODULE_BM_I2C1         = BIT(SLEEP_RETENTION_MODULE_I2C1),
     SLEEP_RETENTION_MODULE_BM_RMT0         = BIT(SLEEP_RETENTION_MODULE_RMT0),
+    SLEEP_RETENTION_MODULE_BM_UART0        = BIT(SLEEP_RETENTION_MODULE_UART0),
+    SLEEP_RETENTION_MODULE_BM_UART1        = BIT(SLEEP_RETENTION_MODULE_UART1),
     /* modem module, which includes BLE and 802.15.4 */
     SLEEP_RETENTION_MODULE_BM_BLE_MAC      = BIT(SLEEP_RETENTION_MODULE_BLE_MAC),
     SLEEP_RETENTION_MODULE_BM_BT_BB        = BIT(SLEEP_RETENTION_MODULE_BT_BB),
@@ -84,7 +88,10 @@ typedef enum periph_retention_module_bitmap {
                                     | SLEEP_RETENTION_MODULE_BM_ADC         \
                                     | SLEEP_RETENTION_MODULE_BM_I2C0        \
                                     | SLEEP_RETENTION_MODULE_BM_I2C1        \
-                                    | SLEEP_RETENTION_MODULE_BM_RMT0)
+                                    | SLEEP_RETENTION_MODULE_BM_RMT0        \
+                                    | SLEEP_RETENTION_MODULE_BM_UART0       \
+                                    | SLEEP_RETENTION_MODULE_BM_UART1       \
+                                   )
 
 #ifdef __cplusplus
 }

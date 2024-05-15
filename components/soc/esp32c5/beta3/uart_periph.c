@@ -5,6 +5,7 @@
  */
 
 #include "soc/uart_periph.h"
+#include "soc/uart_reg.h"
 
 /*
  Bunch of constants for every UART peripheral: GPIO signals, irqs, hw addr of registers etc
@@ -41,7 +42,6 @@ const uart_signal_conn_t uart_periph_signal[SOC_UART_NUM] = {
             }
         },
         .irq = ETS_UART0_INTR_SOURCE,
-        .module = PERIPH_UART0_MODULE,
     },
 
     { // HP UART1
@@ -75,7 +75,6 @@ const uart_signal_conn_t uart_periph_signal[SOC_UART_NUM] = {
             },
         },
         .irq = ETS_UART1_INTR_SOURCE,
-        .module = PERIPH_UART1_MODULE,
     },
 
     { // LP UART0
@@ -109,6 +108,44 @@ const uart_signal_conn_t uart_periph_signal[SOC_UART_NUM] = {
             },
         },
         .irq = ETS_LP_UART_INTR_SOURCE,
-        .module = PERIPH_LP_UART0_MODULE,
+    },
+};
+
+/**
+ * UART registers to be saved during sleep retention
+ *
+ * Reset TXFIFO and RXFIFO
+ * UART registers require set the reg_update bit to make the configuration take effect
+ */
+#define N_REGS_UART(uart_num)   (((UART_ID_REG(uart_num) - UART_INT_RAW_REG(uart_num)) / 4) + 1)
+#define UART_SLEEP_RETENTION_ENTRIES(uart_num) { \
+    [0] = {.config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_UART_LINK(0x00), \
+                                                 UART_INT_RAW_REG(uart_num), UART_INT_RAW_REG(uart_num), \
+                                                 N_REGS_UART(uart_num), 0, 0 \
+                                                ), \
+           .owner = ENTRY(0) | ENTRY(2) }, \
+    [1] = {.config = REGDMA_LINK_WRITE_INIT(REGDMA_UART_LINK(0x01), \
+                                            UART_REG_UPDATE_REG(uart_num), UART_REG_UPDATE, \
+                                            UART_REG_UPDATE_M, 1, 0 \
+                                           ), \
+           .owner = ENTRY(0) | ENTRY(2) }, \
+    [2] = {.config = REGDMA_LINK_WAIT_INIT(REGDMA_UART_LINK(0x02), \
+                                           UART_REG_UPDATE_REG(uart_num), 0x0, \
+                                           UART_REG_UPDATE_M, 1, 0 \
+                                          ), \
+           .owner = ENTRY(0) | ENTRY(2) }, \
+}
+
+static const regdma_entries_config_t uart0_regdma_entries[] = UART_SLEEP_RETENTION_ENTRIES(0);
+static const regdma_entries_config_t uart1_regdma_entries[] = UART_SLEEP_RETENTION_ENTRIES(1);
+
+const uart_reg_retention_info_t uart_reg_retention_info[SOC_UART_HP_NUM] = {
+    [0] = {
+        .regdma_entry_array = uart0_regdma_entries,
+        .array_size = ARRAY_SIZE(uart0_regdma_entries),
+    },
+    [1] = {
+        .regdma_entry_array = uart1_regdma_entries,
+        .array_size = ARRAY_SIZE(uart1_regdma_entries),
     },
 };

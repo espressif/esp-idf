@@ -44,16 +44,6 @@ const regdma_entries_config_t tee_apm_highpri_regs_retention[] = {
 };
 _Static_assert((ARRAY_SIZE(tee_apm_regs_retention) == TEE_APM_RETENTION_LINK_LEN) && (ARRAY_SIZE(tee_apm_highpri_regs_retention) == TEE_APM_HIGH_PRI_RETENTION_LINK_LEN), "Inconsistent TEE_APM retention link length definitions");
 
-/* UART0 Registers Context */
-#define N_REGS_UART()   (((UART_ID_REG(0) - UART_INT_RAW_REG(0)) / 4) + 1)
-const regdma_entries_config_t uart_regs_retention[] = {
-    [0] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_UART_LINK(0x00), UART_INT_RAW_REG(0),    UART_INT_RAW_REG(0), N_REGS_UART(),  0, 0), .owner = ENTRY(0) | ENTRY(2) }, /* uart */
-    /* Note: uart register should set update reg to make the configuration take effect */
-    [1] = { .config = REGDMA_LINK_WRITE_INIT     (REGDMA_UART_LINK(0x01), UART_REG_UPDATE_REG(0), UART_REG_UPDATE,  UART_REG_UPDATE_M, 1, 0), .owner = ENTRY(0) | ENTRY(2) },
-    [2] = { .config = REGDMA_LINK_WAIT_INIT      (REGDMA_UART_LINK(0x02), UART_REG_UPDATE_REG(0), 0x0,              UART_REG_UPDATE_M, 1, 0), .owner = ENTRY(0) | ENTRY(2) }
-};
-_Static_assert(ARRAY_SIZE(uart_regs_retention) == UART_RETENTION_LINK_LEN, "Inconsistent UART retention link length definitions");
-
 /* IO MUX Registers Context */
 #define N_REGS_IOMUX_0()    (((IO_MUX_GPIO27_REG - REG_IO_MUX_BASE) / 4) + 1)
 #define N_REGS_IOMUX_1()    (((GPIO_FUNC31_OUT_SEL_CFG_REG - GPIO_FUNC0_OUT_SEL_CFG_REG) / 4) + 1)

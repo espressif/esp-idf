@@ -49,7 +49,7 @@ static const regdma_entries_config_t gdma_g0p0_regs_retention[] = {
                                                 g0p0_regs_map0[0], g0p0_regs_map0[1],   \
                                                 g0p0_regs_map0[2], g0p0_regs_map0[3]),  \
                                                 .owner = ENTRY(0) | ENTRY(2) },
-    [1]  = { .config = REGDMA_LINK_ADDR_MAP_INIT(REGDMA_GDMA_LINK(0x00), \
+    [1]  = { .config = REGDMA_LINK_ADDR_MAP_INIT(REGDMA_GDMA_LINK(0x01), \
                                                 G0P0_RETENTION_MAP_BASE_1, G0P0_RETENTION_MAP_BASE_1, \
                                                 G0P0_RETENTION_REGS_CNT_1, 0, 0, \
                                                 g0p0_regs_map1[0], g0p0_regs_map1[1],   \
@@ -76,7 +76,7 @@ static const regdma_entries_config_t gdma_g0p1_regs_retention[] = {
                                                 g0p1_regs_map0[0], g0p1_regs_map0[1],   \
                                                 g0p1_regs_map0[2], g0p1_regs_map0[3]),  \
                                                 .owner = ENTRY(0) | ENTRY(2) },
-    [1]  = { .config = REGDMA_LINK_ADDR_MAP_INIT(REGDMA_GDMA_LINK(0x00), \
+    [1]  = { .config = REGDMA_LINK_ADDR_MAP_INIT(REGDMA_GDMA_LINK(0x01), \
                                                 G0P1_RETENTION_MAP_BASE_1, G0P1_RETENTION_MAP_BASE_1, \
                                                 G0P1_RETENTION_REGS_CNT_1, 0, 0, \
                                                 g0p1_regs_map1[0], g0p1_regs_map1[1],   \
@@ -103,7 +103,7 @@ static const regdma_entries_config_t gdma_g0p2_regs_retention[] = {
                                                 g0p2_regs_map0[0], g0p2_regs_map0[1],   \
                                                 g0p2_regs_map0[2], g0p2_regs_map0[3]),  \
                                                 .owner = ENTRY(0) | ENTRY(2) },
-    [1]  = { .config = REGDMA_LINK_ADDR_MAP_INIT(REGDMA_GDMA_LINK(0x00), \
+    [1]  = { .config = REGDMA_LINK_ADDR_MAP_INIT(REGDMA_GDMA_LINK(0x01), \
                                                 G0P2_RETENTION_MAP_BASE_1, G0P2_RETENTION_MAP_BASE_1, \
                                                 G0P2_RETENTION_REGS_CNT_1, 0, 0, \
                                                 g0p2_regs_map1[0], g0p2_regs_map1[1],   \
