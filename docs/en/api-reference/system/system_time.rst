@@ -8,7 +8,6 @@ System Time
 {IDF_TARGET_INT_OSC_FRE_DIVIDED:default="Not updated", esp32="about 33 kHz", esp32s2="about 33 kHz", esp32s3="about 68 kHz", esp32c3="about 68 kHz", esp32c2="about 68 kHz"}
 {IDF_TARGET_EXT_CRYSTAL_PIN:default="Not updated", esp32="32K_XP and 32K_XN", esp32s2="XTAL_32K_P and XTAL_32K_N", esp32s3="XTAL_32K_P and XTAL_32K_N", esp32c3="XTAL_32K_P and XTAL_32K_N", esp32c6="XTAL_32K_P and XTAL_32K_N", esp32h2="XTAL_32K_P and XTAL_32K_N", esp32p4="XTAL_32K_P and XTAL_32K_N"}
 {IDF_TARGET_EXT_OSC_PIN:default="Not updated", esp32="32K_XN", esp32s2="XTAL_32K_P", esp32s3="XTAL_32K_P", esp32c3="XTAL_32K_P", esp32c2="GPIO0", esp32c6="XTAL_32K_P", esp32h2="XTAL_32K_P", esp32p4="XTAL_32K_P"}
-{IDF_TARGET_HARDWARE_DESIGN_URL:default="Not updated",esp32="`ESP32 Hardware Design Guidelines <https://www.espressif.com/sites/default/files/documentation/esp32_hardware_design_guidelines_en.pdf#page=11>`_", esp32s2="`ESP32-S2 Hardware Design Guidelines <https://www.espressif.com/sites/default/files/documentation/esp32-s2_hardware_design_guidelines_en.pdf#page=10>`_", esp32s3="`ESP32-S3 Hardware Design Guidelines <https://www.espressif.com/sites/default/files/documentation/esp32-s3_hardware_design_guidelines_en.pdf#page=11>`_", esp32c3="`ESP32-C3 Hardware Design Guidelines <https://www.espressif.com/sites/default/files/documentation/esp32-c3_hardware_design_guidelines_en.pdf#page=9>`_", esp32c6="`ESP32-C6 Hardware Design Guidelines <https://www.espressif.com/sites/default/files/documentation/esp32-c6_hardware_design_guidelines_en.pdf#page=12>`_", esp32c2="`ESP8684 Hardware Design Guidelines <https://www.espressif.com/sites/default/files/documentation/esp8684_hardware_design_guidelines_en.pdf#page=10>`_", esp32h2="`ESP32-H2 Hardware Design Guidelines <https://www.espressif.com/sites/default/files/documentation/esp32-h2_hardware_design_guidelines_en.pdf#page=11>`_", esp32p4="`ESP32-P4 Hardware Design Guidelines <https://www.espressif.com/sites/default/files/documentation/esp32-p4_hardware_design_guidelines_en.pdf#page=11>`_"}
 
 
 Overview
@@ -51,7 +50,7 @@ The RTC timer has the following clock sources:
 
 The choice depends on your requirements for system time accuracy and power consumption in sleep modes. To modify the RTC clock source, set :ref:`CONFIG_RTC_CLK_SRC` in project configuration.
 
-More details about the wiring requirements for the external crystal or external oscillator, please refer to {IDF_TARGET_HARDWARE_DESIGN_URL}.
+More details about the wiring requirements for the external crystal or external oscillator, please refer to the `Hardware Design Guidelines <https://docs.espressif.com/projects/esp-hardware-design-guidelines/en/latest/{IDF_TARGET_PATH_NAME}>`_.
 
 Get Current Time
 ----------------
