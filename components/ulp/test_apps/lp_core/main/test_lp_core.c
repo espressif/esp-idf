@@ -55,6 +55,12 @@ static void load_and_start_lp_core_firmware(ulp_lp_core_cfg_t* cfg, const uint8_
 
 }
 
+static void clear_test_cmds(void)
+{
+    ulp_main_cpu_command = LP_CORE_NO_COMMAND;
+    ulp_command_resp = LP_CORE_NO_COMMAND;
+}
+
 TEST_CASE("LP core and main CPU are able to exchange data", "[lp_core]")
 {
     const uint32_t test_data = 0x12345678;
@@ -84,9 +90,7 @@ TEST_CASE("LP core and main CPU are able to exchange data", "[lp_core]")
     printf("data out: 0x%" PRIx32 ", expected: 0x%" PRIx32 " \n", ulp_test_data_out, test_data);
     TEST_ASSERT(test_data == ulp_test_data_out);
 
-    /* Clear test data */
-    ulp_main_cpu_command = LP_CORE_NO_COMMAND;
-    ulp_command_resp = LP_CORE_NO_COMMAND;
+    clear_test_cmds();
 }
 
 TEST_CASE("Test LP core delay", "[lp_core]")
@@ -121,9 +125,7 @@ TEST_CASE("Test LP core delay", "[lp_core]")
     printf("Waited for %" PRIi64 "us, expected: %" PRIi32 "us\n", diff, delay_period_us);
     TEST_ASSERT_INT_WITHIN(delta_us, delay_period_us, diff);
 
-    /* Clear test data */
-    ulp_main_cpu_command = LP_CORE_NO_COMMAND;
-    ulp_command_resp = LP_CORE_NO_COMMAND;
+    clear_test_cmds();
 }
 
 #define LP_TIMER_TEST_DURATION_S        (5)
@@ -218,6 +220,8 @@ static void check_reset_reason_and_sleep_duration(void)
     printf("CPU slept for %"PRIi64" ms, expected it to sleep approx %"PRIi64" ms\n", sleep_duration, expected_sleep_duration_ms);
     /* Rough estimate, as CPU spends quite some time waking up, but will test if lp core is waking up way too often etc */
     TEST_ASSERT_INT_WITHIN_MESSAGE(1000, expected_sleep_duration_ms, sleep_duration, "LP Core did not wake up the expected number of times");
+
+    clear_test_cmds();
 }
 
 TEST_CASE_MULTIPLE_STAGES("LP Timer can wakeup lp core periodically during deep sleep", "[ulp]",
