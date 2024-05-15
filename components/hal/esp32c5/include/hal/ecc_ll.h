@@ -21,11 +21,9 @@ typedef enum {
     ECC_PARAM_PX = 0x0,
     ECC_PARAM_PY,
     ECC_PARAM_K,
-#if CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
     ECC_PARAM_QX,
     ECC_PARAM_QY,
     ECC_PARAM_QZ,
-#endif
 } ecc_ll_param_t;
 
 /**
@@ -45,10 +43,8 @@ static inline void ecc_ll_reset_register(void)
 {
     PCR.ecc_conf.ecc_rst_en = 1;
     PCR.ecc_conf.ecc_rst_en = 0;
-#if CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
     // Clear reset on ECDSA, otherwise ECC is held in reset
     PCR.ecdsa_conf.ecdsa_rst_en = 0;
-#endif
 }
 
 static inline void ecc_ll_enable_interrupt(void)
@@ -78,7 +74,6 @@ static inline void ecc_ll_set_mode(ecc_mode_t mode)
         case ECC_MODE_VERIFY_THEN_POINT_MUL:
             REG_SET_FIELD(ECC_MULT_CONF_REG, ECC_MULT_WORK_MODE, 3);
             break;
-#if CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
         case ECC_MODE_JACOBIAN_POINT_MUL:
             REG_SET_FIELD(ECC_MULT_CONF_REG, ECC_MULT_WORK_MODE, 4);
             break;
@@ -103,7 +98,6 @@ static inline void ecc_ll_set_mode(ecc_mode_t mode)
         case ECC_MODE_INVERSE_MUL:
             REG_SET_FIELD(ECC_MULT_CONF_REG, ECC_MULT_WORK_MODE, 11);
             break;
-#endif
         default:
             HAL_ASSERT(false && "Unsupported mode");
             break;
@@ -125,7 +119,6 @@ static inline void ecc_ll_set_curve(ecc_curve_t curve)
     }
 }
 
-#if CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
 static inline void ecc_ll_set_mod_base(ecc_mod_base_t base)
 {
     switch(base) {
@@ -140,7 +133,6 @@ static inline void ecc_ll_set_mod_base(ecc_mod_base_t base)
             return;
     }
 }
-#endif
 
 static inline void ecc_ll_write_param(ecc_ll_param_t param, const uint8_t *buf, uint16_t len)
 {
@@ -156,7 +148,6 @@ static inline void ecc_ll_write_param(ecc_ll_param_t param, const uint8_t *buf, 
         case ECC_PARAM_K:
             reg = ECC_MULT_K_MEM;
             break;
-#if CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
         case ECC_PARAM_QX:
             reg = ECC_MULT_QX_MEM;
             break;
@@ -166,7 +157,6 @@ static inline void ecc_ll_write_param(ecc_ll_param_t param, const uint8_t *buf, 
         case ECC_PARAM_QZ:
             reg = ECC_MULT_QZ_MEM;
             break;
-#endif
         default:
             HAL_ASSERT(false && "Invalid parameter");
             return;
@@ -203,12 +193,10 @@ static inline ecc_curve_t ecc_ll_get_curve(void)
     return (ecc_curve_t)(REG_GET_FIELD(ECC_MULT_CONF_REG, ECC_MULT_KEY_LENGTH));
 }
 
-#if CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
 static inline ecc_mod_base_t ecc_ll_get_mod_base(void)
 {
     return (ecc_mod_base_t)(REG_GET_FIELD(ECC_MULT_CONF_REG, ECC_MULT_MOD_BASE));
 }
-#endif
 
 static inline void ecc_ll_read_param(ecc_ll_param_t param, uint8_t *buf, uint16_t len)
 {
@@ -223,7 +211,6 @@ static inline void ecc_ll_read_param(ecc_ll_param_t param, uint8_t *buf, uint16_
         case ECC_PARAM_K:
             reg = ECC_MULT_K_MEM;
             break;
-#if CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
         case ECC_PARAM_QX:
             reg = ECC_MULT_QX_MEM;
             break;
@@ -233,7 +220,6 @@ static inline void ecc_ll_read_param(ecc_ll_param_t param, uint8_t *buf, uint16_
         case ECC_PARAM_QZ:
             reg = ECC_MULT_QZ_MEM;
             break;
-#endif
         default:
             HAL_ASSERT(false && "Invalid parameter");
             return;
