@@ -574,8 +574,8 @@ static esp_err_t emac_esp_alloc_driver_obj(const eth_mac_config_t *config, emac_
                                                    config->rx_task_prio, &emac->rx_task_hdl, core_num);
     ESP_GOTO_ON_FALSE(xReturned == pdPASS, ESP_FAIL, err, TAG, "create emac_rx task failed");
 
-    *emac_out_hdl = emac;
 err:
+    *emac_out_hdl = emac;
     return ret;
 }
 
