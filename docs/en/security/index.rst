@@ -11,3 +11,4 @@ Security Guides
    :esp32: secure-boot-v1
    secure-boot-v2
    host-based-security-workflows
+   vulnerabilities
