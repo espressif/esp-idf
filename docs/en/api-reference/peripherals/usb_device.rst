@@ -103,7 +103,7 @@ High-speed devices should initialize the following fields to provide configurati
 
 .. note::
 
-    When Device Stack supports high-speed, both :cpp:member:`fs_configuration_descriptor` and :cpp:member:`hs_configuration_descriptor` should be present to comply with usb2.0 specification.
+    When Device Stack supports high-speed, both :cpp:member:`fs_configuration_descriptor` and :cpp:member:`hs_configuration_descriptor` should be present to comply with USB 2.0 specification.
 
 The Device Stack will instantiate a USB device based on the descriptors provided in the fields described above when :cpp:func:`tinyusb_driver_install` is called.
 
@@ -113,13 +113,13 @@ The Device Stack also provides default descriptors that can be installed by sett
 - Default string descriptor: Enabled by setting :cpp:member:`string_descriptor` to ``NULL``. Default string descriptors will use the value set by corresponding menuconfig options (e.g., manufacturer, product, and serial string descriptor options).
 - Default configuration descriptor. Some classes that rarely require custom configuration (such as CDC and MSC) will provide default configuration descriptors. These can be enabled by setting associated configuration descriptor field to ``NULL``:
 
-    - :cpp:member:`configuration_descriptor` full-speed descriptor for full-speed devices only
-    - :cpp:member:`fs_configuration_descriptor` full-speed descriptor for high-speed devices
-    - :cpp:member:`hs_configuration_descriptor` high-speed descriptor for high-speed devices
+    - :cpp:member:`configuration_descriptor`: full-speed descriptor for full-speed devices only
+    - :cpp:member:`fs_configuration_descriptor`: full-speed descriptor for high-speed devices
+    - :cpp:member:`hs_configuration_descriptor`: high-speed descriptor for high-speed devices
 
 .. note::
 
-    Backward compatibility: when Device Stack supports high-speed, field :cpp:member:`configuration_descriptor` could be used instead of :cpp:member:`fs_configuration_descriptor` for full-speed configuration descriptor.
+    For backward compatibility, when Device Stack supports high-speed, the field :cpp:member:`configuration_descriptor` could be used instead of :cpp:member:`fs_configuration_descriptor` for full-speed configuration descriptor.
 
 Installation
 ------------
@@ -138,7 +138,7 @@ To install the Device Stack, please call :cpp:func:`tinyusb_driver_install`. The
         .external_phy = false,      // Use internal USB PHY
     #if (TUD_OPT_HIGH_SPEED)
         .fs_configuration_descriptor = NULL, // Use the default full-speed configuration descriptor according to settings in Menuconfig
-        .hs_configuration_descriptor = NULL, // Use the default high-ppeed configuration descriptor according to settings in Menuconfig
+        .hs_configuration_descriptor = NULL, // Use the default high-speed configuration descriptor according to settings in Menuconfig
         .qualifier_descriptor = NULL,  // Use the default qualifier descriptor, with values from default device descriptor
     #else
         .configuration_descriptor = NULL,   // Use the default configuration descriptor according to settings in Menuconfig
