@@ -34,7 +34,7 @@ typedef union {
         uint32_t reserved_15:17;
     };
     uint32_t val;
-} iomux_pin_ctrl_reg_t;
+} io_mux_pin_ctrl_reg_t;
 
 /** Type of gpio register
  *  IO MUX Configure Register for pad XTAL_32K_P
@@ -102,13 +102,13 @@ typedef union {
         uint32_t hys_en:1;
         /** hys_sel : R/W; bitpos: [17]; default: 0;
          *  Select enabling signals of the pad from software and efuse hardware. 1: Select
-         *  enabling siganl from slftware. 0: Select enabling signal from efuse hardware.
+         *  enabling signal from slftware. 0: Select enabling signal from efuse hardware.
          */
         uint32_t hys_sel:1;
         uint32_t reserved_18:14;
     };
     uint32_t val;
-} iomux_gpio_reg_t;
+} io_mux_gpio_reg_t;
 
 /** Type of date register
  *  IO MUX Version Control Register
@@ -122,20 +122,20 @@ typedef union {
         uint32_t reserved_28:4;
     };
     uint32_t val;
-} iomux_date_reg_t;
+} io_mux_date_reg_t;
 
 
-typedef struct iomux_dev_t {
-    volatile iomux_pin_ctrl_reg_t pin_ctrl;
-    volatile iomux_gpio_reg_t gpio[27];
+typedef struct io_mux_dev_t {
+    volatile io_mux_pin_ctrl_reg_t pin_ctrl;
+    volatile io_mux_gpio_reg_t gpio[27];
     uint32_t reserved_070[35];
-    volatile iomux_date_reg_t date;
-} iomux_dev_t;
+    volatile io_mux_date_reg_t date;
+} io_mux_dev_t;
 
-extern iomux_dev_t IOMUX;
+extern io_mux_dev_t IO_MUX;
 
 #ifndef __cplusplus
-_Static_assert(sizeof(iomux_dev_t) == 0x100, "Invalid size of iomux_dev_t structure");
+_Static_assert(sizeof(io_mux_dev_t) == 0x100, "Invalid size of io_mux_dev_t structure");
 #endif
 
 #ifdef __cplusplus

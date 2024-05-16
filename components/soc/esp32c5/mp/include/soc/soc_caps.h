@@ -174,35 +174,35 @@
 // #define SOC_ETM_CHANNELS_PER_GROUP      50  // Number of ETM channels in the group
 
 /*-------------------------- GPIO CAPS ---------------------------------------*/
-// TODO: [ESP32C5] IDF-8717
 // ESP32-C5 has 1 GPIO peripheral
-// #define SOC_GPIO_PORT                      1U
+#define SOC_GPIO_PORT                      1U
 #define SOC_GPIO_PIN_COUNT                 29
 // #define SOC_GPIO_SUPPORT_PIN_GLITCH_FILTER 1
 // #define SOC_GPIO_FLEX_GLITCH_FILTER_NUM    8
+#define SOC_GPIO_SUPPORT_PIN_HYS_FILTER      1
 
 // GPIO peripheral has the ETM extension
 // #define SOC_GPIO_SUPPORT_ETM          1
 
 // Target has the full LP IO subsystem
 // On ESP32-C5, Digital IOs have their own registers to control pullup/down capability, independent of LP registers.
-// #define SOC_GPIO_SUPPORT_RTC_INDEPENDENT    (1)
+#define SOC_GPIO_SUPPORT_RTC_INDEPENDENT    (1)
 // GPIO0~7 on ESP32C5 can support chip deep sleep wakeup
-// #define SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP   (1)
+// #define SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP   (1)  // TODO: [ESP32C5] IDF-8719
 
 #define SOC_GPIO_VALID_GPIO_MASK        ((1U<<SOC_GPIO_PIN_COUNT) - 1)
 #define SOC_GPIO_VALID_OUTPUT_GPIO_MASK SOC_GPIO_VALID_GPIO_MASK
 
-#define SOC_GPIO_IN_RANGE_MAX           30
-#define SOC_GPIO_OUT_RANGE_MAX          30
+#define SOC_GPIO_IN_RANGE_MAX           28
+#define SOC_GPIO_OUT_RANGE_MAX          28
 
-// #define SOC_GPIO_DEEP_SLEEP_WAKE_VALID_GPIO_MASK        (0ULL | BIT0 | BIT1 | BIT2 | BIT3 | BIT4 | BIT5 | BIT6 | BIT7)
+#define SOC_GPIO_DEEP_SLEEP_WAKE_VALID_GPIO_MASK        (0ULL | BIT0 | BIT1 | BIT2 | BIT3 | BIT4 | BIT5 | BIT6 | BIT7)
 
-// digital I/O pad powered by VDD3P3_CPU or VDD_SPI(GPIO_NUM_8~GPIO_NUM_30)
-// #define SOC_GPIO_VALID_DIGITAL_IO_PAD_MASK 0x000000007FFFFF00ULL
+// digital I/O pad powered by VDD3P3_CPU or VDD_SPI(GPIO_NUM_8~GPIO_NUM_28)
+#define SOC_GPIO_VALID_DIGITAL_IO_PAD_MASK 0x0000000001FFFF00ULL
 
 // Support to force hold all IOs
-// #define SOC_GPIO_SUPPORT_FORCE_HOLD              (1)
+#define SOC_GPIO_SUPPORT_FORCE_HOLD              (1)
 // Support to hold a single digital I/O when the digital domain is powered off
 #define SOC_GPIO_SUPPORT_HOLD_SINGLE_IO_IN_DSLP  (1)
 
