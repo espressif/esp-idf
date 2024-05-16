@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -294,7 +294,7 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
         ESP_LOGI(BLE_ANCS_TAG, "The passkey Notify number:%06" PRIu32, param->ble_security.key_notif.passkey);
         break;
     case ESP_GAP_BLE_AUTH_CMPL_EVT: {
-        esp_log_buffer_hex("addr", param->ble_security.auth_cmpl.bd_addr, ESP_BD_ADDR_LEN);
+        ESP_LOG_BUFFER_HEX("addr", param->ble_security.auth_cmpl.bd_addr, ESP_BD_ADDR_LEN);
         ESP_LOGI(BLE_ANCS_TAG, "pair status = %s",param->ble_security.auth_cmpl.success ? "success" : "fail");
         if (!param->ble_security.auth_cmpl.success) {
             ESP_LOGI(BLE_ANCS_TAG, "fail reason = 0x%x",param->ble_security.auth_cmpl.fail_reason);
@@ -504,7 +504,6 @@ static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_
         break;
     }
     case ESP_GATTC_NOTIFY_EVT:
-        //esp_log_buffer_hex(BLE_ANCS_TAG, param->notify.value, param->notify.value_len);
         if (param->notify.handle == gl_profile_tab[PROFILE_A_APP_ID].notification_source_handle) {
             esp_receive_apple_notification_source(param->notify.value, param->notify.value_len);
             uint8_t *notificationUID = &param->notify.value[4];
@@ -542,7 +541,7 @@ static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_
         break;
     case ESP_GATTC_SRVC_CHG_EVT: {
         ESP_LOGI(BLE_ANCS_TAG, "ESP_GATTC_SRVC_CHG_EVT, bd_addr:");
-        esp_log_buffer_hex(BLE_ANCS_TAG, param->srvc_chg.remote_bda, 6);
+        ESP_LOG_BUFFER_HEX(BLE_ANCS_TAG, param->srvc_chg.remote_bda, 6);
         break;
     }
     case ESP_GATTC_WRITE_CHAR_EVT:
@@ -562,7 +561,6 @@ static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_
         break;
     case ESP_GATTC_CONNECT_EVT:
         //ESP_LOGI(BLE_ANCS_TAG, "ESP_GATTC_CONNECT_EVT");
-        //esp_log_buffer_hex("bda", param->connect.remote_bda, 6);
         memcpy(gl_profile_tab[PROFILE_A_APP_ID].remote_bda, param->connect.remote_bda, 6);
         // create gattc virtual connection
         esp_ble_gattc_open(gl_profile_tab[PROFILE_A_APP_ID].gattc_if, gl_profile_tab[PROFILE_A_APP_ID].remote_bda, BLE_ADDR_TYPE_RANDOM, true);

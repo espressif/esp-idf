@@ -52,9 +52,9 @@ static void esp_eddystone_show_inform(const esp_eddystone_result_t* res)
             ESP_LOGI(DEMO_TAG, "Eddystone UID inform:");
             ESP_LOGI(DEMO_TAG, "Measured power(RSSI at 0m distance):%d dbm", res->inform.uid.ranging_data);
             ESP_LOGI(DEMO_TAG, "EDDYSTONE_DEMO: Namespace ID:0x");
-            esp_log_buffer_hex(DEMO_TAG, res->inform.uid.namespace_id, 10);
+            ESP_LOG_BUFFER_HEX(DEMO_TAG, res->inform.uid.namespace_id, 10);
             ESP_LOGI(DEMO_TAG, "EDDYSTONE_DEMO: Instance ID:0x");
-            esp_log_buffer_hex(DEMO_TAG, res->inform.uid.instance_id, 6);
+            ESP_LOG_BUFFER_HEX(DEMO_TAG, res->inform.uid.instance_id, 6);
             break;
         }
         case EDDYSTONE_FRAME_TYPE_URL: {
@@ -114,7 +114,7 @@ static void esp_gap_cb(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t* par
                         // Here, we get the eddystone information in eddystone_res, we can use the data in res to do other things.
                         // For example, just print them:
                         ESP_LOGI(DEMO_TAG, "--------Eddystone Found----------");
-                        esp_log_buffer_hex("EDDYSTONE_DEMO: Device address:", scan_result->scan_rst.bda, ESP_BD_ADDR_LEN);
+                        ESP_LOG_BUFFER_HEX("EDDYSTONE_DEMO: Device address:", scan_result->scan_rst.bda, ESP_BD_ADDR_LEN);
                         ESP_LOGI(DEMO_TAG, "RSSI of packet:%d dbm", scan_result->scan_rst.rssi);
                         esp_eddystone_show_inform(&eddystone_res);
                     }

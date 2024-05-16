@@ -110,7 +110,7 @@ static void esp_spp_cb(esp_spp_cb_event_t event, esp_spp_cb_param_t *param)
         ESP_LOGI(SPP_TAG, "ESP_SPP_DATA_IND_EVT len:%d handle:%"PRIu32,
                  param->data_ind.len, param->data_ind.handle);
         if (param->data_ind.len < 128) {
-            esp_log_buffer_hex("", param->data_ind.data, param->data_ind.len);
+            ESP_LOG_BUFFER_HEX("", param->data_ind.data, param->data_ind.len);
         }
 #else
         gettimeofday(&time_new, NULL);

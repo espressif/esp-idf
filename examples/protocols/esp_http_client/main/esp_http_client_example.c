@@ -109,7 +109,6 @@ esp_err_t _http_event_handler(esp_http_client_event_t *evt)
             ESP_LOGD(TAG, "HTTP_EVENT_ON_FINISH");
             if (output_buffer != NULL) {
                 // Response is accumulated in output_buffer. Uncomment the below line to print the accumulated response
-                // ESP_LOG_BUFFER_HEX(TAG, output_buffer, output_len);
                 free(output_buffer);
                 output_buffer = NULL;
             }
@@ -145,7 +144,7 @@ static void http_rest_with_url(void)
     // it is used by functions like strlen(). The buffer should only be used upto size MAX_HTTP_OUTPUT_BUFFER
     char local_response_buffer[MAX_HTTP_OUTPUT_BUFFER + 1] = {0};
     /**
-     * NOTE: All the configuration parameters for http_client must be spefied either in URL or as host and path parameters.
+     * NOTE: All the configuration parameters for http_client must be specified either in URL or as host and path parameters.
      * If host and path parameters are not set, query parameter will be ignored. In such cases,
      * query parameter should be specified in URL.
      *

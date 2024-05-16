@@ -142,7 +142,6 @@ static void l2cap_read_handle(void * param)
             vTaskDelay(500 / portTICK_PERIOD_MS);
         } else {
             ESP_LOGI(L2CAP_TAG, "fd = %d data_len = %d", fd, size);
-            // esp_log_buffer_hex(L2CAP_TAG, l2cap_data, size);
             /* To avoid task watchdog */
             vTaskDelay(10 / portTICK_PERIOD_MS);
         }

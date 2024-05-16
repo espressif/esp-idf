@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -119,7 +119,6 @@ void esp_receive_apple_notification_source(uint8_t *message, uint16_t message_le
 
 void esp_receive_apple_data_source(uint8_t *message, uint16_t message_len)
 {
-    //esp_log_buffer_hex("data source", message, message_len);
     if (!message || message_len == 0) {
         return;
     }
@@ -141,32 +140,32 @@ void esp_receive_apple_data_source(uint8_t *message, uint16_t message_len)
                 switch (AttributeID)
                 {
                     case NotificationAttributeIDAppIdentifier:
-                        esp_log_buffer_char("Identifier", &attrs[3], len);
+                        ESP_LOG_BUFFER_CHAR("Identifier", &attrs[3], len);
                         break;
                     case NotificationAttributeIDTitle:
-                        esp_log_buffer_char("Title", &attrs[3], len);
+                        ESP_LOG_BUFFER_CHAR("Title", &attrs[3], len);
                         break;
                     case NotificationAttributeIDSubtitle:
-                        esp_log_buffer_char("Subtitle", &attrs[3], len);
+                        ESP_LOG_BUFFER_CHAR("Subtitle", &attrs[3], len);
                         break;
                     case NotificationAttributeIDMessage:
-                        esp_log_buffer_char("Message", &attrs[3], len);
+                        ESP_LOG_BUFFER_CHAR("Message", &attrs[3], len);
                         break;
                     case NotificationAttributeIDMessageSize:
-                        esp_log_buffer_char("MessageSize", &attrs[3], len);
+                        ESP_LOG_BUFFER_CHAR("MessageSize", &attrs[3], len);
                         break;
                     case NotificationAttributeIDDate:
                         //yyyyMMdd'T'HHmmSS
-                        esp_log_buffer_char("Date", &attrs[3], len);
+                        ESP_LOG_BUFFER_CHAR("Date", &attrs[3], len);
                         break;
                     case NotificationAttributeIDPositiveActionLabel:
-                        esp_log_buffer_hex("PActionLabel", &attrs[3], len);
+                        ESP_LOG_BUFFER_HEX("PActionLabel", &attrs[3], len);
                         break;
                     case NotificationAttributeIDNegativeActionLabel:
-                        esp_log_buffer_hex("NActionLabel", &attrs[3], len);
+                        ESP_LOG_BUFFER_HEX("NActionLabel", &attrs[3], len);
                         break;
                     default:
-                        esp_log_buffer_hex("unknownAttributeID", &attrs[3], len);
+                        ESP_LOG_BUFFER_HEX("unknownAttributeID", &attrs[3], len);
                         break;
                 }
 

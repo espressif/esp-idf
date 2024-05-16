@@ -1543,7 +1543,6 @@ void test_add_device_master(void)
 
         ESP_LOGI("Master", "dev %d communication:", i);
         ESP_LOG_BUFFER_HEX("Tx", master_sendbuf, sizeof(master_sendbuf));
-        // ESP_LOG_BUFFER_HEX("Rx", master_recvbuf, sizeof(master_recvbuf));
         spitest_cmp_or_dump(master_expect, master_recvbuf, TEST_TRANS_LEN);
 
         //swap self as a dummy device to free real cs line
@@ -1586,7 +1585,6 @@ void test_add_device_slave(void)
 
         ESP_LOGI("Slave", "dev %d communication:", i);
         ESP_LOG_BUFFER_HEX("Tx", slave_sendbuf, sizeof(slave_sendbuf));
-        // ESP_LOG_BUFFER_HEX("Rx", slave_recvbuf, sizeof(slave_recvbuf));
         spitest_cmp_or_dump(slave_expect, slave_recvbuf, TEST_TRANS_LEN);
     }
 

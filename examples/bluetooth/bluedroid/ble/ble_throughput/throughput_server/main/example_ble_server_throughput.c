@@ -428,7 +428,7 @@ static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_i
                     ESP_LOGI(GATTS_TAG, "notify/indicate disable ");
                 }else{
                     ESP_LOGE(GATTS_TAG, "unknown descr value");
-                    esp_log_buffer_hex(GATTS_TAG, param->write.value, param->write.len);
+                    ESP_LOG_BUFFER_HEX(GATTS_TAG, param->write.value, param->write.len);
                 }
 
             }
