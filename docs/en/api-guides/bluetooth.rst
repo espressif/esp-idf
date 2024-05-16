@@ -7,11 +7,11 @@ This document provides an architecture overview of the Bluetooth stack in ESP-ID
 
 .. only:: esp32
 
-    {IDF_TARGET_NAME} supports Dual-Mode Bluetooth 4.2 and is certified for Bluetooth 4.2.
+    {IDF_TARGET_NAME} supports Dual-Mode Bluetooth 4.2 and is certified for Dual-Mode Bluetooth 4.2 and Bluetooth LE 5.0.
 
 .. only:: esp32c3 or esp32s3
 
-    {IDF_TARGET_NAME} supports Bluetooth 5.0 (LE) and is certified for Bluetooth LE 5.0.
+    {IDF_TARGET_NAME} supports Bluetooth 5.0 (LE) and is certified for Bluetooth LE 5.4.
 
 .. only:: esp32c2 or esp32c6 or esp32h2
 
