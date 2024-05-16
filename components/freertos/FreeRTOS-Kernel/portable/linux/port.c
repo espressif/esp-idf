@@ -6,7 +6,7 @@
  *
  * SPDX-License-Identifier: MIT
  *
- * SPDX-FileContributor: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
  * this software and associated documentation files (the "Software"), to deal in
@@ -562,5 +562,11 @@ unsigned long ulPortGetRunTime( void )
     times( &xTimes );
 
     return ( unsigned long ) xTimes.tms_utime;
+}
+/*-----------------------------------------------------------*/
+
+void vPortSetStackWatchpoint( void *pxStackStart )
+{
+    (void) pxStackStart;
 }
 /*-----------------------------------------------------------*/

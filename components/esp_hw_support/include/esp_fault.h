@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -49,10 +49,14 @@ extern "C" {
         if(!(CONDITION)) _ESP_FAULT_RESET();            \
 } while(0)
 
-#ifndef CONFIG_IDF_TARGET_ARCH_RISCV
+#if CONFIG_IDF_TARGET_ARCH_XTENSA
 #define _ESP_FAULT_ILLEGAL_INSTRUCTION asm volatile("ill.n; ill.n; ill.n; ill.n; ill.n; ill.n; ill.n;")
-#else
+#elif CONFIG_IDF_TARGET_ARCH_RISCV
 #define _ESP_FAULT_ILLEGAL_INSTRUCTION asm volatile("unimp; unimp; unimp; unimp; unimp;")
+#elif CONFIG_IDF_TARGET_LINUX
+#define _ESP_FAULT_ILLEGAL_INSTRUCTION
+#else
+#error "_ESP_FAULT_ILLEGAL_INSTRUCTION is not defined for this TARGET"
 #endif
 
 // Uncomment this macro to get debug output if ESP_FAULT_ASSERT() fails

@@ -1,7 +1,5 @@
-# SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
-from __future__ import unicode_literals
-
 import logging
 import os
 
@@ -10,11 +8,7 @@ from pytest_embedded import Dut
 from pytest_embedded_qemu.dut import QemuDut
 
 
-@pytest.mark.generic
-@pytest.mark.esp32
-@pytest.mark.esp32c2
-@pytest.mark.esp32c3
-def test_examples_efuse(dut: Dut) -> None:
+def basic_efuse_example(dut: Dut) -> None:
     dut.expect(r'example: Coding Scheme (3/4)|(NONE)|(REPEAT)|(RS \(Reed-Solomon coding\))', timeout=20)
     dut.expect(['example: read efuse fields',
                 r'example: 1. read MAC address: {}'.format(r':'.join((r'[0-9a-f]{2}',) * 6)),
@@ -35,6 +29,20 @@ def test_examples_efuse(dut: Dut) -> None:
                 'example: setting_2 = 4',
                 'example: custom_secure_version = 5',
                 'example: Done'], expect_all=True)
+
+
+@pytest.mark.generic
+@pytest.mark.esp32
+@pytest.mark.esp32c2
+@pytest.mark.esp32c3
+def test_examples_efuse(dut: Dut) -> None:
+    basic_efuse_example(dut)
+
+
+@pytest.mark.linux
+@pytest.mark.host_test
+def test_examples_efuse_linux(dut: Dut) -> None:
+    basic_efuse_example(dut)
 
 
 @pytest.mark.generic
