@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -149,32 +149,40 @@ static esp_err_t panel_io_i2c_tx_buffer(esp_lcd_panel_io_t *io, int lcd_cmd, con
     esp_err_t ret = ESP_OK;
     lcd_panel_io_i2c_t *i2c_panel_io = __containerof(io, lcd_panel_io_i2c_t, base);
     bool send_param = (lcd_cmd >= 0);
-    int write_size = 0;
-    uint8_t *write_buffer = (uint8_t*)heap_caps_malloc(CONTROL_PHASE_LENGTH + CMD_LENGTH + buffer_size, MALLOC_CAP_8BIT);
-    ESP_GOTO_ON_FALSE(write_buffer, ESP_ERR_NO_MEM, err, TAG, "no mem for write buffer");
 
+    uint8_t control_phase_byte = 0;
+    size_t control_phase_size = 0;
     if (i2c_panel_io->control_phase_enabled) {
-        write_buffer[0] = is_param ? i2c_panel_io->control_phase_cmd : i2c_panel_io->control_phase_data;
-        write_size += 1;
+        control_phase_byte = is_param ? i2c_panel_io->control_phase_cmd : i2c_panel_io->control_phase_data;
+        control_phase_size = 1;
     }
 
+    uint8_t *cmd_buffer = NULL;
+    size_t cmd_buffer_size = 0;
     // some displays don't want any additional commands on data transfers
     if (send_param) {
         uint8_t cmds[4] = {BYTESHIFT(lcd_cmd, 3), BYTESHIFT(lcd_cmd, 2), BYTESHIFT(lcd_cmd, 1), BYTESHIFT(lcd_cmd, 0)};
         size_t cmds_size = i2c_panel_io->lcd_cmd_bits / 8;
         if (cmds_size > 0 && cmds_size <= sizeof(cmds)) {
-            memcpy(write_buffer + write_size, cmds + (sizeof(cmds) - cmds_size), cmds_size);
-            write_size += cmds_size;
+            cmd_buffer = cmds + (sizeof(cmds) - cmds_size);
+            cmd_buffer_size = cmds_size;
         }
     }
 
+    uint8_t *lcd_buffer = NULL;
+    size_t lcd_buffer_size = 0;
     if (buffer) {
-        memcpy(write_buffer + write_size, buffer, buffer_size);
-        write_size += buffer_size;
+        lcd_buffer = (uint8_t*)buffer;
+        lcd_buffer_size = buffer_size;
     }
 
-    ESP_GOTO_ON_ERROR(i2c_master_transmit(i2c_panel_io->i2c_handle, write_buffer, write_size, -1), err, TAG, "i2c transaction failed");
-    free(write_buffer);
+    i2c_master_transmit_multi_buffer_info_t lcd_i2c_buffer[3] = {
+        {.write_buffer = &control_phase_byte, .buffer_size = control_phase_size},
+        {.write_buffer = cmd_buffer, .buffer_size = cmd_buffer_size},
+        {.write_buffer = lcd_buffer, .buffer_size = lcd_buffer_size},
+    };
+
+    ESP_GOTO_ON_ERROR(i2c_master_multi_buffer_transmit(i2c_panel_io->i2c_handle, lcd_i2c_buffer, sizeof(lcd_i2c_buffer) / sizeof(i2c_master_transmit_multi_buffer_info_t), -1), err, TAG, "i2c transaction failed");
     if (!is_param) {
         // trans done callback
         if (i2c_panel_io->on_color_trans_done) {
@@ -184,9 +192,6 @@ static esp_err_t panel_io_i2c_tx_buffer(esp_lcd_panel_io_t *io, int lcd_cmd, con
 
     return ESP_OK;
 err:
-    if (write_buffer) {
-        free(write_buffer);
-    }
     return ret;
 }
 
