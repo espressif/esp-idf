@@ -191,6 +191,10 @@ config SOC_SECURE_BOOT_SUPPORTED
     bool
     default y
 
+config SOC_BOD_SUPPORTED
+    bool
+    default y
+
 config SOC_PMU_SUPPORTED
     bool
     default y
