@@ -70,7 +70,8 @@ static esp_err_t rmt_rx_init_dma_link(rmt_rx_channel_t *rx_channel, const rmt_rx
     gdma_rx_event_callbacks_t cbs = {
         .on_recv_done = rmt_dma_rx_one_block_cb,
     };
-    gdma_register_rx_event_callbacks(rx_channel->base.dma_chan, &cbs, rx_channel);
+    // register the DMA callbacks may fail if the interrupt service can not be installed successfully
+    ESP_RETURN_ON_ERROR(gdma_register_rx_event_callbacks(rx_channel->base.dma_chan, &cbs, rx_channel), TAG, "register DMA callbacks failed");
     return ESP_OK;
 }
 #endif // SOC_RMT_SUPPORT_DMA

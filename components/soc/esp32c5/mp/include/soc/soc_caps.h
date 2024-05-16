@@ -39,7 +39,7 @@
 #define SOC_RTC_FAST_MEM_SUPPORTED      1
 #define SOC_RTC_MEM_SUPPORTED           1
 #define SOC_I2S_SUPPORTED               1
-// #define SOC_RMT_SUPPORTED               1  // TODO: [ESP32C5] IDF-8726
+#define SOC_RMT_SUPPORTED               1
 // #define SOC_SDM_SUPPORTED               1  // TODO: [ESP32C5] IDF-8687
 #define SOC_GPSPI_SUPPORTED             1
 // #define SOC_LEDC_SUPPORTED              1  // TODO: [ESP32C5] IDF-8684

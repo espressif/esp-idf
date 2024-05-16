@@ -463,7 +463,7 @@ static inline void rmt_ll_tx_set_carrier_level(rmt_dev_t *dev, uint32_t channel,
  *
  * @param dev Peripheral instance address
  * @param channel RMT TX channel number
- * @param enable True to output carrier signal in all RMT state, False to only ouput carrier signal for effective data
+ * @param enable True to output carrier signal in all RMT state, False to only output carrier signal for effective data
  */
 static inline void rmt_ll_tx_enable_carrier_always_on(rmt_dev_t *dev, uint32_t channel, bool enable)
 {
@@ -706,7 +706,7 @@ static inline void rmt_ll_enable_interrupt(rmt_dev_t *dev, uint32_t mask, bool e
  * @brief Clear RMT interrupt status by mask
  *
  * @param dev Peripheral instance address
- * @param mask Interupt status mask
+ * @param mask Interrupt status mask
  */
 __attribute__((always_inline))
 static inline void rmt_ll_clear_interrupt_status(rmt_dev_t *dev, uint32_t mask)

@@ -485,7 +485,7 @@ static inline void rmt_ll_enable_interrupt(rmt_dev_t *dev, uint32_t mask, bool e
  * @brief Clear RMT interrupt status by mask
  *
  * @param dev Peripheral instance address
- * @param mask Interupt status mask
+ * @param mask Interrupt status mask
  */
 __attribute__((always_inline))
 static inline void rmt_ll_clear_interrupt_status(rmt_dev_t *dev, uint32_t mask)
