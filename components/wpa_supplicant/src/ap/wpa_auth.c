@@ -1357,8 +1357,7 @@ SM_STATE(WPA_PTK, AUTHENTICATION2)
     if (os_get_random(sm->ANonce, WPA_NONCE_LEN)) {
         wpa_printf( MSG_ERROR, "WPA: Failed to get random data for "
                "ANonce.");
-        wpa_sta_disconnect(sm->wpa_auth, sm->addr,
-                WLAN_REASON_4WAY_HANDSHAKE_TIMEOUT);
+        sm->Disconnect = true;
         return;
     }
     wpa_hexdump(MSG_DEBUG, "WPA: Assign ANonce", sm->ANonce,
