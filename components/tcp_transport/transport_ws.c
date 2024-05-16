@@ -131,7 +131,7 @@ static int esp_transport_read_internal(transport_ws_t *ws, char *buffer, int len
     return to_read;
 }
 
-static char *trimwhitespace(const char *str)
+static char *trimwhitespace(char *str)
 {
     char *end;
 
@@ -141,19 +141,19 @@ static char *trimwhitespace(const char *str)
     }
 
     if (*str == 0) {
-        return (char *)str;
+        return str;
     }
 
     // Trim trailing space
-    end = (char *)(str + strlen(str) - 1);
+    end = str + strlen(str) - 1;
     while (end > str && isspace((unsigned char)*end)) {
         end--;
     }
 
     // Write new null terminator
-    *(end + 1) = 0;
+    *(end + 1) = '\0';
 
-    return (char *)str;
+    return str;
 }
 
 static int get_http_status_code(const char *buffer)
@@ -162,11 +162,11 @@ static int get_http_status_code(const char *buffer)
     const char *found = strcasestr(buffer, http);
     char status_code[4];
     if (found) {
-        found += sizeof(http)/sizeof(http[0]) - 1;
+        found += sizeof(http) - 1;
         found = strchr(found, ' ');
         if (found) {
             found++;
-            strncpy(status_code, found, 4);
+            strncpy(status_code, found, 3);
             status_code[3] = '\0';
             int code = atoi(status_code);
             ESP_LOGD(TAG, "HTTP status code is %d", code);
@@ -176,14 +176,14 @@ static int get_http_status_code(const char *buffer)
     return -1;
 }
 
-static char *get_http_header(const char *buffer, const char *key)
+static char *get_http_header(char *buffer, const char *key)
 {
     char *found = strcasestr(buffer, key);
     if (found) {
         found += strlen(key);
         char *found_end = strstr(found, "\r\n");
         if (found_end) {
-            found_end[0] = 0;//terminal string
+            *found_end = '\0'; // terminal string
 
             return trimwhitespace(found);
         }
