@@ -58,7 +58,7 @@ void iperf_hook_show_wifi_stats(iperf_traffic_type_t type, iperf_status_t status
         }
 #endif
 #if CONFIG_ESP_WIFI_ENABLE_WIFI_RX_STATS
-        if (type != IPERF_UDP_SERVER) {
+        if (type != IPERF_UDP_CLIENT) {
             wifi_cmd_get_rx_statistics(0, NULL);
         }
 #endif
