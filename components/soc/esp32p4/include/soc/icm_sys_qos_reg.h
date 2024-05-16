@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -14,7 +14,7 @@ extern "C" {
 /** ICM_VERID_FILEDS_REG register
  *  NA
  */
-#define ICM_VERID_FILEDS_REG (DR_REG_ICM_BASE + 0x0)
+#define ICM_VERID_FILEDS_REG (DR_REG_AXI_ICM_QOS_BASE + 0x0)
 /** ICM_REG_VERID : RO; bitpos: [31:0]; default: 875574314;
  *  NA
  */
@@ -26,7 +26,7 @@ extern "C" {
 /** ICM_HW_CFG_REG_REG register
  *  NA
  */
-#define ICM_HW_CFG_REG_REG (DR_REG_ICM_BASE + 0x4)
+#define ICM_HW_CFG_REG_REG (DR_REG_AXI_ICM_QOS_BASE + 0x4)
 /** ICM_REG_AXI_HWCFG_QOS_SUPPORT : RO; bitpos: [0]; default: 1;
  *  NA
  */
@@ -108,7 +108,7 @@ extern "C" {
 /** ICM_CMD_REG register
  *  NA
  */
-#define ICM_CMD_REG (DR_REG_ICM_BASE + 0x8)
+#define ICM_CMD_REG (DR_REG_AXI_ICM_QOS_BASE + 0x8)
 /** ICM_REG_AXI_CMD : R/W; bitpos: [2:0]; default: 0;
  *  NA
  */
@@ -162,7 +162,7 @@ extern "C" {
 /** ICM_DATA_REG register
  *  NA
  */
-#define ICM_DATA_REG (DR_REG_ICM_BASE + 0xc)
+#define ICM_DATA_REG (DR_REG_AXI_ICM_QOS_BASE + 0xc)
 /** ICM_REG_DATA : R/W; bitpos: [31:0]; default: 0;
  *  NA
  */

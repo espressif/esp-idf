@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -373,7 +373,7 @@ typedef union {
 typedef union {
     struct {
         /** reg_icm_sys_addrhole_id : RO; bitpos: [7:0]; default: 0;
-         *  master id = 4-bit CID + 4-bit  UID(refer to related IP) . CID is used to verfiy
+         *  master id = 4-bit CID + 4-bit  UID(refer to related IP) . CID is used to verify
          *  master in icm. CID: 4'h1: cache, 4'h5 gdma mst1, 4'h6: gdma mst2, 4'h8: axi pdma,
          *  4'ha: dma2d, 4'hb: h264 mst1, 4'hc: h264 mst2.
          */
@@ -508,11 +508,12 @@ typedef struct {
     volatile icm_rdn_eco_cs_reg_t rdn_eco_cs;
     volatile icm_rdn_eco_low_reg_t rdn_eco_low;
     volatile icm_rdn_eco_high_reg_t rdn_eco_high;
-} icm_dev_t;
+} axi_icm_dev_t;
 
+extern axi_icm_dev_t AXI_ICM;
 
 #ifndef __cplusplus
-_Static_assert(sizeof(icm_dev_t) == 0x5c, "Invalid size of icm_dev_t structure");
+_Static_assert(sizeof(axi_icm_dev_t) == 0x5c, "Invalid size of axi_icm_dev_t structure");
 #endif
 
 #ifdef __cplusplus
