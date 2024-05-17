@@ -18,7 +18,9 @@ extern "C" {
 #endif
 
 /* -------------------- Default initializers and flags ---------------------- */
+
 /** @cond */    //Doxy command to hide preprocessor definitions from docs
+
 /**
  * @brief Initializer macro for general configuration structure.
  *
