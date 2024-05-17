@@ -27,6 +27,7 @@ extern "C" {
 #define TWAI_ERR_PASS_THRESH            128         /**< Error counter threshold for error passive */
 
 /** @cond */    //Doxy command to hide preprocessor definitions from docs
+
 /**
  * @brief   TWAI Message flags
  *
