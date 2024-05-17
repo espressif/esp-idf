@@ -46,6 +46,10 @@ extern "C" {
     #define DEFAULT_BT_LE_50_FEATURE_SUPPORT (0)
     #endif
 
+    #define DEFAULT_BT_LE_ROLE_OBSERVER                  MYNEWT_VAL(BLE_ROLE_OBSERVER)
+    #define DEFAULT_BT_LE_ROLE_CENTROL                   MYNEWT_VAL(BLE_ROLE_CENTRAL)
+    #define DEFAULT_BT_LE_ROLE_PERIPHERAL                MYNEWT_VAL(BLE_ROLE_PERIPHERAL)
+    #define DEFAULT_BT_LE_ROLE_BROADCASTER               MYNEWT_VAL(BLE_ROLE_BROADCASTER)
 #else
 
     #if CONFIG_BT_LE_LL_CFG_FEAT_LE_CODED_PHY
@@ -57,13 +61,13 @@ extern "C" {
     #if defined(CONFIG_BT_LE_MAX_PERIODIC_ADVERTISER_LIST)
         #define DEFAULT_BT_LE_MAX_PERIODIC_ADVERTISER_LIST (CONFIG_BT_LE_MAX_PERIODIC_ADVERTISER_LIST)
     #else
-        #define DEFAULT_BT_LE_MAX_PERIODIC_ADVERTISER_LIST (5)
+        #define DEFAULT_BT_LE_MAX_PERIODIC_ADVERTISER_LIST (0)
     #endif
 
     #if defined(CONFIG_BT_LE_MAX_PERIODIC_SYNCS)
         #define DEFAULT_BT_LE_MAX_PERIODIC_SYNCS (CONFIG_BT_LE_MAX_PERIODIC_SYNCS)
     #else
-        #define DEFAULT_BT_LE_MAX_PERIODIC_SYNCS (1)
+        #define DEFAULT_BT_LE_MAX_PERIODIC_SYNCS (0)
     #endif
 
     #if defined(CONFIG_BT_LE_MAX_CONNECTIONS)
@@ -125,6 +129,29 @@ extern "C" {
         #define DEFAULT_BT_LE_50_FEATURE_SUPPORT (0)
     #endif
 
+    #if defined(CONFIG_BT_LE_ROLE_CENTROL_ENABLE)
+        #define DEFAULT_BT_LE_ROLE_CENTROL (1)
+    #else
+        #define DEFAULT_BT_LE_ROLE_CENTROL (0)
+    #endif
+
+    #if defined(CONFIG_BT_LE_ROLE_PERIPHERAL_ENABLE)
+        #define DEFAULT_BT_LE_ROLE_PERIPHERAL (1)
+    #else
+        #define DEFAULT_BT_LE_ROLE_PERIPHERAL (0)
+    #endif
+
+    #if defined(CONFIG_BT_LE_ROLE_BROADCASTER_ENABLE)
+        #define DEFAULT_BT_LE_ROLE_BROADCASTER (1)
+    #else
+        #define DEFAULT_BT_LE_ROLE_BROADCASTER (0)
+    #endif
+
+    #if defined(CONFIG_BT_LE_ROLE_OBSERVER_ENABLE)
+        #define DEFAULT_BT_LE_ROLE_OBSERVER (1)
+    #else
+        #define DEFAULT_BT_LE_ROLE_OBSERVER (0)
+    #endif
 #endif
 
 #define DEFAULT_BT_LE_COEX_PHY_CODED_TX_RX_TLIM_EFF CONFIG_BT_LE_COEX_PHY_CODED_TX_RX_TLIM_EFF
