@@ -1,5 +1,51 @@
 menu "Log"
 
+    choice LOG_VERSION
+        prompt "Log version"
+        default LOG_VERSION_1
+        help
+            Select the log version to be used by the ESP log component.
+
+            - "V1": This version integrates log formatting into the format string provided by the user.
+                    Logs are processed and formatted during compile time, leading to a larger binary file.
+                    Example: ESP_LOGI("boot", "chip revision: v%d.%d", major, minor);
+                    Output: I (56) boot: chip revision: v3.0
+                    Note: Log strings are stored in Flash with added formatting characters.
+                    Format string on flash: "[0;32mI (%lu) %s: chip revision: v%d.%d [0m"
+
+            - "V2": This version centralizes log formatting within the esp_log() function.
+                    User-supplied format strings are stored without added formatting, reducing binary size.
+                    Example: ESP_LOGI("boot", "chip revision: v%d.%d", major, minor);
+                    Output: I (56) boot: chip revision: v3.0
+                    Note: This version supports runtime configuration of formatting and is more flexible,
+                    logging from constrained environments (ex.: ISR, Startup, Cache disabled).
+                    It may consumes a bit more stack and affect performance.
+                    Format string on flash: "chip revision: v%d.%d"
+
+            Use V1 for minimal stack usage and simpler implementation.
+            Use V2 for smaller binary sizes, more flexible log formatting, and advanced features like disabling
+            colors or timestamps.
+
+        config LOG_VERSION_1
+            bool "V1"
+            help
+                Select this option to use Log V1. Recommended for projects with strict stack constraints
+                or that prioritize performance over flexibility.
+
+        config LOG_VERSION_2
+            bool "V2"
+            help
+                Select this option to use Log V2. Recommended for projects that require smaller binaries,
+                runtime log formatting configuration, or advanced logging features.
+    endchoice
+
+    config LOG_VERSION
+        int
+        default 1 if LOG_VERSION_1
+        default 2 if LOG_VERSION_2
+        help
+            This configuration sets the log version number based on the chosen log version.
+
     orsource "./Kconfig.level"
 
     orsource "./Kconfig.format"

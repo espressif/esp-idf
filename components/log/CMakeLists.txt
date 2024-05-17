@@ -13,7 +13,11 @@ endif()
 
 set(srcs "src/${system_target}/log_timestamp.c"
          "src/log_timestamp_common.c"
-         "src/${system_target}/log_lock.c")
+         "src/${system_target}/log_lock.c"
+         "src/${system_target}/util.c"
+         "src/log_print.c"
+         "src/log.c")
+
 set(priv_requires "")
 
 if(NOT non_os_build)

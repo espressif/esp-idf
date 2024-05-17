@@ -393,15 +393,117 @@ TEST_CASE("esp_log_util_cvt")
 TEST_CASE("esp_log_timestamp_str")
 {
     char buffer[64];
-    bool critical = true;
-    uint64_t timestamp_ms = esp_log_timestamp64(critical);
-    esp_log_timestamp_str(critical, timestamp_ms, buffer);
+    bool constrained_env = true;
+    uint64_t timestamp_ms = esp_log_timestamp64(constrained_env);
+    esp_log_timestamp_str(constrained_env, timestamp_ms, buffer);
     const std::regex test_print(EARLY_TIMESTAMP, std::regex::ECMAScript);
     CHECK(regex_search(string(buffer), test_print) == true);
 
-    critical = false;
-    timestamp_ms = esp_log_timestamp64(critical);
-    esp_log_timestamp_str(critical, timestamp_ms, buffer);
+    constrained_env = false;
+    timestamp_ms = esp_log_timestamp64(constrained_env);
+    esp_log_timestamp_str(constrained_env, timestamp_ms, buffer);
     const std::regex test_print2(TIMESTAMP, std::regex::ECMAScript);
     CHECK(regex_search(string(buffer), test_print2) == true);
+}
+
+TEST_CASE("esp_log with formatting")
+{
+    PrintFixture fix(ESP_LOG_INFO);
+
+    esp_log_config_t config = {
+        .opts = {
+            .log_level = ESP_LOG_NONE,
+            .constrained_env = false,
+            .require_formatting = true,
+            .dis_color = false,
+            .dis_timestamp = false,
+            .reserved = 0,
+        }
+    };
+
+    for (int i = 0; i <= 10; i++) {
+        if (5 <= i && i < 7) {
+            config.opts.log_level = ESP_LOG_INFO;
+        } else if (7 <= i && i < 9) {
+            config.opts.log_level = ESP_LOG_WARN;
+        } else if (9 <= i) {
+            config.opts.log_level = ESP_LOG_ERROR;
+        };
+
+        esp_log(config, TEST_TAG, "Temp = %dC", i);
+
+        if (5 <= i && i < 7) {
+            const std::regex test_print("I \\(" TIMESTAMP "\\) test: Temp = [0-9]+C", std::regex::ECMAScript);
+            CHECK(regex_search(fix.get_print_buffer_string(), test_print) == true);
+        } else if (7 <= i && i < 9) {
+            const std::regex test_print("W \\(" TIMESTAMP "\\) test: Temp = [0-9]+C", std::regex::ECMAScript);
+            CHECK(regex_search(fix.get_print_buffer_string(), test_print) == true);
+        } else if (9 <= i) {
+            const std::regex test_print("E \\(" TIMESTAMP "\\) test: Temp = [0-9]+C", std::regex::ECMAScript);
+            CHECK(regex_search(fix.get_print_buffer_string(), test_print) == true);
+        } else {
+            const std::regex test_print("", std::regex::ECMAScript);
+            CHECK(regex_search(fix.get_print_buffer_string(), test_print) == true);
+        }
+        fix.reset_buffer();
+    }
+}
+
+TEST_CASE("esp_log without formatting")
+{
+    PrintFixture fix(ESP_LOG_INFO);
+
+    esp_log_config_t config = {
+        .opts = {
+            .log_level = ESP_LOG_NONE,
+            .constrained_env = false,
+            .require_formatting = false, // print just text
+            .dis_color = false,
+            .dis_timestamp = false,
+            .reserved = 0,
+        }
+    };
+
+    for (int i = 0; i <= 10; i++) {
+        if (5 <= i && i < 7) {
+            config.opts.log_level = ESP_LOG_INFO;
+        } else if (7 <= i && i < 9) {
+            config.opts.log_level = ESP_LOG_WARN;
+        } else if (9 <= i) {
+            config.opts.log_level = ESP_LOG_ERROR;
+        };
+
+        esp_log(config, TEST_TAG, "Temp = %dC\n", i);
+
+        if (i >= 5) {
+            const std::regex test_print("Temp = [0-9]+C", std::regex::ECMAScript);
+            CHECK(regex_search(fix.get_print_buffer_string(), test_print) == true);
+        } else {
+            const std::regex test_print("", std::regex::ECMAScript);
+            CHECK(regex_search(fix.get_print_buffer_string(), test_print) == true);
+        }
+        fix.reset_buffer();
+    }
+}
+
+TEST_CASE("esp_log TAG can be NULL")
+{
+    PrintFixture fix(ESP_LOG_INFO);
+
+    esp_log_config_t config = {
+        .opts = {
+            .log_level = ESP_LOG_ERROR,
+            .constrained_env = false,
+            .require_formatting = true,
+            .dis_color = false,
+            .dis_timestamp = false,
+            .reserved = 0,
+        }
+    };
+
+    esp_log(config, NULL, "Temp = %dC", 120);
+
+    const std::regex test_print("E \\(" TIMESTAMP "\\) Temp = 120C", std::regex::ECMAScript);
+    CHECK(regex_search(fix.get_print_buffer_string(), test_print) == true);
+    fix.reset_buffer();
 }

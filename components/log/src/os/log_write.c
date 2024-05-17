@@ -10,18 +10,19 @@
 #include <stdio.h>
 #include "esp_log_write.h"
 #include "esp_private/log_lock.h"
-#include "esp_private/log_level.h"
-#include "sdkconfig.h"
+#include "esp_log_level.h"
+#include "esp_log_config.h"
+#include "esp_log.h"
 
-static vprintf_like_t s_log_print_func = &vprintf;
+vprintf_like_t esp_log_vprint_func = &vprintf;
 
 vprintf_like_t esp_log_set_vprintf(vprintf_like_t func)
 {
-    esp_log_impl_lock();
-    vprintf_like_t orig_func = s_log_print_func;
-    s_log_print_func = func;
-    esp_log_impl_unlock();
-    return orig_func;
+    /* This builtin, as described by Intel, is not a traditional
+     * test-and-set operation, but rather an atomic exchange operation. It
+     * writes value into *ptr, and returns the previous contents of *ptr.
+     */
+    return __atomic_exchange_n(&esp_log_vprint_func, func, __ATOMIC_SEQ_CST);
 }
 
 void esp_log_writev(esp_log_level_t level,
@@ -29,10 +30,7 @@ void esp_log_writev(esp_log_level_t level,
                     const char *format,
                     va_list args)
 {
-    esp_log_level_t level_for_tag = esp_log_level_get_timeout(tag);
-    if (ESP_LOG_NONE != level_for_tag && level <= level_for_tag) {
-        (*s_log_print_func)(format, args);
-    }
+    esp_log_va(ESP_LOG_CONFIG_INIT(level), tag, format, args);
 }
 
 void esp_log_write(esp_log_level_t level,
@@ -41,6 +39,6 @@ void esp_log_write(esp_log_level_t level,
 {
     va_list list;
     va_start(list, format);
-    esp_log_writev(level, tag, format, list);
+    esp_log_va(ESP_LOG_CONFIG_INIT(level), tag, format, list);
     va_end(list);
 }
