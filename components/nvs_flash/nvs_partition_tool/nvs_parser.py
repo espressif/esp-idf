@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
-# SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-from typing import Any, Dict, List, Optional
+from typing import Any
+from typing import Dict
+from typing import List
+from typing import Optional
 from zlib import crc32
 
 
@@ -123,9 +126,9 @@ class NVS_Page:
 
             # Load an entry
             entry = NVS_Entry(
-                i - 2,
-                page_data[i * nvs_const.entry_size: (i + 1) * nvs_const.entry_size],
-                entry_states[i - 2],
+                index=(i - 2),
+                entry_data=page_data[i * nvs_const.entry_size: (i + 1) * nvs_const.entry_size],
+                entry_state=entry_states[i - 2],
             )
             self.entries.append(entry)
 
@@ -137,13 +140,13 @@ class NVS_Page:
                     if page_addr * nvs_const.entry_size >= nvs_const.page_size:
                         break
                     child_entry = NVS_Entry(
-                        entry_idx,
-                        page_data[
+                        index=entry_idx,
+                        entry_data=page_data[
                             page_addr
                             * nvs_const.entry_size: (page_addr + 1)
                             * nvs_const.entry_size
                         ],
-                        entry_states[entry_idx],
+                        entry_state=entry_states[entry_idx],
                     )
                     entry.child_assign(child_entry)
                 entry.compute_crc()
@@ -269,7 +272,9 @@ class NVS_Entry:
         for entry in self.children:
             children_data += entry.raw
         if self.data:
-            children_data = children_data[: self.data['size']]  # Discard padding
+            if self.data['value'] is not None:
+                if self.data['size']:
+                    children_data = children_data[: self.data['size']]  # Discard padding
         self.metadata['crc']['data_computed'] = crc32(children_data, 0xFFFFFFFF)
 
     def toJSON(self) -> Dict[str, Any]:
@@ -279,7 +284,7 @@ class NVS_Entry:
             is_empty=self.is_empty,
             index=self.index,
             metadata=self.metadata,
-            children=self.children,
             key=self.key,
             data=self.data,
+            children=self.children,
         )

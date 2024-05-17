@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import argparse
 import os
@@ -25,11 +25,11 @@ def program_args() -> argparse.Namespace:
         help='check partition for potential errors',
     )
     tmp = {
-        'all': 'print everything',
+        'all': 'print written, erased and empty entries',
         'written': 'print only currently written entries',
         'minimal': 'print only namespace:key=value pairs',
-        'namespaces': 'list all written namespaces',
         'blobs': 'print all blobs and strings',
+        'namespaces': 'list all written namespaces',
         'storage_info': 'print storage related information (free/used entries, etc)',
         'none': 'do not print anything (if you only want to do integrity check)',
     }
