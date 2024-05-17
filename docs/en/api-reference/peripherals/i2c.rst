@@ -267,6 +267,42 @@ Simple example for writing data to slave:
 
     ESP_ERROR_CHECK(i2c_master_transmit(dev_handle, data_wr, DATA_LENGTH, -1));
 
+
+I2C master write also supports transmit multi buffer in one transaction. Take following transaction as a simple example:
+
+.. code:: c
+
+    uint8_t control_phase_byte = 0;
+    size_t control_phase_size = 0;
+    if (/*condition*/) {
+        control_phase_byte = 1;
+        control_phase_size = 1;
+    }
+
+    uint8_t *cmd_buffer = NULL;
+    size_t cmd_buffer_size = 0;
+    if (/*condition*/) {
+        uint8_t cmds[4] = {BYTESHIFT(lcd_cmd, 3), BYTESHIFT(lcd_cmd, 2), BYTESHIFT(lcd_cmd, 1), BYTESHIFT(lcd_cmd, 0)};
+        cmd_buffer = cmds;
+        cmd_buffer_size = 4;
+    }
+
+    uint8_t *lcd_buffer = NULL;
+    size_t lcd_buffer_size = 0;
+    if (buffer) {
+        lcd_buffer = (uint8_t*)buffer;
+        lcd_buffer_size = buffer_size;
+    }
+
+    i2c_master_transmit_multi_buffer_info_t lcd_i2c_buffer[3] = {
+        {.write_buffer = &control_phase_byte, .buffer_size = control_phase_size},
+        {.write_buffer = cmd_buffer, .buffer_size = cmd_buffer_size},
+        {.write_buffer = lcd_buffer, .buffer_size = lcd_buffer_size},
+    };
+
+    i2c_master_multi_buffer_transmit(handle, lcd_i2c_buffer, sizeof(lcd_i2c_buffer) / sizeof(i2c_master_transmit_multi_buffer_info_t), -1);
+
+
 I2C Master Read
 ~~~~~~~~~~~~~~~
 

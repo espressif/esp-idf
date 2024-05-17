@@ -50,6 +50,14 @@ typedef struct {
 } i2c_device_config_t;
 
 /**
+ * @brief I2C master transmit buffer information structure
+ */
+typedef struct {
+    uint8_t *write_buffer;               /*!< Pointer to buffer to be written. */
+    size_t buffer_size;                  /*!< Size of data to be written. */
+} i2c_master_transmit_multi_buffer_info_t;
+
+/**
  * @brief Group of I2C master callbacks, can be used to get status during transaction or doing other small things. But take care potential concurrency issues.
  * @note The callbacks are all running under ISR context
  * @note When CONFIG_I2C_ISR_IRAM_SAFE is enabled, the callback itself and functions called by it should be placed in IRAM.
@@ -122,6 +130,24 @@ esp_err_t i2c_master_bus_rm_device(i2c_master_dev_handle_t handle);
  *      - ESP_ERR_TIMEOUT: Operation timeout(larger than xfer_timeout_ms) because the bus is busy or hardware crash.
  */
 esp_err_t i2c_master_transmit(i2c_master_dev_handle_t i2c_dev, const uint8_t *write_buffer, size_t write_size, int xfer_timeout_ms);
+
+/**
+ * @brief Transmit multiple buffers of data over an I2C bus.
+ *
+ * This function transmits multiple buffers of data over an I2C bus using the specified I2C master device handle.
+ * It takes in an array of buffer information structures along with the size of the array and a transfer timeout value in milliseconds.
+ *
+ * @param i2c_dev I2C master device handle that created by `i2c_master_bus_add_device`.
+ * @param buffer_info_array Pointer to buffer information array.
+ * @param array_size size of buffer information array.
+ * @param xfer_timeout_ms Wait timeout, in ms. Note: -1 means wait forever.
+ *
+ * @return
+ *      - ESP_OK: I2C master transmit success
+ *      - ESP_ERR_INVALID_ARG: I2C master transmit parameter invalid.
+ *      - ESP_ERR_TIMEOUT: Operation timeout(larger than xfer_timeout_ms) because the bus is busy or hardware crash.
+ */
+esp_err_t i2c_master_multi_buffer_transmit(i2c_master_dev_handle_t i2c_dev, i2c_master_transmit_multi_buffer_info_t *buffer_info_array, size_t array_size, int xfer_timeout_ms);
 
 /**
  * @brief Perform a write-read transaction on the I2C bus.
