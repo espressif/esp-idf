@@ -8,7 +8,7 @@
 #include <time.h>
 #include <assert.h>
 #include <stdint.h>
-#include "esp_log_private.h"
+#include "esp_private/log_lock.h"
 
 static pthread_mutex_t mutex1 = PTHREAD_MUTEX_INITIALIZER;
 

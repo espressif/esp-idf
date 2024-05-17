@@ -10,7 +10,7 @@ The logging library provides three ways for setting log verbosity:
 
 - **At compile time**: in menuconfig, set the verbosity level using the option :ref:`CONFIG_LOG_DEFAULT_LEVEL`.
 - Optionally, also in menuconfig, set the maximum verbosity level using the option :ref:`CONFIG_LOG_MAXIMUM_LEVEL`. By default, this is the same as the default level, but it can be set higher in order to compile more optional logs into the firmware.
-- **At runtime**: all logs for verbosity levels lower than :ref:`CONFIG_LOG_DEFAULT_LEVEL` are enabled by default. The function :cpp:func:`esp_log_level_set` can be used to set a logging level on a per-module basis. Modules are identified by their tags, which are human-readable ASCII zero-terminated strings.
+- **At runtime**: all logs for verbosity levels lower than :ref:`CONFIG_LOG_DEFAULT_LEVEL` are enabled by default. The function :cpp:func:`esp_log_level_set` can be used to set a logging level on a per-module basis. Modules are identified by their tags, which are human-readable ASCII zero-terminated strings. Note that the ability to change the log level at runtime depends on :ref:`CONFIG_LOG_DYNAMIC_LEVEL_CONTROL`.
 - **At runtime**: if :ref:`CONFIG_LOG_MASTER_LEVEL` is enabled then a ``Master logging level`` can be set using :cpp:func:`esp_log_set_level_master`. This option adds an additional logging level check for all compiled logs. Note that this will increase application size. This feature is useful if you want to compile a lot of logs that are selectable at runtime, but also want to avoid the performance hit from looking up the tags and their log level when you don't want log output.
 
 There are the following verbosity levels:
@@ -72,6 +72,9 @@ At component scope, define it in the component CMakeLists:
 
     target_compile_definitions(${COMPONENT_LIB} PUBLIC "-DLOG_LOCAL_LEVEL=ESP_LOG_VERBOSE")
 
+Dynamic Log Level Control
+-------------------------
+
 To configure logging output per module at runtime, add calls to the function :cpp:func:`esp_log_level_set` as follows:
 
 .. code-block:: c
@@ -85,6 +88,19 @@ To configure logging output per module at runtime, add calls to the function :cp
     The "DRAM" and "EARLY" log macro variants documented above do not support per module setting of log verbosity. These macros will always log at the "default" verbosity level, which can only be changed at runtime by calling ``esp_log_level("*", level)``.
 
 Even when logs are disabled by using a tag name, they will still require a processing time of around 10.9 microseconds per entry.
+
+The log component provides several options to better adjust the system to your needs, reducing memory usage and speeding up operations. The :ref:`CONFIG_LOG_TAG_LEVEL_IMPL` option sets the method of tag level checks:
+
+- "None". This option disables the ability to set the log level per tag. The ability to change the log level at runtime depends on :ref:`CONFIG_LOG_DYNAMIC_LEVEL_CONTROL`. If disabled, changing the log level at runtime using :cpp:func:`esp_log_level_set` is not possible. This implementation is suitable for highly constrained environments.
+- "Linked list" (no cache). This option enables the ability to set the log level per tag. This approach searches the linked list of all tags for the log level, which may be slower for a large number of tags but may have lower memory requirements than the cache approach.
+- (Default) "Cache + Linked List". This option enables the ability to set the log level per tag. This hybrid approach offers a balance between speed and memory usage. The cache stores recently accessed log tags and their corresponding log levels, providing faster lookups for frequently used tags.
+
+When the :ref:`CONFIG_LOG_DYNAMIC_LEVEL_CONTROL` option is enabled, log levels to be changed at runtime via :cpp:func:`esp_log_level_set`. Dynamic log levels increase flexibility but also incurs additional code size.
+If your application doesn't require dynamic log level changes and you do not need to control logs per module using tags, consider disabling :ref:`CONFIG_LOG_DYNAMIC_LEVEL_CONTROL`. It reduces IRAM usage by approximately 260 bytes, DRAM usage by approximately 264 bytes, and Flash usage by approximately 1K bytes compared to the default option. It is not only streamlines logs for memory efficiency but also contributes to speeding up log operations in your application about 10 times.
+
+.. note::
+
+    The "Linked list" and "Cache + Linked List" options will automatically enable :ref:`CONFIG_LOG_DYNAMIC_LEVEL_CONTROL`.
 
 Master Logging Level
 ^^^^^^^^^^^^^^^^^^^^

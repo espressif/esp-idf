@@ -5,7 +5,7 @@
  */
 
 #include <assert.h>
-#include "esp_log_private.h"
+#include "esp_private/log_lock.h"
 #include "esp_rom_sys.h"
 #include "esp_cpu.h"
 

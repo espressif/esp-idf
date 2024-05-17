@@ -4,12 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __ESP_LOG_H__
-#define __ESP_LOG_H__
+#pragma once
 
 #include <stdint.h>
 #include <stdarg.h>
 #include <inttypes.h>
+#include "esp_log_level.h"
 #include "sdkconfig.h"
 #include "esp_rom_sys.h"
 #include "esp_log_level.h"
@@ -20,70 +20,6 @@ extern "C" {
 #endif
 
 typedef int (*vprintf_like_t)(const char *, va_list);
-
-/**
- * @brief Default log level
- *
- * This is used by the definition of ESP_EARLY_LOGx macros. It is not
- * recommended to set this directly, call esp_log_level_set("*", level)
- * instead.
- */
-extern esp_log_level_t esp_log_default_level;
-
-#if defined(CONFIG_LOG_MASTER_LEVEL) || __DOXYGEN__
-
-/**
- * @brief Master log level.
- *
- * Optional master log level to check against for ESP_LOGx macros before calling
- * esp_log_write. Allows one to set a higher CONFIG_LOG_MAXIMUM_LEVEL but not
- * impose a performance hit during normal operation (only when instructed). An
- * application may set esp_log_set_level_master(level) to globally enforce a
- * maximum log level. ESP_LOGx macros above this level will be skipped immediately,
- * rather than calling esp_log_write and doing a cache hit.
- *
- * The tradeoff is increased application size.
- *
- * @param level  Master log level
- */
-void esp_log_set_level_master(esp_log_level_t level);
-
-/**
- * @brief Returns master log level.
- * @return Master log level
- */
-esp_log_level_t esp_log_get_level_master(void);
-
-#endif //CONFIG_LOG_MASTER_LEVEL
-
-/**
- * @brief Set log level for given tag
- *
- * If logging for given component has already been enabled, changes previous setting.
- *
- * @note Note that this function can not raise log level above the level set using
- * CONFIG_LOG_MAXIMUM_LEVEL setting in menuconfig.
- * To raise log level above the default one for a given file, define
- * LOG_LOCAL_LEVEL to one of the ESP_LOG_* values, before including
- * esp_log.h in this file.
- *
- * @param tag Tag of the log entries to enable. Must be a non-NULL zero terminated string.
- *            Value "*" resets log level for all tags to the given value.
- *
- * @param level  Selects log level to enable. Only logs at this and lower verbosity
- * levels will be shown.
- */
-void esp_log_level_set(const char* tag, esp_log_level_t level);
-
-/**
- * @brief Get log level for a given tag, can be used to avoid expensive log statements
- *
- * @param tag Tag of the log to query current level. Must be a non-NULL zero terminated
- *            string.
- *
- * @return The current log level for the given tag
- */
-esp_log_level_t esp_log_level_get(const char* tag);
 
 /**
  * @brief Set function used to output log entries
@@ -223,14 +159,6 @@ void esp_log_writev(esp_log_level_t level, const char* tag, const char* format, 
 #define ESP_EARLY_LOGV( tag, format, ... ) ESP_LOG_EARLY_IMPL(tag, format, ESP_LOG_VERBOSE, V, ##__VA_ARGS__)
 #endif // !(defined(__cplusplus) && (__cplusplus >  201703L))
 
-#ifdef BOOTLOADER_BUILD
-#define _ESP_LOG_EARLY_ENABLED(log_level) (LOG_LOCAL_LEVEL >= (log_level))
-#else
-/* For early log, there is no log tag filtering. So we want to log only if both the LOG_LOCAL_LEVEL and the
-   currently configured min log level are higher than the log level */
-#define _ESP_LOG_EARLY_ENABLED(log_level) (LOG_LOCAL_LEVEL >= (log_level) && esp_log_default_level >= (log_level))
-#endif
-
 #define ESP_LOG_EARLY_IMPL(tag, format, log_level, log_tag_letter, ...) do {                             \
         if (_ESP_LOG_EARLY_ENABLED(log_level)) {                                                         \
             esp_rom_printf(LOG_FORMAT(log_tag_letter, format), esp_log_timestamp(), tag, ##__VA_ARGS__); \
@@ -336,15 +264,9 @@ void esp_log_writev(esp_log_level_t level, const char* tag, const char* format, 
  *
  * @see ``printf``, ``ESP_LOG_LEVEL``
  */
-#ifdef CONFIG_LOG_MASTER_LEVEL
 #define ESP_LOG_LEVEL_LOCAL(level, tag, format, ...) do {               \
-        if ( (esp_log_get_level_master() >= level) && (LOG_LOCAL_LEVEL >= level) ) ESP_LOG_LEVEL(level, tag, format, ##__VA_ARGS__); \
+        if (_ESP_LOG_ENABLED(level)) ESP_LOG_LEVEL(level, tag, format, ##__VA_ARGS__); \
     } while(0)
-#else
-#define ESP_LOG_LEVEL_LOCAL(level, tag, format, ...) do {               \
-        if ( LOG_LOCAL_LEVEL >= level ) ESP_LOG_LEVEL(level, tag, format, ##__VA_ARGS__); \
-    } while(0)
-#endif //CONFIG_LOG_MASTER_LEVEL
 
 /**
  * @brief Macro to output logs when the cache is disabled. Log at ``ESP_LOG_ERROR`` level.
@@ -403,5 +325,3 @@ void esp_log_writev(esp_log_level_t level, const char* tag, const char* format, 
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* __ESP_LOG_H__ */

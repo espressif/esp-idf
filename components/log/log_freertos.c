@@ -13,7 +13,7 @@
 #include "esp_cpu.h" // for esp_cpu_get_cycle_count()
 #include "esp_compiler.h"
 #include "esp_log.h"
-#include "esp_log_private.h"
+#include "esp_private/log_lock.h"
 
 // Maximum time to wait for the mutex in a logging statement.
 //
