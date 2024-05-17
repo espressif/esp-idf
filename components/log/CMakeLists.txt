@@ -14,7 +14,9 @@ endif()
 set(srcs "src/${system_target}/log_timestamp.c"
          "src/log_timestamp_common.c"
          "src/${system_target}/log_lock.c"
+         "src/buffer/log_buffers.c"
          "src/${system_target}/util.c"
+         "src/util.c"
          "src/log_print.c"
          "src/log.c")
 
@@ -24,10 +26,6 @@ if(NOT non_os_build)
     list(APPEND priv_requires soc hal esp_hw_support)
 
     list(APPEND srcs "src/os/log_write.c")
-
-    # Buffer APIs call ESP_LOG_LEVEL -> esp_log_write, which can not used in bootloader.
-    list(APPEND srcs "src/buffer/log_buffers.c"
-                     "src/util.c")
 
     list(APPEND srcs "src/log_level/log_level.c"
                      "src/log_level/tag_log_level/tag_log_level.c")
