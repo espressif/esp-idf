@@ -44,6 +44,19 @@ ESP_STATIC_ASSERT(ESP_LOG_MAX <= ESP_LOG_LEVEL_MASK, "Log level items of esp_log
 #endif
 #endif // LOG_LOCAL_LEVEL
 
+/**
+ * @brief Check if a specific log level is enabled at compile-time.
+ *
+ * This macro checks whether logging for the specified log level is enabled based on the
+ * current local log level setting (`LOG_LOCAL_LEVEL`). It uses a compile-time check to
+ * determine if logging for the specified level should be included in the binary,
+ * helping to exclude logs that are not configured.
+ *
+ * @param level log level.
+ * @return true if the specified log level is enabled, false otherwise.
+ */
+#define ESP_LOG_ENABLED(level) (LOG_LOCAL_LEVEL >= (level))
+
 #if NON_OS_BUILD
 
 #define _ESP_LOG_ENABLED(log_level) (LOG_LOCAL_LEVEL >= (log_level))

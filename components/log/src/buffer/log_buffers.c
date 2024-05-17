@@ -6,6 +6,7 @@
 
 #include <string.h>
 #include <stdbool.h>
+#include <sys/param.h>
 #include "esp_log.h"
 #include "esp_private/log_util.h"
 
@@ -73,7 +74,7 @@ static void print_buffer(const char *tag, const void *buffer, uint16_t buff_len,
 
     do {
         const char *ptr_line = buffer;
-        int bytes_cur_line = (buff_len > BYTES_PER_LINE) ? BYTES_PER_LINE : buff_len;
+        int bytes_cur_line = MIN(BYTES_PER_LINE, buff_len);
         if (!esp_ptr_byte_accessible(buffer)) {
             //use memcpy to get around alignment issue
             memcpy(temp_buffer, buffer, (bytes_cur_line + 3) / 4 * 4);
@@ -92,11 +93,13 @@ static void log_buffer_hex_line(uintptr_t orig_buff, const void *ptr_line, char 
 {
     (void) orig_buff;
     const unsigned char *ptr = (unsigned char *)ptr_line;
-    for (int i = 0; i < buff_len; i++) {
+    int i;
+    for (i = 0; i < buff_len - 1; i++) {
         output_str += esp_log_util_cvt_hex(ptr[i], 2, output_str);
         *output_str++ = ' ';
     }
-    *--output_str = 0;
+    output_str += esp_log_util_cvt_hex(ptr[i], 2, output_str);
+    *output_str = '\0';
 }
 
 static void log_buffer_char_line(uintptr_t orig_buff, const void *ptr_line, char *output_str, int buff_len)
