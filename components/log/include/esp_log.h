@@ -16,17 +16,11 @@
 #include "esp_log_buffer.h"
 #include "esp_log_timestamp.h"
 #include "esp_log_write.h"
+#include "esp_log_format.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-/** @cond */
-
-#define LOG_FORMAT(letter, format)  LOG_COLOR_ ## letter #letter " (%" PRIu32 ") %s: " format LOG_RESET_COLOR "\n"
-#define LOG_SYSTEM_TIME_FORMAT(letter, format)  LOG_COLOR_ ## letter #letter " (%s) %s: " format LOG_RESET_COLOR "\n"
-
-/** @endcond */
 
 /// macro to output logs in startup code, before heap allocator and syscalls have been initialized.
 /// Log at ``ESP_LOG_ERROR`` level. @see ``printf``,``ESP_LOGE``,``ESP_DRAM_LOGE``
@@ -208,7 +202,6 @@ extern "C" {
 #endif // !(defined(__cplusplus) && (__cplusplus >  201703L))
 
 /** @cond */
-#define _ESP_LOG_DRAM_LOG_FORMAT(letter, format)  DRAM_STR(#letter " %s: " format "\n")
 
 #if defined(__cplusplus) && (__cplusplus >  201703L)
 #define ESP_DRAM_LOG_IMPL(tag, format, log_level, log_tag_letter, ...) do {                                  \
