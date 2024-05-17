@@ -6,7 +6,7 @@
 
 ## Overview
 
-This example demonstrates how to use the esp_driver_cam component to capture camera sensor signals and display it via DSI interface.
+This example demonstrates how to use the ISP (image signal processor) to work with esp_driver_cam component. This example will capture camera sensor signals via CSI interface and display it via DSI interface. This example also enables the ISP AF (auto-focus) feature.
 
 ## Usage
 
@@ -17,7 +17,7 @@ The subsections below give only absolutely necessary information. For full steps
 
 This example requires:
 
-- OV5647 camera sensor
+- OV5647 camera sensor with VCM (Voice Coil Motor). The VCM used in this example is DW9714.
 - ILI9881C LCD screen
 - ESP32P4 devkit
 
@@ -131,9 +131,11 @@ I (1315) cam_dsi: fmt[2].name:MIPI_2lane_24Minput_RAW8_800x800_50fps
 I (1355) cam_dsi: Format in use:MIPI_2lane_24Minput_RAW8_800x640_50fps
 ```
 
+You will also see the screen auto-focus when the screen image changes.
 
 ## Reference
 
-- Link to the ESP-IDF feature's API reference, for example [ESP-IDF: Camera Controller Driver](https://docs.espressif.com/projects/esp-idf/en/latest/api-reference/peripherals/camera_driver.html)
+- Link to the ESP-IDF camera controller driver API reference, [ESP-IDF: Camera Controller Driver](https://docs.espressif.com/projects/esp-idf/en/latest/esp32p4/api-reference/peripherals/camera_driver.html)
+- Link to the ESP-IDF ISP driver API reference, [ESP-IDF: Image Signal Processor](https://docs.espressif.com/projects/esp-idf/en/latest/esp32p4/api-reference/peripherals/isp.html)
 - [ESP-IDF Getting Started](https://docs.espressif.com/projects/esp-idf/en/latest/get-started/index.html#get-started)
 - [Project Configuration](https://docs.espressif.com/projects/esp-idf/en/latest/api-reference/kconfig.html) (Kconfig Options)

@@ -6,14 +6,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "esp_log.h"
-#include "esp_heap_caps.h"
 #include "esp_lcd_mipi_dsi.h"
 #include "esp_lcd_panel_ops.h"
 #include "esp_lcd_ili9881c.h"
-#include "esp_ldo_regulator.h"
-#include "esp_cache.h"
 #include "example_dsi_init.h"
-#include "example_config.h"
 
 void example_dsi_resource_alloc(esp_lcd_panel_handle_t *ili9881c_ctrl_panel, esp_lcd_panel_handle_t *mipi_dpi_panel, void **frame_buffer)
 {
