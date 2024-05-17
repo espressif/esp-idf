@@ -35,7 +35,7 @@ extern int wifi_cmd_get_rx_statistics(int argc, char **argv);
 extern int wifi_cmd_clr_rx_statistics(int argc, char **argv);
 #endif
 
-#ifdef CONFIG_ESP_EXT_CONN_ENABLE
+#if defined(CONFIG_ESP_EXT_CONN_ENABLE) && defined(CONFIG_ESP_HOST_WIFI_ENABLED)
 #include "esp_extconn.h"
 #endif
 
@@ -72,7 +72,7 @@ void iperf_hook_show_wifi_stats(iperf_traffic_type_t type, iperf_status_t status
 
 void app_main(void)
 {
-#if CONFIG_ESP_EXT_CONN_ENABLE
+#if defined(CONFIG_ESP_EXT_CONN_ENABLE) && defined(CONFIG_ESP_HOST_WIFI_ENABLED)
     esp_extconn_config_t ext_config = ESP_EXTCONN_CONFIG_DEFAULT();
     esp_extconn_init(&ext_config);
 #endif
