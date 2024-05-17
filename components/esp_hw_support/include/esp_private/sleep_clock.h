@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -30,34 +30,6 @@ extern "C" {
  * @return True to allow power off
  */
 bool clock_domain_pd_allowed(void);
-
-/**
- * @brief  PCR module power down initialize
- *
- * @return ESP_OK on success
- *         ESP_ERR_INVALID_ARG on invalid sleep_retention_entries_create args
- *         No memory for the retention link
- */
-esp_err_t sleep_clock_system_retention_init(void);
-
-/**
- * @brief  PCR module power down deinitialize
- */
-void sleep_clock_system_retention_deinit(void);
-
-/**
- * @brief  Modem syscon module power down initialize
- *
- * @return ESP_OK on success
- *         ESP_ERR_INVALID_ARG on invalid sleep_retention_entries_create args
- *         No memory for the retention link
- */
-esp_err_t sleep_clock_modem_retention_init(void);
-
-/**
- * @brief  Modem syscon module power down deinitialize
- */
-void sleep_clock_modem_retention_deinit(void);
 
 #ifdef __cplusplus
 }

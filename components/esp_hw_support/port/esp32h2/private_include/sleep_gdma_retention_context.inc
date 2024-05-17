@@ -71,11 +71,10 @@ static const sleep_retention_entries_config_t gdma_g0p2_regs_retention[] = {
                                                 .owner = ENTRY(0) | ENTRY(2) },
 };
 
-static const struct {
-    const sleep_retention_entries_config_t *link_list;
-    uint32_t link_num;
-} gdma_chx_regs_retention[SOC_GDMA_PAIRS_PER_GROUP*SOC_GDMA_PAIRS_PER_GROUP] = {
-    [0] = {gdma_g0p0_regs_retention, ARRAY_SIZE(gdma_g0p0_regs_retention)},
-    [1] = {gdma_g0p1_regs_retention, ARRAY_SIZE(gdma_g0p1_regs_retention)},
-    [2] = {gdma_g0p2_regs_retention, ARRAY_SIZE(gdma_g0p2_regs_retention)}
+const gdma_chx_reg_ctx_link_t gdma_chx_regs_retention[SOC_GDMA_GROUPS][SOC_GDMA_PAIRS_PER_GROUP] = {
+    [0] = {
+        [0] = {gdma_g0p0_regs_retention, ARRAY_SIZE(gdma_g0p0_regs_retention)},
+        [1] = {gdma_g0p1_regs_retention, ARRAY_SIZE(gdma_g0p1_regs_retention)},
+        [2] = {gdma_g0p2_regs_retention, ARRAY_SIZE(gdma_g0p2_regs_retention)}
+    }
 };

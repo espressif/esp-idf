@@ -12,6 +12,7 @@
 #include "esp_private/sleep_modem.h"
 #include "esp_pm.h"
 #include "esp_sleep.h"
+#include "esp_check.h"
 #include "esp_private/pm_impl.h"
 #include "esp_private/esp_clk.h"
 #include "esp_wpa.h"
@@ -27,6 +28,10 @@
 #endif
 #ifdef CONFIG_ESP_WIFI_FTM_ENABLE
 #include "esp_chip_info.h"
+#endif
+
+#if SOC_PM_MODEM_RETENTION_BY_REGDMA
+#include "esp_private/sleep_retention.h"
 #endif
 
 static bool s_wifi_inited = false;
@@ -108,6 +113,41 @@ static void esp_wifi_set_log_level(void)
     esp_wifi_internal_set_log_level(wifi_log_level);
 }
 
+#if (CONFIG_FREERTOS_USE_TICKLESS_IDLE && SOC_PM_MODEM_RETENTION_BY_REGDMA)
+static esp_err_t init_wifi_mac_sleep_retention(void *arg)
+{
+    int config_size;
+    sleep_retention_entries_config_t *config = esp_wifi_internal_mac_retention_context_get(&config_size);
+    esp_err_t err = sleep_retention_entries_create(config, config_size, 3, SLEEP_RETENTION_MODULE_WIFI_MAC);
+    ESP_RETURN_ON_ERROR(err, TAG, "failed to allocate memory for modem (%s) retention", "WiFi MAC");
+    ESP_LOGD(TAG, "WiFi MAC sleep retention initialization");
+    return ESP_OK;
+}
+#endif
+
+#if CONFIG_MAC_BB_PD
+static void esp_wifi_mac_pd_mem_init(void)
+{
+#if SOC_PM_MODEM_RETENTION_BY_REGDMA
+    esp_err_t err = sleep_retention_module_allocate(SLEEP_RETENTION_MODULE_WIFI_MAC);
+    if (err != ESP_OK) {
+        ESP_LOGW(TAG, "failed to allocate sleep retention linked list for wifi mac retention");
+    }
+#endif
+    esp_wifi_internal_set_mac_sleep(true);
+}
+static void esp_wifi_mac_pd_mem_deinit(void)
+{
+    esp_wifi_internal_set_mac_sleep(false);
+#if SOC_PM_MODEM_RETENTION_BY_REGDMA
+    esp_err_t err = sleep_retention_module_free(SLEEP_RETENTION_MODULE_WIFI_MAC);
+    if (err != ESP_OK) {
+        ESP_LOGW(TAG, "failed to free sleep retention linked list for wifi mac retention");
+    }
+#endif
+}
+#endif
+
 static esp_err_t wifi_deinit_internal(void)
 {
     esp_err_t err = ESP_OK;
@@ -124,6 +164,11 @@ static esp_err_t wifi_deinit_internal(void)
 
 #ifdef CONFIG_ESP_WIFI_NAN_ENABLE
     esp_nan_app_deinit();
+#endif
+
+#if CONFIG_MAC_BB_PD
+    esp_wifi_mac_pd_mem_deinit();
+    esp_mac_bb_pd_mem_deinit();
 #endif
 
     esp_supplicant_deinit();
@@ -157,14 +202,16 @@ static esp_err_t wifi_deinit_internal(void)
     esp_sleep_disable_wifi_beacon_wakeup();
 # endif
 #endif /* SOC_WIFI_HW_TSF */
+#if SOC_PM_MODEM_RETENTION_BY_REGDMA
+    err = sleep_retention_module_deinit(SLEEP_RETENTION_MODULE_WIFI_MAC);
+    if (err != ESP_OK) {
+        ESP_LOGW(TAG, "WiFi MAC sleep retention deinit failed");
+    }
+#endif /* SOC_PM_MODEM_RETENTION_BY_REGDMA */
 #endif /* CONFIG_FREERTOS_USE_TICKLESS_IDLE */
 #if CONFIG_MAC_BB_PD
     esp_unregister_mac_bb_pd_callback(pm_mac_sleep);
     esp_unregister_mac_bb_pu_callback(pm_mac_wakeup);
-#endif
-#if CONFIG_MAC_BB_PD
-    esp_wifi_internal_set_mac_sleep(false);
-    esp_mac_bb_pd_mem_deinit();
 #endif
 #if CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP
     esp_wifi_internal_modem_state_configure(false);
@@ -281,6 +328,17 @@ esp_err_t esp_wifi_init(const wifi_init_config_t *config)
 #endif
 
 #if CONFIG_FREERTOS_USE_TICKLESS_IDLE
+#if SOC_PM_MODEM_RETENTION_BY_REGDMA
+    sleep_retention_module_init_param_t init_param = {
+        .cbs     = { .create = { .handle = init_wifi_mac_sleep_retention, .arg = NULL } },
+        .depends = BIT(SLEEP_RETENTION_MODULE_WIFI_BB) | BIT(SLEEP_RETENTION_MODULE_CLOCK_MODEM)
+    };
+    esp_err_t err = sleep_retention_module_init(SLEEP_RETENTION_MODULE_WIFI_MAC, &init_param);
+    if (err != ESP_OK) {
+        ESP_LOGW(TAG, "WiFi MAC sleep retention init failed");
+    }
+#endif
+
 #if CONFIG_MAC_BB_PD
     if (esp_register_mac_bb_pd_callback(pm_mac_sleep) != ESP_OK
         || esp_register_mac_bb_pu_callback(pm_mac_wakeup) != ESP_OK) {
@@ -332,7 +390,7 @@ esp_err_t esp_wifi_init(const wifi_init_config_t *config)
     if (result == ESP_OK) {
 #if CONFIG_MAC_BB_PD
         esp_mac_bb_pd_mem_init();
-        esp_wifi_internal_set_mac_sleep(true);
+        esp_wifi_mac_pd_mem_init();
 #endif
         esp_phy_modem_init();
 #if CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP
