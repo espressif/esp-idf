@@ -13,7 +13,7 @@
 #include "soc/gpio_periph.h"
 #include "soc/gpio_sig_map.h"
 #include "soc/rtc.h"
-#include "hal/gpio_hal.h"
+#include "hal/gpio_ll.h"
 #if CONFIG_IDF_TARGET_ESP32S2
 #include "esp32s2/rom/usb/cdc_acm.h"
 #include "esp32s2/rom/usb/usb_common.h"
@@ -63,17 +63,17 @@ void bootloader_console_init(void)
             uart_tx_gpio != UART_NUM_0_TXD_DIRECT_GPIO_NUM ||
             uart_rx_gpio != UART_NUM_0_RXD_DIRECT_GPIO_NUM) {
         // Change default UART pins back to GPIOs
-        gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[UART_NUM_0_RXD_DIRECT_GPIO_NUM], PIN_FUNC_GPIO);
-        gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[UART_NUM_0_TXD_DIRECT_GPIO_NUM], PIN_FUNC_GPIO);
+        gpio_ll_func_sel(&GPIO, UART_NUM_0_RXD_DIRECT_GPIO_NUM, PIN_FUNC_GPIO);
+        gpio_ll_func_sel(&GPIO, UART_NUM_0_TXD_DIRECT_GPIO_NUM, PIN_FUNC_GPIO);
         // Route GPIO signals to/from pins
         const uint32_t tx_idx = UART_PERIPH_SIGNAL(uart_num, SOC_UART_TX_PIN_IDX);
         const uint32_t rx_idx = UART_PERIPH_SIGNAL(uart_num, SOC_UART_RX_PIN_IDX);
-        gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[uart_rx_gpio], PIN_FUNC_GPIO);
-        PIN_INPUT_ENABLE(GPIO_PIN_MUX_REG[uart_rx_gpio]);
+        gpio_ll_func_sel(&GPIO, uart_rx_gpio, PIN_FUNC_GPIO);
+        gpio_ll_input_enable(&GPIO, uart_rx_gpio);
         esp_rom_gpio_pad_pullup_only(uart_rx_gpio);
         esp_rom_gpio_connect_out_signal(uart_tx_gpio, tx_idx, 0, 0);
         esp_rom_gpio_connect_in_signal(uart_rx_gpio, rx_idx, 0);
-        gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[uart_tx_gpio], PIN_FUNC_GPIO);
+        gpio_ll_func_sel(&GPIO, uart_tx_gpio, PIN_FUNC_GPIO);
         // Enable the peripheral
         uart_ll_enable_bus_clock(uart_num, true);
         uart_ll_reset_register(uart_num);
