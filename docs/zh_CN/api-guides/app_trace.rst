@@ -78,7 +78,7 @@ ESP-IDF 中提供了应用层跟踪功能，用于分析应用程序的行为。
       #include "esp_app_trace.h"
       ...
       char buf[] = "Hello World!";
-      esp_err_t res = esp_apptrace_write(ESP_APPTRACE_DEST_TRAX, buf, strlen(buf), ESP_APPTRACE_TMO_INFINITE);
+      esp_err_t res = esp_apptrace_write(ESP_APPTRACE_DEST_JTAG, buf, strlen(buf), ESP_APPTRACE_TMO_INFINITE);
       if (res != ESP_OK) {
           ESP_LOGE(TAG, "Failed to write data to host!");
           return res;
@@ -91,13 +91,13 @@ ESP-IDF 中提供了应用层跟踪功能，用于分析应用程序的行为。
       #include "esp_app_trace.h"
       ...
       int number = 10;
-      char *ptr = (char *)esp_apptrace_buffer_get(ESP_APPTRACE_DEST_TRAX, 32, 100/*tmo in us*/);
+      char *ptr = (char *)esp_apptrace_buffer_get(ESP_APPTRACE_DEST_JTAG, 32, 100/*tmo in us*/);
       if (ptr == NULL) {
           ESP_LOGE(TAG, "Failed to get buffer!");
           return ESP_FAIL;
       }
       sprintf(ptr, "Here is the number %d", number);
-      esp_err_t res = esp_apptrace_buffer_put(ESP_APPTRACE_DEST_TRAX, ptr, 100/*tmo in us*/);
+      esp_err_t res = esp_apptrace_buffer_put(ESP_APPTRACE_DEST_JTAG, ptr, 100/*tmo in us*/);
       if (res != ESP_OK) {
           /* in case of error host tracing tool (e.g. OpenOCD) will report incomplete user buffer */
           ESP_LOGE(TAG, "Failed to put buffer!");
@@ -117,7 +117,7 @@ ESP-IDF 中提供了应用层跟踪功能，用于分析应用程序的行为。
       /* config down buffer */
       esp_apptrace_down_buffer_config(down_buf, sizeof(down_buf));
       /* check for incoming data and read them if any */
-      esp_err_t res = esp_apptrace_read(ESP_APPTRACE_DEST_TRAX, buf, &sz, 0/*do not wait*/);
+      esp_err_t res = esp_apptrace_read(ESP_APPTRACE_DEST_JTAG, buf, &sz, 0/*do not wait*/);
       if (res != ESP_OK) {
           ESP_LOGE(TAG, "Failed to read data from host!");
           return res;
@@ -139,7 +139,7 @@ ESP-IDF 中提供了应用层跟踪功能，用于分析应用程序的行为。
 
       /* config down buffer */
       esp_apptrace_down_buffer_config(down_buf, sizeof(down_buf));
-      char *ptr = (char *)esp_apptrace_down_buffer_get(ESP_APPTRACE_DEST_TRAX, &sz, 100/*tmo in us*/);
+      char *ptr = (char *)esp_apptrace_down_buffer_get(ESP_APPTRACE_DEST_JTAG, &sz, 100/*tmo in us*/);
       if (ptr == NULL) {
           ESP_LOGE(TAG, "Failed to get buffer!");
           return ESP_FAIL;
@@ -150,7 +150,7 @@ ESP-IDF 中提供了应用层跟踪功能，用于分析应用程序的行为。
       } else {
           printf("No data");
       }
-      esp_err_t res = esp_apptrace_down_buffer_put(ESP_APPTRACE_DEST_TRAX, ptr, 100/*tmo in us*/);
+      esp_err_t res = esp_apptrace_down_buffer_put(ESP_APPTRACE_DEST_JTAG, ptr, 100/*tmo in us*/);
       if (res != ESP_OK) {
           /* in case of error host tracing tool (e.g. OpenOCD) will report incomplete user buffer */
           ESP_LOGE(TAG, "Failed to put buffer!");

@@ -42,7 +42,7 @@ static uint8_t s_down_buf[SYSVIEW_DOWN_BUF_SIZE];
 #endif // CONFIG_APPTRACE_SV_DEST_CPU_0
 
 #elif CONFIG_APPTRACE_SV_DEST_JTAG || (CONFIG_APPTRACE_ENABLE && CONFIG_APPTRACE_DEST_UART_NONE)
-#define ESP_APPTRACE_DEST_SYSVIEW ESP_APPTRACE_DEST_TRAX
+#define ESP_APPTRACE_DEST_SYSVIEW ESP_APPTRACE_DEST_JTAG
 #endif
 
 /*********************************************************************
@@ -60,7 +60,7 @@ static uint8_t s_down_buf[SYSVIEW_DOWN_BUF_SIZE];
 *    Flushes buffered events.
 *
 *  Parameters
-*    min_sz  Threshold for flushing data. If current filling level is above this value, data will be flushed. TRAX destinations only.
+*    min_sz  Threshold for flushing data. If current filling level is above this value, data will be flushed. JTAG destinations only.
 *    tmo     Timeout for operation (in us). Use ESP_APPTRACE_TMO_INFINITE to wait indefinitely.
 *
 *  Return value
@@ -91,7 +91,7 @@ void SEGGER_RTT_ESP_FlushNoLock(unsigned long min_sz, unsigned long tmo)
 *    Flushes buffered events.
 *
 *  Parameters
-*    min_sz  Threshold for flushing data. If current filling level is above this value, data will be flushed. TRAX destinations only.
+*    min_sz  Threshold for flushing data. If current filling level is above this value, data will be flushed. JTAG destinations only.
 *    tmo     Timeout for operation (in us). Use ESP_APPTRACE_TMO_INFINITE to wait indefinitely.
 *
 *  Return value

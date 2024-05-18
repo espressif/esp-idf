@@ -17,12 +17,10 @@ extern "C" {
 /**
  * Application trace data destinations bits.
  */
-typedef enum {
-    ESP_APPTRACE_DEST_JTAG = 1,                         ///< JTAG destination
-    ESP_APPTRACE_DEST_TRAX = ESP_APPTRACE_DEST_JTAG,    ///< xxx_TRAX name is obsolete, use more common xxx_JTAG
-    ESP_APPTRACE_DEST_UART,                             ///< UART destination
-    ESP_APPTRACE_DEST_MAX = ESP_APPTRACE_DEST_UART + 1,
-    ESP_APPTRACE_DEST_NUM
+ typedef enum {
+    ESP_APPTRACE_DEST_JTAG,                         ///< JTAG destination
+    ESP_APPTRACE_DEST_UART,                         ///< UART destination
+    ESP_APPTRACE_DEST_MAX,
 } esp_apptrace_dest_t;
 
 /**
@@ -117,7 +115,7 @@ esp_err_t esp_apptrace_flush(esp_apptrace_dest_t dest, uint32_t tmo);
  *        This is a special version of esp_apptrace_flush which should be called from panic handler.
  *
  * @param dest   Indicates HW interface to flush data on.
- * @param min_sz Threshold for flushing data. If current filling level is above this value, data will be flushed. TRAX destinations only.
+ * @param min_sz Threshold for flushing data. If current filling level is above this value, data will be flushed. JTAG destinations only.
  * @param tmo    Timeout for operation (in us). Use ESP_APPTRACE_TMO_INFINITE to wait indefinitely.
  *
  * @return ESP_OK on success, otherwise see esp_err_t

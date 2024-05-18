@@ -361,7 +361,7 @@ void esp_panic_handler(panic_info_t *info)
 #if CONFIG_APPTRACE_SV_ENABLE
         SEGGER_RTT_ESP_FlushNoLock(CONFIG_APPTRACE_POSTMORTEM_FLUSH_THRESH, APPTRACE_ONPANIC_HOST_FLUSH_TMO);
 #else
-        esp_apptrace_flush_nolock(ESP_APPTRACE_DEST_TRAX, CONFIG_APPTRACE_POSTMORTEM_FLUSH_THRESH,
+        esp_apptrace_flush_nolock(ESP_APPTRACE_DEST_JTAG, CONFIG_APPTRACE_POSTMORTEM_FLUSH_THRESH,
                                   APPTRACE_ONPANIC_HOST_FLUSH_TMO);
 #endif
 #endif
@@ -401,7 +401,7 @@ void esp_panic_handler(panic_info_t *info)
 #if CONFIG_APPTRACE_SV_ENABLE
     SEGGER_RTT_ESP_FlushNoLock(CONFIG_APPTRACE_POSTMORTEM_FLUSH_THRESH, APPTRACE_ONPANIC_HOST_FLUSH_TMO);
 #else
-    esp_apptrace_flush_nolock(ESP_APPTRACE_DEST_TRAX, CONFIG_APPTRACE_POSTMORTEM_FLUSH_THRESH,
+    esp_apptrace_flush_nolock(ESP_APPTRACE_DEST_JTAG, CONFIG_APPTRACE_POSTMORTEM_FLUSH_THRESH,
                               APPTRACE_ONPANIC_HOST_FLUSH_TMO);
 #endif
 #endif // CONFIG_APPTRACE_ENABLE
@@ -472,7 +472,7 @@ void __attribute__((noreturn, no_sanitize_undefined)) panic_abort(const char *de
 #if CONFIG_APPTRACE_SV_ENABLE
     SEGGER_RTT_ESP_FlushNoLock(CONFIG_APPTRACE_POSTMORTEM_FLUSH_THRESH, APPTRACE_ONPANIC_HOST_FLUSH_TMO);
 #else
-    esp_apptrace_flush_nolock(ESP_APPTRACE_DEST_TRAX, CONFIG_APPTRACE_POSTMORTEM_FLUSH_THRESH,
+    esp_apptrace_flush_nolock(ESP_APPTRACE_DEST_JTAG, CONFIG_APPTRACE_POSTMORTEM_FLUSH_THRESH,
                               APPTRACE_ONPANIC_HOST_FLUSH_TMO);
 #endif
 #endif
