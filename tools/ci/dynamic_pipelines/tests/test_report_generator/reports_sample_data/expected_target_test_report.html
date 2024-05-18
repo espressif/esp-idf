@@ -1,0 +1,178 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Test Report</title>
+
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://unpkg.com/bootstrap-table@1.22.1/dist/bootstrap-table.min.css"
+      rel="stylesheet"
+    />
+  </head>
+
+  <body>
+    <div class="container-fluid"><h2>Failed Test Cases (Excludes Known Failure Cases)</h2><table data-toggle="table" data-search="true">
+    <thead>
+        <tr>
+            <th>Test Case</th>
+            <th>Test Script File Path</th>
+            <th>Failure Reason</th>
+            <th>Job URL</th>
+            <th>Grafana URL</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>('esp32h2', 'esp32h2').('defaults', 'defaults').test_i2c_multi_device</td>
+            <td>components/driver/test_apps/i2c_test_apps/pytest_i2c.py</td>
+            <td>failed on setup with "EOFError"</td>
+            <td></td>
+            <td><a href="https://test_dashboard_host/d/Ucg477Fnz/case-list?var-case_id=%28%27esp32h2%27%2C%20%27esp32h2%27%29.%28%27defaults%27%2C%20%27defaults%27%29.test_i2c_multi_device">link</a></td>
+        </tr>
+        <tr>
+            <td>('esp32h2', 'esp32h2').('default', 'default').test_i2s_multi_dev</td>
+            <td>components/driver/test_apps/i2s_test_apps/i2s_multi_dev/pytest_i2s_multi_dev.py</td>
+            <td>failed on setup with "EOFError"</td>
+            <td></td>
+            <td><a href="https://test_dashboard_host/d/Ucg477Fnz/case-list?var-case_id=%28%27esp32h2%27%2C%20%27esp32h2%27%29.%28%27default%27%2C%20%27default%27%29.test_i2s_multi_dev">link</a></td>
+        </tr>
+        <tr>
+            <td>esp32c3.release.test_wear_levelling</td>
+            <td>components/wear_levelling/test_apps/pytest_wear_levelling.py</td>
+            <td>pexpect.exceptions.TIMEOUT: Not found "re.compile(b'^[-]+\\s*(\\d+) Tests (\\d+) Failures (\\d+) Ignored\\s*(?P<result>OK|FAIL)', re.MULTILINE)" Bytes in current buffer (color code eliminated): Serial port /dev/ttyUSB16 Connecting.... Connecting.... esptool.py v4.7.0 Found 1 serial ports Chip is ESP32-C3 (QFN32) (revision v0.3) Features: WiFi, BLE, Embedded Flash 4MB... (total 24528 bytes) Please check the full log here: /builds/espressif/esp-idf/pytest_embedded/2024-05-17_17-50-04/esp32c3.release.test_wear_levelling/dut.txt</td>
+            <td></td>
+            <td><a href="https://test_dashboard_host/d/Ucg477Fnz/case-list?var-case_id=esp32c3.release.test_wear_levelling">link</a></td>
+        </tr>
+    </tbody>
+</table><h2>Known Failure Cases</h2><table data-toggle="table" data-search="true">
+    <thead>
+        <tr>
+            <th>Test Case</th>
+            <th>Test Script File Path</th>
+            <th>Failure Reason</th>
+            <th>Job URL</th>
+            <th>Grafana URL</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>esp32c2.default.test_wpa_supplicant_ut</td>
+            <td>components/wpa_supplicant/test_apps/pytest_wpa_supplicant_ut.py</td>
+            <td>AssertionError: Unity test failed</td>
+            <td></td>
+            <td><a href="https://test_dashboard_host/d/Ucg477Fnz/case-list?var-case_id=esp32c2.default.test_wpa_supplicant_ut">link</a></td>
+        </tr>
+        <tr>
+            <td>esp32c3.release.test_esp_timer</td>
+            <td>components/esp_timer/test_apps/pytest_esp_timer_ut.py</td>
+            <td>pexpect.exceptions.TIMEOUT: Not found "Press ENTER to see the list of tests" Bytes in current buffer (color code eliminated): ce710,len:0x2afc entry 0x403cc710 Please check the full log here: /builds/espressif/esp-idf/pytest_embedded/2024-05-17_17-50-04/esp32c3.release.test_esp_timer/dut.txt</td>
+            <td></td>
+            <td><a href="https://test_dashboard_host/d/Ucg477Fnz/case-list?var-case_id=esp32c3.release.test_esp_timer">link</a></td>
+        </tr>
+        <tr>
+            <td>esp32c3.512safe.test_wear_levelling</td>
+            <td>components/wear_levelling/test_apps/pytest_wear_levelling.py</td>
+            <td>pexpect.exceptions.TIMEOUT: Not found "re.compile(b'^[-]+\\s*(\\d+) Tests (\\d+) Failures (\\d+) Ignored\\s*(?P<result>OK|FAIL)', re.MULTILINE)" Bytes in current buffer (color code eliminated): Serial port /dev/ttyUSB16 Connecting.... Connecting.... esptool.py v4.7.0 Found 1 serial ports Chip is ESP32-C3 (QFN32) (revision v0.3) Features: WiFi, BLE, Embedded Flash 4MB... (total 6673 bytes) Please check the full log here: /builds/espressif/esp-idf/pytest_embedded/2024-05-17_17-50-04/esp32c3.512safe.test_wear_levelling/dut.txt</td>
+            <td></td>
+            <td><a href="https://test_dashboard_host/d/Ucg477Fnz/case-list?var-case_id=esp32c3.512safe.test_wear_levelling">link</a></td>
+        </tr>
+        <tr>
+            <td>esp32c3.default.test_wpa_supplicant_ut</td>
+            <td>components/wpa_supplicant/test_apps/pytest_wpa_supplicant_ut.py</td>
+            <td>pexpect.exceptions.TIMEOUT: Not found "Press ENTER to see the list of tests" Bytes in current buffer (color code eliminated): 0 d4 000 00x0000 x0000x00 000000 0 Please check the full log here: /builds/espressif/esp-idf/pytest_embedded/2024-05-17_17-50-04/esp32c3.default.test_wpa_supplicant_ut/dut.txt</td>
+            <td></td>
+            <td><a href="https://test_dashboard_host/d/Ucg477Fnz/case-list?var-case_id=esp32c3.default.test_wpa_supplicant_ut">link</a></td>
+        </tr>
+    </tbody>
+</table><h2>Skipped Test Cases</h2><table data-toggle="table" data-search="true">
+    <thead>
+        <tr>
+            <th>Test Case</th>
+            <th>Test Script File Path</th>
+            <th>Skipped Reason</th>
+            <th>Grafana URL</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>test_python_interpreter_win</td>
+            <td>test_common.py</td>
+            <td>Linux does not support executing .exe files</td>
+            <td><a href="https://test_dashboard_host/d/Ucg477Fnz/case-list?var-case_id=test_python_interpreter_win">link</a></td>
+        </tr>
+    </tbody>
+</table><h2>Succeeded Test Cases</h2><table data-toggle="table" data-search="true">
+    <thead>
+        <tr>
+            <th>Test Case</th>
+            <th>Test Script File Path</th>
+            <th>Job URL</th>
+            <th>Grafana URL</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>esp32c2.default.test_vfs_default</td>
+            <td>components/vfs/test_apps/pytest_vfs.py</td>
+            <td></td>
+            <td><a href="https://test_dashboard_host/d/Ucg477Fnz/case-list?var-case_id=esp32c2.default.test_vfs_default">link</a></td>
+        </tr>
+        <tr>
+            <td>esp32c2.iram.test_vfs_default</td>
+            <td>components/vfs/test_apps/pytest_vfs.py</td>
+            <td></td>
+            <td><a href="https://test_dashboard_host/d/Ucg477Fnz/case-list?var-case_id=esp32c2.iram.test_vfs_default">link</a></td>
+        </tr>
+        <tr>
+            <td>test_python_interpreter_unix</td>
+            <td>test_common.py</td>
+            <td></td>
+            <td><a href="https://test_dashboard_host/d/Ucg477Fnz/case-list?var-case_id=test_python_interpreter_unix">link</a></td>
+        </tr>
+        <tr>
+            <td>test_invoke_confserver</td>
+            <td>test_common.py</td>
+            <td></td>
+            <td><a href="https://test_dashboard_host/d/Ucg477Fnz/case-list?var-case_id=test_invoke_confserver">link</a></td>
+        </tr>
+        <tr>
+            <td>test_ccache_used_to_build</td>
+            <td>test_common.py</td>
+            <td></td>
+            <td><a href="https://test_dashboard_host/d/Ucg477Fnz/case-list?var-case_id=test_ccache_used_to_build">link</a></td>
+        </tr>
+        <tr>
+            <td>test_toolchain_prefix_in_description_file</td>
+            <td>test_common.py</td>
+            <td></td>
+            <td><a href="https://test_dashboard_host/d/Ucg477Fnz/case-list?var-case_id=test_toolchain_prefix_in_description_file">link</a></td>
+        </tr>
+        <tr>
+            <td>test_subcommands_with_options</td>
+            <td>test_common.py</td>
+            <td></td>
+            <td><a href="https://test_dashboard_host/d/Ucg477Fnz/case-list?var-case_id=test_subcommands_with_options">link</a></td>
+        </tr>
+        <tr>
+            <td>test_fallback_to_build_system_target</td>
+            <td>test_common.py</td>
+            <td></td>
+            <td><a href="https://test_dashboard_host/d/Ucg477Fnz/case-list?var-case_id=test_fallback_to_build_system_target">link</a></td>
+        </tr>
+        <tr>
+            <td>test_create_component_project</td>
+            <td>test_common.py</td>
+            <td></td>
+            <td><a href="https://test_dashboard_host/d/Ucg477Fnz/case-list?var-case_id=test_create_component_project">link</a></td>
+        </tr>
+    </tbody>
+</table></div>
+    <script src="https://cdn.jsdelivr.net/npm/jquery/dist/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://unpkg.com/bootstrap-table@1.22.1/dist/bootstrap-table.min.js"></script>
+  </body>
+</html>

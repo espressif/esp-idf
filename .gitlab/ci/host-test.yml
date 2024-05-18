@@ -394,5 +394,7 @@ test_idf_pytest_plugin:
     reports:
       junit: XUNIT_RESULT.xml
   script:
-    - cd tools/ci/idf_pytest
+    - cd ${IDF_PATH}/tools/ci/dynamic_pipelines/tests/test_report_generator
+    - python -m unittest test_target_test_report_generator.py
+    - cd ${IDF_PATH}/tools/ci/idf_pytest
     - pytest --junitxml=${CI_PROJECT_DIR}/XUNIT_RESULT.xml

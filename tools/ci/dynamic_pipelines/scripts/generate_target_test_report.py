@@ -1,14 +1,12 @@
 # SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-
 import argparse
-import glob
 import os
-import xml.etree.ElementTree as ET
 
 import __init__  # noqa: F401 # inject the system path
-from dynamic_pipelines.models import TestCase
 from dynamic_pipelines.report import TargetTestReportGenerator
+from dynamic_pipelines.utils import parse_testcases_from_filepattern
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
@@ -52,11 +50,6 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    test_cases = []
-    for f in glob.glob(args.junit_report_filepattern):
-        root = ET.parse(f).getroot()
-        for tc in root.findall('.//testcase'):
-            test_cases.append(TestCase.from_test_case_node(tc))
-
+    test_cases = parse_testcases_from_filepattern(args.junit_report_filepattern)
     report_generator = TargetTestReportGenerator(args.project_id, args.mr_iid, args.pipeline_id, test_cases=test_cases)
     report_generator.post_report(args.job_id, args.commit_id)

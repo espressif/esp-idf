@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-
 import abc
+import fnmatch
 import html
 import os
 import re
@@ -15,8 +15,12 @@ from idf_build_apps.constants import BuildStatus
 from idf_ci.uploader import AppUploader
 from prettytable import PrettyTable
 
-from .constants import COMMENT_START_MARKER, REPORT_TEMPLATE_FILEPATH, TEST_RELATED_APPS_DOWNLOAD_URLS_FILENAME
+from .constants import COMMENT_START_MARKER
+from .constants import REPORT_TEMPLATE_FILEPATH
+from .constants import TEST_RELATED_APPS_DOWNLOAD_URLS_FILENAME
 from .models import TestCase
+from .utils import is_url
+from .utils import load_known_failure_cases
 
 
 class ReportGenerator:
@@ -32,6 +36,7 @@ class ReportGenerator:
 
         self.title = title
         self.output_filepath = self.title.lower().replace(' ', '_') + '.html'
+        self.additional_info = ''
 
     @staticmethod
     def get_download_link_for_url(url: str) -> str:
@@ -66,11 +71,14 @@ class ReportGenerator:
         # CI_PAGES_URL is {URL}/esp-idf, which missed one `-`
         url = os.getenv('CI_PAGES_URL', '').replace('esp-idf', '-/esp-idf')
 
-        comment = f'''#### {self.title}
+        comment = f'#### {self.title}\n'
+        if self.additional_info:
+            comment += f'{self.additional_info}\n'
 
+        comment += f"""
 Full {self.title} here: {url}/-/jobs/{job_id}/artifacts/{self.output_filepath} (with commit {commit_id})
 
-'''
+"""
         print(comment)
 
         if self.mr is None:
@@ -87,9 +95,9 @@ Full {self.title} here: {url}/-/jobs/{job_id}/artifacts/{self.output_filepath} (
                 note.save()
                 break
         else:
-            new_comment = f'''{COMMENT_START_MARKER}
+            new_comment = f"""{COMMENT_START_MARKER}
 
-{comment}'''
+{comment}"""
             self.mr.notes.create({'body': new_comment})
 
 
@@ -237,41 +245,114 @@ class TargetTestReportGenerator(ReportGenerator):
         super().__init__(project_id, mr_iid, pipeline_id, title=title)
 
         self.test_cases = test_cases
+        self._known_failure_cases_set = None
+
+    @property
+    def known_failure_cases_set(self) -> t.Optional[t.Set[str]]:
+        if self._known_failure_cases_set is None:
+            self._known_failure_cases_set = load_known_failure_cases()
+
+        return self._known_failure_cases_set
+
+    def get_known_failure_cases(self) -> t.List[TestCase]:
+        if self.known_failure_cases_set is None:
+            return []
+        matched_cases = [
+            testcase
+            for testcase in self.test_cases
+            if any(fnmatch.fnmatch(testcase.name, pattern) for pattern in self.known_failure_cases_set)
+            and testcase.is_failure
+        ]
+        return matched_cases
+
+    def _filter_test_cases(self, condition: t.Callable[[TestCase], bool]) -> t.List[TestCase]:
+        """
+        Filter test cases based on a given condition.  In this scenario, we filter by status,
+        however it is possible to filter by other criteria.
+
+        :param condition: A function that evaluates to True or False for each test case.
+        :return: List of filtered TestCase instances.
+        """
+        return [tc for tc in self.test_cases if condition(tc)]
+
+    def _create_table_for_test_cases(
+        self, test_cases: t.List[TestCase], headers: t.List[str], row_attrs: t.List[str]
+    ) -> str:
+        """
+        Create a PrettyTable and convert it to an HTML string for the provided test cases.
+        :param test_cases: List of TestCase objects to include in the table.
+        :param headers: List of strings for the table headers.
+        :param row_attrs: List of attributes to include in each row.
+        :return: HTML table string.
+        """
+        table = PrettyTable()
+        table.field_names = headers
+        for tc in test_cases:
+            row = []
+            for attr in row_attrs:
+                value = getattr(tc, attr, '')
+                if is_url(value):
+                    link = f'<a href="{value}">link</a>'
+                    row.append(link)
+                else:
+                    row.append(value)
+            table.add_row(row)
+
+        return self.table_to_html_str(table)
 
     def _get_report_str(self) -> str:
+        """
+        Generate a complete HTML report string by processing test cases.
+        :return: Complete HTML report string.
+        """
         table_str = ''
 
-        failed_test_cases = [tc for tc in self.test_cases if tc.is_failure]
+        known_failures = self.get_known_failure_cases()
+        known_failure_case_names = {case.name for case in known_failures}
+        failed_test_cases = self._filter_test_cases(
+            lambda tc: tc.is_failure and tc.name not in known_failure_case_names
+        )
+        skipped_test_cases = self._filter_test_cases(lambda tc: tc.is_skipped)
+        successful_test_cases = self._filter_test_cases(lambda tc: tc.is_success)
+
         if failed_test_cases:
-            table_str += '<h2>Failed Test Cases</h2>'
+            table_str += '<h2>Failed Test Cases (Excludes Known Failure Cases)</h2>'
+            table_str += self._create_table_for_test_cases(
+                test_cases=failed_test_cases,
+                headers=['Test Case', 'Test Script File Path', 'Failure Reason', 'Job URL', 'Grafana URL'],
+                row_attrs=['name', 'file', 'failure', 'ci_job_url', 'ci_dashboard_url'],
+            )
 
-            failed_test_cases_table = PrettyTable()
-            failed_test_cases_table.field_names = ['Test Case', 'Test Script File Path', 'Failure Reason', 'Job URL']
-            for tc in failed_test_cases:
-                failed_test_cases_table.add_row([tc.name, tc.file, tc.failure, tc.ci_job_url])
+        if known_failures:
+            table_str += '<h2>Known Failure Cases</h2>'
+            table_str += self._create_table_for_test_cases(
+                test_cases=known_failures,
+                headers=['Test Case', 'Test Script File Path', 'Failure Reason', 'Job URL', 'Grafana URL'],
+                row_attrs=['name', 'file', 'failure', 'ci_job_url', 'ci_dashboard_url'],
+            )
 
-            table_str += self.table_to_html_str(failed_test_cases_table)
-
-        skipped_test_cases = [tc for tc in self.test_cases if tc.is_skipped]
         if skipped_test_cases:
             table_str += '<h2>Skipped Test Cases</h2>'
+            table_str += self._create_table_for_test_cases(
+                test_cases=skipped_test_cases,
+                headers=['Test Case', 'Test Script File Path', 'Skipped Reason', 'Grafana URL'],
+                row_attrs=['name', 'file', 'skipped', 'ci_dashboard_url'],
+            )
 
-            skipped_test_cases_table = PrettyTable()
-            skipped_test_cases_table.field_names = ['Test Case', 'Test Script File Path', 'Skipped Reason']
-            for tc in skipped_test_cases:
-                skipped_test_cases_table.add_row([tc.name, tc.file, tc.skipped])
-
-            table_str += self.table_to_html_str(skipped_test_cases_table)
-
-        successful_test_cases = [tc for tc in self.test_cases if tc.is_success]
         if successful_test_cases:
             table_str += '<h2>Succeeded Test Cases</h2>'
-
-            successful_test_cases_table = PrettyTable()
-            successful_test_cases_table.field_names = ['Test Case', 'Test Script File Path', 'Job URL']
-            for tc in successful_test_cases:
-                successful_test_cases_table.add_row([tc.name, tc.file, tc.ci_job_url])
-
-            table_str += self.table_to_html_str(successful_test_cases_table)
+            table_str += self._create_table_for_test_cases(
+                test_cases=successful_test_cases,
+                headers=['Test Case', 'Test Script File Path', 'Job URL', 'Grafana URL'],
+                row_attrs=['name', 'file', 'ci_job_url', 'ci_dashboard_url'],
+            )
+        self.additional_info = (
+            '**Test Case Summary:**\n'
+            f'- **Failed Test Cases (Excludes Known Failure Cases):** {len(failed_test_cases)}\n'
+            f'- **Known Failures:** {len(known_failures)}\n'
+            f'- **Skipped Test Cases:** {len(skipped_test_cases)}\n'
+            f'- **Succeeded Test Cases:** {len(successful_test_cases)}\n\n'
+            f'Please check report below for more information.\n\n'
+        )
 
         return self.generate_html_report(table_str)

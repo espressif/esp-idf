@@ -148,6 +148,7 @@
 
 .patterns-idf-pytest-plugin: &patterns-idf-pytest-plugin
   - "tools/ci/idf_pytest/**/*"
+  - "tools/ci/dynamic_pipelines/tests/**/*"
 
 ##############
 # if anchors #
