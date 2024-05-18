@@ -8,4 +8,4 @@ generate_pytest_report:
       - target_test_report.html
   script:
       - python tools/ci/get_known_failure_cases_file.py
-      - python tools/ci/dynamic_pipelines/scripts/generate_target_test_report.py
+      - python tools/ci/dynamic_pipelines/scripts/generate_report.py --report-type target_test

@@ -18,7 +18,9 @@ from prettytable import PrettyTable
 from .constants import COMMENT_START_MARKER
 from .constants import REPORT_TEMPLATE_FILEPATH
 from .constants import TEST_RELATED_APPS_DOWNLOAD_URLS_FILENAME
+from .models import GitlabJob
 from .models import TestCase
+from .utils import fetch_failed_testcases_failure_ratio
 from .utils import is_url
 from .utils import load_known_failure_cases
 
@@ -58,25 +60,150 @@ class ReportGenerator:
     def table_to_html_str(table: PrettyTable) -> str:
         return html.unescape(table.get_html_string())  # type: ignore
 
+    def create_table_section(
+        self,
+        report_sections: list,
+        title: str,
+        items: list,
+        headers: list,
+        row_attrs: list,
+        value_functions: t.Optional[list] = None,
+    ) -> None:
+        """
+        Appends a formatted section to a report based on the provided items. This section includes
+        a header and a table constructed from the items list with specified headers and attributes.
+
+        :param report_sections: List where the HTML report sections are collected. This list is
+                                modified in-place by appending new sections.
+        :param title: Title for the report section. This title is used as a header above the table.
+        :param items: List of item objects to include in the table. Each item should have attributes
+                      that correspond to the row_attrs and value_functions specified.
+        :param headers: List of strings that will serve as the column headers in the generated table.
+        :param row_attrs: List of attributes to include from each item for the table rows. These
+                          should be attributes or keys that exist on the items in the 'items' list.
+        :param value_functions: Optional list of tuples containing additional header and corresponding
+                                value function. Each tuple should specify a header (as a string) and
+                                a function that takes an item and returns a string. This is used for
+                                generating dynamic columns based on item data.
+
+        :return: None. The function modifies the 'report_sections' list by appending new HTML sections.
+        """
+        if not items:
+            return
+
+        report_sections.append(f'<h2>{title}</h2>')
+        report_sections.append(
+            self._create_table_for_items(
+                items=items, headers=headers, row_attrs=row_attrs, value_functions=value_functions or []
+            )
+        )
+
+    def _create_table_for_items(
+        self,
+        items: t.Union[t.List[TestCase], t.List[GitlabJob]],
+        headers: t.List[str],
+        row_attrs: t.List[str],
+        value_functions: t.Optional[t.List[t.Tuple[str, t.Callable[[t.Union[TestCase, GitlabJob]], str]]]] = None,
+    ) -> str:
+        """
+        Create a PrettyTable and convert it to an HTML string for the provided test cases.
+        :param items: List of item objects to include in the table.
+        :param headers: List of strings for the table headers.
+        :param row_attrs: List of attributes to include in each row.
+        :param value_functions: List of tuples containing additional header and corresponding value function.
+        :return: HTML table string.
+        """
+        table = PrettyTable()
+        table.field_names = headers
+
+        # Create a mapping of header names to their corresponding index in the headers list
+        header_index_map = {header: i for i, header in enumerate(headers)}
+
+        for item in items:
+            row = []
+            for attr in row_attrs:
+                value = str(getattr(item, attr, ''))
+                if is_url(value):
+                    link = f'<a href="{value}">link</a>'
+                    row.append(link)
+                else:
+                    row.append(value)
+
+            # Insert values computed by value functions at the correct column position based on their headers
+            if value_functions:
+                for header, func in value_functions:
+                    index = header_index_map.get(header)
+                    if index is not None:
+                        computed_value = func(item)
+                        row.insert(index, computed_value)
+
+            table.add_row(row)
+
+        return self.table_to_html_str(table)
+
+    @staticmethod
+    def _filter_items(
+        items: t.Union[t.List[TestCase], t.List[GitlabJob]], condition: t.Callable[[t.Union[TestCase, GitlabJob]], bool]
+    ) -> t.List[TestCase]:
+        """
+        Filter items s based on a given condition.
+
+        :param items: List of items to filter by given condition.
+        :param condition: A function that evaluates to True or False for each items.
+        :return: List of filtered instances.
+        """
+        return [item for item in items if condition(item)]
+
+    @staticmethod
+    def _sort_items(
+        items: t.List[t.Union[TestCase, GitlabJob]],
+        key: t.Union[str, t.Callable[[t.Union[TestCase, GitlabJob]], t.Any]],
+        order: str = 'asc',
+    ) -> t.List[t.Union[TestCase, GitlabJob]]:
+        """
+        Sort items based on a given key and order.
+
+        :param items: List of items to sort.
+        :param key: A string representing the attribute name or a function to extract the sorting key.
+        :param order: Order of sorting ('asc' for ascending, 'desc' for descending).
+        :return: List of sorted instances.
+        """
+        key_func = None
+        if isinstance(key, str):
+
+            def key_func(item: t.Any) -> t.Any:
+                return getattr(item, key)
+
+        if key_func is not None:
+            try:
+                items = sorted(items, key=key_func, reverse=(order == 'desc'))
+            except TypeError:
+                print(f'Comparison for the key {key} is not supported')
+        return items
+
     @abc.abstractmethod
     def _get_report_str(self) -> str:
         raise NotImplementedError
 
     def post_report(self, job_id: int, commit_id: str) -> None:
         # report in html format, otherwise will exceed the limit
-        with open(self.output_filepath, 'w') as fw:
-            fw.write(self._get_report_str())
-
-        # for example, {URL}/-/esp-idf/-/jobs/{id}/artifacts/list_job_84.txt
-        # CI_PAGES_URL is {URL}/esp-idf, which missed one `-`
-        url = os.getenv('CI_PAGES_URL', '').replace('esp-idf', '-/esp-idf')
-
         comment = f'#### {self.title}\n'
+
+        report_str = self._get_report_str()
+
         if self.additional_info:
             comment += f'{self.additional_info}\n'
 
-        comment += f"""
-Full {self.title} here: {url}/-/jobs/{job_id}/artifacts/{self.output_filepath} (with commit {commit_id})
+        if report_str:
+            with open(self.output_filepath, 'w') as fw:
+                fw.write(report_str)
+
+            # for example, {URL}/-/esp-idf/-/jobs/{id}/artifacts/list_job_84.txt
+            # CI_PAGES_URL is {URL}/esp-idf, which missed one `-`
+            url = os.getenv('CI_PAGES_URL', '').replace('esp-idf', '-/esp-idf')
+
+            comment += f"""
+Full {self.title} here: {url}/-/jobs/{job_id}/artifacts/{self.output_filepath} (with commit {commit_id[:8]})
 
 """
         print(comment)
@@ -265,94 +392,172 @@ class TargetTestReportGenerator(ReportGenerator):
         ]
         return matched_cases
 
-    def _filter_test_cases(self, condition: t.Callable[[TestCase], bool]) -> t.List[TestCase]:
-        """
-        Filter test cases based on a given condition.  In this scenario, we filter by status,
-        however it is possible to filter by other criteria.
-
-        :param condition: A function that evaluates to True or False for each test case.
-        :return: List of filtered TestCase instances.
-        """
-        return [tc for tc in self.test_cases if condition(tc)]
-
-    def _create_table_for_test_cases(
-        self, test_cases: t.List[TestCase], headers: t.List[str], row_attrs: t.List[str]
-    ) -> str:
-        """
-        Create a PrettyTable and convert it to an HTML string for the provided test cases.
-        :param test_cases: List of TestCase objects to include in the table.
-        :param headers: List of strings for the table headers.
-        :param row_attrs: List of attributes to include in each row.
-        :return: HTML table string.
-        """
-        table = PrettyTable()
-        table.field_names = headers
-        for tc in test_cases:
-            row = []
-            for attr in row_attrs:
-                value = getattr(tc, attr, '')
-                if is_url(value):
-                    link = f'<a href="{value}">link</a>'
-                    row.append(link)
-                else:
-                    row.append(value)
-            table.add_row(row)
-
-        return self.table_to_html_str(table)
-
     def _get_report_str(self) -> str:
         """
         Generate a complete HTML report string by processing test cases.
         :return: Complete HTML report string.
         """
-        table_str = ''
+        report_parts: list = []
 
         known_failures = self.get_known_failure_cases()
         known_failure_case_names = {case.name for case in known_failures}
-        failed_test_cases = self._filter_test_cases(
-            lambda tc: tc.is_failure and tc.name not in known_failure_case_names
+        failed_test_cases = self._filter_items(
+            self.test_cases, lambda tc: tc.is_failure and tc.name not in known_failure_case_names
         )
-        skipped_test_cases = self._filter_test_cases(lambda tc: tc.is_skipped)
-        successful_test_cases = self._filter_test_cases(lambda tc: tc.is_success)
+        failed_test_cases_with_ratio = self._sort_items(
+            fetch_failed_testcases_failure_ratio(failed_test_cases), key='latest_failed_count'
+        )
+        skipped_test_cases = self._filter_items(self.test_cases, lambda tc: tc.is_skipped)
+        successful_test_cases = self._filter_items(self.test_cases, lambda tc: tc.is_success)
 
-        if failed_test_cases:
-            table_str += '<h2>Failed Test Cases (Excludes Known Failure Cases)</h2>'
-            table_str += self._create_table_for_test_cases(
-                test_cases=failed_test_cases,
-                headers=['Test Case', 'Test Script File Path', 'Failure Reason', 'Job URL', 'Grafana URL'],
-                row_attrs=['name', 'file', 'failure', 'ci_job_url', 'ci_dashboard_url'],
-            )
+        current_branch_failures = self._sort_items(
+            self._filter_items(failed_test_cases_with_ratio, lambda tc: tc.latest_failed_count == 0),
+            key='latest_failed_count',
+        )
+        other_branch_failures = self._sort_items(
+            self._filter_items(
+                failed_test_cases_with_ratio, lambda tc: tc.name not in [t.name for t in current_branch_failures]
+            ),
+            key='latest_failed_count',
+        )
 
-        if known_failures:
-            table_str += '<h2>Known Failure Cases</h2>'
-            table_str += self._create_table_for_test_cases(
-                test_cases=known_failures,
-                headers=['Test Case', 'Test Script File Path', 'Failure Reason', 'Job URL', 'Grafana URL'],
-                row_attrs=['name', 'file', 'failure', 'ci_job_url', 'ci_dashboard_url'],
-            )
+        self.create_table_section(
+            report_sections=report_parts,
+            title='Failed Test Cases on Your branch (Excludes Known Failure Cases)',
+            items=current_branch_failures,
+            headers=[
+                'Test Case',
+                'Test Script File Path',
+                'Failure Reason',
+                'Failures across all other branches (20 latest testcases)',
+                'Job URL',
+                'Grafana URL',
+            ],
+            row_attrs=['name', 'file', 'failure', 'ci_job_url', 'ci_dashboard_url'],
+            value_functions=[
+                (
+                    'Failures across all other branches (20 latest testcases)',
+                    lambda item: f"{getattr(item, 'latest_failed_count', '')} / {getattr(item, 'latest_total_count', '')}",
+                )
+            ],
+        )
+        self.create_table_section(
+            report_sections=report_parts,
+            title='Failed Test Cases on Other branches (Excludes Known Failure Cases)',
+            items=other_branch_failures,
+            headers=[
+                'Test Case',
+                'Test Script File Path',
+                'Failure Reason',
+                'Failures across all other branches (20 latest testcases)',
+                'Job URL',
+                'Grafana URL',
+            ],
+            row_attrs=['name', 'file', 'failure', 'ci_job_url', 'ci_dashboard_url'],
+            value_functions=[
+                (
+                    'Failures across all other branches (20 latest testcases)',
+                    lambda item: f"{getattr(item, 'latest_failed_count', '')} / {getattr(item, 'latest_total_count', '')}",
+                )
+            ],
+        )
 
-        if skipped_test_cases:
-            table_str += '<h2>Skipped Test Cases</h2>'
-            table_str += self._create_table_for_test_cases(
-                test_cases=skipped_test_cases,
-                headers=['Test Case', 'Test Script File Path', 'Skipped Reason', 'Grafana URL'],
-                row_attrs=['name', 'file', 'skipped', 'ci_dashboard_url'],
-            )
+        self.create_table_section(
+            report_sections=report_parts,
+            title='Known Failure Cases',
+            items=known_failures,
+            headers=['Test Case', 'Test Script File Path', 'Failure Reason', 'Job URL', 'Grafana URL'],
+            row_attrs=['name', 'file', 'failure', 'ci_job_url', 'ci_dashboard_url'],
+        )
+        self.create_table_section(
+            report_sections=report_parts,
+            title='Skipped Test Cases',
+            items=skipped_test_cases,
+            headers=['Test Case', 'Test Script File Path', 'Skipped Reason', 'Grafana URL'],
+            row_attrs=['name', 'file', 'skipped', 'ci_dashboard_url'],
+        )
+        self.create_table_section(
+            report_sections=report_parts,
+            title='Succeeded Test Cases',
+            items=successful_test_cases,
+            headers=['Test Case', 'Test Script File Path', 'Job URL', 'Grafana URL'],
+            row_attrs=['name', 'file', 'ci_job_url', 'ci_dashboard_url'],
+        )
 
-        if successful_test_cases:
-            table_str += '<h2>Succeeded Test Cases</h2>'
-            table_str += self._create_table_for_test_cases(
-                test_cases=successful_test_cases,
-                headers=['Test Case', 'Test Script File Path', 'Job URL', 'Grafana URL'],
-                row_attrs=['name', 'file', 'ci_job_url', 'ci_dashboard_url'],
-            )
         self.additional_info = (
             '**Test Case Summary:**\n'
-            f'- **Failed Test Cases (Excludes Known Failure Cases):** {len(failed_test_cases)}\n'
+            f'- **Failed Test Cases on Your Branch (Excludes Known Failure Cases):** {len(current_branch_failures)}.\n'
+            f'- **Failed Test Cases on Other Branches (Excludes Known Failure Cases):** {len(other_branch_failures)}.\n'
             f'- **Known Failures:** {len(known_failures)}\n'
             f'- **Skipped Test Cases:** {len(skipped_test_cases)}\n'
             f'- **Succeeded Test Cases:** {len(successful_test_cases)}\n\n'
-            f'Please check report below for more information.\n\n'
+            'Please check report below for more information.\n\n'
         )
 
-        return self.generate_html_report(table_str)
+        return self.generate_html_report(''.join(report_parts))
+
+
+class JobReportGenerator(ReportGenerator):
+    def __init__(
+        self,
+        project_id: int,
+        mr_iid: int,
+        pipeline_id: int,
+        *,
+        title: str = 'Job Report',
+        jobs: t.List[GitlabJob],
+    ):
+        super().__init__(project_id, mr_iid, pipeline_id, title=title)
+        self.jobs = jobs
+
+    def _get_report_str(self) -> str:
+        """
+        Generate a complete HTML report string by processing jobs.
+        :return: Complete HTML report string.
+        """
+        report_str: str = ''
+        report_parts: list = []
+
+        if not self.jobs:
+            print('No jobs found, skip generating job report')
+            return 'No Job Found'
+
+        relevant_failed_jobs = self._sort_items(
+            self._filter_items(
+                self.jobs, lambda job: job.is_failed and job.stage not in ['integration_test', 'target_test']
+            ),
+            key='latest_failed_count',
+        )
+        succeeded_jobs = self._filter_items(self.jobs, lambda job: job.is_success)
+
+        self.additional_info = (
+            '**Job Summary:**\n'
+            f'- **Failed Jobs (Excludes "integration_test" and "target_test" jobs):** {len(relevant_failed_jobs)}\n'
+            f'- **Succeeded Jobs:** {len(succeeded_jobs)}\n\n'
+        )
+
+        if relevant_failed_jobs:
+            self.create_table_section(
+                report_sections=report_parts,
+                title='Failed Jobs (Excludes "integration_test" and "target_test" jobs)',
+                items=relevant_failed_jobs,
+                headers=[
+                    'Job Name',
+                    'Failure Reason',
+                    'Failure Log',
+                    'Failures across all other branches (10 latest jobs)',
+                    'URL',
+                    'CI Dashboard URL',
+                ],
+                row_attrs=['name', 'failure_reason', 'failure_log', 'url', 'ci_dashboard_url'],
+                value_functions=[
+                    (
+                        'Failures across all other branches (10 latest jobs)',
+                        lambda item: f"{getattr(item, 'latest_failed_count', '')} / {getattr(item, 'latest_total_count', '')}",
+                    )
+                ],
+            )
+            self.additional_info += f'Please check report below for more information.\n\n'
+            report_str = self.generate_html_report(''.join(report_parts))
+
+        return report_str
