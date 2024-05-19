@@ -9,6 +9,7 @@
 #include <stdint.h>
 #include "soc/clkout_channel.h"
 #include "soc/soc.h"
+#include "soc/chip_revision.h"
 #include "soc/clk_tree_defs.h"
 #include "soc/hp_sys_clkrst_reg.h"
 #include "soc/hp_sys_clkrst_struct.h"
@@ -22,6 +23,8 @@
 #include "hal/log.h"
 #include "esp32p4/rom/rtc.h"
 #include "hal/misc.h"
+#include "hal/efuse_hal.h"
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -309,7 +312,11 @@ static inline __attribute__((always_inline)) uint32_t clk_ll_cpll_get_freq_mhz(u
 {
     uint8_t div = REGI2C_READ_MASK(I2C_CPLL, I2C_CPLL_OC_DIV_7_0);
     uint8_t ref_div = REGI2C_READ_MASK(I2C_CPLL, I2C_CPLL_OC_REF_DIV);
-    return xtal_freq_mhz * (div + 4) / (ref_div + 1);
+    unsigned chip_version = efuse_hal_chip_revision();
+    if (!ESP_CHIP_REV_ABOVE(chip_version, 1)) {
+        return xtal_freq_mhz * (div + 4) / (ref_div + 1);
+    } else
+    return xtal_freq_mhz * div / (ref_div + 1);
 }
 
 /**
@@ -339,19 +346,39 @@ static inline __attribute__((always_inline)) void clk_ll_cpll_set_config(uint32_
 
     // Currently, only supporting 40MHz XTAL
     HAL_ASSERT(xtal_freq_mhz == SOC_XTAL_FREQ_40M);
-    switch (cpll_freq_mhz) {
-    case CLK_LL_PLL_400M_FREQ_MHZ:
-        /* Configure 400M CPLL */
-        div7_0 = 6;
-        div_ref = 0;
-        break;
-    case CLK_LL_PLL_360M_FREQ_MHZ:
-    default:
-        /* Configure 360M CPLL */
-        div7_0 = 5;
-        div_ref = 0;
-        break;
+
+    unsigned chip_version = efuse_hal_chip_revision();
+    if (!ESP_CHIP_REV_ABOVE(chip_version, 1)) {
+        switch (cpll_freq_mhz) {
+        case CLK_LL_PLL_400M_FREQ_MHZ:
+            /* Configure 400M CPLL */
+            div7_0 = 6;
+            div_ref = 0;
+            break;
+        case CLK_LL_PLL_360M_FREQ_MHZ:
+        default:
+            /* Configure 360M CPLL */
+            div7_0 = 5;
+            div_ref = 0;
+            break;
+        }
+    } else {
+        /*div7_0 bit2 & bit3 is swapped from ECO1*/
+        switch (cpll_freq_mhz) {
+        case CLK_LL_PLL_400M_FREQ_MHZ:
+            /* Configure 400M CPLL */
+            div7_0 = 10;
+            div_ref = 0;
+            break;
+        case CLK_LL_PLL_360M_FREQ_MHZ:
+        default:
+            /* Configure 360M CPLL */
+            div7_0 = 9;
+            div_ref = 0;
+            break;
+        }
     }
+
     uint8_t i2c_cpll_lref  = (oc_enb_fcal << I2C_CPLL_OC_ENB_FCAL_LSB) | (dchgp << I2C_CPLL_OC_DCHGP_LSB) | (div_ref);
     uint8_t i2c_cpll_div_7_0 = div7_0;
     uint8_t i2c_cpll_dcur = (1 << I2C_CPLL_OC_DLREF_SEL_LSB ) | (3 << I2C_CPLL_OC_DHREF_SEL_LSB) | dcur;
