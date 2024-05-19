@@ -73,7 +73,7 @@ void gcov_create_task(void *arg)
 {
     ESP_EARLY_LOGV(TAG, "%s", __FUNCTION__);
     xTaskCreatePinnedToCore(&gcov_dump_task, "gcov_dump_task", CONFIG_APPTRACE_GCOV_DUMP_TASK_STACK_SIZE,
-		(void *)&s_gcov_task_running, configMAX_PRIORITIES - 1, NULL, 0);
+                            (void *)&s_gcov_task_running, configMAX_PRIORITIES - 1, NULL, 0);
 }
 
 static IRAM_ATTR
@@ -180,7 +180,7 @@ int gcov_rtio_feof(void *stream)
     return ret;
 }
 
-void gcov_rtio_setbuf(void *arg1 __attribute__ ((unused)), void *arg2 __attribute__ ((unused)))
+void gcov_rtio_setbuf(void *arg1 __attribute__((unused)), void *arg2 __attribute__((unused)))
 {
     return;
 }

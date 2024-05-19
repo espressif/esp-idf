@@ -52,7 +52,6 @@ const static char *TAG = "esp_apptrace";
 
 static uint32_t esp_apptrace_membufs_down_buffer_write_nolock(esp_apptrace_membufs_proto_data_t *proto, uint8_t *data, uint32_t size);
 
-
 esp_err_t esp_apptrace_membufs_init(esp_apptrace_membufs_proto_data_t *proto, const esp_apptrace_mem_block_t blocks_cfg[2])
 {
     // disabled by default
@@ -66,7 +65,7 @@ esp_err_t esp_apptrace_membufs_init(esp_apptrace_membufs_proto_data_t *proto, co
     proto->state.in_block = 0;
 #if CONFIG_APPTRACE_PENDING_DATA_SIZE_MAX > 0
     esp_apptrace_rb_init(&proto->rb_pend, proto->pending_data,
-                        sizeof(proto->pending_data));
+                         sizeof(proto->pending_data));
 #endif
     return ESP_OK;
 }
@@ -101,13 +100,13 @@ static esp_err_t esp_apptrace_membufs_swap(esp_apptrace_membufs_proto_data_t *pr
         // TODO: add support for multiple blocks from host, currently there is no need for that
         uint8_t *p = proto->blocks[new_block_num].start + proto->blocks[new_block_num].sz;
         ESP_APPTRACE_LOGD("Recvd %" PRIu16 " bytes from host (@ %p) [%x %x %x %x %x %x %x %x .. %x %x %x %x %x %x %x %x]",
-            hdr->block_sz, proto->blocks[new_block_num].start,
-            *(proto->blocks[new_block_num].start+0), *(proto->blocks[new_block_num].start+1),
-            *(proto->blocks[new_block_num].start+2), *(proto->blocks[new_block_num].start+3),
-            *(proto->blocks[new_block_num].start+4), *(proto->blocks[new_block_num].start+5),
-            *(proto->blocks[new_block_num].start+6), *(proto->blocks[new_block_num].start+7),
-            *(p-8), *(p-7), *(p-6), *(p-5), *(p-4), *(p-3), *(p-2), *(p-1));
-        uint32_t sz = esp_apptrace_membufs_down_buffer_write_nolock(proto, (uint8_t *)(hdr+1), hdr->block_sz);
+                          hdr->block_sz, proto->blocks[new_block_num].start,
+                          *(proto->blocks[new_block_num].start + 0), *(proto->blocks[new_block_num].start + 1),
+                          *(proto->blocks[new_block_num].start + 2), *(proto->blocks[new_block_num].start + 3),
+                          *(proto->blocks[new_block_num].start + 4), *(proto->blocks[new_block_num].start + 5),
+                          *(proto->blocks[new_block_num].start + 6), *(proto->blocks[new_block_num].start + 7),
+                          *(p - 8), *(p - 7), *(p - 6), *(p - 5), *(p - 4), *(p - 3), *(p - 2), *(p - 1));
+        uint32_t sz = esp_apptrace_membufs_down_buffer_write_nolock(proto, (uint8_t *)(hdr + 1), hdr->block_sz);
         if (sz != hdr->block_sz) {
             ESP_APPTRACE_LOGE("Failed to write %" PRIu32 " bytes to down buffer (%" PRIu16 " %" PRIu32 ")!", hdr->block_sz - sz, hdr->block_sz, sz);
         }
@@ -129,8 +128,8 @@ static esp_err_t esp_apptrace_membufs_swap(esp_apptrace_membufs_proto_data_t *pr
             break;
         }
         ESP_APPTRACE_LOGD("Pump %d pend bytes [%x %x %x %x : %x %x %x %x : %x %x %x %x : %x %x...%x %x]",
-            read_sz, *(ptr+0), *(ptr+1), *(ptr+2), *(ptr+3), *(ptr+4),
-            *(ptr+5), *(ptr+6), *(ptr+7), *(ptr+8), *(ptr+9), *(ptr+10), *(ptr+11), *(ptr+12), *(ptr+13), *(ptr+read_sz-2), *(ptr+read_sz-1));
+                          read_sz, *(ptr + 0), *(ptr + 1), *(ptr + 2), *(ptr + 3), *(ptr + 4),
+                          *(ptr + 5), *(ptr + 6), *(ptr + 7), *(ptr + 8), *(ptr + 9), *(ptr + 10), *(ptr + 11), *(ptr + 12), *(ptr + 13), *(ptr + read_sz - 2), *(ptr + read_sz - 1));
         memcpy(proto->blocks[new_block_num].start + proto->state.markers[new_block_num], ptr, read_sz);
         proto->state.markers[new_block_num] += read_sz;
     }
@@ -209,7 +208,7 @@ static uint32_t esp_apptrace_membufs_down_buffer_write_nolock(esp_apptrace_membu
 
     while (total_sz < size) {
         ESP_APPTRACE_LOGD("esp_apptrace_trax_down_buffer_write_nolock WRS %" PRIu32 "-%" PRIu32 "-%" PRIu32 " %" PRIu32, proto->rb_down.wr, proto->rb_down.rd,
-            proto->rb_down.cur_size, size);
+                          proto->rb_down.cur_size, size);
         uint32_t wr_sz = esp_apptrace_rb_write_size_get(&proto->rb_down);
         if (wr_sz == 0) {
             break;
@@ -319,10 +318,10 @@ uint8_t *esp_apptrace_membufs_up_buffer_get(esp_apptrace_membufs_proto_data_t *p
     if (1) {
 #endif
         if (ESP_APPTRACE_INBLOCK_MARKER(proto) + ESP_APPTRACE_USR_BLOCK_RAW_SZ(size) > ESP_APPTRACE_INBLOCK(proto)->sz) {
-            #if CONFIG_APPTRACE_PENDING_DATA_SIZE_MAX > 0
+#if CONFIG_APPTRACE_PENDING_DATA_SIZE_MAX > 0
             ESP_APPTRACE_LOGD("Block full. Get %" PRIu32 " bytes from PEND buffer", size);
             buf_ptr = esp_apptrace_rb_produce(&proto->rb_pend, ESP_APPTRACE_USR_BLOCK_RAW_SZ(size));
-            #endif
+#endif
             if (buf_ptr == NULL) {
                 int pended_buf;
                 ESP_APPTRACE_LOGD(" full. Get %" PRIu32 " bytes from pend buffer", size);
@@ -372,10 +371,11 @@ esp_err_t esp_apptrace_membufs_flush_nolock(esp_apptrace_membufs_proto_data_t *p
         ESP_APPTRACE_LOGD("Try to flush %" PRIu32 " bytes", ESP_APPTRACE_INBLOCK_MARKER(proto));
         res = esp_apptrace_membufs_swap_waitus(proto, tmo);
         if (res != ESP_OK) {
-            if (res == ESP_ERR_TIMEOUT)
+            if (res == ESP_ERR_TIMEOUT) {
                 ESP_APPTRACE_LOGW("Failed to switch to another block in %" PRIi32 " us!", (int32_t)tmo->elapsed);
-            else
+            } else {
                 ESP_APPTRACE_LOGE("Failed to switch to another block, res: %d", res);
+            }
             return res;
         }
     }
