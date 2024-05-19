@@ -18,6 +18,7 @@
 
 #define USB_SERIAL_JTAG_LL_INTR_MASK            (0x7ffff)   // All interrupts mask
 #define USB_SERIAL_JTAG_LL_EXT_PHY_SUPPORTED    1   // Can route to an external FSLS PHY
+#define USB_SERIAL_JTAG_LL_PHY_DEPENDS_ON_BBPLL (1)
 
 // Define USB_SERIAL_JTAG interrupts
 // Note the hardware has more interrupts, but they're only useful for debugging

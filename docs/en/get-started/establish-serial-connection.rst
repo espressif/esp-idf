@@ -146,15 +146,15 @@ Sometimes the USB-to-UART bridge is external. This is often used in small develo
 
     The USB on the {IDF_TARGET_NAME} uses the **{IDF_TARGET_USB_PIN_DP}** for **D+** and **{IDF_TARGET_USB_PIN_DM}** for **D-**.
 
-    .. only:: SOC_USB_SERIAL_JTAG_SUPPORTED and not esp32s3
+    .. only:: SOC_USB_SERIAL_JTAG_SUPPORTED
 
-        .. note:: The {IDF_TARGET_NAME} supports only *USB CDC and JTAG*.
+        .. only:: not SOC_USB_OTG_SUPPORTED
 
-        If you are flashing for the first time, you need to get the {IDF_TARGET_NAME} into the download mode manually. To do so, press and hold the ``BOOT`` button and then press the ``RESET`` button once. After that release the ``BOOT`` button.
-
-    .. only:: esp32s3
+            .. note:: The {IDF_TARGET_NAME} supports only *USB CDC and JTAG*.
 
         If you are flashing for the first time, you need to get the {IDF_TARGET_NAME} into the download mode manually. To do so, press and hold the ``BOOT`` button and then press the ``RESET`` button once. After that release the ``BOOT`` button.
+
+        For any usage for usb serial jtag, please refer to :doc:`USB_SERIAL_JTAG_CONSOLE <../api-guides/usb-serial-jtag-console>` for more information.
 
     .. only:: esp32s2
 
