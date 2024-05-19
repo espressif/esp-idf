@@ -537,6 +537,7 @@ static inline void isp_ll_af_set_window_range(isp_dev_t *hw, uint32_t window_id,
  *
  * @return Window sum
  */
+__attribute__((always_inline))
 static inline uint32_t isp_ll_af_get_window_sum(isp_dev_t *hw, uint32_t window_id)
 {
     switch (window_id) {
@@ -560,6 +561,7 @@ static inline uint32_t isp_ll_af_get_window_sum(isp_dev_t *hw, uint32_t window_i
  *
  * @return Window lum
  */
+__attribute__((always_inline))
 static inline uint32_t isp_ll_af_get_window_lum(isp_dev_t *hw, uint32_t window_id)
 {
     switch (window_id) {
@@ -740,6 +742,18 @@ __attribute__((always_inline))
 static inline uint32_t isp_ll_get_intr_status(isp_dev_t *hw)
 {
     return hw->int_st.val;
+}
+
+/**
+ * @brief Get interrupt status reg address
+ *
+ * @param[in] hw  Hardware instance address
+ *
+ * @return Interrupt status reg address
+ */
+static inline uint32_t isp_ll_get_intr_status_reg_addr(isp_dev_t *hw)
+{
+    return (uint32_t)&(hw->int_st);
 }
 
 /**
