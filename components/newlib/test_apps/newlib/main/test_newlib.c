@@ -131,7 +131,7 @@ static bool fn_in_rom(void *fn)
 /* Older chips have newlib nano in rom as well, but this is not linked in due to us now using 64 bit time_t
    and the ROM code was compiled for 32 bit.
  */
-#define PRINTF_NANO_IN_ROM (CONFIG_NEWLIB_NANO_FORMAT && (CONFIG_IDF_TARGET_ESP32C2 || CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP32P4))
+#define PRINTF_NANO_IN_ROM (CONFIG_NEWLIB_NANO_FORMAT && CONFIG_IDF_TARGET_ESP32C2)
 #define SSCANF_NANO_IN_ROM (CONFIG_NEWLIB_NANO_FORMAT && CONFIG_IDF_TARGET_ESP32C2)
 
 TEST_CASE("check if ROM or Flash is used for functions", "[newlib]")
