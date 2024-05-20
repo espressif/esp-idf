@@ -903,7 +903,7 @@ typedef struct {
     uint8_t mac[6];           /**< MAC address of the station disconnects to soft-AP */
     uint8_t aid;              /**< the aid that soft-AP gave to the station disconnects to  */
     bool is_mesh_child;       /**< flag to identify mesh child */
-    uint8_t reason;           /**< reason of disconnection */
+    uint16_t reason;           /**< reason of disconnection */
 } wifi_event_ap_stadisconnected_t;
 
 /** Argument structure for WIFI_EVENT_AP_PROBEREQRECVED event */
