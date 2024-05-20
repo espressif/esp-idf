@@ -14,7 +14,7 @@ extern "C" {
 /** PMS_LP2HP_PERI_PMS_DATE_REG register
  *  Version control register
  */
-#define PMS_LP2HP_PERI_PMS_DATE_REG (DR_REG_PMS_BASE + 0x0)
+#define PMS_LP2HP_PERI_PMS_DATE_REG (DR_REG_LP2HP_PERI_PMS_BASE + 0x0)
 /** PMS_LP2HP_PERI_PMS_DATE : R/W; bitpos: [31:0]; default: 2294790;
  *  Version control register.
  */
@@ -26,7 +26,7 @@ extern "C" {
 /** PMS_LP2HP_PERI_PMS_CLK_EN_REG register
  *  Clock gating register
  */
-#define PMS_LP2HP_PERI_PMS_CLK_EN_REG (DR_REG_PMS_BASE + 0x4)
+#define PMS_LP2HP_PERI_PMS_CLK_EN_REG (DR_REG_LP2HP_PERI_PMS_BASE + 0x4)
 /** PMS_LP2HP_PERI_PMS_CLK_EN : R/W; bitpos: [0]; default: 1;
  *  Configures whether to keep the clock always on.
  *  0: Enable automatic clock gating.
@@ -40,7 +40,7 @@ extern "C" {
 /** PMS_LP_MM_PMS_REG0_REG register
  *  Permission control register0 for the LP CPU in machine mode
  */
-#define PMS_LP_MM_PMS_REG0_REG (DR_REG_PMS_BASE + 0x8)
+#define PMS_LP_MM_PMS_REG0_REG (DR_REG_LP2HP_PERI_PMS_BASE + 0x8)
 /** PMS_LP_MM_PSRAM_ALLOW : R/W; bitpos: [0]; default: 1;
  *  Configures whether the LP CPU in machine mode has permission to access external RAM
  *  without going through cache.
@@ -141,7 +141,7 @@ extern "C" {
 /** PMS_LP_MM_PMS_REG1_REG register
  *  Permission control register1 for the LP CPU in machine mode
  */
-#define PMS_LP_MM_PMS_REG1_REG (DR_REG_PMS_BASE + 0x30)
+#define PMS_LP_MM_PMS_REG1_REG (DR_REG_LP2HP_PERI_PMS_BASE + 0x30)
 /** PMS_LP_MM_HP_USBOTG_ALLOW : R/W; bitpos: [0]; default: 1;
  *  Configures whether the LP CPU in machine mode has permission to access HP
  *  high-speed USB 2.0 OTG.
@@ -422,7 +422,7 @@ extern "C" {
 /** PMS_LP_MM_PMS_REG2_REG register
  *  Permission control register2 for the LP CPU in machine mode
  */
-#define PMS_LP_MM_PMS_REG2_REG (DR_REG_PMS_BASE + 0xa4)
+#define PMS_LP_MM_PMS_REG2_REG (DR_REG_LP2HP_PERI_PMS_BASE + 0xa4)
 /** PMS_LP_MM_HP_MCPWM0_ALLOW : R/W; bitpos: [0]; default: 1;
  *  Configures whether the LP CPU in machine mode has permission to access HP MCPWM0.
  *  0: Not allowed
@@ -703,7 +703,7 @@ extern "C" {
 /** PMS_LP_MM_PMS_REG3_REG register
  *  Permission control register3 for the LP CPU in machine mode
  */
-#define PMS_LP_MM_PMS_REG3_REG (DR_REG_PMS_BASE + 0x11c)
+#define PMS_LP_MM_PMS_REG3_REG (DR_REG_LP2HP_PERI_PMS_BASE + 0x11c)
 /** PMS_LP_MM_HP_GPIO_ALLOW : R/W; bitpos: [0]; default: 1;
  *  Configures whether the LP CPU in machine mode has permission to access HP GPIO
  *  Matrix.
