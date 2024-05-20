@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -88,7 +88,7 @@ TEST_CASE("heap trace wrapped buffer check", "[heap-trace]")
         ptrs[i] = malloc(i*3);
     }
 
-    // becuase other mallocs happen as part of this control flow,
+    // because other mallocs happen as part of this control flow,
     // we can't guarantee N entries of ptrs[] are in the heap check buffer.
     // but we should guarantee at least the last one is
     bool saw_last_ptr = false;
@@ -167,6 +167,69 @@ TEST_CASE("can trace allocations made by newlib", "[heap-trace]")
 
     /* has to be at least a few as newlib allocates via multiple different function calls */
     TEST_ASSERT(heap_trace_get_count() > 3);
+}
+
+TEST_CASE("can stop recording allocs but continue recording frees", "[heap-trace]")
+{
+    const size_t N = 2;
+    heap_trace_record_t recs[N];
+    void *ptrs[N];
+    const size_t alloc_size = 100;
+    heap_trace_init_standalone(recs, N);
+    heap_trace_start(HEAP_TRACE_LEAKS);
+
+    size_t current_count = N;
+
+    /* allocate N blocks of memory to fill N records */
+    for (size_t i = 0; i < N; i ++) {
+        ptrs[i] = heap_caps_malloc(alloc_size, MALLOC_CAP_INTERNAL);
+        TEST_ASSERT_NOT_NULL(ptrs[i]);
+    }
+
+    /* get the current allocation count to make sure it is
+     * accurately tracking N allocations. */
+    TEST_ASSERT(heap_trace_get_count() == current_count);
+
+    /* free an allocation and make sure the new count has dropped by one */
+    heap_caps_free(ptrs[current_count - 1]);
+    TEST_ASSERT(heap_trace_get_count() == current_count - 1);
+    current_count--;
+
+    /* pause the tracing */
+    heap_trace_alloc_pause();
+
+    /* try to allocate a new block of memory and make
+     * sure the trace count has not increased. */
+    ptrs[current_count] = heap_caps_malloc(alloc_size, MALLOC_CAP_INTERNAL);
+    TEST_ASSERT_NOT_NULL(ptrs[current_count]);
+    TEST_ASSERT(heap_trace_get_count() == current_count);
+
+    /* free the newly allocated block and make sure the trace count
+     * has not dropped since the freed block of memory is not the one
+     * present in the trace records */
+    heap_caps_free(ptrs[current_count]);
+    TEST_ASSERT(heap_trace_get_count() == current_count);
+
+    /* free a block of memory that is in the record and make sure
+     * that the trace count has dropped by one */
+    heap_caps_free(ptrs[current_count - 1]);
+    TEST_ASSERT(heap_trace_get_count() == current_count - 1);
+    current_count--;
+
+    /* start the tracing again, allocate a new block of memory and
+     * make sure the trace count is increased by 1 */
+    heap_trace_resume();
+    ptrs[current_count + 1] = heap_caps_malloc(alloc_size, MALLOC_CAP_INTERNAL);
+    TEST_ASSERT_NOT_NULL(ptrs[current_count + 1]);
+    TEST_ASSERT(heap_trace_get_count() == current_count + 1);
+    current_count++;
+
+    /* free the allocated blocks of memory */
+    for (size_t i = 0; i < current_count; i++) {
+        heap_caps_free(ptrs[i]);
+    }
+
+    heap_trace_stop();
 }
 
 TEST_CASE("check for summary value validity", "[heap-trace]") {
