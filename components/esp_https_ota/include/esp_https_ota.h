@@ -33,6 +33,9 @@ typedef struct {
 #define ESP_ERR_HTTPS_OTA_BASE            (0x9000)
 #define ESP_ERR_HTTPS_OTA_IN_PROGRESS     (ESP_ERR_HTTPS_OTA_BASE + 1)  /* OTA operation in progress */
 
+// New routine to provide OTA Error String for OTA Publish to Cloud
+void get_ota_perform_err_str( char* ptr_err_str );
+
 /**
  * @brief    HTTPS OTA Firmware upgrade.
  *
