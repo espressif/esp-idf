@@ -127,118 +127,6 @@ typedef union {
     uint32_t val;
 } sha_t_length_reg_t;
 
-/** Type of mode register
- *  Initial configuration register 0.
- */
-typedef union {
-    struct {
-        /** mode : R/W; bitpos: [2:0]; default: 0;
-         *  Sha3 mode
-         */
-        uint32_t mode:3;
-        uint32_t reserved_3:29;
-    };
-    uint32_t val;
-} sha_3_mode_reg_t;
-
-/** Type of clean_m register
- *  Initial configuration register 1.
- */
-typedef union {
-    struct {
-        /** clean_m : WO; bitpos: [0]; default: 0;
-         *  Clean Message.
-         */
-        uint32_t clean_m:1;
-        uint32_t reserved_1:31;
-    };
-    uint32_t val;
-} sha_3_clean_m_reg_t;
-
-/** Type of dma_block_num register
- *  DMA configuration register 0.
- */
-typedef union {
-    struct {
-        /** dma_block_num : R/W; bitpos: [5:0]; default: 0;
-         *  DMA-SHA3 block number.
-         */
-        uint32_t dma_block_num:6;
-        uint32_t reserved_6:26;
-    };
-    uint32_t val;
-} sha_3_dma_block_num_reg_t;
-
-/** Type of start register
- *  Typical SHA3 configuration register 0.
- */
-typedef union {
-    struct {
-        /** start : WO; bitpos: [0]; default: 0;
-         *  Start typical sha3.
-         */
-        uint32_t start:1;
-        uint32_t reserved_1:31;
-    };
-    uint32_t val;
-} sha_3_start_reg_t;
-
-/** Type of continue register
- *  Typical SHA3 configuration register 1.
- */
-typedef union {
-    struct {
-        /** conti : WO; bitpos: [0]; default: 0;
-         *  Continue typical sha3.
-         */
-        uint32_t conti:1;
-        uint32_t reserved_1:31;
-    };
-    uint32_t val;
-} sha_3_continue_reg_t;
-
-/** Type of dma_start register
- *  DMA configuration register 1.
- */
-typedef union {
-    struct {
-        /** dma_start : WO; bitpos: [0]; default: 0;
-         *  Start dma-sha3.
-         */
-        uint32_t dma_start:1;
-        uint32_t reserved_1:31;
-    };
-    uint32_t val;
-} sha_3_dma_start_reg_t;
-
-/** Type of dma_continue register
- *  DMA configuration register 2.
- */
-typedef union {
-    struct {
-        /** dma_continue : WO; bitpos: [0]; default: 0;
-         *  Continue dma-sha3.
-         */
-        uint32_t dma_continue:1;
-        uint32_t reserved_1:31;
-    };
-    uint32_t val;
-} sha_3_dma_continue_reg_t;
-
-/** Type of shake_length register
- *  DMA configuration register 3.
- */
-typedef union {
-    struct {
-        /** shake_length : WO; bitpos: [10:0]; default: 50;
-         *  SHAKE output hash word length
-         */
-        uint32_t shake_length:11;
-        uint32_t reserved_11:21;
-    };
-    uint32_t val;
-} sha_3_shake_length_reg_t;
-
 
 /** Group: Status Registers */
 /** Type of busy register
@@ -306,52 +194,6 @@ typedef union {
 
 /** Group: memory type */
 
-/** Group: Status Register */
-/** Type of busy register
- *  Busy register.
- */
-typedef union {
-    struct {
-        /** busy_reg : RO; bitpos: [0]; default: 0;
-         *  Sha3 busy state. 1'b0: idle. 1'b1: busy.
-         */
-        uint32_t busy_reg:1;
-        uint32_t reserved_1:31;
-    };
-    uint32_t val;
-} sha_3_busy_reg_t;
-
-
-/** Group: Interrupt Register */
-/** Type of clear_int register
- *  Interrupt clear register.
- */
-typedef union {
-    struct {
-        /** clear_int : WO; bitpos: [0]; default: 0;
-         *  Clear sha3 interrupt.
-         */
-        uint32_t clear_int:1;
-        uint32_t reserved_1:31;
-    };
-    uint32_t val;
-} sha_3_clear_int_reg_t;
-
-/** Type of int_ena register
- *  Interrupt enable register.
- */
-typedef union {
-    struct {
-        /** int_ena : R/W; bitpos: [0]; default: 0;
-         *  Sha3 interrupt enable register. 1'b0: disable(default). 1'b1:enable
-         */
-        uint32_t int_ena:1;
-        uint32_t reserved_1:31;
-    };
-    uint32_t val;
-} sha_3_int_ena_reg_t;
-
-
 typedef struct {
     volatile sha_mode_reg_t mode;
     volatile sha_t_string_reg_t t_string;
@@ -368,29 +210,12 @@ typedef struct {
     uint32_t reserved_030[4];
     volatile uint32_t h[16];
     volatile uint32_t m[16];
-    uint32_t reserved_0c0[464];
-    volatile sha_3_mode_reg_t mode_3;
-    volatile sha_3_clean_m_reg_t clean_m_3;
-    uint32_t reserved_808;
-    volatile sha_3_dma_block_num_reg_t dma_block_num_3;
-    volatile sha_3_start_reg_t start_3;
-    volatile sha_3_continue_reg_t continue_3;
-    volatile sha_3_busy_reg_t busy_3;
-    volatile sha_3_dma_start_reg_t dma_start_3;
-    volatile sha_3_dma_continue_reg_t dma_continue_3;
-    volatile sha_3_clear_int_reg_t clear_int_3;
-    volatile sha_3_int_ena_reg_t int_ena_3;
-    volatile sha_3_shake_length_reg_t shake_length_3;
-    uint32_t reserved_830[52];
-    volatile uint32_t m_out_3[50];
-    uint32_t reserved_9c8[14];
-    volatile uint32_t m_3[50];
 } sha_dev_t;
 
 extern sha_dev_t SHA;
 
 #ifndef __cplusplus
-_Static_assert(sizeof(sha_dev_t) == 0xac8, "Invalid size of sha_dev_t structure");
+_Static_assert(sizeof(sha_dev_t) == 0xc0, "Invalid size of sha_dev_t structure");
 #endif
 
 #ifdef __cplusplus
