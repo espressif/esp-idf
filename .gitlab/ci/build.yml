@@ -515,6 +515,18 @@ test_build_system_cmake_macos:
     - macos_shell
   variables:
     SHELL_TEST_SCRIPT: test_build_system_cmake.sh
+  script:
+    - ${IDF_PATH}/tools/ci/test_configure_ci_environment.sh
+    - rm -rf test_build_system
+    - mkdir test_build_system
+    - cd test_build_system
+    # copy-paste the script from .test_build_system_template
+    # since `ESP_IDF_TEMPLATE_GIT` is a group variable and has higher precedence than job variable
+    # export here to override the group variable
+    #
+    # Clone the template app from github for macos runners
+    - export ESP_IDF_TEMPLATE_GIT="https://github.com/espressif/esp-idf-template.git"
+    - ${IDF_PATH}/tools/ci/${SHELL_TEST_SCRIPT}
 
 test_build_system_spaces:
   extends: .test_build_system_template
