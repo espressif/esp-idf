@@ -16,7 +16,6 @@
 
 #include <stdlib.h> //for abs()
 #include <string.h>
-#include "sdkconfig.h"  // TODO: [ESP32C5] IDF-8698 remove
 #include "esp_types.h"
 #include "soc/spi_periph.h"
 #include "soc/spi_struct.h"
@@ -150,15 +149,12 @@ static inline void spi_ll_set_clk_source(spi_dev_t *hw, spi_clock_source_t clk_s
 {
     uint32_t clk_id = 0;
     switch (clk_source) {
-    // TODO: [ESP32C5] IDF-8698
-#if CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
     case SOC_MOD_CLK_PLL_F160M:
         clk_id = 1;
         break;
     case SOC_MOD_CLK_RC_FAST:
         clk_id = 2;
         break;
-#endif
     case SOC_MOD_CLK_XTAL:
         clk_id = 0;
         break;
@@ -317,7 +313,7 @@ static inline void spi_ll_slave_reset(spi_dev_t *hw)
 /**
  * Reset SPI CPU TX FIFO
  *
- * On esp32c5, this function is not seperated
+ * On esp32c5, this function is not separated
  *
  * @param hw Beginning address of the peripheral registers.
  */
@@ -330,7 +326,7 @@ static inline void spi_ll_cpu_tx_fifo_reset(spi_dev_t *hw)
 /**
  * Reset SPI CPU RX FIFO
  *
- * On esp32c5, this function is not seperated
+ * On esp32c5, this function is not separated
  *
  * @param hw Beginning address of the peripheral registers.
  */
@@ -430,15 +426,12 @@ static inline void spi_ll_dma_set_rx_eof_generation(spi_dev_t *hw, bool enable)
  */
 static inline void spi_ll_write_buffer(spi_dev_t *hw, const uint8_t *buffer_to_send, size_t bitlen)
 {
-    // TODO: [ESP32C5] IDF-8698
-#if CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
     for (int x = 0; x < bitlen; x += 32) {
         //Use memcpy to get around alignment issues for txdata
         uint32_t word;
         memcpy(&word, &buffer_to_send[x / 8], 4);
         hw->data_buf[(x / 32)].buf = word;
     }
-#endif
 }
 
 /**
@@ -454,8 +447,7 @@ static inline void spi_ll_write_buffer_byte(spi_dev_t *hw, int byte_id, uint8_t 
     HAL_ASSERT(byte_id + len <= 64);
     HAL_ASSERT(len > 0);
     HAL_ASSERT(byte_id >= 0);
-    // TODO: [ESP32C5] IDF-8698
-#if CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
+
     while (len > 0) {
         uint32_t word;
         int offset = byte_id % 4;
@@ -475,7 +467,6 @@ static inline void spi_ll_write_buffer_byte(spi_dev_t *hw, int byte_id, uint8_t 
         byte_id += copy_len;
         len -= copy_len;
     }
-#endif
 }
 
 /**
@@ -487,8 +478,6 @@ static inline void spi_ll_write_buffer_byte(spi_dev_t *hw, int byte_id, uint8_t 
  */
 static inline void spi_ll_read_buffer(spi_dev_t *hw, uint8_t *buffer_to_rcv, size_t bitlen)
 {
-    // TODO: [ESP32C5] IDF-8698
-#if CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
     for (int x = 0; x < bitlen; x += 32) {
         //Do a memcpy to get around possible alignment issues in rx_buffer
         uint32_t word = hw->data_buf[x / 32].buf;
@@ -498,7 +487,6 @@ static inline void spi_ll_read_buffer(spi_dev_t *hw, uint8_t *buffer_to_rcv, siz
         }
         memcpy(&buffer_to_rcv[x / 8], &word, (len + 7) / 8);
     }
-#endif
 }
 
 /**
@@ -511,8 +499,6 @@ static inline void spi_ll_read_buffer(spi_dev_t *hw, uint8_t *buffer_to_rcv, siz
  */
 static inline void spi_ll_read_buffer_byte(spi_dev_t *hw, int byte_id, uint8_t *out_data, int len)
 {
-    // TODO: [ESP32C5] IDF-8698
-#if CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
     while (len > 0) {
         uint32_t word = hw->data_buf[byte_id / 4].buf;
         int offset = byte_id % 4;
@@ -526,7 +512,6 @@ static inline void spi_ll_read_buffer_byte(spi_dev_t *hw, int byte_id, uint8_t *
         out_data += copy_len;
         len -= copy_len;
     }
-#endif
 }
 
 /*------------------------------------------------------------------------------
@@ -726,7 +711,7 @@ static inline void spi_ll_master_set_clock_by_reg(spi_dev_t *hw, const spi_ll_cl
  * Get the frequency of given dividers. Don't use in app.
  *
  * @param fapb APB clock of the system.
- * @param pre  Pre devider.
+ * @param pre  Pre divider.
  * @param n    Main divider.
  *
  * @return     Frequency of given dividers.
@@ -737,10 +722,10 @@ static inline int spi_ll_freq_for_pre_n(int fapb, int pre, int n)
 }
 
 /**
- * Calculate the nearest frequency avaliable for master.
+ * Calculate the nearest frequency available for master.
  *
  * @param fapb       APB clock of the system.
- * @param hz         Frequncy desired.
+ * @param hz         Frequency desired.
  * @param duty_cycle Duty cycle desired.
  * @param out_reg    Output address to store the calculated clock configurations for the return frequency.
  *
@@ -820,7 +805,7 @@ static inline int spi_ll_master_cal_clock(int fapb, int hz, int duty_cycle, spi_
  *
  * @param hw         Beginning address of the peripheral registers.
  * @param fapb       APB clock of the system.
- * @param hz         Frequncy desired.
+ * @param hz         Frequency desired.
  * @param duty_cycle Duty cycle desired.
  *
  * @return           Actual frequency that is used.

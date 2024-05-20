@@ -819,7 +819,7 @@ typedef union {
         /** clk_equ_sysclk : R/W; bitpos: [31]; default: 1;
          *  Configures whether or not the SPI_CLK is equal to APB_CLK in master transfer.\\
          *  0: SPI_CLK is divided from APB_CLK.\\
-         *  1: SPI_CLK is eqaul to APB_CLK.\\
+         *  1: SPI_CLK is equal to APB_CLK.\\
          *  Can be configured in CONF state.
          */
         uint32_t clk_equ_sysclk:1;
@@ -1555,7 +1555,7 @@ typedef union {
 
 
 /** Group: CPU-controlled data buffer */
-/** Type of w0 register
+/** Type of wn register
  *  SPI CPU-controlled buffer0
  */
 typedef union {
@@ -1563,206 +1563,10 @@ typedef union {
         /** buf0 : R/W/SS; bitpos: [31:0]; default: 0;
          *  32-bit data buffer $n.
          */
-        uint32_t buf0:32;
+        uint32_t buf:32;
     };
     uint32_t val;
-} spi_w0_reg_t;
-
-/** Type of w1 register
- *  SPI CPU-controlled buffer1
- */
-typedef union {
-    struct {
-        /** buf1 : R/W/SS; bitpos: [31:0]; default: 0;
-         *  32-bit data buffer $n.
-         */
-        uint32_t buf1:32;
-    };
-    uint32_t val;
-} spi_w1_reg_t;
-
-/** Type of w2 register
- *  SPI CPU-controlled buffer2
- */
-typedef union {
-    struct {
-        /** buf2 : R/W/SS; bitpos: [31:0]; default: 0;
-         *  32-bit data buffer $n.
-         */
-        uint32_t buf2:32;
-    };
-    uint32_t val;
-} spi_w2_reg_t;
-
-/** Type of w3 register
- *  SPI CPU-controlled buffer3
- */
-typedef union {
-    struct {
-        /** buf3 : R/W/SS; bitpos: [31:0]; default: 0;
-         *  32-bit data buffer $n.
-         */
-        uint32_t buf3:32;
-    };
-    uint32_t val;
-} spi_w3_reg_t;
-
-/** Type of w4 register
- *  SPI CPU-controlled buffer4
- */
-typedef union {
-    struct {
-        /** buf4 : R/W/SS; bitpos: [31:0]; default: 0;
-         *  32-bit data buffer $n.
-         */
-        uint32_t buf4:32;
-    };
-    uint32_t val;
-} spi_w4_reg_t;
-
-/** Type of w5 register
- *  SPI CPU-controlled buffer5
- */
-typedef union {
-    struct {
-        /** buf5 : R/W/SS; bitpos: [31:0]; default: 0;
-         *  32-bit data buffer $n.
-         */
-        uint32_t buf5:32;
-    };
-    uint32_t val;
-} spi_w5_reg_t;
-
-/** Type of w6 register
- *  SPI CPU-controlled buffer6
- */
-typedef union {
-    struct {
-        /** buf6 : R/W/SS; bitpos: [31:0]; default: 0;
-         *  32-bit data buffer $n.
-         */
-        uint32_t buf6:32;
-    };
-    uint32_t val;
-} spi_w6_reg_t;
-
-/** Type of w7 register
- *  SPI CPU-controlled buffer7
- */
-typedef union {
-    struct {
-        /** buf7 : R/W/SS; bitpos: [31:0]; default: 0;
-         *  32-bit data buffer $n.
-         */
-        uint32_t buf7:32;
-    };
-    uint32_t val;
-} spi_w7_reg_t;
-
-/** Type of w8 register
- *  SPI CPU-controlled buffer8
- */
-typedef union {
-    struct {
-        /** buf8 : R/W/SS; bitpos: [31:0]; default: 0;
-         *  32-bit data buffer $n.
-         */
-        uint32_t buf8:32;
-    };
-    uint32_t val;
-} spi_w8_reg_t;
-
-/** Type of w9 register
- *  SPI CPU-controlled buffer9
- */
-typedef union {
-    struct {
-        /** buf9 : R/W/SS; bitpos: [31:0]; default: 0;
-         *  32-bit data buffer $n.
-         */
-        uint32_t buf9:32;
-    };
-    uint32_t val;
-} spi_w9_reg_t;
-
-/** Type of w10 register
- *  SPI CPU-controlled buffer10
- */
-typedef union {
-    struct {
-        /** buf10 : R/W/SS; bitpos: [31:0]; default: 0;
-         *  32-bit data buffer $n.
-         */
-        uint32_t buf10:32;
-    };
-    uint32_t val;
-} spi_w10_reg_t;
-
-/** Type of w11 register
- *  SPI CPU-controlled buffer11
- */
-typedef union {
-    struct {
-        /** buf11 : R/W/SS; bitpos: [31:0]; default: 0;
-         *  32-bit data buffer $n.
-         */
-        uint32_t buf11:32;
-    };
-    uint32_t val;
-} spi_w11_reg_t;
-
-/** Type of w12 register
- *  SPI CPU-controlled buffer12
- */
-typedef union {
-    struct {
-        /** buf12 : R/W/SS; bitpos: [31:0]; default: 0;
-         *  32-bit data buffer $n.
-         */
-        uint32_t buf12:32;
-    };
-    uint32_t val;
-} spi_w12_reg_t;
-
-/** Type of w13 register
- *  SPI CPU-controlled buffer13
- */
-typedef union {
-    struct {
-        /** buf13 : R/W/SS; bitpos: [31:0]; default: 0;
-         *  32-bit data buffer $n.
-         */
-        uint32_t buf13:32;
-    };
-    uint32_t val;
-} spi_w13_reg_t;
-
-/** Type of w14 register
- *  SPI CPU-controlled buffer14
- */
-typedef union {
-    struct {
-        /** buf14 : R/W/SS; bitpos: [31:0]; default: 0;
-         *  32-bit data buffer $n.
-         */
-        uint32_t buf14:32;
-    };
-    uint32_t val;
-} spi_w14_reg_t;
-
-/** Type of w15 register
- *  SPI CPU-controlled buffer15
- */
-typedef union {
-    struct {
-        /** buf15 : R/W/SS; bitpos: [31:0]; default: 0;
-         *  32-bit data buffer $n.
-         */
-        uint32_t buf15:32;
-    };
-    uint32_t val;
-} spi_w15_reg_t;
-
+} spi_wn_reg_t;
 
 /** Group: Version register */
 /** Type of date register
@@ -1797,25 +1601,10 @@ typedef struct {
     volatile spi_dma_int_ena_reg_t dma_int_ena;
     volatile spi_dma_int_clr_reg_t dma_int_clr;
     volatile spi_dma_int_raw_reg_t dma_int_raw;
-    volatile spi_dma_int_st_reg_t dma_int_st;
+    volatile spi_dma_int_st_reg_t  dma_int_sta;
     volatile spi_dma_int_set_reg_t dma_int_set;
     uint32_t reserved_048[20];
-    volatile spi_w0_reg_t w0;
-    volatile spi_w1_reg_t w1;
-    volatile spi_w2_reg_t w2;
-    volatile spi_w3_reg_t w3;
-    volatile spi_w4_reg_t w4;
-    volatile spi_w5_reg_t w5;
-    volatile spi_w6_reg_t w6;
-    volatile spi_w7_reg_t w7;
-    volatile spi_w8_reg_t w8;
-    volatile spi_w9_reg_t w9;
-    volatile spi_w10_reg_t w10;
-    volatile spi_w11_reg_t w11;
-    volatile spi_w12_reg_t w12;
-    volatile spi_w13_reg_t w13;
-    volatile spi_w14_reg_t w14;
-    volatile spi_w15_reg_t w15;
+    volatile spi_wn_reg_t data_buf[16];
     uint32_t reserved_0d8[2];
     volatile spi_slave_reg_t slave;
     volatile spi_slave1_reg_t slave1;

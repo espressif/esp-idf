@@ -131,7 +131,6 @@ extern "C" {
 #define GPIO_PAD_PULLDOWN(num) do{PIN_PULLUP_DIS(IOMUX_REG_GPIO##num);PIN_PULLDWN_EN(IOMUX_REG_GPIO##num);}while(0)
 #define GPIO_PAD_SET_DRV(num, drv) PIN_SET_DRV(IOMUX_REG_GPIO##num, drv)
 
-// TODO: [ESP32C5] 	IDF-8698 need check
 #define SPI_HD_GPIO_NUM              20
 #define SPI_WP_GPIO_NUM              18
 #define SPI_CS0_GPIO_NUM             16

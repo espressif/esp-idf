@@ -5,16 +5,16 @@
  */
 
 #pragma once
+#include "soc/io_mux_reg.h"
 
-// TODO: [ESP32C5] IDF-8698 (inherit from C6)
-
+// MSPI IO_MUX pin
 #define SPI_FUNC_NUM            0
-#define SPI_IOMUX_PIN_NUM_CS    24
-#define SPI_IOMUX_PIN_NUM_CLK   29
-#define SPI_IOMUX_PIN_NUM_MOSI  30
-#define SPI_IOMUX_PIN_NUM_MISO  25
-#define SPI_IOMUX_PIN_NUM_WP    26
-#define SPI_IOMUX_PIN_NUM_HD    28
+#define SPI_IOMUX_PIN_NUM_CS    SPI_CS0_GPIO_NUM
+#define SPI_IOMUX_PIN_NUM_CLK   SPI_CLK_GPIO_NUM
+#define SPI_IOMUX_PIN_NUM_MOSI  SPI_D_GPIO_NUM
+#define SPI_IOMUX_PIN_NUM_MISO  SPI_Q_GPIO_NUM
+#define SPI_IOMUX_PIN_NUM_WP    SPI_WP_GPIO_NUM
+#define SPI_IOMUX_PIN_NUM_HD    SPI_HD_GPIO_NUM
 
 #define SPI2_FUNC_NUM           2
 #define SPI2_IOMUX_PIN_NUM_MISO 2
@@ -22,4 +22,4 @@
 #define SPI2_IOMUX_PIN_NUM_WP   5
 #define SPI2_IOMUX_PIN_NUM_CLK  6
 #define SPI2_IOMUX_PIN_NUM_MOSI 7
-#define SPI2_IOMUX_PIN_NUM_CS   16
+#define SPI2_IOMUX_PIN_NUM_CS   10
