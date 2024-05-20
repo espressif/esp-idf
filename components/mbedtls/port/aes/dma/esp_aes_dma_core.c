@@ -452,7 +452,7 @@ static esp_err_t generate_descriptor_list(const uint8_t *buffer, const size_t le
 
         // add start alignment node to the DMA linked list
         dma_desc_populate(dma_descriptors, start_alignment_stream_buffer, unaligned_start_bytes, max_desc_size, populated_dma_descs);
-        populated_dma_descs += (unaligned_start_bytes ? 1 : 0);
+        populated_dma_descs += 1;
     }
 
     if (aligned_block_bytes) {
@@ -474,7 +474,7 @@ static esp_err_t generate_descriptor_list(const uint8_t *buffer, const size_t le
 
         // add end alignment node to the DMA linked list
         dma_desc_populate(dma_descriptors, end_alignment_stream_buffer, unaligned_end_bytes, max_desc_size, populated_dma_descs);
-        populated_dma_descs += (unaligned_end_bytes ? 1 : 0);
+        populated_dma_descs += 1;
     }
 
     if (dma_desc_link(dma_descriptors, dma_descs_needed, cache_line_size) != ESP_OK) {
