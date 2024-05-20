@@ -14,6 +14,8 @@
 #include "soc/rtc_io_channel.h"
 #endif
 
+#include "soc/io_mux_reg.h"
+
 #ifdef __cplusplus
 extern "C"
 {

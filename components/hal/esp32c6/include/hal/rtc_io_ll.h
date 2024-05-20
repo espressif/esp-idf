@@ -68,11 +68,14 @@ static inline void rtcio_ll_iomux_func_sel(int rtcio_num, int func)
 /**
  * @brief Enable/Disable LP_IO peripheral clock.
  *
- * @param enable true to enable the clock / false to enable the clock
+ * @param enable true to enable the clock / false to disable the clock
  */
 static inline void _rtcio_ll_enable_io_clock(bool enable)
 {
     LPPERI.clk_en.lp_io_ck_en = enable;
+    while (LPPERI.clk_en.lp_io_ck_en != enable) {
+        ;
+    }
 }
 
 #define rtcio_ll_enable_io_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; _rtcio_ll_enable_io_clock(__VA_ARGS__)
@@ -92,9 +95,6 @@ static inline void rtcio_ll_function_select(int rtcio_num, rtcio_ll_func_t func)
     if (func == RTCIO_LL_FUNC_RTC) {
         // 0: GPIO connected to digital GPIO module. 1: GPIO connected to analog RTC module.
         uint32_t sel_mask = HAL_FORCE_READ_U32_REG_FIELD(LP_AON.gpio_mux, gpio_mux_sel);
-        if ((sel_mask & SOC_RTCIO_VALID_RTCIO_MASK) == 0) {
-            _rtcio_ll_enable_io_clock(true);
-        }
         sel_mask |= BIT(rtcio_num);
         HAL_FORCE_MODIFY_U32_REG_FIELD(LP_AON.gpio_mux, gpio_mux_sel, sel_mask);
         //0:RTC FUNCTION 1,2,3:Reserved
@@ -104,9 +104,6 @@ static inline void rtcio_ll_function_select(int rtcio_num, rtcio_ll_func_t func)
         uint32_t sel_mask = HAL_FORCE_READ_U32_REG_FIELD(LP_AON.gpio_mux, gpio_mux_sel);
         sel_mask &= ~BIT(rtcio_num);
         HAL_FORCE_MODIFY_U32_REG_FIELD(LP_AON.gpio_mux, gpio_mux_sel, sel_mask);
-        if ((sel_mask & SOC_RTCIO_VALID_RTCIO_MASK) == 0) {
-            _rtcio_ll_enable_io_clock(false);
-        }
     }
 }
 

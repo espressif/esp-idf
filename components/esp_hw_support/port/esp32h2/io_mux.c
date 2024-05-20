@@ -1,15 +1,21 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include "freertos/FreeRTOS.h"
 #include "esp_private/io_mux.h"
+#include "esp_private/periph_ctrl.h"
 #include "hal/gpio_ll.h"
+#include "hal/rtc_io_ll.h"
+
+#define RTCIO_RCC_ATOMIC()  PERIPH_RCC_ATOMIC()
 
 static portMUX_TYPE s_io_mux_spinlock = portMUX_INITIALIZER_UNLOCKED;
 static soc_module_clk_t s_io_mux_clk_src = 0; // by default, the clock source is not set explicitly by any consumer (e.g. SDM, Filter)
+static uint8_t s_rtc_io_enabled_cnt[MAX_RTC_GPIO_NUM] = { 0 };
+static uint32_t s_rtc_io_using_mask = 0;
 
 esp_err_t io_mux_set_clock_source(soc_module_clk_t clk_src)
 {
@@ -30,4 +36,28 @@ esp_err_t io_mux_set_clock_source(soc_module_clk_t clk_src)
     gpio_ll_iomux_set_clk_src(clk_src);
 
     return ESP_OK;
+}
+
+void io_mux_enable_lp_io_clock(gpio_num_t gpio_num, bool enable)
+{
+    portENTER_CRITICAL(&s_io_mux_spinlock);
+    if (enable) {
+        if (s_rtc_io_enabled_cnt[gpio_num] == 0) {
+            s_rtc_io_using_mask |= (1ULL << gpio_num);
+        }
+        s_rtc_io_enabled_cnt[gpio_num]++;
+    } else if (!enable && (s_rtc_io_enabled_cnt[gpio_num] > 0)) {
+        s_rtc_io_enabled_cnt[gpio_num]--;
+        if (s_rtc_io_enabled_cnt[gpio_num] == 0) {
+            s_rtc_io_using_mask &= ~(1ULL << gpio_num);
+        }
+    }
+    RTCIO_RCC_ATOMIC() {
+        if (s_rtc_io_using_mask == 0) {
+            rtcio_ll_enable_io_clock(false);
+        } else {
+            rtcio_ll_enable_io_clock(true);
+        }
+    }
+    portEXIT_CRITICAL(&s_io_mux_spinlock);
 }

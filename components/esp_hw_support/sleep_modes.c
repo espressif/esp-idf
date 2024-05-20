@@ -15,10 +15,10 @@
 #include "esp_sleep.h"
 #include "esp_private/esp_sleep_internal.h"
 #include "esp_private/esp_timer_private.h"
-#include "esp_private/periph_ctrl.h"
 #include "esp_private/rtc_clk.h"
 #include "esp_private/sleep_event.h"
 #include "esp_private/system_internal.h"
+#include "esp_private/io_mux.h"
 #include "esp_log.h"
 #include "esp_newlib.h"
 #include "esp_timer.h"
@@ -117,16 +117,6 @@
 
 #if SOC_PM_RETENTION_SW_TRIGGER_REGDMA
 #include "esp_private/sleep_retention.h"
-#endif
-
-#if SOC_LP_IO_CLOCK_IS_INDEPENDENT && !SOC_RTCIO_RCC_IS_INDEPENDENT
-// For `rtcio_hal_function_select` using, clock reg option is inlined in it,
-// so remove the declaration check of __DECLARE_RCC_RC_ATOMIC_ENV
-#define RTCIO_RCC_ATOMIC()                              \
-    for (int i = 1; i ? (periph_rcc_enter(), 1) : 0;    \
-         periph_rcc_exit(), i--)
-#else
-#define RTCIO_RCC_ATOMIC()
 #endif
 
 // If light sleep time is less than that, don't power down flash
@@ -1694,10 +1684,11 @@ esp_err_t esp_sleep_enable_ext0_wakeup(gpio_num_t gpio_num, int level)
 static void ext0_wakeup_prepare(void)
 {
     int rtc_gpio_num = s_config.ext0_rtc_gpio_num;
+#if SOC_LP_IO_CLOCK_IS_INDEPENDENT
+    io_mux_enable_lp_io_clock(rtc_gpio_num, true);
+#endif
     rtcio_hal_ext0_set_wakeup_pin(rtc_gpio_num, s_config.ext0_trigger_level);
-    RTCIO_RCC_ATOMIC() {
-        rtcio_hal_function_select(rtc_gpio_num, RTCIO_LL_FUNC_RTC);
-    }
+    rtcio_hal_function_select(rtc_gpio_num, RTCIO_LL_FUNC_RTC);
     rtcio_hal_input_enable(rtc_gpio_num);
 }
 
@@ -1826,11 +1817,12 @@ static void ext1_wakeup_prepare(void)
         if ((rtc_gpio_mask & BIT(rtc_pin)) == 0) {
             continue;
         }
+#if SOC_LP_IO_CLOCK_IS_INDEPENDENT
+        io_mux_enable_lp_io_clock(rtc_pin, true);
+#endif
 #if SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
         // Route pad to RTC
-        RTCIO_RCC_ATOMIC() {
-            rtcio_hal_function_select(rtc_pin, RTCIO_LL_FUNC_RTC);
-        }
+        rtcio_hal_function_select(rtc_pin, RTCIO_LL_FUNC_RTC);
         // set input enable in sleep mode
         rtcio_hal_input_enable(rtc_pin);
 #if SOC_PM_SUPPORT_RTC_PERIPH_PD
@@ -1845,9 +1837,7 @@ static void ext1_wakeup_prepare(void)
         * a pathway to EXT1. */
 
         // Route pad to DIGITAL
-        RTCIO_RCC_ATOMIC() {
-            rtcio_hal_function_select(rtc_pin, RTCIO_LL_FUNC_DIGITAL);
-        }
+        rtcio_hal_function_select(rtc_pin, RTCIO_LL_FUNC_DIGITAL);
         // set input enable
         gpio_ll_input_enable(&GPIO, gpio);
         // hold rtc_pin to use it during sleep state
