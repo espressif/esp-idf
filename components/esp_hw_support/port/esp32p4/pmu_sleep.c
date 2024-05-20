@@ -12,11 +12,13 @@
 #include "esp_err.h"
 #include "esp_attr.h"
 #include "esp_private/regi2c_ctrl.h"
+#include "esp32p4/rom/cache.h"
 #include "soc/chip_revision.h"
 #include "soc/soc.h"
 #include "soc/regi2c_syspll.h"
 #include "soc/regi2c_cpll.h"
 #include "soc/rtc.h"
+#include "soc/cache_reg.h"
 #include "soc/pau_reg.h"
 #include "soc/pmu_reg.h"
 #include "soc/pmu_struct.h"
@@ -285,6 +287,11 @@ void pmu_sleep_shutdown_ldo(void) {
     CLEAR_PERI_REG_MASK(PMU_HP_ACTIVE_HP_REGULATOR0_REG, PMU_HP_ACTIVE_HP_REGULATOR_XPD);
 }
 
+FORCE_INLINE_ATTR void sleep_writeback_l1_dcache(void) {
+    Cache_WriteBack_All(CACHE_MAP_L1_DCACHE);
+    while (!REG_GET_BIT(CACHE_SYNC_CTRL_REG, CACHE_SYNC_DONE));
+}
+
 TCM_IRAM_ATTR uint32_t pmu_sleep_start(uint32_t wakeup_opt, uint32_t reject_opt, uint32_t lslp_mem_inf_fpu, bool dslp)
 {
     lp_aon_hal_inform_wakeup_type(dslp);
@@ -296,6 +303,8 @@ TCM_IRAM_ATTR uint32_t pmu_sleep_start(uint32_t wakeup_opt, uint32_t reject_opt,
     pmu_ll_hp_clear_wakeup_intr_status(PMU_instance()->hal->dev);
     pmu_ll_hp_clear_reject_intr_status(PMU_instance()->hal->dev);
     pmu_ll_hp_clear_reject_cause(PMU_instance()->hal->dev);
+
+    sleep_writeback_l1_dcache();
 
     /* Start entry into sleep mode */
     pmu_ll_hp_set_sleep_enable(PMU_instance()->hal->dev);

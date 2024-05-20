@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -132,6 +132,8 @@ enum {
     ESP_ERR_SLEEP_REJECT = ESP_ERR_INVALID_STATE,
     ESP_ERR_SLEEP_TOO_SHORT_SLEEP_DURATION = ESP_ERR_INVALID_ARG,
 };
+
+#define ESP_SLEEP_POWER_DOWN_CPU (CONFIG_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP || (SOC_CPU_IN_TOP_DOMAIN && CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP))
 
 /**
  * @brief Disable wakeup source
@@ -713,7 +715,7 @@ void esp_default_wake_deep_sleep(void);
  */
 void esp_deep_sleep_disable_rom_logging(void);
 
-#if CONFIG_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP
+#if ESP_SLEEP_POWER_DOWN_CPU
 
 #if SOC_PM_CPU_RETENTION_BY_RTCCNTL
 /**
@@ -752,7 +754,7 @@ esp_err_t esp_sleep_cpu_retention_init(void);
  * Release system retention memory.
  */
 esp_err_t esp_sleep_cpu_retention_deinit(void);
-#endif // CONFIG_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP
+#endif // ESP_SLEEP_POWER_DOWN_CPU
 
 /**
  * @brief Configure to isolate all GPIO pins in sleep state
