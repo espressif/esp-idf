@@ -2179,7 +2179,7 @@ static uint32_t get_power_down_flags(void)
     }
 #endif
 
-#if SOC_PM_SUPPORT_CPU_PD
+#if SOC_PM_SUPPORT_CPU_PD && ESP_SLEEP_POWER_DOWN_CPU
     if ((s_config.domain[ESP_PD_DOMAIN_CPU].pd_option != ESP_PD_OPTION_ON) && cpu_domain_pd_allowed()) {
         pd_flags |= RTC_SLEEP_PD_CPU;
     }
