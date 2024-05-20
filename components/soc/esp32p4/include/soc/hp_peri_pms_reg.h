@@ -14,7 +14,7 @@ extern "C" {
 /** PMS_HP_PERI_PMS_DATE_REG register
  *  Version control register
  */
-#define PMS_HP_PERI_PMS_DATE_REG (DR_REG_PMS_BASE + 0x0)
+#define PMS_HP_PERI_PMS_DATE_REG (DR_REG_HP_PERI_PMS_BASE + 0x0)
 /** PMS_HP_PERI_PMS_DATE : R/W; bitpos: [31:0]; default: 2294537;
  *  Version control register.
  */
@@ -26,7 +26,7 @@ extern "C" {
 /** PMS_HP_PERI_PMS_CLK_EN_REG register
  *  Clock gating register
  */
-#define PMS_HP_PERI_PMS_CLK_EN_REG (DR_REG_PMS_BASE + 0x4)
+#define PMS_HP_PERI_PMS_CLK_EN_REG (DR_REG_HP_PERI_PMS_BASE + 0x4)
 /** PMS_HP_PERI_PMS_CLK_EN : R/W; bitpos: [0]; default: 1;
  *  Configures whether to keep the clock always on.
  *  0: Enable automatic clock gating
@@ -40,7 +40,7 @@ extern "C" {
 /** PMS_CORE0_MM_HP_PERI_PMS_REG0_REG register
  *  Permission control register0 for HP CPU0 in machine mode
  */
-#define PMS_CORE0_MM_HP_PERI_PMS_REG0_REG (DR_REG_PMS_BASE + 0x8)
+#define PMS_CORE0_MM_HP_PERI_PMS_REG0_REG (DR_REG_HP_PERI_PMS_BASE + 0x8)
 /** PMS_CORE0_MM_PSRAM_ALLOW : R/W; bitpos: [0]; default: 1;
  *  Configures whether HP CPU0 in machine mode has permission to access external RAM
  *  without going through cache.
@@ -140,7 +140,7 @@ extern "C" {
 /** PMS_CORE0_MM_HP_PERI_PMS_REG1_REG register
  *  Permission control register1 for HP CPU0 in machine mode
  */
-#define PMS_CORE0_MM_HP_PERI_PMS_REG1_REG (DR_REG_PMS_BASE + 0xc)
+#define PMS_CORE0_MM_HP_PERI_PMS_REG1_REG (DR_REG_HP_PERI_PMS_BASE + 0xc)
 /** PMS_CORE0_MM_HP_USBOTG_ALLOW : R/W; bitpos: [0]; default: 1;
  *  Configures whether HP CPU0 in machine mode has permission to access HP high-speed
  *  USB 2.0 OTG.
@@ -421,7 +421,7 @@ extern "C" {
 /** PMS_CORE0_MM_HP_PERI_PMS_REG2_REG register
  *  Permission control register2 for HP CPU0 in machine mode
  */
-#define PMS_CORE0_MM_HP_PERI_PMS_REG2_REG (DR_REG_PMS_BASE + 0x10)
+#define PMS_CORE0_MM_HP_PERI_PMS_REG2_REG (DR_REG_HP_PERI_PMS_BASE + 0x10)
 /** PMS_CORE0_MM_HP_MCPWM0_ALLOW : R/W; bitpos: [0]; default: 1;
  *  Configures whether HP CPU0 in machine mode has permission to access HP MCPWM0.
  *  0: Not allowed
@@ -702,7 +702,7 @@ extern "C" {
 /** PMS_CORE0_MM_HP_PERI_PMS_REG3_REG register
  *  Permission control register3 for HP CPU0 in machine mode
  */
-#define PMS_CORE0_MM_HP_PERI_PMS_REG3_REG (DR_REG_PMS_BASE + 0x14)
+#define PMS_CORE0_MM_HP_PERI_PMS_REG3_REG (DR_REG_HP_PERI_PMS_BASE + 0x14)
 /** PMS_CORE0_MM_HP_GPIO_ALLOW : R/W; bitpos: [0]; default: 1;
  *  Configures whether HP CPU0 in machine mode has permission to access HP GPIO Matrix.
  *  0: Not allowed
@@ -754,7 +754,7 @@ extern "C" {
 /** PMS_CORE0_UM_HP_PERI_PMS_REG0_REG register
  *  Permission control register0 for HP CPU0 in user mode
  */
-#define PMS_CORE0_UM_HP_PERI_PMS_REG0_REG (DR_REG_PMS_BASE + 0x18)
+#define PMS_CORE0_UM_HP_PERI_PMS_REG0_REG (DR_REG_HP_PERI_PMS_BASE + 0x18)
 /** PMS_CORE0_UM_PSRAM_ALLOW : R/W; bitpos: [0]; default: 1;
  *  Configures whether HP CPU0 in user mode has permission to access external RAM
  *  without going through cache.
@@ -853,7 +853,7 @@ extern "C" {
 /** PMS_CORE0_UM_HP_PERI_PMS_REG1_REG register
  *  Permission control register1 for HP CPU0 in user mode
  */
-#define PMS_CORE0_UM_HP_PERI_PMS_REG1_REG (DR_REG_PMS_BASE + 0x1c)
+#define PMS_CORE0_UM_HP_PERI_PMS_REG1_REG (DR_REG_HP_PERI_PMS_BASE + 0x1c)
 /** PMS_CORE0_UM_HP_USBOTG_ALLOW : R/W; bitpos: [0]; default: 1;
  *  Configures whether HP CPU0 in user mode has permission to access HP high-speed USB
  *  2.0 OTG.
@@ -1128,7 +1128,7 @@ extern "C" {
 /** PMS_CORE0_UM_HP_PERI_PMS_REG2_REG register
  *  Permission control register2 for HP CPU0 in user mode
  */
-#define PMS_CORE0_UM_HP_PERI_PMS_REG2_REG (DR_REG_PMS_BASE + 0x20)
+#define PMS_CORE0_UM_HP_PERI_PMS_REG2_REG (DR_REG_HP_PERI_PMS_BASE + 0x20)
 /** PMS_CORE0_UM_HP_MCPWM0_ALLOW : R/W; bitpos: [0]; default: 1;
  *  Configures whether HP CPU0 in user mode has permission to access HP MCPWM0.
  *  0: Not allowed
@@ -1407,7 +1407,7 @@ extern "C" {
 /** PMS_CORE0_UM_HP_PERI_PMS_REG3_REG register
  *  Permission control register3 for HP CPU0 in user mode
  */
-#define PMS_CORE0_UM_HP_PERI_PMS_REG3_REG (DR_REG_PMS_BASE + 0x24)
+#define PMS_CORE0_UM_HP_PERI_PMS_REG3_REG (DR_REG_HP_PERI_PMS_BASE + 0x24)
 /** PMS_CORE0_UM_HP_GPIO_ALLOW : R/W; bitpos: [0]; default: 1;
  *  Configures whether HP CPU0 in user mode has permission to access HP GPIO Matrix.
  *  0: Not allowed
@@ -1458,7 +1458,7 @@ extern "C" {
 /** PMS_CORE1_MM_HP_PERI_PMS_REG0_REG register
  *  Permission control register0 for HP CPU1 in machine mode
  */
-#define PMS_CORE1_MM_HP_PERI_PMS_REG0_REG (DR_REG_PMS_BASE + 0x28)
+#define PMS_CORE1_MM_HP_PERI_PMS_REG0_REG (DR_REG_HP_PERI_PMS_BASE + 0x28)
 /** PMS_CORE1_MM_PSRAM_ALLOW : R/W; bitpos: [0]; default: 1;
  *  Configures whether HP CPU1 in machine mode has permission to access external RAM
  *  without going through cache.
@@ -1558,7 +1558,7 @@ extern "C" {
 /** PMS_CORE1_MM_HP_PERI_PMS_REG1_REG register
  *  Permission control register1 for HP CPU1 in machine mode
  */
-#define PMS_CORE1_MM_HP_PERI_PMS_REG1_REG (DR_REG_PMS_BASE + 0x2c)
+#define PMS_CORE1_MM_HP_PERI_PMS_REG1_REG (DR_REG_HP_PERI_PMS_BASE + 0x2c)
 /** PMS_CORE1_MM_HP_USBOTG_ALLOW : R/W; bitpos: [0]; default: 1;
  *  Configures whether HP CPU1 in machine mode has permission to access HP high-speed
  *  USB 2.0 OTG.
@@ -1839,7 +1839,7 @@ extern "C" {
 /** PMS_CORE1_MM_HP_PERI_PMS_REG2_REG register
  *  Permission control register2 for HP CPU1 in machine mode
  */
-#define PMS_CORE1_MM_HP_PERI_PMS_REG2_REG (DR_REG_PMS_BASE + 0x30)
+#define PMS_CORE1_MM_HP_PERI_PMS_REG2_REG (DR_REG_HP_PERI_PMS_BASE + 0x30)
 /** PMS_CORE1_MM_HP_MCPWM0_ALLOW : R/W; bitpos: [0]; default: 1;
  *  Configures whether HP CPU1 in machine mode has permission to access HP MCPWM0.
  *  0: Not allowed
@@ -2120,7 +2120,7 @@ extern "C" {
 /** PMS_CORE1_MM_HP_PERI_PMS_REG3_REG register
  *  Permission control register3 for HP CPU1 in machine mode
  */
-#define PMS_CORE1_MM_HP_PERI_PMS_REG3_REG (DR_REG_PMS_BASE + 0x34)
+#define PMS_CORE1_MM_HP_PERI_PMS_REG3_REG (DR_REG_HP_PERI_PMS_BASE + 0x34)
 /** PMS_CORE1_MM_HP_GPIO_ALLOW : R/W; bitpos: [0]; default: 1;
  *  Configures whether HP CPU1 in machine mode has permission to access HP GPIO Matrix.
  *  0: Not allowed
@@ -2172,7 +2172,7 @@ extern "C" {
 /** PMS_CORE1_UM_HP_PERI_PMS_REG0_REG register
  *  Permission control register0 for HP CPU1 in user mode
  */
-#define PMS_CORE1_UM_HP_PERI_PMS_REG0_REG (DR_REG_PMS_BASE + 0x38)
+#define PMS_CORE1_UM_HP_PERI_PMS_REG0_REG (DR_REG_HP_PERI_PMS_BASE + 0x38)
 /** PMS_CORE1_UM_PSRAM_ALLOW : R/W; bitpos: [0]; default: 1;
  *  Configures whether HP CPU1 in user mode has permission to access external RAM
  *  without going through cache.
@@ -2271,7 +2271,7 @@ extern "C" {
 /** PMS_CORE1_UM_HP_PERI_PMS_REG1_REG register
  *  Permission control register1 for HP CPU1 in user mode
  */
-#define PMS_CORE1_UM_HP_PERI_PMS_REG1_REG (DR_REG_PMS_BASE + 0x3c)
+#define PMS_CORE1_UM_HP_PERI_PMS_REG1_REG (DR_REG_HP_PERI_PMS_BASE + 0x3c)
 /** PMS_CORE1_UM_HP_USBOTG_ALLOW : R/W; bitpos: [0]; default: 1;
  *  Configures whether HP CPU1 in user mode has permission to access HP high-speed USB
  *  2.0 OTG.
@@ -2546,7 +2546,7 @@ extern "C" {
 /** PMS_CORE1_UM_HP_PERI_PMS_REG2_REG register
  *  Permission control register2 for HP CPU1 in user mode
  */
-#define PMS_CORE1_UM_HP_PERI_PMS_REG2_REG (DR_REG_PMS_BASE + 0x40)
+#define PMS_CORE1_UM_HP_PERI_PMS_REG2_REG (DR_REG_HP_PERI_PMS_BASE + 0x40)
 /** PMS_CORE1_UM_HP_MCPWM0_ALLOW : R/W; bitpos: [0]; default: 1;
  *  Configures whether HP CPU1 in user mode has permission to access HP MCPWM0.
  *  0: Not allowed
@@ -2825,7 +2825,7 @@ extern "C" {
 /** PMS_CORE1_UM_HP_PERI_PMS_REG3_REG register
  *  Permission control register3 for HP CPU1 in user mode
  */
-#define PMS_CORE1_UM_HP_PERI_PMS_REG3_REG (DR_REG_PMS_BASE + 0x44)
+#define PMS_CORE1_UM_HP_PERI_PMS_REG3_REG (DR_REG_HP_PERI_PMS_BASE + 0x44)
 /** PMS_CORE1_UM_HP_GPIO_ALLOW : R/W; bitpos: [0]; default: 1;
  *  Configures whether HP CPU1 in user mode has permission to access HP GPIO Matrix.
  *  0: Not allowed
@@ -2876,7 +2876,7 @@ extern "C" {
 /** PMS_REGDMA_PERI_PMS_REG register
  *  Permission register for REGDMA
  */
-#define PMS_REGDMA_PERI_PMS_REG (DR_REG_PMS_BASE + 0x48)
+#define PMS_REGDMA_PERI_PMS_REG (DR_REG_HP_PERI_PMS_BASE + 0x48)
 /** PMS_REGDMA_PERI_ALLOW : R/W; bitpos: [0]; default: 1;
  *  Configures whether REGDMA has permission to access all HP peripheral (including CPU
  *  peripherals).

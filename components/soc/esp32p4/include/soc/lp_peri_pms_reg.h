@@ -14,7 +14,7 @@ extern "C" {
 /** PMS_LP_PERI_PMS_DATE_REG register
  *  Version control register
  */
-#define PMS_LP_PERI_PMS_DATE_REG (DR_REG_PMS_BASE + 0x0)
+#define PMS_LP_PERI_PMS_DATE_REG (DR_REG_LP_PERI_PMS_BASE + 0x0)
 /** PMS_LP_PERI_PMS_DATE : R/W; bitpos: [31:0]; default: 2294537;
  *  Version control register
  */
@@ -26,7 +26,7 @@ extern "C" {
 /** PMS_LP_PERI_PMS_CLK_EN_REG register
  *  Clock gating register
  */
-#define PMS_LP_PERI_PMS_CLK_EN_REG (DR_REG_PMS_BASE + 0x4)
+#define PMS_LP_PERI_PMS_CLK_EN_REG (DR_REG_LP_PERI_PMS_BASE + 0x4)
 /** PMS_LP_PERI_PMS_CLK_EN : R/W; bitpos: [0]; default: 1;
  *  Configures whether to keep the clock always on.
  *  0: Enable automatic clock gating
@@ -40,7 +40,7 @@ extern "C" {
 /** PMS_LP_MM_LP_PERI_PMS_REG0_REG register
  *  Permission control register0 for LP CPU in machine mode
  */
-#define PMS_LP_MM_LP_PERI_PMS_REG0_REG (DR_REG_PMS_BASE + 0x8)
+#define PMS_LP_MM_LP_PERI_PMS_REG0_REG (DR_REG_LP_PERI_PMS_BASE + 0x8)
 /** PMS_LP_MM_LP_SYSREG_ALLOW : R/W; bitpos: [0]; default: 1;
  *  Configures whether LP CPU in machine mode has permission to access LP system
  *  registers.
@@ -272,7 +272,7 @@ extern "C" {
 /** PMS_PERI_REGION0_LOW_REG register
  *  Region0 start address configuration register
  */
-#define PMS_PERI_REGION0_LOW_REG (DR_REG_PMS_BASE + 0xc)
+#define PMS_PERI_REGION0_LOW_REG (DR_REG_LP_PERI_PMS_BASE + 0xc)
 /** PMS_PERI_REGION0_LOW : R/W; bitpos: [31:2]; default: 0;
  *  Configures the high 30 bits of the start address of peripheral register's region0.
  */
@@ -284,7 +284,7 @@ extern "C" {
 /** PMS_PERI_REGION0_HIGH_REG register
  *  Region0 end address configuration register
  */
-#define PMS_PERI_REGION0_HIGH_REG (DR_REG_PMS_BASE + 0x10)
+#define PMS_PERI_REGION0_HIGH_REG (DR_REG_LP_PERI_PMS_BASE + 0x10)
 /** PMS_PERI_REGION0_HIGH : R/W; bitpos: [31:2]; default: 1073741823;
  *  Configures the high 30 bits of the end address of peripheral register's region0.
  */
@@ -296,7 +296,7 @@ extern "C" {
 /** PMS_PERI_REGION1_LOW_REG register
  *  Region1 start address configuration register
  */
-#define PMS_PERI_REGION1_LOW_REG (DR_REG_PMS_BASE + 0x14)
+#define PMS_PERI_REGION1_LOW_REG (DR_REG_LP_PERI_PMS_BASE + 0x14)
 /** PMS_PERI_REGION1_LOW : R/W; bitpos: [31:2]; default: 0;
  *  Configures the high 30 bits of the start address of peripheral register's region1.
  */
@@ -308,7 +308,7 @@ extern "C" {
 /** PMS_PERI_REGION1_HIGH_REG register
  *  Region1 end address configuration register
  */
-#define PMS_PERI_REGION1_HIGH_REG (DR_REG_PMS_BASE + 0x18)
+#define PMS_PERI_REGION1_HIGH_REG (DR_REG_LP_PERI_PMS_BASE + 0x18)
 /** PMS_PERI_REGION1_HIGH : R/W; bitpos: [31:2]; default: 1073741823;
  *  Configures the high 30 bits of the end address of peripheral register's region1.
  */
@@ -320,7 +320,7 @@ extern "C" {
 /** PMS_PERI_REGION_PMS_REG register
  *  Permission register of  region
  */
-#define PMS_PERI_REGION_PMS_REG (DR_REG_PMS_BASE + 0x1c)
+#define PMS_PERI_REGION_PMS_REG (DR_REG_LP_PERI_PMS_BASE + 0x1c)
 /** PMS_LP_CORE_REGION_PMS : R/W; bitpos: [1:0]; default: 3;
  *  Configures whether LP core in machine mode has permission to access address region0
  *  and address region1. Bit0 corresponds to region0 and bit1 corresponds to region1.
