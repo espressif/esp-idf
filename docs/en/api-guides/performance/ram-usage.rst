@@ -183,6 +183,7 @@ The following options will reduce IRAM usage of some ESP-IDF features:
 
    Any memory that ends up unused for static IRAM will be added to the heap.
 
+
 .. only:: esp32c3
 
     Flash Suspend Feature
@@ -233,3 +234,19 @@ The following options will reduce IRAM usage of some ESP-IDF features:
 .. note::
 
     Other configuration options exist that will increase IRAM usage by moving some functionality into IRAM, usually for performance, but the default option is not to do this. These are not listed here. The IRAM size impact of enabling these options is usually noted in the configuration item help text.
+
+
+.. only:: esp32s2 or esp32s3 or esp32p4
+
+   Change cache size
+   ^^^^^^^^^^^^^^^^^
+
+   The {IDF_TARGET_NAME} RAM memory available size is dependent on the size of cache. Decreasing the cache size in the Kconfig options listed below will result in increasing the available RAM.
+
+   .. list::
+
+      :esp32s2: - :ref:`CONFIG_ESP32S2_INSTRUCTION_CACHE_SIZE`
+      :esp32s2: - :ref:`CONFIG_ESP32S2_DATA_CACHE_SIZE`
+      :esp32s3: - :ref:`CONFIG_ESP32S3_INSTRUCTION_CACHE_SIZE`
+      :esp32s3: - :ref:`CONFIG_ESP32S3_DATA_CACHE_SIZE`
+      :esp32p4: - :ref:`CONFIG_CACHE_L2_CACHE_SIZE`
