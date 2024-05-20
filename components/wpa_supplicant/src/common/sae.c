@@ -601,8 +601,8 @@ static struct crypto_ec_point * sswu(struct crypto_ec *ec, int group,
 				     const struct crypto_bignum *u)
 {
 	int z_int;
-	const struct crypto_bignum *a, *b, *prime;
-	struct crypto_bignum *u2, *t1, *t2, *z, *t, *zero, *one, *two, *three,
+	const struct crypto_bignum *b, *prime;
+	struct crypto_bignum *a, *u2, *t1, *t2, *z, *t, *zero, *one, *two, *three,
 		*x1a, *x1b, *y = NULL;
 	struct crypto_bignum *x1 = NULL, *x2, *gx1, *gx2, *v = NULL;
 	struct crypto_bignum *tmp = NULL;
@@ -789,6 +789,7 @@ static struct crypto_ec_point * sswu(struct crypto_ec *ec, int group,
 	p = crypto_ec_point_from_bin(ec, x_y);
 
 fail:
+	crypto_bignum_deinit(a, 0);
 	crypto_bignum_deinit(tmp, 0);
 	crypto_bignum_deinit(u2, 1);
 	crypto_bignum_deinit(t1, 1);
