@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -33,8 +33,9 @@ typedef struct {
      * @brief Sensor driver API to set sensor focus value
      *
      * @param[in] focus_val  Camera sensor focus value
+     * @param[in] arg        User arg
      */
-    esp_err_t (*af_sensor_set_focus)(int focus_val);
+    esp_err_t (*af_sensor_set_focus)(int focus_val, void *arg);
 
 } isp_af_sa_scheme_sensor_drv_t;
 
@@ -72,13 +73,14 @@ esp_err_t isp_af_delete_sa_scheme(isp_af_scheme_handle_t scheme);
  * @param[in] scheme      AF scheme handle
  * @param[in] sensor_drv  Sensor driver, see `isp_af_sa_scheme_sensor_drv_t`
  * @param[in] info        Sensor info
+ * @param[in] arg         User arg
  *
  * @return
  *         - ESP_OK                On success
  *         - ESP_ERR_INVALID_ARG   If the combination of arguments is invalid
  *         - ESP_ERR_INVALID_STATE Invalid state
  */
-esp_err_t isp_af_sa_scheme_register_sensor_driver(isp_af_scheme_handle_t scheme, const isp_af_sa_scheme_sensor_drv_t *sensor_drv, const isp_af_sa_scheme_sensor_info_t *info);
+esp_err_t isp_af_sa_scheme_register_sensor_driver(isp_af_scheme_handle_t scheme, const isp_af_sa_scheme_sensor_drv_t *sensor_drv, const isp_af_sa_scheme_sensor_info_t *info, void *arg);
 
 #ifdef __cplusplus
 }

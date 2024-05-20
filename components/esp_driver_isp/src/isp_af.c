@@ -241,6 +241,10 @@ esp_err_t esp_isp_af_controller_set_env_detector(isp_af_ctrlr_t af_ctrlr, const 
     isp_ll_af_env_monitor_set_period(af_ctrlr->isp_proc->hal.hw, 0);
     isp_ll_clear_intr(af_ctrlr->isp_proc->hal.hw, ISP_LL_EVENT_AF_ENV);
 
+    isp_ll_af_env_monitor_set_mode(af_ctrlr->isp_proc->hal.hw, ISP_LL_AF_ENV_MONITOR_MODE_ABS);
+    isp_ll_af_env_monitor_set_period(af_ctrlr->isp_proc->hal.hw, af_ctrlr->config.interval);
+    isp_ll_enable_intr(af_ctrlr->isp_proc->hal.hw, ISP_LL_EVENT_AF_ENV, true);
+
     return ESP_OK;
 }
 
@@ -267,7 +271,7 @@ esp_err_t esp_isp_af_env_detector_register_event_callbacks(isp_af_ctrlr_t af_ctr
     return ESP_OK;
 }
 
-esp_err_t esp_isp_af_env_detector_set_threshold(isp_af_ctrlr_t af_ctrlr, int definition_thresh, int luminance_thresh)
+esp_err_t esp_isp_af_controller_set_env_detector_threshold(isp_af_ctrlr_t af_ctrlr, int definition_thresh, int luminance_thresh)
 {
     ESP_RETURN_ON_FALSE_ISR(af_ctrlr, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
     ESP_RETURN_ON_FALSE_ISR(af_ctrlr->fsm == ISP_FSM_ENABLE, ESP_ERR_INVALID_STATE, TAG, "detector isn't in enable state");

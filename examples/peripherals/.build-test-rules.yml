@@ -24,6 +24,13 @@ examples/peripherals/analog_comparator:
     - esp_driver_gpio
     - esp_driver_ana_cmpr
 
+examples/peripherals/camera/camera_dsi:
+  disable:
+    - if: SOC_MIPI_CSI_SUPPORTED != 1 or SOC_MIPI_DSI_SUPPORTED != 1
+  depends_components:
+    - esp_lcd
+    - esp_driver_cam
+
 examples/peripherals/dac:
   disable:
     - if: SOC_DAC_SUPPORTED != 1
@@ -118,11 +125,11 @@ examples/peripherals/i2s/i2s_recorder:
 
 examples/peripherals/isp/auto_focus:
   disable:
-    - if: INCLUDE_DEFAULT == 1
-      temporary: true
-      reason: disable build temporarily # TODO: IDF-8895
+    - if: SOC_MIPI_CSI_SUPPORTED != 1 or SOC_MIPI_DSI_SUPPORTED != 1 or SOC_ISP_SUPPORTED != 1
   depends_components:
     - esp_driver_isp
+    - esp_driver_cam
+    - esp_lcd
 
 examples/peripherals/jpeg/jpeg_decode:
   disable:
