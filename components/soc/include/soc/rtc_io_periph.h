@@ -18,6 +18,8 @@
 #include "soc/sens_struct.h"
 #endif
 
+#include "soc/io_mux_reg.h"
+
 #ifdef __cplusplus
 extern "C"
 {

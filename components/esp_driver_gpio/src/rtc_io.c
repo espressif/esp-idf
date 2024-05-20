@@ -9,6 +9,7 @@
 #include "esp_err.h"
 #include "esp_check.h"
 #include "esp_private/periph_ctrl.h"
+#include "esp_private/io_mux.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 #include "freertos/timers.h"
@@ -17,16 +18,6 @@
 #include "hal/rtc_io_hal.h"
 #include "soc/rtc_io_periph.h"
 #include "soc/soc_caps.h"
-
-#if SOC_LP_IO_CLOCK_IS_INDEPENDENT && !SOC_RTCIO_RCC_IS_INDEPENDENT
-// For `rtcio_hal_function_select` using, clock reg option is inlined in it,
-// so remove the declaration check of __DECLARE_RCC_RC_ATOMIC_ENV
-#define RTCIO_RCC_ATOMIC()                              \
-    for (int i = 1; i ? (periph_rcc_enter(), 1) : 0;    \
-         periph_rcc_exit(), i--)
-#else
-#define RTCIO_RCC_ATOMIC()
-#endif
 
 static const char __attribute__((__unused__)) *RTCIO_TAG = "RTCIO";
 
@@ -56,9 +47,10 @@ esp_err_t rtc_gpio_init(gpio_num_t gpio_num)
 {
     ESP_RETURN_ON_FALSE(rtc_gpio_is_valid_gpio(gpio_num), ESP_ERR_INVALID_ARG, RTCIO_TAG, "RTCIO number error");
     RTCIO_ENTER_CRITICAL();
-    RTCIO_RCC_ATOMIC() {
-        rtcio_hal_function_select(rtc_io_number_get(gpio_num), RTCIO_LL_FUNC_RTC);
-    }
+#if SOC_LP_IO_CLOCK_IS_INDEPENDENT
+    io_mux_enable_lp_io_clock(gpio_num, true);
+#endif
+    rtcio_hal_function_select(rtc_io_number_get(gpio_num), RTCIO_LL_FUNC_RTC);
     RTCIO_EXIT_CRITICAL();
 
     return ESP_OK;
@@ -68,10 +60,12 @@ esp_err_t rtc_gpio_deinit(gpio_num_t gpio_num)
 {
     ESP_RETURN_ON_FALSE(rtc_gpio_is_valid_gpio(gpio_num), ESP_ERR_INVALID_ARG, RTCIO_TAG, "RTCIO number error");
     RTCIO_ENTER_CRITICAL();
-    RTCIO_RCC_ATOMIC() {
-        // Select Gpio as Digital Gpio
-        rtcio_hal_function_select(rtc_io_number_get(gpio_num), RTCIO_LL_FUNC_DIGITAL);
-    }
+    // Select Gpio as Digital Gpio
+    rtcio_hal_function_select(rtc_io_number_get(gpio_num), RTCIO_LL_FUNC_DIGITAL);
+
+#if SOC_LP_IO_CLOCK_IS_INDEPENDENT
+    io_mux_enable_lp_io_clock(gpio_num, false);
+#endif
     RTCIO_EXIT_CRITICAL();
 
     return ESP_OK;
