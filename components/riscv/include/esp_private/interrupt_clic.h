@@ -46,32 +46,6 @@ extern "C" {
 #define MTVT_CSR    0x307
 
 
-/**
- * @brief Convert a priority level from 8-bit to NLBITS and NLBITS to 8-bit
- *
- * On CLIC, the interrupt threshold is stored in the upper (NLBITS) of the mintthresh register, with the other (8 - NLBITS)
- * defaulted to 1. We form the interrupt level bits here to avoid doing this at run time
- */
-#define NLBITS_SHIFT            (8 - NLBITS)
-#define NLBITS_MASK             ((1 << NLBITS) - 1)
-#define BYTE_TO_NLBITS(level)   (((level) >> NLBITS_SHIFT) & NLBITS_MASK)
-/* Align the level to the left, and put 1 in the lowest bits */
-#define NLBITS_TO_BYTE(level)   (((level) << NLBITS_SHIFT) | ((1 << NLBITS_SHIFT) - 1))
-
-
-/* Helper macro to translate absolute interrupt level to CLIC interrupt threshold bits in the mintthresh reg */
-#define CLIC_INT_THRESH(intlevel)       (NLBITS_TO_BYTE(intlevel) << CLIC_CPU_INT_THRESH_S)
-
-/* Helper macro to translate a CLIC interrupt threshold bits to an absolute interrupt level */
-#define CLIC_THRESH_TO_INT(intlevel)    (BYTE_TO_NLBITS((intlevel >> CLIC_CPU_INT_THRESH_S) & CLIC_CPU_INT_THRESH_V))
-
-/* Helper macro to set interrupt level RVHAL_EXCM_LEVEL. Used during critical sections */
-#define RVHAL_EXCM_LEVEL_CLIC           (CLIC_INT_THRESH(RVHAL_EXCM_LEVEL - 1))
-
-/* Helper macro to enable interrupts. */
-#define RVHAL_INTR_ENABLE_THRESH_CLIC   (CLIC_INT_THRESH(RVHAL_INTR_ENABLE_THRESH))
-
-
 #if CONFIG_IDF_TARGET_ESP32P4 || CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
 
 /**
@@ -92,6 +66,43 @@ extern "C" {
 #else
     #error "Check the implementation of the CLIC on this target."
 #endif
+
+/**
+ * @brief Convert a priority level from 8-bit to NLBITS and NLBITS to 8-bit
+ *
+ * On CLIC, the interrupt threshold is stored in the upper (NLBITS) of the mintthresh register, with the other (8 - NLBITS)
+ * defaulted to 1. We form the interrupt level bits here to avoid doing this at run time
+ */
+#define NLBITS_SHIFT            (8 - NLBITS)
+#define NLBITS_MASK             ((1 << NLBITS) - 1)
+#define BYTE_TO_NLBITS(level)   (((level) >> NLBITS_SHIFT) & NLBITS_MASK)
+/* Align the level to the left, and put 1 in the lowest bits */
+#define NLBITS_TO_BYTE(level)   (((level) << NLBITS_SHIFT) | ((1 << NLBITS_SHIFT) - 1))
+
+
+#if INTTHRESH_STANDARD
+/* Helper macro to translate absolute interrupt level to CLIC interrupt threshold bits in the mintthresh reg */
+#define CLIC_INT_THRESH(intlevel)       (NLBITS_TO_BYTE(intlevel))
+
+/* Helper macro to translate a CLIC interrupt threshold bits to an absolute interrupt level */
+#define CLIC_THRESH_TO_INT(intlevel)    (BYTE_TO_NLBITS((intlevel)))
+#else
+/* For the non-standard intthresh implementation the threshold is stored in the upper 8 bits of CLIC_CPU_INT_THRESH reg */
+/* Helper macro to translate absolute interrupt level to CLIC interrupt threshold bits in the mintthresh reg */
+#define CLIC_INT_THRESH(intlevel)       (NLBITS_TO_BYTE(intlevel) << CLIC_CPU_INT_THRESH_S)
+
+/* Helper macro to translate a CLIC interrupt threshold bits to an absolute interrupt level */
+#define CLIC_THRESH_TO_INT(intlevel)    (BYTE_TO_NLBITS((intlevel >> CLIC_CPU_INT_THRESH_S) & CLIC_CPU_INT_THRESH_V))
+#endif //INTTHRESH_STANDARD
+
+/* Helper macro to set interrupt level RVHAL_EXCM_LEVEL. Used during critical sections */
+#define RVHAL_EXCM_LEVEL_CLIC           (CLIC_INT_THRESH(RVHAL_EXCM_LEVEL - 1))
+
+/* Helper macro to enable interrupts. */
+#define RVHAL_INTR_ENABLE_THRESH_CLIC   (CLIC_INT_THRESH(RVHAL_INTR_ENABLE_THRESH))
+
+
+
 
 
 FORCE_INLINE_ATTR void assert_valid_rv_int_num(int rv_int_num)
