@@ -614,13 +614,13 @@ esp_err_t esp_wifi_internal_set_spp_amsdu(wifi_interface_t ifidx, bool spp_cap, 
 void esp_wifi_internal_update_light_sleep_default_params(int min_freq_mhz, int max_freq_mhz);
 
 /**
- * @brief   Set the delay time for wifi to enter the sleep state when light sleep
+ * @brief   Set the min active time for wifi to enter the sleep state when light sleep
  *
- * @param   return_to_sleep_delay: minimum timeout time  for waiting to receive
+ * @param   min_active_time: minimum timeout time  for waiting to receive
  *                      data, when no data is received during the timeout period,
  *                      the wifi enters the sleep process.
  */
-void esp_wifi_set_sleep_delay_time(uint32_t return_to_sleep_delay);
+void esp_wifi_set_sleep_min_active_time(uint32_t min_active_time);
 
 /**
  * @brief   Set wifi keep alive time
@@ -628,6 +628,17 @@ void esp_wifi_set_sleep_delay_time(uint32_t return_to_sleep_delay);
  * @param   keep_alive_time: keep alive time
  */
 void esp_wifi_set_keep_alive_time(uint32_t keep_alive_time);
+
+/**
+  * @brief      Set the min broadcast data wait time for wifi to enter the sleep state
+  *
+  * @attention  Default sleep wait broadcast data time is 15000, Uint µs.
+  *
+  * @param      time: When the station knows through the beacon that the AP
+  *                   will send broadcast packet, it will wait for a minimum of
+  *                   wait_broadcast_data_time before entering the sleep process.
+  */
+void esp_wifi_set_sleep_wait_broadcast_data_time(uint32_t time);
 
 /**
  * @brief   Configure wifi beacon montior default parameters

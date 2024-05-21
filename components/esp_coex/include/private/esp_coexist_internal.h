@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2018-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -313,7 +313,7 @@ esp_err_t esp_coex_adapter_register(coex_adapter_funcs_t *funcs);
 
 #if CONFIG_EXTERNAL_COEX_ENABLE
 /**
-  * @brief     Set external coexistence advanced informations, like working mode.
+  * @brief     Set external coexistence advanced information, like working mode.
   *
   * @param     out_pti1    This parameter no longer works, will be deprecated and later removed in future releases.
   * @param     out_pti2    This parameter no longer works, will be deprecated and later removed in future releases.
@@ -364,6 +364,25 @@ void esp_coex_external_set_wire_type(external_coex_wire_t wire_type);
 void esp_coex_external_set_txline(bool en);
 #endif    /*SOC_EXTERNAL_COEX_LEADER_TX_LINE*/
 #endif    /*External Coex*/
+
+#if CONFIG_ESP_COEX_POWER_MANAGEMENT
+/**
+  * @brief     Set coexist scheme flexible period
+  *
+  * @param     period    flexible period
+  *
+  * @return
+  *    - ESP_OK: succeed
+  */
+int coex_schm_flexible_period_set(uint8_t period);
+
+/**
+  * @brief     Get coexist scheme flexible period
+  *
+  * @return    Coexist scheme flexible period
+  */
+uint8_t coex_schm_flexible_period_get(void);
+#endif
 
 /**
   * @brief     Check the MD5 values of the coexistence adapter header files in IDF and WiFi library

@@ -153,6 +153,8 @@ typedef struct wifi_osi_funcs_t {
     void (* _regdma_link_set_write_wait_content)(void *, uint32_t, uint32_t);
     void * (* _sleep_retention_find_link_by_id)(int);
 #endif
+    int (*_coex_schm_flexible_period_set)(uint8_t);
+    uint8_t (*_coex_schm_flexible_period_get)(void);
     int32_t _magic;
 } wifi_osi_funcs_t;
 
