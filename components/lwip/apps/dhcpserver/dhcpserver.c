@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -1399,7 +1399,7 @@ static void kill_oldest_dhcps_pool(dhcps_t *dhcps)
     assert(pre != NULL && pre->pnext != NULL); // Expect the list to have at least 2 nodes
     p = pre->pnext;
     minpre = pre;
-    minp = p;
+    minp = pre;
 
     while (p != NULL) {
         pdhcps_pool = p->pnode;
@@ -1413,8 +1413,11 @@ static void kill_oldest_dhcps_pool(dhcps_t *dhcps)
         pre = p;
         p = p->pnext;
     }
-
-    minpre->pnext = minp->pnext;
+    if (minp == dhcps->plist) {
+        dhcps->plist = minp->pnext;
+    } else {
+        minpre->pnext = minp->pnext;
+    }
     free(minp->pnode);
     minp->pnode = NULL;
     free(minp);
