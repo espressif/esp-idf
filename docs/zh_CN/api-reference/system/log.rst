@@ -135,3 +135,7 @@ API 参考
 -------------
 
 .. include-build-file:: inc/esp_log.inc
+.. include-build-file:: inc/esp_log_level.inc
+.. include-build-file:: inc/esp_log_buffer.inc
+.. include-build-file:: inc/esp_log_timestamp.inc
+.. include-build-file:: inc/esp_log_color.inc
