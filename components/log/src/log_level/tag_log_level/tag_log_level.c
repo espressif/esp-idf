@@ -68,17 +68,15 @@ static esp_log_level_t log_level_get(const char *tag, bool timeout)
     } else {
         esp_log_impl_lock();
     }
-    bool search_in_linked_list = !CACHE_ENABLED;
 #if CACHE_ENABLED
     bool cache_miss = !esp_log_cache_get_level(tag, &level_for_tag);
     if (cache_miss) {
-        search_in_linked_list = true;
+        esp_log_linked_list_get_level(tag, &level_for_tag);
         esp_log_cache_add(tag, level_for_tag);
     }
-#endif // CACHE_ENABLED
-    if (search_in_linked_list) {
-        esp_log_linked_list_get_level(tag, &level_for_tag);
-    }
+#else
+    esp_log_linked_list_get_level(tag, &level_for_tag);
+#endif
     esp_log_impl_unlock();
     return level_for_tag;
 }
