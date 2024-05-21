@@ -293,6 +293,7 @@ build_docs_pdf:
   needs:
     - job: fast_template_app
       artifacts: false
+      optional: true
   script:
     - ${IDF_PATH}/tools/ci/test_configure_ci_environment.sh
     - rm -rf test_build_system
