@@ -1,9 +1,13 @@
 # SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
+import importlib
+import logging
 import os
+import sys
 import typing as t
 from collections import defaultdict
 from functools import cached_property
+from unittest.mock import MagicMock
 from xml.etree import ElementTree as ET
 
 import pytest
@@ -134,6 +138,38 @@ class IdfPytestEmbedded:
             item=item,
             multi_dut_without_param=multi_dut_without_param
         )
+
+    def pytest_collectstart(self) -> None:
+        # mock the optional packages while collecting locally
+        if not os.getenv('CI_JOB_ID'):
+            # optional packages required by test scripts
+            for p in [
+                'scapy',
+                'scapy.all',
+                'websocket',  # websocket-client
+                'netifaces',
+                'RangeHTTPServer',  # rangehttpserver
+                'dbus',  # dbus-python
+                'dbus.mainloop',
+                'dbus.mainloop.glib',
+                'google.protobuf',  # protobuf
+                'google.protobuf.internal',
+                'bleak',
+                'paho',  # paho-mqtt
+                'paho.mqtt',
+                'paho.mqtt.client',
+                'paramiko',
+                'netmiko',
+                'pyecharts',
+                'pyecharts.options',
+                'pyecharts.charts',
+                'can',  # python-can
+            ]:
+                try:
+                    importlib.import_module(p)
+                except ImportError:
+                    logging.warning(f'Optional package {p} is not installed, mocking it while collecting...')
+                    sys.modules[p] = MagicMock()
 
     @pytest.hookimpl(tryfirst=True)
     def pytest_collection_modifyitems(self, items: t.List[Function]) -> None:
