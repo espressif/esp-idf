@@ -63,14 +63,18 @@ extern "C" {
 #define ISP_LL_EVENT_TAIL_IDI_FRAME           (1<<27)
 #define ISP_LL_EVENT_HEADER_IDI_FRAME         (1<<28)
 
-#define ISP_LL_EVENT_ALL_MASK   (0x1FFFFFFF)
-#define ISP_LL_EVENT_AF_MASK    (ISP_LL_EVENT_AF_FDONE | ISP_LL_EVENT_AF_ENV)
+#define ISP_LL_EVENT_ALL_MASK                 (0x1FFFFFFF)
+#define ISP_LL_EVENT_AF_MASK                  (ISP_LL_EVENT_AF_FDONE | ISP_LL_EVENT_AF_ENV)
 
 /*---------------------------------------------------------------
                       AF
 ---------------------------------------------------------------*/
-#define ISP_LL_AF_WINDOW_MAX_RANGE    ((1<<12) - 1)
+#define ISP_LL_AF_WINDOW_MAX_RANGE            ((1<<12) - 1)
 
+/*---------------------------------------------------------------
+                      BF
+---------------------------------------------------------------*/
+#define ISP_LL_BF_DEFAULT_TEMPLATE_VAL        15
 
 /**
  * @brief Env monitor mode
@@ -661,6 +665,82 @@ static inline void isp_ll_bf_enable(isp_dev_t *hw, bool enable)
     hw->cntl.bf_en = enable;
 }
 
+/**
+ * @brief Set ISP BF sigma value
+ *
+ * @param[in] hw          Hardware instance address
+ * @param[in] sigmal_val  sigma value
+ */
+static inline void isp_ll_bf_set_sigma(isp_dev_t *hw, uint32_t sigma_val)
+{
+    hw->bf_sigma.sigma = sigma_val;
+}
+
+/**
+ * @brief Set ISP BF padding mode
+ *
+ * @param[in] hw            Hardware instance address
+ * @param[in] padding_mode  padding mode
+ */
+static inline void isp_ll_bf_set_padding_mode(isp_dev_t *hw, isp_bf_edge_padding_mode_t padding_mode)
+{
+    hw->bf_matrix_ctrl.bf_padding_mode = padding_mode;
+}
+
+/**
+ * @brief Set ISP BF padding data
+ *
+ * @param[in] hw            Hardware instance address
+ * @param[in] padding_data  padding data
+ */
+static inline void isp_ll_bf_set_padding_data(isp_dev_t *hw, uint32_t padding_data)
+{
+    hw->bf_matrix_ctrl.bf_padding_data = padding_data;
+}
+
+/**
+ * @brief Set ISP BF tail pixen pulse tl
+ *
+ * @param[in] hw           Hardware instance address
+ * @param[in] start_pixel  start pixel value
+ */
+static inline void isp_ll_bf_set_padding_line_tail_valid_start_pixel(isp_dev_t *hw, uint32_t start_pixel)
+{
+    hw->bf_matrix_ctrl.bf_tail_pixen_pulse_tl = start_pixel;
+}
+
+/**
+ * @brief Set ISP BF tail pixen pulse th
+ *
+ * @param[in] hw         Hardware instance address
+ * @param[in] end_pixel  end pixel value
+ */
+static inline void isp_ll_bf_set_padding_line_tail_valid_end_pixel(isp_dev_t *hw, uint32_t end_pixel)
+{
+    hw->bf_matrix_ctrl.bf_tail_pixen_pulse_th = end_pixel;
+}
+
+/**
+ * @brief Set ISP BF template
+ *
+ * @param[in] hw            Hardware instance address
+ * @param[in] template_arr  2-d array for the template
+ */
+static inline void isp_ll_bf_set_template(isp_dev_t *hw, uint8_t template_arr[SOC_ISP_BF_TEMPLATE_X_NUMS][SOC_ISP_BF_TEMPLATE_Y_NUMS])
+{
+    int cnt = 0;
+    for (int i = 0; i < SOC_ISP_BF_TEMPLATE_X_NUMS; i++) {
+        for (int j = 0; j < SOC_ISP_BF_TEMPLATE_Y_NUMS; j++) {
+            if (i == 2 && j == 2) {
+                break;
+            }
+            hw->bf_gau0.val = (hw->bf_gau0.val &  ~(0xf << (28 - cnt * 4))) | ((template_arr[i][j] & 0xf) << (28 - cnt * 4));
+            cnt++;
+        }
+    }
+
+    hw->bf_gau1.gau_template22 = template_arr[2][2];
+}
 /*---------------------------------------------------------------
                       CCM
 ---------------------------------------------------------------*/

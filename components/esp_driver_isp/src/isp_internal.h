@@ -57,7 +57,8 @@ typedef struct isp_processor_t {
     portMUX_TYPE         spinlock;
 
     /* sub module contexts */
-    isp_af_ctrlr_t af_ctlr[SOC_ISP_AF_CTLR_NUMS];
+    isp_af_ctrlr_t       af_ctlr[SOC_ISP_AF_CTLR_NUMS];
+    isp_fsm_t            bf_fsm;
 } isp_processor_t;
 
 #ifdef __cplusplus
