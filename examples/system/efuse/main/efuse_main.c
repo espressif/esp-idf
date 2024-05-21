@@ -8,6 +8,7 @@
 */
 
 #include <stdio.h>
+#include "sdkconfig.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_err.h"
@@ -15,9 +16,14 @@
 #include "esp_efuse.h"
 #include "esp_efuse_table.h"
 #include "esp_efuse_custom_table.h"
+
+#if CONFIG_SECURE_BOOT
 #include "esp_secure_boot.h"
+#endif
+
+#if CONFIG_SECURE_FLASH_ENC_ENABLED
 #include "esp_flash_encrypt.h"
-#include "sdkconfig.h"
+#endif
 
 static const char* TAG = "example";
 
