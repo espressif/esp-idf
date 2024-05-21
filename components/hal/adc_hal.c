@@ -74,6 +74,10 @@ void adc_hal_digi_init(adc_hal_dma_ctx_t *hal)
 
 void adc_hal_digi_deinit()
 {
+#if ADC_LL_POWER_MANAGE_SUPPORTED
+    adc_ll_set_power_manage(ADC_UNIT_1, ADC_LL_POWER_SW_OFF);
+    adc_ll_set_power_manage(ADC_UNIT_2, ADC_LL_POWER_SW_OFF);
+#endif
     adc_ll_digi_trigger_disable();
     adc_ll_digi_dma_disable();
     adc_ll_digi_clear_pattern_table(ADC_UNIT_1);
@@ -144,6 +148,9 @@ void adc_hal_digi_controller_config(adc_hal_dma_ctx_t *hal, const adc_hal_digi_c
     for (int i = 0; i < cfg->adc_pattern_len; i++) {
         adc_ll_digi_set_pattern_table(pattern_both, i, cfg->adc_pattern[i]);
     }
+#if ADC_LL_POWER_MANAGE_SUPPORTED
+    adc_ll_set_power_manage(0, ADC_LL_POWER_SW_ON);
+#endif
 
 #elif (SOC_ADC_DIGI_CONTROLLER_NUM >= 2)
     uint32_t adc1_pattern_idx = 0;
@@ -154,9 +161,15 @@ void adc_hal_digi_controller_config(adc_hal_dma_ctx_t *hal, const adc_hal_digi_c
 
     for (int i = 0; i < cfg->adc_pattern_len; i++) {
         if (cfg->adc_pattern[i].unit == ADC_UNIT_1) {
+#if ADC_LL_POWER_MANAGE_SUPPORTED
+            adc_ll_set_power_manage(ADC_UNIT_1, ADC_LL_POWER_SW_ON);
+#endif
             adc_ll_digi_set_pattern_table(ADC_UNIT_1, adc1_pattern_idx, cfg->adc_pattern[i]);
             adc1_pattern_idx++;
         } else if (cfg->adc_pattern[i].unit == ADC_UNIT_2) {
+#if ADC_LL_POWER_MANAGE_SUPPORTED
+            adc_ll_set_power_manage(ADC_UNIT_2, ADC_LL_POWER_SW_ON);
+#endif
             adc_ll_digi_set_pattern_table(ADC_UNIT_2, adc2_pattern_idx, cfg->adc_pattern[i]);
             adc2_pattern_idx++;
         } else {

@@ -17,7 +17,6 @@
 #include "soc/syscon_struct.h"
 #include "soc/rtc_cntl_struct.h"
 #include "soc/clk_tree_defs.h"
-#include "soc/dport_reg.h"
 
 #ifdef __cplusplus
 extern "C" {

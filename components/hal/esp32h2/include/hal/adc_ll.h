@@ -60,6 +60,7 @@ extern "C" {
 #define ADC_LL_DEFAULT_CONV_LIMIT_EN      0
 #define ADC_LL_DEFAULT_CONV_LIMIT_NUM     10
 
+#define ADC_LL_POWER_MANAGE_SUPPORTED     1 //ESP32H2 supported to manage power mode
 /*---------------------------------------------------------------
                     PWDET (Power Detect)
 ---------------------------------------------------------------*/
@@ -578,8 +579,9 @@ static inline void adc_ll_reset_register(void)
  *
  * @param manage Set ADC power status.
  */
-static inline void adc_ll_set_power_manage(adc_ll_power_t manage)
+static inline void adc_ll_set_power_manage(adc_unit_t adc_n, adc_ll_power_t manage)
 {
+    (void) adc_n;
     /* Bit1  0:Fsm  1: SW mode
        Bit0  0:SW mode power down  1: SW mode power on */
     if (manage == ADC_LL_POWER_SW_ON) {

@@ -50,15 +50,12 @@ __attribute__((always_inline))
 static inline void sar_ctrl_ll_set_power_mode(sar_ctrl_ll_power_t mode)
 {
     if (mode == SAR_CTRL_LL_POWER_FSM) {
-        // LP_ADC.sar_peri_clk_gate_conf.saradc_clk_en = 1;
         LP_ADC.force_wpd_sar.force_xpd_sar1 = 0x0;
         LP_ADC.force_wpd_sar.force_xpd_sar2 = 0x0;
     } else if (mode == SAR_CTRL_LL_POWER_ON) {
-        // LP_ADC.sar_peri_clk_gate_conf.saradc_clk_en = 1;
         LP_ADC.force_wpd_sar.force_xpd_sar1 = 0x3;
         LP_ADC.force_wpd_sar.force_xpd_sar2 = 0x3;
     } else {
-        // LP_ADC.sar_peri_clk_gate_conf.saradc_clk_en = 0;
         LP_ADC.force_wpd_sar.force_xpd_sar1 = 0x2;
         LP_ADC.force_wpd_sar.force_xpd_sar2 = 0x2;
     }
