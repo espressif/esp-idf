@@ -307,3 +307,44 @@ TEST_CASE("esp console help command - --verbose sub command", "[console][ignore]
     TEST_ESP_OK(esp_console_start_repl(s_repl));
     vTaskDelay(pdMS_TO_TICKS(5000));
 }
+
+TEST_CASE("esp console deregister commands", "[console][ignore]")
+{
+    esp_console_repl_config_t repl_config = ESP_CONSOLE_REPL_CONFIG_DEFAULT();
+    esp_console_dev_uart_config_t uart_config = ESP_CONSOLE_DEV_UART_CONFIG_DEFAULT();
+    TEST_ESP_OK(esp_console_new_repl_uart(&uart_config, &repl_config, &s_repl));
+
+    TEST_ESP_OK(esp_console_cmd_register(&cmd_a));
+    TEST_ESP_OK(esp_console_cmd_register(&s_quit_cmd));
+    TEST_ESP_OK(esp_console_register_help_command());
+    TEST_ESP_OK(esp_console_cmd_register(&cmd_z));
+    // deregister a non-existing cmd, should return "ESP_ERR_INVALID_ARG"
+    TEST_ESP_ERR(ESP_ERR_INVALID_ARG, esp_console_cmd_deregister("abcdefg"));
+    // deregister cmd_a
+    TEST_ESP_OK(esp_console_cmd_deregister(cmd_a.command));
+    TEST_ESP_OK(esp_console_start_repl(s_repl));
+    vTaskDelay(pdMS_TO_TICKS(5000));
+}
+
+TEST_CASE("esp console re-register commands", "[console][ignore]")
+{
+    esp_console_repl_config_t repl_config = ESP_CONSOLE_REPL_CONFIG_DEFAULT();
+    esp_console_dev_uart_config_t uart_config = ESP_CONSOLE_DEV_UART_CONFIG_DEFAULT();
+    TEST_ESP_OK(esp_console_new_repl_uart(&uart_config, &repl_config, &s_repl));
+
+    TEST_ESP_OK(esp_console_cmd_register(&cmd_a));
+    TEST_ESP_OK(esp_console_cmd_register(&s_quit_cmd));
+    TEST_ESP_OK(esp_console_cmd_register(&cmd_z));
+    TEST_ESP_OK(esp_console_register_help_command());
+
+    // deregister cmd_z and cmd_a
+    TEST_ESP_OK(esp_console_cmd_deregister(cmd_z.command));
+    TEST_ESP_OK(esp_console_cmd_deregister(cmd_a.command));
+
+    // re-register cmd_z and cmd_a
+    TEST_ESP_OK(esp_console_cmd_register(&cmd_z));
+    TEST_ESP_OK(esp_console_cmd_register(&cmd_a));
+
+    TEST_ESP_OK(esp_console_start_repl(s_repl));
+    vTaskDelay(pdMS_TO_TICKS(5000));
+}
