@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "sdkconfig.h"
 #include "soc/soc_caps.h"
 #include "hal/efuse_hal.h"
 #include "rom/efuse.h"
@@ -12,12 +13,16 @@
 #include "esp_check.h"
 #include "esp_efuse_utility.h"
 #include "esp_system.h"
-#include "esp_flash_encrypt.h"
-#include "esp_secure_boot.h"
 #include "esp_log.h"
 #include "esp_private/startup_internal.h"
 #ifdef CONFIG_EFUSE_VIRTUAL_KEEP_IN_FLASH
 #include "esp_partition.h"
+#endif
+#if CONFIG_SECURE_FLASH_ENC_ENABLED
+#include "esp_flash_encrypt.h"
+#endif
+#if CONFIG_SECURE_BOOT || CONFIG_SECURE_SIGNED_ON_UPDATE_NO_SECURE_BOOT
+#include "esp_secure_boot.h"
 #endif
 #include "sdkconfig.h"
 
