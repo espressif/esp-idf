@@ -19,6 +19,7 @@ from pytest_embedded.utils import to_list
 SUPPORTED_TARGETS = ['esp32', 'esp32s2', 'esp32c3', 'esp32s3', 'esp32c2', 'esp32c6', 'esp32h2', 'esp32p4']
 PREVIEW_TARGETS: t.List[str] = []  # this PREVIEW_TARGETS excludes 'linux' target
 DEFAULT_SDKCONFIG = 'default'
+DEFAULT_LOGDIR = 'pytest-embedded'
 
 TARGET_MARKERS = {
     'esp32': 'support esp32 target',
@@ -200,7 +201,7 @@ class PytestCase:
         for _t in [app.target for app in self.apps]:
             if _t in self.target_markers:
                 skip = False
-                warnings.warn(f'`pytest.mark.[TARGET]` defined in parametrize for multi-dut test cases is deprecated. '
+                warnings.warn(f'`pytest.mark.[TARGET]` defined in parametrize for multi-dut test cases is deprecated. '  # noqa: W604
                               f'Please use parametrize instead for test case {self.item.nodeid}')
                 break
 
@@ -233,7 +234,7 @@ class PytestCase:
             # temp markers should always use keyword arguments `targets` and `reason`
             if not temp_marker.kwargs.get('targets') or not temp_marker.kwargs.get('reason'):
                 raise ValueError(
-                    f'`{marker_name}` should always use keyword arguments `targets` and `reason`. '
+                    f'`{marker_name}` should always use keyword arguments `targets` and `reason`. '  # noqa: W604
                     f'For example: '
                     f'`@pytest.mark.{marker_name}(targets=["esp32"], reason="IDF-xxxx, will fix it ASAP")`'
                 )
@@ -292,7 +293,7 @@ class PytestCase:
                 bin_found[i] = 1
 
         if sum(bin_found) == 0:
-            msg = f'Skip test case {self.name} because all following binaries are not listed in the app lists: '
+            msg = f'Skip test case {self.name} because all following binaries are not listed in the app lists: '  # noqa: E713
             for app in self.apps:
                 msg += f'\n - {app.build_dir}'
 
@@ -303,7 +304,7 @@ class PytestCase:
             return None
 
         # some found, some not, looks suspicious
-        msg = f'Found some binaries of test case {self.name} are not listed in the app lists.'
+        msg = f'Found some binaries of test case {self.name} are not listed in the app lists.'  # noqa: E713
         for i, app in enumerate(self.apps):
             if bin_found[i] == 0:
                 msg += f'\n - {app.build_dir}'

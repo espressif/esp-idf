@@ -96,6 +96,8 @@ dependencies.lock
 managed_components
 
 # pytest log
+pytest-embedded/
+# legacy one
 pytest_embedded_log/
 list_job*.txt
 size_info*.txt

@@ -19,6 +19,7 @@ if tools_dir not in sys.path:
     sys.path.append(tools_dir)
 
 from idf_ci_utils import IDF_PATH  # noqa: E402
+from idf_pytest.constants import DEFAULT_LOGDIR  # noqa: E402
 
 
 def create_project(name: str, folder: Path) -> Path:
@@ -57,9 +58,9 @@ void app_main(void) {}
 
 @pytest.fixture
 def work_dirpath() -> t.Generator[Path, None, None]:
-    os.makedirs(os.path.join(IDF_PATH, 'pytest_embedded_log'), exist_ok=True)
+    os.makedirs(os.path.join(IDF_PATH, DEFAULT_LOGDIR), exist_ok=True)
 
-    p = Path(tempfile.mkdtemp(prefix=os.path.join(IDF_PATH, 'pytest_embedded_log') + os.sep))
+    p = Path(tempfile.mkdtemp(prefix=os.path.join(IDF_PATH, DEFAULT_LOGDIR) + os.sep))
 
     try:
         yield p
