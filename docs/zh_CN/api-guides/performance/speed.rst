@@ -231,7 +231,7 @@ ESP-IDF 启动的系统任务预设了固定优先级。启动时，一些任务
 
         - 以太网驱动程序会创建一个 MAC 任务，用于接收以太网帧。如果使用默认配置 ``ETH_MAC_DEFAULT_CONFIG`` ，则该任务为中高优先级 (15) 且并未固定在特定内核上执行。可以在以太网 MAC 初始化时输入自定义 :cpp:class:`eth_mac_config_t` 结构体来更改此设置。
         - 如果使用 :doc:`/api-reference/protocols/mqtt` 组件，它会创建优先级默认为 5 的任务（ :ref:`可配置 <CONFIG_MQTT_TASK_PRIORITY>` ，也可通过 :ref:`CONFIG_MQTT_USE_CUSTOM_CONFIG` 调整）。该任务未固定在特定内核上执行（ :ref:`可配置 <CONFIG_MQTT_TASK_CORE_SELECTION_ENABLED>` ）。
-        - 关于 ``mDNS`` 服务的任务优先级，参见 `性能优化 <https://espressif.github.io/esp-protocols/mdns/en/index.html#performance-optimization>`__ 。
+        - 关于 ``mDNS`` 服务的任务优先级，参见 `性能优化 <https://docs.espressif.com/projects/esp-protocols/mdns/docs/latest/en/index.html#performance-optimization>`__ 。
 
 
 设定应用程序任务优先级

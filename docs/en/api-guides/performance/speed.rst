@@ -232,7 +232,7 @@ Common priorities are:
 
         - The Ethernet driver creates a task for the MAC to receive Ethernet frames. If using the default config ``ETH_MAC_DEFAULT_CONFIG`` then the priority is medium-high (15) and the task is not pinned to any core. These settings can be changed by passing a custom :cpp:class:`eth_mac_config_t` struct when initializing the Ethernet MAC.
         - If using the :doc:`/api-reference/protocols/mqtt` component, it creates a task with default priority 5 (:ref:`configurable <CONFIG_MQTT_TASK_PRIORITY>`, depending on :ref:`CONFIG_MQTT_USE_CUSTOM_CONFIG`) and not pinned to any core (:ref:`configurable <CONFIG_MQTT_TASK_CORE_SELECTION_ENABLED>`).
-        - To see what is the task priority for ``mDNS`` service, please check `Performance Optimization <https://espressif.github.io/esp-protocols/mdns/en/index.html#performance-optimization>`__.
+        - To see what is the task priority for ``mDNS`` service, please check `Performance Optimization <https://docs.espressif.com/projects/esp-protocols/mdns/docs/latest/en/index.html#performance-optimization>`__.
 
 
 Choosing Task Priorities of the Application
