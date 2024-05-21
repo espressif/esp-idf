@@ -1130,6 +1130,15 @@ menu "LWIP"
             help
                 This option allows you to config dns fallback server address.
 
+        config LWIP_DNS_SETSERVER_WITH_NETIF
+            bool "Enable DNS server settings with netif"
+            default n
+            help
+                This option allows collecting DNS server settings per netif using
+                configurable callback function.
+                It's typically used with CONFIG_ESP_NETIF_SET_DNS_PER_DEFAULT_NETIF
+                which configures a callback to collect the DNS info on esp_netif layer.
+
     endmenu # DNS
 
     config LWIP_BRIDGEIF_MAX_PORTS
