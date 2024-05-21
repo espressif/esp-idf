@@ -164,5 +164,6 @@ extern void bta_hd_set_protocol_act(tBTA_HD_DATA *p_data);
 extern void bta_hd_vc_unplug_done_act(tBTA_HD_DATA *p_data);
 extern void bta_hd_suspend_act(tBTA_HD_DATA *p_data);
 extern void bta_hd_exit_suspend_act(tBTA_HD_DATA *p_data);
+extern void bta_hd_open_failure(tBTA_HD_DATA *p_data);
 
 #endif
