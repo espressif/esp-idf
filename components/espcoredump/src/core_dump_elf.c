@@ -754,25 +754,22 @@ typedef struct {
 	void *n_ptr;
 } elf_note_content_t;
 
+esp_err_t esp_core_dump_partition_and_size_get(const esp_partition_t **partition, uint32_t* size);
+
 /* Below are the helper function to parse the core dump ELF stored in flash */
 static esp_err_t elf_core_dump_image_mmap(esp_partition_mmap_handle_t* core_data_handle, const void **map_addr)
 {
-    size_t out_size;
-    assert (core_data_handle);
+    const esp_partition_t *core_part = NULL;
+    uint32_t out_size;
+    assert(core_data_handle);
     assert(map_addr);
 
-    /* Find the partition that could potentially contain a (previous) core dump. */
-    const esp_partition_t *core_part = esp_partition_find_first(ESP_PARTITION_TYPE_DATA,
-                                                                ESP_PARTITION_SUBTYPE_DATA_COREDUMP,
-                                                                NULL);
-    if (!core_part) {
-        ESP_COREDUMP_LOGE("Core dump partition not found!");
-        return ESP_ERR_NOT_FOUND;
+    /* Retrieve the partition and size. */
+    esp_err_t err = esp_core_dump_partition_and_size_get(&core_part, &out_size);
+    if (err != ESP_OK) {
+        return err;
     }
-    if (core_part->size < sizeof(uint32_t)) {
-        ESP_COREDUMP_LOGE("Core dump partition too small!");
-        return ESP_ERR_INVALID_SIZE;
-    }
+
     /* Data read from the mmapped core dump partition will be garbage if flash
      * encryption is enabled in hardware and core dump partition is not encrypted
      */
@@ -780,13 +777,8 @@ static esp_err_t elf_core_dump_image_mmap(esp_partition_mmap_handle_t* core_data
         ESP_COREDUMP_LOGE("Flash encryption enabled in hardware and core dump partition is not encrypted!");
         return ESP_ERR_NOT_SUPPORTED;
     }
-    /* Read the size of the core dump file from the partition */
-    esp_err_t ret = esp_partition_read(core_part, 0, &out_size, sizeof(uint32_t));
-    if (ret != ESP_OK) {
-        ESP_COREDUMP_LOGE("Failed to read core dump data size");
-        return ret;
-    }
-    /* map the full core dump parition, including the checksum. */
+
+    /* map the full core dump partition, including the checksum. */
     return esp_partition_mmap(core_part, 0, out_size, ESP_PARTITION_MMAP_DATA,
                               map_addr, core_data_handle);
 }
