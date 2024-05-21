@@ -28,7 +28,6 @@ __attribute__((unused)) static const char *TAG = "TEST_ADC";
 #define TEST_STD_ADC1_CHANNEL0    ADC_CHANNEL_2
 #endif
 
-#if !CONFIG_IDF_TARGET_ESP32P4 // TODO: IDF-6497
 static int s_adc_count_size;
 static int *s_p_adc_count;
 static int s_adc_offset = -1;
@@ -131,8 +130,6 @@ static float s_print_summary(bool figure)
 
     return sqrt(variation_square / count);
 }
-
-#endif
 
 #if SOC_ADC_DMA_SUPPORTED
 /*---------------------------------------------------------------

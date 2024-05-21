@@ -315,6 +315,10 @@ config SOC_ADC_DIG_CTRL_SUPPORTED
     bool
     default y
 
+config SOC_ADC_DMA_SUPPORTED
+    bool
+    default y
+
 config SOC_ADC_PERIPH_NUM
     int
     default 2
@@ -333,7 +337,7 @@ config SOC_ADC_DIGI_CONTROLLER_NUM
 
 config SOC_ADC_PATT_LEN_MAX
     int
-    default 8
+    default 16
 
 config SOC_ADC_DIGI_MAX_BITWIDTH
     int
@@ -378,6 +382,10 @@ config SOC_ADC_RTC_MAX_BITWIDTH
 config SOC_ADC_CALIBRATION_V1_SUPPORTED
     bool
     default n
+
+config SOC_ADC_SHARED_POWER
+    bool
+    default y
 
 config SOC_APB_BACKUP_DMA
     bool

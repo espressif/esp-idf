@@ -571,7 +571,7 @@ esp_err_t adc2_get_raw(adc2_channel_t channel, adc_bits_width_t width_bit, int *
 #endif
     adc_oneshot_ll_set_output_bits(ADC_UNIT_2, bitwidth);
 
-#if CONFIG_IDF_TARGET_ESP32
+#if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32P4
     adc_ll_set_controller(ADC_UNIT_2, ADC_LL_CTRL_RTC);// set controller
 #else
     adc_ll_set_controller(ADC_UNIT_2, ADC_LL_CTRL_ARB);// set controller

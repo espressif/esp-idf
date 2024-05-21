@@ -57,7 +57,7 @@ extern portMUX_TYPE rtc_spinlock; //TODO: Will be placed in the appropriate posi
 
 #define INTERNAL_BUF_NUM 5
 
-#if SOC_AHB_GDMA_VERSION == 1
+#if SOC_AHB_GDMA_SUPPORTED
 #define ADC_GDMA_HOST                   0
 #define ADC_DMA_INTR_MASK               GDMA_LL_EVENT_RX_SUC_EOF
 #define ADC_DMA_INTR_MASK               GDMA_LL_EVENT_RX_SUC_EOF
