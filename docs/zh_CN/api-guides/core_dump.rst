@@ -58,6 +58,7 @@ ELF 格式具备扩展特性，支持在发生崩溃时保存更多关于错误�
 
    如果使用了独立的栈，建议栈大小应大于 1300 字节，确保核心转储例程本身不会导致栈溢出。
 
+
 .. only:: not esp32c5
 
     核心转储内存区域
@@ -86,12 +87,12 @@ ELF 格式具备扩展特性，支持在发生崩溃时保存更多关于错误�
 
 .. code-block:: none
 
-   # 名称，   类型，子类型，   偏移量，   大小
-   # 注意：如果增加了引导加载程序大小，请及时更新偏移量，避免产生重叠
-   nvs,      data, nvs,     0x9000,  0x6000
-   phy_init, data, phy,     0xf000,  0x1000
-   factory,  app,  factory, 0x10000, 1M
-   coredump, data, coredump,,        64K
+    # 名称，   类型，子类型，   偏移量，   大小
+    # 注意：如果增加了引导加载程序大小，请及时更新偏移量，避免产生重叠
+    nvs,      data, nvs,     0x9000,  0x6000
+    phy_init, data, phy,     0xf000,  0x1000
+    factory,  app,  factory, 0x10000, 1M
+    coredump, data, coredump,,        64K
 
 .. important::
 
@@ -195,7 +196,7 @@ ELF 格式具备扩展特性，支持在发生崩溃时保存更多关于错误�
     <将 Base64 编码的核心转储内容解码，并将其保存到磁盘文件中>
     ================= CORE DUMP END ===================
 
-建议将核心转储文本主体手动保存到文件，``CORE DUMP START`` 和 ``CORE DUMP END`` 行不应包含在核心转储文本文件中。随后，可以使用以下命令解码保存的文本：
+建议将核心转储文本主体手动保存到文件， ``CORE DUMP START`` 和 ``CORE DUMP END`` 行不应包含在核心转储文本文件中。随后，可以使用以下命令解码保存的文本：
 
 .. code-block:: bash
 
