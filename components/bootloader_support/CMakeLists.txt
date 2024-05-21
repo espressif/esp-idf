@@ -28,10 +28,6 @@ if(NOT CONFIG_APP_BUILD_TYPE_PURE_RAM_APP)
         )
 endif()
 
-if(NOT CONFIG_APP_BUILD_TYPE_PURE_RAM_APP AND NOT BOOTLOADER_BUILD)
-    list(APPEND srcs "src/image_process.c")
-endif()
-
 if(CONFIG_APP_BUILD_TYPE_APP_2NDBOOT)
     list(APPEND srcs
         "src/bootloader_utility.c"
@@ -64,7 +60,7 @@ else()
     set(include_dirs "include" "bootloader_flash/include")
     set(priv_include_dirs "private_include")
     # heap is required for `heap_memory_layout.h` header
-    set(priv_requires spi_flash mbedtls efuse heap esp_bootloader_format esp_app_format esp_mm)
+    set(priv_requires spi_flash mbedtls efuse heap esp_bootloader_format esp_app_format)
 endif()
 
 if(BOOTLOADER_BUILD)
@@ -116,8 +112,7 @@ idf_component_register(SRCS "${srcs}"
                     INCLUDE_DIRS "${include_dirs}"
                     PRIV_INCLUDE_DIRS "${priv_include_dirs}"
                     REQUIRES "${requires}"
-                    PRIV_REQUIRES "${priv_requires}"
-                    LDFRAGMENTS linker.lf)
+                    PRIV_REQUIRES "${priv_requires}")
 
 if(NOT BOOTLOADER_BUILD)
     if(CONFIG_SECURE_SIGNED_ON_UPDATE)

@@ -23,6 +23,11 @@
 #include "esp_private/image_process.h"
 #include "esp_private/esp_cache_esp32_private.h"
 
+/**
+ * ESP32 bootloader size is not enough, not enable this feature for now
+ */
+#define IMAGE_PROCESS_SUPPORTED_TARGETS    (!CONFIG_IDF_TARGET_ESP32)
+
 #if CONFIG_IDF_TARGET_ESP32
 #define MMAP_MMU_SIZE       0x320000
 #elif CONFIG_IDF_TARGET_ESP32S2
@@ -94,6 +99,7 @@ static esp_err_t flash_read(size_t src_addr, void *dest, size_t size)
     return ESP_OK;
 }
 
+#if IMAGE_PROCESS_SUPPORTED_TARGETS
 static esp_err_t process_image_header(esp_image_metadata_t *data, uint32_t part_offset)
 {
     bzero(data, sizeof(esp_image_metadata_t));
@@ -105,6 +111,7 @@ static esp_err_t process_image_header(esp_image_metadata_t *data, uint32_t part_
 
     return ESP_OK;
 }
+#endif
 
 static esp_err_t process_segment(int index, uint32_t flash_addr, esp_image_segment_header_t *header, esp_image_metadata_t *metadata, int *cnt)
 {
@@ -189,6 +196,7 @@ void image_process_get_flash_segments_info(uint32_t *out_drom_paddr_start, uint3
 
 esp_err_t image_process(void)
 {
+#if IMAGE_PROCESS_SUPPORTED_TARGETS
     esp_err_t ret = ESP_FAIL;
     /**
      * We use the MMU_LL_END_DROM_ENTRY_ID mmu entry as a map page for app to find the boot partition
@@ -210,6 +218,9 @@ esp_err_t image_process(void)
     }
 
     mmu_ll_set_entry_invalid(0, MMU_LL_END_DROM_ENTRY_ID);
+#else
+    (void)s_image_process_driver;
+#endif
 
     return ESP_OK;
 }
