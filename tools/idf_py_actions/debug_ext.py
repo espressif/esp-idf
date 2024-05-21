@@ -11,16 +11,26 @@ import threading
 import time
 from textwrap import indent
 from threading import Thread
-from typing import Any, Dict, List, Optional, Union
+from typing import Any
+from typing import Dict
+from typing import List
+from typing import Optional
+from typing import Union
 
 from click import INT
 from click.core import Context
 from esp_coredump import CoreDump
-from idf_py_actions.constants import OPENOCD_TAGET_CONFIG, OPENOCD_TAGET_CONFIG_DEFAULT
+from idf_py_actions.constants import OPENOCD_TAGET_CONFIG
+from idf_py_actions.constants import OPENOCD_TAGET_CONFIG_DEFAULT
 from idf_py_actions.errors import FatalError
-from idf_py_actions.serial_ext import BAUD_RATE, PORT
-from idf_py_actions.tools import (PropertyDict, ensure_build_directory, generate_hints, get_default_serial_port,
-                                  get_sdkconfig_value, yellow_print)
+from idf_py_actions.serial_ext import BAUD_RATE
+from idf_py_actions.serial_ext import PORT
+from idf_py_actions.tools import ensure_build_directory
+from idf_py_actions.tools import generate_hints
+from idf_py_actions.tools import get_default_serial_port
+from idf_py_actions.tools import get_sdkconfig_value
+from idf_py_actions.tools import PropertyDict
+from idf_py_actions.tools import yellow_print
 
 PYTHON = sys.executable
 ESP_ROM_INFO_FILE = 'roms.json'
@@ -51,6 +61,7 @@ file {app_elf}
 '''
 GDBINIT_CONNECT = '''
 # Connect to the default openocd-esp port and break on app_main()
+set remotetimeout 10
 target remote :3333
 monitor reset halt
 maintenance flush register-cache
