@@ -39,12 +39,15 @@ static __attribute__((unused)) esp_err_t sleep_sys_periph_hp_system_retention_in
 #if SOC_APM_SUPPORTED
 static __attribute__((unused)) esp_err_t sleep_sys_periph_tee_apm_retention_init(void *arg)
 {
+/* TBD for ESP32P4 IDF-10020. */
+#ifndef CONFIG_IDF_TARGET_ESP32P4
     esp_err_t err = sleep_retention_entries_create(tee_apm_regs_retention, ARRAY_SIZE(tee_apm_regs_retention), REGDMA_LINK_PRI_NON_CRITICAL_TEE_APM, SLEEP_RETENTION_MODULE_SYS_PERIPH);
     if (err == ESP_OK) {
         err = sleep_retention_entries_create(tee_apm_highpri_regs_retention, ARRAY_SIZE(tee_apm_highpri_regs_retention), REGDMA_LINK_PRI_CRITICAL_TEE_APM, SLEEP_RETENTION_MODULE_SYS_PERIPH);
     }
     ESP_RETURN_ON_ERROR(err, TAG, "failed to allocate memory for digital peripherals (%s) retention", "TEE/APM");
     ESP_LOGD(TAG, "TEE/APM sleep retention initialization");
+#endif
     return ESP_OK;
 }
 #endif

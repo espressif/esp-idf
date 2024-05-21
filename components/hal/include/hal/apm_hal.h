@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,6 +13,93 @@ extern "C" {
 #include "soc/soc_caps.h"
 #if SOC_APM_SUPPORTED
 #include "hal/apm_ll.h"
+
+#if CONFIG_IDF_TARGET_ESP32P4
+
+/**
+ * @brief DMA configurable region configuration data.
+ */
+typedef struct {
+    apm_ll_dma_master_t dma_master; /* DMA master whose access permission to be configured.*/
+    uint32_t            pms_r_mask; /* Read permission mask. */
+    uint32_t            pms_w_mask; /* Write permission mask. */
+} apm_hal_dma_region_config_data_t;
+
+/**
+ * @brief Configure HP peripherals access permission for the HP CPU0/1.
+ *
+ * @param master_id  HP CPU0/1
+ * @param hp_peri    HP peripheral whose access permission to be configured.
+ * @param enable     Permission enable/disable
+ */
+void apm_hal_hp_peri_access_enable(apm_ll_master_id_t master_id, apm_ll_hp_peri_t hp_peri,
+                                       apm_ll_secure_mode_t sec_mode, bool enable);
+
+/**
+ * @brief Configure LP peripherals access permission for the LP CPU.
+ *
+ * @param lp_peri    LP peripheral whose access permission to be configured.
+ * @param enable     Permission enable/disable
+ */
+void apm_hal_lp_peri_access_enable(apm_ll_lp_peri_t lp_peri, bool enable);
+
+/**
+ * @brief Configure peripherals configurable address ranges.
+ *
+ * @param regn_num       Configurable address range number.
+ * @param regn_low_addr  Configurable address range start address.
+ * @param regn_high_addr Configurable address range end address.
+ */
+void apm_hal_peri_region_config(uint32_t regn_num, uint32_t regn_low_addr,
+                                                   uint32_t regn_high_addr);
+
+/**
+ * @brief Configure peripherals configurable address ranges.
+ *
+ * @param master_id  LP CPU and HP CPU0/1
+ * @param sec_mode   CPU privilege mode (Machine/User) which corresponds to (TEE/REE).
+ * @param regn_num   Configurable address range number.
+ * @param regn_pms   Configurable address range permission setting(2-bits field).
+ *                   Bit 0: Region 0 permission enable/disable.
+ *                   Bit 1: Region 1 permission enable/disable.
+ * @return           Configuration performed successfully?
+ */
+int apm_hal_peri_region_pms(apm_ll_master_id_t master_id, apm_ll_secure_mode_t sec_mode,
+                                           uint32_t regn_num, uint32_t regn_pms);
+
+/**
+ * @brief Configure APM controller clock gating.
+ *
+ * @param apm_ctrl APM controller (LP_PERI/HP_PERI/HP_DMA/LP2HP_PERI/HP2LP_PERI).
+ * @param enable   Permission enable/disable.
+ *                 enable: Enable automatic clock gating.
+ *                 disable: Keep the clock always on.
+ * @return         Clock gating set successfully?
+ */
+int apm_hal_apm_ctrl_clk_gating_enable(apm_ll_apm_ctrl_t apm_ctrl, bool enable);
+
+/**
+ * @brief Configure DMA configurable address range low address.
+ *
+ * @param regn_num       Configurable DMA address range number.
+ * @param regn_low_addr  Configurable DMA address range start address.
+ * @param regn_high_addr Configurable DMA address range end address.
+ */
+void apm_hal_dma_region_config(uint32_t regn_num, uint32_t regn_low_addr, uint32_t regn_high_addr);
+
+/**
+ * @brief Configure DMA configurable address range read permission.
+ *
+ * @param pms_data DMA configurable region configuration data.
+ * @param dma_master DMA master whose access permission to be configured.
+ * @param regn_mask  32-bits field, each bit for corresponding DMA configurable address range permission.
+ *                   0: Disable read permission.
+ *                   1: Enable read permission.
+ */
+void apm_hal_dma_region_pms(apm_hal_dma_region_config_data_t *pms_data);
+
+
+#else
 
 /**
  * @brief Region configuration data.
@@ -157,7 +244,9 @@ void apm_hal_apm_ctrl_reset_event_enable(bool enable);
  */
 esp_err_t apm_hal_apm_ctrl_get_int_src_num(apm_ctrl_path_t *apm_path);
 
-#endif
+#endif //CONFIG_IDF_TARGET_ESP32P4
+
+#endif //SOC_APM_SUPPORTED
 
 #ifdef __cplusplus
 }

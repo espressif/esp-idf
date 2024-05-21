@@ -61,6 +61,7 @@
 #define SOC_SECURE_BOOT_SUPPORTED       1
 #define SOC_BOD_SUPPORTED               1
 #define SOC_APM_SUPPORTED               1
+#define SOC_APM_CTRL_FILTER_SUPPORTED   1
 #define SOC_PMU_SUPPORTED               1
 #define SOC_LP_TIMER_SUPPORTED          1
 #define SOC_LP_AON_SUPPORTED            1
