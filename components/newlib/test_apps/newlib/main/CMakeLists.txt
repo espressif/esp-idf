@@ -5,6 +5,7 @@ idf_component_register(SRCS
                        "test_locks.c"
                        "test_misc.c"
                        "test_newlib.c"
+                       "test_printf.c"
                        "test_setjmp.c"
                        "test_stdatomic.c"
                        "test_time.c"
