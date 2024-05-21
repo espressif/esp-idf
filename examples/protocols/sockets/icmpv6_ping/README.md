@@ -32,6 +32,11 @@ Set the following parameters under "***Example Configuration***" Options:
   **Destination IPV6 Address** can also be set manually by modifying the source file `icmpv6_ping.c`.
 * Press '**`s`**' to save and '**`q`**' to quit the menu.
 
+Network configuration:
+* Ensure the Wifi router you are connecting to has a global IPv6 address.
+  If not, this example will keep waiting for a *Router Advertisement* message.
+* To make this example work with the default settings set the global IPv6 of your router address as `2001:DB8::56AF:97FF:FEB3:2195`
+
 #### Build and execute as follows:
 ```sh
 idf.py build 
