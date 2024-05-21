@@ -1,7 +1,3 @@
-api-guides/performance/speed.rst
-api-guides/performance/size.rst
-api-guides/performance/ram-usage.rst
-api-guides/performance/index.rst
 api-guides/partition-tables.rst
 api-guides/RF_calibration.rst
 api-guides/deep-sleep-stub.rst
