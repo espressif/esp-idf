@@ -9,11 +9,14 @@ else()
     set(target_folder "${target}")
 endif()
 
-set(include_dirs "include" "include/${target_folder}")
+set(include_dirs "include"
+                 "include/${target_folder}"
+                 "${target_folder}")
 
 set(private_required_comp "")
 
-set(sources "")
+set(sources "patches/esp_rom_sys.c"
+            "patches/esp_rom_print.c")
 
 if(target STREQUAL "linux")
     list(APPEND sources "${target}/esp_rom_sys.c"
@@ -21,12 +24,10 @@ if(target STREQUAL "linux")
                         "${target}/esp_rom_md5.c"
                         "${target}/esp_rom_efuse.c")
 else()
-    list(APPEND include_dirs "${target_folder}")
     if(CONFIG_IDF_TARGET_ESP32C5)
         list(APPEND include_dirs "include/${target_folder}/..")
     endif()
     list(APPEND sources "patches/esp_rom_crc.c"
-                        "patches/esp_rom_sys.c"
                         "patches/esp_rom_uart.c"
                         "patches/esp_rom_spiflash.c"
                         "patches/esp_rom_efuse.c")

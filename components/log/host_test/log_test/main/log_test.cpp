@@ -9,6 +9,7 @@
 #include <cstdio>
 #include <regex>
 #include <iostream>
+#include "esp_rom_sys.h"
 #include "esp_log.h"
 #include "esp_private/log_util.h"
 #include "esp_private/log_timestamp.h"
@@ -111,7 +112,7 @@ struct PutcFixture : BasicLogFixture {
             throw exception();
         }
 
-        esp_rom_install_channel_putc(0, putc_callback);
+        esp_rom_install_channel_putc(1, putc_callback);
 
         instance = this;
     }
