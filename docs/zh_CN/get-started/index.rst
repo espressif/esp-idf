@@ -111,7 +111,6 @@
         ESP-WROVER-KIT <../hw-reference/esp32/get-started-wrover-kit>
         ESP32-PICO-KIT <../hw-reference/esp32/get-started-pico-kit>
         ESP32-Ethernet-Kit <../hw-reference/esp32/get-started-ethernet-kit>
-        ESP32-DevKit-S(-R) <../hw-reference/esp32/user-guide-devkits-r-v1.1>
         ESP32-PICO-KIT-1 <../hw-reference/esp32/get-started-pico-kit-1>
         ESP32-PICO-DevKitM-2 <../hw-reference/esp32/get-started-pico-devkitm-2>
         ESP32-DevKitM-1 <../hw-reference/esp32/user-guide-devkitm-1>
