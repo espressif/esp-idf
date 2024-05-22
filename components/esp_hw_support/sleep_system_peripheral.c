@@ -84,7 +84,7 @@ static __attribute__((unused)) esp_err_t sleep_sys_periph_systimer_retention_ini
 #if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
 esp_err_t sleep_sys_periph_l2_cache_retention_init(void)
 {
-    esp_err_t err = sleep_retention_entries_create(l2_cache_regs_retention, ARRAY_SIZE(l2_cache_regs_retention), REGDMA_LINK_PRI_5, SLEEP_RETENTION_MODULE_SYS_PERIPH);
+    esp_err_t err = sleep_retention_entries_create(l2_cache_regs_retention, ARRAY_SIZE(l2_cache_regs_retention), REGDMA_LINK_PRI_SYS_PERIPH_HIGH, SLEEP_RETENTION_MODULE_SYS_PERIPH);
     ESP_RETURN_ON_ERROR(err, TAG, "failed to allocate memory for digital peripherals (L2 Cache) retention");
     ESP_LOGI(TAG, "L2 Cache sleep retention initialization");
     return ESP_OK;
@@ -94,7 +94,7 @@ esp_err_t sleep_sys_periph_l2_cache_retention_init(void)
 #if SOC_PAU_IN_TOP_DOMAIN
 esp_err_t sleep_pau_retention_init(void)
 {
-    esp_err_t err = sleep_retention_entries_create(pau_regs_retention, ARRAY_SIZE(pau_regs_retention), REGDMA_LINK_PRI_7, SLEEP_RETENTION_MODULE_SYS_PERIPH);
+    esp_err_t err = sleep_retention_entries_create(pau_regs_retention, ARRAY_SIZE(pau_regs_retention), REGDMA_LINK_PRI_SYS_PERIPH_LOW, SLEEP_RETENTION_MODULE_SYS_PERIPH);
     ESP_RETURN_ON_ERROR(err, TAG, "failed to allocate memory for system (PAU) retention");
     ESP_LOGI(TAG, "PAU sleep retention initialization");
     return ESP_OK;

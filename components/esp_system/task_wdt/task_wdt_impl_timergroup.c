@@ -52,7 +52,7 @@ static esp_err_t sleep_task_wdt_retention_init(void *arg)
     uint32_t group_id = *(uint32_t *)arg;
     esp_err_t err = sleep_retention_entries_create(tg_wdt_regs_retention[group_id].link_list,
                                                    tg_wdt_regs_retention[group_id].link_num,
-                                                   REGDMA_LINK_PRI_6,
+                                                   REGDMA_LINK_PRI_SYS_PERIPH_LOW,
                                                    (group_id == 0) ? SLEEP_RETENTION_MODULE_TG0_WDT : SLEEP_RETENTION_MODULE_TG1_WDT);
     if (err == ESP_OK) {
         ESP_LOGD(TAG, "Task watchdog timer retention initialization");

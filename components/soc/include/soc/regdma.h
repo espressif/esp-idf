@@ -60,9 +60,12 @@ extern "C" {
 #define REGDMA_LINK_PRI_BT_MAC_BB               REGDMA_LINK_PRI_5
 #define REGDMA_LINK_PRI_SYS_PERIPH_HIGH         REGDMA_LINK_PRI_5 // INT_MTX & HP_SYSTEM & Console UART
 #define REGDMA_LINK_PRI_SYS_PERIPH_LOW          REGDMA_LINK_PRI_6 // TG0 & IO MUX & SPI MEM & Systimer
-#define REGDMA_LINK_PRI_IEEE802154              REGDMA_LINK_PRI_7
-#define REGDMA_LINK_PRI_GDMA                    REGDMA_LINK_PRI_7
-#define REGDMA_LINK_PRI_RMT                     REGDMA_LINK_PRI_7
+#define REGDMA_LINK_PRI_GENERAL_PERIPH          REGDMA_LINK_PRI_7 // Low retenion priority for general peripherals
+#define REGDMA_LINK_PRI_IEEE802154              REGDMA_LINK_PRI_GENERAL_PERIPH
+#define REGDMA_LINK_PRI_GDMA                    REGDMA_LINK_PRI_GENERAL_PERIPH
+#define REGDMA_LINK_PRI_RMT                     REGDMA_LINK_PRI_GENERAL_PERIPH
+#define REGDMA_LINK_PRI_GPTIMER                 REGDMA_LINK_PRI_GENERAL_PERIPH
+#define REGDMA_LINK_PRI_I2C                     REGDMA_LINK_PRI_GENERAL_PERIPH
 
 typedef enum {
     REGDMA_LINK_PRI_0 = 0,
