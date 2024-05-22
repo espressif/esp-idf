@@ -13,6 +13,7 @@
 #include "freertos/FreeRTOS.h"
 #include "hal/spi_types.h"
 #include "hal/dma_types.h"
+#include "soc/ext_mem_defs.h"   //for SOC_NON_CACHEABLE_OFFSET
 #include "esp_private/spi_dma.h"
 #include "esp_pm.h"
 #include "esp_private/spi_share_hw_ctrl.h"
