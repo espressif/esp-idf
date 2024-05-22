@@ -744,15 +744,6 @@ static uint8_t get_extended_caps_ie(uint8_t *ie, size_t len)
 }
 
 #else /* CONFIG_IEEE80211KV */
-bool esp_rrm_is_rrm_supported_connection(void)
-{
-    return false;
-}
-
-bool esp_wnm_is_btm_supported_connection(void)
-{
-    return false;
-}
 #endif /* CONFIG_IEEE80211KV */
 
 void esp_set_scan_ie(void)
@@ -920,6 +911,20 @@ int esp_supplicant_post_evt(uint32_t evt_id, uint32_t data)
 }
 #endif /* CONFIG_SUPPLICANT_TASK */
 #else /* defined(CONFIG_IEEE80211KV) || defined(CONFIG_IEEE80211R) */
+void esp_set_scan_ie(void) { }
+#endif /* defined(CONFIG_IEEE80211KV) || defined(CONFIG_IEEE80211R) */
+
+#ifndef CONFIG_IEEE80211KV
+bool esp_rrm_is_rrm_supported_connection(void)
+{
+    return false;
+}
+
+bool esp_wnm_is_btm_supported_connection(void)
+{
+    return false;
+}
+
 int esp_rrm_send_neighbor_report_request(void)
 {
     return -1;
@@ -937,8 +942,7 @@ int esp_wnm_send_bss_transition_mgmt_query(enum btm_query_reason query_reason,
     return -1;
 }
 
-void esp_set_scan_ie(void) { }
-#endif /* defined(CONFIG_IEEE80211KV) || defined(CONFIG_IEEE80211R) */
+#endif /* !CONFIG_IEEE80211KV */
 
 #if defined(CONFIG_IEEE80211KV) || defined(CONFIG_IEEE80211R) || defined(CONFIG_WPA3_SAE)
 void esp_set_assoc_ie(uint8_t *bssid, const u8 *ies, size_t ies_len, bool mdie)
