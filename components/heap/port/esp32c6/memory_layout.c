@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -42,11 +42,11 @@ enum {
 /**
  * Defined the attributes and allocation priority of each memory on the chip,
  * The heap allocator will traverse all types of memory types in column High Priority Matching and match the specified caps at first,
- * if no memory caps matched or the allocation is failed, it will go to columns Medium Priorty Matching and Low Priority Matching
+ * if no memory caps matched or the allocation is failed, it will go to columns Medium Priority Matching and Low Priority Matching
  * in turn to continue matching.
  */
 const soc_memory_type_desc_t soc_memory_types[SOC_MEMORY_TYPE_NUM] = {
-    /*                           Mem Type Name   High Priority Matching                      Medium Priorty Matching    Low Priority Matching */
+    /*                           Mem Type Name   High Priority Matching                      Medium Priority Matching    Low Priority Matching */
     [SOC_MEMORY_TYPE_RAM]    = { "RAM",          { ESP32C6_MEM_COMMON_CAPS | MALLOC_CAP_DMA, 0,                         0 }},
     [SOC_MEMORY_TYPE_RTCRAM] = { "RTCRAM",       { MALLOC_CAP_RTCRAM,                        ESP32C6_MEM_COMMON_CAPS,   0 }},
 };
@@ -96,7 +96,6 @@ SOC_RESERVE_MEMORY_REGION((intptr_t)&_data_start, (intptr_t)&_heap_start, dram_d
 SOC_RESERVE_MEMORY_REGION((intptr_t)&_iram_start, (intptr_t)&_iram_end, iram_code);
 
 #ifdef CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP
-// TODO: IDF-6019 check reserved lp mem region
 SOC_RESERVE_MEMORY_REGION(SOC_RTC_DRAM_LOW, (intptr_t)&_rtc_force_slow_end, rtcram_data);
 #endif
 
