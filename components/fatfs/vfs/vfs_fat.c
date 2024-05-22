@@ -857,7 +857,7 @@ static int vfs_fat_rename(void* ctx, const char *src, const char *dst)
 static DIR* vfs_fat_opendir(void* ctx, const char* name)
 {
     vfs_fat_ctx_t* fat_ctx = (vfs_fat_ctx_t*) ctx;
-    strlcpy(fat_ctx->dir_path, name, FILENAME_MAX);
+    strlcpy(fat_ctx->dir_path, name, sizeof(fat_ctx->dir_path));
     _lock_acquire(&fat_ctx->lock);
     prepend_drive_to_path(fat_ctx, &name, NULL);
     vfs_fat_dir_t* fat_dir = ff_memalloc(sizeof(vfs_fat_dir_t));
@@ -895,6 +895,8 @@ static int vfs_fat_closedir(void* ctx, DIR* pdir)
 
 static struct dirent* vfs_fat_readdir(void* ctx, DIR* pdir)
 {
+    assert(ctx);
+    assert(pdir);
     vfs_fat_ctx_t* fat_ctx = (vfs_fat_ctx_t*) ctx;
     vfs_fat_dir_t* fat_dir = (vfs_fat_dir_t*) pdir;
     struct dirent* out_dirent;
@@ -912,8 +914,14 @@ static struct dirent* vfs_fat_readdir(void* ctx, DIR* pdir)
         snprintf(fat_ctx->cached_fileinfo.file_path, sizeof(fat_ctx->cached_fileinfo.file_path),
                  "/%s", fat_dir->filinfo.fname);
     } else {
-        snprintf(fat_ctx->cached_fileinfo.file_path, sizeof(fat_ctx->cached_fileinfo.file_path),
+        char *temp_file_path = (char*) ff_memalloc(sizeof(fat_ctx->cached_fileinfo.file_path));
+        if (temp_file_path == NULL) {
+            return out_dirent;
+        }
+        snprintf(temp_file_path, sizeof(fat_ctx->cached_fileinfo.file_path),
                  "%s/%s", fat_ctx->dir_path, fat_dir->filinfo.fname);
+        memcpy(fat_ctx->cached_fileinfo.file_path, temp_file_path, sizeof(fat_ctx->cached_fileinfo.file_path));
+        ff_memfree(temp_file_path);
     }
     fat_ctx->cached_fileinfo.fileinfo = fat_dir->filinfo;
     return out_dirent;
