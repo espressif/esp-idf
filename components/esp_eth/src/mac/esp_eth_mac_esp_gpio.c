@@ -28,7 +28,7 @@ static uint64_t s_emac_esp_used_gpio_mask = 0x0;
 static esp_err_t emac_esp_gpio_matrix_init(gpio_num_t gpio_num, uint32_t signal_in_idx, uint32_t signal_out_idx, gpio_mode_t mode)
 {
     // silently skip when user don't want to connect the signal to GPIO pad
-    if (gpio_num == GPIO_NUM_NC) {
+    if (gpio_num <= GPIO_NUM_NC) {
         ESP_LOGD(TAG, "%s skipping signal in_idx %" PRIu32 ", out_idx %" PRIu32, __func__, signal_in_idx, signal_out_idx);
         return ESP_OK;
     }
@@ -72,6 +72,11 @@ static esp_err_t emac_esp_iomux_init(gpio_num_t gpio_num, const emac_iomux_info_
     // silently skip undefined iomux functions (for example, ESP32 does not use MII COL_IN/CRS_IN)
     if (iomux_info == NULL) {
         ESP_LOGD(TAG, "%s skipping target undefined iomux periph function", __func__);
+        return ESP_OK;
+    }
+    // silently skip when user don't want to iomux the function to GPIO pad
+    if (gpio_num <= GPIO_NUM_NC) {
+        ESP_LOGD(TAG, "%s user defined GPIO not connected - skipping", __func__);
         return ESP_OK;
     }
     // loop over target iomux_info until reached end of list indicated by invalid GPIO num
