@@ -74,13 +74,17 @@ Clock Source
 
 - :cpp:enumerator:`i2s_clock_src_t::I2S_CLK_SRC_DEFAULT`: Default PLL clock.
 
-.. only:: not esp32h2
+.. only:: SOC_I2S_SUPPORTS_PLL_F160M
 
     - :cpp:enumerator:`i2s_clock_src_t::I2S_CLK_SRC_PLL_160M`: 160 MHz PLL clock.
 
-.. only:: esp32h2
+.. only:: SOC_I2S_SUPPORTS_PLL_F96M
 
     - :cpp:enumerator:`i2s_clock_src_t::I2S_CLK_SRC_PLL_96M`: 96 MHz PLL clock.
+
+.. only:: SOC_I2S_SUPPORTS_PLL_F240M
+
+    - :cpp:enumerator:`i2s_clock_src_t::I2S_CLK_SRC_PLL_240M`: 240 MHz PLL clock.
 
 .. only:: SOC_I2S_SUPPORTS_APLL
 
@@ -117,6 +121,7 @@ ESP32-C6    I2S 0     I2S 0     none      I2S 0     none       none
 ESP32-S3   I2S 0/1    I2S 0     I2S 0    I2S 0/1    none       none
 ESP32-H2    I2S 0     I2S 0     none      I2S 0     none       none
 ESP32-P4   I2S 0~2    I2S 0     I2S 0    I2S 0~2    none       none
+ESP32-C5    I2S 0     I2S 0     none      I2S 0     none       none
 =========  ========  ========  ========  ========  ========  ==========
 
 Standard Mode

@@ -42,6 +42,7 @@
 #include "esp_private/esp_clk.h"
 
 #include "driver/gpio.h"
+#include "esp_private/gpio.h"
 #include "driver/i2s_common.h"
 #include "i2s_private.h"
 
@@ -789,7 +790,7 @@ void i2s_gpio_check_and_set(i2s_chan_handle_t handle, int gpio, uint32_t signal_
 {
     /* Ignore the pin if pin = I2S_GPIO_UNUSED */
     if (gpio != (int)I2S_GPIO_UNUSED) {
-        gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[gpio], PIN_FUNC_GPIO);
+        gpio_func_sel(gpio, PIN_FUNC_GPIO);
         if (is_input) {
             /* Set direction, for some GPIOs, the input function are not enabled as default */
             gpio_set_direction(gpio, GPIO_MODE_INPUT);
@@ -806,7 +807,7 @@ void i2s_gpio_loopback_set(i2s_chan_handle_t handle, int gpio, uint32_t out_sig_
 {
     if (gpio != (int)I2S_GPIO_UNUSED) {
         i2s_output_gpio_reserve(handle,  gpio);
-        gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[gpio], PIN_FUNC_GPIO);
+        gpio_func_sel(gpio, PIN_FUNC_GPIO);
         gpio_set_direction(gpio, GPIO_MODE_INPUT_OUTPUT);
         esp_rom_gpio_connect_out_signal(gpio, out_sig_idx, 0, 0);
         esp_rom_gpio_connect_in_signal(gpio, in_sig_idx, 0);

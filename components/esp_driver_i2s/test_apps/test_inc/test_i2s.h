@@ -54,6 +54,14 @@ extern "C" {
 #define SLAVE_WS_IO 23
 #define DATA_IN_IO 47
 #define DATA_OUT_IO 48
+#elif CONFIG_IDF_TARGET_ESP32C5
+#define MASTER_MCK_IO 6
+#define MASTER_BCK_IO 8
+#define MASTER_WS_IO 9
+#define SLAVE_BCK_IO 23
+#define SLAVE_WS_IO 24
+#define DATA_IN_IO 10
+#define DATA_OUT_IO 25
 #else
 #define MASTER_MCK_IO 0
 #define MASTER_BCK_IO 4
