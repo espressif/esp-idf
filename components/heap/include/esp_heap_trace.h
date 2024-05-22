@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -112,9 +112,24 @@ esp_err_t heap_trace_start(heap_trace_mode_t mode);
  * @return
  * - ESP_ERR_NOT_SUPPORTED Project was compiled without heap tracing enabled in menuconfig.
  * - ESP_ERR_INVALID_STATE Heap tracing was not in progress.
- * - ESP_OK Heap tracing stopped..
+ * - ESP_OK Heap tracing stopped.
  */
 esp_err_t heap_trace_stop(void);
+
+/**
+ * @brief Pause heap tracing of allocations.
+ *
+ * @note This function puts the heap tracing in the state where the new allocations
+ * will no longer be traced but the free will still be. This can be used to e.g.,
+ * strategically monitor a set of allocations to make sure each of them will get freed
+ * without polluting the list of records with unwanted allocations.
+ *
+ * @return
+ * - ESP_ERR_NOT_SUPPORTED Project was compiled without heap tracing enabled in menuconfig.
+ * - ESP_ERR_INVALID_STATE Heap tracing was not in progress.
+ * - ESP_OK Heap tracing paused.
+ */
+esp_err_t heap_trace_alloc_pause(void);
 
 /**
  * @brief Resume heap tracing which was previously stopped.
