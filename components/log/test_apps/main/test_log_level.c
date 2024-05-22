@@ -98,6 +98,16 @@ TEST_CASE("LOG_LOCAL_LEVEL can be re-defined", "[log]")
     TEST_ASSERT_GREATER_THAN(17, get_counter());
     TEST_ASSERT_NOT_NULL(strstr(get_buffer(), "There is an info log"));
 
+    reset_buffer();
+    esp_log_level_set("*", ESP_LOG_INFO);
+    esp_log_level_set(TAG1, ESP_LOG_DEBUG);
+    ESP_LOGD(TAG1, "There is a debug log");
+    TEST_ASSERT_NOT_NULL(strstr(get_buffer(), "There is a debug log"));
+
+    reset_buffer();
+    ESP_LOGD(TAG1, "There is 2nd debug log");
+    TEST_ASSERT_NOT_NULL(strstr(get_buffer(), "There is 2nd debug log"));
+
     esp_log_level_set("*", ESP_LOG_ERROR);
     reset_buffer();
     ESP_LOGI(TAG1, "There is an info log");
