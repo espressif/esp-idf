@@ -41,7 +41,7 @@
 // #define SOC_I2S_SUPPORTED               1  // TODO: [ESP32C5] IDF-8713, IDF-8714
 // #define SOC_RMT_SUPPORTED               1  // TODO: [ESP32C5] IDF-8726
 // #define SOC_SDM_SUPPORTED               1  // TODO: [ESP32C5] IDF-8687
-// #define SOC_GPSPI_SUPPORTED             1  // TODO: [ESP32C5] IDF-8698, IDF-8699
+#define SOC_GPSPI_SUPPORTED             1
 // #define SOC_LEDC_SUPPORTED              1  // TODO: [ESP32C5] IDF-8684
 // #define SOC_I2C_SUPPORTED               1  // TODO: [ESP32C5] IDF-8694, IDF-8696
 #define SOC_SYSTIMER_SUPPORTED          1     // TODO: [ESP32C5] IDF-8707
@@ -383,15 +383,14 @@
 #define SOC_SPI_PERIPH_NUM          2
 #define SOC_SPI_PERIPH_CS_NUM(i)    6
 #define SOC_SPI_MAX_CS_NUM          6
+#define SOC_SPI_MAXIMUM_BUFFER_SIZE     64
 
-// #define SOC_SPI_MAXIMUM_BUFFER_SIZE     64
-
-// #define SOC_SPI_SUPPORT_DDRCLK              1
-// #define SOC_SPI_SLAVE_SUPPORT_SEG_TRANS     1
-// #define SOC_SPI_SUPPORT_CD_SIG              1
-// #define SOC_SPI_SUPPORT_CONTINUOUS_TRANS    1
-// #define SOC_SPI_SUPPORT_SLAVE_HD_VER2       1
-// #define SOC_SPI_SUPPORT_CLK_XTAL            1
+#define SOC_SPI_SUPPORT_DDRCLK              1
+#define SOC_SPI_SLAVE_SUPPORT_SEG_TRANS     1
+#define SOC_SPI_SUPPORT_CD_SIG              1
+#define SOC_SPI_SUPPORT_CONTINUOUS_TRANS    1
+#define SOC_SPI_SUPPORT_SLAVE_HD_VER2       1
+#define SOC_SPI_SUPPORT_CLK_XTAL            1
 // #define SOC_SPI_SUPPORT_CLK_PLL_F80M        1
 // #define SOC_SPI_SUPPORT_CLK_RC_FAST         1
 
@@ -399,8 +398,8 @@
 // host_id = 0 -> SPI0/SPI1, host_id = 1 -> SPI2,
 #define SOC_SPI_PERIPH_SUPPORT_MULTILINE_MODE(host_id)  ({(void)host_id; 1;})
 
-// #define SOC_MEMSPI_IS_INDEPENDENT 1
-// #define SOC_SPI_MAX_PRE_DIVIDER 16
+#define SOC_MEMSPI_IS_INDEPENDENT 1
+#define SOC_SPI_MAX_PRE_DIVIDER 16
 
 /*-------------------------- SPI MEM CAPS ---------------------------------------*/
 // #define SOC_SPI_MEM_SUPPORT_AUTO_WAIT_IDLE                (1)

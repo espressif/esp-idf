@@ -1568,7 +1568,7 @@ void test_add_device_slave(void)
         .spics_io_num = CS_REAL_DEV,
         .queue_size = 3,
     };
-    TEST_ESP_OK(spi_slave_initialize(TEST_SPI_HOST, &bus_cfg, &slvcfg, SPI_DMA_DISABLED));
+    TEST_ESP_OK(spi_slave_initialize(TEST_SPI_HOST, &bus_cfg, &slvcfg, SPI_DMA_CH_AUTO));
 
     spi_slave_transaction_t slave_trans = {};
     slave_trans.length = sizeof(slave_sendbuf) * 8;

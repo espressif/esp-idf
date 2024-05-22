@@ -37,7 +37,7 @@ const spi_signal_conn_t spi_periph_signal[SOC_SPI_PERIPH_NUM] = {
         .hw = NULL,
         .func = -1,
     }, {
-        .spiclk_out = FSPICLK_OUT_MUX_IDX,
+        .spiclk_out = FSPICLK_OUT_IDX,
         .spiclk_in = FSPICLK_IN_IDX,
         .spid_out = FSPID_OUT_IDX,
         .spiq_out = FSPIQ_OUT_IDX,
@@ -57,7 +57,7 @@ const spi_signal_conn_t spi_periph_signal[SOC_SPI_PERIPH_NUM] = {
         .spics0_iomux_pin = SPI2_IOMUX_PIN_NUM_CS,
         .irq = ETS_GPSPI2_INTR_SOURCE,
         .irq_dma = -1,
-        .module = PERIPH_GPSPI2_MODULE,
+        .module = -1,
         .hw = &GPSPI2,
         .func = SPI2_FUNC_NUM,
     },
