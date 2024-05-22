@@ -38,6 +38,10 @@
 #include "esp_private/sleep_retention.h"
 #endif
 
+#if CONFIG_ESP_WIFI_ENABLE_ROAMING_APP
+#include "esp_roaming.h"
+#endif
+
 static bool s_wifi_inited = false;
 
 #if (CONFIG_ESP_WIFI_RX_BA_WIN > CONFIG_ESP_WIFI_DYNAMIC_RX_BUFFER_NUM)
@@ -176,6 +180,11 @@ static esp_err_t wifi_deinit_internal(void)
 #endif
 
     esp_supplicant_deinit();
+
+#if CONFIG_ESP_WIFI_ENABLE_ROAMING_APP
+    deinit_roaming_app();
+#endif
+
     err = esp_wifi_deinit_internal();
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Failed to deinit Wi-Fi driver (0x%x)", err);
@@ -435,6 +444,11 @@ esp_err_t esp_wifi_init(const wifi_init_config_t *config)
             ESP_LOGE(TAG, "Failed to init supplicant (0x%x)", result);
             goto _deinit;
         }
+
+#if CONFIG_ESP_WIFI_ENABLE_ROAMING_APP
+        init_roaming_app();
+#endif
+
     } else {
         goto _deinit;
     }
@@ -462,6 +476,28 @@ _deinit:
     }
 
     return result;
+}
+
+esp_err_t esp_wifi_connect(void)
+{
+    esp_err_t ret = ESP_OK;
+    ret = esp_wifi_connect_internal();
+
+#if CONFIG_ESP_WIFI_ENABLE_ROAMING_APP
+    roaming_app_enable_reconnect();
+#endif
+    return ret;
+}
+
+esp_err_t esp_wifi_disconnect(void)
+{
+    esp_err_t ret = ESP_OK;
+    ret = esp_wifi_disconnect_internal();
+
+#if CONFIG_ESP_WIFI_ENABLE_ROAMING_APP
+    roaming_app_disable_reconnect();
+#endif
+    return ret;
 }
 
 #ifdef CONFIG_PM_ENABLE

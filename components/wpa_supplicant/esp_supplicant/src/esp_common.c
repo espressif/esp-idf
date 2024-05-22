@@ -427,9 +427,6 @@ void esp_supplicant_common_deinit(void)
     }
     s_supplicant_task_init_done = false;
 #endif /* CONFIG_SUPPLICANT_TASK */
-#if CONFIG_ESP_WIFI_ENABLE_ROAMING_APP
-    deinit_roaming_app();
-#endif
 #endif /* defined(CONFIG_IEEE80211KV) || defined(CONFIG_IEEE80211R) */
 }
 
