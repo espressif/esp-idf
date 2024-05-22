@@ -10,6 +10,8 @@
 #include "esp_ldo_regulator.h"
 #include "esp_private/esp_clk_tree_common.h"
 #include "esp_check.h"
+#include "hal/clk_tree_hal.h"
+#include "hal/clk_tree_ll.h"
 #if SOC_CLK_MPLL_SUPPORTED
 #include "rtc_clk.h"
 #endif
@@ -137,7 +139,7 @@ esp_err_t periph_rtc_apll_freq_set(uint32_t expt_freq, uint32_t *real_freq)
 #endif // SOC_CLK_APLL_SUPPORTED
 
 #if SOC_CLK_MPLL_SUPPORTED
-esp_err_t periph_rtc_mpll_acquire(void)
+esp_err_t IRAM_ATTR periph_rtc_mpll_acquire(void)
 {
     // power up LDO for the MPLL
 #if defined(CONFIG_ESP_LDO_CHAN_PSRAM_DOMAIN) && CONFIG_ESP_LDO_CHAN_PSRAM_DOMAIN != -1
@@ -176,7 +178,7 @@ void periph_rtc_mpll_release(void)
     portEXIT_CRITICAL(&periph_spinlock);
 }
 
-esp_err_t periph_rtc_mpll_freq_set(uint32_t expt_freq, uint32_t *real_freq)
+esp_err_t IRAM_ATTR periph_rtc_mpll_freq_set(uint32_t expt_freq, uint32_t *real_freq)
 {
     esp_err_t ret = ESP_OK;
 
@@ -190,10 +192,9 @@ esp_err_t periph_rtc_mpll_freq_set(uint32_t expt_freq, uint32_t *real_freq)
     /* If MPLL is not in use or only one peripheral in use, its frequency can be changed as will
      * But when more than one peripheral refers MPLL, its frequency is not allowed to change once it is set */
     if (s_cur_mpll_freq == 0 || s_mpll_ref_cnt < 2) {
-        uint32_t xtal_freq = 0;
-        ESP_ERROR_CHECK(esp_clk_tree_src_get_freq_hz(SOC_MOD_CLK_XTAL, ESP_CLK_TREE_SRC_FREQ_PRECISION_EXACT, &xtal_freq));
-        rtc_clk_mpll_configure(xtal_freq / MHZ, expt_freq / MHZ);
-        ESP_ERROR_CHECK(esp_clk_tree_src_get_freq_hz(SOC_MOD_CLK_MPLL, ESP_CLK_TREE_SRC_FREQ_PRECISION_EXACT, &s_cur_mpll_freq));
+        uint32_t xtal_freq_mhz = clk_ll_xtal_load_freq_mhz();
+        rtc_clk_mpll_configure(xtal_freq_mhz, expt_freq / MHZ);
+        s_cur_mpll_freq = clk_ll_mpll_get_freq_mhz(xtal_freq_mhz);
     } else {
         ret = ESP_ERR_INVALID_STATE;
     }

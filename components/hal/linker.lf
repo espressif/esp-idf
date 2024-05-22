@@ -24,5 +24,3 @@ entries:
         spi_flash_hal_gpspi (noflash)
     if SOC_PMU_SUPPORTED = y:
         pmu_hal (noflash)
-    if SOC_CLK_MPLL_SUPPORTED = y:
-        clk_tree_hal: clk_hal_xtal_get_freq_mhz (noflash)

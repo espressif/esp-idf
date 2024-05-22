@@ -771,8 +771,14 @@ static esp_err_t verify_segment_header(int index, const esp_image_segment_header
 
 static bool should_map(uint32_t load_addr)
 {
-    return (load_addr >= SOC_IROM_LOW && load_addr < SOC_IROM_HIGH)
-           || (load_addr >= SOC_DROM_LOW && load_addr < SOC_DROM_HIGH);
+    bool is_irom = (load_addr >= SOC_IROM_LOW) && (load_addr < SOC_IROM_HIGH);
+    bool is_drom = (load_addr >= SOC_DROM_LOW) && (load_addr < SOC_DROM_HIGH);
+    bool is_psram = false;
+#if SOC_MMU_PER_EXT_MEM_TARGET
+    is_psram = (load_addr >= SOC_EXTRAM_LOW) && (load_addr < SOC_EXTRAM_HIGH);
+#endif
+
+    return (is_irom || is_drom || is_psram);
 }
 
 static bool should_load(uint32_t load_addr)
@@ -857,7 +863,7 @@ static esp_err_t process_appended_hash_and_sig(esp_image_metadata_t *data, uint3
 
     // Case I: Bootloader part
     if (part_offset == ESP_BOOTLOADER_OFFSET) {
-        // For bootloader with secure boot v1, signature stays in an independant flash
+        // For bootloader with secure boot v1, signature stays in an independent flash
         // sector (offset 0x0)  and does not get appended to the image.
 #if CONFIG_SECURE_BOOT_V2_ENABLED
         // Sanity check - secure boot v2 signature block starts on 4K boundary

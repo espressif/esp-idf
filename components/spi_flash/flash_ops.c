@@ -150,7 +150,10 @@ void IRAM_ATTR esp_mspi_pin_init(void)
     }
     //Set F4R4 board pin drive strength. TODO: IDF-3663
 #endif
-    /* Reserve the GPIO pins */
+}
+
+void esp_mspi_pin_reserve(void)
+{
     uint64_t reserve_pin_mask = 0;
     for (esp_mspi_io_t i = 0; i < ESP_MSPI_IO_MAX; i++) {
         reserve_pin_mask |= BIT64(esp_mspi_get_io(i));

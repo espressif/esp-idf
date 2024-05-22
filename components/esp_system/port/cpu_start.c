@@ -82,6 +82,7 @@
 #endif // SOC_INT_CLIC_SUPPORTED
 
 #include "esp_private/esp_mmu_map_private.h"
+#include "esp_private/image_process.h"
 #if CONFIG_SPIRAM
 #include "esp_psram.h"
 #include "esp_private/mmu_psram_flash.h"
@@ -440,17 +441,10 @@ void IRAM_ATTR call_start_cpu0(void)
     }
 #endif
 
-#if !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
-#if CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
-    ESP_EARLY_LOGI(TAG, "Unicore app");
-#else
-    ESP_EARLY_LOGI(TAG, "Multicore app");
-#if !SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
+#if !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP && !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE && !SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
     // It helps to fix missed cache settings for other cores. It happens when bootloader is unicore.
     do_multicore_settings();
-#endif // !SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
 #endif
-#endif // !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
 
     // When the APP is loaded into ram for execution, some hardware initialization behaviors
     // in the bootloader are still necessary
@@ -538,7 +532,7 @@ void IRAM_ATTR call_start_cpu0(void)
 #if CONFIG_ESPTOOLPY_OCT_FLASH && !CONFIG_ESPTOOLPY_FLASH_MODE_AUTO_DETECT
     bool efuse_opflash_en = efuse_ll_get_flash_type();
     if (!efuse_opflash_en) {
-        ESP_EARLY_LOGE(TAG, "Octal Flash option selected, but EFUSE not configured!");
+        ESP_DRAM_LOGE(TAG, "Octal Flash option selected, but EFUSE not configured!");
         abort();
     }
 #endif
@@ -568,22 +562,43 @@ void IRAM_ATTR call_start_cpu0(void)
 
     esp_mmu_map_init();
 
+#if !CONFIG_APP_BUILD_TYPE_ELF_RAM
+#if CONFIG_SPIRAM_FLASH_LOAD_TO_PSRAM
+    ESP_ERROR_CHECK(image_process());
+#endif
+#endif
+
 #if CONFIG_SPIRAM_BOOT_INIT
     if (esp_psram_init() != ESP_OK) {
 #if CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
-        ESP_EARLY_LOGE(TAG, "Failed to init external RAM, needed for external .bss segment");
+        ESP_DRAM_LOGE(TAG, "Failed to init external RAM, needed for external .bss segment");
         abort();
 #endif
 
 #if CONFIG_SPIRAM_IGNORE_NOTFOUND
         ESP_EARLY_LOGI(TAG, "Failed to init external RAM; continuing without it.");
 #else
-        ESP_EARLY_LOGE(TAG, "Failed to init external RAM!");
+        ESP_DRAM_LOGE(TAG, "Failed to init external RAM!");
         abort();
 #endif
     }
 #endif
+
+    //----------------------------------Separator-----------------------------//
+    /**
+     * @note
+     * After this stage, you can access the flash through the cache, i.e. run code which is not placed in IRAM
+     * or print string which locates on flash
+     */
+    esp_mspi_pin_reserve();
+
 #endif // !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
+
+#if CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
+    ESP_EARLY_LOGI(TAG, "Unicore app");
+#else
+    ESP_EARLY_LOGI(TAG, "Multicore app");
+#endif
 
     bootloader_init_mem();
 
