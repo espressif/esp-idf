@@ -750,6 +750,33 @@ esp_err_t esp_nan_internal_datapath_resp(wifi_nan_datapath_resp_t *resp);
   */
 esp_err_t esp_nan_internal_datapath_end(wifi_nan_datapath_end_req_t *req);
 
+/**
+  * @brief     Connect WiFi station to the AP.
+  *
+  * @attention 1. This API only impact WIFI_MODE_STA or WIFI_MODE_APSTA mode
+  *
+  * @return
+  *    - ESP_OK: succeed
+  *    - ESP_ERR_WIFI_NOT_INIT: WiFi is not initialized by esp_wifi_init
+  *    - ESP_ERR_WIFI_NOT_STARTED: WiFi is not started by esp_wifi_start
+  *    - ESP_ERR_WIFI_MODE: WiFi mode error
+  *    - ESP_ERR_WIFI_CONN: WiFi internal error, station or soft-AP control block wrong
+  *    - ESP_ERR_WIFI_SSID: SSID of AP which station connects is invalid
+  */
+esp_err_t esp_wifi_connect_internal(void);
+
+/**
+  * @brief     Disconnect WiFi station from the AP.
+  *
+  * @return
+  *    - ESP_OK: succeed
+  *    - ESP_ERR_WIFI_NOT_INIT: WiFi was not initialized by esp_wifi_init
+  *    - ESP_ERR_WIFI_NOT_STARTED: WiFi was not started by esp_wifi_start
+  *    - ESP_FAIL: other WiFi internal errors
+  *
+  */
+esp_err_t esp_wifi_disconnect_internal(void);
+
 #ifdef __cplusplus
 }
 #endif
