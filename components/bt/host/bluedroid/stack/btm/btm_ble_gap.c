@@ -4741,6 +4741,17 @@ BOOLEAN BTM_BleAddDevToResolvingList(BD_ADDR addr,
     return TRUE;
 }
 
+BOOLEAN BTM_BleSetPrivacyMode(UINT8 addr_type, BD_ADDR bd_addr, UINT8 privacy_mode, tBTM_SET_PRIVACY_MODE_CMPL_CBACK *p_callback)
+{
+    if (btsnd_hcic_ble_set_privacy_mode(addr_type, bd_addr, privacy_mode) != TRUE) {
+        BTM_TRACE_ERROR("LE SetPrivacyMode Mode=%d: error", privacy_mode);
+        return FALSE;
+    }
+
+    btm_cb.devcb.p_set_privacy_mode_cmpl_cb = p_callback;
+    return TRUE;
+}
+
 bool btm_ble_adv_pkt_ready(void)
 {
     tBTM_BLE_CB *p_cb = &btm_cb.ble_ctr_cb;
