@@ -191,7 +191,20 @@ TEST_CASE("I2S_basic_channel_allocation_reconfig_deleting_test", "[i2s]")
     TEST_ESP_OK(i2s_channel_enable(tx_handle));
     TEST_ESP_OK(i2s_channel_disable(tx_handle));
     TEST_ESP_OK(i2s_del_channel(tx_handle));
-    TEST_ASSERT(i2s_channel_get_info(tx_handle, &chan_info) == ESP_ERR_NOT_FOUND);
+    TEST_ESP_ERR(ESP_ERR_NOT_FOUND, i2s_channel_get_info(tx_handle, &chan_info));
+
+    /* Exhaust test */
+    i2s_chan_handle_t tx_ex[SOC_I2S_NUM] = {};
+    for (int i = 0; i < SOC_I2S_NUM; i++) {
+        TEST_ESP_OK(i2s_new_channel(&chan_cfg, &tx_ex[i], NULL));
+        TEST_ESP_OK(i2s_channel_init_std_mode(tx_ex[i], &std_cfg));
+        TEST_ESP_OK(i2s_channel_enable(tx_ex[i]));
+    }
+    TEST_ESP_ERR(ESP_ERR_NOT_FOUND, i2s_new_channel(&chan_cfg, &tx_handle, NULL));
+    for (int i = 0; i < SOC_I2S_NUM; i++) {
+        TEST_ESP_OK(i2s_channel_disable(tx_ex[i]));
+        TEST_ESP_OK(i2s_del_channel(tx_ex[i]));
+    }
 
     /* Duplex channel basic test */
     chan_cfg.id = I2S_NUM_0;    // Specify port id to I2S port 0
@@ -209,7 +222,7 @@ TEST_CASE("I2S_basic_channel_allocation_reconfig_deleting_test", "[i2s]")
 
     /* Hold the occupation */
     TEST_ESP_OK(i2s_platform_acquire_occupation(I2S_NUM_0, "test_i2s"));
-    TEST_ASSERT(i2s_new_channel(&chan_cfg, &tx_handle, &rx_handle) == ESP_ERR_NOT_FOUND);
+    TEST_ESP_ERR(ESP_ERR_NOT_FOUND, i2s_new_channel(&chan_cfg, &tx_handle, &rx_handle));
     TEST_ESP_OK(i2s_platform_release_occupation(I2S_NUM_0));
     TEST_ESP_OK(i2s_new_channel(&chan_cfg, &tx_handle, &rx_handle));
     TEST_ESP_OK(i2s_del_channel(tx_handle));

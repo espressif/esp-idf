@@ -23,6 +23,9 @@ typedef enum {
 #if SOC_I2S_NUM > 1
     I2S_NUM_1 = 1,                 /*!< I2S controller port 1 */
 #endif
+#if SOC_I2S_NUM > 2
+    I2S_NUM_2 = 2,                 /*!< I2S controller port 2 */
+#endif
     I2S_NUM_AUTO,                  /*!< Select whichever port is available */
 } i2s_port_t;
 
