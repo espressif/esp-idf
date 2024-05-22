@@ -54,14 +54,14 @@ This example doesn't utilize card detect (CD) and write protect (WP) signals fro
 
 The table below shows the default pin assignments.
 
-SD card pin | SPI pin | ESP32 pin     | ESP32-S2 | ESP32-S3 | ESP32-H2 | ESP32-C3 and other chips | Notes
-------------|---------|---------------|----------|----------|----------|--------------------------|-------------
- D0         | MISO    | GPIO2         | GPIO37   | GPIO37   | GPIO0    | GPIO6                    | 10k pullup
- D1         | -       | GPIO4         | -        | GPIO38   | -        | -                        | not used in 1-line SD mode; 10k pullup in 4-line mode
- D2         | -       | GPIO12 (MTDI) | -        | GPIO33   | -        | -                        | not used in 1-line SD mode; 10k pullup in 4-line mode
- D3         | CS      | GPIO13 (MTCK) | GPIO34   | GPIO34   | GPIO1    | GPIO1                    | not used in 1-line SD mode, but card's D3 pin must have a 10k pullup
- CLK        | SCK     | GPIO14 (MTMS) | GPIO36   | GPIO36   | GPIO4    | GPIO5                    | 10k pullup
- CMD        | MOSI    | GPIO15 (MTDO) | GPIO35   | GPIO35   | GPIO5    | GPIO4                    | 10k pullup
+SD card pin | SPI pin | ESP32 pin     | ESP32-S2 | ESP32-S3 | ESP32-P4 SDMMC | ESP32-P4 SDSPI | ESP32-H2 | ESP32-C3 and other chips | Notes
+------------|---------|---------------|----------|----------|----------------|----------------|----------|--------------------------|-------------
+ D0         | MISO    | GPIO2         | GPIO37   | GPIO37   | GPIO43         | GPIO13         | GPIO0    | GPIO6                    | 10k pullup
+ D1         | -       | GPIO4         | -        | GPIO38   | GPIO44         | -              | -        | -                        | not used in 1-line SD mode; 10k pullup in 4-line mode
+ D2         | -       | GPIO12 (MTDI) | -        | GPIO33   | GPIO39         | -              | -        | -                        | not used in 1-line SD mode; 10k pullup in 4-line mode
+ D3         | CS      | GPIO13 (MTCK) | GPIO34   | GPIO34   | GPIO40         | GPIO10         | GPIO1    | GPIO1                    | not used in 1-line SD mode, but card's D3 pin must have a 10k pullup
+ CLK        | SCK     | GPIO14 (MTMS) | GPIO36   | GPIO36   | GPIO41         | GPIO12         | GPIO4    | GPIO5                    | 10k pullup
+ CMD        | MOSI    | GPIO15 (MTDO) | GPIO35   | GPIO35   | GPIO42         | GPIO11         | GPIO5    | GPIO4                    | 10k pullup
 
  ### 4-line and 1-line SD modes
 
@@ -96,6 +96,21 @@ This command will burn the `XPD_SDIO_TIEH`, `XPD_SDIO_FORCE`, and `XPD_SDIO_REG`
 `espefuse.py` has a `--do-not-confirm` option if running from an automated flashing script.
 
 See [the document about pullup requirements](https://docs.espressif.com/projects/esp-idf/en/latest/api-reference/peripherals/sd_pullup_requirements.html) for more details about pullup support and compatibility of modules and development boards.
+
+#### ESP32-P4 related notes
+
+This only applies when `Test SD card` setting in `Performance Benchmark Example Configuration` is enabled.
+
+On ESP32-P4, Slot 1 of the SDMMC peripheral is connected to GPIO pins using GPIO matrix. This allows arbitrary GPIOs to be used to connect an SD card. In this example, GPIOs can be configured in two ways:
+
+1. Using menuconfig: Run `idf.py menuconfig` in the project directory and open `Performance Benchmark Example Configuration` menu.
+2. In the source code: See the initialization of `sdmmc_slot_config_t slot_config` structure in the example code.
+
+If pins selected correspond with default pins used for ESP32-P4 SDMMC (i.e. SD card slot is connected to them), possibly an additional setting up needs to be done.
+
+These pins are able to connect to an ultra high-speed SD card (UHS-I) which requires 1.8V switching (instead of the regular 3.3V). This means the user has to provide an external LDO power supply to use them, or to enable and configure an internal LDO via `idf.py menuconfig` -> `SD/MMC Example Configuration` -> `SD power supply comes from internal LDO IO`.
+
+When using different GPIO pins this is not required and `SD power supply comes from internal LDO IO` setting can be disabled.
 
 ### Note about SPIFFS
 

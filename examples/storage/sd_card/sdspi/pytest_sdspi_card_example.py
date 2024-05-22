@@ -1,7 +1,5 @@
 # SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
-
-
 import logging
 import re
 
@@ -33,7 +31,7 @@ def test_examples_sd_card_sdspi(dut: Dut) -> None:
                      'Reading file /sdcard/foo.txt',
                      "Read from file: 'Hello {}!'".format(name))
     sd_card_format = re.compile(str.encode('Formatting card, allocation unit size=\\S+'))
-    message_list2 = ('file doesnt exist, format done',
+    message_list2 = ("file doesn't exist, formatting done",
                      'Opening file /sdcard/nihao.txt',
                      'File written',
                      'Reading file /sdcard/nihao.txt',
