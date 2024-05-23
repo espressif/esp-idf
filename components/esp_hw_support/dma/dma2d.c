@@ -828,9 +828,6 @@ esp_err_t dma2d_set_transfer_ability(dma2d_channel_handle_t dma2d_chan, const dm
         dma2d_ll_tx_enable_descriptor_burst(group->hal.dev, channel_id, ability->desc_burst_en);
         dma2d_ll_tx_set_data_burst_length(group->hal.dev, channel_id, ability->data_burst_length);
         dma2d_ll_tx_set_macro_block_size(group->hal.dev, channel_id, ability->mb_size);
-        if (ability->dscr_port_block_h && ability->dscr_port_block_v) {
-            dma2d_ll_tx_set_dscr_port_block_size(group->hal.dev, channel_id, ability->dscr_port_block_h, ability->dscr_port_block_v);
-        }
     } else {
         dma2d_ll_rx_enable_descriptor_burst(group->hal.dev, channel_id, ability->desc_burst_en);
         dma2d_ll_rx_set_data_burst_length(group->hal.dev, channel_id, ability->data_burst_length);
@@ -868,6 +865,24 @@ esp_err_t dma2d_configure_color_space_conversion(dma2d_channel_handle_t dma2d_ch
         dma2d_ll_rx_configure_color_space_conv(group->hal.dev, channel_id, config->rx_csc_option);
         dma2d_ll_rx_set_csc_pre_scramble(group->hal.dev, channel_id, config->pre_scramble);
         dma2d_ll_rx_set_csc_post_scramble(group->hal.dev, channel_id, config->post_scramble);
+    }
+
+err:
+    return ret;
+}
+
+esp_err_t dma2d_configure_dscr_port_mode(dma2d_channel_handle_t dma2d_chan, const dma2d_dscr_port_mode_config_t *config)
+{
+    esp_err_t ret = ESP_OK;
+    ESP_GOTO_ON_FALSE_ISR(dma2d_chan && config, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
+
+    dma2d_group_t *group = dma2d_chan->group;
+    int channel_id = dma2d_chan->channel_id;
+
+    if (dma2d_chan->direction == DMA2D_CHANNEL_DIRECTION_TX) {
+        ESP_GOTO_ON_FALSE_ISR(config->block_h > 0 && config->block_v > 0, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
+
+        dma2d_ll_tx_set_dscr_port_block_size(group->hal.dev, channel_id, config->block_h, config->block_v);
     }
 
 err:

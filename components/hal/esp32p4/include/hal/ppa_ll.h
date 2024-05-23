@@ -679,10 +679,15 @@ static inline void ppa_ll_blend_set_rx_fg_fix_rgb(ppa_dev_t *dev, color_pixel_rg
  * @param rgb_thres_low Color-key lower threshold of background in RGB888 format
  * @param rgb_thres_high Color-key higher threshold of background in RGB888 format
  */
-static inline void ppa_ll_blend_configure_rx_bg_ck_range(ppa_dev_t *dev, uint32_t rgb_thres_low, uint32_t rgb_thres_high)
+static inline void ppa_ll_blend_configure_rx_bg_ck_range(ppa_dev_t *dev, color_pixel_rgb888_data_t *rgb_thres_low, color_pixel_rgb888_data_t *rgb_thres_high)
 {
-    dev->ck_bg_low.val = rgb_thres_low;
-    dev->ck_bg_high.val = rgb_thres_high;
+    dev->ck_bg_low.colorkey_bg_b_low = rgb_thres_low->b;
+    dev->ck_bg_low.colorkey_bg_g_low = rgb_thres_low->g;
+    dev->ck_bg_low.colorkey_bg_r_low = rgb_thres_low->r;
+
+    dev->ck_bg_high.colorkey_bg_b_high = rgb_thres_high->b;
+    dev->ck_bg_high.colorkey_bg_g_high = rgb_thres_high->g;
+    dev->ck_bg_high.colorkey_bg_r_high = rgb_thres_high->r;
 }
 
 /**
@@ -692,10 +697,15 @@ static inline void ppa_ll_blend_configure_rx_bg_ck_range(ppa_dev_t *dev, uint32_
  * @param rgb_thres_low Color-key lower threshold of foreground in RGB888 format
  * @param rgb_thres_high Color-key higher threshold of foreground in RGB888 format
  */
-static inline void ppa_ll_blend_configure_rx_fg_ck_range(ppa_dev_t *dev, uint32_t rgb_thres_low, uint32_t rgb_thres_high)
+static inline void ppa_ll_blend_configure_rx_fg_ck_range(ppa_dev_t *dev, color_pixel_rgb888_data_t *rgb_thres_low, color_pixel_rgb888_data_t *rgb_thres_high)
 {
-    dev->ck_fg_low.val = rgb_thres_low;
-    dev->ck_fg_high.val = rgb_thres_high;
+    dev->ck_fg_low.colorkey_fg_b_low = rgb_thres_low->b;
+    dev->ck_fg_low.colorkey_fg_g_low = rgb_thres_low->g;
+    dev->ck_fg_low.colorkey_fg_r_low = rgb_thres_low->r;
+
+    dev->ck_fg_high.colorkey_fg_b_high = rgb_thres_high->b;
+    dev->ck_fg_high.colorkey_fg_g_high = rgb_thres_high->g;
+    dev->ck_fg_high.colorkey_fg_r_high = rgb_thres_high->r;
 }
 
 /**
@@ -704,9 +714,11 @@ static inline void ppa_ll_blend_configure_rx_fg_ck_range(ppa_dev_t *dev, uint32_
  * @param dev Peripheral instance address
  * @param rgb Default RGB value in RGB888 format
  */
-static inline void ppa_ll_blend_set_ck_default_rgb(ppa_dev_t *dev, uint32_t rgb)
+static inline void ppa_ll_blend_set_ck_default_rgb(ppa_dev_t *dev, color_pixel_rgb888_data_t *rgb)
 {
-    dev->ck_default.val = (dev->ck_default.colorkey_fg_bg_reverse << PPA_COLORKEY_FG_BG_REVERSE_S) | rgb;
+    dev->ck_default.colorkey_default_b = rgb->b;
+    dev->ck_default.colorkey_default_g = rgb->g;
+    dev->ck_default.colorkey_default_r = rgb->r;
 }
 
 /**

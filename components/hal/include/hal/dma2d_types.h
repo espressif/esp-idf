@@ -118,9 +118,11 @@ typedef enum {
 
 /**
  * @brief Enumeration of 2D-DMA data burst length options
+ *
+ * Starting from 1, saving 0 for special purpose (upper layer could use 0 to be a default burst length)
  */
 typedef enum {
-    DMA2D_DATA_BURST_LENGTH_8,          /*!< 2D-DMA block size: 8 bytes */
+    DMA2D_DATA_BURST_LENGTH_8 = 1,      /*!< 2D-DMA block size: 8 bytes */
     DMA2D_DATA_BURST_LENGTH_16,         /*!< 2D-DMA block size: 16 bytes */
     DMA2D_DATA_BURST_LENGTH_32,         /*!< 2D-DMA block size: 32 bytes */
     DMA2D_DATA_BURST_LENGTH_64,         /*!< 2D-DMA block size: 64 bytes */

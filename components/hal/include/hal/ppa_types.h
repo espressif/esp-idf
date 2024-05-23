@@ -8,6 +8,7 @@
 
 #include <stdint.h>
 #include "hal/color_types.h"
+#include "hal/dma2d_types.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -53,10 +54,11 @@ typedef enum {
     PPA_BLEND_COLOR_MODE_ARGB8888 = COLOR_TYPE_ID(COLOR_SPACE_ARGB, COLOR_PIXEL_ARGB8888),   /*!< PPA blend color mode: ARGB8888 */
     PPA_BLEND_COLOR_MODE_RGB888 = COLOR_TYPE_ID(COLOR_SPACE_RGB, COLOR_PIXEL_RGB888),        /*!< PPA blend color mode: RGB888 */
     PPA_BLEND_COLOR_MODE_RGB565 = COLOR_TYPE_ID(COLOR_SPACE_RGB, COLOR_PIXEL_RGB565),        /*!< PPA blend color mode: RGB565 */
-    PPA_BLEND_COLOR_MODE_L8 = COLOR_TYPE_ID(COLOR_SPACE_CLUT, COLOR_PIXEL_L8),               /*!< PPA blend color mode: L8, only available on blend inputs */
-    PPA_BLEND_COLOR_MODE_L4 = COLOR_TYPE_ID(COLOR_SPACE_CLUT, COLOR_PIXEL_L4),               /*!< PPA blend color mode: L4, only available on blend inputs */
     PPA_BLEND_COLOR_MODE_A8 = COLOR_TYPE_ID(COLOR_SPACE_ALPHA, COLOR_PIXEL_A8),              /*!< PPA blend color mode: A8, only available on blend foreground input */
     PPA_BLEND_COLOR_MODE_A4 = COLOR_TYPE_ID(COLOR_SPACE_ALPHA, COLOR_PIXEL_A4),              /*!< PPA blend color mode: A4, only available on blend foreground input */
+    // TODO: Support CLUT to support L4/L8 color mode
+    PPA_BLEND_COLOR_MODE_L8 = COLOR_TYPE_ID(COLOR_SPACE_CLUT, COLOR_PIXEL_L8),               /*!< PPA blend color mode: L8, only available on blend inputs */
+    PPA_BLEND_COLOR_MODE_L4 = COLOR_TYPE_ID(COLOR_SPACE_CLUT, COLOR_PIXEL_L4),               /*!< PPA blend color mode: L4, only available on blend inputs */
 } ppa_blend_color_mode_t;
 
 /**
@@ -96,6 +98,17 @@ typedef enum {
     PPA_COLOR_RANGE_LIMIT = COLOR_RANGE_LIMIT,      /*!< Limited color range, 16 is the darkest black and 235 is the brightest white */
     PPA_COLOR_RANGE_FULL = COLOR_RANGE_FULL,        /*!< Full color range, 0 is the darkest black and 255 is the brightest white */
 } ppa_color_range_t;
+
+/**
+ * @brief Enumeration of PPA supported data burst length
+ */
+typedef enum {
+    PPA_DATA_BURST_LENGTH_8 = DMA2D_DATA_BURST_LENGTH_8,        /*!< Data burst length: 8 bytes */
+    PPA_DATA_BURST_LENGTH_16 = DMA2D_DATA_BURST_LENGTH_16,      /*!< Data burst length: 16 bytes */
+    PPA_DATA_BURST_LENGTH_32 = DMA2D_DATA_BURST_LENGTH_32,      /*!< Data burst length: 32 bytes */
+    PPA_DATA_BURST_LENGTH_64 = DMA2D_DATA_BURST_LENGTH_64,      /*!< Data burst length: 64 bytes */
+    PPA_DATA_BURST_LENGTH_128 = DMA2D_DATA_BURST_LENGTH_128,    /*!< Data burst length: 128 bytes */
+} ppa_data_burst_length_t;
 
 #ifdef __cplusplus
 }

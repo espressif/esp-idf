@@ -93,15 +93,19 @@ bool ppa_srm_transaction_on_picked(uint32_t num_chans, const dma2d_trans_channel
     dma2d_connect(dma2d_rx_chan, &trig_periph);
 
     dma2d_transfer_ability_t dma_transfer_ability = {
-        .data_burst_length = DMA2D_DATA_BURST_LENGTH_128,
+        .data_burst_length = srm_trans_desc->data_burst_length,
         .desc_burst_en = true,
         .mb_size = DMA2D_MACRO_BLOCK_SIZE_NONE,
-        // Configure the block size to be received by the SRM engine, which is passed from the 2D-DMA TX channel (i.e. 2D-DMA dscr-port mode)
-        .dscr_port_block_h = (srm_trans_desc->in.srm_cm == PPA_SRM_COLOR_MODE_YUV420) ? PPA_LL_SRM_YUV420_BLOCK_SIZE : PPA_LL_SRM_DEFAULT_BLOCK_SIZE,
-        .dscr_port_block_v = (srm_trans_desc->in.srm_cm == PPA_SRM_COLOR_MODE_YUV420) ? PPA_LL_SRM_YUV420_BLOCK_SIZE : PPA_LL_SRM_DEFAULT_BLOCK_SIZE,
     };
     dma2d_set_transfer_ability(dma2d_tx_chan, &dma_transfer_ability);
     dma2d_set_transfer_ability(dma2d_rx_chan, &dma_transfer_ability);
+
+    // Configure the block size to be received by the SRM engine, which is passed from the 2D-DMA TX channel (i.e. 2D-DMA dscr-port mode)
+    dma2d_dscr_port_mode_config_t dma_dscr_port_mode_config = {
+        .block_h = (srm_trans_desc->in.srm_cm == PPA_SRM_COLOR_MODE_YUV420) ? PPA_LL_SRM_YUV420_BLOCK_SIZE : PPA_LL_SRM_DEFAULT_BLOCK_SIZE,
+        .block_v = (srm_trans_desc->in.srm_cm == PPA_SRM_COLOR_MODE_YUV420) ? PPA_LL_SRM_YUV420_BLOCK_SIZE : PPA_LL_SRM_DEFAULT_BLOCK_SIZE,
+    };
+    dma2d_configure_dscr_port_mode(dma2d_tx_chan, &dma_dscr_port_mode_config);
 
     // YUV444 and YUV422 are not supported by PPA module, need to utilize 2D-DMA color space conversion feature to do a conversion
     ppa_srm_color_mode_t ppa_in_color_mode = srm_trans_desc->in.srm_cm;
@@ -180,8 +184,25 @@ esp_err_t ppa_do_scale_rotate_mirror(ppa_client_handle_t ppa_client, const ppa_s
     // in_buffer could be anywhere (ram, flash, psram), out_buffer ptr cannot in flash region
     ESP_RETURN_ON_FALSE(esp_ptr_internal(config->out.buffer) || esp_ptr_external_ram(config->out.buffer), ESP_ERR_INVALID_ARG, TAG, "invalid out.buffer addr");
     uint32_t buf_alignment_size = (uint32_t)ppa_client->engine->platform->buf_alignment_size;
-    ESP_RETURN_ON_FALSE((uintptr_t)config->out.buffer % buf_alignment_size == 0 && config->out.buffer_size % buf_alignment_size == 0,
+    ESP_RETURN_ON_FALSE(((uint32_t)config->out.buffer & (buf_alignment_size - 1)) == 0 && (config->out.buffer_size & (buf_alignment_size - 1)) == 0,
                         ESP_ERR_INVALID_ARG, TAG, "out.buffer addr or out.buffer_size not aligned to cache line size");
+    // For YUV420 input/output: in desc, ha/hb/va/vb/x/y must be even number
+    if (config->in.srm_cm == PPA_SRM_COLOR_MODE_YUV420) {
+        ESP_RETURN_ON_FALSE(config->in.pic_h % 2 == 0 && config->in.pic_w % 2 == 0 &&
+                            config->in.block_h % 2 == 0 && config->in.block_w % 2 == 0 &&
+                            config->in.block_offset_x % 2 == 0 && config->in.block_offset_y % 2 == 0,
+                            ESP_ERR_INVALID_ARG, TAG, "YUV420 input does not support odd h/w/offset_x/offset_y");
+    }
+    // TODO: ECO2 support YUV422
+    // else if (config->in.srm_cm == PPA_SRM_COLOR_MODE_YUV422) {
+    //     ESP_RETURN_ON_FALSE(config->in.pic_w % 2 == 0 && config->in.block_w % 2 == 0 && config->in.block_offset_x % 2 == 0,
+    //                         ESP_ERR_INVALID_ARG, TAG, "YUV422 input does not support odd w/offset_x");
+    // }
+    if (config->out.srm_cm == PPA_SRM_COLOR_MODE_YUV420) {
+        ESP_RETURN_ON_FALSE(config->out.pic_h % 2 == 0 && config->out.pic_w % 2 == 0 &&
+                            config->out.block_offset_x % 2 == 0 && config->out.block_offset_y % 2 == 0,
+                            ESP_ERR_INVALID_ARG, TAG, "YUV420 output does not support odd h/w/offset_x/offset_y");
+    }
     color_space_pixel_format_t out_pixel_format = {
         .color_type_id = config->out.srm_cm,
     };
@@ -217,26 +238,22 @@ esp_err_t ppa_do_scale_rotate_mirror(ppa_client_handle_t ppa_client, const ppa_s
         new_alpha_value = (uint32_t)(config->alpha_scale_ratio * 256);
     }
     // To reduce complexity, rotation_angle, color_mode, alpha_update_mode correctness are checked in their corresponding LL functions
-    // TODO:
-    // YUV420: in desc, ha/hb/va/vb/x/y must be even number
-    // What for YUV444/YUV422
 
-    // Write back and invalidate are performed on the entire picture (the window content is not continuous in the buffer)
-    // Write back in_buffer
+    // Write back and invalidate necessary data (note that the window content is not continuous in the buffer)
+    // Write back in_buffer extended window (alignment not necessary on C2M direction)
     color_space_pixel_format_t in_pixel_format = {
         .color_type_id = config->in.srm_cm,
     };
-    uint32_t in_pic_len = config->in.pic_w * config->in.pic_h * color_hal_pixel_format_get_bit_depth(in_pixel_format) / 8;
-    esp_cache_msync((void *)config->in.buffer, in_pic_len, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED);
-    // Invalidate out_buffer
+    uint32_t in_pixel_depth = color_hal_pixel_format_get_bit_depth(in_pixel_format); // bits
+    uint32_t in_ext_window = (uint32_t)config->in.buffer + config->in.block_offset_y * config->in.pic_w * in_pixel_depth / 8;
+    uint32_t in_ext_window_len = config->in.pic_w * config->in.block_h * in_pixel_depth / 8;
+    esp_cache_msync((void *)in_ext_window, in_ext_window_len, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED);
+    // Invalidate out_buffer entire picture (alignment strict on M2C direction)
     esp_cache_msync((void *)config->out.buffer, config->out.buffer_size, ESP_CACHE_MSYNC_FLAG_DIR_M2C);
 
     esp_err_t ret = ESP_OK;
     ppa_trans_t *trans_elm = NULL;
-    portENTER_CRITICAL(&ppa_client->spinlock);
-    bool trans_elm_acquired = xQueueReceive(ppa_client->trans_elm_ptr_queue, (void *)&trans_elm, 0);
-    portEXIT_CRITICAL(&ppa_client->spinlock);
-    if (trans_elm_acquired) {
+    if (xQueueReceive(ppa_client->trans_elm_ptr_queue, (void *)&trans_elm, 0)) {
         dma2d_trans_config_t *dma_trans_desc = trans_elm->trans_desc;
 
         ppa_dma2d_trans_on_picked_config_t *trans_on_picked_desc = dma_trans_desc->user_config;
@@ -248,6 +265,7 @@ esp_err_t ppa_do_scale_rotate_mirror(ppa_client_handle_t ppa_client, const ppa_s
         srm_trans_desc->scale_y_int = (uint32_t)srm_trans_desc->scale_y;
         srm_trans_desc->scale_y_frag = (uint32_t)(srm_trans_desc->scale_y * (PPA_LL_SRM_SCALING_FRAG_MAX + 1)) & PPA_LL_SRM_SCALING_FRAG_MAX;
         srm_trans_desc->alpha_value = new_alpha_value;
+        srm_trans_desc->data_burst_length = ppa_client->data_burst_length;
 
         trans_on_picked_desc->ppa_engine = ppa_client->engine;
         trans_on_picked_desc->trigger_periph = DMA2D_TRIG_PERIPH_PPA_SRM;

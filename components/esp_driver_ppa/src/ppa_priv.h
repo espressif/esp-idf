@@ -22,7 +22,7 @@
 extern "C" {
 #endif
 
-#define PPA_MEM_ALLOC_CAPS (MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT) // TODO...
+#define PPA_MEM_ALLOC_CAPS       (MALLOC_CAP_DEFAULT)
 
 #define PPA_PM_LOCK_NAME_LEN_MAX 16
 
@@ -80,6 +80,7 @@ struct ppa_client_t {
     portMUX_TYPE spinlock;                        // Client level spinlock
     ppa_event_callback_t done_cb;                 // Transaction done callback
     QueueHandle_t trans_elm_ptr_queue;            // Queue that contains the pointers to the allocated memory to save the transaction contexts
+    ppa_data_burst_length_t data_burst_length;    // The desired data burst length for all the transactions of the client
 };
 
 /****************************** OPERATION ************************************/
@@ -115,6 +116,7 @@ typedef struct {
     uint32_t scale_y_int;                         // Calculation result for the integral part of the scale_y to be directly written to register
     uint32_t scale_y_frag;                        // Calculation result for the fractional part of the scale_y to be directly written to register
     uint32_t alpha_value;                         // Calculation result for the fix alpha value to be directly written to register
+    ppa_data_burst_length_t data_burst_length;    // Data burst length for the transaction, information passed from the client
 } ppa_srm_oper_t;
 
 // The elements in this structure listed first are identical to the elements in structure `ppa_blend_oper_config_t`
@@ -144,12 +146,12 @@ typedef struct {
 
     // color-keying
     bool bg_ck_en;
-    uint32_t bg_ck_rgb_low_thres;
-    uint32_t bg_ck_rgb_high_thres;
+    color_pixel_rgb888_data_t bg_ck_rgb_low_thres;
+    color_pixel_rgb888_data_t bg_ck_rgb_high_thres;
     bool fg_ck_en;
-    uint32_t fg_ck_rgb_low_thres;
-    uint32_t fg_ck_rgb_high_thres;
-    uint32_t ck_rgb_default_val;
+    color_pixel_rgb888_data_t fg_ck_rgb_low_thres;
+    color_pixel_rgb888_data_t fg_ck_rgb_high_thres;
+    color_pixel_rgb888_data_t ck_rgb_default_val;
     bool ck_reverse_bg2fg;
 
     ppa_trans_mode_t mode;
@@ -157,9 +159,24 @@ typedef struct {
 
     uint32_t bg_alpha_value;                      // Calculation result for the fix alpha value for BG to be directly written to register
     uint32_t fg_alpha_value;                      // Calculation result for the fix alpha value for FG to be directly written to register
+    ppa_data_burst_length_t data_burst_length;    // Data burst length for the transaction, information passed from the client
 } ppa_blend_oper_t;
 
-typedef ppa_fill_oper_config_t ppa_fill_oper_t;
+// The elements in this structure listed first are identical to the elements in structure `ppa_fill_oper_config_t`
+// With adding a few extra elements at the end
+// This allows memcpy
+typedef struct {
+    ppa_out_pic_blk_config_t out;
+
+    uint32_t fill_block_w;
+    uint32_t fill_block_h;
+    color_pixel_argb8888_data_t fill_argb_color;
+
+    ppa_trans_mode_t mode;
+    void *user_data;
+
+    ppa_data_burst_length_t data_burst_length;    // Data burst length for the transaction, information passed from the client
+} ppa_fill_oper_t;
 
 /***************************** TRANSACTION ***********************************/
 

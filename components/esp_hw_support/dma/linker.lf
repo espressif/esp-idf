@@ -113,6 +113,7 @@ entries:
         dma2d: dma2d_apply_strategy (noflash)
         dma2d: dma2d_set_transfer_ability (noflash)
         dma2d: dma2d_configure_color_space_conversion (noflash)
+        dma2d: dma2d_configure_dscr_port_mode (noflash)
         dma2d: dma2d_enqueue (noflash)
 
 [mapping:dma2d_hal]

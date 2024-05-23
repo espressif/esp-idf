@@ -75,8 +75,8 @@ static esp_err_t ppa_engine_acquire(const ppa_engine_config_t *config, ppa_engin
         if (!s_platform.srm) {
             ppa_srm_engine_t *srm_engine = heap_caps_calloc(1, sizeof(ppa_srm_engine_t), PPA_MEM_ALLOC_CAPS);
             SemaphoreHandle_t srm_sem = xSemaphoreCreateBinaryWithCaps(PPA_MEM_ALLOC_CAPS);
-            dma2d_descriptor_t *srm_tx_dma_desc = (dma2d_descriptor_t *)heap_caps_aligned_calloc(alignment, 1, s_platform.dma_desc_mem_size, MALLOC_CAP_DMA | PPA_MEM_ALLOC_CAPS);
-            dma2d_descriptor_t *srm_rx_dma_desc = (dma2d_descriptor_t *)heap_caps_aligned_calloc(alignment, 1, s_platform.dma_desc_mem_size, MALLOC_CAP_DMA | PPA_MEM_ALLOC_CAPS);
+            dma2d_descriptor_t *srm_tx_dma_desc = (dma2d_descriptor_t *)heap_caps_aligned_calloc(alignment, 1, s_platform.dma_desc_mem_size, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+            dma2d_descriptor_t *srm_rx_dma_desc = (dma2d_descriptor_t *)heap_caps_aligned_calloc(alignment, 1, s_platform.dma_desc_mem_size, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
             if (srm_engine && srm_sem && srm_tx_dma_desc && srm_rx_dma_desc) {
                 srm_engine->dma_tx_desc = srm_tx_dma_desc;
                 srm_engine->dma_rx_desc = srm_rx_dma_desc;
@@ -120,9 +120,9 @@ static esp_err_t ppa_engine_acquire(const ppa_engine_config_t *config, ppa_engin
         if (!s_platform.blending) {
             ppa_blend_engine_t *blending_engine = heap_caps_calloc(1, sizeof(ppa_blend_engine_t), PPA_MEM_ALLOC_CAPS);
             SemaphoreHandle_t blending_sem = xSemaphoreCreateBinaryWithCaps(PPA_MEM_ALLOC_CAPS);
-            dma2d_descriptor_t *blending_tx_bg_dma_desc = (dma2d_descriptor_t *)heap_caps_aligned_calloc(alignment, 1, s_platform.dma_desc_mem_size, MALLOC_CAP_DMA | PPA_MEM_ALLOC_CAPS);
-            dma2d_descriptor_t *blending_tx_fg_dma_desc = (dma2d_descriptor_t *)heap_caps_aligned_calloc(alignment, 1, s_platform.dma_desc_mem_size, MALLOC_CAP_DMA | PPA_MEM_ALLOC_CAPS);
-            dma2d_descriptor_t *blending_rx_dma_desc = (dma2d_descriptor_t *)heap_caps_aligned_calloc(alignment, 1, s_platform.dma_desc_mem_size, MALLOC_CAP_DMA | PPA_MEM_ALLOC_CAPS);
+            dma2d_descriptor_t *blending_tx_bg_dma_desc = (dma2d_descriptor_t *)heap_caps_aligned_calloc(alignment, 1, s_platform.dma_desc_mem_size, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+            dma2d_descriptor_t *blending_tx_fg_dma_desc = (dma2d_descriptor_t *)heap_caps_aligned_calloc(alignment, 1, s_platform.dma_desc_mem_size, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+            dma2d_descriptor_t *blending_rx_dma_desc = (dma2d_descriptor_t *)heap_caps_aligned_calloc(alignment, 1, s_platform.dma_desc_mem_size, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
             if (blending_engine && blending_sem && blending_tx_bg_dma_desc && blending_tx_fg_dma_desc && blending_rx_dma_desc) {
                 blending_engine->dma_tx_bg_desc = blending_tx_bg_dma_desc;
                 blending_engine->dma_tx_fg_desc = blending_tx_fg_dma_desc;
@@ -277,6 +277,7 @@ esp_err_t ppa_register_client(const ppa_client_config_t *config, ppa_client_hand
 
     client->oper_type = config->oper_type;
     client->spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
+    client->data_burst_length = config->data_burst_length ? config->data_burst_length : PPA_DATA_BURST_LENGTH_128;
     if (config->oper_type == PPA_OPERATION_SRM) {
         ppa_engine_config_t engine_config = {
             .engine = PPA_ENGINE_TYPE_SRM,
@@ -397,7 +398,7 @@ static void ppa_free_transaction(ppa_trans_t *trans_elm)
 bool ppa_recycle_transaction(ppa_client_handle_t ppa_client, ppa_trans_t *trans_elm)
 {
     // Reset transaction and send back to client's trans_elm_ptr_queue
-    // TODO: To be very safe, we shall memset all to 0, and reconnect necessary pointers？
+    // TODO: To be very safe, we shall memset all to 0, and reconnect necessary pointers?
     BaseType_t HPTaskAwoken;
     BaseType_t sent = xQueueSendFromISR(ppa_client->trans_elm_ptr_queue, &trans_elm, &HPTaskAwoken);
     assert(sent);

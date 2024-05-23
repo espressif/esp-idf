@@ -220,7 +220,7 @@ typedef struct {
 esp_err_t dma2d_apply_strategy(dma2d_channel_handle_t dma2d_chan, const dma2d_strategy_config_t *config);
 
 /**
- * @brief A collection of transfer ability items that each 2D-DMA channel could apply to improve transfer efficiency or to ensure desired transfer block size
+ * @brief A collection of transfer ability items that each 2D-DMA channel could apply to improve transfer efficiency
  *
  * @note The 2D-DMA driver has no knowledge about the DMA buffer (address and size) used by upper layer.
  *       So it's the responsibility of the **upper layer** to take care of the buffer address and size.
@@ -231,8 +231,6 @@ typedef struct {
     bool desc_burst_en;                             /*!< If set / clear, DMA channel enables / disables burst reading descriptor link */
     dma2d_data_burst_length_t data_burst_length;    /*!< Configure the DMA channel burst reading data length */
     dma2d_macro_block_size_t mb_size;               /*!< Configure the DMA channel macro block size (only useful in DMA2D_DESCRIPTOR_BLOCK_RW_MODE_MULTIPLE mode) */
-    uint32_t dscr_port_block_h;                     /*!< Configure the DMA TX channel horizontal width of the block in dscr-port mode (unit: pixel) */
-    uint32_t dscr_port_block_v;                     /*!< Configure the DMA TX channel vertical height of the block in dscr-port mode (unit: pixel) */
 } dma2d_transfer_ability_t;
 
 /**
@@ -272,6 +270,26 @@ typedef struct {
  *      - ESP_ERR_INVALID_ARG: Configure DMA color space conversion failed because of invalid argument
  */
 esp_err_t dma2d_configure_color_space_conversion(dma2d_channel_handle_t dma2d_chan, const dma2d_csc_config_t *config);
+
+/**
+ * @brief A collection of configurations apply to 2D-DMA channel DSCR-PORT mode
+ */
+typedef struct {
+    uint32_t block_h;                           /*!< Horizontal width of the block in dscr-port mode (unit: pixel) */
+    uint32_t block_v;                           /*!< Vertical height of the block in dscr-port mode (unit: pixel) */
+} dma2d_dscr_port_mode_config_t;
+
+/**
+ * @brief Configure 2D-DMA channel DSCR-PORT mode
+ *
+ * @note This API only targets PPA SRM, which uses 2D-DMA DSCR-PORT mode.
+ *
+ * @param[in] dma2d_chan 2D-DMA channel handle, get from the `on_job_picked` callback input argument `dma2d_chans`
+ * @param[in] config Configuration of 2D-DMA channel DSCR-PORT mode
+ * @return
+ *      - ESP_OK: Configure 2D-DMA dscr-port mode successfully
+ */
+esp_err_t dma2d_configure_dscr_port_mode(dma2d_channel_handle_t dma2d_chan, const dma2d_dscr_port_mode_config_t *config);
 
 /**
  * @brief Type of 2D-DMA event data

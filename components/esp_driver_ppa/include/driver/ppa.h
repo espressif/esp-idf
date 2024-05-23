@@ -33,9 +33,12 @@ typedef struct ppa_client_t *ppa_client_handle_t;
  * @brief A collection of configuration items that used for registering a PPA client
  */
 typedef struct {
-    ppa_operation_t oper_type;          /*!< The desired PPA operation for the client */
-    uint32_t max_pending_trans_num;     /*!< The maximum number of pending transactions for the client.
-                                             By default, it will be 1, which is sufficient if all transactions are performed with `PPA_TRANS_MODE_BLOCKING` */
+    ppa_operation_t oper_type;                  /*!< The desired PPA operation for the client */
+    uint32_t max_pending_trans_num;             /*!< The maximum number of pending transactions for the client.
+                                                     By default, it will be 1, which is sufficient if all transactions are performed with `PPA_TRANS_MODE_BLOCKING` */
+    ppa_data_burst_length_t data_burst_length;  /*!< The desired data burst length for all the transactions of the client.
+                                                     Use a small burst length will decrease PPA performance, but can save burst bandwidth for other peripheral usages.
+                                                     By default, it will be at the maximum burst length, `PPA_DATA_BURST_LENGTH_128` */
 } ppa_client_config_t;
 
 /**
@@ -131,8 +134,8 @@ typedef struct {
  * @brief A collection of configuration items for an output picture and the target block inside the picture
  */
 typedef struct {
-    void *buffer;                           /*!< Pointer to the output picture buffer (requires align to the cache line size) */
-    uint32_t buffer_size;                   /*!< Size of the output picture buffer (requires align to the cache line size) */
+    void *buffer;                           /*!< Pointer to the output picture buffer (requires alignment: internal memory needs align to L1 cache line size, external memory needs align to L1 and L2 cache line size) */
+    uint32_t buffer_size;                   /*!< Size of the output picture buffer (requires alignment: internal memory needs align to L1 cache line size, external memory needs align to L1 and L2 cache line size) */
     uint32_t pic_w;                         /*!< Output picture width (unit: pixel) */
     uint32_t pic_h;                         /*!< Output picture height (unit: pixel) */
     uint32_t block_offset_x;                /*!< Target block offset in x direction in the picture (unit: pixel) */
@@ -232,13 +235,13 @@ typedef struct {
     // A pixel, where its background element and foreground element are both out of their color-keying ranges, will follow Alpha Blending
     bool bg_ck_en;                                 /*!< Whether to enable color keying for background
                                                         If not enabled, all background pixels are considered as out of the color-keying range */
-    uint32_t bg_ck_rgb_low_thres;                  /*!< The lower threshold of the color-keying range for the background, in RGB888 format (R[23:16], G[15: 8], B[7:0]) */
-    uint32_t bg_ck_rgb_high_thres;                 /*!< The higher threshold of the color-keying range for the background, in RGB888 format (R[23:16], G[15: 8], B[7:0]) */
+    color_pixel_rgb888_data_t bg_ck_rgb_low_thres; /*!< The lower threshold of the color-keying range for the background, in RGB888 format */
+    color_pixel_rgb888_data_t bg_ck_rgb_high_thres;/*!< The higher threshold of the color-keying range for the background, in RGB888 format */
     bool fg_ck_en;                                 /*!< Whether to enable color keying for foreground
                                                         If not enabled, all foreground pixels are considered as out of the color-keying range */
-    uint32_t fg_ck_rgb_low_thres;                  /*!< The lower threshold of the color-keying range for the foreground, in RGB888 format (R[23:16], G[15: 8], B[7:0]) */
-    uint32_t fg_ck_rgb_high_thres;                 /*!< The higher threshold of the color-keying range for the foreground, in RGB888 format (R[23:16], G[15: 8], B[7:0]) */
-    uint32_t ck_rgb_default_val;                   /*!< The color to overwrite when a pixel, where its background element and foreground element are both within their color-keying ranges, in RGB888 format (R[23:16], G[15: 8], B[7:0]) */
+    color_pixel_rgb888_data_t fg_ck_rgb_low_thres; /*!< The lower threshold of the color-keying range for the foreground, in RGB888 format */
+    color_pixel_rgb888_data_t fg_ck_rgb_high_thres;/*!< The higher threshold of the color-keying range for the foreground, in RGB888 format */
+    color_pixel_rgb888_data_t ck_rgb_default_val;  /*!< The color to overwrite when a pixel, where its background element and foreground element are both within their color-keying ranges, in RGB888 format */
     bool ck_reverse_bg2fg;                         /*!< If this bit is set, in color-keying, for the pixel, where its background element is in the color range, but its foreground element is not in the color range, it will output the foreground element instead of the background element */
 
     ppa_trans_mode_t mode;                         /*!< Determines whether to block inside the operation functions, see `ppa_trans_mode_t` */

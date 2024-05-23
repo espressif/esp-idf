@@ -176,6 +176,12 @@ typedef struct {
         uint8_t r;      /*!< R component [0, 255] */
 } color_pixel_rgb888_data_t;
 
+///< Color BLACK in color_pixel_rgb888_data_t
+#define RGB888_BLACK {.b = 0x00, .g = 0x00, .r = 0x00}
+
+///< Color WHITE in color_pixel_rgb888_data_t
+#define RGB888_WHITE {.b = 0xFF, .g = 0xFF, .r = 0xFF}
+
 /**
  * @brief Data structure for RGB565 pixel unit
  */

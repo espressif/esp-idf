@@ -118,7 +118,7 @@ bool ppa_blend_transaction_on_picked(uint32_t num_chans, const dma2d_trans_chann
     dma2d_connect(dma2d_rx_chan, &trig_periph);
 
     dma2d_transfer_ability_t dma_transfer_ability = {
-        .data_burst_length = DMA2D_DATA_BURST_LENGTH_128,
+        .data_burst_length = blend_trans_desc->data_burst_length,
         .desc_burst_en = true,
         .mb_size = DMA2D_MACRO_BLOCK_SIZE_NONE,
     };
@@ -155,13 +155,15 @@ bool ppa_blend_transaction_on_picked(uint32_t num_chans, const dma2d_trans_chann
     ppa_ll_blend_set_tx_color_mode(platform->hal.dev, blend_trans_desc->out.blend_cm);
 
     // Color keying
+    color_pixel_rgb888_data_t rgb888_black = RGB888_BLACK;
+    color_pixel_rgb888_data_t rgb888_white = RGB888_WHITE;
     ppa_ll_blend_configure_rx_bg_ck_range(platform->hal.dev,
-                                          blend_trans_desc->bg_ck_en ? blend_trans_desc->bg_ck_rgb_low_thres : 0xFFFFFF,
-                                          blend_trans_desc->bg_ck_en ? blend_trans_desc->bg_ck_rgb_high_thres : 0);
+                                          blend_trans_desc->bg_ck_en ? &blend_trans_desc->bg_ck_rgb_low_thres : &rgb888_white,
+                                          blend_trans_desc->bg_ck_en ? &blend_trans_desc->bg_ck_rgb_high_thres : &rgb888_black);
     ppa_ll_blend_configure_rx_fg_ck_range(platform->hal.dev,
-                                          blend_trans_desc->fg_ck_en ? blend_trans_desc->fg_ck_rgb_low_thres : 0xFFFFFF,
-                                          blend_trans_desc->fg_ck_en ? blend_trans_desc->fg_ck_rgb_high_thres : 0);
-    ppa_ll_blend_set_ck_default_rgb(platform->hal.dev, (blend_trans_desc->bg_ck_en && blend_trans_desc->fg_ck_en) ? blend_trans_desc->ck_rgb_default_val : 0);
+                                          blend_trans_desc->fg_ck_en ? &blend_trans_desc->fg_ck_rgb_low_thres : &rgb888_white,
+                                          blend_trans_desc->fg_ck_en ? &blend_trans_desc->fg_ck_rgb_high_thres : &rgb888_black);
+    ppa_ll_blend_set_ck_default_rgb(platform->hal.dev, (blend_trans_desc->bg_ck_en && blend_trans_desc->fg_ck_en) ? &blend_trans_desc->ck_rgb_default_val : &rgb888_black);
     ppa_ll_blend_enable_ck_fg_bg_reverse(platform->hal.dev, blend_trans_desc->ck_reverse_bg2fg);
 
     ppa_ll_blend_start(platform->hal.dev, PPA_LL_BLEND_TRANS_MODE_BLEND);
@@ -178,7 +180,7 @@ esp_err_t ppa_do_blend(ppa_client_handle_t ppa_client, const ppa_blend_oper_conf
     // in_buffer could be anywhere (ram, flash, psram), out_buffer ptr cannot in flash region
     ESP_RETURN_ON_FALSE(esp_ptr_internal(config->out.buffer) || esp_ptr_external_ram(config->out.buffer), ESP_ERR_INVALID_ARG, TAG, "invalid out.buffer addr");
     uint32_t buf_alignment_size = (uint32_t)ppa_client->engine->platform->buf_alignment_size;
-    ESP_RETURN_ON_FALSE((uintptr_t)config->out.buffer % buf_alignment_size == 0 && config->out.buffer_size % buf_alignment_size == 0,
+    ESP_RETURN_ON_FALSE(((uint32_t)config->out.buffer & (buf_alignment_size - 1)) == 0 && (config->out.buffer_size & (buf_alignment_size - 1)) == 0,
                         ESP_ERR_INVALID_ARG, TAG, "out.buffer addr or out.buffer_size not aligned to cache line size");
     color_space_pixel_format_t out_pixel_format = {
         .color_type_id = config->out.blend_cm,
@@ -225,27 +227,28 @@ esp_err_t ppa_do_blend(ppa_client_handle_t ppa_client, const ppa_blend_oper_conf
     }
     // To reduce complexity, color_mode, alpha_update_mode correctness are checked in their corresponding LL functions
 
-    // Write back and invalidate are performed on the entire picture (the window content is not continuous in the buffer)
-    // Write back in_bg_buffer, in_fg_buffer
+    // Write back and invalidate necessary data (note that the window content is not continuous in the buffer)
+    // Write back in_bg_buffer, in_fg_buffer extended windows (alignment not necessary on C2M direction)
     color_space_pixel_format_t in_bg_pixel_format = {
         .color_type_id = config->in_bg.blend_cm,
     };
-    uint32_t in_bg_pic_len = config->in_bg.pic_w * config->in_bg.pic_h * color_hal_pixel_format_get_bit_depth(in_bg_pixel_format) / 8;
-    esp_cache_msync((void *)config->in_bg.buffer, in_bg_pic_len, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED);
+    uint32_t in_bg_pixel_depth = color_hal_pixel_format_get_bit_depth(in_bg_pixel_format); // bits
+    uint32_t in_bg_ext_window = (uint32_t)config->in_bg.buffer + config->in_bg.block_offset_y * config->in_bg.pic_w * in_bg_pixel_depth / 8;
+    uint32_t in_bg_ext_window_len = config->in_bg.pic_w * config->in_bg.block_h * in_bg_pixel_depth / 8;
+    esp_cache_msync((void *)in_bg_ext_window, in_bg_ext_window_len, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED);
     color_space_pixel_format_t in_fg_pixel_format = {
         .color_type_id = config->in_fg.blend_cm,
     };
-    uint32_t in_fg_pic_len = config->in_fg.pic_w * config->in_fg.pic_h * color_hal_pixel_format_get_bit_depth(in_fg_pixel_format) / 8;
-    esp_cache_msync((void *)config->in_fg.buffer, in_fg_pic_len, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED);
-    // Invalidate out_buffer
+    uint32_t in_fg_pixel_depth = color_hal_pixel_format_get_bit_depth(in_fg_pixel_format); // bits
+    uint32_t in_fg_ext_window = (uint32_t)config->in_fg.buffer + config->in_fg.block_offset_y * config->in_fg.pic_w * in_fg_pixel_depth / 8;
+    uint32_t in_fg_ext_window_len = config->in_fg.pic_w * config->in_fg.block_h * in_fg_pixel_depth / 8;
+    esp_cache_msync((void *)in_fg_ext_window, in_fg_ext_window_len, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED);
+    // Invalidate out_buffer entire picture (alignment strict on M2C direction)
     esp_cache_msync((void *)config->out.buffer, config->out.buffer_size, ESP_CACHE_MSYNC_FLAG_DIR_M2C);
 
     esp_err_t ret = ESP_OK;
     ppa_trans_t *trans_elm = NULL;
-    portENTER_CRITICAL(&ppa_client->spinlock);
-    bool trans_elm_acquired = xQueueReceive(ppa_client->trans_elm_ptr_queue, (void *)&trans_elm, 0);
-    portEXIT_CRITICAL(&ppa_client->spinlock);
-    if (trans_elm_acquired) {
+    if (xQueueReceive(ppa_client->trans_elm_ptr_queue, (void *)&trans_elm, 0)) {
         dma2d_trans_config_t *dma_trans_desc = trans_elm->trans_desc;
 
         ppa_dma2d_trans_on_picked_config_t *trans_on_picked_desc = dma_trans_desc->user_config;
@@ -254,6 +257,7 @@ esp_err_t ppa_do_blend(ppa_client_handle_t ppa_client, const ppa_blend_oper_conf
         memcpy(blend_trans_desc, config, sizeof(ppa_blend_oper_config_t));
         blend_trans_desc->bg_alpha_value = new_bg_alpha_value;
         blend_trans_desc->fg_alpha_value = new_fg_alpha_value;
+        blend_trans_desc->data_burst_length = ppa_client->data_burst_length;
 
         trans_on_picked_desc->ppa_engine = ppa_client->engine;
         trans_on_picked_desc->trigger_periph = DMA2D_TRIG_PERIPH_PPA_BLEND;

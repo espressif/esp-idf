@@ -62,7 +62,7 @@ bool ppa_fill_transaction_on_picked(uint32_t num_chans, const dma2d_trans_channe
     dma2d_connect(dma2d_rx_chan, &trig_periph);
 
     dma2d_transfer_ability_t dma_transfer_ability = {
-        .data_burst_length = DMA2D_DATA_BURST_LENGTH_128,
+        .data_burst_length = fill_trans_desc->data_burst_length,
         .desc_burst_en = true,
         .mb_size = DMA2D_MACRO_BLOCK_SIZE_NONE,
     };
@@ -94,30 +94,34 @@ esp_err_t ppa_do_fill(ppa_client_handle_t ppa_client, const ppa_fill_oper_config
     // out_buffer ptr cannot in flash region
     ESP_RETURN_ON_FALSE(esp_ptr_internal(config->out.buffer) || esp_ptr_external_ram(config->out.buffer), ESP_ERR_INVALID_ARG, TAG, "invalid out.buffer addr");
     uint32_t buf_alignment_size = (uint32_t)ppa_client->engine->platform->buf_alignment_size;
-    ESP_RETURN_ON_FALSE((uintptr_t)config->out.buffer % buf_alignment_size == 0 && config->out.buffer_size % buf_alignment_size == 0,
+    ESP_RETURN_ON_FALSE(((uint32_t)config->out.buffer & (buf_alignment_size - 1)) == 0 && (config->out.buffer_size & (buf_alignment_size - 1)) == 0,
                         ESP_ERR_INVALID_ARG, TAG, "out.buffer addr or out.buffer_size not aligned to cache line size");
     color_space_pixel_format_t out_pixel_format = {
         .color_type_id = config->out.fill_cm,
     };
-    uint32_t out_pic_len = config->out.pic_w * config->out.pic_h * color_hal_pixel_format_get_bit_depth(out_pixel_format) / 8;
+    uint32_t out_pixel_depth = color_hal_pixel_format_get_bit_depth(out_pixel_format);
+    uint32_t out_pic_len = config->out.pic_w * config->out.pic_h * out_pixel_depth / 8;
     ESP_RETURN_ON_FALSE(out_pic_len <= config->out.buffer_size, ESP_ERR_INVALID_ARG, TAG, "out.pic_w/h mismatch with out.buffer_size");
     // To reduce complexity, color_mode, fill_block_w/h correctness are checked in their corresponding LL functions
 
-    // Write back and invalidate are performed on the entire picture (the window content is not continuous in the buffer)
-    esp_cache_msync((void *)config->out.buffer, config->out.buffer_size, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_INVALIDATE);
+    // Write back and invalidate necessary data (note that the window content is not continuous in the buffer)
+    // Write back buffer extended window (alignment not necessary on C2M direction)
+    uint32_t out_ext_window = (uint32_t)config->out.buffer + config->out.block_offset_y * config->out.pic_w * out_pixel_depth / 8;
+    uint32_t out_ext_window_len = config->out.pic_w * config->fill_block_h * out_pixel_depth / 8;
+    esp_cache_msync((void *)out_ext_window, out_ext_window_len, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED);
+    // Invalidate out_buffer entire picture (alignment strict on M2C direction)
+    esp_cache_msync((void *)config->out.buffer, config->out.buffer_size, ESP_CACHE_MSYNC_FLAG_DIR_M2C);
 
     esp_err_t ret = ESP_OK;
     ppa_trans_t *trans_elm = NULL;
-    portENTER_CRITICAL(&ppa_client->spinlock);
-    bool trans_elm_acquired = xQueueReceive(ppa_client->trans_elm_ptr_queue, (void *)&trans_elm, 0);
-    portEXIT_CRITICAL(&ppa_client->spinlock);
-    if (trans_elm_acquired) {
+    if (xQueueReceive(ppa_client->trans_elm_ptr_queue, (void *)&trans_elm, 0)) {
         dma2d_trans_config_t *dma_trans_desc = trans_elm->trans_desc;
 
         ppa_dma2d_trans_on_picked_config_t *trans_on_picked_desc = dma_trans_desc->user_config;
 
         ppa_fill_oper_t *fill_trans_desc = (ppa_fill_oper_t *)trans_on_picked_desc->fill_desc;
         memcpy(fill_trans_desc, config, sizeof(ppa_fill_oper_config_t));
+        fill_trans_desc->data_burst_length = ppa_client->data_burst_length;
 
         trans_on_picked_desc->ppa_engine = ppa_client->engine;
         trans_on_picked_desc->trigger_periph = DMA2D_TRIG_PERIPH_PPA_BLEND;

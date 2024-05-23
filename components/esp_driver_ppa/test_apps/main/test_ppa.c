@@ -41,19 +41,19 @@ TEST_CASE("ppa_client_do_ppa_operation", "[PPA]")
     TEST_ASSERT_NOT_NULL(buf_2);
 
     // Register different types of PPA clients
-    ppa_client_handle_t ppa_client_a_handle;
-    ppa_client_handle_t ppa_client_b_handle;
-    ppa_client_handle_t ppa_client_c_handle;
-    ppa_client_handle_t ppa_client_d_handle;
+    ppa_client_handle_t ppa_client_srm_handle;
+    ppa_client_handle_t ppa_client_blend_handle;
+    ppa_client_handle_t ppa_client_fill_handle_a;
+    ppa_client_handle_t ppa_client_fill_handle_b;
     ppa_client_config_t ppa_client_config = {
         .oper_type = PPA_OPERATION_SRM,
     };
-    TEST_ESP_OK(ppa_register_client(&ppa_client_config, &ppa_client_a_handle));
+    TEST_ESP_OK(ppa_register_client(&ppa_client_config, &ppa_client_srm_handle));
     ppa_client_config.oper_type = PPA_OPERATION_BLEND;
-    TEST_ESP_OK(ppa_register_client(&ppa_client_config, &ppa_client_b_handle));
+    TEST_ESP_OK(ppa_register_client(&ppa_client_config, &ppa_client_blend_handle));
     ppa_client_config.oper_type = PPA_OPERATION_FILL;
-    TEST_ESP_OK(ppa_register_client(&ppa_client_config, &ppa_client_c_handle));
-    TEST_ESP_OK(ppa_register_client(&ppa_client_config, &ppa_client_d_handle));
+    TEST_ESP_OK(ppa_register_client(&ppa_client_config, &ppa_client_fill_handle_a));
+    TEST_ESP_OK(ppa_register_client(&ppa_client_config, &ppa_client_fill_handle_b));
 
     ppa_srm_oper_config_t srm_oper_config = {
         .in.buffer = buf_1,
@@ -80,9 +80,9 @@ TEST_CASE("ppa_client_do_ppa_operation", "[PPA]")
         .mode = PPA_TRANS_MODE_BLOCKING,
     };
     // A SRM client can request to do a SRM operation
-    TEST_ESP_OK(ppa_do_scale_rotate_mirror(ppa_client_a_handle, &srm_oper_config));
+    TEST_ESP_OK(ppa_do_scale_rotate_mirror(ppa_client_srm_handle, &srm_oper_config));
     // A non-SRM client can not request to do a SRM operation
-    TEST_ESP_ERR(ESP_ERR_INVALID_ARG, ppa_do_scale_rotate_mirror(ppa_client_b_handle, &srm_oper_config));
+    TEST_ESP_ERR(ESP_ERR_INVALID_ARG, ppa_do_scale_rotate_mirror(ppa_client_blend_handle, &srm_oper_config));
 
     ppa_blend_oper_config_t blend_oper_config = {
         .in_bg.buffer = buf_1,
@@ -114,9 +114,9 @@ TEST_CASE("ppa_client_do_ppa_operation", "[PPA]")
         .mode = PPA_TRANS_MODE_BLOCKING,
     };
     // A blend client can request to do a blend operation
-    TEST_ESP_OK(ppa_do_blend(ppa_client_b_handle, &blend_oper_config));
+    TEST_ESP_OK(ppa_do_blend(ppa_client_blend_handle, &blend_oper_config));
     // A non-blend client can not request to do a blend operation
-    TEST_ESP_ERR(ESP_ERR_INVALID_ARG, ppa_do_blend(ppa_client_d_handle, &blend_oper_config));
+    TEST_ESP_ERR(ESP_ERR_INVALID_ARG, ppa_do_blend(ppa_client_fill_handle_b, &blend_oper_config));
 
     ppa_fill_oper_config_t fill_oper_config = {
         .out.buffer = buf_1,
@@ -136,17 +136,17 @@ TEST_CASE("ppa_client_do_ppa_operation", "[PPA]")
         .mode = PPA_TRANS_MODE_NON_BLOCKING,
     };
     // A fill client can request to do a fill operation
-    TEST_ESP_OK(ppa_do_fill(ppa_client_c_handle, &fill_oper_config));
+    TEST_ESP_OK(ppa_do_fill(ppa_client_fill_handle_a, &fill_oper_config));
     // Another fill client can also request another fill operation at the same time
-    TEST_ESP_OK(ppa_do_fill(ppa_client_d_handle, &fill_oper_config));
+    TEST_ESP_OK(ppa_do_fill(ppa_client_fill_handle_b, &fill_oper_config));
 
     vTaskDelay(pdMS_TO_TICKS(500));
 
     // Unregister all PPA clients
-    TEST_ESP_OK(ppa_unregister_client(ppa_client_a_handle));
-    TEST_ESP_OK(ppa_unregister_client(ppa_client_b_handle));
-    TEST_ESP_OK(ppa_unregister_client(ppa_client_c_handle));
-    TEST_ESP_OK(ppa_unregister_client(ppa_client_d_handle));
+    TEST_ESP_OK(ppa_unregister_client(ppa_client_srm_handle));
+    TEST_ESP_OK(ppa_unregister_client(ppa_client_blend_handle));
+    TEST_ESP_OK(ppa_unregister_client(ppa_client_fill_handle_a));
+    TEST_ESP_OK(ppa_unregister_client(ppa_client_fill_handle_b));
 
     free(buf_1);
     free(buf_2);
