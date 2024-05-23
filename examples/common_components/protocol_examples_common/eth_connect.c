@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -13,6 +13,7 @@
 #include "driver/spi_master.h"
 #endif // CONFIG_ETH_USE_SPI_ETHERNET
 #include "esp_log.h"
+#include "esp_mac.h"
 #include "driver/gpio.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -153,11 +154,12 @@ static esp_netif_t *eth_start(void)
     ESP_ERROR_CHECK(esp_eth_driver_install(&config, &s_eth_handle));
 #if !CONFIG_EXAMPLE_USE_INTERNAL_ETHERNET
     /* The SPI Ethernet module might doesn't have a burned factory MAC address, we cat to set it manually.
-       02:00:00 is a Locally Administered OUI range so should not be used except when testing on a LAN under your control.
+       We set the ESP_MAC_ETH mac address as the default, if you want to use ESP_MAC_EFUSE_CUSTOM mac address, please enable the
+       configuration: `ESP_MAC_USE_CUSTOM_MAC_AS_BASE_MAC`
     */
-    ESP_ERROR_CHECK(esp_eth_ioctl(s_eth_handle, ETH_CMD_S_MAC_ADDR, (uint8_t[]) {
-        0x02, 0x00, 0x00, 0x12, 0x34, 0x56
-    }));
+    uint8_t eth_mac[6] = {0};
+    ESP_ERROR_CHECK(esp_read_mac(eth_mac, ESP_MAC_ETH));
+    ESP_ERROR_CHECK(esp_eth_ioctl(s_eth_handle, ETH_CMD_S_MAC_ADDR, eth_mac));
 #endif
     // combine driver with netif
     s_eth_glue = esp_eth_new_netif_glue(s_eth_handle);
