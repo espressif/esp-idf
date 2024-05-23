@@ -149,7 +149,7 @@ bool peripheral_domain_pd_allowed(void)
     const uint32_t created_modules = sleep_retention_get_created_modules();
     uint32_t mask = (const uint32_t) (BIT(SLEEP_RETENTION_MODULE_SYS_PERIPH));
 
-#if SOC_RMT_SUPPORT_SLEEP_BACKUP
+#if SOC_RMT_SUPPORT_SLEEP_RETENTION
     mask |= BIT(SLEEP_RETENTION_MODULE_RMT0);
 #endif
 

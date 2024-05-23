@@ -555,7 +555,7 @@ When power management is enabled, i.e., :ref:`CONFIG_PM_ENABLE` is on, the syste
 
 The driver can prevent the above issue by creating a power management lock. The lock type is set based on different clock sources. The driver will acquire the lock in :cpp:func:`rmt_enable`, and release it in :cpp:func:`rmt_disable`. That means, any RMT transactions in between these two functions are guaranteed to work correctly, regardless of the power management strategy. The clock source won't be disabled or adjusted its frequency during this time.
 
-.. only:: SOC_RMT_SUPPORT_SLEEP_BACKUP
+.. only:: SOC_RMT_SUPPORT_SLEEP_RETENTION
 
     Besides the potential changes to the clock source, when the power management is enabled, the system can also power down a domain where RMT register located. To ensure the RMT driver can continue work after sleep, we can either backup the RMT registers to the RAM, or just refuse to power down. You can choose what to do in :cpp:member:`rmt_tx_channel_config_t::backup_before_sleep` and :cpp:member:`rmt_rx_channel_config_t::backup_before_sleep`. It's a balance between power saving and memory consumption. Set it based on your application requirements.
 

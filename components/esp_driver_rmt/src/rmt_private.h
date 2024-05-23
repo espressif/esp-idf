@@ -74,7 +74,7 @@ typedef dma_descriptor_align4_t rmt_dma_descriptor_t;
 #define ALIGN_DOWN(num, align)  ((num) & ~((align) - 1))
 
 // Use retention link only when the target supports sleep retention and PM is enabled
-#define RMT_USE_RETENTION_LINK  (SOC_RMT_SUPPORT_SLEEP_BACKUP && CONFIG_PM_ENABLE && CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP)
+#define RMT_USE_RETENTION_LINK  (SOC_RMT_SUPPORT_SLEEP_RETENTION && CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP)
 
 typedef struct {
     struct {

@@ -132,7 +132,7 @@ static void test_rmt_tx_rx_sleep_retention(bool back_up_before_sleep)
 TEST_CASE("rmt tx+rx after light sleep", "[rmt]")
 {
     test_rmt_tx_rx_sleep_retention(false);
-#if SOC_RMT_SUPPORT_SLEEP_BACKUP
+#if SOC_RMT_SUPPORT_SLEEP_RETENTION
     test_rmt_tx_rx_sleep_retention(true);
 #endif
 }
