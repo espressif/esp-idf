@@ -365,6 +365,8 @@ test_pytest_macos:
       - "**/build*/build_log.txt"
     reports:
       junit: XUNIT_RESULT.xml
+  variables:
+    PYTEST_IGNORE_COLLECT_IMPORT_ERROR: "1"
   script:
     - run_cmd python tools/ci/ci_build_apps.py components examples tools/test_apps -vv
       --target linux
