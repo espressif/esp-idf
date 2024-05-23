@@ -413,7 +413,7 @@ esp_err_t s_csi_ctlr_disable(esp_cam_ctlr_handle_t handle)
 {
     ESP_RETURN_ON_FALSE(handle, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
     csi_controller_t *ctlr = __containerof(handle, csi_controller_t, base);
-    ESP_RETURN_ON_FALSE(ctlr->csi_fsm == CSI_FSM_ENABLED, ESP_ERR_INVALID_STATE, TAG, "processor isn't in init state");
+    ESP_RETURN_ON_FALSE(ctlr->csi_fsm == CSI_FSM_ENABLED, ESP_ERR_INVALID_STATE, TAG, "processor isn't in enable state");
 
     portENTER_CRITICAL(&ctlr->spinlock);
     ctlr->csi_fsm = CSI_FSM_INIT;
@@ -485,7 +485,7 @@ esp_err_t s_ctlr_csi_stop(esp_cam_ctlr_handle_t handle)
     ESP_RETURN_ON_ERROR(dw_gdma_channel_enable_ctrl(ctlr->dma_chan, false), TAG, "failed to disable dwgdma");
 
     portENTER_CRITICAL(&ctlr->spinlock);
-    ctlr->csi_fsm = CSI_FSM_INIT;
+    ctlr->csi_fsm = CSI_FSM_ENABLED;
     portEXIT_CRITICAL(&ctlr->spinlock);
 
     return ESP_OK;
