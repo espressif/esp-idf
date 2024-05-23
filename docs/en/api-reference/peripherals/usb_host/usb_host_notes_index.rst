@@ -23,6 +23,7 @@ This document is split into the following sections:
     usb_host_notes_dwc_otg
     usb_host_notes_usbh
     usb_host_notes_enum
+    usb_host_notes_ext_hub
 
 Todo:
 
@@ -45,6 +46,10 @@ Features & Limitations
 
 **The Host Stack currently supports the following notable features:**
 
+.. only:: esp32p4
+
+    - Supports HS (High Speed)
+
 - Supports FS (Full Speed) and LS (Low Speed) devices
 - Supports all transfer types (Control, Bulk, Isochronous, and Interrupt)
 - Automatically enumerates connected devices
@@ -52,5 +57,4 @@ Features & Limitations
 
 **The Host Stack currently has the following notable limitations:**
 
-- No HS (High Speed) support
 - No Hub support (currently only supports a single device)
