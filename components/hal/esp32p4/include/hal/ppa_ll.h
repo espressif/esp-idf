@@ -27,6 +27,7 @@ extern "C" {
 #define PPA_LL_SRM_SCALING_INT_MAX   PPA_SR_SCAL_X_INT_V
 #define PPA_LL_SRM_SCALING_FRAG_MAX  PPA_SR_SCAL_X_FRAG_V
 
+// TODO: On P4 ECO2, SRM block size needs update
 #define PPA_LL_SRM_DEFAULT_BLOCK_SIZE   18 // 18 x 18 block size
 #define PPA_LL_SRM_YUV420_BLOCK_SIZE    20 // 20 x 20 block size
 
@@ -438,12 +439,12 @@ static inline void ppa_ll_blend_set_rx_bg_color_mode(ppa_dev_t *dev, ppa_blend_c
     case PPA_BLEND_COLOR_MODE_RGB565:
         val = 2;
         break;
-    case PPA_BLEND_COLOR_MODE_L8:
-        val = 4;
-        break;
-    case PPA_BLEND_COLOR_MODE_L4:
-        val = 5;
-        break;
+    // case PPA_BLEND_COLOR_MODE_L8:
+    //     val = 4;
+    //     break;
+    // case PPA_BLEND_COLOR_MODE_L4:
+    //     val = 5;
+    //     break;
     default:
         // Unsupported blending rx background color mode
         abort();
@@ -470,12 +471,12 @@ static inline void ppa_ll_blend_set_rx_fg_color_mode(ppa_dev_t *dev, ppa_blend_c
     case PPA_BLEND_COLOR_MODE_RGB565:
         val = 2;
         break;
-    case PPA_BLEND_COLOR_MODE_L8:
-        val = 4;
-        break;
-    case PPA_BLEND_COLOR_MODE_L4:
-        val = 5;
-        break;
+    // case PPA_BLEND_COLOR_MODE_L8:
+    //     val = 4;
+    //     break;
+    // case PPA_BLEND_COLOR_MODE_L4:
+    //     val = 5;
+    //     break;
     case PPA_BLEND_COLOR_MODE_A8:
         val = 6;
         break;

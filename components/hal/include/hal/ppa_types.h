@@ -41,10 +41,11 @@ typedef enum {
     PPA_SRM_COLOR_MODE_RGB565 = COLOR_TYPE_ID(COLOR_SPACE_RGB, COLOR_PIXEL_RGB565),           /*!< PPA SRM color mode: RGB565 */
     PPA_SRM_COLOR_MODE_YUV420 = COLOR_TYPE_ID(COLOR_SPACE_YUV, COLOR_PIXEL_YUV420),           /*!< PPA SRM color mode: YUV420 */
     PPA_SRM_COLOR_MODE_YUV444 = COLOR_TYPE_ID(COLOR_SPACE_YUV, COLOR_PIXEL_YUV444),           /*!< PPA SRM color mode: YUV444 (limited range only)*/
-    PPA_SRM_COLOR_MODE_YUV422 = COLOR_TYPE_ID(COLOR_SPACE_YUV, COLOR_PIXEL_YUV422),           /*!< PPA SRM color mode: YUV422 (input only, limited range only) */
-    // YUV444 and YUV422 not supported by PPA hardware, but seems like we can use 2D-DMA to do conversion before sending into and after coming out from the PPA module
-    // If in_pic is YUV444/422, then TX DMA channel could do DMA2D_CSC_TX_YUV444/422_TO_RGB888_601/709, so PPA in_color_mode is RGB888
+    // YUV444 not supported by PPA hardware, but we can use 2D-DMA to do conversion before sending into and after coming out from the PPA module
+    // If in_pic is YUV444, then TX DMA channel could do DMA2D_CSC_TX_YUV444_TO_RGB888_601/709, so PPA in_color_mode is RGB888
     // If out_pic is YUV444, then RX DMA channel could do DMA2D_CSC_RX_YUV420_TO_YUV444, so PPA out_color_mode is YUV420
+    // TODO: P4 ECO2 supports YUV422
+    // PPA_SRM_COLOR_MODE_YUV422 = COLOR_TYPE_ID(COLOR_SPACE_YUV, COLOR_PIXEL_YUV422),           /*!< PPA SRM color mode: YUV422 (input only, limited range only) */
 } ppa_srm_color_mode_t;
 
 /**
@@ -57,8 +58,8 @@ typedef enum {
     PPA_BLEND_COLOR_MODE_A8 = COLOR_TYPE_ID(COLOR_SPACE_ALPHA, COLOR_PIXEL_A8),              /*!< PPA blend color mode: A8, only available on blend foreground input */
     PPA_BLEND_COLOR_MODE_A4 = COLOR_TYPE_ID(COLOR_SPACE_ALPHA, COLOR_PIXEL_A4),              /*!< PPA blend color mode: A4, only available on blend foreground input */
     // TODO: Support CLUT to support L4/L8 color mode
-    PPA_BLEND_COLOR_MODE_L8 = COLOR_TYPE_ID(COLOR_SPACE_CLUT, COLOR_PIXEL_L8),               /*!< PPA blend color mode: L8, only available on blend inputs */
-    PPA_BLEND_COLOR_MODE_L4 = COLOR_TYPE_ID(COLOR_SPACE_CLUT, COLOR_PIXEL_L4),               /*!< PPA blend color mode: L4, only available on blend inputs */
+    // PPA_BLEND_COLOR_MODE_L8 = COLOR_TYPE_ID(COLOR_SPACE_CLUT, COLOR_PIXEL_L8),               /*!< PPA blend color mode: L8, only available on blend inputs */
+    // PPA_BLEND_COLOR_MODE_L4 = COLOR_TYPE_ID(COLOR_SPACE_CLUT, COLOR_PIXEL_L4),               /*!< PPA blend color mode: L4, only available on blend inputs */
 } ppa_blend_color_mode_t;
 
 /**

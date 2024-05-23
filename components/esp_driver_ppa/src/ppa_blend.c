@@ -155,15 +155,15 @@ bool ppa_blend_transaction_on_picked(uint32_t num_chans, const dma2d_trans_chann
     ppa_ll_blend_set_tx_color_mode(platform->hal.dev, blend_trans_desc->out.blend_cm);
 
     // Color keying
-    color_pixel_rgb888_data_t rgb888_black = RGB888_BLACK;
-    color_pixel_rgb888_data_t rgb888_white = RGB888_WHITE;
+    color_pixel_rgb888_data_t rgb888_min = {.b = 0x00, .g = 0x00, .r = 0x00};
+    color_pixel_rgb888_data_t rgb888_max = {.b = 0xFF, .g = 0xFF, .r = 0xFF};
     ppa_ll_blend_configure_rx_bg_ck_range(platform->hal.dev,
-                                          blend_trans_desc->bg_ck_en ? &blend_trans_desc->bg_ck_rgb_low_thres : &rgb888_white,
-                                          blend_trans_desc->bg_ck_en ? &blend_trans_desc->bg_ck_rgb_high_thres : &rgb888_black);
+                                          blend_trans_desc->bg_ck_en ? &blend_trans_desc->bg_ck_rgb_low_thres : &rgb888_max,
+                                          blend_trans_desc->bg_ck_en ? &blend_trans_desc->bg_ck_rgb_high_thres : &rgb888_min);
     ppa_ll_blend_configure_rx_fg_ck_range(platform->hal.dev,
-                                          blend_trans_desc->fg_ck_en ? &blend_trans_desc->fg_ck_rgb_low_thres : &rgb888_white,
-                                          blend_trans_desc->fg_ck_en ? &blend_trans_desc->fg_ck_rgb_high_thres : &rgb888_black);
-    ppa_ll_blend_set_ck_default_rgb(platform->hal.dev, (blend_trans_desc->bg_ck_en && blend_trans_desc->fg_ck_en) ? &blend_trans_desc->ck_rgb_default_val : &rgb888_black);
+                                          blend_trans_desc->fg_ck_en ? &blend_trans_desc->fg_ck_rgb_low_thres : &rgb888_max,
+                                          blend_trans_desc->fg_ck_en ? &blend_trans_desc->fg_ck_rgb_high_thres : &rgb888_min);
+    ppa_ll_blend_set_ck_default_rgb(platform->hal.dev, (blend_trans_desc->bg_ck_en && blend_trans_desc->fg_ck_en) ? &blend_trans_desc->ck_rgb_default_val : &rgb888_min);
     ppa_ll_blend_enable_ck_fg_bg_reverse(platform->hal.dev, blend_trans_desc->ck_reverse_bg2fg);
 
     ppa_ll_blend_start(platform->hal.dev, PPA_LL_BLEND_TRANS_MODE_BLEND);
@@ -217,11 +217,11 @@ esp_err_t ppa_do_blend(ppa_client_handle_t ppa_client, const ppa_blend_oper_conf
         ESP_RETURN_ON_FALSE(config->fg_alpha_scale_ratio > 0 && config->fg_alpha_scale_ratio < 1, ESP_ERR_INVALID_ARG, TAG, "invalid fg_alpha_scale_ratio");
         new_fg_alpha_value = (uint32_t)(config->fg_alpha_scale_ratio * 256);
     }
-    if (config->in_bg.blend_cm == PPA_BLEND_COLOR_MODE_L4) {
-        ESP_RETURN_ON_FALSE(config->in_bg.block_w % 2 == 0 && config->in_bg.block_offset_x % 2 == 0,
-                            ESP_ERR_INVALID_ARG, TAG, "in_bg.block_w and in_bg.block_offset_x must be even");
-    }
-    if (config->in_fg.blend_cm == PPA_BLEND_COLOR_MODE_A4 || config->in_fg.blend_cm == PPA_BLEND_COLOR_MODE_L4) {
+    // if (config->in_bg.blend_cm == PPA_BLEND_COLOR_MODE_L4) {
+    //     ESP_RETURN_ON_FALSE(config->in_bg.block_w % 2 == 0 && config->in_bg.block_offset_x % 2 == 0,
+    //                         ESP_ERR_INVALID_ARG, TAG, "in_bg.block_w and in_bg.block_offset_x must be even");
+    // }
+    if (config->in_fg.blend_cm == PPA_BLEND_COLOR_MODE_A4) { // || config->in_fg.blend_cm == PPA_BLEND_COLOR_MODE_L4
         ESP_RETURN_ON_FALSE(config->in_fg.block_w % 2 == 0 && config->in_fg.block_offset_x % 2 == 0,
                             ESP_ERR_INVALID_ARG, TAG, "in_fg.block_w and in_fg.block_offset_x must be even");
     }

@@ -458,11 +458,7 @@ esp_err_t ppa_do_operation(ppa_client_handle_t ppa_client, ppa_engine_t *ppa_eng
     }
 
     if (mode == PPA_TRANS_MODE_BLOCKING) {
-        // while (1) {
-        //     printf("ppa intr: %ld\n", PPA.int_raw.val);
-        // }
         xSemaphoreTake(trans_elm->sem, portMAX_DELAY); // Given in the ISR
-        // TODO: Sanity check new_trans_elm not in trans_stailq anymore? (loop takes time tho)
     }
 
 err:

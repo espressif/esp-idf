@@ -114,7 +114,7 @@ Similarly, some notes to avoid confusion in configuring :cpp:type:`ppa_blend_ope
 .. list::
     - :cpp:member:`ppa_out_pic_blk_config_t::buffer` can be the same pointer to one of the input's :cpp:member:`ppa_in_pic_blk_config_t::buffer` for a blend operation.
     - The blocks' width/height of FG and BG should be identical, and are the width/height values for the output block.
-    - If the color mode of the input picture is ``PPA_BLEND_COLOR_MODE_A4`` or ``PPA_BLEND_COLOR_MODE_L4``, then its ``block_w`` and ``block_offset_x`` fields must be even.
+    - If the color mode of the input picture is ``PPA_BLEND_COLOR_MODE_A4``, then its ``block_w`` and ``block_offset_x`` fields must be even.
 
 Fill
 ~~~~
@@ -140,7 +140,7 @@ The PPA driver has guaranteed the thread safety of calling the PPA operation API
 Performance Overview
 ^^^^^^^^^^^^^^^^^^^^
 
-The PPA operations are acted on the target block of an input picture. Therefore, the time it takes to complete a PPA transaction is proportional to the amount of the data of the block. The size of the entire picture has no influence on the performance. More importantly, the PPA performance highly relies on the PSRAM bandwidth if the pictures are located in the PSRAM section. When there are quite a few peripherals reading and writing to the PSRAM at the same time, the performance of PPA operation will be greatly reduced.
+The PPA operations are acted on the target block of an input picture. Therefore, the time it takes to complete a PPA transaction is proportional to the amount of the data in the block. The size of the entire picture has no influence on the performance. More importantly, the PPA performance highly relies on the PSRAM bandwidth if the pictures are located in the PSRAM section. When there are quite a few peripherals reading and writing to the PSRAM at the same time, the performance of PPA operation will be greatly reduced.
 
 API Reference
 -------------

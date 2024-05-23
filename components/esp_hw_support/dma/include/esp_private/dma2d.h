@@ -288,6 +288,7 @@ typedef struct {
  * @param[in] config Configuration of 2D-DMA channel DSCR-PORT mode
  * @return
  *      - ESP_OK: Configure 2D-DMA dscr-port mode successfully
+ *      - ESP_ERR_INVALID_ARG: Configure 2D-DMA dscr-port mode failed because of invalid argument
  */
 esp_err_t dma2d_configure_dscr_port_mode(dma2d_channel_handle_t dma2d_chan, const dma2d_dscr_port_mode_config_t *config);
 
