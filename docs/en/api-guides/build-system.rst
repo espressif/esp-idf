@@ -149,7 +149,9 @@ Example Project
 
 .. highlight:: none
 
-An example project directory tree might look like this::
+An example project directory tree might look like this:
+
+.. code-block:: none
 
     - myProject/
                  - CMakeLists.txt
@@ -181,7 +183,7 @@ This example "myProject" contains the following elements:
 
 - "sdkconfig" project configuration file. This file is created/updated when ``idf.py menuconfig`` runs, and holds the configuration for all of the components in the project (including ESP-IDF itself). The ``sdkconfig`` file may or may not be added to the source control system of the project.
 
-- "dependencies.lock" file contains the list of all managed components, and their versions, that are currently in used in the project. The ``dependencies.lock`` file is generated/updated automatically when IDF Component Manager is used to add or update project components. So this file should never be edited manually! If the project does not have ``idf_component.yml`` files in any of its components, ``dependencies.lock`` will not be created.
+- "dependencies.lock" file contains the list of all managed components, and their versions, that are currently in used in the project. The ``dependencies.lock`` file is generated or updated automatically when IDF Component Manager is used to add or update project components. So this file should never be edited manually! If the project does not have ``idf_component.yml`` files in any of its components, ``dependencies.lock`` will not be created.
 
 - Optional "idf_component.yml" file contains metadata about the component and its dependencies. It is used by the IDF Component Manager to download and resolve these dependencies. More information about this file can be found in the `idf_component.yml <https://docs.espressif.com/projects/idf-component-manager/en/latest/reference/manifest_file.html>`_ section.
 
