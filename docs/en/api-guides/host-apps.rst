@@ -142,6 +142,9 @@ Note that any "Yes" here does not necessarily mean a full implementation or mock
    * - driver
      - Yes
      - No
+   * - esp_app_format
+     - No
+     - Yes
    * - esp_common
      - No
      - Yes

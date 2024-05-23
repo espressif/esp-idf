@@ -9,6 +9,7 @@
 #include "esp_app_desc.h"
 #include "unity.h"
 #include "unity_fixture.h"
+#include "inttypes_ext.h"
 
 TEST_GROUP(esp_app_format);
 
@@ -40,7 +41,7 @@ TEST(esp_app_format, esp_app_get_elf_sha256_test)
     memset(dst, fill, sizeof(dst));
     len = sizeof(dst);
     res = esp_app_get_elf_sha256(dst, len);
-    printf("%d: %s (%d)\n", len, dst, res);
+    printf("%" PRIuSIZE ": %s (%d)\n", len, dst, res);
     TEST_ASSERT_EQUAL(sha256_hex_len + 1, res);
     TEST_ASSERT_EQUAL(0, memcmp(dst, ref_sha256, res - 1));
     TEST_ASSERT_EQUAL_HEX(0, dst[sha256_hex_len]);
@@ -49,7 +50,7 @@ TEST(esp_app_format, esp_app_get_elf_sha256_test)
     memset(dst, fill, sizeof(dst));
     len = 9;
     res = esp_app_get_elf_sha256(dst, len);
-    printf("%d: %s (%d)\n", len, dst, res);
+    printf("%" PRIuSIZE ": %s (%d)\n", len, dst, res);
     TEST_ASSERT_EQUAL(9, res);
     TEST_ASSERT_EQUAL(0, memcmp(dst, ref_sha256, res - 1));
     TEST_ASSERT_EQUAL_HEX(0, dst[8]);
@@ -59,7 +60,7 @@ TEST(esp_app_format, esp_app_get_elf_sha256_test)
     strncpy(ref_sha256, esp_app_get_elf_sha256_str(), sizeof(ref_sha256));
     len = strlen(ref_sha256);
     TEST_ASSERT_EQUAL(CONFIG_APP_RETRIEVE_LEN_ELF_SHA, len);
-    printf("\n_Ref: %s (len=%d with null)\n", ref_sha256, len);
+    printf("\n_Ref: %s (len=%" PRIuSIZE " with null)\n", ref_sha256, len);
 
     TEST_ASSERT_EQUAL(0, esp_app_get_elf_sha256(dst, 0));
     TEST_ASSERT_EQUAL(0, esp_app_get_elf_sha256(dst, 1));
@@ -69,7 +70,7 @@ TEST(esp_app_format, esp_app_get_elf_sha256_test)
         memset(dst, 0xCC, sizeof(dst));
         TEST_ASSERT_EQUAL(req_len, esp_app_get_elf_sha256(dst, req_len));
         len = strlen(dst) + 1; // + 1 for the null terminator
-        printf("_%02d_: %-15s (len=%d with null)\n", req_len, dst, len);
+        printf("_%02" PRIuSIZE "_: %-15s (len=%" PRIuSIZE " with null)\n", req_len, dst, len);
         TEST_ASSERT_EQUAL(req_len, len);
         TEST_ASSERT_EQUAL_STRING_LEN(ref_sha256, dst, len - 1); // -1 without null terminator
     }
@@ -78,7 +79,7 @@ TEST(esp_app_format, esp_app_get_elf_sha256_test)
     size_t max_len = CONFIG_APP_RETRIEVE_LEN_ELF_SHA + 1; // + 1 for the null terminator
     TEST_ASSERT_EQUAL(max_len, esp_app_get_elf_sha256(dst, 99));
     len = strlen(dst) + 1; // + 1 for the null terminator
-    printf("_99_: %-15s (len=%d with null)\n", dst, len);
+    printf("_99_: %-15s (len=%" PRIuSIZE " with null)\n", dst, len);
     TEST_ASSERT_EQUAL(max_len, len);
     TEST_ASSERT_EQUAL_STRING_LEN(ref_sha256, dst, len - 1); // -1 without null terminator
 }
