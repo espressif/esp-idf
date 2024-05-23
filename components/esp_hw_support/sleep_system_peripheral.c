@@ -57,14 +57,6 @@ static __attribute__((unused)) esp_err_t sleep_sys_periph_uart0_retention_init(v
     return ESP_OK;
 }
 
-static __attribute__((unused)) esp_err_t sleep_sys_periph_tg0_retention_init(void *arg)
-{
-    esp_err_t err = sleep_retention_entries_create(tg_regs_retention, ARRAY_SIZE(tg_regs_retention), REGDMA_LINK_PRI_SYS_PERIPH_LOW, SLEEP_RETENTION_MODULE_SYS_PERIPH);
-    ESP_RETURN_ON_ERROR(err, TAG, "failed to allocate memory for digital peripherals (%s) retention", "Timer Group");
-    ESP_LOGD(TAG, "Timer Group sleep retention initialization");
-    return ESP_OK;
-}
-
 static __attribute__((unused)) esp_err_t sleep_sys_periph_iomux_retention_init(void *arg)
 {
     esp_err_t err = sleep_retention_entries_create(iomux_regs_retention, ARRAY_SIZE(iomux_regs_retention), REGDMA_LINK_PRI_SYS_PERIPH_LOW, SLEEP_RETENTION_MODULE_SYS_PERIPH);
@@ -126,8 +118,6 @@ static __attribute__((unused)) esp_err_t sleep_sys_periph_retention_init(void *a
 #endif
     err = sleep_sys_periph_uart0_retention_init(arg);
     if(err) goto error;
-    err = sleep_sys_periph_tg0_retention_init(arg);
-    if(err) goto error;
     err = sleep_sys_periph_iomux_retention_init(arg);
     if(err) goto error;
     err = sleep_sys_periph_spimem_retention_init(arg);
@@ -147,13 +137,7 @@ bool peripheral_domain_pd_allowed(void)
 #if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
     const uint32_t inited_modules = sleep_retention_get_inited_modules();
     const uint32_t created_modules = sleep_retention_get_created_modules();
-    uint32_t mask = (const uint32_t) (BIT(SLEEP_RETENTION_MODULE_SYS_PERIPH));
-
-#if SOC_RMT_SUPPORT_SLEEP_RETENTION
-    mask |= BIT(SLEEP_RETENTION_MODULE_RMT0);
-#endif
-
-    return ((inited_modules & mask) == (created_modules & mask));
+    return (((inited_modules ^ created_modules) & TOP_DOMAIN_PERIPHERALS_BM) == 0);
 #else
     return false;
 #endif

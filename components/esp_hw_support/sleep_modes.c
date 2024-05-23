@@ -684,8 +684,19 @@ FORCE_INLINE_ATTR void misc_modules_sleep_prepare(bool deep_sleep)
 /**
  * These save-restore workaround should be moved to lower layer
  */
-FORCE_INLINE_ATTR void misc_modules_wake_prepare(void)
+FORCE_INLINE_ATTR void misc_modules_wake_prepare(uint32_t pd_flags)
 {
+#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
+    if (pd_flags & PMU_SLEEP_PD_TOP) {
+        // There is no driver to manage the flashboot watchdog, and it is definitely be in off state when
+        // the system is running, after waking up from pd_top sleep, shut it down by software here.
+        wdt_hal_context_t mwdt_ctx = {.inst = WDT_MWDT0, .mwdt_dev = &TIMERG0};
+        wdt_hal_write_protect_disable(&mwdt_ctx);
+        wdt_hal_set_flashboot_en(&mwdt_ctx, false);
+        wdt_hal_write_protect_enable(&mwdt_ctx);
+    }
+#endif
+
 #if SOC_USB_SERIAL_JTAG_SUPPORTED && !SOC_USB_SERIAL_JTAG_SUPPORT_LIGHT_SLEEP
     sleep_console_usj_pad_restore();
 #endif
@@ -1057,7 +1068,7 @@ static esp_err_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t m
             sleep_retention_do_system_retention(false);
         }
 #endif
-        misc_modules_wake_prepare();
+        misc_modules_wake_prepare(pd_flags);
     }
 
 #if SOC_SPI_MEM_SUPPORT_TIMING_TUNING
