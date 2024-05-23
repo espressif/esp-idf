@@ -20,6 +20,10 @@ void pau_hal_set_regdma_entry_link_addr(pau_hal_context_t *hal, pau_regdma_link_
     pau_ll_set_regdma_link2_addr(hal->dev, (*link_addr)[2]);
     /* The link 3 of REGDMA is reserved, PMU state switching will not use
      * REGDMA link 3 */
+
+    // When light sleep (PD_TOP), the PAU will power down. so need use LP_SYS_BACKUP_DMA_CFG2_REG
+    // to store recover link address. We always use link0 as the default retention entry.
+    lp_sys_ll_set_pau_link_addr((uint32_t)(*link_addr)[0]);
 }
 
 void IRAM_ATTR pau_hal_start_regdma_modem_link(pau_hal_context_t *hal, bool backup_or_restore)
