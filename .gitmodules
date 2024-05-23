@@ -49,12 +49,12 @@
 [submodule "components/json/cJSON"]
 	path = components/json/cJSON
 	url = ../../DaveGamble/cJSON.git
-	sbom-version = 1.7.17
+	sbom-version = 1.7.18
 	sbom-cpe = cpe:2.3:a:cjson_project:cjson:{}:*:*:*:*:*:*:*
 	sbom-supplier = Person: Dave Gamble
 	sbom-url = https://github.com/DaveGamble/cJSON
 	sbom-description = Ultralightweight JSON parser in ANSI C
-	sbom-hash = 87d8f0961a01bf09bef98ff89bae9fdec42181ee
+	sbom-hash = acc76239bee01d8e9c858ae2cab296704e52d916
 
 [submodule "components/mbedtls/mbedtls"]
 	path = components/mbedtls/mbedtls
