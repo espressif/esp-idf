@@ -36,6 +36,7 @@ typedef struct {
 } tg_reg_ctx_link_t;
 
 extern const tg_reg_ctx_link_t tg_wdt_regs_retention[SOC_TIMER_GROUPS];
+extern const tg_reg_ctx_link_t tg_timer_regs_retention[SOC_TIMER_GROUPS];
 #endif
 
 #ifdef __cplusplus

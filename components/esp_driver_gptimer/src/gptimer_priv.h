@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -39,12 +39,18 @@ extern "C" {
 
 #define GPTIMER_PM_LOCK_NAME_LEN_MAX 16
 
+#define GPTIMER_USE_RETENTION_LINK  (SOC_TIMER_SUPPORT_SLEEP_RETENTION && CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP)
+
 typedef struct gptimer_t gptimer_t;
 
 typedef struct gptimer_group_t {
     int group_id;
     portMUX_TYPE spinlock; // to protect per-group register level concurrent access
     gptimer_t *timers[SOC_TIMER_GROUP_TIMERS_PER_GROUP];
+#if GPTIMER_USE_RETENTION_LINK
+    bool sleep_retention_initialized;           // mark if the retention link is initialized
+    bool retention_link_created;                // mark if the retention link is created
+#endif
 } gptimer_group_t;
 
 typedef enum {
