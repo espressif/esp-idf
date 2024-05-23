@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -22,43 +22,47 @@ const pcnt_signal_conn_t pcnt_periph_signals = {
                             .control_sig = PCNT_CTRL_CH1_IN0_IDX,
                             .pulse_sig = PCNT_SIG_CH1_IN0_IDX
                         }
-                    }
+                    },
+                    .clear_sig = PCNT_RST_IN0_IDX
                 },
                 [1] = {
                     .channels = {
                         [0] = {
                             .control_sig = PCNT_CTRL_CH0_IN1_IDX,
-                            .pulse_sig = PCNT_SIG_CH0_IN1_IDX
+                            .pulse_sig = PCNT_SIG_CH0_IN1_IDX,
                         },
                         [1] = {
                             .control_sig = PCNT_CTRL_CH1_IN1_IDX,
                             .pulse_sig = PCNT_SIG_CH1_IN1_IDX
                         }
-                    }
+                    },
+                    .clear_sig = PCNT_RST_IN1_IDX
                 },
                 [2] = {
                     .channels = {
                         [0] = {
                             .control_sig = PCNT_CTRL_CH0_IN2_IDX,
-                            .pulse_sig = PCNT_SIG_CH0_IN2_IDX
+                            .pulse_sig = PCNT_SIG_CH0_IN2_IDX,
                         },
                         [1] = {
                             .control_sig = PCNT_CTRL_CH1_IN2_IDX,
                             .pulse_sig = PCNT_SIG_CH1_IN2_IDX
                         }
-                    }
+                    },
+                    .clear_sig = PCNT_RST_IN2_IDX
                 },
                 [3] = {
                     .channels = {
                         [0] = {
                             .control_sig = PCNT_CTRL_CH0_IN3_IDX,
-                            .pulse_sig = PCNT_SIG_CH0_IN3_IDX
+                            .pulse_sig = PCNT_SIG_CH0_IN3_IDX,
                         },
                         [1] = {
                             .control_sig = PCNT_CTRL_CH1_IN3_IDX,
                             .pulse_sig = PCNT_SIG_CH1_IN3_IDX
                         }
-                    }
+                    },
+                    .clear_sig = PCNT_RST_IN3_IDX
                 }
             }
         }

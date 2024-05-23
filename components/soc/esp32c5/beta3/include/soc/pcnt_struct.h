@@ -419,12 +419,12 @@ typedef struct pcnt_dev_t {
         pcnt_un_conf1_reg_t conf1;
         pcnt_un_conf2_reg_t conf2;
     } conf_unit[4];
-    volatile pcnt_un_cnt_reg_t un_cnt[4];
+    volatile pcnt_un_cnt_reg_t cnt_unit[4];
     volatile pcnt_int_raw_reg_t int_raw;
     volatile pcnt_int_st_reg_t int_st;
     volatile pcnt_int_ena_reg_t int_ena;
     volatile pcnt_int_clr_reg_t int_clr;
-    volatile pcnt_un_status_reg_t un_status[4];
+    volatile pcnt_un_status_reg_t status_unit[4];
     volatile pcnt_ctrl_reg_t ctrl;
     volatile pcnt_un_change_conf_reg_t change_conf_unit[4]; // Note the unit order is 3210
     uint32_t reserved_074[34];
