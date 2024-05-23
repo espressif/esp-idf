@@ -3,10 +3,9 @@
 # internal use only for CI
 # get latest MR information by source branch
 #
-# SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 #
-
 import argparse
 import os
 import subprocess
@@ -14,6 +13,7 @@ import typing as t
 from pathlib import Path
 
 from gitlab_api import Gitlab
+from idf_ci_utils import IDF_PATH
 
 if t.TYPE_CHECKING:
     from gitlab.v4.objects import ProjectCommit, ProjectMergeRequest
@@ -59,6 +59,43 @@ def get_mr_commits(source_branch: str) -> t.List['ProjectCommit']:
     return list(mr.commits())
 
 
+_COMPONENT_NAME_DIR_RECORDS = {}
+
+
+def get_modified_component(filepath: str) -> t.Optional[str]:
+    """Return the component name if the file is in a component directory, otherwise None."""
+    try:
+        f_path = Path(filepath).resolve().relative_to(IDF_PATH)
+    except ValueError:  # not in IDF_PATH
+        return None
+
+    # skip md files, etc.
+    if f_path.suffix in ['.md', '.yml']:
+        return None
+
+    # skip test_apps files
+    if 'test_apps' in f_path.parts:
+        return None
+
+    component_parent_dirs = [f_path.parts[0]]
+    for part in f_path.parts[1:]:
+        if component_parent_dirs[-1] == 'components' or component_parent_dirs[-1].endswith('common_components'):
+            if part not in _COMPONENT_NAME_DIR_RECORDS:
+                print('Found component "%s" in path "%s"' % (part, component_parent_dirs))
+                _COMPONENT_NAME_DIR_RECORDS[part] = component_parent_dirs
+            elif _COMPONENT_NAME_DIR_RECORDS.get(part) != component_parent_dirs:
+                print(
+                    'WARNING!!! Found component "%s" in path "%s" and "%s"'
+                    % (part, component_parent_dirs, _COMPONENT_NAME_DIR_RECORDS.get(part))
+                )
+
+            return part
+
+        component_parent_dirs.append(part)
+
+    return None
+
+
 def get_mr_components(
     source_branch: t.Optional[str] = None, modified_files: t.Optional[t.List[str]] = None
 ) -> t.List[str]:
@@ -70,13 +107,9 @@ def get_mr_components(
         modified_files = get_mr_changed_files(source_branch)
 
     for f in modified_files:
-        file = Path(f)
-        if (
-            file.parts[0] == 'components'
-            and 'test_apps' not in file.parts
-            and file.parts[-1] != '.build-test-rules.yml'
-        ):
-            components.add(file.parts[1])
+        modified_component = get_modified_component(f)
+        if modified_component:
+            components.add(modified_component)
 
     return list(components)
 

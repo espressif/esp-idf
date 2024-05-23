@@ -1,8 +1,6 @@
 # Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
 
 .default_dependencies: &default_dependencies
-  depends_filepatterns:
-    - examples/common_components/protocol_examples_common/**/*
   depends_components:
     - lwip
     - esp_netif
@@ -10,6 +8,7 @@
     - esp_phy
     - esp_eth
     - mbedtls
+    - protocol_examples_common
 
 examples/protocols/esp_http_client:
   <<: *default_dependencies
@@ -22,7 +21,6 @@ examples/protocols/esp_http_client:
   disable_test:
     - if: IDF_TARGET not in ["esp32", "linux"]
   depends_filepatterns:
-    - examples/common_components/protocol_examples_common/**/*
     - components/esp_http_client/**/*
 
 examples/protocols/esp_local_ctrl:
@@ -35,7 +33,6 @@ examples/protocols/esp_local_ctrl:
     - if: IDF_TARGET not in ["esp32", "esp32c3", "esp32s3"]
       reason: only test on these targets
   depends_filepatterns:
-    - examples/common_components/protocol_examples_common/**/*
     - components/protocomm/**/*
     - tools/esp_prov/**/*
 
@@ -59,7 +56,6 @@ examples/protocols/http_server:
     - if: IDF_TARGET not in ["esp32", "esp32c3", "esp32s3"]
       reason: only test on these targets
   depends_filepatterns:
-    - examples/common_components/protocol_examples_common/**/*
     - components/esp_http_server/**/*
 
 examples/protocols/http_server/captive_portal:
@@ -72,7 +68,6 @@ examples/protocols/http_server/captive_portal:
     - if: IDF_TARGET != "esp32"
       reason: only test on esp32
   depends_filepatterns:
-    - examples/common_components/protocol_examples_common/**/*
     - components/esp_http_server/**/*
 
 examples/protocols/http_server/restful_server:
@@ -82,7 +77,6 @@ examples/protocols/http_server/restful_server:
       temporary: true
       reason: not supported yet  # TODO: [ESP32C5] IDF-8697
   depends_filepatterns:
-    - examples/common_components/protocol_examples_common/**/*
     - components/esp_http_server/**/*
 
 examples/protocols/http_server/ws_echo_server:
@@ -95,7 +89,6 @@ examples/protocols/http_server/ws_echo_server:
     - if: IDF_TARGET != "esp32"
       reason: only test on esp32
   depends_filepatterns:
-    - examples/common_components/protocol_examples_common/**/*
     - components/esp_http_server/**/*
 
 examples/protocols/https_mbedtls:
@@ -130,7 +123,6 @@ examples/protocols/https_server/simple:
     - if: IDF_TARGET not in ["esp32", "esp32c3", "esp32s3"]
       reason: only test on these targets
   depends_filepatterns:
-    - examples/common_components/protocol_examples_common/**/*
     - components/esp_https_server/**/*
     - components/esp_tls/**/*
 
@@ -144,7 +136,6 @@ examples/protocols/https_server/wss_server:
     - if: IDF_TARGET != "esp32"
       reason: only test on esp32
   depends_filepatterns:
-    - examples/common_components/protocol_examples_common/**/*
     - components/esp_https_server/**/*
 
 examples/protocols/https_x509_bundle:
@@ -157,7 +148,6 @@ examples/protocols/https_x509_bundle:
     - if: IDF_TARGET != "esp32"
       reason: only test on esp32
   depends_filepatterns:
-    - examples/common_components/protocol_examples_common/**/*
     - components/esp_tls/**/*
 
 examples/protocols/icmp_echo:
@@ -186,7 +176,6 @@ examples/protocols/modbus:
       temporary: true
       reason: not supported yet  # TODO: [ESP32C5] IDF-8722, IDF-8697
   depends_filepatterns:
-    - examples/common_components/protocol_examples_common/**/*
     - examples/protocols/modbus/mb_example_common/**/*
 
 examples/protocols/mqtt:
@@ -196,7 +185,6 @@ examples/protocols/mqtt:
       temporary: true
       reason: not supported on c5 # TODO: [ESP32C5] IDF-8697
   depends_filepatterns:
-    - examples/common_components/protocol_examples_common/**/*
     - components/mqtt/**/*
 
 examples/protocols/mqtt/custom_outbox:
