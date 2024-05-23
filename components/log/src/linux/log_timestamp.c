@@ -17,4 +17,8 @@ uint32_t esp_log_early_timestamp(void)
     return milliseconds;
 }
 
-uint32_t esp_log_timestamp(void) __attribute__((alias("esp_log_early_timestamp")));
+// Avoid using __attribute(alias) here since linux target builds on MacOS fail to compile.
+uint32_t esp_log_timestamp(void)
+{
+    return esp_log_early_timestamp();
+}
