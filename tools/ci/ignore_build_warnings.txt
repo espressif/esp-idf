@@ -39,3 +39,5 @@ warning: unknown kconfig symbol 'SPIRAM' assigned to 'y' in .*/examples/protocol
 warning: unknown kconfig symbol 'SPIRAM' assigned to 'y' in .*/examples/protocols/https_request/sdkconfig.ci.ssldyn
 warning: unknown kconfig symbol 'UNITY_FREERTOS_STACK_SIZE' assigned to '12288' in .*/components/bt/test_apps/sdkconfig.defaults
 warning: unknown kconfig symbol 'WPA3_SAE' assigned to 'y' in .*/components/wpa_supplicant/test_apps/sdkconfig.defaults
+ld: warning: ignoring duplicate libraries
+archive library: .+ the table of contents is empty

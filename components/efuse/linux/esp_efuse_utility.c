@@ -89,7 +89,7 @@ esp_err_t esp_efuse_utility_burn_chip_opt(bool ignore_coding_errors, bool verify
 // This function reads EFUSE_BLKx_WDATAx_REG registers, and checks possible to write these data with RS coding scheme.
 // The RS coding scheme does not require data changes for the encoded data. esp32s2 has special registers for this.
 // They will be filled during the burn operation.
-esp_err_t esp_efuse_utility_apply_new_coding_scheme()
+esp_err_t esp_efuse_utility_apply_new_coding_scheme(void)
 {
     // start with EFUSE_BLK1. EFUSE_BLK0 - always uses EFUSE_CODING_SCHEME_NONE.
     for (int num_block = EFUSE_BLK1; num_block < EFUSE_BLK_MAX; num_block++) {

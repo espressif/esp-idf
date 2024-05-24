@@ -141,7 +141,7 @@ class IdfPytestEmbedded:
 
     def pytest_collectstart(self) -> None:
         # mock the optional packages while collecting locally
-        if not os.getenv('CI_JOB_ID'):
+        if not os.getenv('CI_JOB_ID') or os.getenv('PYTEST_IGNORE_COLLECT_IMPORT_ERROR') == '1':
             # optional packages required by test scripts
             for p in [
                 'scapy',

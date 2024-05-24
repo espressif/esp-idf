@@ -11,7 +11,13 @@ idf_component_register(SRCS ${src}
 if(NOT BOOTLOADER_BUILD)
     # esp_app_desc structure is added as an undefined symbol because otherwise the
     # linker will ignore this structure as it has no other files depending on it.
-    target_link_libraries(${COMPONENT_LIB} INTERFACE "-u esp_app_desc")
+    if(CONFIG_IDF_TARGET_LINUX AND CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin")
+        # On MacOS, the linker expects the exact mangled symbol name (with leading underscore)
+        # to be present in the object file.
+        target_link_libraries(${COMPONENT_LIB} INTERFACE "-u _esp_app_desc")
+    else()
+        target_link_libraries(${COMPONENT_LIB} INTERFACE "-u esp_app_desc")
+    endif()
 
     if(CONFIG_APP_PROJECT_VER_FROM_CONFIG)
         # Ignore current PROJECT_VER (which was set in project.cmake)

@@ -20,7 +20,11 @@ static const char *TAG = "app_init";
 #endif
 
 // Application version info
+#if defined(__APPLE__) && CONFIG_IDF_TARGET_LINUX
+const __attribute__((weak)) __attribute__((section("__RODATA_DESC,.rodata_desc")))  esp_app_desc_t esp_app_desc = {
+#else
 const __attribute__((weak)) __attribute__((section(".rodata_desc")))  esp_app_desc_t esp_app_desc = {
+#endif /* #if defined(__APPLE__) && CONFIG_IDF_TARGET_LINUX */
     .magic_word = ESP_APP_DESC_MAGIC_WORD,
 #ifdef CONFIG_APP_EXCLUDE_PROJECT_VER_VAR
     .version = "",
