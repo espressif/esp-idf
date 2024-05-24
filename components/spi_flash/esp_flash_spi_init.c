@@ -131,7 +131,6 @@ static IRAM_ATTR NOINLINE_ATTR void cs_initialize(esp_flash_t *chip, const esp_f
     int spics_in = spi_periph_signal[config->host_id].spics_in;
     int spics_out = spi_periph_signal[config->host_id].spics_out[cs_id];
     int spics_func = spi_periph_signal[config->host_id].func;
-    uint32_t iomux_reg = GPIO_PIN_MUX_REG[cs_io_num];
     gpio_hal_context_t gpio_hal = {
         .dev = GPIO_HAL_GET_HW(GPIO_PORT_0)
     };
@@ -139,9 +138,9 @@ static IRAM_ATTR NOINLINE_ATTR void cs_initialize(esp_flash_t *chip, const esp_f
     //To avoid the panic caused by flash data line conflicts during cs line
     //initialization, disable the cache temporarily
     chip->os_func->start(chip->os_func_data);
-    PIN_INPUT_ENABLE(iomux_reg);
+    gpio_hal_input_enable(&gpio_hal, cs_io_num);
     if (use_iomux) {
-        gpio_hal_iomux_func_sel(iomux_reg, spics_func);
+        gpio_hal_func_sel(&gpio_hal, cs_io_num, spics_func);
     } else {
         gpio_hal_output_enable(&gpio_hal, cs_io_num);
         gpio_hal_od_disable(&gpio_hal, cs_io_num);
@@ -149,7 +148,7 @@ static IRAM_ATTR NOINLINE_ATTR void cs_initialize(esp_flash_t *chip, const esp_f
         if (cs_id == 0) {
             esp_rom_gpio_connect_in_signal(cs_io_num, spics_in, false);
         }
-        gpio_hal_iomux_func_sel(iomux_reg, PIN_FUNC_GPIO);
+        gpio_hal_func_sel(&gpio_hal, cs_io_num, PIN_FUNC_GPIO);
     }
     chip->os_func->end(chip->os_func_data);
 }
@@ -317,14 +316,14 @@ static void s_esp_flash_choose_correct_mode(memspi_host_config_t *cfg)
     static const char *mode = FLASH_MODE_STRING;
     if (bootloader_flash_is_octal_mode_enabled()) {
     #if !CONFIG_ESPTOOLPY_FLASHMODE_OPI
-        ESP_EARLY_LOGW(TAG, "Octal flash chip is using but %s mode is selected, will automatically swich to Octal mode", mode);
+        ESP_EARLY_LOGW(TAG, "Octal flash chip is using but %s mode is selected, will automatically switch to Octal mode", mode);
         cfg->octal_mode_en = 1;
         cfg->default_io_mode = SPI_FLASH_OPI_STR;
         default_chip.read_mode = SPI_FLASH_OPI_STR;
     #endif
     } else {
     #if CONFIG_ESPTOOLPY_FLASHMODE_OPI
-        ESP_EARLY_LOGW(TAG, "Quad flash chip is using but %s flash mode is selected, will automatically swich to DIO mode", mode);
+        ESP_EARLY_LOGW(TAG, "Quad flash chip is using but %s flash mode is selected, will automatically switch to DIO mode", mode);
         cfg->octal_mode_en = 0;
         cfg->default_io_mode = SPI_FLASH_DIO;
         default_chip.read_mode = SPI_FLASH_DIO;
@@ -357,7 +356,7 @@ esp_err_t esp_flash_init_default_chip(void)
     #endif
 
 
-    // For chips need time tuning, get value directely from system here.
+    // For chips need time tuning, get value directly from system here.
     #if SOC_SPI_MEM_SUPPORT_TIMING_TUNING
     if (spi_flash_timing_is_tuned()) {
         cfg.using_timing_tuning = 1;
