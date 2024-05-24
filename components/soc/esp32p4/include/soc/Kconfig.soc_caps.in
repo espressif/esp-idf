@@ -43,6 +43,10 @@ config SOC_PCNT_SUPPORTED
     bool
     default y
 
+config SOC_LCDCAM_CAM_SUPPORTED
+    bool
+    default y
+
 config SOC_MIPI_CSI_SUPPORTED
     bool
     default y
@@ -1666,3 +1670,15 @@ config SOC_JPEG_DECODE_SUPPORTED
 config SOC_JPEG_ENCODE_SUPPORTED
     bool
     default y
+
+config SOC_LCDCAM_CAM_SUPPORT_RGB_YUV_CONV
+    bool
+    default y
+
+config SOC_LCDCAM_CAM_PERIPH_NUM
+    int
+    default 1
+
+config SOC_LCDCAM_CAM_DATA_WIDTH_MAX
+    int
+    default 16

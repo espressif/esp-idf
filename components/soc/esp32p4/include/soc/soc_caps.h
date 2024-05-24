@@ -29,6 +29,7 @@
 #define SOC_GPTIMER_SUPPORTED           1
 #define SOC_PCNT_SUPPORTED              1
 // #define SOC_LCDCAM_SUPPORTED            1 // TODO: IDF-7465
+#define SOC_LCDCAM_CAM_SUPPORTED        1
 #define SOC_MIPI_CSI_SUPPORTED          1
 #define SOC_MIPI_DSI_SUPPORTED          1
 #define SOC_MCPWM_SUPPORTED             1
@@ -542,8 +543,8 @@
 /*-------------------------- TOUCH SENSOR CAPS -------------------------------*/
 #define SOC_TOUCH_SENSOR_VERSION            (3)         // Hardware version of touch sensor
 #define SOC_TOUCH_SENSOR_NUM                (14)        // Touch available channel number. Actually there are 15 Touch channels, but channel 14 is not pinned out, limit to 14 channels
-#define SOC_TOUCH_PROXIMITY_CHANNEL_NUM     (3)         // Sopport touch proximity channel number.
-#define SOC_TOUCH_PROXIMITY_MEAS_DONE_SUPPORTED (1)     // Sopport touch proximity channel measure done interrupt type.
+#define SOC_TOUCH_PROXIMITY_CHANNEL_NUM     (3)         // Support touch proximity channel number.
+#define SOC_TOUCH_PROXIMITY_MEAS_DONE_SUPPORTED (1)     // Support touch proximity channel measure done interrupt type.
 #define SOC_TOUCH_SAMPLER_NUM               (3)         // The sampler number in total, each sampler can be used to sample on one frequency
 
 /*-------------------------- TWAI CAPS ---------------------------------------*/
@@ -663,3 +664,8 @@
 #define SOC_JPEG_CODEC_SUPPORTED                  (1)
 #define SOC_JPEG_DECODE_SUPPORTED                 (1)
 #define SOC_JPEG_ENCODE_SUPPORTED                 (1)
+
+/*--------------------------- CAM ---------------------------------*/
+#define SOC_LCDCAM_CAM_SUPPORT_RGB_YUV_CONV         (1)
+#define SOC_LCDCAM_CAM_PERIPH_NUM                   (1U)
+#define SOC_LCDCAM_CAM_DATA_WIDTH_MAX               (16U)
