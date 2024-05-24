@@ -181,7 +181,8 @@ esp_err_t esp_timer_impl_early_init(void)
     systimer_hal_connect_alarm_counter(&systimer_hal, SYSTIMER_ALARM_ESPTIMER, SYSTIMER_COUNTER_ESPTIMER);
 
     for (unsigned cpuid = 0; cpuid < SOC_CPU_CORES_NUM; ++cpuid) {
-        systimer_hal_counter_can_stall_by_cpu(&systimer_hal, SYSTIMER_COUNTER_ESPTIMER, cpuid, (cpuid < portNUM_PROCESSORS) ? true : false);
+        bool can_stall = (cpuid < portNUM_PROCESSORS);
+        systimer_hal_counter_can_stall_by_cpu(&systimer_hal, SYSTIMER_COUNTER_ESPTIMER, cpuid, can_stall);
     }
 
     return ESP_OK;
