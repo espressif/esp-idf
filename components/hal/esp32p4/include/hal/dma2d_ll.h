@@ -55,7 +55,7 @@ extern "C" {
 #define DMA2D_LL_EVENT_TX_EOF                (1<<1)
 #define DMA2D_LL_EVENT_TX_DONE               (1<<0)
 
-// Bit masks that are used to indicate availbility of some sub-features in the channels
+// Bit masks that are used to indicate availability of some sub-features in the channels
 #define DMA2D_LL_TX_CHANNEL_SUPPORT_RO_MASK        (0U | BIT0) // TX channels that support reorder feature
 #define DMA2D_LL_TX_CHANNEL_SUPPORT_CSC_MASK       (0U | BIT0 | BIT1 | BIT2) // TX channels that support color space conversion feature
 
@@ -479,7 +479,7 @@ static inline void dma2d_ll_rx_enable_reorder(dma2d_dev_t *dev, uint32_t channel
     reg->in_reorder_en_chn = enable;
 }
 
-// COLOR SPACE CONVERTION FUNCTION
+// COLOR SPACE CONVERSION FUNCTION
 
 /**
  * @brief Configure 2D-DMA RX channel color space conversion parameters
@@ -826,6 +826,16 @@ static inline void dma2d_ll_tx_enable_dscr_port(dma2d_dev_t *dev, uint32_t chann
 }
 
 /**
+ * @brief Set 2D-DMA TX channel block size in dscr-port mode
+ */
+__attribute__((always_inline))
+static inline void dma2d_ll_tx_set_dscr_port_block_size(dma2d_dev_t *dev, uint32_t channel, uint32_t blk_h, uint32_t blk_v)
+{
+    dev->out_channel[channel].out_dscr_port_blk.out_dscr_port_blk_h_chn = blk_h;
+    dev->out_channel[channel].out_dscr_port_blk.out_dscr_port_blk_v_chn = blk_v;
+}
+
+/**
  * @brief Select 2D-DMA TX channel macro block size
  */
 __attribute__((always_inline))
@@ -973,7 +983,7 @@ static inline void dma2d_ll_tx_enable_reorder(dma2d_dev_t *dev, uint32_t channel
     dev->out_channel[channel].out_conf0.out_reorder_en_chn = enable;
 }
 
-// COLOR SPACE CONVERTION FUNCTION
+// COLOR SPACE CONVERSION FUNCTION
 
 /**
  * @brief Configure 2D-DMA TX channel color space conversion parameters

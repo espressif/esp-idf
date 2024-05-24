@@ -571,7 +571,7 @@ esp_err_t dma2d_connect(dma2d_channel_handle_t dma2d_chan, const dma2d_trigger_t
         // Configure reorder functionality
         dma2d_ll_tx_enable_reorder(group->hal.dev, channel_id, dma2d_chan->status.reorder_en);
         // Assume dscr_port enable or not can be directly derived from trig_periph
-        dma2d_ll_tx_enable_dscr_port(group->hal.dev, channel_id, trig_periph->periph == DMA2D_TRIG_PERIPH_PPA_SR);
+        dma2d_ll_tx_enable_dscr_port(group->hal.dev, channel_id, trig_periph->periph == DMA2D_TRIG_PERIPH_PPA_SRM);
 
         // Reset to certain settings
         dma2d_ll_tx_enable_owner_check(group->hal.dev, channel_id, false);
@@ -596,7 +596,7 @@ esp_err_t dma2d_connect(dma2d_channel_handle_t dma2d_chan, const dma2d_trigger_t
         // Configure reorder functionality
         dma2d_ll_rx_enable_reorder(group->hal.dev, channel_id, dma2d_chan->status.reorder_en);
         // Assume dscr_port enable or not can be directly derived from trig_periph
-        dma2d_ll_rx_enable_dscr_port(group->hal.dev, channel_id, trig_periph->periph == DMA2D_TRIG_PERIPH_PPA_SR);
+        dma2d_ll_rx_enable_dscr_port(group->hal.dev, channel_id, trig_periph->periph == DMA2D_TRIG_PERIPH_PPA_SRM);
 
         // Reset to certain settings
         dma2d_ll_rx_enable_owner_check(group->hal.dev, channel_id, false);
@@ -865,6 +865,24 @@ esp_err_t dma2d_configure_color_space_conversion(dma2d_channel_handle_t dma2d_ch
         dma2d_ll_rx_configure_color_space_conv(group->hal.dev, channel_id, config->rx_csc_option);
         dma2d_ll_rx_set_csc_pre_scramble(group->hal.dev, channel_id, config->pre_scramble);
         dma2d_ll_rx_set_csc_post_scramble(group->hal.dev, channel_id, config->post_scramble);
+    }
+
+err:
+    return ret;
+}
+
+esp_err_t dma2d_configure_dscr_port_mode(dma2d_channel_handle_t dma2d_chan, const dma2d_dscr_port_mode_config_t *config)
+{
+    esp_err_t ret = ESP_OK;
+    ESP_GOTO_ON_FALSE_ISR(dma2d_chan && config, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
+
+    dma2d_group_t *group = dma2d_chan->group;
+    int channel_id = dma2d_chan->channel_id;
+
+    if (dma2d_chan->direction == DMA2D_CHANNEL_DIRECTION_TX) {
+        ESP_GOTO_ON_FALSE_ISR(config->block_h > 0 && config->block_v > 0, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
+
+        dma2d_ll_tx_set_dscr_port_block_size(group->hal.dev, channel_id, config->block_h, config->block_v);
     }
 
 err:

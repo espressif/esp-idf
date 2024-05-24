@@ -31,7 +31,7 @@ struct dma2d_descriptor_align8_s {
         uint32_t dma2d_en : 1;        /*!< Whether to enable 2D functionality */
         uint32_t suc_eof : 1;         /*!< Whether the descriptor is the last one in the link */
         uint32_t owner : 1;           /*!< Who is allowed to access the buffer that this descriptor points to, select DMA2D_DESCRIPTOR_BUFFER_OWNER_CPU or DMA2D_DESCRIPTOR_BUFFER_OWNER_DMA
-                                           When owner is chosen to be DMA, after DMA finishs with the descriptor, it will clear this bit
+                                           When owner is chosen to be DMA, after DMA finishes with the descriptor, it will clear this bit
                                            For data transfer, the bit won't be cleared unless DMA2D_OUT_AUTO_WRBACK is enabled */
     };                                /*!< Descriptor Word 0 */
     struct {
@@ -104,7 +104,7 @@ typedef enum {
     DMA2D_TRIG_PERIPH_M2M,              /*!< 2D-DMA trigger peripheral: M2M */
     DMA2D_TRIG_PERIPH_JPEG_ENCODER,     /*!< 2D-DMA trigger peripheral: JPEG Encoder */
     DMA2D_TRIG_PERIPH_JPEG_DECODER,     /*!< 2D-DMA trigger peripheral: JPEG Decoder */
-    DMA2D_TRIG_PERIPH_PPA_SR,           /*!< 2D-DMA trigger peripheral: PPA SR engine */
+    DMA2D_TRIG_PERIPH_PPA_SRM,          /*!< 2D-DMA trigger peripheral: PPA SRM engine */
     DMA2D_TRIG_PERIPH_PPA_BLEND,        /*!< 2D-DMA trigger peripheral: PPA Blending engine */
 } dma2d_trigger_peripheral_t;
 
@@ -118,9 +118,11 @@ typedef enum {
 
 /**
  * @brief Enumeration of 2D-DMA data burst length options
+ *
+ * Starting from 1, saving 0 for special purpose (upper layer could use 0 to be a default burst length)
  */
 typedef enum {
-    DMA2D_DATA_BURST_LENGTH_8,          /*!< 2D-DMA block size: 8 bytes */
+    DMA2D_DATA_BURST_LENGTH_8 = 1,      /*!< 2D-DMA block size: 8 bytes */
     DMA2D_DATA_BURST_LENGTH_16,         /*!< 2D-DMA block size: 16 bytes */
     DMA2D_DATA_BURST_LENGTH_32,         /*!< 2D-DMA block size: 32 bytes */
     DMA2D_DATA_BURST_LENGTH_64,         /*!< 2D-DMA block size: 64 bytes */
@@ -173,6 +175,10 @@ typedef enum {
 //  G = 1.164 *(Y - 16) - 0.213 *(Cb - 128) - 0.534 *(Cr - 128)//
 //  B = 1.164 *(Y - 16) + 2.114 *(Cb - 128)                    //
 //*********************BT709***********************************//
+
+//  R/G/B [0 ... 255]
+//  Y     [16 ... 235]
+//  Cb/Cr [16 ... 240]
 
 // 256 * Q = A[9:0] * x + B[10:0] * y + C[9:0] * z + D[17:0]
 

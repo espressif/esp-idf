@@ -104,7 +104,7 @@ typedef struct {
  * @return Whether a task switch is needed after the callback function returns,
  *         this is usually due to the callback wakes up some high priority task.
  */
-typedef bool (*dma2d_trans_callback_t)(uint32_t num_chans, const dma2d_trans_channel_info_t *dma2d_chans, void *user_config);
+typedef bool (*dma2d_trans_on_picked_callback_t)(uint32_t num_chans, const dma2d_trans_channel_info_t *dma2d_chans, void *user_config);
 
 /**
  * @brief 2D-DMA channel special function flags
@@ -131,7 +131,7 @@ typedef struct {
     uint32_t specified_tx_channel_mask;     /*!< Bit mask of the specific TX channels to be used, the specified TX channels should have been reserved */
     uint32_t specified_rx_channel_mask;     /*!< Bit mask of the specific RX channels to be used, the specified RX channels should have been reserved */
 
-    dma2d_trans_callback_t on_job_picked;   /*!< Callback function to be called when all necessary channels to do the transaction have been acquired */
+    dma2d_trans_on_picked_callback_t on_job_picked;   /*!< Callback function to be called when all necessary channels to do the transaction have been acquired */
     void *user_config;                      /*!< User registered data to be passed into `on_job_picked` callback */
 } dma2d_trans_config_t;
 
@@ -270,6 +270,27 @@ typedef struct {
  *      - ESP_ERR_INVALID_ARG: Configure DMA color space conversion failed because of invalid argument
  */
 esp_err_t dma2d_configure_color_space_conversion(dma2d_channel_handle_t dma2d_chan, const dma2d_csc_config_t *config);
+
+/**
+ * @brief A collection of configurations apply to 2D-DMA channel DSCR-PORT mode
+ */
+typedef struct {
+    uint32_t block_h;                           /*!< Horizontal width of the block in dscr-port mode (unit: pixel) */
+    uint32_t block_v;                           /*!< Vertical height of the block in dscr-port mode (unit: pixel) */
+} dma2d_dscr_port_mode_config_t;
+
+/**
+ * @brief Configure 2D-DMA channel DSCR-PORT mode
+ *
+ * @note This API only targets PPA SRM, which uses 2D-DMA DSCR-PORT mode.
+ *
+ * @param[in] dma2d_chan 2D-DMA channel handle, get from the `on_job_picked` callback input argument `dma2d_chans`
+ * @param[in] config Configuration of 2D-DMA channel DSCR-PORT mode
+ * @return
+ *      - ESP_OK: Configure 2D-DMA dscr-port mode successfully
+ *      - ESP_ERR_INVALID_ARG: Configure 2D-DMA dscr-port mode failed because of invalid argument
+ */
+esp_err_t dma2d_configure_dscr_port_mode(dma2d_channel_handle_t dma2d_chan, const dma2d_dscr_port_mode_config_t *config);
 
 /**
  * @brief Type of 2D-DMA event data
