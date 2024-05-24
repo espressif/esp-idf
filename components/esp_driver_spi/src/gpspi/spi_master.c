@@ -584,6 +584,15 @@ esp_err_t spi_bus_remove_device(spi_device_handle_t handle)
 
 #if SOC_SPI_SUPPORT_CLK_RC_FAST
     if (handle->cfg.clock_source == SPI_CLK_SRC_RC_FAST) {
+        // If no transactions from other device, acquire the bus to switch module clock to `SPI_CLK_SRC_DEFAULT`
+        // because `SPI_CLK_SRC_RC_FAST` will be disabled then, which block following transactions
+        if (handle->host->cur_cs == DEV_NUM_MAX) {
+            spi_device_acquire_bus(handle, portMAX_DELAY);
+            SPI_MASTER_PERI_CLOCK_ATOMIC() {
+                spi_ll_set_clk_source(handle->host->hal.hw, SPI_CLK_SRC_DEFAULT);
+            }
+            spi_device_release_bus(handle);
+        }
         periph_rtc_dig_clk8m_disable();
     }
 #endif
