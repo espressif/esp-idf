@@ -156,6 +156,9 @@
         "macos": {
           "$ref": "#/definitions/platformDownloadInfo"
         },
+        "macos-arm64": {
+          "$ref": "#/definitions/platformDownloadInfo"
+        },
         "win32": {
           "$ref": "#/definitions/platformDownloadInfo"
         },
