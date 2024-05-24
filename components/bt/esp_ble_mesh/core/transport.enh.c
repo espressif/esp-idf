@@ -2,7 +2,7 @@
 
 /*
  * SPDX-FileCopyrightText: 2017 Intel Corporation
- * SPDX-FileContributor: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -121,22 +121,22 @@ static bt_mesh_mutex_t seg_rx_lock;
 
 static inline void bt_mesh_seg_tx_lock(void)
 {
-    bt_mesh_mutex_lock(&seg_tx_lock);
+    bt_mesh_r_mutex_lock(&seg_tx_lock);
 }
 
 static inline void bt_mesh_seg_tx_unlock(void)
 {
-    bt_mesh_mutex_unlock(&seg_tx_lock);
+    bt_mesh_r_mutex_unlock(&seg_tx_lock);
 }
 
 static inline void bt_mesh_seg_rx_lock(void)
 {
-    bt_mesh_mutex_lock(&seg_rx_lock);
+    bt_mesh_r_mutex_lock(&seg_rx_lock);
 }
 
 static inline void bt_mesh_seg_rx_unlock(void)
 {
-    bt_mesh_mutex_unlock(&seg_rx_lock);
+    bt_mesh_r_mutex_unlock(&seg_rx_lock);
 }
 
 uint8_t bt_mesh_seg_send_interval(void)
@@ -516,6 +516,12 @@ static bool send_next_segment(struct seg_tx *tx, int *result)
     }
 
     net_tx.ctx->net_idx = tx->sub->net_idx;
+
+    /**
+     * Add one to the ref count only if the segment can be further
+     * processed by the network.
+     */
+    seg = net_buf_ref(seg);
 
     err = bt_mesh_net_send(&net_tx, seg, &seg_sent_cb, tx);
     if (err) {
@@ -966,7 +972,18 @@ static int send_seg(struct bt_mesh_net_tx *net_tx, struct net_buf_simple *sdu,
             }
         }
 
-        tx->seg[seg_o] = net_buf_ref(seg);
+        /**
+         * If the net buffer allocation of the subsequent
+         * segments of this segment message fails, it will
+         * cause the ref count of the previously allocated
+         * successful segments to not be unref, which will
+         * cause the net buffer leakage to occur, so it is
+         * necessary to wait until all the segments have been
+         * allocated, and then when the segment is confirmed
+         * that it will be network layer for further processing,
+         * then ref of the net buffer should be plus one.
+         */
+        tx->seg[seg_o] = seg;
 
         BT_DBG("Seg %u/%u prepared", seg_o, tx->seg_n);
     }
@@ -975,6 +992,11 @@ static int send_seg(struct bt_mesh_net_tx *net_tx, struct net_buf_simple *sdu,
      * tx->seg[0] will be NULL here.
      */
     if (tx->seg[0]) {
+        /**
+         * Add one to the ref count only if the segment can be further
+         * processed by the network.
+         */
+        tx->seg[0] = net_buf_ref(tx->seg[0]);
         err = bt_mesh_net_send(net_tx, tx->seg[0], &seg_sent_cb, tx);
         if (err) {
             BT_ERR("Send 1st seg failed (err %d)", err);
@@ -2327,8 +2349,8 @@ void bt_mesh_trans_init(void)
         seg_rx[i].buf.data = seg_rx[i].buf.__buf;
     }
 
-    bt_mesh_mutex_create(&seg_tx_lock);
-    bt_mesh_mutex_create(&seg_rx_lock);
+    bt_mesh_r_mutex_create(&seg_tx_lock);
+    bt_mesh_r_mutex_create(&seg_rx_lock);
 }
 
 #if CONFIG_BLE_MESH_DEINIT
@@ -2338,7 +2360,7 @@ void bt_mesh_trans_deinit(bool erase)
     bt_mesh_tx_reset();
     bt_mesh_rpl_reset(erase);
 
-    bt_mesh_mutex_free(&seg_tx_lock);
-    bt_mesh_mutex_free(&seg_rx_lock);
+    bt_mesh_r_mutex_free(&seg_tx_lock);
+    bt_mesh_r_mutex_free(&seg_rx_lock);
 }
 #endif /* CONFIG_BLE_MESH_DEINIT */
