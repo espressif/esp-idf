@@ -22,8 +22,15 @@ if(NOT ${target} STREQUAL "linux")
     list(APPEND requires esp_mm)
 endif()
 
+if(CONFIG_SOC_LCDCAM_CAM_SUPPORTED)
+    list(APPEND srcs "dvp/src/esp_cam_ctlr_dvp_gdma.c" "dvp/src/esp_cam_ctlr_dvp_cam.c")
+    list(APPEND includes "dvp/include")
+    list(APPEND priv_include_dirs "dvp/private_include")
+endif()
+
 idf_component_register(SRCS ${srcs}
                        INCLUDE_DIRS ${includes}
+                       PRIV_INCLUDE_DIRS ${priv_include_dirs}
                        REQUIRES ${requires}
                        PRIV_REQUIRES ${priv_requires}
                       )
