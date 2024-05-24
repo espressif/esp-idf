@@ -134,6 +134,9 @@ struct esp_netif_obj {
     char * if_key;
     char * if_desc;
     int route_prio;
+
+    // mldv6 timer
+    bool mldv6_report_timer_started;
 };
 
 #endif /* CONFIG_ESP_NETIF_TCPIP_LWIP */
