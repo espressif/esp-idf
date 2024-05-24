@@ -7,7 +7,6 @@ from pytest_embedded_idf import IdfDut
 @pytest.mark.esp32
 @pytest.mark.esp32s3
 @pytest.mark.esp32p4
-@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='lack of runners, IDF-8970')
 @pytest.mark.sdcard
 def test_sdmmc(dut: IdfDut) -> None:
     # SDMMC driver can't be reinitialized if the test fails,
