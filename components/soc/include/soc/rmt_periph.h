@@ -30,7 +30,7 @@ typedef struct {
 
 extern const rmt_signal_conn_t rmt_periph_signals;
 
-#if SOC_RMT_SUPPORT_SLEEP_BACKUP
+#if SOC_RMT_SUPPORT_SLEEP_RETENTION
 typedef struct {
     const regdma_entries_config_t *regdma_entry_array;
     uint32_t array_size;
@@ -40,7 +40,7 @@ typedef struct {
 // - save memory when not all RMT channels are used
 // - specify different retention dependency, e.g. only RMT channel x is capable to use DMA, we only want to add the DMA dependency for that channel
 extern const rmt_reg_retention_info_t rmt_reg_retention_info[SOC_RMT_GROUPS];
-#endif // SOC_RMT_SUPPORT_SLEEP_BACKUP
+#endif // SOC_RMT_SUPPORT_SLEEP_RETENTION
 
 #endif // SOC_RMT_SUPPORTED
 

@@ -555,7 +555,7 @@ RMT 编码器是 RMT TX 事务的一部分，用于在特定时间生成正确�
 
 驱动程序可以通过创建一个电源管理锁来防止上述问题。锁的类型会根据不同的时钟源来设置。驱动程序将在 :cpp:func:`rmt_enable` 中拿锁，并在 :cpp:func:`rmt_disable` 中释放锁。这意味着，无论电源管理策略如何，在这两个函数之间的任何 RMT 事务都可以保证正常工作。在此期间，时钟源不会被禁用或调整频率。
 
-.. only:: SOC_RMT_SUPPORT_SLEEP_BACKUP
+.. only:: SOC_RMT_SUPPORT_SLEEP_RETENTION
 
     除了时钟源的潜在变化外，当启用电源管理时，系统还可以关闭 RMT 寄存器所在的电源域。为确保 RMT 驱动程序在睡眠后继续工作，用户要么选择将 RMT 相关的寄存器备份到 RAM 中，要么拒绝关闭电源域。你可以根据应用需求在 :cpp:member:`rmt_tx_channel_config_t::backup_before_sleep` 和 :cpp:member:`rmt_rx_channel_config_t::backup_before_sleep` 中设置是否需要启用寄存器备份，在功耗和内存使用之间做权衡。
 

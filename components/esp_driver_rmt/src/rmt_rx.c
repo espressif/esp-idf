@@ -70,7 +70,8 @@ static esp_err_t rmt_rx_init_dma_link(rmt_rx_channel_t *rx_channel, const rmt_rx
     gdma_rx_event_callbacks_t cbs = {
         .on_recv_done = rmt_dma_rx_one_block_cb,
     };
-    gdma_register_rx_event_callbacks(rx_channel->base.dma_chan, &cbs, rx_channel);
+    // register the DMA callbacks may fail if the interrupt service can not be installed successfully
+    ESP_RETURN_ON_ERROR(gdma_register_rx_event_callbacks(rx_channel->base.dma_chan, &cbs, rx_channel), TAG, "register DMA callbacks failed");
     return ESP_OK;
 }
 #endif // SOC_RMT_SUPPORT_DMA
@@ -188,9 +189,9 @@ esp_err_t rmt_new_rx_channel(const rmt_rx_channel_config_t *config, rmt_channel_
     ESP_RETURN_ON_FALSE(config->flags.with_dma == 0, ESP_ERR_NOT_SUPPORTED, TAG, "DMA not supported");
 #endif // SOC_RMT_SUPPORT_DMA
 
-#if !SOC_RMT_SUPPORT_SLEEP_BACKUP
+#if !SOC_RMT_SUPPORT_SLEEP_RETENTION
     ESP_RETURN_ON_FALSE(config->flags.backup_before_sleep == 0, ESP_ERR_NOT_SUPPORTED, TAG, "register back up is not supported");
-#endif // SOC_RMT_SUPPORT_SLEEP_BACKUP
+#endif // SOC_RMT_SUPPORT_SLEEP_RETENTION
 
     // malloc channel memory
     uint32_t mem_caps = RMT_MEM_ALLOC_CAPS;
