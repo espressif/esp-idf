@@ -132,12 +132,7 @@ if(CONFIG_LWIP_ENABLE)
             "lwip/src/netif/ppp/pppos.c"
             "lwip/src/netif/ppp/upap.c"
             "lwip/src/netif/ppp/utils.c"
-            "lwip/src/netif/ppp/vj.c"
-            "lwip/src/netif/ppp/polarssl/arc4.c"
-            "lwip/src/netif/ppp/polarssl/des.c"
-            "lwip/src/netif/ppp/polarssl/md4.c"
-            "lwip/src/netif/ppp/polarssl/md5.c"
-            "lwip/src/netif/ppp/polarssl/sha1.c")
+            "lwip/src/netif/ppp/vj.c")
     endif()
 
     if(NOT ${target} STREQUAL "linux")
@@ -158,6 +153,15 @@ if(CONFIG_LWIP_ENABLE)
             "apps/ping/esp_ping.c"
             "apps/ping/ping.c"
             "apps/ping/ping_sock.c")
+    endif()
+
+    if(NOT CONFIG_LWIP_USE_EXTERNAL_MBEDTLS)
+        list(APPEND srcs
+                "lwip/src/netif/ppp/polarssl/arc4.c"
+                "lwip/src/netif/ppp/polarssl/des.c"
+                "lwip/src/netif/ppp/polarssl/md4.c"
+                "lwip/src/netif/ppp/polarssl/md5.c"
+                "lwip/src/netif/ppp/polarssl/sha1.c")
     endif()
 
     if(CONFIG_LWIP_DHCPS)
@@ -209,6 +213,10 @@ if(CONFIG_LWIP_ENABLE)
 
     if(CONFIG_LWIP_DHCP_RESTORE_LAST_IP)
         idf_component_optional_requires(PRIVATE nvs_flash)
+    endif()
+
+    if(CONFIG_LWIP_USE_EXTERNAL_MBEDTLS)
+        idf_component_optional_requires(PRIVATE mbedtls)
     endif()
 
     if(${target} STREQUAL "linux")
