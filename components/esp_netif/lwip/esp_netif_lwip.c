@@ -2530,7 +2530,7 @@ static esp_err_t esp_netif_napt_control_api(esp_netif_api_msg_t *msg)
         /* Disable napt on all other interface */
         esp_netif_t *netif = esp_netif_next_unsafe(NULL);
         while (netif) {
-            if (netif != esp_netif) {
+            if (netif != esp_netif && netif->lwip_netif->napt == 1) {
                 ip_napt_enable_netif(netif->lwip_netif, 0); // Fails only if netif is down
                 ESP_LOGW(TAG, "napt disabled on esp_netif:%p", esp_netif);
             }
