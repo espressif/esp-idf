@@ -16,6 +16,7 @@
 #include "esp_cache.h"
 #include "driver/i2c_master.h"
 #include "driver/isp.h"
+#include "driver/isp_bf.h"
 #include "isp_af_scheme_sa.h"
 #include "esp_cam_ctlr_csi.h"
 #include "esp_cam_ctlr.h"
@@ -262,6 +263,20 @@ void app_main(void)
     };
     ESP_ERROR_CHECK(esp_isp_new_processor(&isp_config, &isp_proc));
     ESP_ERROR_CHECK(esp_isp_enable(isp_proc));
+
+    esp_isp_bf_config_t bf_config = {
+        .denoising_level = 5,
+        .padding_mode = ISP_BF_EDGE_PADDING_MODE_SRND_DATA,
+        .bf_template = {
+            {1, 2, 1},
+            {2, 4, 2},
+            {1, 2, 1},
+        },
+        .padding_line_tail_valid_start_pixel = 0,
+        .padding_line_tail_valid_end_pixel = 0,
+    };
+    ESP_ERROR_CHECK(esp_isp_bf_configure(isp_proc, &bf_config));
+    ESP_ERROR_CHECK(esp_isp_bf_enable(isp_proc));
 
     typedef struct af_task_param_t {
         isp_proc_handle_t isp_proc;
