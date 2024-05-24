@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -72,7 +72,7 @@ static inline void i2s_ll_dma_enable_auto_write_back(i2s_dev_t *hw, bool en)
 }
 
 /**
- * @brief I2S DMA generate EOF event on data in FIFO poped out
+ * @brief I2S DMA generate EOF event on data in FIFO popped out
  *
  * @param hw Peripheral I2S hardware instance address.
  * @param en True to enable, False to disable
@@ -995,17 +995,6 @@ static inline void i2s_ll_enable_lcd(i2s_dev_t *hw, bool enable)
 static inline void i2s_ll_tx_stop_on_fifo_empty(i2s_dev_t *hw, bool en)
 {
     hw->conf1.tx_stop_en = en;
-}
-
-/**
- * @brief Set whether to bypass the internal PCM module
- *
- * @param hw Peripheral I2S hardware instance address.
- * @param bypass whether to bypass the PCM module
- */
-static inline void i2s_ll_tx_bypass_pcm(i2s_dev_t *hw, bool bypass)
-{
-    hw->conf1.tx_pcm_bypass = bypass;
 }
 
 #ifdef __cplusplus

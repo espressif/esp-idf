@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -175,10 +175,7 @@ typedef volatile struct i2s_dev_s {
             uint32_t rx_fifo_mod:          3;           /*Receiver FIFO mode configuration bits*/
             uint32_t tx_fifo_mod_force_en: 1;           /*The bit should always be set to 1*/
             uint32_t rx_fifo_mod_force_en: 1;           /*The bit should always be set to 1*/
-            uint32_t rx_fifo_sync:         1;           /*force write back rx data to memory*/
-            uint32_t rx_24msb_en:          1;           /*Only useful in rx 24bit mode. 1: the high 24 bits are effective in i2s fifo   0: the low 24 bits are effective in i2s fifo*/
-            uint32_t tx_24msb_en:          1;           /*Only useful in tx 24bit mode. 1: the high 24 bits are effective in i2s fifo   0: the low 24 bits are effective in i2s fifo*/
-            uint32_t reserved24:           8;
+            uint32_t reserved21:          11;
         };
         uint32_t val;
     } fifo_conf;
@@ -314,13 +311,9 @@ typedef volatile struct i2s_dev_s {
     uint32_t reserved_9c;
     union {
         struct {
-            uint32_t tx_pcm_conf:    3;                 /*Compress/Decompress module configuration bits. 0: decompress transmitted data  1:compress transmitted data*/
-            uint32_t tx_pcm_bypass:  1;                 /*Set this bit to bypass  Compress/Decompress module for transmitted data.*/
-            uint32_t rx_pcm_conf:    3;                 /*Compress/Decompress module configuration bits. 0: decompress received data  1:compress received data*/
-            uint32_t rx_pcm_bypass:  1;                 /*Set this bit to bypass Compress/Decompress module for received data.*/
-            uint32_t tx_stop_en:     1;                 /*Set this bit to stop disable output BCK signal and WS signal when tx FIFO is emtpy*/
-            uint32_t tx_zeros_rm_en: 1;                 /*don't use*/
-            uint32_t reserved10:    22;
+            uint32_t reserved0:      8;
+            uint32_t tx_stop_en:     1;                 /*Set this bit to stop disable output BCK signal and WS signal when tx FIFO is empty*/
+            uint32_t reserved9:    23;
         };
         uint32_t val;
     } conf1;
