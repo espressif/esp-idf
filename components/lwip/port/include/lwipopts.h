@@ -308,12 +308,23 @@ extern "C" {
 #define LWIP_DHCP                       1
 
 /**
- * DHCP_DOES_ARP_CHECK==1: Do an ARP check on the offered address.
+ * LWIP_DHCP_CHECKS_OFFERED_ADDRESS:
+ * - Using Address Conflict Detection (ACD) module assures that the offered IP address
+ *    is properly probed and announced before binding in DHCP. This conforms to RFC5227,
+ *    but takes several seconds.
+ * - Using ARP check, we only send two ARP requests to check for replies. This process
+ *    lasts 1 - 2 seconds.
+ * - No conflict detection: We directly bind the offered address.
  */
 #ifdef CONFIG_LWIP_DHCP_DOES_ARP_CHECK
 #define DHCP_DOES_ARP_CHECK             1
+#define LWIP_DHCP_DOES_ACD_CHECK        1
+#elif CONFIG_LWIP_DHCP_DOES_ACD_CHECK
+#define DHCP_DOES_ARP_CHECK             0
+#define LWIP_DHCP_DOES_ACD_CHECK        1
 #else
 #define DHCP_DOES_ARP_CHECK             0
+#define LWIP_DHCP_DOES_ACD_CHECK        0
 #endif
 
 /**
