@@ -19,6 +19,7 @@ set(srcs
     "abort.c"
     "assert.c"
     "heap.c"
+    "flockfile.c"
     "locks.c"
     "poll.c"
     "pthread.c"
