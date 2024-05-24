@@ -230,3 +230,10 @@ TEST_CASE("newlib: rom and toolchain localtime func gives the same result", "[ne
     printf("%s\n", test_result);
     TEST_ASSERT_EQUAL_STRING("2020-03-12 15:00:00 EDT (tm_isdst = 1)", test_result);
 }
+
+TEST_CASE("newlib: printf float as expected", "[newlib]")
+{
+    const float val = 1.23;
+    int len = printf("test printf float val is %1.2f\n", val);
+    TEST_ASSERT_EQUAL_INT(30, len);
+}
