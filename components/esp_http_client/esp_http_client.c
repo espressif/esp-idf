@@ -238,6 +238,7 @@ static int http_on_header_event(esp_http_client_handle_t client)
 {
     if (client->current_header_key != NULL && client->current_header_value != NULL) {
         ESP_LOGD(TAG, "HEADER=%s:%s", client->current_header_key, client->current_header_value);
+        http_header_set(client->response->headers, client->current_header_key, client->current_header_value);
         client->event.header_key = client->current_header_key;
         client->event.header_value = client->current_header_value;
         http_dispatch_event(client, HTTP_EVENT_ON_HEADER, NULL, 0);
@@ -361,6 +362,11 @@ esp_err_t esp_http_client_set_header(esp_http_client_handle_t client, const char
 esp_err_t esp_http_client_get_header(esp_http_client_handle_t client, const char *key, char **value)
 {
     return http_header_get(client->request->headers, key, value);
+}
+
+esp_err_t esp_http_client_response_header(esp_http_client_handle_t client, const char *key, char **value)
+{
+    return http_header_get(client->response->headers, key, value);
 }
 
 esp_err_t esp_http_client_delete_header(esp_http_client_handle_t client, const char *key)
