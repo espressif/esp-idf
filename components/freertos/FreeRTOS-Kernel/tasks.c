@@ -141,6 +141,11 @@
  *   - If a yield is required on the current core, this macro return pdTRUE
  *   - if a yield is required on the other core, this macro will internally
  *     trigger it.
+ *
+ * - In SMP, these macros must be called from a critical section (where the
+ *   kernel locks are taken).
+ * - In single-core, these macros must be called from a critical section or when
+ *   the scheduler is suspended.
  */
 #if ( configNUMBER_OF_CORES > 1 )
     #define taskIS_YIELD_REQUIRED( pxTCB, xYieldEqualPriority )                                   prvIsYieldRequiredSMP( ( pxTCB ), ( pxTCB )->uxPriority, xYieldEqualPriority )
@@ -177,7 +182,12 @@
 #endif /* configNUMBER_OF_CORES > 1 */
 /*-----------------------------------------------------------*/
 
-/* Macros to check if a particular task is a currently running. */
+/* Macros to check if a particular task is a currently running.
+ *
+ * - In SMP, these macros must be called from a critical section (where the
+ *   kernel lock is taken).
+ * - In single-core, these macros must be called from a critical section or when
+ *   the scheduler is suspended */
 #if ( configNUMBER_OF_CORES > 1 )
     #define taskIS_CURRENTLY_RUNNING( pxTCB )                     ( ( ( ( pxTCB ) == pxCurrentTCBs[ 0 ] ) || ( ( pxTCB ) == pxCurrentTCBs[ 1 ] ) ) ? pdTRUE : pdFALSE )
     #define taskIS_CURRENTLY_RUNNING_ON_CORE( pxTCB, xCoreID )    ( ( ( pxTCB ) == pxCurrentTCBs[ ( xCoreID ) ] ) ? pdTRUE : pdFALSE )
@@ -193,7 +203,12 @@
 /*-----------------------------------------------------------*/
 
 /* Macro to check if a particular task can currently be scheduled (i.e., is
- * the scheduler suspended). */
+ * the scheduler suspended).
+ *
+ * - In SMP, these macros must be called from a critical section (where the
+ *   kernel lock is taken).
+ * - In single-core, these macros must be called from a critical section or when
+ *   the scheduler is suspended */
 #if ( configNUMBER_OF_CORES > 1 )
     #define taskCAN_BE_SCHEDULED( pxTCB )    prvCheckTaskCanBeScheduledSMP( pxTCB )
 #else
@@ -569,6 +584,9 @@ static BaseType_t prvCreateIdleTasks( void );
  * Exit:
  * - Returns pdTRUE if the current core requires yielding
  * - The other core will be triggered to yield if required
+ *
+ * @note This function must be called from a critical section where the kernel
+ *       lock is taken).
  */
 #if ( configNUMBER_OF_CORES > 1 )
 
@@ -589,6 +607,9 @@ static BaseType_t prvCreateIdleTasks( void );
  * - If a task is unpinned, check the scheduler suspension state on both cores.
  *   The task can be scheduled if the scheduler is not suspended on either of
  *   the cores.
+ *
+ * @note This function must be called from a critical section (where the kernel
+ *       lock is taken).
  */
 #if ( configNUMBER_OF_CORES > 1 )
 
@@ -772,6 +793,9 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB ) PRIVILEGED_FUNCTION;
                                              UBaseType_t uxTaskPriority,
                                              BaseType_t xYieldEqualPriority )
     {
+        /* This function must be called from a critical section (where the kernel
+         * lock is taken). */
+
         configASSERT( uxTaskPriority < configMAX_PRIORITIES );
 
         /* Save core ID as we can no longer be preempted. */
@@ -825,6 +849,9 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB ) PRIVILEGED_FUNCTION;
 
     static BaseType_t prvCheckTaskCanBeScheduledSMP( TCB_t * pxTCB )
     {
+        /* This function must be called from a critical section (where the kernel
+         * lock is taken). */
+
         BaseType_t xReturn;
 
         if( pxTCB->xCoreID == tskNO_AFFINITY )
@@ -2462,22 +2489,29 @@ void vTaskEndScheduler( void )
 
 void vTaskSuspendAll( void )
 {
-    /* A critical section is not required as the variable is of type
+    /* For SMP, we need to take the kernel lock here as we are about to access
+     * kernel data structures.
+     *
+     * For single-core, a critical section is not required as the variable is of type
      * BaseType_t.  Please read Richard Barry's reply in the following link to a
      * post in the FreeRTOS support forum before reporting this as a bug! -
      * https://goo.gl/wu4acr */
+    prvENTER_CRITICAL_SMP_ONLY( &xKernelLock );
+    {
+        /* portSOFTWARE_BARRIER() is only implemented for emulated/simulated ports that
+         * do not otherwise exhibit real time behaviour. */
+        portSOFTWARE_BARRIER();
 
-    /* portSOFTWARE_BARRIER() is only implemented for emulated/simulated ports that
-     * do not otherwise exhibit real time behaviour. */
-    portSOFTWARE_BARRIER();
+        /* The scheduler is suspended if uxSchedulerSuspended is non-zero.  An increment
+         * is used to allow calls to vTaskSuspendAll() to nest. */
+        ++uxSchedulerSuspended[ portGET_CORE_ID() ];
 
-    /* The scheduler is suspended if uxSchedulerSuspended is non-zero.  An increment
-     * is used to allow calls to vTaskSuspendAll() to nest. */
-    ++uxSchedulerSuspended[ portGET_CORE_ID() ];
-
-    /* Enforces ordering for ports and optimised compilers that may otherwise place
-     * the above increment elsewhere. */
-    portMEMORY_BARRIER();
+        /* Enforces ordering for ports and optimised compilers that may otherwise place
+         * the above increment elsewhere. */
+        portMEMORY_BARRIER();
+    }
+    /* Release the previously taken kernel lock. */
+    prvEXIT_CRITICAL_SMP_ONLY( &xKernelLock );
 }
 /*----------------------------------------------------------*/
 
