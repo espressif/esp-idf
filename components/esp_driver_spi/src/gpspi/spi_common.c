@@ -921,6 +921,9 @@ esp_err_t spi_bus_free(spi_host_device_t host_id)
 
     if (ctx->destroy_func) {
         err = ctx->destroy_func(ctx->destroy_arg);
+        if (err != ESP_OK) {
+            return err;
+        }
     }
     spicommon_bus_free_io_cfg(&bus_attr->bus_cfg);
 
