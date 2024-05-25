@@ -1757,3 +1757,30 @@ static void test_iram_slave_normal(void)
 
 TEST_CASE_MULTIPLE_DEVICES("SPI_Master:IRAM_safe", "[spi_ms]", test_master_iram, test_iram_slave_normal);
 #endif
+
+TEST_CASE("test_bus_free_safty_to_remain_devices", "[spi]")
+{
+    spi_bus_config_t buscfg = SPI_BUS_TEST_DEFAULT_CONFIG();
+    TEST_ESP_OK(spi_bus_initialize(TEST_SPI_HOST, &buscfg, SPI_DMA_CH_AUTO));
+
+    spi_device_handle_t dev0, dev1;
+    spi_device_interface_config_t devcfg = SPI_DEVICE_TEST_DEFAULT_CONFIG();
+    TEST_ESP_OK(spi_bus_add_device(TEST_SPI_HOST, &devcfg, &dev0));
+    devcfg.spics_io_num = PIN_NUM_MISO;
+    TEST_ESP_OK(spi_bus_add_device(TEST_SPI_HOST, &devcfg, &dev1));
+
+    int master_send;
+    spi_transaction_t trans_cfg = {
+        .tx_buffer = &master_send,
+        .length = sizeof(uint32_t) * 8,
+    };
+
+    TEST_ESP_OK(spi_bus_remove_device(dev0));
+    TEST_ESP_ERR(ESP_ERR_INVALID_STATE, spi_bus_free(TEST_SPI_HOST));
+
+    //transaction should OK after a failed call to bus_free
+    TEST_ESP_OK(spi_device_transmit(dev1, (spi_transaction_t *)&trans_cfg));
+
+    TEST_ESP_OK(spi_bus_remove_device(dev1));
+    TEST_ESP_OK(spi_bus_free(TEST_SPI_HOST));
+}
