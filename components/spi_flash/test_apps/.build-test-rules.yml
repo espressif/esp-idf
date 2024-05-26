@@ -28,6 +28,16 @@ components/spi_flash/test_apps/flash_encryption:
     - esp_mm
     - spi_flash
 
+components/spi_flash/test_apps/flash_mmap:
+  depends_components:
+    - esp_mm
+    - spi_flash
+  enable:
+    - if: CONFIG_NAME in ["release", "rom_impl"] and IDF_TARGET != "linux"
+    - if: CONFIG_NAME == "xip_psram" and IDF_TARGET in ["esp32s2", "esp32s3"]
+    # S2 doesn't have ROM for flash
+    - if: CONFIG_NAME == "xip_psram_with_rom_impl" and IDF_TARGET in ["esp32s3"]
+
 components/spi_flash/test_apps/flash_suspend:
   disable:
     - if: SOC_SPI_MEM_SUPPORT_AUTO_SUSPEND != 1
