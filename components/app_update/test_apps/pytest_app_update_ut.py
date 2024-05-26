@@ -9,18 +9,44 @@ DEFAULT_TIMEOUT = 20
 TEST_SUBMENU_PATTERN_PYTEST = re.compile(rb'\s+\((\d+)\)\s+"([^"]+)"\r?\n')
 
 
-def run_multiple_stages(dut: Dut, test_case_num: int, stages: int) -> None:
-    for stage in range(1, stages + 1):
-        dut.write(str(test_case_num))
-        dut.expect(TEST_SUBMENU_PATTERN_PYTEST, timeout=DEFAULT_TIMEOUT)
-        dut.write(str(stage))
-        if stage != stages:
-            dut.expect_exact('Press ENTER to see the list of tests.')
+@pytest.mark.supported_targets
+@pytest.mark.temp_skip_ci(targets=['esp32c5'], reason='C5 has not supported deep sleep')  # TODO: [ESP32C5] IDF-8640, IDF-10317
+@pytest.mark.generic
+@pytest.mark.parametrize(
+    'config',
+    [
+        'defaults',
+    ],
+    indirect=True,
+)
+def test_app_update(dut: Dut) -> None:
+    dut.run_all_single_board_cases(timeout=90)
 
 
 @pytest.mark.supported_targets
 # TODO: [ESP32C61] IDF-9245, IDF-9247, IDF-10983
 @pytest.mark.temp_skip_ci(targets=['esp32c61'], reason='C61 has not supported deep sleep')
 @pytest.mark.generic
-def test_app_update(dut: Dut) -> None:
+@pytest.mark.parametrize(
+    'config',
+    [
+        'xip_psram',
+    ],
+    indirect=True,
+)
+def test_app_update_xip_psram(dut: Dut) -> None:
+    dut.run_all_single_board_cases(timeout=90)
+
+
+@pytest.mark.supported_targets
+@pytest.mark.temp_skip_ci(targets=['esp32c5'], reason='C5 has not supported deep sleep')  # TODO: [ESP32C5] IDF-8640, IDF-10317
+@pytest.mark.generic
+@pytest.mark.parametrize(
+    'config',
+    [
+        'xip_psram_with_rom_impl',
+    ],
+    indirect=True,
+)
+def test_app_update_xip_psram_rom_impl(dut: Dut) -> None:
     dut.run_all_single_board_cases(timeout=90)
