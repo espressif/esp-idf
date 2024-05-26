@@ -17,3 +17,13 @@ components/spi_flash/test_apps/flash_encryption:
     - if: IDF_TARGET in ["esp32c2", "esp32s2", "esp32c6", "esp32h2"]
       temporary: true
       reason: No runners # IDF-5634
+
+components/spi_flash/test_apps/flash_mmap:
+  depends_components:
+    - esp_mm
+    - spi_flash
+  enable:
+    - if: CONFIG_NAME in ["release", "rom_impl"] and IDF_TARGET != "linux"
+    - if: CONFIG_NAME == "xip_psram" and IDF_TARGET in ["esp32s2", "esp32s3"]
+    # S2 doesn't have ROM for flash
+    - if: CONFIG_NAME == "xip_psram_with_rom_impl" and IDF_TARGET in ["esp32s3"]
