@@ -73,7 +73,7 @@ ssize_t console_write(int fd, const void *data, size_t size)
 
 int console_fstat(int fd, struct stat * st)
 {
-    return fstat(fd, st);
+    return fstat(vfs_console.fd_primary, st);
 }
 
 int console_close(int fd)
