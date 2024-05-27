@@ -5,6 +5,7 @@
  */
 
 #include <string.h>
+#include "sdkconfig.h"
 #include "freertos/portmacro.h"
 #include "soc/periph_defs.h"
 #include "soc/soc.h"
@@ -84,9 +85,7 @@ static pending_tx_t s_pending_tx = { 0 };
 static void ieee802154_receive_done(uint8_t *data, esp_ieee802154_frame_info_t *frame_info)
 {
     // If the RX done packet is written in the stub buffer, drop it silently.
-    if (s_rx_index == CONFIG_IEEE802154_RX_BUFFER_SIZE) {
-        esp_rom_printf("receive buffer full, drop the current frame.\n");
-    } else {
+    if (s_rx_index != CONFIG_IEEE802154_RX_BUFFER_SIZE) {
         // Otherwise, post it to the upper layer.
         // Ignore bit8 for the frame length, due to the max frame length is 127 based 802.15.4 spec.
         data[0] = data[0] & 0x7f;
@@ -99,7 +98,6 @@ static void ieee802154_transmit_done(const uint8_t *frame, const uint8_t *ack, e
 {
     if (ack && ack_frame_info) {
         if (s_rx_index == CONFIG_IEEE802154_RX_BUFFER_SIZE) {
-            esp_rom_printf("receive buffer full, drop the current ack frame.\n");
             esp_ieee802154_transmit_failed(frame, ESP_IEEE802154_TX_ERR_NO_ACK);
         } else {
             ack_frame_info->process = true;
@@ -165,7 +163,6 @@ IEEE802154_STATIC void set_next_rx_buffer(void)
 {
     uint8_t* next_rx_buffer = NULL;
     uint8_t index = 0;
-
     if (s_rx_index != CONFIG_IEEE802154_RX_BUFFER_SIZE && s_rx_frame_info[s_rx_index].process == false) {
         // If buffer is not full, and current index is empty, set it to hardware.
         next_rx_buffer = s_rx_frame[s_rx_index];
@@ -188,8 +185,10 @@ IEEE802154_STATIC void set_next_rx_buffer(void)
     if (!next_rx_buffer) {
         s_rx_index = CONFIG_IEEE802154_RX_BUFFER_SIZE;
         next_rx_buffer = s_rx_frame[CONFIG_IEEE802154_RX_BUFFER_SIZE];
+#if CONFIG_IEEE802154_DEBUG
+        ESP_EARLY_LOGW(IEEE802154_TAG, "Rx buffer full.");
+#endif
     }
-
     ieee802154_ll_set_rx_addr(next_rx_buffer);
 }
 
