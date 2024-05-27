@@ -68,7 +68,6 @@ components/json/cJSON/
 components/spiffs/include/spiffs_config.h
 
 components/unity/unity/src/unity_internals.h
-components/unity/unity/extras/
 components/unity/include/unity_config.h
 components/unity/include/unity_test_runner.h
 
