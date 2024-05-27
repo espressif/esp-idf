@@ -54,6 +54,8 @@
 #include "bootloader_flash_config.h"
 #include "esp_compiler.h"
 #include "esp_rom_efuse.h"
+#include "soc/chip_revision.h"
+#include "hal/efuse_hal.h"
 #if CONFIG_SPIRAM
 #include "esp_private/esp_psram_io.h"
 #endif
@@ -288,3 +290,22 @@ uint8_t esp_mspi_get_io(esp_mspi_io_t io)
     return s_mspi_io_num_default[io];
 #endif // SOC_SPI_MEM_SUPPORT_CONFIG_GPIO_BY_EFUSE
 }
+
+#if !CONFIG_IDF_TARGET_ESP32P4 || !CONFIG_APP_BUILD_TYPE_RAM  // IDF-10019
+esp_err_t IRAM_ATTR esp_mspi_32bit_address_flash_feature_check(void)
+{
+#if CONFIG_IDF_TARGET_ESP32C6 || CONFIG_IDF_TARGET_ESP32H2
+    ESP_EARLY_LOGE(TAG, "32bit address (flash over 16MB) has high risk on this chip");
+    return ESP_ERR_NOT_SUPPORTED;
+#elif CONFIG_IDF_TARGET_ESP32P4
+    // IDF-10019
+    unsigned chip_version = efuse_hal_chip_revision();
+    if (unlikely(!ESP_CHIP_REV_ABOVE(chip_version, 1))) {
+        ESP_EARLY_LOGE(TAG, "32bit address (flash over 16MB) has high risk on ESP32P4 ECO0");
+        return ESP_ERR_NOT_SUPPORTED;
+    }
+#endif
+
+    return ESP_OK;
+}
+#endif // !CONFIG_IDF_TARGET_ESP32P4 || !CONFIG_APP_BUILD_TYPE_RAM

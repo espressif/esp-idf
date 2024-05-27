@@ -1319,6 +1319,10 @@ config SOC_MEMSPI_CORE_CLK_SHARED_WITH_PSRAM
     bool
     default y
 
+config SOC_SPI_MEM_SUPPORT_CACHE_32BIT_ADDR_MAP
+    bool
+    default y
+
 config SOC_COEX_HW_PTI
     bool
     default y

@@ -157,15 +157,15 @@ List of Flash chips that support this feature:
 Restrictions
 ^^^^^^^^^^^^
 
-.. only:: not esp32s3
+.. only:: not SOC_SPI_MEM_SUPPORT_CACHE_32BIT_ADDR_MAP
 
     .. important::
 
         Over 16 MBytes space on flash mentioned above can be only used for ``data saving``, like file system.
 
-        Mapping data/instructions to 32-bit physical address space (so as to be accessed by the CPU) needs the support of MMU. However {IDF_TARGET_NAME} doesn't support this feature. Only ESP32-S3 supports this up to now.
+        Mapping data/instructions to 32-bit physical address space (so as to be accessed by the CPU) needs the support of MMU. However {IDF_TARGET_NAME} doesn't support this feature. Only ESP32-S3 and ESP32-P4 supports this up to now.
 
-.. only:: esp32s3
+.. only:: SOC_SPI_MEM_SUPPORT_CACHE_32BIT_ADDR_MAP
 
     By default, space over 16 MBytes on flash mentioned above can be used for ``data saving``, like file system.
 
@@ -178,7 +178,7 @@ Restrictions
 OPI Flash Support
 -----------------
 
-This feature is only supporetd on ESP32-S3 for now.
+This feature is only supported on ESP32-S3 for now.
 
 OPI flash means that the flash chip supports octal peripheral interface, which has octal I/O pins. Different octal flash has different configurations and different commands. Hence, it is necessary to carefully check the support list.
 

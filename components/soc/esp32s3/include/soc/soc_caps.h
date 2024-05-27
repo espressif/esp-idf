@@ -514,6 +514,7 @@
 #define SOC_SPI_MEM_SUPPORT_WRAP                          (1)
 #define SOC_MEMSPI_TIMING_TUNING_BY_MSPI_DELAY            (1)
 #define SOC_MEMSPI_CORE_CLK_SHARED_WITH_PSRAM             (1)
+#define SOC_SPI_MEM_SUPPORT_CACHE_32BIT_ADDR_MAP          (1)
 
 /*-------------------------- COEXISTENCE HARDWARE PTI CAPS -------------------------------*/
 #define SOC_COEX_HW_PTI                 (1)

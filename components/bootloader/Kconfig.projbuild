@@ -100,9 +100,15 @@ menu "Bootloader config"
             help
                 This is a helper config for 32bits address flash. Invisible for users.
 
+        config BOOTLOADER_FLASH_NEEDS_32BIT_ADDR_QUAD_FLASH
+            bool
+            default y if BOOTLOADER_FLASH_NEEDS_32BIT_FEAT && SOC_SPI_MEM_SUPPORT_CACHE_32BIT_ADDR_MAP
+            help
+                This is a helper config for 32bits address quad flash. Invisible for users.
+
         config BOOTLOADER_CACHE_32BIT_ADDR_QUAD_FLASH
             bool "Enable cache access to 32-bit-address (over 16MB) range of SPI Flash (READ DOCS FIRST)"
-            depends on BOOTLOADER_FLASH_NEEDS_32BIT_FEAT && IDF_TARGET_ESP32S3 && IDF_EXPERIMENTAL_FEATURES
+            depends on BOOTLOADER_FLASH_NEEDS_32BIT_ADDR_QUAD_FLASH && IDF_EXPERIMENTAL_FEATURES
             default n
             help
                 Enabling this option allows the CPU to access 32-bit-address flash beyond 16M range.
