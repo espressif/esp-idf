@@ -29,17 +29,18 @@
 
 static const char *TAG = "dm9051.mac";
 
-#define DM9051_SPI_LOCK_TIMEOUT_MS (50)
+#define DM9051_SPI_LOCK_TIMEOUT_MS      (50)
 #define DM9051_PHY_OPERATION_TIMEOUT_US (1000)
-#define DM9051_RX_MEM_START_ADDR (3072)
-#define DM9051_RX_MEM_MAX_SIZE (16384)
-#define DM9051_RX_HDR_SIZE (4)
+#define DM9051_MULTI_REG_AXS_TIMEOUT_MS (50)
+#define DM9051_RX_MEM_START_ADDR        (3072)
+#define DM9051_RX_MEM_MAX_SIZE          (16384)
+#define DM9051_RX_HDR_SIZE              (4)
 #define DM9051_ETH_MAC_RX_BUF_SIZE_AUTO (0)
 
 typedef struct {
     uint32_t copy_len;
     uint32_t byte_cnt;
-}__attribute__((packed)) dm9051_auto_buf_info_t;
+} __attribute__((packed)) dm9051_auto_buf_info_t;
 
 typedef struct {
     uint8_t flag;
@@ -66,6 +67,7 @@ typedef struct {
     esp_eth_mediator_t *eth;
     eth_spi_custom_driver_t spi;
     TaskHandle_t rx_task_hdl;
+    SemaphoreHandle_t multi_reg_axs_mutex;
     uint32_t sw_reset_timeout_ms;
     int int_gpio_num;
     esp_timer_handle_t poll_timer;
@@ -92,7 +94,7 @@ static void *dm9051_spi_init(const void *spi_config)
         spi_devcfg.address_bits = 7;
     } else {
         ESP_GOTO_ON_FALSE(dm9051_config->spi_devcfg->command_bits == 1 && dm9051_config->spi_devcfg->address_bits == 7,
-                            NULL, err, TAG, "incorrect SPI frame format (command_bits/address_bits)");
+                          NULL, err, TAG, "incorrect SPI frame format (command_bits/address_bits)");
     }
     ESP_GOTO_ON_FALSE(spi_bus_add_device(dm9051_config->spi_host_id, &spi_devcfg, &spi->hdl) == ESP_OK,
                                             NULL, err, TAG, "adding device to SPI host #%d failed", dm9051_config->spi_host_id + 1);
@@ -179,10 +181,20 @@ static esp_err_t dm9051_spi_read(void *spi_ctx, uint32_t cmd, uint32_t addr, voi
     } else {
         ret = ESP_ERR_TIMEOUT;
     }
-    if ((trans.flags&SPI_TRANS_USE_RXDATA) && len <= 4) {
+    if ((trans.flags & SPI_TRANS_USE_RXDATA) && len <= 4) {
         memcpy(value, trans.rx_data, len);  // copy register values to output
     }
     return ret;
+}
+
+static inline bool dm9051_mutex_lock(emac_dm9051_t *emac)
+{
+    return xSemaphoreTake(emac->multi_reg_axs_mutex, pdMS_TO_TICKS(DM9051_MULTI_REG_AXS_TIMEOUT_MS)) == pdTRUE;
+}
+
+static inline bool dm9051_mutex_unlock(emac_dm9051_t *emac)
+{
+    return xSemaphoreGive(emac->multi_reg_axs_mutex) == pdTRUE;
 }
 
 /**
@@ -378,7 +390,7 @@ static esp_err_t emac_dm9051_start(esp_eth_mac_t *mac)
 {
     esp_err_t ret = ESP_OK;
     emac_dm9051_t *emac = __containerof(mac, emac_dm9051_t, parent);
-   /* reset tx and rx memory pointer */
+    /* reset tx and rx memory pointer */
     ESP_GOTO_ON_ERROR(dm9051_register_write(emac, DM9051_MPTRCR, MPTRCR_RST_RX | MPTRCR_RST_TX), err, TAG, "write MPTRCR failed");
     /* clear interrupt status */
     ESP_GOTO_ON_ERROR(dm9051_register_write(emac, DM9051_ISR, ISR_CLR_STATUS), err, TAG, "write ISR failed");
@@ -441,59 +453,65 @@ err:
     return ret;
 }
 
+static esp_err_t emac_dm9051_phy_access_compl(emac_dm9051_t *emac, uint32_t timeout_us)
+{
+    uint8_t epcr = 0;
+    ESP_RETURN_ON_ERROR(dm9051_register_read(emac, DM9051_EPCR, &epcr), TAG, "read EPCR failed");
+    uint32_t to = 0;
+    if (epcr & EPCR_ERRE) {
+        do {
+            esp_rom_delay_us(100);
+            ESP_RETURN_ON_ERROR(dm9051_register_read(emac, DM9051_EPCR, &epcr), TAG, "read EPCR failed");
+            to += 100;
+        } while ((epcr & EPCR_ERRE) && to < timeout_us);
+        ESP_RETURN_ON_FALSE(!(epcr & EPCR_ERRE), ESP_ERR_TIMEOUT, TAG, "wait for PHY/EEPROM access completion timeouted");
+    }
+    return ESP_OK;
+}
+
 static esp_err_t emac_dm9051_write_phy_reg(esp_eth_mac_t *mac, uint32_t phy_addr, uint32_t phy_reg, uint32_t reg_value)
 {
     esp_err_t ret = ESP_OK;
     emac_dm9051_t *emac = __containerof(mac, emac_dm9051_t, parent);
-    /* check if phy access is in progress */
-    uint8_t epcr = 0;
-    ESP_GOTO_ON_ERROR(dm9051_register_read(emac, DM9051_EPCR, &epcr), err, TAG, "read EPCR failed");
-    ESP_GOTO_ON_FALSE(!(epcr & EPCR_ERRE), ESP_ERR_INVALID_STATE, err, TAG, "phy is busy");
+
+    /* The following commands need to be performed in atomic manner */
+    ESP_RETURN_ON_FALSE(dm9051_mutex_lock(emac), ESP_ERR_TIMEOUT, TAG, "multiple register access mutex timeout");
+    /* check if no PHY/EEPROM access is in progress */
+    ESP_GOTO_ON_ERROR(emac_dm9051_phy_access_compl(emac, DM9051_PHY_OPERATION_TIMEOUT_US), err, TAG, "PHY is busy");
     ESP_GOTO_ON_ERROR(dm9051_register_write(emac, DM9051_EPAR, (uint8_t)(((phy_addr << 6) & 0xFF) | phy_reg)), err, TAG, "write EPAR failed");
     ESP_GOTO_ON_ERROR(dm9051_register_write(emac, DM9051_EPDRL, (uint8_t)(reg_value & 0xFF)), err, TAG, "write EPDRL failed");
     ESP_GOTO_ON_ERROR(dm9051_register_write(emac, DM9051_EPDRH, (uint8_t)((reg_value >> 8) & 0xFF)), err, TAG, "write EPDRH failed");
     /* select PHY and select write operation */
     ESP_GOTO_ON_ERROR(dm9051_register_write(emac, DM9051_EPCR, EPCR_EPOS | EPCR_ERPRW), err, TAG, "write EPCR failed");
-    /* polling the busy flag */
-    uint32_t to = 0;
-    do {
-        esp_rom_delay_us(100);
-        ESP_GOTO_ON_ERROR(dm9051_register_read(emac, DM9051_EPCR, &epcr), err, TAG, "read EPCR failed");
-        to += 100;
-    } while ((epcr & EPCR_ERRE) && to < DM9051_PHY_OPERATION_TIMEOUT_US);
-    ESP_GOTO_ON_FALSE(!(epcr & EPCR_ERRE), ESP_ERR_TIMEOUT, err, TAG, "phy is busy");
-    return ESP_OK;
+    /* wait for PHY access completion */
+    ESP_GOTO_ON_ERROR(emac_dm9051_phy_access_compl(emac, DM9051_PHY_OPERATION_TIMEOUT_US), err, TAG, "PHY access completion check failed");
 err:
+    dm9051_mutex_unlock(emac);
     return ret;
 }
 
 static esp_err_t emac_dm9051_read_phy_reg(esp_eth_mac_t *mac, uint32_t phy_addr, uint32_t phy_reg, uint32_t *reg_value)
 {
     esp_err_t ret = ESP_OK;
-    ESP_GOTO_ON_FALSE(reg_value, ESP_ERR_INVALID_ARG, err, TAG, "can't set reg_value to null");
+    ESP_RETURN_ON_FALSE(reg_value, ESP_ERR_INVALID_ARG, TAG, "can't set reg_value to null");
     emac_dm9051_t *emac = __containerof(mac, emac_dm9051_t, parent);
-    /* check if phy access is in progress */
-    uint8_t epcr = 0;
-    ESP_GOTO_ON_ERROR(dm9051_register_read(emac, DM9051_EPCR, &epcr), err, TAG, "read EPCR failed");
-    ESP_GOTO_ON_FALSE(!(epcr & 0x01), ESP_ERR_INVALID_STATE, err, TAG, "phy is busy");
+
+    /* The following commands need to be performed in atomic manner */
+    ESP_RETURN_ON_FALSE(dm9051_mutex_lock(emac), ESP_ERR_TIMEOUT, TAG, "multiple register access mutex timeout");
+    /* check if no PHY/EEPROM access is in progress */
+    ESP_GOTO_ON_ERROR(emac_dm9051_phy_access_compl(emac, DM9051_PHY_OPERATION_TIMEOUT_US), err, TAG, "PHY is busy");
     ESP_GOTO_ON_ERROR(dm9051_register_write(emac, DM9051_EPAR, (uint8_t)(((phy_addr << 6) & 0xFF) | phy_reg)), err, TAG, "write EPAR failed");
     /* Select PHY and select read operation */
-    ESP_GOTO_ON_ERROR(dm9051_register_write(emac, DM9051_EPCR, 0x0C), err, TAG, "write EPCR failed");
-    /* polling the busy flag */
-    uint32_t to = 0;
-    do {
-        esp_rom_delay_us(100);
-        ESP_GOTO_ON_ERROR(dm9051_register_read(emac, DM9051_EPCR, &epcr), err, TAG, "read EPCR failed");
-        to += 100;
-    } while ((epcr & EPCR_ERRE) && to < DM9051_PHY_OPERATION_TIMEOUT_US);
-    ESP_GOTO_ON_FALSE(!(epcr & EPCR_ERRE), ESP_ERR_TIMEOUT, err, TAG, "phy is busy");
+    ESP_GOTO_ON_ERROR(dm9051_register_write(emac, DM9051_EPCR, EPCR_EPOS | EPCR_ERPRR), err, TAG, "write EPCR failed");
+    /* wait for PHY access completion */
+    ESP_GOTO_ON_ERROR(emac_dm9051_phy_access_compl(emac, DM9051_PHY_OPERATION_TIMEOUT_US), err, TAG, "PHY access completion check failed");
     uint8_t value_h = 0;
     uint8_t value_l = 0;
     ESP_GOTO_ON_ERROR(dm9051_register_read(emac, DM9051_EPDRH, &value_h), err, TAG, "read EPDRH failed");
     ESP_GOTO_ON_ERROR(dm9051_register_read(emac, DM9051_EPDRL, &value_l), err, TAG, "read EPDRL failed");
     *reg_value = (value_h << 8) | value_l;
-    return ESP_OK;
 err:
+    dm9051_mutex_unlock(emac);
     return ret;
 }
 
@@ -529,14 +547,14 @@ static esp_err_t emac_dm9051_set_link(esp_eth_mac_t *mac, eth_link_t link)
         ESP_GOTO_ON_ERROR(mac->start(mac), err, TAG, "dm9051 start failed");
         if (emac->poll_timer) {
             ESP_GOTO_ON_ERROR(esp_timer_start_periodic(emac->poll_timer, emac->poll_period_ms * 1000),
-                                err, TAG, "start poll timer failed");
+                              err, TAG, "start poll timer failed");
         }
         break;
     case ETH_LINK_DOWN:
         ESP_GOTO_ON_ERROR(mac->stop(mac), err, TAG, "dm9051 stop failed");
         if (emac->poll_timer) {
             ESP_GOTO_ON_ERROR(esp_timer_stop(emac->poll_timer),
-                                err, TAG, "stop poll timer failed");
+                              err, TAG, "stop poll timer failed");
         }
         break;
     default:
@@ -637,7 +655,7 @@ static esp_err_t emac_dm9051_transmit(esp_eth_mac_t *mac, uint8_t *buf, uint32_t
     int64_t wait_time =  esp_timer_get_time();
     do {
         ESP_GOTO_ON_ERROR(dm9051_register_read(emac, DM9051_TCR, &tcr), err, TAG, "read TCR failed");
-    } while((tcr & TCR_TXREQ) && ((esp_timer_get_time() - wait_time) < 100));
+    } while ((tcr & TCR_TXREQ) && ((esp_timer_get_time() - wait_time) < 100));
 
     if (tcr & TCR_TXREQ) {
         ESP_LOGE(TAG, "last transmit still in progress, cannot send.");
@@ -781,7 +799,7 @@ static esp_err_t emac_dm9051_receive(esp_eth_mac_t *mac, uint8_t *buf, uint32_t 
 
     /* dummy read, get the most updated data */
     ESP_GOTO_ON_ERROR(dm9051_register_read(emac, DM9051_MRCMDX, &rxbyte), err, TAG, "read MRCMDX failed");
-    /* check for remaing packets */
+    /* check for remaining packets */
     ESP_GOTO_ON_ERROR(dm9051_register_read(emac, DM9051_MRCMDX, &rxbyte), err, TAG, "read MRCMDX failed");
     emac->packets_remain = rxbyte > 0;
     return ESP_OK;
@@ -807,7 +825,7 @@ static esp_err_t emac_dm9051_init(esp_eth_mac_t *mac)
     /* reset dm9051 */
     ESP_GOTO_ON_ERROR(dm9051_reset(emac), err, TAG, "reset dm9051 failed");
     /* verify chip id */
-    ESP_GOTO_ON_ERROR(dm9051_verify_id(emac), err, TAG, "vefiry chip ID failed");
+    ESP_GOTO_ON_ERROR(dm9051_verify_id(emac), err, TAG, "verify chip ID failed");
     /* default setup of internal registers */
     ESP_GOTO_ON_ERROR(dm9051_setup_default(emac), err, TAG, "dm9051 default setup failed");
     /* clear multicast hash table */
@@ -849,7 +867,7 @@ static void emac_dm9051_task(void *arg)
         // check if the task receives any notification
         if (emac->int_gpio_num >= 0) {                                   // if in interrupt mode
             if (ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(1000)) == 0 &&   // if no notification ...
-                gpio_get_level(emac->int_gpio_num) == 0) {               // ...and no interrupt asserted
+                    gpio_get_level(emac->int_gpio_num) == 0) {               // ...and no interrupt asserted
                 continue;                                                // -> just continue to check again
             }
         } else {
@@ -908,6 +926,7 @@ static esp_err_t emac_dm9051_del(esp_eth_mac_t *mac)
     }
     vTaskDelete(emac->rx_task_hdl);
     emac->spi.deinit(emac->spi.ctx);
+    vSemaphoreDelete(emac->multi_reg_axs_mutex);
     heap_caps_free(emac->rx_buffer);
     free(emac);
     return ESP_OK;
@@ -946,7 +965,7 @@ esp_eth_mac_t *esp_eth_mac_new_dm9051(const eth_dm9051_config_t *dm9051_config, 
     emac->parent.receive = emac_dm9051_receive;
 
     if (dm9051_config->custom_spi_driver.init != NULL && dm9051_config->custom_spi_driver.deinit != NULL
-        && dm9051_config->custom_spi_driver.read != NULL && dm9051_config->custom_spi_driver.write != NULL) {
+            && dm9051_config->custom_spi_driver.read != NULL && dm9051_config->custom_spi_driver.write != NULL) {
         ESP_LOGD(TAG, "Using user's custom SPI Driver");
         emac->spi.init = dm9051_config->custom_spi_driver.init;
         emac->spi.deinit = dm9051_config->custom_spi_driver.deinit;
@@ -964,13 +983,17 @@ esp_eth_mac_t *esp_eth_mac_new_dm9051(const eth_dm9051_config_t *dm9051_config, 
         ESP_GOTO_ON_FALSE((emac->spi.ctx = emac->spi.init(dm9051_config)) != NULL, NULL, err, TAG, "SPI initialization failed");
     }
 
+    /* create mutex for accessing multiple registers in atomic manner */
+    emac->multi_reg_axs_mutex = xSemaphoreCreateMutex();
+    ESP_GOTO_ON_FALSE(emac->multi_reg_axs_mutex, NULL, err, TAG, "create multi registers access mutex failed");
+
     /* create dm9051 task */
     BaseType_t core_num = tskNO_AFFINITY;
     if (mac_config->flags & ETH_MAC_FLAG_PIN_TO_CORE) {
         core_num = esp_cpu_get_core_id();
     }
     BaseType_t xReturned = xTaskCreatePinnedToCore(emac_dm9051_task, "dm9051_tsk", mac_config->rx_task_stack_size, emac,
-                           mac_config->rx_task_prio, &emac->rx_task_hdl, core_num);
+                                                   mac_config->rx_task_prio, &emac->rx_task_hdl, core_num);
     ESP_GOTO_ON_FALSE(xReturned == pdPASS, NULL, err, TAG, "create dm9051 task failed");
 
     emac->rx_buffer = heap_caps_malloc(ETH_MAX_PACKET_SIZE + DM9051_RX_HDR_SIZE, MALLOC_CAP_DMA);
@@ -998,6 +1021,9 @@ err:
         }
         if (emac->spi.ctx) {
             emac->spi.deinit(emac->spi.ctx);
+        }
+        if (emac->multi_reg_axs_mutex) {
+            vSemaphoreDelete(emac->multi_reg_axs_mutex);
         }
         heap_caps_free(emac->rx_buffer);
         free(emac);
