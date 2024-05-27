@@ -906,7 +906,6 @@ void btc_l2cap_cb_handler(btc_msg_t *msg)
                 fixed_queue_enqueue(slot->rx.queue, p_data_buf, FIXED_QUEUE_MAX_TIMEOUT);
             } else {
                 osi_free(p_data_buf);
-                break;
             }
         }
         osi_mutex_unlock(&l2cap_local_param.l2cap_slot_mutex);
@@ -950,7 +949,6 @@ void btc_l2cap_cb_handler(btc_msg_t *msg)
                 fixed_queue_enqueue(slot->rx.queue, p_data_buf, FIXED_QUEUE_MAX_TIMEOUT);
             } else {
                 osi_free(p_data_buf);
-                break;
             }
         }
         osi_mutex_unlock(&l2cap_local_param.l2cap_slot_mutex);
@@ -1060,7 +1058,7 @@ static ssize_t l2cap_vfs_write(int fd, const void * data, size_t size)
             if (!enqueue_status) {
                 BTC_TRACE_DEBUG("%s tx_len:%d, fd:%d\n", __func__, fixed_queue_length(slot->tx.queue), fd);
                 osi_mutex_unlock(&l2cap_local_param.l2cap_slot_mutex);
-                //block untill under water level, be closed or time out
+                //block until under water level, be closed or time out
                 tx_event_group_val =
                     xEventGroupWaitBits(l2cap_local_param.tx_event_group, SLOT_WRITE_BIT(serial) | SLOT_CLOSE_BIT(serial), pdTRUE,
                                         pdFALSE, VFS_WRITE_TIMEOUT / portTICK_PERIOD_MS);
