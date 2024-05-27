@@ -25,6 +25,7 @@
 #include "esp_spi_flash_counters.h"
 #include "esp_rom_spiflash.h"
 #include "bootloader_flash.h"
+#include "esp_check.h"
 
 __attribute__((unused)) static const char TAG[] = "spi_flash";
 
@@ -317,14 +318,14 @@ static void s_esp_flash_choose_correct_mode(memspi_host_config_t *cfg)
     static const char *mode = FLASH_MODE_STRING;
     if (bootloader_flash_is_octal_mode_enabled()) {
     #if !CONFIG_ESPTOOLPY_FLASHMODE_OPI
-        ESP_EARLY_LOGW(TAG, "Octal flash chip is using but %s mode is selected, will automatically swich to Octal mode", mode);
+        ESP_EARLY_LOGW(TAG, "Octal flash chip is using but %s mode is selected, will automatically switch to Octal mode", mode);
         cfg->octal_mode_en = 1;
         cfg->default_io_mode = SPI_FLASH_OPI_STR;
         default_chip.read_mode = SPI_FLASH_OPI_STR;
     #endif
     } else {
     #if CONFIG_ESPTOOLPY_FLASHMODE_OPI
-        ESP_EARLY_LOGW(TAG, "Quad flash chip is using but %s flash mode is selected, will automatically swich to DIO mode", mode);
+        ESP_EARLY_LOGW(TAG, "Quad flash chip is using but %s flash mode is selected, will automatically switch to DIO mode", mode);
         cfg->octal_mode_en = 0;
         cfg->default_io_mode = SPI_FLASH_DIO;
         default_chip.read_mode = SPI_FLASH_DIO;
@@ -357,7 +358,7 @@ esp_err_t esp_flash_init_default_chip(void)
     #endif
 
 
-    // For chips need time tuning, get value directely from system here.
+    // For chips need time tuning, get value directly from system here.
     #if SOC_SPI_MEM_SUPPORT_TIMING_TUNING
     if (spi_flash_timing_is_tuned()) {
         cfg.using_timing_tuning = 1;
@@ -396,6 +397,11 @@ esp_err_t esp_flash_init_default_chip(void)
     if (default_chip.size > legacy_chip->chip_size) {
         ESP_EARLY_LOGW(TAG, "Detected size(%dk) larger than the size in the binary image header(%dk). Using the size in the binary image header.", default_chip.size/1024, legacy_chip->chip_size/1024);
     }
+#if !CONFIG_IDF_TARGET_ESP32P4 || !CONFIG_APP_BUILD_TYPE_RAM // IDF-10019
+    if (legacy_chip->chip_size > 16 * 1024 * 1024) {
+        ESP_RETURN_ON_ERROR_ISR(esp_mspi_32bit_address_flash_feature_check(), TAG, "32bit address feature check failed");
+    }
+#endif // !CONFIG_IDF_TARGET_ESP32P4 || !CONFIG_APP_BUILD_TYPE_RAM
     // Set chip->size equal to ROM flash size(also equal to the size in binary image header), which means the available size that can be used
     default_chip.size = legacy_chip->chip_size;
 

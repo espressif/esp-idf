@@ -136,6 +136,8 @@ esp_err_t bootloader_flash_erase_range(uint32_t start_addr, uint32_t size)
 
 #if CONFIG_IDF_TARGET_ESP32S3
 #include "esp32s3/rom/opi_flash.h"
+#elif CONFIG_IDF_TARGET_ESP32P4
+#include "esp32p4/rom/opi_flash.h"
 #endif
 static const char *TAG = "bootloader_flash";
 
