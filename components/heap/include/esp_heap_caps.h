@@ -43,6 +43,9 @@ extern "C" {
 #define MALLOC_CAP_RETENTION        (1<<14) ///< Memory must be able to accessed by retention DMA
 #define MALLOC_CAP_RTCRAM           (1<<15) ///< Memory must be in RTC fast memory
 #define MALLOC_CAP_TCM              (1<<16) ///< Memory must be in TCM memory
+#define MALLOC_CAP_DMA_DESC_AHB     (1<<17) ///< Memory must be capable of containing AHB DMA descriptors
+#define MALLOC_CAP_DMA_DESC_AXI     (1<<18) ///< Memory must be capable of containing AXI DMA descriptors
+#define MALLOC_CAP_CACHE_ALIGNED    (1<<19) ///< Memory must be aligned to the cache line size of any intermediate caches
 
 #define MALLOC_CAP_INVALID          (1<<31) ///< Memory can't be used / list end marker
 
@@ -385,7 +388,7 @@ void *heap_caps_malloc_prefer( size_t size, size_t num, ... );
  *
  * @param ptr Pointer to previously allocated memory, or NULL for a new allocation.
  * @param size Size of the new buffer requested, or 0 to free the buffer.
- * @param num Number of variable paramters
+ * @param num Number of variable parameters
  *
  * @return Pointer to a new buffer of size 'size', or NULL if allocation failed.
  */
@@ -396,7 +399,7 @@ void *heap_caps_realloc_prefer( void *ptr, size_t size, size_t num, ... );
  *
  * @param n    Number of continuing chunks of memory to allocate
  * @param size Size, in bytes, of a chunk of memory to allocate
- * @param num  Number of variable paramters
+ * @param num  Number of variable parameters
  *
  * @return A pointer to the memory allocated on success, NULL on failure
  */
