@@ -232,6 +232,9 @@ tBTM_SET_RPA_TIMEOUT_CMPL_CBACK  *p_ble_set_rpa_timeout_cmpl_cb; /* Callback fun
                                                 ble set rpa timeout is completed   */
 
 tBTM_ADD_DEV_TO_RESOLVING_LIST_CMPL_CBACK *p_add_dev_to_resolving_list_cmpl_cb;
+
+tBTM_SET_PRIVACY_MODE_CMPL_CBACK *p_set_privacy_mode_cmpl_cb;
+
 tBTM_CMPL_CB        *p_le_test_cmd_cmpl_cb;   /* Callback function to be called when
                                                   LE test mode command has been sent successfully */
 
