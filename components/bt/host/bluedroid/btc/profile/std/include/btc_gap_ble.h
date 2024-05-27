@@ -102,7 +102,10 @@ typedef enum {
 #if (BLE_42_FEATURE_SUPPORT == TRUE)
     BTC_GAP_BLE_ACT_CLEAR_ADV,
 #endif // #if (BLE_42_FEATURE_SUPPORT == TRUE)
+    BTC_GAP_BLE_ACT_SET_RESOLVABLE_PRIVATE_ADDRESS_TIMEOUT,
+    BTC_GAP_BLE_ACT_ADD_DEVICE_TO_RESOLVING_LIST,
     BTC_GAP_BLE_ACT_VENDOR_HCI_CMD_EVT,
+    BTC_GAP_BLE_SET_PRIVACY_MODE,
 } btc_gap_ble_act_t;
 
 /* btc_ble_gap_args_t */
@@ -140,6 +143,16 @@ typedef union {
     struct set_rand_addr_args {
         esp_bd_addr_t rand_addr;
     } set_rand_addr;
+    // BTC_GAP_BLE_ACT_SET_RESOLVABLE_PRIVATE_ADDRESS_TIMEOUT
+    struct set_rpa_timeout_args {
+        uint16_t rpa_timeout;
+    } set_rpa_timeout;
+    //BTC_GAP_BLE_ACT_ADD_DEVICE_TO_RESOLVING_LIST
+    struct add_dev_to_resolving_list_args {
+        esp_bd_addr_t addr;
+        uint8_t addr_type;
+        uint8_t irk[PEER_IRK_LEN];
+    } add_dev_to_resolving_list;
     //BTC_GAP_BLE_ACT_CONFIG_LOCAL_PRIVACY,
     struct cfg_local_privacy_args {
         bool privacy_enable;
@@ -255,9 +268,15 @@ typedef union {
         uint8_t  param_len;
         uint8_t *p_param_buf;
     } vendor_cmd_send;
+    // BTC_GAP_BLE_SET_PRIVACY_MODE
+    struct set_privacy_mode {
+        esp_ble_addr_type_t addr_type;
+        esp_bd_addr_t addr;
+        uint8_t privacy_mode;
+    } set_privacy_mode;
 } btc_ble_gap_args_t;
-#if (BLE_50_FEATURE_SUPPORT == TRUE)
 
+#if (BLE_50_FEATURE_SUPPORT == TRUE)
 typedef union {
     struct read_phy_args {
         esp_bd_addr_t bd_addr;

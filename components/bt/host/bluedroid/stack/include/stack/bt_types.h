@@ -676,6 +676,11 @@ typedef void (BT_LOG_FUNC) (int trace_type, const char *fmt_str, ...);
 typedef uint8_t BD_ADDR[BD_ADDR_LEN];
 #endif
 
+/* peer irk */
+#ifndef PEER_IRK_LEN
+#define PEER_IRK_LEN     16
+typedef uint8_t PEER_IRK[PEER_IRK_LEN];
+#endif
 // From bd.c
 
 /*****************************************************************************
