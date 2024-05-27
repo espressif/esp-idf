@@ -118,7 +118,7 @@ static esp_err_t dpi_panel_create_dma_link(esp_lcd_dpi_panel_t *dpi_panel)
             .handshake_type = DW_GDMA_HANDSHAKE_HW,
             .num_outstanding_requests = 2,
         },
-        .flow_controller = DW_GDMA_FLOW_CTRL_DST, // the DSI bridge as the DMA flow controller
+        .flow_controller = DW_GDMA_FLOW_CTRL_SELF, // DMA as the flow controller
         .chan_priority = 1,
     };
     ESP_RETURN_ON_ERROR(dw_gdma_new_channel(&dma_alloc_config, &dma_chan), TAG, "create DMA channel failed");
@@ -280,8 +280,8 @@ esp_err_t esp_lcd_new_panel_dpi(esp_lcd_dsi_bus_handle_t bus, const esp_lcd_dpi_
                                               panel_config->video_timing.vsync_front_porch);
     mipi_dsi_brg_ll_set_num_pixel_bits(hal->bridge, panel_config->video_timing.h_size * panel_config->video_timing.v_size * bits_per_pixel);
     mipi_dsi_brg_ll_set_underrun_discard_count(hal->bridge, panel_config->video_timing.h_size);
-    // let the DSI bridge as the DMA flow controller
-    mipi_dsi_brg_ll_set_flow_controller(hal->bridge, MIPI_DSI_LL_FLOW_CONTROLLER_BRIDGE);
+    // use the DW_GDMA as the flow controller
+    mipi_dsi_brg_ll_set_flow_controller(hal->bridge, MIPI_DSI_LL_FLOW_CONTROLLER_DMA);
     mipi_dsi_brg_ll_set_burst_len(hal->bridge, 256);
     mipi_dsi_brg_ll_set_empty_threshold(hal->bridge, 1024 - 256);
     // enable DSI bridge
