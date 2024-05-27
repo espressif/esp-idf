@@ -1,8 +1,11 @@
 # SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
 import re
+from typing import Any
 from typing import List
 from typing import Optional
+from typing import Pattern
+from typing import Sequence
 from typing import Union
 
 import pexpect
@@ -66,11 +69,13 @@ CONFIGS_DUAL_CORE = [
 # This list is used to check if the target is a dual-core one.
 TARGETS_DUAL_CORE_NAMES = [x.mark.name for x in TARGETS_DUAL_CORE]
 
-# The tests which panic on external stack require PSRAM capable runners
 CONFIGS_EXTRAM_STACK = [
-    pytest.param('coredump_extram_stack', marks=[pytest.mark.esp32, pytest.mark.psram]),
-    pytest.param('coredump_extram_stack', marks=[pytest.mark.esp32s2, pytest.mark.generic]),
-    pytest.param('coredump_extram_stack', marks=[pytest.mark.esp32s3, pytest.mark.quad_psram]),
+    pytest.param('coredump_flash_extram_stack_heap_esp32', marks=[pytest.mark.esp32, pytest.mark.psram]),
+    pytest.param('coredump_flash_extram_stack_heap_esp32s2', marks=[pytest.mark.esp32s2, pytest.mark.generic]),
+    pytest.param('coredump_flash_extram_stack_heap_esp32s3', marks=[pytest.mark.esp32s3, pytest.mark.quad_psram]),
+    pytest.param('coredump_flash_extram_stack_bss_esp32', marks=[pytest.mark.esp32, pytest.mark.psram]),
+    pytest.param('coredump_flash_extram_stack_bss_esp32s2', marks=[pytest.mark.esp32s2, pytest.mark.generic]),
+    pytest.param('coredump_flash_extram_stack_bss_esp32s3', marks=[pytest.mark.esp32s3, pytest.mark.quad_psram]),
 ]
 
 CONFIGS_HW_STACK_GUARD = [
@@ -107,7 +112,7 @@ def get_default_backtrace(config: str) -> List[str]:
 
 
 def common_test(dut: PanicTestDut, config: str, expected_backtrace: Optional[List[str]] = None, check_cpu_reset: Optional[bool] = True,
-                expected_coredump: Optional[List[Union[str, re.Pattern]]] = None) -> None:
+                expected_coredump: Optional[Sequence[Union[str, Pattern[Any]]]] = None) -> None:
     if 'gdbstub' in config:
         dut.expect_exact('Entering gdb stub now.')
         dut.start_gdb_for_gdbstub()
@@ -204,8 +209,11 @@ def test_task_wdt_cpu1(dut: PanicTestDut, config: str, test_func_name: str) -> N
 
 
 @pytest.mark.parametrize('config', CONFIGS_EXTRAM_STACK, indirect=True)
-def test_panic_extram_stack(dut: PanicTestDut, config: str, test_func_name: str) -> None:
-    dut.run_test_func(test_func_name)
+def test_panic_extram_stack(dut: PanicTestDut, config: str) -> None:
+    if 'heap' in config:
+        dut.run_test_func('test_panic_extram_stack_heap')
+    else:
+        dut.run_test_func('test_panic_extram_stack_bss')
     dut.expect_none('Allocated stack is not in external RAM')
     dut.expect_none('Guru Meditation')
     dut.expect_backtrace()
@@ -218,7 +226,22 @@ def test_panic_extram_stack(dut: PanicTestDut, config: str, test_func_name: str)
     # The caller must be accessible after restoring the stack
     dut.expect_exact('Core dump has been saved to flash.')
 
-    common_test(dut, config)
+    if dut.target == 'esp32':
+        # ESP32 External data memory range [0x3f800000-0x3fc00000)
+        coredump_pattern = re.compile('.coredump.tasks.data (0x3[fF][8-9a-bA-B][0-9a-fA-F]{5}) (0x[a-fA-F0-9]+) RW')
+    elif dut.target == 'esp32s2':
+        # ESP32-S2 External data memory range [0x3f500000-0x3ff80000)
+        coredump_pattern = re.compile('.coredump.tasks.data (0x3[fF][5-9a-fA-F][0-7][0-9a-fA-F]{4}) (0x[a-fA-F0-9]+) RW')
+    else:
+        # ESP32-S3 External data memory range [0x3c000000-0x3e000000)
+        coredump_pattern = re.compile('.coredump.tasks.data (0x3[c-dC-D][0-9a-fA-F]{6}) (0x[a-fA-F0-9]+) RW')
+
+    common_test(
+        dut,
+        config,
+        expected_backtrace=None,
+        expected_coredump=[coredump_pattern]
+    )
 
 
 @pytest.mark.parametrize('config', CONFIGS, indirect=True)
@@ -1019,3 +1042,38 @@ def test_coredump_summary(dut: PanicTestDut) -> None:
 @pytest.mark.parametrize('config', CONFIG_COREDUMP_SUMMARY_FLASH_ENCRYPTED, indirect=True)
 def test_coredump_summary_flash_encrypted(dut: PanicTestDut, config: str) -> None:
     _test_coredump_summary(dut, True, config == 'coredump_flash_encrypted')
+
+
+@pytest.mark.parametrize('config', [pytest.param('coredump_flash_elf_sha', marks=TARGETS_ALL)], indirect=True)
+@pytest.mark.generic
+def test_tcb_corrupted(dut: PanicTestDut, target: str, config: str, test_func_name: str) -> None:
+    dut.run_test_func(test_func_name)
+    if dut.is_xtensa:
+        dut.expect_gme('LoadProhibited')
+        dut.expect_reg_dump(0)
+        dut.expect_corrupted_backtrace()
+    else:
+        dut.expect_gme('Load access fault')
+        dut.expect_reg_dump(0)
+        dut.expect_stack_dump()
+
+    dut.expect_elf_sha256()
+    dut.expect_none('Guru Meditation')
+
+    #        TCB             NAME
+    # ---------- ----------------
+    if dut.is_multi_core:
+        regex_patterns = [rb'[0-9xa-fA-F]             main',
+                          rb'[0-9xa-fA-F]             ipc0',
+                          rb'[0-9xa-fA-F]             ipc1']
+    else:
+        regex_patterns = [rb'[0-9xa-fA-F]             main']
+
+    coredump_pattern = [re.compile(pattern.decode('utf-8')) for pattern in regex_patterns]
+
+    common_test(
+        dut,
+        config,
+        expected_backtrace=None,
+        expected_coredump=coredump_pattern
+    )
