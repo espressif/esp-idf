@@ -19,8 +19,6 @@
 extern "C" {
 #endif
 
-#define IEEE802154_TAG "ieee802154"
-
 // These three macros are in microseconds, used for transmit_at
 #define IEEE802154_ED_TRIG_TX_RAMPUP_TIME_US   256
 #define IEEE802154_TX_RAMPUP_TIME_US           98
