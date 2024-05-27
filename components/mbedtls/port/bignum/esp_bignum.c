@@ -6,7 +6,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  *
- * SPDX-FileContributor: 2016-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2016-2024 Espressif Systems (Shanghai) CO LTD
  */
 #include <stdio.h>
 #include <string.h>
@@ -41,7 +41,7 @@
  *   bignum. This number may be less than the size of the bignum
  *
  * - Naming convention hw_words for the hardware length of the operation. This number maybe be rounded up
- *   for targets that requres this (e.g. ESP32), and may be larger than any of the numbers
+ *   for targets that requires this (e.g. ESP32), and may be larger than any of the numbers
  *   involved in the calculation.
  *
  * - Timing behaviour of these functions will depend on the length of the inputs. This is fundamentally
@@ -359,7 +359,7 @@ static int esp_mpi_exp_mod( mbedtls_mpi *Z, const mbedtls_mpi *X, const mbedtls_
     int ret = 0;
 
     mbedtls_mpi Rinv_new; /* used if _Rinv == NULL */
-    mbedtls_mpi *Rinv;    /* points to _Rinv (if not NULL) othwerwise &RR_new */
+    mbedtls_mpi *Rinv;    /* points to _Rinv (if not NULL) otherwise &RR_new */
     mbedtls_mpi_uint Mprime;
 
     size_t x_words = mpi_words(X);
@@ -502,8 +502,8 @@ int mbedtls_mpi_mul_mpi( mbedtls_mpi *Z, const mbedtls_mpi *X, const mbedtls_mpi
        argument is zero or one.
     */
     if (x_bits == 0 || y_bits == 0) {
-        mbedtls_mpi_lset(Z, 0);
-        return 0;
+        ret = mbedtls_mpi_lset(Z, 0);
+        return ret;
     }
     if (x_bits == 1) {
         ret = mbedtls_mpi_copy(Z, Y);

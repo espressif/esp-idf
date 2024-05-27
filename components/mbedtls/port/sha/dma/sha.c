@@ -156,6 +156,8 @@ static void esp_sha_block_mode(esp_sha_type sha_type, const uint8_t *input, uint
     int num_block = 0;
 
     blk_len = block_length(sha_type);
+    assert(blk_len != 0);
+
     blk_word_len =  blk_len / 4;
     num_block = ilen / blk_len;
 
@@ -236,7 +238,13 @@ static esp_err_t esp_sha_dma_process(esp_sha_type sha_type, const void *input, u
 {
     int ret = 0;
     crypto_dma_desc_t *dma_descr_head = NULL;
-    size_t num_blks = (ilen + buf_len) / block_length(sha_type);
+
+    size_t blk_len = block_length(sha_type);
+    if (blk_len == 0) {
+        ESP_LOGE(TAG, "Unsupported SHA type");
+        return ESP_FAIL;
+    }
+    size_t num_blks = (ilen + buf_len) / blk_len;
 
     memset(&s_dma_descr_input, 0, sizeof(crypto_dma_desc_t));
     memset(&s_dma_descr_buf, 0, sizeof(crypto_dma_desc_t));
