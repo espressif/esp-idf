@@ -945,7 +945,7 @@ void btc_l2cap_cb_handler(btc_msg_t *msg)
                 break; // to do disconnect
             }
             memset(p_data_buf, 0, count + sizeof(BT_HDR));
-            p_data_buf->len = BTA_JvL2capRead(p_data->data_ind.handle, slot->id, p_data_buf->data, count);
+            p_data_buf->len = BTA_JvL2capRead(p_data->l2c_read.handle, slot->id, p_data_buf->data, count);
             if (p_data_buf->len > 0) {
                 fixed_queue_enqueue(slot->rx.queue, p_data_buf, FIXED_QUEUE_MAX_TIMEOUT);
             } else {
