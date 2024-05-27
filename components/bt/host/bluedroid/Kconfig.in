@@ -312,6 +312,17 @@ config BT_SMP_SLAVE_CON_PARAMS_UPD_ENABLE
         In order to reduce the pairing time, slave actively initiates connection parameters
         update during pairing.
 
+config BT_BLE_SMP_ID_RESET_ENABLE
+    bool "Reset device identity when all bonding records are deleted"
+    depends on BT_BLE_SMP_ENABLE
+    default n
+    help
+        There are tracking risks associated with using a fixed or static IRK.
+        If enabled this option, Bluedroid will assign a new randomly-generated IRK
+        when all pairing and bonding records are deleted. This would decrease the ability
+        of a previously paired peer to be used to determine whether a device
+        with which it previously shared an IRK is within range.
+
 config BT_STACK_NO_LOG
     bool "Disable BT debug logs (minimize bin size)"
     depends on BT_BLUEDROID_ENABLED
