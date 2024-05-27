@@ -2559,6 +2559,21 @@ void BTA_DmBleDtmStop(tBTA_DTM_CMD_CMPL_CBACK *p_dtm_cmpl_cback)
     }
 }
 
+void BTA_DmBleSetPrivacyMode(uint8_t addr_type, BD_ADDR addr, uint8_t privacy_mode, tBTA_SET_PRIVACY_MODE_CMPL_CBACK *p_cback)
+{
+    tBTA_DM_API_SET_PRIVACY_MODE *p_msg;
+
+    if ((p_msg = (tBTA_DM_API_SET_PRIVACY_MODE *)osi_malloc(sizeof(tBTA_DM_API_SET_PRIVACY_MODE)))
+            != NULL) {
+        p_msg->hdr.event = BTA_DM_API_SET_PRIVACY_MODE_EVT;
+        p_msg->addr_type = addr_type;
+        memcpy(p_msg->addr, addr, sizeof(BD_ADDR));
+        p_msg->privacy_mode = privacy_mode;
+        p_msg->p_cback = p_cback;
+        bta_sys_sendmsg(p_msg);
+    }
+}
+
 #endif
 
 /*******************************************************************************

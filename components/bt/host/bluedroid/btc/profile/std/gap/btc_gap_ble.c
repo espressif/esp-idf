@@ -1319,6 +1319,25 @@ static void btc_ble_vendor_hci_cmd_complete_callback(tBTA_VSC_CMPL *p_param)
     }
 }
 
+static void btc_ble_set_privacy_mode_callback(UINT8 status)
+{
+    esp_ble_gap_cb_param_t param;
+    bt_status_t ret;
+    btc_msg_t msg = {0};
+
+    msg.sig = BTC_SIG_API_CB;
+    msg.pid = BTC_PID_GAP_BLE;
+    msg.act = ESP_GAP_BLE_SET_PRIVACY_MODE_COMPLETE_EVT;
+
+    param.set_privacy_mode_cmpl.status = btc_btm_status_to_esp_status(status);
+
+    ret = btc_transfer_context(&msg, &param, sizeof(esp_ble_gap_cb_param_t), NULL, NULL);
+
+    if (ret != BT_STATUS_SUCCESS) {
+        BTC_TRACE_ERROR("%s btc_transfer_context failed\n", __func__);
+    }
+}
+
 void btc_get_whitelist_size(uint16_t *length)
 {
     BTM_BleGetWhiteListSize(length);
@@ -1497,6 +1516,13 @@ static void btc_ble_dtm_stop(tBTA_DTM_CMD_CMPL_CBACK *p_dtm_cmpl_cback)
     BTA_DmBleDtmStop(p_dtm_cmpl_cback);
 }
 
+static void btc_ble_set_privacy_mode(uint8_t addr_type,
+                                     BD_ADDR addr,
+                                     uint8_t privacy_mode,
+                                     tBTA_SET_PRIVACY_MODE_CMPL_CBACK *p_cback)
+{
+    BTA_DmBleSetPrivacyMode(addr_type, addr, privacy_mode, p_cback);
+}
 
 void btc_gap_ble_cb_handler(btc_msg_t *msg)
 {
@@ -2322,6 +2348,10 @@ void btc_gap_ble_call_handler(btc_msg_t *msg)
                                 arg->vendor_cmd_send.param_len,
                                 arg->vendor_cmd_send.p_param_buf,
                                 btc_ble_vendor_hci_cmd_complete_callback);
+        break;
+    case BTC_GAP_BLE_SET_PRIVACY_MODE:
+        btc_ble_set_privacy_mode(arg->set_privacy_mode.addr_type, arg->set_privacy_mode.addr,
+            arg->set_privacy_mode.privacy_mode, btc_ble_set_privacy_mode_callback);
         break;
     default:
         break;

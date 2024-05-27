@@ -228,6 +228,7 @@ typedef enum {
     ESP_GAP_BLE_SET_RPA_TIMEOUT_COMPLETE_EVT,                    /*!< When set the Resolvable Private Address (RPA) timeout completes, the event comes */
     ESP_GAP_BLE_ADD_DEV_TO_RESOLVING_LIST_COMPLETE_EVT,          /*!< when add a device to the resolving list completes, the event comes*/
     ESP_GAP_BLE_VENDOR_CMD_COMPLETE_EVT,                         /*!< When vendor hci command complete, the event comes */
+    ESP_GAP_BLE_SET_PRIVACY_MODE_COMPLETE_EVT,                   /*!< When set privacy mode complete, the event comes */
     ESP_GAP_BLE_EVT_MAX,                                         /*!< when maximum advertising event complete, the event comes */
 } esp_gap_ble_cb_event_t;
 
@@ -1021,6 +1022,11 @@ typedef struct {
 } esp_ble_gap_past_params_t;
 #endif // #if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
 
+typedef enum{
+    ESP_BLE_NETWORK_PRIVACY_MODE    = 0X00,    /*!< Network Privacy Mode for peer device (default) */
+    ESP_BLE_DEVICE_PRIVACY_MODE     = 0X01,    /*!< Device Privacy Mode for peer device */
+} esp_ble_privacy_mode_t;
+
 /**
  * @brief Gap callback parameters union
  */
@@ -1498,6 +1504,12 @@ typedef union {
         uint16_t        param_len;                  /*!< The length of parameter buffer */
         uint8_t         *p_param_buf;               /*!< The point of parameter buffer */
     } vendor_cmd_cmpl;                              /*!< Event parameter of ESP_GAP_BLE_VENDOR_CMD_COMPLETE_EVT */
+    /**
+     * @brief ESP_GAP_BLE_SET_PRIVACY_MODE_COMPLETE_EVT
+     */
+    struct ble_set_privacy_mode_cmpl_evt_param {
+        esp_bt_status_t status;                     /*!< Indicate privacy mode set operation success status */
+    } set_privacy_mode_cmpl;                        /*!< Event parameter of ESP_GAP_BLE_SET_PRIVACY_MODE_COMPLETE_EVT */
 } esp_ble_gap_cb_param_t;
 
 /**
@@ -2630,6 +2642,21 @@ esp_err_t esp_ble_gap_clear_advertising(void);
  *                  - other  : failed
  */
 esp_err_t esp_ble_gap_vendor_command_send(esp_ble_vendor_cmd_params_t *vendor_cmd_param);
+
+/**
+ * @brief           This function set the privacy mode of the device in resolving list.
+ *
+ * @note            This feature is not supported on ESP32.
+ *
+ * @param[in]       addr_type: The address type of the peer identity address (BLE_ADDR_TYPE_PUBLIC or BLE_ADDR_TYPE_RANDOM).
+ * @param[in]       addr: The peer identity address of the device.
+ * @param[in]       mode: The privacy mode of the device.
+ *
+ * @return
+ *                  - ESP_OK : success
+ *                  - other  : failed
+ */
+esp_err_t esp_ble_gap_set_privacy_mode(esp_ble_addr_type_t addr_type, esp_bd_addr_t addr, esp_ble_privacy_mode_t mode);
 
 #ifdef __cplusplus
 }
