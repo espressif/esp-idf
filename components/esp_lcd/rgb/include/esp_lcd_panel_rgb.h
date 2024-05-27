@@ -132,8 +132,11 @@ typedef struct {
     size_t num_fbs;               /*!< Number of screen-sized frame buffers that allocated by the driver. By default (set to either 0 or 1) only one frame buffer will be used. Maximum number of buffers are 3 */
     size_t bounce_buffer_size_px; /*!< If it's non-zero, the driver allocates two DRAM bounce buffers for DMA use.
                                        DMA fetching from DRAM bounce buffer is much faster than PSRAM frame buffer. */
-    size_t sram_trans_align;      /*!< Alignment of buffers (frame buffer or bounce buffer) that allocated in SRAM */
-    size_t psram_trans_align;     /*!< Alignment of buffers (frame buffer) that allocated in PSRAM */
+    size_t sram_trans_align __attribute__((deprecated)); /*!< Alignment of buffers (frame buffer or bounce buffer) that allocated in SRAM */
+    union {
+        size_t psram_trans_align; /*!< Alignment of buffers (frame buffer) that allocated in PSRAM */
+        size_t dma_burst_size;    /*!< DMA burst size, in bytes */
+    };
     int hsync_gpio_num;           /*!< GPIO used for HSYNC signal */
     int vsync_gpio_num;           /*!< GPIO used for VSYNC signal */
     int de_gpio_num;              /*!< GPIO used for DE signal, set to -1 if it's not used */

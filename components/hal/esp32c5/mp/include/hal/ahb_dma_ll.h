@@ -10,10 +10,10 @@
 #include <stdbool.h>
 #include "soc/soc_caps.h"
 #include "hal/gdma_types.h"
+#include "hal/assert.h"
 #include "soc/ahb_dma_struct.h"
 #include "soc/ahb_dma_reg.h"
 #include "soc/soc_etm_source.h"
-#include "soc/pcr_struct.h"
 #include "soc/retention_periph_defs.h"
 
 #ifdef __cplusplus
@@ -98,25 +98,6 @@ extern "C" {
 #define GDMA_LL_AHB_DESC_ALIGNMENT    4
 
 ///////////////////////////////////// Common /////////////////////////////////////////
-
-/**
- * @brief Enable the bus clock for the DMA module
- */
-static inline void gdma_ll_enable_bus_clock(int group_id, bool enable)
-{
-    (void)group_id;
-    PCR.gdma_conf.gdma_clk_en = enable;
-}
-
-/**
- * @brief Reset the DMA module
- */
-static inline void gdma_ll_reset_register(int group_id)
-{
-    (void)group_id;
-    PCR.gdma_conf.gdma_rst_en = 1;
-    PCR.gdma_conf.gdma_rst_en = 0;
-}
 
 /**
  * @brief Force enable register clock
@@ -212,11 +193,10 @@ static inline void ahb_dma_ll_rx_enable_owner_check(ahb_dma_dev_t *dev, uint32_t
 }
 
 /**
- * @brief Enable DMA RX channel burst reading data, disabled by default
+ * @brief Enable DMA RX channel burst reading data, always enabled
  */
 static inline void ahb_dma_ll_rx_enable_data_burst(ahb_dma_dev_t *dev, uint32_t channel, bool enable)
 {
-    // dev->channel[channel].in.in_conf0.in_data_burst_mode_sel_chn = enable; // single/incr4/incr8/incr16
 }
 
 /**
@@ -225,6 +205,32 @@ static inline void ahb_dma_ll_rx_enable_data_burst(ahb_dma_dev_t *dev, uint32_t 
 static inline void ahb_dma_ll_rx_enable_descriptor_burst(ahb_dma_dev_t *dev, uint32_t channel, bool enable)
 {
     dev->channel[channel].in.in_conf0.indscr_burst_en_chn = enable;
+}
+
+/**
+ * @brief Set RX channel burst size
+ */
+static inline void ahb_dma_ll_rx_set_burst_size(ahb_dma_dev_t *dev, uint32_t channel, uint32_t sz)
+{
+    uint8_t burst_mode = 0;
+    switch (sz) {
+    case 4:
+        burst_mode = 0; // single
+        break;
+    case 16:
+        burst_mode = 1; // incr4
+        break;
+    case 32:
+        burst_mode = 2; // incr8
+        break;
+    case 64:
+        burst_mode = 3; // incr16
+        break;
+    default:
+        HAL_ASSERT(false);
+        break;
+    }
+    dev->channel[channel].in.in_conf0.in_data_burst_mode_sel_chn = burst_mode;
 }
 
 /**
@@ -440,11 +446,10 @@ static inline void ahb_dma_ll_tx_enable_owner_check(ahb_dma_dev_t *dev, uint32_t
 }
 
 /**
- * @brief Enable DMA TX channel burst sending data, disabled by default
+ * @brief Enable DMA TX channel burst sending data, always enabled
  */
 static inline void ahb_dma_ll_tx_enable_data_burst(ahb_dma_dev_t *dev, uint32_t channel, bool enable)
 {
-    // dev->channel[channel].out.out_conf0.out_data_burst_mode_sel_chn = enable;
 }
 
 /**
@@ -453,6 +458,32 @@ static inline void ahb_dma_ll_tx_enable_data_burst(ahb_dma_dev_t *dev, uint32_t 
 static inline void ahb_dma_ll_tx_enable_descriptor_burst(ahb_dma_dev_t *dev, uint32_t channel, bool enable)
 {
     dev->channel[channel].out.out_conf0.outdscr_burst_en_chn = enable;
+}
+
+/**
+ * @brief Set TX channel burst size
+ */
+static inline void ahb_dma_ll_tx_set_burst_size(ahb_dma_dev_t *dev, uint32_t channel, uint32_t sz)
+{
+    uint8_t burst_mode = 0;
+    switch (sz) {
+    case 4:
+        burst_mode = 0; // single
+        break;
+    case 16:
+        burst_mode = 1; // incr4
+        break;
+    case 32:
+        burst_mode = 2; // incr8
+        break;
+    case 64:
+        burst_mode = 3; // incr16
+        break;
+    default:
+        HAL_ASSERT(false);
+        break;
+    }
+    dev->channel[channel].out.out_conf0.out_data_burst_mode_sel_chn = burst_mode;
 }
 
 /**

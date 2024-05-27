@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -27,10 +27,9 @@
 #include "soc/soc_caps.h"
 #include "esp_clk_tree.h"
 #include "esp_memory_utils.h"
+#include "esp_cache.h"
 #include "hal/dma_types.h"
 #include "hal/gpio_hal.h"
-#include "hal/cache_hal.h"
-#include "hal/cache_ll.h"
 #include "esp_private/gdma.h"
 #include "driver/gpio.h"
 #include "esp_private/periph_ctrl.h"
@@ -38,7 +37,6 @@
 #include "soc/lcd_periph.h"
 #include "hal/lcd_ll.h"
 #include "hal/lcd_hal.h"
-#include "esp_cache.h"
 
 #define ALIGN_UP(size, align)    (((size) + (align) - 1) & ~((align) - 1))
 #define ALIGN_DOWN(size, align)  ((size) & ~((align) - 1))
@@ -52,7 +50,7 @@ typedef struct lcd_i80_trans_descriptor_t lcd_i80_trans_descriptor_t;
 static esp_err_t panel_io_i80_tx_param(esp_lcd_panel_io_t *io, int lcd_cmd, const void *param, size_t param_size);
 static esp_err_t panel_io_i80_tx_color(esp_lcd_panel_io_t *io, int lcd_cmd, const void *color, size_t color_size);
 static esp_err_t panel_io_i80_del(esp_lcd_panel_io_t *io);
-static esp_err_t lcd_i80_init_dma_link(esp_lcd_i80_bus_handle_t bus);
+static esp_err_t lcd_i80_init_dma_link(esp_lcd_i80_bus_handle_t bus, const esp_lcd_i80_bus_config_t *bus_config);
 static void lcd_periph_trigger_quick_trans_done_event(esp_lcd_i80_bus_handle_t bus);
 static esp_err_t lcd_i80_select_periph_clock(esp_lcd_i80_bus_handle_t bus, lcd_clock_source_t clk_src);
 static esp_err_t lcd_i80_bus_configure_gpio(esp_lcd_i80_bus_handle_t bus, const esp_lcd_i80_bus_config_t *bus_config);
@@ -72,8 +70,8 @@ struct esp_lcd_i80_bus_t {
     uint8_t *format_buffer;  // The driver allocates an internal buffer for DMA to do data format transformer
     size_t resolution_hz;    // LCD_CLK resolution, determined by selected clock source
     gdma_channel_handle_t dma_chan; // DMA channel handle
-    size_t psram_trans_align; // DMA transfer alignment for data allocated from PSRAM
-    size_t sram_trans_align;  // DMA transfer alignment for data allocated from SRAM
+    size_t int_mem_align; // Alignment for internal memory
+    size_t ext_mem_align; // Alignment for external memory
     lcd_i80_trans_descriptor_t *cur_trans; // Current transaction
     lcd_panel_io_i80_t *cur_device; // Current working device
     LIST_HEAD(i80_device_list, lcd_panel_io_i80_t) device_list; // Head of i80 device list
@@ -175,10 +173,8 @@ esp_err_t esp_lcd_new_i80_bus(const esp_lcd_i80_bus_config_t *bus_config, esp_lc
     lcd_ll_enable_interrupt(bus->hal.dev, LCD_LL_EVENT_TRANS_DONE, false); // disable all interrupts
     lcd_ll_clear_interrupt_status(bus->hal.dev, UINT32_MAX); // clear pending interrupt
     // install DMA service
-    bus->psram_trans_align = bus_config->psram_trans_align;
-    bus->sram_trans_align = bus_config->sram_trans_align;
     bus->bus_width = bus_config->bus_width;
-    ret = lcd_i80_init_dma_link(bus);
+    ret = lcd_i80_init_dma_link(bus, bus_config);
     ESP_GOTO_ON_ERROR(ret, err, TAG, "install DMA failed");
     // disable RGB-LCD mode
     lcd_ll_enable_rgb_mode(bus->hal.dev, false);
@@ -481,6 +477,18 @@ static esp_err_t panel_io_i80_tx_color(esp_lcd_panel_io_t *io, int lcd_cmd, cons
     esp_lcd_i80_bus_t *bus = i80_device->bus;
     lcd_i80_trans_descriptor_t *trans_desc = NULL;
     assert(color_size <= (bus->num_dma_nodes * DMA_DESCRIPTOR_BUFFER_MAX_SIZE) && "color bytes too long, enlarge max_transfer_bytes");
+    if (esp_ptr_external_ram(color)) {
+        // check alignment
+        ESP_RETURN_ON_FALSE(((uint32_t)color & (bus->ext_mem_align - 1)) == 0, ESP_ERR_INVALID_ARG, TAG, "color address not aligned");
+        ESP_RETURN_ON_FALSE((color_size & (bus->ext_mem_align - 1)) == 0, ESP_ERR_INVALID_ARG, TAG, "color size not aligned");
+        // flush frame buffer from cache to the physical PSRAM
+        esp_cache_msync((void *)color, color_size, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED);
+    } else {
+        // check alignment
+        ESP_RETURN_ON_FALSE(((uint32_t)color & (bus->int_mem_align - 1)) == 0, ESP_ERR_INVALID_ARG, TAG, "color address not aligned");
+        ESP_RETURN_ON_FALSE((color_size & (bus->int_mem_align - 1)) == 0, ESP_ERR_INVALID_ARG, TAG, "color size not aligned");
+    }
+
     // in case bus_width=16 and cmd_bits=8, we still need 1 cmd_cycle
     uint32_t cmd_cycles = i80_device->lcd_cmd_bits / bus->bus_width;
     if (cmd_cycles * bus->bus_width < i80_device->lcd_cmd_bits) {
@@ -502,13 +510,6 @@ static esp_err_t panel_io_i80_tx_color(esp_lcd_panel_io_t *io, int lcd_cmd, cons
     trans_desc->data_length = color_size;
     trans_desc->trans_done_cb = i80_device->on_color_trans_done;
     trans_desc->user_ctx = i80_device->user_ctx;
-
-    if (esp_ptr_external_ram(color)) {
-        uint32_t dcache_line_size = cache_hal_get_cache_line_size(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_DATA);
-        // flush frame buffer from cache to the physical PSRAM
-        // note the esp_cache_msync function will check the alignment of the address and size, make sure they're aligned to current cache line size
-        esp_cache_msync((void *)ALIGN_DOWN((intptr_t)color, dcache_line_size), ALIGN_UP(color_size, dcache_line_size), 0);
-    }
 
     // send transaction to trans_queue
     xQueueSend(i80_device->trans_queue, &trans_desc, portMAX_DELAY);
@@ -542,7 +543,7 @@ static esp_err_t lcd_i80_select_periph_clock(esp_lcd_i80_bus_handle_t bus, lcd_c
     return ESP_OK;
 }
 
-static esp_err_t lcd_i80_init_dma_link(esp_lcd_i80_bus_handle_t bus)
+static esp_err_t lcd_i80_init_dma_link(esp_lcd_i80_bus_handle_t bus, const esp_lcd_i80_bus_config_t *bus_config)
 {
     esp_err_t ret = ESP_OK;
     // chain DMA descriptors
@@ -567,12 +568,13 @@ static esp_err_t lcd_i80_init_dma_link(esp_lcd_i80_bus_handle_t bus)
         .owner_check = true
     };
     gdma_apply_strategy(bus->dma_chan, &strategy_config);
-    // set DMA transfer ability
-    gdma_transfer_ability_t ability = {
-        .psram_trans_align = bus->psram_trans_align,
-        .sram_trans_align = bus->sram_trans_align,
+    // config DMA transfer parameters
+    gdma_transfer_config_t trans_cfg = {
+        .max_data_burst_size = bus_config->dma_burst_size ? bus_config->dma_burst_size : 16, // Enable DMA burst transfer for better performance
+        .access_ext_mem = true, // the LCD can carry pixel buffer from the external memory
     };
-    gdma_set_transfer_ability(bus->dma_chan, &ability);
+    ESP_GOTO_ON_ERROR(gdma_config_transfer(bus->dma_chan, &trans_cfg), err, TAG, "config DMA transfer failed");
+    gdma_get_alignment_constraints(bus->dma_chan, &bus->int_mem_align, &bus->ext_mem_align);
     return ESP_OK;
 err:
     if (bus->dma_chan) {

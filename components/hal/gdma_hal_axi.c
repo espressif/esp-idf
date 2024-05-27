@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -91,6 +91,15 @@ void gdma_axi_hal_enable_burst(gdma_hal_context_t *hal, int chan_id, gdma_channe
     }
 }
 
+void gdma_axi_hal_set_burst_size(gdma_hal_context_t *hal, int chan_id, gdma_channel_direction_t dir, uint32_t burst_sz)
+{
+    if (dir == GDMA_CHANNEL_DIRECTION_RX) {
+        axi_dma_ll_rx_set_burst_size(hal->axi_dma_dev, chan_id, burst_sz);
+    } else {
+        axi_dma_ll_tx_set_burst_size(hal->axi_dma_dev, chan_id, burst_sz);
+    }
+}
+
 void gdma_axi_hal_set_strategy(gdma_hal_context_t *hal, int chan_id, gdma_channel_direction_t dir, bool en_owner_check, bool en_desc_write_back, bool eof_till_popped)
 {
     if (dir == GDMA_CHANNEL_DIRECTION_RX) {
@@ -150,6 +159,15 @@ uint32_t gdma_axi_hal_get_eof_desc_addr(gdma_hal_context_t *hal, int chan_id, gd
     } else {
         // The TX direction only has success EOF, parameter 'is_success' is ignored
         return axi_dma_ll_tx_get_eof_desc_addr(hal->axi_dma_dev, chan_id);
+    }
+}
+
+void gdma_axi_hal_enable_access_encrypt_mem(gdma_hal_context_t *hal, int chan_id, gdma_channel_direction_t dir, bool en_or_dis)
+{
+    if (dir == GDMA_CHANNEL_DIRECTION_RX) {
+        axi_dma_ll_rx_enable_ext_mem_ecc_aes_access(hal->axi_dma_dev, chan_id, en_or_dis);
+    } else {
+        axi_dma_ll_tx_enable_ext_mem_ecc_aes_access(hal->axi_dma_dev, chan_id, en_or_dis);
     }
 }
 
@@ -238,6 +256,8 @@ void gdma_axi_hal_init(gdma_hal_context_t *hal, const gdma_hal_config_t *config)
     hal->read_intr_status = gdma_axi_hal_read_intr_status;
     hal->get_intr_status_reg = gdma_axi_hal_get_intr_status_reg;
     hal->get_eof_desc_addr = gdma_axi_hal_get_eof_desc_addr;
+    hal->set_burst_size = gdma_axi_hal_set_burst_size;
+    hal->enable_access_encrypt_mem = gdma_axi_hal_enable_access_encrypt_mem;
 #if SOC_GDMA_SUPPORT_CRC
     hal->clear_crc = gdma_axi_hal_clear_crc;
     hal->set_crc_poly = gdma_axi_hal_set_crc_poly;

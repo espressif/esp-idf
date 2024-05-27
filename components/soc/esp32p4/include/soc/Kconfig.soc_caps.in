@@ -479,7 +479,7 @@ config SOC_DS_KEY_CHECK_MAX_WAIT_US
     int
     default 1100
 
-config SOC_DMA_CAN_ACCESS_MSPI_MEM
+config SOC_DMA_CAN_ACCESS_FLASH
     bool
     default y
 

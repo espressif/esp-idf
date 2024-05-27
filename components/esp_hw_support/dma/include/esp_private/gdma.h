@@ -4,9 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// DO NOT USE THESE APIS IN ANY APPLICATIONS
-// GDMA driver is not public for end users, but for ESP-IDF developers.
-
 #pragma once
 
 #include <stdbool.h>
@@ -36,19 +33,6 @@ typedef struct {
         int reserve_sibling: 1; /*!< If set, DMA channel allocator would prefer to allocate new channel in a new pair, and reserve sibling channel for future use */
     } flags;
 } gdma_channel_alloc_config_t;
-
-/**
- * @brief GDMA transfer ability
- *
- * @note The alignment set in this structure is **not** a guarantee that gdma driver will take care of the nonalignment cases.
- *       Actually the GDMA driver has no knowledge about the DMA buffer (address and size) used by upper layer.
- *       So it's the responsibility of the **upper layer** to take care of the buffer address and size.
- *
- */
-typedef struct {
-    size_t sram_trans_align;  /*!< DMA transfer alignment for memory in SRAM, in bytes. The driver enables/disables burst mode based on this value. 0 means no alignment is required */
-    size_t psram_trans_align; /*!< DMA transfer alignment for memory in PSRAM, in bytes. The driver sets proper burst block size based on the alignment value. 0 means no alignment is required */
-} gdma_transfer_ability_t;
 
 /**
  * @brief Type of GDMA event data
@@ -200,16 +184,48 @@ esp_err_t gdma_connect(gdma_channel_handle_t dma_chan, gdma_trigger_t trig_perip
 esp_err_t gdma_disconnect(gdma_channel_handle_t dma_chan);
 
 /**
- * @brief Set DMA channel transfer ability
+ * @brief Channel transfer configurations
+ */
+typedef struct {
+    uint32_t max_data_burst_size; /*!< Set the max burst size when DMA read/write the data buffer.
+                                       Set to 0 means to disable the data burst.
+                                       Other value must be power of 2, e.g., 4/8/16/32/64 */
+    bool access_ext_mem;          /*!< Set this if the DMA transfer will access external memory */
+} gdma_transfer_config_t;
+
+/**
+ * @brief Configure transfer parameters for a DMA channel
+ *
+ * @note It's highly recommended to enable the burst mode and set proper burst size for the DMA channel,
+ *       which can improve the performance in accessing external memory by a lot.
+ *
+ * @param[in] chan DMA channel handle, allocated by `gdma_new_channel`
+ * @param[in] config Transfer configurations
+ * @return
+ *      - ESP_OK: Configure DMA transfer parameters successfully
+ *      - ESP_ERR_INVALID_ARG: Configure DMA transfer parameters failed because of invalid argument
+ *      - ESP_FAIL: Configure DMA transfer parameters failed because of other error
+ */
+esp_err_t gdma_config_transfer(gdma_channel_handle_t dma_chan, const gdma_transfer_config_t *config);
+
+/**
+ * @brief Get the alignment constraints for internal and external memory
+ *
+ * @note You should call this function after `gdma_config_transfer`, the later one can
+ *       adjust the alignment constraints based on various conditions, e.g. burst size, memory encryption, etc.
+ * @note You can use returned alignment value to validate if a DMA buffer provided by the upper layer meets the constraints.
+ * @note The returned alignment doesn't take the cache line size into account, if you want to do aligned memory allocation,
+ *       you should align the buffer size to the cache line size by yourself if the DMA buffer is behind a cache.
  *
  * @param[in] dma_chan GDMA channel handle, allocated by `gdma_new_channel`
- * @param[in] ability Transfer ability, e.g. alignment
+ * @param[out] int_mem_alignment Internal memory alignment
+ * @param[out] ext_mem_alignment External memory alignment
  * @return
- *      - ESP_OK: Set DMA channel transfer ability successfully
- *      - ESP_ERR_INVALID_ARG: Set DMA channel transfer ability failed because of invalid argument
- *      - ESP_FAIL: Set DMA channel transfer ability failed because of other error
+ *      - ESP_OK: Get alignment constraints successfully
+ *      - ESP_ERR_INVALID_ARG: Get alignment constraints failed because of invalid argument
+ *      - ESP_FAIL: Get alignment constraints failed because of other error
  */
-esp_err_t gdma_set_transfer_ability(gdma_channel_handle_t dma_chan, const gdma_transfer_ability_t *ability);
+esp_err_t gdma_get_alignment_constraints(gdma_channel_handle_t dma_chan, size_t *int_mem_alignment, size_t *ext_mem_alignment);
 
 /**
  * @brief Apply channel strategy for GDMA channel
@@ -457,6 +473,36 @@ esp_err_t gdma_config_crc_calculator(gdma_channel_handle_t dma_chan, const gdma_
  */
 esp_err_t gdma_crc_get_result(gdma_channel_handle_t dma_chan, uint32_t *result);
 #endif // SOC_GDMA_SUPPORT_CRC
+
+/****************************************************************************************
+ * Deprecated APIs
+ ****************************************************************************************/
+
+/**
+ * @brief GDMA transfer ability
+ *
+ * @note The alignment set in this structure is **not** a guarantee that gdma driver will take care of the nonalignment cases.
+ *       Actually the GDMA driver has no knowledge about the DMA buffer (address and size) used by upper layer.
+ *       So it's the responsibility of the **upper layer** to take care of the buffer address and size.
+ *
+ */
+typedef struct {
+    size_t sram_trans_align;  /*!< DMA transfer alignment for memory in SRAM, in bytes. The driver enables/disables burst mode based on this value. 0 means no alignment is required */
+    size_t psram_trans_align; /*!< DMA transfer alignment for memory in PSRAM, in bytes. The driver sets proper burst block size based on the alignment value. 0 means no alignment is required */
+} gdma_transfer_ability_t;
+
+/**
+ * @brief Set DMA channel transfer ability
+ *
+ * @param[in] dma_chan GDMA channel handle, allocated by `gdma_new_channel`
+ * @param[in] ability Transfer ability, e.g. alignment
+ * @return
+ *      - ESP_OK: Set DMA channel transfer ability successfully
+ *      - ESP_ERR_INVALID_ARG: Set DMA channel transfer ability failed because of invalid argument
+ *      - ESP_FAIL: Set DMA channel transfer ability failed because of other error
+ */
+esp_err_t gdma_set_transfer_ability(gdma_channel_handle_t dma_chan, const gdma_transfer_ability_t *ability)
+__attribute__((deprecated("please use gdma_config_transfer instead")));
 
 #ifdef __cplusplus
 }

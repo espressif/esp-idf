@@ -39,7 +39,8 @@
 #include "soc/lcd_periph.h"
 #include "hal/lcd_hal.h"
 #include "hal/lcd_ll.h"
-#include "hal/gdma_ll.h"
+#include "hal/cache_hal.h"
+#include "hal/cache_ll.h"
 #include "rom/cache.h"
 #include "esp_cache.h"
 
@@ -77,7 +78,8 @@ static esp_err_t rgb_panel_swap_xy(esp_lcd_panel_t *panel, bool swap_axes);
 static esp_err_t rgb_panel_set_gap(esp_lcd_panel_t *panel, int x_gap, int y_gap);
 static esp_err_t rgb_panel_disp_on_off(esp_lcd_panel_t *panel, bool off);
 static esp_err_t lcd_rgb_panel_select_clock_src(esp_rgb_panel_t *panel, lcd_clock_source_t clk_src);
-static esp_err_t lcd_rgb_panel_create_trans_link(esp_rgb_panel_t *panel);
+static esp_err_t lcd_rgb_create_dma_channel(esp_rgb_panel_t *panel);
+static void lcd_rgb_panel_init_trans_link(esp_rgb_panel_t *panel);
 static esp_err_t lcd_rgb_panel_configure_gpio(esp_rgb_panel_t *panel, const esp_lcd_rgb_panel_config_t *panel_config);
 static void lcd_rgb_panel_start_transmission(esp_rgb_panel_t *rgb_panel);
 static void lcd_default_isr_handler(void *args);
@@ -90,8 +92,7 @@ struct esp_rgb_panel_t {
     size_t fb_bits_per_pixel; // Frame buffer color depth, in bpp
     size_t num_fbs;           // Number of frame buffers
     size_t output_bits_per_pixel; // Color depth seen from the output data line. Default to fb_bits_per_pixel, but can be changed by YUV-RGB conversion
-    size_t sram_trans_align;  // Alignment for framebuffer that allocated in SRAM
-    size_t psram_trans_align; // Alignment for framebuffer that allocated in PSRAM
+    size_t dma_burst_size;  // DMA transfer burst size
     int disp_gpio_num;     // Display control GPIO, which is used to perform action like "disp_off"
     intr_handle_t intr;    // LCD peripheral interrupt handle
     esp_pm_lock_handle_t pm_lock; // Power management lock
@@ -134,10 +135,20 @@ struct esp_rgb_panel_t {
 static esp_err_t lcd_rgb_panel_alloc_frame_buffers(const esp_lcd_rgb_panel_config_t *rgb_panel_config, esp_rgb_panel_t *rgb_panel)
 {
     bool fb_in_psram = false;
-    size_t psram_trans_align = rgb_panel_config->psram_trans_align ? rgb_panel_config->psram_trans_align : 64;
-    size_t sram_trans_align = rgb_panel_config->sram_trans_align ? rgb_panel_config->sram_trans_align : 4;
-    rgb_panel->psram_trans_align = psram_trans_align;
-    rgb_panel->sram_trans_align = sram_trans_align;
+    size_t ext_mem_align = 0;
+    size_t int_mem_align = 0;
+    gdma_get_alignment_constraints(rgb_panel->dma_chan, &int_mem_align, &ext_mem_align);
+
+    // also take the cache line size into account when allocating the frame buffer
+    uint32_t ext_mem_cache_line_size = cache_hal_get_cache_line_size(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_DATA);
+    uint32_t int_mem_cache_line_size = cache_hal_get_cache_line_size(CACHE_LL_LEVEL_INT_MEM, CACHE_TYPE_DATA);
+    // The buffer must be aligned to the cache line size
+    if (ext_mem_cache_line_size) {
+        ext_mem_align = MAX(ext_mem_align, ext_mem_cache_line_size);
+    }
+    if (int_mem_cache_line_size) {
+        int_mem_align = MAX(int_mem_align, int_mem_cache_line_size);
+    }
 
     // alloc frame buffer
     if (rgb_panel->num_fbs > 0) {
@@ -152,13 +163,13 @@ static esp_err_t lcd_rgb_panel_alloc_frame_buffers(const esp_lcd_rgb_panel_confi
         for (int i = 0; i < rgb_panel->num_fbs; i++) {
             if (fb_in_psram) {
                 // the low level malloc function will help check the validation of alignment
-                rgb_panel->fbs[i] = heap_caps_aligned_calloc(psram_trans_align, 1, rgb_panel->fb_size, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
+                rgb_panel->fbs[i] = heap_caps_aligned_calloc(ext_mem_align, 1, rgb_panel->fb_size, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
                 ESP_RETURN_ON_FALSE(rgb_panel->fbs[i], ESP_ERR_NO_MEM, TAG, "no mem for frame buffer");
                 // calloc not only allocates but also zero's the buffer. We have to make sure this is
                 // properly committed to the PSRAM, otherwise all sorts of visual corruption will happen.
                 ESP_RETURN_ON_ERROR(esp_cache_msync(rgb_panel->fbs[i], rgb_panel->fb_size, ESP_CACHE_MSYNC_FLAG_DIR_C2M), TAG, "cache write back failed");
             } else {
-                rgb_panel->fbs[i] = heap_caps_aligned_calloc(sram_trans_align, 1, rgb_panel->fb_size, MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA);
+                rgb_panel->fbs[i] = heap_caps_aligned_calloc(int_mem_align, 1, rgb_panel->fb_size, MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA);
                 ESP_RETURN_ON_FALSE(rgb_panel->fbs[i], ESP_ERR_NO_MEM, TAG, "no mem for frame buffer");
             }
         }
@@ -168,7 +179,7 @@ static esp_err_t lcd_rgb_panel_alloc_frame_buffers(const esp_lcd_rgb_panel_confi
     if (rgb_panel->bb_size) {
         for (int i = 0; i < RGB_LCD_PANEL_BOUNCE_BUF_NUM; i++) {
             // bounce buffer must come from SRAM
-            rgb_panel->bounce_buffer[i] = heap_caps_aligned_calloc(sram_trans_align, 1, rgb_panel->bb_size, MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA);
+            rgb_panel->bounce_buffer[i] = heap_caps_aligned_calloc(int_mem_align, 1, rgb_panel->bb_size, MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA);
             ESP_RETURN_ON_FALSE(rgb_panel->bounce_buffer[i], ESP_ERR_NO_MEM, TAG, "no mem for bounce buffer");
         }
     }
@@ -302,9 +313,6 @@ esp_err_t esp_lcd_new_rgb_panel(const esp_lcd_rgb_panel_config_t *rgb_panel_conf
         }
     }
 
-    // allocate frame buffers + bounce buffers
-    ESP_GOTO_ON_ERROR(lcd_rgb_panel_alloc_frame_buffers(rgb_panel_config, rgb_panel), err, TAG, "alloc frame buffers failed");
-
     // initialize HAL layer, so we can call LL APIs later
     lcd_hal_init(&rgb_panel->hal, panel_id);
     // enable clock
@@ -334,8 +342,13 @@ esp_err_t esp_lcd_new_rgb_panel(const esp_lcd_rgb_panel_config_t *rgb_panel_conf
     // install DMA service
     rgb_panel->flags.stream_mode = !rgb_panel_config->flags.refresh_on_demand;
     rgb_panel->fb_bits_per_pixel = fb_bits_per_pixel;
-    ret = lcd_rgb_panel_create_trans_link(rgb_panel);
-    ESP_GOTO_ON_ERROR(ret, err, TAG, "install DMA failed");
+    rgb_panel->dma_burst_size = rgb_panel_config->dma_burst_size ? rgb_panel_config->dma_burst_size : 64;
+    ESP_GOTO_ON_ERROR(lcd_rgb_create_dma_channel(rgb_panel), err, TAG, "install DMA failed");
+    // allocate frame buffers + bounce buffers
+    ESP_GOTO_ON_ERROR(lcd_rgb_panel_alloc_frame_buffers(rgb_panel_config, rgb_panel), err, TAG, "alloc frame buffers failed");
+    // initialize DMA descriptor link
+    lcd_rgb_panel_init_trans_link(rgb_panel);
+
     // configure GPIO
     ret = lcd_rgb_panel_configure_gpio(rgb_panel, rgb_panel_config);
     ESP_GOTO_ON_ERROR(ret, err, TAG, "configure GPIO failed");
@@ -959,11 +972,42 @@ static IRAM_ATTR bool lcd_rgb_panel_eof_handler(gdma_channel_handle_t dma_chan, 
     return lcd_rgb_panel_fill_bounce_buffer(panel, panel->bounce_buffer[bb]);
 }
 
+static esp_err_t lcd_rgb_create_dma_channel(esp_rgb_panel_t *panel)
+{
+    // alloc DMA channel and connect to LCD peripheral
+    gdma_channel_alloc_config_t dma_chan_config = {
+        .direction = GDMA_CHANNEL_DIRECTION_TX,
+    };
+#if SOC_GDMA_TRIG_PERIPH_LCD0_BUS == SOC_GDMA_BUS_AHB
+    ESP_RETURN_ON_ERROR(gdma_new_ahb_channel(&dma_chan_config, &panel->dma_chan), TAG, "alloc DMA channel failed");
+#elif SOC_GDMA_TRIG_PERIPH_LCD0_BUS == SOC_GDMA_BUS_AXI
+    ESP_RETURN_ON_ERROR(gdma_new_axi_channel(&dma_chan_config, &panel->dma_chan), TAG, "alloc DMA channel failed");
+#endif
+    gdma_connect(panel->dma_chan, GDMA_MAKE_TRIGGER(GDMA_TRIG_PERIPH_LCD, 0));
+
+    // configure DMA transfer parameters
+    gdma_transfer_config_t trans_cfg = {
+        .max_data_burst_size = panel->dma_burst_size,
+        .access_ext_mem = true, // frame buffer was allocated from external memory
+    };
+    ESP_RETURN_ON_ERROR(gdma_config_transfer(panel->dma_chan, &trans_cfg), TAG, "config DMA transfer failed");
+
+    // we need to refill the bounce buffer in the DMA EOF interrupt, so only register the callback for bounce buffer mode
+    if (panel->bb_size) {
+        gdma_tx_event_callbacks_t cbs = {
+            .on_trans_eof = lcd_rgb_panel_eof_handler,
+        };
+        gdma_register_tx_event_callbacks(panel->dma_chan, &cbs, panel);
+    }
+
+    return ESP_OK;
+}
+
 // If we restart GDMA, many pixels already have been transferred to the LCD peripheral.
 // Looks like that has 16 pixels of FIFO plus one holding register.
 #define LCD_FIFO_PRESERVE_SIZE_PX (LCD_LL_FIFO_DEPTH + 1)
 
-static esp_err_t lcd_rgb_panel_create_trans_link(esp_rgb_panel_t *panel)
+static void lcd_rgb_panel_init_trans_link(esp_rgb_panel_t *panel)
 {
     for (int i = 0; i < RGB_LCD_PANEL_DMA_LINKS_REPLICA; i++) {
         panel->dma_links[i] = &panel->dma_nodes[panel->num_dma_nodes * i];
@@ -1007,32 +1051,6 @@ static esp_err_t lcd_rgb_panel_create_trans_link(esp_rgb_panel_t *panel)
     panel->dma_restart_node.buffer = &p[restart_skip_bytes];
     panel->dma_restart_node.dw0.length -= restart_skip_bytes;
     panel->dma_restart_node.dw0.size -= restart_skip_bytes;
-
-    // alloc DMA channel and connect to LCD peripheral
-    gdma_channel_alloc_config_t dma_chan_config = {
-        .direction = GDMA_CHANNEL_DIRECTION_TX,
-    };
-#if SOC_GDMA_TRIG_PERIPH_LCD0_BUS == SOC_GDMA_BUS_AHB
-    ESP_RETURN_ON_ERROR(gdma_new_ahb_channel(&dma_chan_config, &panel->dma_chan), TAG, "alloc DMA channel failed");
-#elif SOC_GDMA_TRIG_PERIPH_LCD0_BUS == SOC_GDMA_BUS_AXI
-    ESP_RETURN_ON_ERROR(gdma_new_axi_channel(&dma_chan_config, &panel->dma_chan), TAG, "alloc DMA channel failed");
-#endif
-    gdma_connect(panel->dma_chan, GDMA_MAKE_TRIGGER(GDMA_TRIG_PERIPH_LCD, 0));
-    gdma_transfer_ability_t ability = {
-        .psram_trans_align = panel->psram_trans_align,
-        .sram_trans_align = panel->sram_trans_align,
-    };
-    gdma_set_transfer_ability(panel->dma_chan, &ability);
-
-    // we need to refill the bounce buffer in the DMA EOF interrupt, so only register the callback for bounce buffer mode
-    if (panel->bb_size) {
-        gdma_tx_event_callbacks_t cbs = {
-            .on_trans_eof = lcd_rgb_panel_eof_handler,
-        };
-        gdma_register_tx_event_callbacks(panel->dma_chan, &cbs, panel);
-    }
-
-    return ESP_OK;
 }
 
 // reset the GDMA channel every VBlank to stop permanent desyncs from happening.

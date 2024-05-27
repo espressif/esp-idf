@@ -302,8 +302,7 @@ static void memcpy_performance_test(uint32_t buffer_size)
 
     async_memcpy_config_t config = ASYNC_MEMCPY_DEFAULT_CONFIG();
     config.backlog = (buffer_size / DMA_DESCRIPTOR_BUFFER_MAX_SIZE + 1) * TEST_ASYNC_MEMCPY_BENCH_COUNTS;
-    config.sram_trans_align = 4;   // at least 4 bytes aligned for SRAM transfer
-    config.psram_trans_align = 64; // at least 64 bytes aligned for PSRAM transfer
+    config.dma_burst_size = 64;   // set a big burst size for performance
     async_memcpy_handle_t driver = NULL;
     int64_t elapse_us = 0;
     float throughput = 0.0;
@@ -311,7 +310,7 @@ static void memcpy_performance_test(uint32_t buffer_size)
 
     // 1. SRAM->SRAM
     memcpy_testbench_context_t test_context = {
-        .align = config.psram_trans_align,
+        .align = config.dma_burst_size,
         .buffer_size = buffer_size,
         .src_in_psram = false,
         .dst_in_psram = false,
