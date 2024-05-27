@@ -184,7 +184,6 @@ esp_err_t esp_lcd_new_i80_bus(const esp_lcd_i80_bus_config_t *bus_config, esp_lc
     // enable I2S LCD master mode (refer to I2S TRM)
     i2s_ll_enable_lcd(bus->hal.dev, true);
     i2s_ll_tx_stop_on_fifo_empty(bus->hal.dev, true);
-    i2s_ll_tx_bypass_pcm(bus->hal.dev, true);
     i2s_ll_tx_set_slave_mod(bus->hal.dev, false);
     i2s_ll_tx_set_bits_mod(bus->hal.dev, bus_config->bus_width);
     i2s_ll_tx_select_std_slot(bus->hal.dev, I2S_STD_SLOT_BOTH, true); // copy mono

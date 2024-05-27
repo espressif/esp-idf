@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -723,26 +723,6 @@ extern "C" {
 #define I2S_TX_BCK_IN_DELAY_S  0
 
 #define I2S_FIFO_CONF_REG(i)          (REG_I2S_BASE(i) + 0x0020)
-/* I2S_TX_24MSB_EN : R/W ;bitpos:[23] ;default: 1'b0 ; */
-/*description: Only useful in tx 24bit mode. 1: the high 24 bits are effective
- in i2s fifo   0: the low 24 bits are effective in i2s fifo*/
-#define I2S_TX_24MSB_EN  (BIT(23))
-#define I2S_TX_24MSB_EN_M  (BIT(23))
-#define I2S_TX_24MSB_EN_V  0x1
-#define I2S_TX_24MSB_EN_S  23
-/* I2S_RX_24MSB_EN : R/W ;bitpos:[22] ;default: 1'b0 ; */
-/*description: Only useful in rx 24bit mode. 1: the high 24 bits are effective
- in i2s fifo   0: the low 24 bits are effective in i2s fifo*/
-#define I2S_RX_24MSB_EN  (BIT(22))
-#define I2S_RX_24MSB_EN_M  (BIT(22))
-#define I2S_RX_24MSB_EN_V  0x1
-#define I2S_RX_24MSB_EN_S  22
-/* I2S_RX_FIFO_SYNC : R/W ;bitpos:[21] ;default: 1'b0 ; */
-/*description: force write back rx data to memory*/
-#define I2S_RX_FIFO_SYNC  (BIT(21))
-#define I2S_RX_FIFO_SYNC_M  (BIT(21))
-#define I2S_RX_FIFO_SYNC_V  0x1
-#define I2S_RX_FIFO_SYNC_S  21
 /* I2S_RX_FIFO_MOD_FORCE_EN : R/W ;bitpos:[20] ;default: 1'b0 ; */
 /*description: The bit should always be set to 1*/
 #define I2S_RX_FIFO_MOD_FORCE_EN  (BIT(20))
@@ -1192,45 +1172,13 @@ extern "C" {
 #define I2S_LC_FIFO_TIMEOUT_S  0
 
 #define I2S_CONF1_REG(i)          (REG_I2S_BASE(i) + 0x00a0)
-/* I2S_TX_ZEROS_RM_EN : R/W ;bitpos:[9] ;default: 1'd0 ; */
-/*description: don't use*/
-#define I2S_TX_ZEROS_RM_EN  (BIT(9))
-#define I2S_TX_ZEROS_RM_EN_M  (BIT(9))
-#define I2S_TX_ZEROS_RM_EN_V  0x1
-#define I2S_TX_ZEROS_RM_EN_S  9
 /* I2S_TX_STOP_EN : R/W ;bitpos:[8] ;default: 1'd0 ; */
 /*description: Set this bit to stop disable output BCK signal and WS signal
- when tx FIFO is emtpy*/
+ when tx FIFO is empty*/
 #define I2S_TX_STOP_EN  (BIT(8))
 #define I2S_TX_STOP_EN_M  (BIT(8))
 #define I2S_TX_STOP_EN_V  0x1
 #define I2S_TX_STOP_EN_S  8
-/* I2S_RX_PCM_BYPASS : R/W ;bitpos:[7] ;default: 1'h1 ; */
-/*description: Set this bit to bypass Compress/Decompress module for received data.*/
-#define I2S_RX_PCM_BYPASS  (BIT(7))
-#define I2S_RX_PCM_BYPASS_M  (BIT(7))
-#define I2S_RX_PCM_BYPASS_V  0x1
-#define I2S_RX_PCM_BYPASS_S  7
-/* I2S_RX_PCM_CONF : R/W ;bitpos:[6:4] ;default: 3'h0 ; */
-/*description: Compress/Decompress module configuration bits. 0: decompress
- received data  1:compress received data*/
-#define I2S_RX_PCM_CONF  0x00000007
-#define I2S_RX_PCM_CONF_M  ((I2S_RX_PCM_CONF_V)<<(I2S_RX_PCM_CONF_S))
-#define I2S_RX_PCM_CONF_V  0x7
-#define I2S_RX_PCM_CONF_S  4
-/* I2S_TX_PCM_BYPASS : R/W ;bitpos:[3] ;default: 1'h1 ; */
-/*description: Set this bit to bypass  Compress/Decompress module for transmitted data.*/
-#define I2S_TX_PCM_BYPASS  (BIT(3))
-#define I2S_TX_PCM_BYPASS_M  (BIT(3))
-#define I2S_TX_PCM_BYPASS_V  0x1
-#define I2S_TX_PCM_BYPASS_S  3
-/* I2S_TX_PCM_CONF : R/W ;bitpos:[2:0] ;default: 3'h1 ; */
-/*description: Compress/Decompress module configuration bits. 0: decompress
- transmitted data  1:compress transmitted data*/
-#define I2S_TX_PCM_CONF  0x00000007
-#define I2S_TX_PCM_CONF_M  ((I2S_TX_PCM_CONF_V)<<(I2S_TX_PCM_CONF_S))
-#define I2S_TX_PCM_CONF_V  0x7
-#define I2S_TX_PCM_CONF_S  0
 
 #define I2S_PD_CONF_REG(i)          (REG_I2S_BASE(i) + 0x00a4)
 /* I2S_DMA_RAM_CLK_FO : R/W ;bitpos:[6] ;default: 1'h0 ; */
