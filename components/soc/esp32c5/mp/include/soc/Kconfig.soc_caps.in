@@ -59,6 +59,10 @@ config SOC_GPSPI_SUPPORTED
     bool
     default y
 
+config SOC_LEDC_SUPPORTED
+    bool
+    default y
+
 config SOC_SYSTIMER_SUPPORTED
     bool
     default y
@@ -286,6 +290,26 @@ config SOC_LEDC_SUPPORT_XTAL_CLOCK
 config SOC_LEDC_CHANNEL_NUM
     int
     default 6
+
+config SOC_LEDC_TIMER_BIT_WIDTH
+    int
+    default 20
+
+config SOC_LEDC_SUPPORT_FADE_STOP
+    bool
+    default y
+
+config SOC_LEDC_GAMMA_CURVE_FADE_SUPPORTED
+    bool
+    default y
+
+config SOC_LEDC_GAMMA_CURVE_FADE_RANGE_MAX
+    int
+    default 16
+
+config SOC_LEDC_FADE_PARAMS_BIT_WIDTH
+    int
+    default 10
 
 config SOC_MMU_PERIPH_NUM
     int
@@ -568,10 +592,6 @@ config SOC_PM_SUPPORT_HP_AON_PD
     default y
 
 config SOC_PM_SUPPORT_RTC_PERIPH_PD
-    bool
-    default y
-
-config SOC_CLK_RC_FAST_SUPPORT_CALIBRATION
     bool
     default y
 

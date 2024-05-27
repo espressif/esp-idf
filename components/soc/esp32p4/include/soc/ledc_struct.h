@@ -1237,7 +1237,7 @@ typedef union {
 } ledc_channel_gamma_fade_param_t;
 
 typedef struct {
-    ledc_channel_gamma_fade_param_t entry[16];
+    volatile ledc_channel_gamma_fade_param_t entry[16];
 } ledc_gamma_channel_t;
 
 typedef struct {
