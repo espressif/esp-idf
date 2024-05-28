@@ -2061,7 +2061,12 @@ def handle_missing_versions(
     """
     Prints the info about missing tool to stderr if tool has no supported versions installed.
     """
-    fatal(f'tool {tool.name} has no installed versions. Please run \'{install_cmd}\' to install it.')
+    msg = f'tool {tool.name} has no installed versions.'
+    if 'NIX_PATH' in os.environ:
+        fatal(f'{msg} The environment indicates that you might be using NixOS. '
+              'Please see https://nixos.wiki/wiki/ESP-IDF for how to install tools for it.')
+    else:
+        fatal(f'{msg} Please run \'{install_cmd}\' to install it.')
     if tool.version_in_path and tool.version_in_path not in tool.versions:
         info(f'An unsupported version of tool {tool_name} was found in PATH: {tool.version_in_path}. ' +
              prefer_system_hint, f=sys.stderr)
