@@ -122,6 +122,10 @@ esp_err_t esp_timer_impl_early_init(void)
     systimer_hal_select_alarm_mode(&systimer_hal, SYSTIMER_LL_ALARM_CLOCK, SYSTIMER_ALARM_MODE_ONESHOT);
     systimer_hal_connect_alarm_counter(&systimer_hal, SYSTIMER_LL_ALARM_CLOCK, SYSTIMER_LL_COUNTER_CLOCK);
 
+    for (unsigned cpuid = 0; cpuid < SOC_CPU_CORES_NUM; ++cpuid) {
+        systimer_hal_counter_can_stall_by_cpu(&systimer_hal, SYSTIMER_LL_COUNTER_CLOCK, cpuid, (cpuid < portNUM_PROCESSORS) ? true : false);
+    }
+
     return ESP_OK;
 }
 

@@ -25,6 +25,10 @@
 #include "driver/rtc_io.h"
 #include "hal/rtc_io_hal.h"
 
+#if SOC_SLEEP_SYSTIMER_STALL_WORKAROUND
+#include "hal/systimer_ll.h"
+#endif
+
 #include "driver/uart.h"
 
 #include "soc/cpu.h"
@@ -530,11 +534,6 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
         timer_wakeup_prepare();
     }
 
-#if CONFIG_ESP_SLEEP_SYSTIMER_STALL_WORKAROUND
-    if (!(pd_flags & RTC_SLEEP_PD_XTAL)) {
-        rtc_sleep_systimer_enable(false);
-    }
-#endif
 
     uint32_t result;
     if (deep_sleep) {
@@ -564,18 +563,26 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
 #endif
 #endif // SOC_PM_SUPPORT_DEEPSLEEP_VERIFY_STUB_ONLY
     } else {
+#if SOC_SLEEP_SYSTIMER_STALL_WORKAROUND
+        if (!(pd_flags & RTC_SLEEP_PD_XTAL)) {
+            for (uint32_t counter_id = 0; counter_id < SOC_SYSTIMER_COUNTER_NUM; ++counter_id) {
+                systimer_ll_enable_counter(&SYSTIMER, counter_id, false);
+            }
+        }
+#endif
         uint32_t cache_state;
         uint32_t cpuid = cpu_ll_get_core_id();
         spi_flash_disable_cache(cpuid, &cache_state);
         result = call_rtc_sleep_start(reject_triggers, config.lslp_mem_inf_fpu);
         spi_flash_restore_cache(cpuid, cache_state);
-    }
-
-#if CONFIG_ESP_SLEEP_SYSTIMER_STALL_WORKAROUND
-    if (!(pd_flags & RTC_SLEEP_PD_XTAL)) {
-        rtc_sleep_systimer_enable(true);
-    }
+#if SOC_SLEEP_SYSTIMER_STALL_WORKAROUND
+        if (!(pd_flags & RTC_SLEEP_PD_XTAL)) {
+            for (uint32_t counter_id = 0; counter_id < SOC_SYSTIMER_COUNTER_NUM; ++counter_id) {
+                systimer_ll_enable_counter(&SYSTIMER, counter_id, true);
+            }
+        }
 #endif
+    }
 
     // Restore CPU frequency
     rtc_clk_cpu_freq_set_config(&cpu_freq_config);
