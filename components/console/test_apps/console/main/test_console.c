@@ -273,3 +273,37 @@ TEST_CASE("esp console test with context", "[console]")
 
     TEST_ESP_OK(esp_console_deinit());
 }
+
+TEST_CASE("esp console help command - set verbose level = 0", "[console][ignore]")
+{
+    esp_console_repl_config_t repl_config = ESP_CONSOLE_REPL_CONFIG_DEFAULT();
+    esp_console_dev_uart_config_t uart_config = ESP_CONSOLE_DEV_UART_CONFIG_DEFAULT();
+    TEST_ESP_OK(esp_console_new_repl_uart(&uart_config, &repl_config, &s_repl));
+    TEST_ESP_OK(esp_console_register_help_command());
+    TEST_ESP_ERR(ESP_ERR_INVALID_ARG, esp_console_set_help_verbose_level(ESP_CONSOLE_HELP_VERBOSE_LEVEL_MAX_NUM));
+    TEST_ESP_OK(esp_console_set_help_verbose_level(ESP_CONSOLE_HELP_VERBOSE_LEVEL_0));
+    TEST_ESP_OK(esp_console_start_repl(s_repl));
+    vTaskDelay(pdMS_TO_TICKS(5000));
+}
+
+TEST_CASE("esp console help command - set verbose level = 1", "[console][ignore]")
+{
+    esp_console_repl_config_t repl_config = ESP_CONSOLE_REPL_CONFIG_DEFAULT();
+    esp_console_dev_uart_config_t uart_config = ESP_CONSOLE_DEV_UART_CONFIG_DEFAULT();
+    TEST_ESP_OK(esp_console_new_repl_uart(&uart_config, &repl_config, &s_repl));
+    TEST_ESP_OK(esp_console_register_help_command());
+    TEST_ESP_ERR(ESP_ERR_INVALID_ARG, esp_console_set_help_verbose_level(ESP_CONSOLE_HELP_VERBOSE_LEVEL_MAX_NUM));
+    TEST_ESP_OK(esp_console_set_help_verbose_level(ESP_CONSOLE_HELP_VERBOSE_LEVEL_1));
+    TEST_ESP_OK(esp_console_start_repl(s_repl));
+    vTaskDelay(pdMS_TO_TICKS(5000));
+}
+
+TEST_CASE("esp console help command - --verbose sub command", "[console][ignore]")
+{
+    esp_console_repl_config_t repl_config = ESP_CONSOLE_REPL_CONFIG_DEFAULT();
+    esp_console_dev_uart_config_t uart_config = ESP_CONSOLE_DEV_UART_CONFIG_DEFAULT();
+    TEST_ESP_OK(esp_console_new_repl_uart(&uart_config, &repl_config, &s_repl));
+    TEST_ESP_OK(esp_console_register_help_command());
+    TEST_ESP_OK(esp_console_start_repl(s_repl));
+    vTaskDelay(pdMS_TO_TICKS(5000));
+}

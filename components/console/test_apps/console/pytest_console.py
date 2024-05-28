@@ -183,3 +183,81 @@ def test_console_sorted_help_reverse_registration(dut: Dut, test_on: str) -> Non
 )
 def test_console_help_quit(dut: Dut, test_on: str) -> None:
     do_test_help_quit(dut)
+
+
+@pytest.mark.parametrize(
+    'config', [
+        pytest.param('defaults'),
+    ]
+)
+@pytest.mark.parametrize(
+    'test_on', [
+        pytest.param('host', marks=[pytest.mark.linux, pytest.mark.host_test]),
+        pytest.param('target', marks=[pytest.mark.esp32, pytest.mark.generic]),
+        pytest.param('target', marks=[pytest.mark.esp32c3, pytest.mark.generic]),
+        pytest.param('qemu', marks=[pytest.mark.esp32, pytest.mark.host_test, pytest.mark.qemu]),
+    ]
+)
+def test_console_help_verbose_level_0(dut: Dut, test_on: str) -> None:
+    help_verbose_info = 'Print the summary of all registered commands if no arguments are given,'
+    dut.expect_exact('Press ENTER to see the list of tests')
+    dut.write('"esp console help command - set verbose level = 0"')
+
+    dut.expect_exact('esp>', timeout=5)
+    # verify help command
+    dut.write('help')
+    dut.write('help')
+    dut.expect_exact('help', not_matching=help_verbose_info)
+
+
+@pytest.mark.parametrize(
+    'config', [
+        pytest.param('defaults'),
+    ]
+)
+@pytest.mark.parametrize(
+    'test_on', [
+        pytest.param('host', marks=[pytest.mark.linux, pytest.mark.host_test]),
+        pytest.param('target', marks=[pytest.mark.esp32, pytest.mark.generic]),
+        pytest.param('target', marks=[pytest.mark.esp32c3, pytest.mark.generic]),
+        pytest.param('qemu', marks=[pytest.mark.esp32, pytest.mark.host_test, pytest.mark.qemu]),
+    ]
+)
+def test_console_help_verbose_level_1(dut: Dut, test_on: str) -> None:
+    help_verbose_info = 'Print the summary of all registered commands if no arguments are given,'
+    dut.expect_exact('Press ENTER to see the list of tests')
+    dut.write('"esp console help command - set verbose level = 1"')
+
+    dut.expect_exact('esp>', timeout=5)
+    # verify help command
+    dut.write('help')
+    dut.expect_exact(help_verbose_info)
+
+
+@pytest.mark.parametrize(
+    'config', [
+        pytest.param('defaults'),
+    ]
+)
+@pytest.mark.parametrize(
+    'test_on', [
+        pytest.param('host', marks=[pytest.mark.linux, pytest.mark.host_test]),
+        pytest.param('target', marks=[pytest.mark.esp32, pytest.mark.generic]),
+        pytest.param('target', marks=[pytest.mark.esp32c3, pytest.mark.generic]),
+        pytest.param('qemu', marks=[pytest.mark.esp32, pytest.mark.host_test, pytest.mark.qemu]),
+    ]
+)
+def test_console_help_verbose_subcommand(dut: Dut, test_on: str) -> None:
+    help_verbose_info = 'Print the summary of all registered commands if no arguments are given,'
+    dut.expect_exact('Press ENTER to see the list of tests')
+    dut.write('"esp console help command - --verbose sub command"')
+
+    dut.expect_exact('esp>', timeout=5)
+    # verify help --verbose=0 subcommand
+    dut.write('help --verbose=0')
+    dut.write('help --verbose=0')
+    dut.expect_exact('help --verbose=0',not_matching=help_verbose_info)
+
+    # verify help --verbose=1 subcommand
+    dut.write('help --verbose=1')
+    dut.expect_exact(help_verbose_info)
