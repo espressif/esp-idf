@@ -1,3 +1,4 @@
+
 /*
  * SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
  *
@@ -98,6 +99,15 @@ esp_err_t esp_usb_console_set_cb(esp_usb_console_cb_t rx_cb, esp_usb_console_cb_
  *
  */
 void esp_usb_console_poll_interrupts(void); // [refactor-todo] Remove when implementing IDF-12175
+
+/**
+ * @brief Checks whether the USB console is installed or not
+ *
+ * @return
+ *     - true  USB console is installed
+ *     - false USB console is not installed
+ */
+bool esp_usb_console_is_installed(void);
 
 #ifdef __cplusplus
 }
