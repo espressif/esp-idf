@@ -105,12 +105,10 @@ esp_err_t ppa_do_fill(ppa_client_handle_t ppa_client, const ppa_fill_oper_config
     // To reduce complexity, color_mode, fill_block_w/h correctness are checked in their corresponding LL functions
 
     // Write back and invalidate necessary data (note that the window content is not continuous in the buffer)
-    // Write back buffer extended window (alignment not necessary on C2M direction)
+    // Write back and invalidate buffer extended window (alignment not necessary on C2M direction, but alignment strict on M2C direction)
     uint32_t out_ext_window = (uint32_t)config->out.buffer + config->out.block_offset_y * config->out.pic_w * out_pixel_depth / 8;
     uint32_t out_ext_window_len = config->out.pic_w * config->fill_block_h * out_pixel_depth / 8;
-    esp_cache_msync((void *)out_ext_window, out_ext_window_len, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED);
-    // Invalidate out_buffer entire picture (alignment strict on M2C direction)
-    esp_cache_msync((void *)config->out.buffer, config->out.buffer_size, ESP_CACHE_MSYNC_FLAG_DIR_M2C);
+    esp_cache_msync((void *)PPA_ALIGN_DOWN(out_ext_window, buf_alignment_size), PPA_ALIGN_UP(out_ext_window_len, buf_alignment_size), ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_INVALIDATE);
 
     esp_err_t ret = ESP_OK;
     ppa_trans_t *trans_elm = NULL;
