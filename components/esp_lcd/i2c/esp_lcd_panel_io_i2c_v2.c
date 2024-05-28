@@ -160,8 +160,8 @@ static esp_err_t panel_io_i2c_tx_buffer(esp_lcd_panel_io_t *io, int lcd_cmd, con
     uint8_t *cmd_buffer = NULL;
     size_t cmd_buffer_size = 0;
     // some displays don't want any additional commands on data transfers
+    uint8_t cmds[4] = {BYTESHIFT(lcd_cmd, 3), BYTESHIFT(lcd_cmd, 2), BYTESHIFT(lcd_cmd, 1), BYTESHIFT(lcd_cmd, 0)};
     if (send_param) {
-        uint8_t cmds[4] = {BYTESHIFT(lcd_cmd, 3), BYTESHIFT(lcd_cmd, 2), BYTESHIFT(lcd_cmd, 1), BYTESHIFT(lcd_cmd, 0)};
         size_t cmds_size = i2c_panel_io->lcd_cmd_bits / 8;
         if (cmds_size > 0 && cmds_size <= sizeof(cmds)) {
             cmd_buffer = cmds + (sizeof(cmds) - cmds_size);
