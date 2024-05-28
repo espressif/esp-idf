@@ -25,6 +25,7 @@
 #include "esp_spi_flash_counters.h"
 #include "esp_rom_spiflash.h"
 #include "bootloader_flash.h"
+#include "esp_check.h"
 
 __attribute__((unused)) static const char TAG[] = "spi_flash";
 
@@ -395,6 +396,11 @@ esp_err_t esp_flash_init_default_chip(void)
     if (default_chip.size > legacy_chip->chip_size) {
         ESP_EARLY_LOGW(TAG, "Detected size(%dk) larger than the size in the binary image header(%dk). Using the size in the binary image header.", default_chip.size/1024, legacy_chip->chip_size/1024);
     }
+#if !CONFIG_IDF_TARGET_ESP32P4 || !CONFIG_APP_BUILD_TYPE_RAM // IDF-10019
+    if (legacy_chip->chip_size > 16 * 1024 * 1024) {
+        ESP_RETURN_ON_ERROR_ISR(esp_mspi_32bit_address_flash_feature_check(), TAG, "32bit address feature check failed");
+    }
+#endif // !CONFIG_IDF_TARGET_ESP32P4 || !CONFIG_APP_BUILD_TYPE_RAM
     // Set chip->size equal to ROM flash size(also equal to the size in binary image header), which means the available size that can be used
     default_chip.size = legacy_chip->chip_size;
 

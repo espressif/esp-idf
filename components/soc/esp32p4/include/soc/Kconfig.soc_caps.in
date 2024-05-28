@@ -1211,6 +1211,10 @@ config SOC_SPI_MEM_SUPPORT_AUTO_WAIT_IDLE
     bool
     default y
 
+config SOC_SPI_MEM_SUPPORT_AUTO_SUSPEND
+    bool
+    default y
+
 config SOC_SPI_MEM_SUPPORT_AUTO_RESUME
     bool
     default y
@@ -1232,6 +1236,14 @@ config SOC_SPI_MEM_SUPPORT_TIMING_TUNING
     default y
 
 config SOC_MEMSPI_TIMING_TUNING_BY_DQS
+    bool
+    default y
+
+config SOC_SPI_MEM_SUPPORT_CACHE_32BIT_ADDR_MAP
+    bool
+    default y
+
+config SOC_SPI_PERIPH_SUPPORT_CONTROL_DUMMY_OUT
     bool
     default y
 
