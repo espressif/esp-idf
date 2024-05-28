@@ -5,15 +5,16 @@ Random Number Generation
 
 {IDF_TARGET_RF_NAME: default="Wi-Fi or Bluetooth", esp32s2="Wi-Fi", esp32h2="Bluetooth or 802.15.4 Thread/Zigbee", esp32c6="Wi-Fi or Bluetooth or 802.15.4 Thread/Zigbee"}
 {IDF_TARGET_RF_IS: default="are", esp32s2="is"}
-{IDF_TARGET_BOOTLOADER_RANDOM_INCOMPATIBLE: default="", esp32="I2S, "}
 
 {IDF_TARGET_NAME} contains a hardware random number generator (RNG). You can use the APIs :cpp:func:`esp_random` and :cpp:func:`esp_fill_random` to obtained random values from it.
 
 The hardware RNG produces true random numbers so long as one or more of the following conditions are met:
 
-- RF subsystem is enabled. i.e., {IDF_TARGET_RF_NAME} {IDF_TARGET_RF_IS} enabled.
-- An internal entropy source has been enabled by calling :cpp:func:`bootloader_random_enable` and not yet disabled by calling :cpp:func:`bootloader_random_disable`.
-- While the ESP-IDF :ref:`second-stage-bootloader` is running. This is because the default ESP-IDF bootloader implementation calls :cpp:func:`bootloader_random_enable` when the bootloader starts, and :cpp:func:`bootloader_random_disable` before executing the application.
+.. list::
+
+    :SOC_WIFI_SUPPORTED or SOC_IEEE802154_SUPPORTED or SOC_BT_SUPPORTED: - RF subsystem is enabled. i.e., {IDF_TARGET_RF_NAME} {IDF_TARGET_RF_IS} enabled.
+    - The internal entropy source (SAR ADC) has been enabled by calling :cpp:func:`bootloader_random_enable` and not yet disabled by calling :cpp:func:`bootloader_random_disable`.
+    - While the ESP-IDF :ref:`second-stage-bootloader` is running. This is because the default ESP-IDF bootloader implementation calls :cpp:func:`bootloader_random_enable` when the bootloader starts, and :cpp:func:`bootloader_random_disable` before executing the application.
 
 When any of these conditions are true, samples of physical noise are continuously mixed into the internal hardware RNG state to provide entropy. Consult the **{IDF_TARGET_NAME} Technical Reference Manual** > **Random Number Generator (RNG)** [`PDF <{IDF_TARGET_TRM_EN_URL}#rng>`__] chapter for more details.
 
@@ -22,9 +23,26 @@ If none of the above conditions are true, the output of the RNG should be consid
 Startup
 -------
 
-During startup, ESP-IDF bootloader temporarily enables a non-RF entropy source (internal reference voltage noise) that provides entropy for any first boot key generation. However, after the application starts executing, then normally only pseudo-random numbers are available until {IDF_TARGET_RF_NAME} {IDF_TARGET_RF_IS} initialized.
+During startup, the ESP-IDF bootloader temporarily enables the non-RF internal entropy source (SAR ADC using internal reference voltage noise) that provides entropy for any first boot key generation.
 
-To re-enable the entropy source temporarily during application startup, or for an application that does not use {IDF_TARGET_RF_NAME}, call the function :cpp:func:`bootloader_random_enable` to re-enable the internal entropy source. The function :cpp:func:`bootloader_random_disable` must be called to disable the entropy source again before using ADC, {IDF_TARGET_BOOTLOADER_RANDOM_INCOMPATIBLE} {IDF_TARGET_RF_NAME}.
+.. only:: not SOC_WIFI_SUPPORTED and not SOC_IEEE802154_SUPPORTED and not SOC_BT_SUPPORTED
+
+    However, after the application starts executing, then normally only pseudo-random numbers are available until the internal entropy source has been enabled again.
+
+.. only:: SOC_WIFI_SUPPORTED or SOC_IEEE802154_SUPPORTED or SOC_BT_SUPPORTED
+
+    However, after the application starts executing, then normally only pseudo-random numbers are available until {IDF_TARGET_RF_NAME} {IDF_TARGET_RF_IS} initialized or until the internal entropy source has been enabled again.
+
+
+To re-enable the entropy source temporarily during application startup, or for an application that does not use {IDF_TARGET_RF_NAME}, call the function :cpp:func:`bootloader_random_enable` to re-enable the internal entropy source. The function :cpp:func:`bootloader_random_disable` must be called to disable the entropy source again before using any of the following features:
+
+.. list::
+
+    - ADC
+
+    :esp32: - I2S
+
+    :SOC_WIFI_SUPPORTED or SOC_IEEE802154_SUPPORTED or SOC_BT_SUPPORTED: - {IDF_TARGET_RF_NAME}
 
 .. note::
 
