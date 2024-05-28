@@ -34,6 +34,9 @@ extern "C" {
             ESP_RETURN_ON_FALSE(COLOR_SPACE_TYPE(color_type_id) == COLOR_SPACE_ARGB || COLOR_SPACE_TYPE(color_type_id) == COLOR_SPACE_RGB, \
                                 ESP_ERR_INVALID_ARG, TAG, str "_cm does not support rgb_swap");
 
+#define PPA_ALIGN_UP(num, align)    (((num) + ((align) - 1)) & ~((align) - 1))
+#define PPA_ALIGN_DOWN(num, align)  ((num) & ~((align) - 1))
+
 typedef struct ppa_platform_t ppa_platform_t;
 
 /******************************** ENGINE *************************************/
