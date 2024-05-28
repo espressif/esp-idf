@@ -249,11 +249,11 @@ esp_err_t jpeg_encoder_process(jpeg_encoder_handle_t encoder_engine, const jpeg_
     };
 
     ESP_GOTO_ON_ERROR(dma2d_enqueue(encoder_engine->dma2d_group_handle, &trans_desc, encoder_engine->trans_desc), err, TAG, "DMA2D enqueue failed");
-
+    bool need_yield;
     while (1) {
         jpeg_enc_dma2d_evt_t s_rcv_event;
         BaseType_t ret_val = xQueueReceive(encoder_engine->evt_queue, &s_rcv_event, encoder_engine->timeout_tick);
-        ESP_GOTO_ON_FALSE(ret_val == pdTRUE, ESP_ERR_TIMEOUT, err, TAG, "jpeg-dma2d handle jpeg decode timeout, please check `timeout_ms`");
+        ESP_GOTO_ON_FALSE(ret_val == pdTRUE, ESP_ERR_TIMEOUT, err, TAG, "jpeg-dma2d handle jpeg decode timeout, please check image accuracy and `timeout_ms`");
 
         if (s_rcv_event.encoder_status != 0) {
             s_encoder_error_log_print(s_rcv_event.encoder_status);
@@ -273,10 +273,17 @@ esp_err_t jpeg_encoder_process(jpeg_encoder_handle_t encoder_engine, const jpeg_
     compressed_size += encoder_engine->header_info->header_len;
     *out_size = compressed_size;
 
-err:
     xSemaphoreGive(encoder_engine->codec_base->codec_mutex);
     if (encoder_engine->codec_base->pm_lock) {
         ESP_RETURN_ON_ERROR(esp_pm_lock_release(encoder_engine->codec_base->pm_lock), TAG, "release pm_lock failed");
+    }
+    return ESP_OK;
+
+err:
+    dma2d_force_end(encoder_engine->trans_desc, &need_yield);
+    xSemaphoreGive(encoder_engine->codec_base->codec_mutex);
+    if (encoder_engine->codec_base->pm_lock) {
+        esp_pm_lock_release(encoder_engine->codec_base->pm_lock);
     }
     return ret;
 }
