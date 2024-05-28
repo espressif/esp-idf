@@ -350,7 +350,7 @@ static void seg_tx_done(struct seg_tx *tx, uint8_t seg_idx)
      */
     bt_mesh_adv_buf_ref_debug(__func__, tx->seg[seg_idx], 4U, BLE_MESH_BUF_REF_SMALL);
 
-    BLE_MESH_ADV(tx->seg[seg_idx])->busy = 0U;
+    bt_mesh_atomic_set(&BLE_MESH_ADV_BUSY(tx->seg[seg_idx]), 0);
     net_buf_unref(tx->seg[seg_idx]);
 
     tx->seg[seg_idx] = NULL;
@@ -498,7 +498,7 @@ static bool send_next_segment(struct seg_tx *tx, int *result)
     /* The segment may have already been transmitted, for example, the
      * Segment Retransmission timer is expired earlier.
      */
-    if (BLE_MESH_ADV(seg)->busy) {
+    if (bt_mesh_atomic_get(&BLE_MESH_ADV_BUSY(seg))) {
         return false;
     }
 
@@ -768,7 +768,7 @@ static bool resend_unacked_seg(struct seg_tx *tx, int *result)
      * A is still going to be retransmitted, but at this moment we could
      * find that the "busy" flag of Segment A is 1.
      */
-    if (BLE_MESH_ADV(seg)->busy) {
+    if (bt_mesh_atomic_get(&BLE_MESH_ADV_BUSY(seg))) {
         return false;
     }
 

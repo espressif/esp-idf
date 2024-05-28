@@ -170,13 +170,10 @@ bt_mesh_atomic_val_t bt_mesh_atomic_inc(bt_mesh_atomic_t *target)
     return ret;
 }
 
-bool bt_mesh_atomic_campare_and_set(bt_mesh_atomic_t *target, bt_mesh_atomic_val_t excepted, bt_mesh_atomic_val_t new_val)
+bool bt_mesh_atomic_cas(bt_mesh_atomic_t *target, bt_mesh_atomic_val_t excepted, bt_mesh_atomic_val_t new_val)
 {
-    bt_mesh_atomic_val_t ret = 0;
-
     bt_mesh_atomic_lock();
 
-    ret = *target;
     if (*target == excepted) {
         *target = new_val;
         bt_mesh_atomic_unlock();
