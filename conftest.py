@@ -15,7 +15,6 @@ import os
 import re
 import sys
 import xml.etree.ElementTree as ET
-from datetime import datetime
 from fnmatch import fnmatch
 from typing import Callable
 from typing import List
@@ -183,7 +182,7 @@ def item_skip_targets(item: Item) -> List[str]:
         # temp markers should always use keyword arguments `targets` and `reason`
         if not temp_marker.kwargs.get('targets') or not temp_marker.kwargs.get('reason'):
             raise ValueError(
-                f'`{marker_name}` should always use keyword arguments `targets` and `reason`. '
+                f'`{marker_name}` should always use keyword arguments `targets` and `reason`. '  # noqa
                 f'For example: '
                 f'`@pytest.mark.{marker_name}(targets=["esp32"], reason="IDF-xxxx, will fix it ASAP")`'
             )
@@ -227,15 +226,10 @@ def idf_path() -> str:
     return os.path.dirname(__file__)
 
 
-@pytest.fixture(scope='session', autouse=True)
-def session_tempdir() -> str:
-    _tmpdir = os.path.join(
-        os.path.dirname(__file__),
-        'pytest_embedded_log',
-        datetime.now().strftime('%Y-%m-%d_%H-%M-%S'),
-    )
-    os.makedirs(_tmpdir, exist_ok=True)
-    return _tmpdir
+@pytest.fixture(scope='session')
+def session_root_logdir(idf_path: str) -> str:
+    """Session scoped log dir for pytest-embedded"""
+    return idf_path
 
 
 @pytest.fixture
