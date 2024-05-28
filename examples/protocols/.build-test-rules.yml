@@ -174,7 +174,7 @@ examples/protocols/modbus:
   disable:
     - if: IDF_TARGET == "esp32c5"
       temporary: true
-      reason: not supported yet  # TODO: [ESP32C5] IDF-8722, IDF-8697
+      reason: not supported yet  # TODO: [ESP32C5] IDF-8697
   depends_filepatterns:
     - examples/protocols/modbus/mb_example_common/**/*
 
