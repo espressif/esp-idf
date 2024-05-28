@@ -224,6 +224,8 @@
 
 #define SOC_RTC_SLOW_CLOCK_SUPPORT_8MD256       (1)
 
+#define SOC_SLEEP_SYSTIMER_STALL_WORKAROUND     (1)
+
 /*-------------------------- RTCIO CAPS --------------------------------------*/
 /* No dedicated RTCIO subsystem on ESP32-C3. RTC functions are still supported
  * for hold, wake & 32kHz crystal functions - via rtc_cntl_reg */

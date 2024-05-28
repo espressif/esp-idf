@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -24,6 +24,10 @@
 #include "soc/soc_caps.h"
 #include "driver/rtc_io.h"
 #include "hal/rtc_io_hal.h"
+
+#if SOC_SLEEP_SYSTIMER_STALL_WORKAROUND
+#include "hal/systimer_ll.h"
+#endif
 
 #include "driver/uart.h"
 
@@ -546,11 +550,6 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
         timer_wakeup_prepare();
     }
 
-#if CONFIG_ESP_SLEEP_SYSTIMER_STALL_WORKAROUND
-    if (!(pd_flags & RTC_SLEEP_PD_XTAL)) {
-        rtc_sleep_systimer_enable(false);
-    }
-#endif
 
     uint32_t result;
     if (deep_sleep) {
@@ -582,18 +581,26 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
 #endif
 #endif // SOC_PM_SUPPORT_DEEPSLEEP_CHECK_STUB_ONLY
     } else {
+#if SOC_SLEEP_SYSTIMER_STALL_WORKAROUND
+        if (!(pd_flags & RTC_SLEEP_PD_XTAL)) {
+            for (uint32_t counter_id = 0; counter_id < SOC_SYSTIMER_COUNTER_NUM; ++counter_id) {
+                systimer_ll_enable_counter(&SYSTIMER, counter_id, false);
+            }
+        }
+#endif
         /* Wait cache idle in cache suspend to avoid cache load wrong data after spi io isolation */
         cache_hal_suspend(CACHE_TYPE_ALL);
         result = call_rtc_sleep_start(reject_triggers, config.lslp_mem_inf_fpu);
         /* Resume cache for continue running */
         cache_hal_resume(CACHE_TYPE_ALL);
-    }
-
-#if CONFIG_ESP_SLEEP_SYSTIMER_STALL_WORKAROUND
-    if (!(pd_flags & RTC_SLEEP_PD_XTAL)) {
-        rtc_sleep_systimer_enable(true);
-    }
+#if SOC_SLEEP_SYSTIMER_STALL_WORKAROUND
+        if (!(pd_flags & RTC_SLEEP_PD_XTAL)) {
+            for (uint32_t counter_id = 0; counter_id < SOC_SYSTIMER_COUNTER_NUM; ++counter_id) {
+                systimer_ll_enable_counter(&SYSTIMER, counter_id, true);
+            }
+        }
 #endif
+    }
 
     // Restore CPU frequency
     rtc_clk_cpu_freq_set_config(&cpu_freq_config);

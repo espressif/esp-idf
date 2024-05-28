@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -657,18 +657,6 @@ void rtc_sleep_low_init(uint32_t slowclk_period);
  *          only the lower 48 bits are used
  */
 void rtc_sleep_set_wakeup_time(uint64_t t);
-
-#if CONFIG_ESP_SLEEP_SYSTIMER_STALL_WORKAROUND
-/**
- * @brief Configure systimer for esp32c3 systimer stall issue workaround
- *
- * This function configures related systimer for esp32c3 systimer stall issue.
- * Only apply workaround when xtal powered up.
- *
- * @param en enable systimer or not
- */
-void rtc_sleep_systimer_enable(bool en);
-#endif
 
 #define RTC_GPIO_TRIG_EN            BIT(2)  //!< GPIO wakeup
 #define RTC_TIMER_TRIG_EN           BIT(3)  //!< Timer wakeup
