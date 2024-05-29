@@ -169,7 +169,7 @@ esp_err_t dw_gdma_channel_suspend_ctrl(dw_gdma_channel_handle_t chan, bool enter
 /**
  * @brief Abort the DMA channel
  *
- * @note If the channel is aborted, it will be diabled immediately, which may cause AXI bus protocol violation.
+ * @note If the channel is aborted, it will be disabled immediately, which may cause AXI bus protocol violation.
  * @note This function is recommended to only be used when the channel hangs. Recommend to try `dw_gdma_channel_enable_ctrl` first, then opt for aborting.
  *
  * @param[in] chan DMA channel handle, allocated by `dw_gdma_new_channel`
@@ -366,8 +366,8 @@ esp_err_t dw_gdma_lli_config_transfer(dw_gdma_lli_handle_t lli, dw_gdma_block_tr
 /**
  * @brief Set the next link list item for a given DMA link list item
  *
- * @param[in] lli Link list item
- * @param[in] next Next link list item
+ * @param[in] lli Current link list item, can be obtained from `dw_gdma_link_list_get_item`
+ * @param[in] next Next link list item, can be obtained from `dw_gdma_link_list_get_item`
  * @return
  *      - ESP_OK: Set next link list item successfully
  *      - ESP_ERR_INVALID_ARG: Set next link list item failed because of invalid argument
