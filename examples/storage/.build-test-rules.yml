@@ -34,14 +34,6 @@ examples/storage/ext_flash_fatfs:
       temporary: true
       reason: lack of runners
 
-examples/storage/fatfsgen:
-  depends_components:
-    - fatfs
-    - vfs
-  disable_test:
-    - if: IDF_TARGET != "esp32"
-      reason: only one target needed
-
 examples/storage/nvs_rw_blob:
   depends_components:
     - nvs_flash

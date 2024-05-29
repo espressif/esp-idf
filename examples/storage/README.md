@@ -10,7 +10,6 @@ The examples are grouped into sub-directories by category. Each category directo
 * `custom_flash_driver` example demonstrates how to implement your own flash chip driver by overriding the default driver.
 * `emmc` example demonstrates how to use an eMMC chip with an ESP device.
 * `ext_flash_fatfs` example demonstrates how to use FATFS partition with external SPI FLASH chip.
-* `fatfsgen` example demonstrates how to use FATFS partition
 * `nvs_rw_blob` example demonstrates how to read and write a single integer value and a blob (binary large object) using NVS to preserve them between ESP module restarts.
 * `nvs_rw_value` example demonstrates how to read and write a single integer value using NVS.
 * `nvs_rw_value_cxx` example demonstrates how to read and write a single integer value using NVS (it uses the C++ NVS handle API).

@@ -1,5 +1,13 @@
 # Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
 
+tools/test_apps/storage/fatfsgen:
+  depends_components:
+    - fatfs
+    - vfs
+  disable_test:
+    - if: IDF_TARGET != "esp32"
+      reason: only one target needed
+
 tools/test_apps/storage/partition_table_readonly:
   disable_test:
     - if: IDF_TARGET not in ["esp32", "esp32c3"]
