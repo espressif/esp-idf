@@ -58,3 +58,8 @@ SPI 接口的 LCD
         };
         // 为 ST7789 创建 LCD 面板句柄，并指定 SPI IO 设备句柄
         ESP_ERROR_CHECK(esp_lcd_new_panel_st7789(io_handle, &panel_config, &panel_handle));
+
+API 参考
+--------
+
+.. include-build-file:: inc/esp_lcd_io_spi.inc

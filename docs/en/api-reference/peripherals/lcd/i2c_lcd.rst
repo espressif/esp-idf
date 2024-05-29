@@ -50,3 +50,8 @@ I2C Interfaced LCD
             .reset_gpio_num = EXAMPLE_PIN_NUM_RST,
         };
         ESP_ERROR_CHECK(esp_lcd_new_panel_ssd1306(io_handle, &panel_config, &panel_handle));
+
+API Reference
+-------------
+
+.. include-build-file:: inc/esp_lcd_io_i2c.inc
