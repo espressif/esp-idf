@@ -42,8 +42,10 @@ static const char *TAG = "dw-gdma";
 
 #if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
 #define DW_GDMA_GET_NON_CACHE_ADDR(addr) ((addr) ? CACHE_LL_L2MEM_NON_CACHE_ADDR(addr) : 0)
+#define DW_GDMA_GET_CACHE_ADDRESS(nc_addr) ((nc_addr) ? CACHE_LL_L2MEM_CACHE_ADDR(nc_addr) : 0)
 #else
 #define DW_GDMA_GET_NON_CACHE_ADDR(addr) (addr)
+#define DW_GDMA_GET_CACHE_ADDRESS(nc_addr) (nc_addr)
 #endif
 
 #if CONFIG_DW_GDMA_ISR_IRAM_SAFE || CONFIG_DW_GDMA_CTRL_FUNC_IN_IRAM || DW_GDMA_SETTER_FUNC_IN_IRAM
@@ -385,22 +387,16 @@ esp_err_t dw_gdma_new_link_list(const dw_gdma_link_list_config_t *config, dw_gdm
     uint32_t num_items = config->num_items;
     list = heap_caps_calloc(1, sizeof(dw_gdma_link_list_t), DW_GDMA_MEM_ALLOC_CAPS);
     ESP_GOTO_ON_FALSE(list, ESP_ERR_NO_MEM, err, TAG, "no mem for link list");
-    // allocate memory for link list items, from SRAM
-    // the link list items has itw own alignment requirement
-    // also we should respect the data cache line size
-    uint32_t data_cache_line_size = cache_hal_get_cache_line_size(CACHE_LL_LEVEL_INT_MEM, CACHE_TYPE_DATA);
-    uint32_t alignment = MAX(DW_GDMA_LL_LINK_LIST_ALIGNMENT, data_cache_line_size);
-    // because we want to access the link list items via non-cache address, so the memory size should also align to the cache line size
-    uint32_t lli_size = num_items * sizeof(dw_gdma_link_list_item_t);
-    if (data_cache_line_size) {
-        lli_size = ALIGN_UP(lli_size, data_cache_line_size);
-    }
-    items = heap_caps_aligned_calloc(alignment, 1, lli_size, MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA);
+    // allocate memory for link list items, from internal memory
+    // the link list items has its own alignment requirement, the heap allocator can help handle the cache alignment as well
+    items = heap_caps_aligned_calloc(DW_GDMA_LL_LINK_LIST_ALIGNMENT, num_items, sizeof(dw_gdma_link_list_item_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA);
     ESP_GOTO_ON_FALSE(items, ESP_ERR_NO_MEM, err, TAG, "no mem for link list items");
-    if (data_cache_line_size) { // do memory sync only when the cache exists
-        // write back and then invalidate the cache, we won't use the cache to operate the link list items afterwards
-        // even the cache auto-write back happens, there's no risk the link list items will be overwritten
-        ESP_GOTO_ON_ERROR(esp_cache_msync(items, lli_size, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_INVALIDATE),
+    // do memory sync when the link list items are cached
+    uint32_t data_cache_line_size = cache_hal_get_cache_line_size(CACHE_LL_LEVEL_INT_MEM, CACHE_TYPE_DATA);
+    if (data_cache_line_size) {
+        // write back and then invalidate the cache, because later we will read/write the link list items by non-cacheable address
+        ESP_GOTO_ON_ERROR(esp_cache_msync(items, num_items * sizeof(dw_gdma_link_list_item_t),
+                                          ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_INVALIDATE | ESP_CACHE_MSYNC_FLAG_UNALIGNED),
                           err, TAG, "cache sync failed");
     }
 
@@ -466,16 +462,17 @@ dw_gdma_lli_handle_t dw_gdma_link_list_get_item(dw_gdma_link_list_handle_t list,
 {
     ESP_RETURN_ON_FALSE_ISR(list, NULL, TAG, "invalid argument");
     ESP_RETURN_ON_FALSE_ISR(item_index < list->num_items, NULL, TAG, "invalid item index");
+    // Note: the returned address is non-cached
     dw_gdma_link_list_item_t *lli = list->items_nc + item_index;
     return lli;
 }
 
-esp_err_t dw_gdma_lli_set_next(dw_gdma_link_list_item_t *lli, dw_gdma_lli_handle_t next)
+esp_err_t dw_gdma_lli_set_next(dw_gdma_lli_handle_t lli, dw_gdma_lli_handle_t next)
 {
     ESP_RETURN_ON_FALSE(lli && next, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
 
-    // the next field must use a cached address
-    dw_gdma_ll_lli_set_next_item_addr(lli, CACHE_LL_L2MEM_CACHE_ADDR(next));
+    // the next field must use a cached address, so convert it to a cached address
+    dw_gdma_ll_lli_set_next_item_addr(lli, DW_GDMA_GET_CACHE_ADDRESS(next));
 
     return ESP_OK;
 }
@@ -534,7 +531,7 @@ esp_err_t dw_gdma_channel_set_block_markers(dw_gdma_channel_handle_t chan, dw_gd
     return ESP_OK;
 }
 
-esp_err_t dw_gdma_lli_config_transfer(dw_gdma_link_list_item_t *lli, dw_gdma_block_transfer_config_t *config)
+esp_err_t dw_gdma_lli_config_transfer(dw_gdma_lli_handle_t lli, dw_gdma_block_transfer_config_t *config)
 {
     ESP_RETURN_ON_FALSE(lli && config, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
 
@@ -567,7 +564,7 @@ esp_err_t dw_gdma_lli_config_transfer(dw_gdma_link_list_item_t *lli, dw_gdma_blo
     return ESP_OK;
 }
 
-esp_err_t dw_gdma_lli_set_block_markers(dw_gdma_link_list_item_t *lli, dw_gdma_block_markers_t markers)
+esp_err_t dw_gdma_lli_set_block_markers(dw_gdma_lli_handle_t lli, dw_gdma_block_markers_t markers)
 {
     ESP_RETURN_ON_FALSE_ISR(lli, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
 
