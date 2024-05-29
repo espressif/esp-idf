@@ -47,13 +47,3 @@ _vector_table:
 
 	.option pop
 	.size _vector_table, .-_vector_table
-
-
-/* _panic_handler: handle all exception */
-	.section	.text.handlers,"ax"
-	.global _panic_handler
-	.type _panic_handler, @function
-_panic_handler:
-	call ulp_lp_core_panic_handler
-_end:
-	j _end /* loop forever */

@@ -92,4 +92,20 @@ menu "Ultra Low Power (ULP) Co-processor"
             Note: For LP ROM prints to work properly, make sure that the LP core boots
             from the LP ROM.
 
+    menu "ULP Debugging Options"
+        config ULP_PANIC_OUTPUT_ENABLE
+            depends on ULP_COPROC_TYPE_LP_CORE && SOC_ULP_LP_UART_SUPPORTED
+            bool
+            prompt "Enable panic handler which outputs over LP UART"
+            default "y" if IDF_TARGET_ESP32P4
+            help
+                Set this option to enable panic handler functionality. If this option is
+                enabled then the LP Core will output a panic dump over LP UART,
+                similar to what the main core does. Output depends on LP UART already being
+                initialized and configured.
+                Disabling this option will reduce the LP core binary size by not
+                linking in panic handler functionality.
+
+    endmenu
+
 endmenu  # Ultra Low Power (ULP) Co-processor

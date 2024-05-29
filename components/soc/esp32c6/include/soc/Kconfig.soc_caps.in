@@ -1478,3 +1478,7 @@ config SOC_PHY_COMBO_MODULE
 config SOC_CAPS_NO_RESET_BY_ANA_BOD
     bool
     default y
+
+config SOC_LP_CORE_SINGLE_INTERRUPT_VECTOR
+    bool
+    default y
