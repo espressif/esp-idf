@@ -70,7 +70,7 @@ const regdma_entries_config_t tg_regs_retention[] = {
 _Static_assert(ARRAY_SIZE(tg_regs_retention) == TIMG_RETENTION_LINK_LEN, "Inconsistent Timergroup retention link length definitions");
 
 /* IO MUX Registers Context */
-#define N_REGS_IOMUX_0()    (((PERIPHS_IO_MUX_SPID_U - REG_IO_MUX_BASE) / 4) + 1)
+#define N_REGS_IOMUX_0()    (((IO_MUX_GPIO30_REG - REG_IO_MUX_BASE) / 4) + 1)
 #define N_REGS_IOMUX_1()    (((GPIO_FUNC34_OUT_SEL_CFG_REG - GPIO_FUNC0_OUT_SEL_CFG_REG) / 4) + 1)
 #define N_REGS_IOMUX_2()    (((GPIO_FUNC124_IN_SEL_CFG_REG - GPIO_STATUS_NEXT_REG) / 4) + 1)
 #define N_REGS_IOMUX_3()    (((GPIO_PIN34_REG - DR_REG_GPIO_BASE) / 4) + 1)
@@ -83,7 +83,7 @@ const regdma_entries_config_t iomux_regs_retention[] = {
 };
 _Static_assert(ARRAY_SIZE(iomux_regs_retention) == IOMUX_RETENTION_LINK_LEN, "Inconsistent IOMUX retention link length definitions");
 
-/* Mememory SPI Registers Context */
+/* Memory SPI Registers Context */
 #define N_REGS_SPI1_MEM_0()     (((SPI_MEM_SPI_SMEM_DDR_REG(1) - REG_SPI_MEM_BASE(1)) / 4) + 1)
 #define N_REGS_SPI1_MEM_1()     (((SPI_MEM_SPI_SMEM_AC_REG(1) - SPI_MEM_SPI_FMEM_PMS0_ATTR_REG(1)) / 4) + 1)
 #define N_REGS_SPI1_MEM_2()     (1)
