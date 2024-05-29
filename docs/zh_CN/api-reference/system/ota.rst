@@ -62,7 +62,7 @@ OTA 数据分区的容量是 2 个 flash 扇区的大小（0x2000 字节），�
 
 .. note::
 
-  应用程序的状态不是写到程序的二进制镜像，而是写到 ``otadata`` 分区。该分区有一个 ``ota_seq`` 计数器，该计数器是 OTA 应用分区的指针，指向下次启动时选取应用所在的分区 (ota_0, ota_1, ...)。
+  应用程序的状态不是写到程序的二进制镜像，而是写到 ``otadata`` 分区。该分区有一个 ``ota_seq`` 计数器，该计数器是 OTA 应用分区的指针，指向下次启动时选取应用所在的分区 (``ota_0``, ``ota_1``, ...)。
 
 应用程序 OTA 状态
 ^^^^^^^^^^^^^^^^^
@@ -100,7 +100,7 @@ Kconfig 中的 :ref:`CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE` 可以帮助用户�
 * 引导加载程序选取一个新版应用程序来引导，这样应用程序状态就不会设置为 ``ESP_OTA_IMG_INVALID`` 或 ``ESP_OTA_IMG_ABORTED``。
 * 引导加载程序检查所选取的新版应用程序，若状态设置为 ``ESP_OTA_IMG_NEW``，则写入 ``ESP_OTA_IMG_PENDING_VERIFY``。该状态表示，需确认应用程序的可操作性，如不确认，发生重启，则状态会重写为 ``ESP_OTA_IMG_ABORTED`` （见上文），该应用程序不可再启动，将回滚至上一版本。
 * 新版应用程序启动，应进行自测。
-* 若通过自测，则必须调用函数 :cpp:func:`esp_ota_mark_app_valid_cancel_rollback`，因为新版应用程序在等待确认其可操作性（ ``ESP_OTA_IMG_PENDING_VERIFY`` 状态）。
+* 若通过自测，则必须调用函数 :cpp:func:`esp_ota_mark_app_valid_cancel_rollback`，因为新版应用程序在等待确认其可操作性（``ESP_OTA_IMG_PENDING_VERIFY`` 状态）。
 * 若未通过自测，则调用函数 :cpp:func:`esp_ota_mark_app_invalid_rollback_and_reboot`，回滚至之前能正常工作的应用程序版本，同时将无效的新版本应用程序设置为 ``ESP_OTA_IMG_INVALID``。
 * 如果新版应用程序可操作性没有确认，则状态一直为 ``ESP_OTA_IMG_PENDING_VERIFY``。下一次启动时，状态变更为 ``ESP_OTA_IMG_ABORTED``，阻止其再次启动，之后回滚到之前的版本。
 
@@ -221,6 +221,21 @@ Kconfig 中的 :ref:`CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE` 可以帮助用户�
 
   具体可参考 :ref:`signed-app-verify`。
 
+OTA 性能调优
+------------
+
+- 在写操作时，与按默认机制逐块顺序擦除相比，一次性擦除更新分区可能有助于减少固件升级所需的时间。要启用此功能，请在 :cpp:type:`esp_https_ota_config_t` 结构体中将 :cpp:member:`esp_https_ota_config_t::bulk_flash_erase` 设置为 true。如果要擦除的分区过大，可能会触发任务看门狗。建议在这种情况下增加看门狗超时时间。
+
+  .. code-block:: c
+
+      esp_https_ota_config_t ota_config = {
+          .bulk_flash_erase = true,
+      }
+
+- 调整 :cpp:member:`esp_https_ota_config_t::http_config::buffer_size` 也有助于 OTA 性能调优。
+- :cpp:type:`esp_https_ota_config_t` 结构体中有一个成员 :cpp:member:`esp_https_ota_config_t::buffer_caps`，可以用来指定在为 OTA 缓冲区分配内存时使用的内存类型。当启用 SPIRAM 时，将该值配置为 MALLOC_CAP_INTERNAL 可能有助于 OTA 性能调优。
+- 请参阅 :doc:`/api-guides/performance/speed` 中的 **提高网络速度** 小节获取详细信息。
+
 
 OTA 工具 ``otatool.py``
 ----------------------------
@@ -282,7 +297,7 @@ Python API
 命令行界面
 ^^^^^^^^^^
 
-``otatool.py`` 的命令行界面具有如下结构：
+``otatool.py`` 的命令行界面具有如下结构体：
 
 .. code-block:: bash
 
