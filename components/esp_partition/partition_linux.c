@@ -396,12 +396,14 @@ esp_err_t esp_partition_write(const esp_partition_t *partition, size_t dst_offse
 
     for (size_t x = 0; x < new_size; x++) {
 
+#ifdef CONFIG_ESP_PARTITION_ERASE_CHECK
         // Check if address to be written was erased first
         if((~((uint8_t *)dst_addr)[x] & ((uint8_t *)src)[x]) != 0) {
             ESP_LOGW(TAG, "invalid flash operation detected");
             ret = ESP_ERR_FLASH_OP_FAIL;
             break;
         }
+#endif // CONFIG_ESP_PARTITION_ERASE_CHECK
 
         // AND with destination byte (to emulate real NOR FLASH behavior)
         ((uint8_t *)dst_addr)[x] &= ((uint8_t *)src)[x];

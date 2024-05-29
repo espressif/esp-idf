@@ -6,5 +6,6 @@ from pytest_embedded import Dut
 
 @pytest.mark.linux
 @pytest.mark.host_test
+@pytest.mark.parametrize('config', ['erase_check', 'no_erase_check'])
 def test_spiffs_linux(dut: Dut) -> None:
     dut.expect_unity_test_output(timeout=5)
