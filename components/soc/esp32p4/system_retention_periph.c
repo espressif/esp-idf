@@ -53,7 +53,7 @@ const regdma_entries_config_t uart_regs_retention[] = {
 _Static_assert(ARRAY_SIZE(uart_regs_retention) == UART_RETENTION_LINK_LEN, "Inconsistent UART retention link length definitions");
 
 /* IO MUX Registers Context */
-#define N_REGS_IOMUX_0()    (((PERIPHS_IO_MUX_U_PAD_GPIO56 - REG_IO_MUX_BASE) / 4) + 1)
+#define N_REGS_IOMUX_0()    (((IO_MUX_GPIO54_REG - REG_IO_MUX_BASE) / 4) + 1)
 #define N_REGS_IOMUX_1()    (((GPIO_ZERO_DET1_FILTER_CNT_REG - DR_REG_GPIO_BASE) / 4) + 1)
 const regdma_entries_config_t iomux_regs_retention[] = {
     [0] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_IOMUX_LINK(0x00), REG_IO_MUX_BASE,         REG_IO_MUX_BASE,            N_REGS_IOMUX_0(), 0, 0), .owner = ENTRY(0) }, /* io_mux */
