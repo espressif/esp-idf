@@ -5,6 +5,7 @@
  */
 #pragma once
 
+#include <stdbool.h>
 #include "esp_assert.h"
 #include "hal/lcd_types.h"
 #include "hal/mipi_dsi_types.h"
@@ -60,6 +61,29 @@ typedef lcd_rgb_element_order_t lcd_color_rgb_endian_t;
 #define LCD_RGB_ENDIAN_RGB LCD_RGB_ELEMENT_ORDER_RGB
 #define LCD_RGB_ENDIAN_BGR LCD_RGB_ELEMENT_ORDER_BGR
 /** @endcond */
+
+/**
+ * @brief Type of LCD panel IO event data
+ */
+typedef struct {
+} esp_lcd_panel_io_event_data_t;
+
+/**
+ * @brief Declare the prototype of the function that will be invoked when panel IO finishes transferring color data
+ *
+ * @param[in] panel_io LCD panel IO handle, which is created by factory API like `esp_lcd_new_panel_io_spi()`
+ * @param[in] edata Panel IO event data, fed by driver
+ * @param[in] user_ctx User data, passed from `esp_lcd_panel_io_xxx_config_t`
+ * @return Whether a high priority task has been waken up by this function
+ */
+typedef bool (*esp_lcd_panel_io_color_trans_done_cb_t)(esp_lcd_panel_io_handle_t panel_io, esp_lcd_panel_io_event_data_t *edata, void *user_ctx);
+
+/**
+ * @brief Type of LCD panel IO callbacks
+ */
+typedef struct {
+    esp_lcd_panel_io_color_trans_done_cb_t on_color_trans_done; /*!< Callback invoked when color data transfer has finished */
+} esp_lcd_panel_io_callbacks_t;
 
 #ifdef __cplusplus
 }
