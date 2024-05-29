@@ -38,7 +38,7 @@ struct esp_lcd_dpi_panel_t {
     uint32_t h_pixels;            // Horizontal pixels
     uint32_t v_pixels;            // Vertical pixels
     size_t frame_buffer_size;     // Frame buffer size
-    size_t bytes_per_pixel;       // Bytes per pixel
+    size_t bits_per_pixel;        // Bits per pixel
     lcd_color_rgb_pixel_format_t pixel_format; // RGB Pixel format
     dw_gdma_channel_handle_t dma_chan;    // DMA channel
     dw_gdma_link_list_handle_t link_lists[DPI_PANEL_MAX_FB_NUM]; // DMA link list
@@ -118,7 +118,7 @@ static esp_err_t dpi_panel_create_dma_link(esp_lcd_dpi_panel_t *dpi_panel)
             .handshake_type = DW_GDMA_HANDSHAKE_HW,
             .num_outstanding_requests = 2,
         },
-        .flow_controller = DW_GDMA_FLOW_CTRL_DST, // the DSI bridge as the DMA flow controller
+        .flow_controller = DW_GDMA_FLOW_CTRL_SELF, // DMA as the flow controller
         .chan_priority = 1,
     };
     ESP_RETURN_ON_ERROR(dw_gdma_new_channel(&dma_alloc_config, &dma_chan), TAG, "create DMA channel failed");
@@ -161,6 +161,22 @@ esp_err_t esp_lcd_new_panel_dpi(esp_lcd_dsi_bus_handle_t bus, const esp_lcd_dpi_
     }
     ESP_RETURN_ON_FALSE(num_fbs <= DPI_PANEL_MAX_FB_NUM, ESP_ERR_INVALID_ARG, TAG, "num_fbs not within [1,%d]", DPI_PANEL_MAX_FB_NUM);
 
+    size_t bits_per_pixel = 0;
+    switch (panel_config->pixel_format) {
+    case LCD_COLOR_PIXEL_FORMAT_RGB565:
+        bits_per_pixel = 16;
+        break;
+    case LCD_COLOR_PIXEL_FORMAT_RGB666:
+        // RGB data in the memory must be constructed in 6-6-6 (18 bits) for each pixel
+        bits_per_pixel = 18;
+        break;
+    case LCD_COLOR_PIXEL_FORMAT_RGB888:
+        bits_per_pixel = 24;
+        break;
+    }
+    ESP_RETURN_ON_FALSE(panel_config->video_timing.h_size * panel_config->video_timing.v_size * bits_per_pixel % 8 == 0,
+                        ESP_ERR_INVALID_ARG, TAG, "frame buffer size not aligned to byte boundary");
+
     int bus_id = bus->bus_id;
     mipi_dsi_hal_context_t *hal = &bus->hal;
 
@@ -172,22 +188,10 @@ esp_err_t esp_lcd_new_panel_dpi(esp_lcd_dsi_bus_handle_t bus, const esp_lcd_dpi_
     dpi_panel->num_fbs = num_fbs;
 
     // allocate frame buffer from PSRAM
-    size_t bytes_per_pixel = 0;
-    switch (panel_config->pixel_format) {
-    case LCD_COLOR_PIXEL_FORMAT_RGB565:
-        bytes_per_pixel = 2;
-        break;
-    case LCD_COLOR_PIXEL_FORMAT_RGB666:
-        bytes_per_pixel = 3;
-        break;
-    case LCD_COLOR_PIXEL_FORMAT_RGB888:
-        bytes_per_pixel = 3;
-        break;
-    }
     uint32_t cache_line_size = cache_hal_get_cache_line_size(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_DATA);
     // DMA doesn't have requirement on the buffer alignment, but the cache does
     uint32_t alignment = cache_line_size;
-    size_t frame_buffer_size = panel_config->video_timing.h_size * panel_config->video_timing.v_size * bytes_per_pixel;
+    size_t frame_buffer_size = panel_config->video_timing.h_size * panel_config->video_timing.v_size * bits_per_pixel / 8;
     uint8_t *frame_buffer = NULL;
     for (int i = 0; i < num_fbs; i++) {
         frame_buffer = heap_caps_aligned_calloc(alignment, 1, frame_buffer_size, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
@@ -202,7 +206,7 @@ esp_err_t esp_lcd_new_panel_dpi(esp_lcd_dsi_bus_handle_t bus, const esp_lcd_dpi_
                           err, TAG, "cache write back failed");
     }
     dpi_panel->frame_buffer_size = frame_buffer_size;
-    dpi_panel->bytes_per_pixel = bytes_per_pixel;
+    dpi_panel->bits_per_pixel = bits_per_pixel;
     dpi_panel->h_pixels = panel_config->video_timing.h_size;
     dpi_panel->v_pixels = panel_config->video_timing.v_size;
 
@@ -274,10 +278,10 @@ esp_err_t esp_lcd_new_panel_dpi(esp_lcd_dsi_bus_handle_t bus, const esp_lcd_dpi_
                                               panel_config->video_timing.vsync_back_porch,
                                               panel_config->video_timing.v_size,
                                               panel_config->video_timing.vsync_front_porch);
-    mipi_dsi_brg_ll_set_num_pixel_bits(hal->bridge, panel_config->video_timing.h_size * panel_config->video_timing.v_size * bytes_per_pixel * 8);
+    mipi_dsi_brg_ll_set_num_pixel_bits(hal->bridge, panel_config->video_timing.h_size * panel_config->video_timing.v_size * bits_per_pixel);
     mipi_dsi_brg_ll_set_underrun_discard_count(hal->bridge, panel_config->video_timing.h_size);
-    // let the DSI bridge as the DMA flow controller
-    mipi_dsi_brg_ll_set_flow_controller(hal->bridge, MIPI_DSI_LL_FLOW_CONTROLLER_BRIDGE);
+    // use the DW_GDMA as the flow controller
+    mipi_dsi_brg_ll_set_flow_controller(hal->bridge, MIPI_DSI_LL_FLOW_CONTROLLER_DMA);
     mipi_dsi_brg_ll_set_burst_len(hal->bridge, 256);
     mipi_dsi_brg_ll_set_empty_threshold(hal->bridge, 1024 - 256);
     // enable DSI bridge
@@ -416,7 +420,7 @@ static esp_err_t dpi_panel_draw_bitmap(esp_lcd_panel_t *panel, int x_start, int 
     uint8_t *frame_buffer = dpi_panel->fbs[cur_fb_index];
     uint8_t *draw_buffer = (uint8_t *)color_data;
     size_t frame_buffer_size = dpi_panel->frame_buffer_size;
-    size_t bytes_per_pixel = dpi_panel->bytes_per_pixel;
+    size_t bits_per_pixel = dpi_panel->bits_per_pixel;
 
     // clip to boundaries
     int h_res = dpi_panel->h_pixels;
@@ -443,8 +447,8 @@ static esp_err_t dpi_panel_draw_bitmap(esp_lcd_panel_t *panel, int x_start, int 
     if (!do_copy) { // no copy, just do cache memory write back
         ESP_LOGD(TAG, "draw buffer is in frame buffer memory range, do cache write back only");
         // only write back the LCD lines that updated by the draw buffer
-        uint8_t *cache_sync_start = dpi_panel->fbs[draw_buf_fb_index] + (y_start * dpi_panel->h_pixels) * bytes_per_pixel;
-        size_t cache_sync_size = (y_end - y_start) * dpi_panel->h_pixels * bytes_per_pixel;
+        uint8_t *cache_sync_start = dpi_panel->fbs[draw_buf_fb_index] + (y_start * dpi_panel->h_pixels) * bits_per_pixel / 8;
+        size_t cache_sync_size = (y_end - y_start) * dpi_panel->h_pixels * bits_per_pixel / 8;
         // the buffer to be flushed is still within the frame buffer, so even an unaligned address is OK
         esp_cache_msync(cache_sync_start, cache_sync_size, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED);
 
@@ -456,9 +460,9 @@ static esp_err_t dpi_panel_draw_bitmap(esp_lcd_panel_t *panel, int x_start, int 
     } else if (!dpi_panel->fbcpy_handle) { // copy by CPU
         ESP_LOGD(TAG, "copy draw buffer by CPU");
         const uint8_t *from = draw_buffer;
-        uint8_t *to = frame_buffer + (y_start * dpi_panel->h_pixels + x_start) * bytes_per_pixel;
-        uint32_t copy_bytes_per_line = (x_end - x_start) * bytes_per_pixel;
-        uint32_t bytes_per_line = bytes_per_pixel * dpi_panel->h_pixels;
+        uint8_t *to = frame_buffer + (y_start * dpi_panel->h_pixels + x_start) * bits_per_pixel / 8;
+        uint32_t copy_bytes_per_line = (x_end - x_start) * bits_per_pixel / 8;
+        uint32_t bytes_per_line = bits_per_pixel * dpi_panel->h_pixels / 8;
         // please note, we assume the user provided draw_buffer is compact,
         // but the destination is a sub-window of the frame buffer, so we need to skip the stride
         for (int y = y_start; y < y_end; y++) {
@@ -466,8 +470,8 @@ static esp_err_t dpi_panel_draw_bitmap(esp_lcd_panel_t *panel, int x_start, int 
             to += bytes_per_line;
             from += copy_bytes_per_line;
         }
-        uint8_t *cache_sync_start = frame_buffer + (y_start * dpi_panel->h_pixels) * bytes_per_pixel;
-        size_t cache_sync_size = (y_end - y_start) * dpi_panel->h_pixels * bytes_per_pixel;
+        uint8_t *cache_sync_start = frame_buffer + (y_start * dpi_panel->h_pixels) * bits_per_pixel / 8;
+        size_t cache_sync_size = (y_end - y_start) * dpi_panel->h_pixels * bits_per_pixel / 8;
         // the buffer to be flushed is still within the frame buffer, so even an unaligned address is OK
         esp_cache_msync(cache_sync_start, cache_sync_size, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED);
         // invoke the trans done callback
@@ -482,7 +486,7 @@ static esp_err_t dpi_panel_draw_bitmap(esp_lcd_panel_t *panel, int x_start, int 
 
         // write back the user's draw buffer, so that the DMA can see the correct data
         // Note, the user draw buffer should be 1D array, and contiguous in memory, no stride
-        size_t color_data_size = (x_end - x_start) * (y_end - y_start) * bytes_per_pixel;
+        size_t color_data_size = (x_end - x_start) * (y_end - y_start) * bits_per_pixel / 8;
         esp_cache_msync(draw_buffer, color_data_size, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED);
 
         esp_async_fbcpy_trans_desc_t fbcpy_trans_config = {
