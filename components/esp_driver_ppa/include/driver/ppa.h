@@ -73,7 +73,6 @@ esp_err_t ppa_unregister_client(ppa_client_handle_t ppa_client);
  * @brief Type of PPA event data
  */
 typedef struct {
-    ;
 } ppa_event_data_t;
 
 /**

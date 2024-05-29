@@ -32,8 +32,6 @@
 #include "hal/ppa_types.h"
 #include "esp_private/periph_ctrl.h"
 
-#define ALIGN_UP(num, align)    (((num) + ((align) - 1)) & ~((align) - 1))
-
 static const char *TAG = "ppa_core";
 
 // PPA driver platform
@@ -65,7 +63,7 @@ static esp_err_t ppa_engine_acquire(const ppa_engine_config_t *config, ppa_engin
 
     _lock_acquire(&s_platform.mutex);
     if (s_platform.dma_desc_mem_size == 0) {
-        s_platform.dma_desc_mem_size = ALIGN_UP(sizeof(dma2d_descriptor_align8_t), alignment);
+        s_platform.dma_desc_mem_size = PPA_ALIGN_UP(sizeof(dma2d_descriptor_align8_t), alignment);
     }
     if (s_platform.buf_alignment_size == 0) {
         esp_cache_get_alignment(MALLOC_CAP_SPIRAM | MALLOC_CAP_DMA, &s_platform.buf_alignment_size);
