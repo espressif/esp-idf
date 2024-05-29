@@ -15,7 +15,6 @@
 #include "esp_ipc_isr.h"
 #include "esp_sleep.h"
 #include "esp_log.h"
-#include "esp_crc.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_heap_caps.h"

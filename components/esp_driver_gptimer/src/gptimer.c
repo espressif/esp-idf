@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -30,6 +30,10 @@
 #include "esp_clk_tree.h"
 #include "gptimer_priv.h"
 
+#if GPTIMER_USE_RETENTION_LINK
+#include "esp_private/sleep_retention.h"
+#endif
+
 static const char *TAG = "gptimer";
 
 #if SOC_PERIPH_CLK_CTRL_SHARED
@@ -51,6 +55,37 @@ static gptimer_group_t *gptimer_acquire_group_handle(int group_id);
 static void gptimer_release_group_handle(gptimer_group_t *group);
 static esp_err_t gptimer_select_periph_clock(gptimer_t *timer, gptimer_clock_source_t src_clk, uint32_t resolution_hz);
 static void gptimer_default_isr(void *args);
+
+#if GPTIMER_USE_RETENTION_LINK
+static esp_err_t sleep_tg_timer_retention_link_cb(void *arg)
+{
+    uint32_t group_id = *(uint32_t *)arg;
+    esp_err_t err = sleep_retention_entries_create(tg_timer_regs_retention[group_id].link_list,
+                                                   tg_timer_regs_retention[group_id].link_num,
+                                                   REGDMA_LINK_PRI_6,
+                                                   (group_id == 0) ? SLEEP_RETENTION_MODULE_TG0_TIMER : SLEEP_RETENTION_MODULE_TG1_TIMER);
+    if (err == ESP_OK) {
+        ESP_LOGD(TAG, "Timer group %ld retention initialization", group_id);
+    }
+    ESP_RETURN_ON_ERROR(err, TAG, "Failed to create sleep retention linked list for timer group %ld", group_id);
+    return err;
+}
+
+static void gptimer_create_retention_module(gptimer_group_t *group)
+{
+    _lock_acquire(&s_platform.mutex);
+    int group_id = group->group_id;
+    if ((group->sleep_retention_initialized == true) && (group->retention_link_created == false)) {
+        esp_err_t err = sleep_retention_module_allocate((group_id == 0) ? SLEEP_RETENTION_MODULE_TG0_TIMER : SLEEP_RETENTION_MODULE_TG1_TIMER);
+        if (err != ESP_OK) {
+            ESP_LOGW(TAG, "Failed to allocate sleep retention linked list for timer group %d retention, power domain can't turn off", group_id);
+        } else {
+            group->retention_link_created = true;
+        }
+    }
+    _lock_release(&s_platform.mutex);
+}
+#endif
 
 static esp_err_t gptimer_register_to_group(gptimer_t *timer)
 {
@@ -128,6 +163,12 @@ esp_err_t gptimer_new_timer(const gptimer_config_t *config, gptimer_handle_t *re
     gptimer_group_t *group = timer->group;
     int group_id = group->group_id;
     int timer_id = timer->timer_id;
+
+#if GPTIMER_USE_RETENTION_LINK
+    if (config->flags.backup_before_sleep != 0) {
+        gptimer_create_retention_module(group);
+    }
+#endif // GPTIMER_USE_RETENTION_LINK
 
     // initialize HAL layer
     timer_hal_init(&timer->hal, group_id, timer_id);
@@ -404,7 +445,6 @@ static gptimer_group_t *gptimer_acquire_group_handle(int group_id)
         // someone acquired the group handle means we have a new object that refer to this group
         s_platform.group_ref_counts[group_id]++;
     }
-    _lock_release(&s_platform.mutex);
 
     if (new_group) {
         // !!! HARDWARE SHARED RESOURCE !!!
@@ -417,7 +457,28 @@ static gptimer_group_t *gptimer_acquire_group_handle(int group_id)
             }
         }
         ESP_LOGD(TAG, "new group (%d) @%p", group_id, group);
+#if GPTIMER_USE_RETENTION_LINK
+        if (group->sleep_retention_initialized != true) {
+            sleep_retention_module_init_param_t init_param = {
+                .cbs = {
+                    .create = {
+                        .handle = sleep_tg_timer_retention_link_cb,
+                        .arg = &group_id
+                    },
+                },
+                .depends = BIT(SLEEP_RETENTION_MODULE_CLOCK_SYSTEM)
+            };
+            esp_err_t err = sleep_retention_module_init((group_id == 0) ? SLEEP_RETENTION_MODULE_TG0_TIMER : SLEEP_RETENTION_MODULE_TG1_TIMER, &init_param);
+
+            if (err == ESP_OK) {
+                group->sleep_retention_initialized = true;
+            } else {
+                ESP_LOGW(TAG, "Failed to allocate sleep retention linked list for timer group %d retention", group_id);
+            }
+        }
+#endif // GPTIMER_USE_RETENTION_LINK
     }
+    _lock_release(&s_platform.mutex);
 
     return group;
 }
@@ -434,7 +495,6 @@ static void gptimer_release_group_handle(gptimer_group_t *group)
         do_deinitialize = true;
         s_platform.groups[group_id] = NULL;
     }
-    _lock_release(&s_platform.mutex);
 
     if (do_deinitialize) {
         // disable bus clock for the timer group
@@ -443,9 +503,18 @@ static void gptimer_release_group_handle(gptimer_group_t *group)
                 timer_ll_enable_bus_clock(group_id, false);
             }
         }
+#if GPTIMER_USE_RETENTION_LINK
+        if (group->retention_link_created) {
+            sleep_retention_module_free((group_id == 0) ? SLEEP_RETENTION_MODULE_TG0_TIMER : SLEEP_RETENTION_MODULE_TG1_TIMER);
+        }
+        if (group->sleep_retention_initialized) {
+            sleep_retention_module_deinit((group_id == 0) ? SLEEP_RETENTION_MODULE_TG0_TIMER : SLEEP_RETENTION_MODULE_TG1_TIMER);
+        }
+#endif
         free(group);
         ESP_LOGD(TAG, "del group (%d)", group_id);
     }
+    _lock_release(&s_platform.mutex);
 }
 
 static esp_err_t gptimer_select_periph_clock(gptimer_t *timer, gptimer_clock_source_t src_clk, uint32_t resolution_hz)

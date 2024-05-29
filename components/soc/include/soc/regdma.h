@@ -37,16 +37,19 @@ extern "C" {
 #define REGDMA_TEEAPM_LINK(_pri)            ((0x0f << 8) | _pri)
 
 #define REGDMA_UART_LINK(_pri)              ((0x10 << 8) | _pri)
-#define REGDMA_TIMG_LINK(_pri)              ((0x11 << 8) | _pri)
-#define REGDMA_IOMUX_LINK(_pri)             ((0x12 << 8) | _pri)
-#define REGDMA_SPIMEM_LINK(_pri)            ((0x13 << 8) | _pri)
-#define REGDMA_SYSTIMER_LINK(_pri)          ((0x14 << 8) | _pri)
-#define REGDMA_BLE_MAC_LINK(_pri)           ((0x15 << 8) | _pri)
-#define REGDMA_MODEM_BT_BB_LINK(_pri)       ((0x16 << 8) | _pri)
-#define REGDMA_MODEM_IEEE802154_LINK(_pri)  ((0x17 << 8) | _pri)
-#define REGDMA_GDMA_LINK(_pri)              ((0x18 << 8) | _pri)
-#define REGDMA_I2C_LINK(_pri)               ((0x19 << 8) | _pri)
-#define REGDMA_RMT_LINK(_pri)               ((0x20 << 8) | _pri)
+#define REGDMA_IOMUX_LINK(_pri)             ((0x11 << 8) | _pri)
+#define REGDMA_SPIMEM_LINK(_pri)            ((0x12 << 8) | _pri)
+#define REGDMA_SYSTIMER_LINK(_pri)          ((0x13 << 8) | _pri)
+#define REGDMA_BLE_MAC_LINK(_pri)           ((0x14 << 8) | _pri)
+#define REGDMA_MODEM_BT_BB_LINK(_pri)       ((0x15 << 8) | _pri)
+#define REGDMA_MODEM_IEEE802154_LINK(_pri)  ((0x16 << 8) | _pri)
+#define REGDMA_GDMA_LINK(_pri)              ((0x17 << 8) | _pri)
+#define REGDMA_I2C_LINK(_pri)               ((0x18 << 8) | _pri)
+#define REGDMA_RMT_LINK(_pri)               ((0x19 << 8) | _pri)
+#define REGDMA_TG0_WDT_LINK(_pri)           ((0x1A << 8) | _pri)
+#define REGDMA_TG1_WDT_LINK(_pri)           ((0x1B << 8) | _pri)
+#define REGDMA_TG0_TIMER_LINK(_pri)         ((0x1C << 8) | _pri)
+#define REGDMA_TG1_TIMER_LINK(_pri)         ((0x1D << 8) | _pri)
 #define REGDMA_MODEM_FE_LINK(_pri)          ((0xFF << 8) | _pri)
 
 #define REGDMA_LINK_PRI_SYS_CLK                 REGDMA_LINK_PRI_0
@@ -57,9 +60,12 @@ extern "C" {
 #define REGDMA_LINK_PRI_BT_MAC_BB               REGDMA_LINK_PRI_5
 #define REGDMA_LINK_PRI_SYS_PERIPH_HIGH         REGDMA_LINK_PRI_5 // INT_MTX & HP_SYSTEM & Console UART
 #define REGDMA_LINK_PRI_SYS_PERIPH_LOW          REGDMA_LINK_PRI_6 // TG0 & IO MUX & SPI MEM & Systimer
-#define REGDMA_LINK_PRI_IEEE802154              REGDMA_LINK_PRI_7
-#define REGDMA_LINK_PRI_GDMA                    REGDMA_LINK_PRI_7
-#define REGDMA_LINK_PRI_RMT                     REGDMA_LINK_PRI_7
+#define REGDMA_LINK_PRI_GENERAL_PERIPH          REGDMA_LINK_PRI_7 // Low retenion priority for general peripherals
+#define REGDMA_LINK_PRI_IEEE802154              REGDMA_LINK_PRI_GENERAL_PERIPH
+#define REGDMA_LINK_PRI_GDMA                    REGDMA_LINK_PRI_GENERAL_PERIPH
+#define REGDMA_LINK_PRI_RMT                     REGDMA_LINK_PRI_GENERAL_PERIPH
+#define REGDMA_LINK_PRI_GPTIMER                 REGDMA_LINK_PRI_GENERAL_PERIPH
+#define REGDMA_LINK_PRI_I2C                     REGDMA_LINK_PRI_GENERAL_PERIPH
 
 typedef enum {
     REGDMA_LINK_PRI_0 = 0,

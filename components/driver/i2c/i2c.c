@@ -280,7 +280,7 @@ static void i2c_hw_enable(i2c_port_t i2c_num)
 static esp_err_t i2c_sleep_retention_init(void *arg)
 {
     i2c_port_t i2c_num = *(i2c_port_t *)arg;
-    esp_err_t ret = sleep_retention_entries_create(i2c_regs_retention[i2c_num].link_list, i2c_regs_retention[i2c_num].link_num, REGDMA_LINK_PRI_7, I2C_SLEEP_RETENTION_MODULE(i2c_num));
+    esp_err_t ret = sleep_retention_entries_create(i2c_regs_retention[i2c_num].link_list, i2c_regs_retention[i2c_num].link_num, REGDMA_LINK_PRI_I2C, I2C_SLEEP_RETENTION_MODULE(i2c_num));
     ESP_RETURN_ON_ERROR(ret, I2C_TAG, "failed to allocate mem for sleep retention");
     return ret;
 }

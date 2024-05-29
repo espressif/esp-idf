@@ -54,21 +54,6 @@ const regdma_entries_config_t uart_regs_retention[] = {
 };
 _Static_assert(ARRAY_SIZE(uart_regs_retention) == UART_RETENTION_LINK_LEN, "Inconsistent UART retention link length definitions");
 
-/* Timergroup Registers Context */
-#define N_REGS_TG()     (((TIMG_REGCLK_REG(0) - REG_TIMG_BASE(0)) / 4) + 1)
-const regdma_entries_config_t tg_regs_retention[] = {
-    /*Timer group0 backup. T0_wdt should get of write project firstly. wdt used by RTOS.*/
-    [0] = { .config = REGDMA_LINK_WRITE_INIT     (REGDMA_TIMG_LINK(0x00), TIMG_WDTWPROTECT_REG(0), TIMG_WDT_WKEY_VALUE,     TIMG_WDT_WKEY_M,           1, 0), .owner = ENTRY(0) | ENTRY(2) }, /* TG0 */
-    [1] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_TIMG_LINK(0x01), REG_TIMG_BASE(0),        REG_TIMG_BASE(0),        N_REGS_TG(),               0, 0), .owner = ENTRY(0) | ENTRY(2) },
-    [2] = { .config = REGDMA_LINK_WRITE_INIT     (REGDMA_TIMG_LINK(0x02), TIMG_WDTWPROTECT_REG(0), TIMG_WDT_WKEY_VALUE,     TIMG_WDT_WKEY_M,           1, 0), .owner = ENTRY(0) | ENTRY(2) },
-    [3] = { .config = REGDMA_LINK_WRITE_INIT     (REGDMA_TIMG_LINK(0x03), TIMG_WDTCONFIG0_REG(0),  TIMG_WDT_CONF_UPDATE_EN, TIMG_WDT_CONF_UPDATE_EN_M, 1, 0), .owner = ENTRY(0) | ENTRY(2) },
-    [4] = { .config = REGDMA_LINK_WRITE_INIT     (REGDMA_TIMG_LINK(0x04), TIMG_T0UPDATE_REG(0),    TIMG_T0_UPDATE,          TIMG_T0_UPDATE_M,          0, 1), .owner = ENTRY(0) | ENTRY(2) },
-    [5] = { .config = REGDMA_LINK_WAIT_INIT      (REGDMA_TIMG_LINK(0x05), TIMG_T0UPDATE_REG(0),    0x0,                     TIMG_T0_UPDATE_M,          0, 1), .owner = ENTRY(0) | ENTRY(2) },
-    [6] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_TIMG_LINK(0x06), TIMG_T0LO_REG(0),        TIMG_T0LOADLO_REG(0),    2,                         0, 0), .owner = ENTRY(0) | ENTRY(2) },
-    [7] = { .config = REGDMA_LINK_WRITE_INIT     (REGDMA_TIMG_LINK(0x07), TIMG_T0LOAD_REG(0),      0x1,                     TIMG_T0_LOAD_M,            1, 0), .owner = ENTRY(0) | ENTRY(2) }
-};
-_Static_assert(ARRAY_SIZE(tg_regs_retention) == TIMG_RETENTION_LINK_LEN, "Inconsistent Timergroup retention link length definitions");
-
 /* IO MUX Registers Context */
 #define N_REGS_IOMUX_0()    (((IO_MUX_GPIO26_REG - REG_IO_MUX_BASE) / 4) + 1)
 #define N_REGS_IOMUX_1()    (((GPIO_FUNC30_OUT_SEL_CFG_REG - GPIO_FUNC0_OUT_SEL_CFG_REG) / 4) + 1)
