@@ -28,6 +28,10 @@ if(NOT BOOTLOADER_BUILD)
         list(APPEND compile_options "-O2")
     endif()
 
+    if(CONFIG_COMPILER_STACK_MIRROR)
+        list(APPEND compile_options "-finstrument-functions")
+    endif()
+
 else()  # BOOTLOADER_BUILD
 
     if(CONFIG_BOOTLOADER_COMPILER_OPTIMIZATION_SIZE)

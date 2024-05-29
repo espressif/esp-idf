@@ -29,6 +29,9 @@
 extern "C" {
 #endif
 
+#if CONFIG_COMPILER_STACK_MIRROR
+    IRAM_ATTR __attribute__((no_instrument_function))
+#endif
 static inline uint32_t IRAM_ATTR cpu_ll_get_core_id(void)
 {
     uint32_t id;

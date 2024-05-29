@@ -15,6 +15,7 @@
 #include "esp_task.h"
 #include "esp_private/crosscore_int.h"
 #include "esp_private/startup_internal.h"    /* Required by g_spiram_ok. [refactor-todo] for g_spiram_ok */
+#include "esp_private/stack_mirror.h"
 #include "esp_log.h"
 #include "soc/soc_memory_types.h"
 #include "soc/dport_access.h"
@@ -136,6 +137,11 @@ static void main_task(void* args)
     if(idle_1 != NULL){
         ESP_ERROR_CHECK(esp_task_wdt_add(idle_1));
     }
+#endif
+
+// Todo: this could be initialized sooner, but not sure where exactly...
+#if CONFIG_COMPILER_STACK_MIRROR
+    stack_mirror_enable();
 #endif
 
     app_main();
