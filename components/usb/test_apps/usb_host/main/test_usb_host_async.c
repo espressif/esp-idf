@@ -10,7 +10,6 @@
 #include "freertos/semphr.h"
 #include "esp_err.h"
 #include "esp_intr_alloc.h"
-#include "test_usb_common.h"
 #include "dev_msc.h"
 #include "msc_client.h"
 #include "ctrl_client.h"
@@ -252,8 +251,9 @@ TEST_CASE("Test USB Host async API", "[usb_host][full_speed][low_speed]")
                                                              client0_dev_hdl,
                                                              dev_info->bInterfaceNumber));
 
+    // Trigger a disconnect by powering OFF the root port
+    usb_host_lib_set_root_port_power(false);
     // Wait until the device disconnects and the clients receive the event
-    test_usb_set_phy_state(false, 0);
     while (!(client0_stage == CLIENT_TEST_STAGE_DCONN && client1_stage == CLIENT_TEST_STAGE_DCONN)) {
         usb_host_lib_handle_events(0, NULL);
         usb_host_client_handle_events(client0_hdl, 0);

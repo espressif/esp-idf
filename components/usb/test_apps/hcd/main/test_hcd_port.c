@@ -9,7 +9,6 @@
 #include "freertos/semphr.h"
 #include "unity.h"
 #include "esp_rom_sys.h"
-#include "test_usb_common.h"
 #include "test_hcd_common.h"
 
 #define TEST_DEV_ADDR               0
@@ -87,7 +86,8 @@ TEST_CASE("Test HCD port sudden disconnect", "[port][low_speed][full_speed]")
     }
     // Add a short delay to let the transfers run for a bit
     esp_rom_delay_us(POST_ENQUEUE_DELAY_US);
-    test_usb_set_phy_state(false, 0);
+    // Power-off the port to trigger a disconnection
+    TEST_ASSERT_EQUAL(ESP_OK, hcd_port_command(port_hdl, HCD_PORT_CMD_POWER_OFF));
     // Disconnect event should have occurred. Handle the port event
     test_hcd_expect_port_event(port_hdl, HCD_PORT_EVENT_DISCONNECTION);
     TEST_ASSERT_EQUAL(HCD_PORT_EVENT_DISCONNECTION, hcd_port_handle_event(port_hdl));
@@ -290,8 +290,8 @@ static void concurrent_task(void *arg)
     SemaphoreHandle_t sync_sem = (SemaphoreHandle_t) arg;
     xSemaphoreTake(sync_sem, portMAX_DELAY);
     vTaskDelay(pdMS_TO_TICKS(10));  // Give a short delay let reset command start in main thread
-    // Force a disconnection
-    test_usb_set_phy_state(false, 0);
+    // Power-off the port to trigger a disconnection
+    TEST_ASSERT_EQUAL(ESP_OK, hcd_port_command(port_hdl, HCD_PORT_CMD_POWER_OFF));
     vTaskDelay(portMAX_DELAY);  // Block forever and wait to be deleted
 }
 
@@ -314,7 +314,8 @@ TEST_CASE("Test HCD port command bailout", "[port][low_speed][full_speed]")
     // Attempt to resume the port. But the concurrent task should override this with a disconnection event
     printf("Attempting to resume\n");
     xSemaphoreGive(sync_sem);   // Trigger concurrent task
-    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_RESPONSE, hcd_port_command(port_hdl, HCD_PORT_CMD_RESUME));
+    vTaskDelay(pdMS_TO_TICKS(20)); // Short delay for concurrent task to trigger disconnection
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_STATE, hcd_port_command(port_hdl, HCD_PORT_CMD_RESUME));
 
     // Check that concurrent task triggered a sudden disconnection
     test_hcd_expect_port_event(port_hdl, HCD_PORT_EVENT_DISCONNECTION);

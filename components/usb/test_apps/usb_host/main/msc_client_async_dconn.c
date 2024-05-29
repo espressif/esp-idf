@@ -14,7 +14,6 @@
 #include "esp_log.h"
 #include "mock_msc.h"
 #include "dev_msc.h"
-#include "test_usb_common.h"
 #include "msc_client.h"
 #include "usb/usb_types_ch9.h"
 #include "usb/usb_host.h"
@@ -251,8 +250,8 @@ void msc_client_async_dconn_task(void *arg)
             for (int i = 0; i < msc_obj.num_data_transfers; i++) {
                 TEST_ASSERT_EQUAL(ESP_OK, usb_host_transfer_submit(xfer_in[i]));
             }
-            // Trigger a disconnect
-            test_usb_set_phy_state(false, 0);
+            // Trigger a disconnect by powering OFF the root port
+            usb_host_lib_set_root_port_power(false);
             // Next stage set from transfer callback
             break;
         }
@@ -265,7 +264,8 @@ void msc_client_async_dconn_task(void *arg)
                 // Start the next test iteration by going back to TEST_STAGE_WAIT_CONN and reenabling connections
                 msc_obj.next_stage = TEST_STAGE_WAIT_CONN;
                 skip_event_handling = true; // Need to execute TEST_STAGE_WAIT_CONN
-                test_usb_set_phy_state(true, 0);
+                // Allow connections again by powering ON the root port
+                usb_host_lib_set_root_port_power(true);
             } else {
                 exit_loop = true;
             }

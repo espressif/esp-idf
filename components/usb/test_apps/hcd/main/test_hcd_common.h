@@ -53,6 +53,8 @@ int test_hcd_get_num_pipe_events(hcd_pipe_handle_t pipe_hdl);
 /**
  * @brief Sets up the HCD and initializes an HCD port.
  *
+ * The HCD port is left in the HCD_PORT_STATE_NOT_POWERED state
+ *
  * @return hcd_port_handle_t Port handle
  */
 hcd_port_handle_t test_hcd_setup(void);
@@ -67,7 +69,7 @@ void test_hcd_teardown(hcd_port_handle_t port_hdl);
 /**
  * @brief Wait for a connection on an HCD port
  *
- * @note This function will internally call test_usb_set_phy_state() to allow for a connection
+ * @note HCD_PORT_CMD_POWER_ON is called internally to allow connections
  *
  * @param port_hdl Port handle
  * @return usb_speed_t Speed of the connected device
@@ -77,7 +79,7 @@ usb_speed_t test_hcd_wait_for_conn(hcd_port_handle_t port_hdl);
 /**
  * @brief Wait for a disconnection on an HCD port
  *
- * @note This fucntion will internally call test_usb_set_phy_state() to force a disconnection
+ * @note HCD_PORT_CMD_POWER_OFF is called internally to force a disconnection
  *
  * @param port_hdl Port handle
  * @param already_disabled Whether the HCD port is already in the disabled state

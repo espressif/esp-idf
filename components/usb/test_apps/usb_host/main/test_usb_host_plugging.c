@@ -9,7 +9,6 @@
 #include "freertos/task.h"
 #include "esp_err.h"
 #include "esp_intr_alloc.h"
-#include "test_usb_common.h"
 #include "mock_msc.h"
 #include "dev_msc.h"
 #include "msc_client.h"
@@ -49,7 +48,8 @@ TEST_CASE("Test USB Host sudden disconnection (no client)", "[usb_host][full_spe
                 // We've just connected. Trigger a disconnect
                 connected = true;
                 printf("Forcing Sudden Disconnect\n");
-                test_usb_set_phy_state(false, 0);
+                // Trigger a disconnect by powering OFF the root port
+                usb_host_lib_set_root_port_power(false);
             }
         }
         if (event_flags & USB_HOST_LIB_EVENT_FLAGS_ALL_FREE) {
@@ -58,7 +58,8 @@ TEST_CASE("Test USB Host sudden disconnection (no client)", "[usb_host][full_spe
             if (++dconn_iter < TEST_DCONN_NO_CLIENT_ITERATIONS) {
                 // Start next iteration
                 connected = false;
-                test_usb_set_phy_state(true, 0);
+                // Allow connections again by powering ON the root port
+                usb_host_lib_set_root_port_power(true);
             } else {
                 break;
             }
