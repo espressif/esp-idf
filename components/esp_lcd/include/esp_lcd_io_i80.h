@@ -100,6 +100,18 @@ typedef struct {
  */
 esp_err_t esp_lcd_new_panel_io_i80(esp_lcd_i80_bus_handle_t bus, const esp_lcd_panel_io_i80_config_t *io_config, esp_lcd_panel_io_handle_t *ret_io);
 
+/**
+ * @brief Allocate a draw buffer that can be used by I80 interfaced LCD panel
+ *
+ * @note This function differs from the normal 'heap_caps_*' functions in that it can also automatically handle the alignment required by DMA burst, cache line size, etc.
+ *
+ * @param[in] io Panel IO handle, created by `esp_lcd_new_panel_io_i80()`
+ * @param[in] size Size of memory to be allocated
+ * @param[in] caps Bitwise OR of MALLOC_CAP_* flags indicating the type of memory desired for the allocation
+ * @return Pointer to a new buffer of size 'size' with capabilities 'caps', or NULL if allocation failed
+ */
+void *esp_lcd_i80_alloc_draw_buffer(esp_lcd_panel_io_handle_t io, size_t size, uint32_t caps);
+
 #endif // SOC_LCD_I80_SUPPORTED
 
 #ifdef __cplusplus
