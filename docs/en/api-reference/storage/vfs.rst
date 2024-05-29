@@ -238,3 +238,5 @@ API Reference
 .. include-build-file:: inc/uart_vfs.inc
 
 .. include-build-file:: inc/esp_vfs_eventfd.inc
+
+.. include-build-file:: inc/esp_vfs_null.inc

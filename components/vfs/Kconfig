@@ -97,4 +97,11 @@ menu "Virtual file system"
                 Define maximum number of host filesystem mount points.
     endmenu
 
+    config VFS_INITIALIZE_DEV_NULL
+        bool "Initialize /dev/null VFS"
+        default y
+        depends on VFS_SUPPORT_IO
+        help
+            If enabled, /dev/null VFS will be automatically initialized at startup.
+
 endmenu
