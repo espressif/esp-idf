@@ -227,12 +227,9 @@ api-reference/protocols/esp_tls.rst
 api-reference/protocols/mdns.rst
 api-reference/protocols/index.rst
 api-reference/protocols/asio.rst
-security/host-based-security-workflows.rst
 security/flash-encryption.rst
-security/security.rst
 security/secure-boot-v2.rst
 security/secure-boot-v1.rst
-security/index.rst
 about.rst
 resources.rst
 migration-guides/release-5.x/5.2/ieee802154.rst
