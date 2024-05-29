@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -318,6 +318,14 @@ err:
         free(i80_device);
     }
     return ret;
+}
+
+void *esp_lcd_i80_alloc_draw_buffer(esp_lcd_panel_io_handle_t io, size_t size, uint32_t caps)
+{
+    ESP_RETURN_ON_FALSE(io, NULL, TAG, "invalid argument");
+    ESP_RETURN_ON_FALSE((caps & MALLOC_CAP_SPIRAM) == 0, NULL, TAG, "external memory is not supported");
+    // DMA can only carry internal memory
+    return heap_caps_aligned_calloc(4, 1, size, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT | MALLOC_CAP_DMA);
 }
 
 static esp_err_t panel_io_i80_del(esp_lcd_panel_io_t *io)
