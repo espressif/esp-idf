@@ -106,7 +106,6 @@ api-reference/peripherals/usb_host/usb_host_notes_index.rst
 api-reference/peripherals/usb_host/usb_host_notes_dwc_otg.rst
 api-reference/peripherals/usb_host/usb_host_notes_design.rst
 api-reference/peripherals/usb_host/usb_host_notes_usbh.rst
-api-reference/peripherals/hmac.rst
 api-reference/peripherals/usb_device.rst
 api-reference/peripherals/sdspi_host.rst
 api-reference/peripherals/spi_slave.rst
@@ -128,7 +127,6 @@ api-reference/peripherals/touch_pad.rst
 api-reference/peripherals/adc_calibration.rst
 api-reference/peripherals/spi_slave_hd.rst
 api-reference/peripherals/parlio.rst
-api-reference/peripherals/ds.rst
 api-reference/peripherals/i2c.rst
 api-reference/peripherals/dedic_gpio.rst
 api-reference/peripherals/sd_pullup_requirements.rst

@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
-# SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-
 import argparse
 import datetime
 import hashlib
@@ -13,16 +12,19 @@ import struct
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.primitives.asymmetric.rsa import _modinv as modinv  # type: ignore
-from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+from cryptography.hazmat.primitives.ciphers import algorithms
+from cryptography.hazmat.primitives.ciphers import Cipher
+from cryptography.hazmat.primitives.ciphers import modes
 from cryptography.utils import int_to_bytes
 
-supported_targets = {'esp32s2', 'esp32c3', 'esp32s3', 'esp32c6', 'esp32h2', 'esp32p4'}
+supported_targets = {'esp32s2', 'esp32c3', 'esp32s3', 'esp32c6', 'esp32h2', 'esp32p4', 'esp32c5'}
 supported_key_size = {'esp32s2':[4096, 3072, 2048, 1024],
                       'esp32c3':[3072, 2048, 1024],
                       'esp32s3':[4096, 3072, 2048, 1024],
                       'esp32c6':[3072, 2048, 1024],
                       'esp32h2':[3072, 2048, 1024],
-                      'esp32p4':[4096, 3072, 2048, 1024]}
+                      'esp32p4':[4096, 3072, 2048, 1024],
+                      'esp32c5':[3072, 2048, 1024]}
 
 NUM_HMAC_KEYS = 3
 NUM_MESSAGES = 10
@@ -41,12 +43,12 @@ def number_as_bignum_words(number):  # type: (int) -> str
     return '{ ' + ', '.join(result) + ' }'
 
 
-def number_as_bytes(number, pad_bits=None):  # type: (int, int) -> bytes
+def number_as_bytes(number, pad_bits=0):  # type: (int, int) -> bytes
     """
     Given a number, format as a little endian array of bytes
     """
     result = int_to_bytes(number)[::-1]  # type: bytes
-    while pad_bits is not None and len(result) < (pad_bits // 8):
+    while pad_bits != 0 and len(result) < (pad_bits // 8):
         result += b'\x00'
     return result
 
