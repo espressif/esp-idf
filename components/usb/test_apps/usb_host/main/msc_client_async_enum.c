@@ -14,7 +14,6 @@
 #include "esp_log.h"
 #include "dev_msc.h"
 #include "mock_msc.h"
-#include "test_usb_common.h"
 #include "msc_client.h"
 #include "usb/usb_host.h"
 #include "unity.h"
@@ -177,8 +176,8 @@ void msc_client_async_enum_task(void *arg)
             enum_iter++;
             if (enum_iter < TEST_ENUM_ITERATIONS) {
                 // Start the next test iteration by disconnecting the device, then going back to TEST_STAGE_WAIT_CONN stage
-                test_usb_set_phy_state(false, 0);
-                test_usb_set_phy_state(true, 0);
+                usb_host_lib_set_root_port_power(false);
+                usb_host_lib_set_root_port_power(true);
                 msc_obj.next_stage = TEST_STAGE_WAIT_CONN;
                 skip_event_handling = true; // Need to execute TEST_STAGE_WAIT_CONN
             } else {
