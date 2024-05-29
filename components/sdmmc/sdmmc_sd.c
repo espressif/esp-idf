@@ -119,7 +119,7 @@ esp_err_t sdmmc_init_sd_ssr(sdmmc_card_t* card)
 
     err = sdmmc_decode_ssr(sd_ssr, &card->ssr);
     if (err != ESP_OK) {
-        ESP_LOGE(TAG, "%s: error sdmmc_decode_scr returned 0x%x", __func__, err);
+        ESP_LOGE(TAG, "%s: error sdmmc_decode_ssr returned 0x%x", __func__, err);
     }
     free(sd_ssr);
     return err;
