@@ -7,6 +7,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 import argparse
+import logging
 import os
 import subprocess
 import typing as t
@@ -81,10 +82,10 @@ def get_modified_component(filepath: str) -> t.Optional[str]:
     for part in f_path.parts[1:]:
         if component_parent_dirs[-1] == 'components' or component_parent_dirs[-1].endswith('common_components'):
             if part not in _COMPONENT_NAME_DIR_RECORDS:
-                print('Found component "%s" in path "%s"' % (part, component_parent_dirs))
+                logging.debug('Found component "%s" in path "%s"' % (part, component_parent_dirs))
                 _COMPONENT_NAME_DIR_RECORDS[part] = component_parent_dirs
             elif _COMPONENT_NAME_DIR_RECORDS.get(part) != component_parent_dirs:
-                print(
+                logging.debug(
                     'WARNING!!! Found component "%s" in path "%s" and "%s"'
                     % (part, component_parent_dirs, _COMPONENT_NAME_DIR_RECORDS.get(part))
                 )
