@@ -10,7 +10,6 @@
 #include "freertos/task.h"
 #include "esp_err.h"
 #include "esp_log.h"
-#include "test_usb_common.h"
 #include "dev_msc.h"
 #include "ctrl_client.h"
 #include "usb/usb_host.h"
