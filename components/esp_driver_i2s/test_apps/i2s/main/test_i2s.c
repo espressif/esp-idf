@@ -194,6 +194,7 @@ TEST_CASE("I2S_basic_channel_allocation_reconfig_deleting_test", "[i2s]")
     TEST_ESP_ERR(ESP_ERR_NOT_FOUND, i2s_channel_get_info(tx_handle, &chan_info));
 
     /* Exhaust test */
+    std_cfg.gpio_cfg.mclk = -1;
     i2s_chan_handle_t tx_ex[SOC_I2S_NUM] = {};
     for (int i = 0; i < SOC_I2S_NUM; i++) {
         TEST_ESP_OK(i2s_new_channel(&chan_cfg, &tx_ex[i], NULL));
