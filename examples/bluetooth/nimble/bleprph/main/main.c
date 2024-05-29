@@ -45,11 +45,6 @@ static uint8_t own_addr_type = BLE_OWN_ADDR_RANDOM;
 static uint8_t own_addr_type;
 #endif
 
-#if MYNEWT_VAL(BLE_EATT_CHAN_NUM)
-static uint16_t cids[MYNEWT_VAL(BLE_EATT_CHAN_NUM)];
-static uint16_t bearers;
-#endif
-
 void ble_store_config_init(void);
 
 /**
@@ -421,36 +416,12 @@ bleprph_gap_event(struct ble_gap_event *event, void *arg)
                      event->transmit_power.delta);
         return 0;
 
-    case BLE_GAP_EVENT_PATHLOSS_THRESHOLD:
+     case BLE_GAP_EVENT_PATHLOSS_THRESHOLD:
         MODLOG_DFLT(INFO, "Pathloss threshold event : conn_handle=%d current path loss=%d "
                            "zone_entered =%d",
                      event->pathloss_threshold.conn_handle,
                      event->pathloss_threshold.current_path_loss,
                      event->pathloss_threshold.zone_entered);
-        return 0;
-#endif
-#if MYNEWT_VAL(BLE_EATT_CHAN_NUM)
-    case BLE_GAP_EVENT_EATT:
-        MODLOG_DFLT(INFO, "EATT %s : conn_handle=%d cid=%d",
-                event->eatt.status ? "disconnected" : "connected",
-                event->eatt.conn_handle,
-                event->eatt.cid);
-    if (event->eatt.status) {
-        /* Abort if disconnected */
-        return 0;
-    }
-    cids[bearers] = event->eatt.cid;
-    bearers += 1;
-    if (bearers != MYNEWT_VAL(BLE_EATT_CHAN_NUM)) {
-        /* Wait until all EATT bearers are connected before proceeding */
-        return 0;
-    }
-    /* Set the default bearer to use for further procedures */
-    rc = ble_att_set_default_bearer_using_cid(event->eatt.conn_handle, cids[0]);
-    if (rc != 0) {
-        MODLOG_DFLT(INFO, "Cannot set default EATT bearer, rc = %d\n", rc);
-        return rc;
-    }
         return 0;
 #endif
     }
@@ -595,11 +566,4 @@ app_main(void)
     if (rc != ESP_OK) {
         ESP_LOGE(tag, "scli_init() failed");
     }
-
-#if MYNEWT_VAL(BLE_EATT_CHAN_NUM)
-    bearers = 0;
-    for (int i = 0; i < MYNEWT_VAL(BLE_EATT_CHAN_NUM); i++) {
-        cids[i] = 0;
-    }
-#endif
 }

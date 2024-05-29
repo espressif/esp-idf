@@ -62,11 +62,6 @@ static const char *tag = "NimBLE_BLE_CENT";
 static int blecent_gap_event(struct ble_gap_event *event, void *arg);
 static uint8_t peer_addr[6];
 
-#if MYNEWT_VAL(BLE_EATT_CHAN_NUM)
-static uint16_t cids[MYNEWT_VAL(BLE_EATT_CHAN_NUM)];
-static uint16_t bearers;
-#endif
-
 void ble_store_config_init(void);
 
 /**
@@ -778,14 +773,6 @@ blecent_gap_event(struct ble_gap_event *event, void *arg)
         /* Forget about peer. */
         peer_delete(event->disconnect.conn.conn_handle);
 
-#if MYNEWT_VAL(BLE_EATT_CHAN_NUM)
-        /* Reset EATT config */
-        bearers = 0;
-        for (int i = 0; i < MYNEWT_VAL(BLE_EATT_CHAN_NUM); i++) {
-            cids[i] = 0;
-        }
-#endif
-
         /* Resume scanning. */
         blecent_scan();
         return 0;
@@ -802,16 +789,14 @@ blecent_gap_event(struct ble_gap_event *event, void *arg)
         rc = ble_gap_conn_find(event->enc_change.conn_handle, &desc);
         assert(rc == 0);
         print_conn_desc(&desc);
-#if !MYNEWT_VAL(BLE_EATT_CHAN_NUM)
 #if CONFIG_EXAMPLE_ENCRYPTION
         /*** Go for service discovery after encryption has been successfully enabled ***/
-        rc = peer_disc_all(event->enc_change.conn_handle,
+        rc = peer_disc_all(event->connect.conn_handle,
                            blecent_on_disc_complete, NULL);
         if (rc != 0) {
             MODLOG_DFLT(ERROR, "Failed to discover services; rc=%d\n", rc);
             return 0;
         }
-#endif
 #endif
         return 0;
 
@@ -883,52 +868,6 @@ blecent_gap_event(struct ble_gap_event *event, void *arg)
 		    event->pathloss_threshold.zone_entered);
 	return 0;
 #endif
-
-#if MYNEWT_VAL(BLE_EATT_CHAN_NUM)
-    case BLE_GAP_EVENT_EATT:
-    int i;
-    MODLOG_DFLT(INFO, "EATT %s : conn_handle=%d cid=%d",
-            event->eatt.status ? "disconnected" : "connected",
-            event->eatt.conn_handle,
-            event->eatt.cid);
-    if (event->eatt.status) {
-        /* Remove CID from the list of saved CIDs */
-        for (i = 0; i < bearers; i++) {
-            if (cids[i] == event->eatt.cid) {
-                break;
-            }
-        }
-        while (i < (bearers - 1)) {
-            cids[i] = cids[i + 1];
-            i += 1;
-        }
-        cids[i] = 0;
-
-        /* Now Abort */
-        return 0;
-    }
-    cids[bearers] = event->eatt.cid;
-    bearers += 1;
-    if (bearers != MYNEWT_VAL(BLE_EATT_CHAN_NUM)) {
-        /* Wait until all EATT bearers are connected before proceeding */
-        return 0;
-    }
-    /* Set the default bearer to use for further procedures */
-    rc = ble_att_set_default_bearer_using_cid(event->eatt.conn_handle, cids[0]);
-    if (rc != 0) {
-        MODLOG_DFLT(INFO, "Cannot set default EATT bearer, rc = %d\n", rc);
-        return rc;
-    }
-
-    /* Perform service discovery */
-    rc = peer_disc_all(event->eatt.conn_handle,
-                blecent_on_disc_complete, NULL);
-    if(rc != 0) {
-        MODLOG_DFLT(ERROR, "Failed to discover services; rc=%d\n", rc);
-        return 0;
-    }
-#endif
-        return 0;
     default:
         return 0;
     }
@@ -948,7 +887,6 @@ blecent_on_sync(void)
     /* Make sure we have proper identity address set (public preferred) */
     rc = ble_hs_util_ensure_addr(0);
     assert(rc == 0);
-
 
 #if !CONFIG_EXAMPLE_INIT_DEINIT_LOOP
     /* Begin scanning for a peripheral to connect to. */
@@ -1039,13 +977,6 @@ app_main(void)
 
 #if CONFIG_EXAMPLE_INIT_DEINIT_LOOP
     stack_init_deinit();
-#endif
-
-#if MYNEWT_VAL(BLE_EATT_CHAN_NUM)
-    bearers = 0;
-    for (int i = 0; i < MYNEWT_VAL(BLE_EATT_CHAN_NUM); i++) {
-        cids[i] = 0;
-    }
 #endif
 
 }
