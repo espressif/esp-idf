@@ -23,6 +23,10 @@ config SOC_PCNT_SUPPORTED
     bool
     default y
 
+config SOC_MCPWM_SUPPORTED
+    bool
+    default y
+
 config SOC_ASYNC_MEMCPY_SUPPORTED
     bool
     default y
@@ -420,6 +424,62 @@ config SOC_RMT_SUPPORT_TX_CARRIER_DATA_ONLY
     default y
 
 config SOC_RMT_SUPPORT_XTAL
+    bool
+    default y
+
+config SOC_MCPWM_GROUPS
+    int
+    default 1
+
+config SOC_MCPWM_TIMERS_PER_GROUP
+    int
+    default 3
+
+config SOC_MCPWM_OPERATORS_PER_GROUP
+    int
+    default 3
+
+config SOC_MCPWM_COMPARATORS_PER_OPERATOR
+    int
+    default 2
+
+config SOC_MCPWM_GENERATORS_PER_OPERATOR
+    int
+    default 2
+
+config SOC_MCPWM_EVENT_COMPARATORS_PER_OPERATOR
+    int
+    default 2
+
+config SOC_MCPWM_TRIGGERS_PER_OPERATOR
+    int
+    default 2
+
+config SOC_MCPWM_GPIO_FAULTS_PER_GROUP
+    int
+    default 3
+
+config SOC_MCPWM_CAPTURE_TIMERS_PER_GROUP
+    bool
+    default y
+
+config SOC_MCPWM_CAPTURE_CHANNELS_PER_TIMER
+    int
+    default 3
+
+config SOC_MCPWM_GPIO_SYNCHROS_PER_GROUP
+    int
+    default 3
+
+config SOC_MCPWM_SWSYNC_CAN_PROPAGATE
+    bool
+    default y
+
+config SOC_MCPWM_SUPPORT_EVENT_COMPARATOR
+    bool
+    default y
+
+config SOC_MCPWM_CAPTURE_CLK_FROM_GROUP
     bool
     default y
 

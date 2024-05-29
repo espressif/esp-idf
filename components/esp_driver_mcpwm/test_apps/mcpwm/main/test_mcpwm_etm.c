@@ -14,7 +14,7 @@
 #include "driver/gpio.h"
 #include "driver/mcpwm_prelude.h"
 
-TEST_CASE("mcpwm_comparator_etm_event", "[etm]")
+TEST_CASE("mcpwm_comparator_etm_event", "[mcpwm][etm]")
 {
     // MCPWM cmpra -------------------------------------> ETM channel A ---> GPTimer start
     // MCPWM cmprb / evt_cmpra (if support evt_cmpr) ---> ETM channel B ---> GPTimer stop
@@ -58,9 +58,9 @@ TEST_CASE("mcpwm_comparator_etm_event", "[etm]")
     };
     TEST_ESP_OK(mcpwm_new_generator(oper, &generator_config, &generator));
     TEST_ESP_OK(mcpwm_generator_set_action_on_compare_event(generator,
-                MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, comparator_a, MCPWM_GEN_ACTION_HIGH)));
+                                                            MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, comparator_a, MCPWM_GEN_ACTION_HIGH)));
     TEST_ESP_OK(mcpwm_generator_set_action_on_compare_event(generator,
-                MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, comparator_b, MCPWM_GEN_ACTION_LOW)));
+                                                            MCPWM_GEN_COMPARE_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, comparator_b, MCPWM_GEN_ACTION_LOW)));
 
     // allocate etm channels
     printf("allocate etm channels\r\n");

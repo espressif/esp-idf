@@ -173,7 +173,7 @@ esp_err_t mcpwm_select_periph_clock(mcpwm_group_t *group, soc_module_clk_t clk_s
 #endif // CONFIG_PM_ENABLE
 
         MCPWM_CLOCK_SRC_ATOMIC() {
-            mcpwm_ll_group_set_clock_source(group->hal.dev, clk_src);
+            mcpwm_ll_group_set_clock_source(group->group_id, clk_src);
         }
     }
     return ret;
@@ -232,7 +232,7 @@ esp_err_t mcpwm_set_prescale(mcpwm_group_t *group, uint32_t expect_module_resolu
         group->prescale = group_prescale;
         group->resolution_hz = group_resolution_hz;
         MCPWM_CLOCK_SRC_ATOMIC() {
-            mcpwm_ll_group_set_clock_prescale(group->hal.dev, group_prescale);
+            mcpwm_ll_group_set_clock_prescale(group_id, group_prescale);
         }
     } else {
         prescale_conflict = (group->prescale != group_prescale);
