@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2018-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -85,7 +85,7 @@ initializer that should be kept in sync
 #define ESP_ERR_HTTPD_INVALID_REQ       (ESP_ERR_HTTPD_BASE +  3)   /*!< Invalid request pointer */
 #define ESP_ERR_HTTPD_RESULT_TRUNC      (ESP_ERR_HTTPD_BASE +  4)   /*!< Result string truncated */
 #define ESP_ERR_HTTPD_RESP_HDR          (ESP_ERR_HTTPD_BASE +  5)   /*!< Response header field larger than supported */
-#define ESP_ERR_HTTPD_RESP_SEND         (ESP_ERR_HTTPD_BASE +  6)   /*!< Error occured while sending response packet */
+#define ESP_ERR_HTTPD_RESP_SEND         (ESP_ERR_HTTPD_BASE +  6)   /*!< Error occurred while sending response packet */
 #define ESP_ERR_HTTPD_ALLOC_MEM         (ESP_ERR_HTTPD_BASE +  7)   /*!< Failed to dynamically allocate memory for resource */
 #define ESP_ERR_HTTPD_TASK              (ESP_ERR_HTTPD_BASE +  8)   /*!< Failed to launch server task/thread */
 
@@ -608,6 +608,9 @@ typedef enum {
      */
     HTTPD_411_LENGTH_REQUIRED,
 
+    /* Incoming payload is too large */
+    HTTPD_413_CONTENT_TOO_LARGE,
+
     /* URI length greater than CONFIG_HTTPD_MAX_URI_LEN */
     HTTPD_414_URI_TOO_LONG,
 
@@ -1028,7 +1031,7 @@ esp_err_t httpd_query_key_value(const char *qry, const char *key, char *val, siz
  * @param[in]       cookie_name     The cookie name to be searched in the request
  * @param[out]      val             Pointer to the buffer into which the value of cookie will be copied if the cookie is found
  * @param[inout]    val_size        Pointer to size of the user buffer "val". This variable will contain cookie length if
- *                                  ESP_OK is returned and required buffer length incase ESP_ERR_HTTPD_RESULT_TRUNC is returned.
+ *                                  ESP_OK is returned and required buffer length in case ESP_ERR_HTTPD_RESULT_TRUNC is returned.
  *
  * @return
  *  - ESP_OK : Key is found in the cookie string and copied to buffer
@@ -1048,9 +1051,9 @@ esp_err_t httpd_req_get_cookie_val(httpd_req_t *req, const char *cookie_name, ch
  *
  * Example:
  *   - * matches everything
- *   - /foo/? matches /foo and /foo/
- *   - /foo/\* (sans the backslash) matches /foo/ and /foo/bar, but not /foo or /fo
- *   - /foo/?* or /foo/\*?  (sans the backslash) matches /foo/, /foo/bar, and also /foo, but not /foox or /fo
+ *   - /api/? matches /api and /api/
+ *   - /api/\* (sans the backslash) matches /api/ and /api/status, but not /api or /ap
+ *   - /api/?* or /api/\*?  (sans the backslash) matches /api/, /api/status, and also /api, but not /apix or /ap
  *
  * The special characters "?" and "*" anywhere else in the template will be taken literally.
  *
@@ -1400,7 +1403,7 @@ static inline esp_err_t httpd_resp_send_500(httpd_req_t *r) {
  * Call this API if you wish to construct your custom response packet.
  * When using this, all essential header, eg. HTTP version, Status Code,
  * Content Type and Length, Encoding, etc. will have to be constructed
- * manually, and HTTP delimeters (CRLF) will need to be placed correctly
+ * manually, and HTTP delimiters (CRLF) will need to be placed correctly
  * for separating sub-sections of the HTTP response packet.
  *
  * If the send override function is set, this API will end up
