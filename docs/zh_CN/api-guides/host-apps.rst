@@ -68,6 +68,60 @@ ESP-IDF 已支持使用 `FreeRTOS POSIX/Linux 模拟器 <https://www.freertos.or
   idf.py build
   idf.py monitor
 
+问题排查
+---------------
+
+应用程序是为主机编译的，因而可以用主机上的所有工具进行调试。例如，在 Linux 上可以使用 `GDB <https://man7.org/linux/man-pages/man1/gdb.1.html>`_ 和 `Valgrind <https://linux.die.net/man/1/valgrind>`_。在没有连接调试器的情况下，定制了分段错误和中止信号的处理程序，为用户打印出更多信息，并提高与 ESP-IDF 工具的兼容性。
+
+.. note::
+
+  以下功能绝不是应用程序在调试器中运行的替代方案。它们仅用于提供一些补充信息，例如，当在 CI/CD 系统中运行测试时，只收集应用程序日志。在大多数情况下，要追踪实际问题，请使用调试器复现问题。调试器会更加方便，例如，您无需将地址转换为行号。
+
+分段错误
+^^^^^^^^^^^^^^^
+
+在 Linux 上，应用程序遇到分段错误时，会打印错误信息和基本的回溯。这些信息可以用于查找源代码中发生问题的行号。以下是 Hello-World 应用程序中发生分段错误的示例：
+
+.. code-block::
+
+  ...
+  Hello world!
+  ERROR: Segmentation Fault, here's your backtrace:
+  path/to/esp-idf/examples/get-started/hello_world/build/hello_world.elf(+0x2d1b)[0x55d3f636ad1b]
+  /lib/x86_64-linux-gnu/libc.so.6(+0x3c050)[0x7f49f0e00050]
+  path/to/esp-idf/examples/get-started/hello_world/build/hello_world.elf(+0x6198)[0x55d3f636e198]
+  path/to/esp-idf/examples/get-started/hello_world/build/hello_world.elf(+0x5909)[0x55d3f636d909]
+  path/to/esp-idf/examples/get-started/hello_world/build/hello_world.elf(+0x2c93)[0x55d3f636ac93]
+  path/to/esp-idf/examples/get-started/hello_world/build/hello_world.elf(+0x484e)[0x55d3f636c84e]
+  /lib/x86_64-linux-gnu/libc.so.6(+0x89134)[0x7f49f0e4d134]
+  /lib/x86_64-linux-gnu/libc.so.6(+0x1097dc)[0x7f49f0ecd7dc]
+
+注意，这些地址 (``+0x...``) 是相对的二进制地址，仍然需要转换为源代码行号（见下文）。
+另外，回溯信息是由信号处理程序生成的，从回溯信息的第三行开始，才是问题发生的的堆栈帧，而最上面的两个堆栈帧不是导致错误的代码部分所以不重要。
+
+.. code-block::
+
+  path/to/esp-idf/examples/get-started/hello_world/build/hello_world.elf(+0x6198)[0x55d3f636e198]
+
+要检索源代码中的实际行，需要使用文件名和相对地址（如，此例中的 ``+0x6198``）来调用工具 ``addr2line``：
+
+.. code-block::
+
+  $ addr2line -e path/to/esp-idf/examples/get-started/hello_world/build/hello_world.elf +0x6198
+  path/to/esp-idf/components/esp_hw_support/port/linux/chip_info.c:13
+
+现在，请使用主机上可用的详细调试工具进一步追踪问题。
+有关 ``addr2line`` 及其调用方法的更多信息，请参见 `addr2line 手册页 <https://linux.die.net/man/1/addr2line>`_。
+
+异常中止
+^^^^^^^^^^^^
+
+一旦调用了 ``abort()``，将打印以下行：
+
+.. code-block::
+
+  ERROR: Aborted
+
 .. _component-linux-mock-support:
 
 组件 Linux/Mock 支持情况概述
