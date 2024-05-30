@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -24,7 +24,7 @@
 #include "soc/regi2c_dig_reg.h"
 #include "soc/regi2c_lp_bias.h"
 #include "hal/efuse_hal.h"
-#if CONFIG_ESP_SLEEP_SYSTIMER_STALL_WORKAROUND
+#if SOC_SLEEP_SYSTIMER_STALL_WORKAROUND
 #include "soc/systimer_reg.h"
 #endif
 
@@ -256,17 +256,6 @@ void rtc_sleep_set_wakeup_time(uint64_t t)
     WRITE_PERI_REG(RTC_CNTL_SLP_TIMER0_REG, t & UINT32_MAX);
     WRITE_PERI_REG(RTC_CNTL_SLP_TIMER1_REG, t >> 32);
 }
-
-#if CONFIG_ESP_SLEEP_SYSTIMER_STALL_WORKAROUND
-void rtc_sleep_systimer_enable(bool en)
-{
-    if (en) {
-        REG_SET_BIT(SYSTIMER_CONF_REG, SYSTIMER_TIMER_UNIT1_WORK_EN);
-    } else {
-        REG_CLR_BIT(SYSTIMER_CONF_REG, SYSTIMER_TIMER_UNIT1_WORK_EN);
-    }
-}
-#endif
 
 static uint32_t rtc_sleep_finish(uint32_t lslp_mem_inf_fpu);
 
