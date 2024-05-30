@@ -884,6 +884,7 @@ typedef struct {
     UINT16                  ediv;       /* received ediv value from LTK request */
     UINT8                   key_size;
     tBTM_BLE_VSC_CB         cmn_ble_vsc_cb;
+    BOOLEAN                 addr_res_en;   /* internal use for test: address resolution enable/disable */
 #endif
 
     /* Packet types supported by the local device */
