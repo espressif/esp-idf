@@ -186,7 +186,7 @@ esp_err_t jpeg_encoder_process(jpeg_encoder_handle_t encoder_engine, const jpeg_
     default:
         ESP_LOGE(TAG, "wrong, we don't support encode from such format.");
         ret = ESP_ERR_NOT_SUPPORTED;
-        goto err;
+        goto err2;
     }
     encoder_engine->header_info->sub_sample = encode_cfg->sub_sample;
     encoder_engine->header_info->quality = encode_cfg->image_quality;
@@ -202,7 +202,7 @@ esp_err_t jpeg_encoder_process(jpeg_encoder_handle_t encoder_engine, const jpeg_
     jpeg_ll_add_tail(hal->dev, true);
     jpeg_ll_enable_ff_check(hal->dev, true);
     jpeg_ll_set_qnr_presition(hal->dev, 0);
-    ESP_GOTO_ON_ERROR(s_jpeg_set_header_info(encoder_engine), err, TAG, "set header failed");
+    ESP_GOTO_ON_ERROR(s_jpeg_set_header_info(encoder_engine), err2, TAG, "set header failed");
     jpeg_hal_set_quantization_coefficient(hal, encoder_engine->header_info->m_quantization_tables[0], encoder_engine->header_info->m_quantization_tables[1]);
 
     uint8_t sample_method_idx = 0;
@@ -227,7 +227,7 @@ esp_err_t jpeg_encoder_process(jpeg_encoder_handle_t encoder_engine, const jpeg_
     uint32_t dma_hb = enc_hb_tbl[best_hb_idx][sample_method_idx];
     uint32_t dma_vb = encoder_engine->mcuy;
 
-    ESP_GOTO_ON_FALSE((encoder_engine->header_info->header_len % cache_hal_get_cache_line_size(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_DATA)) == 0, ESP_ERR_INVALID_STATE, err, TAG, "The header is not cache line aligned, please check");
+    ESP_GOTO_ON_FALSE((encoder_engine->header_info->header_len % cache_hal_get_cache_line_size(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_DATA)) == 0, ESP_ERR_INVALID_STATE, err2, TAG, "The header is not cache line aligned, please check");
 
     // 1D direction
     memset(encoder_engine->rxlink, 0, sizeof(dma2d_descriptor_t));
@@ -248,24 +248,24 @@ esp_err_t jpeg_encoder_process(jpeg_encoder_handle_t encoder_engine, const jpeg_
         .on_job_picked = s_jpeg_enc_transaction_on_job_picked,
     };
 
-    ESP_GOTO_ON_ERROR(dma2d_enqueue(encoder_engine->dma2d_group_handle, &trans_desc, encoder_engine->trans_desc), err, TAG, "DMA2D enqueue failed");
+    ESP_GOTO_ON_ERROR(dma2d_enqueue(encoder_engine->dma2d_group_handle, &trans_desc, encoder_engine->trans_desc), err2, TAG, "DMA2D enqueue failed");
     bool need_yield;
     while (1) {
         jpeg_enc_dma2d_evt_t s_rcv_event;
         BaseType_t ret_val = xQueueReceive(encoder_engine->evt_queue, &s_rcv_event, encoder_engine->timeout_tick);
-        ESP_GOTO_ON_FALSE(ret_val == pdTRUE, ESP_ERR_TIMEOUT, err, TAG, "jpeg-dma2d handle jpeg decode timeout, please check image accuracy and `timeout_ms`");
+        ESP_GOTO_ON_FALSE(ret_val == pdTRUE, ESP_ERR_TIMEOUT, err1, TAG, "jpeg-dma2d handle jpeg decode timeout, please check image accuracy and `timeout_ms`");
 
         if (s_rcv_event.encoder_status != 0) {
             s_encoder_error_log_print(s_rcv_event.encoder_status);
             ret = ESP_ERR_INVALID_STATE;
-            goto err;
+            goto err1;
         }
 
         if (s_rcv_event.dma_evt & JPEG_DMA2D_RX_EOF) {
-            ESP_GOTO_ON_ERROR(esp_cache_msync((void*)encoder_engine->rxlink, encoder_engine->dma_desc_size, ESP_CACHE_MSYNC_FLAG_DIR_M2C), err, TAG, "sync memory to cache failed");
+            ESP_GOTO_ON_ERROR(esp_cache_msync((void*)encoder_engine->rxlink, encoder_engine->dma_desc_size, ESP_CACHE_MSYNC_FLAG_DIR_M2C), err1, TAG, "sync memory to cache failed");
             compressed_size = s_dma_desc_get_len(encoder_engine->rxlink);
             uint32_t _compressed_size = JPEG_ALIGN_UP(compressed_size, cache_hal_get_cache_line_size(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_DATA));
-            ESP_GOTO_ON_ERROR(esp_cache_msync((void*)(bit_stream + encoder_engine->header_info->header_len), _compressed_size, ESP_CACHE_MSYNC_FLAG_DIR_M2C), err, TAG, "sync memory to cache failed");
+            ESP_GOTO_ON_ERROR(esp_cache_msync((void*)(bit_stream + encoder_engine->header_info->header_len), _compressed_size, ESP_CACHE_MSYNC_FLAG_DIR_M2C), err1, TAG, "sync memory to cache failed");
             break;
         }
     }
@@ -279,8 +279,9 @@ esp_err_t jpeg_encoder_process(jpeg_encoder_handle_t encoder_engine, const jpeg_
     }
     return ESP_OK;
 
-err:
+err1:
     dma2d_force_end(encoder_engine->trans_desc, &need_yield);
+err2:
     xSemaphoreGive(encoder_engine->codec_base->codec_mutex);
     if (encoder_engine->codec_base->pm_lock) {
         esp_pm_lock_release(encoder_engine->codec_base->pm_lock);
