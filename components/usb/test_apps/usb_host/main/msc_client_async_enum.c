@@ -146,19 +146,26 @@ void msc_client_async_enum_task(void *arg)
             break;
         }
         case TEST_STAGE_CHECK_STR_DESC: {
+            // Get dev info and compare
             usb_device_info_t dev_info;
             TEST_ASSERT_EQUAL(ESP_OK, usb_host_device_info(msc_obj.dev_hdl, &dev_info));
+#if CONFIG_USB_HOST_TEST_CHECK_MANU_STR
             // Check manufacturer string descriptors
             const usb_str_desc_t *manu_str_desc_ref = dev_msc_get_str_desc_manu();
-            const usb_str_desc_t *product_str_desc_ref = dev_msc_get_str_desc_prod();
-            const usb_str_desc_t *ser_num_str_desc_ref = dev_msc_get_str_desc_ser();
             TEST_ASSERT_EQUAL(manu_str_desc_ref->bLength, dev_info.str_desc_manufacturer->bLength);
-            TEST_ASSERT_EQUAL(product_str_desc_ref->bLength, dev_info.str_desc_product->bLength);
-            TEST_ASSERT_EQUAL(ser_num_str_desc_ref->bLength, dev_info.str_desc_serial_num->bLength);
             TEST_ASSERT_EQUAL_MEMORY_MESSAGE(manu_str_desc_ref, dev_info.str_desc_manufacturer, manu_str_desc_ref->bLength, "Manufacturer string descriptors do not match.");
+#endif  // CONFIG_USB_HOST_TEST_CHECK_MANU_STR
+#if CONFIG_USB_HOST_TEST_CHECK_PROD_STR
+            const usb_str_desc_t *product_str_desc_ref = dev_msc_get_str_desc_prod();
+            TEST_ASSERT_EQUAL(product_str_desc_ref->bLength, dev_info.str_desc_product->bLength);
             TEST_ASSERT_EQUAL_MEMORY_MESSAGE(product_str_desc_ref, dev_info.str_desc_product, manu_str_desc_ref->bLength, "Product string descriptors do not match.");
+#endif // CONFIG_USB_HOST_TEST_CHECK_PROD_STR
+#if CONFIG_USB_HOST_TEST_CHECK_SERIAL_STR
+            const usb_str_desc_t *ser_num_str_desc_ref = dev_msc_get_str_desc_ser();
+            TEST_ASSERT_EQUAL(ser_num_str_desc_ref->bLength, dev_info.str_desc_serial_num->bLength);
             TEST_ASSERT_EQUAL_MEMORY_MESSAGE(ser_num_str_desc_ref, dev_info.str_desc_serial_num, manu_str_desc_ref->bLength, "Serial number string descriptors do not match.");
-            // Get dev info and compare
+#endif // CONFIG_USB_HOST_TEST_CHECK_SERIAL_STR
+            (void) dev_info;    // Unused if all string descriptor checks are disabled
             msc_obj.next_stage = TEST_STAGE_DEV_CLOSE;
             skip_event_handling = true; // Need to execute TEST_STAGE_DEV_CLOSE
             break;
