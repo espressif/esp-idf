@@ -47,31 +47,25 @@ static void select_rtc_slow_clk(soc_rtc_slow_clk_src_t rtc_slow_clk_src);
 static const char *TAG = "clk";
 
 // TODO: [ESP32C5] IDF-8642
-__attribute__((weak)) void esp_clk_init(void)
+void esp_rtc_init(void)
 {
 #if CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
 #if SOC_PMU_SUPPORTED
     pmu_init();
 #endif
+#endif
+}
 
+// TODO: [ESP32C5] IDF-8642
+__attribute__((weak)) void esp_clk_init(void)
+{
+#if CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
     assert((rtc_clk_xtal_freq_get() == SOC_XTAL_FREQ_40M) || (rtc_clk_xtal_freq_get() == SOC_XTAL_FREQ_48M));
 #if SOC_MODEM_CLOCK_SUPPORTED
     modem_lpcon_ll_set_pwr_tick_target(&MODEM_LPCON, rtc_clk_xtal_freq_get() - 1);
 #endif
     rtc_clk_8m_enable(true);
     rtc_clk_fast_src_set(SOC_RTC_FAST_CLK_SRC_RC_FAST);
-#elif CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
-#if !CONFIG_IDF_ENV_FPGA
-    pmu_init();
-    if (esp_rom_get_reset_reason(0) == RESET_REASON_CHIP_POWER_ON) {
-        esp_ocode_calib_init();
-    }
-
-    assert(rtc_clk_xtal_freq_get() == RTC_XTAL_FREQ_40M);
-
-    rtc_clk_8m_enable(true);
-    rtc_clk_fast_src_set(SOC_RTC_FAST_CLK_SRC_RC_FAST);
-#endif
 #endif
 
 #ifdef CONFIG_BOOTLOADER_WDT_ENABLE
