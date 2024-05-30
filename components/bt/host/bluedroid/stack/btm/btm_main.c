@@ -84,6 +84,7 @@ void btm_init (void)
 #if BLE_INCLUDED == TRUE
     btm_ble_lock_init();
     btm_ble_sem_init();
+    btm_cb.addr_res_en = TRUE;
 #endif
     btm_sec_dev_init();
 #if (BLE_50_FEATURE_SUPPORT == TRUE)
@@ -132,4 +133,11 @@ uint8_t btm_acl_active_count(void)
     }
 
     return count;
+}
+
+void btm_ble_addr_resolve_enable(bool enable)
+{
+#if (BLE_INCLUDED == TRUE)
+    btm_cb.addr_res_en = enable;
+#endif
 }
