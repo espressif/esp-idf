@@ -51,11 +51,18 @@ typedef enum {
 } slow_clk_sel_t;
 
 static void select_rtc_slow_clk(slow_clk_sel_t slow_clk);
+static __attribute__((unused)) void recalib_bbpll(void);
 
 static const char *TAG = "clk";
 
-__attribute__((weak)) void esp_clk_init(void)
+void esp_rtc_init(void)
 {
+#if CONFIG_ESP_SYSTEM_BBPLL_RECALIB
+    // In earlier version of ESP-IDF, the PLL provided by bootloader is not stable enough.
+    // Do calibration again here so that we can use better clock for the timing tuning.
+    recalib_bbpll();
+#endif
+
 #if !CONFIG_IDF_ENV_FPGA
     rtc_config_t cfg = RTC_CONFIG_DEFAULT();
     soc_reset_reason_t rst_reas;
@@ -64,7 +71,12 @@ __attribute__((weak)) void esp_clk_init(void)
         cfg.cali_ocode = 1;
     }
     rtc_init(cfg);
+#endif
+}
 
+__attribute__((weak)) void esp_clk_init(void)
+{
+#if !CONFIG_IDF_ENV_FPGA
 #ifndef CONFIG_XTAL_FREQ_AUTO
     assert(rtc_clk_xtal_freq_get() == CONFIG_XTAL_FREQ);
 #endif
@@ -264,4 +276,22 @@ __attribute__((weak)) void esp_perip_clk_init(void)
 
     /* Enable RNG clock. */
     periph_module_enable(PERIPH_RNG_MODULE);
+}
+
+// Workaround for bootloader not calibrated well issue.
+// Placed in IRAM because disabling BBPLL may influence the cache
+static void IRAM_ATTR NOINLINE_ATTR recalib_bbpll(void)
+{
+    rtc_cpu_freq_config_t old_config;
+    rtc_clk_cpu_freq_get_config(&old_config);
+
+    // There are two paths we arrive here: 1. CPU reset. 2. Other reset reasons.
+    // - For other reasons, the bootloader will set CPU source to BBPLL and enable it. But there are calibration issues.
+    //   Turn off the BBPLL and do calibration again to fix the issue.
+    // - For CPU reset, the CPU source will be set to XTAL, while the BBPLL is kept to meet USB Serial JTAG's
+    //   requirements. In this case, we don't touch BBPLL to avoid USJ disconnection.
+    if (old_config.source == SOC_CPU_CLK_SRC_PLL) {
+        rtc_clk_cpu_freq_set_xtal();
+        rtc_clk_cpu_freq_set_config(&old_config);
+    }
 }
