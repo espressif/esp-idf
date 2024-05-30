@@ -106,11 +106,14 @@ static void select_rtc_slow_clk(slow_clk_sel_t slow_clk)
     esp_clk_slowclk_cal_set(cal_val);
 }
 
- __attribute__((weak)) void esp_clk_init(void)
+void esp_rtc_init(void)
 {
     rtc_config_t cfg = RTC_CONFIG_DEFAULT();
     rtc_init(cfg);
+}
 
+__attribute__((weak)) void esp_clk_init(void)
+{
 #if (CONFIG_APP_COMPATIBLE_PRE_V2_1_BOOTLOADERS || CONFIG_APP_INIT_CLK)
     /* Check the bootloader set the XTAL frequency.
 

@@ -187,7 +187,7 @@ static void rtc_clk_bbpll_configure(rtc_xtal_freq_t xtal_freq, int pll_freq)
 static void rtc_clk_cpu_freq_to_pll_mhz(int cpu_freq_mhz)
 {
 
-    /* There are totally 6 LDO slaves(all on by default). At the moment of swithing LDO slave, LDO voltage will also change instantaneously.
+    /* There are totally 6 LDO slaves(all on by default). At the moment of switching LDO slave, LDO voltage will also change instantaneously.
      * LDO slave can reduce the voltage change caused by switching frequency.
      * CPU frequency <= 40M : just open 3 LDO slaves; CPU frequency = 80M : open 4 LDO slaves; CPU frequency = 160M : open 5 LDO slaves; CPU frequency = 240M : open 6 LDO slaves;
      *
@@ -459,25 +459,6 @@ bool rtc_dig_8m_enabled(void)
 {
     return clk_ll_rc_fast_digi_is_enabled();
 }
-
-// Workaround for bootloader not calibrated well issue.
-// Placed in IRAM because disabling BBPLL may influence the cache
-void rtc_clk_recalib_bbpll(void)
-{
-    rtc_cpu_freq_config_t old_config;
-    rtc_clk_cpu_freq_get_config(&old_config);
-
-    // There are two paths we arrive here: 1. CPU reset. 2. Other reset reasons.
-    // - For other reasons, the bootloader will set CPU source to BBPLL and enable it. But there are calibration issues.
-    //   Turn off the BBPLL and do calibration again to fix the issue.
-    // - For CPU reset, the CPU source will be set to XTAL, while the BBPLL is kept to meet USB Serial JTAG's
-    //   requirements. In this case, we don't touch BBPLL to avoid USJ disconnection.
-    if (old_config.source == SOC_CPU_CLK_SRC_PLL) {
-        rtc_clk_cpu_freq_set_xtal();
-        rtc_clk_cpu_freq_set_config(&old_config);
-    }
-}
-
 
 /* Name used in libphy.a:phy_chip_v7.o
  * TODO: update the library to use rtc_clk_xtal_freq_get

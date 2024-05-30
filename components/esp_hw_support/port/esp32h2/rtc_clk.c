@@ -239,7 +239,7 @@ static void rtc_clk_cpu_freq_to_pll_mhz(int cpu_freq_mhz)
 /**
  * Switch to FLASH_PLL as cpu clock source.
  * On ESP32H2, FLASH_PLL frequency is 64MHz.
- * PLL must alreay be enabled.
+ * PLL must already be enabled.
  */
 static void rtc_clk_cpu_freq_to_flash_pll(uint32_t cpu_freq_mhz, uint32_t cpu_divider)
 {
@@ -474,22 +474,4 @@ void rtc_dig_clk8m_disable(void)
 bool rtc_dig_8m_enabled(void)
 {
     return clk_ll_rc_fast_digi_is_enabled();
-}
-
-// Workaround for bootloader not calibrated well issue.
-// Placed in IRAM because disabling BBPLL may influence the cache
-void rtc_clk_recalib_bbpll(void)
-{
-    rtc_cpu_freq_config_t old_config;
-    rtc_clk_cpu_freq_get_config(&old_config);
-
-    // There are two paths we arrive here: 1. CPU reset. 2. Other reset reasons.
-    // - For other reasons, the bootloader will set CPU source to BBPLL and enable it. But there are calibration issues.
-    //   Turn off the BBPLL and do calibration again to fix the issue. Flash_PLL comes from the same source as PLL.
-    // - For CPU reset, the CPU source will be set to XTAL, while the BBPLL is kept to meet USB Serial JTAG's
-    //   requirements. In this case, we don't touch BBPLL to avoid USJ disconnection.
-    if (old_config.source == SOC_CPU_CLK_SRC_PLL || old_config.source == SOC_CPU_CLK_SRC_FLASH_PLL) {
-        rtc_clk_cpu_freq_set_xtal();
-        rtc_clk_cpu_freq_set_config(&old_config);
-    }
 }

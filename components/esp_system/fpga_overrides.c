@@ -67,12 +67,16 @@ void IRAM_ATTR bootloader_fill_random(void *buffer, size_t length)
     }
 }
 
-void esp_clk_init(void)
+void esp_rtc_init(void)
 {
-    s_warn();
 #if SOC_PMU_SUPPORTED
     pmu_init();
 #endif
+}
+
+void esp_clk_init(void)
+{
+    s_warn();
 }
 
 void esp_perip_clk_init(void)

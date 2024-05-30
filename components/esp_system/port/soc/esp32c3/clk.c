@@ -56,7 +56,7 @@ static void select_rtc_slow_clk(slow_clk_sel_t slow_clk);
 static const char *TAG = "clk";
 
 
- __attribute__((weak)) void esp_clk_init(void)
+void esp_rtc_init(void)
 {
 #if !CONFIG_IDF_ENV_FPGA
     rtc_config_t cfg = RTC_CONFIG_DEFAULT();
@@ -70,7 +70,10 @@ static const char *TAG = "clk";
         cfg.cali_ocode = 1;
     }
     rtc_init(cfg);
+}
 
+__attribute__((weak)) void esp_clk_init(void)
+{
     assert(rtc_clk_xtal_freq_get() == RTC_XTAL_FREQ_40M);
 
     bool rc_fast_d256_is_enabled = rtc_clk_8md256_enabled();
