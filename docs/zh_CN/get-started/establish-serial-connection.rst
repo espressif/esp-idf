@@ -348,7 +348,6 @@ macOS 提供了 **屏幕** 命令，因此无需安装串口终端程序。
 输出示例
 ^^^^^^^^^^^
 
-
 {IDF_TARGET_STRAP_GPIO:default="[NEEDS TO BE UPDATED]", esp32="GPIO0", esp32s2="GPIO0", esp32s3="GPIO0", esp32c2="GPIO9", esp32c3="GPIO9", esp32c6="GPIO9", esp32h2="GPIO9", esp32p4="GPIO35"}
 
 以下是一个日志示例。如果没看到任何输出，请尝试重置开发板。
