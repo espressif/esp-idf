@@ -60,6 +60,10 @@ void IRAM_ATTR bootloader_fill_random(void *buffer, size_t length)
     }
 }
 
+void esp_rtc_init(void)
+{
+}
+
 void esp_clk_init(void)
 {
     s_warn();
