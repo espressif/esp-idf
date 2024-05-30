@@ -13,6 +13,7 @@
 
 #include "crypto.h"
 #include "adv.h"
+#include "net.h"
 #include "scan.h"
 #include "mesh.h"
 #include "lpn.h"
@@ -1123,6 +1124,15 @@ int bt_mesh_net_send(struct bt_mesh_net_tx *tx, struct net_buf *buf,
         tx->ctx->send_cred != BLE_MESH_FRIENDSHIP_CRED) {
         if (bt_mesh_proxy_server_relay(&buf->b, tx->ctx->addr) &&
             BLE_MESH_ADDR_IS_UNICAST(tx->ctx->addr)) {
+            /**
+             * When a message is sent to a proxy client, the message
+             * can be sent via GATT only, eliminating the need for
+             * an ADV bearer.
+             */
+            if (bt_mesh_proxy_server_find_client_by_addr(tx->ctx->addr)) {
+                bearer &= ~BLE_MESH_ADV_BEARER;
+            }
+
             /* Notify completion if this only went
              * through the Mesh Proxy.
              */
@@ -1892,24 +1902,26 @@ static bool ignore_net_msg(uint16_t src, uint16_t dst)
     return false;
 }
 
-void bt_mesh_net_recv(struct net_buf_simple *data, int8_t rssi,
-                      enum bt_mesh_net_if net_if)
+void bt_mesh_generic_net_recv(struct net_buf_simple *data,
+                              struct bt_mesh_net_rx *rx,
+                              enum bt_mesh_net_if net_if)
 {
     NET_BUF_SIMPLE_DEFINE(buf, 29);
-    struct bt_mesh_net_rx rx = { .ctx.recv_rssi = rssi };
     struct net_buf_simple_state state = {0};
 
-    BT_DBG("rssi %d net_if %u", rssi, net_if);
+    assert(rx);
+
+    BT_DBG("rssi %d net_if %u", rx->ctx.recv_rssi, net_if);
 
     if (!ready_to_recv()) {
         return;
     }
 
-    if (bt_mesh_net_decode(data, net_if, &rx, &buf)) {
+    if (bt_mesh_net_decode(data, net_if, rx, &buf)) {
         return;
     }
 
-    if (ignore_net_msg(rx.ctx.addr, rx.ctx.recv_dst)) {
+    if (ignore_net_msg(rx->ctx.addr, rx->ctx.recv_dst)) {
         return;
     }
 
@@ -1919,26 +1931,26 @@ void bt_mesh_net_recv(struct net_buf_simple *data, int8_t rssi,
     BT_BQB(BLE_MESH_BQB_TEST_LOG_LEVEL_PRIMARY_ID_NODE | \
            BLE_MESH_BQB_TEST_LOG_LEVEL_SUB_ID_NET,
            "\nNetRecv: ctl: %d, src: %d, dst: %d, ttl: %d, data: 0x%s",
-           rx.ctl, rx.ctx.addr, rx.ctx.recv_dst, rx.ctx.recv_ttl,
+           rx->ctl, rx->ctx.addr, rx->ctx.recv_dst, rx->ctx.recv_ttl,
            bt_hex(buf.data + BLE_MESH_NET_HDR_LEN, buf.len - BLE_MESH_NET_HDR_LEN));
 
     /* If trying to handle a message with DST set to all-directed-forwarding-nodes,
      * we need to make sure the directed forwarding functionality is enabled in the
      * corresponding subnet.
      */
-    rx.local_match = (bt_mesh_fixed_group_match(rx.ctx.recv_dst) ||
-                      bt_mesh_fixed_direct_match(rx.sub, rx.ctx.recv_dst) ||
-                      bt_mesh_elem_find(rx.ctx.recv_dst));
+    rx->local_match = (bt_mesh_fixed_group_match(rx->ctx.recv_dst) ||
+                      bt_mesh_fixed_direct_match(rx->sub, rx->ctx.recv_dst) ||
+                      bt_mesh_elem_find(rx->ctx.recv_dst));
 
     if (IS_ENABLED(CONFIG_BLE_MESH_GATT_PROXY_SERVER) &&
 #if CONFIG_BLE_MESH_PRB_SRV
         bt_mesh_private_gatt_proxy_state_get() != BLE_MESH_PRIVATE_GATT_PROXY_ENABLED &&
 #endif
         net_if == BLE_MESH_NET_IF_PROXY) {
-        bt_mesh_proxy_server_addr_add(data, rx.ctx.addr);
+        bt_mesh_proxy_server_addr_add(data, rx->ctx.addr);
 
         if (bt_mesh_gatt_proxy_get() == BLE_MESH_GATT_PROXY_DISABLED &&
-            !rx.local_match) {
+            !rx->local_match) {
             BT_INFO("Proxy is disabled; ignoring message");
             return;
         }
@@ -1951,11 +1963,11 @@ void bt_mesh_net_recv(struct net_buf_simple *data, int8_t rssi,
          * tag the Network PDU with the immutable-credentials tag.
          */
 #if CONFIG_BLE_MESH_DF_SRV
-        if (rx.sub->directed_proxy == BLE_MESH_DIRECTED_PROXY_ENABLED &&
-            rx.sub->use_directed == BLE_MESH_PROXY_USE_DIRECTED_ENABLED &&
-            !bt_mesh_addr_in_uar(&rx.sub->proxy_client_uar, rx.ctx.addr) &&
-            !bt_mesh_proxy_server_find_client_by_addr(rx.ctx.addr)) {
-            rx.ctx.recv_tag |= BLE_MESH_TAG_IMMUTABLE_CRED;
+        if (rx->sub->directed_proxy == BLE_MESH_DIRECTED_PROXY_ENABLED &&
+            rx->sub->use_directed == BLE_MESH_PROXY_USE_DIRECTED_ENABLED &&
+            !bt_mesh_addr_in_uar(&rx->sub->proxy_client_uar, rx->ctx.addr) &&
+            !bt_mesh_proxy_server_find_client_by_addr(rx->ctx.addr)) {
+            rx->ctx.recv_tag |= BLE_MESH_TAG_IMMUTABLE_CRED;
         }
 #endif /* CONFIG_BLE_MESH_DF_SRV */
     }
@@ -1967,24 +1979,24 @@ void bt_mesh_net_recv(struct net_buf_simple *data, int8_t rssi,
     * credentials. Remove it from the message cache so that we accept
     * it again in the future.
     */
-    if (bt_mesh_trans_recv(&buf, &rx) == -EAGAIN) {
+    if (bt_mesh_trans_recv(&buf, rx) == -EAGAIN) {
         BT_WARN("Removing rejected message from Network Message Cache");
-        msg_cache[rx.msg_cache_idx].src = BLE_MESH_ADDR_UNASSIGNED;
+        msg_cache[rx->msg_cache_idx].src = BLE_MESH_ADDR_UNASSIGNED;
         /* Rewind the next index now that we're not using this entry */
-        msg_cache_next = rx.msg_cache_idx;
+        msg_cache_next = rx->msg_cache_idx;
     }
 
     /* Relay if this was a group/virtual address, or if the destination
      * was neither a local element nor an LPN we're Friends for.
      */
-    if (!BLE_MESH_ADDR_IS_UNICAST(rx.ctx.recv_dst) ||
-        (!rx.local_match && !rx.friend_match
+    if (!BLE_MESH_ADDR_IS_UNICAST(rx->ctx.recv_dst) ||
+        (!rx->local_match && !rx->friend_match
 #if CONFIG_BLE_MESH_NOT_RELAY_REPLAY_MSG
-        && !rx.replay_msg
+        && !rx->replay_msg
 #endif
         )) {
         net_buf_simple_restore(&buf, &state);
-        bt_mesh_net_relay(&buf, &rx);
+        bt_mesh_net_relay(&buf, rx);
     }
 }
 

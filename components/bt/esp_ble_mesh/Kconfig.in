@@ -21,13 +21,25 @@ if BLE_MESH
             for mesh packets. And this could help avoid collision of
             advertising packets.
 
+    menuconfig BLE_MESH_USE_BLE_50
+        bool "Support using BLE 5.0 APIs for BLE Mesh"
+        depends on BLE_MESH_EXPERIMENTAL
+        depends on IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3
+        select BT_NIMBLE_50_FEATURE_SUPPORT if BT_NIMBLE_ENABLED
+        select BT_NIMBLE_EXT_ADV if BT_NIMBLE_ENABLED
+        select BT_BLE_50_FEATURES_SUPPORTED if BT_BLUEDROID_ENABLED
+        select BT_LE_50_FEATURE_SUPPORT if IDF_TARGET_ESP32C6 || IDF_TARGET_ESP32H2
+        default n
+        help
+            This option to enable BLE Mesh using some BLE 5.0 APIs.
+
     config BLE_MESH_USE_DUPLICATE_SCAN
         bool "Support Duplicate Scan in BLE Mesh"
         select BTDM_BLE_SCAN_DUPL if IDF_TARGET_ESP32
         select BTDM_BLE_MESH_SCAN_DUPL_EN if IDF_TARGET_ESP32
         select BT_CTRL_BLE_SCAN_DUPL if IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3
         select BT_CTRL_BLE_MESH_SCAN_DUPL_EN if IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3
-        select BT_LE_SCAN_DUPL if IDF_TARGET_ESP32C6 || IDF_TARGET_ESP32H2
+        select BT_LE_SCAN_DUPL if IDF_TARGET_ESP32C6 || IDF_TARGET_ESP32H2 || IDF_TARGET_ESP32C61 || IDF_TARGET_ESP32C5
         select BT_NIMBLE_VS_SUPPORT if BT_NIMBLE_ENABLED
         default y
         help
@@ -1646,5 +1658,6 @@ if BLE_MESH
             Make BLE Mesh Experimental features visible.
             Experimental features list:
             - CONFIG_BLE_MESH_NOT_RELAY_REPLAY_MSG
+            - CONFIG_BLE_MESH_USE_BLE_50
 
 endif # BLE_MESH

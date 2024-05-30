@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,8 +13,7 @@
 #include "mesh/adapter.h"
 #include "esp_ble_mesh_ble_api.h"
 
-#if CONFIG_BLE_MESH_BLE_COEX_SUPPORT
-
+#if (CONFIG_BLE_MESH_BLE_COEX_SUPPORT || CONFIG_BLE_MESH_USE_BLE_50)
 static void btc_ble_mesh_ble_copy_req_data(btc_msg_t *msg, void *p_dst, void *p_src)
 {
 #if CONFIG_BLE_MESH_SUPPORT_BLE_SCAN
@@ -29,6 +28,7 @@ static void btc_ble_mesh_ble_copy_req_data(btc_msg_t *msg, void *p_dst, void *p_
     switch (msg->act) {
     case ESP_BLE_MESH_SCAN_BLE_ADVERTISING_PKT_EVT:
         if (p_src_data->scan_ble_adv_pkt.data && p_src_data->scan_ble_adv_pkt.length) {
+            memcpy(&p_dst_data->scan_ble_adv_pkt, &p_src_data->scan_ble_adv_pkt, sizeof(p_src_data->scan_ble_adv_pkt));
             p_dst_data->scan_ble_adv_pkt.length = p_src_data->scan_ble_adv_pkt.length;
             p_dst_data->scan_ble_adv_pkt.data = bt_mesh_calloc(p_src_data->scan_ble_adv_pkt.length);
             if (p_dst_data->scan_ble_adv_pkt.data) {
@@ -86,26 +86,34 @@ static void btc_ble_mesh_ble_callback(esp_ble_mesh_ble_cb_param_t *cb_params, ui
                          btc_ble_mesh_ble_copy_req_data, btc_ble_mesh_ble_free_req_data);
 }
 
-#if CONFIG_BLE_MESH_SUPPORT_BLE_SCAN
-void bt_mesh_ble_scan_cb_evt_to_btc(const bt_mesh_addr_t *addr,
-                                    uint8_t adv_type, uint8_t data[],
-                                    uint16_t length, int8_t rssi)
+#if CONFIG_BT_NIMBLE_ENABLED && CONFIG_BLE_MESH_USE_BLE_50
+void bt_mesh_ble_nimble_evt_to_btc(struct ble_gap_event *event, void *arg)
 {
     esp_ble_mesh_ble_cb_param_t param = {0};
 
-    if (addr == NULL) {
+    if (event == NULL) {
         BT_ERR("%s, Invalid parameter", __func__);
         return;
     }
 
-    memcpy(param.scan_ble_adv_pkt.addr, addr->val, sizeof(addr->val));
-    param.scan_ble_adv_pkt.addr_type = addr->type;
-    if (data && length) {
-        param.scan_ble_adv_pkt.data = data;
-        param.scan_ble_adv_pkt.length = length;
+    memcpy(&param.nimble_gap_evt.event, event, sizeof(struct ble_gap_event));
+    param.nimble_gap_evt.arg = arg;
+
+    btc_ble_mesh_ble_callback(&param, ESP_BLE_MESH_NIMBLE_GAP_EVENT_EVT);
+}
+#endif /* CONFIG_BT_NIMBLE_ENABLED && CONFIG_BLE_MESH_USE_BLE_50 */
+
+#if CONFIG_BLE_MESH_SUPPORT_BLE_SCAN
+void bt_mesh_ble_scan_cb_evt_to_btc(bt_mesh_ble_adv_report_t *adv_report)
+{
+    esp_ble_mesh_ble_cb_param_t param = {0};
+
+    if (adv_report == NULL) {
+        BT_ERR("%s, Invalid parameter", __func__);
+        return;
     }
-    param.scan_ble_adv_pkt.adv_type = adv_type;
-    param.scan_ble_adv_pkt.rssi = rssi;
+
+    memcpy(&param.scan_ble_adv_pkt, adv_report, sizeof(bt_mesh_ble_adv_report_t));
 
     btc_ble_mesh_ble_callback(&param, ESP_BLE_MESH_SCAN_BLE_ADVERTISING_PKT_EVT);
 }
@@ -157,6 +165,14 @@ void btc_ble_mesh_ble_call_handler(btc_msg_t *msg)
         btc_ble_mesh_ble_callback(&param, ESP_BLE_MESH_STOP_BLE_SCANNING_COMP_EVT);
         break;
 #endif /* CONFIG_BLE_MESH_SUPPORT_BLE_SCAN */
+    case BTC_BLE_MESH_ACT_UPDATE_SCAN_PARAMS:
+        struct bt_mesh_scan_param scan_param = {
+            .interval = arg->scan_params.scan_interval,
+            .window = arg->scan_params.uncoded_scan_window,
+        };
+        param.scan_params_update_comp.err_code = bt_mesh_scan_param_update(&scan_param);
+        btc_ble_mesh_ble_callback(&param, ESP_BLE_MESH_SCAN_PARAMS_UPDATE_COMP_EVT);
+        break;
     default:
         return;
     }
@@ -191,5 +207,4 @@ void btc_ble_mesh_ble_cb_handler(btc_msg_t *msg)
 
     btc_ble_mesh_ble_free_req_data(msg);
 }
-
-#endif /* CONFIG_BLE_MESH_BLE_COEX_SUPPORT */
+#endif /* (CONFIG_BLE_MESH_BLE_COEX_SUPPORT || CONFIG_BLE_MESH_USE_BLE_50) */

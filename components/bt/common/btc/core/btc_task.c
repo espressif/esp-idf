@@ -254,9 +254,9 @@ static const btc_func_t profile_tab[BTC_PID_NUM] = {
 #if CONFIG_BLE_MESH_MBT_SRV
     [BTC_PID_MBT_SERVER]        = {btc_ble_mesh_mbt_server_call_handler,        btc_ble_mesh_mbt_server_cb_handler       },
 #endif /* CONFIG_BLE_MESH_MBT_SRV */
-#if CONFIG_BLE_MESH_BLE_COEX_SUPPORT
+#if CONFIG_BLE_MESH_BLE_COEX_SUPPORT || CONFIG_BLE_MESH_USE_BLE_50
     [BTC_PID_BLE_MESH_BLE_COEX] = {btc_ble_mesh_ble_call_handler,               btc_ble_mesh_ble_cb_handler              },
-#endif /* CONFIG_BLE_MESH_BLE_COEX_SUPPORT */
+#endif /* CONFIG_BLE_MESH_BLE_COEX_SUPPORT || CONFIG_BLE_MESH_USE_BLE_50 */
 #endif /* #if CONFIG_BLE_MESH */
 };
 
