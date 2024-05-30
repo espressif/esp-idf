@@ -216,6 +216,8 @@ ESP32C2_DOCS = ['api-guides/RF_calibration.rst',
 
 ESP32C5_DOCS = ['']
 
+ESP32C61_DOCS = ['']
+
 ESP32C6_DOCS = ['api-guides/RF_calibration.rst',
                 'api-reference/peripherals/sd_pullup_requirements.rst',
                 'api-guides/phy.rst']
