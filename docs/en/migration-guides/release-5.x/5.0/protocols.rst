@@ -205,7 +205,7 @@ The ``main`` component folder of the new application shall include the component
     espressif/esp-modbus:
       version: "^1.0"
 
-The ``esp-modbus`` component can be found in `component manager registry <https://components.espressif.com/component/espressif/esp-modbus>`__. Refer to `component manager documentation <https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/tools/idf-component-manager.html>`__ for more information on how to set up the component manager.
+The ``esp-modbus`` component can be found in `ESP Component Registry <https://components.espressif.com/component/espressif/esp-modbus>`__. Refer to `component manager documentation <https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/tools/idf-component-manager.html>`__ for more information on how to set up the component manager.
 
 For applications targeting v4.x releases of ESP-IDF that need to use new ``esp-modbus`` component, adding the component manager manifest file ``idf_component.yml`` will be sufficient to pull in the new component. However, users should also exclude the legacy ``freemodbus`` component from the build. This can be achieved using the statement below in the project's ``CMakeLists.txt``:
 

@@ -8,7 +8,7 @@
 This example shows how to extend CDC-ACM driver for Virtual Communication Port (VCP) devices,
 such as CP210x, FTDI FT23x or CH34x devices.
 
-The drivers are fetched from [IDF Component Registry](https://components.espressif.com/) together with VCP service that automatically loads correct driver for plugged-in device.
+The drivers are fetched from [ESP Component Registry](https://components.espressif.com/) together with VCP service that automatically loads correct driver for plugged-in device.
 
 ## How to use example
 

@@ -6,7 +6,7 @@
 ## Note about iperf version
 The iperf example doesn't support all features in standard iperf. It's compatible with iperf version 2.x.
 
-- Refer to the components registry iperf-cmd page for more information: https://components.espressif.com/components/espressif/iperf-cmd
+- Refer to the ESP Component Registry iperf-cmd page for more information: https://components.espressif.com/components/espressif/iperf-cmd
 
 ## Note about 80MHz flash frequency (ESP32)
 The iperf can get better throughput if the SPI flash frequency is set to 80MHz, but the system may crash in 80MHz mode for ESP-WROVER-KIT.
