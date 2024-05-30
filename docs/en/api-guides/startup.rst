@@ -50,11 +50,11 @@ Startup code called from the reset vector determines the boot mode by checking `
 
     Second stage bootloader binary image is loaded from flash starting at address {IDF_TARGET_CONFIG_BOOTLOADER_OFFSET_IN_FLASH}. The 4 kB sector of flash before this address is unused.
 
-.. only:: esp32p4
+.. only:: SOC_KEY_MANAGER_SUPPORTED
 
     Second stage bootloader binary image is loaded from flash starting at address {IDF_TARGET_CONFIG_BOOTLOADER_OFFSET_IN_FLASH}. The 8 kB sector of flash before this address is reserved for the key manager for use with flash encryption (AES-XTS).
 
-.. only:: not (esp32 or esp32s2 or esp32p4)
+.. only:: not (esp32 or esp32s2 or SOC_KEY_MANAGER_SUPPORTED)
 
     Second stage bootloader binary image is loaded from the start of flash at offset {IDF_TARGET_CONFIG_BOOTLOADER_OFFSET_IN_FLASH}.
 
