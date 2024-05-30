@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,6 +8,50 @@
 #include "hal/apm_hal.h"
 #include "hal/apm_ll.h"
 #include "hal/log.h"
+
+#if CONFIG_IDF_TARGET_ESP32P4
+void apm_hal_hp_peri_access_enable(apm_ll_master_id_t master_id, apm_ll_hp_peri_t hp_peri,
+                                     apm_ll_secure_mode_t sec_mode, bool enable)
+{
+    apm_ll_hp_peri_access_enable(master_id, hp_peri, sec_mode, enable);
+}
+
+
+void apm_hal_lp_peri_access_enable(apm_ll_lp_peri_t lp_peri, bool enable)
+{
+   apm_ll_lp_peri_access_enable(lp_peri, enable);
+}
+
+void apm_hal_peri_region_config(uint32_t regn_num, uint32_t regn_low_addr, uint32_t regn_high_addr)
+{
+    apm_ll_peri_region_config(regn_num, regn_low_addr, regn_high_addr);
+}
+
+int apm_hal_peri_region_pms(apm_ll_master_id_t master_id, apm_ll_secure_mode_t sec_mode,
+                             uint32_t regn_num, uint32_t regn_pms)
+{
+    return apm_ll_peri_region_pms(master_id, sec_mode, regn_num, regn_pms);
+}
+
+int apm_hal_apm_ctrl_clk_gating_enable(apm_ll_apm_ctrl_t apm_ctrl, bool enable)
+{
+    return apm_ll_apm_ctrl_clk_gating_enable(apm_ctrl, enable);
+}
+
+void apm_hal_dma_region_config(uint32_t regn_num, uint32_t regn_low_addr, uint32_t regn_high_addr)
+{
+    apm_ll_dma_region_set_low_address(regn_num, regn_low_addr);
+    apm_ll_dma_region_set_high_address(regn_num, regn_high_addr);
+}
+
+void apm_hal_dma_region_pms(apm_hal_dma_region_config_data_t *pms_data)
+{
+    HAL_ASSERT(pms_data);
+
+    apm_ll_dma_region_r_pms(pms_data->dma_master, pms_data->pms_r_mask);
+    apm_ll_dma_region_w_pms(pms_data->dma_master, pms_data->pms_w_mask);
+}
+#else
 
 void apm_tee_hal_set_master_secure_mode(apm_ll_apm_ctrl_t apm_ctrl, apm_ll_master_id_t master_id, apm_ll_secure_mode_t sec_mode)
 {
@@ -129,3 +173,5 @@ esp_err_t apm_hal_apm_ctrl_get_int_src_num(apm_ctrl_path_t *apm_path)
 {
     return apm_ll_apm_ctrl_get_int_src_num(apm_path->apm_ctrl, apm_path->apm_m_path);
 }
+
+#endif //CONFIG_IDF_TARGET_ESP32P4

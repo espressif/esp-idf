@@ -61,6 +61,7 @@
 #define SOC_SDIO_SLAVE_SUPPORTED        1
 #define SOC_BOD_SUPPORTED               1
 #define SOC_APM_SUPPORTED               1
+#define SOC_APM_CTRL_FILTER_SUPPORTED   1
 #define SOC_PMU_SUPPORTED               1
 #define SOC_PAU_SUPPORTED               1
 #define SOC_LP_TIMER_SUPPORTED          1

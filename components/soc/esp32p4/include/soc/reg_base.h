@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -194,13 +194,6 @@
 #define DR_REG_INTERRUPT_CORE1_BASE             (DR_REG_INTR_BASE + 0x800)
 #define DR_REG_LPPERI_BASE                      DR_REG_LP_PERI_CLKRST_BASE
 #define DR_REG_CPU_BUS_MONITOR_BASE             DR_REG_CPU_BUS_MON_BASE
-
-//TODO: IDF-7542
-// #define DR_REG_TEE_BASE                         0x60098000
-// #define DR_REG_HP_APM_BASE                      0x60099000
-// #define DR_REG_LP_APM0_BASE                     0x60099800
-// #define DR_REG_LP_TEE_BASE                      0x600B3400
-// #define DR_REG_LP_APM_BASE                      0x600B3800
 
 #define DR_REG_PAU_BASE                         DR_REG_REGDMA_BASE
 
