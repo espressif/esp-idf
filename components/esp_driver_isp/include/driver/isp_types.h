@@ -31,6 +31,14 @@ typedef struct {
 } isp_float_range_t;
 
 /**
+ * @brief ISP AF result
+ */
+typedef struct {
+    int definition[ISP_AF_WINDOW_NUM];    ///< Definition, it refers how clear and sharp an image is
+    int luminance[ISP_AF_WINDOW_NUM];     ///< Luminance, it refers how luminant an image is
+} isp_af_result_t;
+
+/**
  * @brief ISP AWB result
  */
 typedef struct {

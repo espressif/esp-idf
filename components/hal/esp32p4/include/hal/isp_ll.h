@@ -1123,7 +1123,7 @@ static inline void isp_ll_awb_set_bg_ratio_range(isp_dev_t *hw, isp_ll_awb_rgb_r
  *      - white patch count
  */
 __attribute__((always_inline))
-static inline uint32_t isp_ll_awb_get_white_patcherence_cnt(isp_dev_t *hw)
+static inline uint32_t isp_ll_awb_get_white_patch_cnt(isp_dev_t *hw)
 {
     return hw->awb0_white_cnt.awb0_white_cnt;
 }

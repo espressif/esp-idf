@@ -16,8 +16,6 @@
 #include "hal/isp_types.h"
 #include "hal/hal_utils.h"
 
-#include "esp_rom_sys.h"
-
 /**
  * ISP HAL layer
  */
