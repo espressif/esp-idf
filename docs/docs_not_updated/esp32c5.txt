@@ -151,7 +151,6 @@ api-reference/system/mm_sync.rst
 api-reference/system/ota.rst
 api-reference/system/perfmon.rst
 api-reference/system/esp_function_with_shared_stack.rst
-api-reference/system/efuse.rst
 api-reference/system/chip_revision.rst
 api-reference/system/async_memcpy.rst
 api-reference/system/random.rst
@@ -168,9 +167,6 @@ api-reference/system/mem_alloc.rst
 api-reference/system/wdts.rst
 api-reference/system/misc_system_api.rst
 api-reference/system/bootloader_image_format.rst
-api-reference/system/inc/show-efuse-table_ESP32-C5.rst
-api-reference/system/inc/revisions_ESP32-C5.rst
-api-reference/system/inc/espefuse_summary_ESP32-C5.rst
 api-reference/system/inc/power_management_esp32c5.rst
 api-reference/system/heap_debug.rst
 api-reference/system/mm.rst
