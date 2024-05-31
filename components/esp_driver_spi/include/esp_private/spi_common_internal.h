@@ -50,7 +50,7 @@ typedef struct {
     uint32_t flags;                     ///< Flags (attributes) of the bus
     int max_transfer_sz;                ///< Maximum length of bytes available to send
     bool dma_enabled;                   ///< To enable DMA or not
-    uint16_t internal_mem_align_size;   ///< Buffer align byte requirement for internal memory
+    size_t internal_mem_align_size;     ///< Buffer align byte requirement for internal memory
     spi_bus_lock_handle_t lock;
 #ifdef CONFIG_PM_ENABLE
     esp_pm_lock_handle_t pm_lock;       ///< Power management lock
