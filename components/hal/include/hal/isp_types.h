@@ -24,6 +24,24 @@ typedef int                         isp_clk_src_t;     ///< Default type
 #endif
 
 /**
+ * @brief ISP coordinate type
+ *
+ */
+typedef struct {
+    uint32_t    x;      ///< X coordinate of the point
+    uint32_t    y;      ///< Y coordinate of the point
+} isp_coordinate_t;
+
+/**
+ * @brief ISP window type
+ *
+ */
+typedef struct {
+    isp_coordinate_t top_left;       ///< The top left point coordinate
+    isp_coordinate_t btm_right;      ///< The bottom right point coordinate
+} isp_window_t;
+
+/**
  * @brief ISP Input Source
  */
 typedef enum {
@@ -99,6 +117,20 @@ typedef enum {
     ISP_BF_EDGE_PADDING_MODE_SRND_DATA,      ///< Fill BF edge padding data with surrounding pixel data
     ISP_BF_EDGE_PADDING_MODE_CUSTOM_DATA,    ///< Fill BF edge padding data with custom pixel data
 } isp_bf_edge_padding_mode_t;
+
+/*---------------------------------------------------------------
+                      AWB
+---------------------------------------------------------------*/
+
+/**
+ * @brief ISP AWB sample point in the ISP pipeline
+ *
+ */
+typedef enum {
+    ISP_AWB_SAMPLE_POINT_BEFORE_CCM,       ///< Sample AWB data before CCM (Color Correction Matrix)
+    ISP_AWB_SAMPLE_POINT_AFTER_CCM,        ///< Sample AWB data after CCM (Color Correction Matrix)
+} isp_awb_sample_point_t;
+
 
 #ifdef __cplusplus
 }
