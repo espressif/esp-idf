@@ -101,6 +101,15 @@ typedef enum {
 } isp_bf_edge_padding_mode_t;
 
 /*---------------------------------------------------------------
+                      CCM
+---------------------------------------------------------------*/
+#if SOC_ISP_CCM_SUPPORTED
+#define ISP_CCM_DIMENSION   SOC_ISP_CCM_DIMENSION  ///< ISP Color Correction Matrix dimension
+#else
+#define ISP_CCM_DIMENSION   0                      ///< Not support CCM
+#endif
+
+/*---------------------------------------------------------------
                       AWB
 ---------------------------------------------------------------*/
 

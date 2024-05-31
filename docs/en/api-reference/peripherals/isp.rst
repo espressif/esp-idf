@@ -15,8 +15,10 @@ Terminology
   - RAW: Unprocessed data directly output from an image sensor, typically divided into R, Gr, Gb, and B four channels classified into RAW8, RAW10, RAW12, etc., based on bit width
   - RGB: Colored image format composed of red, green, and blue colors classified into RGB888, RGB565, etc., based on the bit width of each color
   - YUV: Colored image format composed of luminance and chrominance classified into YUV444, YUV422, YUV420, etc., based on the data arrangement
+  - BF:  Bayer Domain Filter
   - AF:  Auto-focus
   - AWB: Auto-white balance
+  - CCM: Color correction matrix
 
 ISP Pipeline
 ------------
@@ -59,6 +61,7 @@ The ISP driver offers following services:
 -  `Enable and disable ISP processor <#isp-enable-disable>`__ - covers how to enable and disable an ISP processor.
 -  `Get AF statistics in one shot or continuous way <#isp-af-statistics>`__ - covers how to get AF statistics one-shot or continuously.
 -  `Get AWB statistics in one shot or continuous way <#isp-awb-statistics>`__ - covers how to get AWB white patches statistics one-shot or continuously.
+-  `Configure CCM <#isp-ccm-config>`__ - covers how to config the Color Correction Matrix.
 -  `Register callback <#isp-callback>`__ - covers how to hook user specific code to ISP driver event callback function.
 -  `Thread Safety <#isp-thread-safety>`__ - lists which APIs are guaranteed to be thread safe by the driver.
 -  `Kconfig Options <#isp-kconfig-options>`__ - lists the supported Kconfig options that can bring different effects to the driver.
@@ -303,6 +306,36 @@ Note that if you want to use the continuous statistics, you need to register the
     ESP_ERROR_CHECK(esp_isp_awb_controller_disable(awb_ctlr));
     /* Delete the awb controller and free the resources */
     ESP_ERROR_CHECK(esp_isp_del_awb_controller(awb_ctlr));
+
+.. _isp-ccm-config:
+
+Configure CCM
+^^^^^^^^^^^^^
+
+Color Correction Matrix can scale the color ratio of RGB888 pixels. It can be used for adjusting the image color via some algorithms, for example, used for white balance by inputting the AWB computed result, or used as a Filter with some filter algorithms.
+
+To adjust the color correction matrix, you can refer to the following code:
+
+.. code-block:: c
+
+    // ...
+    // Configure CCM
+    esp_isp_ccm_config_t ccm_cfg = {
+        .matrix = {
+            1.0, 0.0, 0.0,
+            0.0, 1.0, 0.0,
+            0.0, 0.0, 1.0
+        },
+        .saturation = false,
+    };
+    ESP_ERROR_CHECK(esp_isp_ccm_configure(isp_proc, &ccm_cfg));
+    // The configured CCM will be applied to the image once the CCM module is enabled
+    ESP_ERROR_CHECK(esp_isp_ccm_enable(isp_proc));
+    // CCM can also be configured after it is enabled
+    ccm_cfg.matrix[0][0] = 2.0;
+    ESP_ERROR_CHECK(esp_isp_ccm_configure(isp_proc, &ccm_cfg));
+    // Disable CCM if no longer needed
+    ESP_ERROR_CHECK(esp_isp_ccm_disable(isp_proc));
 
 .. _isp-callback:
 
