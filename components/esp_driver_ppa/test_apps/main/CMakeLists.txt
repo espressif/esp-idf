@@ -5,5 +5,5 @@ set(srcs "test_app_main.c"
 # the component can be registered as WHOLE_ARCHIVE
 idf_component_register(SRCS ${srcs}
                        INCLUDE_DIRS "."
-                       PRIV_REQUIRES esp_driver_ppa esp_psram unity
+                       PRIV_REQUIRES esp_driver_ppa esp_psram unity esp_mm
                        WHOLE_ARCHIVE)
