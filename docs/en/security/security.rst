@@ -9,6 +9,10 @@ Security
 
 This guide provides an overview of the overall security features available in various Espressif solutions. It is highly recommended to consider this guide while designing the products with the Espressif platform and the ESP-IDF software stack from the **security** perspective.
 
+.. note::
+
+    In this guide, most used commands are in the form of ``idf.py secure-<command>``, which is a wrapper around corresponding ``espsecure.py <command>``. The idf.py-based commands provides more user-friendly experience, although may lack some of the advanced functionality of their espsecure.py-based counterparts.
+
 Goals
 -----
 
@@ -45,7 +49,7 @@ Secure Boot Best Practices
 
 * Generate the signing key on a system with a quality source of entropy.
 * Always keep the signing key private. A leak of this key will compromise the Secure Boot system.
-* Do not allow any third party to observe any aspects of the key generation or signing process using ``espsecure.py``. Both processes are vulnerable to timing or other side-channel attacks.
+* Do not allow any third party to observe any aspects of the key generation or signing process using ``idf.py secure-`` or ``espsecure.py`` commands. Both processes are vulnerable to timing or other side-channel attacks.
 * Ensure that all security eFuses have been correctly programmed, including disabling of the debug interfaces, non-required boot mediums (e.g., UART DL mode), etc.
 
 

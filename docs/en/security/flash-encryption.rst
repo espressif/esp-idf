@@ -5,12 +5,15 @@ Flash Encryption
 
 {IDF_TARGET_ESP32_V3_ONLY:default="", esp32="(ESP32 V3 only)"}
 
-{IDF_TARGET_ENCRYPT_COMMAND:default="espsecure.py encrypt_flash_data --aes_xts", esp32="espsecure.py encrypt_flash_data"}
+{IDF_TARGET_ENCRYPT_COMMAND:default="idf.py secure-encrypt-flash-data --aes-xts", esp32="idf.py secure-encrypt-flash-data"}
 
 :link_to_translation:`zh_CN:[中文]`
 
 This is a quick start guide to {IDF_TARGET_NAME}'s flash encryption feature. Using application code as an example, it demonstrates how to test and verify flash encryption operations during development and production.
 
+.. note::
+
+    In this guide, most used commands are in the form of ``idf.py secure-<command>``, which is a wrapper around corresponding ``espsecure.py <command>``. The idf.py-based commands provides more user-friendly experience, although may lack some of the advanced functionality of their espsecure.py-based counterparts.
 
 Introduction
 ------------
@@ -359,7 +362,7 @@ To use a host generated key, take the following steps:
 
       .. code-block:: bash
 
-          espsecure.py generate_flash_encryption_key my_flash_encryption_key.bin
+          idf.py secure-generate-flash-encryption-key my_flash_encryption_key.bin
 
   .. only:: SOC_FLASH_ENCRYPTION_XTS_AES_256
 
@@ -367,20 +370,20 @@ To use a host generated key, take the following steps:
 
       .. code-block:: bash
 
-          espsecure.py generate_flash_encryption_key my_flash_encryption_key.bin
+          idf.py secure-generate-flash-encryption-key my_flash_encryption_key.bin
 
       else if :ref:`Size of generated XTS-AES key <CONFIG_SECURE_FLASH_ENCRYPTION_KEYSIZE>` is AES-256 (512-bit key):
 
       .. code-block:: bash
 
-          espsecure.py generate_flash_encryption_key --keylen 512 my_flash_encryption_key.bin
+          idf.py secure-generate-flash-encryption-key --keylen 512 my_flash_encryption_key.bin
 
 
   .. only:: SOC_FLASH_ENCRYPTION_XTS_AES_128 and not SOC_FLASH_ENCRYPTION_XTS_AES_256 and not SOC_EFUSE_CONSISTS_OF_ONE_KEY_BLOCK
 
       .. code-block:: bash
 
-          espsecure.py generate_flash_encryption_key my_flash_encryption_key.bin
+          idf.py secure-generate-flash-encryption-key my_flash_encryption_key.bin
 
 .. only:: SOC_FLASH_ENCRYPTION_XTS_AES_128 and SOC_EFUSE_CONSISTS_OF_ONE_KEY_BLOCK
 
@@ -388,13 +391,13 @@ To use a host generated key, take the following steps:
 
       .. code-block:: bash
 
-          espsecure.py generate_flash_encryption_key my_flash_encryption_key.bin
+          idf.py secure-generate-flash-encryption-key my_flash_encryption_key.bin
 
       else if :ref:`Size of generated XTS-AES key <CONFIG_SECURE_FLASH_ENCRYPTION_KEYSIZE>` is AES-128 key derived from 128 bits (SHA256(128 bits)):
 
       .. code-block:: bash
 
-          espsecure.py generate_flash_encryption_key --keylen 128 my_flash_encryption_key.bin
+          idf.py secure-generate-flash-encryption-key --keylen 128 my_flash_encryption_key.bin
 
 3. **Before the first encrypted boot**, burn the key into your device's eFuse using the command below. This action can be done **only once**.
 
@@ -996,19 +999,19 @@ Manually encrypting or decrypting files requires the flash encryption key to be 
 
 The key file should be a single raw binary file (example: ``key.bin``).
 
-For example, these are the steps to encrypt the file ``build/my-app.bin`` to flash at offset 0x10000. Run espsecure.py as follows:
+For example, these are the steps to encrypt the file ``my-app.bin`` to flash at offset 0x10000. Run idf.py as follows:
 
 .. only:: esp32
 
     .. code-block:: bash
 
-       espsecure.py encrypt_flash_data --keyfile /path/to/key.bin --address 0x10000 --output my-app-ciphertext.bin build/my-app.bin
+       idf.py secure-encrypt-flash-data --keyfile /path/to/key.bin --address 0x10000 --output my-app-ciphertext.bin my-app.bin
 
 .. only:: not esp32
 
     .. code-block:: bash
 
-       espsecure.py encrypt_flash_data --aes_xts --keyfile /path/to/key.bin --address 0x10000 --output my-app-ciphertext.bin build/my-app.bin
+       idf.py secure-encrypt-flash-data --aes-xts --keyfile /path/to/key.bin --address 0x10000 --output my-app-ciphertext.bin my-app.bin
 
 The file ``my-app-ciphertext.bin`` can then be flashed to offset 0x10000 using ``esptool.py``. To see all of the command line options recommended for ``esptool.py``, see the output printed when ``idf.py build`` succeeds.
 
@@ -1018,9 +1021,9 @@ The file ``my-app-ciphertext.bin`` can then be flashed to offset 0x10000 using `
 
    .. only:: esp32
 
-       If your ESP32 uses non-default :ref:`FLASH_CRYPT_CONFIG value in eFuse <setting-flash-crypt-config>` then you will need to pass the ``--flash_crypt_conf`` argument to ``espsecure.py`` to set the matching value. This will not happen if the device configured flash encryption by itself, but may happen if burning eFuses manually to enable flash encryption.
+       If your ESP32 uses non-default :ref:`FLASH_CRYPT_CONFIG value in eFuse <setting-flash-crypt-config>` then you will need to pass the ``--flash-crypt-conf`` argument to ``idf.py`` command to set the matching value. This will not happen if the device configured flash encryption by itself, but may happen if burning eFuses manually to enable flash encryption.
 
-The command ``espsecure.py decrypt_flash_data`` can be used with the same options (and different input/output files), to decrypt ciphertext flash contents or a previously encrypted file.
+The command ``idf.py decrypt-flash-data`` can be used with the same options (and different input/output files), to decrypt ciphertext flash contents or a previously encrypted file.
 
 
 .. only:: SOC_SPIRAM_SUPPORTED and not esp32

@@ -259,6 +259,134 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
         print(f'Merged binary {output} will be created in the build directory...')
         RunTool('merge_bin', merge_bin_args, args.build_dir, build_dir=args.build_dir, hints=not args.no_hints)()
 
+    def secure_decrypt_flash_data(
+            action: str,
+            ctx: click.core.Context,
+            args: PropertyDict,
+            aes_xts: bool,
+            keyfile: str,
+            output: str,
+            address: str,
+            flash_crypt_conf: str,
+            **extra_args: str) -> None:
+        ensure_build_directory(args, ctx.info_name)
+        decrypt_flash_data_args = [PYTHON, '-m', 'espsecure', 'decrypt_flash_data']
+        if aes_xts:
+            decrypt_flash_data_args += ['--aes_xts']
+        if keyfile:
+            decrypt_flash_data_args += ['--keyfile', keyfile]
+        if output:
+            decrypt_flash_data_args += ['--output', output]
+        if address:
+            decrypt_flash_data_args += ['--address', address]
+        if flash_crypt_conf:
+            decrypt_flash_data_args += ['--flash_crypt_conf', flash_crypt_conf]
+        if extra_args['encrypted_file']:
+            decrypt_flash_data_args += [extra_args['encrypted_file']]
+        RunTool('espsecure', decrypt_flash_data_args, args.build_dir)()
+
+    def secure_digest_secure_bootloader(
+            action: str,
+            ctx: click.core.Context,
+            args: PropertyDict,
+            keyfile: str,
+            output: str,
+            iv: str,
+            **extra_args: str) -> None:
+        ensure_build_directory(args, ctx.info_name)
+        digest_secure_bootloader_args = [PYTHON, '-m', 'espsecure', 'digest_secure_bootloader']
+        if keyfile:
+            digest_secure_bootloader_args += ['--keyfile', keyfile]
+        if output:
+            digest_secure_bootloader_args += ['--output', output]
+        if iv:
+            digest_secure_bootloader_args += ['--iv', iv]
+        if extra_args['image']:
+            digest_secure_bootloader_args += [extra_args['image']]
+        RunTool('espsecure', digest_secure_bootloader_args, args.build_dir)()
+
+    def secure_encrypt_flash_data(
+            action: str,
+            ctx: click.core.Context,
+            args: PropertyDict,
+            aes_xts: bool,
+            keyfile: str,
+            output: str,
+            address: str,
+            flash_crypt_conf: str,
+            **extra_args: str) -> None:
+        ensure_build_directory(args, ctx.info_name)
+        encrypt_flash_data_args = [PYTHON, '-m', 'espsecure', 'encrypt_flash_data']
+        if aes_xts:
+            encrypt_flash_data_args += ['--aes_xts']
+        if keyfile:
+            encrypt_flash_data_args += ['--keyfile', keyfile]
+        if output:
+            encrypt_flash_data_args += ['--output', output]
+        if address:
+            encrypt_flash_data_args += ['--address', address]
+        if flash_crypt_conf:
+            encrypt_flash_data_args += ['--flash_crypt_conf', flash_crypt_conf]
+        if extra_args['plaintext_file']:
+            encrypt_flash_data_args += [extra_args['plaintext_file']]
+        RunTool('espsecure', encrypt_flash_data_args, args.build_dir)()
+
+    def secure_generate_flash_encryption_key(action: str, ctx: click.core.Context, args: PropertyDict, keylen: str, **extra_args: str) -> None:
+        ensure_build_directory(args, ctx.info_name)
+        generate_flash_encryption_key_args = [PYTHON, '-m', 'espsecure', 'generate_flash_encryption_key']
+        if keylen:
+            generate_flash_encryption_key_args += ['--keylen', keylen]
+        if extra_args['keyfile']:
+            generate_flash_encryption_key_args += [extra_args['keyfile']]
+        RunTool('espsecure',  generate_flash_encryption_key_args, args.build_dir)()
+
+    def secure_generate_signing_key(action: str, ctx: click.core.Context, args: PropertyDict, version: str, scheme: str, **extra_args: str) -> None:
+        ensure_build_directory(args, ctx.info_name)
+        generate_signing_key_args = [PYTHON, '-m', 'espsecure', 'generate_signing_key']
+        project_desc = _get_project_desc(ctx, args)
+        ecdsa_scheme = get_sdkconfig_value(project_desc['config_file'], 'CONFIG_SECURE_SIGNED_APPS_ECDSA_SCHEME')
+        ecdsa_v2_scheme = get_sdkconfig_value(project_desc['config_file'], 'CONFIG_SECURE_SIGNED_APPS_ECDSA_V2_SCHEME')
+        rsa_scheme = get_sdkconfig_value(project_desc['config_file'], 'CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME')
+        if ecdsa_scheme:
+            version = '1'
+        elif ecdsa_v2_scheme or rsa_scheme:
+            version = '2'
+        if version:
+            generate_signing_key_args += ['--version', version]
+        if scheme:
+            generate_signing_key_args += ['--scheme', '2']
+        if extra_args['keyfile']:
+            generate_signing_key_args += [extra_args['keyfile']]
+        RunTool('espsecure', generate_signing_key_args, args.build_dir)()
+
+    def secure_sign_data(action: str,
+                         ctx: click.core.Context,
+                         args: PropertyDict,
+                         version: str,
+                         keyfile: str,
+                         append_signatures: bool,
+                         pub_key: str,
+                         signature: str,
+                         output: str,
+                         **extra_args: str) -> None:
+        ensure_build_directory(args, ctx.info_name)
+        sign_data_args = [PYTHON, '-m', 'espsecure', 'sign_data']
+        if version:
+            sign_data_args += ['--version', version]
+        if keyfile:
+            sign_data_args += ['--keyfile', keyfile]
+        if append_signatures:
+            sign_data_args += ['--append_signatures']
+        if pub_key:
+            sign_data_args += ['--pub-key', pub_key]
+        if signature:
+            sign_data_args += ['--signature', signature]
+        if output:
+            sign_data_args += ['--output', output]
+        if extra_args['datafile']:
+            sign_data_args += [extra_args['datafile']]
+        RunTool('espsecure', sign_data_args, args.build_dir)()
+
     BAUD_AND_PORT = [BAUD_RATE, PORT]
     flash_options = BAUD_AND_PORT + [
         {
@@ -329,6 +457,192 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
                     },
                 ],
                 'dependencies': ['all'],  # all = build
+            },
+            'secure-decrypt-flash-data': {
+                'callback': secure_decrypt_flash_data,
+                'options': [
+                    {
+                        'names': ['--aes-xts', '-x'],
+                        'is_flag': True,
+                        'help': ('Decrypt data using AES-XTS.'),
+                    },
+                    {
+                        'names': ['--keyfile', '-k'],
+                        'help': ('File with flash encryption key.'),
+                    },
+                    {
+                        'names': ['--output', '-o'],
+                        'help': ('Output file for plaintext data.'),
+                    },
+                    {
+                        'names': ['--address', '-a'],
+                        'help': ('Address offset in flash that file was read from.'),
+                    },
+                    {
+                        'names': ['--flash-crypt-conf'],
+                        'help': ('Override FLASH_CRYPT_CONF efuse value (default is 0XF).'),
+                    },
+                ],
+                'arguments': [
+                    {
+                        'names': ['encrypted_file'],
+                        'nargs': 1,
+                    },
+                ],
+            },
+            'secure-digest-secure-bootloader': {
+                'callback': secure_digest_secure_bootloader,
+                'help': ('Take a bootloader binary image and a secure boot key, and output a combined'
+                         'digest+binary suitable for flashing along with the precalculated secure boot key.'),
+                'options': [
+                    {
+                        'names': ['--keyfile', '-k'],
+                        'help': ('256 bit key for secure boot digest.'),
+                    },
+                    {
+                        'names': ['--output', '-o'],
+                        'help': ('Output file for signed digest image.'),
+                    },
+                    {
+                        'names': ['--iv'],
+                        'help': (
+                            '128 byte IV file. Supply a file for testing purposes only, if not supplied an IV will be randomly generated.'
+                        ),
+                    },
+                ],
+                'arguments': [
+                    {
+                        'names': ['image'],
+                        'nargs': 1,
+                    },
+                ],
+            },
+            'secure-encrypt-flash-data': {
+                'callback': secure_encrypt_flash_data,
+                'help': 'Encrypt some data suitable for encrypted flash (using known key).',
+                'options': [
+                    {
+                        'names': ['--aes-xts', '-x'],
+                        'is_flag': True,
+                        'help': (
+                            'Encrypt data using AES-XTS if chip supports it.'
+                        ),
+                    },
+                    {
+                        'names': ['--keyfile', '-k'],
+                        'help': ('File with flash encryption key.'),
+                    },
+                    {
+                        'names': ['--output', '-o'],
+                        'help': ('Output file for encrypted data.'),
+                    },
+                    {
+                        'names': ['--address', '-a'],
+                        'help': ('Address offset in flash where file will be flashed.'),
+                    },
+                    {
+                        'names': ['--flash-crypt-conf'],
+                        'help': (
+                            'Override FLASH_CRYPT_CONF eFuse value (default is 0XF).'
+                        ),
+                    },
+                ],
+                'arguments': [
+                    {
+                        'names': ['plaintext_file'],
+                        'nargs': 1,
+                    },
+                ],
+            },
+            'secure-generate-flash-encryption-key': {
+                'callback': secure_generate_flash_encryption_key,
+                'options': [
+                    {
+                        'names': ['--keylen', '-l'],
+                        'help': (
+                            'Length of private key digest file to generate (in bits). 3/4 Coding Scheme requires 192 bit key.'
+                        ),
+                    },
+                ],
+                'arguments': [
+                    {
+                        'names': ['keyfile'],
+                        'nargs': 1,
+                    },
+                ],
+            },
+            'secure-generate-signing-key': {
+                'callback': secure_generate_signing_key,
+                'help': ('Generate a private key for signing secure boot images as per the secure boot version. Key file is generated in PEM'
+                         'format, Secure Boot V1 - ECDSA NIST256p private key. Secure Boot V2 - RSA 3072, ECDSA NIST256p, ECDSA NIST192p'
+                         'private key.'),
+                'options': [
+                    {
+                        'names': ['--version', '-v'],
+                        'help': ('Version of the secure boot signing scheme to use.'),
+                        'type': click.Choice(['1', '2']),
+                        'default': '2',
+                    },
+                    {
+                        'names': ['--scheme', '-s'],
+                        'help': ('Scheme of secure boot signing.'),
+                        'type': click.Choice(['rsa3072', 'ecdsa192', 'ecdsa256']),
+                    },
+                ],
+                'arguments': [
+                    {
+                        'names': ['keyfile'],
+                        'nargs': 1,
+                    },
+                ],
+            },
+            'secure-sign-data': {
+                'callback': secure_sign_data,
+                'help': ('Sign a data file for use with secure boot. Signing algorithm is deterministic ECDSA w/ SHA-512 (V1) or either RSA-'
+                         'PSS or ECDSA w/ SHA-256 (V2).'),
+                'options': [
+                    {
+                        'names': ['--version', '-v'],
+                        'help': ('Version of the secure boot signing scheme to use.'),
+                        'type': click.Choice(['1', '2']),
+                        'default': '2',
+                    },
+                    {
+                        'names': ['--keyfile', '-k'],
+                        'help': ('Private key file for signing. Key is in PEM format.'),
+                    },
+                    {
+                        'names': ['--append-signatures', '-a'],
+                        'is_flag': True,
+                        'help': (
+                            'Append signature block(s) to already signed image. Valid only for ESP32-S2.'
+                        ),
+                    },
+                    {
+                        'names': ['--pub-key'],
+                        'help': (
+                            'Public key files corresponding to the private key used to generate the pre-calculated signatures. Keys should be in PEM format.'
+                        ),
+                    },
+                    {
+                        'names': ['--signature'],
+                        'help': (
+                            'Pre-calculated signatures. Signatures generated using external private keys e.g. keys stored in HSM.'
+                        ),
+                    },
+                    {
+                        'names': ['--output', '-o'],
+                        'help': (
+                            'Output file for signed digest image. Default is to sign the input file.'
+                        ),
+                    },
+                ],
+                'arguments': [
+                    {
+                        'names': ['datafile'],
+                        'nargs': 1,
+                    },
+                ],
             },
             'monitor': {
                 'callback':

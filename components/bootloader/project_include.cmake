@@ -30,12 +30,6 @@ idf_build_get_property(project_dir PROJECT_DIR)
 if(CONFIG_SECURE_SIGNED_APPS)
     add_custom_target(gen_secure_boot_keys)
 
-    if(CONFIG_SECURE_SIGNED_APPS_ECDSA_SCHEME)
-        set(secure_apps_signing_version "1")
-    elseif(CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME OR CONFIG_SECURE_SIGNED_APPS_ECDSA_V2_SCHEME)
-        set(secure_apps_signing_version "2")
-    endif()
-
     if(CONFIG_SECURE_BOOT_V1_ENABLED)
         # Check that the configuration is sane
         if((CONFIG_SECURE_BOOTLOADER_REFLASHABLE AND CONFIG_SECURE_BOOTLOADER_ONE_TIME_FLASH) OR
@@ -68,8 +62,7 @@ if(CONFIG_SECURE_SIGNED_APPS)
             if(CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME)
                 fail_at_build_time(gen_secure_boot_signing_key
                     "Secure Boot Signing Key ${CONFIG_SECURE_BOOT_SIGNING_KEY} does not exist. Generate using:"
-                    "\tespsecure.py generate_signing_key --version ${secure_apps_signing_version} \
-                    ${CONFIG_SECURE_BOOT_SIGNING_KEY}")
+                    "\tidf.py secure-generate-signing-key ${CONFIG_SECURE_BOOT_SIGNING_KEY}")
             else()
                 if(CONFIG_SECURE_BOOT_ECDSA_KEY_LEN_192_BITS)
                     set(scheme "ecdsa192")
@@ -78,8 +71,7 @@ if(CONFIG_SECURE_SIGNED_APPS)
                 endif()
                 fail_at_build_time(gen_secure_boot_signing_key
                     "Secure Boot Signing Key ${CONFIG_SECURE_BOOT_SIGNING_KEY} does not exist. Generate using:"
-                    "\tespsecure.py generate_signing_key --version ${secure_apps_signing_version} \
-                    --scheme ${scheme} ${CONFIG_SECURE_BOOT_SIGNING_KEY}")
+                    "\tidf.py secure-generate-signing-key --scheme ${scheme} ${CONFIG_SECURE_BOOT_SIGNING_KEY}")
             endif()
         else()
             add_custom_target(gen_secure_boot_signing_key)
@@ -124,7 +116,7 @@ idf_build_get_property(sdkconfig SDKCONFIG)
 idf_build_get_property(python PYTHON)
 idf_build_get_property(extra_cmake_args EXTRA_CMAKE_ARGS)
 
-# We cannot pass lists are a parameter to the external project without modifying the ';' spearator
+# We cannot pass lists are a parameter to the external project without modifying the ';' separator
 string(REPLACE ";" "|" BOOTLOADER_IGNORE_EXTRA_COMPONENT "${BOOTLOADER_IGNORE_EXTRA_COMPONENT}")
 
 externalproject_add(bootloader
