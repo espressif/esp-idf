@@ -84,19 +84,42 @@ USB 设备栈（以下简称设备栈）支持在 {IDF_TARGET_NAME} 上启用 US
 配置描述符
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-结构体 :cpp:type:`tinyusb_config_t` 提供了以下与 USB 描述符相关的字段，应进行初始化：
+结构体 :cpp:type:`tinyusb_config_t` 提供了与 USB 描述符相关的字段，应进行初始化。
+
+无论是全速 USB 设备还是高速 USB 设备，都应初始化以下描述符：
 
 - :cpp:member:`device_descriptor`
-- :cpp:member:`configuration_descriptor`
 - :cpp:member:`string_descriptor`
+
+全速 USB 设备应初始化以下字段，以提供相应的配置描述符：
+
+- :cpp:member:`configuration_descriptor`
+
+高速 USB 设备应初始化以下字段，以提供不同速度下的配置描述符：
+
+- :cpp:member:`fs_configuration_descriptor`
+- :cpp:member:`hs_configuration_descriptor`
+- :cpp:member:`qualifier_descriptor`
+
+.. note::
+
+    若设备栈支持高速，为符合 USB 2.0 协议规范，应同时初始化 :cpp:member:`fs_configuration_descriptor` 和 :cpp:member:`hs_configuration_descriptor`。
 
 调用 :cpp:func:`tinyusb_driver_install` 时，设备栈将基于上述字段中提供的描述符实现 USB 设备。
 
 设备栈还提供了默认描述符，将 :cpp:func:`tinyusb_driver_install` 中的相应字段设置为 ``NULL`` 即可安装。默认描述符包括：
 
-- 默认设备描述符：启用时，将 :cpp:member:`device_descriptor` 设置为 ``NULL``。默认设备描述符将使用相应的 menuconfig 选项设置的值（如 PID、VID、bcdDevice 等）。
-- 默认字符串描述符：启用时，将 :cpp:member:`string_descriptor` 设置为 ``NULL``。默认字符串描述符将使用相应的 menuconfig 选项设置的值（如制造商、产品和序列字符串描述符选项）。
-- 默认配置描述符。某些很少需要自定义配置的类别（如 CDC 和 MSC）将提供默认配置描述符。启用时，将 :cpp:member:`configuration_descriptor` 设置为 ``NULL``。
+- 默认设备描述符：如需启用，将 :cpp:member:`device_descriptor` 设置为 ``NULL``。默认设备描述符将使用相应的 menuconfig 选项设置的值（如 PID、VID、bcdDevice 等）。
+- 默认字符串描述符：如需启用，将 :cpp:member:`string_descriptor` 设置为 ``NULL``。默认字符串描述符将使用相应的 menuconfig 选项设置的值（如制造商、产品和序列字符串描述符选项）。
+- 默认配置描述符。某些很少需要自定义配置的类别（如 CDC 和 MSC）将提供默认配置描述符。如需启用，将相应的配置描述符字段设置为 ``NULL``。
+
+    - :cpp:member:`configuration_descriptor`：全速描述符，仅适用于全速设备
+    - :cpp:member:`fs_configuration_descriptor`：全速描述符，适用于高速设备
+    - :cpp:member:`hs_configuration_descriptor`：高速描述符，适用于高速设备
+
+.. note::
+
+    为实现向后兼容性，若设备栈支持高速，可使用 :cpp:member:`configuration_descriptor` 代替 :cpp:member:`fs_configuration_descriptor` 来设置全速配置描述符。
 
 安装设备栈
 ----------
@@ -105,7 +128,7 @@ USB 设备栈（以下简称设备栈）支持在 {IDF_TARGET_NAME} 上启用 US
 
 .. note::
 
-  结构体 :cpp:type:`tinyusb_config_t` 可以实现零初始化（如 ``const tinyusb_config_t tusb_cfg = { 0 };``）或部分初始化（如下所示）。对于结构体中任何初始化为 ``0`` 或 ``NULL`` 的成员，设备栈将使用其默认配置，请参阅如下示例。
+    结构体 :cpp:type:`tinyusb_config_t` 可以实现零初始化（如 ``const tinyusb_config_t tusb_cfg = { 0 };``）或部分初始化（如下所示）。对于结构体中任何初始化为 ``0`` 或 ``NULL`` 的成员，设备栈将使用其默认配置，请参阅如下示例。
 
 .. code-block:: c
 
@@ -113,7 +136,14 @@ USB 设备栈（以下简称设备栈）支持在 {IDF_TARGET_NAME} 上启用 US
         .device_descriptor = NULL,  // 使用在 menuconfig 中指定的默认设备描述符
         .string_descriptor = NULL,  // 使用在 menuconfig 中指定的默认字符串描述符
         .external_phy = false,      // 使用内部 USB PHY
-        .configuration_descriptor = NULL, // 使用在 menuconfig 中根据设置指定的默认配置描述符
+    #if (TUD_OPT_HIGH_SPEED)
+        .fs_configuration_descriptor = NULL, // 使用在 menuconfig 中根据设置指定的默认全速配置描述符
+        .hs_configuration_descriptor = NULL, // 使用在 menuconfig 中根据设置指定的默认高速配置描述符
+        .qualifier_descriptor = NULL,  // 使用默认限定描述符，值取自默认设备描述符
+    #else
+        .configuration_descriptor = NULL,   // 使用在 menuconfig 中根据设置指定的默认配置描述符
+    #endif // TUD_OPT_HIGH_SPEED
+
     };
 
 .. _self-powered-device:
