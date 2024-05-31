@@ -6,6 +6,7 @@ endif()
 
 if(IDF_TARGET STREQUAL "esp32p4" OR IDF_TARGET STREQUAL "esp32c61")
     # TODO: IDF-7460, IDF-8851, IDF-9553
+    idf_component_register()
     return()
 endif()
 

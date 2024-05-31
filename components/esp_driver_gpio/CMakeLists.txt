@@ -1,6 +1,9 @@
 idf_build_get_property(target IDF_TARGET)
 
 if(${target} STREQUAL "linux")
+    # TODO: Remove this once all components have their requirements explicitly defined
+    # and using set(COMPONENTS main).
+    idf_component_register()
     return() # This component is not supported by the POSIX/Linux simulator
 endif()
 

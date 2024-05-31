@@ -1,3 +1,5 @@
+idf_build_get_property(target IDF_TARGET)
+
 set(srcs)
 
 set(public_include "include")
@@ -8,8 +10,16 @@ if(CONFIG_SOC_SDMMC_HOST_SUPPORTED)
                      "src/sdmmc_host.c")
 endif()
 
+if(${target} STREQUAL "linux")
+    set(requires "")
+    set(priv_requires esp_timer)
+else()
+    set(requires sdmmc esp_driver_gpio)
+    set(priv_requires esp_timer esp_pm esp_mm)
+endif()
+
 idf_component_register(SRCS ${srcs}
                        INCLUDE_DIRS ${public_include}
-                       REQUIRES sdmmc esp_driver_gpio
-                       PRIV_REQUIRES esp_timer esp_pm esp_mm
+                       REQUIRES "${requires}"
+                       PRIV_REQUIRES "${priv_requires}"
                       )

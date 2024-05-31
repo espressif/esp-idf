@@ -14,9 +14,16 @@ set(srcs "src/nvs_api.cpp"
          "src/nvs_types.cpp"
          "src/nvs_platform.cpp")
 
+set(requires esp_partition)
+if(${target} STREQUAL "linux")
+    set(priv_requires spi_flash)
+else()
+    set(priv_requires spi_flash newlib)
+endif()
+
 idf_component_register(SRCS "${srcs}"
-                    REQUIRES "esp_partition"
-                    PRIV_REQUIRES spi_flash newlib
+                    REQUIRES "${requires}"
+                    PRIV_REQUIRES "${priv_requires}"
                     INCLUDE_DIRS "include"
                     "../spi_flash/include"
                     PRIV_INCLUDE_DIRS "private_include")

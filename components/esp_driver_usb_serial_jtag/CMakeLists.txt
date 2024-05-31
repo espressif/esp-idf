@@ -1,3 +1,5 @@
+idf_build_get_property(target IDF_TARGET)
+
 set(srcs)
 set(include "include")
 
@@ -7,9 +9,15 @@ if(CONFIG_SOC_USB_SERIAL_JTAG_SUPPORTED)
                      "src/usb_serial_jtag_connection_monitor.c")
 endif()
 
+if(${target} STREQUAL "linux")
+    set(priv_requires esp_ringbuf esp_timer)
+else()
+    set(priv_requires esp_driver_gpio esp_ringbuf esp_pm esp_timer)
+endif()
+
 idf_component_register(SRCS ${srcs}
                     INCLUDE_DIRS ${include}
-                    PRIV_REQUIRES esp_driver_gpio esp_ringbuf esp_pm esp_timer
+                    PRIV_REQUIRES "${priv_requires}"
                     )
 
 if(CONFIG_VFS_SUPPORT_IO AND CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG_ENABLED)

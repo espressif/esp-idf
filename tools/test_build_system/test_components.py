@@ -87,21 +87,21 @@ def test_component_properties_are_set(idf_py: IdfPyFunc, test_app_copy: Path) ->
     assert 'SRCS:{}'.format((test_app_copy / 'main' / 'build_test_app.c').as_posix()) in ret.stdout, 'Component properties should be set'
 
 
-def test_component_overriden_dir(idf_py: IdfPyFunc, test_app_copy: Path, default_idf_env: EnvDict) -> None:
-    logging.info('Getting component overriden dir')
+def test_component_overridden_dir(idf_py: IdfPyFunc, test_app_copy: Path, default_idf_env: EnvDict) -> None:
+    logging.info('Getting component overridden dir')
     (test_app_copy / 'components' / 'hal').mkdir(parents=True)
     (test_app_copy / 'components' / 'hal' / 'CMakeLists.txt').write_text('\n'.join([
-        'idf_component_get_property(overriden_dir ${COMPONENT_NAME} COMPONENT_OVERRIDEN_DIR)',
-        'message(STATUS overriden_dir:${overriden_dir})']))
+        'idf_component_get_property(overridden_dir ${COMPONENT_NAME} COMPONENT_OVERRIDEN_DIR)',
+        'message(STATUS overridden_dir:${overridden_dir})', 'idf_component_register()']))
     ret = idf_py('reconfigure')
     idf_path = Path(default_idf_env.get('IDF_PATH'))
     # no registration, overrides registration as well
-    assert 'overriden_dir:{}'.format((idf_path / 'components' / 'hal').as_posix()) in ret.stdout, 'Failed to get overriden dir'
+    assert 'overridden_dir:{}'.format((idf_path / 'components' / 'hal').as_posix()) in ret.stdout, 'Failed to get overridden dir'
     append_to_file((test_app_copy / 'components' / 'hal' / 'CMakeLists.txt'), '\n'.join([
         '',
-        'idf_component_register(KCONFIG ${overriden_dir}/Kconfig)',
+        'idf_component_register(KCONFIG ${overridden_dir}/Kconfig)',
         'idf_component_get_property(kconfig ${COMPONENT_NAME} KCONFIG)',
-        'message(STATUS kconfig:${overriden_dir}/Kconfig)']))
+        'message(STATUS kconfig:${overridden_dir}/Kconfig)']))
     ret = idf_py('reconfigure', check=False)
     assert 'kconfig:{}'.format((idf_path / 'components' / 'hal').as_posix()) in ret.stdout, 'Failed to verify original `main` directory'
 
