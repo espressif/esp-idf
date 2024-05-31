@@ -113,9 +113,9 @@ static inline void ecdsa_ll_enable_intr(ecdsa_ll_intr_type_t type)
     switch (type) {
         case ECDSA_INT_CALC_DONE:
 #if !CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
-            REG_SET_FIELD(ECDSA_INT_ENA_REG, ECDSA_PREP_DONE_INT_ENA, 0);
+            REG_SET_FIELD(ECDSA_INT_ENA_REG, ECDSA_PREP_DONE_INT_ENA, 1);
 #else
-            REG_SET_FIELD(ECDSA_INT_ENA_REG, ECDSA_CALC_DONE_INT_ENA, 0);
+            REG_SET_FIELD(ECDSA_INT_ENA_REG, ECDSA_CALC_DONE_INT_ENA, 1);
 #endif
             break;
         case ECDSA_INT_SHA_RELEASE:
@@ -161,9 +161,9 @@ static inline void ecdsa_ll_clear_intr(ecdsa_ll_intr_type_t type)
     switch (type) {
         case ECDSA_INT_CALC_DONE:
 #if !CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
-            REG_SET_FIELD(ECDSA_INT_ENA_REG, ECDSA_PREP_DONE_INT_CLR, 0);
+            REG_SET_FIELD(ECDSA_INT_ENA_REG, ECDSA_PREP_DONE_INT_CLR, 1);
 #else
-            REG_SET_FIELD(ECDSA_INT_ENA_REG, ECDSA_CALC_DONE_INT_CLR, 0);
+            REG_SET_FIELD(ECDSA_INT_ENA_REG, ECDSA_CALC_DONE_INT_CLR, 1);
 #endif
             break;
         case ECDSA_INT_SHA_RELEASE:
