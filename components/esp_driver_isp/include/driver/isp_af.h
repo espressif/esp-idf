@@ -38,7 +38,7 @@ typedef struct {
  *         - ESP_ERR_NOT_FOUND     No free interrupt found with the specified flags
  *         - ESP_ERR_NO_MEM        If out of memory
  */
-esp_err_t esp_isp_new_af_controller(isp_proc_handle_t isp_proc, const esp_isp_af_config_t *af_config, isp_af_ctrlr_t *ret_hdl);
+esp_err_t esp_isp_new_af_controller(isp_proc_handle_t isp_proc, const esp_isp_af_config_t *af_config, isp_af_ctlr_t *ret_hdl);
 
 /**
  * @brief Delete an ISP AF controller
@@ -50,7 +50,7 @@ esp_err_t esp_isp_new_af_controller(isp_proc_handle_t isp_proc, const esp_isp_af
  *         - ESP_ERR_INVALID_ARG   If the combination of arguments is invalid.
  *         - ESP_ERR_INVALID_STATE Driver state is invalid.
  */
-esp_err_t esp_isp_del_af_controller(isp_af_ctrlr_t af_ctrlr);
+esp_err_t esp_isp_del_af_controller(isp_af_ctlr_t af_ctrlr);
 
 /**
  * @brief Enable an ISP AF controller
@@ -62,7 +62,7 @@ esp_err_t esp_isp_del_af_controller(isp_af_ctrlr_t af_ctrlr);
  *         - ESP_ERR_INVALID_ARG   If the combination of arguments is invalid.
  *         - ESP_ERR_INVALID_STATE Driver state is invalid.
  */
-esp_err_t esp_isp_af_controller_enable(isp_af_ctrlr_t af_ctrlr);
+esp_err_t esp_isp_af_controller_enable(isp_af_ctlr_t af_ctrlr);
 
 /**
  * @brief Disable an ISP AF controller
@@ -74,7 +74,7 @@ esp_err_t esp_isp_af_controller_enable(isp_af_ctrlr_t af_ctrlr);
  *         - ESP_ERR_INVALID_ARG   If the combination of arguments is invalid.
  *         - ESP_ERR_INVALID_STATE Driver state is invalid.
  */
-esp_err_t esp_isp_af_controller_disable(isp_af_ctrlr_t af_ctrlr);
+esp_err_t esp_isp_af_controller_disable(isp_af_ctlr_t af_ctrlr);
 
 /**
  * @brief Trigger AF luminance and definition statistics for one time and get the result
@@ -97,7 +97,7 @@ esp_err_t esp_isp_af_controller_disable(isp_af_ctrlr_t af_ctrlr);
  *         - ESP_ERR_INVALID_ARG   If the combination of arguments is invalid.
  *         - ESP_ERR_INVALID_STATE Driver state is invalid.
  */
-esp_err_t esp_isp_af_controller_get_oneshot_statistics(isp_af_ctrlr_t af_ctrlr, int timeout_ms, isp_af_result_t *out_res);
+esp_err_t esp_isp_af_controller_get_oneshot_statistics(isp_af_ctlr_t af_ctrlr, int timeout_ms, isp_af_result_t *out_res);
 
 /** @cond */
 #define esp_isp_af_controller_get_oneshot_result(af_ctrlr, out_res)     \
@@ -116,7 +116,7 @@ esp_err_t esp_isp_af_controller_get_oneshot_statistics(isp_af_ctrlr_t af_ctrlr, 
  *         - ESP_ERR_INVALID_ARG   Null pointer
  *         - ESP_ERR_INVALID_STATE Driver state is invalid.
  */
-esp_err_t esp_isp_af_controller_start_continuous_statistics(isp_af_ctrlr_t af_ctrlr);
+esp_err_t esp_isp_af_controller_start_continuous_statistics(isp_af_ctlr_t af_ctrlr);
 
 /**
  * @brief Stop AF continuous statistics of the luminance and definition in the windows
@@ -127,7 +127,7 @@ esp_err_t esp_isp_af_controller_start_continuous_statistics(isp_af_ctrlr_t af_ct
  *         - ESP_ERR_INVALID_ARG   Null pointer
  *         - ESP_ERR_INVALID_STATE Driver state is invalid.
  */
-esp_err_t esp_isp_af_controller_stop_continuous_statistics(isp_af_ctrlr_t af_ctrlr);
+esp_err_t esp_isp_af_controller_stop_continuous_statistics(isp_af_ctlr_t af_ctrlr);
 
 /*---------------------------------------------
                 AF Env Monitor
@@ -152,7 +152,7 @@ typedef struct {
  *         - ESP_ERR_INVALID_ARG   If the combination of arguments is invalid.
  *         - ESP_ERR_INVALID_STATE Driver state is invalid.
  */
-esp_err_t esp_isp_af_controller_set_env_detector(isp_af_ctrlr_t af_ctrlr, const esp_isp_af_env_config_t *env_config);
+esp_err_t esp_isp_af_controller_set_env_detector(isp_af_ctlr_t af_ctrlr, const esp_isp_af_env_config_t *env_config);
 
 /**
  * @brief Set ISP AF environment detector detecting threshold
@@ -166,7 +166,7 @@ esp_err_t esp_isp_af_controller_set_env_detector(isp_af_ctrlr_t af_ctrlr, const 
  *         - ESP_ERR_INVALID_ARG   If the combination of arguments is invalid.
  *         - ESP_ERR_INVALID_STATE Driver state is invalid.
  */
-esp_err_t esp_isp_af_controller_set_env_detector_threshold(isp_af_ctrlr_t af_ctrlr, int definition_thresh, int luminance_thresh);
+esp_err_t esp_isp_af_controller_set_env_detector_threshold(isp_af_ctlr_t af_ctrlr, int definition_thresh, int luminance_thresh);
 
 /**
  * @brief Event data structure
@@ -184,7 +184,7 @@ typedef struct {
  *
  * @return Whether a high priority task is woken up by this function
  */
-typedef bool (*esp_isp_af_env_detector_callback_t)(isp_af_ctrlr_t af_ctrlr, const esp_isp_af_env_detector_evt_data_t *edata, void *user_data);
+typedef bool (*esp_isp_af_env_detector_callback_t)(isp_af_ctlr_t af_ctrlr, const esp_isp_af_env_detector_evt_data_t *edata, void *user_data);
 
 /**
  * @brief Group of ISP AF Env detector callbacks
@@ -215,7 +215,7 @@ typedef struct {
  *        - ESP_ERR_INVALID_ARG:   Invalid arguments
  *        - ESP_ERR_INVALID_STATE: Driver state is invalid, you shouldn't call this API at this moment
  */
-esp_err_t esp_isp_af_env_detector_register_event_callbacks(isp_af_ctrlr_t af_ctrlr, const esp_isp_af_env_detector_evt_cbs_t *cbs, void *user_data);
+esp_err_t esp_isp_af_env_detector_register_event_callbacks(isp_af_ctlr_t af_ctrlr, const esp_isp_af_env_detector_evt_cbs_t *cbs, void *user_data);
 
 #ifdef __cplusplus
 }

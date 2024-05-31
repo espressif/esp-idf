@@ -24,7 +24,7 @@
 #include "esp_private/esp_cache_private.h"
 #include "esp_cache.h"
 
-#if CONFIG_MIPI_CSI_ISR_IRAM_SAFE
+#if CONFIG_CAM_CTLR_MIPI_CSI_ISR_IRAM_SAFE
 #define CSI_MEM_ALLOC_CAPS   (MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT)
 #else
 #define CSI_MEM_ALLOC_CAPS   MALLOC_CAP_DEFAULT
@@ -66,7 +66,6 @@ static esp_err_t s_csi_claim_controller(csi_controller_t *controller)
                 mipi_csi_ll_enable_host_bus_clock(i, 1);
                 mipi_csi_ll_reset_host_clock(i);
             }
-            _lock_release(&s_platform.mutex);
             break;
         }
     }
@@ -295,7 +294,7 @@ static esp_err_t s_csi_ctlr_get_buffer_length(esp_cam_ctlr_handle_t handle, size
     return ESP_OK;
 }
 
-static bool csi_dma_trans_done_callback(dw_gdma_channel_handle_t chan, const dw_gdma_trans_done_event_data_t *event_data, void *user_data)
+IRAM_ATTR static bool csi_dma_trans_done_callback(dw_gdma_channel_handle_t chan, const dw_gdma_trans_done_event_data_t *event_data, void *user_data)
 {
     bool need_yield = false;
     BaseType_t high_task_woken = pdFALSE;
@@ -374,7 +373,7 @@ esp_err_t s_register_event_callbacks(esp_cam_ctlr_handle_t handle, const esp_cam
     csi_controller_t *ctlr = __containerof(handle, csi_controller_t, base);
     ESP_RETURN_ON_FALSE(ctlr->csi_fsm == CSI_FSM_INIT, ESP_ERR_INVALID_STATE, TAG, "driver starts already, not allow cbs register");
 
-#if CONFIG_MIPI_CSI_ISR_IRAM_SAFE
+#if CONFIG_CAM_CTLR_MIPI_CSI_ISR_IRAM_SAFE
     if (cbs->on_get_new_trans) {
         ESP_RETURN_ON_FALSE(esp_ptr_in_iram(cbs->on_get_new_trans), ESP_ERR_INVALID_ARG, TAG, "on_get_new_trans callback not in IRAM");
     }
@@ -407,7 +406,7 @@ esp_err_t s_csi_ctlr_disable(esp_cam_ctlr_handle_t handle)
 {
     ESP_RETURN_ON_FALSE(handle, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
     csi_controller_t *ctlr = __containerof(handle, csi_controller_t, base);
-    ESP_RETURN_ON_FALSE(ctlr->csi_fsm == CSI_FSM_ENABLED, ESP_ERR_INVALID_STATE, TAG, "processor isn't in init state");
+    ESP_RETURN_ON_FALSE(ctlr->csi_fsm == CSI_FSM_ENABLED, ESP_ERR_INVALID_STATE, TAG, "processor isn't in enable state");
 
     portENTER_CRITICAL(&ctlr->spinlock);
     ctlr->csi_fsm = CSI_FSM_INIT;
@@ -487,7 +486,7 @@ esp_err_t s_ctlr_csi_stop(esp_cam_ctlr_handle_t handle)
     ESP_RETURN_ON_ERROR(dw_gdma_channel_enable_ctrl(ctlr->dma_chan, false), TAG, "failed to disable dwgdma");
 
     portENTER_CRITICAL(&ctlr->spinlock);
-    ctlr->csi_fsm = CSI_FSM_INIT;
+    ctlr->csi_fsm = CSI_FSM_ENABLED;
     portEXIT_CRITICAL(&ctlr->spinlock);
 
     return ESP_OK;

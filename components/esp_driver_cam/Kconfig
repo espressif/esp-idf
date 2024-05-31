@@ -1,11 +1,27 @@
-menu "ESP Camera Controller Configurations"
+menu "ESP-Driver:Camera Controller Configurations"
+
     depends on SOC_MIPI_CSI_SUPPORTED
 
-    config MIPI_CSI_ISR_IRAM_SAFE
+    config CAM_CTLR_MIPI_CSI_ISR_IRAM_SAFE
         bool "CSI ISR IRAM-Safe"
         default n
+        select DW_GDMA_ISR_IRAM_SAFE
+        select DW_GDMA_CTRL_FUNC_IN_IRAM
+        select DW_GDMA_SETTER_FUNC_IN_IRAM
+        select DW_GDMA_GETTER_FUNC_IN_IRAM
         help
             Ensure the CSI driver ISR is IRAM-Safe. When enabled, the ISR handler
+            will be available when the cache is disabled.
+
+    config CAM_CTLR_ISP_DVP_ISR_IRAM_SAFE
+        bool "ISP_DVP ISR IRAM-Safe"
+        default n
+        select DW_GDMA_ISR_IRAM_SAFE
+        select DW_GDMA_CTRL_FUNC_IN_IRAM
+        select DW_GDMA_SETTER_FUNC_IN_IRAM
+        select DW_GDMA_GETTER_FUNC_IN_IRAM
+        help
+            Ensure the ISP_DVP driver ISR is IRAM-Safe. When enabled, the ISR handler
             will be available when the cache is disabled.
 
 endmenu # ESP Camera Controller Configurations

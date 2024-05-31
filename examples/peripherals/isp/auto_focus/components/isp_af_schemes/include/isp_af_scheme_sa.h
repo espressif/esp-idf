@@ -52,7 +52,7 @@ typedef struct {
  *         - ESP_ERR_INVALID_STATE Invalid state
  *         - ESP_ERR_NO_MEM        If out of memory
  */
-esp_err_t isp_af_create_sa_scheme(isp_af_ctrlr_t af_ctrlr, const isp_af_sa_scheme_config_t *config, isp_af_scheme_handle_t *ret_scheme);
+esp_err_t isp_af_create_sa_scheme(isp_af_ctlr_t af_ctrlr, const isp_af_sa_scheme_config_t *config, isp_af_scheme_handle_t *ret_scheme);
 
 /**
  * @brief Delete an AF step approximation scheme

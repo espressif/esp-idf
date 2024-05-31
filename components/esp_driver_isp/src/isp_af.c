@@ -12,7 +12,7 @@
 #include "esp_heap_caps.h"
 #include "freertos/FreeRTOS.h"
 #include "driver/isp_af.h"
-#include "isp_internal.h"
+#include "esp_private/isp_private.h"
 
 static const char *TAG = "ISP_AF";
 
@@ -33,7 +33,7 @@ static void s_isp_af_default_isr(void *arg);
 /*---------------------------------------------
                 AF
 ----------------------------------------------*/
-static esp_err_t s_isp_claim_af_controller(isp_proc_handle_t isp_proc, isp_af_ctrlr_t af_ctlr)
+static esp_err_t s_isp_claim_af_controller(isp_proc_handle_t isp_proc, isp_af_ctlr_t af_ctlr)
 {
     assert(isp_proc && af_ctlr);
 
@@ -56,7 +56,7 @@ static esp_err_t s_isp_claim_af_controller(isp_proc_handle_t isp_proc, isp_af_ct
     return ESP_OK;
 }
 
-static void s_isp_declaim_af_controller(isp_af_ctrlr_t af_ctlr)
+static void s_isp_declaim_af_controller(isp_af_ctlr_t af_ctlr)
 {
     assert(af_ctlr && af_ctlr->isp_proc);
 
@@ -65,7 +65,7 @@ static void s_isp_declaim_af_controller(isp_af_ctrlr_t af_ctlr)
     portEXIT_CRITICAL(&af_ctlr->isp_proc->spinlock);
 }
 
-static void s_isp_af_free_controller(isp_af_ctrlr_t af_ctlr)
+static void s_isp_af_free_controller(isp_af_ctlr_t af_ctlr)
 {
     if (af_ctlr) {
         if (af_ctlr->intr_handle) {
@@ -78,7 +78,7 @@ static void s_isp_af_free_controller(isp_af_ctrlr_t af_ctlr)
     }
 }
 
-esp_err_t esp_isp_new_af_controller(isp_proc_handle_t isp_proc, const esp_isp_af_config_t *af_config, isp_af_ctrlr_t *ret_hdl)
+esp_err_t esp_isp_new_af_controller(isp_proc_handle_t isp_proc, const esp_isp_af_config_t *af_config, isp_af_ctlr_t *ret_hdl)
 {
     esp_err_t ret = ESP_FAIL;
     ESP_RETURN_ON_FALSE(isp_proc && af_config && ret_hdl, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
@@ -102,7 +102,7 @@ esp_err_t esp_isp_new_af_controller(isp_proc_handle_t isp_proc, const esp_isp_af
     }
     ESP_RETURN_ON_FALSE(af_config->edge_thresh > 0, ESP_ERR_INVALID_ARG, TAG, "edge threshold should be larger than 0");
 
-    isp_af_ctrlr_t af_ctlr = heap_caps_calloc(1, sizeof(isp_af_controller_t), ISP_MEM_ALLOC_CAPS);
+    isp_af_ctlr_t af_ctlr = heap_caps_calloc(1, sizeof(isp_af_controller_t), ISP_MEM_ALLOC_CAPS);
     ESP_RETURN_ON_FALSE(af_ctlr, ESP_ERR_NO_MEM, TAG, "no mem");
     af_ctlr->evt_que = xQueueCreateWithCaps(1, sizeof(isp_af_result_t), ISP_MEM_ALLOC_CAPS);
     ESP_GOTO_ON_FALSE(af_ctlr->evt_que, ESP_ERR_NO_MEM, err1, TAG, "no mem for af event queue");
@@ -141,7 +141,7 @@ err1:
     return ret;
 }
 
-esp_err_t esp_isp_del_af_controller(isp_af_ctrlr_t af_ctlr)
+esp_err_t esp_isp_del_af_controller(isp_af_ctlr_t af_ctlr)
 {
     ESP_RETURN_ON_FALSE(af_ctlr && af_ctlr->isp_proc, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
     ESP_RETURN_ON_FALSE(af_ctlr->fsm == ISP_FSM_INIT, ESP_ERR_INVALID_STATE, TAG, "controller isn't in init state");
@@ -159,7 +159,7 @@ esp_err_t esp_isp_del_af_controller(isp_af_ctrlr_t af_ctlr)
     return ESP_OK;
 }
 
-esp_err_t esp_isp_af_controller_enable(isp_af_ctrlr_t af_ctlr)
+esp_err_t esp_isp_af_controller_enable(isp_af_ctlr_t af_ctlr)
 {
     ESP_RETURN_ON_FALSE(af_ctlr && af_ctlr->isp_proc, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
     ESP_RETURN_ON_FALSE(af_ctlr->fsm == ISP_FSM_INIT, ESP_ERR_INVALID_STATE, TAG, "controller isn't in init state");
@@ -173,7 +173,7 @@ esp_err_t esp_isp_af_controller_enable(isp_af_ctrlr_t af_ctlr)
     return ESP_OK;
 }
 
-esp_err_t esp_isp_af_controller_disable(isp_af_ctrlr_t af_ctlr)
+esp_err_t esp_isp_af_controller_disable(isp_af_ctlr_t af_ctlr)
 {
     ESP_RETURN_ON_FALSE(af_ctlr && af_ctlr->isp_proc, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
     ESP_RETURN_ON_FALSE(af_ctlr->fsm == ISP_FSM_ENABLE, ESP_ERR_INVALID_STATE, TAG, "controller isn't in enable state");
@@ -187,7 +187,7 @@ esp_err_t esp_isp_af_controller_disable(isp_af_ctrlr_t af_ctlr)
     return ESP_OK;
 }
 
-esp_err_t esp_isp_af_controller_get_oneshot_statistics(isp_af_ctrlr_t af_ctrlr, int timeout_ms, isp_af_result_t *out_res)
+esp_err_t esp_isp_af_controller_get_oneshot_statistics(isp_af_ctlr_t af_ctrlr, int timeout_ms, isp_af_result_t *out_res)
 {
     ESP_RETURN_ON_FALSE_ISR(af_ctrlr && (out_res || timeout_ms == 0), ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
     ESP_RETURN_ON_FALSE_ISR(af_ctrlr->fsm == ISP_FSM_ENABLE, ESP_ERR_INVALID_STATE, TAG, "controller isn't enabled or continuous statistics has started");
@@ -206,7 +206,7 @@ esp_err_t esp_isp_af_controller_get_oneshot_statistics(isp_af_ctrlr_t af_ctrlr, 
     return ret;
 }
 
-esp_err_t esp_isp_af_controller_start_continuous_statistics(isp_af_ctrlr_t af_ctrlr)
+esp_err_t esp_isp_af_controller_start_continuous_statistics(isp_af_ctlr_t af_ctrlr)
 {
     ESP_RETURN_ON_FALSE_ISR(af_ctrlr, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
     ESP_RETURN_ON_FALSE_ISR(af_ctrlr->fsm == ISP_FSM_ENABLE, ESP_ERR_INVALID_STATE, TAG, "controller isn't in enable state");
@@ -217,7 +217,7 @@ esp_err_t esp_isp_af_controller_start_continuous_statistics(isp_af_ctrlr_t af_ct
     return ESP_OK;
 }
 
-esp_err_t esp_isp_af_controller_stop_continuous_statistics(isp_af_ctrlr_t af_ctrlr)
+esp_err_t esp_isp_af_controller_stop_continuous_statistics(isp_af_ctlr_t af_ctrlr)
 {
     ESP_RETURN_ON_FALSE_ISR(af_ctrlr, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
     ESP_RETURN_ON_FALSE_ISR(af_ctrlr->fsm == ISP_FSM_START, ESP_ERR_INVALID_STATE, TAG, "controller isn't in continuous state");
@@ -231,7 +231,7 @@ esp_err_t esp_isp_af_controller_stop_continuous_statistics(isp_af_ctrlr_t af_ctr
 /*---------------------------------------------
                 AF Env Monitor
 ----------------------------------------------*/
-esp_err_t esp_isp_af_controller_set_env_detector(isp_af_ctrlr_t af_ctrlr, const esp_isp_af_env_config_t *env_config)
+esp_err_t esp_isp_af_controller_set_env_detector(isp_af_ctlr_t af_ctrlr, const esp_isp_af_env_config_t *env_config)
 {
     ESP_RETURN_ON_FALSE(af_ctrlr && env_config, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
     ESP_RETURN_ON_FALSE(af_ctrlr->fsm == ISP_FSM_INIT, ESP_ERR_INVALID_STATE, TAG, "invalid fsm, should be called when in init state");
@@ -248,7 +248,7 @@ esp_err_t esp_isp_af_controller_set_env_detector(isp_af_ctrlr_t af_ctrlr, const 
     return ESP_OK;
 }
 
-esp_err_t esp_isp_af_env_detector_register_event_callbacks(isp_af_ctrlr_t af_ctrlr, const esp_isp_af_env_detector_evt_cbs_t *cbs, void *user_data)
+esp_err_t esp_isp_af_env_detector_register_event_callbacks(isp_af_ctlr_t af_ctrlr, const esp_isp_af_env_detector_evt_cbs_t *cbs, void *user_data)
 {
     ESP_RETURN_ON_FALSE(af_ctrlr && cbs, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
     ESP_RETURN_ON_FALSE(af_ctrlr->fsm == ISP_FSM_INIT, ESP_ERR_INVALID_STATE, TAG, "detector isn't in the init state");
@@ -271,7 +271,7 @@ esp_err_t esp_isp_af_env_detector_register_event_callbacks(isp_af_ctrlr_t af_ctr
     return ESP_OK;
 }
 
-esp_err_t esp_isp_af_controller_set_env_detector_threshold(isp_af_ctrlr_t af_ctrlr, int definition_thresh, int luminance_thresh)
+esp_err_t esp_isp_af_controller_set_env_detector_threshold(isp_af_ctlr_t af_ctrlr, int definition_thresh, int luminance_thresh)
 {
     ESP_RETURN_ON_FALSE_ISR(af_ctrlr, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
     ESP_RETURN_ON_FALSE_ISR(af_ctrlr->fsm == ISP_FSM_ENABLE, ESP_ERR_INVALID_STATE, TAG, "detector isn't in enable state");
@@ -286,7 +286,7 @@ esp_err_t esp_isp_af_controller_set_env_detector_threshold(isp_af_ctrlr_t af_ctr
 ---------------------------------------------------------------*/
 static void IRAM_ATTR s_isp_af_default_isr(void *arg)
 {
-    isp_af_ctrlr_t af_ctrlr = (isp_af_ctrlr_t)arg;
+    isp_af_ctlr_t af_ctrlr = (isp_af_ctlr_t)arg;
     isp_proc_handle_t proc = af_ctrlr->isp_proc;
 
     uint32_t af_events = isp_hal_check_clear_intr_event(&proc->hal, ISP_LL_EVENT_AF_MASK);

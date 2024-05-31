@@ -1,0 +1,25 @@
+menu "Example DSI Configuration"
+    choice EXAMPLE_MIPI_DSI_DISP_HRES
+        bool "Set MIPI CSI horizontal resolution"
+        default EXAMPLE_MIPI_DSI_DISP_HRES_800
+
+        config EXAMPLE_MIPI_DSI_DISP_HRES_800
+            bool "800"
+    endchoice
+
+    config EXAMPLE_MIPI_DSI_DISP_HRES
+        int
+        default 800 if EXAMPLE_MIPI_DSI_DISP_HRES_800
+
+    choice EXAMPLE_MIPI_DSI_DISP_VRES
+        bool "Set MIPI CSI vertical resolution"
+        default EXAMPLE_MIPI_DSI_DISP_VRES_1280
+
+        config EXAMPLE_MIPI_DSI_DISP_VRES_1280
+            bool "1280"
+    endchoice
+
+    config EXAMPLE_MIPI_DSI_DISP_VRES
+        int
+        default 1280 if EXAMPLE_MIPI_DSI_DISP_VRES_1280
+endmenu

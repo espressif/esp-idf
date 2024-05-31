@@ -6,4 +6,4 @@ dependencies:
   isp_af_schemes:
     path: ${IDF_PATH}/examples/peripherals/isp/auto_focus/components/isp_af_schemes
   dsi_init:
-    path: ${IDF_PATH}/examples/peripherals/camera/components/dsi_init
+    path: ${IDF_PATH}/examples/peripherals/camera/camera_dsi/components/dsi_init

@@ -25,6 +25,7 @@
 #include "esp_cam_sensor.h"
 #include "ov5647.h"
 #include "example_dsi_init.h"
+#include "example_dsi_init_config.h"
 #include "example_config.h"
 
 static const char *TAG = "isp_dsi";
@@ -46,7 +47,7 @@ typedef union {
     uint16_t val;
 } dw9714_reg_t;
 
-static bool IRAM_ATTR s_env_change_cb(isp_af_ctrlr_t af_ctrlr, const esp_isp_af_env_detector_evt_data_t *edata, void *user_data)
+static bool IRAM_ATTR s_env_change_cb(isp_af_ctlr_t af_ctrlr, const esp_isp_af_env_detector_evt_data_t *edata, void *user_data)
 {
     BaseType_t mustYield = pdFALSE;
     TaskHandle_t task_handle = (TaskHandle_t)user_data;
@@ -119,7 +120,7 @@ static void af_task(void *arg)
         .edge_thresh = 128,
     };
 
-    isp_af_ctrlr_t af_ctrlr = NULL;
+    isp_af_ctlr_t af_ctrlr = NULL;
     ESP_ERROR_CHECK(esp_isp_new_af_controller(af_task_param.isp_proc, &af_config, &af_ctrlr));
 
     esp_isp_af_env_config_t env_config = {
@@ -185,9 +186,9 @@ void app_main(void)
     example_dsi_resource_alloc(&ili9881c_ctrl_panel, &mipi_dpi_panel, &frame_buffer);
 
     //---------------Necessary variable config------------------//
-    frame_buffer_size = CONFIG_EXAMPLE_MIPI_CSI_DISP_HRES * EXAMPLE_MIPI_DSI_IMAGE_VSIZE * EXAMPLE_RGB565_BITS_PER_PIXEL / 8;
+    frame_buffer_size = CONFIG_EXAMPLE_MIPI_CSI_DISP_HRES * CONFIG_EXAMPLE_MIPI_DSI_DISP_VRES * EXAMPLE_RGB565_BITS_PER_PIXEL / 8;
 
-    ESP_LOGD(TAG, "CONFIG_EXAMPLE_MIPI_CSI_DISP_HRES: %d, EXAMPLE_MIPI_DSI_IMAGE_VSIZE: %d, bits per pixel: %d", CONFIG_EXAMPLE_MIPI_CSI_DISP_HRES, EXAMPLE_MIPI_DSI_IMAGE_VSIZE, 8);
+    ESP_LOGD(TAG, "CONFIG_EXAMPLE_MIPI_CSI_DISP_HRES: %d, CONFIG_EXAMPLE_MIPI_DSI_DISP_VRES: %d, bits per pixel: %d", CONFIG_EXAMPLE_MIPI_CSI_DISP_HRES, CONFIG_EXAMPLE_MIPI_DSI_DISP_VRES, 8);
     ESP_LOGD(TAG, "frame_buffer_size: %zu", frame_buffer_size);
     ESP_LOGD(TAG, "frame_buffer: %p", frame_buffer);
 
@@ -226,8 +227,8 @@ void app_main(void)
         .h_res = CONFIG_EXAMPLE_MIPI_CSI_DISP_HRES,
         .v_res = CONFIG_EXAMPLE_MIPI_CSI_DISP_VRES,
         .lane_bit_rate_mbps = EXAMPLE_MIPI_CSI_LANE_BITRATE_MBPS,
-        .input_data_color_type = MIPI_CSI_COLOR_RAW8,
-        .output_data_color_type = MIPI_CSI_COLOR_RGB565,
+        .input_data_color_type = CAM_CTLR_COLOR_RAW8,
+        .output_data_color_type = CAM_CTLR_COLOR_RGB565,
         .data_lane_num = 2,
         .byte_swap_en = false,
         .queue_items = 1,
