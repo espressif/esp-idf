@@ -248,6 +248,8 @@ menu "Bootloader config"
             Protects the unmapped memory regions of the entire address space from unintended accesses.
             This will ensure that an exception will be triggered whenever the CPU performs a memory
             operation on unmapped regions of the address space.
+            NOTE: Disabling this config on some targets (ESP32-C6, ESP32-H2, ESP32-C5) would not generate
+            an exception when reading from or writing to 0x0.
 
     config BOOTLOADER_WDT_ENABLE
         bool "Use RTC watchdog in start code"
