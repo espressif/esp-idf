@@ -74,3 +74,8 @@ I80 接口的 LCD
             .bits_per_pixel = 16,
         };
         ESP_ERROR_CHECK(esp_lcd_new_panel_st7789(io_handle, &panel_config, &panel_handle));
+
+API 参考
+--------
+
+.. include-build-file:: inc/esp_lcd_io_i80.inc
