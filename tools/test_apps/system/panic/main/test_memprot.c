@@ -246,3 +246,21 @@ void test_drom_reg_execute_violation(void)
     func_ptr();
 }
 #endif
+
+#ifdef CONFIG_SOC_CPU_HAS_PMA
+void test_invalid_memory_region_write_violation(void)
+{
+    uint32_t *test_addr = (uint32_t *)((uint32_t)(SOC_DRAM_HIGH + 0x40));
+    printf("Write operation | Address: %p\n", test_addr);
+    *test_addr = RND_VAL;
+    printf("%ld\n", *test_addr);
+}
+
+void test_invalid_memory_region_execute_violation(void)
+{
+    void (*func_ptr)(void);
+    func_ptr = (void(*)(void))(SOC_DRAM_HIGH + 0x40);
+    printf("Execute operation | Address: %p\n", func_ptr);
+    func_ptr();
+}
+#endif
