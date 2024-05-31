@@ -82,12 +82,14 @@ typedef enum {
 #endif
 
 /**
- * @brief ISP AF result
+ * @brief ISP AF window
  */
 typedef struct {
-    int definition[ISP_AF_WINDOW_NUM];    ///< Definition, it refers how clear and sharp an image is
-    int luminance[ISP_AF_WINDOW_NUM];     ///< Luminance, it refers how luminant an image is
-} isp_af_result_t;
+    uint32_t top_left_x;        ///< Top left x axis value
+    uint32_t top_left_y;        ///< Top left y axis value
+    uint32_t bottom_right_x;    ///< Bottom right x axis value
+    uint32_t bottom_right_y;    ///< Bottom right y axis value
+} isp_af_window_t;
 
 /*---------------------------------------------------------------
                       BF

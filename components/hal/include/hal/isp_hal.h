@@ -89,21 +89,6 @@ uint32_t isp_hal_check_clear_intr_event(const isp_hal_context_t *hal, uint32_t m
 void isp_hal_bf_config(isp_hal_context_t *hal, isp_hal_bf_cfg_t *config);
 
 /*---------------------------------------------------------------
-                      Color Correction Matrix
----------------------------------------------------------------*/
-/**
- * @brief Set Color Correction Matrix
- *
- * @param[in] hal           Context of the HAL layer
- * @param[in] saturation    Whether to enable saturation when float data overflow
- * @param[in] flt_matrix    3x3 RGB correction matrix
- * @return
- *      - true      Set success
- *      - false     Invalid are
- */
-bool isp_hal_ccm_set_matrix(const isp_hal_context_t *hal, bool saturation, const float flt_matrix[3][3]);
-
-/*---------------------------------------------------------------
                             AWB
 ---------------------------------------------------------------*/
 /**

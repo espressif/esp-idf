@@ -57,6 +57,15 @@ TEST_CASE("ISP AF controller exhausted allocation", "[isp]")
     TEST_ESP_OK(esp_isp_del_processor(isp_proc));
 }
 
+static bool test_isp_awb_default_on_statistics_done_cb(isp_awb_ctlr_t awb_ctlr, const esp_isp_awb_evt_data_t *edata, void *user_data)
+{
+    (void) awb_ctlr;
+    (void) edata;
+    (void) user_data;
+    // Do nothing
+    return false;
+}
+
 TEST_CASE("ISP AWB driver basic function", "[isp]")
 {
     esp_isp_processor_cfg_t isp_config = {
@@ -88,6 +97,11 @@ TEST_CASE("ISP AWB driver basic function", "[isp]")
     isp_awb_stat_result_t stat_res = {};
     /* Create the awb controller */
     TEST_ESP_OK(esp_isp_new_awb_controller(isp_proc, &awb_config, &awb_ctlr));
+    /* Register AWB callback */
+    esp_isp_awb_cbs_t awb_cb = {
+        .on_statistics_done = test_isp_awb_default_on_statistics_done_cb,
+    };
+    TEST_ESP_OK(esp_isp_awb_register_event_callbacks(awb_ctlr, &awb_cb, NULL));
     /* Enabled the awb controller */
     TEST_ESP_OK(esp_isp_awb_controller_enable(awb_ctlr));
     /* Start continuous AWB statistics */
