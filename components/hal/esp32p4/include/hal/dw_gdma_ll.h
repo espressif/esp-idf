@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -932,7 +932,7 @@ static inline uint32_t dw_gdma_ll_channel_get_dst_periph_status(dw_gdma_dev_t *d
 /**
  * @brief Type of DW-DMA link list item
  */
-typedef struct dw_gdma_link_list_item_t {
+struct dw_gdma_link_list_item_t {
     dmac_chn_sar0_reg_t sar_lo;   /*!< Source address low 32 bits */
     dmac_chn_sar1_reg_t sar_hi;   /*!< Source address high 32 bits */
     dmac_chn_dar0_reg_t dar_lo;   /*!< Destination address low 32 bits */
@@ -949,8 +949,9 @@ typedef struct dw_gdma_link_list_item_t {
     dmac_chn_status1_reg_t status_hi; /*!< Channel status high 32 bits */
     uint32_t reserved_38;
     uint32_t reserved_3c;
-} dw_gdma_link_list_item_t __attribute__((aligned(DW_GDMA_LL_LINK_LIST_ALIGNMENT)));
+} __attribute__((aligned(DW_GDMA_LL_LINK_LIST_ALIGNMENT)));
 
+typedef struct dw_gdma_link_list_item_t dw_gdma_link_list_item_t;
 ESP_STATIC_ASSERT(sizeof(dw_gdma_link_list_item_t) == DW_GDMA_LL_LINK_LIST_ALIGNMENT, "Invalid size of dw_gdma_link_list_item_t structure");
 
 /**
