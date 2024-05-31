@@ -63,6 +63,17 @@ menu "Driver Configurations"
         endmenu # Legacy ADC Calibration Configuration
     endmenu  # Legacy ADC Driver Configuration
 
+    menu "Legacy DAC Driver Configurations"
+        depends on SOC_DAC_SUPPORTED
+        config DAC_SUPPRESS_DEPRECATE_WARN
+            bool "Suppress legacy driver deprecated warning"
+            default n
+            help
+                Whether to suppress the deprecation warnings when using legacy dac driver (driver/dac.h).
+                If you want to continue using the legacy driver, and don't want to see related deprecation warnings,
+                you can enable this option.
+    endmenu # Legacy DAC Driver Configurations
+
     menu "Legacy MCPWM Driver Configurations"
         depends on SOC_MCPWM_SUPPORTED
         config MCPWM_SUPPRESS_DEPRECATE_WARN
@@ -96,5 +107,49 @@ menu "Driver Configurations"
                 If you want to continue using the legacy driver, and don't want to see related deprecation warnings,
                 you can enable this option.
     endmenu # Legacy RMT Driver Configurations
+
+    menu "Legacy I2S Driver Configurations"
+        depends on SOC_I2S_SUPPORTED
+        config I2S_SUPPRESS_DEPRECATE_WARN
+            bool "Suppress legacy driver deprecated warning"
+            default n
+            help
+                Whether to suppress the deprecation warnings when using legacy i2s driver (driver/i2s.h).
+                If you want to continue using the legacy driver, and don't want to see related deprecation warnings,
+                you can enable this option.
+    endmenu # Legacy I2S Driver Configurationss
+
+    menu "Legacy PCNT Driver Configurations"
+        depends on SOC_PCNT_SUPPORTED
+        config PCNT_SUPPRESS_DEPRECATE_WARN
+            bool "Suppress legacy driver deprecated warning"
+            default n
+            help
+                whether to suppress the deprecation warnings when using legacy PCNT driver (driver/pcnt.h).
+                If you want to continue using the legacy driver, and don't want to see related deprecation warnings,
+                you can enable this option.
+    endmenu # Legacy PCNT Driver Configurationss
+
+    menu "Legacy SDM Driver Configurations"
+        depends on SOC_SDM_SUPPORTED
+        config SDM_SUPPRESS_DEPRECATE_WARN
+            bool "Suppress legacy driver deprecated warning"
+            default n
+            help
+                whether to suppress the deprecation warnings when using legacy SDM driver (driver/sigmadelta.h).
+                If you want to continue using the legacy driver, and don't want to see related deprecation warnings,
+                you can enable this option.
+    endmenu # Legacy SDM Driver Configurationss
+
+    menu "Legacy Temperature Sensor Driver Configurations"
+        depends on SOC_TEMP_SENSOR_SUPPORTED
+        config TEMP_SENSOR_SUPPRESS_DEPRECATE_WARN
+            bool "Suppress legacy driver deprecated warning"
+            default n
+            help
+                whether to suppress the deprecation warnings when using legacy temperature sensor driver
+                (driver/temp_sensor.h). If you want to continue using the legacy driver,
+                and don't want to see related deprecation warnings, you can enable this option.
+    endmenu # Legacy Temperature Sensor Driver Configurationss
 
 endmenu  # Driver configurations
