@@ -178,7 +178,7 @@ typedef struct {
 /**
  * @brief Prototype of ISP AF Env detector event callback
  *
- * @param[in] handle    ISP AF controller handle
+ * @param[in] af_ctrlr  ISP AF controller handle
  * @param[in] edata     ISP AF Env detector event data
  * @param[in] user_data User registered context, registered when in `esp_isp_af_env_detector_register_event_callbacks()`
  *

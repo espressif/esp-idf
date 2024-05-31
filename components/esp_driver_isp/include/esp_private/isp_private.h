@@ -64,6 +64,7 @@ typedef struct isp_processor_t {
     uint32_t                    v_res;
     /* sub module contexts */
     isp_af_ctlr_t               af_ctlr[SOC_ISP_AF_CTLR_NUMS];
+    isp_awb_ctlr_t              awb_ctlr;
     isp_fsm_t                   bf_fsm;
 } isp_processor_t;
 #endif

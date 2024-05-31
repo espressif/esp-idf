@@ -108,6 +108,20 @@ typedef enum {
     ISP_BF_EDGE_PADDING_MODE_CUSTOM_DATA,    ///< Fill BF edge padding data with custom pixel data
 } isp_bf_edge_padding_mode_t;
 
+/*---------------------------------------------------------------
+                      AWB
+---------------------------------------------------------------*/
+
+/**
+ * @brief ISP AWB sample point in the ISP pipeline
+ *
+ */
+typedef enum {
+    ISP_AWB_SAMPLE_POINT_BEFORE_CCM,       ///< Sample AWB data before CCM (Color Correction Matrix)
+    ISP_AWB_SAMPLE_POINT_AFTER_CCM,        ///< Sample AWB data after CCM (Color Correction Matrix)
+} isp_awb_sample_point_t;
+
+
 #ifdef __cplusplus
 }
 #endif

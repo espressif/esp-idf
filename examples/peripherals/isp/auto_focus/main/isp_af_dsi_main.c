@@ -92,7 +92,7 @@ static void af_task(void *arg)
 
     /**
      * AF window, windows for ISP hardware to record the
-     * - lunimance
+     * - luminance
      * - definition
      * of the current windows
      */
