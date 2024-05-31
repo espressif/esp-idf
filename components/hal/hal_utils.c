@@ -7,6 +7,14 @@
 #include "hal/hal_utils.h"
 #include "hal/assert.h"
 
+#ifndef BIT
+#define BIT(n)          (1UL << (n))
+#endif
+
+#ifndef BIT_MASK
+#define BIT_MASK(n)     (BIT(n) - 1)
+#endif
+
 __attribute__((always_inline))
 static inline uint32_t _sub_abs(uint32_t a, uint32_t b)
 {
@@ -130,4 +138,57 @@ uint32_t hal_utils_calc_clk_div_integer(const hal_utils_clk_info_t *clk_info, ui
     *int_div = div_integ;
     // Return the actual frequency
     return clk_info->src_freq_hz / div_integ;
+}
+
+typedef union {
+    struct {
+        uint32_t mantissa: 23;
+        uint32_t exponent: 8;
+        uint32_t sign: 1;
+    };
+    uint32_t val;
+} hal_utils_ieee754_float_t;
+
+int hal_utils_float_to_fixed_point_32b(float flt, const hal_utils_fixed_point_t *fp_cfg, uint32_t *fp_out)
+{
+    int ret = 0;
+    uint32_t output = 0;
+    const hal_utils_ieee754_float_t *f = (const hal_utils_ieee754_float_t *)&flt;
+    if (fp_cfg->int_bit + fp_cfg->frac_bit > 31) {
+        // Not supported
+        return -3;
+    }
+
+    if (f->val == 0) {  // Zero case
+        *fp_out = 0;
+        return 0;
+    }
+    if (f->exponent != 0xFF) {  // Normal case
+        int real_exp = (int)f->exponent - 127;
+        uint32_t real_mant = f->mantissa | BIT(23);  // Add the hidden bit
+        // Overflow check
+        if (real_exp >= (int)fp_cfg->int_bit) {
+            ret = -1;
+        }
+        // Determine sign
+        output |= f->sign << (fp_cfg->int_bit + fp_cfg->frac_bit);
+        // Determine integer and fraction part
+        int shift = 23 - fp_cfg->frac_bit - real_exp;
+        output |= shift >= 0 ? real_mant >> shift : real_mant << -shift;
+    } else {
+        if (f->mantissa && f->mantissa < BIT(23) - 1) {  // NaN (Not-a-Number) case
+            return -2;
+        } else {  // Infinity or Largest Number case
+            output = f->sign ? ~(uint32_t)0 : BIT(31) - 1;
+            ret = -1;
+        }
+    }
+
+    if (ret != 0 && fp_cfg->saturation) {
+        *fp_out = (f->sign << (fp_cfg->int_bit + fp_cfg->frac_bit)) |
+                (BIT_MASK(fp_cfg->int_bit + fp_cfg->frac_bit));
+    } else {
+        *fp_out = output;
+    }
+    return ret;
 }

@@ -7,6 +7,7 @@
 #pragma once
 
 #include <stdint.h>
+#include <stdbool.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -147,6 +148,38 @@ static inline uint32_t hal_utils_calc_lcm(uint32_t a, uint32_t b)
     b = b == 0 ? 1 : b;
     return (a * b / hal_utils_gcd(a, b));
 }
+
+/**
+ * @brief Fixed-point data configuration
+ *
+ */
+typedef struct {
+    uint32_t int_bit;       /*!< Integer bit of the fixed point */
+    uint32_t frac_bit;      /*!< Fractional bit of the fixed point */
+    bool saturation;        /*!< Whether to limit the value to the maximum when fixed-point data overflow.
+                             *   When set true, the value will be limited to the maximum when the float type data is out of range.
+                             *   When set false, the function will return false when the float type data is out of range.
+                             */
+} hal_utils_fixed_point_t;
+
+/**
+ * @brief Convert the float type to fixed point type
+ * @note  The supported data format:
+ *        - [input] float (IEEE 754):
+ *          sign(1bit) + exponent(8bit) + mantissa(23bit)       (32 bit in total)
+ *        - [output] fixed-point:
+ *          sign(1bit) + integer(int_bit) + fraction(frac_bit)  (less or equal to 32 bit)
+ *
+ * @param[in]  flt          IEEE 754 float type data
+ * @param[in]  fp_cfg       Fixed-point data configuration
+ * @param[out] fp_out       The output fixed-point data
+ * @return
+ *      0:              Success
+ *      -1:             Fixed point data overflow, `fp_out` will still be assigned
+ *      -2:             Float is NaN
+ *      -3:             Invalid configuration
+ */
+int hal_utils_float_to_fixed_point_32b(float flt, const hal_utils_fixed_point_t *fp_cfg, uint32_t *fp_out);
 
 #ifdef __cplusplus
 }
