@@ -86,3 +86,7 @@ config ESP_ROM_HAS_SW_FLOAT
 config ESP_ROM_USB_OTG_NUM
     int
     default -1
+
+config ESP_ROM_HAS_OUTPUT_PUTC_FUNC
+    bool
+    default y

@@ -1,6 +1,8 @@
 [mapping:esp_rom]
 archive: libesp_rom.a
 entries:
+    esp_rom_sys (noflash)
+    esp_rom_print (noflash)
     esp_rom_spiflash (noflash)
     if ESP_ROM_HAS_FLASH_COUNT_PAGES_BUG = y:
         esp_rom_cache_esp32s2_esp32s3 (noflash)

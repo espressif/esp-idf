@@ -1,5 +1,6 @@
 set(srcs "test_app_main.c"
-         "test_libgcc.c")
+         "test_libgcc.c"
+         "test_printf.c")
 
 if(CONFIG_IDF_ENV_FPGA)
     list(APPEND srcs "test_miniz.c")
