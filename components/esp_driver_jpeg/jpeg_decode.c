@@ -217,12 +217,12 @@ esp_err_t jpeg_decoder_process(jpeg_decoder_handle_t decoder_engine, const jpeg_
     decoder_engine->conv_std = decode_cfg->conv_std;
     decoder_engine->decoded_buf = decode_outbuf;
 
-    ESP_GOTO_ON_ERROR(jpeg_parse_marker(decoder_engine, bit_stream, stream_size), err, TAG, "jpeg parse marker failed");
-    ESP_GOTO_ON_ERROR(jpeg_parse_header_info_to_hw(decoder_engine), err, TAG, "write header info to hw failed");
-    ESP_GOTO_ON_ERROR(jpeg_dec_config_dma_descriptor(decoder_engine), err, TAG, "config dma descriptor failed");
+    ESP_GOTO_ON_ERROR(jpeg_parse_marker(decoder_engine, bit_stream, stream_size), err2, TAG, "jpeg parse marker failed");
+    ESP_GOTO_ON_ERROR(jpeg_parse_header_info_to_hw(decoder_engine), err2, TAG, "write header info to hw failed");
+    ESP_GOTO_ON_ERROR(jpeg_dec_config_dma_descriptor(decoder_engine), err2, TAG, "config dma descriptor failed");
 
     *out_size = decoder_engine->header_info->process_h * decoder_engine->header_info->process_v * decoder_engine->bit_per_pixel / 8;
-    ESP_GOTO_ON_FALSE((*out_size <= outbuf_size), ESP_ERR_INVALID_ARG, err, TAG, "Given buffer size % " PRId32 " is smaller than actual jpeg decode output size % " PRId32 "the height and width of output picture size will be adjusted to 16 bytes aligned automatically", outbuf_size, *out_size);
+    ESP_GOTO_ON_FALSE((*out_size <= outbuf_size), ESP_ERR_INVALID_ARG, err2, TAG, "Given buffer size % " PRId32 " is smaller than actual jpeg decode output size % " PRId32 "the height and width of output picture size will be adjusted to 16 bytes aligned automatically", outbuf_size, *out_size);
 
     dma2d_trans_config_t trans_desc = {
         .tx_channel_num = 1,
@@ -236,20 +236,20 @@ esp_err_t jpeg_decoder_process(jpeg_decoder_handle_t decoder_engine, const jpeg_
     ret = esp_cache_msync((void*)decoder_engine->header_info->buffer_offset, decoder_engine->header_info->buffer_left, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED);
     assert(ret == ESP_OK);
 
-    ESP_GOTO_ON_ERROR(dma2d_enqueue(decoder_engine->dma2d_group_handle, &trans_desc, decoder_engine->trans_desc), err, TAG, "enqueue dma2d failed");
+    ESP_GOTO_ON_ERROR(dma2d_enqueue(decoder_engine->dma2d_group_handle, &trans_desc, decoder_engine->trans_desc), err2, TAG, "enqueue dma2d failed");
     bool need_yield;
     // Blocking for JPEG decode transaction finishes.
     while (1) {
         jpeg_dma2d_dec_evt_t jpeg_dma2d_event;
         BaseType_t ret_val = xQueueReceive(decoder_engine->evt_queue, &jpeg_dma2d_event, decoder_engine->timeout_tick);
-        ESP_GOTO_ON_FALSE(ret_val == pdTRUE, ESP_ERR_TIMEOUT, err, TAG, "jpeg-dma2d handle jpeg decode timeout, please check image accuracy and `timeout_ms` ");
+        ESP_GOTO_ON_FALSE(ret_val == pdTRUE, ESP_ERR_TIMEOUT, err1, TAG, "jpeg-dma2d handle jpeg decode timeout, please check image accuracy and `timeout_ms` ");
 
         // Dealing with JPEG event
         if (jpeg_dma2d_event.jpgd_status != 0) {
             uint32_t status = jpeg_dma2d_event.jpgd_status;
             s_decoder_error_log_print(status);
             ret = ESP_ERR_INVALID_STATE;
-            goto err;
+            goto err1;
         }
 
         if (jpeg_dma2d_event.dma_evt & JPEG_DMA2D_RX_EOF) {
@@ -265,8 +265,9 @@ esp_err_t jpeg_decoder_process(jpeg_decoder_handle_t decoder_engine, const jpeg_
     }
     return ESP_OK;
 
-err:
+err1:
     dma2d_force_end(decoder_engine->trans_desc, &need_yield);
+err2:
     xSemaphoreGive(decoder_engine->codec_base->codec_mutex);
     if (decoder_engine->codec_base->pm_lock) {
         esp_pm_lock_release(decoder_engine->codec_base->pm_lock);
