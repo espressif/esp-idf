@@ -16,7 +16,6 @@
 extern "C" {
 #endif
 
-
 /**
  * @brief get chip version
  */
