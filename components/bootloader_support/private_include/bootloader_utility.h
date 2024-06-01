@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2018-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,6 +8,11 @@
 #include "bootloader_config.h"
 #include "esp_image_format.h"
 #include "bootloader_config.h"
+
+#ifdef __cplusplus
+extern "C"
+{
+#endif
 
 /**
  * @brief Load partition table.
@@ -120,3 +125,7 @@ void bootloader_debug_buffer(const void *buffer, size_t length, const char *labe
  * @return ESP_OK if secure boot digest is generated successfully.
  */
 esp_err_t bootloader_sha256_flash_contents(uint32_t flash_offset, uint32_t len, uint8_t *digest);
+
+#ifdef __cplusplus
+}
+#endif

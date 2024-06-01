@@ -1,9 +1,14 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 #pragma once
+
+#ifdef __cplusplus
+extern "C"
+{
+#endif
 
 /**
  * @brief Configure analog super WDT reset
@@ -25,3 +30,7 @@ void bootloader_ana_bod_reset_config(bool enable);
  * @param enable Boolean to enable or disable clock glitch reset
  */
 void bootloader_ana_clock_glitch_reset_config(bool enable);
+
+#ifdef __cplusplus
+}
+#endif
