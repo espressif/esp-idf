@@ -238,11 +238,15 @@ void apm_hal_apm_ctrl_master_sec_mode_config(apm_ctrl_secure_mode_config_t *sec_
 void apm_hal_apm_ctrl_reset_event_enable(bool enable);
 
 /**
- * @brief Returns APM Ctrl access path interrupt source number.
+ * @brief Fetch the APM Ctrl access path interrupt source number.
  *
  * @param apm_path   APM controller and access path to be configured
+ *
+ * @return
+ *      - valid interrupt source number on success
+ *      - -1: invalid interrupt source
  */
-esp_err_t apm_hal_apm_ctrl_get_int_src_num(apm_ctrl_path_t *apm_path);
+int apm_hal_apm_ctrl_get_int_src_num(apm_ctrl_path_t *apm_path);
 
 #endif //CONFIG_IDF_TARGET_ESP32P4
 
