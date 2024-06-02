@@ -1,6 +1,6 @@
 /*
- * FreeRTOS Kernel V11.0.1
- * Copyright (C) 2021 Amazon.com, Inc. or its affiliates.  All Rights Reserved.
+ * FreeRTOS Kernel V11.1.0
+ * Copyright (C) 2021 Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *
  * SPDX-FileCopyrightText: 2021 Amazon.com, Inc. or its affiliates
  *
@@ -98,6 +98,10 @@
 /* Set default value of configNUMBER_OF_CORES to 1 to use single core FreeRTOS. */
 #ifndef configNUMBER_OF_CORES
     #define configNUMBER_OF_CORES    1
+#endif
+
+#ifndef configUSE_MALLOC_FAILED_HOOK
+    #define configUSE_MALLOC_FAILED_HOOK    0
 #endif
 
 /* Basic FreeRTOS definitions. */
@@ -298,10 +302,6 @@
     #endif
 #endif
 
-#ifndef configUSE_DAEMON_TASK_STARTUP_HOOK
-    #define configUSE_DAEMON_TASK_STARTUP_HOOK    0
-#endif
-
 #ifndef configUSE_APPLICATION_TASK_TAG
     #define configUSE_APPLICATION_TASK_TAG    0
 #endif
@@ -320,6 +320,24 @@
 
 #ifndef configUSE_TIMERS
     #define configUSE_TIMERS    0
+#endif
+
+#ifndef configUSE_EVENT_GROUPS
+    #define configUSE_EVENT_GROUPS    1
+#endif
+
+#ifndef configUSE_STREAM_BUFFERS
+    #define configUSE_STREAM_BUFFERS    1
+#endif
+
+#ifndef configUSE_DAEMON_TASK_STARTUP_HOOK
+    #define configUSE_DAEMON_TASK_STARTUP_HOOK    0
+#endif
+
+#if ( configUSE_DAEMON_TASK_STARTUP_HOOK != 0 )
+    #if ( configUSE_TIMERS == 0 )
+        #error configUSE_DAEMON_TASK_STARTUP_HOOK is set, but the daemon task is not created because configUSE_TIMERS is 0.
+    #endif
 #endif
 
 #ifndef configUSE_COUNTING_SEMAPHORES
@@ -488,6 +506,12 @@
     #define configUSE_CORE_AFFINITY    0
 #endif /* configUSE_CORE_AFFINITY */
 
+#if ( ( configNUMBER_OF_CORES > 1 ) && ( configUSE_CORE_AFFINITY == 1 ) )
+    #ifndef configTASK_DEFAULT_CORE_AFFINITY
+        #define configTASK_DEFAULT_CORE_AFFINITY    tskNO_AFFINITY
+    #endif
+#endif
+
 #ifndef configUSE_PASSIVE_IDLE_HOOK
     #define configUSE_PASSIVE_IDLE_HOOK    0
 #endif /* configUSE_PASSIVE_IDLE_HOOK */
@@ -513,12 +537,36 @@
 
 #endif /* configUSE_TIMERS */
 
+#ifndef portHAS_NESTED_INTERRUPTS
+    #if defined( portSET_INTERRUPT_MASK_FROM_ISR ) && defined( portCLEAR_INTERRUPT_MASK_FROM_ISR )
+        #define portHAS_NESTED_INTERRUPTS    1
+    #else
+        #define portHAS_NESTED_INTERRUPTS    0
+    #endif
+#endif
+
 #ifndef portSET_INTERRUPT_MASK_FROM_ISR
-    #define portSET_INTERRUPT_MASK_FROM_ISR()    0
+    #if ( portHAS_NESTED_INTERRUPTS == 1 )
+        #error portSET_INTERRUPT_MASK_FROM_ISR must be defined for ports that support nested interrupts (i.e. portHAS_NESTED_INTERRUPTS is set to 1)
+    #else
+        #define portSET_INTERRUPT_MASK_FROM_ISR()    0
+    #endif
+#else
+    #if ( portHAS_NESTED_INTERRUPTS == 0 )
+        #error portSET_INTERRUPT_MASK_FROM_ISR must not be defined for ports that do not support nested interrupts (i.e. portHAS_NESTED_INTERRUPTS is set to 0)
+    #endif
 #endif
 
 #ifndef portCLEAR_INTERRUPT_MASK_FROM_ISR
-    #define portCLEAR_INTERRUPT_MASK_FROM_ISR( uxSavedStatusValue )    ( void ) ( uxSavedStatusValue )
+    #if ( portHAS_NESTED_INTERRUPTS == 1 )
+        #error portCLEAR_INTERRUPT_MASK_FROM_ISR must be defined for ports that support nested interrupts  (i.e. portHAS_NESTED_INTERRUPTS is set to 1)
+    #else
+        #define portCLEAR_INTERRUPT_MASK_FROM_ISR( uxSavedStatusValue )    ( void ) ( uxSavedStatusValue )
+    #endif
+#else
+    #if ( portHAS_NESTED_INTERRUPTS == 0 )
+        #error portCLEAR_INTERRUPT_MASK_FROM_ISR must not be defined for ports that do not support nested interrupts (i.e. portHAS_NESTED_INTERRUPTS is set to 0)
+    #endif
 #endif
 
 #ifndef portCLEAN_UP_TCB
@@ -938,15 +986,15 @@
 #endif
 
 #ifndef traceSTREAM_BUFFER_CREATE_FAILED
-    #define traceSTREAM_BUFFER_CREATE_FAILED( xIsMessageBuffer )
+    #define traceSTREAM_BUFFER_CREATE_FAILED( xStreamBufferType )
 #endif
 
 #ifndef traceSTREAM_BUFFER_CREATE_STATIC_FAILED
-    #define traceSTREAM_BUFFER_CREATE_STATIC_FAILED( xReturn, xIsMessageBuffer )
+    #define traceSTREAM_BUFFER_CREATE_STATIC_FAILED( xReturn, xStreamBufferType )
 #endif
 
 #ifndef traceSTREAM_BUFFER_CREATE
-    #define traceSTREAM_BUFFER_CREATE( pxStreamBuffer, xIsMessageBuffer )
+    #define traceSTREAM_BUFFER_CREATE( pxStreamBuffer, xStreamBufferType )
 #endif
 
 #ifndef traceSTREAM_BUFFER_DELETE
@@ -955,6 +1003,10 @@
 
 #ifndef traceSTREAM_BUFFER_RESET
     #define traceSTREAM_BUFFER_RESET( xStreamBuffer )
+#endif
+
+#ifndef traceSTREAM_BUFFER_RESET_FROM_ISR
+    #define traceSTREAM_BUFFER_RESET_FROM_ISR( xStreamBuffer )
 #endif
 
 #ifndef traceBLOCKING_ON_STREAM_BUFFER_SEND
@@ -1622,7 +1674,7 @@
 #endif
 
 #ifndef traceENTER_xTaskCreateStatic
-    #define traceENTER_xTaskCreateStatic( pxTaskCode, pcName, ulStackDepth, pvParameters, uxPriority, puxStackBuffer, pxTaskBuffer )
+    #define traceENTER_xTaskCreateStatic( pxTaskCode, pcName, uxStackDepth, pvParameters, uxPriority, puxStackBuffer, pxTaskBuffer )
 #endif
 
 #ifndef traceRETURN_xTaskCreateStatic
@@ -1630,7 +1682,7 @@
 #endif
 
 #ifndef traceENTER_xTaskCreateStaticAffinitySet
-    #define traceENTER_xTaskCreateStaticAffinitySet( pxTaskCode, pcName, ulStackDepth, pvParameters, uxPriority, puxStackBuffer, pxTaskBuffer, uxCoreAffinityMask )
+    #define traceENTER_xTaskCreateStaticAffinitySet( pxTaskCode, pcName, uxStackDepth, pvParameters, uxPriority, puxStackBuffer, pxTaskBuffer, uxCoreAffinityMask )
 #endif
 
 #ifndef traceRETURN_xTaskCreateStaticAffinitySet
@@ -1670,7 +1722,7 @@
 #endif
 
 #ifndef traceENTER_xTaskCreate
-    #define traceENTER_xTaskCreate( pxTaskCode, pcName, usStackDepth, pvParameters, uxPriority, pxCreatedTask )
+    #define traceENTER_xTaskCreate( pxTaskCode, pcName, uxStackDepth, pvParameters, uxPriority, pxCreatedTask )
 #endif
 
 #ifndef traceRETURN_xTaskCreate
@@ -1678,7 +1730,7 @@
 #endif
 
 #ifndef traceENTER_xTaskCreateAffinitySet
-    #define traceENTER_xTaskCreateAffinitySet( pxTaskCode, pcName, usStackDepth, pvParameters, uxPriority, uxCoreAffinityMask, pxCreatedTask )
+    #define traceENTER_xTaskCreateAffinitySet( pxTaskCode, pcName, uxStackDepth, pvParameters, uxPriority, uxCoreAffinityMask, pxCreatedTask )
 #endif
 
 #ifndef traceRETURN_xTaskCreateAffinitySet
@@ -2354,7 +2406,7 @@
 #endif
 
 #ifndef traceENTER_xStreamBufferGenericCreate
-    #define traceENTER_xStreamBufferGenericCreate( xBufferSizeBytes, xTriggerLevelBytes, xIsMessageBuffer, pxSendCompletedCallback, pxReceiveCompletedCallback )
+    #define traceENTER_xStreamBufferGenericCreate( xBufferSizeBytes, xTriggerLevelBytes, xStreamBufferType, pxSendCompletedCallback, pxReceiveCompletedCallback )
 #endif
 
 #ifndef traceRETURN_xStreamBufferGenericCreate
@@ -2362,7 +2414,7 @@
 #endif
 
 #ifndef traceENTER_xStreamBufferGenericCreateStatic
-    #define traceENTER_xStreamBufferGenericCreateStatic( xBufferSizeBytes, xTriggerLevelBytes, xIsMessageBuffer, pucStreamBufferStorageArea, pxStaticStreamBuffer, pxSendCompletedCallback, pxReceiveCompletedCallback )
+    #define traceENTER_xStreamBufferGenericCreateStatic( xBufferSizeBytes, xTriggerLevelBytes, xStreamBufferType, pucStreamBufferStorageArea, pxStaticStreamBuffer, pxSendCompletedCallback, pxReceiveCompletedCallback )
 #endif
 
 #ifndef traceRETURN_xStreamBufferGenericCreateStatic
@@ -2391,6 +2443,14 @@
 
 #ifndef traceRETURN_xStreamBufferReset
     #define traceRETURN_xStreamBufferReset( xReturn )
+#endif
+
+#ifndef traceENTER_xStreamBufferResetFromISR
+    #define traceENTER_xStreamBufferResetFromISR( xStreamBuffer )
+#endif
+
+#ifndef traceRETURN_xStreamBufferResetFromISR
+    #define traceRETURN_xStreamBufferResetFromISR( xReturn )
 #endif
 
 #ifndef traceENTER_xStreamBufferSetTriggerLevel
@@ -2487,6 +2547,22 @@
 
 #ifndef traceRETURN_xStreamBufferReceiveCompletedFromISR
     #define traceRETURN_xStreamBufferReceiveCompletedFromISR( xReturn )
+#endif
+
+#ifndef traceENTER_uxStreamBufferGetStreamBufferNotificationIndex
+    #define traceENTER_uxStreamBufferGetStreamBufferNotificationIndex( xStreamBuffer )
+#endif
+
+#ifndef traceRETURN_uxStreamBufferGetStreamBufferNotificationIndex
+    #define traceRETURN_uxStreamBufferGetStreamBufferNotificationIndex( uxNotificationIndex )
+#endif
+
+#ifndef traceENTER_vStreamBufferSetStreamBufferNotificationIndex
+    #define traceENTER_vStreamBufferSetStreamBufferNotificationIndex( xStreamBuffer, uxNotificationIndex )
+#endif
+
+#ifndef traceRETURN_vStreamBufferSetStreamBufferNotificationIndex
+    #define traceRETURN_vStreamBufferSetStreamBufferNotificationIndex()
 #endif
 
 #ifndef traceENTER_uxStreamBufferGetStreamBufferNumber
@@ -2605,10 +2681,6 @@
 
 #ifndef portCONFIGURE_TIMER_FOR_RUN_TIME_STATS
     #define portCONFIGURE_TIMER_FOR_RUN_TIME_STATS()
-#endif
-
-#ifndef configUSE_MALLOC_FAILED_HOOK
-    #define configUSE_MALLOC_FAILED_HOOK    0
 #endif
 
 #ifndef portPRIVILEGE_BIT
@@ -2763,9 +2835,9 @@
 
 #ifndef configSTACK_DEPTH_TYPE
 
-/* Defaults to uint16_t for backward compatibility, but can be overridden
- * in FreeRTOSConfig.h if uint16_t is too restrictive. */
-    #define configSTACK_DEPTH_TYPE    uint16_t
+/* Defaults to StackType_t for backward compatibility, but can be overridden
+ * in FreeRTOSConfig.h if StackType_t is too restrictive. */
+    #define configSTACK_DEPTH_TYPE    StackType_t
 #endif
 
 #ifndef configRUN_TIME_COUNTER_TYPE
@@ -3251,6 +3323,7 @@ typedef struct xSTATIC_STREAM_BUFFER
     #if ( configUSE_SB_COMPLETED_CALLBACK == 1 )
         void * pvDummy5[ 2 ];
     #endif
+    UBaseType_t uxDummy6;
 } StaticStreamBuffer_t;
 
 /* Message buffers are built on stream buffers. */

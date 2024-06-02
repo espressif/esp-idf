@@ -11,7 +11,7 @@ The following terms will be used in this document to avoid confusion between the
 
 # Organization
 
-This directory contains a copy of upstream [v11.0.1](https://github.com/FreeRTOS/FreeRTOS-Kernel/tree/V11.0.1) FreeRTOS which is SMP capable.
+This directory contains a copy of upstream [v11.1.0](https://github.com/FreeRTOS/FreeRTOS-Kernel/tree/V11.1.0) FreeRTOS which is SMP capable.
 
 - IDF FreeRTOS remains in  `components/freertos/FreeRTOS-Kernel`
 - SMP FreeRTOS is entirely contained in `components/freertos/FreeRTOS-Kernel-SMP`
