@@ -326,7 +326,7 @@ FORCE_INLINE_ATTR void uart_ll_read_rxfifo(uart_dev_t *hw, uint8_t *buf, uint32_
  *
  * @param  hw Beginning address of the peripheral registers.
  * @param  buf The data buffer.
- * @param  wr_len The data length needs to be writen.
+ * @param  wr_len The data length needs to be written.
  *
  * @return None
  */
@@ -505,7 +505,7 @@ FORCE_INLINE_ATTR void uart_ll_set_tx_idle_num(uart_dev_t *hw, uint32_t idle_num
 }
 
 /**
- * @brief  Configure the transmiter to send break chars.
+ * @brief  Configure the transmitter to send break chars.
  *
  * @param  hw Beginning address of the peripheral registers.
  * @param  break_num The number of the break chars need to be send.
@@ -569,7 +569,7 @@ FORCE_INLINE_ATTR void uart_ll_get_hw_flow_ctrl(uart_dev_t *hw, uart_hw_flowcont
  * @brief  Configure the software flow control.
  *
  * @param  hw Beginning address of the peripheral registers.
- * @param  flow_ctrl The UART sofware flow control settings.
+ * @param  flow_ctrl The UART software flow control settings.
  * @param  sw_flow_ctrl_en Set true to enable software flow control, otherwise set it false.
  *
  * @return None.
@@ -860,7 +860,7 @@ FORCE_INLINE_ATTR bool uart_ll_is_hw_cts_en(uart_dev_t *hw)
  * @brief Configure TX signal loop back to RX module, just for the testing purposes
  *
  * @param  hw Beginning address of the peripheral registers.
- * @param  loop_back_en Set ture to enable the loop back function, else set it false.
+ * @param  loop_back_en Set true to enable the loop back function, else set it false.
  *
  * @return None
  */

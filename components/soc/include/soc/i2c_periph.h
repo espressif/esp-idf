@@ -10,9 +10,7 @@
 #include "soc/soc_caps.h"
 #if SOC_I2C_SUPPORTED  // TODO: [ESP32C5] IDF-8694
 #include "soc/periph_defs.h"
-#if SOC_PM_SUPPORT_TOP_PD
 #include "soc/regdma.h"
-#endif
 #endif  // SOC_I2C_SUPPORTED
 
 #ifdef __cplusplus
@@ -32,7 +30,7 @@ typedef struct {
 
 extern const i2c_signal_conn_t i2c_periph_signal[SOC_I2C_NUM];
 
-#if SOC_PM_SUPPORT_TOP_PD
+#if SOC_I2C_SUPPORT_SLEEP_RETENTION
 typedef struct {
     const regdma_entries_config_t *link_list;
     uint32_t link_num;

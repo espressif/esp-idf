@@ -68,6 +68,10 @@ UART 通信参数可以在一个步骤中完成全部配置，也可以在多个
 
 了解配置硬件流控模式的更多信息，请参考 :example:`peripherals/uart/uart_echo`。
 
+.. only:: SOC_UART_SUPPORT_SLEEP_RETENTION
+
+    此外，置位 :cpp:member:`uart_config_t::backup_before_sleep` 会使能在进入睡眠模式前备份 UART 配置寄存器并在退出睡眠后恢复这些寄存器。这个功能使 UART 能够在系统唤醒后继续正常工作，即使其电源域在睡眠过程中被完全关闭。此选项需要用户在功耗和内存使用之间取得平衡。如果功耗不是一个问题，可以禁用这个选项来节省内存。
+
 分步依次配置每个参数
 """""""""""""""""""""""""""""""
 

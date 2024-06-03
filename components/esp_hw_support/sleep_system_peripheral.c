@@ -10,6 +10,7 @@
 #include "sdkconfig.h"
 #include "soc/soc_caps.h"
 #include "soc/system_periph_retention.h"
+#include "soc/uart_periph.h"
 
 #include "esp_sleep.h"
 #include "esp_log.h"
@@ -52,13 +53,17 @@ static __attribute__((unused)) esp_err_t sleep_sys_periph_tee_apm_retention_init
 }
 #endif
 
-static __attribute__((unused)) esp_err_t sleep_sys_periph_uart0_retention_init(void *arg)
+#if CONFIG_ESP_CONSOLE_UART
+static __attribute__((unused)) esp_err_t sleep_sys_periph_stdout_console_uart_retention_init(void *arg)
 {
-    esp_err_t err = sleep_retention_entries_create(uart_regs_retention, ARRAY_SIZE(uart_regs_retention), REGDMA_LINK_PRI_SYS_PERIPH_HIGH, SLEEP_RETENTION_MODULE_SYS_PERIPH);
+    esp_err_t err = sleep_retention_entries_create(uart_reg_retention_info[CONFIG_ESP_CONSOLE_UART_NUM].regdma_entry_array,
+                                                   uart_reg_retention_info[CONFIG_ESP_CONSOLE_UART_NUM].array_size,
+                                                   REGDMA_LINK_PRI_SYS_PERIPH_HIGH, SLEEP_RETENTION_MODULE_SYS_PERIPH);
     ESP_RETURN_ON_ERROR(err, TAG, "failed to allocate memory for digital peripherals (%s) retention", "UART");
-    ESP_LOGD(TAG, "UART sleep retention initialization");
+    ESP_LOGD(TAG, "stdout console UART sleep retention initialization");
     return ESP_OK;
 }
+#endif
 
 static __attribute__((unused)) esp_err_t sleep_sys_periph_iomux_retention_init(void *arg)
 {
@@ -119,8 +124,10 @@ static __attribute__((unused)) esp_err_t sleep_sys_periph_retention_init(void *a
     err = sleep_sys_periph_tee_apm_retention_init(arg);
     if(err) goto error;
 #endif
-    err = sleep_sys_periph_uart0_retention_init(arg);
+#if CONFIG_ESP_CONSOLE_UART
+    err = sleep_sys_periph_stdout_console_uart_retention_init(arg);
     if(err) goto error;
+#endif
     err = sleep_sys_periph_iomux_retention_init(arg);
     if(err) goto error;
     err = sleep_sys_periph_spimem_retention_init(arg);

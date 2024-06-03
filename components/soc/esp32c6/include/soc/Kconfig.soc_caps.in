@@ -615,6 +615,10 @@ config SOC_I2C_SLAVE_SUPPORT_SLAVE_UNMATCH
     bool
     default y
 
+config SOC_I2C_SUPPORT_SLEEP_RETENTION
+    bool
+    default y
+
 config SOC_LP_I2C_NUM
     int
     default 1
@@ -1252,6 +1256,10 @@ config SOC_UART_SUPPORT_WAKEUP_INT
     default y
 
 config SOC_UART_HAS_LP_UART
+    bool
+    default y
+
+config SOC_UART_SUPPORT_SLEEP_RETENTION
     bool
     default y
 

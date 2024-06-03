@@ -980,7 +980,7 @@ static esp_err_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t m
             /* On esp32c6, only the lp_aon pad hold function can only hold the GPIO state in the active mode.
                In order to avoid the leakage of the SPI cs pin, hold it here */
 #if (CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && CONFIG_ESP_SLEEP_FLASH_LEAKAGE_WORKAROUND)
-#if !CONFIG_IDF_TARGET_ESP32H2 // ESP32H2 TODO IDF-7359: related rtcio ll func not supported yet
+#if !CONFIG_IDF_TARGET_ESP32H2 // ESP32H2 TODO IDF-7359
             if(!(pd_flags & RTC_SLEEP_PD_VDDSDIO)) {
                 /* Cache suspend also means SPI bus IDLE, then we can hold SPI CS pin safely */
                 gpio_ll_hold_en(&GPIO, SPI_CS0_GPIO_NUM);
@@ -1031,7 +1031,7 @@ static esp_err_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t m
 
             /* Unhold the SPI CS pin */
 #if (CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && CONFIG_ESP_SLEEP_FLASH_LEAKAGE_WORKAROUND)
-#if !CONFIG_IDF_TARGET_ESP32H2 // ESP32H2 TODO IDF-7359: related rtcio ll func not supported yet
+#if !CONFIG_IDF_TARGET_ESP32H2 // ESP32H2 TODO IDF-7359
             if(!(pd_flags & RTC_SLEEP_PD_VDDSDIO)) {
                 gpio_ll_hold_dis(&GPIO, SPI_CS0_GPIO_NUM);
             }
