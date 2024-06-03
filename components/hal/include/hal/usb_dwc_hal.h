@@ -205,7 +205,7 @@ typedef struct {
  * - The peripheral must have been reset and clock un-gated
  * - The USB PHY (internal or external) and associated GPIOs must already be configured
  * - GPIO pins configured
- * - Interrupt allocated but DISABLED (in case of an unknown interupt state)
+ * - Interrupt allocated but DISABLED (in case of an unknown interrupt state)
  * Exit:
  * - Checks to see if DWC_OTG is alive, and if HW version/config is correct
  * - HAl context initialized
@@ -290,7 +290,7 @@ static inline void usb_dwc_hal_port_init(usb_dwc_hal_context_t *hal)
 /**
  * @brief Deinitialize the host port
  *
- * - Will disable the host port's interrupts preventing further port aand channel events from ocurring
+ * - Will disable the host port's interrupts preventing further port aand channel events from occurring
  *
  * @param hal Context of the HAL layer
  */
@@ -333,7 +333,6 @@ static inline void usb_dwc_hal_port_toggle_power(usb_dwc_hal_context_t *hal, boo
  */
 static inline void usb_dwc_hal_port_toggle_reset(usb_dwc_hal_context_t *hal, bool enable)
 {
-    HAL_ASSERT(hal->channels.num_allocd == 0);  //Cannot reset if there are still allocated channels
     usb_dwc_ll_hprt_set_port_reset(hal->dev, enable);
 }
 
@@ -447,7 +446,7 @@ static inline void usb_dwc_hal_port_periodic_enable(usb_dwc_hal_context_t *hal)
 /**
  * @brief Disable periodic scheduling
  *
- * Disabling periodic scheduling will save a bit of DMA bandwith (as the controller will no longer fetch the schedule
+ * Disabling periodic scheduling will save a bit of DMA bandwidth (as the controller will no longer fetch the schedule
  * from the frame list).
  *
  * @note Before disabling periodic scheduling, it is the user's responsibility to ensure that all periodic channels have
@@ -505,17 +504,17 @@ static inline usb_dwc_speed_t usb_dwc_hal_port_get_conn_speed(usb_dwc_hal_contex
  * @brief Disable the debounce lock
  *
  * This function must be called after calling usb_dwc_hal_port_check_if_connected() and will allow connection/disconnection
- * events to occur again. Any pending connection or disconenction interrupts are cleared.
+ * events to occur again. Any pending connection or disconnection interrupts are cleared.
  *
  * @param hal Context of the HAL layer
  */
 static inline void usb_dwc_hal_disable_debounce_lock(usb_dwc_hal_context_t *hal)
 {
     hal->flags.dbnc_lock_enabled = 0;
-    //Clear Conenction and disconenction interrupt in case it triggered again
+    //Clear Connection and disconnection interrupt in case it triggered again
     usb_dwc_ll_gintsts_clear_intrs(hal->dev, USB_DWC_LL_INTR_CORE_DISCONNINT);
     usb_dwc_ll_hprt_intr_clear(hal->dev, USB_DWC_LL_INTR_HPRT_PRTCONNDET);
-    //Reenable the hprt (connection) and disconnection interrupts
+    //Re-enable the hprt (connection) and disconnection interrupts
     usb_dwc_ll_gintmsk_en_intrs(hal->dev, USB_DWC_LL_INTR_CORE_PRTINT | USB_DWC_LL_INTR_CORE_DISCONNINT);
 }
 
@@ -672,10 +671,10 @@ bool usb_dwc_hal_chan_request_halt(usb_dwc_hal_chan_t *chan_obj);
 /**
  * @brief Indicate that a channel is halted after a port error
  *
- * When a port error occurs (e.g., discconect, overcurrent):
+ * When a port error occurs (e.g., disconnect, overcurrent):
  * - Any previously active channels will remain active (i.e., they will not receive a channel interrupt)
  * - Attempting to disable them using usb_dwc_hal_chan_request_halt() will NOT generate an interrupt for ISOC channels
- *   (probalby something to do with the periodic scheduling)
+ *   (probably something to do with the periodic scheduling)
  *
  * However, the channel's enable bit can be left as 1 since after a port error, a soft reset will be done anyways.
  * This function simply updates the channels internal state variable to indicate it is halted (thus allowing it to be
