@@ -874,8 +874,8 @@ typedef enum {
     WIFI_PHY_RATE_MCS8_SGI,         /**< MCS8 with short GI */
     WIFI_PHY_RATE_MCS9_SGI,         /**< MCS9 with short GI */
 #endif
-    WIFI_PHY_RATE_LORA_250K = 0x29, /**< 250 Kbps */
-    WIFI_PHY_RATE_LORA_500K = 0x2A, /**< 500 Kbps */
+    WIFI_PHY_RATE_LORA_250K = 0x29, /**< Espressif-specific Long Range mode rate, 250 Kbps */
+    WIFI_PHY_RATE_LORA_500K = 0x2A, /**< Espressif-specific Long Range mode rate, 500 Kbps */
     WIFI_PHY_RATE_MAX,
 } wifi_phy_rate_t;
 
