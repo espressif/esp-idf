@@ -10,7 +10,7 @@
 extern "C" {
 #endif
 
-#define NLBITS                   3
+#define NLBITS                   4
 #define CLIC_EXT_INTR_NUM_OFFSET 16
 
 #define DR_REG_CLIC_BASE      (0x20800000)
@@ -144,7 +144,7 @@ extern "C" {
 
 #define BYTE_CLIC_INT_CTL_REG(i) (DR_REG_CLIC_CTRL_BASE + 3 + (i)*4)
 /* BYTE_CLIC_INT_ATTR_MODE: R/W ; bitpos:[7:5] ;default: 3'd0 ; */
-/*description: interrupt pririty */
+/*description: interrupt priority */
 #define BYTE_CLIC_INT_CTL   0x00000007
 #define BYTE_CLIC_INT_CTL_M ((BYTE_CLIC_INT_CTL_V) << (BYTE_CLIC_INT_CTL_S))
 #define BYTE_CLIC_INT_CTL_V 0x7
