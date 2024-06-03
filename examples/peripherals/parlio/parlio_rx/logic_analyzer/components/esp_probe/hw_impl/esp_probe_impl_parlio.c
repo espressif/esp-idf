@@ -12,7 +12,6 @@
 #include "hal/cache_ll.h"
 #include "esp_clk_tree.h"
 #include "esp_heap_caps.h"
-#include "esp_dma_utils.h"
 #include "esp_check.h"
 #include "esp_probe_private.h"
 
