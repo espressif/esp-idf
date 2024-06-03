@@ -2,10 +2,10 @@
 # SPDX-License-Identifier: Apache-2.0
 # pylint: disable=W0621  # redefined-outer-name
 import os
-import subprocess
-import sys
 import time
 
+import espefuse
+import esptool
 import pytest
 import serial
 from _pytest.fixtures import FixtureRequest
@@ -31,7 +31,7 @@ class FpgaSerial(IdfSerial):
         if self.esp_port is None:
             raise RuntimeError('ESPPORT not specified')
 
-    @EspSerial.use_esptool(hard_reset_after=False, no_stub=True)
+    @EspSerial.use_esptool()
     def bootloader_flash(self, bootloader_path: str) -> None:
         """
         Flash bootloader.
@@ -39,12 +39,12 @@ class FpgaSerial(IdfSerial):
         :return: None
         """
         offs = int(self.app.sdkconfig.get('BOOTLOADER_OFFSET_IN_FLASH', 0))
-        if subprocess.run(
-            f'{sys.executable} -m esptool --port {self.esp_port} --no-stub write_flash {str(offs)} {bootloader_path} --force'.split()
-        ).returncode != 0:
-            raise RuntimeError('Flashing the bootloader binary failed')
+        esptool.main(
+            f'--port {self.esp_port} --no-stub write_flash {str(offs)} {bootloader_path} --force'.split(),
+            esp=self.esp
+        )
 
-    @EspSerial.use_esptool(hard_reset_after=False, no_stub=True)
+    @EspSerial.use_esptool()
     def partition_table_flash(self, partition_table_path: str) -> None:
         """
         Flash Partition Table.
@@ -52,12 +52,12 @@ class FpgaSerial(IdfSerial):
         :return: None
         """
         offs = int(self.app.flash_args['partition-table']['offset'], 16)
-        if subprocess.run(
-            f'{sys.executable} -m esptool --port {self.esp_port} --no-stub write_flash {str(offs)} {partition_table_path}'.split()
-        ).returncode != 0:
-            raise RuntimeError('Flashing the partition table binary failed')
+        esptool.main(
+            f'--port {self.esp_port} --no-stub write_flash {str(offs)} {partition_table_path}'.split(),
+            esp=self.esp
+        )
 
-    @EspSerial.use_esptool(hard_reset_after=True, no_stub=True)
+    @EspSerial.use_esptool()
     def app_flash(self, app_path: str) -> None:
         """
         Flash App.
@@ -65,10 +65,10 @@ class FpgaSerial(IdfSerial):
         :return: None
         """
         offs = int(self.app.flash_args['app']['offset'], 16)
-        if subprocess.run(
-            f'{sys.executable} -m esptool --port {self.esp_port} --no-stub write_flash {str(offs)} {app_path}'.split()
-        ).returncode != 0:
-            raise RuntimeError('Flashing the app binary failed')
+        esptool.main(
+            f'--port {self.esp_port} --no-stub write_flash {str(offs)} {app_path}'.split(),
+            esp=self.esp
+        )
 
     def erase_app_header(self) -> None:
         """
@@ -83,26 +83,26 @@ class FpgaSerial(IdfSerial):
 
         self.app_flash('erase_app_header.bin')
 
-    @EspSerial.use_esptool(hard_reset_after=True, no_stub=True)
+    @EspSerial.use_esptool()
     def burn_efuse_key_digest(self, key: str, purpose: str, block: str) -> None:
-        if subprocess.run(
-            f'{sys.executable} -m espefuse --port {self.esp_port} burn_key_digest {block} {key} {purpose} --do-not-confirm'.split()
-        ).returncode != 0:
-            raise RuntimeError('Burning the key digest for the key {key} into the efuse block {block} failed')
+        espefuse.main(
+            f'--port {self.esp_port} burn_key_digest {block} {key} {purpose} --do-not-confirm'.split(),
+            esp=self.esp
+        )
 
-    @EspSerial.use_esptool(hard_reset_after=False, no_stub=True)
+    @EspSerial.use_esptool()
     def burn_efuse(self, field: str, val: int) -> None:
-        if subprocess.run(
-            f'{sys.executable} -m espefuse --port {self.esp_port} burn_efuse {field} {str(val)} --do-not-confirm'.split()
-        ).returncode != 0:
-            raise RuntimeError(f'Burning the {field} efuse failed')
+        espefuse.main(
+            f'--port {self.esp_port} burn_efuse {field} {str(val)} --do-not-confirm'.split(),
+            esp=self.esp
+        )
 
-    @EspSerial.use_esptool(hard_reset_after=False, no_stub=True)
+    @EspSerial.use_esptool()
     def burn_efuse_key(self, key: str, purpose: str, block: str) -> None:
-        if subprocess.run(
-            f'{sys.executable} -m espefuse --port {self.esp_port} burn_key {block} {key} {purpose} --do-not-confirm'.split()
-        ).returncode != 0:
-            raise RuntimeError('Burning the key {key} into the efuse block {block} failed.')
+        espefuse.main(
+            f'--port {self.esp_port} burn_key {block} {key} {purpose} --do-not-confirm'.split(),
+            esp=self.esp
+        )
 
     def reset_efuses(self) -> None:
         with serial.Serial(self.efuse_reset_port) as efuseport:
