@@ -55,7 +55,6 @@
 #include "esp_intr_alloc.h"
 #include "esp_check.h"
 #include "esp_attr.h"
-#include "esp_dma_utils.h"
 #if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
 #include "esp_cache.h"
 #endif
@@ -70,16 +69,9 @@
 static const char *TAG = "i2s_common";
 
 __attribute__((always_inline))
-inline void *i2s_dma_calloc(i2s_chan_handle_t handle, size_t num, size_t size, size_t *actual_size)
+inline void *i2s_dma_calloc(i2s_chan_handle_t handle, size_t num, size_t size)
 {
-    void *ptr = NULL;
-    esp_dma_mem_info_t dma_mem_info = {
-        .extra_heap_caps = I2S_DMA_ALLOC_CAPS,
-        .dma_alignment_bytes = 4,
-    };
-    //TODO: IDF-9636
-    esp_dma_capable_calloc(num, size, &dma_mem_info, &ptr, actual_size);
-    return ptr;
+    return heap_caps_aligned_calloc(4, num, size, I2S_DMA_ALLOC_CAPS);
 }
 
 /*---------------------------------------------------------------------------
@@ -426,10 +418,9 @@ esp_err_t i2s_alloc_dma_desc(i2s_chan_handle_t handle, uint32_t num, uint32_t bu
     handle->dma.desc = (lldesc_t **)heap_caps_calloc(num, sizeof(lldesc_t *), I2S_MEM_ALLOC_CAPS);
     ESP_GOTO_ON_FALSE(handle->dma.desc, ESP_ERR_NO_MEM, err, TAG, "create I2S DMA descriptor array failed");
     handle->dma.bufs = (uint8_t **)heap_caps_calloc(num, sizeof(uint8_t *), I2S_MEM_ALLOC_CAPS);
-    size_t desc_size = 0;
     for (int i = 0; i < num; i++) {
         /* Allocate DMA descriptor */
-        handle->dma.desc[i] = (lldesc_t *) i2s_dma_calloc(handle, 1, sizeof(lldesc_t), &desc_size);
+        handle->dma.desc[i] = (lldesc_t *) i2s_dma_calloc(handle, 1, sizeof(lldesc_t));
         ESP_GOTO_ON_FALSE(handle->dma.desc[i], ESP_ERR_NO_MEM, err, TAG,  "allocate DMA description failed");
         handle->dma.desc[i]->owner = 1;
         handle->dma.desc[i]->eof = 1;
@@ -437,7 +428,7 @@ esp_err_t i2s_alloc_dma_desc(i2s_chan_handle_t handle, uint32_t num, uint32_t bu
         handle->dma.desc[i]->length = bufsize;
         handle->dma.desc[i]->size = bufsize;
         handle->dma.desc[i]->offset = 0;
-        handle->dma.bufs[i] = (uint8_t *) i2s_dma_calloc(handle, 1, bufsize * sizeof(uint8_t), NULL);
+        handle->dma.bufs[i] = (uint8_t *) i2s_dma_calloc(handle, 1, bufsize * sizeof(uint8_t));
         ESP_GOTO_ON_FALSE(handle->dma.bufs[i], ESP_ERR_NO_MEM, err, TAG,  "allocate DMA buffer failed");
 #if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
         esp_cache_msync(handle->dma.bufs[i], bufsize * sizeof(uint8_t), ESP_CACHE_MSYNC_FLAG_DIR_C2M);
@@ -450,7 +441,7 @@ esp_err_t i2s_alloc_dma_desc(i2s_chan_handle_t handle, uint32_t num, uint32_t bu
         /* Link to the next descriptor */
         STAILQ_NEXT(handle->dma.desc[i], qe) = (i < (num - 1)) ? (handle->dma.desc[i + 1]) : handle->dma.desc[0];
 #if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
-        esp_cache_msync(handle->dma.desc[i], desc_size, ESP_CACHE_MSYNC_FLAG_DIR_C2M);
+        esp_cache_msync(handle->dma.desc[i], sizeof(lldesc_t), ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED);
 #endif
     }
     if (handle->dir == I2S_DIR_RX) {
