@@ -216,7 +216,8 @@ ESP-IDF 集成了用于请求 :ref:`堆内存信息 <heap-information>`、:ref:`
 - 启用 :ref:`CONFIG_HEAP_TRACING_DEST` 选项。
 - 在程序早期调用函数 :cpp:func:`heap_trace_init_standalone` 注册一个可用于记录内存跟踪的缓冲区。
 - 在有内存泄漏之嫌的代码块前，调用函数 :cpp:func:`heap_trace_start` 记录系统中的所有内存分配和释放操作。
-- 在有内存泄露之嫌的代码块后，调用函数 :cpp:func:`heap_trace_stop` 停止跟踪。
+- 在可疑代码执行完毕后调用 :cpp:func:`heap_trace_stop` 函数可停止跟踪内存的分配和释放。
+- 调用 :cpp:func:`heap_trace_alloc_pause` 函数暂停跟踪新的内存分配，同时继续跟踪内存释放。在可能泄漏内存的代码后立即调用该函数，防止记录任何新的内存分配。
 - 调用函数 :cpp:func:`heap_trace_dump` 导出内存跟踪结果。
 
 应用程序代码初始化、启动和停止堆内存跟踪的一般过程，见以下代码片段示例：
