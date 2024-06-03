@@ -48,7 +48,7 @@ typedef enum {
 /*---------------------------------------------------------------
                       DVP
 ---------------------------------------------------------------*/
-#if SOC_ISP_AF_WINDOW_NUMS
+#if SOC_ISP_DVP_DATA_WIDTH_MAX
 #define ISP_DVP_DATA_SIG_NUM   SOC_ISP_DVP_DATA_WIDTH_MAX // The ISP DVP data signal number
 #else
 #define ISP_DVP_DATA_SIG_NUM   0
