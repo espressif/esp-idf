@@ -115,7 +115,6 @@ r_lld_con_evt_time_update_eco = 0x40001d0c;
 r_lld_con_start_eco = 0x40001d10;
 r_lld_con_frm_isr_eco = 0x40001d14;
 r_lld_con_tx_eco = 0x40001d18;
-r_lld_scan_evt_start_cbk_eco = 0x40001d20;
 r_lld_ext_scan_dynamic_pti_process_eco = 0x40001d28;
 r_lld_scan_frm_eof_isr_eco = 0x40001d2c;
 r_lld_sync_start_eco = 0x40001d30;
@@ -215,6 +214,7 @@ r_lld_scan_start_eco = 0x40001d24;
 r_lld_scan_try_sched_eco = 0x40001dac;
 r_lld_scan_start_hook = 0x40001c74;
 r_lld_init_start_hook = 0x40001cb8;
+r_lld_scan_evt_start_cbk_eco = 0x40001d20;
 */
 
 
