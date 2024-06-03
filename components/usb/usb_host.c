@@ -19,6 +19,7 @@ Warning: The USB Host Library API is still a beta version and may be subject to 
 #include "esp_log.h"
 #include "esp_heap_caps.h"
 #include "hub.h"
+#include "enum.h"
 #include "usbh.h"
 #include "hcd.h"
 #include "esp_private/usb_phy.h"
@@ -45,12 +46,9 @@ static portMUX_TYPE host_lock = portMUX_INITIALIZER_UNLOCKED;
             }                                                               \
 })
 
-#define PROCESS_REQUEST_PENDING_FLAG_USBH       0x01
-#define PROCESS_REQUEST_PENDING_FLAG_HUB        0x02
-
-#ifdef CONFIG_USB_HOST_ENABLE_ENUM_FILTER_CALLBACK
-#define ENABLE_ENUM_FILTER_CALLBACK
-#endif // CONFIG_USB_HOST_ENABLE_ENUM_FILTER_CALLBACK
+#define PROCESS_REQUEST_PENDING_FLAG_USBH       (1 << 0)
+#define PROCESS_REQUEST_PENDING_FLAG_HUB        (1 << 1)
+#define PROCESS_REQUEST_PENDING_FLAG_ENUM       (1 << 2)
 
 typedef struct ep_wrapper_s ep_wrapper_t;
 typedef struct interface_s interface_t;
@@ -148,7 +146,8 @@ typedef struct {
         SemaphoreHandle_t event_sem;
         SemaphoreHandle_t mux_lock;
         usb_phy_handle_t phy_handle;    // Will be NULL if host library is installed with skip_phy_setup
-        void *hub_client;   // Pointer to Hub driver (acting as a client). Used to reroute completed USBH control transfers
+        void *enum_client;              // Pointer to Enum driver (acting as a client). Used to reroute completed USBH control transfers
+        void *hub_client;               // Pointer to External Hub driver (acting as a client). Used to reroute completed USBH control transfers. NULL, when External Hub Driver not available.
     } constant;
 } host_lib_t;
 
@@ -219,6 +218,14 @@ static bool _unblock_lib(bool in_isr)
     return yield;
 }
 
+static inline bool _is_internal_client(void *client)
+{
+    if (p_host_lib_obj->constant.enum_client && (client == p_host_lib_obj->constant.enum_client)) {
+        return true;
+    }
+    return false;
+}
+
 static void send_event_msg_to_clients(const usb_host_client_event_msg_t *event_msg, bool send_to_all, uint8_t opened_dev_addr)
 {
     // Lock client list
@@ -263,6 +270,9 @@ static bool proc_req_callback(usb_proc_req_source_t source, bool in_isr, void *a
     case USB_PROC_REQ_SOURCE_HUB:
         p_host_lib_obj->dynamic.process_pending_flags |= PROCESS_REQUEST_PENDING_FLAG_HUB;
         break;
+    case USB_PROC_REQ_SOURCE_ENUM:
+        p_host_lib_obj->dynamic.process_pending_flags |= PROCESS_REQUEST_PENDING_FLAG_ENUM;
+        break;
     }
     bool yield = _unblock_lib(in_isr);
     HOST_EXIT_CRITICAL_SAFE();
@@ -277,8 +287,8 @@ static void usbh_event_callback(usbh_event_data_t *event_data, void *arg)
         assert(event_data->ctrl_xfer_data.urb != NULL);
         assert(event_data->ctrl_xfer_data.urb->usb_host_client != NULL);
         // Redistribute completed control transfers to the clients that submitted them
-        if (event_data->ctrl_xfer_data.urb->usb_host_client == p_host_lib_obj->constant.hub_client) {
-            // Redistribute to Hub driver. Simply call the transfer callback
+        if (_is_internal_client(event_data->ctrl_xfer_data.urb->usb_host_client)) {
+            // Simply call the transfer callback
             event_data->ctrl_xfer_data.urb->transfer.callback(&event_data->ctrl_xfer_data.urb->transfer);
         } else {
             client_t *client_obj = (client_t *)event_data->ctrl_xfer_data.urb->usb_host_client;
@@ -333,14 +343,42 @@ static void hub_event_callback(hub_event_data_t *event_data, void *arg)
 {
     switch (event_data->event) {
     case HUB_EVENT_CONNECTED:
-        // Nothing to do, because enumeration still holding in Hub Driver
+        // Start enumeration process
+        enum_start(event_data->connected.uid);
         break;
     case HUB_EVENT_RESET_COMPLETED:
-        // Nothing to do, because enumeration still holding in Hub Driver
+        // Proceed enumeration process
+        ESP_ERROR_CHECK(enum_proceed(event_data->reset_completed.uid));
         break;
     case HUB_EVENT_DISCONNECTED:
+        // Cancel enumeration process
+        enum_cancel(event_data->disconnected.uid);
         // We allow this to fail in case the device object was already freed
         usbh_devs_remove(event_data->disconnected.uid);
+        break;
+    default:
+        abort();    // Should never occur
+        break;
+    }
+}
+
+static void enum_event_callback(enum_event_data_t *event_data, void *arg)
+{
+    enum_event_t event = event_data->event;
+
+    switch (event) {
+    case ENUM_EVENT_STARTED:
+        // Enumeration process started
+        break;
+    case ENUM_EVENT_RESET_REQUIRED:
+        hub_port_reset(event_data->reset_req.parent_dev_hdl, event_data->reset_req.parent_port_num);
+        break;
+    case ENUM_EVENT_COMPLETED:
+        // Propagate a new device event
+        ESP_ERROR_CHECK(usbh_devs_new_dev_event(event_data->complete.dev_hdl));
+        break;
+    case ENUM_EVENT_CANCELED:
+        // Enumeration canceled
         break;
     default:
         abort();    // Should never occur
@@ -399,6 +437,7 @@ esp_err_t usb_host_install(const usb_host_config_t *config)
     - USB PHY
     - HCD
     - USBH
+    - Enum
     - Hub
     */
 
@@ -440,20 +479,28 @@ esp_err_t usb_host_install(const usb_host_config_t *config)
         goto usbh_err;
     }
 
-#ifdef ENABLE_ENUM_FILTER_CALLBACK
-    if (config->enum_filter_cb == NULL) {
-        ESP_LOGW(USB_HOST_TAG, "User callback to set USB device configuration is enabled, but not used");
-    }
+    // Install Enumeration driver
+    enum_config_t enum_config = {
+        .proc_req_cb = proc_req_callback,
+        .proc_req_cb_arg = NULL,
+        .enum_event_cb = enum_event_callback,
+        .enum_event_cb_arg = NULL,
+#if ENABLE_ENUM_FILTER_CALLBACK
+        .enum_filter_cb = config->enum_filter_cb,
+        .enum_filter_cb_arg = NULL,
 #endif // ENABLE_ENUM_FILTER_CALLBACK
+    };
+    ret = enum_install(&enum_config, &host_lib_obj->constant.enum_client);
+    if (ret != ESP_OK) {
+        goto enum_err;
+    }
+
     // Install Hub
     hub_config_t hub_config = {
         .proc_req_cb = proc_req_callback,
         .proc_req_cb_arg = NULL,
         .event_cb = hub_event_callback,
         .event_cb_arg = NULL,
-#ifdef ENABLE_ENUM_FILTER_CALLBACK
-        .enum_filter_cb = config->enum_filter_cb,
-#endif // ENABLE_ENUM_FILTER_CALLBACK
     };
     ret = hub_install(&hub_config, &host_lib_obj->constant.hub_client);
     if (ret != ESP_OK) {
@@ -478,6 +525,8 @@ esp_err_t usb_host_install(const usb_host_config_t *config)
 assign_err:
     ESP_ERROR_CHECK(hub_uninstall());
 hub_err:
+    ESP_ERROR_CHECK(enum_uninstall());
+enum_err:
     ESP_ERROR_CHECK(usbh_uninstall());
 usbh_err:
     ESP_ERROR_CHECK(hcd_uninstall());
@@ -520,11 +569,13 @@ esp_err_t usb_host_uninstall(void)
     /*
     Uninstall each layer of the Host stack (listed below) from the highest layer to the lowest
     - Hub
+    - Enum
     - USBH
     - HCD
     - USB PHY
     */
     ESP_ERROR_CHECK(hub_uninstall());
+    ESP_ERROR_CHECK(enum_uninstall());
     ESP_ERROR_CHECK(usbh_uninstall());
     ESP_ERROR_CHECK(hcd_uninstall());
     // If the USB PHY was setup, then delete it
@@ -570,6 +621,9 @@ esp_err_t usb_host_lib_handle_events(TickType_t timeout_ticks, uint32_t *event_f
         }
         if (process_pending_flags & PROCESS_REQUEST_PENDING_FLAG_HUB) {
             ESP_ERROR_CHECK(hub_process());
+        }
+        if (process_pending_flags & PROCESS_REQUEST_PENDING_FLAG_ENUM) {
+            ESP_ERROR_CHECK(enum_process());
         }
 
         ret = ESP_OK;

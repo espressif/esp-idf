@@ -8,7 +8,6 @@
 
 #include <stdlib.h>
 #include <stdint.h>
-#include "sdkconfig.h"
 #include "esp_err.h"
 #include "usb_private.h"
 #include "usbh.h"
@@ -60,9 +59,6 @@ typedef struct {
     void *proc_req_cb_arg;                          /**< Processing request callback argument */
     hub_event_cb_t event_cb;                        /**< Hub event callback */
     void *event_cb_arg;                             /**< Hub event callback argument */
-#ifdef CONFIG_USB_HOST_ENABLE_ENUM_FILTER_CALLBACK
-    usb_host_enum_filter_cb_t enum_filter_cb;       /**< Set device configuration callback */
-#endif // CONFIG_USB_HOST_ENABLE_ENUM_FILTER_CALLBACK
 } hub_config_t;
 
 // ---------------------------------------------- Hub Driver Functions -------------------------------------------------
