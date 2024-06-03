@@ -97,7 +97,7 @@ static esp_err_t esp_load_wolfssl_verify_buffer(esp_tls_t *tls, const unsigned c
             wolf_fileformat = WOLFSSL_FILETYPE_ASN1;
         }
         if (type == FILE_TYPE_SELF_CERT) {
-            if ((*err_ret = wolfSSL_CTX_use_certificate_buffer( (WOLFSSL_CTX *)tls->priv_ctx, cert_buf, cert_len, wolf_fileformat)) == WOLFSSL_SUCCESS) {
+            if ((*err_ret = wolfSSL_CTX_use_certificate_chain_buffer_format( (WOLFSSL_CTX *)tls->priv_ctx, cert_buf, cert_len, wolf_fileformat)) == WOLFSSL_SUCCESS) {
                 return ESP_OK;
             }
             return ESP_FAIL;
@@ -288,6 +288,11 @@ static esp_err_t set_client_config(const char *hostname, size_t hostlen, esp_tls
             free(use_host);
             return ESP_ERR_WOLFSSL_SSL_SET_HOSTNAME_FAILED;
         }
+        /* Mimic the semantics of mbedtls_ssl_set_hostname() */
+        if ((ret = wolfSSL_CTX_UseSNI(tls->priv_ctx, WOLFSSL_SNI_HOST_NAME, use_host, strlen(use_host))) != WOLFSSL_SUCCESS) {
+            ESP_LOGE(TAG, "wolfSSL_CTX_UseSNI failed, returned %d", ret);
+            return ESP_ERR_WOLFSSL_SSL_SET_HOSTNAME_FAILED;
+        }
         free(use_host);
     }
 
@@ -309,6 +314,24 @@ static esp_err_t set_client_config(const char *hostname, size_t hostlen, esp_tls
     return ESP_FAIL;
 #endif /* CONFIG_WOLFSSL_HAVE_ALPN */
     }
+
+#ifdef CONFIG_WOLFSSL_HAVE_OCSP
+    /* enable OCSP certificate status check for this TLS context */
+    if ((ret = wolfSSL_CTX_EnableOCSP((WOLFSSL_CTX *)tls->priv_ctx, WOLFSSL_OCSP_CHECKALL)) != WOLFSSL_SUCCESS) {
+        ESP_LOGE(TAG, "wolfSSL_CTX_EnableOCSP failed, returned %d", ret);
+        return ESP_ERR_WOLFSSL_CTX_SETUP_FAILED;
+    }
+    /* enable OCSP stapling for this TLS context */
+    if ((ret = wolfSSL_CTX_EnableOCSPStapling((WOLFSSL_CTX *)tls->priv_ctx )) != WOLFSSL_SUCCESS) {
+        ESP_LOGE(TAG, "wolfSSL_CTX_EnableOCSPStapling failed, returned %d", ret);
+        return ESP_ERR_WOLFSSL_CTX_SETUP_FAILED;
+    }
+    /* set option to use OCSP v1 stapling with nounce extension */
+    if ((ret = wolfSSL_UseOCSPStapling((WOLFSSL *)tls->priv_ssl, WOLFSSL_CSR_OCSP, WOLFSSL_CSR_OCSP_USE_NONCE)) != WOLFSSL_SUCCESS) {
+        ESP_LOGE(TAG, "wolfSSL_UseOCSPStapling failed, returned %d", ret);
+        return ESP_ERR_WOLFSSL_SSL_SETUP_FAILED;
+    }
+#endif /* CONFIG_WOLFSSL_HAVE_OCSP */
 
     wolfSSL_set_fd((WOLFSSL *)tls->priv_ssl, tls->sockfd);
     return ESP_OK;
@@ -526,7 +549,7 @@ void esp_wolfssl_server_session_delete(esp_tls_t *tls)
 
 esp_err_t esp_wolfssl_init_global_ca_store(void)
 {
-    /* This function is just to provide consistancy between function calls of esp_tls.h and wolfssl */
+    /* This function is just to provide consistency between function calls of esp_tls.h and wolfssl */
     return ESP_OK;
 }
 
