@@ -89,6 +89,14 @@ void ulp_lp_core_sw_intr_enable(bool enable);
  */
 void ulp_lp_core_sw_intr_clear(void);
 
+/**
+ * @brief Puts the CPU into a wait state until an interrupt is triggered
+ *
+ * @note The CPU will draw less power when in this state compared to actively running
+ *
+ */
+void ulp_lp_core_wait_for_intr(void);
+
 #ifdef __cplusplus
 }
 #endif

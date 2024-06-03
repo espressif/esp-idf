@@ -263,6 +263,12 @@ examples/system/ulp/lp_core/gpio:
   depends_components:
     - ulp
 
+examples/system/ulp/lp_core/gpio_intr_pulse_counter:
+  enable:
+    - if: SOC_LP_CORE_SUPPORTED == 1
+  depends_components:
+    - ulp
+
 examples/system/ulp/lp_core/interrupt:
   enable:
     - if: SOC_LP_CORE_SUPPORTED == 1

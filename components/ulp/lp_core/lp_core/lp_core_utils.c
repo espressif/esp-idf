@@ -145,3 +145,8 @@ void ulp_lp_core_sw_intr_clear(void)
 {
     pmu_ll_lp_clear_sw_intr_status(&PMU);
 }
+
+void ulp_lp_core_wait_for_intr(void)
+{
+    asm volatile("wfi");
+}
