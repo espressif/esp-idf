@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -84,6 +84,7 @@ TEST_CASE("esp_timer orders timers correctly", "[esp_timer]")
 
     }
     fclose(stream);
+    vTaskDelay(3); // wait for the esp_timer task to delete all timers
 }
 
 static const int test_time_sec = 10;
@@ -160,6 +161,7 @@ TEST_CASE("esp_timer produces correct delay", "[esp_timer]")
     TEST_ESP_OK( esp_timer_dump(stdout) );
 
     esp_timer_delete(timer1);
+    vTaskDelay(3); // wait for the esp_timer task to delete all timers
 }
 
 // no, we can't make this a const size_t (§6.7.5.2)
@@ -218,6 +220,7 @@ TEST_CASE("periodic esp_timer produces correct delays", "[esp_timer]")
 
     TEST_ESP_OK( esp_timer_delete(timer1) );
     vSemaphoreDelete(args.done);
+    vTaskDelay(3); // wait for the esp_timer task to delete all timers
 }
 #undef NUM_INTERVALS
 
@@ -342,6 +345,7 @@ TEST_CASE("multiple timers are ordered correctly", "[esp_timer]")
     TEST_ESP_OK( esp_timer_delete(args1.timer) );
     TEST_ESP_OK( esp_timer_delete(args2.timer) );
     TEST_ESP_OK( esp_timer_delete(args3.timer) );
+    vTaskDelay(3); // wait for the esp_timer task to delete all timers
 }
 #undef N
 
@@ -384,6 +388,7 @@ TEST_CASE("esp_timer for very short intervals", "[esp_timer]")
     vSemaphoreDelete(semaphore);
     TEST_ESP_OK(esp_timer_delete(timer1));
     TEST_ESP_OK(esp_timer_delete(timer2));
+    vTaskDelay(3); // wait for the esp_timer task to delete all timers
 }
 
 TEST_CASE("esp_timer_get_time call takes less than 1us", "[esp_timer]")
@@ -633,6 +638,7 @@ TEST_CASE("after esp_timer_impl_advance, timers run when expected", "[esp_timer]
 
     ref_clock_deinit();
     TEST_ESP_OK(esp_timer_delete(timer));
+    vTaskDelay(3); // wait for the esp_timer task to delete all timers
 }
 
 static esp_timer_handle_t timer1;
@@ -670,6 +676,7 @@ TEST_CASE("Can start/stop timer from ISR context", "[esp_timer]")
     esp_deregister_freertos_tick_hook(test_tick_hook);
     TEST_ESP_OK( esp_timer_delete(timer1) );
     vSemaphoreDelete(sem);
+    vTaskDelay(3); // wait for the esp_timer task to delete all timers
 }
 
 #if !defined(CONFIG_FREERTOS_UNICORE) && SOC_DPORT_WORKAROUND
@@ -861,6 +868,7 @@ TEST_CASE("Test a latency between a call of callback and real event", "[esp_time
     TEST_ESP_OK(esp_timer_dump(stdout));
     TEST_ESP_OK(esp_timer_stop(periodic_timer));
     TEST_ESP_OK(esp_timer_delete(periodic_timer));
+    vTaskDelay(3); // wait for the esp_timer task to delete all timers
 }
 
 static void test_timer_triggered(void* timer1_trig)
@@ -909,6 +917,7 @@ TEST_CASE("periodic esp_timer can be restarted", "[esp_timer]")
 
     TEST_ESP_OK( esp_timer_stop(timer1) );
     TEST_ESP_OK( esp_timer_delete(timer1) );
+    vTaskDelay(3); // wait for the esp_timer task to delete all timers
 }
 
 TEST_CASE("one-shot esp_timer can be restarted", "[esp_timer]")
@@ -943,6 +952,7 @@ TEST_CASE("one-shot esp_timer can be restarted", "[esp_timer]")
     TEST_ASSERT_EQUAL(0, timer_trig);
 
     TEST_ESP_OK( esp_timer_delete(timer1) );
+    vTaskDelay(3); // wait for the esp_timer task to delete all timers
 }
 
 
@@ -1002,6 +1012,7 @@ TEST_CASE("Test ESP_TIMER_ISR dispatch method", "[esp_timer]")
     TEST_ESP_OK(esp_timer_delete(periodic_timer2));
     printf("timers deleted\n");
     TEST_ESP_OK(esp_timer_dump(stdout));
+    vTaskDelay(3); // wait for the esp_timer task to delete all timers
 }
 
 static void dump_task(void* arg)
@@ -1062,6 +1073,7 @@ TEST_CASE("Test ESP_TIMER_ISR dispatch method is not blocked", "[esp_timer]")
     TEST_ESP_OK(esp_timer_delete(periodic_timer1));
     TEST_ESP_OK(esp_timer_delete(periodic_timer2));
     printf("timer deleted\n");
+    vTaskDelay(3); // wait for the esp_timer task to delete all timers
 }
 
 static void isr_callback1(void* arg)
@@ -1121,6 +1133,7 @@ TEST_CASE("Test ESP_TIMER_ISR, stop API cleans alarm reg if TASK timer list is e
     TEST_ESP_OK(esp_timer_delete(timer2));
     vSemaphoreDelete(done);
     printf("timer deleted\n");
+    vTaskDelay(3); // wait for the esp_timer task to delete all timers
 }
 
 static void isr_callback2(void* arg)
@@ -1176,6 +1189,7 @@ TEST_CASE("Test ESP_TIMER_ISR, stop API cleans alarm reg if ISR timer list is em
     TEST_ESP_OK(esp_timer_delete(timer2));
     vSemaphoreDelete(done);
     printf("timer deleted\n");
+    vTaskDelay(3); // wait for the esp_timer task to delete all timers
 }
 
 #ifndef CONFIG_FREERTOS_UNICORE
@@ -1214,6 +1228,7 @@ TEST_CASE("Test that CPU1 can handle esp_timer ISR even when CPU0 is blocked", "
     TEST_ESP_OK(esp_timer_dump(stdout));
     TEST_ASSERT_INT_WITHIN(3, 10, data);
     TEST_ESP_OK(esp_timer_delete(timer));
+    vTaskDelay(3); // wait for the esp_timer task to delete all timers
 }
 #endif // not CONFIG_FREERTOS_UNICORE
 
@@ -1283,6 +1298,7 @@ TEST_CASE("Test ISR dispatch callbacks are not blocked even if TASK callbacks ta
     TEST_ESP_OK(esp_timer_stop(isr_timer_handle));
     TEST_ESP_OK(esp_timer_delete(task_timer_handle));
     TEST_ESP_OK(esp_timer_delete(isr_timer_handle));
+    vTaskDelay(3); // wait for the esp_timer task to delete all timers
 }
 
 #endif // CONFIG_ESP_TIMER_SUPPORTS_ISR_DISPATCH_METHOD
