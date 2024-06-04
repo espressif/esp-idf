@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2010-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2010-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -226,50 +226,8 @@
 #define SOC_ROM_STACK_START         0x3fceb710
 #define SOC_ROM_STACK_SIZE          0x2000
 
-//interrupt cpu using table, Please see the core-isa.h
-/*************************************************************************************************************
- *      Intr num                Level           Type                    PRO CPU usage           APP CPU uasge
- *      0                       1               extern level            WMAC                    Reserved
- *      1                       1               extern level            BT/BLE Host HCI DMA     BT/BLE Host HCI DMA
- *      2                       1               extern level
- *      3                       1               extern level
- *      4                       1               extern level            WBB
- *      5                       1               extern level            BT/BLE Controller       BT/BLE Controller
- *      6                       1               timer                   FreeRTOS Tick(L1)       FreeRTOS Tick(L1)
- *      7                       1               software                BT/BLE VHCI             BT/BLE VHCI
- *      8                       1               extern level            BT/BLE BB(RX/TX)        BT/BLE BB(RX/TX)
- *      9                       1               extern level
- *      10                      1               extern edge
- *      11                      3               profiling
- *      12                      1               extern level
- *      13                      1               extern level
- *      14                      7               nmi                     Reserved                Reserved
- *      15                      3               timer                   FreeRTOS Tick(L3)       FreeRTOS Tick(L3)
- *      16                      5               timer
- *      17                      1               extern level
- *      18                      1               extern level
- *      19                      2               extern level
- *      20                      2               extern level
- *      21                      2               extern level
- *      22                      3               extern edge
- *      23                      3               extern level
- *      24                      4               extern level            TG1_WDT
- *      25                      4               extern level            CACHEERR
- *      26                      5               extern level
- *      27                      3               extern level            Reserved                Reserved
- *      28                      4               extern edge             IPC_ISR                 IPC_ISR
- *      29                      3               software                Reserved                Reserved
- *      30                      4               extern edge             Reserved                Reserved
- *      31                      5               extern level
- *************************************************************************************************************
- */
-
-//CPU0 Interrupt number reserved, not touch this.
 #define ETS_WMAC_INUM                           0
-#define ETS_BT_HOST_INUM                        1
 #define ETS_WBB_INUM                            4
-#define ETS_TG0_T1_INUM                         10 /**< use edge interrupt*/
-#define ETS_FRC1_INUM                           22
 #define ETS_T1_WDT_INUM                         24
 #define ETS_MEMACCESS_ERR_INUM                  25
 #define ETS_CACHEERR_INUM                       ETS_MEMACCESS_ERR_INUM
