@@ -125,10 +125,10 @@ If you have already set up ESP-IDF with CMake build system according to the :doc
 
 The output should be as follows (although the version may be more recent than listed here)::
 
-    Open On-Chip Debugger  v0.10.0-esp32-20190708 (2019-07-08-11:04)
+    Open On-Chip Debugger v0.12.0-esp32-20240318 (2024-03-18-18:25)
     Licensed under GNU GPL v2
     For bug reports, read
-        https://openocd.org/doc/doxygen/bugs.html
+            http://openocd.org/doc/doxygen/bugs.html
 
 You may also verify that OpenOCD knows where its configuration scripts are located by printing the value of ``OPENOCD_SCRIPTS`` environment variable, by typing ``echo $OPENOCD_SCRIPTS`` (for Linux and macOS) or ``echo %OPENOCD_SCRIPTS%`` (for Windows). If a valid path is printed, then OpenOCD is set up correctly.
 

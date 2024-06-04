@@ -125,10 +125,10 @@ JTAG 调试
 
 终端会输出以下信息（实际版本号可能会更新）::
 
-    Open On-Chip Debugger  v0.10.0-esp32-20190708 (2019-07-08-11:04)
+    Open On-Chip Debugger v0.12.0-esp32-20240318 (2024-03-18-18:25)
     Licensed under GNU GPL v2
     For bug reports, read
-        https://openocd.org/doc/doxygen/bugs.html
+            http://openocd.org/doc/doxygen/bugs.html
 
 你还可以检查 ``OPENOCD_SCRIPTS`` 环境变量的值，以确认 OpenOCD 配置文件的路径，Linux 和 macOS 用户可以在终端输入 ``echo $OPENOCD_SCRIPTS``，Windows 用户需要输入 ``echo %OPENOCD_SCRIPTS%``。如果终端输出了有效路径，则表明已经正确安装 OpenOCD。
 

@@ -3,7 +3,7 @@
 
 :link_to_translation:`en:[English]`
 
-{IDF_TARGET_JTAG_SEL_EFUSE:default="Not Updated!", esp32s3="STRAP_JTAG_SEL", esp32c6="JTAG_SEL_ENABLE", esp32h2="JTAG_SEL_ENABLE"}
+{IDF_TARGET_JTAG_SEL_EFUSE:default="Not Updated!", esp32s3="STRAP_JTAG_SEL", esp32c6="JTAG_SEL_ENABLE", esp32h2="JTAG_SEL_ENABLE", esp32p4="JTAG_SEL_ENABLE"}
 
 关于适配 OpenOCD 和 {IDF_TARGET_NAME} 的 JTAG 接口选择问题，请参考 :ref:`jtag-debugging-selecting-jtag-adapter` 章节。然后按照以下步骤进行设置，使其正常工作。
 

@@ -2,17 +2,6 @@ api-guides/performance/speed.rst
 api-guides/performance/size.rst
 api-guides/performance/ram-usage.rst
 api-guides/performance/index.rst
-api-guides/jtag-debugging/debugging-examples.rst
-api-guides/jtag-debugging/configure-ft2232h-jtag.rst
-api-guides/jtag-debugging/tips-and-quirks.rst
-api-guides/jtag-debugging/using-debugger.rst
-api-guides/jtag-debugging/building-openocd-macos.rst
-api-guides/jtag-debugging/building-openocd-linux.rst
-api-guides/jtag-debugging/esp32p4.inc
-api-guides/jtag-debugging/configure-other-jtag.rst
-api-guides/jtag-debugging/building-openocd-windows.rst
-api-guides/jtag-debugging/index.rst
-api-guides/jtag-debugging/configure-builtin-jtag.rst
 api-guides/partition-tables.rst
 api-guides/app_trace.rst
 api-guides/thread-local-storage.rst
