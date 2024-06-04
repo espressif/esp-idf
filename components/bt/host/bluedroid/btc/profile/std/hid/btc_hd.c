@@ -261,7 +261,7 @@ static void btc_hd_deinit(void)
         }
 
         btc_hd_cb.service_dereg_active = FALSE;
-        // unresgister app will also relase the connection
+        // unregister app will also release the connection
         // and disable after receiving unregister event from lower layer
         if (is_hidd_app_register()) {
             btc_hd_unregister_app(true);
@@ -844,6 +844,8 @@ void btc_hd_cb_handler(btc_msg_t *msg)
             // }
             // btc_storage_set_hidd((bt_bdaddr_t *)&p_data->conn.bda);
             btc_hd_cb.status = BTC_HD_CONNECTED;
+        } else if (p_data->conn.conn_status == BTA_HD_CONN_STATE_DISCONNECTED) {
+            btc_hd_cb.status = BTC_HD_DISCONNECTED;
         }
         param.open.status = p_data->conn.status;
         param.open.conn_status = p_data->conn.conn_status;

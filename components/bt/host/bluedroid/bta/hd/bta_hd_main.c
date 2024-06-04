@@ -62,6 +62,7 @@ enum {
     BTA_HD_VC_UNPLUG_DONE_ACT,
     BTA_HD_SUSPEND_ACT,
     BTA_HD_EXIT_SUSPEND_ACT,
+    BTA_HD_OPEN_FAILURE,
     BTA_HD_NUM_ACTIONS
 };
 
@@ -74,7 +75,7 @@ const tBTA_HD_ACTION bta_hd_action[] = {
     bta_hd_disconnect_act,     bta_hd_add_device_act, bta_hd_remove_device_act, bta_hd_send_report_act,
     bta_hd_report_error_act,   bta_hd_vc_unplug_act,  bta_hd_open_act,          bta_hd_close_act,
     bta_hd_intr_data_act,      bta_hd_get_report_act, bta_hd_set_report_act,    bta_hd_set_protocol_act,
-    bta_hd_vc_unplug_done_act, bta_hd_suspend_act,    bta_hd_exit_suspend_act,
+    bta_hd_vc_unplug_done_act, bta_hd_suspend_act,    bta_hd_exit_suspend_act,  bta_hd_open_failure
 };
 
 /* state table information */
@@ -118,7 +119,7 @@ const uint8_t bta_hd_st_idle[][BTA_HD_NUM_COLS] = {
     /* BTA_HD_API_REPORT_ERROR_EVT   */ {BTA_HD_IGNORE, BTA_HD_IDLE_ST},
     /* BTA_HD_API_VC_UNPLUG_EVT      */ {BTA_HD_VC_UNPLUG_ACT, BTA_HD_IDLE_ST},
     /* BTA_HD_INT_OPEN_EVT           */ {BTA_HD_OPEN_ACT, BTA_HD_CONN_ST},
-    /* BTA_HD_INT_CLOSE_EVT          */ {BTA_HD_IGNORE, BTA_HD_IDLE_ST},
+    /* BTA_HD_INT_CLOSE_EVT          */ {BTA_HD_OPEN_FAILURE, BTA_HD_IDLE_ST},
     /* BTA_HD_INT_INTR_DATA_EVT      */ {BTA_HD_IGNORE, BTA_HD_IDLE_ST},
     /* BTA_HD_INT_GET_REPORT_EVT     */ {BTA_HD_IGNORE, BTA_HD_IDLE_ST},
     /* BTA_HD_INT_SET_REPORT_EVT     */ {BTA_HD_IGNORE, BTA_HD_IDLE_ST},
