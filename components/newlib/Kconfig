@@ -59,7 +59,7 @@ menu "Newlib"
 
             For more details about "nano" formatting option, please see newlib readme file,
             search for '--enable-newlib-nano-formatted-io':
-            https://sourceware.org/newlib/README
+            https://sourceware.org/git/?p=newlib-cygwin.git;a=blob_plain;f=newlib/README;hb=HEAD
 
             If this option is enabled and the ROM contains functions from newlib-nano, the build system
             will use functions available in ROM, reducing the application binary size.

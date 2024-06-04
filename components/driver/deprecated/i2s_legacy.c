@@ -62,7 +62,6 @@
 #include "esp_pm.h"
 #include "esp_efuse.h"
 #include "esp_rom_gpio.h"
-#include "esp_dma_utils.h"
 
 #if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
 #include "esp_cache.h"
@@ -581,22 +580,17 @@ static esp_err_t i2s_alloc_dma_buffer(i2s_port_t i2s_num, i2s_dma_t *dma_obj)
     ESP_GOTO_ON_FALSE(dma_obj, ESP_ERR_INVALID_ARG, err, TAG, "I2S DMA object can't be NULL");
 
     uint32_t buf_cnt = p_i2s[i2s_num]->dma_desc_num;
-    size_t desc_size = 0;
     for (int cnt = 0; cnt < buf_cnt; cnt++) {
         /* Allocate DMA buffer */
-        esp_dma_mem_info_t dma_mem_info = {
-            .extra_heap_caps = MALLOC_CAP_INTERNAL,
-            .dma_alignment_bytes = 4,
-        };
-        //TODO: IDF-9636
-        esp_dma_capable_calloc(1, sizeof(char) * dma_obj->buf_size, &dma_mem_info, (void **)&dma_obj->buf[cnt], NULL);
+        dma_obj->buf[cnt] = heap_caps_aligned_calloc(4, 1, sizeof(char) * dma_obj->buf_size,
+                                                     MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
         ESP_GOTO_ON_FALSE(dma_obj->buf[cnt], ESP_ERR_NO_MEM, err, TAG, "Error malloc dma buffer");
 #if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
         esp_cache_msync(dma_obj->buf[cnt], dma_obj->buf_size, ESP_CACHE_MSYNC_FLAG_DIR_C2M);
 #endif
 
         /* Allocate DMA descriptor */
-        esp_dma_capable_calloc(1, sizeof(lldesc_t), &dma_mem_info, (void **)&dma_obj->desc[cnt], &desc_size);
+        dma_obj->desc[cnt] = heap_caps_aligned_calloc(4, 1, sizeof(lldesc_t), MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
         ESP_GOTO_ON_FALSE(dma_obj->desc[cnt], ESP_ERR_NO_MEM, err, TAG,  "Error malloc dma description entry");
     }
     /* DMA descriptor must be initialize after all descriptor has been created, otherwise they can't be linked together as a chain */
@@ -612,7 +606,7 @@ static esp_err_t i2s_alloc_dma_buffer(i2s_port_t i2s_num, i2s_dma_t *dma_obj)
         /* Link to the next descriptor */
         dma_obj->desc[cnt]->empty = (uint32_t)((cnt < (buf_cnt - 1)) ? (dma_obj->desc[cnt + 1]) : dma_obj->desc[0]);
 #if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
-        esp_cache_msync(dma_obj->desc[cnt], desc_size, ESP_CACHE_MSYNC_FLAG_DIR_C2M);
+        esp_cache_msync(dma_obj->desc[cnt], sizeof(lldesc_t), ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED);
 #endif
     }
     if (p_i2s[i2s_num]->dir & I2S_DIR_RX) {

@@ -1,7 +1,5 @@
-# SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
-from __future__ import print_function
-
 import os
 import struct
 import zlib
@@ -18,17 +16,19 @@ from pytest_embedded import Dut
 #    e.g export EFUSEPORT=/dev/ttyUSB1
 # 4. Run these tests
 
+CORRUPT_ALL_BLOCKS = 0xFF
 
-def corrupt_signature(signed_bootloader, seed=0, corrupt_sig=True, corrupt_crc=False, corrupt_single_block=None):
+
+def corrupt_signature(signed_bootloader, seed=0, corrupt_sig=True, corrupt_crc=False, corrupt_block=CORRUPT_ALL_BLOCKS):
     # type: (bytes, int, bool, bool, int) -> bytes
     image = signed_bootloader[:-4096]
     signature = signed_bootloader[-4096:]
     sig_blocks = (signature[0:1216], signature[1216:2432], signature[2432:3648])
     new_blocks = tuple(corrupt_sig_block(s, seed, corrupt_sig, corrupt_crc) for s in sig_blocks)
 
-    # if corrupt_single_block is None, corrupt all blocks
+    # if corrupt_block is CORRUPT_ALL_BLOCKS, corrupt all blocks
     # otherwise, only corrupt the one with that index set
-    corr_sig_blocks = tuple(new_blocks[n] if corrupt_single_block in [None, n] else sig_blocks[n] for n in range(3))
+    corr_sig_blocks = tuple(new_blocks[n] if corrupt_block in [CORRUPT_ALL_BLOCKS, n] else sig_blocks[n] for n in range(3))
 
     return image + b''.join(corr_sig_blocks) + signature[3648:]
 
@@ -80,6 +80,8 @@ def dut_start_secure_app(dut: Dut) -> None:
 # Test secure boot flow.
 # Correctly signed bootloader + correctly signed app should work
 @pytest.mark.esp32c3
+# TODO: [ESP32C5] IDF-10043
+# @pytest.mark.esp32c5
 @pytest.mark.esp32s3
 @pytest.mark.esp32p4
 def test_examples_security_secure_boot(dut: Dut) -> None:
@@ -92,6 +94,8 @@ def test_examples_security_secure_boot(dut: Dut) -> None:
 # Test efuse key index and key block combination.
 # Any key index can be written to any key block and should work
 @pytest.mark.esp32c3
+# TODO: [ESP32C5] IDF-10043
+# @pytest.mark.esp32c5
 @pytest.mark.esp32s3
 @pytest.mark.esp32p4
 # Increasing the test timeout to 1200s as the test runs for 18 iterations
@@ -114,6 +118,8 @@ def test_examples_security_secure_boot_key_combo(dut: Dut) -> None:
 # Test secure boot key revoke.
 # If a key is revoked, bootloader signed with that key should fail verification
 @pytest.mark.esp32c3
+# TODO: [ESP32C5] IDF-10043
+# @pytest.mark.esp32c5
 @pytest.mark.esp32s3
 @pytest.mark.esp32p4
 def test_examples_security_secure_boot_key_revoke(dut: Dut) -> None:
@@ -133,6 +139,8 @@ def test_examples_security_secure_boot_key_revoke(dut: Dut) -> None:
 # Test bootloader signature corruption.
 # Corrupt one byte at a time of bootloader signature and test that the verification fails
 @pytest.mark.esp32c3
+# TODO: [ESP32C5] IDF-10043
+# @pytest.mark.esp32c5
 @pytest.mark.esp32s3
 @pytest.mark.esp32p4
 @pytest.mark.timeout(18000)
@@ -170,6 +178,8 @@ def test_examples_security_secure_boot_corrupt_bl_sig(dut: Dut) -> None:
 # Test app signature corruption.
 # Corrupt app signature, one byte at a time, and test that the verification fails
 @pytest.mark.esp32c3
+# TODO: [ESP32C5] IDF-10043
+# @pytest.mark.esp32c5
 @pytest.mark.esp32s3
 @pytest.mark.esp32p4
 @pytest.mark.timeout(18000)
@@ -213,6 +223,6 @@ def test_examples_security_secure_boot_corrupt_app_sig(dut: Dut) -> None:
     dut.secure_boot_burn_en_bit()
     dut.secure_boot_burn_digest('test_rsa_3072_key.pem', 0, 0)
 
-    dut.expect('Sig block 0 invalid: {}'.format('CRC mismatch' if dut.target == 'esp32p4' else 'Stored CRC ends'), timeout=2)
+    dut.expect('Sig block 0 invalid: {}'.format('CRC mismatch' if dut.target == 'esp32p4' or dut.target == 'esp32c5' else 'Stored CRC ends'), timeout=2)
     dut.expect('Secure boot signature verification failed', timeout=2)
     dut.expect('No bootable app partitions in the partition table', timeout=2)

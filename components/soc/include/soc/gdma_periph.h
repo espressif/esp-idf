@@ -8,10 +8,7 @@
 
 #include "soc/soc_caps.h"
 #include "soc/periph_defs.h"
-
-#if SOC_PM_SUPPORT_TOP_PD
 #include "soc/regdma.h"
-#endif
 
 #ifdef __cplusplus
 extern "C" {

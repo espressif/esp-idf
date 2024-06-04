@@ -106,6 +106,7 @@ api-reference/peripherals/usb_host/usb_host_notes_index.rst
 api-reference/peripherals/usb_host/usb_host_notes_dwc_otg.rst
 api-reference/peripherals/usb_host/usb_host_notes_design.rst
 api-reference/peripherals/usb_host/usb_host_notes_usbh.rst
+api-reference/peripherals/usb_host/usb_host_notes_enum.rst
 api-reference/peripherals/usb_device.rst
 api-reference/peripherals/sdspi_host.rst
 api-reference/peripherals/spi_slave.rst
@@ -226,8 +227,6 @@ api-reference/protocols/mdns.rst
 api-reference/protocols/index.rst
 api-reference/protocols/asio.rst
 security/flash-encryption.rst
-security/secure-boot-v2.rst
-security/secure-boot-v1.rst
 about.rst
 resources.rst
 migration-guides/release-5.x/5.2/ieee802154.rst

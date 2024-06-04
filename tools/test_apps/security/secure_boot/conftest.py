@@ -1,6 +1,5 @@
-# SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-
 # pylint: disable=W0621  # redefined-outer-name
 import os
 import subprocess
@@ -56,7 +55,7 @@ class FpgaSerial(IdfSerial):
         if subprocess.run(
             f'{sys.executable} -m esptool --port {self.esp_port} --no-stub write_flash {str(offs)} {partition_table_path}'.split()
         ).returncode != 0:
-            raise RuntimeError('Flashing the patition table binary failed')
+            raise RuntimeError('Flashing the partition table binary failed')
 
     @EspSerial.use_esptool(hard_reset_after=True, no_stub=True)
     def app_flash(self, app_path: str) -> None:
@@ -173,6 +172,20 @@ class Esp32p4FpgaDut(FpgaDut):
         self.serial.burn_efuse_key_digest(digest, 'SECURE_BOOT_DIGEST%d' % key_index, 'BLOCK_KEY%d' % block)
 
 
+class Esp32c5FpgaDut(FpgaDut):
+    SECURE_BOOT_EN_KEY = 'SECURE_BOOT_EN'
+    SECURE_BOOT_EN_VAL = 1
+
+    def burn_wafer_version(self) -> None:
+        pass
+
+    def secure_boot_burn_en_bit(self) -> None:
+        self.serial.burn_efuse(self.SECURE_BOOT_EN_KEY, self.SECURE_BOOT_EN_VAL)
+
+    def secure_boot_burn_digest(self, digest: str, key_index: int = 0, block: int = 0) -> None:
+        self.serial.burn_efuse_key_digest(digest, 'SECURE_BOOT_DIGEST%d' % key_index, 'BLOCK_KEY%d' % block)
+
+
 @pytest.fixture(scope='module')
 def monkeypatch_module(request: FixtureRequest) -> MonkeyPatch:
     mp = MonkeyPatch()
@@ -189,5 +202,7 @@ def replace_dut_class(monkeypatch_module: MonkeyPatch, pytestconfig: pytest.Conf
         monkeypatch_module.setattr('pytest_embedded_idf.IdfDut', Esp32s3FpgaDut)
     elif target == 'esp32p4':
         monkeypatch_module.setattr('pytest_embedded_idf.IdfDut', Esp32p4FpgaDut)
+    elif target == 'esp32c5':
+        monkeypatch_module.setattr('pytest_embedded_idf.IdfDut', Esp32c5FpgaDut)
 
     monkeypatch_module.setattr('pytest_embedded_idf.IdfSerial', FpgaSerial)

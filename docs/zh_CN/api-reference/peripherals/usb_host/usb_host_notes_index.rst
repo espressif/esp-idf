@@ -22,6 +22,7 @@ USB 主机维护者注意事项（简介）
     usb_host_notes_arch
     usb_host_notes_dwc_otg
     usb_host_notes_usbh
+    usb_host_notes_enum
 
 待写章节：
 
