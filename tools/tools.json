@@ -217,14 +217,14 @@
           "name": "esp-13.2.0_20240530",
           "status": "recommended",
           "win32": {
-            "sha256": "06e43d202e4daccf899ed57dbebb777062637f2a7e3167dffe1a5ce53fe78b79",
-            "size": 268719971,
-            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-13.2.0_20240530/xtensa-esp-elf-13.2.0_20240530-i686-w64-mingw32.zip"
+            "sha256": "d6b227c50e3c8e21d62502b3140e5ab74a4cb502c2b4169c36238b9858a8fb88",
+            "size": 266042967,
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-13.2.0_20240530/xtensa-esp-elf-13.2.0_20240530-i686-w64-mingw32_hotfix.zip"
           },
           "win64": {
-            "sha256": "fad96cffef900b4898bc89d5a11c16c581bddb88f25fc83eccbbc126cd9a4f41",
-            "size": 272523365,
-            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-13.2.0_20240530/xtensa-esp-elf-13.2.0_20240530-x86_64-w64-mingw32.zip"
+            "sha256": "155ee97b531236e6a7c763395c68ca793e55e74d2cb4d38a23057a153e01e7d0",
+            "size": 269831985,
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-13.2.0_20240530/xtensa-esp-elf-13.2.0_20240530-x86_64-w64-mingw32_hotfix.zip"
           }
         }
       ]
