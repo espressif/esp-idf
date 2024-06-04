@@ -17,7 +17,7 @@ extern "C" {
 #include <stdbool.h>
 #include "hal/misc.h"
 #include "hal/assert.h"
-#include "soc/timer_periph.h"
+#include "soc/wdt_periph.h"
 #include "soc/timer_group_struct.h"
 #include "hal/wdt_types.h"
 #include "esp_attr.h"
