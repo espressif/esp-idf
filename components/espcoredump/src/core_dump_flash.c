@@ -52,7 +52,7 @@ esp_err_t esp_core_dump_write_data(core_dump_write_data_t *wr_data, void *data, 
 #define ESP_COREDUMP_FLASH_ERASE(_off_, _len_)                   esp_flash_erase_region(esp_flash_default_chip, _off_, _len_)
 
 esp_err_t esp_core_dump_image_check(void);
-static esp_err_t esp_core_dump_partition_and_size_get(const esp_partition_t **partition, uint32_t* size);
+esp_err_t esp_core_dump_partition_and_size_get(const esp_partition_t **partition, uint32_t* size);
 
 static void esp_core_dump_flash_print_write_start(void)
 {
@@ -242,7 +242,7 @@ static esp_err_t esp_core_dump_flash_write_prepare(core_dump_write_data_t *wr_da
         padding = COREDUMP_CACHE_SIZE - modulo;
     }
 
-    /* Now we can check whether we have enough space in our core dump parition
+    /* Now we can check whether we have enough space in our core dump partition
      * or not. */
     if ((*data_len + padding + cs_len) > s_core_flash_config.partition.size) {
         ESP_COREDUMP_LOGE("Not enough space to save core dump!");
@@ -465,7 +465,7 @@ esp_err_t esp_core_dump_image_erase(void)
     return err;
 }
 
-static esp_err_t esp_core_dump_partition_and_size_get(const esp_partition_t **partition, uint32_t* size)
+esp_err_t esp_core_dump_partition_and_size_get(const esp_partition_t **partition, uint32_t* size)
 {
     uint32_t core_size = 0;
     const esp_partition_t *core_part = NULL;
