@@ -141,7 +141,6 @@ r_bt_bb_recorrect_is_dead = 0x40001d84;
 r_bt_bb_restart_hw_recorrect = 0x40001d88;
 r_ke_task_handler_pre = 0x40001da0;
 r_ke_task_handler_end = 0x40001da4;
-r_ke_task_handler_get_overwrite = 0x40001da8;
 r_lld_scan_frm_skip_isr_eco = 0x40001db0;
 r_lld_ext_scan_dynamic_pti_reset = 0x40001db4;
 r_llc_rem_phy_upd_proc_continue_eco = 0x40001db8;
@@ -215,6 +214,7 @@ r_lld_scan_try_sched_eco = 0x40001dac;
 r_lld_scan_start_hook = 0x40001c74;
 r_lld_init_start_hook = 0x40001cb8;
 r_lld_scan_evt_start_cbk_eco = 0x40001d20;
+r_ke_task_handler_get_overwrite = 0x40001da8;
 */
 
 
