@@ -19,7 +19,7 @@
 /******************************************************************************
  *
  *  This is the implementation of the JAVA API for Bluetooth Wireless
- *  Technology (JABWT) as specified by the JSR82 specificiation
+ *  Technology (JABWT) as specified by the JSR82 specification
  *
  ******************************************************************************/
 
@@ -118,6 +118,11 @@ void BTA_JvDisable(tBTA_JV_RFCOMM_CBACK *p_cback)
 
     APPL_TRACE_API( "BTA_JvDisable");
     bta_sys_deregister(BTA_ID_JV);
+    memset(&bta_jv_cb, 0, sizeof(tBTA_JV_CB));
+    /* set handle to invalid value by default */
+    for (int i = 0; i < BTA_JV_PM_MAX_NUM; i++) {
+        bta_jv_cb.pm_cb[i].handle = BTA_JV_PM_HANDLE_CLEAR;
+    }
     if ((p_buf = (tBTA_JV_API_DISABLE *) osi_malloc(sizeof(tBTA_JV_API_DISABLE))) != NULL) {
         p_buf->hdr.event = BTA_JV_API_DISABLE_EVT;
         p_buf->p_cback = p_cback;
@@ -893,7 +898,7 @@ tBTA_JV_STATUS BTA_JvRfcommConfig(BOOLEAN enable_l2cap_ertm)
 **
 ** Function         BTA_JvRfcommConnect
 **
-** Description      This function makes an RFCOMM conection to a remote BD
+** Description      This function makes an RFCOMM connection to a remote BD
 **                  Address.
 **                  When the connection is initiated or failed to initiate,
 **                  tBTA_JV_RFCOMM_CBACK is called with BTA_JV_RFCOMM_CL_INIT_EVT
@@ -1204,7 +1209,7 @@ tBTA_JV_STATUS BTA_JvRfcommFlowControl(UINT32 handle, UINT16 credits_given)
  ** Parameters:  handle,  JV handle from RFCOMM or L2CAP
  **              app_id:  app specific pm ID, can be BTA_JV_PM_ALL, see bta_dm_cfg.c for details
  **              BTA_JV_PM_ID_CLEAR: removes pm management on the handle. init_st is ignored and
- **              BTA_JV_CONN_CLOSE is called implicitely
+ **              BTA_JV_CONN_CLOSE is called implicitly
  **              init_st:  state after calling this API. typically it should be BTA_JV_CONN_OPEN
  **
  ** Returns      BTA_JV_SUCCESS, if the request is being processed.
