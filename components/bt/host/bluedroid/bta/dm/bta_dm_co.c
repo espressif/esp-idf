@@ -52,6 +52,18 @@ tBTE_APPL_CFG bte_appl_cfg = {
     BTM_BLE_ONLY_ACCEPT_SPECIFIED_SEC_AUTH_DISABLE,
     BTM_BLE_OOB_DISABLE,
 };
+
+void bta_dm_co_security_param_init(void)
+{
+    bte_appl_cfg.ble_auth_req = BTA_LE_AUTH_REQ_SC_MITM_BOND;
+    bte_appl_cfg.ble_io_cap = BTM_LOCAL_IO_CAPS_BLE;
+    bte_appl_cfg.ble_init_key = BTM_BLE_INITIATOR_KEY_SIZE;
+    bte_appl_cfg.ble_resp_key = BTM_BLE_RESPONDER_KEY_SIZE;
+    bte_appl_cfg.ble_max_key_size = BTM_BLE_MAX_KEY_SIZE;
+    bte_appl_cfg.ble_min_key_size = BTM_BLE_MIN_KEY_SIZE;
+    bte_appl_cfg.ble_accept_auth_enable = BTM_BLE_ONLY_ACCEPT_SPECIFIED_SEC_AUTH_DISABLE;
+    bte_appl_cfg.oob_support = BTM_BLE_OOB_DISABLE;
+};
 #endif
 
 #if (defined CLASSIC_BT_INCLUDED && CLASSIC_BT_INCLUDED == TRUE)
