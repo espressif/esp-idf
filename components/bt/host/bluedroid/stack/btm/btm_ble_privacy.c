@@ -330,7 +330,7 @@ void btm_ble_remove_resolving_list_entry_complete(UINT8 *p, UINT16 evt_len)
     BTM_TRACE_DEBUG("%s status = %d", __func__, status);
 
     if (!btm_ble_deq_resolving_pending(pseudo_bda)) {
-        BTM_TRACE_ERROR("%s no pending resolving list operation", __func__);
+        BTM_TRACE_DEBUG("%s no pending resolving list operation", __func__);
         return;
     }
 
