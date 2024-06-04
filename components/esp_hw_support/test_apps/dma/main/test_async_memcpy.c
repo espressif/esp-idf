@@ -18,7 +18,6 @@
 #include "esp_async_memcpy.h"
 #include "soc/soc_caps.h"
 #include "hal/dma_types.h"
-#include "esp_dma_utils.h"
 
 #define IDF_LOG_PERFORMANCE(item, value_fmt, value, ...) \
     printf("[Performance][%s]: " value_fmt "\n", item, value, ##__VA_ARGS__)
@@ -55,21 +54,13 @@ static void async_memcpy_setup_testbench(memcpy_testbench_context_t *test_contex
     uint8_t *from_addr = NULL;
     uint8_t *to_addr = NULL;
 
-    esp_dma_mem_info_t mem_info = {
-        .dma_alignment_bytes = test_context->align,
-    };
-    if (test_context->src_in_psram) {
-        mem_info.extra_heap_caps = MALLOC_CAP_SPIRAM;
-    } else {
-        mem_info.extra_heap_caps = 0;
-    }
-    TEST_ESP_OK(esp_dma_capable_calloc(1, buffer_size, &mem_info, (void **)&src_buf, NULL));
-    if (test_context->dst_in_psram) {
-        mem_info.extra_heap_caps = MALLOC_CAP_SPIRAM;
-    } else {
-        mem_info.extra_heap_caps = 0;
-    }
-    TEST_ESP_OK(esp_dma_capable_calloc(1, buffer_size, &mem_info, (void **)&dst_buf, NULL));
+    uint32_t mem_caps = test_context->src_in_psram ? MALLOC_CAP_SPIRAM | MALLOC_CAP_DMA | MALLOC_CAP_8BIT :  MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA | MALLOC_CAP_8BIT ;
+    src_buf = heap_caps_aligned_calloc(test_context->align, 1, buffer_size, mem_caps);
+    TEST_ASSERT_NOT_NULL(src_buf);
+
+    mem_caps = test_context->dst_in_psram ? MALLOC_CAP_SPIRAM | MALLOC_CAP_DMA | MALLOC_CAP_8BIT :  MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA | MALLOC_CAP_8BIT ;
+    dst_buf = heap_caps_aligned_calloc(test_context->align, 1, buffer_size, mem_caps);
+    TEST_ASSERT_NOT_NULL(dst_buf);
 
     // adding extra offset
     from_addr = src_buf + test_context->offset;
@@ -111,13 +102,11 @@ TEST_CASE("memory copy the same buffer with different content", "[async mcp]")
     async_memcpy_config_t config = ASYNC_MEMCPY_DEFAULT_CONFIG();
     async_memcpy_handle_t driver = NULL;
     TEST_ESP_OK(esp_async_memcpy_install(&config, &driver));
-    uint8_t *sbuf = NULL;
-    uint8_t *dbuf = NULL;
-    esp_dma_mem_info_t mem_info = {
-        .dma_alignment_bytes = 4,
-    };
-    TEST_ESP_OK(esp_dma_capable_calloc(1, 256, &mem_info, (void **)&sbuf, NULL));
-    TEST_ESP_OK(esp_dma_capable_calloc(1, 256, &mem_info, (void **)&dbuf, NULL));
+    uint8_t *sbuf = heap_caps_aligned_calloc(4, 1, 256, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+    uint8_t *dbuf = heap_caps_aligned_calloc(4, 1, 256, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+    TEST_ASSERT_NOT_NULL(sbuf);
+    TEST_ASSERT_NOT_NULL(dbuf);
+
     for (int j = 0; j < 20; j++) {
         TEST_ESP_OK(esp_async_memcpy(driver, dbuf, sbuf, 256, NULL, NULL));
         vTaskDelay(pdMS_TO_TICKS(10));
@@ -219,13 +208,10 @@ TEST_CASE("memory copy done callback", "[async mcp]")
     async_memcpy_handle_t driver = NULL;
     TEST_ESP_OK(esp_async_memcpy_install(&config, &driver));
 
-    uint8_t *src_buf = NULL;
-    uint8_t *dst_buf = NULL;
-    esp_dma_mem_info_t mem_info = {
-        .dma_alignment_bytes = 4,
-    };
-    TEST_ESP_OK(esp_dma_capable_calloc(1, 256, &mem_info, (void **)&src_buf, NULL));
-    TEST_ESP_OK(esp_dma_capable_calloc(1, 256, &mem_info, (void **)&dst_buf, NULL));
+    uint8_t *src_buf = heap_caps_aligned_calloc(4, 1, 256, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+    uint8_t *dst_buf = heap_caps_aligned_calloc(4, 1, 256, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+    TEST_ASSERT_NOT_NULL(src_buf);
+    TEST_ASSERT_NOT_NULL(dst_buf);
 
     SemaphoreHandle_t sem = xSemaphoreCreateBinary();
     TEST_ESP_OK(esp_async_memcpy(driver, dst_buf, src_buf, 256, test_async_memcpy_cb_v1, sem));
