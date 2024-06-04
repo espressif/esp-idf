@@ -9,32 +9,51 @@ import pexpect
 import pytest
 from test_panic_util import PanicTestDut
 
-# Markers for all the targets this test currently runs on
-TARGETS_TESTED = [
-    pytest.mark.esp32,
+TARGETS_XTENSA_SINGLE_CORE = [
     pytest.mark.esp32s2,
-    pytest.mark.esp32c3,
-    pytest.mark.esp32s3,
-    pytest.mark.esp32c2,
-    pytest.mark.esp32c6,
-    pytest.mark.esp32h2
 ]
+
+TARGETS_XTENSA_DUAL_CORE = [
+    pytest.mark.esp32,
+    pytest.mark.esp32s3,
+]
+
+TARGETS_XTENSA = TARGETS_XTENSA_SINGLE_CORE + TARGETS_XTENSA_DUAL_CORE
+
+TARGETS_RISCV_SINGLE_CORE = [
+    pytest.mark.esp32c2,
+    pytest.mark.esp32c3,
+    pytest.mark.esp32c6,
+    pytest.mark.esp32h2,
+]
+
+TARGETS_RISCV_DUAL_CORE = [
+    pytest.mark.esp32p4,
+]
+
+# ESP32-P4 tests are not supported in this branch yet
+TARGETS_RISCV = TARGETS_RISCV_SINGLE_CORE
+
+# Markers for all the targets this test currently runs on
+TARGETS_ALL = TARGETS_XTENSA + TARGETS_RISCV
+
+# Some tests only run on dual-core targets, they use the config below.
+TARGETS_DUAL_CORE = TARGETS_XTENSA_DUAL_CORE
 
 # Most tests run on all targets and with all configs.
 # This list is passed to @pytest.mark.parametrize for each of the test cases.
 # It creates an outer product of the sets: [configs] x [targets],
 # with some exceptions.
 CONFIGS = [
-    pytest.param('coredump_flash_bin_crc', marks=TARGETS_TESTED),
-    pytest.param('coredump_flash_elf_sha', marks=TARGETS_TESTED),
-    pytest.param('coredump_uart_bin_crc', marks=TARGETS_TESTED),
-    pytest.param('coredump_uart_elf_crc', marks=TARGETS_TESTED),
-    pytest.param('gdbstub', marks=TARGETS_TESTED),
-    pytest.param('panic', marks=TARGETS_TESTED),
+    pytest.param('coredump_flash_bin_crc', marks=TARGETS_ALL),
+    pytest.param('coredump_flash_elf_sha', marks=TARGETS_ALL),
+    pytest.param('coredump_uart_bin_crc', marks=TARGETS_ALL),
+    pytest.param('coredump_uart_elf_crc', marks=TARGETS_ALL),
+    pytest.param('coredump_flash_custom_stack', marks=TARGETS_RISCV),
+    pytest.param('gdbstub', marks=TARGETS_ALL),
+    pytest.param('panic', marks=TARGETS_ALL),
 ]
 
-# Some tests only run on dual-core targets, they use the config below.
-TARGETS_DUAL_CORE = [pytest.mark.esp32, pytest.mark.esp32s3]
 CONFIGS_DUAL_CORE = [
     pytest.param('coredump_flash_bin_crc', marks=TARGETS_DUAL_CORE),
     pytest.param('coredump_flash_elf_sha', marks=TARGETS_DUAL_CORE),
@@ -53,19 +72,12 @@ CONFIGS_EXTRAM_STACK = [
     pytest.param('coredump_extram_stack', marks=[pytest.mark.esp32, pytest.mark.esp32s2, pytest.mark.psram, pytest.mark.esp32s3, pytest.mark.quad_psram])
 ]
 
-TARGETS_HW_STACK_GUARD = [
-    pytest.mark.esp32c2,
-    pytest.mark.esp32c3,
-    pytest.mark.esp32c6,
-    pytest.mark.esp32h2,
-]
-
 CONFIGS_HW_STACK_GUARD = [
-    pytest.param('coredump_flash_bin_crc', marks=TARGETS_HW_STACK_GUARD),
-    pytest.param('coredump_uart_bin_crc', marks=TARGETS_HW_STACK_GUARD),
-    pytest.param('coredump_uart_elf_crc', marks=TARGETS_HW_STACK_GUARD),
-    pytest.param('gdbstub', marks=TARGETS_HW_STACK_GUARD),
-    pytest.param('panic', marks=TARGETS_HW_STACK_GUARD),
+    pytest.param('coredump_flash_bin_crc', marks=TARGETS_RISCV),
+    pytest.param('coredump_uart_bin_crc', marks=TARGETS_RISCV),
+    pytest.param('coredump_uart_elf_crc', marks=TARGETS_RISCV),
+    pytest.param('gdbstub', marks=TARGETS_RISCV),
+    pytest.param('panic', marks=TARGETS_RISCV),
 ]
 
 # Panic abort information will start with this string.

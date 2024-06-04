@@ -131,6 +131,7 @@ class PanicTestDut(IdfDut):
         espcoredump_args = [
             sys.executable,
             espcoredump_script,
+            '-b115200',
             'info_corefile',
             '--core',
             coredump_file_name,
