@@ -13,7 +13,9 @@
 #pragma once
 
 #include <stdint.h>
+#include <stdbool.h>
 #include "hal/isp_types.h"
+#include "hal/hal_utils.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -60,7 +62,7 @@ void isp_hal_init(isp_hal_context_t *hal, int isp_id);
  *
  * @param[in] hal        Context of the HAL layer
  * @param[in] window_id  Window ID
- * @param[in] window     Window info, see `isp_af_window_t`
+ * @param[in] window     Window info, see `isp_window_t`
  */
 void isp_hal_af_window_config(const isp_hal_context_t *hal, int window_id, const isp_af_window_t *window);
 
@@ -85,6 +87,54 @@ uint32_t isp_hal_check_clear_intr_event(const isp_hal_context_t *hal, uint32_t m
  * @param[in] config     BF config, set NULL to de-config the ISP BF
  */
 void isp_hal_bf_config(isp_hal_context_t *hal, isp_hal_bf_cfg_t *config);
+
+/*---------------------------------------------------------------
+                            AWB
+---------------------------------------------------------------*/
+/**
+ * @brief  Set the window of the AWB
+ *
+ * @param[in] hal   Context of the HAL layer
+ * @param[in] win   Pointer to the window of the AWB
+ * @return
+ *      - true      Set success
+ *      - false     Invalid arg
+ */
+bool isp_hal_awb_set_window_range(const isp_hal_context_t *hal, const isp_window_t *win);
+
+/**
+ * @brief   Set the luminance range of the white patch
+ *
+ * @param[in] hal   Context of the HAL layer
+ * @param[in] lum_min Minimum luminance
+ * @param[in] lum_max Maximum luminance
+ * @return
+ *      - true      Set success
+ *      - false     Invalid arg
+ */
+bool isp_hal_awb_set_luminance_range(const isp_hal_context_t *hal, uint32_t lum_min, uint32_t lum_max);
+
+/**
+ * @brief   Set the R/G ratio of the white patch
+ *
+ * @param[in] hal   Context of the HAL layer
+ * @param[in] rg_ratio_range Range of Red to Green ratio
+ * @return
+ *      - true      Set success
+ *      - false     Invalid arg
+ */
+bool isp_hal_awb_set_rg_ratio_range(const isp_hal_context_t *hal, float rg_min, float rg_max);
+
+/**
+ * @brief   Set the B/R ratio of the white patch
+ *
+ * @param[in] hal   Context of the HAL layer
+ * @param[in] bg_ratio_range Range of Blue to Green ratio
+ * @return
+ *      - true      Set success
+ *      - false     Invalid arg
+ */
+bool isp_hal_awb_set_bg_ratio_range(const isp_hal_context_t *hal, float bg_min, float bg_max);
 
 #ifdef __cplusplus
 }
