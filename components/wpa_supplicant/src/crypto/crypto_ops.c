@@ -43,7 +43,7 @@ static int esp_aes_gmac(const u8 *key, size_t key_len, const u8 *iv, size_t iv_l
 #if CONFIG_GMAC
 	return aes_gmac(key, key_len, iv, iv_len, aad, aad_len, tag);
 #else
-	return 0;
+	return -1;
 #endif
 }
 
