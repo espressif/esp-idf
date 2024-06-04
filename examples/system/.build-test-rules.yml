@@ -216,9 +216,6 @@ examples/system/select:
 examples/system/sysview_tracing:
   disable:
     - if: SOC_GPTIMER_SUPPORTED != 1
-    - if: IDF_TARGET in ["esp32p4"]
-      temporary: true
-      reason: not supported on esp32p4
   disable_test:
     - if: IDF_TARGET != "esp32"
       temporary: true
@@ -227,9 +224,6 @@ examples/system/sysview_tracing:
 examples/system/sysview_tracing_heap_log:
   disable:
     - if: SOC_GPTIMER_SUPPORTED != 1
-    - if: IDF_TARGET in ["esp32p4"]
-      temporary: true
-      reason: not supported on esp32p4
   disable_test:
     - if: IDF_TARGET != "esp32"
       temporary: true
