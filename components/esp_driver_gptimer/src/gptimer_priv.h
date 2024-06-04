@@ -9,13 +9,19 @@
 #include <stdint.h>
 #include <stdatomic.h>
 #include "sdkconfig.h"
+#include "soc/soc_caps.h"
 #include "freertos/FreeRTOS.h"
 #include "esp_err.h"
 #include "esp_intr_alloc.h"
 #include "esp_heap_caps.h"
+#include "clk_ctrl_os.h"
 #include "esp_pm.h"
-#include "soc/soc_caps.h"
+#include "soc/timer_periph.h"
+#include "hal/timer_types.h"
 #include "hal/timer_hal.h"
+#include "hal/timer_ll.h"
+#include "esp_private/sleep_retention.h"
+#include "esp_private/periph_ctrl.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -41,6 +47,12 @@ extern "C" {
 
 #define GPTIMER_USE_RETENTION_LINK  (SOC_TIMER_SUPPORT_SLEEP_RETENTION && CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP)
 
+#if SOC_PERIPH_CLK_CTRL_SHARED
+#define GPTIMER_CLOCK_SRC_ATOMIC() PERIPH_RCC_ATOMIC()
+#else
+#define GPTIMER_CLOCK_SRC_ATOMIC()
+#endif
+
 typedef struct gptimer_t gptimer_t;
 
 typedef struct gptimer_group_t {
@@ -48,8 +60,8 @@ typedef struct gptimer_group_t {
     portMUX_TYPE spinlock; // to protect per-group register level concurrent access
     gptimer_t *timers[SOC_TIMER_GROUP_TIMERS_PER_GROUP];
 #if GPTIMER_USE_RETENTION_LINK
-    bool sleep_retention_initialized;           // mark if the retention link is initialized
-    bool retention_link_created;                // mark if the retention link is created
+    sleep_retention_module_t sleep_retention_module; // sleep retention module
+    bool retention_link_created;       // mark if the retention link is created
 #endif
 } gptimer_group_t;
 
@@ -86,6 +98,11 @@ struct gptimer_t {
         uint32_t alarm_en: 1;
     } flags;
 };
+
+gptimer_group_t *gptimer_acquire_group_handle(int group_id);
+void gptimer_release_group_handle(gptimer_group_t *group);
+esp_err_t gptimer_select_periph_clock(gptimer_t *timer, gptimer_clock_source_t src_clk, uint32_t resolution_hz);
+void gptimer_create_retention_module(gptimer_group_t *group);
 
 #ifdef __cplusplus
 }
