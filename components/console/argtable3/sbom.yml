@@ -1,0 +1,5 @@
+name: 'argtable3'
+version: '3.2.2'
+supplier: 'Organization: Espressif Systems (Shanghai) CO LTD'
+originator: 'Organization: Argtable.org and individual contributors'
+description: An open source ANSI C library that parses GNU-style command-line options.
