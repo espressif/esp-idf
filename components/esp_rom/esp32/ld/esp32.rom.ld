@@ -1474,7 +1474,7 @@ PROVIDE ( uart_tx_switch = 0x40009028 );
 
 /*
 These functions are part of the ROM GPIO driver. We do not use them; the provided esp-idf functions
-replace them and this way we can re-use the fixed RAM addresses these routines need.
+replace them and this way we can reuse the fixed RAM addresses these routines need.
 */
 /* <-- So you don't read over it: This comment disables the next lines.
 PROVIDE ( gpio_init = 0x40009c20 );
@@ -1623,6 +1623,7 @@ PROVIDE ( ld_acl_sniff_trans_sched = 0x40033734 );
 PROVIDE ( lc_pwr_decr_ind_handler = 0x4002859c );
 PROVIDE ( lc_pwr_incr_ind_handler = 0x400284a8 );
 PROVIDE ( lc_pwr_max_ind_handler = 0x40028690 );
+PROVIDE ( lc_setup_sync_param_check = 0x4002354c );
 
 PROVIDE ( lm_sync_conf = 0x3ffb8348 );
 PROVIDE ( lm_nb_sync_active = 0x3ffb8346 );
