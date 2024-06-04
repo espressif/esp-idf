@@ -29,9 +29,9 @@ void isp_hal_init(isp_hal_context_t *hal, int isp_id)
 /*---------------------------------------------------------------
                       AF
 ---------------------------------------------------------------*/
-void isp_hal_af_window_config(const isp_hal_context_t *hal, int window_id, const isp_af_window_t *window)
+void isp_hal_af_window_config(const isp_hal_context_t *hal, int window_id, const isp_window_t *window)
 {
-    isp_ll_af_set_window_range(hal->hw, window_id, window->top_left_x, window->top_left_y, window->bottom_right_x, window->bottom_right_y);
+    isp_ll_af_set_window_range(hal->hw, window_id, window->top_left.x, window->top_left.y, window->btm_right.x, window->btm_right.y);
 }
 
 /*---------------------------------------------------------------

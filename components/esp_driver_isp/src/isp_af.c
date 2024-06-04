@@ -88,17 +88,17 @@ esp_err_t esp_isp_new_af_controller(isp_proc_handle_t isp_proc, const esp_isp_af
     ESP_RETURN_ON_FALSE(demosaic_en && rgb2yuv_en, ESP_ERR_INVALID_STATE, TAG, "RGB2YUV not enabled, please update the output_data_color_type");
 
     for (int i = 0; i < SOC_ISP_AF_WINDOW_NUMS; i++) {
-        ESP_LOGV(TAG, "af_config->window[%d].top_left_x: %"PRId32, i, af_config->window[i].top_left_x);
-        ESP_LOGV(TAG, "af_config->window[%d].bottom_right_x: %"PRId32, i, af_config->window[i].bottom_right_x);
-        ESP_LOGV(TAG, "af_config->window[%d].bottom_right_y: %"PRId32, i, af_config->window[i].bottom_right_y);
-        ESP_LOGV(TAG, "af_config->window[%d].top_left_y: %"PRId32, i, af_config->window[i].top_left_y);
+        ESP_LOGV(TAG, "af_config->window[%d].top_left.x: %"PRId32, i, af_config->window[i].top_left.x);
+        ESP_LOGV(TAG, "af_config->window[%d].btm_right.x: %"PRId32, i, af_config->window[i].btm_right.x);
+        ESP_LOGV(TAG, "af_config->window[%d].btm_right.y: %"PRId32, i, af_config->window[i].btm_right.y);
+        ESP_LOGV(TAG, "af_config->window[%d].top_left.y: %"PRId32, i, af_config->window[i].top_left.y);
 
-        ESP_RETURN_ON_FALSE(((af_config->window[i].top_left_x < ISP_LL_AF_WINDOW_MAX_RANGE) &&
-                             (af_config->window[i].bottom_right_x >= af_config->window[i].top_left_x) &&
-                             (af_config->window[i].bottom_right_x < ISP_LL_AF_WINDOW_MAX_RANGE) &&
-                             (af_config->window[i].top_left_y < ISP_LL_AF_WINDOW_MAX_RANGE) &&
-                             (af_config->window[i].bottom_right_y >= af_config->window[i].top_left_y) &&
-                             (af_config->window[i].bottom_right_y < ISP_LL_AF_WINDOW_MAX_RANGE)), ESP_ERR_INVALID_ARG, TAG, "invalid window");
+        ESP_RETURN_ON_FALSE(((af_config->window[i].top_left.x < ISP_LL_AF_WINDOW_MAX_RANGE) &&
+                             (af_config->window[i].btm_right.x >= af_config->window[i].top_left.x) &&
+                             (af_config->window[i].btm_right.x < ISP_LL_AF_WINDOW_MAX_RANGE) &&
+                             (af_config->window[i].top_left.y < ISP_LL_AF_WINDOW_MAX_RANGE) &&
+                             (af_config->window[i].btm_right.y >= af_config->window[i].top_left.y) &&
+                             (af_config->window[i].btm_right.y < ISP_LL_AF_WINDOW_MAX_RANGE)), ESP_ERR_INVALID_ARG, TAG, "invalid window");
     }
     ESP_RETURN_ON_FALSE(af_config->edge_thresh > 0, ESP_ERR_INVALID_ARG, TAG, "edge threshold should be larger than 0");
 

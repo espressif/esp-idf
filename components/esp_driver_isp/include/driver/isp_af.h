@@ -19,7 +19,7 @@ extern "C" {
  * @brief AF controller config
  */
 typedef struct {
-    isp_af_window_t window[ISP_AF_WINDOW_NUM];         ///< The sampling windows of AF
+    isp_window_t window[ISP_AF_WINDOW_NUM];            ///< The sampling windows of AF
     int edge_thresh;                                   ///< Edge threshold, definition higher than this value will be counted as a valid pixel for calculating AF result
     int intr_priority;                                 ///< The interrupt priority, range 0~7, if set to 0, the driver will try to allocate an interrupt with a relative low priority (1,2,3) otherwise the larger the higher, 7 is NMI
 } esp_isp_af_config_t;
