@@ -24,6 +24,24 @@ typedef int                         isp_clk_src_t;     ///< Default type
 #endif
 
 /**
+ * @brief ISP coordinate type
+ *
+ */
+typedef struct {
+    uint32_t    x;      ///< X coordinate of the point
+    uint32_t    y;      ///< Y coordinate of the point
+} isp_coordinate_t;
+
+/**
+ * @brief ISP window type
+ *
+ */
+typedef struct {
+    isp_coordinate_t top_left;       ///< The top left point coordinate
+    isp_coordinate_t btm_right;      ///< The bottom right point coordinate
+} isp_window_t;
+
+/**
  * @brief ISP Input Source
  */
 typedef enum {
@@ -62,16 +80,6 @@ typedef enum {
 #else
 #define ISP_AF_WINDOW_NUM   0
 #endif
-
-/**
- * @brief ISP AF window
- */
-typedef struct {
-    uint32_t top_left_x;        ///< Top left x axis value
-    uint32_t top_left_y;        ///< Top left y axis value
-    uint32_t bottom_right_x;    ///< Bottom right x axis value
-    uint32_t bottom_right_y;    ///< Bottom right y axis value
-} isp_af_window_t;
 
 /**
  * @brief ISP AF result

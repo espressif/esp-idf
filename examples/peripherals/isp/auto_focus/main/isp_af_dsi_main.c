@@ -99,22 +99,34 @@ static void af_task(void *arg)
     esp_isp_af_config_t af_config = {
         .window = {
             [0] = {
-                .top_left_x = (CONFIG_EXAMPLE_MIPI_CSI_DISP_HRES / 2) - 100,
-                .bottom_right_x = (CONFIG_EXAMPLE_MIPI_CSI_DISP_HRES / 2) + 99,
-                .top_left_y = (CONFIG_EXAMPLE_MIPI_CSI_DISP_VRES / 2) - 100,
-                .bottom_right_y = (CONFIG_EXAMPLE_MIPI_CSI_DISP_VRES / 2) + 99,
+                .top_left = {
+                    .x = (CONFIG_EXAMPLE_MIPI_CSI_DISP_HRES / 2) - 100,
+                    .y = (CONFIG_EXAMPLE_MIPI_CSI_DISP_VRES / 2) - 100,
+                },
+                .btm_right = {
+                    .x = (CONFIG_EXAMPLE_MIPI_CSI_DISP_HRES / 2) + 99,
+                    .y = (CONFIG_EXAMPLE_MIPI_CSI_DISP_VRES / 2) + 99,
+                },
             },
             [1] = {
-                .top_left_x = (CONFIG_EXAMPLE_MIPI_CSI_DISP_HRES / 2) - 100,
-                .bottom_right_x = (CONFIG_EXAMPLE_MIPI_CSI_DISP_HRES / 2) + 99,
-                .top_left_y = (CONFIG_EXAMPLE_MIPI_CSI_DISP_VRES / 2) - 100,
-                .bottom_right_y = (CONFIG_EXAMPLE_MIPI_CSI_DISP_VRES / 2) + 99,
+                .top_left = {
+                    .x = (CONFIG_EXAMPLE_MIPI_CSI_DISP_HRES / 2) - 100,
+                    .y = (CONFIG_EXAMPLE_MIPI_CSI_DISP_VRES / 2) - 100,
+                },
+                .btm_right = {
+                    .x = (CONFIG_EXAMPLE_MIPI_CSI_DISP_HRES / 2) + 99,
+                    .y = (CONFIG_EXAMPLE_MIPI_CSI_DISP_VRES / 2) + 99,
+                },
             },
             [2] = {
-                .top_left_x = (CONFIG_EXAMPLE_MIPI_CSI_DISP_HRES / 2) - 100,
-                .bottom_right_x = (CONFIG_EXAMPLE_MIPI_CSI_DISP_HRES / 2) + 99,
-                .top_left_y = (CONFIG_EXAMPLE_MIPI_CSI_DISP_VRES / 2) - 100,
-                .bottom_right_y = (CONFIG_EXAMPLE_MIPI_CSI_DISP_VRES / 2) + 99,
+                .top_left = {
+                    .x = (CONFIG_EXAMPLE_MIPI_CSI_DISP_HRES / 2) - 100,
+                    .y = (CONFIG_EXAMPLE_MIPI_CSI_DISP_VRES / 2) - 100,
+                },
+                .btm_right = {
+                    .x = (CONFIG_EXAMPLE_MIPI_CSI_DISP_HRES / 2) + 99,
+                    .y = (CONFIG_EXAMPLE_MIPI_CSI_DISP_VRES / 2) + 99,
+                },
             },
         },
         .edge_thresh = 128,
