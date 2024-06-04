@@ -13,7 +13,7 @@ This is a quick start guide to {IDF_TARGET_NAME}'s flash encryption feature. Usi
 
 .. note::
 
-    In this guide, most used commands are in the form of ``idf.py secure-<command>``, which is a wrapper around corresponding ``espsecure.py <command>``. The idf.py-based commands provides more user-friendly experience, although may lack some of the advanced functionality of their espsecure.py-based counterparts.
+    In this guide, most used commands are in the form of ``idf.py secure-<command>``, which is a wrapper around corresponding ``espsecure.py <command>``. The ``idf.py`` based commands provides more user-friendly experience, although may lack some of the advanced functionality of their ``espsecure.py`` based counterparts.
 
 Introduction
 ------------
@@ -999,7 +999,7 @@ Manually encrypting or decrypting files requires the flash encryption key to be 
 
 The key file should be a single raw binary file (example: ``key.bin``).
 
-For example, these are the steps to encrypt the file ``my-app.bin`` to flash at offset 0x10000. Run idf.py as follows:
+For example, these are the steps to encrypt the file ``my-app.bin`` to flash at offset 0x10000. Run ``idf.py`` as follows:
 
 .. only:: esp32
 
