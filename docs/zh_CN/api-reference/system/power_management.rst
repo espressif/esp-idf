@@ -142,15 +142,14 @@ Light-sleep 外设下电
     - INT_MTX
     - TEE/APM
     - IO_MUX / GPIO
-    - UART0
-    - TIMG0
+    - UART0/1
+    - GPTimer
     - SPI0/1
     - SYSTIMER
     - RMT
 
     以下外设尚未支持：
     - ETM
-    - TIMG1
     - ASSIST_DEBUG
     - Trace
     - Crypto: AES/ECC/HMAC/RSA/SHA/DS/XTA_AES/ECDSA
@@ -164,7 +163,6 @@ Light-sleep 外设下电
     - SARADC
     - SDIO
     - PARL_IO
-    - UART1
 
     对于未支持 Light-sleep 上下文备份的外设，若启用了电源管理功能，应在外设工作时持有 ``ESP_PM_NO_LIGHT_SLEEP`` 锁以避免进入休眠导致外设工作上下文丢失。
 
