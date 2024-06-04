@@ -97,9 +97,9 @@ The following example demonstrates the usage of :cpp:func:`xRingbufferSendAcquir
 
         //Retrieve space for DMA descriptor and corresponding data buffer
         //This has to be done with SendAcquire, or the address may be different when we copy
-        dma_item_t item;
+        dma_item_t *item;
         UBaseType_t res =  xRingbufferSendAcquire(buf_handle,
-                            &item, DMA_ITEM_SIZE(buffer_size), pdMS_TO_TICKS(1000));
+                            (void**) &item, DMA_ITEM_SIZE(buffer_size), pdMS_TO_TICKS(1000));
         if (res != pdTRUE) {
             printf("Failed to acquire memory for item\n");
         }
@@ -108,7 +108,7 @@ The following example demonstrates the usage of :cpp:func:`xRingbufferSendAcquir
             .length = buffer_size,
             .eof = 0,
             .owner = 1,
-            .buf = &item->buf,
+            .buf = item->buf,
         };
         //Actually send to the ring buffer for consumer to use
         res = xRingbufferSendComplete(buf_handle, &item);
