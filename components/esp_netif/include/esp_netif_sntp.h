@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -106,6 +106,17 @@ void esp_netif_sntp_deinit(void);
  *         ESP_OK if time sync'ed
  */
 esp_err_t esp_netif_sntp_sync_wait(TickType_t tout);
+
+/**
+ * @brief Returns SNTP server's reachability shift register as described in RFC 5905.
+ *
+ * @param index Index of the SERVER
+ * @param reachability reachability shift register
+ * @return ESP_OK on success,
+ *         ESP_ERR_INVALID_STATE if SNTP not initialized
+ *         ESP_ERR_INVALID_ARG if invalid arguments
+ */
+esp_err_t esp_netif_sntp_reachability(unsigned int index, unsigned int *reachability);
 
 /**
  * @}

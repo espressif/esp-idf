@@ -48,7 +48,20 @@ TEST(esp_netif, init_and_destroy_sntp)
 {
     esp_sntp_config_t config = ESP_NETIF_SNTP_DEFAULT_CONFIG("127.0.0.1");
     config.start = false;
-    esp_netif_sntp_init(&config);
+    TEST_ESP_OK(esp_netif_sntp_init(&config));
+    // Cannot initialize multiple times
+    TEST_ASSERT_NOT_EQUAL(ESP_OK, esp_netif_sntp_init(&config));
+    // Try again to see that the state didn't change
+    TEST_ASSERT_NOT_EQUAL(ESP_OK, esp_netif_sntp_init(&config));
+    esp_netif_sntp_deinit();
+
+    // Can initialize again once it's destroyed
+    TEST_ESP_OK(esp_netif_sntp_init(&config));
+
+    // Test the reachability API
+    size_t reachability = 0;
+    // Invalid state is expected since SNTP service didn't start
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_STATE, esp_netif_sntp_reachability(0, &reachability));
     esp_netif_sntp_deinit();
 }
 
