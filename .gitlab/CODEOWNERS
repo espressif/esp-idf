@@ -59,6 +59,7 @@
 /CONTRIBUTING.md                      @esp-idf-codeowners/docs
 /Kconfig                              @esp-idf-codeowners/build-config
 /README*.md                           @esp-idf-codeowners/docs
+/ROADMAP*.md                          @esp-idf-codeowners/docs
 /SUPPORT_POLICY*.md                   @esp-idf-codeowners/docs
 /add_path.sh                          @esp-idf-codeowners/tools
 /conftest.py                          @esp-idf-codeowners/ci
