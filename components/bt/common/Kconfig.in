@@ -1,0 +1,6 @@
+config BT_ALARM_MAX_NUM
+    int "Maximum number of Bluetooth alarms"
+    default 50
+    help
+        This option decides the maximum number of alarms which
+        could be used by Bluetooth host.
