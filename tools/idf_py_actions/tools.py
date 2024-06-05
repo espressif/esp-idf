@@ -4,7 +4,6 @@ import os
 import re
 import subprocess
 import sys
-from io import open
 
 import click
 
@@ -22,6 +21,7 @@ def executable_exists(args):
 
 
 def _idf_version_from_cmake():
+    """Acquires version of ESP-IDF from version.cmake"""
     version_path = os.path.join(os.environ['IDF_PATH'], 'tools/cmake/version.cmake')
     regex = re.compile(r'^\s*set\s*\(\s*IDF_VERSION_([A-Z]{5})\s+(\d+)')
     ver = {}
@@ -55,7 +55,7 @@ def idf_version():
             '--work-tree=%s' % os.environ['IDF_PATH'],
             'describe', '--tags', '--dirty', '--match', 'v*.*',
         ]).decode('utf-8', 'ignore').strip()
-    except (subprocess.CalledProcessError, UnicodeError):
+    except Exception:
         # if failed, then try to parse cmake.version file
         sys.stderr.write('WARNING: Git version unavailable, reading from source\n')
         version = _idf_version_from_cmake()
