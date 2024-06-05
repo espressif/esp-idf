@@ -27,7 +27,7 @@ def pytest_runtest_makereport(item: typing.Any, call: typing.Any) -> typing.Gene
 
 def should_clean_test_dir(request: FixtureRequest) -> bool:
     # Only remove the test directory if the test has passed
-    return getattr(request.node, 'passed', False)
+    return getattr(request.node, 'passed', False) or request.config.getoption('cleanup_idf_copy', False)
 
 
 def pytest_addoption(parser: pytest.Parser) -> None:
@@ -35,6 +35,10 @@ def pytest_addoption(parser: pytest.Parser) -> None:
         '--work-dir', action='store', default=None,
         help='Directory for temporary files. If not specified, an OS-specific '
              'temporary directory will be used.'
+    )
+    parser.addoption(
+        '--cleanup-idf-copy', action='store_true',
+        help='Always clean up the IDF copy after the test. By default, the copy is cleaned up only if the test passes.'
     )
 
 
