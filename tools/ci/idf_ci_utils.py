@@ -1,16 +1,15 @@
-# SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-
 # internal use only for CI
 # some CI related util functions
-
 import logging
 import os
 import subprocess
 import sys
-from typing import Any, List
+from typing import Any
+from typing import List
 
-IDF_PATH = os.path.abspath(os.getenv('IDF_PATH', os.path.join(os.path.dirname(__file__), '..', '..')))
+IDF_PATH: str = os.path.abspath(os.getenv('IDF_PATH', os.path.join(os.path.dirname(__file__), '..', '..')))
 
 
 def get_submodule_dirs(full_path: bool = False) -> List[str]:

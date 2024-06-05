@@ -2,7 +2,6 @@
 #
 # SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-
 import argparse
 import subprocess
 from sys import exit
@@ -30,7 +29,7 @@ def types_valid_ignored_rules(file_name):  # type: (str) -> bool
     """
     Run Mypy check with rules for ignore list on the given file, return TRUE if Mypy check passes
     """
-    mypy_exit_code = subprocess.call('mypy {} --allow-untyped-defs'.format(file_name), shell=True)
+    mypy_exit_code = subprocess.call('mypy {} --python-version 3.8 --allow-untyped-defs'.format(file_name), shell=True)
     return not bool(mypy_exit_code)
 
 
