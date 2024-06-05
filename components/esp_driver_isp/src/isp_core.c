@@ -104,13 +104,6 @@ esp_err_t esp_isp_new_processor(const esp_isp_processor_cfg_t *proc_config, isp_
     }
 
     isp_hal_init(&proc->hal, proc->proc_id);
-    //necessary ISP submodules that needs basic initialisation
-    isp_ll_bf_clk_enable(proc->hal.hw, true);
-    isp_ll_bf_enable(proc->hal.hw, true);
-    isp_ll_ccm_clk_enable(proc->hal.hw, true);
-    isp_ll_ccm_enable(proc->hal.hw, true);
-    isp_ll_color_clk_enable(proc->hal.hw, true);
-    isp_ll_color_enable(proc->hal.hw, true);
     PERIPH_RCC_ATOMIC() {
         isp_ll_select_clk_source(proc->hal.hw, clk_src);
         isp_ll_set_clock_div(proc->hal.hw, &clk_div);

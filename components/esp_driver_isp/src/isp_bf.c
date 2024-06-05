@@ -56,6 +56,7 @@ esp_err_t esp_isp_bf_enable(isp_proc_handle_t proc)
     ESP_RETURN_ON_FALSE(proc, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
     ESP_RETURN_ON_FALSE(proc->bf_fsm == ISP_FSM_INIT, ESP_ERR_INVALID_STATE, TAG, "bf is enabled already");
 
+    isp_ll_bf_clk_enable(proc->hal.hw, true);
     isp_ll_bf_enable(proc->hal.hw, true);
     proc->bf_fsm = ISP_FSM_ENABLE;
 
@@ -68,6 +69,7 @@ esp_err_t esp_isp_bf_disable(isp_proc_handle_t proc)
     ESP_RETURN_ON_FALSE(proc->bf_fsm == ISP_FSM_ENABLE, ESP_ERR_INVALID_STATE, TAG, "bf isn't enabled yet");
 
     isp_ll_bf_enable(proc->hal.hw, false);
+    isp_ll_bf_clk_enable(proc->hal.hw, false);
     proc->bf_fsm = ISP_FSM_INIT;
 
     return ESP_OK;
