@@ -81,16 +81,6 @@ typedef enum {
 #define ISP_AF_WINDOW_NUM   0
 #endif
 
-/**
- * @brief ISP AF window
- */
-typedef struct {
-    uint32_t top_left_x;        ///< Top left x axis value
-    uint32_t top_left_y;        ///< Top left y axis value
-    uint32_t bottom_right_x;    ///< Bottom right x axis value
-    uint32_t bottom_right_y;    ///< Bottom right y axis value
-} isp_af_window_t;
-
 /*---------------------------------------------------------------
                       BF
 ---------------------------------------------------------------*/

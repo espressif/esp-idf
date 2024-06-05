@@ -64,7 +64,7 @@ void isp_hal_init(isp_hal_context_t *hal, int isp_id);
  * @param[in] window_id  Window ID
  * @param[in] window     Window info, see `isp_window_t`
  */
-void isp_hal_af_window_config(const isp_hal_context_t *hal, int window_id, const isp_af_window_t *window);
+void isp_hal_af_window_config(const isp_hal_context_t *hal, int window_id, const isp_window_t *window);
 
 /*---------------------------------------------------------------
                       INTR
