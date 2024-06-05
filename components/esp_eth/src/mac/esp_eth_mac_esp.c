@@ -659,7 +659,7 @@ esp_eth_mac_t *esp_eth_mac_new_esp32(const eth_esp32_emac_config_t *esp32_config
     }
 
     ret_code = emac_esp_alloc_driver_obj(config, &emac);
-    ESP_RETURN_ON_FALSE(ret_code == ESP_OK, NULL, TAG, "alloc driver object failed");
+    ESP_GOTO_ON_FALSE(ret_code == ESP_OK, NULL, err, TAG, "alloc driver object failed");
 
     // enable bus clock for the EMAC module, and reset the registers into default state
     // this must be called before HAL layer initialization
