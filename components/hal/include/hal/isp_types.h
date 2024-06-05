@@ -235,6 +235,58 @@ typedef struct {
     } pt[ISP_GAMMA_CURVE_POINTS_NUM];   ///< Point (x, y)
 } isp_gamma_curve_points_t;
 
+/*---------------------------------------------------------------
+                      HIST
+---------------------------------------------------------------*/
+#if SOC_ISP_HIST_WINDOW_NUMS
+#define ISP_HIST_WINDOW_NUM   SOC_ISP_HIST_WINDOW_NUMS      // The HIST window number for sampling
+#else
+#define ISP_HIST_WINDOW_NUM   0
+#endif
+
+#if SOC_ISP_HIST_SEGMENT_NUMS
+#define ISP_HIST_SEGMENT_NUMS   SOC_ISP_HIST_SEGMENT_NUMS      // The segment of histogram
+#else
+#define ISP_HIST_SEGMENT_NUMS   0
+#endif
+
+#if SOC_ISP_HIST_INTERVAL_NUMS
+#define ISP_HIST_INTERVAL_NUMS   SOC_ISP_HIST_INTERVAL_NUMS      // The segment of histogram
+#else
+#define ISP_HIST_INTERVAL_NUMS   0
+#endif
+
+/**
+ * @brief ISP histogram mode.
+*/
+typedef enum {
+    ISP_HIST_RGB_B,            ///< histogram mode for B component for RGB
+    ISP_HIST_RGB_GB,           ///< histogram mode for GB component for RGB
+    ISP_HIST_RGB_GR,           ///< histogram mode for GR component for RGB
+    ISP_HIST_RGB_R,            ///< histogram mode for R component for RGB
+    ISP_HIST_RGB,              ///< histogram mode for RGB
+    ISP_HIST_YUV_Y,            ///< histogram mode for Y component for YUV
+    ISP_HIST_YUV_U,            ///< histogram mode for U component for YUV
+    ISP_HIST_YUV_V,            ///< histogram mode for V component for YUV
+} isp_hist_mode_enum_t;
+
+/**
+ * @brief ISP histogram r,g,b coefficient
+*/
+typedef struct {
+    uint8_t coeff_r;          ///< R coefficient
+    uint8_t coeff_g;          ///< G coefficient
+    uint8_t coeff_b;          ///< B coefficient
+} isp_hist_rgb_coefficient;
+
+/**
+ * @brief ISP histogram result.
+*/
+typedef struct {
+    uint32_t hist_value[ISP_HIST_SEGMENT_NUMS];  ///< histogram value.
+} isp_hist_result_t;
+
+
 #ifdef __cplusplus
 }
 #endif

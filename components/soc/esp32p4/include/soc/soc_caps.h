@@ -355,6 +355,9 @@
 #define SOC_ISP_SHARPEN_M_FREQ_COEF_INT_BITS     3
 #define SOC_ISP_SHARPEN_M_FREQ_COEF_DEC_BITS     5
 #define SOC_ISP_SHARPEN_M_FREQ_COEF_RES_BITS     24
+#define SOC_ISP_HIST_WINDOW_NUMS        25
+#define SOC_ISP_HIST_SEGMENT_NUMS       16
+#define SOC_ISP_HIST_INTERVAL_NUMS      15
 
 /*-------------------------- LEDC CAPS ---------------------------------------*/
 #define SOC_LEDC_SUPPORT_PLL_DIV_CLOCK      (1)

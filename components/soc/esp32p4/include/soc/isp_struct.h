@@ -2584,229 +2584,19 @@ typedef union {
     uint32_t val;
 } isp_blc_mean_reg_t;
 
-/** Type of hist_bin0 register
- *  result of histogram bin 0
+/** Type of hist_bin register
+ *  result of histogram bin n
  */
 typedef union {
     struct {
-        /** hist_bin_0 : RO; bitpos: [16:0]; default: 0;
-         *  this field represents result of histogram bin 0
+        /** hist_bin_n : RO; bitpos: [16:0]; default: 0;
+         *  this field represents result of histogram bin n
          */
-        uint32_t hist_bin_0:17;
+        uint32_t hist_bin_n:17;
         uint32_t reserved_17:15;
     };
     uint32_t val;
-} isp_hist_bin0_reg_t;
-
-/** Type of hist_bin1 register
- *  result of histogram bin 1
- */
-typedef union {
-    struct {
-        /** hist_bin_1 : RO; bitpos: [16:0]; default: 0;
-         *  this field represents result of histogram bin 1
-         */
-        uint32_t hist_bin_1:17;
-        uint32_t reserved_17:15;
-    };
-    uint32_t val;
-} isp_hist_bin1_reg_t;
-
-/** Type of hist_bin2 register
- *  result of histogram bin 2
- */
-typedef union {
-    struct {
-        /** hist_bin_2 : RO; bitpos: [16:0]; default: 0;
-         *  this field represents result of histogram bin 2
-         */
-        uint32_t hist_bin_2:17;
-        uint32_t reserved_17:15;
-    };
-    uint32_t val;
-} isp_hist_bin2_reg_t;
-
-/** Type of hist_bin3 register
- *  result of histogram bin 3
- */
-typedef union {
-    struct {
-        /** hist_bin_3 : RO; bitpos: [16:0]; default: 0;
-         *  this field represents result of histogram bin 3
-         */
-        uint32_t hist_bin_3:17;
-        uint32_t reserved_17:15;
-    };
-    uint32_t val;
-} isp_hist_bin3_reg_t;
-
-/** Type of hist_bin4 register
- *  result of histogram bin 4
- */
-typedef union {
-    struct {
-        /** hist_bin_4 : RO; bitpos: [16:0]; default: 0;
-         *  this field represents result of histogram bin 4
-         */
-        uint32_t hist_bin_4:17;
-        uint32_t reserved_17:15;
-    };
-    uint32_t val;
-} isp_hist_bin4_reg_t;
-
-/** Type of hist_bin5 register
- *  result of histogram bin 5
- */
-typedef union {
-    struct {
-        /** hist_bin_5 : RO; bitpos: [16:0]; default: 0;
-         *  this field represents result of histogram bin 5
-         */
-        uint32_t hist_bin_5:17;
-        uint32_t reserved_17:15;
-    };
-    uint32_t val;
-} isp_hist_bin5_reg_t;
-
-/** Type of hist_bin6 register
- *  result of histogram bin 6
- */
-typedef union {
-    struct {
-        /** hist_bin_6 : RO; bitpos: [16:0]; default: 0;
-         *  this field represents result of histogram bin 6
-         */
-        uint32_t hist_bin_6:17;
-        uint32_t reserved_17:15;
-    };
-    uint32_t val;
-} isp_hist_bin6_reg_t;
-
-/** Type of hist_bin7 register
- *  result of histogram bin 7
- */
-typedef union {
-    struct {
-        /** hist_bin_7 : RO; bitpos: [16:0]; default: 0;
-         *  this field represents result of histogram bin 7
-         */
-        uint32_t hist_bin_7:17;
-        uint32_t reserved_17:15;
-    };
-    uint32_t val;
-} isp_hist_bin7_reg_t;
-
-/** Type of hist_bin8 register
- *  result of histogram bin 8
- */
-typedef union {
-    struct {
-        /** hist_bin_8 : RO; bitpos: [16:0]; default: 0;
-         *  this field represents result of histogram bin 8
-         */
-        uint32_t hist_bin_8:17;
-        uint32_t reserved_17:15;
-    };
-    uint32_t val;
-} isp_hist_bin8_reg_t;
-
-/** Type of hist_bin9 register
- *  result of histogram bin 9
- */
-typedef union {
-    struct {
-        /** hist_bin_9 : RO; bitpos: [16:0]; default: 0;
-         *  this field represents result of histogram bin 9
-         */
-        uint32_t hist_bin_9:17;
-        uint32_t reserved_17:15;
-    };
-    uint32_t val;
-} isp_hist_bin9_reg_t;
-
-/** Type of hist_bin10 register
- *  result of histogram bin 10
- */
-typedef union {
-    struct {
-        /** hist_bin_10 : RO; bitpos: [16:0]; default: 0;
-         *  this field represents result of histogram bin 10
-         */
-        uint32_t hist_bin_10:17;
-        uint32_t reserved_17:15;
-    };
-    uint32_t val;
-} isp_hist_bin10_reg_t;
-
-/** Type of hist_bin11 register
- *  result of histogram bin 11
- */
-typedef union {
-    struct {
-        /** hist_bin_11 : RO; bitpos: [16:0]; default: 0;
-         *  this field represents result of histogram bin 11
-         */
-        uint32_t hist_bin_11:17;
-        uint32_t reserved_17:15;
-    };
-    uint32_t val;
-} isp_hist_bin11_reg_t;
-
-/** Type of hist_bin12 register
- *  result of histogram bin 12
- */
-typedef union {
-    struct {
-        /** hist_bin_12 : RO; bitpos: [16:0]; default: 0;
-         *  this field represents result of histogram bin 12
-         */
-        uint32_t hist_bin_12:17;
-        uint32_t reserved_17:15;
-    };
-    uint32_t val;
-} isp_hist_bin12_reg_t;
-
-/** Type of hist_bin13 register
- *  result of histogram bin 13
- */
-typedef union {
-    struct {
-        /** hist_bin_13 : RO; bitpos: [16:0]; default: 0;
-         *  this field represents result of histogram bin 13
-         */
-        uint32_t hist_bin_13:17;
-        uint32_t reserved_17:15;
-    };
-    uint32_t val;
-} isp_hist_bin13_reg_t;
-
-/** Type of hist_bin14 register
- *  result of histogram bin 14
- */
-typedef union {
-    struct {
-        /** hist_bin_14 : RO; bitpos: [16:0]; default: 0;
-         *  this field represents result of histogram bin 14
-         */
-        uint32_t hist_bin_14:17;
-        uint32_t reserved_17:15;
-    };
-    uint32_t val;
-} isp_hist_bin14_reg_t;
-
-/** Type of hist_bin15 register
- *  result of histogram bin 15
- */
-typedef union {
-    struct {
-        /** hist_bin_15 : RO; bitpos: [16:0]; default: 0;
-         *  this field represents result of histogram bin 15
-         */
-        uint32_t hist_bin_15:17;
-        uint32_t reserved_17:15;
-    };
-    uint32_t val;
-} isp_hist_bin15_reg_t;
+} isp_hist_binn_reg_t;
 
 /** Type of rdn_eco_cs register
  *  rdn eco cs register
@@ -3448,22 +3238,7 @@ typedef struct {
     volatile isp_hist_weight4_reg_t hist_weight4;
     volatile isp_hist_weight5_reg_t hist_weight5;
     volatile isp_hist_weight6_reg_t hist_weight6;
-    volatile isp_hist_bin0_reg_t hist_bin0;
-    volatile isp_hist_bin1_reg_t hist_bin1;
-    volatile isp_hist_bin2_reg_t hist_bin2;
-    volatile isp_hist_bin3_reg_t hist_bin3;
-    volatile isp_hist_bin4_reg_t hist_bin4;
-    volatile isp_hist_bin5_reg_t hist_bin5;
-    volatile isp_hist_bin6_reg_t hist_bin6;
-    volatile isp_hist_bin7_reg_t hist_bin7;
-    volatile isp_hist_bin8_reg_t hist_bin8;
-    volatile isp_hist_bin9_reg_t hist_bin9;
-    volatile isp_hist_bin10_reg_t hist_bin10;
-    volatile isp_hist_bin11_reg_t hist_bin11;
-    volatile isp_hist_bin12_reg_t hist_bin12;
-    volatile isp_hist_bin13_reg_t hist_bin13;
-    volatile isp_hist_bin14_reg_t hist_bin14;
-    volatile isp_hist_bin15_reg_t hist_bin15;
+    volatile isp_hist_binn_reg_t hist_binn[16];
     volatile isp_mem_aux_ctrl_0_reg_t mem_aux_ctrl_0;
     volatile isp_mem_aux_ctrl_1_reg_t mem_aux_ctrl_1;
     volatile isp_mem_aux_ctrl_2_reg_t mem_aux_ctrl_2;

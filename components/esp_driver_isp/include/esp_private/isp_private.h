@@ -68,6 +68,7 @@ typedef struct isp_processor_t {
     isp_af_ctlr_t               af_ctlr[SOC_ISP_AF_CTLR_NUMS];
     isp_awb_ctlr_t              awb_ctlr;
     isp_ae_ctlr_t               ae_ctlr;
+    isp_hist_ctlr_t             hist_ctlr;
     isp_fsm_t                   bf_fsm;
     isp_fsm_t                   sharpen_fsm;
     esp_isp_evt_cbs_t           cbs;

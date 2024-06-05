@@ -62,8 +62,9 @@ The ISP driver offers following services:
 -  `Get AF statistics in one shot or continuous way <#isp-af-statistics>`__ - covers how to get AF statistics one-shot or continuously.
 -  `Get AE statistics in one shot or continuous way <#isp-ae-statistics>`__ - covers how to get AE statistics one-shot or continuously.
 -  `Get AWB statistics in one shot or continuous way <#isp-awb-statistics>`__ - covers how to get AWB white patches statistics one-shot or continuously.
--  `Enable BF function <#isp-bf>`__ - covers how to enable and configure BF function.
--  `Configure CCM <#isp-ccm-config>`__ - covers how to config the Color Correction Matrix.
+-  `Get histogram statistics in one shot or continuous way <#isp-hist-statistics>`__ - covers how to get histogram statistics one-shot or continuously.
+-  `Enable BF function <#isp_bf>`__ - covers how to enable and configure BF function.
+-  `Configure CCM <#isp-ccm-config>`__ - covers how to configure the Color Correction Matrix.
 -  `Enable Gamma Correction <#isp-gamma-correction>`__ - covers how to enable and configure gamma correction.
 -  `Configure Sharpen <#isp-sharpen>`__ - covers how to config the Sharpen function.
 -  `Register callback <#isp-callback>`__ - covers how to hook user specific code to ISP driver event callback function.
@@ -394,7 +395,64 @@ Note that if you want to use the continuous statistics, you need to register the
     /* Delete the awb controller and free the resources */
     ESP_ERROR_CHECK(esp_isp_del_awb_controller(awb_ctlr));
 
-.. _isp-bf:
+.. _isp-hist:
+
+ISP histogram Processor
+-----------------------
+
+Before doing ISP histogram statistics, you need to enable the ISP histogram processor first, by calling :cpp:func:`esp_isp_hist_controller_enable`. This function:
+
+* Switches the driver state from **init** to **enable**.
+
+Calling :cpp:func:`esp_isp_hist_controller_disable` does the opposite, that is, put the driver back to the **init** state.
+
+.. _isp-hist-statistics:
+
+Histogram One-shot and Continuous Statistics
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Calling :cpp:func:`esp_isp_hist_controller_get_oneshot_statistics` to get oneshot histogram statistics result. You can take following code as reference.
+
+Aside from the above oneshot API, the ISP histogram driver also provides a way to start histogram statistics continuously. Calling :cpp:func:`esp_isp_hist_controller_start_continuous_statistics` starts the continuous statistics and :cpp:func:`esp_isp_hist_controller_stop_continuous_statistics` stops it.
+
+Note that if you want to use the continuous statistics, you need to register the :cpp:member:`esp_isp_hist_cbs_t::on_statistics_done` callback to get the statistics result. See how to register it in `Register Event Callbacks <#isp-callback>`__
+
+.. code:: c
+
+    static bool s_hist_scheme_on_statistics_done_callback(isp_hist_ctlr_t awb_ctrlr, const esp_isp_hist_evt_data_t *edata, void *user_data)
+    {
+        for(int i = 0; i < 16; i++) {
+            esp_rom_printf(DRAM_STR("val %d is %x\n"), i, edata->hist_result.hist_value[i]); // get the histogram statistic value
+        }
+        return true;
+    }
+
+    isp_hist_ctlr_t hist_ctrlr = NULL;
+    esp_isp_hist_config_t hist_cfg = {
+        .first_window_x_offs = 0,
+        .first_window_y_offs = 0,
+        .window_x_size = 800 / 25,
+        .window_y_size = 640 / 25,
+        .rgb_coefficient = {
+            .coeff_b = 85,
+            .coeff_g = 85,
+            .coeff_r = 85,
+        },
+        .hist_windows_weight = {[0 ... ISP_HIST_WINDOW_NUM - 1] = 10},
+        .hist_segment_threshold = {16, 32, 48, 64, 80, 96, 112, 128, 144, 160, 176, 192, 208, 224, 240},
+        .hist_mode = ISP_HIST_RGB,
+    };
+
+    esp_isp_new_hist_controller(isp_proc, &hist_cfg, &hist_ctrlr);
+    esp_isp_hist_cbs_t hist_cbs = {
+        .on_statistics_done = s_hist_scheme_on_statistics_done_callback,
+    };
+
+    esp_isp_hist_register_event_callbacks(hist_ctrlr, &hist_cbs, hist_ctrlr);
+    esp_isp_hist_controller_enable(hist_ctrlr);
+
+
+.. _isp_bf:
 
 ISP BF Processor
 ~~~~~~~~~~~~~~~~

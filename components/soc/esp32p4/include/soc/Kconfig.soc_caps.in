@@ -923,6 +923,18 @@ config SOC_ISP_SHARPEN_M_FREQ_COEF_RES_BITS
     int
     default 24
 
+config SOC_ISP_HIST_WINDOW_NUMS
+    int
+    default 25
+
+config SOC_ISP_HIST_SEGMENT_NUMS
+    int
+    default 16
+
+config SOC_ISP_HIST_INTERVAL_NUMS
+    int
+    default 15
+
 config SOC_LEDC_SUPPORT_PLL_DIV_CLOCK
     bool
     default y
