@@ -1347,7 +1347,6 @@ esp_err_t enum_process(void)
         break;
     default:
         // Should never occur
-        ret = ESP_ERR_INVALID_STATE;
         abort();
         break;
     }
