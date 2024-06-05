@@ -32,7 +32,7 @@ In Deep-sleep mode, the CPUs, most of the RAM, and all digital peripherals that 
         :SOC_RTC_FAST_MEM_SUPPORTED: - RTC FAST memory
         :SOC_RTC_SLOW_MEM_SUPPORTED: - RTC SLOW memory
 
-.. only:: SOC_BT_SUPPORTED
+.. only:: SOC_WIFI_SUPPORTED and SOC_BT_SUPPORTED
 
     Wi-Fi/Bluetooth and Sleep Modes
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -41,7 +41,7 @@ In Deep-sleep mode, the CPUs, most of the RAM, and all digital peripherals that 
 
     If Wi-Fi/Bluetooth connections need to be maintained, enable Wi-Fi/Bluetooth Modem-sleep mode and automatic Light-sleep feature (see :doc:`Power Management APIs <power_management>`). This allows the system to wake up from sleep automatically when required by the Wi-Fi/Bluetooth driver, thereby maintaining the connection.
 
-.. only:: not SOC_BT_SUPPORTED
+.. only:: SOC_WIFI_SUPPORTED and not SOC_BT_SUPPORTED
 
     Wi-Fi and Sleep Modes
     ^^^^^^^^^^^^^^^^^^^^^^^
@@ -227,7 +227,7 @@ RTC peripherals or RTC memories do not need to be powered on during sleep in thi
         - wake up if any of the selected pins is high (``ESP_EXT1_WAKEUP_ANY_HIGH``)
         - wake up if all the selected pins are low (``ESP_EXT1_WAKEUP_ALL_LOW``)
 
-    .. only:: esp32s2 or esp32s3 or esp32c6 or esp32h2
+    .. only:: not esp32
 
         - wake up if any of the selected pins is high (``ESP_EXT1_WAKEUP_ANY_HIGH``)
         - wake up if any of the selected pins is low (``ESP_EXT1_WAKEUP_ANY_LOW``)
@@ -344,7 +344,7 @@ When {IDF_TARGET_NAME} receives UART input from external devices, it is often ne
 
 After waking-up from UART, you should send some extra data through the UART port in Active mode, so that the internal wakeup indication signal can be cleared. Otherwises, the next UART wake-up would trigger with two less rising edges than the configured threshold value.
 
-    .. only:: esp32c6 or esp32h2
+    .. only:: SOC_PM_SUPPORT_TOP_PD
 
        .. note::
 
@@ -472,7 +472,7 @@ Application Examples
 .. list::
 
     - :example:`protocols/sntp` demonstrates the implementation of basic functionality of Deep-sleep, where ESP module is periodically waken up to retrieve time from NTP server.
-    - :example:`wifi/power_save` demonstrates the usage of Wi-Fi Modem-sleep mode and automatic Light-sleep feature to maintain Wi-Fi connections.
+    :SOC_WIFI_SUPPORTED: - :example:`wifi/power_save` demonstrates the usage of Wi-Fi Modem-sleep mode and automatic Light-sleep feature to maintain Wi-Fi connections.
     :SOC_BT_SUPPORTED: - :example:`bluetooth/nimble/power_save` demonstrates the usage of Bluetooth Modem-sleep mode and automatic Light-sleep feature to maintain Bluetooth connections.
     :SOC_ULP_SUPPORTED: - :example:`system/deep_sleep` demonstrates the usage of various Deep-sleep wakeup triggers and ULP coprocessor programming.
     :not SOC_ULP_SUPPORTED: - :example:`system/deep_sleep` demonstrates the usage of Deep-sleep wakeup triggered by various sources, such as the RTC timer, GPIOs, EXT0, EXT1, the touch sensor, supported by {IDF_TARGET_NAME}.
