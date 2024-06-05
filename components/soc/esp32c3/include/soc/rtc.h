@@ -651,18 +651,6 @@ void rtc_sleep_init(rtc_sleep_config_t cfg);
  */
 void rtc_sleep_low_init(uint32_t slowclk_period);
 
-#if CONFIG_ESP_SLEEP_SYSTIMER_STALL_WORKAROUND
-/**
- * @brief Configure systimer for esp32c3 systimer stall issue workaround
- *
- * This function configures related systimer for esp32c3 systimer stall issue.
- * Only apply workaround when xtal powered up.
- *
- * @param en enable systimer or not
- */
-void rtc_sleep_systimer_enable(bool en);
-#endif
-
 #define RTC_GPIO_TRIG_EN            BIT(2)  //!< GPIO wakeup
 #define RTC_TIMER_TRIG_EN           BIT(3)  //!< Timer wakeup
 #define RTC_WIFI_TRIG_EN            BIT(5)  //!< WIFI wakeup (light sleep only)

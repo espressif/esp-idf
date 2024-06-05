@@ -208,18 +208,6 @@ menu "Hardware Settings"
                 callback and hence it is highly recommended to keep them as short as possible.
     endmenu
 
-    menu "ESP_SLEEP_WORKAROUND"
-        # No visible menu/configs for workaround
-        visible if 0
-        config ESP_SLEEP_SYSTIMER_STALL_WORKAROUND
-            bool "ESP32C3 SYSTIMER Stall Issue Workaround"
-            depends on IDF_TARGET_ESP32C3
-            help
-                Its not able to stall ESP32C3 systimer in sleep.
-                To fix related RTOS TICK issue, select it to disable related systimer during sleep.
-                TODO: IDF-7036
-    endmenu
-
     menu "RTC Clock Config"
         orsource "./port/$IDF_TARGET/Kconfig.rtc"
     endmenu
