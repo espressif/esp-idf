@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,6 +20,7 @@
 #include "soc/rtc_cntl_reg.h"
 #include "soc/regi2c_defs.h"
 #include "soc/clk_tree_defs.h"
+#include "soc/system_struct.h"
 #include "hal/regi2c_ctrl.h"
 #include "soc/regi2c_saradc.h"
 
@@ -43,6 +44,7 @@ extern "C" {
 #define ADC_LL_DATA_INVERT_DEFAULT(PERIPH_NUM)         (0)
 #define ADC_LL_SAR_CLK_DIV_DEFAULT(PERIPH_NUM)         (1)
 #define ADC_LL_DELAY_CYCLE_AFTER_DONE_SIGNAL           (0)
+#define ADC_LL_RTC_GPIO_SUPPORTED                      (1)
 
 /*---------------------------------------------------------------
                     DMA
@@ -611,6 +613,29 @@ static inline uint32_t adc_ll_pwdet_get_cct(void)
 /*---------------------------------------------------------------
                     Common setting
 ---------------------------------------------------------------*/
+
+/**
+ * @brief Enable the ADC clock
+ * @param enable true to enable, false to disable
+ */
+static inline void adc_ll_enable_bus_clock(bool enable)
+{
+    SYSTEM.perip_clk_en0.apb_saradc_clk_en = enable;
+}
+// SYSTEM.perip_clk_en0 is a shared register, so this function must be used in an atomic way
+#define adc_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; adc_ll_enable_bus_clock(__VA_ARGS__)
+
+/**
+ * @brief Reset ADC module
+ */
+static inline void adc_ll_reset_register(void)
+{
+    SYSTEM.perip_rst_en0.apb_saradc_rst = 1;
+    SYSTEM.perip_rst_en0.apb_saradc_rst = 0;
+}
+//  SYSTEM.perip_rst_en0 is a shared register, so this function must be used in an atomic way
+#define adc_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; adc_ll_reset_register(__VA_ARGS__)
+
 /**
  * Set ADC module power management.
  *

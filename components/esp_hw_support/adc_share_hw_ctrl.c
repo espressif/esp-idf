@@ -12,7 +12,7 @@
  *
  * However, usages of above components are different.
  * Therefore, we put the common used parts into `esp_hw_support`, including:
- * - adc power maintainance
+ * - adc power maintenance
  * - adc hw calibration settings
  * - adc locks, to prevent concurrently using adc hw
  */
@@ -205,10 +205,10 @@ void adc_apb_periph_claim(void)
     portENTER_CRITICAL(&s_spinlock);
     s_adc_digi_ctrlr_cnt++;
     if (s_adc_digi_ctrlr_cnt == 1) {
-        //enable ADC digital part
-        periph_module_enable(PERIPH_SARADC_MODULE);
-        //reset ADC digital part
-        periph_module_reset(PERIPH_SARADC_MODULE);
+        ADC_BUS_CLK_ATOMIC() {
+            adc_ll_enable_bus_clock(true);
+            adc_ll_reset_register();
+        }
     }
 
     portEXIT_CRITICAL(&s_spinlock);
@@ -219,7 +219,9 @@ void adc_apb_periph_free(void)
     portENTER_CRITICAL(&s_spinlock);
     s_adc_digi_ctrlr_cnt--;
     if (s_adc_digi_ctrlr_cnt == 0) {
-        periph_module_disable(PERIPH_SARADC_MODULE);
+        ADC_BUS_CLK_ATOMIC() {
+            adc_ll_enable_bus_clock(false);
+        }
     } else if (s_adc_digi_ctrlr_cnt < 0) {
         portEXIT_CRITICAL(&s_spinlock);
         ESP_LOGE(TAG, "%s called, but `s_adc_digi_ctrlr_cnt == 0`", __func__);

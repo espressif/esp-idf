@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,10 +12,6 @@
 
 #if SOC_RTCIO_PIN_COUNT > 0
 #include "soc/rtc_io_channel.h"
-#endif
-
-#if SOC_ADC_RTC_CTRL_SUPPORTED
-#include "soc/sens_struct.h"
 #endif
 
 #ifdef __cplusplus

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -59,6 +59,7 @@ extern "C" {
 #define ADC_LL_DEFAULT_CONV_LIMIT_EN      0
 #define ADC_LL_DEFAULT_CONV_LIMIT_NUM     10
 
+#define ADC_LL_POWER_MANAGE_SUPPORTED     1 //ESP32C6 supported to manage power mode
 /*---------------------------------------------------------------
                     PWDET (Power Detect)
 ---------------------------------------------------------------*/
@@ -554,13 +555,33 @@ static inline uint32_t adc_ll_pwdet_get_cct(void)
 /*---------------------------------------------------------------
                     Common setting
 ---------------------------------------------------------------*/
+
+/**
+ * @brief Enable the ADC clock
+ * @param enable true to enable, false to disable
+ */
+static inline void adc_ll_enable_bus_clock(bool enable)
+{
+    PCR.saradc_conf.saradc_reg_clk_en = enable;
+}
+
+/**
+ * @brief Reset ADC module
+ */
+static inline void adc_ll_reset_register(void)
+{
+    PCR.saradc_conf.saradc_reg_rst_en = 1;
+    PCR.saradc_conf.saradc_reg_rst_en = 0;
+}
+
 /**
  * Set ADC module power management.
  *
  * @param manage Set ADC power status.
  */
-static inline void adc_ll_set_power_manage(adc_ll_power_t manage)
+static inline void adc_ll_set_power_manage(adc_unit_t adc_n, adc_ll_power_t manage)
 {
+    (void) adc_n;
     /* Bit1  0:Fsm  1: SW mode
        Bit0  0:SW mode power down  1: SW mode power on */
     if (manage == ADC_LL_POWER_SW_ON) {

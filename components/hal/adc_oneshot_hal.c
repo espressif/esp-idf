@@ -142,7 +142,7 @@ bool adc_oneshot_hal_convert(adc_oneshot_hal_ctx_t *hal, int *out_raw)
     }
     esp_rom_delay_us(read_delay_us);
     *out_raw = adc_oneshot_ll_get_raw_result(hal->unit);
-#if (SOC_ADC_PERIPH_NUM == 2)
+#if SOC_ADC_ARBITER_SUPPORTED
     if (hal->unit == ADC_UNIT_2) {
         valid = adc_oneshot_ll_raw_check_valid(ADC_UNIT_2, *out_raw);
         if (!valid) {

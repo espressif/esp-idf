@@ -259,11 +259,11 @@ typedef union {
          */
         uint32_t cocpu_saradc2_int_raw:1;
         /** cocpu_saradc1_error_int_raw : R/WTC/SS; bitpos: [2]; default: 0;
-         *  An errro occurs from ADC1, int raw.
+         *  An error occurs from ADC1, int raw.
          */
         uint32_t cocpu_saradc1_error_int_raw:1;
         /** cocpu_saradc2_error_int_raw : R/WTC/SS; bitpos: [3]; default: 0;
-         *  An errro occurs from ADC2, int raw.
+         *  An error occurs from ADC2, int raw.
          */
         uint32_t cocpu_saradc2_error_int_raw:1;
         /** cocpu_saradc1_wake_int_raw : R/WTC/SS; bitpos: [4]; default: 0;
@@ -293,11 +293,11 @@ typedef union {
          */
         uint32_t cocpu_saradc2_int_ena:1;
         /** cocpu_saradc1_error_int_ena : R/WTC; bitpos: [2]; default: 0;
-         *  An errro occurs from ADC1, int enable.
+         *  An error occurs from ADC1, int enable.
          */
         uint32_t cocpu_saradc1_error_int_ena:1;
         /** cocpu_saradc2_error_int_ena : R/WTC; bitpos: [3]; default: 0;
-         *  An errro occurs from ADC2, int enable.
+         *  An error occurs from ADC2, int enable.
          */
         uint32_t cocpu_saradc2_error_int_ena:1;
         /** cocpu_saradc1_wake_int_ena : R/WTC; bitpos: [4]; default: 0;
@@ -327,11 +327,11 @@ typedef union {
          */
         uint32_t cocpu_saradc2_int_st:1;
         /** cocpu_saradc1_error_int_st : RO; bitpos: [2]; default: 0;
-         *  An errro occurs from ADC1, int status.
+         *  An error occurs from ADC1, int status.
          */
         uint32_t cocpu_saradc1_error_int_st:1;
         /** cocpu_saradc2_error_int_st : RO; bitpos: [3]; default: 0;
-         *  An errro occurs from ADC2, int status.
+         *  An error occurs from ADC2, int status.
          */
         uint32_t cocpu_saradc2_error_int_st:1;
         /** cocpu_saradc1_wake_int_st : RO; bitpos: [4]; default: 0;
@@ -361,11 +361,11 @@ typedef union {
          */
         uint32_t cocpu_saradc2_int_clr:1;
         /** cocpu_saradc1_error_int_clr : WT; bitpos: [2]; default: 0;
-         *  An errro occurs from ADC1, int clear.
+         *  An error occurs from ADC1, int clear.
          */
         uint32_t cocpu_saradc1_error_int_clr:1;
         /** cocpu_saradc2_error_int_clr : WT; bitpos: [3]; default: 0;
-         *  An errro occurs from ADC2, int clear.
+         *  An error occurs from ADC2, int clear.
          */
         uint32_t cocpu_saradc2_error_int_clr:1;
         /** cocpu_saradc1_wake_int_clr : WT; bitpos: [4]; default: 0;
@@ -395,11 +395,11 @@ typedef union {
          */
         uint32_t cocpu_saradc2_int_ena_w1ts:1;
         /** cocpu_saradc1_error_int_ena_w1ts : WT; bitpos: [2]; default: 0;
-         *  An errro occurs from ADC1, write 1 to assert int enable.
+         *  An error occurs from ADC1, write 1 to assert int enable.
          */
         uint32_t cocpu_saradc1_error_int_ena_w1ts:1;
         /** cocpu_saradc2_error_int_ena_w1ts : WT; bitpos: [3]; default: 0;
-         *  An errro occurs from ADC2, write 1 to assert int enable.
+         *  An error occurs from ADC2, write 1 to assert int enable.
          */
         uint32_t cocpu_saradc2_error_int_ena_w1ts:1;
         /** cocpu_saradc1_wake_int_ena_w1ts : WT; bitpos: [4]; default: 0;
@@ -429,11 +429,11 @@ typedef union {
          */
         uint32_t cocpu_saradc2_int_ena_w1tc:1;
         /** cocpu_saradc1_error_int_ena_w1tc : WT; bitpos: [2]; default: 0;
-         *  An errro occurs from ADC1, write 1 to deassert int enable.
+         *  An error occurs from ADC1, write 1 to deassert int enable.
          */
         uint32_t cocpu_saradc1_error_int_ena_w1tc:1;
         /** cocpu_saradc2_error_int_ena_w1tc : WT; bitpos: [3]; default: 0;
-         *  An errro occurs from ADC2, write 1 to deassert int enable.
+         *  An error occurs from ADC2, write 1 to deassert int enable.
          */
         uint32_t cocpu_saradc2_error_int_ena_w1tc:1;
         /** cocpu_saradc1_wake_int_ena_w1tc : WT; bitpos: [4]; default: 0;
@@ -592,6 +592,7 @@ typedef struct {
     volatile rtcadc_sar2_hw_wakeup_reg_t sar2_hw_wakeup;
 } rtcadc_dev_t;
 
+extern rtcadc_dev_t LP_ADC;
 
 #ifndef __cplusplus
 _Static_assert(sizeof(rtcadc_dev_t) == 0x74, "Invalid size of rtcadc_dev_t structure");

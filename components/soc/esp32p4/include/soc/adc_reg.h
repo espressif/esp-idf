@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -194,6 +194,26 @@ extern "C" {
 #define ADC_FILTER_FACTOR0_M  (ADC_FILTER_FACTOR0_V << ADC_FILTER_FACTOR0_S)
 #define ADC_FILTER_FACTOR0_V  0x00000007U
 #define ADC_FILTER_FACTOR0_S  29
+
+#define ADC_FSM_WAIT_REG          (DR_REG_ADC_BASE + 0xC)
+/* ADC_STANDBY_WAIT : R/W ;bitpos:[23:16] ;default: 8'd255 ; */
+/*description: need_des.*/
+#define ADC_STANDBY_WAIT    0x000000FF
+#define ADC_STANDBY_WAIT_M  ((ADC_STANDBY_WAIT_V)<<(ADC_STANDBY_WAIT_S))
+#define ADC_STANDBY_WAIT_V  0xFF
+#define ADC_STANDBY_WAIT_S  16
+/* ADC_RSTB_WAIT : R/W ;bitpos:[15:8] ;default: 8'd8 ; */
+/*description: need_des.*/
+#define ADC_RSTB_WAIT    0x000000FF
+#define ADC_RSTB_WAIT_M  ((ADC_RSTB_WAIT_V)<<(ADC_RSTB_WAIT_S))
+#define ADC_RSTB_WAIT_V  0xFF
+#define ADC_RSTB_WAIT_S  8
+/* ADC_XPD_WAIT : R/W ;bitpos:[7:0] ;default: 8'd8 ; */
+/*description: need_des.*/
+#define ADC_XPD_WAIT    0x000000FF
+#define ADC_XPD_WAIT_M  ((ADC_XPD_WAIT_V)<<(ADC_XPD_WAIT_S))
+#define ADC_XPD_WAIT_V  0xFF
+#define ADC_XPD_WAIT_S  0
 
 /** ADC_SAR1_PATT_TAB1_REG register
  *  Register
