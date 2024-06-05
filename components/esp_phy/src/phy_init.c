@@ -858,8 +858,7 @@ void esp_phy_load_cal_and_init(void)
         ESP_LOGW(TAG, "saving new calibration data because of checksum failure, mode(%d)", calibration_mode);
     }
 
-    if ((calibration_mode != PHY_RF_CAL_NONE && err != ESP_OK) ||
-            (calibration_mode != PHY_RF_CAL_FULL && ret == ESP_CAL_DATA_CHECK_FAIL)) {
+    if ((calibration_mode != PHY_RF_CAL_NONE) && ((err != ESP_OK) || (ret == ESP_CAL_DATA_CHECK_FAIL))) {
         err = esp_phy_store_cal_data_to_nvs(cal_data);
     } else {
         err = ESP_OK;
