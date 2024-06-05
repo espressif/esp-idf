@@ -333,6 +333,24 @@ config BT_LE_CONTROLLER_LOG_DUMP_ONLY
     help
             Only operate in dump mode
 
+config BT_LE_CONTROLLER_LOG_STORAGE_ENABLE
+    bool "Storage ble controller log to flash(experimental)"
+    depends on !BT_LE_CONTROLLER_LOG_DUMP_ONLY
+    depends on BT_LE_CONTROLLER_LOG_ENABLED
+    default n
+    help
+            Storage ble controller log to flash.
+
+config BT_LE_CONTROLLER_LOG_PARTITION_SIZE
+    int "size of ble controller log partition(Multiples of 4K)"
+    depends on BT_LE_CONTROLLER_LOG_STORAGE_ENABLE
+    default 65536
+    help
+            The size of ble controller log partition shall be a multiples of 4K.
+            The name of log partition shall be "bt_ctrl_log".
+            The partition type shall be ESP_PARTITION_TYPE_DATA.
+            The partition sub_type shall be ESP_PARTITION_SUBTYPE_ANY.
+
 config BT_LE_LOG_CTRL_BUF1_SIZE
     int "size of the first BLE controller LOG buffer"
     depends on BT_LE_CONTROLLER_LOG_ENABLED
