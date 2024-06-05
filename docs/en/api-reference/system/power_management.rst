@@ -163,6 +163,10 @@ Light-sleep Peripheral Power Down
 
     For peripherals that do not support Light-sleep context retention, if the Power management is enabled, the ``ESP_PM_NO_LIGHT_SLEEP`` lock should be held when the peripheral is working to avoid losing the working context of the peripheral when entering sleep.
 
+    .. note::
+
+        When the peripheral power domain is powered down during sleep, both the IO_MUX and GPIO modules are inactive, meaning the chip pins' state is not maintained by these modules. To preserve the state of an IO during sleep, it's essential to call :cpp:func:`gpio_hold_dis` and :cpp:func:`gpio_hold_en` before and after configuring the GPIO state. This action ensures that the IO configuration is latched and prevents the IO from becoming floating while in sleep mode.
+
 
 API Reference
 -------------
