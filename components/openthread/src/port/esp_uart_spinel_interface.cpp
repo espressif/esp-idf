@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -295,8 +295,8 @@ esp_err_t UartSpinelInterface::TryRecoverUart(void)
 otError UartSpinelInterface::HardwareReset(void)
 {
     if (mRcpFailureHandler) {
-        mRcpFailureHandler();
         TryRecoverUart();
+        mRcpFailureHandler();
     }
     return OT_ERROR_NONE;
 }

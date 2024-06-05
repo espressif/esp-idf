@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,6 +20,7 @@
 #include "esp_openthread_task_queue.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "lwip/err.h"
 #include "lwip/ip6.h"
 #include "lwip/ip6_addr.h"
 #include "lwip/ip_addr.h"
@@ -40,24 +41,19 @@ typedef struct {
 } udp_recv_task_t;
 
 typedef struct {
-    TaskHandle_t source_task;
     otUdpSocket *socket;
     struct udp_pcb *pcb_ret;
 } udp_new_task_t;
 
 typedef struct {
-    TaskHandle_t source_task;
     struct udp_pcb *pcb;
     ip_addr_t addr;
     uint16_t port;
-    err_t ret;
 } udp_bind_connect_task_t;
 
 typedef struct {
-    TaskHandle_t source_task;
     struct udp_pcb *pcb;
     uint8_t netif_index;
-    esp_err_t err;
 } udp_bind_netif_task_t;
 
 typedef struct {
@@ -77,13 +73,6 @@ typedef struct {
     uint8_t netif_index;
     ip6_addr_t addr;
 } udp_multicast_join_leave_task_t;
-
-static void wait_for_task_notification(void)
-{
-    esp_openthread_task_switching_lock_release();
-    ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
-    esp_openthread_task_switching_lock_acquire(portMAX_DELAY);
-}
 
 static ip_addr_t map_openthread_addr_to_lwip_addr(const otIp6Address *address)
 {
@@ -185,23 +174,25 @@ static void handle_udp_recv(void *ctx, struct udp_pcb *pcb, struct pbuf *p, cons
     }
 }
 
-static void udp_new_task(void *ctx)
+static esp_err_t udp_new_task(void *ctx)
 {
     udp_new_task_t *task = (udp_new_task_t *)ctx;
-
     task->pcb_ret = udp_new();
+    ESP_RETURN_ON_FALSE(task->pcb_ret != NULL, ESP_ERR_NO_MEM, OT_PLAT_LOG_TAG, "Failed to create a new UDP pcb");
     udp_recv(task->pcb_ret, handle_udp_recv, task->socket);
-    xTaskNotifyGive(task->source_task);
+    return ESP_OK;
 }
 
 otError otPlatUdpSocket(otUdpSocket *udp_socket)
 {
     otError error = OT_ERROR_NONE;
+    esp_err_t err = ESP_OK;
 
-    udp_new_task_t task = { .source_task = xTaskGetCurrentTaskHandle(), .socket = udp_socket };
-    tcpip_callback(udp_new_task, &task);
-    wait_for_task_notification();
-    VerifyOrExit(task.pcb_ret != NULL, error = OT_ERROR_FAILED);
+    udp_new_task_t task = {.socket = udp_socket };
+    esp_openthread_task_switching_lock_release();
+    err = esp_netif_tcpip_exec(udp_new_task, &task);
+    esp_openthread_task_switching_lock_acquire(portMAX_DELAY);
+    VerifyOrExit(err == ESP_OK, error = OT_ERROR_FAILED);
     udp_socket->mHandle = task.pcb_ret;
 
 exit:
@@ -220,24 +211,25 @@ otError otPlatUdpClose(otUdpSocket *udp_socket)
     struct udp_pcb *pcb = (struct udp_pcb *)udp_socket->mHandle;
 
     if (pcb) {
+        esp_openthread_task_switching_lock_release();
         tcpip_callback(udp_close_task, pcb);
+        esp_openthread_task_switching_lock_acquire(portMAX_DELAY);
     }
 
     return OT_ERROR_NONE;
 }
 
-static void udp_bind_task(void *ctx)
+static esp_err_t udp_bind_task(void *ctx)
 {
     udp_bind_connect_task_t *task = (udp_bind_connect_task_t *)ctx;
-
-    task->ret = udp_bind(task->pcb, &task->addr, task->port);
-    xTaskNotifyGive(task->source_task);
+    err_t ret = udp_bind(task->pcb, &task->addr, task->port);
+    return (ret == ERR_OK) ? ESP_OK : ESP_FAIL;
 }
 
 otError otPlatUdpBind(otUdpSocket *udp_socket)
 {
+    esp_err_t err = ESP_OK;
     udp_bind_connect_task_t task = {
-        .source_task = xTaskGetCurrentTaskHandle(),
         .pcb = (struct udp_pcb *)udp_socket->mHandle,
         .port = udp_socket->mSockName.mPort,
     };
@@ -247,17 +239,18 @@ otError otPlatUdpBind(otUdpSocket *udp_socket)
     task.addr.type = IPADDR_TYPE_ANY;
 #endif
     memcpy(ip_2_ip6(&task.addr)->addr, udp_socket->mSockName.mAddress.mFields.m8, sizeof(ip_2_ip6(&task.addr)->addr));
-    tcpip_callback(udp_bind_task, &task);
-    wait_for_task_notification();
+    esp_openthread_task_switching_lock_release();
+    err = esp_netif_tcpip_exec(udp_bind_task, &task);
+    esp_openthread_task_switching_lock_acquire(portMAX_DELAY);
 
-    return task.ret == ERR_OK ? OT_ERROR_NONE : OT_ERROR_FAILED;
+    return err == ESP_OK ? OT_ERROR_NONE : OT_ERROR_FAILED;
 }
 
-static void udp_bind_netif_task(void *ctx)
+static esp_err_t udp_bind_netif_task(void *ctx)
 {
     udp_bind_netif_task_t *task = (udp_bind_netif_task_t *)ctx;
     udp_bind_netif(task->pcb, netif_get_by_index(task->netif_index));
-    xTaskNotifyGive(task->source_task);
+    return ESP_OK;
 }
 
 static uint8_t get_netif_index(otNetifIdentifier netif_identifier)
@@ -276,34 +269,30 @@ static uint8_t get_netif_index(otNetifIdentifier netif_identifier)
 
 otError otPlatUdpBindToNetif(otUdpSocket *udp_socket, otNetifIdentifier netif_identifier)
 {
-    otError err = OT_ERROR_NONE;
+    esp_err_t err = ESP_OK;
     udp_bind_netif_task_t task = {
-        .source_task = xTaskGetCurrentTaskHandle(),
         .pcb = (struct udp_pcb *)udp_socket->mHandle,
         .netif_index = get_netif_index(netif_identifier),
-        .err = ESP_OK,
     };
 
-    tcpip_callback(udp_bind_netif_task, &task);
-    wait_for_task_notification();
-    if (task.err != ESP_OK) {
-        err = OT_ERROR_FAILED;
-    }
-    return err;
+    esp_openthread_task_switching_lock_release();
+    err = esp_netif_tcpip_exec(udp_bind_netif_task, &task);
+    esp_openthread_task_switching_lock_acquire(portMAX_DELAY);
+
+    return err == ESP_OK ? OT_ERROR_NONE : OT_ERROR_FAILED;
 }
 
-static void udp_connect_task(void *ctx)
+static esp_err_t udp_connect_task(void *ctx)
 {
     udp_bind_connect_task_t *task = (udp_bind_connect_task_t *)ctx;
-
-    task->ret = udp_connect(task->pcb, &task->addr, task->port);
-    xTaskNotifyGive(task->source_task);
+    err_t ret = udp_connect(task->pcb, &task->addr, task->port);
+    return (ret == ERR_OK) ? ESP_OK : ESP_FAIL;
 }
 
 otError otPlatUdpConnect(otUdpSocket *udp_socket)
 {
+    esp_err_t err = ESP_OK;
     udp_bind_connect_task_t task = {
-        .source_task = xTaskGetCurrentTaskHandle(),
         .pcb = (struct udp_pcb *)udp_socket->mHandle,
         .port = udp_socket->mPeerName.mPort,
     };
@@ -312,10 +301,11 @@ otError otPlatUdpConnect(otUdpSocket *udp_socket)
     if (ip_addr_isany_val(task.addr) && task.port == 0) {
         return OT_ERROR_NONE;
     }
-    tcpip_callback(udp_connect_task, &task);
-    wait_for_task_notification();
+    esp_openthread_task_switching_lock_release();
+    err = esp_netif_tcpip_exec(udp_connect_task, &task);
+    esp_openthread_task_switching_lock_acquire(portMAX_DELAY);
 
-    return task.ret == ERR_OK ? OT_ERROR_NONE : OT_ERROR_FAILED;
+    return err == ESP_OK ? OT_ERROR_NONE : OT_ERROR_FAILED;
 }
 
 static bool is_link_local(const otIp6Address *address)
@@ -419,7 +409,9 @@ otError otPlatUdpSend(otUdpSocket *udp_socket, otMessage *message, const otMessa
         // If the destination address is a openthread mesh local address, set the netif OT.
         task->netif_index = get_netif_index(OT_NETIF_THREAD);
     }
+    esp_openthread_task_switching_lock_release();
     tcpip_callback(udp_send_task, task);
+    esp_openthread_task_switching_lock_acquire(portMAX_DELAY);
 
 exit:
     return error;
@@ -458,7 +450,9 @@ otError otPlatUdpJoinMulticastGroup(otUdpSocket *socket, otNetifIdentifier netif
     task->netif_index = get_netif_index(netif_id);
     task->addr.zone = task->netif_index;
     memcpy(task->addr.addr, addr->mFields.m8, sizeof(task->addr.addr));
+    esp_openthread_task_switching_lock_release();
     tcpip_callback(udp_multicast_join_leave_task, task);
+    esp_openthread_task_switching_lock_acquire(portMAX_DELAY);
 
 exit:
     return error;
@@ -475,7 +469,9 @@ otError otPlatUdpLeaveMulticastGroup(otUdpSocket *socket, otNetifIdentifier neti
     task->netif_index = get_netif_index(netif_id);
     task->addr.zone = task->netif_index;
     memcpy(task->addr.addr, addr->mFields.m8, sizeof(task->addr.addr));
+    esp_openthread_task_switching_lock_release();
     tcpip_callback(udp_multicast_join_leave_task, task);
+    esp_openthread_task_switching_lock_acquire(portMAX_DELAY);
 
 exit:
     return error;
