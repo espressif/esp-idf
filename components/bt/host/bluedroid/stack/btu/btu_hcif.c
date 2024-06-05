@@ -1088,7 +1088,12 @@ static void btu_hcif_hdl_command_complete (UINT16 opcode, UINT8 *p, UINT16 evt_l
         btm_ble_set_addr_resolution_enable_complete(p, evt_len);
         break;
     case HCI_BLE_SET_RAND_PRIV_ADDR_TIMOUT:
+        btm_ble_set_rpa_timeout_complete(p, evt_len);
         break;
+    case HCI_BLE_SET_PRIVACY_MODE:
+        btm_ble_set_privacy_mode_complete(p, evt_len);
+        break;
+#endif // #if (defined BLE_PRIVACY_SPT && BLE_PRIVACY_SPT == TRUE)
 #if (BLE_50_FEATURE_SUPPORT == TRUE)
     case HCI_BLE_SET_EXT_ADV_PARAM:
     case HCI_BLE_SET_EXT_ADV_DATA:
@@ -1128,7 +1133,6 @@ static void btu_hcif_hdl_command_complete (UINT16 opcode, UINT8 *p, UINT16 evt_l
         break;
     }
 #endif // #if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
-#endif
 #endif /* (BLE_INCLUDED == TRUE) */
 
     default: {
@@ -1457,7 +1461,6 @@ static void btu_hcif_command_status_evt(uint8_t status, BT_HDR *command, void *c
     hack->context = context;
 
     event->event = BTU_POST_TO_TASK_NO_GOOD_HORRIBLE_HACK;
-
     if (btu_task_post(SIG_BTU_HCI_MSG, event, OSI_THREAD_MAX_TIMEOUT) == false) {
         osi_free(event);
     }
