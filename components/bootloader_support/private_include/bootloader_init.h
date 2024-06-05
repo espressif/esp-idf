@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2018-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,6 +7,10 @@
 
 #include "esp_err.h"
 #include "esp_image_format.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /**@{*/
 /**
@@ -49,3 +53,7 @@ void bootloader_print_banner(void);
  *          ESP_FAIL - If the setting is not successful.
  */
 esp_err_t bootloader_init(void);
+
+#ifdef __cplusplus
+}
+#endif

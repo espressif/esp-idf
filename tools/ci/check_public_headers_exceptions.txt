@@ -36,7 +36,6 @@ components/spi_flash/include/memspi_host_driver.h
 components/spi_flash/include/spi_flash_chip_driver.h
 components/spi_flash/include/spi_flash_chip_generic.h
 
-components/bootloader_support/include/esp_app_format.h
 
 components/wpa_supplicant/include/
 components/wpa_supplicant/port/
