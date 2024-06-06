@@ -17,6 +17,8 @@
 extern "C" {
 #endif
 
+#define IEEE802154_TAG "ieee802154"
+
 #if SOC_PM_MODEM_RETENTION_BY_REGDMA && CONFIG_FREERTOS_USE_TICKLESS_IDLE
 #define IEEE802154_RF_ENABLE() ieee802154_rf_enable()
 #define IEEE802154_RF_DISABLE() ieee802154_rf_disable()
