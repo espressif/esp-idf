@@ -1,6 +1,5 @@
 # SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-
 import pytest
 from pytest_embedded_idf.dut import IdfDut
 
@@ -39,3 +38,9 @@ def test_nvs_flash_encr_flash_enc(dut: IdfDut) -> None:
     # Erase the nvs_key partition
     dut.serial.erase_partition('nvs_key')
     dut.run_all_single_board_cases()
+
+
+@pytest.mark.esp32
+@pytest.mark.psram
+def test_nvs_flash_ram(dut: IdfDut) -> None:
+    dut.run_all_single_board_cases(group='nvs_ram')
