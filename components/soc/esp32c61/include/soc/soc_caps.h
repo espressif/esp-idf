@@ -45,7 +45,8 @@
 //  \#define SOC_SHA_SUPPORTED               1    //TODO: [ESP32C61] IDF-9234
 //  \#define SOC_HMAC_SUPPORTED              1    //TODO: [ESP32C61] IDF-9323
 //  \#define SOC_DIG_SIGN_SUPPORTED          1    //TODO: [ESP32C61] IDF-9325
-//  \#define SOC_ECC_SUPPORTED               1    //TODO: [ESP32C61] IDF-9235
+#define SOC_ECC_SUPPORTED               1
+#define SOC_ECC_EXTENDED_MODES_SUPPORTED   1
 #define SOC_FLASH_ENC_SUPPORTED         1       //TODO: [ESP32C61] IDF-9232
 //  \#define SOC_SECURE_BOOT_SUPPORTED       1    //TODO: [ESP32C61] IDF-9233
 //  \#define SOC_BOD_SUPPORTED               1    //TODO: [ESP32C61] IDF-9254
