@@ -570,6 +570,27 @@ mainmenu "Espressif IoT Development Framework Configuration"
             default "gcc" if COMPILER_RT_LIB_GCCLIB
             default "" if COMPILER_RT_LIB_HOST
 
+        choice COMPILER_ORPHAN_SECTIONS
+            prompt "Orphan sections handling"
+            default COMPILER_ORPHAN_SECTIONS_PLACE
+            depends on !IDF_TARGET_LINUX
+            help
+                If the linker finds orphan sections, it attempts to place orphan sections after sections of the same
+                attribute such as code vs data, loadable vs non-loadable, etc.
+                That means that orphan sections could placed between sections defined in IDF linker scripts.
+                This could lead to corruption of the binary image. Configure the linker action here.
+
+            config COMPILER_ORPHAN_SECTIONS_WARNING
+                bool "Place with warning"
+                help
+                    Places orphan sections without a warning message.
+
+            config COMPILER_ORPHAN_SECTIONS_PLACE
+                bool "Place silently"
+                help
+                    Places orphan sections without a warning/error message.
+        endchoice
+
     endmenu # Compiler Options
 
     menu "Component config"
