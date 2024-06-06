@@ -101,6 +101,7 @@ void heap_caps_init(void)
         const soc_memory_type_desc_t *type = &soc_memory_types[region->type];
         heap_t *heap = &temp_heaps[heap_idx];
         if (region->type == -1) {
+            memset(heap, 0, sizeof(*heap));
             continue;
         }
         heap_idx++;
