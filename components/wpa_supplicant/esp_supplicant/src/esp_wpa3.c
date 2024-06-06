@@ -561,6 +561,7 @@ int wpa3_hostap_auth_init(void *data)
                     &g_wpa3_hostap_task_hdl) != pdPASS) {
         wpa_printf(MSG_ERROR, "wpa3_hostap_auth_init: failed to create task");
         os_queue_delete(g_wpa3_hostap_evt_queue);
+        g_wpa3_hostap_evt_queue = NULL;
         return ESP_FAIL;
     }
 
