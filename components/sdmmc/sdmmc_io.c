@@ -327,7 +327,9 @@ esp_err_t sdmmc_io_rw_extended(sdmmc_card_t* card, int func,
             return ESP_ERR_INVALID_ARG;
         }
         memset(card->host.dma_aligned_buffer, 0xcc, SDMMC_IO_BLOCK_SIZE);
-        memcpy(card->host.dma_aligned_buffer, datap, datalen);
+        if (arg & SD_ARG_CMD53_WRITE) {
+            memcpy(card->host.dma_aligned_buffer, datap, datalen);
+        }
         cmd.data = card->host.dma_aligned_buffer;
         cmd.buflen = SDMMC_IO_BLOCK_SIZE;
     }
@@ -362,7 +364,8 @@ esp_err_t sdmmc_io_rw_extended(sdmmc_card_t* card, int func,
 
     err = sdmmc_send_cmd(card, &cmd);
 
-    if (datalen > 0 && cmd.data == card->host.dma_aligned_buffer) {
+    if (arg & SD_ARG_CMD53_READ &&
+            datalen > 0 && cmd.data == card->host.dma_aligned_buffer) {
         assert(datalen <= SDMMC_IO_BLOCK_SIZE);
         memcpy(datap, card->host.dma_aligned_buffer, datalen);
     }
