@@ -71,6 +71,7 @@ function(ulp_embed_binary app_name s_sources exp_dep_srcs)
                             -DULP_COCPU_IS_RISCV=${ULP_IS_RISCV}
                             -DULP_COCPU_IS_LP_CORE=${ULP_IS_LP_CORE_RISCV}
                             -DCONFIG_ESP_ROM_HAS_LP_ROM=${CONFIG_ESP_ROM_HAS_LP_ROM}
+                            -DCONFIG_ULP_LP_RISCV_SAVE_RESTORE_LIBCALLS=${CONFIG_ULP_LP_RISCV_SAVE_RESTORE_LIBCALLS}
                             ${extra_cmake_args}
                 BUILD_COMMAND ${CMAKE_COMMAND} --build ${CMAKE_CURRENT_BINARY_DIR}/${app_name} --target build
                 BUILD_BYPRODUCTS ${ulp_artifacts} ${ulp_artifacts_extras} ${ulp_ps_sources}
