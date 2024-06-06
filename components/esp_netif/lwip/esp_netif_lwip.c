@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -140,8 +140,8 @@ static void esp_netif_internal_dhcpc_cb(struct netif *netif);
 #endif
 #if LWIP_IPV6
 static void esp_netif_internal_nd6_cb(struct netif *p_netif, uint8_t ip_index);
-static void netif_set_mldv6_flag(struct netif *netif);
-static void netif_unset_mldv6_flag(struct netif *netif);
+static void netif_set_mldv6_flag(esp_netif_t *netif);
+static void netif_unset_mldv6_flag(esp_netif_t *netif);
 #endif /* LWIP_IPV6 */
 
 static esp_err_t esp_netif_destroy_api(esp_netif_api_msg_t *msg);
@@ -156,7 +156,8 @@ static void netif_callback_fn(struct netif* netif, netif_nsc_reason_t reason, co
 #if LWIP_IPV6
     if ((reason & LWIP_NSC_IPV6_ADDR_STATE_CHANGED) && (args != NULL)) {
         s8_t addr_idx = args->ipv6_addr_state_changed.addr_index;
-        if (netif_ip6_addr_state(netif, addr_idx) & IP6_ADDR_VALID)  {
+        if (!(args->ipv6_addr_state_changed.old_state & IP6_ADDR_VALID) &&
+            netif_ip6_addr_state(netif, addr_idx) & IP6_ADDR_VALID) {
             /* address is valid -> call the callback function */
             esp_netif_internal_nd6_cb(netif, addr_idx);
         }
@@ -845,7 +846,7 @@ static void esp_netif_lwip_remove(esp_netif_t *esp_netif)
 #endif
 #if ESP_MLDV6_REPORT && LWIP_IPV6
         if (esp_netif->flags & ESP_NETIF_FLAG_MLDV6_REPORT) {
-            netif_unset_mldv6_flag(esp_netif->lwip_netif);
+            netif_unset_mldv6_flag(esp_netif);
         }
 #endif
         if (esp_netif->flags & ESP_NETIF_DHCP_CLIENT) {
@@ -1693,7 +1694,7 @@ static esp_err_t esp_netif_down_api(esp_netif_api_msg_t *msg)
 #if CONFIG_LWIP_IPV6
 #if ESP_MLDV6_REPORT
         if (esp_netif->flags & ESP_NETIF_FLAG_MLDV6_REPORT) {
-            netif_unset_mldv6_flag(esp_netif->lwip_netif);
+            netif_unset_mldv6_flag(esp_netif);
         }
 #endif
     for(int8_t i = 0 ;i < LWIP_IPV6_NUM_ADDRESSES ;i++) {
@@ -1997,25 +1998,31 @@ esp_err_t esp_netif_get_dns_info(esp_netif_t *esp_netif, esp_netif_dns_type_t ty
 
 static void netif_send_mldv6(void *arg)
 {
-    struct netif *netif = arg;
-    if (!netif_is_up(netif)) {
+    esp_netif_t *esp_netif = arg;
+    esp_netif->mldv6_report_timer_started = false;
+    if (!netif_is_up(esp_netif->lwip_netif)) {
         return;
     }
-    mld6_report_groups(netif);
-    sys_timeout(CONFIG_LWIP_MLDV6_TMR_INTERVAL*1000, netif_send_mldv6, netif);
+    mld6_report_groups(esp_netif->lwip_netif);
+    esp_netif->mldv6_report_timer_started = true;
+    sys_timeout(CONFIG_LWIP_MLDV6_TMR_INTERVAL*1000, netif_send_mldv6, esp_netif);
 }
 
-static void netif_set_mldv6_flag(struct netif *netif)
+static void netif_set_mldv6_flag(esp_netif_t *esp_netif)
 {
-    if (!netif_is_up(netif)) {
+    if (!netif_is_up(esp_netif->lwip_netif) || esp_netif->mldv6_report_timer_started) {
         return;
     }
-    sys_timeout(CONFIG_LWIP_MLDV6_TMR_INTERVAL*1000, netif_send_mldv6, netif);
+    esp_netif->mldv6_report_timer_started = true;
+    sys_timeout(CONFIG_LWIP_MLDV6_TMR_INTERVAL*1000, netif_send_mldv6, esp_netif);
 }
 
-static void netif_unset_mldv6_flag(struct netif *netif)
+static void netif_unset_mldv6_flag(esp_netif_t *esp_netif)
 {
-    sys_untimeout(netif_send_mldv6, netif);
+    if (esp_netif->mldv6_report_timer_started) {
+        esp_netif->mldv6_report_timer_started = false;
+        sys_untimeout(netif_send_mldv6, esp_netif);
+    }
 }
 
 #endif
@@ -2062,7 +2069,7 @@ static void esp_netif_internal_nd6_cb(struct netif *netif, uint8_t ip_index)
 
     if (esp_netif->flags&ESP_NETIF_FLAG_MLDV6_REPORT) {
 #if ESP_MLDV6_REPORT
-        netif_set_mldv6_flag(netif);
+        netif_set_mldv6_flag(esp_netif);
 #else
         ESP_LOGW(TAG,"CONFIG_LWIP_ESP_MLDV6_REPORT not enabled, but esp-netif configured with ESP_NETIF_FLAG_MLDV6_REPORT");
 #endif
