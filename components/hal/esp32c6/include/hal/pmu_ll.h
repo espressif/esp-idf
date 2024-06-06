@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,6 +15,7 @@
 #include "hal/assert.h"
 #include "soc/pmu_struct.h"
 #include "hal/pmu_types.h"
+#include "hal/misc.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -488,7 +489,7 @@ FORCE_INLINE_ATTR void pmu_ll_hp_set_sleep_protect_mode(pmu_dev_t *hw, int mode)
 
 FORCE_INLINE_ATTR void pmu_ll_hp_set_min_sleep_cycle(pmu_dev_t *hw, uint32_t slow_clk_cycle)
 {
-    hw->wakeup.cntl3.hp_min_slp_val = slow_clk_cycle;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->wakeup.cntl3, hp_min_slp_val, slow_clk_cycle);
 }
 
 FORCE_INLINE_ATTR void pmu_ll_hp_clear_reject_cause(pmu_dev_t *hw)
@@ -543,27 +544,27 @@ FORCE_INLINE_ATTR void pmu_ll_lp_clear_intsts_mask(pmu_dev_t *hw, uint32_t mask)
 
 FORCE_INLINE_ATTR void pmu_ll_lp_set_min_sleep_cycle(pmu_dev_t *hw, uint32_t slow_clk_cycle)
 {
-    hw->wakeup.cntl3.lp_min_slp_val = slow_clk_cycle;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->wakeup.cntl3, lp_min_slp_val, slow_clk_cycle);
 }
 
 FORCE_INLINE_ATTR void pmu_ll_hp_set_modify_icg_cntl_wait_cycle(pmu_dev_t *hw, uint32_t cycle)
 {
-    hw->hp_ext.clk_cntl.modify_icg_cntl_wait = cycle;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->hp_ext.clk_cntl, modify_icg_cntl_wait, cycle);
 }
 
 FORCE_INLINE_ATTR uint32_t pmu_ll_hp_get_modify_icg_cntl_wait_cycle(pmu_dev_t *hw)
 {
-    return hw->hp_ext.clk_cntl.modify_icg_cntl_wait;
+    return HAL_FORCE_READ_U32_REG_FIELD(hw->hp_ext.clk_cntl, modify_icg_cntl_wait);
 }
 
 FORCE_INLINE_ATTR void pmu_ll_hp_set_switch_icg_cntl_wait_cycle(pmu_dev_t *hw, uint32_t cycle)
 {
-    hw->hp_ext.clk_cntl.switch_icg_cntl_wait = cycle;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->hp_ext.clk_cntl, switch_icg_cntl_wait, cycle);
 }
 
 FORCE_INLINE_ATTR uint32_t pmu_ll_hp_get_switch_icg_cntl_wait_cycle(pmu_dev_t *hw)
 {
-    return hw->hp_ext.clk_cntl.switch_icg_cntl_wait;
+    return HAL_FORCE_READ_U32_REG_FIELD(hw->hp_ext.clk_cntl, switch_icg_cntl_wait);
 }
 
 FORCE_INLINE_ATTR void pmu_ll_hp_set_digital_power_down_wait_cycle(pmu_dev_t *hw, uint32_t cycle)
@@ -588,12 +589,12 @@ FORCE_INLINE_ATTR uint32_t pmu_ll_lp_get_digital_power_down_wait_cycle(pmu_dev_t
 
 FORCE_INLINE_ATTR void pmu_ll_lp_set_analog_wait_target_cycle(pmu_dev_t *hw, uint32_t slow_clk_cycle)
 {
-    hw->wakeup.cntl5.lp_ana_wait_target = slow_clk_cycle;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->wakeup.cntl5, lp_ana_wait_target, slow_clk_cycle);
 }
 
 FORCE_INLINE_ATTR uint32_t pmu_ll_lp_get_analog_wait_target_cycle(pmu_dev_t *hw)
 {
-    return hw->wakeup.cntl5.lp_ana_wait_target;
+    return HAL_FORCE_READ_U32_REG_FIELD(hw->wakeup.cntl5, lp_ana_wait_target);
 }
 
 FORCE_INLINE_ATTR void pmu_ll_set_modem_wait_target_cycle(pmu_dev_t *hw, uint32_t cycle)
@@ -608,22 +609,22 @@ FORCE_INLINE_ATTR uint32_t pmu_ll_get_modem_wait_target_cycle(pmu_dev_t *hw)
 
 FORCE_INLINE_ATTR void pmu_ll_set_xtal_stable_wait_cycle(pmu_dev_t *hw, uint32_t cycle)
 {
-    hw->power.clk_wait.wait_xtal_stable = cycle;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->power.clk_wait, wait_xtal_stable, cycle);
 }
 
 FORCE_INLINE_ATTR uint32_t pmu_ll_get_xtal_stable_wait_cycle(pmu_dev_t *hw)
 {
-    return hw->power.clk_wait.wait_xtal_stable;
+    return HAL_FORCE_READ_U32_REG_FIELD(hw->power.clk_wait, wait_xtal_stable);
 }
 
 FORCE_INLINE_ATTR void pmu_ll_set_pll_stable_wait_cycle(pmu_dev_t *hw, uint32_t cycle)
 {
-    hw->power.clk_wait.wait_pll_stable = cycle;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->power.clk_wait, wait_pll_stable, cycle);
 }
 
 FORCE_INLINE_ATTR uint32_t pmu_ll_get_pll_stable_wait_cycle(pmu_dev_t *hw)
 {
-    return hw->power.clk_wait.wait_pll_stable;
+    return HAL_FORCE_READ_U32_REG_FIELD(hw->power.clk_wait, wait_pll_stable);
 }
 
 FORCE_INLINE_ATTR void pmu_ll_lp_set_digital_power_supply_wait_cycle(pmu_dev_t *hw, uint32_t cycle)
@@ -648,12 +649,12 @@ FORCE_INLINE_ATTR uint32_t pmu_ll_lp_get_digital_power_up_wait_cycle(pmu_dev_t *
 
 FORCE_INLINE_ATTR void pmu_ll_hp_set_analog_wait_target_cycle(pmu_dev_t *hw, uint32_t cycle)
 {
-    hw->wakeup.cntl7.ana_wait_target = cycle;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->wakeup.cntl7, ana_wait_target, cycle);
 }
 
 FORCE_INLINE_ATTR uint32_t pmu_ll_hp_get_analog_wait_target_cycle(pmu_dev_t *hw)
 {
-    return hw->wakeup.cntl7.ana_wait_target;
+    return HAL_FORCE_READ_U32_REG_FIELD(hw->wakeup.cntl7, ana_wait_target);
 }
 
 FORCE_INLINE_ATTR void pmu_ll_hp_set_digital_power_supply_wait_cycle(pmu_dev_t *hw, uint32_t cycle)
