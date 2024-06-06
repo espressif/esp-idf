@@ -5,6 +5,7 @@
  */
 
 #include <string.h>
+#include "sdkconfig.h"
 #include "freertos/portmacro.h"
 #include "soc/periph_defs.h"
 #include "soc/soc.h"
@@ -26,7 +27,7 @@
 #include "esp_attr.h"
 #include "esp_phy_init.h"
 
-#if SOC_PM_MODEM_RETENTION_BY_REGDMA && CONFIG_FREERTOS_USE_TICKLESS_IDLE
+#if CONFIG_PM_ENABLE
 #include "esp_pm.h"
 #include "esp_private/esp_clk.h"
 #include "esp_private/sleep_retention.h"
@@ -36,7 +37,7 @@
 #else
 #define IEEE802154_LINK_OWNER  ENTRY(0) | ENTRY(2)
 #endif // SOC_PM_RETENTION_HAS_CLOCK_BUG
-#endif // SOC_PM_MODEM_RETENTION_BY_REGDMA && CONFIG_FREERTOS_USE_TICKLESS_IDLE
+#endif // CONFIG_PM_ENABLE
 
 static bool s_rf_closed = true;
 #define CCA_DETECTION_TIME 8
@@ -84,10 +85,10 @@ static pending_tx_t s_pending_tx = { 0 };
 static void ieee802154_receive_done(uint8_t *data, esp_ieee802154_frame_info_t *frame_info)
 {
     // If the RX done packet is written in the stub buffer, drop it silently.
-    if (s_rx_index == CONFIG_IEEE802154_RX_BUFFER_SIZE) {
-        esp_rom_printf("receive buffer full, drop the current frame.\n");
-    } else {
+    if (s_rx_index != CONFIG_IEEE802154_RX_BUFFER_SIZE) {
         // Otherwise, post it to the upper layer.
+        // Ignore bit8 for the frame length, due to the max frame length is 127 based 802.15.4 spec.
+        data[0] = data[0] & 0x7f;
         frame_info->process = true;
         esp_ieee802154_receive_done(data, frame_info);
     }
@@ -97,7 +98,6 @@ static void ieee802154_transmit_done(const uint8_t *frame, const uint8_t *ack, e
 {
     if (ack && ack_frame_info) {
         if (s_rx_index == CONFIG_IEEE802154_RX_BUFFER_SIZE) {
-            esp_rom_printf("receive buffer full, drop the current ack frame.\n");
             esp_ieee802154_transmit_failed(frame, ESP_IEEE802154_TX_ERR_NO_ACK);
         } else {
             ack_frame_info->process = true;
@@ -163,7 +163,6 @@ IEEE802154_STATIC void set_next_rx_buffer(void)
 {
     uint8_t* next_rx_buffer = NULL;
     uint8_t index = 0;
-
     if (s_rx_index != CONFIG_IEEE802154_RX_BUFFER_SIZE && s_rx_frame_info[s_rx_index].process == false) {
         // If buffer is not full, and current index is empty, set it to hardware.
         next_rx_buffer = s_rx_frame[s_rx_index];
@@ -186,8 +185,10 @@ IEEE802154_STATIC void set_next_rx_buffer(void)
     if (!next_rx_buffer) {
         s_rx_index = CONFIG_IEEE802154_RX_BUFFER_SIZE;
         next_rx_buffer = s_rx_frame[CONFIG_IEEE802154_RX_BUFFER_SIZE];
+#if CONFIG_IEEE802154_DEBUG
+        ESP_EARLY_LOGW(IEEE802154_TAG, "Rx buffer full.");
+#endif
     }
-
     ieee802154_ll_set_rx_addr(next_rx_buffer);
 }
 
@@ -900,11 +901,11 @@ esp_err_t ieee802154_receive_at(uint32_t time)
     uint32_t rx_target_time = time - IEEE802154_RX_RAMPUP_TIME_US;
     uint32_t current_time;
     IEEE802154_RF_ENABLE();
+    ieee802154_enter_critical();
     rx_init();
     IEEE802154_SET_TXRX_PTI(IEEE802154_SCENE_RX_AT);
     set_next_rx_buffer();
     ieee802154_set_state(IEEE802154_STATE_RX);
-    ieee802154_enter_critical();
     ieee802154_etm_set_event_task(IEEE802154_ETM_CHANNEL1, ETM_EVENT_TIMER0_OVERFLOW, ETM_TASK_RX_START);
     current_time = (uint32_t)esp_timer_get_time();
     ieee802154_timer0_set_threshold((is_target_time_expired(rx_target_time, current_time) ? 0 : (rx_target_time - current_time))); //uint: 1us
@@ -913,24 +914,27 @@ esp_err_t ieee802154_receive_at(uint32_t time)
     return ESP_OK;
 }
 
-#if SOC_PM_MODEM_RETENTION_BY_REGDMA && CONFIG_FREERTOS_USE_TICKLESS_IDLE
+#if CONFIG_PM_ENABLE
 static esp_err_t ieee802154_sleep_retention_init(void *arg)
 {
+    esp_err_t err = ESP_OK;
+#if SOC_PM_MODEM_RETENTION_BY_REGDMA && CONFIG_FREERTOS_USE_TICKLESS_IDLE
     #define N_REGS_IEEE802154() (((IEEE802154_MAC_DATE_REG - IEEE802154_REG_BASE) / 4) + 1)
     const static sleep_retention_entries_config_t ieee802154_mac_regs_retention[] = {
         [0] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_MODEM_IEEE802154_LINK(0x00), IEEE802154_REG_BASE, IEEE802154_REG_BASE, N_REGS_IEEE802154(), 0, 0), .owner = IEEE802154_LINK_OWNER },
     };
-    esp_err_t err = sleep_retention_entries_create(ieee802154_mac_regs_retention, ARRAY_SIZE(ieee802154_mac_regs_retention), REGDMA_LINK_PRI_7, SLEEP_RETENTION_MODULE_802154_MAC);
+    err = sleep_retention_entries_create(ieee802154_mac_regs_retention, ARRAY_SIZE(ieee802154_mac_regs_retention), REGDMA_LINK_PRI_7, SLEEP_RETENTION_MODULE_802154_MAC);
     ESP_RETURN_ON_ERROR(err, IEEE802154_TAG, "failed to allocate memory for ieee802154 mac retention");
     ESP_LOGD(IEEE802154_TAG, "ieee802154 mac sleep retention initialization");
+#endif
     return err;
 }
-#endif
+#endif // CONFIG_PM_ENABLE
 
 static esp_err_t ieee802154_sleep_init(void)
 {
     esp_err_t err = ESP_OK;
-#if SOC_PM_MODEM_RETENTION_BY_REGDMA && CONFIG_FREERTOS_USE_TICKLESS_IDLE
+#if CONFIG_PM_ENABLE
     sleep_retention_module_init_param_t init_param = {
         .cbs     = { .create = { .handle = ieee802154_sleep_retention_init, .arg = NULL } },
         .depends = BIT(SLEEP_RETENTION_MODULE_BT_BB) | BIT(SLEEP_RETENTION_MODULE_CLOCK_MODEM)
@@ -944,14 +948,14 @@ static esp_err_t ieee802154_sleep_init(void)
     sleep_modem_register_mac_bb_module_prepare_callback(sleep_modem_mac_bb_power_down_prepare,
                                                    sleep_modem_mac_bb_power_up_prepare);
 #endif // SOC_PM_RETENTION_HAS_CLOCK_BUG && CONFIG_MAC_BB_PD
-#endif // SOC_PM_MODEM_RETENTION_BY_REGDMA && CONFIG_FREERTOS_USE_TICKLESS_IDLE
+#endif // CONFIG_PM_ENABLE
     return err;
 }
 
 static esp_err_t ieee802154_sleep_deinit(void)
 {
     esp_err_t err = ESP_OK;
-#if SOC_PM_MODEM_RETENTION_BY_REGDMA && CONFIG_FREERTOS_USE_TICKLESS_IDLE
+#if CONFIG_PM_ENABLE
     err = sleep_retention_module_free(SLEEP_RETENTION_MODULE_802154_MAC);
     if (err == ESP_OK) {
         err = sleep_retention_module_deinit(SLEEP_RETENTION_MODULE_802154_MAC);
@@ -960,7 +964,7 @@ static esp_err_t ieee802154_sleep_deinit(void)
     sleep_modem_unregister_mac_bb_module_prepare_callback(sleep_modem_mac_bb_power_down_prepare,
                                                      sleep_modem_mac_bb_power_up_prepare);
 #endif // SOC_PM_RETENTION_HAS_CLOCK_BUG && CONFIG_MAC_BB_PD
-#endif // SOC_PM_MODEM_RETENTION_BY_REGDMA && CONFIG_FREERTOS_USE_TICKLESS_IDLE
+#endif // CONFIG_PM_ENABLE
     return err;
 }
 

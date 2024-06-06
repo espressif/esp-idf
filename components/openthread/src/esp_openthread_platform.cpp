@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -34,7 +34,7 @@ static esp_openthread_platform_workflow_t *s_workflow_list = NULL;
 esp_err_t esp_openthread_platform_workflow_register(esp_openthread_update_func update_func,
                                                     esp_openthread_process_func process_func, const char *name)
 {
-    uint8_t name_len = strnlen(name, WORKFLOW_MAX_NAMELEN);
+    uint8_t name_len = strnlen(name, WORKFLOW_MAX_NAMELEN - 1);
     esp_openthread_platform_workflow_t *current_workflow = s_workflow_list;
     esp_openthread_platform_workflow_t *before_workflow = NULL;
     esp_openthread_platform_workflow_t *add_workflow =
@@ -42,6 +42,7 @@ esp_err_t esp_openthread_platform_workflow_register(esp_openthread_update_func u
     ESP_RETURN_ON_FALSE(add_workflow != NULL, ESP_ERR_NO_MEM, OT_PLAT_LOG_TAG,
                         "Failed to alloc memory for esp_openthread_workflow");
     strncpy(add_workflow->name, name, name_len);
+    add_workflow->name[name_len] = '\0';
     add_workflow->update_func = update_func;
     add_workflow->process_func = process_func;
     add_workflow->next = NULL;

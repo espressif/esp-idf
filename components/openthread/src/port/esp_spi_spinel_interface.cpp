@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -266,8 +266,8 @@ otError SpiSpinelInterface::WaitForFrame(uint64_t timeout_us)
 otError SpiSpinelInterface::HardwareReset(void)
 {
     if (mRcpFailureHandler) {
-        mRcpFailureHandler();
         ConductSPITransaction(true, 0, 0); // clear
+        mRcpFailureHandler();
     }
     return OT_ERROR_NONE;
 }
