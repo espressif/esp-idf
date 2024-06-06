@@ -541,6 +541,26 @@ static void host_send_pkt_available_cb(void)
     hci_downstream_data_post(OSI_THREAD_MAX_TIMEOUT);
 }
 
+
+void bt_record_hci_data(uint8_t *data, uint16_t len)
+{
+#if (BT_HCI_LOG_INCLUDED == TRUE)
+    if ((data[0] == DATA_TYPE_EVENT) && (data[1] == HCI_BLE_EVENT) && ((data[3] ==  HCI_BLE_ADV_PKT_RPT_EVT) || (data[3] == HCI_BLE_DIRECT_ADV_EVT)
+#if (BLE_ADV_REPORT_FLOW_CONTROL == TRUE)
+        || (data[3] ==  HCI_BLE_ADV_DISCARD_REPORT_EVT)
+#endif // (BLE_ADV_REPORT_FLOW_CONTROL == TRUE)
+ #if (BLE_50_FEATURE_SUPPORT == TRUE)
+        || (data[3] == HCI_BLE_EXT_ADV_REPORT_EVT) || (data[3] == HCI_BLE_PERIOD_ADV_REPORT_EVT)
+#endif // (BLE_50_FEATURE_SUPPORT == TRUE)
+    )) {
+        bt_hci_log_record_hci_adv(HCI_LOG_DATA_TYPE_ADV, &data[2], len - 2);
+    } else {
+        uint8_t data_type = ((data[0] == 2) ? HCI_LOG_DATA_TYPE_C2H_ACL : data[0]);
+        bt_hci_log_record_hci_data(data_type, &data[1], len - 1);
+    }
+#endif // (BT_HCI_LOG_INCLUDED == TRUE)
+}
+
 static int host_recv_pkt_cb(uint8_t *data, uint16_t len)
 {
     //Target has packet to host, malloc new buffer for packet
@@ -552,13 +572,11 @@ static int host_recv_pkt_cb(uint8_t *data, uint16_t len)
         return 0;
     }
 
+    bt_record_hci_data(data, len);
+
     bool is_adv_rpt = host_recv_adv_packet(data);
 
     if (!is_adv_rpt) {
-#if (BT_HCI_LOG_INCLUDED == TRUE)
-        uint8_t data_type = ((data[0] == 2) ? HCI_LOG_DATA_TYPE_C2H_ACL : data[0]);
-        bt_hci_log_record_hci_data(data_type, data, len);
-#endif // (BT_HCI_LOG_INCLUDED == TRUE)
         pkt_size = BT_HDR_SIZE + len;
         pkt = (BT_HDR *) osi_calloc(pkt_size);
         if (!pkt) {
@@ -572,10 +590,6 @@ static int host_recv_pkt_cb(uint8_t *data, uint16_t len)
         memcpy(pkt->data, data, len);
         fixed_queue_enqueue(hci_hal_env.rx_q, pkt, FIXED_QUEUE_MAX_TIMEOUT);
     } else {
-#if (BT_HCI_LOG_INCLUDED == TRUE)
-        // data type is adv report
-        bt_hci_log_record_hci_adv(HCI_LOG_DATA_TYPE_ADV, data, len);
-#endif // (BT_HCI_LOG_INCLUDED == TRUE)
 #if !BLE_ADV_REPORT_FLOW_CONTROL
         // drop the packets if pkt_queue length goes beyond upper limit
         if (pkt_queue_length(hci_hal_env.adv_rpt_q) > HCI_HAL_BLE_ADV_RPT_QUEUE_LEN_MAX) {

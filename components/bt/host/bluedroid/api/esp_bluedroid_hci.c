@@ -61,7 +61,7 @@ bool hci_host_check_send_available(void)
 void hci_host_send_packet(uint8_t *data, uint16_t len)
 {
 #if (BT_HCI_LOG_INCLUDED == TRUE)
-    bt_hci_log_record_hci_data(data[0], data, len);
+    bt_hci_log_record_hci_data(data[0], &data[1], len - 1);
 #endif
 #if (BT_CONTROLLER_INCLUDED == TRUE)
     esp_vhci_host_send_packet(data, len);
