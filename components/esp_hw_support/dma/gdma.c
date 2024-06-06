@@ -135,8 +135,8 @@ static esp_err_t do_allocate_gdma_channel(const gdma_channel_search_info_t *sear
 
     for (int i = start_group_id; i < end_group_id && search_code; i++) { // loop to search group
         group = gdma_acquire_group_handle(i, search_info->hal_init);
-        group->bus_id = search_info->bus_id;
         ESP_GOTO_ON_FALSE(group, ESP_ERR_NO_MEM, err, TAG, "no mem for group(%d)", i);
+        group->bus_id = search_info->bus_id;
         for (int j = 0; j < pairs_per_group && search_code; j++) { // loop to search pair
             pair = gdma_acquire_pair_handle(group, j);
             ESP_GOTO_ON_FALSE(pair, ESP_ERR_NO_MEM, err, TAG, "no mem for pair(%d,%d)", i, j);
