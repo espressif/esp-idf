@@ -155,15 +155,15 @@ esp_err_t usb_serial_jtag_driver_install(usb_serial_jtag_driver_config_t *usb_se
     ESP_RETURN_ON_FALSE((usb_serial_jtag_config->rx_buffer_size > USB_SER_JTAG_RX_MAX_SIZE), ESP_ERR_INVALID_ARG, USB_SERIAL_JTAG_TAG, "RX buffer prepared is so small, should larger than 64");
     ESP_RETURN_ON_FALSE((usb_serial_jtag_config->tx_buffer_size > 0), ESP_ERR_INVALID_ARG, USB_SERIAL_JTAG_TAG, "TX buffer is not prepared");
     p_usb_serial_jtag_obj = (usb_serial_jtag_obj_t*) heap_caps_calloc(1, sizeof(usb_serial_jtag_obj_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
-    p_usb_serial_jtag_obj->rx_buf_size = usb_serial_jtag_config->rx_buffer_size;
-    p_usb_serial_jtag_obj->tx_buf_size = usb_serial_jtag_config->tx_buffer_size;
-    p_usb_serial_jtag_obj->tx_stash_cnt = 0;
-    p_usb_serial_jtag_obj->spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
     if (p_usb_serial_jtag_obj == NULL) {
         ESP_LOGE(USB_SERIAL_JTAG_TAG, "memory allocate error");
         err = ESP_ERR_NO_MEM;
         goto _exit;
     }
+    p_usb_serial_jtag_obj->rx_buf_size = usb_serial_jtag_config->rx_buffer_size;
+    p_usb_serial_jtag_obj->tx_buf_size = usb_serial_jtag_config->tx_buffer_size;
+    p_usb_serial_jtag_obj->tx_stash_cnt = 0;
+    p_usb_serial_jtag_obj->spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
 
     p_usb_serial_jtag_obj->rx_ring_buf = xRingbufferCreate(p_usb_serial_jtag_obj->rx_buf_size, RINGBUF_TYPE_BYTEBUF);
     if (p_usb_serial_jtag_obj->rx_ring_buf == NULL) {
