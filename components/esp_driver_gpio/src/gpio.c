@@ -22,13 +22,7 @@
 #include "hal/gpio_hal.h"
 #include "esp_rom_gpio.h"
 #include "esp_private/esp_gpio_reserve.h"
-#include "esp_private/periph_ctrl.h"
-
-#if SOC_LP_IO_CLOCK_IS_INDEPENDENT && !SOC_RTCIO_RCC_IS_INDEPENDENT
-#define RTCIO_RCC_ATOMIC() PERIPH_RCC_ATOMIC()
-#else
-#define RTCIO_RCC_ATOMIC()
-#endif
+#include "esp_private/io_mux.h"
 
 #if (SOC_RTCIO_PIN_COUNT > 0)
 #include "hal/rtc_io_hal.h"
@@ -66,9 +60,6 @@ typedef struct {
     gpio_isr_func_t *gpio_isr_func;
     gpio_isr_handle_t gpio_isr_handle;
     uint64_t isr_clr_on_entry_mask; // for edge-triggered interrupts, interrupt status bits should be cleared before entering per-pin handlers
-#if SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP && SOC_LP_IO_CLOCK_IS_INDEPENDENT
-    uint32_t gpio_wakeup_mask;
-#endif
 } gpio_context_t;
 
 static gpio_hal_context_t _gpio_hal = {
@@ -81,9 +72,6 @@ static gpio_context_t gpio_context = {
     .isr_core_id = GPIO_ISR_CORE_ID_UNINIT,
     .gpio_isr_func = NULL,
     .isr_clr_on_entry_mask = 0,
-#if SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP && SOC_LP_IO_CLOCK_IS_INDEPENDENT
-    .gpio_wakeup_mask = 0,
-#endif
 };
 
 esp_err_t gpio_pullup_en(gpio_num_t gpio_num)
@@ -639,6 +627,11 @@ esp_err_t gpio_wakeup_enable(gpio_num_t gpio_num, gpio_int_type_t intr_type)
     if ((intr_type == GPIO_INTR_LOW_LEVEL) || (intr_type == GPIO_INTR_HIGH_LEVEL)) {
 #if SOC_RTCIO_WAKE_SUPPORTED
         if (rtc_gpio_is_valid_gpio(gpio_num)) {
+#if SOC_LP_IO_CLOCK_IS_INDEPENDENT
+            // LP_IO Wake-up function does not depend on LP_IO Matrix, but uses its clock to
+            // sample the wake-up signal, we need to enable the LP_IO clock here.
+            io_mux_enable_lp_io_clock(gpio_num, true);
+#endif
             ret = rtc_gpio_wakeup_enable(gpio_num, intr_type);
         }
 #endif
@@ -664,6 +657,9 @@ esp_err_t gpio_wakeup_disable(gpio_num_t gpio_num)
 #if SOC_RTCIO_WAKE_SUPPORTED
     if (rtc_gpio_is_valid_gpio(gpio_num)) {
         ret = rtc_gpio_wakeup_disable(gpio_num);
+#if SOC_LP_IO_CLOCK_IS_INDEPENDENT
+        io_mux_enable_lp_io_clock(gpio_num, false);
+#endif
     }
 #endif
     portENTER_CRITICAL(&gpio_context.gpio_spinlock);
@@ -992,12 +988,7 @@ esp_err_t gpio_deep_sleep_wakeup_enable(gpio_num_t gpio_num, gpio_int_type_t int
     }
     portENTER_CRITICAL(&gpio_context.gpio_spinlock);
 #if SOC_LP_IO_CLOCK_IS_INDEPENDENT
-    if (gpio_context.gpio_wakeup_mask == 0) {
-        RTCIO_RCC_ATOMIC() {
-            rtcio_ll_enable_io_clock(true);
-        }
-    }
-    gpio_context.gpio_wakeup_mask |= (1ULL << gpio_num);
+    io_mux_enable_lp_io_clock(gpio_num, true);
 #endif
     gpio_hal_deepsleep_wakeup_enable(gpio_context.gpio_hal, gpio_num, intr_type);
 #if CONFIG_ESP_SLEEP_GPIO_RESET_WORKAROUND || CONFIG_PM_SLP_DISABLE_GPIO
@@ -1019,12 +1010,7 @@ esp_err_t gpio_deep_sleep_wakeup_disable(gpio_num_t gpio_num)
     gpio_hal_sleep_sel_en(gpio_context.gpio_hal, gpio_num);
 #endif
 #if SOC_LP_IO_CLOCK_IS_INDEPENDENT
-    gpio_context.gpio_wakeup_mask &= ~(1ULL << gpio_num);
-    if (gpio_context.gpio_wakeup_mask == 0) {
-        RTCIO_RCC_ATOMIC() {
-            rtcio_ll_enable_io_clock(false);
-        }
-    }
+    io_mux_enable_lp_io_clock(gpio_num, false);
 #endif
     portEXIT_CRITICAL(&gpio_context.gpio_spinlock);
     return ESP_OK;

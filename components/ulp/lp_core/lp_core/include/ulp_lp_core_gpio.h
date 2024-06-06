@@ -49,11 +49,16 @@ typedef enum {
 
 /**
  * @brief Initialize a rtcio pin
+ * @note If IO is used in LP application, `rtc_gpio_init` must be called at least once
+ *       for the using IO before loading LP core firmware in HP Code.
  *
  * @param lp_io_num The rtc io pin to initialize
  */
 static inline void ulp_lp_core_gpio_init(lp_io_num_t lp_io_num)
 {
+#if SOC_LP_IO_CLOCK_IS_INDEPENDENT
+    _rtcio_ll_enable_io_clock(true);
+#endif
     rtcio_ll_function_select(lp_io_num, RTCIO_LL_FUNC_RTC);
 }
 

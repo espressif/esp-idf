@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -31,6 +31,14 @@ extern "C" {
 #endif
 
 #if SOC_RTCIO_PIN_COUNT > 0
+
+#if SOC_LP_IO_CLOCK_IS_INDEPENDENT
+/**
+ * Enable rtcio module clock.
+ */
+#define rtcio_hal_enable_io_clock(enable) rtcio_ll_output_enable(enable)
+#endif
+
 /**
  * Select the rtcio function.
  *

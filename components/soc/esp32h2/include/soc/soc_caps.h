@@ -198,6 +198,9 @@
 // However, there is no way to control pullup/down/capability for IOs under LP function since there is no LP_IOMUX registers
 #define SOC_GPIO_SUPPORT_RTC_INDEPENDENT    (1)
 
+// LP IO peripherals have independent clock gating to manage
+#define SOC_LP_IO_CLOCK_IS_INDEPENDENT      (1)
+
 // GPIO7~14 on ESP32H2 can support chip deep sleep wakeup through EXT1 wake up
 
 #define SOC_GPIO_VALID_GPIO_MASK        ((1U << SOC_GPIO_PIN_COUNT) - 1)

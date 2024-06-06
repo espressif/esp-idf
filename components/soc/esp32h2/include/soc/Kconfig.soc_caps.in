@@ -495,6 +495,10 @@ config SOC_GPIO_SUPPORT_RTC_INDEPENDENT
     bool
     default y
 
+config SOC_LP_IO_CLOCK_IS_INDEPENDENT
+    bool
+    default y
+
 config SOC_GPIO_IN_RANGE_MAX
     int
     default 27
