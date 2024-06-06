@@ -5,3 +5,5 @@
 # older Python to use since new gdbgui versions don't support Windows anymore.
 gdbgui; sys_platform != 'win32'
 gdbgui; sys_platform == 'win32' and python_version < "3.11"
+jinja2>=3.1.4 # not directly required, pinned by Snyk to avoid a vulnerability
+werkzeug>=3.0.3 # not directly required, pinned by Snyk to avoid a vulnerability
