@@ -19,6 +19,7 @@
 #include "esp_types.h"
 #include "esp_attr.h"
 #include "esp_bit_defs.h"
+#include "esp_compiler.h"
 #include "soc/spi_periph.h"
 #include "soc/spi_struct.h"
 #include "soc/spi_reg.h"
@@ -1336,6 +1337,7 @@ static inline void spi_dma_ll_rx_enable_burst_desc(spi_dma_dev_t *dma_in, uint32
 __attribute__((always_inline))
 static inline uint32_t spi_dma_ll_get_in_suc_eof_desc_addr(spi_dma_dev_t *dma_in, uint32_t channel)
 {
+    ESP_STATIC_ANALYZER_CHECK(!dma_in, -1);
     return dma_in->dma_in_suc_eof_des_addr;
 }
 
@@ -1437,6 +1439,7 @@ static inline void spi_dma_ll_enable_out_auto_wrback(spi_dma_dev_t *dma_out, uin
 __attribute__((always_inline))
 static inline uint32_t spi_dma_ll_get_out_eof_desc_addr(spi_dma_dev_t *dma_out, uint32_t channel)
 {
+    ESP_STATIC_ANALYZER_CHECK(!dma_out, -1);
     return dma_out->dma_out_eof_des_addr;
 }
 

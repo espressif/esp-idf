@@ -18,6 +18,7 @@
 #include "esp_ipc.h"
 #include "esp_timer.h"
 #include "esp_timer_impl.h"
+#include "esp_compiler.h"
 
 #include "esp_private/startup_internal.h"
 #include "esp_private/esp_timer_private.h"
@@ -215,7 +216,7 @@ esp_err_t IRAM_ATTR esp_timer_start_once(esp_timer_handle_t timer, uint64_t time
     timer_list_lock(dispatch_method);
 
     /* Check if the timer is armed once the list is locked.
-     * Otherwise another task may arm the timer inbetween the check
+     * Otherwise another task may arm the timer between the checks
      * and us locking the list, resulting in us inserting the
      * timer to s_timers a second time. This will create a loop
      * in s_timers. */
@@ -418,9 +419,11 @@ static bool timer_process_alarm(esp_timer_dispatch_t dispatch_method)
     while (1) {
         it = LIST_FIRST(&s_timers[dispatch_method]);
         int64_t now = esp_timer_impl_get_time();
+        ESP_COMPILER_DIAGNOSTIC_PUSH_IGNORE("-Wanalyzer-use-after-free") // False-positive detection. TODO GCC-366
         if (it == NULL || it->alarm > now) {
             break;
         }
+        ESP_COMPILER_DIAGNOSTIC_POP("-Wanalyzer-use-after-free")
         processed = true;
         LIST_REMOVE(it, list_entry);
         if (it->event_id == EVENT_ID_DELETE_TIMER) {

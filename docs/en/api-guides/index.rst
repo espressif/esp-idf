@@ -14,6 +14,7 @@ API Guides
    :SOC_SUPPORT_COEXISTENCE: coexist
    c
    cplusplus
+   code-quality/index
    core_dump
    current-consumption-measurement-modules
    :SOC_RTC_MEM_SUPPORTED: deep-sleep-stub

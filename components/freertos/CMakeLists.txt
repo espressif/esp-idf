@@ -248,4 +248,12 @@ else()
         idf_component_optional_requires(PRIVATE esp_pm)
     endif()
 
+    if(CONFIG_IDF_TARGET_ESP32P4 AND NOT CONFIG_FREERTOS_SMP AND
+       CONFIG_COMPILER_STATIC_ANALYZER AND CMAKE_C_COMPILER_ID STREQUAL "GNU")  # suppress false-positive warning
+        set_source_files_properties(
+            "${kernel_impl}/queue.c"
+            PROPERTIES COMPILE_OPTIONS
+            "-Wno-analyzer-null-argument"
+            )
+    endif()
 endif()

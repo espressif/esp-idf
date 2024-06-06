@@ -48,6 +48,10 @@ mainmenu "Espressif IoT Development Framework Configuration"
         bool
         default "y" if IDF_TOOLCHAIN="clang"
 
+    config IDF_TOOLCHAIN_GCC
+        bool
+        default "y" if IDF_TOOLCHAIN="gcc"
+
     config IDF_TARGET_ARCH_RISCV
         bool
         default "n"
@@ -605,6 +609,13 @@ mainmenu "Espressif IoT Development Framework Configuration"
                 help
                     Places orphan sections without a warning/error message.
         endchoice
+
+        config COMPILER_STATIC_ANALYZER
+            bool "Enable compiler static analyzer"
+            default "n"
+            depends on IDF_TOOLCHAIN_GCC
+            help
+                Enable compiler static analyzer. This may produce false-positive results and increases compile time.
 
     endmenu # Compiler Options
 

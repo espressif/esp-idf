@@ -112,6 +112,22 @@ fast_template_app:
     BUILD_COMMAND_ARGS: "-p"
 #------------------------------------------------------------------------------
 
+#######################
+# gnu_static_analyzer #
+#######################
+gcc_static_analyzer:
+  extends:
+    - .build_template_app_template
+    - .rules:build:target_test
+  stage: pre_check
+  tags: [build, shiny]
+  variables:
+    CI_CCACHE_DISABLE: 1
+    ANALYZING_APP: "examples/get-started/hello_world"
+  script:
+    - echo "CONFIG_COMPILER_STATIC_ANALYZER=y" >> ${ANALYZING_APP}/sdkconfig.defaults
+    - python -m idf_build_apps build -vv -p ${ANALYZING_APP} -t all
+
 ########################################
 # Clang Build Apps Without Tests Cases #
 ########################################

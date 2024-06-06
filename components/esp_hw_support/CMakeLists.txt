@@ -189,6 +189,10 @@ idf_build_get_property(target IDF_TARGET)
 add_subdirectory(port/${target})
 add_subdirectory(lowpower)
 
+if(CONFIG_COMPILER_STATIC_ANALYZER AND CMAKE_C_COMPILER_ID STREQUAL "GNU") # TODO IDF-10229
+    target_compile_options(${COMPONENT_LIB} PRIVATE "-fno-analyzer")
+endif()
+
 if(NOT BOOTLOADER_BUILD)
     if(CONFIG_SPIRAM)
         idf_component_optional_requires(PRIVATE esp_psram)

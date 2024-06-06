@@ -34,3 +34,7 @@ idf_component_register(SRCS ${srcs}
                        PRIV_INCLUDE_DIRS ${priv_includes}
                        PRIV_REQUIRES ${priv_requires}
                        )
+
+if(CONFIG_COMPILER_STATIC_ANALYZER AND CMAKE_C_COMPILER_ID STREQUAL "GNU") # TODO GCC-366 (segfault)
+    set_property(SOURCE usb_host.c PROPERTY COMPILE_FLAGS -fno-analyzer)
+endif()

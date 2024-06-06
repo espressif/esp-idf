@@ -1106,6 +1106,7 @@ static void IRAM_ATTR rmt_tx_default_isr(void *args)
 }
 
 #if SOC_RMT_SUPPORT_DMA
+ESP_COMPILER_DIAGNOSTIC_PUSH_IGNORE("-Wanalyzer-null-dereference") // TODO IDF-10235
 static bool IRAM_ATTR rmt_dma_tx_eof_cb(gdma_channel_handle_t dma_chan, gdma_event_data_t *event_data, void *user_data)
 {
     rmt_tx_channel_t *tx_chan = (rmt_tx_channel_t *)user_data;
@@ -1132,4 +1133,5 @@ static bool IRAM_ATTR rmt_dma_tx_eof_cb(gdma_channel_handle_t dma_chan, gdma_eve
     }
     return false;
 }
+ESP_COMPILER_DIAGNOSTIC_POP("-Wanalyzer-null-dereference")
 #endif // SOC_RMT_SUPPORT_DMA
