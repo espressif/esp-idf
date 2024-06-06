@@ -202,14 +202,9 @@ if(CONFIG_COMPILER_DISABLE_GCC13_WARNINGS)
 endif()
 
 if(CONFIG_COMPILER_DISABLE_DEFAULT_ERRORS)
-    set(compiler_flags "-Wno-error")
     if(NOT CMAKE_C_COMPILER_ID MATCHES "Clang")
-        list(APPEND compiler_flags "-Werror=all")
+        idf_build_replace_option_from_property(COMPILE_OPTIONS "-Werror" "-Werror=all")
     endif()
-
-    list(APPEND compile_options ${compiler_flags})
-    list(APPEND c_compile_options ${compiler_flags})
-    list(APPEND cxx_compile_options ${compiler_flags})
 endif()
 
 # GCC-specific options
