@@ -1,11 +1,12 @@
 /*
- * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include "sdkconfig.h"
 #include "bootloader_console.h"
+#include "soc/soc_caps.h"
 #include "soc/uart_periph.h"
 #include "soc/uart_channel.h"
 #include "soc/io_mux_reg.h"
@@ -18,8 +19,8 @@
 #include "esp32s2/rom/usb/cdc_acm.h"
 #include "esp32s2/rom/usb/usb_common.h"
 #endif
-#if SOC_USB_SERIAL_JTAG_SUPPORTED
-#include "hal/usb_fsls_phy_ll.h"
+#if CONFIG_ESP_CONSOLE_USB_CDC
+#include "hal/usb_wrap_ll.h"
 #endif
 #include "esp_rom_gpio.h"
 #include "esp_rom_uart.h"
@@ -105,10 +106,9 @@ void bootloader_console_init(void)
     esp_rom_uart_usb_acm_init(s_usb_cdc_buf, sizeof(s_usb_cdc_buf));
     esp_rom_uart_set_as_console(ESP_ROM_USB_OTG_NUM);
     esp_rom_install_channel_putc(1, bootloader_console_write_char_usb);
-#if SOC_USB_SERIAL_JTAG_SUPPORTED
-    usb_fsls_phy_ll_usb_wrap_pad_enable(&USB_WRAP, true);
-    usb_fsls_phy_ll_int_otg_enable(&USB_WRAP);
-#endif
+    // Ensure that the USB FSLS PHY is mapped to the USB WRAP
+    usb_wrap_ll_phy_enable_pad(&USB_WRAP, true);
+    usb_wrap_ll_phy_enable_external(&USB_WRAP, false);
 }
 #endif //CONFIG_ESP_CONSOLE_USB_CDC
 
