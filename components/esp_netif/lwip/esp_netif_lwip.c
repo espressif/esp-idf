@@ -1105,7 +1105,7 @@ static esp_err_t esp_netif_start_api(esp_netif_api_msg_t *msg)
     ESP_ERROR_CHECK(esp_netif_lwip_add(esp_netif));
 
 #if ESP_IPV6_AUTOCONFIG
-    esp_netif->lwip_netif->ip6_autoconfig_enabled = 1;
+    esp_netif->lwip_netif->ip6_autoconfig_enabled = (esp_netif->flags & ESP_NETIF_FLAG_IPV6_AUTOCONFIG_ENABLED) ? 1 : 0;
 #endif
     if (esp_netif->flags&ESP_NETIF_FLAG_GARP) {
 #if ESP_GRATUITOUS_ARP

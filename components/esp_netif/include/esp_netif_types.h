@@ -178,6 +178,7 @@ typedef enum esp_netif_flags {
     ESP_NETIF_FLAG_IS_PPP = 1 << 5,
     ESP_NETIF_FLAG_IS_BRIDGE = 1 << 6,
     ESP_NETIF_FLAG_MLDV6_REPORT = 1 << 7,
+    ESP_NETIF_FLAG_IPV6_AUTOCONFIG_ENABLED = 1 << 8,
 } esp_netif_flags_t;
 
 typedef enum esp_netif_ip_event_type {
