@@ -1538,7 +1538,7 @@ Wi-Fi 安全性
  - 从关联请求获取隐藏网络的 SSID。
  - 强制 client 从合法 AP 中 (de)authentication，并关联到流氓 AP，发起中间人攻击。
 
-PMF 通过对单播管理帧进行加密，并检查广播管理帧的完整性，阻止上述攻击。其中包括 (de)authentication、(dis)association 和强奸的管理帧。PMF 同样提供“安全关联” (SA) 拆解机制，阻止欺骗 association/authentication frame 断开已连接的 client。
+PMF 通过对单播管理帧进行加密，并检查广播管理帧的完整性，阻止上述攻击。其中包括 (de)authentication、(dis)association 和强健的管理帧。PMF 同样提供“安全关联” (SA) 拆解机制，阻止欺骗 association/authentication frame 断开已连接的 client。
 
 关于PMF，{IDF_TARGET_NAME} 支持以下三种操作模式。
 
