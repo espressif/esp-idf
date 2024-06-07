@@ -108,8 +108,6 @@ LDO_DOCS = ['api-reference/peripherals/ldo_regulator.rst']
 
 TEMP_SENSOR_DOCS = ['api-reference/peripherals/temp_sensor.rst']
 
-TOUCH_SENSOR_DOCS = ['api-reference/peripherals/touch_pad.rst']
-
 SPIRAM_DOCS = ['api-guides/external-ram.rst']
 
 USB_DOCS = ['api-reference/peripherals/usb_device.rst',
@@ -185,6 +183,7 @@ ESP32_DOCS = ['api-reference/system/himem.rst',
               'security/secure-boot-v1.rst',
               'api-reference/peripherals/dac.rst',
               'api-reference/peripherals/sd_pullup_requirements.rst',
+              'api-reference/peripherals/touch_pad.rst',
               'hw-reference/esp32/**',
               'api-guides/RF_calibration.rst',
               'api-guides/phy.rst'] + FTDI_JTAG_DOCS + QEMU_DOCS
@@ -194,6 +193,7 @@ ESP32S2_DOCS = ['hw-reference/esp32s2/**',
                 'api-reference/peripherals/ds.rst',
                 'api-reference/peripherals/temp_sensor.rst',
                 'api-reference/system/async_memcpy.rst',
+                'api-reference/peripherals/touch_pad.rst',
                 'api-reference/peripherals/touch_element.rst',
                 'api-guides/RF_calibration.rst',
                 'api-guides/phy.rst'] + FTDI_JTAG_DOCS + USB_OTG_DFU_DOCS + USB_OTG_CONSOLE_DOCS
@@ -201,6 +201,7 @@ ESP32S2_DOCS = ['hw-reference/esp32s2/**',
 ESP32S3_DOCS = ['hw-reference/esp32s3/**',
                 'api-reference/system/ipc.rst',
                 'api-guides/flash_psram_config.rst',
+                'api-reference/peripherals/touch_pad.rst',
                 'api-reference/peripherals/sd_pullup_requirements.rst',
                 'api-guides/RF_calibration.rst',
                 'api-guides/phy.rst'] + USB_OTG_DFU_DOCS + USB_OTG_CONSOLE_DOCS
@@ -223,6 +224,7 @@ ESP32H2_DOCS = ['api-guides/RF_calibration.rst',
                 'api-guides/phy.rst']
 
 ESP32P4_DOCS = ['api-reference/system/ipc.rst',
+                'api-reference/peripherals/cap_touch_sens.rst',
                 'api-reference/peripherals/sd_pullup_requirements.rst']
 
 # format: {tag needed to include: documents to included}, tags are parsed from sdkconfig and peripheral_caps.h headers
@@ -253,7 +255,6 @@ conditional_include_dict = {'SOC_BT_SUPPORTED':BT_DOCS,
                             'SOC_RMT_SUPPORTED':RMT_DOCS,
                             'SOC_DAC_SUPPORTED':DAC_DOCS,
                             'SOC_ETM_SUPPORTED':ETM_DOCS,
-                            'SOC_TOUCH_SENSOR_SUPPORTED':TOUCH_SENSOR_DOCS,
                             'SOC_ULP_FSM_SUPPORTED':ULP_FSM_DOCS,
                             'SOC_RISCV_COPROC_SUPPORTED':RISCV_COPROC_DOCS,
                             'SOC_LP_CORE_SUPPORTED':LP_CORE_DOCS,

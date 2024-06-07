@@ -9,11 +9,10 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "driver/touch_sens.h"
-#include "soc/lp_analog_peri_struct.h"
 #include "esp_check.h"
 
 // Touch version 3 supports multiple sample configurations
-#define EXAMPLE_TOUCH_SAMPLE_CFG_NUM        TOUCH_SAMPLE_CFG_NUM
+#define EXAMPLE_TOUCH_SAMPLE_CFG_NUM        1  // Up to 'TOUCH_SAMPLE_CFG_NUM'
 #define EXAMPLE_TOUCH_CHANNEL_NUM           4
 #define EXAMPLE_TOUCH_CHAN_INIT_SCAN_TIMES  3
 
@@ -21,7 +20,7 @@ static touch_sensor_handle_t  s_sens_handle = NULL;
 static touch_channel_handle_t s_chan_handle[EXAMPLE_TOUCH_CHANNEL_NUM] = {};
 // Active threshold to benchmark ratio. (i.e., touch will be activated when data >= benchmark * (1 + ratio))
 static float s_thresh2bm_ratio[EXAMPLE_TOUCH_CHANNEL_NUM] = {
-    [0 ... EXAMPLE_TOUCH_CHANNEL_NUM - 1] = 0.02f,  // 2%
+    [0 ... EXAMPLE_TOUCH_CHANNEL_NUM - 1] = 0.015f,  // 1.5%
 };
 
 bool example_touch_on_active_callback(touch_sensor_handle_t sens_handle, const touch_active_event_data_t *event, void *user_ctx)
@@ -59,7 +58,7 @@ static void example_touch_do_initial_scanning(void)
         printf("[CH %d]", i);
         touch_channel_config_t chan_cfg = {};
         for (int j = 0; j < EXAMPLE_TOUCH_SAMPLE_CFG_NUM; j++) {
-            chan_cfg.active_thresh[j] = (uint32_t)(benchmark[j] * s_thresh2bm_ratio[j]);
+            chan_cfg.active_thresh[j] = (uint32_t)(benchmark[j] * s_thresh2bm_ratio[i]);
             printf(" %d: %"PRIu32", %"PRIu32"\t", j, benchmark[j], chan_cfg.active_thresh[j]);
         }
         printf("\n");
@@ -72,12 +71,12 @@ void app_main(void)
 {
     /* Use the default sample configurations */
     touch_sensor_sample_config_t sample_cfg[EXAMPLE_TOUCH_SAMPLE_CFG_NUM] = {
-        TOUCH_SENSOR_DEFAULT_SAMPLE_CONFIG0(),
+        TOUCH_SENSOR_V3_DEFAULT_SAMPLE_CONFIG(1, 1, 1),
 #if EXAMPLE_TOUCH_SAMPLE_CFG_NUM > 1
-        TOUCH_SENSOR_DEFAULT_SAMPLE_CONFIG1(),
+        TOUCH_SENSOR_V3_DEFAULT_SAMPLE_CONFIG(2, 1, 1),
 #endif
 #if EXAMPLE_TOUCH_SAMPLE_CFG_NUM > 2
-        TOUCH_SENSOR_DEFAULT_SAMPLE_CONFIG2(),
+        TOUCH_SENSOR_V3_DEFAULT_SAMPLE_CONFIG(4, 1, 1),
 #endif
     };
     /* Allocate new touch controller handle */
@@ -108,12 +107,12 @@ void app_main(void)
          *  Step3: adjust the `s_thresh2bm_ratio` to a proper value to trigger the active callback
          */
         .active_thresh = {
-            5000,       // estimated active threshold of sample configuration 0
+            1000,       // estimated active threshold of sample configuration 0
 #if EXAMPLE_TOUCH_SAMPLE_CFG_NUM > 1
             2500,       // estimated active threshold of sample configuration 1
 #endif
 #if EXAMPLE_TOUCH_SAMPLE_CFG_NUM > 2
-            1000,       // estimated active threshold of sample configuration 2
+            5000,       // estimated active threshold of sample configuration 2
 #endif
         },
     };

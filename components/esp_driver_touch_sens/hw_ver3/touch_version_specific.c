@@ -96,7 +96,7 @@ void IRAM_ATTR touch_priv_default_intr_handler(void *arg)
     if (status & TOUCH_LL_INTR_MASK_ACTIVE) {
         /* When the guard ring activated, disable the scanning of other channels to avoid fake touch */
         TOUCH_ENTER_CRITICAL_SAFE(TOUCH_PERIPH_LOCK);
-        if (g_touch->waterproof_en && data.chan == g_touch->guard_chan) {
+        if (g_touch->immersion_proof && data.chan == g_touch->guard_chan) {
             touch_ll_enable_scan_mask(~BIT(data.chan->id), false);
         }
         TOUCH_EXIT_CRITICAL_SAFE(TOUCH_PERIPH_LOCK);
@@ -107,7 +107,7 @@ void IRAM_ATTR touch_priv_default_intr_handler(void *arg)
     if (status & TOUCH_LL_INTR_MASK_INACTIVE) {
         /* When the guard ring inactivated, enable the scanning of other channels again */
         TOUCH_ENTER_CRITICAL_SAFE(TOUCH_PERIPH_LOCK);
-        if (g_touch->waterproof_en && data.chan == g_touch->guard_chan) {
+        if (g_touch->immersion_proof && data.chan == g_touch->guard_chan) {
             touch_ll_enable_scan_mask(g_touch->chan_mask & (~BIT(g_touch->shield_chan->id)), true);
         }
         TOUCH_EXIT_CRITICAL_SAFE(TOUCH_PERIPH_LOCK);
@@ -157,36 +157,12 @@ static esp_err_t s_touch_convert_to_hal_config(touch_sensor_handle_t sens_handle
     hal_cfg->sample_cfg_num = sens_cfg->sample_cfg_num;
     hal_cfg->output_mode = sens_cfg->output_mode;
 
-    hal_utils_clk_info_t clk_info = {
-        .src_freq_hz = sens_handle->src_freq_hz,
-        .min_integ = 1,
-        .max_integ = TOUCH_LL_CLK_DIV_MAX,
-        .round_opt = HAL_DIV_ROUND,
-    };
-    for (uint32_t div_num, smp_cfg_id = 0; smp_cfg_id < sens_cfg->sample_cfg_num; smp_cfg_id++) {
+    for (uint32_t smp_cfg_id = 0; smp_cfg_id < sens_cfg->sample_cfg_num; smp_cfg_id++) {
         const touch_sensor_sample_config_t *sample_cfg = &(sens_cfg->sample_cfg[smp_cfg_id]);
-        uint32_t actual_freq_hz = 0;
-        /* Allow 10% overflow to increase the robustness when the sample frequency is close to the source clock,
-           because the source clock is from RTC FAST whose frequency is floating up and down among startups  */
-        if (sample_cfg->freq_hz > sens_handle->src_freq_hz && sample_cfg->freq_hz < sens_handle->src_freq_hz * 1.1) {
-            ESP_LOGW(TAG, "[sample_cfg_id %"PRIu32"] sample frequency exceed the src clock but still within 10%%", smp_cfg_id);
-            div_num = 1;
-            actual_freq_hz = sens_handle->src_freq_hz;
-        } else {
-            clk_info.exp_freq_hz = sample_cfg->freq_hz;
-            actual_freq_hz = hal_utils_calc_clk_div_integer(&clk_info, &div_num);
-        }
-        /* Check the actual frequency and its precision */
-        ESP_RETURN_ON_FALSE(actual_freq_hz, ESP_ERR_INVALID_ARG, TAG,
-                            "[sample_cfg_id %"PRIu32"] sample frequency should within range %"PRIu32" ~ %"PRIu32" hz",
-                            smp_cfg_id, sens_handle->src_freq_hz / TOUCH_LL_CLK_DIV_MAX, sens_handle->src_freq_hz);
-        ESP_LOGD(TAG, "[sample_cfg_id %"PRIu32"] clock divider %"PRIu32, smp_cfg_id, div_num);
-        if (actual_freq_hz != clk_info.exp_freq_hz) {
-            ESP_LOGW(TAG, "[sample_cfg_id %"PRIu32"] clock precision loss, expect %"PRIu32" hz, got %"PRIu32" hz",
-                     smp_cfg_id, clk_info.exp_freq_hz, actual_freq_hz);
-        }
+        ESP_RETURN_ON_FALSE(sample_cfg->div_num > 0, ESP_ERR_INVALID_ARG, TAG,
+                            "div_num can't be 0");
         /* Assign the hal configurations */
-        hal_cfg->sample_cfg[smp_cfg_id].div_num = div_num;
+        hal_cfg->sample_cfg[smp_cfg_id].div_num = sample_cfg->div_num;
         hal_cfg->sample_cfg[smp_cfg_id].charge_times = sample_cfg->charge_times;
         hal_cfg->sample_cfg[smp_cfg_id].rc_filter_res = sample_cfg->rc_filter_res;
         hal_cfg->sample_cfg[smp_cfg_id].rc_filter_cap = sample_cfg->rc_filter_cap;
@@ -271,14 +247,8 @@ esp_err_t touch_priv_channel_read_data(touch_channel_handle_t chan_handle, touch
         }
         if (type <= TOUCH_CHAN_DATA_TYPE_BENCHMARK) {
             TOUCH_ENTER_CRITICAL_SAFE(TOUCH_PERIPH_LOCK);
-            if (chan_handle != chan_handle->base->deep_slp_chan) {
-                for (int i = 0; i < sample_cfg_num; i++) {
-                    touch_ll_read_chan_data(chan_handle->id, i, internal_type, &data[i]);
-                }
-            } else {
-                for (int i = 0; i < sample_cfg_num; i++) {
-                    touch_ll_sleep_read_chan_data(internal_type, i, &data[i]);
-                }
+            for (int i = 0; i < sample_cfg_num; i++) {
+                touch_ll_read_chan_data(chan_handle->id, i, internal_type, &data[i]);
             }
             TOUCH_EXIT_CRITICAL_SAFE(TOUCH_PERIPH_LOCK);
         }
@@ -297,9 +267,9 @@ esp_err_t touch_priv_channel_read_data(touch_channel_handle_t chan_handle, touch
     return ESP_OK;
 }
 
-void touch_priv_set_benchmark(touch_channel_handle_t chan_handle, const touch_chan_benchmark_op_t *benchmark_op)
+void touch_priv_config_benchmark(touch_channel_handle_t chan_handle, const touch_chan_benchmark_config_t *benchmark_cfg)
 {
-    if (benchmark_op->do_reset) {
+    if (benchmark_cfg->do_reset) {
         touch_ll_reset_chan_benchmark(BIT(chan_handle->id));
     }
 }
@@ -423,6 +393,7 @@ esp_err_t touch_sensor_config_waterproof(touch_sensor_handle_t sens_handle, cons
         TOUCH_NULL_POINTER_CHECK(wp_cfg->shield_chan);
         TOUCH_ENTER_CRITICAL(TOUCH_PERIPH_LOCK);
         sens_handle->waterproof_en = true;
+        sens_handle->immersion_proof = wp_cfg->flags.immersion_proof;
         sens_handle->guard_chan = wp_cfg->guard_chan;
         sens_handle->shield_chan = wp_cfg->shield_chan;
         touch_ll_waterproof_set_guard_chan(wp_cfg->guard_chan ? wp_cfg->guard_chan->id : TOUCH_LL_NULL_CHANNEL);
@@ -441,6 +412,7 @@ esp_err_t touch_sensor_config_waterproof(touch_sensor_handle_t sens_handle, cons
         touch_ll_waterproof_set_shield_driver(0);
         sens_handle->guard_chan = NULL;
         sens_handle->shield_chan = NULL;
+        sens_handle->immersion_proof = false;
         sens_handle->waterproof_en = false;
         TOUCH_EXIT_CRITICAL(TOUCH_PERIPH_LOCK);
     }

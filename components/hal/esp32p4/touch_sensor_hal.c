@@ -25,6 +25,7 @@ static touch_hal_deep_sleep_obj_t s_touch_slp_obj = {
 void touch_hal_config_controller(const touch_hal_config_t *cfg)
 {
     HAL_ASSERT(cfg);
+    touch_ll_sleep_set_channel_num(TOUCH_LL_NULL_CHANNEL);
     touch_ll_set_out_mode(cfg->output_mode);
     touch_ll_set_power_on_wait_cycle(cfg->power_on_wait_ticks);
     touch_ll_set_measure_interval_ticks(cfg->meas_interval_ticks);
@@ -76,7 +77,6 @@ static void s_touch_hal_apply_sleep_config(void)
 void touch_hal_prepare_deep_sleep(void)
 {
     s_touch_hal_apply_sleep_config();
-    // TODO: check if it is necessary to reset the sleep benchmark
     touch_ll_sleep_reset_benchmark();
     touch_ll_intr_clear(TOUCH_LL_INTR_MASK_ALL);
 }

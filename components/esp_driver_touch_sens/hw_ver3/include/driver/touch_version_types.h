@@ -12,15 +12,15 @@
 #pragma once
 
 #include "soc/soc_caps.h"
-#include "driver/touch_common_types.h"
+#include "driver/touch_sens_types.h"
 #include "esp_err.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#define TOUCH_MIN_CHAN_ID          0        /*!< The minimum available channel id of the touch pad */
-#define TOUCH_MAX_CHAN_ID          13       /*!< The maximum available channel id of the touch pad */
+#define TOUCH_MIN_CHAN_ID           0           /*!< The minimum available channel id of the touch pad */
+#define TOUCH_MAX_CHAN_ID           13          /*!< The maximum available channel id of the touch pad */
 
 /**
  * @brief Helper macro to the default configurations of the touch sensor controller
@@ -37,49 +37,17 @@ extern "C" {
 
 /**
  * @brief Helper macro to the default sample configurations
- * @note  This default configuration is based on clock frequency 16MHz
+ * @note  This default configuration uses `sample frequency = clock frequency / 1`
  *
  */
-#define TOUCH_SENSOR_DEFAULT_SAMPLE_CONFIG0() { \
-    .freq_hz = 16000000, \
+#define TOUCH_SENSOR_V3_DEFAULT_SAMPLE_CONFIG(_div_num, coarse_freq_tune, fine_freq_tune) { \
+    .div_num = _div_num, \
     .charge_times = 500, \
-    .rc_filter_res = 2, \
-    .rc_filter_cap = 88, \
-    .low_drv = 3, \
-    .high_drv = 0, \
+    .rc_filter_res = 1, \
+    .rc_filter_cap = 1, \
+    .low_drv = fine_freq_tune, \
+    .high_drv = coarse_freq_tune, \
     .bias_volt = 5, \
-    .bypass_shield_output = false, \
-}
-
-/**
- * @brief Helper macro to the default sample configurations
- * @note  This default configuration is based on clock frequency 8MHz
- *
- */
-#define TOUCH_SENSOR_DEFAULT_SAMPLE_CONFIG1() { \
-    .freq_hz = 8000000, \
-    .charge_times = 500, \
-    .rc_filter_res = 3, \
-    .rc_filter_cap = 29, \
-    .low_drv = 3, \
-    .high_drv = 8, \
-    .bias_volt = 5, \
-    .bypass_shield_output = false, \
-}
-
-/**
- * @brief Helper macro to the default sample configurations
- * @note  This default configuration is based on clock frequency 4MHz
- *
- */
-#define TOUCH_SENSOR_DEFAULT_SAMPLE_CONFIG2() { \
-    .freq_hz = 4000000, \
-    .charge_times = 500, \
-    .rc_filter_res = 3, \
-    .rc_filter_cap = 10, \
-    .low_drv = 7, \
-    .high_drv = 31, \
-    .bias_volt = 15, \
     .bypass_shield_output = false, \
 }
 
@@ -205,7 +173,7 @@ typedef enum {
  *
  */
 typedef struct {
-    uint32_t                        freq_hz;            /*!< The sampling frequency for this configuration in Hz */
+    uint32_t                        div_num;            /*!< Division of the touch output pulse, `touch_out_pulse / div_num = charge_times` */
     uint32_t                        charge_times;       /*!< The charge and discharge times of this sample configuration, the read data are positive correlation to the charge_times */
     uint8_t                         rc_filter_res;      /*!< The resistance of the RC filter of this sample configuration, range [0, 3], while 0 = 0K, 1 = 1.5K, 2 = 3K, 3 = 4.5K */
     uint8_t                         rc_filter_cap;      /*!< The capacitance of the RC filter of this sample configuration, range [0, 127], while 0 = 0pF, 1 = 20fF, ..., 127 = 2.54pF */
@@ -337,12 +305,12 @@ typedef struct {
  *
  */
 typedef struct {
-    touch_channel_handle_t          guard_chan;         /*!< The guard channel of waterproof. Set NULL if you don't need the guard channel.
+    touch_channel_handle_t          guard_chan;         /*!< The guard channel of that used for immersion detect. Set NULL if you don't need the guard channel.
                                                          *   Typically, the guard channel is a ring that surrounds the touch panels,
                                                          *   it is used to detect the large area that covered by water.
-                                                         *   While large area of water covers the touch panel, the touch sensor will be temporary disable to avoid the fake touch.
+                                                         *   While large area of water covers the touch panel, the guard channel will be activated.
                                                          */
-    touch_channel_handle_t          shield_chan;        /*!< The touch channel that used as the shield channel, can't be NULL.
+    touch_channel_handle_t          shield_chan;        /*!< The shield channel that used for water droplets shield, can't be NULL.
                                                          *   Typically, the shield channel uses grid layout which covers the touch area,
                                                          *   it is used to shield the influence of water droplets covering both the touch panel and the shield channel.
                                                          *   The shield channel will be paralleled to the current measuring channel (except the guard channel) to reduce the influence of water droplets.
@@ -350,6 +318,12 @@ typedef struct {
     uint32_t                        shield_drv;         /*!< The shield channel driver, which controls the drive capability of shield channel, range: 0 ~ 7
                                                          *   The larger the parasitic capacitance on the shielding channel, the higher the drive capability needs to be set.
                                                          */
+    struct {
+        uint32_t                    immersion_proof: 1; /*!< Enable to protect the touch sensor pad when immersion detected.
+                                                         *   It will temporary disable the touch scanning if the guard channel triggered, and enable again if guard channel released.
+                                                         *   So that to avoid the fake touch when the touch panel is immersed in water.
+                                                         */
+    } flags;                                            /*!< Flags of the water proof function */
 } touch_waterproof_config_t;
 
 /**
@@ -491,12 +465,12 @@ typedef struct {
 } touch_event_callbacks_t;
 
 /**
- * @brief Touch sensor benchmark operation, to set or reset the benchmark of the channel
+ * @brief Touch sensor benchmark configurations, to set or reset the benchmark of the channel
  *
  */
 typedef struct {
     bool                            do_reset;                /*!< Whether to reset the benchmark to the channel's latest smooth data */
-} touch_chan_benchmark_op_t;
+} touch_chan_benchmark_config_t;
 
 #ifdef __cplusplus
 }
