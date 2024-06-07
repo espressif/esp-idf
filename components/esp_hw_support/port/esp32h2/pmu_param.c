@@ -22,7 +22,6 @@ static __attribute__((unused)) const char *TAG = "pmu_param";
 #define ARRAY_SIZE(a)   (sizeof(a) / sizeof((a)[0]))
 #endif
 
-//TODO: IDF-6254
 #define PMU_HP_ACTIVE_POWER_CONFIG_DEFAULT() { \
     .dig_power = {          \
         .vdd_spi_pd_en = 0, \

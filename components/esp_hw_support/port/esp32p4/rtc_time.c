@@ -16,7 +16,7 @@
 #include "esp_rom_sys.h"
 #include "esp_private/periph_ctrl.h"
 
-static const char *TAG = "rtc_time";
+__attribute__((unused)) static const char *TAG = "rtc_time";
 
 /* Calibration of clock frequency is performed using a special feature of TIMG0.
  * This feature counts the number of XTAL clock cycles within a given number of
@@ -212,12 +212,6 @@ uint64_t rtc_time_slowclk_to_us(uint64_t rtc_cycles, uint32_t period)
 uint64_t rtc_time_get(void)
 {
     return lp_timer_hal_get_cycle_count();
-}
-
-void rtc_clk_wait_for_slow_cycle(void) //This function may not by useful any more
-{
-    // TODO: IDF-5781
-    ESP_EARLY_LOGW(TAG, "rtc_clk_wait_for_slow_cycle() has not been implemented yet");
 }
 
 uint32_t rtc_clk_freq_cal(uint32_t cal_val)
