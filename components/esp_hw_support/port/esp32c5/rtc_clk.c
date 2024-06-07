@@ -477,21 +477,25 @@ void rtc_clk_cpu_freq_to_pll_and_pll_lock_release(int cpu_freq_mhz)
 soc_xtal_freq_t rtc_clk_xtal_freq_get(void)
 {
 #if CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
-    return CONFIG_XTAL_FREQ;
-#elif CONFIG_IDF_TARGET_ESP32C5_MP_VERSION
     uint32_t xtal_freq_mhz = clk_ll_xtal_load_freq_mhz();
     if (xtal_freq_mhz == 0) {
-        ESP_HW_LOGW(TAG, "invalid RTC_XTAL_FREQ_REG value, assume 40MHz");
-        return RTC_XTAL_FREQ_40M;
+        ESP_HW_LOGW(TAG, "invalid RTC_XTAL_FREQ_REG value, assume 48MHz");
+        return SOC_XTAL_FREQ_48M;
     }
+    return (soc_xtal_freq_t)xtal_freq_mhz;
+#elif CONFIG_IDF_TARGET_ESP32C5_MP_VERSION
+    uint32_t xtal_freq_mhz = clk_ll_xtal_get_freq_mhz();
+    assert(xtal_freq_mhz == SOC_XTAL_FREQ_48M || xtal_freq_mhz == SOC_XTAL_FREQ_40M);
     return (soc_xtal_freq_t)xtal_freq_mhz;
 #endif
 }
 
+#if CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
 void rtc_clk_xtal_freq_update(soc_xtal_freq_t xtal_freq)
 {
     clk_ll_xtal_store_freq_mhz(xtal_freq);
 }
+#endif
 
 static uint32_t rtc_clk_ahb_freq_get(void)
 {
@@ -561,10 +565,3 @@ bool rtc_dig_8m_enabled(void)
 {
     return clk_ll_rc_fast_digi_is_enabled();
 }
-
-#if CONFIG_IDF_TARGET_ESP32C5_MP_VERSION
-/* Name used in libphy.a:phy_chip_v7.o
- * TODO: update the library to use rtc_clk_xtal_freq_get
- */
-rtc_xtal_freq_t rtc_get_xtal(void) __attribute__((alias("rtc_clk_xtal_freq_get")));
-#endif

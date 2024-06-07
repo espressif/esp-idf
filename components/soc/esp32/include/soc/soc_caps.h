@@ -114,7 +114,7 @@
 /*-------------------------- XTAL CAPS ---------------------------------------*/
 #define SOC_XTAL_SUPPORT_26M            1
 #define SOC_XTAL_SUPPORT_40M            1
-#define SOC_XTAL_SUPPORT_AUTO_DETECT    1
+#define SOC_XTAL_SUPPORT_AUTO_DETECT    1   // Measure XTAL freq with an internal RC clock
 
 /*-------------------------- ADC CAPS ----------------------------------------*/
 /*!< SAR ADC Module*/

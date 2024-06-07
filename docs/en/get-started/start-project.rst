@@ -115,14 +115,13 @@ To exit IDF monitor use the shortcut ``Ctrl+]``.
 
     1. Exit the monitor.
     2. Go back to ``menuconfig``.
-    3. Go to ``Component config`` --> ``Hardware Settings`` --> ``Main XTAL Config`` --> ``Main XTAL frequency``, then change :ref:`CONFIG_XTAL_FREQ_SEL` to 26 MHz.
+    3. Go to ``Component config`` --> ``Hardware Settings`` --> ``Main XTAL Config`` --> ``Main XTAL frequency``, then change :ref:`CONFIG_XTAL_FREQ` to 26 MHz.
     4. After that, ``build and flash`` the application again.
 
     In the current version of ESP-IDF, main XTAL frequencies supported by {IDF_TARGET_NAME} are as follows:
 
     .. list::
 
-        :SOC_XTAL_SUPPORT_24M: - 24 MHz
         :SOC_XTAL_SUPPORT_26M: - 26 MHz
         :SOC_XTAL_SUPPORT_32M: - 32 MHz
         :SOC_XTAL_SUPPORT_40M: - 40 MHz

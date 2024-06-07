@@ -60,14 +60,14 @@ __attribute__((weak)) void esp_clk_init(void)
 #endif
     rtc_clk_8m_enable(true);
     rtc_clk_fast_src_set(SOC_RTC_FAST_CLK_SRC_RC_FAST);
-#elif CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
+#else
 #if !CONFIG_IDF_ENV_FPGA
     pmu_init();
     if (esp_rom_get_reset_reason(0) == RESET_REASON_CHIP_POWER_ON) {
         esp_ocode_calib_init();
     }
 
-    assert(rtc_clk_xtal_freq_get() == RTC_XTAL_FREQ_40M);
+    assert((rtc_clk_xtal_freq_get() == SOC_XTAL_FREQ_48M) || (rtc_clk_xtal_freq_get() == SOC_XTAL_FREQ_40M));
 
     rtc_clk_8m_enable(true);
     rtc_clk_fast_src_set(SOC_RTC_FAST_CLK_SRC_RC_FAST);

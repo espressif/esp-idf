@@ -360,8 +360,7 @@ menu "ESP System Settings"
         prompt "UART console baud rate" if ESP_CONSOLE_UART_CUSTOM
         depends on ESP_CONSOLE_UART
         default 74880 if (IDF_TARGET_ESP32C2 && XTAL_FREQ_26)
-        # TODO: IDF-8651 Check if need update
-        default 138240 if (IDF_TARGET_ESP32C5 && XTAL_FREQ_48)
+        default 138240 if (IDF_TARGET_ESP32C5_BETA3_VERSION && XTAL_FREQ_48)
         default 115200
         range 1200 4000000 if !PM_ENABLE
         range 1200 1000000 if PM_ENABLE
@@ -411,7 +410,7 @@ menu "ESP System Settings"
         default 800 if (SPIRAM && IDF_TARGET_ESP32)
         range 10 10000
         help
-            The timeout of the watchdog, in miliseconds. Make this higher than the FreeRTOS tick rate.
+            The timeout of the watchdog, in milliseconds. Make this higher than the FreeRTOS tick rate.
 
     config ESP_INT_WDT_CHECK_CPU1
         bool "Also watch CPU1 tick interrupt"

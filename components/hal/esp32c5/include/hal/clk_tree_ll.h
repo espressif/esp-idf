@@ -266,6 +266,20 @@ static inline __attribute__((always_inline)) bool clk_ll_rc32k_digi_is_enabled(v
     return LP_CLKRST.clk_to_hp.icg_hp_osc32k;
 }
 
+#if !CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
+/**
+ * @brief Get XTAL_CLK frequency
+ *
+ * PCR_CLK_XTAL_FREQ updates its value based on EFUSE_XTAL_48M_SEL.
+ *
+ * @return Main XTAL clock frequency, in MHz.
+ */
+static inline __attribute__((always_inline)) uint32_t clk_ll_xtal_get_freq_mhz(void)
+{
+    return PCR.sysclk_conf.clk_xtal_freq;
+}
+#endif
+
 /**
  * @brief Get PLL_CLK frequency
  *
@@ -910,6 +924,7 @@ static inline __attribute__((always_inline)) void clk_ll_rc_slow_set_divider(uin
 }
 
 /************************** LP STORAGE REGISTER STORE/LOAD **************************/
+#if CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
 /**
  * @brief Store XTAL_CLK frequency in RTC storage register
  *
@@ -950,6 +965,7 @@ static inline __attribute__((always_inline)) uint32_t clk_ll_xtal_load_freq_mhz(
     // If the format in reg is invalid
     return 0;
 }
+#endif
 
 /**
  * @brief Store RTC_SLOW_CLK calibration value in RTC storage register
