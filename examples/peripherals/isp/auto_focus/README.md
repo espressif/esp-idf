@@ -6,7 +6,7 @@
 
 ## Overview
 
-This example demonstrates how to use the ISP (image signal processor) to work with esp_driver_cam component. This example will capture camera sensor signals via CSI interface and display it via DSI interface. This example also enables the ISP AF (auto-focus) feature.
+This example demonstrates how to use the ISP (image signal processor) to work with esp_driver_cam component. This example will capture camera sensor signals via CSI interface and display it via DSI interface. This example also enables the ISP AF (auto-focus) feature and ISP BF (bayer denoise) feature.
 
 ## Usage
 
