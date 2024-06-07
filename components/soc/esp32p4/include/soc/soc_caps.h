@@ -86,7 +86,7 @@
 #define SOC_ASSIST_DEBUG_SUPPORTED      1
 #define SOC_WDT_SUPPORTED               1
 #define SOC_SPI_FLASH_SUPPORTED         1
-// #define SOC_TOUCH_SENSOR_SUPPORTED      1  //TODO: IDF-7477
+#define SOC_TOUCH_SENSOR_SUPPORTED      1
 #define SOC_RNG_SUPPORTED               1
 #define SOC_GP_LDO_SUPPORTED            1 // General purpose LDO
 #define SOC_PPA_SUPPORTED               1
@@ -547,11 +547,17 @@
 #define SOC_MWDT_SUPPORT_XTAL              (1)
 
 /*-------------------------- TOUCH SENSOR CAPS -------------------------------*/
-#define SOC_TOUCH_SENSOR_VERSION            (3)         // Hardware version of touch sensor
-#define SOC_TOUCH_SENSOR_NUM                (14)        // Touch available channel number. Actually there are 15 Touch channels, but channel 14 is not pinned out, limit to 14 channels
-#define SOC_TOUCH_PROXIMITY_CHANNEL_NUM     (3)         // Support touch proximity channel number.
-#define SOC_TOUCH_PROXIMITY_MEAS_DONE_SUPPORTED (1)     // Support touch proximity channel measure done interrupt type.
-#define SOC_TOUCH_SAMPLER_NUM               (3)         // The sampler number in total, each sampler can be used to sample on one frequency
+#define SOC_TOUCH_SENSOR_VERSION                    (3)     /*!< Hardware version of touch sensor */
+#define SOC_TOUCH_SENSOR_NUM                        (14)    /*!< Touch available channel number. Actually there are 15 Touch channels, but channel 14 is not pinned out, limit to 14 channels */
+
+/* Touch Sensor Features */
+#define SOC_TOUCH_SUPPORT_SLEEP_WAKEUP              (1)     /*!< Touch sensor supports sleep awake */
+#define SOC_TOUCH_SUPPORT_WATERPROOF                (1)     /*!< Touch sensor supports waterproof */
+#define SOC_TOUCH_SUPPORT_PROX_SENSING              (1)     /*!< Touch sensor supports proximity sensing */
+#define SOC_TOUCH_PROXIMITY_CHANNEL_NUM             (3)     /*!< Support touch proximity channel number. */
+#define SOC_TOUCH_PROXIMITY_MEAS_DONE_SUPPORTED     (1)     /*!< Support touch proximity channel measure done interrupt type. */
+#define SOC_TOUCH_SUPPORT_FREQ_HOP                  (1)     /*!< Touch sensor supports frequency hopping */
+#define SOC_TOUCH_SAMPLE_CFG_NUM                    (3)     /*!< The sample configurations number in total, each sampler can be used to sample on one frequency */
 
 /*-------------------------- TWAI CAPS ---------------------------------------*/
 #define SOC_TWAI_CONTROLLER_NUM         3
@@ -620,6 +626,7 @@
 #define SOC_PM_SUPPORT_EXT1_WAKEUP_MODE_PER_PIN   (1) /*!<Supports one bit per pin to configure the EXT1 trigger level */
 #define SOC_PM_EXT1_WAKEUP_BY_PMU       (1)
 #define SOC_PM_SUPPORT_WIFI_WAKEUP      (1)
+#define SOC_PM_SUPPORT_TOUCH_SENSOR_WAKEUP    (1)     /*!<Supports waking up from touch pad trigger */
 #define SOC_PM_SUPPORT_XTAL32K_PD       (1)
 #define SOC_PM_SUPPORT_RC32K_PD         (1)
 #define SOC_PM_SUPPORT_RC_FAST_PD       (1)
