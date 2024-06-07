@@ -118,7 +118,7 @@
         :maxdepth: 1
 
         ESP32-S2-Saola-1 <../hw-reference/esp32s2/user-guide-saola-1-v1.2>
-        ESP32-S2-DevKitM-1(U) <../hw-reference/esp32s2/user-guide-devkitm-1-v1>
+        ESP32-S2-DevKitM-1 <https://docs.espressif.com/projects/esp-dev-kits/zh_CN/latest/esp32s2/esp32-s2-devkitm-1/index.html>
         ESP32-S2-DevKitC-1 <../hw-reference/esp32s2/user-guide-s2-devkitc-1>
         ESP32-S2-Kaluga-Kit <../hw-reference/esp32s2/user-guide-esp32-s2-kaluga-1-kit>
 
