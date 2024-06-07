@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,6 +18,9 @@
 #include "hal/assert.h"
 #include "soc/touch_sensor_periph.h"
 #include "soc/lp_analog_peri_struct.h"
+#include "soc/lp_clkrst_struct.h"
+#include "soc/lp_system_struct.h"
+#include "soc/lpperi_struct.h"
 #include "soc/touch_struct.h"
 #include "soc/pmu_struct.h"
 #include "soc/soc_caps.h"
@@ -27,7 +30,6 @@
 extern "C" {
 #endif
 
-#define TOUCH_LL_READ_RAW           0x0
 #define TOUCH_LL_READ_BENCHMARK     0x2
 #define TOUCH_LL_READ_SMOOTH        0x3
 
@@ -35,27 +37,41 @@ extern "C" {
 #define TOUCH_LL_TIMER_DONE_BY_FSM         0x0
 
 // Interrupt mask
-#define TOUCH_LL_INTR_MASK_SCAN_DONE        BIT(1)
-#define TOUCH_LL_INTR_MASK_DONE             BIT(2)
-#define TOUCH_LL_INTR_MASK_ACTIVE           BIT(3)
-#define TOUCH_LL_INTR_MASK_INACTIVE         BIT(4)
-#define TOUCH_LL_INTR_MASK_TIMEOUT          BIT(5)
-#define TOUCH_LL_INTR_MASK_APPROACH_DONE    BIT(6)
+#define TOUCH_LL_INTR_MASK_SCAN_DONE        BIT(0)
+#define TOUCH_LL_INTR_MASK_DONE             BIT(1)
+#define TOUCH_LL_INTR_MASK_ACTIVE           BIT(2)
+#define TOUCH_LL_INTR_MASK_INACTIVE         BIT(3)
+#define TOUCH_LL_INTR_MASK_TIMEOUT          BIT(4)
+#define TOUCH_LL_INTR_MASK_PROX_DONE        BIT(5)
 #define TOUCH_LL_INTR_MASK_ALL              (0x3F)
 
 #define TOUCH_LL_FULL_CHANNEL_MASK          ((uint16_t)((1U << SOC_TOUCH_SENSOR_NUM) - 1))
-#define TOUCH_LL_NULL_CHANNEL               (15)  // Null Channel id. Used for disabling some functions like sleep/approach/waterproof
+#define TOUCH_LL_NULL_CHANNEL               (15)  // Null Channel id. Used for disabling some functions like sleep/proximity/waterproof
 
 #define TOUCH_LL_PAD_MEASURE_WAIT_MAX      (0x7FFF)    // The timer frequency is 8Mhz, the max value is 0xff
+#define TOUCH_LL_ACTIVE_THRESH_MAX         (0xFFFF)    // Max channel active threshold
+#define TOUCH_LL_CLK_DIV_MAX               (0x08)      // Max clock divider value
+#define TOUCH_LL_TIMEOUT_MAX               (0xFFFF)    // Max timeout value
 
 /**
  * Enable/disable clock gate of touch sensor.
  *
  * @param enable true/false.
  */
-static inline void touch_ll_enable_clock(bool enable)
+static inline void touch_ll_enable_module_clock(bool enable)
 {
-    LP_ANA_PERI.date.clk_en = enable;
+    LPPERI.clk_en.ck_en_lp_touch = enable;
+}
+
+/**
+ * Enable/disable clock gate of touch sensor.
+ *
+ * @param enable true/false.
+ */
+static inline void touch_ll_reset_module(void)
+{
+    LPPERI.reset_en.rst_en_lp_touch = 1;
+    LPPERI.reset_en.rst_en_lp_touch = 0;
 }
 
 /**
@@ -71,14 +87,14 @@ static inline void touch_ll_set_power_on_wait_cycle(uint32_t wait_cycles)
 /**
  * Set touch sensor touch sensor charge and discharge times of every measurement on a pad.
  *
- * @param sampler_id The sampler index
+ * @param sample_cfg_id The sample configuration index
  * @param charge_times The times of charge and discharge in each measure process of touch channels.
- *                     The timer frequency is 8Mhz. Range: 0 ~ 0xffff.
+ *                     The timer frequency is RTC_FAST (about 16M). Range: 0 ~ 0xffff.
  */
-static inline void touch_ll_set_charge_times(uint8_t sampler_id, uint16_t charge_times)
+static inline void touch_ll_set_charge_times(uint8_t sample_cfg_id, uint16_t charge_times)
 {
     //The times of charge and discharge in each measure process of touch channels.
-    switch (sampler_id) {
+    switch (sample_cfg_id) {
         case 0:
             LP_ANA_PERI.touch_work_meas_num.touch_meas_num0 = charge_times;
             break;
@@ -98,9 +114,9 @@ static inline void touch_ll_set_charge_times(uint8_t sampler_id, uint16_t charge
  *
  * @param meas_times Pointer to accept times count of charge and discharge.
  */
-static inline void touch_ll_get_charge_times(uint8_t sampler_id, uint16_t *charge_times)
+static inline void touch_ll_get_charge_times(uint8_t sample_cfg_id, uint16_t *charge_times)
 {
-    switch (sampler_id) {
+    switch (sample_cfg_id) {
         case 0:
             *charge_times = LP_ANA_PERI.touch_work_meas_num.touch_meas_num0;
             break;
@@ -140,21 +156,21 @@ static inline void touch_ll_get_measure_interval_ticks(uint16_t *interval_ticks)
 }
 
 /**
- * Set touch sensor FSM mode.
- *        The measurement action can be triggered by the hardware timer, as well as by the software instruction.
+ * Enable touch sensor FSM timer trigger (continuous) mode or software trigger (oneshot) mode.
  *
- * @param mode FSM mode.
- *        TOUCH_FSM_MODE_TIMER: the FSM will trigger scanning repeatedly under the control of the hardware timer
- *        TOUCH_FSM_MODE_SW: the FSM will trigger scanning once under the control of the software
+ * @param enable Enable FSM timer mode.
+ *        True: the FSM will trigger scanning repeatedly under the control of the hardware timer (continuous mode)
+ *        False: the FSM will trigger scanning once under the control of the software (continuous mode)
  */
-static inline void touch_ll_set_fsm_mode(touch_fsm_mode_t mode)
+__attribute__((always_inline))
+static inline void touch_ll_enable_fsm_timer(bool enable)
 {
     // FSM controlled by timer or software
-    LP_ANA_PERI.touch_mux0.touch_fsm_en = mode;
-    // Start by timer or software
-    LP_ANA_PERI.touch_mux0.touch_start_force = mode;
-    // Stop by timer or software
-    LP_ANA_PERI.touch_mux0.touch_done_force = mode;
+    LP_ANA_PERI.touch_mux0.touch_fsm_en = enable;
+    // Set 0 to stop by timer, otherwise by software
+    LP_ANA_PERI.touch_mux0.touch_done_force = !enable;
+    // Set 0 to start by timer, otherwise by software
+    LP_ANA_PERI.touch_mux0.touch_start_force = !enable;
 }
 
 /**
@@ -182,18 +198,23 @@ static inline bool touch_ll_is_fsm_using_timer(void)
 /**
  * Touch timer trigger measurement and always wait measurement done.
  * Force done for touch timer ensures that the timer always can get the measurement done signal.
+ * @note The `force done` signal should last as least one slow clock tick
  */
+__attribute__((always_inline))
 static inline void touch_ll_force_done_curr_measurement(void)
 {
-    if (touch_ll_is_fsm_using_timer()) {
-        LP_ANA_PERI.touch_mux0.touch_done_force = TOUCH_LL_TIMER_FORCE_DONE_BY_SW;
-        LP_ANA_PERI.touch_mux0.touch_done_en = 1;
-        LP_ANA_PERI.touch_mux0.touch_done_en = 0;
-        LP_ANA_PERI.touch_mux0.touch_done_force = TOUCH_LL_TIMER_DONE_BY_FSM;
-    } else {
-        LP_ANA_PERI.touch_mux0.touch_done_en = 1;
-        LP_ANA_PERI.touch_mux0.touch_done_en = 0;
-    }
+    // Enable event tick first
+    LP_AON_CLKRST.lp_clk_en.etm_event_tick_en = 1;
+    // Set `force done` signal
+    PMU.touch_pwr_cntl.force_done = 1;
+    // Force done signal should last at least one slow clock tick, wait until tick interrupt triggers
+    LP_SYS.int_clr.slow_clk_tick_int_clr = 1;
+    while(LP_SYS.int_clr.slow_clk_tick_int_clr);
+    while(!LP_SYS.int_raw.slow_clk_tick_int_raw);
+    // Clear `force done` signal
+    PMU.touch_pwr_cntl.force_done = 0;
+    // Disable event tick
+    LP_AON_CLKRST.lp_clk_en.etm_event_tick_en = 0;
 }
 
 /**
@@ -203,6 +224,7 @@ static inline void touch_ll_force_done_curr_measurement(void)
  *      The timer should be triggered
  * @param is_sleep   Whether in sleep state
  */
+__attribute__((always_inline))
 static inline void touch_ll_start_fsm_repeated_timer(bool is_sleep)
 {
     /**
@@ -210,11 +232,7 @@ static inline void touch_ll_start_fsm_repeated_timer(bool is_sleep)
      * Force done for touch timer ensures that the timer always can get the measurement done signal.
      */
     touch_ll_force_done_curr_measurement();
-    if (is_sleep) {
-        PMU.touch_pwr_cntl.sleep_timer_en = 1;
-    } else {
-        LP_ANA_PERI.touch_mux0.touch_start_en = 1;
-    }
+    PMU.touch_pwr_cntl.sleep_timer_en = 1;
 }
 
 /**
@@ -222,21 +240,31 @@ static inline void touch_ll_start_fsm_repeated_timer(bool is_sleep)
  *        The measurement action can be triggered by the hardware timer, as well as by the software instruction.
  * @param is_sleep   Whether in sleep state
  */
+__attribute__((always_inline))
 static inline void touch_ll_stop_fsm_repeated_timer(bool is_sleep)
 {
-    if (is_sleep) {
-        PMU.touch_pwr_cntl.sleep_timer_en = 0;
-    } else {
-        LP_ANA_PERI.touch_mux0.touch_start_en = 0;
-    }
+    PMU.touch_pwr_cntl.sleep_timer_en = 0;
     touch_ll_force_done_curr_measurement();
 }
 
 /**
- * Start touch sensor FSM once by software
- * @note Every trigger means measuring one channel, not scanning all enabled channels
+ * Is the FSM repeated timer enabled.
+ * @note when the timer is enabled, RTC clock should not be power down
+ *
+ * @return
+ *      - true: enabled
+ *      - true: disabled
  */
-static inline void touch_ll_start_fsm_once(void)
+static inline bool touch_ll_is_fsm_repeated_timer_enabled(void)
+{
+    return (bool)(PMU.touch_pwr_cntl.sleep_timer_en);
+}
+
+/**
+ * Enable the touch sensor FSM start signal from software
+ */
+__attribute__((always_inline))
+static inline void touch_ll_trigger_oneshot_measurement(void)
 {
     /* Trigger once measurement */
     LP_ANA_PERI.touch_mux0.touch_start_en = 1;
@@ -245,7 +273,8 @@ static inline void touch_ll_start_fsm_once(void)
 
 static inline void touch_ll_measure_channel_once(uint16_t chan_mask)
 {
-    LP_ANA_PERI.touch_mux1.touch_start = chan_mask;
+    // Channel shift workaround
+    LP_ANA_PERI.touch_mux1.touch_start = chan_mask << 1;
 }
 
 /**
@@ -255,13 +284,34 @@ static inline void touch_ll_measure_channel_once(uint16_t chan_mask)
  *
  * @note  If set "TOUCH_PAD_THRESHOLD_MAX", the touch is never be triggered.
  * @param touch_num The touch pad id
- * @param sampler_id The sampler index
+ * @param sample_cfg_id The sample configuration index
  * @param thresh    The threshold of charge cycles
  */
-static inline void touch_ll_set_chan_active_threshold(uint32_t touch_num, uint8_t sampler_id, uint32_t thresh)
+static inline void touch_ll_set_chan_active_threshold(uint32_t touch_num, uint8_t sample_cfg_id, uint32_t thresh)
 {
-    HAL_ASSERT(sampler_id < SOC_TOUCH_SAMPLER_NUM);
-    HAL_FORCE_MODIFY_U32_REG_FIELD(LP_ANA_PERI.touch_padx_thn[touch_num].thn[sampler_id], threshold, thresh);
+    HAL_ASSERT(sample_cfg_id < SOC_TOUCH_SAMPLE_CFG_NUM);
+    // Channel shift workaround
+    HAL_FORCE_MODIFY_U32_REG_FIELD(LP_ANA_PERI.touch_padx_thn[touch_num + 1].thresh[sample_cfg_id], threshold, thresh);  // codespell:ignore
+}
+
+/**
+ * @brief Enable or disable the channel that will be scanned.
+ * @note  The shield channel should not be enabled to scan here
+ *
+ * @param chan_mask The channel mask to be enabled or disabled
+ * @param enable Enable or disable the channel mask
+ */
+__attribute__((always_inline))
+static inline void touch_ll_enable_scan_mask(uint16_t chan_mask, bool enable)
+{
+    // Channel shift workaround: the lowest bit takes no effect
+    uint16_t mask = (chan_mask << 1) & TOUCH_PAD_BIT_MASK_ALL;
+    uint16_t prev_mask = LP_ANA_PERI.touch_scan_ctrl1.touch_scan_pad_map;
+    if (enable) {
+        LP_ANA_PERI.touch_scan_ctrl1.touch_scan_pad_map = prev_mask | mask;
+    } else {
+        LP_ANA_PERI.touch_scan_ctrl1.touch_scan_pad_map = prev_mask & (~mask);
+    }
 }
 
 /**
@@ -278,7 +328,8 @@ static inline void touch_ll_set_chan_active_threshold(uint32_t touch_num, uint8_
  */
 static inline void touch_ll_set_channel_mask(uint16_t enable_mask)
 {
-    uint16_t mask = enable_mask & TOUCH_PAD_BIT_MASK_ALL;
+    // Channel shift workaround: the lowest bit takes no effect
+    uint16_t mask = (enable_mask << 1) & TOUCH_PAD_BIT_MASK_ALL;
     LP_ANA_PERI.touch_scan_ctrl1.touch_scan_pad_map = mask;
     LP_ANA_PERI.touch_filter2.touch_outen = mask;
 }
@@ -288,10 +339,12 @@ static inline void touch_ll_set_channel_mask(uint16_t enable_mask)
  *
  * @param chan_mask The channel mask that needs to power on
  */
-static inline void touch_ll_channel_power_on(uint16_t chan_mask)
+__attribute__((always_inline))
+static inline void touch_ll_channel_sw_measure_mask(uint16_t chan_mask)
 {
-    uint32_t curr_mask = LP_ANA_PERI.touch_mux1.touch_xpd;
-    LP_ANA_PERI.touch_mux1.touch_xpd = chan_mask | curr_mask;
+    // Channel shift workaround
+    LP_ANA_PERI.touch_mux1.touch_xpd = chan_mask << 1;
+    LP_ANA_PERI.touch_mux1.touch_start = chan_mask << 1;
 }
 
 /**
@@ -302,20 +355,8 @@ static inline void touch_ll_channel_power_on(uint16_t chan_mask)
 static inline void touch_ll_channel_power_off(uint16_t chan_mask)
 {
     uint32_t curr_mask = LP_ANA_PERI.touch_mux1.touch_xpd;
-    LP_ANA_PERI.touch_mux1.touch_xpd = (~chan_mask) & curr_mask;
-}
-
-/**
- * @brief Start channel by mask
- * @note  Only start the specified channels
- *
- * @param chan_mask The channel mask that needs to start
- */
-static inline void touch_ll_channel_start(uint16_t chan_mask)
-{
-    uint32_t curr_mask = LP_ANA_PERI.touch_mux1.touch_start;
-    LP_ANA_PERI.touch_mux1.touch_start = chan_mask | curr_mask;
-    LP_ANA_PERI.touch_mux1.touch_start = (~chan_mask) & curr_mask;
+    // Channel shift workaround
+    LP_ANA_PERI.touch_mux1.touch_xpd = (~(chan_mask << 1)) & curr_mask;
 }
 
 /**
@@ -323,9 +364,11 @@ static inline void touch_ll_channel_start(uint16_t chan_mask)
  *
  * @param active_mask The touch channel status. e.g. Touch1 trigger status is `status_mask & (BIT1)`.
  */
+__attribute__((always_inline))
 static inline void touch_ll_get_active_channel_mask(uint32_t *active_mask)
 {
-    *active_mask = LP_TOUCH.chn_status.pad_active;
+    // Channel shift workaround
+    *active_mask = (LP_TOUCH.chn_status.pad_active >> 1);
 }
 
 /**
@@ -342,22 +385,23 @@ static inline void touch_ll_clear_active_channel_status(void)
  * Get the data of the touch channel according to the types
  *
  * @param touch_num touch pad index
- * @param sampler_id The sampler index
+ * @param sample_cfg_id The sample configuration index
  * @param type  data type
- *              0/1: TOUCH_LL_READ_RAW, the raw data of the touch channel
+ *              0/1: not work
  *              2:   TOUCH_LL_READ_BENCHMARK, benchmark value of touch channel,
  *                   the benchmark value is the maximum during the first measurement period
  *              3:   TOUCH_LL_READ_SMOOTH, the smoothed data that obtained by filtering the raw data.
  * @param data pointer to the data
  */
 __attribute__((always_inline))
-static inline void touch_ll_read_chan_data(uint32_t touch_num, uint8_t sampler_id, uint8_t type, uint32_t *data)
+static inline void touch_ll_read_chan_data(uint32_t touch_num, uint8_t sample_cfg_id, uint8_t type, uint32_t *data)
 {
-    HAL_ASSERT(sampler_id < SOC_TOUCH_SAMPLER_NUM);
-    HAL_ASSERT(type <= TOUCH_LL_READ_SMOOTH);
-    LP_ANA_PERI.touch_mux0.touch_freq_sel = sampler_id + 1;
+    HAL_ASSERT(sample_cfg_id < SOC_TOUCH_SAMPLE_CFG_NUM);
+    HAL_ASSERT(type == TOUCH_LL_READ_BENCHMARK || type == TOUCH_LL_READ_SMOOTH);
+    LP_ANA_PERI.touch_mux0.touch_freq_sel = sample_cfg_id;
     LP_ANA_PERI.touch_mux0.touch_data_sel = type;
-    *data = LP_TOUCH.chn_data[touch_num - 1].pad_data;
+    // Channel shift workaround
+    *data = LP_TOUCH.chn_data[touch_num + 1].pad_data;
 }
 
 /**
@@ -366,12 +410,17 @@ static inline void touch_ll_read_chan_data(uint32_t touch_num, uint8_t sampler_i
  * @return
  *      - If touch sensors measure done.
  */
-static inline bool touch_ll_is_measure_done(uint32_t *touch_num)
+__attribute__((always_inline))
+static inline bool touch_ll_is_measure_done(void)
 {
-    *touch_num = (uint32_t)(LP_TOUCH.chn_status.scan_curr);
     return (bool)LP_TOUCH.chn_status.meas_done;
 }
 
+static inline uint32_t touch_ll_get_current_measure_channel(void)
+{
+    // Channel shift workaround
+    return (uint32_t)(LP_TOUCH.chn_status.scan_curr - 1);
+}
 /**
  * Select the counting mode of the binarized touch out wave
  *
@@ -385,25 +434,35 @@ static inline void touch_ll_set_out_mode(touch_out_mode_t mode)
 }
 
 /**
+ * @brief Enable/disable the touch sensor output gate
+ *
+ * @param enable set true to enable the output gate, false to disable it
+ */
+static inline void touch_ll_enable_out_gate(bool enable)
+{
+    LP_ANA_PERI.touch_work.touch_out_gate = enable;
+}
+
+/**
  * @brief Set the clock division of the sampling frequency
  *
- * @param sampler_id The sampler index
+ * @param sample_cfg_id The sample configuration index
  * @param div_num   Division number
  */
-static inline void touch_ll_set_clock_div(uint8_t sampler_id, uint32_t div_num)
+static inline void touch_ll_set_clock_div(uint8_t sample_cfg_id, uint32_t div_num)
 {
-    switch (sampler_id) {
+    switch (sample_cfg_id) {
         case 0:
-            LP_ANA_PERI.touch_work.div_num0 = div_num;
+            LP_ANA_PERI.touch_work.div_num0 = div_num - 1;
             break;
         case 1:
-            LP_ANA_PERI.touch_work.div_num1 = div_num;
+            LP_ANA_PERI.touch_work.div_num1 = div_num - 1;
             break;
         case 2:
-            LP_ANA_PERI.touch_work.div_num2 = div_num;
+            LP_ANA_PERI.touch_work.div_num2 = div_num - 1;
             break;
         default:
-            // invalid sampler_id
+            // invalid sample_cfg_id
             abort();
     }
 }
@@ -434,7 +493,8 @@ static inline void touch_ll_set_idle_channel_connect(touch_pad_conn_type_t type)
 __attribute__((always_inline))
 static inline uint32_t touch_ll_get_current_meas_channel(void)
 {
-    return (uint32_t)(LP_TOUCH.chn_status.scan_curr);
+    // Channel shift workaround
+    return (uint32_t)(LP_TOUCH.chn_status.scan_curr - 1);
 }
 
 /**
@@ -466,9 +526,10 @@ static inline void touch_ll_intr_disable(uint32_t int_mask)
  *
  * @param int_mask Pad mask to clear interrupts
  */
-static inline void touch_ll_intr_clear_all(void)
+__attribute__((always_inline))
+static inline void touch_ll_intr_clear(touch_pad_intr_mask_t int_mask)
 {
-    LP_TOUCH.int_clr.val = TOUCH_LL_INTR_MASK_ALL;
+    LP_TOUCH.int_clr.val = int_mask;
 }
 
 /**
@@ -476,6 +537,7 @@ static inline void touch_ll_intr_clear_all(void)
  *
  * @return type interrupt type
  */
+__attribute__((always_inline))
 static inline uint32_t touch_ll_get_intr_status_mask(void)
 {
     uint32_t intr_st = LP_TOUCH.int_st.val;
@@ -508,56 +570,68 @@ static inline void touch_ll_timeout_disable(void)
 }
 
 /**
- * Set the engaged sampler number
+ * Set the engaged sample configuration number
  *
- * @param sampler_num The enabled sampler number, range 0~3.
- *                    0/1 means only one sampler enabled, which can not support frequency hopping
+ * @param sample_cfg_num The enabled sample configuration number, range 0~3.
+ *                    0/1 means only one sample configuration enabled, which can not support frequency hopping
  */
-static inline void touch_ll_sampler_set_engaged_num(uint8_t sampler_num)
+static inline void touch_ll_sample_cfg_set_engaged_num(uint8_t sample_cfg_num)
 {
-    HAL_ASSERT(sampler_num < SOC_TOUCH_SAMPLER_NUM);
-    LP_ANA_PERI.touch_scan_ctrl2.freq_scan_en = !!sampler_num;
-    LP_ANA_PERI.touch_scan_ctrl2.freq_scan_cnt_limit = sampler_num ? sampler_num : 1;
+    HAL_ASSERT(sample_cfg_num <= SOC_TOUCH_SAMPLE_CFG_NUM);
+    LP_ANA_PERI.touch_scan_ctrl2.freq_scan_en = !!sample_cfg_num;
+    LP_ANA_PERI.touch_scan_ctrl2.freq_scan_cnt_limit = sample_cfg_num ? sample_cfg_num : 1;
 }
 
 /**
  * Set capacitance and resistance of the RC filter of the sampling frequency.
  *
- * @param sampler_id The sampler index
+ * @param sample_cfg_id The sample configuration index
  * @param cap       Capacitance of the RC filter.
  * @param res       Resistance of the RC filter.
  */
-static inline void touch_ll_sampler_set_rc_filter(uint8_t sampler_id, uint32_t cap, uint32_t res)
+static inline void touch_ll_sample_cfg_set_rc_filter(uint8_t sample_cfg_id, uint32_t cap, uint32_t res)
 {
-    HAL_ASSERT(sampler_id < SOC_TOUCH_SAMPLER_NUM);
-    LP_ANA_PERI.touch_freq_scan_para[sampler_id].touch_freq_dcap_lpf = cap;
-    LP_ANA_PERI.touch_freq_scan_para[sampler_id].touch_freq_dres_lpf = res;
+    HAL_ASSERT(sample_cfg_id < SOC_TOUCH_SAMPLE_CFG_NUM);
+    LP_ANA_PERI.touch_freq_scan_para[sample_cfg_id].touch_freq_dcap_lpf = cap;
+    LP_ANA_PERI.touch_freq_scan_para[sample_cfg_id].touch_freq_dres_lpf = res;
 }
 
 /**
  * @brief Set the driver of the sampling frequency
  *
- * @param sampler_id The sampler index
+ * @param sample_cfg_id The sample configuration index
  * @param ls_drv    Low speed touch driver
  * @param hs_drv    High speed touch driver
  */
-static inline void touch_ll_sampler_set_driver(uint8_t sampler_id, uint32_t ls_drv, uint32_t hs_drv)
+static inline void touch_ll_sample_cfg_set_driver(uint8_t sample_cfg_id, uint32_t ls_drv, uint32_t hs_drv)
 {
-    HAL_ASSERT(sampler_id < SOC_TOUCH_SAMPLER_NUM);
-    LP_ANA_PERI.touch_freq_scan_para[sampler_id].touch_freq_drv_ls = ls_drv;
-    LP_ANA_PERI.touch_freq_scan_para[sampler_id].touch_freq_drv_hs = hs_drv;
+    HAL_ASSERT(sample_cfg_id < SOC_TOUCH_SAMPLE_CFG_NUM);
+    LP_ANA_PERI.touch_freq_scan_para[sample_cfg_id].touch_freq_drv_ls = ls_drv;
+    LP_ANA_PERI.touch_freq_scan_para[sample_cfg_id].touch_freq_drv_hs = hs_drv;
+}
+
+/**
+ * Bypass the shield channel output for the specify sample configuration
+ *
+ * @param sample_cfg_id The sample configuration index
+ * @param enable Set true to bypass the shield channel output for the current channel
+ */
+static inline void touch_ll_sample_cfg_bypass_shield_output(uint8_t sample_cfg_id, bool enable)
+{
+    HAL_ASSERT(sample_cfg_id < SOC_TOUCH_SAMPLE_CFG_NUM);
+    LP_ANA_PERI.touch_freq_scan_para[sample_cfg_id].touch_bypass_shield = enable;
 }
 
 /**
  * Set the touch internal LDO bias voltage of the sampling frequency
  *
- * @param sampler_id The sampler index
+ * @param sample_cfg_id The sample configuration index
  * @param bias_volt LDO bias voltage
  */
-static inline void touch_ll_sampler_set_bias_voltage(uint8_t sampler_id, uint32_t bias_volt)
+static inline void touch_ll_sample_cfg_set_bias_voltage(uint8_t sample_cfg_id, uint32_t bias_volt)
 {
-    HAL_ASSERT(sampler_id < SOC_TOUCH_SAMPLER_NUM);
-    LP_ANA_PERI.touch_freq_scan_para[sampler_id].touch_freq_dbias = bias_volt;
+    HAL_ASSERT(sample_cfg_id < SOC_TOUCH_SAMPLE_CFG_NUM);
+    LP_ANA_PERI.touch_freq_scan_para[sample_cfg_id].touch_freq_dbias = bias_volt;
 }
 
 /**
@@ -581,6 +655,7 @@ static inline void touch_ll_set_internal_loop_capacitance(int cap)
  * @note If call this API, make sure enable clock gate(`touch_ll_clkgate`) first.
  * @param chan_mask touch channel mask
  */
+__attribute__((always_inline))
 static inline void touch_ll_reset_chan_benchmark(uint32_t chan_mask)
 {
     LP_ANA_PERI.touch_clr.touch_channel_clr = chan_mask;
@@ -711,7 +786,8 @@ static inline void touch_ll_force_update_benchmark(uint32_t benchmark)
  */
 static inline void touch_ll_waterproof_set_guard_chan(uint32_t pad_num)
 {
-    LP_ANA_PERI.touch_scan_ctrl2.touch_out_ring = pad_num;
+    // Channel shift workaround
+    LP_ANA_PERI.touch_scan_ctrl2.touch_out_ring = pad_num == TOUCH_LL_NULL_CHANNEL ? TOUCH_LL_NULL_CHANNEL : pad_num + 1;
 }
 
 /**
@@ -734,7 +810,8 @@ static inline void touch_ll_waterproof_enable(bool enable)
  */
 static inline void touch_ll_waterproof_set_shield_chan_mask(uint32_t mask)
 {
-    LP_ANA_PERI.touch_mux0.touch_bufsel = (mask & TOUCH_LL_FULL_CHANNEL_MASK);
+    // Channel shift workaround
+    LP_ANA_PERI.touch_mux0.touch_bufsel = mask << 1;
 }
 
 /**
@@ -750,63 +827,76 @@ static inline void touch_ll_waterproof_set_shield_driver(touch_pad_shield_driver
 /************************ Approach register setting ************************/
 
 /**
- * Set the approach channel to the specific touch channel
- * To disable the approach channel, point this pad to `TOUCH_LL_NULL_CHANNEL`
+ * Set the proximity sensing channel to the specific touch channel
+ * To disable the proximity channel, point this pad to `TOUCH_LL_NULL_CHANNEL`
  *
- * @param aprch_chan approach channel.
- * @param touch_num  The touch channel that supposed to be used as approach channel
+ * @param prox_chan  proximity sensing channel.
+ * @param touch_num  The touch channel that supposed to be used as proximity sensing channel
  */
-static inline void touch_ll_set_approach_channel(uint8_t aprch_chan, uint32_t touch_num)
+static inline void touch_ll_set_proximity_sensing_channel(uint8_t prox_chan, uint32_t touch_num)
 {
-    switch (aprch_chan) {
+    switch (prox_chan) {
         case 0:
-            LP_ANA_PERI.touch_approach.touch_approach_pad0 = touch_num;
+            // Channel shift workaround
+            LP_ANA_PERI.touch_approach.touch_approach_pad0 = touch_num + 1;
             break;
         case 1:
-            LP_ANA_PERI.touch_approach.touch_approach_pad1 = touch_num;
+            // Channel shift workaround
+            LP_ANA_PERI.touch_approach.touch_approach_pad1 = touch_num + 1;
             break;
         case 2:
-            LP_ANA_PERI.touch_approach.touch_approach_pad2 = touch_num;
+            // Channel shift workaround
+            LP_ANA_PERI.touch_approach.touch_approach_pad2 = touch_num + 1;
             break;
         default:
-            // invalid approach channel
+            // invalid proximity channel
             abort();
     }
 }
 
 /**
- * Set cumulative measurement times for approach channel.
+ * Set the total scan times of the proximity sensing channel.
  *
- * @param sampler_id The sampler index
- * @param times The cumulative number of measurement cycles.
+ * @param scan_times The total scan times of the proximity sensing channel
  */
-static inline void touch_ll_approach_set_measure_times(uint8_t sampler_id, uint32_t times)
+static inline void touch_ll_proximity_set_total_scan_times(uint32_t scan_times)
 {
-    switch (sampler_id) {
+    LP_ANA_PERI.touch_filter1.touch_approach_limit = scan_times;
+}
+
+/**
+ * Set charge times for each sample configuration in proximity sensing mode.
+ *
+ * @param sample_cfg_id The sample configuration index
+ * @param charge_times The charge and discharge times.
+ */
+static inline void touch_ll_proximity_set_charge_times(uint8_t sample_cfg_id, uint32_t charge_times)
+{
+    switch (sample_cfg_id) {
         case 0:
-            LP_ANA_PERI.touch_approach_work_meas_num.touch_approach_meas_num0 = times;
+            LP_ANA_PERI.touch_approach_work_meas_num.touch_approach_meas_num0 = charge_times;
             break;
         case 1:
-            LP_ANA_PERI.touch_approach_work_meas_num.touch_approach_meas_num1 = times;
+            LP_ANA_PERI.touch_approach_work_meas_num.touch_approach_meas_num1 = charge_times;
             break;
         case 2:
-            LP_ANA_PERI.touch_approach_work_meas_num.touch_approach_meas_num2 = times;
+            LP_ANA_PERI.touch_approach_work_meas_num.touch_approach_meas_num2 = charge_times;
             break;
         default:
-            // invalid sampler_id
+            // invalid sample_cfg_id
             abort();
     }
 }
 
 /**
- * Read current cumulative measurement times for approach channel.
+ * Read current cumulative measurement times for proximity sensing channel.
  *
- * @param aprch_chan approach channel.
+ * @param prox_chan proximity sensing channel.
  * @param cnt The cumulative number of measurement cycles.
  */
-static inline void touch_ll_approach_read_measure_cnt(uint8_t aprch_chan, uint32_t *cnt)
+static inline void touch_ll_proximity_read_measure_cnt(uint8_t prox_chan, uint32_t *cnt)
 {
-    switch (aprch_chan) {
+    switch (prox_chan) {
         case 0:
             *cnt = HAL_FORCE_READ_U32_REG_FIELD(LP_TOUCH.aprch_ch_data, approach_pad0_cnt);
             break;
@@ -823,19 +913,18 @@ static inline void touch_ll_approach_read_measure_cnt(uint8_t aprch_chan, uint32
 }
 
 /**
- * Check if the touch sensor channel is the approach channel.
+ * Check if the touch sensor channel is the proximity sensing channel.
  *
  * @param touch_num The touch sensor channel number.
  */
-static inline bool touch_ll_is_approach_channel(uint32_t touch_num)
+static inline bool touch_ll_is_proximity_sensing_channel(uint32_t touch_num)
 {
     if ((LP_ANA_PERI.touch_approach.touch_approach_pad0 != touch_num)
         && (LP_ANA_PERI.touch_approach.touch_approach_pad1 != touch_num)
         && (LP_ANA_PERI.touch_approach.touch_approach_pad2 != touch_num)) {
         return false;
-    } else {
-        return true;
     }
+    return true;
 }
 
 /************** sleep channel setting ***********************/
@@ -848,7 +937,8 @@ static inline bool touch_ll_is_approach_channel(uint32_t touch_num)
  */
 static inline void touch_ll_sleep_set_channel_num(uint32_t touch_num)
 {
-    LP_ANA_PERI.touch_slp0.touch_slp_pad = touch_num;
+    // Channel shift workaround
+    LP_ANA_PERI.touch_slp0.touch_slp_pad = touch_num + 1;
 }
 
 /**
@@ -869,9 +959,9 @@ static inline void touch_ll_sleep_get_channel_num(uint32_t *touch_num)
  *
  * @note In general, the touch threshold during sleep can use the threshold parameter parameters before sleep.
  */
-static inline void touch_ll_sleep_set_threshold(uint8_t sampler_id, uint32_t touch_thresh)
+static inline void touch_ll_sleep_set_threshold(uint8_t sample_cfg_id, uint32_t touch_thresh)
 {
-    switch (sampler_id) {
+    switch (sample_cfg_id) {
         case 0:
             HAL_FORCE_MODIFY_U32_REG_FIELD(LP_ANA_PERI.touch_slp0, touch_slp_th0, touch_thresh);
             break;
@@ -882,15 +972,15 @@ static inline void touch_ll_sleep_set_threshold(uint8_t sampler_id, uint32_t tou
             HAL_FORCE_MODIFY_U32_REG_FIELD(LP_ANA_PERI.touch_slp1, touch_slp_th2, touch_thresh);
             break;
         default:
-            // invalid sampler_id
+            // invalid sample_cfg_id
             abort();
     }
 }
 
 /**
- * Enable approach function for sleep channel.
+ * Enable proximity sensing function for sleep channel.
  */
-static inline void touch_ll_sleep_enable_approach(bool enable)
+static inline void touch_ll_sleep_enable_proximity_sensing(bool enable)
 {
     LP_ANA_PERI.touch_approach.touch_slp_approach_en = enable;
 }
@@ -898,7 +988,7 @@ static inline void touch_ll_sleep_enable_approach(bool enable)
 /**
  * Get the data of the touch channel according to the types
  *
- * @param sampler_id The sampler index
+ * @param sample_cfg_id The sample configuration index
  * @param type  data type
  *              0/1: TOUCH_LL_READ_RAW, the raw data of the touch channel
  *              2:   TOUCH_LL_READ_BENCHMARK, benchmark value of touch channel,
@@ -907,10 +997,10 @@ static inline void touch_ll_sleep_enable_approach(bool enable)
  * @param smooth_data pointer to smoothed data
  */
 __attribute__((always_inline))
-static inline void touch_ll_sleep_read_chan_data(uint8_t type, uint8_t sampler_id, uint32_t *data)
+static inline void touch_ll_sleep_read_chan_data(uint8_t type, uint8_t sample_cfg_id, uint32_t *data)
 {
     HAL_ASSERT(type <= TOUCH_LL_READ_SMOOTH);
-    LP_ANA_PERI.touch_mux0.touch_freq_sel = sampler_id + 1;
+    LP_ANA_PERI.touch_mux0.touch_freq_sel = sample_cfg_id + 1;
     LP_ANA_PERI.touch_mux0.touch_data_sel = type;
     *data = HAL_FORCE_READ_U32_REG_FIELD(LP_TOUCH.slp_ch_data, slp_data);
 }
@@ -935,12 +1025,33 @@ static inline void touch_ll_sleep_read_debounce(uint32_t *debounce)
 }
 
 /**
- * Read approach count of touch sensor for sleep channel.
- * @param approach_cnt Pointer to accept touch sensor approach count value.
+ * Read proximity count of touch sensor for sleep channel.
+ * @param prox_cnt Pointer to accept touch sensor proximity count value.
  */
-static inline void touch_ll_sleep_read_approach_cnt(uint32_t *approach_cnt)
+static inline void touch_ll_sleep_read_proximity_cnt(uint32_t *prox_cnt)
 {
-    *approach_cnt = HAL_FORCE_READ_U32_REG_FIELD(LP_TOUCH.aprch_ch_data, slp_approach_cnt);
+    *prox_cnt = HAL_FORCE_READ_U32_REG_FIELD(LP_TOUCH.aprch_ch_data, slp_approach_cnt);
+}
+
+/**
+ * @brief Enable or disable the internal capacitor, mainly for debug
+ *
+ * @param enable enable or disable the internal capacitor
+ */
+static inline void touch_ll_enable_internal_capacitor(bool enable)
+{
+    LP_ANA_PERI.touch_ana_para.touch_touch_en_cal = enable;
+}
+
+/**
+ * @brief Set the internal capacitor, mainly for debug
+ * @note  Only take effect when the internal capacitor is enabled
+ *
+ * @param cap the capacitor value
+ */
+static inline void touch_ll_set_internal_capacitor(uint32_t cap)
+{
+    LP_ANA_PERI.touch_ana_para.touch_touch_dcap_cal = cap;
 }
 
 #ifdef __cplusplus

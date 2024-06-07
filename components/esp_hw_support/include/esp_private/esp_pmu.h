@@ -90,6 +90,12 @@ typedef enum {
 #define RTC_BT_TRIG_EN              0
 #endif
 
+#if SOC_TOUCH_SENSOR_SUPPORTED
+#define RTC_TOUCH_TRIG_EN           PMU_TOUCH_WAKEUP_EN     //!< TOUCH wakeup
+#else
+#define RTC_TOUCH_TRIG_EN           0
+#endif
+
 #define RTC_USB_TRIG_EN             PMU_USB_WAKEUP_EN
 
 #if SOC_LP_CORE_SUPPORTED

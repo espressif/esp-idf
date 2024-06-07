@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -14,7 +14,7 @@ extern "C" {
 /** RTC_TOUCH_INT_RAW_REG register
  *  need_des
  */
-#define RTC_TOUCH_INT_RAW_REG (DR_REG_RTC_TOUCH_BASE + 0x0)
+#define RTC_TOUCH_INT_RAW_REG (DR_REG_LP_TOUCH_BASE + 0x0)
 /** RTC_TOUCH_SCAN_DONE_INT_RAW : R/WTC/SS; bitpos: [0]; default: 0;
  *  need_des
  */
@@ -61,7 +61,7 @@ extern "C" {
 /** RTC_TOUCH_INT_ST_REG register
  *  need_des
  */
-#define RTC_TOUCH_INT_ST_REG (DR_REG_RTC_TOUCH_BASE + 0x4)
+#define RTC_TOUCH_INT_ST_REG (DR_REG_LP_TOUCH_BASE + 0x4)
 /** RTC_TOUCH_SCAN_DONE_INT_ST : RO; bitpos: [0]; default: 0;
  *  need_des
  */
@@ -108,7 +108,7 @@ extern "C" {
 /** RTC_TOUCH_INT_ENA_REG register
  *  need_des
  */
-#define RTC_TOUCH_INT_ENA_REG (DR_REG_RTC_TOUCH_BASE + 0x8)
+#define RTC_TOUCH_INT_ENA_REG (DR_REG_LP_TOUCH_BASE + 0x8)
 /** RTC_TOUCH_SCAN_DONE_INT_ENA : R/W; bitpos: [0]; default: 0;
  *  need_des
  */
@@ -155,7 +155,7 @@ extern "C" {
 /** RTC_TOUCH_INT_CLR_REG register
  *  need_des
  */
-#define RTC_TOUCH_INT_CLR_REG (DR_REG_RTC_TOUCH_BASE + 0xc)
+#define RTC_TOUCH_INT_CLR_REG (DR_REG_LP_TOUCH_BASE + 0xc)
 /** RTC_TOUCH_SCAN_DONE_INT_CLR : WT; bitpos: [0]; default: 0;
  *  need_des
  */
@@ -202,7 +202,7 @@ extern "C" {
 /** RTC_TOUCH_CHN_STATUS_REG register
  *  need_des
  */
-#define RTC_TOUCH_CHN_STATUS_REG (DR_REG_RTC_TOUCH_BASE + 0x10)
+#define RTC_TOUCH_CHN_STATUS_REG (DR_REG_LP_TOUCH_BASE + 0x10)
 /** RTC_TOUCH_PAD_ACTIVE : RO; bitpos: [14:0]; default: 0;
  *  need_des
  */
@@ -228,7 +228,7 @@ extern "C" {
 /** RTC_TOUCH_STATUS_0_REG register
  *  need_des
  */
-#define RTC_TOUCH_STATUS_0_REG (DR_REG_RTC_TOUCH_BASE + 0x14)
+#define RTC_TOUCH_STATUS_0_REG (DR_REG_LP_TOUCH_BASE + 0x14)
 /** RTC_TOUCH_PAD0_DATA : RO; bitpos: [15:0]; default: 0;
  *  need_des
  */
@@ -254,7 +254,7 @@ extern "C" {
 /** RTC_TOUCH_STATUS_1_REG register
  *  need_des
  */
-#define RTC_TOUCH_STATUS_1_REG (DR_REG_RTC_TOUCH_BASE + 0x18)
+#define RTC_TOUCH_STATUS_1_REG (DR_REG_LP_TOUCH_BASE + 0x18)
 /** RTC_TOUCH_PAD1_DATA : RO; bitpos: [15:0]; default: 0;
  *  need_des
  */
@@ -280,7 +280,7 @@ extern "C" {
 /** RTC_TOUCH_STATUS_2_REG register
  *  need_des
  */
-#define RTC_TOUCH_STATUS_2_REG (DR_REG_RTC_TOUCH_BASE + 0x1c)
+#define RTC_TOUCH_STATUS_2_REG (DR_REG_LP_TOUCH_BASE + 0x1c)
 /** RTC_TOUCH_PAD2_DATA : RO; bitpos: [15:0]; default: 0;
  *  need_des
  */
@@ -306,7 +306,7 @@ extern "C" {
 /** RTC_TOUCH_STATUS_3_REG register
  *  need_des
  */
-#define RTC_TOUCH_STATUS_3_REG (DR_REG_RTC_TOUCH_BASE + 0x20)
+#define RTC_TOUCH_STATUS_3_REG (DR_REG_LP_TOUCH_BASE + 0x20)
 /** RTC_TOUCH_PAD3_DATA : RO; bitpos: [15:0]; default: 0;
  *  need_des
  */
@@ -332,7 +332,7 @@ extern "C" {
 /** RTC_TOUCH_STATUS_4_REG register
  *  need_des
  */
-#define RTC_TOUCH_STATUS_4_REG (DR_REG_RTC_TOUCH_BASE + 0x24)
+#define RTC_TOUCH_STATUS_4_REG (DR_REG_LP_TOUCH_BASE + 0x24)
 /** RTC_TOUCH_PAD4_DATA : RO; bitpos: [15:0]; default: 0;
  *  need_des
  */
@@ -358,7 +358,7 @@ extern "C" {
 /** RTC_TOUCH_STATUS_5_REG register
  *  need_des
  */
-#define RTC_TOUCH_STATUS_5_REG (DR_REG_RTC_TOUCH_BASE + 0x28)
+#define RTC_TOUCH_STATUS_5_REG (DR_REG_LP_TOUCH_BASE + 0x28)
 /** RTC_TOUCH_PAD5_DATA : RO; bitpos: [15:0]; default: 0;
  *  need_des
  */
@@ -384,7 +384,7 @@ extern "C" {
 /** RTC_TOUCH_STATUS_6_REG register
  *  need_des
  */
-#define RTC_TOUCH_STATUS_6_REG (DR_REG_RTC_TOUCH_BASE + 0x2c)
+#define RTC_TOUCH_STATUS_6_REG (DR_REG_LP_TOUCH_BASE + 0x2c)
 /** RTC_TOUCH_PAD6_DATA : RO; bitpos: [15:0]; default: 0;
  *  need_des
  */
@@ -410,7 +410,7 @@ extern "C" {
 /** RTC_TOUCH_STATUS_7_REG register
  *  need_des
  */
-#define RTC_TOUCH_STATUS_7_REG (DR_REG_RTC_TOUCH_BASE + 0x30)
+#define RTC_TOUCH_STATUS_7_REG (DR_REG_LP_TOUCH_BASE + 0x30)
 /** RTC_TOUCH_PAD7_DATA : RO; bitpos: [15:0]; default: 0;
  *  need_des
  */
@@ -436,7 +436,7 @@ extern "C" {
 /** RTC_TOUCH_STATUS_8_REG register
  *  need_des
  */
-#define RTC_TOUCH_STATUS_8_REG (DR_REG_RTC_TOUCH_BASE + 0x34)
+#define RTC_TOUCH_STATUS_8_REG (DR_REG_LP_TOUCH_BASE + 0x34)
 /** RTC_TOUCH_PAD8_DATA : RO; bitpos: [15:0]; default: 0;
  *  need_des
  */
@@ -462,7 +462,7 @@ extern "C" {
 /** RTC_TOUCH_STATUS_9_REG register
  *  need_des
  */
-#define RTC_TOUCH_STATUS_9_REG (DR_REG_RTC_TOUCH_BASE + 0x38)
+#define RTC_TOUCH_STATUS_9_REG (DR_REG_LP_TOUCH_BASE + 0x38)
 /** RTC_TOUCH_PAD9_DATA : RO; bitpos: [15:0]; default: 0;
  *  need_des
  */
@@ -488,7 +488,7 @@ extern "C" {
 /** RTC_TOUCH_STATUS_10_REG register
  *  need_des
  */
-#define RTC_TOUCH_STATUS_10_REG (DR_REG_RTC_TOUCH_BASE + 0x3c)
+#define RTC_TOUCH_STATUS_10_REG (DR_REG_LP_TOUCH_BASE + 0x3c)
 /** RTC_TOUCH_PAD10_DATA : RO; bitpos: [15:0]; default: 0;
  *  need_des
  */
@@ -514,7 +514,7 @@ extern "C" {
 /** RTC_TOUCH_STATUS_11_REG register
  *  need_des
  */
-#define RTC_TOUCH_STATUS_11_REG (DR_REG_RTC_TOUCH_BASE + 0x40)
+#define RTC_TOUCH_STATUS_11_REG (DR_REG_LP_TOUCH_BASE + 0x40)
 /** RTC_TOUCH_PAD11_DATA : RO; bitpos: [15:0]; default: 0;
  *  need_des
  */
@@ -540,7 +540,7 @@ extern "C" {
 /** RTC_TOUCH_STATUS_12_REG register
  *  need_des
  */
-#define RTC_TOUCH_STATUS_12_REG (DR_REG_RTC_TOUCH_BASE + 0x44)
+#define RTC_TOUCH_STATUS_12_REG (DR_REG_LP_TOUCH_BASE + 0x44)
 /** RTC_TOUCH_PAD12_DATA : RO; bitpos: [15:0]; default: 0;
  *  need_des
  */
@@ -566,7 +566,7 @@ extern "C" {
 /** RTC_TOUCH_STATUS_13_REG register
  *  need_des
  */
-#define RTC_TOUCH_STATUS_13_REG (DR_REG_RTC_TOUCH_BASE + 0x48)
+#define RTC_TOUCH_STATUS_13_REG (DR_REG_LP_TOUCH_BASE + 0x48)
 /** RTC_TOUCH_PAD13_DATA : RO; bitpos: [15:0]; default: 0;
  *  need_des
  */
@@ -592,7 +592,7 @@ extern "C" {
 /** RTC_TOUCH_STATUS_14_REG register
  *  need_des
  */
-#define RTC_TOUCH_STATUS_14_REG (DR_REG_RTC_TOUCH_BASE + 0x4c)
+#define RTC_TOUCH_STATUS_14_REG (DR_REG_LP_TOUCH_BASE + 0x4c)
 /** RTC_TOUCH_PAD14_DATA : RO; bitpos: [15:0]; default: 0;
  *  need_des
  */
@@ -618,7 +618,7 @@ extern "C" {
 /** RTC_TOUCH_STATUS_15_REG register
  *  need_des
  */
-#define RTC_TOUCH_STATUS_15_REG (DR_REG_RTC_TOUCH_BASE + 0x50)
+#define RTC_TOUCH_STATUS_15_REG (DR_REG_LP_TOUCH_BASE + 0x50)
 /** RTC_TOUCH_SLP_DATA : RO; bitpos: [15:0]; default: 0;
  *  need_des
  */
@@ -644,7 +644,7 @@ extern "C" {
 /** RTC_TOUCH_STATUS_16_REG register
  *  need_des
  */
-#define RTC_TOUCH_STATUS_16_REG (DR_REG_RTC_TOUCH_BASE + 0x54)
+#define RTC_TOUCH_STATUS_16_REG (DR_REG_LP_TOUCH_BASE + 0x54)
 /** RTC_TOUCH_APPROACH_PAD2_CNT : RO; bitpos: [7:0]; default: 0;
  *  need_des
  */
@@ -677,7 +677,7 @@ extern "C" {
 /** RTC_TOUCH_STATUS_17_REG register
  *  need_des
  */
-#define RTC_TOUCH_STATUS_17_REG (DR_REG_RTC_TOUCH_BASE + 0x58)
+#define RTC_TOUCH_STATUS_17_REG (DR_REG_LP_TOUCH_BASE + 0x58)
 /** RTC_TOUCH_DCAP_LPF : RO; bitpos: [6:0]; default: 0;
  *  Reserved
  */
@@ -724,7 +724,7 @@ extern "C" {
 /** RTC_TOUCH_CHN_TMP_STATUS_REG register
  *  need_des
  */
-#define RTC_TOUCH_CHN_TMP_STATUS_REG (DR_REG_RTC_TOUCH_BASE + 0x5c)
+#define RTC_TOUCH_CHN_TMP_STATUS_REG (DR_REG_LP_TOUCH_BASE + 0x5c)
 /** RTC_TOUCH_PAD_INACTIVE_STATUS : RO; bitpos: [14:0]; default: 0;
  *  need_des
  */
@@ -743,7 +743,7 @@ extern "C" {
 /** RTC_TOUCH_DATE_REG register
  *  need_des
  */
-#define RTC_TOUCH_DATE_REG (DR_REG_RTC_TOUCH_BASE + 0x100)
+#define RTC_TOUCH_DATE_REG (DR_REG_LP_TOUCH_BASE + 0x100)
 /** RTC_TOUCH_DATE : R/W; bitpos: [27:0]; default: 2294548;
  *  need_des
  */
