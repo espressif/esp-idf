@@ -419,10 +419,10 @@ esp_err_t touch_channel_read_data(touch_channel_handle_t chan_handle, touch_chan
     return touch_priv_channel_read_data(chan_handle, type, data);
 }
 
-esp_err_t touch_sensor_set_benchmark(touch_channel_handle_t chan_handle, const touch_chan_benchmark_op_t *benchmark_op)
+esp_err_t touch_channel_config_benchmark(touch_channel_handle_t chan_handle, const touch_chan_benchmark_config_t *benchmark_cfg)
 {
     TOUCH_NULL_POINTER_CHECK_ISR(chan_handle);
-    TOUCH_NULL_POINTER_CHECK_ISR(benchmark_op);
-    touch_priv_set_benchmark(chan_handle, benchmark_op);
+    TOUCH_NULL_POINTER_CHECK_ISR(benchmark_cfg);
+    touch_priv_config_benchmark(chan_handle, benchmark_cfg);
     return ESP_OK;
 }

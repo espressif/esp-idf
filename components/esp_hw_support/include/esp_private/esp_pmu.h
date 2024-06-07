@@ -119,6 +119,7 @@ typedef enum {
                                RTC_UART1_TRIG_EN        | \
                                RTC_BT_TRIG_EN           | \
                                RTC_LP_CORE_TRIG_EN      | \
+                               RTC_TOUCH_TRIG_EN        | \
                                RTC_XTAL32K_DEAD_TRIG_EN | \
                                RTC_USB_TRIG_EN          | \
                                RTC_BROWNOUT_DET_TRIG_EN)

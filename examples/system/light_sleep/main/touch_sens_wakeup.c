@@ -66,7 +66,7 @@ esp_err_t example_register_touch_wakeup(void)
 {
     touch_sensor_handle_t sens_handle = NULL;
     touch_sensor_sample_config_t sample_cfg[EXAMPLE_TOUCH_SAMPLE_CFG_NUM] = {
-        TOUCH_SENSOR_DEFAULT_SAMPLE_CONFIG0(),
+        TOUCH_SENSOR_V3_DEFAULT_SAMPLE_CONFIG(1, 1, 1),
     };
     touch_sensor_config_t sens_cfg = TOUCH_SENSOR_DEFAULT_BASIC_CONFIG(EXAMPLE_TOUCH_SAMPLE_CFG_NUM, sample_cfg);
     ESP_ERROR_CHECK(touch_sensor_new_controller(&sens_cfg, &sens_handle));

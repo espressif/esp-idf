@@ -7,7 +7,7 @@
 #pragma once
 
 #include "esp_err.h"
-#include "driver/touch_common_types.h"
+#include "driver/touch_sens_types.h"
 #include "driver/touch_version_types.h"
 
 #ifdef __cplusplus
@@ -179,7 +179,7 @@ esp_err_t touch_sensor_stop_continuous_scanning(touch_sensor_handle_t sens_handl
  *        And the touch sensor driver will be in SCANNING state after this function is called successfully,
  *        and then switch back to ENABLED state after the scanning is done or timeout.
  * @note  The block time of this function depends on various factors,
- *        In common practice, recommend to set the timeout to a second-level timeout or wait forever,
+ *        In common practice, recommend to set the timeout to several seconds or wait forever,
  *        because oneshot scanning can't last for so long.
  *
  * @param[in]  sens_handle      Touch sensor controller handle
@@ -208,17 +208,17 @@ esp_err_t touch_sensor_trigger_oneshot_scanning(touch_sensor_handle_t sens_handl
 esp_err_t touch_sensor_register_callbacks(touch_sensor_handle_t sens_handle, const touch_event_callbacks_t *callbacks, void *user_ctx);
 
 /**
- * @brief Set the touch sensor benchmark for all the registered channels
+ * @brief Confiture the touch sensor benchmark for all the registered channels
  * @note  This function can be called no matter the touch sensor controller is enabled or not (i.e. ENABLED or SCANNING state).
  *        And it can also be called in ISR/callback context.
  *
  * @param[in]  chan_handle      Touch channel handle
- * @param[in]  benchmark_op     The benchmark operations
+ * @param[in]  benchmark_cfg    The benchmark configurations
  * @return
  *      - ESP_OK                On success
  *      - ESP_ERR_INVALID_ARG   NULL pointer
  */
-esp_err_t touch_sensor_set_benchmark(touch_channel_handle_t chan_handle, const touch_chan_benchmark_op_t *benchmark_op);
+esp_err_t touch_channel_config_benchmark(touch_channel_handle_t chan_handle, const touch_chan_benchmark_config_t *benchmark_cfg);
 
 /**
  * @brief Read the touch channel data according to the types

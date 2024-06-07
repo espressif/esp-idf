@@ -15,7 +15,7 @@
 #include "freertos/semphr.h"
 #include "soc/soc_caps.h"
 #include "hal/touch_sensor_hal.h"
-#include "driver/touch_common_types.h"
+#include "driver/touch_sens_types.h"
 #include "esp_memory_utils.h"
 #include "esp_check.h"
 #include "sdkconfig.h"
@@ -31,7 +31,7 @@ extern "C" {
 #define TOUCH_IRAM_CHECK(cb)            (!(cb) || esp_ptr_in_iram(cb))
 
 /* IRAM safe caps */
-#if CONFIG_TOUCH_ISR_IRAM_SAFE
+#if CONFIG_TOUCH_ISR_IRAM_SAFE || CONFIG_TOUCH_CTRL_FUNC_IN_IRAM
 #define TOUCH_INTR_ALLOC_FLAGS    (ESP_INTR_FLAG_IRAM | ESP_INTR_FLAG_SHARED | ESP_INTR_FLAG_LOWMED)
 #define TOUCH_MEM_ALLOC_CAPS      (MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT)
 #else
@@ -82,6 +82,7 @@ struct touch_sensor_s {
     bool                    is_meas_timeout;            /*!< Flag to indicate whether the measurement timeout, will force to stop the current measurement if the timeout is triggered */
     bool                    sleep_en;                   /*!< Flag to indicate whether the sleep wake-up feature is enabled */
     bool                    waterproof_en;              /*!< Flag to indicate whether the water proof feature is enabled */
+    bool                    immersion_proof;            /*!< Flag to indicate whether to disable scanning when the guard ring is triggered */
     bool                    proximity_en;               /*!< Flag to indicate whether the proximity sensing feature is enabled */
     bool                    timeout_en;                 /*!< Flag to indicate whether the measurement timeout feature (hardware timeout) is enabled */
 };
@@ -182,9 +183,9 @@ esp_err_t touch_priv_channel_read_data(touch_channel_handle_t chan_handle, touch
  *        It should be implemented by each hardware version
  *
  * @param[in] chan_handle   The channel handle
- * @param[in] benchmark_op  The benchmark operation
+ * @param[in] benchmark_cfg  The benchmark operation
  */
-void touch_priv_set_benchmark(touch_channel_handle_t chan_handle, const touch_chan_benchmark_op_t *benchmark_op);
+void touch_priv_config_benchmark(touch_channel_handle_t chan_handle, const touch_chan_benchmark_config_t *benchmark_cfg);
 
 #ifdef __cplusplus
 }
