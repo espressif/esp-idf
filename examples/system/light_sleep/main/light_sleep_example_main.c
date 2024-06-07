@@ -50,7 +50,7 @@ static void light_sleep_task(void *args)
                  * Otherwise the chip may fall sleep again before running uart task */
                 vTaskDelay(1);
                 break;
-#if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
+#if EXAMPLE_TOUCH_LSLEEP_WAKEUP_SUPPORT
             case ESP_SLEEP_WAKEUP_TOUCHPAD:
                 wakeup_reason = "touch";
                 break;
@@ -83,7 +83,7 @@ void app_main(void)
     example_register_timer_wakeup();
     /* Enable wakeup from light sleep by uart */
     example_register_uart_wakeup();
-#if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
+#if EXAMPLE_TOUCH_LSLEEP_WAKEUP_SUPPORT
     /* Enable wakeup from light sleep by touch element */
     example_register_touch_wakeup();
 #endif
