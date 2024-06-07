@@ -1,5 +1,5 @@
-| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C6 | ESP32-H2 | ESP32-S2 | ESP32-S3 |
-| ----------------- | ----- | -------- | -------- | -------- | -------- | -------- | -------- |
+| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C5 | ESP32-C6 | ESP32-H2 | ESP32-P4 | ESP32-S2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- | -------- | -------- | -------- | -------- |
 
 
 # UDP Client example
@@ -91,7 +91,7 @@ Choose connection capabilities in `Example Connection Configuration` menu:
 * If you want to connect lwIP network interface to the host system networking, set `EXAMPLE_CONNECT_LWIP_TAPIF`.
     * Configure the interface address information (IP address, GW address and netmask).
     * Create a host network interface named `tap0` of *TAP* type. You can use the `./make_tap_netif` script located in the `tapif_io` component directory.
-    * Optionally set input or output packet loss rate to simulate loosing data of physical interfaces.
+    * Optionally set input or output packet loss rate to simulate losing data of physical interfaces.
     * Note about the host side networking:
     * This example uses static IP address configured in `tapif_io` component configuration.
     * Use the IP ranges that do not overlap with any other IP range of the host system.

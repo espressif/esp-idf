@@ -1,12 +1,13 @@
-# SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-
 import logging
 import socket
 
 import pytest
-from common_test_methods import (get_env_config_variable, get_host_ip4_by_dest_ip, get_host_ip6_by_dest_ip,
-                                 get_my_interface_by_dest_ip)
+from common_test_methods import get_env_config_variable
+from common_test_methods import get_host_ip4_by_dest_ip
+from common_test_methods import get_host_ip6_by_dest_ip
+from common_test_methods import get_my_interface_by_dest_ip
 from pytest_embedded import Dut
 
 try:
@@ -26,6 +27,7 @@ PORT = 3333
 @pytest.mark.esp32c2
 @pytest.mark.esp32c3
 @pytest.mark.esp32s3
+@pytest.mark.esp32c5
 @pytest.mark.esp32c6
 @pytest.mark.wifi_router
 def test_examples_tcp_client_ipv4(dut: Dut) -> None:

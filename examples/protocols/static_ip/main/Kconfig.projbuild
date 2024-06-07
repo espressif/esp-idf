@@ -1,22 +1,9 @@
 menu "Example Configuration"
-
-    config EXAMPLE_WIFI_SSID
-        string "WiFi SSID"
-        default "myssid"
-        help
-            SSID (network name) for the example to connect to.
-
-    config EXAMPLE_WIFI_PASSWORD
-        string "WiFi Password"
-        default "mypassword"
-        help
-            WiFi password (WPA or WPA2) for the example to use.
-
-    config EXAMPLE_MAXIMUM_RETRY
-        int "Maximum retry"
-        default 5
-        help
-            Set the Maximum retry to avoid station reconnecting to the AP unlimited when the AP is really inexistent.
+    # Hidden variable to get configuration of Component for Ethernet Initialization
+    config EXAMPLE_USE_ETH
+        bool
+        default y if ETHERNET_INTERNAL_SUPPORT || ETHERNET_SPI_SUPPORT
+        default n
 
     config EXAMPLE_STATIC_IP_ADDR
         string "Static IP address"
@@ -78,4 +65,34 @@ menu "Example Configuration"
         depends on EXAMPLE_STATIC_DNS_RESOLVE_TEST
         help
             Set domain name for DNS test
+endmenu
+
+menu "WiFi Example Configuration"
+    config EXAMPLE_USE_WIFI
+        depends on SOC_WIFI_SUPPORTED
+        bool "Use WiFi"
+        default y
+        help
+            Select to use WiFi as network interface in the example.
+
+    if EXAMPLE_USE_WIFI
+        config EXAMPLE_WIFI_SSID
+            string "WiFi SSID"
+            default "myssid"
+            help
+                SSID (network name) for the example to connect to.
+
+        config EXAMPLE_WIFI_PASSWORD
+            string "WiFi Password"
+            default "mypassword"
+            help
+                WiFi password (WPA or WPA2) for the example to use.
+
+        config EXAMPLE_MAXIMUM_RETRY
+            int "Maximum retry"
+            default 5
+            help
+                Set the Maximum retry to avoid station reconnecting to the AP unlimited when the AP is really
+                inexistent.
+    endif # EXAMPLE_WIFI
 endmenu
