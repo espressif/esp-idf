@@ -108,4 +108,22 @@ menu "Ultra Low Power (ULP) Co-processor"
 
     endmenu
 
+    menu "ULP float library source"
+        depends on ULP_COPROC_TYPE_LP_CORE || ULP_COPROC_TYPE_RISCV
+
+        config ULP_LP_CORE_FLOAT_LIB_FROM_RVFPLIB
+            bool
+            prompt "librvfp"
+            default "n"
+            help
+                In the soft-fp part of libgcc, RISC-V version is written in C,
+                and handles all edge cases in IEEE754, which makes it larger
+                and performance is slow.
+
+                RVfplib is an optimized RISC-V library for FP arithmetic on 32-bit
+                integer processors, for single and double-precision FP.
+                RVfplib is "fast", but it has a few exceptions from IEEE 754 compliance.
+
+    endmenu
+
 endmenu  # Ultra Low Power (ULP) Co-processor

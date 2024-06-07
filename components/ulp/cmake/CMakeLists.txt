@@ -171,6 +171,15 @@ else()
 
 endif()
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+if(CONFIG_ULP_LP_CORE_FLOAT_LIB_FROM_RVFPLIB)
+    file(GLOB ULP_S_LIBRVFP_SOURCES "${IDF_PATH}/components/ulp/RVfplib/src/asm/ieee754/*.S")
+    add_library(rvfp STATIC "${ULP_S_LIBRVFP_SOURCES}")
+    target_compile_definitions(rvfp PRIVATE "SIZE=1")
+    target_link_libraries(${ULP_APP_NAME} rvfp)
+endif()
+
 if(ULP_COCPU_IS_LP_CORE)
     set(ULP_BASE_ADDR "0x0")
 else()

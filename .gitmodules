@@ -147,3 +147,13 @@
 [submodule "components/bt/esp_ble_mesh/lib/lib"]
 	path = components/bt/esp_ble_mesh/lib/lib
 	url = ../../espressif/esp-ble-mesh-lib.git
+
+[submodule "components/ulp/RVfplib"]
+	path = components/ulp/RVfplib
+	url = ../../pulp-platform/RVfplib.git
+	sbom-version = 9de634e25a7130f1d08a2434100aabd12581841b
+	sbom-cpe = cpe:2.3:a:RVfplib:librvfp:{}:*:*:*:*:*:*:*
+	sbom-supplier = Organization: pulp-platform community <https://pulp-platform.org>
+	sbom-url = https://github.com/pulp-platform/RVfplib
+	sbom-description = Optimized RISC-V FP emulation for 32-bit processors
+	sbom-hash = 9de634e25a7130f1d08a2434100aabd12581841b

@@ -144,6 +144,7 @@
   - "components/bt/controller/lib_esp32c6/esp32c6-bt-lib"
   - "components/bt/controller/lib_esp32c5/esp32c5-bt-lib"
   - "components/bt/esp_ble_mesh/lib/lib"
+  - "components/ulp/RVfplib"
   - ".gitmodules"
 
 .patterns-idf-pytest-plugin: &patterns-idf-pytest-plugin
