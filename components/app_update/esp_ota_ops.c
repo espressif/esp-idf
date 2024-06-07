@@ -17,6 +17,7 @@
 #include "esp_image_format.h"
 #include "esp_secure_boot.h"
 #include "esp_flash_encrypt.h"
+#include "spi_flash_mmap.h"
 #include "sdkconfig.h"
 
 #include "esp_ota_ops.h"

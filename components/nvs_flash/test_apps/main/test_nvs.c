@@ -17,6 +17,7 @@
 #include "esp_log.h"
 #include "esp_partition.h"
 #include "esp_system.h"
+#include "spi_flash_mmap.h"
 
 #include "nvs.h"
 #include "nvs_flash.h"

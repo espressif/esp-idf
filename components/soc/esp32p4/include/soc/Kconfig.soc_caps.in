@@ -483,6 +483,10 @@ config SOC_GDMA_SUPPORT_ETM
     bool
     default y
 
+config SOC_AXI_DMA_EXT_MEM_ENC_ALIGNMENT
+    int
+    default 16
+
 config SOC_DMA2D_GROUPS
     int
     default 1

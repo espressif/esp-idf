@@ -13,6 +13,9 @@
 #include "hal/efuse_ll.h"
 #include "hal/efuse_hal.h"
 
+#ifndef BOOTLOADER_BUILD
+#include "spi_flash_mmap.h"
+#endif
 #include "hal/spi_flash_ll.h"
 #include "rom/spi_flash.h"
 #if CONFIG_IDF_TARGET_ESP32

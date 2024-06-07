@@ -27,6 +27,7 @@
 #if !CONFIG_IDF_TARGET_LINUX
 #include "esp_flash.h"
 #include "esp_flash_encrypt.h"
+#include "spi_flash_mmap.h"
 #endif
 #include "esp_log.h"
 #include "esp_rom_md5.h"
