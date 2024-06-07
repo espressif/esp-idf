@@ -317,6 +317,7 @@
 
 /*-------------------------- ISP CAPS ----------------------------------------*/
 #define SOC_ISP_BF_SUPPORTED            1
+#define SOC_ISP_CCM_SUPPORTED           1
 #define SOC_ISP_DVP_SUPPORTED           1
 
 #define SOC_ISP_NUMS                    1U
@@ -326,6 +327,7 @@
 #define SOC_ISP_SHARE_CSI_BRG           1
 #define SOC_ISP_BF_TEMPLATE_X_NUMS      3
 #define SOC_ISP_BF_TEMPLATE_Y_NUMS      3
+#define SOC_ISP_CCM_DIMENSION           3
 #define SOC_ISP_DVP_DATA_WIDTH_MAX      16
 
 /*-------------------------- LEDC CAPS ---------------------------------------*/
@@ -546,8 +548,8 @@
 /*-------------------------- TOUCH SENSOR CAPS -------------------------------*/
 #define SOC_TOUCH_SENSOR_VERSION            (3)         // Hardware version of touch sensor
 #define SOC_TOUCH_SENSOR_NUM                (14)        // Touch available channel number. Actually there are 15 Touch channels, but channel 14 is not pinned out, limit to 14 channels
-#define SOC_TOUCH_PROXIMITY_CHANNEL_NUM     (3)         // Sopport touch proximity channel number.
-#define SOC_TOUCH_PROXIMITY_MEAS_DONE_SUPPORTED (1)     // Sopport touch proximity channel measure done interrupt type.
+#define SOC_TOUCH_PROXIMITY_CHANNEL_NUM     (3)         // Support touch proximity channel number.
+#define SOC_TOUCH_PROXIMITY_MEAS_DONE_SUPPORTED (1)     // Support touch proximity channel measure done interrupt type.
 #define SOC_TOUCH_SAMPLER_NUM               (3)         // The sampler number in total, each sampler can be used to sample on one frequency
 
 /*-------------------------- TWAI CAPS ---------------------------------------*/
