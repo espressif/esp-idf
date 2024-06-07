@@ -96,7 +96,7 @@ typedef union {
         uint16_t wValue;                    /**< Word-sized field that varies according to request */
         uint16_t wIndex;                    /**< Word-sized field that varies according to request; typically used to pass an index or offset */
         uint16_t wLength;                   /**< Number of bytes to transfer if there is a data stage */
-    } __attribute__((packed));
+    } USB_DESC_ATTR;                        /**< USB descriptor attributes */
     uint8_t val[USB_SETUP_PACKET_SIZE];     /**< Descriptor value */
 } usb_setup_packet_t;
 ESP_STATIC_ASSERT(sizeof(usb_setup_packet_t) == USB_SETUP_PACKET_SIZE, "Size of usb_setup_packet_t incorrect");
@@ -467,6 +467,8 @@ ESP_STATIC_ASSERT(sizeof(usb_ep_desc_t) == USB_EP_DESC_SIZE, "Size of usb_ep_des
 #define USB_EP_DESC_GET_EP_DIR(desc_ptr) (((desc_ptr)->bEndpointAddress & USB_B_ENDPOINT_ADDRESS_EP_DIR_MASK) ? 1 : 0)
 #define USB_EP_DESC_GET_MPS(desc_ptr) ((desc_ptr)->wMaxPacketSize & USB_W_MAX_PACKET_SIZE_MPS_MASK)
 #define USB_EP_DESC_GET_MULT(desc_ptr) (((desc_ptr)->wMaxPacketSize & USB_W_MAX_PACKET_SIZE_MULT_MASK) >> 11)
+#define USB_EP_DESC_GET_SYNCTYPE(desc_ptr) (((desc_ptr)->bmAttributes & USB_BM_ATTRIBUTES_SYNCTYPE_MASK) >> 2)
+#define USB_EP_DESC_GET_USAGETYPE(desc_ptr) (((desc_ptr)->bmAttributes & USB_BM_ATTRIBUTES_USAGETYPE_MASK) >> 4)
 
 // ------------------ String Descriptor --------------------
 
