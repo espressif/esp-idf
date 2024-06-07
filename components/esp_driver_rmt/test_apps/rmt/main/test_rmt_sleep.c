@@ -15,6 +15,8 @@
 #include "esp_timer.h"
 #include "esp_sleep.h"
 #include "esp_private/sleep_cpu.h"
+#include "esp_private/esp_sleep_internal.h"
+#include "esp_private/esp_pmu.h"
 #include "test_util_rmt_encoders.h"
 #include "test_board.h"
 
@@ -91,16 +93,27 @@ static void test_rmt_tx_rx_sleep_retention(bool back_up_before_sleep)
 
     // Note: don't enable the RMT channel before going to sleep, ensure no power management lock is acquired by RMT
 
+    esp_sleep_context_t sleep_ctx;
+    esp_sleep_set_sleep_context(&sleep_ctx);
     printf("go to light sleep for 2 seconds\r\n");
-#if CONFIG_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP
+#if ESP_SLEEP_POWER_DOWN_CPU
     TEST_ESP_OK(sleep_cpu_configure(true));
 #endif
     TEST_ESP_OK(esp_sleep_enable_timer_wakeup(2 * 1000 * 1000));
     TEST_ESP_OK(esp_light_sleep_start());
 
     printf("Waked up! Let's see if RMT driver can still work...\r\n");
-#if CONFIG_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP
+#if ESP_SLEEP_POWER_DOWN_CPU
     TEST_ESP_OK(sleep_cpu_configure(false));
+#endif
+
+    printf("check if the sleep happened as expected\r\n");
+    TEST_ASSERT_EQUAL(0, sleep_ctx.sleep_request_result);
+#if SOC_RMT_SUPPORT_SLEEP_RETENTION
+    if (back_up_before_sleep) {
+        printf("sleep_ctx.sleep_flags=%lx\r\n", sleep_ctx.sleep_flags);
+        TEST_ASSERT_EQUAL(PMU_SLEEP_PD_TOP, sleep_ctx.sleep_flags & PMU_SLEEP_PD_TOP);
+    }
 #endif
 
     TEST_ESP_OK(rmt_enable(tx_channel));
