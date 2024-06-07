@@ -899,7 +899,7 @@ extern "C" {
 #define DMA2D_OUT_COLOR_OUTPUT_SEL_CH0_V  0x00000003U
 #define DMA2D_OUT_COLOR_OUTPUT_SEL_CH0_S  0
 /** DMA2D_OUT_COLOR_3B_PROC_EN_CH0 : R/W; bitpos: [2]; default: 0;
- *  Enable generic color convert modlue between color input & color output, need to
+ *  Enable generic color convert module between color input & color output, need to
  *  configure parameter.
  */
 #define DMA2D_OUT_COLOR_3B_PROC_EN_CH0    (BIT(2))
@@ -1032,14 +1032,14 @@ extern "C" {
  */
 #define DMA2D_OUT_DSCR_PORT_BLK_CH0_REG (DR_REG_DMA2D_BASE + 0x6c)
 /** DMA2D_OUT_DSCR_PORT_BLK_H_CH0 : R/W; bitpos: [13:0]; default: 18;
- *  Set the vertical height of tx block size in dscr port mode
+ *  Set the horizontal width of tx block size in dscr port mode
  */
 #define DMA2D_OUT_DSCR_PORT_BLK_H_CH0    0x00003FFFU
 #define DMA2D_OUT_DSCR_PORT_BLK_H_CH0_M  (DMA2D_OUT_DSCR_PORT_BLK_H_CH0_V << DMA2D_OUT_DSCR_PORT_BLK_H_CH0_S)
 #define DMA2D_OUT_DSCR_PORT_BLK_H_CH0_V  0x00003FFFU
 #define DMA2D_OUT_DSCR_PORT_BLK_H_CH0_S  0
 /** DMA2D_OUT_DSCR_PORT_BLK_V_CH0 : R/W; bitpos: [27:14]; default: 18;
- *  Set the horizontal width of tx block size in dscr port mode
+ *  Set the vertical height of tx block size in dscr port mode
  */
 #define DMA2D_OUT_DSCR_PORT_BLK_V_CH0    0x00003FFFU
 #define DMA2D_OUT_DSCR_PORT_BLK_V_CH0_M  (DMA2D_OUT_DSCR_PORT_BLK_V_CH0_V << DMA2D_OUT_DSCR_PORT_BLK_V_CH0_S)
@@ -1907,7 +1907,7 @@ extern "C" {
 #define DMA2D_OUT_COLOR_OUTPUT_SEL_CH1_V  0x00000003U
 #define DMA2D_OUT_COLOR_OUTPUT_SEL_CH1_S  0
 /** DMA2D_OUT_COLOR_3B_PROC_EN_CH1 : R/W; bitpos: [2]; default: 0;
- *  Enable generic color convert modlue between color input & color output, need to
+ *  Enable generic color convert module between color input & color output, need to
  *  configure parameter.
  */
 #define DMA2D_OUT_COLOR_3B_PROC_EN_CH1    (BIT(2))
@@ -2040,14 +2040,14 @@ extern "C" {
  */
 #define DMA2D_OUT_DSCR_PORT_BLK_CH1_REG (DR_REG_DMA2D_BASE + 0x16c)
 /** DMA2D_OUT_DSCR_PORT_BLK_H_CH1 : R/W; bitpos: [13:0]; default: 18;
- *  Set the vertical height of tx block size in dscr port mode
+ *  Set the horizontal width of tx block size in dscr port mode
  */
 #define DMA2D_OUT_DSCR_PORT_BLK_H_CH1    0x00003FFFU
 #define DMA2D_OUT_DSCR_PORT_BLK_H_CH1_M  (DMA2D_OUT_DSCR_PORT_BLK_H_CH1_V << DMA2D_OUT_DSCR_PORT_BLK_H_CH1_S)
 #define DMA2D_OUT_DSCR_PORT_BLK_H_CH1_V  0x00003FFFU
 #define DMA2D_OUT_DSCR_PORT_BLK_H_CH1_S  0
 /** DMA2D_OUT_DSCR_PORT_BLK_V_CH1 : R/W; bitpos: [27:14]; default: 18;
- *  Set the horizontal width of tx block size in dscr port mode
+ *  Set the vertical height of tx block size in dscr port mode
  */
 #define DMA2D_OUT_DSCR_PORT_BLK_V_CH1    0x00003FFFU
 #define DMA2D_OUT_DSCR_PORT_BLK_V_CH1_M  (DMA2D_OUT_DSCR_PORT_BLK_V_CH1_V << DMA2D_OUT_DSCR_PORT_BLK_V_CH1_S)
@@ -2915,7 +2915,7 @@ extern "C" {
 #define DMA2D_OUT_COLOR_OUTPUT_SEL_CH2_V  0x00000003U
 #define DMA2D_OUT_COLOR_OUTPUT_SEL_CH2_S  0
 /** DMA2D_OUT_COLOR_3B_PROC_EN_CH2 : R/W; bitpos: [2]; default: 0;
- *  Enable generic color convert modlue between color input & color output, need to
+ *  Enable generic color convert module between color input & color output, need to
  *  configure parameter.
  */
 #define DMA2D_OUT_COLOR_3B_PROC_EN_CH2    (BIT(2))
@@ -3048,14 +3048,14 @@ extern "C" {
  */
 #define DMA2D_OUT_DSCR_PORT_BLK_CH2_REG (DR_REG_DMA2D_BASE + 0x26c)
 /** DMA2D_OUT_DSCR_PORT_BLK_H_CH2 : R/W; bitpos: [13:0]; default: 18;
- *  Set the vertical height of tx block size in dscr port mode
+ *  Set the horizontal width of tx block size in dscr port mode
  */
 #define DMA2D_OUT_DSCR_PORT_BLK_H_CH2    0x00003FFFU
 #define DMA2D_OUT_DSCR_PORT_BLK_H_CH2_M  (DMA2D_OUT_DSCR_PORT_BLK_H_CH2_V << DMA2D_OUT_DSCR_PORT_BLK_H_CH2_S)
 #define DMA2D_OUT_DSCR_PORT_BLK_H_CH2_V  0x00003FFFU
 #define DMA2D_OUT_DSCR_PORT_BLK_H_CH2_S  0
 /** DMA2D_OUT_DSCR_PORT_BLK_V_CH2 : R/W; bitpos: [27:14]; default: 18;
- *  Set the horizontal width of tx block size in dscr port mode
+ *  Set the vertical height of tx block size in dscr port mode
  */
 #define DMA2D_OUT_DSCR_PORT_BLK_V_CH2    0x00003FFFU
 #define DMA2D_OUT_DSCR_PORT_BLK_V_CH2_M  (DMA2D_OUT_DSCR_PORT_BLK_V_CH2_V << DMA2D_OUT_DSCR_PORT_BLK_V_CH2_S)
@@ -3990,7 +3990,7 @@ extern "C" {
 #define DMA2D_IN_COLOR_OUTPUT_SEL_CH0_V  0x00000003U
 #define DMA2D_IN_COLOR_OUTPUT_SEL_CH0_S  0
 /** DMA2D_IN_COLOR_3B_PROC_EN_CH0 : R/W; bitpos: [2]; default: 0;
- *  Enable generic color convert modlue between color input & color output, need to
+ *  Enable generic color convert module between color input & color output, need to
  *  configure parameter.
  */
 #define DMA2D_IN_COLOR_3B_PROC_EN_CH0    (BIT(2))

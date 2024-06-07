@@ -217,6 +217,10 @@ if(NOT BOOTLOADER_BUILD)
         list(APPEND srcs "jpeg_hal.c")
     endif()
 
+    if(CONFIG_SOC_PPA_SUPPORTED)
+        list(APPEND srcs "ppa_hal.c")
+    endif()
+
     if(CONFIG_SOC_GPSPI_SUPPORTED)
         list(APPEND srcs
             "spi_hal.c"
