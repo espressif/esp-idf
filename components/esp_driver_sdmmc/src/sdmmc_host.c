@@ -82,7 +82,7 @@ esp_err_t sdmmc_host_reset(void)
 
     // Wait for the reset bits to be cleared by hardware
     int64_t yield_delay_us = 100 * 1000; // initially 100ms
-    int64_t t0 = esp_timer_get_time();
+    uint64_t t0 = esp_timer_get_time();
     int64_t t1 = 0;
     while (SDMMC.ctrl.controller_reset || SDMMC.ctrl.fifo_reset || SDMMC.ctrl.dma_reset) {
         t1 = esp_timer_get_time();
@@ -148,7 +148,7 @@ static esp_err_t sdmmc_host_clock_update_command(int slot)
         ESP_RETURN_ON_ERROR(sdmmc_host_start_command(slot, cmd_val, 0), TAG, "sdmmc_host_start_command returned 0x%x", err_rc_);
 
         int64_t yield_delay_us = 100 * 1000; // initially 100ms
-        int64_t t0 = esp_timer_get_time();
+        uint64_t t0 = esp_timer_get_time();
         int64_t t1 = 0;
         while (true) {
             t1 = esp_timer_get_time();
@@ -359,7 +359,7 @@ esp_err_t sdmmc_host_start_command(int slot, sdmmc_hw_cmd_t cmd, uint32_t arg)
     cmd.use_hold_reg = 1;
 
     int64_t yield_delay_us = 100 * 1000; // initially 100ms
-    int64_t t0 = esp_timer_get_time();
+    uint64_t t0 = esp_timer_get_time();
     int64_t t1 = 0;
     while (SDMMC.cmd.start_command == 1) {
         t1 = esp_timer_get_time();

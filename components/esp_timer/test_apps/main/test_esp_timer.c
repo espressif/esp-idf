@@ -92,8 +92,8 @@ static void set_alarm_task(void* arg)
 {
     SemaphoreHandle_t done = (SemaphoreHandle_t) arg;
 
-    int64_t start = esp_timer_impl_get_time();
-    int64_t now = start;
+    uint64_t start = esp_timer_impl_get_time();
+    uint64_t now = start;
     int count = 0;
     const int delays[] = {50, 5000, 10000000};
     const int delays_count = sizeof(delays) / sizeof(delays[0]);
@@ -390,8 +390,8 @@ TEST_CASE("esp_timer for very short intervals", "[esp_timer]")
 
 TEST_CASE("esp_timer_get_time call takes less than 1us", "[esp_timer]")
 {
-    int64_t begin = esp_timer_get_time();
-    volatile int64_t end;
+    uint64_t begin = esp_timer_get_time();
+    volatile uint64_t end;
     const int iter_count = 10000;
     for (int i = 0; i < iter_count; ++i) {
         end = esp_timer_get_time();
@@ -582,11 +582,11 @@ TEST_CASE("Can delete timer from a separate task, triggered from callback", "[es
 
 TEST_CASE("esp_timer_impl_advance moves time base correctly", "[esp_timer]")
 {
-    int64_t t0 = esp_timer_get_time();
+    uint64_t t0 = esp_timer_get_time();
     const int64_t diff_us = 1000000;
     esp_timer_impl_advance(diff_us);
-    int64_t t1 = esp_timer_get_time();
-    int64_t t_delta = t1 - t0;
+    uint64_t t1 = esp_timer_get_time();
+    uint64_t t_delta = t1 - t0;
     printf("diff_us=%lld t0=%lld t1=%lld t1-t0=%lld\n", diff_us, t0, t1, t_delta);
     TEST_ASSERT_INT_WITHIN(1000, diff_us, (int) t_delta);
 }
@@ -826,7 +826,7 @@ TEST_CASE("Test case when esp_timer_impl_set_alarm needs set timer < now_time", 
 
 static void timer_callback5(void* arg)
 {
-    *(int64_t *)arg = esp_timer_get_time();
+    *(uint64_t *)arg = esp_timer_get_time();
 }
 
 TEST_CASE("Test a latency between a call of callback and real event", "[esp_timer]")

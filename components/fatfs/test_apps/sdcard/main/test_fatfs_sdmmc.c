@@ -339,7 +339,7 @@ TEST_CASE("(SD) mount FAT partitions and readdir to get stat structure", "[fatfs
     }
 
     //Start the timer to get time needed to calculate the directory size
-    int64_t start = esp_timer_get_time();
+    uint64_t start = esp_timer_get_time();
     DIR* dir = opendir(dir_prefix);
     TEST_ASSERT_NOT_NULL(dir);
     struct stat st;
@@ -357,8 +357,8 @@ TEST_CASE("(SD) mount FAT partitions and readdir to get stat structure", "[fatfs
         dir_size += st.st_size;
     }
     TEST_ASSERT_EQUAL(0, closedir(dir));
-    int64_t end = esp_timer_get_time();
-    int64_t total_time_readdir = end-start;
+    uint64_t end = esp_timer_get_time();
+    uint64_t total_time_readdir = end-start;
     printf("Time in us for calculating directory size by calling readdir first and then stat func:  %lld \n",total_time_readdir);
     printf("Size of the directory %s is %"PRIu32"Kb\n", dir_prefix, (dir_size/1000));
     TEST_ASSERT_EQUAL(file_num*strlen(fatfs_test_hello_str), dir_size); //each file size is 14 bytes

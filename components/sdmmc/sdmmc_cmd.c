@@ -473,8 +473,8 @@ esp_err_t sdmmc_write_sectors_dma(sdmmc_card_t* card, const void* src,
     uint32_t status = 0;
     size_t count = 0;
     int64_t yield_delay_us = 100 * 1000; // initially 100ms
-    int64_t t0 = esp_timer_get_time();
-    int64_t t1 = 0;
+    uint64_t t0 = esp_timer_get_time();
+    uint64_t t1 = 0;
     /* SD mode: wait for the card to become idle based on R1 status */
     while (!host_is_spi(card) && !(status & MMC_R1_READY_FOR_DATA)) {
         t1 = esp_timer_get_time();

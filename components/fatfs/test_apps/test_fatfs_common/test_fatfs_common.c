@@ -772,7 +772,7 @@ void test_fatfs_readdir_stat(const char* dir_prefix)
     }
 
     printf("Start counting\n");
-    int64_t start = esp_timer_get_time();
+    uint64_t start = esp_timer_get_time();
     DIR* dir = opendir(dir_prefix);
     TEST_ASSERT_NOT_NULL(dir);
     struct stat st;

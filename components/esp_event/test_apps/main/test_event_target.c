@@ -594,7 +594,7 @@ static void performance_test(bool dedicated_task)
             }
 
             // Post the events
-            int64_t start = esp_timer_get_time();
+            uint64_t start = esp_timer_get_time();
             for (int base = 0; base < bases; base++) {
                 for (int id = 0; id < ids; id++) {
                     TEST_ESP_OK(esp_event_post_to(loop, test_base + post_bases[base], post_ids[id], NULL, 0, portMAX_DELAY));
@@ -602,7 +602,7 @@ static void performance_test(bool dedicated_task)
             }
 
             xSemaphoreTake(data.done, portMAX_DELAY);
-            int64_t elapsed = esp_timer_get_time() - start;
+            uint64_t elapsed = esp_timer_get_time() - start;
 
             // Record data
             TEST_ASSERT_EQUAL(data.expected, data.performed);

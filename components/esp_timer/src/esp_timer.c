@@ -170,7 +170,7 @@ esp_err_t IRAM_ATTR esp_timer_restart(esp_timer_handle_t timer, uint64_t timeout
     esp_timer_dispatch_t dispatch_method = timer->flags & FL_ISR_DISPATCH_METHOD;
     timer_list_lock(dispatch_method);
 
-    const int64_t now = esp_timer_impl_get_time();
+    const uint64_t now = esp_timer_impl_get_time();
     const uint64_t period = timer->period;
 
     /* We need to remove the timer to the list of timers and reinsert it at
@@ -208,7 +208,7 @@ esp_err_t IRAM_ATTR esp_timer_start_once(esp_timer_handle_t timer, uint64_t time
     if (!is_initialized()) {
         return ESP_ERR_INVALID_STATE;
     }
-    int64_t alarm = esp_timer_get_time() + timeout_us;
+    uint64_t alarm = esp_timer_get_time() + timeout_us;
     esp_timer_dispatch_t dispatch_method = timer->flags & FL_ISR_DISPATCH_METHOD;
     esp_err_t err;
 
@@ -242,7 +242,7 @@ esp_err_t IRAM_ATTR esp_timer_start_periodic(esp_timer_handle_t timer, uint64_t 
         return ESP_ERR_INVALID_STATE;
     }
     period_us = MAX(period_us, esp_timer_impl_get_min_period_us());
-    int64_t alarm = esp_timer_get_time() + period_us;
+    uint64_t alarm = esp_timer_get_time() + period_us;
     esp_timer_dispatch_t dispatch_method = timer->flags & FL_ISR_DISPATCH_METHOD;
     esp_err_t err;
     timer_list_lock(dispatch_method);
@@ -292,7 +292,7 @@ esp_err_t esp_timer_delete(esp_timer_handle_t timer)
         return ESP_ERR_INVALID_ARG;
     }
 
-    int64_t alarm = esp_timer_get_time();
+    uint64_t alarm = esp_timer_get_time();
     esp_err_t err;
     timer_list_lock(ESP_TIMER_TASK);
 
@@ -417,7 +417,7 @@ static bool timer_process_alarm(esp_timer_dispatch_t dispatch_method)
     esp_timer_handle_t it;
     while (1) {
         it = LIST_FIRST(&s_timers[dispatch_method]);
-        int64_t now = esp_timer_impl_get_time();
+        uint64_t now = esp_timer_impl_get_time();
         if (it == NULL || it->alarm > now) {
             break;
         }

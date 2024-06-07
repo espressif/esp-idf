@@ -65,14 +65,14 @@ uint64_t IRAM_ATTR esp_timer_impl_get_counter_reg(void)
     return systimer_hal_get_counter_value(&systimer_hal, SYSTIMER_COUNTER_ESPTIMER);
 }
 
-int64_t IRAM_ATTR esp_timer_impl_get_time(void)
+uint64_t IRAM_ATTR esp_timer_impl_get_time(void)
 {
     // we hope the execution time of this function won't > 1us
     // thus, to save one function call, we didn't use the existing `systimer_hal_get_time`
     return systimer_hal.ticks_to_us(systimer_hal_get_counter_value(&systimer_hal, SYSTIMER_COUNTER_ESPTIMER));
 }
 
-int64_t esp_timer_get_time(void) __attribute__((alias("esp_timer_impl_get_time")));
+uint64_t esp_timer_get_time(void) __attribute__((alias("esp_timer_impl_get_time")));
 
 void IRAM_ATTR esp_timer_impl_set_alarm_id(uint64_t timestamp, unsigned alarm_id)
 {

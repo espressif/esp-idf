@@ -792,11 +792,11 @@ void IRAM_ATTR vApplicationSleep( TickType_t xExpectedIdleTime )
     if (!should_skip_light_sleep(core_id)) {
         /* Calculate how much we can sleep */
         int64_t next_esp_timer_alarm = esp_timer_get_next_alarm_for_wake_up();
-        int64_t now = esp_timer_get_time();
-        int64_t time_until_next_alarm = next_esp_timer_alarm - now;
-        int64_t wakeup_delay_us = portTICK_PERIOD_MS * 1000LL * xExpectedIdleTime;
-        int64_t sleep_time_us = MIN(wakeup_delay_us, time_until_next_alarm);
-        int64_t slept_us = 0;
+        uint64_t now = esp_timer_get_time();
+        uint64_t time_until_next_alarm = next_esp_timer_alarm - now;
+        uint64_t wakeup_delay_us = portTICK_PERIOD_MS * 1000LL * xExpectedIdleTime;
+        uint64_t sleep_time_us = MIN(wakeup_delay_us, time_until_next_alarm);
+        uint64_t slept_us = 0;
 #if CONFIG_PM_LIGHT_SLEEP_CALLBACKS
         uint32_t cycle = esp_cpu_get_cycle_count();
         esp_pm_execute_enter_sleep_callbacks(sleep_time_us);
@@ -810,7 +810,7 @@ void IRAM_ATTR vApplicationSleep( TickType_t xExpectedIdleTime )
 #endif
             /* Enter sleep */
             ESP_PM_TRACE_ENTER(SLEEP, core_id);
-            int64_t sleep_start = esp_timer_get_time();
+            uint64_t sleep_start = esp_timer_get_time();
             if (esp_light_sleep_start() != ESP_OK){
 #ifdef WITH_PROFILING
                 s_light_sleep_reject_counts++;

@@ -215,12 +215,12 @@ TEST_CASE("Can wake up from automatic light sleep by GPIO", "[pm][ignore]")
         const int delay_ticks = delay_ms / portTICK_PERIOD_MS;
 
         int64_t start_rtc = esp_clk_rtc_time();
-        int64_t start_hs = esp_timer_get_time();
+        uint64_t start_hs = esp_timer_get_time();
         uint32_t start_tick = xTaskGetTickCount();
         /* Will enter sleep here */
         vTaskDelay(delay_ticks);
         int64_t end_rtc = esp_clk_rtc_time();
-        int64_t end_hs = esp_timer_get_time();
+        uint64_t end_hs = esp_timer_get_time();
         uint32_t end_tick = xTaskGetTickCount();
 
         printf("%lld %lld %u\n", end_rtc - start_rtc, end_hs - start_hs, end_tick - start_tick);

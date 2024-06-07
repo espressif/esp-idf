@@ -310,7 +310,7 @@ static void test_from_host(bool check_data)
 
         // Two counters are used. The `esp_timer_get_time()` is for the typical time, and the
         // `ccomp_timer` is for performance test to reduce influence caused by cache miss.
-        int64_t pre_us = esp_timer_get_time();
+        uint64_t pre_us = esp_timer_get_time();
         TEST_ESP_OK(ccomp_timer_start());
         uint32_t expected_length = TEST_TRANS_NUMS * TEST_RX_BUFFER_SIZE;
 
@@ -324,7 +324,7 @@ static void test_from_host(bool check_data)
         }
 
         int64_t c_time_ms = ccomp_timer_stop() / 1000;
-        int64_t end_us = esp_timer_get_time();
+        uint64_t end_us = esp_timer_get_time();
 
         uint32_t total_time_ms = (end_us - pre_us) / 1000;
         ESP_LOGI(TAG, "test done, total time: %" PRIu32 " ms (%d ms compensated), bytes transferred: %"PRIu32, total_time_ms, (int)c_time_ms, expected_length);
@@ -373,7 +373,7 @@ static void test_to_host(bool check_data)
 
         // Two counters are used. The `esp_timer_get_time()` is for the typical time, and the
         // `ccomp_timer` is for performance test to reduce influence caused by cache miss.
-        int64_t pre_us = esp_timer_get_time();
+        uint64_t pre_us = esp_timer_get_time();
         TEST_ESP_OK(ccomp_timer_start());
         do {
             size_t rcv_len;
@@ -395,7 +395,7 @@ static void test_to_host(bool check_data)
         } while (remain_length > 0);
 
         int64_t c_time_ms = ccomp_timer_stop() / 1000;
-        int64_t end_us = esp_timer_get_time();
+        uint64_t end_us = esp_timer_get_time();
 
         uint32_t total_time_ms = (end_us - pre_us) / 1000;
         ESP_LOGI(TAG, "test done, total time: %" PRIu32 " ms (%d ms compensated), bytes transferred: %"PRIu32, total_time_ms, (int)c_time_ms, expected_length);

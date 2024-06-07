@@ -480,12 +480,12 @@ void example_ble_mesh_send_vendor_message(bool resend)
 static void example_ble_mesh_custom_model_cb(esp_ble_mesh_model_cb_event_t event,
                                              esp_ble_mesh_model_cb_param_t *param)
 {
-    static int64_t start_time;
+    static uint64_t start_time;
 
     switch (event) {
     case ESP_BLE_MESH_MODEL_OPERATION_EVT:
         if (param->model_operation.opcode == ESP_BLE_MESH_VND_MODEL_OP_STATUS) {
-            int64_t end_time = esp_timer_get_time();
+            uint64_t end_time = esp_timer_get_time();
             ESP_LOGI(TAG, "Recv 0x06%" PRIx32 ", tid 0x%04x, time %lldus",
                 param->model_operation.opcode, store.vnd_tid, end_time - start_time);
         }

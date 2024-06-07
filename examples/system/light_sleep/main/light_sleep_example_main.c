@@ -27,13 +27,13 @@ static void light_sleep_task(void *args)
         uart_wait_tx_idle_polling(CONFIG_ESP_CONSOLE_UART_NUM);
 
         /* Get timestamp before entering sleep */
-        int64_t t_before_us = esp_timer_get_time();
+        uint64_t t_before_us = esp_timer_get_time();
 
         /* Enter sleep mode */
         esp_light_sleep_start();
 
         /* Get timestamp after waking up from sleep */
-        int64_t t_after_us = esp_timer_get_time();
+        uint64_t t_after_us = esp_timer_get_time();
 
         /* Determine wake up reason */
         const char* wakeup_reason;

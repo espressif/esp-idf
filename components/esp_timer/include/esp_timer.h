@@ -220,7 +220,7 @@ esp_err_t esp_timer_delete(esp_timer_handle_t timer);
  * @brief Get time in microseconds since boot
  * @return Number of microseconds since the initialization of ESP Timer
  */
-int64_t esp_timer_get_time(void);
+uint64_t esp_timer_get_time(void);
 
 /**
  * @brief Get the timestamp of the next expected timeout

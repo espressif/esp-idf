@@ -197,9 +197,9 @@ TEST_CASE("light sleep duration is correct", "[deepsleep][ignore]")
         esp_sleep_enable_timer_wakeup(sleep_time);
         for (int repeat = 0; repeat < 5; ++repeat) {
             uint64_t start = esp_clk_rtc_time();
-            int64_t start_hs = esp_timer_get_time();
+            uint64_t start_hs = esp_timer_get_time();
             esp_light_sleep_start();
-            int64_t stop_hs = esp_timer_get_time();
+            uint64_t stop_hs = esp_timer_get_time();
             uint64_t stop = esp_clk_rtc_time();
 
             int diff_us = (int)(stop - start);

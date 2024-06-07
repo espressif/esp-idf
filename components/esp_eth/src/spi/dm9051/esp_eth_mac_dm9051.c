@@ -653,7 +653,7 @@ static esp_err_t emac_dm9051_transmit(esp_eth_mac_t *mac, uint8_t *buf, uint32_t
     ESP_GOTO_ON_FALSE(length <= ETH_MAX_PACKET_SIZE, ESP_ERR_INVALID_ARG, err,
                       TAG, "frame size is too big (actual %" PRIu32 ", maximum %d)", length, ETH_MAX_PACKET_SIZE);
 
-    int64_t wait_time =  esp_timer_get_time();
+    uint64_t wait_time =  esp_timer_get_time();
     do {
         ESP_GOTO_ON_ERROR(dm9051_register_read(emac, DM9051_TCR, &tcr), err, TAG, "read TCR failed");
     } while ((tcr & TCR_TXREQ) && ((esp_timer_get_time() - wait_time) < 100));

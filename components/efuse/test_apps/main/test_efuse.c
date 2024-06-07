@@ -670,9 +670,9 @@ static void task2(void* arg)
 {
     xSemaphoreTake(sema, portMAX_DELAY);
     uint8_t mac[6];
-    int64_t t1 = esp_timer_get_time();
+    uint64_t t1 = esp_timer_get_time();
     TEST_ESP_OK(esp_efuse_read_field_blob(ESP_EFUSE_MAC_FACTORY, &mac, sizeof(mac) * 8));
-    int64_t t2 = esp_timer_get_time();
+    uint64_t t2 = esp_timer_get_time();
     int diff_ms = (t2 - t1) / 1000;
     TEST_ASSERT_GREATER_THAN(diff_ms, delay_ms);
     ESP_LOGI(TAG, "read MAC address: %02x:%02x:%02x:%02x:%02x:%02x", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
@@ -685,10 +685,10 @@ static void task3(void* arg)
 {
     xSemaphoreTake(sema, portMAX_DELAY);
     size_t test3_len_6 = 2;
-    int64_t t1 = esp_timer_get_time();
+    uint64_t t1 = esp_timer_get_time();
     TEST_ESP_OK(esp_efuse_write_field_cnt(ESP_EFUSE_TEST3_LEN_6, test3_len_6));
     TEST_ESP_OK(esp_efuse_read_field_cnt(ESP_EFUSE_TEST3_LEN_6, &test3_len_6));
-    int64_t t2 = esp_timer_get_time();
+    uint64_t t2 = esp_timer_get_time();
     ESP_LOGI(TAG, "write&read test3_len_6: %d", test3_len_6);
     int diff_ms = (t2 - t1) / 1000;
     TEST_ASSERT_GREATER_THAN(delay_ms, diff_ms);

@@ -578,7 +578,7 @@ static esp_err_t poll_busy(slot_info_t *slot, int timeout_ms, bool polling)
     };
     esp_err_t ret;
 
-    int64_t t_end = esp_timer_get_time() + timeout_ms * 1000;
+    uint64_t t_end = esp_timer_get_time() + timeout_ms * 1000;
     int nonzero_count = 0;
     do {
         t_rx = SDSPI_MOSI_IDLE_VAL;
@@ -613,7 +613,7 @@ static esp_err_t poll_data_token(slot_info_t *slot, uint8_t *extra_ptr, size_t *
         .length = sizeof(t_rx) * 8,
     };
     esp_err_t ret;
-    int64_t t_end = esp_timer_get_time() + timeout_ms * 1000;
+    uint64_t t_end = esp_timer_get_time() + timeout_ms * 1000;
     do {
         memset(t_rx, SDSPI_MOSI_IDLE_VAL, sizeof(t_rx));
         ret = spi_device_polling_transmit(slot->spi_handle, &t);

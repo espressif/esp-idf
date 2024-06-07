@@ -61,13 +61,13 @@ void app_main(void)
     /* Timekeeping continues in light sleep, and timers are scheduled
      * correctly after light sleep.
      */
-    int64_t t1 = esp_timer_get_time();
+    uint64_t t1 = esp_timer_get_time();
     ESP_LOGI(TAG, "Entering light sleep for 0.5s, time since boot: %lld us", t1);
 
     ESP_ERROR_CHECK(esp_sleep_enable_timer_wakeup(500000));
     esp_light_sleep_start();
 
-    int64_t t2 = esp_timer_get_time();
+    uint64_t t2 = esp_timer_get_time();
     ESP_LOGI(TAG, "Woke up from light sleep, time since boot: %lld us", t2);
 
     assert(llabs((t2 - t1) - 500000) < 1200);
@@ -84,13 +84,13 @@ void app_main(void)
 
 static void periodic_timer_callback(void* arg)
 {
-    int64_t time_since_boot = esp_timer_get_time();
+    uint64_t time_since_boot = esp_timer_get_time();
     ESP_LOGI(TAG, "Periodic timer called, time since boot: %lld us", time_since_boot);
 }
 
 static void oneshot_timer_callback(void* arg)
 {
-    int64_t time_since_boot = esp_timer_get_time();
+    uint64_t time_since_boot = esp_timer_get_time();
     ESP_LOGI(TAG, "One-shot timer called, time since boot: %lld us", time_since_boot);
     esp_timer_handle_t periodic_timer_handle = (esp_timer_handle_t) arg;
     /* To start the timer which is running, need to stop it first */

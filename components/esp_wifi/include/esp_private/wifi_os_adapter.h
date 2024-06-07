@@ -97,7 +97,7 @@ typedef struct wifi_osi_funcs_t {
     void (* _wifi_clock_disable)(void);
     void (* _wifi_rtc_enable_iso)(void);
     void (* _wifi_rtc_disable_iso)(void);
-    int64_t (* _esp_timer_get_time)(void);
+    uint64_t (* _esp_timer_get_time)(void);
     int (* _nvs_set_i8)(uint32_t handle, const char* key, int8_t value);
     int (* _nvs_get_i8)(uint32_t handle, const char* key, int8_t* out_value);
     int (* _nvs_set_u8)(uint32_t handle, const char* key, uint8_t value);

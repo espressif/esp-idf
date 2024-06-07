@@ -36,7 +36,7 @@ typedef struct {
     int (* _is_in_isr)(void);
     void * (* _malloc_internal)(size_t size);
     void (* _free)(void *p);
-    int64_t (* _esp_timer_get_time)(void);
+    uint64_t (* _esp_timer_get_time)(void);
     bool (* _env_is_chip)(void);
 #if CONFIG_IDF_TARGET_ESP32C2
     // this function is only used on esp32c2

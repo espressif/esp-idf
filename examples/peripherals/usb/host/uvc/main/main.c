@@ -132,7 +132,7 @@ void frame_callback(uvc_frame_t *frame, void *ptr)
     static size_t bytes_per_second;
     static int64_t start_time;
 
-    int64_t current_time = esp_timer_get_time();
+    uint64_t current_time = esp_timer_get_time();
     bytes_per_second += frame->data_bytes;
     fps++;
 

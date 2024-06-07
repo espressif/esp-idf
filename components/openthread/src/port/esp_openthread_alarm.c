@@ -41,7 +41,7 @@ static inline uint32_t calculate_duration(uint32_t target, uint32_t now)
 
 uint64_t otPlatTimeGet(void)
 {
-    return (uint64_t)esp_timer_get_time();
+    return esp_timer_get_time();
 }
 
 void otPlatAlarmMilliStartAt(otInstance *aInstance, uint32_t aT0, uint32_t aDt)

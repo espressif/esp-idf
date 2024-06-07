@@ -91,7 +91,7 @@ void esp_timer_impl_advance(int64_t time_us);
  * @brief Get time, in microseconds, since esp_timer_impl_init was called
  * @return timestamp in microseconds
  */
-int64_t esp_timer_impl_get_time(void);
+uint64_t esp_timer_impl_get_time(void);
 
 /**
  * @brief Get minimal timer period, in microseconds
