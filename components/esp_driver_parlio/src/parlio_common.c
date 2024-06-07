@@ -48,6 +48,8 @@ parlio_group_t *parlio_acquire_group_handle(int group_id)
             }
             // hal layer initialize
             parlio_hal_init(&group->hal);
+            group->dma_align = cache_hal_get_cache_line_size(CACHE_LL_LEVEL_INT_MEM, CACHE_TYPE_DATA);
+            group->dma_align = group->dma_align < 4 ? 4 : group->dma_align;
         }
     } else { // group already install
         group = s_platform.groups[group_id];

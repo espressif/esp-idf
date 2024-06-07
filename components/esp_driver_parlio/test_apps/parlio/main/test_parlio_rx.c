@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,16 +17,26 @@
 #include "driver/spi_master.h"
 #include "driver/gpio.h"
 #include "hal/gpio_hal.h"
+#include "hal/cache_hal.h"
+#include "hal/cache_ll.h"
 #include "soc/soc_caps.h"
 #include "soc/i2s_periph.h"
 #include "soc/spi_periph.h"
 #include "soc/parlio_periph.h"
+#include "esp_dma_utils.h"
 #include "esp_attr.h"
 #include "test_board.h"
 
 #define TEST_SPI_HOST   SPI2_HOST
 #define TEST_I2S_PORT   I2S_NUM_0
 #define TEST_VALID_SIG  (PARLIO_RX_UNIT_MAX_DATA_WIDTH - 1)
+
+#if SOC_PARLIO_RX_CLK_SUPPORT_OUTPUT
+#define TEST_OUTPUT_CLK_PIN     TEST_CLK_GPIO
+#else
+#define TEST_OUTPUT_CLK_PIN     -1
+#endif
+
 #define TEST_DEFAULT_UNIT_CONFIG(_clk_src, _clk_freq) {  \
     .trans_queue_depth = 10,  \
     .max_recv_size = 10 * 1024,  \
@@ -35,7 +45,7 @@
     .ext_clk_freq_hz = _clk_src == PARLIO_CLK_SRC_EXTERNAL ? _clk_freq : 0,  \
     .clk_in_gpio_num = _clk_src == PARLIO_CLK_SRC_EXTERNAL ? TEST_CLK_GPIO : -1,  \
     .exp_clk_freq_hz = _clk_freq,  \
-    .clk_out_gpio_num = -1,  \
+    .clk_out_gpio_num = _clk_src == PARLIO_CLK_SRC_EXTERNAL ? -1 : TEST_OUTPUT_CLK_PIN,  \
     .valid_gpio_num = TEST_VALID_GPIO,  \
     .data_gpio_nums = {  \
         [0] = TEST_DATA0_GPIO,  \
@@ -55,6 +65,10 @@ typedef struct {
     uint32_t recv_done_cnt;
     uint32_t timeout_cnt;
 } test_data_t;
+
+#ifndef ALIGN_UP
+#define ALIGN_UP(num, align)    (((num) + ((align) - 1)) & ~((align) - 1))
+#endif
 
 TEST_PARLIO_CALLBACK_ATTR
 static bool test_parlio_rx_partial_recv_callback(parlio_rx_unit_handle_t rx_unit, const parlio_rx_event_data_t *edata, void *user_data)
@@ -285,11 +299,15 @@ static bool test_delimiter(parlio_rx_delimiter_handle_t deli, bool free_running_
         .delimiter = deli,
         .flags.partial_rx_en = false,
     };
-    uint8_t recv_buff[TEST_EOF_DATA_LEN];
+    uint8_t *recv_buff = NULL;
+    uint32_t alignment = cache_hal_get_cache_line_size(CACHE_LL_LEVEL_INT_MEM, CACHE_TYPE_DATA);
+    alignment = alignment < 4 ? 4 : alignment;
+    size_t buff_size = ALIGN_UP(TEST_EOF_DATA_LEN, alignment);
+    recv_buff = heap_caps_aligned_calloc(alignment, 1, buff_size, TEST_PARLIO_DMA_MEM_ALLOC_CAPS);
     bool is_success = false;
     // sample 5 times
     for (int i = 0; i < 5 && !is_success; i++) {
-        TEST_ESP_OK(parlio_rx_unit_receive(rx_unit, recv_buff, TEST_EOF_DATA_LEN, &recv_config));
+        TEST_ESP_OK(parlio_rx_unit_receive(rx_unit, recv_buff, buff_size, &recv_config));
         TEST_ESP_OK(parlio_rx_unit_wait_all_done(rx_unit, 5000));
         for (int k = 0; k < TEST_EOF_DATA_LEN; k++) {
             printf("%x ", recv_buff[k]);
@@ -315,6 +333,7 @@ static bool test_delimiter(parlio_rx_delimiter_handle_t deli, bool free_running_
     }
     // Delete the sender task
     vTaskDelete(sender_task);
+    free(recv_buff);
 
     TEST_ESP_OK(parlio_rx_unit_disable(rx_unit));
     TEST_ESP_OK(parlio_del_rx_unit(rx_unit));
@@ -409,8 +428,7 @@ TEST_CASE("parallel_rx_unit_install_uninstall", "[parlio_rx]")
     TEST_ESP_OK(parlio_rx_unit_disable(units[0]));
     TEST_ESP_OK(parlio_del_rx_unit(units[0]));
 }
-
-#define TEST_PAYLOAD_SIZE   5000
+#define TEST_PAYLOAD_SIZE   5120
 
 // This test case uses soft delimiter
 TEST_CASE("parallel_rx_unit_receive_transaction_test", "[parlio_rx]")
@@ -444,7 +462,11 @@ TEST_CASE("parallel_rx_unit_receive_transaction_test", "[parlio_rx]")
         .delimiter = deli,
         .flags.partial_rx_en = false,
     };
-    uint8_t *payload = heap_caps_calloc(1, TEST_PAYLOAD_SIZE, TEST_PARLIO_MEM_ALLOC_CAPS);
+    uint8_t *payload = NULL;
+    uint32_t alignment = cache_hal_get_cache_line_size(CACHE_LL_LEVEL_INT_MEM, CACHE_TYPE_DATA);
+    alignment = alignment < 4 ? 4 : alignment;
+    size_t payload_size = ALIGN_UP(TEST_PAYLOAD_SIZE, alignment);
+    payload = heap_caps_aligned_calloc(alignment, 1, payload_size, TEST_PARLIO_DMA_MEM_ALLOC_CAPS);
     TEST_ASSERT(payload);
 
     printf("Testing one normal transaction...\n");
@@ -535,7 +557,11 @@ TEST_CASE("parallel_rx_unit_receive_timeout_test", "[parlio_rx]")
         .delimiter = timeout_deli,
         .flags.partial_rx_en = false,
     };
-    uint8_t *payload = heap_caps_calloc(1, TEST_PAYLOAD_SIZE, TEST_PARLIO_MEM_ALLOC_CAPS);
+    uint8_t *payload = NULL;
+    uint32_t alignment = cache_hal_get_cache_line_size(CACHE_LL_LEVEL_INT_MEM, CACHE_TYPE_DATA);
+    alignment = alignment < 4 ? 4 : alignment;
+    size_t payload_size = ALIGN_UP(TEST_PAYLOAD_SIZE, alignment);
+    payload = heap_caps_aligned_calloc(alignment, 1, payload_size, TEST_PARLIO_DMA_MEM_ALLOC_CAPS);
     TEST_ASSERT(payload);
 
     printf("Testing the timeout callback...\n");

@@ -213,13 +213,13 @@ static inline void parlio_ll_rx_set_recv_bit_len(parl_io_dev_t *dev, uint32_t bi
  * @brief Set the sub mode of the level controlled receive mode
  *
  * @param dev Parallel IO register base address
- * @param active_level Level of the external enable signal, true for active high, false for active low
+ * @param active_low_en Level of the external enable signal, true for active low, false for active high
  */
 __attribute__((always_inline))
-static inline void parlio_ll_rx_set_level_recv_mode(parl_io_dev_t *dev, bool active_level)
+static inline void parlio_ll_rx_set_level_recv_mode(parl_io_dev_t *dev, bool active_low_en)
 {
     dev->rx_mode_cfg.rx_smp_mode_sel = 0;
-    dev->rx_mode_cfg.rx_ext_en_inv = !active_level; // 0: active low, 1: active high
+    dev->rx_mode_cfg.rx_ext_en_inv = active_low_en;
 }
 
 /**
@@ -359,7 +359,7 @@ static inline void parlio_ll_rx_treat_data_line_as_en(parl_io_dev_t *dev, uint32
 }
 
 /**
- * @brief Wether to enable the RX clock gating
+ * @brief whether to enable the RX clock gating
  *
  * @param dev Parallel IO register base address
  * @param en True to enable, False to disable
@@ -519,7 +519,7 @@ static inline void parlio_ll_tx_set_eof_condition(parl_io_dev_t *dev, parlio_ll_
 }
 
 /**
- * @brief Wether to enable the TX clock gating
+ * @brief whether to enable the TX clock gating
  *
  * @note The MSB of TXD will be taken as the gating enable signal
  *
@@ -589,7 +589,6 @@ static inline void parlio_ll_tx_set_bus_width(parl_io_dev_t *dev, uint32_t width
 {
     uint32_t width_sel = 0;
     switch (width) {
-    // TODO: check this field (IDF-8284)
     case 16:
         width_sel = 4;
         break;

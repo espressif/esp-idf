@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,6 +11,8 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/queue.h"
+#include "soc/soc_caps.h"
+#include "hal/dma_types.h"
 #include "esp_heap_caps.h"
 #include "esp_probe.h"
 
@@ -19,12 +21,17 @@ extern "C" {
 #endif
 
 #define ESP_PROBE_DEFAULT_Q_DEPTH   8
-#define ESP_PROBE_DEFAULT_MAX_RECV_SIZE   (ESP_PROBE_DEFAULT_Q_DEPTH * 4092)
+#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
+#define ESP_PROBE_DEFAULT_MAX_RECV_SIZE   (ESP_PROBE_DEFAULT_Q_DEPTH * DMA_DESCRIPTOR_BUFFER_MAX_SIZE_64B_ALIGNED)
+#else
+#define ESP_PROBE_DEFAULT_MAX_RECV_SIZE   (ESP_PROBE_DEFAULT_Q_DEPTH * DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED)
+#endif
 #if CONFIG_PARLIO_ISR_IRAM_SAFE
 #define ESP_PROBE_ALLOC_CAPS        (MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT)
 #else
 #define ESP_PROBE_ALLOC_CAPS        MALLOC_CAP_DEFAULT
 #endif
+#define ESP_PROBE_DMA_ALLOC_CAPS    (MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA)
 
 struct esp_probe_t {
     uint32_t sample_width;      /*!< sample width, i.e., enabled probe channel nums */

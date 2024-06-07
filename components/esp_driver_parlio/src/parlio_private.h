@@ -30,6 +30,7 @@
 #else
 #define PARLIO_MEM_ALLOC_CAPS    MALLOC_CAP_DEFAULT
 #endif
+#define PARLIO_DMA_MEM_ALLOC_CAPS    (MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA)
 
 #if SOC_PARLIO_TX_RX_SHARE_INTERRUPT
 #define PARLIO_INTR_ALLOC_FLAG_SHARED ESP_INTR_FLAG_SHARED
@@ -56,6 +57,12 @@ typedef dma_descriptor_align8_t     parlio_dma_desc_t;
 #endif // defined(SOC_GDMA_TRIG_PERIPH_PARLIO0_BUS)
 
 #define ALIGN_UP(num, align)    (((num) + ((align) - 1)) & ~((align) - 1))
+
+#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
+#define PARLIO_MAX_ALIGNED_DMA_BUF_SIZE     DMA_DESCRIPTOR_BUFFER_MAX_SIZE_64B_ALIGNED
+#else
+#define PARLIO_MAX_ALIGNED_DMA_BUF_SIZE     DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED
+#endif
 
 #ifdef CACHE_LL_L2MEM_NON_CACHE_ADDR
 /* The descriptor address can be mapped by a fixed offset */
@@ -107,11 +114,12 @@ typedef enum {
 typedef struct parlio_unit_t *parlio_unit_base_handle_t;
 
 typedef struct parlio_group_t {
-    int                       group_id; // group ID, index from 0
-    portMUX_TYPE              spinlock; // to protect per-group register level concurrent access
-    parlio_hal_context_t      hal;      // hal layer context
-    parlio_unit_base_handle_t tx_units[SOC_PARLIO_TX_UNITS_PER_GROUP]; // tx unit handles
-    parlio_unit_base_handle_t rx_units[SOC_PARLIO_RX_UNITS_PER_GROUP]; // rx unit handles
+    int                       group_id;     // group ID, index from 0
+    portMUX_TYPE              spinlock;     // to protect per-group register level concurrent access
+    parlio_hal_context_t      hal;          // hal layer context
+    uint32_t                  dma_align;    // DMA buffer alignment
+    parlio_unit_base_handle_t    tx_units[SOC_PARLIO_TX_UNITS_PER_GROUP]; // tx unit handles
+    parlio_unit_base_handle_t    rx_units[SOC_PARLIO_RX_UNITS_PER_GROUP]; // rx unit handles
 } parlio_group_t;
 
 /**

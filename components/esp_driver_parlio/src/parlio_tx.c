@@ -405,7 +405,7 @@ static void IRAM_ATTR parlio_tx_mount_dma_data(parlio_tx_unit_t *tx_unit, const 
 
 #if CONFIG_IDF_TARGET_ESP32P4
     // Write back to cache to synchronize the cache before DMA start
-    esp_cache_msync(buffer, len, ESP_CACHE_MSYNC_FLAG_DIR_C2M);
+    esp_cache_msync((void *)buffer, len, ESP_CACHE_MSYNC_FLAG_DIR_C2M);
 #endif  // CONFIG_IDF_TARGET_ESP32P4
 }
 
