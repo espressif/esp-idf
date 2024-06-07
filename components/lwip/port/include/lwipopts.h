@@ -1081,6 +1081,11 @@ static inline uint32_t timeout_from_offered(uint32_t lease, uint32_t min)
 #define PPP_IPV6_SUPPORT                               CONFIG_LWIP_PPP_ENABLE_IPV6
 
 /**
+ * PPP_IPV4_SUPPORT==1: Enable PPP IPv4 support
+ */
+#define PPP_IPV4_SUPPORT                               CONFIG_LWIP_PPP_ENABLE_IPV4
+
+/**
  * PPP_NOTIFY_PHASE==1: Support PPP notify phase.
  */
 #define PPP_NOTIFY_PHASE                CONFIG_LWIP_PPP_NOTIFY_PHASE_SUPPORT
