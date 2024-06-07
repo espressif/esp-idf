@@ -10,6 +10,11 @@ Introduction
 The eFuse Manager library is designed to structure access to eFuse bits and make using these easy. This library operates eFuse bits by a structure name which is assigned in eFuse table. This sections introduces some concepts used by eFuse Manager.
 
 
+eFuse Manager vs idf.py
+-----------------------
+
+idf.py provides a subset of the functionality of the eFuse Manager via the ``idf.py efuse-<subcommand>`` commands. In this documentation, mostly ``idf.py`` based commands will be used, although you can still see some ``espefuse.py`` based commands for advanced or rare cases. To see all available commands, run ``idf.py --help`` and search for those prefixed with ``efuse-``.
+
 Hardware Description
 --------------------
 
@@ -226,7 +231,7 @@ Supported Coding Scheme
 
     You can find out the coding scheme of your chip:
 
-    * run a ``espefuse.py -p PORT summary`` command.
+    * run a ``idf.py efuse-summary`` command.
     * from ``esptool`` utility logs (during flashing).
     * calling the function in the code :cpp:func:`esp_efuse_get_coding_scheme` for the EFUSE_BLK3 block.
 
@@ -351,7 +356,7 @@ The eFuses bit order is little endian (see the example below), it means that eFu
 
 .. code-block:: none
 
-    $ espefuse.py dump
+    $ idf.py efuse-dump
 
     USER_DATA      (BLOCK3          ) [3 ] read_regs: 03020100 07060504 0B0A0908 0F0E0D0C 13121111 17161514 1B1A1918 1F1E1D1C
     BLOCK4         (BLOCK4          ) [4 ] read_regs: 03020100 07060504 0B0A0908 0F0E0D0C 13121111 17161514 1B1A1918 1F1E1D1C
@@ -440,7 +445,7 @@ The json string has the following properties:
         },
     }
 
-These functions can be used from a top-level project ``CMakeLists.txt`` (:example_file:`get-started/hello_world/CMakeLists.txt`):
+These functions can be used from a top-level project ``CMakeLists.txt`` (:example_file:`system/efuse/CMakeLists.txt`):
 
 .. code-block:: cmake
 
@@ -451,13 +456,13 @@ These functions can be used from a top-level project ``CMakeLists.txt`` (:exampl
     espefuse_get_efuse(ret_data ${efuse_json} "MAC" "value")
     message("MAC:" ${ret_data})
 
-The format of the ``value`` property is the same as shown in ``espefuse.py summary``.
+The format of the ``value`` property is the same as shown in ``espefuse.py summary`` or ``idf.py efuse-summary``.
 
 .. code-block:: none
 
     MAC:94:b9:7e:5a:6e:58 (CRC 0xe2 OK)
 
-There is an example test :example_file:`system/efuse/CMakeLists.txt` which adds a custom target ``efuse-summary``. This allows you to run the ``idf.py efuse-summary`` command to read the required eFuses (specified in the ``efuse_names`` list) at any time, not just at project build time.
+There is an example test :example_file:`system/efuse/CMakeLists.txt` which adds a custom target ``efuse-filter``. This allows you to run the ``idf.py efuse-filter`` command to read the required eFuses (specified in the ``efuse_names`` list) at any time, not just during the project build.
 
 Debug eFuse & Unit Tests
 ------------------------
@@ -482,6 +487,7 @@ Flash Encryption (FE) is a hardware feature that requires the physical burning o
 ^^^^^^^^^^^^^^^
 
 esptool includes a useful tool for reading/writing {IDF_TARGET_NAME} eFuse bits - `espefuse.py <https://docs.espressif.com/projects/esptool/en/latest/{IDF_TARGET_PATH_NAME}/espefuse/index.html>`_.
+Part of the functionality of this tool is also provided directly by ``idf.py`` commands. For example, the ``idf.py efuse-summary`` command is equivalent to ``espefuse.py summary``.
 
 .. include:: inc/espefuse_summary_{IDF_TARGET_NAME}.rst
 

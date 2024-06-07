@@ -199,7 +199,7 @@ If you use a development board without pull-ups, you can do the following:
 
         Burning eFuses is irreversible! The issue list above might be out of date, so please make sure that the module you are burning has a 3.3 V flash chip by checking the information on https://www.espressif.com/. If you burn the 3.3 V eFuses on a module with a 1.8 V flash chip, the module will stop functioning.
 
-    If you are sure that you need to irreversibly burn eFuses, go to your ESP-IDF directory and run the following command:
+    If you are sure that you need to irreversibly burn eFuses, go to your ESP-IDF directory and run the following command using ``espefuse.py`` tool:
 
     .. code-block:: bash
 
@@ -221,9 +221,11 @@ If you use a development board without pull-ups, you can do the following:
 
     To check the status of the eFuses, run::
 
-        ``components/esptool_py/esptool/espefuse.py summary``
+    .. code-block::
 
-    If running from an automated flashing script, ``espefuse.py`` has an option ``--do-not-confirm``.
+        idf.py efuse-summary
+
+    If running from an automated flashing script, it is better to use standalone eFuse tool, ``espefuse.py``. This tool also has an option ``--do-not-confirm`` to burn eFuses without confirmation.
 
     For more details, see **{IDF_TARGET_NAME} Technical Reference Manual** [`PDF <{IDF_TARGET_TRM_EN_URL}#efuse>`__].
 

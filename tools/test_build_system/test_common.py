@@ -90,7 +90,7 @@ def test_efuse_summary_cmake_functions(
     default_idf_env: EnvDict
 ) -> None:
     default_idf_env['IDF_CI_BUILD'] = '1'
-    output = run_idf_py('efuse-summary', env=default_idf_env)
+    output = run_idf_py('efuse-filter', env=default_idf_env)
     assert 'FROM_CMAKE: MAC: 00:00:00:00:00:00' in output.stdout
     assert 'FROM_CMAKE: WR_DIS: 0' in output.stdout
 

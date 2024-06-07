@@ -22,11 +22,11 @@ ECDSA on {IDF_TARGET_NAME}
 
 On {IDF_TARGET_NAME}, the ECDSA module works with a secret key burnt into an eFuse block. This eFuse key is made completely inaccessible (default mode) for any resources outside the cryptographic modules, thus avoiding key leakage.
 
-ECDSA key can be programmed externally through ``espefuse.py`` script using:
+ECDSA key can be programmed externally through ``idf.py`` script. Here is an example of how to program the ECDSA key:
 
 .. code:: bash
 
-   espefuse.py burn_key <BLOCK_NUM> </path/to/ecdsa_private_key.pem> ECDSA_KEY
+   idf.py efuse-burn-key <BLOCK_NUM> </path/to/ecdsa_private_key.pem> ECDSA_KEY
 
 .. only:: SOC_EFUSE_BLOCK9_KEY_PURPOSE_QUIRK
 
@@ -63,7 +63,7 @@ Following code snippet uses :cpp:func:`esp_efuse_write_key` to set physical key 
 
 .. only:: SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE
 
-    Determinisitic Signature Generation
+    Deterministic Signature Generation
     -----------------------------------
 
     The ECDSA peripheral of {IDF_TARGET_NAME} also supports generation of deterministic signatures using deterministic derivation of the parameter K as specified in the `RFC 6979 <https://tools.ietf.org/html/rfc6979>`_ section 3.2.
