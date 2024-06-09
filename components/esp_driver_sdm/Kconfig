@@ -8,14 +8,6 @@ menu "ESP-Driver:Sigma Delta Modulator Configurations"
             so that these functions can be IRAM-safe and able to be called in the other IRAM interrupt context.
             Enabling this option can improve driver performance as well.
 
-    config SDM_SUPPRESS_DEPRECATE_WARN
-        bool "Suppress legacy driver deprecated warning"
-        default n
-        help
-            whether to suppress the deprecation warnings when using legacy sigma delta driver.
-            If you want to continue using the legacy driver, and don't want to see related deprecation warnings,
-            you can enable this option.
-
     config SDM_ENABLE_DEBUG_LOG
         bool "Enable debug log"
         default n
