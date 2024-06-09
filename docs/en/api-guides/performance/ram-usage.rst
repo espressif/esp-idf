@@ -192,6 +192,7 @@ The following options will reduce IRAM usage of some ESP-IDF features:
     - Refer to the sdkconfig menu ``Auto-detect Flash chips``, and you can disable flash drivers which you do not need to save some IRAM.
     :SOC_GPSPI_SUPPORTED: - Enable :ref:`CONFIG_HEAP_PLACE_FUNCTION_INTO_FLASH`. Provided that :ref:`CONFIG_SPI_MASTER_ISR_IN_IRAM` is not enabled and the heap functions are not incorrectly used from ISRs, this option is safe to enable in all configurations.
     :esp32c2: - Enable :ref:`CONFIG_BT_RELEASE_IRAM`. Release BT text section and merge BT data, bss & text into a large free heap region when ``esp_bt_mem_release`` is called. This makes Bluetooth unavailable until the next restart, but saving ~22 KB or more of IRAM.
+    :SOC_DEBUG_HAVE_OCD_STUB_BINS: - Disabling :ref:`CONFIG_ESP_DEBUG_INCLUDE_OCD_STUB_BINS` frees 8 KB IRAM but overall speed of debugging might be impacted due to the added overhead of runtime stub loading especially when using flash breakpoints.
 
 .. only:: esp32
 
@@ -202,7 +203,7 @@ The following options will reduce IRAM usage of some ESP-IDF features:
 
    To use this option, ESP-IDF should be able to recognize that the new SRAM1 area is also a valid load address for an image segment. If the software bootloader was compiled before this option existed, then the bootloader will not be able to load the app that has code placed in this new extended IRAM area. This would typically happen if you are doing an OTA update, where only the app would be updated.
 
-   If the IRAM section were to be placed in an invalid area, then this would be detected during the boot-up process, and result in a failed boot:
+   If the IRAM section were to be placed in an invalid area, then this would be detected during the boot up process, and result in a failed boot:
 
    .. code-block:: text
 
