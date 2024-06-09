@@ -147,3 +147,7 @@ endif()
 if(CONFIG_SOC_MEM_NON_CONTIGUOUS_SRAM)
     target_link_options(${COMPONENT_LIB} INTERFACE "-Wl,--enable-non-contiguous-regions")
 endif()
+
+if(CONFIG_ESP_DEBUG_INCLUDE_OCD_STUB_BINS)
+    add_subdirectory(openocd_stub_bins)
+endif()
