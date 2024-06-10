@@ -641,9 +641,11 @@ static bool init_common_tcp_transport(esp_http_client_handle_t client, const esp
     }
 
     if (config->if_name) {
-        client->if_name = calloc(1, sizeof(struct ifreq));
-        ESP_RETURN_ON_FALSE(client->if_name, false, TAG, "Memory exhausted");
-        memcpy(client->if_name, config->if_name, sizeof(struct ifreq));
+        if (client->if_name == NULL) {
+            client->if_name = calloc(1, sizeof(struct ifreq));
+            ESP_RETURN_ON_FALSE(client->if_name, false, TAG, "Memory exhausted");
+            memcpy(client->if_name, config->if_name, sizeof(struct ifreq));
+        }
         esp_transport_tcp_set_interface_name(transport, client->if_name);
     }
     return true;
