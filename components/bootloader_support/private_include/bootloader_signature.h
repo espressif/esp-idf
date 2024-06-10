@@ -27,6 +27,8 @@
 #include "esp32p4/rom/secure_boot.h"
 #elif CONFIG_IDF_TARGET_ESP32C5
 #include "esp32c5/rom/secure_boot.h"
+#elif CONFIG_IDF_TARGET_ESP32C61
+#include "esp32c61/rom/secure_boot.h"
 #endif
 
 #ifdef __cplusplus

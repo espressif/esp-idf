@@ -23,6 +23,8 @@
 #include "esp32p4/rom/secure_boot.h"
 #elif CONFIG_IDF_TARGET_ESP32C5
 #include "esp32c5/rom/secure_boot.h"
+#elif CONFIG_IDF_TARGET_ESP32C61
+#include "esp32c61/rom/secure_boot.h"
 #endif
 
 esp_err_t verify_ecdsa_signature_block(const ets_secure_boot_signature_t *sig_block, const uint8_t *image_digest, const ets_secure_boot_sig_block_t *trusted_block);
