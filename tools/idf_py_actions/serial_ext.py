@@ -9,6 +9,7 @@ from typing import Any
 from typing import Dict
 from typing import List
 from typing import Optional
+from typing import Tuple
 
 import click
 from idf_py_actions.global_options import global_options
@@ -18,13 +19,13 @@ from idf_py_actions.tools import get_sdkconfig_value
 from idf_py_actions.tools import PropertyDict
 from idf_py_actions.tools import run_target
 from idf_py_actions.tools import RunTool
-
 PYTHON = sys.executable
 
 
 BAUD_RATE = {
     'names': ['-b', '--baud'],
-    'help': 'Baud rate for flashing. It can imply monitor baud rate as well if it hasn\'t been defined locally.',
+    'help': ("Global baud rate for all idf.py subcommands if they don't overwrite it locally."
+             "It can imply monitor baud rate as well if it hasn't been defined locally."),
     'scope': 'global',
     'envvar': 'ESPBAUD',
     'default': 460800,
@@ -41,7 +42,7 @@ PORT = {
 
 
 def yellow_print(message: str, newline: Optional[str]='\n') -> None:
-    """Print a message to stderr with yellow highlighting """
+    """Print a message to stderr with yellow highlighting"""
     sys.stderr.write('%s%s%s%s' % ('\033[0;33m', message, '\033[0m', newline))
     sys.stderr.flush()
 
@@ -56,7 +57,9 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
         return project_desc
 
     def _get_esptool_args(args: PropertyDict) -> List:
-        esptool_path = os.path.join(os.environ['IDF_PATH'], 'components/esptool_py/esptool/esptool.py')
+        esptool_path = os.path.join(
+            os.environ['IDF_PATH'], 'components/esptool_py/esptool/esptool.py'
+        )
         esptool_wrapper_path = os.environ.get('ESPTOOL_WRAPPER', '')
         if args.port is None:
             args.port = get_default_serial_port()
@@ -79,7 +82,7 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
         return result
 
     def _get_commandline_options(ctx: click.core.Context) -> List:
-        """ Return all the command line options up to first action """
+        """Return all the command line options up to first action"""
         # This approach ignores argument parsing done Click
         result = []
 
@@ -91,8 +94,18 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
 
         return result
 
-    def monitor(action: str, ctx: click.core.Context, args: PropertyDict, print_filter: str, monitor_baud: str, encrypted: bool,
-                no_reset: bool, timestamps: bool, timestamp_format: str, force_color: bool) -> None:
+    def monitor(
+        action: str,
+        ctx: click.core.Context,
+        args: PropertyDict,
+        print_filter: str,
+        monitor_baud: str,
+        encrypted: bool,
+        no_reset: bool,
+        timestamps: bool,
+        timestamp_format: str,
+        force_color: bool,
+    ) -> None:
         """
         Run esp_idf_monitor to watch build output
         """
@@ -104,15 +117,21 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
 
         if project_desc['target'] != 'linux':
             if no_reset and args.port is None:
-                msg = ('WARNING: --no-reset is ignored. '
-                       'Please specify the port with the --port argument in order to use this option.')
+                msg = (
+                    'WARNING: --no-reset is ignored. '
+                    'Please specify the port with the --port argument in order to use this option.'
+                )
                 yellow_print(msg)
                 no_reset = False
 
             args.port = args.port or get_default_serial_port()
             monitor_args += ['-p', args.port]
 
-            baud = monitor_baud or os.getenv('IDF_MONITOR_BAUD') or os.getenv('MONITORBAUD')
+            baud = (
+                monitor_baud
+                or os.getenv('IDF_MONITOR_BAUD')
+                or os.getenv('MONITORBAUD')
+            )
 
             if baud is None:
                 # Baud hasn't been changed locally (by local baud argument nor by environment variables)
@@ -120,18 +139,27 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
                 # Use the global baud rate if it has been changed by the command line.
                 # Use project_desc['monitor_baud'] as the last option.
 
-                global_baud_defined = ctx._parameter_source['baud'] == click.core.ParameterSource.COMMANDLINE
-                baud = args.baud if global_baud_defined else project_desc['monitor_baud']
+                global_baud_defined = (
+                    ctx._parameter_source['baud']
+                    == click.core.ParameterSource.COMMANDLINE
+                )
+                baud = (
+                    args.baud if global_baud_defined else project_desc['monitor_baud']
+                )
 
             monitor_args += ['-b', baud]
 
         monitor_args += ['--toolchain-prefix', project_desc['monitor_toolprefix']]
 
-        coredump_decode = get_sdkconfig_value(project_desc['config_file'], 'CONFIG_ESP_COREDUMP_DECODE')
+        coredump_decode = get_sdkconfig_value(
+            project_desc['config_file'], 'CONFIG_ESP_COREDUMP_DECODE'
+        )
         if coredump_decode is not None:
             monitor_args += ['--decode-coredumps', coredump_decode]
 
-        target_arch_riscv = get_sdkconfig_value(project_desc['config_file'], 'CONFIG_IDF_TARGET_ARCH_RISCV')
+        target_arch_riscv = get_sdkconfig_value(
+            project_desc['config_file'], 'CONFIG_IDF_TARGET_ARCH_RISCV'
+        )
         monitor_args += ['--target', project_desc['target']]
         revision = project_desc.get('min_rev')
         if revision:
@@ -168,13 +196,26 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
         # Temporally ignore SIGINT, which is used in idf_monitor to spawn gdb.
         old_handler = signal.getsignal(signal.SIGINT)
         signal.signal(signal.SIGINT, signal.SIG_IGN)
-
         try:
-            RunTool('idf_monitor', monitor_args, args.project_dir, build_dir=args.build_dir, hints=hints, interactive=True, convert_output=True)()
+            RunTool(
+                'idf_monitor',
+                monitor_args,
+                args.project_dir,
+                build_dir=args.build_dir,
+                hints=hints,
+                interactive=True,
+                convert_output=True,
+            )()
         finally:
             signal.signal(signal.SIGINT, old_handler)
 
-    def flash(action: str, ctx: click.core.Context, args: PropertyDict, force: bool, extra_args: str) -> None:
+    def flash(
+        action: str,
+        ctx: click.core.Context,
+        args: PropertyDict,
+        force: bool,
+        extra_args: str,
+    ) -> None:
         """
         Run esptool to flash the entire project, from an argfile generated by the build system
         """
@@ -190,7 +231,11 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
             extra.append('--force')
         if extra_args:
             extra += shlex.split(extra_args)
-        env = {'ESPBAUD': str(args.baud), 'ESPPORT': args.port, 'SERIAL_TOOL_EXTRA_ARGS': ';'.join(extra)}
+        env = {
+            'ESPBAUD': str(args.baud),
+            'ESPPORT': args.port,
+            'SERIAL_TOOL_EXTRA_ARGS': ';'.join(extra),
+        }
         run_target(action, args, env, force_progression=True)
 
     def erase_flash(action: str, ctx: click.core.Context, args: PropertyDict) -> None:
@@ -199,15 +244,21 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
         esptool_args += ['erase_flash']
         RunTool('esptool.py', esptool_args, args.build_dir, hints=not args.no_hints)()
 
-    def global_callback(ctx: click.core.Context, global_args: Dict, tasks: PropertyDict) -> None:
-        encryption = any([task.name in ('encrypted-flash', 'encrypted-app-flash') for task in tasks])
+    def global_callback(
+        ctx: click.core.Context, global_args: Dict, tasks: PropertyDict
+    ) -> None:
+        encryption = any(
+            [task.name in ('encrypted-flash', 'encrypted-app-flash') for task in tasks]
+        )
         if encryption:
             for task in tasks:
                 if task.name == 'monitor':
                     task.action_args['encrypted'] = True
                     break
 
-    def ota_targets(target_name: str, ctx: click.core.Context, args: PropertyDict) -> None:
+    def ota_targets(
+        target_name: str, ctx: click.core.Context, args: PropertyDict
+    ) -> None:
         """
         Execute the target build system to build target 'target_name'.
         Additionally set global variables for baud and port.
@@ -387,6 +438,76 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
             sign_data_args += [extra_args['datafile']]
         RunTool('espsecure', sign_data_args, args.build_dir)()
 
+    def _parse_efuse_args(ctx: click.core.Context, args: PropertyDict, extra_args: Dict) -> List:
+        efuse_args = []
+        efuse_args += ['-p', args.port or get_default_serial_port()]
+        if args.baud:
+            efuse_args += ['-b', str(args.baud)]
+        efuse_args += ['--chip', _get_project_desc(ctx, args)['target']]
+        if extra_args['before']:
+            efuse_args += ['--before', extra_args['before'].replace('-', '_')]
+        if extra_args['debug']:
+            efuse_args += ['--debug']
+        if extra_args['do_not_confirm']:
+            efuse_args += ['--do-not-confirm']
+        return efuse_args
+
+    def efuse_burn(action: str, ctx: click.core.Context, args: PropertyDict, **extra_args: Dict) -> None:
+        ensure_build_directory(args, ctx.info_name)
+        burn_efuse_args = [PYTHON, '-m' 'espefuse', 'burn_efuse']
+        burn_efuse_args += _parse_efuse_args(ctx, args, extra_args)
+        if extra_args['efuse_positional_args']:
+            burn_efuse_args += list(extra_args['efuse_positional_args'])
+        RunTool('espefuse', burn_efuse_args, args.build_dir)()
+
+    def efuse_burn_key(action: str, ctx: click.core.Context, args: PropertyDict, **extra_args: str) -> None:
+        ensure_build_directory(args, ctx.info_name)
+        burn_key_args = [PYTHON, '-m' 'espefuse', 'burn_key']
+        burn_key_args += _parse_efuse_args(ctx, args, extra_args)
+        if extra_args['no_protect_key']:
+            burn_key_args += ['--no-protect-key']
+        if extra_args['force_write_always']:
+            burn_key_args += ['--force-write-always']
+        if extra_args['show_sensitive_info']:
+            burn_key_args += ['--show-sensitive-info']
+        if extra_args['image']:
+            burn_key_args.append(extra_args['image'])
+        RunTool('espefuse.py', burn_key_args, args.project_dir, build_dir=args.build_dir)()
+
+    def efuse_dump(action: str, ctx: click.core.Context, args: PropertyDict, file_name: str, **extra_args: Dict) -> None:
+        ensure_build_directory(args, ctx.info_name)
+        dump_args = [PYTHON, '-m' 'espefuse', 'dump']
+        dump_args += _parse_efuse_args(ctx, args, extra_args)
+        if file_name:
+            dump_args += ['--file_name', file_name]
+        RunTool('espefuse', dump_args, args.build_dir)()
+
+    def efuse_read_protect(action: str, ctx: click.core.Context, args: PropertyDict, **extra_args: Dict) -> None:
+        ensure_build_directory(args, ctx.info_name)
+        read_protect_args = [PYTHON, '-m' 'espefuse', 'read_protect_efuse']
+        read_protect_args += _parse_efuse_args(ctx, args, extra_args)
+        if extra_args['efuse_positional_args']:
+            read_protect_args += list(extra_args['efuse_positional_args'])
+        RunTool('espefuse', read_protect_args, args.build_dir)()
+
+    def efuse_summary(action: str, ctx: click.core.Context, args: PropertyDict, format: str, **extra_args: Tuple) -> None:
+        ensure_build_directory(args, ctx.info_name)
+        summary_args = [PYTHON, '-m' 'espefuse', 'summary']
+        summary_args += _parse_efuse_args(ctx, args, extra_args)
+        if format:
+            summary_args += ['--format', format.replace('-', '_')]
+        if extra_args['efuses']:
+            summary_args += extra_args['efuse_name']
+        RunTool('espefuse', summary_args, args.build_dir)()
+
+    def efuse_write_protect(action: str, ctx: click.core.Context, args: PropertyDict, **extra_args: Dict) -> None:
+        ensure_build_directory(args, ctx.info_name)
+        write_protect_args = [PYTHON, '-m' 'espefuse', 'write_protect_efuse']
+        write_protect_args += _parse_efuse_args(ctx, args, extra_args)
+        if extra_args['efuse_positional_args']:
+            write_protect_args += list(extra_args['efuse_positional_args'])
+        RunTool('espefuse', write_protect_args, args.build_dir)()
+
     BAUD_AND_PORT = [BAUD_RATE, PORT]
     flash_options = BAUD_AND_PORT + [
         {
@@ -402,6 +523,25 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
             )
         }
     ]
+
+    EFUSE_OPTS = BAUD_AND_PORT + [
+        {
+            'names': ['--before'],
+            'help': 'What to do before connecting to the chip.',
+            'type': click.Choice(['default-reset', 'usb-reset', 'no-reset', 'no-reset-no-sync']),
+        },
+        {
+            'names': ['--debug', '-d'],
+            'is_flag': True,
+            'help': 'Print debug information (loglevel=DEBUG).',
+        },
+        {
+            'names': ['--do-not-confirm'],
+            'is_flag': True,
+            'help': 'Do not pause for confirmation before permanently writing eFuses. Use with caution!',
+        },
+    ]
+
     serial_actions = {
         'global_action_callbacks': [global_callback],
         'actions': {
@@ -516,6 +656,7 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
                         'nargs': 1,
                     },
                 ],
+
             },
             'secure-encrypt-flash-data': {
                 'callback': secure_encrypt_flash_data,
@@ -644,63 +785,169 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
                     },
                 ],
             },
+            'efuse-burn': {
+                'callback': efuse_burn,
+                'help': 'Burn the eFuse with the specified name.',
+                'options': EFUSE_OPTS,
+                'arguments': [
+                    {
+                        'names': ['efuse-positional-args'],
+                        'nargs': -1,
+                    },
+                ],
+            },
+            'efuse-burn-key': {
+                'callback': efuse_burn_key,
+                'help': 'Burn a 256-bit key to EFUSE: BLOCK1, flash_encryption, BLOCK2, secure_boot_v1, secure_boot_v2, BLOCK3.',
+                'options': EFUSE_OPTS + [
+                    {
+                        'names': ['--no-protect-key'],
+                        'help': (
+                            'Disable default read- and write-protecting of the key.'
+                            'If this option is not set, once the key is flashed it cannot be read back or changed.'
+                        ),
+                    },
+                    {
+                        'names': ['--force-write-always'],
+                        'help': (
+                            "Write the eFuse even if it looks like it's already been written, or is write protected."
+                            "Note that this option can't disable write protection, or clear any bit which has already been set."
+                        ),
+                    },
+                    {
+                        'names': ['--show-sensitive-info'],
+                        'help': (
+                            'Show data to be burned (may expose sensitive data). Enabled if --debug is used.'
+                        ),
+                    },
+                ],
+                'arguments': [
+                    {
+                        'names': ['image'],
+                        'nargs': 1,
+                    },
+                ],
+            },
+            'efuse-dump': {
+                'callback': efuse_dump,
+                'help': 'Dump raw hex values of all eFuses.',
+                'options': EFUSE_OPTS + [
+                    {
+                        'names': ['--file-name'],
+                        'help': (
+                            'Saves dump for each block into separate file. Provide the common path name /path/blk.bin, it will create:'
+                            ' blk0.bin, blk1.bin ... blkN.bin. Use burn_block_data to write it back to another chip.'
+                        ),
+                    },
+                ],
+            },
+            'efuse-read-protect': {
+                'callback': efuse_read_protect,
+                'help': 'Disable writing to the eFuse with the specified name.',
+                'options': EFUSE_OPTS,
+                'arguments': [
+                    {
+                        'names': ['efuse-positional-args'],
+                        'nargs': -1,
+                    },
+                ],
+            },
+            'efuse-summary': {
+                'callback': efuse_summary,
+                'help': 'Get the summary of the eFuses.',
+                'options': EFUSE_OPTS + [
+                    {
+                        'names': ['--format'],
+                        'help': ('Summary format.'),
+                        'type': click.Choice(['json', 'summary', 'value-only']),
+                    },
+                ],
+                'arguments': [
+                    {
+                        'names': ['efuse-name'],
+                        'nargs': 1,
+                    },
+                ],
+            },
+            'efuse-write-protect': {
+                'callback': efuse_write_protect,
+                'help': 'Disable writing to the eFuse with the specified name.',
+                'options': EFUSE_OPTS,
+                'arguments': [
+                    {
+                        'names': ['efuse-positional-args'],
+                        'nargs': -1,
+                    },
+                ],
+            },
             'monitor': {
-                'callback':
-                monitor,
-                'help':
-                'Display serial output.',
+                'callback': monitor,
+                'help': 'Display serial output.',
                 'options': [
-                    PORT, {
+                    PORT,
+                    {
                         'names': ['--print-filter', '--print_filter'],
-                        'help':
-                        ('Filter monitor output. '
-                         'Restrictions on what to print can be specified as a series of <tag>:<log_level> items '
-                         'where <tag> is the tag string and <log_level> is a character from the set '
-                         '{N, E, W, I, D, V, *} referring to a level. '
-                         'For example, "tag1:W" matches and prints only the outputs written with '
-                         'ESP_LOGW("tag1", ...) or at lower verbosity level, i.e. ESP_LOGE("tag1", ...). '
-                         'Not specifying a <log_level> or using "*" defaults to Verbose level. '
-                         'Please see the IDF Monitor section of the ESP-IDF documentation '
-                         'for a more detailed description and further examples.'),
-                        'default':
-                        None,
-                    }, {
+                        'help': (
+                            'Filter monitor output. '
+                            'Restrictions on what to print can be specified as a series of <tag>:<log_level> items '
+                            'where <tag> is the tag string and <log_level> is a character from the set '
+                            '{N, E, W, I, D, V, *} referring to a level. '
+                            'For example, "tag1:W" matches and prints only the outputs written with '
+                            'ESP_LOGW("tag1", ...) or at lower verbosity level, i.e. ESP_LOGE("tag1", ...). '
+                            'Not specifying a <log_level> or using "*" defaults to Verbose level. '
+                            'Please see the IDF Monitor section of the ESP-IDF documentation '
+                            'for a more detailed description and further examples.'
+                        ),
+                        'default': None,
+                    },
+                    {
                         'names': ['--monitor-baud', '-b'],
-                        'type':
-                        click.INT,
-                        'help': ('Baud rate for monitor. '
-                                 'If this option is not provided IDF_MONITOR_BAUD and MONITORBAUD '
-                                 'environment variables, global baud rate and project_description.json in build directory '
-                                 "(generated by CMake from project's sdkconfig) "
-                                 'will be checked for default value.'),
-                    }, {
+                        'type': click.INT,
+                        'help': (
+                            'Baud rate for monitor. '
+                            'If this option is not provided IDF_MONITOR_BAUD and MONITORBAUD '
+                            'environment variables, global baud rate and project_description.json in build directory '
+                            "(generated by CMake from project's sdkconfig) "
+                            'will be checked for default value.'
+                        ),
+                    },
+                    {
                         'names': ['--encrypted', '-E'],
                         'is_flag': True,
-                        'help': ('Enable encrypted flash targets. '
-                                 'IDF Monitor will invoke encrypted-flash and encrypted-app-flash targets '
-                                 'if this option is set. This option is set by default if IDF Monitor was invoked '
-                                 'together with encrypted-flash or encrypted-app-flash target.'),
-                    }, {
+                        'help': (
+                            'Enable encrypted flash targets. '
+                            'IDF Monitor will invoke encrypted-flash and encrypted-app-flash targets '
+                            'if this option is set. This option is set by default if IDF Monitor was invoked '
+                            'together with encrypted-flash or encrypted-app-flash target.'
+                        ),
+                    },
+                    {
                         'names': ['--no-reset'],
                         'is_flag': True,
-                        'help': ('Disable reset on monitor startup. '
-                                 'IDF Monitor will not reset the MCU target by toggling DTR/RTS lines on startup '
-                                 'if this option is set.'),
-                    }, {
+                        'help': (
+                            'Disable reset on monitor startup. '
+                            'IDF Monitor will not reset the MCU target by toggling DTR/RTS lines on startup '
+                            'if this option is set.'
+                        ),
+                    },
+                    {
                         'names': ['--timestamps'],
                         'is_flag': True,
                         'help': 'Print a time stamp in the beginning of each line.',
-                    }, {
+                    },
+                    {
                         'names': ['--timestamp-format'],
-                        'help': ('Set the formatting of timestamps compatible with strftime(). '
-                                 'For example, "%Y-%m-%d %H:%M:%S".'),
-                        'default': None
-                    }, {
+                        'help': (
+                            'Set the formatting of timestamps compatible with strftime(). '
+                            'For example, "%Y-%m-%d %H:%M:%S".'
+                        ),
+                        'default': None,
+                    },
+                    {
                         'names': ['--force-color'],
                         'is_flag': True,
                         'help': 'Always print ANSI for colors',
-                    }
-
+                    },
                 ],
                 'order_dependencies': [
                     'flash',
@@ -741,6 +988,7 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
                 'options': flash_options,
                 'order_dependencies': ['all', 'erase-flash'],
             },
+
             'erase-otadata': {
                 'callback': ota_targets,
                 'help': 'Erase otadata partition.',

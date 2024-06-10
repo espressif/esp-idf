@@ -1,14 +1,10 @@
 .. code-block:: none
 
-    espefuse.py -p PORT summary
+    idf.py efuse-summary
 
-    espefuse.py v4.6-dev
-    Connecting....
-    Detecting chip type... Unsupported detection protocol, switching and trying again...
-    Connecting.....
-    Detecting chip type... ESP32
+    Executing action: efuse-summary
+    (...)
 
-    === Run "summary" command ===
     EFUSE_NAME (Block) Description  = [Meaningful Value] [Readable/Writeable] (Hex Value)
     ----------------------------------------------------------------------------------------
     Calibration fuses:
@@ -29,8 +25,8 @@
     CLK8M_FREQ (BLOCK0)                                8MHz clock freq override                           = 51 R/W (0x33)
     VOL_LEVEL_HP_INV (BLOCK0)                          This field stores the voltage level for CPU to run = 0 R/W (0b00)
                                                         at 240 MHz; or for flash/PSRAM to run at 80 MHz.0
-                                                       x0: level 7; 0x1: level 6; 0x2: level 5; 0x3: leve
-                                                       l 4. (RO)
+                                                       x0: level 7; 0x1: level 6; 0x2: level 5; 0x3:i
+                                                       level 4. (RO)
     CODING_SCHEME (BLOCK0)                             Efuse variable block length scheme
        = NONE (BLK1-3 len=256 bits) R/W (0b00)
     CONSOLE_DEBUG_DISABLE (BLOCK0)                     Disable ROM BASIC interpreter fallback             = True R/W (0b1)
@@ -97,13 +93,13 @@ To get a dump for all eFuse registers.
 
 .. code-block:: none
 
-    espefuse.py -p PORT dump
+    idf.py efuse-dump
 
+    Executing action: efuse-dump
+    Running espefuse.py in directory <project-directory>
+    Executing "espefuse.py dump --chip esp32"...
     espefuse.py v4.6-dev
     Connecting....
-    Detecting chip type... Unsupported detection protocol, switching and trying again...
-    Connecting.......
-    Detecting chip type... ESP32
     BLOCK0          (                ) [0 ] read_regs: 00000000 7e5a6e58 00e294b9 0000a200 00000333 00100000 00000004
     BLOCK1          (flash_encryption) [1 ] read_regs: 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000
     BLOCK2          (secure_boot_v1 s) [2 ] read_regs: 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000
