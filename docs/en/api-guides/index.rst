@@ -44,4 +44,5 @@ API Guides
    :SOC_WIFI_SUPPORTED: wifi
    :SOC_WIFI_SUPPORTED: wifi-security
    low-power-mode
+   wifi-expansion
    :SOC_WIFI_SUPPORTED or SOC_BT_SUPPORTED or SOC_IEEE802154_SUPPORTED: phy
