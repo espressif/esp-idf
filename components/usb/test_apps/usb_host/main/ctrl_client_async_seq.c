@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,6 +11,7 @@
 #include "esp_err.h"
 #include "esp_log.h"
 #include "test_usb_common.h"
+#include "dev_msc.h"
 #include "ctrl_client.h"
 #include "usb/usb_host.h"
 #include "unity.h"
@@ -47,21 +48,26 @@ typedef enum {
 } test_stage_t;
 
 typedef struct {
+    // Test parameters
     ctrl_client_test_param_t test_param;
+    // MSC device info
+    uint8_t dev_addr;
+    usb_speed_t dev_speed;
+    // Client variables
+    usb_host_client_handle_t client_hdl;
+    usb_device_handle_t dev_hdl;
+    // Test state
     test_stage_t cur_stage;
     test_stage_t next_stage;
     uint8_t num_xfer_done;
     uint8_t num_xfer_sent;
-    uint8_t dev_addr_to_open;
-    usb_host_client_handle_t client_hdl;
-    usb_device_handle_t dev_hdl;
     const usb_config_desc_t *config_desc_cached;
 } ctrl_client_obj_t;
 
 static void ctrl_transfer_cb(usb_transfer_t *transfer)
 {
     ctrl_client_obj_t *ctrl_obj = (ctrl_client_obj_t *)transfer->context;
-    //Check the completed control transfer
+    // Check the completed control transfer
     TEST_ASSERT_EQUAL_MESSAGE(USB_TRANSFER_STATUS_COMPLETED, transfer->status, "Transfer NOT completed");
     TEST_ASSERT_EQUAL(ctrl_obj->config_desc_cached->wTotalLength, transfer->actual_num_bytes - sizeof(usb_setup_packet_t));
     ctrl_obj->num_xfer_done++;
@@ -79,10 +85,10 @@ static void ctrl_client_event_cb(const usb_host_client_event_msg_t *event_msg, v
     case USB_HOST_CLIENT_EVENT_NEW_DEV:
         TEST_ASSERT_EQUAL(TEST_STAGE_WAIT_CONN, ctrl_obj->cur_stage);
         ctrl_obj->next_stage = TEST_STAGE_DEV_OPEN;
-        ctrl_obj->dev_addr_to_open = event_msg->new_dev.address;
+        ctrl_obj->dev_addr = event_msg->new_dev.address;
         break;
     default:
-        abort();    //Should never occur in this test
+        abort();    // Should never occur in this test
         break;
     }
 }
@@ -94,7 +100,7 @@ void ctrl_client_async_seq_task(void *arg)
     ctrl_obj.cur_stage = TEST_STAGE_WAIT_CONN;
     ctrl_obj.next_stage = TEST_STAGE_WAIT_CONN;
 
-    //Register client
+    // Register client
     usb_host_client_config_t client_config = {
         .is_synchronous = false,
         .max_num_event_msg = CTRL_CLIENT_MAX_EVENT_MSGS,
@@ -105,7 +111,7 @@ void ctrl_client_async_seq_task(void *arg)
     };
     TEST_ASSERT_EQUAL(ESP_OK, usb_host_client_register(&client_config, &ctrl_obj.client_hdl));
 
-    //Allocate transfers
+    // Allocate transfers
     usb_transfer_t *ctrl_xfer[NUM_TRANSFER_OBJ] = {NULL};
     for (int i = 0; i < NUM_TRANSFER_OBJ; i++) {
         TEST_ASSERT_EQUAL(ESP_OK, usb_host_transfer_alloc(sizeof(usb_setup_packet_t) + MAX_TRANSFER_BYTES, 0, &ctrl_xfer[i]));
@@ -113,7 +119,7 @@ void ctrl_client_async_seq_task(void *arg)
         ctrl_xfer[i]->context = (void *)&ctrl_obj;
     }
 
-    //Wait to be started by main thread
+    // Wait to be started by main thread
     ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
     ESP_LOGD(CTRL_CLIENT_TAG, "Starting");
 
@@ -132,18 +138,23 @@ void ctrl_client_async_seq_task(void *arg)
         switch (ctrl_obj.next_stage) {
         case TEST_STAGE_DEV_OPEN: {
             ESP_LOGD(CTRL_CLIENT_TAG, "Open");
-            //Open the device
-            TEST_ASSERT_EQUAL_MESSAGE(ESP_OK, usb_host_device_open(ctrl_obj.client_hdl, ctrl_obj.dev_addr_to_open, &ctrl_obj.dev_hdl), "Failed to open the device");
-            //Target our transfers to the device
+            // Open the device
+            TEST_ASSERT_EQUAL_MESSAGE(ESP_OK, usb_host_device_open(ctrl_obj.client_hdl, ctrl_obj.dev_addr, &ctrl_obj.dev_hdl), "Failed to open the device");
+            // Get device info to get device speed
+            usb_device_info_t dev_info;
+            TEST_ASSERT_EQUAL(ESP_OK, usb_host_device_info(ctrl_obj.dev_hdl, &dev_info));
+            ctrl_obj.dev_speed = dev_info.speed;
+            // Target our transfers to the device
             for (int i = 0; i < NUM_TRANSFER_OBJ; i++) {
                 ctrl_xfer[i]->device_handle = ctrl_obj.dev_hdl;
             }
-            //Check the VID/PID of the opened device
+            // Check that the device descriptor matches our expected MSC device
             const usb_device_desc_t *device_desc;
+            const usb_device_desc_t *device_desc_ref = dev_msc_get_dev_desc(ctrl_obj.dev_speed);
             TEST_ASSERT_EQUAL(ESP_OK, usb_host_get_device_descriptor(ctrl_obj.dev_hdl, &device_desc));
-            TEST_ASSERT_EQUAL(ctrl_obj.test_param.idVendor, device_desc->idVendor);
-            TEST_ASSERT_EQUAL(ctrl_obj.test_param.idProduct, device_desc->idProduct);
-            //Cache the active configuration descriptor for later comparison
+            TEST_ASSERT_EQUAL(device_desc_ref->bLength, device_desc->bLength);
+            TEST_ASSERT_EQUAL_MEMORY_MESSAGE(device_desc_ref, device_desc, sizeof(usb_device_desc_t), "Device descriptors do not match.");
+            // Cache the active configuration descriptor for later comparison
             TEST_ASSERT_EQUAL(ESP_OK, usb_host_get_active_config_descriptor(ctrl_obj.dev_hdl, &ctrl_obj.config_desc_cached));
             ctrl_obj.next_stage = TEST_STAGE_CTRL_XFER;
             skip_event_handling = true;
@@ -151,7 +162,7 @@ void ctrl_client_async_seq_task(void *arg)
         }
         case TEST_STAGE_CTRL_XFER: {
             ESP_LOGD(CTRL_CLIENT_TAG, "Transfer");
-            //Send a control transfer to get the device's configuration descriptor
+            // Send a control transfer to get the device's configuration descriptor
             usb_transfer_t *transfer = ctrl_xfer[ctrl_obj.num_xfer_sent % NUM_TRANSFER_OBJ];
             USB_SETUP_PACKET_INIT_GET_CONFIG_DESC((usb_setup_packet_t *)transfer->data_buffer, 0, MAX_TRANSFER_BYTES);
             transfer->num_bytes = sizeof(usb_setup_packet_t) + MAX_TRANSFER_BYTES;
@@ -163,12 +174,12 @@ void ctrl_client_async_seq_task(void *arg)
             break;
         }
         case TEST_STAGE_CTRL_XFER_WAIT: {
-            //Nothing to do but wait
+            // Nothing to do but wait
             break;
         }
         case TEST_STAGE_DEV_CLOSE: {
             ESP_LOGD(CTRL_CLIENT_TAG, "Close");
-            vTaskDelay(10); // Give USB Host Lib some time to process all trnsfers
+            vTaskDelay(10); // Give USB Host Lib some time to process all transfers
             TEST_ASSERT_EQUAL(ESP_OK, usb_host_device_close(ctrl_obj.client_hdl, ctrl_obj.dev_hdl));
             exit_loop = true;
             break;
@@ -178,7 +189,7 @@ void ctrl_client_async_seq_task(void *arg)
             break;
         }
     }
-    //Free transfers and deregister client
+    // Free transfers and deregister client
     for (int i = 0; i < NUM_TRANSFER_OBJ; i++) {
         TEST_ASSERT_EQUAL(ESP_OK, usb_host_transfer_free(ctrl_xfer[i]));
     }

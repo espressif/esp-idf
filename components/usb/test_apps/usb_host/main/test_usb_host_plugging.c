@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,7 +10,8 @@
 #include "esp_err.h"
 #include "esp_intr_alloc.h"
 #include "test_usb_common.h"
-#include "test_usb_mock_msc.h"
+#include "mock_msc.h"
+#include "dev_msc.h"
 #include "msc_client.h"
 #include "ctrl_client.h"
 #include "usb/usb_host.h"
@@ -38,24 +39,24 @@ TEST_CASE("Test USB Host sudden disconnection (no client)", "[usb_host][full_spe
     bool connected = false;
     int dconn_iter = 0;
     while (1) {
-        //Start handling system events
+        // Start handling system events
         uint32_t event_flags;
         usb_host_lib_handle_events(portMAX_DELAY, &event_flags);
         if (!connected) {
             usb_host_lib_info_t lib_info;
             TEST_ASSERT_EQUAL(ESP_OK, usb_host_lib_info(&lib_info));
             if (lib_info.num_devices == 1) {
-                //We've just connected. Trigger a disconnect
+                // We've just connected. Trigger a disconnect
                 connected = true;
                 printf("Forcing Sudden Disconnect\n");
                 test_usb_set_phy_state(false, 0);
             }
         }
         if (event_flags & USB_HOST_LIB_EVENT_FLAGS_ALL_FREE) {
-            //The device has disconnected and it's disconnection has been handled
+            // The device has disconnected and it's disconnection has been handled
             printf("Dconn iter %d done\n", dconn_iter);
             if (++dconn_iter < TEST_DCONN_NO_CLIENT_ITERATIONS) {
-                //Start next iteration
+                // Start next iteration
                 connected = false;
                 test_usb_set_phy_state(true, 0);
             } else {
@@ -83,23 +84,22 @@ Procedure:
 
 TEST_CASE("Test USB Host sudden disconnection (single client)", "[usb_host][full_speed]")
 {
-    //Create task to run client that communicates with MSC SCSI interface
+    // Create task to run client that communicates with MSC SCSI interface
+    const dev_msc_info_t *dev_info = dev_msc_get_info();
     msc_client_test_param_t params = {
-        .num_sectors_to_read = 1,   //Unused by disconnect MSC client
-        .num_sectors_per_xfer = TEST_FORCE_DCONN_NUM_TRANSFERS * MOCK_MSC_SCSI_SECTOR_SIZE,
+        .num_sectors_to_read = 1,   // Unused by disconnect MSC client
+        .num_sectors_per_xfer = TEST_FORCE_DCONN_NUM_TRANSFERS * dev_info->scsi_sector_size,
         .msc_scsi_xfer_tag = TEST_MSC_SCSI_TAG,
-        .idVendor = MOCK_MSC_SCSI_DEV_ID_VENDOR,
-        .idProduct = MOCK_MSC_SCSI_DEV_ID_PRODUCT,
     };
     TaskHandle_t task_hdl;
     xTaskCreatePinnedToCore(msc_client_async_dconn_task, "async", 4096, (void *)&params, 2, &task_hdl, 0);
-    //Start the task
+    // Start the task
     xTaskNotifyGive(task_hdl);
 
     bool all_clients_gone = false;
     bool all_dev_free = false;
     while (!all_clients_gone || !all_dev_free) {
-        //Start handling system events
+        // Start handling system events
         uint32_t event_flags;
         usb_host_lib_handle_events(portMAX_DELAY, &event_flags);
         if (event_flags & USB_HOST_LIB_EVENT_FLAGS_NO_CLIENTS) {
@@ -133,16 +133,16 @@ Procedure:
 
 TEST_CASE("Test USB Host enumeration", "[usb_host][full_speed]")
 {
-    //Create task to run client that checks the enumeration of the device
+    // Create task to run client that checks the enumeration of the device
     TaskHandle_t task_hdl;
     xTaskCreatePinnedToCore(msc_client_async_enum_task, "async", 6144, NULL, 2, &task_hdl, 0);
-    //Start the task
+    // Start the task
     xTaskNotifyGive(task_hdl);
 
     bool all_clients_gone = false;
     bool all_dev_free = false;
     while (!all_clients_gone || !all_dev_free) {
-        //Start handling system events
+        // Start handling system events
         uint32_t event_flags;
         usb_host_lib_handle_events(portMAX_DELAY, &event_flags);
         if (event_flags & USB_HOST_LIB_EVENT_FLAGS_NO_CLIENTS) {

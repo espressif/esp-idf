@@ -8,8 +8,6 @@
 
 typedef struct {
     int num_ctrl_xfer_to_send;
-    uint16_t idVendor;
-    uint16_t idProduct;
 } ctrl_client_test_param_t;
 
 void ctrl_client_async_seq_task(void *arg);
