@@ -96,6 +96,8 @@ ESP-Protocols components:
 
 * `asio <https://components.espressif.com/component/espressif/asio>`_ is a cross-platform C++ library, see https://think-async.com/Asio/. It provides a consistent asynchronous model using a modern C++ approach. See the `asio documentation <https://docs.espressif.com/projects/esp-protocols/asio/docs/latest/index.html>`_.
 
+* `esp_wifi_remote <https://components.espressif.com/component/espressif/esp_wifi_remote>`_ is a Wi-Fi communication library that provides standard Wi-Fi API and networking of an external, Wi-Fi capable ESP32 chipset connected to the target device via a specified transport interface. See the :doc:`../api-guides/wifi-expansion`.
+
 ESP-BSP
 -------
 
