@@ -20,6 +20,8 @@
 extern "C" {
 #endif
 
+#define BROWNOUT_DETECTOR_LL_INTERRUPT_MASK   (BIT(31))
+
 /**
  * @brief power down the flash when a brown out happens.
  *
@@ -121,6 +123,16 @@ static inline void brownout_ll_clear_count(void)
 {
     LP_ANA_PERI.bod_mode0_cntl.bod_mode0_cnt_clr = 1;
     LP_ANA_PERI.bod_mode0_cntl.bod_mode0_cnt_clr = 0;
+}
+
+/**
+ * @brief Get interrupt status register address
+ *
+ * @return Register address
+ */
+static inline volatile void *brownout_ll_intr_get_status_reg(void)
+{
+    return &LP_ANA_PERI.int_st;
 }
 
 #ifdef __cplusplus

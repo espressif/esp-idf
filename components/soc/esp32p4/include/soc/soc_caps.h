@@ -67,7 +67,7 @@
 #define SOC_KEY_MANAGER_SUPPORTED       1
 #define SOC_FLASH_ENC_SUPPORTED         1
 #define SOC_SECURE_BOOT_SUPPORTED       1
-// #define SOC_BOD_SUPPORTED               1  //TODO: IDF-7519
+#define SOC_BOD_SUPPORTED               1
 // #define SOC_APM_SUPPORTED               1  //TODO: IDF-7542
 #define SOC_PMU_SUPPORTED               1
 #define SOC_DCDC_SUPPORTED              1
