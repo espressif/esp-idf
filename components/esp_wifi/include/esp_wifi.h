@@ -242,10 +242,16 @@ extern wifi_osi_funcs_t g_wifi_osi_funcs;
 #define WIFI_FTM_RESPONDER 0
 #endif
 
-#if CONFIG_GCMP
+#if CONFIG_ESP_WIFI_GCMP_SUPPORT
 #define WIFI_ENABLE_GCMP (1<<4)
 #else
 #define WIFI_ENABLE_GCMP 0
+#endif
+
+#if CONFIG_ESP_WIFI_GMAC_SUPPORT
+#define WIFI_ENABLE_GMAC (1<<5)
+#else
+#define WIFI_ENABLE_GMAC 0
 #endif
 
 #if CONFIG_ESP_WIFI_ENABLE_DUMP_HESIGB && !WIFI_CSI_ENABLED
@@ -265,13 +271,15 @@ extern wifi_osi_funcs_t g_wifi_osi_funcs;
 #define CONFIG_FEATURE_FTM_INITIATOR_BIT (1<<2)
 #define CONFIG_FEATURE_FTM_RESPONDER_BIT (1<<3)
 #define CONFIG_FEATURE_GCMP_BIT (1<<4)
+#define CONFIG_FEATURE_GMAC_BIT (1<<5)
 
 /* Set additional WiFi features and capabilities */
 #define WIFI_FEATURE_CAPS (WIFI_ENABLE_WPA3_SAE | \
                            WIFI_ENABLE_SPIRAM  | \
                            WIFI_FTM_INITIATOR | \
                            WIFI_FTM_RESPONDER | \
-                           WIFI_ENABLE_GCMP)
+                           WIFI_ENABLE_GCMP | \
+                           WIFI_ENABLE_GMAC)
 
 #define WIFI_INIT_CONFIG_DEFAULT() { \
     .osi_funcs = &g_wifi_osi_funcs, \
