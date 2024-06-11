@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -51,8 +51,11 @@ typedef bool (*async_memcpy_isr_cb_t)(async_memcpy_handle_t mcp_hdl, async_memcp
  */
 typedef struct {
     uint32_t backlog;          /*!< Maximum number of transactions that can be prepared in the background */
-    size_t sram_trans_align;   /*!< DMA transfer alignment (both in size and address) for SRAM memory */
-    size_t psram_trans_align;  /*!< DMA transfer alignment (both in size and address) for PSRAM memory */
+    size_t sram_trans_align __attribute__((deprecated)); /*!< DMA transfer alignment (both in size and address) for SRAM memory */
+    union {
+        size_t psram_trans_align; /*!< DMA transfer alignment (both in size and address) for PSRAM memory */
+        size_t dma_burst_size;    /*!< DMA transfer burst size, in bytes */
+    };
     uint32_t flags;            /*!< Extra flags to control async memcpy feature */
 } async_memcpy_config_t;
 
@@ -62,8 +65,7 @@ typedef struct {
 #define ASYNC_MEMCPY_DEFAULT_CONFIG() \
     {                                 \
         .backlog = 8,                 \
-        .sram_trans_align = 0,        \
-        .psram_trans_align = 0,       \
+        .dma_burst_size = 16,         \
         .flags = 0,                   \
     }
 

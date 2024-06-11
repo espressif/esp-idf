@@ -36,8 +36,7 @@ DMA 允许多个内存复制请求在首个请求完成之前排队，即允许�
 在 :cpp:type:`async_memcpy_config_t` 中设置驱动配置：
 
 * :cpp:member:`backlog`：此项用于配置首个请求完成前可以排队的最大内存复制事务数量。如果将此字段设置为零，会应用默认值 4。
-* :cpp:member:`sram_trans_align`：声明 SRAM 中数据地址和复制大小的对齐方式，如果数据没有对齐限制，则设置为零。如果设置为四的倍数值（即 4X），驱动程序将内部启用突发模式，这有利于某些和性能相关的应用程序。
-* :cpp:member:`psram_trans_align`：声明 PSRAM 中数据地址和复制大小的对齐方式。如果 memcpy 的目标地址位于 PSRAM 中，用户必须给出一个有效值（只支持 16、32、64）。如果设置为零，会默认采用 16 位对齐。在内部，驱动程序会根据对齐方式来配置 DMA 访问 PSRAM 时所用的块大小。
+* :cpp:member:`dma_burst_size`：设置单次 DMA 传输中突发数据量的大小。
 * :cpp:member:`flags`：此项可以启用一些特殊的驱动功能。
 
 .. code-block:: c

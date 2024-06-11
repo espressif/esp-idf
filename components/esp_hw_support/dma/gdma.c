@@ -29,6 +29,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/cdefs.h>
+#include <sys/param.h>
 #include "sdkconfig.h"
 #if CONFIG_GDMA_ENABLE_DEBUG_LOG
 // The local log level must be defined before including esp_log.h
@@ -42,10 +43,9 @@
 #include "esp_log.h"
 #include "esp_check.h"
 #include "esp_memory_utils.h"
+#include "esp_flash_encrypt.h"
 #include "esp_private/periph_ctrl.h"
 #include "gdma_priv.h"
-#include "hal/cache_hal.h"
-#include "hal/cache_ll.h"
 
 #if CONFIG_PM_ENABLE && SOC_PM_SUPPORT_TOP_PD
 #include "esp_private/gdma_sleep_retention.h"
@@ -354,46 +354,68 @@ esp_err_t gdma_get_free_m2m_trig_id_mask(gdma_channel_handle_t dma_chan, uint32_
     return ESP_OK;
 }
 
-esp_err_t gdma_set_transfer_ability(gdma_channel_handle_t dma_chan, const gdma_transfer_ability_t *ability)
+esp_err_t gdma_config_transfer(gdma_channel_handle_t dma_chan, const gdma_transfer_config_t *config)
 {
-    ESP_RETURN_ON_FALSE(dma_chan && ability, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    ESP_RETURN_ON_FALSE(dma_chan && config, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    uint32_t max_data_burst_size = config->max_data_burst_size;
+    if (max_data_burst_size) {
+        // burst size must be power of 2
+        ESP_RETURN_ON_FALSE((max_data_burst_size & (max_data_burst_size - 1)) == 0, ESP_ERR_INVALID_ARG,
+                            TAG, "invalid max_data_burst_size: %"PRIu32, max_data_burst_size);
+    }
     gdma_pair_t *pair = dma_chan->pair;
     gdma_group_t *group = pair->group;
     gdma_hal_context_t *hal = &group->hal;
+    size_t int_mem_alignment = 1;
+    size_t ext_mem_alignment = 1;
 
-    size_t sram_alignment = ability->sram_trans_align;
-    size_t psram_alignment = ability->psram_trans_align;
-    // alignment should be 2^n
-    ESP_RETURN_ON_FALSE((sram_alignment & (sram_alignment - 1)) == 0, ESP_ERR_INVALID_ARG,
-                        TAG, "invalid sram alignment: %zu", sram_alignment);
-
-    uint32_t ext_mem_cache_line_size = cache_hal_get_cache_line_size(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_DATA);
-    if (psram_alignment == 0) {
-        // fall back to use the same size of the psram data cache line size
-        psram_alignment = ext_mem_cache_line_size;
-    }
-    if (psram_alignment > ext_mem_cache_line_size) {
-        ESP_RETURN_ON_FALSE(((psram_alignment % ext_mem_cache_line_size) == 0), ESP_ERR_INVALID_ARG,
-                            TAG, "psram_alignment(%d) should be multiple of the ext_mem_cache_line_size(%"PRIu32")",
-                            psram_alignment, ext_mem_cache_line_size);
+    // always enable descriptor burst as the descriptor is always word aligned and is in the internal SRAM
+    bool en_desc_burst = true;
+    bool en_data_burst = max_data_burst_size > 0;
+    gdma_hal_enable_burst(hal, pair->pair_id, dma_chan->direction, en_data_burst, en_desc_burst);
+    if (en_data_burst) {
+        gdma_hal_set_burst_size(hal, pair->pair_id, dma_chan->direction, max_data_burst_size);
     }
 
-    // if the DMA can't access the PSRAM, this HAL function is no-op
-    gdma_hal_set_ext_mem_align(hal, pair->pair_id, dma_chan->direction, psram_alignment);
-
-    // TX channel can always enable burst mode, no matter data alignment
-    bool en_burst = true;
-    if (dma_chan->direction == GDMA_CHANNEL_DIRECTION_RX) {
-        // RX channel burst mode depends on specific data alignment
-        en_burst = sram_alignment >= 4;
+#if GDMA_LL_AHB_RX_BURST_NEEDS_ALIGNMENT
+    if (en_data_burst && dma_chan->direction == GDMA_CHANNEL_DIRECTION_RX) {
+        int_mem_alignment = MAX(int_mem_alignment, 4);
+        ext_mem_alignment = MAX(ext_mem_alignment, max_data_burst_size);
     }
-    gdma_hal_enable_burst(hal, pair->pair_id, dma_chan->direction, en_burst, en_burst);
+#endif
 
-    dma_chan->sram_alignment = sram_alignment;
-    dma_chan->psram_alignment = psram_alignment;
-    ESP_LOGD(TAG, "%s channel (%d,%d), (%u:%u) bytes aligned, burst %s", dma_chan->direction == GDMA_CHANNEL_DIRECTION_TX ? "tx" : "rx",
-             group->group_id, pair->pair_id, sram_alignment, psram_alignment, en_burst ? "enabled" : "disabled");
+    // if MSPI encryption is enabled, and DMA wants to read/write external memory
+    if (esp_flash_encryption_enabled()) {
+        gdma_hal_enable_access_encrypt_mem(hal, pair->pair_id, dma_chan->direction, config->access_ext_mem);
+        // when DMA access the encrypted memory, extra alignment is needed, for both internal and external memory
+        if (config->access_ext_mem) {
+            ext_mem_alignment = MAX(ext_mem_alignment, GDMA_ACCESS_ENCRYPTION_MEM_ALIGNMENT);
+            int_mem_alignment = MAX(int_mem_alignment, GDMA_ACCESS_ENCRYPTION_MEM_ALIGNMENT);
+        }
+    } else {
+        gdma_hal_enable_access_encrypt_mem(hal, pair->pair_id, dma_chan->direction, false);
+    }
 
+    // if the channel is not allowed to access external memory, set a super big (meaningless) alignment value
+    // so when the upper layer checks the alignment with an external buffer, the check should fail
+    if (!config->access_ext_mem) {
+        ext_mem_alignment = BIT(31);
+    }
+
+    dma_chan->int_mem_alignment = int_mem_alignment;
+    dma_chan->ext_mem_alignment = ext_mem_alignment;
+    return ESP_OK;
+}
+
+esp_err_t gdma_get_alignment_constraints(gdma_channel_handle_t dma_chan, size_t *int_mem_alignment, size_t *ext_mem_alignment)
+{
+    ESP_RETURN_ON_FALSE(dma_chan, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    if (int_mem_alignment) {
+        *int_mem_alignment = dma_chan->int_mem_alignment;
+    }
+    if (ext_mem_alignment) {
+        *ext_mem_alignment = dma_chan->ext_mem_alignment;
+    }
     return ESP_OK;
 }
 
@@ -420,57 +442,6 @@ esp_err_t gdma_set_priority(gdma_channel_handle_t dma_chan, uint32_t priority)
 
     return ESP_OK;
 }
-
-#if SOC_GDMA_SUPPORT_CRC
-esp_err_t gdma_config_crc_calculator(gdma_channel_handle_t dma_chan, const gdma_crc_calculator_config_t *config)
-{
-    ESP_RETURN_ON_FALSE(dma_chan && config, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
-    gdma_pair_t *pair = dma_chan->pair;
-    gdma_group_t *group = pair->group;
-    gdma_hal_context_t *hal = &group->hal;
-    switch (group->bus_id) {
-#if SOC_AHB_GDMA_SUPPORTED
-    case SOC_GDMA_BUS_AHB:
-        ESP_RETURN_ON_FALSE(config->crc_bit_width <= GDMA_LL_AHB_MAX_CRC_BIT_WIDTH, ESP_ERR_INVALID_ARG, TAG, "invalid crc bit width");
-        break;
-#endif // SOC_AHB_GDMA_SUPPORTED
-#if SOC_AXI_GDMA_SUPPORTED
-    case SOC_GDMA_BUS_AXI:
-        ESP_RETURN_ON_FALSE(config->crc_bit_width <= GDMA_LL_AXI_MAX_CRC_BIT_WIDTH, ESP_ERR_INVALID_ARG, TAG, "invalid crc bit width");
-        break;
-#endif // SOC_AXI_GDMA_SUPPORTED
-    default:
-        ESP_LOGE(TAG, "invalid bus id: %d", group->bus_id);
-        return ESP_ERR_INVALID_ARG;
-    }
-
-    // clear the previous CRC result
-    gdma_hal_clear_crc(hal, pair->pair_id, dma_chan->direction);
-
-    // set polynomial and initial value
-    gdma_hal_crc_config_t hal_config = {
-        .crc_bit_width = config->crc_bit_width,
-        .poly_hex = config->poly_hex,
-        .init_value = config->init_value,
-        .reverse_data_mask = config->reverse_data_mask,
-    };
-    gdma_hal_set_crc_poly(hal, pair->pair_id, dma_chan->direction, &hal_config);
-
-    return ESP_OK;
-}
-
-esp_err_t gdma_crc_get_result(gdma_channel_handle_t dma_chan, uint32_t *result)
-{
-    ESP_RETURN_ON_FALSE(dma_chan && result, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
-    gdma_pair_t *pair = dma_chan->pair;
-    gdma_group_t *group = pair->group;
-    gdma_hal_context_t *hal = &group->hal;
-
-    *result = gdma_hal_get_crc_result(hal, pair->pair_id, dma_chan->direction);
-
-    return ESP_OK;
-}
-#endif // SOC_GDMA_SUPPORT_CRC
 
 esp_err_t gdma_register_tx_event_callbacks(gdma_channel_handle_t dma_chan, gdma_tx_event_callbacks_t *cbs, void *user_data)
 {
