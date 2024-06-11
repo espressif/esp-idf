@@ -11,7 +11,7 @@
 #if CONFIG_IDF_TARGET_ESP32C3
 
 /**
- * @brief Since ESP32-C3 target in QEMU doesn't support Wifi, re-use its interrupt source for ethernet
+ * @brief Since ESP32-C3 target in QEMU doesn't support Wifi, reuse its interrupt source for ethernet
  */
 #define ETS_ETH_MAC_INTR_SOURCE     ETS_WIFI_MAC_INTR_SOURCE
 

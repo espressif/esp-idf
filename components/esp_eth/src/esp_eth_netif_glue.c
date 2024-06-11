@@ -6,7 +6,6 @@
 #include <stdlib.h>
 #include <inttypes.h>
 #include "esp_netif.h"
-#include "esp_eth_driver.h"
 #include "esp_eth_netif_glue.h"
 #include "esp_netif_net_stack.h"
 #include "esp_event.h"

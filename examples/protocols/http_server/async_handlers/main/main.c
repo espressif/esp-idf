@@ -36,7 +36,7 @@
 
 static const char *TAG = "example";
 
-// Async reqeusts are queued here while they wait to
+// Async requests are queued here while they wait to
 // be processed by the workers
 static QueueHandle_t async_req_queue;
 

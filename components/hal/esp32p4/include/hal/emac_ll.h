@@ -411,6 +411,11 @@ static inline void emac_ll_recv_store_forward_enable(emac_dma_dev_t *dma_regs, b
     dma_regs->dmaoperation_mode.rx_store_forward = enable;
 }
 
+static inline bool emac_ll_recv_store_forward_is_enabled(emac_dma_dev_t *dma_regs)
+{
+    return dma_regs->dmaoperation_mode.rx_store_forward;
+}
+
 static inline void emac_ll_flush_recv_frame_enable(emac_dma_dev_t *dma_regs, bool enable)
 {
     dma_regs->dmaoperation_mode.dis_flush_recv_frames = !enable;

@@ -1,6 +1,16 @@
 以太网
 =========
 
+{IDF_TARGET_SOC_REF_CLK_IN_GPIO:default="", esp32="GPIO0", esp32p4="GPIO32, GPIO44 and GPIO50"}
+{IDF_TARGET_SOC_REF_CLK_OUT_GPIO:default="", esp32="GPIO0, GPIO16 and GPIO17", esp32p4="GPIO23 and GPIO39"}
+{IDF_TARGET_SOC_RMII_TX_EN:default="", esp32="GPIO21", esp32p4="GPIO33, GPIO40 and GPIO49"}
+{IDF_TARGET_SOC_RMII_TXD0:default="", esp32="GPIO19", esp32p4="GPIO34 and GPIO41"}
+{IDF_TARGET_SOC_RMII_TXD1:default="", esp32="GPIO22", esp32p4="GPIO35 and GPIO42"}
+{IDF_TARGET_SOC_RMII_CRS_DV:default="", esp32="GPIO27", esp32p4="GPIO28, GPIO45 and GPIO51"}
+{IDF_TARGET_SOC_RMII_RXD0:default="", esp32="GPIO25", esp32p4="GPIO29, GPIO46 and GPIO52"}
+{IDF_TARGET_SOC_RMII_RXD1:default="", esp32="GPIO26", esp32p4="GPIO30, GPIO47 and GPIO53"}
+
+
 :link_to_translation:`en:[English]`
 
 .. -------------------------------- Overview -----------------------------------
@@ -8,7 +18,13 @@
 概述
 --------
 
-ESP-IDF 提供一系列功能强大且兼具一致性的 API，为内部以太网 MAC (EMAC) 控制器和外部 SPI-Ethernet 模块提供支持。
+.. only:: SOC_EMAC_SUPPORTED
+
+    ESP-IDF 提供一系列灵活度高且兼具一致性的 API，为内部以太网 MAC (EMAC) 控制器和外部 SPI-Ethernet 模块提供支持。
+
+.. only:: not SOC_EMAC_SUPPORTED
+
+    ESP-IDF 提供一系列灵活度高且兼具一致性的 API，为外部 SPI-Ethernet 模块提供支持。
 
 本编程指南分为以下几个部分：
 
@@ -24,7 +40,7 @@ ESP-IDF 提供一系列功能强大且兼具一致性的 API，为内部以太�
 以太网基本概念
 -----------------------
 
-以太网是一种异步的带冲突检测的载波侦听多路访问 (CSMA/CD) 协议/接口。通常来说，以太网不太适用于低功率应用。然而，得益于其广泛的部署、高效的网络连接、高数据率以及范围不限的可扩展性，几乎所有的有线通信都可以通过以太网进行。
+以太网是一种异步的带冲突检测的载波侦听多路访问 (CSMA/CD) 协议/接口。通常来说，以太网不太适用于低功耗应用。然而，得益于其广泛的部署、高效的网络连接、高数据率以及范围不限的可扩展性，几乎所有的有线通信都可以通过以太网进行。
 
 符合 IEEE 802.3 标准的正常以太网帧的长度在 64 至 1518 字节之间，由五个或六个不同的字段组成：目的地 MAC 地址 (DA)、源 MAC 地址 (SA)、类型/长度字段、数据有效载荷字段、可选的填充字段和帧校验序列字段 (CRC)。此外，在以太网上传输时，以太网数据包的开头需附加 7 字节的前导码和 1 字节的帧起始符 (SOF)。
 
@@ -115,36 +131,100 @@ ESP-IDF 提供一系列功能强大且兼具一致性的 API，为内部以太�
 
     MII 和 RMII 的一个明显区别在于其所需的信号数。MII 通常需要多达 18 个信号，RMII 接口则仅需要 9 个信号。
 
+    .. only:: esp32
+
+        .. note::
+            ESP-IDF 只支持 RMII 接口，所以请将 :cpp:member:`eth_esp32_emac_config_t::interface` 设置为 :cpp:enumerator:`eth_data_interface_t::EMAC_DATA_INTERFACE_RMII` 或在 Kconfig 选项 :ref:`CONFIG_ETH_PHY_INTERFACE` 中选择 ``CONFIG_ETH_PHY_INTERFACE_RMII``。
+
+    .. only:: not esp32
+
+        .. note::
+            ESP-IDF 只支持 RMII 接口，所以请将 :cpp:member:`eth_esp32_emac_config_t::interface` 设置为 :cpp:enumerator:`eth_data_interface_t::EMAC_DATA_INTERFACE_RMII`。
+
     在 RMII 模式下，接收器和发射器信号的参考时钟为 ``REF_CLK``。 **在访问 PHY 和 MAC 时，REF_CLK 必须保持稳定**。一般来说，根据设计中 PHY 设备的特征，可通过以下三种方式生成 ``REF_CLK``：
 
-    * 一些 PHY 芯片可以从其外部连接的 25 MHz 晶体振荡器中获取 ``REF_CLK`` （如图中的选项 **a** 所示）。对于此类芯片，请在 :ref:`CONFIG_ETH_RMII_CLK_MODE` 中选择 ``CONFIG_ETH_RMII_CLK_INPUT``。
+    * 一些 PHY 芯片可以从其外部连接的 25 MHz 晶体振荡器中衍生出 ``REF_CLK`` （如图中的选项 **a** 所示）。对于此类芯片，请将 :cpp:member:`eth_esp32_emac_config_t::clock_config` 中的 :cpp:member:`eth_mac_clock_config_t::clock_mode` 设置为 :cpp:enumerator:`emac_rmii_clock_mode_t::EMAC_CLK_EXT_IN`。
 
-    * 一些 PHY 芯片使用可以作为 MAC 端 ``REF_CLK`` 的外接 50 MHz 晶体振荡器或其他时钟源（如图中的选项 **b** 所示）。对于此类芯片，请同样在 :ref:`CONFIG_ETH_RMII_CLK_MODE` 中选择 ``CONFIG_ETH_RMII_CLK_INPUT``。
+    * 一些 PHY 芯片使用外接的 50 MHz 晶体振荡器或其他时钟源作为 MAC 端的 ``REF_CLK`` （如图中的选项 **b** 所示）。对于此类芯片，请同样将 :cpp:member:`eth_esp32_emac_config_t::clock_config` 中的 :cpp:member:`eth_mac_clock_config_t::clock_mode` 设置为 :cpp:enumerator:`emac_rmii_clock_mode_t::EMAC_CLK_EXT_IN`。
 
-    * 一些 EMAC 控制器可以使用其内部的高精度 PLL 生成 ``REF_CLK`` （如图中的选项 **c** 所示）。此种情况下，请在 :ref:`CONFIG_ETH_RMII_CLK_MODE` 中选择 ``CONFIG_ETH_RMII_CLK_OUTPUT``。
+    * 一些 EMAC 控制器可以使用其内部的高精度 PLL 生成 ``REF_CLK`` （如图中的选项 **c** 所示）。此种情况下，请将 :cpp:member:`eth_esp32_emac_config_t::clock_config` 中的 :cpp:member:`eth_mac_clock_config_t::clock_mode` 设置为 :cpp:enumerator:`emac_rmii_clock_mode_t::EMAC_CLK_OUT`。
 
-    .. note::
-        如上所述，``REF_CLK`` 默认通过项目配置进行配置。然而，通过设置 :cpp:member:`eth_esp32_emac_config_t::interface` 和 :cpp:member:`eth_esp32_emac_config_t::clock_config`，也可以实现在用户应用代码中覆盖该时钟。更多细节，请参见 :cpp:enum:`emac_rmii_clock_mode_t` 和 :cpp:enum:`emac_rmii_clock_gpio_t`。
+    .. only:: esp32
 
-    .. warning::
-        如果配置 RMII 时钟模式为 ``CONFIG_ETH_RMII_CLK_OUTPUT``，那么就可以使用  ``GPIO0`` 输出 ``REF_CLK`` 信号。更多细节，请参见 :ref:`CONFIG_ETH_RMII_CLK_OUTPUT_GPIO0`。
+        .. note::
+            使用 :c:macro:`ETH_ESP32_EMAC_DEFAULT_CONFIG` 宏初始化 :cpp:class:`eth_esp32_emac_config_t` 时，也可以通过项目配置来配置 ``REF_CLK``。在项目配置中，根据上述个人设计，在 :ref:`CONFIG_ETH_RMII_CLK_MODE` 配置下选择适当的选项， ``CONFIG_ETH_RMII_CLK_INPUT`` 或是 ``CONFIG_ETH_RMII_CLK_OUTPUT``。
 
-        值得一提的是，如果设计中并未使用 PSRAM，则 GPIO16 和 GPIO17 也可以用来输出参考时钟。更多细节，请参见 :ref:`CONFIG_ETH_RMII_CLK_OUT_GPIO`。
+        .. warning::
+            如果配置 RMII 时钟模式为 :cpp:enumerator:`emac_rmii_clock_mode_t::EMAC_CLK_OUT` （或是选择 ``CONFIG_ETH_RMII_CLK_OUTPUT``，那么就可以使用  ``GPIO0`` 输出 ``REF_CLK`` 信号。更多细节，请参见 :cpp:enumerator:`emac_rmii_clock_gpio_t::EMAC_APPL_CLK_OUT_GPIO` 或是 :ref:`CONFIG_ETH_RMII_CLK_OUTPUT_GPIO0`。
 
-        如果配置 RMII 时钟模式为 ``CONFIG_ETH_RMII_CLK_INPUT``，那么有且只有 ``GPIO0`` 可以用来输入 ``REF_CLK`` 信号。请注意， ``GPIO0`` 同时也是 ESP32 上一个重要的 strapping GPIO 管脚。如果 GPIO0 在上电时采样为低电平，ESP32 将进入下载模式，需进行手动复位重启系统。解决这个问题的方法是，在硬件中默认禁用 ``REF_CLK``，从而避免 strapping 管脚在启动阶段受到其他信号的干扰。随后，再在以太网驱动安装阶段重新启用 ``REF_CLK``。
+            值得一提的是，如果设计中并未使用 PSRAM，则 GPIO16 和 GPIO17 也可以用来输出参考时钟。更多细节，请参见 :cpp:enumerator:`emac_rmii_clock_gpio_t::EMAC_CLK_OUT_GPIO` 和 :cpp:enumerator:`emac_rmii_clock_gpio_t::EMAC_CLK_OUT_180_GPIO`，或是 :ref:`CONFIG_ETH_RMII_CLK_OUT_GPIO`。
 
-        可以通过以下方法禁用 ``REF_CLK`` 信号：
+            如果配置 RMII 时钟模式为 :cpp:enumerator:`emac_rmii_clock_mode_t::EMAC_CLK_EXT_IN` （或是选择 ``CONFIG_ETH_RMII_CLK_INPUT``，那么只能选择 ``GPIO0`` 输入 ``REF_CLK`` 信号。请注意， ``GPIO0`` 同时也是 ESP32 上一个重要的 strapping GPIO 管脚。如果上电时 GPIO0 为低电平，则 ESP32 将进入下载模式，需进行手动复位重启系统。解决这个问题的方法是，在硬件中默认禁用 ``REF_CLK``，从而避免 strapping 管脚在启动阶段受到其他信号的干扰。随后，再在以太网驱动安装阶段重新启用 ``REF_CLK``。
 
-        * 禁用或关闭晶体振荡器的电源（对应图中的选项 **b**）。
+            可以通过以下方法禁用 ``REF_CLK`` 信号：
 
-        * 强制复位 PHY 设备（对应图中的选项 **a**）。 **此种方法并不适用于所有 PHY 设备**，即便处于复位状态，某些 PHY 设备仍会向 GPIO0 输出信号。
+            * 禁用或关闭晶体振荡器的电源（对应图中的选项 **b**）。
 
-    **无论选择哪种 RMII 时钟模式，都请确保硬件设计中 REF_CLK 的信号完整性！** 信号线越短越好，并请保持信号线与 RF 设备和电感器元件的距离。
+            * 强制复位 PHY 设备（对应图中的选项 **a**）。**此种方法并不适用于所有 PHY 设备** （即便处于复位状态，某些 PHY 设备仍会向 GPIO0 输出信号）。
 
-    .. note::
-        ESP-IDF 只支持 RMII 接口（即在 Kconfig 选项 :ref:`CONFIG_ETH_PHY_INTERFACE` 中始终选择 ``CONFIG_ETH_PHY_INTERFACE_RMII``）。
+    .. only:: not esp32
 
-        在数据平面使用的信号通过 MUX 连接至特定的 GPIO，这些信号无法配置至其他 GPIO。在控制平面使用的信号则可以通过 Matrix 矩阵路由到任何空闲 GPIO。相关的硬件设计示例，请参考 :doc:`ESP32-Ethernet-Kit <../../hw-reference/esp32/get-started-ethernet-kit>`。
+        .. note::
+            如果 RMII 时钟模式配置为 :cpp:enumerator:`emac_rmii_clock_mode_t::EMAC_CLK_OUT`，则可以通过 IO_MUX 将 {IDF_TARGET_SOC_REF_CLK_OUT_GPIO} 选择为 ``REF_CLK`` 信号的输出管脚。
+
+            如果 RMII 时钟模式配置为 :cpp:enumerator:`emac_rmii_clock_mode_t::EMAC_CLK_EXT_IN`，则可以通过 IO_MUX 将 {IDF_TARGET_SOC_REF_CLK_IN_GPIO} 选择为 ``REF_CLK`` 信号的输入管脚。
+
+    .. only:: not SOC_EMAC_RMII_CLK_OUT_INTERNAL_LOOPBACK
+
+        .. warning::
+            如果 RMII 时钟模式配置为 :cpp:enumerator:`emac_rmii_clock_mode_t::EMAC_CLK_OUT`，则必须从外部将 ``REF_CLK`` 输出信号回环到 EMAC。请将 :cpp:member:`eth_esp32_emac_config_t::clock_config_out_in` 中的 :cpp:member:`eth_mac_clock_config_t::clock_mode` 配置为 :cpp:enumerator:`emac_rmii_clock_mode_t::EMAC_CLK_EXT_IN`，并选择与 ``REF_CLK`` 输入 GPIO ({IDF_TARGET_SOC_REF_CLK_IN_GPIO}) 相关联的 GPIO 编号。
+
+            .. only:: esp32p4
+
+                .. figure:: ../../../_static/rmii_ref_clk_esp32p4.png
+                    :scale: 95 %
+                    :alt: RMII REF_CKL Output Loopback
+                    :figclass: align-center
+
+                    RMII REF_CKL 输出回环
+
+    **无论选择哪种 RMII 时钟模式，都请确保硬件设计中 REF_CLK 的信号完整性！** 信号线越短越好，并远离 RF 设备和电感。
+
+    .. only:: not SOC_EMAC_USE_MULTI_IO_MUX
+
+        .. note::
+            数据平面中使用的信号通过 IO_MUX 连接至特定的 GPIO，这些信号无法配置到其他 GPIO 上。控制平面中使用的信号可以通过矩阵路由到任何空闲的 GPIO 上。相关硬件设计示例，请参阅 :doc:`ESP32-Ethernet-Kit <../../hw-reference/esp32/get-started-ethernet-kit>`。
+
+    .. only:: SOC_EMAC_USE_MULTI_IO_MUX
+
+        .. note::
+            数据平面中使用的信号可以通过 IO_MUX 配置为 RMII 预定义的 GPIO，请参阅下表。数据平面 GPIO 配置由驱动程序根据 :cpp:member:`eth_esp32_emac_config_t::emac_dataif_gpio` 的内容执行。控制平面中使用的信号可以通过 GPIO 矩阵路由到任何空闲的 GPIO。
+
+            .. list-table:: {IDF_TARGET_NAME} RMII 数据平面 GPIO
+                :header-rows: 1
+                :widths: 50 50
+                :align: center
+
+                * - 管脚名
+                  - GPIO 编号
+
+                * - TX_EN
+                  - {IDF_TARGET_SOC_RMII_TX_EN}
+
+                * - TXD0
+                  - {IDF_TARGET_SOC_RMII_TXD0}
+
+                * - TXD1
+                  - {IDF_TARGET_SOC_RMII_TXD1}
+
+                * - CRS_DV
+                  - {IDF_TARGET_SOC_RMII_CRS_DV}
+
+                * - RXD0
+                  - {IDF_TARGET_SOC_RMII_RXD0}
+
+                * - RXD1
+                  - {IDF_TARGET_SOC_RMII_RXD1}
 
 根据以太网板设计，需要分别为 MAC 和 PHY 配置必要的参数，通过两者完成驱动程序的安装。
 
@@ -156,13 +236,25 @@ MAC 的相关配置可以在 :cpp:class:`eth_mac_config_t` 中找到，具体包
 
     * :cpp:member:`eth_mac_config_t::rx_task_stack_size` 和 :cpp:member:`eth_mac_config_t::rx_task_prio`：MAC 驱动会创建一个专门的任务来处理传入的数据包，这两个参数用于设置该任务的堆栈大小和优先级。
 
-    * :cpp:member:`eth_mac_config_t::flags`：指定 MAC 驱动应支持的额外功能，尤其适用于某些特殊情况。这个字段的值支持与以 ``ETH_MAC_FLAG_`` 为前缀的宏进行 OR 运算。例如，如果 MAC 驱动应在禁用缓存后开始工作，那么则需要用 :c:macro:`ETH_MAC_FLAG_WORK_WITH_CACHE_DISABLE` 配置这个字段。
+    * :cpp:member:`eth_mac_config_t::flags`：指定 MAC 驱动应支持的额外功能，尤其适用于某些特殊情况。这个字段的值支持与以 ``ETH_MAC_FLAG_`` 为前缀的宏进行 OR 运算。例如，如果要求 MAC 驱动程序在 cache 禁用时仍能正常工作，那么则需要用 :c:macro:`ETH_MAC_FLAG_WORK_WITH_CACHE_DISABLE` 配置这个字段。
 
-    :SOC_EMAC_SUPPORTED: * :cpp:member:`eth_esp32_emac_config_t::smi_mdc_gpio_num` 和 :cpp:member:`eth_esp32_emac_config_t::smi_mdio_gpio_num`：连接 SMI 信号的 GPIO 编号。
+.. only:: SOC_EMAC_SUPPORTED
 
-    :SOC_EMAC_SUPPORTED: * :cpp:member:`eth_esp32_emac_config_t::interface`：配置到 PHY (MII/RMII) 的 MAC 数据接口。
+    :cpp:class:`eth_esp32_emac_config_t` 描述了 **内部 MAC 模块** 的特定配置，其中包括：
 
-    :SOC_EMAC_SUPPORTED: * :cpp:member:`eth_esp32_emac_config_t::clock_config`：配置 EMAC 接口时钟（RMII 模式下的 ``REF_CLK`` 模式以及 GPIO 编号）。
+    .. list::
+
+        * :cpp:member:`eth_esp32_emac_config_t::smi_mdc_gpio_num` 和 :cpp:member:`eth_esp32_emac_config_t::smi_mdio_gpio_num`：连接 SMI 信号的 GPIO 编号。
+
+        * :cpp:member:`eth_esp32_emac_config_t::interface`：配置到 PHY (MII/RMII) 的 MAC 数据接口。
+
+        * :cpp:member:`eth_esp32_emac_config_t::clock_config`：配置 EMAC 接口时钟（RMII 模式下的 ``REF_CLK`` 模式以及 GPIO 编号）。
+
+        * :cpp:member:`eth_esp32_emac_config_t::intr_priority`： 设置 MAC 中断的优先级。如果设置为 ``0`` 或负值，则驱动程序将分配一个具有默认优先级的中断。否则，驱动程序将使用给定的优先级。请注意，可以设置 *低*、 *中* 中断优先级（1 到 3），因为这可以在 C 中处理。
+
+        :SOC_EMAC_USE_MULTI_IO_MUX: * :cpp:member:`eth_esp32_emac_config_t::emac_dataif_gpio`：EMAC MII/RMII 数据平面 GPIO 编号配置。
+
+        :not SOC_EMAC_RMII_CLK_OUT_INTERNAL_LOOPBACK: * :cpp:member:`eth_esp32_emac_config_t::clock_config_out_in`：当 ``REF_CLK`` 信号在内部生成并从外部回环到 EMAC 时，配置 EMAC 输入接口时钟。必须始终将 EMAC 的模式配置为 :cpp:enumerator:`emac_rmii_clock_mode_t::EMAC_CLK_EXT_IN`。此选项仅在 :cpp:member:`eth_esp32_emac_config_t::clock_config` 的配置设置为 :cpp:enumerator:`emac_rmii_clock_mode_t::EMAC_CLK_OUT` 时有效。
 
 PHY 的相关配置可以在 :cpp:class:`eth_phy_config_t` 中找到，具体包括：
 
@@ -172,7 +264,7 @@ PHY 的相关配置可以在 :cpp:class:`eth_phy_config_t` 中找到，具体包
 
     * :cpp:member:`eth_phy_config_t::reset_timeout_ms`：复位超时值，单位为毫秒。通常，PHY 复位应在 100 ms 内完成。
 
-    * :cpp:member:`eth_phy_config_t::autonego_timeout_ms`：自动协商超时值，单位为毫秒。以太网驱动程序会自动与对等的以太网节点进行协商，以确定双工和速度模式。此值通常取决于电路板上 PHY 设备的性能。
+    * :cpp:member:`eth_phy_config_t::autonego_timeout_ms`：自动协商超时值，单位为毫秒。以太网驱动程序会与链路另一端的设备进行自协商，以确定连接的最佳双工模式和速率。此值通常取决于电路板上 PHY 设备的性能。
 
     * :cpp:member:`eth_phy_config_t::reset_gpio_num`：如果开发板同时将 PHY 复位管脚连接至了任意 GPIO 管脚，请使用该字段进行配置。否则，配置为 ``-1``。
 
@@ -434,7 +526,7 @@ ESP-IDF 在宏 :c:macro:`ETH_DEFAULT_CONFIG` 中为安装驱动程序提供了�
     bool flow_ctrl_enable = true;
     esp_eth_ioctl(eth_handle, ETH_CMD_S_FLOW_CTRL, &flow_ctrl_enable);
 
-需注意，暂停帧是在自动协商期间由 PHY 向对等端公布的。只有当链路的两边都支持暂停帧时，以太网驱动程序才会发送暂停帧。
+需注意，暂停帧是在自动协商期间由 PHY 向对等端公布的。只有当链路两端都支持暂停帧时，以太网驱动程序才会发送暂停帧。
 
 .. -------------------------------- Examples -----------------------------------
 
@@ -457,14 +549,14 @@ ESP-IDF 在宏 :c:macro:`ETH_DEFAULT_CONFIG` 中为安装驱动程序提供了�
 自定义 PHY 驱动程序
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-目前市面上已有多家 PHY 制造商提供了大量的芯片组合。ESP-IDF 现已支持数种 PHY 芯片，但是由于价格、功能、库存等原因，有时用户还是无法找到一款能满足其实际需求的芯片。
+市面上有多家 PHY 芯片制造商提供各种类型的芯片。ESP-IDF 现已支持数种 PHY 芯片，但是由于价格、功能、库存等原因，有时用户还是无法找到一款能满足其实际需求的芯片。
 
-好在 IEEE 802.3 在其 22.2.4 管理功能部分对 EMAC 和 PHY 之间的管理接口进行了标准化。该部分定义了所谓的 ”MII 管理接口”规范，用于控制 PHY 和收集 PHY 的状态，还定义了一组管理寄存器来控制芯片行为、链接属性、自动协商配置等。在 ESP-IDF 中，这项基本的管理功能是由 :component_file:`esp_eth/src/esp_eth_phy_802_3.c` 实现的，这也大大降低了创建新的自定义 PHY 芯片驱动的难度。
+好在 IEEE 802.3 在其 22.2.4 管理功能部分对 EMAC 和 PHY 之间的管理接口进行了标准化。该部分定义了所谓的 ”MII 管理接口”规范，用于控制 PHY 和收集 PHY 的状态，还定义了一组管理寄存器来控制芯片行为、链接属性、自动协商配置等。在 ESP-IDF 中，这项基本的管理功能是由 :component_file:`esp_eth/src/phy/esp_eth_phy_802_3.c` 实现的，这也大大降低了创建新的自定义 PHY 芯片驱动的难度。
 
 .. note::
     由于一些 PHY 芯片可能不符合 IEEE 802.3 第 22.2.4 节的规定，所以请首先查看 PHY 数据手册。不过，就算芯片不符合规定，依旧可以创建自定义 PHY 驱动程序，只是由于需要自行定义所有的 PHY 管理功能，这个过程将变得较为复杂。
 
-ESP-IDF 以太网驱动程序所需的大部分 PHY 管理功能都已涵盖在 :component_file:`esp_eth/src/esp_eth_phy_802_3.c` 中。不过对于以下几项，可能仍需针对不同芯片开发具体的管理功能：
+ESP-IDF 以太网驱动程序所需的大部分 PHY 管理功能都已涵盖在 :component_file:`esp_eth/src/phy/esp_eth_phy_802_3.c` 中。不过对于以下几项，可能仍需针对不同芯片开发具体的管理功能：
 
     * 链接状态。此项总是由使用的具体芯片决定
     * 芯片初始化。即使不存在严格的限制，也应进行自定义，以确保使用的是符合预期的芯片
@@ -472,11 +564,11 @@ ESP-IDF 以太网驱动程序所需的大部分 PHY 管理功能都已涵盖在 
 
 **创建自定义 PHY 驱动程序的步骤：**
 
-1. 请根据 PHY 数据手册，定义针对供应商的特定注册表布局。示例请参见 :component_file:`esp_eth/src/esp_eth_phy_ip101.c`。
+1. 请根据 PHY 数据手册，定义针对供应商的特定注册表布局。示例请参见 :component_file:`esp_eth/src/phy/esp_eth_phy_ip101.c`。
 2. 准备衍生的 PHY 管理对象信息结构，该结构：
 
     * 必须至少包含 IEEE 802.3 :cpp:class:`phy_802_3_t` 父对象
-    * 可选包含支持非 IEEE 802.3 或自定义功能所需的额外变量。示例请参见 :component_file:`esp_eth/src/esp_eth_phy_ksz80xx.c`。
+    * 可选择包含额外的变量，以支持非 IEEE 802.3 或定制功能。示例请参见 :component_file:`esp_eth/src/phy/esp_eth_phy_ksz80xx.c`。
 
 3. 定义针对芯片的特定管理回调功能。
 4. 初始化 IEEE 802.3 父对象并重新分配针对芯片的特定管理回调功能。
@@ -488,10 +580,13 @@ ESP-IDF 以太网驱动程序所需的大部分 PHY 管理功能都已涵盖在 
 API 参考
 -------------
 
+.. include-build-file:: inc/eth_types.inc
 .. include-build-file:: inc/esp_eth.inc
 .. include-build-file:: inc/esp_eth_driver.inc
 .. include-build-file:: inc/esp_eth_com.inc
 .. include-build-file:: inc/esp_eth_mac.inc
+.. include-build-file:: inc/esp_eth_mac_esp.inc
+.. include-build-file:: inc/esp_eth_mac_spi.inc
 .. include-build-file:: inc/esp_eth_phy.inc
 .. include-build-file:: inc/esp_eth_phy_802_3.inc
 .. include-build-file:: inc/esp_eth_netif_glue.inc
