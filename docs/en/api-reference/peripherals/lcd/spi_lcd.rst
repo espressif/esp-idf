@@ -56,3 +56,8 @@ SPI Interfaced LCD
         };
         // Create LCD panel handle for ST7789, with the SPI IO device handle
         ESP_ERROR_CHECK(esp_lcd_new_panel_st7789(io_handle, &panel_config, &panel_handle));
+
+API Reference
+-------------
+
+.. include-build-file:: inc/esp_lcd_io_spi.inc

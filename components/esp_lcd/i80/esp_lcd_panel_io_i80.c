@@ -583,6 +583,21 @@ err:
     return ret;
 }
 
+void *esp_lcd_i80_alloc_draw_buffer(esp_lcd_panel_io_handle_t io, size_t size, uint32_t caps)
+{
+    ESP_RETURN_ON_FALSE(io, NULL, TAG, "invalid argument");
+    lcd_panel_io_i80_t *i80_device = __containerof(io, lcd_panel_io_i80_t, base);
+    esp_lcd_i80_bus_t *bus = i80_device->bus;
+    void *buf = NULL;
+    // alloc from external memory
+    if (caps & MALLOC_CAP_SPIRAM) {
+        buf = heap_caps_aligned_calloc(bus->ext_mem_align, 1, size, MALLOC_CAP_8BIT | MALLOC_CAP_SPIRAM | MALLOC_CAP_DMA);
+    } else {
+        buf = heap_caps_aligned_calloc(bus->int_mem_align, 1, size, MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA);
+    }
+    return buf;
+}
+
 static esp_err_t lcd_i80_bus_configure_gpio(esp_lcd_i80_bus_handle_t bus, const esp_lcd_i80_bus_config_t *bus_config)
 {
     int bus_id = bus->bus_id;
