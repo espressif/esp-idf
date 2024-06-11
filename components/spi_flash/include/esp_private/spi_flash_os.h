@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -54,6 +54,11 @@ esp_err_t spi_flash_init_chip_state(void);
  * @brief To initislize the MSPI pins
  */
 void esp_mspi_pin_init(void);
+
+/**
+ * @brief Reserve MSPI IOs
+ */
+void esp_mspi_pin_reserve(void);
 
 /**
  * @brief Get the number of the GPIO corresponding to the given MSPI io

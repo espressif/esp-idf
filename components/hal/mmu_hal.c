@@ -12,6 +12,7 @@
 #include "hal/assert.h"
 #include "hal/mmu_hal.h"
 #include "hal/mmu_ll.h"
+#include "soc/soc_caps.h"
 #include "rom/cache.h"
 
 void mmu_hal_init(void)
@@ -26,7 +27,7 @@ void mmu_hal_init(void)
 
 void mmu_hal_unmap_all(void)
 {
-#if MMU_LL_MMU_PER_TARGET
+#if SOC_MMU_PER_EXT_MEM_TARGET
     mmu_ll_unmap_all(MMU_LL_FLASH_MMU_ID);
     mmu_ll_unmap_all(MMU_LL_PSRAM_MMU_ID);
 #else

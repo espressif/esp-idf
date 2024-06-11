@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "esp_attr.h"
 #include "hal/clk_tree_hal.h"
 #include "hal/clk_tree_ll.h"
 #include "hal/assert.h"
@@ -70,7 +71,7 @@ uint32_t clk_hal_lp_slow_get_freq_hz(void)
     }
 }
 
-uint32_t clk_hal_xtal_get_freq_mhz(void)
+IRAM_ATTR uint32_t clk_hal_xtal_get_freq_mhz(void)
 {
     uint32_t freq = clk_ll_xtal_load_freq_mhz();
     if (freq == 0) {

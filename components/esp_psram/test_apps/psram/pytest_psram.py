@@ -1,6 +1,5 @@
 # SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
-
 import pytest
 from pytest_embedded import Dut
 
@@ -81,6 +80,7 @@ def test_psram_esp32s3_octal(dut: Dut) -> None:
     'config',
     [
         'esp32p4_200m_release',
+        'esp32p4_xip'
     ],
     indirect=True,
 )

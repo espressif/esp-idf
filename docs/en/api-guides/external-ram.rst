@@ -137,35 +137,55 @@ Remaining external RAM can also be added to the capability heap allocator using 
 
 .. only:: SOC_SPIRAM_XIP_SUPPORTED
 
-    .. _external_ram_config_instructions:
+    .. only:: esp32s2 or esp32s3
 
-    Move Instructions in Flash to PSRAM
-    -----------------------------------
+        .. _external_ram_config_instructions:
 
-    The :ref:`CONFIG_SPIRAM_FETCH_INSTRUCTIONS` option allows the flash ``.text`` sections (use for instructions) to be placed in PSRAM.
+        Move Instructions in Flash to PSRAM
+        -----------------------------------
 
-    By enabling the :ref:`CONFIG_SPIRAM_FETCH_INSTRUCTIONS` option
+        The :ref:`CONFIG_SPIRAM_FETCH_INSTRUCTIONS` option allows the flash ``.text`` sections (for instructions) to be placed in PSRAM.
 
-    - Instructions from the ``.text`` sections of flash are moved into PSRAM on system startup.
+        By enabling the :ref:`CONFIG_SPIRAM_FETCH_INSTRUCTIONS` option,
 
-    - The corresponding virtual memory range of those instructions will also be re-mapped to PSRAM.
+        - Instructions from the ``.text`` sections of flash are moved into PSRAM on system startup.
 
-    If :ref:`CONFIG_SPIRAM_RODATA` is also enabled, the cache will not be disabled during an SPI1 flash operation. You do not need to make sure ISRs, ISR callbacks and involved data are placed in internal RAM, thus internal RAM usage can be optimized.
+        - The corresponding virtual memory range of those instructions will also be re-mapped to PSRAM.
 
-    .. _external_ram_config_rodata:
+        .. _external_ram_config_rodata:
 
-    Move Read-Only Data in Flash to PSRAM
-    ---------------------------------------
+        Move Read-Only Data in Flash to PSRAM
+        ---------------------------------------
 
-    The :ref:`CONFIG_SPIRAM_RODATA` option allows the flash ``.rodata`` sections (use for read only data) to be placed in PSRAM.
+        The :ref:`CONFIG_SPIRAM_RODATA` option allows the flash ``.rodata`` sections (for read only data) to be placed in PSRAM.
 
-    By enabling the :ref:`CONFIG_SPIRAM_RODATA` option
+        By enabling the :ref:`CONFIG_SPIRAM_RODATA` option,
 
-    - Instructions from the ``.rodata`` sections of flash are moved into PSRAM on system startup.
+        - Instructions from the ``.rodata`` sections of flash are moved into PSRAM on system startup.
 
-    - The corresponding virtual memory range of those rodata will also be re-mapped to PSRAM.
+        - The corresponding virtual memory range of those rodata will also be re-mapped to PSRAM.
 
-    If :ref:`CONFIG_SPIRAM_FETCH_INSTRUCTIONS` is also enabled, the cache will not be disabled during an SPI1 flash operation. You do not need to make sure ISRs, ISR callbacks and involved data are placed in internal RAM, thus internal RAM usage can be optimized.
+
+        Execute In Place (XiP) from PSRAM
+        ------------------------------------
+
+        The :ref:`CONFIG_SPIRAM_XIP_FROM_PSRAM` is a helper option for you to select both the :ref:`CONFIG_SPIRAM_FETCH_INSTRUCTIONS` and :ref:`CONFIG_SPIRAM_RODATA`.
+
+        The benefits of XiP from PSRAM is:
+
+        - PSRAM access speed is faster than Flash access. So the performance is better.
+
+        - The cache will not be disabled during an SPI1 flash operation, thus optimizing the code execution performance during SPI1 flash operations. For ISRs, ISR callbacks and data which might be accessed during this period, you do not need to place them in internal RAM, thus internal RAM usage can be optimized. This feature is useful for high throughput peripheral involved applications to improve the performance during SPI1 flash operations.
+
+    .. only:: esp32p4
+
+        Execute In Place (XiP) from PSRAM
+        ------------------------------------
+
+        The :ref:`CONFIG_SPIRAM_XIP_FROM_PSRAM` option enables the executable in place (XiP) from PSRAM feature. With this option sections that are normally placed in flash ,``.text`` (for instructions) and ``.rodata`` (for read only data), will be loaded in PSRAM.
+
+        With this option enabled, the cache will not be disabled during an SPI1 flash operation, so code that requires executing during an SPI1 Flash operation does not have to be placed in internal RAM. Because P4 Flash and PSRAM are using two separate SPI buses, moving Flash content to PSRAM will actually increase the load of the PSRAM MSPI bus, so the access speed is relatively slower. The exact impact on performance will be very dependent on your apps usage of PSRAM, and we suggest doing performance profiling to determine if enabling this option will significantly impact your app's performance.
+
 
 Restrictions
 ============

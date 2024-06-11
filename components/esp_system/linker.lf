@@ -30,6 +30,9 @@ entries:
         usb_console:esp_usb_console_before_restart (noflash)
         usb_console:esp_usb_console_on_restart_timeout (noflash)
 
+    if APP_BUILD_TYPE_RAM = n:
+        image_process (noflash)
+
 [mapping:vfs_cdcacm]
 archive: libvfs.a
 entries:

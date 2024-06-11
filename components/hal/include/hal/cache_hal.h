@@ -9,6 +9,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include "soc/soc_caps.h"
 #include "hal/cache_types.h"
 
 #ifdef __cplusplus
