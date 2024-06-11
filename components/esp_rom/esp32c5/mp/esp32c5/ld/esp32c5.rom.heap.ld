@@ -76,5 +76,6 @@ PROVIDE (multi_heap_aligned_alloc = multi_heap_aligned_alloc_impl);
 PROVIDE (multi_heap_aligned_free = multi_heap_aligned_free_impl);
 PROVIDE (multi_heap_check = multi_heap_check);
 PROVIDE (multi_heap_set_lock = multi_heap_set_lock);
+PROVIDE (multi_heap_os_funcs_init = multi_heap_mutex_init);
 PROVIDE (multi_heap_internal_lock = multi_heap_internal_lock);
 PROVIDE (multi_heap_internal_unlock = multi_heap_internal_unlock);

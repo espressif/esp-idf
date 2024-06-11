@@ -111,17 +111,41 @@ config SOC_CPU_IDRAM_SPLIT_USING_PMP
     bool
     default y
 
+config SOC_GPIO_PORT
+    int
+    default 1
+
 config SOC_GPIO_PIN_COUNT
     int
     default 29
 
+config SOC_GPIO_SUPPORT_PIN_HYS_FILTER
+    bool
+    default y
+
+config SOC_GPIO_SUPPORT_RTC_INDEPENDENT
+    bool
+    default y
+
 config SOC_GPIO_IN_RANGE_MAX
     int
-    default 30
+    default 28
 
 config SOC_GPIO_OUT_RANGE_MAX
     int
-    default 30
+    default 28
+
+config SOC_GPIO_DEEP_SLEEP_WAKE_VALID_GPIO_MASK
+    int
+    default 0
+
+config SOC_GPIO_VALID_DIGITAL_IO_PAD_MASK
+    hex
+    default 0x0000000001FFFF00
+
+config SOC_GPIO_SUPPORT_FORCE_HOLD
+    bool
+    default y
 
 config SOC_GPIO_SUPPORT_HOLD_SINGLE_IO_IN_DSLP
     bool

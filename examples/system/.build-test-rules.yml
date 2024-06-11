@@ -79,10 +79,6 @@ examples/system/freertos:
     - freertos
 
 examples/system/gcov:
-  disable:
-    - if: IDF_TARGET == "esp32c5"
-      temporary: true
-      reason: not supported yet #TODO: IDF-8717
   disable_test:
     - if: IDF_TARGET != "esp32"
       temporary: true

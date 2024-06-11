@@ -1,10 +1,6 @@
 # Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
 
 components/esp_driver_gpio/test_apps:
-  disable:
-    - if: IDF_TARGET == "esp32c5"
-      temporary: true
-      reason: not support yet # TODO: [ESP32C5] IDF-8717
   disable_test:
     - if: IDF_TARGET == "esp32p4"
       temporary: true

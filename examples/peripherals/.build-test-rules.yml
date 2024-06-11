@@ -46,10 +46,6 @@ examples/peripherals/dac/dac_cosine_wave:
     - esp_driver_dac
 
 examples/peripherals/gpio:
-  disable:
-    - if: IDF_TARGET == "esp32c5"
-      temporary: true
-      reason: GPIO is not supported on ESP32-C5  # TODO: [ESP32C5] IDF-8717
   depends_components:
     - esp_driver_gpio
 

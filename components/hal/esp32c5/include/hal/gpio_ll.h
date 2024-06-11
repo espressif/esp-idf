@@ -22,23 +22,17 @@
 #include "soc/gpio_struct.h"
 #include "soc/lp_aon_struct.h"
 #include "soc/pmu_struct.h"
+#include "soc/io_mux_struct.h"
+#include "soc/clk_tree_defs.h"
+#include "soc/pcr_struct.h"
+#include "soc/usb_serial_jtag_struct.h"
+#include "hal/gpio_types.h"
+#include "hal/assert.h"
 #if CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
 #include "soc/lp_io_struct.h"
-#include "soc/pcr_struct.h"
-#include "soc/clk_tree_defs.h"
-#include "soc/usb_serial_jtag_struct.h"
-#include "soc/io_mux_struct.h"
-#include "hal/gpio_types.h"
 #elif CONFIG_IDF_TARGET_ESP32C5_MP_VERSION
 #include "soc/lp_gpio_struct.h"
-#include "soc/usb_serial_jtag_reg.h"
-#include "soc/pcr_struct.h"
-#include "soc/clk_tree_defs.h"
-#include "soc/io_mux_struct.h"
-#include "hal/gpio_types.h"
-#include "hal/misc.h"
 #endif
-#include "hal/assert.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -69,15 +63,15 @@ static inline void gpio_ll_get_io_config(gpio_dev_t *hw, uint32_t gpio_num,
                                          bool *pu, bool *pd, bool *ie, bool *oe, bool *od, uint32_t *drv,
                                          uint32_t *fun_sel, uint32_t *sig_out, bool *slp_sel)
 {
-    *pu = IOMUX.gpio[gpio_num].fun_wpu;
-    *pd = IOMUX.gpio[gpio_num].fun_wpd;
-    *ie = IOMUX.gpio[gpio_num].fun_ie;
+    *pu = IO_MUX.gpio[gpio_num].fun_wpu;
+    *pd = IO_MUX.gpio[gpio_num].fun_wpd;
+    *ie = IO_MUX.gpio[gpio_num].fun_ie;
     *oe = (hw->enable.val & (1 << gpio_num)) >> gpio_num;
     *od = hw->pin[gpio_num].pad_driver;
-    *drv = IOMUX.gpio[gpio_num].fun_drv;
-    *fun_sel = IOMUX.gpio[gpio_num].mcu_sel;
+    *drv = IO_MUX.gpio[gpio_num].fun_drv;
+    *fun_sel = IO_MUX.gpio[gpio_num].mcu_sel;
     *sig_out = hw->func_out_sel_cfg[gpio_num].out_sel;
-    *slp_sel = IOMUX.gpio[gpio_num].slp_sel;
+    *slp_sel = IO_MUX.gpio[gpio_num].slp_sel;
 }
 
 /**
@@ -88,12 +82,7 @@ static inline void gpio_ll_get_io_config(gpio_dev_t *hw, uint32_t gpio_num,
   */
 static inline void gpio_ll_pullup_en(gpio_dev_t *hw, uint32_t gpio_num)
 {
-#if CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
-    IOMUX.gpio[gpio_num].fun_wpu = 1;
-#elif CONFIG_IDF_TARGET_ESP32C5_MP_VERSION
-    // REG_SET_BIT(IO_MUX_GPIO0_REG + (gpio_num * 4), FUN_PU);
-    abort();
-#endif
+    IO_MUX.gpio[gpio_num].fun_wpu = 1;
 }
 
 /**
@@ -105,12 +94,7 @@ static inline void gpio_ll_pullup_en(gpio_dev_t *hw, uint32_t gpio_num)
 __attribute__((always_inline))
 static inline void gpio_ll_pullup_dis(gpio_dev_t *hw, uint32_t gpio_num)
 {
-#if CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
-    IOMUX.gpio[gpio_num].fun_wpu = 0;
-#elif CONFIG_IDF_TARGET_ESP32C5_MP_VERSION
-    // REG_CLR_BIT(IO_MUX_GPIO0_REG + (gpio_num * 4), FUN_PU);
-    abort();
-#endif
+    IO_MUX.gpio[gpio_num].fun_wpu = 0;
 }
 
 /**
@@ -121,12 +105,7 @@ static inline void gpio_ll_pullup_dis(gpio_dev_t *hw, uint32_t gpio_num)
   */
 static inline void gpio_ll_pulldown_en(gpio_dev_t *hw, uint32_t gpio_num)
 {
-#if CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
-    IOMUX.gpio[gpio_num].fun_wpd = 1;
-#elif CONFIG_IDF_TARGET_ESP32C5_MP_VERSION
-    // REG_SET_BIT(IO_MUX_GPIO0_REG + (gpio_num * 4), FUN_PD);
-    abort();
-#endif
+    IO_MUX.gpio[gpio_num].fun_wpd = 1;
 }
 
 /**
@@ -143,20 +122,11 @@ static inline void gpio_ll_pulldown_dis(gpio_dev_t *hw, uint32_t gpio_num)
     // Note that esp32C5 has supported USB_EXCHG_PINS feature. If this efuse is burnt, the gpio pin
     // which should be checked is USB_INT_PHY0_DM_GPIO_NUM instead.
     // TODO: read the specific efuse with efuse_ll.h
-#if CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
     if (gpio_num == USB_INT_PHY0_DP_GPIO_NUM) {
         USB_SERIAL_JTAG.conf0.pad_pull_override = 1;
         USB_SERIAL_JTAG.conf0.dp_pullup = 0;
     }
-    IOMUX.gpio[gpio_num].fun_wpd = 0;
-#elif CONFIG_IDF_TARGET_ESP32C5_MP_VERSION
-    // if (gpio_num == USB_INT_PHY0_DP_GPIO_NUM) {
-    //     SET_PERI_REG_MASK(USB_SERIAL_JTAG_CONF0_REG, USB_SERIAL_JTAG_PAD_PULL_OVERRIDE);
-    //     CLEAR_PERI_REG_MASK(USB_SERIAL_JTAG_CONF0_REG, USB_SERIAL_JTAG_DP_PULLUP);
-    // }
-    // REG_CLR_BIT(IO_MUX_GPIO0_REG + (gpio_num * 4), FUN_PD);
-    abort();
-#endif
+    IO_MUX.gpio[gpio_num].fun_wpd = 0;
 }
 
 /**
@@ -182,11 +152,7 @@ __attribute__((always_inline))
 static inline void gpio_ll_get_intr_status(gpio_dev_t *hw, uint32_t core_id, uint32_t *status)
 {
     (void)core_id;
-#if CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
     *status = hw->pcpu_int.procpu_int;
-#elif CONFIG_IDF_TARGET_ESP32C5_MP_VERSION
-    abort();
-#endif
 }
 
 /**
@@ -261,12 +227,7 @@ static inline void gpio_ll_intr_disable(gpio_dev_t *hw, uint32_t gpio_num)
 __attribute__((always_inline))
 static inline void gpio_ll_input_disable(gpio_dev_t *hw, uint32_t gpio_num)
 {
-#if CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
-    IOMUX.gpio[gpio_num].fun_ie = 0;
-#elif CONFIG_IDF_TARGET_ESP32C5_MP_VERSION
-    // PIN_INPUT_DISABLE(IO_MUX_GPIO0_REG + (gpio_num * 4));
-    abort();
-#endif
+    IO_MUX.gpio[gpio_num].fun_ie = 0;
 }
 
 /**
@@ -277,12 +238,7 @@ static inline void gpio_ll_input_disable(gpio_dev_t *hw, uint32_t gpio_num)
   */
 static inline void gpio_ll_input_enable(gpio_dev_t *hw, uint32_t gpio_num)
 {
-#if CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
-    IOMUX.gpio[gpio_num].fun_ie = 1;
-#elif CONFIG_IDF_TARGET_ESP32C5_MP_VERSION
-    // PIN_INPUT_ENABLE(IO_MUX_GPIO0_REG + (gpio_num * 4));
-    abort();
-#endif
+    IO_MUX.gpio[gpio_num].fun_ie = 1;
 }
 
 /**
@@ -293,12 +249,7 @@ static inline void gpio_ll_input_enable(gpio_dev_t *hw, uint32_t gpio_num)
  */
 static inline void gpio_ll_pin_filter_enable(gpio_dev_t *hw, uint32_t gpio_num)
 {
-#if CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
-    IOMUX.gpio[gpio_num].filter_en = 1;
-#elif CONFIG_IDF_TARGET_ESP32C5_MP_VERSION
-    // PIN_FILTER_EN(IO_MUX_GPIO0_REG + (gpio_num * 4));
-    abort();
-#endif
+    IO_MUX.gpio[gpio_num].filter_en = 1;
 }
 
 /**
@@ -309,15 +260,9 @@ static inline void gpio_ll_pin_filter_enable(gpio_dev_t *hw, uint32_t gpio_num)
  */
 static inline void gpio_ll_pin_filter_disable(gpio_dev_t *hw, uint32_t gpio_num)
 {
-#if CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
-    IOMUX.gpio[gpio_num].filter_en = 0;
-#elif CONFIG_IDF_TARGET_ESP32C5_MP_VERSION
-    PIN_FILTER_DIS(IO_MUX_GPIO0_REG + (gpio_num * 4));
-    abort();
-#endif
+    IO_MUX.gpio[gpio_num].filter_en = 0;
 }
 
-#if CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
 /**
   * @brief Enable GPIO hysteresis
   *
@@ -330,8 +275,8 @@ static inline void gpio_ll_pin_input_hysteresis_enable(gpio_dev_t *hw, uint32_t 
     // We are not going to use the hardware control in IDF for C5.
     // Therefore, we need to always switch to use software control first.
     // i.e. Swt hys_sel to 1, so that hys_en determines whether hysteresis is enabled or not
-    IOMUX.gpio[gpio_num].hys_sel = 1;
-    IOMUX.gpio[gpio_num].hys_en = 1;
+    IO_MUX.gpio[gpio_num].hys_sel = 1;
+    IO_MUX.gpio[gpio_num].hys_en = 1;
 }
 
 /**
@@ -342,10 +287,9 @@ static inline void gpio_ll_pin_input_hysteresis_enable(gpio_dev_t *hw, uint32_t 
   */
 static inline void gpio_ll_pin_input_hysteresis_disable(gpio_dev_t *hw, uint32_t gpio_num)
 {
-    IOMUX.gpio[gpio_num].hys_sel = 1;
-    IOMUX.gpio[gpio_num].hys_en = 0;
+    IO_MUX.gpio[gpio_num].hys_sel = 1;
+    IO_MUX.gpio[gpio_num].hys_en = 0;
 }
-#endif
 
 /**
   * @brief Disable output mode on GPIO.
@@ -461,12 +405,7 @@ static inline void gpio_ll_wakeup_disable(gpio_dev_t *hw, uint32_t gpio_num)
   */
 static inline void gpio_ll_set_drive_capability(gpio_dev_t *hw, uint32_t gpio_num, gpio_drive_cap_t strength)
 {
-#if CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
-    IOMUX.gpio[gpio_num].fun_drv = strength;
-#elif CONFIG_IDF_TARGET_ESP32C5_MP_VERSION
-    // SET_PERI_REG_BITS(IO_MUX_GPIO0_REG + (gpio_num * 4), FUN_DRV_V, strength, FUN_DRV_S);
-    abort();
-#endif
+    IO_MUX.gpio[gpio_num].fun_drv = strength;
 }
 
 /**
@@ -478,12 +417,7 @@ static inline void gpio_ll_set_drive_capability(gpio_dev_t *hw, uint32_t gpio_nu
   */
 static inline void gpio_ll_get_drive_capability(gpio_dev_t *hw, uint32_t gpio_num, gpio_drive_cap_t *strength)
 {
-#if CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
-    *strength = (gpio_drive_cap_t)(IOMUX.gpio[gpio_num].fun_drv);
-#elif CONFIG_IDF_TARGET_ESP32C5_MP_VERSION
-    // *strength = (gpio_drive_cap_t)GET_PERI_REG_BITS2(IO_MUX_GPIO0_REG + (gpio_num * 4), FUN_DRV_V, FUN_DRV_S);
-    abort();
-#endif
+    *strength = (gpio_drive_cap_t)(IO_MUX.gpio[gpio_num].fun_drv);
 }
 
 /**
@@ -527,7 +461,7 @@ static inline bool gpio_ll_is_digital_io_hold(gpio_dev_t *hw, uint32_t gpio_num)
 }
 
 /**
-  * @brief Set pad input to a peripheral signal through the IOMUX.
+  * @brief Set pad input to a peripheral signal through the IO_MUX.
   *
   * @param hw Peripheral GPIO hardware instance address.
   * @param gpio_num GPIO number of the pad.
@@ -537,7 +471,7 @@ __attribute__((always_inline))
 static inline void gpio_ll_iomux_in(gpio_dev_t *hw, uint32_t gpio, uint32_t signal_idx)
 {
     hw->func_in_sel_cfg[signal_idx].sig_in_sel = 0;
-    IOMUX.gpio[gpio].fun_ie = 1;
+    IO_MUX.gpio[gpio].fun_ie = 1;
 }
 
 /**
@@ -554,11 +488,10 @@ static inline void gpio_ll_iomux_func_sel(uint32_t pin_name, uint32_t func)
         USB_SERIAL_JTAG.conf0.usb_pad_enable = 0;
     }
 #elif CONFIG_IDF_TARGET_ESP32C5_MP_VERSION
-    // // Disable USB Serial JTAG if pins 12 or pins 13 needs to select an IOMUX function
-    // if (pin_name == IO_MUX_GPIO12_REG || pin_name == IO_MUX_GPIO13_REG) {
-    //     CLEAR_PERI_REG_MASK(USB_SERIAL_JTAG_CONF0_REG, USB_SERIAL_JTAG_USB_PAD_ENABLE);
-    // }
-    abort();
+    // Disable USB Serial JTAG if pins 13 or pins 14 needs to select an IOMUX function
+    if (pin_name == IO_MUX_GPIO13_REG || pin_name == IO_MUX_GPIO14_REG) {
+        USB_SERIAL_JTAG.conf0.usb_pad_enable = 0;
+    }
 #endif
     PIN_FUNC_SELECT(pin_name, func);
 }
@@ -590,19 +523,18 @@ static inline void gpio_ll_func_sel(gpio_dev_t *hw, uint8_t gpio_num, uint32_t f
     if (gpio_num == USB_INT_PHY0_DM_GPIO_NUM || gpio_num == USB_INT_PHY0_DP_GPIO_NUM) {
         USB_SERIAL_JTAG.conf0.usb_pad_enable = 0;
     }
-    IOMUX.gpio[gpio_num].mcu_sel = func;
+    IO_MUX.gpio[gpio_num].mcu_sel = func;
 #elif CONFIG_IDF_TARGET_ESP32C5_MP_VERSION
-    // // Disable USB Serial JTAG if pins 12 or pins 13 needs to select an IOMUX function
-    // if (gpio_num == USB_INT_PHY0_DM_GPIO_NUM || gpio_num == USB_INT_PHY0_DP_GPIO_NUM) {
-    //     CLEAR_PERI_REG_MASK(USB_SERIAL_JTAG_CONF0_REG, USB_SERIAL_JTAG_USB_PAD_ENABLE);
-    // }
-    // PIN_FUNC_SELECT(IO_MUX_GPIO0_REG + (gpio_num * 4), func);
-    abort();
+    // Disable USB Serial JTAG if pins 13 or pins 14 needs to select an IOMUX function
+    if (gpio_num == USB_INT_PHY0_DM_GPIO_NUM || gpio_num == USB_INT_PHY0_DP_GPIO_NUM) {
+        USB_SERIAL_JTAG.conf0.usb_pad_enable = 0;
+    }
+    IO_MUX.gpio[gpio_num].mcu_sel = func;
 #endif
 }
 
 /**
-  * @brief Set peripheral output to an GPIO pad through the IOMUX.
+  * @brief Set peripheral output to an GPIO pad through the IO_MUX.
   *
   * @param hw Peripheral GPIO hardware instance address.
   * @param gpio_num gpio_num GPIO number of the pad.
@@ -625,7 +557,6 @@ static inline void gpio_ll_iomux_out(gpio_dev_t *hw, uint8_t gpio_num, int func,
 static inline void gpio_ll_iomux_set_clk_src(soc_module_clk_t src)
 {
     switch (src) {
-#if CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
      case SOC_MOD_CLK_XTAL:
         PCR.iomux_clk_conf.iomux_func_clk_sel = 0;
         break;
@@ -635,14 +566,6 @@ static inline void gpio_ll_iomux_set_clk_src(soc_module_clk_t src)
     case SOC_MOD_CLK_PLL_F80M:
         PCR.iomux_clk_conf.iomux_func_clk_sel = 2;
         break;
-#elif CONFIG_IDF_TARGET_ESP32C5_MP_VERSION
-    case SOC_MOD_CLK_XTAL:
-        PCR.iomux_clk_conf.iomux_func_clk_sel = 3;
-        break;
-    case SOC_MOD_CLK_PLL_F80M:
-        PCR.iomux_clk_conf.iomux_func_clk_sel = 1;
-        break;
-#endif
     default:
         // Unsupported IO_MUX clock source
         HAL_ASSERT(false);
@@ -694,12 +617,7 @@ static inline void gpio_ll_force_unhold_all(void)
   */
 static inline void gpio_ll_sleep_sel_en(gpio_dev_t *hw, uint32_t gpio_num)
 {
-#if CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
-    IOMUX.gpio[gpio_num].slp_sel = 1;
-#elif CONFIG_IDF_TARGET_ESP32C5_MP_VERSION
-    // PIN_SLP_SEL_ENABLE(IO_MUX_GPIO0_REG + (gpio_num * 4));
-    abort();
-#endif
+    IO_MUX.gpio[gpio_num].slp_sel = 1;
 }
 
 /**
@@ -711,12 +629,7 @@ static inline void gpio_ll_sleep_sel_en(gpio_dev_t *hw, uint32_t gpio_num)
   */
 static inline void gpio_ll_sleep_sel_dis(gpio_dev_t *hw, uint32_t gpio_num)
 {
-#if CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
-    IOMUX.gpio[gpio_num].slp_sel = 0;
-#elif CONFIG_IDF_TARGET_ESP32C5_MP_VERSION
-    // PIN_SLP_SEL_DISABLE(IO_MUX_GPIO0_REG + (gpio_num * 4));
-    abort();
-#endif
+    IO_MUX.gpio[gpio_num].slp_sel = 0;
 }
 
 /**
@@ -727,12 +640,7 @@ static inline void gpio_ll_sleep_sel_dis(gpio_dev_t *hw, uint32_t gpio_num)
   */
 static inline void gpio_ll_sleep_pullup_dis(gpio_dev_t *hw, uint32_t gpio_num)
 {
-#if CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
-    IOMUX.gpio[gpio_num].mcu_wpu = 0;
-#elif CONFIG_IDF_TARGET_ESP32C5_MP_VERSION
-    // PIN_SLP_PULLUP_DISABLE(IO_MUX_GPIO0_REG + (gpio_num * 4));
-    abort();
-#endif
+    IO_MUX.gpio[gpio_num].mcu_wpu = 0;
 }
 
 /**
@@ -743,12 +651,7 @@ static inline void gpio_ll_sleep_pullup_dis(gpio_dev_t *hw, uint32_t gpio_num)
   */
 static inline void gpio_ll_sleep_pullup_en(gpio_dev_t *hw, uint32_t gpio_num)
 {
-#if CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
-    IOMUX.gpio[gpio_num].mcu_wpu = 1;
-#elif CONFIG_IDF_TARGET_ESP32C5_MP_VERSION
-    // PIN_SLP_PULLUP_ENABLE(IO_MUX_GPIO0_REG + (gpio_num * 4));
-    abort();
-#endif
+    IO_MUX.gpio[gpio_num].mcu_wpu = 1;
 }
 
 /**
@@ -759,12 +662,7 @@ static inline void gpio_ll_sleep_pullup_en(gpio_dev_t *hw, uint32_t gpio_num)
   */
 static inline void gpio_ll_sleep_pulldown_en(gpio_dev_t *hw, uint32_t gpio_num)
 {
-#if CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
-    IOMUX.gpio[gpio_num].mcu_wpd = 1;
-#elif CONFIG_IDF_TARGET_ESP32C5_MP_VERSION
-    // PIN_SLP_PULLDOWN_ENABLE(IO_MUX_GPIO0_REG + (gpio_num * 4));
-    abort();
-#endif
+    IO_MUX.gpio[gpio_num].mcu_wpd = 1;
 }
 
 /**
@@ -775,12 +673,7 @@ static inline void gpio_ll_sleep_pulldown_en(gpio_dev_t *hw, uint32_t gpio_num)
   */
 static inline void gpio_ll_sleep_pulldown_dis(gpio_dev_t *hw, uint32_t gpio_num)
 {
-#if CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
-    IOMUX.gpio[gpio_num].mcu_wpd = 0;
-#elif CONFIG_IDF_TARGET_ESP32C5_MP_VERSION
-    // PIN_SLP_PULLDOWN_DISABLE(IO_MUX_GPIO0_REG + (gpio_num * 4));
-    abort();
-#endif
+    IO_MUX.gpio[gpio_num].mcu_wpd = 0;
 }
 
 /**
@@ -791,12 +684,7 @@ static inline void gpio_ll_sleep_pulldown_dis(gpio_dev_t *hw, uint32_t gpio_num)
   */
 static inline void gpio_ll_sleep_input_disable(gpio_dev_t *hw, uint32_t gpio_num)
 {
-#if CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
-    IOMUX.gpio[gpio_num].mcu_ie = 0;
-#elif CONFIG_IDF_TARGET_ESP32C5_MP_VERSION
-    // PIN_SLP_INPUT_DISABLE(IO_MUX_GPIO0_REG + (gpio_num * 4));
-    abort();
-#endif
+    IO_MUX.gpio[gpio_num].mcu_ie = 0;
 }
 
 /**
@@ -807,12 +695,7 @@ static inline void gpio_ll_sleep_input_disable(gpio_dev_t *hw, uint32_t gpio_num
   */
 static inline void gpio_ll_sleep_input_enable(gpio_dev_t *hw, uint32_t gpio_num)
 {
-#if CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
-    IOMUX.gpio[gpio_num].mcu_ie = 1;
-#elif CONFIG_IDF_TARGET_ESP32C5_MP_VERSION
-    // PIN_SLP_INPUT_ENABLE(IO_MUX_GPIO0_REG + (gpio_num * 4));
-    abort();
-#endif
+    IO_MUX.gpio[gpio_num].mcu_ie = 1;
 }
 
 /**
@@ -823,12 +706,7 @@ static inline void gpio_ll_sleep_input_enable(gpio_dev_t *hw, uint32_t gpio_num)
   */
 static inline void gpio_ll_sleep_output_disable(gpio_dev_t *hw, uint32_t gpio_num)
 {
-#if CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
-    IOMUX.gpio[gpio_num].mcu_oe = 0;
-#elif CONFIG_IDF_TARGET_ESP32C5_MP_VERSION
-    // PIN_SLP_OUTPUT_DISABLE(IO_MUX_GPIO0_REG + (gpio_num * 4));
-    abort();
-#endif
+    IO_MUX.gpio[gpio_num].mcu_oe = 0;
 }
 
 /**
@@ -839,12 +717,7 @@ static inline void gpio_ll_sleep_output_disable(gpio_dev_t *hw, uint32_t gpio_nu
   */
 static inline void gpio_ll_sleep_output_enable(gpio_dev_t *hw, uint32_t gpio_num)
 {
-#if CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
-    IOMUX.gpio[gpio_num].mcu_oe = 1;
-#elif CONFIG_IDF_TARGET_ESP32C5_MP_VERSION
-    // PIN_SLP_OUTPUT_ENABLE(IO_MUX_GPIO0_REG + (gpio_num * 4));
-    abort();
-#endif
+    IO_MUX.gpio[gpio_num].mcu_oe = 1;
 }
 
 #ifdef __cplusplus
