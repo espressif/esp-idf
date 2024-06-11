@@ -21,7 +21,7 @@
 static const char *TAG = "AF_SCHEME";
 
 typedef struct {
-    isp_af_ctrlr_t af_ctlr;
+    isp_af_ctlr_t af_ctlr;
     int first_step_val;
     int first_approx_cycles;
     int second_step_val;
@@ -36,7 +36,7 @@ typedef struct {
 static esp_err_t s_af_process(void *arg, int *out_definition_thresh, int *out_luminance_thresh);
 
 /* ------------------------- Public API ------------------------------------- */
-esp_err_t isp_af_create_sa_scheme(isp_af_ctrlr_t af_ctlr, const isp_af_sa_scheme_config_t *config, isp_af_scheme_handle_t *ret_scheme)
+esp_err_t isp_af_create_sa_scheme(isp_af_ctlr_t af_ctlr, const isp_af_sa_scheme_config_t *config, isp_af_scheme_handle_t *ret_scheme)
 {
     esp_err_t ret = ESP_FAIL;
     ESP_RETURN_ON_FALSE(af_ctlr && config && ret_scheme, ESP_ERR_INVALID_ARG, TAG, "invalid arg: null pointer");

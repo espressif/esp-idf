@@ -76,6 +76,13 @@ extern "C" {
 ---------------------------------------------------------------*/
 #define ISP_LL_BF_DEFAULT_TEMPLATE_VAL        15
 
+/*---------------------------------------------------------------
+                      DVP
+---------------------------------------------------------------*/
+#define ISP_LL_DVP_DATA_TYPE_RAW8     0x2A
+#define ISP_LL_DVP_DATA_TYPE_RAW10    0x2B
+#define ISP_LL_DVP_DATA_TYPE_RAW12    0x2C
+
 /**
  * @brief Env monitor mode
  */
@@ -791,6 +798,130 @@ static inline void isp_ll_color_enable(isp_dev_t *hw, bool enable)
     hw->cntl.color_en = enable;
 }
 
+/*---------------------------------------------------------------
+                      DVP Camera
+---------------------------------------------------------------*/
+/**
+ * @brief Set dvp data color format
+ *
+ * @param[in] hw      Hardware instance address
+ * @param[in] format  color format, see `color_space_pixel_format_t`
+ *
+ * @return true for valid format, false for invalid format
+ */
+static inline bool isp_ll_dvp_set_data_type(isp_dev_t *hw, color_space_pixel_format_t format)
+{
+    bool valid = false;
+
+    if (format.color_space == COLOR_SPACE_RAW) {
+        switch(format.pixel_format) {
+        case COLOR_PIXEL_RAW8:
+            hw->cam_conf.cam_data_type = ISP_LL_DVP_DATA_TYPE_RAW8;
+            valid = true;
+            break;
+        case COLOR_PIXEL_RAW10:
+            hw->cam_conf.cam_data_type = ISP_LL_DVP_DATA_TYPE_RAW10;
+            valid = true;
+            break;
+        case COLOR_PIXEL_RAW12:
+            hw->cam_conf.cam_data_type = ISP_LL_DVP_DATA_TYPE_RAW12;
+            valid = true;
+            break;
+        default:
+            break;
+        }
+    }
+
+    return valid;
+}
+
+/**
+ * @brief Enable / Disable 2B mode
+ *
+ * @param[in] hw      Hardware instance address
+ * @param[in] enable  Enable / Disable
+ */
+static inline void isp_ll_dvp_enable_2byte_mode(isp_dev_t *hw, bool enable)
+{
+    if (enable) {
+        HAL_ASSERT(hw->cam_conf.cam_data_type == ISP_LL_DVP_DATA_TYPE_RAW8);
+        hw->cam_conf.cam_2byte_mode = 1;
+    } else {
+        hw->cam_conf.cam_2byte_mode = 0;
+    }
+}
+
+/**
+ * @brief Reset DVP CAM module
+ *
+ * @param[in] hw      Hardware instance address
+ */
+static inline void isp_ll_dvp_cam_reset(isp_dev_t *hw)
+{
+    hw->cam_cntl.cam_reset = 1;
+    hw->cam_cntl.cam_reset = 0;
+}
+
+/**
+ * @brief Enable DVP CAM pclk invert
+ *
+ * @param[in] hw      Hardware instance address
+ * @param[in] enable  Enable / Disable
+ */
+static inline void isp_ll_cam_enable_pclk_invert(isp_dev_t *hw, bool enable)
+{
+    hw->cam_cntl.cam_clk_inv = enable;
+}
+
+/**
+ * @brief Enable DVP CAM de invert
+ *
+ * @param[in] hw      Hardware instance address
+ * @param[in] enable  Enable / Disable
+ */
+static inline void isp_ll_cam_enable_de_invert(isp_dev_t *hw, bool enable)
+{
+    hw->cam_conf.cam_de_inv = enable;
+}
+
+/**
+ * @brief Enable DVP CAM hsync invert
+ *
+ * @param[in] hw      Hardware instance address
+ * @param[in] enable  Enable / Disable
+ */
+static inline void isp_ll_cam_enable_hsync_invert(isp_dev_t *hw, bool enable)
+{
+    hw->cam_conf.cam_hsync_inv = enable;
+}
+
+/**
+ * @brief Enable DVP CAM vsync invert
+ *
+ * @param[in] hw      Hardware instance address
+ * @param[in] enable  Enable / Disable
+ */
+static inline void isp_ll_cam_enable_vsync_invert(isp_dev_t *hw, bool enable)
+{
+    hw->cam_conf.cam_vsync_inv = enable;
+}
+
+/**
+ * @brief Enable DVP CAM
+ *
+ * @param[in] hw      Hardware instance address
+ * @param[in] enable  Enable / Disable
+ */
+static inline void isp_ll_cam_enable(isp_dev_t *hw, bool enable)
+{
+    if (enable) {
+        hw->cam_cntl.cam_update_reg = 1;
+        hw->cam_cntl.cam_en = 1;
+        while (hw->cam_cntl.cam_update_reg);
+    } else {
+        hw->cam_cntl.cam_en = 0;
+    }
+}
 /*---------------------------------------------------------------
                       INTR
 ---------------------------------------------------------------*/

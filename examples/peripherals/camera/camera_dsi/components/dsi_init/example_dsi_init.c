@@ -10,6 +10,7 @@
 #include "esp_lcd_panel_ops.h"
 #include "esp_lcd_ili9881c.h"
 #include "example_dsi_init.h"
+#include "example_dsi_init_config.h"
 
 void example_dsi_resource_alloc(esp_lcd_panel_handle_t *ili9881c_ctrl_panel, esp_lcd_panel_handle_t *mipi_dpi_panel, void **frame_buffer)
 {
@@ -45,8 +46,8 @@ void example_dsi_resource_alloc(esp_lcd_panel_handle_t *ili9881c_ctrl_panel, esp
         .virtual_channel = 0,
         .pixel_format = LCD_COLOR_PIXEL_FORMAT_RGB565,
         .video_timing = {
-            .h_size = EXAMPLE_MIPI_DSI_IMAGE_HSIZE,
-            .v_size = EXAMPLE_MIPI_DSI_IMAGE_VSIZE,
+            .h_size = CONFIG_EXAMPLE_MIPI_DSI_DISP_HRES,
+            .v_size = CONFIG_EXAMPLE_MIPI_DSI_DISP_VRES,
             .hsync_back_porch = EXAMPLE_MIPI_DSI_IMAGE_HBP,
             .hsync_pulse_width = EXAMPLE_MIPI_DSI_IMAGE_HSYNC,
             .hsync_front_porch = EXAMPLE_MIPI_DSI_IMAGE_HFP,

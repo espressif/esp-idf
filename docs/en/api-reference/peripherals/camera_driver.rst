@@ -48,8 +48,8 @@ Resource Allocation
             .h_res = MIPI_CSI_DISP_HSIZE,
             .v_res = MIPI_CSI_DISP_VSIZE_640P,
             .lane_bit_rate_mbps = MIPI_CSI_LANE_BITRATE_MBPS,
-            .input_data_color_type = MIPI_CSI_COLOR_RAW8,
-            .output_data_color_type = MIPI_CSI_COLOR_RGB565,
+            .input_data_color_type = CAM_CTLR_COLOR_RAW8,
+            .output_data_color_type = CAM_CTLR_COLOR_RGB565,
             .data_lane_num = 2,
             .byte_swap_en = false,
             .queue_items = 1,
@@ -134,7 +134,7 @@ The factory function :cpp:func:`esp_cam_new_csi_ctlr` and :cpp:func:`esp_cam_ctl
 Kconfig Options
 ^^^^^^^^^^^^^^^
 
-- :ref:`CONFIG_MIPI_CSI_ISR_IRAM_SAFE` controls whether the default ISR handler should be masked when the cache is disabled
+- :ref:`CONFIG_CAM_CTLR_MIPI_CSI_ISR_IRAM_SAFE` controls whether the default ISR handler should be masked when the cache is disabled
 
 
 .. _cam-iram-safe:
@@ -144,7 +144,7 @@ IRAM Safe
 
 By default, the CSI interrupt will be deferred when the cache is disabled because of writing or erasing the flash.
 
-There is a Kconfig option :ref:`CONFIG_MIPI_CSI_ISR_IRAM_SAFE` that:
+There is a Kconfig option :ref:`CONFIG_CAM_CTLR_MIPI_CSI_ISR_IRAM_SAFE` that:
 
 -  Enables the interrupt being serviced even when the cache is disabled
 -  Places all functions that used by the ISR into IRAM

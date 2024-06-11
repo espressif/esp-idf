@@ -7,8 +7,7 @@
 #include "sdkconfig.h"
 #include "unity.h"
 #include "driver/isp.h"
-
-#include "esp_rom_sys.h"
+#include "soc/soc_caps.h"
 
 TEST_CASE("ISP processor exhausted allocation", "[isp]")
 {
@@ -45,7 +44,7 @@ TEST_CASE("ISP AF controller exhausted allocation", "[isp]")
     esp_isp_af_config_t af_config = {
         .edge_thresh = 128,
     };
-    isp_af_ctrlr_t af_ctrlr[SOC_ISP_AF_CTLR_NUMS + 1] = {};
+    isp_af_ctlr_t af_ctrlr[SOC_ISP_AF_CTLR_NUMS + 1] = {};
     for (int i = 0; i < SOC_ISP_AF_CTLR_NUMS; i++) {
         TEST_ESP_OK(esp_isp_new_af_controller(isp_proc, &af_config, &af_ctrlr[i]));
     }

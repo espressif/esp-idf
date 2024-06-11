@@ -1,13 +1,12 @@
-set(srcs "test_app_main.c"
-         "test_isp_driver.c")
+set(srcs "test_app_main.c")
 
-if(CONFIG_SOC_ISP_SHARE_CSI_BRG)
-    list(APPEND srcs "test_isp_csi.c")
+if(CONFIG_SOC_ISP_DVP_SUPPORTED)
+    list(APPEND srcs "test_isp_dvp_driver.c")
 endif()
 
 set(priv_requires
         unity
-        esp_driver_isp
+        esp_driver_cam
         esp_psram
 )
 

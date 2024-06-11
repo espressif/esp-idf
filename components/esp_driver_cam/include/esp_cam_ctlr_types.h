@@ -15,6 +15,11 @@ extern "C" {
 #endif
 
 /**
+ * @brief ESP CAM controller max timeout value
+ */
+#define ESP_CAM_CTLR_MAX_DELAY UINT32_MAX
+
+/**
  * @brief ESP CAM controller handle
  */
 typedef struct esp_cam_ctlr_t *esp_cam_ctlr_handle_t;
