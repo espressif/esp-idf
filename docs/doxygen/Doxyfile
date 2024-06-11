@@ -161,7 +161,6 @@ INPUT = \
     $(PROJECT_PATH)/components/esp_http_server/include/esp_http_server.h \
     $(PROJECT_PATH)/components/esp_https_ota/include/esp_https_ota.h \
     $(PROJECT_PATH)/components/esp_https_server/include/esp_https_server.h \
-    $(PROJECT_PATH)/components/esp_hw_support/dma/include/esp_dma_utils.h \
     $(PROJECT_PATH)/components/esp_hw_support/include/esp_clk_tree.h \
     $(PROJECT_PATH)/components/esp_hw_support/include/esp_async_memcpy.h \
     $(PROJECT_PATH)/components/esp_hw_support/include/esp_chip_info.h \
