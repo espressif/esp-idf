@@ -127,6 +127,10 @@ config SOC_XTAL_SUPPORT_48M
     bool
     default y
 
+config SOC_XTAL_SUPPORT_EFUSE_SEL
+    bool
+    default y
+
 config SOC_AES_SUPPORT_DMA
     bool
     default y

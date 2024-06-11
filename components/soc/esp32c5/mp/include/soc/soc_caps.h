@@ -78,6 +78,7 @@
 /*-------------------------- XTAL CAPS ---------------------------------------*/
 #define SOC_XTAL_SUPPORT_40M            1
 #define SOC_XTAL_SUPPORT_48M            1
+#define SOC_XTAL_SUPPORT_EFUSE_SEL      1   // XTAL freq in runtime determined through EFUSE_XTAL_48M_SEL
 
 /*-------------------------- AES CAPS -----------------------------------------*/
 #define SOC_AES_SUPPORT_DMA     (1)
