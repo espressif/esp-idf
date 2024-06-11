@@ -103,17 +103,6 @@ cache 与内存同步的类型：
 默认情况下，如果指定了非对齐地址区域，则 :cpp:func:`esp_cache_msync` 将报错 :c:macro:`ESP_ERR_INVALID_ARG`，并告知所需的对齐方式。
 
 
-内存分配助手
-------------
-
-在涉及 DMA 时通常会考虑同步 cache 和内存。ESP-IDF 提供了能进行内存分配的 API，可同时满足 cache 和 DMA 的对齐要求。
-
-- :cpp:func:`esp_dma_capable_malloc`。此 API 可分配一块满足 cache 和 DMA 对齐要求的内存块。
-- :cpp:func:`esp_dma_capable_calloc`。此 API 可分配一块满足 cache 和 DMA 对齐要求的内存块，且内存中的初始化值已设置为零。
-
-也可以使用 :c:macro:`ESP_DMA_MALLOC_FLAG_PSRAM`， 从 PSRAM 中分配内存。
-
-
 有关地址对齐要求的警告
 ----------------------
 
@@ -140,9 +129,3 @@ API 参考 - ESP Msync 驱动程序
 -----------------------------
 
 .. include-build-file:: inc/esp_cache.inc
-
-
-API 参考 - ESP DMA 实用程序
----------------------------
-
-.. include-build-file:: inc/esp_dma_utils.inc
