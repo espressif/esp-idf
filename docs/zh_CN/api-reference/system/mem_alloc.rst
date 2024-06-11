@@ -50,7 +50,7 @@ ESP-IDF 应用程序使用常见的计算机架构模式：由程序控制流动
 DRAM
 ^^^^
 
-启动时，DRAM 堆包含应用程序未静态分配的所有数据内存，减少静态分配的缓冲区将增加可用的空闲堆空间。
+启动时，DRAM 堆包含应用程序未静态分配的所有数据内存，减少静态分配的 buffer 将增加可用的空闲堆空间。
 
 调用命令 :ref:`idf.py size <idf.py-size>` 可查找静态分配内存大小。
 
@@ -107,7 +107,8 @@ DMA 存储器
 
 .. only SOC_SPIRAM_SUPPORTED and not esp32::
 
-    EDMA 硬件功能允许将 DMA 缓冲区放置在外部 PSRAM，但可能存在其他对齐限制，详情请参阅 {IDF_TARGET_NAME} 技术参考手册。要分配一个可用 DMA 的外部内存缓冲区，请使用 ``MALLOC_CAP_SPIRAM`` 属性标志 和 :cpp:func:`heap_caps_aligned_alloc`，并指定必要的对齐方式。
+    EDMA 硬件功能可以将 DMA buffer 放置在外部 PSRAM，但可能存在一定的对齐限制，详情请参阅 {IDF_TARGET_NAME} 技术参考手册。若要分配一个可用 DMA 的外部 buffer，请使用 ``MALLOC_CAP_SPIRAM | MALLOC_CAP_DMA`` 属性标志，堆分配器将处理 cache 及 DMA 子系统的对齐要求。如果某个外设有额外的对齐要求，可以调用 :cpp:func:heap_caps_aligned_alloc 并指定必要的对齐方式。
+
 
 .. _32-bit accessible memory:
 
@@ -138,7 +139,7 @@ DMA 存储器
 
 堆函数是线程安全的，因此可不受限制，在不同任务中同时调用多个堆函数。
 
-从中断处理程序 (ISR) 上下文中调用 ``malloc``、 ``free`` 和相关函数虽然在技术层面可行（请参阅 :ref:`calling-heap-related-functions-from-isr`），但不建议使用此种方法，因为调用堆函数可能会延迟其他中断。建议重构应用程序，将 ISR 使用的任何缓冲区预先分配到 ISR 之外。之后可能会删除从 ISR 调用堆函数的功能。
+从中断处理程序 (ISR) 上下文中调用 ``malloc``、 ``free`` 和相关函数虽然在技术层面可行（请参阅 :ref:`calling-heap-related-functions-from-isr`），但不建议使用此种方法，因为调用堆函数可能会延迟其他中断。建议重构应用程序，将 ISR 使用的任何 buffer 预先分配到 ISR 之外。之后可能会删除从 ISR 调用堆函数的功能。
 
 .. _calling-heap-related-functions-from-isr:
 

@@ -107,7 +107,8 @@ Use the ``MALLOC_CAP_DMA`` flag to allocate memory which is suitable for use wit
 
 .. only SOC_SPIRAM_SUPPORTED and not esp32::
 
-    The EDMA hardware feature allows DMA buffers to be placed in external PSRAM, but there may be additional alignment constraints. Consult the {IDF_TARGET_NAME} Technical Reference Manual for details. To allocate a DMA-capable external memory buffer, use the ``MALLOC_CAP_SPIRAM`` capabilities flag together with :cpp:func:`heap_caps_aligned_alloc` with the necessary alignment specified.
+    The EDMA hardware feature allows DMA buffers to be placed in external PSRAM, but there may be additional alignment constraints. Consult the {IDF_TARGET_NAME} Technical Reference Manual for details. To allocate a DMA-capable external memory buffer, use the ``MALLOC_CAP_SPIRAM | MALLOC_CAP_DMA`` capabilities flags; the heap allocator will take care of alignment requirements imposed by the cache and DMA subsystems. If a peripheral has additional alignment requirements, you can use :cpp:func:`heap_caps_aligned_alloc` with the necessary alignment specified.
+
 
 .. _32-bit accessible memory:
 

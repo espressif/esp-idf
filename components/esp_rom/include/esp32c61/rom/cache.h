@@ -530,7 +530,7 @@ void Cache_Resume_Cache(uint32_t autoload);
   *
   * @return uint32_t: 16, 32, 64 Byte
   */
-uint32_t Cache_Get_Cache_Line_Size(void);
+uint32_t Cache_Get_Line_Size(void);
 
 /**
   * @brief Enable freeze for ICache.
@@ -574,7 +574,7 @@ void Cache_Travel_Tag_Memory(struct cache_mode * mode, uint32_t filter_addr, voi
   *
   * @param  struct cache_mode * mode : the cache to calculate the virtual address and the cache mode.
   *
-  * @param  uint32_t tag : the tag part fo a tag item, 12-14 bits.
+  * @param  uint32_t tag : the tag part of a tag item, 12-14 bits.
   *
   * @param  uint32_t addr_offset : the virtual address offset of the cache ways.
   *
