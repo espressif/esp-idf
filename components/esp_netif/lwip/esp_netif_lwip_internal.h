@@ -112,4 +112,6 @@ struct esp_netif_obj {
     uint16_t max_fdb_sta_entries;
     uint8_t max_ports;
 #endif // CONFIG_ESP_NETIF_BRIDGE_EN
+    // mldv6 timer
+    bool mldv6_report_timer_started;
 };
