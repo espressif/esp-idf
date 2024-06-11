@@ -455,6 +455,34 @@ void btm_ble_set_rpa_timeout_complete(UINT8 *p, UINT16 evt_len)
 }
 
 /*******************************************************************************
+**
+** Function         btm_ble_set_privacy_mode_complete
+**
+** Description      This function is called when the LE Set Privacy Mode command completes.
+**
+** Parameters       p: Pointer to the command complete event data.
+**                  evt_len: Length of the event data.
+**
+** Returns          void
+**
+*******************************************************************************/
+void btm_ble_set_privacy_mode_complete(UINT8 *p, UINT16 evt_len)
+{
+    UINT8 status;
+
+    // Extract the status of the command completion from the event data
+    STREAM_TO_UINT8(status, p);
+
+    BTM_TRACE_DEBUG("%s status = 0x%x", __func__, status);
+
+    tBTM_SET_PRIVACY_MODE_CMPL_CBACK *p_cb = btm_cb.devcb.p_set_privacy_mode_cmpl_cb;
+
+    if (p_cb) {
+        (*p_cb)(status);
+    }
+}
+
+/*******************************************************************************
                 VSC that implement controller based privacy
 ********************************************************************************/
 /*******************************************************************************

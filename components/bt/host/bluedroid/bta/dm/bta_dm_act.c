@@ -5838,6 +5838,13 @@ void bta_dm_ble_gap_add_dev_to_resolving_list(tBTA_DM_MSG *p_data)
                                   p_data->add_dev_to_resolving_list.p_add_dev_to_resolving_list_callback);
 }
 
+void bta_dm_ble_gap_set_privacy_mode(tBTA_DM_MSG *p_data)
+{
+    APPL_TRACE_API("%s, privacy_mode = %d", __func__, p_data->ble_set_privacy_mode.privacy_mode);
+    BTM_BleSetPrivacyMode(p_data->ble_set_privacy_mode.addr_type, p_data->ble_set_privacy_mode.addr,
+                        p_data->ble_set_privacy_mode.privacy_mode, p_data->ble_set_privacy_mode.p_cback);
+}
+
 #if (BLE_50_FEATURE_SUPPORT == TRUE)
 void bta_dm_ble_gap_dtm_enhance_tx_start(tBTA_DM_MSG *p_data)
 {
