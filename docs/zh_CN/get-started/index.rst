@@ -76,6 +76,14 @@
     * 多种外设
     * 内置安全硬件
 
+.. only:: esp32p4
+
+    * 搭载 RISC-V 32 位双核处理器的高性能 MCU
+    * 强大的图像与语音处理能力
+    * 支持单精度 FPU 和 AI 扩展
+    * 外设丰富包括 MIPI、USB、SDIO、以太网等
+    * 内置安全硬件
+
 {IDF_TARGET_NAME} 采用 40 nm 工艺制成，具有最佳的功耗性能、射频性能、稳定性、通用性和可靠性，适用于各种应用场景和不同功耗需求。
 
 乐鑫为用户提供完整的软、硬件资源，进行 {IDF_TARGET_NAME} 硬件设备的开发。其中，乐鑫的软件开发环境 ESP-IDF 旨在协助用户快速开发物联网 (IoT) 应用，可满足用户对 Wi-Fi、蓝牙、低功耗等方面的要求。
@@ -149,6 +157,10 @@
 
         ESP32-C6-DevKitC-1 <https://docs.espressif.com/projects/espressif-esp-dev-kits/zh_CN/latest/esp32c6/esp32-c6-devkitc-1/index.html>
         ESP32-C6-DevKitM-1 <https://docs.espressif.com/projects/espressif-esp-dev-kits/zh_CN/latest/esp32c6/esp32-c6-devkitm-1/index.html>
+
+.. only:: esp32p4
+
+    即将发布
 
 .. _get-started-get-prerequisites:
 

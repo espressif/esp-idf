@@ -76,6 +76,14 @@ Introduction
     * Multiple peripherals
     * Built-in security hardware
 
+.. only:: esp32p4
+
+    * High performance MCU with RISC-V dual-core processors
+    * Powerful image and voice processing capability
+    * Single-precision FPU and AI extensions
+    * Rich set of peripherals including MIPI, USB, SDIO, and Ethernet
+    * Built-in security hardware
+
 Powered by 40 nm technology, {IDF_TARGET_NAME} provides a robust, highly integrated platform, which helps meet the continuous demands for efficient power usage, compact design, security, high performance, and reliability.
 
 Espressif provides basic hardware and software resources to help application developers realize their ideas using the {IDF_TARGET_NAME} series hardware. The software development framework by Espressif is intended for development of Internet-of-Things (IoT) applications with Wi-Fi, Bluetooth, power management and several other system features.
@@ -149,6 +157,10 @@ If you have one of {IDF_TARGET_NAME} official development boards listed below, y
 
         ESP32-C6-DevKitC-1 <https://docs.espressif.com/projects/espressif-esp-dev-kits/en/latest/esp32c6/esp32-c6-devkitc-1/index.html>
         ESP32-C6-DevKitM-1 <https://docs.espressif.com/projects/espressif-esp-dev-kits/en/latest/esp32c6/esp32-c6-devkitm-1/index.html>
+
+.. only:: esp32p4
+
+    To be announced.
 
 .. _get-started-get-prerequisites:
 

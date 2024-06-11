@@ -12,7 +12,9 @@ ESP-IDF requires some prerequisite tools to be installed so you can build firmwa
 For this Getting Started we are going to use the Command Prompt, but after ESP-IDF is installed you can use `Eclipse Plugin <https://github.com/espressif/idf-eclipse-plugin/blob/master/README.md>`_ or another graphical IDE with CMake support instead.
 
 .. note::
+
     Limitations:
+
     - The installation path of ESP-IDF and ESP-IDF Tools must not be longer than 90 characters. Too long installation paths might result in a failed build.
     - The installation path of Python or ESP-IDF must not contain white spaces or parentheses.
     - The installation path of Python or ESP-IDF should not contain special characters (non-ASCII) unless the operating system is configured with "Unicode UTF-8" support.
@@ -41,7 +43,7 @@ What Is the Usecase for Online and Offline Installer
 
 Online Installer is very small and allows the installation of all available releases of ESP-IDF. The installer downloads only necessary dependencies including `Git For Windows`_  during the installation process. The installer stores downloaded files in the cache directory ``%userprofile%\.espressif``
 
-Offline Installer does not require any network connection. The installer contains all required dependencies including `Git For Windows`_ .
+Offline Installer does not require any network connection. The installer contains all required dependencies including `Git For Windows`_.
 
 Components of the Installation
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
