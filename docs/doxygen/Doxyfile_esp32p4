@@ -7,6 +7,7 @@ INPUT += \
     $(PROJECT_PATH)/components/ulp/lp_core/lp_core/include/ulp_lp_core_print.h \
     $(PROJECT_PATH)/components/ulp/lp_core/lp_core/include/ulp_lp_core_uart.h \
     $(PROJECT_PATH)/components/ulp/lp_core/lp_core/include/ulp_lp_core_utils.h \
+    $(PROJECT_PATH)/components/ulp/lp_core/lp_core/include/ulp_lp_core_interrupts.h \
     $(PROJECT_PATH)/components/ulp/ulp_common/include/ulp_common.h \
     $(PROJECT_PATH)/components/usb/include/usb/usb_helpers.h \
     $(PROJECT_PATH)/components/usb/include/usb/usb_host.h \

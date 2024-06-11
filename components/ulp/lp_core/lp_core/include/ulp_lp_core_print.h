@@ -3,6 +3,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#pragma once
+
 #include "sdkconfig.h"
 
 /**
@@ -17,7 +19,7 @@
  */
 #if CONFIG_ULP_ROM_PRINT_ENABLE
 extern int ets_printf(const char* format, ...);
-int (*lp_core_printf)(const char* format, ...) = ets_printf;
+#define lp_core_printf ets_printf
 #else
 //TODO: Change return type from void to int in IDF 6.0
 void lp_core_printf(const char* format, ...);
@@ -33,5 +35,5 @@ void lp_core_printf(const char* format, ...);
  *       powered down during sleep.
  */
 extern void ets_install_uart_printf(void);
-void (*lp_core_install_uart_printf)(void) = ets_install_uart_printf;
+#define lp_core_install_uart_print ets_install_uart_printf
 #endif /* CONFIG_ULP_ROM_PRINT_ENABLE */
