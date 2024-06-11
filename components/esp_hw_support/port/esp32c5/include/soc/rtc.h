@@ -185,17 +185,6 @@ void rtc_clk_init(rtc_clk_config_t cfg);
  */
 soc_xtal_freq_t rtc_clk_xtal_freq_get(void);
 
-#if CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
-/**
- * @brief Update XTAL frequency
- *
- * Updates the XTAL value stored in RTC_XTAL_FREQ_REG. Usually this value is ignored
- * after startup.
- *
- * @param xtal_freq New frequency value
- */
-void rtc_clk_xtal_freq_update(soc_xtal_freq_t xtal_freq);
-#endif
 
 /**
  * @brief Enable or disable 32 kHz XTAL oscillator

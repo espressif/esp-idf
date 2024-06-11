@@ -265,7 +265,6 @@ static inline __attribute__((always_inline)) bool clk_ll_rc32k_digi_is_enabled(v
     return LP_CLKRST.clk_to_hp.icg_hp_osc32k;
 }
 
-#if !CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
 /**
  * @brief Get XTAL_CLK frequency
  *
@@ -277,7 +276,6 @@ static inline __attribute__((always_inline)) uint32_t clk_ll_xtal_get_freq_mhz(v
 {
     return PCR.sysclk_conf.clk_xtal_freq;
 }
-#endif
 
 /**
  * @brief Get PLL_CLK frequency

@@ -5,7 +5,6 @@ choice RTC_CLK_SRC
         Choose which clock is used as RTC clock source.
 
     config RTC_CLK_SRC_INT_RC
-        depends on IDF_TARGET_ESP32C5_MP_VERSION
         bool "Internal 136kHz RC oscillator"
     config RTC_CLK_SRC_EXT_CRYS
         bool "External 32 kHz crystal"

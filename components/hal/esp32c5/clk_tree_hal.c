@@ -12,10 +12,6 @@
 #include "hal/log.h"
 #include "sdkconfig.h"
 
-#if CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
-static const char *CLK_HAL_TAG = "clk_hal";
-#endif
-
 uint32_t clk_hal_soc_root_get_freq_mhz(soc_cpu_clk_src_t cpu_clk_src)
 {
     switch (cpu_clk_src) {
@@ -73,18 +69,9 @@ uint32_t clk_hal_lp_slow_get_freq_hz(void)
 
 uint32_t clk_hal_xtal_get_freq_mhz(void)
 {
-#if CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
-    uint32_t freq = clk_ll_xtal_load_freq_mhz();
-    if (freq == 0) {
-        HAL_LOGW(CLK_HAL_TAG, "invalid RTC_XTAL_FREQ_REG value, assume 48MHz");
-        return (uint32_t)SOC_XTAL_FREQ_48M;
-    }
-    return freq;
-#elif CONFIG_IDF_TARGET_ESP32C5_MP_VERSION
     uint32_t freq = clk_ll_xtal_get_freq_mhz();
     HAL_ASSERT(freq == SOC_XTAL_FREQ_48M || freq == SOC_XTAL_FREQ_40M);
     return freq;
-#endif
 }
 
 void clk_hal_clock_output_setup(soc_clkout_sig_id_t clk_sig, clock_out_channel_t channel_id)
