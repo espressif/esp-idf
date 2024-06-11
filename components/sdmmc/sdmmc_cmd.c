@@ -408,7 +408,11 @@ esp_err_t sdmmc_write_sectors(sdmmc_card_t* card, const void* src,
 #ifdef SOC_SDMMC_PSRAM_DMA_CAPABLE
     dma_mem_info.extra_heap_caps |= MALLOC_CAP_SPIRAM;
 #endif
-    if (esp_dma_is_buffer_alignment_satisfied(src, block_size * block_count, dma_mem_info)) {
+    if (esp_dma_is_buffer_alignment_satisfied(src, block_size * block_count, dma_mem_info)
+        #if !SOC_SDMMC_PSRAM_DMA_CAPABLE
+            && !esp_ptr_external_ram(src)
+        #endif
+    ) {
         err = sdmmc_write_sectors_dma(card, src, start_block, block_count, block_size * block_count);
     } else {
         // SDMMC peripheral needs DMA-capable buffers. Split the write into
@@ -531,7 +535,11 @@ esp_err_t sdmmc_read_sectors(sdmmc_card_t* card, void* dst,
     size_t block_size = card->csd.sector_size;
     esp_dma_mem_info_t dma_mem_info;
     card->host.get_dma_info(card->host.slot, &dma_mem_info);
-    if (esp_dma_is_buffer_alignment_satisfied(dst, block_size * block_count, dma_mem_info)) {
+    if (esp_dma_is_buffer_alignment_satisfied(dst, block_size * block_count, dma_mem_info)
+        #if !SOC_SDMMC_PSRAM_DMA_CAPABLE
+            && !esp_ptr_external_ram(dst)
+        #endif
+    ) {
         err = sdmmc_read_sectors_dma(card, dst, start_block, block_count, block_size * block_count);
     } else {
         // SDMMC peripheral needs DMA-capable buffers. Split the read into

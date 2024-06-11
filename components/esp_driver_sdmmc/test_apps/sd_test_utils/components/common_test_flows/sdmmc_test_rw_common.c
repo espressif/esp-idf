@@ -149,7 +149,7 @@ void sdmmc_test_rw_performance(sdmmc_card_t *card, FILE *perf_log)
     do_single_rw_perf_test(card, offset, 1, 1, perf_log, 0);
     do_single_rw_perf_test(card, offset, 8, 1, perf_log, 0);
     do_single_rw_perf_test(card, offset, 128, 1, perf_log, 0);
-#if CONFIG_SPIRAM && SOC_SDMMC_PSRAM_DMA_CAPABLE
+#if CONFIG_SPIRAM
     /* spiram */
     do_single_rw_perf_test(card, offset, 1, 4, perf_log, MALLOC_CAP_SPIRAM);
     do_single_rw_perf_test(card, offset, 4, 4, perf_log, MALLOC_CAP_SPIRAM);
