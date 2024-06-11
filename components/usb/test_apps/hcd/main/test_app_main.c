@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: CC0-1.0
  */
@@ -7,20 +7,23 @@
 #include "unity.h"
 #include "unity_test_runner.h"
 #include "unity_test_utils_memory.h"
-
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "dev_msc.h"
+#include "dev_hid.h"
 #include "test_hcd_common.h"
 
 void setUp(void)
 {
     unity_utils_record_free_mem();
+    dev_msc_init();
+    dev_hid_init();
     port_hdl = test_hcd_setup();
 }
 
 void tearDown(void)
 {
-    //Short delay to allow task to be cleaned up
+    // Short delay to allow task to be cleaned up
     vTaskDelay(10);
     test_hcd_teardown(port_hdl);
     port_hdl = NULL;
