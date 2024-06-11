@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -86,7 +86,21 @@ STRUCT_END(RvExcFrame)
 
 #if SOC_CPU_COPROC_NUM > 0
 
+/* Define the default size of each coprocessor save area */
+#define RV_COPROC0_SIZE     0
+#define RV_COPROC1_SIZE     0
+#define RV_COPROC2_SIZE     0
+/* And the alignment for each of them */
+#define RV_COPROC0_ALIGN    4
+#define RV_COPROC1_ALIGN    4
+#define RV_COPROC2_ALIGN    4
+
+
 #if SOC_CPU_HAS_FPU
+
+/* Floating-Point Unit coprocessor is now considered coprocessor 0 */
+#define FPU_COPROC_IDX  0
+
 /**
  * @brief Floating-Point Unit save area
  */
@@ -126,21 +140,89 @@ STRUCT_FIELD (long, 4, RV_FPU_FT11, ft11)
 STRUCT_FIELD (long, 4, RV_FPU_FCSR, fcsr)   /* fcsr special register */
 STRUCT_END(RvFPUSaveArea)
 
-/* Floating-Point Unit coprocessor is now considered coprocessor 0 */
-#define FPU_COPROC_IDX  0
-/* PIE/AIA coprocessor is coprocessor 1 */
-#define PIE_COPROC_IDX  1
-
-/* Define the size of each coprocessor save area */
+/* Redefine the coprocessor area size previously defined to 0 */
+#undef RV_COPROC0_SIZE
 #if defined(_ASMLANGUAGE) || defined(__ASSEMBLER__)
-#define RV_COPROC0_SIZE RvFPUSaveAreaSize
-#define RV_COPROC1_SIZE 0   // PIE/AIA coprocessor area
+    #define RV_COPROC0_SIZE RvFPUSaveAreaSize
 #else
-#define RV_COPROC0_SIZE sizeof(RvFPUSaveArea)
-#define RV_COPROC1_SIZE 0   // PIE/AIA coprocessor area
+    #define RV_COPROC0_SIZE sizeof(RvFPUSaveArea)
 #endif /* defined(_ASMLANGUAGE) || defined(__ASSEMBLER__) */
 
 #endif /* SOC_CPU_HAS_FPU */
+
+
+#if SOC_CPU_HAS_HWLOOP
+
+/* Hardware Loop extension is "coprocessor" 1 */
+#define HWLP_COPROC_IDX  1
+
+/**
+ * @brief Hardware loop save area
+ */
+STRUCT_BEGIN
+STRUCT_FIELD (long, 4, RV_HWLOOP_START0, start0)
+STRUCT_FIELD (long, 4, RV_HWLOOP_END0,   end0)
+STRUCT_FIELD (long, 4, RV_HWLOOP_COUNT0, count0)
+STRUCT_FIELD (long, 4, RV_HWLOOP_START1, start1)
+STRUCT_FIELD (long, 4, RV_HWLOOP_END1,   end1)
+STRUCT_FIELD (long, 4, RV_HWLOOP_COUNT1, count1)
+STRUCT_END(RvHWLPSaveArea)
+
+/* Redefine the coprocessor area size previously defined to 0 */
+#undef RV_COPROC1_SIZE
+#if defined(_ASMLANGUAGE) || defined(__ASSEMBLER__)
+    #define RV_COPROC1_SIZE RvHWLPSaveAreaSize
+#else
+    #define RV_COPROC1_SIZE sizeof(RvHWLPSaveArea)
+#endif /* defined(_ASMLANGUAGE) || defined(__ASSEMBLER__) */
+
+#endif /* SOC_CPU_HAS_HWLOOP */
+
+
+
+#if SOC_CPU_HAS_PIE
+
+/* PIE/AIA coprocessor is now considered coprocessor 2 */
+#define PIE_COPROC_IDX      2
+
+/**
+ * @brief PIE save area
+ */
+STRUCT_BEGIN
+STRUCT_AFIELD (long, 4,  RV_PIE_Q0,        q0,         4)
+STRUCT_AFIELD (long, 4,  RV_PIE_Q1,        q1,         4)
+STRUCT_AFIELD (long, 4,  RV_PIE_Q2,        q2,         4)
+STRUCT_AFIELD (long, 4,  RV_PIE_Q3,        q3,         4)
+STRUCT_AFIELD (long, 4,  RV_PIE_Q4,        q4,         4)
+STRUCT_AFIELD (long, 4,  RV_PIE_Q5,        q5,         4)
+STRUCT_AFIELD (long, 4,  RV_PIE_Q6,        q6,         4)
+STRUCT_AFIELD (long, 4,  RV_PIE_Q7,        q7,         4)
+STRUCT_AFIELD (long, 4,  RV_PIE_QACC_L_L,  qacc_l_l,   4)
+STRUCT_AFIELD (long, 4,  RV_PIE_QACC_L_H,  qacc_l_h,   4)
+STRUCT_AFIELD (long, 4,  RV_PIE_QACC_H_L,  qacc_h_l,   4)
+STRUCT_AFIELD (long, 4,  RV_PIE_QACC_H_H,  qacc_h_h,   4)
+STRUCT_AFIELD (long, 4,  RV_PIE_UA_STATE,  ua_state,   4)
+STRUCT_FIELD  (long, 4,  RV_PIE_XACC,      xacc)
+/* This register contains SAR, SAR_BYTES and FFT_BIT_WIDTH in this order (from top to low) */
+STRUCT_FIELD  (long,    4,  RV_PIE_MISC,      misc)
+STRUCT_END(RvPIESaveArea)
+
+/* Redefine the coprocessor area size previously defined to 0 */
+#undef RV_COPROC2_SIZE
+
+#if defined(_ASMLANGUAGE) || defined(__ASSEMBLER__)
+    #define RV_COPROC2_SIZE RvPIESaveAreaSize
+#else
+    #define RV_COPROC2_SIZE sizeof(RvPIESaveArea)
+#endif /* defined(_ASMLANGUAGE) || defined(__ASSEMBLER__) */
+
+/* The PIE save area structure must be aligned on 16 bytes */
+#undef  RV_COPROC2_ALIGN
+#define RV_COPROC2_ALIGN    16
+
+#endif /* SOC_CPU_HAS_PIE */
+
+
 
 /**
  * @brief Coprocessors save area, containing each coprocessor save area
@@ -148,7 +230,7 @@ STRUCT_END(RvFPUSaveArea)
 STRUCT_BEGIN
 /* Enable bitmap: BIT(i) represents coprocessor i, 1 is used, 0 else */
 STRUCT_FIELD  (long, 4, RV_COPROC_ENABLE, sa_enable)
-/* Address of the original lowest stack address, convenient when the stack needs to re-initialized */
+/* Address of the original lowest stack address, convenient when the stack needs to be re-initialized */
 STRUCT_FIELD  (void*, 4, RV_COPROC_TCB_STACK, sa_tcbstack)
 /* Address of the pool of memory used to allocate coprocessors save areas */
 STRUCT_FIELD  (long, 4, RV_COPROC_ALLOCATOR, sa_allocator)
