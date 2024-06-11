@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -225,5 +225,70 @@ static void hd_slave(void)
 }
 
 TEST_CASE_MULTIPLE_DEVICES("SPI_Master_SCT_HD_Functional", "[spi_ms]", hd_master, hd_slave);
+
+#define SCT_LONG_TRANS_SEG_LEN  10000   //anything lager than 4092
+TEST_CASE("spi_master: test_sct_dma_desc_oob_on_tail", "[spi]")
+{
+    spi_device_handle_t handle;
+
+    spi_bus_config_t buscfg = SPI_BUS_TEST_DEFAULT_CONFIG();
+    buscfg.max_transfer_sz = 4092 * 8;
+
+    spi_device_interface_config_t devcfg = SPI_DEVICE_TEST_DEFAULT_CONFIG();
+    devcfg.clock_speed_hz = 100 * 1000; //low speed ensure cpu faster then HW
+    devcfg.flags = SPI_DEVICE_HALFDUPLEX;
+
+    TEST_ESP_OK(spi_bus_initialize(SPI2_HOST, &buscfg, SPI_DMA_CH_AUTO));
+    TEST_ESP_OK(spi_bus_add_device(SPI2_HOST, &devcfg, &handle));
+    printf("master init OK\n");
+    uint8_t *master_tx_buf = heap_caps_calloc(1, SCT_LONG_TRANS_SEG_LEN, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
+
+    //---------------------Master TX---------------------------//
+    spi_multi_transaction_t tx_seg_trans_cmd[1] = { //uing 1 dma desc, test trans without data phases
+        {
+            .base = {
+                .cmd = 0x7,
+            }
+        },
+    };
+    spi_multi_transaction_t tx_seg_trans_dummy[1] = { //using 4 dma desc
+        {
+            .base = {
+                .length = SCT_LONG_TRANS_SEG_LEN * 8,
+                .tx_buffer = master_tx_buf,
+            },
+        },
+    };
+    spi_multi_transaction_t tx_seg_trans_data[1] = {  //using 4 dma desc, should using (last 3 + first 1) of desc pool
+        {
+            .base = {
+                .cmd = 0x3,
+                .length = SCT_LONG_TRANS_SEG_LEN * 8,
+                .tx_buffer = master_tx_buf,
+            },
+            .dummy_bits = 8,
+            .seg_trans_flags = SPI_MULTI_TRANS_DUMMY_LEN_UPDATED,
+        },
+    };
+
+    spi_multi_transaction_t *ret_seg_trans;
+    printf("enabling sct multi trans mode ...\n");
+    TEST_ESP_OK(spi_bus_multi_trans_mode_enable(handle, true));
+    printf("start sct transaction\n");
+    TEST_ESP_OK(spi_device_queue_multi_trans(handle, tx_seg_trans_cmd, 1, portMAX_DELAY));
+    TEST_ESP_OK(spi_device_queue_multi_trans(handle, tx_seg_trans_dummy, 1, portMAX_DELAY));
+    vTaskDelay(10 / portTICK_PERIOD_MS);  //ensure `tx_seg_trans_cmd` had finish
+    TEST_ESP_OK(spi_device_queue_multi_trans(handle, tx_seg_trans_data, 1, portMAX_DELAY));
+
+    printf("waiting result ...\n");
+    TEST_ESP_OK(spi_device_get_multi_trans_result(handle, &ret_seg_trans, portMAX_DELAY));
+    TEST_ESP_OK(spi_device_get_multi_trans_result(handle, &ret_seg_trans, portMAX_DELAY));
+    TEST_ESP_OK(spi_device_get_multi_trans_result(handle, &ret_seg_trans, portMAX_DELAY));
+    TEST_ESP_OK(spi_bus_multi_trans_mode_enable(handle, false));
+
+    free(master_tx_buf);
+    TEST_ESP_OK(spi_bus_remove_device(handle));
+    TEST_ESP_OK(spi_bus_free(SPI2_HOST));
+}
 
 #endif  //#if (SOC_SPI_SUPPORT_SLAVE_HD_VER2 && SOC_SPI_SCT_SUPPORTED)
