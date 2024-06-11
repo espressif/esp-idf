@@ -123,7 +123,7 @@ DFS 有如下可配置选项：
     esp_pm_config_t pm_config = {
             .max_freq_mhz = CONFIG_EXAMPLE_MAX_CPU_FREQ_MHZ,
             .min_freq_mhz = CONFIG_EXAMPLE_MIN_CPU_FREQ_MHZ,
-            .light_sleep_enable = flase
+            .light_sleep_enable = false
     };
     ESP_ERROR_CHECK( esp_pm_configure(&pm_config) );
 
