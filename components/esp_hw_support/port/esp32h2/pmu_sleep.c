@@ -164,6 +164,9 @@ const pmu_sleep_config_t* pmu_sleep_config_default(
             analog_default.lp_sys[LP(SLEEP)].analog.pd_cur = PMU_PD_CUR_SLEEP_ON;
             analog_default.lp_sys[LP(SLEEP)].analog.bias_sleep = PMU_BIASSLP_SLEEP_ON;
             analog_default.lp_sys[LP(SLEEP)].analog.dbias = get_act_lp_dbias();
+        } else if (!(pd_flags & PMU_SLEEP_PD_RC_FAST)) {
+            analog_default.hp_sys.analog.dbias = get_act_hp_dbias();
+            analog_default.lp_sys[LP(SLEEP)].analog.dbias = get_act_lp_dbias();
         }
         config->analog = analog_default;
     }
