@@ -131,17 +131,12 @@ examples/bluetooth/hci/controller_hci_uart_esp32c3_and_esp32s3:
 
 
 # config BT_NIMBLE_ENABLED does not depends on any soc cap
-examples/bluetooth/nimble:
-  <<: *bt_default_depends
-  disable:
-    - if: SOC_BLE_SUPPORTED != 1
-  depends_filepatterns:
-    - examples/bluetooth/nimble/common/**/*
-
 examples/bluetooth/nimble/ble_enc_adv_data:
   <<: *bt_default_depends
-  disable:
-    - if: SOC_ESP_NIMBLE_CONTROLLER != 1
+  enable:
+    - if: SOC_BLE_SUPPORTED == 1 and IDF_TARGET != "esp32"
+      temporary: true
+      reason: BLE5.0 not supported on esp32
   depends_filepatterns:
     - examples/bluetooth/nimble/common/**/*
 
