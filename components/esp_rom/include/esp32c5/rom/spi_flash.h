@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -421,7 +421,7 @@ void esp_rom_spiflash_fix_dummylen(uint8_t spi, uint8_t freqdiv);
   *
   * @param  uint8_t *drvs: drvs[0]-bit[3:0] for cpiclk, bit[7:4] for spiq, drvs[1]-bit[3:0] for spid, drvs[1]-bit[7:4] for spid
   *            drvs[2]-bit[3:0] for spihd, drvs[2]-bit[7:4] for spiwp.
-  *                        Values usually read from falsh by rom code, function usually callde by rom code.
+  *                        Values usually read from flash by rom code, function usually callde by rom code.
   *                        if value with bit(3) set, the value is valid, bit[2:0] is the real value.
   *
   * @return None

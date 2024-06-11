@@ -169,7 +169,7 @@ bool ets_efuse_download_modes_disabled(void);
   * - 0 for uart force print.
   * - 1 for uart print when GPIO8 is low when digital reset.
   *   2 for uart print when GPIO8 is high when digital reset.
-  *   3 for uart force slient
+  *   3 for uart force silent
   */
 uint32_t ets_efuse_get_uart_print_control(void);
 

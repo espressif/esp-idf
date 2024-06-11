@@ -560,7 +560,7 @@ void Cache_Travel_Tag_Memory(struct cache_mode * mode, uint32_t filter_addr, voi
   *
   * @param  struct cache_mode * mode : the cache to calculate the virtual address and the cache mode.
   *
-  * @param  uint32_t tag : the tag part fo a tag item, 12-14 bits.
+  * @param  uint32_t tag : the tag part for a tag item, 12-14 bits.
   *
   * @param  uint32_t addr_offset : the virtual address offset of the cache ways.
   *

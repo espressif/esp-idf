@@ -57,7 +57,7 @@ typedef enum {
   *
   * @param  uint32_t enable_mask : the gpios that need be changed.
   *
-  * @param  uint32_t disable_mask : the gpios that need diable output.
+  * @param  uint32_t disable_mask : the gpios that need disable output.
   *
   * @return None
   */

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -61,7 +61,7 @@ struct ETSEventTag {
     ETSParam  par;  /**< Event parameter, sometimes without usage, then will be set as 0*/
 };
 
-typedef void (*ETSTask)(ETSEvent *e);       /**< Type of the Task processer*/
+typedef void (*ETSTask)(ETSEvent *e);       /**< Type of the Task processor*/
 typedef void (* ets_idle_cb_t)(void *arg);  /**< Type of the system idle callback*/
 
 
@@ -80,7 +80,7 @@ typedef void (* ets_idle_cb_t)(void *arg);  /**< Type of the system idle callbac
   * @{
   */
 
-extern const char *const exc_cause_table[40];   ///**< excption cause that defined by the core.*/
+extern const char *const exc_cause_table[40];   ///**< exception cause that defined by the core.*/
 
 /**
   * @brief  Set Pro cpu Entry code, code can be called in PRO CPU when booting is not completed.
@@ -135,7 +135,7 @@ uint8_t ets_get_printf_channel(void);
 void ets_write_char_uart(char c);
 
 /**
-  * @brief  Ets_printf have two output functions： putc1 and putc2, both of which will be called if need ouput.
+  * @brief  Ets_printf have two output functions： putc1 and putc2, both of which will be called if need output.
   *         To install putc1, which is defaulted installed as ets_write_char_uart in none silent boot mode, as NULL in silent mode.
   *
   * @param  void (*)(char) p: Output function to install.
@@ -145,7 +145,7 @@ void ets_write_char_uart(char c);
 void ets_install_putc1(void (*p)(char c));
 
 /**
-  * @brief  Ets_printf have two output functions： putc1 and putc2, both of which will be called if need ouput.
+  * @brief  Ets_printf have two output functions： putc1 and putc2, both of which will be called if need output.
   *         To install putc2, which is defaulted installed as NULL.
   *
   * @param  void (*)(char) p: Output function to install.
@@ -188,7 +188,7 @@ typedef void ETSTimerFunc(void *timer_arg);/**< timer handler*/
 
 typedef struct _ETSTIMER_ {
     struct _ETSTIMER_    *timer_next;   /**< timer linker*/
-    uint32_t              timer_expire; /**< abstruct time when timer expire*/
+    uint32_t              timer_expire; /**< abstract time when timer expire*/
     uint32_t              timer_period; /**< timer period, 0 means timer is not periodic repeated*/
     ETSTimerFunc         *timer_func;   /**< timer handler*/
     void                 *timer_arg;    /**< timer handler argument*/

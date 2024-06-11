@@ -76,7 +76,7 @@ struct JDEC {
     BYTE msx, msy;          /* MCU size in unit of block (width, height) */
     BYTE qtid[3];           /* Quantization table ID of each component */
     SHORT dcv[3];           /* Previous DC element of each component */
-    WORD nrst;              /* Restart inverval */
+    WORD nrst;              /* Restart interval */
     UINT width, height;     /* Size of the input image (pixel) */
     BYTE *huffbits[2][2];   /* Huffman bit distribution tables [id][dcac] */
     WORD *huffcode[2][2];   /* Huffman code word tables [id][dcac] */
@@ -85,9 +85,9 @@ struct JDEC {
     void *workbuf;          /* Working buffer for IDCT and RGB output */
     BYTE *mcubuf;           /* Working buffer for the MCU */
     void *pool;             /* Pointer to available memory pool */
-    UINT sz_pool;           /* Size of momory pool (bytes available) */
+    UINT sz_pool;           /* Size of memory pool (bytes available) */
     UINT (*infunc)(JDEC *, BYTE *, UINT); /* Pointer to jpeg stream input function */
-    void *device;           /* Pointer to I/O device identifiler for the session */
+    void *device;           /* Pointer to I/O device identifier for the session */
 };
 
 
