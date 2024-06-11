@@ -5,7 +5,6 @@
  */
 
 #include <stdint.h>
-#include "sdkconfig.h"
 #include "soc/soc.h"
 #include "esp_cpu.h"
 #include "esp_fault.h"
@@ -24,14 +23,6 @@
 #define CONDITIONAL_RWX         RWX
 #endif
 
-// TODO: IDF-9197
-#if CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
-void esp_cpu_configure_region_protection(void)
-{
-    // TODO: [ESP32C5] IDF-8833
-}
-
-#elif CONFIG_IDF_TARGET_ESP32C5_MP_VERSION
 static void esp_cpu_configure_invalid_regions(void)
 {
     const unsigned PMA_NONE                            = PMA_L | PMA_EN;
@@ -220,4 +211,3 @@ void esp_cpu_configure_region_protection(void)
     PMP_ENTRY_SET(14, pmpaddr14, PMP_NAPOT | RW);
     _Static_assert(SOC_PERIPHERAL_LOW < SOC_PERIPHERAL_HIGH, "Invalid peripheral region");
 }
-#endif  // CONFIG_IDF_TARGET_ESP32C5_MP_VERSION

@@ -27,13 +27,9 @@ typedef enum {
     CHIP_ESP32C2 = 12, //!< ESP32-C2
     CHIP_ESP32C6 = 13, //!< ESP32-C6
     CHIP_ESP32H2 = 16, //!< ESP32-H2
-#if CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION  // TODO: IDF-9197
-    CHIP_ESP32C5 = 17, //!< ESP32-C5 beta3 (MPW)
-#elif CONFIG_IDF_TARGET_ESP32C5_MP_VERSION
-    CHIP_ESP32C5 = 23, //!< ESP32-C5 MP
-#endif
     CHIP_ESP32P4 = 18, //!< ESP32-P4
     CHIP_ESP32C61= 20, //!< ESP32-C61
+    CHIP_ESP32C5 = 23, //!< ESP32-C5
     CHIP_POSIX_LINUX = 999, //!< The code is running on POSIX/Linux simulator
 } esp_chip_model_t;
 
@@ -66,7 +62,7 @@ void esp_chip_info(esp_chip_info_t* out_info);
  * @brief Cache lock bug exists or not
  *
  * @return
- *          - ture : bug exists
+ *          - true : bug exists
  *          - false : bug not exists
  */
 bool soc_has_cache_lock_bug(void);

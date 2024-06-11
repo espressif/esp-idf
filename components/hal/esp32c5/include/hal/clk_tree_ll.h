@@ -7,7 +7,6 @@
 #pragma once
 
 #include <stdint.h>
-#include "sdkconfig.h"  // TODO: IDF-9197 remove
 #include "soc/soc.h"
 #include "soc/clk_tree_defs.h"
 #include "soc/pcr_struct.h"
@@ -318,37 +317,6 @@ static inline __attribute__((always_inline)) void clk_ll_bbpll_set_config(uint32
     uint8_t dr3;
     uint8_t dchgp;
     uint8_t dbias;
-#if CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
-    uint8_t href = 3;
-    uint8_t lref = 1;
-    /* Configure 480M PLL */
-    switch (xtal_freq_mhz) {
-    case SOC_XTAL_FREQ_40M:
-        div_ref = 1;
-        div7_0 = 12;
-        dr1 = 0;
-        dr3 = 0;
-        dchgp = 5;
-        dbias = 2;
-        break;
-    case SOC_XTAL_FREQ_48M:
-        div_ref = 1;
-        div7_0 = 10;
-        dr1 = 1;
-        dr3 = 1;
-        dchgp = 5;
-        dbias = 2;
-        break;
-    default:
-        div_ref = 1;
-        div7_0 = 12;
-        dr1 = 0;
-        dr3 = 0;
-        dchgp = 5;
-        dbias = 2;
-        break;
-    }
-#elif CONFIG_IDF_TARGET_ESP32C5_MP_VERSION
     uint8_t dcur;
 
     /* Configure 480M PLL */
@@ -364,35 +332,18 @@ static inline __attribute__((always_inline)) void clk_ll_bbpll_set_config(uint32
         dbias = 2;
         break;
     }
-#endif
+
     uint8_t i2c_bbpll_lref  = (dchgp << I2C_BBPLL_OC_DCHGP_LSB) | (div_ref);
     uint8_t i2c_bbpll_div_7_0 = div7_0;
-#if CONFIG_IDF_TARGET_ESP32C5_MP_VERSION
     uint8_t i2c_bbpll_dcur = (1 << I2C_BBPLL_OC_DLREF_SEL_LSB ) | (3 << I2C_BBPLL_OC_DHREF_SEL_LSB) | dcur;
-#endif
+
     REGI2C_WRITE(I2C_BBPLL, I2C_BBPLL_OC_REF_DIV, i2c_bbpll_lref);
     REGI2C_WRITE(I2C_BBPLL, I2C_BBPLL_OC_DIV_7_0, i2c_bbpll_div_7_0);
     REGI2C_WRITE_MASK(I2C_BBPLL, I2C_BBPLL_OC_DR1, dr1);
     REGI2C_WRITE_MASK(I2C_BBPLL, I2C_BBPLL_OC_DR3, dr3);
-#if CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
-    REGI2C_WRITE_MASK(I2C_BBPLL, I2C_BBPLL_OC_DLREF_SEL, lref);
-    REGI2C_WRITE_MASK(I2C_BBPLL, I2C_BBPLL_OC_DHREF_SEL, href);
-#elif CONFIG_IDF_TARGET_ESP32C5_MP_VERSION
     REGI2C_WRITE(I2C_BBPLL, I2C_BBPLL_OC_DCUR, i2c_bbpll_dcur);
-#endif
     REGI2C_WRITE_MASK(I2C_BBPLL, I2C_BBPLL_OC_VCO_DBIAS, dbias);
 }
-
-#if CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
-/**
- * @brief To enable the change of soc_clk_sel, cpu_div_num, and ahb_div_num
- */
-static inline __attribute__((always_inline)) void clk_ll_bus_update(void)
-{
-    PCR.bus_clk_update.bus_clock_update = 1;
-    while (PCR.bus_clk_update.bus_clock_update);
-}
-#endif
 
 /**
  * @brief Select the clock source for CPU_CLK (SOC Clock Root)
@@ -405,24 +356,12 @@ static inline __attribute__((always_inline)) void clk_ll_cpu_set_src(soc_cpu_clk
     case SOC_CPU_CLK_SRC_XTAL:
         PCR.sysclk_conf.soc_clk_sel = 0;
         break;
-#if CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
-    case SOC_CPU_CLK_SRC_RC_FAST:
-        PCR.sysclk_conf.soc_clk_sel = 1;
-        break;
-    case SOC_CPU_CLK_SRC_PLL_F160M:
-        PCR.sysclk_conf.soc_clk_sel = 2;
-        break;
-    case SOC_CPU_CLK_SRC_PLL_F240M:
-        PCR.sysclk_conf.soc_clk_sel = 3;
-        break;
-#elif CONFIG_IDF_TARGET_ESP32C5_MP_VERSION
     case SOC_CPU_CLK_SRC_PLL:
         PCR.sysclk_conf.soc_clk_sel = 1;
         break;
     case SOC_CPU_CLK_SRC_RC_FAST:
         PCR.sysclk_conf.soc_clk_sel = 2;
         break;
-#endif
     default:
         // Unsupported SOC_CLK mux input sel
         abort();
@@ -441,73 +380,15 @@ static inline __attribute__((always_inline)) soc_cpu_clk_src_t clk_ll_cpu_get_sr
     case 0:
         return SOC_CPU_CLK_SRC_XTAL;
     case 1:
-#if CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
-        return SOC_CPU_CLK_SRC_RC_FAST;
-    case 2:
-        return SOC_CPU_CLK_SRC_PLL_F160M;
-    case 3:
-        return SOC_CPU_CLK_SRC_PLL_F240M;
-#elif CONFIG_IDF_TARGET_ESP32C5_MP_VERSION
         return SOC_CPU_CLK_SRC_PLL;
     case 2:
         return SOC_CPU_CLK_SRC_RC_FAST;
-#endif
     default:
         // Invalid SOC_CLK_SEL value
         return SOC_CPU_CLK_SRC_INVALID;
     }
 }
 
-#if CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
-/**
- * @brief Set CPU_CLK's divider
- *
- * @param divider Divider. (PCR_CPU_DIV_NUM + 1) = divider.
- */
-static inline __attribute__((always_inline)) void clk_ll_cpu_set_divider(uint32_t divider)
-{
-    // SOC_ROOT_CLK ---(1)---> HP_ROOT_CLK ---(2)---> CPU_CLK
-    // (2) configurable
-    //  divider option: 1, 2, 4 (PCR_CPU_HS_DIV_NUM=0, 1, 3)
-    HAL_ASSERT(divider == 1 || divider == 2 || divider == 3 || divider == 4 || divider == 6);
-    HAL_FORCE_MODIFY_U32_REG_FIELD(PCR.cpu_freq_conf, cpu_div_num, (divider) - 1);
-}
-
-/**
- * @brief Get CPU_CLK's high-speed divider
- *
- * @return Divider. Divider = (PCR_HS_DIV_NUM + 1) * (PCR_CPU_HS_DIV_NUM + 1).
- */
-static inline __attribute__((always_inline)) uint32_t clk_ll_cpu_get_divider(void)
-{
-    uint32_t cpu_div = HAL_FORCE_READ_U32_REG_FIELD(PCR.cpu_freq_conf, cpu_div_num);
-    return (cpu_div + 1);
-}
-
-/**
- * @brief Set AHB_CLK's low-speed divider (valid when SOC_ROOT clock source is XTAL/RC_FAST)
- *
- * @param divider Divider. (PCR_LS_DIV_NUM + 1) * (PCR_AHB_LS_DIV_NUM + 1) = divider.
- */
-static inline __attribute__((always_inline)) void clk_ll_ahb_set_divider(uint32_t divider)
-{
-    // SOC_ROOT_CLK ---(1)---> HP_ROOT_CLK ---(2)---> AHB_CLK
-    HAL_FORCE_MODIFY_U32_REG_FIELD(PCR.ahb_freq_conf, ahb_div_num, divider - 1);
-}
-
-/**
- * @brief Get AHB_CLK's low-speed divider
- *
- * @return Divider. Divider = (PCR_LS_DIV_NUM + 1) * (PCR_AHB_LS_DIV_NUM + 1).
- */
-static inline __attribute__((always_inline)) uint32_t clk_ll_ahb_get_divider(void)
-{
-    uint32_t ahb_div = HAL_FORCE_READ_U32_REG_FIELD(PCR.ahb_freq_conf, ahb_div_num);
-    uint32_t hp_root_ls_div = HAL_FORCE_READ_U32_REG_FIELD(PCR.sysclk_conf, ls_div_num);
-    return (hp_root_ls_div + 1) * (ahb_div + 1);
-}
-
-#elif CONFIG_IDF_TARGET_ESP32C5_MP_VERSION
 /**
  * @brief Set CPU_CLK's high-speed divider (valid when SOC_ROOT clock source is PLL)
  *
@@ -633,7 +514,6 @@ static inline __attribute__((always_inline)) uint32_t clk_ll_ahb_get_ls_divider(
     uint32_t hp_root_ls_div = HAL_FORCE_READ_U32_REG_FIELD(PCR.sysclk_conf, ls_div_num);
     return (hp_root_ls_div + 1) * (ahb_ls_div + 1);
 }
-#endif
 
 /**
  * @brief Set APB_CLK divider. freq of APB_CLK = freq of AHB_CLK / divider
@@ -658,41 +538,6 @@ static inline __attribute__((always_inline)) uint32_t clk_ll_apb_get_divider(voi
     return HAL_FORCE_READ_U32_REG_FIELD(PCR.apb_freq_conf, apb_div_num) + 1;
 }
 
-#if CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
-/**
- * @brief Select the clock source for MSPI_FAST_CLK
- *
- * @param in_sel One of the clock sources in soc_periph_mspi_clk_src_t
- */
-static inline __attribute__((always_inline)) void clk_ll_mspi_fast_set_src(soc_periph_mspi_clk_src_t in_sel)
-{
-    switch (in_sel) {
-    case MSPI_CLK_SRC_XTAL:
-        PCR.mspi_clk_conf.mspi_func_clk_sel = 0;
-        break;
-    case MSPI_CLK_SRC_RC_FAST:
-        PCR.mspi_clk_conf.mspi_func_clk_sel = 1;
-        break;
-    case MSPI_CLK_SRC_SPLL:
-        PCR.mspi_clk_conf.mspi_func_clk_sel = 2;
-        break;
-    default:
-        // Unsupported MSPI_FAST_CLK mux input sel
-        abort();
-    }
-}
-
-/**
- * @brief Set MSPI_FAST_CLK's divider
- *
- * @param divider Divider.
- */
-static inline __attribute__((always_inline)) void clk_ll_mspi_fast_set_divider(uint32_t divider)
-{
-    HAL_FORCE_MODIFY_U32_REG_FIELD(PCR.mspi_clk_conf, mspi_fast_div_num, divider - 1);
-}
-
-#elif CONFIG_IDF_TARGET_ESP32C5_MP_VERSION
 /**
  * @brief Set MSPI_FAST_CLK's high-speed divider (valid when SOC_ROOT clock source is PLL)
  *
@@ -746,7 +591,6 @@ static inline __attribute__((always_inline)) void clk_ll_mspi_fast_set_ls_divide
     }
     HAL_FORCE_MODIFY_U32_REG_FIELD(PCR.mspi_clk_conf, mspi_fast_div_num, div_num);
 }
-#endif
 
 /**
  * @brief Select the calibration 32kHz clock source for timergroup0
@@ -799,11 +643,9 @@ static inline __attribute__((always_inline)) soc_rtc_slow_clk_src_t clk_ll_32k_c
 static inline __attribute__((always_inline)) void clk_ll_rtc_slow_set_src(soc_rtc_slow_clk_src_t in_sel)
 {
     switch (in_sel) {
-#if CONFIG_IDF_TARGET_ESP32C5_MP_VERSION
     case SOC_RTC_SLOW_CLK_SRC_RC_SLOW:
         LP_CLKRST.lp_clk_conf.slow_clk_sel = 0;
         break;
-#endif
     case SOC_RTC_SLOW_CLK_SRC_XTAL32K:
         LP_CLKRST.lp_clk_conf.slow_clk_sel = 1;
         break;
@@ -828,10 +670,8 @@ static inline __attribute__((always_inline)) soc_rtc_slow_clk_src_t clk_ll_rtc_s
 {
     uint32_t clk_sel = LP_CLKRST.lp_clk_conf.slow_clk_sel;
     switch (clk_sel) {
-#if CONFIG_IDF_TARGET_ESP32C5_MP_VERSION
     case 0:
         return SOC_RTC_SLOW_CLK_SRC_RC_SLOW;
-#endif
     case 1:
         return SOC_RTC_SLOW_CLK_SRC_XTAL32K;
     case 2:
@@ -857,11 +697,6 @@ static inline __attribute__((always_inline)) void clk_ll_rtc_fast_set_src(soc_rt
     case SOC_RTC_FAST_CLK_SRC_XTAL_D2:
         LP_CLKRST.lp_clk_conf.fast_clk_sel = 1;
         break;
-#if CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
-    case SOC_RTC_FAST_CLK_SRC_XTAL:
-        LP_CLKRST.lp_clk_conf.fast_clk_sel = 2;
-        break;
-#endif
     default:
         // Unsupported RTC_FAST_CLK mux input sel
         abort();
@@ -881,10 +716,6 @@ static inline __attribute__((always_inline)) soc_rtc_fast_clk_src_t clk_ll_rtc_f
         return SOC_RTC_FAST_CLK_SRC_RC_FAST;
     case 1:
         return SOC_RTC_FAST_CLK_SRC_XTAL_D2;
-#if CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
-    case 2:
-        return SOC_RTC_FAST_CLK_SRC_XTAL;
-#endif
     default:
         return SOC_RTC_FAST_CLK_SRC_INVALID;
     }
@@ -998,11 +829,7 @@ Set the frequency division factor of ref_tick
 */
 static inline void clk_ll_rc_fast_tick_conf(void)
 {
-#if CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
-    PCR.ctrl_tick_conf.fosc_tick_num = REG_FOSC_TICK_NUM;
-#elif CONFIG_IDF_TARGET_ESP32C5_MP_VERSION
     PCR.ctrl_32k_conf.fosc_tick_num = REG_FOSC_TICK_NUM;
-#endif
 }
 
 

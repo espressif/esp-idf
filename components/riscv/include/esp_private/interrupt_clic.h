@@ -46,7 +46,7 @@ extern "C" {
 #define MTVT_CSR    0x307
 
 
-#if CONFIG_IDF_TARGET_ESP32P4 || CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
+#if CONFIG_IDF_TARGET_ESP32P4
 
 /**
  * The ESP32-P4 and the beta version of the ESP32-C5 implement a non-standard version of the CLIC:

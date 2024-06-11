@@ -7,7 +7,6 @@
 
 #include <stdbool.h>
 #include <string.h>
-#include "sdkconfig.h"  // TODO: IDF-9197 remove
 #include "hal/assert.h"
 #include "hal/ecc_types.h"
 #include "soc/ecc_mult_reg.h"

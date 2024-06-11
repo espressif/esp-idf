@@ -9,7 +9,6 @@
 
 #pragma once
 
-#include "sdkconfig.h"  // TODO: IDF-9197 remove
 #include "esp_attr.h"
 #include "hal/misc.h"
 #include "hal/uart_types.h"

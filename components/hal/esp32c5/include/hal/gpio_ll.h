@@ -16,7 +16,6 @@
 
 #include <stdlib.h>
 #include <stdbool.h>
-#include "sdkconfig.h"  // TODO: IDF-9197 remove
 #include "soc/soc.h"
 #include "soc/gpio_periph.h"
 #include "soc/gpio_struct.h"
@@ -28,11 +27,7 @@
 #include "soc/usb_serial_jtag_struct.h"
 #include "hal/gpio_types.h"
 #include "hal/assert.h"
-#if CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
-#include "soc/lp_io_struct.h"
-#elif CONFIG_IDF_TARGET_ESP32C5_MP_VERSION
 #include "soc/lp_gpio_struct.h"
-#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -485,17 +480,10 @@ static inline void gpio_ll_iomux_in(gpio_dev_t *hw, uint32_t gpio, uint32_t sign
  */
 static inline void gpio_ll_iomux_func_sel(uint32_t pin_name, uint32_t func)
 {
-#if CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
-    // Disable USB Serial JTAG if pins 25 or pins 26 needs to select an IOMUX function
-    if (pin_name == IO_MUX_GPIO25_REG || pin_name == IO_MUX_GPIO26_REG) {
-        USB_SERIAL_JTAG.conf0.usb_pad_enable = 0;
-    }
-#elif CONFIG_IDF_TARGET_ESP32C5_MP_VERSION
     // Disable USB Serial JTAG if pins 13 or pins 14 needs to select an IOMUX function
     if (pin_name == IO_MUX_GPIO13_REG || pin_name == IO_MUX_GPIO14_REG) {
         USB_SERIAL_JTAG.conf0.usb_pad_enable = 0;
     }
-#endif
     PIN_FUNC_SELECT(pin_name, func);
 }
 
@@ -522,19 +510,11 @@ static inline void gpio_ll_set_pin_ctrl(uint32_t val, uint32_t bmap, uint32_t sh
 __attribute__((always_inline))
 static inline void gpio_ll_func_sel(gpio_dev_t *hw, uint8_t gpio_num, uint32_t func)
 {
-#if CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
-    // Disable USB Serial JTAG if pins 25 or pins 26 needs to select an IOMUX function
-    if (gpio_num == USB_INT_PHY0_DM_GPIO_NUM || gpio_num == USB_INT_PHY0_DP_GPIO_NUM) {
-        USB_SERIAL_JTAG.conf0.usb_pad_enable = 0;
-    }
-    IO_MUX.gpio[gpio_num].mcu_sel = func;
-#elif CONFIG_IDF_TARGET_ESP32C5_MP_VERSION
     // Disable USB Serial JTAG if pins 13 or pins 14 needs to select an IOMUX function
     if (gpio_num == USB_INT_PHY0_DM_GPIO_NUM || gpio_num == USB_INT_PHY0_DP_GPIO_NUM) {
         USB_SERIAL_JTAG.conf0.usb_pad_enable = 0;
     }
     IO_MUX.gpio[gpio_num].mcu_sel = func;
-#endif
 }
 
 /**

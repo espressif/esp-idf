@@ -1,8 +1,6 @@
 choice RTC_CLK_SRC
     prompt "RTC clock source"
-    # TODO: IDF-9197
-    default RTC_CLK_SRC_INT_RC if IDF_TARGET_ESP32C5_MP_VERSION
-    default RTC_CLK_SRC_INT_RC32K if IDF_TARGET_ESP32C5_BETA3_VERSION
+    default RTC_CLK_SRC_INT_RC
     help
         Choose which clock is used as RTC clock source.
 

@@ -1,20 +1,8 @@
-if(CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION)
-    set(srcs "rtc_clk_init.c"
-        "rtc_clk.c"
-        "rtc_time.c"
-        "pmu_init.c"
-        "pmu_sleep.c"
-        "pmu_param.c"
-        "chip_info.c"
-    )
-endif()
-if(CONFIG_IDF_TARGET_ESP32C5_MP_VERSION)
-    set(srcs "rtc_clk_init.c"
-        "rtc_time.c"
-        "rtc_clk.c"
-        "chip_info.c"
-    )
-endif()
+set(srcs "rtc_clk_init.c"
+    "rtc_time.c"
+    "rtc_clk.c"
+    "chip_info.c"
+)
 
 
 if(NOT BOOTLOADER_BUILD)
