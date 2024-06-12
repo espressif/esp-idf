@@ -345,20 +345,7 @@ SECTIONS
     ALIGNED_SYMBOL(16, _heap_start)
   } > dram0_0_seg
 
-  /DISCARD/ :
-  {
-   /**
-    * Discarding .rela.* sections results in the following mapping:
-    * .rela.text.* -> .text.*
-    * .rela.data.* -> .data.*
-    * And so forth...
-    */
-   *(.rela.*)
-#if !(CONFIG_COMPILER_CXX_EXCEPTIONS || CONFIG_ESP_SYSTEM_USE_EH_FRAME)
-   *(.eh_frame_hdr)
-   *(.eh_frame)
-#endif // !(CONFIG_COMPILER_CXX_EXCEPTIONS || CONFIG_ESP_SYSTEM_USE_EH_FRAME)
-  }
+#include "elf_misc.ld.in"
 }
 
 ASSERT(((_iram_end - ORIGIN(iram0_0_seg)) <= LENGTH(iram0_0_seg)),

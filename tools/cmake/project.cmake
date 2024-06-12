@@ -67,7 +67,7 @@ idf_build_set_property(__COMPONENT_MANAGER_INTERFACE_VERSION 2)
 # Parse and store the VERSION argument provided to the project() command.
 #
 function(__parse_and_store_version_arg)
-    # The project_name is the fisrt argument that was passed to the project() command
+    # The project_name is the first argument that was passed to the project() command
     set(project_name ${ARGV0})
 
     # Parse other arguments passed to the project() call
@@ -663,7 +663,7 @@ macro(project project_name)
     # 3. git describe if the project is in a git repository
     # 4. Default to 1 if none of the above conditions are true
     #
-    # PS: PROJECT_VER will get overidden later if CONFIG_APP_PROJECT_VER_FROM_CONFIG is defined.
+    # PS: PROJECT_VER will get overridden later if CONFIG_APP_PROJECT_VER_FROM_CONFIG is defined.
     #     See components/esp_app_format/CMakeLists.txt.
     if(NOT DEFINED PROJECT_VER)
         # Read the version information from the version.txt file if it is present
@@ -824,6 +824,10 @@ macro(project project_name)
         if(${result} EQUAL 0)
             # Do not print RWX segment warnings
             target_link_options(${project_elf} PRIVATE "-Wl,--no-warn-rwx-segments")
+        endif()
+        if(CONFIG_ESP_ORPHAN_SECTION_WARNING)
+            # Print warnings if orphan sections are found
+            target_link_options(${project_elf} PRIVATE "-Wl,--orphan-handling=warn")
         endif()
         unset(idf_target)
     endif()
