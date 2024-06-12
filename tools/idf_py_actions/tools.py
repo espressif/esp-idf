@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import asyncio
 import os
@@ -6,9 +6,16 @@ import re
 import subprocess
 import sys
 from asyncio.subprocess import Process
-from io import open
 from types import FunctionType
-from typing import Any, Dict, Generator, List, Match, Optional, TextIO, Tuple, Union
+from typing import Any
+from typing import Dict
+from typing import Generator
+from typing import List
+from typing import Match
+from typing import Optional
+from typing import TextIO
+from typing import Tuple
+from typing import Union
 
 import click
 import yaml
@@ -38,6 +45,7 @@ def executable_exists(args: List) -> bool:
 
 
 def _idf_version_from_cmake() -> Optional[str]:
+    """Acquires version of ESP-IDF from version.cmake"""
     version_path = os.path.join(os.environ['IDF_PATH'], 'tools/cmake/version.cmake')
     regex = re.compile(r'^\s*set\s*\(\s*IDF_VERSION_([A-Z]{5})\s+(\d+)')
     ver = {}
@@ -71,7 +79,7 @@ def idf_version() -> Optional[str]:
             '--work-tree=%s' % os.environ['IDF_PATH'],
             'describe', '--tags', '--dirty', '--match', 'v*.*',
         ]).decode('utf-8', 'ignore').strip()
-    except (subprocess.CalledProcessError, UnicodeError):
+    except Exception:
         # if failed, then try to parse cmake.version file
         sys.stderr.write('WARNING: Git version unavailable, reading from source\n')
         version = _idf_version_from_cmake()
@@ -81,7 +89,7 @@ def idf_version() -> Optional[str]:
 
 # function prints warning when autocompletion is not being performed
 # set argument stream to sys.stderr for errors and exceptions
-def print_warning(message: str, stream: TextIO=None) -> None:
+def print_warning(message: str, stream: Optional[TextIO]=None) -> None:
     if not SHELL_COMPLETE_RUN:
         print(message, file=stream or sys.stderr)
 
@@ -177,8 +185,9 @@ def fit_text_in_terminal(out: str) -> str:
 
 
 class RunTool:
-    def __init__(self, tool_name: str, args: List, cwd: str, env: Dict=None, custom_error_handler: FunctionType=None, build_dir: str=None,
-                 hints: bool=True, force_progression: bool=False, interactive: bool=False, convert_output: bool=False) -> None:
+    def __init__(self, tool_name: str, args: List, cwd: str, env: Optional[Dict]=None, custom_error_handler: Optional[FunctionType]=None,
+                 build_dir: Optional[str]=None, hints: bool=True, force_progression: bool=False, interactive: bool=False, convert_output: bool=False
+                 ) -> None:
         self.tool_name = tool_name
         self.args = args
         self.cwd = cwd
@@ -346,7 +355,7 @@ def run_tool(*args: Any, **kwargs: Any) -> None:
 
 
 def run_target(target_name: str, args: 'PropertyDict', env: Optional[Dict]=None,
-               custom_error_handler: FunctionType=None, force_progression: bool=False, interactive: bool=False) -> None:
+               custom_error_handler: Optional[FunctionType]=None, force_progression: bool=False, interactive: bool=False) -> None:
     """Run target in build directory."""
     if env is None:
         env = {}
