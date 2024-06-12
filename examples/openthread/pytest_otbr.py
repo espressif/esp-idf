@@ -18,7 +18,7 @@ from pytest_embedded_idf.dut import IdfDut
 # This file contains the test scripts for Thread:
 
 # Case 1: Thread network formation and attaching
-#         A Thread Border Router forms a Thread network, Thread devices attache to it, then test ping connection between them.
+#         A Thread Border Router forms a Thread network, Thread devices attach to it, then test ping connection between them.
 
 # Case 2: Bidirectional IPv6 connectivity
 #         Test IPv6 ping connection between Thread device and Linux Host (via Thread Border Router).
@@ -29,10 +29,10 @@ from pytest_embedded_idf.dut import IdfDut
 # Case 4: Multicast forwarding from Thread to Wi-Fi network
 #         Linux Host joins the multicast group, test group communication from Thread to Wi-Fi network.
 
-# Case 5: discover Serice published by Thread device
+# Case 5: discover Service published by Thread device
 #         Thread device publishes the service, Linux Host discovers the service on Wi-Fi network.
 
-# Case 6: discover Serice published by W-Fi device
+# Case 6: discover Service published by W-Fi device
 #         Linux Host device publishes the service on Wi-Fi network, Thread device discovers the service.
 
 # Case 7: ICMP communication via NAT64
@@ -728,7 +728,7 @@ def test_br_meshcop(Init_interface:bool, Init_avahi:bool, dut: Tuple[IdfDut, Idf
             assert 'hostname = [esp-ot-br.local]' in str(output_str)
             assert ('address = [' + ipv4_address + ']') in str(output_str)
             assert 'dn=DefaultDomain' in str(output_str)
-            assert 'tv=1.3.0' in str(output_str)
+            assert 'tv=1.4.0' in str(output_str)
             assert ('nn=' + networkname) in str(output_str)
             assert 'mn=BorderRouter' in str(output_str)
             assert 'vn=OpenThread' in str(output_str)

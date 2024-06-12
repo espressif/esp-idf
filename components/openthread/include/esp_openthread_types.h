@@ -44,6 +44,8 @@ typedef enum {
     OPENTHREAD_EVENT_TREL_REMOVE_IP6,           /*!< OpenThread stack removed TREL IPv6 address */
     OPENTHREAD_EVENT_TREL_MULTICAST_GROUP_JOIN, /*!< OpenThread stack joined TREL IPv6 multicast group */
     OPENTHREAD_EVENT_SET_DNS_SERVER,            /*!< OpenThread stack set DNS server >*/
+    OPENTHREAD_EVENT_PUBLISH_MESHCOP_E,         /*!< OpenThread stack start to publish meshcop-e service >*/
+    OPENTHREAD_EVENT_REMOVE_MESHCOP_E,          /*!< OpenThread stack start to remove  meshcop-e service >*/
 } esp_openthread_event_t;
 
 /**
