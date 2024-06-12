@@ -8,6 +8,7 @@ set(includes "include")
 
 set(priv_requires heap spi_flash esp_mm)
 if(${target} STREQUAL "esp32")
+    list(APPEND priv_requires bootloader_support)
     # [refactor-todo]: requires "driver" for `spicommon_periph_claim`
     list(APPEND priv_requires driver)
 endif()
@@ -47,7 +48,6 @@ endif()
 
 idf_component_register(SRCS ${srcs}
                        INCLUDE_DIRS ${includes}
-                       REQUIRES bootloader_support
                        PRIV_REQUIRES ${priv_requires}
                        LDFRAGMENTS linker.lf)
 

@@ -42,6 +42,7 @@ typedef struct {
 /**
  * @brief New ESP CAM ISP DVP controller
  *
+ * @param[in]  isp_proc     Processor handle
  * @param[in]  ctlr_config  ISP DVP controller configurations
  * @param[out] ret_handle   Returned ESP CAM controller handle
  *

@@ -10,7 +10,6 @@
 #include <stddef.h>
 #include <string.h>
 #include "esp_err.h"
-#include "esp_image_format.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -20,24 +19,6 @@ extern "C" {
  * @brief Image process driver
  */
 typedef struct image_process_driver_s image_process_driver_t;
-
-/**
- * @brief Image process driver
- */
-struct image_process_driver_s {
-
-    /**
-     * @brief Process segments
-     *
-     * @param[in] data  image meta data
-     *
-     * @return
-     *        - ESP_OK
-     *        - ESP_ERR_INVALID_ARG:   invalid argument
-     *        - ESP_ERR_INVALID_STATE: invalid state
-     */
-    esp_err_t (*process_segments)(esp_image_metadata_t *data);
-};
 
 /**
  * @brief Image process flow
