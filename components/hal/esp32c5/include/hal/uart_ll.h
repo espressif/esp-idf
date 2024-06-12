@@ -112,7 +112,7 @@ FORCE_INLINE_ATTR void lp_uart_ll_get_sclk(uart_dev_t *hw, soc_module_clk_t *sou
     switch (LP_CLKRST.lpperi.lp_uart_clk_sel) {
     default:
     case 0:
-        *source_clk = (soc_module_clk_t)LP_UART_SCLK_LP_FAST;
+        *source_clk = (soc_module_clk_t)LP_UART_SCLK_RC_FAST;
         break;
     case 1:
         *source_clk = (soc_module_clk_t)LP_UART_SCLK_XTAL_D2;
@@ -130,7 +130,7 @@ static inline void lp_uart_ll_set_source_clk(uart_dev_t *hw, soc_periph_lp_uart_
 {
     (void)hw;
     switch (src_clk) {
-    case LP_UART_SCLK_LP_FAST:
+    case LP_UART_SCLK_RC_FAST:
         LP_CLKRST.lpperi.lp_uart_clk_sel = 0;
         break;
     case LP_UART_SCLK_XTAL_D2:
@@ -167,12 +167,7 @@ FORCE_INLINE_ATTR void lp_uart_ll_set_baudrate(uart_dev_t *hw, uint32_t baud, ui
     // an integer part and a fractional part.
     hw->clkdiv_sync.clkdiv_int = clk_div >> 4;
     hw->clkdiv_sync.clkdiv_frag = clk_div & 0xf;
-#if CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
     HAL_FORCE_MODIFY_U32_REG_FIELD(hw->clk_conf, sclk_div_num, sclk_div - 1);
-#elif CONFIG_IDF_TARGET_ESP32C5_MP_VERSION
-    // TODO: [ESP32c5] IDF-8633 Not found sclk_div_num for LP_UART
-    abort();
-#endif
     uart_ll_update(hw);
 }
 
@@ -437,12 +432,7 @@ FORCE_INLINE_ATTR uint32_t uart_ll_get_baudrate(uart_dev_t *hw, uint32_t sclk_fr
     div_reg.val = hw->clkdiv_sync.val;
     int sclk_div;
     if ((hw) == &LP_UART) {
-#if CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
         sclk_div = HAL_FORCE_READ_U32_REG_FIELD(hw->clk_conf, sclk_div_num) + 1;
-#elif CONFIG_IDF_TARGET_ESP32C5_MP_VERSION
-        // TODO: [ESP32c5] IDF-8633 Not found sclk_div_num for LP_UART
-        abort();
-#endif
     } else {
         sclk_div = UART_LL_PCR_REG_U32_GET(hw, sclk_conf, sclk_div_num) + 1;
     }
