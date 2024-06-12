@@ -425,6 +425,7 @@ static void control_request_string(void)
 {
     usb_transfer_t *transfer = &p_enum_driver->constant.urb->transfer;
     enum_stage_t stage = p_enum_driver->dynamic.stage;
+    uint8_t ctrl_ep_mps = p_enum_driver->single_thread.dev_params.bMaxPacketSize0;
     uint8_t bLength = p_enum_driver->single_thread.dev_params.str_desc_bLength;
     uint8_t index = 0;
     uint16_t langid = 0;
@@ -438,7 +439,7 @@ static void control_request_string(void)
     case ENUM_STAGE_GET_SHORT_SER_STR_DESC: {
         // Get only the header of the string descriptor
         USB_SETUP_PACKET_INIT_GET_STR_DESC((usb_setup_packet_t *)transfer->data_buffer, index, langid, sizeof(usb_str_desc_t));
-        transfer->num_bytes = sizeof(usb_setup_packet_t) + sizeof(usb_str_desc_t) /* usb_round_up_to_mps(sizeof(usb_str_desc_t), ctx->bMaxPacketSize0) */;
+        transfer->num_bytes = sizeof(usb_setup_packet_t) + usb_round_up_to_mps(sizeof(usb_str_desc_t), ctrl_ep_mps);
         // IN data stage should return exactly sizeof(usb_str_desc_t) bytes
         p_enum_driver->single_thread.expect_num_bytes = sizeof(usb_setup_packet_t) + sizeof(usb_str_desc_t);
         break;
@@ -449,7 +450,7 @@ static void control_request_string(void)
     case ENUM_STAGE_GET_FULL_SER_STR_DESC: {
         // Get the full string descriptor at a particular index, requesting the descriptors exact length
         USB_SETUP_PACKET_INIT_GET_STR_DESC((usb_setup_packet_t *)transfer->data_buffer, index, langid, bLength);
-        transfer->num_bytes = sizeof(usb_setup_packet_t) + bLength /* usb_round_up_to_mps(ctx->str_desc_bLength, ctx->bMaxPacketSize0) */;
+        transfer->num_bytes = sizeof(usb_setup_packet_t) + usb_round_up_to_mps(bLength, ctrl_ep_mps);
         // IN data stage should return exactly str_desc_bLength bytes
         p_enum_driver->single_thread.expect_num_bytes = sizeof(usb_setup_packet_t) + bLength;
         break;
