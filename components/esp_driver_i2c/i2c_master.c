@@ -1037,9 +1037,6 @@ esp_err_t i2c_new_master_bus(const i2c_master_bus_config_t *bus_config, i2c_mast
     i2c_master->base->sda_num = bus_config->sda_io_num;
     i2c_master->base->pull_up_enable = bus_config->flags.enable_internal_pullup;
 
-    if (i2c_master->base->pull_up_enable == false) {
-        ESP_LOGW(TAG, "Please check pull-up resistances whether be connected properly. Otherwise unexpected behavior would happen. For more detailed information, please read docs");
-    }
     ESP_GOTO_ON_ERROR(i2c_param_master_config(i2c_master->base, bus_config), err, TAG, "i2c configure parameter failed");
 
     if (!i2c_master->base->is_lp_i2c) {
