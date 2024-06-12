@@ -34,7 +34,9 @@ ULP LP-Core 代码会与 ESP-IDF 项目共同编译，生成一个单独的二�
 
 1. 在 menuconfig 中启用 :ref:`CONFIG_ULP_COPROC_ENABLED` 和 :ref:`CONFIG_ULP_COPROC_TYPE` 选项，并将 :ref:`CONFIG_ULP_COPROC_TYPE` 设置为 ``CONFIG_ULP_COPROC_TYPE_LP_CORE``。:ref:`CONFIG_ULP_COPROC_RESERVE_MEM` 选项为 ULP 保留 RTC 内存，因此必须设置为一个足够大的值，以存储 ULP LP-Core 代码和数据。如果应用程序组件包含多个 ULP 程序，那么 RTC 内存的大小必须足够容纳其中最大的程序。
 
-2. 按照常规步骤构建应用程序（例如 ``idf.py app``）。
+2. 如须减少程序体积，可启用 :ref:`CONFIG_ULP_LP_RISCV_SAVE_RESTORE_LIBCALLS` 。此选项会开启GCC的 ``-msave-restore`` 功能，并可能些微影响程序性能。
+
+3. 按照常规步骤构建应用程序（例如 ``idf.py app``）。
 
 在构建过程中，采取以下步骤来构建 ULP 程序：
 

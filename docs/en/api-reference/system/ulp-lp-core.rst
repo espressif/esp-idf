@@ -34,7 +34,9 @@ The first argument to ``ulp_embed_binary`` specifies the ULP binary name. The na
 
 1. Enable both :ref:`CONFIG_ULP_COPROC_ENABLED` and :ref:`CONFIG_ULP_COPROC_TYPE` in menucofig, and set :ref:`CONFIG_ULP_COPROC_TYPE` to ``CONFIG_ULP_COPROC_TYPE_LP_CORE``. The :ref:`CONFIG_ULP_COPROC_RESERVE_MEM` option reserves RTC memory for the ULP, and must be set to a value big enough to store both the ULP LP-Core code and data. If the application components contain multiple ULP programs, then the size of the RTC memory must be sufficient to hold the largest one.
 
-2. Build the application as usual (e.g., ``idf.py app``).
+2. If you want to reduce the code size at the expense of possible performance loss, you can turn on :ref:`CONFIG_ULP_LP_RISCV_SAVE_RESTORE_LIBCALLS` to enable GCC's ``-msave-restore`` feature.
+
+3. Build the application as usual (e.g., ``idf.py app``).
 
 During the build process, the following steps are taken to build ULP program:
 
