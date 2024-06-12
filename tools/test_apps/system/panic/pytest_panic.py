@@ -656,6 +656,12 @@ CONFIGS_MEMPROT_FLASH_IDROM = [
     pytest.param('memprot_esp32p4', marks=[pytest.mark.esp32p4])
 ]
 
+CONFIGS_MEMPROT_INVALID_REGION_PROTECTION_USING_PMA = [
+    pytest.param('memprot_esp32c6', marks=[pytest.mark.esp32c6]),
+    pytest.param('memprot_esp32h2', marks=[pytest.mark.esp32h2]),
+    pytest.param('memprot_esp32p4', marks=[pytest.mark.esp32p4])
+]
+
 
 @pytest.mark.parametrize('config', CONFIGS_MEMPROT_DCACHE, indirect=True)
 @pytest.mark.generic
@@ -913,6 +919,24 @@ def test_drom_reg_write_violation(dut: PanicTestDut, test_func_name: str) -> Non
 @pytest.mark.parametrize('config', CONFIGS_MEMPROT_FLASH_IDROM, indirect=True)
 @pytest.mark.generic
 def test_drom_reg_execute_violation(dut: PanicTestDut, test_func_name: str) -> None:
+    dut.run_test_func(test_func_name)
+    dut.expect_gme('Instruction access fault')
+    dut.expect_reg_dump(0)
+    dut.expect_cpu_reset()
+
+
+@pytest.mark.parametrize('config', CONFIGS_MEMPROT_INVALID_REGION_PROTECTION_USING_PMA, indirect=True)
+@pytest.mark.generic
+def test_invalid_memory_region_write_violation(dut: PanicTestDut, test_func_name: str) -> None:
+    dut.run_test_func(test_func_name)
+    dut.expect_gme('Store access fault')
+    dut.expect_reg_dump(0)
+    dut.expect_cpu_reset()
+
+
+@pytest.mark.parametrize('config', CONFIGS_MEMPROT_INVALID_REGION_PROTECTION_USING_PMA, indirect=True)
+@pytest.mark.generic
+def test_invalid_memory_region_execute_violation(dut: PanicTestDut, test_func_name: str) -> None:
     dut.run_test_func(test_func_name)
     dut.expect_gme('Instruction access fault')
     dut.expect_reg_dump(0)

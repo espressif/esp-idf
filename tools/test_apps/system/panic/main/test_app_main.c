@@ -168,6 +168,10 @@ void app_main(void)
     HANDLE_TEST(test_name, test_drom_reg_execute_violation);
 #endif
 
+#ifdef CONFIG_SOC_CPU_HAS_PMA
+    HANDLE_TEST(test_name, test_invalid_memory_region_write_violation);
+    HANDLE_TEST(test_name, test_invalid_memory_region_execute_violation);
+#endif
 #endif
 
     die("Unknown test name");
