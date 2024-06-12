@@ -265,6 +265,10 @@ if(NOT BOOTLOADER_BUILD)
         list(APPEND srcs "ds_hal.c")
     endif()
 
+    if(CONFIG_SOC_LCDCAM_CAM_SUPPORTED)
+        list(APPEND srcs "cam_hal.c")
+    endif()
+
     if(CONFIG_SOC_USB_SERIAL_JTAG_SUPPORTED)
         list(APPEND srcs "usb_serial_jtag_hal.c")
     endif()

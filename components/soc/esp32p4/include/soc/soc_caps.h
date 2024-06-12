@@ -29,6 +29,7 @@
 #define SOC_GPTIMER_SUPPORTED           1
 #define SOC_PCNT_SUPPORTED              1
 // #define SOC_LCDCAM_SUPPORTED            1 // TODO: IDF-7465
+#define SOC_LCDCAM_CAM_SUPPORTED        1
 #define SOC_MIPI_CSI_SUPPORTED          1
 #define SOC_MIPI_DSI_SUPPORTED          1
 #define SOC_MCPWM_SUPPORTED             1
@@ -669,3 +670,8 @@
 #define SOC_JPEG_CODEC_SUPPORTED                  (1)
 #define SOC_JPEG_DECODE_SUPPORTED                 (1)
 #define SOC_JPEG_ENCODE_SUPPORTED                 (1)
+
+/*--------------------------- CAM ---------------------------------*/
+#define SOC_LCDCAM_CAM_SUPPORT_RGB_YUV_CONV         (1)
+#define SOC_LCDCAM_CAM_PERIPH_NUM                   (1U)
+#define SOC_LCDCAM_CAM_DATA_WIDTH_MAX               (16U)
