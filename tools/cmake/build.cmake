@@ -516,9 +516,17 @@ macro(idf_build_process target)
         set(local_components_list_file ${build_dir}/local_components_list.temp.yml)
 
         set(__contents "components:\n")
-        foreach(__component_name ${components})
-            idf_component_get_property(__component_dir ${__component_name} COMPONENT_DIR)
-            set(__contents "${__contents}  - name: \"${__component_name}\"\n    path: \"${__component_dir}\"\n")
+        idf_build_get_property(build_component_targets BUILD_COMPONENT_TARGETS)
+        foreach(__build_component_target ${build_component_targets})
+            __component_get_property(__component_name ${__build_component_target} COMPONENT_NAME)
+            __component_get_property(__component_dir ${__build_component_target} COMPONENT_DIR)
+
+            # Exclude components could be passed with -DEXCLUDE_COMPONENTS
+            # after the call to __component_add finished in the last run.
+            # Need to check if the component is excluded again
+            if(NOT __component_name IN_LIST EXCLUDE_COMPONENTS)
+                set(__contents "${__contents}  - name: \"${__component_name}\"\n    path: \"${__component_dir}\"\n")
+            endif()
         endforeach()
 
         file(WRITE ${local_components_list_file} "${__contents}")
