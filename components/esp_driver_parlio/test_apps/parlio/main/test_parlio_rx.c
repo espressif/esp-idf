@@ -23,7 +23,6 @@
 #include "soc/i2s_periph.h"
 #include "soc/spi_periph.h"
 #include "soc/parlio_periph.h"
-#include "esp_dma_utils.h"
 #include "esp_attr.h"
 #include "test_board.h"
 

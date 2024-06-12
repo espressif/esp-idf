@@ -33,7 +33,6 @@
 #include "esp_memory_utils.h"
 #include "esp_clk_tree.h"
 #include "esp_attr.h"
-#include "esp_dma_utils.h"
 #include "esp_private/gdma.h"
 #include "esp_cache.h"
 
