@@ -96,6 +96,8 @@ esp_err_t hub_uninstall(void);
  *
  * This will power the root port ON
  *
+ * @note This function should only be called from the Host Library task
+ *
  * @return esp_err_t
  */
 esp_err_t hub_root_start(void);
@@ -112,8 +114,9 @@ esp_err_t hub_root_stop(void);
 /**
  * @brief Indicate to the Hub driver that a device's port can be recycled
  *
- * The device connected to the port has been freed. The Hub driver can now
- * recycled the port.
+ * The device connected to the port has been freed. The Hub driver can now recycled the port
+ *
+ * @note This function should only be called from the Host Library task
  *
  * @param[in] parent_dev_hdl
  * @param[in] parent_port_num
@@ -126,6 +129,7 @@ esp_err_t hub_port_recycle(usb_device_handle_t parent_dev_hdl, uint8_t parent_po
 /**
  * @brief Reset the port
  *
+ * @note This function should only be called from the Host Library task
  *
  * @param[in] parent_dev_hdl
  * @param[in] parent_port_num
