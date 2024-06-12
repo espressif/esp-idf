@@ -38,9 +38,10 @@ def test_esp_system_console_no_output_uart(dut: Dut) -> None:
 
 @pytest.mark.usb_serial_jtag
 @pytest.mark.parametrize(
-    'port, config',
+    'port, flash_port, config',
     [
-        pytest.param('/dev/serial_ports/ttyACM-esp32', 'serial_jtag_only', marks=JTAG_SERIAL_MARKS),
+        pytest.param('/dev/serial_ports/ttyACM-esp32', '/dev/serial_ports/ttyUSB-esp32', 'serial_jtag_only', marks=JTAG_SERIAL_MARKS),
+        pytest.param('/dev/serial_ports/ttyACM-esp32', '/dev/serial_ports/ttyUSB-esp32', 'serial_jtag_only_no_vfs', marks=JTAG_SERIAL_MARKS),
     ],
     indirect=True,
 )

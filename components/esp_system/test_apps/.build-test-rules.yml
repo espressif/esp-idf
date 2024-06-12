@@ -7,6 +7,7 @@ components/esp_system/test_apps/cache_panic:
 components/esp_system/test_apps/console:
   disable:
     - if: CONFIG_NAME == "serial_jtag_only" and SOC_USB_SERIAL_JTAG_SUPPORTED != 1
+    - if: CONFIG_NAME == "serial_jtag_only_no_vfs" and SOC_USB_SERIAL_JTAG_SUPPORTED != 1
 
 components/esp_system/test_apps/esp_system_unity_tests:
   disable:

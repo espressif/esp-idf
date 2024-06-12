@@ -29,6 +29,7 @@ static int syscall_not_implemented_aborts(void)
 
 ssize_t _write_r_console(struct _reent *r, int fd, const void * data, size_t size)
 {
+#if !CONFIG_ESP_CONSOLE_NONE
     const char* cdata = (const char*) data;
     if (fd == STDOUT_FILENO || fd == STDERR_FILENO) {
         for (size_t i = 0; i < size; ++i) {
@@ -36,12 +37,14 @@ ssize_t _write_r_console(struct _reent *r, int fd, const void * data, size_t siz
         }
         return size;
     }
+#endif //!CONFIG_ESP_CONSOLE_NONE
     __errno_r(r) = EBADF;
     return -1;
 }
 
 ssize_t _read_r_console(struct _reent *r, int fd, void * data, size_t size)
 {
+#if !CONFIG_ESP_CONSOLE_NONE
     char* cdata = (char*) data;
     if (fd == STDIN_FILENO) {
         size_t received;
@@ -57,6 +60,7 @@ ssize_t _read_r_console(struct _reent *r, int fd, void * data, size_t size)
         }
         return received;
     }
+#endif //!CONFIG_ESP_CONSOLE_NONE
     __errno_r(r) = EBADF;
     return -1;
 }
