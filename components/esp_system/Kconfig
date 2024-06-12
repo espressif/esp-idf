@@ -471,7 +471,7 @@ menu "ESP System Settings"
 
     config ESP_XT_WDT
         bool "Initialize XTAL32K watchdog timer on startup"
-        depends on !IDF_TARGET_ESP32 && (ESP_SYSTEM_RTC_EXT_OSC || ESP_SYSTEM_RTC_EXT_XTAL)
+        depends on SOC_XT_WDT_SUPPORTED && (ESP_SYSTEM_RTC_EXT_OSC || ESP_SYSTEM_RTC_EXT_XTAL)
         default n
         help
             This watchdog timer can detect oscillation failure of the XTAL32K_CLK. When such a failure
