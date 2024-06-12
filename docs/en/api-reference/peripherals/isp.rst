@@ -15,9 +15,9 @@ Terminology
   - RAW: Unprocessed data directly output from an image sensor, typically divided into R, Gr, Gb, and B four channels classified into RAW8, RAW10, RAW12, etc., based on bit width
   - RGB: Colored image format composed of red, green, and blue colors classified into RGB888, RGB565, etc., based on the bit width of each color
   - YUV: Colored image format composed of luminance and chrominance classified into YUV444, YUV422, YUV420, etc., based on the data arrangement
-  - BF:  Bayer Domain Filter
   - AF:  Auto-focus
   - AWB: Auto-white balance
+  - BF:  Bayer noise filter
   - CCM: Color correction matrix
 
 ISP Pipeline
@@ -61,6 +61,7 @@ The ISP driver offers following services:
 -  `Enable and disable ISP processor <#isp-enable-disable>`__ - covers how to enable and disable an ISP processor.
 -  `Get AF statistics in one shot or continuous way <#isp-af-statistics>`__ - covers how to get AF statistics one-shot or continuously.
 -  `Get AWB statistics in one shot or continuous way <#isp-awb-statistics>`__ - covers how to get AWB white patches statistics one-shot or continuously.
+-  `Enable BF function <#isp_bf>`__ - covers how to enable and configure BF function.
 -  `Configure CCM <#isp-ccm-config>`__ - covers how to config the Color Correction Matrix.
 -  `Register callback <#isp-callback>`__ - covers how to hook user specific code to ISP driver event callback function.
 -  `Thread Safety <#isp-thread-safety>`__ - lists which APIs are guaranteed to be thread safe by the driver.
@@ -83,10 +84,7 @@ If the configurations in :cpp:type:`esp_isp_processor_cfg_t` is specified, users
 
     esp_isp_processor_cfg_t isp_config = {
         .clk_src = ISP_CLK_SRC_DEFAULT,
-        .clk_hz = 80 * 1000 * 1000,
-        .input_data_source = ISP_INPUT_DATA_SOURCE_CSI,
-        .input_data_color_type = ISP_COLOR_RAW8,
-        .output_data_color_type = ISP_COLOR_RGB565,
+        ...
     };
 
     isp_proc_handle_t isp_proc = NULL;
@@ -127,15 +125,7 @@ If an :cpp:type:`esp_isp_awb_config_t` configuration is specified, you can call 
     /* The AWB configuration, please refer to the API comment for how to tune these parameters */
     esp_isp_awb_config_t awb_config = {
         .sample_point = ISP_AWB_SAMPLE_POINT_AFTER_CCM,
-        .window = {
-            .top_left = {.x = image_width * 0.2, .y = image_height * 0.2},
-            .btm_right = {.x = image_width * 0.8, .y = image_height * 0.8},
-        },
-        .white_patch = {
-            .luminance = {.min = 0, .max = 220 * 3},
-            .red_green_ratio = {.min = 0.0f, .max = 3.999f},
-            .blue_green_ratio = {.min = 0.0f, .max = 3.999f},
-        },
+        ...
     };
     ESP_ERROR_CHECK(esp_isp_new_awb_controller(isp_proc, &awb_config, &awb_ctlr));
 
@@ -270,15 +260,7 @@ Note that if you want to use the continuous statistics, you need to register the
     /* The AWB configuration, please refer to the API comment for how to tune these parameters */
     esp_isp_awb_config_t awb_config = {
         .sample_point = ISP_AWB_SAMPLE_POINT_AFTER_CCM,
-        .window = {
-            .top_left = {.x = image_width * 0.2, .y = image_height * 0.2},
-            .btm_right = {.x = image_width * 0.8, .y = image_height * 0.8},
-        },
-        .white_patch = {
-            .luminance = {.min = 0, .max = 220 * 3},
-            .red_green_ratio = {.min = 0.0f, .max = 3.999f},
-            .blue_green_ratio = {.min = 0.0f, .max = 3.999f},
-        },
+        ...
     };
     isp_awb_stat_result_t stat_res = {};
     /* Create the awb controller */
@@ -307,6 +289,31 @@ Note that if you want to use the continuous statistics, you need to register the
     /* Delete the awb controller and free the resources */
     ESP_ERROR_CHECK(esp_isp_del_awb_controller(awb_ctlr));
 
+.. _isp_bf:
+
+ISP BF Processor
+----------------
+
+This pipeline is used for doing image input denoising under bayer mode.
+
+Calling :cpp:func:`esp_isp_bf_configure` to configure BF function, you can take following code as reference.
+
+.. code:: c
+
+    esp_isp_bf_config_t bf_config = {
+        .denoising_level = 5,
+        ...
+    };
+    ESP_ERROR_CHECK(esp_isp_bf_configure(isp_proc, &bf_config));
+    ESP_ERROR_CHECK(esp_isp_bf_enable(isp_proc));
+
+:cpp:member:`esp_isp_bf_config_t::bf_template` is used for bayer denoise. You can set the :cpp:member:`esp_isp_bf_config_t::bf_template` with a Gaussian filter template or an average filter template.
+
+After calling :cpp:func:`esp_isp_bf_configure`, you need to enable the ISP BF processor, by calling :cpp:func:`esp_isp_bf_enable`. This function:
+
+* Switches the driver state from **init** to **enable**.
+
+Calling :cpp:func:`esp_isp_bf_disable` does the opposite, that is, put the driver back to the **init** state.
 .. _isp-ccm-config:
 
 Configure CCM
@@ -314,7 +321,17 @@ Configure CCM
 
 Color Correction Matrix can scale the color ratio of RGB888 pixels. It can be used for adjusting the image color via some algorithms, for example, used for white balance by inputting the AWB computed result, or used as a Filter with some filter algorithms.
 
-To adjust the color correction matrix, you can refer to the following code:
+To adjust the color correction matrix, here is the formula:
+
+
+
+::
+
+    [ R' ]     [ RR  RG  RB  ]   [ R ]
+    [ G' ] =   [ GR  GG  GB  ] * [ G ]
+    [ B' ]     [ BR  BG  BB  ]   [ B ]
+
+, and you can refer to the following code:
 
 .. code-block:: c
 
@@ -327,6 +344,7 @@ To adjust the color correction matrix, you can refer to the following code:
             0.0, 0.0, 1.0
         },
         .saturation = false,
+        ...
     };
     ESP_ERROR_CHECK(esp_isp_ccm_configure(isp_proc, &ccm_cfg));
     // The configured CCM will be applied to the image once the CCM module is enabled
