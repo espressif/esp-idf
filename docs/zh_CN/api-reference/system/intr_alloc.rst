@@ -26,6 +26,10 @@
 
   {IDF_TARGET_NAME} 有两个核，每个核有 32 个外部异步中断。每个中断的优先级别都可独立地通过编程设置。此外，每个核还有 3 个核心本地中断源 (CLINT)。详细信息请参见 **{IDF_TARGET_NAME} 技术参考手册** [`PDF <{IDF_TARGET_TRM_CN_URL}#riscvcpu>`__]。
 
+.. only:: esp32c5 or esp32c61
+
+  {IDF_TARGET_NAME} 有一个核，32 个外部异步中断。每个中断的优先级别都可独立地通过编程设置。此外，还有 3 个核心本地中断源 (CLINT)。详细信息请参见 **{IDF_TARGET_NAME} 技术参考手册** > **高性能处理器** [`PDF <{IDF_TARGET_TRM_CN_URL}#riscvcpu>`__]。
+
 由于中断源数量多于中断，有时多个驱动程序可以共用一个中断。:cpp:func:`esp_intr_alloc` 抽象隐藏了这些实现细节。
 
 驱动程序可以通过调用 :cpp:func:`esp_intr_alloc`，或 :cpp:func:`esp_intr_alloc_intrstatus` 为某个外设分配中断。通过向此函数传递 flag，可以指定中断类型、优先级和触发方式。然后，中断分配代码会找到适用的中断，使用中断矩阵将其连接到外设，并为其安装给定的中断处理程序和 ISR。

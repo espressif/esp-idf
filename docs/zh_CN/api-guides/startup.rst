@@ -50,11 +50,11 @@
 
     二级引导程序二进制镜像会从 flash 的 {IDF_TARGET_CONFIG_BOOTLOADER_OFFSET_IN_FLASH} 偏移地址处加载。该地址前面的 flash 4 kB 扇区未使用。
 
-.. only:: esp32p4
+.. only:: SOC_KEY_MANAGER_SUPPORTED
 
     二级引导程序二进制镜像会从 flash 的 {IDF_TARGET_CONFIG_BOOTLOADER_OFFSET_IN_FLASH} 偏移地址处加载。该地址前面的 flash 8 kB 扇区将为密钥管理器保留，用于与 flash 加密 (AES-XTS) 相关的操作。
 
- .. only:: not (esp32 or esp32s2 or esp32p4)
+ .. only:: not (esp32 or esp32s2 or SOC_KEY_MANAGER_SUPPORTED)
 
     二级引导程序二进制镜像会从 flash 的 {IDF_TARGET_CONFIG_BOOTLOADER_OFFSET_IN_FLASH} 偏移地址处加载。
 
