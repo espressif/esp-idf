@@ -373,8 +373,8 @@ void modem_clock_select_lp_clock_source(periph_module_t module, modem_clock_lpcl
         modem_clock_hal_enable_ble_rtc_timer_clock(MODEM_CLOCK_instance()->hal, true);
 #if CONFIG_IDF_TARGET_ESP32H2
         if (!rc_clk_en) {
-            extern void esp_ble_rtc_ticks_delay(uint32_t ticks);
-            esp_ble_rtc_ticks_delay(2);
+            extern void r_esp_ble_rtc_ticks_delay(uint32_t ticks);
+            r_esp_ble_rtc_ticks_delay(2);
             clk_ll_rc32k_disable();
         }
 #endif // CONFIG_IDF_TARGET_ESP32H2

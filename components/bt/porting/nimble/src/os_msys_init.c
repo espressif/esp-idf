@@ -82,12 +82,12 @@ static struct os_mempool os_msys_init_2_mempool;
 #endif
 
 #if CONFIG_BT_LE_MSYS_INIT_IN_CONTROLLER
-extern int  esp_ble_msys_init(uint16_t msys_size1, uint16_t msys_size2, uint16_t msys_cnt1, uint16_t msys_cnt2, uint8_t from_heap);
-extern void esp_ble_msys_deinit(void);
+extern int  r_esp_ble_msys_init(uint16_t msys_size1, uint16_t msys_size2, uint16_t msys_cnt1, uint16_t msys_cnt2, uint8_t from_heap);
+extern void r_esp_ble_msys_deinit(void);
 
 int os_msys_init(void)
 {
-    return esp_ble_msys_init(SYSINIT_MSYS_1_MEMBLOCK_SIZE,
+    return r_esp_ble_msys_init(SYSINIT_MSYS_1_MEMBLOCK_SIZE,
                              SYSINIT_MSYS_2_MEMBLOCK_SIZE,
                              OS_MSYS_1_BLOCK_COUNT,
                              OS_MSYS_2_BLOCK_COUNT,
@@ -96,7 +96,7 @@ int os_msys_init(void)
 
 void os_msys_deinit(void)
 {
-    esp_ble_msys_deinit();
+    r_esp_ble_msys_deinit();
 }
 
 #else // CONFIG_BT_LE_MSYS_INIT_IN_CONTROLLER
