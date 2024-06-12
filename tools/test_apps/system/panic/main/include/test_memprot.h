@@ -48,6 +48,10 @@ void test_drom_reg_write_violation(void);
 
 void test_drom_reg_execute_violation(void);
 
+void test_invalid_memory_region_write_violation(void);
+
+void test_invalid_memory_region_execute_violation(void);
+
 #ifdef __cplusplus
 }
 #endif
