@@ -703,7 +703,7 @@ config SOC_TOUCH_SENSOR_NUM
     int
     default 10
 
-config SOC_TOUCH_SAMPLER_NUM
+config SOC_TOUCH_SAMPLE_CFG_NUM
     int
     default 1
 

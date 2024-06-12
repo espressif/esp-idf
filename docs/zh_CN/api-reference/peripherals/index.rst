@@ -42,7 +42,8 @@
     :SOC_SPI_SUPPORT_SLAVE_HD_VER2: spi_slave_hd
     :SOC_JPEG_CODEC_SUPPORTED: jpeg
     :SOC_TEMP_SENSOR_SUPPORTED: temp_sensor
-    :SOC_TOUCH_SENSOR_SUPPORTED: touch_pad
+    :SOC_TOUCH_SENSOR_SUPPORTED and not esp32p4: touch_pad
+    :esp32p4: cap_touch_sens
     :esp32s2: touch_element
     :SOC_TWAI_SUPPORTED: twai
     uart

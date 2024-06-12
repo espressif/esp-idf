@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -704,10 +704,14 @@ typedef union {
          *  High speed touch driver
          */
         uint32_t touch_freq_drv_hs:5;
-        /** touch_freq_dbias : R/W; bitpos: [22:18]; default: 0;
+        /** touch_bypass_shield : R/W; bitpos: [18]; default: 0;
+         *  bypass the shield channel output (only available since ECO1)
+         */
+        uint32_t touch_bypass_shield:1;
+        /** touch_freq_dbias : R/W; bitpos: [22:19]; default: 0;
          *  Internal LDO voltage
          */
-        uint32_t touch_freq_dbias:5;
+        uint32_t touch_freq_dbias:4;
         uint32_t reserved_23:9;
     };
     uint32_t val;
@@ -840,7 +844,7 @@ typedef union {
 
 
 typedef struct {
-    volatile lp_analog_peri_touch_pad_thn_reg_t thn[3];
+    volatile lp_analog_peri_touch_pad_thn_reg_t thresh[3];
 } lp_analog_peri_touch_padx_thn_reg_t;
 
 typedef struct {

@@ -90,6 +90,12 @@ typedef enum {
 #define RTC_BT_TRIG_EN              0
 #endif
 
+#if SOC_TOUCH_SENSOR_SUPPORTED
+#define RTC_TOUCH_TRIG_EN           PMU_TOUCH_WAKEUP_EN     //!< TOUCH wakeup
+#else
+#define RTC_TOUCH_TRIG_EN           0
+#endif
+
 #define RTC_USB_TRIG_EN             PMU_USB_WAKEUP_EN
 
 #if SOC_LP_CORE_SUPPORTED
@@ -113,6 +119,7 @@ typedef enum {
                                RTC_UART1_TRIG_EN        | \
                                RTC_BT_TRIG_EN           | \
                                RTC_LP_CORE_TRIG_EN      | \
+                               RTC_TOUCH_TRIG_EN        | \
                                RTC_XTAL32K_DEAD_TRIG_EN | \
                                RTC_USB_TRIG_EN          | \
                                RTC_BROWNOUT_DET_TRIG_EN)

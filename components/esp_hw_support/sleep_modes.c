@@ -284,7 +284,7 @@ static void ext0_wakeup_prepare(void);
 static void ext1_wakeup_prepare(void);
 #endif
 static esp_err_t timer_wakeup_prepare(int64_t sleep_duration);
-#if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
+#if SOC_TOUCH_SENSOR_SUPPORTED && SOC_TOUCH_SENSOR_VERSION != 1
 static void touch_wakeup_prepare(void);
 #endif
 #if SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
@@ -843,7 +843,7 @@ static esp_err_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t m
 
     misc_modules_sleep_prepare(deep_sleep);
 
-#if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
+#if SOC_TOUCH_SENSOR_VERSION >= 2
     if (deep_sleep) {
         if (s_config.wakeup_triggers & RTC_TOUCH_TRIG_EN) {
             touch_wakeup_prepare();
@@ -858,7 +858,12 @@ static esp_err_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t m
         /* In light sleep, the RTC_PERIPH power domain should be in the power-on state (Power on the touch circuit in light sleep),
          * otherwise the touch sensor FSM will be cleared, causing touch sensor false triggering.
          */
-        if (touch_ll_get_fsm_state()) { // Check if the touch sensor is working properly.
+#if SOC_TOUCH_SENSOR_VERSION == 3
+        bool keep_rtc_power_on = touch_ll_is_fsm_repeated_timer_enabled();
+#else
+        bool keep_rtc_power_on = touch_ll_get_fsm_state();
+#endif
+        if (keep_rtc_power_on) { // Check if the touch sensor is working properly.
             pd_flags &= ~RTC_SLEEP_PD_RTC_PERIPH;
         }
     }
@@ -1594,7 +1599,7 @@ static esp_err_t timer_wakeup_prepare(int64_t sleep_duration)
     return ESP_OK;
 }
 
-#if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
+#if SOC_TOUCH_SENSOR_VERSION == 2
 /* In deep sleep mode, only the sleep channel is supported, and other touch channels should be turned off. */
 static void touch_wakeup_prepare(void)
 {
@@ -1612,6 +1617,11 @@ static void touch_wakeup_prepare(void)
         touch_ll_set_channel_mask(BIT(touch_num));
         touch_ll_start_fsm();
     }
+}
+#elif SOC_TOUCH_SENSOR_VERSION == 3
+static void touch_wakeup_prepare(void)
+{
+    touch_hal_prepare_deep_sleep();
 }
 #endif
 
@@ -1640,7 +1650,11 @@ touch_pad_t esp_sleep_get_touchpad_wakeup_status(void)
         return TOUCH_PAD_MAX;
     }
     touch_pad_t pad_num;
+#if SOC_TOUCH_SENSOR_VERSION == 3
+    touch_ll_sleep_get_channel_num((uint32_t *)(&pad_num));
+#else
     touch_hal_get_wakeup_status(&pad_num);
+#endif
     return pad_num;
 }
 

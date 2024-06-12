@@ -279,26 +279,27 @@ if(NOT BOOTLOADER_BUILD)
                     "usb_wrap_hal.c")
     endif()
 
+    if(CONFIG_SOC_TOUCH_SENSOR_SUPPORTED)
+        list(APPEND srcs "${target}/touch_sensor_hal.c")
+        if(CONFIG_SOC_TOUCH_SENSOR_VERSION LESS 3)
+            list(APPEND srcs "touch_sensor_hal.c")
+        endif()
+    endif()
+
     if(${target} STREQUAL "esp32")
         list(APPEND srcs
-            "touch_sensor_hal.c"
-            "esp32/touch_sensor_hal.c"
             "esp32/gpio_hal_workaround.c")
     endif()
 
     if(${target} STREQUAL "esp32s2")
         list(APPEND srcs
-                    "touch_sensor_hal.c"
                     "xt_wdt_hal.c"
-                    "esp32s2/cp_dma_hal.c"
-                    "esp32s2/touch_sensor_hal.c")
+                    "esp32s2/cp_dma_hal.c")
     endif()
 
     if(${target} STREQUAL "esp32s3")
         list(APPEND srcs
-            "touch_sensor_hal.c"
             "xt_wdt_hal.c"
-            "esp32s3/touch_sensor_hal.c"
             "esp32s3/rtc_cntl_hal.c")
     endif()
 

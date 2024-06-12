@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -26,7 +26,7 @@ extern "C" {
 /**
  * Reset the whole of touch module.
  *
- * @note Call this funtion after `touch_pad_fsm_stop`,
+ * @note Call this function after `touch_pad_fsm_stop`,
  */
 #define touch_hal_reset() touch_ll_reset()
 
@@ -385,7 +385,7 @@ void touch_hal_denoise_enable(void);
 #define touch_hal_waterproof_get_guard_pad(pad_num) touch_ll_waterproof_get_guard_pad(pad_num)
 
 /**
- * Set max equivalent capacitance for sheild channel.
+ * Set max equivalent capacitance for shield channel.
  * The equivalent capacitance of the shielded channel can be calculated
  * from the reading of denoise channel.
  *
@@ -394,7 +394,7 @@ void touch_hal_denoise_enable(void);
 #define touch_hal_waterproof_set_sheild_driver(driver_level) touch_ll_waterproof_set_sheild_driver(driver_level)
 
 /**
- * Get max equivalent capacitance for sheild channel.
+ * Get max equivalent capacitance for shield channel.
  * The equivalent capacitance of the shielded channel can be calculated
  * from the reading of denoise channel.
  *
@@ -551,12 +551,12 @@ void touch_hal_sleep_channel_enable(touch_pad_t pad_num, bool enable);
 /**
  * Enable proximity function for sleep pad.
  */
-#define touch_hal_sleep_enable_approach() touch_ll_sleep_enable_approach()
+#define touch_hal_sleep_enable_approach() touch_ll_sleep_enable_proximity_sensing()
 
 /**
  * Disable proximity function for sleep pad.
  */
-#define touch_hal_sleep_disable_approach() touch_ll_sleep_disable_approach()
+#define touch_hal_sleep_disable_approach() touch_ll_sleep_disable_proximity_sensing()
 
 /**
  * Read benchmark of touch sensor for sleep pad.

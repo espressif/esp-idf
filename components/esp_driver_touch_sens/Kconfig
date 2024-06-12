@@ -1,0 +1,25 @@
+menu "ESP-Driver:Touch Sensor Configurations"
+    depends on SOC_TOUCH_SENSOR_SUPPORTED
+    config TOUCH_CTRL_FUNC_IN_IRAM
+        bool "Place touch sensor control functions into IRAM"
+        default n
+        help
+            Place touch sensor oneshot scanning and continuous scanning functions into IRAM,
+            so that these function can be IRAM-safe and able to be called when the flash cache is disabled.
+            Enabling this option can improve driver performance as well.
+
+    config TOUCH_ISR_IRAM_SAFE
+        bool "Touch sensor ISR IRAM-Safe"
+        default n
+        help
+            Ensure the touch sensor interrupt is IRAM-Safe by allowing the interrupt handler to be
+            executable when the cache is disabled (e.g. SPI Flash write).
+
+    config TOUCH_ENABLE_DEBUG_LOG
+        bool "Enable debug log"
+        default n
+        help
+            Whether to enable the debug log message for touch driver.
+            Note that, this option only controls the touch driver log, won't affect other drivers.
+
+endmenu # Touch Sensor Configuration
