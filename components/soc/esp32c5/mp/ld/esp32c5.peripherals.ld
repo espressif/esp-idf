@@ -48,6 +48,7 @@ PROVIDE ( HP_SYSTEM           = 0x60095000 );
 PROVIDE ( PCR                 = 0x60096000 );
 PROVIDE ( TEE                 = 0x60098000 );
 PROVIDE ( HP_APM              = 0x60099000 );
+PROVIDE ( LP_APM0             = 0x60099800 );
 PROVIDE ( MISC                = 0x6009F000 );
 
 /* TODO: [ESP32C5] IDF-8845 Check the address */
