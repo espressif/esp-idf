@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,6 +15,7 @@
 #include "soc/lp_timer_reg.h"
 #include "soc/lp_aon_reg.h"
 #include "hal/lp_timer_types.h"
+#include "hal/misc.h"
 #include "esp_attr.h"
 
 #ifdef __cplusplus
@@ -23,8 +24,8 @@ extern "C" {
 
 FORCE_INLINE_ATTR void lp_timer_ll_set_alarm_target(lp_timer_dev_t *dev, uint8_t timer_id, uint64_t value)
 {
-    dev->target[timer_id].hi.target_hi = (value >> 32) & 0xFFFF;
-    dev->target[timer_id].lo.target_lo = value & 0xFFFFFFFF;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(dev->target[timer_id].hi, target_hi, (value >> 32) & 0xFFFF);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(dev->target[timer_id].lo, target_lo, value & 0xFFFFFFFF);
 }
 
 FORCE_INLINE_ATTR void lp_timer_ll_set_target_enable(lp_timer_dev_t *dev, uint8_t timer_id, bool en)
@@ -34,12 +35,12 @@ FORCE_INLINE_ATTR void lp_timer_ll_set_target_enable(lp_timer_dev_t *dev, uint8_
 
 FORCE_INLINE_ATTR uint32_t lp_timer_ll_get_counter_value_low(lp_timer_dev_t *dev, uint8_t buffer_id)
 {
-    return dev->counter[buffer_id].lo.counter_lo;
+    return HAL_FORCE_READ_U32_REG_FIELD(dev->counter[buffer_id].lo, counter_lo);
 }
 
 FORCE_INLINE_ATTR uint32_t lp_timer_ll_get_counter_value_high(lp_timer_dev_t *dev, uint8_t buffer_id)
 {
-    return dev->counter[buffer_id].hi.counter_hi;
+    return HAL_FORCE_READ_U32_REG_FIELD(dev->counter[buffer_id].hi, counter_hi);
 }
 
 FORCE_INLINE_ATTR void lp_timer_ll_counter_snapshot(lp_timer_dev_t *dev)
