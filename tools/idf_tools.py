@@ -1794,7 +1794,8 @@ def check_python_venv_compatibility(idf_python_env_path: str, idf_version: str) 
             raise SystemExit(1)
     except OSError as e:
         # perhaps the environment was generated before the support for VENV_VER_FILE was added
-        warn(f'Error while accessing the ESP-IDF version file in the Python environment: {e}')
+        warn(f'The following issue occurred while accessing the ESP-IDF version file in the Python environment: {e}. '
+             '(Diagnostic information. It can be ignored.)')
 
 
 def action_export(args):  # type: ignore
@@ -2250,7 +2251,8 @@ def action_install_python_env(args):  # type: ignore
                 with open(os.path.join(idf_python_env_path, VENV_VER_FILE), 'w') as f:
                     f.write(idf_version)
             except OSError as e:
-                warn(f'Error while generating the ESP-IDF version file in the Python environment: {e}')
+                warn(f'The following issue occurred while generating the ESP-IDF version file in the Python environment: {e}. '
+                     '(Diagnostic information. It can be ignored.)')
 
         else:
             # The embeddable Python for Windows doesn't have the built-in venv module
