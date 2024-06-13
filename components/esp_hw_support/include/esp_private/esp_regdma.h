@@ -22,8 +22,6 @@ extern "C" {
 #if SOC_PAU_SUPPORTED
 #include "hal/pau_types.h"
 
-#define REGDMA_LINK_DBG 0       /* Enable REGDMA link info dump apis*/
-
 /**
  * @brief Create a REGDMA continuous type linked list node without retention buffer and the retention buffer is passed in by the caller
  * @param  backup  Register address to be backed up by REGDMA

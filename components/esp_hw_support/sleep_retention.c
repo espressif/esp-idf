@@ -303,7 +303,6 @@ static void sleep_retention_entries_stats(void)
     _lock_release_recursive(&s_retention.lock);
 }
 
-#if REGDMA_LINK_DBG
 void sleep_retention_dump_entries(FILE *out)
 {
     _lock_acquire_recursive(&s_retention.lock);
@@ -315,7 +314,6 @@ void sleep_retention_dump_entries(FILE *out)
     }
     _lock_release_recursive(&s_retention.lock);
 }
-#endif
 
 void * sleep_retention_find_link_by_id(int id)
 {

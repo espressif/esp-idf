@@ -247,19 +247,6 @@ void pmu_sleep_init(const pmu_sleep_config_t *config, bool dslp)
     }
     pmu_sleep_analog_init(PMU_instance(), &config->analog, dslp);
     pmu_sleep_param_init(PMU_instance(), &config->param, dslp);
-
-    // When light sleep (PD_TOP), the PAU will power down. so need use LP_SYS_BACKUP_DMA_CFG2_REG to store recover link address.
-    if (!dslp && PMU.hp_sys[PMU_MODE_HP_SLEEP].dig_power.top_pd_en) {
-        if (PMU.hp_sys[PMU_MODE_HP_SLEEP].backup.hp_active2sleep_backup_en ||
-            PMU.hp_sys[PMU_MODE_HP_ACTIVE].backup.hp_sleep2active_backup_en) {
-            uint32_t link_sel = PMU.hp_sys[PMU_MODE_HP_SLEEP].backup.hp_active2sleep_backup_mode & 0x3;
-            uint32_t link_addr = REG_READ(PAU_REGDMA_LINK_0_ADDR_REG + link_sel * 4);
-            lp_sys_ll_set_pau_link_addr(link_addr);
-            pmu_sleep_enable_regdma_backup();
-        }
-    } else {
-        pmu_sleep_disable_regdma_backup();
-    }
 }
 
 void pmu_sleep_increase_ldo_volt(void) {

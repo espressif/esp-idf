@@ -14,6 +14,7 @@
 #include "hal/timer_ll.h"
 #include "freertos/FreeRTOS.h"
 #include "esp_cpu.h"
+#include "esp_check.h"
 #include "esp_err.h"
 #include "esp_attr.h"
 #include "esp_log.h"
@@ -22,6 +23,10 @@
 #include "esp_freertos_hooks.h"
 #include "esp_private/periph_ctrl.h"
 #include "esp_private/esp_int_wdt.h"
+
+#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && SOC_TIMER_SUPPORT_SLEEP_RETENTION
+#include "esp_private/sleep_retention.h"
+#endif
 
 #if SOC_TIMER_GROUPS > 1
 
@@ -47,6 +52,38 @@
 #endif // SOC_TIMER_GROUPS > 1
 
 #if CONFIG_ESP_INT_WDT
+#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && SOC_TIMER_SUPPORT_SLEEP_RETENTION
+static const char* TAG = "int_wdt";
+static esp_err_t sleep_int_wdt_retention_init(void *arg)
+{
+    uint32_t group_id = *(uint32_t *)arg;
+    esp_err_t err = sleep_retention_entries_create(tg_wdt_regs_retention[group_id].link_list,
+                                                   tg_wdt_regs_retention[group_id].link_num,
+                                                   REGDMA_LINK_PRI_SYS_PERIPH_LOW,
+                                                   (group_id == 0) ? SLEEP_RETENTION_MODULE_TG0_WDT : SLEEP_RETENTION_MODULE_TG1_WDT);
+    if (err == ESP_OK) {
+        ESP_LOGD(TAG, "Interrupt watchdog timer retention initialization");
+    }
+    ESP_RETURN_ON_ERROR(err, TAG, "Failed to create sleep retention linked list for interrupt watchdog timer");
+    return err;
+}
+
+static esp_err_t esp_int_wdt_retention_enable(uint32_t group_id)
+{
+    sleep_retention_module_init_param_t init_param = {
+        .cbs = { .create = { .handle = sleep_int_wdt_retention_init, .arg = &group_id } },
+        .depends = BIT(SLEEP_RETENTION_MODULE_CLOCK_SYSTEM)
+    };
+    esp_err_t err = sleep_retention_module_init((group_id == 0) ? SLEEP_RETENTION_MODULE_TG0_WDT : SLEEP_RETENTION_MODULE_TG1_WDT, &init_param);
+    if (err == ESP_OK) {
+        err = sleep_retention_module_allocate((group_id == 0) ? SLEEP_RETENTION_MODULE_TG0_WDT : SLEEP_RETENTION_MODULE_TG1_WDT);
+        if (err != ESP_OK) {
+            ESP_LOGW(TAG, "Failed to allocate sleep retention linked list for interrupt watchdog timer retention");
+        }
+    }
+    return err;
+}
+#endif
 
 static wdt_hal_context_t iwdt_context;
 
@@ -121,6 +158,10 @@ void esp_int_wdt_init(void)
     wdt_hal_config_stage(&iwdt_context, WDT_STAGE1, IWDT_INITIAL_TIMEOUT_S * 1000000 / IWDT_TICKS_PER_US, WDT_STAGE_ACTION_RESET_SYSTEM);
     wdt_hal_enable(&iwdt_context);
     wdt_hal_write_protect_enable(&iwdt_context);
+
+#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && SOC_TIMER_SUPPORT_SLEEP_RETENTION
+    esp_int_wdt_retention_enable(IWDT_TIMER_GROUP);
+#endif
 
 #if (CONFIG_ESP32_ECO3_CACHE_LOCK_FIX && CONFIG_BTDM_CTRL_HLI)
 #define APB_DCRSET      (0x200c)

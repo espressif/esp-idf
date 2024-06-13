@@ -52,7 +52,7 @@ static esp_err_t s_i2c_sleep_retention_init(void *arg)
 {
     i2c_bus_t *bus = (i2c_bus_t *)arg;
     i2c_port_num_t port_num = bus->port_num;
-    esp_err_t ret = sleep_retention_entries_create(i2c_regs_retention[port_num].link_list, i2c_regs_retention[port_num].link_num, REGDMA_LINK_PRI_7, I2C_SLEEP_RETENTION_MODULE(port_num));
+    esp_err_t ret = sleep_retention_entries_create(i2c_regs_retention[port_num].link_list, i2c_regs_retention[port_num].link_num, REGDMA_LINK_PRI_I2C, I2C_SLEEP_RETENTION_MODULE(port_num));
     ESP_RETURN_ON_ERROR(ret, TAG, "failed to allocate mem for sleep retention");
     return ret;
 }
