@@ -259,6 +259,7 @@ static void IRAM_ATTR s_isp_awb_default_isr(void *arg)
         need_yield |= high_task_awake == pdTRUE;
         /* If started continuous sampling, then trigger the next AWB sample */
         if (awb_ctlr->fsm == ISP_FSM_START) {
+            isp_ll_awb_enable(awb_ctlr->isp_proc->hal.hw, false);
             isp_ll_awb_enable(awb_ctlr->isp_proc->hal.hw, true);
         }
     }
