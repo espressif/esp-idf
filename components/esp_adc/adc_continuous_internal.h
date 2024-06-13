@@ -99,6 +99,7 @@ struct adc_continuous_ctx_t {
 #if SOC_ADC_MONITOR_SUPPORTED
     adc_monitor_t                   *adc_monitor[SOC_ADC_DIGI_MONITOR_NUM];    // adc monitor context
 #endif
+    size_t                          adc_desc_size;
     adc_dma_t                       adc_dma;
     adc_dma_intr_func_t             adc_intr_func;
 };

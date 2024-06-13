@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -137,117 +137,46 @@ typedef union {
     uint32_t val;
 } adc_filter_ctrl1_reg_t;
 
-/** Type of sar1_patt_tab1 register
+/** Type of filter_ctrl1 register
  *  Register
  */
 typedef union {
     struct {
-        /** sar1_patt_tab1 : R/W; bitpos: [23:0]; default: 0;
+        uint32_t xpd_wait:8;
+        uint32_t rstb_wait:8;
+        uint32_t standby_wait:8;
+        uint32_t reserved24:8;
+    };
+    uint32_t val;
+} adc_fsm_wait_reg_t;
+
+/** Type of sar1_patt_tab register
+ *  Register
+ */
+typedef union {
+    struct {
+        /** sar1_patt_tab : R/W; bitpos: [23:0]; default: 0;
          *  item 0 ~ 3 for pattern table 1 (each item one byte)
          */
-        uint32_t sar1_patt_tab1:24;
+        uint32_t sar1_patt_tab:24;
         uint32_t reserved_24:8;
     };
     uint32_t val;
-} adc_sar1_patt_tab1_reg_t;
-
-/** Type of sar1_patt_tab2 register
- *  Register
- */
-typedef union {
-    struct {
-        /** sar1_patt_tab2 : R/W; bitpos: [23:0]; default: 0;
-         *  Item 4 ~ 7 for pattern table 1 (each item one byte)
-         */
-        uint32_t sar1_patt_tab2:24;
-        uint32_t reserved_24:8;
-    };
-    uint32_t val;
-} adc_sar1_patt_tab2_reg_t;
-
-/** Type of sar1_patt_tab3 register
- *  Register
- */
-typedef union {
-    struct {
-        /** sar1_patt_tab3 : R/W; bitpos: [23:0]; default: 0;
-         *  Item 8 ~ 11 for pattern table 1 (each item one byte)
-         */
-        uint32_t sar1_patt_tab3:24;
-        uint32_t reserved_24:8;
-    };
-    uint32_t val;
-} adc_sar1_patt_tab3_reg_t;
-
-/** Type of sar1_patt_tab4 register
- *  Register
- */
-typedef union {
-    struct {
-        /** sar1_patt_tab4 : R/W; bitpos: [23:0]; default: 0;
-         *  Item 12 ~ 15 for pattern table 1 (each item one byte)
-         */
-        uint32_t sar1_patt_tab4:24;
-        uint32_t reserved_24:8;
-    };
-    uint32_t val;
-} adc_sar1_patt_tab4_reg_t;
+} adc_sar1_patt_tab_reg_t;
 
 /** Type of sar2_patt_tab1 register
  *  Register
  */
 typedef union {
     struct {
-        /** sar2_patt_tab1 : R/W; bitpos: [23:0]; default: 0;
+        /** sar2_patt_tab : R/W; bitpos: [23:0]; default: 0;
          *  item 0 ~ 3 for pattern table 2 (each item one byte)
          */
-        uint32_t sar2_patt_tab1:24;
+        uint32_t sar2_patt_tab:24;
         uint32_t reserved_24:8;
     };
     uint32_t val;
-} adc_sar2_patt_tab1_reg_t;
-
-/** Type of sar2_patt_tab2 register
- *  Register
- */
-typedef union {
-    struct {
-        /** sar2_patt_tab2 : R/W; bitpos: [23:0]; default: 0;
-         *  Item 4 ~ 7 for pattern table 2 (each item one byte)
-         */
-        uint32_t sar2_patt_tab2:24;
-        uint32_t reserved_24:8;
-    };
-    uint32_t val;
-} adc_sar2_patt_tab2_reg_t;
-
-/** Type of sar2_patt_tab3 register
- *  Register
- */
-typedef union {
-    struct {
-        /** sar2_patt_tab3 : R/W; bitpos: [23:0]; default: 0;
-         *  Item 8 ~ 11 for pattern table 2 (each item one byte)
-         */
-        uint32_t sar2_patt_tab3:24;
-        uint32_t reserved_24:8;
-    };
-    uint32_t val;
-} adc_sar2_patt_tab3_reg_t;
-
-/** Type of sar2_patt_tab4 register
- *  Register
- */
-typedef union {
-    struct {
-        /** sar2_patt_tab4 : R/W; bitpos: [23:0]; default: 0;
-         *  Item 12 ~ 15 for pattern table 2 (each item one byte)
-         */
-        uint32_t sar2_patt_tab4:24;
-        uint32_t reserved_24:8;
-    };
-    uint32_t val;
-} adc_sar2_patt_tab4_reg_t;
+} adc_sar2_patt_tab_reg_t;
 
 /** Type of arb_ctrl register
  *  Register
@@ -655,15 +584,10 @@ typedef struct {
     volatile adc_ctrl_reg_reg_t ctrl_reg;
     volatile adc_ctrl2_reg_t ctrl2;
     volatile adc_filter_ctrl1_reg_t filter_ctrl1;
-    uint32_t reserved_00c[3];
-    volatile adc_sar1_patt_tab1_reg_t sar1_patt_tab1;
-    volatile adc_sar1_patt_tab2_reg_t sar1_patt_tab2;
-    volatile adc_sar1_patt_tab3_reg_t sar1_patt_tab3;
-    volatile adc_sar1_patt_tab4_reg_t sar1_patt_tab4;
-    volatile adc_sar2_patt_tab1_reg_t sar2_patt_tab1;
-    volatile adc_sar2_patt_tab2_reg_t sar2_patt_tab2;
-    volatile adc_sar2_patt_tab3_reg_t sar2_patt_tab3;
-    volatile adc_sar2_patt_tab4_reg_t sar2_patt_tab4;
+    volatile adc_fsm_wait_reg_t fsm_wait;
+    uint32_t reserved_00c[2];
+    volatile adc_sar1_patt_tab_reg_t sar1_patt_tab[4];
+    volatile adc_sar2_patt_tab_reg_t sar2_patt_tab[4];
     volatile adc_arb_ctrl_reg_t arb_ctrl;
     volatile adc_filter_ctrl0_reg_t filter_ctrl0;
     volatile adc_sar1_data_status_reg_t sar1_data_status;
@@ -684,6 +608,7 @@ typedef struct {
     volatile adc_ctrl_date_reg_t ctrl_date;
 } adc_dev_t;
 
+extern adc_dev_t ADC;
 
 #ifndef __cplusplus
 _Static_assert(sizeof(adc_dev_t) == 0x400, "Invalid size of adc_dev_t structure");

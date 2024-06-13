@@ -57,7 +57,7 @@ extern portMUX_TYPE rtc_spinlock; //TODO: Will be placed in the appropriate posi
 
 #define INTERNAL_BUF_NUM 5
 
-#if SOC_AHB_GDMA_VERSION == 1
+#if SOC_AHB_GDMA_SUPPORTED
 #define ADC_GDMA_HOST                   0
 #define ADC_DMA_INTR_MASK               GDMA_LL_EVENT_RX_SUC_EOF
 #define ADC_DMA_INTR_MASK               GDMA_LL_EVENT_RX_SUC_EOF
@@ -434,7 +434,10 @@ esp_err_t adc_digi_start(void)
         return ESP_ERR_INVALID_STATE;
     }
     //reset ADC digital part to reset ADC sampling EOF counter
-    periph_module_reset(PERIPH_SARADC_MODULE);
+    ADC_BUS_CLK_ATOMIC() {
+        adc_ll_reset_register();
+    }
+
     sar_periph_ctrl_adc_continuous_power_acquire();
     //reset flags
     s_adc_digi_ctx->ringbuf_overflow_flag = 0;
