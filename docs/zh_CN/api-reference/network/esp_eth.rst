@@ -116,9 +116,7 @@
 
 以太网驱动器由两部分组成：MAC 和 PHY。
 
-.. TODO remove esp32p4 (IDF-9057)
-
-.. only:: SOC_EMAC_SUPPORTED and not esp32p4
+.. only:: SOC_EMAC_SUPPORTED
 
     MAC 和 PHY 之间的通信可以通过多种方式进行，如： **MII** （媒体独立接口）、 **RMII** （简化媒体独立接口）等。
 
