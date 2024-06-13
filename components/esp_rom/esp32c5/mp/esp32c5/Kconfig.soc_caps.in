@@ -86,3 +86,7 @@ config ESP_ROM_SUPPORT_DEEP_SLEEP_WAKEUP_STUB
 config ESP_ROM_HAS_OUTPUT_PUTC_FUNC
     bool
     default y
+
+config ESP_ROM_CLIC_INT_THRESH_PATCH
+    bool
+    default y
