@@ -10,7 +10,7 @@
 
 - **编译时**：在 menuconfig 中，使用选项 :ref:`CONFIG_LOG_DEFAULT_LEVEL` 来设置日志级别。
 - 另外，还可以选择在 menuconfig 中使用选项 :ref:`CONFIG_LOG_MAXIMUM_LEVEL` 设置最高日志级别。这个选项默认被配置为默认级别，但这个选项也可以被配置为更高级别，将更多的可选日志编译到固件中。
-- **运行时**：默认启用所有级别低于 :ref:`CONFIG_LOG_DEFAULT_LEVEL` 的日志。:cpp:func:`esp_log_level_set` 函数可以为各个模块分别设置不同的日志级别，可通过人类可读的 ASCII 零终止字符串标签来识别不同的模块。
+- **运行时**：默认启用所有级别低于 :ref:`CONFIG_LOG_DEFAULT_LEVEL` 的日志。:cpp:func:`esp_log_level_set` 函数可以为各个模块分别设置不同的日志级别，可通过人类可读的 ASCII 零终止字符串标签来识别不同的模块。注意，在运行时是否可以更改日志级别由 :ref:`CONFIG_LOG_DYNAMIC_LEVEL_CONTROL` 决定。
 - **运行时**：启用 :ref:`CONFIG_LOG_MASTER_LEVEL` 时，可以使用 :cpp:func:`esp_log_set_level_master` 函数设置 ``主日志级别`` (Master logging level)。该选项会为所有已编译的日志添加额外的日志级别检查。注意，使用此选项会增加应用程序大小。如果希望在运行时编译大量可选日志，同时避免在不需要日志输出时查找标签及其级别带来的性能损耗，此功能会非常有用。
 
 以下是不同的日志级别：
@@ -72,6 +72,9 @@
 
     target_compile_definitions(${COMPONENT_LIB} PUBLIC "-DLOG_LOCAL_LEVEL=ESP_LOG_VERBOSE")
 
+动态控制日志级别
+----------------
+
 如需在运行时按模块配置日志输出，请按如下方式调用 :cpp:func:`esp_log_level_set` 函数：
 
 .. code-block:: c
@@ -85,6 +88,19 @@
     上文介绍的 "DRAM" 和 "EARLY" 日志宏变型不支持按照模块设置日志级别。这些宏始终以“默认”级别记录日志，且只能在运行时调用 ``esp_log_level("*", level)`` 对日志级别进行更改。
 
 即使已通过标签名称禁用日志输出，每个条目仍需约 10.9 微秒的处理时间。
+
+日志组件提供多种选项，可以更好地调整系统以满足需求，从而减少内存使用并提高操作速度。:ref:`CONFIG_LOG_TAG_LEVEL_IMPL` 可配置检查标签级别：
+
+- ``None``：选择此选项，则会禁用为每个标签设置日志级别的功能。在运行时是否可以更改日志级别取决于 :ref:`CONFIG_LOG_DYNAMIC_LEVEL_CONTROL`。如果禁用，则无法在运行时使用 :cpp:func:`esp_log_level_set` 更改日志级别。该选项适用于高度受限的环境。
+- ``Linked list (no cache)``：选择此选项，则会启用为每个标签设置日志级别的功能。此方法在链表中搜索所有标签的日志级别。如果标签数量比较多，这种方法可能会比较慢，但内存要求可能低于下面的 cache 方式。
+- ``Cache + Linked List`` （默认选项）：选择此选项，则会启用为每个标签设置日志级别的功能。这种混合方法在速度和内存使用之间实现了平衡。cache 中存储最近访问的日志标签及其相应的日志级别，从而更快地查找常用标签。
+
+启用 :ref:`CONFIG_LOG_DYNAMIC_LEVEL_CONTROL` 选项后，则可在运行时通过 :cpp:func:`esp_log_level_set` 更改日志级别。动态更改日志级别提高了灵活性，但也会产生额外的代码开销。
+如果应用程序不需要动态更改日志级别，并且不需要使用标签来控制每个模块的日志，建议禁用 :ref:`CONFIG_LOG_DYNAMIC_LEVEL_CONTROL`。与默认选项相比，这可以节约大概 260 字节的 IRAM、264 字节的 DRAM、以及 1 KB 的 flash。这不仅可以简化日志，提高内存效率，还可以将应用程序中的日志操作速度提高约 10 倍。
+
+.. note::
+
+    ``Linked list`` 和 ``Cache + Linked List`` 选项将自动启用 :ref:`CONFIG_LOG_DYNAMIC_LEVEL_CONTROL`。
 
 主日志级别
 ^^^^^^^^^^^^^^^^^^^^

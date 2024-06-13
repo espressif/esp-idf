@@ -128,6 +128,7 @@
     - 通过调低应用日志默认等级 :ref:`CONFIG_LOG_DEFAULT_LEVEL` （引导加载程序日志等级的相应配置为 :ref:`CONFIG_BOOTLOADER_LOG_LEVEL`）来减少日志输出量。这样做不仅可以减小二进制文件大小，还可以节省一些 CPU 用于格式化字符串的时间。
     :not SOC_USB_OTG_SUPPORTED: - 增加 :ref:`CONFIG_ESP_CONSOLE_UART_BAUDRATE` ，可以提高日志输出速度。
     :SOC_USB_OTG_SUPPORTED: - 增加 :ref:`CONFIG_ESP_CONSOLE_UART_BAUDRATE` ，可以提高日志输出速度。如果使用内置 USB-CDC 作为串口控制台，那么串口传输速率不会受配置的波特率影响。
+    - 如果应用程序不需要动态更改日志级别，并且不需要使用标签来控制每个模块的日志，建议禁用 :ref:`CONFIG_LOG_DYNAMIC_LEVEL_CONTROL` 并更改 :ref:`CONFIG_LOG_TAG_LEVEL_IMPL`。与默认选项相比，这可以减少内存使用，并且将应用程序中的日志操作速度提高约 10 倍。
 
 不建议的选项
 ^^^^^^^^^^^^^^^^^^

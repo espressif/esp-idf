@@ -96,7 +96,7 @@ The log component provides several options to better adjust the system to your n
 - (Default) "Cache + Linked List". This option enables the ability to set the log level per tag. This hybrid approach offers a balance between speed and memory usage. The cache stores recently accessed log tags and their corresponding log levels, providing faster lookups for frequently used tags.
 
 When the :ref:`CONFIG_LOG_DYNAMIC_LEVEL_CONTROL` option is enabled, log levels to be changed at runtime via :cpp:func:`esp_log_level_set`. Dynamic log levels increase flexibility but also incurs additional code size.
-If your application doesn't require dynamic log level changes and you do not need to control logs per module using tags, consider disabling :ref:`CONFIG_LOG_DYNAMIC_LEVEL_CONTROL`. It reduces IRAM usage by approximately 260 bytes, DRAM usage by approximately 264 bytes, and Flash usage by approximately 1K bytes compared to the default option. It is not only streamlines logs for memory efficiency but also contributes to speeding up log operations in your application about 10 times.
+If your application does not require dynamic log level changes and you do not need to control logs per module using tags, consider disabling :ref:`CONFIG_LOG_DYNAMIC_LEVEL_CONTROL`. It reduces IRAM usage by approximately 260 bytes, DRAM usage by approximately 264 bytes, and flash usage by approximately 1 KB compared to the default option. It is not only streamlines logs for memory efficiency but also contributes to speeding up log operations in your application about 10 times.
 
 .. note::
 
