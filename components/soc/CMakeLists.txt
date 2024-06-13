@@ -156,6 +156,10 @@ if(CONFIG_SOC_PAU_SUPPORTED)
     list(APPEND srcs "${target_folder}/system_retention_periph.c")
 endif()
 
+if(CONFIG_SOC_LCDCAM_CAM_SUPPORTED)
+    list(APPEND srcs "${target_folder}/cam_periph.c")
+endif()
+
 idf_component_register(SRCS ${srcs}
                        INCLUDE_DIRS ${includes}
                        LDFRAGMENTS "linker.lf")
