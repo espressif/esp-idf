@@ -1,5 +1,6 @@
 # SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
+import os
 import os.path as path
 import sys
 
@@ -18,7 +19,6 @@ def get_line_number(lookup: str, offset: int = 0) -> int:
     return -1
 
 
-@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='esp32p4 support TBD')  # TODO: IDF-8992
 @pytest.mark.supported_targets
 @pytest.mark.generic
 def test_gdbstub_runtime(dut: PanicTestDut) -> None:
@@ -106,7 +106,8 @@ def test_gdbstub_runtime(dut: PanicTestDut) -> None:
     assert dut.find_gdb_response('running', 'notify', responses) is not None
 
     # test ctrl-c
-    responses = dut.gdbmi.send_signal_to_gdb(2)
+    os.kill(dut.gdbmi.gdb_process.pid, 2)
+    # responses = dut.gdbmi.send_signal_to_gdb(2)  # https://github.com/cs01/pygdbmi/issues/97
     # assert dut.find_gdb_response('stopped', 'notify', responses) is not None
     # ?? No response? check we stopped
     dut.gdb_backtrace()
