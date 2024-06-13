@@ -326,10 +326,10 @@ esp_err_t touch_sensor_config_sleep_wakeup(touch_sensor_handle_t sens_handle, co
 
     xSemaphoreTake(sens_handle->mutex, portMAX_DELAY);
     ESP_GOTO_ON_FALSE(!sens_handle->is_enabled, ESP_ERR_INVALID_STATE, err, TAG, "Please disable the touch sensor first");
-    ESP_GOTO_ON_FALSE(sleep_cfg->slp_wakeup_lvl == TOUCH_LIGHT_SLEEP_WAKEUP || sleep_cfg->slp_wakeup_lvl == TOUCH_DEEP_SLEEP_WAKEUP,
-                      ESP_ERR_INVALID_ARG, err, TAG, "Invalid sleep level");
 
     if (sleep_cfg) {
+        ESP_GOTO_ON_FALSE(sleep_cfg->slp_wakeup_lvl == TOUCH_LIGHT_SLEEP_WAKEUP || sleep_cfg->slp_wakeup_lvl == TOUCH_DEEP_SLEEP_WAKEUP,
+                          ESP_ERR_INVALID_ARG, err, TAG, "Invalid sleep level");
         /* Enabled touch sensor as wake-up source */
         ESP_GOTO_ON_ERROR(esp_sleep_enable_touchpad_wakeup(), err, TAG, "Failed to enable touch sensor wakeup");
 #if SOC_PM_SUPPORT_RC_FAST_PD
@@ -408,7 +408,9 @@ esp_err_t touch_sensor_config_waterproof(touch_sensor_handle_t sens_handle, cons
         touch_ll_waterproof_enable(false);
         touch_ll_waterproof_set_guard_chan(TOUCH_LL_NULL_CHANNEL);
         touch_ll_waterproof_set_shield_chan_mask(0);
-        touch_ll_enable_scan_mask(BIT(wp_cfg->shield_chan->id), true);
+        if (sens_handle->shield_chan) {
+            touch_ll_enable_scan_mask(BIT(sens_handle->shield_chan->id), true);
+        }
         touch_ll_waterproof_set_shield_driver(0);
         sens_handle->guard_chan = NULL;
         sens_handle->shield_chan = NULL;
