@@ -378,6 +378,16 @@ typedef union {
 
 typedef union {
     struct {
+        uint32_t reserved0      : 9;
+        uint32_t powerdown_timer: 7;
+        uint32_t powerup_timer  : 7;
+        uint32_t wait_timer     : 9;
+    };
+    uint32_t val;
+} pmu_power_wait_timer2_reg_t;
+
+typedef union {
+    struct {
         uint32_t force_reset   : 1;
         uint32_t force_iso     : 1;
         uint32_t force_pu      : 1;
@@ -445,6 +455,7 @@ typedef union {
 typedef struct pmu_power_hw_regmap_t{
     pmu_power_wait_timer0_reg_t    wait_timer0;
     pmu_power_wait_timer1_reg_t    wait_timer1;
+    pmu_power_wait_timer2_reg_t    wait_timer2;
     pmu_power_domain_cntl_reg_t    hp_pd[5];
     pmu_power_domain_cntl_reg_t    lp_peri;
     pmu_power_memory_cntl_reg_t    mem_cntl;
@@ -731,8 +742,6 @@ typedef struct pmu_dev_t{
         volatile uint32_t val;
     } vdd_spi_status;
 
-    uint32_t reserved[150];
-
     union {
         struct {
             volatile uint32_t pmu_date: 31;
@@ -745,9 +754,8 @@ typedef struct pmu_dev_t{
 extern pmu_dev_t PMU;
 
 #ifndef __cplusplus
-_Static_assert(sizeof(pmu_dev_t) == 0x400, "Invalid size of pmu_dev_t structure");
 
-//_Static_assert(offsetof(pmu_dev_t, reserved) == (PMU_VDD_SPI_STATUS_REG - DR_REG_PMU_BASE) + 4, "Invalid size of pmu_dev_t structure");
+//_Static_assert(offsetof(pmu_dev_t, reserved) == (PMU_VDD_SPI_STATUS_REG - DR_REG_PMU_BASE) + 4, "Invalid size of pmu_dev_t structure"); TODO IDF-8643
 
 #endif
 

@@ -33,7 +33,8 @@
 // #define SOC_TEMP_SENSOR_SUPPORTED       1  // TODO: [ESP32C5] IDF-8727
 // #define SOC_WIFI_SUPPORTED              1  // TODO: [ESP32C5] IDF-8851
 #define SOC_SUPPORTS_SECURE_DL_MODE     1
-// #define SOC_LP_CORE_SUPPORTED           1  // TODO: [ESP32C5] IDF-8637
+#define SOC_LP_CORE_SUPPORTED           1
+#define SOC_ULP_SUPPORTED               1
 #define SOC_EFUSE_KEY_PURPOSE_FIELD     1
 #define SOC_EFUSE_SUPPORTED             1
 #define SOC_RTC_FAST_MEM_SUPPORTED      1
@@ -579,3 +580,6 @@
 
 /*------------------------------------- PHY CAPS -------------------------------------*/
 // #define SOC_PHY_COMBO_MODULE                  (1) /*!< Support Wi-Fi, BLE and 15.4*/
+
+/*------------------------------------- ULP CAPS -------------------------------------*/
+#define SOC_LP_CORE_SINGLE_INTERRUPT_VECTOR   (1) /*!< LP Core interrupts all map to a single entry in vector table */

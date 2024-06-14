@@ -120,6 +120,16 @@ static inline void lp_core_ll_request_sleep(void)
     PMU.lp_ext.pwr1.sleep_req = 1;
 }
 
+/**
+ * @brief Get which interrupts have triggered on the LP core
+ *
+ * @return uint8_t bit mask of triggered LP interrupt sources
+ */
+static inline uint8_t lp_core_ll_get_triggered_interrupt_srcs(void)
+{
+    return LPPERI.interrupt_source.lp_interrupt_source;
+}
+
 #ifdef __cplusplus
 }
 #endif

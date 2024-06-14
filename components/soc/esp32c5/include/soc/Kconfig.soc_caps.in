@@ -35,6 +35,14 @@ config SOC_SUPPORTS_SECURE_DL_MODE
     bool
     default y
 
+config SOC_LP_CORE_SUPPORTED
+    bool
+    default y
+
+config SOC_ULP_SUPPORTED
+    bool
+    default y
+
 config SOC_EFUSE_KEY_PURPOSE_FIELD
     bool
     default y
@@ -772,5 +780,9 @@ config SOC_CLK_RC32K_SUPPORTED
     default y
 
 config SOC_RCC_IS_INDEPENDENT
+    bool
+    default y
+
+config SOC_LP_CORE_SINGLE_INTERRUPT_VECTOR
     bool
     default y
