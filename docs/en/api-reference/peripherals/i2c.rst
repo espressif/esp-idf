@@ -362,7 +362,7 @@ Some I2C device needs write configurations before reading data from it. Therefor
 
     I2C master write to slave and read from slave
 
-Simple example for writing and reading from slave:
+Please note that no STOP condition bit is inserted between the write and read operations; therefore, this function is suited to read a register from an I2C device. A simple example for writing and reading from a slave device:
 
 .. code:: c
 
