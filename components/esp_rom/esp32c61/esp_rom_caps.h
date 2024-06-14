@@ -30,4 +30,3 @@
 #define ESP_ROM_HAS_SW_FLOAT                (1) // ROM has libgcc software floating point emulation functions
 #define ESP_ROM_USB_OTG_NUM                 (-1) // No USB_OTG CDC in the ROM, set -1 for Kconfig usage.
 #define ESP_ROM_HAS_OUTPUT_PUTC_FUNC        (1) // ROM has esp_rom_output_putc (or ets_write_char_uart)
-#define ESP_ROM_CLIC_INT_THRESH_PATCH       (1) // ROM version of esprv_intc_int_set_threshold incorrectly assumes lowest MINTTHRESH is 0x1F, should be 0xF
