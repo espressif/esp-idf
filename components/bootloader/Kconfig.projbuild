@@ -360,9 +360,9 @@ menu "Bootloader config"
         # options, allowing to turn on "allow insecure options" and have secure boot with
         # "skip validation when existing deep sleep". Keeping this to avoid a breaking change,
         # but - as noted in help - it invalidates the integrity of Secure Boot checks
-        depends on SOC_RTC_FAST_MEM_SUPPORTED && ((SECURE_BOOT && SECURE_BOOT_INSECURE) || !SECURE_BOOT)
+        depends on ((SECURE_BOOT && SECURE_BOOT_INSECURE) || !SECURE_BOOT)
         default n
-        select BOOTLOADER_RESERVE_RTC_MEM
+        select BOOTLOADER_RESERVE_RTC_MEM if SOC_RTC_FAST_MEM_SUPPORTED
         help
             This option disables the normal validation of an image coming out of
             deep sleep (checksums, SHA256, and signature). This is a trade-off

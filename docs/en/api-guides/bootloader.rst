@@ -163,12 +163,18 @@ Options to work around this are:
 
 When Secure Boot V2 is enabled, there is also an absolute binary size limit of {IDF_TARGET_MAX_BOOTLOADER_SIZE} (excluding the 4 KB signature), because the bootloader is first loaded into a fixed size buffer for verification.
 
+Fast Boot from Deep-Sleep
+-------------------------
+
+The bootloader has the :ref:`CONFIG_BOOTLOADER_SKIP_VALIDATE_IN_DEEP_SLEEP` option which allows the wake-up time from Deep-sleep to be reduced (useful for reducing power consumption). This option is available when the :ref:`CONFIG_SECURE_BOOT` option is disabled or :ref:`CONFIG_SECURE_BOOT_INSECURE` is enabled along with Secure Boot. The reduction in time is achieved by ignoring image verification.
+
 .. only:: SOC_RTC_FAST_MEM_SUPPORTED
 
-    Fast Boot from Deep-Sleep
-    -------------------------
+    During the first boot, the bootloader stores the address of the application being launched in the RTC FAST memory. After waking up from deep sleep, this address is used to boot the application again without any checks, resulting in a significantly faster load.
 
-    The bootloader has the :ref:`CONFIG_BOOTLOADER_SKIP_VALIDATE_IN_DEEP_SLEEP` option which allows the wake-up time from Deep-sleep to be reduced (useful for reducing power consumption). This option is available when :ref:`CONFIG_SECURE_BOOT` option is disabled. Reduction of time is achieved due to the lack of image verification. During the first boot, the bootloader stores the address of the application being launched in the RTC FAST memory. And during the awakening, this address is used for booting without any checks, thus fast loading is achieved.
+.. only:: not SOC_RTC_FAST_MEM_SUPPORTED
+
+    The {IDF_TARGET_NAME} does not have RTC memory, so a running partition cannot be saved there; instead, the entire partition table is read to select the correct application. During wake-up, the selected application is loaded without any checks, resulting in a significantly faster load.
 
 Custom Bootloader
 -----------------

@@ -56,8 +56,13 @@ __attribute__((__noreturn__)) void bootloader_utility_load_boot_image(const boot
 /**
  * @brief Load that application which was worked before we go to the deep sleep.
  *
+ * If chip supports the RTC memory:
  * Checks the reboot reason if it is the deep sleep and has a valid partition in the RTC memory
  * then try to load the application which was worked before we go to the deep sleep.
+ *
+ * If chip does not support the RTC memory:
+ * Checks the reboot reason if it is the deep sleep then the partition table is read
+ * to select and load an application which was worked before we go to the deep sleep.
  *
  */
 void bootloader_utility_load_boot_image_from_deep_sleep(void);
