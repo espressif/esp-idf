@@ -276,6 +276,7 @@ gpio_pad_hold = 0x40000740;
 
 /* Functions */
 esprv_intc_int_set_priority = 0x40000744;
+esprv_intc_int_set_threshold = 0x40000748;
 esprv_intc_int_enable = 0x4000074c;
 esprv_intc_int_disable = 0x40000750;
 esprv_intc_int_set_type = 0x40000754;

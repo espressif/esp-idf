@@ -10,7 +10,7 @@
 extern "C" {
 #endif
 
-#define NLBITS                   4
+#define NLBITS                   3
 #define CLIC_EXT_INTR_NUM_OFFSET 16
 
 #define DR_REG_CLIC_BASE      (0x20800000)

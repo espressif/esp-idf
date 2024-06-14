@@ -10,7 +10,7 @@
 extern "C" {
 #endif
 
-#define NLBITS                   4
+#define NLBITS                   3
 #define CLIC_EXT_INTR_NUM_OFFSET 16
 #define DUALCORE_CLIC_CTRL_OFF   0x10000
 
