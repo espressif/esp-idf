@@ -176,6 +176,9 @@ static int esp_ecc_gen_dh_key(const uint8_t *peer_pub_key_x, const uint8_t *peer
                               const uint8_t *our_priv_key, uint8_t *out_dhkey);
 #if CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
 static void esp_bt_controller_log_interface(uint32_t len, const uint8_t *addr, bool end);
+#if CONFIG_BT_LE_CONTROLLER_LOG_STORAGE_ENABLE
+static void esp_bt_ctrl_log_partition_get_and_erase_first_block(void);
+#endif // #if CONFIG_BT_LE_CONTROLLER_LOG_STORAGE_ENABLE
 #endif // CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
 /* Local variable definition
  ***************************************************************************
@@ -184,6 +187,83 @@ static void esp_bt_controller_log_interface(uint32_t len, const uint8_t *addr, b
 static DRAM_ATTR esp_bt_controller_status_t ble_controller_status = ESP_BT_CONTROLLER_STATUS_IDLE;
 #if CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
 const static uint32_t log_bufs_size[] = {CONFIG_BT_LE_LOG_CTRL_BUF1_SIZE, CONFIG_BT_LE_LOG_HCI_BUF_SIZE, CONFIG_BT_LE_LOG_CTRL_BUF2_SIZE};
+enum log_out_mode {
+    LOG_DUMP_MEMORY,
+    LOG_ASYNC_OUT,
+    LOG_STORAGE_TO_FLASH,
+};
+
+bool log_is_inited = false;
+#if CONFIG_BT_LE_CONTROLLER_LOG_DUMP_ONLY
+uint8_t log_output_mode = LOG_DUMP_MEMORY;
+#else
+#if CONFIG_BT_LE_CONTROLLER_LOG_STORAGE_ENABLE
+uint8_t log_output_mode = LOG_STORAGE_TO_FLASH;
+#else
+uint8_t log_output_mode = LOG_ASYNC_OUT;
+#endif // CONFIG_BT_LE_CONTROLLER_LOG_STORAGE_ENABLE
+#endif // CONFIG_BT_LE_CONTROLLER_LOG_DUMP_ONLY
+
+void esp_bt_log_output_mode_set(uint8_t output_mode)
+{
+    log_output_mode = output_mode;
+}
+
+uint8_t esp_bt_log_output_mode_get(void)
+{
+    return log_output_mode;
+}
+
+esp_err_t esp_bt_controller_log_init(uint8_t log_output_mode)
+{
+    esp_err_t ret = ESP_OK;
+    interface_func_t bt_controller_log_interface;
+    bt_controller_log_interface = esp_bt_controller_log_interface;
+    bool task_create;
+    uint8_t buffers = 0;
+
+    if (log_is_inited) {
+        return ret;
+    }
+
+#if CONFIG_BT_LE_CONTROLLER_LOG_CTRL_ENABLED
+    buffers |= ESP_BLE_LOG_BUF_CONTROLLER;
+#endif // CONFIG_BT_LE_CONTROLLER_LOG_CTRL_ENABLED
+#if CONFIG_BT_LE_CONTROLLER_LOG_HCI_ENABLED
+    buffers |= ESP_BLE_LOG_BUF_HCI;
+#endif // CONFIG_BT_LE_CONTROLLER_LOG_HCI_ENABLED
+
+    switch (log_output_mode) {
+        case LOG_DUMP_MEMORY:
+            task_create = false;
+            break;
+        case LOG_ASYNC_OUT:
+        case LOG_STORAGE_TO_FLASH:
+            task_create = true;
+#if CONFIG_BT_LE_CONTROLLER_LOG_STORAGE_ENABLE
+            if (log_output_mode == LOG_STORAGE_TO_FLASH) {
+                esp_bt_ctrl_log_partition_get_and_erase_first_block();
+            }
+#endif // CONFIG_BT_LE_CONTROLLER_LOG_STORAGE_ENABLE
+            break;
+        default:
+            assert(0);
+    }
+
+    ret = r_ble_log_init_async(bt_controller_log_interface, task_create, buffers, (uint32_t *)log_bufs_size);
+    if (ret == ESP_OK) {
+        log_is_inited = true;
+    }
+
+    return ret;
+}
+
+void esp_bt_ontroller_log_deinit(void)
+{
+    r_ble_log_deinit_async();
+    log_is_inited = false;
+}
+
 #if CONFIG_BT_LE_CONTROLLER_LOG_STORAGE_ENABLE
 #include "esp_partition.h"
 #include "hal/wdt_hal.h"
@@ -200,7 +280,7 @@ static bool block_erased = false;
 static bool stop_write = false;
 static bool is_filled = false;
 
-void esp_bt_ctrl_log_partition_get_and_erase_first_block(void)
+static void esp_bt_ctrl_log_partition_get_and_erase_first_block(void)
 {
     log_partition = NULL;
     assert(MAX_STORAGE_SIZE % BLOCK_SIZE == 0);
@@ -216,7 +296,7 @@ void esp_bt_ctrl_log_partition_get_and_erase_first_block(void)
     stop_write = false;
 }
 
-int esp_bt_controller_log_storage(uint32_t len, const uint8_t *addr, bool end)
+static int esp_bt_controller_log_storage(uint32_t len, const uint8_t *addr, bool end)
 {
     if (len > MAX_STORAGE_SIZE) {
         return -1;
@@ -260,10 +340,11 @@ void esp_bt_read_ctrl_log_from_flash(bool output)
     const uint8_t *buffer;
     uint32_t print_len;
     uint32_t max_print_len;
+    esp_err_t err;
 
     print_len = 0;
     max_print_len = 4096;
-    esp_err_t err = esp_partition_mmap(log_partition, 0, MAX_STORAGE_SIZE, ESP_PARTITION_MMAP_DATA, &mapped_ptr, &mmap_handle);
+    err = esp_partition_mmap(log_partition, 0, MAX_STORAGE_SIZE, ESP_PARTITION_MMAP_DATA, &mapped_ptr, &mmap_handle);
     if (err != ESP_OK) {
         ESP_LOGE("FLASH", "Mmap failed: %s", esp_err_to_name(err));
         return;
@@ -273,6 +354,7 @@ void esp_bt_read_ctrl_log_from_flash(bool output)
     portENTER_CRITICAL_SAFE(&spinlock);
     esp_panic_handler_reconfigure_wdts(5000);
     r_ble_log_async_output_dump_all(true);
+    esp_bt_ontroller_log_deinit();
     stop_write = true;
 
     buffer = (const uint8_t *)mapped_ptr;
@@ -299,7 +381,8 @@ void esp_bt_read_ctrl_log_from_flash(bool output)
     esp_rom_printf(":DUMP_END]\r\n");
     portEXIT_CRITICAL_SAFE(&spinlock);
     esp_partition_munmap(mmap_handle);
-    esp_bt_ctrl_log_partition_get_and_erase_first_block();
+    err = esp_bt_controller_log_init(log_output_mode);
+    assert(err == ESP_OK);
 }
 #endif // CONFIG_BT_LE_CONTROLLER_LOG_STORAGE_ENABLE
 #endif // CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
@@ -773,23 +856,7 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
 #endif // CONFIG_SW_COEXIST_ENABLE
 
 #if CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
-    interface_func_t bt_controller_log_interface;
-    bt_controller_log_interface = esp_bt_controller_log_interface;
-    uint8_t buffers = 0;
-#if CONFIG_BT_LE_CONTROLLER_LOG_CTRL_ENABLED
-    buffers |= ESP_BLE_LOG_BUF_CONTROLLER;
-#endif // CONFIG_BT_LE_CONTROLLER_LOG_CTRL_ENABLED
-#if CONFIG_BT_LE_CONTROLLER_LOG_HCI_ENABLED
-    buffers |= ESP_BLE_LOG_BUF_HCI;
-#endif // CONFIG_BT_LE_CONTROLLER_LOG_HCI_ENABLED
-#if CONFIG_BT_LE_CONTROLLER_LOG_DUMP_ONLY
-    ret = r_ble_log_init_async(bt_controller_log_interface, false, buffers, (uint32_t *)log_bufs_size);
-#else
-#if CONFIG_BT_LE_CONTROLLER_LOG_STORAGE_ENABLE
-    esp_bt_ctrl_log_partition_get_and_erase_first_block();
-#endif
-    ret = r_ble_log_init_async(bt_controller_log_interface, true, buffers, (uint32_t *)log_bufs_size);
-#endif // CONFIG_BT_CONTROLLER_LOG_DUMP
+    ret = esp_bt_controller_log_init(log_output_mode);
     if (ret != ESP_OK) {
         ESP_LOGW(NIMBLE_PORT_LOG_TAG, "ble_controller_log_init failed %d", ret);
         goto modem_deint;
@@ -853,7 +920,7 @@ free_controller:
 modem_deint:
     esp_ble_unregister_bb_funcs();
 #if CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
-    r_ble_log_deinit_async();
+    esp_bt_ontroller_log_deinit();
 #endif // CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
     esp_phy_modem_deinit();
     modem_clock_deselect_lp_clock_source(PERIPH_BT_MODULE);
@@ -889,7 +956,7 @@ esp_err_t esp_bt_controller_deinit(void)
     r_ble_controller_deinit();
     esp_ble_unregister_bb_funcs();
 #if CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
-    r_ble_log_deinit_async();
+    esp_bt_ontroller_log_deinit();
 #endif // CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
 
 #if CONFIG_BT_NIMBLE_ENABLED
@@ -1209,32 +1276,36 @@ esp_power_level_t esp_ble_tx_power_get_enhanced(esp_ble_enhanced_power_type_t po
 #if CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
 static void esp_bt_controller_log_interface(uint32_t len, const uint8_t *addr, bool end)
 {
+    if (log_output_mode == LOG_STORAGE_TO_FLASH) {
 #if CONFIG_BT_LE_CONTROLLER_LOG_STORAGE_ENABLE
-    esp_bt_controller_log_storage(len, addr, end);
-#else
-    for (int i = 0; i < len; i++) {
-        esp_rom_printf("%02x ", addr[i]);
+        esp_bt_controller_log_storage(len, addr, end);
+#endif //CONFIG_BT_LE_CONTROLLER_LOG_STORAGE_ENABLE
+    } else {
+        for (int i = 0; i < len; i++) {
+            esp_rom_printf("%02x ", addr[i]);
+        }
+
+        if (end) {
+            esp_rom_printf("\n");
+        }
     }
-    if (end) {
-        esp_rom_printf("\n");
-    }
-#endif // CONFIG_BT_LE_CONTROLLER_LOG_STORAGE_ENABLE
 }
 
 void esp_ble_controller_log_dump_all(bool output)
 {
+    if (log_output_mode == LOG_STORAGE_TO_FLASH) {
 #if CONFIG_BT_LE_CONTROLLER_LOG_STORAGE_ENABLE
-    esp_bt_read_ctrl_log_from_flash(output);
-#else
-    portMUX_TYPE spinlock = portMUX_INITIALIZER_UNLOCKED;
-
-    portENTER_CRITICAL_SAFE(&spinlock);
-    esp_panic_handler_reconfigure_wdts(5000);
-    BT_ASSERT_PRINT("\r\n[DUMP_START:");
-    r_ble_log_async_output_dump_all(output);
-    BT_ASSERT_PRINT(":DUMP_END]\r\n");
-    portEXIT_CRITICAL_SAFE(&spinlock);
+        esp_bt_read_ctrl_log_from_flash(output);
 #endif // CONFIG_BT_LE_CONTROLLER_LOG_STORAGE_ENABLE
+    } else {
+        portMUX_TYPE spinlock = portMUX_INITIALIZER_UNLOCKED;
+        portENTER_CRITICAL_SAFE(&spinlock);
+        esp_panic_handler_reconfigure_wdts(5000);
+        BT_ASSERT_PRINT("\r\n[DUMP_START:");
+        r_ble_log_async_output_dump_all(output);
+        BT_ASSERT_PRINT(":DUMP_END]\r\n");
+        portEXIT_CRITICAL_SAFE(&spinlock);
+    }
 }
 #endif // CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
 
