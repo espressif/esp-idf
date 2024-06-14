@@ -18,6 +18,7 @@ typedef struct isp_awb_controller_t {
     isp_fsm_t                          fsm;
     portMUX_TYPE                       spinlock;
     intr_handle_t                      intr_handle;
+    int                                intr_priority;
     isp_proc_handle_t                  isp_proc;
     QueueHandle_t                      evt_que;
     SemaphoreHandle_t                  stat_lock;
@@ -72,6 +73,25 @@ static void s_isp_awb_free_controller(isp_awb_ctlr_t awb_ctlr)
     }
 }
 
+static esp_err_t s_esp_isp_awb_config_hardware(isp_proc_handle_t isp_proc, const esp_isp_awb_config_t *awb_cfg)
+{
+    isp_ll_awb_set_sample_point(isp_proc->hal.hw, awb_cfg->sample_point);
+    ESP_RETURN_ON_FALSE(isp_hal_awb_set_window_range(&isp_proc->hal, &awb_cfg->window),
+                        ESP_ERR_INVALID_ARG, TAG, "invalid window");
+    isp_u32_range_t lum_range = awb_cfg->white_patch.luminance;
+    ESP_RETURN_ON_FALSE(isp_hal_awb_set_luminance_range(&isp_proc->hal, lum_range.min, lum_range.max),
+                        ESP_ERR_INVALID_ARG, TAG, "invalid luminance range");
+    isp_float_range_t rg_range = awb_cfg->white_patch.red_green_ratio;
+    ESP_RETURN_ON_FALSE(rg_range.min < rg_range.max && rg_range.min >= 0 &&
+                        isp_hal_awb_set_rg_ratio_range(&isp_proc->hal, rg_range.min, rg_range.max),
+                        ESP_ERR_INVALID_ARG, TAG, "invalid range of Red Green ratio");
+    isp_float_range_t bg_range = awb_cfg->white_patch.blue_green_ratio;
+    ESP_RETURN_ON_FALSE(bg_range.min < bg_range.max && bg_range.min >= 0 &&
+                        isp_hal_awb_set_bg_ratio_range(&isp_proc->hal, bg_range.min, bg_range.max),
+                        ESP_ERR_INVALID_ARG, TAG, "invalid range of Blue to Green ratio");
+    return ESP_OK;
+}
+
 esp_err_t esp_isp_new_awb_controller(isp_proc_handle_t isp_proc, const esp_isp_awb_config_t *awb_cfg, isp_awb_ctlr_t *ret_hdl)
 {
     esp_err_t ret = ESP_FAIL;
@@ -91,27 +111,14 @@ esp_err_t esp_isp_new_awb_controller(isp_proc_handle_t isp_proc, const esp_isp_a
     ESP_GOTO_ON_ERROR(s_isp_claim_awb_controller(isp_proc, awb_ctlr), err1, TAG, "no available controller");
     // Register the AWB ISR
     uint32_t intr_st_reg_addr = isp_ll_get_intr_status_reg_addr(isp_proc->hal.hw);
-    int intr_priority = awb_cfg->intr_priority > 0 && awb_cfg->intr_priority <= 7 ? BIT(awb_cfg->intr_priority) : ESP_INTR_FLAG_LOWMED;
-    ESP_GOTO_ON_ERROR(esp_intr_alloc_intrstatus(isp_hw_info.instances[isp_proc->proc_id].irq, ISP_INTR_ALLOC_FLAGS | intr_priority, intr_st_reg_addr, ISP_LL_EVENT_AWB_MASK,
+    awb_ctlr->intr_priority = awb_cfg->intr_priority > 0 && awb_cfg->intr_priority <= 3 ? BIT(awb_cfg->intr_priority) : ESP_INTR_FLAG_LOWMED;
+    ESP_GOTO_ON_ERROR(esp_intr_alloc_intrstatus(isp_hw_info.instances[isp_proc->proc_id].irq, ISP_INTR_ALLOC_FLAGS | awb_ctlr->intr_priority, intr_st_reg_addr, ISP_LL_EVENT_AWB_MASK,
                                                 s_isp_awb_default_isr, awb_ctlr, &awb_ctlr->intr_handle), err2, TAG, "allocate interrupt failed");
 
     // Configure the hardware
     isp_ll_awb_enable(isp_proc->hal.hw, false);
-    isp_ll_awb_set_sample_point(isp_proc->hal.hw, awb_cfg->sample_point);
     isp_ll_awb_enable_algorithm_mode(isp_proc->hal.hw, true);
-    ESP_GOTO_ON_FALSE(isp_hal_awb_set_window_range(&isp_proc->hal, &awb_cfg->window),
-                      ESP_ERR_INVALID_ARG, err2, TAG, "invalid window");
-    isp_u32_range_t lum_range = awb_cfg->white_patch.luminance;
-    ESP_GOTO_ON_FALSE(isp_hal_awb_set_luminance_range(&isp_proc->hal, lum_range.min, lum_range.max),
-                      ESP_ERR_INVALID_ARG, err2, TAG, "invalid luminance range");
-    isp_float_range_t rg_range = awb_cfg->white_patch.red_green_ratio;
-    ESP_GOTO_ON_FALSE(rg_range.min < rg_range.max && rg_range.min >= 0 &&
-                      isp_hal_awb_set_rg_ratio_range(&isp_proc->hal, rg_range.min, rg_range.max),
-                      ESP_ERR_INVALID_ARG, err2, TAG, "invalid range of Red Green ratio");
-    isp_float_range_t bg_range = awb_cfg->white_patch.blue_green_ratio;
-    ESP_GOTO_ON_FALSE(bg_range.min < bg_range.max && bg_range.min >= 0 &&
-                      isp_hal_awb_set_bg_ratio_range(&isp_proc->hal, bg_range.min, bg_range.max),
-                      ESP_ERR_INVALID_ARG, err2, TAG, "invalid range of Blue to Green ratio");
+    ESP_GOTO_ON_ERROR(s_esp_isp_awb_config_hardware(isp_proc, awb_cfg), err2, TAG, "configure awb hardware failed");
 
     *ret_hdl = awb_ctlr;
 
@@ -136,6 +143,15 @@ esp_err_t esp_isp_del_awb_controller(isp_awb_ctlr_t awb_ctlr)
     s_isp_awb_free_controller(awb_ctlr);
 
     return ESP_OK;
+}
+
+esp_err_t esp_isp_awb_controller_reconfig(isp_awb_ctlr_t awb_ctlr, const esp_isp_awb_config_t *awb_cfg)
+{
+    ESP_RETURN_ON_FALSE(awb_ctlr && awb_cfg, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
+    int intr_priority = awb_cfg->intr_priority > 0 && awb_cfg->intr_priority <= 3 ? BIT(awb_cfg->intr_priority) : ESP_INTR_FLAG_LOWMED;
+    ESP_RETURN_ON_FALSE(intr_priority == awb_ctlr->intr_priority, ESP_ERR_INVALID_ARG, TAG, "can't change interrupt priority after initialized");
+
+    return s_esp_isp_awb_config_hardware(awb_ctlr->isp_proc, awb_cfg);
 }
 
 esp_err_t esp_isp_awb_controller_enable(isp_awb_ctlr_t awb_ctlr)
