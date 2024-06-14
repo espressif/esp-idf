@@ -15,21 +15,14 @@
 #include "soc/uart_pins.h"
 #include "soc/soc_caps.h"
 #include "soc/clk_tree_defs.h"
+#include "test_common.h"
 
 #define BUF_SIZE         (100)
 #define UART_BAUD_11520  (11520)
 #define UART_BAUD_115200 (115200)
 #define TOLERANCE        (0.02)    //baud rate error tolerance 2%.
 
-typedef struct {
-    uart_port_t port_num;
-    soc_module_clk_t default_src_clk;
-    int tx_pin_num;
-    int rx_pin_num;
-    uint32_t rx_flow_ctrl_thresh;
-} uart_port_param_t;
-
-static bool port_select(uart_port_param_t *port_param)
+bool port_select(uart_port_param_t *port_param)
 {
     char argv[10];
     unity_wait_for_signal_param("select to test 'uart' or 'lp_uart' port", argv, sizeof(argv));

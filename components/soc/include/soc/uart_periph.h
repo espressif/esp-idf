@@ -10,6 +10,8 @@
 #include "soc/gpio_sig_map.h"
 #include "soc/io_mux_reg.h"
 #include "soc/uart_pins.h"
+#include "soc/uart_struct.h"
+#include "soc/uart_reg.h"
 
 #ifdef __cplusplus
 extern "C" {

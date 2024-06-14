@@ -33,6 +33,7 @@
 #include "sdkconfig.h"
 #include "esp_rom_gpio.h"
 #include "clk_ctrl_os.h"
+#include "esp_pm.h"
 
 #ifdef CONFIG_UART_ISR_IN_IRAM
 #define UART_ISR_ATTR     IRAM_ATTR
@@ -41,6 +42,14 @@
 #define UART_ISR_ATTR
 #define UART_MALLOC_CAPS  MALLOC_CAP_DEFAULT
 #endif
+
+// Whether to use the APB_MAX lock.
+// Requirement of each chip, to keep sending:
+// - ESP32, S2, C3, S3: Protect APB, which is the core clock and clock of UART FIFO
+// - ESP32-C2: Protect APB (UART FIFO clock), core clock (TODO: IDF-8348)
+// - ESP32-C6, H2 and later chips: Protect core clock. Run in light-sleep hasn't been developed yet (TODO: IDF-8349),
+//   also need to avoid auto light-sleep.
+#define PROTECT_APB     (CONFIG_PM_ENABLE)
 
 #define XOFF (0x13)
 #define XON (0x11)
@@ -142,6 +151,9 @@ typedef struct {
     SemaphoreHandle_t tx_fifo_sem;      /*!< UART TX FIFO semaphore*/
     SemaphoreHandle_t tx_done_sem;      /*!< UART TX done semaphore*/
     SemaphoreHandle_t tx_brk_sem;       /*!< UART TX send break done semaphore*/
+#if PROTECT_APB
+    esp_pm_lock_handle_t pm_lock;   ///< Power management lock
+#endif
 } uart_obj_t;
 
 typedef struct {
@@ -1273,15 +1285,19 @@ esp_err_t uart_wait_tx_done(uart_port_t uart_num, TickType_t ticks_to_wait)
     } else {
         ticks_to_wait = ticks_to_wait - (ticks_end - ticks_start);
     }
+
+#if PROTECT_APB
+    esp_pm_lock_acquire(p_uart_obj[uart_num]->pm_lock);
+#endif
     //take 2nd tx_done_sem, wait given from ISR
     res = xSemaphoreTake(p_uart_obj[uart_num]->tx_done_sem, (TickType_t)ticks_to_wait);
-    if (res == pdFALSE) {
-        // The TX_DONE interrupt will be disabled in ISR
-        xSemaphoreGive(p_uart_obj[uart_num]->tx_mux);
-        return ESP_ERR_TIMEOUT;
-    }
+#if PROTECT_APB
+    esp_pm_lock_release(p_uart_obj[uart_num]->pm_lock);
+#endif
+
+    // The TX_DONE interrupt will be disabled in ISR
     xSemaphoreGive(p_uart_obj[uart_num]->tx_mux);
-    return ESP_OK;
+    return (res == pdFALSE) ? ESP_ERR_TIMEOUT : ESP_OK;
 }
 
 int uart_tx_chars(uart_port_t uart_num, const char *buffer, uint32_t len)
@@ -1308,6 +1324,9 @@ static int uart_tx_all(uart_port_t uart_num, const char *src, size_t size, bool 
 
     //lock for uart_tx
     xSemaphoreTake(p_uart_obj[uart_num]->tx_mux, (TickType_t)portMAX_DELAY);
+#if PROTECT_APB
+    esp_pm_lock_acquire(p_uart_obj[uart_num]->pm_lock);
+#endif
     p_uart_obj[uart_num]->coll_det_flg = false;
     if (p_uart_obj[uart_num]->tx_buf_size > 0) {
         size_t max_size = xRingbufferGetMaxItemSize(p_uart_obj[uart_num]->tx_ring_buf);
@@ -1351,6 +1370,9 @@ static int uart_tx_all(uart_port_t uart_num, const char *src, size_t size, bool 
         }
         xSemaphoreGive(p_uart_obj[uart_num]->tx_fifo_sem);
     }
+#if PROTECT_APB
+    esp_pm_lock_release(p_uart_obj[uart_num]->pm_lock);
+#endif
     xSemaphoreGive(p_uart_obj[uart_num]->tx_mux);
     return original_size;
 }
@@ -1535,6 +1557,11 @@ static void uart_free_driver_obj(uart_obj_t *uart_obj)
     }
 
     heap_caps_free(uart_obj->rx_data_buf);
+#if PROTECT_APB
+    if (uart_obj->pm_lock) {
+        esp_pm_lock_delete(uart_obj->pm_lock);
+    }
+#endif
     heap_caps_free(uart_obj);
 }
 
@@ -1570,6 +1597,12 @@ static uart_obj_t *uart_alloc_driver_obj(uart_port_t uart_num, int event_queue_s
             !uart_obj->tx_done_sem || !uart_obj->tx_fifo_sem) {
         goto err;
     }
+#if PROTECT_APB
+    if (esp_pm_lock_create(ESP_PM_APB_FREQ_MAX, 0, "uart_driver",
+                           &uart_obj->pm_lock) != ESP_OK) {
+        goto err;
+    }
+#endif
 
     return uart_obj;
 
