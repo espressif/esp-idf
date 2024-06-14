@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -326,7 +326,7 @@ static inline void parlio_ll_rx_treat_data_line_as_en(parl_io_dev_t *dev, uint32
 }
 
 /**
- * @brief Wether to enable the RX clock gating
+ * @brief Whether to enable the RX clock gating
  *
  * @param dev Parallel IO register base address
  * @param en True to enable, False to disable
@@ -457,7 +457,7 @@ static inline void parlio_ll_tx_set_trans_bit_len(parl_io_dev_t *dev, uint32_t b
 }
 
 /**
- * @brief Wether to enable the TX clock gating
+ * @brief Whether to enable the TX clock gating
  *
  * @note The MSB of TXD will be taken as the gating enable signal
  *
@@ -571,7 +571,7 @@ static inline void parlio_ll_tx_reset_fifo(parl_io_dev_t *dev)
 __attribute__((always_inline))
 static inline void parlio_ll_tx_set_idle_data_value(parl_io_dev_t *dev, uint32_t value)
 {
-    dev->tx_genrl_cfg.tx_idle_value = value;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(dev->tx_genrl_cfg, tx_idle_value, value);
 }
 
 /**

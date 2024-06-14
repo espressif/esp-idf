@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -98,7 +98,7 @@ static inline bool etm_ll_is_channel_enabled(soc_etm_dev_t *hw, uint32_t chan)
  */
 static inline void etm_ll_channel_set_event(soc_etm_dev_t *hw, uint32_t chan, uint32_t event)
 {
-    hw->channel[chan].evt_id.evt_id = event;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->channel[chan].eid, evt_id, event);
 }
 
 /**
@@ -110,10 +110,10 @@ static inline void etm_ll_channel_set_event(soc_etm_dev_t *hw, uint32_t chan, ui
  */
 static inline void etm_ll_channel_set_task(soc_etm_dev_t *hw, uint32_t chan, uint32_t task)
 {
-    hw->channel[chan].task_id.task_id = task;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->channel[chan].tid, task_id, task);
 }
 
-#define etm_ll_is_lpcore_wakeup_triggered()         lp_aon_ll_get_lpcore_etm_wakeup_flag()
+#define etm_ll_is_lpcore_wakeup_triggered()       lp_aon_ll_get_lpcore_etm_wakeup_flag()
 
 #define etm_ll_clear_lpcore_wakeup_status()       lp_aon_ll_clear_lpcore_etm_wakeup_flag()
 

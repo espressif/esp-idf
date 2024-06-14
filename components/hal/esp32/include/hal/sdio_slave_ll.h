@@ -17,6 +17,7 @@
 #pragma once
 
 #include "hal/sdio_slave_types.h"
+#include "hal/misc.h"
 #include "soc/slc_struct.h"
 #include "soc/slc_reg.h"
 #include "soc/host_struct.h"
@@ -514,7 +515,7 @@ static inline void sdio_slave_ll_host_send_int(slc_dev_t *slc, const sdio_slave_
 {
     //use registers in SLC to trigger, rather than write HOST registers directly
     //other interrupts than tohost interrupts are not supported yet
-    slc->intvec_tohost.slc0_intvec = (*mask);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(slc->intvec_tohost, slc0_intvec, *mask);
 }
 
 /**

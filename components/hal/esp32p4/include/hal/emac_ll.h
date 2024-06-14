@@ -628,11 +628,11 @@ static inline void emac_ll_clock_enable_mii(void *ext_regs)
 
     HP_SYS_CLKRST.peri_clk_ctrl00.reg_emac_rx_clk_en = 1;
     HP_SYS_CLKRST.peri_clk_ctrl00.reg_emac_rx_clk_src_sel = 1; // 0-pad_emac_txrx_clk, 1-pad_emac_rx_clk
-    HP_SYS_CLKRST.peri_clk_ctrl01.reg_emac_rx_clk_div_num = 0; // 25MHz
+    HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl01, reg_emac_rx_clk_div_num, 0); // 25MHz
 
     HP_SYS_CLKRST.peri_clk_ctrl01.reg_emac_tx_clk_en = 1;
     HP_SYS_CLKRST.peri_clk_ctrl01.reg_emac_tx_clk_src_sel = 1; // 0-pad_emac_txrx_clk, 1-pad_emac_tx_clk
-    HP_SYS_CLKRST.peri_clk_ctrl01.reg_emac_tx_clk_div_num = 0; // 25MHz
+    HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl01, reg_emac_tx_clk_div_num, 0); // 25MHz
 
     LP_AON_CLKRST.hp_clk_ctrl.hp_pad_emac_tx_clk_en = 1;
     LP_AON_CLKRST.hp_clk_ctrl.hp_pad_emac_rx_clk_en = 1;
@@ -653,11 +653,11 @@ static inline void emac_ll_clock_enable_rmii_input(void *ext_regs)
 
     HP_SYS_CLKRST.peri_clk_ctrl00.reg_emac_rx_clk_en = 1;
     HP_SYS_CLKRST.peri_clk_ctrl00.reg_emac_rx_clk_src_sel = 0; // 0-pad_emac_txrx_clk, 1-pad_emac_rx_clk
-    HP_SYS_CLKRST.peri_clk_ctrl01.reg_emac_rx_clk_div_num = 1; // set default divider
+    HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl01, reg_emac_rx_clk_div_num, 1); // set default divider
 
     HP_SYS_CLKRST.peri_clk_ctrl01.reg_emac_tx_clk_en = 1;
     HP_SYS_CLKRST.peri_clk_ctrl01.reg_emac_tx_clk_src_sel = 0; // 0-pad_emac_txrx_clk, 1-pad_emac_tx_clk
-    HP_SYS_CLKRST.peri_clk_ctrl01.reg_emac_tx_clk_div_num = 1; // set default divider
+    HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl01, reg_emac_tx_clk_div_num, 1); // set default divider
 
     LP_AON_CLKRST.hp_clk_ctrl.hp_pad_emac_tx_clk_en = 0;
     LP_AON_CLKRST.hp_clk_ctrl.hp_pad_emac_rx_clk_en = 0;
@@ -670,8 +670,8 @@ static inline void emac_ll_clock_enable_rmii_input(void *ext_regs)
 
 static inline void emac_ll_clock_rmii_rx_tx_div(void *ext_regs, int div)
 {
-    HP_SYS_CLKRST.peri_clk_ctrl01.reg_emac_rx_clk_div_num = div;
-    HP_SYS_CLKRST.peri_clk_ctrl01.reg_emac_tx_clk_div_num = div;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl01, reg_emac_rx_clk_div_num, div);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl01, reg_emac_tx_clk_div_num, div);
 }
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
