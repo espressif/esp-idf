@@ -41,6 +41,9 @@ static esp_clk_tree_calibrated_freq_t s_calibrated_freq = {};
 #define DEFAULT_32K_CLK_CAL_CYCLES  100
 /* Number of cycles for RC_FAST calibration */
 #define DEFAULT_RC_FAST_CAL_CYCLES  10000  // RC_FAST has a higher frequency, therefore, requires more cycles to get an accurate value
+                                           // Usually we calibrate on the divider of the RC_FAST clock, the cal_cycles is divided by
+                                           // the divider factor internally in rtc_clk_cal, so the time to spend on calibrating RC_FAST
+                                           // is always (10000 / f_rc_fast)
 
 
 /**
@@ -187,6 +190,10 @@ uint32_t esp_clk_tree_lp_fast_get_freq_hz(esp_clk_tree_src_freq_precision_t prec
 #if SOC_CLK_LP_FAST_SUPPORT_LP_PLL
     case SOC_RTC_FAST_CLK_SRC_LP_PLL:
         return clk_ll_lp_pll_get_freq_mhz() * MHZ;
+#endif
+#if SOC_CLK_LP_FAST_SUPPORT_XTAL
+    case SOC_RTC_FAST_CLK_SRC_XTAL:
+        return clk_hal_xtal_get_freq_mhz() * MHZ;
 #endif
     default:
         // Invalid clock source

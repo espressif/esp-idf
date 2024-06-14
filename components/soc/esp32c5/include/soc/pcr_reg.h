@@ -1902,21 +1902,6 @@ extern "C" {
  *  SYSCLK configuration register
  */
 #define PCR_SYSCLK_CONF_REG (DR_REG_PCR_BASE + 0x110)
-/** PCR_LS_DIV_NUM : HRO; bitpos: [7:0]; default: 0;
- *  clk_hproot is div1 of low-speed clock-source if clck-source is a low-speed
- *  clock-source such as XTAL/FOSC.
- */
-#define PCR_LS_DIV_NUM    0x000000FFU
-#define PCR_LS_DIV_NUM_M  (PCR_LS_DIV_NUM_V << PCR_LS_DIV_NUM_S)
-#define PCR_LS_DIV_NUM_V  0x000000FFU
-#define PCR_LS_DIV_NUM_S  0
-/** PCR_HS_DIV_NUM : HRO; bitpos: [15:8]; default: 2;
- *  clk_hproot is div3 of SPLL if the clock-source is high-speed clock SPLL.
- */
-#define PCR_HS_DIV_NUM    0x000000FFU
-#define PCR_HS_DIV_NUM_M  (PCR_HS_DIV_NUM_V << PCR_HS_DIV_NUM_S)
-#define PCR_HS_DIV_NUM_V  0x000000FFU
-#define PCR_HS_DIV_NUM_S  8
 /** PCR_SOC_CLK_SEL : R/W; bitpos: [17:16]; default: 0;
  *  Configures to select the clock source of HP_ROOT_CLK.\\
  *  0 (default): XTAL_CLK\\

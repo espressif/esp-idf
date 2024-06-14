@@ -1,9 +1,10 @@
 set(srcs "rtc_clk_init.c"
     "rtc_time.c"
     "rtc_clk.c"
+    "pmu_init.c"
+    "pmu_param.c"
     "chip_info.c"
 )
-
 
 if(NOT BOOTLOADER_BUILD)
     list(APPEND srcs "sar_periph_ctrl.c"

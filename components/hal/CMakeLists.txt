@@ -56,7 +56,7 @@ if(NOT BOOTLOADER_BUILD)
         endif()
     endif()
 
-    if(CONFIG_SOC_CLK_TREE_SUPPORTED OR CONFIG_IDF_TARGET_ESP32C5) # TODO: IDF-8642
+    if(CONFIG_SOC_CLK_TREE_SUPPORTED)
         list(APPEND srcs "${target}/clk_tree_hal.c")
     endif()
 

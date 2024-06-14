@@ -159,7 +159,6 @@ if(NOT BOOTLOADER_BUILD)
                 "sleep_modem.c"       # TODO: [ESP32C5] IDF-8638
                 "sleep_wake_stub.c"   # TODO: [ESP32C5] IDF-8638
                 "sleep_gpio.c"        # TODO: [ESP32C5] IDF-8638
-                "port/esp_clk_tree_common.c"    # TODO: [ESP32C5] IDF-8638
             )
     endif()
 

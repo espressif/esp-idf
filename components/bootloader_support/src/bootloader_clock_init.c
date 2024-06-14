@@ -53,18 +53,12 @@ __attribute__((weak)) void bootloader_clock_configure(void)
 
         clk_cfg.cpu_freq_mhz = cpu_freq_mhz;
 
-#if CONFIG_IDF_TARGET_ESP32C5
-        // TODO: [ESP32C5] IDF-9009 Check whether SOC_RTC_SLOW_CLK_SRC_RC_SLOW can be used on C5 MP
-        // RC150K can't do calibrate on ESP32C5MPW so not use it
-        clk_cfg.slow_clk_src = SOC_RTC_SLOW_CLK_SRC_RC32K;
-#else
         // Use RTC_SLOW clock source sel register field's default value, RC_SLOW, for 2nd stage bootloader
         // RTC_SLOW clock source will be switched according to Kconfig selection at application startup
         clk_cfg.slow_clk_src = rtc_clk_slow_src_get();
         if (clk_cfg.slow_clk_src == SOC_RTC_SLOW_CLK_SRC_INVALID) {
             clk_cfg.slow_clk_src = SOC_RTC_SLOW_CLK_SRC_RC_SLOW;
         }
-#endif
 
         // Use RTC_FAST clock source sel register field's default value, XTAL_DIV, for 2nd stage bootloader
         // RTC_FAST clock source will be switched to RC_FAST at application startup

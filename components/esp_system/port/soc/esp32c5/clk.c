@@ -30,7 +30,6 @@
 #include "esp_private/esp_pmu.h"
 #include "esp_rom_uart.h"
 #include "esp_rom_sys.h"
-#include "ocode_init.h"
 
 /* Number of cycles to wait from the 32k XTAL oscillator to consider it running.
  * Larger values increase startup delay. Smaller values may cause false positive
@@ -44,20 +43,13 @@ static void select_rtc_slow_clk(soc_rtc_slow_clk_src_t rtc_slow_clk_src);
 
 static const char *TAG = "clk";
 
-// TODO: [ESP32C5] IDF-8642
 void esp_rtc_init(void)
 {
 #if !CONFIG_IDF_ENV_FPGA
-#if SOC_PMU_SUPPORTED
     pmu_init();
-#endif
-    if (esp_rom_get_reset_reason(0) == RESET_REASON_CHIP_POWER_ON) {
-        esp_ocode_calib_init();
-    }
 #endif
 }
 
-// TODO: [ESP32C5] IDF-8642
 __attribute__((weak)) void esp_clk_init(void)
 {
 #if !CONFIG_IDF_ENV_FPGA
@@ -122,7 +114,7 @@ __attribute__((weak)) void esp_clk_init(void)
     // Re calculate the ccount to make time calculation correct.
     esp_cpu_set_cycle_count((uint64_t)esp_cpu_get_cycle_count() * new_freq_mhz / old_freq_mhz);
 
-    // Set crypto clock (`clk_sec`) to use 160M SPLL clock
+    // Set crypto clock (`clk_sec`) to use 480M SPLL clock
     REG_SET_FIELD(PCR_SEC_CONF_REG, PCR_SEC_CLK_SEL, 0x2);
 }
 
@@ -195,7 +187,8 @@ void rtc_clk_select_rtc_slow_clk(void)
  */
 __attribute__((weak)) void esp_perip_clk_init(void)
 {
-    // TODO: [ESP32C5] IDF-8844
+// TODO: [ESP32C5] IDF-8844
+#if SOC_MODEM_CLOCK_SUPPORTED
     // modem_clock_domain_pmu_state_icg_map_init();
     /* During system initialization, the low-power clock source of the modem
      * (WiFi, BLE or Coexist) follows the configuration of the slow clock source
@@ -211,6 +204,7 @@ __attribute__((weak)) void esp_perip_clk_init(void)
                                                   : (rtc_slow_clk_src == SOC_RTC_SLOW_CLK_SRC_OSC_SLOW) ? MODEM_CLOCK_LPCLK_SRC_EXT32K
                                                   : MODEM_CLOCK_LPCLK_SRC_RC32K);
     modem_clock_select_lp_clock_source(PERIPH_WIFI_MODULE, modem_lpclk_src, 0);
+#endif
 
     ESP_EARLY_LOGW(TAG, "esp_perip_clk_init() has not been implemented yet");
 #if 0  // TODO: [ESP32C5] IDF-8844

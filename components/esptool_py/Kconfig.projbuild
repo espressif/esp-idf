@@ -3,8 +3,9 @@ menu "Serial flasher config"
 
     config ESPTOOLPY_NO_STUB
         bool "Disable download stub"
-        default "y" if IDF_ENV_FPGA || IDF_ENV_BRINGUP
-        default "n"
+        default y if IDF_ENV_FPGA || IDF_ENV_BRINGUP
+        default y if IDF_TARGET_ESP32C5 # TODO: IDF-8631 to be removed
+        default n
 
         help
             The flasher tool sends a precompiled download stub first by default. That stub allows things
