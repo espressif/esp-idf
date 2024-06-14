@@ -6,3 +6,5 @@
 gdbgui; sys_platform != 'win32'
 gdbgui; sys_platform == 'win32' and python_version < "3.11"
 dnspython>=2.6.1 # not directly required, pinned by Snyk to avoid a vulnerability
+jinja2>=3.1.4 # not directly required, pinned by Snyk to avoid a vulnerability
+werkzeug>=3.0.3 # not directly required, pinned by Snyk to avoid a vulnerability
