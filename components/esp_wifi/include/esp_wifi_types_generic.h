@@ -17,6 +17,9 @@
 extern "C" {
 #endif
 
+/**
+  * @brief WiFi mode type
+  */
 typedef enum {
     WIFI_MODE_NULL = 0,  /**< null mode */
     WIFI_MODE_STA,       /**< WiFi station mode */
@@ -26,6 +29,9 @@ typedef enum {
     WIFI_MODE_MAX
 } wifi_mode_t;
 
+/**
+  * @brief WiFi interface type
+  */
 typedef enum {
     WIFI_IF_STA = ESP_IF_WIFI_STA,
     WIFI_IF_AP  = ESP_IF_WIFI_AP,
@@ -41,12 +47,17 @@ typedef enum {
 #define WIFI_ROC_REQ     1
 #define WIFI_ROC_CANCEL  0
 
+/**
+  * @brief WiFi country policy
+  */
 typedef enum {
     WIFI_COUNTRY_POLICY_AUTO,   /**< Country policy is auto, use the country info of AP to which the station is connected */
     WIFI_COUNTRY_POLICY_MANUAL, /**< Country policy is manual, always use the configured country info */
 } wifi_country_policy_t;
 
-/** @brief Structure describing WiFi country-based regional restrictions. */
+/**
+  * @brief Structure describing WiFi country-based regional restrictions.
+  */
 typedef struct {
     char                  cc[3];   /**< country code string */
     uint8_t               schan;   /**< start channel */
@@ -55,8 +66,12 @@ typedef struct {
     wifi_country_policy_t policy;  /**< country policy */
 } wifi_country_t;
 
-/* Strength of authmodes */
-/* OPEN < WEP < WPA_PSK < OWE < WPA2_PSK = WPA_WPA2_PSK < WAPI_PSK < WPA3_PSK = WPA2_WPA3_PSK = DPP */
+/**
+  * @brief WiFi authmode type
+  * Strength of authmodes
+  * Personal Networks   : OPEN < WEP < WPA_PSK < OWE < WPA2_PSK = WPA_WPA2_PSK < WAPI_PSK < WPA3_PSK = WPA2_WPA3_PSK = DPP
+  * Enterprise Networks : WIFI_AUTH_WPA2_ENTERPRISE < WIFI_AUTH_WPA3_ENTERPRISE = WIFI_AUTH_WPA2_WPA3_ENTERPRISE < WIFI_AUTH_WPA3_ENT_192
+  */
 typedef enum {
     WIFI_AUTH_OPEN = 0,         /**< authenticate mode : open */
     WIFI_AUTH_WEP,              /**< authenticate mode : WEP */
@@ -76,6 +91,9 @@ typedef enum {
     WIFI_AUTH_MAX
 } wifi_auth_mode_t;
 
+/**
+  * @brief WiFi error reason
+  */
 typedef enum {
     WIFI_REASON_UNSPECIFIED                        = 1,
     WIFI_REASON_AUTH_EXPIRE                        = 2,
@@ -140,6 +158,9 @@ typedef enum {
     WIFI_REASON_NO_AP_FOUND_IN_RSSI_THRESHOLD      = 212,
 } wifi_err_reason_t;
 
+/**
+  * @brief WiFi second channel type
+  */
 typedef enum {
     WIFI_SECOND_CHAN_NONE = 0,  /**< the channel width is HT20 */
     WIFI_SECOND_CHAN_ABOVE,     /**< the channel width is HT40 and the secondary channel is above the primary channel */
@@ -158,31 +179,43 @@ typedef enum {
     .home_chan_dwell_time = WIFI_SCAN_HOME_CHANNEL_DWELL_DEFAULT_TIME\
 }
 
+/**
+  * @brief WiFi scan type
+  */
 typedef enum {
     WIFI_SCAN_TYPE_ACTIVE = 0,  /**< active scan */
     WIFI_SCAN_TYPE_PASSIVE,     /**< passive scan */
 } wifi_scan_type_t;
 
-/** @brief Range of active scan times per channel */
+/**
+  * @brief Range of active scan times per channel
+  */
 typedef struct {
     uint32_t min;  /**< minimum active scan time per channel, units: millisecond */
     uint32_t max;  /**< maximum active scan time per channel, units: millisecond, values above 1500ms may
-                                          cause station to disconnect from AP and are not recommended.  */
+                        cause station to disconnect from AP and are not recommended.  */
 } wifi_active_scan_time_t;
 
-/** @brief Aggregate of active & passive scan time per channel */
+/**
+  * @brief Aggregate of active & passive scan time per channel
+  */
 typedef struct {
     wifi_active_scan_time_t active;  /**< active scan time per channel, units: millisecond. */
     uint32_t passive;                /**< passive scan time per channel, units: millisecond, values above 1500ms may
                                           cause station to disconnect from AP and are not recommended. */
 } wifi_scan_time_t;
 
+/**
+  * @brief Bitmap for scan channel
+  */
 typedef struct {
     uint16_t ghz_2_channels;     /**< Represents 2.4 GHz channels */
     uint32_t ghz_5_channels;     /**< Represents 5 GHz channels */
 } wifi_scan_channel_bitmap_t;
 
-/** @brief Parameters for an SSID scan. */
+/**
+  * @brief Parameters for an SSID scan
+  */
 typedef struct {
     uint8_t *ssid;                                     /**< SSID of AP */
     uint8_t *bssid;                                    /**< MAC address of AP */
@@ -194,12 +227,17 @@ typedef struct {
     wifi_scan_channel_bitmap_t channel_bitmap;         /**< Channel bitmap for setting specific channels to be scanned. For 2.4ghz channels set ghz_2_channels from BIT(1) to BIT(14) from LSB to MSB order to indicate channels to be scanned. Currently scanning in 5ghz channels is not supported. Please note that the 'channel' parameter above needs to be set to 0 to allow scanning by bitmap. */
 } wifi_scan_config_t;
 
-/** @brief Parameters default scan configurations. */
+/**
+  * @brief Parameters default scan configurations
+  */
 typedef struct {
     wifi_scan_time_t scan_time;  /**< scan time per channel */
     uint8_t home_chan_dwell_time;/**< time spent at home channel between scanning consecutive channels.*/
 } wifi_scan_default_params_t;
 
+/**
+  * @brief WiFi cipher type
+  */
 typedef enum {
     WIFI_CIPHER_TYPE_NONE = 0,   /**< the cipher type is none */
     WIFI_CIPHER_TYPE_WEP40,      /**< the cipher type is WEP40 */
@@ -218,7 +256,6 @@ typedef enum {
 
 /**
   * @brief WiFi antenna
-  *
   */
 typedef enum {
     WIFI_ANT_ANT0,          /**< WiFi antenna 0 */
@@ -226,7 +263,9 @@ typedef enum {
     WIFI_ANT_MAX,           /**< Invalid WiFi antenna */
 } wifi_ant_t;
 
-/** @brief Description of a WiFi AP HE Info */
+/**
+  * @brief Description of a WiFi AP HE Info
+  */
 typedef struct {
     uint8_t bss_color: 6;                 /**< an unsigned integer whose value is the BSS Color of the BSS corresponding to the AP */
     uint8_t partial_bss_color: 1;         /**< indicate if an AID assignment rule based on the BSS color */
@@ -234,7 +273,9 @@ typedef struct {
     uint8_t bssid_index;                  /**< in M-BSSID set, identifies the nontransmitted BSSID */
 } wifi_he_ap_info_t;
 
-/** @brief Description of a WiFi AP */
+/**
+  * @brief Description of a WiFi AP
+  */
 typedef struct {
     uint8_t bssid[6];                     /**< MAC address of AP */
     uint8_t ssid[33];                     /**< SSID of AP */
@@ -268,23 +309,34 @@ typedef struct {
                                                channel frequency of the second segment. */
 } wifi_ap_record_t;
 
+/**
+  * @brief WiFi scan method
+  */
 typedef enum {
     WIFI_FAST_SCAN = 0,                   /**< Do fast scan, scan will end after find SSID match AP */
     WIFI_ALL_CHANNEL_SCAN,                /**< All channel scan, scan will end after scan all the channel */
 } wifi_scan_method_t;
 
+/**
+  * @brief WiFi sort AP method
+  */
 typedef enum {
     WIFI_CONNECT_AP_BY_SIGNAL = 0,        /**< Sort match AP in scan list by RSSI */
     WIFI_CONNECT_AP_BY_SECURITY,          /**< Sort match AP in scan list by security mode */
 } wifi_sort_method_t;
 
-/** @brief Structure describing parameters for a WiFi fast scan */
+/**
+  * @brief Structure describing parameters for a WiFi fast scan
+  */
 typedef struct {
     int8_t              rssi;             /**< The minimum rssi to accept in the fast scan mode */
     wifi_auth_mode_t    authmode;         /**< The weakest authmode to accept in the fast scan mode
                                                Note: In case this value is not set and password is set as per WPA2 standards(password len >= 8), it will be defaulted to WPA2 and device won't connect to deprecated WEP/WPA networks. Please set authmode threshold as WIFI_AUTH_WEP/WIFI_AUTH_WPA_PSK to connect to WEP/WPA networks */
 } wifi_scan_threshold_t;
 
+/**
+  * @brief WiFi power save type
+  */
 typedef enum {
     WIFI_PS_NONE,        /**< No power save */
     WIFI_PS_MIN_MODEM,   /**< Minimum modem power saving. In this mode, station wakes up to receive beacon every DTIM period */
@@ -299,6 +351,9 @@ typedef enum {
 #define WIFI_PROTOCOL_11AC        0x20
 #define WIFI_PROTOCOL_11AX        0x40
 
+/**
+  * @brief WiFi bandwidth type
+  */
 typedef enum {
     WIFI_BW_HT20   = 1,       /* Bandwidth is HT20      */
     WIFI_BW20 = WIFI_BW_HT20, /* Bandwidth is 20 MHz    */
@@ -309,13 +364,17 @@ typedef enum {
     WIFI_BW80_BW80 = 5,       /* Bandwidth is 80+80 MHz */
 } wifi_bandwidth_t;
 
-/** Configuration structure for Protected Management Frame */
+/**
+  * @brief Configuration structure for Protected Management Frame
+  */
 typedef struct {
     bool capable;            /**< Deprecated variable. Device will always connect in PMF mode if other device also advertises PMF capability. */
     bool required;           /**< Advertises that Protected Management Frame is required. Device will not associate to non-PMF capable devices. */
 } wifi_pmf_config_t;
 
-/** Configuration for SAE PWE derivation */
+/**
+  * @brief Configuration for SAE PWE derivation
+  */
 typedef enum {
     WPA3_SAE_PWE_UNSPECIFIED,
     WPA3_SAE_PWE_HUNT_AND_PECK,
@@ -323,14 +382,18 @@ typedef enum {
     WPA3_SAE_PWE_BOTH,
 } wifi_sae_pwe_method_t;
 
-/** Configuration for SAE-PK  */
+/**
+  * @brief Configuration for SAE-PK
+  */
 typedef enum {
     WPA3_SAE_PK_MODE_AUTOMATIC = 0,
     WPA3_SAE_PK_MODE_ONLY = 1,
     WPA3_SAE_PK_MODE_DISABLED = 2,
 } wifi_sae_pk_mode_t;
 
-/** @brief Soft-AP configuration settings for the device */
+/**
+  * @brief Soft-AP configuration settings for the device
+  */
 typedef struct {
     uint8_t ssid[32];           /**< SSID of soft-AP. If ssid_len field is 0, this must be a Null terminated string. Otherwise, length is set according to ssid_len. */
     uint8_t password[64];       /**< Password of soft-AP. */
@@ -349,7 +412,10 @@ typedef struct {
 } wifi_ap_config_t;
 
 #define SAE_H2E_IDENTIFIER_LEN 32
-/** @brief STA configuration settings for the device */
+
+/**
+  * @brief STA configuration settings for the device
+  */
 typedef struct {
     uint8_t ssid[32];                         /**< SSID of target AP. */
     uint8_t password[64];                     /**< Password of target AP. */
@@ -386,7 +452,6 @@ typedef struct {
 
 /**
   * @brief NAN Discovery start configuration
-  *
   */
 typedef struct {
     uint8_t op_channel;    /**< NAN Discovery operating channel */
@@ -395,19 +460,22 @@ typedef struct {
     uint16_t warm_up_sec;  /**< Warm up time before assuming NAN Anchor Master role */
 } wifi_nan_config_t;
 
-/** @brief Configuration data for device's AP or STA or NAN.
- *
- * The usage of this union (for ap, sta or nan configuration) is determined by the accompanying
- * interface argument passed to esp_wifi_set_config() or esp_wifi_get_config()
- *
- */
+/**
+  * @brief Configuration data for device's AP or STA or NAN.
+  *
+  * The usage of this union (for ap, sta or nan configuration) is determined by the accompanying
+  * interface argument passed to esp_wifi_set_config() or esp_wifi_get_config()
+  *
+  */
 typedef union {
     wifi_ap_config_t  ap;  /**< configuration of AP */
     wifi_sta_config_t sta; /**< configuration of STA */
     wifi_nan_config_t nan; /**< configuration of NAN */
 } wifi_config_t;
 
-/** @brief Description of STA associated with AP */
+/**
+  * @brief Description of STA associated with AP
+  */
 typedef struct {
     uint8_t mac[6];          /**< mac address */
     int8_t  rssi;            /**< current average rssi of sta connected */
@@ -422,6 +490,9 @@ typedef struct {
     uint32_t reserved: 24;   /**< bit: 8..31 reserved */
 } wifi_sta_info_t;
 
+/**
+  * @brief WiFi storage type
+  */
 typedef enum {
     WIFI_STORAGE_FLASH,  /**< all configuration will store in both memory and flash */
     WIFI_STORAGE_RAM,    /**< all configuration will only store in the memory */
@@ -467,10 +538,10 @@ typedef enum {
 } wifi_phy_mode_t;
 
 /**
- * @brief Vendor Information Element header
- *
- * The first bytes of the Information Element will match this header. Payload follows.
- */
+  * @brief Vendor Information Element header
+  *
+  * The first bytes of the Information Element will match this header. Payload follows.
+  */
 typedef struct {
     uint8_t element_id;      /**< Should be set to WIFI_VENDOR_IE_ELEMENT_ID (0xDD) */
     uint8_t length;          /**< Length of all bytes in the element data following this field. Minimum 4. */
@@ -512,7 +583,9 @@ typedef enum {
 #define WIFI_PROMIS_CTRL_FILTER_MASK_CFEND       (1<<30)       /**< filter the control packets with subtype of CF-END */
 #define WIFI_PROMIS_CTRL_FILTER_MASK_CFENDACK    (1<<31)       /**< filter the control packets with subtype of CF-END+CF-ACK */
 
-/** @brief Mask for filtering different packet types in promiscuous mode. */
+/**
+  * @brief Mask for filtering different packet types in promiscuous mode
+  */
 typedef struct {
     uint32_t filter_mask; /**< OR of one or more filter values WIFI_PROMIS_FILTER_* */
 } wifi_promiscuous_filter_t;
@@ -579,10 +652,8 @@ typedef struct {
 typedef int (* wifi_action_rx_cb_t)(uint8_t *hdr, uint8_t *payload,
                                     size_t len, uint8_t channel);
 /**
- * @brief Action Frame Tx Request
- *
- *
- */
+  * @brief Action Frame Tx Request
+  */
 typedef struct {
     wifi_interface_t ifx;       /**< WiFi interface to send request to */
     uint8_t dest_mac[6];        /**< Destination MAC address */
@@ -615,6 +686,7 @@ typedef struct {
 #define ESP_WIFI_MAX_FILTER_LEN         256
 #define ESP_WIFI_MAX_SVC_INFO_LEN       64
 #define ESP_WIFI_MAX_NEIGHBOR_REP_LEN   64
+
 /**
   * @brief NAN Services types
   *
@@ -773,7 +845,9 @@ typedef enum {
     WIFI_PHY_RATE_MAX,
 } wifi_phy_rate_t;
 
-/** WiFi event declarations */
+/**
+  * @brief WiFi event declarations
+  */
 typedef enum {
     WIFI_EVENT_WIFI_READY = 0,           /**< WiFi ready */
     WIFI_EVENT_SCAN_DONE,                /**< Finished scanning AP */
@@ -841,14 +915,18 @@ typedef enum {
 ESP_EVENT_DECLARE_BASE(WIFI_EVENT);
 /** @endcond **/
 
-/** Argument structure for WIFI_EVENT_SCAN_DONE event */
+/**
+  * @brief Argument structure for WIFI_EVENT_SCAN_DONE event
+  */
 typedef struct {
     uint32_t status;          /**< status of scanning APs: 0 — success, 1 - failure */
     uint8_t  number;          /**< number of scan results */
     uint8_t  scan_id;         /**< scan sequence number, used for block scan */
 } wifi_event_sta_scan_done_t;
 
-/** Argument structure for WIFI_EVENT_STA_CONNECTED event */
+/**
+  * @brief Argument structure for WIFI_EVENT_STA_CONNECTED event
+  */
 typedef struct {
     uint8_t ssid[32];         /**< SSID of connected AP */
     uint8_t ssid_len;         /**< SSID length of connected AP */
@@ -858,7 +936,9 @@ typedef struct {
     uint16_t aid;             /**< authentication id assigned by the connected AP */
 } wifi_event_sta_connected_t;
 
-/** Argument structure for WIFI_EVENT_STA_DISCONNECTED event */
+/**
+  * @brief Argument structure for WIFI_EVENT_STA_DISCONNECTED event
+  */
 typedef struct {
     uint8_t ssid[32];         /**< SSID of disconnected AP */
     uint8_t ssid_len;         /**< SSID length of disconnected AP */
@@ -867,18 +947,24 @@ typedef struct {
     int8_t  rssi;             /**< rssi of disconnection */
 } wifi_event_sta_disconnected_t;
 
-/** Argument structure for WIFI_EVENT_STA_AUTHMODE_CHANGE event */
+/**
+  * @brief Argument structure for WIFI_EVENT_STA_AUTHMODE_CHANGE event
+  */
 typedef struct {
     wifi_auth_mode_t old_mode;         /**< the old auth mode of AP */
     wifi_auth_mode_t new_mode;         /**< the new auth mode of AP */
 } wifi_event_sta_authmode_change_t;
 
-/** Argument structure for WIFI_EVENT_STA_WPS_ER_PIN event */
+/**
+  * @brief Argument structure for WIFI_EVENT_STA_WPS_ER_PIN event
+  */
 typedef struct {
     uint8_t pin_code[8];         /**< PIN code of station in enrollee mode */
 } wifi_event_sta_wps_er_pin_t;
 
-/** Argument structure for WIFI_EVENT_STA_WPS_ER_FAILED event */
+/**
+  * @brief Argument structure for WIFI_EVENT_STA_WPS_ER_FAILED event
+  */
 typedef enum {
     WPS_FAIL_REASON_NORMAL = 0,     /**< WPS normal fail reason */
     WPS_FAIL_REASON_RECV_M2D,       /**< WPS receive M2D frame */
@@ -890,7 +976,9 @@ typedef enum {
 #define MAX_PASSPHRASE_LEN  64
 #define MAX_WPS_AP_CRED     3
 
-/** Argument structure for WIFI_EVENT_STA_WPS_ER_SUCCESS event */
+/**
+  * @brief Argument structure for WIFI_EVENT_STA_WPS_ER_SUCCESS event
+  */
 typedef struct {
     uint8_t ap_cred_cnt;                        /**< Number of AP credentials received */
     struct {
@@ -899,14 +987,18 @@ typedef struct {
     } ap_cred[MAX_WPS_AP_CRED];                 /**< All AP credentials received from WPS handshake */
 } wifi_event_sta_wps_er_success_t;
 
-/** Argument structure for WIFI_EVENT_AP_STACONNECTED event */
+/**
+  * @brief Argument structure for WIFI_EVENT_AP_STACONNECTED event
+  */
 typedef struct {
     uint8_t mac[6];           /**< MAC address of the station connected to Soft-AP */
     uint8_t aid;              /**< the aid that soft-AP gives to the station connected to  */
     bool is_mesh_child;       /**< flag to identify mesh child */
 } wifi_event_ap_staconnected_t;
 
-/** Argument structure for WIFI_EVENT_AP_STADISCONNECTED event */
+/**
+  * @brief Argument structure for WIFI_EVENT_AP_STADISCONNECTED event
+  */
 typedef struct {
     uint8_t mac[6];           /**< MAC address of the station disconnects to soft-AP */
     uint8_t aid;              /**< the aid that soft-AP gave to the station disconnects to  */
@@ -914,18 +1006,24 @@ typedef struct {
     uint16_t reason;           /**< reason of disconnection */
 } wifi_event_ap_stadisconnected_t;
 
-/** Argument structure for WIFI_EVENT_AP_PROBEREQRECVED event */
+/**
+  * @brief Argument structure for WIFI_EVENT_AP_PROBEREQRECVED event
+  */
 typedef struct {
     int rssi;                 /**< Received probe request signal strength */
     uint8_t mac[6];           /**< MAC address of the station which send probe request */
 } wifi_event_ap_probe_req_rx_t;
 
-/** Argument structure for WIFI_EVENT_STA_BSS_RSSI_LOW event */
+/**
+  * @brief Argument structure for WIFI_EVENT_STA_BSS_RSSI_LOW event
+  */
 typedef struct {
     int32_t rssi;                 /**< RSSI value of bss */
 } wifi_event_bss_rssi_low_t;
 
-/** Argument structure for WIFI_EVENT_HOME_CHANNEL_CHANGE event */
+/**
+  * @brief Argument structure for WIFI_EVENT_HOME_CHANNEL_CHANGE event
+  */
 typedef struct {
     uint8_t            old_chan;   /**< old home channel of the device */
     wifi_second_chan_t old_snd;    /**< old second channel of the device */
@@ -947,7 +1045,9 @@ typedef enum {
     FTM_STATUS_USER_TERM,       /**< User triggered termination */
 } wifi_ftm_status_t;
 
-/** Argument structure for */
+/**
+  * @brief Argument structure for FTM report entry
+  */
 typedef struct {
     uint8_t dlog_token;     /**< Dialog Token of the FTM frame */
     int8_t rssi;            /**< RSSI of the FTM frame received */
@@ -958,7 +1058,9 @@ typedef struct {
     uint64_t t4;            /**< Time of arrival of ACK at FTM Responder in pSec */
 } wifi_ftm_report_entry_t;
 
-/** Argument structure for WIFI_EVENT_FTM_REPORT event */
+/**
+  * @brief Argument structure for WIFI_EVENT_FTM_REPORT event
+  */
 typedef struct {
     uint8_t peer_mac[6];                        /**< MAC address of the FTM Peer */
     wifi_ftm_status_t status;                   /**< Status of the FTM operation */
@@ -977,7 +1079,9 @@ typedef struct {
 #define WIFI_STATIS_PS        (1<<4)
 #define WIFI_STATIS_ALL       (-1)
 
-/** Argument structure for WIFI_EVENT_ACTION_TX_STATUS event */
+/**
+  * @brief Argument structure for WIFI_EVENT_ACTION_TX_STATUS event
+  */
 typedef struct {
     wifi_interface_t ifx;     /**< WiFi interface to send request to */
     uint32_t context;         /**< Context to identify the request */
@@ -985,16 +1089,23 @@ typedef struct {
     uint8_t status;           /**< Status of the operation */
 } wifi_event_action_tx_status_t;
 
-/** Argument structure for WIFI_EVENT_ROC_DONE event */
+/**
+  * @brief Argument structure for WIFI_EVENT_ROC_DONE event
+  */
 typedef struct {
     uint32_t context;         /**< Context to identify the request */
 } wifi_event_roc_done_t;
 
-/** Argument structure for WIFI_EVENT_AP_WPS_RG_PIN event */
+/**
+  * @brief Argument structure for WIFI_EVENT_AP_WPS_RG_PIN event
+  */
 typedef struct {
     uint8_t pin_code[8];         /**< PIN code of station in enrollee mode */
 } wifi_event_ap_wps_rg_pin_t;
 
+/**
+  * @brief WPS fail reason
+  */
 typedef enum {
     WPS_AP_FAIL_REASON_NORMAL = 0,     /**< WPS normal fail reason */
     WPS_AP_FAIL_REASON_CONFIG,         /**< WPS failed due to incorrect config */
@@ -1002,18 +1113,24 @@ typedef enum {
     WPS_AP_FAIL_REASON_MAX,
 } wps_fail_reason_t;
 
-/** Argument structure for WIFI_EVENT_AP_WPS_RG_FAILED event */
+/**
+  * @brief Argument structure for WIFI_EVENT_AP_WPS_RG_FAILED event
+  */
 typedef struct {
     wps_fail_reason_t reason;          /**< WPS failure reason wps_fail_reason_t */
     uint8_t peer_macaddr[6];           /**< Enrollee mac address */
 } wifi_event_ap_wps_rg_fail_reason_t;
 
-/** Argument structure for WIFI_EVENT_AP_WPS_RG_SUCCESS event */
+/**
+  * @brief Argument structure for WIFI_EVENT_AP_WPS_RG_SUCCESS event
+  */
 typedef struct {
     uint8_t peer_macaddr[6];           /**< Enrollee mac address */
 } wifi_event_ap_wps_rg_success_t;
 
-/** Argument structure for WIFI_EVENT_NAN_SVC_MATCH event */
+/**
+  * @brief Argument structure for WIFI_EVENT_NAN_SVC_MATCH event
+  */
 typedef struct {
     uint8_t subscribe_id;       /**< Subscribe Service Identifier */
     uint8_t publish_id;         /**< Publish Service Identifier */
@@ -1021,14 +1138,18 @@ typedef struct {
     bool update_pub_id;         /**< Indicates whether publisher's service ID needs to be updated */
 } wifi_event_nan_svc_match_t;
 
-/** Argument structure for WIFI_EVENT_NAN_REPLIED event */
+/**
+  * @brief Argument structure for WIFI_EVENT_NAN_REPLIED event
+  */
 typedef struct {
     uint8_t publish_id;         /**< Publish Service Identifier */
     uint8_t subscribe_id;       /**< Subscribe Service Identifier */
     uint8_t sub_if_mac[6];      /**< NAN Interface MAC of the Subscriber */
 } wifi_event_nan_replied_t;
 
-/** Argument structure for WIFI_EVENT_NAN_RECEIVE event */
+/**
+  * @brief Argument structure for WIFI_EVENT_NAN_RECEIVE event
+  */
 typedef struct {
     uint8_t inst_id;                                 /**< Our Service Identifier */
     uint8_t peer_inst_id;                            /**< Peer's Service Identifier */
@@ -1036,7 +1157,9 @@ typedef struct {
     uint8_t peer_svc_info[ESP_WIFI_MAX_SVC_INFO_LEN];/**< Peer Service Info */
 } wifi_event_nan_receive_t;
 
-/** Argument structure for WIFI_EVENT_NDP_INDICATION event */
+/**
+  * @brief Argument structure for WIFI_EVENT_NDP_INDICATION event
+  */
 typedef struct {
     uint8_t publish_id;                         /**< Publish Id for NAN Service */
     uint8_t ndp_id;                             /**< NDP instance id */
@@ -1045,7 +1168,9 @@ typedef struct {
     uint8_t svc_info[ESP_WIFI_MAX_SVC_INFO_LEN];/**< Service Specific Info */
 } wifi_event_ndp_indication_t;
 
-/** Argument structure for WIFI_EVENT_NDP_CONFIRM event */
+/**
+  * @brief Argument structure for WIFI_EVENT_NDP_CONFIRM event
+  */
 typedef struct {
     uint8_t status;                             /**< NDP status code */
     uint8_t ndp_id;                             /**< NDP instance id */
@@ -1055,14 +1180,18 @@ typedef struct {
     uint8_t svc_info[ESP_WIFI_MAX_SVC_INFO_LEN];/**< Service Specific Info */
 } wifi_event_ndp_confirm_t;
 
-/** Argument structure for WIFI_EVENT_NDP_TERMINATED event */
+/**
+  * @brief Argument structure for WIFI_EVENT_NDP_TERMINATED event
+  */
 typedef struct {
     uint8_t reason;                             /**< Termination reason code */
     uint8_t ndp_id;                             /**< NDP instance id */
     uint8_t init_ndi[6];                        /**< Initiator's NAN Data Interface MAC */
 } wifi_event_ndp_terminated_t;
 
-/** Argument structure for WIFI_EVENT_STA_NEIGHBOR_REP event */
+/**
+  * @brief Argument structure for WIFI_EVENT_STA_NEIGHBOR_REP event
+  */
 typedef struct {
     uint8_t report[ESP_WIFI_MAX_NEIGHBOR_REP_LEN];  /**< Neighbor Report received from the AP*/
     uint16_t report_len;                            /**< Length of the report*/
