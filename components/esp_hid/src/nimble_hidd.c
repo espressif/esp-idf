@@ -656,7 +656,7 @@ esp_err_t esp_ble_hidd_dev_init(esp_hidd_dev_t *dev_p, const esp_hid_device_conf
         .queue_size = 5,
         .task_name = "ble_hidd_events",
         .task_priority = uxTaskPriorityGet(NULL),
-        .task_stack_size = 2048,
+        .task_stack_size = 4096,
         .task_core_id = tskNO_AFFINITY
     };
     rc = esp_event_loop_create(&event_task_args, &s_dev->event_loop_handle);
