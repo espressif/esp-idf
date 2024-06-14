@@ -49,8 +49,8 @@ typedef struct {
                                                          *   so that all the distorted pixels will be counted for the reference of white balance.
                                                          */
     } white_patch;                                        /*!< white patch configuration */
-    int intr_priority;                                  /*!< The interrupt priority, range 0~7, if set to 0, the driver will try to allocate an interrupt with
-                                                         *   a relative low priority (1,2,3) otherwise the larger the higher, 7 is NMI.
+    int intr_priority;                                  /*!< The interrupt priority, range 0~3, if set to 0, the driver will try to allocate an interrupt with
+                                                         *   a relative low priority (1,2,3)
                                                          */
 } esp_isp_awb_config_t;
 
@@ -81,6 +81,19 @@ esp_err_t esp_isp_new_awb_controller(isp_proc_handle_t isp_proc, const esp_isp_a
  *         - ESP_ERR_INVALID_STATE Driver state is invalid.
  */
 esp_err_t esp_isp_del_awb_controller(isp_awb_ctlr_t awb_ctlr);
+
+/**
+ * @brief Reconfigure the ISP AWB controller
+ * @note  This function is allowed to be called no matter the awb controller is enabled or not.
+ *
+ * @param[in] awb_ctlr  AWB controller handle
+ * @param[in]  awb_cfg    Pointer to AWB config. Refer to ``esp_isp_awb_config_t``
+ *
+ * @return
+ *         - ESP_OK                On success
+ *         - ESP_ERR_INVALID_ARG   If the combination of arguments is invalid
+ */
+esp_err_t esp_isp_awb_controller_reconfig(isp_awb_ctlr_t awb_ctlr, const esp_isp_awb_config_t *awb_cfg);
 
 /**
  * @brief Enable an ISP AWB controller
