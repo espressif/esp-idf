@@ -1261,6 +1261,29 @@ int uart_write_bytes_with_break(uart_port_t uart_num, const void *src, size_t si
     return uart_tx_all(uart_num, src, size, 1, brk_len);
 }
 
+int uart_send_break(uart_port_t uart_num, int brk_len)
+{
+    UART_CHECK((p_uart_obj[uart_num]->tx_buf_size == 0), "require tx_buf_size=0", (-1));
+    // lock for uart_tx
+    xSemaphoreTake(p_uart_obj[uart_num]->tx_mux, (portTickType)portMAX_DELAY);
+    p_uart_obj[uart_num]->coll_det_flg = false;
+
+    // semaphore for tx_fifo available
+    if (pdTRUE == xSemaphoreTake(p_uart_obj[uart_num]->tx_fifo_sem, (portTickType)portMAX_DELAY))
+    {
+        // uint32_t sent = uart_enable_tx_write_fifo(uart_num, (const uint8_t *)src, size);
+    }
+    uart_hal_clr_intsts_mask(&(uart_context[uart_num].hal), UART_INTR_TX_BRK_DONE);
+    UART_ENTER_CRITICAL(&(uart_context[uart_num].spinlock));
+    uart_hal_tx_break(&(uart_context[uart_num].hal), brk_len);
+    uart_hal_ena_intr_mask(&(uart_context[uart_num].hal), UART_INTR_TX_BRK_DONE);
+    UART_EXIT_CRITICAL(&(uart_context[uart_num].spinlock));
+    xSemaphoreTake(p_uart_obj[uart_num]->tx_brk_sem, (portTickType)portMAX_DELAY);
+    xSemaphoreGive(p_uart_obj[uart_num]->tx_fifo_sem);
+    xSemaphoreGive(p_uart_obj[uart_num]->tx_mux);
+    return 0;
+}
+
 static bool uart_check_buf_full(uart_port_t uart_num)
 {
     if (p_uart_obj[uart_num]->rx_buffer_full_flg) {
