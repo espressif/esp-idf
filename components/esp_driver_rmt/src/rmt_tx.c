@@ -50,26 +50,55 @@ static bool rmt_dma_tx_eof_cb(gdma_channel_handle_t dma_chan, gdma_event_data_t 
 
 static esp_err_t rmt_tx_init_dma_link(rmt_tx_channel_t *tx_channel, const rmt_tx_channel_config_t *config)
 {
-    // For simplicity, the encoder will access the dma_mem_base in a non-cached way
-    // and we allocate the dma_mem_base from the internal SRAM for performance
-    uint32_t data_cache_line_size = cache_hal_get_cache_line_size(CACHE_LL_LEVEL_INT_MEM, CACHE_TYPE_DATA);
-    // the alignment should meet both the DMA and cache requirement
-    size_t alignment = MAX(data_cache_line_size, sizeof(rmt_symbol_word_t));
-    size_t dma_mem_base_size = ALIGN_UP(config->mem_block_symbols * sizeof(rmt_symbol_word_t), alignment);
-    rmt_symbol_word_t *dma_mem_base = heap_caps_aligned_calloc(alignment, 1, dma_mem_base_size,
+    gdma_channel_alloc_config_t dma_chan_config = {
+        .direction = GDMA_CHANNEL_DIRECTION_TX,
+    };
+    ESP_RETURN_ON_ERROR(gdma_new_ahb_channel(&dma_chan_config, &tx_channel->base.dma_chan), TAG, "allocate TX DMA channel failed");
+    gdma_strategy_config_t gdma_strategy_conf = {
+        .auto_update_desc = true,
+        .owner_check = true,
+    };
+    gdma_apply_strategy(tx_channel->base.dma_chan, &gdma_strategy_conf);
+    gdma_transfer_config_t transfer_cfg = {
+        .access_ext_mem = false, // for performance, we don't use external memory as the DMA buffer
+        .max_data_burst_size = 32,
+    };
+    ESP_RETURN_ON_ERROR(gdma_config_transfer(tx_channel->base.dma_chan, &transfer_cfg), TAG, "config DMA transfer failed");
+    gdma_tx_event_callbacks_t cbs = {
+        .on_trans_eof = rmt_dma_tx_eof_cb,
+    };
+    // register the DMA callbacks may fail if the interrupt service can not be installed successfully
+    ESP_RETURN_ON_ERROR(gdma_register_tx_event_callbacks(tx_channel->base.dma_chan, &cbs, tx_channel), TAG, "register DMA callbacks failed");
+
+    size_t int_alignment = 0;
+    // get the alignment requirement from DMA
+    gdma_get_alignment_constraints(tx_channel->base.dma_chan, &int_alignment, NULL);
+    // apply RMT hardware alignment requirement
+    int_alignment = MAX(int_alignment, sizeof(rmt_symbol_word_t));
+    // the memory returned by `heap_caps_aligned_calloc` also meets the cache alignment requirement (both address and size)
+    rmt_symbol_word_t *dma_mem_base = heap_caps_aligned_calloc(int_alignment, sizeof(rmt_symbol_word_t), config->mem_block_symbols,
                                                                RMT_MEM_ALLOC_CAPS | MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
     ESP_RETURN_ON_FALSE(dma_mem_base, ESP_ERR_NO_MEM, TAG, "no mem for tx DMA buffer");
     tx_channel->dma_mem_base = dma_mem_base;
-    // do memory sync only when the data cache exists
+    uint32_t data_cache_line_size = cache_hal_get_cache_line_size(CACHE_LL_LEVEL_INT_MEM, CACHE_TYPE_DATA);
+    // do memory sync if the dma buffer is cached
     if (data_cache_line_size) {
-        // write back and then invalidate the cache, we will skip the cache (by non-cacheable address) when access the dma_mem_base
-        // even the cache auto-write back happens, there's no risk the dma_mem_base will be overwritten
-        ESP_RETURN_ON_ERROR(esp_cache_msync(dma_mem_base, dma_mem_base_size,
-                                            ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_INVALIDATE),
+        // write back and then invalidate the cache, because later RMT encoder accesses the dma_mem_base by non-cacheable address
+        ESP_RETURN_ON_ERROR(esp_cache_msync(dma_mem_base, sizeof(rmt_symbol_word_t) * config->mem_block_symbols,
+                                            ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED | ESP_CACHE_MSYNC_FLAG_INVALIDATE),
                             TAG, "cache sync failed");
     }
-    // we use the non-cached address to manipulate this DMA buffer
+    // For simplicity, encoder will use the non-cached address to read/write the DMA buffer
     tx_channel->dma_mem_base_nc = (rmt_symbol_word_t *)RMT_GET_NON_CACHE_ADDR(dma_mem_base);
+    // the DMA buffer size should be aligned to the DMA requirement
+    size_t mount_size_per_node = ALIGN_DOWN(config->mem_block_symbols * sizeof(rmt_symbol_word_t) / RMT_DMA_NODES_PING_PONG, int_alignment);
+    // check the upper and lower bound of mount_size_per_node
+    ESP_RETURN_ON_FALSE(mount_size_per_node >= sizeof(rmt_symbol_word_t), ESP_ERR_INVALID_ARG,
+                        TAG, "mem_block_symbols is too small");
+    ESP_RETURN_ON_FALSE(mount_size_per_node <= DMA_DESCRIPTOR_BUFFER_MAX_SIZE, ESP_ERR_INVALID_ARG,
+                        TAG, "mem_block_symbols can't exceed %zu", DMA_DESCRIPTOR_BUFFER_MAX_SIZE * RMT_DMA_NODES_PING_PONG / sizeof(rmt_symbol_word_t));
+
+    tx_channel->ping_pong_symbols = mount_size_per_node / sizeof(rmt_symbol_word_t);
     for (int i = 0; i < RMT_DMA_NODES_PING_PONG; i++) {
         // each descriptor shares half of the DMA buffer
         tx_channel->dma_nodes_nc[i].buffer = dma_mem_base + tx_channel->ping_pong_symbols * i;
@@ -80,20 +109,6 @@ static esp_err_t rmt_tx_init_dma_link(rmt_tx_channel_t *tx_channel, const rmt_tx
         tx_channel->dma_nodes_nc[i].dw0.suc_eof = 1;
     }
 
-    gdma_channel_alloc_config_t dma_chan_config = {
-        .direction = GDMA_CHANNEL_DIRECTION_TX,
-    };
-    ESP_RETURN_ON_ERROR(gdma_new_ahb_channel(&dma_chan_config, &tx_channel->base.dma_chan), TAG, "allocate TX DMA channel failed");
-    gdma_strategy_config_t gdma_strategy_conf = {
-        .auto_update_desc = true,
-        .owner_check = true,
-    };
-    gdma_apply_strategy(tx_channel->base.dma_chan, &gdma_strategy_conf);
-    gdma_tx_event_callbacks_t cbs = {
-        .on_trans_eof = rmt_dma_tx_eof_cb,
-    };
-    // register the DMA callbacks may fail if the interrupt service can not be installed successfully
-    ESP_RETURN_ON_ERROR(gdma_register_tx_event_callbacks(tx_channel->base.dma_chan, &cbs, tx_channel), TAG, "register DMA callbacks failed");
     return ESP_OK;
 }
 #endif // SOC_RMT_SUPPORT_DMA
@@ -110,7 +125,6 @@ static esp_err_t rmt_tx_register_to_group(rmt_tx_channel_t *tx_channel, const rm
         mem_block_num = 1;
         // Only the last channel has the DMA capability
         channel_scan_start = RMT_TX_CHANNEL_OFFSET_IN_GROUP + SOC_RMT_TX_CANDIDATES_PER_GROUP - 1;
-        tx_channel->ping_pong_symbols = config->mem_block_symbols / 2;
     } else {
         // one channel can occupy multiple memory blocks
         mem_block_num = config->mem_block_symbols / SOC_RMT_MEM_WORDS_PER_CHANNEL;
@@ -247,13 +261,7 @@ esp_err_t rmt_new_tx_channel(const rmt_tx_channel_config_t *config, rmt_channel_
     ESP_RETURN_ON_FALSE(GPIO_IS_VALID_OUTPUT_GPIO(config->gpio_num), ESP_ERR_INVALID_ARG, TAG, "invalid GPIO number %d", config->gpio_num);
     ESP_RETURN_ON_FALSE((config->mem_block_symbols & 0x01) == 0 && config->mem_block_symbols >= SOC_RMT_MEM_WORDS_PER_CHANNEL,
                         ESP_ERR_INVALID_ARG, TAG, "mem_block_symbols must be even and at least %d", SOC_RMT_MEM_WORDS_PER_CHANNEL);
-
-#if SOC_RMT_SUPPORT_DMA
-    // we only support 2 nodes ping-pong, if the configured memory block size needs more than two DMA descriptors, should treat it as invalid
-    ESP_RETURN_ON_FALSE(config->mem_block_symbols <= RMT_DMA_DESC_BUF_MAX_SIZE * RMT_DMA_NODES_PING_PONG / sizeof(rmt_symbol_word_t),
-                        ESP_ERR_INVALID_ARG, TAG, "mem_block_symbols can't exceed %d",
-                        RMT_DMA_DESC_BUF_MAX_SIZE * RMT_DMA_NODES_PING_PONG / sizeof(rmt_symbol_word_t));
-#else
+#if !SOC_RMT_SUPPORT_DMA
     ESP_RETURN_ON_FALSE(config->flags.with_dma == 0, ESP_ERR_NOT_SUPPORTED, TAG, "DMA not supported");
 #endif
 
@@ -269,19 +277,16 @@ esp_err_t rmt_new_tx_channel(const rmt_tx_channel_config_t *config, rmt_channel_
     tx_channel->base.gpio_num = -1;
     // create DMA descriptors
     if (config->flags.with_dma) {
-        mem_caps |= MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA;
         // DMA descriptors must be placed in internal SRAM
-        uint32_t data_cache_line_size = cache_hal_get_cache_line_size(CACHE_LL_LEVEL_INT_MEM, CACHE_TYPE_DATA);
-        // the alignment should meet both the DMA and cache requirement
-        size_t alignment = MAX(data_cache_line_size, RMT_DMA_DESC_ALIGN);
-        size_t dma_nodes_mem_size = ALIGN_UP(RMT_DMA_NODES_PING_PONG * sizeof(rmt_dma_descriptor_t), alignment);
-        rmt_dma_descriptor_t *dma_nodes = heap_caps_aligned_calloc(alignment, 1, dma_nodes_mem_size, mem_caps);
+        mem_caps |= MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA;
+        rmt_dma_descriptor_t *dma_nodes = heap_caps_aligned_calloc(RMT_DMA_DESC_ALIGN, RMT_DMA_NODES_PING_PONG, sizeof(rmt_dma_descriptor_t), mem_caps);
         ESP_GOTO_ON_FALSE(dma_nodes, ESP_ERR_NO_MEM, err, TAG, "no mem for tx DMA nodes");
         tx_channel->dma_nodes = dma_nodes;
-        // write back and then invalidate the cached dma_nodes, we will skip the cache (by non-cacheable address) when access the dma_nodes
+        // write back and then invalidate the cached dma_nodes, because later the DMA nodes are accessed by non-cacheable address
+        uint32_t data_cache_line_size = cache_hal_get_cache_line_size(CACHE_LL_LEVEL_INT_MEM, CACHE_TYPE_DATA);
         if (data_cache_line_size) {
-            ESP_GOTO_ON_ERROR(esp_cache_msync(dma_nodes, dma_nodes_mem_size,
-                                              ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_INVALIDATE),
+            ESP_GOTO_ON_ERROR(esp_cache_msync(dma_nodes, RMT_DMA_NODES_PING_PONG * sizeof(rmt_dma_descriptor_t),
+                                              ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_INVALIDATE | ESP_CACHE_MSYNC_FLAG_UNALIGNED),
                               err, TAG, "cache sync failed");
         }
         // we will use the non-cached address to manipulate the DMA descriptor, for simplicity
