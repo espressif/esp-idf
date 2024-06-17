@@ -55,11 +55,7 @@ extern "C" {
     .benchmark = { \
         .filter_mode = TOUCH_BM_IIR_FILTER_4, \
         .jitter_step = 4, \
-        .update = { \
-                .pos_thresh = TOUCH_UPDATE_BM_POS_THRESH_1_4, \
-                .neg_thresh = TOUCH_UPDATE_BM_NEG_THRESH_1_4, \
-                .neg_limit = 5, \
-        }, \
+        .denoise_lvl = 1, \
     }, \
     .data = { \
         .smooth_filter = TOUCH_SMOOTH_IIR_FILTER_2, \
@@ -114,35 +110,6 @@ typedef enum {
     TOUCH_BM_IIR_FILTER_128,                /*!< IIR Filter for benchmark, 1/128 raw_value + 127/128 benchmark */
     TOUCH_BM_JITTER_FILTER,                 /*!< Jitter Filter for benchmark, raw value +/- jitter_step */
 } touch_benchmark_filter_mode_t;
-
-/**
- * @brief Positive noise limitation of benchmark
- *        benchmark will only update gradually when
- *        the smooth data within the positive noise limitation
- *
- */
-typedef enum {
-    TOUCH_UPDATE_BM_POS_ALWAYS = -1,        /*!< Always update benchmark when (smooth_data - benchmark) > 0 */
-    TOUCH_UPDATE_BM_POS_THRESH_1_2 = 0,     /*!< Only update benchmark when the (smooth_data - benchmark) < 1/2 * activate_threshold  */
-    TOUCH_UPDATE_BM_POS_THRESH_3_8,         /*!< Only update benchmark when the (smooth_data - benchmark) < 3/8 * activate_threshold  */
-    TOUCH_UPDATE_BM_POS_THRESH_1_4,         /*!< Only update benchmark when the (smooth_data - benchmark) < 1/4 * activate_threshold  */
-    TOUCH_UPDATE_BM_POS_THRESH_1,           /*!< Only update benchmark when the (smooth_data - benchmark) <   1 * activate_threshold  */
-} touch_benchmark_pos_thresh_t;
-
-/**
- * @brief Negative noise limitation of benchmark
- *        benchmark will only update gradually when
- *        the smooth data within the negative noise limitation
- *
- */
-typedef enum {
-    TOUCH_UPDATE_BM_NEG_NEVER = -2,         /*!< Never update benchmark when (benchmark - smooth_data) > 0 */
-    TOUCH_UPDATE_BM_NEG_ALWAYS = -1,        /*!< Always update benchmark when (benchmark - smooth_data) > 0 */
-    TOUCH_UPDATE_BM_NEG_THRESH_1_2 = 0,     /*!< Only update benchmark when the (benchmark - smooth_data) < 1/2 * activate_threshold  */
-    TOUCH_UPDATE_BM_NEG_THRESH_3_8,         /*!< Only update benchmark when the (benchmark - smooth_data) < 3/8 * activate_threshold  */
-    TOUCH_UPDATE_BM_NEG_THRESH_1_4,         /*!< Only update benchmark when the (benchmark - smooth_data) < 1/4 * activate_threshold  */
-    TOUCH_UPDATE_BM_NEG_THRESH_1,           /*!< Only update benchmark when the (benchmark - smooth_data) <   1 * activate_threshold  */
-} touch_benchmark_neg_thresh_t;
 
 /**
  * @brief Touch channel Infinite Impulse Response (IIR) filter for smooth data
@@ -222,31 +189,11 @@ typedef struct {
         touch_benchmark_filter_mode_t   filter_mode;        /*!< Benchmark filter mode. IIR filter and Jitter filter can be selected,
                                                              *   TOUCH_BM_IIR_FILTER_16 is recommended
                                                              */
-        uint32_t                        jitter_step;        /*!< Jitter filter step size, only takes effect when the `filter_mode` is TOUCH_BM_JITTER_FILTER. Range: 0 ~ 15 */
-        /**
-         * @brief Benchmark update strategy
-         */
-        struct {
-            touch_benchmark_pos_thresh_t pos_thresh;        /*!< Select the positive noise threshold. Higher = More noise resistance.
-                                                             *   Range: [-1 ~ 3]. The coefficient of the positive threshold are -1: always; 0: 4/8;  1: 3/8;   2: 2/8;   3: 1;
-                                                             *   Once the data of the channel exceeded the positive threshold (i.e., benchmark + coefficient * touch threshold),
-                                                             *   the benchmark will stop updated to that value.
-                                                             *   -1: ignore the positive threshold and always update the benchmark for positive noise
+        uint32_t                        jitter_step;        /*!< Jitter filter step size, only takes effect when the `filter_mode` is TOUCH_BM_JITTER_FILTER. Range: [0 ~ 15] */
+        int                             denoise_lvl;        /*!< The denoise level, which determines the noise bouncing range that won't trigger benchmark update.
+                                                             *   Range: [0 ~ 4]. The greater the denoise_lvl is, more noise resistance will be. Specially, `0` stands for no denoise
+                                                             *   Typically, recommend to set this field to 1.
                                                              */
-            touch_benchmark_neg_thresh_t neg_thresh;        /*!< Select the negative noise threshold. Higher = More noise resistance.
-                                                             *   Range: [-2 ~ 3]. The coefficient of the negative threshold are -2: never; -1: always; 0: 4/8;  1: 3/8;   2: 2/8;   3: 1;
-                                                             *   Once the data of the channel below the negative threshold (i.e., benchmark - coefficient * touch threshold),
-                                                             *   the benchmark will stop updated to that value,
-                                                             *   unless the data keep below the negative threshold for more than the limitation of `neg_limit`
-                                                             *   -1: ignore the negative threshold and always update the benchmark for negative noise
-                                                             *   -2: never update the benchmark for negative noise
-                                                             */
-            uint32_t                    neg_limit;          /*!< Set the time limitation of the negative threshold.
-                                                             *   The benchmark will be updated to the value that below to the negative threshold after the limited time.
-                                                             *   Normally the negative update is used at the beginning, as the initial benchmark is a very large value.
-                                                             *   (the unit of `neg_limit` is the tick of the slow clock source)
-                                                             */
-        } update;                                           /*!< The benchmark update strategy */
     } benchmark;                                            /*!< Benchmark filter */
     /**
      * @brief Data configuration
