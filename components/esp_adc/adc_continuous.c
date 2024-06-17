@@ -37,7 +37,6 @@
 #include "adc_continuous_internal.h"
 #include "esp_private/adc_dma.h"
 #include "adc_dma_internal.h"
-#include "esp_dma_utils.h"
 #if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
 #include "esp_cache.h"
 #include "esp_private/esp_cache_private.h"
@@ -192,11 +191,7 @@ esp_err_t adc_continuous_new_handle(const adc_continuous_handle_cfg_t *hdl_confi
     }
 
     //malloc internal buffer used by DMA
-    esp_dma_mem_info_t dma_mem_info = {
-        .extra_heap_caps = (MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA),
-        .dma_alignment_bytes = 4,
-    };
-    esp_dma_capable_calloc(1, hdl_config->conv_frame_size * INTERNAL_BUF_NUM, &dma_mem_info, (void **)&adc_ctx->rx_dma_buf, NULL);
+    adc_ctx->rx_dma_buf = heap_caps_calloc(INTERNAL_BUF_NUM, hdl_config->conv_frame_size, MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA | MALLOC_CAP_8BIT);
     if (!adc_ctx->rx_dma_buf) {
         ret = ESP_ERR_NO_MEM;
         goto cleanup;
@@ -205,7 +200,7 @@ esp_err_t adc_continuous_new_handle(const adc_continuous_handle_cfg_t *hdl_confi
     //malloc dma descriptor
     uint32_t dma_desc_num_per_frame = (hdl_config->conv_frame_size + DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED - 1) / DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED;
     uint32_t dma_desc_max_num = dma_desc_num_per_frame * INTERNAL_BUF_NUM;
-    esp_dma_capable_calloc(1, (sizeof(dma_descriptor_t)) * dma_desc_max_num, &dma_mem_info, (void **)&adc_ctx->hal.rx_desc, &adc_ctx->adc_desc_size);
+    adc_ctx->hal.rx_desc = heap_caps_aligned_calloc(ADC_DMA_DESC_ALIGN, dma_desc_max_num, sizeof(dma_descriptor_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA | MALLOC_CAP_8BIT);
     if (!adc_ctx->hal.rx_desc) {
         ret = ESP_ERR_NO_MEM;
         goto cleanup;
@@ -550,12 +545,12 @@ esp_err_t adc_continuous_flush_pool(adc_continuous_handle_t handle)
     return ESP_OK;
 }
 
-esp_err_t adc_continuous_io_to_channel(int io_num, adc_unit_t * const unit_id, adc_channel_t * const channel)
+esp_err_t adc_continuous_io_to_channel(int io_num, adc_unit_t *const unit_id, adc_channel_t *const channel)
 {
     return adc_io_to_channel(io_num, unit_id, channel);
 }
 
-esp_err_t adc_continuous_channel_to_io(adc_unit_t unit_id, adc_channel_t channel, int * const io_num)
+esp_err_t adc_continuous_channel_to_io(adc_unit_t unit_id, adc_channel_t channel, int *const io_num)
 {
     return adc_channel_to_io(unit_id, channel, io_num);
 }
