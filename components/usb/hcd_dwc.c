@@ -1431,8 +1431,11 @@ static dma_buffer_block_t *buffer_block_alloc(usb_transfer_type_t type)
         break;
     }
     dma_buffer_block_t *buffer = calloc(1, sizeof(dma_buffer_block_t));
+    if (buffer == NULL) {
+        return NULL;
+    }
     void *xfer_desc_list = heap_caps_aligned_calloc(USB_DWC_QTD_LIST_MEM_ALIGN, desc_list_len, sizeof(usb_dwc_ll_dma_qtd_t), MALLOC_CAP_DMA);
-    if (buffer == NULL || xfer_desc_list == NULL) {
+    if (xfer_desc_list == NULL) {
         free(buffer);
         heap_caps_free(xfer_desc_list);
         return NULL;
