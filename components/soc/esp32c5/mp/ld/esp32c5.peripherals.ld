@@ -52,10 +52,9 @@ PROVIDE ( HP_APM              = 0x60099000 );
 PROVIDE ( LP_APM0             = 0x60099800 );
 PROVIDE ( MISC                = 0x6009F000 );
 
-/* TODO: [ESP32C5] IDF-8845 Check the address */
-PROVIDE ( IEEE802154    = 0x600A3000 );
-PROVIDE ( MODEM_SYSCON  = 0x600A9800 );
-PROVIDE ( MODEM_LPCON   = 0x600AF000 );
+PROVIDE ( IEEE802154          = 0x600A3000 ); /* TODO: [ESP32C5] IDF-9140 Check the address */
+PROVIDE ( MODEM_SYSCON        = 0x600A9C00 );
+PROVIDE ( MODEM_LPCON         = 0x600AF000 );
 
 PROVIDE ( MODEM0              = 0x600A0000 );
 PROVIDE ( MODEM1              = 0x600AC000 );

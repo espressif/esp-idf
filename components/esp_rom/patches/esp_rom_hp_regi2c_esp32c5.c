@@ -7,17 +7,7 @@
 #include "esp_attr.h"
 #include "soc/i2c_ana_mst_reg.h"
 #include "modem/modem_lpcon_reg.h"
-/**
- * BB    - 0x67 - BIT0
- * TXRF  - 0x6B - BIT1
- * SDM   - 0x63 - BIT2
- * PLL   - 0x62 - BIT3
- * BIAS  - 0x6A - BIT4
- * BBPLL - 0x66 - BIT5
- * ULP   - 0x61 - BIT6
- * SAR   - 0x69 - BIT7
- * PMU   - 0x6d - BIT8
-*/
+#include "soc/pmu_reg.h"
 
 #define REGI2C_BIAS_MST_SEL    (BIT(8))
 #define REGI2C_BBPLL_MST_SEL   (BIT(9))
@@ -87,7 +77,8 @@ static IRAM_ATTR uint8_t regi2c_enable_block(uint8_t block)
     uint32_t i2c_sel = 0;
 
     REG_SET_BIT(MODEM_LPCON_CLK_CONF_REG, MODEM_LPCON_CLK_I2C_MST_EN);
-    REG_SET_BIT(MODEM_LPCON_I2C_MST_CLK_CONF_REG, MODEM_LPCON_CLK_I2C_MST_SEL_160M);
+    REG_SET_BIT(PMU_RF_PWC_REG, PMU_PERIF_I2C_RSTB); // TODO: IDF-8642 Move to pmu_init()
+    REG_SET_BIT(PMU_RF_PWC_REG, PMU_XPD_PERIF_I2C); // TODO: IDF-8642 Move to pmu_init()
 
     /* Before config I2C register, enable corresponding slave. */
     switch (block) {
