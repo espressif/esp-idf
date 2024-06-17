@@ -14,6 +14,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "unity.h"
+#include "hal/gpio_ll.h"
 #include "soc/gpio_periph.h"
 #include "soc/io_mux_reg.h"
 #include "esp_system.h"
@@ -509,7 +510,7 @@ static void tear_testbench(void)
 static int wave_count(int last_time)
 {
     // The input ability of PULSE_IO is disabled after ledc driver install, so we need to re-enable it again
-    PIN_INPUT_ENABLE(GPIO_PIN_MUX_REG[PULSE_IO]);
+    gpio_ll_input_enable(&GPIO, PULSE_IO);
     int test_counter = 0;
     TEST_ESP_OK(pcnt_unit_clear_count(pcnt_unit));
     TEST_ESP_OK(pcnt_unit_start(pcnt_unit));

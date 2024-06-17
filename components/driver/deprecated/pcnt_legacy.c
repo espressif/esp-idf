@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,6 +15,7 @@
 #include "hal/gpio_hal.h"
 #include "soc/pcnt_periph.h"
 #include "esp_rom_gpio.h"
+#include "esp_private/gpio.h"
 
 #define PCNT_CHANNEL_ERR_STR  "PCNT CHANNEL ERROR"
 #define PCNT_UNIT_ERR_STR  "PCNT UNIT ERROR"
@@ -86,14 +87,14 @@ static inline esp_err_t _pcnt_set_pin(pcnt_port_t pcnt_port, pcnt_unit_t unit, p
     PCNT_CHECK(GPIO_IS_VALID_GPIO(ctrl_io) || ctrl_io < 0, PCNT_GPIO_ERR_STR, ESP_ERR_INVALID_ARG);
 
     if (pulse_io >= 0) {
-        gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[pulse_io], PIN_FUNC_GPIO);
+        gpio_func_sel(pulse_io, PIN_FUNC_GPIO);
         gpio_set_direction(pulse_io, GPIO_MODE_INPUT);
         gpio_set_pull_mode(pulse_io, GPIO_PULLUP_ONLY);
         esp_rom_gpio_connect_in_signal(pulse_io, pcnt_periph_signals.groups[pcnt_port].units[unit].channels[channel].pulse_sig, 0);
     }
 
     if (ctrl_io >= 0) {
-        gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[ctrl_io], PIN_FUNC_GPIO);
+        gpio_func_sel(ctrl_io, PIN_FUNC_GPIO);
         gpio_set_direction(ctrl_io, GPIO_MODE_INPUT);
         gpio_set_pull_mode(ctrl_io, GPIO_PULLUP_ONLY);
         esp_rom_gpio_connect_in_signal(ctrl_io, pcnt_periph_signals.groups[pcnt_port].units[unit].channels[channel].control_sig, 0);
