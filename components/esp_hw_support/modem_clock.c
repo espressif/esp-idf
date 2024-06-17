@@ -251,6 +251,7 @@ void IRAM_ATTR modem_clock_module_mac_reset(periph_module_t module)
 #if SOC_IEEE802154_SUPPORTED
         case PERIPH_IEEE802154_MODULE:
             modem_syscon_ll_reset_zbmac(ctx->hal->syscon_dev);
+            modem_syscon_ll_reset_zbmac_apb(ctx->hal->syscon_dev);
             break;
 #endif
         default:
