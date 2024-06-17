@@ -1593,9 +1593,12 @@ static dma_buffer_block_t *buffer_block_alloc(usb_transfer_type_t type)
         break;
     }
     dma_buffer_block_t *buffer = calloc(1, sizeof(dma_buffer_block_t));
+    if (buffer == NULL) {
+        return NULL;
+    }
     size_t real_len = 0;
     void *xfer_desc_list = transfer_descriptor_list_alloc(desc_list_len, &real_len);
-    if (buffer == NULL || xfer_desc_list == NULL) {
+    if (xfer_desc_list == NULL) {
         free(buffer);
         heap_caps_free(xfer_desc_list);
         return NULL;

@@ -340,8 +340,10 @@ esp_err_t usb_new_phy(const usb_phy_config_t *config, usb_phy_handle_t *handle_r
     return ESP_OK;
 
 cleanup:
-    free(phy_context->iopins);
-    free(phy_context);
+    if (phy_context) {
+        free(phy_context->iopins);
+        free(phy_context);
+    }
     if (p_phy_ctrl_obj->ref_count == 0) {
         free(p_phy_ctrl_obj);
         p_phy_ctrl_obj = NULL;
