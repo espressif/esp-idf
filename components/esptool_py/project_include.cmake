@@ -8,15 +8,6 @@ idf_build_get_property(idf_path IDF_PATH)
 
 set(chip_model ${target})
 
-# TODO: [ESP32C5] IDF-9197 remove this 'if' block when esp32C5 beta3 is no longer supported
-if(target STREQUAL "esp32c5")
-    if(CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION)
-        set(chip_model esp32c5beta3)
-    elseif(CONFIG_IDF_TARGET_ESP32C5_MP_VERSION)
-        set(chip_model esp32c5)
-    endif()
-endif()
-
 set(ESPTOOLPY ${python} "$ENV{ESPTOOL_WRAPPER}" "${CMAKE_CURRENT_LIST_DIR}/esptool/esptool.py" --chip ${chip_model})
 set(ESPSECUREPY ${python} "${CMAKE_CURRENT_LIST_DIR}/esptool/espsecure.py")
 set(ESPEFUSEPY ${python} "${CMAKE_CURRENT_LIST_DIR}/esptool/espefuse.py")

@@ -737,11 +737,7 @@ static IRAM_ATTR void sleep_low_power_clock_calibration(bool is_dslp)
     if ((s_lightsleep_cnt % CONFIG_PM_LIGHTSLEEP_RTC_OSC_CAL_INTERVAL == 0) || is_dslp)
 #endif
     {
-#if !CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
         s_config.fast_clk_cal_period = rtc_clk_cal(RTC_CAL_RC_FAST, FAST_CLK_SRC_CAL_CYCLES);
-#else
-        s_config.fast_clk_cal_period = 0x8000;
-#endif
     }
 #endif
 }
@@ -1665,11 +1661,7 @@ bool esp_sleep_is_valid_wakeup_gpio(gpio_num_t gpio_num)
 #if SOC_RTCIO_PIN_COUNT > 0
     return RTC_GPIO_IS_VALID_GPIO(gpio_num);
 #else
-#if !CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION    // TODO: IDF-9673
     return GPIO_IS_DEEP_SLEEP_WAKEUP_VALID_GPIO(gpio_num);
-#else
-    return true;
-#endif
 #endif
 }
 

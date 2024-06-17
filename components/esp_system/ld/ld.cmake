@@ -19,13 +19,7 @@ string(REPLACE "\\n" "\n" TEXT "${PREPROCESSED_LINKER_SCRIPT}")
 file(WRITE "${TARGET}" "${TEXT}")
 ]=])
 
-if(CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION)
-    set(target_folder "esp32c5/beta3")
-elseif(CONFIG_IDF_TARGET_ESP32C5_MP_VERSION)
-    set(target_folder "esp32c5/mp")
-else()
-    set(target_folder "${target}")
-endif()
+set(target_folder "${target}")
 
 function(preprocess_linker_file name_in name_out out_path)
     set(script_in "${CMAKE_CURRENT_LIST_DIR}/${target_folder}/${name_in}")
@@ -49,11 +43,11 @@ function(preprocess_linker_file name_in name_out out_path)
     add_dependencies(${COMPONENT_LIB} "${name_out}")
 endfunction()
 
-# Generage memory.ld
+# Generate memory.ld
 preprocess_linker_file("memory.ld.in" "memory.ld" ld_out_path)
 target_linker_script(${COMPONENT_LIB} INTERFACE "${ld_out_path}")
 
-# Generage sections.ld.in and pass it through linker script generator
+# Generate sections.ld.in and pass it through linker script generator
 preprocess_linker_file("sections.ld.in" "sections.ld.in" ld_out_path)
 target_linker_script(${COMPONENT_LIB} INTERFACE "${ld_out_path}"
                     PROCESS "${CMAKE_CURRENT_BINARY_DIR}/ld/sections.ld")

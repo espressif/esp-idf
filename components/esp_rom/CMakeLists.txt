@@ -1,13 +1,6 @@
 idf_build_get_property(target IDF_TARGET)
 
-# TODO: IDF-9197
-if(CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION)
-    set(target_folder "esp32c5/beta3/esp32c5")
-elseif(CONFIG_IDF_TARGET_ESP32C5_MP_VERSION)
-    set(target_folder "esp32c5/mp/esp32c5")
-else()
-    set(target_folder "${target}")
-endif()
+set(target_folder "${target}")
 
 set(include_dirs "include"
                  "include/${target_folder}"

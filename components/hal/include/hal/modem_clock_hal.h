@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,7 +19,7 @@
 extern "C" {
 #endif
 
-#if !CONFIG_IDF_TARGET_ESP32C5_MP_VERSION
+#if !CONFIG_IDF_TARGET_ESP32C5
 typedef struct {
     modem_syscon_dev_t *syscon_dev;
     modem_lpcon_dev_t  *lpcon_dev;
