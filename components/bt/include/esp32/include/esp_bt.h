@@ -50,6 +50,11 @@ extern "C" {
 
 #endif //CONFIG_BT_ENABLED
 
+/**
+* @brief Internal use only
+*
+* @note Please do not modify this value.
+*/
 #define ESP_BT_CONTROLLER_CONFIG_MAGIC_VAL  0x20240315
 
 /**
@@ -174,7 +179,7 @@ the adv packet will be discarded until the memory is restored. */
 #define BTDM_CTRL_SCAN_BACKOFF_UPPERLIMITMAX  0
 #endif
 /**
-* @brief  Default configuration of Bluetooth Controller
+* @brief  Default Bluetooth Controller configuration
 */
 #define BT_CONTROLLER_INIT_CONFIG_DEFAULT() {                              \
     .controller_task_stack_size = ESP_TASK_BT_CONTROLLER_STACK,            \
@@ -204,6 +209,9 @@ the adv packet will be discarded until the memory is restored. */
 }
 
 #else
+/**
+* @brief  Default Bluetooth Controller configuration
+*/
 #define BT_CONTROLLER_INIT_CONFIG_DEFAULT() {0}; ESP_STATIC_ASSERT(0, "please enable bluetooth in menuconfig to use esp_bt.h");
 #endif
 
@@ -227,15 +235,15 @@ typedef struct {
     /*
      * Following parameters can be configured runtime, when call esp_bt_controller_init()
      */
-    uint16_t controller_task_stack_size;    /*!< Bluetooth Controller task stack size */
+    uint16_t controller_task_stack_size;    /*!< Bluetooth Controller task stack size in bytes */
     uint8_t controller_task_prio;           /*!< Bluetooth Controller task priority */
     uint8_t hci_uart_no;                    /*!< If use UART1/2 as HCI IO interface, indicate UART number */
     uint32_t hci_uart_baudrate;             /*!< If use UART1/2 as HCI IO interface, indicate UART baudrate */
-    uint8_t scan_duplicate_mode;            /*!< Scan duplicate mode */
-    uint8_t scan_duplicate_type;            /*!< Scan duplicate type */
-    uint16_t normal_adv_size;               /*!< Normal adv size for scan duplicate */
-    uint16_t mesh_adv_size;                 /*!< Mesh adv size for scan duplicate */
-    uint16_t send_adv_reserved_size;        /*!< Controller minimum memory value */
+    uint8_t scan_duplicate_mode;            /*!< Scan duplicate filtering mode */
+    uint8_t scan_duplicate_type;            /*!< Scan duplicate filtering type */
+    uint16_t normal_adv_size;               /*!< Scan duplicate filtering list size with normal ADV */
+    uint16_t mesh_adv_size;                 /*!< Scan duplicate filtering list size with mesh ADV */
+    uint16_t send_adv_reserved_size;        /*!< Controller minimum memory value*/
     uint32_t  controller_debug_flag;        /*!< Controller debug log flag */
     uint8_t mode;                           /*!< Controller mode: BR/EDR, BLE or Dual Mode */
     uint8_t ble_max_conn;                   /*!< BLE maximum connection numbers */
@@ -253,7 +261,7 @@ typedef struct {
     uint8_t pcm_role;                       /*!< PCM role (master & slave)*/
     uint8_t pcm_polar;                      /*!< PCM polar trig (falling clk edge & rising clk edge) */
     bool hli;                               /*!< Using high level interrupt or not */
-    uint16_t dup_list_refresh_period;       /*!< Duplicate scan list refresh period */
+    uint16_t dup_list_refresh_period;       /*!< Scan duplicate filtering list refresh period */
     bool ble_scan_backoff;                  /*!< BLE scan backoff */
     uint32_t magic;                         /*!< Magic number */
 } esp_bt_controller_config_t;
@@ -273,14 +281,9 @@ typedef enum {
  * @note
  *       1. The connection TX power can only be set after the connection is established.
  *          After disconnecting, the corresponding TX power will not be affected.
- *       2.
- *        ESP_BLE_PWR_TYPE_CONN_HDL0-8: TX power for each connection, and only be set after connection completed.
- *                                      when disconnect, the correspond TX power is not effected.
- *        ESP_BLE_PWR_TYPE_ADV : for advertising/scan response.
- *        ESP_BLE_PWR_TYPE_SCAN : for scan.
- *        ESP_BLE_PWR_TYPE_DEFAULT : if each connection's TX power is not set, it will use this default value.
- *                                   if neither in scan mode nor in adv mode, it will use this default value.
- *        3. If none of power type is set, the system will use `ESP_PWR_LVL_P3` as default for ADV/SCAN/CONN0-9.
+ *       2. `ESP_BLE_PWR_TYPE_DEFAULT` can be used to set the TX power for power types that have not been set before.
+ *          It will not affect the TX power values which have been set the following CONN0-8/ADV/SCAN power types.
+ *       3. If none of power type is set, the system will use `ESP_PWR_LVL_P3` as default for ADV/SCAN/CONN0-8.
  */
 typedef enum {
     ESP_BLE_PWR_TYPE_CONN_HDL0  = 0,            /*!< TX power for connection handle 0 */
@@ -294,7 +297,7 @@ typedef enum {
     ESP_BLE_PWR_TYPE_CONN_HDL8  = 8,            /*!< TX power for connection handle 8 */
     ESP_BLE_PWR_TYPE_ADV        = 9,            /*!< TX power for advertising */
     ESP_BLE_PWR_TYPE_SCAN       = 10,           /*!< TX power for scan */
-    ESP_BLE_PWR_TYPE_DEFAULT    = 11,           /*!< For default, if not set other, it will use default value */
+    ESP_BLE_PWR_TYPE_DEFAULT    = 11,           /*!< Default TX power type, which can be used to set the TX power for power types that have not been set before.*/
     ESP_BLE_PWR_TYPE_NUM        = 12,           /*!< TYPE numbers */
 } esp_ble_power_type_t;
 
@@ -332,7 +335,7 @@ typedef enum {
  * @brief  Set BLE TX power
  * @note   Connection TX power should only be set after the connection is established.
  * @param[in]  power_type The type of TX power. It could be Advertising/Connection/Default and etc.
- * @param[in]  power_level Power level (index) corresponding to the absolute value(dbm)
+ * @param[in]  power_level Power level (index) corresponding to the absolute value (dBm)
  * @return
  *      - ESP_OK:   Success
  *      - ESP_ERR_INVALID_ARG: Invalid argument
