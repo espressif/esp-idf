@@ -54,6 +54,9 @@ components/driver/test_apps/legacy_mcpwm_driver:
 components/driver/test_apps/legacy_pcnt_driver:
   disable:
     - if: SOC_PCNT_SUPPORTED != 1
+    - if: IDF_TARGET == "esp32c5"
+      temporary: true
+      reason: build failed. track in IDFCI-2204
   depends_filepatterns:
     - components/driver/deprecated/**/*pcnt*
 
