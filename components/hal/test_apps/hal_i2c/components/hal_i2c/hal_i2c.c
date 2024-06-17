@@ -92,7 +92,7 @@ esp_err_t hal_i2c_init(hal_i2c_config *cfg)
     // 2. Set both SCL and SDA open-drain
     // 3. Set both SCL and SDA pullup enable and pulldown disable. (If you use external pullup, this can be ignored)
     // 4. io mux function select
-    // 5. We connect out/in signal. As I2C master, out/in signal is necessary fpr both SCL and SDA according to esp hardware.
+    // 5. We connect out/in signal. As I2C master, out/in signal is necessary for both SCL and SDA according to esp hardware.
 
     // SDA pin configurations
     if (sda_io != -1) {
@@ -101,7 +101,7 @@ esp_err_t hal_i2c_init(hal_i2c_config *cfg)
         gpio_ll_od_enable(&GPIO, sda_io);
         gpio_ll_pullup_en(&GPIO, sda_io);
         gpio_ll_pulldown_dis(&GPIO, sda_io);
-        gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[sda_io], PIN_FUNC_GPIO);
+        gpio_ll_func_sel(&GPIO, sda_io, PIN_FUNC_GPIO);
         esp_rom_gpio_connect_out_signal(sda_io, i2c_periph_signal[cfg->i2c_port].sda_out_sig, 0, 0);
         esp_rom_gpio_connect_in_signal(sda_io, i2c_periph_signal[cfg->i2c_port].sda_in_sig, 0);
     }
@@ -112,7 +112,7 @@ esp_err_t hal_i2c_init(hal_i2c_config *cfg)
         gpio_ll_od_enable(&GPIO, scl_io);
         gpio_ll_pullup_en(&GPIO, scl_io);
         gpio_ll_pulldown_dis(&GPIO, scl_io);
-        gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[scl_io], PIN_FUNC_GPIO);
+        gpio_ll_func_sel(&GPIO, scl_io, PIN_FUNC_GPIO);
         esp_rom_gpio_connect_out_signal(scl_io, i2c_periph_signal[cfg->i2c_port].scl_out_sig, 0, 0);
         esp_rom_gpio_connect_in_signal(scl_io, i2c_periph_signal[cfg->i2c_port].scl_out_sig, 0);
     }
