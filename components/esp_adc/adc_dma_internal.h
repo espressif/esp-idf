@@ -32,6 +32,8 @@ typedef struct {
     intr_handle_t           dma_intr_hdl;
 } adc_dma_t;
 
+#define ADC_DMA_DESC_ALIGN      4
+
 #ifdef __cplusplus
 }
 #endif
