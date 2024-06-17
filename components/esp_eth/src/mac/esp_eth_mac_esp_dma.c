@@ -5,13 +5,11 @@
  */
 
 #include "esp_check.h"
-#include "esp_dma_utils.h"
 #include "sdkconfig.h"
 #include "soc/soc_caps.h"
-#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
 #include "esp_cache.h"
-#endif
 #include "hal/emac_hal.h"
+#include "esp_heap_caps.h"
 #include "esp_private/eth_mac_esp_dma.h"
 
 #define ETH_CRC_LENGTH (4)
@@ -41,8 +39,7 @@
 
 static const char *TAG = "esp.emac.dma";
 
-struct emac_esp_dma_t
-{
+struct emac_esp_dma_t {
     emac_hal_context_t hal;
     uint32_t tx_desc_flags;
     uint32_t rx_desc_flags;
@@ -58,14 +55,14 @@ typedef struct {
     uint32_t magic_id;
 #endif // NDEBUG
     uint32_t copy_len;
-}__attribute__((packed)) emac_esp_dma_auto_buf_info_t;
+} __attribute__((packed)) emac_esp_dma_auto_buf_info_t;
 
 void emac_esp_dma_reset(emac_esp_dma_handle_t emac_esp_dma)
 {
     /* reset DMA descriptors */
     emac_esp_dma->rx_desc = (eth_dma_rx_descriptor_t *)(emac_esp_dma->descriptors);
     emac_esp_dma->tx_desc = (eth_dma_tx_descriptor_t *)(emac_esp_dma->descriptors +
-                   sizeof(eth_dma_rx_descriptor_t) * CONFIG_ETH_DMA_RX_BUFFER_NUM);
+                                                        sizeof(eth_dma_rx_descriptor_t) * CONFIG_ETH_DMA_RX_BUFFER_NUM);
     /* init rx chain */
     for (int i = 0; i < CONFIG_ETH_DMA_RX_BUFFER_NUM; i++) {
         /* Set Own bit of the Rx descriptor Status: DMA */
@@ -227,7 +224,7 @@ uint32_t emac_esp_dma_transmit_multiple_buf_frame(emac_esp_dma_handle_t emac_esp
                 buffs_cnt--;
                 ptr = *(++buffs);
                 lastlen = *(++lengths);
-            /* There is only limited available space in the current descriptor, use it all */
+                /* There is only limited available space in the current descriptor, use it all */
             } else {
                 /* copy data from uplayer stack buffer */
                 memcpy((void *)(desc_iter->Buffer1Addr + (CONFIG_ETH_DMA_BUFFER_SIZE - avail_len)), ptr, avail_len);
@@ -236,7 +233,7 @@ uint32_t emac_esp_dma_transmit_multiple_buf_frame(emac_esp_dma_handle_t emac_esp
                 /* If lastlen is not zero, input buff will be fragmented over multiple descriptors */
                 if (lastlen > 0) {
                     ptr += avail_len;
-                /* Input buff fully fits the descriptor, move to the next input buff */
+                    /* Input buff fully fits the descriptor, move to the next input buff */
                 } else {
                     /* Update processed input buffers info */
                     buffs_cnt--;
@@ -386,7 +383,7 @@ uint32_t emac_esp_dma_receive_frame(emac_esp_dma_handle_t emac_esp_dma, uint8_t 
 
     if (copy_len) {
         eth_dma_rx_descriptor_t *desc_iter = emac_esp_dma->rx_desc;
-        while(copy_len > CONFIG_ETH_DMA_BUFFER_SIZE) {
+        while (copy_len > CONFIG_ETH_DMA_BUFFER_SIZE) {
             DMA_CACHE_INVALIDATE(desc_iter->Buffer1Addr, CONFIG_ETH_DMA_BUFFER_SIZE);
             memcpy(buf, (void *)(desc_iter->Buffer1Addr), CONFIG_ETH_DMA_BUFFER_SIZE);
             buf += CONFIG_ETH_DMA_BUFFER_SIZE;
@@ -449,7 +446,7 @@ esp_err_t emac_esp_del_dma(emac_esp_dma_handle_t emac_esp_dma)
     return ESP_OK;
 }
 
-esp_err_t emac_esp_new_dma(const emac_esp_dma_config_t* config, emac_esp_dma_handle_t *ret_handle)
+esp_err_t emac_esp_new_dma(const emac_esp_dma_config_t *config, emac_esp_dma_handle_t *ret_handle)
 {
     esp_err_t ret = ESP_OK;
     *ret_handle = NULL;
@@ -459,20 +456,15 @@ esp_err_t emac_esp_new_dma(const emac_esp_dma_config_t* config, emac_esp_dma_han
     /* alloc memory for ethernet dma descriptor */
     uint32_t desc_size = CONFIG_ETH_DMA_RX_BUFFER_NUM * sizeof(eth_dma_rx_descriptor_t) +
                          CONFIG_ETH_DMA_TX_BUFFER_NUM * sizeof(eth_dma_tx_descriptor_t);
-    esp_dma_mem_info_t dma_mem_info = {
-        .extra_heap_caps = MALLOC_CAP_INTERNAL,
-        .dma_alignment_bytes = 4,
-    };
-    esp_dma_capable_calloc(1, desc_size, &dma_mem_info, (void*)&emac_esp_dma->descriptors, NULL);
-
+    emac_esp_dma->descriptors = heap_caps_aligned_calloc(4, 1, desc_size, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
     ESP_GOTO_ON_FALSE(emac_esp_dma->descriptors, ESP_ERR_NO_MEM, err, TAG, "no mem for descriptors");
     /* alloc memory for ethernet dma buffer */
     for (int i = 0; i < CONFIG_ETH_DMA_RX_BUFFER_NUM; i++) {
-        esp_dma_capable_calloc(1, CONFIG_ETH_DMA_BUFFER_SIZE, &dma_mem_info, (void*)&emac_esp_dma->rx_buf[i], NULL);
+        emac_esp_dma->rx_buf[i] = heap_caps_aligned_calloc(4, 1, CONFIG_ETH_DMA_BUFFER_SIZE, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
         ESP_GOTO_ON_FALSE(emac_esp_dma->rx_buf[i], ESP_ERR_NO_MEM, err, TAG, "no mem for RX DMA buffers");
     }
     for (int i = 0; i < CONFIG_ETH_DMA_TX_BUFFER_NUM; i++) {
-        esp_dma_capable_calloc(1, CONFIG_ETH_DMA_BUFFER_SIZE, &dma_mem_info, (void*)&emac_esp_dma->tx_buf[i], NULL);
+        emac_esp_dma->tx_buf[i] = heap_caps_aligned_calloc(4, 1, CONFIG_ETH_DMA_BUFFER_SIZE, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
         ESP_GOTO_ON_FALSE(emac_esp_dma->tx_buf[i], ESP_ERR_NO_MEM, err, TAG, "no mem for TX DMA buffers");
     }
     emac_hal_init(&emac_esp_dma->hal);

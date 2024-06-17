@@ -16,10 +16,16 @@
 #include "esp_log.h"
 #include "hal/wdt_hal.h"
 
-#if SOC_KEY_MANAGER_SUPPORTED
+// Need to remove check and merge accordingly for ESP32C5 once key manager support added in IDF-8621
+#if SOC_KEY_MANAGER_SUPPORTED || CONFIG_IDF_TARGET_ESP32C5
+#if CONFIG_IDF_TARGET_ESP32C5
+#include "soc/keymng_reg.h"
+#include "hal/key_mgr_types.h"
+#include "soc/pcr_reg.h"
+#else
 #include "hal/key_mgr_hal.h"
 #include "hal/mspi_timing_tuning_ll.h"
-#include "soc/keymng_reg.h"
+#endif /* CONFIG_IDF_TARGET_ESP32C5 */
 #endif
 
 #ifdef CONFIG_SOC_EFUSE_CONSISTS_OF_ONE_KEY_BLOCK
@@ -216,17 +222,17 @@ static esp_err_t check_and_generate_encryption_keys(void)
         }
         ESP_LOGI(TAG, "Using pre-loaded flash encryption key in efuse");
     }
-
-#if SOC_KEY_MANAGER_SUPPORTED
-#if CONFIG_IDF_TARGET_ESP32C5 && SOC_KEY_MANAGER_SUPPORTED
-    // TODO: [ESP32C5] IDF-8622 find a more proper place for these codes
-    REG_SET_BIT(KEYMNG_STATIC_REG, KEYMNG_USE_EFUSE_KEY_FLASH);
+// Need to remove check for ESP32C5 and merge accordingly once key manager support added in IDF-8621
+#if SOC_KEY_MANAGER_SUPPORTED || CONFIG_IDF_TARGET_ESP32C5
+#if CONFIG_IDF_TARGET_ESP32C5
+    REG_SET_FIELD(KEYMNG_STATIC_REG, KEYMNG_USE_EFUSE_KEY, 2);
     REG_SET_BIT(PCR_MSPI_CLK_CONF_REG, PCR_MSPI_AXI_RST_EN);
     REG_CLR_BIT(PCR_MSPI_CLK_CONF_REG, PCR_MSPI_AXI_RST_EN);
-#endif
+#else
     // Force Key Manager to use eFuse key for XTS-AES operation
     key_mgr_hal_set_key_usage(ESP_KEY_MGR_XTS_AES_128_KEY, ESP_KEY_MGR_USE_EFUSE_KEY);
     _mspi_timing_ll_reset_mspi();
+#endif /* CONFIG_IDF_TARGET_ESP32C5 */
 #endif
 
     return ESP_OK;

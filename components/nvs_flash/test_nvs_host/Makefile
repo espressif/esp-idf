@@ -26,7 +26,7 @@ SOURCE_FILES = \
 	test_partition_manager.cpp \
 	main.cpp
 
-SOURCE_FILES_C = ../../esp_rom/linux/esp_rom_crc.c ../../esp_common/src/esp_err_check_linux.c
+SOURCE_FILES_C = ../../esp_rom/linux/esp_rom_crc.c esp_err_check_mock.c
 
 ifeq ($(shell $(CC) -v 2>&1 | grep -c "clang version"), 1)
 COMPILER := clang
@@ -34,7 +34,7 @@ else
 COMPILER := gcc
 endif
 
-CPPFLAGS += -I../private_include -I../include -I../src -I../../esp_rom/include -I../../esp_rom/include/linux -I../../log/include -I./ -I../../esp_common/include -I../../esp32/include -I ../../mbedtls/mbedtls/include -I ../../spi_flash/include -I ../../esp_partition/include -I ../../hal/include -I ../../xtensa/include -I ../../soc/linux/include -I ../../../tools/catch -fprofile-arcs -ftest-coverage -g2 -ggdb
+CPPFLAGS += -I../private_include -I../include -I../src -I../../heap/include -I../../esp_rom/include -I../../esp_rom/include/linux -I../../log/include -I./ -I../../esp_common/include -I../../esp32/include -I ../../mbedtls/mbedtls/include -I ../../spi_flash/include -I ../../esp_partition/include -I ../../hal/include -I ../../xtensa/include -I ../../soc/linux/include -I ../../../tools/catch -fprofile-arcs -ftest-coverage -g2 -ggdb
 CFLAGS += -fprofile-arcs -ftest-coverage -DLINUX_TARGET -DLINUX_HOST_LEGACY_TEST
 CXXFLAGS += -std=c++11 -Wall -Werror -DLINUX_TARGET -DLINUX_HOST_LEGACY_TEST
 LDFLAGS += -lstdc++ -Wall -fprofile-arcs -ftest-coverage

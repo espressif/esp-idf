@@ -280,13 +280,13 @@ esp_err_t emac_esp_custom_ioctl(esp_eth_mac_t *mac, int cmd, void *data)
 
 static esp_err_t emac_esp32_transmit(esp_eth_mac_t *mac, uint8_t *buf, uint32_t length)
 {
-    esp_err_t ret = ESP_OK;
     emac_esp32_t *emac = __containerof(mac, emac_esp32_t, parent);
     uint32_t sent_len = emac_esp_dma_transmit_frame(emac->emac_dma_hndl, buf, length);
-    ESP_GOTO_ON_FALSE(sent_len == length, ESP_ERR_NO_MEM, err, TAG, "insufficient TX buffer size");
+    if(sent_len != length) {
+        ESP_LOGD(TAG, "insufficient TX buffer size");
+        return ESP_ERR_NO_MEM;
+    }
     return ESP_OK;
-err:
-    return ret;
 }
 
 static esp_err_t emac_esp32_transmit_multiple_bufs(esp_eth_mac_t *mac, uint32_t argc, va_list args)
@@ -659,7 +659,7 @@ esp_eth_mac_t *esp_eth_mac_new_esp32(const eth_esp32_emac_config_t *esp32_config
     }
 
     ret_code = emac_esp_alloc_driver_obj(config, &emac);
-    ESP_RETURN_ON_FALSE(ret_code == ESP_OK, NULL, TAG, "alloc driver object failed");
+    ESP_GOTO_ON_FALSE(ret_code == ESP_OK, NULL, err, TAG, "alloc driver object failed");
 
     // enable bus clock for the EMAC module, and reset the registers into default state
     // this must be called before HAL layer initialization

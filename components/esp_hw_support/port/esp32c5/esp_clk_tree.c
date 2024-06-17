@@ -27,7 +27,7 @@ uint32_t *freq_value)
     uint32_t clk_src_freq = 0;
     switch (clk_src) {
     case SOC_MOD_CLK_XTAL:
-        clk_src_freq = CONFIG_XTAL_FREQ * MHZ;
+        clk_src_freq = clk_hal_xtal_get_freq_mhz() * MHZ;
         break;
     case SOC_MOD_CLK_PLL_F80M:
         clk_src_freq = CLK_LL_PLL_80M_FREQ_MHZ * MHZ;
@@ -51,7 +51,7 @@ uint32_t *freq_value)
         clk_src_freq = SOC_CLK_RC_FAST_FREQ_APPROX;
         break;
     case SOC_MOD_CLK_XTAL_D2:
-        clk_src_freq = (CONFIG_XTAL_FREQ * MHZ) >> 1;
+        clk_src_freq = (clk_hal_xtal_get_freq_mhz() * MHZ) >> 1;
         break;
     default:
         break;

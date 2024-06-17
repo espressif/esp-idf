@@ -109,7 +109,7 @@ typedef struct {
  *
  * @param[in]  i2c_slave Handle for I2C slave.
  * @param[out] evt_cause I2C capture event cause, fed by driver
- * @param[in]  user_ctx User data, set in `i2c_slave_register_event_callbacks()`
+ * @param[in]  arg User data, set in `i2c_slave_register_event_callbacks()`
  *
  * @return Whether a high priority task has been waken up by this function
  */

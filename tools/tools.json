@@ -217,14 +217,14 @@
           "name": "esp-13.2.0_20240530",
           "status": "recommended",
           "win32": {
-            "sha256": "06e43d202e4daccf899ed57dbebb777062637f2a7e3167dffe1a5ce53fe78b79",
-            "size": 268719971,
-            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-13.2.0_20240530/xtensa-esp-elf-13.2.0_20240530-i686-w64-mingw32.zip"
+            "sha256": "d6b227c50e3c8e21d62502b3140e5ab74a4cb502c2b4169c36238b9858a8fb88",
+            "size": 266042967,
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-13.2.0_20240530/xtensa-esp-elf-13.2.0_20240530-i686-w64-mingw32_hotfix.zip"
           },
           "win64": {
-            "sha256": "fad96cffef900b4898bc89d5a11c16c581bddb88f25fc83eccbbc126cd9a4f41",
-            "size": 272523365,
-            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-13.2.0_20240530/xtensa-esp-elf-13.2.0_20240530-x86_64-w64-mingw32.zip"
+            "sha256": "155ee97b531236e6a7c763395c68ca793e55e74d2cb4d38a23057a153e01e7d0",
+            "size": 269831985,
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-13.2.0_20240530/xtensa-esp-elf-13.2.0_20240530-x86_64-w64-mingw32_hotfix.zip"
           }
         }
       ]
@@ -895,31 +895,31 @@
       "versions": [
         {
           "linux-amd64": {
-            "sha256": "e7c72ef5705ad1444d391711088c8717fc89f42e9bf6d1487f9c2a326b8cfa83",
-            "size": 14714724,
-            "url": "https://github.com/espressif/qemu/releases/download/esp-develop-8.2.0-20240122/qemu-xtensa-softmmu-esp_develop_8.2.0_20240122-x86_64-linux-gnu.tar.xz"
+            "sha256": "071d117c44a6e9a1bc8664ab63b592d3e17ceb779119dcb46c59571a4a7a88c9",
+            "size": 13611248,
+            "url": "https://github.com/espressif/qemu/releases/download/esp-develop-9.0.0-20240606/qemu-xtensa-softmmu-esp_develop_9.0.0_20240606-x86_64-linux-gnu.tar.xz"
           },
           "linux-arm64": {
-            "sha256": "77c83f2772f7d9b0c770722c2cebf3625d21d8eddbccfea6816f3d8f4982ea86",
-            "size": 14239876,
-            "url": "https://github.com/espressif/qemu/releases/download/esp-develop-8.2.0-20240122/qemu-xtensa-softmmu-esp_develop_8.2.0_20240122-aarch64-linux-gnu.tar.xz"
+            "sha256": "43552f32b303a6820d0d9551903e54fc221aca98ccbd04e5cbccbca881548008",
+            "size": 15247720,
+            "url": "https://github.com/espressif/qemu/releases/download/esp-develop-9.0.0-20240606/qemu-xtensa-softmmu-esp_develop_9.0.0_20240606-aarch64-linux-gnu.tar.xz"
           },
           "macos": {
-            "sha256": "897126a12aeac1cc7d8e9a50626cdf0bc4812fd4bceb77b07ff4a81b86deaaa4",
-            "size": 3379992,
-            "url": "https://github.com/espressif/qemu/releases/download/esp-develop-8.2.0-20240122/qemu-xtensa-softmmu-esp_develop_8.2.0_20240122-x86_64-apple-darwin.tar.xz"
+            "sha256": "0096734280ce04f558cd9bd72f35db39667f80d44309a35565f2f8c02d1f9cc3",
+            "size": 3707956,
+            "url": "https://github.com/espressif/qemu/releases/download/esp-develop-9.0.0-20240606/qemu-xtensa-softmmu-esp_develop_9.0.0_20240606-x86_64-apple-darwin.tar.xz"
           },
           "macos-arm64": {
-            "sha256": "9134f6dc653c6dd556a6c9c2d80b9eca0c437a8f625e994f9285aadf7b2e7d6f",
-            "size": 3200756,
-            "url": "https://github.com/espressif/qemu/releases/download/esp-develop-8.2.0-20240122/qemu-xtensa-softmmu-esp_develop_8.2.0_20240122-aarch64-apple-darwin.tar.xz"
+            "sha256": "fb4ca6be7b1a4dbcf153879cf0582300f974371def0826c0c5b728f12812ad08",
+            "size": 3456764,
+            "url": "https://github.com/espressif/qemu/releases/download/esp-develop-9.0.0-20240606/qemu-xtensa-softmmu-esp_develop_9.0.0_20240606-aarch64-apple-darwin.tar.xz"
           },
-          "name": "esp_develop_8.2.0_20240122",
+          "name": "esp_develop_9.0.0_20240606",
           "status": "recommended",
           "win64": {
-            "sha256": "fc49844b506697542558d3fcb2fe64171b3d28f47e59000ebe8e198d32091d45",
-            "size": 32225200,
-            "url": "https://github.com/espressif/qemu/releases/download/esp-develop-8.2.0-20240122/qemu-xtensa-softmmu-esp_develop_8.2.0_20240122-x86_64-w64-mingw32.tar.xz"
+            "sha256": "281659f7a1d49761ac6f54d0aeb14366cb93c002f21948b847a0e15c0b8f5425",
+            "size": 33957256,
+            "url": "https://github.com/espressif/qemu/releases/download/esp-develop-9.0.0-20240606/qemu-xtensa-softmmu-esp_develop_9.0.0_20240606-x86_64-w64-mingw32.tar.xz"
           }
         }
       ]
@@ -948,31 +948,31 @@
       "versions": [
         {
           "linux-amd64": {
-            "sha256": "95ac86d7b53bf98b5ff19c33aa926189b849f5a0daf8f41e160bc86c5e31abd4",
-            "size": 16275380,
-            "url": "https://github.com/espressif/qemu/releases/download/esp-develop-8.2.0-20240122/qemu-riscv32-softmmu-esp_develop_8.2.0_20240122-x86_64-linux-gnu.tar.xz"
+            "sha256": "47120e826cfec7180db8cb611a7a4aed2e9b2191c2a739194f8ce085e63cdd8d",
+            "size": 14454468,
+            "url": "https://github.com/espressif/qemu/releases/download/esp-develop-9.0.0-20240606/qemu-riscv32-softmmu-esp_develop_9.0.0_20240606-x86_64-linux-gnu.tar.xz"
           },
           "linux-arm64": {
-            "sha256": "4089f7958f753779e5b4c93fe2469d62850a1f209b0bda8b75d55fe4a61ca39b",
-            "size": 15796904,
-            "url": "https://github.com/espressif/qemu/releases/download/esp-develop-8.2.0-20240122/qemu-riscv32-softmmu-esp_develop_8.2.0_20240122-aarch64-linux-gnu.tar.xz"
+            "sha256": "3b6221a8b1881d2c9b9fa0b0bf8d7065c84153d2a54e429307bde9feae235c27",
+            "size": 16542756,
+            "url": "https://github.com/espressif/qemu/releases/download/esp-develop-9.0.0-20240606/qemu-riscv32-softmmu-esp_develop_9.0.0_20240606-aarch64-linux-gnu.tar.xz"
           },
           "macos": {
-            "sha256": "e9cc3c1344f6bf1ffa3748a4c59d88f9005c2689cc0583458cea35409a73c923",
-            "size": 3502440,
-            "url": "https://github.com/espressif/qemu/releases/download/esp-develop-8.2.0-20240122/qemu-riscv32-softmmu-esp_develop_8.2.0_20240122-x86_64-apple-darwin.tar.xz"
+            "sha256": "3afa55d5abea52ccf18d0bc41fe819d568bd4ee1582989b1ee9b1ee4a609a31e",
+            "size": 3751096,
+            "url": "https://github.com/espressif/qemu/releases/download/esp-develop-9.0.0-20240606/qemu-riscv32-softmmu-esp_develop_9.0.0_20240606-x86_64-apple-darwin.tar.xz"
           },
           "macos-arm64": {
-            "sha256": "b3f23e294cf325f92e5e8948583cc985d55d5d2ba3d79c04c9d09f080b62954d",
-            "size": 3219984,
-            "url": "https://github.com/espressif/qemu/releases/download/esp-develop-8.2.0-20240122/qemu-riscv32-softmmu-esp_develop_8.2.0_20240122-aarch64-apple-darwin.tar.xz"
+            "sha256": "69ba5154594fb2922d5490a49ea6b4925c024c6c37f875b42f9885f513e0bcdd",
+            "size": 3409264,
+            "url": "https://github.com/espressif/qemu/releases/download/esp-develop-9.0.0-20240606/qemu-riscv32-softmmu-esp_develop_9.0.0_20240606-aarch64-apple-darwin.tar.xz"
           },
-          "name": "esp_develop_8.2.0_20240122",
+          "name": "esp_develop_9.0.0_20240606",
           "status": "recommended",
           "win64": {
-            "sha256": "36008768c7ce91927e73de5e4298625087c01208e6122d886e578d400fd93b5c",
-            "size": 35229220,
-            "url": "https://github.com/espressif/qemu/releases/download/esp-develop-8.2.0-20240122/qemu-riscv32-softmmu-esp_develop_8.2.0_20240122-x86_64-w64-mingw32.tar.xz"
+            "sha256": "f49bb5c8f4d6e2cfbf7eeec21eb8ef190a57307778705bc689536ac13bde511c",
+            "size": 36274632,
+            "url": "https://github.com/espressif/qemu/releases/download/esp-develop-9.0.0-20240606/qemu-riscv32-softmmu-esp_develop_9.0.0_20240606-x86_64-w64-mingw32.tar.xz"
           }
         }
       ]

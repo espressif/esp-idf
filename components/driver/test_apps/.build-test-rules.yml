@@ -17,6 +17,10 @@ components/driver/test_apps/i2s_test_apps/legacy_i2s_driver:
 components/driver/test_apps/legacy_adc_driver:
   disable:
     - if: SOC_ADC_SUPPORTED != 1
+  disable_test:
+    - if: IDF_TARGET == "esp32p4"
+      temporary: true
+      reason: lack of runners, TODO IDF-9573
   depends_components:
     - efuse
     - esp_driver_i2s
@@ -74,10 +78,6 @@ components/driver/test_apps/legacy_sigma_delta_driver:
 components/driver/test_apps/legacy_timer_driver:
   disable:
     - if: SOC_GPTIMER_SUPPORTED != 1
-  disable_test:
-    - if: IDF_TARGET == "esp32p4"
-      temporary: true
-      reason: test not pass, should be re-enable # TODO: IDF-8962
   depends_filepatterns:
     - components/driver/deprecated/**/*timer*
 

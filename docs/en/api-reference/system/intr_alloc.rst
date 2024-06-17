@@ -26,6 +26,10 @@ Overview
 
     The {IDF_TARGET_NAME} has two cores, with 32 external asynchronous interrupts each. Each interrupt's priority is independently programmable. In addition, there are also 3 core local interrupt sources (CLINT) on each core. See **{IDF_TARGET_NAME} Technical Reference Manual** [`PDF <{IDF_TARGET_TRM_EN_URL}#riscvcpu>`__] for more details.
 
+.. only:: esp32c5 or esp32c61
+
+    The {IDF_TARGET_NAME} has one core, with 32 external asynchronous interrupts. Each interrupt's priority is independently programmable. In addition, there are also 3 core local interrupt sources (CLINT). For details, see **{IDF_TARGET_NAME} Technical Reference Manual** > **High-Performance CPU** [`PDF <{IDF_TARGET_TRM_EN_URL}#riscvcpu>`__].
+
 Because there are more interrupt sources than interrupts, sometimes it makes sense to share an interrupt in multiple drivers. The :cpp:func:`esp_intr_alloc` abstraction exists to hide all these implementation details.
 
 A driver can allocate an interrupt for a certain peripheral by calling :cpp:func:`esp_intr_alloc` (or :cpp:func:`esp_intr_alloc_intrstatus`). It can use the flags passed to this function to specify the type, priority, and trigger method of the interrupt to allocate. The interrupt allocation code will then find an applicable interrupt, use the interrupt matrix to hook it up to the peripheral, and install the given interrupt handler and ISR to it.

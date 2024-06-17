@@ -122,7 +122,7 @@ It is possible for an application to use different keys for different NVS partit
     .. note:: Users can program their own HMAC key in eFuse block beforehand by using the following command:
         ::
 
-            espefuse.py -p PORT burn_key <BLOCK_KEYN> <hmac_key_file.bin> HMAC_UP
+            idf.py -p PORT efuse-burn-key <BLOCK_KEYN> <hmac_key_file.bin> HMAC_UP
 
 Encrypted Read/Write
 --------------------

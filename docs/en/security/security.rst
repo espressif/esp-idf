@@ -11,7 +11,7 @@ This guide provides an overview of the overall security features available in va
 
 .. note::
 
-    In this guide, most used commands are in the form of ``idf.py secure-<command>``, which is a wrapper around corresponding ``espsecure.py <command>``. The idf.py-based commands provides more user-friendly experience, although may lack some of the advanced functionality of their espsecure.py-based counterparts.
+    In this guide, most used commands are in the form of ``idf.py secure-<command>``, which is a wrapper around corresponding ``espsecure.py <command>``. The ``idf.py`` based commands provides more user-friendly experience, although may lack some of the advanced functionality of their ``espsecure.py`` based counterparts.
 
 Goals
 -----
@@ -245,7 +245,7 @@ Anti-Rollback Protection
 
 Anti-rollback protection feature ensures that device only executes the application that meets the security version criteria as stored in its eFuse. So even though the application is trusted and signed by legitimate key, it may contain some revoked security feature or credential. Hence, device must reject any such application.
 
-ESP-IDF allows this feature for the application only and it is managed through 2nd stage bootloader. The security version is stored in the device eFuse and it is compared against the application image header during both bootup and over-the-air updates.
+ESP-IDF allows this feature for the application only and it is managed through 2nd stage bootloader. The security version is stored in the device eFuse and it is compared against the application image header during both boot-up and over-the-air updates.
 
 Please see more information to enable this feature in the :ref:`anti-rollback` guide.
 

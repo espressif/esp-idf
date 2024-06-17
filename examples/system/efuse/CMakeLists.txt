@@ -7,7 +7,7 @@ project(efuse)
 
 idf_component_get_property(esptool_py_dir esptool_py COMPONENT_DIR)
 set(efuse_names "MAC" "WR_DIS")
-add_custom_target(efuse-summary
+add_custom_target(efuse-filter
     COMMAND ${CMAKE_COMMAND}
     -D "IDF_PATH=${IDF_PATH}"
     -D "esptool_py_dir=${esptool_py_dir}"

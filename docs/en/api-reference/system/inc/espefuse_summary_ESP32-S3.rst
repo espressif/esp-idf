@@ -1,12 +1,10 @@
 .. code-block:: none
 
-    espefuse.py -p PORT summary
+    idf.py efuse-summary
 
-    espefuse.py v4.6-dev
-    Connecting....
-    Detecting chip type... ESP32-S3
+    Executing action: efuse-summary
+    (...)
 
-    === Run "summary" command ===
     EFUSE_NAME (Block) Description  = [Meaningful Value] [Readable/Writeable] (Hex Value)
     ----------------------------------------------------------------------------------------
     Calibration fuses:
@@ -94,14 +92,14 @@
        = 00:00:00:00:00:00 (OK) R/W
 
     Security fuses:
-    DIS_DOWNLOAD_ICACHE (BLOCK0)                       Set this bit to disable Icache in download mode (b = False R/W (0b0)
-                                                       oot_mode[3:0] is 0; 1; 2; 3; 6; 7)
+    DIS_DOWNLOAD_ICACHE (BLOCK0)                       Set this bit to disable Icache in download mode (  = False R/W (0b0)
+                                                       boot_mode[3:0] is 0; 1; 2; 3; 6; 7)
     DIS_DOWNLOAD_DCACHE (BLOCK0)                       Set this bit to disable Dcache in download mode (  = False R/W (0b0)
                                                        boot_mode[3:0] is 0; 1; 2; 3; 6; 7)
-    DIS_FORCE_DOWNLOAD (BLOCK0)                        Set this bit to disable the function that forces c = False R/W (0b0)
-                                                       hip into download mode
-    DIS_DOWNLOAD_MANUAL_ENCRYPT (BLOCK0)               Set this bit to disable flash encryption when in d = False R/W (0b0)
-                                                       ownload boot modes
+    DIS_FORCE_DOWNLOAD (BLOCK0)                        Set this bit to disable the function that forces   = False R/W (0b0)
+                                                       chip into download mode
+    DIS_DOWNLOAD_MANUAL_ENCRYPT (BLOCK0)               Set this bit to disable flash encryption when in   = False R/W (0b0)
+                                                       download boot modes
     SPI_BOOT_CRYPT_CNT (BLOCK0)                        Enables flash encryption when 1 or 3 bits are set  = Disable R/W (0b000)
                                                        and disabled otherwise
     SECURE_BOOT_KEY_REVOKE0 (BLOCK0)                   Revoke 1st secure boot key                         = False R/W (0b0)
@@ -119,8 +117,8 @@
     DIS_DOWNLOAD_MODE (BLOCK0)                         Set this bit to disable download mode (boot_mode[3 = False R/W (0b0)
                                                        :0] = 0; 1; 2; 3; 6; 7)
     ENABLE_SECURITY_DOWNLOAD (BLOCK0)                  Set this bit to enable secure UART download mode   = False R/W (0b0)
-    SECURE_VERSION (BLOCK0)                            Secure version (used by ESP-IDF anti-rollback feat = 0 R/W (0x0000)
-                                                       ure)
+    SECURE_VERSION (BLOCK0)                            Secure version (used by ESP-IDF anti-rollback      = 0 R/W (0x0000)
+                                                       feature)
     BLOCK_KEY0 (BLOCK4)
       Purpose: USER
                    Key0 or user data
@@ -193,11 +191,13 @@ To get a dump for all eFuse registers.
 
 .. code-block:: none
 
-    espefuse.py -p PORT dump
+    idf.py efuse-dump
 
+    Executing action: efuse-dump
+    Running espefuse.py in directory <project-directory>
+    Executing "espefuse.py dump --chip esp32s3"...
     espefuse.py v4.6-dev
     Connecting....
-    Detecting chip type... ESP32-S3
     BLOCK0          (                ) [0 ] read_regs: 00000000 00000000 00000000 00000000 00000000 00000000
     MAC_SPI_8M_0    (BLOCK1          ) [1 ] read_regs: 3b41f270 0000ecda 00000000 030c0000 2c707800 9800cc58
     BLOCK_SYS_DATA  (BLOCK2          ) [2 ] read_regs: b8c93acb bcc32b88 6000f45e 4bbe25ac 8d8b16d1 924940b4 b2c4cee1 50a53ace

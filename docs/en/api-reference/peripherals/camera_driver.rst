@@ -32,10 +32,10 @@ Functional Overview
 Resource Allocation
 ^^^^^^^^^^^^^^^^^^^
 
-.. only:: SOC_MIPI_CSI_SUPPORTED
+Install Camera Controller Driver
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    Install Camera Controller Driver
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. only:: SOC_MIPI_CSI_SUPPORTED
 
     A Camera Controller Driver can be implemented by the CSI peripheral, which requires the configuration that specified by :cpp:type:`esp_cam_ctlr_csi_config_t`.
 
@@ -56,6 +56,41 @@ Resource Allocation
         };
         esp_cam_ctlr_handle_t handle = NULL;
         ESP_ERROR_CHECK(esp_cam_new_csi_ctlr(&csi_config, &handle));
+
+.. only:: SOC_ISP_DVP_SUPPORTED
+
+    A Camera Controller Driver can be implemented by the ISP DVP peripheral, which requires the configuration that specified by :cpp:type:`esp_cam_ctlr_isp_dvp_cfg_t`.
+
+    If the configurations in :cpp:type:`esp_cam_ctlr_isp_dvp_cfg_t` is specified, users can call :cpp:func:`esp_cam_new_isp_dvp_ctlr` to allocate and initialize a ISP DVP camera controller handle. This function will return an ISP DVP camera controller handle if it runs correctly. You can take following code as reference.
+
+    Before calling :cpp:func:`esp_cam_new_isp_dvp_ctlr`, you should also call :cpp:func:`esp_isp_new_processor` to create an ISP handle.
+
+    .. code:: c
+
+        isp_proc_handle_t isp_proc = NULL;
+        esp_isp_processor_cfg_t isp_config = {
+            .clk_hz = 120 * 1000 * 1000,
+            .input_data_source = ISP_INPUT_DATA_SOURCE_DVP,
+            .input_data_color_type = ISP_COLOR_RAW8,
+            .output_data_color_type = ISP_COLOR_RGB565,
+            .has_line_start_packet = false,
+            .has_line_end_packet = false,
+            .h_res = MIPI_CSI_DISP_HSIZE,
+            .v_res = MIPI_CSI_DISP_VSIZE,
+        };
+        ESP_ERROR_CHECK(esp_isp_new_processor(&isp_config, &isp_proc));
+
+        esp_cam_ctlr_isp_dvp_cfg_t dvp_ctlr_config = {
+            .data_width = 8,
+            .data_io = {53, 54, 52, 0, 1, 45, 46, 47, -1, -1, -1, -1, -1, -1, -1, -1},
+            .pclk_io = 21,
+            .hsync_io = 5,
+            .vsync_io = 23,
+            .de_io = 22,
+            .io_flags.vsync_invert = 1,
+            .queue_items = 10,
+        };
+        ESP_ERROR_CHECK(esp_cam_new_isp_dvp_ctlr(isp_proc, &dvp_ctlr_config, &cam_handle));
 
 Uninstall Camera Controller Driver
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -127,15 +162,25 @@ After the Camera Controller Driver starts receiving, it can generate a specific 
 Thread Safety
 ^^^^^^^^^^^^^
 
-The factory function :cpp:func:`esp_cam_new_csi_ctlr` and :cpp:func:`esp_cam_ctlr_del` are guaranteed to be thread safe by the driver, which means, user can call them from different RTOS tasks without protection by extra locks.
+The factory functions:
+
+.. list::
+    :SOC_MIPI_CSI_SUPPORTED: - :cpp:func:`esp_cam_new_csi_ctlr`
+    :SOC_ISP_DVP_SUPPORTED: - :cpp:func:`esp_cam_new_isp_dvp_ctlr`
+    - :cpp:func:`esp_cam_ctlr_del`
+
+    are guaranteed to be thread safe by the driver, which means, user can call them from different RTOS tasks without protection by extra locks.
 
 .. _cam-kconfig-options:
 
 Kconfig Options
 ^^^^^^^^^^^^^^^
 
-- :ref:`CONFIG_CAM_CTLR_MIPI_CSI_ISR_IRAM_SAFE` controls whether the default ISR handler should be masked when the cache is disabled
+The following kconfig options the behavior of the interrupt handler when cache is disabled:
 
+.. list::
+    :SOC_MIPI_CSI_SUPPORTED: - :ref:`CONFIG_CAM_CTLR_MIPI_CSI_ISR_IRAM_SAFE`, see `IRAM SAFE <#cam-iram-safe>`__ for more details.
+    :SOC_ISP_DVP_SUPPORTED: - :ref:`CONFIG_CAM_CTLR_ISP_DVP_ISR_IRAM_SAFE`, see `IRAM SAFE <#cam-iram-safe>`__ for more details.
 
 .. _cam-iram-safe:
 
@@ -144,7 +189,13 @@ IRAM Safe
 
 By default, the CSI interrupt will be deferred when the cache is disabled because of writing or erasing the flash.
 
-There is a Kconfig option :ref:`CONFIG_CAM_CTLR_MIPI_CSI_ISR_IRAM_SAFE` that:
+There are Kconfig options
+
+.. list::
+    :SOC_MIPI_CSI_SUPPORTED: - :ref:`CONFIG_CAM_CTLR_MIPI_CSI_ISR_IRAM_SAFE`
+    :SOC_ISP_DVP_SUPPORTED: - :ref:`CONFIG_CAM_CTLR_ISP_DVP_ISR_IRAM_SAFE`
+
+that
 
 -  Enables the interrupt being serviced even when the cache is disabled
 -  Places all functions that used by the ISR into IRAM
@@ -158,3 +209,4 @@ API Reference
 .. include-build-file:: inc/esp_cam_ctlr.inc
 .. include-build-file:: inc/esp_cam_ctlr_types.inc
 .. include-build-file:: inc/esp_cam_ctlr_csi.inc
+.. include-build-file:: inc/esp_cam_ctlr_isp_dvp.inc

@@ -15,6 +15,7 @@
 #include "soc/lp_aon_reg.h"
 #include "hal/assert.h"
 #include "hal/lp_timer_types.h"
+#include "hal/misc.h"
 #include "esp_attr.h"
 
 #ifdef __cplusplus
@@ -33,8 +34,8 @@ extern "C" {
 FORCE_INLINE_ATTR void lp_timer_ll_set_alarm_target(lp_timer_dev_t *dev, uint8_t timer_id, uint64_t value)
 {
 #if CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
-    dev->target[timer_id].hi.main_timer_tar_high = (value >> 32) & 0xFFFF;
-    dev->target[timer_id].lo.main_timer_tar_low = value & 0xFFFFFFFF;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(dev->target[timer_id].hi, main_timer_tar_high, (value >> 32) & 0xFFFF);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(dev->target[timer_id].lo, main_timer_tar_low, value & 0xFFFFFFFF);
 #else
     HAL_ASSERT(false && "lp_timer not supported yet");
 #endif
@@ -69,7 +70,7 @@ FORCE_INLINE_ATTR void lp_timer_ll_set_target_enable(lp_timer_dev_t *dev, uint8_
 FORCE_INLINE_ATTR uint32_t lp_timer_ll_get_counter_value_low(lp_timer_dev_t *dev, uint8_t buffer_id)
 {
 #if CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
-    return dev->counter[buffer_id].lo.main_timer_buf_low;
+    return HAL_FORCE_READ_U32_REG_FIELD(dev->counter[buffer_id].lo, main_timer_buf_low);
 #else
     HAL_ASSERT(false && "lp_timer not supported yet");
     return 0;
@@ -87,7 +88,7 @@ FORCE_INLINE_ATTR uint32_t lp_timer_ll_get_counter_value_low(lp_timer_dev_t *dev
 FORCE_INLINE_ATTR uint32_t lp_timer_ll_get_counter_value_high(lp_timer_dev_t *dev, uint8_t buffer_id)
 {
 #if CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
-    return dev->counter[buffer_id].hi.main_timer_buf_high;
+    return HAL_FORCE_READ_U32_REG_FIELD(dev->counter[buffer_id].hi, main_timer_buf_high);
 #else
     HAL_ASSERT(false && "lp_timer not supported yet");
     return 0;

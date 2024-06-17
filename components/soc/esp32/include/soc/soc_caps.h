@@ -114,7 +114,7 @@
 /*-------------------------- XTAL CAPS ---------------------------------------*/
 #define SOC_XTAL_SUPPORT_26M            1
 #define SOC_XTAL_SUPPORT_40M            1
-#define SOC_XTAL_SUPPORT_AUTO_DETECT    1
+#define SOC_XTAL_SUPPORT_AUTO_DETECT    1   // Measure XTAL freq with an internal RC clock
 
 /*-------------------------- ADC CAPS ----------------------------------------*/
 /*!< SAR ADC Module*/
@@ -326,7 +326,7 @@
 #define SOC_TOUCH_SENSOR_VERSION            (1U)     /*!<Hardware version of touch sensor */
 #define SOC_TOUCH_SENSOR_NUM                (10)
 
-#define SOC_TOUCH_SAMPLER_NUM               (1U)    /*!< The sampler number in total, each sampler can be used to sample on one frequency */
+#define SOC_TOUCH_SAMPLE_CFG_NUM               (1U)    /*!< The sample configuration number in total, each sampler can be used to sample on one frequency */
 
 /*-------------------------- TWAI CAPS ---------------------------------------*/
 #define SOC_TWAI_CONTROLLER_NUM         1UL

@@ -17,7 +17,7 @@
 #pragma once
 
 /*-------------------------- COMMON CAPS ---------------------------------------*/
-// #define SOC_ADC_SUPPORTED               1  //TODO: IDF-6496
+#define SOC_ADC_SUPPORTED               1
 #define SOC_ANA_CMPR_SUPPORTED          1
 #define SOC_DEDICATED_GPIO_SUPPORTED    1
 #define SOC_UART_SUPPORTED              1
@@ -29,6 +29,7 @@
 #define SOC_GPTIMER_SUPPORTED           1
 #define SOC_PCNT_SUPPORTED              1
 // #define SOC_LCDCAM_SUPPORTED            1 // TODO: IDF-7465
+#define SOC_LCDCAM_CAM_SUPPORTED        1
 #define SOC_MIPI_CSI_SUPPORTED          1
 #define SOC_MIPI_DSI_SUPPORTED          1
 #define SOC_MCPWM_SUPPORTED             1
@@ -85,7 +86,7 @@
 #define SOC_ASSIST_DEBUG_SUPPORTED      1
 #define SOC_WDT_SUPPORTED               1
 #define SOC_SPI_FLASH_SUPPORTED         1
-// #define SOC_TOUCH_SENSOR_SUPPORTED      1  //TODO: IDF-7477
+#define SOC_TOUCH_SENSOR_SUPPORTED      1
 #define SOC_RNG_SUPPORTED               1
 #define SOC_GP_LDO_SUPPORTED            1 // General purpose LDO
 #define SOC_PPA_SUPPORTED               1
@@ -108,19 +109,20 @@
 
 /*-------------------------- ADC CAPS -------------------------------*/
 /*!< SAR ADC Module*/
-// #define SOC_ADC_DIG_CTRL_SUPPORTED              1  //TODO: IDF-6496, TODO: IDF-6497
+#define SOC_ADC_RTC_CTRL_SUPPORTED              1
+#define SOC_ADC_DIG_CTRL_SUPPORTED              1
 // #define SOC_ADC_DIG_IIR_FILTER_SUPPORTED        1
 // #define SOC_ADC_MONITOR_SUPPORTED               1
 #define SOC_ADC_DIG_SUPPORTED_UNIT(UNIT)        1    //Digital controller supported ADC unit
-// #define SOC_ADC_DMA_SUPPORTED                   1
-#define SOC_ADC_PERIPH_NUM                      (1U)
-#define SOC_ADC_CHANNEL_NUM(PERIPH_NUM)         (7)
-#define SOC_ADC_MAX_CHANNEL_NUM                 (7)
+#define SOC_ADC_DMA_SUPPORTED                   1
+#define SOC_ADC_PERIPH_NUM                      (2)
+#define SOC_ADC_CHANNEL_NUM(PERIPH_NUM)         ((PERIPH_NUM==0)? 6: 8)
+#define SOC_ADC_MAX_CHANNEL_NUM                 (8)
 #define SOC_ADC_ATTEN_NUM                       (4)
 
 /*!< Digital */
-#define SOC_ADC_DIGI_CONTROLLER_NUM             (1U)
-#define SOC_ADC_PATT_LEN_MAX                    (8) /*!< Two pattern tables, each contains 4 items. Each item takes 1 byte */
+#define SOC_ADC_DIGI_CONTROLLER_NUM             (2)
+#define SOC_ADC_PATT_LEN_MAX                    (16) /*!< Four pattern tables, each contains 4 items. Each item takes 1 byte */
 #define SOC_ADC_DIGI_MAX_BITWIDTH               (12)
 #define SOC_ADC_DIGI_MIN_BITWIDTH               (12)
 #define SOC_ADC_DIGI_IIR_FILTER_NUM             (2)
@@ -137,6 +139,9 @@
 
 /*!< Calibration */
 #define SOC_ADC_CALIBRATION_V1_SUPPORTED        (0) /*!< support HW offset calibration version 1*/
+
+/*!< ADC power control is shared by PWDET, TempSensor */
+#define SOC_ADC_SHARED_POWER                    1
 
 // ESP32P4-TODO: Copy from esp32c6, need check
 /*-------------------------- APB BACKUP DMA CAPS -------------------------------*/
@@ -313,6 +318,7 @@
 
 /*-------------------------- ISP CAPS ----------------------------------------*/
 #define SOC_ISP_BF_SUPPORTED            1
+#define SOC_ISP_CCM_SUPPORTED           1
 #define SOC_ISP_DVP_SUPPORTED           1
 
 #define SOC_ISP_NUMS                    1U
@@ -322,6 +328,7 @@
 #define SOC_ISP_SHARE_CSI_BRG           1
 #define SOC_ISP_BF_TEMPLATE_X_NUMS      3
 #define SOC_ISP_BF_TEMPLATE_Y_NUMS      3
+#define SOC_ISP_CCM_DIMENSION           3
 #define SOC_ISP_DVP_DATA_WIDTH_MAX      16
 
 /*-------------------------- LEDC CAPS ---------------------------------------*/
@@ -370,8 +377,9 @@
 #define SOC_RMT_SUPPORT_TX_SYNCHRO            1  /*!< Support coordinate a group of TX channels to start simultaneously */
 #define SOC_RMT_SUPPORT_TX_CARRIER_DATA_ONLY  1  /*!< TX carrier can be modulated to data phase only */
 #define SOC_RMT_SUPPORT_XTAL                  1  /*!< Support set XTAL clock as the RMT clock source */
-// #define SOC_RMT_SUPPORT_RC_FAST               1  /*!< Support set RC_FAST clock as the RMT clock source */
+#define SOC_RMT_SUPPORT_RC_FAST               1  /*!< Support set RC_FAST clock as the RMT clock source */
 #define SOC_RMT_SUPPORT_DMA                   1  /*!< RMT peripheral can connect to DMA channel */
+#define SOC_RMT_SUPPORT_SLEEP_RETENTION       1  /*!< The sleep retention feature can help back up RMT registers before sleep */
 
 /*-------------------------- LCD CAPS ----------------------------------------*/
 /* I80 bus and RGB timing generator can't work at the same time */
@@ -540,11 +548,17 @@
 #define SOC_MWDT_SUPPORT_XTAL              (1)
 
 /*-------------------------- TOUCH SENSOR CAPS -------------------------------*/
-#define SOC_TOUCH_SENSOR_VERSION            (3)         // Hardware version of touch sensor
-#define SOC_TOUCH_SENSOR_NUM                (14)        // Touch available channel number. Actually there are 15 Touch channels, but channel 14 is not pinned out, limit to 14 channels
-#define SOC_TOUCH_PROXIMITY_CHANNEL_NUM     (3)         // Sopport touch proximity channel number.
-#define SOC_TOUCH_PROXIMITY_MEAS_DONE_SUPPORTED (1)     // Sopport touch proximity channel measure done interrupt type.
-#define SOC_TOUCH_SAMPLER_NUM               (3)         // The sampler number in total, each sampler can be used to sample on one frequency
+#define SOC_TOUCH_SENSOR_VERSION                    (3)     /*!< Hardware version of touch sensor */
+#define SOC_TOUCH_SENSOR_NUM                        (14)    /*!< Touch available channel number. Actually there are 15 Touch channels, but channel 14 is not pinned out, limit to 14 channels */
+
+/* Touch Sensor Features */
+#define SOC_TOUCH_SUPPORT_SLEEP_WAKEUP              (1)     /*!< Touch sensor supports sleep awake */
+#define SOC_TOUCH_SUPPORT_WATERPROOF                (1)     /*!< Touch sensor supports waterproof */
+#define SOC_TOUCH_SUPPORT_PROX_SENSING              (1)     /*!< Touch sensor supports proximity sensing */
+#define SOC_TOUCH_PROXIMITY_CHANNEL_NUM             (3)     /*!< Support touch proximity channel number. */
+#define SOC_TOUCH_PROXIMITY_MEAS_DONE_SUPPORTED     (1)     /*!< Support touch proximity channel measure done interrupt type. */
+#define SOC_TOUCH_SUPPORT_FREQ_HOP                  (1)     /*!< Touch sensor supports frequency hopping */
+#define SOC_TOUCH_SAMPLE_CFG_NUM                    (3)     /*!< The sample configurations number in total, each sampler can be used to sample on one frequency */
 
 /*-------------------------- TWAI CAPS ---------------------------------------*/
 #define SOC_TWAI_CONTROLLER_NUM         3
@@ -613,6 +627,7 @@
 #define SOC_PM_SUPPORT_EXT1_WAKEUP_MODE_PER_PIN   (1) /*!<Supports one bit per pin to configure the EXT1 trigger level */
 #define SOC_PM_EXT1_WAKEUP_BY_PMU       (1)
 #define SOC_PM_SUPPORT_WIFI_WAKEUP      (1)
+#define SOC_PM_SUPPORT_TOUCH_SENSOR_WAKEUP    (1)     /*!<Supports waking up from touch pad trigger */
 #define SOC_PM_SUPPORT_XTAL32K_PD       (1)
 #define SOC_PM_SUPPORT_RC32K_PD         (1)
 #define SOC_PM_SUPPORT_RC_FAST_PD       (1)
@@ -663,3 +678,8 @@
 #define SOC_JPEG_CODEC_SUPPORTED                  (1)
 #define SOC_JPEG_DECODE_SUPPORTED                 (1)
 #define SOC_JPEG_ENCODE_SUPPORTED                 (1)
+
+/*--------------------------- CAM ---------------------------------*/
+#define SOC_LCDCAM_CAM_SUPPORT_RGB_YUV_CONV         (1)
+#define SOC_LCDCAM_CAM_PERIPH_NUM                   (1U)
+#define SOC_LCDCAM_CAM_DATA_WIDTH_MAX               (16U)

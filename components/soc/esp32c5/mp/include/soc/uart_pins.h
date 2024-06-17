@@ -8,8 +8,6 @@
 
 #include "soc/io_mux_reg.h"
 
-// TODO: [ESP32C5] IDF-8722
-
 /* Specify the number of pins for UART */
 #define SOC_UART_PINS_COUNT  (4)
 

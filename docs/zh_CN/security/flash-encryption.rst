@@ -5,12 +5,15 @@ flash 加密
 
 {IDF_TARGET_ESP32_V3_ONLY:default="", esp32="(ESP32 V3 only)"}
 
-{IDF_TARGET_ENCRYPT_COMMAND:default="espsecure.py encrypt_flash_data --aes_xts", esp32="espsecure.py encrypt_flash_data"}
+{IDF_TARGET_ENCRYPT_COMMAND:default="idf.py secure-encrypt-flash-data --aes-xts", esp32="idf.py secure-encrypt-flash-data"}
 
 :link_to_translation:`en:[English]`
 
 本文档旨在引导用户快速了解 {IDF_TARGET_NAME} 的 flash 加密功能，通过应用程序代码示例向用户演示如何在开发及生产过程中测试及验证 flash 加密的相关操作。
 
+.. note::
+
+    在本指南中，最常用的命令形式为 ``idf.py secure-<command>``，这是对应 ``espsecure.py <command>`` 的封装。基于 ``idf.py`` 的命令能提供更好的用户体验，但与基于 ``espsecure.py`` 的命令相比，可能会损失一部分高级功能。
 
 概述
 ------
@@ -359,7 +362,7 @@ flash 加密设置
 
       .. code-block:: bash
 
-          espsecure.py generate_flash_encryption_key my_flash_encryption_key.bin
+          idf.py secure-generate-flash-encryption-key my_flash_encryption_key.bin
 
   .. only:: SOC_FLASH_ENCRYPTION_XTS_AES_256
 
@@ -367,20 +370,20 @@ flash 加密设置
 
       .. code-block:: bash
 
-          espsecure.py generate_flash_encryption_key my_flash_encryption_key.bin
+          idf.py secure-generate-flash-encryption-key my_flash_encryption_key.bin
 
     如果 :ref:`生成的 XTS-AES 密钥大小 <CONFIG_SECURE_FLASH_ENCRYPTION_KEYSIZE>` 是 AES-256（512 位密钥）：
 
       .. code-block:: bash
 
-          espsecure.py generate_flash_encryption_key --keylen 512 my_flash_encryption_key.bin
+          idf.py secure-generate-flash-encryption-key --keylen 512 my_flash_encryption_key.bin
 
 
   .. only:: SOC_FLASH_ENCRYPTION_XTS_AES_128 and not SOC_FLASH_ENCRYPTION_XTS_AES_256 and not SOC_EFUSE_CONSISTS_OF_ONE_KEY_BLOCK
 
       .. code-block:: bash
 
-          espsecure.py generate_flash_encryption_key my_flash_encryption_key.bin
+          idf.py secure-generate-flash-encryption-key my_flash_encryption_key.bin
 
 .. only:: SOC_FLASH_ENCRYPTION_XTS_AES_128 and SOC_EFUSE_CONSISTS_OF_ONE_KEY_BLOCK
 
@@ -388,13 +391,13 @@ flash 加密设置
 
      .. code-block:: bash
 
-          espsecure.py generate_flash_encryption_key my_flash_encryption_key.bin
+          idf.py secure-generate-flash-encryption-key my_flash_encryption_key.bin
 
       或者如果 :ref:`生成的 XTS-AES 密钥大小 <CONFIG_SECURE_FLASH_ENCRYPTION_KEYSIZE>` 是由 128 位导出的 AES-128 密钥（SHA256（128 位））:
 
       .. code-block:: bash
 
-          espsecure.py generate_flash_encryption_key --keylen 128 my_flash_encryption_key.bin
+          idf.py secure-generate-flash-encryption-key --keylen 128 my_flash_encryption_key.bin
 
 3. **在第一次加密启动前**，使用以下命令将该密钥烧录到设备上，这个操作只能执行 **一次**。
 
@@ -996,19 +999,19 @@ JTAG 调试
 
 密钥文件应该是单个原始二进制文件（例如：``key.bin``）。
 
-例如，以下是将文件 ``build/my-app.bin`` 进行加密、烧录到偏移量 0x10000 的步骤。运行 ``espsecure.py``，如下所示:
+例如，以下是将文件 ``my-app.bin`` 进行加密、烧录到偏移量 0x10000 的步骤。如下所示，请运行 ``idf.py``:
 
 .. only:: esp32
 
     .. code-block:: bash
 
-       espsecure.py encrypt_flash_data --keyfile /path/to/key.bin --address 0x10000 --output my-app-ciphertext.bin build/my-app.bin
+       idf.py secure-encrypt-flash-data --keyfile /path/to/key.bin --address 0x10000 --output my-app-ciphertext.bin my-app.bin
 
 .. only:: not esp32
 
     .. code-block:: bash
 
-       espsecure.py encrypt_flash_data --aes_xts --keyfile /path/to/key.bin --address 0x10000 --output my-app-ciphertext.bin build/my-app.bin
+       idf.py secure-encrypt-flash-data --aes-xts --keyfile /path/to/key.bin --address 0x10000 --output my-app-ciphertext.bin my-app.bin
 
 然后可以使用 ``esptool.py`` 将文件 ``my-app-ciphertext.bin`` 写入偏移量 0x10000。 关于为 ``esptool.py`` 推荐的所有命令行选项，请查看 idf.py build 成功时打印的输出。
 
@@ -1018,9 +1021,9 @@ JTAG 调试
 
   .. only:: esp32
 
-    如果你的 ESP32 在 eFuse 中使用了非默认的 :ref:`FLASH_CRYPT_CONFIG 值 <setting-flash-crypt-config>`，那么则需要向 ``espsecure.py`` 传递 ``--flash_crypt_conf`` 参数以设置匹配的值。如果设备自己设置了 flash 加密就不会出现这种情况，但如果手动烧录 eFuse 来启用 flash 加密就可能发生这种情况。
+    若 ESP32 在 eFuse 中使用了非默认的 :ref:`FLASH_CRYPT_CONFIG 值 <setting-flash-crypt-config>`，则需要向 ``idf.py`` 命令传递 ``--flash-crypt-conf`` 参数以设置匹配的值。如果设备自行设置了 flash 加密就不会出现这种情况，但如果手动烧录 eFuse 来启用 flash 加密就可能发生这种情况。
 
-``espsecure.py decrypt_flash_data`` 命令可以使用同样的选项（和不同的输入/输出文件）来解密 flash 密文或之前加密的文件。
+``idf.py decrypt-flash-data`` 命令可以使用同样的选项（和不同的输入/输出文件）来解密 flash 密文或之前加密的文件。
 
 
 .. only:: SOC_SPIRAM_SUPPORTED and not esp32

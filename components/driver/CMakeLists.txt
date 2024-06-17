@@ -73,9 +73,11 @@ endif()
 
 # Touch Sensor related source files
 if(CONFIG_SOC_TOUCH_SENSOR_SUPPORTED)
-    list(APPEND srcs "touch_sensor/touch_sensor_common.c"
-                     "touch_sensor/${target}/touch_sensor.c")
-    list(APPEND includes "touch_sensor/${target}/include")
+    if(CONFIG_SOC_TOUCH_SENSOR_VERSION LESS 3)
+        list(APPEND srcs "touch_sensor/touch_sensor_common.c"
+                        "touch_sensor/${target}/touch_sensor.c")
+        list(APPEND includes "touch_sensor/${target}/include")
+    endif()
 endif()
 
 # TWAI related source files

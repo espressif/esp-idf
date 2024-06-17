@@ -844,7 +844,22 @@ typedef union {
  */
 typedef union {
     struct {
-        uint32_t reserved_0:24;
+        /** sclk_div_b : R/W; bitpos: [5:0]; default: 0;
+         *  The  denominator of the frequency divider factor.
+         *  Only available to LP UART instance
+         */
+        uint32_t sclk_div_b:6;
+        /** sclk_div_a : R/W; bitpos: [11:6]; default: 0;
+         *  The numerator of the frequency divider factor.
+         *  Only available to LP UART instance
+         */
+        uint32_t sclk_div_a:6;
+        /** sclk_div_num : R/W; bitpos: [19:12]; default: 1;
+         *  The integral part of the frequency divider factor.
+         *  Only available to LP UART instance
+         */
+        uint32_t sclk_div_num:8;
+        uint32_t reserved_20:4;
         /** tx_sclk_en : R/W; bitpos: [24]; default: 1;
          *  Configures whether or not to enable LP UART TX clock.\\
          *  0: Disable\\

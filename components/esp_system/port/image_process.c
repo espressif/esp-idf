@@ -44,6 +44,24 @@
 
 #define MMU_FLASH_MASK    (~(CONFIG_MMU_PAGE_SIZE - 1))
 
+/**
+ * @brief Image process driver
+ */
+struct image_process_driver_s {
+
+    /**
+     * @brief Process segments
+     *
+     * @param[in] data  image meta data
+     *
+     * @return
+     *        - ESP_OK
+     *        - ESP_ERR_INVALID_ARG:   invalid argument
+     *        - ESP_ERR_INVALID_STATE: invalid state
+     */
+    esp_err_t (*process_segments)(esp_image_metadata_t *data);
+};
+
 const static char *TAG = "image_process";
 
 static uint32_t s_current_read_mapping = UINT32_MAX;

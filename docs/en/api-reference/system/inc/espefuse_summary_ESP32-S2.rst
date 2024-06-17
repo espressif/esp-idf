@@ -1,13 +1,12 @@
 .. code-block:: none
 
-    espefuse.py -p PORT summary
+    idf.py efuse-summary
 
-    espefuse.py v4.6-dev
-    Connecting....
-    Detecting chip type... Unsupported detection protocol, switching and trying again...
-    Detecting chip type... ESP32-S2
+    Executing action: efuse-summary
+    "ninja efuse-summary"...
 
-    === Run "summary" command ===
+    (...)
+
     EFUSE_NAME (Block) Description  = [Meaningful Value] [Readable/Writeable] (Hex Value)
     ----------------------------------------------------------------------------------------
     Config fuses:
@@ -90,8 +89,8 @@
     DIS_DOWNLOAD_MODE (BLOCK0)                         Set this bit to disable all download boot modes    = False R/W (0b0)
     ENABLE_SECURITY_DOWNLOAD (BLOCK0)                  Set this bit to enable secure UART download mode ( = False R/W (0b0)
                                                        read/write flash only)
-    SECURE_VERSION (BLOCK0)                            Secure version (used by ESP-IDF anti-rollback feat = 0 R/W (0x0000)
-                                                       ure)
+    SECURE_VERSION (BLOCK0)                            Secure version (used by ESP-IDF anti-rollback      = 0 R/W (0x0000)
+                                                       feature)
     BLOCK_KEY0 (BLOCK4)
       Purpose: USER
                    Key0 or user data
@@ -158,12 +157,13 @@ To get a dump for all eFuse registers.
 
 .. code-block:: none
 
-    espefuse.py -p PORT dump
+    idf.py efuse-dump
 
+    Executing action: efuse-dump
+    Running espefuse.py in directory <project-directory>
+    Executing "espefuse.py dump --chip esp32s2"...
     espefuse.py v4.6-dev
     Connecting....
-    Detecting chip type... Unsupported detection protocol, switching and trying again...
-    Detecting chip type... ESP32-S2
     BLOCK0          (                ) [0 ] read_regs: 00000000 00000000 00000000 00000000 00000000 00000000
     MAC_SPI_8M_0    (BLOCK1          ) [1 ] read_regs: 79b3b954 000058cf 00000000 10440000 00000000 00000000
     BLOCK_SYS_DATA  (BLOCK2          ) [2 ] read_regs: f1c60eea 8238f201 595b98e9 0200fe81 1c549f24 88491102 06461421 070c2083

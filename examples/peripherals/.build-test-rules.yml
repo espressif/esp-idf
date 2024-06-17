@@ -10,11 +10,19 @@
 examples/peripherals/adc/continuous_read:
   disable:
     - if: SOC_ADC_DMA_SUPPORTED != 1
+  disable_test:
+    - if: IDF_TARGET == "esp32p4"
+      temporary: true
+      reason: lack of runners, TODO IDF-9573
   <<: *adc_dependencies
 
 examples/peripherals/adc/oneshot_read:
   disable:
     - if: SOC_ADC_SUPPORTED != 1
+  disable_test:
+    - if: IDF_TARGET == "esp32p4"
+      temporary: true
+      reason: lack of runner, TODO IDF-9573
   <<: *adc_dependencies
 
 examples/peripherals/analog_comparator:
@@ -416,6 +424,16 @@ examples/peripherals/touch_sensor/touch_sensor_v1:
 examples/peripherals/touch_sensor/touch_sensor_v2:
   disable:
     - if: SOC_TOUCH_SENSOR_VERSION != 2
+
+examples/peripherals/touch_sensor/touch_sensor_v3:
+  disable:
+    - if: SOC_TOUCH_SENSOR_VERSION != 3
+  disable_test:
+    - if: IDF_TARGET == "esp32p4"
+      temporary: true
+      reason: the runners do not support the pins for touch sensor
+  depends_components:
+    - esp_driver_touch_sens
 
 examples/peripherals/twai/twai_alert_and_recovery:
   disable:

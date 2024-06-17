@@ -116,9 +116,7 @@ Configure MAC and PHY
 
 The Ethernet driver is composed of two parts: MAC and PHY.
 
-.. TODO remove esp32p4 (IDF-9057)
-
-.. only:: SOC_EMAC_SUPPORTED and not esp32p4
+.. only:: SOC_EMAC_SUPPORTED
 
     The communication between MAC and PHY can have diverse choices: **MII** (Media Independent Interface), **RMII** (Reduced Media Independent Interface), etc.
 

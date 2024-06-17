@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -79,7 +79,7 @@ esp_err_t esp_supp_dpp_deinit(void);
   * @param chan_list List of channels device will be available on for listening
   * @param type Bootstrap method type, only QR Code method is supported for now.
   * @param key (Optional) 32 byte Raw Private Key for generating a Bootstrapping Public Key
-  * @param info (Optional) Ancilliary Device Information like Serial Number
+  * @param info (Optional) Ancillary Device Information like Serial Number
   *
   * @return
   *    - ESP_OK: Success

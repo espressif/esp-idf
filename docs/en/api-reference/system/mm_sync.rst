@@ -103,17 +103,6 @@ There is address and size alignment requirement (in bytes) for using :cpp:func:`
 By default, if you specify an unaligned address region, :cpp:func:`esp_cache_msync` will return an :c:macro:`ESP_ERR_INVALID_ARG` error, together with the required alignment.
 
 
-Memory Allocation Helper
-------------------------
-
-cache memory synchronization is usually considered when DMA is involved. ESP-IDF provides an API to do memory allocation that can meet the alignment requirement from both the cache and the DMA.
-
-- :cpp:func:`esp_dma_capable_malloc`. This API allocates a chunk of memory that meets the alignment requirement from both the cache and the DMA.
-- :cpp:func:`esp_dma_capable_calloc`. This API allocates a chunk of memory that meets the alignment requirement from both the cache and the DMA. The initialized value in the memory is set to zero.
-
-You can also use :c:macro:`ESP_DMA_MALLOC_FLAG_PSRAM` to allocate from the PSRAM.
-
-
 Warning for Address Alignment Requirement
 -----------------------------------------
 
@@ -140,9 +129,3 @@ API Reference - ESP Msync Driver
 --------------------------------
 
 .. include-build-file:: inc/esp_cache.inc
-
-
-API Reference - ESP DMA Utils
------------------------------
-
-.. include-build-file:: inc/esp_dma_utils.inc

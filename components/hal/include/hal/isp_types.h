@@ -24,6 +24,24 @@ typedef int                         isp_clk_src_t;     ///< Default type
 #endif
 
 /**
+ * @brief ISP coordinate type
+ *
+ */
+typedef struct {
+    uint32_t    x;      ///< X coordinate of the point
+    uint32_t    y;      ///< Y coordinate of the point
+} isp_coordinate_t;
+
+/**
+ * @brief ISP window type
+ *
+ */
+typedef struct {
+    isp_coordinate_t top_left;       ///< The top left point coordinate
+    isp_coordinate_t btm_right;      ///< The bottom right point coordinate
+} isp_window_t;
+
+/**
  * @brief ISP Input Source
  */
 typedef enum {
@@ -63,24 +81,6 @@ typedef enum {
 #define ISP_AF_WINDOW_NUM   0
 #endif
 
-/**
- * @brief ISP AF window
- */
-typedef struct {
-    uint32_t top_left_x;        ///< Top left x axis value
-    uint32_t top_left_y;        ///< Top left y axis value
-    uint32_t bottom_right_x;    ///< Bottom right x axis value
-    uint32_t bottom_right_y;    ///< Bottom right y axis value
-} isp_af_window_t;
-
-/**
- * @brief ISP AF result
- */
-typedef struct {
-    int definition[ISP_AF_WINDOW_NUM];    ///< Definition, it refers how clear and sharp an image is
-    int luminance[ISP_AF_WINDOW_NUM];     ///< Luminance, it refers how luminant an image is
-} isp_af_result_t;
-
 /*---------------------------------------------------------------
                       BF
 ---------------------------------------------------------------*/
@@ -99,6 +99,29 @@ typedef enum {
     ISP_BF_EDGE_PADDING_MODE_SRND_DATA,      ///< Fill BF edge padding data with surrounding pixel data
     ISP_BF_EDGE_PADDING_MODE_CUSTOM_DATA,    ///< Fill BF edge padding data with custom pixel data
 } isp_bf_edge_padding_mode_t;
+
+/*---------------------------------------------------------------
+                      CCM
+---------------------------------------------------------------*/
+#if SOC_ISP_CCM_SUPPORTED
+#define ISP_CCM_DIMENSION   SOC_ISP_CCM_DIMENSION  ///< ISP Color Correction Matrix dimension
+#else
+#define ISP_CCM_DIMENSION   0                      ///< Not support CCM
+#endif
+
+/*---------------------------------------------------------------
+                      AWB
+---------------------------------------------------------------*/
+
+/**
+ * @brief ISP AWB sample point in the ISP pipeline
+ *
+ */
+typedef enum {
+    ISP_AWB_SAMPLE_POINT_BEFORE_CCM,       ///< Sample AWB data before CCM (Color Correction Matrix)
+    ISP_AWB_SAMPLE_POINT_AFTER_CCM,        ///< Sample AWB data after CCM (Color Correction Matrix)
+} isp_awb_sample_point_t;
+
 
 #ifdef __cplusplus
 }

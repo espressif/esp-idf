@@ -1,6 +1,6 @@
 idf_component_register(SRC_DIRS "."
                        PRIV_REQUIRES cmock test_utils nvs_flash nvs_sec_provider
-                                     bootloader_support spi_flash
+                                     bootloader_support spi_flash esp_psram
                        EMBED_TXTFILES encryption_keys.bin partition_encrypted.bin
                                       partition_encrypted_hmac.bin sample.bin
                        WHOLE_ARCHIVE)

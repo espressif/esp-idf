@@ -237,7 +237,7 @@ Error Handling
         load:0x3fcd0108,len:0x171c
         ets_loader.c 78
 
-   this may mean that the necessary efuses are not correctly burnt. Please check the eFuse bits of the chip using command ``espefuse.py summary``.
+   this may mean that the necessary eFuses are not correctly burnt. Please check the eFuse bits of the chip using ``idf.py efuse-summary``.
 
    The ROM bootloader relies on an eFuse bit ``FLASH_TYPE`` to reset the flash into the default mode (SPI mode). If this bit is not burnt and the flash is working in OPI mode, ROM bootloader may not be able to read from the flash and load the following images.
 
@@ -257,7 +257,7 @@ Here is a method to burn the eFuse bit:
 
 .. code-block:: python
 
-    python3 ./espefuse.py -p /dev/<serial_device> --do-not-confirm burn_efuse FLASH_TYPE 1
+    idf.py -p PORT efuse-burn --do-not-confirm FLASH_TYPE 1
 
 .. note::
 

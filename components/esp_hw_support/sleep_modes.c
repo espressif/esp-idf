@@ -15,10 +15,10 @@
 #include "esp_sleep.h"
 #include "esp_private/esp_sleep_internal.h"
 #include "esp_private/esp_timer_private.h"
-#include "esp_private/periph_ctrl.h"
 #include "esp_private/rtc_clk.h"
 #include "esp_private/sleep_event.h"
 #include "esp_private/system_internal.h"
+#include "esp_private/io_mux.h"
 #include "esp_log.h"
 #include "esp_newlib.h"
 #include "esp_timer.h"
@@ -117,16 +117,6 @@
 
 #if SOC_PM_RETENTION_SW_TRIGGER_REGDMA
 #include "esp_private/sleep_retention.h"
-#endif
-
-#if SOC_LP_IO_CLOCK_IS_INDEPENDENT && !SOC_RTCIO_RCC_IS_INDEPENDENT
-// For `rtcio_hal_function_select` using, clock reg option is inlined in it,
-// so remove the declaration check of __DECLARE_RCC_RC_ATOMIC_ENV
-#define RTCIO_RCC_ATOMIC()                              \
-    for (int i = 1; i ? (periph_rcc_enter(), 1) : 0;    \
-         periph_rcc_exit(), i--)
-#else
-#define RTCIO_RCC_ATOMIC()
 #endif
 
 // If light sleep time is less than that, don't power down flash
@@ -294,7 +284,7 @@ static void ext0_wakeup_prepare(void);
 static void ext1_wakeup_prepare(void);
 #endif
 static esp_err_t timer_wakeup_prepare(int64_t sleep_duration);
-#if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
+#if SOC_TOUCH_SENSOR_SUPPORTED && SOC_TOUCH_SENSOR_VERSION != 1
 static void touch_wakeup_prepare(void);
 #endif
 #if SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
@@ -673,7 +663,7 @@ FORCE_INLINE_ATTR void misc_modules_sleep_prepare(bool deep_sleep)
 #endif
     }
 
-#if !CONFIG_IDF_TARGET_ESP32P4 // TODO: IDF-6496
+#if !CONFIG_IDF_TARGET_ESP32P4
     // TODO: IDF-7370
     if (!(deep_sleep && s_adc_tsen_enabled)){
         sar_periph_ctrl_power_disable();
@@ -700,11 +690,7 @@ FORCE_INLINE_ATTR void misc_modules_wake_prepare(uint32_t pd_flags)
 #if SOC_USB_SERIAL_JTAG_SUPPORTED && !SOC_USB_SERIAL_JTAG_SUPPORT_LIGHT_SLEEP
     sleep_console_usj_pad_restore();
 #endif
-
-#if !CONFIG_IDF_TARGET_ESP32P4 // TODO: IDF-6496
     sar_periph_ctrl_power_enable();
-#endif
-
 #if CONFIG_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP && SOC_PM_CPU_RETENTION_BY_RTCCNTL
     sleep_disable_cpu_retention();
 #endif
@@ -857,7 +843,7 @@ static esp_err_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t m
 
     misc_modules_sleep_prepare(deep_sleep);
 
-#if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
+#if SOC_TOUCH_SENSOR_VERSION >= 2
     if (deep_sleep) {
         if (s_config.wakeup_triggers & RTC_TOUCH_TRIG_EN) {
             touch_wakeup_prepare();
@@ -872,7 +858,12 @@ static esp_err_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t m
         /* In light sleep, the RTC_PERIPH power domain should be in the power-on state (Power on the touch circuit in light sleep),
          * otherwise the touch sensor FSM will be cleared, causing touch sensor false triggering.
          */
-        if (touch_ll_get_fsm_state()) { // Check if the touch sensor is working properly.
+#if SOC_TOUCH_SENSOR_VERSION == 3
+        bool keep_rtc_power_on = touch_ll_is_fsm_repeated_timer_enabled();
+#else
+        bool keep_rtc_power_on = touch_ll_get_fsm_state();
+#endif
+        if (keep_rtc_power_on) { // Check if the touch sensor is working properly.
             pd_flags &= ~RTC_SLEEP_PD_RTC_PERIPH;
         }
     }
@@ -1608,7 +1599,7 @@ static esp_err_t timer_wakeup_prepare(int64_t sleep_duration)
     return ESP_OK;
 }
 
-#if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
+#if SOC_TOUCH_SENSOR_VERSION == 2
 /* In deep sleep mode, only the sleep channel is supported, and other touch channels should be turned off. */
 static void touch_wakeup_prepare(void)
 {
@@ -1626,6 +1617,11 @@ static void touch_wakeup_prepare(void)
         touch_ll_set_channel_mask(BIT(touch_num));
         touch_ll_start_fsm();
     }
+}
+#elif SOC_TOUCH_SENSOR_VERSION == 3
+static void touch_wakeup_prepare(void)
+{
+    touch_hal_prepare_deep_sleep();
 }
 #endif
 
@@ -1654,7 +1650,11 @@ touch_pad_t esp_sleep_get_touchpad_wakeup_status(void)
         return TOUCH_PAD_MAX;
     }
     touch_pad_t pad_num;
+#if SOC_TOUCH_SENSOR_VERSION == 3
+    touch_ll_sleep_get_channel_num((uint32_t *)(&pad_num));
+#else
     touch_hal_get_wakeup_status(&pad_num);
+#endif
     return pad_num;
 }
 
@@ -1698,10 +1698,11 @@ esp_err_t esp_sleep_enable_ext0_wakeup(gpio_num_t gpio_num, int level)
 static void ext0_wakeup_prepare(void)
 {
     int rtc_gpio_num = s_config.ext0_rtc_gpio_num;
+#if SOC_LP_IO_CLOCK_IS_INDEPENDENT
+    io_mux_enable_lp_io_clock(rtc_gpio_num, true);
+#endif
     rtcio_hal_ext0_set_wakeup_pin(rtc_gpio_num, s_config.ext0_trigger_level);
-    RTCIO_RCC_ATOMIC() {
-        rtcio_hal_function_select(rtc_gpio_num, RTCIO_LL_FUNC_RTC);
-    }
+    rtcio_hal_function_select(rtc_gpio_num, RTCIO_LL_FUNC_RTC);
     rtcio_hal_input_enable(rtc_gpio_num);
 }
 
@@ -1830,11 +1831,12 @@ static void ext1_wakeup_prepare(void)
         if ((rtc_gpio_mask & BIT(rtc_pin)) == 0) {
             continue;
         }
+#if SOC_LP_IO_CLOCK_IS_INDEPENDENT
+        io_mux_enable_lp_io_clock(rtc_pin, true);
+#endif
 #if SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
         // Route pad to RTC
-        RTCIO_RCC_ATOMIC() {
-            rtcio_hal_function_select(rtc_pin, RTCIO_LL_FUNC_RTC);
-        }
+        rtcio_hal_function_select(rtc_pin, RTCIO_LL_FUNC_RTC);
         // set input enable in sleep mode
         rtcio_hal_input_enable(rtc_pin);
 #if SOC_PM_SUPPORT_RTC_PERIPH_PD
@@ -1849,9 +1851,7 @@ static void ext1_wakeup_prepare(void)
         * a pathway to EXT1. */
 
         // Route pad to DIGITAL
-        RTCIO_RCC_ATOMIC() {
-            rtcio_hal_function_select(rtc_pin, RTCIO_LL_FUNC_DIGITAL);
-        }
+        rtcio_hal_function_select(rtc_pin, RTCIO_LL_FUNC_DIGITAL);
         // set input enable
         gpio_ll_input_enable(&GPIO, gpio);
         // hold rtc_pin to use it during sleep state

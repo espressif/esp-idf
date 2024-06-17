@@ -19,6 +19,7 @@
 #include "soc/io_mux_reg.h"
 #include "soc/usb_serial_jtag_reg.h"
 #include "soc/usb_serial_jtag_struct.h"
+#include "soc/sens_struct.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -27,7 +28,7 @@ extern "C" {
 #define RTCIO_LL_PIN_FUNC     0
 
 typedef enum {
-    RTCIO_LL_FUNC_RTC = 0x0,         /*!< The pin controled by RTC module. */
+    RTCIO_LL_FUNC_RTC = 0x0,         /*!< The pin controlled by RTC module. */
     RTCIO_LL_FUNC_DIGITAL = 0x1,     /*!< The pin controlled by DIGITAL module. */
 } rtcio_ll_func_t;
 

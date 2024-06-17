@@ -24,6 +24,7 @@
 #include "lwip/esp_netif_net_stack.h"
 #include "esp_compiler.h"
 #include "lwip/esp_pbuf_ref.h"
+#include "esp_netif_types.h"
 
 /**
  * In this function, the hardware should be initialized.
@@ -84,10 +85,11 @@ static err_t low_level_output(struct netif *netif, struct pbuf *p)
     }
 
     struct pbuf *q = p;
-    esp_err_t ret;
+    esp_err_t netif_ret = ESP_FAIL;
+    err_t ret = ERR_IF;
 
     if(q->next == NULL) {
-        ret = esp_netif_transmit_wrap(esp_netif, q->payload, q->len, q);
+        netif_ret = esp_netif_transmit_wrap(esp_netif, q->payload, q->len, q);
 
     } else {
         LWIP_DEBUGF(PBUF_DEBUG, ("low_level_output: pbuf is a list, application may has bug"));
@@ -97,21 +99,36 @@ static err_t low_level_output(struct netif *netif, struct pbuf *p)
         } else {
             return ERR_MEM;
         }
-        ret = esp_netif_transmit_wrap(esp_netif, q->payload, q->len, q);
+        netif_ret = esp_netif_transmit_wrap(esp_netif, q->payload, q->len, q);
 
         pbuf_free(q);
     }
 
-    if (ret == ESP_OK) {
-        return ERR_OK;
+    /* translate netif_ret to lwip supported return value */
+    switch (netif_ret) {
+
+    case ESP_OK:
+        ret = ERR_OK;
+        break;
+
+    case ESP_ERR_NO_MEM:
+        ret = ERR_MEM;
+        break;
+
+    case ESP_ERR_ESP_NETIF_TX_FAILED:
+        ret = ERR_BUF;
+        break;
+
+    case ESP_ERR_INVALID_ARG:
+        ret = ERR_ARG;
+        break;
+
+    default:
+        ret = ERR_IF;
+        break;
     }
-    if (ret == ESP_ERR_NO_MEM) {
-        return ERR_MEM;
-    }
-    if (ret == ESP_ERR_INVALID_ARG) {
-        return ERR_ARG;
-    }
-    return ERR_IF;
+
+    return ret;
 }
 
 /**

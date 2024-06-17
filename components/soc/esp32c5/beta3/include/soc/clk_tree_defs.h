@@ -19,7 +19,7 @@ extern "C" {
  *
  * 2) External 40/48MHz Crystal Clock: XTAL
  *
- * 3) Internal 136kHz RC Oscillator: RC_SLOW (may also referrred as SOSC in TRM or reg. description)
+ * 3) Internal 136kHz RC Oscillator: RC_SLOW (may also referred as SOSC in TRM or reg. description)
  *
  *    This RC oscillator generates a ~136kHz clock signal output as the RC_SLOW_CLK. The exact frequency of this clock
  *    can be computed in runtime through calibration.
@@ -250,15 +250,15 @@ typedef enum {
 /**
  * @brief Array initializer for all supported clock sources of LP_UART
  */
-#define SOC_LP_UART_CLKS {SOC_MOD_CLK_RTC_FAST, SOC_MOD_CLK_XTAL_D2}
+#define SOC_LP_UART_CLKS {SOC_MOD_CLK_RC_FAST, SOC_MOD_CLK_XTAL_D2}
 
 /**
  * @brief Type of LP_UART clock source
  */
 typedef enum {
-    LP_UART_SCLK_LP_FAST = SOC_MOD_CLK_RTC_FAST,        /*!< LP_UART source clock is LP(RTC)_FAST */
+    LP_UART_SCLK_RC_FAST = SOC_MOD_CLK_RC_FAST,         /*!< LP_UART source clock is RC_FAST */
     LP_UART_SCLK_XTAL_D2 = SOC_MOD_CLK_XTAL_D2,         /*!< LP_UART source clock is XTAL_D2 */
-    LP_UART_SCLK_DEFAULT = SOC_MOD_CLK_RTC_FAST,        /*!< LP_UART source clock default choice is LP(RTC)_FAST */
+    LP_UART_SCLK_DEFAULT = SOC_MOD_CLK_XTAL_D2,         /*!< LP_UART source clock default choice is RC_FAST */
 } soc_periph_lp_uart_clk_src_t;
 
 //////////////////////////////////////////////////MCPWM/////////////////////////////////////////////////////////////////

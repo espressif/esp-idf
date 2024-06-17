@@ -10,7 +10,9 @@ set(requires)
 
 if(CONFIG_SOC_ISP_SUPPORTED)
     list(APPEND srcs "src/isp_core.c"
-                     "src/isp_af.c")
+                     "src/isp_af.c"
+                     "src/isp_ccm.c"
+                     "src/isp_awb.c")
 endif()
 
 if(CONFIG_SOC_ISP_BF_SUPPORTED)

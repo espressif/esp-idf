@@ -11,6 +11,10 @@
 // TODO: IDF-9197
 #include "sdkconfig.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * @brief ESP chip ID
  *
@@ -120,3 +124,7 @@ typedef struct {
 } esp_image_segment_header_t;
 
 #define ESP_IMAGE_MAX_SEGMENTS 16           /*!< Max count of segments in the image. */
+
+#ifdef __cplusplus
+}
+#endif

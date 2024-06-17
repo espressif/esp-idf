@@ -1,12 +1,10 @@
 .. code-block:: none
 
-    espefuse.py -p PORT summary
+    idf.py efuse-summary
 
-    espefuse.py v4.6-dev
-    Connecting....
-    Detecting chip type... ESP32-C6
+    Executing action: efuse-summary
+    (...)
 
-    === Run "summary" command ===
     EFUSE_NAME (Block) Description  = [Meaningful Value] [Readable/Writeable] (Hex Value)
     ----------------------------------------------------------------------------------------
     Config fuses:
@@ -160,11 +158,13 @@ To get a dump for all eFuse registers.
 
 .. code-block:: none
 
-    espefuse.py -p PORT dump
+    idf.py efuse-dump
 
+    Executing action: efuse-dump
+    Running espefuse.py in directory <project-directory>
+    Executing "espefuse.py dump --chip esp32c6"...
     espefuse.py v4.6-dev
     Connecting....
-    Detecting chip type... ESP32-C6
     BLOCK0          (                ) [0 ] read_regs: 00000000 00000000 00000000 00000000 00000000 00000000
     MAC_SPI_8M_0    (BLOCK1          ) [1 ] read_regs: f9f7529c 00006055 00000000 01040000 00000000 00000000
     BLOCK_SYS_DATA  (BLOCK2          ) [2 ] read_regs: 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000

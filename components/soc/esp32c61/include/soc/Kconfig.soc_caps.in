@@ -595,10 +595,6 @@ config SOC_SPI_SUPPORT_CONTINUOUS_TRANS
     bool
     default y
 
-config SOC_SPI_SUPPORT_SLAVE_HD_VER2
-    bool
-    default y
-
 config SOC_SPI_SUPPORT_CLK_XTAL
     bool
     default y
@@ -1004,10 +1000,6 @@ config SOC_WIFI_WAPI_SUPPORT
     default y
 
 config SOC_WIFI_CSI_SUPPORT
-    bool
-    default y
-
-config SOC_WIFI_MESH_SUPPORT
     bool
     default y
 

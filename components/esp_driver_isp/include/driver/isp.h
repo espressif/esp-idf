@@ -13,4 +13,6 @@
 
 #include "driver/isp_core.h"
 #include "driver/isp_af.h"
+#include "driver/isp_awb.h"
 #include "driver/isp_bf.h"
+#include "driver/isp_ccm.h"

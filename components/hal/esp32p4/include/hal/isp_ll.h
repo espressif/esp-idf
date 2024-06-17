@@ -65,6 +65,7 @@ extern "C" {
 
 #define ISP_LL_EVENT_ALL_MASK                 (0x1FFFFFFF)
 #define ISP_LL_EVENT_AF_MASK                  (ISP_LL_EVENT_AF_FDONE | ISP_LL_EVENT_AF_ENV)
+#define ISP_LL_EVENT_AWB_MASK                 (ISP_LL_EVENT_AWB_FDONE)
 
 /*---------------------------------------------------------------
                       AF
@@ -82,6 +83,38 @@ extern "C" {
 #define ISP_LL_DVP_DATA_TYPE_RAW8     0x2A
 #define ISP_LL_DVP_DATA_TYPE_RAW10    0x2B
 #define ISP_LL_DVP_DATA_TYPE_RAW12    0x2C
+
+/*---------------------------------------------------------------
+                      AWB
+---------------------------------------------------------------*/
+#define ISP_LL_AWB_WINDOW_MAX_RANGE    ((1<<12) - 1)
+#define ISP_LL_AWB_LUM_MAX_RANGE       ((1<<10) - 1)
+#define ISP_LL_AWB_RGB_RATIO_INT_BITS  (2)
+#define ISP_LL_AWB_RGB_RATIO_FRAC_BITS (8)
+
+typedef union {
+    struct {
+        uint32_t fraction: ISP_LL_AWB_RGB_RATIO_FRAC_BITS;
+        uint32_t integer: ISP_LL_AWB_RGB_RATIO_INT_BITS;
+    };
+    uint32_t val;
+} isp_ll_awb_rgb_ratio_t;
+
+/*---------------------------------------------------------------
+                      CCM
+---------------------------------------------------------------*/
+#define ISP_LL_CCM_MATRIX_INT_BITS      (2)
+#define ISP_LL_CCM_MATRIX_FRAC_BITS     (10)
+#define ISP_LL_CCM_MATRIX_TOT_BITS      (ISP_LL_CCM_MATRIX_INT_BITS + ISP_LL_CCM_MATRIX_FRAC_BITS + 1)  // including one sign bit
+
+typedef union {
+    struct {
+        uint32_t fraction: ISP_LL_AWB_RGB_RATIO_FRAC_BITS;
+        uint32_t integer: ISP_LL_AWB_RGB_RATIO_INT_BITS;
+        uint32_t sign: 1;
+    };
+    uint32_t val;
+} isp_ll_ccm_gain_t;
 
 /**
  * @brief Env monitor mode
@@ -773,6 +806,25 @@ static inline void isp_ll_ccm_enable(isp_dev_t *hw, bool enable)
     hw->cntl.ccm_en = enable;
 }
 
+/**
+ * @brief Set the Color Correction Matrix
+ *
+ * @param[in] hw      Hardware instance address
+ * @param[in] fixed_point_matrix  Color Correction Matrix in fixed-point format
+ */
+static inline void isp_ll_ccm_set_matrix(isp_dev_t *hw, isp_ll_ccm_gain_t fixed_point_matrix[ISP_CCM_DIMENSION][ISP_CCM_DIMENSION])
+{
+    hw->ccm_coef0.ccm_rr = fixed_point_matrix[0][0].val;
+    hw->ccm_coef0.ccm_rg = fixed_point_matrix[0][1].val;
+    hw->ccm_coef1.ccm_rb = fixed_point_matrix[0][2].val;
+    hw->ccm_coef1.ccm_gr = fixed_point_matrix[1][0].val;
+    hw->ccm_coef3.ccm_gg = fixed_point_matrix[1][1].val;
+    hw->ccm_coef3.ccm_gb = fixed_point_matrix[1][2].val;
+    hw->ccm_coef4.ccm_br = fixed_point_matrix[2][0].val;
+    hw->ccm_coef4.ccm_bg = fixed_point_matrix[2][1].val;
+    hw->ccm_coef5.ccm_bb = fixed_point_matrix[2][2].val;
+}
+
 /*---------------------------------------------------------------
                       Color
 ---------------------------------------------------------------*/
@@ -990,6 +1042,164 @@ __attribute__((always_inline))
 static inline void isp_ll_clear_intr(isp_dev_t *hw, uint32_t mask)
 {
     hw->int_clr.val = mask;
+}
+
+/*---------------------------------------------------------------
+                      AWB
+---------------------------------------------------------------*/
+/**
+ * @brief Enable / Disable AWB clock
+ *
+ * @param[in] hw      Hardware instance address
+ * @param[in] enable  Enable / Disable
+ */
+static inline void isp_ll_awb_clk_enable(isp_dev_t *hw, bool enable)
+{
+    hw->clk_en.clk_awb_force_on = enable;
+}
+
+/**
+ * @brief Enable AWB statistics
+ *
+ * @param[in] hw      Hardware instance address
+ * @param[in] enable  Enable / Disable
+ */
+__attribute__((always_inline))
+static inline void isp_ll_awb_enable(isp_dev_t *hw, bool enable)
+{
+    hw->cntl.awb_en = enable;
+}
+
+/**
+ * @brief Set AWB sample point
+ *
+ * @param[in] hw      Hardware instance address
+ * @param[in] point   Sample point
+ *                      - 0: Before CCM
+ *                      - 1: After CCM
+ */
+static inline void isp_ll_awb_set_sample_point(isp_dev_t *hw, isp_awb_sample_point_t point)
+{
+    hw->awb_mode.awb_sample = point;
+}
+
+/**
+ * @brief Set AWB algorithm mode
+ *
+ * @param[in] hw      Hardware instance address
+ * @param[in] enable  Enable algorithm mode 1
+ */
+static inline void isp_ll_awb_enable_algorithm_mode(isp_dev_t *hw, bool enable)
+{
+    hw->awb_mode.awb_mode = enable;
+}
+
+/**
+ * @brief Set AWB window range
+ *
+ * @param[in] hw              Hardware instance address
+ * @param[in] top_left_x      Top left pixel x axis value
+ * @param[in] top_left_y      Top left pixel y axis value
+ * @param[in] bottom_right_x  Bottom right pixel x axis value
+ * @param[in] bottom_right_y  Bottom right pixel y axis value
+ */
+static inline void isp_ll_awb_set_window_range(isp_dev_t *hw, uint32_t top_left_x, uint32_t top_left_y, uint32_t bottom_right_x, uint32_t bottom_right_y)
+{
+    hw->awb_hscale.awb_lpoint = top_left_x;
+    hw->awb_vscale.awb_tpoint = top_left_y;
+    hw->awb_hscale.awb_rpoint = bottom_right_x;
+    hw->awb_vscale.awb_bpoint = bottom_right_y;
+}
+
+/**
+ * @brief Set AWB luminance range
+ *
+ * @param[in] hw              Hardware instance address
+ * @param[in] min             Minimum luminance
+ * @param[in] max             Maximum luminance
+ */
+static inline void isp_ll_awb_set_luminance_range(isp_dev_t *hw, uint32_t min, uint32_t max)
+{
+    hw->awb_th_lum.awb_min_lum = min;
+    hw->awb_th_lum.awb_max_lum = max;
+}
+
+/**
+ * @brief Set AWB R/G ratio range
+ *
+ * @param[in] hw              Hardware instance address
+ * @param[in] min             Minimum R/G ratio in fixed-point data type
+ * @param[in] max             Maximum R/G ratio in fixed-point data type
+ */
+static inline void isp_ll_awb_set_rg_ratio_range(isp_dev_t *hw, isp_ll_awb_rgb_ratio_t min, isp_ll_awb_rgb_ratio_t max)
+{
+    hw->awb_th_rg.awb_min_rg = min.val;
+    hw->awb_th_rg.awb_max_rg = max.val;
+}
+
+/**
+ * @brief Set AWB B/G ratio range
+ *
+ * @param[in] hw              Hardware instance address
+ * @param[in] min             Minimum B/G ratio in fixed-point data type
+ * @param[in] max             Maximum B/G ratio in fixed-point data type
+ */
+static inline void isp_ll_awb_set_bg_ratio_range(isp_dev_t *hw, isp_ll_awb_rgb_ratio_t min, isp_ll_awb_rgb_ratio_t max)
+{
+    hw->awb_th_bg.awb_min_bg = min.val;
+    hw->awb_th_bg.awb_max_bg = max.val;
+}
+
+/**
+ * @brief Get AWB white patch count
+ *
+ * @param[in] hw              Hardware instance address
+ * @return
+ *      - white patch count
+ */
+__attribute__((always_inline))
+static inline uint32_t isp_ll_awb_get_white_patch_cnt(isp_dev_t *hw)
+{
+    return hw->awb0_white_cnt.awb0_white_cnt;
+}
+
+/**
+ * @brief Get AWB accumulated R value of white patches
+ *
+ * @param[in] hw              Hardware instance address
+ * @return
+ *      - Accumulated R value of white patches
+ */
+__attribute__((always_inline))
+static inline uint32_t isp_ll_awb_get_accumulated_r_value(isp_dev_t *hw)
+{
+    return hw->awb0_acc_r.awb0_acc_r;
+}
+
+/**
+ * @brief Get AWB accumulated G value of white patches
+ *
+ * @param[in] hw              Hardware instance address
+ * @return
+ *      - Accumulated G value of white patches
+ */
+__attribute__((always_inline))
+static inline uint32_t isp_ll_awb_get_accumulated_g_value(isp_dev_t *hw)
+{
+    return hw->awb0_acc_g.awb0_acc_g;
+}
+
+/**
+ * @brief Get AWB accumulated B value of white patches
+ *
+ * @param[in] hw              Hardware instance address
+ * @return
+ *      - Accumulated B value of white patches
+ */
+__attribute__((always_inline))
+static inline uint32_t isp_ll_awb_get_accumulated_b_value(isp_dev_t *hw)
+{
+    return hw->awb0_acc_b.awb0_acc_b;
 }
 
 #ifdef __cplusplus

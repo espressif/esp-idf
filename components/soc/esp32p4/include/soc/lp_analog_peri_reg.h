@@ -233,6 +233,8 @@ extern "C" {
 #define LP_ANALOG_PERI_ANA_FIB_ENA_V  0xFFFFFFFFU
 #define LP_ANALOG_PERI_ANA_FIB_ENA_S  0
 
+#define LP_ANALOG_PERI_LP_ANA_FIB_BOD_RST BIT(1)
+
 /** LP_ANALOG_PERI_INT_RAW_REG register
  *  need_des
  */

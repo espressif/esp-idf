@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,7 +15,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include "soc/hp_system_reg.h"
-// #include "soc/xts_aes_reg.h"
+#include "soc/spi_mem_reg.h"
 #include "soc/soc.h"
 #include "soc/soc_caps.h"
 #include "hal/assert.h"
@@ -27,7 +27,6 @@ extern "C" {
 /// Choose type of chip you want to encrypt manually
 typedef enum
 {
-    // TODO: [ESP32C5] IDF-8622, IDF-8649
     FLASH_ENCRYPTION_MANU = 0, ///!< Manually encrypt the flash chip.
     PSRAM_ENCRYPTION_MANU = 1  ///!< Manually encrypt the psram chip.
 } flash_encrypt_ll_type_t;
@@ -37,11 +36,15 @@ typedef enum
  */
 static inline void spi_flash_encrypt_ll_enable(void)
 {
-    // TODO: [ESP32C5] IDF-8622, IDF-8649
-    // REG_SET_BIT(HP_SYSTEM_EXTERNAL_DEVICE_ENCRYPT_DECRYPT_CONTROL_REG,
-    //             HP_SYSTEM_ENABLE_DOWNLOAD_MANUAL_ENCRYPT |
-    //             HP_SYSTEM_ENABLE_SPI_MANUAL_ENCRYPT);
-    abort();
+#if CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
+    REG_SET_BIT(HP_SYS_EXTERNAL_DEVICE_ENCRYPT_DECRYPT_CONTROL_REG,
+                HP_SYS_ENABLE_DOWNLOAD_MANUAL_ENCRYPT |
+                HP_SYS_ENABLE_SPI_MANUAL_ENCRYPT);
+#else
+    REG_SET_BIT(HP_SYSTEM_EXTERNAL_DEVICE_ENCRYPT_DECRYPT_CONTROL_REG,
+                HP_SYSTEM_ENABLE_DOWNLOAD_MANUAL_ENCRYPT |
+                HP_SYSTEM_ENABLE_SPI_MANUAL_ENCRYPT);
+#endif
 }
 
 /*
@@ -49,14 +52,17 @@ static inline void spi_flash_encrypt_ll_enable(void)
  */
 static inline void spi_flash_encrypt_ll_disable(void)
 {
-    // TODO: [ESP32C5] IDF-8622, IDF-8649
-    // REG_CLR_BIT(HP_SYSTEM_EXTERNAL_DEVICE_ENCRYPT_DECRYPT_CONTROL_REG,
-    //             HP_SYSTEM_ENABLE_SPI_MANUAL_ENCRYPT);
-    abort();
+#if CONFIG_IDF_TARGET_ESP32C5_BETA3_VERSION
+    REG_CLR_BIT(HP_SYS_EXTERNAL_DEVICE_ENCRYPT_DECRYPT_CONTROL_REG,
+                HP_SYS_ENABLE_SPI_MANUAL_ENCRYPT);
+#else
+    REG_CLR_BIT(HP_SYSTEM_EXTERNAL_DEVICE_ENCRYPT_DECRYPT_CONTROL_REG,
+                HP_SYSTEM_ENABLE_SPI_MANUAL_ENCRYPT);
+#endif
 }
 
 /**
- * Choose type of chip you want to encrypt manully
+ * Choose type of chip you want to encrypt manually
  *
  * @param type The type of chip to be encrypted
  *
@@ -64,11 +70,9 @@ static inline void spi_flash_encrypt_ll_disable(void)
  */
 static inline void spi_flash_encrypt_ll_type(flash_encrypt_ll_type_t type)
 {
-    // TODO: [ESP32C5] IDF-8622, IDF-8649
-    // // Our hardware only support flash encryption
-    // HAL_ASSERT(type == FLASH_ENCRYPTION_MANU);
-    // REG_SET_FIELD(XTS_AES_DESTINATION_REG(0), XTS_AES_DESTINATION, type);
-    abort();
+    // Our hardware only support flash encryption
+    HAL_ASSERT(type == FLASH_ENCRYPTION_MANU);
+    REG_SET_FIELD(SPI_MEM_XTS_DESTINATION_REG(0), SPI_XTS_DESTINATION, type);
 }
 
 /**
@@ -78,10 +82,8 @@ static inline void spi_flash_encrypt_ll_type(flash_encrypt_ll_type_t type)
  */
 static inline void spi_flash_encrypt_ll_buffer_length(uint32_t size)
 {
-    // TODO: [ESP32C5] IDF-8622, IDF-8649
-    // // Desired block should not be larger than the block size.
-    // REG_SET_FIELD(XTS_AES_LINESIZE_REG(0), XTS_AES_LINESIZE, size >> 5);
-    abort();
+    // Desired block should not be larger than the block size.
+    REG_SET_FIELD(SPI_MEM_XTS_LINESIZE_REG(0), SPI_XTS_LINESIZE, size >> 5);
 }
 
 /**
@@ -94,11 +96,9 @@ static inline void spi_flash_encrypt_ll_buffer_length(uint32_t size)
  */
 static inline void spi_flash_encrypt_ll_plaintext_save(uint32_t address, const uint32_t* buffer, uint32_t size)
 {
-    // TODO: [ESP32C5] IDF-8622, IDF-8649
-    // uint32_t plaintext_offs = (address % SOC_FLASH_ENCRYPTED_XTS_AES_BLOCK_MAX);
-    // HAL_ASSERT(plaintext_offs + size <= SOC_FLASH_ENCRYPTED_XTS_AES_BLOCK_MAX);
-    // memcpy((void *)(XTS_AES_PLAIN_MEM(0) + plaintext_offs), buffer, size);
-    abort();
+    uint32_t plaintext_offs = (address % SOC_FLASH_ENCRYPTED_XTS_AES_BLOCK_MAX);
+    HAL_ASSERT(plaintext_offs + size <= SOC_FLASH_ENCRYPTED_XTS_AES_BLOCK_MAX);
+    memcpy((void *)(SPI_MEM_XTS_PLAIN_BASE_REG(0) + plaintext_offs), buffer, size);
 }
 
 /**
@@ -108,9 +108,7 @@ static inline void spi_flash_encrypt_ll_plaintext_save(uint32_t address, const u
  */
 static inline void spi_flash_encrypt_ll_address_save(uint32_t flash_addr)
 {
-    // TODO: [ESP32C5] IDF-8622, IDF-8649
-    // REG_SET_FIELD(XTS_AES_PHYSICAL_ADDRESS_REG(0), XTS_AES_PHYSICAL_ADDRESS, flash_addr);
-    abort();
+    REG_SET_FIELD(SPI_MEM_XTS_PHYSICAL_ADDRESS_REG(0), SPI_XTS_PHYSICAL_ADDRESS, flash_addr);
 }
 
 /**
@@ -118,9 +116,7 @@ static inline void spi_flash_encrypt_ll_address_save(uint32_t flash_addr)
  */
 static inline void spi_flash_encrypt_ll_calculate_start(void)
 {
-    // TODO: [ESP32C5] IDF-8622, IDF-8649
-    // REG_SET_FIELD(XTS_AES_TRIGGER_REG(0), XTS_AES_TRIGGER, 1);
-    abort();
+    REG_SET_FIELD(SPI_MEM_XTS_TRIGGER_REG(0), SPI_XTS_TRIGGER, 1);
 }
 
 /**
@@ -128,10 +124,8 @@ static inline void spi_flash_encrypt_ll_calculate_start(void)
  */
 static inline void spi_flash_encrypt_ll_calculate_wait_idle(void)
 {
-    // TODO: [ESP32C5] IDF-8622, IDF-8649
-    // while(REG_GET_FIELD(XTS_AES_STATE_REG(0), XTS_AES_STATE) == 0x1) {
-    // }
-    abort();
+    while(REG_GET_FIELD(SPI_MEM_XTS_STATE_REG(0), SPI_XTS_STATE) == 0x1) {
+    }
 }
 
 /**
@@ -139,11 +133,9 @@ static inline void spi_flash_encrypt_ll_calculate_wait_idle(void)
  */
 static inline void spi_flash_encrypt_ll_done(void)
 {
-    // TODO: [ESP32C5] IDF-8622, IDF-8649
-    // REG_SET_BIT(XTS_AES_RELEASE_REG(0), XTS_AES_RELEASE);
-    // while(REG_GET_FIELD(XTS_AES_STATE_REG(0), XTS_AES_STATE) != 0x3) {
-    // }
-    abort();
+    REG_SET_BIT(SPI_MEM_XTS_RELEASE_REG(0), SPI_XTS_RELEASE);
+    while(REG_GET_FIELD(SPI_MEM_XTS_STATE_REG(0), SPI_XTS_STATE) != 0x3) {
+    }
 }
 
 /**
@@ -151,9 +143,7 @@ static inline void spi_flash_encrypt_ll_done(void)
  */
 static inline void spi_flash_encrypt_ll_destroy(void)
 {
-    // TODO: [ESP32C5] IDF-8622, IDF-8649
-    // REG_SET_BIT(XTS_AES_DESTROY_REG(0), XTS_AES_DESTROY);
-    abort();
+    REG_SET_BIT(SPI_MEM_XTS_DESTROY_REG(0), SPI_XTS_DESTROY);
 }
 
 /**
@@ -164,10 +154,7 @@ static inline void spi_flash_encrypt_ll_destroy(void)
  */
 static inline bool spi_flash_encrypt_ll_check(uint32_t address, uint32_t length)
 {
-    // TODO: [ESP32C5] IDF-8622, IDF-8649
-    // return ((address % length) == 0) ? true : false;
-    abort();
-    return (bool)0;
+    return ((address % length) == 0) ? true : false;
 }
 
 #ifdef __cplusplus

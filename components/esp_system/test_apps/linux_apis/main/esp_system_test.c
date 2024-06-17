@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -106,6 +106,27 @@ TEST_CASE("heap_size_stubs", "[esp_system]")
     TEST_ASSERT_EQUAL(UINT32_MAX, esp_get_free_heap_size());
     TEST_ASSERT_EQUAL(UINT32_MAX, esp_get_free_internal_heap_size());
     TEST_ASSERT_EQUAL(UINT32_MAX, esp_get_minimum_free_heap_size());
+}
+
+esp_err_t esp_ok_func(void)
+{
+    return ESP_OK;
+}
+
+esp_err_t esp_fail_func(void)
+{
+    return ESP_FAIL;
+}
+
+TEST_CASE("ESP_ERROR_CHECK_WITHOUT_ABORT", "[esp_system]")
+{
+    ESP_ERROR_CHECK_WITHOUT_ABORT(esp_ok_func());
+    ESP_ERROR_CHECK_WITHOUT_ABORT(esp_fail_func());
+}
+
+TEST_CASE("ESP_ERROR_CHECK", "[esp_system]")
+{
+    ESP_ERROR_CHECK(esp_ok_func());
 }
 
 void app_main(void)

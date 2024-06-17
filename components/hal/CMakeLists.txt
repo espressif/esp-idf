@@ -62,7 +62,7 @@ if(NOT BOOTLOADER_BUILD)
         endif()
     endif()
 
-    if(CONFIG_SOC_CLK_TREE_SUPPORTED)
+    if(CONFIG_SOC_CLK_TREE_SUPPORTED OR CONFIG_IDF_TARGET_ESP32C5) # TODO: IDF-8642
         list(APPEND srcs "${target}/clk_tree_hal.c")
     endif()
 
@@ -265,6 +265,10 @@ if(NOT BOOTLOADER_BUILD)
         list(APPEND srcs "ds_hal.c")
     endif()
 
+    if(CONFIG_SOC_LCDCAM_CAM_SUPPORTED)
+        list(APPEND srcs "cam_hal.c")
+    endif()
+
     if(CONFIG_SOC_USB_SERIAL_JTAG_SUPPORTED)
         list(APPEND srcs "usb_serial_jtag_hal.c")
     endif()
@@ -275,26 +279,27 @@ if(NOT BOOTLOADER_BUILD)
                     "usb_wrap_hal.c")
     endif()
 
+    if(CONFIG_SOC_TOUCH_SENSOR_SUPPORTED)
+        list(APPEND srcs "${target}/touch_sensor_hal.c")
+        if(CONFIG_SOC_TOUCH_SENSOR_VERSION LESS 3)
+            list(APPEND srcs "touch_sensor_hal.c")
+        endif()
+    endif()
+
     if(${target} STREQUAL "esp32")
         list(APPEND srcs
-            "touch_sensor_hal.c"
-            "esp32/touch_sensor_hal.c"
             "esp32/gpio_hal_workaround.c")
     endif()
 
     if(${target} STREQUAL "esp32s2")
         list(APPEND srcs
-                    "touch_sensor_hal.c"
                     "xt_wdt_hal.c"
-                    "esp32s2/cp_dma_hal.c"
-                    "esp32s2/touch_sensor_hal.c")
+                    "esp32s2/cp_dma_hal.c")
     endif()
 
     if(${target} STREQUAL "esp32s3")
         list(APPEND srcs
-            "touch_sensor_hal.c"
             "xt_wdt_hal.c"
-            "esp32s3/touch_sensor_hal.c"
             "esp32s3/rtc_cntl_hal.c")
     endif()
 

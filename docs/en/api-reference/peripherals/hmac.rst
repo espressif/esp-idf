@@ -98,7 +98,7 @@ Following is the procedure to re-enable the JTAG:
 **Stage 1: Setup**
 
 1. Generate a 256-bit HMAC secret key to use for JTAG re-enable.
-2. Write the key to an eFuse block with key purpose HMAC_DOWN_ALL (5) or HMAC_DOWN_JTAG (6). This can be done using the ``esp_efuse_write_key()`` function in the firmware or using ``espefuse.py`` from the host.
+2. Write the key to an eFuse block with key purpose HMAC_DOWN_ALL (5) or HMAC_DOWN_JTAG (6). This can be done using the ``esp_efuse_write_key()`` function in the firmware or using ``idf.py efuse-burn-key`` from the host.
 3. Configure the eFuse key block to be read-protected using the ``esp_efuse_set_read_protect()``, so that software cannot read back the value.
 4. Burn the ``soft JTAG disable`` bit/bits on {IDF_TARGET_NAME}. This will permanently disable JTAG unless the correct key value is provided by the software.
 

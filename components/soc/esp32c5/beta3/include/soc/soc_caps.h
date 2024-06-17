@@ -55,7 +55,7 @@
 #define SOC_DIG_SIGN_SUPPORTED          1
 #define SOC_ECC_SUPPORTED               1
 #define SOC_ECC_EXTENDED_MODES_SUPPORTED   1
-#define SOC_FLASH_ENC_SUPPORTED         1     // TODO: [ESP32C5] IDF-8622
+#define SOC_FLASH_ENC_SUPPORTED         1
 #define SOC_SECURE_BOOT_SUPPORTED       1
 // #define SOC_BOD_SUPPORTED               1  // TODO: [ESP32C5] IDF-8647
 // #define SOC_APM_SUPPORTED               1  // TODO: [ESP32C5] IDF-8614, IDF-8615
@@ -474,9 +474,9 @@
 #define SOC_SUPPORT_SECURE_BOOT_REVOKE_KEY  1
 
 /*-------------------------- Flash Encryption CAPS----------------------------*/
-#define SOC_FLASH_ENCRYPTED_XTS_AES_BLOCK_MAX   (64)  // TODO: [ESP32C5] IDF-8622
+#define SOC_FLASH_ENCRYPTED_XTS_AES_BLOCK_MAX   (64)
 #define SOC_FLASH_ENCRYPTION_XTS_AES        1
-#define SOC_FLASH_ENCRYPTION_XTS_AES_128    1  // TODO: [ESP32C5] IDF-8622
+#define SOC_FLASH_ENCRYPTION_XTS_AES_128    1
 
 /*------------------------ Anti DPA (Security) CAPS --------------------------*/
 // #define SOC_CRYPTO_DPA_PROTECTION_SUPPORTED     1

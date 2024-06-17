@@ -12,7 +12,7 @@ For guidance about which JTAG interface to select when using OpenOCD with {IDF_T
     Configure eFuses
     ^^^^^^^^^^^^^^^^
 
-    By default, {IDF_TARGET_NAME} JTAG interface is connected to the :doc:`built-in USB_SERIAL_JTAG peripheral <configure-builtin-jtag>`. To use an external JTAG adapter instead, you need to switch the JTAG interface to the GPIO pins. This can be done by burning eFuses using ``espefuse.py`` tool.
+    By default, {IDF_TARGET_NAME} JTAG interface is connected to the :doc:`built-in USB_SERIAL_JTAG peripheral <configure-builtin-jtag>`. To use an external JTAG adapter instead, you need to switch the JTAG interface to the GPIO pins. This can be done by burning eFuses using ``idf.py`` tool.
 
     .. only:: esp32c3
 

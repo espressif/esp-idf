@@ -30,14 +30,16 @@
 /**
  * @brief Stages of device enumeration listed in their order of execution
  *
+ * Entry:
  * - These stages MUST BE LISTED IN THE ORDER OF THEIR EXECUTION as the enumeration will simply increment the current stage
  * - If an error occurs at any stage, ENUM_STAGE_CANCEL acts as a common exit stage on failure
  * - Must start with 0 as enum is also used as an index
  * - The short descriptor stages are used to fetch the start particular descriptors that don't have a fixed length in order to determine the full descriptors length
+ * - Any state of Get String Descriptor could be STALLed by the device. In that case we just don't fetch them and treat enumeration as successful
  */
 typedef enum {
     ENUM_STAGE_IDLE = 0,                    /**< There is no device awaiting enumeration */
-    // Basic device enumeration
+    // Basic Device enumeration
     ENUM_STAGE_GET_SHORT_DEV_DESC,          /**< Getting short dev desc (wLength is ENUM_SHORT_DESC_REQ_LEN) */
     ENUM_STAGE_CHECK_SHORT_DEV_DESC,        /**< Save bMaxPacketSize0 from the short dev desc. Update the MPS of the enum pipe */
     ENUM_STAGE_SECOND_RESET,                /**< Reset the device again (Workaround for old USB devices that get confused by the previous short dev desc request). */
@@ -51,7 +53,7 @@ typedef enum {
     ENUM_STAGE_CHECK_SHORT_CONFIG_DESC,     /**< Save wTotalLength of the short config desc */
     ENUM_STAGE_GET_FULL_CONFIG_DESC,        /**< Get the full config desc (wLength is the saved wTotalLength) */
     ENUM_STAGE_CHECK_FULL_CONFIG_DESC,      /**< Check the full config desc, fill it into the device object in USBH */
-    // Get string descriptors
+    // Get String Descriptors
     ENUM_STAGE_GET_SHORT_LANGID_TABLE,      /**< Get the header of the LANGID table string descriptor */
     ENUM_STAGE_CHECK_SHORT_LANGID_TABLE,    /**< Save the bLength of the LANGID table string descriptor */
     ENUM_STAGE_GET_FULL_LANGID_TABLE,       /**< Get the full LANGID table string descriptor */
@@ -68,7 +70,7 @@ typedef enum {
     ENUM_STAGE_CHECK_SHORT_SER_STR_DESC,    /**< Save the bLength of the iSerialNumber string descriptor */
     ENUM_STAGE_GET_FULL_SER_STR_DESC,       /**< Get the full iSerialNumber string descriptor */
     ENUM_STAGE_CHECK_FULL_SER_STR_DESC,     /**< Check and fill the full iSerialNumber string descriptor */
-    // Set configuration
+    // Set Configuration
     ENUM_STAGE_SET_CONFIG,                  /**< Send SET_CONFIGURATION request */
     ENUM_STAGE_CHECK_CONFIG,                /**< Check that SET_CONFIGURATION request was successful */
     // Terminal stages
@@ -423,6 +425,7 @@ static void control_request_string(void)
 {
     usb_transfer_t *transfer = &p_enum_driver->constant.urb->transfer;
     enum_stage_t stage = p_enum_driver->dynamic.stage;
+    uint8_t ctrl_ep_mps = p_enum_driver->single_thread.dev_params.bMaxPacketSize0;
     uint8_t bLength = p_enum_driver->single_thread.dev_params.str_desc_bLength;
     uint8_t index = 0;
     uint16_t langid = 0;
@@ -436,7 +439,7 @@ static void control_request_string(void)
     case ENUM_STAGE_GET_SHORT_SER_STR_DESC: {
         // Get only the header of the string descriptor
         USB_SETUP_PACKET_INIT_GET_STR_DESC((usb_setup_packet_t *)transfer->data_buffer, index, langid, sizeof(usb_str_desc_t));
-        transfer->num_bytes = sizeof(usb_setup_packet_t) + sizeof(usb_str_desc_t) /* usb_round_up_to_mps(sizeof(usb_str_desc_t), ctx->bMaxPacketSize0) */;
+        transfer->num_bytes = sizeof(usb_setup_packet_t) + usb_round_up_to_mps(sizeof(usb_str_desc_t), ctrl_ep_mps);
         // IN data stage should return exactly sizeof(usb_str_desc_t) bytes
         p_enum_driver->single_thread.expect_num_bytes = sizeof(usb_setup_packet_t) + sizeof(usb_str_desc_t);
         break;
@@ -447,7 +450,7 @@ static void control_request_string(void)
     case ENUM_STAGE_GET_FULL_SER_STR_DESC: {
         // Get the full string descriptor at a particular index, requesting the descriptors exact length
         USB_SETUP_PACKET_INIT_GET_STR_DESC((usb_setup_packet_t *)transfer->data_buffer, index, langid, bLength);
-        transfer->num_bytes = sizeof(usb_setup_packet_t) + bLength /* usb_round_up_to_mps(ctx->str_desc_bLength, ctx->bMaxPacketSize0) */;
+        transfer->num_bytes = sizeof(usb_setup_packet_t) + usb_round_up_to_mps(bLength, ctrl_ep_mps);
         // IN data stage should return exactly str_desc_bLength bytes
         p_enum_driver->single_thread.expect_num_bytes = sizeof(usb_setup_packet_t) + bLength;
         break;
@@ -779,9 +782,12 @@ static esp_err_t control_response_handling(void)
     int expected_num_bytes = p_enum_driver->single_thread.expect_num_bytes;
     usb_transfer_t *ctrl_xfer = &p_enum_driver->constant.urb->transfer;
 
-    // Sanity check
-    // We already checked the transfer status for control transfer
-    assert(ctrl_xfer->status == USB_TRANSFER_STATUS_COMPLETED);
+    if (ctrl_xfer->status != USB_TRANSFER_STATUS_COMPLETED) {
+        ESP_LOGE(ENUM_TAG, "Bad transfer status %d: %s",
+                 ctrl_xfer->status,
+                 enum_stage_strings[p_enum_driver->dynamic.stage]);
+        return ret;
+    }
 
     // Check Control IN transfer returned the expected correct number of bytes
     if (expected_num_bytes != 0 && expected_num_bytes != ctrl_xfer->actual_num_bytes) {
@@ -996,11 +1002,11 @@ static void set_next_stage(bool last_stage_pass)
             // Stages that are allowed to fail skip to the next appropriate stage
             case ENUM_STAGE_CHECK_SHORT_LANGID_TABLE:
             case ENUM_STAGE_CHECK_FULL_LANGID_TABLE:
-            // Couldn't get LANGID, skip the rest of the string descriptors and jump straight to cleanup.
+            // Couldn't get LANGID, skip the rest of the string descriptors
             case ENUM_STAGE_CHECK_SHORT_SER_STR_DESC:
             case ENUM_STAGE_CHECK_FULL_SER_STR_DESC:
-                // iSerialNumber string failed. Jump to complete.
-                next_stage = ENUM_STAGE_COMPLETE;
+                // iSerialNumber string failed. Jump to Set Configuration and complete enumeration process.
+                next_stage = ENUM_STAGE_SET_CONFIG;
                 break;
             case ENUM_STAGE_CHECK_SHORT_MANU_STR_DESC:
             case ENUM_STAGE_CHECK_FULL_MANU_STR_DESC:
@@ -1086,14 +1092,21 @@ static void enum_control_transfer_complete(usb_transfer_t *ctrl_xfer)
     assert(ctrl_xfer->context);
     assert(p_enum_driver->single_thread.dev_hdl == ctrl_xfer->context);
 
-    if (ctrl_xfer->status == USB_TRANSFER_STATUS_COMPLETED) {
+    switch (ctrl_xfer->status) {
+    case USB_TRANSFER_STATUS_COMPLETED:
         ESP_LOG_BUFFER_HEXDUMP(ENUM_TAG, ctrl_xfer->data_buffer, ctrl_xfer->actual_num_bytes, ESP_LOG_VERBOSE);
         goto process;
-    } else {
+        break;
+    case USB_TRANSFER_STATUS_STALL:
+        // Device can STALL some requests if it doesn't have the requested descriptors
+        goto process;
+        break;
+    default:
         ESP_LOGE(ENUM_TAG, "[%d:%d] Control transfer failed, status=%d",
                  p_enum_driver->single_thread.parent_dev_addr,
                  p_enum_driver->single_thread.parent_port_num,
                  ctrl_xfer->status);
+        break;
     }
     // Cancel enumeration process
     enum_cancel(p_enum_driver->single_thread.dev_uid);
@@ -1284,7 +1297,7 @@ esp_err_t enum_process(void)
     ENUM_CHECK_FROM_CRIT(p_enum_driver->dynamic.flags.processing != 0, ESP_ERR_INVALID_STATE);
     ENUM_EXIT_CRITICAL();
 
-    esp_err_t ret = ESP_FAIL;
+    esp_err_t res = ESP_FAIL;
     bool need_process_cb = true;
     enum_stage_t stage = p_enum_driver->dynamic.stage;
 
@@ -1305,13 +1318,13 @@ esp_err_t enum_process(void)
     case ENUM_STAGE_GET_SHORT_SER_STR_DESC:
     case ENUM_STAGE_GET_FULL_SER_STR_DESC:
         need_process_cb = false; // Do not need to request process callback, as we need to wait transfer completion
-        ret = control_request();
+        res = control_request();
         break;
     // Recovery interval
     case ENUM_STAGE_SET_ADDR_RECOVERY:
         // Need a short delay before device is ready. Todo: IDF-7007
         vTaskDelay(pdMS_TO_TICKS(SET_ADDR_RECOVERY_INTERVAL_MS));
-        ret = ESP_OK;
+        res = ESP_OK;
         break;
     // Transfer check stages
     case ENUM_STAGE_CHECK_SHORT_DEV_DESC:
@@ -1328,37 +1341,36 @@ esp_err_t enum_process(void)
     case ENUM_STAGE_CHECK_FULL_PROD_STR_DESC:
     case ENUM_STAGE_CHECK_SHORT_SER_STR_DESC:
     case ENUM_STAGE_CHECK_FULL_SER_STR_DESC:
-        ret = control_response_handling();
+        res = control_response_handling();
         break;
     case ENUM_STAGE_SELECT_CONFIG:
-        ret = select_active_configuration();
+        res = select_active_configuration();
         break;
     case ENUM_STAGE_SECOND_RESET:
         need_process_cb = false; // We need to wait Hub driver to finish port reset
-        ret = second_reset();
+        res = second_reset();
         break;
     case ENUM_STAGE_CANCEL:
         need_process_cb = false; // Terminal state
-        ret = stage_cancel();
+        res = stage_cancel();
         break;
     case ENUM_STAGE_COMPLETE:
         need_process_cb = false; // Terminal state
-        ret = stage_complete();
+        res = stage_complete();
         break;
     default:
         // Should never occur
-        ret = ESP_ERR_INVALID_STATE;
         abort();
         break;
     }
 
-    // Set nest stage of enumeration process
-    set_next_stage(ret == ESP_OK);
+    // Set nest stage of enumeration process, based on the stage result
+    set_next_stage(res == ESP_OK);
 
     // Request process callback is necessary
     if (need_process_cb) {
         p_enum_driver->constant.proc_req_cb(USB_PROC_REQ_SOURCE_ENUM, false, p_enum_driver->constant.proc_req_cb_arg);
     }
 
-    return ret;
+    return ESP_OK;
 }
