@@ -7,6 +7,7 @@
 #pragma once
 
 #include <stdint.h>
+#include "esp_assert.h"
 #include "sdkconfig.h"
 
 #ifdef __cplusplus
@@ -26,7 +27,11 @@ typedef enum {
     ESP_LOG_MAX     = 6,    /*!< Number of levels supported */
 } esp_log_level_t;
 
+#define ESP_LOG_LEVEL_LEN   (3) /*!< Number of bits used to represent the log level */
+#define ESP_LOG_LEVEL_MASK  ((1 << ESP_LOG_LEVEL_LEN) - 1) /*!< Mask for log level */
+
 /** @cond */
+ESP_STATIC_ASSERT(ESP_LOG_MAX <= ESP_LOG_LEVEL_MASK, "Log level items of esp_log_level_t must fit ESP_LOG_LEVEL_MASK");
 
 // LOG_LOCAL_LEVEL controls what log levels are included in the binary.
 #ifndef LOG_LOCAL_LEVEL
