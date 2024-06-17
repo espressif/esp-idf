@@ -385,7 +385,6 @@ test_pytest_macos:
       --ignore-result-files ${KNOWN_FAILURE_CASES_FILE_NAME}
       --app-info-filepattern \"list_job_*.txt\"
 
-
 test_idf_pytest_plugin:
   extends:
     - .host_test_template
@@ -400,3 +399,8 @@ test_idf_pytest_plugin:
     - python -m unittest test_report_generator.py
     - cd ${IDF_PATH}/tools/ci/idf_pytest
     - pytest --junitxml=${CI_PROJECT_DIR}/XUNIT_RESULT.xml
+
+test_idf_build_apps_load_soc_caps:
+  extends: .host_test_template
+  script:
+    - python tools/ci/check_soc_headers_load_in_idf_build_apps.py
