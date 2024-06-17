@@ -724,10 +724,10 @@ static inline void touch_ll_filter_set_neg_noise_thresh(int neg_noise_thresh, ui
 {
     bool always_update = neg_noise_thresh == -1;
     bool stop_update = neg_noise_thresh == -2;
-    LP_ANA_PERI.touch_filter2.touch_bypass_neg_noise_thres = always_update;
-    LP_ANA_PERI.touch_filter1.touch_neg_noise_disupdate_baseline_en = stop_update;
-    LP_ANA_PERI.touch_filter1.touch_neg_noise_thres = always_update || stop_update ? 0 : neg_noise_thresh;
-    LP_ANA_PERI.touch_filter1.touch_neg_noise_limit = always_update || stop_update ? 5 : neg_noise_limit; // 5 is the default value
+    LP_ANA_PERI.touch_filter2.touch_bypass_nn_thres = always_update;
+    LP_ANA_PERI.touch_filter1.touch_nn_disupdate_baseline_en = stop_update;
+    LP_ANA_PERI.touch_filter1.touch_nn_thres = always_update || stop_update ? 0 : neg_noise_thresh;
+    LP_ANA_PERI.touch_filter1.touch_nn_limit = always_update || stop_update ? 5 : neg_noise_limit; // 5 is the default value
 }
 
 /**
