@@ -249,7 +249,7 @@ typedef struct {
     uint8_t ble_max_conn;                   /*!< BLE maximum connection numbers */
     uint8_t bt_max_acl_conn;                /*!< BR/EDR maximum ACL connection numbers */
     uint8_t bt_sco_datapath;                /*!< SCO data path, i.e. HCI or PCM module */
-    bool auto_latency;                      /*!< BLE auto latency, used to enhance classic BT performance */
+    bool auto_latency;                      /*!< BLE auto latency, used to enhance Classic Bluetooth performance */
     bool bt_legacy_auth_vs_evt;             /*!< BR/EDR Legacy auth complete event required to  protect from BIAS attack */
     /*
      * Following parameters can not be configured runtime when call esp_bt_controller_init()
@@ -445,7 +445,7 @@ esp_err_t esp_bt_controller_deinit(void);
  *       to change the Controller mode dynamically. To change the Controller mode, call
  *       `esp_bt_controller_disable()` and then call `esp_bt_controller_enable()` with the new mode.
  *
- * @param[in] mode the Bluetooth Controller mode (BLE/Classic BT/BTDM) to enable
+ * @param[in] mode the Bluetooth Controller mode (BLE/Classic Bluetooth/BTDM) to enable
  *
  * For API compatibility, retain this argument. This mode must match the mode specified in the `cfg` of `esp_bt_controller_init()`.
  *
@@ -527,7 +527,7 @@ esp_err_t esp_vhci_host_register_callback(const esp_vhci_host_callback_t *callba
  *
  * If the mode is `ESP_BT_MODE_BTDM`, then it may be useful to call API `esp_bt_mem_release(ESP_BT_MODE_BTDM)` instead,
  * which internally calls `esp_bt_controller_mem_release(ESP_BT_MODE_BTDM)` and additionally releases the BSS and data
- * consumed by the BT/BLE Host stack to heap. For more details about usage please refer to the documentation of `esp_bt_mem_release()` function
+ * consumed by the Classic Bluetooth/BLE Host stack to heap. For more details about usage please refer to the documentation of `esp_bt_mem_release()` function
  *
  * @note
  *      1. This function should be called only before `esp_bt_controller_init()` or after `esp_bt_controller_deinit()`.
@@ -543,10 +543,10 @@ esp_err_t esp_vhci_host_register_callback(const esp_vhci_host_callback_t *callba
  */
 esp_err_t esp_bt_controller_mem_release(esp_bt_mode_t mode);
 
-/** @brief Release Controller memory, BSS and data section of the BT/BLE Host stack as per the mode
+/** @brief Release the Controller memory, BSS and data section of the Classic Bluetooth/BLE Host stack as per the mode
  *
  * This function first releases Controller memory by internally calling `esp_bt_controller_mem_release()`.
- * Additionally, if the mode is set to `ESP_BT_MODE_BTDM`, it also releases the BSS and data consumed by the BT/BLE Host stack to heap
+ * Additionally, if the mode is set to `ESP_BT_MODE_BTDM`, it also releases the BSS and data consumed by the Classic Bluetooth and BLE Host stack to heap.
  *
  * If you never intend to use Bluetooth in a current boot-up cycle, you can call `esp_bt_mem_release(ESP_BT_MODE_BTDM)`
  * before `esp_bt_controller_init()` or after `esp_bt_controller_deinit()`.
@@ -625,14 +625,14 @@ esp_err_t esp_bt_sleep_disable(void);
 esp_err_t esp_ble_scan_dupilcate_list_flush(void);
 
 /**
- * @brief Power on BT Wi-Fi power domain
+ * @brief Power on Bluetooth Wi-Fi power domain
  *
  * @note This function is not recommended to use due to potential risk.
  */
 void esp_wifi_bt_power_domain_on(void);
 
 /**
- * @brief Power off BT Wi-Fi power domain
+ * @brief Power off Bluetooth Wi-Fi power domain
  *
  * @note This function is not recommended to use due to potential risk.
  */
