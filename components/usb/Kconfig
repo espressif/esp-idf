@@ -112,6 +112,51 @@ menu "USB-OTG"
             help
                 Enables support for connecting multiple Hubs simultaneously.
 
+        menu "Downstream Port configuration"
+            depends on USB_HOST_HUBS_SUPPORTED
+
+            config USB_HOST_EXT_PORT_SUPPORT_LS
+                depends on IDF_EXPERIMENTAL_FEATURES
+                bool "Support LS"
+                default n
+                help
+                    Enables support of Low-speed devices, connected through the external Hub.
+
+            config USB_HOST_EXT_PORT_RESET_ATTEMPTS
+                depends on IDF_EXPERIMENTAL_FEATURES
+                # Invisible config option
+                # Todo: IDF-11283
+                int
+                default 1
+                help
+                    Amount of attempts to reset the device.
+
+                    The default value is 1.
+
+            config USB_HOST_EXT_PORT_CUSTOM_RESET_ENABLE
+                bool "Custom bPwrOn2PwrGood value"
+                default n
+                help
+                    Enables the possibility to configure custom time for the power-on sequence on a port
+                    until power is good on that port.
+
+                    When enabled, applies the custom PwrOn2PwrGood delay.
+                    When disabled, applies the PwrOn2PwrGood value from the Hub Descriptor.
+
+            config USB_HOST_EXT_PORT_CUSTOM_RESET_MS
+                depends on USB_HOST_EXT_PORT_CUSTOM_RESET_ENABLE
+                int "PwrOn2PwrGood delay in ms"
+                default 100
+                range 0 5000
+                help
+                    Custom value of delay from the time the power-on sequence begins on a port
+                    until power is good on that port.
+                    Value 0 is used for a hub with no power switches.
+
+                    The default value is 100 ms.
+
+        endmenu #Downstream Port configuration
+
     endmenu #Hub Driver Configuration
 
     config USB_HOST_ENABLE_ENUM_FILTER_CALLBACK
