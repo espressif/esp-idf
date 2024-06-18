@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -120,26 +120,26 @@ static void usb_host_lib_task(void *arg)
     xTaskNotifyGive(arg);
 
     bool has_clients = true;
-    bool has_devices = true;
-    while (has_clients || has_devices) {
+    bool has_devices = false;
+    while (has_clients) {
         uint32_t event_flags;
         ESP_ERROR_CHECK(usb_host_lib_handle_events(portMAX_DELAY, &event_flags));
         if (event_flags & USB_HOST_LIB_EVENT_FLAGS_NO_CLIENTS) {
-            ESP_LOGI(TAG, "No more clients");
-            has_clients = false;
+            ESP_LOGI(TAG, "Get FLAGS_NO_CLIENTS");
             if (ESP_OK == usb_host_device_free_all()) {
-                ESP_LOGI(TAG, "All devices marked as free");
+                ESP_LOGI(TAG, "All devices marked as free, no need to wait FLAGS_ALL_FREE event");
+                has_clients = false;
             } else {
-                ESP_LOGI(TAG, "Wait for the ALL FREE EVENT");
+                ESP_LOGI(TAG, "Wait for the FLAGS_ALL_FREE");
+                has_devices = true;
             }
         }
-        if (event_flags & USB_HOST_LIB_EVENT_FLAGS_ALL_FREE) {
-            ESP_LOGI(TAG, "No more devices");
-            has_devices = false;
+        if (has_devices && event_flags & USB_HOST_LIB_EVENT_FLAGS_ALL_FREE) {
+            ESP_LOGI(TAG, "Get FLAGS_ALL_FREE");
+            has_clients = false;
         }
-
     }
-    ESP_LOGI(TAG, "No more clients and devices");
+    ESP_LOGI(TAG, "No more clients and devices, uninstall USB Host library");
 
     //Uninstall the USB Host Library
     ESP_ERROR_CHECK(usb_host_uninstall());
@@ -167,7 +167,7 @@ void app_main(void)
 
     TaskHandle_t host_lib_task_hdl, class_driver_task_hdl;
 
-    //Create usb host lib task
+    // Create usb host lib task
     BaseType_t task_created;
     task_created = xTaskCreatePinnedToCore(usb_host_lib_task,
                                            "usb_host",
@@ -178,19 +178,20 @@ void app_main(void)
                                            0);
     assert(task_created == pdTRUE);
 
-    //Wait unit the USB host library is installed
+    // Wait unit the USB host library is installed
     ulTaskNotifyTake(false, 1000);
 
-    //Create class driver task
+    // Create class driver task
     task_created = xTaskCreatePinnedToCore(class_driver_task,
                                            "class",
-                                           4096,
+                                           5 * 1024,
                                            NULL,
                                            CLASS_TASK_PRIORITY,
                                            &class_driver_task_hdl,
                                            0);
     assert(task_created == pdTRUE);
-    vTaskDelay(10);     //Add a short delay to let the tasks run
+    // Add a short delay to let the tasks run
+    vTaskDelay(10);
 
     while (1) {
         if (xQueueReceive(app_event_queue, &evt_queue, portMAX_DELAY)) {
@@ -198,22 +199,20 @@ void app_main(void)
                 // User pressed button
                 usb_host_lib_info_t lib_info;
                 ESP_ERROR_CHECK(usb_host_lib_info(&lib_info));
-                if (lib_info.num_devices == 0) {
-                    // End while cycle
-                    break;
-                } else {
-                    ESP_LOGW(TAG, "To shutdown example, remove all USB devices and press button again.");
-                    // Keep polling
+                if (lib_info.num_devices != 0) {
+                    ESP_LOGW(TAG, "Shutdown with attached devices.");
                 }
+                // End while cycle
+                break;
             }
         }
     }
 
-    //Deregister client
+    // Deregister client
     class_driver_client_deregister();
     vTaskDelay(10);
 
-    //Delete the tasks
+    // Delete the tasks
     vTaskDelete(class_driver_task_hdl);
     vTaskDelete(host_lib_task_hdl);
 
