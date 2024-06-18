@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,7 +10,6 @@
 #include "esp_pm.h"
 #include "esp_log.h"
 #include "test_common.h"
-#include "esp_private/sleep_cpu.h" //for sleep_cpu_configure
 
 #define UART_TAG         "Uart"
 #define TEST_BUF_SIZE    256
@@ -34,7 +33,6 @@
 #endif
 
 #if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32P4)
-#if CONFIG_PM_ENABLE
 
 TEST_CASE("uart tx won't be blocked by auto light sleep", "[uart]")
 {
@@ -82,10 +80,9 @@ TEST_CASE("uart tx won't be blocked by auto light sleep", "[uart]")
     uart_driver_delete(port_num);
     free(data);
 
-#if CONFIG_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP
-    //When PD_CPU enabled, retention may cause 14K memory leak. Workaround to release the memory
-    sleep_cpu_configure(false);
+#if CONFIG_FREERTOS_USE_TICKLESS_IDLE
+    pm_config.light_sleep_enable = false;
+    TEST_ESP_OK(esp_pm_configure(&pm_config));
 #endif
 }
-#endif // CONFIG_PM_ENABLE
 #endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32P4)

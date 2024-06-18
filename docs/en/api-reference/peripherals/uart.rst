@@ -66,6 +66,10 @@ Call the function :cpp:func:`uart_param_config` and pass to it a :cpp:type:`uart
 
 For more information on how to configure the hardware flow control options, please refer to :example:`peripherals/uart/uart_echo`.
 
+.. only:: SOC_UART_SUPPORT_SLEEP_RETENTION
+
+    Additionally, :cpp:member:`uart_config_t::backup_before_sleep` can be set to enable the backup of the UART configuration registers before entering sleep and restore these registers after exiting sleep. This allows the UART to continue working properly after waking up even when the UART module power domain is entirely off during sleep. This option implies an balance between power consumption and memory usage. If the power consumption is not a concern, you can disable this option to save memory.
+
 Multiple Steps
 """"""""""""""
 

@@ -136,7 +136,7 @@ Light-sleep Peripheral Power Down
     - INT_MTX
     - TEE/APM
     - IO_MUX / GPIO
-    - UART0
+    - UART0/1
     - TIMG0
     - SPI0/1
     - SYSTIMER
@@ -159,7 +159,6 @@ Light-sleep Peripheral Power Down
     - SARADC
     - SDIO
     - PARL_IO
-    - UART1
 
     For peripherals that do not support Light-sleep context retention, if the Power management is enabled, the ``ESP_PM_NO_LIGHT_SLEEP`` lock should be held when the peripheral is working to avoid losing the working context of the peripheral when entering sleep.
 
