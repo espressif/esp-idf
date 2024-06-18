@@ -611,7 +611,7 @@ static inline void i2c_ll_get_stop_timing(i2c_dev_t *hw, int *setup_time, int *h
  *
  * @param  hw Beginning address of the peripheral registers
  * @param  ptr Pointer to data buffer
- * @param  len Amount of data needs to be writen
+ * @param  len Amount of data needs to be written
  *
  * @return None.
  */
@@ -646,7 +646,7 @@ static inline void i2c_ll_read_rxfifo(i2c_dev_t *hw, uint8_t *ptr, uint8_t len)
  * @param  hw Beginning address of the peripheral registers
  * @param  ram_offset Offset value of I2C RAM.
  * @param  ptr Pointer to data buffer
- * @param  len Amount of data needs to be writen
+ * @param  len Amount of data needs to be written
  */
 static inline void i2c_ll_write_by_nonfifo(i2c_dev_t *hw, uint8_t ram_offset, const uint8_t *ptr, uint8_t len)
 {
@@ -718,7 +718,7 @@ static inline void i2c_ll_master_get_filter(i2c_dev_t *hw, uint8_t *filter_conf)
 }
 
 /**
- * @brief Reste I2C master FSM. When the master FSM is stuck, call this function to reset the FSM
+ * @brief Reset I2C master FSM. When the master FSM is stuck, call this function to reset the FSM
  *
  * @param  hw Beginning address of the peripheral registers
  *
@@ -746,7 +746,7 @@ static inline void i2c_ll_master_clr_bus(i2c_dev_t *hw, uint32_t slave_pulses)
     hw->scl_sp_conf.scl_rst_slv_num = slave_pulses;
     hw->scl_sp_conf.scl_rst_slv_en = 1;
     hw->ctr.conf_upgate = 1;
-    // hardward will clear scl_rst_slv_en after sending SCL pulses,
+    // hardware will clear scl_rst_slv_en after sending SCL pulses,
     // and we should set conf_upgate bit to synchronize register value.
     while (hw->scl_sp_conf.scl_rst_slv_en);
     hw->ctr.conf_upgate = 1;
@@ -854,6 +854,20 @@ static inline void i2c_ll_slave_clear_stretch(i2c_dev_t *dev)
 }
 
 /**
+ * @brief Check if i2c command is done.
+ *
+ * @param  hw Beginning address of the peripheral registers
+ * @param  cmd_idx The index of the command register, must be less than 8
+ *
+ * @return True if the `cmd_idx` command is done. Otherwise false.
+ */
+__attribute__((always_inline))
+static inline bool i2c_ll_master_is_cmd_done(i2c_dev_t *hw, int cmd_idx)
+{
+    return hw->command[cmd_idx].command_done;
+}
+
+/**
  * @brief Calculate SCL timeout us to reg value
  *
  * @param timeout_us timeout value in us
@@ -902,7 +916,7 @@ typedef enum {
  * @brief  Configure I2C SCL timing
  *
  * @param  hw Beginning address of the peripheral registers
- * @param  high_period The I2C SCL hight period (in core clock cycle, hight_period > 2)
+ * @param  high_period The I2C SCL height period (in core clock cycle, height_period > 2)
  * @param  low_period The I2C SCL low period (in core clock cycle, low_period > 1)
  * @param  wait_high_period The I2C SCL wait rising edge period.
  *
@@ -1090,16 +1104,16 @@ static inline void i2c_ll_slave_disable_rx_it(i2c_dev_t *hw)
  * @brief  Configure I2C SCL timing
  *
  * @param  hw Beginning address of the peripheral registers
- * @param  hight_period The I2C SCL hight period (in core clock cycle, hight_period > 2)
+ * @param  height_period The I2C SCL height period (in core clock cycle, height_period > 2)
  * @param  low_period The I2C SCL low period (in core clock cycle, low_period > 1)
  *
  * @return None.
  */
-static inline void i2c_ll_set_scl_timing(i2c_dev_t *hw, int hight_period, int low_period)
+static inline void i2c_ll_set_scl_timing(i2c_dev_t *hw, int height_period, int low_period)
 {
     hw->scl_low_period.scl_low_period = low_period - 1;
-    hw->scl_high_period.scl_high_period = hight_period - 10;
-    hw->scl_high_period.scl_wait_high_period = hight_period - hw->scl_high_period.scl_high_period;
+    hw->scl_high_period.scl_high_period = height_period - 10;
+    hw->scl_high_period.scl_wait_high_period = height_period - hw->scl_high_period.scl_high_period;
 }
 
 /**
