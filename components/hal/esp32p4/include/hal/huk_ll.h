@@ -58,30 +58,36 @@ static inline void huk_ll_continue(void)
 /* @bried Enable or Disable the HUK interrupts */
 static inline void huk_ll_configure_interrupt(const esp_huk_interrupt_type_t intr, const bool en)
 {
-    switch(intr) {
-        case ESP_HUK_INT_PREP_DONE:
-                REG_SET_FIELD(HUK_INT_ENA_REG, HUK_PREP_DONE_INT_ENA, en);
-        case ESP_HUK_INT_PROC_DONE:
-                REG_SET_FIELD(HUK_INT_ENA_REG, HUK_PROC_DONE_INT_ENA, en);
-        case ESP_HUK_INT_POST_DONE:
-                REG_SET_FIELD(HUK_INT_ENA_REG, HUK_POST_DONE_INT_ENA, en);
-        default:
-            return;
+    switch (intr) {
+    case ESP_HUK_INT_PREP_DONE:
+        REG_SET_FIELD(HUK_INT_ENA_REG, HUK_PREP_DONE_INT_ENA, en);
+        break;
+    case ESP_HUK_INT_PROC_DONE:
+        REG_SET_FIELD(HUK_INT_ENA_REG, HUK_PROC_DONE_INT_ENA, en);
+        break;
+    case ESP_HUK_INT_POST_DONE:
+        REG_SET_FIELD(HUK_INT_ENA_REG, HUK_POST_DONE_INT_ENA, en);
+        break;
+    default:
+        return;
     }
 }
 
 /* @bried Clear the HUK interrupts */
 static inline void huk_ll_clear_int(const esp_huk_interrupt_type_t intr)
 {
-    switch(intr) {
-        case ESP_HUK_INT_PREP_DONE:
-            REG_SET_FIELD(HUK_INT_CLR_REG, HUK_PREP_DONE_INT_CLR, 1);
-        case ESP_HUK_INT_PROC_DONE:
-            REG_SET_FIELD(HUK_INT_CLR_REG, HUK_PROC_DONE_INT_CLR, 1);
-        case ESP_HUK_INT_POST_DONE:
-            REG_SET_FIELD(HUK_INT_CLR_REG, HUK_POST_DONE_INT_CLR, 1);
-        default:
-            return;
+    switch (intr) {
+    case ESP_HUK_INT_PREP_DONE:
+        REG_SET_FIELD(HUK_INT_CLR_REG, HUK_PREP_DONE_INT_CLR, 1);
+        break;
+    case ESP_HUK_INT_PROC_DONE:
+        REG_SET_FIELD(HUK_INT_CLR_REG, HUK_PROC_DONE_INT_CLR, 1);
+        break;
+    case ESP_HUK_INT_POST_DONE:
+        REG_SET_FIELD(HUK_INT_CLR_REG, HUK_POST_DONE_INT_CLR, 1);
+        break;
+    default:
+        return;
     }
 }
 
@@ -108,7 +114,7 @@ static inline esp_huk_gen_status_t huk_ll_get_gen_status(void)
  */
 static inline uint32_t huk_ll_get_date_info(void)
 {
-    // Only the least siginificant 28 bits have desired information
+    // Only the least significant 28 bits have desired information
     return (uint32_t)(0x0FFFFFFF & REG_READ(HUK_DATE_REG));
 }
 
