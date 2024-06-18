@@ -403,6 +403,10 @@ config SOC_GPIO_DEEP_SLEEP_WAKE_VALID_GPIO_MASK
     int
     default 0
 
+config SOC_GPIO_DEEP_SLEEP_WAKE_SUPPORTED_PIN_CNT
+    int
+    default 6
+
 config SOC_GPIO_VALID_DIGITAL_IO_PAD_MASK
     hex
     default 0x00000000003FFFC0
