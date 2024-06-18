@@ -11,6 +11,7 @@
 #include "soc/pmu_struct.h"
 #include "soc/hp_system_reg.h"
 #include "esp_attr.h"
+#include "hal/misc.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -29,18 +30,18 @@ FORCE_INLINE_ATTR void cpu_utility_ll_reset_cpu(uint32_t cpu_no)
 FORCE_INLINE_ATTR void cpu_utility_ll_stall_cpu(uint32_t cpu_no)
 {
     if (cpu_no == 0) {
-        PMU.cpu_sw_stall.hpcore0_stall_code = 0x86;
+        HAL_FORCE_MODIFY_U32_REG_FIELD(PMU.cpu_sw_stall, hpcore0_stall_code, 0x86);
     } else {
-        PMU.cpu_sw_stall.hpcore1_stall_code = 0x86;
+        HAL_FORCE_MODIFY_U32_REG_FIELD(PMU.cpu_sw_stall, hpcore1_stall_code, 0x86);
     }
 }
 
 FORCE_INLINE_ATTR void cpu_utility_ll_unstall_cpu(uint32_t cpu_no)
 {
     if (cpu_no == 0) {
-        PMU.cpu_sw_stall.hpcore0_stall_code = 0xFF;
+        HAL_FORCE_MODIFY_U32_REG_FIELD(PMU.cpu_sw_stall, hpcore0_stall_code, 0xFF);
     } else {
-        PMU.cpu_sw_stall.hpcore1_stall_code = 0xFF;
+        HAL_FORCE_MODIFY_U32_REG_FIELD(PMU.cpu_sw_stall, hpcore1_stall_code, 0xFF);
     }
 }
 #endif // SOC_CPU_CORES_NUM > 1

@@ -19,3 +19,8 @@ if(CONFIG_COMPILER_DUMP_RTL_FILES)
                       DEPENDS ${elf}
                       )
 endif()
+
+message(STATUS "Checking mipi_dsi registers are not read-write by half-word")
+include($ENV{IDF_PATH}/tools/ci/check_register_rw_half_word.cmake)
+check_register_rw_half_word(SOC_MODULES "*dsi*" "hp_sys_clkrst"
+                            HAL_MODULES "*dsi*")

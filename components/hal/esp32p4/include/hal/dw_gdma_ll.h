@@ -1112,7 +1112,7 @@ __attribute__((always_inline))
 static inline void dw_gdma_ll_lli_set_src_burst_len(dw_gdma_link_list_item_t *lli, uint8_t len)
 {
     lli->ctrl_hi.arlen_en = len > 0;
-    lli->ctrl_hi.arlen = len;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(lli->ctrl_hi, arlen, len);
 }
 
 /**
@@ -1125,7 +1125,7 @@ __attribute__((always_inline))
 static inline void dw_gdma_ll_lli_set_dst_burst_len(dw_gdma_link_list_item_t *lli, uint8_t len)
 {
     lli->ctrl_hi.awlen_en = len > 0;
-    lli->ctrl_hi.awlen = len;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(lli->ctrl_hi, awlen, len);
 }
 
 /**
