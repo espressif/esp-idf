@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -463,6 +463,21 @@ esp_err_t esp_netif_add_ip6_address(esp_netif_t *esp_netif, const esp_ip6_addr_t
 esp_err_t esp_netif_remove_ip6_address(esp_netif_t *esp_netif, const esp_ip6_addr_t *addr)
 {
     return ESP_ERR_NOT_SUPPORTED;
+}
+
+int esp_netif_get_all_ip6(esp_netif_t *esp_netif, esp_ip6_addr_t if_ip6[])
+{
+    return 0;
+}
+
+esp_ip6_addr_type_t esp_netif_ip6_get_addr_type(esp_ip6_addr_t* ip6_addr)
+{
+    return ESP_IP6_ADDR_IS_UNKNOWN;
+}
+
+esp_err_t esp_netif_tcpip_exec(esp_netif_callback_fn fn, void*ctx)
+{
+    return fn(ctx);
 }
 
 #endif /* CONFIG_ESP_NETIF_LOOPBACK */

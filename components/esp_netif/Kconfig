@@ -13,9 +13,18 @@ menu "ESP NETIF Adapter"
             the timer expires. The IP lost timer is stopped if the station get the IP again before
             the timer expires.
 
+    config ESP_NETIF_PROVIDE_CUSTOM_IMPLEMENTATION
+        bool "Use only ESP-NETIF headers"
+        default n
+        help
+            No implementation of ESP-NETIF functions is provided.
+            This option is used for adding a custom TCP/IP stack and defining related
+            esp_netif functionality
+
     choice ESP_NETIF_USE_TCPIP_STACK_LIB
         prompt "TCP/IP Stack Library"
         default ESP_NETIF_TCPIP_LWIP
+        depends on !ESP_NETIF_PROVIDE_CUSTOM_IMPLEMENTATION
         help
             Choose the TCP/IP Stack to work, for example, LwIP, uIP, etc.
         config ESP_NETIF_TCPIP_LWIP
