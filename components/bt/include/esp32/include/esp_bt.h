@@ -61,10 +61,10 @@ extern "C" {
  * @brief Bluetooth Controller mode
  */
 typedef enum {
-    ESP_BT_MODE_IDLE       = 0x00,   /*!< Bluetooth is not operating */
+    ESP_BT_MODE_IDLE       = 0x00,   /*!< Bluetooth is not operating. */
     ESP_BT_MODE_BLE        = 0x01,   /*!< Bluetooth is operating in BLE mode. */
-    ESP_BT_MODE_CLASSIC_BT = 0x02,   /*!< Bluetooth is operating in Classic Bluetooth mode */
-    ESP_BT_MODE_BTDM       = 0x03,   /*!< Bluetooth is operating in Dual mode */
+    ESP_BT_MODE_CLASSIC_BT = 0x02,   /*!< Bluetooth is operating in Classic Bluetooth mode. */
+    ESP_BT_MODE_BTDM       = 0x03,   /*!< Bluetooth is operating in Dual mode. */
 } esp_bt_mode_t;
 
 /**
@@ -245,7 +245,7 @@ typedef struct {
     uint16_t mesh_adv_size;                 /*!< Scan duplicate filtering list size with mesh ADV */
     uint16_t send_adv_reserved_size;        /*!< Controller minimum memory value*/
     uint32_t  controller_debug_flag;        /*!< Controller debug log flag */
-    uint8_t mode;                           /*!< Controller mode: BR/EDR, BLE or Dual Mode */
+    uint8_t mode;                           /*!< Controller mode: BLE mode (1), Classic BT mode (2) or Dual mode (3) */
     uint8_t ble_max_conn;                   /*!< BLE maximum connection numbers */
     uint8_t bt_max_acl_conn;                /*!< BR/EDR maximum ACL connection numbers */
     uint8_t bt_sco_datapath;                /*!< SCO data path, i.e. HCI or PCM module */
