@@ -96,7 +96,7 @@ static inline uint8_t ulp_riscv_gpio_get_level(gpio_num_t gpio_num)
 
 static inline void ulp_riscv_gpio_set_output_mode(gpio_num_t gpio_num, rtc_io_out_mode_t mode)
 {
-    REG_SET_FIELD(RTC_IO_TOUCH_PAD0_REG + gpio_num*4, RTC_IO_TOUCH_PAD0_DRV, mode);
+    REG_SET_FIELD(RTC_GPIO_PIN0_REG + gpio_num * 4, RTC_GPIO_PIN0_PAD_DRIVER, mode);
 }
 
 static inline void ulp_riscv_gpio_pullup(gpio_num_t gpio_num)
