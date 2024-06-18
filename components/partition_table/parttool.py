@@ -3,10 +3,8 @@
 # parttool is used to perform partition level operations - reading,
 # writing, erasing and getting info about the partition.
 #
-# SPDX-FileCopyrightText: 2018-2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2018-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-from __future__ import division, print_function
-
 import argparse
 import os
 import re
@@ -158,11 +156,11 @@ class ParttoolTarget():
         partition = self.get_partition_info(partition_id)
         self._call_esptool(['read_flash', str(partition.offset), str(partition.size), output] + self.esptool_read_args)
 
-    def write_partition(self, partition_id, input):
+    def write_partition(self, partition_id, input, ignore_readonly=False):
         partition = self.get_partition_info(partition_id)
 
-        if partition.readonly:
-            raise Exception(f'"{partition.name}" partition is read-only')
+        if partition.readonly and not ignore_readonly:
+            raise SystemExit(f'"{partition.name}" partition is read-only, (use the --ignore-readonly flag to skip it)')
 
         self.erase_partition(partition_id)
 
@@ -175,8 +173,8 @@ class ParttoolTarget():
         self._call_esptool(['write_flash', str(partition.offset), input] + self.esptool_write_args)
 
 
-def _write_partition(target, partition_id, input):
-    target.write_partition(partition_id, input)
+def _write_partition(target, partition_id, input, ignore_readonly=False):
+    target.write_partition(partition_id, input, ignore_readonly)
     partition = target.get_partition_info(partition_id)
     status("Written contents of file '{}' at offset 0x{:x}".format(input, partition.offset))
 
@@ -268,6 +266,7 @@ def main():
     write_part_subparser = subparsers.add_parser('write_partition', help='write contents of a binary file to partition on device',
                                                  parents=[partition_selection_parser])
     write_part_subparser.add_argument('--input', help='file whose contents are to be written to the partition offset')
+    write_part_subparser.add_argument('--ignore-readonly', help='Ignore read-only attribute', action='store_true')
 
     subparsers.add_parser('erase_partition', help='erase the contents of a partition on the device', parents=[partition_selection_parser])
 
@@ -336,7 +335,7 @@ def main():
     parttool_ops = {
         'erase_partition': (_erase_partition, []),
         'read_partition': (_read_partition, ['output']),
-        'write_partition': (_write_partition, ['input']),
+        'write_partition': (_write_partition, ['input', 'ignore_readonly']),
         'get_partition_info': (_get_partition_info, ['info'])
     }
 
