@@ -695,39 +695,23 @@ static inline void touch_ll_filter_set_debounce(uint32_t dbc_cnt)
 }
 
 /**
- * Set the positive noise threshold coefficient. Higher = More noise resistance.
- * The benchmark will update to the new value if the touch data is within (benchmark + active_threshold * pos_coeff)
+ * Set the denoise coefficient regarding the denoise level.
  *
- *
- * @param pos_noise_thresh Range [-1 ~ 3]. The coefficient is -1: always; 0: 4/8;  1: 3/8;   2: 2/8;   3: 1;
- *                         -1: the benchmark will always update to the new touch data without considering the positive noise threshold
+ * @param denoise_lvl   Range [0 ~ 4]. 0 = no noise resistance, otherwise higher denoise_lvl means more noise resistance.
  */
-static inline void touch_ll_filter_set_pos_noise_thresh(int pos_noise_thresh)
+static inline void touch_ll_filter_set_denoise_level(int denoise_lvl)
 {
-    bool always_update = pos_noise_thresh < 0;
-    LP_ANA_PERI.touch_filter2.touch_bypass_noise_thres = always_update;
-    LP_ANA_PERI.touch_filter1.touch_noise_thres = always_update ? 0 : pos_noise_thresh;
-}
+    HAL_ASSERT(denoise_lvl >= 0 && denoise_lvl <= 4);
+    bool always_update = denoise_lvl == 0;
+    // Map denoise level to actual noise threshold coefficients
+    uint32_t noise_thresh = denoise_lvl == 4 ? 3 : 3 - denoise_lvl;
 
-/**
- * Set the negative noise threshold coefficient. Higher = More noise resistance.
- * The benchmark will update to the new value if the touch data is greater than (benchmark - active_threshold * neg_coeff)
- *
- * @param neg_noise_thresh Range [-2 ~ 3]. The coefficient is -2: never; -1: always; 0: 4/8;  1: 3/8;   2: 2/8;   3: 1;
- *                         -1: the benchmark will always update to the new touch data without considering the negative noise threshold
- *                         -2: the benchmark will never update to the new touch data with negative growth
- * @param neg_noise_limit  Only when neg_noise_thresh >= 0, if the touch data keep blow the negative threshold for mare than neg_noise_limit ticks,
- *                         the benchmark will still update to the new value.
- *                         It is normally used for updating the benchmark at the first scanning
- */
-static inline void touch_ll_filter_set_neg_noise_thresh(int neg_noise_thresh, uint8_t neg_noise_limit)
-{
-    bool always_update = neg_noise_thresh == -1;
-    bool stop_update = neg_noise_thresh == -2;
-    LP_ANA_PERI.touch_filter2.touch_bypass_neg_noise_thres = always_update;
-    LP_ANA_PERI.touch_filter1.touch_neg_noise_disupdate_baseline_en = stop_update;
-    LP_ANA_PERI.touch_filter1.touch_neg_noise_thres = always_update || stop_update ? 0 : neg_noise_thresh;
-    LP_ANA_PERI.touch_filter1.touch_neg_noise_limit = always_update || stop_update ? 5 : neg_noise_limit; // 5 is the default value
+    LP_ANA_PERI.touch_filter2.touch_bypass_noise_thres = always_update;
+    LP_ANA_PERI.touch_filter1.touch_noise_thres = always_update ? 0 : noise_thresh;
+
+    LP_ANA_PERI.touch_filter2.touch_bypass_nn_thres = always_update;
+    LP_ANA_PERI.touch_filter1.touch_nn_thres = always_update ? 0 : noise_thresh;
+    LP_ANA_PERI.touch_filter1.touch_nn_limit = 5; // 5 is the default value
 }
 
 /**
