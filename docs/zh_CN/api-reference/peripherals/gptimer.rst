@@ -42,15 +42,12 @@
 
 要安装一个定时器实例，需要提前提供配置结构体 :cpp:type:`gptimer_config_t`：
 
--  :cpp:member:`gptimer_config_t::clk_src` 选择定时器的时钟源。:cpp:type:`gptimer_clock_source_t` 中列出多个可用时钟，仅可选择其中一个时钟。了解不同时钟源对功耗的影响，请查看章节 :ref:`gptimer-power-management`。
-
--  :cpp:member:`gptimer_config_t::direction` 设置定时器的计数方向，:cpp:type:`gptimer_count_direction_t` 中列出多个支持的方向，仅可选择其中一个方向。
-
--  :cpp:member:`gptimer_config_t::resolution_hz` 设置内部计数器的分辨率。计数器每滴答一次相当于 **1 / resolution_hz** 秒。
-
--  :cpp:member:`gptimer_config::intr_priority` 设置中断的优先级。如果设置为 ``0``，则会分配一个默认优先级的中断，否则会使用指定的优先级。
-
--  选用 :cpp:member:`gptimer_config_t::intr_shared` 设置是否将定时器中断源标记为共享源。了解共享中断的优缺点，请参考 :doc:`Interrupt Handling <../../api-reference/system/intr_alloc>`。
+- :cpp:member:`gptimer_config_t::clk_src` 选择定时器的时钟源。:cpp:type:`gptimer_clock_source_t` 中列出多个可用时钟，仅可选择其中一个时钟。了解不同时钟源对功耗的影响，请查看章节 :ref:`gptimer-power-management`。
+- :cpp:member:`gptimer_config_t::direction` 设置定时器的计数方向，:cpp:type:`gptimer_count_direction_t` 中列出多个支持的方向，仅可选择其中一个方向。
+- :cpp:member:`gptimer_config_t::resolution_hz` 设置内部计数器的分辨率。计数器每滴答一次相当于 **1 / resolution_hz** 秒。
+- :cpp:member:`gptimer_config::intr_priority` 设置中断的优先级。如果设置为 ``0``，则会分配一个默认优先级的中断，否则会使用指定的优先级。
+- :cpp:member:`gptimer_config::backup_before_sleep` 用于使能在进入睡眠模式前备份 GPTimer 寄存器。这个选项需要用户在功耗和内存使用之间取得平衡。如果功耗不是一个问题，可以禁用这个选项来节省内存。但如果想要节省功耗，应该使能这个选项，在进入睡眠模式前备份 GPTimer 寄存器，并在唤醒后恢复它们。这个功能依赖于特定的硬件模块，如果你在不支持的芯片上启用它，你会得到一个错误信息，如 ``register back up is not supported``。
+- 可选地， :cpp:member:`gptimer_config_t::intr_shared` 设置是否将定时器中断源标记为共享源。了解共享中断的优缺点，请参考 :doc:`Interrupt Handling <../../api-reference/system/intr_alloc>`。
 
 完成上述结构配置之后，可以将结构传递给 :cpp:func:`gptimer_new_timer`，用以实例化定时器实例并返回定时器句柄。
 
@@ -284,9 +281,13 @@
 电源管理
 ^^^^^^^^
 
-有些电源管理的策略会在某些时刻关闭时钟源，或者改变时钟源的频率，以求降低功耗。比如在启用 DFS 后，APB 时钟源会降低频率。如果浅睡眠 (Light-sleep) 模式也被开启，PLL 和 XTAL 时钟都会被默认关闭，从而导致 GPTimer 的计时不准确。
+当电源管理 :ref:`CONFIG_PM_ENABLE` 被启用的时候，系统在进入睡眠前可能会调整或禁用时钟源。结果导致 GPTimer 的计时不准确。
 
-驱动程序会根据具体的时钟源选择，通过创建不同的电源锁来避免上述情况的发生。驱动会在 :cpp:func:`gptimer_enable` 函数中增加电源锁的引用计数，并在 :cpp:func:`gptimer_disable` 函数中减少电源锁的引用计数，从而保证了在 :cpp:func:`gptimer_enable` 和 :cpp:func:`gptimer_disable` 之间，GPTimer 的时钟源始处于稳定工作的状态。
+驱动程序可以通过创建一个电源管理锁来防止上述问题。锁的类型会根据不同的时钟源来设置。驱动程序将在 :cpp:func:`gptimer_enable` 中拿锁，并在 :cpp:func:`gptimer_disable` 中释放锁。这意味着，在这两个函数之间，定时器可以正确工作，因为此时时钟源不会被禁用或改变频率。
+
+.. only:: SOC_TIMER_SUPPORT_SLEEP_RETENTION
+
+    除了时钟源的潜在变化外，当启用电源管理时，系统还可以关闭 GPTimer 寄存器所在的电源域。为确保 GPTimer 驱动程序在睡眠后继续工作，用户要么选择将 GPTimer 相关的寄存器备份到 RAM 中，要么拒绝关闭电源域。你可以根据应用需求在 :cpp:member:`gptimer_config_t::backup_before_sleep` 中设置是否需要启用寄存器备份，在功耗和内存使用之间做权衡。
 
 .. _gptimer-iram-safe:
 

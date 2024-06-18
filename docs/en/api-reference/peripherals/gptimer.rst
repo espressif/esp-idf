@@ -43,14 +43,11 @@ A GPTimer instance is represented by :cpp:type:`gptimer_handle_t`. The driver be
 To install a timer instance, there is a configuration structure that needs to be given in advance: :cpp:type:`gptimer_config_t`:
 
 - :cpp:member:`gptimer_config_t::clk_src` selects the source clock for the timer. The available clocks are listed in :cpp:type:`gptimer_clock_source_t`, you can only pick one of them. For the effect on power consumption of different clock source, please refer to Section :ref:`gptimer-power-management`.
-
 - :cpp:member:`gptimer_config_t::direction` sets the counting direction of the timer, supported directions are listed in :cpp:type:`gptimer_count_direction_t`, you can only pick one of them.
-
 - :cpp:member:`gptimer_config_t::resolution_hz` sets the resolution of the internal counter. Each count step is equivalent to **1 / resolution_hz** seconds.
-
--  :cpp:member:`gptimer_config::intr_priority` sets the priority of the timer interrupt. If it is set to ``0``, the driver will allocate an interrupt with a default priority. Otherwise, the driver will use the given priority.
-
--  Optional :cpp:member:`gptimer_config_t::intr_shared` sets whether or not mark the timer interrupt source as a shared one. For the pros/cons of a shared interrupt, you can refer to :doc:`Interrupt Handling <../../api-reference/system/intr_alloc>`.
+- :cpp:member:`gptimer_config::intr_priority` sets the priority of the timer interrupt. If it is set to ``0``, the driver will allocate an interrupt with a default priority. Otherwise, the driver will use the given priority.
+- :cpp:member:`gptimer_config_t::backup_before_sleep` enables the backup of the GPTimer registers before entering sleep mode. This option implies an balance between power consumption and memory usage. If the power consumption is not a concern, you can disable this option to save memory. But if you want to save more power, you should enable this option to backup the GPTimer registers before entering sleep mode, and restore them after waking up. This feature depends on specific hardware module, if you enable this flag on an unsupported chip, you will get an error message like ``register back up is not supported``.
+- Optional :cpp:member:`gptimer_config_t::intr_shared` sets whether or not mark the timer interrupt source as a shared one. For the pros/cons of a shared interrupt, you can refer to :doc:`Interrupt Handling <../../api-reference/system/intr_alloc>`.
 
 With all the above configurations set in the structure, the structure can be passed to :cpp:func:`gptimer_new_timer` which will instantiate the timer instance and return a handle of the timer.
 
@@ -284,9 +281,13 @@ Alarm value can be updated dynamically inside the ISR handler callback, by chang
 Power Management
 ^^^^^^^^^^^^^^^^
 
-There are some power management strategies, which might turn off or change the frequency of GPTimer's source clock to save power consumption. For example, during DFS, APB clock will be scaled down. If light-sleep is also enabled, PLL and XTAL clocks will be powered off. Both of them can result in an inaccurate time keeping.
+When power management is enabled, i.e., :ref:`CONFIG_PM_ENABLE` is on, the system may adjust or disable the clock source before going to sleep. As a result, the time keeping will be inaccurate.
 
-The driver can prevent the above situation from happening by creating different power management lock according to different clock source. The driver increases the reference count of that power management lock in the :cpp:func:`gptimer_enable` and decrease it in the :cpp:func:`gptimer_disable`. So we can ensure the clock source is stable between :cpp:func:`gptimer_enable` and :cpp:func:`gptimer_disable`.
+The driver can prevent the above issue by creating a power management lock. The lock type is set based on different clock sources. The driver will acquire the lock in :cpp:func:`gptimer_enable`, and release it in :cpp:func:`gptimer_disable`. So that the timer can work correctly in between these two functions, because the clock source won't be disabled or adjusted its frequency during this time.
+
+.. only:: SOC_TIMER_SUPPORT_SLEEP_RETENTION
+
+    Besides the potential changes to the clock source, when the power management is enabled, the system can also power down a domain where GPTimer register located. To ensure the GPTimer driver can continue work after sleep, we can either backup the GPTimer registers to the RAM, or just refuse to power down. You can choose what to do in :cpp:member:`gptimer_config_t::backup_before_sleep`. It's a balance between power saving and memory consumption. Set it based on your application requirements.
 
 .. _gptimer-iram-safe:
 
