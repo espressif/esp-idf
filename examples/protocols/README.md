@@ -20,6 +20,26 @@ When connecting using Wi-Fi, enter SSID and password of your Wi-Fi access point 
 
 When connecting using Ethernet, set up PHY type and configuration in the provided fields. If using Ethernet for the first time, it is recommended to start with the [Ethernet example readme](../ethernet/basic/README.md), which contains instructions for connecting and configuring the PHY. Once Ethernet example obtains IP address successfully, proceed to the protocols example and set the same configuration options.
 
-### Disabling IPv6
+### IP protocol handling
 
-By default, `example_connect()` function waits until Wi-Fi or Ethernet connection is established, and IPv4 address and IPv6 link-local address are obtained. In network environments where IPv6 link-local address cannot be obtained, disable "Obtain IPv6 link-local address" option found in "Example Connection Configuration" menu.
+By default the examples support any network configuration: IPv4 only, IPv6 only, and dual stack.
+
+The `example_connect()` function waits until Wi-Fi or Ethernet connection is established, and either an IPv4 address or an IPv6 global scope address is obtained. By waiting for the first (of either), this allows it to work in any network.
+
+The behaviour is based on the available network:
+
+| Network | Addresses | DNS | IPv4 destination | IPv6 destination | Dual-stack destination
+| -- | -- | -- | -- | -- | -- 
+| IPv4 only | IPv4, IPv6 link-local | IPv4 | Yes | Not possible | Uses IPv4
+| IPv6 only | IPv6 global, IPv6 link-local | IPv6 | NAT64 if available | Yes | Uses IPv6
+| Dual-stack | IPv6 global (*1), IPv4, IPv6 link-local | IPv6, then IPv4 | Yes | Yes | Uses IPv6
+
+(*1) There may be a delay waiting for an IPv6 global address, in which case IPv4 may be used for the first test request (with IPv4 DNS)
+
+#### Disabling protocol versions
+
+Where the target network is unknown, such as this sample, using an adaptable configuration that supports all networks (whatever is available) is best.
+
+However in some cases you may want to restrict network configuration.
+
+For example the Matter standard requires IPv6, so you can reduce application size and simplify development and testing complexity by completely disabling IPv4 (`LWIP_IPV4`), as it is never needed for a Matter device.
