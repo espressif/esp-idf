@@ -5,17 +5,16 @@
  */
 #include <string.h>
 #include <stdint.h>
+#include "sdkconfig.h"
 #include "esp_err.h"
 #include "esp_log.h"
 #include "esp_heap_caps.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "freertos/semphr.h"
 #include "usb_private.h"
 #include "ext_hub.h"
+#include "ext_port.h"
 #include "usb/usb_helpers.h"
-
-typedef struct ext_port_s *ext_port_hdl_t;          /* This will be implemented during ext_port driver implementation */
 
 #define EXT_HUB_MAX_STATUS_BYTES_SIZE               (sizeof(uint32_t))
 #define EXT_HUB_STATUS_CHANGE_FLAG                  (1 << 0)
@@ -396,8 +395,15 @@ static void device_error(ext_hub_dev_t *ext_hub_dev)
 
 static esp_err_t device_port_new(ext_hub_dev_t *ext_hub_dev, uint8_t port_idx)
 {
+    ext_port_config_t port_config = {
+        .ext_hub_hdl = (ext_hub_handle_t) ext_hub_dev,
+        .parent_dev_hdl =  ext_hub_dev->constant.dev_hdl,
+        .parent_port_num = port_idx + 1,
+        .port_power_delay_ms = ext_hub_dev->constant.hub_desc->bPwrOn2PwrGood * 2,
+    };
+
     assert(p_ext_hub_driver->constant.port_driver);
-    esp_err_t ret = p_ext_hub_driver->constant.port_driver->new (NULL, (void**) &ext_hub_dev->constant.ports[port_idx]);
+    esp_err_t ret = p_ext_hub_driver->constant.port_driver->new (&port_config, (void**) &ext_hub_dev->constant.ports[port_idx]);
     if (ret != ESP_OK) {
         ESP_LOGE(EXT_HUB_TAG, "[%d:%d] Port allocation error: %s", ext_hub_dev->constant.dev_addr, port_idx + 1, esp_err_to_name(ret));
         goto fail;
@@ -418,7 +424,7 @@ static esp_err_t device_port_free(ext_hub_dev_t *ext_hub_dev, uint8_t port_idx)
 
     assert(ext_hub_dev->single_thread.maxchild != 0);
     assert(p_ext_hub_driver->constant.port_driver);
-    esp_err_t ret = p_ext_hub_driver->constant.port_driver->free(ext_hub_dev->constant.ports[port_idx]);
+    esp_err_t ret = p_ext_hub_driver->constant.port_driver->del(ext_hub_dev->constant.ports[port_idx]);
 
     if (ret != ESP_OK) {
         ESP_LOGE(EXT_HUB_TAG, "[%d:%d] Unable to free port: %s", ext_hub_dev->constant.dev_addr, port_idx + 1, esp_err_to_name(ret));
@@ -1038,6 +1044,7 @@ static void handle_device(ext_hub_dev_t *ext_hub_dev)
     // FSM for external Hub
     switch (ext_hub_dev->single_thread.stage) {
     case EXT_HUB_STAGE_IDLE:
+        stage_pass = true;
         break;
     case EXT_HUB_STAGE_GET_DEVICE_STATUS:
     case EXT_HUB_STAGE_GET_HUB_DESCRIPTOR:
@@ -1118,8 +1125,7 @@ esp_err_t ext_hub_install(const ext_hub_config_t *config)
 {
     esp_err_t ret;
     ext_hub_driver_t *ext_hub_drv = heap_caps_calloc(1, sizeof(ext_hub_driver_t), MALLOC_CAP_DEFAULT);
-    SemaphoreHandle_t mux_lock = xSemaphoreCreateMutex();
-    if (ext_hub_drv == NULL || mux_lock == NULL) {
+    if (ext_hub_drv == NULL) {
         ret = ESP_ERR_NO_MEM;
         goto err;
     }
@@ -1151,9 +1157,6 @@ esp_err_t ext_hub_install(const ext_hub_config_t *config)
     return ESP_OK;
 
 err:
-    if (mux_lock != NULL) {
-        vSemaphoreDelete(mux_lock);
-    }
     heap_caps_free(ext_hub_drv);
     return ret;
 }
@@ -1672,7 +1675,7 @@ esp_err_t ext_hub_port_get_speed(ext_hub_handle_t ext_hub_hdl, uint8_t port_num,
 esp_err_t ext_hub_set_port_feature(ext_hub_handle_t ext_hub_hdl, uint8_t port_num, uint8_t feature)
 {
     EXT_HUB_ENTER_CRITICAL();
-    EXT_HUB_CHECK_FROM_CRIT(p_ext_hub_driver != NULL, ESP_ERR_INVALID_STATE);
+    EXT_HUB_CHECK_FROM_CRIT(p_ext_hub_driver != NULL, ESP_ERR_NOT_ALLOWED);
     EXT_HUB_EXIT_CRITICAL();
 
     esp_err_t ret;
@@ -1701,7 +1704,7 @@ esp_err_t ext_hub_set_port_feature(ext_hub_handle_t ext_hub_hdl, uint8_t port_nu
 esp_err_t ext_hub_clear_port_feature(ext_hub_handle_t ext_hub_hdl, uint8_t port_num, uint8_t feature)
 {
     EXT_HUB_ENTER_CRITICAL();
-    EXT_HUB_CHECK_FROM_CRIT(p_ext_hub_driver != NULL, ESP_ERR_INVALID_STATE);
+    EXT_HUB_CHECK_FROM_CRIT(p_ext_hub_driver != NULL, ESP_ERR_NOT_ALLOWED);
     EXT_HUB_EXIT_CRITICAL();
 
     esp_err_t ret;
@@ -1730,7 +1733,7 @@ esp_err_t ext_hub_clear_port_feature(ext_hub_handle_t ext_hub_hdl, uint8_t port_
 esp_err_t ext_hub_get_port_status(ext_hub_handle_t ext_hub_hdl, uint8_t port_num)
 {
     EXT_HUB_ENTER_CRITICAL();
-    EXT_HUB_CHECK_FROM_CRIT(p_ext_hub_driver != NULL, ESP_ERR_INVALID_STATE);
+    EXT_HUB_CHECK_FROM_CRIT(p_ext_hub_driver != NULL, ESP_ERR_NOT_ALLOWED);
     EXT_HUB_EXIT_CRITICAL();
 
     esp_err_t ret;
