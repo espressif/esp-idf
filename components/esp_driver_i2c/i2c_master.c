@@ -441,6 +441,8 @@ static void s_i2c_send_commands(i2c_master_bus_handle_t i2c_master, TickType_t t
             i2c_master->cmd_idx = 0;
             i2c_master->trans_idx = 0;
             atomic_store(&i2c_master->status, I2C_STATUS_TIMEOUT);
+            ESP_LOGE(TAG, "I2C software timeout");
+            xSemaphoreGive(i2c_master->cmd_semphr);
             return;
         }
 
