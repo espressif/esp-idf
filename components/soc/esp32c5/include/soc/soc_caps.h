@@ -303,7 +303,7 @@
 #define SOC_PCNT_THRES_POINT_PER_UNIT         2
 #define SOC_PCNT_SUPPORT_RUNTIME_THRES_UPDATE 1
 #define SOC_PCNT_SUPPORT_CLEAR_SIGNAL         1
-// #define SOC_PCNT_SUPPORT_STEP_NOTIFY          1 // IDF-7984
+#define SOC_PCNT_SUPPORT_STEP_NOTIFY          1
 
 /*--------------------------- RMT CAPS ---------------------------------------*/
 #define SOC_RMT_GROUPS                        1U /*!< One RMT group */
