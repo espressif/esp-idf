@@ -74,12 +74,6 @@ uint32_t rtc_clk_mpll_get_freq(void);
 
 #endif  //#if SOC_CLK_MPLL_SUPPORTED
 
-/**
- * @brief Workaround for C2, S3, C6, H2. Trigger the calibration of PLL. Should be called when the bootloader doesn't provide a good enough PLL accuracy.
-*/
-void rtc_clk_recalib_bbpll(void);
-
-
 #ifdef __cplusplus
 }
 #endif
