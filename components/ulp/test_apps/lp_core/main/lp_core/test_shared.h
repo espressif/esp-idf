@@ -24,6 +24,7 @@ typedef enum {
     LP_CORE_LP_UART_READ_TEST,
     LP_CORE_LP_UART_MULTI_BYTE_READ_TEST,
     LP_CORE_LP_UART_PRINT_TEST,
+    LP_CORE_LP_SPI_WRITE_READ_TEST,
     LP_CORE_NO_COMMAND,
 } lp_core_test_commands_t;
 
