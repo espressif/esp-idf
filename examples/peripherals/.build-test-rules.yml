@@ -256,20 +256,12 @@ examples/peripherals/mcpwm/mcpwm_sync:
 examples/peripherals/parlio:
   disable:
     - if: SOC_PARLIO_SUPPORTED != 1
-  disable_test:
-    - if: IDF_TARGET == "esp32p4"
-      temporary: true
-      reason: lack of runner
   depends_components:
     - esp_driver_parlio
 
 examples/peripherals/parlio/parlio_rx:
   disable:
     - if: SOC_PARLIO_SUPPORTED != 1
-  disable_test:
-    - if: IDF_TARGET == "esp32p4"
-      temporary: true
-      reason: lack of runner
   depends_components:
     - esp_driver_parlio
 

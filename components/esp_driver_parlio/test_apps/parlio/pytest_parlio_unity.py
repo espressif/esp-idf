@@ -5,6 +5,8 @@ from pytest_embedded import Dut
 
 
 @pytest.mark.esp32c6
+@pytest.mark.esp32h2
+@pytest.mark.esp32p4
 @pytest.mark.generic
 @pytest.mark.parametrize(
     'config',
