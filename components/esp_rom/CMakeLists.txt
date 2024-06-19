@@ -3,7 +3,8 @@ idf_build_get_property(target IDF_TARGET)
 set(target_folder "${target}")
 
 set(include_dirs "include"
-                 "include/${target_folder}"
+                 "${target_folder}/include"
+                 "${target_folder}/include/${target_folder}"
                  "${target_folder}")
 
 set(private_required_comp "")
@@ -17,9 +18,6 @@ if(target STREQUAL "linux")
                         "${target}/esp_rom_md5.c"
                         "${target}/esp_rom_efuse.c")
 else()
-    if(CONFIG_IDF_TARGET_ESP32C5)
-        list(APPEND include_dirs "include/${target_folder}/..")
-    endif()
     list(APPEND sources "patches/esp_rom_crc.c"
                         "patches/esp_rom_uart.c"
                         "patches/esp_rom_spiflash.c"
