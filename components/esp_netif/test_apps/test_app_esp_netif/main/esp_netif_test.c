@@ -502,6 +502,81 @@ TEST(esp_netif, route_priority)
     }
 }
 
+// to probe DNS server info directly in LWIP
+const ip_addr_t * dns_getserver(u8_t numdns);
+
+TEST(esp_netif, set_get_dnsserver)
+{
+    // create a couple of netifs
+    test_case_uses_tcpip();
+    const char *if_keys[] = {"if0", "if1", "if2", "if3", "if4", "if5", "if6", "if7", "if8", "if9"};
+    const int nr_of_netifs = sizeof(if_keys) / sizeof(char *);
+    esp_netif_t *netifs[nr_of_netifs];
+    esp_netif_driver_ifconfig_t driver_config = { .handle =  (void*)1, .transmit = dummy_transmit };
+    // create 10 netifs with different route prio
+    for (int i = 0; i < nr_of_netifs; ++i) {
+        esp_netif_inherent_config_t base_netif_config = { .if_key = if_keys[i], .route_prio = i };
+        esp_netif_config_t cfg = {  .base = &base_netif_config,
+                .stack = ESP_NETIF_NETSTACK_DEFAULT_WIFI_STA,
+                .driver = &driver_config };
+        netifs[i] = esp_netif_new(&cfg);
+        TEST_ASSERT_NOT_NULL(netifs[i]);
+        // set the interface up and connected -- to enable the default netif based on route_prio
+        esp_netif_action_start(netifs[i], 0, 0, 0);
+        esp_netif_action_connected(netifs[i], 0, 0, 0);
+    }
+
+    esp_netif_dns_info_t dns[2];
+    esp_netif_dns_info_t get_dns;
+    TEST_ASSERT_EQUAL(ESP_OK, esp_netif_str_to_ip4("1.2.3.4", &dns[0].ip.u_addr.ip4));
+    TEST_ASSERT_EQUAL(ESP_OK, esp_netif_str_to_ip4("5.6.7.8", &dns[1].ip.u_addr.ip4));
+
+    // set DNS info to one netif
+    TEST_ASSERT_EQUAL(ESP_OK, esp_netif_set_dns_info(netifs[3], ESP_NETIF_DNS_MAIN, &dns[0]));
+    TEST_ASSERT_EQUAL(ESP_OK, esp_netif_set_dns_info(netifs[3], ESP_NETIF_DNS_BACKUP, &dns[1]));
+#ifndef CONFIG_ESP_NETIF_SET_DNS_PER_DEFAULT_NETIF
+    // check that calling setters/getters with 'esp_netif==NULL' is invalid
+    TEST_ASSERT_NOT_EQUAL(ESP_OK, esp_netif_set_dns_info(NULL, ESP_NETIF_DNS_BACKUP, &dns[1]));
+    TEST_ASSERT_NOT_EQUAL(ESP_OK, esp_netif_get_dns_info(NULL, ESP_NETIF_DNS_BACKUP, &get_dns));
+
+    // check that the global DNS is configured the same way
+    const ip_addr_t *ip = dns_getserver(0);
+    TEST_ASSERT_EQUAL(ip->u_addr.ip4.addr, dns[0].ip.u_addr.ip4.addr);
+    ip = dns_getserver(1);
+    TEST_ASSERT_EQUAL(ip->u_addr.ip4.addr, dns[1].ip.u_addr.ip4.addr);
+
+    // check that we get the same DNS information for all netifs
+    for (int i=0; i < nr_of_netifs; ++i) {
+        TEST_ASSERT_EQUAL(ESP_OK, esp_netif_get_dns_info(netifs[i], ESP_NETIF_DNS_MAIN, &get_dns));
+        TEST_ASSERT_EQUAL(get_dns.ip.u_addr.ip4.addr, dns[0].ip.u_addr.ip4.addr);
+        TEST_ASSERT_EQUAL(ESP_OK, esp_netif_get_dns_info(netifs[i], ESP_NETIF_DNS_BACKUP, &get_dns));
+        TEST_ASSERT_EQUAL(get_dns.ip.u_addr.ip4.addr, dns[1].ip.u_addr.ip4.addr);
+    }
+#else
+    // check that calling setters/getters with 'esp_netif==NULL' is valid, they set/get global DNS servers
+    TEST_ASSERT_EQUAL(ESP_OK, esp_netif_set_dns_info(NULL, ESP_NETIF_DNS_MAIN, &dns[0]));
+    TEST_ASSERT_EQUAL(ESP_OK, esp_netif_get_dns_info(NULL, ESP_NETIF_DNS_BACKUP, &get_dns));
+    const ip_addr_t *ip = dns_getserver(0);
+    TEST_ASSERT_EQUAL(ip->u_addr.ip4.addr, dns[0].ip.u_addr.ip4.addr);
+    ip = dns_getserver(1);
+    TEST_ASSERT_EQUAL(ip->u_addr.ip4.addr, get_dns.ip.u_addr.ip4.addr);     // same as what we got at the esp-netif layer
+    TEST_ASSERT_NOT_EQUAL(ip->u_addr.ip4.addr, dns[1].ip.u_addr.ip4.addr);  // but different from what we set earlier per netif
+
+    // now we set the netif[3] as default one and check again
+    esp_netif_set_default_netif(netifs[3]);
+    ip = dns_getserver(1);
+    TEST_ASSERT_EQUAL(ip->u_addr.ip4.addr, dns[1].ip.u_addr.ip4.addr);  // now the ESP_NETIF_DNS_BACKUP[3[ should be set globally
+
+    // check that we get a different DNS server with another netif
+    TEST_ASSERT_EQUAL(ESP_OK, esp_netif_get_dns_info(netifs[5], ESP_NETIF_DNS_MAIN, &get_dns));
+    TEST_ASSERT_NOT_EQUAL(dns[0].ip.u_addr.ip4.addr, get_dns.ip.u_addr.ip4.addr);
+#endif
+
+    for (int i=0; i < nr_of_netifs; ++i) {
+        esp_netif_destroy(netifs[i]);
+        TEST_ASSERT_FALSE(esp_netif_is_netif_listed(netifs[i]));
+    }
+}
 
 TEST_GROUP_RUNNER(esp_netif)
 {
@@ -531,6 +606,7 @@ TEST_GROUP_RUNNER(esp_netif)
     RUN_TEST_CASE(esp_netif, dhcp_server_state_transitions_mesh)
 #endif
     RUN_TEST_CASE(esp_netif, route_priority)
+    RUN_TEST_CASE(esp_netif, set_get_dnsserver)
 }
 
 void app_main(void)
