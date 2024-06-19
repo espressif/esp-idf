@@ -468,7 +468,7 @@ typedef union {
 } parl_io_version_reg_t;
 
 
-typedef struct {
+typedef struct parl_io_dev_t {
     volatile parl_io_rx_mode_cfg_reg_t rx_mode_cfg;
     volatile parl_io_rx_data_cfg_reg_t rx_data_cfg;
     volatile parl_io_rx_genrl_cfg_reg_t rx_genrl_cfg;
