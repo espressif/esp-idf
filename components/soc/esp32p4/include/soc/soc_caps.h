@@ -78,6 +78,7 @@
 #define SOC_LP_GPIO_MATRIX_SUPPORTED    1
 #define SOC_LP_PERIPHERALS_SUPPORTED    1
 #define SOC_LP_I2C_SUPPORTED            1
+#define SOC_LP_SPI_SUPPORTED            1
 #define SOC_SPIRAM_SUPPORTED            1
 #define SOC_PSRAM_DMA_CAPABLE           1
 // #define SOC_ULP_SUPPORTED               1  //TODO: IDF-7534
@@ -503,6 +504,10 @@
 
 #define SOC_MEMSPI_IS_INDEPENDENT   1
 #define SOC_SPI_MAX_PRE_DIVIDER     16
+
+/*-------------------------- LP SPI CAPS ----------------------------------------*/
+#define SOC_LP_SPI_PERIPH_NUM              1
+#define SOC_LP_SPI_MAXIMUM_BUFFER_SIZE     64
 
 /*-------------------------- SPI MEM CAPS ---------------------------------------*/
 #define SOC_SPI_MEM_SUPPORT_AUTO_WAIT_IDLE                (1)
