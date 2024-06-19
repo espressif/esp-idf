@@ -25,6 +25,7 @@
 
 #include "pthread_internal.h"
 #include "esp_pthread.h"
+#include "esp_compiler.h"
 
 #include "esp_log.h"
 const static char *TAG = "pthread";
@@ -165,7 +166,10 @@ esp_err_t esp_pthread_set_cfg(const esp_pthread_cfg_t *cfg)
     *p = *cfg;
     p->stack_alloc_caps = heap_caps;
     pthread_setspecific(s_pthread_cfg_key, p);
+
+    ESP_COMPILER_DIAGNOSTIC_PUSH_IGNORE("-Wanalyzer-malloc-leak") // ignore leak of 'p'
     return 0;
+    ESP_COMPILER_DIAGNOSTIC_POP("-Wanalyzer-malloc-leak")
 }
 
 esp_err_t esp_pthread_get_cfg(esp_pthread_cfg_t *p)

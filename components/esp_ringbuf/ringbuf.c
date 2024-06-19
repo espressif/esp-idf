@@ -822,12 +822,7 @@ static BaseType_t prvReceiveGeneric(Ringbuffer_t *pxRingbuffer,
     BaseType_t xEntryTimeSet = pdFALSE;
     TimeOut_t xTimeOut;
 
-#ifdef __clang_analyzer__
-    // Teach clang-tidy that if NULL pointers are provided, this function will never dereference them
-    if (!pvItem1 || !pvItem2 || !xItemSize1 || !xItemSize2) {
-        return pdFALSE;
-    }
-#endif /*__clang_analyzer__ */
+    ESP_STATIC_ANALYZER_CHECK(!pvItem1 || !pvItem2 || !xItemSize1 || !xItemSize2, pdFALSE);
 
     while (xExitLoop == pdFALSE) {
         portENTER_CRITICAL(&pxRingbuffer->mux);
@@ -888,12 +883,7 @@ static BaseType_t prvReceiveGenericFromISR(Ringbuffer_t *pxRingbuffer,
 {
     BaseType_t xReturn = pdFALSE;
 
-#ifdef __clang_analyzer__
-    // Teach clang-tidy that if NULL pointers are provided, this function will never dereference them
-    if (!pvItem1 || !pvItem2 || !xItemSize1 || !xItemSize2) {
-        return pdFALSE;
-    }
-#endif /*__clang_analyzer__ */
+    ESP_STATIC_ANALYZER_CHECK(!pvItem1 || !pvItem2 || !xItemSize1 || !xItemSize2, pdFALSE);
 
     portENTER_CRITICAL_ISR(&pxRingbuffer->mux);
     if (prvCheckItemAvail(pxRingbuffer) == pdTRUE) {

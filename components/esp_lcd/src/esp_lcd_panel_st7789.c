@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -24,6 +24,7 @@
 #include "driver/gpio.h"
 #include "esp_log.h"
 #include "esp_check.h"
+#include "esp_compiler.h"
 
 #define ST7789_CMD_RAMCTRL               0xb0
 #define ST7789_DATA_LITTLE_ENDIAN_BIT    (1 << 3)
@@ -66,6 +67,8 @@ esp_lcd_new_panel_st7789(const esp_lcd_panel_io_handle_t io, const esp_lcd_panel
     esp_err_t ret = ESP_OK;
     st7789_panel_t *st7789 = NULL;
     ESP_GOTO_ON_FALSE(io && panel_dev_config && ret_panel, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
+    // leak detection of st7789 because saving st7789->base address
+    ESP_COMPILER_DIAGNOSTIC_PUSH_IGNORE("-Wanalyzer-malloc-leak")
     st7789 = calloc(1, sizeof(st7789_panel_t));
     ESP_GOTO_ON_FALSE(st7789, ESP_ERR_NO_MEM, err, TAG, "no mem for st7789 panel");
 
@@ -139,6 +142,7 @@ err:
         free(st7789);
     }
     return ret;
+    ESP_COMPILER_DIAGNOSTIC_POP("-Wanalyzer-malloc-leak")
 }
 
 static esp_err_t panel_st7789_del(esp_lcd_panel_t *panel)

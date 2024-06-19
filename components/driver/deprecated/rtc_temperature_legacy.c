@@ -11,6 +11,7 @@
 #include "esp_types.h"
 #include "esp_log.h"
 #include "esp_check.h"
+#include "esp_compiler.h"
 #include "freertos/FreeRTOS.h"
 #include "esp_private/regi2c_ctrl.h"
 #include "soc/regi2c_saradc.h"
@@ -110,7 +111,9 @@ esp_err_t temp_sensor_stop(void)
 esp_err_t temp_sensor_read_raw(uint32_t *tsens_out)
 {
     ESP_RETURN_ON_FALSE(tsens_out != NULL, ESP_ERR_INVALID_ARG, TAG, "no tsens_out specified");
+    ESP_COMPILER_DIAGNOSTIC_PUSH_IGNORE("-Wanalyzer-use-of-uninitialized-value") // False-positive detection. TODO GCC-366
     *tsens_out = temperature_sensor_ll_get_raw_value();
+    ESP_COMPILER_DIAGNOSTIC_POP("-Wanalyzer-use-of-uninitialized-value")
     return ESP_OK;
 }
 

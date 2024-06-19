@@ -389,10 +389,12 @@ static void IRAM_ATTR parlio_tx_mount_dma_data(parlio_tx_unit_t *tx_unit, const 
 {
     size_t prepared_length = 0;
     uint8_t *data = (uint8_t *)buffer;
+    uint32_t mount_bytes = 0;
     parlio_dma_desc_t *desc_nc = tx_unit->dma_nodes_nc;
 
     while (len) {
-        uint32_t mount_bytes = len > DMA_DESCRIPTOR_BUFFER_MAX_SIZE ? DMA_DESCRIPTOR_BUFFER_MAX_SIZE : len;
+        assert(desc_nc);
+        mount_bytes = len > DMA_DESCRIPTOR_BUFFER_MAX_SIZE ? DMA_DESCRIPTOR_BUFFER_MAX_SIZE : len;
         len -= mount_bytes;
         desc_nc->dw0.suc_eof = (len == 0);    // whether the last frame
         desc_nc->dw0.size = mount_bytes;

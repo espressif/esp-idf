@@ -111,4 +111,9 @@ else()
                                     esp_driver_uart esp_driver_ledc esp_driver_parlio esp_driver_usb_serial_jtag
                            LDFRAGMENTS ${ldfragments}
                           )
+    if(CONFIG_SOC_ADC_SUPPORTED AND
+       CONFIG_COMPILER_STATIC_ANALYZER AND CMAKE_C_COMPILER_ID STREQUAL "GNU") # TODO GCC-366
+        set_source_files_properties(deprecated/adc_legacy.c
+                                    PROPERTIES COMPILE_FLAGS "-Wno-analyzer-use-of-uninitialized-value")
+    endif()
 endif()

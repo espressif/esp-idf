@@ -17,6 +17,7 @@
 #include "hal/cache_hal.h"
 #include "hal/cache_ll.h"
 #include "esp_cache.h"
+#include "esp_compiler.h"
 #include "esp_private/esp_cache_private.h"
 #include "esp_private/critical_section.h"
 
@@ -147,7 +148,7 @@ esp_err_t esp_cache_aligned_malloc_prefer(size_t size, void **out_ptr, size_t *a
     *out_ptr = NULL;
 
     while (flag_nums--) {
-        flags = va_arg(argp, uint32_t);
+        flags = va_arg(argp, int);
         ret = esp_cache_aligned_malloc_internal(size, flags, out_ptr, actual_size);
         if (ret == ESP_OK) {
             break;
@@ -199,10 +200,10 @@ esp_err_t esp_cache_aligned_calloc_prefer(size_t n, size_t size, void **out_ptr,
         arg = va_arg(argp, int);
         ret = esp_cache_aligned_malloc_internal(size_bytes, arg, &ptr, actual_size);
         if (ret == ESP_OK) {
+            ESP_COMPILER_DIAGNOSTIC_PUSH_IGNORE("-Wanalyzer-null-argument")
             memset(ptr, 0, size_bytes);
             *out_ptr = ptr;
-
-            arg = va_arg(argp, int);
+            ESP_COMPILER_DIAGNOSTIC_POP("-Wanalyzer-null-argument")
             break;
         }
 

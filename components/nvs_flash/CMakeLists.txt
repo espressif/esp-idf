@@ -41,3 +41,7 @@ else()
     target_sources(${COMPONENT_LIB} PRIVATE "src/nvs_encrypted_partition.cpp")
     target_link_libraries(${COMPONENT_LIB} PRIVATE idf::mbedtls)
 endif()
+
+if(CONFIG_COMPILER_STATIC_ANALYZER AND CMAKE_C_COMPILER_ID STREQUAL "GNU") # TODO IDF-10088
+    target_compile_options(${COMPONENT_LIB} PUBLIC "-fno-analyzer")
+endif()
