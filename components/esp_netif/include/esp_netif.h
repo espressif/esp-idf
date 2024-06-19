@@ -718,7 +718,7 @@ esp_err_t esp_netif_dhcps_get_clients_by_mac(esp_netif_t *esp_netif, int num, es
  *   Note that LWIP stores DNS server information globally, not per interface, so the first parameter is unused
  *   in the default LWIP configuration.
  *   If CONFIG_ESP_NETIF_SET_DNS_PER_DEFAULT_NETIF=1 this API sets internal DNS server information per
- *   netif. It's also possible set the global DNS server info by supplying esp_netif=NULL
+ *   netif. It's also possible to set the global DNS server info by supplying esp_netif=NULL
  *
  *   If DHCP server is enabled, the Main DNS Server setting is used by the DHCP server to provide a DNS Server option
  *   to DHCP clients (Wi-Fi stations).
