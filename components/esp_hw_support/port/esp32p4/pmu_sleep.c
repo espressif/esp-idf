@@ -154,6 +154,10 @@ const pmu_sleep_config_t* pmu_sleep_config_default(
 
     if (dslp) {
         config->param.lp_sys.analog_wait_target_cycle  = rtc_time_us_to_slowclk(PMU_LP_ANALOG_WAIT_TARGET_TIME_DSLP_US, slowclk_period);
+
+        pmu_sleep_digital_config_t digital_default = PMU_SLEEP_DIGITAL_DSLP_CONFIG_DEFAULT(pd_flags);
+        config->digital = digital_default;
+
         pmu_sleep_analog_config_t analog_default = PMU_SLEEP_ANALOG_DSLP_CONFIG_DEFAULT(pd_flags);
         config->analog = analog_default;
     } else {
@@ -200,6 +204,7 @@ static void pmu_sleep_power_init(pmu_context_t *ctx, const pmu_sleep_power_confi
 static void pmu_sleep_digital_init(pmu_context_t *ctx, const pmu_sleep_digital_config_t *dig)
 {
     pmu_ll_hp_set_dig_pad_slp_sel   (ctx->hal->dev, HP(SLEEP), dig->syscntl.dig_pad_slp_sel);
+    pmu_ll_hp_set_hold_all_lp_pad   (ctx->hal->dev, HP(SLEEP), dig->syscntl.lp_pad_hold_all);
 }
 
 static void pmu_sleep_analog_init(pmu_context_t *ctx, const pmu_sleep_analog_config_t *analog, bool dslp)
@@ -255,9 +260,7 @@ void pmu_sleep_init(const pmu_sleep_config_t *config, bool dslp)
 {
     assert(PMU_instance());
     pmu_sleep_power_init(PMU_instance(), &config->power, dslp);
-    if(!dslp){
-        pmu_sleep_digital_init(PMU_instance(), &config->digital);
-    }
+    pmu_sleep_digital_init(PMU_instance(), &config->digital);
     pmu_sleep_analog_init(PMU_instance(), &config->analog, dslp);
     pmu_sleep_param_init(PMU_instance(), &config->param, dslp);
 }
