@@ -28,11 +28,6 @@ typedef enum {
     LCD_RGB_ELEMENT_ORDER_BGR, /*!< RGB element order: BGR */
 } lcd_rgb_element_order_t;
 
-/// for backward compatible
-typedef lcd_rgb_element_order_t lcd_color_rgb_endian_t;
-#define LCD_RGB_ENDIAN_RGB LCD_RGB_ELEMENT_ORDER_RGB
-#define LCD_RGB_ENDIAN_BGR LCD_RGB_ELEMENT_ORDER_BGR
-
 /**
  * @brief RGB data endian
  */
