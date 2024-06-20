@@ -217,24 +217,8 @@ the adv packet will be discarded until the memory is restored. */
 
 /**
  * @brief Bluetooth Controller config options
- * @note
- *     1. The following parameters can be configured at runtime when calling esp_bt_controller_init():
- *
- *      `controller_task_stack_size`, `controller_task_prio`, `hci_uart_no`, `hci_uart_baudrate`
- *      `scan_duplicate_mode`, `scan_duplicate_type`, `normal_adv_size`, `mesh_adv_size`, `send_adv_reserved_size`,
- *      `controller_debug_flag`, `mode`, `ble_max_conn`, `bt_max_acl_conn`, `bt_sco_datapath`, `auto_latency`,
- *      `bt_legacy_auth_vs_evt`
- *
- *     2. The following parameters cannot be configured at runtime when calling `esp_bt_controller_init()`.
- *         They will be overwritten with values in menuconfig or from a macro:
- *
- *         `bt_max_sync_conn`, `ble_sca`, `pcm_role`, `pcm_polar`, `hli`, `dup_list_refresh_period`, `ble_scan_backoff`,
- *         `magic`.
  */
 typedef struct {
-    /*
-     * Following parameters can be configured runtime, when call esp_bt_controller_init()
-     */
     uint16_t controller_task_stack_size;    /*!< Bluetooth Controller task stack size in bytes */
     uint8_t controller_task_prio;           /*!< Bluetooth Controller task priority */
     uint8_t hci_uart_no;                    /*!< If use UART1/2 as HCI IO interface, indicate UART number */
@@ -251,11 +235,6 @@ typedef struct {
     uint8_t bt_sco_datapath;                /*!< SCO data path, i.e. HCI or PCM module */
     bool auto_latency;                      /*!< BLE auto latency, used to enhance Classic Bluetooth performance */
     bool bt_legacy_auth_vs_evt;             /*!< BR/EDR Legacy auth complete event required to  protect from BIAS attack */
-    /*
-     * Following parameters can not be configured runtime when call esp_bt_controller_init()
-     * It will be overwrite with a constant value which in menuconfig or from a macro.
-     * So, do not modify the value when esp_bt_controller_init()
-     */
     uint8_t bt_max_sync_conn;               /*!< BR/EDR maximum ACL connection numbers. Effective in menuconfig */
     uint8_t ble_sca;                        /*!< BLE low power crystal accuracy index */
     uint8_t pcm_role;                       /*!< PCM role (master & slave)*/
@@ -625,16 +604,12 @@ esp_err_t esp_bt_sleep_disable(void);
 esp_err_t esp_ble_scan_dupilcate_list_flush(void);
 
 /**
- * @brief Power on Bluetooth Wi-Fi power domain
- *
- * @note This function is not recommended to use due to potential risk.
+ * @brief bt Wi-Fi power domain power on
  */
 void esp_wifi_bt_power_domain_on(void);
 
 /**
- * @brief Power off Bluetooth Wi-Fi power domain
- *
- * @note This function is not recommended to use due to potential risk.
+ * @brief bt Wi-Fi power domain power off
  */
 void esp_wifi_bt_power_domain_off(void);
 
