@@ -185,6 +185,11 @@ static esp_err_t esp_core_dump_write_binary(void)
     hdr.version   = COREDUMP_VERSION_BIN_CURRENT;
     hdr.tcb_sz    = tcb_sz;
     hdr.chip_rev  = efuse_hal_chip_revision();
+    dump_hdr.boot_time = esp_timer_get_time();
+
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    dump_hdr.unix_time = tv.tv_sec * 1000000 + tv.tv_usec;
     err = esp_core_dump_write_data(&write_data, &hdr, sizeof(core_dump_header_t));
     if (err != ESP_OK) {
         ESP_COREDUMP_LOGE("Failed to write core dump header error=%d!", err);
