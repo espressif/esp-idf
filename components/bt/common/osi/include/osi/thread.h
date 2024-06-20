@@ -17,10 +17,8 @@
 
 #define OSI_THREAD_MAX_TIMEOUT OSI_SEM_MAX_TIMEOUT
 
-struct osi_thread;
-struct osi_event;
-
-typedef struct osi_thread osi_thread_t;
+typedef struct osi_thread_s osi_thread_t;
+typedef struct osi_event osi_event_t;
 
 typedef void (*osi_thread_func_t)(void *context);
 
@@ -88,7 +86,7 @@ int osi_thread_queue_wait_size(osi_thread_t *thread, int wq_idx);
  * param context: the argument to be passed to the handler function when the job is being processed
  * return: NULL if no memory, otherwise a valid struct pointer
  */
-struct osi_event *osi_event_create(osi_thread_func_t func, void *context);
+osi_event_t *osi_event_create(osi_thread_func_t func, void *context);
 
 /*
  * brief: Bind an osi_event to a specific work queue for an osi_thread.
@@ -99,13 +97,13 @@ struct osi_event *osi_event_create(osi_thread_func_t func, void *context);
  * param queue_idx: the index of the workqueue of the specified osi_thread, with range starting from 0 to work_queue_num - 1
  * return: true if osi_event binds to the thread's workqueue successfully, otherwise false
  */
-bool osi_event_bind(struct osi_event* event, osi_thread_t *thread, int queue_idx);
+bool osi_event_bind(osi_event_t* event, osi_thread_t *thread, int queue_idx);
 
 /*
  * brief: Destroy the osi_event struct created by osi_event_create and free the allocated memory
  * param event: the pointer to osi_event
  */
-void osi_event_delete(struct osi_event* event);
+void osi_event_delete(osi_event_t* event);
 
 /*
  * brief: try sending a work to the binded thread's workqueue, so that it can be handled by the worker thread
@@ -115,6 +113,6 @@ void osi_event_delete(struct osi_event* event);
  * note: if the return value of function is false, it is the case that the workqueue of the thread is full, and users
  *       are expected to post the event sometime later to get the work handled.
  */
-bool osi_thread_post_event(struct osi_event *event, uint32_t timeout);
+bool osi_thread_post_event(osi_event_t *event, uint32_t timeout);
 
 #endif /* __THREAD_H__ */

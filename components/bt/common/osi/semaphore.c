@@ -19,6 +19,11 @@
 
 #include "osi/semaphore.h"
 
+TickType_t osi_ms_to_ticks(uint32_t timeout_ms)
+{
+    return (timeout_ms == OSI_SEM_MAX_TIMEOUT) ? portMAX_DELAY : pdMS_TO_TICKS(timeout_ms);
+}
+
 /*-----------------------------------------------------------------------------------*/
 //  Creates and returns a new semaphore. The "init_count" argument specifies
 //  the initial state of the semaphore, "max_count" specifies the maximum value
@@ -54,19 +59,13 @@ void osi_sem_give(osi_sem_t *sem)
 int
 osi_sem_take(osi_sem_t *sem, uint32_t timeout)
 {
-    int ret = 0;
-
-    if (timeout ==  OSI_SEM_MAX_TIMEOUT) {
-        if (xSemaphoreTake(*sem, portMAX_DELAY) != pdTRUE) {
-            ret = -1;
+    if (xSemaphoreTake(*sem, osi_ms_to_ticks(timeout)) == pdTRUE) {
+        return 0;
         }
-    } else {
-        if (xSemaphoreTake(*sem, timeout / portTICK_PERIOD_MS) != pdTRUE) {
-            ret = -2;
-        }
-    }
+    if (timeout == OSI_SEM_MAX_TIMEOUT)
+        return -1;
 
-    return ret;
+    return -2;
 }
 
 // Deallocates a semaphore
