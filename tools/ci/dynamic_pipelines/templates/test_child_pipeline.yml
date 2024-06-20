@@ -10,7 +10,7 @@ generate_pytest_build_report:
       - build_report.html
       - test_related_apps_download_urls.yml
   script:
-    - python tools/ci/dynamic_pipelines/scripts/generate_build_report.py
+    - python tools/ci/dynamic_pipelines/scripts/generate_report.py --report-type build
 
 generate_pytest_child_pipeline:
   # finally, we can get some use out of the default behavior that downloads all artifacts from the previous stage
