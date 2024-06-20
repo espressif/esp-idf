@@ -512,7 +512,9 @@ esp_err_t touch_pad_filter_delete(void)
     esp_err_t ret = ESP_OK;
     xSemaphoreTake(rtc_touch_mux, portMAX_DELAY);
     if (s_touch_pad_filter->timer) {
-        ESP_GOTO_ON_ERROR(esp_timer_stop(s_touch_pad_filter->timer), err, TOUCH_TAG, "failed to stop the timer");
+        if (esp_timer_is_active(s_touch_pad_filter->timer)) {
+            ESP_GOTO_ON_ERROR(esp_timer_stop(s_touch_pad_filter->timer), err, TOUCH_TAG, "failed to stop the timer");
+        }
         ESP_GOTO_ON_ERROR(esp_timer_delete(s_touch_pad_filter->timer), err, TOUCH_TAG, "failed to delete the timer");
         s_touch_pad_filter->timer = NULL;
     }
