@@ -173,7 +173,7 @@ STRUCT_BEGIN
     STRUCT_FIELD (long, 4, RV_SLP_CTX_MCYCLE,           mcycle)
 
     STRUCT_FIELD (long, 4, RV_SLP_CTX_MTVT,             mtvt)
-    STRUCT_FIELD (long, 4, RV_SLP_CTX_MNXTI,            mnxti)
+    STRUCT_FIELD (long, 4, RV_SLP_CTX_MINTTHRESH,       mintthresh)
     STRUCT_FIELD (long, 4, RV_SLP_CTX_MINTSTATUS,       mintstatus)
     STRUCT_FIELD (long, 4, RV_SLP_CTX_MXSTATUS,         mxstatus)
     STRUCT_FIELD (long, 4, RV_SLP_CTX_MHCR,             mhcr)
