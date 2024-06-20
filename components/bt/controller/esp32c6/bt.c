@@ -15,7 +15,9 @@
 
 #include "sdkconfig.h"
 
+#if CONFIG_BT_NIMBLE_ENABLED
 #include "nimble/nimble_port.h"
+#endif // CONFIG_BT_NIMBLE_ENABLED
 #include "nimble/nimble_port_freertos.h"
 #include "esp_private/esp_modem_clock.h"
 
@@ -28,7 +30,7 @@
 #endif // CONFIG_SW_COEXIST_ENABLE
 
 #include "nimble/nimble_npl_os.h"
-#include "nimble/ble_hci_trans.h"
+#include "ble_hci_trans.h"
 #include "os/endian.h"
 
 #include "esp_bt.h"
