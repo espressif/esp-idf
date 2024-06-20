@@ -16,7 +16,10 @@
 
 #include "sdkconfig.h"
 
+#if CONFIG_BT_NIMBLE_ENABLED
 #include "nimble/nimble_port.h"
+#endif // CONFIG_BT_NIMBLE_ENABLED
+
 #include "nimble/nimble_port_freertos.h"
 
 #ifdef ESP_PLATFORM
@@ -28,7 +31,7 @@
 #endif
 
 #include "nimble/nimble_npl_os.h"
-#include "nimble/ble_hci_trans.h"
+#include "ble_hci_trans.h"
 #include "os/endian.h"
 
 #include "esp_bt.h"
