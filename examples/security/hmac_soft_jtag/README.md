@@ -46,8 +46,9 @@ espefuse.py -p $ESPPORT burn_key <KEY_BLOCK_NO> <KEY_FILE>.bin HMAC_DOWN_ALL
 **Step 4:** Generate token data from the HMAC key. Keep this token data handy before re-enabling JTAG access.
 
 ```bash
-python jtag_example_helper.py generate_token <KEY_FILE>.bin
+python jtag_example_helper.py generate_token <KEY_FILE>.bin <OUTPUT_FILE(optional)>
 ```
+**Note**: The OUTPUT_FILE argument is optional. If provided, the token data will be stored in the specified file in either binary format (.bin) or hexadecimal format (.hex) based on the file extension. If no OUTPUT_FILE is specified, the token data will be printed to the console.
 
 ### Configure the project
 
