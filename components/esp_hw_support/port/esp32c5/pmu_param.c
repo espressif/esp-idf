@@ -195,66 +195,69 @@ const pmu_hp_system_digital_param_t * pmu_hp_system_digital_param_default(pmu_hp
 }
 
 #define PMU_HP_ACTIVE_ANALOG_CONFIG_DEFAULT() { \
-    .bias = {                   \
-        .xpd_bias        = 1,   \
-        .dbg_atten       = 0x0, \
-        .pd_cur          = 0,   \
-        .bias_sleep      = 0    \
+    .bias = {                                       \
+        .xpd_bias        = 1,                       \
+        .dbg_atten       = 0x0,                     \
+        .pd_cur          = 0,                       \
+        .bias_sleep      = 0                        \
     }, \
-    .regulator0 = {             \
-        .lp_dbias_vol    = 0xd, \
-        .hp_dbias_vol    = 0x1c,\
-        .dbias_sel       = 1,   \
-        .dbias_init      = 1,   \
-        .slp_mem_xpd     = 0,   \
-        .slp_logic_xpd   = 0,   \
-        .xpd             = 1,   \
-        .slp_mem_dbias   = 0, \
-        .slp_logic_dbias = 0, \
-        .dbias           = HP_CALI_DBIAS_DEFAULT \
+    .regulator0 = {                                 \
+        .slp_connect_en  = 0,                       \
+        .lp_dbias_vol    = 0xd,                     \
+        .hp_dbias_vol    = 0x1c,                    \
+        .dbias_sel       = 1,                       \
+        .dbias_init      = 1,                       \
+        .slp_mem_xpd     = 0,                       \
+        .slp_logic_xpd   = 0,                       \
+        .xpd             = 1,                       \
+        .slp_mem_dbias   = 0,                       \
+        .slp_logic_dbias = 0,                       \
+        .dbias           = HP_CALI_DBIAS_DEFAULT    \
     }, \
-    .regulator1 = {             \
-        .drv_b           = 0x0 \
+    .regulator1 = {                                 \
+        .drv_b           = 0x0                      \
     } \
 }
 
 #define PMU_HP_MODEM_ANALOG_CONFIG_DEFAULT() { \
-    .bias = {                   \
-        .xpd_bias        = 0,   \
-        .dbg_atten       = 0x0, \
-        .pd_cur          = 0,   \
-        .bias_sleep      = 0    \
+    .bias = {                                       \
+        .xpd_bias        = 0,                       \
+        .dbg_atten       = 0x0,                     \
+        .pd_cur          = 0,                       \
+        .bias_sleep      = 0                        \
     }, \
-    .regulator0 = {             \
-        .slp_mem_xpd     = 0,   \
-        .slp_logic_xpd   = 0,   \
-        .xpd             = 1,   \
-        .slp_mem_dbias   = 0, \
-        .slp_logic_dbias = 0, \
-        .dbias           = HP_CALI_DBIAS_DEFAULT \
+    .regulator0 = {                                 \
+        .slp_connect_en  = 0,                       \
+        .slp_mem_xpd     = 0,                       \
+        .slp_logic_xpd   = 0,                       \
+        .xpd             = 1,                       \
+        .slp_mem_dbias   = 0,                       \
+        .slp_logic_dbias = 0,                       \
+        .dbias           = HP_CALI_DBIAS_DEFAULT    \
     }, \
-    .regulator1 = {             \
-        .drv_b           = 0x0 \
+    .regulator1 = {                                 \
+        .drv_b           = 0x0                      \
     } \
 }
 
 #define PMU_HP_SLEEP_ANALOG_CONFIG_DEFAULT() { \
-    .bias = {                   \
-        .xpd_bias        = 0,   \
-        .dbg_atten       = 0x0, \
-        .pd_cur          = 0,   \
-        .bias_sleep      = 0    \
+    .bias = {                               \
+        .xpd_bias        = 0,               \
+        .dbg_atten       = 0x0,             \
+        .pd_cur          = 0,               \
+        .bias_sleep      = 0                \
     }, \
-    .regulator0 = {             \
-        .slp_mem_xpd     = 0,   \
-        .slp_logic_xpd   = 0,   \
-        .xpd             = 1,   \
-        .slp_mem_dbias   = 0, \
-        .slp_logic_dbias = 0, \
-        .dbias           = 1 \
+    .regulator0 = {                         \
+        .slp_connect_en  = 0,               \
+        .slp_mem_xpd     = 0,               \
+        .slp_logic_xpd   = 0,               \
+        .xpd             = 1,               \
+        .slp_mem_dbias   = 0,               \
+        .slp_logic_dbias = 0,               \
+        .dbias           = 1                \
     }, \
-    .regulator1 = {             \
-        .drv_b           = 0x0 \
+    .regulator1 = {                         \
+        .drv_b           = 0x0              \
     } \
 }
 
@@ -269,7 +272,7 @@ const pmu_hp_system_analog_param_t * pmu_hp_system_analog_param_default(pmu_hp_m
     return &hp_analog[mode];
 }
 
-#define PMU_HP_RETENTION_REGDMA_CONFIG(dir, entry)  ((((dir)<<2) | (entry & 0x3)) & 0x7)
+#define PMU_HP_RETENTION_REGDMA_CONFIG(dir, entry)  ((((dir)<<4) | (entry & 0xf)) & 0x1f)
 
 #define PMU_HP_ACTIVE_RETENTION_CONFIG_DEFAULT() {  \
     .retention = {                                  \

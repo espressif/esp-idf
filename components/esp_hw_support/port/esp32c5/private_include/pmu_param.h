@@ -169,7 +169,12 @@ typedef struct {
         uint32_t bias_sleep: 1;
     };
     struct {
-        uint32_t reserved1      : 16;
+        uint32_t reserved1      : 3;    /* Only HP_ACTIVE modem under hp system is valid */
+        uint32_t dbias_init     : 1;    /* Only HP_ACTIVE modem under hp system is valid */
+        uint32_t lp_dbias_vol   : 5;    /* Only HP_ACTIVE modem under hp system is valid */
+        uint32_t hp_dbias_vol   : 5;    /* Only HP_ACTIVE modem under hp system is valid */
+        uint32_t dbias_sel      : 1;    /* Only HP_ACTIVE modem under hp system is valid */
+        uint32_t slp_connect_en : 1;
         uint32_t slp_mem_xpd    : 1;
         uint32_t slp_logic_xpd  : 1;
         uint32_t xpd            : 1;
