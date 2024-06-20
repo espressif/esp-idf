@@ -20,6 +20,9 @@ typedef enum {
     ECC_PARAM_K,
 } ecc_ll_param_t;
 
+static inline void ecc_ll_power_up(void) {}
+static inline void ecc_ll_power_down(void) {}
+
 static inline void ecc_ll_enable_interrupt(void)
 {
     REG_SET_FIELD(ECC_MULT_INT_ENA_REG, ECC_MULT_CALC_DONE_INT_ENA, 1);

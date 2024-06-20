@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,7 +8,10 @@
 #include <stdbool.h>
 #include <string.h>
 #include "hal/assert.h"
+#include "hal/ecc_types.h"
 #include "soc/ecc_mult_reg.h"
+#include "soc/pcr_struct.h"
+#include "soc/pcr_reg.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -22,6 +25,18 @@ typedef enum {
     ECC_PARAM_QY,
     ECC_PARAM_QZ,
 } ecc_ll_param_t;
+
+static inline void ecc_ll_power_up(void)
+{
+    REG_CLR_BIT(PCR_ECC_PD_CTRL_REG, PCR_ECC_MEM_PD);
+    REG_CLR_BIT(PCR_ECC_PD_CTRL_REG, PCR_ECC_MEM_FORCE_PD);
+}
+
+static inline void ecc_ll_power_down(void)
+{
+    REG_CLR_BIT(PCR_ECC_PD_CTRL_REG, PCR_ECC_MEM_FORCE_PU);
+    REG_SET_BIT(PCR_ECC_PD_CTRL_REG, PCR_ECC_MEM_PD);
+}
 
 static inline void ecc_ll_enable_interrupt(void)
 {

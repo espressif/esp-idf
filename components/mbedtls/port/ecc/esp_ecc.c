@@ -11,17 +11,20 @@
 #include "esp_private/periph_ctrl.h"
 #include "ecc_impl.h"
 #include "hal/ecc_hal.h"
+#include "hal/ecc_ll.h"
 
 static void esp_ecc_acquire_hardware(void)
 {
     esp_crypto_ecc_lock_acquire();
 
     periph_module_enable(PERIPH_ECC_MODULE);
+    ecc_ll_power_up();
 }
 
 static void esp_ecc_release_hardware(void)
 {
     periph_module_disable(PERIPH_ECC_MODULE);
+    ecc_ll_power_down();
 
     esp_crypto_ecc_lock_release();
 }
