@@ -19,8 +19,8 @@ extern "C" {
 typedef struct {
     int reset_gpio_num; /*!< GPIO used to reset the LCD panel, set to -1 if it's not used */
     union {
-        lcd_rgb_element_order_t color_space;   /*!< @deprecated Set RGB color space, please use rgb_ele_order instead */
-        lcd_rgb_element_order_t rgb_endian;    /*!< @deprecated Set RGB data endian, please use rgb_ele_order instead */
+        esp_lcd_color_space_t color_space;     /*!< @deprecated Set RGB color space, please use rgb_ele_order instead */
+        lcd_color_rgb_endian_t rgb_endian;     /*!< @deprecated Set RGB data endian, please use rgb_ele_order instead */
         lcd_rgb_element_order_t rgb_ele_order; /*!< Set RGB element order, RGB or BGR */
     };
     lcd_rgb_data_endian_t data_endian;         /*!< Set the data endian for color data larger than 1 byte */
