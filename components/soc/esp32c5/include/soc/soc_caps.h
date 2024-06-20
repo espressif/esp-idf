@@ -60,7 +60,7 @@
 // #define SOC_APM_SUPPORTED               1  // TODO: [ESP32C5] IDF-8614, IDF-8615
 // #define SOC_PMU_SUPPORTED               1  // TODO: [ESP32C5] IDF-8667
 // #define SOC_PAU_SUPPORTED               1  // TODO: [ESP32C5] IDF-8638
-// #define SOC_LP_TIMER_SUPPORTED          1  // TODO: [ESP32C5] IDF-8636
+#define SOC_LP_TIMER_SUPPORTED          1
 // #define SOC_LP_AON_SUPPORTED            1  // TODO: [ESP32C5] IDF-8638
 #define SOC_LP_PERIPHERALS_SUPPORTED    1
 // #define SOC_LP_I2C_SUPPORTED            1  // TODO: [ESP32C5] IDF-8634
@@ -434,8 +434,8 @@
 // #define SOC_SYSTIMER_SUPPORT_ETM            1  // Systimer comparator can generate ETM event
 
 /*-------------------------- LP_TIMER CAPS ----------------------------------*/
-// #define SOC_LP_TIMER_BIT_WIDTH_LO           32 // Bit width of lp_timer low part
-// #define SOC_LP_TIMER_BIT_WIDTH_HI           16 // Bit width of lp_timer high part
+#define SOC_LP_TIMER_BIT_WIDTH_LO           32 // Bit width of lp_timer low part
+#define SOC_LP_TIMER_BIT_WIDTH_HI           16 // Bit width of lp_timer high part
 
 /*--------------------------- TIMER GROUP CAPS ---------------------------------------*/
 #define SOC_TIMER_GROUPS                  (2)

@@ -123,6 +123,10 @@ config SOC_SECURE_BOOT_SUPPORTED
     bool
     default y
 
+config SOC_LP_TIMER_SUPPORTED
+    bool
+    default y
+
 config SOC_LP_PERIPHERALS_SUPPORTED
     bool
     default y
@@ -706,6 +710,14 @@ config SOC_SYSTIMER_INT_LEVEL
 config SOC_SYSTIMER_ALARM_MISS_COMPENSATE
     bool
     default y
+
+config SOC_LP_TIMER_BIT_WIDTH_LO
+    int
+    default 32
+
+config SOC_LP_TIMER_BIT_WIDTH_HI
+    int
+    default 16
 
 config SOC_TIMER_GROUPS
     int
