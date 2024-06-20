@@ -503,30 +503,6 @@ config SOC_MCPWM_CAPTURE_CLK_FROM_GROUP
     bool
     default y
 
-config SOC_PARLIO_GROUPS
-    int
-    default 1
-
-config SOC_PARLIO_TX_UNITS_PER_GROUP
-    int
-    default 1
-
-config SOC_PARLIO_RX_UNITS_PER_GROUP
-    int
-    default 1
-
-config SOC_PARLIO_TX_UNIT_MAX_DATA_WIDTH
-    int
-    default 16
-
-config SOC_PARLIO_RX_UNIT_MAX_DATA_WIDTH
-    int
-    default 16
-
-config SOC_PARLIO_TX_RX_SHARE_INTERRUPT
-    bool
-    default y
-
 config SOC_MPI_MEM_BLOCKS_NUM
     int
     default 4

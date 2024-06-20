@@ -106,7 +106,6 @@ api-reference/peripherals/sdm.rst
 api-reference/peripherals/touch_pad.rst
 api-reference/peripherals/adc_calibration.rst
 api-reference/peripherals/spi_slave_hd.rst
-api-reference/peripherals/parlio.rst
 api-reference/peripherals/dedic_gpio.rst
 api-reference/peripherals/sd_pullup_requirements.rst
 api-reference/peripherals/spi_master.rst

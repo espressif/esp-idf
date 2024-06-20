@@ -1095,7 +1095,19 @@ config SOC_PARLIO_RX_UNIT_MAX_DATA_WIDTH
     int
     default 16
 
+config SOC_PARLIO_TX_CLK_SUPPORT_GATING
+    bool
+    default y
+
+config SOC_PARLIO_RX_CLK_SUPPORT_GATING
+    bool
+    default y
+
 config SOC_PARLIO_RX_CLK_SUPPORT_OUTPUT
+    bool
+    default y
+
+config SOC_PARLIO_TRANS_BIT_ALIGN
     bool
     default y
 

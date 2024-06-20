@@ -520,10 +520,16 @@ typedef enum {
 /**
  * @brief PARLIO clock source
  */
-typedef enum {  // TODO: [ESP32C5] IDF-8685, IDF-8686 (inherit from C6)
-    PARLIO_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,           /*!< Select XTAL as the source clock */
-    PARLIO_CLK_SRC_PLL_F240M = SOC_MOD_CLK_PLL_F240M, /*!< Select PLL_F240M as the source clock */
-    PARLIO_CLK_SRC_DEFAULT = SOC_MOD_CLK_PLL_F240M,   /*!< Select PLL_F240M as the default clock choice */
+typedef enum {
+    PARLIO_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,             /*!< Select XTAL as the source clock */
+    PARLIO_CLK_SRC_RC_FAST = SOC_MOD_CLK_RC_FAST,       /*!< Select RC_FAST as the source clock */
+    PARLIO_CLK_SRC_PLL_F240M = SOC_MOD_CLK_PLL_F240M,   /*!< Select PLL_F240M as the source clock */
+    PARLIO_CLK_SRC_EXTERNAL = -1,                       /*!< Select EXTERNAL clock as the source clock */
+#if SOC_CLK_TREE_SUPPORTED  // TODO: [ESP32C5] IDF-8642 remove when clock tree is supported
+    PARLIO_CLK_SRC_DEFAULT = SOC_MOD_CLK_PLL_F240M,     /*!< Select PLL_F240M as the default clock choice */
+#else
+    PARLIO_CLK_SRC_DEFAULT = SOC_MOD_CLK_XTAL,          /*!< Select XTAL as the default clock choice */
+#endif
 } soc_periph_parlio_clk_src_t;
 
 //////////////////////////////////////////////////MSPI///////////////////////////////////////////////////////////////////
