@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -345,6 +345,35 @@ esp_err_t usb_host_get_device_descriptor(usb_device_handle_t dev_hdl, const usb_
  * @return esp_err_t
  */
 esp_err_t usb_host_get_active_config_descriptor(usb_device_handle_t dev_hdl, const usb_config_desc_t **config_desc);
+
+/**
+ * @brief Get get device's configuration descriptor
+ *
+ * - The USB Host library only caches a device's active configuration descriptor.
+ * - This function reads any configuration descriptor of a particular device (specified by bConfigurationValue).
+ * - This function will read the specified configuration descriptor via control transfers, and allocate memory to store that descriptor.
+ * - Users can call usb_host_get_config_desc_free() to free the descriptor's memory afterwards.
+ *
+ * @note This function can block
+ * @note A client must call usb_host_device_open() on the device first
+ * @param[in] client_hdl Client handle - usb_host_client_handle_events() should be called repeatedly in a separate task to handle client events
+ * @param[in] dev_hdl Device handle
+ * @param[out] config_desc_ret Returned configuration descriptor
+ * @param[in] bConfigurationValue Index of device's configuration descriptor to be read
+ * @note bConfigurationValue starts from index 1
+ * @return esp_err_t
+ */
+esp_err_t usb_host_get_config_desc(usb_host_client_handle_t client_hdl, usb_device_handle_t dev_hdl, uint8_t bConfigurationValue, const usb_config_desc_t **config_desc_ret);
+
+/**
+ * @brief Free a configuration descriptor
+ *
+ * This function frees a configuration descriptor that was returned by usb_host_get_config_desc()
+ *
+ * @param[out] config_desc Configuration descriptor
+ * @return esp_err_t
+ */
+esp_err_t usb_host_get_config_desc_free(const usb_config_desc_t *config_desc);
 
 // ----------------------------------------------- Interface Functions -------------------------------------------------
 
