@@ -238,7 +238,7 @@ static int tcp_write(esp_transport_handle_t t, const char *buffer, int len, int 
         ESP_LOGW(TAG, "Poll timeout or error, errno=%s, fd=%d, timeout_ms=%d", strerror(errno), ssl->sockfd, timeout_ms);
         return poll;
     }
-    int ret = send(ssl->sockfd, (const unsigned char *) buffer, len, 0);
+    int ret = send(ssl->sockfd, (const unsigned char *) buffer, len, MSG_MORE);
     if (ret < 0) {
         ESP_LOGE(TAG, "tcp_write error, errno=%s", strerror(errno));
         esp_transport_capture_errno(t, errno);
