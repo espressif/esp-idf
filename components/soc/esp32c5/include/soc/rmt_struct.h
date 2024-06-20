@@ -827,7 +827,7 @@ typedef struct rmt_dev_t {
     volatile struct {
         rmt_chmconf0_reg_t conf0;
         rmt_chmconf1_reg_t conf1;
-    } chmconf[2];;
+    } chmconf[2];
     volatile rmt_chnstatus_reg_t chnstatus[2];
     volatile rmt_chmstatus_reg_t chmstatus[2];
     volatile rmt_int_raw_reg_t int_raw;
