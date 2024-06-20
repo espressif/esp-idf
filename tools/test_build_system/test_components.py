@@ -87,6 +87,24 @@ def test_component_properties_are_set(idf_py: IdfPyFunc, test_app_copy: Path) ->
     assert 'SRCS:{}'.format((test_app_copy / 'main' / 'build_test_app.c').as_posix()) in ret.stdout, 'Component properties should be set'
 
 
+def test_get_property_for_unknown_component(idf_py: IdfPyFunc, test_app_copy: Path) -> None:
+    logging.info('Getting property of unknown component fails gracefully')
+    append_to_file(test_app_copy / 'CMakeLists.txt', '\n'.join(['',
+                                                                'idf_component_get_property(VAR UNKNOWN PROP)']))
+    ret = idf_py('reconfigure', check=False)
+    assert "Failed to resolve component 'UNKNOWN'" in ret.stderr, ('idf_component_get_property '
+                                                                   'for unknown component should fail gracefully')
+
+
+def test_set_property_for_unknown_component(idf_py: IdfPyFunc, test_app_copy: Path) -> None:
+    logging.info('Setting property of unknown component fails gracefully')
+    append_to_file(test_app_copy / 'CMakeLists.txt', '\n'.join(['',
+                                                                'idf_component_set_property(UNKNOWN PROP VAL)']))
+    ret = idf_py('reconfigure', check=False)
+    assert "Failed to resolve component 'UNKNOWN'" in ret.stderr, ('idf_component_set_property '
+                                                                   'for unknown component should fail gracefully')
+
+
 def test_component_overridden_dir(idf_py: IdfPyFunc, test_app_copy: Path, default_idf_env: EnvDict) -> None:
     logging.info('Getting component overridden dir')
     (test_app_copy / 'components' / 'hal').mkdir(parents=True)
