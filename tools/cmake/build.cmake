@@ -61,6 +61,35 @@ function(idf_build_unset_property property)
     idf_build_set_property(__BUILD_PROPERTIES "${build_properties}")
 endfunction()
 
+# idf_build_replace_option_from_property
+#
+# @brief Replace specified option with new one in a given property.
+#
+# @param[in] property_name the property in which to replace the options (ex.: COMPILE_OPTIONS, C_COMPILE_OPTIONS,..)
+#
+# @param[in] option_to_remove the option to be replaced
+# @param[in] new_option the option to replace with (if empty, the old option will be removed)
+#
+# Example usage:
+#   idf_build_replace_options_from_property(COMPILE_OPTIONS "-Werror" "-Werror=all")
+#   idf_build_replace_options_from_property(COMPILE_OPTIONS "-Wno-error=extra" "")
+#
+function(idf_build_replace_option_from_property property_name option_to_remove new_option)
+    idf_build_get_property(current_list_of_options ${property_name})
+
+    set(new_list_of_options)
+    foreach(option ${current_list_of_options})
+        if(option STREQUAL option_to_remove)
+            list(APPEND new_list_of_options "${new_option}")
+        else()
+            list(APPEND new_list_of_options "${option}")
+        endif()
+    endforeach()
+
+    # Set the updated list back
+    idf_build_set_property(${property_name} "${new_list_of_options}")
+endfunction()
+
 #
 # Retrieve the IDF_PATH repository's version, either using a version
 # file or Git revision. Sets the IDF_VER build property.
@@ -101,12 +130,13 @@ function(__build_set_default_build_specifications)
                                     "-fdata-sections"
                                     # warning-related flags
                                     "-Wall"
-                                    "-Werror=all"
+                                    "-Werror"
                                     "-Wno-error=unused-function"
                                     "-Wno-error=unused-variable"
                                     "-Wno-error=unused-but-set-variable"
                                     "-Wno-error=deprecated-declarations"
                                     "-Wextra"
+                                    "-Wno-error=extra"
                                     "-Wno-unused-parameter"
                                     "-Wno-sign-compare"
                                     # ignore multiple enum conversion warnings since gcc 11
