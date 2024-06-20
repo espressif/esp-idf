@@ -15,6 +15,8 @@
 #include "soc/rtc.h"
 #include "soc/pmu_struct.h"
 #include "hal/lp_aon_hal.h"
+#include "hal/efuse_ll.h"
+#include "hal/efuse_hal.h"
 #include "esp_private/esp_pmu.h"
 #include "pmu_param.h"
 

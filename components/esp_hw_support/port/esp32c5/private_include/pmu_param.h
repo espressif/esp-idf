@@ -13,7 +13,6 @@
 #include "soc/pmu_struct.h"
 #include "hal/pmu_hal.h"
 
-// TODO: [ESP32C5] IDF-8643
 
 #ifdef __cplusplus
 extern "C" {

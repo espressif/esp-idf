@@ -411,13 +411,13 @@ void modem_clock_select_lp_clock_source(periph_module_t module, modem_clock_lpcl
     default:
         break;
     }
-#if SOC_LIGHT_SLEEP_SUPPORTED  // TODO: [ESP32C5] IDF-8643
+#if SOC_LIGHT_SLEEP_SUPPORTED
     modem_clock_lpclk_src_t last_src = MODEM_CLOCK_instance()->lpclk_src[module - PERIPH_MODEM_MODULE_MIN];
 #endif
     MODEM_CLOCK_instance()->lpclk_src[module - PERIPH_MODEM_MODULE_MIN] = src;
     portEXIT_CRITICAL_SAFE(&MODEM_CLOCK_instance()->lock);
 
-#if SOC_LIGHT_SLEEP_SUPPORTED  // TODO: [ESP32C5] IDF-8643
+#if SOC_LIGHT_SLEEP_SUPPORTED
     /* The power domain of the low-power clock source required by the modem
      * module remains powered on during sleep */
     esp_sleep_pd_domain_t pd_domain = (esp_sleep_pd_domain_t) ( \
@@ -441,7 +441,7 @@ void modem_clock_deselect_lp_clock_source(periph_module_t module)
 {
     assert(IS_MODEM_MODULE(module));
     portENTER_CRITICAL_SAFE(&MODEM_CLOCK_instance()->lock);
-#if SOC_LIGHT_SLEEP_SUPPORTED  // TODO: [ESP32C5] IDF-8643
+#if SOC_LIGHT_SLEEP_SUPPORTED
     modem_clock_lpclk_src_t last_src = MODEM_CLOCK_instance()->lpclk_src[module - PERIPH_MODEM_MODULE_MIN];
 #endif
     MODEM_CLOCK_instance()->lpclk_src[module - PERIPH_MODEM_MODULE_MIN] = MODEM_CLOCK_LPCLK_SRC_INVALID;
@@ -478,13 +478,13 @@ void modem_clock_deselect_lp_clock_source(periph_module_t module)
     }
     portEXIT_CRITICAL_SAFE(&MODEM_CLOCK_instance()->lock);
 
-#if SOC_LIGHT_SLEEP_SUPPORTED  // TODO: [ESP32C5] IDF-8643
     esp_sleep_pd_domain_t pd_domain = (esp_sleep_pd_domain_t) ( \
               (last_src == MODEM_CLOCK_LPCLK_SRC_RC_FAST)  ? ESP_PD_DOMAIN_RC_FAST  \
             : (last_src == MODEM_CLOCK_LPCLK_SRC_MAIN_XTAL) ? ESP_PD_DOMAIN_XTAL    \
             : (last_src == MODEM_CLOCK_LPCLK_SRC_RC32K)     ? ESP_PD_DOMAIN_RC32K   \
             : (last_src == MODEM_CLOCK_LPCLK_SRC_XTAL32K)   ? ESP_PD_DOMAIN_XTAL32K \
             : ESP_PD_DOMAIN_MAX);
+#if SOC_LIGHT_SLEEP_SUPPORTED
     esp_sleep_pd_config(pd_domain, ESP_PD_OPTION_OFF);
 #endif
 }

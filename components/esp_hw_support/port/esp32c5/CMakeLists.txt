@@ -1,8 +1,9 @@
 set(srcs "rtc_clk_init.c"
     "rtc_time.c"
     "rtc_clk.c"
-    "pmu_init.c"
     "pmu_param.c"
+    "pmu_init.c"
+    "pmu_sleep.c"
     "chip_info.c"
 )
 
