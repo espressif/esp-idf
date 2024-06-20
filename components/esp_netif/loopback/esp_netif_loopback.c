@@ -480,4 +480,8 @@ esp_err_t esp_netif_tcpip_exec(esp_netif_callback_fn fn, void*ctx)
     return fn(ctx);
 }
 
+esp_netif_t *esp_netif_get_handle_from_ifkey(const char *if_key)
+{
+    return esp_netif_get_handle_from_ifkey_unsafe(if_key);
+}
 #endif /* CONFIG_ESP_NETIF_LOOPBACK */

@@ -17,6 +17,7 @@
 #include "test_utils.h"
 #include "memory_checks.h"
 #include "lwip/netif.h"
+#include "esp_netif_test.h"
 
 TEST_GROUP(esp_netif);
 
@@ -91,20 +92,7 @@ TEST(esp_netif, convert_ip_addresses)
 
 TEST(esp_netif, get_from_if_key)
 {
-    // init default netif
-    esp_netif_config_t cfg = ESP_NETIF_DEFAULT_WIFI_STA();
-    esp_netif_t *esp_netif = esp_netif_new(&cfg);
-    TEST_ASSERT_NOT_NULL(esp_netif);
-
-    // check it's accessible by key
-    TEST_ASSERT_EQUAL(esp_netif, esp_netif_get_handle_from_ifkey("WIFI_STA_DEF"));
-
-    // destroy it
-    esp_netif_destroy(esp_netif);
-
-    // check it's also destroyed in list
-    TEST_ASSERT_EQUAL(NULL, esp_netif_get_handle_from_ifkey("WIFI_STA_DEF"));
-
+    get_from_if_key();
 }
 
 // This is a private esp-netif API, but include here to test it
@@ -112,34 +100,7 @@ bool esp_netif_is_netif_listed(esp_netif_t *esp_netif);
 
 TEST(esp_netif, create_delete_multiple_netifs)
 {
-    // interface key has to be a unique identifier
-    const char* if_keys[] = { "if1", "if2", "if3", "if4", "if5", "if6", "if7", "if8", "if9" };
-    const int nr_of_netifs = sizeof(if_keys)/sizeof(char*);
-    esp_netif_t *netifs[nr_of_netifs];
-
-    // create 10 wifi stations
-    for (int i=0; i<nr_of_netifs; ++i) {
-        esp_netif_inherent_config_t base_netif_config = { .if_key = if_keys[i]};
-        esp_netif_config_t cfg = { .base = &base_netif_config, .stack = ESP_NETIF_NETSTACK_DEFAULT_WIFI_STA };
-        netifs[i] = esp_netif_new(&cfg);
-        TEST_ASSERT_NOT_NULL(netifs[i]);
-    }
-
-    // there's no AP within created stations
-    TEST_ASSERT_EQUAL(NULL, esp_netif_get_handle_from_ifkey("WIFI_AP_DEF"));
-
-    // check that the created netifs are correctly found by their interface keys and globally listed
-    for (int i=0; i<nr_of_netifs; ++i) {
-        TEST_ASSERT_EQUAL(netifs[i], esp_netif_get_handle_from_ifkey(if_keys[i]));
-        TEST_ASSERT_TRUE(esp_netif_is_netif_listed(netifs[i]));
-    }
-
-    // destroy one by one and check it's been removed
-    for (int i=0; i<nr_of_netifs; ++i) {
-        esp_netif_destroy(netifs[i]);
-        TEST_ASSERT_FALSE(esp_netif_is_netif_listed(netifs[i]));
-    }
-
+    create_delete_multiple_netifs();
 }
 
 static bool desc_matches_with(esp_netif_t *netif, void *ctx)
@@ -147,6 +108,12 @@ static bool desc_matches_with(esp_netif_t *netif, void *ctx)
     return strcmp(ctx, esp_netif_get_desc(netif)) == 0;
 }
 
+/*
+ * This test validates esp_netif_find_if() API by searching in the list of netifs
+ * by their description using the predicate function desc_matches_with() above.
+ * These netifs have the same key and description, so we can use esp_netif_get_handle_from_ifkey()
+ * to validate the test.
+ */
 TEST(esp_netif, find_netifs)
 {
     // Create some interfaces
@@ -181,6 +148,10 @@ TEST(esp_netif, find_netifs)
 }
 
 #ifdef CONFIG_ESP_WIFI_ENABLED
+/*
+ * This test creates a default WiFi station and checks all possible transitions
+ * of the DHCP client used by the station.
+ */
 TEST(esp_netif, dhcp_client_state_transitions_wifi_sta)
 {
     // init default wifi netif
@@ -230,6 +201,10 @@ TEST(esp_netif, dhcp_client_state_transitions_wifi_sta)
 #endif // CONFIG_ESP_WIFI_ENABLED
 
 #if defined(CONFIG_ESP_WIFI_ENABLED) && defined(CONFIG_ESP_WIFI_SOFTAP_SUPPORT)
+/*
+ * This test creates a default WiFi AP and checks all possible transitions
+ * of the DHCP server used by the soft AP.
+ */
 TEST(esp_netif, dhcp_server_state_transitions_wifi_ap)
 {
     // init default wifi netif
@@ -272,6 +247,10 @@ TEST(esp_netif, dhcp_server_state_transitions_wifi_ap)
     nvs_flash_deinit();
 }
 
+/*
+ * This test creates a default mesh interfaces and checks all possible transitions
+ * of the DHCP client and server used by these netifs.
+ */
 TEST(esp_netif, dhcp_server_state_transitions_mesh)
 {
     esp_netif_t *ap = NULL;
@@ -336,6 +315,10 @@ TEST(esp_netif, dhcp_server_state_transitions_mesh)
 #endif // CONFIG_ESP_WIFI_ENABLED && CONFIG_ESP_WIFI_SOFTAP_SUPPORT
 
 #ifdef CONFIG_ESP_WIFI_ENABLED
+/*
+ * This test validates convenience API esp_netif_create_wifi() which creates WiFi station
+ * or API with the specified inherent network config.
+ */
 TEST(esp_netif, create_custom_wifi_interfaces)
 {
     esp_netif_t *ap = NULL;
@@ -449,6 +432,14 @@ static esp_err_t dummy_transmit(void* hd, void *buf, size_t length)
     return ESP_OK;
 }
 
+/*
+ * This test validates the route priority of multiple netifs. It checks that the default route (default netif)
+ * is set correctly for the netifs according to their `route_prio` value and `link_up` state.
+ * - We create 10 netifs with prios: 0, 1, 2, 3, 4, 0, 0, ...., 0 (netifs[nr_of_netifs/2] has max_prio)
+ * - We check the default netif is correct after bringing it down/up, overriding it
+ * - We destroy the default netif and check again
+ * - We destroy the remaining netifs
+ */
 TEST(esp_netif, route_priority)
 {
     test_case_uses_tcpip();
