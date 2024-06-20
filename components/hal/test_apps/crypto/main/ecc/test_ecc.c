@@ -46,6 +46,7 @@ static void ecc_enable_and_reset(void)
 {
     ECC_RCC_ATOMIC() {
         ecc_ll_enable_bus_clock(true);
+        ecc_ll_power_up();
         ecc_ll_reset_register();
     }
 }
@@ -54,6 +55,7 @@ static void ecc_disable(void)
 {
     ECC_RCC_ATOMIC() {
         ecc_ll_enable_bus_clock(false);
+        ecc_ll_power_down();
     }
 }
 

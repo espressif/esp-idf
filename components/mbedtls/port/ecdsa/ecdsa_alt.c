@@ -35,6 +35,7 @@ static void esp_ecdsa_acquire_hardware(void)
 
     ECC_RCC_ATOMIC() {
         ecc_ll_enable_bus_clock(true);
+        ecc_ll_power_up();
         ecc_ll_reset_register();
     }
 
@@ -57,6 +58,7 @@ static void esp_ecdsa_release_hardware(void)
 
     ECC_RCC_ATOMIC() {
         ecc_ll_enable_bus_clock(false);
+        ecc_ll_power_down();
     }
 
 #ifdef SOC_ECDSA_USES_MPI

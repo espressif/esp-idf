@@ -50,11 +50,15 @@ static inline size_t mpi_ll_calculate_hardware_words(size_t words)
 
 static inline void mpi_ll_clear_power_control_bit(void)
 {
+    /* Power up the MPI peripheral */
     REG_CLR_BIT(PCR_RSA_PD_CTRL_REG, PCR_RSA_MEM_PD);
+    REG_CLR_BIT(PCR_RSA_PD_CTRL_REG, PCR_RSA_MEM_FORCE_PD);
 }
 
 static inline void mpi_ll_set_power_control_bit(void)
 {
+    /* Power down the MPI peripheral */
+    REG_CLR_BIT(PCR_RSA_PD_CTRL_REG, PCR_RSA_MEM_FORCE_PU);
     REG_SET_BIT(PCR_RSA_PD_CTRL_REG, PCR_RSA_MEM_PD);
 }
 
