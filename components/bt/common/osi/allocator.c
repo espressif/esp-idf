@@ -213,48 +213,33 @@ char *osi_strdup(const char *str)
 
 void *osi_malloc_func(size_t size)
 {
-#if HEAP_MEMORY_DEBUG
-    void *p;
-#if HEAP_ALLOCATION_FROM_SPIRAM_FIRST
-    p = heap_caps_malloc_prefer(size, 2, MALLOC_CAP_DEFAULT|MALLOC_CAP_SPIRAM, MALLOC_CAP_DEFAULT|MALLOC_CAP_INTERNAL);
-#else
-    p = malloc(size);
-#endif /* #if HEAP_ALLOCATION_FROM_SPIRAM_FIRST */
-    osi_mem_dbg_record(p, size, __func__, __LINE__);
+    void *p = osi_malloc_base(size);
+
+    if (size != 0 && p == NULL) {
+        OSI_TRACE_ERROR("malloc failed (caller=%p size=%u)\n", __builtin_return_address(0), size);
+#if HEAP_ALLOCATION_FAILS_ABORT
+        assert(0);
+#endif
+    }
+
     return p;
-#else
-#if HEAP_ALLOCATION_FROM_SPIRAM_FIRST
-    return heap_caps_malloc_prefer(size, 2, MALLOC_CAP_DEFAULT|MALLOC_CAP_SPIRAM, MALLOC_CAP_DEFAULT|MALLOC_CAP_INTERNAL);
-#else
-    return malloc(size);
-#endif /* #if HEAP_ALLOCATION_FROM_SPIRAM_FIRST */
-#endif /* #if HEAP_MEMORY_DEBUG */
 }
 
 void *osi_calloc_func(size_t size)
 {
-#if HEAP_MEMORY_DEBUG
-    void *p;
-#if HEAP_ALLOCATION_FROM_SPIRAM_FIRST
-    p = heap_caps_calloc_prefer(1, size, 2, MALLOC_CAP_DEFAULT|MALLOC_CAP_SPIRAM, MALLOC_CAP_DEFAULT|MALLOC_CAP_INTERNAL);
-#else
-    p = calloc(1, size);
-#endif /* #if HEAP_ALLOCATION_FROM_SPIRAM_FIRST */
-    osi_mem_dbg_record(p, size, __func__, __LINE__);
+    void *p = osi_calloc_base(size);
+
+    if (size != 0 && p == NULL) {
+        OSI_TRACE_ERROR("calloc failed (caller=%p size=%u)\n", __builtin_return_address(0), size);
+#if HEAP_ALLOCATION_FAILS_ABORT
+        assert(0);
+#endif
+    }
+
     return p;
-#else
-#if HEAP_ALLOCATION_FROM_SPIRAM_FIRST
-    return heap_caps_calloc_prefer(1, size, 2, MALLOC_CAP_DEFAULT|MALLOC_CAP_SPIRAM, MALLOC_CAP_DEFAULT|MALLOC_CAP_INTERNAL);
-#else
-    return calloc(1, size);
-#endif /* #if HEAP_ALLOCATION_FROM_SPIRAM_FIRST */
-#endif /* #if HEAP_MEMORY_DEBUG */
 }
 
 void osi_free_func(void *ptr)
 {
-#if HEAP_MEMORY_DEBUG
-    osi_mem_dbg_clean(ptr, __func__, __LINE__);
-#endif
     free(ptr);
 }

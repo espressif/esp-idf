@@ -1223,3 +1223,10 @@ config BT_BLE_HIGH_DUTY_ADV_INTERVAL
     default n
     help
         This enable BLE high duty advertising interval feature
+
+config BT_ABORT_WHEN_ALLOCATION_FAILS
+    bool "Abort when memory allocation fails in BT/BLE stack"
+    depends on BT_BLUEDROID_ENABLED
+    default n
+    help
+        This enables abort when memory allocation fails
