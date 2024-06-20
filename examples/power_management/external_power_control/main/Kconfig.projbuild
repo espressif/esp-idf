@@ -1,0 +1,308 @@
+menu "Example Configuration"
+
+    menu "GPIO configuration"
+        config EXAMPLE_GPIO_CONTROL_NUM
+            int "Pin for gpio control"
+            default 6  if IDF_TARGET_ESP32S3 || IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32C2 || IDF_TARGET_ESP32C6
+            default 5  if IDF_TARGET_ESP32S2
+            default 4  if IDF_TARGET_ESP32
+            default 10  if IDF_TARGET_ESP32H2
+            default 0
+            range 0 7  if PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && IDF_TARGET_ESP32C6
+            range 7 14 if PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && IDF_TARGET_ESP32H2
+            range 0 39 if IDF_TARGET_ESP32
+            range 0 46 if IDF_TARGET_ESP32S2
+            range 0 48 if IDF_TARGET_ESP32S3
+            range 0 20 if IDF_TARGET_ESP32C2
+            range 0 21 if IDF_TARGET_ESP32C3
+            range 0 30 if IDF_TARGET_ESP32C6
+            range 0 27 if IDF_TARGET_ESP32H2
+            help
+                This option is used to set the pin for gpio control.
+        
+        config EXAMPLE_USE_PULSE_CONTROL
+            bool "Enable GPIO pulse control"
+            default n
+            help
+                This option set the gpio control mode. 
+                If this option is enabled, it is a pulse control mode, otherwise it is a level control mode.
+
+        config EXAMPLE_GPIO_CONTROL_HIGH_LEVEL
+            bool "Enable GPIO high-level control"
+            default n
+            help
+                This option set the gpio control trigger signal, In light sleep, only high or low level wake-up is
+                supported. If this option is enabled, it is a high level wakeup, otherwise it is a low level wakeup.
+
+        config EXAMPLE_USE_INTERNAL_PU_PD
+            bool "Use internal pull up and pull down"
+            default y
+            help
+                This option set the pull-down mode of the gpio. If this option is enabled, 
+                then the internal pull-down is used, otherwise the external access pull-down is used.
+    endmenu
+
+    menu "UART configuration"
+        config EXAMPLE_UART_NUM
+            int "Select the UART to use"
+            default 0
+            range 0 1
+            help
+                This option sets the UART used for the UART wakeup.
+                Although the esp32s3 have three uart, only uart0 and uart1 support uart wakeup.
+        
+        config EXAMPLE_UART_TX_IO_NUM
+            int "Select the UART tx io"
+            default 1 if IDF_TARGET_ESP32 && (!EXAMPLE_UART_NUM)
+            default 43 if IDF_TARGET_ESP32S2 && (!EXAMPLE_UART_NUM)
+            default 43 if IDF_TARGET_ESP32S3 && (!EXAMPLE_UART_NUM)
+            default 20 if IDF_TARGET_ESP32C2 && (!EXAMPLE_UART_NUM)
+            default 21 if IDF_TARGET_ESP32C3 && (!EXAMPLE_UART_NUM)
+            default 16 if IDF_TARGET_ESP32C6 && (!EXAMPLE_UART_NUM)
+            default 24 if IDF_TARGET_ESP32H2 && (!EXAMPLE_UART_NUM)
+            default 10 if IDF_TARGET_ESP32 && EXAMPLE_UART_NUM
+            default 17 if IDF_TARGET_ESP32S2 && EXAMPLE_UART_NUM
+            default 17 if IDF_TARGET_ESP32S3 && EXAMPLE_UART_NUM
+            default -1 if IDF_TARGET_ESP32C2 && EXAMPLE_UART_NUM
+            default -1 if IDF_TARGET_ESP32C3 && EXAMPLE_UART_NUM
+            default -1 if IDF_TARGET_ESP32C6 && EXAMPLE_UART_NUM
+            default -1 if IDF_TARGET_ESP32H2 && EXAMPLE_UART_NUM
+            range -1 39 if IDF_TARGET_ESP32
+            range -1 46 if IDF_TARGET_ESP32S2
+            range -1 48 if IDF_TARGET_ESP32S3
+            range -1 20 if IDF_TARGET_ESP32C2
+            range -1 21 if IDF_TARGET_ESP32C3
+            range -1 30 if IDF_TARGET_ESP32C6
+            range -1 27 if IDF_TARGET_ESP32H2
+            help
+                This option is used to set the tx pin of the uart.
+                The default value is the tx default pin for uart0 or uart1.
+                -1 means no pin is set.
+                Notes:
+                1.The ESP32 must configure uart as the wakeup source using the iomux input; there are no limitation to the other target.
+                2.If you want to select other gpio pins, must check if the pins are available through the datasheet.
+
+        config EXAMPLE_UART_RX_IO_NUM
+            int "Select the UART rx io"
+            default 3 if IDF_TARGET_ESP32 && (!EXAMPLE_UART_NUM)
+            default 44 if IDF_TARGET_ESP32S2 && (!EXAMPLE_UART_NUM)
+            default 44 if IDF_TARGET_ESP32S3 && (!EXAMPLE_UART_NUM)
+            default 19 if IDF_TARGET_ESP32C2 && (!EXAMPLE_UART_NUM)
+            default 20 if IDF_TARGET_ESP32C3 && (!EXAMPLE_UART_NUM)
+            default 17 if IDF_TARGET_ESP32C6 && (!EXAMPLE_UART_NUM)
+            default 23 if IDF_TARGET_ESP32H2 && (!EXAMPLE_UART_NUM)
+            default 9 if IDF_TARGET_ESP32 && EXAMPLE_UART_NUM
+            default 18 if IDF_TARGET_ESP32S2 && EXAMPLE_UART_NUM
+            default 18 if IDF_TARGET_ESP32S3 && EXAMPLE_UART_NUM
+            default -1 if IDF_TARGET_ESP32C2 && EXAMPLE_UART_NUM
+            default -1 if IDF_TARGET_ESP32C3 && EXAMPLE_UART_NUM
+            default -1 if IDF_TARGET_ESP32C6 && EXAMPLE_UART_NUM
+            default -1 if IDF_TARGET_ESP32H2 && EXAMPLE_UART_NUM
+            range -1 39 if IDF_TARGET_ESP32
+            range -1 46 if IDF_TARGET_ESP32S2
+            range -1 48 if IDF_TARGET_ESP32S3
+            range -1 20 if IDF_TARGET_ESP32C2
+            range -1 21 if IDF_TARGET_ESP32C3
+            range -1 30 if IDF_TARGET_ESP32C6
+            range -1 27 if IDF_TARGET_ESP32H2
+            help
+                This option is used to set the rx pin of the uart.
+                The default value is the rx default pin for uart0 or uart1.
+                -1 means no pin is set.
+                Notes:
+                1.The ESP32 must configure uart as the wakeup source using the iomux input; there are no limitation to the other target.
+                2.If you want to select other gpio pins, must check if the pins are available through the datasheet.
+
+        config EXAMPLE_UART_CTS_IO_NUM
+            int "Select the UART cts io"
+            default 19 if IDF_TARGET_ESP32 && (!EXAMPLE_UART_NUM)
+            default 16 if IDF_TARGET_ESP32S2 && (!EXAMPLE_UART_NUM)
+            default 16 if IDF_TARGET_ESP32S3 && (!EXAMPLE_UART_NUM)
+            default -1 if IDF_TARGET_ESP32C2 && (!EXAMPLE_UART_NUM)
+            default -1 if IDF_TARGET_ESP32C3 && (!EXAMPLE_UART_NUM)
+            default -1 if IDF_TARGET_ESP32C6 && (!EXAMPLE_UART_NUM)
+            default -1 if IDF_TARGET_ESP32H2 && (!EXAMPLE_UART_NUM)
+            default 6 if IDF_TARGET_ESP32 && EXAMPLE_UART_NUM
+            default 20 if IDF_TARGET_ESP32S2 && EXAMPLE_UART_NUM
+            default 20 if IDF_TARGET_ESP32S3 && EXAMPLE_UART_NUM
+            default -1 if IDF_TARGET_ESP32C2 && EXAMPLE_UART_NUM
+            default -1 if IDF_TARGET_ESP32C3 && EXAMPLE_UART_NUM
+            default -1 if IDF_TARGET_ESP32C6 && EXAMPLE_UART_NUM
+            default -1 if IDF_TARGET_ESP32H2 && EXAMPLE_UART_NUM
+            range -1 39 if IDF_TARGET_ESP32
+            range -1 46 if IDF_TARGET_ESP32S2
+            range -1 48 if IDF_TARGET_ESP32S3
+            range -1 20 if IDF_TARGET_ESP32C2
+            range -1 21 if IDF_TARGET_ESP32C3
+            range -1 30 if IDF_TARGET_ESP32C6
+            range -1 27 if IDF_TARGET_ESP32H2
+            help
+                This option is used to set the cts pin of the uart.
+                The default value is the cts default pin for uart0 or uart1.
+                -1 means no pin is set.
+                Notes:
+                1.The ESP32 must configure uart as the wakeup source using the iomux input; there are no limitation to the other target.
+                2.If you want to select other gpio pins, must check if the pins are available through the datasheet.
+
+        config EXAMPLE_UART_RTS_IO_NUM
+            int "Select the UART rts io"
+            default 22 if IDF_TARGET_ESP32 && (!EXAMPLE_UART_NUM)
+            default 15 if IDF_TARGET_ESP32S2 && (!EXAMPLE_UART_NUM)
+            default 15 if IDF_TARGET_ESP32S3 && (!EXAMPLE_UART_NUM)
+            default -1 if IDF_TARGET_ESP32C2 && (!EXAMPLE_UART_NUM)
+            default -1 if IDF_TARGET_ESP32C3 && (!EXAMPLE_UART_NUM)
+            default -1 if IDF_TARGET_ESP32C6 && (!EXAMPLE_UART_NUM)
+            default -1 if IDF_TARGET_ESP32H2 && (!EXAMPLE_UART_NUM)
+            default 11 if IDF_TARGET_ESP32 && EXAMPLE_UART_NUM
+            default 19 if IDF_TARGET_ESP32S2 && EXAMPLE_UART_NUM
+            default 19 if IDF_TARGET_ESP32S3 && EXAMPLE_UART_NUM
+            default -1 if IDF_TARGET_ESP32C2 && EXAMPLE_UART_NUM
+            default -1 if IDF_TARGET_ESP32C3 && EXAMPLE_UART_NUM
+            default -1 if IDF_TARGET_ESP32C6 && EXAMPLE_UART_NUM
+            default -1 if IDF_TARGET_ESP32H2 && EXAMPLE_UART_NUM
+            range -1 39 if IDF_TARGET_ESP32
+            range -1 46 if IDF_TARGET_ESP32S2
+            range -1 48 if IDF_TARGET_ESP32S3
+            range -1 20 if IDF_TARGET_ESP32C2
+            range -1 21 if IDF_TARGET_ESP32C3
+            range -1 30 if IDF_TARGET_ESP32C6
+            range -1 27 if IDF_TARGET_ESP32H2
+            help
+                This option is used to set the rts pin of the uart.
+                The default value is the rts default pin for uart0 or uart1.
+                -1 means no pin is set.
+                Notes:
+                1.The ESP32 must configure uart as the wakeup source using the iomux input; there are no limitation to the other target.
+                2.If you want to select other gpio pins, must check if the pins are available through the datasheet.
+        
+        config EXAMPLE_UART_WAKEUP_THRESHOLD
+            int "UART wakeup threshold"
+            default 3
+            range 3 100
+            help
+                This option is used to set the number of pos-edge used for uart wakeup.
+                Note: The minimum number of pos-edge is 3
+
+        config EXAMPLE_SLEEP_TIMEOUT_US
+            int "idle wait time (us)"
+            default 8000000
+            range 1 15000000
+            help
+                This option sets the timeout for the sleep timer.
+    endmenu
+
+    menu "event configuration"
+        config EXAMPLE_EVENT_QUEUE_LEN
+            int "Event queue length"
+            default 5
+            range 1 30
+            help
+                This option is used to set the length of the queue in which events are stored.
+                It is recommended to set it to between 5 and 10. 
+                Because if it is too small, it is easy to cause the system to crash; too big is also useless.
+
+        config EXAMPLE_EVENT_TASK_STACK_SIZE
+            int "Event task`s stack size"
+            default 4096
+            range 1 8192
+            help
+                This option is used to set the stack size of the task that handles the event.
+                When there is extra heap space requested in the task, it should be set larger.
+
+        config EXAMPLE_EVENT_TASK_PRIORITY
+            int "Event task`s priority"
+            default 10
+            range 1 15
+            help
+                This option is used to set the priority of the task.
+                The higher the value, the higher the priority. A value of 10 is usually sufficient.
+    endmenu
+
+    menu "power manager configuration"
+
+        choice EXAMPLE_PM_LOCK_TYPE
+            prompt "Set pm lock"
+            default EXAMPLE_PM_LOCK_TYPE_NO_LIGHT_SLEEP
+            help
+                set lock in pm config.
+
+            config EXAMPLE_PM_LOCK_TYPE_CPU_FREQ_MAX
+                bool "CPU_FREQ_MAX lock"
+            config EXAMPLE_PM_LOCK_TYPE_APB_FREQ_MAX
+                bool "APB_FREQ_MAX lock"
+            config EXAMPLE_PM_LOCK_TYPE_NO_LIGHT_SLEEP
+                bool "NO_LIGHT_SLEEP lock"
+        endchoice
+
+        config EXAMPLE_PM_LOCK_TYPE
+            int
+            default 0 if EXAMPLE_PM_LOCK_TYPE_CPU_FREQ_MAX
+            default 1 if EXAMPLE_PM_LOCK_TYPE_APB_FREQ_MAX
+            default 2 if EXAMPLE_PM_LOCK_TYPE_NO_LIGHT_SLEEP
+
+        choice EXAMPLE_PM_MAX_FREQ_MHZ
+            prompt "Set max freq in pm config"
+            default EXAMPLE_PM_MAX_FREQ_MHZ_96 if IDF_TARGET_ESP32H2
+            default EXAMPLE_PM_MAX_FREQ_MHZ_120 if IDF_TARGET_ESP32C2
+            default EXAMPLE_PM_MAX_FREQ_MHZ_160 if IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32C6
+            default EXAMPLE_PM_MAX_FREQ_MHZ_240
+            help
+                set max freq in pm config.
+
+            config EXAMPLE_PM_MAX_FREQ_MHZ_80
+                bool "80 MHz" if !IDF_TARGET_ESP32H2
+            config EXAMPLE_PM_MAX_FREQ_MHZ_120
+                bool "120 MHz" if IDF_TARGET_ESP32C2
+            config EXAMPLE_PM_MAX_FREQ_MHZ_160
+                bool "160 MHz" if !IDF_TARGET_ESP32H2 && !IDF_TARGET_ESP32C2
+            config EXAMPLE_PM_MAX_FREQ_MHZ_240
+                bool "240 MHz" if !IDF_TARGET_ESP32H2 && !IDF_TARGET_ESP32C2 && !IDF_TARGET_ESP32C3 && !IDF_TARGET_ESP32C6
+
+            config EXAMPLE_PM_MAX_FREQ_MHZ_96
+                bool "96 MHz" if IDF_TARGET_ESP32H2
+            config EXAMPLE_PM_MAX_FREQ_MHZ_64
+                bool "64 MHz" if IDF_TARGET_ESP32H2
+            config EXAMPLE_PM_MAX_FREQ_MHZ_48
+                bool "48 MHz" if IDF_TARGET_ESP32H2
+        endchoice
+
+        config EXAMPLE_PM_MAX_FREQ_MHZ
+            int
+            default 80 if EXAMPLE_PM_MAX_FREQ_MHZ_80
+            default 120 if EXAMPLE_PM_MAX_FREQ_MHZ_120
+            default 160 if EXAMPLE_PM_MAX_FREQ_MHZ_160
+            default 240 if EXAMPLE_PM_MAX_FREQ_MHZ_240
+            default 96 if EXAMPLE_PM_MAX_FREQ_MHZ_96
+            default 64 if EXAMPLE_PM_MAX_FREQ_MHZ_64
+            default 48 if EXAMPLE_PM_MAX_FREQ_MHZ_48
+
+        choice EXAMPLE_PM_MIN_FREQ_MHZ
+            prompt "Set min freq in pm config"
+            default EXAMPLE_PM_MIN_FREQ_MHZ_32 if IDF_TARGET_ESP32H2
+            default EXAMPLE_PM_MIN_FREQ_MHZ_40
+            help
+                set min freq in pm config.
+
+            config EXAMPLE_PM_MIN_FREQ_MHZ_40
+                bool "40 MHz" if !IDF_TARGET_ESP32H2
+            config EXAMPLE_PM_MIN_FREQ_MHZ_80
+                bool "80 MHz" if !IDF_TARGET_ESP32H2
+            config EXAMPLE_PM_MIN_FREQ_MHZ_32
+                bool "32 MHz" if IDF_TARGET_ESP32H2
+            config EXAMPLE_PM_MIN_FREQ_MHZ_48
+                bool "48 MHz" if IDF_TARGET_ESP32H2
+            config EXAMPLE_PM_MIN_FREQ_MHZ_64
+                bool "64 MHz" if IDF_TARGET_ESP32H2
+        endchoice
+
+        config EXAMPLE_PM_MIN_FREQ_MHZ
+            int
+            default 40 if EXAMPLE_PM_MIN_FREQ_MHZ_40
+            default 80 if EXAMPLE_PM_MIN_FREQ_MHZ_80
+            default 32 if EXAMPLE_PM_MIN_FREQ_MHZ_32
+            default 48 if EXAMPLE_PM_MIN_FREQ_MHZ_48
+            default 64 if EXAMPLE_PM_MIN_FREQ_MHZ_64
+
+        endmenu
+
+endmenu
