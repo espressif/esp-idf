@@ -207,10 +207,6 @@ if(CONFIG_LWIP_ENABLE)
         idf_component_optional_requires(PRIVATE openthread)
     endif()
 
-    if(CONFIG_ETH_ENABLED)
-        idf_component_optional_requires(PRIVATE esp_eth)
-    endif()
-
     if(CONFIG_LWIP_DHCP_RESTORE_LAST_IP)
         idf_component_optional_requires(PRIVATE nvs_flash)
     endif()
