@@ -64,8 +64,8 @@
 #define SOC_DIG_SIGN_SUPPORTED          1
 #define SOC_ECC_SUPPORTED               1
 #define SOC_ECC_EXTENDED_MODES_SUPPORTED   1
-#define SOC_ECDSA_SUPPORTED             1
-#define SOC_KEY_MANAGER_SUPPORTED       1
+#define SOC_ECDSA_SUPPORTED             0
+#define SOC_KEY_MANAGER_SUPPORTED       0
 #define SOC_FLASH_ENC_SUPPORTED         1
 #define SOC_SECURE_BOOT_SUPPORTED       1
 #define SOC_BOD_SUPPORTED               1
