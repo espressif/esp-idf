@@ -213,24 +213,36 @@ public class ProvisionLanding extends ManualProvBaseActivity {
 
         ArrayList<String> deviceCaps = provisionManager.getEspDevice().getDeviceCapabilities();
 
-        if (!TextUtils.isEmpty(pop)) {
+        if (deviceCaps != null) {
 
-            provisionManager.getEspDevice().setProofOfPossession(pop);
+            if (!TextUtils.isEmpty(pop)) {
 
-            if (deviceCaps != null && deviceCaps.contains("wifi_scan")) {
-                goToWifiScanListActivity();
+                provisionManager.getEspDevice().setProofOfPossession(pop);
+
+                if (deviceCaps.contains(AppConstants.CAPABILITY_WIFI_SCAN)) {
+                    goToWifiScanListActivity();
+                } else if (deviceCaps.contains(AppConstants.CAPABILITY_THREAD_SCAN)) {
+                    goToThreadScanActivity(true);
+                } else if (deviceCaps.contains(AppConstants.CAPABILITY_THREAD_PROV)) {
+                    goToThreadScanActivity(false);
+                } else {
+                    goToWiFiConfigActivity();
+                }
             } else {
-                goToWiFiConfigActivity();
+                if (!deviceCaps.contains("no_pop") && securityType != AppConstants.SEC_TYPE_0) {
+                    goToPopActivity();
+                } else if (deviceCaps.contains(AppConstants.CAPABILITY_WIFI_SCAN)) {
+                    goToWifiScanListActivity();
+                } else if (deviceCaps.contains(AppConstants.CAPABILITY_THREAD_SCAN)) {
+                    goToThreadScanActivity(true);
+                } else if (deviceCaps.contains(AppConstants.CAPABILITY_THREAD_PROV)) {
+                    goToThreadScanActivity(false);
+                } else {
+                    goToWiFiConfigActivity();
+                }
             }
         } else {
-
-            if (deviceCaps != null && !deviceCaps.contains("no_pop") && securityType != AppConstants.SEC_TYPE_0) {
-                goToPopActivity();
-            } else if (deviceCaps != null && deviceCaps.contains("wifi_scan")) {
-                goToWifiScanListActivity();
-            } else {
-                goToWiFiConfigActivity();
-            }
+            goToWiFiConfigActivity();
         }
     }
 
@@ -246,6 +258,14 @@ public class ProvisionLanding extends ManualProvBaseActivity {
         finish();
         Intent wifiListIntent = new Intent(getApplicationContext(), WiFiScanActivity.class);
         startActivity(wifiListIntent);
+    }
+
+    private void goToThreadScanActivity(boolean scanCapAvailable) {
+
+        finish();
+        Intent threadConfigIntent = new Intent(getApplicationContext(), ThreadConfigActivity.class);
+        threadConfigIntent.putExtra(AppConstants.KEY_THREAD_SCAN_AVAILABLE, scanCapAvailable);
+        startActivity(threadConfigIntent);
     }
 
     private void goToWiFiConfigActivity() {

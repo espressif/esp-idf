@@ -1,3 +1,17 @@
+// Copyright 2024 Espressif Systems (Shanghai) PTE LTD
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package com.espressif.ui.activities;
 
 import android.content.SharedPreferences;
@@ -61,7 +75,7 @@ public class SettingsActivity extends AppCompatActivity {
     public static class SettingsFragment extends PreferenceFragmentCompat {
 
         SwitchPreferenceCompat securityPref;
-        EditTextPreference userNamePref;
+        EditTextPreference userNamePrefWifi, userNamePrefThread;
 
         @Override
         public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
@@ -72,15 +86,18 @@ public class SettingsActivity extends AppCompatActivity {
 
             SharedPreferences sharedPreferences = prefMgr.getSharedPreferences();
             securityPref = prefMgr.findPreference(AppConstants.KEY_SECURITY_TYPE);
-            userNamePref = prefMgr.findPreference(AppConstants.KEY_USER_NAME);
+            userNamePrefWifi = prefMgr.findPreference(AppConstants.KEY_USER_NAME_WIFI);
+            userNamePrefThread = prefMgr.findPreference(AppConstants.KEY_USER_NAME_THREAD);
 
             boolean isSecure = sharedPreferences.getBoolean(AppConstants.KEY_SECURITY_TYPE, true);
             if (isSecure) {
                 securityPref.setSummary(R.string.summary_secured);
-                userNamePref.setVisible(true);
+                userNamePrefWifi.setVisible(true);
+                userNamePrefThread.setVisible(true);
             } else {
                 securityPref.setSummary(R.string.summary_unsecured);
-                userNamePref.setVisible(false);
+                userNamePrefWifi.setVisible(false);
+                userNamePrefThread.setVisible(false);
             }
 
             securityPref.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
@@ -91,10 +108,12 @@ public class SettingsActivity extends AppCompatActivity {
 
                     if (isSecure) {
                         preference.setSummary(R.string.summary_secured);
-                        userNamePref.setVisible(true);
+                        userNamePrefWifi.setVisible(true);
+                        userNamePrefThread.setVisible(true);
                     } else {
                         preference.setSummary(R.string.summary_unsecured);
-                        userNamePref.setVisible(false);
+                        userNamePrefWifi.setVisible(false);
+                        userNamePrefThread.setVisible(false);
                     }
                     return true;
                 }

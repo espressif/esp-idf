@@ -78,6 +78,11 @@
             android:screenOrientation="portrait"
             android:theme="@style/AppTheme.NoActionBar" />
         <activity
+            android:name="com.espressif.ui.activities.ThreadConfigActivity"
+            android:label="@string/title_activity_wifi_scan_list"
+            android:screenOrientation="portrait"
+            android:theme="@style/AppTheme.NoActionBar" />
+        <activity
             android:name="com.espressif.ui.activities.ProofOfPossessionActivity"
             android:label="@string/title_activity_pop"
             android:screenOrientation="portrait"

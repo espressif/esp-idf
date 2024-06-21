@@ -27,7 +27,10 @@ public class AppConstants {
     public static final String KEY_WIFI_PASSWORD = "password";
     public static final String KEY_DEVICE_TYPES = "device_types";
     public static final String KEY_SECURITY_TYPE = "security_type";
-    public static final String KEY_USER_NAME = "sec2_username";
+    public static final String KEY_USER_NAME_WIFI = "sec2_username_wifi";
+    public static final String KEY_USER_NAME_THREAD = "sec2_username_thread";
+    public static final String KEY_THREAD_DATASET = "thread_dataset";
+    public static final String KEY_THREAD_SCAN_AVAILABLE = "thread_scan_available";
 
     public static final String ESP_PREFERENCES = "Esp_Preferences";
 
@@ -40,5 +43,10 @@ public class AppConstants {
     public static final int SEC_TYPE_1 = 1;
     public static final int SEC_TYPE_2 = 2;
     public static final int SEC_TYPE_DEFAULT = SEC_TYPE_2;
-    public static final String DEFAULT_USER_NAME = "wifiprov";
+    public static final String DEFAULT_USER_NAME_WIFI = "wifiprov";
+    public static final String DEFAULT_USER_NAME_THREAD = "threadprov";
+
+    public static final String CAPABILITY_WIFI_SCAN = "wifi_scan";
+    public static final String CAPABILITY_THREAD_SCAN = "thread_scan";
+    public static final String CAPABILITY_THREAD_PROV = "thread_prov";
 }

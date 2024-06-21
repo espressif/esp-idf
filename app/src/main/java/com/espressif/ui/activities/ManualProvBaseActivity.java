@@ -31,6 +31,8 @@ import org.greenrobot.eventbus.EventBus;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.ArrayList;
+
 public class ManualProvBaseActivity extends AppCompatActivity {
 
     private static final String TAG = ManualProvBaseActivity.class.getSimpleName();
@@ -92,8 +94,15 @@ public class ManualProvBaseActivity extends AppCompatActivity {
                         default:
                             securityType = AppConstants.SEC_TYPE_2;
                             provisionManager.getEspDevice().setSecurityType(ESPConstants.SecurityType.SECURITY_2);
-                            if (TextUtils.isEmpty(provisionManager.getEspDevice().getUserName())) {
-                                String userName = sharedPreferences.getString(AppConstants.KEY_USER_NAME, AppConstants.DEFAULT_USER_NAME);
+                            ArrayList<String> deviceCaps = provisionManager.getEspDevice().getDeviceCapabilities();
+
+                            if (deviceCaps != null && deviceCaps.size() > 0
+                                    && (deviceCaps.contains(AppConstants.CAPABILITY_THREAD_SCAN) || deviceCaps.contains(AppConstants.CAPABILITY_THREAD_PROV))
+                            ) {
+                                String userName = sharedPreferences.getString(AppConstants.KEY_USER_NAME_THREAD, AppConstants.DEFAULT_USER_NAME_THREAD);
+                                provisionManager.getEspDevice().setUserName(userName);
+                            } else if (TextUtils.isEmpty(provisionManager.getEspDevice().getUserName())) {
+                                String userName = sharedPreferences.getString(AppConstants.KEY_USER_NAME_WIFI, AppConstants.DEFAULT_USER_NAME_WIFI);
                                 provisionManager.getEspDevice().setUserName(userName);
                             }
                             break;

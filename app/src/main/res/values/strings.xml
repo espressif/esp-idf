@@ -9,6 +9,7 @@
     <string name="title_activity_pop">Proof of Possession</string>
     <string name="title_activity_wifi_scan_list">Select Wi-Fi Network</string>
     <string name="title_activity_wifi_config">Wi-Fi Configuration</string>
+    <string name="title_activity_thread_config">Thread Network Configuration</string>
     <string name="title_activity_provisioning">Provisioning</string>
     <string name="title_activity_settings">Settings</string>
     <string name="title_activity_add_device">Add Device</string>
@@ -30,6 +31,7 @@
     <string name="btn_change_prefix">Change</string>
     <string name="btn_yes">Yes</string>
     <string name="btn_get_permission">Get Permission</string>
+    <string name="btn_try_again">Try Again</string>
 
     <!-- Hint Text -->
     <string name="hint_pop">Proof of Possession</string>
@@ -51,6 +53,8 @@
     <string name="error_prov_step_1">Failed to send Wi-Fi credentials</string>
     <string name="error_prov_step_2">Failed to apply Wi-Fi credentials</string>
     <string name="error_prov_step_3">Failed to provisioning device</string>
+    <string name="error_prov_thread_step_1">Failed to send Thread credentials</string>
+    <string name="error_prov_thread_step_2">Failed to apply Thread credentials</string>
 
     <string name="action_settings">Settings</string>
     <string name="title_activity_provision_landing">Connect to device</string>
@@ -76,6 +80,7 @@
     <string name="progress_scanning">Scanning Devices...</string>
     <string name="progress_get_status">Getting Status</string>
     <string name="progress_loading">Loading...</string>
+    <string name="progress_thread_networks">Searching thread\nnetworks...</string>
 
     <!--Error Messages-->
     <string name="error_title">Error!</string>
@@ -96,6 +101,10 @@
     <string name="error_security_mismatch">Security applied for communicating with device does not match configuration setting</string>
     <string name="error_camera_permission">Camera permission is not given. App will not be able to scan QR code to add device.</string>
     <string name="error_location_permission">Location permission is not given. It will be required to add BLE or SoftAP devices.</string>
+    <string name="error_no_preferred_creds">No thread network added</string>
+    <string name="error_read_preferred_creds_request_denied">You have denied request for reading thread credentials</string>
+    <string name="error_no_thread_network">No Active Thread Border Router</string>
+    <string name="error_dataset_invalid">Invalid Dataset</string>
 
     <string name="prefix">Prefix :</string>
     <string name="hint_prefix">Enter Prefix</string>
@@ -122,7 +131,8 @@
     <!-- Messages Preferences -->
     <string name="device_selection_title">Supported Device Types</string>
     <string name="security_selection_title">Encrypted Communication</string>
-    <string name="username_pref_title">Set Username</string>
+    <string name="username_wifi_pref_title">Sec2 Username for Wi-Fi</string>
+    <string name="username_thread_pref_title">Sec2 Username for Thread</string>
     <string name="username_selection_title">Username</string>
     <string name="summary_secured">Secured</string>
     <string name="summary_unsecured">Unsecured</string>

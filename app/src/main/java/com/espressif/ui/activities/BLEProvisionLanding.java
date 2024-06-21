@@ -325,16 +325,19 @@ public class BLEProvisionLanding extends ManualProvBaseActivity {
     private void processDeviceCapabilities() {
         ArrayList<String> deviceCaps = provisionManager.getEspDevice().getDeviceCapabilities();
 
-        if (deviceCaps != null && !deviceCaps.contains("no_pop") && securityType != AppConstants.SEC_TYPE_0) {
-
-            goToPopActivity();
-
-        } else if (deviceCaps.contains("wifi_scan")) {
-
-            goToWifiScanListActivity();
-
+        if (deviceCaps != null) {
+            if (!deviceCaps.contains("no_pop") && securityType != AppConstants.SEC_TYPE_0) {
+                goToPopActivity();
+            } else if (deviceCaps.contains(AppConstants.CAPABILITY_WIFI_SCAN)) {
+                goToWifiScanListActivity();
+            } else if (deviceCaps.contains(AppConstants.CAPABILITY_THREAD_SCAN)) {
+                goToThreadScanActivity(true);
+            } else if (deviceCaps.contains(AppConstants.CAPABILITY_THREAD_PROV)) {
+                goToThreadScanActivity(false);
+            } else {
+                goToWiFiConfigActivity();
+            }
         } else {
-
             goToWiFiConfigActivity();
         }
     }
@@ -566,6 +569,15 @@ public class BLEProvisionLanding extends ManualProvBaseActivity {
         Intent wifiListIntent = new Intent(getApplicationContext(), WiFiScanActivity.class);
         wifiListIntent.putExtra(AppConstants.KEY_DEVICE_NAME, deviceList.get(position).getName());
         startActivity(wifiListIntent);
+    }
+
+    private void goToThreadScanActivity(boolean scanCapAvailable) {
+
+        finish();
+        Intent threadConfigIntent = new Intent(getApplicationContext(), ThreadConfigActivity.class);
+        threadConfigIntent.putExtra(AppConstants.KEY_DEVICE_NAME, deviceList.get(position).getName());
+        threadConfigIntent.putExtra(AppConstants.KEY_THREAD_SCAN_AVAILABLE, scanCapAvailable);
+        startActivity(threadConfigIntent);
     }
 
     private void goToWiFiConfigActivity() {

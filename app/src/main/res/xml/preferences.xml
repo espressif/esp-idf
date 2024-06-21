@@ -24,8 +24,16 @@
         <EditTextPreference
             app:defaultValue="wifiprov"
             app:iconSpaceReserved="false"
-            app:key="sec2_username"
-            app:title="@string/username_pref_title"
+            app:key="sec2_username_wifi"
+            app:title="@string/username_wifi_pref_title"
+            app:dialogTitle="@string/username_selection_title"
+            app:useSimpleSummaryProvider="true" />
+
+        <EditTextPreference
+            app:defaultValue="threadprov"
+            app:iconSpaceReserved="false"
+            app:key="sec2_username_thread"
+            app:title="@string/username_thread_pref_title"
             app:dialogTitle="@string/username_selection_title"
             app:useSimpleSummaryProvider="true" />
 

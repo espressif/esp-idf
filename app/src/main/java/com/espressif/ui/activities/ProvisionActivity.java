@@ -17,6 +17,7 @@ package com.espressif.ui.activities;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
@@ -50,7 +51,7 @@ public class ProvisionActivity extends AppCompatActivity {
     private CardView btnOk;
     private TextView txtOkBtn;
 
-    private String ssidValue, passphraseValue = "";
+    private String ssidValue, passphraseValue = "", dataset;
     private ESPProvisionManager provisionManager;
     private boolean isProvisioningCompleted = false;
 
@@ -63,6 +64,7 @@ public class ProvisionActivity extends AppCompatActivity {
         Intent intent = getIntent();
         ssidValue = intent.getStringExtra(AppConstants.KEY_WIFI_SSID);
         passphraseValue = intent.getStringExtra(AppConstants.KEY_WIFI_PASSWORD);
+        dataset = intent.getStringExtra(AppConstants.KEY_THREAD_DATASET);
         provisionManager = ESPProvisionManager.getInstance(getApplicationContext());
         initViews();
         EventBus.getDefault().register(this);
@@ -144,157 +146,311 @@ public class ProvisionActivity extends AppCompatActivity {
         tick1.setVisibility(View.GONE);
         progress1.setVisibility(View.VISIBLE);
 
-        provisionManager.getEspDevice().provision(ssidValue, passphraseValue, new ProvisionListener() {
+        if (!TextUtils.isEmpty(dataset)) {
+            provisionManager.getEspDevice().provision(dataset, new ProvisionListener() {
 
-            @Override
-            public void createSessionFailed(Exception e) {
+                @Override
+                public void createSessionFailed(Exception e) {
 
-                runOnUiThread(new Runnable() {
+                    runOnUiThread(new Runnable() {
 
-                    @Override
-                    public void run() {
-                        tick1.setImageResource(R.drawable.ic_error);
-                        tick1.setVisibility(View.VISIBLE);
-                        progress1.setVisibility(View.GONE);
-                        tvErrAtStep1.setVisibility(View.VISIBLE);
-                        tvErrAtStep1.setText(R.string.error_session_creation);
-                        tvProvError.setVisibility(View.VISIBLE);
-                        hideLoading();
-                    }
-                });
-            }
-
-            @Override
-            public void wifiConfigSent() {
-
-                runOnUiThread(new Runnable() {
-
-                    @Override
-                    public void run() {
-                        tick1.setImageResource(R.drawable.ic_checkbox_on);
-                        tick1.setVisibility(View.VISIBLE);
-                        progress1.setVisibility(View.GONE);
-                        tick2.setVisibility(View.GONE);
-                        progress2.setVisibility(View.VISIBLE);
-                    }
-                });
-            }
-
-            @Override
-            public void wifiConfigFailed(Exception e) {
-
-                runOnUiThread(new Runnable() {
-
-                    @Override
-                    public void run() {
-                        tick1.setImageResource(R.drawable.ic_error);
-                        tick1.setVisibility(View.VISIBLE);
-                        progress1.setVisibility(View.GONE);
-                        tvErrAtStep1.setVisibility(View.VISIBLE);
-                        tvErrAtStep1.setText(R.string.error_prov_step_1);
-                        tvProvError.setVisibility(View.VISIBLE);
-                        hideLoading();
-                    }
-                });
-            }
-
-            @Override
-            public void wifiConfigApplied() {
-
-                runOnUiThread(new Runnable() {
-
-                    @Override
-                    public void run() {
-                        tick2.setImageResource(R.drawable.ic_checkbox_on);
-                        tick2.setVisibility(View.VISIBLE);
-                        progress2.setVisibility(View.GONE);
-                        tick3.setVisibility(View.GONE);
-                        progress3.setVisibility(View.VISIBLE);
-                    }
-                });
-            }
-
-            @Override
-            public void wifiConfigApplyFailed(Exception e) {
-
-                runOnUiThread(new Runnable() {
-
-                    @Override
-                    public void run() {
-                        tick2.setImageResource(R.drawable.ic_error);
-                        tick2.setVisibility(View.VISIBLE);
-                        progress2.setVisibility(View.GONE);
-                        tvErrAtStep2.setVisibility(View.VISIBLE);
-                        tvErrAtStep2.setText(R.string.error_prov_step_2);
-                        tvProvError.setVisibility(View.VISIBLE);
-                        hideLoading();
-                    }
-                });
-            }
-
-            @Override
-            public void provisioningFailedFromDevice(final ESPConstants.ProvisionFailureReason failureReason) {
-
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-
-                        switch (failureReason) {
-                            case AUTH_FAILED:
-                                tvErrAtStep3.setText(R.string.error_authentication_failed);
-                                break;
-                            case NETWORK_NOT_FOUND:
-                                tvErrAtStep3.setText(R.string.error_network_not_found);
-                                break;
-                            case DEVICE_DISCONNECTED:
-                            case UNKNOWN:
-                                tvErrAtStep3.setText(R.string.error_prov_step_3);
-                                break;
+                        @Override
+                        public void run() {
+                            tick1.setImageResource(R.drawable.ic_error);
+                            tick1.setVisibility(View.VISIBLE);
+                            progress1.setVisibility(View.GONE);
+                            tvErrAtStep1.setVisibility(View.VISIBLE);
+                            tvErrAtStep1.setText(R.string.error_session_creation);
+                            tvProvError.setVisibility(View.VISIBLE);
+                            hideLoading();
                         }
-                        tick3.setImageResource(R.drawable.ic_error);
-                        tick3.setVisibility(View.VISIBLE);
-                        progress3.setVisibility(View.GONE);
-                        tvErrAtStep3.setVisibility(View.VISIBLE);
-                        tvProvError.setVisibility(View.VISIBLE);
-                        hideLoading();
-                    }
-                });
-            }
+                    });
+                }
 
-            @Override
-            public void deviceProvisioningSuccess() {
+                @Override
+                public void wifiConfigSent() {
 
-                runOnUiThread(new Runnable() {
+                    runOnUiThread(new Runnable() {
 
-                    @Override
-                    public void run() {
-                        isProvisioningCompleted = true;
-                        tick3.setImageResource(R.drawable.ic_checkbox_on);
-                        tick3.setVisibility(View.VISIBLE);
-                        progress3.setVisibility(View.GONE);
-                        hideLoading();
-                    }
-                });
-            }
+                        @Override
+                        public void run() {
+                            tick1.setImageResource(R.drawable.ic_checkbox_on);
+                            tick1.setVisibility(View.VISIBLE);
+                            progress1.setVisibility(View.GONE);
+                            tick2.setVisibility(View.GONE);
+                            progress2.setVisibility(View.VISIBLE);
+                        }
+                    });
+                }
 
-            @Override
-            public void onProvisioningFailed(Exception e) {
+                @Override
+                public void wifiConfigFailed(Exception e) {
 
-                runOnUiThread(new Runnable() {
+                    runOnUiThread(new Runnable() {
 
-                    @Override
-                    public void run() {
-                        tick3.setImageResource(R.drawable.ic_error);
-                        tick3.setVisibility(View.VISIBLE);
-                        progress3.setVisibility(View.GONE);
-                        tvErrAtStep3.setVisibility(View.VISIBLE);
-                        tvErrAtStep3.setText(R.string.error_prov_step_3);
-                        tvProvError.setVisibility(View.VISIBLE);
-                        hideLoading();
-                    }
-                });
-            }
-        });
+                        @Override
+                        public void run() {
+                            tick1.setImageResource(R.drawable.ic_error);
+                            tick1.setVisibility(View.VISIBLE);
+                            progress1.setVisibility(View.GONE);
+                            tvErrAtStep1.setVisibility(View.VISIBLE);
+                            tvErrAtStep1.setText(R.string.error_prov_thread_step_1);
+                            tvProvError.setVisibility(View.VISIBLE);
+                            hideLoading();
+                        }
+                    });
+                }
+
+                @Override
+                public void wifiConfigApplied() {
+
+                    runOnUiThread(new Runnable() {
+
+                        @Override
+                        public void run() {
+                            tick2.setImageResource(R.drawable.ic_checkbox_on);
+                            tick2.setVisibility(View.VISIBLE);
+                            progress2.setVisibility(View.GONE);
+                            tick3.setVisibility(View.GONE);
+                            progress3.setVisibility(View.VISIBLE);
+                        }
+                    });
+                }
+
+                @Override
+                public void wifiConfigApplyFailed(Exception e) {
+
+                    runOnUiThread(new Runnable() {
+
+                        @Override
+                        public void run() {
+                            tick2.setImageResource(R.drawable.ic_error);
+                            tick2.setVisibility(View.VISIBLE);
+                            progress2.setVisibility(View.GONE);
+                            tvErrAtStep2.setVisibility(View.VISIBLE);
+                            tvErrAtStep2.setText(R.string.error_prov_thread_step_2);
+                            tvProvError.setVisibility(View.VISIBLE);
+                            hideLoading();
+                        }
+                    });
+                }
+
+                @Override
+                public void provisioningFailedFromDevice(final ESPConstants.ProvisionFailureReason failureReason) {
+
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+
+                            switch (failureReason) {
+                                case AUTH_FAILED:
+                                    tvErrAtStep3.setText(R.string.error_dataset_invalid);
+                                    break;
+                                case NETWORK_NOT_FOUND:
+                                    tvErrAtStep3.setText(R.string.error_network_not_found);
+                                    break;
+                                case DEVICE_DISCONNECTED:
+                                case UNKNOWN:
+                                    tvErrAtStep3.setText(R.string.error_prov_step_3);
+                                    break;
+                            }
+                            tick3.setImageResource(R.drawable.ic_error);
+                            tick3.setVisibility(View.VISIBLE);
+                            progress3.setVisibility(View.GONE);
+                            tvErrAtStep3.setVisibility(View.VISIBLE);
+                            tvProvError.setVisibility(View.VISIBLE);
+                            hideLoading();
+                        }
+                    });
+                }
+
+                @Override
+                public void deviceProvisioningSuccess() {
+
+                    runOnUiThread(new Runnable() {
+
+                        @Override
+                        public void run() {
+                            isProvisioningCompleted = true;
+                            tick3.setImageResource(R.drawable.ic_checkbox_on);
+                            tick3.setVisibility(View.VISIBLE);
+                            progress3.setVisibility(View.GONE);
+                            hideLoading();
+                        }
+                    });
+                }
+
+                @Override
+                public void onProvisioningFailed(Exception e) {
+
+                    runOnUiThread(new Runnable() {
+
+                        @Override
+                        public void run() {
+                            tick3.setImageResource(R.drawable.ic_error);
+                            tick3.setVisibility(View.VISIBLE);
+                            progress3.setVisibility(View.GONE);
+                            tvErrAtStep3.setVisibility(View.VISIBLE);
+                            tvErrAtStep3.setText(R.string.error_prov_step_3);
+                            tvProvError.setVisibility(View.VISIBLE);
+                            hideLoading();
+                        }
+                    });
+                }
+            });
+        } else {
+            provisionManager.getEspDevice().provision(ssidValue, passphraseValue, new ProvisionListener() {
+
+                @Override
+                public void createSessionFailed(Exception e) {
+
+                    runOnUiThread(new Runnable() {
+
+                        @Override
+                        public void run() {
+                            tick1.setImageResource(R.drawable.ic_error);
+                            tick1.setVisibility(View.VISIBLE);
+                            progress1.setVisibility(View.GONE);
+                            tvErrAtStep1.setVisibility(View.VISIBLE);
+                            tvErrAtStep1.setText(R.string.error_session_creation);
+                            tvProvError.setVisibility(View.VISIBLE);
+                            hideLoading();
+                        }
+                    });
+                }
+
+                @Override
+                public void wifiConfigSent() {
+
+                    runOnUiThread(new Runnable() {
+
+                        @Override
+                        public void run() {
+                            tick1.setImageResource(R.drawable.ic_checkbox_on);
+                            tick1.setVisibility(View.VISIBLE);
+                            progress1.setVisibility(View.GONE);
+                            tick2.setVisibility(View.GONE);
+                            progress2.setVisibility(View.VISIBLE);
+                        }
+                    });
+                }
+
+                @Override
+                public void wifiConfigFailed(Exception e) {
+
+                    runOnUiThread(new Runnable() {
+
+                        @Override
+                        public void run() {
+                            tick1.setImageResource(R.drawable.ic_error);
+                            tick1.setVisibility(View.VISIBLE);
+                            progress1.setVisibility(View.GONE);
+                            tvErrAtStep1.setVisibility(View.VISIBLE);
+                            tvErrAtStep1.setText(R.string.error_prov_step_1);
+                            tvProvError.setVisibility(View.VISIBLE);
+                            hideLoading();
+                        }
+                    });
+                }
+
+                @Override
+                public void wifiConfigApplied() {
+
+                    runOnUiThread(new Runnable() {
+
+                        @Override
+                        public void run() {
+                            tick2.setImageResource(R.drawable.ic_checkbox_on);
+                            tick2.setVisibility(View.VISIBLE);
+                            progress2.setVisibility(View.GONE);
+                            tick3.setVisibility(View.GONE);
+                            progress3.setVisibility(View.VISIBLE);
+                        }
+                    });
+                }
+
+                @Override
+                public void wifiConfigApplyFailed(Exception e) {
+
+                    runOnUiThread(new Runnable() {
+
+                        @Override
+                        public void run() {
+                            tick2.setImageResource(R.drawable.ic_error);
+                            tick2.setVisibility(View.VISIBLE);
+                            progress2.setVisibility(View.GONE);
+                            tvErrAtStep2.setVisibility(View.VISIBLE);
+                            tvErrAtStep2.setText(R.string.error_prov_step_2);
+                            tvProvError.setVisibility(View.VISIBLE);
+                            hideLoading();
+                        }
+                    });
+                }
+
+                @Override
+                public void provisioningFailedFromDevice(final ESPConstants.ProvisionFailureReason failureReason) {
+
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+
+                            switch (failureReason) {
+                                case AUTH_FAILED:
+                                    tvErrAtStep3.setText(R.string.error_authentication_failed);
+                                    break;
+                                case NETWORK_NOT_FOUND:
+                                    tvErrAtStep3.setText(R.string.error_network_not_found);
+                                    break;
+                                case DEVICE_DISCONNECTED:
+                                case UNKNOWN:
+                                    tvErrAtStep3.setText(R.string.error_prov_step_3);
+                                    break;
+                            }
+                            tick3.setImageResource(R.drawable.ic_error);
+                            tick3.setVisibility(View.VISIBLE);
+                            progress3.setVisibility(View.GONE);
+                            tvErrAtStep3.setVisibility(View.VISIBLE);
+                            tvProvError.setVisibility(View.VISIBLE);
+                            hideLoading();
+                        }
+                    });
+                }
+
+                @Override
+                public void deviceProvisioningSuccess() {
+
+                    runOnUiThread(new Runnable() {
+
+                        @Override
+                        public void run() {
+                            isProvisioningCompleted = true;
+                            tick3.setImageResource(R.drawable.ic_checkbox_on);
+                            tick3.setVisibility(View.VISIBLE);
+                            progress3.setVisibility(View.GONE);
+                            hideLoading();
+                        }
+                    });
+                }
+
+                @Override
+                public void onProvisioningFailed(Exception e) {
+
+                    runOnUiThread(new Runnable() {
+
+                        @Override
+                        public void run() {
+                            tick3.setImageResource(R.drawable.ic_error);
+                            tick3.setVisibility(View.VISIBLE);
+                            progress3.setVisibility(View.GONE);
+                            tvErrAtStep3.setVisibility(View.VISIBLE);
+                            tvErrAtStep3.setText(R.string.error_prov_step_3);
+                            tvProvError.setVisibility(View.VISIBLE);
+                            hideLoading();
+                        }
+                    });
+                }
+            });
+        }
     }
 
     private void showLoading() {

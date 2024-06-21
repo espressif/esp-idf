@@ -28,6 +28,7 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
 
+import com.espressif.AppConstants;
 import com.espressif.provisioning.DeviceConnectionEvent;
 import com.espressif.provisioning.ESPConstants;
 import com.espressif.provisioning.ESPProvisionManager;
@@ -131,8 +132,12 @@ public class ProofOfPossessionActivity extends AppCompatActivity {
                             btnNext.setAlpha(1f);
                             progressBar.setVisibility(View.GONE);
                             ArrayList<String> deviceCaps = provisionManager.getEspDevice().getDeviceCapabilities();
-                            if (deviceCaps.contains("wifi_scan")) {
+                            if (deviceCaps.contains(AppConstants.CAPABILITY_WIFI_SCAN)) {
                                 goToWiFiScanListActivity();
+                            } else if (deviceCaps.contains(AppConstants.CAPABILITY_THREAD_SCAN)) {
+                                goToThreadScanActivity(true);
+                            } else if (deviceCaps.contains(AppConstants.CAPABILITY_THREAD_PROV)) {
+                                goToThreadScanActivity(false);
                             } else {
                                 goToWiFiConfigActivity();
                             }
@@ -194,6 +199,15 @@ public class ProofOfPossessionActivity extends AppCompatActivity {
         Intent wifiListIntent = new Intent(getApplicationContext(), WiFiScanActivity.class);
         wifiListIntent.putExtras(getIntent());
         startActivity(wifiListIntent);
+        finish();
+    }
+
+    private void goToThreadScanActivity(boolean scanCapAvailable) {
+
+        Intent threadConfigIntent = new Intent(getApplicationContext(), ThreadConfigActivity.class);
+        threadConfigIntent.putExtras(getIntent());
+        threadConfigIntent.putExtra(AppConstants.KEY_THREAD_SCAN_AVAILABLE, scanCapAvailable);
+        startActivity(threadConfigIntent);
         finish();
     }
 

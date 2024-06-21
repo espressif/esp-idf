@@ -229,10 +229,6 @@ public class AddDeviceActivity extends AppCompatActivity {
 
             case ESPConstants.EVENT_DEVICE_CONNECTED:
 
-                if (TextUtils.isEmpty(provisionManager.getEspDevice().getUserName())) {
-                    String userName = sharedPreferences.getString(AppConstants.KEY_USER_NAME, AppConstants.DEFAULT_USER_NAME);
-                    provisionManager.getEspDevice().setUserName(userName);
-                }
                 Log.d(TAG, "Device Connected Event Received");
                 setSecurityTypeFromVersionInfo();
                 break;
@@ -540,6 +536,14 @@ public class AddDeviceActivity extends AppCompatActivity {
         startActivity(wifiListIntent);
     }
 
+    private void goToThreadScanActivity(boolean scanCapAvailable) {
+
+        finish();
+        Intent threadConfigIntent = new Intent(getApplicationContext(), ThreadConfigActivity.class);
+        threadConfigIntent.putExtra(AppConstants.KEY_THREAD_SCAN_AVAILABLE, scanCapAvailable);
+        startActivity(threadConfigIntent);
+    }
+
     private void goToWiFiConfigActivity() {
 
         finish();
@@ -724,6 +728,17 @@ public class AddDeviceActivity extends AppCompatActivity {
                     default:
                         securityType = AppConstants.SEC_TYPE_2;
                         provisionManager.getEspDevice().setSecurityType(ESPConstants.SecurityType.SECURITY_2);
+                        ArrayList<String> deviceCaps = provisionManager.getEspDevice().getDeviceCapabilities();
+
+                        if (deviceCaps != null && deviceCaps.size() > 0
+                                && (deviceCaps.contains(AppConstants.CAPABILITY_THREAD_SCAN) || deviceCaps.contains(AppConstants.CAPABILITY_THREAD_PROV))
+                        ) {
+                            String userName = sharedPreferences.getString(AppConstants.KEY_USER_NAME_THREAD, AppConstants.DEFAULT_USER_NAME_THREAD);
+                            provisionManager.getEspDevice().setUserName(userName);
+                        } else if (TextUtils.isEmpty(provisionManager.getEspDevice().getUserName())) {
+                            String userName = sharedPreferences.getString(AppConstants.KEY_USER_NAME_WIFI, AppConstants.DEFAULT_USER_NAME_WIFI);
+                            provisionManager.getEspDevice().setUserName(userName);
+                        }
                         break;
                 }
             } else {
@@ -754,8 +769,12 @@ public class AddDeviceActivity extends AppCompatActivity {
 
     private void processDeviceCapabilities() {
         ArrayList<String> deviceCaps = espDevice.getDeviceCapabilities();
-        if (deviceCaps.contains("wifi_scan")) {
+        if (deviceCaps.contains(AppConstants.CAPABILITY_WIFI_SCAN)) {
             goToWiFiScanActivity();
+        } else if (deviceCaps.contains(AppConstants.CAPABILITY_THREAD_SCAN)) {
+            goToThreadScanActivity(true);
+        } else if (deviceCaps.contains(AppConstants.CAPABILITY_THREAD_PROV)) {
+            goToThreadScanActivity(false);
         } else {
             goToWiFiConfigActivity();
         }

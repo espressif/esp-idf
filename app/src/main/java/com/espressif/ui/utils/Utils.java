@@ -24,6 +24,14 @@ import com.espressif.wifi_provisioning.R;
 
 public class Utils {
 
+    public static String byteArrayToDs(byte[] byteArray) {
+        StringBuilder sb = new StringBuilder();
+        for (byte b : byteArray) {
+            sb.append(String.format("%02x", b));
+        }
+        return sb.toString();
+    }
+
     public static void displayDeviceConnectionError(Activity aContext, String msg) {
 
         AlertDialog.Builder builder = new AlertDialog.Builder(aContext);
