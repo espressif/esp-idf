@@ -1343,6 +1343,14 @@ config SOC_PM_PAU_LINK_NUM
     int
     default 4
 
+config SOC_PM_PAU_REGDMA_LINK_MULTI_ADDR
+    bool
+    default y
+
+config SOC_PM_PAU_REGDMA_LINK_WIFIMAC
+    bool
+    default y
+
 config SOC_PM_CPU_RETENTION_BY_SW
     bool
     default y

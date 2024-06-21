@@ -110,6 +110,20 @@ static inline void lp_aon_ll_clear_lpcore_etm_wakeup_flag(void)
     REG_SET_BIT(LP_AON_LPCORE_REG, LP_AON_LPCORE_ETM_WAKEUP_FLAG_CLR);
 }
 
+/**
+ * @brief Set the maximum number of linked lists supported by REGDMA
+ * @param count: the maximum number of regdma link
+ */
+static inline void lp_aon_ll_set_regdma_link_count(int count)
+{
+    HAL_FORCE_MODIFY_U32_REG_FIELD(LP_AON.backup_dma_cfg0, branch_link_length_aon, count);
+}
+
+static inline void lp_aon_ll_set_regdma_link_addr(uint32_t addr)
+{
+    HAL_FORCE_MODIFY_U32_REG_FIELD(LP_AON.backup_dma_cfg2, link_addr_aon, addr);
+}
+
 #ifdef __cplusplus
 }
 #endif

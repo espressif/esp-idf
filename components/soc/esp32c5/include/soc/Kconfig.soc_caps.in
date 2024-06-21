@@ -1219,6 +1219,14 @@ config SOC_PM_CPU_RETENTION_BY_SW
     bool
     default y
 
+config SOC_PM_PAU_LINK_NUM
+    int
+    default 4
+
+config SOC_PM_PAU_REGDMA_LINK_CONFIGURABLE
+    bool
+    default y
+
 config SOC_CLK_RC_FAST_SUPPORT_CALIBRATION
     bool
     default y
