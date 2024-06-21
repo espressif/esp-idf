@@ -257,7 +257,7 @@ F4R4 硬件
 
 .. code-block:: python
 
-    python3 ./espefuse.py -p /dev/<serial_device> --do-not-confirm burn_efuse FLASH_TYPE 1
+    idf.py -p PORT efuse-burn --do-not-confirm FLASH_TYPE 1
 
 .. note::
 

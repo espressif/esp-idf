@@ -12,7 +12,7 @@
     配置 eFuse
     ^^^^^^^^^^^^^^^^
 
-    {IDF_TARGET_NAME} JTAG 接口默认连接至 :doc:`内置 USB_SERIAL_JTAG 外设 <configure-builtin-jtag>`。要使用外部 JTAG 适配器，需将 JTAG 接口切换至 GPIO 管脚。你可以使用 ``espefuse.py`` 工具来烧录 eFuse，以完成接口转换。
+    {IDF_TARGET_NAME} JTAG 接口默认连接至 :doc:`内置 USB_SERIAL_JTAG 外设 <configure-builtin-jtag>`。要使用外部 JTAG 适配器，需将 JTAG 接口切换至 GPIO 管脚。你可以使用 ``idf.py`` 工具来烧录 eFuse，以完成接口转换。
 
     .. only:: esp32c3
 

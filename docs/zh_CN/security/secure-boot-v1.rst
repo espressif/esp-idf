@@ -149,11 +149,11 @@
 
 1. 在 :ref:`project-configuration-menu` 中，选择 ``Bootloader Config`` > :ref:`CONFIG_SECURE_BOOT` > ``CONFIG_SECURE_BOOT_V1_ENABLED`` > :ref:`CONFIG_SECURE_BOOTLOADER_MODE` > ``Reflashable``。
 
-2. 如有需要，按照设备使用的编码方案设置 :ref:`CONFIG_SECURE_BOOTLOADER_KEY_ENCODING`。编码方案将在 ``esptool.py`` 连接到芯片时显示在 ``Features`` 行中，或在 ``espefuse.py summary`` 输出中显示。
+2. 如有需要，按照设备使用的编码方案设置 :ref:`CONFIG_SECURE_BOOTLOADER_KEY_ENCODING`。编码方案将在 ``esptool.py`` 连接到芯片时显示在 ``Features`` 行中，或在 ``idf.py efuse-summary`` 输出中显示。
 
 3. 请按 :ref:`secure-boot-generate-key` 中的步骤生成签名密钥。生成的密钥文件路径必须在 ``Secure Boot Configuration`` 菜单中指定。
 
-4. 运行 ``idf.py bootloader`` 将创建一个二进制密钥文件，该文件派生自用于签名的私钥。同时将打印两组烧录步骤。第一组步骤包括一个 ``espefuse.py burn_key secure_boot_v1 path_to/secure-bootloader-key-xxx.bin`` 命令，用于将引导加载程序密钥写入 eFuse，此密钥仅可烧录一次。第二组步骤可使用预计算的摘要重新烧录引导加载程序，该摘要在构建过程中生成。
+4. 运行 ``idf.py bootloader`` 将创建一个二进制密钥文件，该文件派生自用于签名的私钥。同时将打印两组烧录步骤。第一组步骤包括一个 ``idf.py efuse-burn-key secure_boot_v1 path_to/secure-bootloader-key-xxx.bin`` 命令，用于将引导加载程序密钥写入 eFuse，此密钥仅可烧录一次。第二组步骤可使用预计算的摘要重新烧录引导加载程序，该摘要在构建过程中生成。
 
 5. 从 :ref:`一次性烧录步骤 6 <secure-boot-resume-normal-flashing>` 继续，烧录引导加载程序并启用安全启动。请密切监视控制器日志输出，确保安全启动配置正确无误。
 
