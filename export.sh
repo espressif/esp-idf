@@ -28,20 +28,18 @@ fi
 
 if [ ! -f "${idf_path}/tools/idf.py" ] ||
     [ ! -f "${idf_path}/tools/idf_tools.py" ] ||
-    [ ! -f "${idf_path}/activate.py" ]
+    [ ! -f "${idf_path}/tools/activate.py" ]
 then
-    # Echo command here is not used for printing to the terminal, but as non-empty return value from function.
     echo "Could not detect IDF_PATH. Please set it before sourcing this script:"
     echo "  export IDF_PATH=(add path here)"
     unset idf_path
     return 1
 fi
 
-# TODO Maybe we can use "command -v" to check just for python and python3
 . "${idf_path}/tools/detect_python.sh"
 
 # Evaluate the ESP-IDF environment set up by the activate.py script.
-idf_exports=$("$ESP_PYTHON" "${idf_path}/activate.py" --export)
+idf_exports=$("$ESP_PYTHON" "${idf_path}/tools/activate.py" --export)
 eval "${idf_exports}"
 unset idf_path
 return 0

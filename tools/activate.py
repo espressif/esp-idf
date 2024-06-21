@@ -17,8 +17,8 @@ def die(msg: str) -> None:
     sys.exit(f'error: {msg}')
 
 
-idf_path = os.path.realpath(os.path.dirname(__file__))
-idf_tools_path = os.path.join(idf_path, 'tools')
+idf_tools_path = os.path.realpath(os.path.dirname(__file__))
+idf_path = os.path.dirname(idf_tools_path)
 sys.path.insert(0, idf_tools_path)
 
 try:
@@ -38,6 +38,6 @@ os.environ['IDF_PYTHON_ENV_PATH'] = idf_python_env_path
 os.environ['ESP_IDF_VERSION'] = idf_version
 
 try:
-    run([virtualenv_python, os.path.join(idf_path, 'activate_venv.py')] + sys.argv[1:], check=True)
+    run([virtualenv_python, os.path.join(idf_path, 'tools', 'export_utils', 'activate_venv.py')] + sys.argv[1:], check=True)
 except (OSError, SubprocessError):
     die(f'Activation script failed')
