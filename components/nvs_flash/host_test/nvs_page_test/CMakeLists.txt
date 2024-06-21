@@ -11,21 +11,15 @@ project(test_nvs_page_host)
 
 
 add_custom_command(
-    OUTPUT "${CMAKE_CURRENT_SOURCE_DIR}/build/coverage.info"
-    WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/build"
-    COMMAND lcov --capture --directory . --output-file coverage.info
-    COMMENT "Create coverage report"
-    )
-
-add_custom_command(
-    OUTPUT "${CMAKE_CURRENT_SOURCE_DIR}/build/coverage_report/"
-    DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/build/coverage.info"
-    WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/build"
-    COMMAND genhtml coverage.info --output-directory coverage_report/
-    COMMENT "Turn coverage report into html-based visualization"
+    OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/coverage_report/index.html"
+    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
+    COMMAND gcovr --root $ENV{IDF_PATH}/components/nvs_flash --html-details
+    --exclude ${CMAKE_CURRENT_SOURCE_DIR}/managed_components/*
+    -o ${CMAKE_CURRENT_BINARY_DIR}/coverage_report/index.html ${CMAKE_CURRENT_BINARY_DIR}
+    COMMENT "Generate coverage report"
     )
 
 add_custom_target(coverage
-    WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/build"
-    DEPENDS "coverage_report/"
+    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
+    DEPENDS "coverage_report/index.html"
     )
