@@ -19,10 +19,11 @@ To run this example, you should have an ESP32-C6 based development board and a h
 
 **Note:** The following pin assignments are used by default.
 
-|                         | Rx    | Tx    |
-| ----------------------- | ------| ------|
-| ESP32-C6                | GPIO4 | GPIO5 |
-| Host machine            | Tx    | Rx    |
+|                         | Rx     | Tx     |
+| ----------------------- | -------| -------|
+| ESP32-C6                | GPIO4  | GPIO5  |
+| ESP32-P4                | GPIO15 | GPIO14 |
+| Host machine            | Tx     | Rx     |
 
 ### Build and Flash
 
