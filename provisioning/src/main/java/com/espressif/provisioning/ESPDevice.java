@@ -61,9 +61,9 @@ import java.util.List;
 import java.util.UUID;
 
 import espressif.Constants;
-import espressif.WifiConfig;
-import espressif.WifiConstants;
-import espressif.WifiScan;
+import espressif.NetworkConfig;
+import espressif.NetworkConstants;
+import espressif.NetworkScan;
 
 /**
  * ESPDevice class to hold device information. This will give facility to connect device, send data to device and
@@ -521,6 +521,38 @@ public class ESPDevice {
     }
 
     /**
+     * Send scan command to device to get available Thread networks.
+     *
+     * @param wifiScanListener WiFiScanListener to get callbacks of scanning networks.
+     */
+    public void scanThreadNetworks(final WiFiScanListener wifiScanListener) {
+
+        Log.d(TAG, "Send Thread scan command to device");
+        this.wifiScanListener = wifiScanListener;
+
+        if (session == null || !session.isEstablished()) {
+
+            initSession(new ResponseListener() {
+
+                @Override
+                public void onSuccess(byte[] returnData) {
+                    startThreadNetworkScan();
+                }
+
+                @Override
+                public void onFailure(Exception e) {
+                    e.printStackTrace();
+                    if (wifiScanListener != null) {
+                        wifiScanListener.onWiFiScanFailed(new RuntimeException("Failed to create session."));
+                    }
+                }
+            });
+        } else {
+            startThreadNetworkScan();
+        }
+    }
+
+    /**
      * Send data to custom endpoint of the device.
      *
      * @param path     Endpoint.
@@ -584,6 +616,39 @@ public class ESPDevice {
             });
         } else {
             sendWiFiConfig(ssid, passphrase, provisionListener);
+        }
+    }
+
+    /**
+     * Send Thread credentials to device for provisioning.
+     *
+     * @param activeDataset     Thread dataset of a thread network which is to be configure in device.
+     * @param provisionListener Listener for provisioning callbacks.
+     */
+    public void provision(final String activeDataset, final ProvisionListener provisionListener) {
+
+        this.provisionListener = provisionListener;
+
+        if (session == null || !session.isEstablished()) {
+
+            initSession(new ResponseListener() {
+
+                @Override
+                public void onSuccess(byte[] returnData) {
+                    sendThreadConfig(activeDataset, provisionListener);
+                }
+
+                @Override
+                public void onFailure(Exception e) {
+                    e.printStackTrace();
+                    disableOnlyWifiNetwork();
+                    if (provisionListener != null) {
+                        provisionListener.createSessionFailed(new RuntimeException("Failed to create session."));
+                    }
+                }
+            });
+        } else {
+            sendThreadConfig(activeDataset, provisionListener);
         }
     }
 
@@ -724,6 +789,49 @@ public class ESPDevice {
         });
     }
 
+    private void startThreadNetworkScan() {
+
+        Log.d(TAG, "Start thread network scan");
+        totalCount = 0;
+        startIndex = 0;
+        wifiApList = new ArrayList<>();
+        byte[] scanCommand = MessengeHelper.prepareThreadScanMsg();
+
+        session.sendDataToDevice(ESPConstants.HANDLER_PROV_SCAN, scanCommand, new ResponseListener() {
+
+            @Override
+            public void onSuccess(byte[] returnData) {
+
+                processStartThreadScanResponse(returnData);
+
+                byte[] getScanStatusCmd = MessengeHelper.prepareGetThreadScanStatusMsg();
+                session.sendDataToDevice(ESPConstants.HANDLER_PROV_SCAN, getScanStatusCmd, new ResponseListener() {
+
+                    @Override
+                    public void onSuccess(byte[] returnData) {
+                        processThreadStatusResponse(returnData);
+                    }
+
+                    @Override
+                    public void onFailure(Exception e) {
+                        e.printStackTrace();
+                        if (wifiScanListener != null) {
+                            wifiScanListener.onWiFiScanFailed(new RuntimeException("Failed to send thread scan command."));
+                        }
+                    }
+                });
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+                e.printStackTrace();
+                if (wifiScanListener != null) {
+                    wifiScanListener.onWiFiScanFailed(new RuntimeException("Failed to send thread scan command."));
+                }
+            }
+        });
+    }
+
     private void getFullWiFiList() {
 
         Log.d(TAG, "Total count : " + totalCount + " and start index is : " + startIndex);
@@ -746,6 +854,33 @@ public class ESPDevice {
 
             } else {
                 Log.d(TAG, "Nothing to do. Wifi list completed.");
+                completeWifiList();
+            }
+        }
+    }
+
+    private void getFullThreadList() {
+
+        Log.d(TAG, "Total count : " + totalCount + " and start index is : " + startIndex);
+
+        if (totalCount < 4) {
+
+            getThreadScanList(0, totalCount);
+
+        } else {
+
+            int temp = totalCount - startIndex;
+
+            if (temp > 0) {
+
+                if (temp > 4) {
+                    getThreadScanList(startIndex, 4);
+                } else {
+                    getThreadScanList(startIndex, temp);
+                }
+
+            } else {
+                Log.d(TAG, "Nothing to do. Thread list completed.");
                 completeWifiList();
             }
         }
@@ -774,6 +909,34 @@ public class ESPDevice {
                 e.printStackTrace();
                 if (wifiScanListener != null) {
                     wifiScanListener.onWiFiScanFailed(new RuntimeException("Failed to get Wi-Fi Networks."));
+                }
+            }
+        });
+    }
+
+    private void getThreadScanList(int start, int count) {
+
+        Log.d(TAG, "Getting " + count + " Thread networks");
+
+        if (count <= 0) {
+            completeWifiList();
+            return;
+        }
+
+        byte[] data = MessengeHelper.prepareGetThreadScanListMsg(start, count);
+        session.sendDataToDevice(ESPConstants.HANDLER_PROV_SCAN, data, new ResponseListener() {
+
+            @Override
+            public void onSuccess(byte[] returnData) {
+                Log.d(TAG, "Successfully got thread networks");
+                processGetThreadNetworks(returnData);
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+                e.printStackTrace();
+                if (wifiScanListener != null) {
+                    wifiScanListener.onWiFiScanFailed(new RuntimeException("Failed to get Thread Networks."));
                 }
             }
         });
@@ -822,6 +985,42 @@ public class ESPDevice {
         });
     }
 
+    private void sendThreadConfig(final String activeDataset, final ProvisionListener provisionListener) {
+
+        byte[] scanCommand = MessengeHelper.prepareThreadConfigMsg(activeDataset);
+
+        session.sendDataToDevice(ESPConstants.HANDLER_PROV_CONFIG, scanCommand, new ResponseListener() {
+
+            @Override
+            public void onSuccess(byte[] returnData) {
+
+                Constants.Status status = processThreadConfigResponse(returnData);
+                if (provisionListener != null) {
+                    if (status != Constants.Status.Success) {
+                        provisionListener.wifiConfigFailed(new RuntimeException("Failed to send wifi credentials to device"));
+                    } else {
+                        provisionListener.wifiConfigSent();
+                    }
+                }
+
+                if (status == Constants.Status.Success) {
+                    applyThreadConfig();
+                } else {
+                    disableOnlyWifiNetwork();
+                }
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+                e.printStackTrace();
+                disableOnlyWifiNetwork();
+                if (provisionListener != null) {
+                    provisionListener.wifiConfigFailed(new RuntimeException("Failed to send thread credentials to device"));
+                }
+            }
+        });
+    }
+
     private void applyWiFiConfig() {
 
         byte[] scanCommand = MessengeHelper.prepareApplyWiFiConfigMsg();
@@ -863,6 +1062,47 @@ public class ESPDevice {
         });
     }
 
+    private void applyThreadConfig() {
+
+        byte[] scanCommand = MessengeHelper.prepareApplyThreadConfigMsg();
+
+        session.sendDataToDevice(ESPConstants.HANDLER_PROV_CONFIG, scanCommand, new ResponseListener() {
+
+            @Override
+            public void onSuccess(byte[] returnData) {
+
+                Constants.Status status = processApplyThreadConfigResponse(returnData);
+
+                if (status == Constants.Status.Success) {
+                    if (provisionListener != null) {
+                        provisionListener.wifiConfigApplied();
+                    }
+
+                    try {
+                        Thread.sleep(2000);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                    pollForThreadConnectionStatus();
+                } else {
+                    disableOnlyWifiNetwork();
+                    if (provisionListener != null) {
+                        provisionListener.wifiConfigApplyFailed(new RuntimeException("Failed to apply thread credentials"));
+                    }
+                }
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+                e.printStackTrace();
+                disableOnlyWifiNetwork();
+                if (provisionListener != null) {
+                    provisionListener.wifiConfigApplyFailed(new RuntimeException("Failed to apply thread credentials"));
+                }
+            }
+        });
+    }
+
     private void pollForWifiConnectionStatus() {
 
         byte[] message = MessengeHelper.prepareGetWiFiConfigStatusMsg();
@@ -872,10 +1112,10 @@ public class ESPDevice {
             public void onSuccess(byte[] returnData) {
 
                 Object[] statuses = processProvisioningStatusResponse(returnData);
-                WifiConstants.WifiStationState wifiStationState = (WifiConstants.WifiStationState) statuses[0];
-                WifiConstants.WifiConnectFailedReason failedReason = (WifiConstants.WifiConnectFailedReason) statuses[1];
+                NetworkConstants.WifiStationState wifiStationState = (NetworkConstants.WifiStationState) statuses[0];
+                NetworkConstants.WifiConnectFailedReason failedReason = (NetworkConstants.WifiConnectFailedReason) statuses[1];
 
-                if (wifiStationState == WifiConstants.WifiStationState.Connected) {
+                if (wifiStationState == NetworkConstants.WifiStationState.Connected) {
 
                     // Provision success
                     if (provisionListener != null) {
@@ -884,7 +1124,7 @@ public class ESPDevice {
                     session = null;
                     disableOnlyWifiNetwork();
 
-                } else if (wifiStationState == WifiConstants.WifiStationState.Disconnected) {
+                } else if (wifiStationState == NetworkConstants.WifiStationState.Disconnected) {
 
                     // Device disconnected but Provision may got success / failure
                     if (provisionListener != null) {
@@ -893,7 +1133,7 @@ public class ESPDevice {
                     session = null;
                     disableOnlyWifiNetwork();
 
-                } else if (wifiStationState == WifiConstants.WifiStationState.Connecting) {
+                } else if (wifiStationState == NetworkConstants.WifiStationState.Connecting) {
 
                     try {
                         sleep(5000);
@@ -906,11 +1146,79 @@ public class ESPDevice {
                     }
                 } else {
 
-                    if (failedReason == WifiConstants.WifiConnectFailedReason.AuthError) {
+                    if (failedReason == NetworkConstants.WifiConnectFailedReason.AuthError) {
 
                         provisionListener.provisioningFailedFromDevice(ESPConstants.ProvisionFailureReason.AUTH_FAILED);
 
-                    } else if (failedReason == WifiConstants.WifiConnectFailedReason.NetworkNotFound) {
+                    } else if (failedReason == NetworkConstants.WifiConnectFailedReason.WifiNetworkNotFound) {
+
+                        provisionListener.provisioningFailedFromDevice(ESPConstants.ProvisionFailureReason.NETWORK_NOT_FOUND);
+
+                    } else {
+                        provisionListener.provisioningFailedFromDevice(ESPConstants.ProvisionFailureReason.UNKNOWN);
+                    }
+                    session = null;
+                    disableOnlyWifiNetwork();
+                }
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+                e.printStackTrace();
+                disableOnlyWifiNetwork();
+                provisionListener.onProvisioningFailed(new RuntimeException("Provisioning Failed"));
+            }
+        });
+    }
+
+    private void pollForThreadConnectionStatus() {
+
+        byte[] message = MessengeHelper.prepareGetThreadConfigStatusMsg();
+        session.sendDataToDevice(ESPConstants.HANDLER_PROV_CONFIG, message, new ResponseListener() {
+
+            @Override
+            public void onSuccess(byte[] returnData) {
+
+                Object[] statuses = processThreadProvisioningStatusResponse(returnData);
+                NetworkConstants.ThreadNetworkState threadNetworkState = (NetworkConstants.ThreadNetworkState) statuses[0];
+                NetworkConstants.ThreadAttachFailedReason failedReason = (NetworkConstants.ThreadAttachFailedReason) statuses[1];
+
+                if (threadNetworkState == NetworkConstants.ThreadNetworkState.Attached) {
+
+                    // Provision success
+                    if (provisionListener != null) {
+                        provisionListener.deviceProvisioningSuccess();
+                    }
+                    session = null;
+                    disableOnlyWifiNetwork();
+
+                } else if (threadNetworkState == NetworkConstants.ThreadNetworkState.Dettached) {
+
+                    // Device disconnected but Provision may got success / failure
+                    if (provisionListener != null) {
+                        provisionListener.provisioningFailedFromDevice(ESPConstants.ProvisionFailureReason.DEVICE_DISCONNECTED);
+                    }
+                    session = null;
+                    disableOnlyWifiNetwork();
+
+                } else if (threadNetworkState == NetworkConstants.ThreadNetworkState.Attaching) {
+
+                    try {
+                        sleep(5000);
+                        pollForThreadConnectionStatus();
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                        session = null;
+                        disableOnlyWifiNetwork();
+                        provisionListener.onProvisioningFailed(new RuntimeException("Provisioning Failed"));
+                    }
+                } else {
+
+                    if (failedReason == NetworkConstants.ThreadAttachFailedReason.DatasetInvalid) {
+
+                        provisionListener.provisioningFailedFromDevice(ESPConstants.ProvisionFailureReason.AUTH_FAILED);
+
+                    } else if (failedReason == NetworkConstants.ThreadAttachFailedReason.ThreadNetworkNotFound) {
 
                         provisionListener.provisioningFailedFromDevice(ESPConstants.ProvisionFailureReason.NETWORK_NOT_FOUND);
 
@@ -936,8 +1244,21 @@ public class ESPDevice {
         Log.d(TAG, "Process Wi-Fi start scan command response");
 
         try {
-            WifiScan.WiFiScanPayload payload = WifiScan.WiFiScanPayload.parseFrom(responseData);
-            WifiScan.RespScanStart response = WifiScan.RespScanStart.parseFrom(payload.toByteArray());
+            NetworkScan.NetworkScanPayload payload = NetworkScan.NetworkScanPayload.parseFrom(responseData);
+            NetworkScan.RespScanWifiStart response = NetworkScan.RespScanWifiStart.parseFrom(payload.toByteArray());
+            // TODO Proto should send status as ok started or failed
+        } catch (InvalidProtocolBufferException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void processStartThreadScanResponse(byte[] responseData) {
+
+        Log.d(TAG, "Process Thread start scan command response");
+
+        try {
+            NetworkScan.NetworkScanPayload payload = NetworkScan.NetworkScanPayload.parseFrom(responseData);
+            NetworkScan.RespScanThreadStart response = NetworkScan.RespScanThreadStart.parseFrom(payload.toByteArray());
             // TODO Proto should send status as ok started or failed
         } catch (InvalidProtocolBufferException e) {
             e.printStackTrace();
@@ -948,9 +1269,10 @@ public class ESPDevice {
 
         Log.d(TAG, "Process Wi-Fi scan status command response");
         try {
-            WifiScan.WiFiScanPayload payload = WifiScan.WiFiScanPayload.parseFrom(responseData);
-            WifiScan.RespScanStatus response = payload.getRespScanStatus();
+            NetworkScan.NetworkScanPayload payload = NetworkScan.NetworkScanPayload.parseFrom(responseData);
+            NetworkScan.RespScanWifiStatus response = payload.getRespScanWifiStatus();
             boolean scanFinished = response.getScanFinished();
+            Log.d(TAG, "scanFinished : " + scanFinished);
 
             if (scanFinished) {
                 totalCount = response.getResultCount();
@@ -968,11 +1290,37 @@ public class ESPDevice {
         }
     }
 
+    private void processThreadStatusResponse(byte[] responseData) {
+
+        Log.d(TAG, "Process Thread scan status command response");
+        try {
+            NetworkScan.NetworkScanPayload payload = NetworkScan.NetworkScanPayload.parseFrom(responseData);
+            NetworkScan.RespScanThreadStatus response = payload.getRespScanThreadStatus();
+            boolean scanFinished = response.getScanFinished();
+            Log.d(TAG, "scanFinished : " + scanFinished);
+
+            if (scanFinished) {
+                totalCount = response.getResultCount();
+                getFullThreadList();
+                ;
+            } else {
+                // TODO Error case
+            }
+
+        } catch (InvalidProtocolBufferException e) {
+
+            e.printStackTrace();
+            if (wifiScanListener != null) {
+                wifiScanListener.onWiFiScanFailed(new RuntimeException("Failed to get Wi-Fi status."));
+            }
+        }
+    }
+
     private void processGetSSIDs(byte[] responseData) {
 
         try {
-            WifiScan.WiFiScanPayload payload = WifiScan.WiFiScanPayload.parseFrom(responseData);
-            final WifiScan.RespScanResult response = payload.getRespScanResult();
+            NetworkScan.NetworkScanPayload payload = NetworkScan.NetworkScanPayload.parseFrom(responseData);
+            final NetworkScan.RespScanWifiResult response = payload.getRespScanWifiResult();
 
             Log.d(TAG, "Response count : " + response.getEntriesCount());
 
@@ -1028,12 +1376,83 @@ public class ESPDevice {
         }
     }
 
+    private void processGetThreadNetworks(byte[] responseData) {
+
+        try {
+            NetworkScan.NetworkScanPayload payload = NetworkScan.NetworkScanPayload.parseFrom(responseData);
+            final NetworkScan.RespScanThreadResult response = payload.getRespScanThreadResult();
+
+            Log.d(TAG, "Response count : " + response.getEntriesCount());
+
+            for (int i = 0; i < response.getEntriesCount(); i++) {
+
+                Log.d(TAG, "Network Name : " + response.getEntries(i).getNetworkName());
+                String ssid = response.getEntries(i).getNetworkName();
+                int rssi = response.getEntries(i).getRssi();
+                boolean isAvailable = false;
+
+                for (int index = 0; index < wifiApList.size(); index++) {
+
+                    if (ssid.equals(wifiApList.get(index).getWifiName())) {
+
+                        isAvailable = true;
+
+                        if (wifiApList.get(index).getRssi() < rssi) {
+                            wifiApList.get(index).setRssi(rssi);
+                        }
+                        break;
+                    }
+                }
+
+                if (!isAvailable) {
+
+                    WiFiAccessPoint wifiAp = new WiFiAccessPoint();
+                    wifiAp.setWifiName(ssid);
+                    wifiAp.setRssi(response.getEntries(i).getRssi());
+                    wifiAp.setSecurity(0);
+                    wifiApList.add(wifiAp);
+                }
+
+                Log.d(TAG, "Size of  list : " + wifiApList.size());
+            }
+
+            startIndex = startIndex + 4;
+
+            int temp = totalCount - startIndex;
+
+            if (temp > 0) {
+
+                getFullThreadList();
+
+            } else {
+
+                Log.e(TAG, "Thread LIST Completed");
+                completeWifiList();
+            }
+        } catch (InvalidProtocolBufferException e) {
+
+            e.printStackTrace();
+        }
+    }
+
     private Constants.Status processWifiConfigResponse(byte[] responseData) {
 
         Constants.Status status = Constants.Status.InvalidSession;
         try {
-            WifiConfig.WiFiConfigPayload wiFiConfigPayload = WifiConfig.WiFiConfigPayload.parseFrom(responseData);
-            status = wiFiConfigPayload.getRespSetConfig().getStatus();
+            NetworkConfig.NetworkConfigPayload wiFiConfigPayload = NetworkConfig.NetworkConfigPayload.parseFrom(responseData);
+            status = wiFiConfigPayload.getRespSetWifiConfig().getStatus();
+        } catch (InvalidProtocolBufferException e) {
+            e.printStackTrace();
+        }
+        return status;
+    }
+
+    private Constants.Status processThreadConfigResponse(byte[] responseData) {
+
+        Constants.Status status = Constants.Status.InvalidSession;
+        try {
+            NetworkConfig.NetworkConfigPayload wiFiConfigPayload = NetworkConfig.NetworkConfigPayload.parseFrom(responseData);
+            status = wiFiConfigPayload.getRespSetThreadConfig().getStatus();
         } catch (InvalidProtocolBufferException e) {
             e.printStackTrace();
         }
@@ -1043,8 +1462,19 @@ public class ESPDevice {
     private Constants.Status processApplyConfigResponse(byte[] responseData) {
         Constants.Status status = Constants.Status.InvalidSession;
         try {
-            WifiConfig.WiFiConfigPayload wiFiConfigPayload = WifiConfig.WiFiConfigPayload.parseFrom(responseData);
-            status = wiFiConfigPayload.getRespApplyConfig().getStatus();
+            NetworkConfig.NetworkConfigPayload wiFiConfigPayload = NetworkConfig.NetworkConfigPayload.parseFrom(responseData);
+            status = wiFiConfigPayload.getRespApplyWifiConfig().getStatus();
+        } catch (InvalidProtocolBufferException e) {
+            e.printStackTrace();
+        }
+        return status;
+    }
+
+    private Constants.Status processApplyThreadConfigResponse(byte[] responseData) {
+        Constants.Status status = Constants.Status.InvalidSession;
+        try {
+            NetworkConfig.NetworkConfigPayload threadConfigPayload = NetworkConfig.NetworkConfigPayload.parseFrom(responseData);
+            status = threadConfigPayload.getRespApplyThreadConfig().getStatus();
         } catch (InvalidProtocolBufferException e) {
             e.printStackTrace();
         }
@@ -1053,21 +1483,40 @@ public class ESPDevice {
 
     private Object[] processProvisioningStatusResponse(byte[] responseData) {
 
-        WifiConstants.WifiStationState wifiStationState = WifiConstants.WifiStationState.Disconnected;
-        WifiConstants.WifiConnectFailedReason failedReason = WifiConstants.WifiConnectFailedReason.UNRECOGNIZED;
+        NetworkConstants.WifiStationState wifiStationState = NetworkConstants.WifiStationState.Disconnected;
+        NetworkConstants.WifiConnectFailedReason failedReason = NetworkConstants.WifiConnectFailedReason.UNRECOGNIZED;
 
         if (responseData == null) {
             return new Object[]{wifiStationState, failedReason};
         }
 
         try {
-            WifiConfig.WiFiConfigPayload wiFiConfigPayload = WifiConfig.WiFiConfigPayload.parseFrom(responseData);
-            wifiStationState = wiFiConfigPayload.getRespGetStatus().getStaState();
-            failedReason = wiFiConfigPayload.getRespGetStatus().getFailReason();
+            NetworkConfig.NetworkConfigPayload wiFiConfigPayload = NetworkConfig.NetworkConfigPayload.parseFrom(responseData);
+            wifiStationState = wiFiConfigPayload.getRespGetWifiStatus().getWifiStaState();
+            failedReason = wiFiConfigPayload.getRespGetWifiStatus().getWifiFailReason();
         } catch (InvalidProtocolBufferException e) {
             e.printStackTrace();
         }
         return new Object[]{wifiStationState, failedReason};
+    }
+
+    private Object[] processThreadProvisioningStatusResponse(byte[] responseData) {
+
+        NetworkConstants.ThreadNetworkState threadNetworkState = NetworkConstants.ThreadNetworkState.Dettached;
+        NetworkConstants.ThreadAttachFailedReason failedReason = NetworkConstants.ThreadAttachFailedReason.UNRECOGNIZED;
+
+        if (responseData == null) {
+            return new Object[]{threadNetworkState, failedReason};
+        }
+
+        try {
+            NetworkConfig.NetworkConfigPayload threadConfigPayload = NetworkConfig.NetworkConfigPayload.parseFrom(responseData);
+            threadNetworkState = threadConfigPayload.getRespGetThreadStatus().getThreadState();
+            failedReason = threadConfigPayload.getRespGetThreadStatus().getThreadFailReason();
+        } catch (InvalidProtocolBufferException e) {
+            e.printStackTrace();
+        }
+        return new Object[]{threadNetworkState, failedReason};
     }
 
     private int deviceConnectionReqCount = 0;

@@ -1,0 +1,57 @@
+syntax = "proto3";
+package espressif;
+
+import "constants.proto";
+import "network_constants.proto";
+
+message CmdCtrlWifiReset {
+}
+
+message RespCtrlWifiReset {
+}
+
+message CmdCtrlWifiReprov {
+}
+
+message RespCtrlWifiReprov{
+}
+
+message CmdCtrlThreadReset {
+}
+
+message RespCtrlThreadReset {
+}
+
+message CmdCtrlThreadReprov {
+}
+
+message RespCtrlThreadReprov{
+}
+
+enum NetworkCtrlMsgType {
+    TypeCtrlReserved = 0;
+    TypeCmdCtrlWifiReset = 1;
+    TypeRespCtrlWifiReset = 2;
+    TypeCmdCtrlWifiReprov = 3;
+    TypeRespCtrlWifiReprov = 4;
+    TypeCmdCtrlThreadReset = 5;
+    TypeRespCtrlThreadReset = 6;
+    TypeCmdCtrlThreadReprov = 7;
+    TypeRespCtrlThreadReprov = 8;
+
+}
+
+message NetworkCtrlPayload {
+    NetworkCtrlMsgType msg = 1;
+    Status status = 2;
+    oneof payload {
+        CmdCtrlWifiReset cmd_ctrl_wifi_reset = 11;
+        RespCtrlWifiReset resp_ctrl_wifi_reset = 12;
+        CmdCtrlWifiReprov cmd_ctrl_wifi_reprov = 13;
+        RespCtrlWifiReprov resp_ctrl_wifi_reprov = 14;
+        CmdCtrlThreadReset cmd_ctrl_thread_reset = 15;
+        RespCtrlThreadReset resp_ctrl_thread_reset = 16;
+        CmdCtrlThreadReprov cmd_ctrl_thread_reprov = 17;
+        RespCtrlThreadReprov resp_ctrl_thread_reprov = 18;
+    }
+}

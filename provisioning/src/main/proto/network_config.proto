@@ -1,0 +1,96 @@
+syntax = "proto3";
+package espressif;
+
+import "constants.proto";
+import "network_constants.proto";
+
+message CmdGetWifiStatus {
+}
+
+message RespGetWifiStatus {
+    Status status = 1;
+    WifiStationState wifi_sta_state = 2;
+    oneof state {
+        WifiConnectFailedReason wifi_fail_reason = 10;
+        WifiConnectedState wifi_connected = 11;
+    }
+}
+
+message CmdGetThreadStatus {
+}
+
+message RespGetThreadStatus {
+    Status status = 1;
+    ThreadNetworkState thread_state = 2;
+    oneof state {
+        ThreadAttachFailedReason thread_fail_reason = 10;
+        ThreadAttachState thread_attached = 11;
+    }
+}
+
+message CmdSetWifiConfig {
+    bytes ssid = 1;
+    bytes passphrase = 2;
+    bytes bssid = 3;
+    int32 channel = 4;
+}
+
+message CmdSetThreadConfig {
+    bytes dataset = 1;
+}
+
+message RespSetWifiConfig {
+    Status status = 1;
+}
+
+message RespSetThreadConfig {
+    Status status = 1;
+}
+
+message CmdApplyWifiConfig {
+}
+
+message CmdApplyThreadConfig {
+}
+
+message RespApplyWifiConfig {
+    Status status = 1;
+}
+
+message RespApplyThreadConfig {
+    Status status = 1;
+}
+
+enum NetworkConfigMsgType {
+    TypeCmdGetWifiStatus = 0;
+    TypeRespGetWifiStatus = 1;
+    TypeCmdSetWifiConfig = 2;
+    TypeRespSetWifiConfig = 3;
+    TypeCmdApplyWifiConfig = 4;
+    TypeRespApplyWifiConfig = 5;
+    TypeCmdGetThreadStatus = 6;
+    TypeRespGetThreadStatus = 7;
+    TypeCmdSetThreadConfig = 8;
+    TypeRespSetThreadConfig = 9;
+    TypeCmdApplyThreadConfig = 10;
+    TypeRespApplyThreadConfig = 11;
+
+}
+
+message NetworkConfigPayload {
+    NetworkConfigMsgType msg = 1;
+    oneof payload {
+        CmdGetWifiStatus cmd_get_wifi_status = 10;
+        RespGetWifiStatus resp_get_wifi_status = 11;
+        CmdSetWifiConfig cmd_set_wifi_config = 12;
+        RespSetWifiConfig resp_set_wifi_config = 13;
+        CmdApplyWifiConfig cmd_apply_wifi_config = 14;
+        RespApplyWifiConfig resp_apply_wifi_config = 15;
+        CmdGetThreadStatus cmd_get_thread_status = 16;
+        RespGetThreadStatus resp_get_thread_status = 17;
+        CmdSetThreadConfig cmd_set_thread_config = 18;
+        RespSetThreadConfig resp_set_thread_config = 19;
+        CmdApplyThreadConfig cmd_apply_thread_config = 20;
+        RespApplyThreadConfig resp_apply_thread_config = 21;
+    }
+}

@@ -1,0 +1,110 @@
+syntax = "proto3";
+package espressif;
+
+import "constants.proto";
+import "network_constants.proto";
+
+message CmdScanWifiStart {
+    bool blocking = 1;
+    bool passive = 2;
+    uint32 group_channels = 3;
+    uint32 period_ms = 4;
+}
+
+message CmdScanThreadStart {
+    bool blocking = 1;
+    uint32 channel_mask = 2;
+}
+
+message RespScanWifiStart {
+}
+
+message RespScanThreadStart {
+}
+
+message CmdScanWifiStatus {
+}
+
+message CmdScanThreadStatus {
+}
+
+message RespScanWifiStatus {
+    bool scan_finished = 1;
+    uint32 result_count = 2;
+}
+
+message RespScanThreadStatus {
+    bool scan_finished = 1;
+    uint32 result_count = 2;
+}
+
+message CmdScanWifiResult {
+    uint32 start_index = 1;
+    uint32 count = 2;
+}
+
+message CmdScanThreadResult {
+    uint32 start_index = 1;
+    uint32 count = 2;
+}
+
+message WiFiScanResult {
+    bytes ssid = 1;
+    uint32 channel = 2;
+    int32 rssi = 3;
+    bytes bssid = 4;
+    WifiAuthMode auth = 5;
+}
+
+message ThreadScanResult {
+    uint32 pan_id = 1;
+    uint32 channel = 2;
+    int32 rssi = 3;
+    uint32 lqi = 4;
+    bytes ext_addr = 5;
+    string network_name = 6;
+    bytes ext_pan_id = 7;
+}
+
+message RespScanWifiResult {
+    repeated WiFiScanResult entries = 1;
+}
+
+message RespScanThreadResult {
+    repeated ThreadScanResult entries = 1;
+}
+
+
+enum NetworkScanMsgType {
+    TypeCmdScanWifiStart = 0;
+    TypeRespScanWifiStart = 1;
+    TypeCmdScanWifiStatus = 2;
+    TypeRespScanWifiStatus = 3;
+    TypeCmdScanWifiResult = 4;
+    TypeRespScanWifiResult = 5;
+    TypeCmdScanThreadStart = 6;
+    TypeRespScanThreadStart = 7;
+    TypeCmdScanThreadStatus = 8;
+    TypeRespScanThreadStatus = 9;
+    TypeCmdScanThreadResult = 10;
+    TypeRespScanThreadResult = 11;
+}
+
+message NetworkScanPayload {
+    NetworkScanMsgType msg = 1;
+    Status status = 2;
+    oneof payload {
+        CmdScanWifiStart cmd_scan_wifi_start = 10;
+        RespScanWifiStart resp_scan_wifi_start = 11;
+        CmdScanWifiStatus cmd_scan_wifi_status = 12;
+        RespScanWifiStatus resp_scan_wifi_status = 13;
+        CmdScanWifiResult cmd_scan_wifi_result = 14;
+        RespScanWifiResult resp_scan_wifi_result = 15;
+        CmdScanThreadStart cmd_scan_thread_start = 16;
+        RespScanThreadStart resp_scan_thread_start = 17;
+        CmdScanThreadStatus cmd_scan_thread_status = 18;
+        RespScanThreadStatus resp_scan_thread_status = 19;
+        CmdScanThreadResult cmd_scan_thread_result = 20;
+        RespScanThreadResult resp_scan_thread_result = 21;
+    }
+}

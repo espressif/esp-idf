@@ -17,24 +17,42 @@ package com.espressif.provisioning.utils;
 
 import com.google.protobuf.ByteString;
 
-import espressif.WifiConfig;
-import espressif.WifiScan;
+import java.util.ArrayList;
+import java.util.List;
+
+import espressif.NetworkConfig;
+import espressif.NetworkScan;
 
 public class MessengeHelper {
 
     // Send Wi-Fi Scan command
     public static byte[] prepareWiFiScanMsg() {
 
-        WifiScan.CmdScanStart configRequest = WifiScan.CmdScanStart.newBuilder()
+        NetworkScan.CmdScanWifiStart configRequest = NetworkScan.CmdScanWifiStart.newBuilder()
                 .setBlocking(true)
                 .setPassive(false)
                 .setGroupChannels(0)
                 .setPeriodMs(120)
                 .build();
-        WifiScan.WiFiScanMsgType msgType = WifiScan.WiFiScanMsgType.TypeCmdScanStart;
-        WifiScan.WiFiScanPayload payload = WifiScan.WiFiScanPayload.newBuilder()
+        NetworkScan.NetworkScanMsgType msgType = NetworkScan.NetworkScanMsgType.TypeCmdScanWifiStart;
+        NetworkScan.NetworkScanPayload payload = NetworkScan.NetworkScanPayload.newBuilder()
                 .setMsg(msgType)
-                .setCmdScanStart(configRequest)
+                .setCmdScanWifiStart(configRequest)
+                .build();
+
+        return payload.toByteArray();
+    }
+
+    public static byte[] prepareThreadScanMsg() {
+
+        NetworkScan.CmdScanThreadStart configRequest = NetworkScan.CmdScanThreadStart.newBuilder()
+                .setBlocking(true)
+                .setChannelMask(0)
+                .build();
+        NetworkScan.NetworkScanMsgType msgType = NetworkScan.NetworkScanMsgType.TypeCmdScanThreadStart;
+        NetworkScan.NetworkScanPayload payload = NetworkScan.NetworkScanPayload.newBuilder()
+                .setMsg(msgType)
+                .setCmdScanThreadStart(configRequest)
                 .build();
 
         return payload.toByteArray();
@@ -42,12 +60,24 @@ public class MessengeHelper {
 
     public static byte[] prepareGetWiFiScanStatusMsg() {
 
-        WifiScan.CmdScanStatus configRequest = WifiScan.CmdScanStatus.newBuilder()
+        NetworkScan.CmdScanWifiStatus configRequest = NetworkScan.CmdScanWifiStatus.newBuilder()
                 .build();
-        WifiScan.WiFiScanMsgType msgType = WifiScan.WiFiScanMsgType.TypeCmdScanStatus;
-        WifiScan.WiFiScanPayload payload = WifiScan.WiFiScanPayload.newBuilder()
+        NetworkScan.NetworkScanMsgType msgType = NetworkScan.NetworkScanMsgType.TypeCmdScanWifiStatus;
+        NetworkScan.NetworkScanPayload payload = NetworkScan.NetworkScanPayload.newBuilder()
                 .setMsg(msgType)
-                .setCmdScanStatus(configRequest)
+                .setCmdScanWifiStatus(configRequest)
+                .build();
+        return payload.toByteArray();
+    }
+
+    public static byte[] prepareGetThreadScanStatusMsg() {
+
+        NetworkScan.CmdScanThreadStatus configRequest = NetworkScan.CmdScanThreadStatus.newBuilder()
+                .build();
+        NetworkScan.NetworkScanMsgType msgType = NetworkScan.NetworkScanMsgType.TypeCmdScanThreadStatus;
+        NetworkScan.NetworkScanPayload payload = NetworkScan.NetworkScanPayload.newBuilder()
+                .setMsg(msgType)
+                .setCmdScanThreadStatus(configRequest)
                 .build();
         return payload.toByteArray();
     }
@@ -55,14 +85,29 @@ public class MessengeHelper {
     // Get Wi-Fi scan list
     public static byte[] prepareGetWiFiScanListMsg(int start, int count) {
 
-        WifiScan.CmdScanResult configRequest = WifiScan.CmdScanResult.newBuilder()
+        NetworkScan.CmdScanWifiResult configRequest = NetworkScan.CmdScanWifiResult.newBuilder()
                 .setStartIndex(start)
                 .setCount(count)
                 .build();
-        WifiScan.WiFiScanMsgType msgType = WifiScan.WiFiScanMsgType.TypeCmdScanResult;
-        WifiScan.WiFiScanPayload payload = WifiScan.WiFiScanPayload.newBuilder()
+        NetworkScan.NetworkScanMsgType msgType = NetworkScan.NetworkScanMsgType.TypeCmdScanWifiResult;
+        NetworkScan.NetworkScanPayload payload = NetworkScan.NetworkScanPayload.newBuilder()
                 .setMsg(msgType)
-                .setCmdScanResult(configRequest)
+                .setCmdScanWifiResult(configRequest)
+                .build();
+
+        return payload.toByteArray();
+    }
+
+    public static byte[] prepareGetThreadScanListMsg(int start, int count) {
+
+        NetworkScan.CmdScanThreadResult configRequest = NetworkScan.CmdScanThreadResult.newBuilder()
+                .setStartIndex(start)
+                .setCount(count)
+                .build();
+        NetworkScan.NetworkScanMsgType msgType = NetworkScan.NetworkScanMsgType.TypeCmdScanThreadResult;
+        NetworkScan.NetworkScanPayload payload = NetworkScan.NetworkScanPayload.newBuilder()
+                .setMsg(msgType)
+                .setCmdScanThreadResult(configRequest)
                 .build();
 
         return payload.toByteArray();
@@ -71,55 +116,112 @@ public class MessengeHelper {
     // Send Wi-Fi Config
     public static byte[] prepareWiFiConfigMsg(String ssid, String passphrase) {
 
-        WifiConfig.CmdSetConfig cmdSetConfig;
+        NetworkConfig.CmdSetWifiConfig cmdSetConfig;
 
         if (passphrase != null) {
 
-            cmdSetConfig = WifiConfig.CmdSetConfig
+            cmdSetConfig = NetworkConfig.CmdSetWifiConfig
                     .newBuilder()
                     .setSsid(ByteString.copyFrom(ssid.getBytes()))
                     .setPassphrase(ByteString.copyFrom(passphrase.getBytes()))
                     .build();
         } else {
-            cmdSetConfig = WifiConfig.CmdSetConfig
+            cmdSetConfig = NetworkConfig.CmdSetWifiConfig
                     .newBuilder()
                     .setSsid(ByteString.copyFrom(ssid.getBytes()))
                     .build();
         }
-        WifiConfig.WiFiConfigPayload wiFiConfigPayload = WifiConfig.WiFiConfigPayload
+        NetworkConfig.NetworkConfigPayload wiFiConfigPayload = NetworkConfig.NetworkConfigPayload
                 .newBuilder()
-                .setCmdSetConfig(cmdSetConfig)
-                .setMsg(WifiConfig.WiFiConfigMsgType.TypeCmdSetConfig)
+                .setMsg(NetworkConfig.NetworkConfigMsgType.TypeCmdSetWifiConfig)
+                .setCmdSetWifiConfig(cmdSetConfig)
                 .build();
 
         return wiFiConfigPayload.toByteArray();
+    }
+
+    public static byte[] prepareThreadConfigMsg(String activeDataset) {
+
+        byte[] dataset = dsToByteArray(activeDataset);
+
+        NetworkConfig.CmdSetThreadConfig cmdSetConfig = NetworkConfig.CmdSetThreadConfig
+                .newBuilder()
+                .setDataset(ByteString.copyFrom(dataset))
+                .build();
+        NetworkConfig.NetworkConfigPayload threadConfigPayload = NetworkConfig.NetworkConfigPayload
+                .newBuilder()
+                .setMsg(NetworkConfig.NetworkConfigMsgType.TypeCmdSetThreadConfig)
+                .setCmdSetThreadConfig(cmdSetConfig)
+                .build();
+
+        return threadConfigPayload.toByteArray();
+    }
+
+    private static byte[] dsToByteArray(String input) {
+        List<Byte> bytes = new ArrayList<>();
+        for (int i = 0; i < input.length(); i += 2) {
+            String hex = input.substring(i, i + 2);
+            bytes.add((byte) Integer.parseInt(hex, 16));
+        }
+        byte[] result = new byte[bytes.size()];
+        for (int i = 0; i < bytes.size(); i++) {
+            result[i] = bytes.get(i);
+        }
+        return result;
     }
 
     // Apply Wi-Fi config
     public static byte[] prepareApplyWiFiConfigMsg() {
 
-        WifiConfig.CmdApplyConfig cmdApplyConfig = WifiConfig.CmdApplyConfig
+        NetworkConfig.CmdApplyWifiConfig cmdApplyConfig = NetworkConfig.CmdApplyWifiConfig
                 .newBuilder()
                 .build();
-        WifiConfig.WiFiConfigPayload wiFiConfigPayload = WifiConfig.WiFiConfigPayload
+        NetworkConfig.NetworkConfigPayload wiFiConfigPayload = NetworkConfig.NetworkConfigPayload
                 .newBuilder()
-                .setCmdApplyConfig(cmdApplyConfig)
-                .setMsg(WifiConfig.WiFiConfigMsgType.TypeCmdApplyConfig)
+                .setMsg(NetworkConfig.NetworkConfigMsgType.TypeCmdApplyWifiConfig)
+                .setCmdApplyWifiConfig(cmdApplyConfig)
                 .build();
         return wiFiConfigPayload.toByteArray();
+    }
+
+    public static byte[] prepareApplyThreadConfigMsg() {
+
+        NetworkConfig.CmdApplyThreadConfig cmdApplyConfig = NetworkConfig.CmdApplyThreadConfig
+                .newBuilder()
+                .build();
+        NetworkConfig.NetworkConfigPayload threadConfigPayload = NetworkConfig.NetworkConfigPayload
+                .newBuilder()
+                .setMsg(NetworkConfig.NetworkConfigMsgType.TypeCmdApplyThreadConfig)
+                .setCmdApplyThreadConfig(cmdApplyConfig)
+                .build();
+        return threadConfigPayload.toByteArray();
     }
 
     // Get Wi-Fi Config status
     public static byte[] prepareGetWiFiConfigStatusMsg() {
 
-        WifiConfig.CmdGetStatus cmdGetStatus = WifiConfig.CmdGetStatus
+        NetworkConfig.CmdGetWifiStatus cmdGetStatus = NetworkConfig.CmdGetWifiStatus
                 .newBuilder()
                 .build();
-        WifiConfig.WiFiConfigPayload wiFiConfigPayload = WifiConfig.WiFiConfigPayload
+        NetworkConfig.NetworkConfigPayload wiFiConfigPayload = NetworkConfig.NetworkConfigPayload
                 .newBuilder()
-                .setCmdGetStatus(cmdGetStatus)
-                .setMsg(WifiConfig.WiFiConfigMsgType.TypeCmdGetStatus)
+                .setMsg(NetworkConfig.NetworkConfigMsgType.TypeCmdGetWifiStatus)
+                .setCmdGetWifiStatus(cmdGetStatus)
                 .build();
         return wiFiConfigPayload.toByteArray();
+    }
+
+    // Get Wi-Fi Config status
+    public static byte[] prepareGetThreadConfigStatusMsg() {
+
+        NetworkConfig.CmdGetThreadStatus cmdGetStatus = NetworkConfig.CmdGetThreadStatus
+                .newBuilder()
+                .build();
+        NetworkConfig.NetworkConfigPayload threadConfigPayload = NetworkConfig.NetworkConfigPayload
+                .newBuilder()
+                .setMsg(NetworkConfig.NetworkConfigMsgType.TypeCmdGetThreadStatus)
+                .setCmdGetThreadStatus(cmdGetStatus)
+                .build();
+        return threadConfigPayload.toByteArray();
     }
 }

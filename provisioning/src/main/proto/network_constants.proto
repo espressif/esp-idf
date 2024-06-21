@@ -10,7 +10,7 @@ enum WifiStationState {
 
 enum WifiConnectFailedReason {
     AuthError = 0;
-    NetworkNotFound = 1;
+    WifiNetworkNotFound = 1;
 }
 
 enum WifiAuthMode {
@@ -30,4 +30,23 @@ message WifiConnectedState {
     bytes ssid = 3;
     bytes bssid = 4;
     int32 channel = 5;
+}
+
+enum ThreadNetworkState {
+    Attached = 0;
+    Attaching = 1;
+    Dettached = 2;
+    AttachingFailed = 3;
+}
+
+enum ThreadAttachFailedReason {
+    DatasetInvalid = 0;
+    ThreadNetworkNotFound = 1;
+}
+
+message ThreadAttachState {
+    uint32 pan_id = 1;
+    bytes ext_pan_id = 2;
+    uint32 channel = 3;
+    string name = 4;
 }
