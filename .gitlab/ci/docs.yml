@@ -171,6 +171,7 @@ build_docs_pdf:
     - job: fast_template_app
       artifacts: false
       optional: true
+  allow_failure: true # TODO IDFCI-2216
   artifacts:
     paths:
       - docs/_build/*/*/latex/*
@@ -182,6 +183,7 @@ build_docs_pdf_prod:
     - .build_docs_template
     - .doc-rules:build:docs-full-prod
   dependencies: [] # Stop build_docs jobs from downloading all previous job's artifacts
+  allow_failure: true # TODO IDFCI-2216
   artifacts:
     paths:
       - docs/_build/*/*/latex/*
