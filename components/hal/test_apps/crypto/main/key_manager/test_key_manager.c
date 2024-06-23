@@ -172,7 +172,7 @@ static void key_mgr_test_ecdsa_p256_aes_mode(void)
     memcpy(key_config.k1_encrypted, (uint8_t*) test_data_ecdsa.k1_encrypted, KEY_MGR_K1_ENCRYPTED_SIZE);
     memcpy(key_config.sw_init_key, (uint8_t*) test_data_ecdsa.init_key, KEY_MGR_SW_INIT_KEY_SIZE);
     key_config.use_pre_generated_sw_init_key = 1;
-    key_config.key_type = ESP_KEY_MGR_ECDSA_KEY;
+    key_config.key_type = ESP_KEY_MGR_ECDSA_256_KEY;
 
     static esp_key_mgr_key_recovery_info_t key_recovery_info;
     TEST_ASSERT_EQUAL(ESP_OK, esp_key_mgr_deploy_key_in_aes_mode(&key_config, &key_recovery_info));
@@ -228,7 +228,7 @@ static void key_mgr_test_ecdsa_ecdh0_mode(void)
     printf("\nKey Manager ECDH0 deployment: ECDSA_256 key\n");
     static esp_key_mgr_ecdh0_key_config_t key_config;
     memcpy(key_config.k1_G[0], (uint8_t*) test_data_ecdh0.k1_G[0], KEY_MGR_ECDH0_INFO_SIZE);
-    key_config.key_type = ESP_KEY_MGR_ECDSA_KEY;
+    key_config.key_type = ESP_KEY_MGR_ECDSA_256_KEY;
 
     static esp_key_mgr_key_recovery_info_t key_recovery_info;
     static esp_key_mgr_ecdh0_info_t ecdh0_info;
@@ -248,7 +248,7 @@ static void key_mgr_test_ecdsa_random_mode(void)
 {
     printf("\nKey Manager Random deployment: ECDSA_256 key\n");
     static esp_key_mgr_random_key_config_t key_config;
-    key_config.key_type = ESP_KEY_MGR_ECDSA_KEY;
+    key_config.key_type = ESP_KEY_MGR_ECDSA_256_KEY;
 
     static esp_key_mgr_key_recovery_info_t key_recovery_info;
     TEST_ASSERT_EQUAL(ESP_OK, esp_key_mgr_deploy_key_in_random_mode(&key_config, &key_recovery_info));

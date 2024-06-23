@@ -44,12 +44,17 @@ ESP_STATIC_ASSERT(sizeof(esp_key_mgr_huk_info_t) == sizeof(struct huk_info), "Si
 static void esp_key_mgr_acquire_key_lock(esp_key_mgr_key_type_t key_type)
 {
     switch (key_type) {
-    case ESP_KEY_MGR_ECDSA_KEY:
+    case ESP_KEY_MGR_ECDSA_192_KEY:
+    case ESP_KEY_MGR_ECDSA_256_KEY:
+    case ESP_KEY_MGR_ECDSA_384_KEY:
         _lock_acquire(&s_key_mgr_ecdsa_key_lock);
         break;
     case ESP_KEY_MGR_XTS_AES_128_KEY:
     case ESP_KEY_MGR_XTS_AES_256_KEY:
         _lock_acquire(&s_key_mgr_xts_aes_key_lock);
+        break;
+    default:
+        ESP_LOGE(TAG, "Invalid key type");
         break;
     }
     ESP_LOGV(TAG, "Key lock acquired for key type %d", key_type);
@@ -58,12 +63,17 @@ static void esp_key_mgr_acquire_key_lock(esp_key_mgr_key_type_t key_type)
 static void esp_key_mgr_release_key_lock(esp_key_mgr_key_type_t key_type)
 {
     switch (key_type) {
-    case ESP_KEY_MGR_ECDSA_KEY:
+    case ESP_KEY_MGR_ECDSA_192_KEY:
+    case ESP_KEY_MGR_ECDSA_256_KEY:
+    case ESP_KEY_MGR_ECDSA_384_KEY:
         _lock_release(&s_key_mgr_ecdsa_key_lock);
         break;
     case ESP_KEY_MGR_XTS_AES_128_KEY:
     case ESP_KEY_MGR_XTS_AES_256_KEY:
         _lock_release(&s_key_mgr_xts_aes_key_lock);
+        break;
+    default:
+        ESP_LOGE(TAG, "Invalid key type");
         break;
     }
     ESP_LOGV(TAG, "Key lock released for key type %d", key_type);
@@ -223,7 +233,7 @@ static esp_err_t key_mgr_deploy_key_aes_mode(aes_deploy_config_t *config)
     if (!key_recovery_info) {
         return ESP_ERR_NO_MEM;
     }
-    // Set key purpose (XTS/ECDSA)
+    // Set key purpose
     ESP_LOGD(TAG, "Key purpose = %d", config->key_purpose);
     key_mgr_hal_set_key_purpose(config->key_purpose);
 
@@ -238,12 +248,10 @@ static esp_err_t key_mgr_deploy_key_aes_mode(aes_deploy_config_t *config)
 
     if (config->key_config->use_pre_generated_sw_init_key) {
         key_mgr_hal_use_sw_init_key();
-    } else {
-        if (!esp_efuse_find_purpose(ESP_EFUSE_KEY_PURPOSE_KM_INIT_KEY, NULL)) {
-            ESP_LOGE(TAG, "Could not find key with purpose KM_INIT_KEY");
-            heap_caps_free(key_recovery_info);
-            return ESP_FAIL;
-        }
+    } else if (!esp_efuse_find_purpose(ESP_EFUSE_KEY_PURPOSE_KM_INIT_KEY, NULL)) {
+        ESP_LOGE(TAG, "Could not find key with purpose KM_INIT_KEY");
+        heap_caps_free(key_recovery_info);
+        return ESP_FAIL;
     }
 
     key_mgr_hal_start();
@@ -306,8 +314,10 @@ esp_err_t esp_key_mgr_deploy_key_in_aes_mode(const esp_key_mgr_aes_key_config_t 
     aes_deploy_config.k1_encrypted = key_config->k1_encrypted[0];
 
     esp_key_mgr_key_type_t key_type = (esp_key_mgr_key_type_t) key_config->key_type;
-    if (key_type == ESP_KEY_MGR_ECDSA_KEY) {
-        aes_deploy_config.key_purpose = ESP_KEY_MGR_KEY_PURPOSE_ECDSA;
+    if (key_type == ESP_KEY_MGR_ECDSA_192_KEY) {
+        aes_deploy_config.key_purpose = ESP_KEY_MGR_KEY_PURPOSE_ECDSA_192;
+    } else if (key_type == ESP_KEY_MGR_ECDSA_256_KEY) {
+        aes_deploy_config.key_purpose = ESP_KEY_MGR_KEY_PURPOSE_ECDSA_256;
     } else if (key_type == ESP_KEY_MGR_XTS_AES_128_KEY) {
         aes_deploy_config.key_purpose = ESP_KEY_MGR_KEY_PURPOSE_XTS_AES_128;
     } else if (key_type == ESP_KEY_MGR_XTS_AES_256_KEY) {
@@ -424,10 +434,12 @@ esp_err_t esp_key_mgr_activate_key(esp_key_mgr_key_recovery_info_t *key_recovery
     }
 
     esp_key_mgr_key_purpose_t key_purpose;
-    ESP_LOGD(TAG, "Activating key of type %d", key_recovery_info->key_type);
+    ESP_LOGI(TAG, "Activating key of type %d", key_recovery_info->key_type);
     esp_key_mgr_key_type_t key_type = (esp_key_mgr_key_type_t) key_recovery_info->key_type;
-    if (key_type == ESP_KEY_MGR_ECDSA_KEY) {
-        key_purpose = ESP_KEY_MGR_KEY_PURPOSE_ECDSA;
+    if (key_type == ESP_KEY_MGR_ECDSA_192_KEY) {
+        key_purpose = ESP_KEY_MGR_KEY_PURPOSE_ECDSA_192;
+    } else if (key_type == ESP_KEY_MGR_ECDSA_256_KEY) {
+        key_purpose = ESP_KEY_MGR_KEY_PURPOSE_ECDSA_256;
     } else if (key_type == ESP_KEY_MGR_XTS_AES_128_KEY) {
         key_purpose = ESP_KEY_MGR_KEY_PURPOSE_XTS_AES_128;
     } else if (key_type == ESP_KEY_MGR_XTS_AES_256_KEY) {
@@ -438,6 +450,7 @@ esp_err_t esp_key_mgr_activate_key(esp_key_mgr_key_recovery_info_t *key_recovery
     }
 
     esp_err_t esp_ret = ESP_FAIL;
+    ESP_LOGI(TAG, "Activating key of type %d", key_recovery_info->key_type);
     esp_key_mgr_acquire_key_lock(key_type);
     key_recovery_config_t key_recovery_config = {};
     key_recovery_config.key_recovery_info = key_recovery_info;
@@ -448,6 +461,7 @@ esp_err_t esp_key_mgr_activate_key(esp_key_mgr_key_recovery_info_t *key_recovery
     esp_ret = key_mgr_recover_key(&key_recovery_config);
     if (esp_ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to recover key");
+        esp_key_mgr_release_key_lock(key_type);
         goto cleanup;
     }
 
@@ -456,13 +470,15 @@ esp_err_t esp_key_mgr_activate_key(esp_key_mgr_key_recovery_info_t *key_recovery
         esp_ret = key_mgr_recover_key(&key_recovery_config);
         if (esp_ret != ESP_OK) {
             ESP_LOGE(TAG, "Failed to recover key");
+            esp_key_mgr_release_key_lock(key_type);
             goto cleanup;
         }
     }
 
     // Set the Key Manager Static Register to use own key for the respective key type
-    key_mgr_hal_set_key_usage(key_recovery_info->key_type, ESP_KEY_MGR_USE_OWN_KEY);
+    key_mgr_hal_set_key_usage(key_type, ESP_KEY_MGR_USE_OWN_KEY);
     ESP_LOGI(TAG, "Key activation for type %d successful", key_recovery_info->key_type);
+    esp_key_mgr_release_key_lock(key_type);
     return ESP_OK;
 
 cleanup:
@@ -585,8 +601,11 @@ esp_err_t esp_key_mgr_deploy_key_in_ecdh0_mode(const esp_key_mgr_ecdh0_key_confi
     ecdh0_deploy_config.key_info = key_info;
     ecdh0_deploy_config.k1_G = key_config->k1_G[0];
 
-    if (key_type == ESP_KEY_MGR_ECDSA_KEY) {
-        ecdh0_deploy_config.key_purpose = ESP_KEY_MGR_KEY_PURPOSE_ECDSA;
+    if (key_type == ESP_KEY_MGR_ECDSA_192_KEY) {
+        ecdh0_deploy_config.key_purpose = ESP_KEY_MGR_KEY_PURPOSE_ECDSA_192;
+        ecdh0_deploy_config.ecdh0_key_info = ecdh0_key_info->k2_G[0];
+    } else if (key_type == ESP_KEY_MGR_ECDSA_256_KEY) {
+        ecdh0_deploy_config.key_purpose = ESP_KEY_MGR_KEY_PURPOSE_ECDSA_256;
         ecdh0_deploy_config.ecdh0_key_info = ecdh0_key_info->k2_G[0];
     } else if (key_type == ESP_KEY_MGR_XTS_AES_128_KEY) {
         ecdh0_deploy_config.key_purpose = ESP_KEY_MGR_KEY_PURPOSE_XTS_AES_128;
@@ -718,8 +737,10 @@ esp_err_t esp_key_mgr_deploy_key_in_random_mode(const esp_key_mgr_random_key_con
     random_deploy_config.key_info = key_recovery_info;
     esp_key_mgr_key_type_t key_type = (esp_key_mgr_key_type_t) key_config->key_type;
 
-    if (key_type == ESP_KEY_MGR_ECDSA_KEY) {
-        random_deploy_config.key_purpose = ESP_KEY_MGR_KEY_PURPOSE_ECDSA;
+    if (key_type == ESP_KEY_MGR_ECDSA_192_KEY) {
+        random_deploy_config.key_purpose = ESP_KEY_MGR_KEY_PURPOSE_ECDSA_192;
+    } else if (key_type == ESP_KEY_MGR_ECDSA_256_KEY) {
+        random_deploy_config.key_purpose = ESP_KEY_MGR_KEY_PURPOSE_ECDSA_256;
     } else if (key_type == ESP_KEY_MGR_XTS_AES_128_KEY) {
         random_deploy_config.key_purpose = ESP_KEY_MGR_KEY_PURPOSE_XTS_AES_128;
     } else if (key_type == ESP_KEY_MGR_XTS_AES_256_KEY) {
@@ -748,7 +769,7 @@ esp_err_t esp_key_mgr_deploy_key_in_random_mode(const esp_key_mgr_random_key_con
     }
 
     // Set the Key Manager Static Register to use own key for the respective key type
-    key_mgr_hal_set_key_usage(key_config->key_type, ESP_KEY_MGR_USE_OWN_KEY);
+    key_mgr_hal_set_key_usage(key_type, ESP_KEY_MGR_USE_OWN_KEY);
 
     esp_key_mgr_release_hardware(true);
     return esp_ret;

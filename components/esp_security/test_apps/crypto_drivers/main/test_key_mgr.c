@@ -138,7 +138,7 @@ TEST_CASE("Key Manager random mode: ECDSA key deployment", "[hw_crypto] [key_mgr
     static esp_key_mgr_random_key_config_t key_config;
     static esp_key_mgr_key_recovery_info_t key_info;
     esp_err_t esp_ret = ESP_FAIL;
-    key_config.key_type = ESP_KEY_MGR_ECDSA_KEY;
+    key_config.key_type = ESP_KEY_MGR_ECDSA_256_KEY;
     esp_ret = esp_key_mgr_deploy_key_in_random_mode(&key_config, &key_info);
     TEST_ASSERT_EQUAL(ESP_OK, esp_ret);
 }

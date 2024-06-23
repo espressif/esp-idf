@@ -19,6 +19,7 @@
 #include "hal/key_mgr_types.h"
 #include "soc/keymng_reg.h"
 #include "soc/pcr_struct.h"
+#include "soc/pcr_reg.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -34,32 +35,38 @@ static inline esp_key_mgr_state_t key_mgr_ll_get_state(void)
     return (esp_key_mgr_state_t) REG_GET_FIELD(KEYMNG_STATE_REG, KEYMNG_STATE);
 }
 
+static inline void key_mgr_ll_power_up(void)
+{
+    /* Power up the Key Manager peripheral (default state is power-down) */
+    REG_CLR_BIT(PCR_KM_PD_CTRL_REG, PCR_KM_MEM_FORCE_PD);
+    REG_SET_BIT(PCR_KM_PD_CTRL_REG, PCR_KM_MEM_FORCE_PU);
+}
+
+#define key_mgr_ll_enable_bus_clock(...) do { \
+        _key_mgr_ll_enable_bus_clock(__VA_ARGS__); \
+    } while(0)
+
+static inline void key_mgr_ll_power_down(void)
+{
+    /* Power down the Key Manager peripheral */
+    REG_CLR_BIT(PCR_KM_PD_CTRL_REG, PCR_KM_MEM_FORCE_PU);
+    REG_SET_BIT(PCR_KM_PD_CTRL_REG, PCR_KM_MEM_FORCE_PD);
+}
+
 /**
  * @brief Enable the bus clock for Key Manager peripheral
- * Note: Please use key_mgr_ll_enable_bus_clock which requires the critical section
- *       and do not use _key_mgr_ll_enable_bus_clock
+ *
  * @param true to enable, false to disable
  */
 static inline void _key_mgr_ll_enable_bus_clock(bool enable)
 {
-    // Set the force power down bit to 0 to enable key manager
-    PCR.km_pd_ctrl.km_mem_force_pd = 0;
     // Enable key manager clock
-    PCR.km_conf.km_clk_en = 1;
+    PCR.km_conf.km_clk_en = enable;
 }
-
-/// use a macro to wrap the function, force the caller to use it in a critical section
-/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define key_mgr_ll_enable_bus_clock(...) do { \
-        (void)__DECLARE_RCC_ATOMIC_ENV; \
-        _key_mgr_ll_enable_bus_clock(__VA_ARGS__); \
-    } while(0)
 
 /**
  * @brief Enable the peripheral clock for Key Manager
  *
- * Note: Please use key_mgr_ll_enable_peripheral_clock which requires the critical section
- *       and do not use _key_mgr_ll_enable_peripheral_clock
  * @param true to enable, false to disable
  */
 static inline void _key_mgr_ll_enable_peripheral_clock(bool enable)
@@ -68,14 +75,12 @@ static inline void _key_mgr_ll_enable_peripheral_clock(bool enable)
 }
 
 #define key_mgr_ll_enable_peripheral_clock(...) do { \
-        (void)__DECLARE_RCC_ATOMIC_ENV; \
         _key_mgr_ll_enable_peripheral_clock(__VA_ARGS__); \
     } while(0)
 
 /**
  * @brief Reset the Key Manager peripheral
- * Note: Please use key_mgr_ll_reset_register which requires the critical section
- *       and do not use _key_mgr_ll_reset_register
+ *
  */
 static inline void _key_mgr_ll_reset_register(void)
 {
@@ -90,10 +95,7 @@ static inline void _key_mgr_ll_reset_register(void)
 
 }
 
-/// use a macro to wrap the function, force the caller to use it in a critical section
-/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
 #define key_mgr_ll_reset_register(...) do { \
-        (void)__DECLARE_RCC_ATOMIC_ENV; \
         _key_mgr_ll_reset_register(__VA_ARGS__); \
     } while(0)
 
@@ -160,7 +162,9 @@ static inline void key_mgr_ll_use_sw_init_key(void)
 static inline void key_mgr_ll_set_key_usage(const esp_key_mgr_key_type_t key_type, const esp_key_mgr_key_usage_t key_usage)
 {
     switch (key_type) {
-        case ESP_KEY_MGR_ECDSA_KEY:
+        case ESP_KEY_MGR_ECDSA_192_KEY:
+        case ESP_KEY_MGR_ECDSA_256_KEY:
+        case ESP_KEY_MGR_ECDSA_384_KEY:
             if (key_usage == ESP_KEY_MGR_USE_EFUSE_KEY) {
                 REG_SET_BIT(KEYMNG_STATIC_REG, KEYMNG_USE_EFUSE_KEY_ECDSA);
             } else {
@@ -185,7 +189,9 @@ static inline void key_mgr_ll_set_key_usage(const esp_key_mgr_key_type_t key_typ
 static inline esp_key_mgr_key_usage_t key_mgr_ll_get_key_usage(esp_key_mgr_key_type_t key_type)
 {
     switch (key_type) {
-        case ESP_KEY_MGR_ECDSA_KEY:
+        case ESP_KEY_MGR_ECDSA_192_KEY:
+        case ESP_KEY_MGR_ECDSA_256_KEY:
+        case ESP_KEY_MGR_ECDSA_384_KEY:
             return (esp_key_mgr_key_usage_t) (REG_GET_BIT(KEYMNG_STATIC_REG, KEYMNG_USE_EFUSE_KEY_ECDSA));
             break;
 
@@ -219,7 +225,9 @@ static inline void key_mgr_ll_lock_use_sw_init_key_reg(void)
 static inline void key_mgr_ll_lock_use_efuse_key_reg(esp_key_mgr_key_type_t key_type)
 {
     switch(key_type) {
-        case ESP_KEY_MGR_ECDSA_KEY:
+        case ESP_KEY_MGR_ECDSA_192_KEY:
+        case ESP_KEY_MGR_ECDSA_256_KEY:
+        case ESP_KEY_MGR_ECDSA_384_KEY:
             REG_SET_BIT(KEYMNG_LOCK_REG, KEYMNG_USE_EFUSE_KEY_LOCK_ECDSA);
             break;
         case ESP_KEY_MGR_XTS_AES_128_KEY:
@@ -265,8 +273,12 @@ static inline bool key_mgr_ll_is_key_deployment_valid(const esp_key_mgr_key_type
 {
     switch (key_type) {
 
-        case ESP_KEY_MGR_ECDSA_KEY:
-            return REG_GET_FIELD(KEYMNG_KEY_VLD_REG, KEYMNG_KEY_ECDSA_VLD);
+        case ESP_KEY_MGR_ECDSA_192_KEY:
+            return REG_GET_FIELD(KEYMNG_KEY_VLD_REG, KEYMNG_KEY_ECDSA_192_VLD);
+        case ESP_KEY_MGR_ECDSA_256_KEY:
+            return REG_GET_FIELD(KEYMNG_KEY_VLD_REG, KEYMNG_KEY_ECDSA_256_VLD);
+        case ESP_KEY_MGR_ECDSA_384_KEY:
+            return REG_GET_FIELD(KEYMNG_KEY_VLD_REG, KEYMNG_KEY_ECDSA_384_VLD);
             break;
 
         case ESP_KEY_MGR_XTS_AES_128_KEY:
