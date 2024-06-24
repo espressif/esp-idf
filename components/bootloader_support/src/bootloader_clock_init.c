@@ -66,19 +66,22 @@ __attribute__((weak)) void bootloader_clock_configure(void)
         }
 #endif
 
-//TODO: [ESP32C61] IDF-9274, basic rtc support
-#if CONFIG_IDF_TARGET_ESP32C6 || CONFIG_IDF_TARGET_ESP32C5 || CONFIG_IDF_TARGET_ESP32C61
-        // TODO: IDF-5781 Some of esp32c6 SOC_RTC_FAST_CLK_SRC_XTAL_D2 rtc_fast clock has timing issue
-        // Force to use SOC_RTC_FAST_CLK_SRC_RC_FAST since 2nd stage bootloader
-        clk_cfg.fast_clk_src = SOC_RTC_FAST_CLK_SRC_RC_FAST;
-#else
         // Use RTC_FAST clock source sel register field's default value, XTAL_DIV, for 2nd stage bootloader
         // RTC_FAST clock source will be switched to RC_FAST at application startup
         clk_cfg.fast_clk_src = rtc_clk_fast_src_get();
         if (clk_cfg.fast_clk_src == SOC_RTC_FAST_CLK_SRC_INVALID) {
             clk_cfg.fast_clk_src = SOC_RTC_FAST_CLK_SRC_XTAL_DIV;
         }
+
+#if CONFIG_IDF_TARGET_ESP32C6
+        if (efuse_hal_chip_revision() == 0) {
+            // Some of ESP32C6-ECO0 chip's SOC_RTC_FAST_CLK_SRC_XTAL_D2 rtc_fast clock has timing issue,
+            // which will cause the chip to be unable to capture the reset reason when it is reset.
+            // Force to use SOC_RTC_FAST_CLK_SRC_RC_FAST since 2nd stage bootloader
+            clk_cfg.fast_clk_src = SOC_RTC_FAST_CLK_SRC_RC_FAST;
+        }
 #endif
+
         rtc_clk_init(clk_cfg);
     }
 
