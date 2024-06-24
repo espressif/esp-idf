@@ -1245,7 +1245,7 @@ config SOC_PM_MODEM_RETENTION_BY_REGDMA
 
 config SOC_PM_PAU_LINK_NUM
     int
-    default 4
+    default 5
 
 config SOC_PM_PAU_REGDMA_LINK_CONFIGURABLE
     bool

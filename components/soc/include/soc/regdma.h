@@ -154,10 +154,12 @@ typedef struct regdma_link_branch_write_wait_body {
     volatile uint32_t   mask;
 } regdma_link_branch_write_wait_body_t;
 
-ESP_STATIC_ASSERT(REGDMA_LINK_ENTRY_NUM < 16, "regdma link entry number should less 16");
+ESP_STATIC_ASSERT(REGDMA_LINK_ENTRY_NUM <= 16, "regdma link entry number should equal to and less than 16");
 typedef struct regdma_link_stats {
     volatile uint32_t   ref: REGDMA_LINK_ENTRY_NUM, /* a bitmap, identifies which entry has referenced the current link */
+#if REGDMA_LINK_ENTRY_NUM < 16
              reserve: 16-REGDMA_LINK_ENTRY_NUM,
+#endif
              id: 16; /* REGDMA linked list node unique identifier */
     volatile uint32_t   module; /* a bitmap used to identify the module to which the current node belongs */
 } regdma_link_stats_t;

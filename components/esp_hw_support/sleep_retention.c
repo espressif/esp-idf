@@ -175,9 +175,11 @@ typedef struct {
 #define SLEEP_RETENTION_MODULE_INVALID                  ((sleep_retention_module_t)(-1)) /* the final node does not belong to any module */
     struct {
         sleep_retention_entries_t entries;
-        uint32_t entries_bitmap: REGDMA_LINK_ENTRY_NUM,
-                 runtime_bitmap: REGDMA_LINK_ENTRY_NUM,
-                 reserved: 32-(2*REGDMA_LINK_ENTRY_NUM);
+        uint32_t entries_bitmap: REGDMA_LINK_ENTRY_NUM;
+        uint32_t runtime_bitmap: REGDMA_LINK_ENTRY_NUM;
+#if REGDMA_LINK_ENTRY_NUM < 16
+        uint32_t reserved: 32-(2*REGDMA_LINK_ENTRY_NUM);
+#endif
         void *entries_tail;
     } lists[SLEEP_RETENTION_REGDMA_LINK_NR_PRIORITIES];
     _lock_t lock;
@@ -245,6 +247,9 @@ static void sleep_retention_entries_update(uint32_t owner, void *new_link, regdm
         (owner & BIT(1)) ? new_link : s_retention.lists[priority].entries[1],
         (owner & BIT(2)) ? new_link : s_retention.lists[priority].entries[2],
         (owner & BIT(3)) ? new_link : s_retention.lists[priority].entries[3]
+#if (REGDMA_LINK_ENTRY_NUM == 5)
+        , (owner & BIT(4)) ? new_link : s_retention.lists[priority].entries[4]
+#endif
     };
     if (s_retention.lists[priority].entries_bitmap == 0) {
         s_retention.lists[priority].entries_tail = new_link;
@@ -270,6 +275,9 @@ static void * sleep_retention_entries_try_create(const regdma_link_config_t *con
                         (owner & BIT(1)) ? s_retention.lists[priority].entries[1] : NULL,
                         (owner & BIT(2)) ? s_retention.lists[priority].entries[2] : NULL,
                         (owner & BIT(3)) ? s_retention.lists[priority].entries[3] : NULL
+#if (REGDMA_LINK_ENTRY_NUM == 5)
+                        , (owner & BIT(4)) ? s_retention.lists[priority].entries[4] : NULL
+#endif
                     );
         }
     } else {
@@ -289,6 +297,9 @@ static void * sleep_retention_entries_try_create_bonding(const regdma_link_confi
                 (owner & BIT(1)) ? s_retention.lists[priority].entries[1] : NULL,
                 (owner & BIT(2)) ? s_retention.lists[priority].entries[2] : NULL,
                 (owner & BIT(3)) ? s_retention.lists[priority].entries[3] : NULL
+#if (REGDMA_LINK_ENTRY_NUM == 5)
+                , (owner & BIT(4)) ? s_retention.lists[priority].entries[4] : NULL
+#endif
             );
     _lock_release_recursive(&s_retention.lock);
     return link;
@@ -399,11 +410,18 @@ static bool sleep_retention_entries_dettach(regdma_link_priority_t priority, sle
     } else if (is_tail) {
         s_retention.lists[priority].entries_tail = prev_tail;
     } else {
+#if (REGDMA_LINK_ENTRY_NUM == 5)
+        regdma_link_update_next_safe(prev_tail, (*next_entries)[0], (*next_entries)[1], (*next_entries)[2], (*next_entries)[3], (*next_entries)[4]);
+#else
         regdma_link_update_next_safe(prev_tail, (*next_entries)[0], (*next_entries)[1], (*next_entries)[2], (*next_entries)[3]);
+#endif
     }
     sleep_retention_entries_context_update(priority);
-
+#if (REGDMA_LINK_ENTRY_NUM == 5)
+    regdma_link_update_next_safe(destroy_tail, NULL, NULL, NULL, NULL, NULL);
+#else
     regdma_link_update_next_safe(destroy_tail, NULL, NULL, NULL, NULL);
+#endif
     _lock_release_recursive(&s_retention.lock);
     return (is_head || is_tail);
 }
@@ -527,6 +545,9 @@ static void sleep_retention_entries_join(void)
                     s_retention.lists[priority].entries[1],
                     s_retention.lists[priority].entries[2],
                     s_retention.lists[priority].entries[3]
+#if (REGDMA_LINK_ENTRY_NUM == 5)
+                    , s_retention.lists[priority].entries[4]
+#endif
                 );
         }
         entries_tail = s_retention.lists[priority].entries_tail;
