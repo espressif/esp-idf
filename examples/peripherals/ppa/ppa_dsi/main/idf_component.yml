@@ -1,0 +1,7 @@
+dependencies:
+  espressif/esp_lcd_ili9881c: "*"
+  idf:
+    version: ">=5.3.0"
+  dsi_init:
+    path: ${IDF_PATH}/examples/peripherals/camera/camera_dsi/components/dsi_init
+  esp_jpeg: ">=1.0.2"

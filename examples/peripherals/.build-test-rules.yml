@@ -281,6 +281,13 @@ examples/peripherals/pcnt:
   depends_components:
     - esp_driver_pcnt
 
+examples/peripherals/ppa/ppa_dsi:
+  disable:
+    - if: SOC_PPA_SUPPORTED != 1 or SOC_MIPI_DSI_SUPPORTED != 1
+  depends_components:
+    - esp_driver_ppa
+    - esp_lcd
+
 examples/peripherals/rmt:
   disable:
     - if: SOC_RMT_SUPPORTED != 1
