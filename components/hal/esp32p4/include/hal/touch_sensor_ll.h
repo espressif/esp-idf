@@ -755,10 +755,10 @@ static inline void touch_ll_filter_enable(bool enable)
  */
 static inline void touch_ll_force_update_benchmark(uint32_t benchmark)
 {
-    HAL_FORCE_MODIFY_U32_REG_FIELD(LP_ANA_PERI.touch_filter3, touch_baseline_sw, benchmark);
-    LP_ANA_PERI.touch_filter3.touch_update_baseline_sw = 1;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(LP_ANA_PERI.touch_filter3, touch_benchmark_sw, benchmark);
+    LP_ANA_PERI.touch_filter3.touch_update_benchmark_sw = 1;
     // waiting for update
-    while (LP_ANA_PERI.touch_filter3.touch_update_baseline_sw);
+    while (LP_ANA_PERI.touch_filter3.touch_update_benchmark_sw);
 }
 
 /************************ Waterproof register setting ************************/
