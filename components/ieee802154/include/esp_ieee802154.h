@@ -136,8 +136,12 @@ esp_err_t esp_ieee802154_receive(void);
  *                    |-----------------------------------------------------------------------|
  * @param[in]  cca    Perform CCA before transmission if it's true, otherwise transmit the frame directly.
  *
+ * @note During transmission, the hardware calculates the FCS, and send it over the air right after the MAC payload,
+ *       so you just need to prepare the length, mac header and mac payload content.
+ *
  * @return
  *      - ESP_OK on success.
+ *      - ESP_ERR_INVALID_ARG on an invalid frame.
  *      - ESP_FAIL on failure due to invalid state.
  *
  */
@@ -477,6 +481,10 @@ esp_err_t esp_ieee802154_receive_handle_done(const uint8_t *frame);
  *                    |-----------------------------------------------------------------------|
  * @param[in]  frame_info  More information of the received frame, refer to esp_ieee802154_frame_info_t.
  *
+ * @note  During receiving, the hardware calculates the FCS of the received frame, and may drop it if the FCS doesn't match, only the valid
+ *        frames will be received and notified by esp_ieee802154_receive_done(). Please note that the FCS field is replaced by RSSI and LQI
+ *        value of the received frame.
+ *
  */
 extern void esp_ieee802154_receive_done(uint8_t *frame, esp_ieee802154_frame_info_t *frame_info);
 
@@ -547,6 +555,7 @@ esp_err_t esp_ieee802154_receive_at(uint32_t time);
  *
  * @return
  *      - ESP_OK on success.
+ *      - ESP_ERR_INVALID_ARG on an invalid frame.
  *      - ESP_FAIL on failure due to invalid state.
  *
  */
