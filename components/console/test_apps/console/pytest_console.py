@@ -261,3 +261,51 @@ def test_console_help_verbose_subcommand(dut: Dut, test_on: str) -> None:
     # verify help --verbose=1 subcommand
     dut.write('help --verbose=1')
     dut.expect_exact(help_verbose_info)
+
+
+@pytest.mark.parametrize(
+    'config', [
+        pytest.param('defaults'),
+    ]
+)
+@pytest.mark.parametrize(
+    'test_on', [
+        pytest.param('host', marks=[pytest.mark.linux, pytest.mark.host_test]),
+        pytest.param('target', marks=[pytest.mark.esp32, pytest.mark.esp32c3, pytest.mark.generic]),
+        pytest.param('qemu', marks=[pytest.mark.esp32, pytest.mark.host_test, pytest.mark.qemu]),
+    ]
+)
+def test_console_help_deregister(dut: Dut, test_on: str) -> None:
+    dut.expect_exact('Press ENTER to see the list of tests')
+    dut.write('"esp console deregister commands"')
+
+    dut.expect_exact('esp>', timeout=5)
+    dut.write('help')
+
+    # in the test sequence, command a is registered before registering command z, then
+    # command a is deregistered; therefore, console shall not print command a's description
+    cmd_a_description, cmd_z_description = 'should appear first in help', 'should appear last in help'
+    dut.expect_exact(cmd_z_description, not_matching=cmd_a_description)
+
+
+@pytest.mark.parametrize(
+    'config', [
+        pytest.param('defaults'),
+    ]
+)
+@pytest.mark.parametrize(
+    'test_on', [
+        pytest.param('host', marks=[pytest.mark.linux, pytest.mark.host_test]),
+        pytest.param('target', marks=[pytest.mark.esp32, pytest.mark.esp32c3, pytest.mark.generic]),
+        pytest.param('qemu', marks=[pytest.mark.esp32, pytest.mark.host_test, pytest.mark.qemu]),
+    ]
+)
+def test_console_help_re_register(dut: Dut, test_on: str) -> None:
+    dut.expect_exact('Press ENTER to see the list of tests')
+    dut.write('"esp console re-register commands"')
+
+    dut.expect_exact('esp>', timeout=5)
+    dut.write('help')
+
+    dut.expect_exact('should appear last in help', timeout=5)
+    dut.expect_exact('should appear first in help', timeout=5)
