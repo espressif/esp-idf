@@ -638,6 +638,7 @@
 #define SOC_PM_SUPPORT_VDDSDIO_PD       (1)
 #define SOC_PM_SUPPORT_TOP_PD           (1)
 #define SOC_PM_SUPPORT_CNNT_PD          (1)
+#define SOC_PM_SUPPORT_RTC_PERIPH_PD    (1)
 
 #define SOC_PM_SUPPORT_DEEPSLEEP_CHECK_STUB_ONLY   (1) /*!<Supports CRC only the stub code in RTC memory */
 

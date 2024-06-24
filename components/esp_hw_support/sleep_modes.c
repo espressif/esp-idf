@@ -26,7 +26,9 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "soc/soc_caps.h"
+#include "soc/chip_revision.h"
 #include "driver/rtc_io.h"
+#include "hal/efuse_hal.h"
 #include "hal/rtc_io_hal.h"
 #include "hal/clk_tree_hal.h"
 
@@ -862,6 +864,12 @@ static esp_err_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t m
         if (keep_rtc_power_on) { // Check if the touch sensor is working properly.
             pd_flags &= ~RTC_SLEEP_PD_RTC_PERIPH;
         }
+    }
+#elif CONFIG_IDF_TARGET_ESP32P4
+    /* Due to esp32p4 eco0 hardware bug, if LP peripheral power domain is powerdowned in sleep, there will be a possibility of
+       triggering the EFUSE_CRC reset, so disable the power-down of this power domain on lightsleep for ECO0 version. */
+    if (!ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 1)) {
+        pd_flags &= ~RTC_SLEEP_PD_RTC_PERIPH;
     }
 #endif
 
@@ -2264,6 +2272,12 @@ static uint32_t get_power_down_flags(void)
 #endif
         ) {
         pd_flags |= RTC_SLEEP_PD_MODEM;
+    }
+#endif
+
+#if SOC_PM_SUPPORT_CNNT_PD
+    if (s_config.domain[ESP_PD_DOMAIN_CNNT].pd_option != ESP_PD_OPTION_ON) {
+        pd_flags |= PMU_SLEEP_PD_CNNT;
     }
 #endif
 
