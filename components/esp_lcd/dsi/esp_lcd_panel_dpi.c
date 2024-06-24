@@ -79,8 +79,19 @@ static bool dma_trans_done_cb(dw_gdma_channel_handle_t chan, const dw_gdma_trans
 {
     bool yield_needed = false;
     esp_lcd_dpi_panel_t *dpi_panel = (esp_lcd_dpi_panel_t *)user_data;
+    mipi_dsi_hal_context_t *hal = &dpi_panel->bus->hal;
     uint8_t fb_index = dpi_panel->cur_fb_index;
     dw_gdma_link_list_handle_t link_list = dpi_panel->link_lists[fb_index];
+
+    // clear the interrupt status
+    uint32_t error_status = mipi_dsi_brg_ll_get_interrupt_status(hal->bridge);
+    mipi_dsi_brg_ll_clear_interrupt_status(hal->bridge, error_status);
+    if (unlikely(error_status & MIPI_DSI_LL_EVENT_UNDERRUN)) {
+        // when an underrun happens, the LCD display may already becomes blue
+        // it's too late to recover the display, so we just print an error message
+        // as a hint to the user that he should optimize the memory bandwidth (with AXI-ICM)
+        ESP_DRAM_LOGE(TAG, "can't fetch data from external memory fast enough, underrun happens");
+    }
 
     // restart the DMA transfer, keep refreshing the LCD
     dw_gdma_block_markers_t markers = {
@@ -437,6 +448,10 @@ static esp_err_t dpi_panel_init(esp_lcd_panel_t *panel)
     // enable the DPI output of the DSI bridge
     mipi_dsi_brg_ll_enable_dpi_output(hal->bridge, true);
     mipi_dsi_brg_ll_update_dpi_config(hal->bridge);
+
+    // enable the underrun interrupt, we use this as a signal of bandwidth shortage
+    // note, we opt to not install a dedicated interrupt handler just for this error condition, instead, we check it in the DMA callback
+    mipi_dsi_brg_ll_enable_interrupt(hal->bridge, MIPI_DSI_LL_EVENT_UNDERRUN, true);
 
     return ESP_OK;
 }
